@@ -58,7 +58,6 @@ export const PET_OWNER_MENU = {
   earn: '💵 کسب درآمد',
   verify: '🛡 احراز چهره',
   phoneVerify: '📱 احراز موبایل',
-  medical: '🩺 پزشکی',
   invite: '🎁 معرفی به دوستان',
   help: '❓ راهنما',
   menu: MAIN_MENU_BTN,
@@ -476,8 +475,6 @@ export function petOwnerMenuKeyboard(telegramId?: string | number | null): Keybo
     .text(m.earn)
     .success()
     .row()
-    .text(m.medical)
-    .primary()
     .text(m.invite)
     .success()
     .row()
