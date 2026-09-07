@@ -116,6 +116,7 @@ export async function showPetEditMenu(ctx: Context, petId: number): Promise<void
       petSectionEdit: true,
       draftPet: draftFromPet(owned.pet),
       breedPage: undefined,
+      ...clearOwnerChatFieldsOnly(),
     });
   }
 
