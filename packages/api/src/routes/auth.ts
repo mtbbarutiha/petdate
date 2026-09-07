@@ -267,15 +267,32 @@ authRouter.get('/wallet', (req, res) => {
     res.status(404).json({ error: 'کاربر پیدا نشد' });
     return;
   }
+  const linked = Boolean(user.telegramId);
+  const botUsername = String(process.env.TELEGRAM_BOT_USERNAME || 'Petdatebot').replace(/^@/, '');
   res.json({
     ok: true,
     wallet,
     /** coins همان سکه ربات است؛ برای سازگاری با کلاینت‌های قدیمی */
     coins: wallet.coins,
     telegram: {
-      linked: Boolean(user.telegramId),
+      linked,
       telegramId: user.telegramId ?? null,
       username: user.username ?? null,
+    },
+    /**
+     * موجودی Stars حساب شخصی کاربر از Bot API قابل خواندن نیست (محدودیت تلگرام).
+     * وقتی سینک شده باشد، می‌تواند با فاکتور XTR ستاره را مستقیم به ربات بپردازد
+     * و موجودی wallet_stars کیف‌پول پت‌دیت شارژ شود.
+     */
+    telegramStars: {
+      linked,
+      nativeReadable: false,
+      nativeBalance: null as number | null,
+      reasonFa: linked
+        ? 'تلگرام اجازهٔ خواندن موجودی Stars حساب شخصی را به ربات نمی‌دهد. با فاکتور تلگرام بخر تا ستاره مستقیم به ربات واریز شود و همین‌جا شارژ شود.'
+        : 'اول حساب وب را به تلگرام وصل کن، بعد می‌توانی با Stars واقعی تلگرام پرداخت کنی.',
+      walletStars: wallet.stars,
+      topUpDeepLink: linked ? `https://t.me/${botUsername}?start=wstars` : null,
     },
   });
 });

@@ -543,6 +543,14 @@ export async function fetchWallet(token: string) {
       telegramId: string | null;
       username: string | null;
     };
+    telegramStars?: {
+      linked: boolean;
+      nativeReadable: boolean;
+      nativeBalance: number | null;
+      reasonFa: string;
+      walletStars: number;
+      topUpDeepLink: string | null;
+    };
   }>('/api/auth/wallet', token);
 }
 

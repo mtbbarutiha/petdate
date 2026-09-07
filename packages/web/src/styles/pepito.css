@@ -8606,6 +8606,7 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
+  text-decoration: none;
   min-height: 2.4rem;
   min-width: 0;
   width: auto;

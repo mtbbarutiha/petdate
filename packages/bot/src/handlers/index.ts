@@ -169,6 +169,8 @@ import {
   handlePaymentReject,
   handlePreCheckout,
   handleSuccessfulPayment,
+  handleWalletStarsTopUpBuy,
+  handleWalletStarsTopUpMenu,
 } from './coins';
 import {
   handleNearbyPets,
@@ -678,6 +680,9 @@ export function registerHandlers(bot: Bot): void {
     handlePaymentReject(ctx, Number(ctx.match![1]))
   );
 
+  bot.callbackQuery(/^wstars:buy:(\d+)$/, (ctx) =>
+    handleWalletStarsTopUpBuy(ctx, ctx.match![1]!)
+  );
   bot.on('pre_checkout_query', (ctx) => handlePreCheckout(ctx));
   bot.on('message:successful_payment', (ctx) => handleSuccessfulPayment(ctx));
 

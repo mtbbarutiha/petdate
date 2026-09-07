@@ -4642,7 +4642,7 @@ export const dbService = {
     orderId: number;
     telegramPaymentChargeId: string;
   }):
-    | { ok: true; order: PaymentOrder; user: User; credited: boolean }
+    | { ok: true; order: PaymentOrder; user: User; credited: boolean; creditKind: 'coins' | 'wallet_stars' }
     | { ok: false; reason: 'missing' | 'bad_status' | 'already' } {
     const existing = this.getPaymentOrder(input.orderId);
     if (!existing) return { ok: false, reason: 'missing' };
@@ -4653,9 +4653,14 @@ export const dbService = {
         order: existing,
         user: this.getUserById(existing.userId)!,
         credited: false,
+        creditKind: String(existing.packageId || '').startsWith('wstars:') ? 'wallet_stars' : 'coins',
       };
     }
     if (existing.status !== 'awaiting_stars') return { ok: false, reason: 'bad_status' };
+
+    const isWalletStarsTopUp = String(existing.packageId || '').startsWith('wstars:');
+    const starsAmount = Math.max(0, Math.floor(Number(existing.amountStars ?? 0)));
+    const coinsAmount = Math.max(0, Math.floor(Number(existing.coins ?? 0)));
 
     const chargeId = input.telegramPaymentChargeId.trim();
     const tx = db.transaction(() => {
@@ -4669,19 +4674,37 @@ export const dbService = {
         )
         .run(chargeId || null, input.orderId);
       if (updated.changes !== 1) throw new Error('BAD_STATUS');
-      db.prepare(`UPDATE users SET coins = COALESCE(coins, 0) + ? WHERE id = ?`).run(
-        existing.coins,
-        existing.userId
-      );
-      this.appendWalletLedger({
-        userId: existing.userId,
-        currency: 'coins',
-        amount: existing.coins,
-        direction: 'credit',
-        reason: 'خرید سکه (ستاره‌های تلگرام)',
-        refType: 'payment_order',
-        refId: input.orderId,
-      });
+
+      if (isWalletStarsTopUp) {
+        const credit = starsAmount > 0 ? starsAmount : coinsAmount;
+        if (credit <= 0) throw new Error('BAD_AMOUNT');
+        db.prepare(
+          `UPDATE users SET wallet_stars = COALESCE(wallet_stars, 0) + ? WHERE id = ?`
+        ).run(credit, existing.userId);
+        this.appendWalletLedger({
+          userId: existing.userId,
+          currency: 'stars',
+          amount: credit,
+          direction: 'credit',
+          reason: 'شارژ ستاره با Telegram Stars (واریز به ربات)',
+          refType: 'payment_order',
+          refId: input.orderId,
+        });
+      } else {
+        db.prepare(`UPDATE users SET coins = COALESCE(coins, 0) + ? WHERE id = ?`).run(
+          coinsAmount,
+          existing.userId
+        );
+        this.appendWalletLedger({
+          userId: existing.userId,
+          currency: 'coins',
+          amount: coinsAmount,
+          direction: 'credit',
+          reason: 'خرید سکه (ستاره‌های تلگرام)',
+          refType: 'payment_order',
+          refId: input.orderId,
+        });
+      }
     });
 
     try {
@@ -4695,6 +4718,7 @@ export const dbService = {
             order: again,
             user: this.getUserById(existing.userId)!,
             credited: false,
+            creditKind: isWalletStarsTopUp ? 'wallet_stars' : 'coins',
           };
         }
         return { ok: false, reason: 'bad_status' };
@@ -4707,6 +4731,7 @@ export const dbService = {
       order: this.getPaymentOrder(input.orderId)!,
       user: this.getUserById(existing.userId)!,
       credited: true,
+      creditKind: isWalletStarsTopUp ? 'wallet_stars' : 'coins',
     };
   },
 

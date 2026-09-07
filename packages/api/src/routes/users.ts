@@ -714,7 +714,17 @@ usersRouter.post('/telegram/:telegramId/payments', (req, res) => {
   const amountStars =
     req.body?.amountStars != null ? Number(req.body.amountStars) : undefined;
 
-  if (!packageId || !Number.isFinite(coins) || coins <= 0) {
+  const isWalletStarsTopUp = packageId.startsWith('wstars:');
+  if (!packageId) {
+    res.status(400).json({ error: 'بسته نامعتبر', reason: 'package' });
+    return;
+  }
+  if (isWalletStarsTopUp) {
+    if (!Number.isFinite(amountStars) || Number(amountStars) <= 0) {
+      res.status(400).json({ error: 'تعداد ستاره نامعتبر', reason: 'package' });
+      return;
+    }
+  } else if (!Number.isFinite(coins) || coins <= 0) {
     res.status(400).json({ error: 'بسته نامعتبر', reason: 'package' });
     return;
   }
@@ -727,7 +737,7 @@ usersRouter.post('/telegram/:telegramId/payments', (req, res) => {
   const order = dbService.createPaymentOrder({
     userId: user.id,
     packageId,
-    coins: Math.floor(coins),
+    coins: isWalletStarsTopUp ? 0 : Math.floor(coins),
     amountToman: amountToman != null && Number.isFinite(amountToman) ? amountToman : undefined,
     amountStars: amountStars != null && Number.isFinite(amountStars) ? amountStars : undefined,
     method,
@@ -805,6 +815,7 @@ usersRouter.post('/payments/:id/stars/complete', (req, res) => {
     order: result.order,
     user: result.user,
     credited: result.credited,
+    creditKind: result.creditKind,
   });
 });
 

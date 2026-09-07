@@ -217,6 +217,21 @@ export async function handleStart(ctx: Context): Promise<void> {
       username: from.username,
     });
 
+    if (payload === 'wstars' || payload.startsWith('wstars')) {
+      const roles = normalizeRoles(user.roles, user.role);
+      await upsertSession(telegramId, {
+        userId: user.id,
+        role: user.role,
+        draftRoles: roles,
+        step: roles.length ? 'ready' : 'role_select',
+        locale: 'fa',
+        pendingPhone: undefined,
+      });
+      const { handleWalletStarsTopUpMenu } = await import('./coins');
+      await handleWalletStarsTopUpMenu(ctx);
+      return;
+    }
+
     if (payload.startsWith('wlink_')) {
       const roles = normalizeRoles(user.roles, user.role);
       await upsertSession(telegramId, {

@@ -562,16 +562,33 @@ export async function handlePreCheckout(ctx: Context): Promise<void> {
   const orderId = Number(match[1]);
   const pkgId = match[2]!;
   const order = await getPaymentOrder(orderId);
-  const pkg = COIN_PACKAGES.find((p) => p.id === pkgId);
   if (
     !order ||
-    !pkg ||
     order.method !== 'stars' ||
     order.status !== 'awaiting_stars' ||
     order.packageId !== pkgId ||
-    q.currency !== 'XTR' ||
-    q.total_amount !== pkg.stars
+    q.currency !== 'XTR'
   ) {
+    await ctx.answerPreCheckoutQuery(false, {
+      error_message: 'این فاکتور منقضی یا نامعتبر است',
+    });
+    return;
+  }
+
+  if (pkgId.startsWith('wstars:')) {
+    const stars = Math.floor(Number(order.amountStars ?? 0));
+    if (stars <= 0 || q.total_amount !== stars) {
+      await ctx.answerPreCheckoutQuery(false, {
+        error_message: 'مبلغ ستاره نامعتبر است',
+      });
+      return;
+    }
+    await ctx.answerPreCheckoutQuery(true);
+    return;
+  }
+
+  const pkg = COIN_PACKAGES.find((p) => p.id === pkgId);
+  if (!pkg || q.total_amount !== pkg.stars) {
     await ctx.answerPreCheckoutQuery(false, {
       error_message: 'این فاکتور منقضی یا نامعتبر است',
     });
@@ -580,7 +597,7 @@ export async function handlePreCheckout(ctx: Context): Promise<void> {
   await ctx.answerPreCheckoutQuery(true);
 }
 
-/** successful_payment — واریز سکه بعد از Stars */
+/** successful_payment — واریز سکه یا شارژ wallet_stars بعد از Stars (XTR → ربات) */
 export async function handleSuccessfulPayment(ctx: Context): Promise<void> {
   const payment = ctx.message?.successful_payment;
   if (!payment) return;
@@ -591,18 +608,35 @@ export async function handleSuccessfulPayment(ctx: Context): Promise<void> {
     return;
   }
   const orderId = Number(match[1]);
+  const pkgId = match[2]!;
   const result = await completeStarsPayment(orderId, payment.telegram_payment_charge_id);
   if (!result.ok) {
-    await ctx.reply('پرداخت ثبت شد ولی واریز سکه با خطا روبه‌رو شد. با پشتیبانی هماهنگ کن.');
+    await ctx.reply('پرداخت ثبت شد ولی واریز موجودی با خطا روبه‌رو شد. با پشتیبانی هماهنگ کن.');
     console.error('completeStarsPayment failed:', result.reason, orderId);
     return;
   }
 
   const user = result.user;
+  if (pkgId.startsWith('wstars:') || result.creditKind === 'wallet_stars') {
+    const stars = Math.floor(Number(result.order.amountStars ?? payment.total_amount ?? 0));
+    await ctx.reply(
+      [
+        '⭐ پرداخت Stars تلگرام موفق بود!',
+        `ستاره‌ها مستقیم به ربات واریز شد و <b>${formatNum(stars)}</b> ستاره به کیف‌پول پت‌دیتت اضافه شد.`,
+        `موجودی ستاره کیف‌پول: <b>⭐ ${formatNum(user.wallet?.stars ?? user.walletStars ?? 0)}</b>`,
+      ].join('\n'),
+      {
+        parse_mode: 'HTML',
+        reply_markup: menuKeyboardFor(ctx, user),
+      }
+    );
+    return;
+  }
+
   await ctx.reply(
     [
       '⭐ پرداخت با ستاره موفق بود!',
-      `${formatNum(result.order.coins)} سکه به موجودی‌ات اضافه شد.`,
+      `ستاره‌ها به ربات واریز شد و <b>${formatNum(result.order.coins)}</b> سکه به موجودی‌ات اضافه شد.`,
       `موجودی فعلی: <b>${formatNum(user.coins ?? 0)}</b> سکه`,
     ].join('\n'),
     {
@@ -610,6 +644,83 @@ export async function handleSuccessfulPayment(ctx: Context): Promise<void> {
       reply_markup: menuKeyboardFor(ctx, user),
     }
   );
+}
+
+/** بسته‌های شارژ wallet_stars با پرداخت واقعی Telegram Stars (XTR) */
+export const WALLET_STARS_TOPUP_PACKS = [10, 25, 50, 100, 250] as const;
+
+export async function handleWalletStarsTopUpMenu(ctx: Context): Promise<void> {
+  const user = await getCtxUser(ctx);
+  if (!user?.telegramId) {
+    await ctx.reply('اول /start بزن.');
+    return;
+  }
+  const stars = userStarsBalance(user);
+  const kb = new InlineKeyboard();
+  for (const amount of WALLET_STARS_TOPUP_PACKS) {
+    kb.text(`⭐ ${formatNum(amount)} ستاره`, `wstars:buy:${amount}`).row();
+  }
+  await ctx.reply(
+    [
+      '⭐ <b>شارژ ستاره کیف‌پول با Stars تلگرام</b>',
+      '',
+      'تلگرام موجودی Stars حساب شخصی‌ات را به ربات نشان نمی‌دهد.',
+      'با فاکتور زیر، Stars واقعی‌ات مستقیم به ربات واریز می‌شود و همان مقدار در کیف‌پول پت‌دیت شارژ می‌گردد.',
+      '',
+      `موجودی فعلی کیف‌پول: ⭐ <b>${formatNum(stars)}</b>`,
+      '',
+      'بسته را انتخاب کن:',
+    ].join('\n'),
+    { parse_mode: 'HTML', reply_markup: kb }
+  );
+  await ctx.reply('منوی اصلی 👇', { reply_markup: menuKeyboardFor(ctx, user) });
+}
+
+export async function handleWalletStarsTopUpBuy(ctx: Context, amountRaw: string): Promise<void> {
+  const user = await getCtxUser(ctx);
+  if (!user?.telegramId || !ctx.from) {
+    await ctx.answerCallbackQuery({ text: 'اول /start بزن', show_alert: true });
+    return;
+  }
+  const amount = Math.floor(Number(amountRaw));
+  if (!Number.isFinite(amount) || amount <= 0 || amount > 5000) {
+    await ctx.answerCallbackQuery({ text: 'مبلغ نامعتبر', show_alert: true });
+    return;
+  }
+
+  const packageId = `wstars:${amount}`;
+  const created = await createPaymentOrder(user.telegramId, {
+    packageId,
+    coins: 0,
+    amountStars: amount,
+    method: 'stars',
+  });
+  if (!created.ok) {
+    await ctx.answerCallbackQuery({ text: 'ثبت سفارش ناموفق', show_alert: true });
+    return;
+  }
+
+  await ctx.answerCallbackQuery();
+  const title = `شارژ ${amount} ستاره`.slice(0, 32);
+  const description = `شارژ کیف‌پول پت‌دیت — ${amount} Telegram Stars مستقیم به ربات`.slice(0, 255);
+  const payload = `pay:${created.order.id}:${packageId}`;
+
+  try {
+    await ctx.replyWithInvoice(
+      title,
+      description,
+      payload,
+      'XTR',
+      [{ label: `${amount} ستاره کیف‌پول`, amount }],
+      { provider_token: '' }
+    );
+  } catch (err) {
+    console.error('sendInvoice wallet stars top-up failed:', err);
+    await ctx.reply(
+      'ارسال فاکتور Stars ممکن نشد. اگر پرداخت Stars برای ربات فعال نیست، با پشتیبانی هماهنگ کن.',
+      { reply_markup: menuKeyboardFor(ctx, user) }
+    );
+  }
 }
 
 export async function handleEarn(ctx: Context): Promise<void> {

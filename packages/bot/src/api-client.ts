@@ -973,7 +973,13 @@ export async function completeStarsPayment(
   orderId: number,
   telegramPaymentChargeId: string
 ): Promise<
-  | { ok: true; order: PaymentOrder; user: User; credited: boolean }
+  | {
+      ok: true;
+      order: PaymentOrder;
+      user: User;
+      credited: boolean;
+      creditKind: 'coins' | 'wallet_stars';
+    }
   | { ok: false; reason: string }
 > {
   const res = await fetch(`${config.apiUrl}/api/users/payments/${orderId}/stars/complete`, {
@@ -986,6 +992,7 @@ export async function completeStarsPayment(
     order?: PaymentOrder;
     user?: User;
     credited?: boolean;
+    creditKind?: 'coins' | 'wallet_stars';
     reason?: string;
     error?: string;
   };
@@ -997,6 +1004,7 @@ export async function completeStarsPayment(
     order: body.order,
     user: body.user,
     credited: Boolean(body.credited),
+    creditKind: body.creditKind === 'wallet_stars' ? 'wallet_stars' : 'coins',
   };
 }
 
