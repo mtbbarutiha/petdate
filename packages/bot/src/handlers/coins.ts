@@ -576,11 +576,28 @@ export async function handlePreCheckout(ctx: Context): Promise<void> {
     return;
   }
 
-  if (order.userTelegramId && String(q.from?.id) !== String(order.userTelegramId)) {
+  // فاکتور XTR داخل همان چت تلگرام پرداخت می‌شود؛ مقایسهٔ سخت مالکیت
+  // (number vs string / چند اکانت) خرید شاپ را بی‌دلیل بلاک می‌کرد.
+  const payerTg = String(q.from?.id ?? ctx.from?.id ?? '').trim();
+  const ownerTg = order.userTelegramId != null ? String(order.userTelegramId).trim() : '';
+  if (ownerTg && payerTg && ownerTg !== payerTg && pkgId !== 'shopxtr') {
+    console.warn('pre_checkout telegram mismatch', {
+      orderId,
+      pkgId,
+      ownerTg,
+      payerTg,
+    });
     await ctx.answerPreCheckoutQuery(false, {
       error_message: 'این فاکتور برای حساب دیگری است',
     });
     return;
+  }
+  if (ownerTg && payerTg && ownerTg !== payerTg && pkgId === 'shopxtr') {
+    console.warn('pre_checkout shopxtr telegram mismatch (allowed)', {
+      orderId,
+      ownerTg,
+      payerTg,
+    });
   }
 
   if (pkgId === 'shopxtr' || pkgId.startsWith('wstars:')) {

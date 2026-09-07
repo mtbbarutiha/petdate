@@ -1716,7 +1716,10 @@ function mapPaymentOrder(row: Record<string, unknown>): PaymentOrder {
     createdAt: row.created_at as string,
     reviewedAt: (row.reviewed_at as string | undefined) ?? undefined,
     userName: (row.user_name as string | undefined) ?? undefined,
-    userTelegramId: (row.user_telegram_id as string | undefined) ?? undefined,
+    userTelegramId:
+      row.user_telegram_id != null && String(row.user_telegram_id).trim() !== ''
+        ? String(row.user_telegram_id).trim()
+        : undefined,
     userUsername: (row.user_username as string | undefined) ?? undefined,
   };
 }

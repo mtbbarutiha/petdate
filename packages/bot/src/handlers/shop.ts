@@ -648,9 +648,15 @@ export async function sendShopStarsInvoiceForPaymentOrder(
     await ctx.reply('فاکتور فروشگاه پیدا نشد یا منقضی است.');
     return true;
   }
-  if (order.userTelegramId && order.userTelegramId !== user.telegramId) {
-    await ctx.reply('این فاکتور برای حساب تلگرام دیگری است.');
-    return true;
+  const ownerTg = order.userTelegramId != null ? String(order.userTelegramId).trim() : '';
+  const payerTg = String(user.telegramId).trim();
+  if (ownerTg && payerTg && ownerTg !== payerTg) {
+    // همان کاربر ممکن است چند اکانت داشته باشد؛ فاکتور را برای پرداخت‌کننده فعلی می‌فرستیم.
+    console.warn('shoppay deep-link telegram mismatch (sending invoice anyway)', {
+      paymentOrderId,
+      ownerTg,
+      payerTg,
+    });
   }
   if (order.status === 'paid') {
     await ctx.reply('این سفارش قبلاً پرداخت شده است.');
