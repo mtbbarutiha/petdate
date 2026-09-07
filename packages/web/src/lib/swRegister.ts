@@ -7,7 +7,7 @@
  * and clears obsolete Workbox caches.
  */
 
-const BUST_GENERATION = 'petdate-sw-20260907-web-perf-v13';
+const BUST_GENERATION = 'petdate-sw-20260907-pets-sync-v14';
 const BUST_KEY = `pd_sw_bust_${BUST_GENERATION}`;
 const RELOAD_KEY = `pd_sw_reload_${BUST_GENERATION}`;
 
@@ -36,6 +36,12 @@ async function clearStaleCaches() {
         .filter((k) => /workbox|precache|petdate/i.test(k) && !k.includes('petdate-web-v3'))
         .map((k) => caches.delete(k)),
     );
+  } catch {
+    /* ignore */
+  }
+  // Legacy demo pet store (رکس / گلدن رتریور) — must not survive next to live /auth/pets.
+  try {
+    localStorage.removeItem('petdate_store_v2');
   } catch {
     /* ignore */
   }

@@ -31,7 +31,29 @@ export const CURRENT_OWNER: OwnerProfile = {
   ],
 };
 
-export const MY_PET = CURRENT_OWNER.pets[0];
+/** Blank draft for local forms only — never show demo «رکس» next to live /auth/pets. */
+export const MY_PET: Pet = {
+  id: 0,
+  name: '',
+  type: 'dog',
+  breed: '',
+  age: 1,
+  ageUnit: 'year',
+  size: 'medium',
+  gender: 'male',
+  city: '',
+  neighborhood: '',
+  ownerName: '',
+  ownerId: 0,
+  imageUrl: petLocal(DOG_PHOTOS[0]),
+  emoji: '🐕',
+  bio: '',
+  traits: [],
+  vaccinated: false,
+  neutered: false,
+  lookingForPlaymate: true,
+  distanceKm: 0,
+};
 
 export const MOCK_PETS: Pet[] = [
   {

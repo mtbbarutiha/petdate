@@ -13,6 +13,7 @@ import {
   verifyWebOtp,
   type WebOtpChannel,
 } from '../lib/api';
+import { petStore } from './store';
 import { userStore } from './userStore';
 
 const STORAGE_KEY = 'petdate_web_auth_v1';
@@ -161,6 +162,8 @@ class AuthStore {
           this.data = {};
           localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
           userStore.reset();
+          // Drop mock «رکس» so Profile / forms never mix demo pet with live API pets.
+          petStore.reset();
           this.listeners.forEach((l) => l());
           return null;
         }
@@ -234,6 +237,7 @@ class AuthStore {
     this.data = {};
     localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
     userStore.reset();
+    petStore.reset();
     this.listeners.forEach((l) => l());
   }
 }

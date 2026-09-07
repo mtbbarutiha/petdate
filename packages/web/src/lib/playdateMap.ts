@@ -1,7 +1,7 @@
 import { PLAYDATE_STATUS_LABELS, type PetProfile, type PlaydateRequest } from '@petdate/shared';
 import type { MatchRequest, MatchStatus, Pet, PetType } from '../types';
 import { PET_TYPE_EMOJI } from '../types';
-import { EMPTY_STATE_PHOTO } from '../data/petImages';
+import { DEFAULT_IMAGES } from '../data/petImages';
 
 function speciesToType(species?: string): PetType {
   const s = (species || '').toLowerCase();
@@ -12,8 +12,9 @@ function speciesToType(species?: string): PetType {
   return 'other';
 }
 
-function resolveImage(url?: string | null, petId?: number): string {
-  if (!url?.trim()) return EMPTY_STATE_PHOTO;
+/** Prefer real URL / Telegram proxy; never show a cat placeholder for a dog (etc.). */
+function resolveImage(url: string | null | undefined, petId: number | undefined, type: PetType): string {
+  if (!url?.trim()) return DEFAULT_IMAGES[type];
   const u = url.trim();
   // Absolute remote, same-origin API uploads, or static /pets assets
   if (/^https?:\/\//i.test(u) || u.startsWith('/')) return u;
@@ -22,7 +23,7 @@ function resolveImage(url?: string | null, petId?: number): string {
     if (petId != null && petId > 0) return `/api/pets/${petId}/image`;
     return `/api/media/telegram/${encodeURIComponent(u)}`;
   }
-  return EMPTY_STATE_PHOTO;
+  return DEFAULT_IMAGES[type];
 }
 
 export function petProfileToUiPet(pet?: PetProfile | null): Pet {
@@ -43,7 +44,7 @@ export function petProfileToUiPet(pet?: PetProfile | null): Pet {
     neighborhood: pet?.neighborhood || '',
     ownerName: '',
     ownerId: pet?.ownerId ?? 0,
-    imageUrl: resolveImage(pet?.imageUrl, pet?.id),
+    imageUrl: resolveImage(pet?.imageUrl, pet?.id, type),
     emoji: PET_TYPE_EMOJI[type],
     bio: pet?.bio,
     traits: [],
