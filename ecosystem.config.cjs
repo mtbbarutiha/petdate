@@ -1,8 +1,10 @@
 /** PM2 process file — production PetDate */
 const path = require('path');
 
-/** Single SQLite source of truth for api (+ bot env proof). Bot stores users/pets only via API. */
+/** SQLite file kept as local backup; live SoT is Postgres when DATABASE_URL is set. */
 const DATABASE_PATH = path.join(__dirname, 'packages/api/data/petdate.db');
+const DATABASE_URL =
+  process.env.DATABASE_URL || 'postgresql://petdate:petdate@127.0.0.1:5432/petdate';
 const API_URL = process.env.API_URL || 'http://127.0.0.1:3001';
 
 module.exports = {
@@ -23,6 +25,7 @@ module.exports = {
         PORT: 3001,
         NODE_OPTIONS: '--dns-result-order=ipv4first',
         DATABASE_PATH,
+        DATABASE_URL,
       },
     },
     {
@@ -39,8 +42,8 @@ module.exports = {
       env: {
         NODE_ENV: 'production',
         NODE_OPTIONS: '--dns-result-order=ipv4first',
-        /** Same absolute path as api — bot does not open SQLite; proves unified SoT in pm2 env */
         DATABASE_PATH,
+        DATABASE_URL,
         API_URL,
       },
     },

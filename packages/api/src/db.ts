@@ -1,6 +1,7 @@
 import './load-env';
 import Database from 'better-sqlite3';
 import path from 'path';
+import { createPgCompatDatabase, isPostgresUrl } from './db/pg-compat';
 import type {
   CoinAward,
   Game,
@@ -72,8 +73,8 @@ export type WalletLedgerMeta = {
 
 /**
  * Single source of truth for profile/pet data.
- * Absolute DATABASE_PATH wins; otherwise always `packages/api/data/petdate.db`
- * (relative env paths ignored — cwd varies across worktrees / pm2).
+ * - DATABASE_URL=postgresql://… → PostgreSQL (production target)
+ * - else absolute DATABASE_PATH / default SQLite file
  * Bot must not keep a divergent user/pet store; it talks to this API DB via HTTP.
  */
 function resolveDbPath(): string {
@@ -84,29 +85,55 @@ function resolveDbPath(): string {
 
 const dbPath = resolveDbPath();
 
-/** Absolute path of the live SQLite file (for health / ops proof). */
+/** Absolute path of the live SQLite file (empty when Postgres is SoT). */
 export function getResolvedDatabasePath(): string {
-  return dbPath;
+  return isPostgresUrl(process.env.DATABASE_URL) ? '' : dbPath;
 }
 
-let db: Database.Database;
+export function getStorageDriver(): 'postgres' | 'sqlite' {
+  return isPostgresUrl(process.env.DATABASE_URL) ? 'postgres' : 'sqlite';
+}
 
-export function getDb(): Database.Database {
+type AppDatabase = Database.Database;
+
+let db: AppDatabase;
+
+export function getDb(): AppDatabase {
   if (!db) {
-    const fs = require('fs');
-    const dir = path.dirname(dbPath);
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    db = new Database(dbPath);
-    db.pragma('journal_mode = WAL');
-    db.pragma('foreign_keys = ON');
-    initSchema();
-    seedIfEmpty();
-    // Demo/fake users+pets only when explicitly enabled — never auto-reseed after a production wipe.
-    if (process.env.SEED_DEMO_DATA === '1') {
-      seedDemoPetsIfEmpty();
-      seedFakeDogOwners();
+    const usePostgres = isPostgresUrl(process.env.DATABASE_URL);
+    if (usePostgres) {
+      db = createPgCompatDatabase() as unknown as Database.Database;
+      try {
+        migrateSchema();
+      } catch (err) {
+        console.warn(
+          'postgres migrateSchema soft-patch skipped/failed:',
+          (err as Error).message
+        );
+      }
+      seedIfEmpty();
+      if (process.env.SEED_DEMO_DATA === '1') {
+        seedDemoPetsIfEmpty();
+        seedFakeDogOwners();
+      }
+      console.log(
+        `   PostgreSQL (source of truth): ${String(process.env.DATABASE_URL).replace(/:[^:@/]+@/, ':***@')}`
+      );
+    } else {
+      const fs = require('fs');
+      const dir = path.dirname(dbPath);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      db = new Database(dbPath);
+      db.pragma('journal_mode = WAL');
+      db.pragma('foreign_keys = ON');
+      initSchema();
+      seedIfEmpty();
+      if (process.env.SEED_DEMO_DATA === '1') {
+        seedDemoPetsIfEmpty();
+        seedFakeDogOwners();
+      }
+      console.log(`   SQLite (source of truth): ${dbPath}`);
     }
-    console.log(`   SQLite (source of truth): ${dbPath}`);
   }
   return db;
 }
