@@ -10368,54 +10368,9 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
 }
 
 
-/* —— میانبر شاپ موبایل (سفارش‌ها / سبد) —— */
-.pd-shop-mobile-tabs {
-  display: none;
-}
+/* —— سفارش‌های من: آیکن کنار سبد (بدون نوار سه‌تایی موبایل) —— */
 @media (max-width: 859px) {
-  .pd-shop-page .pd-shop-mobile-tabs {
-    display: flex;
-    position: sticky;
-    top: var(--pepito-nav-h, 58px);
-    z-index: 40;
-    gap: 0.35rem;
-    padding: 0.45rem var(--pepito-gutter-x, 1rem);
-    background: rgba(255, 255, 255, 0.94);
-    backdrop-filter: blur(10px);
-    border-bottom: 1px solid rgba(26, 77, 143, 0.08);
-  }
-  .pd-shop-mobile-tab {
-    flex: 1 1 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.35rem;
-    min-height: 2.35rem;
-    padding: 0.35rem 0.5rem;
-    border-radius: 12px;
-    background: rgba(26, 77, 143, 0.05);
-    color: var(--pepito-dark, #1a2b4a);
-    text-decoration: none;
-    font-size: 0.82rem;
-    font-weight: 700;
-  }
-  .pd-shop-mobile-tab.active,
-  .pd-shop-mobile-tab[aria-current='page'] {
-    background: rgba(11, 165, 242, 0.14);
-    color: #0a6fa8;
-  }
-  .pd-shop-mobile-tab-count {
-    min-width: 1.15rem;
-    height: 1.15rem;
-    padding: 0 0.28rem;
-    border-radius: 999px;
-    background: var(--pepito-orange, #f4a261);
-    color: #fff;
-    font-size: 0.68rem;
-    line-height: 1.15rem;
-    text-align: center;
-  }
-  .pepito-nav-orders-link {
+  .pd-shop-page .pepito-nav-orders-link {
     display: inline-flex !important;
   }
 }

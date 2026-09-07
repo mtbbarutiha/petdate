@@ -1,10 +1,9 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link, NavLink } from 'react-router-dom';
-import { Package, PawPrint, ShoppingBag, ShoppingCart } from 'lucide-react';
+import { PawPrint } from 'lucide-react';
 import { BRAND } from '@petdate/shared';
 import { useAuthStore } from '../../hooks/useAuthStore';
 import { useShopCatalogSync } from '../../hooks/useShopCatalogSync';
-import { useShopCart } from '../../hooks/useShopCart';
 import { NavUserCluster } from '../NavUserCluster';
 import { SiteDesktopNav } from '../SiteDesktopNav';
 import { SiteFooter } from '../SiteFooter';
@@ -24,7 +23,6 @@ export function ShopChrome({
   const [scrolled, setScrolled] = useState(false);
   const { isLoggedIn } = useAuthStore();
   const { ready } = useShopCatalogSync();
-  const { itemCount } = useShopCart();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -65,25 +63,6 @@ export function ShopChrome({
           <SiteDesktopNav />
         </div>
       </header>
-
-      {/* Mobile: top nav links are hidden — keep shop shortcuts visible */}
-      <nav className="pd-shop-mobile-tabs" aria-label="میانبر شاپ">
-        <NavLink to="/shop" end className="pd-shop-mobile-tab">
-          <ShoppingBag size={16} strokeWidth={2.2} aria-hidden />
-          فروشگاه
-        </NavLink>
-        <NavLink to="/shop/orders" className="pd-shop-mobile-tab">
-          <Package size={16} strokeWidth={2.2} aria-hidden />
-          سفارش‌ها
-        </NavLink>
-        <NavLink to="/shop/cart" className="pd-shop-mobile-tab">
-          <ShoppingCart size={16} strokeWidth={2.2} aria-hidden />
-          سبد
-          {itemCount > 0 ? (
-            <span className="pd-shop-mobile-tab-count">{itemCount.toLocaleString('fa-IR')}</span>
-          ) : null}
-        </NavLink>
-      </nav>
 
       {!hideBanner ? (
         <section className="pd-shop-hero pd-shop-hero--full" aria-label={bannerTitle}>
