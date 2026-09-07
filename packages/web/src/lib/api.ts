@@ -1132,9 +1132,44 @@ export type ShopStarsCheckoutResult = {
   totalToman: number;
   titleHint?: string;
   botDeepLink: string;
+  webSuccessUrl?: string;
   requiresTelegramStars: true;
   message: string;
 };
+
+export type ShopStarsPaymentStatus = {
+  ok: true;
+  paymentOrderId: number;
+  status: string;
+  stars: number;
+  totalToman: number;
+  titleHint?: string;
+  shopOrderId?: number;
+  chargeId?: string;
+  paidAt?: string;
+  botDeepLink: string;
+  webSuccessUrl: string;
+  paid: boolean;
+};
+
+export async function fetchShopStarsPaymentStatus(
+  token: string,
+  paymentOrderId: number
+): Promise<ShopStarsPaymentStatus> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}/api/shop/checkout/stars-status/${paymentOrderId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  } catch {
+    throw new Error('اتصال به سرور برقرار نشد.');
+  }
+  const json = (await res.json()) as ShopStarsPaymentStatus & { error?: string; ok?: boolean };
+  if (!res.ok || json.ok !== true) {
+    throw new Error(json.error || `خطای ${res.status}`);
+  }
+  return json;
+}
 
 async function postShopCheckout<T extends { ok?: boolean; error?: string }>(
   path: string,

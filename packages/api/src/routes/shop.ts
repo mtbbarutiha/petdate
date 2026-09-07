@@ -3,6 +3,7 @@ import { COIN_PRICE_TOMAN, STAR_PRICE_TOMAN, tomanToShopCoins } from '@petdate/s
 import { getUserFromBearer } from '../services/web-otp';
 import {
   checkoutShopWithCoins,
+  getShopStarsXtrStatus,
   prepareShopStarsXtrCheckout,
   quoteShopCoins,
   quoteShopStars,
@@ -278,9 +279,26 @@ shopRouter.post('/checkout/stars', (req, res) => {
     lines: result.lines,
     titleHint: result.titleHint,
     botDeepLink: result.botDeepLink,
+    webSuccessUrl: result.webSuccessUrl,
     requiresTelegramStars: true,
     message: result.message,
   });
+});
+
+shopRouter.get('/checkout/stars-status/:paymentOrderId', (req, res) => {
+  const session = requireSession(req, res, 'برای پیگیری پرداخت وارد حساب شوید.');
+  if (!session) return;
+  const paymentOrderId = Number(req.params.paymentOrderId);
+  if (!Number.isFinite(paymentOrderId) || paymentOrderId <= 0) {
+    res.status(400).json({ ok: false, reason: 'bad_id', error: 'شناسه فاکتور نامعتبر است.' });
+    return;
+  }
+  const result = getShopStarsXtrStatus(paymentOrderId, session.user.id);
+  if (!result.ok) {
+    res.status(result.reason === 'forbidden' ? 403 : 404).json(result);
+    return;
+  }
+  res.json(result);
 });
 
 shopRouter.post('/checkout/coins-telegram', (req, res) => {
@@ -373,6 +391,7 @@ shopRouter.post('/checkout/stars-telegram', (req, res) => {
     lines: result.lines,
     titleHint: result.titleHint,
     botDeepLink: result.botDeepLink,
+    webSuccessUrl: result.webSuccessUrl,
     requiresTelegramStars: true,
     message: result.message,
   });

@@ -1,5 +1,5 @@
 import { type FormEvent, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { COIN_PRICE_TOMAN, STAR_PRICE_TOMAN, walletFromUserFields } from '@petdate/shared';
 import { formatShopCoins, formatShopStars, formatToman } from '../../data/shopCatalog';
 import { useAuthStore } from '../../hooks/useAuthStore';
@@ -11,6 +11,7 @@ import { ShopChrome } from '../../components/shop/ShopChrome';
 type PayMethod = 'coins' | 'stars';
 
 export function ShopCartPage() {
+  const navigate = useNavigate();
   const { lines, itemCount, totalToman, totalCoins, totalStars, setQty, remove, clear, rememberPaidOrder } =
     useShopCart();
   const { isLoggedIn, token, user, refreshMe } = useAuthStore();
@@ -20,20 +21,12 @@ export function ShopCartPage() {
   const [note, setNote] = useState('');
   const [orderId, setOrderId] = useState<string | null>(null);
   const [paidCoins, setPaidCoins] = useState<number | null>(null);
-  const [paidStars, setPaidStars] = useState<number | null>(null);
-  const [paidMethod, setPaidMethod] = useState<PayMethod | null>(null);
-  const [starsInvoiceLink, setStarsInvoiceLink] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState<PayMethod | null>(null);
   const [error, setError] = useState('');
 
   const coinBalance = useMemo(() => {
     if (!user) return 0;
     return user.wallet?.coins ?? walletFromUserFields(user).coins ?? user.coins ?? 0;
-  }, [user]);
-
-  const starsBalance = useMemo(() => {
-    if (!user) return 0;
-    return user.wallet?.stars ?? walletFromUserFields(user).stars ?? user.walletStars ?? 0;
   }, [user]);
 
   const canAffordCoins = coinBalance >= totalCoins && totalCoins > 0;
@@ -90,18 +83,12 @@ export function ShopCartPage() {
         });
         clear();
         setPaidCoins(result.coinsSpent);
-        setPaidStars(null);
-        setPaidMethod('coins');
-        setStarsInvoiceLink(null);
         setOrderId(String(result.orderId));
       } else {
         const result = await checkoutShopWithStars(token, payload);
         clear();
-        setPaidCoins(null);
-        setPaidStars(result.stars ?? result.starsNeeded);
-        setPaidMethod('stars');
-        setStarsInvoiceLink(result.botDeepLink);
-        setOrderId(String(result.paymentOrderId));
+        navigate(`/shop/stars-pay/${result.paymentOrderId}`, { replace: true });
+        return;
       }
       try {
         await refreshMe();
@@ -125,42 +112,19 @@ export function ShopCartPage() {
       <div className="pepito-container pd-shop-cart">
         {orderId ? (
           <div className="pd-shop-order-ok">
-            {paidMethod === 'stars' && starsInvoiceLink ? (
-              <>
-                <h2>فاکتور Stars تلگرام آماده است</h2>
-                <p>
-                  شماره فاکتور: <strong dir="ltr">#{orderId}</strong>
-                </p>
-                {paidStars != null ? (
-                  <p>
-                    مبلغ: <strong>{formatShopStars(paidStars)}</strong> — مستقیم از اکانت تلگرام به ربات
-                  </p>
-                ) : null}
-                <p>در تلگرام فاکتور را باز کن و پرداخت کن تا سفارش شاپ ثبت شود.</p>
-                <a href={starsInvoiceLink} className="pepito-btn button-1" target="_blank" rel="noreferrer">
-                  پرداخت در تلگرام
-                </a>
-                <Link to="/shop" className="pepito-btn button-2" style={{ marginInlineStart: 8 }}>
-                  بازگشت به پت شاپ
-                </Link>
-              </>
-            ) : (
-              <>
-                <h2>پرداخت با سکه انجام شد</h2>
-                <p>
-                  شماره سفارش: <strong dir="ltr">#{orderId}</strong>
-                </p>
-                {paidCoins != null ? (
-                  <p>
-                    مبلغ پرداختی: <strong>{formatShopCoins(paidCoins)}</strong>
-                  </p>
-                ) : null}
-                <p>سفارش به‌عنوان «پرداخت‌شده با سکه» در سرور ثبت شد.</p>
-                <Link to="/shop" className="pepito-btn button-1">
-                  بازگشت به پت شاپ
-                </Link>
-              </>
-            )}
+            <h2>پرداخت با سکه انجام شد</h2>
+            <p>
+              شماره سفارش: <strong dir="ltr">#{orderId}</strong>
+            </p>
+            {paidCoins != null ? (
+              <p>
+                مبلغ پرداختی: <strong>{formatShopCoins(paidCoins)}</strong>
+              </p>
+            ) : null}
+            <p>سفارش به‌عنوان «پرداخت‌شده با سکه» در سرور ثبت شد.</p>
+            <Link to="/shop" className="pepito-btn button-1">
+              بازگشت به پت شاپ
+            </Link>
           </div>
         ) : (
           <div className="pd-shop-cart-layout">
@@ -247,11 +211,10 @@ export function ShopCartPage() {
                     ) : null}
                   </p>
                   <p className="pd-shop-checkout-balance" role="status">
-                    ستاره کیف‌پول (نمایشی): <strong>{formatShopStars(starsBalance)}</strong>
                     {!telegramLinked ? (
-                      <span className="pd-shop-afford-warn"> — برای Stars تلگرام، حساب را به ربات وصل کن</span>
+                      <span className="pd-shop-afford-warn">برای Stars تلگرام، حساب وب را به ربات وصل کن</span>
                     ) : (
-                      <span className="pd-shop-checkout-rate"> — خرید شاپ از Stars واقعی تلگرام است</span>
+                      <span className="pd-shop-checkout-rate">پرداخت ستاره = فاکتور واقعی تلگرام (XTR → ربات)</span>
                     )}
                   </p>
                   <label>

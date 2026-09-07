@@ -15,7 +15,7 @@ import {
   type PaymentOrder,
 } from '../api-client';
 import { config } from '../config';
-import { effectiveWebUrl } from '../urls';
+import { effectiveWebUrl, isTelegramInlineUrl } from '../urls';
 import { isAdminAuthorized } from './admin-auth';
 import {
   COIN_PACKAGES,
@@ -647,28 +647,40 @@ export async function handleSuccessfulPayment(ctx: Context): Promise<void> {
       Number(result.starsSpent ?? result.order.amountStars ?? payment.total_amount ?? 0)
     );
     const shopId = result.shopOrderId;
-    const site = (() => {
-      const base = effectiveWebUrl().replace(/\/$/, '');
-      return base ? `${base}/shop` : '';
-    })();
+    const paymentId = result.order.id;
+    const chargeId = payment.telegram_payment_charge_id;
+    const base = effectiveWebUrl().replace(/\/$/, '');
+    const receiptUrl = base ? `${base}/shop/stars-pay/${paymentId}` : '';
+    const kb = new InlineKeyboard();
+    if (receiptUrl && isTelegramInlineUrl(receiptUrl)) {
+      kb.url('🧾 مشاهده رسید تراکنش', receiptUrl).row();
+    }
+    kb.text('🛒 پت شاپ', 'shop:home');
     await ctx.reply(
       [
-        '✅ <b>خرید پت شاپ با Stars تلگرام موفق بود</b>',
-        `ستاره‌ها از اکانت تلگرامت کسر و مستقیم به ربات واریز شد.`,
-        shopId != null ? `شماره سفارش شاپ: #${shopId}` : null,
-        `پرداخت: ⭐ ${formatNum(stars)}`,
+        '✅ <b>تراکنش موفق — خرید پت شاپ</b>',
+        '',
+        'ستاره‌ها از اکانت تلگرامت کسر و مستقیم به ربات واریز شد.',
+        shopId != null ? `📦 شماره سفارش شاپ: <b>#${shopId}</b>` : null,
+        `🧾 فاکتور: <b>#${paymentId}</b>`,
+        `⭐ مبلغ: <b>${formatNum(stars)}</b> ستاره`,
         result.totalToman != null
-          ? `معادل: ${Math.floor(result.totalToman).toLocaleString('fa-IR')} تومان`
+          ? `💰 معادل: <b>${Math.floor(result.totalToman).toLocaleString('fa-IR')}</b> تومان`
           : null,
-        site ? `سایت: ${site}` : null,
+        chargeId ? `🔗 شناسه تراکنش تلگرام:\n<code>${escapeHtml(chargeId)}</code>` : null,
+        '',
+        receiptUrl
+          ? 'برای دیدن صفحه رسید موفق روی دکمه زیر بزن:'
+          : 'سفارش در پنل ادمین و سایت ثبت شد.',
       ]
         .filter(Boolean)
         .join('\n'),
       {
         parse_mode: 'HTML',
-        reply_markup: menuKeyboardFor(ctx, user),
+        reply_markup: kb,
       }
     );
+    await ctx.reply('منوی اصلی', { reply_markup: menuKeyboardFor(ctx, user) }).catch(() => undefined);
     return;
   }
 

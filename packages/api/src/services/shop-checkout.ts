@@ -117,7 +117,23 @@ export type ShopStarsXtrPrepareOk = {
   lines: ShopCheckoutLine[];
   titleHint: string;
   botDeepLink: string;
+  webSuccessUrl: string;
   message: string;
+};
+
+export type ShopStarsXtrStatusOk = {
+  ok: true;
+  paymentOrderId: number;
+  status: 'awaiting_stars' | 'paid' | string;
+  stars: number;
+  totalToman: number;
+  titleHint?: string;
+  shopOrderId?: number;
+  chargeId?: string;
+  paidAt?: string;
+  botDeepLink: string;
+  webSuccessUrl: string;
+  paid: boolean;
 };
 
 export type ShopStarsXtrCompleteOk = {
@@ -451,6 +467,14 @@ function shopXtrBotDeepLink(paymentOrderId: number): string {
   return `https://t.me/${bot}?start=shoppay_${paymentOrderId}`;
 }
 
+function shopXtrWebSuccessUrl(paymentOrderId: number): string {
+  const web = String(process.env.PUBLIC_WEB_URL || process.env.WEB_URL || 'https://petdate.ir').replace(
+    /\/$/,
+    ''
+  );
+  return `${web}/shop/stars-pay/${paymentOrderId}`;
+}
+
 /**
  * ثبت فاکتور در انتظار برای خرید فروشگاه با Telegram Stars (XTR → ربات).
  * موجودی wallet_stars کسر نمی‌شود؛ بعد از successful_payment سفارش شاپ ساخته می‌شود.
@@ -512,7 +536,38 @@ export function prepareShopStarsXtrCheckout(
     lines,
     titleHint,
     botDeepLink: shopXtrBotDeepLink(payment.id),
+    webSuccessUrl: shopXtrWebSuccessUrl(payment.id),
     message: `فاکتور ${stars.toLocaleString('fa-IR')} ستاره آماده است. با پرداخت Stars تلگرام، مبلغ مستقیم به ربات واریز و سفارش ثبت می‌شود.`,
+  };
+}
+
+/** وضعیت فاکتور XTR شاپ برای صفحه انتظار/رسید وب */
+export function getShopStarsXtrStatus(
+  paymentOrderId: number,
+  userId: number
+): ShopStarsXtrStatusOk | { ok: false; reason: 'missing' | 'forbidden'; error: string } {
+  const order = dbService.getPaymentOrder(paymentOrderId);
+  if (!order || !isShopXtrPackageId(order.packageId)) {
+    return { ok: false, reason: 'missing', error: 'فاکتور پیدا نشد.' };
+  }
+  if (order.userId !== userId) {
+    return { ok: false, reason: 'forbidden', error: 'این فاکتور متعلق به حساب دیگری است.' };
+  }
+  const meta = parseShopXtrMeta(order.adminNote);
+  const paid = order.status === 'paid';
+  return {
+    ok: true,
+    paymentOrderId: order.id,
+    status: order.status,
+    stars: Math.floor(Number(order.amountStars ?? meta?.stars ?? 0)),
+    totalToman: Math.floor(Number(order.amountToman ?? meta?.totalToman ?? 0)),
+    titleHint: meta?.titleHint,
+    shopOrderId: meta?.shopOrderId,
+    chargeId: order.telegramPaymentChargeId,
+    paidAt: paid ? order.reviewedAt || order.createdAt : undefined,
+    botDeepLink: shopXtrBotDeepLink(order.id),
+    webSuccessUrl: shopXtrWebSuccessUrl(order.id),
+    paid,
   };
 }
 

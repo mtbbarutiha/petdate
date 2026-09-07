@@ -29,6 +29,9 @@ const ShopProductPage = lazy(() =>
 const ShopCartPage = lazy(() =>
   import('./pages/shop/ShopCartPage').then((m) => ({ default: m.ShopCartPage })),
 );
+const ShopStarsPayPage = lazy(() =>
+  import('./pages/shop/ShopStarsPayPage').then((m) => ({ default: m.ShopStarsPayPage })),
+);
 const RoleSelectPage = lazy(() =>
   import('./pages/onboarding/RoleSelectPage').then((m) => ({ default: m.RoleSelectPage })),
 );
@@ -178,6 +181,7 @@ export default function App() {
             <Route path="shop/c/:category" element={<ShopCategoryPage />} />
             <Route path="shop/product/:id" element={<ShopProductPage />} />
             <Route path="shop/cart" element={<ShopCartPage />} />
+            <Route path="shop/stars-pay/:paymentOrderId" element={<ShopStarsPayPage />} />
             <Route path="auth/login" element={<LoginPage />} />
             <Route path="auth/otp" element={<OtpPage />} />
             <Route path="auth/telegram" element={<TelegramLinkPage />} />
