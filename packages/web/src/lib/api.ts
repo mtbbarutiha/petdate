@@ -772,6 +772,20 @@ export async function patchWebVetOnline(token: string, online: boolean) {
   });
 }
 
+/** مبلغ ویزیت دامپزشک (وب — هم‌تراز ربات) */
+export async function patchWebVisitFee(token: string, visitFeeCoins: number) {
+  return request<{ ok: true; user: User }>('/api/auth/visit-fee', {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ visitFeeCoins }),
+  });
+}
+
+/** دامپزشک‌های آنلاین آماده پذیرش (+ مبلغ ویزیت) */
+export async function listOnlineVets(): Promise<User[]> {
+  return request<User[]>('/api/users/vets/online');
+}
+
 export type QuickVetConnectResult = {
   ok: true;
   sent: number;

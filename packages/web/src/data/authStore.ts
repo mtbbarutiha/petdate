@@ -8,6 +8,7 @@ import {
   patchWebProfile,
   patchWebRoles,
   patchWebVetOnline,
+  patchWebVisitFee,
   requestWebOtp,
   uploadUserAvatar,
   verifyWebOtp,
@@ -196,6 +197,15 @@ class AuthStore {
   async setVetOnline(online: boolean) {
     if (!this.data.token) throw new Error('وارد نشده‌اید');
     const res = await patchWebVetOnline(this.data.token, online);
+    this.data = { ...this.data, user: res.user };
+    this.persist();
+    return res.user;
+  }
+
+  /** مبلغ ویزیت دامپزشک */
+  async setVisitFee(visitFeeCoins: number) {
+    if (!this.data.token) throw new Error('وارد نشده‌اید');
+    const res = await patchWebVisitFee(this.data.token, visitFeeCoins);
     this.data = { ...this.data, user: res.user };
     this.persist();
     return res.user;

@@ -5659,6 +5659,117 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   color: var(--pepito-dark);
 }
 .pepito-vet-consult-panel,
+.pepito-vet-fee-panel,
+.pepito-vet-online-list {
+  margin-inline: var(--pepito-container-pad, 15px);
+  margin-bottom: 0.95rem;
+  padding: 1rem 1.05rem 1.15rem;
+  border-radius: 20px;
+  border: 1px solid rgba(31, 36, 48, 0.08);
+  background: #fff;
+  box-shadow: 0 8px 22px rgba(25, 6, 61, 0.04);
+}
+.pepito-vet-fee-head h2,
+.pepito-vet-online-list-head h2 {
+  margin: 0 0 0.35rem;
+  font-family: var(--font-display);
+  font-size: 1.12rem;
+  color: var(--pepito-dark);
+}
+.pepito-vet-fee-head p,
+.pepito-vet-online-list-head p {
+  margin: 0;
+  color: #435366;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+.pepito-vet-fee-hint {
+  margin-top: 0.35rem !important;
+  font-size: 0.82rem !important;
+  color: var(--pepito-muted) !important;
+}
+.pepito-vet-fee-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.85rem;
+}
+.pepito-vet-fee-chip {
+  border: 1px solid rgba(31, 36, 48, 0.12);
+  background: rgba(11, 165, 242, 0.06);
+  color: var(--pepito-dark);
+  border-radius: 999px;
+  padding: 0.4rem 0.75rem;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.pepito-vet-fee-chip.is-active {
+  background: var(--pepito-sky);
+  border-color: transparent;
+  color: #fff;
+}
+.pepito-vet-fee-chip:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.pepito-vet-fee-custom {
+  margin-top: 0.9rem;
+  display: grid;
+  gap: 0.4rem;
+}
+.pepito-vet-fee-custom label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--pepito-muted);
+}
+.pepito-vet-fee-custom-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.pepito-vet-fee-custom-row input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid rgba(31, 36, 48, 0.14);
+  border-radius: 12px;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.95rem;
+}
+.pepito-vet-online-list-ul {
+  list-style: none;
+  margin: 0.85rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+.pepito-vet-online-list-ul li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.7rem 0.8rem;
+  border-radius: 14px;
+  background: rgba(11, 165, 242, 0.06);
+  border: 1px solid rgba(11, 165, 242, 0.12);
+}
+.pepito-vet-online-list-ul strong {
+  display: block;
+  color: var(--pepito-dark);
+}
+.pepito-vet-online-list-city {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.8rem;
+  color: var(--pepito-muted);
+}
+.pepito-vet-online-list-fee {
+  flex-shrink: 0;
+  font-weight: 800;
+  color: #0b7a5c;
+  font-variant-numeric: tabular-nums;
+}
+
 .pepito-vet-connect-panel {
   display: grid;
   gap: 1rem;
