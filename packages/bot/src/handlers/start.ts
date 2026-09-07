@@ -34,7 +34,13 @@ import { displayName, getCtxUser, menuKeyboardFor } from './helpers';
 import { resumeOwnerChatOnStart } from './owner-chat';
 import { startProfileWizard } from './profile';
 
-export { displayName, getCtxUser, menuKeyboardFor } from './helpers';
+export {
+  displayName,
+  getCtxUser,
+  menuKeyboardFor,
+  pushMainMenuKeyboard,
+  pushReplyKeyboard,
+} from './helpers';
 
 function roleLabels(user: User): string {
   const roles = normalizeRoles(user.roles, user.role);

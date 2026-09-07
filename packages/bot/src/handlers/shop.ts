@@ -21,7 +21,7 @@ import {
 } from '../api-client';
 import { getSession, upsertSession } from '../session';
 import { effectiveWebUrl, isTelegramInlineUrl } from '../urls';
-import { getCtxUser, menuKeyboardFor } from './helpers';
+import { getCtxUser, menuKeyboardFor, pushMainMenuKeyboard } from './helpers';
 
 const PAGE_SIZE = 6;
 const PET_TYPES = [
@@ -182,7 +182,7 @@ export async function handlePetShop(ctx: Context): Promise<void> {
     }
   }
   await ctx.reply(text, { parse_mode: 'HTML', reply_markup: homeKeyboard(balance) });
-  await ctx.reply('منوی اصلی 👇', { reply_markup: menuKeyboardFor(ctx, user) });
+  await pushMainMenuKeyboard(ctx, user);
 }
 
 export async function handleShopHome(ctx: Context): Promise<void> {

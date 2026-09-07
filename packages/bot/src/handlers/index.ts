@@ -218,8 +218,11 @@ import {
   handlePhoneVerifyText,
 } from './phone-verify';
 import { touchTelegramPresence } from '../api-client';
+import { stickyReplyKeyboardMiddleware } from '../sticky-reply-keyboard';
 
 export function registerHandlers(bot: Bot): void {
+  // کیبورد reply را پایین بچسبان (جلوگیری از کیبورد فیک هنگام اسکرول)
+  bot.use(stickyReplyKeyboardMiddleware());
   // عضویت اجباری در کانال‌ها — قبل از همهٔ دستورات
   bot.use(forceJoinMiddleware);
 

@@ -4,7 +4,7 @@ import type { User } from '@petdate/shared';
 import { userHasRole, vetVisitFeeCoins } from '@petdate/shared';
 import { listOnlineVets, quickVetConnect, setReadyToAdopt } from '../api-client';
 import { QUICK_VET_COST, formatNum } from '../economy';
-import { getCtxUser, menuKeyboardFor } from './helpers';
+import { getCtxUser, menuKeyboardFor, pushMainMenuKeyboard } from './helpers';
 import { handleSearchPetsMenu } from './search';
 
 function escapeHtml(value: string): string {
@@ -145,7 +145,7 @@ export async function handleBuyPetConsult(ctx: Context): Promise<void> {
     }
   );
   if (balance >= cost) {
-    await ctx.reply('منوی اصلی 👇', { reply_markup: menuKeyboardFor(ctx, user) });
+    await pushMainMenuKeyboard(ctx, user);
   }
 }
 

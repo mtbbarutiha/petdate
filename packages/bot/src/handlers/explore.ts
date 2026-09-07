@@ -10,7 +10,7 @@ import {
   myPetsActionKeyboard,
 } from '../keyboards';
 import { upsertSession } from '../session';
-import { getCtxUser, menuKeyboardFor } from './helpers';
+import { getCtxUser, menuKeyboardFor, pushMainMenuKeyboard } from './helpers';
 
 const MAX_AUTO_REQUESTS = 30;
 
@@ -92,7 +92,7 @@ export async function handleExplorePickPet(ctx: Context): Promise<void> {
       await safeReply(ctx, 'اول باید حداقل یک پت ثبت کنی تا برات همبازی پیدا کنیم.', {
         reply_markup: myPetsActionKeyboard(),
       });
-      await safeReply(ctx, 'منوی اصلی 👇', { reply_markup: menuKeyboardFor(ctx, user) });
+      await pushMainMenuKeyboard(ctx, user);
       return;
     }
 
@@ -273,7 +273,7 @@ export async function handleExploreForPet(ctx: Context, petId: number | 'all'): 
       .join('\n');
 
     await editOrReply(ctx, summary, { parse_mode: 'HTML' });
-    await safeReply(ctx, 'منوی اصلی 👇', { reply_markup: menuKeyboardFor(ctx, user) });
+    await pushMainMenuKeyboard(ctx, user);
   } catch (err) {
     console.error('handleExploreForPet failed:', err);
     if (ctx.callbackQuery) {

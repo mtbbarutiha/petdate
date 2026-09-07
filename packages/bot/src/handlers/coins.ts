@@ -47,7 +47,7 @@ import {
 } from '../keyboards';
 import { getSession, upsertSession } from '../session';
 import { telegramWebLoginUrl } from '../telegram-web-link';
-import { getCtxUser, menuKeyboardFor } from './helpers';
+import { getCtxUser, menuKeyboardFor, pushMainMenuKeyboard } from './helpers';
 
 export const SEND_RECEIPT_BTN = '📤 ارسال فیش';
 export const CANCEL_PAYMENT_BTN = '↩️ انصراف از پرداخت';
@@ -68,7 +68,7 @@ export async function handleCoins(ctx: Context): Promise<void> {
     parse_mode: 'HTML',
     reply_markup: coinsShopKeyboard(user?.lastDailyCoinAt),
   });
-  await ctx.reply('منوی اصلی 👇', { reply_markup: menuKeyboardFor(ctx, user) });
+  await pushMainMenuKeyboard(ctx, user);
 }
 
 export async function handleCoinsDaily(ctx: Context): Promise<void> {
@@ -728,7 +728,7 @@ export async function handleWalletStarsTopUpMenu(ctx: Context): Promise<void> {
     ].join('\n'),
     { parse_mode: 'HTML', reply_markup: kb }
   );
-  await ctx.reply('منوی اصلی 👇', { reply_markup: menuKeyboardFor(ctx, user) });
+  await pushMainMenuKeyboard(ctx, user);
 }
 
 export async function handleWalletStarsTopUpBuy(ctx: Context, amountRaw: string): Promise<void> {
@@ -794,7 +794,7 @@ export async function handleEarn(ctx: Context): Promise<void> {
     parse_mode: 'HTML',
     reply_markup: earnKeyboard(canSell),
   });
-  await ctx.reply('منوی اصلی 👇', { reply_markup: menuKeyboardFor(ctx, user) });
+  await pushMainMenuKeyboard(ctx, user);
 }
 
 export async function handleEarnSell(ctx: Context): Promise<void> {

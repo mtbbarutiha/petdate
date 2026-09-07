@@ -23,7 +23,7 @@ import {
   playdateResendConfirmKeyboard,
 } from '../keyboards';
 import { upsertSession } from '../session';
-import { getCtxUser, menuKeyboardFor } from './helpers';
+import { getCtxUser, menuKeyboardFor, pushMainMenuKeyboard } from './helpers';
 import { startOwnerChat } from './owner-chat';
 
 export function defaultPetPhoto(pet: { species?: string; id: number }): string {
@@ -512,5 +512,5 @@ export async function handlePlaydateCancel(ctx: Context): Promise<void> {
   await upsertSession(String(ctx.from!.id), { step: 'ready', selectedPetId: undefined, selectedToPetId: undefined });
   await ctx.editMessageText('انصراف دادی.');
   const u = await getCtxUser(ctx);
-  await ctx.reply('منوی اصلی:', { reply_markup: menuKeyboardFor(ctx, u) });
+  await pushMainMenuKeyboard(ctx, u);
 }

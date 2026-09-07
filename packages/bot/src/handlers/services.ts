@@ -17,7 +17,7 @@ import {
 import { QUICK_VET_COST, formatNum } from '../economy';
 import { myPetsActionKeyboard } from '../keyboards';
 import { effectiveWebUrl, isTelegramInlineUrl } from '../urls';
-import { getCtxUser, menuKeyboardFor } from './helpers';
+import { getCtxUser, menuKeyboardFor, pushMainMenuKeyboard } from './helpers';
 import { startVetChat } from './vet-chat';
 import { handleAddPetCommand } from './wizard';
 
@@ -76,7 +76,7 @@ async function ensurePatientHasPetForVet(
     ].join('\n'),
     { reply_markup: myPetsActionKeyboard() }
   );
-  await ctx.reply('منوی اصلی 👇', { reply_markup: menuKeyboardFor(ctx, user) });
+  await pushMainMenuKeyboard(ctx, user);
   await handleAddPetCommand(ctx);
   return false;
 }
@@ -116,7 +116,7 @@ export async function handleMedical(ctx: Context): Promise<void> {
         .success(),
     }
   );
-  await ctx.reply('منوی اصلی 👇', { reply_markup: menuKeyboardFor(ctx, user) });
+  await pushMainMenuKeyboard(ctx, user);
 }
 
 export async function handleChatsEntry(ctx: Context): Promise<void> {
@@ -141,7 +141,7 @@ export async function handleChatsEntry(ctx: Context): Promise<void> {
     parse_mode: 'HTML',
     reply_markup: kb,
   });
-  await ctx.reply('منوی اصلی 👇', { reply_markup: menuKeyboardFor(ctx, user) });
+  await pushMainMenuKeyboard(ctx, user);
 }
 
 export async function handleInviteFriends(ctx: Context): Promise<void> {
@@ -170,7 +170,7 @@ export async function handleInviteFriends(ctx: Context): Promise<void> {
         .success(),
     }
   );
-  await ctx.reply('منوی اصلی 👇', { reply_markup: menuKeyboardFor(ctx, user) });
+  await pushMainMenuKeyboard(ctx, user);
 }
 
 export async function handleQuickVet(ctx: Context): Promise<void> {
@@ -239,7 +239,7 @@ export async function handleQuickVet(ctx: Context): Promise<void> {
               .success(),
     }
   );
-  await ctx.reply('منوی اصلی 👇', { reply_markup: menuKeyboardFor(ctx, user) });
+  await pushMainMenuKeyboard(ctx, user);
 }
 
 /** اتصال فوری: کسر سکه و ارسال درخواست به همه دامپزشک‌های واجد شرایط */
@@ -494,7 +494,7 @@ export async function handleServices(ctx: Context): Promise<void> {
         .primary(),
     }
   );
-  await ctx.reply('منوی اصلی 👇', { reply_markup: menuKeyboardFor(ctx, user) });
+  await pushMainMenuKeyboard(ctx, user);
 }
 
 export async function handleComingSoon(ctx: Context, feature: string): Promise<void> {
