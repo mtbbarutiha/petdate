@@ -2,6 +2,7 @@
  * Atomic shop checkout paid with bot coins (users.coins).
  * Stars checkout uses Telegram XTR invoices (Stars → bot), then creates a paid shop order.
  */
+import { randomBytes } from 'crypto';
 import { tomanToShopCoins, tomanToShopStars, type PaymentOrder } from '@petdate/shared';
 import { getDb, dbService } from '../db';
 import { adminPlatform, type ShopOrderRow } from '../admin-platform';
@@ -22,6 +23,7 @@ export type ShopXtrMeta = {
   stars: number;
   titleHint?: string;
   shopOrderId?: number;
+  receiptToken?: string;
 };
 
 export function isShopXtrPackageId(packageId: string | null | undefined): boolean {
@@ -118,6 +120,7 @@ export type ShopStarsXtrPrepareOk = {
   titleHint: string;
   botDeepLink: string;
   webSuccessUrl: string;
+  receiptToken: string;
   message: string;
 };
 
@@ -133,6 +136,7 @@ export type ShopStarsXtrStatusOk = {
   paidAt?: string;
   botDeepLink: string;
   webSuccessUrl: string;
+  receiptToken?: string;
   paid: boolean;
 };
 
@@ -467,12 +471,13 @@ function shopXtrBotDeepLink(paymentOrderId: number): string {
   return `https://t.me/${bot}?start=shoppay_${paymentOrderId}`;
 }
 
-function shopXtrWebSuccessUrl(paymentOrderId: number): string {
+function shopXtrWebSuccessUrl(paymentOrderId: number, receiptToken?: string): string {
   const web = String(process.env.PUBLIC_WEB_URL || process.env.WEB_URL || 'https://petdate.ir').replace(
     /\/$/,
     ''
   );
-  return `${web}/shop/stars-pay/${paymentOrderId}`;
+  const base = `${web}/shop/stars-pay/${paymentOrderId}`;
+  return receiptToken ? `${base}?t=${encodeURIComponent(receiptToken)}` : base;
 }
 
 /**
@@ -504,6 +509,7 @@ export function prepareShopStarsXtrCheckout(
     .map((l) => l.title)
     .join(' · ')
     .slice(0, 80);
+  const receiptToken = randomBytes(16).toString('hex');
   const meta: ShopXtrMeta = {
     v: 1,
     kind: 'shopxtr',
@@ -515,6 +521,7 @@ export function prepareShopStarsXtrCheckout(
     totalToman,
     stars,
     titleHint,
+    receiptToken,
   };
 
   const payment = dbService.createPaymentOrder({
@@ -536,7 +543,8 @@ export function prepareShopStarsXtrCheckout(
     lines,
     titleHint,
     botDeepLink: shopXtrBotDeepLink(payment.id),
-    webSuccessUrl: shopXtrWebSuccessUrl(payment.id),
+    webSuccessUrl: shopXtrWebSuccessUrl(payment.id, receiptToken),
+    receiptToken,
     message: `فاکتور ${stars.toLocaleString('fa-IR')} ستاره آماده است. با پرداخت Stars تلگرام، مبلغ مستقیم به ربات واریز و سفارش ثبت می‌شود.`,
   };
 }
@@ -544,17 +552,23 @@ export function prepareShopStarsXtrCheckout(
 /** وضعیت فاکتور XTR شاپ برای صفحه انتظار/رسید وب */
 export function getShopStarsXtrStatus(
   paymentOrderId: number,
-  userId: number
+  access: { userId?: number; receiptToken?: string }
 ): ShopStarsXtrStatusOk | { ok: false; reason: 'missing' | 'forbidden'; error: string } {
   const order = dbService.getPaymentOrder(paymentOrderId);
   if (!order || !isShopXtrPackageId(order.packageId)) {
     return { ok: false, reason: 'missing', error: 'فاکتور پیدا نشد.' };
   }
-  if (order.userId !== userId) {
+  const meta = parseShopXtrMeta(order.adminNote);
+  const tokenOk =
+    Boolean(access.receiptToken) &&
+    Boolean(meta?.receiptToken) &&
+    access.receiptToken === meta?.receiptToken;
+  const ownerOk = access.userId != null && order.userId === access.userId;
+  if (!ownerOk && !tokenOk) {
     return { ok: false, reason: 'forbidden', error: 'این فاکتور متعلق به حساب دیگری است.' };
   }
-  const meta = parseShopXtrMeta(order.adminNote);
   const paid = order.status === 'paid';
+  const receiptToken = meta?.receiptToken;
   return {
     ok: true,
     paymentOrderId: order.id,
@@ -566,7 +580,8 @@ export function getShopStarsXtrStatus(
     chargeId: order.telegramPaymentChargeId,
     paidAt: paid ? order.reviewedAt || order.createdAt : undefined,
     botDeepLink: shopXtrBotDeepLink(order.id),
-    webSuccessUrl: shopXtrWebSuccessUrl(order.id),
+    webSuccessUrl: shopXtrWebSuccessUrl(order.id, receiptToken),
+    receiptToken,
     paid,
   };
 }
@@ -628,9 +643,19 @@ export function completeShopStarsXtrPayment(input: {
     return { ok: false, reason: 'bad_meta', error: 'مبلغ ستاره فاکتور با سبد هم‌خوان نیست.' };
   }
 
-  const note = orderNote(meta.address, meta.note);
-  const cogsToman = cogsOf(lines);
+  const addressNote = orderNote(meta.address, meta.note);
   const chargeId = input.telegramPaymentChargeId.trim();
+  const note = [
+    addressNote,
+    '—',
+    'پرداخت: Telegram Stars (XTR → ربات)',
+    `فاکتور پرداخت: #${input.orderId}`,
+    `مبلغ: ${starsNeeded} ستاره`,
+    chargeId ? `شناسه تراکنش تلگرام: ${chargeId}` : null,
+  ]
+    .filter(Boolean)
+    .join('\n');
+  const cogsToman = cogsOf(lines);
   const d = getDb();
 
   try {
@@ -658,6 +683,7 @@ export function completeShopStarsXtrPayment(input: {
           priceToman: l.priceToman,
           costToman: l.costToman ?? Math.floor(l.priceToman * 0.65),
           coins: l.lineStars,
+          stars: l.lineStars,
         })),
         customerName: meta.customerName,
         customerPhone: meta.customerPhone,

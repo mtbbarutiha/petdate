@@ -280,20 +280,28 @@ shopRouter.post('/checkout/stars', (req, res) => {
     titleHint: result.titleHint,
     botDeepLink: result.botDeepLink,
     webSuccessUrl: result.webSuccessUrl,
+    receiptToken: result.receiptToken,
     requiresTelegramStars: true,
     message: result.message,
   });
 });
 
 shopRouter.get('/checkout/stars-status/:paymentOrderId', (req, res) => {
-  const session = requireSession(req, res, 'برای پیگیری پرداخت وارد حساب شوید.');
-  if (!session) return;
   const paymentOrderId = Number(req.params.paymentOrderId);
   if (!Number.isFinite(paymentOrderId) || paymentOrderId <= 0) {
     res.status(400).json({ ok: false, reason: 'bad_id', error: 'شناسه فاکتور نامعتبر است.' });
     return;
   }
-  const result = getShopStarsXtrStatus(paymentOrderId, session.user.id);
+  const receiptToken = String(req.query.t ?? req.query.token ?? '').trim() || undefined;
+  const session = getUserFromBearer(req.header('authorization') ?? undefined);
+  if (!session && !receiptToken) {
+    res.status(401).json({ error: 'برای پیگیری پرداخت وارد حساب شوید.', reason: 'unauthorized' });
+    return;
+  }
+  const result = getShopStarsXtrStatus(paymentOrderId, {
+    userId: session?.user.id,
+    receiptToken,
+  });
   if (!result.ok) {
     res.status(result.reason === 'forbidden' ? 403 : 404).json(result);
     return;

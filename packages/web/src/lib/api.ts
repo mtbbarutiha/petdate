@@ -1153,13 +1153,15 @@ export type ShopStarsPaymentStatus = {
 };
 
 export async function fetchShopStarsPaymentStatus(
-  token: string,
-  paymentOrderId: number
+  token: string | null | undefined,
+  paymentOrderId: number,
+  receiptToken?: string | null
 ): Promise<ShopStarsPaymentStatus> {
+  const qs = receiptToken ? `?t=${encodeURIComponent(receiptToken)}` : '';
   let res: Response;
   try {
-    res = await fetch(`${API_BASE}/api/shop/checkout/stars-status/${paymentOrderId}`, {
-      headers: { Authorization: `Bearer ${token}` },
+    res = await fetch(`${API_BASE}/api/shop/checkout/stars-status/${paymentOrderId}${qs}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
     });
   } catch {
     throw new Error('اتصال به سرور برقرار نشد.');

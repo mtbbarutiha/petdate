@@ -982,6 +982,7 @@ export async function completeStarsPayment(
       shopOrderId?: number;
       starsSpent?: number;
       totalToman?: number;
+      webSuccessUrl?: string;
     }
   | { ok: false; reason: string }
 > {
@@ -999,6 +1000,7 @@ export async function completeStarsPayment(
     shopOrderId?: number;
     starsSpent?: number;
     totalToman?: number;
+    webSuccessUrl?: string;
     reason?: string;
     error?: string;
   };
@@ -1019,6 +1021,7 @@ export async function completeStarsPayment(
     shopOrderId: body.shopOrderId,
     starsSpent: body.starsSpent,
     totalToman: body.totalToman,
+    webSuccessUrl: body.webSuccessUrl,
   };
 }
 

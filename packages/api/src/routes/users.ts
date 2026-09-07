@@ -828,6 +828,25 @@ usersRouter.post('/payments/:id/stars/complete', (req, res) => {
       shopOrder: result.shopOrder,
       starsSpent: result.starsSpent,
       totalToman: result.totalToman,
+      webSuccessUrl: (() => {
+        const meta = (() => {
+          try {
+            return JSON.parse(String(result.paymentOrder.adminNote || '{}')) as {
+              receiptToken?: string;
+            };
+          } catch {
+            return {};
+          }
+        })();
+        const web = String(process.env.PUBLIC_WEB_URL || process.env.WEB_URL || 'https://petdate.ir').replace(
+          /\/$/,
+          ''
+        );
+        const base = `${web}/shop/stars-pay/${result.paymentOrder.id}`;
+        return meta.receiptToken
+          ? `${base}?t=${encodeURIComponent(meta.receiptToken)}`
+          : base;
+      })(),
     });
     return;
   }

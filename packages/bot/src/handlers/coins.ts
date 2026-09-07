@@ -650,7 +650,17 @@ export async function handleSuccessfulPayment(ctx: Context): Promise<void> {
     const paymentId = result.order.id;
     const chargeId = payment.telegram_payment_charge_id;
     const base = effectiveWebUrl().replace(/\/$/, '');
-    const receiptUrl = base ? `${base}/shop/stars-pay/${paymentId}` : '';
+    let receiptUrl = result.webSuccessUrl || (base ? `${base}/shop/stars-pay/${paymentId}` : '');
+    if (!result.webSuccessUrl) {
+      try {
+        const meta = JSON.parse(String(result.order.adminNote || '{}')) as { receiptToken?: string };
+        if (meta.receiptToken && base) {
+          receiptUrl = `${base}/shop/stars-pay/${paymentId}?t=${encodeURIComponent(meta.receiptToken)}`;
+        }
+      } catch {
+        /* ignore */
+      }
+    }
     const kb = new InlineKeyboard();
     if (receiptUrl && isTelegramInlineUrl(receiptUrl)) {
       kb.url('🧾 مشاهده رسید تراکنش', receiptUrl).row();
@@ -661,6 +671,7 @@ export async function handleSuccessfulPayment(ctx: Context): Promise<void> {
         '✅ <b>تراکنش موفق — خرید پت شاپ</b>',
         '',
         'ستاره‌ها از اکانت تلگرامت کسر و مستقیم به ربات واریز شد.',
+        'سفارش نهایی شد و در پنل ادمین قابل مشاهده است.',
         shopId != null ? `📦 شماره سفارش شاپ: <b>#${shopId}</b>` : null,
         `🧾 فاکتور: <b>#${paymentId}</b>`,
         `⭐ مبلغ: <b>${formatNum(stars)}</b> ستاره`,
@@ -680,7 +691,7 @@ export async function handleSuccessfulPayment(ctx: Context): Promise<void> {
         reply_markup: kb,
       }
     );
-    await ctx.reply('منوی اصلی', { reply_markup: menuKeyboardFor(ctx, user) }).catch(() => undefined);
+    await pushMainMenuKeyboard(ctx, user).catch(() => undefined);
     return;
   }
 
