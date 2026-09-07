@@ -50,6 +50,7 @@ import {
   textStepKeyboard,
 } from '../keyboards';
 import { getSession, upsertSession } from '../session';
+import { clearOwnerChatFieldsOnly } from './owner-chat';
 import { getCtxUser, menuKeyboardFor } from './helpers';
 
 const PROFILE_TOTAL = 10;
@@ -189,6 +190,7 @@ export async function showProfileEditMenu(ctx: Context): Promise<void> {
       step: 'profile_edit_menu',
       draftProfile: undefined,
       profileSectionEdit: false,
+      ...clearOwnerChatFieldsOnly(),
     });
   }
   const incomplete = !isProfileComplete(user);
@@ -269,6 +271,7 @@ export async function startProfileWizard(ctx: Context): Promise<void> {
     role: user.role,
     step: 'profile_name',
     profileSectionEdit: false,
+    ...clearOwnerChatFieldsOnly(),
     draftProfile: {
       name: user.name,
       age: user.age,
@@ -340,6 +343,7 @@ export async function startProfileSectionEdit(
     role: user.role,
     step,
     profileSectionEdit: true,
+    ...clearOwnerChatFieldsOnly(),
     draftProfile: draft,
   });
 

@@ -77,6 +77,28 @@ function clearOwnerChatPatch() {
   };
 }
 
+/** Drop playmate-chat fields without forcing step=ready (e.g. entering profile edit). */
+export function clearOwnerChatFieldsOnly() {
+  return {
+    ownerChatPlaydateId: undefined as number | undefined,
+    ownerChatPeerTelegramId: undefined as string | undefined,
+    ownerChatPeerUserId: undefined as number | undefined,
+    ownerChatMyPetId: undefined as number | undefined,
+    ownerChatPeerPetId: undefined as number | undefined,
+    ownerChatSecure: undefined as boolean | undefined,
+    ownerChatWebHintSent: undefined as boolean | undefined,
+  };
+}
+
+/**
+ * Auto-resume of an accepted playdate chat must only happen when the user is idle.
+ * Otherwise profile/pet/wizard text (and photos) get hijacked into «چت همبازی دوباره فعال شد».
+ */
+export function shouldAutoResumeOwnerChat(step: string | undefined | null): boolean {
+  if (!step) return true;
+  return step === 'ready' || step === 'start' || step === 'owner_chat';
+}
+
 /** web-cta-once-v2 — one-time web chat option for playmate sessions (never on relay/resume). */
 async function sendOwnerChatWebHintOnce(
   ctx: Context,
@@ -623,6 +645,8 @@ export async function handleOwnerChatRelay(ctx: Context): Promise<boolean> {
   let session = await getSession(String(from.id));
   if (!session || session.step !== 'owner_chat' || !session.ownerChatPeerTelegramId) {
     if (lookingLikeMenu) return false;
+    // ویرایش پروفایل / ویزارد / پرداخت و … — نباید چت همبازی را دوباره روشن کند
+    if (!shouldAutoResumeOwnerChat(session?.step)) return false;
     const me = await getCtxUser(ctx);
     const ensured = await ensureOwnerChatSession(String(from.id), me?.id);
     if (!ensured) return false;

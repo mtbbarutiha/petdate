@@ -39,6 +39,7 @@ import {
   vaccinatedReplyKeyboard,
 } from '../keyboards';
 import { getSession, upsertSession } from '../session';
+import { clearOwnerChatFieldsOnly } from './owner-chat';
 import { getCtxUser } from './helpers';
 import { handleMyPetView } from './playdates';
 
