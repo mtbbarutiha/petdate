@@ -1,8 +1,8 @@
 import type { User, VetConsultation } from '@petdate/shared';
 import { infra } from '../config/infra';
 
-function escapeHtml(value: string): string {
-  return value
+function escapeHtml(value: string | number | null | undefined): string {
+  return String(value ?? '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
