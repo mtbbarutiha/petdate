@@ -53,6 +53,7 @@ import {
   USER_ROLES,
   sanitizeRoleList,
   VET_CONSULT_REQUEST_TTL_MS,
+  vetVisitFeeCoins,
   walletFromUserFields,
   walletLedgerLabelFa,
   type CoinSellRequestStatus,
@@ -746,6 +747,12 @@ function migrateSchema() {
   }
   if (!vcNames.has('chat_ended')) {
     db.exec('ALTER TABLE vet_consultations ADD COLUMN chat_ended INTEGER NOT NULL DEFAULT 0');
+  }
+  if (!vcNames.has('fee_coins')) {
+    db.exec('ALTER TABLE vet_consultations ADD COLUMN fee_coins INTEGER');
+  }
+  if (!vcNames.has('vet_paid_at')) {
+    db.exec('ALTER TABLE vet_consultations ADD COLUMN vet_paid_at TEXT');
   }
 
   const vchatCols = db
@@ -1733,6 +1740,11 @@ function mapVetConsultation(row: Record<string, unknown>): VetConsultation {
     petId: row.pet_id != null ? Number(row.pet_id) : undefined,
     status: row.status as VetConsultStatus,
     notes: (row.notes as string | undefined) ?? undefined,
+    feeCoins:
+      row.fee_coins != null && Number.isFinite(Number(row.fee_coins))
+        ? Math.max(0, Math.floor(Number(row.fee_coins)))
+        : undefined,
+    vetPaidAt: (row.vet_paid_at as string | undefined) ?? undefined,
     chatSecure: Boolean(row.chat_secure),
     chatEnded: Boolean(row.chat_ended),
     createdAt: row.created_at as string,
@@ -4030,22 +4042,27 @@ export const dbService = {
     petId?: number;
     status?: VetConsultStatus;
     notes?: string;
+    feeCoins?: number;
   }): VetConsultation {
+    const fee =
+      data.feeCoins != null && Number.isFinite(Number(data.feeCoins))
+        ? Math.max(0, Math.floor(Number(data.feeCoins)))
+        : null;
     const result = db
       .prepare(
         `INSERT INTO vet_consultations (
-          vet_user_id, patient_user_id, pet_id, status, notes
-        ) VALUES (?, ?, ?, ?, ?)`
+          vet_user_id, patient_user_id, pet_id, status, notes, fee_coins
+        ) VALUES (?, ?, ?, ?, ?, ?)`
       )
       .run(
         data.vetUserId,
         data.patientUserId,
         data.petId ?? null,
         data.status ?? 'requested',
-        data.notes ?? null
+        data.notes ?? null,
+        fee
       );
-    const rows = this.listVetConsultations({ vetUserId: data.vetUserId });
-    const created = rows.find((r) => r.id === Number(result.lastInsertRowid));
+    const created = this.getVetConsultation(Number(result.lastInsertRowid));
     return (
       created ?? {
         id: Number(result.lastInsertRowid),
@@ -4054,6 +4071,7 @@ export const dbService = {
         petId: data.petId,
         status: data.status ?? 'requested',
         notes: data.notes,
+        feeCoins: fee ?? undefined,
         createdAt: new Date().toISOString(),
       }
     );
@@ -4131,6 +4149,94 @@ export const dbService = {
       )
       .run(patientUserId, keepId);
     return result.changes;
+  },
+
+  /**
+   * واریز درآمد دامپزشک بعد از قبول مشاوره (idempotent).
+   * مبلغ: fee_coins ذخیره‌شده روی مشاوره، وگرنه مبلغ ویزیت فعلی دامپزشک.
+   */
+  payVetForAcceptedConsult(consultId: number): {
+    paid: boolean;
+    amount: number;
+    alreadyPaid: boolean;
+    consult: VetConsultation | null;
+  } {
+    const consult = this.getVetConsultation(consultId);
+    if (!consult) {
+      return { paid: false, amount: 0, alreadyPaid: false, consult: null };
+    }
+    if (consult.status !== 'active' && consult.status !== 'completed') {
+      return { paid: false, amount: 0, alreadyPaid: false, consult };
+    }
+    if (consult.vetPaidAt) {
+      return {
+        paid: false,
+        amount: consult.feeCoins ?? 0,
+        alreadyPaid: true,
+        consult,
+      };
+    }
+
+    const vet = this.getUserById(consult.vetUserId);
+    if (!vet) {
+      return { paid: false, amount: 0, alreadyPaid: false, consult };
+    }
+
+    const amount = Math.max(
+      0,
+      Math.floor(
+        Number(
+          consult.feeCoins != null && consult.feeCoins > 0
+            ? consult.feeCoins
+            : vetVisitFeeCoins(vet)
+        )
+      )
+    );
+
+    if (amount <= 0) {
+      db.prepare(
+        `UPDATE vet_consultations
+         SET vet_paid_at = datetime('now'),
+             fee_coins = COALESCE(fee_coins, 0)
+         WHERE id = ? AND vet_paid_at IS NULL`
+      ).run(consultId);
+      return {
+        paid: false,
+        amount: 0,
+        alreadyPaid: false,
+        consult: this.getVetConsultation(consultId),
+      };
+    }
+
+    const marked = db
+      .prepare(
+        `UPDATE vet_consultations
+         SET vet_paid_at = datetime('now'),
+             fee_coins = COALESCE(fee_coins, ?)
+         WHERE id = ? AND vet_paid_at IS NULL`
+      )
+      .run(amount, consultId);
+    if (marked.changes === 0) {
+      return {
+        paid: false,
+        amount,
+        alreadyPaid: true,
+        consult: this.getVetConsultation(consultId),
+      };
+    }
+
+    this.creditCoins(consult.vetUserId, amount, undefined, {
+      reason: 'درآمد مشاوره دامپزشک',
+      refType: 'vet_consult_payout',
+      refId: consultId,
+    });
+
+    return {
+      paid: true,
+      amount,
+      alreadyPaid: false,
+      consult: this.getVetConsultation(consultId),
+    };
   },
 
   listVetConsultChatMessages(

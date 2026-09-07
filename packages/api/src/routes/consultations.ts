@@ -220,10 +220,12 @@ consultationsRouter.post('/quick-connect', async (req, res) => {
   let notifiedTelegram = 0;
   for (const vet of vets) {
     try {
+      const feeCoins = vetVisitFeeCoins(vet);
       const consult = dbService.createVetConsultation({
         vetUserId: vet.id,
         patientUserId: patient.id,
         notes: 'اتصال سریع آنلاین',
+        feeCoins,
       });
       consultations.push(consult);
       if (vet.telegramId) {
@@ -231,7 +233,7 @@ consultationsRouter.post('/quick-connect', async (req, res) => {
           consult,
           vetTelegramId: vet.telegramId,
           patient,
-          visitFeeCoins: vetVisitFeeCoins(vet),
+          visitFeeCoins: feeCoins,
         });
         if (ok) notifiedTelegram += 1;
       }
@@ -334,6 +336,7 @@ consultationsRouter.post('/', (req, res) => {
     petId: petId != null ? Number(petId) : undefined,
     status: status as VetConsultStatus | undefined,
     notes: typeof notes === 'string' ? notes : undefined,
+    feeCoins: vetVisitFeeCoins(dbService.getUserById(Number(vetUserId))),
   });
 
   notifyInbox([consultation.vetUserId, consultation.patientUserId], {
@@ -366,6 +369,7 @@ consultationsRouter.patch('/:id/status', async (req, res) => {
   // Web POST /:id/accept is responsible for activating bot sessions + Telegram intros.
   if (status === 'active' && previous?.status === 'requested') {
     dbService.cancelSiblingVetConsultations(updated.patientUserId, updated.id);
+    dbService.payVetForAcceptedConsult(updated.id);
     const existing = dbService.listVetConsultChatMessages(updated.id, { limit: 1 });
     if (!existing.length) {
       try {
@@ -435,6 +439,7 @@ consultationsRouter.post('/:id/accept', async (req, res) => {
     return;
   }
   dbService.cancelSiblingVetConsultations(updated.patientUserId, updated.id);
+  dbService.payVetForAcceptedConsult(updated.id);
 
   try {
     dbService.createVetConsultChatMessage({

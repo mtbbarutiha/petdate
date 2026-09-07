@@ -362,6 +362,10 @@ export interface VetConsultation {
   petId?: number;
   status: VetConsultStatus;
   notes?: string;
+  /** مبلغ ویزیت توافق‌شده هنگام ایجاد درخواست (سکه) */
+  feeCoins?: number;
+  /** زمان واریز درآمد به دامپزشک (idempotent payout) */
+  vetPaidAt?: string;
   /** چت امن برای پیام‌های مشاوره (protect_content در تلگرام) */
   chatSecure?: boolean;
   /** چت از طرف یکی از کاربران قطع شده */
