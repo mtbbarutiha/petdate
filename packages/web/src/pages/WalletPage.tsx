@@ -76,6 +76,9 @@ export function WalletPage() {
     nativeReadable: boolean;
     reasonFa: string;
     topUpDeepLink: string | null;
+    telegramAccountLabelFa: string;
+    petdateLabelFa: string;
+    petdateBalance: number;
   } | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(() => !user);
@@ -131,6 +134,16 @@ export function WalletPage() {
           nativeReadable: Boolean(res.telegramStars.nativeReadable),
           reasonFa: res.telegramStars.reasonFa,
           topUpDeepLink: res.telegramStars.topUpDeepLink,
+          telegramAccountLabelFa:
+            res.telegramStars.telegramAccountLabelFa || 'موجودی Stars شما در تلگرام',
+          petdateLabelFa:
+            res.telegramStars.petdateLabelFa || 'موجودی ستاره پنل پت‌دیت (خریداری‌شده)',
+          petdateBalance: Math.max(
+            0,
+            Math.floor(
+              Number(res.telegramStars.petdateBalance ?? res.telegramStars.walletStars ?? res.wallet.stars) || 0
+            )
+          ),
         });
       }
       if (res.telegram) {
@@ -230,12 +243,12 @@ export function WalletPage() {
           <p className="pepito-wallet-featured-note">{WALLET_CURRENCY_STATUS.coins.noteFa}</p>
         </div>
         <div className="pepito-wallet-featured-main pepito-wallet-featured-main--stars" aria-live="polite">
-          <span className="pepito-wallet-featured-label">{WALLET_CURRENCY_LABELS_FA.stars}</span>
+          <span className="pepito-wallet-featured-label">ستاره پنل پت‌دیت</span>
           <p className="pepito-wallet-featured-val">
             <span aria-hidden>{WALLET_CURRENCY_SYMBOLS.stars}</span>
-            {formatBal(starsCount)}
+            {formatBal(telegramStarsMeta?.petdateBalance ?? starsCount)}
           </p>
-          <p className="pepito-wallet-featured-unit">ستاره کیف‌پول</p>
+          <p className="pepito-wallet-featured-unit">خریداری‌شده در پنل</p>
           <p className="pepito-wallet-featured-note">{WALLET_CURRENCY_STATUS.stars.noteFa}</p>
         </div>
         <ul className="pepito-wallet-featured-side" aria-label="سایر موجودی‌ها">
@@ -269,25 +282,47 @@ export function WalletPage() {
             <Sparkles size={18} />
           </span>
           <div>
-            <h2 id="wallet-tg-title">ستاره‌های تلگرام → ربات</h2>
+            <h2 id="wallet-tg-title">ستاره‌ها — تلگرام و پنل پت‌دیت</h2>
             <p className="pepito-wallet-tg-lead">
               {telegramStarsMeta?.reasonFa ||
-                'موجودی Stars حساب شخصی از API تلگرام قابل خواندن نیست. با فاکتور XTR مستقیم به ربات واریز می‌شود و کیف‌پول پت‌دیت شارژ می‌گردد.'}
+                'موجودی Stars حساب تلگرام جدا از ستاره خریداری‌شده در پنل پت‌دیت است.'}
             </p>
           </div>
         </div>
 
         <div className="pepito-wallet-tg-body">
-          <p className="pepito-wallet-tg-stars pepito-wallet-tg-stars--hero" aria-live="polite">
-            <span className="pepito-wallet-tg-stars-badge" aria-hidden>⭐</span>
-            <span className="pepito-wallet-tg-stars-copy">
-              <span className="pepito-wallet-tg-stars-label">موجودی ستاره کیف‌پول پت‌دیت</span>
-              <strong className="pepito-wallet-tg-stars-val">
-                {formatBal(starsCount)}
-                <span className="pepito-wallet-tg-stars-unit"> ستاره</span>
-              </strong>
-            </span>
-          </p>
+          <div className="pepito-wallet-stars-split" role="group" aria-label="دو نوع موجودی ستاره">
+            <p className="pepito-wallet-tg-stars pepito-wallet-tg-stars--hero pepito-wallet-tg-stars--panel">
+              <span className="pepito-wallet-tg-stars-badge" aria-hidden>
+                ⭐
+              </span>
+              <span className="pepito-wallet-tg-stars-copy">
+                <span className="pepito-wallet-tg-stars-label">
+                  {telegramStarsMeta?.petdateLabelFa || 'موجودی ستاره پنل پت‌دیت (خریداری‌شده)'}
+                </span>
+                <strong className="pepito-wallet-tg-stars-val">
+                  {formatBal(telegramStarsMeta?.petdateBalance ?? starsCount)}
+                  <span className="pepito-wallet-tg-stars-unit"> ستاره</span>
+                </strong>
+              </span>
+            </p>
+            <p className="pepito-wallet-tg-stars pepito-wallet-tg-stars--hero pepito-wallet-tg-stars--telegram">
+              <span className="pepito-wallet-tg-stars-badge" aria-hidden>
+                📱
+              </span>
+              <span className="pepito-wallet-tg-stars-copy">
+                <span className="pepito-wallet-tg-stars-label">
+                  {telegramStarsMeta?.telegramAccountLabelFa || 'موجودی Stars شما در تلگرام'}
+                </span>
+                <strong className="pepito-wallet-tg-stars-val pepito-wallet-tg-stars-val--muted">
+                  فقط در تلگرام
+                </strong>
+                <span className="pepito-wallet-tg-stars-hint">
+                  عدد موجودی حساب شخصی از API خوانده نمی‌شود؛ هنگام پرداخت فاکتور در خود تلگرام دیده و کسر می‌شود.
+                </span>
+              </span>
+            </p>
+          </div>
 
           {linked ? (
             <p className="pepito-wallet-tg-status">
@@ -312,11 +347,11 @@ export function WalletPage() {
                 rel="noopener noreferrer"
               >
                 <Sparkles size={16} aria-hidden />
-                شارژ با Stars واقعی تلگرام
+                شارژ ستاره پنل با Stars تلگرام
               </a>
             ) : linked ? (
               <p className="pepito-wallet-tg-meta-inline">
-                از ربات /start wstars برای شارژ با فاکتور تلگرام استفاده کن.
+                از ربات /start wstars برای شارژ پنل با فاکتور تلگرام استفاده کن.
               </p>
             ) : (
               <button
@@ -354,7 +389,7 @@ export function WalletPage() {
           >
             {linked
               ? syncedAt
-                ? 'بعد از پرداخت فاکتور Stars در ربات، اینجا همگام‌سازی را بزن.'
+                ? 'بعد از پرداخت فاکتور Stars در ربات، موجودی پنل پت‌دیت اینجا به‌روز می‌شود.'
                 : '\u00a0'
               : linkHint || '\u00a0'}
           </p>

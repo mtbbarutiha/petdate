@@ -189,7 +189,7 @@ export const WALLET_CURRENCY_STATUS: Record<
   stars: {
     deposit: 'bot_only',
     noteFa:
-      'شارژ کیف‌پول و خرید فروشگاه با فاکتور XTR: Stars واقعی از اکانت تلگرام کسر و به ربات واریز می‌شود',
+      'پنل پت‌دیت = ستاره خریداری‌شده در کیف‌پول. Stars حساب تلگرام جداست و فقط در خود تلگرام دیده می‌شود',
   },
   coins: {
     deposit: 'wired',

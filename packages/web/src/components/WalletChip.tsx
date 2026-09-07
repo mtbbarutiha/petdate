@@ -74,7 +74,7 @@ export function WalletChip() {
           <span className="pepito-nav-wallet-chip-sep" aria-hidden>
             ·
           </span>
-          <span className="pepito-nav-wallet-chip-item" title={WALLET_CURRENCY_LABELS_FA.stars}>
+          <span className="pepito-nav-wallet-chip-item" title="ستاره پنل پت‌دیت (خریداری‌شده)">
             <span aria-hidden>{WALLET_CURRENCY_SYMBOLS.stars}</span>
             <span>{formatBal(wallet.stars)}</span>
           </span>

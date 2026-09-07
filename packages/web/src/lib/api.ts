@@ -547,6 +547,10 @@ export async function fetchWallet(token: string) {
       linked: boolean;
       nativeReadable: boolean;
       nativeBalance: number | null;
+      telegramAccountBalance?: number | null;
+      telegramAccountLabelFa?: string;
+      petdateBalance?: number;
+      petdateLabelFa?: string;
       reasonFa: string;
       walletStars: number;
       topUpDeepLink: string | null;

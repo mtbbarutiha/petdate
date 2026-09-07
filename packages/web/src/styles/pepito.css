@@ -8559,6 +8559,37 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   border: 1px solid rgba(196, 106, 0, 0.18);
 }
 
+.pepito-wallet-stars-split {
+  display: grid;
+  gap: 0.75rem;
+  width: 100%;
+}
+@media (min-width: 640px) {
+  .pepito-wallet-stars-split {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.pepito-wallet-stars-split .pepito-wallet-tg-stars--hero {
+  min-height: auto;
+  align-items: flex-start;
+}
+.pepito-wallet-tg-stars--telegram {
+  background: rgba(26, 77, 143, 0.07);
+  border-color: rgba(26, 77, 143, 0.14);
+}
+.pepito-wallet-tg-stars-val--muted {
+  font-size: 1.05rem !important;
+  color: #1a4d8f !important;
+}
+.pepito-wallet-tg-stars-hint {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  font-weight: 600;
+  color: var(--pepito-muted, #6b7280);
+}
+
 .pepito-wallet-tg-stars--hero {
   min-height: 4.2rem;
 }

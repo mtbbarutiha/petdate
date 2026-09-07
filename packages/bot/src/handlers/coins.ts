@@ -700,8 +700,9 @@ export async function handleSuccessfulPayment(ctx: Context): Promise<void> {
     await ctx.reply(
       [
         '⭐ پرداخت Stars تلگرام موفق بود!',
-        `ستاره‌ها مستقیم به ربات واریز شد و <b>${formatNum(stars)}</b> ستاره به کیف‌پول پت‌دیتت اضافه شد.`,
-        `موجودی ستاره کیف‌پول: <b>⭐ ${formatNum(user.wallet?.stars ?? user.walletStars ?? 0)}</b>`,
+        `ستاره‌ها مستقیم به ربات واریز شد و <b>${formatNum(stars)}</b> ستاره به پنل پت‌دیتت اضافه شد.`,
+        `⭐ موجودی ستاره پنل پت‌دیت: <b>${formatNum(user.wallet?.stars ?? user.walletStars ?? 0)}</b>`,
+        '📱 موجودی Stars حساب تلگرام فقط داخل خود تلگرام دیده می‌شود.',
       ].join('\n'),
       {
         parse_mode: 'HTML',
@@ -740,12 +741,12 @@ export async function handleWalletStarsTopUpMenu(ctx: Context): Promise<void> {
   }
   await ctx.reply(
     [
-      '⭐ <b>شارژ ستاره کیف‌پول با Stars تلگرام</b>',
+      '⭐ <b>شارژ ستاره پنل پت‌دیت با Stars تلگرام</b>',
       '',
-      'تلگرام موجودی Stars حساب شخصی‌ات را به ربات نشان نمی‌دهد.',
-      'با فاکتور زیر، Stars واقعی‌ات مستقیم به ربات واریز می‌شود و همان مقدار در کیف‌پول پت‌دیت شارژ می‌گردد.',
+      '📱 موجودی Stars شما در تلگرام: فقط داخل خود تلگرام دیده می‌شود (ربات عدد را نمی‌خواند).',
+      `⭐ موجودی ستاره پنل پت‌دیت (خریداری‌شده): <b>${formatNum(stars)}</b>`,
       '',
-      `موجودی فعلی کیف‌پول: ⭐ <b>${formatNum(stars)}</b>`,
+      'با فاکتور زیر، Stars واقعی از اکانت تلگرام کسر و همان مقدار به پنل پت‌دیت اضافه می‌شود.',
       '',
       'بسته را انتخاب کن:',
     ].join('\n'),

@@ -280,17 +280,21 @@ authRouter.get('/wallet', (req, res) => {
       username: user.username ?? null,
     },
     /**
-     * موجودی Stars حساب شخصی کاربر از Bot API قابل خواندن نیست (محدودیت تلگرام).
-     * وقتی سینک شده باشد، می‌تواند با فاکتور XTR ستاره را مستقیم به ربات بپردازد
-     * و موجودی wallet_stars کیف‌پول پت‌دیت شارژ شود.
+     * دو موجودی جدا:
+     * - petdateBalance / walletStars: ستاره داخل پنل پت‌دیت (خریداری/شارژ‌شده در کیف‌پول)
+     * - telegramAccountBalance: Stars حساب شخصی تلگرام — Bot API عدد را برنمی‌گرداند
      */
     telegramStars: {
       linked,
       nativeReadable: false,
       nativeBalance: null as number | null,
+      telegramAccountBalance: null as number | null,
+      telegramAccountLabelFa: 'موجودی Stars شما در تلگرام',
+      petdateBalance: wallet.stars,
+      petdateLabelFa: 'موجودی ستاره پنل پت‌دیت (خریداری‌شده)',
       reasonFa: linked
-        ? 'تلگرام اجازهٔ خواندن موجودی Stars حساب شخصی را به ربات نمی‌دهد. با فاکتور تلگرام بخر تا ستاره مستقیم به ربات واریز شود و همین‌جا شارژ شود.'
-        : 'اول حساب وب را به تلگرام وصل کن، بعد می‌توانی با Stars واقعی تلگرام پرداخت کنی.',
+        ? 'موجودی Stars حساب تلگرام فقط داخل خود اپ تلگرام دیده می‌شود؛ ربات اجازهٔ خواندن عدد آن را ندارد. ستاره‌ای که با فاکتور می‌خری وارد پنل پت‌دیت می‌شود و همین‌جا نمایش داده می‌شود.'
+        : 'اول حساب وب را به تلگرام وصل کن. بعد Stars تلگرام برای پرداخت فاکتور، و ستاره پنل پت‌دیت برای موجودی خریداری‌شده جداگانه دیده می‌شود.',
       walletStars: wallet.stars,
       topUpDeepLink: linked ? `https://t.me/${botUsername}?start=wstars` : null,
     },
