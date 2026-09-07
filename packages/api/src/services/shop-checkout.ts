@@ -588,7 +588,8 @@ export function getShopStarsXtrStatus(
 
 /**
  * بعد از successful_payment (XTR): علامت‌گذاری payment_order و ساخت سفارش شاپ paid.
- * ستاره‌ها از قبل به اکانت ربات رفته‌اند — wallet_stars کاربر تغییر نمی‌کند.
+ * ستاره‌ها به اکانت ربات رفته‌اند — wallet_stars کاربر تغییر نمی‌کند،
+ * ولی ردیف debit در wallet_ledger برای تاریخچه تراکنش‌های کاربر ثبت می‌شود.
  */
 export function completeShopStarsXtrPayment(input: {
   orderId: number;
@@ -697,6 +698,17 @@ export function completeShopStarsXtrPayment(input: {
       d.prepare(`UPDATE payment_orders SET admin_note = ? WHERE id = ?`).run(
         encodeShopXtrMeta(nextMeta),
         input.orderId
+      );
+
+      // تاریخچه تراکنش کاربر: Stars از تلگرام رفته‌اند (نه wallet_stars)، ولی خرید باید در لجر دیده شود
+      d.prepare(
+        `INSERT INTO wallet_ledger (user_id, currency, amount, direction, reason, ref_type, ref_id)
+         VALUES (?, 'stars', ?, 'debit', ?, 'shop_order', ?)`
+      ).run(
+        existing.userId,
+        starsNeeded,
+        'خرید پت شاپ با Stars تلگرام',
+        String(order.id)
       );
 
       return order;
