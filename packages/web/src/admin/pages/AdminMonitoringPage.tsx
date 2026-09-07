@@ -24,6 +24,9 @@ type Check = {
 type Monitoring = {
   ok: boolean;
   generatedAt: string;
+  publicDomain?: string;
+  publicWebUrl?: string;
+  publicPdfUrl?: string;
   uptimeSec: number;
   node: string;
   platform: string;
@@ -62,15 +65,33 @@ function checkTone(check: Check): 'ok' | 'bad' | 'idle' {
 }
 
 const CHECK_LABELS: Record<string, string> = {
-  api: 'API',
+  site: 'سایت اصلی',
+  www: 'www',
+  api: 'API عمومی',
+  pdf: 'PDF',
   telegramBot: 'ربات تلگرام',
   sqlite: 'SQLite',
   postgres: 'Postgres',
-  redis: 'Redis (همین سرور)',
+  redis: 'Redis',
   s3: 'S3 / MinIO',
   elasticsearch: 'Elasticsearch',
   disk: 'دیسک',
 };
+
+/** Prefer public edge checks before internal infra in the grid. */
+const CHECK_ORDER = [
+  'site',
+  'www',
+  'api',
+  'pdf',
+  'telegramBot',
+  'sqlite',
+  'postgres',
+  'redis',
+  's3',
+  'elasticsearch',
+  'disk',
+] as const;
 
 function formatUptime(sec: number): string {
   const d = Math.floor(sec / 86400);
@@ -79,6 +100,33 @@ function formatUptime(sec: number): string {
   if (d > 0) return `${d}ر ${h}س ${m}د`;
   if (h > 0) return `${h}س ${m}د`;
   return `${m}د ${sec % 60}ث`;
+}
+
+function formatGeneratedAt(iso: string): string {
+  try {
+    return new Intl.DateTimeFormat('fa-IR', {
+      dateStyle: 'medium',
+      timeStyle: 'medium',
+      timeZone: 'Asia/Tehran',
+    }).format(new Date(iso));
+  } catch {
+    return iso;
+  }
+}
+
+function orderedChecks(checks: Record<string, Check>): Array<[string, Check]> {
+  const seen = new Set<string>();
+  const out: Array<[string, Check]> = [];
+  for (const key of CHECK_ORDER) {
+    if (checks[key]) {
+      out.push([key, checks[key]!]);
+      seen.add(key);
+    }
+  }
+  for (const [key, check] of Object.entries(checks)) {
+    if (!seen.has(key)) out.push([key, check]);
+  }
+  return out;
 }
 
 export function AdminMonitoringPage() {
@@ -109,7 +157,10 @@ export function AdminMonitoringPage() {
       <header className="admin-header">
         <div>
           <h1>مانیتورینگ</h1>
-          <p>وضعیت سرویس‌ها و منابع سرور — هر ۱۰ ثانیه</p>
+          <p>
+            وضعیت زنده روی دامنه اصلی
+            {data?.publicDomain ? ` (${data.publicDomain})` : ''} — هر ۱۰ ثانیه
+          </p>
         </div>
         <button type="button" className="admin-btn" onClick={() => void load()}>
           <RefreshCw size={16} />
@@ -127,7 +178,11 @@ export function AdminMonitoringPage() {
             <div>
               <strong>{data.ok ? 'سیستم سالم است' : 'مشکل در سرویس‌های حیاتی'}</strong>
               <span>
-                {data.hostname} · uptime {formatUptime(data.uptimeSec)} · {data.node}
+                {data.publicWebUrl || data.publicDomain || data.hostname}
+                {' · '}
+                uptime {formatUptime(data.uptimeSec)}
+                {' · '}
+                {data.node}
               </span>
             </div>
           </div>
@@ -176,10 +231,10 @@ export function AdminMonitoringPage() {
           <section className="admin-card">
             <div className="admin-card-head">
               <h2>سرویس‌ها</h2>
-              <span className="admin-muted">{data.generatedAt}</span>
+              <span className="admin-muted">{formatGeneratedAt(data.generatedAt)}</span>
             </div>
             <div className="admin-checks">
-              {Object.entries(data.checks).map(([key, check]) => {
+              {orderedChecks(data.checks).map(([key, check]) => {
                 const tone = checkTone(check);
                 return (
                   <div key={key} className={`admin-check is-${tone}`}>

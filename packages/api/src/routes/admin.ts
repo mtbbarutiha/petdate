@@ -31,6 +31,7 @@ import {
   listInboxMessages,
 } from '../services/mail-inbox';
 import { rateLimit } from '../middleware/rate-limit';
+import { publicPdfOrigin, publicWebOrigin } from '../services/prescription-html';
 
 export const adminRouter = Router();
 const STARTED_AT = Date.now();
@@ -755,50 +756,107 @@ function checkTcpPort(host: string, port: number, timeoutMs = 1200): Promise<boo
   });
 }
 
-/** Loopback host:port from REDIS_URL etc. means same VPS, not the admin's laptop. */
-function formatServiceEndpoint(host: string, port: number): string {
-  const loopback = host === 'localhost' || host === '127.0.0.1' || host === '::1';
-  return loopback ? `همین سرور · ${host}:${port}` : `${host}:${port}`;
+function isLoopbackHost(host: string): boolean {
+  return host === 'localhost' || host === '127.0.0.1' || host === '::1';
 }
 
-async function probeService(url: string | undefined, defaultPort: number): Promise<ServiceCheck> {
+/** Public apex host for admin UI — never show localhost/IP to operators. */
+function publicApexHost(): string {
+  try {
+    const host = new URL(publicWebOrigin()).hostname.replace(/^www\./i, '');
+    if (host && !isLoopbackHost(host) && !/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) {
+      return host;
+    }
+  } catch {
+    /* fall through */
+  }
+  return 'petdate.ir';
+}
+
+/**
+ * Display label for infra probes.
+ * Internal docker/loopback listeners are shown as production domain + role, not localhost:port.
+ */
+function formatServiceEndpoint(host: string, port: number, roleFa: string): string {
+  const apex = publicApexHost();
+  if (isLoopbackHost(host)) {
+    return `${apex} · ${roleFa} (داخلی)`;
+  }
+  if (/^\d{1,3}(\.\d{1,3}){3}$/.test(host)) {
+    return `${apex} · ${roleFa} (داخلی)`;
+  }
+  return `${host}${port ? `:${port}` : ''} · ${roleFa}`;
+}
+
+async function probeService(
+  url: string | undefined,
+  defaultPort: number,
+  roleFa: string,
+): Promise<ServiceCheck> {
   if (!url) return checkNotConfigured();
   try {
     const u = new URL(url);
     const host = u.hostname || '127.0.0.1';
     const port = Number(u.port || defaultPort);
-    const endpoint = formatServiceEndpoint(host, port);
+    const endpoint = formatServiceEndpoint(host, port, roleFa);
     const ok = await checkTcpPort(host, port);
-    return ok ? checkUp(endpoint) : checkDown(`غیرقابل دسترس ${endpoint}`);
+    return ok ? checkUp(endpoint) : checkDown(`غیرقابل دسترس — ${endpoint}`);
   } catch (err) {
     return checkDown((err as Error).message);
   }
 }
 
-async function probeHttp(url: string | undefined, healthPath: string, defaultPort: number): Promise<ServiceCheck> {
+async function probeHttp(
+  url: string | undefined,
+  healthPath: string,
+  defaultPort: number,
+  roleFa: string,
+): Promise<ServiceCheck> {
   if (!url) return checkNotConfigured();
   try {
     const base = new URL(url);
     const host = base.hostname || '127.0.0.1';
     const port = Number(base.port || defaultPort);
-    const endpoint = formatServiceEndpoint(host, port);
+    const endpoint = formatServiceEndpoint(host, port, roleFa);
     const live = new URL(healthPath, `${base.protocol}//${host}:${port}`);
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 2000);
     try {
       const res = await fetch(live, { method: 'GET', signal: controller.signal });
       if (res.ok) return checkUp(endpoint);
-      return checkDown(`HTTP ${res.status} ${endpoint}`);
+      return checkDown(`HTTP ${res.status} — ${endpoint}`);
     } finally {
       clearTimeout(timer);
     }
   } catch (err) {
     // Fall back to TCP so a blocked health path does not hide a live listener.
-    const tcp = await probeService(url, defaultPort);
+    const tcp = await probeService(url, defaultPort, roleFa);
     if (tcp.status === 'up') {
-      return checkUp(`${tcp.detail} (health path failed: ${(err as Error).message})`);
+      return checkUp(`${tcp.detail}`);
     }
     return checkDown((err as Error).message);
+  }
+}
+
+/** Probe a public HTTPS URL as users see it on the main domain. */
+async function probePublicUrl(url: string, label: string): Promise<ServiceCheck> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 4000);
+  try {
+    const res = await fetch(url, {
+      method: 'GET',
+      redirect: 'follow',
+      signal: controller.signal,
+      headers: { Accept: 'application/json, text/html, */*' },
+    });
+    if (res.ok) {
+      return checkUp(`${label} · HTTP ${res.status}`);
+    }
+    return checkDown(`${label} · HTTP ${res.status}`);
+  } catch (err) {
+    return checkDown(`${label} · ${(err as Error).message}`);
+  } finally {
+    clearTimeout(timer);
   }
 }
 
@@ -849,14 +907,44 @@ adminRouter.get('/monitoring', async (_req, res) => {
   const mem = process.memoryUsage();
   const loadAvg = os.loadavg().map((n) => Math.round(n * 100) / 100);
   const postgresUrl = process.env.DATABASE_URL?.startsWith('postgres') ? process.env.DATABASE_URL : undefined;
-  const [redis, postgres, s3, elasticsearch, telegramBot] = await Promise.all([
-    probeService(process.env.REDIS_URL, 6379),
-    probeService(postgresUrl, 5432),
+  const webOrigin = publicWebOrigin();
+  const pdfOrigin = publicPdfOrigin();
+  const apex = publicApexHost();
+  const siteUrl = webOrigin.replace(/\/$/, '');
+  const wwwUrl = (() => {
+    try {
+      const u = new URL(siteUrl);
+      if (!u.hostname.startsWith('www.')) u.hostname = `www.${u.hostname}`;
+      return u.origin;
+    } catch {
+      return `https://www.${apex}`;
+    }
+  })();
+  const apiHealthUrl = `${siteUrl}/api/health`;
+  const pdfUrl = pdfOrigin.replace(/\/$/, '') || `https://pdf.${apex}`;
+
+  const [
+    sitePublic,
+    wwwPublic,
+    apiPublic,
+    pdfPublic,
+    redis,
+    postgres,
+    s3,
+    elasticsearch,
+    telegramBot,
+  ] = await Promise.all([
+    probePublicUrl(siteUrl, apex),
+    probePublicUrl(wwwUrl, `www.${apex}`),
+    probePublicUrl(apiHealthUrl, `${apex}/api`),
+    probePublicUrl(pdfUrl, new URL(pdfUrl).hostname),
+    probeService(process.env.REDIS_URL, 6379, 'Redis'),
+    probeService(postgresUrl, 5432, 'Postgres'),
     hasS3Config()
-      ? probeHttp(infra.s3.endpoint, '/minio/health/live', 9000)
+      ? probeHttp(infra.s3.endpoint, '/minio/health/live', 9000, 'S3/MinIO')
       : Promise.resolve(checkNotConfigured()),
     hasElasticsearchConfig()
-      ? probeHttp(infra.elasticsearch.url, '/_cluster/health', 9200)
+      ? probeHttp(infra.elasticsearch.url, '/_cluster/health', 9200, 'Elasticsearch')
       : Promise.resolve(checkNotConfigured()),
     probeTelegramBot(),
   ]);
@@ -865,9 +953,12 @@ adminRouter.get('/monitoring', async (_req, res) => {
   const disk = diskCheck(process.cwd());
   const dash = adminPlatform.getDashboardStats();
   const checks: Record<string, ServiceCheck> = {
-    api: checkUp('فعال'),
+    site: sitePublic,
+    www: wwwPublic,
+    api: apiPublic,
+    pdf: pdfPublic,
     telegramBot,
-    sqlite: checkUp('اصلی — منبع حقیقت کاربران/پت‌ها'),
+    sqlite: checkUp(`${apex} · SQLite (منبع حقیقت)`),
     postgres: postgresUrl
       ? postgres
       : checkNotConfigured(),
@@ -880,11 +971,14 @@ adminRouter.get('/monitoring', async (_req, res) => {
     .filter(([, v]) => v.status === 'down')
     .map(([k]) => k);
   // Elasticsearch is optional (compose profile: search). Configured infra that is down is critical.
-  const nonCritical = new Set(['elasticsearch']);
+  const nonCritical = new Set(['elasticsearch', 'postgres']);
   const criticalUnhealthy = unhealthy.filter((k) => !nonCritical.has(k));
   res.json({
     ok: criticalUnhealthy.length === 0,
     generatedAt: new Date().toISOString(),
+    publicDomain: apex,
+    publicWebUrl: siteUrl,
+    publicPdfUrl: pdfUrl,
     uptimeSec: Math.floor((Date.now() - STARTED_AT) / 1000),
     node: process.version,
     platform: `${os.type()} ${os.release()}`,
