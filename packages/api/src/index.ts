@@ -29,6 +29,7 @@ import { authRouter } from './routes/auth';
 import { adminRouter } from './routes/admin';
 import { shopRouter } from './routes/shop';
 import { newsletterRouter } from './routes/newsletter';
+import { mediaRouter } from './routes/media';
 import {
   expressErrorHandler,
   installConsoleErrorBridge,
@@ -148,6 +149,7 @@ app.use('/api/prescriptions', prescriptionsFileRouter);
 app.use('/rx', prescriptionWebRouter);
 app.use('/api/games', gamesRouter);
 app.use('/api/pets', petsRouter);
+app.use('/api/media', mediaRouter);
 app.use('/api/playdate-requests', playdatesRouter);
 app.use('/api/sections', sectionsRouter);
 app.use('/api/auth', authRouter);

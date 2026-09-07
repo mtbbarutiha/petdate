@@ -61,6 +61,7 @@ import {
   type WalletLedgerDirection,
   type WalletTransaction,
 } from '@petdate/shared';
+import { publicImageUrlForStored } from './services/telegram-media';
 
 /** متادیتای اختیاری برای ثبت در wallet_ledger هنگام کسر/واریز */
 export type WalletLedgerMeta = {
@@ -1501,7 +1502,7 @@ function mapUser(row: Record<string, unknown>): User {
     phoneVerifiedAt: (row.phone_verified_at as string | undefined) ?? undefined,
     bio: row.bio as string | undefined,
     interests: parseInterests(row.interests),
-    avatarUrl: row.avatar_url as string | undefined,
+    avatarUrl: publicImageUrlForStored(row.avatar_url as string | undefined),
     avatarCustom: row.avatar_custom == null ? false : Boolean(row.avatar_custom),
     coins: row.coins != null ? Number(row.coins) : 0,
     walletTon: row.wallet_ton != null ? Number(row.wallet_ton) : 0,
@@ -1581,7 +1582,9 @@ function mapPet(row: Record<string, unknown>): PetProfile {
     lookingForPlaymate: Boolean(row.looking_for_playmate),
     personality: parseJsonObject(row.personality),
     health: parseJsonObject(row.health),
-    imageUrl: row.image_url as string | undefined,
+    imageUrl: publicImageUrlForStored(row.image_url as string | undefined, {
+      petId: row.id as number,
+    }),
     city: row.city as string | undefined,
     neighborhood: row.neighborhood as string | undefined,
     ownerProvince: (row.owner_province as string | undefined) ?? undefined,
