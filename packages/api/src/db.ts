@@ -50,6 +50,7 @@ import {
   SIGNUP_BONUS,
   USER_PRESENCE_ONLINE_MS,
   USER_ROLES,
+  normalizeIranMobile,
   sanitizeRoleList,
   VET_CONSULT_REQUEST_TTL_MS,
   walletFromUserFields,
@@ -61,6 +62,14 @@ import {
   type WalletLedgerDirection,
   type WalletTransaction,
 } from '@petdate/shared';
+import { publicImageUrlForStored } from './services/telegram-media';
+
+/** Canonical Iran mobile for storage/lookup: 98912xxxxxxx (no +). */
+function canonicalizeStoredPhone(raw: string | null | undefined): string | null {
+  const trimmed = String(raw ?? '').trim();
+  if (!trimmed) return null;
+  return normalizeIranMobile(trimmed) ?? trimmed;
+}
 
 /** متادیتای اختیاری برای ثبت در wallet_ledger هنگام کسر/واریز */
 export type WalletLedgerMeta = {
@@ -742,6 +751,18 @@ function migrateSchema() {
   const userPresenceNames = new Set(userPresenceCols.map((c) => c.name));
   if (!userPresenceNames.has('last_seen_at')) {
     db.exec('ALTER TABLE users ADD COLUMN last_seen_at TEXT');
+  }
+
+  // Normalize phone variants (+989… / 09…) so web OTP finds the same row as Telegram bot.
+  const phoneRows = db
+    .prepare(`SELECT id, phone FROM users WHERE phone IS NOT NULL AND phone != ''`)
+    .all() as { id: number; phone: string }[];
+  const updatePhone = db.prepare('UPDATE users SET phone = ? WHERE id = ?');
+  for (const row of phoneRows) {
+    const canonical = canonicalizeStoredPhone(row.phone);
+    if (canonical && canonical !== row.phone) {
+      updatePhone.run(canonical, row.id);
+    }
   }
 
   // Backfill roles JSON + migrate removed roles (pet_sitter / community_seeker → drop or pet_owner)
@@ -1501,7 +1522,7 @@ function mapUser(row: Record<string, unknown>): User {
     phoneVerifiedAt: (row.phone_verified_at as string | undefined) ?? undefined,
     bio: row.bio as string | undefined,
     interests: parseInterests(row.interests),
-    avatarUrl: row.avatar_url as string | undefined,
+    avatarUrl: publicImageUrlForStored(row.avatar_url as string | undefined),
     avatarCustom: row.avatar_custom == null ? false : Boolean(row.avatar_custom),
     coins: row.coins != null ? Number(row.coins) : 0,
     walletTon: row.wallet_ton != null ? Number(row.wallet_ton) : 0,
@@ -1581,7 +1602,9 @@ function mapPet(row: Record<string, unknown>): PetProfile {
     lookingForPlaymate: Boolean(row.looking_for_playmate),
     personality: parseJsonObject(row.personality),
     health: parseJsonObject(row.health),
-    imageUrl: row.image_url as string | undefined,
+    imageUrl: publicImageUrlForStored(row.image_url as string | undefined, {
+      petId: row.id as number,
+    }),
     city: row.city as string | undefined,
     neighborhood: row.neighborhood as string | undefined,
     ownerProvince: (row.owner_province as string | undefined) ?? undefined,
@@ -1966,10 +1989,11 @@ export const dbService = {
     if (patch.city !== undefined) { fields.push('city = ?'); values.push(patch.city); }
     if (patch.province !== undefined) { fields.push('province = ?'); values.push(patch.province); }
     if (patch.phone !== undefined) {
+      const nextPhone = canonicalizeStoredPhone(patch.phone) ?? '';
       fields.push('phone = ?');
-      values.push(patch.phone);
+      values.push(nextPhone || null);
       // تغییر شماره بدون OTP → لغو تأیید قبلی
-      if (patch.phone !== existing.phone) {
+      if (nextPhone !== (existing.phone ?? '')) {
         fields.push('phone_verified = ?');
         values.push(0);
         fields.push('phone_verified_at = ?');
@@ -5104,8 +5128,38 @@ export const dbService = {
   },
 
   getUserByPhone(phone: string): User | null {
-    const row = db.prepare('SELECT * FROM users WHERE phone = ? ORDER BY id DESC LIMIT 1').get(phone) as Record<string, unknown> | undefined;
-    return row ? mapUser(row) : null;
+    const raw = String(phone ?? '').trim();
+    if (!raw) return null;
+    const want = normalizeIranMobile(raw);
+    const candidates = new Set<string>([raw]);
+    if (want) {
+      candidates.add(want);
+      candidates.add(`+${want}`);
+      if (want.startsWith('98') && want.length === 12) {
+        candidates.add(`0${want.slice(2)}`);
+      }
+    }
+    for (const c of candidates) {
+      const row = db
+        .prepare('SELECT * FROM users WHERE phone = ? ORDER BY id DESC LIMIT 1')
+        .get(c) as Record<string, unknown> | undefined;
+      if (row) return mapUser(row);
+    }
+    // Legacy rows may store odd separators; match by normalized digits.
+    if (want) {
+      const local = want.slice(2);
+      const rows = db
+        .prepare(
+          `SELECT * FROM users
+           WHERE phone LIKE ? OR phone LIKE ? OR phone LIKE ?
+           ORDER BY id DESC`
+        )
+        .all(`%${local}`, `+98${local}`, `98${local}`) as Record<string, unknown>[];
+      for (const row of rows) {
+        if (normalizeIranMobile(String(row.phone ?? '')) === want) return mapUser(row);
+      }
+    }
+    return null;
   },
 
   getUserByEmail(email: string): User | null {
@@ -5281,7 +5335,9 @@ export const dbService = {
 
   /** Attach phone to userId; merge if another row already owns that phone. */
   linkPhoneIdentity(userId: number, phone: string): User | null {
-    const other = this.getUserByPhone(phone);
+    const normalized = canonicalizeStoredPhone(phone);
+    if (!normalized) return this.getUserById(userId);
+    const other = this.getUserByPhone(normalized);
     if (other && other.id !== userId) {
       const me = this.getUserById(userId);
       if (!me) return null;
@@ -5290,12 +5346,12 @@ export const dbService = {
       if (!merged) return null;
       db.prepare(
         `UPDATE users SET phone = ?, phone_verified = 1, phone_verified_at = datetime('now') WHERE id = ?`
-      ).run(phone, merged.id);
+      ).run(normalized, merged.id);
       return this.getUserById(merged.id);
     }
     db.prepare(
       `UPDATE users SET phone = ?, phone_verified = 1, phone_verified_at = datetime('now') WHERE id = ?`
-    ).run(phone, userId);
+    ).run(normalized, userId);
     return this.getUserById(userId);
   },
 
@@ -5519,7 +5575,8 @@ export const dbService = {
   },
 
   findOrCreateWebUser(opts: { phone?: string; email?: string; name?: string }): User {
-    let byPhone = opts.phone ? this.getUserByPhone(opts.phone) : null;
+    const phone = opts.phone ? canonicalizeStoredPhone(opts.phone) ?? undefined : undefined;
+    let byPhone = phone ? this.getUserByPhone(phone) : null;
     let byEmail = opts.email ? this.getUserByEmail(opts.email) : null;
 
     if (byPhone && byEmail && byPhone.id !== byEmail.id) {
@@ -5531,8 +5588,8 @@ export const dbService = {
 
     const existing = byPhone ?? byEmail;
     if (existing) {
-      if (opts.phone && existing.phone !== opts.phone) {
-        return this.linkPhoneIdentity(existing.id, opts.phone) ?? existing;
+      if (phone && existing.phone !== phone) {
+        return this.linkPhoneIdentity(existing.id, phone) ?? existing;
       }
       if (opts.email && existing.email !== opts.email) {
         return this.linkEmailIdentity(existing.id, opts.email) ?? existing;
@@ -5548,9 +5605,9 @@ export const dbService = {
       )
       .run(
         name,
-        opts.phone ?? null,
+        phone ?? null,
         opts.email ?? null,
-        opts.phone ? 1 : 0,
+        phone ? 1 : 0,
         opts.email ? 1 : 0
       );
     const user = this.getUserById(Number(result.lastInsertRowid));

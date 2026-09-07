@@ -28,6 +28,7 @@ import {
   submitVetCredential,
   updateUserProfile,
 } from '../api-client';
+import { telegramMediaUrl } from '../media-url';
 import { formatCoinAwardMessage } from '../economy';
 import {
   PROFILE_AGE_CHIPS,
@@ -110,7 +111,7 @@ async function sendOwnProfileCard(
   );
   if (user.avatarUrl) {
     try {
-      await ctx.replyWithPhoto(user.avatarUrl, {
+      await ctx.replyWithPhoto(telegramMediaUrl(user.avatarUrl)!, {
         caption,
         parse_mode: 'HTML',
         reply_markup: kb,

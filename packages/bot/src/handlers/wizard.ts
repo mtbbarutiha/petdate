@@ -18,6 +18,7 @@ import {
   listBreeds,
   listSpecies,
 } from '../api-client';
+import { telegramMediaUrl } from '../media-url';
 import {
   BREED_PAGE_SIZE,
   COMMON_CITIES,
@@ -989,7 +990,7 @@ async function finishPetWizard(
 
   if (pet.imageUrl) {
     try {
-      await ctx.replyWithPhoto(pet.imageUrl, {
+      await ctx.replyWithPhoto(telegramMediaUrl(pet.imageUrl)!, {
         caption,
         parse_mode: 'HTML',
         reply_markup: kb,

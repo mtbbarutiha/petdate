@@ -5,7 +5,7 @@ import type { PetProfile } from '@petdate/shared';
 import { BRAND, toPersianDigits } from '@petdate/shared';
 import { PetAvatar } from '../components/PetAvatar';
 import { useAuthStore } from '../hooks/useAuthStore';
-import { listPets } from '../lib/api';
+import { listMyPets } from '../lib/api';
 import { petProfileToUiPet } from '../lib/playdateMap';
 import { PET_TYPE_LABELS } from '../types';
 import { formatAge } from '../data/mock';
@@ -21,33 +21,40 @@ function PawIcon({ size = 16 }: { size?: number }) {
 /** Owner hub: list pets with profile + edit + medical entry points (mobile + desktop). */
 export function MyPetsPage() {
   const navigate = useNavigate();
-  const { user, isLoggedIn, token } = useAuthStore();
+  const { user, isLoggedIn, token, refreshMe } = useAuthStore();
   const [pets, setPets] = useState<PetProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    if (!isLoggedIn || !user?.id) {
+    if (!isLoggedIn || !token) {
       setPets([]);
       setLoading(false);
       return;
     }
     let cancelled = false;
     setLoading(true);
-    void listPets({ ownerId: user.id })
-      .then((rows) => {
+    setError('');
+    void (async () => {
+      try {
+        const me = await refreshMe();
+        if (cancelled) return;
+        if (!me) {
+          setPets([]);
+          return;
+        }
+        const rows = await listMyPets(token);
         if (!cancelled) setPets(rows);
-      })
-      .catch((err) => {
+      } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : 'بارگذاری پت‌ها ناموفق بود');
-      })
-      .finally(() => {
+      } finally {
         if (!cancelled) setLoading(false);
-      });
+      }
+    })();
     return () => {
       cancelled = true;
     };
-  }, [isLoggedIn, user?.id, token]);
+  }, [isLoggedIn, user?.id, token, refreshMe]);
 
   if (!isLoggedIn) {
     return (

@@ -12,11 +12,16 @@ function speciesToType(species?: string): PetType {
   return 'other';
 }
 
-function resolveImage(url?: string | null): string {
+function resolveImage(url?: string | null, petId?: number): string {
   if (!url?.trim()) return EMPTY_STATE_PHOTO;
   const u = url.trim();
   // Absolute remote, same-origin API uploads, or static /pets assets
   if (/^https?:\/\//i.test(u) || u.startsWith('/')) return u;
+  // Bot may still return a raw Telegram file_id — prefer pet image proxy
+  if (/^(AgAC|AQAD|BAAC|BQAC|AwAC|CQAC|DQAC)/.test(u) || /^[A-Za-z0-9_-]{24,}$/.test(u)) {
+    if (petId != null && petId > 0) return `/api/pets/${petId}/image`;
+    return `/api/media/telegram/${encodeURIComponent(u)}`;
+  }
   return EMPTY_STATE_PHOTO;
 }
 
@@ -38,7 +43,7 @@ export function petProfileToUiPet(pet?: PetProfile | null): Pet {
     neighborhood: pet?.neighborhood || '',
     ownerName: '',
     ownerId: pet?.ownerId ?? 0,
-    imageUrl: resolveImage(pet?.imageUrl),
+    imageUrl: resolveImage(pet?.imageUrl, pet?.id),
     emoji: PET_TYPE_EMOJI[type],
     bio: pet?.bio,
     traits: [],

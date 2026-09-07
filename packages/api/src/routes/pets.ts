@@ -1,13 +1,20 @@
 import fs from 'fs';
 import { Router } from 'express';
 import multer from 'multer';
-import { dbService } from '../db';
+import { dbService, getDb } from '../db';
 import {
   MAX_PET_PHOTO_BYTES,
   mimeFromPetPhotoKey,
   resolvePetPhotoPath,
   savePetPhoto,
 } from '../services/pet-photo-store';
+import {
+  fetchTelegramFileBytes,
+  looksLikeTelegramFileId,
+  materializePetTelegramPhoto,
+  petPhotoStorageKeyFromUrl,
+  readLocalPetPhoto,
+} from '../services/telegram-media';
 
 export const petsRouter = Router();
 
@@ -128,6 +135,74 @@ petsRouter.get('/:id', (req, res) => {
   res.json(pet);
 });
 
+/**
+ * Stream pet photo for web <img>.
+ * Local `/api/pets/photos/...` is served from disk; Telegram file_id is
+ * materialized into pet-photos (best effort) or proxied once.
+ */
+petsRouter.get('/:id/image', async (req, res) => {
+  const petId = Number(req.params.id);
+  if (!Number.isFinite(petId) || petId <= 0) {
+    res.status(400).json({ error: 'شناسه پت نامعتبر است' });
+    return;
+  }
+
+  const row = getDb()
+    .prepare('SELECT id, owner_id, image_url FROM pets WHERE id = ?')
+    .get(petId) as { id: number; owner_id: number; image_url: string | null } | undefined;
+  if (!row) {
+    res.status(404).json({ error: 'پت پیدا نشد' });
+    return;
+  }
+
+  const raw = String(row.image_url ?? '').trim();
+  if (!raw) {
+    res.status(404).json({ error: 'عکس پیدا نشد' });
+    return;
+  }
+
+  const sendLocal = (urlPath: string): boolean => {
+    const key = petPhotoStorageKeyFromUrl(urlPath);
+    if (!key) return false;
+    const local = readLocalPetPhoto(key);
+    if (!local) return false;
+    res.setHeader('Content-Type', local.contentType);
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.send(local.buffer);
+    return true;
+  };
+
+  // Already a local pet-photos URL
+  if (raw.startsWith('/api/pets/photos/') && sendLocal(raw)) return;
+
+  // Absolute http(s) — redirect
+  if (/^https?:\/\//i.test(raw)) {
+    res.redirect(302, raw);
+    return;
+  }
+
+  // Telegram file_id — materialize then stream, or proxy
+  if (looksLikeTelegramFileId(raw)) {
+    const saved = await materializePetTelegramPhoto(petId, row.owner_id, raw);
+    if (saved && sendLocal(saved)) return;
+
+    const bytes = await fetchTelegramFileBytes(raw);
+    if (!bytes) {
+      res.status(404).json({ error: 'عکس تلگرام در دسترس نیست' });
+      return;
+    }
+    res.setHeader('Content-Type', bytes.contentType || 'image/jpeg');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    res.send(bytes.buffer);
+    return;
+  }
+
+  // Other relative API paths under /api/pets/photos may still work
+  if (sendLocal(raw)) return;
+
+  res.status(404).json({ error: 'عکس پیدا نشد' });
+});
+
 petsRouter.post('/', (req, res) => {
   const {
     ownerId,
@@ -189,6 +264,14 @@ petsRouter.post('/', (req, res) => {
     neighborhood,
   });
 
+  // Bot stores Telegram file_id in imageUrl — materialize in background for web <img>
+  const rawImage = typeof imageUrl === 'string' ? imageUrl.trim() : '';
+  if (rawImage && looksLikeTelegramFileId(rawImage)) {
+    void materializePetTelegramPhoto(pet.id, pet.ownerId, rawImage).catch((err) => {
+      console.warn('background pet photo materialize failed:', (err as Error).message);
+    });
+  }
+
   dbService.setUserOnboarding(Number(ownerId), 'profile_complete');
   res.status(201).json(pet);
 });
@@ -232,6 +315,15 @@ petsRouter.patch('/:id', (req, res) => {
     res.status(404).json({ error: 'پت پیدا نشد' });
     return;
   }
+
+  const patchedImage =
+    typeof body.imageUrl === 'string' ? String(body.imageUrl).trim() : '';
+  if (patchedImage && looksLikeTelegramFileId(patchedImage)) {
+    void materializePetTelegramPhoto(petId, existing.ownerId, patchedImage).catch((err) => {
+      console.warn('background pet photo materialize failed:', (err as Error).message);
+    });
+  }
+
   res.json(pet);
 });
 
