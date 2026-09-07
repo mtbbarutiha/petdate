@@ -11,6 +11,7 @@ try {
 import { infra } from '../config/infra';
 import { dbService } from '../db';
 import { MAX_USER_AVATAR_BYTES, saveUserAvatar } from './user-avatar-store';
+import { looksLikeTelegramFileId } from './telegram-media';
 
 const PLACEHOLDER_NAMES = new Set([
   'کاربر تلگرام',
@@ -163,9 +164,37 @@ export async function fetchTelegramPublicProfile(telegramId: string): Promise<{
   };
 }
 
+/** Extract a Telegram file_id from raw DB value or mapped /api/media/telegram/... URL. */
+export function extractTelegramFileIdFromAvatar(
+  value: string | undefined | null
+): string | null {
+  const v = String(value ?? '').trim();
+  if (!v) return null;
+  if (looksLikeTelegramFileId(v)) return v;
+  const m = v.match(/^\/api\/media\/telegram\/(.+)$/i);
+  if (m?.[1]) {
+    try {
+      return decodeURIComponent(m[1]);
+    } catch {
+      return m[1];
+    }
+  }
+  return null;
+}
+
+function avatarNeedsMaterialize(avatarUrl: string | undefined | null): boolean {
+  const v = String(avatarUrl ?? '').trim();
+  if (!v) return true;
+  if (v.startsWith('/api/auth/avatar/')) return false;
+  if (looksLikeTelegramFileId(v)) return true;
+  if (v.includes('/api/media/telegram/')) return true;
+  return false;
+}
+
 /**
  * After Telegram web login / attach: fill empty name + username from Bot API,
  * and refresh avatar from Telegram unless the user uploaded a custom one.
+ * Also materializes bot-stored file_id avatars to /api/auth/avatar/... for web <img>.
  * Failures never block auth — returns the latest user row either way.
  */
 export async function syncUserProfileFromTelegram(
@@ -176,40 +205,46 @@ export async function syncUserProfileFromTelegram(
   if (!user) return null;
 
   const profile = await fetchTelegramPublicProfile(telegramId);
-  if (!profile) return user;
-
   const patch: Parameters<typeof dbService.updateUserProfile>[1] = {};
-  const tgName = combineTelegramNames(profile.firstName, profile.lastName);
 
-  if (tgName && isPlaceholderUserName(user.name)) {
-    patch.name = tgName;
-  }
-  if (profile.username && !String(user.username ?? '').trim()) {
-    patch.username = profile.username;
+  if (profile) {
+    const tgName = combineTelegramNames(profile.firstName, profile.lastName);
+    if (tgName && isPlaceholderUserName(user.name)) {
+      patch.name = tgName;
+    }
+    if (profile.username && !String(user.username ?? '').trim()) {
+      patch.username = profile.username;
+    }
   }
 
   const shouldRefreshAvatar = !user.avatarCustom;
   if (!shouldRefreshAvatar) {
     console.info(`telegram profile sync: skip avatar user=${userId} (avatarCustom)`);
-  } else if (!profile.photoFileId) {
-    console.warn(`telegram profile sync: no photo for tg=${telegramId} user=${userId}`);
-  } else {
-    const downloaded = await downloadTelegramFile(profile.photoFileId);
-    if (!downloaded) {
-      console.warn(`telegram profile sync: download failed tg=${telegramId} user=${userId}`);
+  } else if (avatarNeedsMaterialize(user.avatarUrl)) {
+    const fileId =
+      profile?.photoFileId ||
+      extractTelegramFileIdFromAvatar(user.avatarUrl) ||
+      null;
+    if (!fileId) {
+      console.warn(`telegram profile sync: no photo for tg=${telegramId} user=${userId}`);
     } else {
-      try {
-        const saved = saveUserAvatar({
-          userId,
-          originalName: downloaded.originalName,
-          mimeType: downloaded.mimeType,
-          buffer: downloaded.buffer,
-        });
-        patch.avatarUrl = saved.urlPath;
-        patch.avatarCustom = false;
-        console.info(`telegram profile sync: avatar saved user=${userId} path=${saved.urlPath}`);
-      } catch (err) {
-        console.warn('save telegram avatar failed:', (err as Error).message);
+      const downloaded = await downloadTelegramFile(fileId);
+      if (!downloaded) {
+        console.warn(`telegram profile sync: download failed tg=${telegramId} user=${userId}`);
+      } else {
+        try {
+          const saved = saveUserAvatar({
+            userId,
+            originalName: downloaded.originalName,
+            mimeType: downloaded.mimeType,
+            buffer: downloaded.buffer,
+          });
+          patch.avatarUrl = saved.urlPath;
+          patch.avatarCustom = false;
+          console.info(`telegram profile sync: avatar saved user=${userId} path=${saved.urlPath}`);
+        } catch (err) {
+          console.warn('save telegram avatar failed:', (err as Error).message);
+        }
       }
     }
   }

@@ -23,6 +23,7 @@ import {
   listPets,
   updateVetConsultationStatus,
 } from '../api-client';
+import { telegramMediaUrl } from '../media-url';
 import { getSession, upsertSession } from '../session';
 import { getCtxUser, menuKeyboardFor } from './helpers';
 import { MENU_LABELS } from '../keyboards';
@@ -426,7 +427,7 @@ async function showPetProfile(ctx: Context, petId: number): Promise<void> {
   const text = formatVetPetProfileCard(pet);
   if (pet.imageUrl) {
     try {
-      await ctx.replyWithPhoto(pet.imageUrl, {
+      await ctx.replyWithPhoto(telegramMediaUrl(pet.imageUrl)!, {
         caption: text,
         parse_mode: 'HTML',
       });

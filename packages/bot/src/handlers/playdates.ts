@@ -23,6 +23,7 @@ import {
   playdateResendConfirmKeyboard,
 } from '../keyboards';
 import { upsertSession } from '../session';
+import { telegramMediaUrl } from '../media-url';
 import { getCtxUser, menuKeyboardFor } from './helpers';
 import { startOwnerChat } from './owner-chat';
 
@@ -62,7 +63,7 @@ export async function notifyIncomingPlaydateRequest(
     .join('\n')
     .slice(0, 1024);
 
-  const photo = opts.fromPet.imageUrl || defaultPetPhoto(opts.fromPet);
+  const photo = telegramMediaUrl(opts.fromPet.imageUrl) || defaultPetPhoto(opts.fromPet);
   const kb = playdateActionKeyboard(opts.requestId);
 
   try {
@@ -129,7 +130,7 @@ export async function handleMyPetView(ctx: Context, petId: number): Promise<void
   }
   const text = `🐾 <b>پروفایل پت</b>\n\n${formatPet(pet, true)}`;
   const kb = myPetProfileKeyboard(pet.id);
-  const photo = pet.imageUrl || defaultPetPhoto(pet);
+  const photo = telegramMediaUrl(pet.imageUrl) || defaultPetPhoto(pet);
 
   try {
     await ctx.replyWithPhoto(photo, {

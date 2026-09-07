@@ -4,6 +4,7 @@
  */
 import {
   combineTelegramNames,
+  extractTelegramFileIdFromAvatar,
   isPlaceholderUserName,
   pickLargestProfilePhotoFileId,
 } from './telegram-profile-sync';
@@ -36,5 +37,18 @@ const fileId = pickLargestProfilePhotoFileId({
 assert(fileId === 'big', 'pick largest photo');
 assert(pickLargestProfilePhotoFileId(null) === null, 'null photos');
 assert(pickLargestProfilePhotoFileId({ total_count: 0, photos: [] }) === null, 'empty photos');
+
+assert(
+  extractTelegramFileIdFromAvatar('AgACAgQAAxkBAAIE1Wqb8sKs09rKsqr92mkenIXVrHc6AAInEGsbPFfgUBLqBMwgVelaAQADAgADeQADPQQ') ===
+    'AgACAgQAAxkBAAIE1Wqb8sKs09rKsqr92mkenIXVrHc6AAInEGsbPFfgUBLqBMwgVelaAQADAgADeQADPQQ',
+  'raw file_id'
+);
+assert(
+  extractTelegramFileIdFromAvatar(
+    '/api/media/telegram/AgACAgQAAxkBAAIE1Wqb8sKs09rKsqr92mkenIXVrHc6AAInEGsbPFfgUBLqBMwgVelaAQADAgADeQADPQQ'
+  ) === 'AgACAgQAAxkBAAIE1Wqb8sKs09rKsqr92mkenIXVrHc6AAInEGsbPFfgUBLqBMwgVelaAQADAgADeQADPQQ',
+  'mapped media url'
+);
+assert(extractTelegramFileIdFromAvatar('/api/auth/avatar/38/x.jpg') === null, 'local avatar');
 
 console.log('telegram-profile-sync.selftest: ok');

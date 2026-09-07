@@ -19,6 +19,7 @@ import {
   setPlaydateChatSecureViaApi,
   type ActiveOwnerChat,
 } from '../api-client';
+import { telegramMediaUrl } from '../media-url';
 import { getSession, upsertSession } from '../session';
 import { getCtxUser, menuKeyboardFor } from './helpers';
 import { formatPet } from '../format';
@@ -296,7 +297,7 @@ async function handleShowPeerProfile(ctx: Context): Promise<boolean> {
   const secure = !!session.ownerChatSecure;
   if (peer.avatarUrl) {
     try {
-      await ctx.replyWithPhoto(peer.avatarUrl, {
+      await ctx.replyWithPhoto(telegramMediaUrl(peer.avatarUrl)!, {
         caption: text,
         parse_mode: 'HTML',
         ...protectOpts(secure),
@@ -336,7 +337,7 @@ async function handleShowPeerPetProfile(ctx: Context): Promise<boolean> {
   const secure = !!session.ownerChatSecure;
   if (pet.imageUrl) {
     try {
-      await ctx.replyWithPhoto(pet.imageUrl, {
+      await ctx.replyWithPhoto(telegramMediaUrl(pet.imageUrl)!, {
         caption: text,
         parse_mode: 'HTML',
         ...protectOpts(secure),
