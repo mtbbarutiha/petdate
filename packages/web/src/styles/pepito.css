@@ -10335,3 +10335,85 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
     grid-template-columns: 1fr;
   }
 }
+
+
+/* —— سفارش‌های من (پت شاپ) —— */
+.pd-shop-orders-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+.pd-shop-orders-head h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+.pd-shop-orders-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.85rem;
+}
+.pd-shop-order-card {
+  background: #fff;
+  border: 1px solid rgba(92, 77, 145, 0.1);
+  border-radius: 20px;
+  padding: 1rem 1.15rem;
+  text-align: start;
+}
+.pd-shop-order-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.45rem;
+}
+.pd-shop-order-status {
+  font-size: 0.82rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(92, 77, 145, 0.08);
+}
+.pd-shop-order-status--paid,
+.pd-shop-order-status--completed {
+  background: rgba(21, 204, 160, 0.15);
+  color: #0c8b6c;
+}
+.pd-shop-order-status--shipped {
+  background: rgba(11, 165, 242, 0.12);
+  color: #1a4d8f;
+}
+.pd-shop-order-status--cancelled {
+  background: rgba(253, 150, 30, 0.15);
+  color: #b35c00;
+}
+.pd-shop-order-status--cancelled {
+  background: rgba(201, 24, 74, 0.1);
+  color: #9b2226;
+}
+.pd-shop-order-items {
+  margin: 0.2rem 0 0.45rem;
+  font-weight: 600;
+}
+.pd-shop-muted {
+  margin: 0.15rem 0;
+  opacity: 0.72;
+  font-size: 0.9rem;
+}
+@media (max-width: 720px) {
+  .pd-shop-orders-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .pd-shop-orders-head .pd-shop-pay-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+  .pd-shop-orders-head .pd-shop-pay-actions .pepito-btn {
+    flex: 1;
+    text-align: center;
+  }
+}

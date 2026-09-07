@@ -13,6 +13,7 @@ import {
 import {
   checkoutShopWithCoinsTelegram,
   checkoutShopWithStarsTelegram,
+  fetchMyShopOrdersTelegram,
   fetchShopCategories,
   fetchShopProduct,
   fetchShopProducts,
@@ -83,8 +84,11 @@ function homeKeyboard(balance: number): InlineKeyboard {
   }
   if (PET_TYPES.length % 2 === 1) kb.row();
   kb.text('⭐ پیشنهادی', 'shop:featured').row();
+  kb.text('📦 سفارش‌های من', 'shop:orders').row();
   const site = webShopUrl('/shop');
+  const ordersSite = webShopUrl('/shop/orders');
   if (site) kb.url('🌐 باز کردن در سایت', site).row();
+  if (ordersSite) kb.url('🌐 سفارش‌ها در سایت', ordersSite).row();
   kb.text('🪙 کیف سکه', 'coins:back');
   void balance;
   return kb;
@@ -161,13 +165,13 @@ export async function handlePetShop(ctx: Context): Promise<void> {
   const text = [
     '🛒 <b>پت شاپ</b>',
     '',
-    'همان کاتالوگ و قیمت سایت — پرداخت با سکه یا ستاره (کیف پول مشترک وب و ربات).',
+    'همان کاتالوگ و قیمت سایت — پرداخت با سکه یا Stars تلگرام.',
     `موجودی سکه: <b>${formatCoins(balance)}</b>`,
-    `موجودی ستاره: ⭐ <b>${formatStars(starsBalance)}</b>`,
+    `موجودی ستاره کیف‌پول: ⭐ <b>${formatStars(starsBalance)}</b>`,
     `نرخ: هر سکه/ستاره ≈ ${COIN_PRICE_TOMAN.toLocaleString('fa-IR')} تومان`,
     cats.total ? `دسته‌ها در فروشگاه: ${cats.total.toLocaleString('fa-IR')}` : '',
     '',
-    'نوع پت را انتخاب کن:',
+    'نوع پت را انتخاب کن یا سفارش‌هایت را ببین:',
   ]
     .filter(Boolean)
     .join('\n');
@@ -707,4 +711,99 @@ export async function handleShopPayStars(
 
 export async function handleShopNoop(ctx: Context): Promise<void> {
   await ctx.answerCallbackQuery().catch(() => undefined);
+}
+
+const STATUS_FA: Record<string, string> = {
+  pending: 'در انتظار',
+  paid: 'پرداخت‌شده',
+  shipped: 'ارسال‌شده',
+  completed: 'تکمیل‌شده',
+  cancelled: 'لغوشده',
+};
+
+function orderPayLine(o: {
+  paymentCurrency?: string;
+  paymentAmount?: number;
+  totalToman: number;
+}): string {
+  const cur = o.paymentCurrency || 'toman';
+  const amt = o.paymentAmount ?? o.totalToman;
+  if (cur === 'stars_xtr') return `⭐ ${formatStars(Number(amt))} (تلگرام)`;
+  if (cur === 'stars') return `⭐ ${formatStars(Number(amt))}`;
+  if (cur === 'coins') return formatCoins(Number(amt));
+  return formatToman(o.totalToman);
+}
+
+export async function handleShopOrders(ctx: Context): Promise<void> {
+  const user = await getCtxUser(ctx);
+  if (!user?.telegramId) {
+    await ctx.answerCallbackQuery({ text: 'اول /start بزن', show_alert: true }).catch(() => undefined);
+    return;
+  }
+  await ctx.answerCallbackQuery().catch(() => undefined);
+
+  let orders: Awaited<ReturnType<typeof fetchMyShopOrdersTelegram>>['orders'] = [];
+  try {
+    const data = await fetchMyShopOrdersTelegram(user.telegramId);
+    orders = data.orders;
+  } catch (err) {
+    console.warn('fetchMyShopOrdersTelegram failed', err);
+    await ctx.reply('❌ دریافت سفارش‌ها ناموفق بود. دوباره تلاش کن.', {
+      reply_markup: new InlineKeyboard().text('🏠 منوی شاپ', 'shop:home'),
+    });
+    return;
+  }
+
+  if (!orders.length) {
+    await ctx.reply(
+      ['📦 <b>سفارش‌های من</b>', '', 'هنوز سفارشی ثبت نشده.', 'از منوی شاپ خرید کن.'].join('\n'),
+      {
+        parse_mode: 'HTML',
+        reply_markup: new InlineKeyboard()
+          .text('🛒 خرید', 'shop:home')
+          .row()
+          .text('🏠 منوی شاپ', 'shop:home'),
+      }
+    );
+    await pushMainMenuKeyboard(ctx, user);
+    return;
+  }
+
+  const lines = [
+    '📦 <b>سفارش‌های من</b>',
+    `آخرین ${orders.length.toLocaleString('fa-IR')} سفارش:`,
+    '',
+  ];
+  for (const o of orders.slice(0, 12)) {
+    const items = Array.isArray(o.items) ? o.items : [];
+    const titles = items
+      .map((it) => {
+        const t = escapeHtml(String(it.title || it.productId || 'کالا'));
+        const q = Math.max(1, Number(it.qty) || 1);
+        return q > 1 ? `${t}×${q}` : t;
+      })
+      .join('، ');
+    const st = STATUS_FA[o.status] || o.status;
+    lines.push(
+      [
+        `<b>#${o.id}</b> — ${escapeHtml(st)}`,
+        titles ? `· ${titles}` : null,
+        `· ${formatToman(o.totalToman)} · ${orderPayLine(o)}`,
+        o.createdAt ? `· <code>${escapeHtml(o.createdAt)}</code>` : null,
+      ]
+        .filter(Boolean)
+        .join('\n')
+    );
+    lines.push('');
+  }
+
+  const kb = new InlineKeyboard().text('🏠 منوی شاپ', 'shop:home').row();
+  const site = webShopUrl('/shop/orders');
+  if (site) kb.url('🌐 سفارش‌ها در سایت', site);
+
+  await ctx.reply(lines.join('\n').trim(), {
+    parse_mode: 'HTML',
+    reply_markup: kb,
+  });
+  await pushMainMenuKeyboard(ctx, user);
 }

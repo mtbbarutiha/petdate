@@ -125,6 +125,9 @@ export function ShopCartPage() {
             <Link to="/shop" className="pepito-btn button-1">
               بازگشت به پت شاپ
             </Link>
+            <Link to="/shop/orders" className="pepito-btn button-2" style={{ marginInlineStart: 8 }}>
+              سفارش‌های من
+            </Link>
           </div>
         ) : (
           <div className="pd-shop-cart-layout">

@@ -1173,6 +1173,52 @@ export async function fetchShopStarsPaymentStatus(
   return json;
 }
 
+export type MyShopOrder = {
+  id: number;
+  status: string;
+  totalToman: number;
+  paymentCurrency?: string;
+  paymentAmount?: number;
+  customerName?: string;
+  customerPhone?: string;
+  note?: string;
+  items: unknown[];
+  createdAt: string;
+  updatedAt?: string;
+};
+
+export async function fetchMyShopOrders(token: string): Promise<{
+  ok: true;
+  total: number;
+  orders: MyShopOrder[];
+  statusLabelsFa?: Record<string, string>;
+}> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}/api/shop/my-orders?limit=50`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  } catch {
+    throw new Error('اتصال به سرور برقرار نشد.');
+  }
+  const json = (await res.json()) as {
+    ok?: boolean;
+    total?: number;
+    orders?: MyShopOrder[];
+    statusLabelsFa?: Record<string, string>;
+    error?: string;
+  };
+  if (!res.ok || json.ok !== true) {
+    throw new Error(json.error || `خطای ${res.status}`);
+  }
+  return {
+    ok: true,
+    total: json.total ?? json.orders?.length ?? 0,
+    orders: json.orders ?? [],
+    statusLabelsFa: json.statusLabelsFa,
+  };
+}
+
 async function postShopCheckout<T extends { ok?: boolean; error?: string }>(
   path: string,
   token: string,

@@ -117,6 +117,7 @@ import {
   handleShopFeatured,
   handleShopHome,
   handleShopNoop,
+  handleShopOrders,
   handleShopPage,
   handleShopPay,
   handleShopPayStars,
@@ -640,6 +641,7 @@ export function registerHandlers(bot: Bot): void {
   bot.callbackQuery('vchat:rxok', (ctx) => handleVetChatRxConfirm(ctx));
   bot.callbackQuery(/^vet:/, (ctx) => handleComingSoon(ctx, 'مشاوره دامپزشک'));
   bot.callbackQuery('shop:home', (ctx) => handleShopHome(ctx));
+  bot.callbackQuery('shop:orders', (ctx) => handleShopOrders(ctx));
   bot.callbackQuery('shop:featured', (ctx) => handleShopFeatured(ctx));
   bot.callbackQuery('shop:backcat', (ctx) => handleShopBackCategories(ctx));
   bot.callbackQuery('shop:noop', (ctx) => handleShopNoop(ctx));

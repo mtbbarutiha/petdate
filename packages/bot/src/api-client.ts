@@ -1308,3 +1308,25 @@ export async function checkoutShopWithStarsTelegram(payload: {
     body: JSON.stringify(payload),
   });
 }
+
+export type BotShopOrder = {
+  id: number;
+  status: string;
+  totalToman: number;
+  paymentCurrency?: string;
+  paymentAmount?: number;
+  customerName?: string;
+  items: Array<{ title?: string; productId?: string; qty?: number }>;
+  createdAt: string;
+};
+
+export async function fetchMyShopOrdersTelegram(telegramId: string): Promise<{
+  ok: true;
+  total: number;
+  orders: BotShopOrder[];
+  statusLabelsFa?: Record<string, string>;
+}> {
+  return request(
+    `/api/shop/orders-telegram?telegramId=${encodeURIComponent(telegramId)}&limit=15`
+  );
+}

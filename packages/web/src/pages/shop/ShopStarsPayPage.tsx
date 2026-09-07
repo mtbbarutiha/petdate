@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { formatShopStars, formatToman } from '../../data/shopCatalog';
 import { useAuthStore } from '../../hooks/useAuthStore';
 import { useShopCart } from '../../hooks/useShopCart';
@@ -19,7 +19,6 @@ export function ShopStarsPayPage() {
   const [search] = useSearchParams();
   const receiptToken = search.get('t') || search.get('token') || '';
   const paymentOrderId = Number(rawId);
-  const navigate = useNavigate();
   const { isLoggedIn, token, refreshMe } = useAuthStore();
   const { rememberPaidOrder } = useShopCart();
   const [status, setStatus] = useState<ShopStarsPaymentStatus | null>(null);
@@ -158,12 +157,12 @@ export function ShopStarsPayPage() {
                 </li>
               </ul>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 16 }}>
-                <Link to="/shop" className="pepito-btn button-1">
+                <Link to="/shop/orders" className="pepito-btn button-1">
+                  سفارش‌های من
+                </Link>
+                <Link to="/shop" className="pepito-btn button-2">
                   بازگشت به پت شاپ
                 </Link>
-                <button type="button" className="pepito-btn button-2" onClick={() => navigate('/shop/cart')}>
-                  سبد خرید
-                </button>
               </div>
             </>
           ) : (

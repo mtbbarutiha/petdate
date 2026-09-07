@@ -404,3 +404,82 @@ shopRouter.post('/checkout/stars-telegram', (req, res) => {
     message: result.message,
   });
 });
+function publicShopOrder(o: ReturnType<typeof adminPlatform.getShopOrder>) {
+  if (!o) return null;
+  const items = Array.isArray(o.items) ? o.items : [];
+  return {
+    id: o.id,
+    status: o.status,
+    totalToman: o.totalToman,
+    paymentCurrency: o.paymentCurrency ?? 'toman',
+    paymentAmount: o.paymentAmount ?? o.totalToman,
+    customerName: o.customerName,
+    customerPhone: o.customerPhone,
+    note: o.note,
+    items,
+    createdAt: o.createdAt,
+    updatedAt: o.updatedAt,
+  };
+}
+
+const ORDER_STATUS_FA: Record<string, string> = {
+  pending: 'در انتظار',
+  paid: 'پرداخت‌شده',
+  shipped: 'ارسال‌شده',
+  completed: 'تکمیل‌شده',
+  cancelled: 'لغوشده',
+};
+
+shopRouter.get('/my-orders', (req, res) => {
+  const session = requireSession(req, res, 'برای دیدن سفارش‌ها وارد حساب شوید.');
+  if (!session) return;
+  const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 100);
+  const orders = adminPlatform.listShopOrdersForUser(session.user.id, { limit }).map(publicShopOrder);
+  res.json({
+    ok: true,
+    total: orders.length,
+    orders,
+    statusLabelsFa: ORDER_STATUS_FA,
+  });
+});
+
+shopRouter.get('/my-orders/:id', (req, res) => {
+  const session = requireSession(req, res, 'برای دیدن سفارش وارد حساب شوید.');
+  if (!session) return;
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id) || id <= 0) {
+    res.status(400).json({ ok: false, reason: 'bad_id', error: 'شناسه نامعتبر است.' });
+    return;
+  }
+  const order = adminPlatform.getShopOrder(id);
+  if (!order || order.userId !== session.user.id) {
+    res.status(404).json({ ok: false, reason: 'missing', error: 'سفارش پیدا نشد.' });
+    return;
+  }
+  res.json({
+    ok: true,
+    order: publicShopOrder(order),
+    statusLabelsFa: ORDER_STATUS_FA,
+  });
+});
+
+shopRouter.get('/orders-telegram', (req, res) => {
+  const telegramId = String(req.query.telegramId ?? '').trim();
+  if (!telegramId) {
+    res.status(400).json({ ok: false, reason: 'bad_user', error: 'telegramId الزامی است.' });
+    return;
+  }
+  const user = dbService.getUserByTelegramId(telegramId);
+  if (!user) {
+    res.status(404).json({ ok: false, reason: 'user_missing', error: 'کاربر پیدا نشد.' });
+    return;
+  }
+  const limit = Math.min(Math.max(Number(req.query.limit) || 20, 1), 50);
+  const orders = adminPlatform.listShopOrdersForUser(user.id, { limit }).map(publicShopOrder);
+  res.json({
+    ok: true,
+    total: orders.length,
+    orders,
+    statusLabelsFa: ORDER_STATUS_FA,
+  });
+});
