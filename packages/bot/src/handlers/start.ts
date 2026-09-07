@@ -232,6 +232,22 @@ export async function handleStart(ctx: Context): Promise<void> {
       return;
     }
 
+    const shopPayMatch = /^shoppay_(\d+)$/.exec(payload || '');
+    if (shopPayMatch) {
+      const roles = normalizeRoles(user.roles, user.role);
+      await upsertSession(telegramId, {
+        userId: user.id,
+        role: user.role,
+        draftRoles: roles,
+        step: roles.length ? 'ready' : 'role_select',
+        locale: 'fa',
+        pendingPhone: undefined,
+      });
+      const { sendShopStarsInvoiceForPaymentOrder } = await import('./shop');
+      await sendShopStarsInvoiceForPaymentOrder(ctx, Number(shopPayMatch[1]));
+      return;
+    }
+
     if (payload.startsWith('wlink_')) {
       const roles = normalizeRoles(user.roles, user.role);
       await upsertSession(telegramId, {

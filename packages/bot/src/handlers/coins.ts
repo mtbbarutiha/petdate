@@ -15,6 +15,7 @@ import {
   type PaymentOrder,
 } from '../api-client';
 import { config } from '../config';
+import { effectiveWebUrl } from '../urls';
 import { isAdminAuthorized } from './admin-auth';
 import {
   COIN_PACKAGES,
@@ -575,7 +576,14 @@ export async function handlePreCheckout(ctx: Context): Promise<void> {
     return;
   }
 
-  if (pkgId.startsWith('wstars:')) {
+  if (order.userTelegramId && String(q.from?.id) !== String(order.userTelegramId)) {
+    await ctx.answerPreCheckoutQuery(false, {
+      error_message: 'این فاکتور برای حساب دیگری است',
+    });
+    return;
+  }
+
+  if (pkgId === 'shopxtr' || pkgId.startsWith('wstars:')) {
     const stars = Math.floor(Number(order.amountStars ?? 0));
     if (stars <= 0 || q.total_amount !== stars) {
       await ctx.answerPreCheckoutQuery(false, {
@@ -597,7 +605,7 @@ export async function handlePreCheckout(ctx: Context): Promise<void> {
   await ctx.answerPreCheckoutQuery(true);
 }
 
-/** successful_payment — واریز سکه یا شارژ wallet_stars بعد از Stars (XTR → ربات) */
+/** successful_payment — واریز سکه / شارژ wallet_stars / ثبت سفارش شاپ بعد از Stars (XTR → ربات) */
 export async function handleSuccessfulPayment(ctx: Context): Promise<void> {
   const payment = ctx.message?.successful_payment;
   if (!payment) return;
@@ -617,6 +625,36 @@ export async function handleSuccessfulPayment(ctx: Context): Promise<void> {
   }
 
   const user = result.user;
+  if (pkgId === 'shopxtr' || result.creditKind === 'shop_order') {
+    const stars = Math.floor(
+      Number(result.starsSpent ?? result.order.amountStars ?? payment.total_amount ?? 0)
+    );
+    const shopId = result.shopOrderId;
+    const site = (() => {
+      const base = effectiveWebUrl().replace(/\/$/, '');
+      return base ? `${base}/shop` : '';
+    })();
+    await ctx.reply(
+      [
+        '✅ <b>خرید پت شاپ با Stars تلگرام موفق بود</b>',
+        `ستاره‌ها از اکانت تلگرامت کسر و مستقیم به ربات واریز شد.`,
+        shopId != null ? `شماره سفارش شاپ: #${shopId}` : null,
+        `پرداخت: ⭐ ${formatNum(stars)}`,
+        result.totalToman != null
+          ? `معادل: ${Math.floor(result.totalToman).toLocaleString('fa-IR')} تومان`
+          : null,
+        site ? `سایت: ${site}` : null,
+      ]
+        .filter(Boolean)
+        .join('\n'),
+      {
+        parse_mode: 'HTML',
+        reply_markup: menuKeyboardFor(ctx, user),
+      }
+    );
+    return;
+  }
+
   if (pkgId.startsWith('wstars:') || result.creditKind === 'wallet_stars') {
     const stars = Math.floor(Number(result.order.amountStars ?? payment.total_amount ?? 0));
     await ctx.reply(

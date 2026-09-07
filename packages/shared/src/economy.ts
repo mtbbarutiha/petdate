@@ -188,7 +188,8 @@ export const WALLET_CURRENCY_STATUS: Record<
   },
   stars: {
     deposit: 'bot_only',
-    noteFa: 'موجودی مشترک وب/ربات (wallet_stars)؛ پرداخت فروشگاه — نه موجودی بومی Stars تلگرام',
+    noteFa:
+      'شارژ کیف‌پول و خرید فروشگاه با فاکتور XTR: Stars واقعی از اکانت تلگرام کسر و به ربات واریز می‌شود',
   },
   coins: {
     deposit: 'wired',

@@ -1126,19 +1126,14 @@ export type ShopCoinCheckoutResult = {
 
 export type ShopStarsCheckoutResult = {
   ok: true;
-  orderId: number;
-  order: {
-    id: number;
-    status: string;
-    totalToman: number;
-    paymentCurrency?: string;
-    paymentAmount?: number;
-  };
-  starsSpent: number;
-  starsRemaining: number;
+  paymentOrderId: number;
+  stars: number;
+  starsNeeded: number;
   totalToman: number;
+  titleHint?: string;
+  botDeepLink: string;
+  requiresTelegramStars: true;
   message: string;
-  wallet?: { ton: number; stars: number; coins: number; toman: number };
 };
 
 async function postShopCheckout<T extends { ok?: boolean; error?: string }>(

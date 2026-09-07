@@ -978,7 +978,10 @@ export async function completeStarsPayment(
       order: PaymentOrder;
       user: User;
       credited: boolean;
-      creditKind: 'coins' | 'wallet_stars';
+      creditKind: 'coins' | 'wallet_stars' | 'shop_order';
+      shopOrderId?: number;
+      starsSpent?: number;
+      totalToman?: number;
     }
   | { ok: false; reason: string }
 > {
@@ -992,7 +995,10 @@ export async function completeStarsPayment(
     order?: PaymentOrder;
     user?: User;
     credited?: boolean;
-    creditKind?: 'coins' | 'wallet_stars';
+    creditKind?: 'coins' | 'wallet_stars' | 'shop_order';
+    shopOrderId?: number;
+    starsSpent?: number;
+    totalToman?: number;
     reason?: string;
     error?: string;
   };
@@ -1004,7 +1010,15 @@ export async function completeStarsPayment(
     order: body.order,
     user: body.user,
     credited: Boolean(body.credited),
-    creditKind: body.creditKind === 'wallet_stars' ? 'wallet_stars' : 'coins',
+    creditKind:
+      body.creditKind === 'wallet_stars'
+        ? 'wallet_stars'
+        : body.creditKind === 'shop_order'
+          ? 'shop_order'
+          : 'coins',
+    shopOrderId: body.shopOrderId,
+    starsSpent: body.starsSpent,
+    totalToman: body.totalToman,
   };
 }
 
@@ -1277,10 +1291,13 @@ export async function checkoutShopWithStarsTelegram(payload: {
   note?: string;
 }): Promise<{
   ok: true;
-  orderId: number;
-  starsSpent: number;
-  starsRemaining: number;
+  paymentOrderId: number;
+  stars: number;
+  starsNeeded: number;
   totalToman: number;
+  titleHint: string;
+  botDeepLink: string;
+  requiresTelegramStars: true;
   message?: string;
 }> {
   return request('/api/shop/checkout/stars-telegram', {

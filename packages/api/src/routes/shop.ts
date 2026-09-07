@@ -3,7 +3,7 @@ import { COIN_PRICE_TOMAN, STAR_PRICE_TOMAN, tomanToShopCoins } from '@petdate/s
 import { getUserFromBearer } from '../services/web-otp';
 import {
   checkoutShopWithCoins,
-  checkoutShopWithStars,
+  prepareShopStarsXtrCheckout,
   quoteShopCoins,
   quoteShopStars,
 } from '../services/shop-checkout';
@@ -252,7 +252,7 @@ shopRouter.post('/checkout/stars', (req, res) => {
 
   const body = req.body ?? {};
   const items = Array.isArray(body.items) ? body.items : [];
-  const result = checkoutShopWithStars({
+  const result = prepareShopStarsXtrCheckout({
     userId: session.user.id,
     items: items.map((it: { productId?: string; qty?: number }) => ({
       productId: String(it?.productId ?? ''),
@@ -269,18 +269,17 @@ shopRouter.post('/checkout/stars', (req, res) => {
     return;
   }
 
-  const user = dbService.getUserById(session.user.id);
-  const wallet = user?.wallet ?? dbService.getWallet(session.user.id);
   res.status(201).json({
     ok: true,
-    orderId: result.order.id,
-    order: result.order,
-    starsSpent: result.starsSpent,
-    starsRemaining: result.starsRemaining,
+    paymentOrderId: result.paymentOrderId,
+    stars: result.stars,
+    starsNeeded: result.stars,
     totalToman: result.totalToman,
     lines: result.lines,
-    wallet,
-    message: `سفارش #${result.order.id} با ${result.starsSpent.toLocaleString('fa-IR')} ستاره پرداخت شد.`,
+    titleHint: result.titleHint,
+    botDeepLink: result.botDeepLink,
+    requiresTelegramStars: true,
+    message: result.message,
   });
 });
 
@@ -347,7 +346,7 @@ shopRouter.post('/checkout/stars-telegram', (req, res) => {
   }
 
   const items = Array.isArray(body.items) ? body.items : [];
-  const result = checkoutShopWithStars({
+  const result = prepareShopStarsXtrCheckout({
     userId: user.id,
     items: items.map((it: { productId?: string; qty?: number }) => ({
       productId: String(it?.productId ?? ''),
@@ -365,16 +364,16 @@ shopRouter.post('/checkout/stars-telegram', (req, res) => {
     return;
   }
 
-  const fresh = dbService.getUserById(user.id);
   res.status(201).json({
     ok: true,
-    orderId: result.order.id,
-    order: result.order,
-    starsSpent: result.starsSpent,
-    starsRemaining: result.starsRemaining,
+    paymentOrderId: result.paymentOrderId,
+    stars: result.stars,
+    starsNeeded: result.stars,
     totalToman: result.totalToman,
     lines: result.lines,
-    wallet: fresh?.wallet ?? dbService.getWallet(user.id),
-    message: `سفارش #${result.order.id} با ${result.starsSpent.toLocaleString('fa-IR')} ستاره پرداخت شد.`,
+    titleHint: result.titleHint,
+    botDeepLink: result.botDeepLink,
+    requiresTelegramStars: true,
+    message: result.message,
   });
 });

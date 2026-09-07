@@ -4484,12 +4484,13 @@ export const dbService = {
     amountStars?: number;
     method: PaymentMethod;
     status: PaymentOrderStatus;
+    adminNote?: string;
   }): PaymentOrder {
     const result = db
       .prepare(
         `INSERT INTO payment_orders (
-          user_id, package_id, coins, amount_toman, amount_stars, method, status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)`
+          user_id, package_id, coins, amount_toman, amount_stars, method, status, admin_note
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .run(
         input.userId,
@@ -4498,9 +4499,17 @@ export const dbService = {
         input.amountToman ?? null,
         input.amountStars ?? null,
         input.method,
-        input.status
+        input.status,
+        input.adminNote?.trim() || null
       );
     return this.getPaymentOrder(Number(result.lastInsertRowid))!;
+  },
+
+  updatePaymentOrderAdminNote(orderId: number, adminNote: string): void {
+    db.prepare(`UPDATE payment_orders SET admin_note = ? WHERE id = ?`).run(
+      adminNote,
+      orderId
+    );
   },
 
   getPaymentOrder(id: number): PaymentOrder | null {

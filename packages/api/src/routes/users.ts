@@ -4,6 +4,7 @@ import { FACE_VERIFY_REWARD, ONBOARDING_STATUS_LABELS, USER_ROLES, userHasRole }
 import { dbService } from '../db';
 import { sendPhoneOtp, verifyPhoneOtp } from '../services/phone-otp';
 import { sendVetEnabledSms } from '../services/vet-status-sms';
+import { completeShopStarsXtrPayment, isShopXtrPackageId } from '../services/shop-checkout';
 
 export const usersRouter = Router();
 
@@ -799,8 +800,40 @@ usersRouter.post('/payments/:id/reject', (req, res) => {
 
 usersRouter.post('/payments/:id/stars/complete', (req, res) => {
   const chargeId = String(req.body?.telegramPaymentChargeId ?? '').trim();
+  const orderId = Number(req.params.id);
+  const existing = dbService.getPaymentOrder(orderId);
+
+  if (existing && isShopXtrPackageId(existing.packageId)) {
+    const result = completeShopStarsXtrPayment({
+      orderId,
+      telegramPaymentChargeId: chargeId,
+    });
+    if (!result.ok) {
+      const status = result.reason === 'missing' ? 404 : 409;
+      res.status(status).json({ ok: false, reason: result.reason, error: result.error });
+      return;
+    }
+    const user = dbService.getUserById(result.paymentOrder.userId);
+    if (!user) {
+      res.status(404).json({ ok: false, reason: 'user_missing' });
+      return;
+    }
+    res.json({
+      ok: true,
+      order: result.paymentOrder,
+      user,
+      credited: result.credited,
+      creditKind: 'shop_order',
+      shopOrderId: result.shopOrder.id,
+      shopOrder: result.shopOrder,
+      starsSpent: result.starsSpent,
+      totalToman: result.totalToman,
+    });
+    return;
+  }
+
   const result = dbService.completeStarsPayment({
-    orderId: Number(req.params.id),
+    orderId,
     telegramPaymentChargeId: chargeId,
   });
   if (!result.ok) {

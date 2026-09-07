@@ -1,10 +1,48 @@
 /**
- * Atomic shop checkout paid with bot coins (users.coins) or wallet stars (users.wallet_stars).
+ * Atomic shop checkout paid with bot coins (users.coins).
+ * Stars checkout uses Telegram XTR invoices (Stars → bot), then creates a paid shop order.
  */
-import { tomanToShopCoins, tomanToShopStars } from '@petdate/shared';
+import { tomanToShopCoins, tomanToShopStars, type PaymentOrder } from '@petdate/shared';
 import { getDb, dbService } from '../db';
 import { adminPlatform, type ShopOrderRow } from '../admin-platform';
 import { lookupShopPrice } from './shop-price-index';
+
+/** payment_orders.package_id for shop checkout via Telegram Stars (XTR → bot) */
+export const SHOP_XTR_PACKAGE_ID = 'shopxtr';
+
+export type ShopXtrMeta = {
+  v: 1;
+  kind: 'shopxtr';
+  items: ShopCheckoutItemInput[];
+  customerName: string;
+  customerPhone: string;
+  address: string;
+  note?: string;
+  totalToman: number;
+  stars: number;
+  titleHint?: string;
+  shopOrderId?: number;
+};
+
+export function isShopXtrPackageId(packageId: string | null | undefined): boolean {
+  return String(packageId || '') === SHOP_XTR_PACKAGE_ID;
+}
+
+export function encodeShopXtrMeta(meta: ShopXtrMeta): string {
+  return JSON.stringify(meta);
+}
+
+export function parseShopXtrMeta(raw?: string | null): ShopXtrMeta | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as ShopXtrMeta;
+    if (!parsed || parsed.kind !== 'shopxtr' || parsed.v !== 1) return null;
+    if (!Array.isArray(parsed.items) || parsed.items.length === 0) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
 
 export type ShopCheckoutItemInput = {
   productId: string;
@@ -61,11 +99,35 @@ export type ShopCheckoutFail = {
     | 'insufficient_coins'
     | 'insufficient_stars'
     | 'user_missing'
-    | 'bad_customer';
+    | 'bad_customer'
+    | 'payment_missing'
+    | 'bad_status'
+    | 'bad_meta';
   error: string;
   balance?: number;
   cost?: number;
   productId?: string;
+};
+
+export type ShopStarsXtrPrepareOk = {
+  ok: true;
+  paymentOrderId: number;
+  stars: number;
+  totalToman: number;
+  lines: ShopCheckoutLine[];
+  titleHint: string;
+  botDeepLink: string;
+  message: string;
+};
+
+export type ShopStarsXtrCompleteOk = {
+  ok: true;
+  paymentOrder: PaymentOrder;
+  shopOrder: ShopOrderRow;
+  starsSpent: number;
+  totalToman: number;
+  credited: boolean;
+  creditKind: 'shop_order';
 };
 
 /** @deprecated use ShopCheckoutFail */
@@ -378,6 +440,215 @@ export function checkoutShopWithStars(
         balance: e.balance ?? 0,
         cost: e.cost ?? starsNeeded,
       };
+    }
+    throw err;
+  }
+}
+
+function shopXtrBotDeepLink(paymentOrderId: number): string {
+  const bot =
+    String(process.env.TELEGRAM_BOT_USERNAME || 'Petdatebot').replace(/^@/, '') || 'Petdatebot';
+  return `https://t.me/${bot}?start=shoppay_${paymentOrderId}`;
+}
+
+/**
+ * ثبت فاکتور در انتظار برای خرید فروشگاه با Telegram Stars (XTR → ربات).
+ * موجودی wallet_stars کسر نمی‌شود؛ بعد از successful_payment سفارش شاپ ساخته می‌شود.
+ */
+export function prepareShopStarsXtrCheckout(
+  input: ShopCheckoutStarsInput
+): ShopStarsXtrPrepareOk | ShopCheckoutFail {
+  const bad = validateCustomer(input);
+  if (bad) return bad;
+
+  const user = dbService.getUserById(input.userId);
+  if (!user) {
+    return { ok: false, reason: 'user_missing', error: 'کاربر پیدا نشد.' };
+  }
+
+  const built = buildLines(input.items);
+  if (!built.ok) return built.fail;
+  const { lines } = built;
+
+  const totalToman = lines.reduce((s, l) => s + l.priceToman * l.qty, 0);
+  const stars = lines.reduce((s, l) => s + l.lineStars, 0);
+  if (stars <= 0) {
+    return { ok: false, reason: 'empty_cart', error: 'مبلغ ستاره نامعتبر است.' };
+  }
+
+  const titleHint = lines
+    .map((l) => l.title)
+    .join(' · ')
+    .slice(0, 80);
+  const meta: ShopXtrMeta = {
+    v: 1,
+    kind: 'shopxtr',
+    items: lines.map((l) => ({ productId: l.productId, qty: l.qty })),
+    customerName: input.customerName.trim(),
+    customerPhone: input.customerPhone.trim(),
+    address: input.address.trim(),
+    note: input.note?.trim() || undefined,
+    totalToman,
+    stars,
+    titleHint,
+  };
+
+  const payment = dbService.createPaymentOrder({
+    userId: input.userId,
+    packageId: SHOP_XTR_PACKAGE_ID,
+    coins: 0,
+    amountToman: totalToman,
+    amountStars: stars,
+    method: 'stars',
+    status: 'awaiting_stars',
+    adminNote: encodeShopXtrMeta(meta),
+  });
+
+  return {
+    ok: true,
+    paymentOrderId: payment.id,
+    stars,
+    totalToman,
+    lines,
+    titleHint,
+    botDeepLink: shopXtrBotDeepLink(payment.id),
+    message: `فاکتور ${stars.toLocaleString('fa-IR')} ستاره آماده است. با پرداخت Stars تلگرام، مبلغ مستقیم به ربات واریز و سفارش ثبت می‌شود.`,
+  };
+}
+
+/**
+ * بعد از successful_payment (XTR): علامت‌گذاری payment_order و ساخت سفارش شاپ paid.
+ * ستاره‌ها از قبل به اکانت ربات رفته‌اند — wallet_stars کاربر تغییر نمی‌کند.
+ */
+export function completeShopStarsXtrPayment(input: {
+  orderId: number;
+  telegramPaymentChargeId: string;
+}):
+  | ShopStarsXtrCompleteOk
+  | { ok: false; reason: 'missing' | 'bad_status' | 'bad_meta' | 'already'; error: string } {
+  const existing = dbService.getPaymentOrder(input.orderId);
+  if (!existing) {
+    return { ok: false, reason: 'missing', error: 'سفارش پرداخت پیدا نشد.' };
+  }
+  if (!isShopXtrPackageId(existing.packageId) || existing.method !== 'stars') {
+    return { ok: false, reason: 'bad_status', error: 'این فاکتور برای خرید فروشگاه نیست.' };
+  }
+
+  if (existing.status === 'paid') {
+    const meta = parseShopXtrMeta(existing.adminNote);
+    const shopOrder =
+      meta?.shopOrderId != null ? adminPlatform.getShopOrder(meta.shopOrderId) : null;
+    if (shopOrder) {
+      return {
+        ok: true,
+        paymentOrder: existing,
+        shopOrder,
+        starsSpent: Math.floor(Number(existing.amountStars ?? meta?.stars ?? 0)),
+        totalToman: Math.floor(Number(existing.amountToman ?? meta?.totalToman ?? shopOrder.totalToman)),
+        credited: false,
+        creditKind: 'shop_order',
+      };
+    }
+    return { ok: false, reason: 'already', error: 'پرداخت قبلاً ثبت شده ولی سفارش شاپ ناقص است.' };
+  }
+
+  if (existing.status !== 'awaiting_stars') {
+    return { ok: false, reason: 'bad_status', error: 'وضعیت فاکتور برای تکمیل مناسب نیست.' };
+  }
+
+  const meta = parseShopXtrMeta(existing.adminNote);
+  if (!meta) {
+    return { ok: false, reason: 'bad_meta', error: 'اطلاعات سفارش فروشگاه نامعتبر است.' };
+  }
+
+  const built = buildLines(meta.items);
+  if (!built.ok) {
+    return { ok: false, reason: 'bad_meta', error: built.fail.error };
+  }
+  const { lines } = built;
+  const totalToman = lines.reduce((s, l) => s + l.priceToman * l.qty, 0);
+  const starsNeeded = lines.reduce((s, l) => s + l.lineStars, 0);
+  const starsPaid = Math.floor(Number(existing.amountStars ?? 0));
+  if (starsPaid !== starsNeeded || starsPaid <= 0) {
+    return { ok: false, reason: 'bad_meta', error: 'مبلغ ستاره فاکتور با سبد هم‌خوان نیست.' };
+  }
+
+  const note = orderNote(meta.address, meta.note);
+  const cogsToman = cogsOf(lines);
+  const chargeId = input.telegramPaymentChargeId.trim();
+  const d = getDb();
+
+  try {
+    const result = d.transaction(() => {
+      const updated = d
+        .prepare(
+          `UPDATE payment_orders
+           SET status = 'paid',
+               telegram_payment_charge_id = ?,
+               reviewed_at = datetime('now')
+           WHERE id = ? AND status = 'awaiting_stars'`
+        )
+        .run(chargeId || null, input.orderId);
+      if (updated.changes !== 1) throw new Error('BAD_STATUS');
+
+      const order = adminPlatform.createShopOrder({
+        userId: existing.userId,
+        status: 'paid',
+        totalToman,
+        items: lines.map((l) => ({
+          productId: l.productId,
+          title: l.title,
+          categorySlug: l.categorySlug,
+          qty: l.qty,
+          priceToman: l.priceToman,
+          costToman: l.costToman ?? Math.floor(l.priceToman * 0.65),
+          coins: l.lineStars,
+        })),
+        customerName: meta.customerName,
+        customerPhone: meta.customerPhone,
+        note,
+        paymentCurrency: 'stars_xtr',
+        paymentAmount: starsNeeded,
+        cogsToman,
+      });
+
+      const nextMeta: ShopXtrMeta = { ...meta, shopOrderId: order.id, totalToman, stars: starsNeeded };
+      d.prepare(`UPDATE payment_orders SET admin_note = ? WHERE id = ?`).run(
+        encodeShopXtrMeta(nextMeta),
+        input.orderId
+      );
+
+      return order;
+    })();
+
+    return {
+      ok: true,
+      paymentOrder: dbService.getPaymentOrder(input.orderId)!,
+      shopOrder: result,
+      starsSpent: starsNeeded,
+      totalToman,
+      credited: true,
+      creditKind: 'shop_order',
+    };
+  } catch (err) {
+    if (err instanceof Error && err.message === 'BAD_STATUS') {
+      const again = dbService.getPaymentOrder(input.orderId);
+      if (again?.status === 'paid') {
+        const m = parseShopXtrMeta(again.adminNote);
+        const shopOrder = m?.shopOrderId != null ? adminPlatform.getShopOrder(m.shopOrderId) : null;
+        if (shopOrder) {
+          return {
+            ok: true,
+            paymentOrder: again,
+            shopOrder,
+            starsSpent: starsNeeded,
+            totalToman,
+            credited: false,
+            creditKind: 'shop_order',
+          };
+        }
+      }
+      return { ok: false, reason: 'bad_status', error: 'تکمیل پرداخت ممکن نشد.' };
     }
     throw err;
   }
