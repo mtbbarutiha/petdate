@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ShoppingCart } from 'lucide-react';
+import { Package, ShoppingCart } from 'lucide-react';
 import { ProfileMenu } from './ProfileMenu';
 import { WalletChip } from './WalletChip';
 import { useAuthStore } from '../hooks/useAuthStore';
@@ -7,14 +7,17 @@ import { useShopCart } from '../hooks/useShopCart';
 
 /**
  * Top-bar account tools pinned to physical CSS left (LTR cluster):
- * circular profile avatar → wallet chip → cart.
+ * circular profile avatar → wallet chip → orders → cart.
  * Mobile CSS hides avatar/wallet (dock covers them); desktop keeps them.
  */
-export function NavUserCluster({ showCart = true }: { showCart?: boolean } = {}) {
+export function NavUserCluster({
+  showCart = true,
+  showOrders = false,
+}: { showCart?: boolean; showOrders?: boolean } = {}) {
   const { isLoggedIn } = useAuthStore();
   const { itemCount } = useShopCart();
 
-  if (!isLoggedIn && !showCart) return null;
+  if (!isLoggedIn && !showCart && !showOrders) return null;
 
   return (
     <div className="pepito-nav-user-cluster" aria-label="حساب و خرید">
@@ -23,6 +26,16 @@ export function NavUserCluster({ showCart = true }: { showCart?: boolean } = {})
           <ProfileMenu />
           <WalletChip />
         </>
+      ) : null}
+      {showOrders ? (
+        <Link
+          to="/shop/orders"
+          className="pepito-nav-cart-link pepito-nav-orders-link"
+          aria-label="سفارش‌های من"
+          title="سفارش‌های من"
+        >
+          <Package size={18} strokeWidth={2.2} aria-hidden />
+        </Link>
       ) : null}
       {showCart ? (
         <Link
