@@ -23,7 +23,16 @@ mediaRouter.get('/telegram/:fileId', async (req, res) => {
     return;
   }
 
-  res.setHeader('Content-Type', bytes.contentType || 'image/jpeg');
+  let contentType = bytes.contentType || 'image/jpeg';
+  if (!contentType.startsWith('image/')) {
+    // Telegram sometimes returns application/octet-stream
+    if (bytes.buffer[0] === 0xff && bytes.buffer[1] === 0xd8) contentType = 'image/jpeg';
+    else if (bytes.buffer[0] === 0x89 && bytes.buffer[1] === 0x50) contentType = 'image/png';
+    else if (bytes.buffer[0] === 0x52 && bytes.buffer[1] === 0x49) contentType = 'image/webp';
+    else contentType = 'image/jpeg';
+  }
+
+  res.setHeader('Content-Type', contentType);
   res.setHeader('Cache-Control', 'public, max-age=86400');
   res.send(bytes.buffer);
 });

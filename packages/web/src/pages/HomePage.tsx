@@ -1,9 +1,11 @@
 import { Link, Navigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import { PawPrint, Stethoscope } from 'lucide-react';
-import { BRAND, dashboardPathForRole, primaryRole } from '@petdate/shared';
+import { BRAND, dashboardPathForRole, primaryRole, type PetProfile } from '@petdate/shared';
 import { useAuthStore } from '../hooks/useAuthStore';
-import { usePetStore } from '../hooks/usePetStore';
 import { useUserStore } from '../hooks/useUserStore';
+import { listMyPets } from '../lib/api';
+import { petProfileToUiPet } from '../lib/playdateMap';
 
 const HERO_IMG = '/pepito/uploads/3.jpg';
 
@@ -24,14 +26,32 @@ function VetIcon({ size = 16 }: { size?: number }) {
 }
 
 export function HomePage() {
-  const { myPet } = usePetStore();
   const { user } = useUserStore();
-  const { user: authUser, isProfileComplete } = useAuthStore();
+  const { user: authUser, isProfileComplete, token } = useAuthStore();
+  const [myPets, setMyPets] = useState<PetProfile[]>([]);
 
   // نقش فعال (نه فقط «داشتن نقش») — هم‌تراز ربات و RoleSwitchControl
   const active =
     primaryRole(authUser?.roles, authUser?.role) ??
     primaryRole(user.roles, user.role);
+
+  useEffect(() => {
+    if (!token || active !== 'pet_owner') {
+      setMyPets([]);
+      return;
+    }
+    let cancelled = false;
+    void listMyPets(token)
+      .then((rows) => {
+        if (!cancelled) setMyPets(rows);
+      })
+      .catch(() => {
+        if (!cancelled) setMyPets([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [token, active]);
 
   // دامپزشک فعال → داشبورد اختصاصی پزشک (نه پنل صاحب‌پت)
   if (active === 'vet') {
@@ -40,13 +60,14 @@ export function HomePage() {
 
   const isPetOwner = active === 'pet_owner';
   const displayName = authUser?.name?.trim() || 'دوست';
-  const hasPetName = Boolean(myPet?.name && myPet.name !== 'پت من');
+  const primaryPet = myPets[0] ? petProfileToUiPet(myPets[0]) : null;
+  const hasPetName = Boolean(primaryPet?.name);
   const needsProfile = !isProfileComplete;
 
   const lead = needsProfile
     ? 'پروفایلت را کامل کن تا همبازی و خدمات نزدیک‌تر شوند.'
     : isPetOwner && hasPetName
-      ? `همبازی برای ${myPet.name} — درخواست بفرست و مدیریت کن در همان فضای Pet Date.`
+      ? `همبازی برای ${primaryPet!.name} — درخواست بفرست و مدیریت کن در همان فضای Pet Date.`
       : isPetOwner
         ? 'پت‌ات را ثبت کن و همبازی پیدا کن — همان حساب وب و تلگرام.'
         : 'از پروفایل، کلینیک، پت شاپ و مشاوره را در همین محیط ادامه بده.';
