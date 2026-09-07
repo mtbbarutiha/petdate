@@ -122,6 +122,7 @@ import {
   handleShopPay,
   handleShopPayStars,
   handleShopPetType,
+  handleShopSetPayMethod,
   handleShopView,
 } from './shop';
 import {
@@ -659,8 +660,14 @@ export function registerHandlers(bot: Bot): void {
   bot.callbackQuery(/^shop:buyStars:([^:]+):(\d+)$/, (ctx) =>
     handleShopBuyStars(ctx, ctx.match![1]!, Number(ctx.match![2]))
   );
-  bot.callbackQuery(/^shop:pay:([^:]+):(\d+)$/, (ctx) =>
+  bot.callbackQuery(/^shop:method:(coins|wstars|xtr):([^:]+):(\d+)$/, (ctx) =>
+    handleShopSetPayMethod(ctx, ctx.match![1]!, ctx.match![2]!, Number(ctx.match![3]))
+  );
+  bot.callbackQuery(/^shop:payNow:([^:]+):(\d+)$/, (ctx) =>
     handleShopPay(ctx, ctx.match![1]!, Number(ctx.match![2]))
+  );
+  bot.callbackQuery(/^shop:pay:([^:]+):(\d+)$/, (ctx) =>
+    handleShopPay(ctx, ctx.match![1]!, Number(ctx.match![2]), 'coins')
   );
   bot.callbackQuery(/^shop:payStars:([^:]+):(\d+)$/, (ctx) =>
     handleShopPayStars(ctx, ctx.match![1]!, Number(ctx.match![2]))

@@ -1137,8 +1137,26 @@ export type ShopStarsCheckoutResult = {
   titleHint?: string;
   botDeepLink: string;
   webSuccessUrl?: string;
+  receiptToken?: string;
   requiresTelegramStars: true;
+  message?: string;
+};
+
+export type ShopWalletStarsCheckoutResult = {
+  ok: true;
+  orderId: number;
+  order: {
+    id: number;
+    status: string;
+    totalToman: number;
+    paymentCurrency?: string;
+    paymentAmount?: number;
+  };
+  starsSpent: number;
+  starsRemaining: number;
+  totalToman: number;
   message: string;
+  wallet?: { ton: number; stars: number; coins: number; toman: number };
 };
 
 export type ShopStarsPaymentStatus = {
@@ -1273,6 +1291,7 @@ export async function checkoutShopWithCoins(
   return postShopCheckout<ShopCoinCheckoutResult>('/api/shop/checkout/coins', token, payload);
 }
 
+/** فاکتور Telegram Stars (XTR → ربات) */
 export async function checkoutShopWithStars(
   token: string,
   payload: {
@@ -1284,6 +1303,20 @@ export async function checkoutShopWithStars(
   }
 ): Promise<ShopStarsCheckoutResult> {
   return postShopCheckout<ShopStarsCheckoutResult>('/api/shop/checkout/stars', token, payload);
+}
+
+/** کسر ستاره پنل پت‌دیت (wallet_stars) */
+export async function checkoutShopWithWalletStars(
+  token: string,
+  payload: {
+    items: ShopCoinCheckoutItem[];
+    customerName: string;
+    customerPhone: string;
+    address: string;
+    note?: string;
+  }
+): Promise<ShopWalletStarsCheckoutResult> {
+  return postShopCheckout<ShopWalletStarsCheckoutResult>('/api/shop/checkout/wallet-stars', token, payload);
 }
 
 export type PublicShopProduct = {

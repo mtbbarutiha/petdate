@@ -3,6 +3,7 @@ import { COIN_PRICE_TOMAN, STAR_PRICE_TOMAN, tomanToShopCoins } from '@petdate/s
 import { getUserFromBearer } from '../services/web-otp';
 import {
   checkoutShopWithCoins,
+  checkoutShopWithStars,
   getShopStarsXtrStatus,
   prepareShopStarsXtrCheckout,
   quoteShopCoins,
@@ -286,6 +287,44 @@ shopRouter.post('/checkout/stars', (req, res) => {
   });
 });
 
+/** پرداخت با ستاره پنل پت‌دیت (wallet_stars) — کسر از موجودی مشترک وب/ربات */
+shopRouter.post('/checkout/wallet-stars', (req, res) => {
+  const session = requireSession(req, res, 'برای پرداخت با ستاره پنل وارد حساب شوید.');
+  if (!session) return;
+
+  const body = req.body ?? {};
+  const items = Array.isArray(body.items) ? body.items : [];
+  const result = checkoutShopWithStars({
+    userId: session.user.id,
+    items: items.map((it: { productId?: string; qty?: number }) => ({
+      productId: String(it?.productId ?? ''),
+      qty: Number(it?.qty ?? 0),
+    })),
+    customerName: String(body.customerName ?? body.name ?? ''),
+    customerPhone: String(body.customerPhone ?? body.phone ?? ''),
+    address: String(body.address ?? ''),
+    note: body.note != null ? String(body.note) : undefined,
+  });
+
+  if (!result.ok) {
+    res.status(200).json(result);
+    return;
+  }
+
+  const user = dbService.getUserById(session.user.id);
+  res.status(201).json({
+    ok: true,
+    orderId: result.order.id,
+    order: result.order,
+    starsSpent: result.starsSpent,
+    starsRemaining: result.starsRemaining,
+    totalToman: result.totalToman,
+    lines: result.lines,
+    wallet: user?.wallet ?? dbService.getWallet(session.user.id),
+    message: `سفارش #${result.order.id} با ${result.starsSpent.toLocaleString('fa-IR')} ستاره پنل پرداخت شد.`,
+  });
+});
+
 shopRouter.get('/checkout/stars-status/:paymentOrderId', (req, res) => {
   const paymentOrderId = Number(req.params.paymentOrderId);
   if (!Number.isFinite(paymentOrderId) || paymentOrderId <= 0) {
@@ -402,6 +441,53 @@ shopRouter.post('/checkout/stars-telegram', (req, res) => {
     webSuccessUrl: result.webSuccessUrl,
     requiresTelegramStars: true,
     message: result.message,
+  });
+});
+
+shopRouter.post('/checkout/wallet-stars-telegram', (req, res) => {
+  const body = req.body ?? {};
+  const telegramId = String(body.telegramId ?? '').trim();
+  if (!telegramId) {
+    res.status(400).json({ ok: false, reason: 'bad_user', error: 'telegramId الزامی است.' });
+    return;
+  }
+
+  const user = dbService.getUserByTelegramId(telegramId);
+  if (!user) {
+    res.status(404).json({ ok: false, reason: 'user_missing', error: 'کاربر پیدا نشد. اول /start بزن.' });
+    return;
+  }
+
+  const items = Array.isArray(body.items) ? body.items : [];
+  const result = checkoutShopWithStars({
+    userId: user.id,
+    items: items.map((it: { productId?: string; qty?: number }) => ({
+      productId: String(it?.productId ?? ''),
+      qty: Number(it?.qty ?? 0),
+    })),
+    customerName: String(body.customerName ?? body.name ?? user.name ?? ''),
+    customerPhone: String(body.customerPhone ?? body.phone ?? user.phone ?? ''),
+    address: String(body.address ?? ''),
+    note: body.note != null ? String(body.note) : undefined,
+  });
+
+  if (!result.ok) {
+    const status = result.reason === 'user_missing' ? 404 : 400;
+    res.status(status).json(result);
+    return;
+  }
+
+  const fresh = dbService.getUserById(user.id);
+  res.status(201).json({
+    ok: true,
+    orderId: result.order.id,
+    order: result.order,
+    starsSpent: result.starsSpent,
+    starsRemaining: result.starsRemaining,
+    totalToman: result.totalToman,
+    lines: result.lines,
+    wallet: fresh?.wallet ?? dbService.getWallet(user.id),
+    message: `سفارش #${result.order.id} با ${result.starsSpent.toLocaleString('fa-IR')} ستاره پنل پرداخت شد.`,
   });
 });
 function publicShopOrder(o: ReturnType<typeof adminPlatform.getShopOrder>) {

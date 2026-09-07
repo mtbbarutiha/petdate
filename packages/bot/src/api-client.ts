@@ -1309,6 +1309,27 @@ export async function checkoutShopWithStarsTelegram(payload: {
   });
 }
 
+export async function checkoutShopWithWalletStarsTelegram(payload: {
+  telegramId: string;
+  items: Array<{ productId: string; qty: number }>;
+  customerName: string;
+  customerPhone: string;
+  address: string;
+  note?: string;
+}): Promise<{
+  ok: true;
+  orderId: number;
+  starsSpent: number;
+  starsRemaining: number;
+  totalToman: number;
+  message?: string;
+}> {
+  return request('/api/shop/checkout/wallet-stars-telegram', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
 export type BotShopOrder = {
   id: number;
   status: string;

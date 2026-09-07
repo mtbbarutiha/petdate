@@ -7813,6 +7813,50 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
 .pd-shop-pay-actions .pepito-btn {
   width: 100%;
 }
+.pd-shop-pay-methods {
+  margin: 0 0 0.85rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid rgba(26, 77, 143, 0.12);
+  border-radius: 14px;
+  display: grid;
+  gap: 0.45rem;
+}
+.pd-shop-pay-methods legend {
+  padding-inline: 0.35rem;
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: var(--pepito-dark, #1a2b4a);
+}
+.pd-shop-pay-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 12px;
+  background: rgba(26, 77, 143, 0.04);
+  cursor: pointer;
+}
+.pd-shop-pay-option.is-active {
+  background: rgba(11, 165, 242, 0.12);
+  outline: 1px solid rgba(11, 165, 242, 0.35);
+}
+.pd-shop-pay-option input {
+  margin-top: 0.2rem;
+}
+.pd-shop-pay-option span {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+.pd-shop-pay-option strong {
+  font-size: 0.92rem;
+}
+.pd-shop-pay-option small {
+  font-size: 0.78rem;
+  color: var(--pepito-muted, #6b7280);
+  font-weight: 600;
+}
 .pd-shop-checkout-form label {
   display: flex;
   flex-direction: column;

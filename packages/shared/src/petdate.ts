@@ -529,7 +529,8 @@ export interface BotSession {
   shopCheckout?: {
     productId: string;
     qty: number;
-    method?: 'coins' | 'stars';
+    /** coins=سکه پنل · wallet_stars=ستاره پنل · telegram_stars/stars=فاکتور XTR تلگرام */
+    method?: 'coins' | 'wallet_stars' | 'telegram_stars' | 'stars';
     name?: string;
     phone?: string;
     address?: string;
