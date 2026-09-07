@@ -1510,9 +1510,14 @@ function mapUser(row: Record<string, unknown>): User {
   const role =
     (row.role as UserRole | undefined) ??
     (roles.includes('pet_owner') ? 'pet_owner' : roles[0]);
+  const telegramRaw = row.telegram_id;
+  const phoneRaw = row.phone;
   return {
     id: row.id as number,
-    telegramId: row.telegram_id as string | undefined,
+    telegramId:
+      telegramRaw != null && String(telegramRaw).trim() !== ''
+        ? String(telegramRaw).trim()
+        : undefined,
     name: row.name as string,
     username: row.username as string | undefined,
     sectionId: row.section_id as number | undefined,
@@ -1524,7 +1529,10 @@ function mapUser(row: Record<string, unknown>): User {
     country: row.country as string | undefined,
     city: row.city as string | undefined,
     province: row.province as string | undefined,
-    phone: row.phone as string | undefined,
+    phone:
+      phoneRaw != null && String(phoneRaw).trim() !== ''
+        ? String(phoneRaw).trim()
+        : undefined,
     email: (row.email as string | undefined) ?? undefined,
     emailVerified: row.email_verified == null ? false : Boolean(row.email_verified),
     phoneVerified: row.phone_verified == null ? false : Boolean(row.phone_verified),

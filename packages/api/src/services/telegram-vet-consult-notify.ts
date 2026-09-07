@@ -1,5 +1,6 @@
 import type { User, VetConsultation } from '@petdate/shared';
 import { infra } from '../config/infra';
+import { normalizeTelegramId } from './telegram-id';
 
 function escapeHtml(value: string | number | null | undefined): string {
   return String(value ?? '')
@@ -46,7 +47,8 @@ export async function notifyVetQuickConsultTelegram(opts: {
   patient: User;
   visitFeeCoins?: number;
 }): Promise<boolean> {
-  if (!infra.telegram.botToken || !opts.vetTelegramId) return false;
+  const vetTg = normalizeTelegramId(opts.vetTelegramId);
+  if (!infra.telegram.botToken || !vetTg) return false;
 
   const { patient, consult } = opts;
   const fee =
@@ -69,7 +71,7 @@ export async function notifyVetQuickConsultTelegram(opts: {
     .join('\n');
 
   return telegramCall('sendMessage', {
-    chat_id: opts.vetTelegramId,
+    chat_id: vetTg,
     text,
     parse_mode: 'HTML',
     reply_markup: {

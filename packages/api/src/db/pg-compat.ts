@@ -116,12 +116,57 @@ function splitExecStatements(sql: string): string[] {
     .map(translateSql);
 }
 
+/** Columns that must stay strings even when digit-only (Telegram/phone/ids). */
+const KEEP_STRING_COLUMNS = new Set([
+  'telegram_id',
+  'phone',
+  'username',
+  'email',
+  'name',
+  'city',
+  'province',
+  'country',
+  'bio',
+  'avatar_url',
+  'verification_photo_file_id',
+  'vet_credential_file_id',
+  'verification_note',
+  'verification_status',
+  'vet_credential_status',
+  'role',
+  'roles',
+  'onboarding',
+  'gender',
+  'interests',
+  'profile_rewards',
+  'created_at',
+  'updated_at',
+  'verified_at',
+  'phone_verified_at',
+  'last_daily_coin_at',
+  'last_seen_at',
+  'text',
+  'notes',
+  'pdf_path',
+  'storage_key',
+  'mime_type',
+  'file_name',
+  'card_number',
+  'card_holder',
+  'public_id',
+]);
+
 function normalizeRow(row: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(row)) {
-    if (typeof v === 'string' && /^-?\d+$/.test(v) && v.length <= 15) {
+    if (typeof v === 'bigint') {
       out[k] = Number(v);
-    } else if (typeof v === 'bigint') {
+    } else if (
+      typeof v === 'string' &&
+      /^-?\d+$/.test(v) &&
+      v.length <= 15 &&
+      !KEEP_STRING_COLUMNS.has(k)
+    ) {
       out[k] = Number(v);
     } else {
       out[k] = v;

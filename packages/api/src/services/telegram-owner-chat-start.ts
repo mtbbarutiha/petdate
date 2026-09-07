@@ -1,8 +1,12 @@
 import type { User } from '@petdate/shared';
 import { infra } from '../config/infra';
+import { normalizeTelegramId } from './telegram-id';
 
-function escapeHtml(value: string): string {
-  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+function escapeHtml(value: string | number | null | undefined): string {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 }
 
 async function telegramCall(method: string, body: Record<string, unknown>): Promise<boolean> {
@@ -24,12 +28,6 @@ async function telegramCall(method: string, body: Record<string, unknown>): Prom
     console.warn(`telegram ${method} error:`, (err as Error).message);
     return false;
   }
-}
-
-function usableTelegramId(id?: string | null): id is string {
-  if (!id) return false;
-  if (id.startsWith('fake_') || id.startsWith('fake_owner_')) return false;
-  return true;
 }
 
 function enterChatKeyboard(playdateId: number) {
@@ -55,7 +53,9 @@ export async function startOwnerChatFromApi(opts: {
   toPetId?: number;
 }): Promise<boolean> {
   const { accepter, requester, playdateId } = opts;
-  if (!usableTelegramId(accepter.telegramId) || !usableTelegramId(requester.telegramId)) {
+  const accepterTg = normalizeTelegramId(accepter.telegramId);
+  const requesterTg = normalizeTelegramId(requester.telegramId);
+  if (!accepterTg || !requesterTg) {
     console.warn('startOwnerChatFromApi: missing usable telegram ids', {
       playdateId,
       accepter: accepter.telegramId,
@@ -95,13 +95,13 @@ export async function startOwnerChatFromApi(opts: {
 
   const keyboard = enterChatKeyboard(playdateId);
   const aOk = await telegramCall('sendMessage', {
-    chat_id: accepter.telegramId,
+    chat_id: accepterTg,
     text: accepterIntro,
     parse_mode: 'HTML',
     reply_markup: keyboard,
   });
   const rOk = await telegramCall('sendMessage', {
-    chat_id: requester.telegramId,
+    chat_id: requesterTg,
     text: requesterIntro,
     parse_mode: 'HTML',
     reply_markup: keyboard,
