@@ -246,7 +246,7 @@ export function WalletPage() {
           <div>
             <h2 id="wallet-tg-title">ستاره‌های تلگرام</h2>
             <p className="pepito-wallet-tg-lead">
-              موجودی مشترک با ربات (wallet_stars) — از API بومی تلگرام خوانده نمی‌شود.
+              ستاره‌های کیف‌پول مشترک وب و ربات — موجودی Stars حساب شخصی تلگرام فقط هنگام پرداخت فاکتور در خود تلگرام دیده می‌شود.
             </p>
           </div>
         </div>
@@ -268,11 +268,11 @@ export function WalletPage() {
 
           <div className="pepito-wallet-tg-slot pepito-wallet-tg-slot--secondary">
             {linked ? (
-              <p className="pepito-wallet-tg-stars">
-                <span className="pepito-wallet-tg-stars-badge" aria-hidden>★</span>
-                <span>
-                  موجودی ستاره:{' '}
-                  <strong>{formatBal(balances.stars)}</strong>
+              <p className="pepito-wallet-tg-stars" aria-live="polite">
+                <span className="pepito-wallet-tg-stars-badge" aria-hidden>⭐</span>
+                <span className="pepito-wallet-tg-stars-copy">
+                  <span className="pepito-wallet-tg-stars-label">موجودی ستاره</span>
+                  <strong className="pepito-wallet-tg-stars-val">{formatBal(balances.stars)}</strong>
                 </span>
               </p>
             ) : (

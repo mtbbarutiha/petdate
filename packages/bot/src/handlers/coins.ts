@@ -55,10 +55,14 @@ function escapeHtml(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+function userStarsBalance(user: { wallet?: { stars?: number }; walletStars?: number } | null | undefined): number {
+  return user?.wallet?.stars ?? user?.walletStars ?? 0;
+}
+
 export async function handleCoins(ctx: Context): Promise<void> {
   const user = await getCtxUser(ctx);
   const balance = user?.coins ?? 0;
-  const starsBalance = user?.wallet?.stars ?? user?.walletStars ?? 0;
+  const starsBalance = userStarsBalance(user);
   await ctx.reply(coinsShopIntroText(balance, starsBalance), {
     parse_mode: 'HTML',
     reply_markup: coinsShopKeyboard(user?.lastDailyCoinAt),
@@ -92,7 +96,7 @@ export async function handleCoinsDaily(ctx: Context): Promise<void> {
   });
   const text = coinsShopIntroText(
     result.user.coins ?? 0,
-    result.user.wallet?.stars ?? result.user.walletStars ?? 0
+    userStarsBalance(result.user)
   );
   try {
     await ctx.editMessageText(text, {
@@ -325,7 +329,7 @@ export async function handleCoinsPayCancel(ctx: Context): Promise<void> {
   }
   await ctx.answerCallbackQuery({ text: 'لغو شد' });
   const user = await getCtxUser(ctx);
-  const text = coinsShopIntroText(user?.coins ?? 0);
+  const text = coinsShopIntroText(user?.coins ?? 0, userStarsBalance(user));
   try {
     await ctx.editMessageText(text, {
       parse_mode: 'HTML',
@@ -342,7 +346,7 @@ export async function handleCoinsPayCancel(ctx: Context): Promise<void> {
 export async function handleCoinsBack(ctx: Context): Promise<void> {
   const user = await getCtxUser(ctx);
   await ctx.answerCallbackQuery();
-  const text = coinsShopIntroText(user?.coins ?? 0);
+  const text = coinsShopIntroText(user?.coins ?? 0, userStarsBalance(user));
   try {
     await ctx.editMessageText(text, {
       parse_mode: 'HTML',

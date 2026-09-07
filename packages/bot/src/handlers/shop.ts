@@ -163,7 +163,7 @@ export async function handlePetShop(ctx: Context): Promise<void> {
     '',
     'همان کاتالوگ و قیمت سایت — پرداخت با سکه یا ستاره (کیف پول مشترک وب و ربات).',
     `موجودی سکه: <b>${formatCoins(balance)}</b>`,
-    `موجودی ستاره: <b>${formatStars(starsBalance)}</b>`,
+    `موجودی ستاره: ⭐ <b>${formatStars(starsBalance)}</b>`,
     `نرخ: هر سکه/ستاره ≈ ${COIN_PRICE_TOMAN.toLocaleString('fa-IR')} تومان`,
     cats.total ? `دسته‌ها در فروشگاه: ${cats.total.toLocaleString('fa-IR')}` : '',
     '',

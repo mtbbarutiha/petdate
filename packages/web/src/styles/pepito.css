@@ -8277,17 +8277,13 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.55rem;
-  height: 1.55rem;
-  margin-inline-end: 0.35rem;
-  border-radius: 8px;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 10px;
   background: rgba(253, 150, 30, 0.16);
   color: #c46a00;
-  font-size: 0.85rem;
-}
-.pepito-wallet-tg-stars {
-  display: inline-flex;
-  align-items: center;
+  font-size: 1.05rem;
+  flex: 0 0 auto;
 }
 @media (max-width: 640px) {
   .pepito-wallet-featured {
@@ -8517,14 +8513,33 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
 
 .pepito-wallet-tg-stars {
   margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
   font-size: 0.98rem;
   color: var(--pepito-dark);
 }
 
+.pepito-wallet-tg-stars-copy {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.pepito-wallet-tg-stars-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--pepito-muted);
+}
+
+.pepito-wallet-tg-stars-val,
 .pepito-wallet-tg-stars strong {
   font-family: var(--font-display);
   font-weight: 800;
-  color: var(--pepito-base);
+  font-size: 1.45rem;
+  line-height: 1.1;
+  color: #c46a00;
   font-variant-numeric: tabular-nums;
 }
 
@@ -8783,14 +8798,20 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
 }
 
 @media (max-width: 420px) {
+  /* Keep coin + Stars counts visible on narrow phones (was fully hidden). */
   .pepito-nav-wallet-chip-line {
+    display: inline-flex !important;
+    font-size: 0.62rem !important;
+  }
+  .pepito-nav-wallet-chip-item--toman,
+  .pepito-nav-wallet-chip-sep--toman {
     display: none !important;
   }
   .pepito-nav-wallet-btn {
-    width: 36px !important;
-    max-width: 36px !important;
-    padding: 0 !important;
-    justify-content: center !important;
+    width: auto !important;
+    max-width: min(48vw, 8.5rem) !important;
+    padding: 0 0.4rem 0 0.3rem !important;
+    justify-content: flex-start !important;
   }
 }
 
