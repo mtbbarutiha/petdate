@@ -7,7 +7,7 @@ const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: 'pending', label: 'در انتظار بررسی (کارت)' },
   { value: 'awaiting_receipt', label: 'منتظر رسید' },
   { value: 'awaiting_stars', label: 'فاکتور Stars' },
-  { value: 'paid', label: 'پرداخت‌شده (Stars)' },
+  { value: 'paid', label: 'پرداخت‌شده' },
   { value: 'approved', label: 'تأییدشده (کارت)' },
   { value: 'rejected', label: 'ردشده' },
   { value: 'cancelled', label: 'لغو' },
@@ -20,6 +20,8 @@ function statusLabel(status: string): string {
 function packageLabel(o: PaymentOrder): string {
   const pkg = o.packageId || '—';
   if (pkg === 'shopxtr') return 'پت شاپ · Stars تلگرام';
+  if (pkg === 'shopwallet') return 'پت شاپ · ستاره پنل';
+  if (pkg === 'shopcoins') return 'پت شاپ · سکه پنل';
   if (pkg.startsWith('wstars:')) return `کیف‌پول Stars · ${pkg}`;
   if (o.coins > 0) return `${pkg} · ${formatNumFa(o.coins)} سکه`;
   return pkg;
@@ -36,7 +38,9 @@ function parseShopMeta(note?: string): { shopOrderId?: number; titleHint?: strin
   if (!note?.trim().startsWith('{')) return null;
   try {
     const j = JSON.parse(note) as { kind?: string; shopOrderId?: number; titleHint?: string };
-    if (j?.kind === 'shopxtr') return { shopOrderId: j.shopOrderId, titleHint: j.titleHint };
+    if (j?.kind === 'shopxtr' || j?.kind === 'shopwallet' || j?.kind === 'shopcoins') {
+      return { shopOrderId: j.shopOrderId, titleHint: j.titleHint };
+    }
   } catch {
     /* ignore */
   }
@@ -148,7 +152,15 @@ export function AdminPaymentsPage() {
                       ) : null}
                     </td>
                     <td>{amountLabel(o)}</td>
-                    <td>{o.method === 'stars' ? '⭐ Stars' : o.method === 'card' ? 'کارت' : o.method}</td>
+                    <td>
+                      {o.method === 'stars'
+                        ? '⭐ Stars'
+                        : o.method === 'coins'
+                          ? '🪙 سکه'
+                          : o.method === 'card'
+                            ? 'کارت'
+                            : o.method}
+                    </td>
                     <td>
                       <span className="admin-badge">{statusLabel(o.status)}</span>
                     </td>

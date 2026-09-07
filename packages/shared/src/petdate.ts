@@ -36,7 +36,7 @@ export const VERIFICATION_STATUS_LABELS: Record<VerificationStatus, string> = {
 };
 
 /** روش خرید سکه */
-export type PaymentMethod = 'card' | 'stars';
+export type PaymentMethod = 'card' | 'stars' | 'coins';
 
 /**
  * وضعیت سفارش پرداخت:

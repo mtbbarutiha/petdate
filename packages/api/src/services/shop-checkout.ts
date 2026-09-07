@@ -331,6 +331,23 @@ export function checkoutShopWithCoins(
          VALUES (?, 'coins', ?, 'debit', ?, 'shop_order', ?)`
       ).run(input.userId, coinsNeeded, 'خرید فروشگاه با سکه', String(order.id));
 
+      // ثبت در payment_orders تا در پنل ادمین «پرداخت‌ها» دیده شود
+      d.prepare(
+        `INSERT INTO payment_orders (
+          user_id, package_id, coins, amount_toman, amount_stars, method, status, admin_note, reviewed_at
+        ) VALUES (?, 'shopcoins', ?, ?, NULL, 'coins', 'paid', ?, datetime('now'))`
+      ).run(
+        input.userId,
+        coinsNeeded,
+        totalToman,
+        JSON.stringify({
+          v: 1,
+          kind: 'shopcoins',
+          shopOrderId: order.id,
+          titleHint: lines[0]?.title || 'خرید پت شاپ',
+        })
+      );
+
       return {
         order,
         coinsRemaining: debited.coins ?? 0,
@@ -435,6 +452,23 @@ export function checkoutShopWithStars(
         `INSERT INTO wallet_ledger (user_id, currency, amount, direction, reason, ref_type, ref_id)
          VALUES (?, 'stars', ?, 'debit', ?, 'shop_order', ?)`
       ).run(input.userId, starsNeeded, 'خرید فروشگاه با ستاره', String(order.id));
+
+      // ثبت در payment_orders تا در پنل ادمین «پرداخت‌ها» دیده شود
+      d.prepare(
+        `INSERT INTO payment_orders (
+          user_id, package_id, coins, amount_toman, amount_stars, method, status, admin_note, reviewed_at
+        ) VALUES (?, 'shopwallet', 0, ?, ?, 'stars', 'paid', ?, datetime('now'))`
+      ).run(
+        input.userId,
+        totalToman,
+        starsNeeded,
+        JSON.stringify({
+          v: 1,
+          kind: 'shopwallet',
+          shopOrderId: order.id,
+          titleHint: lines[0]?.title || 'خرید پت شاپ',
+        })
+      );
 
       return {
         order,
