@@ -91,8 +91,8 @@ import {
 import { menuKeyboardFor } from './helpers';
 import {
   handleComingSoon,
+  handleChatsEntry,
   handleInviteFriends,
-  handleMedical,
   handleQuickVet,
   handleQuickVetConnect,
   handleQuickVetReconnect,
@@ -897,6 +897,8 @@ async function handleTextMessage(ctx: Context): Promise<void> {
     case petsSection.addPet:
       return handleAddPetCommand(ctx);
     case m.coins:
+    case d.coins:
+    case v.coins:
       return handleCoins(ctx);
     case m.earn:
       return handleEarn(ctx);
@@ -910,7 +912,13 @@ async function handleTextMessage(ctx: Context): Promise<void> {
       }
       return;
     case m.invite:
+    case d.invite:
+    case v.invite:
       return handleInviteFriends(ctx);
+    case m.chat:
+    case d.chat:
+    case v.chat:
+      return handleChatsEntry(ctx);
     case m.help:
     case d.help:
     case v.help:
@@ -923,6 +931,8 @@ async function handleTextMessage(ctx: Context): Promise<void> {
     case '⚡ ارتباط سریع با پزشک':
       return handleQuickVet(ctx);
     case m.shop:
+    case d.shop:
+    case v.shop:
       return handlePetShop(ctx);
     case m.services:
       return handleServices(ctx);

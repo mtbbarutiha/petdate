@@ -63,8 +63,21 @@ export const PET_OWNER_MENU = {
   menu: MAIN_MENU_BTN,
   quickVet: '⚡ مشاوره سریع با پزشک',
   shop: '🛒 پت شاپ',
+  chat: '💬 چت',
   services: '🛠 خدمات',
   myRoles: MY_ROLES_LABEL,
+} as const;
+
+/**
+ * دکمه‌های مشترک همه نقش‌ها (صاحب پت / دامپزشک / پیش‌فرض)
+ * — سکه، شاپ، معرفی، چت، راهنما
+ */
+export const COMMON_MENU = {
+  coins: PET_OWNER_MENU.coins,
+  shop: PET_OWNER_MENU.shop,
+  invite: PET_OWNER_MENU.invite,
+  chat: PET_OWNER_MENU.chat,
+  help: PET_OWNER_MENU.help,
 } as const;
 
 /** زیرمنوی پنل ادمین (reply keyboard) */
@@ -96,8 +109,12 @@ export const DEFAULT_MENU = {
   verify: '🛡 احراز چهره',
   phoneVerify: '📱 احراز موبایل',
   addPet: '➕ ثبت پت',
+  coins: COMMON_MENU.coins,
+  shop: COMMON_MENU.shop,
+  invite: COMMON_MENU.invite,
+  chat: COMMON_MENU.chat,
   myRoles: MY_ROLES_LABEL,
-  help: '❓ راهنما',
+  help: COMMON_MENU.help,
   menu: MAIN_MENU_BTN,
 } as const;
 
@@ -110,8 +127,12 @@ export const VET_MENU = {
   profile: '👤 پروفایل',
   verify: '🛡 احراز چهره',
   phoneVerify: '📱 احراز موبایل',
+  coins: COMMON_MENU.coins,
+  shop: COMMON_MENU.shop,
+  invite: COMMON_MENU.invite,
+  chat: COMMON_MENU.chat,
   myRoles: MY_ROLES_LABEL,
-  help: '❓ راهنما',
+  help: COMMON_MENU.help,
   menu: MAIN_MENU_BTN,
 } as const;
 
@@ -432,6 +453,25 @@ function appendAccessRow(kb: Keyboard, telegramId?: string | number | null): Key
   return kb;
 }
 
+/** سکه / شاپ / معرفی / چت / راهنما — مشترک همه نقش‌ها */
+function appendCommonMenuRows(kb: Keyboard): Keyboard {
+  const c = COMMON_MENU;
+  return kb
+    .row()
+    .text(c.coins)
+    .primary()
+    .text(c.shop)
+    .primary()
+    .row()
+    .text(c.invite)
+    .success()
+    .text(c.chat)
+    .primary()
+    .row()
+    .text(c.help)
+    .primary();
+}
+
 export function vetMenuKeyboard(
   telegramId?: string | number | null,
   options?: { vetOnline?: boolean },
@@ -449,12 +489,9 @@ export function vetMenuKeyboard(
     .primary()
     .row()
     .text(m.profile)
-    .primary()
-    .text(m.help)
-    .primary()
-    .resized()
-    .persistent();
-  return appendAccessRow(kb, telegramId);
+    .primary();
+  appendCommonMenuRows(kb);
+  return appendAccessRow(kb.resized().persistent(), telegramId);
 }
 
 export function petOwnerMenuKeyboard(telegramId?: string | number | null): Keyboard {
@@ -473,26 +510,15 @@ export function petOwnerMenuKeyboard(telegramId?: string | number | null): Keybo
     .text(m.myPets)
     .primary()
     .row()
-    .text(m.coins)
-    .primary()
     .text(m.earn)
     .success()
-    .row()
-    .text(m.invite)
-    .success()
-    .row()
     .text(m.quickVet)
-    .primary()
-    .text(m.shop)
     .primary()
     .row()
     .text(m.services)
-    .primary()
-    .text(m.help)
-    .primary()
-    .resized()
-    .persistent();
-  return appendAccessRow(kb, telegramId);
+    .primary();
+  appendCommonMenuRows(kb);
+  return appendAccessRow(kb.resized().persistent(), telegramId);
 }
 
 export function searchPetsMenuKeyboard(): Keyboard {
@@ -524,13 +550,9 @@ export function defaultMenuKeyboard(telegramId?: string | number | null): Keyboa
     .text(m.myPets)
     .primary()
     .text(m.profile)
-    .primary()
-    .row()
-    .text(m.help)
-    .primary()
-    .resized()
-    .persistent();
-  return appendAccessRow(kb, telegramId);
+    .primary();
+  appendCommonMenuRows(kb);
+  return appendAccessRow(kb.resized().persistent(), telegramId);
 }
 
 /** کیبورد پنل ادمین بعد از ورود */
@@ -1025,6 +1047,7 @@ export const MENU_LABELS = new Set<string>([
   ...Object.values(PET_OWNER_MENU),
   ...Object.values(DEFAULT_MENU),
   ...Object.values(VET_MENU),
+  ...Object.values(COMMON_MENU),
   ...Object.values(ADMIN_MENU),
   ...Object.values(MY_PETS_SECTION),
   ...Object.values(SEARCH_PETS_MENU),

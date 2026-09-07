@@ -16,6 +16,7 @@ import {
 } from '../api-client';
 import { QUICK_VET_COST, formatNum } from '../economy';
 import { myPetsActionKeyboard } from '../keyboards';
+import { effectiveWebUrl, isTelegramInlineUrl } from '../urls';
 import { getCtxUser, menuKeyboardFor } from './helpers';
 import { startVetChat } from './vet-chat';
 import { handleAddPetCommand } from './wizard';
@@ -115,6 +116,31 @@ export async function handleMedical(ctx: Context): Promise<void> {
         .success(),
     }
   );
+  await ctx.reply('منوی اصلی 👇', { reply_markup: menuKeyboardFor(ctx, user) });
+}
+
+export async function handleChatsEntry(ctx: Context): Promise<void> {
+  const user = await getCtxUser(ctx);
+  const webBase = effectiveWebUrl().replace(/\/$/, '');
+  const chatsUrl = `${webBase}/chats`;
+  const vetUrl = `${webBase}/vet-consult`;
+  const lines = [
+    '💬 <b>چت و گفتگوها</b>',
+    '',
+    'گفتگوهای همبازی و مشاوره دامپزشک در وب هم در دسترس‌اند.',
+    'اگر چت فعالی در ربات داری، پیام‌ها همین‌جا رد و بدل می‌شوند.',
+  ];
+  const kb = new InlineKeyboard();
+  if (isTelegramInlineUrl(chatsUrl)) {
+    kb.url('💬 گفتگوهای وب', chatsUrl).row();
+  }
+  if (isTelegramInlineUrl(vetUrl)) {
+    kb.url('🩺 مشاوره سریع', vetUrl).row();
+  }
+  await ctx.reply(lines.join('\n'), {
+    parse_mode: 'HTML',
+    reply_markup: kb,
+  });
   await ctx.reply('منوی اصلی 👇', { reply_markup: menuKeyboardFor(ctx, user) });
 }
 
