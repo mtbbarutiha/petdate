@@ -900,8 +900,15 @@ async function handleTextMessage(ctx: Context): Promise<void> {
       return handleCoins(ctx);
     case m.earn:
       return handleEarn(ctx);
-    case m.medical:
-      return handleMedical(ctx);
+    case '🩺 پزشکی':
+      // دکمه قدیمی حذف‌شده از منو
+      {
+        const user = await getCtxUser(ctx);
+        await ctx.reply('این دکمه از منوی ربات حذف شده.', {
+          reply_markup: menuKeyboardFor(ctx, user),
+        });
+      }
+      return;
     case m.invite:
       return handleInviteFriends(ctx);
     case m.help:
