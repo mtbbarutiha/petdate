@@ -66,7 +66,7 @@ const CHECK_LABELS: Record<string, string> = {
   telegramBot: 'ربات تلگرام',
   sqlite: 'SQLite',
   postgres: 'Postgres',
-  redis: 'Redis (همین سرور)',
+  redis: 'Redis',
   s3: 'S3 / MinIO',
   elasticsearch: 'Elasticsearch',
   disk: 'دیسک',

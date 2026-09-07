@@ -30,6 +30,7 @@ import {
   isInboxConfigured,
   listInboxMessages,
 } from '../services/mail-inbox';
+import { publicWebOrigin } from '../services/prescription-html';
 import { rateLimit } from '../middleware/rate-limit';
 
 export const adminRouter = Router();
@@ -755,10 +756,28 @@ function checkTcpPort(host: string, port: number, timeoutMs = 1200): Promise<boo
   });
 }
 
-/** Loopback host:port from REDIS_URL etc. means same VPS, not the admin's laptop. */
+/** Public site hostname for admin-facing copy (never localhost / raw IP). */
+function publicDisplayHost(): string {
+  try {
+    const host = new URL(publicWebOrigin()).hostname;
+    if (host && host !== 'localhost' && host !== '127.0.0.1' && host !== '::1') return host;
+  } catch {
+    /* fall through */
+  }
+  return SITE.domain;
+}
+
+/**
+ * User-visible endpoint label for admin monitoring.
+ * Health probes still use the real connection host (often loopback on the VPS);
+ * UI copy must describe production co-location, not "localhost".
+ */
 function formatServiceEndpoint(host: string, port: number): string {
   const loopback = host === 'localhost' || host === '127.0.0.1' || host === '::1';
-  return loopback ? `همین سرور · ${host}:${port}` : `${host}:${port}`;
+  if (loopback) {
+    return `همین سرور (${publicDisplayHost()}) · پورت ${port}`;
+  }
+  return `${host}:${port}`;
 }
 
 async function probeService(url: string | undefined, defaultPort: number): Promise<ServiceCheck> {
