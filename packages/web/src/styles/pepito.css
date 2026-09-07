@@ -8157,6 +8157,26 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   padding: 0;
   animation: pepito-flow-rise 0.55s ease 0.12s both;
 }
+.pepito-wallet-featured--dual {
+  grid-template-columns: 1fr 1fr;
+  grid-template-areas:
+    'coins stars'
+    'side side';
+}
+.pepito-wallet-featured--dual .pepito-wallet-featured-main--coins {
+  grid-area: coins;
+}
+.pepito-wallet-featured--dual .pepito-wallet-featured-main--stars {
+  grid-area: stars;
+  background:
+    radial-gradient(120% 90% at 0% 0%, rgba(255, 210, 120, 0.35), transparent 55%),
+    linear-gradient(155deg, #9a4d00 0%, #fd961e 78%);
+  box-shadow: 0 14px 36px rgba(196, 106, 0, 0.22);
+}
+.pepito-wallet-featured--dual .pepito-wallet-featured-side {
+  grid-area: side;
+  grid-template-columns: repeat(2, 1fr);
+}
 .pepito-wallet-featured.is-pending {
   opacity: 0.72;
 }
@@ -8173,6 +8193,12 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   flex-direction: column;
   justify-content: center;
   gap: 0.25rem;
+}
+.pepito-wallet-featured-unit {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  opacity: 0.92;
 }
 .pepito-wallet-featured-label {
   font-size: 0.82rem;
@@ -8288,6 +8314,15 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
 @media (max-width: 640px) {
   .pepito-wallet-featured {
     grid-template-columns: 1fr;
+  }
+  .pepito-wallet-featured--dual {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      'coins stars'
+      'side side';
+  }
+  .pepito-wallet-featured--dual .pepito-wallet-featured-side {
+    grid-template-columns: repeat(2, 1fr);
   }
   .pepito-wallet-featured-side {
     grid-template-columns: repeat(3, 1fr);
@@ -8461,12 +8496,11 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
 
 .pepito-wallet-tg-body {
   display: grid;
-  grid-template-rows: minmax(1.5rem, auto) minmax(2.6rem, auto) minmax(2.6rem, auto) minmax(1.2rem, auto);
+  grid-template-rows: auto auto minmax(2.6rem, auto) minmax(2.6rem, auto) minmax(1.2rem, auto);
   gap: 0.65rem;
   align-items: start;
   justify-items: start;
-  /* Covers linked (stars+sync) and unlinked (link+sync) without height swap */
-  min-height: 11.25rem;
+  min-height: 12.5rem;
 }
 
 .pepito-wallet-tg-slot {
@@ -8518,6 +8552,15 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   gap: 0.55rem;
   font-size: 0.98rem;
   color: var(--pepito-dark);
+  width: 100%;
+  padding: 0.85rem 0.95rem;
+  border-radius: 16px;
+  background: rgba(253, 150, 30, 0.12);
+  border: 1px solid rgba(196, 106, 0, 0.18);
+}
+
+.pepito-wallet-tg-stars--hero {
+  min-height: 4.2rem;
 }
 
 .pepito-wallet-tg-stars-copy {
@@ -8528,7 +8571,7 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
 }
 
 .pepito-wallet-tg-stars-label {
-  font-size: 0.72rem;
+  font-size: 0.78rem;
   font-weight: 700;
   color: var(--pepito-muted);
 }
@@ -8537,10 +8580,24 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
 .pepito-wallet-tg-stars strong {
   font-family: var(--font-display);
   font-weight: 800;
-  font-size: 1.45rem;
+  font-size: 1.65rem;
   line-height: 1.1;
   color: #c46a00;
   font-variant-numeric: tabular-nums;
+}
+
+.pepito-wallet-tg-stars-unit {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-inline-start: 0.25rem;
+  color: #9a5b12;
+}
+
+.pepito-wallet-tg-meta-inline {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--pepito-muted);
+  line-height: 1.45;
 }
 
 .pepito-wallet-tg-sync,

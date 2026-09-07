@@ -19,11 +19,13 @@ import {
   type WalletTransactionDto,
 } from '../lib/api';
 
-const ORDER: WalletCurrency[] = ['coins', 'toman', 'stars', 'ton'];
-const FEATURED: WalletCurrency = 'coins';
+const ORDER: WalletCurrency[] = ['coins', 'stars', 'toman', 'ton'];
+const HERO: WalletCurrency[] = ['coins', 'stars'];
 
 function formatBal(n: number): string {
-  return toPersianDigits(new Intl.NumberFormat('en-US').format(Math.max(0, Math.floor(n))));
+  const x = Math.floor(Number(n));
+  const safe = Number.isFinite(x) && x > 0 ? x : 0;
+  return toPersianDigits(new Intl.NumberFormat('en-US').format(safe));
 }
 
 function formatDelta(tx: WalletTransactionDto): string {
@@ -149,6 +151,8 @@ export function WalletPage() {
 
   const balances: WalletBalances =
     wallet ?? (user ? user.wallet ?? walletFromUserFields(user) : { ton: 0, stars: 0, coins: 0, toman: 0 });
+  const starsCount = Math.max(0, Math.floor(Number(balances.stars) || 0));
+  const coinsCount = Math.max(0, Math.floor(Number(balances.coins) || 0));
 
   const linked = telegramLinked || Boolean(user?.telegramId);
   const tgDisplay = telegramId || user?.telegramId || null;
@@ -183,7 +187,7 @@ export function WalletPage() {
     }
   }
 
-  const secondary = ORDER.filter((k) => k !== FEATURED);
+  const secondary = ORDER.filter((k) => !HERO.includes(k));
 
   return (
     <div className="pepito-wallet-page">
@@ -202,16 +206,25 @@ export function WalletPage() {
       </header>
 
       <section
-        className={`pepito-wallet-featured${loading && !wallet ? ' is-pending' : ''}`}
+        className={`pepito-wallet-featured pepito-wallet-featured--dual${loading && !wallet ? ' is-pending' : ''}`}
         aria-label="موجودی اصلی"
       >
-        <div className="pepito-wallet-featured-main">
-          <span className="pepito-wallet-featured-label">{WALLET_CURRENCY_LABELS_FA[FEATURED]}</span>
+        <div className="pepito-wallet-featured-main pepito-wallet-featured-main--coins">
+          <span className="pepito-wallet-featured-label">{WALLET_CURRENCY_LABELS_FA.coins}</span>
           <p className="pepito-wallet-featured-val">
-            <span aria-hidden>{WALLET_CURRENCY_SYMBOLS[FEATURED]}</span>
-            {formatBal(balances[FEATURED])}
+            <span aria-hidden>{WALLET_CURRENCY_SYMBOLS.coins}</span>
+            {formatBal(coinsCount)}
           </p>
-          <p className="pepito-wallet-featured-note">{WALLET_CURRENCY_STATUS[FEATURED].noteFa}</p>
+          <p className="pepito-wallet-featured-note">{WALLET_CURRENCY_STATUS.coins.noteFa}</p>
+        </div>
+        <div className="pepito-wallet-featured-main pepito-wallet-featured-main--stars" aria-live="polite">
+          <span className="pepito-wallet-featured-label">{WALLET_CURRENCY_LABELS_FA.stars}</span>
+          <p className="pepito-wallet-featured-val">
+            <span aria-hidden>{WALLET_CURRENCY_SYMBOLS.stars}</span>
+            {formatBal(starsCount)}
+          </p>
+          <p className="pepito-wallet-featured-unit">ستاره کیف‌پول</p>
+          <p className="pepito-wallet-featured-note">{WALLET_CURRENCY_STATUS.stars.noteFa}</p>
         </div>
         <ul className="pepito-wallet-featured-side" aria-label="سایر موجودی‌ها">
           {secondary.map((key) => (
@@ -244,14 +257,25 @@ export function WalletPage() {
             <Sparkles size={18} />
           </span>
           <div>
-            <h2 id="wallet-tg-title">ستاره‌های تلگرام</h2>
+            <h2 id="wallet-tg-title">ستاره‌های کیف‌پول</h2>
             <p className="pepito-wallet-tg-lead">
-              ستاره‌های کیف‌پول مشترک وب و ربات — موجودی Stars حساب شخصی تلگرام فقط هنگام پرداخت فاکتور در خود تلگرام دیده می‌شود.
+              موجودی ستاره مشترک وب و ربات (برای فروشگاه). موجودی Stars حساب شخصی تلگرام فقط داخل فاکتور پرداخت تلگرام دیده می‌شود.
             </p>
           </div>
         </div>
 
         <div className="pepito-wallet-tg-body">
+          <p className="pepito-wallet-tg-stars pepito-wallet-tg-stars--hero" aria-live="polite">
+            <span className="pepito-wallet-tg-stars-badge" aria-hidden>⭐</span>
+            <span className="pepito-wallet-tg-stars-copy">
+              <span className="pepito-wallet-tg-stars-label">موجودی ستاره</span>
+              <strong className="pepito-wallet-tg-stars-val">
+                {formatBal(starsCount)}
+                <span className="pepito-wallet-tg-stars-unit"> ستاره</span>
+              </strong>
+            </span>
+          </p>
+
           {linked ? (
             <p className="pepito-wallet-tg-status">
               <span className="pepito-wallet-tg-dot" aria-hidden />
@@ -268,12 +292,8 @@ export function WalletPage() {
 
           <div className="pepito-wallet-tg-slot pepito-wallet-tg-slot--secondary">
             {linked ? (
-              <p className="pepito-wallet-tg-stars" aria-live="polite">
-                <span className="pepito-wallet-tg-stars-badge" aria-hidden>⭐</span>
-                <span className="pepito-wallet-tg-stars-copy">
-                  <span className="pepito-wallet-tg-stars-label">موجودی ستاره</span>
-                  <strong className="pepito-wallet-tg-stars-val">{formatBal(balances.stars)}</strong>
-                </span>
+              <p className="pepito-wallet-tg-meta-inline">
+                همین موجودی در ربات (منوی سکه / شاپ) هم نشان داده می‌شود.
               </p>
             ) : (
               <button
