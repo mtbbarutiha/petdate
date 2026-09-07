@@ -2243,51 +2243,9 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 
 .admin-pet-card-actions .admin-btn--ghost { flex: 1; justify-content: center; }
 
-.admin-login-page {
-  min-height: 100dvh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-  background: var(--slate-50);
-}
-
-.admin-login-card {
-  width: 100%;
-  max-width: 400px;
-  background: white;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-xl);
-  padding: 32px 28px;
-  box-shadow: var(--shadow-md);
-  text-align: center;
-}
-
 .admin-brand .brand-mark-word {
   font-size: 1.15rem;
 }
-
-.admin-login-brand {
-  margin-bottom: 8px;
-}
-
-.admin-login-subtitle {
-  color: var(--text-secondary);
-  font-size: 0.9rem;
-  margin-bottom: 28px;
-}
-
-.admin-login-icon {
-  width: 56px;
-  height: 56px;
-  margin: 0 auto 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.admin-login-card h1 { font-size: 1.4rem; font-weight: 800; margin-bottom: 6px; }
-.admin-login-card > p { color: var(--text-secondary); margin-bottom: 24px; }
 
 .admin-input-icon {
   position: relative;
@@ -2295,17 +2253,15 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 
 .admin-input-icon svg {
   position: absolute;
-  right: 14px;
+  inset-inline-end: 14px;
   top: 50%;
   transform: translateY(-50%);
   color: var(--text-tertiary);
 }
 
-.admin-input-icon .form-input { padding-right: 40px; }
+.admin-input-icon .form-input { padding-inline-end: 40px; }
 
 .admin-error { color: #dc2626; font-size: 0.85rem; margin-bottom: 12px; }
-.admin-login-hint { margin-top: 16px; font-size: 0.8rem; color: var(--text-tertiary); }
-.admin-login-hint code { background: var(--slate-100); padding: 2px 6px; border-radius: 4px; }
 
 .admin-form { max-width: 720px; }
 
