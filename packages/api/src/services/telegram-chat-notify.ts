@@ -1,5 +1,8 @@
 import { infra } from '../config/infra';
+import fs from 'fs';
+import path from 'path';
 import type { PlaydateChatMediaKind } from '@petdate/shared';
+import { resolveStoragePath } from './chat-upload-store';
 import { dbService } from '../db';
 
 type TelegramSendResult = { ok: boolean; messageId?: number };
@@ -32,18 +35,108 @@ async function telegramCall(
   }
 }
 
+async function telegramCallForm(method: string, form: FormData): Promise<TelegramSendResult> {
+  const token = infra.telegram.botToken;
+  if (!token) return { ok: false };
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
+      method: 'POST',
+      body: form,
+    });
+    const data = (await res.json()) as {
+      ok?: boolean;
+      description?: string;
+      result?: { message_id?: number };
+    };
+    if (!data.ok) {
+      console.warn(`telegram ${method} failed:`, data.description ?? res.status);
+      return { ok: false };
+    }
+    return { ok: true, messageId: data.result?.message_id };
+  } catch (err) {
+    console.warn(`telegram ${method} error:`, (err as Error).message);
+    return { ok: false };
+  }
+}
+
 function usableTelegramId(id?: string | null): id is string {
   if (!id) return false;
   if (id.startsWith('fake_') || id.startsWith('fake_owner_')) return false;
   return true;
 }
 
-/**
- * Playmate chat is web-only: do NOT mirror lines to Telegram as
- * "💬 پیام همبازی از …". Delivery stays on web chat / WebSocket.
- * Kept as a no-op so call sites remain stable if re-enabled later.
- */
-export async function notifyPlaydateChatTelegram(_opts: {
+
+/** Reply keyboard for active playmate (owner) chat — mirrors bot ownerChatReplyKeyboard */
+export function ownerChatTelegramKeyboard(secure = false): {
+  keyboard: { text: string }[][];
+  resize_keyboard: true;
+  is_persistent: true;
+} {
+  return {
+    keyboard: [
+      [
+        { text: secure ? '🔓 خاموش‌کردن چت امن' : '🔒 چت امن' },
+        { text: '👤 پروفایل طرف مقابل' },
+      ],
+      [{ text: '🐾 مشاهده پروفایل پت' }, { text: '➕ افزودن مخاطب' }],
+      [{ text: '🔌 قطع چت همبازی' }],
+    ],
+    resize_keyboard: true,
+    is_persistent: true,
+  };
+}
+
+function telegramMethodForKind(kind: PlaydateChatMediaKind | null | undefined): string {
+  switch (kind) {
+    case 'photo':
+    case 'sticker':
+      return 'sendPhoto';
+    case 'video':
+    case 'animation':
+    case 'video_note':
+      return 'sendVideo';
+    case 'voice':
+      return 'sendVoice';
+    case 'audio':
+      return 'sendAudio';
+    default:
+      return 'sendDocument';
+  }
+}
+
+function formFieldForKind(kind: PlaydateChatMediaKind | null | undefined): string {
+  switch (kind) {
+    case 'photo':
+    case 'sticker':
+      return 'photo';
+    case 'video':
+    case 'animation':
+    case 'video_note':
+      return 'video';
+    case 'voice':
+      return 'voice';
+    case 'audio':
+      return 'audio';
+    default:
+      return 'document';
+  }
+}
+
+function rememberDelivery(
+  playdateId: number | undefined,
+  telegramChatId: string,
+  messageId?: number
+): void {
+  if (!playdateId || !messageId) return;
+  try {
+    dbService.recordPlaydateChatTgRef(playdateId, telegramChatId, messageId);
+  } catch (err) {
+    console.warn('record tg ref failed:', (err as Error).message);
+  }
+}
+
+/** Deliver a playdate chat line from web/API to the peer's Telegram. */
+export async function notifyPlaydateChatTelegram(opts: {
   toTelegramId: string;
   senderName: string;
   text: string;
@@ -54,7 +147,51 @@ export async function notifyPlaydateChatTelegram(_opts: {
   mimeType?: string | null;
   fileName?: string | null;
 }): Promise<boolean> {
-  return false;
+  if (!infra.telegram.botToken || !usableTelegramId(opts.toTelegramId)) return false;
+
+  const header = `💬 پیام همبازی از ${opts.senderName}:`;
+  const captionText = opts.text.trim();
+  const isPlaceholder = /^\[(تصویر|ویدیو|پیام صوتی|فایل صوتی|فایل|استیکر|رسانه)\]$/.test(
+    captionText
+  );
+  const bodyText = isPlaceholder ? '' : captionText.slice(0, 900);
+
+  if (opts.storageKey && opts.mediaKind) {
+    const abs = resolveStoragePath(opts.storageKey);
+    if (abs && fs.existsSync(abs)) {
+      const buf = fs.readFileSync(abs);
+      const fileName =
+        opts.fileName || path.basename(abs) || `file${path.extname(abs) || ''}`;
+      const mime = opts.mimeType || 'application/octet-stream';
+      const form = new FormData();
+      form.append('chat_id', opts.toTelegramId);
+      const blob = new Blob([new Uint8Array(buf)], { type: mime });
+      form.append(formFieldForKind(opts.mediaKind), blob, fileName);
+      const caption = bodyText ? `${header}\n\n${bodyText}` : header;
+      form.append('caption', caption.slice(0, 1024));
+      if (opts.protectContent) form.append('protect_content', 'true');
+      form.append(
+        'reply_markup',
+        JSON.stringify(ownerChatTelegramKeyboard(Boolean(opts.protectContent)))
+      );
+      const sent = await telegramCallForm(telegramMethodForKind(opts.mediaKind), form);
+      if (sent.ok) {
+        rememberDelivery(opts.playdateId, opts.toTelegramId, sent.messageId);
+        return true;
+      }
+      // fall through to text notice if media send fails
+    }
+  }
+
+  const body = (bodyText || captionText || '[رسانه]').slice(0, 3500);
+  const sent = await telegramCall('sendMessage', {
+    chat_id: opts.toTelegramId,
+    text: `${header}\n\n${body}`,
+    ...(opts.protectContent ? { protect_content: true } : {}),
+    reply_markup: ownerChatTelegramKeyboard(Boolean(opts.protectContent)),
+  });
+  if (sent.ok) rememberDelivery(opts.playdateId, opts.toTelegramId, sent.messageId);
+  return sent.ok;
 }
 
 export async function notifyPlaydateChatSecureTelegram(opts: {
