@@ -133,6 +133,10 @@ import {
   handleVetOnlineToggle,
   handleVetRecentPatients,
   handleVetRequestRechat,
+  handleVetVisitFeeCustomPrompt,
+  handleVetVisitFeeMenu,
+  handleVetVisitFeePick,
+  handleVetVisitFeeText,
 } from './vet';
 import {
   handleCoins,
@@ -580,6 +584,10 @@ export function registerHandlers(bot: Bot): void {
   bot.callbackQuery(/^vet:consult:reject:(\d+)$/, (ctx) =>
     handleVetConsultDecision(ctx, Number(ctx.match![1]), 'reject')
   );
+  bot.callbackQuery(/^vet:fee:(\d+)$/, (ctx) =>
+    handleVetVisitFeePick(ctx, Number(ctx.match![1]))
+  );
+  bot.callbackQuery('vet:fee:custom', (ctx) => handleVetVisitFeeCustomPrompt(ctx));
   bot.callbackQuery(/^vet:rechat:(\d+)$/, (ctx) =>
     handleVetRequestRechat(ctx, Number(ctx.match![1]))
   );
@@ -816,6 +824,7 @@ async function handleTextMessage(ctx: Context): Promise<void> {
   if (await handleEarnCardText(ctx, text)) return;
   if (await handleSearchBreedText(ctx, text)) return;
   if (await handleVetCredentialText(ctx, text)) return;
+  if (await handleVetVisitFeeText(ctx, text)) return;
   if (await handleProfileWizardText(ctx, text)) return;
   if (await handlePetEditText(ctx, text)) return;
   if (await handleWizardText(ctx, text)) return;
@@ -841,6 +850,10 @@ async function handleTextMessage(ctx: Context): Promise<void> {
     case v.recentPatients: {
       if (!(await ensureVetPhoneVerified(ctx))) return;
       return handleVetRecentPatients(ctx);
+    }
+    case v.visitFee: {
+      if (!(await ensureVetPhoneVerified(ctx))) return;
+      return handleVetVisitFeeMenu(ctx);
     }
     case m.nearbyPets:
       return handleNearbyPets(ctx);

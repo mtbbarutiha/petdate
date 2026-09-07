@@ -284,6 +284,9 @@ function migrateSchema() {
   if (!names.has('vet_enabled')) {
     db.exec('ALTER TABLE users ADD COLUMN vet_enabled INTEGER NOT NULL DEFAULT 1');
   }
+  if (!names.has('visit_fee_coins')) {
+    db.exec('ALTER TABLE users ADD COLUMN visit_fee_coins INTEGER NOT NULL DEFAULT 1');
+  }
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS coin_ledger (
@@ -1530,6 +1533,10 @@ function mapUser(row: Record<string, unknown>): User {
     vetOnline: row.vet_online == null ? false : Boolean(row.vet_online),
     /** false = توسط ادمین از لیست پزشک‌ها خارج شده */
     vetEnabled: row.vet_enabled == null ? true : Boolean(row.vet_enabled),
+    visitFeeCoins:
+      row.visit_fee_coins != null && Number.isFinite(Number(row.visit_fee_coins))
+        ? Math.max(1, Math.floor(Number(row.visit_fee_coins)))
+        : 1,
     avgRating:
       row.avg_rating != null && Number.isFinite(Number(row.avg_rating))
         ? Math.round(Number(row.avg_rating) * 10) / 10
@@ -2478,6 +2485,20 @@ export const dbService = {
     const user = this.getUserByTelegramId(telegramId);
     if (!user) return null;
     return this.setVetOnline(user.id, online);
+  },
+
+  setVisitFeeCoins(userId: number, feeCoins: number): User | null {
+    const existing = this.getUserById(userId);
+    if (!existing) return null;
+    const fee = Math.min(500, Math.max(1, Math.floor(Number(feeCoins) || 1)));
+    db.prepare(`UPDATE users SET visit_fee_coins = ? WHERE id = ?`).run(fee, userId);
+    return this.getUserById(userId);
+  },
+
+  setVisitFeeCoinsByTelegramId(telegramId: string, feeCoins: number): User | null {
+    const user = this.getUserByTelegramId(telegramId);
+    if (!user) return null;
+    return this.setVisitFeeCoins(user.id, feeCoins);
   },
 
   listPreviousVetsForPatient(patientUserId: number): PreviousVet[] {

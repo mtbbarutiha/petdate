@@ -107,6 +107,7 @@ export const VET_MENU = {
   goOnline: '🟢 آنلاین هستم و آماده پذیرش بیمار',
   goOffline: '🔴 آفلاین هستم',
   recentPatients: '🩺 آخرین بیمارها',
+  visitFee: '💰 مبلغ ویزیت',
   profile: '👤 پروفایل',
   verify: '🛡 احراز چهره',
   phoneVerify: '📱 احراز موبایل',
@@ -444,6 +445,8 @@ export function vetMenuKeyboard(
   kb
     .row()
     .text(m.recentPatients)
+    .primary()
+    .text(m.visitFee)
     .primary()
     .row()
     .text(m.profile)

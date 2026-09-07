@@ -197,6 +197,8 @@ export interface User {
   vetOnline?: boolean;
   /** false = توسط ادمین از لیست/اتصال پزشک‌ها خارج شده */
   vetEnabled?: boolean;
+  /** مبلغ ویزیت دامپزشک به سکه (قابل تنظیم از پنل پزشک) */
+  visitFeeCoins?: number;
   /** میانگین امتیاز کاربران (۱–۵) — فقط برای دامپزشک */
   avgRating?: number;
   /** تعداد نظرات ثبت‌شده برای دامپزشک */

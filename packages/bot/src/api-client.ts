@@ -595,6 +595,17 @@ export async function setVetOnline(telegramId: string, online: boolean): Promise
   );
 }
 
+/** مبلغ ویزیت دامپزشک (سکه) */
+export async function setVetVisitFee(telegramId: string, visitFeeCoins: number): Promise<User> {
+  return request<User>(
+    `/api/users/telegram/${encodeURIComponent(telegramId)}/visit-fee`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ visitFeeCoins }),
+    }
+  );
+}
+
 export async function debitUserCoins(telegramId: string, amount: number): Promise<User> {
   return request<User>(`/api/users/telegram/${encodeURIComponent(telegramId)}/coins/debit`, {
     method: 'POST',

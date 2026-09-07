@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import type { OnboardingStatus, UserRole } from '@petdate/shared';
-import { FACE_VERIFY_REWARD, ONBOARDING_STATUS_LABELS, USER_ROLES } from '@petdate/shared';
+import { FACE_VERIFY_REWARD, ONBOARDING_STATUS_LABELS, USER_ROLES, userHasRole } from '@petdate/shared';
 import { dbService } from '../db';
 import { sendPhoneOtp, verifyPhoneOtp } from '../services/phone-otp';
 import { sendVetEnabledSms } from '../services/vet-status-sms';
@@ -371,6 +371,34 @@ usersRouter.post('/telegram/:telegramId/vet-online', (req, res) => {
     return;
   }
   const user = dbService.setVetOnlineByTelegramId(req.params.telegramId, online);
+  if (!user) {
+    res.status(404).json({ error: 'کاربر پیدا نشد' });
+    return;
+  }
+  res.json(user);
+});
+
+/** مبلغ ویزیت دامپزشک (سکه) — پنل نقش پزشک در ربات/وب */
+usersRouter.post('/telegram/:telegramId/visit-fee', (req, res) => {
+  const existing = dbService.getUserByTelegramId(req.params.telegramId);
+  if (!existing) {
+    res.status(404).json({ error: 'کاربر پیدا نشد' });
+    return;
+  }
+  if (!userHasRole(existing, 'vet')) {
+    res.status(403).json({ error: 'این بخش مخصوص دامپزشکان است' });
+    return;
+  }
+  const raw = req.body?.visitFeeCoins ?? req.body?.feeCoins ?? req.body?.fee;
+  const fee = Number(raw);
+  if (!Number.isFinite(fee) || fee < 1 || fee > 500) {
+    res.status(400).json({
+      error: 'مبلغ ویزیت باید بین ۱ تا ۵۰۰ سکه باشد',
+      reason: 'invalid_visit_fee',
+    });
+    return;
+  }
+  const user = dbService.setVisitFeeCoinsByTelegramId(req.params.telegramId, fee);
   if (!user) {
     res.status(404).json({ error: 'کاربر پیدا نشد' });
     return;

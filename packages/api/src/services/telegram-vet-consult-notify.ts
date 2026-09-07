@@ -44,16 +44,22 @@ export async function notifyVetQuickConsultTelegram(opts: {
   consult: VetConsultation;
   vetTelegramId: string;
   patient: User;
+  visitFeeCoins?: number;
 }): Promise<boolean> {
   if (!infra.telegram.botToken || !opts.vetTelegramId) return false;
 
   const { patient, consult } = opts;
+  const fee =
+    opts.visitFeeCoins != null && Number.isFinite(opts.visitFeeCoins)
+      ? Math.max(1, Math.floor(opts.visitFeeCoins))
+      : null;
   const text = [
     '📬 <b>درخواست مشاوره سریع</b>',
     '',
     `بیمار: <b>${escapeHtml(patient.name)}</b>`,
     patient.city ? `شهر: ${escapeHtml(patient.city)}` : null,
     patient.phone ? `تماس: <code>${escapeHtml(patient.phone)}</code>` : null,
+    fee != null ? `مبلغ ویزیت شما: <b>${fee}</b> سکه` : null,
     '',
     'اگر آماده‌ای قبول کن؛ بیمار منتظر پاسخته.',
     'قبول از ربات یا از وب → چت وب برای هر دو طرف فعال می‌شود.',

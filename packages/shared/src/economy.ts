@@ -1,7 +1,25 @@
 /** اقتصاد سکه همبازی — ثابت‌های مشترک API و بات */
 
-/** هزینه اتصال سریع به دامپزشک آنلاین (سکه ربات) — هم‌تراز ربات */
+/** هزینه پیش‌فرض اتصال سریع به دامپزشک آنلاین (سکه ربات) — هم‌تراز ربات */
 export const QUICK_VET_COST = 1;
+
+/** حداقل/حداکثر مبلغ ویزیت قابل تنظیم توسط دامپزشک (سکه) */
+export const MIN_VET_VISIT_FEE_COINS = 1;
+export const MAX_VET_VISIT_FEE_COINS = 500;
+
+/** نرمال‌سازی مبلغ ویزیت دامپزشک؛ مقدار نامعتبر → پیش‌فرض */
+export function normalizeVisitFeeCoins(value: unknown, fallback = QUICK_VET_COST): number {
+  const n = Math.floor(Number(value));
+  if (!Number.isFinite(n)) {
+    return Math.min(MAX_VET_VISIT_FEE_COINS, Math.max(MIN_VET_VISIT_FEE_COINS, fallback));
+  }
+  return Math.min(MAX_VET_VISIT_FEE_COINS, Math.max(MIN_VET_VISIT_FEE_COINS, n));
+}
+
+/** مبلغ ویزیت مؤثر یک دامپزشک */
+export function vetVisitFeeCoins(user: { visitFeeCoins?: number | null } | null | undefined): number {
+  return normalizeVisitFeeCoins(user?.visitFeeCoins, QUICK_VET_COST);
+}
 
 /**
  * نرخ تبدیل خرید سکه (تومان به‌ازای هر سکه) — هم‌تراز ربات.

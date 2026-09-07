@@ -537,6 +537,31 @@ authRouter.patch('/vet-online', (req, res) => {
   res.json({ ok: true, user: updated });
 });
 
+/** مبلغ ویزیت دامپزشک (وب) */
+authRouter.patch('/visit-fee', (req, res) => {
+  const session = getUserFromBearer(req.header('authorization') ?? undefined);
+  if (!session) {
+    res.status(401).json({ error: 'وارد نشده‌اید' });
+    return;
+  }
+  if (!userHasRole(session.user, 'vet')) {
+    res.status(403).json({ error: 'این بخش مخصوص دامپزشکان است' });
+    return;
+  }
+  const raw = req.body?.visitFeeCoins ?? req.body?.feeCoins ?? req.body?.fee;
+  const fee = Number(raw);
+  if (!Number.isFinite(fee) || fee < 1 || fee > 500) {
+    res.status(400).json({ error: 'مبلغ ویزیت باید بین ۱ تا ۵۰۰ سکه باشد' });
+    return;
+  }
+  const updated = dbService.setVisitFeeCoins(session.user.id, fee);
+  if (!updated) {
+    res.status(400).json({ error: 'ثبت مبلغ ویزیت ممکن نشد' });
+    return;
+  }
+  res.json({ ok: true, user: updated });
+});
+
 authRouter.patch('/roles', (req, res) => {
   const session = getUserFromBearer(req.header('authorization') ?? undefined);
   if (!session) {

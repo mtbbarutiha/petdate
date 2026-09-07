@@ -191,6 +191,8 @@ export interface PetdateUser {
   vetOnline?: boolean;
   /** false = توسط ادمین از لیست/اتصال پزشک‌ها خارج شده */
   vetEnabled?: boolean;
+  /** مبلغ ویزیت دامپزشک به سکه (قابل تنظیم از پنل پزشک) */
+  visitFeeCoins?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -674,6 +676,7 @@ export type BotStep =
   | 'vet_chat'
   | 'vet_medical_note'
   | 'vet_prescription'
+  | 'vet_visit_fee'
   | 'owner_chat'
   | 'shop_checkout_name'
   | 'shop_checkout_phone'

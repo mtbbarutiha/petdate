@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import fs from 'fs';
 import multer from 'multer';
-import { QUICK_VET_COST, type VetConsultStatus } from '@petdate/shared';
+import { QUICK_VET_COST, vetVisitFeeCoins, type VetConsultStatus } from '@petdate/shared';
 import { infra } from '../config/infra';
 import { dbService } from '../db';
 import { createPrescriptionWithDelivery } from '../services/prescription';
@@ -175,16 +175,6 @@ consultationsRouter.post('/quick-connect', async (req, res) => {
   }
 
   const balance = patient.coins ?? 0;
-  if (balance < QUICK_VET_COST) {
-    res.status(400).json({
-      error: `برای اتصال سریع حداقل ${QUICK_VET_COST} سکه لازم داری. موجودی: ${balance}`,
-      reason: 'insufficient_coins',
-      balance,
-      cost: QUICK_VET_COST,
-    });
-    return;
-  }
-
   // دسکتاپ/وب: هم آنلاین‌های ربات، هم آنلاین‌های وب
   let vets = dbService
     .listOnlineVetsForQuickConnect()
@@ -197,7 +187,22 @@ consultationsRouter.post('/quick-connect', async (req, res) => {
     return;
   }
 
-  const debited = dbService.debitCoins(patient.id, QUICK_VET_COST, {
+  const cost = Math.max(
+    QUICK_VET_COST,
+    ...vets.map((v) => vetVisitFeeCoins(v)),
+  );
+
+  if (balance < cost) {
+    res.status(400).json({
+      error: `برای اتصال سریع حداقل ${cost} سکه لازم داری. موجودی: ${balance}`,
+      reason: 'insufficient_coins',
+      balance,
+      cost,
+    });
+    return;
+  }
+
+  const debited = dbService.debitCoins(patient.id, cost, {
     reason: 'مشاوره سریع دامپزشک',
     refType: 'vet_consult',
   });
@@ -206,7 +211,7 @@ consultationsRouter.post('/quick-connect', async (req, res) => {
       error: 'سکه کافی نیست',
       reason: 'insufficient_coins',
       balance: patient.coins ?? 0,
-      cost: QUICK_VET_COST,
+      cost,
     });
     return;
   }
@@ -226,6 +231,7 @@ consultationsRouter.post('/quick-connect', async (req, res) => {
           consult,
           vetTelegramId: vet.telegramId,
           patient,
+          visitFeeCoins: vetVisitFeeCoins(vet),
         });
         if (ok) notifiedTelegram += 1;
       }
@@ -236,7 +242,7 @@ consultationsRouter.post('/quick-connect', async (req, res) => {
 
   // اگر هیچ مشاوره‌ای ساخته نشد، سکه برگردد (چت وب بدون رکورد بی‌معنی است)
   if (consultations.length === 0) {
-    dbService.creditCoins(patient.id, QUICK_VET_COST, undefined, {
+    dbService.creditCoins(patient.id, cost, undefined, {
       reason: 'بازگشت سکه مشاوره (ناموفق)',
       refType: 'vet_consult_refund',
     });
@@ -245,7 +251,7 @@ consultationsRouter.post('/quick-connect', async (req, res) => {
       error: 'ارسال به پزشک‌ها ناموفق بود؛ سکه‌ات برگشت داده شد.',
       reason: 'notify_failed',
       refunded: true,
-      cost: QUICK_VET_COST,
+      cost,
       coins: refunded?.coins ?? 0,
       consultations,
     });
@@ -265,14 +271,14 @@ consultationsRouter.post('/quick-connect', async (req, res) => {
     ok: true,
     sent,
     notifiedTelegram,
-    cost: QUICK_VET_COST,
+    cost,
     coins: updatedPatient?.coins ?? 0,
     consultations,
     message: [
       'درخواستت برای پزشک‌های آنلاین (ربات و وب) ارسال شد.',
       `پزشک‌های هدف: ${sent}`,
       notifiedTelegram > 0 ? `اعلان تلگرام: ${notifiedTelegram}` : null,
-      `سکه کسر شده: ${QUICK_VET_COST}`,
+      `سکه کسر شده: ${cost}`,
       'به‌زودی یکی از دامپزشک‌ها در چت وب یا ربات جواب می‌دهد.',
     ]
       .filter(Boolean)
