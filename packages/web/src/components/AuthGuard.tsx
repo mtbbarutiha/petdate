@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { loginPath, postAuthPath, readNextFromSearch, sanitizeNext } from '../lib/authRedirect';
 import { useAuthStore } from '../hooks/useAuthStore';
@@ -16,6 +16,7 @@ function isPublic(pathname: string) {
 export function AuthGuard({ children }: { children?: React.ReactNode }) {
   const location = useLocation();
   const { isLoggedIn, hasRole, isProfileComplete, refreshMe, token, user } = useAuthStore();
+  const [authReady, setAuthReady] = useState(() => !token);
   const nextFromQuery = readNextFromSearch(location.search);
   const nextFromState = sanitizeNext(
     (location.state as { from?: string } | null)?.from,
@@ -26,12 +27,29 @@ export function AuthGuard({ children }: { children?: React.ReactNode }) {
   // Depend on token only — refreshMe is a stable module-level bind, but keeping
   // it out of deps prevents accidental re-fetch loops if the hook regresses.
   useEffect(() => {
-    if (token) void refreshMe().catch(() => undefined);
+    let cancelled = false;
+    if (!token) {
+      setAuthReady(true);
+      return;
+    }
+    setAuthReady(false);
+    void refreshMe()
+      .catch(() => undefined)
+      .finally(() => {
+        if (!cancelled) setAuthReady(true);
+      });
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- token is the sole trigger
   }, [token]);
 
   if (location.pathname.startsWith('/admin')) {
     return <>{children ?? <Outlet />}</>;
+  }
+
+  if (!authReady) {
+    return <div className="pepito-auth-boot" aria-busy="true" aria-label="در حال بررسی ورود" />;
   }
 
   if (!isLoggedIn && !isPublic(location.pathname)) {

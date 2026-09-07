@@ -25,6 +25,7 @@ import { useAuthStore } from '../hooks/useAuthStore';
 import { useLiveAjaxPoll } from '../hooks/useLiveAjaxPoll';
 import {
   acceptVetConsultation,
+  listMyPets,
   listPets,
   listVetConsultations,
   quickVetConnect,
@@ -334,13 +335,14 @@ export function VetConsultPage() {
     }
     setPetsLoading(true);
     try {
-      setPets(await listPets({ ownerId: user.id }));
+      if (token) setPets(await listMyPets(token));
+      else setPets(await listPets({ ownerId: user.id }));
     } catch {
       setPets([]);
     } finally {
       setPetsLoading(false);
     }
-  }, [user?.id, isVetDashboard]);
+  }, [user?.id, isVetDashboard, token]);
 
   const refreshConsultStatus = useCallback(async () => {
     if (!user?.id || isVetDashboard) return;

@@ -528,6 +528,13 @@ export async function fetchMe(token: string) {
   return coalescedAuthGet<{ ok: true; user: User }>('/api/auth/me', token);
 }
 
+/** Pets for the bearer session — never trust a stale localStorage ownerId. */
+export async function listMyPets(token: string) {
+  return request<PetProfile[]>('/api/auth/pets', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
 export async function fetchWallet(token: string) {
   return coalescedAuthGet<{
     ok: true;

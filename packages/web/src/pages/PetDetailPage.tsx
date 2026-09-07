@@ -21,6 +21,7 @@ import {
   addPetWishlistTarget,
   getPet,
   getPetMedical,
+  listMyPets,
   listPetPrescriptions,
   listPetWishlist,
   listPets,
@@ -38,7 +39,7 @@ export function PetDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { user: authUser, isLoggedIn } = useAuthStore();
+  const { user: authUser, isLoggedIn, token } = useAuthStore();
   const petId = Number(id);
 
   const [pet, setPet] = useState<PetProfile | null>(null);
@@ -88,14 +89,14 @@ export function PetDetailPage() {
   }, [loadPet]);
 
   useEffect(() => {
-    if (!myUserId) {
+    if (!token && !myUserId) {
       setMyPets([]);
       return;
     }
-    void listPets({ ownerId: myUserId })
+    void (token ? listMyPets(token) : listPets({ ownerId: myUserId! }))
       .then(setMyPets)
       .catch(() => setMyPets([]));
-  }, [myUserId]);
+  }, [myUserId, token]);
 
   useEffect(() => {
     if (!pet || !myUserId) {

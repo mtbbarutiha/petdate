@@ -6,7 +6,7 @@ import { PlaymateRequestsPanel } from './PlaymateRequestsPanel';
 import { EMPTY_STATE_PHOTO } from '../data/petImages';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { useUserStore } from '../hooks/useUserStore';
-import { listPets } from '../lib/api';
+import { listMyPets, listPets } from '../lib/api';
 import { findAndSendPlaymates, type FindPlaymateResult } from '../lib/playmateActions';
 import { petProfileToUiPet } from '../lib/playdateMap';
 
@@ -41,7 +41,7 @@ export function FindPlaymatePanel({
   onSent,
 }: FindPlaymatePanelProps) {
   const { user } = useUserStore();
-  const { user: authUser, isLoggedIn } = useAuthStore();
+  const { user: authUser, isLoggedIn, token } = useAuthStore();
   const [myPets, setMyPets] = useState<PetProfile[]>([]);
   const [petsLoading, setPetsLoading] = useState(false);
   const [findPhase, setFindPhase] = useState<FindPhase>('idle');
@@ -49,26 +49,28 @@ export function FindPlaymatePanel({
   const [findResult, setFindResult] = useState<FindPlaymateResult | null>(null);
   const [statusLine, setStatusLine] = useState<string | null>(null);
 
-  const myUserId = authUser?.id ?? user.id;
+  const myUserId = authUser?.id;
   const active =
     primaryRole(authUser?.roles, authUser?.role) ?? primaryRole(user.roles, user.role);
   const isPetOwner = active === 'pet_owner';
 
   const loadMyPets = useCallback(async () => {
-    if (!myUserId || !isPetOwner) {
+    if (!isPetOwner || (!token && !myUserId)) {
       setMyPets([]);
       return;
     }
     setPetsLoading(true);
     try {
-      const rows = await listPets({ ownerId: myUserId });
+      const rows = token
+        ? await listMyPets(token)
+        : await listPets({ ownerId: myUserId! });
       setMyPets(rows);
     } catch {
       setMyPets([]);
     } finally {
       setPetsLoading(false);
     }
-  }, [myUserId, isPetOwner]);
+  }, [myUserId, isPetOwner, token]);
 
   useEffect(() => {
     void loadMyPets();

@@ -254,6 +254,17 @@ authRouter.get('/me', (req, res) => {
   res.json({ ok: true, user: dbService.enrichUserProfileCard(fresh) });
 });
 
+/** پت‌های کاربر لاگین‌شده — منبع حقیقت سشن (نه ownerId کلاینت/استیل) */
+authRouter.get('/pets', (req, res) => {
+  const session = getUserFromBearer(req.header('authorization') ?? undefined);
+  if (!session) {
+    res.status(401).json({ error: 'وارد نشده‌اید' });
+    return;
+  }
+  const pets = dbService.listPets({ ownerId: session.user.id });
+  res.json(pets);
+});
+
 /** کیف پول چندارزی — TON / Stars / سکه ربات / تومان (همان منبع ربات) */
 authRouter.get('/wallet', (req, res) => {
   const session = getUserFromBearer(req.header('authorization') ?? undefined);

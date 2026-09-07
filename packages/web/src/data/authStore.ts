@@ -152,6 +152,19 @@ class AuthStore {
         this.data = { ...this.data, user: me.user };
         this.persist();
         return me.user;
+      } catch (err) {
+        const status = (err as Error & { status?: number })?.status;
+        // After DB wipe / expired session, never keep a stale user id in localStorage —
+        // that caused /api/pets?ownerId=<dead-id> and empty «پت‌های من» while UI looked logged-in.
+        if (status === 401 || status === 403) {
+          invalidateAuthGetCache(this.data.token);
+          this.data = {};
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
+          userStore.reset();
+          this.listeners.forEach((l) => l());
+          return null;
+        }
+        throw err;
       } finally {
         refreshMeInflight = null;
       }

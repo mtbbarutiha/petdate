@@ -10145,3 +10145,6 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
     grid-template-columns: 1fr;
   }
 }
+
+/* auth session bootstrap — avoid flash of stale logged-in UI */
+.pepito-auth-boot{min-height:40vh;}
