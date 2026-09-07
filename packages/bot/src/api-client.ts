@@ -563,6 +563,11 @@ export async function listVerifiedVets(): Promise<User[]> {
   return request<User[]>('/api/users/vets/verified');
 }
 
+/** دامپزشک‌های آنلاین آماده پذیرش (+ مبلغ ویزیت) */
+export async function listOnlineVets(): Promise<User[]> {
+  return request<User[]>('/api/users/vets/online');
+}
+
 /** همه دامپزشک‌ها برای پنل ادمین */
 export async function listAllVets(): Promise<User[]> {
   return request<User[]>('/api/users/vets');

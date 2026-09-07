@@ -333,6 +333,11 @@ usersRouter.get('/vets/verified', (_req, res) => {
   res.json(dbService.listVerifiedVets());
 });
 
+/** دامپزشک‌های آنلاین آماده پذیرش (برای نمایش لیست + مبلغ ویزیت قبل از اتصال سریع) */
+usersRouter.get('/vets/online', (_req, res) => {
+  res.json(dbService.listOnlineVetsForQuickConnect());
+});
+
 /** لیست همه دامپزشک‌ها برای پنل ادمین (فعال و غیرفعال) */
 usersRouter.get('/vets', (_req, res) => {
   res.json(dbService.listAllVets());
