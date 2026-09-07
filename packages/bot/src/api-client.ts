@@ -497,7 +497,7 @@ export type QuickVetConnectFailure = {
  */
 export async function quickVetConnect(
   patientUserId: number,
-  opts?: { confirmResend?: boolean }
+  opts?: { confirmResend?: boolean; purchaseAdvice?: boolean }
 ): Promise<QuickVetConnectResult | QuickVetConnectFailure> {
   const res = await fetch(`${config.apiUrl}/api/consultations/quick-connect`, {
     method: 'POST',
@@ -505,6 +505,8 @@ export async function quickVetConnect(
     body: JSON.stringify({
       patientUserId,
       confirmResend: Boolean(opts?.confirmResend),
+      purchaseAdvice: Boolean(opts?.purchaseAdvice),
+      intent: opts?.purchaseAdvice ? 'purchase_advice' : undefined,
     }),
   });
   const body = await res.text();
@@ -596,6 +598,17 @@ export async function setVetOnline(telegramId: string, online: boolean): Promise
     {
       method: 'POST',
       body: JSON.stringify({ online }),
+    }
+  );
+}
+
+/** آماده پذیرش پت — نقش دنبال‌کننده */
+export async function setReadyToAdopt(telegramId: string, ready: boolean): Promise<User> {
+  return request<User>(
+    `/api/users/telegram/${encodeURIComponent(telegramId)}/ready-to-adopt`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ ready }),
     }
   );
 }

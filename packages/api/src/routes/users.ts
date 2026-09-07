@@ -383,6 +383,26 @@ usersRouter.post('/telegram/:telegramId/vet-online', (req, res) => {
   res.json(user);
 });
 
+/** آماده پذیرش پت — نقش دنبال‌کننده پت */
+usersRouter.post('/telegram/:telegramId/ready-to-adopt', (req, res) => {
+  const ready = Boolean(req.body?.ready ?? req.body?.readyToAdopt);
+  const existing = dbService.getUserByTelegramId(req.params.telegramId);
+  if (!existing) {
+    res.status(404).json({ error: 'کاربر پیدا نشد' });
+    return;
+  }
+  if (!userHasRole(existing, 'pet_seeker')) {
+    res.status(403).json({ error: 'این بخش مخصوص نقش «دنبال پت» است' });
+    return;
+  }
+  const user = dbService.setReadyToAdoptByTelegramId(req.params.telegramId, ready);
+  if (!user) {
+    res.status(404).json({ error: 'کاربر پیدا نشد' });
+    return;
+  }
+  res.json(user);
+});
+
 /** مبلغ ویزیت دامپزشک (سکه) — پنل نقش پزشک در ربات/وب */
 usersRouter.post('/telegram/:telegramId/visit-fee', (req, res) => {
   const existing = dbService.getUserByTelegramId(req.params.telegramId);

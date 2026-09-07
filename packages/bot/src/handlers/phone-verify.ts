@@ -14,7 +14,9 @@ import {
   DEFAULT_MENU,
   MAIN_MENU_ALIASES,
   MY_PETS_SECTION,
+  NO_PET_MENU,
   PET_OWNER_MENU,
+  PET_SEEKER_MENU,
   SEARCH_PETS_MENU,
   VET_MENU,
   WIZARD_NAV,
@@ -28,6 +30,8 @@ import { getCtxUser, menuKeyboardFor } from './helpers';
 const MENU_LABELS = new Set<string>([
   ...Object.values(PET_OWNER_MENU),
   ...Object.values(DEFAULT_MENU),
+  ...Object.values(NO_PET_MENU),
+  ...Object.values(PET_SEEKER_MENU),
   ...Object.values(VET_MENU),
   ...Object.values(ADMIN_MENU),
   ...Object.values(SEARCH_PETS_MENU),

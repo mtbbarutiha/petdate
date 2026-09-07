@@ -8,6 +8,8 @@ import {
   MAIN_MENU_BTN,
   PET_OWNER_MENU,
   DEFAULT_MENU,
+  NO_PET_MENU,
+  PET_SEEKER_MENU,
   VET_MENU,
   ADMIN_MENU,
   MY_PETS_SECTION,
@@ -99,6 +101,12 @@ import {
   handleServices,
   handleVetConsultDecision,
 } from './services';
+import {
+  handleBuyPetConsult,
+  handleBuyPetConsultConnect,
+  handlePetsAndPlaymates,
+  handleReadyToAdoptToggle,
+} from './role-menus';
 import {
   handlePetShop,
   handleShopBackCategories,
@@ -567,6 +575,10 @@ export function registerHandlers(bot: Bot): void {
   bot.callbackQuery('vet:connect:resend', (ctx) =>
     handleQuickVetConnect(ctx, { confirmResend: true })
   );
+  bot.callbackQuery('vet:buyconsult:connect', (ctx) => handleBuyPetConsultConnect(ctx));
+  bot.callbackQuery('vet:buyconsult:resend', (ctx) =>
+    handleBuyPetConsultConnect(ctx, { confirmResend: true })
+  );
   bot.callbackQuery('vet:connect:cancel', async (ctx) => {
     await ctx.answerCallbackQuery({ text: 'لغو شد' }).catch(() => undefined);
     try {
@@ -831,6 +843,8 @@ async function handleTextMessage(ctx: Context): Promise<void> {
 
   const m = PET_OWNER_MENU;
   const d = DEFAULT_MENU;
+  const n = NO_PET_MENU;
+  const s = PET_SEEKER_MENU;
   const v = VET_MENU;
   const petsSection = MY_PETS_SECTION;
   const search = SEARCH_PETS_MENU;
@@ -838,24 +852,39 @@ async function handleTextMessage(ctx: Context): Promise<void> {
   switch (text) {
     case m.findPlaymate:
     case d.explore:
+    case n.explore:
+    case s.explore:
       return handleFindPlaymate(ctx);
-    case v.goOnline: {
+    case s.petsAndPlaymates:
+      return handlePetsAndPlaymates(ctx);
+    case s.readyAdoptOn:
+      return handleReadyToAdoptToggle(ctx, true);
+    case s.readyAdoptOff:
+      return handleReadyToAdoptToggle(ctx, false);
+    case n.buyConsult:
+      return handleBuyPetConsult(ctx);
+    case v.goOnline:
+    case '🟢 آنلاین هستم و آماده پذیرش بیمار': {
       if (!(await ensureVetPhoneVerified(ctx))) return;
       return handleVetOnlineToggle(ctx, true);
     }
-    case v.goOffline: {
+    case v.goOffline:
+    case '🔴 آفلاین هستم': {
       if (!(await ensureVetPhoneVerified(ctx))) return;
       return handleVetOnlineToggle(ctx, false);
     }
-    case v.recentPatients: {
+    case v.recentPatients:
+    case '🩺 آخرین بیمارها': {
       if (!(await ensureVetPhoneVerified(ctx))) return;
       return handleVetRecentPatients(ctx);
     }
-    case v.visitFee: {
+    case v.visitFee:
+    case '💰 مبلغ ویزیت': {
       if (!(await ensureVetPhoneVerified(ctx))) return;
       return handleVetVisitFeeMenu(ctx);
     }
     case m.nearbyPets:
+    case '📍 پت‌های نزدیک من':
       return handleNearbyPets(ctx);
     case m.searchPets:
       return handleSearchPetsMenu(ctx);
@@ -871,26 +900,37 @@ async function handleTextMessage(ctx: Context): Promise<void> {
     case search.menu:
     case m.menu:
     case d.menu:
+    case n.menu:
+    case s.menu:
     case v.menu:
     case petsSection.menu:
     case petsSection.backToMenu: {
       return handleMenu(ctx);
     }
     case m.myProfile:
+    case '👤 پروفایل خودم':
     case d.profile:
+    case n.profile:
+    case s.profile:
     case v.profile:
       return handleProfile(ctx);
     case m.verify:
     case d.verify:
+    case n.verify:
+    case s.verify:
     case v.verify:
     case '🛡 احراز هویت':
       return handleVerifyStart(ctx);
     case m.phoneVerify:
     case d.phoneVerify:
+    case n.phoneVerify:
+    case s.phoneVerify:
     case v.phoneVerify:
       return handlePhoneVerifyStart(ctx);
     case m.myPets:
     case d.myPets:
+    case n.myPets:
+    case s.myPets:
       return handleMyPets(ctx);
     case m.addPet:
     case d.addPet:
@@ -898,6 +938,8 @@ async function handleTextMessage(ctx: Context): Promise<void> {
       return handleAddPetCommand(ctx);
     case m.coins:
     case d.coins:
+    case n.coins:
+    case s.coins:
     case v.coins:
       return handleCoins(ctx);
     case m.earn:
@@ -912,26 +954,46 @@ async function handleTextMessage(ctx: Context): Promise<void> {
       }
       return;
     case m.invite:
+    case '🎁 معرفی به دوستان':
     case d.invite:
+    case n.invite:
+    case s.invite:
     case v.invite:
       return handleInviteFriends(ctx);
     case m.chat:
     case d.chat:
+    case n.chat:
+    case s.chat:
     case v.chat:
-      return handleChatsEntry(ctx);
+      // دکمه چت از همه نقش‌ها حذف شد
+      {
+        const user = await getCtxUser(ctx);
+        await ctx.reply('دکمه چت از منوی ربات حذف شده. از وب یا گفتگوی مستقیم استفاده کن.', {
+          reply_markup: menuKeyboardFor(ctx, user),
+        });
+      }
+      return;
     case m.help:
     case d.help:
+    case n.help:
+    case s.help:
     case v.help:
       return handleHelp(ctx);
     case m.myRoles:
     case d.myRoles:
+    case n.myRoles:
+    case s.myRoles:
     case v.myRoles:
       return handleMyRoles(ctx);
     case m.quickVet:
+    case '⚡ مشاوره سریع با پزشک':
     case '⚡ ارتباط سریع با پزشک':
       return handleQuickVet(ctx);
     case m.shop:
+    case '🛒 پت شاپ':
     case d.shop:
+    case n.shop:
+    case s.shop:
     case v.shop:
       return handlePetShop(ctx);
     case m.services:

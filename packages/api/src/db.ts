@@ -309,6 +309,9 @@ function migrateSchema() {
   if (!names.has('vet_online')) {
     db.exec('ALTER TABLE users ADD COLUMN vet_online INTEGER NOT NULL DEFAULT 0');
   }
+  if (!names.has('ready_to_adopt')) {
+    db.exec('ALTER TABLE users ADD COLUMN ready_to_adopt INTEGER NOT NULL DEFAULT 0');
+  }
   if (!names.has('vet_enabled')) {
     db.exec('ALTER TABLE users ADD COLUMN vet_enabled INTEGER NOT NULL DEFAULT 1');
   }
@@ -1573,6 +1576,7 @@ function mapUser(row: Record<string, unknown>): User {
     vetCredentialFileId: (row.vet_credential_file_id as string | undefined) ?? undefined,
     vetCredentialStatus: parseVetCredentialStatus(row.vet_credential_status),
     vetOnline: row.vet_online == null ? false : Boolean(row.vet_online),
+    readyToAdopt: row.ready_to_adopt == null ? false : Boolean(row.ready_to_adopt),
     /** false = توسط ادمین از لیست پزشک‌ها خارج شده */
     vetEnabled: row.vet_enabled == null ? true : Boolean(row.vet_enabled),
     visitFeeCoins:
@@ -2532,6 +2536,22 @@ export const dbService = {
     const user = this.getUserByTelegramId(telegramId);
     if (!user) return null;
     return this.setVetOnline(user.id, online);
+  },
+
+  setReadyToAdopt(userId: number, ready: boolean): User | null {
+    const existing = this.getUserById(userId);
+    if (!existing) return null;
+    const result = db
+      .prepare(`UPDATE users SET ready_to_adopt = ? WHERE id = ?`)
+      .run(ready ? 1 : 0, userId);
+    if (result.changes === 0) return null;
+    return this.getUserById(userId);
+  },
+
+  setReadyToAdoptByTelegramId(telegramId: string, ready: boolean): User | null {
+    const user = this.getUserByTelegramId(telegramId);
+    if (!user) return null;
+    return this.setReadyToAdopt(user.id, ready);
   },
 
   setVisitFeeCoins(userId: number, feeCoins: number): User | null {

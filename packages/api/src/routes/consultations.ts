@@ -144,7 +144,10 @@ consultationsRouter.post('/quick-connect', async (req, res) => {
   }
 
   const pets = dbService.listPets({ ownerId: patient.id });
-  if (!pets.length) {
+  const purchaseAdvice = Boolean(
+    req.body?.purchaseAdvice || req.body?.intent === 'purchase_advice'
+  );
+  if (!pets.length && !purchaseAdvice) {
     res.status(400).json({
       error: 'برای درخواست ارتباط با پزشک، اول باید حداقل یک پت ثبت کنی.',
       reason: 'no_pet',
@@ -224,7 +227,9 @@ consultationsRouter.post('/quick-connect', async (req, res) => {
       const consult = dbService.createVetConsultation({
         vetUserId: vet.id,
         patientUserId: patient.id,
-        notes: 'اتصال سریع آنلاین',
+        notes: purchaseAdvice
+          ? 'مشاوره برای خرید پت (بدون پت ثبت‌شده)'
+          : 'اتصال سریع آنلاین',
         feeCoins,
       });
       consultations.push(consult);
