@@ -101,8 +101,11 @@ export function getDb(): Database.Database {
     db.pragma('foreign_keys = ON');
     initSchema();
     seedIfEmpty();
-    seedDemoPetsIfEmpty();
-    seedFakeDogOwners();
+    // Demo/fake users+pets only when explicitly enabled — never auto-reseed after a production wipe.
+    if (process.env.SEED_DEMO_DATA === '1') {
+      seedDemoPetsIfEmpty();
+      seedFakeDogOwners();
+    }
     console.log(`   SQLite (source of truth): ${dbPath}`);
   }
   return db;
