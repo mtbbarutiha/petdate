@@ -7,6 +7,7 @@ import { useShopCatalogSync } from '../../hooks/useShopCatalogSync';
 import { NavUserCluster } from '../NavUserCluster';
 import { SiteDesktopNav } from '../SiteDesktopNav';
 import { SiteFooter } from '../SiteFooter';
+import { ShopAddToast } from './ShopAddToast';
 
 
 export function ShopChrome({
@@ -93,6 +94,7 @@ export function ShopChrome({
         {children}
       </main>
 
+      <ShopAddToast />
       <SiteFooter />
     </div>
   );

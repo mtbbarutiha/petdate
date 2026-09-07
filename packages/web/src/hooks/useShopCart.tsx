@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
@@ -40,6 +41,14 @@ export interface ShopOrderStub {
   paymentCurrency?: 'coins' | 'stars' | 'toman';
 }
 
+export type ShopAddToast = {
+  id: number;
+  productId: string;
+  title: string;
+  image?: string;
+  qty: number;
+};
+
 function readLines(): CartLine[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -67,6 +76,23 @@ function readOrders(): ShopOrderStub[] {
   }
 }
 
+function pulseCartTarget() {
+  const el = document.querySelector<HTMLElement>('[data-shop-cart-target]');
+  if (!el) return;
+  el.classList.remove('is-cart-pulse');
+  // restart animation
+  void el.offsetWidth;
+  el.classList.add('is-cart-pulse');
+  window.setTimeout(() => el.classList.remove('is-cart-pulse'), 520);
+  const badge = el.querySelector('.pepito-nav-cart-count, .pd-shop-cart-count');
+  if (badge) {
+    badge.classList.remove('is-badge-pop');
+    void (badge as HTMLElement).offsetWidth;
+    badge.classList.add('is-badge-pop');
+    window.setTimeout(() => badge.classList.remove('is-badge-pop'), 480);
+  }
+}
+
 interface ShopCartContextValue {
   lines: CartLineView[];
   itemCount: number;
@@ -74,6 +100,11 @@ interface ShopCartContextValue {
   totalCoins: number;
   totalStars: number;
   add: (productId: string, qty?: number) => void;
+  /** افزودن با لودینگ دکمه + toast گوشه‌ای */
+  addAnimated: (productId: string, qty?: number) => Promise<void>;
+  pendingAddId: string | null;
+  addToast: ShopAddToast | null;
+  dismissAddToast: () => void;
   setQty: (productId: string, qty: number) => void;
   remove: (productId: string) => void;
   clear: () => void;
@@ -93,6 +124,11 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
   const [lines, setLines] = useState<CartLine[]>(() =>
     typeof window === 'undefined' ? [] : readLines()
   );
+  const [pendingAddId, setPendingAddId] = useState<string | null>(null);
+  const [addToast, setAddToast] = useState<ShopAddToast | null>(null);
+  const toastTimerRef = useRef<number | null>(null);
+  const toastSeqRef = useRef(0);
+  const pendingLockRef = useRef(false);
 
   useEffect(() => {
     writeLines(lines);
@@ -105,6 +141,13 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
     window.addEventListener('storage', onStorage);
     return () => window.removeEventListener('storage', onStorage);
   }, []);
+
+  useEffect(
+    () => () => {
+      if (toastTimerRef.current != null) window.clearTimeout(toastTimerRef.current);
+    },
+    []
+  );
 
   const views: CartLineView[] = useMemo(() => {
     return lines
@@ -130,16 +173,61 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
   const totalStars = useMemo(() => views.reduce((s, l) => s + l.lineStars, 0), [views]);
 
   const add = useCallback((productId: string, qty = 1) => {
+    const n = Math.max(1, Math.floor(qty) || 1);
     setLines((prev) => {
       const i = prev.findIndex((l) => l.productId === productId);
       if (i >= 0) {
         const next = [...prev];
-        next[i] = { ...next[i]!, qty: next[i]!.qty + qty };
+        next[i] = { ...next[i]!, qty: next[i]!.qty + n };
         return next;
       }
-      return [...prev, { productId, qty }];
+      return [...prev, { productId, qty: n }];
     });
   }, []);
+
+  const dismissAddToast = useCallback(() => {
+    if (toastTimerRef.current != null) {
+      window.clearTimeout(toastTimerRef.current);
+      toastTimerRef.current = null;
+    }
+    setAddToast(null);
+  }, []);
+
+  const addAnimated = useCallback(
+    async (productId: string, qty = 1) => {
+      if (pendingLockRef.current) return;
+      const product = getProduct(productId);
+      if (!product?.inStock) return;
+      const n = Math.max(1, Math.min(10, Math.floor(qty) || 1));
+      pendingLockRef.current = true;
+      setPendingAddId(productId);
+      try {
+        await new Promise<void>((resolve) => {
+          window.setTimeout(resolve, 380);
+        });
+        add(productId, n);
+        pulseCartTarget();
+        toastSeqRef.current += 1;
+        const toast: ShopAddToast = {
+          id: toastSeqRef.current,
+          productId,
+          title: product.title,
+          image: product.image,
+          qty: n,
+        };
+        setAddToast(toast);
+        if (toastTimerRef.current != null) window.clearTimeout(toastTimerRef.current);
+        toastTimerRef.current = window.setTimeout(() => {
+          setAddToast((cur) => (cur?.id === toast.id ? null : cur));
+          toastTimerRef.current = null;
+        }, 2800);
+      } finally {
+        setPendingAddId(null);
+        pendingLockRef.current = false;
+      }
+    },
+    [add]
+  );
 
   const setQty = useCallback((productId: string, qty: number) => {
     setLines((prev) => {
@@ -187,6 +275,10 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
       totalCoins,
       totalStars,
       add,
+      addAnimated,
+      pendingAddId,
+      addToast,
+      dismissAddToast,
       setQty,
       remove,
       clear,
@@ -200,6 +292,10 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
       totalCoins,
       totalStars,
       add,
+      addAnimated,
+      pendingAddId,
+      addToast,
+      dismissAddToast,
       setQty,
       remove,
       clear,
