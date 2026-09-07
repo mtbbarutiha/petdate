@@ -11,7 +11,7 @@ import {
   hasS3Config,
   infra,
 } from '../config/infra';
-import { dbService } from '../db';
+import { dbService, getStorageDriver } from '../db';
 import { adminPlatform } from '../admin-platform';
 import { adminFinance } from '../admin-finance';
 import { logAppEvent } from '../services/app-logger';
@@ -35,6 +35,10 @@ import { publicPdfOrigin, publicWebOrigin } from '../services/prescription-html'
 
 export const adminRouter = Router();
 const STARTED_AT = Date.now();
+
+function usePostgresStorage(): boolean {
+  return getStorageDriver() === 'postgres';
+}
 
 const adminLoginLimit = rateLimit({
   windowMs: 15 * 60 * 1000,
@@ -841,7 +845,7 @@ async function probeHttp(
 /** Probe a public HTTPS URL as users see it on the main domain. */
 async function probePublicUrl(url: string, label: string): Promise<ServiceCheck> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 4000);
+  const timer = setTimeout(() => controller.abort(), 2500);
   try {
     const res = await fetch(url, {
       method: 'GET',
@@ -921,6 +925,7 @@ adminRouter.get('/monitoring', async (_req, res) => {
     }
   })();
   const apiHealthUrl = `${siteUrl}/api/health`;
+  const apiHealthLocal = 'http://127.0.0.1:3001/api/health';
   const pdfUrl = pdfOrigin.replace(/\/$/, '') || `https://pdf.${apex}`;
 
   const [
@@ -936,10 +941,16 @@ adminRouter.get('/monitoring', async (_req, res) => {
   ] = await Promise.all([
     probePublicUrl(siteUrl, apex),
     probePublicUrl(wwwUrl, `www.${apex}`),
-    probePublicUrl(apiHealthUrl, `${apex}/api`),
+    // Prefer loopback for API health to avoid hairpin NAT stalls on the same VPS.
+    probePublicUrl(apiHealthLocal, `${apex}/api`).then(async (local) => {
+      if (local.status === 'up') {
+        return checkUp(`${apex}/api · HTTP 200 (local)`);
+      }
+      return probePublicUrl(apiHealthUrl, `${apex}/api`);
+    }),
     probePublicUrl(pdfUrl, new URL(pdfUrl).hostname),
     probeService(process.env.REDIS_URL, 6379, 'Redis'),
-    probeService(postgresUrl, 5432, 'Postgres'),
+    probeService(postgresUrl || 'postgresql://petdate@127.0.0.1:5432/petdate', 5432, 'Postgres'),
     hasS3Config()
       ? probeHttp(infra.s3.endpoint, '/minio/health/live', 9000, 'S3/MinIO')
       : Promise.resolve(checkNotConfigured()),
@@ -958,10 +969,20 @@ adminRouter.get('/monitoring', async (_req, res) => {
     api: apiPublic,
     pdf: pdfPublic,
     telegramBot,
-    sqlite: checkUp(`${apex} · SQLite (منبع حقیقت)`),
+    sqlite: usePostgresStorage()
+      ? checkUp(`${apex} · SQLite (بکاپ محلی)`)
+      : checkUp(`${apex} · SQLite (منبع حقیقت)`),
     postgres: postgresUrl
-      ? postgres
-      : checkNotConfigured(),
+      ? (postgres.status === 'up'
+          ? checkUp(
+              usePostgresStorage()
+                ? `${apex} · Postgres (منبع حقیقت)`
+                : `${apex} · Postgres (آماده — هنوز SoT نیست)`
+            )
+          : postgres)
+      : postgres.status === 'up'
+        ? checkUp(`${apex} · Postgres روی سرور روشن است — DATABASE_URL ست نیست`)
+        : checkNotConfigured('کانتینر Postgres در دسترس نیست / DATABASE_URL ست نیست'),
     redis,
     s3,
     elasticsearch,
@@ -970,8 +991,8 @@ adminRouter.get('/monitoring', async (_req, res) => {
   const unhealthy = Object.entries(checks)
     .filter(([, v]) => v.status === 'down')
     .map(([k]) => k);
-  // Elasticsearch is optional (compose profile: search). Configured infra that is down is critical.
-  const nonCritical = new Set(['elasticsearch', 'postgres']);
+  // Elasticsearch optional; Postgres is critical only when it is the active SoT.
+  const nonCritical = new Set(['elasticsearch', ...(usePostgresStorage() ? [] : ['postgres'])]);
   const criticalUnhealthy = unhealthy.filter((k) => !nonCritical.has(k));
   res.json({
     ok: criticalUnhealthy.length === 0,
