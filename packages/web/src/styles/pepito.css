@@ -5379,8 +5379,8 @@ div.pepito-profile-stat:active {
 
 /* —— Post-login profile avatar + wallet (physical CSS left) —— */
 .pepito-nav--app {
-  /* Room for absolute avatar + compact wallet entry on physical left */
-  padding-left: calc(var(--pepito-gutter-x) + 10.5rem);
+  /* Room for absolute avatar + wallet chip on physical left */
+  padding-left: calc(var(--pepito-gutter-x) + 12.5rem);
 }
 .pepito-nav-user-cluster {
   position: absolute;
@@ -5410,7 +5410,8 @@ div.pepito-profile-stat:active {
   appearance: none;
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.5rem;
+  max-width: min(58vw, 20rem);
   height: 42px;
   padding: 0 0.85rem 0 0.5rem;
   border-radius: 999px;
@@ -5421,14 +5422,12 @@ div.pepito-profile-stat:active {
   box-shadow: 0 4px 14px rgba(25, 6, 61, 0.07);
   transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
   font: inherit;
-  text-decoration: none;
-  white-space: nowrap;
 }
-.pepito-nav-wallet-btn:hover {
+.pepito-nav-wallet-btn:hover,
+.pepito-nav-wallet-btn[aria-expanded='true'] {
   border-color: rgba(92, 77, 145, 0.35);
   box-shadow: 0 8px 18px rgba(25, 6, 61, 0.12);
   transform: translateY(-1px);
-  color: var(--pepito-dark);
 }
 .pepito-nav-wallet-mark {
   display: inline-flex;
@@ -5444,12 +5443,54 @@ div.pepito-profile-stat:active {
   flex-shrink: 0;
   line-height: 1;
 }
-.pepito-nav-wallet-label {
+.pepito-nav-wallet-chip-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+  overflow: hidden;
   font-family: var(--font-display);
   font-weight: 750;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   line-height: 1;
   color: var(--pepito-dark);
+}
+.pepito-nav-wallet-chip-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28rem;
+  white-space: nowrap;
+  line-height: 1;
+}
+.pepito-nav-wallet-chip-ico {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1em;
+  height: 1em;
+  font-size: 0.92em;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.pepito-nav-wallet-chip-num {
+  display: inline-block;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  transform: translateY(0.02em);
+}
+.pepito-nav-wallet-chip-sep {
+  display: inline-block;
+  width: 1px;
+  height: 0.95em;
+  flex-shrink: 0;
+  background: rgba(25, 6, 61, 0.16);
+  border-radius: 1px;
+}
+.pepito-nav-wallet-chip-unit {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--pepito-muted);
+  line-height: 1;
 }
 .pepito-nav-wallet-panel {
   position: absolute;
@@ -5690,9 +5731,11 @@ div.pepito-profile-stat:active {
   .pepito-nav-wallet-btn {
     padding: 0 0.65rem 0 0.4rem;
     gap: 0.4rem;
+    max-width: min(52vw, 16rem);
   }
-  .pepito-nav-wallet-label {
-    font-size: 0.76rem;
+  .pepito-nav-wallet-chip-line {
+    font-size: 0.72rem;
+    gap: 0.4rem;
   }
   .pepito-nav-profile-menu,
   .pepito-nav-wallet-panel {
@@ -10005,12 +10048,14 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   }
 
   .pepito-nav-wallet-btn {
+    max-width: min(52vw, 12.5rem) !important;
     height: 36px !important;
     padding: 0 0.55rem 0 0.35rem !important;
     gap: 0.35rem !important;
   }
-  .pepito-nav-wallet-label {
-    font-size: 0.72rem !important;
+  .pepito-nav-wallet-chip-line {
+    font-size: 0.66rem !important;
+    gap: 0.35rem !important;
   }
   .pepito-nav-profile-btn,
   .pepito-nav-cart-link {
@@ -10024,8 +10069,18 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
 }
 
 @media (max-width: 420px) {
+  /* Keep coin + Stars counts visible on narrow phones (was fully hidden). */
+  .pepito-nav-wallet-chip-line {
+    display: inline-flex !important;
+    font-size: 0.62rem !important;
+  }
+  .pepito-nav-wallet-chip-item--toman,
+  .pepito-nav-wallet-chip-sep--toman {
+    display: none !important;
+  }
   .pepito-nav-wallet-btn {
     width: auto !important;
+    max-width: min(48vw, 8.5rem) !important;
     padding: 0 0.4rem 0 0.3rem !important;
     justify-content: flex-start !important;
   }
@@ -10259,8 +10314,17 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
     font-size: 0.76rem;
   }
 
-  .pepito-nav-wallet-label {
-    font-size: 0.78rem;
+  .pepito-nav-wallet-btn {
+    max-width: min(42vw, 15.5rem);
+  }
+  .pepito-nav-wallet-chip-line {
+    gap: 0.4rem;
+  }
+}
+
+@media (min-width: 1100px) {
+  .pepito-nav-wallet-btn {
+    max-width: none;
   }
 }
 
