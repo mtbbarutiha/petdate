@@ -20,6 +20,9 @@ npx tsx "$ROOT/packages/shared/src/user-command-id.selftest.ts"
 echo "==> selftest: web inbox title (no public id)"
 npx tsx "$ROOT/packages/web/src/lib/inboxTitle.selftest.ts"
 
+echo "==> selftest: web share helper (Web Share / clipboard)"
+npx tsx "$ROOT/packages/web/src/lib/share.selftest.ts"
+
 # Pure / memory-path tests first
 run src/services/web-chat-cta-once.selftest.ts
 run src/services/otp-sms-copy.selftest.ts
