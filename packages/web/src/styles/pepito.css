@@ -8747,6 +8747,23 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   font-size: 1.05rem !important;
   color: #1a4d8f !important;
 }
+.pepito-wallet-tg-stars-open {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  margin-top: 0.15rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.92rem !important;
+  font-weight: 800 !important;
+  color: #fff !important;
+  background: #1a4d8f;
+  text-decoration: none;
+  line-height: 1.2;
+}
+.pepito-wallet-tg-stars-open:hover {
+  filter: brightness(1.06);
+}
 .pepito-wallet-tg-stars-hint {
   display: block;
   margin-top: 0.25rem;

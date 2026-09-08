@@ -554,6 +554,8 @@ export async function fetchWallet(token: string) {
       reasonFa: string;
       walletStars: number;
       topUpDeepLink: string | null;
+      viewStarsDeepLink?: string | null;
+      viewStarsHttpsHint?: string | null;
     };
   }>('/api/auth/wallet', token);
 }

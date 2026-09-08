@@ -76,6 +76,7 @@ export function WalletPage() {
     nativeReadable: boolean;
     reasonFa: string;
     topUpDeepLink: string | null;
+    viewStarsDeepLink: string | null;
     telegramAccountLabelFa: string;
     petdateLabelFa: string;
     petdateBalance: number;
@@ -134,6 +135,10 @@ export function WalletPage() {
           nativeReadable: Boolean(res.telegramStars.nativeReadable),
           reasonFa: res.telegramStars.reasonFa,
           topUpDeepLink: res.telegramStars.topUpDeepLink,
+          viewStarsDeepLink:
+            res.telegramStars.viewStarsDeepLink ||
+            res.telegramStars.viewStarsHttpsHint ||
+            'tg://stars',
           telegramAccountLabelFa:
             res.telegramStars.telegramAccountLabelFa || 'موجودی Stars شما در تلگرام',
           petdateLabelFa:
@@ -314,11 +319,22 @@ export function WalletPage() {
                 <span className="pepito-wallet-tg-stars-label">
                   {telegramStarsMeta?.telegramAccountLabelFa || 'موجودی Stars شما در تلگرام'}
                 </span>
-                <strong className="pepito-wallet-tg-stars-val pepito-wallet-tg-stars-val--muted">
-                  فقط در تلگرام
-                </strong>
+                {linked && telegramStarsMeta?.viewStarsDeepLink ? (
+                  <a
+                    className="pepito-wallet-tg-stars-val pepito-wallet-tg-stars-open"
+                    href={telegramStarsMeta.viewStarsDeepLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    مشاهده در تلگرام
+                  </a>
+                ) : (
+                  <strong className="pepito-wallet-tg-stars-val pepito-wallet-tg-stars-val--muted">
+                    بعد از اتصال
+                  </strong>
+                )}
                 <span className="pepito-wallet-tg-stars-hint">
-                  عدد موجودی حساب شخصی از API خوانده نمی‌شود؛ هنگام پرداخت فاکتور در خود تلگرام دیده و کسر می‌شود.
+                  عدد موجودی شخصی فقط داخل اپ تلگرام (My Stars) دیده می‌شود؛ از اینجا همان صفحه باز می‌شود.
                 </span>
               </span>
             </p>
@@ -389,7 +405,7 @@ export function WalletPage() {
           >
             {linked
               ? syncedAt
-                ? 'بعد از پرداخت فاکتور Stars در ربات، موجودی پنل پت‌دیت اینجا به‌روز می‌شود.'
+                ? 'همگام‌سازی: ستارهٔ پنل تازه شد. برای عدد Stars تلگرام از «مشاهده در تلگرام» استفاده کن.'
                 : '\u00a0'
               : linkHint || '\u00a0'}
           </p>
