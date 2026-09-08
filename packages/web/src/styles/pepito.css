@@ -2884,6 +2884,18 @@ button.chip.is-on {
     width: auto !important;
     max-width: none !important;
   }
+  .pepito-app-shell .pepito-profile-top,
+  .pepito-profile-top {
+    margin-inline: calc(-1 * var(--pepito-container-pad));
+    width: auto;
+    max-width: none;
+    border-radius: 0 0 20px 20px;
+  }
+  .pepito-app-shell .pepito-profile-top .pepito-profile-hero,
+  .pepito-profile-top .pepito-profile-hero {
+    margin-inline: 0 !important;
+    border-radius: 0 !important;
+  }
 }
 
 .pepito-app-mobile-nav {
@@ -3054,12 +3066,22 @@ button.chip.is-on {
 .pepito-profile {
   display: flex;
   flex-direction: column;
-  gap: 1.1rem;
+  gap: 1.25rem;
   background: transparent !important;
-  max-width: 780px;
+  max-width: 720px;
   width: 100%;
   margin-inline: auto;
   padding-bottom: 1.5rem;
+}
+.pepito-profile-top {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border-radius: 24px;
+  overflow: hidden;
+  isolation: isolate;
+  animation: pepito-flow-banner-in 0.75s ease both;
+  box-shadow: 0 10px 28px rgba(25, 6, 61, 0.08);
 }
 .pepito-profile-hero {
   position: relative;
@@ -3073,6 +3095,14 @@ button.chip.is-on {
   align-items: flex-end;
   isolation: isolate;
   animation: pepito-flow-banner-in 0.75s ease both;
+}
+.pepito-profile-hero--compact {
+  min-height: 0;
+  border-radius: 0;
+  animation: none;
+}
+.pepito-profile-top .pepito-profile-hero--compact {
+  border-radius: 0;
 }
 .pepito-profile-hero-wash {
   position: absolute;
@@ -3111,6 +3141,48 @@ button.chip.is-on {
   gap: 0.7rem;
   animation: pepito-flow-rise 0.65s ease 0.1s both;
 }
+.pepito-profile-hero--compact .pepito-profile-hero-inner {
+  padding: 0.95rem 1.1rem 0.95rem;
+  gap: 0.85rem;
+  animation: pepito-flow-rise 0.55s ease both;
+}
+.pepito-profile-hero-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+.pepito-profile-hero--compact .pepito-profile-kicker {
+  font-size: 0.78rem !important;
+  opacity: 0.9;
+}
+.pepito-profile-name-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.65rem;
+  margin-bottom: 0.25rem;
+}
+.pepito-profile-name-row h1 {
+  margin: 0;
+}
+.pepito-profile-section-head {
+  margin-bottom: 0.75rem;
+}
+.pepito-profile-section-head h2 {
+  margin: 0 0 0.2rem;
+  font-family: var(--font-display);
+  color: var(--pepito-dark);
+  font-size: clamp(1.15rem, 2.2vw, 1.4rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+.pepito-profile-section-head > p {
+  margin: 0;
+  color: var(--pepito-muted);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
 .pepito-profile-kicker {
   color: rgba(255, 255, 255, 0.95) !important;
   margin: 0 !important;
@@ -3142,6 +3214,39 @@ button.chip.is-on {
   align-items: center;
   gap: 0.4rem;
   flex-wrap: wrap;
+}
+.pepito-profile-hero--compact .pepito-profile-identity-text h1 {
+  margin: 0;
+  font-size: clamp(1.35rem, 3vw, 1.85rem);
+}
+.pepito-profile-hero--compact .pepito-profile-identity {
+  gap: 0.9rem;
+  align-items: center;
+}
+.pepito-profile-hero--compact .pepito-profile-meta {
+  margin: 0 0 0.25rem;
+  font-size: 0.88rem;
+}
+.pepito-profile-hero--compact .pepito-profile-loc {
+  margin: 0;
+  font-size: 0.86rem;
+  max-width: 100%;
+}
+.pepito-profile-hero--compact .pepito-profile-loc span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pepito-profile-hero--compact .pepito-profile-completion {
+  padding-top: 0.15rem;
+}
+.pepito-profile-hero--compact .pepito-profile-completion-top {
+  margin-bottom: 0.3rem;
+  font-size: 0.8rem;
+}
+.pepito-profile-hero--compact .pepito-profile-hero-cta {
+  justify-content: flex-end;
+  flex-shrink: 0;
 }
 .pepito-profile-name-emoji {
   font-size: 0.85em;
@@ -3370,7 +3475,7 @@ button.chip.is-on {
   margin-top: 0;
 }
 
-/* Facts — no card clutter; hairline rows */
+/* Facts — dense label/value rows (priority: readable data) */
 .pepito-profile-facts {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3401,6 +3506,44 @@ button.chip.is-on {
   font-size: 1rem;
   font-weight: 700;
   color: var(--pepito-dark);
+}
+.pepito-profile-facts--rows {
+  grid-template-columns: 1fr;
+  margin: 0 0 0.85rem;
+  border: 1px solid rgba(92, 77, 145, 0.1);
+  border-radius: 16px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.88);
+}
+.pepito-profile-facts--rows > div {
+  display: grid;
+  grid-template-columns: minmax(4.5rem, 7rem) minmax(0, 1fr);
+  align-items: center;
+  gap: 0.65rem 1rem;
+  padding: 0.7rem 0.9rem;
+  border-bottom: 1px solid rgba(92, 77, 145, 0.08);
+  min-width: 0;
+}
+.pepito-profile-facts--rows > div:nth-last-child(-n + 2),
+.pepito-profile-facts--rows > div:last-child {
+  border-bottom: 0;
+}
+.pepito-profile-facts--rows > div:not(:last-child) {
+  border-bottom: 1px solid rgba(92, 77, 145, 0.08);
+}
+.pepito-profile-facts--rows dt {
+  font-size: 0.8rem;
+}
+.pepito-profile-facts--rows dd {
+  font-size: 0.95rem;
+  font-weight: 700;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  text-align: start;
+}
+.pepito-profile-about .pepito-profile-bio {
+  margin-top: 0.15rem;
 }
 .pepito-profile-badge {
   display: inline-flex;
@@ -3447,13 +3590,48 @@ button.chip.is-on {
   font-weight: 700;
 }
 
-/* Stats strip — touch-friendly metrics */
+/* Stats strip — compact metrics under identity */
 .pepito-profile-stats {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.55rem;
   margin: 0;
   padding: 0;
+}
+.pepito-profile-stats--strip {
+  gap: 0;
+  margin: 0;
+  padding: 0.15rem 0;
+  background: #fff;
+  border-top: 1px solid rgba(92, 77, 145, 0.08);
+}
+.pepito-profile-stats--strip .pepito-profile-stat {
+  min-height: 3.35rem;
+  padding: 0.55rem 0.25rem 0.6rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  position: relative;
+}
+.pepito-profile-stats--strip .pepito-profile-stat + .pepito-profile-stat::before {
+  content: '';
+  position: absolute;
+  inset-block: 18%;
+  inset-inline-start: 0;
+  width: 1px;
+  background: rgba(92, 77, 145, 0.12);
+}
+.pepito-profile-stats--strip .pepito-profile-stat:hover {
+  background: rgba(92, 77, 145, 0.04);
+  transform: none;
+  border-color: transparent;
+}
+.pepito-profile-stats--strip .pepito-profile-stat strong {
+  font-size: 1.05rem;
+}
+.pepito-profile-stats--strip .pepito-profile-stat span {
+  font-size: 0.72rem;
 }
 .pepito-profile-stat {
   display: flex;
@@ -3717,12 +3895,32 @@ div.pepito-profile-stat:active {
   gap: 0.55rem;
 }
 @media (max-width: 640px) {
+  .pepito-profile-top {
+    border-radius: 0 0 20px 20px;
+  }
   .pepito-profile-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.5rem;
   }
+  .pepito-profile-stats--strip {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0;
+  }
+  .pepito-profile-stats--strip .pepito-profile-stat {
+    min-height: 3.2rem;
+  }
   .pepito-profile-stat {
     min-height: 4.6rem;
+  }
+  .pepito-profile-facts--rows > div {
+    grid-template-columns: minmax(4rem, 5.5rem) minmax(0, 1fr);
+    padding: 0.65rem 0.75rem;
+  }
+  .pepito-profile-hero-toolbar {
+    align-items: flex-start;
+  }
+  .pepito-profile-hero--compact .pepito-profile-identity {
+    align-items: flex-start;
   }
   .pepito-profile-overview-list {
     grid-template-columns: 1fr;
@@ -10756,10 +10954,23 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   cursor: pointer;
   font: inherit;
   color: inherit;
+  max-width: 100%;
+  display: inline-flex;
+  min-width: 0;
 }
 .pepito-profile-command-id code {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   letter-spacing: 0.02em;
+  display: inline-block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+  background: var(--pepito-lilac);
+  color: var(--pepito-base);
+  padding: 0.15rem 0.45rem;
+  border-radius: 8px;
+  font-size: 0.88em;
+  font-weight: 700;
 }
 .pepito-profile-command-id:hover code,
 .pepito-profile-command-id:focus-visible code {
