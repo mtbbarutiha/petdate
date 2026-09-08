@@ -299,11 +299,48 @@ export function WelcomePage() {
     if (!track) return;
     const card = track.querySelector<HTMLElement>('.pepito-service-card');
     if (!card) return;
-    const gap = 21.6; // 1.35rem
+    const styles = getComputedStyle(track);
+    const gap = parseFloat(styles.columnGap || styles.gap) || 21.6;
     const step = card.getBoundingClientRect().width + gap;
-    const rtl = getComputedStyle(track).direction === 'rtl';
-    track.scrollTo({ left: rtl ? -svcIndex * step : svcIndex * step, behavior: 'smooth' });
+    if (step <= 0) return;
+    const rtl = styles.direction === 'rtl';
+    const target = rtl ? -svcIndex * step : svcIndex * step;
+    const current = track.scrollLeft;
+    if (Math.abs(current - target) < 2) return;
+    track.scrollTo({ left: target, behavior: 'smooth' });
   }, [svcIndex]);
+
+  /* Keep dots in sync when the user swipes the services track (RTL-aware). */
+  useEffect(() => {
+    const track = svcTrackRef.current;
+    if (!track) return;
+    let settleTimer = 0;
+    const syncFromScroll = () => {
+      const card = track.querySelector<HTMLElement>('.pepito-service-card');
+      if (!card) return;
+      const styles = getComputedStyle(track);
+      const gap = parseFloat(styles.columnGap || styles.gap) || 21.6;
+      const step = card.getBoundingClientRect().width + gap;
+      if (step <= 0) return;
+      const rtl = styles.direction === 'rtl';
+      const raw = rtl ? -track.scrollLeft : track.scrollLeft;
+      const idx = Math.max(0, Math.min(SERVICES.length - 1, Math.round(raw / step)));
+      setSvcIndex((prev) => (prev === idx ? prev : idx));
+    };
+    const onScroll = () => {
+      setSvcPaused(true);
+      window.clearTimeout(settleTimer);
+      settleTimer = window.setTimeout(() => {
+        syncFromScroll();
+        setSvcPaused(false);
+      }, 120);
+    };
+    track.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      window.clearTimeout(settleTimer);
+      track.removeEventListener('scroll', onScroll);
+    };
+  }, []);
 
   const newsPages = Math.max(1, NEWS.length - 2); // 3 visible on desktop → pages = n-2
   const goNews = (index: number) => {
