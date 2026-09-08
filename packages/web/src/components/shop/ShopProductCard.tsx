@@ -71,7 +71,7 @@ export function ShopProductCard({
             ) : (
               <ShoppingCart size={15} strokeWidth={2.2} aria-hidden />
             )}
-            {busy ? '…' : product.inStock ? 'بخر' : 'ناموجود'}
+            {busy ? 'در حال افزودن…' : product.inStock ? 'افزودن به سبد خرید' : 'ناموجود'}
           </button>
         </div>
       </div>
