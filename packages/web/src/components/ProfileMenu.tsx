@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { LogOut, UserRound } from 'lucide-react';
 import { USER_ROLE_LABELS, normalizeRoles, primaryRole } from '@petdate/shared';
 import { useAuthStore } from '../hooks/useAuthStore';
+import { resolvePublicMediaUrl } from '../lib/api';
 import { RoleSwitchControl } from './RoleSwitchControl';
 
 /**
@@ -45,7 +46,7 @@ export function ProfileMenu() {
   const active = primaryRole(roles, user.role);
   const roleLabel = active ? USER_ROLE_LABELS[active] : null;
   const initial = (user.name?.trim()?.[0] || 'پ').toUpperCase();
-  const photo = user.avatarUrl?.trim() || '';
+  const photo = resolvePublicMediaUrl(user.avatarUrl);
 
   async function onLogout() {
     if (busy) return;

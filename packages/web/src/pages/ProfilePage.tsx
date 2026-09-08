@@ -56,6 +56,7 @@ import {
   listUserBlocks,
   listUserContacts,
   patchWebProfile,
+  resolvePublicMediaUrl,
   setSilentChatRequests,
 } from '../lib/api';
 import { petProfileToUiPet } from '../lib/playdateMap';
@@ -154,7 +155,8 @@ export function ProfilePage() {
   const locationLabel = [display.city, display.province, display.country].filter(Boolean).join('، ') || '—';
   const primaryPet = myPets[0] ? petProfileToUiPet(myPets[0]) : null;
   const avatarSrc =
-    display.avatarUrl || (isPetOwner && primaryPet?.imageUrl ? primaryPet.imageUrl : '');
+    resolvePublicMediaUrl(display.avatarUrl) ||
+    (isPetOwner && primaryPet?.imageUrl ? resolvePublicMediaUrl(primaryPet.imageUrl) : '');
   const genderLabel = display.gender ? USER_GENDER_LABELS[display.gender] : null;
   const likes = display.likesCount ?? 0;
   const contactsCount = display.contactsCount ?? 0;

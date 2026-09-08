@@ -422,6 +422,17 @@
   flex-shrink: 0;
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
+.tg-chat-peer-avatar--photo {
+  overflow: hidden;
+  padding: 0;
+  background: #dfe3ea;
+}
+.tg-chat-peer-avatar--photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
 
 .tg-icon-btn {
   width: 40px !important;

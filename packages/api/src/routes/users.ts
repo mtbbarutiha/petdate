@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import type { OnboardingStatus, UserRole } from '@petdate/shared';
+import type { OnboardingStatus, User, UserRole } from '@petdate/shared';
 import { FACE_VERIFY_REWARD, ONBOARDING_STATUS_LABELS, USER_ROLES, userHasRole } from '@petdate/shared';
 import { dbService } from '../db';
 import { sendPhoneOtp, verifyPhoneOtp } from '../services/phone-otp';
@@ -9,6 +9,13 @@ import {
   completeShopStarsXtrPayment,
   isShopXtrPackageId,
 } from '../services/shop-checkout';
+import {
+  ensureWebAccessibleAvatar,
+  isWebAvatarUrl,
+  looksLikeTelegramFileId,
+  materializeTelegramFileIdAsAvatar,
+  syncUserProfileFromTelegram,
+} from '../services/telegram-profile-sync';
 
 export const usersRouter = Router();
 
@@ -16,32 +23,69 @@ function isUserRole(value: unknown): value is UserRole {
   return typeof value === 'string' && USER_ROLES.includes(value as UserRole);
 }
 
-usersRouter.post('/register', (req, res) => {
+/** Convert Telegram file_id avatars to /api/auth/avatar/... for web + absolute Telegram URLs. */
+async function resolveAvatarUrlPatch(
+  userId: number,
+  avatarUrl: unknown
+): Promise<string | undefined> {
+  if (avatarUrl == null) return undefined;
+  const raw = String(avatarUrl).trim();
+  if (!raw) return '';
+  if (isWebAvatarUrl(raw)) return raw;
+  if (looksLikeTelegramFileId(raw)) {
+    const path = await materializeTelegramFileIdAsAvatar(userId, raw);
+    return path ?? raw;
+  }
+  return raw;
+}
+
+async function withEnsuredAvatar(user: User): Promise<User> {
+  try {
+    const ensured = await ensureWebAccessibleAvatar(user.id);
+    return ensured ?? user;
+  } catch (err) {
+    console.warn('ensureWebAccessibleAvatar failed:', (err as Error).message);
+    return user;
+  }
+}
+
+usersRouter.post('/register', async (req, res) => {
   const { telegramId, name, username } = req.body;
   if (!name) {
     res.status(400).json({ error: 'نام الزامی است' });
     return;
   }
   const { user, created } = dbService.findOrCreateUser({ telegramId, name, username });
+  // Pull Telegram profile photo (or materialize file_id) so bot/web profile views have a face.
+  let synced = await withEnsuredAvatar(user);
+  if (telegramId && !isWebAvatarUrl(synced.avatarUrl)) {
+    try {
+      const fromTg = await syncUserProfileFromTelegram(synced.id, String(telegramId));
+      if (fromTg) synced = fromTg;
+    } catch (err) {
+      console.warn('register telegram profile sync failed:', (err as Error).message);
+    }
+  }
   if (!created) {
-    res.json(user);
+    res.json(synced);
     return;
   }
-  const bonus = dbService.claimSignupBonus(user.id);
+  const bonus = dbService.claimSignupBonus(synced.id);
   if (bonus.awarded && bonus.user && bonus.award) {
     res.json({ ...bonus.user, awardedRewards: [bonus.award] });
     return;
   }
-  res.json(user);
+  res.json(synced);
 });
 
-usersRouter.get('/telegram/:telegramId', (req, res) => {
+usersRouter.get('/telegram/:telegramId', async (req, res) => {
   const user = dbService.getUserByTelegramId(req.params.telegramId);
   if (!user) {
     res.status(404).json({ error: 'کاربر پیدا نشد' });
     return;
   }
-  res.json(dbService.enrichUserProfileCard(user));
+  const ensured = await withEnsuredAvatar(user);
+  res.json(dbService.enrichUserProfileCard(ensured));
 });
 
 /** Touch last_seen for Telegram bot activity (marks user online). */
@@ -91,26 +135,28 @@ usersRouter.post('/telegram/:telegramId/business-connection', (req, res) => {
   });
 });
 
-usersRouter.get('/id/:id', (req, res) => {
+usersRouter.get('/id/:id', async (req, res) => {
   const user = dbService.getUserById(Number(req.params.id));
   if (!user) {
     res.status(404).json({ error: 'کاربر پیدا نشد' });
     return;
   }
-  res.json(dbService.enrichUserProfileCard(user));
+  const ensured = await withEnsuredAvatar(user);
+  res.json(dbService.enrichUserProfileCard(ensured));
 });
 
 /** خلاصه کارت پروفایل + آمار تعاملات */
-usersRouter.get('/:id/profile-card', (req, res) => {
+usersRouter.get('/:id/profile-card', async (req, res) => {
   const userId = Number(req.params.id);
   const user = dbService.getUserById(userId);
   if (!user) {
     res.status(404).json({ error: 'کاربر پیدا نشد' });
     return;
   }
+  const ensured = await withEnsuredAvatar(user);
   const extras = dbService.getProfileCardExtras(userId);
   res.json({
-    user: dbService.enrichUserProfileCard(user),
+    user: dbService.enrichUserProfileCard(ensured),
     extras,
   });
 });
@@ -229,8 +275,15 @@ usersRouter.patch('/:id/onboarding', (req, res) => {
   res.json(user);
 });
 
-usersRouter.patch('/telegram/:telegramId/profile', (req, res) => {
+usersRouter.patch('/telegram/:telegramId/profile', async (req, res) => {
   const patch = req.body ?? {};
+  const existing = dbService.getUserByTelegramId(req.params.telegramId);
+  if (!existing) {
+    res.status(404).json({ error: 'کاربر پیدا نشد' });
+    return;
+  }
+  const rawAvatar = patch.avatarUrl;
+  const avatarUrl = await resolveAvatarUrlPatch(existing.id, rawAvatar);
   const user = dbService.updateUserProfileByTelegramId(req.params.telegramId, {
     name: patch.name,
     age: patch.age != null ? Number(patch.age) : undefined,
@@ -241,7 +294,12 @@ usersRouter.patch('/telegram/:telegramId/profile', (req, res) => {
     phone: patch.phone,
     bio: patch.bio,
     interests: Array.isArray(patch.interests) ? patch.interests.map(String) : undefined,
-    avatarUrl: patch.avatarUrl,
+    avatarUrl,
+    // Bot/wizard photo upload → treat as custom so Telegram sync won't overwrite it
+    avatarCustom:
+      rawAvatar != null && looksLikeTelegramFileId(rawAvatar)
+        ? true
+        : undefined,
     coins: patch.coins != null ? Number(patch.coins) : undefined,
     onboarding: patch.onboarding,
     isActive: typeof patch.isActive === 'boolean' ? patch.isActive : undefined,
@@ -274,9 +332,17 @@ usersRouter.delete('/telegram/:telegramId', (req, res) => {
   res.json({ ok: true });
 });
 
-usersRouter.patch('/:id/profile', (req, res) => {
+usersRouter.patch('/:id/profile', async (req, res) => {
   const patch = req.body ?? {};
-  const user = dbService.updateUserProfile(Number(req.params.id), {
+  const userId = Number(req.params.id);
+  const existing = dbService.getUserById(userId);
+  if (!existing) {
+    res.status(404).json({ error: 'کاربر پیدا نشد' });
+    return;
+  }
+  const rawAvatar = patch.avatarUrl;
+  const avatarUrl = await resolveAvatarUrlPatch(userId, rawAvatar);
+  const user = dbService.updateUserProfile(userId, {
     name: patch.name,
     age: patch.age != null ? Number(patch.age) : undefined,
     gender: patch.gender,
@@ -286,7 +352,9 @@ usersRouter.patch('/:id/profile', (req, res) => {
     phone: patch.phone,
     bio: patch.bio,
     interests: Array.isArray(patch.interests) ? patch.interests.map(String) : undefined,
-    avatarUrl: patch.avatarUrl,
+    avatarUrl,
+    avatarCustom:
+      rawAvatar != null && looksLikeTelegramFileId(rawAvatar) ? true : undefined,
     coins: patch.coins != null ? Number(patch.coins) : undefined,
     onboarding: patch.onboarding,
     isActive: typeof patch.isActive === 'boolean' ? patch.isActive : undefined,
@@ -316,7 +384,7 @@ usersRouter.get('/verification/pending', (_req, res) => {
 });
 
 /** ارسال درخواست احراز هویت (عکس پروفایل / سلفی) */
-usersRouter.post('/telegram/:telegramId/verification', (req, res) => {
+usersRouter.post('/telegram/:telegramId/verification', async (req, res) => {
   const user = dbService.getUserByTelegramId(req.params.telegramId);
   if (!user) {
     res.status(404).json({ error: 'کاربر پیدا نشد' });
@@ -345,7 +413,14 @@ usersRouter.post('/telegram/:telegramId/verification', (req, res) => {
     });
     return;
   }
-  res.json({ ok: true, user: result.user });
+  if (looksLikeTelegramFileId(photoFileId)) {
+    try {
+      await ensureWebAccessibleAvatar(user.id);
+    } catch (err) {
+      console.warn('verification avatar materialize failed:', (err as Error).message);
+    }
+  }
+  res.json({ ok: true, user: dbService.getUserById(user.id) ?? result.user });
 });
 
 usersRouter.post('/:id/verification/approve', (req, res) => {

@@ -4928,6 +4928,19 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   height: 120px; border-radius: 12px; background-size: cover; background-position: center;
   margin-bottom: 10px;
 }
+.tg-info-owner-cover {
+  height: 160px;
+  border-radius: 12px;
+  background-size: cover;
+  background-position: center;
+  margin-bottom: 10px;
+  background-color: #eceff3;
+}
+.tg-info-owner-cover--empty {
+  display: grid;
+  place-items: center;
+  color: #9aa3b2;
+}
 .tg-info-bio { color: var(--tg-muted); font-size: .86rem; line-height: 1.5; }
 
 .tg-composer {

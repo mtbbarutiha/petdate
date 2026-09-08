@@ -48,6 +48,7 @@ import {
   provinceReplyKeyboard,
   textStepKeyboard,
 } from '../keyboards';
+import { resolveTelegramPhotoUrl } from '../urls';
 import { getSession, upsertSession } from '../session';
 import { getCtxUser, menuKeyboardFor, pushMainMenuKeyboard } from './helpers';
 
@@ -109,15 +110,18 @@ async function sendOwnProfileCard(
     }
   );
   if (user.avatarUrl) {
-    try {
-      await ctx.replyWithPhoto(user.avatarUrl, {
-        caption,
-        parse_mode: 'HTML',
-        reply_markup: kb,
-      });
-      return;
-    } catch {
-      /* fall through */
+    const photo = resolveTelegramPhotoUrl(user.avatarUrl);
+    if (photo) {
+      try {
+        await ctx.replyWithPhoto(photo, {
+          caption,
+          parse_mode: 'HTML',
+          reply_markup: kb,
+        });
+        return;
+      } catch {
+        /* fall through */
+      }
     }
   }
   await ctx.reply(caption, { parse_mode: 'HTML', reply_markup: kb });
