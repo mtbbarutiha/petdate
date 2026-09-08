@@ -565,7 +565,10 @@ export function ChatPage() {
             setEnded(Boolean(req.chatEnded));
             bootstrappedRef.current = null;
             if (req.status === 'accepted') {
-              setMessages([systemMessage('درخواست پذیرفته شد — چت همبازی فعال شد.')]);
+              setMessages([
+                systemMessage('درخواست پذیرفته شد — چت همبازی فعال شد.'),
+                systemMessage('👋 به همبازی جدید سلام کن!'),
+              ]);
             } else if (req.status === 'expired') {
               setMessages([systemMessage('درخواست همبازی منقضی شد (مهلت ۲ دقیقه).')]);
             } else if (req.status === 'rejected') {
@@ -702,7 +705,10 @@ export function ChatPage() {
     setRequestBusy(false);
     stickToBottomRef.current = true;
     if (match.status === 'accepted' && !ended) {
-      setMessages([systemMessage('چت همبازی فعال شد — می‌توانی پیام بفرستی.')]);
+      setMessages([
+        systemMessage('چت همبازی فعال شد.'),
+        systemMessage('👋 به همبازی جدید سلام کن!'),
+      ]);
     } else if (match.status === 'pending') {
       setMessages([]);
     } else if (match.expired) {
@@ -730,7 +736,11 @@ export function ChatPage() {
         bootstrappedRef.current = null;
         softReloadConversations();
         if (req.status === 'accepted') {
-          setMessages([systemMessage('درخواست پذیرفته شد — چت همبازی فعال شد.')]);
+          setMessages([
+            systemMessage('درخواست پذیرفته شد — چت همبازی فعال شد.'),
+            systemMessage('👋 به همبازی جدید سلام کن!'),
+          ]);
+          requestAnimationFrame(() => inputRef.current?.focus());
         } else if (req.status === 'expired') {
           setMessages([systemMessage('درخواست همبازی منقضی شد (مهلت ۲ دقیقه).')]);
         } else if (req.status === 'rejected') {
@@ -985,8 +995,14 @@ export function ChatPage() {
       setMatch(mapped);
       setEnded(Boolean(updated.chatEnded));
       setSecure(Boolean(updated.chatSecure));
-      setMessages([systemMessage('درخواست پذیرفته شد — چت همبازی فعال شد.')]);
+      setMessages([
+        systemMessage('درخواست پذیرفته شد — چت همبازی فعال شد.'),
+        systemMessage('👋 به همبازی جدید سلام کن!'),
+      ]);
       void reloadConversations();
+      requestAnimationFrame(() => {
+        inputRef.current?.focus();
+      });
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'قبول درخواست ناموفق بود');
     } finally {
@@ -1577,7 +1593,7 @@ export function ChatPage() {
                         </div>
                       ) : match.status === 'accepted' ? (
                         <p className="tg-request-card-wait" role="status">
-                          پذیرفته شد — می‌توانی پیام بفرستی.
+                          👋 به همبازی جدید سلام کن!
                         </p>
                       ) : null}
                     </div>

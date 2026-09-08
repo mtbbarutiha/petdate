@@ -141,8 +141,7 @@ function protectOpts(secure: boolean): { protect_content?: true } {
 
 /**
  * بعد از قبول درخواست همبازی توسط گیرنده:
- * - قبول‌کننده (که دکمه قبول را زده) وارد چت می‌شود
- * - درخواست‌دهنده فقط دعوت می‌شود و باید «شروع چت» را بزند
+ * هر دو طرف بلافاصله وارد چت می‌شوند — بدون دکمه «شروع چت».
  */
 export async function startOwnerChat(
   ctx: Context,
@@ -161,7 +160,6 @@ export async function startOwnerChat(
     return;
   }
 
-  // Only the accepter opted in by tapping Accept — do not force the requester in.
   await upsertSession(String(accepter.telegramId), {
     step: 'owner_chat',
     ownerChatPlaydateId: playdateId,
@@ -169,6 +167,17 @@ export async function startOwnerChat(
     ownerChatPeerUserId: requester.id,
     ownerChatMyPetId: opts?.toPetId,
     ownerChatPeerPetId: opts?.fromPetId,
+    ownerChatSecure: false,
+    ownerChatWebHintSent: false,
+  });
+
+  await upsertSession(String(requester.telegramId), {
+    step: 'owner_chat',
+    ownerChatPlaydateId: playdateId,
+    ownerChatPeerTelegramId: String(accepter.telegramId),
+    ownerChatPeerUserId: accepter.id,
+    ownerChatMyPetId: opts?.fromPetId,
+    ownerChatPeerPetId: opts?.toPetId,
     ownerChatSecure: false,
     ownerChatWebHintSent: false,
   });
@@ -191,6 +200,8 @@ export async function startOwnerChat(
     '',
     `طرف مقابل: <b>${escapeHtml(requester.name)}</b>`,
     petLine,
+    '',
+    '👋 به همبازی جدید سلام کن!',
     'هر پیامی بفرستی مستقیم به صاحب پت همبازی می‌رسد.',
     '',
     tipLines,
@@ -204,8 +215,10 @@ export async function startOwnerChat(
     `طرف مقابل: <b>${escapeHtml(accepter.name)}</b>`,
     petLine,
     '',
-    'برای شروع گفتگو دکمهٔ <b>شروع چت</b> را بزن.',
-    'تا وقتی وارد چت نشوی، پیام‌ها به‌صورت چت دوطرفه وصل نمی‌شوند.',
+    '💬 چت همبازی همین الان فعال شد.',
+    '👋 به همبازی جدید سلام کن!',
+    '',
+    tipLines,
   ]
     .filter(Boolean)
     .join('\n');
@@ -219,14 +232,11 @@ export async function startOwnerChat(
   try {
     await ctx.api.sendMessage(requester.telegramId, requesterIntro, {
       parse_mode: 'HTML',
-      reply_markup: {
-        inline_keyboard: [
-          [{ text: '💬 شروع چت', callback_data: `playdate:enterchat:${playdateId}` }],
-        ],
-      },
+      reply_markup: ownerChatReplyKeyboard(false),
     });
+    await sendOwnerChatWebHintOnce(ctx, String(requester.telegramId), playdateId);
   } catch (err) {
-    console.warn('notify requester owner chat invite failed:', err);
+    console.warn('notify requester owner chat open failed:', err);
   }
 }
 
@@ -541,8 +551,7 @@ export async function resumeOwnerChatOnStart(ctx: Context): Promise<boolean> {
 }
 
 /**
- * Explicit opt-in to owner chat after a playdate was accepted.
- * Used when the user taps «شروع چت».
+ * Explicit opt-in kept for older «شروع چت» buttons; new accepts auto-enter both sides.
  */
 export async function enterOwnerChatFromCallback(
   ctx: Context,
@@ -598,9 +607,10 @@ export async function enterOwnerChatFromCallback(
 
   await ctx.reply(
     [
-      '💬 <b>وارد چت همبازی شدی</b>',
+      '💬 <b>چت همبازی فعال است</b>',
       '',
       `طرف مقابل: <b>${peer.name}</b>`,
+      '👋 به همبازی جدید سلام کن!',
       'از حالا پیام‌هایت مستقیم می‌رسد.',
     ].join('\n'),
     { parse_mode: 'HTML', reply_markup: ownerChatReplyKeyboard(false) }
