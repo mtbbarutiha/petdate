@@ -58,6 +58,7 @@ import {
   setPlaydateChatSecure,
   updatePlaydateStatus,
   uploadPlaydateChatFile,
+  resolvePublicMediaUrl,
 } from '../lib/api';
 import type { PlaydateChatMediaKind, PlaydateChatMessage } from '@petdate/shared';
 import { PLAYDATE_REQUEST_TTL_MS, isPendingRequestExpired, makeUserPublicId, userPublicIdOf } from '@petdate/shared';
@@ -435,6 +436,13 @@ export function ChatPage() {
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [pendingPreview, setPendingPreview] = useState<string | null>(null);
   const [peerOwnerLabel, setPeerOwnerLabel] = useState<string | null>(null);
+  const [peerOwnerAvatar, setPeerOwnerAvatar] = useState<string>('');
+  const [peerOwnerMeta, setPeerOwnerMeta] = useState<{
+    city?: string;
+    province?: string;
+    age?: number | null;
+    bio?: string;
+  } | null>(null);
   const [brokenMedia, setBrokenMedia] = useState<Record<string, boolean>>({});
   const [requestBusy, setRequestBusy] = useState(false);
 
@@ -847,6 +855,8 @@ export function ChatPage() {
     const ownerId = match?.fromPet?.ownerId;
     if (!ownerId) {
       setPeerOwnerLabel(null);
+      setPeerOwnerAvatar('');
+      setPeerOwnerMeta(null);
       return;
     }
     let cancelled = false;
@@ -858,6 +868,13 @@ export function ChatPage() {
         if (cancelled || !user?.id) return;
         const label = userPublicIdOf(user);
         setPeerOwnerLabel(label);
+        setPeerOwnerAvatar(resolvePublicMediaUrl(user.avatarUrl));
+        setPeerOwnerMeta({
+          city: user.city || undefined,
+          province: user.province || undefined,
+          age: user.age ?? null,
+          bio: user.bio || undefined,
+        });
         setConversations((prev) =>
           prev.map((c) =>
             c.peerPet?.ownerId === ownerId
@@ -1384,12 +1401,18 @@ export function ChatPage() {
                   className="tg-chat-peer"
                   onClick={() => setInfoCard(infoCard === 'owner' ? 'none' : 'owner')}
                 >
-                  <PetAvatar
-                    type={peerPet.type}
-                    size="sm"
-                    imageUrl={peerPet.imageUrl}
-                    name={peerPet.name}
-                  />
+                  {peerOwnerAvatar ? (
+                    <span className="tg-chat-peer-avatar tg-chat-peer-avatar--photo">
+                      <img src={peerOwnerAvatar} alt="" />
+                    </span>
+                  ) : (
+                    <PetAvatar
+                      type={peerPet.type}
+                      size="sm"
+                      imageUrl={peerPet.imageUrl}
+                      name={peerPet.name}
+                    />
+                  )}
                   <span>
                     <strong>{peerOwnerName}</strong>
                     <small>
@@ -1661,15 +1684,37 @@ export function ChatPage() {
                       >
                         <X size={16} />
                       </button>
+                      {peerOwnerAvatar ? (
+                        <div
+                          className="tg-info-owner-cover"
+                          style={{ backgroundImage: `url(${peerOwnerAvatar})` }}
+                          role="img"
+                          aria-label={`عکس پروفایل ${peerOwnerName}`}
+                        />
+                      ) : (
+                        <div className="tg-info-owner-cover tg-info-owner-cover--empty" aria-hidden>
+                          <UserRound size={36} strokeWidth={1.5} />
+                        </div>
+                      )}
                       <h3>پروفایل طرف مقابل</h3>
                       <p>
                         <strong>{peerOwnerName}</strong>
                       </p>
                       <ul>
-                        <li>شهر: {peerPet.city || '—'}</li>
+                        {peerOwnerMeta?.age != null ? <li>سن: {peerOwnerMeta.age}</li> : null}
+                        <li>
+                          شهر:{' '}
+                          {peerOwnerMeta?.city ||
+                            peerPet.city ||
+                            peerOwnerMeta?.province ||
+                            '—'}
+                        </li>
                         <li>محله: {peerPet.neighborhood || '—'}</li>
                         <li>پت: {peerPet.name}</li>
                       </ul>
+                      {peerOwnerMeta?.bio ? (
+                        <p className="tg-info-bio">{peerOwnerMeta.bio}</p>
+                      ) : null}
                     </div>
                   ) : null}
 

@@ -18,6 +18,25 @@ import type {
 /** Empty = same-origin (Vite proxies /api → API). Override with VITE_API_URL if needed. */
 const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ?? '';
 
+/**
+ * Resolve stored media paths for <img src> / CSS backgrounds.
+ * Relative `/api/...` must be prefixed with VITE_API_URL when the web origin differs.
+ * Opaque Telegram file_ids are not displayable in the browser.
+ */
+export function resolvePublicMediaUrl(url?: string | null): string {
+  const raw = String(url ?? '').trim();
+  if (!raw) return '';
+  if (
+    /^https?:\/\//i.test(raw) ||
+    raw.startsWith('blob:') ||
+    raw.startsWith('data:')
+  ) {
+    return raw;
+  }
+  if (raw.startsWith('/')) return `${API_BASE}${raw}`;
+  return '';
+}
+
 export async function subscribeNewsletter(email: string, source = 'footer') {
   return request<{
     ok: true;

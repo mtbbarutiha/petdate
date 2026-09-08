@@ -341,9 +341,10 @@ async function handleShowPeerProfile(ctx: Context): Promise<boolean> {
 
   const text = formatPeerOwnerCard(peer);
   const secure = !!session.ownerChatSecure;
-  if (peer.avatarUrl) {
+  const photo = resolveTelegramPhotoUrl(peer.avatarUrl);
+  if (photo) {
     try {
-      await ctx.replyWithPhoto(peer.avatarUrl, {
+      await ctx.replyWithPhoto(photo, {
         caption: text,
         parse_mode: 'HTML',
         ...protectOpts(secure),
@@ -354,10 +355,15 @@ async function handleShowPeerProfile(ctx: Context): Promise<boolean> {
     }
   }
 
-  await ctx.reply(text, {
-    parse_mode: 'HTML',
-    ...protectOpts(secure),
-  });
+  await ctx.reply(
+    photo
+      ? text
+      : `${text}\n\n📷 عکس پروفایل ثبت نشده — از «پروفایل» عکس بگذار یا عکس تلگرام همگام می‌شود.`,
+    {
+      parse_mode: 'HTML',
+      ...protectOpts(secure),
+    }
+  );
   return true;
 }
 

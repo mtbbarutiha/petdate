@@ -163,6 +163,79 @@ export async function fetchTelegramPublicProfile(telegramId: string): Promise<{
   };
 }
 
+/** True when value is a site/HTTP URL path Telegram or the web can fetch by URL. */
+export function isWebAvatarUrl(value: string | null | undefined): boolean {
+  const raw = String(value ?? '').trim();
+  if (!raw) return false;
+  return raw.startsWith('/') || /^https?:\/\//i.test(raw);
+}
+
+/**
+ * Bot wizard historically stored Telegram file_id in users.avatar_url.
+ * Those work with sendPhoto but not as <img src> on the website.
+ */
+export function looksLikeTelegramFileId(value: string | null | undefined): boolean {
+  const raw = String(value ?? '').trim();
+  if (!raw || isWebAvatarUrl(raw)) return false;
+  // Telegram file_ids are opaque tokens (often AgAC… / BAAC…); never paths.
+  return raw.length >= 16 && !/\s/.test(raw);
+}
+
+/** Download a Telegram file_id and persist under /api/auth/avatar/... */
+export async function materializeTelegramFileIdAsAvatar(
+  userId: number,
+  fileId: string
+): Promise<string | null> {
+  const id = String(fileId ?? '').trim();
+  if (!id || !Number.isFinite(userId) || userId <= 0) return null;
+  const downloaded = await downloadTelegramFile(id);
+  if (!downloaded) return null;
+  try {
+    const saved = saveUserAvatar({
+      userId,
+      originalName: downloaded.originalName,
+      mimeType: downloaded.mimeType,
+      buffer: downloaded.buffer,
+    });
+    return saved.urlPath;
+  } catch (err) {
+    console.warn('materialize telegram avatar failed:', (err as Error).message);
+    return null;
+  }
+}
+
+/**
+ * Ensure avatarUrl is a web-fetchable path when possible:
+ * - file_id → download + /api/auth/avatar/...
+ * - empty → sync Telegram profile photo (unless avatarCustom)
+ */
+export async function ensureWebAccessibleAvatar(userId: number): Promise<User | null> {
+  let user = dbService.getUserById(userId);
+  if (!user) return null;
+
+  const raw = String(user.avatarUrl ?? '').trim();
+  if (isWebAvatarUrl(raw)) return user;
+
+  if (looksLikeTelegramFileId(raw)) {
+    const urlPath = await materializeTelegramFileIdAsAvatar(userId, raw);
+    if (urlPath) {
+      const updated = dbService.updateUserProfile(userId, {
+        avatarUrl: urlPath,
+        // Preserve custom flag if user uploaded via bot wizard
+        avatarCustom: user.avatarCustom ?? true,
+      });
+      if (updated) return updated;
+    }
+  }
+
+  const tg = String(user.telegramId ?? '').trim();
+  if (tg && !user.avatarCustom) {
+    const synced = await syncUserProfileFromTelegram(userId, tg);
+    if (synced) return synced;
+  }
+  return dbService.getUserById(userId);
+}
+
 /**
  * After Telegram web login / attach: fill empty name + username from Bot API,
  * and refresh avatar from Telegram unless the user uploaded a custom one.
@@ -188,29 +261,31 @@ export async function syncUserProfileFromTelegram(
     patch.username = profile.username;
   }
 
-  const shouldRefreshAvatar = !user.avatarCustom;
+  // If avatar is still a raw Telegram file_id, materialize it first (web needs a URL).
+  if (looksLikeTelegramFileId(user.avatarUrl)) {
+    const urlPath = await materializeTelegramFileIdAsAvatar(userId, String(user.avatarUrl));
+    if (urlPath) {
+      patch.avatarUrl = urlPath;
+      if (user.avatarCustom == null) patch.avatarCustom = true;
+    }
+  }
+
+  const shouldRefreshAvatar =
+    !user.avatarCustom && !isWebAvatarUrl(patch.avatarUrl ?? user.avatarUrl);
   if (!shouldRefreshAvatar) {
-    console.info(`telegram profile sync: skip avatar user=${userId} (avatarCustom)`);
+    if (user.avatarCustom) {
+      console.info(`telegram profile sync: skip avatar user=${userId} (avatarCustom)`);
+    }
   } else if (!profile.photoFileId) {
     console.warn(`telegram profile sync: no photo for tg=${telegramId} user=${userId}`);
   } else {
-    const downloaded = await downloadTelegramFile(profile.photoFileId);
-    if (!downloaded) {
+    const urlPath = await materializeTelegramFileIdAsAvatar(userId, profile.photoFileId);
+    if (!urlPath) {
       console.warn(`telegram profile sync: download failed tg=${telegramId} user=${userId}`);
     } else {
-      try {
-        const saved = saveUserAvatar({
-          userId,
-          originalName: downloaded.originalName,
-          mimeType: downloaded.mimeType,
-          buffer: downloaded.buffer,
-        });
-        patch.avatarUrl = saved.urlPath;
-        patch.avatarCustom = false;
-        console.info(`telegram profile sync: avatar saved user=${userId} path=${saved.urlPath}`);
-      } catch (err) {
-        console.warn('save telegram avatar failed:', (err as Error).message);
-      }
+      patch.avatarUrl = urlPath;
+      patch.avatarCustom = false;
+      console.info(`telegram profile sync: avatar saved user=${userId} path=${urlPath}`);
     }
   }
 
