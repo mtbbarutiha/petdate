@@ -23,12 +23,8 @@ import {
   playdateResendConfirmKeyboard,
 } from '../keyboards';
 import { upsertSession } from '../session';
-<<<<<<< HEAD
-import { getCtxUser, menuKeyboardFor, pushMainMenuKeyboard } from './helpers';
-=======
 import { resolveTelegramPhotoUrl } from '../urls';
-import { getCtxUser, menuKeyboardFor } from './helpers';
->>>>>>> be47c7b (fix(api,bot): send pet photo on playdate Telegram notify)
+import { getCtxUser, menuKeyboardFor, pushMainMenuKeyboard } from './helpers';
 import { startOwnerChat } from './owner-chat';
 
 export function defaultPetPhoto(pet: { species?: string; id: number }): string {

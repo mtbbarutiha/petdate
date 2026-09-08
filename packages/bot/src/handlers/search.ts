@@ -17,12 +17,8 @@ import {
   textStepKeyboard,
 } from '../keyboards';
 import { getSession, upsertSession } from '../session';
-<<<<<<< HEAD
-import { getCtxUser, menuKeyboardFor, pushMainMenuKeyboard, pushReplyKeyboard } from './helpers';
-=======
 import { resolveTelegramPhotoUrl } from '../urls';
-import { getCtxUser, menuKeyboardFor } from './helpers';
->>>>>>> be47c7b (fix(api,bot): send pet photo on playdate Telegram notify)
+import { getCtxUser, menuKeyboardFor, pushMainMenuKeyboard, pushReplyKeyboard } from './helpers';
 
 const PAGE_SIZE = 8;
 
