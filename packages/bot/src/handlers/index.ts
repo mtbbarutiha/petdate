@@ -188,14 +188,18 @@ import {
   handleSearchAll,
   handleSearchBreedText,
   handleSearchByBreedStart,
+  handleSearchGoCallback,
   handleSearchHomeCallback,
   handleSearchMashhad,
   handleSearchMenuCallback,
   handleSearchNearbyAskLocCallback,
+  handleSearchNewest,
   handleSearchOwnerView,
   handleSearchPage,
   handleSearchPetsMenu,
   handleSearchPetView,
+  handleSearchPopular,
+  handleSearchSameBreed,
   handleSearchSameProvince,
 } from './search';
 import {
@@ -738,6 +742,9 @@ export function registerHandlers(bot: Bot): void {
   bot.callbackQuery('search:menu', (ctx) => handleSearchMenuCallback(ctx));
   bot.callbackQuery('search:home', (ctx) => handleSearchHomeCallback(ctx));
   bot.callbackQuery('search:nearby:askloc', (ctx) => handleSearchNearbyAskLocCallback(ctx));
+  bot.callbackQuery(/^search:go:([a-z]+)$/, (ctx) =>
+    handleSearchGoCallback(ctx, ctx.match![1]!)
+  );
   bot.callbackQuery(/^nearby:radius:(\d+)$/, async (ctx) => {
     try {
       await handleNearbyRadiusCallback(ctx, Number(ctx.match![1]));
@@ -979,13 +986,22 @@ async function handleTextMessage(ctx: Context): Promise<void> {
     case m.searchPets:
       return handleSearchPetsMenu(ctx);
     case search.byBreed:
+    case search.advanced:
       return handleSearchByBreedStart(ctx);
     case search.sameProvince:
+    case search.sameProvinceLegacy:
       return handleSearchSameProvince(ctx);
+    case search.sameBreed:
+      return handleSearchSameBreed(ctx);
     case search.mashhad:
       return handleSearchMashhad(ctx);
     case search.allPets:
+    case search.viewAll:
       return handleSearchAll(ctx);
+    case search.newest:
+      return handleSearchNewest(ctx);
+    case search.popular:
+      return handleSearchPopular(ctx);
     case search.backToMenu:
     case search.menu:
     case m.menu:

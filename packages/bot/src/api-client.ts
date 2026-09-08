@@ -14,9 +14,14 @@ import type {
 import { config } from './config';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const botToken = config.telegramBotToken?.trim();
   const res = await fetch(`${config.apiUrl}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...init?.headers },
     ...init,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(botToken ? { 'X-PetDate-Bot-Token': botToken } : {}),
+      ...init?.headers,
+    },
   });
   if (!res.ok) {
     const body = await res.text();
@@ -270,6 +275,8 @@ export async function listPets(filters?: {
   city?: string;
   province?: string;
   breed?: string;
+  breeds?: string[];
+  sort?: 'newest' | 'popular' | 'updated';
 }): Promise<PetProfile[]> {
   const params = new URLSearchParams();
   if (filters?.ownerId) params.set('ownerId', String(filters.ownerId));
@@ -278,6 +285,8 @@ export async function listPets(filters?: {
   if (filters?.city) params.set('city', filters.city);
   if (filters?.province) params.set('province', filters.province);
   if (filters?.breed) params.set('breed', filters.breed);
+  if (filters?.breeds?.length) params.set('breeds', filters.breeds.join(','));
+  if (filters?.sort) params.set('sort', filters.sort);
   if (filters?.lookingForPlaymate !== undefined) {
     params.set('lookingForPlaymate', String(filters.lookingForPlaymate));
   }

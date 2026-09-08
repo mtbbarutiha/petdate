@@ -101,6 +101,19 @@ petsRouter.get('/', (req, res) => {
   const city = typeof req.query.city === 'string' ? req.query.city : undefined;
   const province = typeof req.query.province === 'string' ? req.query.province : undefined;
   const breed = typeof req.query.breed === 'string' ? req.query.breed : undefined;
+  const breedsRaw = typeof req.query.breeds === 'string' ? req.query.breeds : undefined;
+  const breeds = breedsRaw
+    ? breedsRaw
+        .split(',')
+        .map((b) => b.trim())
+        .filter(Boolean)
+        .slice(0, 40)
+    : undefined;
+  const sortRaw = typeof req.query.sort === 'string' ? req.query.sort : undefined;
+  const sort =
+    sortRaw === 'newest' || sortRaw === 'popular' || sortRaw === 'updated'
+      ? sortRaw
+      : undefined;
   const lookingForPlaymate =
     req.query.lookingForPlaymate === 'true'
       ? true
@@ -116,6 +129,8 @@ petsRouter.get('/', (req, res) => {
     city,
     province,
     breed,
+    breeds,
+    sort,
   });
   res.json(pets);
 });

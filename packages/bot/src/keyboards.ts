@@ -92,14 +92,34 @@ export const ADMIN_MENU = {
   menu: MAIN_MENU_BTN,
 } as const;
 
-/** زیرمنوی جستجوی پت */
+/** زیرمنوی جستجوی پت — برچسب‌های reply (سازگاری) + اینلاین */
 export const SEARCH_PETS_MENU = {
+  /** @deprecated برچسب قدیمی — جستجو پیشرفته */
   byBreed: '🧬 بر اساس نژاد',
-  sameProvince: '🗺 هم‌استان',
-  mashhad: '🏙 مشهد',
+  advanced: '🔍 جستجو پیشرفته',
+  sameProvince: '📍🍷 هم استانی‌ها',
+  /** برچسب قدیمی reply */
+  sameProvinceLegacy: '🗺 هم‌استان',
+  sameBreed: '🧬 هم نژادها',
+  viewAll: '📋 مشاهده همه',
+  /** برچسب قدیمی reply */
   allPets: '🐾 همه پت‌ها',
+  newest: '🙋 پت‌های جدید',
+  popular: '❤️📊 پت‌های محبوب',
+  /** حذف‌شده — فقط تشخیص کیبورد قدیمی */
+  mashhad: '🏙 مشهد',
   backToMenu: '🔙 بازگشت به منو',
   menu: MAIN_MENU_BTN,
+} as const;
+
+/** callback_data منوی اینلاین جستجوی پت */
+export const SEARCH_MENU_CALLBACKS = {
+  province: 'search:go:province',
+  sameBreed: 'search:go:samebreed',
+  all: 'search:go:all',
+  advanced: 'search:go:advanced',
+  newest: 'search:go:newest',
+  popular: 'search:go:popular',
 } as const;
 
 /** منوی نقش «بدون پت» */
@@ -702,24 +722,35 @@ export function noPetMenuKeyboard(telegramId?: string | number | null): Keyboard
   return appendAccessRow(kb.resized().persistent(), telegramId);
 }
 
+/**
+ * منوی اینلاین جستجوی پت (سبک اسکرین مرجع).
+ * بدون دکمه مشهد و بدون «هم سن».
+ */
+export function searchPetsMenuInlineKeyboard(): InlineKeyboard {
+  const m = SEARCH_PETS_MENU;
+  const c = SEARCH_MENU_CALLBACKS;
+  return new InlineKeyboard()
+    .text(m.sameProvince, c.province)
+    .primary()
+    .text(m.sameBreed, c.sameBreed)
+    .primary()
+    .row()
+    .text(m.viewAll, c.all)
+    .primary()
+    .text(m.advanced, c.advanced)
+    .primary()
+    .row()
+    .text(m.newest, c.newest)
+    .primary()
+    .row()
+    .text(m.popular, c.popular)
+    .success();
+}
+
+/** Reply keyboard سبک — فقط بازگشت؛ گزینه‌های جستجو اینلاین‌اند */
 export function searchPetsMenuKeyboard(): Keyboard {
   const m = SEARCH_PETS_MENU;
-  return new Keyboard()
-    .text(m.byBreed)
-    .primary()
-    .row()
-    .text(m.sameProvince)
-    .success()
-    .text(m.mashhad)
-    .primary()
-    .row()
-    .text(m.allPets)
-    .primary()
-    .row()
-    .text(m.backToMenu)
-    .primary()
-    .resized()
-    .persistent();
+  return new Keyboard().text(m.backToMenu).primary().resized().persistent();
 }
 
 /** @deprecated — از noPetMenuKeyboard استفاده کن */

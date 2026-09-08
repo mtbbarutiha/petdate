@@ -530,7 +530,7 @@ export interface BotSession {
   /** صفحهٔ نژاد در ویزارد ثبت پت (reply keyboard) */
   breedPage?: number;
   /** حالت مرور/جستجوی پت */
-  searchMode?: 'nearby' | 'breed' | 'province' | 'mashhad' | 'all';
+  searchMode?: 'nearby' | 'breed' | 'province' | 'samebreed' | 'newest' | 'popular' | 'all';
   /** مختصات برای صفحه‌بندی پت‌های نزدیک (بعد از ارسال موقعیت) */
   searchLat?: number;
   searchLng?: number;
