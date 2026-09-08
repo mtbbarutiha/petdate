@@ -48,6 +48,7 @@ import {
   vaccinatedReplyKeyboard,
 } from '../keyboards';
 import { getSession, upsertSession } from '../session';
+import { resolveTelegramPhotoUrl } from '../urls';
 
 const TOTAL_STEPS = 13;
 
@@ -986,10 +987,11 @@ async function finishPetWizard(
 
   const caption = lines.join('\n');
   const kb = myPetsSectionKeyboard();
+  const photo = resolveTelegramPhotoUrl(pet.imageUrl);
 
-  if (pet.imageUrl) {
+  if (photo) {
     try {
-      await ctx.replyWithPhoto(pet.imageUrl, {
+      await ctx.replyWithPhoto(photo, {
         caption,
         parse_mode: 'HTML',
         reply_markup: kb,

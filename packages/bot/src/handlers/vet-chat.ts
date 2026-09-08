@@ -26,7 +26,7 @@ import {
 import { getSession, upsertSession } from '../session';
 import { getCtxUser, menuKeyboardFor } from './helpers';
 import { MENU_LABELS } from '../keyboards';
-import { effectiveWebUrl, isTelegramInlineUrl } from '../urls';
+import { effectiveWebUrl, isTelegramInlineUrl, resolveTelegramPhotoUrl } from '../urls';
 import { claimWebChatCtaOnce } from '../web-chat-cta-once';
 
 /** Reply-keyboard labels for vet chat (short so buttons stay compact). */
@@ -424,9 +424,10 @@ async function showPetProfile(ctx: Context, petId: number): Promise<void> {
   }
 
   const text = formatVetPetProfileCard(pet);
-  if (pet.imageUrl) {
+  const photo = resolveTelegramPhotoUrl(pet.imageUrl);
+  if (photo) {
     try {
-      await ctx.replyWithPhoto(pet.imageUrl, {
+      await ctx.replyWithPhoto(photo, {
         caption: text,
         parse_mode: 'HTML',
       });
