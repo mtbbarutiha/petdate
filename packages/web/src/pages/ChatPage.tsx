@@ -61,7 +61,7 @@ import {
   resolvePublicMediaUrl,
 } from '../lib/api';
 import type { PlaydateChatMediaKind, PlaydateChatMessage } from '@petdate/shared';
-import { PLAYDATE_REQUEST_TTL_MS, isPendingRequestExpired, makeUserPublicId, toUserCommandId, userCommandIdOf } from '@petdate/shared';
+import { PLAYDATE_REQUEST_TTL_MS, USER_GENDER_LABELS, isPendingRequestExpired, makeUserPublicId, toUserCommandId, userCommandIdOf, userPublicIdOf } from '@petdate/shared';
 import { playdateToMatchRequest } from '../lib/playdateMap';
 import { subscribeIncomingRefresh } from '../lib/liveIncoming';
 import {
@@ -453,11 +453,16 @@ export function ChatPage() {
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [pendingPreview, setPendingPreview] = useState<string | null>(null);
   const [peerOwnerLabel, setPeerOwnerLabel] = useState<string | null>(null);
+  const [peerOwnerDisplayName, setPeerOwnerDisplayName] = useState<string | null>(null);
   const [peerOwnerAvatar, setPeerOwnerAvatar] = useState<string>('');
   const [peerOwnerMeta, setPeerOwnerMeta] = useState<{
     city?: string;
     province?: string;
     age?: number | null;
+    gender?: string;
+    interests?: string;
+    verification?: string;
+    publicId?: string;
     bio?: string;
   } | null>(null);
   const [brokenMedia, setBrokenMedia] = useState<Record<string, boolean>>({});
@@ -872,24 +877,39 @@ export function ChatPage() {
     const ownerId = match?.fromPet?.ownerId;
     if (!ownerId) {
       setPeerOwnerLabel(null);
+      setPeerOwnerDisplayName(null);
       setPeerOwnerAvatar('');
       setPeerOwnerMeta(null);
       return;
     }
     let cancelled = false;
-    // Prefer tappable/copyable command id (/u#####) immediately.
+    // Prefer tappable/copyable command id (/u#####) immediately — never Telegram @username.
     const fallbackId = toUserCommandId(makeUserPublicId(ownerId));
     setPeerOwnerLabel(fallbackId);
     void getUserById(ownerId)
       .then((user) => {
         if (cancelled || !user?.id) return;
         const label = userCommandIdOf(user);
+        const displayName = (user.name && String(user.name).trim()) || null;
         setPeerOwnerLabel(label);
+        setPeerOwnerDisplayName(displayName);
         setPeerOwnerAvatar(resolvePublicMediaUrl(user.avatarUrl));
         setPeerOwnerMeta({
           city: user.city || undefined,
           province: user.province || undefined,
           age: user.age ?? null,
+          gender: user.gender ? USER_GENDER_LABELS[user.gender] : undefined,
+          interests:
+            user.interests && user.interests.length
+              ? user.interests.join(' · ')
+              : undefined,
+          verification:
+            user.verificationStatus === 'verified'
+              ? 'احراز هویت شده'
+              : user.verificationStatus === 'pending'
+                ? 'در انتظار احراز'
+                : undefined,
+          publicId: userPublicIdOf(user),
           bio: user.bio || undefined,
         });
         setConversations((prev) =>
@@ -898,14 +918,20 @@ export function ChatPage() {
               ? {
                   ...c,
                   title: label,
-                  peerPet: { ...c.peerPet, ownerName: label },
+                  peerPet: { ...c.peerPet, ownerName: displayName || label },
                 }
               : c,
           ),
         );
         setMatch((prev) =>
           prev && prev.fromPet.ownerId === ownerId
-            ? { ...prev, fromPet: { ...prev.fromPet, ownerName: label } }
+            ? {
+                ...prev,
+                fromPet: {
+                  ...prev.fromPet,
+                  ownerName: displayName || label,
+                },
+              }
             : prev,
         );
       })
@@ -954,13 +980,19 @@ export function ChatPage() {
 
   const peerPet = match?.fromPet;
   const peerOwnerId = peerPet?.ownerId;
-  const peerOwnerName =
+  const peerOwnerCommandId =
     peerOwnerLabel ||
     (peerOwnerId ? toUserCommandId(makeUserPublicId(peerOwnerId)) : null) ||
+    null;
+  const peerOwnerName =
+    peerOwnerDisplayName ||
+    (peerPet?.ownerName && !String(peerPet.ownerName).startsWith('/')
+      ? peerPet.ownerName
+      : null) ||
     'صاحب پت';
 
   async function copyPeerCommandId() {
-    const id = peerOwnerName.startsWith('/') ? peerOwnerName : null;
+    const id = peerOwnerCommandId?.startsWith('/') ? peerOwnerCommandId : null;
     if (!id || typeof navigator === 'undefined' || !navigator.clipboard?.writeText) return;
     try {
       await navigator.clipboard.writeText(id);
@@ -1771,26 +1803,36 @@ export function ChatPage() {
                         </div>
                       )}
                       <h3>پروفایل طرف مقابل</h3>
-                      <p>
-                        <strong
-                          dir="ltr"
-                          className="tg-peer-command-id"
-                          title="کپی آیدی"
-                          role="button"
-                          tabIndex={0}
-                          onClick={() => void copyPeerCommandId()}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault();
-                              void copyPeerCommandId();
-                            }
-                          }}
-                        >
-                          {peerOwnerName}
-                        </strong>
-                      </p>
+                      <p className="tg-info-owner-name">{peerOwnerName}</p>
+                      {peerOwnerCommandId ? (
+                        <p>
+                          <strong
+                            dir="ltr"
+                            className="tg-peer-command-id"
+                            title="کپی آیدی"
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => void copyPeerCommandId()}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                void copyPeerCommandId();
+                              }
+                            }}
+                          >
+                            {peerOwnerCommandId}
+                          </strong>
+                          {peerOwnerMeta?.publicId ? (
+                            <span className="tg-peer-public-id" dir="ltr">
+                              {' '}
+                              · {peerOwnerMeta.publicId}
+                            </span>
+                          ) : null}
+                        </p>
+                      ) : null}
                       <ul>
                         {peerOwnerMeta?.age != null ? <li>سن: {peerOwnerMeta.age}</li> : null}
+                        {peerOwnerMeta?.gender ? <li>جنسیت: {peerOwnerMeta.gender}</li> : null}
                         <li>
                           شهر:{' '}
                           {peerOwnerMeta?.city ||
@@ -1798,6 +1840,12 @@ export function ChatPage() {
                             peerOwnerMeta?.province ||
                             '—'}
                         </li>
+                        {peerOwnerMeta?.interests ? (
+                          <li>علاقه‌مندی‌ها: {peerOwnerMeta.interests}</li>
+                        ) : null}
+                        {peerOwnerMeta?.verification ? (
+                          <li>🛡️ {peerOwnerMeta.verification}</li>
+                        ) : null}
                         <li>محله: {peerPet.neighborhood || '—'}</li>
                         <li>پت: {peerPet.name}</li>
                       </ul>

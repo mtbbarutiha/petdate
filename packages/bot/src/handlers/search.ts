@@ -4,12 +4,14 @@ import type { PetBreed, PetProfile, PetSpecies } from '@petdate/shared';
 import {
   PET_GENDER_LABELS,
   PET_SPECIES_LABELS,
+  USER_GENDER_LABELS,
+  formatPeerLastSeenFa,
   formatPetAge,
   petPublicIdOf,
   userCommandIdOf,
+  userPublicIdOf,
 } from '@petdate/shared';
 import {
-  fetchNearbyListCardBuffer,
   fetchPetProfileCardBuffer,
   getPet,
   getUserById,
@@ -30,7 +32,7 @@ import {
   nearbyLocationKeyboard,
   nearbyRadiusKeyboard,
   nearbySummaryKeyboard,
-  nearbyVisualListKeyboard,
+  nearbyInlineListKeyboard,
   searchPetDetailKeyboard,
   searchPetsListKeyboard,
   searchPetsMenuInlineKeyboard,
@@ -344,16 +346,28 @@ async function showNearbySummary(ctx: Context, radiusKm: number): Promise<void> 
   const text = [
     `🛰️ <b>اطراف من ≤ ${toFaDigits(radiusKm)} کیلومتر (${toFaDigits(pets.length)})</b>`,
     '',
-    'برای دیدن لیست، دکمه زیر را بزن و اسکرول کن.',
+    'برای دیدن <b>لیست اینلاین</b> افراد نزدیک، دکمه زیر را بزن.',
   ].join('\n');
 
   await replyNearbyMarkup(ctx, text, nearbySummaryKeyboard(radiusKm));
 }
 
+/**
+ * «📋 نمایش بصورت لیستی» — لیست اینلاین تلگرام (یک ردیف دکمه به ازای هر نفر)،
+ * نه تصویر JPEG ترکیبی.
+ */
 export async function handleNearbyListCallback(ctx: Context, page: number): Promise<void> {
+  if (!ctx.from) {
+    await safeAnswerNearbyCallback(ctx, { text: 'اول /start بزن', show_alert: true });
+    return;
+  }
+
+  // فوری — مثل شعاع؛ دیگر تصویر لیست ساخته نمی‌شود
+  await safeAnswerNearbyCallback(ctx);
+
   const user = await getCtxUser(ctx);
-  if (!user?.id || !ctx.from) {
-    await ctx.answerCallbackQuery({ text: 'اول /start بزن', show_alert: true });
+  if (!user?.id) {
+    await ctx.reply('اول /start بزن.');
     return;
   }
 
@@ -362,12 +376,9 @@ export async function handleNearbyListCallback(ctx: Context, page: number): Prom
   const lng = session?.searchLng;
   const radiusKm = session?.searchRadiusKm ?? 5;
   if (lat == null || lng == null) {
-    await ctx.answerCallbackQuery({ text: 'اول موقعیت بفرست', show_alert: true });
     await askNearbyLocation(ctx);
     return;
   }
-
-  await ctx.answerCallbackQuery({ text: 'در حال ساخت لیست…' });
 
   let pets: PetProfile[] = [];
   try {
@@ -400,39 +411,14 @@ export async function handleNearbyListCallback(ctx: Context, page: number): Prom
     searchRadiusKm: radiusKm,
   });
 
-  const caption = [
-    `🛰️ اطراف من ≤ ${toFaDigits(radiusKm)} کیلومتر (${toFaDigits(pets.length)})`,
-    'روی هر مورد در دکمه‌ها بزن تا پروفایل پت باز بشه.',
+  const text = [
+    `🛰️ <b>اطراف من ≤ ${toFaDigits(radiusKm)} کیلومتر (${toFaDigits(pets.length)})</b>`,
+    '',
+    'روی هر ردیف بزن تا پروفایل پت باز بشه.',
   ].join('\n');
 
-  const kb = nearbyVisualListKeyboard(slice, safePage, NEARBY_LIST_PAGE_SIZE, pets.length);
-
-  try {
-    const buf = await fetchNearbyListCardBuffer({
-      lat,
-      lng,
-      radiusKm,
-      excludeOwnerId: user.id,
-      page: safePage,
-      pageSize: NEARBY_LIST_PAGE_SIZE,
-    });
-    await ctx.replyWithPhoto(new InputFile(buf, 'nearby-list.jpg'), {
-      caption,
-      reply_markup: kb,
-    });
-    return;
-  } catch (err) {
-    console.warn('nearby list card failed, fallback inline:', (err as Error).message);
-  }
-
-  // Fallback: متن + اینلاین (اگر ساخت تصویر شکست بخورد)
-  await ctx.reply(
-    [`<b>${caption}</b>`, '', 'لیست متنی (پشتیبان):'].join('\n'),
-    {
-      parse_mode: 'HTML',
-      reply_markup: searchPetsListKeyboard(pets, 'nearby', safePage, NEARBY_LIST_PAGE_SIZE),
-    }
-  );
+  const kb = nearbyInlineListKeyboard(slice, safePage, NEARBY_LIST_PAGE_SIZE, pets.length);
+  await replyNearbyMarkup(ctx, text, kb);
 }
 
 export async function handleSearchOwnerView(ctx: Context, ownerId: number): Promise<void> {
@@ -695,25 +681,60 @@ export async function handleSearchHomeCallback(ctx: Context): Promise<void> {
   await pushMainMenuKeyboard(ctx, user);
 }
 
-function formatNearbyPetCaption(pet: PetProfile): string {
+function formatNearbyPetCaption(
+  pet: PetProfile,
+  owner?: {
+    name?: string | null;
+    age?: number | null;
+    gender?: string | null;
+    interests?: string[] | null;
+    verificationStatus?: string | null;
+    lastSeenAt?: string | null;
+    publicId?: string | null;
+    id?: number;
+  } | null
+): string {
   const lines: string[] = [];
-  const cmd = userCommandIdOf({ id: pet.ownerId });
+  const ownerId = owner?.id ?? pet.ownerId;
+  const cmd = userCommandIdOf({
+    id: ownerId,
+    publicId: owner?.publicId ?? undefined,
+  });
+  const publicId =
+    owner?.publicId ||
+    (ownerId ? userPublicIdOf({ id: ownerId, publicId: owner?.publicId }) : null);
   lines.push(`🐾 <b>${escapeHtml(pet.name)}</b>`);
   lines.push(`آیدی پت: <code>${escapeHtml(petPublicIdOf(pet))}</code>`);
-  lines.push(`آیدی صاحب: /${escapeHtml(cmd.replace(/^\//, ''))}`);
   const species = PET_SPECIES_LABELS[pet.species] ?? pet.species;
   lines.push(`| ${species}${pet.breed ? ` · ${escapeHtml(pet.breed)}` : ''}`);
   if (pet.gender) lines.push(`| ${PET_GENDER_LABELS[pet.gender] ?? pet.gender}`);
   if (pet.ageMonths != null) lines.push(`| 🎂 ${escapeHtml(formatPetAge(pet.ageMonths))}`);
   const loc = [pet.ownerCity || pet.city, pet.ownerProvince].filter(Boolean).join(' - ');
   if (loc) lines.push(`| 📍 ${escapeHtml(loc)}`);
-  if (pet.ownerName) lines.push(`| 👤 صاحب: ${escapeHtml(pet.ownerName)}`);
-  if (pet.ownerVerified) lines.push('| 🛡️✅ صاحب احراز شده');
   if (pet.distanceKm != null) {
     lines.push(`| 🏁 فاصله از شما: ${formatDistanceCaption(pet.distanceKm)}`);
   }
   if (pet.bio) lines.push(`| 💬 ${escapeHtml(pet.bio)}`);
   lines.push(pet.lookingForPlaymate ? '| 🔍 دنبال همبازی' : '| ⏸️ فعلاً همبازی نمی‌خواد');
+
+  const ownerName = (owner?.name && String(owner.name).trim()) || pet.ownerName;
+  lines.push('');
+  lines.push('👤 <b>صاحب پت</b>');
+  if (ownerName) lines.push(`| نام: ${escapeHtml(ownerName)}`);
+  lines.push(`| آیدی: /${escapeHtml(cmd.replace(/^\//, ''))}${publicId ? ` · <code>${escapeHtml(publicId)}</code>` : ''}`);
+  if (owner?.age != null) lines.push(`| سن: ${owner.age}`);
+  if (owner?.gender && owner.gender in USER_GENDER_LABELS) {
+    lines.push(`| جنسیت: ${USER_GENDER_LABELS[owner.gender as keyof typeof USER_GENDER_LABELS]}`);
+  }
+  if (owner?.interests && owner.interests.length) {
+    lines.push(`| علاقه‌مندی‌ها: ${escapeHtml(owner.interests.join(' · '))}`);
+  }
+  if (pet.ownerVerified || owner?.verificationStatus === 'verified') {
+    lines.push('| 🛡️✅ احراز شده');
+  }
+  const lastSeen = formatPeerLastSeenFa(owner?.lastSeenAt || pet.ownerLastSeenAt);
+  if (lastSeen) lines.push(`| ${escapeHtml(lastSeen)}`);
+
   return lines.join('\n');
 }
 
@@ -744,10 +765,25 @@ export async function handleSearchPetView(ctx: Context, petId: number): Promise<
 
   await ctx.answerCallbackQuery();
 
+  let owner: Awaited<ReturnType<typeof getUserById>> = null;
+  try {
+    owner = await getUserById(pet.ownerId);
+  } catch {
+    owner = null;
+  }
+
   const text =
     mode === 'nearby'
-      ? formatNearbyPetCaption(pet)
-      : `🐾 <b>پروفایل پت</b>\n\n${formatPet(pet, true)}`;
+      ? formatNearbyPetCaption(pet, owner)
+      : `🐾 <b>پروفایل پت</b>\n\n${formatPet(pet, true)}${
+          owner?.name
+            ? `\n\n👤 صاحب: ${escapeHtml(owner.name)}${
+                owner.verificationStatus === 'verified' ? ' ✅' : ''
+              }`
+            : pet.ownerName
+              ? `\n\n👤 صاحب: ${escapeHtml(pet.ownerName)}`
+              : ''
+        }`;
   const kb = searchPetDetailKeyboard(mode, page, {
     petId: pet.id,
     ownerId: pet.ownerId,

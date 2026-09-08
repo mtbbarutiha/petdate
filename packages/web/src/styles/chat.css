@@ -1528,3 +1528,13 @@ html.tg-chat-open body {
   text-decoration-color: rgba(21, 204, 160, 0.85);
   outline: none;
 }
+.tg-info-owner-name {
+  margin: 0.35rem 0 0.15rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+.tg-peer-public-id {
+  opacity: 0.72;
+  font-size: 0.85em;
+  font-variant-numeric: tabular-nums;
+}

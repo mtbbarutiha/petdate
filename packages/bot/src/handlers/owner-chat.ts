@@ -2,10 +2,7 @@ import { InlineKeyboard, Keyboard } from 'grammy';
 import type { Context } from 'grammy';
 import type { BotSession, User } from '@petdate/shared';
 import {
-  USER_GENDER_LABELS,
-  USER_ROLE_LABELS,
-  VERIFIED_BADGE,
-  normalizeRoles,
+  formatPeerOwnerProfileHtml,
   toUserCommandId,
   userCommandIdOf,
 } from '@petdate/shared';
@@ -123,26 +120,7 @@ function formatPeerOwnerCard(
   user: User,
   heading = '👤 <b>پروفایل طرف مقابل</b>'
 ): string {
-  const gender = user.gender ? USER_GENDER_LABELS[user.gender] : '—';
-  const roles = normalizeRoles(user.roles, user.role);
-  const role = roles.length ? roles.map((r) => USER_ROLE_LABELS[r]).join(' · ') : '—';
-  const verified = (user.verificationStatus ?? 'none') === 'verified';
-  const location = [user.province, user.city].filter(Boolean).join('، ') || '—';
-  const peerId = playmatePeerIdLabel(user);
-
-  return [
-    heading,
-    verified ? VERIFIED_BADGE : null,
-    '',
-    `<b>آیدی:</b> ${escapeHtml(peerId)}${verified ? ' ✅' : ''}`,
-    user.age != null ? `<b>سن:</b> ${user.age}` : null,
-    `<b>جنسیت:</b> ${gender}`,
-    `<b>نقش:</b> ${role}`,
-    `<b>موقعیت:</b> ${escapeHtml(location)}`,
-    user.bio ? `\n💬 ${escapeHtml(user.bio)}` : null,
-  ]
-    .filter(Boolean)
-    .join('\n');
+  return formatPeerOwnerProfileHtml(user, { heading });
 }
 
 function protectOpts(secure: boolean): { protect_content?: true } {

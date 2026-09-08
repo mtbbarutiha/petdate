@@ -247,6 +247,7 @@ export async function renderNearbyListCard(opts: {
     const place = pet.ownerCity || pet.city || pet.ownerProvince || '';
     const midParts = [
       formatDistanceFa(pet.distanceKm) + ' 🏁',
+      pet.ownerName ? `👤 ${pet.ownerName}` : null,
       place || null,
       pet.breed || null,
     ].filter(Boolean);
@@ -309,7 +310,7 @@ export async function renderNearbyListCard(opts: {
 
 /** Large pet photo with owner avatar composited in a corner (DoorDooria badge slot). */
 export async function renderPetProfileCard(opts: {
-  pet: PetProfile & { ownerAvatarUrl?: string };
+  pet: PetProfile & { ownerAvatarUrl?: string; ownerName?: string };
   corner?: 'br' | 'tr';
 }): Promise<Buffer> {
   const pet = opts.pet;
@@ -372,26 +373,29 @@ export async function renderPetProfileCard(opts: {
     overlays.push({ input: ownerCircle, left, top });
   }
 
-  // Small "صاحب" chip near overlay
+  // Owner name chip near overlay (fallback: «صاحب پت»)
   if (ownerCircle) {
+    const rawName = String(pet.ownerName ?? '').trim();
+    const label = rawName ? (rawName.length > 14 ? `${rawName.slice(0, 13)}…` : rawName) : 'صاحب پت';
+    const chipW = Math.min(220, Math.max(90, 28 + label.length * 12));
     const chip = await sharp(
       Buffer.from(`<?xml version="1.0" encoding="UTF-8"?>
-<svg width="90" height="28" xmlns="http://www.w3.org/2000/svg">
+<svg width="${chipW}" height="28" xmlns="http://www.w3.org/2000/svg">
   <defs><style>${fontFaceCss()}
     .c { font-family: Vazirmatn; font-size: 14px; fill: #fff; font-weight: 700; }
   </style></defs>
-  <rect width="90" height="28" rx="14" fill="#16a34a"/>
-  <text x="45" y="19" class="c" text-anchor="middle">صاحب پت</text>
+  <rect width="${chipW}" height="28" rx="14" fill="#16a34a"/>
+  <text x="${chipW / 2}" y="19" class="c" text-anchor="middle">${escapeXml(label)}</text>
 </svg>`)
     )
       .png()
       .toBuffer();
     const inset = 28;
-    const left = PROFILE_SIZE - OWNER_OVERLAY - 10 - inset + Math.round((OWNER_OVERLAY + 10 - 90) / 2);
+    const left = PROFILE_SIZE - OWNER_OVERLAY - 10 - inset + Math.round((OWNER_OVERLAY + 10 - chipW) / 2);
     const top =
       (corner === 'tr' ? inset : PROFILE_SIZE - OWNER_OVERLAY - 10 - inset) + OWNER_OVERLAY + 10 - 6;
     if (top + 28 < PROFILE_SIZE) {
-      overlays.push({ input: chip, left, top });
+      overlays.push({ input: chip, left: Math.max(4, left), top });
     }
   }
 

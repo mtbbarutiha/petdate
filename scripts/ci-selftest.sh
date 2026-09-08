@@ -12,6 +12,11 @@ run() {
   npx tsx "$file"
 }
 
+# Shared pure selftests
+echo "==> selftest: shared peer-profile + user-command-id"
+npx tsx "$ROOT/packages/shared/src/peer-profile.selftest.ts"
+npx tsx "$ROOT/packages/shared/src/user-command-id.selftest.ts"
+
 # Pure / memory-path tests first
 run src/services/web-chat-cta-once.selftest.ts
 run src/services/otp-sms-copy.selftest.ts
@@ -25,10 +30,11 @@ run src/services/telegram-playdate-notify.selftest.ts
 run src/services/nearby-cards.selftest.ts
 
 # Bot guards (sticky keyboard + IPv4 Telegram HTTP) — no network / no DB
-echo "==> selftest: bot sticky + telegram-http + nearby-radius + pet-search-menu"
+echo "==> selftest: bot sticky + telegram-http + nearby-radius + nearby-inline-list + pet-search-menu"
 npx tsx "$ROOT/packages/bot/src/sticky-reply-keyboard.selftest.ts"
 npx tsx "$ROOT/packages/bot/src/telegram-http.selftest.ts"
 npx tsx "$ROOT/packages/bot/src/handlers/nearby-radius.selftest.ts"
+npx tsx "$ROOT/packages/bot/src/handlers/nearby-inline-list.selftest.ts"
 npx tsx "$ROOT/packages/bot/src/handlers/pet-search-menu.selftest.ts"
 
 # SQLite cascade (uses temp/local DB via API helpers — not production path)

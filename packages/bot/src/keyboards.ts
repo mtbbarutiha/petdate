@@ -401,7 +401,7 @@ export function nearbyRadiusKeyboard(): InlineKeyboard {
     .success();
 }
 
-/** خلاصه تعداد نتایج — قبل از لیست تصویری */
+/** خلاصه تعداد نتایج — قبل از لیست اینلاین */
 export function nearbySummaryKeyboard(_radiusKm: number): InlineKeyboard {
   return new InlineKeyboard()
     .text('📋 نمایش بصورت لیستی', 'nearby:list:0')
@@ -414,8 +414,12 @@ export function nearbySummaryKeyboard(_radiusKm: number): InlineKeyboard {
     .primary();
 }
 
-/** دکمه‌های زیر کارت لیست تصویری — باز کردن هر پت */
-export function nearbyVisualListKeyboard(
+/**
+ * لیست اینلاین افراد نزدیک (سبک دوردوریا):
+ * یک ردیف عمودی به ازای هر نفر — نام · فاصله · شهر — + صفحه‌بندی.
+ * تصویر JPEG ترکیبی استفاده نمی‌شود.
+ */
+export function nearbyInlineListKeyboard(
   pets: PetProfile[],
   page: number,
   pageSize: number,
@@ -428,12 +432,15 @@ export function nearbyVisualListKeyboard(
 
   slice.forEach((pet, idx) => {
     const n = safePage * pageSize + idx + 1;
-    let label = `${n}. ${pet.name}`;
-    if (pet.distanceKm != null && Number.isFinite(pet.distanceKm)) {
-      label += ` · ${formatNearbyDistance(pet.distanceKm)}`;
-    }
-    if (label.length > 56) label = `${label.slice(0, 53)}…`;
-    kb.text(`🐾 ${label}`, `search:pet:${pet.id}`).primary().row();
+    const dist =
+      pet.distanceKm != null && Number.isFinite(pet.distanceKm)
+        ? formatNearbyDistance(pet.distanceKm)
+        : null;
+    const city = (pet.ownerCity || pet.city || '').trim() || null;
+    const bits = [dist, city].filter(Boolean).join(' · ');
+    let label = bits ? `${n}. ${pet.name} · ${bits}` : `${n}. ${pet.name}`;
+    if (label.length > 64) label = `${label.slice(0, 61)}…`;
+    kb.text(label, `search:pet:${pet.id}`).primary().row();
   });
 
   if (totalPages > 1) {
@@ -445,8 +452,19 @@ export function nearbyVisualListKeyboard(
 
   kb.text('📋 خلاصه', 'nearby:summary').primary().row();
   kb.text('📍 موقعیت دوباره', 'search:nearby:askloc').primary().row();
-  kb.text('🔙 منوی اصلی', 'search:home').primary();
+  kb.text('🔙 تغییر شعاع', 'nearby:pick-radius').primary().row();
+  kb.text('🏠 منوی اصلی', 'search:home').primary();
   return kb;
+}
+
+/** @deprecated استفاده از nearbyInlineListKeyboard */
+export function nearbyVisualListKeyboard(
+  pets: PetProfile[],
+  page: number,
+  pageSize: number,
+  totalCount: number
+): InlineKeyboard {
+  return nearbyInlineListKeyboard(pets, page, pageSize, totalCount);
 }
 
 /** پروفایل پت در نتایج جستجو — بازگشت به لیست + اکشن‌های پت‌دیت */
