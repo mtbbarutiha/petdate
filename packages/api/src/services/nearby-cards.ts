@@ -308,13 +308,35 @@ export async function renderNearbyListCard(opts: {
     .toBuffer();
 }
 
-/** Large pet photo with owner avatar composited in a corner (DoorDooria badge slot). */
+export type ProfileCardCorner = 'tl' | 'tr' | 'bl' | 'br';
+
+const OWNER_OVERLAY_OUTER = OWNER_OVERLAY + 10;
+const OWNER_OVERLAY_INSET = 28;
+
+/** Pixel position for the circular owner avatar on the pet profile card. */
+export function ownerOverlayPosition(
+  corner: ProfileCardCorner = 'tl',
+  profileSize = PROFILE_SIZE,
+  overlayOuter = OWNER_OVERLAY_OUTER,
+  inset = OWNER_OVERLAY_INSET
+): { left: number; top: number } {
+  const right = profileSize - overlayOuter - inset;
+  const bottom = profileSize - overlayOuter - inset;
+  const left = corner === 'tr' || corner === 'br' ? right : inset;
+  const top = corner === 'bl' || corner === 'br' ? bottom : inset;
+  return { left, top };
+}
+
+/**
+ * Large pet photo with circular owner avatar in a corner (default: top-left).
+ * No caption/label under the overlay — photo only.
+ */
 export async function renderPetProfileCard(opts: {
   pet: PetProfile & { ownerAvatarUrl?: string; ownerName?: string };
-  corner?: 'br' | 'tr';
+  corner?: ProfileCardCorner;
 }): Promise<Buffer> {
   const pet = opts.pet;
-  const corner = opts.corner ?? 'br';
+  const corner = opts.corner ?? 'tl';
   const petBuf = await squareThumb(
     await loadImageBuffer(pet.imageUrl, defaultPetPhotoUrl(pet)),
     PROFILE_SIZE,
@@ -339,14 +361,14 @@ export async function renderPetProfileCard(opts: {
         .png()
         .toBuffer();
       const ring = Buffer.from(`<?xml version="1.0" encoding="UTF-8"?>
-<svg width="${OWNER_OVERLAY + 10}" height="${OWNER_OVERLAY + 10}" xmlns="http://www.w3.org/2000/svg">
-  <circle cx="${(OWNER_OVERLAY + 10) / 2}" cy="${(OWNER_OVERLAY + 10) / 2}" r="${OWNER_OVERLAY / 2 + 3}" fill="none" stroke="#ffffff" stroke-width="6"/>
-  <circle cx="${(OWNER_OVERLAY + 10) / 2}" cy="${(OWNER_OVERLAY + 10) / 2}" r="${OWNER_OVERLAY / 2 + 3}" fill="none" stroke="#16a34a" stroke-width="2"/>
+<svg width="${OWNER_OVERLAY_OUTER}" height="${OWNER_OVERLAY_OUTER}" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="${OWNER_OVERLAY_OUTER / 2}" cy="${OWNER_OVERLAY_OUTER / 2}" r="${OWNER_OVERLAY / 2 + 3}" fill="none" stroke="#ffffff" stroke-width="6"/>
+  <circle cx="${OWNER_OVERLAY_OUTER / 2}" cy="${OWNER_OVERLAY_OUTER / 2}" r="${OWNER_OVERLAY / 2 + 3}" fill="none" stroke="#16a34a" stroke-width="2"/>
 </svg>`);
       ownerCircle = await sharp({
         create: {
-          width: OWNER_OVERLAY + 10,
-          height: OWNER_OVERLAY + 10,
+          width: OWNER_OVERLAY_OUTER,
+          height: OWNER_OVERLAY_OUTER,
           channels: 4,
           background: { r: 0, g: 0, b: 0, alpha: 0 },
         },
@@ -364,39 +386,8 @@ export async function renderPetProfileCard(opts: {
 
   const overlays: sharp.OverlayOptions[] = [];
   if (ownerCircle) {
-    const inset = 28;
-    const left =
-      corner === 'tr' || corner === 'br'
-        ? PROFILE_SIZE - OWNER_OVERLAY - 10 - inset
-        : inset;
-    const top = corner === 'tr' ? inset : PROFILE_SIZE - OWNER_OVERLAY - 10 - inset;
+    const { left, top } = ownerOverlayPosition(corner);
     overlays.push({ input: ownerCircle, left, top });
-  }
-
-  // Owner name chip near overlay (fallback: «صاحب پت»)
-  if (ownerCircle) {
-    const rawName = String(pet.ownerName ?? '').trim();
-    const label = rawName ? (rawName.length > 14 ? `${rawName.slice(0, 13)}…` : rawName) : 'صاحب پت';
-    const chipW = Math.min(220, Math.max(90, 28 + label.length * 12));
-    const chip = await sharp(
-      Buffer.from(`<?xml version="1.0" encoding="UTF-8"?>
-<svg width="${chipW}" height="28" xmlns="http://www.w3.org/2000/svg">
-  <defs><style>${fontFaceCss()}
-    .c { font-family: Vazirmatn; font-size: 14px; fill: #fff; font-weight: 700; }
-  </style></defs>
-  <rect width="${chipW}" height="28" rx="14" fill="#16a34a"/>
-  <text x="${chipW / 2}" y="19" class="c" text-anchor="middle">${escapeXml(label)}</text>
-</svg>`)
-    )
-      .png()
-      .toBuffer();
-    const inset = 28;
-    const left = PROFILE_SIZE - OWNER_OVERLAY - 10 - inset + Math.round((OWNER_OVERLAY + 10 - chipW) / 2);
-    const top =
-      (corner === 'tr' ? inset : PROFILE_SIZE - OWNER_OVERLAY - 10 - inset) + OWNER_OVERLAY + 10 - 6;
-    if (top + 28 < PROFILE_SIZE) {
-      overlays.push({ input: chip, left: Math.max(4, left), top });
-    }
   }
 
   return sharp(petBuf)
