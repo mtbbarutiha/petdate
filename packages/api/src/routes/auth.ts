@@ -528,7 +528,9 @@ authRouter.patch('/vet-online', (req, res) => {
     res.status(403).json({ error: 'این بخش مخصوص دامپزشکان است' });
     return;
   }
-  const online = Boolean(req.body?.online);
+  const raw = req.body?.online;
+  const online =
+    raw === true || raw === 1 || raw === '1' || raw === 'true';
   const existing = dbService.getUserById(session.user.id) ?? session.user;
   if (online && existing.vetEnabled === false) {
     res.status(403).json({
@@ -537,12 +539,12 @@ authRouter.patch('/vet-online', (req, res) => {
     });
     return;
   }
-  const updated = dbService.setVetOnline(session.user.id, online);
+  const updated = dbService.setVetOnline(Number(session.user.id), online);
   if (!updated) {
     res.status(400).json({ error: 'تغییر وضعیت آنلاین ممکن نشد' });
     return;
   }
-  res.json({ ok: true, user: updated });
+  res.json({ ok: true, user: dbService.enrichUserProfileCard(updated) });
 });
 
 /** مبلغ ویزیت دامپزشک (وب) */

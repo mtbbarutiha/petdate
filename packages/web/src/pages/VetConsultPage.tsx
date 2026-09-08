@@ -190,22 +190,25 @@ function VetOnlineCard({
   needsLogin,
   dualRole,
   credentialStatus,
-  onToggle,
+  onSetOnline,
 }: {
   vetOnline: boolean;
   onlineBusy: boolean;
   needsLogin: boolean;
   dualRole?: boolean;
   credentialStatus?: VetCredentialStatus | null;
-  onToggle: () => void;
+  onSetOnline: (online: boolean) => void;
 }) {
   const cred = credentialLabel(credentialStatus);
   const verified = credentialStatus === 'verified';
+  // Only block interaction while a request is in flight or when logged out.
+  // Never leave the control permanently inert — busy is cleared by a timeout too.
   const locked = onlineBusy || needsLogin;
   return (
     <section
       className={`pepito-vet-online-card${vetOnline ? ' is-online' : ' is-offline'}`}
       aria-label="وضعیت آنلاین"
+      aria-busy={onlineBusy || undefined}
     >
       <div className="pepito-vet-online-card-main">
         <div className="pepito-vet-online-status">
@@ -239,15 +242,9 @@ function VetOnlineCard({
             type="button"
             className={`pepito-vet-online-seg-btn${vetOnline ? ' is-active is-online' : ''}`}
             disabled={locked}
-            onClick={() => {
-              if (!vetOnline) onToggle();
-            }}
+            onClick={() => onSetOnline(true)}
             data-testid={
-              !vetOnline
-                ? dualRole
-                  ? 'vet-online-toggle-dual'
-                  : 'vet-online-toggle'
-                : undefined
+              dualRole ? 'vet-online-toggle-dual-on' : 'vet-online-toggle-on'
             }
             aria-pressed={vetOnline}
             aria-label="آنلاین شو"
@@ -258,15 +255,9 @@ function VetOnlineCard({
             type="button"
             className={`pepito-vet-online-seg-btn${!vetOnline ? ' is-active is-offline' : ''}`}
             disabled={locked}
-            onClick={() => {
-              if (vetOnline) onToggle();
-            }}
+            onClick={() => onSetOnline(false)}
             data-testid={
-              vetOnline
-                ? dualRole
-                  ? 'vet-online-toggle-dual'
-                  : 'vet-online-toggle'
-                : undefined
+              dualRole ? 'vet-online-toggle-dual-off' : 'vet-online-toggle-off'
             }
             aria-pressed={!vetOnline}
             aria-label="آفلاین شو"
@@ -449,6 +440,8 @@ export function VetConsultPage() {
   const [onlineVets, setOnlineVets] = useState<User[]>([]);
   const [onlineVetsLoading, setOnlineVetsLoading] = useState(false);
   const autoNavRef = useRef<number | null>(null);
+  const onlineBusyRef = useRef(false);
+  const onlineToggleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const coins = user?.coins ?? user?.wallet?.coins ?? 0;
   const botUrl = telegramBotDeepLink();
@@ -651,18 +644,51 @@ export function VetConsultPage() {
     return 'پزشک‌های آنلاین و مبلغ ویزیت‌شان را ببین، بعد درخواست بفرست.';
   }, [isVetDashboard, vetOnline, needsLogin, needsPet, noOnlineVets, lowCoins, coins, connectCost]);
 
-  async function onToggleOnline() {
-    if (!token) return;
+  async function onSetVetOnline(nextOnline: boolean) {
+    if (!token) {
+      setError('اول وارد حساب شو.');
+      return;
+    }
+    if (onlineBusyRef.current) return;
+    if (Boolean(user?.vetOnline) === nextOnline) return;
+
+    onlineBusyRef.current = true;
     setOnlineBusy(true);
     setError(null);
-    try {
-      await setVetOnline(!vetOnline);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'تغییر وضعیت آنلاین ناموفق بود');
-    } finally {
+
+    // Never leave the segmented control disabled forever if the PATCH hangs.
+    if (onlineToggleTimerRef.current) clearTimeout(onlineToggleTimerRef.current);
+    let timedOut = false;
+    onlineToggleTimerRef.current = setTimeout(() => {
+      timedOut = true;
+      onlineBusyRef.current = false;
       setOnlineBusy(false);
+      setError('تغییر وضعیت بیش از حد طول کشید. دوباره تلاش کن.');
+    }, 12_000);
+
+    try {
+      await setVetOnline(nextOnline);
+    } catch (err) {
+      if (!timedOut) {
+        setError(err instanceof Error ? err.message : 'تغییر وضعیت آنلاین ناموفق بود');
+      }
+    } finally {
+      if (onlineToggleTimerRef.current) {
+        clearTimeout(onlineToggleTimerRef.current);
+        onlineToggleTimerRef.current = null;
+      }
+      if (!timedOut) {
+        onlineBusyRef.current = false;
+        setOnlineBusy(false);
+      }
     }
   }
+
+  useEffect(() => {
+    return () => {
+      if (onlineToggleTimerRef.current) clearTimeout(onlineToggleTimerRef.current);
+    };
+  }, []);
 
   async function onSaveVisitFee(fee: number) {
     if (!token) return;
@@ -812,7 +838,7 @@ export function VetConsultPage() {
           onlineBusy={onlineBusy}
           needsLogin={needsLogin}
           credentialStatus={user?.vetCredentialStatus}
-          onToggle={() => void onToggleOnline()}
+          onSetOnline={(online) => void onSetVetOnline(online)}
         />
         <VetVisitFeeCard
           currentFee={myVisitFee}
@@ -849,7 +875,7 @@ export function VetConsultPage() {
             needsLogin={needsLogin}
             dualRole
             credentialStatus={user?.vetCredentialStatus}
-            onToggle={() => void onToggleOnline()}
+            onSetOnline={(online) => void onSetVetOnline(online)}
           />
           <VetVisitFeeCard
             currentFee={myVisitFee}

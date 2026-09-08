@@ -559,7 +559,9 @@ usersRouter.post('/:id/vet-enabled', async (req, res) => {
 
 /** وضعیت آنلاین/آفلاین دامپزشک برای پذیرش بیمار */
 usersRouter.post('/telegram/:telegramId/vet-online', (req, res) => {
-  const online = Boolean(req.body?.online);
+  const raw = req.body?.online;
+  const online =
+    raw === true || raw === 1 || raw === '1' || raw === 'true';
   const existing = dbService.getUserByTelegramId(req.params.telegramId);
   if (!existing) {
     res.status(404).json({ error: 'کاربر پیدا نشد' });

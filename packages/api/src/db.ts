@@ -2622,16 +2622,24 @@ export const dbService = {
   },
 
   setVetOnline(userId: number, online: boolean): User | null {
-    const existing = this.getUserById(userId);
+    const id = Number(userId);
+    if (!Number.isFinite(id) || id <= 0) return null;
+    const existing = this.getUserById(id);
     if (!existing) return null;
     if (online && existing.vetEnabled === false) {
       return null;
     }
-    const result = db
-      .prepare(`UPDATE users SET vet_online = ? WHERE id = ?`)
-      .run(online ? 1 : 0, userId);
-    if (result.changes === 0) return null;
-    return this.getUserById(userId);
+    // Already in the requested state — success (avoids false failures when
+    // pg-compat/SQLite reports changes=0 for a no-op UPDATE).
+    if (Boolean(existing.vetOnline) === online) {
+      return existing;
+    }
+    db.prepare(`UPDATE users SET vet_online = ? WHERE id = ?`).run(online ? 1 : 0, id);
+    const updated = this.getUserById(id);
+    if (!updated) return null;
+    // Trust read-after-write over changes count (Postgres rowCount can be flaky).
+    if (Boolean(updated.vetOnline) !== online) return null;
+    return updated;
   },
 
   setVetOnlineByTelegramId(telegramId: string, online: boolean): User | null {
