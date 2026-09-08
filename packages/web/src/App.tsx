@@ -5,6 +5,7 @@ import { Layout } from './components/Layout';
 import { RouteSeo } from './components/RouteSeo';
 import { ShopCartProvider } from './hooks/useShopCart';
 import { LandingMobileDock } from './components/LandingMobileDock';
+import { ScrollToTop } from './components/ScrollToTop';
 import { WelcomePage } from './pages/WelcomePage';
 import { LoginPage } from './pages/auth/LoginPage';
 
@@ -176,6 +177,7 @@ export default function App() {
   return (
     <AppGuards>
       <ShopCartProvider>
+        <ScrollToTop />
         <RouteSeo />
         <Suspense fallback={<RouteFallback />}>
           <Routes>
