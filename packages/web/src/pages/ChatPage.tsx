@@ -90,6 +90,8 @@ const FALLBACK_POLL_MS = 12_000;
 const OFFLINE_FALLBACK_POLL_MS = 8_000;
 /** Message/status poll when WS is down — keep gentle to avoid UI thrash. */
 const MESSAGE_FALLBACK_POLL_MS = 15_000;
+/** Slow catch-up while WS is up (missed Telegram→web events / subscribe races). */
+const MESSAGE_WS_CATCHUP_POLL_MS = 20_000;
 const DESKTOP_MQ = '(min-width: 860px)';
 
 type ChatMsg = {
@@ -547,8 +549,9 @@ export function ChatPage() {
         softReloadConversations();
         return;
       }
-      if (!match?.id || !myUserId) return;
-      if (event.type === 'message' && event.channel === 'playmate' && event.threadId === match.id) {
+      if (!myUserId || !hasThread || selectedId <= 0) return;
+      // Match by URL thread id — do not wait for match load (WS can arrive first).
+      if (event.type === 'message' && event.channel === 'playmate' && event.threadId === selectedId) {
         const row = event.message as PlaydateChatMessage;
         if (!row?.id) return;
         setMessages((prev) => {
@@ -559,7 +562,7 @@ export function ChatPage() {
         softReloadConversations();
         return;
       }
-      if (event.type === 'thread' && event.channel === 'playmate' && event.threadId === match.id) {
+      if (event.type === 'thread' && event.channel === 'playmate' && event.threadId === selectedId) {
         const patch = event.patch || {};
         if (typeof patch.chatSecure === 'boolean') {
           setSecure((prev) => {
@@ -587,8 +590,8 @@ export function ChatPage() {
           lastMsgIdRef.current = 0;
           setWiped(true);
         }
-        if (typeof patch.status === 'string' && patch.status !== match.status) {
-          void getPlaydateRequest(match.id).then((req) => {
+        if (typeof patch.status === 'string' && patch.status !== match?.status) {
+          void getPlaydateRequest(selectedId).then((req) => {
             if (!req || !myUserId) return;
             const mapped = playdateToMatchRequest(req, myUserId);
             setMatch(mapped);
@@ -610,7 +613,7 @@ export function ChatPage() {
         softReloadConversations();
       }
     },
-    [match?.id, match?.status, myUserId, softReloadConversations],
+    [hasThread, selectedId, match?.status, myUserId, softReloadConversations],
   );
 
   const { connected: wsConnected } = useChatSocket({
@@ -792,8 +795,6 @@ export function ChatPage() {
 
   useEffect(() => {
     if (!match || !myUserId || ended || match.status !== 'accepted') return;
-    // Socket delivers messages + thread patches — avoid interval setState thrash.
-    if (wsConnected) return;
     let cancelled = false;
 
     async function pull(initial = false) {
@@ -852,12 +853,18 @@ export function ChatPage() {
       }
     }
 
+    // Always load history once — WS-only path missed Telegram→web lines and
+    // dropped events that arrived before match finished loading.
     void pull(true);
     const timer = window.setInterval(() => {
-      if (wsConnectedRef.current) return;
+      // While WS is up: slow catch-up only (missed relays). Full poll when offline.
+      if (wsConnectedRef.current) {
+        void pull(false);
+        return;
+      }
       void pull(false);
       void pullMeta();
-    }, MESSAGE_FALLBACK_POLL_MS);
+    }, wsConnected ? MESSAGE_WS_CATCHUP_POLL_MS : MESSAGE_FALLBACK_POLL_MS);
     return () => {
       cancelled = true;
       window.clearInterval(timer);
