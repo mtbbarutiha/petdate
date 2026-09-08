@@ -7,7 +7,7 @@ import { useShopCart } from '../hooks/useShopCart';
 
 /**
  * Top-bar account tools pinned to physical CSS left (LTR cluster):
- * circular profile avatar → wallet entry → orders → cart.
+ * circular profile avatar → wallet chip → orders → cart.
  * Mobile CSS hides avatar/wallet (dock covers them); desktop keeps them.
  */
 export function NavUserCluster({
