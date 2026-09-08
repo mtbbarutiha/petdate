@@ -17,7 +17,13 @@ Sitemap تولید و روی سایت در دسترس است:
 2. افزودن ملک:
    - ترجیحاً **Domain** برای `petdate.ir` (شامل www و غیرwww)، یا
    - URL-prefix برای `https://petdate.ir` و در صورت نیاز `https://www.petdate.ir`.
-3. تأیید مالکیت (DNS TXT یا فایل HTML روی سرور).
+3. تأیید مالکیت — یکی از روش‌ها:
+   - **HTML tag** (آماده روی سایت): متای زیر در `packages/web/index.html` است و بعد از دیپلوی وب در HTML اولیه همه صفحات عمومی دیده می‌شود:
+     ```html
+     <meta name="google-site-verification" content="xaV-T_LTYV_FDK2Yvd7AVCxzHRk1RRDrkxiuAEbBdvo" />
+     ```
+     در Search Console روی **Verify** بزنید.
+   - یا DNS TXT / فایل HTML روی سرور.
 4. **Sitemaps** → ارسال `https://petdate.ir/sitemap.xml`.
 5. (پیشنهاد) در nginx یک **۳۰۱** از `www` به apex (یا برعکس) تا با canonicalهای فعلی (`https://petdate.ir/...`) هم‌خوان شود.
 
