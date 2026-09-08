@@ -80,14 +80,14 @@ const HERO_SLIDES: {
     cta: { kind: 'hash', href: '#services', label: 'کشف کن' },
   },
   {
-    img: `${P}/5.jpg`,
+    img: `${P}/5-kittens.jpg`,
     kicker: 'عشق ما حیوانات‌اند',
     title: 'پت‌تان شایسته بهترین‌هاست',
     lead: 'دامپزشکان قابل‌اعتماد که پت‌تان را در اولویت می‌گذارند.',
     cta: { kind: 'hash', href: '#services', label: 'کشف کن' },
   },
   {
-    img: `${P}/06.jpg`,
+    img: `${P}/06-pink-cat.jpg`,
     kicker: 'عشق ما حیوانات‌اند',
     title: 'مراقبت دامپزشکی حرفه‌ای',
     lead: 'دامپزشکان قابل‌اعتماد که پت‌تان را در اولویت می‌گذارند.',
