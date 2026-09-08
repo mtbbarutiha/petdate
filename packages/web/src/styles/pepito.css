@@ -5487,106 +5487,67 @@ div.pepito-profile-stat:active {
   position: relative;
   z-index: 5;
 }
+/*
+  Shared desktop nav-chip family (wallet / cart / SiteDesktopNav):
+  equal height, equal padding rhythm, same border + fill, RTL icon at start.
+  Wallet keeps a soft teal icon tint as the only brand accent.
+*/
 .pepito-nav-wallet-btn {
+  --pepito-nav-chip-h: 40px;
   appearance: none;
   position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 0.45rem;
-  height: 42px;
-  padding: 0 0.85rem 0 0.4rem;
-  border-radius: 14px;
-  border: 1.5px solid rgba(92, 64, 40, 0.32);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.42) 0%, rgba(255, 255, 255, 0) 46%),
-    linear-gradient(155deg, #f6eee4 0%, #ead9c6 42%, #dfc7ae 100%);
+  justify-content: center;
+  gap: 0.35rem;
+  height: var(--pepito-nav-chip-h);
+  min-height: var(--pepito-nav-chip-h);
+  padding: 0 0.75rem;
+  border-radius: 999px;
+  border: 1.5px solid rgba(92, 77, 145, 0.14);
+  background: rgba(255, 255, 255, 0.88);
   color: var(--pepito-dark);
   cursor: pointer;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.62),
-    inset 0 -1px 0 rgba(92, 64, 40, 0.1),
-    0 1px 0 rgba(255, 255, 255, 0.35),
-    0 5px 14px rgba(62, 40, 20, 0.14);
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  box-shadow: none;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
   font: inherit;
-  overflow: hidden;
+  overflow: visible;
   isolation: isolate;
   text-decoration: none;
   white-space: nowrap;
+  line-height: 1;
+  box-sizing: border-box;
 }
-/* Soft wallet fold / stitch accent along the leading edge */
-.pepito-nav-wallet-btn::before {
-  content: '';
-  position: absolute;
-  inset-block: 5px;
-  inset-inline-start: 2.05rem;
-  width: 1px;
-  background: linear-gradient(
-    180deg,
-    transparent 0%,
-    rgba(92, 64, 40, 0.22) 18%,
-    rgba(92, 64, 40, 0.22) 82%,
-    transparent 100%
-  );
-  pointer-events: none;
-  z-index: 0;
-}
+.pepito-nav-wallet-btn::before,
 .pepito-nav-wallet-btn::after {
-  content: '';
-  position: absolute;
-  inset-inline: 0.55rem;
-  top: 3px;
-  height: 1px;
-  background: repeating-linear-gradient(
-    90deg,
-    rgba(92, 64, 40, 0.22) 0 3px,
-    transparent 3px 7px
-  );
-  pointer-events: none;
-  z-index: 0;
-  opacity: 0.7;
+  content: none;
+  display: none;
+}
+.pepito-nav-wallet-btn svg {
+  display: block;
+  flex-shrink: 0;
+  color: #1d6f66;
 }
 .pepito-nav-wallet-btn:hover {
-  border-color: rgba(92, 64, 40, 0.48);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.7),
-    inset 0 -1px 0 rgba(92, 64, 40, 0.12),
-    0 1px 0 rgba(255, 255, 255, 0.4),
-    0 8px 18px rgba(62, 40, 20, 0.18);
-  transform: translateY(-1px);
-  color: var(--pepito-dark);
+  background: var(--pepito-lilac, #f3eefc);
+  border-color: rgba(92, 77, 145, 0.28);
+  color: var(--pepito-base);
+  box-shadow: none;
+  transform: none;
 }
-.pepito-nav-wallet-mark {
-  position: relative;
-  z-index: 1;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.5rem;
-  height: 1.5rem;
-  border-radius: 9px;
-  background:
-    linear-gradient(160deg, #3aa89a 0%, #1d6f66 78%);
-  color: #fff;
-  flex-shrink: 0;
-  line-height: 1;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.28),
-    0 2px 6px rgba(29, 111, 102, 0.28);
+.pepito-nav-wallet-btn:hover svg {
+  color: var(--pepito-base);
 }
-.pepito-nav-wallet-mark svg {
-  display: block;
-  width: 0.88rem;
-  height: 0.88rem;
+.pepito-nav-wallet-btn:focus-visible {
+  outline: 2px solid rgba(42, 157, 143, 0.55);
+  outline-offset: 2px;
 }
 .pepito-nav-wallet-label {
-  position: relative;
-  z-index: 1;
   font-family: var(--font-display);
-  font-weight: 750;
-  font-size: 0.82rem;
+  font-weight: 700;
+  font-size: 0.8rem;
   line-height: 1;
-  color: var(--pepito-dark);
+  color: inherit;
 }
 .pepito-nav-wallet-panel {
   position: absolute;
@@ -5810,24 +5771,22 @@ div.pepito-profile-stat:active {
   right: auto;
   min-width: min(320px, calc(100vw - 1.5rem));
 }
-@media (max-width: 900px) {
+@media (max-width: 859px) {
   .pepito-nav--app {
     padding-left: calc(var(--pepito-gutter-x) + 9.5rem);
   }
   .pepito-nav-user-cluster {
     gap: 0.35rem;
   }
-  .pepito-nav-profile-btn,
-  .pepito-nav-wallet-btn {
-    height: 38px;
-  }
   .pepito-nav-profile-btn {
+    height: 38px;
     width: 38px;
   }
   .pepito-nav-wallet-btn {
-    padding: 0 0.65rem 0 0.32rem;
-    gap: 0.35rem;
-    border-radius: 12px;
+    height: 38px;
+    min-height: 38px;
+    padding: 0 0.65rem;
+    gap: 0.3rem;
   }
   .pepito-nav-wallet-label {
     font-size: 0.76rem;
@@ -10055,24 +10014,33 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   }
 }
 
-/* MOBILE_NAV_TOOLS_FIX */
+/* MOBILE_NAV_TOOLS_FIX — cart matches nav-chip height/border family */
 .pepito-nav-cart-link {
+  --pepito-nav-chip-h: 40px;
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: var(--pepito-nav-chip-h);
+  height: var(--pepito-nav-chip-h);
+  min-height: var(--pepito-nav-chip-h);
   border-radius: 999px;
   color: var(--pepito-dark);
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.88);
   border: 1.5px solid rgba(92, 77, 145, 0.14);
   text-decoration: none;
   flex-shrink: 0;
+  box-sizing: border-box;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 .pepito-nav-cart-link:hover {
   background: var(--pepito-lilac, #f3eefc);
+  border-color: rgba(92, 77, 145, 0.28);
   color: var(--pepito-base);
+}
+.pepito-nav-cart-link:focus-visible {
+  outline: 2px solid rgba(92, 77, 145, 0.45);
+  outline-offset: 2px;
 }
 .pepito-nav-cart-count {
   position: absolute;
@@ -10155,9 +10123,10 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
 
   .pepito-nav-wallet-btn {
     height: 36px !important;
-    padding: 0 0.55rem 0 0.3rem !important;
-    gap: 0.35rem !important;
-    border-radius: 11px !important;
+    min-height: 36px !important;
+    padding: 0 0.6rem !important;
+    gap: 0.3rem !important;
+    border-radius: 999px !important;
   }
   .pepito-nav-wallet-label {
     font-size: 0.72rem !important;
@@ -10166,6 +10135,7 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   .pepito-nav-cart-link {
     width: 36px !important;
     height: 36px !important;
+    min-height: 36px !important;
   }
 
   .pd-shop-page .pepito-nav-actions .pepito-btn--nav {
@@ -10176,8 +10146,8 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
 @media (max-width: 420px) {
   .pepito-nav-wallet-btn {
     width: auto !important;
-    padding: 0 0.4rem 0 0.3rem !important;
-    justify-content: flex-start !important;
+    padding: 0 0.55rem !important;
+    justify-content: center !important;
   }
 }
 
@@ -10349,33 +10319,54 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
     flex: 0 0 auto;
     z-index: 6;
     margin: 0;
-    gap: 0.4rem;
+    gap: 0.35rem;
     max-width: none;
+  }
+
+  .pepito-nav-wallet-btn,
+  .pepito-nav-cart-link {
+    height: 40px;
+    min-height: 40px;
+  }
+
+  .pepito-nav-cart-link {
+    width: 40px;
   }
 
   .pepito-site-desktop-nav {
     display: inline-flex;
     align-items: center;
-    gap: 0.3rem;
+    gap: 0.35rem;
     flex-wrap: nowrap;
     max-width: none;
   }
 
   .pepito-site-desktop-nav-link {
+    --pepito-nav-chip-h: 40px;
     display: inline-flex;
     align-items: center;
-    gap: 0.3rem;
-    padding: 0.4rem 0.7rem;
+    justify-content: center;
+    gap: 0.35rem;
+    height: var(--pepito-nav-chip-h);
+    min-height: var(--pepito-nav-chip-h);
+    padding: 0 0.75rem;
     border-radius: 999px;
     text-decoration: none;
     font-family: var(--font-display);
     font-weight: 700;
     font-size: 0.8rem;
+    line-height: 1;
     color: var(--pepito-dark);
-    background: rgba(255, 255, 255, 0.72);
-    border: 1px solid rgba(92, 77, 145, 0.14);
+    background: rgba(255, 255, 255, 0.88);
+    border: 1.5px solid rgba(92, 77, 145, 0.14);
     transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
     white-space: nowrap;
+    flex-shrink: 0;
+    box-sizing: border-box;
+  }
+
+  .pepito-site-desktop-nav-link svg {
+    display: block;
     flex-shrink: 0;
   }
 
@@ -10383,6 +10374,11 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
     background: var(--pepito-lilac, #f3eefc);
     border-color: rgba(92, 77, 145, 0.28);
     color: var(--pepito-base);
+  }
+
+  .pepito-site-desktop-nav-link:focus-visible {
+    outline: 2px solid rgba(92, 77, 145, 0.45);
+    outline-offset: 2px;
   }
 
   .pepito-site-desktop-nav-link.is-active {
@@ -10394,8 +10390,8 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   /* Desktop keeps circular avatar + wallet chip in the left cluster
      (SiteDesktopNav no longer duplicates پروفایل / کیف پول / سبد). */
   .pepito-nav-user-cluster .pepito-nav-profile-btn {
-    width: 42px;
-    height: 42px;
+    width: 40px;
+    height: 40px;
     border-radius: 50%;
     overflow: hidden;
   }
@@ -10422,12 +10418,16 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   }
 
   .pepito-site-desktop-nav-link {
-    padding: 0.35rem 0.55rem;
+    padding: 0 0.6rem;
     font-size: 0.76rem;
   }
 
+  .pepito-nav-wallet-btn {
+    padding: 0 0.6rem;
+  }
+
   .pepito-nav-wallet-label {
-    font-size: 0.78rem;
+    font-size: 0.76rem;
   }
 }
 
@@ -10442,7 +10442,8 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   }
 
   .pepito-site-desktop-nav-link {
-    padding: 0.4rem;
+    width: var(--pepito-nav-chip-h, 40px);
+    padding: 0;
   }
 }
 

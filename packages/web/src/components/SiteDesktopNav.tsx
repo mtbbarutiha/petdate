@@ -37,6 +37,7 @@ export function SiteDesktopNav() {
             to={href}
             className={`pepito-site-desktop-nav-link${active ? ' is-active' : ''}`}
             aria-current={active ? 'page' : undefined}
+            dir="rtl"
           >
             <item.icon size={16} strokeWidth={2.25} aria-hidden />
             <span>{item.label}</span>
