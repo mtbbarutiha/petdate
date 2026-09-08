@@ -232,16 +232,16 @@ export function WalletPage() {
         <ul className="pepito-wallet-featured-side" aria-label="سایر موجودی‌ها">
           {secondary.map((key) => (
             <li key={key} className={`pepito-wallet-mini pepito-wallet-mini--${key}`}>
-              <span className="pepito-wallet-mini-sym" aria-hidden>
-                {key === 'toman' ? '﷼' : WALLET_CURRENCY_SYMBOLS[key]}
-              </span>
-              <div>
+              <div className="pepito-wallet-mini-head">
                 <p className="pepito-wallet-mini-label">{WALLET_CURRENCY_LABELS_FA[key]}</p>
-                <p className="pepito-wallet-mini-val">
-                  {formatBal(balances[key])}
-                  {key === 'toman' ? <span className="pepito-wallet-row-unit"> ت</span> : null}
-                </p>
+                <span className="pepito-wallet-mini-sym" aria-hidden>
+                  {key === 'toman' ? '﷼' : WALLET_CURRENCY_SYMBOLS[key]}
+                </span>
               </div>
+              <p className="pepito-wallet-mini-val">
+                {formatBal(balances[key])}
+                {key === 'toman' ? <span className="pepito-wallet-row-unit"> ت</span> : null}
+              </p>
             </li>
           ))}
         </ul>
