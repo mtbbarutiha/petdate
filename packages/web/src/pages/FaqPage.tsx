@@ -93,11 +93,24 @@ export function FaqPage() {
             </span>
             پشتیبانی
           </p>
-          <h1>سؤالات متداول</h1>
-          <p>پرسش‌های پرتکرار درباره پت‌دیت، همبازی، شاپ، پذیرش، دامپزشک و دعوت دوستان.</p>
-          <Link to="/chats" className="pepito-btn button-1">
-            رفتن به پنل همبازی
-          </Link>
+          {/* H1 lives in LandingChrome banner — avoid duplicate H1 */}
+          <p className="pepito-faq-page-lead">
+            پرسش‌های پرتکرار درباره پت‌دیت، همبازی، شاپ، پذیرش، دامپزشک و دعوت دوستان.
+          </p>
+          <div className="pepito-faq-page-links">
+            <Link to="/shop" className="pepito-btn button-3">
+              پت‌شاپ
+            </Link>
+            <Link to="/vet-consult" className="pepito-btn button-3">
+              دامپزشک آنلاین
+            </Link>
+            <Link to="/#pets" className="pepito-btn button-3">
+              پذیرش پت
+            </Link>
+            <Link to="/chats" className="pepito-btn button-1">
+              رفتن به پنل همبازی
+            </Link>
+          </div>
         </header>
 
         <div className="pepito-faq-page-list" role="list">

@@ -1,22 +1,55 @@
 # petdate.ir — پت‌دیت
+# Public: landing, FAQ, shop browse, adoption, vet-consult marketing, login.
+# Private/app surfaces are disallowed (auth OTP, chats, wallet, admin, onboarding).
+
 User-agent: *
 Allow: /
+Allow: /faq
+Allow: /shop
+Allow: /shop/c/
+Allow: /shop/product/
+Allow: /adoption/
+Allow: /vet-consult
+Allow: /auth/login
 Disallow: /admin
 Disallow: /admin/
 Disallow: /api/
 Disallow: /auth/otp
+Disallow: /auth/telegram
+Disallow: /onboarding
 Disallow: /onboarding/
+Disallow: /chats
 Disallow: /chats/
+Disallow: /home
+Disallow: /matches
+Disallow: /profile
+Disallow: /wallet
+Disallow: /wallet/
+Disallow: /earn
+Disallow: /my-pets
+Disallow: /add-pet
+Disallow: /pets/
+Disallow: /vet-chats
+Disallow: /vet-chats/
+Disallow: /shop/cart
+Disallow: /shop/orders
+Disallow: /shop/stars-pay/
+Disallow: /shop/card-pay/
 Disallow: /dev-seed.html
+Disallow: /panels-seed.html
 
-User-agent: Googlebot
-Allow: /
-
-User-agent: Bingbot
-Allow: /
-
+# AI / assistant crawlers — same public surface (do not bypass Disallow)
 User-agent: GPTBot
 Allow: /
+Disallow: /admin
+Disallow: /admin/
+Disallow: /api/
+Disallow: /chats
+Disallow: /chats/
+Disallow: /onboarding
+Disallow: /onboarding/
+Disallow: /wallet
+Disallow: /wallet/
 
 User-agent: ChatGPT-User
 Allow: /
@@ -30,16 +63,13 @@ Allow: /
 User-agent: ClaudeBot
 Allow: /
 
-User-agent: Claude-Web
-Allow: /
-
 User-agent: PerplexityBot
 Allow: /
 
 User-agent: Applebot
 Allow: /
 
-User-agent: DuckDuckBot
+User-agent: Bingbot
 Allow: /
 
 Sitemap: https://petdate.ir/sitemap.xml

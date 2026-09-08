@@ -17,7 +17,8 @@
     "infra:up:search": "docker compose --profile search up -d",
     "infra:down": "docker compose down",
     "infra:logs": "docker compose logs -f",
-    "infra:elasticsearch": "bash ./scripts/ensure-elasticsearch.sh"
+    "infra:elasticsearch": "bash ./scripts/ensure-elasticsearch.sh",
+    "sitemap": "node ./scripts/generate-sitemap.mjs"
   },
   "workspaces": [
     "packages/*"

@@ -109,6 +109,8 @@ const TEAM = [
   { name: 'دکتر پویا مرادی', role: 'مشاوره آنلاین', img: `${P}/04-3.jpg` },
 ] as const;
 
+const TEAM_ALT = (name: string, role: string) => `${name} — ${role} پت‌دیت`;
+
 /** Pepito “Happy pet lovers / Pepito reviews” — photo + stars + quote */
 const REVIEWS = [
   {
@@ -165,7 +167,7 @@ const NEWS = [
     author: 'لیلی دورو',
     tag: 'مراقبت',
     img: `${P}/01.jpg`,
-    to: '/chats' },
+    to: '/vet-consult' },
   {
     title: 'سبک‌های آرایش سگ',
     excerpt: 'انتخاب کوتاهی مو متناسب با نژاد و فصل.',
@@ -173,7 +175,7 @@ const NEWS = [
     author: 'فرانک وایت',
     tag: 'پت',
     img: `${P}/06.jpg`,
-    to: '/chats' },
+    to: '/shop' },
   {
     title: 'نکات ایمنی پت',
     excerpt: 'چطور خانه را برای پت‌ها امن‌تر کنیم.',
@@ -181,7 +183,7 @@ const NEWS = [
     author: 'اولیویا دان',
     tag: 'دندان',
     img: `${P}/03.jpg`,
-    to: '/chats' },
+    to: '/faq' },
   {
     title: 'انگل‌های پت',
     excerpt: 'پیشگیری و درمان به‌موقع انگل‌های رایج.',
@@ -189,7 +191,7 @@ const NEWS = [
     author: 'فرانک وایت',
     tag: 'جراحی',
     img: `${P}/04.jpg`,
-    to: '/chats' },
+    to: '/vet-consult' },
   {
     title: 'خواب توله‌ها',
     excerpt: 'عادت‌های سالم خواب برای توله‌های پرانرژی.',
@@ -197,7 +199,7 @@ const NEWS = [
     author: 'لیلی دورو',
     tag: 'تشخیص',
     img: `${P}/05.jpg`,
-    to: '/chats' },
+    to: '/#pets' },
   {
     title: 'میکروچیپ گربه',
     excerpt: 'شناسایی دائمی برای امنیت بیشتر در گم‌شدن.',
@@ -205,7 +207,7 @@ const NEWS = [
     author: 'اولیویا دان',
     tag: 'ایمنی',
     img: `${P}/02.jpg`,
-    to: '/chats' },
+    to: '/vet-consult' },
 ] as const;
 
 function GatedLink({
@@ -428,7 +430,7 @@ export function WelcomePage() {
               <img
                 className="pepito-hero-media"
                 src={s.img}
-                alt=""
+                alt={i === 0 ? 'پت‌دیت — همبازی پت و مراقبت حیوانات خانگی' : s.title}
                 decoding={i === 0 ? "sync" : "async"}
                 loading={i === 0 ? "eager" : "lazy"}
                 fetchPriority={i === 0 ? "high" : "auto"}
@@ -445,7 +447,9 @@ export function WelcomePage() {
               </span>
               {current.kicker}
             </p>
-            <h1>{current.title}</h1>
+            {/* Stable brand H1 for SEO; slide headline stays visual (styled like former h1). */}
+            <h1 className="pd-sr-only">پت‌دیت — همبازی پت، پت‌شاپ و دامپزشک آنلاین</h1>
+            <p className="pepito-hero-slide-title">{current.title}</p>
             <p className="pepito-hero-lead">{current.lead}</p>
             {/* First slide → /vet-consult (coin-paid quick connect). Others keep Discover. */}
             <div className="pepito-hero-cta">
@@ -507,7 +511,7 @@ export function WelcomePage() {
         <div className="pepito-about-media">
           <div className="pepito-about-item">
             <div className="pepito-about-photo">
-              <img src={`${P}/about.jpg`} alt="" loading="lazy" />
+              <img src={`${P}/about.jpg`} alt="مراقبت از حیوانات خانگی در پت‌دیت" loading="lazy" />
             </div>
             {/* Pepito `.note.vert-move` floating quote on the about photo */}
             <aside className="pepito-about-note pepito-vert-move" aria-label="نظر">
@@ -614,7 +618,7 @@ export function WelcomePage() {
       <section className="pepito-section pepito-rely" id="rely">
         <div className="pepito-rely-grid">
           <div className="pepito-rely-media">
-            <img src={`${P}/pet3.png`} alt="" loading="lazy" />
+            <img src={`${P}/pet3.png`} alt="پت خوشحال — چرا به پت‌دیت اعتماد کنید" loading="lazy" />
           </div>
           <div className="pepito-rely-copy">
             <p className="pepito-eyebrow">
@@ -707,7 +711,7 @@ export function WelcomePage() {
           {TEAM.map((m) => (
             <article key={m.name} className="pepito-member">
               <div className="pepito-member-photo">
-                <img src={m.img} alt="" loading="lazy" width={600} height={700} decoding="async" />
+                <img src={m.img} alt={TEAM_ALT(m.name, m.role)} loading="lazy" width={600} height={700} decoding="async" />
               </div>
               <div className="pepito-member-info">
                 <h3>{m.name}</h3>
@@ -740,7 +744,7 @@ export function WelcomePage() {
             <article key={r.handle} className="pepito-review">
               <div className="pepito-review-img">
                 <div className="pepito-review-img-frame">
-                  <img src={r.img} alt="" loading="lazy" />
+                  <img src={r.img} alt={`نظر ${r.handle} درباره پت‌دیت`} loading="lazy" />
                 </div>
               </div>
               <div className="pepito-review-body">
@@ -878,7 +882,7 @@ export function WelcomePage() {
               <article key={n.title} className="pepito-news-card">
                 <div className="pepito-news-img">
                   <GatedLink to={n.to}>
-                    <img src={n.img} alt="" loading="lazy" />
+                    <img src={n.img} alt={n.title} loading="lazy" />
                   </GatedLink>
                   <span className="pepito-news-cat">{n.tag}</span>
                 </div>

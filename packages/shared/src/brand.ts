@@ -18,11 +18,12 @@ export const SITE = {
 
 /** SEO / document-head strings — Persian-first, no clinic claims. */
 export const SEO = {
-  titleDefault: 'پت‌دیت | همبازی برای پت‌ات — PLAY • MEET • FRIENDS',
+  titleDefault: 'پت‌دیت | همبازی پت، پت‌شاپ و دامپزشک آنلاین — PLAY • MEET • FRIENDS',
   titleTemplate: (page: string) => `${page} | پت‌دیت`,
   description:
-    'پت‌دیت (PetDate) پلتفرم فارسی پیدا کردن همبازی برای پت، پت‌شاپ، پذیرش پت و مشاوره دامپزشک — روی وب و ربات تلگرام.',
-  keywords: 'پت‌دیت, PetDate, همبازی پت, پت شاپ, پذیرش حیوان, مشاوره دامپزشک, سگ, گربه',
+    'پت‌دیت (PetDate) پلتفرم فارسی همبازی پت در ایران، پت‌شاپ آنلاین، پذیرش حیوان خانگی و مشاوره دامپزشک آنلاین — وب و ربات تلگرام با یک حساب.',
+  keywords:
+    'پت‌دیت, PetDate, همبازی پت, همبازی سگ, دوستیابی پت, پت شاپ آنلاین, خرید غذای سگ, خرید غذای گربه, پذیرش حیوان خانگی, دامپزشک آنلاین, مشاوره دامپزشک, سگ, گربه',
   siteName: 'پت‌دیت',
   locale: 'fa_IR',
   themeColor: '#5c4d91',
