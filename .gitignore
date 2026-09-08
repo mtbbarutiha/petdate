@@ -12,3 +12,4 @@ packages/bot/data/sessions.json
 packages/api/data/prescriptions/
 packages/api/data/chat-uploads/
 packages/api/data/pet-photos/
+packages/api/data/selftest/

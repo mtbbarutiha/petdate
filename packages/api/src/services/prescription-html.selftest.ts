@@ -1,7 +1,11 @@
 /**
  * Self-test: publicWebOrigin / publicPdfOrigin must prefer domains and never emit raw VPS IP.
+ * Also: Rx HTML embeds لوگو مادر (mother logo) as data URI.
  * Run: npx tsx src/services/prescription-html.selftest.ts
  */
+import fs from 'fs';
+import path from 'path';
+import crypto from 'crypto';
 import {
   publicWebOrigin,
   publicPdfOrigin,
@@ -10,11 +14,16 @@ import {
   prescriptionWebPath,
   prescriptionPdfWebPath,
   prescriptionPdfPublicPath,
+  renderPrescriptionHtml,
+  resolvePrescriptionLogoPath,
+  prescriptionLogoSrc,
 } from './prescription-html';
 
 function assert(cond: unknown, msg: string): asserts cond {
   if (!cond) throw new Error(msg);
 }
+
+const MOTHER_LOGO_MD5 = 'beda5e5ccdd11c32dd06a4f1bce2c6bf';
 
 const prev = {
   PUBLIC_API_URL: process.env.PUBLIC_API_URL,
@@ -72,6 +81,34 @@ try {
   assert(prescriptionWebPath(12) === '/rx/12', 'path');
   assert(prescriptionPdfWebPath(12) === '/rx/12/pdf', 'legacy pdf path');
   assert(prescriptionPdfPublicPath(12) === '/rx/12.pdf', 'public pdf path');
+
+  // لوگو مادر must be present and match pepito/img/logo.png
+  const logoPath = resolvePrescriptionLogoPath();
+  assert(logoPath, 'prescription logo path missing');
+  const md5 = crypto.createHash('md5').update(fs.readFileSync(logoPath!)).digest('hex');
+  assert(md5 === MOTHER_LOGO_MD5, `rx logo md5=${md5} expected mother ${MOTHER_LOGO_MD5}`);
+
+  const src = prescriptionLogoSrc();
+  assert(src.startsWith('data:image/png;base64,'), 'logo src must be data URI embed');
+
+  const html = renderPrescriptionHtml({
+    prescriptionId: 99,
+    vetName: 'دکتر تست',
+    patientName: 'صاحب تست',
+    petName: 'رکس',
+    petSpecies: 'dog',
+    medicationText: 'آموکسی‌سیلین ۵۰mg\nروزی دو بار',
+    dateIso: '2026-09-08T12:00:00.000Z',
+  });
+  assert(html.includes('data:image/png;base64,'), 'HTML must embed mother logo');
+  assert(!html.includes('width="96" height="96"'), 'must not force square logo box');
+  assert(html.includes('class="logo"'), 'logo class present');
+
+  const outDir = path.join(__dirname, '..', '..', 'data', 'selftest');
+  fs.mkdirSync(outDir, { recursive: true });
+  const sampleHtml = path.join(outDir, 'rx-mother-logo-sample.html');
+  fs.writeFileSync(sampleHtml, html, 'utf8');
+  console.log('wrote', sampleHtml);
 
   console.log('prescription-html.selftest: ok');
 } finally {

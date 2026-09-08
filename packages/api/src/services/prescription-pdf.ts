@@ -15,13 +15,12 @@ import fs from 'fs';
 import path from 'path';
 import PDFDocument from 'pdfkit';
 import { PET_SPECIES_LABELS } from '@petdate/shared';
+import { resolvePrescriptionLogoPath } from './prescription-html';
 
 /** Brand sky-blue — Pet Date Dr / petdate */
 const BRAND_BLUE = '#5ba8d2';
 const BRAND_BLUE_SOFT = '#e8f4fa';
 const BRAND_BLUE_MID = '#b8dceb';
-const BRAND_INK = '#0f172a';
-const BRAND_INK_MID = '#1e293b';
 const INK = '#1e293b';
 const MUTED = '#64748b';
 const RULE = '#d4e6f0';
@@ -153,57 +152,9 @@ function paint(
   });
 }
 
-/** Brand dual-paw mark (matches web LogoIcon mood) at top-left of a size×size box. */
-function drawPawMark(doc: PDFKit.PDFDocument, x: number, y: number, size: number): void {
-  const s = size / 48;
-  doc.save();
-  doc.translate(x, y);
-  doc.scale(s);
-
-  // Rounded dark badge
-  doc.roundedRect(0, 0, 48, 48, 13).fill(BRAND_INK);
-  doc
-    .roundedRect(0.5, 0.5, 47, 47, 12.5)
-    .lineWidth(1)
-    .strokeColor('#334155')
-    .stroke();
-
-  // Soft link glow
-  doc.circle(24, 24, 9).fillOpacity(0.14).fill(BRAND_BLUE);
-  doc.fillOpacity(1);
-
-  const drawPaw = () => {
-    doc.circle(-5.4, -6.2, 2.35).fill('#ffffff');
-    doc.circle(-1.7, -8.6, 2.55).fill('#ffffff');
-    doc.circle(1.7, -8.6, 2.55).fill('#ffffff');
-    doc.circle(5.4, -6.2, 2.35).fill('#ffffff');
-    doc.ellipse(0, 1.8, 7, 6).fill('#ffffff');
-  };
-
-  doc.save();
-  doc.translate(15, 28);
-  doc.rotate(-22);
-  drawPaw();
-  doc.restore();
-
-  doc.save();
-  doc.translate(33, 28);
-  doc.rotate(22);
-  doc.scale(-1, 1);
-  drawPaw();
-  doc.restore();
-
-  // Link node
-  doc.circle(24, 23.5, 2.6).fill(BRAND_BLUE);
-  doc.circle(24, 23.5, 1).fillOpacity(0.35).fill(BRAND_INK);
-  doc.fillOpacity(1);
-
-  doc.restore();
-}
-
 /**
- * Header logo: dual-paw badge + "پت دیت دکتر" / "Pet Date Dr"
- * Drawn from the right edge (RTL header).
+ * Header logo: لوگو مادر (embedded PNG) + Rx subtitle.
+ * Placed from the right edge (RTL header). Mother wordmark is landscape 780×228.
  */
 function drawPetDateDrLogo(
   doc: PDFKit.PDFDocument,
@@ -211,28 +162,28 @@ function drawPetDateDrLogo(
   top: number,
   contentW: number
 ): void {
-  const markSize = 44;
-  const markX = right - markSize;
-  drawPawMark(doc, markX, top + 2, markSize);
+  const logoPath = resolvePrescriptionLogoPath();
+  const logoH = 46;
+  // Mother logo aspect ≈ 780/228 ≈ 3.42
+  const logoW = Math.min(168, contentW * 0.42);
+  const logoX = right - logoW;
+  const logoY = top + 4;
 
-  const textRight = markX - 12;
-  const textW = Math.min(280, contentW - markSize - 16);
+  if (logoPath) {
+    try {
+      // fit keeps mother wordmark aspect (780×228); do not force square crop
+      doc.image(logoPath, logoX, logoY, { fit: [logoW, logoH], align: 'right', valign: 'center' });
+    } catch (err) {
+      console.warn('prescription PDF logo embed failed:', (err as Error).message);
+    }
+  }
+
+  const textRight = right;
+  const textW = Math.min(280, contentW - 8);
   const textX = textRight - textW;
+  const subY = logoPath ? logoY + logoH + 4 : top + 8;
 
-  paint(doc, RX_BRAND_FA, textX, top + 4, {
-    width: textW,
-    align: 'right',
-    size: 22,
-    color: BRAND_BLUE,
-    bold: true,
-  });
-  // Latin wordmark — left-to-right under Persian title
-  doc.font('VazirBold').fontSize(11).fillColor(BRAND_INK_MID);
-  const en = RX_BRAND_EN;
-  const enW = doc.widthOfString(en);
-  doc.text(en, textRight - enW, top + 30, { lineBreak: false });
-
-  paint(doc, 'نسخه دامپزشکی  ·  کلینیک آنلاین', textX, top + 48, {
+  paint(doc, 'نسخه دامپزشکی  ·  کلینیک آنلاین', textX, subY, {
     width: textW,
     align: 'right',
     size: 10,
@@ -240,8 +191,8 @@ function drawPetDateDrLogo(
   });
 
   doc
-    .moveTo(textRight - 140, top + 66)
-    .lineTo(textRight, top + 66)
+    .moveTo(textRight - 140, subY + 16)
+    .lineTo(textRight, subY + 16)
     .strokeColor(BRAND_BLUE)
     .lineWidth(1.6)
     .stroke();
@@ -324,14 +275,14 @@ export async function generatePrescriptionPdf(
     const right = left + contentW;
 
     // Soft wash + brand top bar
-    doc.rect(0, 0, pageW, 92).fill(BRAND_BLUE_SOFT);
+    doc.rect(0, 0, pageW, 96).fill(BRAND_BLUE_SOFT);
     doc.rect(0, 0, pageW, 5).fill(BRAND_BLUE);
 
-    // Hero brand logo (paw mark + Pet Date Dr)
+    // Hero brand logo (لوگو مادر PNG embed)
     drawPetDateDrLogo(doc, right, 14, contentW);
 
     // Meta card
-    let y = 88;
+    let y = 96;
     const metaRows: string[] = [
       ...(input.prescriptionId ? [`شماره نسخه: ${input.prescriptionId}`] : []),
       `تاریخ: ${dateFa}`,
