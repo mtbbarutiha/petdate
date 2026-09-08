@@ -31,34 +31,73 @@ export function menuKeyboardFor(
 }
 
 /**
- * اعمال ReplyKeyboard بدون پیام ماندگار در چت.
- *
- * روی بعضی کلاینت‌های تلگرام (به‌خصوص اندروید) اگر پیامِ حامل کیبورد
- * در تاریخچه بماند، هنگام اسکرول کیبورد «فیک» وسط صفحه شناور می‌شود.
- * با ارسال + حذف فوری، کیبورد پایینِ چت می‌ماند و با اسکرول جابه‌جا نمی‌شود.
+ * Carrier texts for sticky ReplyKeyboard push (send + delete).
+ * Telegram rejects ZWNJ/ZWSP/NBSP as "text must be non-empty".
+ * Prefer Word Joiner, then visible fallbacks. Sticky push is best-effort only —
+ * always attach reply_markup on the real content message too (see sticky middleware).
  */
-export async function pushReplyKeyboard(ctx: Context, keyboard: Keyboard): Promise<void> {
-  const chatId = ctx.chat?.id ?? ctx.from?.id;
-  if (chatId == null) return;
-  try {
-    const msg = await ctx.api.sendMessage(chatId, '\u200c', { reply_markup: keyboard });
-    await ctx.api.deleteMessage(chatId, msg.message_id).catch(() => undefined);
-  } catch (err) {
-    console.warn('pushReplyKeyboard failed', err);
+const KEYBOARD_CARRIERS = ['\u2060', '·', '.', '-'] as const;
+
+type TelegramApiLike = {
+  sendMessage: (
+    chatId: string | number,
+    text: string,
+    other?: { reply_markup?: Keyboard }
+  ) => Promise<{ message_id: number }>;
+  deleteMessage: (chatId: string | number, messageId: number) => Promise<unknown>;
+};
+
+/**
+ * اعمال ReplyKeyboard روی یک chatId بدون پیام ماندگار.
+ * برای طرف مقابل (requester) که ctx.chat او نیست هم قابل استفاده است.
+ * اگر همه carrierها fail شوند false برمی‌گردد — caller باید کیبورد را روی
+ * پیام محتوا گذاشته باشد.
+ */
+export async function pushReplyKeyboardToChat(
+  api: TelegramApiLike,
+  chatId: string | number,
+  keyboard: Keyboard
+): Promise<boolean> {
+  for (const carrier of KEYBOARD_CARRIERS) {
+    try {
+      const msg = await api.sendMessage(chatId, carrier, { reply_markup: keyboard });
+      await api.deleteMessage(chatId, msg.message_id).catch(() => undefined);
+      return true;
+    } catch (err) {
+      console.warn(
+        'pushReplyKeyboardToChat carrier failed',
+        JSON.stringify(carrier),
+        (err as Error)?.message ?? err
+      );
+    }
   }
+  return false;
 }
 
-/** متن محتوا + کیبورد پایین بدون پیام فیک اسکرولی */
+/**
+ * Best-effort sticky ReplyKeyboard (send carrier + delete).
+ * Must not be the only place keyboard is applied — content messages should
+ * also carry reply_markup so clients still show the menu if sticky fails or
+ * if deleting the carrier drops the keyboard.
+ */
+export async function pushReplyKeyboard(ctx: Context, keyboard: Keyboard): Promise<boolean> {
+  const chatId = ctx.chat?.id ?? ctx.from?.id;
+  if (chatId == null) return false;
+  const ok = await pushReplyKeyboardToChat(ctx.api, chatId, keyboard);
+  if (!ok) console.warn('pushReplyKeyboard failed for all carriers', chatId);
+  return ok;
+}
+
+/** متن محتوا با کیبورد روی همان پیام + sticky push اختیاری */
 export async function replyThenPushKeyboard(
   ctx: Context,
   text: string,
   keyboard: Keyboard,
   extra?: Parameters<Context['reply']>[1]
 ): Promise<void> {
-  const { reply_markup: _ignored, ...rest } = (extra ?? {}) as Record<string, unknown> & {
-    reply_markup?: unknown;
-  };
-  await ctx.reply(text, rest as Parameters<Context['reply']>[1]);
+  const rest = (extra ?? {}) as Record<string, unknown>;
+  await ctx.reply(text, { ...rest, reply_markup: keyboard } as Parameters<Context['reply']>[1]);
+  // sticky middleware already re-pushes; keep explicit push for non-middleware paths
   await pushReplyKeyboard(ctx, keyboard);
 }
 
@@ -67,5 +106,15 @@ export async function pushMainMenuKeyboard(
   ctx: Context,
   user?: (Pick<User, 'role' | 'roles'> & { vetOnline?: boolean; readyToAdopt?: boolean }) | null
 ): Promise<void> {
-  await pushReplyKeyboard(ctx, menuKeyboardFor(ctx, user));
+  const keyboard = menuKeyboardFor(ctx, user);
+  const ok = await pushReplyKeyboard(ctx, keyboard);
+  if (ok) return;
+  const chatId = ctx.chat?.id ?? ctx.from?.id;
+  if (chatId == null) return;
+  // Sticky carrier failed — keep a short visible message so the menu is never lost.
+  try {
+    await ctx.api.sendMessage(chatId, '⌨️ منوی اصلی', { reply_markup: keyboard });
+  } catch (err) {
+    console.warn('pushMainMenuKeyboard visible fallback failed', chatId, err);
+  }
 }

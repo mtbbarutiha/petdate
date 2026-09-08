@@ -5,6 +5,7 @@
 import Redis from 'ioredis';
 import type { User } from '@petdate/shared';
 import { infra, hasRedisConfig } from '../config/infra';
+import { normalizeTelegramId } from './telegram-id';
 
 const KEY_PREFIX = 'petdate:bot:session:';
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
@@ -54,14 +55,6 @@ function sessionKey(telegramId: string): string {
   return `${KEY_PREFIX}${telegramId}`;
 }
 
-function usableTelegramId(id?: string | null): id is string {
-  if (!id) return false;
-  const t = id.trim();
-  if (!t) return false;
-  if (t.startsWith('fake_') || t.startsWith('demo_')) return false;
-  return true;
-}
-
 async function upsertOwnerChatSession(opts: {
   telegramId: string;
   userId?: number;
@@ -107,12 +100,8 @@ export async function activateBotOwnerChatSessions(opts: {
   fromPetId?: number;
   toPetId?: number;
 }): Promise<{ accepter: boolean; requester: boolean }> {
-  const accepterTg = usableTelegramId(opts.accepter.telegramId)
-    ? opts.accepter.telegramId!.trim()
-    : null;
-  const requesterTg = usableTelegramId(opts.requester.telegramId)
-    ? opts.requester.telegramId!.trim()
-    : null;
+  const accepterTg = normalizeTelegramId(opts.accepter.telegramId);
+  const requesterTg = normalizeTelegramId(opts.requester.telegramId);
   const result = { accepter: false, requester: false };
   if (accepterTg && requesterTg) {
     try {
