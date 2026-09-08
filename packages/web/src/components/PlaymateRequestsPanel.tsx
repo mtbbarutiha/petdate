@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Check, Clock, MessageCircle, RefreshCw, Send, X } from 'lucide-react';
+import { Check, Clock, MessageCircle, RefreshCw, Send, UserRound, X } from 'lucide-react';
 import { PetAvatar } from './PetAvatar';
 import { RequestCountdown } from './RequestCountdown';
 import { formatTimeAgo } from '../data/mock';
@@ -246,6 +246,13 @@ export function PlaymateRequestsPanel({
                       <X size={16} strokeWidth={2.5} />
                       رد
                     </button>
+                    <Link
+                      to={`/chats/${match.id}?info=owner`}
+                      className="btn-profile"
+                    >
+                      <UserRound size={16} strokeWidth={2} />
+                      پروفایل صاحب پت
+                    </Link>
                     <Link to={`/chats/${match.id}`} className="btn-profile">
                       <MessageCircle size={16} strokeWidth={2} />
                       مشاهده در چت

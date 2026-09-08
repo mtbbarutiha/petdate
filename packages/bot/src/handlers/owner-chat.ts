@@ -118,7 +118,10 @@ function playmatePeerIdLabel(user: { id: number; publicId?: string | null }): st
   return userPublicIdOf(user);
 }
 
-function formatPeerOwnerCard(user: User): string {
+function formatPeerOwnerCard(
+  user: User,
+  heading = '👤 <b>پروفایل طرف مقابل</b>'
+): string {
   const gender = user.gender ? USER_GENDER_LABELS[user.gender] : '—';
   const roles = normalizeRoles(user.roles, user.role);
   const role = roles.length ? roles.map((r) => USER_ROLE_LABELS[r]).join(' · ') : '—';
@@ -127,22 +130,59 @@ function formatPeerOwnerCard(user: User): string {
   const peerId = playmatePeerIdLabel(user);
 
   return [
-    '👤 <b>پروفایل طرف مقابل</b>',
+    heading,
     verified ? VERIFIED_BADGE : null,
     '',
-    `<b>آیدی:</b> <code>${escapeHtml(peerId)}</code>${verified ? ' ✅' : ''}`,
+    `<b>آیدی:</b> <code>${escapeHtml(peerId)}</code>${verified ? ' ✅' : ''}`,,
     user.age != null ? `<b>سن:</b> ${user.age}` : null,
     `<b>جنسیت:</b> ${gender}`,
     `<b>نقش:</b> ${role}`,
     `<b>موقعیت:</b> ${escapeHtml(location)}`,
-    user.bio ? `\n💬 ${escapeHtml(user.bio)}` : null,
+    user.bio ? `\n💬 ${escapeHtml(user.bio)}` : null,,
   ]
     .filter(Boolean)
-    .join('\n');
+    .join('\n');;
 }
 
 function protectOpts(secure: boolean): { protect_content?: true } {
   return secure ? { protect_content: true } : {};
+}
+
+/**
+ * Show an owner profile card (with photo when possible).
+ * Shared by owner-chat peer button and incoming playdate «مشاهده پروفایل صاحب پت».
+ */
+export async function replyWithOwnerProfile(
+  ctx: Context,
+  user: User,
+  opts?: {
+    heading?: string;
+    protectContent?: boolean;
+  }
+): Promise<void> {
+  const card = formatPeerOwnerCard(user, opts?.heading);
+  const protect = protectOpts(Boolean(opts?.protectContent));
+  const photo = resolveTelegramPhotoUrl(user.avatarUrl);
+  if (photo) {
+    try {
+      await ctx.replyWithPhoto(photo, {
+        caption: card,
+        parse_mode: 'HTML',
+        ...protect,
+      });
+      return;
+    } catch (err) {
+      console.warn('owner profile photo failed:', (err as Error).message);
+    }
+  }
+
+  await ctx.reply(
+    photo ? card : `${card}\n\n📷 عکس پروفایل ثبت نشده.`,
+    {
+      parse_mode: 'HTML',
+      ...protect,
+    }
+  );
 }
 
 /**
@@ -339,31 +379,9 @@ async function handleShowPeerProfile(ctx: Context): Promise<boolean> {
     return true;
   }
 
-  const text = formatPeerOwnerCard(peer);
-  const secure = !!session.ownerChatSecure;
-  const photo = resolveTelegramPhotoUrl(peer.avatarUrl);
-  if (photo) {
-    try {
-      await ctx.replyWithPhoto(photo, {
-        caption: text,
-        parse_mode: 'HTML',
-        ...protectOpts(secure),
-      });
-      return true;
-    } catch (err) {
-      console.warn('owner peer profile photo failed:', (err as Error).message);
-    }
-  }
-
-  await ctx.reply(
-    photo
-      ? text
-      : `${text}\n\n📷 عکس پروفایل ثبت نشده — از «پروفایل» عکس بگذار یا عکس تلگرام همگام می‌شود.`,
-    {
-      parse_mode: 'HTML',
-      ...protectOpts(secure),
-    }
-  );
+  await replyWithOwnerProfile(ctx, peer, {
+    protectContent: !!session.ownerChatSecure,
+  });
   return true;
 }
 

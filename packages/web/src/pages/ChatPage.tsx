@@ -7,7 +7,7 @@ import {
   useRef,
   useState,
 } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   ArrowRight,
   Check,
@@ -205,6 +205,7 @@ function ConversationListPane({
   onRefresh,
   onAccept,
   onReject,
+  onViewOwner,
 }: {
   conversations: InboxConversation[];
   loading: boolean;
@@ -216,6 +217,7 @@ function ConversationListPane({
   onRefresh: () => void;
   onAccept: (item: InboxConversation) => void;
   onReject: (item: InboxConversation) => void;
+  onViewOwner: (item: InboxConversation) => void;
 }) {
   return (
     <aside className="tg-chat-list" aria-label="فهرست گفتگوها">
@@ -348,6 +350,20 @@ function ConversationListPane({
                         <X size={14} strokeWidth={2.5} />
                         رد
                       </button>
+                      {c.kind === 'playmate' ? (
+                        <button
+                          type="button"
+                          className="tg-chat-list-profile"
+                          disabled={Boolean(busy)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onViewOwner(c);
+                          }}
+                        >
+                          <UserRound size={14} strokeWidth={2.2} />
+                          پروفایل صاحب پت
+                        </button>
+                      ) : null}
                     </div>
                   ) : null}
                 </li>
@@ -403,6 +419,7 @@ function ThreadEmptyState({
 export function ChatPage() {
   const { matchId } = useParams();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const desktop = useIsDesktop();
   const { user: authUser, token, isProfileComplete } = useAuthStore();
   const myUserId = authUser?.id;
@@ -965,8 +982,26 @@ export function ChatPage() {
     return blocks;
   }, [messages]);
 
+  useEffect(() => {
+    if (!hasThread) return;
+    if (searchParams.get('info') !== 'owner') return;
+    setInfoCard('owner');
+    const next = new URLSearchParams(searchParams);
+    next.delete('info');
+    setSearchParams(next, { replace: true });
+  }, [hasThread, searchParams, setSearchParams]);
+
   function onSelectConversation(item: InboxConversation) {
     navigate(item.href);
+  }
+
+  function onViewOwnerFromList(item: InboxConversation) {
+    if (item.kind !== 'playmate') {
+      navigate(item.href);
+      return;
+    }
+    const base = item.href.split('?')[0] || item.href;
+    navigate(`${base}?info=owner`);
   }
 
   async function onAcceptFromList(item: InboxConversation) {
@@ -1350,6 +1385,7 @@ export function ChatPage() {
           onRefresh={() => void reloadConversations()}
           onAccept={(item) => void onAcceptFromList(item)}
           onReject={(item) => void onRejectFromList(item)}
+          onViewOwner={onViewOwnerFromList}
         />
       ) : null}
 
@@ -1602,6 +1638,15 @@ export function ChatPage() {
                           >
                             <X size={16} strokeWidth={2.5} />
                             رد
+                          </button>
+                          <button
+                            type="button"
+                            className="tg-request-profile"
+                            disabled={requestBusy}
+                            onClick={() => setInfoCard('owner')}
+                          >
+                            <UserRound size={16} strokeWidth={2.2} />
+                            پروفایل صاحب پت
                           </button>
                         </div>
                       ) : isPendingRequest ? (

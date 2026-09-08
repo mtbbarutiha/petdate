@@ -25,7 +25,7 @@ import {
 import { upsertSession } from '../session';
 import { resolveTelegramPhotoUrl } from '../urls';
 import { getCtxUser, menuKeyboardFor, pushMainMenuKeyboard } from './helpers';
-import { startOwnerChat } from './owner-chat';
+import { replyWithOwnerProfile, startOwnerChat } from './owner-chat';
 
 export function defaultPetPhoto(pet: { species?: string; id: number }): string {
   const dogs = [
@@ -513,6 +513,53 @@ export async function handlePlaydateAction(
     toPetName: updated.toPet?.name,
     fromPetId: updated.fromPetId,
     toPetId: updated.toPetId,
+  });
+}
+
+/**
+ * Incoming playdate keyboard: show requester (fromUser) owner profile + photo.
+ * Reuses owner-chat profile card path — does not invent a parallel flow.
+ */
+export async function handlePlaydateOwnerProfile(
+  ctx: Context,
+  requestId: number
+): Promise<void> {
+  const user = await getCtxUser(ctx);
+  if (!user?.id) {
+    await ctx.answerCallbackQuery({ text: 'اول /start بزن', show_alert: true });
+    return;
+  }
+
+  const existing = await getPlaydate(requestId);
+  if (!existing) {
+    await ctx.answerCallbackQuery({ text: 'درخواست پیدا نشد', show_alert: true });
+    return;
+  }
+  if (existing.toUserId !== user.id) {
+    await ctx.answerCallbackQuery({ text: 'این درخواست مال تو نیست', show_alert: true });
+    return;
+  }
+
+  const ownerId = existing.fromUserId || existing.fromPet?.ownerId;
+  if (!ownerId) {
+    await ctx.answerCallbackQuery({ text: 'صاحب پت پیدا نشد', show_alert: true });
+    return;
+  }
+
+  const owner = await getUserById(ownerId);
+  if (!owner) {
+    await ctx.answerCallbackQuery({ text: 'پروفایل صاحب پت پیدا نشد', show_alert: true });
+    return;
+  }
+
+  try {
+    await ctx.answerCallbackQuery();
+  } catch {
+    /* ignore */
+  }
+
+  await replyWithOwnerProfile(ctx, owner, {
+    heading: '👤 <b>پروفایل صاحب پت</b>',
   });
 }
 
