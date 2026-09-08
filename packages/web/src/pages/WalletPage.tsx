@@ -66,6 +66,9 @@ function sameWallet(a: WalletBalances | null, b: WalletBalances): boolean {
  * Layout stability: soft refresh updates state in place (no remount), TG body uses a
  * fixed slot grid so linked/unlinked swaps cannot shift the page, and fetch runs once
  * per token (not on every loadWallet identity change).
+ *
+ * Visual: Pepito “currency folio” — brand-forward hero, one balance ribbon (4 rails),
+ * compact TG strip, ledger transactions. Balances stay visible on this page.
  */
 export function WalletPage() {
   const { user, token, refreshMe } = useAuthStore();
@@ -162,7 +165,7 @@ export function WalletPage() {
       ? 'در حال بارگذاری موجودی…'
       : syncing
         ? 'در حال همگام‌سازی…'
-        : '\u00a0';
+        : '';
 
   async function onLinkTelegram() {
     if (!token) return;
@@ -188,14 +191,14 @@ export function WalletPage() {
   }
 
   return (
-    <div className="pepito-wallet-page">
+    <div className="pepito-wallet-page pepito-wallet-page--folio">
       <header className="pepito-wallet-hero">
         <div className="pepito-wallet-hero-wash" aria-hidden />
+        <div className="pepito-wallet-hero-orb pepito-wallet-hero-orb--a" aria-hidden />
+        <div className="pepito-wallet-hero-orb pepito-wallet-hero-orb--b" aria-hidden />
         <div className="pepito-wallet-hero-inner">
-          <p className="pepito-kicker pepito-wallet-kicker">
-            <span className="pepito-kicker-dot" aria-hidden>
-              <Wallet size={16} />
-            </span>
+          <p className="pepito-wallet-brand">
+            <Wallet size={18} aria-hidden />
             {BRAND.displayName}
           </p>
           <h1>کیف پول</h1>
@@ -207,45 +210,68 @@ export function WalletPage() {
         className={`pepito-wallet-balances${loading && !wallet ? ' is-pending' : ''}`}
         aria-label="موجودی‌ها"
       >
-        <div className="pepito-wallet-panel">
-          <div className="pepito-wallet-panel-band" aria-hidden />
-          <div className="pepito-wallet-panel-top">
-            <span className="pepito-wallet-panel-chip">
-              <Wallet size={14} aria-hidden />
-              کیف پول
-            </span>
-            <span className="pepito-wallet-panel-meta">۴ ارز</span>
+        <div className="pepito-wallet-folio">
+          <div className="pepito-wallet-folio-top">
+            <div className="pepito-wallet-folio-title">
+              <span className="pepito-wallet-folio-mark" aria-hidden>
+                <Wallet size={16} />
+              </span>
+              <div>
+                <h2>موجودی‌ها</h2>
+                <p>چهار ارز فعال در پنل</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              className="pepito-wallet-folio-refresh"
+              onClick={() => void loadWallet({ soft: true })}
+              disabled={syncing || loading}
+              aria-busy={syncing || loading}
+              aria-label="همگام‌سازی موجودی"
+            >
+              <RefreshCw size={15} aria-hidden className={syncing ? 'pepito-spin' : undefined} />
+              تازه کردن
+            </button>
           </div>
-          <div className="pepito-wallet-grid">
+
+          <div className="pepito-wallet-rail" role="list">
             {ORDER.map((key) => (
               <article
                 key={key}
-                className={`pepito-wallet-card pepito-wallet-card--${key}`}
+                role="listitem"
+                className={`pepito-wallet-cell pepito-wallet-cell--${key}`}
                 aria-live={key === 'stars' ? 'polite' : undefined}
               >
-                <div className="pepito-wallet-card-head">
-                  <p className="pepito-wallet-card-label">{WALLET_CURRENCY_LABELS_FA[key]}</p>
-                  <span className="pepito-wallet-card-sym" aria-hidden>
+                <span className="pepito-wallet-cell-rail" aria-hidden />
+                <div className="pepito-wallet-cell-head">
+                  <p className="pepito-wallet-cell-label">{WALLET_CURRENCY_LABELS_FA[key]}</p>
+                  <span className="pepito-wallet-cell-sym" aria-hidden>
                     {key === 'toman' ? '﷼' : WALLET_CURRENCY_SYMBOLS[key]}
                   </span>
                 </div>
-                <p className="pepito-wallet-card-val">
+                <p className="pepito-wallet-cell-val">
                   {formatBal(balances[key])}
-                  {key === 'toman' ? <span className="pepito-wallet-card-unit"> ت</span> : null}
+                  {key === 'toman' ? <span className="pepito-wallet-cell-unit"> ت</span> : null}
                 </p>
-                <p className="pepito-wallet-card-note">{WALLET_CURRENCY_STATUS[key].noteFa}</p>
+                <p className="pepito-wallet-cell-note">{WALLET_CURRENCY_STATUS[key].noteFa}</p>
               </article>
             ))}
           </div>
         </div>
       </section>
 
-      <p
-        className={`pepito-wallet-status${error ? ' pepito-wallet-status--warn' : ''}`}
-        aria-live="polite"
-      >
-        {statusText}
-      </p>
+      {statusText ? (
+        <p
+          className={`pepito-wallet-status${error ? ' pepito-wallet-status--warn' : ''}`}
+          aria-live="polite"
+        >
+          {statusText}
+        </p>
+      ) : (
+        <p className="pepito-wallet-status pepito-wallet-status--idle" aria-live="polite">
+          {'\u00a0'}
+        </p>
+      )}
 
       <section className="pepito-wallet-tg" aria-labelledby="wallet-tg-title">
         <div className="pepito-wallet-tg-head">
@@ -275,49 +301,51 @@ export function WalletPage() {
             </p>
           )}
 
-          <div className="pepito-wallet-tg-slot pepito-wallet-tg-slot--secondary">
-            {linked && topUpDeepLink ? (
-              <a
-                className="pepito-btn button-1 pepito-wallet-tg-link"
-                href={topUpDeepLink}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Sparkles size={16} aria-hidden />
-                صدور فاکتور شارژ در تلگرام
-              </a>
-            ) : linked ? (
-              <p className="pepito-wallet-tg-meta-inline">
-                در ربات /start wstars را بزن تا فاکتور Stars برایت ارسال شود.
-              </p>
-            ) : (
+          <div className="pepito-wallet-tg-actions">
+            <div className="pepito-wallet-tg-slot pepito-wallet-tg-slot--secondary">
+              {linked && topUpDeepLink ? (
+                <a
+                  className="pepito-btn button-1 pepito-wallet-tg-link"
+                  href={topUpDeepLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Sparkles size={16} aria-hidden />
+                  صدور فاکتور شارژ در تلگرام
+                </a>
+              ) : linked ? (
+                <p className="pepito-wallet-tg-meta-inline">
+                  در ربات /start wstars را بزن تا فاکتور Stars برایت ارسال شود.
+                </p>
+              ) : (
+                <button
+                  type="button"
+                  className="pepito-btn button-1 pepito-wallet-tg-link"
+                  onClick={() => void onLinkTelegram()}
+                  disabled={linkBusy}
+                >
+                  <Link2 size={16} aria-hidden />
+                  {linkBusy ? 'در حال ساخت لینک…' : 'اتصال / سینک تلگرام'}
+                </button>
+              )}
+            </div>
+
+            <div className="pepito-wallet-tg-slot pepito-wallet-tg-slot--action">
               <button
                 type="button"
-                className="pepito-btn button-1 pepito-wallet-tg-link"
-                onClick={() => void onLinkTelegram()}
-                disabled={linkBusy}
+                className="pepito-btn button-2 pepito-wallet-tg-sync"
+                onClick={() => void loadWallet({ soft: true })}
+                disabled={syncing || loading}
+                aria-busy={syncing || loading}
               >
-                <Link2 size={16} aria-hidden />
-                {linkBusy ? 'در حال ساخت لینک…' : 'اتصال / سینک تلگرام'}
+                <RefreshCw size={16} aria-hidden className={syncing ? 'pepito-spin' : undefined} />
+                {linked
+                  ? syncing
+                    ? 'در حال همگام‌سازی…'
+                    : 'همگام‌سازی کیف‌پول'
+                  : 'بعد از Start در ربات — همگام‌سازی'}
               </button>
-            )}
-          </div>
-
-          <div className="pepito-wallet-tg-slot pepito-wallet-tg-slot--action">
-            <button
-              type="button"
-              className="pepito-btn button-2 pepito-wallet-tg-sync"
-              onClick={() => void loadWallet({ soft: true })}
-              disabled={syncing || loading}
-              aria-busy={syncing || loading}
-            >
-              <RefreshCw size={16} aria-hidden className={syncing ? 'pepito-spin' : undefined} />
-              {linked
-                ? syncing
-                  ? 'در حال همگام‌سازی…'
-                  : 'همگام‌سازی کیف‌پول'
-                : 'بعد از Start در ربات — همگام‌سازی'}
-            </button>
+            </div>
           </div>
 
           <p
