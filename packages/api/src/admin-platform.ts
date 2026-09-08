@@ -242,11 +242,13 @@ export const adminPlatform = {
     const params: unknown[] = [];
     if (filters?.q) {
       const like = `%${filters.q.trim()}%`;
+      const qTrim = filters.q.trim();
       where += ` AND (
         name LIKE ? OR IFNULL(username,'') LIKE ? OR IFNULL(phone,'') LIKE ?
         OR IFNULL(telegram_id,'') LIKE ? OR CAST(id AS TEXT) = ?
+        OR IFNULL(public_id,'') LIKE ? OR upper(IFNULL(public_id,'')) = upper(?)
       )`;
-      params.push(like, like, like, like, filters.q.trim());
+      params.push(like, like, like, like, qTrim, like, qTrim);
     }
     if (filters?.role) {
       where += ` AND (role = ? OR roles LIKE ?)`;

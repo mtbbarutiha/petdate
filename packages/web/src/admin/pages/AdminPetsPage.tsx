@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Search, Trash2 } from 'lucide-react';
-import type { PetProfile } from '@petdate/shared';
+import { petPublicIdOf, type PetProfile } from '@petdate/shared';
 import { adminFetch, formatNumFa } from '../api';
 
 export function AdminPetsPage() {
@@ -28,7 +28,7 @@ export function AdminPetsPage() {
     <div className="admin-page">
       <header className="admin-header"><div><h1>مدیریت پت‌ها</h1><p>{formatNumFa(total)} پت</p></div></header>
       <div className="admin-toolbar">
-        <div className="admin-search"><Search size={16} /><input placeholder="نام، نژاد، شهر…" value={q} onChange={(e) => setQ(e.target.value)} /></div>
+        <div className="admin-search"><Search size={16} /><input placeholder="نام، آیدی PD-P، نژاد، شهر…" value={q} onChange={(e) => setQ(e.target.value)} /></div>
         <select className="admin-select" value={species} onChange={(e) => setSpecies(e.target.value)}>
           <option value="">همه</option><option value="dog">سگ</option><option value="cat">گربه</option><option value="bird">پرنده</option>
         </select>
@@ -36,19 +36,26 @@ export function AdminPetsPage() {
       </div>
       {error ? <p className="admin-error">{error}</p> : null}
       <div className="admin-table-wrap admin-card"><table className="admin-table">
-        <thead><tr><th>عکس</th><th>نام</th><th>گونه</th><th>مالک</th><th>شهر</th><th></th></tr></thead>
+        <thead><tr><th>عکس</th><th>آیدی</th><th>نام</th><th>گونه</th><th>مالک</th><th>شهر</th><th></th></tr></thead>
         <tbody>
-          {pets.map((pet) => (
-            <tr key={pet.id}>
-              <td>{pet.imageUrl ? <img src={pet.imageUrl} alt="" className="admin-thumb" /> : '—'}</td>
-              <td><strong>{pet.name}</strong><div className="admin-mono">#{pet.id}</div></td>
-              <td>{pet.species} · {pet.breed || '—'}</td>
-              <td>{pet.ownerId}</td>
-              <td>{pet.city || '—'}</td>
-              <td><button type="button" className="admin-btn admin-btn--danger" onClick={() => void remove(pet)}><Trash2 size={14} /></button></td>
-            </tr>
-          ))}
-          {!pets.length ? <tr><td colSpan={6} className="admin-muted">پتی یافت نشد</td></tr> : null}
+          {pets.map((pet) => {
+            const publicId = petPublicIdOf(pet);
+            return (
+              <tr key={pet.id}>
+                <td>{pet.imageUrl ? <img src={pet.imageUrl} alt="" className="admin-thumb" /> : '—'}</td>
+                <td>
+                  <code className="admin-mono" dir="ltr">{publicId}</code>
+                  <div className="admin-muted admin-mono">#{pet.id}</div>
+                </td>
+                <td><strong>{pet.name}</strong></td>
+                <td>{pet.species} · {pet.breed || '—'}</td>
+                <td className="admin-mono">#{pet.ownerId}</td>
+                <td>{pet.city || '—'}</td>
+                <td><button type="button" className="admin-btn admin-btn--danger" onClick={() => void remove(pet)}><Trash2 size={14} /></button></td>
+              </tr>
+            );
+          })}
+          {!pets.length ? <tr><td colSpan={7} className="admin-muted">پتی یافت نشد</td></tr> : null}
         </tbody>
       </table></div>
     </div>

@@ -129,9 +129,37 @@ export function userPublicIdOf(user: { id: number; publicId?: string | null }): 
   return makeUserPublicId(user.id);
 }
 
+/**
+ * نرمال‌سازی فرم‌های شناخته‌شده به PD-P##### (با پد ۵رقمی).
+ * قبول می‌کند: PD-P42، PD-P00042، p00042، …
+ */
+export function normalizePetPublicId(raw: string | null | undefined): string | null {
+  const s = String(raw ?? '').trim();
+  if (!s) return null;
+  const pd = /^PD-P(\d{1,10})$/i.exec(s);
+  if (pd) return makePetPublicId(Number(pd[1]));
+  const bare = /^p_?(\d{1,10})$/i.exec(s);
+  if (bare) return makePetPublicId(Number(bare[1]));
+  return null;
+}
+
 /** شناسهٔ نمایشی پت — publicId ذخیره‌شده یا مشتق از id */
 export function petPublicIdOf(pet: { id: number; publicId?: string | null }): string {
-  return (pet.publicId && String(pet.publicId).trim()) || makePetPublicId(pet.id);
+  const raw = pet.publicId != null ? String(pet.publicId).trim() : '';
+  if (raw) {
+    const normalized = normalizePetPublicId(raw);
+    if (normalized) return normalized;
+    return raw;
+  }
+  return makePetPublicId(pet.id);
+}
+
+/** استخراج id داخلی از آیدی عمومی پت (PD-P##### / p#####) */
+export function parsePetIdFromPublicId(raw: string): number | null {
+  const normalized = normalizePetPublicId(raw);
+  if (!normalized) return null;
+  const m = /^PD-P(\d+)$/i.exec(normalized);
+  return m ? Number(m[1]) : null;
 }
 
 /**

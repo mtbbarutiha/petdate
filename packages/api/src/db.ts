@@ -41,10 +41,13 @@ import {
   COIN_REASON,
   FACE_VERIFY_REWARD,
   isPendingRequestExpired,
+  makePetPublicId,
+  makeUserPublicId,
   maskCardNumber,
   PET_BREEDS_SEED,
   PET_MEDICAL_FIELD_LABELS,
   PET_SPECIES,
+  petPublicIdOf,
   PLAYDATE_REQUEST_TTL_MS,
   PROFILE_REWARD_SECTIONS,
   PROFILE_SECTION_REWARD,
@@ -53,6 +56,7 @@ import {
   USER_PRESENCE_ONLINE_MS,
   USER_ROLES,
   sanitizeRoleList,
+  userPublicIdOf,
   VET_CONSULT_REQUEST_TTL_MS,
   vetVisitFeeCoins,
   walletFromUserFields,
@@ -130,6 +134,11 @@ export function getDb(): AppDatabase {
       }
       seedIfEmpty();
       maybeSeedDemo();
+      try {
+        backfillPublicIds();
+      } catch (err) {
+        console.warn('public_id backfill skipped/failed:', (err as Error).message);
+      }
       console.log(
         `   PostgreSQL (source of truth): ${String(process.env.DATABASE_URL).replace(/:[^:@/]+@/, ':***@')}`
       );
@@ -143,6 +152,11 @@ export function getDb(): AppDatabase {
       initSchema();
       seedIfEmpty();
       maybeSeedDemo();
+      try {
+        backfillPublicIds();
+      } catch (err) {
+        console.warn('public_id backfill skipped/failed:', (err as Error).message);
+      }
       console.log(`   SQLite (source of truth): ${dbPath}`);
     }
   }
@@ -252,6 +266,59 @@ function initSchema() {
   seedSpeciesCatalog();
 }
 
+/** تخصیص / نرمال‌سازی PD-U##### و PD-P##### برای ردیف‌های بدون کد یا با پد ناقص */
+function backfillPublicIds(): void {
+  const userMissing = db
+    .prepare(
+      `SELECT id, public_id FROM users WHERE public_id IS NULL OR trim(CAST(public_id AS TEXT)) = ''`
+    )
+    .all() as { id: number; public_id: string | null }[];
+  if (userMissing.length) {
+    const upd = db.prepare('UPDATE users SET public_id = ? WHERE id = ?');
+    for (const row of userMissing) {
+      upd.run(makeUserPublicId(Number(row.id)), Number(row.id));
+    }
+  }
+  // Re-pad short / legacy forms (PD-U42 → PD-U00042, /u00042 → PD-U00042)
+  const userAll = db.prepare('SELECT id, public_id FROM users WHERE public_id IS NOT NULL').all() as {
+    id: number;
+    public_id: string;
+  }[];
+  const updUser = db.prepare('UPDATE users SET public_id = ? WHERE id = ?');
+  for (const row of userAll) {
+    const canonical = userPublicIdOf({ id: Number(row.id), publicId: row.public_id });
+    if (canonical !== String(row.public_id).trim()) {
+      updUser.run(canonical, Number(row.id));
+    }
+  }
+
+  const petMissing = db
+    .prepare(
+      `SELECT id, public_id FROM pets WHERE public_id IS NULL OR trim(CAST(public_id AS TEXT)) = ''`
+    )
+    .all() as { id: number; public_id: string | null }[];
+  if (petMissing.length) {
+    const upd = db.prepare('UPDATE pets SET public_id = ? WHERE id = ?');
+    for (const row of petMissing) {
+      upd.run(makePetPublicId(Number(row.id)), Number(row.id));
+    }
+  }
+  const petAll = db.prepare('SELECT id, public_id FROM pets WHERE public_id IS NOT NULL').all() as {
+    id: number;
+    public_id: string;
+  }[];
+  const updPet = db.prepare('UPDATE pets SET public_id = ? WHERE id = ?');
+  for (const row of petAll) {
+    const canonical = petPublicIdOf({ id: Number(row.id), publicId: row.public_id });
+    if (canonical !== String(row.public_id).trim()) {
+      updPet.run(canonical, Number(row.id));
+    }
+  }
+
+  db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_public_id ON users (public_id)');
+  db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_pets_public_id ON pets (public_id)');
+}
+
 function migrateSchema() {
   const userCols = db.prepare("PRAGMA table_info(users)").all() as { name: string }[];
   const names = new Set(userCols.map((c) => c.name));
@@ -330,6 +397,10 @@ function migrateSchema() {
   }
   if (!names.has('visit_fee_coins')) {
     db.exec('ALTER TABLE users ADD COLUMN visit_fee_coins INTEGER NOT NULL DEFAULT 1');
+  }
+  /** شناسهٔ عمومی پایدار نمایشی — PD-U##### */
+  if (!names.has('public_id')) {
+    db.exec('ALTER TABLE users ADD COLUMN public_id TEXT');
   }
   /** آخرین موقعیت GPS اشتراک‌گذاری‌شده (برای پت‌های نزدیک در ربات) */
   if (!names.has('lat')) {
@@ -708,6 +779,13 @@ function migrateSchema() {
   if (!petNames.has('gender')) db.exec('ALTER TABLE pets ADD COLUMN gender TEXT');
   if (!petNames.has('size')) db.exec('ALTER TABLE pets ADD COLUMN size TEXT');
   if (!petNames.has('color')) db.exec('ALTER TABLE pets ADD COLUMN color TEXT');
+  /** شناسهٔ عمومی پایدار نمایشی — PD-P##### */
+  if (!petNames.has('public_id')) {
+    db.exec('ALTER TABLE pets ADD COLUMN public_id TEXT');
+  }
+
+  // Backfill / normalize public ids (idempotent — safe on every startup)
+  backfillPublicIds();
 
   const breedCols = db.prepare('PRAGMA table_info(pet_breeds)').all() as { name: string }[];
   const breedNames = new Set(breedCols.map((c) => c.name));
@@ -1573,8 +1651,10 @@ function mapUser(row: Record<string, unknown>): User {
     (roles.includes('pet_owner') ? 'pet_owner' : roles[0]);
   const telegramRaw = row.telegram_id;
   const phoneRaw = row.phone;
+  const id = row.id as number;
   return {
-    id: row.id as number,
+    id,
+    publicId: userPublicIdOf({ id, publicId: row.public_id as string | undefined }),
     telegramId:
       telegramRaw != null && String(telegramRaw).trim() !== ''
         ? String(telegramRaw).trim()
@@ -1679,8 +1759,10 @@ function mapPet(row: Record<string, unknown>): PetProfile {
     row.distance_km != null && Number.isFinite(Number(row.distance_km))
       ? Math.round(Number(row.distance_km) * 10) / 10
       : undefined;
+  const id = row.id as number;
   return {
-    id: row.id as number,
+    id,
+    publicId: petPublicIdOf({ id, publicId: row.public_id as string | undefined }),
     ownerId: row.owner_id as number,
     name: row.name as string,
     species: row.species as string,
@@ -1959,9 +2041,11 @@ export const dbService = {
     const result = db
       .prepare('INSERT INTO users (telegram_id, name, username) VALUES (?, ?, ?)')
       .run(data.telegramId ?? null, data.name, data.username ?? null);
+    const newId = Number(result.lastInsertRowid);
+    db.prepare('UPDATE users SET public_id = ? WHERE id = ?').run(makeUserPublicId(newId), newId);
     return {
       user: mapUser(
-        db.prepare('SELECT * FROM users WHERE id = ?').get(result.lastInsertRowid) as Record<
+        db.prepare('SELECT * FROM users WHERE id = ?').get(newId) as Record<
           string,
           unknown
         >
@@ -3797,7 +3881,9 @@ export const dbService = {
         data.city ?? null,
         data.neighborhood ?? null
       );
-    return mapPet(db.prepare('SELECT * FROM pets WHERE id = ?').get(result.lastInsertRowid) as Record<string, unknown>);
+    const petId = Number(result.lastInsertRowid);
+    db.prepare('UPDATE pets SET public_id = ? WHERE id = ?').run(makePetPublicId(petId), petId);
+    return mapPet(db.prepare('SELECT * FROM pets WHERE id = ?').get(petId) as Record<string, unknown>);
   },
 
   updatePet(id: number, patch: Partial<{
@@ -6125,7 +6211,9 @@ export const dbService = {
         opts.phone ? 1 : 0,
         opts.email ? 1 : 0
       );
-    const user = this.getUserById(Number(result.lastInsertRowid));
+    const newId = Number(result.lastInsertRowid);
+    db.prepare('UPDATE users SET public_id = ? WHERE id = ?').run(makeUserPublicId(newId), newId);
+    const user = this.getUserById(newId);
     if (!user) throw new Error('failed to create web user');
     return user;
   },
