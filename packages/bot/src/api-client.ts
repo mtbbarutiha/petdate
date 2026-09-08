@@ -285,6 +285,40 @@ export async function listPets(filters?: {
   return request<PetProfile[]>(`/api/pets${qs ? `?${qs}` : ''}`);
 }
 
+/** پت‌های نزدیک بر اساس مختصات GPS (مرتب‌شده بر اساس فاصله) */
+export async function listNearbyPets(opts: {
+  lat: number;
+  lng: number;
+  excludeOwnerId?: number;
+  limit?: number;
+}): Promise<PetProfile[]> {
+  const params = new URLSearchParams();
+  params.set('lat', String(opts.lat));
+  params.set('lng', String(opts.lng));
+  if (opts.excludeOwnerId) params.set('excludeOwnerId', String(opts.excludeOwnerId));
+  if (opts.limit) params.set('limit', String(opts.limit));
+  return request<PetProfile[]>(`/api/pets/nearby?${params.toString()}`);
+}
+
+/** ذخیره موقعیت کاربر از دکمه ارسال موقعیت تلگرام */
+export async function saveUserLocation(
+  telegramId: string,
+  lat: number,
+  lng: number
+): Promise<User | null> {
+  try {
+    return await request<User>(
+      `/api/users/telegram/${encodeURIComponent(telegramId)}/location`,
+      {
+        method: 'POST',
+        body: JSON.stringify({ lat, lng }),
+      }
+    );
+  } catch {
+    return null;
+  }
+}
+
 export async function getPet(id: number): Promise<PetProfile | null> {
   try {
     return await request<PetProfile>(`/api/pets/${id}`);

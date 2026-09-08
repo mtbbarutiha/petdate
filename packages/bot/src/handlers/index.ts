@@ -16,6 +16,7 @@ import {
   SEARCH_PETS_MENU,
   WIZARD_NAV,
   mainMenuKeyboard,
+  nearbyLocationKeyboard,
 } from '../keyboards';
 import { getSession, upsertSession } from '../session';
 import { handleExplore, handleExploreBack, handleExploreForPet, handleExplorePet, handleExplorePickPet, handleFindPlaymate } from './explore';
@@ -178,6 +179,7 @@ import {
   handleWalletStarsTopUpMenu,
 } from './coins';
 import {
+  handleNearbyLocationMessage,
   handleNearbyPets,
   handleSearchAll,
   handleSearchBreedText,
@@ -185,6 +187,7 @@ import {
   handleSearchHomeCallback,
   handleSearchMashhad,
   handleSearchMenuCallback,
+  handleSearchNearbyAskLocCallback,
   handleSearchPage,
   handleSearchPetsMenu,
   handleSearchPetView,
@@ -726,6 +729,11 @@ export function registerHandlers(bot: Bot): void {
   );
   bot.callbackQuery('search:menu', (ctx) => handleSearchMenuCallback(ctx));
   bot.callbackQuery('search:home', (ctx) => handleSearchHomeCallback(ctx));
+  bot.callbackQuery('search:nearby:askloc', (ctx) => handleSearchNearbyAskLocCallback(ctx));
+
+  bot.on('message:location', async (ctx) => {
+    if (await handleNearbyLocationMessage(ctx)) return;
+  });
 
   bot.on('message:contact', async (ctx) => {
     if (await handlePhoneVerifyContact(ctx)) return;
@@ -870,6 +878,33 @@ async function handleTextMessage(ctx: Context): Promise<void> {
   if (await handleProfileWizardText(ctx, text)) return;
   if (await handlePetEditText(ctx, text)) return;
   if (await handleWizardText(ctx, text)) return;
+
+  // اگر منتظر موقعیت هستیم و کاربر متن فرستاد — یادآوری دکمه
+  if (ctx.from) {
+    const session = await getSession(String(ctx.from.id));
+    if (session?.step === 'awaiting_location_for_nearby') {
+      // دکمه‌های منوی اصلی باید از این حالت خارج شوند
+      if (MENU_LABELS.has(text) && text !== WIZARD_NAV.shareLocation) {
+        await upsertSession(String(ctx.from.id), {
+          step: 'ready',
+          searchLat: undefined,
+          searchLng: undefined,
+        });
+        // fall through to menu switch
+      } else {
+        if (text === WIZARD_NAV.shareLocation) {
+          await ctx.reply('از دکمه تلگرام «ارسال موقعیت» استفاده کن تا لوکیشن واقعی ارسال بشه.', {
+            reply_markup: nearbyLocationKeyboard(),
+          });
+          return;
+        }
+        await ctx.reply(`برای دیدن پت‌های نزدیک، دکمه «${WIZARD_NAV.shareLocation}» رو بزن.`, {
+          reply_markup: nearbyLocationKeyboard(),
+        });
+        return;
+      }
+    }
+  }
 
   const m = PET_OWNER_MENU;
   const d = DEFAULT_MENU;

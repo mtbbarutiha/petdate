@@ -249,6 +249,11 @@ export interface PetdateUser {
   vetEnabled?: boolean;
   /** مبلغ ویزیت دامپزشک به سکه (قابل تنظیم از پنل پزشک) */
   visitFeeCoins?: number;
+  /** آخرین عرض جغرافیایی اشتراک‌گذاری‌شده */
+  lat?: number;
+  /** آخرین طول جغرافیایی اشتراک‌گذاری‌شده */
+  lng?: number;
+  locationUpdatedAt?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -305,8 +310,12 @@ export interface PetProfile {
   /** از پروفایل صاحب پت (برای مچ همبازی) */
   ownerProvince?: string;
   ownerCity?: string;
+  /** نام صاحب پت (برای لیست نزدیک) */
+  ownerName?: string;
   /** صاحب پت احراز هویت شده */
   ownerVerified?: boolean;
+  /** فاصله تا موقعیت درخواست‌کننده (کیلومتر) — فقط در نتایج nearby */
+  distanceKm?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -518,6 +527,9 @@ export interface BotSession {
   breedPage?: number;
   /** حالت مرور/جستجوی پت */
   searchMode?: 'nearby' | 'breed' | 'province' | 'mashhad' | 'all';
+  /** مختصات برای صفحه‌بندی پت‌های نزدیک (بعد از ارسال موقعیت) */
+  searchLat?: number;
+  searchLng?: number;
   /** گونهٔ انتخاب‌شده در جستجو بر اساس نژاد */
   searchSpecies?: string;
   searchBreed?: string;
@@ -714,6 +726,7 @@ export type BotStep =
   | 'vet_credential'
   | 'search_species'
   | 'search_breed'
+  | 'awaiting_location_for_nearby'
   | 'earn_card'
   | 'payment_receipt'
   | 'pet_name'

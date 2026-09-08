@@ -327,6 +327,17 @@ function migrateSchema() {
   if (!names.has('visit_fee_coins')) {
     db.exec('ALTER TABLE users ADD COLUMN visit_fee_coins INTEGER NOT NULL DEFAULT 1');
   }
+  /** آخرین موقعیت GPS اشتراک‌گذاری‌شده (برای پت‌های نزدیک در ربات) */
+  if (!names.has('lat')) {
+    db.exec('ALTER TABLE users ADD COLUMN lat REAL');
+  }
+  if (!names.has('lng')) {
+    db.exec('ALTER TABLE users ADD COLUMN lng REAL');
+  }
+  if (!names.has('location_updated_at')) {
+    db.exec('ALTER TABLE users ADD COLUMN location_updated_at TEXT');
+  }
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_users_lat_lng ON users (lat, lng);`);
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS coin_ledger (
@@ -1618,6 +1629,11 @@ function mapUser(row: Record<string, unknown>): User {
       row.visit_fee_coins != null && Number.isFinite(Number(row.visit_fee_coins))
         ? Math.max(1, Math.floor(Number(row.visit_fee_coins)))
         : 1,
+    lat:
+      row.lat != null && Number.isFinite(Number(row.lat)) ? Number(row.lat) : undefined,
+    lng:
+      row.lng != null && Number.isFinite(Number(row.lng)) ? Number(row.lng) : undefined,
+    locationUpdatedAt: (row.location_updated_at as string | undefined) ?? undefined,
     avgRating:
       row.avg_rating != null && Number.isFinite(Number(row.avg_rating))
         ? Math.round(Number(row.avg_rating) * 10) / 10
@@ -1653,6 +1669,10 @@ function parseJsonObject(value: unknown): Record<string, unknown> {
 }
 
 function mapPet(row: Record<string, unknown>): PetProfile {
+  const distanceKm =
+    row.distance_km != null && Number.isFinite(Number(row.distance_km))
+      ? Math.round(Number(row.distance_km) * 10) / 10
+      : undefined;
   return {
     id: row.id as number,
     ownerId: row.owner_id as number,
@@ -1674,10 +1694,24 @@ function mapPet(row: Record<string, unknown>): PetProfile {
     neighborhood: row.neighborhood as string | undefined,
     ownerProvince: (row.owner_province as string | undefined) ?? undefined,
     ownerCity: (row.owner_city as string | undefined) ?? undefined,
+    ownerName: (row.owner_name as string | undefined) ?? undefined,
     ownerVerified: row.owner_verified != null ? Boolean(row.owner_verified) : undefined,
+    distanceKm,
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
   };
+}
+
+/** فاصله تقریبی دو نقطه روی کره زمین (کیلومتر) — فرمول هاورساین */
+export function haversineKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const R = 6371;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
 function mapPlaydate(row: Record<string, unknown>): PlaydateRequest {
@@ -3365,6 +3399,71 @@ export const dbService = {
     }
     sql += ' ORDER BY pets.updated_at DESC';
     return (db.prepare(sql).all(...params) as Record<string, unknown>[]).map(mapPet);
+  },
+
+  /**
+   * پت‌های نزدیک بر اساس lat/lng صاحب‌ها.
+   * شعاع ثابت کوچک نداریم — نسبت به نزدیک‌ترین‌ها مرتب می‌کنیم و تا limit برمی‌گردانیم.
+   */
+  listNearbyPets(opts: {
+    lat: number;
+    lng: number;
+    excludeOwnerId?: number;
+    limit?: number;
+  }): PetProfile[] {
+    const limit = Math.min(Math.max(1, Math.floor(opts.limit ?? 30)), 80);
+    let sql = `
+      SELECT pets.*,
+             users.province AS owner_province,
+             users.city AS owner_city,
+             users.name AS owner_name,
+             users.lat AS owner_lat,
+             users.lng AS owner_lng,
+             CASE WHEN users.verification_status = 'verified' THEN 1 ELSE 0 END AS owner_verified
+      FROM pets
+      INNER JOIN users ON users.id = pets.owner_id
+      WHERE users.lat IS NOT NULL
+        AND users.lng IS NOT NULL
+        AND COALESCE(users.is_active, 1) = 1`;
+    const params: unknown[] = [];
+    if (opts.excludeOwnerId) {
+      sql += ' AND pets.owner_id != ?';
+      params.push(opts.excludeOwnerId);
+    }
+    const rows = db.prepare(sql).all(...params) as Record<string, unknown>[];
+    const scored = rows
+      .map((row) => {
+        const oLat = Number(row.owner_lat);
+        const oLng = Number(row.owner_lng);
+        if (!Number.isFinite(oLat) || !Number.isFinite(oLng)) return null;
+        const distanceKm = haversineKm(opts.lat, opts.lng, oLat, oLng);
+        return { ...row, distance_km: distanceKm };
+      })
+      .filter((r): r is Record<string, unknown> & { distance_km: number } => r != null)
+      .sort((a, b) => a.distance_km - b.distance_km)
+      .slice(0, limit);
+
+    return scored.map(mapPet);
+  },
+
+  /** ذخیره موقعیت GPS کاربر (از دکمه ارسال موقعیت ربات) */
+  setUserLocation(userId: number, lat: number, lng: number): User | null {
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
+    const existing = this.getUserById(userId);
+    if (!existing) return null;
+    db.prepare(
+      `UPDATE users
+       SET lat = ?, lng = ?, location_updated_at = datetime('now')
+       WHERE id = ?`
+    ).run(lat, lng, userId);
+    return this.getUserById(userId);
+  },
+
+  setUserLocationByTelegramId(telegramId: string, lat: number, lng: number): User | null {
+    const user = this.getUserByTelegramId(telegramId);
+    if (!user) return null;
+    return this.setUserLocation(user.id, lat, lng);
   },
 
   getPet(id: number): PetProfile | null {

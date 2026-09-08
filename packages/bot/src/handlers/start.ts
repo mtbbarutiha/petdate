@@ -905,6 +905,8 @@ export async function handleCancel(ctx: Context): Promise<void> {
     searchSpecies: undefined,
     searchPage: undefined,
     searchBreedPage: undefined,
+    searchLat: undefined,
+    searchLng: undefined,
     earnPendingCoins: undefined,
     paymentPendingOrderId: undefined,
     adminRejectUserId: undefined,

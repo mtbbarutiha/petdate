@@ -261,6 +261,22 @@ usersRouter.patch('/telegram/:telegramId/onboarding', (req, res) => {
   res.json(user);
 });
 
+/** ذخیره موقعیت GPS از ربات (دکمه ارسال موقعیت — پت‌های نزدیک) */
+usersRouter.post('/telegram/:telegramId/location', (req, res) => {
+  const lat = Number(req.body?.lat ?? req.body?.latitude);
+  const lng = Number(req.body?.lng ?? req.body?.longitude);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    res.status(400).json({ error: 'lat و lng الزامی است' });
+    return;
+  }
+  const user = dbService.setUserLocationByTelegramId(req.params.telegramId, lat, lng);
+  if (!user) {
+    res.status(404).json({ error: 'کاربر پیدا نشد یا مختصات نامعتبر است' });
+    return;
+  }
+  res.json(user);
+});
+
 usersRouter.patch('/:id/onboarding', (req, res) => {
   const { onboarding } = req.body;
   if (!isOnboardingStatus(onboarding)) {

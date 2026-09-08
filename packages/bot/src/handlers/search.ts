@@ -1,7 +1,14 @@
 import type { Context } from 'grammy';
 import type { PetBreed, PetProfile, PetSpecies } from '@petdate/shared';
 import { PET_SPECIES_LABELS } from '@petdate/shared';
-import { getPet, listBreeds, listPets, listSpecies } from '../api-client';
+import {
+  getPet,
+  listBreeds,
+  listNearbyPets,
+  listPets,
+  listSpecies,
+  saveUserLocation,
+} from '../api-client';
 import { formatPet } from '../format';
 import {
   BREED_PAGE_SIZE,
@@ -9,7 +16,7 @@ import {
   SEARCH_PETS_MENU,
   WIZARD_NAV,
   breedReplyKeyboard,
-  mainMenuKeyboard,
+  nearbyLocationKeyboard,
   searchPetDetailKeyboard,
   searchPetsListKeyboard,
   searchPetsMenuKeyboard,
@@ -18,9 +25,10 @@ import {
 } from '../keyboards';
 import { getSession, upsertSession } from '../session';
 import { resolveTelegramPhotoUrl } from '../urls';
-import { getCtxUser, menuKeyboardFor, pushMainMenuKeyboard, pushReplyKeyboard } from './helpers';
+import { getCtxUser, pushMainMenuKeyboard, pushReplyKeyboard } from './helpers';
 
 const PAGE_SIZE = 8;
+const NEARBY_LIMIT = 30;
 
 function matchSpecies(text: string, species: PetSpecies[]): PetSpecies | null {
   const t = text.trim();
@@ -40,37 +48,97 @@ function speciesTitle(code?: string): string {
   return PET_SPECIES_LABELS[code] ?? code;
 }
 
+/** ورود به پت‌های نزدیک — اول دکمه ارسال موقعیت */
 export async function handleNearbyPets(ctx: Context): Promise<void> {
+  await askNearbyLocation(ctx);
+}
+
+/** درخواست موقعیت (منو یا دکمه «موقعیت دوباره») */
+export async function askNearbyLocation(ctx: Context): Promise<void> {
   const user = await getCtxUser(ctx);
-  if (!user?.id) {
+  if (!user?.id || !ctx.from) {
     await ctx.reply('اول /start بزن.');
     return;
   }
 
-  await upsertSession(String(ctx.from!.id), {
-    step: 'ready',
+  await upsertSession(String(ctx.from.id), {
+    step: 'awaiting_location_for_nearby',
     searchMode: 'nearby',
     searchPage: 0,
     searchBreed: undefined,
     searchSpecies: undefined,
+    searchLat: undefined,
+    searchLng: undefined,
   });
 
-  if (!user.city && !user.province) {
-    await ctx.reply(
-      [
-        '📍 <b>پت‌های نزدیک من</b>',
-        '',
-        'اول در پروفایل، شهر یا استانت رو ثبت کن تا پت‌های نزدیک رو نشون بدیم.',
-      ].join('\n'),
-      {
-        parse_mode: 'HTML',
-        reply_markup: menuKeyboardFor(ctx, user),
-      }
-    );
-    return;
+  const text = [
+    '📍 <b>پت‌های نزدیک</b>',
+    '',
+    'موقعیتت رو بفرست تا نزدیک‌ترین افراد و پت‌ها رو در یک لیست نشونت بدیم.',
+    '',
+    `دکمه <b>«${WIZARD_NAV.shareLocation}»</b> رو بزن.`,
+  ].join('\n');
+
+  if (ctx.callbackQuery) {
+    try {
+      await ctx.answerCallbackQuery();
+    } catch {
+      /* ignore */
+    }
   }
 
+  await ctx.reply(text, {
+    parse_mode: 'HTML',
+    reply_markup: nearbyLocationKeyboard(),
+  });
+}
+
+export async function handleSearchNearbyAskLocCallback(ctx: Context): Promise<void> {
+  await askNearbyLocation(ctx);
+}
+
+/**
+ * دریافت موقعیت تلگرام وقتی کاربر در حالت awaiting_location_for_nearby است.
+ * @returns true اگر پیام مصرف شد
+ */
+export async function handleNearbyLocationMessage(ctx: Context): Promise<boolean> {
+  const from = ctx.from;
+  const loc = ctx.message?.location;
+  if (!from || !loc) return false;
+
+  const session = await getSession(String(from.id));
+  if (!session || session.step !== 'awaiting_location_for_nearby') {
+    return false;
+  }
+
+  const user = await getCtxUser(ctx);
+  if (!user?.id) {
+    await ctx.reply('اول /start بزن.');
+    return true;
+  }
+
+  const lat = loc.latitude;
+  const lng = loc.longitude;
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    await ctx.reply('موقعیت نامعتبر بود. دوباره «ارسال موقعیت» رو بزن.', {
+      reply_markup: nearbyLocationKeyboard(),
+    });
+    return true;
+  }
+
+  await saveUserLocation(String(from.id), lat, lng);
+
+  await upsertSession(String(from.id), {
+    step: 'ready',
+    searchMode: 'nearby',
+    searchLat: lat,
+    searchLng: lng,
+    searchPage: 0,
+  });
+
+  await ctx.reply('⏳ در حال پیدا کردن نزدیک‌ترین‌ها…');
   await showSearchResults(ctx, 'nearby', 0);
+  return true;
 }
 
 export async function handleSearchPetsMenu(ctx: Context): Promise<void> {
@@ -223,6 +291,8 @@ export async function handleSearchHomeCallback(ctx: Context): Promise<void> {
       step: 'ready',
       searchMode: undefined,
       searchPage: undefined,
+      searchLat: undefined,
+      searchLng: undefined,
     });
   }
   await pushMainMenuKeyboard(ctx, user);
@@ -284,11 +354,33 @@ async function fetchPetsForMode(
   mode: SearchMode,
   user: { id: number; city?: string; province?: string },
   breed?: string,
-  species?: string
+  species?: string,
+  geo?: { lat: number; lng: number }
 ): Promise<PetProfile[]> {
   const base = { excludeOwnerId: user.id as number | undefined };
   switch (mode) {
-    case 'nearby':
+    case 'nearby': {
+      if (geo && Number.isFinite(geo.lat) && Number.isFinite(geo.lng)) {
+        try {
+          const nearby = await listNearbyPets({
+            lat: geo.lat,
+            lng: geo.lng,
+            excludeOwnerId: user.id,
+            limit: NEARBY_LIMIT,
+          });
+          if (nearby.length > 0) return nearby;
+        } catch (err) {
+          console.warn('listNearbyPets failed:', (err as Error).message);
+        }
+        // اگر هنوز کسی موقعیت نزده — fallback شهر/استان تا لیست خالی نماند
+        if (user.city) {
+          return listPets({ ...base, city: user.city });
+        }
+        if (user.province) {
+          return listPets({ ...base, province: user.province });
+        }
+        return [];
+      }
       if (user.city) {
         return listPets({ ...base, city: user.city });
       }
@@ -296,6 +388,7 @@ async function fetchPetsForMode(
         return listPets({ ...base, province: user.province });
       }
       return [];
+    }
     case 'breed':
       if (!breed) return [];
       return listPets({ ...base, breed, ...(species ? { species } : {}) });
@@ -343,7 +436,14 @@ async function showSearchResults(
   const session = await getSession(String(ctx.from.id));
   const breed = session?.searchBreed;
   const species = session?.searchSpecies;
-  const pets = await fetchPetsForMode(mode, user, breed, species);
+  const geo =
+    session?.searchLat != null &&
+    session?.searchLng != null &&
+    Number.isFinite(session.searchLat) &&
+    Number.isFinite(session.searchLng)
+      ? { lat: session.searchLat, lng: session.searchLng }
+      : undefined;
+  const pets = await fetchPetsForMode(mode, user, breed, species, geo);
   const totalPages = Math.max(1, Math.ceil(pets.length / PAGE_SIZE));
   const safePage = Math.min(Math.max(0, page), Math.max(0, totalPages - 1));
 
@@ -356,11 +456,18 @@ async function showSearchResults(
     const empty = [
       `<b>${modeTitle(mode, breed, species)}</b>`,
       '',
-      'فعلاً پتی با این فیلتر پیدا نشد.',
+      mode === 'nearby' && geo
+        ? 'هنوز کسی اطراف این موقعیت پیدا نشد. بعداً دوباره موقعیت بفرست یا «موقعیت دوباره» رو بزن.'
+        : 'فعلاً پتی با این فیلتر پیدا نشد.',
     ].join('\n');
+    if (mode === 'nearby') {
+      await upsertSession(String(ctx.from.id), {
+        step: 'awaiting_location_for_nearby',
+      });
+    }
     const emptyKb =
       mode === 'nearby'
-        ? menuKeyboardFor(ctx, user)
+        ? nearbyLocationKeyboard()
         : searchPetsMenuKeyboard();
 
     if (opts?.edit && ctx.callbackQuery) {
@@ -376,9 +483,12 @@ async function showSearchResults(
     return;
   }
 
+  const hasGeoDistances = pets.some((p) => p.distanceKm != null);
   const text = [
     `<b>${modeTitle(mode, breed, species)}</b>`,
-    `📋 ${pets.length} پت — روی هر مورد بزن تا پروفایل باز بشه`,
+    hasGeoDistances
+      ? `📋 ${pets.length} نفر/پت نزدیک — روی هر مورد بزن تا پروفایل باز بشه`
+      : `📋 ${pets.length} پت — روی هر مورد بزن تا پروفایل باز بشه`,
     totalPages > 1 ? `صفحه ${safePage + 1} از ${totalPages}` : null,
   ]
     .filter(Boolean)
