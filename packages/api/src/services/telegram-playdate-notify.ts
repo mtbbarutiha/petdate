@@ -8,11 +8,13 @@ import {
   type PetProfile,
 } from '@petdate/shared';
 import { infra } from '../config/infra';
+import { renderPetProfileCard } from './nearby-cards';
 import {
   mimeFromPetPhotoKey,
   resolvePetPhotoPath,
 } from './pet-photo-store';
 import { telegramFetch, telegramBotApiUrl } from './telegram-http';
+import { ensureWebAccessibleAvatar } from './telegram-profile-sync';
 
 function escapeHtml(value: string): string {
   return value
@@ -134,6 +136,44 @@ export function resolvePlaydateNotifyPhoto(pet: PetProfile): ResolvedNotifyPhoto
 
   // Opaque Telegram file_id stored by the bot
   return { kind: 'ref', value: raw };
+}
+
+/**
+ * Pet photo + circular owner avatar (top-left), same as nearby/search profile-card.
+ * Materializes Telegram file_id avatars before sharp compositing.
+ */
+export async function buildPlaydateNotifyCompositePhoto(
+  pet: PetProfile
+): Promise<ResolvedNotifyPhoto | null> {
+  let ownerAvatarUrl = pet.ownerAvatarUrl;
+  try {
+    if (pet.ownerId) {
+      const ensured = await ensureWebAccessibleAvatar(pet.ownerId);
+      if (ensured?.avatarUrl) ownerAvatarUrl = ensured.avatarUrl;
+    }
+  } catch (err) {
+    console.warn(
+      'playdate notify owner avatar ensure failed:',
+      (err as Error).message
+    );
+  }
+
+  try {
+    const buffer = await renderPetProfileCard({
+      pet: { ...pet, ownerAvatarUrl },
+      corner: 'tl',
+    });
+    if (!buffer?.length) return null;
+    return {
+      kind: 'upload',
+      buffer,
+      filename: 'playdate-request.jpg',
+      contentType: 'image/jpeg',
+    };
+  } catch (err) {
+    console.warn('playdate notify composite failed:', (err as Error).message);
+    return null;
+  }
 }
 
 async function telegramCall(
@@ -263,7 +303,10 @@ export async function notifyPlaydateRequestTelegram(opts: {
     ],
   };
 
-  const photo = resolvePlaydateNotifyPhoto(opts.fromPet);
+  // Prefer composited pet + owner overlay (circular, top-left). Fall back to
+  // plain pet photo if sharp/avatar materialize fails.
+  const composite = await buildPlaydateNotifyCompositePhoto(opts.fromPet);
+  const photo = composite ?? resolvePlaydateNotifyPhoto(opts.fromPet);
   let sentPhoto = false;
   if (photo.kind === 'upload') {
     sentPhoto = await telegramSendPhotoUpload({

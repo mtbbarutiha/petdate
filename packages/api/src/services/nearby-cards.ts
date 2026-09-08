@@ -179,7 +179,19 @@ export async function loadImageBuffer(
       const buf = await fetchRemoteBuffer(raw);
       if (buf) return buf;
     }
-    // Telegram file_id / opaque — cannot load without Bot API
+    // Telegram file_id / opaque token — materialize via Bot API getFile.
+    if (!raw.startsWith('/') && raw.length >= 16 && !/\s/.test(raw)) {
+      try {
+        const { resolveTelegramFile } = await import('./telegram-chat-notify');
+        const resolved = await resolveTelegramFile(raw);
+        if (resolved?.downloadUrl) {
+          const buf = await fetchRemoteBuffer(resolved.downloadUrl);
+          if (buf) return buf;
+        }
+      } catch {
+        /* fall through */
+      }
+    }
   }
   if (fallbackUrl) return fetchRemoteBuffer(fallbackUrl);
   return null;

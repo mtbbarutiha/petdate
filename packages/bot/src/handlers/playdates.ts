@@ -1,9 +1,11 @@
 import type { Api, Context } from 'grammy';
+import { InputFile } from 'grammy';
 import type { PetProfile } from '@petdate/shared';
 import { isPendingRequestExpired, PLAYDATE_REQUEST_TTL_MS } from '@petdate/shared';
 import {
   createPlaydate,
   deletePet,
+  fetchPetProfileCardBuffer,
   getPet,
   getPlaydate,
   getUserById,
@@ -48,13 +50,24 @@ function petPhotoForTelegram(pet: {
   return resolveTelegramPhotoUrl(pet.imageUrl) || defaultPetPhoto(pet);
 }
 
-/** اطلاع درخواست همبازی به صاحب پت مقصد — با عکس پروفایل پت فرستنده */
+/** اطلاع درخواست همبازی به صاحب پت مقصد — عکس پت + صاحب گوشه بالاچپ */
 export async function notifyIncomingPlaydateRequest(
   api: Api,
   toTelegramId: string,
   opts: {
     requestId: number;
-    fromPet: Pick<PetProfile, 'id' | 'name' | 'species' | 'breed' | 'imageUrl' | 'city' | 'ownerCity' | 'ownerProvince' | 'ownerVerified'>;
+    fromPet: Pick<
+      PetProfile,
+      | 'id'
+      | 'name'
+      | 'species'
+      | 'breed'
+      | 'imageUrl'
+      | 'city'
+      | 'ownerCity'
+      | 'ownerProvince'
+      | 'ownerVerified'
+    >;
     toPetName: string;
     speciesLabel?: string;
   }
@@ -71,9 +84,22 @@ export async function notifyIncomingPlaydateRequest(
     .join('\n')
     .slice(0, 1024);
 
-  const photo = petPhotoForTelegram(opts.fromPet);
   const kb = playdateActionKeyboard(opts.requestId);
 
+  // Prefer API composite (pet + circular owner TL) — same as nearby profile-card.
+  try {
+    const buf = await fetchPetProfileCardBuffer(opts.fromPet.id);
+    await api.sendPhoto(toTelegramId, new InputFile(buf, 'playdate-request.jpg'), {
+      caption,
+      parse_mode: 'HTML',
+      reply_markup: kb,
+    });
+    return;
+  } catch (err) {
+    console.warn('playdate notify composite failed:', (err as Error).message);
+  }
+
+  const photo = petPhotoForTelegram(opts.fromPet);
   try {
     await api.sendPhoto(toTelegramId, photo, {
       caption,
