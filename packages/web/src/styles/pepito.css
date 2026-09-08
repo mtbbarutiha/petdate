@@ -5804,13 +5804,16 @@ div.pepito-profile-stat:active {
     width: 38px;
   }
   .pepito-nav-wallet-btn {
-    padding: 0 0.65rem 0 0.4rem;
-    gap: 0.4rem;
+    padding: 0 0.45rem 0 0.32rem;
+    gap: 0.35rem;
     max-width: min(52vw, 16rem);
+    border-radius: 12px;
   }
   .pepito-nav-wallet-chip-line {
     font-size: 0.72rem;
-    gap: 0.4rem;
+  }
+  .pepito-nav-wallet-chip-item {
+    padding: 0 0.32rem;
   }
   .pepito-nav-profile-menu,
   .pepito-nav-wallet-panel {
@@ -10075,12 +10078,15 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   .pepito-nav-wallet-btn {
     max-width: min(52vw, 12.5rem) !important;
     height: 36px !important;
-    padding: 0 0.55rem 0 0.35rem !important;
-    gap: 0.35rem !important;
+    padding: 0 0.4rem 0 0.3rem !important;
+    gap: 0.3rem !important;
+    border-radius: 11px !important;
   }
   .pepito-nav-wallet-chip-line {
     font-size: 0.66rem !important;
-    gap: 0.35rem !important;
+  }
+  .pepito-nav-wallet-chip-item {
+    padding: 0 0.28rem !important;
   }
   .pepito-nav-profile-btn,
   .pepito-nav-cart-link {
@@ -10342,8 +10348,8 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   .pepito-nav-wallet-btn {
     max-width: min(42vw, 15.5rem);
   }
-  .pepito-nav-wallet-chip-line {
-    gap: 0.4rem;
+  .pepito-nav-wallet-chip-item {
+    padding: 0 0.34rem;
   }
 }
 
