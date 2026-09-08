@@ -16,16 +16,19 @@ import {
 import {
   addPetMedicalEntry,
   createConsultationPrescription,
+  endVetConsultChatViaApi,
   fetchPrescriptionPdfBuffer,
   getPet,
   getPetMedical,
+  getUserByTelegramId,
   getVetConsultation,
   listPets,
+  postVetConsultChatMessage,
   updateVetConsultationStatus,
 } from '../api-client';
 import { getSession, upsertSession } from '../session';
 import { getCtxUser, menuKeyboardFor } from './helpers';
-import { MENU_LABELS } from '../keyboards';
+import { MENU_LABELS, mainMenuKeyboard } from '../keyboards';
 import { effectiveWebUrl, isTelegramInlineUrl, resolveTelegramPhotoUrl } from '../urls';
 import { claimWebChatCtaOnce } from '../web-chat-cta-once';
 
@@ -364,7 +367,15 @@ export async function handleVetChatEnd(ctx: Context): Promise<boolean> {
   const peerId = session.vetChatPeerTelegramId;
   const user = await getCtxUser(ctx);
 
-  if (consultId) {
+  // Clear local session first so sticky keyboard stops even if API is slow.
+  await upsertSession(String(from.id), clearVetChatPatch());
+  if (peerId) {
+    await upsertSession(peerId, clearVetChatPatch());
+  }
+
+  if (consultId && user?.id) {
+    await endVetConsultChatViaApi(consultId, user.id);
+  } else if (consultId) {
     try {
       await updateVetConsultationStatus(consultId, 'completed');
     } catch (err) {
@@ -372,18 +383,31 @@ export async function handleVetChatEnd(ctx: Context): Promise<boolean> {
     }
   }
 
-  await upsertSession(String(from.id), clearVetChatPatch());
-
   if (peerId) {
-    await upsertSession(peerId, clearVetChatPatch());
     try {
-      await ctx.api.sendMessage(peerId, '🔌 چت مشاوره قطع شد.');
+      const peerUser = await getUserByTelegramId(peerId);
+      await ctx.api.sendMessage(
+        peerId,
+        '🔌 چت مشاوره قطع شد.\nمنوی اصلی دوباره فعال است — /start یا «📋 منو» را بزن.\n🗑 در صورت نیاز گفتگو را از تلگرام پاک کن.',
+        {
+          reply_markup: mainMenuKeyboard(peerUser?.role, peerUser?.roles, Number(peerId), {
+            vetOnline: peerUser?.vetOnline,
+          }),
+        }
+      );
     } catch {
-      /* ignore */
+      try {
+        await ctx.api.sendMessage(
+          peerId,
+          '🔌 چت مشاوره قطع شد.\nمنوی اصلی دوباره فعال است — /start یا «📋 منو» را بزن.'
+        );
+      } catch {
+        /* ignore */
+      }
     }
   }
 
-  await ctx.reply('چت مشاوره پایان یافت.', {
+  await ctx.reply(['چت مشاوره پایان یافت.', '', '🗑 در صورت نیاز گفتگو را از تلگرام پاک کن.'].join('\n'), {
     reply_markup: menuKeyboardFor(ctx, user),
   });
   return true;
@@ -1139,47 +1163,160 @@ export async function handleVetChatRelay(ctx: Context): Promise<boolean> {
   if (session.step !== 'vet_chat') return false;
 
   // Hard lock: never relay until consult is accepted (active) / after end.
-  if (session.vetChatConsultId) {
-    const consult = await getVetConsultation(session.vetChatConsultId).catch(() => null);
-    if (!consult || consult.status !== 'active' || consult.chatEnded) {
-      await exitInactiveVetChat(
-        ctx,
-        String(from.id),
-        consult?.chatEnded || consult?.status === 'completed' ? 'ended' : 'pending'
-      );
-      return true;
-    }
-  } else {
-    await exitInactiveVetChat(ctx, String(from.id), 'pending');
+  const consult = session.vetChatConsultId
+    ? await getVetConsultation(session.vetChatConsultId).catch(() => null)
+    : null;
+  if (!consult || consult.status !== 'active' || consult.chatEnded) {
+    await exitInactiveVetChat(
+      ctx,
+      String(from.id),
+      consult?.chatEnded || consult?.status === 'completed' ? 'ended' : 'pending'
+    );
     return true;
   }
 
   const peer = session.vetChatPeerTelegramId;
+  const consultId = consult.id;
+  const secure = Boolean(consult.chatSecure);
+  const protect = secure ? { protect_content: true as const } : {};
+
+  // Messages the API forwarded from the web app (or legacy self-echo) — do not re-relay
+  if (
+    text?.startsWith('💬 ') ||
+    text?.startsWith('💬 پیام') ||
+    text?.startsWith('📤 شما:')
+  ) {
+    return false;
+  }
+
+  async function persistMedia(
+    kind: string,
+    fileId: string,
+    caption?: string,
+    mimeType?: string,
+    fileName?: string
+  ) {
+    const me = await getCtxUser(ctx);
+    if (!me?.id) {
+      console.warn('vet chat persist aborted: no sender user', { consultId });
+      throw new Error('NO_SENDER_USER');
+    }
+    await postVetConsultChatMessage(consultId, me.id, caption || '', {
+      mediaKind: kind,
+      telegramFileId: fileId,
+      mimeType,
+      fileName,
+    });
+  }
 
   try {
     if (ctx.message?.photo?.length) {
       const fileId = ctx.message.photo[ctx.message.photo.length - 1]!.file_id;
-      await ctx.api.sendPhoto(peer, fileId, {
-        caption: ctx.message.caption || undefined,
+      const caption = ctx.message.caption || undefined;
+      await persistMedia('photo', fileId, caption, 'image/jpeg');
+      await ctx.api.sendPhoto(peer, fileId, { caption, ...protect });
+      return true;
+    }
+    if (ctx.message?.video) {
+      const caption = ctx.message.caption || undefined;
+      await persistMedia(
+        'video',
+        ctx.message.video.file_id,
+        caption,
+        ctx.message.video.mime_type,
+        ctx.message.video.file_name
+      );
+      await ctx.api.sendVideo(peer, ctx.message.video.file_id, { caption, ...protect });
+      return true;
+    }
+    if (ctx.message?.animation) {
+      const caption = ctx.message.caption || undefined;
+      await persistMedia(
+        'animation',
+        ctx.message.animation.file_id,
+        caption,
+        ctx.message.animation.mime_type,
+        ctx.message.animation.file_name
+      );
+      await ctx.api.sendAnimation(peer, ctx.message.animation.file_id, {
+        caption,
+        ...protect,
       });
       return true;
     }
+    if (ctx.message?.video_note) {
+      await persistMedia('video_note', ctx.message.video_note.file_id, undefined, 'video/mp4');
+      await ctx.api.sendVideoNote(peer, ctx.message.video_note.file_id, protect);
+      return true;
+    }
     if (ctx.message?.document) {
+      const caption = ctx.message.caption || undefined;
+      await persistMedia(
+        'document',
+        ctx.message.document.file_id,
+        caption,
+        ctx.message.document.mime_type,
+        ctx.message.document.file_name
+      );
       await ctx.api.sendDocument(peer, ctx.message.document.file_id, {
-        caption: ctx.message.caption || undefined,
+        caption,
+        ...protect,
       });
       return true;
     }
     if (ctx.message?.voice) {
-      await ctx.api.sendVoice(peer, ctx.message.voice.file_id);
+      await persistMedia('voice', ctx.message.voice.file_id, undefined, ctx.message.voice.mime_type);
+      await ctx.api.sendVoice(peer, ctx.message.voice.file_id, protect);
+      return true;
+    }
+    if (ctx.message?.audio) {
+      const caption = ctx.message.caption || undefined;
+      await persistMedia(
+        'audio',
+        ctx.message.audio.file_id,
+        caption,
+        ctx.message.audio.mime_type,
+        ctx.message.audio.file_name
+      );
+      await ctx.api.sendAudio(peer, ctx.message.audio.file_id, { caption, ...protect });
+      return true;
+    }
+    if (ctx.message?.sticker) {
+      await persistMedia(
+        'sticker',
+        ctx.message.sticker.file_id,
+        undefined,
+        ctx.message.sticker.is_animated || ctx.message.sticker.is_video ? undefined : 'image/webp'
+      );
+      await ctx.api.sendSticker(peer, ctx.message.sticker.file_id, protect);
       return true;
     }
     if (text) {
-      await ctx.api.sendMessage(peer, text);
+      // Persist first so web (WS + poll) sees the line even if TG send is slow/fails.
+      const me = await getCtxUser(ctx);
+      if (!me?.id) {
+        console.warn('vet chat text persist aborted: no sender user', { consultId });
+        throw new Error('NO_SENDER_USER');
+      }
+      await postVetConsultChatMessage(consultId, me.id, text);
+      await ctx.api.sendMessage(peer, text, protect);
       return true;
     }
   } catch (err) {
     console.warn('vet chat relay failed:', err);
+    const reason = err instanceof Error ? err.message : '';
+    if (/API 409/.test(reason)) {
+      await upsertSession(String(from.id), clearVetChatPatch());
+      await ctx.reply(
+        'چت مشاوره دیگر فعال نیست. منوی اصلی را با /start باز کن.',
+        { reply_markup: menuKeyboardFor(ctx, await getCtxUser(ctx)) }
+      );
+      return true;
+    }
+    if (reason === 'NO_SENDER_USER') {
+      await ctx.reply('حسابت روی سرور پیدا نشد. یک‌بار /start بزن و دوباره پیام بفرست.');
+      return true;
+    }
     await ctx.reply('ارسال به طرف مقابل ناموفق بود. ممکن است ربات را بلاک کرده باشد.');
     return true;
   }
