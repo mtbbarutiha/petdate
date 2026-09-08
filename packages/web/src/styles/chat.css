@@ -1541,14 +1541,27 @@ html.tg-chat-open body {
 }
 
 
-/* Tappable/copyable peer command id (/u00042) */
+/* Copyable peer public id (PD-U00042) */
+.tg-peer-name {
+  cursor: pointer;
+}
+.tg-peer-name:hover,
+.tg-peer-name:focus-visible {
+  text-decoration: underline dotted rgba(255, 255, 255, 0.35);
+  text-underline-offset: 3px;
+  outline: none;
+}
+.tg-peer-public-id-btn,
 .tg-peer-command-id {
   cursor: pointer;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
   text-decoration: underline dotted rgba(255, 255, 255, 0.35);
   text-underline-offset: 3px;
 }
+.tg-peer-public-id-btn:hover,
+.tg-peer-public-id-btn:focus-visible,
 .tg-peer-command-id:hover,
 .tg-peer-command-id:focus-visible {
   text-decoration-color: rgba(21, 204, 160, 0.85);
@@ -1558,6 +1571,25 @@ html.tg-chat-open body {
   margin: 0.35rem 0 0.15rem;
   font-size: 1.05rem;
   font-weight: 700;
+}
+.tg-info-owner-id-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.45rem 0.65rem;
+  margin: 0.15rem 0 0.55rem;
+}
+.tg-info-owner-id-label {
+  opacity: 0.72;
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+.tg-info-owner-id-row .tg-peer-public-id-btn {
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.05em;
+  color: #15cca0;
+  text-decoration-color: rgba(21, 204, 160, 0.45);
 }
 .tg-peer-public-id {
   opacity: 0.72;

@@ -2,7 +2,7 @@ import { Router } from 'express';
 import fs from 'fs';
 import multer from 'multer';
 import type { PlaydateChatMediaKind, PlaydateStatus } from '@petdate/shared';
-import { userCommandIdOf } from '@petdate/shared';
+import { userPublicIdOf } from '@petdate/shared';
 import { dbService } from '../db';
 import { notifyPlaydateRequestTelegram } from '../services/telegram-playdate-notify';
 import {
@@ -221,7 +221,7 @@ playdatesRouter.get('/active-owner-chat', (req, res) => {
 
     const iAmFrom = fromUser.id === user.id;
     const peer = iAmFrom ? toUser : fromUser;
-    const peerPublicId = userCommandIdOf(peer);
+    const peerPublicId = userPublicIdOf(peer);
     res.json({
       playdateId: pd.id,
       peerTelegramId: peer.telegramId,
@@ -229,7 +229,7 @@ playdatesRouter.get('/active-owner-chat', (req, res) => {
       myPetId: iAmFrom ? pd.fromPetId : pd.toPetId,
       peerPetId: iAmFrom ? pd.toPetId : pd.fromPetId,
       peerPublicId,
-      // Legacy field — command-safe id so old bots never show @username/name
+      // Legacy field — same canonical public id so old bots never show @username/name
       peerName: peerPublicId,
       chatSecure: Boolean(pd.chatSecure),
     });

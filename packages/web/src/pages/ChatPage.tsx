@@ -61,7 +61,7 @@ import {
   resolvePublicMediaUrl,
 } from '../lib/api';
 import type { PlaydateChatMediaKind, PlaydateChatMessage } from '@petdate/shared';
-import { PLAYDATE_REQUEST_TTL_MS, USER_GENDER_LABELS, isPendingRequestExpired, makeUserPublicId, toUserCommandId, userCommandIdOf, userPublicIdOf } from '@petdate/shared';
+import { PLAYDATE_REQUEST_TTL_MS, USER_GENDER_LABELS, isPendingRequestExpired, makeUserPublicId, userPublicIdOf } from '@petdate/shared';
 import { playdateToMatchRequest } from '../lib/playdateMap';
 import { subscribeIncomingRefresh } from '../lib/liveIncoming';
 import {
@@ -919,13 +919,13 @@ export function ChatPage() {
       return;
     }
     let cancelled = false;
-    // Prefer tappable/copyable command id (/u#####) immediately — never Telegram @username.
-    const fallbackId = toUserCommandId(makeUserPublicId(ownerId));
+    // Prefer canonical PD-U##### immediately — never Telegram @username.
+    const fallbackId = makeUserPublicId(ownerId);
     setPeerOwnerLabel(fallbackId);
     void getUserById(ownerId)
       .then((user) => {
         if (cancelled || !user?.id) return;
-        const label = userCommandIdOf(user);
+        const label = userPublicIdOf(user);
         const displayName = (user.name && String(user.name).trim()) || null;
         setPeerOwnerLabel(label);
         setPeerOwnerDisplayName(displayName);
@@ -945,10 +945,10 @@ export function ChatPage() {
               : user.verificationStatus === 'pending'
                 ? 'در انتظار احراز'
                 : undefined,
-          publicId: userPublicIdOf(user),
+          publicId: label,
           bio: user.bio || undefined,
         });
-        // Inbox list title = display name (never /u#####). Command id stays in peerOwnerLabel for copy/profile.
+        // Inbox list title = display name (never PD-U /u). Public id stays in peerOwnerLabel for copy/profile.
         const inboxTitle = playmateInboxTitle({
           name: match?.fromPet?.name || '',
           ownerName: displayName || '',
@@ -1024,19 +1024,22 @@ export function ChatPage() {
 
   const peerPet = match?.fromPet;
   const peerOwnerId = peerPet?.ownerId;
-  const peerOwnerCommandId =
+  const peerOwnerPublicId =
     peerOwnerLabel ||
-    (peerOwnerId ? toUserCommandId(makeUserPublicId(peerOwnerId)) : null) ||
+    (peerOwnerId ? makeUserPublicId(peerOwnerId) : null) ||
+    peerOwnerMeta?.publicId ||
     null;
   const peerOwnerName =
     peerOwnerDisplayName ||
-    (peerPet?.ownerName && !String(peerPet.ownerName).startsWith('/')
+    (peerPet?.ownerName &&
+    !String(peerPet.ownerName).startsWith('/') &&
+    !/^PD-U\d+/i.test(String(peerPet.ownerName))
       ? peerPet.ownerName
       : null) ||
     'صاحب پت';
 
-  async function copyPeerCommandId() {
-    const id = peerOwnerCommandId?.startsWith('/') ? peerOwnerCommandId : null;
+  async function copyPeerPublicId() {
+    const id = peerOwnerPublicId;
     if (!id || typeof navigator === 'undefined' || !navigator.clipboard?.writeText) return;
     try {
       await navigator.clipboard.writeText(id);
@@ -1526,18 +1529,17 @@ export function ChatPage() {
                   )}
                   <span>
                     <strong
-                      dir="ltr"
-                      className="tg-peer-command-id"
+                      className="tg-peer-name"
                       title="کپی آیدی"
                       onClick={(e) => {
                         e.stopPropagation();
-                        void copyPeerCommandId();
+                        void copyPeerPublicId();
                       }}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' || e.key === ' ') {
                           e.preventDefault();
                           e.stopPropagation();
-                          void copyPeerCommandId();
+                          void copyPeerPublicId();
                         }
                       }}
                       role="button"
@@ -1837,30 +1839,25 @@ export function ChatPage() {
                       )}
                       <h3>پروفایل طرف مقابل</h3>
                       <p className="tg-info-owner-name">{peerOwnerName}</p>
-                      {peerOwnerCommandId ? (
-                        <p>
+                      {peerOwnerPublicId ? (
+                        <p className="tg-info-owner-id-row">
+                          <span className="tg-info-owner-id-label">آیدی</span>
                           <strong
                             dir="ltr"
-                            className="tg-peer-command-id"
+                            className="tg-peer-public-id-btn"
                             title="کپی آیدی"
                             role="button"
                             tabIndex={0}
-                            onClick={() => void copyPeerCommandId()}
+                            onClick={() => void copyPeerPublicId()}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter' || e.key === ' ') {
                                 e.preventDefault();
-                                void copyPeerCommandId();
+                                void copyPeerPublicId();
                               }
                             }}
                           >
-                            {peerOwnerCommandId}
+                            {peerOwnerPublicId}
                           </strong>
-                          {peerOwnerMeta?.publicId ? (
-                            <span className="tg-peer-public-id" dir="ltr">
-                              {' '}
-                              · {peerOwnerMeta.publicId}
-                            </span>
-                          ) : null}
                         </p>
                       ) : null}
                       <ul>

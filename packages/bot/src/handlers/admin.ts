@@ -30,7 +30,7 @@ import { getSession, upsertSession } from '../session';
 import { getCtxUser, menuKeyboardFor, pushMainMenuKeyboard } from './helpers';
 import { handleAdminVerifyQueue } from './verification';
 import type { User } from '@petdate/shared';
-import { userCommandIdOf } from '@petdate/shared';
+import { userPublicIdOf } from '@petdate/shared';
 
 const ADMIN_VET_LIST_PAGE_SIZE = 10;
 
@@ -38,9 +38,9 @@ function escapeHtml(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-/** شناسهٔ نمایشی پزشک — دستور قابل‌ضربه /u##### */
+/** شناسهٔ نمایشی پزشک — PD-U##### */
 function adminVetPublicId(user: User): string {
-  return userCommandIdOf(user);
+  return userPublicIdOf(user);
 }
 
 export async function showAdminPanel(ctx: Context): Promise<void> {

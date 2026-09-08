@@ -10981,6 +10981,7 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
 }
 
 
+.pepito-profile-public-id,
 .pepito-profile-command-id {
   border: 0;
   background: transparent;
@@ -10993,24 +10994,30 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   display: inline-flex;
   min-width: 0;
 }
+.pepito-profile-public-id code,
 .pepito-profile-command-id code {
+  display: inline-block;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  letter-spacing: 0.02em;
+  font-weight: 700;
+  font-size: 0.95em;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
   display: inline-block;
   max-width: 100%;
   overflow-wrap: anywhere;
   word-break: break-all;
   background: var(--pepito-lilac);
   color: var(--pepito-base);
-  padding: 0.15rem 0.45rem;
+  padding: 0.15rem 0.5rem;
   border-radius: 8px;
-  font-size: 0.88em;
-  font-weight: 700;
 }
+.pepito-profile-public-id:hover code,
+.pepito-profile-public-id:focus-visible code,
 .pepito-profile-command-id:hover code,
 .pepito-profile-command-id:focus-visible code {
   text-decoration: underline dotted;
   text-underline-offset: 3px;
+  background: rgba(30, 42, 74, 0.09);
 }
 
 /* —— دعوت دوستان —— */

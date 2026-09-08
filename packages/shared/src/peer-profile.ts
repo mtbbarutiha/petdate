@@ -202,7 +202,6 @@ export function formatPeerOwnerProfileHtml(
     [peer.province, peer.city].filter(Boolean).join('، ') ||
     peer.country ||
     '—';
-  const cmd = userCommandIdOf({ id: peer.id, publicId: peer.publicId });
   const publicId = peer.publicId;
   const interests =
     peer.interests && peer.interests.length
@@ -215,7 +214,7 @@ export function formatPeerOwnerProfileHtml(
     verified ? VERIFIED_BADGE : null,
     '',
     `<b>نام:</b> ${escapeHtml(peer.name)}${verified ? ' ✅' : ''}`,
-    `<b>آیدی:</b> ${escapeHtml(cmd)} · <code>${escapeHtml(publicId)}</code>`,
+    `<b>آیدی:</b> <code>${escapeHtml(publicId)}</code>`,
     peer.age != null ? `<b>سن:</b> ${peer.age}` : null,
     `<b>جنسیت:</b> ${profileGenderEmoji(peer.gender)} ${gender}`,
     `<b>نقش:</b> ${escapeHtml(roles)}`,

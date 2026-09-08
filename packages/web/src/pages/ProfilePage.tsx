@@ -38,7 +38,7 @@ import {
   profileLanguageCode,
   profileVerifyStatusLabel,
   toPersianDigits,
-  userCommandId,
+  userDisplayPublicId,
   userHasRole,
   type User,
   type UserGender,
@@ -172,7 +172,7 @@ export function ProfilePage() {
     display.interests && display.interests.length > 0
       ? display.interests.join(' · ')
       : 'هنوز انتخاب نشده';
-  const commandId = userCommandId(display);
+  const publicId = userDisplayPublicId(display);
   const roleLabel = mainRole ? USER_ROLE_LABELS[mainRole] : null;
   const metaBits = [
     ageLabel ? `${ageLabel} ساله` : null,
@@ -641,14 +641,14 @@ export function ProfilePage() {
             <dd>
               <button
                 type="button"
-                className="pepito-profile-command-id"
+                className="pepito-profile-public-id"
                 dir="ltr"
                 title="کپی آیدی"
                 onClick={() => {
-                  void navigator.clipboard?.writeText(commandId);
+                  void navigator.clipboard?.writeText(publicId);
                 }}
               >
-                <code>{commandId}</code>
+                <code>{publicId}</code>
               </button>
             </dd>
           </div>
