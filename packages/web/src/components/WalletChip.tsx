@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react';
+import { Wallet } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import {
   WALLET_CURRENCY_LABELS_FA,
@@ -65,7 +66,7 @@ export function WalletChip() {
         onClick={() => setOpen((v) => !v)}
       >
         <span className="pepito-nav-wallet-mark" aria-hidden>
-          ◆
+          <Wallet size={14} strokeWidth={2.35} absoluteStrokeWidth />
         </span>
         <span className="pepito-nav-wallet-chip-line">
           <span className="pepito-nav-wallet-chip-item" title={WALLET_CURRENCY_LABELS_FA.coins}>
