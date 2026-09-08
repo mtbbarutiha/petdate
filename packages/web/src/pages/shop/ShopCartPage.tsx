@@ -306,9 +306,9 @@ export function ShopCartPage() {
                         onChange={() => setPayMethod('telegram_stars')}
                       />
                       <span>
-                        <strong>Stars تلگرام</strong>
+                        <strong>فاکتور Stars تلگرام</strong>
                         <small>
-                          فاکتور XTR از اکانت تلگرام
+                          صدور اینوویس و پرداخت مستقیم در تلگرام
                           {!telegramLinked ? ' — اول حساب را به ربات وصل کن' : ''}
                         </small>
                       </span>
@@ -344,8 +344,8 @@ export function ShopCartPage() {
                     </button>
                   </div>
                   <p className="pd-shop-soon">
-                    سکه و ستاره پنل از کیف‌پول پت‌دیت کسر می‌شوند. Stars تلگرام با فاکتور واقعی از اکانت تلگرام
-                    پرداخت می‌شود.
+                    سکه و ستاره پنل از کیف‌پول کسر می‌شوند. «فاکتور Stars تلگرام» اینوویس واقعی صادر می‌کند و
+                    پرداخت داخل خود تلگرام انجام می‌شود.
                   </p>
                 </form>
               )}

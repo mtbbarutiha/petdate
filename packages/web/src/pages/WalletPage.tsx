@@ -259,9 +259,9 @@ export function WalletPage() {
             <Sparkles size={18} />
           </span>
           <div>
-            <h2 id="wallet-tg-title">تلگرام و شارژ ستاره</h2>
+            <h2 id="wallet-tg-title">شارژ ستاره با فاکتور تلگرام</h2>
             <p className="pepito-wallet-tg-lead">
-              اتصال حساب تلگرام برای پرداخت و شارژ ستارهٔ پنل پت‌دیت
+              فاکتور Stars در ربات صادر می‌شود؛ همان‌جا در تلگرام پرداخت کن تا ستارهٔ پنل شارژ شود
             </p>
           </div>
         </div>
@@ -277,7 +277,7 @@ export function WalletPage() {
             </p>
           ) : (
             <p className="pepito-wallet-tg-status pepito-wallet-tg-status--off">
-              برای پرداخت و شارژ ستاره، اول حساب را به تلگرام وصل کن.
+              برای صدور فاکتور و پرداخت در تلگرام، اول حساب را وصل کن.
             </p>
           )}
 
@@ -290,11 +290,11 @@ export function WalletPage() {
                 rel="noopener noreferrer"
               >
                 <Sparkles size={16} aria-hidden />
-                شارژ ستاره پنل با Stars تلگرام
+                صدور فاکتور شارژ در تلگرام
               </a>
             ) : linked ? (
               <p className="pepito-wallet-tg-meta-inline">
-                از ربات /start wstars برای شارژ پنل استفاده کن.
+                در ربات /start wstars را بزن تا فاکتور Stars برایت ارسال شود.
               </p>
             ) : (
               <button
@@ -332,9 +332,9 @@ export function WalletPage() {
           >
             {linked
               ? syncedAt
-                ? 'موجودی پنل تازه شد.'
-                : ' '
-              : linkHint || ' '}
+                ? 'بعد از پرداخت فاکتور در تلگرام، همگام‌سازی بزن تا ستارهٔ پنل تازه شود.'
+                : '\u00a0'
+              : linkHint || '\u00a0'}
           </p>
         </div>
       </section>

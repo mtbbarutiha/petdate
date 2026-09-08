@@ -164,7 +164,7 @@ function confirmKeyboard(productId: string, qty: number, method: ShopPayMethod =
     .row()
     .text(mark('wallet_stars', '⭐ ستاره پنل'), `shop:method:wstars:${productId}:${qty}`)
     .row()
-    .text(mark('telegram_stars', '📱 Stars تلگرام'), `shop:method:xtr:${productId}:${qty}`)
+    .text(mark('telegram_stars', '📱 فاکتور تلگرام'), `shop:method:xtr:${productId}:${qty}`)
     .row()
     .text('✅ پرداخت', `shop:payNow:${productId}:${qty}`)
     .row()
@@ -176,14 +176,14 @@ function payMethodHint(method: ShopPayMethod): string {
     return 'با پرداخت، ستاره از پنل پت‌دیت (کیف‌پول مشترک) کسر می‌شود.';
   }
   if (method === 'telegram_stars') {
-    return 'با پرداخت، فاکتور Telegram Stars باز می‌شود؛ از اکانت تلگرام کسر و به ربات واریز می‌شود.';
+    return 'فاکتور Stars صادر می‌شود؛ همان‌جا در تلگرام پرداخت کن (مستقیم به ربات).';
   }
   return 'با پرداخت، سکه از پنل پت‌دیت (کیف‌پول مشترک) کسر می‌شود.';
 }
 
 function payMethodLine(method: ShopPayMethod, coins: number, stars: number): string {
   if (method === 'wallet_stars') return `روش: ستاره پنل · ${formatStars(stars)}`;
-  if (method === 'telegram_stars') return `روش: Stars تلگرام · ${formatStars(stars)}`;
+  if (method === 'telegram_stars') return `روش: فاکتور تلگرام · ${formatStars(stars)}`;
   return `روش: سکه پنل · ${formatCoins(coins)}`;
 }
 
