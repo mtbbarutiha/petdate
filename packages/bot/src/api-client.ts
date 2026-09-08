@@ -291,13 +291,58 @@ export async function listNearbyPets(opts: {
   lng: number;
   excludeOwnerId?: number;
   limit?: number;
+  radiusKm?: number;
 }): Promise<PetProfile[]> {
   const params = new URLSearchParams();
   params.set('lat', String(opts.lat));
   params.set('lng', String(opts.lng));
   if (opts.excludeOwnerId) params.set('excludeOwnerId', String(opts.excludeOwnerId));
   if (opts.limit) params.set('limit', String(opts.limit));
+  if (opts.radiusKm != null) params.set('radiusKm', String(opts.radiusKm));
   return request<PetProfile[]>(`/api/pets/nearby?${params.toString()}`);
+}
+
+/** کارت تصویری لیست نزدیک (JPEG) */
+export async function fetchNearbyListCardBuffer(opts: {
+  lat: number;
+  lng: number;
+  radiusKm: number;
+  excludeOwnerId?: number;
+  page?: number;
+  pageSize?: number;
+}): Promise<Buffer> {
+  const params = new URLSearchParams();
+  params.set('lat', String(opts.lat));
+  params.set('lng', String(opts.lng));
+  params.set('radiusKm', String(opts.radiusKm));
+  if (opts.excludeOwnerId) params.set('excludeOwnerId', String(opts.excludeOwnerId));
+  if (opts.page != null) params.set('page', String(opts.page));
+  if (opts.pageSize != null) params.set('pageSize', String(opts.pageSize));
+  const res = await fetch(`${config.apiUrl}/api/pets/nearby/list-card?${params.toString()}`);
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`list-card ${res.status}: ${body}`);
+  }
+  return Buffer.from(await res.arrayBuffer());
+}
+
+/** کارت پروفایل پت با اورلی صاحب (JPEG) */
+export async function fetchPetProfileCardBuffer(
+  petId: number,
+  opts?: { viewerLat?: number; viewerLng?: number }
+): Promise<Buffer> {
+  const params = new URLSearchParams();
+  if (opts?.viewerLat != null) params.set('viewerLat', String(opts.viewerLat));
+  if (opts?.viewerLng != null) params.set('viewerLng', String(opts.viewerLng));
+  const qs = params.toString();
+  const res = await fetch(
+    `${config.apiUrl}/api/pets/${petId}/profile-card${qs ? `?${qs}` : ''}`
+  );
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`profile-card ${res.status}: ${body}`);
+  }
+  return Buffer.from(await res.arrayBuffer());
 }
 
 /** ذخیره موقعیت کاربر از دکمه ارسال موقعیت تلگرام */

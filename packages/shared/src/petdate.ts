@@ -314,6 +314,10 @@ export interface PetProfile {
   ownerName?: string;
   /** صاحب پت احراز هویت شده */
   ownerVerified?: boolean;
+  /** آواتار صاحب پت (برای کارت پروفایل ترکیبی) */
+  ownerAvatarUrl?: string;
+  /** آخرین فعالیت/موقعیت صاحب (برای «آخرین بازدید») */
+  ownerLastSeenAt?: string;
   /** فاصله تا موقعیت درخواست‌کننده (کیلومتر) — فقط در نتایج nearby */
   distanceKm?: number;
   createdAt: string;
@@ -530,6 +534,8 @@ export interface BotSession {
   /** مختصات برای صفحه‌بندی پت‌های نزدیک (بعد از ارسال موقعیت) */
   searchLat?: number;
   searchLng?: number;
+  /** شعاع جستجوی نزدیک (کیلومتر) */
+  searchRadiusKm?: number;
   /** گونهٔ انتخاب‌شده در جستجو بر اساس نژاد */
   searchSpecies?: string;
   searchBreed?: string;
@@ -727,6 +733,7 @@ export type BotStep =
   | 'search_species'
   | 'search_breed'
   | 'awaiting_location_for_nearby'
+  | 'awaiting_nearby_radius'
   | 'earn_card'
   | 'payment_receipt'
   | 'pet_name'

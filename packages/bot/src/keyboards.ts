@@ -358,6 +358,101 @@ export function nearbyLocationKeyboard(): Keyboard {
     .persistent();
 }
 
+/** شعاع‌های جستجوی نزدیک (کیلومتر) — ترتیب دکمه‌ها مثل دوردوریا */
+export const NEARBY_RADII_KM = [5, 10, 20, 50, 100] as const;
+
+/** انتخاب شعاع بعد از ذخیره موقعیت */
+export function nearbyRadiusKeyboard(): InlineKeyboard {
+  return new InlineKeyboard()
+    .text('۱۰ کیلومتر', 'nearby:radius:10')
+    .primary()
+    .text('۵ کیلومتر', 'nearby:radius:5')
+    .primary()
+    .row()
+    .text('۵۰ کیلومتر', 'nearby:radius:50')
+    .primary()
+    .text('۲۰ کیلومتر', 'nearby:radius:20')
+    .primary()
+    .row()
+    .text('۱۰۰ کیلومتر', 'nearby:radius:100')
+    .primary()
+    .row()
+    .text('🛰️ به‌روزرسانی موقعیت GPS', 'search:nearby:askloc')
+    .success();
+}
+
+/** خلاصه تعداد نتایج — قبل از لیست تصویری */
+export function nearbySummaryKeyboard(_radiusKm: number): InlineKeyboard {
+  return new InlineKeyboard()
+    .text('📋 نمایش بصورت لیستی', 'nearby:list:0')
+    .primary()
+    .row()
+    .text('🛰️ به‌روزرسانی موقعیت GPS', 'search:nearby:askloc')
+    .success()
+    .row()
+    .text('🔙 تغییر شعاع', 'nearby:pick-radius')
+    .primary();
+}
+
+/** دکمه‌های زیر کارت لیست تصویری — باز کردن هر پت */
+export function nearbyVisualListKeyboard(
+  pets: PetProfile[],
+  page: number,
+  pageSize: number,
+  totalCount: number
+): InlineKeyboard {
+  const kb = new InlineKeyboard();
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const safePage = Math.min(Math.max(0, page), totalPages - 1);
+  const slice = pets.slice(0, pageSize);
+
+  slice.forEach((pet, idx) => {
+    const n = safePage * pageSize + idx + 1;
+    let label = `${n}. ${pet.name}`;
+    if (pet.distanceKm != null && Number.isFinite(pet.distanceKm)) {
+      label += ` · ${formatNearbyDistance(pet.distanceKm)}`;
+    }
+    if (label.length > 56) label = `${label.slice(0, 53)}…`;
+    kb.text(`🐾 ${label}`, `search:pet:${pet.id}`).primary().row();
+  });
+
+  if (totalPages > 1) {
+    if (safePage > 0) kb.text('◀️ قبلی', `nearby:list:${safePage - 1}`).primary();
+    kb.text(`${safePage + 1}/${totalPages}`, 'noop');
+    if (safePage < totalPages - 1) kb.text('بعدی ▶️', `nearby:list:${safePage + 1}`).primary();
+    kb.row();
+  }
+
+  kb.text('📋 خلاصه', 'nearby:summary').primary().row();
+  kb.text('📍 موقعیت دوباره', 'search:nearby:askloc').primary().row();
+  kb.text('🔙 منوی اصلی', 'search:home').primary();
+  return kb;
+}
+
+/** پروفایل پت در نتایج جستجو — بازگشت به لیست + اکشن‌های پت‌دیت */
+export function searchPetDetailKeyboard(
+  mode: string,
+  page: number,
+  opts?: { petId?: number; ownerId?: number }
+): InlineKeyboard {
+  const kb = new InlineKeyboard();
+  if (opts?.petId) {
+    kb.text('🤝 درخواست همبازی', `playdate:ask:${opts.petId}`).primary();
+    if (opts.ownerId) {
+      kb.text('👤 پروفایل صاحب', `search:owner:${opts.ownerId}`).success();
+    }
+    kb.row();
+  }
+  if (mode === 'nearby') {
+    kb.text('🔙 بازگشت به لیست', `nearby:list:${page}`).primary().row();
+    kb.text('🏠 منوی اصلی', 'search:home').primary();
+  } else {
+    kb.text('🔙 بازگشت به لیست', `search:page:${mode}:${page}`).primary().row();
+    kb.text('🔎 منوی جستجو', 'search:menu').primary();
+  }
+  return kb;
+}
+
 export function interestsReplyKeyboard(selected: string[] = []): Keyboard {
   const kb = new Keyboard();
   PROFILE_INTEREST_OPTIONS.forEach((opt, i) => {
@@ -1272,18 +1367,6 @@ function formatNearbyDistance(km: number): string {
   if (km < 1) return `${Math.round(km * 1000)} متر`;
   const rounded = km < 10 ? Math.round(km * 10) / 10 : Math.round(km);
   return `${rounded} کیلومتر`;
-}
-
-/** پروفایل پت در نتایج جستجو — بازگشت به لیست */
-export function searchPetDetailKeyboard(mode: string, page: number): InlineKeyboard {
-  return new InlineKeyboard()
-    .text('🔙 بازگشت به لیست', `search:page:${mode}:${page}`)
-    .primary()
-    .row()
-    .text(
-      mode === 'nearby' ? '🏠 منوی اصلی' : '🔎 منوی جستجو',
-      mode === 'nearby' ? 'search:home' : 'search:menu'
-    );
 }
 
 /** @deprecated استفاده از searchPetsListKeyboard */
