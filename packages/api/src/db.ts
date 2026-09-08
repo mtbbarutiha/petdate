@@ -1527,25 +1527,26 @@ function parseProfileRewards(value: unknown): string[] {
 }
 
 function isProfileSectionFilled(section: ProfileRewardSection, u: User): boolean {
+  const filled = (value: unknown): boolean => Boolean(String(value ?? '').trim());
   switch (section) {
     case 'name':
-      return Boolean(u.name?.trim());
+      return filled(u.name);
     case 'age':
       return u.age != null && Number(u.age) > 0;
     case 'gender':
       return Boolean(u.gender);
     case 'location':
       return Boolean(
-        u.country?.trim() &&
-          u.city?.trim() &&
-          (u.country !== 'ایران' || Boolean(u.province?.trim()))
+        filled(u.country) &&
+          filled(u.city) &&
+          (String(u.country) !== 'ایران' || filled(u.province))
       );
     case 'phone':
-      return Boolean(u.phone?.trim());
+      return filled(u.phone);
     case 'photo':
-      return Boolean(u.avatarUrl?.trim());
+      return filled(u.avatarUrl);
     case 'bio':
-      return Boolean(u.bio?.trim());
+      return filled(u.bio);
     case 'interests':
       return Boolean(u.interests && u.interests.length > 0);
     default:

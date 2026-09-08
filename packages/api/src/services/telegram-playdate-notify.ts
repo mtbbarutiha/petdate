@@ -16,8 +16,8 @@ import {
 import { telegramFetch, telegramBotApiUrl } from './telegram-http';
 import { ensureWebAccessibleAvatar } from './telegram-profile-sync';
 
-function escapeHtml(value: string): string {
-  return value
+function escapeHtml(value: string | number | null | undefined): string {
+  return String(value ?? '')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;');
