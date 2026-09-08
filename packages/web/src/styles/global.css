@@ -4503,6 +4503,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   min-height: 0;
   height: 100%;
   background: transparent;
+  position: relative;
 }
 
 .tg-thread--blank {
@@ -4869,6 +4870,17 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 }
 .tg-chat--secure .tg-bubble.is-protected {
   outline: 1px dashed rgba(15, 107, 76, 0.35);
+  user-select: none;
+  -webkit-user-select: none;
+}
+.tg-chat--secure .tg-bubble.is-protected .tg-media-image,
+.tg-chat--secure .tg-bubble.is-protected .tg-media-video,
+.tg-chat--secure .tg-bubble.is-protected .tg-media-audio {
+  -webkit-user-drag: none;
+  user-select: none;
+}
+.tg-chat--secure .tg-media-link {
+  pointer-events: none;
 }
 .tg-bubble-text {
   margin: 0;
@@ -5174,6 +5186,227 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   opacity: 0.45;
   cursor: not-allowed;
   box-shadow: none;
+}
+
+.tg-capture-triggers {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.tg-capture-trigger {
+  width: 42px;
+  height: 42px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #54656f;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.tg-capture-trigger:hover:not(:disabled) {
+  color: #111b21;
+  background: rgba(0, 0, 0, 0.05);
+}
+.tg-capture-trigger--mic {
+  width: 46px;
+  height: 46px;
+  background: linear-gradient(135deg, #1ad6aa, #0f9f7c);
+  color: #fff;
+  box-shadow: 0 6px 14px rgba(21, 204, 160, 0.28);
+}
+.tg-capture-trigger--mic:hover:not(:disabled) {
+  color: #fff;
+  filter: brightness(1.05);
+  background: linear-gradient(135deg, #1ad6aa, #0f9f7c);
+}
+.tg-capture-trigger:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.tg-capture-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+  background: rgba(247, 248, 251, 0.98);
+  border-top: 1px solid var(--tg-line);
+  min-height: 60px;
+}
+.tg-capture-bar-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.tg-capture-bar-time {
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  font-size: 0.95rem;
+  color: #0f6b4c;
+}
+.tg-capture-bar-time.is-warn,
+.tg-capture-timer.is-warn {
+  color: #c0392b;
+}
+.tg-capture-bar-hint {
+  color: #54656f;
+  font-size: 0.82rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.tg-capture-audio-preview {
+  width: 100%;
+  max-width: 280px;
+  height: 36px;
+}
+.tg-capture-icon-btn {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.06);
+  color: #54656f;
+}
+.tg-capture-icon-btn.is-danger {
+  color: #c0392b;
+  background: rgba(192, 57, 43, 0.1);
+}
+.tg-capture-icon-btn.is-stop {
+  background: #c0392b;
+  color: #fff;
+}
+.tg-capture-icon-btn.is-send {
+  background: linear-gradient(135deg, #1ad6aa, #0f9f7c);
+  color: #fff;
+}
+.tg-capture-icon-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.tg-capture-rec-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #e74c3c;
+  flex-shrink: 0;
+  animation: tgCapturePulse 1s ease infinite;
+}
+@keyframes tgCapturePulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.85); }
+}
+.tg-capture-timer-max {
+  opacity: 0.55;
+  font-weight: 600;
+  font-size: 0.85em;
+}
+.tg-capture-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 80;
+  background: rgba(8, 12, 18, 0.92);
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  padding: 12px;
+  padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+}
+.tg-capture-overlay-inner {
+  width: min(520px, 100%);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+.tg-capture-video-stage {
+  position: relative;
+  flex: 1;
+  min-height: 220px;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #000;
+}
+.tg-capture-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  background: #000;
+}
+.tg-capture-timer {
+  position: absolute;
+  top: 12px;
+  inset-inline-start: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  font-size: 0.9rem;
+  backdrop-filter: blur(8px);
+}
+.tg-capture-overlay-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+.tg-capture-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  border-radius: 999px;
+  padding: 12px 18px;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  min-height: 48px;
+}
+.tg-capture-btn--ghost {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+.tg-capture-btn--stop {
+  background: #c0392b;
+  color: #fff;
+}
+.tg-capture-btn--send {
+  background: linear-gradient(135deg, #1ad6aa, #0f9f7c);
+  color: #fff;
+}
+.tg-capture-btn--rec {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  padding: 0;
+  background: rgba(255, 255, 255, 0.15);
+  border: 3px solid #fff;
+  display: grid;
+  place-items: center;
+}
+.tg-capture-rec-core {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #e74c3c;
 }
 
 @keyframes tgSendPulse {

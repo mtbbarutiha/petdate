@@ -195,12 +195,17 @@ export async function notifyPlaydateChatTelegram(opts: {
         contentType: contentType || 'video/mp4',
       });
     } else if (kind === 'voice' || kind === 'audio') {
-      const method = kind === 'voice' ? 'sendVoice' : 'sendAudio';
-      const field = kind === 'voice' ? 'voice' : 'audio';
+      // Telegram sendVoice requires OGG/OPUS. Browser MediaRecorder usually
+      // produces webm/mp4 — use sendAudio so peers still get a playable bubble.
+      const isOggOpus =
+        /audio\/(ogg|opus)/i.test(contentType) || /\.(ogg|opus)$/i.test(filename);
+      const useVoice = kind === 'voice' && isOggOpus;
+      const method = useVoice ? 'sendVoice' : 'sendAudio';
+      const field = useVoice ? 'voice' : 'audio';
       result = await telegramSendMultipart(method, fields, field, {
         buffer,
         filename,
-        contentType: contentType || 'audio/ogg',
+        contentType: contentType || (useVoice ? 'audio/ogg' : 'audio/webm'),
       });
     } else {
       result = await telegramSendMultipart('sendDocument', fields, 'document', {
@@ -416,12 +421,17 @@ export async function notifyVetChatTelegram(opts: {
         contentType: contentType || 'video/mp4',
       });
     } else if (kind === 'voice' || kind === 'audio') {
-      const method = kind === 'voice' ? 'sendVoice' : 'sendAudio';
-      const field = kind === 'voice' ? 'voice' : 'audio';
+      // Telegram sendVoice requires OGG/OPUS. Browser MediaRecorder usually
+      // produces webm/mp4 — use sendAudio so peers still get a playable bubble.
+      const isOggOpus =
+        /audio\/(ogg|opus)/i.test(contentType) || /\.(ogg|opus)$/i.test(filename);
+      const useVoice = kind === 'voice' && isOggOpus;
+      const method = useVoice ? 'sendVoice' : 'sendAudio';
+      const field = useVoice ? 'voice' : 'audio';
       result = await telegramSendMultipart(method, fields, field, {
         buffer,
         filename,
-        contentType: contentType || 'audio/ogg',
+        contentType: contentType || (useVoice ? 'audio/ogg' : 'audio/webm'),
       });
     } else {
       result = await telegramSendMultipart('sendDocument', fields, 'document', {

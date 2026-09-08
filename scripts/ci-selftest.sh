@@ -23,6 +23,9 @@ npx tsx "$ROOT/packages/web/src/lib/inboxTitle.selftest.ts"
 echo "==> selftest: web share helper (Web Share / clipboard)"
 npx tsx "$ROOT/packages/web/src/lib/share.selftest.ts"
 
+echo "==> selftest: web chat media recorder helpers"
+npx tsx "$ROOT/packages/web/src/lib/chatMediaRecorder.selftest.ts"
+
 # Pure / memory-path tests first
 run src/services/web-chat-cta-once.selftest.ts
 run src/services/otp-sms-copy.selftest.ts
@@ -36,6 +39,7 @@ run src/services/telegram-profile-sync.selftest.ts
 run src/services/telegram-playdate-notify.selftest.ts
 run src/services/nearby-cards.selftest.ts
 run src/services/vet-online.selftest.ts
+run src/services/chat-upload-store.selftest.ts
 
 # Bot guards (sticky keyboard + IPv4 Telegram HTTP) — no network / no DB
 echo "==> selftest: bot sticky + telegram-http + nearby-radius + nearby-inline-list + pet-search-menu + invite-friends + urls"

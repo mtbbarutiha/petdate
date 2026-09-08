@@ -165,22 +165,26 @@ export function inferMediaKind(
 ): 'photo' | 'video' | 'voice' | 'audio' | 'document' {
   const mime = (mimeType || '').toLowerCase();
   const name = (fileName || '').toLowerCase();
+  const base = path.basename(name);
   if (
     mime.startsWith('image/') ||
     /\.(jpe?g|png|gif|webp|heic|heif|bmp|tiff?)$/i.test(name)
   ) {
     return 'photo';
   }
-  if (mime.startsWith('video/') || /\.(mp4|mov|webm|m4v|avi)$/i.test(name)) {
-    return 'video';
-  }
+  // Voice before video: MediaRecorder often uses .webm for both audio and video.
   if (
     mime === 'audio/ogg' ||
     mime === 'audio/opus' ||
     name.endsWith('.ogg') ||
-    name.endsWith('.opus')
+    name.endsWith('.opus') ||
+    (mime.startsWith('audio/') && /^voice[-_]/i.test(base)) ||
+    (/^voice[-_]/i.test(base) && (name.endsWith('.webm') || name.endsWith('.m4a')))
   ) {
     return 'voice';
+  }
+  if (mime.startsWith('video/') || /\.(mp4|mov|webm|m4v|avi)$/i.test(name)) {
+    return 'video';
   }
   if (mime.startsWith('audio/')) return 'audio';
   return 'document';

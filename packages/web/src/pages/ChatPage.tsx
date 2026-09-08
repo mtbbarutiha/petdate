@@ -1,6 +1,7 @@
 import {
   FormEvent,
   KeyboardEvent,
+  type MouseEvent as ReactMouseEvent,
   useCallback,
   useEffect,
   useMemo,
@@ -29,6 +30,7 @@ import {
   X,
 } from 'lucide-react';
 import { SiteLogo } from '../components/SiteLogo';
+import { ChatMediaCaptureProvider, ChatMediaCaptureTriggers } from '../components/ChatMediaCapture';
 import { EmojiPicker } from '../components/EmojiPicker';
 import { FindPlaymatePanel } from '../components/FindPlaymatePanel';
 import { PetAvatar } from '../components/PetAvatar';
@@ -461,6 +463,7 @@ export function ChatPage() {
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [pendingPreview, setPendingPreview] = useState<string | null>(null);
+  const [captureOccupied, setCaptureOccupied] = useState(false);
   const [peerOwnerLabel, setPeerOwnerLabel] = useState<string | null>(null);
   const [peerOwnerDisplayName, setPeerOwnerDisplayName] = useState<string | null>(null);
   const [peerOwnerAvatar, setPeerOwnerAvatar] = useState<string>('');
@@ -988,13 +991,17 @@ export function ChatPage() {
   }, [match?.id, match?.fromPet?.ownerId]);
 
   useEffect(() => {
-    if (!pendingFile || !isLikelyChatImage(pendingFile)) {
+    if (!pendingFile) {
       setPendingPreview(null);
       return;
     }
-    const url = URL.createObjectURL(pendingFile);
-    setPendingPreview(url);
-    return () => URL.revokeObjectURL(url);
+    const type = (pendingFile.type || '').toLowerCase();
+    if (isLikelyChatImage(pendingFile) || type.startsWith('video/') || type.startsWith('audio/')) {
+      const url = URL.createObjectURL(pendingFile);
+      setPendingPreview(url);
+      return () => URL.revokeObjectURL(url);
+    }
+    setPendingPreview(null);
   }, [pendingFile]);
 
   useEffect(() => {
@@ -1262,6 +1269,28 @@ export function ChatPage() {
     }
   }
 
+  async function sendCapturedMedia(file: File) {
+    if (ended || sending || !myUserId || !match || match.status !== 'accepted') {
+      throw new Error('چت برای ارسال رسانه آماده نیست');
+    }
+    if (file.size > MAX_CHAT_ATTACH_BYTES) {
+      throw new Error('حجم فایل بیش از حد مجاز است (حداکثر ۱۵ مگابایت)');
+    }
+    setSending(true);
+    setSendError(null);
+    setEmojiOpen(false);
+    stickToBottomRef.current = true;
+    smoothScrollRef.current = true;
+    try {
+      const saved = await uploadPlaydateChatFile(match.id, myUserId, file, '');
+      const ui = toUiMessage(saved, myUserId);
+      setMessages((prev) => (prev.some((m) => m.id === ui.id) ? prev : [...prev, ui]));
+      lastMsgIdRef.current = Math.max(lastMsgIdRef.current, saved.id);
+    } finally {
+      setSending(false);
+    }
+  }
+
   function onComposerKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -1365,16 +1394,29 @@ export function ChatPage() {
     const src = playdateChatMediaUrl(match.id, msg.numericId, myUserId);
     const markBroken = () =>
       setBrokenMedia((prev) => (prev[msg.id] ? prev : { ...prev, [msg.id]: true }));
+    const guardSave = secure
+      ? {
+          onContextMenu: (e: ReactMouseEvent) => e.preventDefault(),
+          controlsList: 'nodownload noplaybackrate',
+          disablePictureInPicture: true,
+        }
+      : {};
     if (msg.mediaKind === 'photo' || msg.mediaKind === 'sticker') {
+      const img = (
+        <img
+          className="tg-media-image"
+          src={src}
+          alt={mediaLabel(msg.mediaKind)}
+          loading="lazy"
+          draggable={!secure}
+          onError={markBroken}
+          onContextMenu={secure ? (e) => e.preventDefault() : undefined}
+        />
+      );
+      if (secure) return img;
       return (
         <a className="tg-media-link" href={src} target="_blank" rel="noreferrer">
-          <img
-            className="tg-media-image"
-            src={src}
-            alt={mediaLabel(msg.mediaKind)}
-            loading="lazy"
-            onError={markBroken}
-          />
+          {img}
         </a>
       );
     }
@@ -1390,6 +1432,7 @@ export function ChatPage() {
           controls
           playsInline
           onError={markBroken}
+          {...guardSave}
         >
           ویدیو پشتیبانی نمی‌شود
         </video>
@@ -1403,7 +1446,16 @@ export function ChatPage() {
           controls
           preload="metadata"
           onError={markBroken}
+          {...guardSave}
         />
+      );
+    }
+    if (secure) {
+      return (
+        <span className="tg-media-file tg-media-file--secure">
+          {'📎 '}
+          {msg.fileName || mediaLabel(msg.mediaKind)}
+        </span>
       );
     }
     return (
@@ -1939,7 +1991,23 @@ export function ChatPage() {
                   {pendingFile ? (
                     <div className="tg-attach-preview">
                       {pendingPreview ? (
-                        <img src={pendingPreview} alt="" className="tg-attach-thumb" />
+                        (pendingFile.type || '').startsWith('video/') ? (
+                          <video
+                            src={pendingPreview}
+                            className="tg-attach-thumb tg-attach-thumb--video"
+                            muted
+                            playsInline
+                          />
+                        ) : (pendingFile.type || '').startsWith('audio/') ? (
+                          <audio
+                            src={pendingPreview}
+                            className="tg-attach-thumb tg-attach-thumb--audio"
+                            controls
+                            preload="metadata"
+                          />
+                        ) : (
+                          <img src={pendingPreview} alt="" className="tg-attach-thumb" />
+                        )
                       ) : (
                         <span className="tg-attach-name">📎 {pendingFile.name}</span>
                       )}
@@ -1958,11 +2026,18 @@ export function ChatPage() {
                     Attach + emoji on physical LEFT; textarea keeps RTL/auto Persian text.
                   */}
                   <div className="tg-composer-shell">
+                    <ChatMediaCaptureProvider
+                      disabled={sending}
+                      onOccupiedChange={setCaptureOccupied}
+                      onError={(msg) => setSendError(msg)}
+                      onSend={sendCapturedMedia}
+                    >
                     <EmojiPicker
-                      open={emojiOpen}
+                      open={emojiOpen && !captureOccupied}
                       onClose={() => setEmojiOpen(false)}
                       onPick={insertEmoji}
                     />
+                    {captureOccupied ? null : (
                     <form
                       className="tg-composer"
                       dir="ltr"
@@ -2030,15 +2105,21 @@ export function ChatPage() {
                         autoComplete="off"
                         enterKeyHint="send"
                       />
-                      <button
-                        type="submit"
-                        className={`tg-send${sending ? ' is-sending' : ''}`}
-                        disabled={(!draft.trim() && !pendingFile) || sending}
-                        aria-label="ارسال"
-                      >
-                        {sending ? <Loader2 size={18} className="tg-spin" /> : <Send size={18} />}
-                      </button>
+                      {draft.trim() || pendingFile ? (
+                        <button
+                          type="submit"
+                          className={`tg-send${sending ? ' is-sending' : ''}`}
+                          disabled={(!draft.trim() && !pendingFile) || sending}
+                          aria-label="ارسال"
+                        >
+                          {sending ? <Loader2 size={18} className="tg-spin" /> : <Send size={18} />}
+                        </button>
+                      ) : (
+                        <ChatMediaCaptureTriggers />
+                      )}
                     </form>
+                    )}
+                    </ChatMediaCaptureProvider>
                   </div>
                 </>
               ) : (
