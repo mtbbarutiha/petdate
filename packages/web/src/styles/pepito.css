@@ -10021,26 +10021,35 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
 .find-playmate-header {
   display: flex;
   align-items: center;
-  gap: 0.15rem;
+  gap: 0.35rem;
   flex-shrink: 0;
   position: relative;
+  max-width: min(52vw, 13.5rem);
 }
 .find-playmate-header-btn {
   appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 0 !important;
-  background: transparent !important;
+  background: var(--pepito-base, #5c4d91) !important;
   box-shadow: none !important;
-  color: var(--pepito-base, #5c4d91);
-  font: inherit;
+  color: #fff !important;
+  font-family: var(--font-display, 'Urbanist', 'Vazirmatn', system-ui, sans-serif);
   font-size: 0.72rem;
   font-weight: 800;
-  padding: 0.15rem 0.2rem !important;
-  min-height: 0 !important;
+  padding: 0.45rem 0.7rem !important;
+  min-height: 36px !important;
   line-height: 1.2;
   cursor: pointer;
   text-decoration: none;
   white-space: nowrap;
-  border-radius: 0 !important;
+  border-radius: 999px !important;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+.find-playmate-header-btn:hover:not(:disabled) {
+  background: var(--pepito-pink, #ff6b9d) !important;
+  transform: translateY(-1px);
 }
 .find-playmate-header-btn:disabled {
   opacity: 0.55;
@@ -10049,8 +10058,8 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
 .find-playmate-header-pick {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.1rem;
-  max-width: 38vw;
+  gap: 0.25rem;
+  max-width: 100%;
   justify-content: flex-end;
 }
 .find-playmate-header-err {
@@ -10063,6 +10072,14 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
 }
 
 @media (max-width: 859px) {
+  .find-playmate-header {
+    max-width: min(48vw, 11.5rem);
+  }
+  .find-playmate-header-btn {
+    font-size: 0.68rem;
+    padding: 0.4rem 0.55rem !important;
+    min-height: 34px !important;
+  }
   .tg-chat-list-hub-cta {
     display: none !important;
   }
