@@ -6328,7 +6328,8 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   appearance: none;
   border: 0;
   margin: 0;
-  padding: 0.45rem 0.7rem;
+  padding: 0.55rem 0.75rem;
+  min-height: 2.4rem;
   border-radius: 9px;
   background: transparent;
   color: var(--pepito-muted);
@@ -6337,6 +6338,8 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   font-weight: 800;
   line-height: 1.2;
   cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
   transition:
     background 0.2s ease,
     color 0.2s ease,
@@ -6366,7 +6369,11 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
 }
 .pepito-vet-online-seg-btn.is-active:disabled {
   opacity: 0.85;
-  cursor: default;
+  cursor: wait;
+}
+.pepito-vet-online-seg-btn:disabled:not(.is-active) {
+  /* Keep the target segment visually tappable-looking while busy shows … */
+  opacity: 0.7;
 }
 @media (max-width: 420px) {
   .pepito-vet-online-seg {

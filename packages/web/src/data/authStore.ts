@@ -21,6 +21,13 @@ const STORAGE_KEY = 'petdate_web_auth_v1';
 /** Single-flight refreshMe — AuthGuard + pages must not overlap /me calls. */
 let refreshMeInflight: Promise<User | null> | null = null;
 
+/**
+ * Bumped on local user mutations (vet online, visit fee, …).
+ * In-flight refreshMe started before a mutation must not clobber fresher state —
+ * that race made the vet online/offline toggle look stuck after AuthGuard /me.
+ */
+let userMutationSeq = 0;
+
 export interface WebAuthState {
   token?: string;
   user?: User;
@@ -142,9 +149,14 @@ class AuthStore {
   async refreshMe() {
     if (!this.data.token) return null;
     if (refreshMeInflight) return refreshMeInflight;
+    const startedAt = userMutationSeq;
     refreshMeInflight = (async () => {
       try {
         const me = await fetchMe(this.data.token!);
+        // A newer local mutation won the race (e.g. vet online toggle) — keep it.
+        if (userMutationSeq !== startedAt) {
+          return this.data.user ?? me.user;
+        }
         // Skip persist/notify when payload is unchanged — avoids subscriber thrash
         // (WalletChip / guards re-render storms that look like layout jump).
         if (this.data.user && JSON.stringify(this.data.user) === JSON.stringify(me.user)) {
@@ -153,6 +165,18 @@ class AuthStore {
         this.data = { ...this.data, user: me.user };
         this.persist();
         return me.user;
+      } catch (err) {
+        const status = (err as Error & { status?: number })?.status;
+        // After DB wipe / expired session, never keep a stale user id in localStorage.
+        if (status === 401 || status === 403) {
+          invalidateAuthGetCache(this.data.token);
+          this.data = {};
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(this.data));
+          userStore.reset();
+          this.listeners.forEach((l) => l());
+          return null;
+        }
+        throw err;
       } finally {
         refreshMeInflight = null;
       }
@@ -196,19 +220,55 @@ class AuthStore {
   /** آنلاین/آفلاین دامپزشک برای پذیرش بیمار */
   async setVetOnline(online: boolean) {
     if (!this.data.token) throw new Error('وارد نشده‌اید');
-    const res = await patchWebVetOnline(this.data.token, online);
-    this.data = { ...this.data, user: res.user };
-    this.persist();
-    return res.user;
+    const token = this.data.token;
+    const prevUser = this.data.user;
+    // Optimistic flip so the segmented control never looks jammed while waiting.
+    if (prevUser) {
+      userMutationSeq += 1;
+      this.data = { ...this.data, user: { ...prevUser, vetOnline: online } };
+      this.persist();
+    }
+    try {
+      invalidateAuthGetCache(token);
+      const res = await patchWebVetOnline(token, online);
+      userMutationSeq += 1;
+      // Merge so we keep enriched /me fields the PATCH body may omit.
+      const merged: User = {
+        ...(prevUser ?? ({} as User)),
+        ...res.user,
+        vetOnline: Boolean(res.user?.vetOnline ?? online),
+      };
+      this.data = { ...this.data, user: merged };
+      this.persist();
+      invalidateAuthGetCache(token);
+      return merged;
+    } catch (err) {
+      if (prevUser) {
+        userMutationSeq += 1;
+        this.data = { ...this.data, user: prevUser };
+        this.persist();
+      }
+      throw err;
+    }
   }
 
   /** مبلغ ویزیت دامپزشک */
   async setVisitFee(visitFeeCoins: number) {
     if (!this.data.token) throw new Error('وارد نشده‌اید');
-    const res = await patchWebVisitFee(this.data.token, visitFeeCoins);
-    this.data = { ...this.data, user: res.user };
+    const token = this.data.token;
+    invalidateAuthGetCache(token);
+    const res = await patchWebVisitFee(token, visitFeeCoins);
+    userMutationSeq += 1;
+    const prevUser = this.data.user;
+    const merged: User = {
+      ...(prevUser ?? ({} as User)),
+      ...res.user,
+      visitFeeCoins: res.user?.visitFeeCoins ?? visitFeeCoins,
+    };
+    this.data = { ...this.data, user: merged };
     this.persist();
-    return res.user;
+    invalidateAuthGetCache(token);
+    return merged;
   }
 
   setOnboardingLocal(onboarding: OnboardingStatus) {
