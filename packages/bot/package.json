@@ -12,7 +12,8 @@
     "@petdate/shared": "*",
     "dotenv": "^16.4.7",
     "grammy": "^1.35.0",
-    "ioredis": "^5.4.2"
+    "ioredis": "^5.4.2",
+    "undici": "^6.28.1"
   },
   "devDependencies": {
     "@types/node": "^22.10.5",

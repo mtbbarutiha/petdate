@@ -16,6 +16,7 @@ import { adminPlatform } from '../admin-platform';
 import { adminFinance } from '../admin-finance';
 import { logAppEvent } from '../services/app-logger';
 import { completeShopCardPayment } from '../services/shop-checkout';
+import { telegramFetch } from '../services/telegram-http';
 import {
   getSmtpPublicConfig,
   isPlausibleEmail,
@@ -888,7 +889,7 @@ async function probeTelegramBot(): Promise<ServiceCheck> {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 3500);
     try {
-      const res = await fetch(`https://api.telegram.org/bot${token}/getMe`, { signal: controller.signal });
+      const res = await telegramFetch(`https://api.telegram.org/bot${token}/getMe`, { signal: controller.signal });
       const body = (await res.json()) as { ok?: boolean; result?: { username?: string; id?: number } };
       if (res.ok && body.ok && body.result) {
         const who = body.result.username ? `@${body.result.username}` : `id ${body.result.id ?? '?'}`;

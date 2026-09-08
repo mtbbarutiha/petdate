@@ -1,19 +1,12 @@
 import { Bot } from 'grammy';
-import dns from 'dns';
 import { applyBotBranding } from './branding';
 import { assertBotToken, config } from './config';
 import { requiredChannels } from './force-join';
 import { registerHandlers } from './handlers';
 import { reportBotError } from './report-error';
 import { connectRedis, disconnectRedis } from './session';
+import { grammyClientOptions } from './telegram-http';
 import { effectiveWebUrl, isTelegramInlineUrl } from './urls';
-
-// Prefer IPv4 — Telegram API IPv6 often times out on this host
-try {
-  dns.setDefaultResultOrder('ipv4first');
-} catch {
-  /* older Node */
-}
 
 process.on('uncaughtException', (err) => {
   console.error('uncaughtException:', err);
@@ -60,7 +53,7 @@ async function main(): Promise<void> {
   const token = assertBotToken();
   await connectRedis();
 
-  const bot = new Bot(token);
+  const bot = new Bot(token, { client: grammyClientOptions() });
   registerHandlers(bot);
   await applyBotBranding(bot.api);
   await warnForceJoinAdminRights(bot);

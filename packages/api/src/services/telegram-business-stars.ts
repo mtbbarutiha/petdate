@@ -1,4 +1,5 @@
 import { infra } from '../config/infra';
+import { telegramFetch } from './telegram-http';
 
 type TelegramApiResult<T> = {
   ok?: boolean;
@@ -17,7 +18,7 @@ async function telegramCall<T>(
   const token = infra.telegram.botToken;
   if (!token) return null;
   try {
-    const res = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
+    const res = await telegramFetch(`https://api.telegram.org/bot${token}/${method}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body ?? {}),

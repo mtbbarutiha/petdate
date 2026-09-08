@@ -1,13 +1,15 @@
-# PetDate CI — lint/typecheck/build on every PR and push.
+# PetDate CI — lint/typecheck/build on every PR and feature-branch push.
 # Does NOT deploy. Deploy is only via deploy.yml (main/master + approval).
+#
+# Note: push to main/master is intentionally NOT listed here — deploy.yml
+# already builds the same monorepo before shipping. Listing both caused two
+# "Build monorepo" checks (~2× wall-clock) on every main merge.
 name: CI
 
 on:
   pull_request:
   push:
     branches:
-      - main
-      - master
       - 'cursor/**'
   workflow_dispatch:
 

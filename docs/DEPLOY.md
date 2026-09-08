@@ -8,8 +8,10 @@ Parallel Cloud Agent rsyncs used to overwrite incomplete trees and delete live f
 
 | Workflow | Trigger | What it does |
 |----------|---------|----------------|
-| `.github/workflows/ci.yml` | PR + push | `npm ci` → build shared→api→bot→web → selftests → predeploy-check |
+| `.github/workflows/ci.yml` | PR + `cursor/**` push | `npm ci` → build shared→api→bot→web → selftests → predeploy-check |
 | `.github/workflows/deploy.yml` | push to `main`/`master`, or `workflow_dispatch` | same build, then SSH deploy of **full** tree (`DEPLOY_SCOPE=all`) |
+
+**Why CI does not also build on `main`:** Deploy already builds before shipping. Running both doubled wall-clock (“two Build monorepo checks”) on every merge.
 
 Deploy uses GitHub Environment **`production`** (enable required reviewers for manual approval).
 
@@ -41,10 +43,33 @@ Also create Environment **production** (Settings → Environments) and optionall
 - **Full shop UI** — `ShopOrdersPage`, add-to-cart CTA, toman/rial + card-to-card checkout (`ShopCartPage` / `ShopCardPayPage`). Thin feature-branch `dist` must never rsync `--delete` over live shop.
 - **Profile = My Pets** — `ProfilePage` must use `useMyPets` (same API source).
 - **Playdate accept → chat** — bot enter-chat markers checked in predeploy.
+- **Sticky keyboard** — never reintroduce send+delete carriers (clears ReplyKeyboard).
+- **Telegram HTTP** — bot/api must keep IPv4 + keep-alive client (`telegram-http.ts`).
 
 ### Why `main` must stay complete
 
 Production features historically lived only on feature branches while `main` lagged. Agents then deployed from incomplete trees and wiped shop/playdate/profile. **Merge the full restored tree into `main` before any CI deploy** so the next push to `main` cannot regress live UI. Prefer `DEPLOY_SCOPE=all` from that complete tree; never break-glass `ALLOW_DEPLOY=1` from a thin branch.
+
+
+## Faster agent / ops paths (VPS)
+
+Root cause of many multi-minute loops: **IPv6 to `api.telegram.org` SSL-times out** (~5–10s per attempt). Always prefer IPv4.
+
+```bash
+curl -4 -sS -o /dev/null -w '%{http_code} %{time_total}\n' --connect-timeout 5 https://api.telegram.org/
+source /opt/petdate/scripts/lib/load-env.sh && load_env /opt/petdate/.env
+./scripts/redis-cli.sh PING
+./scripts/force-main-menu.sh
+./scripts/tg-api.sh getMe
+```
+
+### Break-glass scoped deploy (bot/api only — no web wipe)
+
+```bash
+./scripts/predeploy-check.sh
+ALLOW_PARTIAL_DEPLOY=1 DEPLOY_SCOPE=bot ./scripts/deploy-vps.sh root@185.110.189.218
+ALLOW_PARTIAL_DEPLOY=1 DEPLOY_SCOPE=api ./scripts/deploy-vps.sh root@185.110.189.218
+```
 
 ## Root cause (ad-hoc rsync)
 

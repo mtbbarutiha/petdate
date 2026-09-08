@@ -125,4 +125,31 @@ if [[ -d packages/bot/src ]]; then
   ok "playdate enter-chat bot markers"
 fi
 
+
+# Sticky keyboard must remain non-destructive (PR #9) — no send+delete carrier
+if [[ -f packages/bot/src/sticky-reply-keyboard.ts ]]; then
+  if grep -qE 'deleteMessage|api\.delete' packages/bot/src/sticky-reply-keyboard.ts; then
+    fail "sticky-reply-keyboard must not deleteMessage (clears ReplyKeyboard)"
+  fi
+  ok "sticky keyboard no-delete"
+fi
+
+# Telegram IPv4 HTTP client (ops speed on this VPS)
+if [[ -d packages/bot/src ]]; then
+  grep -q 'telegramFetch\|grammyClientOptions\|family: 4' packages/bot/src/telegram-http.ts \
+    || fail "bot telegram-http IPv4 client missing"
+  ok "bot telegram-http IPv4"
+fi
+if [[ -d packages/api/src/services ]]; then
+  grep -q 'telegramFetch\|family: 4' packages/api/src/services/telegram-http.ts \
+    || fail "api telegram-http IPv4 client missing"
+  ok "api telegram-http IPv4"
+fi
+
+# Ops helpers agents reinvent otherwise (slow / broken quoting)
+[[ -f scripts/force-main-menu.sh ]] || fail "scripts/force-main-menu.sh missing"
+[[ -f scripts/redis-cli.sh ]] || fail "scripts/redis-cli.sh missing"
+[[ -f scripts/lib/load-env.sh ]] || fail "scripts/lib/load-env.sh missing"
+ok "ops helper scripts"
+
 echo "predeploy-check passed — this tree may deploy."
