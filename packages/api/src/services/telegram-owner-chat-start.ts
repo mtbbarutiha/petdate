@@ -2,6 +2,7 @@ import type { User } from '@petdate/shared';
 import { userCommandIdOf } from '@petdate/shared';
 import { infra } from '../config/infra';
 import { activateBotOwnerChatSessions } from './bot-owner-chat-session';
+import { telegramFetch } from './telegram-http';
 import { normalizeTelegramId } from './telegram-id';
 
 function escapeHtml(value: string): string {
@@ -20,7 +21,7 @@ async function telegramCall(
   const token = infra.telegram.botToken;
   if (!token) return { ok: false, description: 'no bot token' };
   try {
-    const res = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
+    const res = await telegramFetch(`https://api.telegram.org/bot${token}/${method}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),

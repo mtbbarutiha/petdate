@@ -11,6 +11,7 @@ try {
 import { infra } from '../config/infra';
 import { dbService } from '../db';
 import { MAX_USER_AVATAR_BYTES, saveUserAvatar } from './user-avatar-store';
+import { telegramFetch } from './telegram-http';
 
 const PLACEHOLDER_NAMES = new Set([
   'کاربر تلگرام',
@@ -30,7 +31,7 @@ async function tgApi<T>(method: string, body?: Record<string, unknown>): Promise
   const token = botToken();
   if (!token) return null;
   try {
-    const res = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
+    const res = await telegramFetch(`https://api.telegram.org/bot${token}/${method}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body ?? {}),
@@ -115,7 +116,7 @@ async function downloadTelegramFile(fileId: string): Promise<{
 
   try {
     const url = `https://api.telegram.org/file/bot${token}/${file.file_path}`;
-    const res = await fetch(url);
+    const res = await telegramFetch(url);
     if (!res.ok) {
       console.warn('telegram file download failed:', res.status);
       return null;

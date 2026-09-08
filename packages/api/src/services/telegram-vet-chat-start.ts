@@ -6,6 +6,7 @@ import type { User } from '@petdate/shared';
 import { infra } from '../config/infra';
 import { activateBotVetChatSessions } from './bot-vet-chat-session';
 import { claimWebChatCtaOnce } from './web-chat-cta-once';
+import { telegramFetch } from './telegram-http';
 import { normalizeTelegramId } from './telegram-id';
 
 function escapeHtml(value: string | number | null | undefined): string {
@@ -19,7 +20,7 @@ async function telegramCall(method: string, body: Record<string, unknown>): Prom
   const token = infra.telegram.botToken;
   if (!token) return false;
   try {
-    const res = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
+    const res = await telegramFetch(`https://api.telegram.org/bot${token}/${method}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),

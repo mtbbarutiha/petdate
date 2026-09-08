@@ -18,6 +18,7 @@ import {
 import { notifyVetQuickConsultTelegram } from '../services/telegram-vet-consult-notify';
 import { startVetChatFromApi } from '../services/telegram-vet-chat-start';
 import { resolveTelegramFile } from '../services/telegram-chat-notify';
+import { telegramFetch } from '../services/telegram-http';
 import {
   MAX_UPLOAD_BYTES,
   deleteChatUpload,
@@ -608,7 +609,7 @@ consultationsRouter.post('/:id/messages', async (req, res) => {
       const token = infra.telegram.botToken;
       if (token) {
         // web-cta-once-v2: silent relay — CTA only at chat START via Redis SET NX, never here.
-        void fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        void telegramFetch(`https://api.telegram.org/bot${token}/sendMessage`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -730,7 +731,7 @@ consultationsRouter.post('/:id/messages/upload', (req, res) => {
         const token = infra.telegram.botToken;
         if (token) {
           // web-cta-once-v2: silent relay — CTA only at chat START via Redis SET NX, never here.
-          void fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+          void telegramFetch(`https://api.telegram.org/bot${token}/sendMessage`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
