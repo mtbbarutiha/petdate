@@ -17,6 +17,7 @@ import {
   textStepKeyboard,
 } from '../keyboards';
 import { getSession, upsertSession } from '../session';
+import { resolveTelegramPhotoUrl } from '../urls';
 import { getCtxUser, menuKeyboardFor } from './helpers';
 
 const PAGE_SIZE = 8;
@@ -250,7 +251,7 @@ export async function handleSearchPetView(ctx: Context, petId: number): Promise<
   await ctx.answerCallbackQuery();
   const text = `🐾 <b>پروفایل پت</b>\n\n${formatPet(pet, true)}`;
   const kb = searchPetDetailKeyboard(mode, page);
-  const photo = pet.imageUrl || defaultSearchPetPhoto(pet);
+  const photo = resolveTelegramPhotoUrl(pet.imageUrl) || defaultSearchPetPhoto(pet);
 
   try {
     await ctx.replyWithPhoto(photo, {

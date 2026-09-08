@@ -23,7 +23,7 @@ import { getSession, upsertSession } from '../session';
 import { getCtxUser, menuKeyboardFor } from './helpers';
 import { formatPet } from '../format';
 import { MAIN_MENU_ALIASES, MAIN_MENU_BTN, MENU_LABELS, mainMenuKeyboard } from '../keyboards';
-import { effectiveWebUrl, isTelegramInlineUrl } from '../urls';
+import { effectiveWebUrl, isTelegramInlineUrl, resolveTelegramPhotoUrl } from '../urls';
 import { claimWebChatCtaOnce } from '../web-chat-cta-once';
 
 export const OWNER_CHAT_BTNS = {
@@ -344,9 +344,10 @@ async function handleShowPeerPetProfile(ctx: Context): Promise<boolean> {
 
   const text = `🐾 <b>پروفایل پت طرف مقابل</b>\n\n${formatPet(pet, true)}`;
   const secure = !!session.ownerChatSecure;
-  if (pet.imageUrl) {
+  const photo = resolveTelegramPhotoUrl(pet.imageUrl);
+  if (photo) {
     try {
-      await ctx.replyWithPhoto(pet.imageUrl, {
+      await ctx.replyWithPhoto(photo, {
         caption: text,
         parse_mode: 'HTML',
         ...protectOpts(secure),
