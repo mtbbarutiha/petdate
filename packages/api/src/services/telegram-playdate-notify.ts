@@ -47,6 +47,7 @@ function formatPetHtml(pet: PetProfile): string {
       `📍 ${escapeHtml(pet.city)}${pet.neighborhood ? ` — ${escapeHtml(pet.neighborhood)}` : ''}`
     );
   }
+  if (pet.ownerName) lines.push(`👤 صاحب: ${escapeHtml(pet.ownerName)}`);
   if (pet.ownerVerified) lines.push('✅ صاحب پت احراز شده');
   if (pet.gender) lines.push(`⚧ ${PET_GENDER_LABELS[pet.gender] ?? pet.gender}`);
   if (pet.ageMonths) lines.push(`🎂 ${formatPetAge(pet.ageMonths)}`);

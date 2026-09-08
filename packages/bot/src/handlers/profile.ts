@@ -10,8 +10,8 @@ import {
   USER_AGE_MIN,
   USER_GENDER_LABELS,
   USER_ROLE_LABELS,
-  VERIFIED_BADGE,
   VET_CREDENTIAL_STATUS_LABELS,
+  formatPeerOwnerProfileHtml,
   formatProfileCardHtml,
   isProfileComplete,
   normalizeRoles,
@@ -80,37 +80,12 @@ function escapeHtml(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-/** کارت عمومی کاربر وقتی کسی `/u#####` را می‌زند */
+/** کارت عمومی کاربر وقتی کسی `/u#####` را می‌زند — بدون موبایل / آیدی تلگرام */
 function formatPublicUserCard(user: User, petNames: string[] = []): string {
-  const gender = user.gender ? USER_GENDER_LABELS[user.gender] : '—';
-  const roles = normalizeRoles(user.roles, user.role);
-  const role = roles.length ? roles.map((r) => USER_ROLE_LABELS[r]).join(' · ') : '—';
-  const verified = (user.verificationStatus ?? 'none') === 'verified';
-  const location = [user.province, user.city].filter(Boolean).join('، ') || '—';
-  const cmd = userCommandIdOf(user);
-  const pets =
-    petNames.length > 0
-      ? petNames.map((n) => `• ${escapeHtml(n)}`).join('\n')
-      : 'هنوز پتی ثبت نشده';
-
-  return [
-    '👤 <b>پروفایل کاربر</b>',
-    verified ? VERIFIED_BADGE : null,
-    '',
-    // Bare command — tappable in Telegram clients
-    `<b>آیدی:</b> ${escapeHtml(cmd)}${verified ? ' ✅' : ''}`,
-    user.age != null ? `<b>سن:</b> ${user.age}` : null,
-    `<b>جنسیت:</b> ${gender}`,
-    `<b>نقش:</b> ${role}`,
-    `<b>موقعیت:</b> ${escapeHtml(location)}`,
-    user.bio ? `\n💬 ${escapeHtml(user.bio)}` : null,
-    '',
-    `🐾 پت‌ها (${petNames.length})`,
-    pets,
-    user.isActive === false ? '\n⏸ حساب فعلاً غیرفعال است' : null,
-  ]
-    .filter(Boolean)
-    .join('\n');
+  return formatPeerOwnerProfileHtml(user, {
+    heading: '👤 <b>پروفایل کاربر</b>',
+    includePets: petNames,
+  });
 }
 
 /**

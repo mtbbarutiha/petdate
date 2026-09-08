@@ -4,9 +4,12 @@ import type { PetBreed, PetProfile, PetSpecies } from '@petdate/shared';
 import {
   PET_GENDER_LABELS,
   PET_SPECIES_LABELS,
+  USER_GENDER_LABELS,
+  formatPeerLastSeenFa,
   formatPetAge,
   petPublicIdOf,
   userCommandIdOf,
+  userPublicIdOf,
 } from '@petdate/shared';
 import {
   fetchPetProfileCardBuffer,
@@ -590,25 +593,60 @@ export async function handleSearchHomeCallback(ctx: Context): Promise<void> {
   await pushMainMenuKeyboard(ctx, user);
 }
 
-function formatNearbyPetCaption(pet: PetProfile): string {
+function formatNearbyPetCaption(
+  pet: PetProfile,
+  owner?: {
+    name?: string | null;
+    age?: number | null;
+    gender?: string | null;
+    interests?: string[] | null;
+    verificationStatus?: string | null;
+    lastSeenAt?: string | null;
+    publicId?: string | null;
+    id?: number;
+  } | null
+): string {
   const lines: string[] = [];
-  const cmd = userCommandIdOf({ id: pet.ownerId });
+  const ownerId = owner?.id ?? pet.ownerId;
+  const cmd = userCommandIdOf({
+    id: ownerId,
+    publicId: owner?.publicId ?? undefined,
+  });
+  const publicId =
+    owner?.publicId ||
+    (ownerId ? userPublicIdOf({ id: ownerId, publicId: owner?.publicId }) : null);
   lines.push(`🐾 <b>${escapeHtml(pet.name)}</b>`);
   lines.push(`آیدی پت: <code>${escapeHtml(petPublicIdOf(pet))}</code>`);
-  lines.push(`آیدی صاحب: /${escapeHtml(cmd.replace(/^\//, ''))}`);
   const species = PET_SPECIES_LABELS[pet.species] ?? pet.species;
   lines.push(`| ${species}${pet.breed ? ` · ${escapeHtml(pet.breed)}` : ''}`);
   if (pet.gender) lines.push(`| ${PET_GENDER_LABELS[pet.gender] ?? pet.gender}`);
   if (pet.ageMonths != null) lines.push(`| 🎂 ${escapeHtml(formatPetAge(pet.ageMonths))}`);
   const loc = [pet.ownerCity || pet.city, pet.ownerProvince].filter(Boolean).join(' - ');
   if (loc) lines.push(`| 📍 ${escapeHtml(loc)}`);
-  if (pet.ownerName) lines.push(`| 👤 صاحب: ${escapeHtml(pet.ownerName)}`);
-  if (pet.ownerVerified) lines.push('| 🛡️✅ صاحب احراز شده');
   if (pet.distanceKm != null) {
     lines.push(`| 🏁 فاصله از شما: ${formatDistanceCaption(pet.distanceKm)}`);
   }
   if (pet.bio) lines.push(`| 💬 ${escapeHtml(pet.bio)}`);
   lines.push(pet.lookingForPlaymate ? '| 🔍 دنبال همبازی' : '| ⏸️ فعلاً همبازی نمی‌خواد');
+
+  const ownerName = (owner?.name && String(owner.name).trim()) || pet.ownerName;
+  lines.push('');
+  lines.push('👤 <b>صاحب پت</b>');
+  if (ownerName) lines.push(`| نام: ${escapeHtml(ownerName)}`);
+  lines.push(`| آیدی: /${escapeHtml(cmd.replace(/^\//, ''))}${publicId ? ` · <code>${escapeHtml(publicId)}</code>` : ''}`);
+  if (owner?.age != null) lines.push(`| سن: ${owner.age}`);
+  if (owner?.gender && owner.gender in USER_GENDER_LABELS) {
+    lines.push(`| جنسیت: ${USER_GENDER_LABELS[owner.gender as keyof typeof USER_GENDER_LABELS]}`);
+  }
+  if (owner?.interests && owner.interests.length) {
+    lines.push(`| علاقه‌مندی‌ها: ${escapeHtml(owner.interests.join(' · '))}`);
+  }
+  if (pet.ownerVerified || owner?.verificationStatus === 'verified') {
+    lines.push('| 🛡️✅ احراز شده');
+  }
+  const lastSeen = formatPeerLastSeenFa(owner?.lastSeenAt || pet.ownerLastSeenAt);
+  if (lastSeen) lines.push(`| ${escapeHtml(lastSeen)}`);
+
   return lines.join('\n');
 }
 
@@ -639,10 +677,25 @@ export async function handleSearchPetView(ctx: Context, petId: number): Promise<
 
   await ctx.answerCallbackQuery();
 
+  let owner: Awaited<ReturnType<typeof getUserById>> = null;
+  try {
+    owner = await getUserById(pet.ownerId);
+  } catch {
+    owner = null;
+  }
+
   const text =
     mode === 'nearby'
-      ? formatNearbyPetCaption(pet)
-      : `🐾 <b>پروفایل پت</b>\n\n${formatPet(pet, true)}`;
+      ? formatNearbyPetCaption(pet, owner)
+      : `🐾 <b>پروفایل پت</b>\n\n${formatPet(pet, true)}${
+          owner?.name
+            ? `\n\n👤 صاحب: ${escapeHtml(owner.name)}${
+                owner.verificationStatus === 'verified' ? ' ✅' : ''
+              }`
+            : pet.ownerName
+              ? `\n\n👤 صاحب: ${escapeHtml(pet.ownerName)}`
+              : ''
+        }`;
   const kb = searchPetDetailKeyboard(mode, page, {
     petId: pet.id,
     ownerId: pet.ownerId,
