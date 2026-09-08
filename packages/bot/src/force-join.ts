@@ -29,6 +29,14 @@ export function requiredChannels(): RequiredChannel[] {
 
 const MEMBER_OK = new Set(['creator', 'administrator', 'member', 'restricted']);
 
+/** کش کوتاه عضویت — جلوگیری از تأخیر getChatMember روی هر callback (دکمه‌های شعاع) */
+const MEMBERSHIP_CACHE_TTL_MS = 90_000;
+const membershipCache = new Map<string, { status: 'yes' | 'no'; expiresAt: number }>();
+
+function membershipCacheKey(userId: number, channelUsername: string): string {
+  return `${userId}:${channelUsername.replace(/^@/, '').toLowerCase()}`;
+}
+
 /** دستورات/مسیرهایی که همیشه از گیت عضویت عبور می‌کنند تا ربات قفل نشود */
 function isForceJoinBypass(ctx: Context): boolean {
   const data = ctx.callbackQuery?.data;
@@ -80,13 +88,23 @@ export async function isMemberOfChannel(
 ): Promise<'yes' | 'no' | 'error'> {
   const userId = ctx.from?.id;
   if (!userId) return 'no';
+  const cacheKey = membershipCacheKey(userId, channelUsername);
+  const cached = membershipCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.status;
+  }
   const chatId = channelUsername.startsWith('@') ? channelUsername : `@${channelUsername}`;
   try {
     const member = await withTimeout(
       ctx.api.getChatMember(chatId, userId),
       MEMBERSHIP_CHECK_TIMEOUT_MS
     );
-    return MEMBER_OK.has(member.status) ? 'yes' : 'no';
+    const status: 'yes' | 'no' = MEMBER_OK.has(member.status) ? 'yes' : 'no';
+    membershipCache.set(cacheKey, {
+      status,
+      expiresAt: Date.now() + MEMBERSHIP_CACHE_TTL_MS,
+    });
+    return status;
   } catch (err) {
     const msg = (err as { description?: string }).description ?? (err as Error).message;
     console.warn(`force-join check failed for ${chatId}:`, msg);

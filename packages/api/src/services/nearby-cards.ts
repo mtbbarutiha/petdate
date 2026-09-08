@@ -227,7 +227,7 @@ export async function renderNearbyListCard(opts: {
     .s { font-family: Vazirmatn; font-weight: 400; font-size: 15px; fill: #9ca3af; }
   </style></defs>
   <rect width="${LIST_WIDTH}" height="${headerH}" fill="#121218"/>
-  <text x="${LIST_WIDTH - PAD}" y="28" class="h" text-anchor="end">🛰️ اطراف من ≥ ${toFaDigits(opts.radiusKm)} کیلومتر</text>
+  <text x="${LIST_WIDTH - PAD}" y="28" class="h" text-anchor="end">🛰️ اطراف من ≤ ${toFaDigits(opts.radiusKm)} کیلومتر</text>
   <text x="${LIST_WIDTH - PAD}" y="48" class="s" text-anchor="end">${toFaDigits(opts.totalCount)} نتیجه · صفحه ${toFaDigits(opts.page + 1)}</text>
 </svg>`;
   layered.push({

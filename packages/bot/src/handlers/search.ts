@@ -1,5 +1,5 @@
 import type { Context } from 'grammy';
-import { InputFile } from 'grammy';
+import { InlineKeyboard, InputFile } from 'grammy';
 import type { PetBreed, PetProfile, PetSpecies } from '@petdate/shared';
 import {
   PET_GENDER_LABELS,
@@ -186,10 +186,47 @@ export async function handleNearbyLocationMessage(ctx: Context): Promise<boolean
   return true;
 }
 
+async function safeAnswerNearbyCallback(
+  ctx: Context,
+  opts?: { text?: string; show_alert?: boolean }
+): Promise<void> {
+  if (!ctx.callbackQuery) return;
+  try {
+    await ctx.answerCallbackQuery(opts);
+  } catch {
+    /* query expired / already answered */
+  }
+}
+
+/** پاسخ روی همان پیام اینلاین (در صورت امکان) تا دکمه «مرده» به نظر نرسد */
+async function replyNearbyMarkup(
+  ctx: Context,
+  text: string,
+  reply_markup: InlineKeyboard
+): Promise<void> {
+  if (ctx.callbackQuery?.message) {
+    try {
+      await ctx.editMessageText(text, { parse_mode: 'HTML', reply_markup });
+      return;
+    } catch (err) {
+      const msg = (err as Error).message ?? '';
+      // پیام عوض نشده — برای کاربر همان نتیجه است
+      if (/message is not modified/i.test(msg)) return;
+      /* fall through to reply */
+    }
+  }
+  await ctx.reply(text, { parse_mode: 'HTML', reply_markup });
+}
+
 export async function handleNearbyPickRadiusCallback(ctx: Context): Promise<void> {
-  await ctx.answerCallbackQuery();
+  await safeAnswerNearbyCallback(ctx);
   const session = ctx.from ? await getSession(String(ctx.from.id)) : null;
-  if (!session?.searchLat || !session?.searchLng) {
+  if (
+    session?.searchLat == null ||
+    session?.searchLng == null ||
+    !Number.isFinite(session.searchLat) ||
+    !Number.isFinite(session.searchLng)
+  ) {
     await askNearbyLocation(ctx);
     return;
   }
@@ -197,39 +234,63 @@ export async function handleNearbyPickRadiusCallback(ctx: Context): Promise<void
   await showNearbyRadiusPicker(ctx);
 }
 
+/**
+ * انتخاب شعاع ۵/۱۰/۲۰/۵۰/۱۰۰ — باید فوراً callback را ACK کند
+ * (force-join + getCtxUser قبل از answer باعث timeout و دکمه مرده در کلاینت می‌شود).
+ */
 export async function handleNearbyRadiusCallback(ctx: Context, radiusKm: number): Promise<void> {
-  const user = await getCtxUser(ctx);
-  if (!user?.id || !ctx.from) {
-    await ctx.answerCallbackQuery({ text: 'اول /start بزن', show_alert: true });
-    return;
-  }
   if (!(NEARBY_RADII_KM as readonly number[]).includes(radiusKm)) {
-    await ctx.answerCallbackQuery({ text: 'شعاع نامعتبر', show_alert: true });
+    await safeAnswerNearbyCallback(ctx, { text: 'شعاع نامعتبر', show_alert: true });
+    return;
+  }
+  if (!ctx.from) {
+    await safeAnswerNearbyCallback(ctx, { text: 'اول /start بزن', show_alert: true });
     return;
   }
 
-  const session = await getSession(String(ctx.from.id));
-  const lat = session?.searchLat;
-  const lng = session?.searchLng;
-  if (lat == null || lng == null || !Number.isFinite(lat) || !Number.isFinite(lng)) {
-    await ctx.answerCallbackQuery({ text: 'اول موقعیت بفرست', show_alert: true });
-    await askNearbyLocation(ctx);
-    return;
-  }
-
-  await ctx.answerCallbackQuery();
-  await upsertSession(String(ctx.from.id), {
-    step: 'ready',
-    searchMode: 'nearby',
-    searchRadiusKm: radiusKm,
-    searchPage: 0,
+  // فوری — قبل از هر I/O دیگر
+  await safeAnswerNearbyCallback(ctx, {
+    text: `جستجو تا ${toFaDigits(radiusKm)} کیلومتر…`,
   });
 
-  await showNearbySummary(ctx, radiusKm);
+  console.log(`nearby:radius tapped by ${ctx.from.id} radiusKm=${radiusKm}`);
+
+  try {
+    const user = await getCtxUser(ctx);
+    if (!user?.id) {
+      await ctx.reply('اول /start بزن.');
+      return;
+    }
+
+    const session = await getSession(String(ctx.from.id));
+    const lat = session?.searchLat;
+    const lng = session?.searchLng;
+    if (lat == null || lng == null || !Number.isFinite(lat) || !Number.isFinite(lng)) {
+      await askNearbyLocation(ctx);
+      return;
+    }
+
+    // step را روی awaiting نگه می‌داریم تا اگر خلاصه ۰ شد، دکمه‌های شعاع هنوز معنی‌دار باشند
+    await upsertSession(String(ctx.from.id), {
+      step: 'awaiting_nearby_radius',
+      searchMode: 'nearby',
+      searchRadiusKm: radiusKm,
+      searchPage: 0,
+    });
+
+    await showNearbySummary(ctx, radiusKm);
+  } catch (err) {
+    console.warn('nearby radius callback failed:', (err as Error).message);
+    try {
+      await ctx.reply('خطا در جستجوی نزدیک. دوباره یکی از دکمه‌های شعاع را بزن.');
+    } catch {
+      /* ignore */
+    }
+  }
 }
 
 export async function handleNearbySummaryCallback(ctx: Context): Promise<void> {
-  await ctx.answerCallbackQuery();
+  await safeAnswerNearbyCallback(ctx);
   const session = ctx.from ? await getSession(String(ctx.from.id)) : null;
   const radiusKm = session?.searchRadiusKm ?? 5;
   await showNearbySummary(ctx, radiusKm);
@@ -264,28 +325,28 @@ async function showNearbySummary(ctx: Context, radiusKm: number): Promise<void> 
 
   if (pets.length === 0) {
     await upsertSession(String(ctx.from.id), { step: 'awaiting_nearby_radius' });
-    await ctx.reply(
+    await replyNearbyMarkup(
+      ctx,
       [
-        `🛰️ <b>اطراف من ≥ ${toFaDigits(radiusKm)} کیلومتر (۰)</b>`,
+        `🛰️ <b>اطراف من ≤ ${toFaDigits(radiusKm)} کیلومتر (۰)</b>`,
         '',
         'هنوز کسی داخل این شعاع پیدا نشد.',
         'شعاع بزرگ‌تر انتخاب کن یا موقعیتت رو به‌روز کن.',
       ].join('\n'),
-      { parse_mode: 'HTML', reply_markup: nearbyRadiusKeyboard() }
+      nearbyRadiusKeyboard()
     );
     return;
   }
 
+  await upsertSession(String(ctx.from.id), { step: 'ready' });
+
   const text = [
-    `🛰️ <b>اطراف من ≥ ${toFaDigits(radiusKm)} کیلومتر (${toFaDigits(pets.length)})</b>`,
+    `🛰️ <b>اطراف من ≤ ${toFaDigits(radiusKm)} کیلومتر (${toFaDigits(pets.length)})</b>`,
     '',
     'برای دیدن لیست، دکمه زیر را بزن و اسکرول کن.',
   ].join('\n');
 
-  await ctx.reply(text, {
-    parse_mode: 'HTML',
-    reply_markup: nearbySummaryKeyboard(radiusKm),
-  });
+  await replyNearbyMarkup(ctx, text, nearbySummaryKeyboard(radiusKm));
 }
 
 export async function handleNearbyListCallback(ctx: Context, page: number): Promise<void> {
@@ -339,7 +400,7 @@ export async function handleNearbyListCallback(ctx: Context, page: number): Prom
   });
 
   const caption = [
-    `🛰️ اطراف من ≥ ${toFaDigits(radiusKm)} کیلومتر (${toFaDigits(pets.length)})`,
+    `🛰️ اطراف من ≤ ${toFaDigits(radiusKm)} کیلومتر (${toFaDigits(pets.length)})`,
     'روی هر مورد در دکمه‌ها بزن تا پروفایل پت باز بشه.',
   ].join('\n');
 
