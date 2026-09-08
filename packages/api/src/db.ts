@@ -102,9 +102,16 @@ export function getDb(): Database.Database {
     initSchema();
     seedIfEmpty();
     // Demo/fake users+pets only when explicitly enabled — never auto-reseed after a production wipe.
-    if (process.env.SEED_DEMO_DATA === '1') {
+    // Blocked on production-like hosts even if SEED_DEMO_DATA is mistakenly set.
+    const allowDemoSeed =
+      process.env.SEED_DEMO_DATA === '1' &&
+      process.env.NODE_ENV !== 'production' &&
+      process.env.ALLOW_DEMO_SEED !== '0';
+    if (allowDemoSeed) {
       seedDemoPetsIfEmpty();
       seedFakeDogOwners();
+    } else if (process.env.SEED_DEMO_DATA === '1') {
+      console.warn('SEED_DEMO_DATA ignored (production / ALLOW_DEMO_SEED=0)');
     }
     console.log(`   SQLite (source of truth): ${dbPath}`);
   }
@@ -1068,6 +1075,16 @@ function seedSpeciesCatalog() {
 function seedIfEmpty() {
   const count = db.prepare('SELECT COUNT(*) as c FROM sections').get() as { c: number };
   if (count.c > 0) return;
+
+  // Never insert demo_host / demo_player / sample games unless explicitly allowed.
+  // Production DBs must not regain fake users after a wipe.
+  if (
+    process.env.SEED_DEMO_DATA !== '1' ||
+    process.env.NODE_ENV === 'production' ||
+    process.env.ALLOW_DEMO_SEED === '0'
+  ) {
+    return;
+  }
 
   const insertSection = db.prepare(
     'INSERT INTO sections (name, description, city) VALUES (?, ?, ?)'
@@ -2063,6 +2080,25 @@ export const dbService = {
       const ownedPets = this.listPets({ ownerId: userId });
       for (const pet of ownedPets) {
         this.deletePet(pet.id, userId);
+      }
+      // Belt-and-suspenders: listPets/deletePet can miss rows on some PG paths
+      try {
+        const leftover = db
+          .prepare('SELECT id FROM pets WHERE owner_id = ?')
+          .all(userId) as { id: number }[];
+        for (const row of leftover) {
+          db.prepare(
+            'DELETE FROM playdate_requests WHERE from_pet_id = ? OR to_pet_id = ?'
+          ).run(row.id, row.id);
+          try {
+            db.prepare('UPDATE vet_consultations SET pet_id = NULL WHERE pet_id = ?').run(row.id);
+          } catch {
+            /* older schemas */
+          }
+          db.prepare('DELETE FROM pets WHERE id = ?').run(row.id);
+        }
+      } catch {
+        /* ignore */
       }
 
       // 2) Playdates still pointing at this user (no owned pets)
