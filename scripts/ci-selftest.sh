@@ -23,6 +23,9 @@ npx tsx "$ROOT/packages/web/src/lib/inboxTitle.selftest.ts"
 echo "==> selftest: web share helper (Web Share / clipboard)"
 npx tsx "$ROOT/packages/web/src/lib/share.selftest.ts"
 
+echo "==> selftest: web sitemap public routes"
+npx tsx "$ROOT/packages/web/src/lib/sitemap.selftest.ts"
+
 echo "==> selftest: web chat media recorder helpers"
 npx tsx "$ROOT/packages/web/src/lib/chatMediaRecorder.selftest.ts"
 

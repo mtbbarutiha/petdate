@@ -4,9 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "prebuild": "node ../../scripts/generate-sitemap.mjs",
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "sitemap": "node ../../scripts/generate-sitemap.mjs"
   },
   "dependencies": {
     "lucide-react": "^1.39.0",

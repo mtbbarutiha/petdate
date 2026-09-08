@@ -552,8 +552,10 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
     display: none;
   }
 }
-/* Pepito `.header .caption h1` — 70px / weight 600 / lh 1.1 / mb 20 */
-.pepito-hero h1 {
+/* Pepito `.header .caption h1` — 70px / weight 600 / lh 1.1 / mb 20
+   Slide headline uses .pepito-hero-slide-title; brand H1 is visually hidden for SEO. */
+.pepito-hero h1:not(.pd-sr-only):not(.pepito-footer-sr),
+.pepito-hero .pepito-hero-slide-title {
   margin: 0 0 20px;
   color: #fff;
   font-family: var(--font-display);
@@ -650,7 +652,8 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   .pepito-hero-copy {
     max-width: 100%;
   }
-  .pepito-hero h1 {
+  .pepito-hero h1:not(.pd-sr-only):not(.pepito-footer-sr),
+  .pepito-hero .pepito-hero-slide-title {
     font-size: 35px;
   }
   .pepito-hero-lead {
@@ -687,7 +690,8 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
     width: 36px;
     height: 36px;
   }
-  .pepito-hero h1 {
+  .pepito-hero h1:not(.pd-sr-only):not(.pepito-footer-sr),
+  .pepito-hero .pepito-hero-slide-title {
     font-size: 30px;
   }
 }
@@ -2053,6 +2057,19 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   color: var(--pepito-muted);
   line-height: 1.7;
 }
+
+.pepito-faq-page-lead {
+  margin: 0 0 1rem;
+  color: var(--pepito-muted, #5a5470);
+  font-size: 1.05rem;
+  line-height: 1.7;
+}
+.pepito-faq-page-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  margin-top: 0.35rem;
+}
 .pepito-faq-page-list {
   display: grid;
   gap: 0.75rem;
@@ -2250,7 +2267,8 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   font-size: 0.85rem;
   color: var(--pepito-pink);
 }
-.pepito-footer-sr {
+.pepito-footer-sr,
+.pd-sr-only {
   position: absolute;
   width: 1px;
   height: 1px;

@@ -113,7 +113,7 @@ export function AdoptionDetailPage() {
             <div className="pepito-adopt-gallery-row">
               {pet.gallery.slice(1, 3).map((src) => (
                 <div key={src} className="pepito-adopt-gallery-item">
-                  <img src={src} alt="" loading="lazy" />
+                  <img src={src} alt={`${pet.name} — گالری پذیرش`} loading="lazy" />
                 </div>
               ))}
             </div>

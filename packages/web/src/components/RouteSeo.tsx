@@ -1,6 +1,8 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { SEO, SITE } from '@petdate/shared';
+import { getAdoptionPet } from '../data/adoptionPets';
+import { getCategory, getProduct } from '../data/shopCatalog';
 
 type PageMeta = {
   title: string;
@@ -16,12 +18,17 @@ function metaForPath(pathname: string): PageMeta {
   const p = pathname.replace(/\/+$/, '') || '/';
 
   if (p === '/' || p === '/welcome') {
-    return { title: SEO.titleDefault, description: DEFAULT_DESC, canonicalPath: '/' };
+    return {
+      title: SEO.titleDefault,
+      description: DEFAULT_DESC,
+      canonicalPath: '/',
+    };
   }
   if (p === '/faq') {
     return {
-      title: SEO.titleTemplate('سؤالات متداول'),
-      description: 'پاسخ پرسش‌های پرتکرار درباره پت‌دیت، همبازی، شاپ، پذیرش و مشاوره دامپزشک.',
+      title: SEO.titleTemplate('سؤالات متداول پت‌دیت'),
+      description:
+        'پاسخ پرسش‌های پرتکرار درباره همبازی پت، پت‌شاپ، پذیرش حیوان خانگی، مشاوره دامپزشک آنلاین و ورود با OTP در پت‌دیت.',
       canonicalPath: '/faq',
     };
   }
@@ -42,36 +49,93 @@ function metaForPath(pathname: string): PageMeta {
         robots: 'noindex,follow',
       };
     }
+    if (p.startsWith('/shop/stars-pay/') || p.startsWith('/shop/card-pay/')) {
+      return {
+        title: SEO.titleTemplate('پرداخت سفارش'),
+        robots: 'noindex,nofollow',
+      };
+    }
+    if (p.startsWith('/shop/c/')) {
+      const slug = p.slice('/shop/c/'.length);
+      if (slug === 'all') {
+        return {
+          title: SEO.titleTemplate('همه محصولات پت‌شاپ'),
+          description:
+            'مشاهده همه کالاهای پت‌دیت شاپ — غذا، اسباب‌بازی، خاک، قلاده و لوازم سگ و گربه با فیلتر برند و قیمت.',
+          canonicalPath: '/shop/c/all',
+        };
+      }
+      const cat = getCategory(slug);
+      if (cat) {
+        return {
+          title: SEO.titleTemplate(`${cat.labelFa} | خرید آنلاین`),
+          description:
+            cat.description ||
+            `خرید ${cat.labelFa} از پت‌دیت شاپ — ارسال در ایران، قیمت به تومان.`,
+          canonicalPath: `/shop/c/${cat.slug}`,
+        };
+      }
+    }
+    if (p.startsWith('/shop/product/')) {
+      const id = p.slice('/shop/product/'.length);
+      const product = getProduct(id);
+      if (product) {
+        return {
+          title: SEO.titleTemplate(`${product.title} | خرید`),
+          description: `خرید ${product.title} از پت‌دیت شاپ — غذا و لوازم پت با قیمت تومان.`,
+          canonicalPath: `/shop/product/${product.id}`,
+        };
+      }
+    }
     return {
-      title: SEO.titleTemplate('پت‌شاپ'),
-      description: 'خرید غذا، اسباب‌بازی و لوازم پت از پت‌دیت شاپ.',
-      canonicalPath: p.startsWith('/shop/c/') || p.startsWith('/shop/product/') ? p : '/shop',
+      title: SEO.titleTemplate('پت‌شاپ آنلاین — غذا و لوازم پت'),
+      description:
+        'خرید غذای سگ و گربه، اسباب‌بازی، خاک، قلاده و لوازم پت از پت‌دیت شاپ — فیلتر برند و قیمت، پرداخت تومان.',
+      canonicalPath: '/shop',
     };
   }
   if (p === '/vet-consult') {
     return {
-      title: SEO.titleTemplate('مشاوره دامپزشک'),
-      description: 'درخواست مشاوره دامپزشک آنلاین در پت‌دیت.',
+      title: SEO.titleTemplate('مشاوره دامپزشک آنلاین'),
+      description:
+        'درخواست مشاوره دامپزشک آنلاین در پت‌دیت — چت با دامپزشک تأییدشده روی وب و ربات تلگرام، بدون مراجعه حضوری.',
       canonicalPath: '/vet-consult',
     };
   }
   if (p.startsWith('/adoption/')) {
+    const slug = p.slice('/adoption/'.length);
+    const pet = getAdoptionPet(slug);
+    if (pet) {
+      return {
+        title: SEO.titleTemplate(`پذیرش ${pet.name} — حیوان خانگی`),
+        description:
+          pet.about ||
+          `جزئیات پذیرش ${pet.name} در پت‌دیت — پیدا کردن خانهٔ جدید برای حیوان خانگی.`,
+        canonicalPath: `/adoption/${pet.slug}`,
+      };
+    }
     return {
       title: SEO.titleTemplate('پذیرش پت'),
-      description: 'جزئیات پذیرش پت در پت‌دیت.',
+      description: 'پت‌های نیازمند خانه در پت‌دیت — پذیرش مسئولانه حیوان خانگی.',
       canonicalPath: p,
     };
   }
   if (p === '/auth/login') {
     return {
-      title: SEO.titleTemplate('ورود'),
-      description: 'ورود به پت‌دیت با پیامک OTP.',
+      title: SEO.titleTemplate('ورود با پیامک'),
+      description: 'ورود به پت‌دیت با کد یک‌بارمصرف پیامک — همبازی، شاپ و دامپزشک روی یک حساب.',
       canonicalPath: '/auth/login',
     };
   }
   if (p === '/auth/otp') {
     return {
       title: SEO.titleTemplate('کد تأیید'),
+      robots: 'noindex,follow',
+    };
+  }
+  if (p === '/auth/telegram') {
+    return {
+      title: SEO.titleTemplate('اتصال تلگرام'),
       robots: 'noindex,follow',
     };
   }
@@ -102,7 +166,7 @@ function metaForPath(pathname: string): PageMeta {
   if (p.startsWith('/pets/')) {
     return { title: SEO.titleTemplate('پروفایل پت'), robots: 'noindex,follow' };
   }
-  if (p === '/chats' || p.startsWith('/chats/')) {
+  if (p === '/chats' || p.startsWith('/chats/') || p.startsWith('/vet-chats')) {
     return { title: SEO.titleTemplate('هم بازی'), robots: 'noindex,nofollow' };
   }
   if (p.startsWith('/onboarding')) {
@@ -135,6 +199,19 @@ function upsertLink(rel: string, href: string) {
   el.href = href;
 }
 
+function upsertHreflang(hreflang: string, href: string) {
+  let el = document.head.querySelector(
+    `link[rel="alternate"][hreflang="${hreflang}"]`
+  ) as HTMLLinkElement | null;
+  if (!el) {
+    el = document.createElement('link');
+    el.rel = 'alternate';
+    el.hreflang = hreflang;
+    document.head.appendChild(el);
+  }
+  el.href = href;
+}
+
 /**
  * Keeps document.title + key meta in sync with the SPA route.
  * Crawlers that execute JS (and browser tabs) get per-page titles.
@@ -148,16 +225,28 @@ export function RouteSeo() {
 
     const description = meta.description ?? DEFAULT_DESC;
     upsertMeta('name', 'description', description);
-    upsertMeta('name', 'robots', meta.robots ?? 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1');
+    upsertMeta(
+      'name',
+      'robots',
+      meta.robots ?? 'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1'
+    );
 
     const canonical = `${SITE.origin}${meta.canonicalPath ?? (pathname === '/' ? '/' : pathname)}`;
     upsertLink('canonical', canonical);
+    upsertHreflang('fa-IR', canonical);
+    upsertHreflang('x-default', canonical);
 
     upsertMeta('property', 'og:url', canonical);
     upsertMeta('property', 'og:title', meta.title);
     upsertMeta('property', 'og:description', description);
+    upsertMeta('property', 'og:type', 'website');
+    upsertMeta('property', 'og:site_name', SEO.siteName);
+    upsertMeta('property', 'og:locale', SEO.locale);
+    upsertMeta('property', 'og:image', SITE.ogImage);
+    upsertMeta('name', 'twitter:card', 'summary_large_image');
     upsertMeta('name', 'twitter:title', meta.title);
     upsertMeta('name', 'twitter:description', description);
+    upsertMeta('name', 'twitter:image', SITE.ogImage);
   }, [pathname]);
 
   return null;
