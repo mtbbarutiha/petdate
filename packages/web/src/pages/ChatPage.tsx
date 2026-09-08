@@ -60,7 +60,7 @@ import {
   uploadPlaydateChatFile,
 } from '../lib/api';
 import type { PlaydateChatMediaKind, PlaydateChatMessage } from '@petdate/shared';
-import { PLAYDATE_REQUEST_TTL_MS, isPendingRequestExpired } from '@petdate/shared';
+import { PLAYDATE_REQUEST_TTL_MS, isPendingRequestExpired, makeUserPublicId, userPublicIdOf } from '@petdate/shared';
 import { playdateToMatchRequest } from '../lib/playdateMap';
 import { subscribeIncomingRefresh } from '../lib/liveIncoming';
 import {
@@ -850,30 +850,33 @@ export function ChatPage() {
       return;
     }
     let cancelled = false;
+    // Prefer public آیدی immediately; refine from API if stored publicId differs.
+    const fallbackId = makeUserPublicId(ownerId);
+    setPeerOwnerLabel(fallbackId);
     void getUserById(ownerId)
       .then((user) => {
-        if (cancelled || !user?.name?.trim()) return;
-        const name = user.name.trim();
-        setPeerOwnerLabel(name);
+        if (cancelled || !user?.id) return;
+        const label = userPublicIdOf(user);
+        setPeerOwnerLabel(label);
         setConversations((prev) =>
           prev.map((c) =>
             c.peerPet?.ownerId === ownerId
               ? {
                   ...c,
-                  title: name || c.title,
-                  peerPet: { ...c.peerPet, ownerName: name },
+                  title: label,
+                  peerPet: { ...c.peerPet, ownerName: label },
                 }
               : c,
           ),
         );
         setMatch((prev) =>
           prev && prev.fromPet.ownerId === ownerId
-            ? { ...prev, fromPet: { ...prev.fromPet, ownerName: name } }
+            ? { ...prev, fromPet: { ...prev.fromPet, ownerName: label } }
             : prev,
         );
       })
       .catch(() => {
-        /* keep fallback */
+        /* keep PD-U##### fallback */
       });
     return () => {
       cancelled = true;
@@ -916,9 +919,11 @@ export function ChatPage() {
   }, [ended]);
 
   const peerPet = match?.fromPet;
-  const peerOwnerName =
-    peerOwnerLabel || peerPet?.ownerName || peerPet?.name || 'صاحب پت';
   const peerOwnerId = peerPet?.ownerId;
+  const peerOwnerName =
+    peerOwnerLabel ||
+    (peerOwnerId ? makeUserPublicId(peerOwnerId) : null) ||
+    'صاحب پت';
   const isExpiredRequest =
     Boolean(match?.expired) ||
     match?.status === 'expired' ||

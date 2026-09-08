@@ -1,10 +1,16 @@
 import type { User } from '@petdate/shared';
+import { userPublicIdOf } from '@petdate/shared';
 import { infra } from '../config/infra';
 import { activateBotOwnerChatSessions } from './bot-owner-chat-session';
 import { normalizeTelegramId } from './telegram-id';
 
 function escapeHtml(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/** Playmate chat peer label — public آیدی only, never @username / display name. */
+function playmatePeerIdLabel(user: User): string {
+  return userPublicIdOf(user);
 }
 
 async function telegramCall(
@@ -135,7 +141,7 @@ export async function startOwnerChatFromApi(opts: {
   const accepterIntro = [
     '💬 <b>چت همبازی فعال شد</b>',
     '',
-    `طرف مقابل: <b>${escapeHtml(requester.name)}</b>`,
+    `طرف مقابل: <b>${escapeHtml(playmatePeerIdLabel(requester))}</b>`,
     petLine,
     '',
     '👋 به همبازی جدید سلام کن!',
@@ -149,7 +155,7 @@ export async function startOwnerChatFromApi(opts: {
   const requesterIntro = [
     '✅ <b>درخواست همبازی‌ات پذیرفته شد!</b>',
     '',
-    `طرف مقابل: <b>${escapeHtml(accepter.name)}</b>`,
+    `طرف مقابل: <b>${escapeHtml(playmatePeerIdLabel(accepter))}</b>`,
     petLine,
     '',
     '💬 چت همبازی همین الان فعال شد.',
