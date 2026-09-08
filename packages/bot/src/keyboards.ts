@@ -66,6 +66,7 @@ export const PET_OWNER_MENU = {
   shop: '🛒 پت‌شاپ',
   /** @deprecated حذف از منو — نگه‌داری برای کیبوردهای قدیمی تلگرام */
   chat: '💬 چت',
+  /** @deprecated حذف از منوی همه نقش‌ها — نگه‌داری برای کیبوردهای قدیمی / deep-link */
   services: '🛠 خدمات',
   myRoles: MY_ROLES_LABEL,
 } as const;
@@ -703,9 +704,6 @@ export function petOwnerMenuKeyboard(telegramId?: string | number | null): Keybo
     .text(m.quickVet)
     .success()
     .text(m.earn)
-    .primary()
-    .row()
-    .text(m.services)
     .primary();
   appendCommonMenuRows(kb);
   return appendAccessRow(kb.resized().persistent(), telegramId);
