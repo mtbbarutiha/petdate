@@ -89,9 +89,13 @@ const CHAT_WIPE_HINT =
 const FALLBACK_POLL_MS = 12_000;
 const OFFLINE_FALLBACK_POLL_MS = 8_000;
 /** Message/status poll when WS is down — keep gentle to avoid UI thrash. */
-const MESSAGE_FALLBACK_POLL_MS = 15_000;
-/** Slow catch-up while WS is up (missed Telegram→web events / subscribe races). */
-const MESSAGE_WS_CATCHUP_POLL_MS = 20_000;
+const MESSAGE_FALLBACK_POLL_MS = 8_000;
+/**
+ * Catch-up while WS is up (missed Telegram→web events / subscribe races /
+ * half-open sockets). Keep short enough that dual-online "گیر کردن" recovers
+ * within a few seconds without waiting for a full page refresh.
+ */
+const MESSAGE_WS_CATCHUP_POLL_MS = 8_000;
 const DESKTOP_MQ = '(min-width: 860px)';
 
 type ChatMsg = {
@@ -800,8 +804,11 @@ export function ChatPage() {
   useEffect(() => {
     if (!match || !myUserId || ended || match.status !== 'accepted') return;
     let cancelled = false;
+    let inFlight = false;
 
     async function pull(initial = false) {
+      if (inFlight) return;
+      inFlight = true;
       try {
         const rows = await listPlaydateChatMessages(
           match!.id,
@@ -819,7 +826,9 @@ export function ChatPage() {
         });
         lastMsgIdRef.current = Math.max(lastMsgIdRef.current, ...rows.map((r) => r.id));
       } catch {
-        /* keep local */
+        /* keep local — next tick / reconnect / focus retries */
+      } finally {
+        inFlight = false;
       }
     }
 
@@ -854,22 +863,37 @@ export function ChatPage() {
           navigate('/chats', { replace: true });
         }
       } catch {
-        /* ignore */
+        /* ignore — retried on interval / reconnect */
       }
+    }
+
+    function catchUp(initial = false) {
+      if (document.visibilityState === 'hidden') return;
+      void pull(initial);
+      void pullMeta();
     }
 
     // Always load history once — WS-only path missed Telegram→web lines and
     // dropped events that arrived before match finished loading.
-    void pull(true);
-    void pullMeta();
-    const timer = window.setInterval(() => {
-      void pull(false);
-      // Always poll meta so chatEnded reaches every open browser even if WS missed it
-      void pullMeta();
-    }, wsConnected ? MESSAGE_WS_CATCHUP_POLL_MS : MESSAGE_FALLBACK_POLL_MS);
+    catchUp(true);
+    const timer = window.setInterval(
+      () => catchUp(false),
+      wsConnected ? MESSAGE_WS_CATCHUP_POLL_MS : MESSAGE_FALLBACK_POLL_MS,
+    );
+    // Immediate catch-up after WS reconnect (covers subscribe races + missed frames).
+    const onWsOpen = () => catchUp(false);
+    const onVis = () => {
+      if (document.visibilityState === 'visible') catchUp(false);
+    };
+    window.addEventListener('petdate:ws-open', onWsOpen);
+    document.addEventListener('visibilitychange', onVis);
+    window.addEventListener('focus', onWsOpen);
     return () => {
       cancelled = true;
       window.clearInterval(timer);
+      window.removeEventListener('petdate:ws-open', onWsOpen);
+      document.removeEventListener('visibilitychange', onVis);
+      window.removeEventListener('focus', onWsOpen);
     };
   }, [match?.id, myUserId, ended, softReloadConversations, wsConnected, navigate]);
 
