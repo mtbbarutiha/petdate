@@ -95,4 +95,34 @@ if [[ -d packages/api/src/routes ]]; then
   ok "wallet/transactions api markers"
 fi
 
+# --- Shop full UI (wiped when thin feature-branch dist was rsynced with --delete) ---
+[[ -f packages/web/src/pages/shop/ShopOrdersPage.tsx ]] \
+  || fail "ShopOrdersPage.tsx missing — incomplete shop tree"
+grep -q 'ShopOrdersPage' packages/web/src/App.tsx \
+  || fail "ShopOrdersPage route missing from App.tsx"
+grep -qE 'افزودن به سبد' packages/web/src/components/shop/ShopProductCard.tsx \
+  || fail "shop add-to-cart CTA missing on ShopProductCard"
+grep -qE "PayMethod = .*'toman'|paymentCurrency: 'toman'|ریال / تومان" \
+  packages/web/src/pages/shop/ShopCartPage.tsx \
+  || fail "shop toman/rial checkout missing from ShopCartPage"
+grep -qE "payMethod === 'card'|ShopCardPayPage|/shop/card-pay" \
+  packages/web/src/pages/shop/ShopCartPage.tsx \
+  || fail "shop card-to-card checkout missing from ShopCartPage"
+[[ -f packages/web/src/pages/shop/ShopCardPayPage.tsx ]] \
+  || fail "ShopCardPayPage.tsx missing"
+ok "shop orders + toman/card checkout markers"
+
+# Profile / My Pets same API source (regression when partial web deploy shipped stale Profile)
+grep -q 'useMyPets' packages/web/src/pages/ProfilePage.tsx \
+  || fail "ProfilePage must use useMyPets (same source as My Pets)"
+[[ -f packages/web/src/hooks/useMyPets.ts ]] || fail "useMyPets hook missing"
+ok "profile/my-pets same source"
+
+# Playdate accept → chat (bot+api) — soft presence check
+if [[ -d packages/bot/src ]]; then
+  grep -R -q -E 'auto-enter|playdate:enterchat' packages/bot/src \
+    || fail "playdate auto-enter chat markers look missing in bot"
+  ok "playdate enter-chat bot markers"
+fi
+
 echo "predeploy-check passed — this tree may deploy."
