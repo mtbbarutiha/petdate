@@ -204,24 +204,40 @@ export function WalletPage() {
       </header>
 
       <section
-        className={`pepito-wallet-grid${loading && !wallet ? ' is-pending' : ''}`}
+        className={`pepito-wallet-balances${loading && !wallet ? ' is-pending' : ''}`}
         aria-label="موجودی‌ها"
       >
-        {ORDER.map((key) => (
-          <article key={key} className={`pepito-wallet-card pepito-wallet-card--${key}`} aria-live={key === 'stars' ? 'polite' : undefined}>
-            <div className="pepito-wallet-card-head">
-              <p className="pepito-wallet-card-label">{WALLET_CURRENCY_LABELS_FA[key]}</p>
-              <span className="pepito-wallet-card-sym" aria-hidden>
-                {key === 'toman' ? '﷼' : WALLET_CURRENCY_SYMBOLS[key]}
-              </span>
-            </div>
-            <p className="pepito-wallet-card-val">
-              {formatBal(balances[key])}
-              {key === 'toman' ? <span className="pepito-wallet-card-unit"> ت</span> : null}
-            </p>
-            <p className="pepito-wallet-card-note">{WALLET_CURRENCY_STATUS[key].noteFa}</p>
-          </article>
-        ))}
+        <div className="pepito-wallet-panel">
+          <div className="pepito-wallet-panel-band" aria-hidden />
+          <div className="pepito-wallet-panel-top">
+            <span className="pepito-wallet-panel-chip">
+              <Wallet size={14} aria-hidden />
+              کیف پول
+            </span>
+            <span className="pepito-wallet-panel-meta">۴ ارز</span>
+          </div>
+          <div className="pepito-wallet-grid">
+            {ORDER.map((key) => (
+              <article
+                key={key}
+                className={`pepito-wallet-card pepito-wallet-card--${key}`}
+                aria-live={key === 'stars' ? 'polite' : undefined}
+              >
+                <div className="pepito-wallet-card-head">
+                  <p className="pepito-wallet-card-label">{WALLET_CURRENCY_LABELS_FA[key]}</p>
+                  <span className="pepito-wallet-card-sym" aria-hidden>
+                    {key === 'toman' ? '﷼' : WALLET_CURRENCY_SYMBOLS[key]}
+                  </span>
+                </div>
+                <p className="pepito-wallet-card-val">
+                  {formatBal(balances[key])}
+                  {key === 'toman' ? <span className="pepito-wallet-card-unit"> ت</span> : null}
+                </p>
+                <p className="pepito-wallet-card-note">{WALLET_CURRENCY_STATUS[key].noteFa}</p>
+              </article>
+            ))}
+          </div>
+        </div>
       </section>
 
       <p
