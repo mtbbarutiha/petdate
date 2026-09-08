@@ -30,6 +30,7 @@ import {
 } from '../lib/api';
 import { petProfileToUiPet } from '../lib/playdateMap';
 import { sendPlaymateRequestNow } from '../lib/playmateActions';
+import { petPublicUrl, shareOrCopyUrl } from '../lib/share';
 import { PET_TYPE_LABELS } from '../types';
 
 const MED_FIELDS = Object.keys(PET_MEDICAL_FIELD_LABELS) as PetMedicalField[];
@@ -198,6 +199,17 @@ export function PetDetailPage() {
     }
   }
 
+  async function onSharePet() {
+    if (!pet) return;
+    const url = petPublicUrl(pet.id);
+    const title = `${pet.name} | پت‌دیت`;
+    const text = `پروفایل ${pet.name} را در پت‌دیت ببین`;
+    const message = await shareOrCopyUrl({ url, title, text });
+    if (!message) return;
+    setToast(message);
+    window.setTimeout(() => setToast(null), 2200);
+  }
+
   if (loading) {
     return (
       <div className="pepito-pet-profile">
@@ -254,7 +266,12 @@ export function PetDetailPage() {
                 <Heart size={18} />
               </button>
             )}
-            <button type="button" className="icon-btn icon-btn--glass" aria-label="اشتراک">
+            <button
+              type="button"
+              className="icon-btn icon-btn--glass"
+              aria-label="اشتراک"
+              onClick={() => void onSharePet()}
+            >
               <Share2 size={18} />
             </button>
           </div>
