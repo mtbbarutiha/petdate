@@ -127,3 +127,67 @@ export async function activateBotVetChatSessions(opts: {
   }
   return result;
 }
+
+function clearVetChatFields(existing: SessionLike): SessionLike {
+  const next: SessionLike = { ...existing, step: 'ready', updatedAt: new Date().toISOString() };
+  delete next.vetChatConsultId;
+  delete next.vetChatPeerTelegramId;
+  delete next.vetChatRole;
+  delete next.vetChatWebHintSent;
+  delete next.medicalNotePetId;
+  delete next.prescriptionPetId;
+  delete next.prescriptionDraft;
+  return next;
+}
+
+/**
+ * Clear bot vet_chat for both peers when consult chat ends (web or bot).
+ * Prevents sticky chat keyboard / relay interference across mobile+desktop.
+ */
+export async function clearBotVetChatSessions(opts: {
+  consultId?: number;
+  telegramIds: Array<string | null | undefined>;
+}): Promise<number> {
+  const client = await getRedis();
+  if (!client) return 0;
+  let cleared = 0;
+  const unique = [
+    ...new Set(
+      opts.telegramIds
+        .map((id) => normalizeTelegramId(id))
+        .filter((id): id is string => Boolean(id)),
+    ),
+  ];
+  for (const telegramId of unique) {
+    try {
+      const key = sessionKey(telegramId);
+      const raw = await client.get(key);
+      if (!raw) continue;
+      let existing: SessionLike;
+      try {
+        existing = JSON.parse(raw) as SessionLike;
+      } catch {
+        continue;
+      }
+      if (
+        opts.consultId &&
+        existing.vetChatConsultId &&
+        existing.vetChatConsultId !== opts.consultId
+      ) {
+        continue;
+      }
+      const inVetChat =
+        existing.step === 'vet_chat' ||
+        existing.step === 'vet_medical_note' ||
+        existing.step === 'vet_prescription' ||
+        Boolean(existing.vetChatConsultId);
+      if (!inVetChat) continue;
+      const next = clearVetChatFields(existing);
+      await client.set(key, JSON.stringify(next), 'EX', SESSION_TTL_SECONDS);
+      cleared += 1;
+    } catch (err) {
+      console.warn('clear bot vet session failed:', telegramId, (err as Error).message);
+    }
+  }
+  return cleared;
+}

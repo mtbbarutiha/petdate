@@ -329,6 +329,169 @@ export async function wipePlaydateChatTelegram(opts: {
   return { deleted };
 }
 
+/**
+ * Sticky ReplyKeyboard for vet consult chat (role-aware).
+ * Labels match packages/bot vetChatReplyKeyboard — never send+delete carriers.
+ */
+function vetChatStickyKeyboard(peerRole: 'vet' | 'patient') {
+  if (peerRole === 'patient') {
+    return {
+      keyboard: [[{ text: '🔌 بستن چت' }]],
+      resize_keyboard: true,
+      is_persistent: true,
+    };
+  }
+  return {
+    keyboard: [
+      [{ text: '🔌 بستن چت' }],
+      [{ text: '🐾 پروفایل پت' }, { text: '📋 پرونده' }],
+      [{ text: '📝 ثبت پرونده' }, { text: '💊 نسخه' }],
+    ],
+    resize_keyboard: true,
+    is_persistent: true,
+  };
+}
+
+/**
+ * Mirror a web/API vet consult chat line to the peer's Telegram.
+ * Plain text (no sender prefix). Sticky ReplyKeyboard on the content message.
+ * No self-echo to the sender's own bot (Bot API cannot do right-side bubbles).
+ * Bot-originated lines call the messages API with skipTelegram=true.
+ */
+export async function notifyVetChatTelegram(opts: {
+  toTelegramId: string;
+  peerRole: 'vet' | 'patient';
+  text: string;
+  protectContent?: boolean;
+  mediaKind?: PlaydateChatMediaKind | null;
+  storageKey?: string | null;
+  mimeType?: string | null;
+  fileName?: string | null;
+}): Promise<boolean> {
+  if (!infra.telegram.botToken || !usableTelegramId(opts.toTelegramId)) return false;
+
+  const chatId = String(opts.toTelegramId).trim();
+  const secure = Boolean(opts.protectContent);
+  const protect = secure ? { protect_content: true } : {};
+  const keyboard = vetChatStickyKeyboard(opts.peerRole);
+  const caption = (opts.text || '').trim();
+  const storageAbs = opts.storageKey ? resolveStoragePath(opts.storageKey) : null;
+  const hasFile = Boolean(storageAbs && fs.existsSync(storageAbs));
+
+  let result: TelegramSendResult = { ok: false };
+
+  if (hasFile && storageAbs) {
+    const buffer = fs.readFileSync(storageAbs);
+    const filename =
+      (opts.fileName && path.basename(opts.fileName)) ||
+      path.basename(storageAbs) ||
+      'file';
+    const contentType = opts.mimeType || 'application/octet-stream';
+    const kind = opts.mediaKind || 'document';
+    const fields: Record<string, string> = {
+      chat_id: chatId,
+      ...(caption ? { caption: caption.slice(0, 1024) } : {}),
+      ...(secure ? { protect_content: 'true' } : {}),
+      reply_markup: JSON.stringify(keyboard),
+    };
+
+    if (kind === 'photo') {
+      result = await telegramSendMultipart('sendPhoto', fields, 'photo', {
+        buffer,
+        filename,
+        contentType: contentType.startsWith('image/') ? contentType : 'image/jpeg',
+      });
+    } else if (kind === 'sticker') {
+      result = await telegramSendMultipart('sendDocument', fields, 'document', {
+        buffer,
+        filename: filename.endsWith('.webp') ? filename : `${filename}.webp`,
+        contentType: contentType.startsWith('image/') ? contentType : 'image/webp',
+      });
+    } else if (kind === 'video' || kind === 'animation' || kind === 'video_note') {
+      const method = kind === 'animation' ? 'sendAnimation' : 'sendVideo';
+      const field = kind === 'animation' ? 'animation' : 'video';
+      result = await telegramSendMultipart(method, fields, field, {
+        buffer,
+        filename,
+        contentType: contentType || 'video/mp4',
+      });
+    } else if (kind === 'voice' || kind === 'audio') {
+      const method = kind === 'voice' ? 'sendVoice' : 'sendAudio';
+      const field = kind === 'voice' ? 'voice' : 'audio';
+      result = await telegramSendMultipart(method, fields, field, {
+        buffer,
+        filename,
+        contentType: contentType || 'audio/ogg',
+      });
+    } else {
+      result = await telegramSendMultipart('sendDocument', fields, 'document', {
+        buffer,
+        filename,
+        contentType,
+      });
+    }
+
+    if (!result.ok && kind !== 'document' && kind !== 'sticker') {
+      result = await telegramSendMultipart('sendDocument', fields, 'document', {
+        buffer,
+        filename,
+        contentType,
+      });
+    }
+    if (!result.ok) {
+      const notice = (caption || mediaPlaceholder(kind)).slice(0, 4096);
+      result = await telegramCall('sendMessage', {
+        chat_id: chatId,
+        text: notice,
+        ...protect,
+        reply_markup: keyboard,
+      });
+    }
+  } else if (caption) {
+    result = await telegramCall('sendMessage', {
+      chat_id: chatId,
+      text: caption.slice(0, 4096),
+      ...protect,
+      reply_markup: keyboard,
+    });
+  } else if (opts.mediaKind) {
+    result = await telegramCall('sendMessage', {
+      chat_id: chatId,
+      text: mediaPlaceholder(opts.mediaKind),
+      ...protect,
+      reply_markup: keyboard,
+    });
+  } else {
+    return false;
+  }
+
+  return result.ok;
+}
+
+export async function notifyVetChatSecureTelegram(opts: {
+  toTelegramId: string;
+  secure: boolean;
+}): Promise<boolean> {
+  if (!infra.telegram.botToken || !usableTelegramId(opts.toTelegramId)) return false;
+  const text = opts.secure
+    ? '🔒 طرف مقابل چت امن را در وب فعال کرد.\nپیام‌های این گفتگو قابل ذخیره یا فوروارد نیستند.'
+    : '🔓 طرف مقابل چت امن را در وب خاموش کرد.';
+  return (await telegramCall('sendMessage', { chat_id: opts.toTelegramId, text })).ok;
+}
+
+export async function notifyVetChatEndedTelegram(opts: {
+  toTelegramId: string;
+}): Promise<boolean> {
+  if (!infra.telegram.botToken || !usableTelegramId(opts.toTelegramId)) return false;
+  return (
+    await telegramCall('sendMessage', {
+      chat_id: opts.toTelegramId,
+      text:
+        '🔌 چت مشاوره قطع شد.\nمنوی اصلی دوباره فعال است — /start یا «📋 منو» را بزن.\n🗑 در صورت نیاز گفتگو را از تلگرام پاک کن.',
+    })
+  ).ok;
+}
+
 /** Resolve a Telegram file_id to a downloadable file path on Telegram servers. */
 export async function resolveTelegramFile(fileId: string): Promise<{
   filePath: string;

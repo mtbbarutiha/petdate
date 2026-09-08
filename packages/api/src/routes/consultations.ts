@@ -2,7 +2,6 @@ import { Router } from 'express';
 import fs from 'fs';
 import multer from 'multer';
 import { QUICK_VET_COST, vetVisitFeeCoins, type VetConsultStatus } from '@petdate/shared';
-import { infra } from '../config/infra';
 import { dbService } from '../db';
 import { createPrescriptionWithDelivery } from '../services/prescription';
 import { deliverPrescriptionToConsultChat } from '../services/prescription-chat';
@@ -17,8 +16,14 @@ import {
 } from '../services/prescription-html';
 import { notifyVetQuickConsultTelegram } from '../services/telegram-vet-consult-notify';
 import { startVetChatFromApi } from '../services/telegram-vet-chat-start';
-import { resolveTelegramFile } from '../services/telegram-chat-notify';
-import { telegramFetch, telegramBotApiUrl } from '../services/telegram-http';
+import { clearBotVetChatSessions } from '../services/bot-vet-chat-session';
+import {
+  notifyVetChatEndedTelegram,
+  notifyVetChatSecureTelegram,
+  notifyVetChatTelegram,
+  resolveTelegramFile,
+} from '../services/telegram-chat-notify';
+import { normalizeTelegramId } from '../services/telegram-id';
 import {
   MAX_UPLOAD_BYTES,
   deleteChatUpload,
@@ -34,6 +39,7 @@ import {
   notifyVetMessage,
   notifyVetThread,
 } from '../ws/chatHub';
+import type { VetConsultChatMediaKind } from '@petdate/shared';
 
 const VALID_STATUSES: VetConsultStatus[] = [
   'requested',
@@ -57,6 +63,55 @@ function purgeVetConsultUploads(consultId: number): void {
     deleteChatUpload(key);
   }
   purgeChatUploadFolder(vetUploadFolder(consultId));
+}
+
+function consultPeerTelegramIds(
+  consult: NonNullable<ReturnType<typeof dbService.getVetConsultation>>,
+  exceptUserId?: number
+): string[] {
+  const ids: string[] = [];
+  for (const userId of [consult.vetUserId, consult.patientUserId]) {
+    if (exceptUserId != null && userId === exceptUserId) continue;
+    const user = dbService.getUserById(userId);
+    const tg = normalizeTelegramId(user?.telegramId);
+    if (tg) ids.push(tg);
+  }
+  return ids;
+}
+
+/**
+ * Web/API → Telegram fan-out for a vet consult chat line.
+ * Delivers exactly one copy to the peer's bot chat (no sender self-echo).
+ * skipTelegram callers must not invoke this — bot already shows the typed line.
+ */
+function fanOutVetChatTelegram(opts: {
+  consult: NonNullable<ReturnType<typeof dbService.getVetConsultation>>;
+  senderUserId: number;
+  text: string;
+  mediaKind?: VetConsultChatMediaKind | string | null;
+  storageKey?: string | null;
+  mimeType?: string | null;
+  fileName?: string | null;
+}): void {
+  const { consult, senderUserId } = opts;
+  const peerUserId =
+    consult.vetUserId === senderUserId ? consult.patientUserId : consult.vetUserId;
+  const peerRole: 'vet' | 'patient' =
+    peerUserId === consult.vetUserId ? 'vet' : 'patient';
+  const peer = dbService.getUserById(peerUserId);
+  const peerTg = normalizeTelegramId(peer?.telegramId);
+  if (!peerTg) return;
+
+  void notifyVetChatTelegram({
+    toTelegramId: peerTg,
+    peerRole,
+    text: opts.text,
+    protectContent: Boolean(consult.chatSecure),
+    mediaKind: (opts.mediaKind ?? null) as VetConsultChatMediaKind | null,
+    storageKey: opts.storageKey,
+    mimeType: opts.mimeType,
+    fileName: opts.fileName,
+  });
 }
 
 export const consultationsRouter = Router();
@@ -559,6 +614,8 @@ consultationsRouter.post('/:id/messages', async (req, res) => {
   const fileName = typeof req.body?.fileName === 'string' ? req.body.fileName : undefined;
   const storageKey =
     typeof req.body?.storageKey === 'string' ? req.body.storageKey : undefined;
+  /** When true, skip Telegram fan-out (bot already delivered the line). */
+  const skipTelegram = Boolean(req.body?.skipTelegram);
 
   if (!senderUserId || !Number.isFinite(senderUserId)) {
     res.status(401).json({ error: 'ورود لازم است' });
@@ -599,29 +656,19 @@ consultationsRouter.post('/:id/messages', async (req, res) => {
       storageKey,
     });
 
-    const peerId =
-      gate.consult.vetUserId === senderUserId
-        ? gate.consult.patientUserId
-        : gate.consult.vetUserId;
-    const peer = dbService.getUserById(peerId);
-    const sender = dbService.getUserById(senderUserId);
-    if (peer?.telegramId) {
-      const token = infra.telegram.botToken;
-      if (token) {
-        // web-cta-once-v2: silent relay — CTA only at chat START via Redis SET NX, never here.
-        void telegramFetch(telegramBotApiUrl(token, 'sendMessage'), {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            chat_id: peer.telegramId,
-            text: `💬 ${sender?.name ?? 'طرف مقابل'}:\n${message.text}`,
-            ...(gate.consult.chatSecure ? { protect_content: true } : {}),
-          }),
-        }).catch(() => undefined);
-      }
-    }
-
+    // WS first — web dual-online peers must not wait on Telegram latency/failures.
     notifyVetMessage(id, message, [gate.consult.vetUserId, gate.consult.patientUserId]);
+    if (!skipTelegram) {
+      fanOutVetChatTelegram({
+        consult: gate.consult,
+        senderUserId,
+        text: message.text,
+        mediaKind: message.mediaKind,
+        storageKey: message.storageKey,
+        mimeType: message.mimeType,
+        fileName: message.fileName,
+      });
+    }
     res.status(201).json(message);
   } catch (err) {
     if (err instanceof Error && err.message === 'EMPTY_TEXT') {
@@ -721,29 +768,17 @@ consultationsRouter.post('/:id/messages/upload', (req, res) => {
         fileName: originalName,
       });
 
-      const peerId =
-        gate.consult.vetUserId === senderUserId
-          ? gate.consult.patientUserId
-          : gate.consult.vetUserId;
-      const peer = dbService.getUserById(peerId);
-      const sender = dbService.getUserById(senderUserId);
-      if (peer?.telegramId) {
-        const token = infra.telegram.botToken;
-        if (token) {
-          // web-cta-once-v2: silent relay — CTA only at chat START via Redis SET NX, never here.
-          void telegramFetch(telegramBotApiUrl(token, 'sendMessage'), {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              chat_id: peer.telegramId,
-              text: `💬 ${sender?.name ?? 'طرف مقابل'}:\n${message.text || '📎 فایل'}`,
-              ...(gate.consult.chatSecure ? { protect_content: true } : {}),
-            }),
-          }).catch(() => undefined);
-        }
-      }
-
+      // WS first — web dual-online peers must not wait on Telegram latency/failures.
       notifyVetMessage(id, message, [gate.consult.vetUserId, gate.consult.patientUserId]);
+      fanOutVetChatTelegram({
+        consult: gate.consult,
+        senderUserId,
+        text: message.text,
+        mediaKind: message.mediaKind,
+        storageKey: message.storageKey,
+        mimeType: message.mimeType,
+        fileName: message.fileName,
+      });
       res.status(201).json(message);
     } catch (err) {
       if (err instanceof Error && err.message === 'FILE_TOO_LARGE') {
@@ -879,6 +914,15 @@ consultationsRouter.post('/:id/end-chat', async (req, res) => {
 
   purgeVetConsultUploads(id);
   const updated = dbService.endVetConsultChat(id);
+  const bothTelegramIds = consultPeerTelegramIds(gate.consult);
+  // Clear sticky bot vet_chat for BOTH sides — stops mobile/desktop keyboard interference
+  void clearBotVetChatSessions({
+    consultId: id,
+    telegramIds: bothTelegramIds,
+  });
+  for (const telegramId of consultPeerTelegramIds(gate.consult, userId)) {
+    void notifyVetChatEndedTelegram({ toTelegramId: telegramId });
+  }
   notifyVetThread(id, [gate.consult.vetUserId, gate.consult.patientUserId], {
     chatEnded: true,
     chatSecure: false,
@@ -921,6 +965,9 @@ consultationsRouter.patch('/:id/chat-secure', async (req, res) => {
   }
 
   const updated = dbService.setVetConsultChatSecure(id, secure);
+  for (const telegramId of consultPeerTelegramIds(gate.consult, userId)) {
+    void notifyVetChatSecureTelegram({ toTelegramId: telegramId, secure });
+  }
   notifyVetThread(id, [gate.consult.vetUserId, gate.consult.patientUserId], {
     chatSecure: secure,
   });

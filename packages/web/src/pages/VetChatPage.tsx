@@ -85,7 +85,12 @@ const CHAT_WIPE_HINT =
 
 const FALLBACK_POLL_MS = 12_000;
 const OFFLINE_FALLBACK_POLL_MS = 8_000;
-const MESSAGE_FALLBACK_POLL_MS = 15_000;
+const MESSAGE_FALLBACK_POLL_MS = 8_000;
+/**
+ * Catch-up while WS is up (missed Telegram→web events / subscribe races /
+ * dual-online stuck frames). Same cadence as playmate ChatPage.
+ */
+const MESSAGE_WS_CATCHUP_POLL_MS = 8_000;
 const DESKTOP_MQ = '(min-width: 860px)';
 
 type UiMsg = {
@@ -543,21 +548,24 @@ export function VetChatPage() {
     if (!consult || (consult.status !== 'active' && consult.status !== 'requested')) {
       return;
     }
-    // Live socket covers active threads — avoid interval setState that looks like a refresh.
-    if (wsConnected && consult.status === 'active') {
-      return;
-    }
-
     let cancelled = false;
     const consultIdLocal = consult.id;
     const statusLocal = consult.status;
 
-    async function tick() {
+    async function pullMessages(initial = false) {
+      if (cancelled || document.visibilityState === 'hidden') return;
+      if (statusLocal === 'active' && !ended) {
+        try {
+          await syncMessages(initial ? { reset: true } : undefined);
+        } catch {
+          /* next tick / reconnect / focus retries */
+        }
+      }
+    }
+
+    async function pullMeta() {
       if (cancelled || document.visibilityState === 'hidden') return;
       try {
-        if (statusLocal === 'active' && !ended) {
-          await syncMessages();
-        }
         const next = await loadConsult();
         if (cancelled || !next || next.id !== consultIdLocal) return;
 
@@ -584,13 +592,34 @@ export function VetChatPage() {
       }
     }
 
+    function catchUp(initial = false) {
+      if (document.visibilityState === 'hidden') return;
+      void pullMessages(initial);
+      void pullMeta();
+    }
+
+    // Always load / catch up — WS-only path missed Telegram→web lines and
+    // dropped events that arrived before consult finished loading.
+    catchUp(false);
     const timer = window.setInterval(
-      () => void tick(),
-      MESSAGE_FALLBACK_POLL_MS,
+      () => catchUp(false),
+      wsConnected && statusLocal === 'active'
+        ? MESSAGE_WS_CATCHUP_POLL_MS
+        : MESSAGE_FALLBACK_POLL_MS,
     );
+    const onWsOpen = () => catchUp(false);
+    const onVis = () => {
+      if (document.visibilityState === 'visible') catchUp(false);
+    };
+    window.addEventListener('petdate:ws-open', onWsOpen);
+    document.addEventListener('visibilitychange', onVis);
+    window.addEventListener('focus', onWsOpen);
     return () => {
       cancelled = true;
       window.clearInterval(timer);
+      window.removeEventListener('petdate:ws-open', onWsOpen);
+      document.removeEventListener('visibilitychange', onVis);
+      window.removeEventListener('focus', onWsOpen);
     };
   }, [
     consult?.status,

@@ -1204,6 +1204,64 @@ export async function getVetConsultation(id: number): Promise<import('@petdate/s
   }
 }
 
+/** Persist a Telegram vet-chat line so the web client can poll / receive WS. */
+export async function postVetConsultChatMessage(
+  consultId: number,
+  senderUserId: number,
+  text: string,
+  media?: {
+    mediaKind: string;
+    telegramFileId: string;
+    mimeType?: string;
+    fileName?: string;
+  }
+): Promise<void> {
+  const body = JSON.stringify({
+    senderUserId,
+    text,
+    skipTelegram: true,
+    ...(media
+      ? {
+          mediaKind: media.mediaKind,
+          telegramFileId: media.telegramFileId,
+          mimeType: media.mimeType,
+          fileName: media.fileName,
+        }
+      : {}),
+  });
+  let lastErr: unknown;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      await request(`/api/consultations/${consultId}/messages`, {
+        method: 'POST',
+        body,
+      });
+      return;
+    } catch (err) {
+      lastErr = err;
+      console.error(`Failed to persist vet chat message (attempt ${attempt}/3):`, err);
+      if (attempt < 3) {
+        await new Promise((r) => setTimeout(r, 150 * attempt));
+      }
+    }
+  }
+  console.error('Failed to persist vet chat message after retries:', lastErr);
+  throw lastErr instanceof Error
+    ? lastErr
+    : new Error('Failed to persist vet chat message after retries');
+}
+
+export async function endVetConsultChatViaApi(consultId: number, userId: number): Promise<void> {
+  try {
+    await request(`/api/consultations/${consultId}/end-chat`, {
+      method: 'POST',
+      body: JSON.stringify({ userId }),
+    });
+  } catch (err) {
+    console.error('Failed to end vet consult chat via API:', err);
+  }
+}
+
 export type CreatePrescriptionResponse = {
   prescription: import('@petdate/shared').Prescription;
   pdfPath: string;
