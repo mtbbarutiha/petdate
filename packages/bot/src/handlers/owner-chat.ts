@@ -710,7 +710,7 @@ export async function handleOwnerChatRelay(ctx: Context): Promise<boolean> {
   const secure = !!session.ownerChatSecure;
   const protect = protectOpts(secure);
 
-  // Messages the API forwarded from the web app — do not re-relay
+  // Messages the API forwarded from the web app (or legacy self-echo) — do not re-relay
   if (
     text?.startsWith('💬 پیام همبازی از') ||
     text?.startsWith('📤 شما:')
