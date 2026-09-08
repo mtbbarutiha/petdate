@@ -214,9 +214,6 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   .pepito-adoption {
     padding-block: 4.5rem;
   }
-  .pepito-adoption-grid {
-    grid-template-columns: 1fr;
-  }
   .pepito-adoption-card {
     aspect-ratio: 1 / 1;
   }
@@ -231,9 +228,6 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
     margin-bottom: 0.5rem;
   }
 
-  .pepito-service-card {
-    flex-basis: 100%;
-  }
   .pepito-services-section {
     padding-block: 4.5rem;
   }
@@ -2384,9 +2378,6 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   .pepito-adoption {
     padding-block: 4.5rem;
   }
-  .pepito-adoption-grid {
-    grid-template-columns: 1fr;
-  }
   .pepito-adoption-card {
     aspect-ratio: 1 / 1;
   }
@@ -2401,20 +2392,12 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
     margin-bottom: 0.5rem;
   }
 
-  .pepito-service-card {
-    flex-basis: 100%;
-  }
   .pepito-services-section {
     padding-block: 4.5rem;
   }
   .pepito-reviews-section {
     padding-block: 4.5rem;
   }
-
-  .pepito-services,
-  .pepito-adoption-grid,
-  .pepito-team,
-  .pepito-reviews { grid-template-columns: 1fr; }
 
   .pepito-rely,
   .pepito-shop,
@@ -2424,17 +2407,86 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   .pepito-rely-lists {
     grid-template-columns: 1fr;
   }
-  .pepito-shop-grid {
-    grid-template-columns: 1fr;
-  }
   .pepito-news-card {
-    flex-basis: 100%;
+    flex-basis: min(86%, 320px);
   }
   .pepito-news-cont {
     padding: 40px 20px;
   }
   .pepito-news-nav {
     display: none;
+  }
+}
+
+/*
+ * Mobile swipe carousels — keep card rows horizontal with snap so sections
+ * do not stack into a long vertical list (team / adoption / services / …).
+ * Desktop grids above 720px stay unchanged. RTL inherits from dir=rtl.
+ */
+@media (max-width: 720px) {
+  .pepito-adoption-grid,
+  .pepito-team,
+  .pepito-reviews,
+  .pepito-shop-grid {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 1rem;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x mandatory;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    grid-template-columns: none;
+    margin-inline: calc(-1 * var(--pepito-gutter-x));
+    padding-inline: var(--pepito-gutter-x);
+    padding-block: 0.25rem 0.5rem;
+  }
+
+  .pepito-adoption-grid::-webkit-scrollbar,
+  .pepito-team::-webkit-scrollbar,
+  .pepito-reviews::-webkit-scrollbar,
+  .pepito-shop-grid::-webkit-scrollbar {
+    display: none;
+  }
+
+  .pepito-adoption-card,
+  .pepito-member,
+  .pepito-review,
+  .pepito-shop-item {
+    flex: 0 0 min(78vw, 280px);
+    width: min(78vw, 280px);
+    max-width: 280px;
+    min-width: 0;
+    scroll-snap-align: start;
+    box-sizing: border-box;
+  }
+
+  .pepito-review {
+    margin-top: 30px;
+  }
+
+  .pepito-services-track {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    margin-inline: calc(-1 * var(--pepito-gutter-x));
+    padding-inline: var(--pepito-gutter-x);
+  }
+
+  .pepito-service-card {
+    flex: 0 0 min(82%, 300px);
+    flex-basis: min(82%, 300px);
+    scroll-snap-align: start;
+  }
+
+  .pepito-news-track {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    margin-inline: calc(-1 * var(--pepito-gutter-x));
+    padding-inline: var(--pepito-gutter-x);
   }
 }
 @media (min-width: 860px) {
