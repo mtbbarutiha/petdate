@@ -738,9 +738,18 @@ export function registerHandlers(bot: Bot): void {
   bot.callbackQuery('search:menu', (ctx) => handleSearchMenuCallback(ctx));
   bot.callbackQuery('search:home', (ctx) => handleSearchHomeCallback(ctx));
   bot.callbackQuery('search:nearby:askloc', (ctx) => handleSearchNearbyAskLocCallback(ctx));
-  bot.callbackQuery(/^nearby:radius:(\d+)$/, (ctx) =>
-    handleNearbyRadiusCallback(ctx, Number(ctx.match![1]))
-  );
+  bot.callbackQuery(/^nearby:radius:(\d+)$/, async (ctx) => {
+    try {
+      await handleNearbyRadiusCallback(ctx, Number(ctx.match![1]));
+    } catch (err) {
+      console.error('nearby:radius handler failed:', err);
+      try {
+        await ctx.answerCallbackQuery({ text: 'خطا — دوباره بزن', show_alert: true });
+      } catch {
+        /* ignore */
+      }
+    }
+  });
   bot.callbackQuery('nearby:pick-radius', (ctx) => handleNearbyPickRadiusCallback(ctx));
   bot.callbackQuery('nearby:summary', (ctx) => handleNearbySummaryCallback(ctx));
   bot.callbackQuery(/^nearby:list:(\d+)$/, (ctx) =>

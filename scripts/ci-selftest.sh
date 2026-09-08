@@ -25,9 +25,10 @@ run src/services/telegram-playdate-notify.selftest.ts
 run src/services/nearby-cards.selftest.ts
 
 # Bot guards (sticky keyboard + IPv4 Telegram HTTP) — no network / no DB
-echo "==> selftest: bot sticky + telegram-http"
+echo "==> selftest: bot sticky + telegram-http + nearby-radius"
 npx tsx "$ROOT/packages/bot/src/sticky-reply-keyboard.selftest.ts"
 npx tsx "$ROOT/packages/bot/src/telegram-http.selftest.ts"
+npx tsx "$ROOT/packages/bot/src/handlers/nearby-radius.selftest.ts"
 
 # SQLite cascade (uses temp/local DB via API helpers — not production path)
 run src/services/user-delete-cascade.selftest.ts
