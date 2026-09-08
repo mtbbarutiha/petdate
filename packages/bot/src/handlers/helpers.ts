@@ -31,12 +31,11 @@ export function menuKeyboardFor(
 }
 
 /**
- * Carrier texts for sticky ReplyKeyboard push (send + delete).
- * Telegram rejects ZWNJ/ZWSP/NBSP as "text must be non-empty".
- * Prefer Word Joiner, then visible fallbacks. Sticky push is best-effort only —
- * always attach reply_markup on the real content message too (see sticky middleware).
+ * Visible carriers only — NEVER send+delete.
+ * Deleting a message that set ReplyKeyboard clears the menu on many Telegram clients
+ * (even when an earlier content message also had reply_markup).
  */
-const KEYBOARD_CARRIERS = ['\u2060', '·', '.', '-'] as const;
+const KEYBOARD_VISIBLE_CARRIERS = ['⌨️', '⌨️ منوی اصلی', '·'] as const;
 
 type TelegramApiLike = {
   sendMessage: (
@@ -48,20 +47,18 @@ type TelegramApiLike = {
 };
 
 /**
- * اعمال ReplyKeyboard روی یک chatId بدون پیام ماندگار.
- * برای طرف مقابل (requester) که ctx.chat او نیست هم قابل استفاده است.
- * اگر همه carrierها fail شوند false برمی‌گردد — caller باید کیبورد را روی
- * پیام محتوا گذاشته باشد.
+ * Apply ReplyKeyboard on chatId with a short visible message that is NOT deleted.
+ * Prefer attaching reply_markup on real content instead; use this when there is
+ * no content message (edit-only flows, force-restore, peer notify).
  */
 export async function pushReplyKeyboardToChat(
   api: TelegramApiLike,
   chatId: string | number,
   keyboard: Keyboard
 ): Promise<boolean> {
-  for (const carrier of KEYBOARD_CARRIERS) {
+  for (const carrier of KEYBOARD_VISIBLE_CARRIERS) {
     try {
-      const msg = await api.sendMessage(chatId, carrier, { reply_markup: keyboard });
-      await api.deleteMessage(chatId, msg.message_id).catch(() => undefined);
+      await api.sendMessage(chatId, carrier, { reply_markup: keyboard });
       return true;
     } catch (err) {
       console.warn(
@@ -75,10 +72,7 @@ export async function pushReplyKeyboardToChat(
 }
 
 /**
- * Best-effort sticky ReplyKeyboard (send carrier + delete).
- * Must not be the only place keyboard is applied — content messages should
- * also carry reply_markup so clients still show the menu if sticky fails or
- * if deleting the carrier drops the keyboard.
+ * Apply ReplyKeyboard with a short visible (non-deleted) message.
  */
 export async function pushReplyKeyboard(ctx: Context, keyboard: Keyboard): Promise<boolean> {
   const chatId = ctx.chat?.id ?? ctx.from?.id;
@@ -88,7 +82,7 @@ export async function pushReplyKeyboard(ctx: Context, keyboard: Keyboard): Promi
   return ok;
 }
 
-/** متن محتوا با کیبورد روی همان پیام + sticky push اختیاری */
+/** متن محتوا با کیبورد روی همان پیام — بدون sticky delete */
 export async function replyThenPushKeyboard(
   ctx: Context,
   text: string,
@@ -97,24 +91,20 @@ export async function replyThenPushKeyboard(
 ): Promise<void> {
   const rest = (extra ?? {}) as Record<string, unknown>;
   await ctx.reply(text, { ...rest, reply_markup: keyboard } as Parameters<Context['reply']>[1]);
-  // sticky middleware already re-pushes; keep explicit push for non-middleware paths
-  await pushReplyKeyboard(ctx, keyboard);
 }
 
-/** فقط منوی اصلی را پایین بچسبان (جایگزین «منوی اصلی 👇») */
+/** فقط منوی اصلی را با پیام کوتاه ماندگار نشان بده */
 export async function pushMainMenuKeyboard(
   ctx: Context,
   user?: (Pick<User, 'role' | 'roles'> & { vetOnline?: boolean; readyToAdopt?: boolean }) | null
 ): Promise<void> {
   const keyboard = menuKeyboardFor(ctx, user);
-  const ok = await pushReplyKeyboard(ctx, keyboard);
-  if (ok) return;
   const chatId = ctx.chat?.id ?? ctx.from?.id;
   if (chatId == null) return;
-  // Sticky carrier failed — keep a short visible message so the menu is never lost.
   try {
     await ctx.api.sendMessage(chatId, '⌨️ منوی اصلی', { reply_markup: keyboard });
   } catch (err) {
-    console.warn('pushMainMenuKeyboard visible fallback failed', chatId, err);
+    console.warn('pushMainMenuKeyboard failed', chatId, err);
+    await pushReplyKeyboard(ctx, keyboard);
   }
 }

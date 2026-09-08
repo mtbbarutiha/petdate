@@ -366,14 +366,13 @@ async function showSearchResults(
     if (opts?.edit && ctx.callbackQuery) {
       try {
         await ctx.editMessageText(empty, { parse_mode: 'HTML' });
-        await pushReplyKeyboard(ctx, emptyKb);
+        await ctx.reply('⌨️', { reply_markup: emptyKb });
         return;
       } catch {
         /* fall through */
       }
     }
-    await ctx.reply(empty, { parse_mode: 'HTML' });
-    await pushReplyKeyboard(ctx, emptyKb);
+    await ctx.reply(empty, { parse_mode: 'HTML', reply_markup: emptyKb });
     return;
   }
 

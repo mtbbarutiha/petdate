@@ -227,7 +227,7 @@ export function registerHandlers(bot: Bot): void {
   // قبل از force-join: آپدیت Business connection نباید بلاک شود
   registerBusinessHandlers(bot);
 
-  // کیبورد reply را پایین بچسبان (جلوگیری از کیبورد فیک هنگام اسکرول)
+  // کیبورد reply باید روی پیام محتوا بماند — sticky send+delete کیبورد را پاک می‌کند
   bot.use(stickyReplyKeyboardMiddleware());
   // عضویت اجباری در کانال‌ها — قبل از همهٔ دستورات
   bot.use(forceJoinMiddleware);
