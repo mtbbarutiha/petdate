@@ -2426,6 +2426,15 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
  * Mobile swipe carousels — keep card rows horizontal with snap so sections
  * do not stack into a long vertical list (team / adoption / services / …).
  * Desktop grids above 720px stay unchanged. RTL inherits from dir=rtl.
+ *
+ * Clipping / jump notes:
+ * - Stay inside section gutters (no negative full-bleed) so the LEFT edge in
+ *   RTL keeps the same inset as the right — peeks clip at the content edge,
+ *   not the screen edge.
+ * - `scroll-padding-inline` makes snap targets honor gutters.
+ * - Flex overflow often drops `padding-inline-end`; `::after` spacers restore
+ *   trailing inset so the last card can fully clear the left side.
+ * - `scroll-behavior: auto` avoids smooth+mandatory snap fighting (mobile «پرش»).
  */
 @media (max-width: 720px) {
   .pepito-adoption-grid,
@@ -2439,14 +2448,16 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
     overflow-x: auto;
     overflow-y: hidden;
     scroll-snap-type: x mandatory;
-    scroll-behavior: smooth;
+    scroll-behavior: auto;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: contain;
     scrollbar-width: none;
     -ms-overflow-style: none;
     grid-template-columns: none;
-    margin-inline: calc(-1 * var(--pepito-gutter-x));
-    padding-inline: var(--pepito-gutter-x);
+    /* Section already pads; keep track in-flow so both RTL edges stay inset. */
+    margin-inline: 0;
+    padding-inline: 0;
+    scroll-padding-inline: 0;
     padding-block: 0.25rem 0.5rem;
   }
 
@@ -2457,27 +2468,69 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
     display: none;
   }
 
+  /* Trailing spacer — padding-inline-end is ignored on many flex scrollers. */
+  .pepito-adoption-grid::after,
+  .pepito-team::after,
+  .pepito-reviews::after,
+  .pepito-shop-grid::after {
+    content: '';
+    flex: 0 0 max(0.5rem, env(safe-area-inset-left, 0px));
+    width: max(0.5rem, env(safe-area-inset-left, 0px));
+    min-height: 1px;
+    pointer-events: none;
+    scroll-snap-align: none;
+  }
+
   .pepito-adoption-card,
   .pepito-member,
   .pepito-review,
   .pepito-shop-item {
-    flex: 0 0 min(78vw, 280px);
-    width: min(78vw, 280px);
-    max-width: 280px;
+    /* ~72% leaves a clear peek of the next card inside the section gutter. */
+    flex: 0 0 min(72%, 268px);
+    width: min(72%, 268px);
+    max-width: 268px;
     min-width: 0;
     scroll-snap-align: start;
     box-sizing: border-box;
+  }
+
+  /* Last card snaps to inline-end (LEFT in RTL) so it isn’t clipped. */
+  .pepito-adoption-card:last-child,
+  .pepito-member:last-child,
+  .pepito-review:last-child,
+  .pepito-shop-item:last-child {
+    scroll-snap-align: end;
   }
 
   .pepito-review {
     margin-top: 30px;
   }
 
+  /* Reserve photo box before decode — reduces landing CLS / jump. */
+  .pepito-member-photo {
+    aspect-ratio: 600 / 700;
+    background: var(--pepito-lilac);
+  }
+  .pepito-member-photo img {
+    height: 100%;
+  }
+
   .pepito-services-track {
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: contain;
-    margin-inline: calc(-1 * var(--pepito-gutter-x));
-    padding-inline: var(--pepito-gutter-x);
+    scroll-behavior: auto;
+    margin-inline: 0;
+    padding-inline: 0;
+    scroll-padding-inline: 0;
+  }
+
+  .pepito-services-track::after {
+    content: '';
+    flex: 0 0 max(0.5rem, env(safe-area-inset-left, 0px));
+    width: max(0.5rem, env(safe-area-inset-left, 0px));
+    min-height: 1px;
+    pointer-events: none;
+    scroll-snap-align: none;
   }
 
   .pepito-service-card {
@@ -2486,11 +2539,30 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
     scroll-snap-align: start;
   }
 
+  .pepito-service-card:last-child {
+    scroll-snap-align: end;
+  }
+
   .pepito-news-track {
     -webkit-overflow-scrolling: touch;
     overscroll-behavior-x: contain;
-    margin-inline: calc(-1 * var(--pepito-gutter-x));
-    padding-inline: var(--pepito-gutter-x);
+    scroll-behavior: auto;
+    margin-inline: 0;
+    padding-inline: 0;
+    scroll-padding-inline: 0;
+  }
+
+  .pepito-news-track::after {
+    content: '';
+    flex: 0 0 max(0.5rem, env(safe-area-inset-left, 0px));
+    width: max(0.5rem, env(safe-area-inset-left, 0px));
+    min-height: 1px;
+    pointer-events: none;
+    scroll-snap-align: none;
+  }
+
+  .pepito-news-card:last-child {
+    scroll-snap-align: end;
   }
 }
 @media (min-width: 860px) {

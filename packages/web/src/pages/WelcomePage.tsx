@@ -261,6 +261,8 @@ export function WelcomePage() {
   const [svcIndex, setSvcIndex] = useState(0);
   const [svcPaused, setSvcPaused] = useState(false);
   const svcTrackRef = useRef<HTMLDivElement>(null);
+  /** Ignore programmatic autoplay scrolls so sync/pause does not fight snap (mobile jump). */
+  const svcProgrammaticScrollRef = useRef(false);
   const [newsIndex, setNewsIndex] = useState(0);
   const newsTrackRef = useRef<HTMLDivElement>(null);
 
@@ -307,7 +309,12 @@ export function WelcomePage() {
     const target = rtl ? -svcIndex * step : svcIndex * step;
     const current = track.scrollLeft;
     if (Math.abs(current - target) < 2) return;
-    track.scrollTo({ left: target, behavior: 'smooth' });
+    const narrow = window.matchMedia('(max-width: 720px)').matches;
+    svcProgrammaticScrollRef.current = true;
+    track.scrollTo({ left: target, behavior: narrow ? 'auto' : 'smooth' });
+    window.requestAnimationFrame(() => {
+      svcProgrammaticScrollRef.current = false;
+    });
   }, [svcIndex]);
 
   /* Keep dots in sync when the user swipes the services track (RTL-aware). */
@@ -315,7 +322,10 @@ export function WelcomePage() {
     const track = svcTrackRef.current;
     if (!track) return;
     let settleTimer = 0;
+    let pointerDragging = false;
+
     const syncFromScroll = () => {
+      if (svcProgrammaticScrollRef.current) return;
       const card = track.querySelector<HTMLElement>('.pepito-service-card');
       if (!card) return;
       const styles = getComputedStyle(track);
@@ -327,17 +337,39 @@ export function WelcomePage() {
       const idx = Math.max(0, Math.min(SERVICES.length - 1, Math.round(raw / step)));
       setSvcIndex((prev) => (prev === idx ? prev : idx));
     };
-    const onScroll = () => {
+
+    const onPointerDown = () => {
+      pointerDragging = true;
       setSvcPaused(true);
+    };
+    const onPointerUp = () => {
+      pointerDragging = false;
       window.clearTimeout(settleTimer);
       settleTimer = window.setTimeout(() => {
         syncFromScroll();
         setSvcPaused(false);
-      }, 120);
+      }, 180);
     };
+    const onScroll = () => {
+      if (svcProgrammaticScrollRef.current) return;
+      if (!pointerDragging) return;
+      window.clearTimeout(settleTimer);
+      settleTimer = window.setTimeout(() => {
+        syncFromScroll();
+        setSvcPaused(false);
+        pointerDragging = false;
+      }, 180);
+    };
+
+    track.addEventListener('pointerdown', onPointerDown, { passive: true });
+    track.addEventListener('pointerup', onPointerUp, { passive: true });
+    track.addEventListener('pointercancel', onPointerUp, { passive: true });
     track.addEventListener('scroll', onScroll, { passive: true });
     return () => {
       window.clearTimeout(settleTimer);
+      track.removeEventListener('pointerdown', onPointerDown);
+      track.removeEventListener('pointerup', onPointerUp);
+      track.removeEventListener('pointercancel', onPointerUp);
       track.removeEventListener('scroll', onScroll);
     };
   }, []);
@@ -355,7 +387,11 @@ export function WelcomePage() {
     const gap = 20;
     const step = card.getBoundingClientRect().width + gap;
     const rtl = getComputedStyle(track).direction === 'rtl';
-    track.scrollTo({ left: rtl ? -newsIndex * step : newsIndex * step, behavior: 'smooth' });
+    const narrow = window.matchMedia('(max-width: 720px)').matches;
+    track.scrollTo({
+      left: rtl ? -newsIndex * step : newsIndex * step,
+      behavior: narrow ? 'auto' : 'smooth',
+    });
   }, [newsIndex]);
 
 
@@ -671,7 +707,7 @@ export function WelcomePage() {
           {TEAM.map((m) => (
             <article key={m.name} className="pepito-member">
               <div className="pepito-member-photo">
-                <img src={m.img} alt="" loading="lazy" />
+                <img src={m.img} alt="" loading="lazy" width={600} height={700} decoding="async" />
               </div>
               <div className="pepito-member-info">
                 <h3>{m.name}</h3>
