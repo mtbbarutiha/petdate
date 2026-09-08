@@ -34,7 +34,10 @@ IDS=()
 while IFS= read -r line; do [[ -n "$line" ]] && IDS+=("$line"); done < <(collect_ids "$@")
 [[ "${#IDS[@]}" -gt 0 ]] || { echo "force-main-menu: no chat ids" >&2; exit 1; }
 
+API_ROOT="${TELEGRAM_API_ROOT:-https://api.telegram.org}"
+API_ROOT="${API_ROOT%/}"
 curl_tg() { curl -4 -sS --connect-timeout 8 --max-time 30 "$@"; }
+tg_url() { echo "${API_ROOT}/bot${TOKEN}/$1"; }
 
 clear_session() {
   local tid="$1" key="petdate:bot:session:${tid}"
@@ -58,7 +61,7 @@ MENU_JSON='{"keyboard":[["🔍 پیدا کردن همبازی"],["📍 پت‌ه
 send_menu() {
   local tid="$1" payload resp
   payload="$(CHAT_ID="$tid" MENU="$MENU_JSON" node -e 'process.stdout.write(JSON.stringify({chat_id:process.env.CHAT_ID,text:"⌨️ منوی اصلی",reply_markup:JSON.parse(process.env.MENU)}));')"
-  resp="$(curl_tg -X POST "https://api.telegram.org/bot${TOKEN}/sendMessage" -H 'Content-Type: application/json' -d "$payload")"
+  resp="$(curl_tg -X POST "$(tg_url sendMessage)" -H 'Content-Type: application/json' -d "$payload")"
   if echo "$resp" | grep -q '"ok":true'; then echo "  menu sent → $tid"
   else echo "  menu FAILED → $tid: $resp" >&2; return 1; fi
 }

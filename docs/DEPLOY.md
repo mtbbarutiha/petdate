@@ -2,6 +2,8 @@
 
 > **Agents:** do **not** `rsync` to the VPS from feature branches. The controlled path is **GitHub Actions → Deploy**. Before any break-glass manual deploy, run `./scripts/predeploy-check.sh` and only proceed if it passes. `deploy-vps.sh` runs the same check automatically (escape hatch: `SKIP_PREDEPLOY=1`).
 
+> **Speed:** see [`AGENT_SPEED.md`](./AGENT_SPEED.md) — no duplicate agents, no multi-minute Telegram retries, merge to `main` after VPS verify.
+
 ## Controlled path: CI/CD
 
 Parallel Cloud Agent rsyncs used to overwrite incomplete trees and delete live features (wallet **transactions**, **roles** cleanup, **web-cta-once-v2**). CI/CD is now the **only supported** production deploy path.

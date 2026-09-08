@@ -1,6 +1,7 @@
 /**
  * Shared Telegram HTTP for API notify/sync paths.
  * Force IPv4 + keep-alive pool + short retries (VPS IPv6 to api.telegram.org times out).
+ * Optional TELEGRAM_API_ROOT for local Bot API / proxy.
  */
 import dns from 'node:dns';
 import { Agent, fetch as undiciFetch, type RequestInfo, type RequestInit } from 'undici';
@@ -13,6 +14,20 @@ try {
 
 const MAX_ATTEMPTS = Math.max(1, Math.min(6, Number(process.env.TELEGRAM_HTTP_RETRIES ?? 4)));
 const BASE_DELAY_MS = Math.max(50, Number(process.env.TELEGRAM_HTTP_RETRY_MS ?? 250));
+
+/** Bot API origin (no trailing slash). Override with TELEGRAM_API_ROOT for local Bot API. */
+export function telegramApiRoot(): string {
+  const raw = (process.env.TELEGRAM_API_ROOT ?? 'https://api.telegram.org').trim();
+  return raw.replace(/\/+$/, '') || 'https://api.telegram.org';
+}
+
+export function telegramBotApiUrl(token: string, method: string): string {
+  return `${telegramApiRoot()}/bot${token}/${method}`;
+}
+
+export function telegramFileApiUrl(token: string, filePath: string): string {
+  return `${telegramApiRoot()}/file/bot${token}/${filePath}`;
+}
 
 export const telegramDispatcher = new Agent({
   connect: { family: 4, timeout: 12_000 },
@@ -87,7 +102,7 @@ export async function telegramApiJson<T = unknown>(
   body?: Record<string, unknown>,
   init?: Omit<RequestInit, 'method' | 'body' | 'dispatcher'>
 ): Promise<{ ok: boolean; status: number; data: T | null; error?: string }> {
-  const url = `https://api.telegram.org/bot${token}/${method}`;
+  const url = telegramBotApiUrl(token, method);
   try {
     const res = await telegramFetch(url, {
       method: 'POST',

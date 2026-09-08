@@ -1,7 +1,7 @@
 import { infra } from '../config/infra';
 import type { PlaydateChatMediaKind } from '@petdate/shared';
 import { dbService } from '../db';
-import { telegramFetch } from './telegram-http';
+import { telegramFetch, telegramBotApiUrl, telegramFileApiUrl } from './telegram-http';
 import { usableTelegramId } from './telegram-id';
 
 type TelegramSendResult = { ok: boolean; messageId?: number };
@@ -13,7 +13,7 @@ async function telegramCall(
   const token = infra.telegram.botToken;
   if (!token) return { ok: false };
   try {
-    const res = await telegramFetch(`https://api.telegram.org/bot${token}/${method}`, {
+    const res = await telegramFetch(telegramBotApiUrl(token, method), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -139,7 +139,7 @@ export async function resolveTelegramFile(fileId: string): Promise<{
   if (!token || !fileId) return null;
   try {
     const res = await telegramFetch(
-      `https://api.telegram.org/bot${token}/getFile?file_id=${encodeURIComponent(fileId)}`
+      telegramBotApiUrl(token, 'getFile') + `?file_id=${encodeURIComponent(fileId)}`
     );
     const data = (await res.json()) as {
       ok?: boolean;
@@ -153,7 +153,7 @@ export async function resolveTelegramFile(fileId: string): Promise<{
     const filePath = data.result.file_path;
     return {
       filePath,
-      downloadUrl: `https://api.telegram.org/file/bot${token}/${filePath}`,
+      downloadUrl: telegramFileApiUrl(token, filePath),
     };
   } catch (err) {
     console.warn('telegram getFile error:', (err as Error).message);

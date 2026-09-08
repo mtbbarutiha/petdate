@@ -133,23 +133,38 @@ if [[ -f packages/bot/src/sticky-reply-keyboard.ts ]]; then
   fi
   ok "sticky keyboard no-delete"
 fi
+[[ -f packages/bot/src/sticky-reply-keyboard.selftest.ts ]] \
+  || fail "sticky-reply-keyboard.selftest.ts missing (regression guard)"
+ok "sticky keyboard selftest present"
 
 # Telegram IPv4 HTTP client (ops speed on this VPS)
 if [[ -d packages/bot/src ]]; then
   grep -q 'telegramFetch\|grammyClientOptions\|family: 4' packages/bot/src/telegram-http.ts \
     || fail "bot telegram-http IPv4 client missing"
+  grep -q 'TELEGRAM_API_ROOT' packages/bot/src/telegram-http.ts \
+    || fail "bot telegram-http TELEGRAM_API_ROOT missing"
+  grep -q '"undici"' packages/bot/package.json \
+    || fail "bot package.json must declare undici (partial dist deploy crash)"
   ok "bot telegram-http IPv4"
 fi
 if [[ -d packages/api/src/services ]]; then
   grep -q 'telegramFetch\|family: 4' packages/api/src/services/telegram-http.ts \
     || fail "api telegram-http IPv4 client missing"
+  grep -q 'TELEGRAM_API_ROOT\|telegramBotApiUrl' packages/api/src/services/telegram-http.ts \
+    || fail "api telegram-http TELEGRAM_API_ROOT helpers missing"
+  grep -q '"undici"' packages/api/package.json \
+    || fail "api package.json must declare undici"
   ok "api telegram-http IPv4"
 fi
+
+[[ -f docs/AGENT_SPEED.md ]] || fail "docs/AGENT_SPEED.md missing"
+ok "AGENT_SPEED.md"
 
 # Ops helpers agents reinvent otherwise (slow / broken quoting)
 [[ -f scripts/force-main-menu.sh ]] || fail "scripts/force-main-menu.sh missing"
 [[ -f scripts/redis-cli.sh ]] || fail "scripts/redis-cli.sh missing"
 [[ -f scripts/lib/load-env.sh ]] || fail "scripts/lib/load-env.sh missing"
+[[ -f scripts/tg-api.sh ]] || fail "scripts/tg-api.sh missing"
 ok "ops helper scripts"
 
 echo "predeploy-check passed — this tree may deploy."

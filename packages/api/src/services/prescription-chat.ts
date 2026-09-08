@@ -9,7 +9,7 @@ import { dbService } from '../db';
 import { saveChatUpload } from './chat-upload-store';
 import type { SmsDeliveryStatus } from './prescription';
 import { notifyVetMessage } from '../ws/chatHub';
-import { telegramFetch } from './telegram-http';
+import { telegramFetch, telegramBotApiUrl } from './telegram-http';
 import type { VetConsultChatMessage } from '@petdate/shared';
 import { normalizeTelegramId } from './telegram-id';
 
@@ -66,7 +66,7 @@ async function telegramSendMessage(
   const token = infra.telegram.botToken;
   if (!token) return false;
   try {
-    const res = await telegramFetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    const res = await telegramFetch(telegramBotApiUrl(token, 'sendMessage'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -107,7 +107,7 @@ async function telegramSendDocument(opts: {
       new Blob([new Uint8Array(buf)], { type: 'application/pdf' }),
       opts.fileName
     );
-    const res = await telegramFetch(`https://api.telegram.org/bot${token}/sendDocument`, {
+    const res = await telegramFetch(telegramBotApiUrl(token, 'sendDocument'), {
       method: 'POST',
       body: form,
     });
