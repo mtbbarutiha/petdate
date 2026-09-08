@@ -46,6 +46,11 @@
     var(--pepito-container-pad),
     calc((100% - var(--pepito-container-max)) / 2 + var(--pepito-container-pad))
   );
+  /*
+   * Floating mobile dock: height 58px + bottom 10px + ~8px gap above glass pill.
+   * Use ONE clearance on content — never stack body + layout + main + footer.
+   */
+  --pepito-mobile-dock-clearance: calc(76px + env(safe-area-inset-bottom, 0px));
 }
 
 /* Shared Pepito content shell (nav / sections / footer / CTA) */
@@ -2830,7 +2835,7 @@ button.chip.is-on {
 .pepito-auth-flow .role-select {
   display: flex;
   flex-direction: column;
-  padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: 1.5rem;
 }
 .pepito-auth-flow .form-group {
   margin: 0;
@@ -2899,16 +2904,13 @@ button.chip.is-on {
 /* Belt-and-suspenders: if dock still mounts, lift the confirm bar above it */
 @media (max-width: 859px) {
   body:has(.pepito-landing-mobile-dock) .role-select-actions {
-    bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+    bottom: var(--pepito-mobile-dock-clearance);
     padding-bottom: 12px;
     border-radius: 18px 18px 0 0;
     width: min(640px, calc(100% - 16px));
   }
   .pepito-auth-flow .role-select {
-    padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px));
-  }
-  .pepito-auth-flow .pepito-footer {
-    padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: var(--pepito-mobile-dock-clearance);
   }
 }
 
@@ -5099,15 +5101,16 @@ div.pepito-profile-stat:active {
   .pepito-profile-edit-actions {
     flex-direction: column;
     margin-inline: -0.25rem;
-    padding: 0.85rem 0.25rem calc(0.65rem + 72px + env(safe-area-inset-bottom, 0px));
-    bottom: 0;
+    padding: 0.85rem 0.25rem calc(0.65rem + env(safe-area-inset-bottom, 0px));
+    bottom: var(--pepito-mobile-dock-clearance);
   }
   .pepito-profile-edit-actions .pepito-btn {
     width: 100%;
     min-height: 48px;
   }
   .pepito-profile--edit {
-    padding-bottom: calc(160px + env(safe-area-inset-bottom, 0px));
+    /* Sticky edit bar (~64px) sits above dock clearance */
+    padding-bottom: calc(64px + var(--pepito-mobile-dock-clearance));
   }
   .pepito-profile-edit-section {
     padding: 1rem 0.9rem 1.1rem;
@@ -5142,7 +5145,7 @@ div.pepito-profile-stat:active {
 @media (max-width: 859px) {
   .pepito-app-layout {
     grid-template-columns: 1fr;
-    padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: 0;
   }
   .pepito-app-rail {
     display: none;
@@ -5193,9 +5196,6 @@ div.pepito-profile-stat:active {
   }
   .pepito-home-actions {
     grid-template-columns: 1fr;
-  }
-  .pepito-app-shell .pepito-footer {
-    padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
   }
 }
 
@@ -10021,20 +10021,12 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
     pointer-events: none;
   }
 
-  .pepito-landing--with-dock .pepito-footer {
-    padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
-  }
-
-  /* Site-wide dock: also clear space on app shell / shop */
-  .pepito-app-shell .pepito-footer,
-  .pd-shop-page .pepito-footer,
-  .pepito-landing .pepito-footer {
-    padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
-  }
+  /* Footer is display:none on mobile — do not reserve footer clearance.
+     Single dock clearance on scrollable content only (not body + layout + footer).
+     Do NOT pad .pepito-flow-panel here — auth/onboarding hide the dock. */
   .pepito-app-main,
-  .pd-shop-main,
-  .pepito-flow-panel {
-    padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+  .pd-shop-main {
+    padding-bottom: var(--pepito-mobile-dock-clearance);
   }
 
   /* Profile + wallet live in bottom dock on mobile — keep only cart in top cluster */
@@ -10273,18 +10265,27 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
 }
 
 
-/* Global mobile dock clearance — reserve via stable landing class to avoid
-   padding flash when the fixed dock mounts. */
+/* Global mobile dock clearance — ONE place only (landing OR main), never body.
+   Footer is already hidden on ≤859px; stacking body+main+footer caused a huge empty band. */
 @media (max-width: 859px) {
-  .pepito-landing--with-dock {
-    padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
-  }
   body:has(.pepito-landing--with-dock),
   body:has(.pepito-landing-mobile-dock) {
-    padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
-  }
-  body:has(.pepito-landing--with-dock) .pepito-landing--with-dock {
     padding-bottom: 0;
+  }
+  /* Welcome + adoption + other landings without app/shop main */
+  body:has(.pepito-landing-mobile-dock)
+    .pepito-landing:not(:has(.pepito-app-main)):not(:has(.pd-shop-main)) {
+    padding-bottom: var(--pepito-mobile-dock-clearance);
+  }
+  .pepito-landing--with-dock {
+    padding-bottom: var(--pepito-mobile-dock-clearance);
+  }
+  /* Chat hides the dock — no clearance band */
+  body:has(.tg-chat),
+  .pepito-app-shell--chat,
+  .pepito-app-shell:has(.tg-chat),
+  body:has(.tg-chat) .pepito-landing {
+    padding-bottom: 0 !important;
   }
 }
 
@@ -10570,7 +10571,8 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   .pepito-my-pets,
   .pepito-wallet-page,
   .pepito-vet-consult {
-    padding-bottom: calc(108px + env(safe-area-inset-bottom, 0px)) !important;
+    /* Main already clears the dock — keep only normal section breathing room */
+    padding-bottom: 1.5rem !important;
   }
   .pepito-my-pets-back {
     margin-bottom: 0.75rem !important;
@@ -10871,7 +10873,8 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
 }
 @media (max-width: 640px) {
   .pepito-pet-edit {
-    padding-bottom: calc(120px + env(safe-area-inset-bottom, 0px));
+    /* Sticky save row sits above dock; main already has dock clearance */
+    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
   }
 }
 
@@ -11144,7 +11147,7 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
     border-radius: 0 0 22px 22px;
   }
   .pepito-my-pets {
-    padding-bottom: calc(108px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: 1.5rem;
   }
   .pepito-my-pets-grid {
     grid-template-columns: 1fr;
