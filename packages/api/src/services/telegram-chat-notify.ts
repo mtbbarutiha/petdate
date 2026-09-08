@@ -125,8 +125,22 @@ function mediaPlaceholder(kind?: PlaydateChatMediaKind | null): string {
 }
 
 /**
- * Mirror a web (or API) playdate chat line to the PEER's Telegram bot chat.
- * Plain text — no «💬 پیام همبازی از» prefix (bot filters that / looks like an echo).
+ * Label for web→own-bot echo. Bot relay must ignore lines starting with this
+ * so a copied self-echo is never re-sent to the peer.
+ */
+export const PLAYDATE_CHAT_SELF_ECHO_PREFIX = '📤 شما:';
+
+function withSelfEchoLabel(text: string, asSelf: boolean): string {
+  if (!asSelf) return text;
+  const body = (text || '').trim();
+  return body ? `${PLAYDATE_CHAT_SELF_ECHO_PREFIX}\n${body}` : PLAYDATE_CHAT_SELF_ECHO_PREFIX;
+}
+
+/**
+ * Mirror a web (or API) playdate chat line to Telegram.
+ * - Default: PEER only, plain text (no «💬 پیام همبازی از» prefix).
+ * - asSelf: also used to echo the sender's own web line into their bot chat
+ *   so dual-online web+bot stays in sync; labeled «📤 شما:».
  * Bot-originated lines call the messages API with skipTelegram=true to avoid double-send.
  */
 export async function notifyPlaydateChatTelegram(opts: {
@@ -139,15 +153,18 @@ export async function notifyPlaydateChatTelegram(opts: {
   storageKey?: string | null;
   mimeType?: string | null;
   fileName?: string | null;
+  /** When true, label as the recipient's own web-sent message (self-sync echo). */
+  asSelf?: boolean;
 }): Promise<boolean> {
   if (!infra.telegram.botToken || !usableTelegramId(opts.toTelegramId)) return false;
-  void opts.senderName; // kept for call-site compatibility; not shown in plain relay
+  void opts.senderName; // kept for call-site compatibility; not shown in plain peer relay
 
   const chatId = String(opts.toTelegramId).trim();
   const secure = Boolean(opts.protectContent);
   const protect = secure ? { protect_content: true } : {};
   const keyboard = ownerChatStickyKeyboard(secure);
-  const caption = (opts.text || '').trim();
+  const asSelf = Boolean(opts.asSelf);
+  const caption = withSelfEchoLabel((opts.text || '').trim(), asSelf);
   const storageAbs = opts.storageKey ? resolveStoragePath(opts.storageKey) : null;
   const hasFile = Boolean(storageAbs && fs.existsSync(storageAbs));
 
@@ -230,10 +247,10 @@ export async function notifyPlaydateChatTelegram(opts: {
       reply_markup: keyboard,
     });
   } else if (opts.mediaKind) {
-    // DB has media metadata but file missing on disk — still notify peer
+    // DB has media metadata but file missing on disk — still notify
     result = await telegramCall('sendMessage', {
       chat_id: chatId,
-      text: mediaPlaceholder(opts.mediaKind),
+      text: withSelfEchoLabel(mediaPlaceholder(opts.mediaKind), asSelf),
       ...protect,
       reply_markup: keyboard,
     });

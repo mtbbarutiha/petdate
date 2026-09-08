@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import fs from 'fs';
 import multer from 'multer';
-import type { PlaydateStatus } from '@petdate/shared';
+import type { PlaydateChatMediaKind, PlaydateStatus } from '@petdate/shared';
 import { userCommandIdOf } from '@petdate/shared';
 import { dbService } from '../db';
 import { notifyPlaydateRequestTelegram } from '../services/telegram-playdate-notify';
@@ -12,6 +12,7 @@ import {
   resolveTelegramFile,
   wipePlaydateChatTelegram,
 } from '../services/telegram-chat-notify';
+import { normalizeTelegramId } from '../services/telegram-id';
 import {
   MAX_UPLOAD_BYTES,
   deleteChatUpload,
@@ -94,6 +95,61 @@ function isUsableTelegramId(telegramId: string | null | undefined): boolean {
   // Demo / seed accounts and placeholders never have a real bot chat.
   if (/^(fake_|demo_)/i.test(id)) return false;
   return true;
+}
+
+/**
+ * Web/API → Telegram fan-out for a playdate chat line.
+ * Always delivers one copy to the peer. Also echoes a labeled copy to the
+ * sender's own bot chat (web→self sync). Callers that set skipTelegram must
+ * not invoke this — the bot already shows the sender's typed line.
+ */
+function fanOutPlaydateChatTelegram(opts: {
+  playdate: NonNullable<ReturnType<typeof dbService.getPlaydateRequest>>;
+  senderUserId: number;
+  text: string;
+  mediaKind?: PlaydateChatMediaKind | string | null;
+  storageKey?: string | null;
+  mimeType?: string | null;
+  fileName?: string | null;
+}): void {
+  const { playdate, senderUserId } = opts;
+  let peerUserId =
+    playdate.fromUserId === senderUserId ? playdate.toUserId : playdate.fromUserId;
+  if (!peerUserId) {
+    const peerPetId =
+      playdate.fromUserId === senderUserId ? playdate.toPetId : playdate.fromPetId;
+    peerUserId = dbService.getPet(peerPetId)?.ownerId;
+  }
+  const peer = peerUserId ? dbService.getUserById(peerUserId) : null;
+  const sender = dbService.getUserById(senderUserId);
+  const senderName = sender?.name || 'همبازی';
+  const peerTg = normalizeTelegramId(peer?.telegramId);
+  const senderTg = normalizeTelegramId(sender?.telegramId);
+  const common = {
+    senderName,
+    text: opts.text,
+    playdateId: playdate.id,
+    protectContent: Boolean(playdate.chatSecure),
+    mediaKind: (opts.mediaKind ?? null) as PlaydateChatMediaKind | null,
+    storageKey: opts.storageKey,
+    mimeType: opts.mimeType,
+    fileName: opts.fileName,
+  };
+
+  if (peerTg) {
+    void notifyPlaydateChatTelegram({
+      ...common,
+      toTelegramId: peerTg,
+    });
+  }
+  // Self-echo so the sender's bot session mirrors what they sent on web.
+  if (senderTg && senderTg !== peerTg) {
+    void notifyPlaydateChatTelegram({
+      ...common,
+      toTelegramId: senderTg,
+      asSelf: true,
+    });
+  }
 }
 
 /** Fire-and-forget Telegram notify to recipient (bot-equivalent). */
@@ -261,29 +317,15 @@ playdatesRouter.post('/:id/messages', async (req, res) => {
     });
 
     if (!skipTelegram) {
-      const playdate = gate.playdate;
-      let peerUserId =
-        playdate.fromUserId === senderUserId ? playdate.toUserId : playdate.fromUserId;
-      if (!peerUserId) {
-        const peerPetId =
-          playdate.fromUserId === senderUserId ? playdate.toPetId : playdate.fromPetId;
-        peerUserId = dbService.getPet(peerPetId)?.ownerId;
-      }
-      const peer = peerUserId ? dbService.getUserById(peerUserId) : null;
-      const sender = dbService.getUserById(senderUserId);
-      if (peer?.telegramId) {
-        void notifyPlaydateChatTelegram({
-          toTelegramId: peer.telegramId,
-          senderName: sender?.name || 'همبازی',
-          text: message.text,
-          playdateId,
-          protectContent: Boolean(playdate.chatSecure),
-          mediaKind: message.mediaKind,
-          storageKey: message.storageKey,
-          mimeType: message.mimeType,
-          fileName: message.fileName,
-        });
-      }
+      fanOutPlaydateChatTelegram({
+        playdate: gate.playdate,
+        senderUserId,
+        text: message.text,
+        mediaKind: message.mediaKind,
+        storageKey: message.storageKey,
+        mimeType: message.mimeType,
+        fileName: message.fileName,
+      });
     }
 
     const playdate = gate.playdate;
@@ -381,30 +423,17 @@ playdatesRouter.post('/:id/messages/upload', (req, res) => {
         fileName: originalName,
       });
 
-      const playdate = gate.playdate;
-      let peerUserId =
-        playdate.fromUserId === senderUserId ? playdate.toUserId : playdate.fromUserId;
-      if (!peerUserId) {
-        const peerPetId =
-          playdate.fromUserId === senderUserId ? playdate.toPetId : playdate.fromPetId;
-        peerUserId = dbService.getPet(peerPetId)?.ownerId;
-      }
-      const peer = peerUserId ? dbService.getUserById(peerUserId) : null;
-      const sender = dbService.getUserById(senderUserId);
-      if (peer?.telegramId) {
-        void notifyPlaydateChatTelegram({
-          toTelegramId: peer.telegramId,
-          senderName: sender?.name || 'همبازی',
-          text: message.text,
-          playdateId,
-          protectContent: Boolean(playdate.chatSecure),
-          mediaKind: message.mediaKind,
-          storageKey: message.storageKey,
-          mimeType: message.mimeType,
-          fileName: message.fileName,
-        });
-      }
+      fanOutPlaydateChatTelegram({
+        playdate: gate.playdate,
+        senderUserId,
+        text: message.text,
+        mediaKind: message.mediaKind,
+        storageKey: message.storageKey,
+        mimeType: message.mimeType,
+        fileName: message.fileName,
+      });
 
+      const playdate = gate.playdate;
       const participants = [playdate.fromUserId, playdate.toUserId].filter(
         (id): id is number => Number.isFinite(id as number) && (id as number) > 0,
       );
