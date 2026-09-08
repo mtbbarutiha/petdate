@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { useAuthStore } from '../hooks/useAuthStore';
 
 /**
- * Desktop header wallet entry — icon + label linking to /wallet.
+ * Desktop header wallet entry — same nav-chip family as SiteDesktopNav + cart.
+ * `dir="rtl"` keeps icon at inline-start (leading) to match sibling chips.
  * Balances live on the Wallet page (header chip no longer shows amounts).
  * Hidden on mobile via CSS; bottom dock covers wallet there.
  */
@@ -14,10 +15,8 @@ export function WalletChip() {
 
   return (
     <div className="pepito-nav-wallet">
-      <Link to="/wallet" className="pepito-nav-wallet-btn" aria-label="کیف پول">
-        <span className="pepito-nav-wallet-mark" aria-hidden>
-          <Wallet size={14} strokeWidth={2.35} absoluteStrokeWidth />
-        </span>
+      <Link to="/wallet" className="pepito-nav-wallet-btn" aria-label="کیف پول" dir="rtl">
+        <Wallet size={16} strokeWidth={2.25} aria-hidden />
         <span className="pepito-nav-wallet-label">کیف پول</span>
       </Link>
     </div>
