@@ -255,7 +255,7 @@ authRouter.get('/me', (req, res) => {
 });
 
 /** کیف پول چندارزی — TON / Stars / سکه ربات / تومان (همان منبع ربات) */
-authRouter.get('/wallet', async (req, res) => {
+authRouter.get('/wallet', (req, res) => {
   const session = getUserFromBearer(req.header('authorization') ?? undefined);
   if (!session) {
     res.status(401).json({ error: 'وارد نشده‌اید' });
@@ -269,38 +269,6 @@ authRouter.get('/wallet', async (req, res) => {
   }
   const linked = Boolean(user.telegramId);
   const botUsername = String(process.env.TELEGRAM_BOT_USERNAME || 'Petdatebot').replace(/^@/, '');
-
-  const biz = dbService.getTelegramBusinessConnection(user.id);
-  let telegramAccountBalance: number | null = null;
-  let nativeReadable = false;
-  let syncErrorFa: string | null = null;
-  const businessConnected = Boolean(biz?.isEnabled && biz.connectionId);
-  const businessCanViewStars = Boolean(biz?.canViewStars);
-
-  if (businessConnected && businessCanViewStars && biz?.connectionId) {
-    const { fetchBusinessAccountStarBalance } = await import(
-      '../services/telegram-business-stars'
-    );
-    const live = await fetchBusinessAccountStarBalance(biz.connectionId);
-    if (live.ok) {
-      telegramAccountBalance = live.amount;
-      nativeReadable = true;
-      dbService.cacheTelegramAccountStars(user.id, live.amount);
-    } else {
-      syncErrorFa =
-        'اتصال Business هست ولی خواندن Stars الان ممکن نشد؛ دسترسی View gifts and Stars را چک کن.';
-      if (biz.cachedStars != null) telegramAccountBalance = biz.cachedStars;
-    }
-  } else if (businessConnected && !businessCanViewStars) {
-    syncErrorFa =
-      'ربات به حساب Business وصل است ولی حق «View gifts and Stars» را نداده‌ای؛ از تنظیمات Business دوباره دسترسی بده.';
-  } else if (biz?.cachedStars != null) {
-    telegramAccountBalance = biz.cachedStars;
-  }
-
-  const { botCanConnectToBusiness } = await import('../services/telegram-business-stars');
-  const botBusinessReady = await botCanConnectToBusiness();
-
   res.json({
     ok: true,
     wallet,
@@ -310,32 +278,11 @@ authRouter.get('/wallet', async (req, res) => {
       telegramId: user.telegramId ?? null,
       username: user.username ?? null,
     },
+    /** فقط ستاره پنل پت‌دیت — موجودی Stars حساب تلگرام نمایش داده نمی‌شود */
     telegramStars: {
       linked,
-      nativeReadable,
-      nativeBalance: telegramAccountBalance,
-      telegramAccountBalance,
-      telegramAccountLabelFa: 'موجودی Stars شما در تلگرام',
       petdateBalance: wallet.stars,
-      petdateLabelFa: 'موجودی ستاره پنل پت‌دیت (خریداری‌شده)',
-      businessConnected,
-      businessCanViewStars,
-      botBusinessReady,
-      syncedAt: biz?.syncedAt ?? null,
-      syncErrorFa,
-      reasonFa: !linked
-        ? 'اول حساب وب را به تلگرام وصل کن.'
-        : nativeReadable
-          ? 'موجودی Stars تلگرام از طریق اتصال Business خوانده شد.'
-          : businessConnected && !businessCanViewStars
-            ? 'حق View gifts and Stars را در تنظیمات Business به ربات بده، بعد همگام‌سازی بزن.'
-            : botBusinessReady
-              ? `برای خواندن عدد Stars: تنظیمات تلگرام → Telegram Business → Chatbots → @${botUsername} را اضافه کن و دسترسی «Gifts and Stars» را روشن کن.`
-              : `اول در @BotFather برای @${botUsername} گزینه Business Mode را روشن کن؛ بعد از تنظیمات Business ربات را وصل کن.`,
       walletStars: wallet.stars,
-      viewStarsDeepLink: 'tg://stars',
-      viewStarsHttpsHint: 'tg://settings/stars',
-      connectBusinessDeepLink: 'tg://settings/business',
       topUpDeepLink: linked ? `https://t.me/${botUsername}?start=wstars` : null,
     },
   });

@@ -545,23 +545,9 @@ export async function fetchWallet(token: string) {
     };
     telegramStars?: {
       linked: boolean;
-      nativeReadable: boolean;
-      nativeBalance: number | null;
-      telegramAccountBalance?: number | null;
-      telegramAccountLabelFa?: string;
       petdateBalance?: number;
-      petdateLabelFa?: string;
-      reasonFa: string;
       walletStars: number;
       topUpDeepLink: string | null;
-      viewStarsDeepLink?: string | null;
-      viewStarsHttpsHint?: string | null;
-      connectBusinessDeepLink?: string | null;
-      businessConnected?: boolean;
-      businessCanViewStars?: boolean;
-      botBusinessReady?: boolean;
-      syncErrorFa?: string | null;
-      syncedAt?: string | null;
     };
   }>('/api/auth/wallet', token);
 }
