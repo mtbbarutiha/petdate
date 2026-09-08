@@ -8,6 +8,8 @@ export function AdminUsersPage() {
   const [total, setTotal] = useState(0);
   const [q, setQ] = useState('');
   const [role, setRole] = useState('');
+  /** Default active-only — soft-deleted shells ([حذف‌شده #N]) must not clutter the list. */
+  const [status, setStatus] = useState<'active' | 'inactive' | 'all'>('active');
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<number | null>(null);
   const [credit, setCredit] = useState<{ userId: number; amount: string; currency: string } | null>(null);
@@ -17,11 +19,13 @@ export function AdminUsersPage() {
       const qs = new URLSearchParams();
       if (q.trim()) qs.set('q', q.trim());
       if (role) qs.set('role', role);
+      if (status === 'active') qs.set('active', '1');
+      else if (status === 'inactive') qs.set('active', '0');
       qs.set('limit', '100');
       const data = await adminFetch<{ total: number; users: User[] }>(`/api/admin/users?${qs}`);
       setUsers(data.users); setTotal(data.total); setError(null);
     } catch (err) { setError(err instanceof Error ? err.message : 'خطا'); }
-  }, [q, role]);
+  }, [q, role, status]);
   useEffect(() => { void load(); }, [load]);
 
   const toggleBan = async (user: User) => {
@@ -62,6 +66,16 @@ export function AdminUsersPage() {
         <select className="admin-select" value={role} onChange={(e) => setRole(e.target.value)}>
           <option value="">همه نقش‌ها</option>
           {USER_ROLES.map((r) => <option key={r} value={r}>{USER_ROLE_LABELS[r]}</option>)}
+        </select>
+        <select
+          className="admin-select"
+          value={status}
+          onChange={(e) => setStatus(e.target.value as 'active' | 'inactive' | 'all')}
+          aria-label="وضعیت حساب"
+        >
+          <option value="active">فقط فعال</option>
+          <option value="inactive">مسدود / حذف‌شده</option>
+          <option value="all">همه</option>
         </select>
         <button type="button" className="admin-btn" onClick={() => void load()}>اعمال</button>
       </div>
