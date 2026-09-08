@@ -12,6 +12,11 @@ run() {
   npx tsx "$file"
 }
 
+# Shared pure selftests
+echo "==> selftest: shared peer-profile + user-command-id"
+npx tsx "$ROOT/packages/shared/src/peer-profile.selftest.ts"
+npx tsx "$ROOT/packages/shared/src/user-command-id.selftest.ts"
+
 # Pure / memory-path tests first
 run src/services/web-chat-cta-once.selftest.ts
 run src/services/otp-sms-copy.selftest.ts

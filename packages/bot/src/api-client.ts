@@ -14,9 +14,14 @@ import type {
 import { config } from './config';
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const botToken = config.telegramBotToken?.trim();
   const res = await fetch(`${config.apiUrl}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...init?.headers },
     ...init,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(botToken ? { 'X-PetDate-Bot-Token': botToken } : {}),
+      ...init?.headers,
+    },
   });
   if (!res.ok) {
     const body = await res.text();

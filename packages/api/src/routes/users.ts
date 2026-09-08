@@ -1,6 +1,12 @@
-import { Router } from 'express';
+import { Router, type Request } from 'express';
 import type { OnboardingStatus, User, UserRole } from '@petdate/shared';
-import { FACE_VERIFY_REWARD, ONBOARDING_STATUS_LABELS, USER_ROLES, userHasRole } from '@petdate/shared';
+import {
+  FACE_VERIFY_REWARD,
+  ONBOARDING_STATUS_LABELS,
+  USER_ROLES,
+  toPeerPublicUser,
+  userHasRole,
+} from '@petdate/shared';
 import { dbService } from '../db';
 import { sendPhoneOtp, verifyPhoneOtp } from '../services/phone-otp';
 import { sendVetEnabledSms } from '../services/vet-status-sms';
@@ -22,6 +28,34 @@ export const usersRouter = Router();
 function isUserRole(value: unknown): value is UserRole {
   return typeof value === 'string' && USER_ROLES.includes(value as UserRole);
 }
+
+/**
+ * Bot→API internal calls (need telegramId for notify/relay).
+ * Header must match TELEGRAM_BOT_TOKEN. Public/web callers get peer DTO.
+ */
+function isTrustedBotRequest(req: Request): boolean {
+  const token = String(process.env.TELEGRAM_BOT_TOKEN || '').trim();
+  if (!token) return false;
+  const header = String(req.headers['x-petdate-bot-token'] || '').trim();
+  return header.length > 0 && header === token;
+}
+
+/** Attach lastSeenAt when present for peer captions */
+function withLastSeen(user: User): User & { lastSeenAt?: string } {
+  const presence = dbService.getUserPresence(user.id);
+  if (presence?.lastSeenAt) {
+    return { ...user, lastSeenAt: presence.lastSeenAt };
+  }
+  return user;
+}
+
+/** Peer-facing serialization — strips phone / Telegram id / @username */
+function serializePeerOrFull(req: Request, user: User) {
+  const enriched = dbService.enrichUserProfileCard(withLastSeen(user));
+  if (isTrustedBotRequest(req)) return enriched;
+  return toPeerPublicUser(enriched);
+}
+
 
 /** Convert Telegram file_id avatars to /api/auth/avatar/... for web + absolute Telegram URLs. */
 async function resolveAvatarUrlPatch(
@@ -142,7 +176,7 @@ usersRouter.get('/id/:id', async (req, res) => {
     return;
   }
   const ensured = await withEnsuredAvatar(user);
-  res.json(dbService.enrichUserProfileCard(ensured));
+  res.json(serializePeerOrFull(req, ensured));
 });
 
 /** خلاصه کارت پروفایل + آمار تعاملات */
@@ -156,8 +190,9 @@ usersRouter.get('/:id/profile-card', async (req, res) => {
   const ensured = await withEnsuredAvatar(user);
   const extras = dbService.getProfileCardExtras(userId);
   res.json({
-    user: dbService.enrichUserProfileCard(ensured),
-    extras,
+    user: serializePeerOrFull(req, ensured),
+    // Peer viewers must not see contact/block counts of someone else
+    extras: isTrustedBotRequest(req) ? extras : undefined,
   });
 });
 

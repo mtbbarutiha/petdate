@@ -24,6 +24,9 @@ export function formatPet(pet: PetProfile, detailed = false): string {
       `📍 ${escapeHtml(pet.city)}${pet.neighborhood ? ` — ${escapeHtml(pet.neighborhood)}` : ''}`
     );
   }
+  if (pet.ownerName) {
+    lines.push(`👤 صاحب: ${escapeHtml(pet.ownerName)}`);
+  }
   if (pet.ownerVerified) {
     lines.push('✅ صاحب پت احراز شده');
   }

@@ -4,6 +4,7 @@ export * from './brand';
 export * from './economy';
 export * from './rx-suggestions';
 export * from './profile-card';
+export * from './peer-profile';
 
 import type {
   OnboardingStatus,
@@ -214,6 +215,8 @@ export interface User {
   avgRating?: number;
   /** تعداد نظرات ثبت‌شده برای دامپزشک */
   ratingCount?: number;
+  /** آخرین بازدید (فقط وقتی API peer/presence آن را برگرداند) */
+  lastSeenAt?: string;
   createdAt: string;
 }
 
