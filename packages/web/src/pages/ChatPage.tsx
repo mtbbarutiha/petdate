@@ -241,15 +241,17 @@ function ConversationListPane({
           <h1>{scope === 'vet' ? 'گفتگوهای پزشک' : 'هم بازی'}</h1>
         </div>
         {scope !== 'vet' ? <FindPlaymatePanel variant="header" onSent={onRefresh} /> : null}
-        <button
-          type="button"
-          className="tg-icon-btn"
-          onClick={onRefresh}
-          aria-label="بروزرسانی فهرست"
-          title="بروزرسانی"
-        >
-          <RefreshCw size={18} />
-        </button>
+        {scope === 'vet' ? (
+          <button
+            type="button"
+            className="tg-icon-btn"
+            onClick={onRefresh}
+            aria-label="بروزرسانی فهرست"
+            title="بروزرسانی"
+          >
+            <RefreshCw size={18} />
+          </button>
+        ) : null}
       </header>
 
       {error ? <p className="tg-error tg-error--inset">{error}</p> : null}

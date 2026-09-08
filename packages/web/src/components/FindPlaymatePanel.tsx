@@ -165,8 +165,9 @@ export function FindPlaymatePanel({
             data-testid="find-playmate-header"
             disabled={sending || petsLoading}
             onClick={() => void onPrimaryClick()}
+            aria-label="پیدا کردن همبازی"
           >
-            {sending ? '…' : 'پیدا کردن'}
+            {sending ? 'در حال ارسال…' : 'پیدا کردن همبازی'}
           </button>
         )}
         {findError ? <span className="find-playmate-header-err">{findError}</span> : null}
