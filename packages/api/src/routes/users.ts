@@ -4,7 +4,11 @@ import { FACE_VERIFY_REWARD, ONBOARDING_STATUS_LABELS, USER_ROLES, userHasRole }
 import { dbService } from '../db';
 import { sendPhoneOtp, verifyPhoneOtp } from '../services/phone-otp';
 import { sendVetEnabledSms } from '../services/vet-status-sms';
-import { completeShopStarsXtrPayment, isShopXtrPackageId } from '../services/shop-checkout';
+import {
+  completeShopCardPayment,
+  completeShopStarsXtrPayment,
+  isShopXtrPackageId,
+} from '../services/shop-checkout';
 
 export const usersRouter = Router();
 
@@ -804,7 +808,28 @@ usersRouter.post('/payments/:id/receipt', (req, res) => {
 
 usersRouter.post('/payments/:id/approve', (req, res) => {
   const note = req.body?.note != null ? String(req.body.note) : undefined;
-  const result = dbService.approveCardPayment(Number(req.params.id), note);
+  const id = Number(req.params.id);
+  const existing = dbService.getPaymentOrder(id);
+  if (existing && String(existing.packageId) === 'shopcard') {
+    const result = completeShopCardPayment({ orderId: id, adminNote: note });
+    if (!result.ok) {
+      res.status(result.reason === 'payment_missing' ? 404 : 409).json({
+        ok: false,
+        reason: result.reason,
+        error: result.error,
+      });
+      return;
+    }
+    res.json({
+      ok: true,
+      order: result.paymentOrder,
+      user: result.user,
+      shopOrder: result.shopOrder,
+      kind: 'shopcard',
+    });
+    return;
+  }
+  const result = dbService.approveCardPayment(id, note);
   if (!result.ok) {
     res.status(result.reason === 'missing' ? 404 : 409).json({
       ok: false,

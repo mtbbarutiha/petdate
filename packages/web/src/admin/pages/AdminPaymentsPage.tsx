@@ -22,6 +22,8 @@ function packageLabel(o: PaymentOrder): string {
   if (pkg === 'shopxtr') return 'پت شاپ · Stars تلگرام';
   if (pkg === 'shopwallet') return 'پت شاپ · ستاره پنل';
   if (pkg === 'shopcoins') return 'پت شاپ · سکه پنل';
+  if (pkg === 'shoptoman') return 'پت شاپ · ریال پنل';
+  if (pkg === 'shopcard') return 'پت شاپ · کارت‌به‌کارت';
   if (pkg.startsWith('wstars:')) return `کیف‌پول Stars · ${pkg}`;
   if (o.coins > 0) return `${pkg} · ${formatNumFa(o.coins)} سکه`;
   return pkg;
@@ -38,7 +40,7 @@ function parseShopMeta(note?: string): { shopOrderId?: number; titleHint?: strin
   if (!note?.trim().startsWith('{')) return null;
   try {
     const j = JSON.parse(note) as { kind?: string; shopOrderId?: number; titleHint?: string };
-    if (j?.kind === 'shopxtr' || j?.kind === 'shopwallet' || j?.kind === 'shopcoins') {
+    if (j?.kind === 'shopxtr' || j?.kind === 'shopwallet' || j?.kind === 'shopcoins' || j?.kind === 'shopcard' || j?.kind === 'shoptoman') {
       return { shopOrderId: j.shopOrderId, titleHint: j.titleHint };
     }
   } catch {
@@ -157,9 +159,11 @@ export function AdminPaymentsPage() {
                         ? '⭐ Stars'
                         : o.method === 'coins'
                           ? '🪙 سکه'
-                          : o.method === 'card'
-                            ? 'کارت'
-                            : o.method}
+                          : o.method === 'toman'
+                            ? '﷼ ریال'
+                            : o.method === 'card'
+                              ? 'کارت'
+                              : o.method}
                     </td>
                     <td>
                       <span className="admin-badge">{statusLabel(o.status)}</span>

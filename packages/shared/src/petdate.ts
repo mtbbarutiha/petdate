@@ -36,7 +36,7 @@ export const VERIFICATION_STATUS_LABELS: Record<VerificationStatus, string> = {
 };
 
 /** روش خرید سکه */
-export type PaymentMethod = 'card' | 'stars' | 'coins';
+export type PaymentMethod = 'card' | 'stars' | 'coins' | 'toman';
 
 /**
  * وضعیت سفارش پرداخت:
@@ -529,8 +529,11 @@ export interface BotSession {
   shopCheckout?: {
     productId: string;
     qty: number;
-    /** coins=سکه پنل · wallet_stars=ستاره پنل · telegram_stars/stars=فاکتور XTR تلگرام */
-    method?: 'coins' | 'wallet_stars' | 'telegram_stars' | 'stars';
+    /**
+     * coins=سکه پنل · wallet_stars=ستاره پنل · telegram_stars/stars=فاکتور XTR تلگرام
+     * toman=کیف‌پول تومان · card=کارت‌به‌کارت (رسید → تأیید ادمین)
+     */
+    method?: 'coins' | 'wallet_stars' | 'telegram_stars' | 'stars' | 'toman' | 'card';
     name?: string;
     phone?: string;
     address?: string;

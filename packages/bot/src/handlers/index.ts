@@ -664,7 +664,7 @@ export function registerHandlers(bot: Bot): void {
   bot.callbackQuery(/^shop:buyStars:([^:]+):(\d+)$/, (ctx) =>
     handleShopBuyStars(ctx, ctx.match![1]!, Number(ctx.match![2]))
   );
-  bot.callbackQuery(/^shop:method:(coins|wstars|xtr):([^:]+):(\d+)$/, (ctx) =>
+  bot.callbackQuery(/^shop:method:(coins|wstars|xtr|toman|card):([^:]+):(\d+)$/, (ctx) =>
     handleShopSetPayMethod(ctx, ctx.match![1]!, ctx.match![2]!, Number(ctx.match![3]))
   );
   bot.callbackQuery(/^shop:payNow:([^:]+):(\d+)$/, (ctx) =>

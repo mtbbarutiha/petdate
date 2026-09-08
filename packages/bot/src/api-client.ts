@@ -945,7 +945,10 @@ export async function attachPaymentReceipt(
 export async function approveCardPayment(
   orderId: number,
   note?: string
-): Promise<{ ok: true; order: PaymentOrder; user: User } | { ok: false; reason: string }> {
+): Promise<
+  | { ok: true; order: PaymentOrder; user: User; shopOrder?: { id: number }; kind?: string }
+  | { ok: false; reason: string }
+> {
   const res = await fetch(`${config.apiUrl}/api/users/payments/${orderId}/approve`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -955,13 +958,21 @@ export async function approveCardPayment(
     ok?: boolean;
     order?: PaymentOrder;
     user?: User;
+    shopOrder?: { id: number };
+    kind?: string;
     reason?: string;
     error?: string;
   };
   if (!res.ok || !body.ok || !body.order || !body.user) {
     return { ok: false, reason: body.reason ?? body.error ?? 'error' };
   }
-  return { ok: true, order: body.order, user: body.user };
+  return {
+    ok: true,
+    order: body.order,
+    user: body.user,
+    shopOrder: body.shopOrder,
+    kind: body.kind,
+  };
 }
 
 export async function rejectCardPayment(
@@ -1342,6 +1353,49 @@ export async function checkoutShopWithWalletStarsTelegram(payload: {
   message?: string;
 }> {
   return request('/api/shop/checkout/wallet-stars-telegram', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function checkoutShopWithTomanTelegram(payload: {
+  telegramId: string;
+  items: Array<{ productId: string; qty: number }>;
+  customerName: string;
+  customerPhone: string;
+  address: string;
+  note?: string;
+}): Promise<{
+  ok: true;
+  orderId: number;
+  tomanSpent: number;
+  tomanRemaining: number;
+  totalToman: number;
+  message?: string;
+}> {
+  return request('/api/shop/checkout/toman-telegram', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function checkoutShopWithCardTelegram(payload: {
+  telegramId: string;
+  items: Array<{ productId: string; qty: number }>;
+  customerName: string;
+  customerPhone: string;
+  address: string;
+  note?: string;
+}): Promise<{
+  ok: true;
+  paymentOrderId: number;
+  totalToman: number;
+  cardNumber: string;
+  cardHolder: string;
+  botDeepLink: string;
+  message?: string;
+}> {
+  return request('/api/shop/checkout/card-telegram', {
     method: 'POST',
     body: JSON.stringify(payload),
   });

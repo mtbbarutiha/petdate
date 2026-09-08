@@ -15,6 +15,7 @@ import { dbService, getStorageDriver } from '../db';
 import { adminPlatform } from '../admin-platform';
 import { adminFinance } from '../admin-finance';
 import { logAppEvent } from '../services/app-logger';
+import { completeShopCardPayment } from '../services/shop-checkout';
 import {
   getSmtpPublicConfig,
   isPlausibleEmail,
@@ -194,6 +195,22 @@ adminRouter.get('/payments', (req, res) => {
 adminRouter.post('/payments/:id/approve', (req, res) => {
   const id = Number(req.params.id);
   const note = typeof req.body?.note === 'string' ? req.body.note : undefined;
+  const existing = dbService.getPaymentOrder(id);
+  if (existing && String(existing.packageId) === 'shopcard') {
+    const result = completeShopCardPayment({ orderId: id, adminNote: note });
+    if (!result.ok) {
+      res.status(400).json({ error: result.reason, message: result.error });
+      return;
+    }
+    res.json({
+      ok: true,
+      order: result.paymentOrder,
+      user: result.user,
+      shopOrder: result.shopOrder,
+      kind: 'shopcard',
+    });
+    return;
+  }
   const result = dbService.approveCardPayment(id, note);
   if (!result.ok) { res.status(400).json({ error: result.reason }); return; }
   res.json(result);

@@ -4719,6 +4719,17 @@ export const dbService = {
     if (existing.method !== 'card' || existing.status !== 'pending') {
       return { ok: false, reason: 'bad_status' };
     }
+    let adminNote = note?.trim() || null;
+    if (String(existing.packageId) === 'shopcard' && existing.adminNote?.trim().startsWith('{')) {
+      try {
+        const meta = JSON.parse(existing.adminNote) as Record<string, unknown>;
+        meta.rejectNote = note?.trim() || undefined;
+        meta.rejected = true;
+        adminNote = JSON.stringify(meta);
+      } catch {
+        /* keep plain note */
+      }
+    }
     const updated = db
       .prepare(
         `UPDATE payment_orders
@@ -4727,7 +4738,7 @@ export const dbService = {
              reviewed_at = datetime('now')
          WHERE id = ? AND status = 'pending'`
       )
-      .run(note?.trim() || null, orderId);
+      .run(adminNote, orderId);
     if (updated.changes !== 1) return { ok: false, reason: 'bad_status' };
     return {
       ok: true,

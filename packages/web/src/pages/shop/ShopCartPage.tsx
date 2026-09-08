@@ -5,14 +5,16 @@ import { formatShopCoins, formatShopStars, formatToman } from '../../data/shopCa
 import { useAuthStore } from '../../hooks/useAuthStore';
 import { useShopCart } from '../../hooks/useShopCart';
 import {
+  checkoutShopWithCard,
   checkoutShopWithCoins,
   checkoutShopWithStars,
+  checkoutShopWithToman,
   checkoutShopWithWalletStars,
 } from '../../lib/api';
 import { loginPath } from '../../lib/authRedirect';
 import { ShopChrome } from '../../components/shop/ShopChrome';
 
-type PayMethod = 'coins' | 'wallet_stars' | 'telegram_stars';
+type PayMethod = 'coins' | 'wallet_stars' | 'telegram_stars' | 'toman' | 'card';
 
 export function ShopCartPage() {
   const navigate = useNavigate();
@@ -39,8 +41,14 @@ export function ShopCartPage() {
     return user.wallet?.stars ?? walletFromUserFields(user).stars ?? user.walletStars ?? 0;
   }, [user]);
 
+  const tomanBalance = useMemo(() => {
+    if (!user) return 0;
+    return user.wallet?.toman ?? walletFromUserFields(user).toman ?? user.walletToman ?? 0;
+  }, [user]);
+
   const canAffordCoins = coinBalance >= totalCoins && totalCoins > 0;
   const canAffordWalletStars = starsBalance >= totalStars && totalStars > 0;
+  const canAffordToman = tomanBalance >= totalToman && totalToman > 0;
   const telegramLinked = Boolean(user?.telegramId);
 
   const payDisabled =
@@ -48,6 +56,7 @@ export function ShopCartPage() {
     submitting ||
     (payMethod === 'coins' && !canAffordCoins) ||
     (payMethod === 'wallet_stars' && !canAffordWalletStars) ||
+    (payMethod === 'toman' && !canAffordToman) ||
     (payMethod === 'telegram_stars' && !telegramLinked);
 
   const pay = async () => {
@@ -73,6 +82,12 @@ export function ShopCartPage() {
     if (payMethod === 'wallet_stars' && !canAffordWalletStars) {
       setError(
         `موجودی ستاره پنل کافی نیست. نیاز: ${totalStars.toLocaleString('fa-IR')} — موجودی: ${starsBalance.toLocaleString('fa-IR')}`
+      );
+      return;
+    }
+    if (payMethod === 'toman' && !canAffordToman) {
+      setError(
+        `موجودی تومان کافی نیست. نیاز: ${totalToman.toLocaleString('fa-IR')} — موجودی: ${tomanBalance.toLocaleString('fa-IR')}`
       );
       return;
     }
@@ -126,6 +141,28 @@ export function ShopCartPage() {
         clear();
         setPaidLabel(formatShopStars(result.starsSpent));
         setOrderId(String(result.orderId));
+      } else if (payMethod === 'toman') {
+        const result = await checkoutShopWithToman(token, payload);
+        rememberPaidOrder({
+          id: String(result.orderId),
+          createdAt: new Date().toISOString(),
+          name: name.trim(),
+          phone: phone.trim(),
+          address: address.trim(),
+          note: note.trim() || undefined,
+          items: lines.map((l) => ({ productId: l.productId, qty: l.qty })),
+          totalToman: result.totalToman,
+          status: 'paid',
+          paymentCurrency: 'toman',
+        });
+        clear();
+        setPaidLabel(formatToman(result.tomanSpent));
+        setOrderId(String(result.orderId));
+      } else if (payMethod === 'card') {
+        const result = await checkoutShopWithCard(token, payload);
+        clear();
+        navigate(`/shop/card-pay/${result.paymentOrderId}`, { replace: true });
+        return;
       } else {
         const result = await checkoutShopWithStars(token, payload);
         clear();
@@ -150,7 +187,7 @@ export function ShopCartPage() {
   };
 
   return (
-    <ShopChrome bannerTitle="سبد خرید" bannerLead="روش پرداخت را انتخاب کن — سکه پنل، ستاره پنل، یا Stars تلگرام">
+    <ShopChrome bannerTitle="سبد خرید" bannerLead="روش پرداخت را انتخاب کن — سکه، ستاره، ریال یا فاکتور تلگرام">
       <div className="pepito-container pd-shop-cart">
         {orderId ? (
           <div className="pd-shop-order-ok">
@@ -260,6 +297,12 @@ export function ShopCartPage() {
                       {formatShopStars(starsBalance)}
                     </strong>
                   </p>
+                  <p className="pd-shop-checkout-balance" role="status">
+                    موجودی تومان پنل:{' '}
+                    <strong className={canAffordToman || lines.length === 0 ? undefined : 'pd-shop-balance-low'}>
+                      {formatToman(tomanBalance)}
+                    </strong>
+                  </p>
 
                   <fieldset className="pd-shop-pay-methods">
                     <legend>روش پرداخت</legend>
@@ -293,6 +336,35 @@ export function ShopCartPage() {
                           {formatShopStars(totalStars)}
                           {!canAffordWalletStars && lines.length > 0 ? ' — موجودی کافی نیست' : ''}
                         </small>
+                      </span>
+                    </label>
+                    <label className={`pd-shop-pay-option${payMethod === 'toman' ? ' is-active' : ''}`}>
+                      <input
+                        type="radio"
+                        name="payMethod"
+                        value="toman"
+                        checked={payMethod === 'toman'}
+                        onChange={() => setPayMethod('toman')}
+                      />
+                      <span>
+                        <strong>ریال / تومان پنل</strong>
+                        <small>
+                          {formatToman(totalToman)}
+                          {!canAffordToman && lines.length > 0 ? ' — موجودی کافی نیست' : ''}
+                        </small>
+                      </span>
+                    </label>
+                    <label className={`pd-shop-pay-option${payMethod === 'card' ? ' is-active' : ''}`}>
+                      <input
+                        type="radio"
+                        name="payMethod"
+                        value="card"
+                        checked={payMethod === 'card'}
+                        onChange={() => setPayMethod('card')}
+                      />
+                      <span>
+                        <strong>کارت‌به‌کارت (ریال)</strong>
+                        <small>واریز ریالی و ارسال رسید در ربات</small>
                       </span>
                     </label>
                     <label
@@ -344,8 +416,8 @@ export function ShopCartPage() {
                     </button>
                   </div>
                   <p className="pd-shop-soon">
-                    سکه و ستاره پنل از کیف‌پول کسر می‌شوند. «فاکتور Stars تلگرام» اینوویس واقعی صادر می‌کند و
-                    پرداخت داخل خود تلگرام انجام می‌شود.
+                    سکه، ستاره و تومان پنل از کیف‌پول کسر می‌شوند. کارت‌به‌کارت با ارسال رسید در ربات تأیید
+                    می‌شود. فاکتور Stars هم داخل تلگرام پرداخت می‌شود.
                   </p>
                 </form>
               )}

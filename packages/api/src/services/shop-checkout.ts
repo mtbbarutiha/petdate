@@ -100,11 +100,13 @@ export type ShopCheckoutFail = {
     | 'out_of_stock'
     | 'insufficient_coins'
     | 'insufficient_stars'
+    | 'insufficient_toman'
     | 'user_missing'
     | 'bad_customer'
     | 'payment_missing'
     | 'bad_status'
-    | 'bad_meta';
+    | 'bad_meta'
+    | 'already';
   error: string;
   balance?: number;
   cost?: number;
@@ -813,4 +815,448 @@ export function quoteShopStars(
   const totalToman = lines.reduce((s, l) => s + l.priceToman * l.qty, 0);
   const stars = lines.reduce((s, l) => s + l.lineStars, 0);
   return { ok: true, totalToman, stars, lines, balanceNeeded: stars };
+}
+
+/** payment_orders.package_id برای خرید شاپ با تومان پنل / کارت‌به‌کارت */
+export const SHOP_TOMAN_PACKAGE_ID = 'shoptoman';
+export const SHOP_CARD_PACKAGE_ID = 'shopcard';
+
+export type ShopCardMeta = {
+  v: 1;
+  kind: 'shopcard';
+  items: ShopCheckoutItemInput[];
+  customerName: string;
+  customerPhone: string;
+  address: string;
+  note?: string;
+  totalToman: number;
+  titleHint?: string;
+  shopOrderId?: number;
+  receiptToken?: string;
+  rejectNote?: string;
+};
+
+export function isShopCardPackageId(packageId: string | null | undefined): boolean {
+  return String(packageId || '') === SHOP_CARD_PACKAGE_ID;
+}
+
+export function encodeShopCardMeta(meta: ShopCardMeta): string {
+  return JSON.stringify(meta);
+}
+
+export function parseShopCardMeta(raw?: string | null): ShopCardMeta | null {
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as ShopCardMeta;
+    if (!parsed || parsed.kind !== 'shopcard' || parsed.v !== 1) return null;
+    if (!Array.isArray(parsed.items) || parsed.items.length === 0) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+export type ShopCheckoutTomanOk = {
+  ok: true;
+  order: ShopOrderRow;
+  tomanSpent: number;
+  tomanRemaining: number;
+  totalToman: number;
+  lines: ShopCheckoutLine[];
+};
+
+/**
+ * پرداخت فروشگاه با تومان کیف‌پول (users.wallet_toman).
+ */
+export function checkoutShopWithToman(
+  input: ShopCheckoutCoinsInput
+): ShopCheckoutTomanOk | ShopCheckoutFail {
+  const bad = validateCustomer(input);
+  if (bad) return bad;
+
+  const user = dbService.getUserById(input.userId);
+  if (!user) {
+    return { ok: false, reason: 'user_missing', error: 'کاربر پیدا نشد.' };
+  }
+
+  const built = buildLines(input.items);
+  if (!built.ok) return built.fail;
+  const { lines } = built;
+
+  const name = input.customerName.trim();
+  const phone = input.customerPhone.trim();
+  const address = input.address.trim();
+  const totalToman = lines.reduce((s, l) => s + l.priceToman * l.qty, 0);
+  const cogsToman = cogsOf(lines);
+  if (totalToman <= 0) {
+    return { ok: false, reason: 'empty_cart', error: 'مبلغ سفارش نامعتبر است.' };
+  }
+
+  const balance = user.wallet?.toman ?? user.walletToman ?? 0;
+  if (balance < totalToman) {
+    return {
+      ok: false,
+      reason: 'insufficient_toman',
+      error: `موجودی تومان کافی نیست. نیاز: ${totalToman.toLocaleString('fa-IR')} — موجودی: ${balance.toLocaleString('fa-IR')}`,
+      balance,
+      cost: totalToman,
+    };
+  }
+
+  const note = orderNote(address, input.note);
+  const d = getDb();
+  try {
+    const result = d.transaction(() => {
+      const debited = dbService.creditWallet(input.userId, 'toman', -totalToman, {
+        skipLedger: true,
+        reason: 'خرید فروشگاه با تومان',
+      });
+      if (!debited.ok) {
+        const w = dbService.getWallet(input.userId);
+        throw Object.assign(new Error('INSUFFICIENT'), {
+          balance: w?.toman ?? 0,
+          cost: totalToman,
+        });
+      }
+
+      const order = adminPlatform.createShopOrder({
+        userId: input.userId,
+        status: 'paid',
+        totalToman,
+        items: lines.map((l) => ({
+          productId: l.productId,
+          title: l.title,
+          categorySlug: l.categorySlug,
+          qty: l.qty,
+          priceToman: l.priceToman,
+          costToman: l.costToman ?? Math.floor(l.priceToman * 0.65),
+          coins: l.lineCoins,
+        })),
+        customerName: name,
+        customerPhone: phone,
+        note,
+        paymentCurrency: 'toman',
+        paymentAmount: totalToman,
+        cogsToman,
+      });
+
+      d.prepare(
+        `INSERT INTO wallet_ledger (user_id, currency, amount, direction, reason, ref_type, ref_id)
+         VALUES (?, 'toman', ?, 'debit', ?, 'shop_order', ?)`
+      ).run(input.userId, totalToman, 'خرید فروشگاه با تومان', String(order.id));
+
+      d.prepare(
+        `INSERT INTO payment_orders (
+          user_id, package_id, coins, amount_toman, amount_stars, method, status, admin_note, reviewed_at
+        ) VALUES (?, 'shoptoman', 0, ?, NULL, 'toman', 'paid', ?, datetime('now'))`
+      ).run(
+        input.userId,
+        totalToman,
+        JSON.stringify({
+          v: 1,
+          kind: 'shoptoman',
+          shopOrderId: order.id,
+          titleHint: lines[0]?.title || 'خرید پت شاپ',
+        })
+      );
+
+      return {
+        order,
+        tomanRemaining: debited.user.wallet?.toman ?? debited.user.walletToman ?? 0,
+      };
+    })();
+
+    return {
+      ok: true,
+      order: result.order,
+      tomanSpent: totalToman,
+      tomanRemaining: result.tomanRemaining,
+      totalToman,
+      lines,
+    };
+  } catch (err) {
+    const e = err as { message?: string; balance?: number; cost?: number };
+    if (e?.message === 'INSUFFICIENT') {
+      return {
+        ok: false,
+        reason: 'insufficient_toman',
+        error: `موجودی تومان کافی نیست. نیاز: ${(e.cost ?? totalToman).toLocaleString('fa-IR')} — موجودی: ${(e.balance ?? 0).toLocaleString('fa-IR')}`,
+        balance: e.balance ?? 0,
+        cost: e.cost ?? totalToman,
+      };
+    }
+    throw err;
+  }
+}
+
+export type ShopCardPrepareOk = {
+  ok: true;
+  paymentOrderId: number;
+  totalToman: number;
+  lines: ShopCheckoutLine[];
+  titleHint: string;
+  botDeepLink: string;
+  webSuccessUrl: string;
+  receiptToken: string;
+  cardNumber: string;
+  cardHolder: string;
+  message: string;
+};
+
+function shopCardBotDeepLink(paymentOrderId: number): string {
+  const bot =
+    String(process.env.TELEGRAM_BOT_USERNAME || 'Petdatebot').replace(/^@/, '') || 'Petdatebot';
+  return `https://t.me/${bot}?start=shopcard_${paymentOrderId}`;
+}
+
+function shopCardWebSuccessUrl(paymentOrderId: number, receiptToken?: string): string {
+  const web = String(process.env.PUBLIC_WEB_URL || process.env.WEB_URL || 'https://petdate.ir').replace(
+    /\/$/,
+    ''
+  );
+  const base = `${web}/shop/card-pay/${paymentOrderId}`;
+  return receiptToken ? `${base}?t=${encodeURIComponent(receiptToken)}` : base;
+}
+
+function paymentCardFromEnv(): { number: string; holder: string } {
+  const number = String(
+    process.env.PAYMENT_CARD_NUMBER || '62198611052407631'
+  ).replace(/\s+/g, '');
+  const holder = String(process.env.PAYMENT_CARD_HOLDER || 'محمد تقی باروتیها');
+  return { number, holder };
+}
+
+/**
+ * ثبت سفارش کارت‌به‌کارت شاپ — بعد از آپلود رسید و تأیید ادمین، سفارش شاپ ساخته می‌شود.
+ */
+export function prepareShopCardCheckout(
+  input: ShopCheckoutCoinsInput
+): ShopCardPrepareOk | ShopCheckoutFail {
+  const bad = validateCustomer(input);
+  if (bad) return bad;
+
+  const user = dbService.getUserById(input.userId);
+  if (!user) {
+    return { ok: false, reason: 'user_missing', error: 'کاربر پیدا نشد.' };
+  }
+
+  const built = buildLines(input.items);
+  if (!built.ok) return built.fail;
+  const { lines } = built;
+
+  const totalToman = lines.reduce((s, l) => s + l.priceToman * l.qty, 0);
+  if (totalToman <= 0) {
+    return { ok: false, reason: 'empty_cart', error: 'مبلغ سفارش نامعتبر است.' };
+  }
+
+  const titleHint = lines
+    .map((l) => l.title)
+    .join(' · ')
+    .slice(0, 80);
+  const receiptToken = randomBytes(16).toString('hex');
+  const meta: ShopCardMeta = {
+    v: 1,
+    kind: 'shopcard',
+    items: lines.map((l) => ({ productId: l.productId, qty: l.qty })),
+    customerName: input.customerName.trim(),
+    customerPhone: input.customerPhone.trim(),
+    address: input.address.trim(),
+    note: input.note?.trim() || undefined,
+    totalToman,
+    titleHint,
+    receiptToken,
+  };
+
+  const payment = dbService.createPaymentOrder({
+    userId: input.userId,
+    packageId: SHOP_CARD_PACKAGE_ID,
+    coins: 0,
+    amountToman: totalToman,
+    amountStars: undefined,
+    method: 'card',
+    status: 'awaiting_receipt',
+    adminNote: encodeShopCardMeta(meta),
+  });
+
+  const card = paymentCardFromEnv();
+  return {
+    ok: true,
+    paymentOrderId: payment.id,
+    totalToman,
+    lines,
+    titleHint,
+    botDeepLink: shopCardBotDeepLink(payment.id),
+    webSuccessUrl: shopCardWebSuccessUrl(payment.id, receiptToken),
+    receiptToken,
+    cardNumber: card.number,
+    cardHolder: card.holder,
+    message: `مبلغ ${totalToman.toLocaleString('fa-IR')} تومان را کارت‌به‌کارت واریز کن و عکس رسید را در ربات بفرست.`,
+  };
+}
+
+/**
+ * بعد از تأیید ادمین روی رسید کارت شاپ — ساخت سفارش paid.
+ */
+export function completeShopCardPayment(input: {
+  orderId: number;
+  adminNote?: string;
+}):
+  | { ok: true; paymentOrder: PaymentOrder; shopOrder: ShopOrderRow; user: ReturnType<typeof dbService.getUserById> }
+  | ShopCheckoutFail {
+  const payment = dbService.getPaymentOrder(input.orderId);
+  if (!payment) {
+    return { ok: false, reason: 'payment_missing', error: 'سفارش پرداخت پیدا نشد.' };
+  }
+  if (!isShopCardPackageId(payment.packageId)) {
+    return { ok: false, reason: 'bad_meta', error: 'این سفارش شاپ کارت نیست.' };
+  }
+  if (payment.method !== 'card' || payment.status !== 'pending') {
+    return { ok: false, reason: 'bad_status', error: 'وضعیت پرداخت برای تأیید مناسب نیست.' };
+  }
+
+  const meta = parseShopCardMeta(payment.adminNote);
+  if (!meta) {
+    return { ok: false, reason: 'bad_meta', error: 'اطلاعات سفارش شاپ ناقص است.' };
+  }
+  if (meta.shopOrderId) {
+    const existingOrder = adminPlatform.getShopOrder(meta.shopOrderId);
+    if (existingOrder) {
+      return {
+        ok: true,
+        paymentOrder: payment,
+        shopOrder: existingOrder,
+        user: dbService.getUserById(payment.userId),
+      };
+    }
+  }
+
+  const built = buildLines(meta.items);
+  if (!built.ok) return built.fail;
+  const { lines } = built;
+  const totalToman = lines.reduce((s, l) => s + l.priceToman * l.qty, 0);
+  const cogsToman = cogsOf(lines);
+  const note = orderNote(meta.address, meta.note);
+
+  const d = getDb();
+  try {
+    const result = d.transaction(() => {
+      const updated = d
+        .prepare(
+          `UPDATE payment_orders
+           SET status = 'approved',
+               admin_note = ?,
+               reviewed_at = datetime('now')
+           WHERE id = ? AND status = 'pending'`
+        )
+        .run(
+          encodeShopCardMeta({
+            ...meta,
+            // keep cart meta; optional admin note stored separately in rejectNote field reuse
+            rejectNote: input.adminNote?.trim() || meta.rejectNote,
+          }),
+          input.orderId
+        );
+      if (updated.changes !== 1) throw new Error('BAD_STATUS');
+
+      const order = adminPlatform.createShopOrder({
+        userId: payment.userId,
+        status: 'paid',
+        totalToman,
+        items: lines.map((l) => ({
+          productId: l.productId,
+          title: l.title,
+          categorySlug: l.categorySlug,
+          qty: l.qty,
+          priceToman: l.priceToman,
+          costToman: l.costToman ?? Math.floor(l.priceToman * 0.65),
+          coins: l.lineCoins,
+        })),
+        customerName: meta.customerName,
+        customerPhone: meta.customerPhone,
+        note: [
+          note,
+          'پرداخت: کارت‌به‌کارت (ریال)',
+          `فاکتور پرداخت: #${input.orderId}`,
+        ]
+          .filter(Boolean)
+          .join('\n'),
+        paymentCurrency: 'toman_card',
+        paymentAmount: totalToman,
+        cogsToman,
+      });
+
+      d.prepare(
+        `UPDATE payment_orders SET admin_note = ? WHERE id = ?`
+      ).run(
+        encodeShopCardMeta({
+          ...meta,
+          shopOrderId: order.id,
+          rejectNote: input.adminNote?.trim() || meta.rejectNote,
+        }),
+        input.orderId
+      );
+
+      return order;
+    })();
+
+    return {
+      ok: true,
+      paymentOrder: dbService.getPaymentOrder(input.orderId)!,
+      shopOrder: result,
+      user: dbService.getUserById(payment.userId),
+    };
+  } catch (err) {
+    if (err instanceof Error && err.message === 'BAD_STATUS') {
+      return { ok: false, reason: 'bad_status', error: 'تأیید ممکن نشد.' };
+    }
+    throw err;
+  }
+}
+
+export function getShopCardStatus(
+  paymentOrderId: number,
+  opts?: { userId?: number; receiptToken?: string }
+):
+  | {
+      ok: true;
+      paid: boolean;
+      status: string;
+      totalToman: number;
+      shopOrderId?: number;
+      botDeepLink: string;
+      cardNumber: string;
+      cardHolder: string;
+      paidAt?: string;
+    }
+  | { ok: false; reason: 'missing' | 'forbidden'; error: string } {
+  const payment = dbService.getPaymentOrder(paymentOrderId);
+  if (!payment || !isShopCardPackageId(payment.packageId)) {
+    return { ok: false, reason: 'missing', error: 'فاکتور پیدا نشد.' };
+  }
+  const meta = parseShopCardMeta(payment.adminNote);
+  if (opts?.userId != null && payment.userId !== opts.userId) {
+    if (!opts.receiptToken || !meta?.receiptToken || opts.receiptToken !== meta.receiptToken) {
+      return { ok: false, reason: 'forbidden', error: 'دسترسی ندارید.' };
+    }
+  } else if (opts?.userId == null && opts?.receiptToken) {
+    if (!meta?.receiptToken || opts.receiptToken !== meta.receiptToken) {
+      return { ok: false, reason: 'forbidden', error: 'دسترسی ندارید.' };
+    }
+  } else if (opts?.userId == null) {
+    return { ok: false, reason: 'forbidden', error: 'دسترسی ندارید.' };
+  }
+
+  const card = paymentCardFromEnv();
+  const paid = payment.status === 'approved' || Boolean(meta?.shopOrderId);
+  return {
+    ok: true,
+    paid,
+    status: payment.status,
+    totalToman: payment.amountToman ?? meta?.totalToman ?? 0,
+    shopOrderId: meta?.shopOrderId,
+    botDeepLink: shopCardBotDeepLink(paymentOrderId),
+    cardNumber: card.number,
+    cardHolder: card.holder,
+    paidAt: paid ? payment.reviewedAt ?? undefined : undefined,
+  };
 }

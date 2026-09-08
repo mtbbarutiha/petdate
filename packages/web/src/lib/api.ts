@@ -1313,6 +1313,91 @@ export async function checkoutShopWithWalletStars(
   return postShopCheckout<ShopWalletStarsCheckoutResult>('/api/shop/checkout/wallet-stars', token, payload);
 }
 
+export type ShopTomanCheckoutResult = {
+  ok: true;
+  orderId: number;
+  tomanSpent: number;
+  tomanRemaining: number;
+  totalToman: number;
+  message?: string;
+};
+
+export type ShopCardCheckoutResult = {
+  ok: true;
+  paymentOrderId: number;
+  totalToman: number;
+  botDeepLink: string;
+  webSuccessUrl?: string;
+  cardNumber: string;
+  cardHolder: string;
+  receiptToken?: string;
+  message?: string;
+};
+
+export type ShopCardPaymentStatus = {
+  ok: true;
+  paid: boolean;
+  status: string;
+  totalToman: number;
+  shopOrderId?: number;
+  botDeepLink: string;
+  cardNumber: string;
+  cardHolder: string;
+  paidAt?: string;
+};
+
+/** پرداخت با تومان پنل */
+export async function checkoutShopWithToman(
+  token: string,
+  payload: {
+    items: ShopCoinCheckoutItem[];
+    customerName: string;
+    customerPhone: string;
+    address: string;
+    note?: string;
+  }
+): Promise<ShopTomanCheckoutResult> {
+  return postShopCheckout<ShopTomanCheckoutResult>('/api/shop/checkout/toman', token, payload);
+}
+
+/** کارت‌به‌کارت شاپ */
+export async function checkoutShopWithCard(
+  token: string,
+  payload: {
+    items: ShopCoinCheckoutItem[];
+    customerName: string;
+    customerPhone: string;
+    address: string;
+    note?: string;
+  }
+): Promise<ShopCardCheckoutResult> {
+  return postShopCheckout<ShopCardCheckoutResult>('/api/shop/checkout/card', token, payload);
+}
+
+export async function fetchShopCardPaymentStatus(
+  token: string | null | undefined,
+  paymentOrderId: number,
+  receiptToken?: string
+): Promise<ShopCardPaymentStatus> {
+  const qs = receiptToken ? `?t=${encodeURIComponent(receiptToken)}` : '';
+  const headers: Record<string, string> = {};
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const res = await fetch(`${API_BASE}/api/shop/checkout/card-status/${paymentOrderId}${qs}`, {
+    headers,
+  });
+  const body = await res.text();
+  let json: ShopCardPaymentStatus & { error?: string; ok?: boolean };
+  try {
+    json = JSON.parse(body) as ShopCardPaymentStatus & { error?: string; ok?: boolean };
+  } catch {
+    throw new Error(body || `خطای ${res.status}`);
+  }
+  if (!res.ok || !json?.ok) {
+    throw new Error(json?.error || body || `خطای ${res.status}`);
+  }
+  return json;
+}
+
 export type PublicShopProduct = {
   id: string;
   slug: string;

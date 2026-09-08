@@ -488,6 +488,35 @@ export async function handlePaymentApprove(ctx: Context, orderId: number): Promi
   } catch {
     /* ignore */
   }
+
+  const isShopCard = String(result.order.packageId || '') === 'shopcard';
+  if (isShopCard) {
+    const shopOrderId = (result as { shopOrder?: { id?: number } }).shopOrder?.id;
+    await ctx.reply(
+      [
+        `✅ سفارش کارت شاپ #${orderId} تأیید شد.`,
+        shopOrderId ? `سفارش فروشگاه #${shopOrderId} ثبت شد.` : 'سفارش فروشگاه ثبت شد.',
+        `کاربر: ${escapeHtml(result.user.name)}`,
+      ].join('\n'),
+      { parse_mode: 'HTML' }
+    );
+    if (result.user.telegramId) {
+      try {
+        await ctx.api.sendMessage(
+          result.user.telegramId,
+          [
+            '✅ پرداخت کارت‌به‌کارت شاپ تأیید شد.',
+            shopOrderId ? `سفارش فروشگاه #${shopOrderId} ثبت شد.` : 'سفارشت ثبت شد.',
+            'از «سفارش‌های من» در شاپ پیگیری کن.',
+          ].join('\n')
+        );
+      } catch (err) {
+        console.warn('notify user shop card approved failed:', err);
+      }
+    }
+    return;
+  }
+
   await ctx.reply(
     `✅ سفارش #${orderId} تأیید شد.\n${formatNum(result.order.coins)} سکه به ${escapeHtml(result.user.name)} واریز شد.`,
     { parse_mode: 'HTML' }

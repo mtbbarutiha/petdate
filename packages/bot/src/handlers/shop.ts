@@ -11,8 +11,10 @@ import {
   type BotSession,
 } from '@petdate/shared';
 import {
+  checkoutShopWithCardTelegram,
   checkoutShopWithCoinsTelegram,
   checkoutShopWithStarsTelegram,
+  checkoutShopWithTomanTelegram,
   checkoutShopWithWalletStarsTelegram,
   fetchMyShopOrdersTelegram,
   fetchShopCategories,
@@ -21,17 +23,20 @@ import {
   type ShopApiCategory,
   type ShopApiProduct,
 } from '../api-client';
+import { paymentCardInfo } from '../economy';
 import { getSession, upsertSession } from '../session';
 import { effectiveWebUrl, isTelegramInlineUrl } from '../urls';
 import { getCtxUser, menuKeyboardFor, pushMainMenuKeyboard } from './helpers';
 
 const PAGE_SIZE = 6;
-type ShopPayMethod = 'coins' | 'wallet_stars' | 'telegram_stars';
+type ShopPayMethod = 'coins' | 'wallet_stars' | 'telegram_stars' | 'toman' | 'card';
 
 function normalizeShopPayMethod(raw?: string | null): ShopPayMethod {
   const m = String(raw || '').trim();
   if (m === 'wallet_stars' || m === 'wstars') return 'wallet_stars';
   if (m === 'telegram_stars' || m === 'stars' || m === 'xtr') return 'telegram_stars';
+  if (m === 'toman' || m === 'rial' || m === 'irr') return 'toman';
+  if (m === 'card' || m === 'card2card') return 'card';
   return 'coins';
 }
 
@@ -164,6 +169,10 @@ function confirmKeyboard(productId: string, qty: number, method: ShopPayMethod =
     .row()
     .text(mark('wallet_stars', '⭐ ستاره پنل'), `shop:method:wstars:${productId}:${qty}`)
     .row()
+    .text(mark('toman', '﷼ ریال پنل'), `shop:method:toman:${productId}:${qty}`)
+    .row()
+    .text(mark('card', '💳 کارت‌به‌کارت'), `shop:method:card:${productId}:${qty}`)
+    .row()
     .text(mark('telegram_stars', '📱 فاکتور تلگرام'), `shop:method:xtr:${productId}:${qty}`)
     .row()
     .text('✅ پرداخت', `shop:payNow:${productId}:${qty}`)
@@ -175,14 +184,22 @@ function payMethodHint(method: ShopPayMethod): string {
   if (method === 'wallet_stars') {
     return 'با پرداخت، ستاره از پنل پت‌دیت (کیف‌پول مشترک) کسر می‌شود.';
   }
+  if (method === 'toman') {
+    return 'با پرداخت، تومان از کیف‌پول پنل کسر می‌شود.';
+  }
+  if (method === 'card') {
+    return 'کارت‌به‌کارت واریز کن و عکس رسید را بفرست؛ بعد از تأیید ادمین سفارش ثبت می‌شود.';
+  }
   if (method === 'telegram_stars') {
     return 'فاکتور Stars صادر می‌شود؛ همان‌جا در تلگرام پرداخت کن (مستقیم به ربات).';
   }
   return 'با پرداخت، سکه از پنل پت‌دیت (کیف‌پول مشترک) کسر می‌شود.';
 }
 
-function payMethodLine(method: ShopPayMethod, coins: number, stars: number): string {
+function payMethodLine(method: ShopPayMethod, coins: number, stars: number, toman: number): string {
   if (method === 'wallet_stars') return `روش: ستاره پنل · ${formatStars(stars)}`;
+  if (method === 'toman') return `روش: ریال پنل · ${formatToman(toman)}`;
+  if (method === 'card') return `روش: کارت‌به‌کارت · ${formatToman(toman)}`;
   if (method === 'telegram_stars') return `روش: فاکتور تلگرام · ${formatStars(stars)}`;
   return `روش: سکه پنل · ${formatCoins(coins)}`;
 }
@@ -195,9 +212,10 @@ export async function handlePetShop(ctx: Context): Promise<void> {
   const text = [
     '🛒 <b>پت شاپ</b>',
     '',
-    'همان کاتالوگ و قیمت سایت — پرداخت با سکه یا Stars تلگرام.',
+    'همان کاتالوگ و قیمت سایت — پرداخت با سکه، ریال پنل، کارت‌به‌کارت یا Stars.',
     `موجودی سکه: <b>${formatCoins(balance)}</b>`,
     `موجودی ستاره کیف‌پول: ⭐ <b>${formatStars(starsBalance)}</b>`,
+    `موجودی ریال: <b>${formatToman(user?.wallet?.toman ?? user?.walletToman ?? 0)}</b>`,
     `نرخ: هر سکه/ستاره ≈ ${COIN_PRICE_TOMAN.toLocaleString('fa-IR')} تومان`,
     cats.total ? `دسته‌ها در فروشگاه: ${cats.total.toLocaleString('fa-IR')}` : '',
     '',
@@ -534,7 +552,7 @@ export async function handleShopCheckoutText(ctx: Context, text: string): Promis
       `محصول: ${escapeHtml(product.title)}`,
       `تعداد: ${draft.qty.toLocaleString('fa-IR')}`,
       `مبلغ: ${formatToman(product.priceToman * draft.qty)}`,
-      payMethodLine(method, coins, stars),
+      payMethodLine(method, coins, stars, product.priceToman * draft.qty),
       `گیرنده: ${escapeHtml(draft.name || '')}`,
       `موبایل: ${escapeHtml(draft.phone || '')}`,
       `آدرس: ${escapeHtml(draft.address)}`,
@@ -585,7 +603,7 @@ export async function handleShopSetPayMethod(
     `محصول: ${escapeHtml(product.title)}`,
     `تعداد: ${qty.toLocaleString('fa-IR')}`,
     `مبلغ: ${formatToman(product.priceToman * qty)}`,
-    payMethodLine(method, coins, stars),
+    payMethodLine(method, coins, stars, product.priceToman * qty),
     `گیرنده: ${escapeHtml(next.name || '')}`,
     `موبایل: ${escapeHtml(next.phone || '')}`,
     `آدرس: ${escapeHtml(next.address || '')}`,
@@ -655,6 +673,17 @@ export async function handleShopPay(
       return;
     }
   }
+  const tomanNeeded = product ? product.priceToman * qty : 0;
+  if (payMethod === 'toman') {
+    const balance = user.wallet?.toman ?? user.walletToman ?? 0;
+    if (balance < tomanNeeded) {
+      await ctx.answerCallbackQuery({
+        text: `تومان کافی نیست. نیاز ${tomanNeeded.toLocaleString('fa-IR')} — موجودی ${balance.toLocaleString('fa-IR')}`,
+        show_alert: true,
+      });
+      return;
+    }
+  }
 
   await ctx.answerCallbackQuery({ text: 'در حال پرداخت…' }).catch(() => undefined);
   try {
@@ -719,6 +748,59 @@ export async function handleShopPay(
           `مانده ستاره پنل: ${formatStars(result.starsRemaining)}`,
         ].join('\n'),
         { parse_mode: 'HTML', reply_markup: kb }
+      );
+    } else if (payMethod === 'toman') {
+      const result = await checkoutShopWithTomanTelegram({
+        telegramId: user.telegramId,
+        items: [{ productId, qty }],
+        customerName: draft.name,
+        customerPhone: draft.phone,
+        address: draft.address,
+      });
+      await patchSession(user.telegramId, { shopCheckout: undefined, step: 'ready' });
+      const site = webShopUrl('/shop/orders');
+      const kb = new InlineKeyboard().text('🛒 پت شاپ', 'shop:home');
+      if (site) kb.row().url('📦 سفارش‌ها در سایت', site);
+      await ctx.reply(
+        [
+          '✅ <b>سفارش ثبت شد</b>',
+          `شماره: #${result.orderId}`,
+          `کسر شده: ${formatToman(result.tomanSpent)} از کیف‌پول`,
+          `مانده تومان: ${formatToman(result.tomanRemaining)}`,
+        ].join('\n'),
+        { parse_mode: 'HTML', reply_markup: kb }
+      );
+    } else if (payMethod === 'card') {
+      const prepared = await checkoutShopWithCardTelegram({
+        telegramId: user.telegramId,
+        items: [{ productId, qty }],
+        customerName: draft.name,
+        customerPhone: draft.phone,
+        address: draft.address,
+      });
+      const card = paymentCardInfo();
+      await patchSession(user.telegramId, {
+        shopCheckout: undefined,
+        step: 'payment_receipt',
+        paymentPendingOrderId: prepared.paymentOrderId,
+      });
+      await ctx.reply(
+        [
+          '🛒 <b>پرداخت کارت‌به‌کارت شاپ</b>',
+          '',
+          `شماره پیگیری: #${prepared.paymentOrderId}`,
+          `مبلغ: ${formatToman(prepared.totalToman)}`,
+          '',
+          `کارت: <code>${escapeHtml(prepared.cardNumber || card.number)}</code>`,
+          `به‌نام: ${escapeHtml(prepared.cardHolder || card.holder)}`,
+          '',
+          'بعد از واریز، همین‌جا <b>عکس رسید</b> را بفرست.',
+          'ادمین بررسی می‌کند و سفارش فروشگاه ثبت می‌شود.',
+        ].join('\n'),
+        {
+          parse_mode: 'HTML',
+          reply_markup: new InlineKeyboard().text('🛒 پت شاپ', 'shop:home'),
+        }
       );
     } else {
       const result = await checkoutShopWithCoinsTelegram({

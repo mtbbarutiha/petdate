@@ -254,6 +254,57 @@ export async function handleStart(ctx: Context): Promise<void> {
       return;
     }
 
+    const shopCardMatch = /^shopcard_(\d+)$/.exec(payload || '');
+    if (shopCardMatch) {
+      const roles = normalizeRoles(user.roles, user.role);
+      const paymentOrderId = Number(shopCardMatch[1]);
+      await upsertSession(telegramId, {
+        userId: user.id,
+        role: user.role,
+        draftRoles: roles,
+        step: 'payment_receipt',
+        locale: 'fa',
+        pendingPhone: undefined,
+        paymentPendingOrderId: paymentOrderId,
+      });
+      try {
+        const { getPaymentOrder } = await import('../api-client');
+        const { paymentCardInfo } = await import('../economy');
+        const order = await getPaymentOrder(paymentOrderId);
+        const card = paymentCardInfo();
+        if (!order || String(order.packageId) !== 'shopcard') {
+          await ctx.reply('فاکتور کارت فروشگاه پیدا نشد یا منقضی است.');
+          return;
+        }
+        if (order.status === 'approved' || order.status === 'paid') {
+          await ctx.reply('این پرداخت فروشگاه قبلاً تأیید شده است.');
+          return;
+        }
+        if (order.status === 'rejected') {
+          await ctx.reply('این پرداخت رد شده است. دوباره از شاپ اقدام کن.');
+          return;
+        }
+        await ctx.reply(
+          [
+            '🛒 پرداخت کارت‌به‌کارت شاپ',
+            '',
+            `شماره پیگیری: #${paymentOrderId}`,
+            `مبلغ: ${(order.amountToman ?? 0).toLocaleString('fa-IR')} تومان`,
+            '',
+            `کارت: ${card.number}`,
+            `به‌نام: ${card.holder}`,
+            '',
+            order.status === 'awaiting_receipt'
+              ? 'عکس رسید واریز را همین‌جا بفرست.'
+              : 'رسید قبلاً ارسال شده و در صف بررسی ادمین است.',
+          ].join('\n')
+        );
+      } catch (e) {
+        await ctx.reply(e instanceof Error ? e.message : 'خطا در بازیابی پرداخت فروشگاه');
+      }
+      return;
+    }
+
     if (payload.startsWith('wlink_')) {
       const roles = normalizeRoles(user.roles, user.role);
       await upsertSession(telegramId, {
