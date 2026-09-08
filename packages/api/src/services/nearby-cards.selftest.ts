@@ -122,8 +122,6 @@ async function main(): Promise<void> {
   const avatarAbs = resolveUserAvatarPath(avatarKey);
   assert(avatarAbs, 'avatar path');
   fs.mkdirSync(path.dirname(avatarAbs!), { recursive: true });
-  const petKeyDir = path.join(path.dirname(avatarAbs!), '..', 'pet-photos', '999001');
-  // Prefer API avatar URL path for loadImageBuffer
   fs.writeFileSync(avatarAbs!, await solidJpeg(256, 220, 30, 30));
 
   const petPhotoKey = '999001/selftest-pet.jpg';
@@ -133,7 +131,6 @@ async function main(): Promise<void> {
   assert(petAbs, 'pet photo path');
   fs.mkdirSync(path.dirname(petAbs!), { recursive: true });
   fs.writeFileSync(petAbs!, await solidJpeg(800, 30, 40, 210));
-  void petKeyDir;
 
   const profileBuf = await renderPetProfileCard({
     pet: {
