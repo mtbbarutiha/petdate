@@ -9,6 +9,7 @@ import {
   type WalletBalances,
   type WalletCurrency,
 } from '@petdate/shared';
+import { InviteFriendsCard } from './InviteFriendsCard';
 import { useAuthStore } from '../hooks/useAuthStore';
 
 const ORDER: WalletCurrency[] = ['ton', 'stars', 'coins', 'toman'];
@@ -131,6 +132,7 @@ export function WalletChip() {
           <Link to="/wallet/earn" className="pepito-nav-wallet-page-link" onClick={() => setOpen(false)}>
             کسب درآمد / برداشت
           </Link>
+          <InviteFriendsCard variant="inline" className="pepito-nav-wallet-invite" />
           <Link to="/wallet" className="pepito-nav-wallet-page-link pepito-nav-wallet-page-link--ghost" onClick={() => setOpen(false)}>
             مشاهده کیف پول
           </Link>

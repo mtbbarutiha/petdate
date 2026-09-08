@@ -17,6 +17,7 @@ import {
   COIN_PRICE_TOMAN as SHARED_COIN_PRICE_TOMAN,
   COIN_SELL_PRICE_TOMAN as SHARED_COIN_SELL_PRICE_TOMAN,
   MIN_SELL_COINS as SHARED_MIN_SELL_COINS,
+  REFERRAL_BONUS_COINS as SHARED_REFERRAL_BONUS_COINS,
   sellAmountToman as sharedSellAmountToman,
   normalizeCardNumber as sharedNormalizeCardNumber,
   validateIranCard as sharedValidateIranCard,
@@ -28,7 +29,8 @@ export const COIN_PRICE_STARS = SHARED_COIN_PRICE_STARS;
 export const COIN_SELL_PRICE_TOMAN = SHARED_COIN_SELL_PRICE_TOMAN;
 export const MIN_SELL_COINS = SHARED_MIN_SELL_COINS;
 export const DAILY_COIN_REWARD = 10;
-export const REFERRAL_BONUS_COINS = 50;
+/** جایزه دعوت دوست — از shared */
+export const REFERRAL_BONUS_COINS = SHARED_REFERRAL_BONUS_COINS;
 /** @deprecated استفاده از SIGNUP_BONUS */
 export const WELCOME_COINS = 20;
 
@@ -92,6 +94,7 @@ export function coinsShopIntroText(balance: number, starsBalance = 0): string {
     `قیمت هر سکه: ${formatNum(COIN_PRICE_TOMAN)} تومان یا ${formatNum(COIN_PRICE_STARS)} Star`,
     `نرخ فروشگاه: هر Star ≈ ${formatNum(COIN_PRICE_TOMAN)} تومان`,
     `🎁 هر روز ${formatNum(DAILY_COIN_REWARD)} سکه رایگان — دکمه بالای لیست`,
+    `🎁 دعوت دوستان: هر ثبت‌نام از لینک تو → ${formatNum(REFERRAL_BONUS_COINS)} سکه`,
     '',
     'بسته را بزن → پرداخت با ستاره یا کارت به کارت',
   ].join('\n');

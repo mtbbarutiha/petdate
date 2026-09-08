@@ -34,11 +34,16 @@ export async function registerTelegramUser(data: {
   telegramId: string;
   name: string;
   username?: string;
-}): Promise<User> {
-  return request<User>('/api/users/register', {
-    method: 'POST',
-    body: JSON.stringify(data),
-  });
+  /** شناسه معرف از لینک ?start=ref_<id> */
+  referredBy?: number;
+}): Promise<User & { referralAward?: { referrerId: number; amount: number } }> {
+  return request<User & { referralAward?: { referrerId: number; amount: number } }>(
+    '/api/users/register',
+    {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }
+  );
 }
 
 /** Mark Telegram user online (bot activity heartbeat). */

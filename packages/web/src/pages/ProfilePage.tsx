@@ -44,6 +44,7 @@ import {
   type UserGender,
 } from '@petdate/shared';
 import { AgePicker } from '../components/AgePicker';
+import { InviteFriendsCard } from '../components/InviteFriendsCard';
 import { PetAvatar } from '../components/PetAvatar';
 import { ProfileAvatarEditor } from '../components/ProfileAvatarEditor';
 import { RoleSwitchControl } from '../components/RoleSwitchControl';
@@ -692,6 +693,10 @@ export function ProfilePage() {
           )}
         </section>
       ) : null}
+
+      <div className="pepito-profile-block">
+        <InviteFriendsCard variant="card" />
+      </div>
 
       <section className="pepito-profile-block pepito-profile-role-block" aria-label="تغییر نقش">
         <header className="pepito-home-section-head">

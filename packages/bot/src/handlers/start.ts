@@ -16,7 +16,7 @@ import {
   completeWebTelegramLink,
   completeTelegramPendingLogin,
 } from '../api-client';
-import { formatCoinAwardMessage } from '../economy';
+import { formatCoinAwardMessage, REFERRAL_BONUS_COINS } from '../economy';
 import { sendWelcomeLogo } from '../branding';
 import { roleWelcomeHint } from '../format';
 import {
@@ -54,6 +54,14 @@ function startPayload(ctx: Context): string {
   const parts = text.split(/\s+/);
   if (parts.length < 2) return '';
   return parts.slice(1).join(' ').trim();
+}
+
+/** لینک دعوت: /start ref_<userId> */
+function parseReferralPayload(payload: string): number | null {
+  const m = /^ref_(\d+)$/i.exec(payload.trim());
+  if (!m) return null;
+  const id = Number(m[1]);
+  return Number.isFinite(id) && id > 0 ? Math.floor(id) : null;
 }
 
 async function tryHandleWebLinkAttach(ctx: Context, payload: string): Promise<boolean> {
@@ -216,12 +224,14 @@ export async function handleStart(ctx: Context): Promise<void> {
 
   const telegramId = String(from.id);
   const name = displayName(from);
+  const referredBy = payload ? parseReferralPayload(payload) : null;
 
   try {
     const user = await registerTelegramUser({
       telegramId,
       name,
       username: from.username,
+      ...(referredBy ? { referredBy } : {}),
     });
 
     if (payload === 'wstars' || payload.startsWith('wstars')) {
@@ -802,6 +812,7 @@ export async function handleHelp(ctx: Context): Promise<void> {
   const isVet = active === 'vet';
   const isSeeker = active === 'pet_seeker';
   const isNoPet = active === 'no_pet';
+  const inviteLine = `🎁 **دعوت دوستان** — ${new Intl.NumberFormat('fa-IR').format(REFERRAL_BONUS_COINS)} سکه جایزه`;
 
   const lines = isOwner
     ? [
@@ -816,6 +827,7 @@ export async function handleHelp(ctx: Context): Promise<void> {
         '⚡ **مشاوره سریع پزشک** — درخواست فوری',
         '💵 **کسب درآمد** — فروش سکه',
         '🛠 **خدمات** — مربی، grooming، حمل',
+        inviteLine,
         '🪙 **سکه** · 🛒 **پت‌شاپ** · 🎁 **دعوت** · ❓ **راهنما**',
         '',
         '📋 **منو** — بازگشت به منوی اصلی',
@@ -832,6 +844,7 @@ export async function handleHelp(ctx: Context): Promise<void> {
           '🩺 **بیماران اخیر** — ۵ بیمار آخر',
           '💰 **تعرفه ویزیت** — تنظیم به سکه',
           '👤 **پروفایل** — اطلاعات + احراز',
+          inviteLine,
           '🪙 **سکه** · 🛒 **پت‌شاپ** · 🎁 **دعوت** · ❓ **راهنما**',
           '',
           '/start — شروع یا بازگشت به منو',
@@ -847,6 +860,7 @@ export async function handleHelp(ctx: Context): Promise<void> {
             '🐾 **پت‌ها و همبازی** — مرور و جستجوی پت',
             '💚 **آماده پذیرش پت هستم** — اعلام آمادگی',
             '👤 **پروفایل** — اطلاعات + احراز',
+            inviteLine,
             '🪙 **سکه** · 🛒 **پت‌شاپ** · 🎁 **دعوت** · ❓ **راهنما**',
             '',
             '/menu — نمایش منو',
@@ -860,6 +874,7 @@ export async function handleHelp(ctx: Context): Promise<void> {
               '',
               '🛒 **به دنبال مشاوره برای خرید** — مشاوره دامپزشک برای انتخاب پت',
               '👤 **پروفایل** — اطلاعات + احراز',
+              inviteLine,
               '🪙 **سکه** · 🛒 **پت‌شاپ** · 🎁 **دعوت** · ❓ **راهنما**',
               '',
               '/menu — نمایش منو',
@@ -870,6 +885,7 @@ export async function handleHelp(ctx: Context): Promise<void> {
               `🐾 **${BRAND.name}** — ${BRAND.taglineFa}`,
               `_${BRAND.taglineEn}_`,
               '',
+              inviteLine,
               '🪙 **سکه** · 🛒 **پت‌شاپ** · 🎁 **دعوت** · ❓ **راهنما**',
               '',
               '/start — شروع یا بازگشت',

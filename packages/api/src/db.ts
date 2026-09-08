@@ -48,6 +48,7 @@ import {
   PLAYDATE_REQUEST_TTL_MS,
   PROFILE_REWARD_SECTIONS,
   PROFILE_SECTION_REWARD,
+  REFERRAL_BONUS_COINS,
   SIGNUP_BONUS,
   USER_PRESENCE_ONLINE_MS,
   USER_ROLES,
@@ -291,6 +292,9 @@ function migrateSchema() {
   if (!names.has('last_daily_coin_at')) db.exec('ALTER TABLE users ADD COLUMN last_daily_coin_at TEXT');
   if (!names.has('signup_bonus_claimed')) {
     db.exec('ALTER TABLE users ADD COLUMN signup_bonus_claimed INTEGER NOT NULL DEFAULT 0');
+  }
+  if (!names.has('referred_by')) {
+    db.exec('ALTER TABLE users ADD COLUMN referred_by INTEGER');
   }
   if (!names.has('profile_rewards')) {
     db.exec("ALTER TABLE users ADD COLUMN profile_rewards TEXT NOT NULL DEFAULT '[]'");
@@ -1609,6 +1613,7 @@ function mapUser(row: Record<string, unknown>): User {
     }),
     lastDailyCoinAt: (row.last_daily_coin_at as string | undefined) ?? undefined,
     signupBonusClaimed: Boolean(row.signup_bonus_claimed),
+    referredBy: row.referred_by != null ? Number(row.referred_by) : null,
     profileRewards: parseProfileRewards(row.profile_rewards),
     profileViews: row.profile_views != null ? Number(row.profile_views) : 0,
     likesCount: row.likes_count != null ? Number(row.likes_count) : 0,
@@ -3198,6 +3203,72 @@ export const dbService = {
       user: result.user,
       award: { reason: COIN_REASON.signup, amount: SIGNUP_BONUS },
     };
+  },
+
+  /**
+   * جایزه دعوت: به معرف واریز می‌شود وقتی کاربر جدید از لینک ref_ ثبت‌نام کند.
+   * یک‌بار برای هر دعوت‌شده (coin_ledger + referred_by).
+   */
+  applyReferralBonus(
+    invitedUserId: number,
+    referrerId: number
+  ): {
+    awarded: boolean;
+    referrer: User | null;
+    invited: User | null;
+    award?: CoinAward;
+    reason?: 'missing' | 'self' | 'already' | 'referrer_missing';
+  } {
+    const invited = this.getUserById(invitedUserId);
+    if (!invited) {
+      return { awarded: false, referrer: null, invited: null, reason: 'missing' };
+    }
+    if (!Number.isFinite(referrerId) || referrerId <= 0 || referrerId === invitedUserId) {
+      return { awarded: false, referrer: null, invited, reason: 'self' };
+    }
+    if (invited.referredBy != null) {
+      return {
+        awarded: false,
+        referrer: this.getUserById(referrerId),
+        invited,
+        reason: 'already',
+      };
+    }
+    const referrer = this.getUserById(referrerId);
+    if (!referrer) {
+      return { awarded: false, referrer: null, invited, reason: 'referrer_missing' };
+    }
+
+    const tx = db.transaction(() => {
+      db.prepare('UPDATE users SET referred_by = ? WHERE id = ? AND referred_by IS NULL').run(
+        referrerId,
+        invitedUserId
+      );
+      const after = this.getUserById(invitedUserId);
+      if (!after || after.referredBy !== referrerId) {
+        return {
+          awarded: false as const,
+          referrer,
+          invited: after ?? invited,
+          reason: 'already' as const,
+        };
+      }
+      const credited = this.creditCoinsOnce(
+        referrerId,
+        REFERRAL_BONUS_COINS,
+        COIN_REASON.referral(invitedUserId)
+      );
+      return {
+        awarded: credited.awarded,
+        referrer: credited.user,
+        invited: after,
+        award: credited.awarded
+          ? ({ reason: COIN_REASON.referral(invitedUserId), amount: REFERRAL_BONUS_COINS } as CoinAward)
+          : undefined,
+        reason: credited.awarded ? undefined : ('already' as const),
+      };
+    });
+    return tx();
   },
 
   /** جایزه بخش‌هایی که تازه از خالی → پر شده‌اند */

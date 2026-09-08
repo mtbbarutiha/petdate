@@ -176,6 +176,8 @@ export interface User {
   lastDailyCoinAt?: string;
   /** هدیه ثبت‌نام یک‌باره واریز شده؟ */
   signupBonusClaimed?: boolean;
+  /** شناسه کاربری که این کاربر را دعوت کرده (لینک ref_) */
+  referredBy?: number | null;
   /** کلیدهای بخش پروفایل که جایزه‌شان گرفته شده */
   profileRewards?: string[];
   /** جایزه‌هایی که همین پاسخ API تازه واریز کرده (ephemeral) */
