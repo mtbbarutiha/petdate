@@ -769,101 +769,104 @@ export async function handleOwnerChatRelay(ctx: Context): Promise<boolean> {
   try {
     if (ctx.message?.photo?.length) {
       const fileId = ctx.message.photo[ctx.message.photo.length - 1]!.file_id;
+      const caption = ctx.message.caption || undefined;
+      await persistMedia('photo', fileId, caption, 'image/jpeg');
       const sent = await ctx.api.sendPhoto(peer, fileId, {
-        caption: ctx.message.caption || undefined,
+        caption,
         ...protect,
       });
       await rememberPeerDelivery(sent.message_id);
-      await persistMedia('photo', fileId, ctx.message.caption || undefined, 'image/jpeg');
       return true;
     }
     if (ctx.message?.video) {
-      const sent = await ctx.api.sendVideo(peer, ctx.message.video.file_id, {
-        caption: ctx.message.caption || undefined,
-        ...protect,
-      });
-      await rememberPeerDelivery(sent.message_id);
+      const caption = ctx.message.caption || undefined;
       await persistMedia(
         'video',
         ctx.message.video.file_id,
-        ctx.message.caption || undefined,
+        caption,
         ctx.message.video.mime_type,
         ctx.message.video.file_name
       );
+      const sent = await ctx.api.sendVideo(peer, ctx.message.video.file_id, {
+        caption,
+        ...protect,
+      });
+      await rememberPeerDelivery(sent.message_id);
       return true;
     }
     if (ctx.message?.animation) {
-      const sent = await ctx.api.sendAnimation(peer, ctx.message.animation.file_id, {
-        caption: ctx.message.caption || undefined,
-        ...protect,
-      });
-      await rememberPeerDelivery(sent.message_id);
+      const caption = ctx.message.caption || undefined;
       await persistMedia(
         'animation',
         ctx.message.animation.file_id,
-        ctx.message.caption || undefined,
+        caption,
         ctx.message.animation.mime_type,
         ctx.message.animation.file_name
       );
+      const sent = await ctx.api.sendAnimation(peer, ctx.message.animation.file_id, {
+        caption,
+        ...protect,
+      });
+      await rememberPeerDelivery(sent.message_id);
       return true;
     }
     if (ctx.message?.video_note) {
+      await persistMedia('video_note', ctx.message.video_note.file_id, undefined, 'video/mp4');
       const sent = await ctx.api.sendVideoNote(peer, ctx.message.video_note.file_id, protect);
       await rememberPeerDelivery(sent.message_id);
-      await persistMedia('video_note', ctx.message.video_note.file_id, undefined, 'video/mp4');
       return true;
     }
     if (ctx.message?.document) {
-      const sent = await ctx.api.sendDocument(peer, ctx.message.document.file_id, {
-        caption: ctx.message.caption || undefined,
-        ...protect,
-      });
-      await rememberPeerDelivery(sent.message_id);
+      const caption = ctx.message.caption || undefined;
       await persistMedia(
         'document',
         ctx.message.document.file_id,
-        ctx.message.caption || undefined,
+        caption,
         ctx.message.document.mime_type,
         ctx.message.document.file_name
       );
-      return true;
-    }
-    if (ctx.message?.voice) {
-      const sent = await ctx.api.sendVoice(peer, ctx.message.voice.file_id, protect);
-      await rememberPeerDelivery(sent.message_id);
-      await persistMedia('voice', ctx.message.voice.file_id, undefined, ctx.message.voice.mime_type);
-      return true;
-    }
-    if (ctx.message?.audio) {
-      const sent = await ctx.api.sendAudio(peer, ctx.message.audio.file_id, {
-        caption: ctx.message.caption || undefined,
+      const sent = await ctx.api.sendDocument(peer, ctx.message.document.file_id, {
+        caption,
         ...protect,
       });
       await rememberPeerDelivery(sent.message_id);
+      return true;
+    }
+    if (ctx.message?.voice) {
+      await persistMedia('voice', ctx.message.voice.file_id, undefined, ctx.message.voice.mime_type);
+      const sent = await ctx.api.sendVoice(peer, ctx.message.voice.file_id, protect);
+      await rememberPeerDelivery(sent.message_id);
+      return true;
+    }
+    if (ctx.message?.audio) {
+      const caption = ctx.message.caption || undefined;
       await persistMedia(
         'audio',
         ctx.message.audio.file_id,
-        ctx.message.caption || undefined,
+        caption,
         ctx.message.audio.mime_type,
         ctx.message.audio.file_name
       );
+      const sent = await ctx.api.sendAudio(peer, ctx.message.audio.file_id, {
+        caption,
+        ...protect,
+      });
+      await rememberPeerDelivery(sent.message_id);
       return true;
     }
     if (ctx.message?.sticker) {
-      const sent = await ctx.api.sendSticker(peer, ctx.message.sticker.file_id, protect);
-      await rememberPeerDelivery(sent.message_id);
       await persistMedia(
         'sticker',
         ctx.message.sticker.file_id,
         undefined,
         ctx.message.sticker.is_animated || ctx.message.sticker.is_video ? undefined : 'image/webp'
       );
+      const sent = await ctx.api.sendSticker(peer, ctx.message.sticker.file_id, protect);
+      await rememberPeerDelivery(sent.message_id);
       return true;
     }
     if (text) {
-      const sent = await ctx.api.sendMessage(peer, text, protect);
-      await rememberPeerDelivery(sent.message_id);
-      // Persist so web ChatPage (WS + poll) sees Telegram → web
+      // Persist first so web ChatPage (WS + poll) sees the line even if TG send is slow
       const pdId = await resolvePlaydateId();
       if (pdId) {
         const me = await getCtxUser(ctx);
@@ -873,6 +876,8 @@ export async function handleOwnerChatRelay(ctx: Context): Promise<boolean> {
           console.warn('owner chat text persist skipped: no sender user', { playdateId: pdId });
         }
       }
+      const sent = await ctx.api.sendMessage(peer, text, protect);
+      await rememberPeerDelivery(sent.message_id);
       return true;
     }
   } catch (err) {

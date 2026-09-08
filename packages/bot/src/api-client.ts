@@ -496,26 +496,41 @@ export async function postPlaydateChatMessage(
     fileName?: string;
   }
 ): Promise<void> {
-  try {
-    await request(`/api/playdate-requests/${playdateId}/messages`, {
-      method: 'POST',
-      body: JSON.stringify({
-        senderUserId,
-        text,
-        skipTelegram: true,
-        ...(media
-          ? {
-              mediaKind: media.mediaKind,
-              telegramFileId: media.telegramFileId,
-              mimeType: media.mimeType,
-              fileName: media.fileName,
-            }
-          : {}),
-      }),
-    });
-  } catch (err) {
-    console.error('Failed to persist playdate chat message:', err);
+  const body = JSON.stringify({
+    senderUserId,
+    text,
+    skipTelegram: true,
+    ...(media
+      ? {
+          mediaKind: media.mediaKind,
+          telegramFileId: media.telegramFileId,
+          mimeType: media.mimeType,
+          fileName: media.fileName,
+        }
+      : {}),
+  });
+  let lastErr: unknown;
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      await request(`/api/playdate-requests/${playdateId}/messages`, {
+        method: 'POST',
+        body,
+      });
+      return;
+    } catch (err) {
+      lastErr = err;
+      console.error(`Failed to persist playdate chat message (attempt ${attempt}/3):`, err);
+      if (attempt < 3) {
+        await new Promise((r) => setTimeout(r, 150 * attempt));
+      }
+    }
   }
+  console.error('Failed to persist playdate chat message after retries:', lastErr);
+  // Throw so owner-chat can abort TG send and surface failure — avoids bot-only delivery
+  // while the web peer never sees the line.
+  throw lastErr instanceof Error
+    ? lastErr
+    : new Error('Failed to persist playdate chat message after retries');
 }
 
 /** Record bot-delivered Telegram message ids for later web wipe. */
