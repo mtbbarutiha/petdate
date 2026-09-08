@@ -21,7 +21,6 @@ import {
 } from '../lib/api';
 
 const ORDER: WalletCurrency[] = ['coins', 'stars', 'toman', 'ton'];
-const HERO: WalletCurrency[] = ['coins', 'stars'];
 
 function formatBal(n: number): string {
   const x = Math.floor(Number(n));
@@ -154,8 +153,6 @@ export function WalletPage() {
 
   const balances: WalletBalances =
     wallet ?? (user ? user.wallet ?? walletFromUserFields(user) : { ton: 0, stars: 0, coins: 0, toman: 0 });
-  const starsCount = Math.max(0, Math.floor(Number(balances.stars) || 0));
-  const coinsCount = Math.max(0, Math.floor(Number(balances.coins) || 0));
 
   const linked = telegramLinked || Boolean(user?.telegramId);
   const tgDisplay = telegramId || user?.telegramId || null;
@@ -190,8 +187,6 @@ export function WalletPage() {
     }
   }
 
-  const secondary = ORDER.filter((k) => !HERO.includes(k));
-
   return (
     <div className="pepito-wallet-page">
       <header className="pepito-wallet-hero">
@@ -209,42 +204,24 @@ export function WalletPage() {
       </header>
 
       <section
-        className={`pepito-wallet-featured pepito-wallet-featured--dual${loading && !wallet ? ' is-pending' : ''}`}
-        aria-label="موجودی اصلی"
+        className={`pepito-wallet-grid${loading && !wallet ? ' is-pending' : ''}`}
+        aria-label="موجودی‌ها"
       >
-        <div className="pepito-wallet-featured-main pepito-wallet-featured-main--coins">
-          <span className="pepito-wallet-featured-label">{WALLET_CURRENCY_LABELS_FA.coins}</span>
-          <p className="pepito-wallet-featured-val">
-            <span aria-hidden>{WALLET_CURRENCY_SYMBOLS.coins}</span>
-            {formatBal(coinsCount)}
-          </p>
-          <p className="pepito-wallet-featured-note">{WALLET_CURRENCY_STATUS.coins.noteFa}</p>
-        </div>
-        <div className="pepito-wallet-featured-main pepito-wallet-featured-main--stars" aria-live="polite">
-          <span className="pepito-wallet-featured-label">ستاره</span>
-          <p className="pepito-wallet-featured-val">
-            <span aria-hidden>{WALLET_CURRENCY_SYMBOLS.stars}</span>
-            {formatBal(starsCount)}
-          </p>
-          <p className="pepito-wallet-featured-unit">موجودی پنل</p>
-          <p className="pepito-wallet-featured-note">{WALLET_CURRENCY_STATUS.stars.noteFa}</p>
-        </div>
-        <ul className="pepito-wallet-featured-side" aria-label="سایر موجودی‌ها">
-          {secondary.map((key) => (
-            <li key={key} className={`pepito-wallet-mini pepito-wallet-mini--${key}`}>
-              <div className="pepito-wallet-mini-head">
-                <p className="pepito-wallet-mini-label">{WALLET_CURRENCY_LABELS_FA[key]}</p>
-                <span className="pepito-wallet-mini-sym" aria-hidden>
-                  {key === 'toman' ? '﷼' : WALLET_CURRENCY_SYMBOLS[key]}
-                </span>
-              </div>
-              <p className="pepito-wallet-mini-val">
-                {formatBal(balances[key])}
-                {key === 'toman' ? <span className="pepito-wallet-row-unit"> ت</span> : null}
-              </p>
-            </li>
-          ))}
-        </ul>
+        {ORDER.map((key) => (
+          <article key={key} className={`pepito-wallet-card pepito-wallet-card--${key}`} aria-live={key === 'stars' ? 'polite' : undefined}>
+            <div className="pepito-wallet-card-head">
+              <p className="pepito-wallet-card-label">{WALLET_CURRENCY_LABELS_FA[key]}</p>
+              <span className="pepito-wallet-card-sym" aria-hidden>
+                {key === 'toman' ? '﷼' : WALLET_CURRENCY_SYMBOLS[key]}
+              </span>
+            </div>
+            <p className="pepito-wallet-card-val">
+              {formatBal(balances[key])}
+              {key === 'toman' ? <span className="pepito-wallet-card-unit"> ت</span> : null}
+            </p>
+            <p className="pepito-wallet-card-note">{WALLET_CURRENCY_STATUS[key].noteFa}</p>
+          </article>
+        ))}
       </section>
 
       <p
