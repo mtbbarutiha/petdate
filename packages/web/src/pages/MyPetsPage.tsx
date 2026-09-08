@@ -92,24 +92,30 @@ export function MyPetsPage() {
             const ui = petProfileToUiPet(pet);
             return (
               <li key={pet.id} className="pepito-my-pets-card">
-                {pet.lookingForPlaymate ? (
-                  <span className="pepito-my-pets-chip">دنبال همبازی</span>
-                ) : null}
                 <Link to={`/pets/${pet.id}`} className="pepito-my-pets-card-main">
-                  <PetAvatar
-                    type={ui.type}
-                    size="lg"
-                    imageUrl={ui.imageUrl}
-                    name={pet.name}
-                  />
-                  <div className="pepito-my-pets-card-text">
-                    <strong>{pet.name}</strong>
-                    <span>
-                      {PET_TYPE_LABELS[ui.type] || pet.species} · {formatAge(ui)}
-                    </span>
-                    <small>
-                      {[pet.breed, pet.city || pet.ownerCity].filter(Boolean).join(' · ') || '—'}
-                    </small>
+                  <div className="pepito-my-pets-card-media">
+                    {pet.lookingForPlaymate ? (
+                      <span className="pepito-my-pets-chip">دنبال همبازی</span>
+                    ) : null}
+                    <PetAvatar
+                      type={ui.type}
+                      size="lg"
+                      variant="cover"
+                      imageUrl={ui.imageUrl}
+                      name={pet.name}
+                      className="pepito-my-pets-card-photo"
+                    />
+                  </div>
+                  <div className="pepito-my-pets-card-body">
+                    <div className="pepito-my-pets-card-text">
+                      <strong>{pet.name}</strong>
+                      <span>
+                        {PET_TYPE_LABELS[ui.type] || pet.species} · {formatAge(ui)}
+                      </span>
+                      <small>
+                        {[pet.breed, pet.city || pet.ownerCity].filter(Boolean).join(' · ') || '—'}
+                      </small>
+                    </div>
                   </div>
                 </Link>
                 <div className="pepito-my-pets-card-actions">
