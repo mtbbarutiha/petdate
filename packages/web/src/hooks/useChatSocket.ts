@@ -53,7 +53,14 @@ type SharedSocket = {
   retryMs: number;
   listeners: Set<Listener>;
   statusListeners: Set<(status: ChatSocketStatus) => void>;
-  threadKey: string;
+  /**
+   * Desired thread rooms from each useChatSocket caller.
+   * Multiple hooks share one socket (ChatPage + LiveIncomingRequests); a caller
+   * with thread=null must NOT wipe another caller's playmate/vet subscription.
+   */
+  threadDesires: Map<object, string>;
+  /** Rooms currently subscribed on the open socket. */
+  activeThreadRooms: Set<string>;
   refCount: number;
 };
 
@@ -119,9 +126,91 @@ function scheduleReconnect() {
   }, wait);
 }
 
+function parseThreadKey(key: string): { channel: string; threadId: number } | null {
+  const idx = key.indexOf(':');
+  if (idx <= 0) return null;
+  const channel = key.slice(0, idx);
+  const threadId = Number(key.slice(idx + 1));
+  if (!Number.isFinite(threadId) || threadId <= 0) return null;
+  if (channel !== 'playmate' && channel !== 'vet') return null;
+  return { channel, threadId };
+}
+
+/**
+ * Reconcile server subscriptions with the union of all callers' desired rooms.
+ * Safe when LiveIncomingRequests (no thread) coexists with ChatPage (playmate:N).
+ */
+function syncThreadSubscriptions() {
+  if (!shared?.ws || shared.ws.readyState !== WebSocket.OPEN) return;
+
+  const desired = new Set<string>();
+  for (const key of shared.threadDesires.values()) {
+    if (key) desired.add(key);
+  }
+
+  for (const key of [...shared.activeThreadRooms]) {
+    if (desired.has(key)) continue;
+    const parsed = parseThreadKey(key);
+    if (parsed) {
+      try {
+        shared.ws.send(
+          JSON.stringify({
+            type: 'unsubscribe',
+            channel: parsed.channel,
+            threadId: parsed.threadId,
+          }),
+        );
+      } catch {
+        /* ignore */
+      }
+    }
+    shared.activeThreadRooms.delete(key);
+  }
+
+  for (const key of desired) {
+    if (shared.activeThreadRooms.has(key)) continue;
+    const parsed = parseThreadKey(key);
+    if (!parsed) continue;
+    try {
+      shared.ws.send(
+        JSON.stringify({
+          type: 'subscribe',
+          channel: parsed.channel,
+          threadId: parsed.threadId,
+        }),
+      );
+      shared.activeThreadRooms.add(key);
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
+function setThreadDesire(owner: object, thread: ThreadSub) {
+  if (!shared) return;
+  const key =
+    thread?.threadId && thread.channel ? `${thread.channel}:${thread.threadId}` : '';
+  const prev = shared.threadDesires.get(owner);
+  if (prev === key) {
+    // Still reconcile in case the socket reconnected with empty active rooms.
+    syncThreadSubscriptions();
+    return;
+  }
+  shared.threadDesires.set(owner, key);
+  syncThreadSubscriptions();
+}
+
+function clearThreadDesire(owner: object) {
+  if (!shared) return;
+  if (!shared.threadDesires.has(owner)) return;
+  shared.threadDesires.delete(owner);
+  syncThreadSubscriptions();
+}
+
 function openSharedSocket() {
   if (!shared) return;
-  if (shared.ws &&
+  if (
+    shared.ws &&
     (shared.ws.readyState === WebSocket.OPEN || shared.ws.readyState === WebSocket.CONNECTING)
   ) {
     return;
@@ -145,10 +234,12 @@ function openSharedSocket() {
     shared.failures = 0;
     shared.pausedUntil = 0;
     shared.retryMs = 800;
-    shared.threadKey = '';
+    // Fresh socket — re-subscribe every desired room.
+    shared.activeThreadRooms.clear();
     setSharedStatus('open');
-    window.dispatchEvent(new Event('petdate:ws-open'));
     clearSharedTimers();
+    syncThreadSubscriptions();
+    window.dispatchEvent(new Event('petdate:ws-open'));
     shared.pingTimer = window.setInterval(() => {
       if (socket.readyState === WebSocket.OPEN) {
         socket.send(JSON.stringify({ type: 'ping' }));
@@ -171,6 +262,7 @@ function openSharedSocket() {
   socket.onclose = () => {
     if (!shared || shared.ws !== socket) return;
     shared.ws = null;
+    shared.activeThreadRooms.clear();
     shared.failures += 1;
     setSharedStatus('closed');
     window.clearInterval(shared.pingTimer);
@@ -204,7 +296,8 @@ function retainShared(token: string) {
       retryMs: 800,
       listeners: new Set(),
       statusListeners: new Set(),
-      threadKey: '',
+      threadDesires: new Map(),
+      activeThreadRooms: new Set(),
       refCount: 0,
     };
   }
@@ -229,34 +322,14 @@ function releaseShared(force = false) {
   shared = null;
 }
 
-function applyThreadSub(thread: ThreadSub) {
-  if (!shared?.ws || shared.ws.readyState !== WebSocket.OPEN) return;
-  const key =
-    thread?.threadId && thread.channel ? `${thread.channel}:${thread.threadId}` : '';
-  if (key === shared.threadKey) return;
-  if (shared.threadKey) {
-    const [channel, id] = shared.threadKey.split(':');
-    shared.ws.send(
-      JSON.stringify({ type: 'unsubscribe', channel, threadId: Number(id) }),
-    );
-  }
-  shared.threadKey = key;
-  if (thread?.threadId && thread.channel) {
-    shared.ws.send(
-      JSON.stringify({
-        type: 'subscribe',
-        channel: thread.channel,
-        threadId: thread.threadId,
-      }),
-    );
-  }
-}
-
 /**
  * Live chat transport (shared singleton).
  * Callers should keep a slow ajax poll only when `connected` is false.
  * Reconnects are circuit-broken after repeated CDN/WS failures so the chats
  * page does not thrash.
+ *
+ * On `petdate:ws-open`, callers should catch-up-poll messages (subscribe races /
+ * dropped frames while the socket looked "up").
  */
 export function useChatSocket({
   token,
@@ -272,6 +345,8 @@ export function useChatSocket({
   const [status, setStatus] = useState<ChatSocketStatus>('idle');
   const onEventRef = useRef(onEvent);
   onEventRef.current = onEvent;
+  const ownerRef = useRef<object | null>(null);
+  if (!ownerRef.current) ownerRef.current = {};
 
   useEffect(() => {
     if (!enabled || !token) {
@@ -279,6 +354,7 @@ export function useChatSocket({
       return;
     }
 
+    const owner = ownerRef.current!;
     const sock = retainShared(token);
     setStatus(sock.status);
 
@@ -302,16 +378,20 @@ export function useChatSocket({
       document.removeEventListener('visibilitychange', onVis);
       sock.listeners.delete(listener);
       sock.statusListeners.delete(onStatus);
+      clearThreadDesire(owner);
       releaseShared();
     };
   }, [enabled, token]);
 
   useEffect(() => {
-    const apply = () => applyThreadSub(thread);
-    apply();
-    window.addEventListener('petdate:ws-open', apply);
-    return () => window.removeEventListener('petdate:ws-open', apply);
-  }, [thread?.channel, thread?.threadId, status]);
+    if (!enabled || !token || !ownerRef.current) return;
+    setThreadDesire(ownerRef.current, thread);
+    return () => {
+      // Keep desire until unmount of the retain effect — only clear on full release.
+      // Updating desire on dependency change is enough; clearing here would flicker
+      // unsubscribe between Strict Mode double-invokes. Final clear is in retain cleanup.
+    };
+  }, [enabled, token, thread?.channel, thread?.threadId, status]);
 
   return { status, connected: status === 'open' };
 }

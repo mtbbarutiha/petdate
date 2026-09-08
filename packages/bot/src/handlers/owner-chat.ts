@@ -10,6 +10,7 @@ import {
   addUserContact,
   getActiveOwnerChat,
   getPet,
+  getPlaydate,
   getUserById,
   getUserByTelegramId,
   postPlaydateChatMessage,
@@ -524,6 +525,7 @@ async function handleOwnerChatAction(ctx: Context, text: string): Promise<boolea
 /**
  * اگر همبازی پذیرفته‌شده و قطع‌نشده در API هست، سشن ربات را به owner_chat برگردان.
  * برای همگام‌سازی وقتی کاربر روی وب چت می‌کند ولی سشن تلگرام هنوز منوی اصلی است.
+ * Redis را بدون تأیید API قبول نکن — بعد از end-chat از وب، سشن کهنه باعث «گیر کردن» می‌شد.
  */
 export async function ensureOwnerChatSession(
   telegramId: string,
@@ -535,18 +537,23 @@ export async function ensureOwnerChatSession(
     existing.ownerChatPeerTelegramId &&
     existing.ownerChatPlaydateId
   ) {
-    return {
-      session: existing,
-      active: {
-        playdateId: existing.ownerChatPlaydateId,
-        peerTelegramId: existing.ownerChatPeerTelegramId,
-        peerUserId: existing.ownerChatPeerUserId ?? 0,
-        myPetId: existing.ownerChatMyPetId ?? 0,
-        peerPetId: existing.ownerChatPeerPetId ?? 0,
-        chatSecure: !!existing.ownerChatSecure,
-      },
-      resumed: false,
-    };
+    const pd = await getPlaydate(existing.ownerChatPlaydateId);
+    if (pd && pd.status === 'accepted' && !pd.chatEnded) {
+      return {
+        session: existing,
+        active: {
+          playdateId: existing.ownerChatPlaydateId,
+          peerTelegramId: existing.ownerChatPeerTelegramId,
+          peerUserId: existing.ownerChatPeerUserId ?? 0,
+          myPetId: existing.ownerChatMyPetId ?? 0,
+          peerPetId: existing.ownerChatPeerPetId ?? 0,
+          chatSecure: !!existing.ownerChatSecure,
+        },
+        resumed: false,
+      };
+    }
+    // Stale sticky session (web ended chat / expired) — clear before API refresh.
+    await upsertSession(telegramId, clearOwnerChatPatch());
   }
 
   const active = await getActiveOwnerChat(telegramId);
@@ -720,7 +727,12 @@ export async function handleOwnerChatRelay(ctx: Context): Promise<boolean> {
 
   /** Resolve playdate id from Redis session or live API (web↔TG sync). */
   async function resolvePlaydateId(): Promise<number | undefined> {
-    if (playdateId && Number.isFinite(playdateId) && playdateId > 0) return playdateId;
+    if (playdateId && Number.isFinite(playdateId) && playdateId > 0) {
+      const pd = await getPlaydate(playdateId);
+      if (pd && pd.status === 'accepted' && !pd.chatEnded) return playdateId;
+      // Stale id in Redis — fall through to live active-owner-chat.
+      playdateId = undefined;
+    }
     const active = await getActiveOwnerChat(String(from!.id));
     if (active?.playdateId && Number.isFinite(active.playdateId) && active.playdateId > 0) {
       playdateId = active.playdateId;
@@ -747,11 +759,14 @@ export async function handleOwnerChatRelay(ctx: Context): Promise<boolean> {
     fileName?: string
   ) {
     const pdId = await resolvePlaydateId();
-    if (!pdId) return;
+    if (!pdId) {
+      // Without a playdate id the web peer never sees this line — abort before TG send.
+      throw new Error('NO_PLAYDATE_ID');
+    }
     const me = await getCtxUser(ctx);
     if (!me?.id) {
-      console.warn('owner chat persist skipped: no sender user', { playdateId: pdId });
-      return;
+      console.warn('owner chat persist aborted: no sender user', { playdateId: pdId });
+      throw new Error('NO_SENDER_USER');
     }
     await postPlaydateChatMessage(pdId, me.id, caption || '', {
       mediaKind: kind,
@@ -869,22 +884,41 @@ export async function handleOwnerChatRelay(ctx: Context): Promise<boolean> {
       return true;
     }
     if (text) {
-      // Persist first so web ChatPage (WS + poll) sees the line even if TG send is slow
+      // Persist first so web ChatPage (WS + poll) sees the line even if TG send is slow /
+      // fails. Never TG-deliver without API persist when a playdate session exists —
+      // that left dual-online web peers "stuck" until refresh.
       const pdId = await resolvePlaydateId();
-      if (pdId) {
-        const me = await getCtxUser(ctx);
-        if (me?.id) {
-          await postPlaydateChatMessage(pdId, me.id, text);
-        } else {
-          console.warn('owner chat text persist skipped: no sender user', { playdateId: pdId });
-        }
+      if (!pdId) {
+        throw new Error('NO_PLAYDATE_ID');
       }
+      const me = await getCtxUser(ctx);
+      if (!me?.id) {
+        console.warn('owner chat text persist aborted: no sender user', { playdateId: pdId });
+        throw new Error('NO_SENDER_USER');
+      }
+      await postPlaydateChatMessage(pdId, me.id, text);
       const sent = await ctx.api.sendMessage(peer, text, protect);
       await rememberPeerDelivery(sent.message_id);
       return true;
     }
   } catch (err) {
     console.warn('owner chat relay failed:', err);
+    const reason = err instanceof Error ? err.message : '';
+    // Ended/forbidden chat → drop sticky keyboard so the bot does not look "گیر کرده".
+    if (/API 409/.test(reason) || reason === 'NO_PLAYDATE_ID') {
+      await upsertSession(String(from.id), clearOwnerChatPatch());
+      await ctx.reply(
+        'چت همبازی دیگر فعال نیست. منوی اصلی را با /start باز کن یا از وب دوباره همبازی بساز.',
+        { reply_markup: menuKeyboardFor(ctx, await getCtxUser(ctx)) },
+      );
+      return true;
+    }
+    if (reason === 'NO_SENDER_USER') {
+      await ctx.reply(
+        'حسابت روی سرور پیدا نشد. یک‌بار /start بزن و دوباره پیام بفرست.',
+      );
+      return true;
+    }
     await ctx.reply('ارسال به طرف مقابل ناموفق بود. ممکن است ربات را بلاک کرده باشد.');
     return true;
   }

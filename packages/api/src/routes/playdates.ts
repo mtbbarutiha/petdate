@@ -309,6 +309,12 @@ playdatesRouter.post('/:id/messages', async (req, res) => {
       fileName,
     });
 
+    const playdate = gate.playdate;
+    const participants = [playdate.fromUserId, playdate.toUserId].filter(
+      (id): id is number => Number.isFinite(id as number) && (id as number) > 0,
+    );
+    // WS first — web dual-online peers must not wait on Telegram latency/failures.
+    notifyPlaymateMessage(playdateId, message, participants);
     if (!skipTelegram) {
       fanOutPlaydateChatTelegram({
         playdate: gate.playdate,
@@ -320,12 +326,6 @@ playdatesRouter.post('/:id/messages', async (req, res) => {
         fileName: message.fileName,
       });
     }
-
-    const playdate = gate.playdate;
-    const participants = [playdate.fromUserId, playdate.toUserId].filter(
-      (id): id is number => Number.isFinite(id as number) && (id as number) > 0,
-    );
-    notifyPlaymateMessage(playdateId, message, participants);
     res.status(201).json(message);
   } catch (err) {
     if (err instanceof Error && err.message === 'EMPTY_TEXT') {
@@ -416,6 +416,12 @@ playdatesRouter.post('/:id/messages/upload', (req, res) => {
         fileName: originalName,
       });
 
+      const playdate = gate.playdate;
+      const participants = [playdate.fromUserId, playdate.toUserId].filter(
+        (id): id is number => Number.isFinite(id as number) && (id as number) > 0,
+      );
+      // WS first — web dual-online peers must not wait on Telegram latency/failures.
+      notifyPlaymateMessage(playdateId, message, participants);
       fanOutPlaydateChatTelegram({
         playdate: gate.playdate,
         senderUserId,
@@ -425,12 +431,6 @@ playdatesRouter.post('/:id/messages/upload', (req, res) => {
         mimeType: message.mimeType,
         fileName: message.fileName,
       });
-
-      const playdate = gate.playdate;
-      const participants = [playdate.fromUserId, playdate.toUserId].filter(
-        (id): id is number => Number.isFinite(id as number) && (id as number) > 0,
-      );
-      notifyPlaymateMessage(playdateId, message, participants);
       res.status(201).json(message);
     } catch (err) {
       if (err instanceof Error && err.message === 'FILE_TOO_LARGE') {
