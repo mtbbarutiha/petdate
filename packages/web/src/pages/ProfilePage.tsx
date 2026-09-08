@@ -38,7 +38,7 @@ import {
   profileLanguageCode,
   profileVerifyStatusLabel,
   toPersianDigits,
-  userCommandId,
+  userDisplayPublicId,
   userHasRole,
   type User,
   type UserGender,
@@ -592,15 +592,15 @@ export function ProfilePage() {
             <dd>
               <button
                 type="button"
-                className="pepito-profile-command-id"
+                className="pepito-profile-public-id"
                 dir="ltr"
                 title="کپی آیدی"
                 onClick={() => {
-                  const id = userCommandId(display);
+                  const id = userDisplayPublicId(display);
                   void navigator.clipboard?.writeText(id);
                 }}
               >
-                <code>{userCommandId(display)}</code>
+                <code>{userDisplayPublicId(display)}</code>
               </button>
             </dd>
           </div>

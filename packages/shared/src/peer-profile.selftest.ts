@@ -56,8 +56,8 @@ assert(peerDtoHasSensitiveLeak(raw), 'raw still sensitive');
 
 const html = formatPeerOwnerProfileHtml(raw, { heading: '👤 <b>پروفایل صاحب پت</b>' });
 assert(html.includes('سارا'), 'html has name');
-assert(html.includes('/u00042') || html.includes('u00042'), 'html has command id');
 assert(html.includes('PD-U00042'), 'html has public id');
+assert(!html.includes('/u00042'), 'html does not show command id as آیدی');
 assert(html.includes('تهران'), 'html has city');
 assert(!html.includes('123456789'), 'html hides telegram id');
 assert(!html.includes('sara_secret'), 'html hides username');
@@ -66,7 +66,8 @@ assert(!html.includes('@'), 'html has no @username');
 
 const lines = buildPeerOwnerSummaryLines(raw);
 assert(lines.name === 'سارا', 'summary name');
-assert(lines.commandId === '/u00042', 'summary command id');
+assert(lines.publicId === 'PD-U00042', 'summary public id');
+assert(lines.commandId === '/u00042', 'summary keeps command id for deep-link');
 assert(!lines.bio || lines.bio.includes('عاشق'), 'summary bio');
 
 console.log('peer-profile.selftest: ok');

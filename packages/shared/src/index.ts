@@ -65,6 +65,7 @@ export {
   isPrimaryRole,
   makePetPublicId,
   makeUserPublicId,
+  normalizeUserPublicId,
   normalizeIranMobile,
   normalizeRoles,
   REMOVED_USER_ROLES,

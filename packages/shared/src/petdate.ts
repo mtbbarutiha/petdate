@@ -82,8 +82,12 @@ export const VERIFIED_BADGE = '✅ احراز شده';
 
 /**
  * شناسهٔ عمومی پایدار (نمایشی) — جدا از id داخلی DB.
- * فرمت: PD-U##### برای کاربر، PD-P##### برای پت.
+ * یک نفر = یک آیدی نمایشی برای وب و بات.
+ * فرمت canonical: PD-U##### برای کاربر، PD-P##### برای پت.
  * پس از تخصیص تغییر نمی‌کند.
+ *
+ * نکته: `/u#####` فقط دستور عمیق تلگرام است (charset بدون خط تیره) —
+ * برای نمایش «آیدی» به کاربر از userPublicIdOf استفاده کن، نه userCommandIdOf.
  */
 export const USER_PUBLIC_ID_PREFIX = 'PD-U';
 export const PET_PUBLIC_ID_PREFIX = 'PD-P';
@@ -96,9 +100,33 @@ export function makePetPublicId(internalId: number): string {
   return `${PET_PUBLIC_ID_PREFIX}${String(Math.trunc(internalId)).padStart(5, '0')}`;
 }
 
-/** شناسهٔ نمایشی کاربر — publicId ذخیره‌شده یا مشتق از id */
+/**
+ * نرمال‌سازی هر فرم شناخته‌شده به PD-U##### (با پد ۵رقمی).
+ * قبول می‌کند: PD-U42، /u00042، u_00042، /user_PD-U00042، …
+ */
+export function normalizeUserPublicId(raw: string | null | undefined): string | null {
+  const s = String(raw ?? '').trim();
+  if (!s) return null;
+  const pd = /^(?:\/?user_)?PD-U(\d{1,10})$/i.exec(s);
+  if (pd) return makeUserPublicId(Number(pd[1]));
+  const cmd = /^\/?u_?(\d{1,10})(?:@\w+)?$/i.exec(s);
+  if (cmd) return makeUserPublicId(Number(cmd[1]));
+  return null;
+}
+
+/**
+ * شناسهٔ نمایشی canonical کاربر — همیشه PD-U##### برای UI.
+ * publicId ذخیره‌شده (حتی فرم قدیمی /u#####) را نرمال می‌کند؛ وگرنه از id داخلی مشتق می‌شود.
+ */
 export function userPublicIdOf(user: { id: number; publicId?: string | null }): string {
-  return (user.publicId && String(user.publicId).trim()) || makeUserPublicId(user.id);
+  const raw = user.publicId != null ? String(user.publicId).trim() : '';
+  if (raw) {
+    const normalized = normalizeUserPublicId(raw);
+    if (normalized) return normalized;
+    // شناسهٔ سفارشی ناشناخته — پایدار نگه دار (مهاجرت آینده)
+    return raw;
+  }
+  return makeUserPublicId(user.id);
 }
 
 /** شناسهٔ نمایشی پت — publicId ذخیره‌شده یا مشتق از id */
@@ -115,13 +143,13 @@ export function makeUserCommandToken(internalId: number): string {
 }
 
 /**
- * آیدی قابل‌ضربه در تلگرام: `/u00042`
- * کلاینت‌ها آن را به‌عنوان bot command تشخیص می‌دهند.
+ * دستور عمیق تلگرام (قابل‌ضربه): `/u00042`
+ * فقط برای bot_command — نه برای برچسب «آیدی» در UI.
  */
 export function userCommandIdOf(user: { id: number; publicId?: string | null }): string {
   const publicId = userPublicIdOf(user);
   const fromPublic = /^PD-U(\d+)$/i.exec(publicId);
-  if (fromPublic) return `/u${fromPublic[1]}`;
+  if (fromPublic) return `/u${fromPublic[1].padStart(5, '0')}`;
   return `/${makeUserCommandToken(user.id)}`;
 }
 

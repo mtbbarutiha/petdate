@@ -10,6 +10,7 @@ import {
   primaryRole,
   toPersianDigits,
   userCommandIdOf,
+  userPublicIdOf,
   type UserGender,
   type UserRole,
   type VerificationStatus,
@@ -136,9 +137,14 @@ export function isProfileComplete(user: ProfileCardUser): boolean {
   return PROFILE_REQUIRED_FIELDS.every((f) => isProfileSectionFilled(f, user));
 }
 
-/** شناسهٔ دستور تلگرام (قابل‌ضربه): /u00014 — بدون خط تیره (محدودیت charset بات) */
+/** شناسهٔ دستور تلگرام (قابل‌ضربه): /u00014 — فقط deep-link بات، نه نمایش «آیدی» */
 export function userCommandId(user: ProfileCardUser): string {
   return userCommandIdOf({ id: user.id, publicId: user.publicId });
+}
+
+/** آیدی نمایشی canonical کاربر: PD-U##### */
+export function userDisplayPublicId(user: ProfileCardUser): string {
+  return userPublicIdOf({ id: user.id, publicId: user.publicId });
 }
 
 export function profileLanguageCode(user: ProfileCardUser): string {
@@ -230,7 +236,7 @@ export function buildProfileCardLines(
   return {
     likes: `❤️ ${formatFaInt(likes)} لایک`,
     completion: `📊 تکمیل پروفایل: ${toPersianDigits(completion.percent)}٪`,
-    userId: `آیدی: ${userCommandId(user)}`,
+    userId: `آیدی: ${userDisplayPublicId(user)}`,
     identity: `${profileGenderEmoji(user.gender)} ${name}${agePart} | ${profileLanguageCode(user)}`,
     location: `${profileCountryFlag(user.country)} ${profileLocationLine(user)}`,
     purpose: profilePurposeLabel(user),

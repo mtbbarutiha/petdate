@@ -1,5 +1,5 @@
 import type { User } from '@petdate/shared';
-import { userCommandIdOf } from '@petdate/shared';
+import { userPublicIdOf } from '@petdate/shared';
 import { infra } from '../config/infra';
 import { activateBotOwnerChatSessions } from './bot-owner-chat-session';
 import { telegramFetch, telegramBotApiUrl } from './telegram-http';
@@ -9,9 +9,9 @@ function escapeHtml(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-/** Playmate chat peer label — tappable /u##### command, never @username / display name. */
+/** Playmate chat peer label — canonical PD-U#####, never @username / display name. */
 function playmatePeerIdLabel(user: User): string {
-  return userCommandIdOf(user);
+  return userPublicIdOf(user);
 }
 
 async function telegramCall(

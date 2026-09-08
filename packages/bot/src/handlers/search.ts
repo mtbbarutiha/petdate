@@ -8,7 +8,6 @@ import {
   formatPeerLastSeenFa,
   formatPetAge,
   petPublicIdOf,
-  userCommandIdOf,
   userPublicIdOf,
 } from '@petdate/shared';
 import {
@@ -696,13 +695,12 @@ function formatNearbyPetCaption(
 ): string {
   const lines: string[] = [];
   const ownerId = owner?.id ?? pet.ownerId;
-  const cmd = userCommandIdOf({
-    id: ownerId,
-    publicId: owner?.publicId ?? undefined,
-  });
   const publicId =
-    owner?.publicId ||
-    (ownerId ? userPublicIdOf({ id: ownerId, publicId: owner?.publicId }) : null);
+    ownerId != null
+      ? userPublicIdOf({ id: ownerId, publicId: owner?.publicId })
+      : owner?.publicId
+        ? String(owner.publicId)
+        : null;
   lines.push(`🐾 <b>${escapeHtml(pet.name)}</b>`);
   lines.push(`آیدی پت: <code>${escapeHtml(petPublicIdOf(pet))}</code>`);
   const species = PET_SPECIES_LABELS[pet.species] ?? pet.species;
@@ -721,7 +719,7 @@ function formatNearbyPetCaption(
   lines.push('');
   lines.push('👤 <b>صاحب پت</b>');
   if (ownerName) lines.push(`| نام: ${escapeHtml(ownerName)}`);
-  lines.push(`| آیدی: /${escapeHtml(cmd.replace(/^\//, ''))}${publicId ? ` · <code>${escapeHtml(publicId)}</code>` : ''}`);
+  if (publicId) lines.push(`| آیدی: <code>${escapeHtml(publicId)}</code>`);
   if (owner?.age != null) lines.push(`| سن: ${owner.age}`);
   if (owner?.gender && owner.gender in USER_GENDER_LABELS) {
     lines.push(`| جنسیت: ${USER_GENDER_LABELS[owner.gender as keyof typeof USER_GENDER_LABELS]}`);

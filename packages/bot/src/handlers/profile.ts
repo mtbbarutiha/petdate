@@ -131,7 +131,7 @@ export async function handleUserCommandId(ctx: Context): Promise<void> {
   const raw = ctx.message?.text?.trim() || '';
   const id = parseUserIdFromCommand(raw.split(/\s+/)[0] || '');
   if (!id) {
-    await ctx.reply('آیدی نامعتبر است. مثال: /u00042');
+    await ctx.reply('آیدی نامعتبر است. مثال: PD-U00042 یا /u00042');
     return;
   }
   await showPublicUserById(ctx, id);

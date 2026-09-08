@@ -3,8 +3,7 @@ import type { Context } from 'grammy';
 import type { BotSession, User } from '@petdate/shared';
 import {
   formatPeerOwnerProfileHtml,
-  toUserCommandId,
-  userCommandIdOf,
+  userPublicIdOf,
 } from '@petdate/shared';
 import {
   addUserContact,
@@ -112,9 +111,9 @@ async function sendOwnerChatWebHintOnce(
 const CHAT_WIPE_HINT =
   '🗑 لطفاً کل این گفتگو را از تلگرام پاک کنید تا اثری از پیام‌ها (متن، عکس، ویس و …) نماند.';
 
-/** Playmate chat: tappable bot-command آیدی (/u00042) — never Telegram @username. */
+/** Playmate chat: canonical public آیدی (PD-U00042) — never Telegram @username. */
 function playmatePeerIdLabel(user: { id: number; publicId?: string | null }): string {
-  return userCommandIdOf(user);
+  return userPublicIdOf(user);
 }
 
 function formatPeerOwnerCard(
@@ -584,7 +583,7 @@ export async function resumeOwnerChatOnStart(ctx: Context): Promise<boolean> {
     [
       '💬 چت همبازی هنوز فعاله.',
       active.peerPublicId
-        ? `طرف مقابل: ${toUserCommandId(active.peerPublicId)}`
+        ? `طرف مقابل: ${userPublicIdOf({ id: active.peerUserId || 0, publicId: active.peerPublicId })}`
         : active.peerUserId
           ? `طرف مقابل: ${playmatePeerIdLabel({ id: active.peerUserId })}`
           : null,
@@ -688,7 +687,7 @@ export async function handleOwnerChatRelay(ctx: Context): Promise<boolean> {
         [
           '💬 چت همبازی دوباره فعال شد.',
           ensured.active.peerPublicId
-            ? `طرف مقابل: ${toUserCommandId(ensured.active.peerPublicId)}`
+            ? `طرف مقابل: ${userPublicIdOf({ id: ensured.active.peerUserId || 0, publicId: ensured.active.peerPublicId })}`
             : ensured.active.peerUserId
               ? `طرف مقابل: ${playmatePeerIdLabel({ id: ensured.active.peerUserId })}`
               : null,
