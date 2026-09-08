@@ -9,6 +9,7 @@ import {
   savePetPhoto,
 } from '../services/pet-photo-store';
 import { renderNearbyListCard, renderPetProfileCard } from '../services/nearby-cards';
+import { ensureWebAccessibleAvatar } from '../services/telegram-profile-sync';
 
 export const petsRouter = Router();
 
@@ -200,7 +201,7 @@ petsRouter.get('/nearby/list-card', async (req, res) => {
   }
 });
 
-/** کارت پروفایل پت با عکس صاحب در گوشه — قبل از /:id */
+/** کارت پروفایل پت با عکس دایره‌ای صاحب در بالا-چپ — قبل از /:id */
 petsRouter.get('/:id/profile-card', async (req, res) => {
   try {
     const pet = dbService.getPet(Number(req.params.id));
@@ -223,9 +224,18 @@ petsRouter.get('/:id/profile-card', async (req, res) => {
         distanceKm = Math.round(haversineKm(viewerLat, viewerLng, owner.lat, owner.lng) * 10) / 10;
       }
     }
+    // Materialize Telegram file_id → /api/auth/avatar/... so sharp can load the face.
+    // Does not expose phone / telegramId on the image or response.
+    let ownerAvatarUrl = pet.ownerAvatarUrl;
+    try {
+      const ensured = await ensureWebAccessibleAvatar(pet.ownerId);
+      if (ensured?.avatarUrl) ownerAvatarUrl = ensured.avatarUrl;
+    } catch (err) {
+      console.warn('profile-card owner avatar ensure failed:', (err as Error).message);
+    }
     const buf = await renderPetProfileCard({
-      pet: { ...pet, distanceKm },
-      corner: 'br',
+      pet: { ...pet, distanceKm, ownerAvatarUrl },
+      corner: 'tl',
     });
     res.setHeader('Content-Type', 'image/jpeg');
     res.setHeader('Cache-Control', 'private, max-age=60');
