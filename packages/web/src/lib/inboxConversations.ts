@@ -1,5 +1,5 @@
 import type { User, UserRole, VetConsultation } from '@petdate/shared';
-import { makeUserPublicId, primaryRole, toUserCommandId, userHasRole } from '@petdate/shared';
+import { primaryRole, userHasRole } from '@petdate/shared';
 import type { MatchRequest, Pet } from '../types';
 import {
   acceptVetConsultation,
@@ -8,7 +8,10 @@ import {
   rejectVetConsultation,
   updatePlaydateStatus,
 } from './api';
+import { playmateInboxTitle } from './inboxTitle';
 import { playdateToMatchRequest } from './playdateMap';
+
+export { looksLikePublicUserId, playmateInboxTitle } from './inboxTitle';
 
 export type InboxKind = 'playmate' | 'vet';
 
@@ -99,12 +102,8 @@ export function playmateToInbox(match: MatchRequest): InboxConversation {
     key: `playmate:${match.id}`,
     kind: 'playmate',
     id: match.id,
-    // Accepted chat: tappable/copyable /u##### (never Telegram username / display name).
-    // Pending requests keep pet name so the seeker sees which pet was requested.
-    title:
-      match.status === 'accepted' && peer.ownerId
-        ? toUserCommandId(makeUserPublicId(peer.ownerId))
-        : peer.ownerName || peer.name,
+    // Always show a human name in the list — never /u##### or PD-U##### as primary title.
+    title: playmateInboxTitle(peer),
     preview,
     createdAt: match.createdAt,
     lastActivityAt,

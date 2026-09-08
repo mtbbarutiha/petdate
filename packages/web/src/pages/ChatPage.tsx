@@ -69,6 +69,7 @@ import {
   inboxRowsEquivalent,
   inboxScopeForUser,
   loadInboxConversations,
+  playmateInboxTitle,
   rejectInboxItem,
   type InboxConversation,
   type InboxScope,
@@ -912,13 +913,21 @@ export function ChatPage() {
           publicId: userPublicIdOf(user),
           bio: user.bio || undefined,
         });
+        // Inbox list title = display name (never /u#####). Command id stays in peerOwnerLabel for copy/profile.
+        const inboxTitle = playmateInboxTitle({
+          name: match?.fromPet?.name || '',
+          ownerName: displayName || '',
+        });
         setConversations((prev) =>
           prev.map((c) =>
             c.peerPet?.ownerId === ownerId
               ? {
                   ...c,
-                  title: label,
-                  peerPet: { ...c.peerPet, ownerName: displayName || label },
+                  title: inboxTitle,
+                  peerPet: {
+                    ...c.peerPet,
+                    ownerName: displayName || c.peerPet.ownerName || '',
+                  },
                 }
               : c,
           ),
@@ -929,7 +938,7 @@ export function ChatPage() {
                 ...prev,
                 fromPet: {
                   ...prev.fromPet,
-                  ownerName: displayName || label,
+                  ownerName: displayName || prev.fromPet.ownerName || '',
                 },
               }
             : prev,
