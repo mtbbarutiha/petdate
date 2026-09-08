@@ -277,17 +277,34 @@
   ) !important;
 }
 
+/* Inbox accept/reject/profile — grid so desktop never overlaps (esp. long profile label) */
 .tg-chat-list-actions {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr;
   gap: 0.4rem !important;
-  padding: 0 0.55rem 0.35rem !important;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0 0.55rem 0.45rem !important;
+  align-items: stretch;
 }
 .tg-chat-list-accept,
 .tg-chat-list-reject,
 .tg-chat-list-profile {
-  min-height: 34px !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  min-height: 36px !important;
+  min-width: 0;
+  width: 100%;
   border-radius: 11px !important;
   font-size: 0.76rem !important;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   transition: transform 0.15s ease, filter 0.15s ease;
+  cursor: pointer;
 }
 .tg-chat-list-accept:not(:disabled):active,
 .tg-chat-list-reject:not(:disabled):active,
@@ -297,22 +314,31 @@
 .tg-chat-list-accept {
   background: linear-gradient(145deg, var(--pepito-mint, #15cca0), #0ba88a) !important;
   border: 0 !important;
+  color: #fff !important;
 }
 .tg-chat-list-reject {
   color: #b91c1c !important;
   background: rgba(198, 40, 40, 0.06) !important;
-  border-color: rgba(185, 28, 28, 0.22) !important;
+  border: 1px solid rgba(185, 28, 28, 0.22) !important;
 }
 .tg-chat-list-profile {
-  display: inline-flex !important;
-  align-items: center;
-  justify-content: center;
-  gap: 0.3rem;
+  grid-column: 1 / -1;
   color: #0f766e !important;
   background: rgba(13, 148, 136, 0.08) !important;
   border: 1px solid rgba(13, 148, 136, 0.22) !important;
-  cursor: pointer;
-  font-weight: 700;
+}
+
+@media (min-width: 900px) {
+  .tg-chat-list-actions {
+    gap: 0.45rem !important;
+    padding-inline: 0.65rem !important;
+  }
+  .tg-chat-list-accept,
+  .tg-chat-list-reject,
+  .tg-chat-list-profile {
+    min-height: 38px !important;
+    font-size: 0.8rem !important;
+  }
 }
 
 /* Empty states — calm, on-brand, denser */

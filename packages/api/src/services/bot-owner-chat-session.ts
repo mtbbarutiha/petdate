@@ -133,3 +133,62 @@ export async function activateBotOwnerChatSessions(opts: {
   }
   return result;
 }
+
+function clearOwnerChatFields(existing: SessionLike): SessionLike {
+  const next: SessionLike = { ...existing, step: 'ready', updatedAt: new Date().toISOString() };
+  delete next.ownerChatPlaydateId;
+  delete next.ownerChatPeerTelegramId;
+  delete next.ownerChatPeerUserId;
+  delete next.ownerChatMyPetId;
+  delete next.ownerChatPeerPetId;
+  delete next.ownerChatSecure;
+  delete next.ownerChatWebHintSent;
+  return next;
+}
+
+/**
+ * Clear bot owner_chat for both peers when playdate chat ends (web or bot).
+ * Prevents sticky chat keyboard / relay interference across mobile+desktop.
+ */
+export async function clearBotOwnerChatSessions(opts: {
+  playdateId?: number;
+  telegramIds: Array<string | null | undefined>;
+}): Promise<number> {
+  const client = await getRedis();
+  if (!client) return 0;
+  let cleared = 0;
+  const unique = [
+    ...new Set(
+      opts.telegramIds
+        .map((id) => normalizeTelegramId(id))
+        .filter((id): id is string => Boolean(id)),
+    ),
+  ];
+  for (const telegramId of unique) {
+    try {
+      const key = sessionKey(telegramId);
+      const raw = await client.get(key);
+      if (!raw) continue;
+      let existing: SessionLike;
+      try {
+        existing = JSON.parse(raw) as SessionLike;
+      } catch {
+        continue;
+      }
+      if (
+        opts.playdateId &&
+        existing.ownerChatPlaydateId &&
+        existing.ownerChatPlaydateId !== opts.playdateId
+      ) {
+        continue;
+      }
+      if (existing.step !== 'owner_chat' && !existing.ownerChatPlaydateId) continue;
+      const next = clearOwnerChatFields(existing);
+      await client.set(key, JSON.stringify(next), 'EX', SESSION_TTL_SECONDS);
+      cleared += 1;
+    } catch (err) {
+      console.warn('clear bot owner session failed:', telegramId, (err as Error).message);
+    }
+  }
+  return cleared;
+}

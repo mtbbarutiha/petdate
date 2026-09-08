@@ -584,6 +584,10 @@ export function ChatPage() {
             ...msgs,
             systemMessage(['چت همبازی قطع شد.', '', CHAT_WIPE_HINT].join('\n')),
           ]);
+          softReloadConversations();
+          // همه تب‌ها/مرورگرها فوراً از محیط چت خارج شوند
+          navigate('/chats', { replace: true });
+          return;
         }
         if (patch.messagesCleared) {
           setMessages([]);
@@ -613,7 +617,7 @@ export function ChatPage() {
         softReloadConversations();
       }
     },
-    [hasThread, selectedId, match?.status, myUserId, softReloadConversations],
+    [hasThread, selectedId, match?.status, myUserId, softReloadConversations, navigate],
   );
 
   const { connected: wsConnected } = useChatSocket({
@@ -847,6 +851,7 @@ export function ChatPage() {
             systemMessage(['چت همبازی قطع شد.', '', CHAT_WIPE_HINT].join('\n')),
           ]);
           softReloadConversations();
+          navigate('/chats', { replace: true });
         }
       } catch {
         /* ignore */
@@ -856,20 +861,17 @@ export function ChatPage() {
     // Always load history once — WS-only path missed Telegram→web lines and
     // dropped events that arrived before match finished loading.
     void pull(true);
+    void pullMeta();
     const timer = window.setInterval(() => {
-      // While WS is up: slow catch-up only (missed relays). Full poll when offline.
-      if (wsConnectedRef.current) {
-        void pull(false);
-        return;
-      }
       void pull(false);
+      // Always poll meta so chatEnded reaches every open browser even if WS missed it
       void pullMeta();
     }, wsConnected ? MESSAGE_WS_CATCHUP_POLL_MS : MESSAGE_FALLBACK_POLL_MS);
     return () => {
       cancelled = true;
       window.clearInterval(timer);
     };
-  }, [match?.id, myUserId, ended, softReloadConversations, wsConnected]);
+  }, [match?.id, myUserId, ended, softReloadConversations, wsConnected, navigate]);
 
   useEffect(() => {
     const el = scrollerRef.current;
@@ -1287,19 +1289,6 @@ export function ChatPage() {
     setActionError(null);
     setEnded(true);
     setInfoCard('none');
-    setMessages((prev) => [
-      ...prev,
-      systemMessage(
-        [
-          'چت همبازی پایان یافت.',
-          '',
-          CHAT_WIPE_HINT,
-          secure ? 'چت امن فعال بود — حتماً گفتگو را پاک کن.' : null,
-        ]
-          .filter(Boolean)
-          .join('\n'),
-      ),
-    ]);
     try {
       await endPlaydateChat(match.id, myUserId);
       void reloadConversations();
@@ -1312,6 +1301,8 @@ export function ChatPage() {
       setActionError(err instanceof Error ? err.message : 'قطع چت روی سرور ناموفق بود');
     } finally {
       setEnding(false);
+      // خود کاربر هم فوراً از محیط چت خارج شود (همه تب‌های طرف مقابل با WS/poll)
+      navigate('/chats', { replace: true });
     }
   }
 
