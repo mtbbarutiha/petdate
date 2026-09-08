@@ -6,6 +6,7 @@ import {
   useState,
   type FormEvent,
   type KeyboardEvent,
+  type MouseEvent as ReactMouseEvent,
 } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
@@ -37,6 +38,7 @@ import {
 import { SiteLogo } from '../components/SiteLogo';
 import { PetAvatar } from '../components/PetAvatar';
 import { PresenceBadge } from '../components/PresenceBadge';
+import { ChatMediaCaptureProvider, ChatMediaCaptureTriggers } from '../components/ChatMediaCapture';
 import { EmojiPicker } from '../components/EmojiPicker';
 import {
   CHAT_FILE_ACCEPT,
@@ -200,6 +202,7 @@ export function VetChatPage() {
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [pendingPreview, setPendingPreview] = useState<string | null>(null);
+  const [captureOccupied, setCaptureOccupied] = useState(false);
   const [brokenMedia, setBrokenMedia] = useState<Record<string, boolean>>({});
   const [error, setError] = useState<string | null>(null);
   const [sendError, setSendError] = useState<string | null>(null);
@@ -655,13 +658,17 @@ export function VetChatPage() {
   }, [draft, consult?.status, hasThread]);
 
   useEffect(() => {
-    if (!pendingFile || !isLikelyChatImage(pendingFile)) {
+    if (!pendingFile) {
       setPendingPreview(null);
       return;
     }
-    const url = URL.createObjectURL(pendingFile);
-    setPendingPreview(url);
-    return () => URL.revokeObjectURL(url);
+    const type = (pendingFile.type || '').toLowerCase();
+    if (isLikelyChatImage(pendingFile) || type.startsWith('video/') || type.startsWith('audio/')) {
+      const url = URL.createObjectURL(pendingFile);
+      setPendingPreview(url);
+      return () => URL.revokeObjectURL(url);
+    }
+    setPendingPreview(null);
   }, [pendingFile]);
 
   useEffect(() => {
@@ -840,6 +847,30 @@ export function VetChatPage() {
     }
   }
 
+  async function sendCapturedMedia(file: File) {
+    if (ended || sending || !token || !user?.id || !consult || consult.status !== 'active') {
+      throw new Error('چت برای ارسال رسانه آماده نیست');
+    }
+    if (file.size > MAX_CHAT_ATTACH_BYTES) {
+      throw new Error('حجم فایل بیش از حد مجاز است (حداکثر ۱۵ مگابایت)');
+    }
+    setSending(true);
+    setSendError(null);
+    setError(null);
+    setEmojiOpen(false);
+    stickToBottomRef.current = true;
+    smoothScrollRef.current = true;
+    try {
+      const saved = await uploadVetConsultChatFile(consult.id, user.id, file, '', token);
+      const ui = toUi(saved, user.id);
+      setMessages((prev) => (prev.some((m) => m.id === ui.id) ? prev : [...prev, ui]));
+      lastIdRef.current = Math.max(lastIdRef.current, saved.id);
+      void reloadConversations();
+    } finally {
+      setSending(false);
+    }
+  }
+
   function onComposerKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -955,16 +986,33 @@ export function VetChatPage() {
     const src = vetConsultChatMediaUrl(consult.id, msg.numericId, user.id);
     const markBroken = () =>
       setBrokenMedia((prev) => (prev[msg.id] ? prev : { ...prev, [msg.id]: true }));
+    const guardSave = secure
+      ? {
+          onContextMenu: (e: ReactMouseEvent) => e.preventDefault(),
+          controlsList: 'nodownload noplaybackrate',
+          disablePictureInPicture: true,
+        }
+      : {};
+    const fileLabel =
+      msg.mimeType === 'application/pdf' || (msg.fileName && /\.pdf$/i.test(msg.fileName))
+        ? msg.fileName || 'نسخه PDF'
+        : msg.fileName || mediaLabel(msg.mediaKind);
     if (msg.mediaKind === 'photo' || msg.mediaKind === 'sticker') {
+      const img = (
+        <img
+          className="tg-media-image"
+          src={src}
+          alt={mediaLabel(msg.mediaKind)}
+          loading="lazy"
+          draggable={!secure}
+          onError={markBroken}
+          onContextMenu={secure ? (e) => e.preventDefault() : undefined}
+        />
+      );
+      if (secure) return img;
       return (
         <a className="tg-media-link" href={src} target="_blank" rel="noreferrer">
-          <img
-            className="tg-media-image"
-            src={src}
-            alt={mediaLabel(msg.mediaKind)}
-            loading="lazy"
-            onError={markBroken}
-          />
+          {img}
         </a>
       );
     }
@@ -980,6 +1028,7 @@ export function VetChatPage() {
           controls
           playsInline
           onError={markBroken}
+          {...guardSave}
         >
           ویدیو پشتیبانی نمی‌شود
         </video>
@@ -993,16 +1042,22 @@ export function VetChatPage() {
           controls
           preload="metadata"
           onError={markBroken}
+          {...guardSave}
         />
+      );
+    }
+    if (secure) {
+      return (
+        <span className="tg-media-file tg-media-file--secure">
+          {'📎 '}
+          {fileLabel}
+        </span>
       );
     }
     return (
       <a className="tg-media-file" href={src} target="_blank" rel="noreferrer">
         {'📎 '}
-        {msg.mimeType === 'application/pdf' ||
-        (msg.fileName && /\.pdf$/i.test(msg.fileName))
-          ? msg.fileName || 'نسخه PDF'
-          : msg.fileName || mediaLabel(msg.mediaKind)}
+        {fileLabel}
       </a>
     );
   }
@@ -1610,7 +1665,23 @@ export function VetChatPage() {
                   {pendingFile ? (
                     <div className="tg-attach-preview">
                       {pendingPreview ? (
-                        <img src={pendingPreview} alt="" className="tg-attach-thumb" />
+                        (pendingFile.type || '').startsWith('video/') ? (
+                          <video
+                            src={pendingPreview}
+                            className="tg-attach-thumb tg-attach-thumb--video"
+                            muted
+                            playsInline
+                          />
+                        ) : (pendingFile.type || '').startsWith('audio/') ? (
+                          <audio
+                            src={pendingPreview}
+                            className="tg-attach-thumb tg-attach-thumb--audio"
+                            controls
+                            preload="metadata"
+                          />
+                        ) : (
+                          <img src={pendingPreview} alt="" className="tg-attach-thumb" />
+                        )
                       ) : (
                         <span className="tg-attach-name">📎 {pendingFile.name}</span>
                       )}
@@ -1625,11 +1696,18 @@ export function VetChatPage() {
                     </div>
                   ) : null}
                   <div className="tg-composer-shell">
+                    <ChatMediaCaptureProvider
+                      disabled={sending}
+                      onOccupiedChange={setCaptureOccupied}
+                      onError={(msg) => setSendError(msg)}
+                      onSend={sendCapturedMedia}
+                    >
                     <EmojiPicker
-                      open={emojiOpen}
+                      open={emojiOpen && !captureOccupied}
                       onClose={() => setEmojiOpen(false)}
                       onPick={insertEmoji}
                     />
+                    {captureOccupied ? null : (
                     <form
                       className="tg-composer"
                       dir="ltr"
@@ -1694,16 +1772,22 @@ export function VetChatPage() {
                         enterKeyHint="send"
                         data-testid="vet-chat-input"
                       />
-                      <button
-                        type="submit"
-                        className={`tg-send${sending ? ' is-sending' : ''}`}
-                        disabled={(!draft.trim() && !pendingFile) || sending}
-                        aria-label="ارسال"
-                        data-testid="vet-chat-send"
-                      >
-                        {sending ? <Loader2 size={18} className="tg-spin" /> : <Send size={18} />}
-                      </button>
+                      {draft.trim() || pendingFile ? (
+                        <button
+                          type="submit"
+                          className={`tg-send${sending ? ' is-sending' : ''}`}
+                          disabled={(!draft.trim() && !pendingFile) || sending}
+                          aria-label="ارسال"
+                          data-testid="vet-chat-send"
+                        >
+                          {sending ? <Loader2 size={18} className="tg-spin" /> : <Send size={18} />}
+                        </button>
+                      ) : (
+                        <ChatMediaCaptureTriggers />
+                      )}
                     </form>
+                    )}
+                    </ChatMediaCaptureProvider>
                   </div>
                 </>
               ) : (
