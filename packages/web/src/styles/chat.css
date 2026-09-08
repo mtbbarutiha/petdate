@@ -282,14 +282,16 @@
   padding: 0 0.55rem 0.35rem !important;
 }
 .tg-chat-list-accept,
-.tg-chat-list-reject {
+.tg-chat-list-reject,
+.tg-chat-list-profile {
   min-height: 34px !important;
   border-radius: 11px !important;
   font-size: 0.76rem !important;
   transition: transform 0.15s ease, filter 0.15s ease;
 }
 .tg-chat-list-accept:not(:disabled):active,
-.tg-chat-list-reject:not(:disabled):active {
+.tg-chat-list-reject:not(:disabled):active,
+.tg-chat-list-profile:not(:disabled):active {
   transform: scale(0.97);
 }
 .tg-chat-list-accept {
@@ -300,6 +302,17 @@
   color: #b91c1c !important;
   background: rgba(198, 40, 40, 0.06) !important;
   border-color: rgba(185, 28, 28, 0.22) !important;
+}
+.tg-chat-list-profile {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  color: #0f766e !important;
+  background: rgba(13, 148, 136, 0.08) !important;
+  border: 1px solid rgba(13, 148, 136, 0.22) !important;
+  cursor: pointer;
+  font-weight: 700;
 }
 
 /* Empty states — calm, on-brand, denser */
@@ -646,7 +659,8 @@
   margin-top: 4px;
 }
 .tg-request-accept,
-.tg-request-reject {
+.tg-request-reject,
+.tg-request-profile {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -660,7 +674,8 @@
   transition: transform 0.15s ease, filter 0.15s ease;
 }
 .tg-request-accept:not(:disabled):active,
-.tg-request-reject:not(:disabled):active {
+.tg-request-reject:not(:disabled):active,
+.tg-request-profile:not(:disabled):active {
   transform: scale(0.97);
 }
 .tg-request-accept {
@@ -672,8 +687,15 @@
   background: rgba(198, 40, 40, 0.09);
   color: var(--tg-danger, #c62828);
 }
+.tg-request-profile {
+  grid-column: 1 / -1;
+  background: rgba(13, 148, 136, 0.08);
+  color: #0f766e;
+  border: 1px solid rgba(13, 148, 136, 0.22);
+}
 .tg-request-accept:disabled,
-.tg-request-reject:disabled {
+.tg-request-reject:disabled,
+.tg-request-profile:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }

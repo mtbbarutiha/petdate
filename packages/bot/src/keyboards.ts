@@ -837,11 +837,14 @@ export function fromPetKeyboard(pets: PetProfile[], toPetId: number): InlineKeyb
 }
 
 export function playdateActionKeyboard(requestId: number): InlineKeyboard {
+  // callback_data budget: playdate:owner:<id> ≪ Telegram 64-byte limit
   return new InlineKeyboard()
     .text('✅ قبول', `playdate:accept:${requestId}`)
     .success()
     .text('❌ رد', `playdate:reject:${requestId}`)
-    .danger();
+    .danger()
+    .row()
+    .text('👤 مشاهده پروفایل صاحب پت', `playdate:owner:${requestId}`);
 }
 
 /** تأیید ارسال مجدد درخواست همبازی بعد از انقضا */

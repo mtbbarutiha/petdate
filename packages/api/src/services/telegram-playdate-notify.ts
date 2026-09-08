@@ -244,11 +244,19 @@ export async function notifyPlaydateRequestTelegram(opts: {
     .join('\n')
     .slice(0, 1024);
 
+  // Same layout as bot playdateActionKeyboard — accept/reject + owner profile.
+  // callback_data: playdate:owner:<id> fits Telegram's 64-byte limit.
   const reply_markup = {
     inline_keyboard: [
       [
         { text: '✅ قبول', callback_data: `playdate:accept:${opts.requestId}` },
         { text: '❌ رد', callback_data: `playdate:reject:${opts.requestId}` },
+      ],
+      [
+        {
+          text: '👤 مشاهده پروفایل صاحب پت',
+          callback_data: `playdate:owner:${opts.requestId}`,
+        },
       ],
     ],
   };

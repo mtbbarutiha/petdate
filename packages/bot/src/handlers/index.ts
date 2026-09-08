@@ -40,6 +40,7 @@ import {
   handlePlaydateAsk,
   handlePlaydateCancel,
   handlePlaydateFrom,
+  handlePlaydateOwnerProfile,
   handlePlaydateResend,
   handlePlaydateSend,
   handleRequests,
@@ -380,6 +381,9 @@ export function registerHandlers(bot: Bot): void {
   );
   bot.callbackQuery(/^playdate:reject:(\d+)$/, (ctx) =>
     handlePlaydateAction(ctx, Number(ctx.match![1]), 'reject')
+  );
+  bot.callbackQuery(/^playdate:owner:(\d+)$/, (ctx) =>
+    handlePlaydateOwnerProfile(ctx, Number(ctx.match![1]))
   );
   bot.callbackQuery(/^playdate:enterchat:(\d+)$/, (ctx) =>
     enterOwnerChatFromCallback(ctx, Number(ctx.match![1]))
