@@ -357,9 +357,11 @@ export async function handleStart(ctx: Context): Promise<void> {
 
     const roles = normalizeRoles(user.roles, user.role);
 
-    // اگر چت همبازی فعال (پذیرفته‌شده و قطع‌نشده) هست، منوی اصلی نشان نده
-    if (roles.length && (await resumeOwnerChatOnStart(ctx))) {
-      return;
+    // Always show main menu on /start. Soft-notify if a playdate chat is still open.
+    if (roles.length) {
+      await resumeOwnerChatOnStart(ctx).catch((err) =>
+        console.warn('resumeOwnerChatOnStart failed', err)
+      );
     }
 
     await upsertSession(telegramId, {

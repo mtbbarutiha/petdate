@@ -49,58 +49,39 @@ function ownerChatReplyKeyboard() {
 }
 
 /**
- * Sticky ReplyKeyboard push — Telegram rejects ZWNJ/ZWSP as empty text.
- * Prefer Word Joiner, then visible fallbacks.
+ * Sticky ReplyKeyboard push was removed: send+delete clears the menu on many clients.
+ * Keyboard must stay on the content message (no carrier delete afterward).
  */
-async function pushOwnerChatKeyboard(chatId: string): Promise<boolean> {
-  const keyboard = ownerChatReplyKeyboard();
-  for (const carrier of ['\u2060', '·', '.', '-'] as const) {
-    const sent = await telegramCall('sendMessage', {
-      chat_id: chatId,
-      text: carrier,
-      reply_markup: keyboard,
-    });
-    if (!sent.ok || sent.messageId == null) continue;
-    await telegramCall('deleteMessage', { chat_id: chatId, message_id: sent.messageId });
-    return true;
-  }
-  return false;
-}
-
 async function notifyOwnerChatOpen(
   chatId: string,
   text: string,
   who: string
 ): Promise<boolean> {
   const keyboard = ownerChatReplyKeyboard();
-  // Keyboard on content first — sticky send+delete alone can leave no menu.
   const intro = await telegramCall('sendMessage', {
     chat_id: chatId,
     text,
     parse_mode: 'HTML',
     reply_markup: keyboard,
   });
-  if (!intro.ok) {
-    const plain = await telegramCall('sendMessage', {
-      chat_id: chatId,
-      text,
-      parse_mode: 'HTML',
-    });
-    if (!plain.ok) {
-      console.warn(`startOwnerChatFromApi: intro failed (${who})`, plain.description);
-      return false;
-    }
+  if (intro.ok) return true;
+
+  const plain = await telegramCall('sendMessage', {
+    chat_id: chatId,
+    text,
+    parse_mode: 'HTML',
+  });
+  if (!plain.ok) {
+    console.warn(`startOwnerChatFromApi: intro failed (${who})`, plain.description);
+    return false;
   }
-  const kbOk = await pushOwnerChatKeyboard(chatId);
-  if (!kbOk) {
-    const fallback = await telegramCall('sendMessage', {
-      chat_id: chatId,
-      text: '👋 به همبازی سلام کن!',
-      reply_markup: keyboard,
-    });
-    if (!fallback.ok) {
-      console.warn(`startOwnerChatFromApi: keyboard failed (${who})`, fallback.description);
-    }
+  const fallback = await telegramCall('sendMessage', {
+    chat_id: chatId,
+    text: '👋 به همبازی سلام کن!',
+    reply_markup: keyboard,
+  });
+  if (!fallback.ok) {
+    console.warn(`startOwnerChatFromApi: keyboard failed (${who})`, fallback.description);
   }
   return true;
 }

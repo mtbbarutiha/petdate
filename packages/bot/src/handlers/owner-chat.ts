@@ -232,9 +232,8 @@ export async function startOwnerChat(
   const chatKeyboard = ownerChatReplyKeyboard(false);
 
   /**
-   * Keyboard MUST be on the content message — sticky send+delete alone can leave
-   * clients with no ReplyKeyboard (carrier rejection or delete drops markup).
-   * Sticky push is best-effort for Android float mitigation.
+   * Keyboard MUST stay on the content message. Never send+delete a carrier
+   * afterward — deleting that message clears ReplyKeyboard on many clients.
    */
   const openChatFor = async (telegramId: string, intro: string, who: string): Promise<boolean> => {
     try {
@@ -242,6 +241,7 @@ export async function startOwnerChat(
         parse_mode: 'HTML',
         reply_markup: chatKeyboard,
       });
+      return true;
     } catch (err) {
       console.warn(`owner chat intro+keyboard failed (${who}):`, err);
       try {
@@ -250,18 +250,12 @@ export async function startOwnerChat(
         console.warn(`owner chat intro failed (${who}):`, err2);
         return false;
       }
-    }
-    const kbOk = await pushReplyKeyboardToChat(ctx.api, telegramId, chatKeyboard);
-    if (!kbOk) {
-      try {
-        await ctx.api.sendMessage(telegramId, '👋 به همبازی سلام کن!', {
-          reply_markup: chatKeyboard,
-        });
-      } catch (err) {
-        console.warn(`owner chat keyboard fallback failed (${who}):`, err);
+      const kbOk = await pushReplyKeyboardToChat(ctx.api, telegramId, chatKeyboard);
+      if (!kbOk) {
+        console.warn(`owner chat keyboard fallback failed (${who})`);
       }
+      return true;
     }
-    return true;
   };
 
   const accepterOk = await openChatFor(accepterTg, accepterIntro, 'accepter');
@@ -563,27 +557,22 @@ export async function ensureOwnerChatSession(
   return { session, active, resumed: true };
 }
 
-/** برای /start — اگر چت فعال است، کیبورد چت را نشان بده */
+/** برای /start — اگر چت فعال است فقط اطلاع بده؛ منوی اصلی را جایگزین نکن */
 export async function resumeOwnerChatOnStart(ctx: Context): Promise<boolean> {
   const from = ctx.from;
   if (!from) return false;
-  const me = await getCtxUser(ctx);
-  const ensured = await ensureOwnerChatSession(String(from.id), me?.id);
-  if (!ensured) return false;
+  const active = await getActiveOwnerChat(String(from.id));
+  if (!active?.peerTelegramId) return false;
 
-  const { active, session } = ensured;
-  const secure = !!session.ownerChatSecure;
   await ctx.reply(
     [
-      '💬 <b>چت همبازی فعال است</b>',
-      '',
-      active.peerName ? `طرف مقابل: <b>${escapeHtml(active.peerName)}</b>` : null,
-      'پیام‌هایت مستقیم به طرف مقابل می‌رسد.',
-      `برای قطع: ${OWNER_CHAT_BTNS.end}`,
+      '💬 چت همبازی هنوز فعاله.',
+      active.peerName ? `طرف مقابل: ${active.peerName}` : null,
+      'از منوی اصلی استفاده کن؛ برای ادامه چت همین‌جا پیام عادی بفرست.',
+      `قطع چت: ${OWNER_CHAT_BTNS.end}`,
     ]
       .filter(Boolean)
-      .join('\n'),
-    { parse_mode: 'HTML', reply_markup: ownerChatReplyKeyboard(secure) }
+      .join('\n')
   );
   return true;
 }
