@@ -1,7 +1,8 @@
 /**
- * کیبورد فیک تلگرام: اگر ReplyKeyboard روی پیامِ ماندگار در تاریخچه باشد،
- * روی بعضی کلاینت‌ها (اندروید) هنگام اسکرول وسط صفحه شناور می‌ماند.
- * این میدلور کیبورد را از پیام محتوا جدا می‌کند و با send+delete پایین می‌چسباند.
+ * کیبورد فیک تلگرام: اگر ReplyKeyboard فقط روی پیامِ حذف‌شده (sticky push)
+ * ست شود، بعضی کلاینت‌ها کیبورد را هم با حذف پیام از دست می‌دهند.
+ * این میدلور کیبورد را روی پیام محتوا نگه می‌دارد و سپس sticky push را
+ * به‌صورت best-effort برای کاهش float اندروید اجرا می‌کند.
  */
 import type { Context, MiddlewareFn } from 'grammy';
 import type { Keyboard } from 'grammy';
@@ -19,13 +20,6 @@ function extractReplyKeyboard(other: unknown): Keyboard | null {
   return null;
 }
 
-function stripKeyboard<T>(other: T): T {
-  if (!other || typeof other !== 'object') return other;
-  const copy = { ...(other as Record<string, unknown>) };
-  delete copy.reply_markup;
-  return copy as T;
-}
-
 function wrapReplyMethod<A extends unknown[]>(
   ctx: Context,
   orig: (...args: A) => Promise<unknown>
@@ -33,10 +27,13 @@ function wrapReplyMethod<A extends unknown[]>(
   return async (...args: A) => {
     const last = args[args.length - 1];
     const kb = extractReplyKeyboard(last);
-    if (!kb) return orig(...args);
-    const strippedArgs = [...args.slice(0, -1), stripKeyboard(last)] as A;
-    const msg = await orig(...strippedArgs);
-    await pushReplyKeyboard(ctx, kb);
+    // Always send content with reply_markup intact — source of truth for the menu.
+    const msg = await orig(...args);
+    if (kb) {
+      // Best-effort re-stick at bottom (Android float mitigation). Failure must not
+      // remove the keyboard already attached to the content message.
+      await pushReplyKeyboard(ctx, kb).catch(() => undefined);
+    }
     return msg;
   };
 }

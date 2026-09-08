@@ -231,27 +231,28 @@ export async function startOwnerChat(
 
   const chatKeyboard = ownerChatReplyKeyboard(false);
 
-  /** Content without reply_markup + sticky keyboard push (survives Android float fix). */
+  /**
+   * Keyboard MUST be on the content message — sticky send+delete alone can leave
+   * clients with no ReplyKeyboard (carrier rejection or delete drops markup).
+   * Sticky push is best-effort for Android float mitigation.
+   */
   const openChatFor = async (telegramId: string, intro: string, who: string): Promise<boolean> => {
     try {
-      await ctx.api.sendMessage(telegramId, intro, { parse_mode: 'HTML' });
+      await ctx.api.sendMessage(telegramId, intro, {
+        parse_mode: 'HTML',
+        reply_markup: chatKeyboard,
+      });
     } catch (err) {
-      console.warn(`owner chat intro failed (${who}):`, err);
-      // Fallback: try with keyboard on the content message so user still enters chat UI.
+      console.warn(`owner chat intro+keyboard failed (${who}):`, err);
       try {
-        await ctx.api.sendMessage(telegramId, intro, {
-          parse_mode: 'HTML',
-          reply_markup: chatKeyboard,
-        });
-        return true;
+        await ctx.api.sendMessage(telegramId, intro, { parse_mode: 'HTML' });
       } catch (err2) {
-        console.warn(`owner chat intro+keyboard failed (${who}):`, err2);
+        console.warn(`owner chat intro failed (${who}):`, err2);
         return false;
       }
     }
     const kbOk = await pushReplyKeyboardToChat(ctx.api, telegramId, chatKeyboard);
     if (!kbOk) {
-      // Last resort: attach keyboard to a short visible prompt so chat mode is obvious.
       try {
         await ctx.api.sendMessage(telegramId, '👋 به همبازی سلام کن!', {
           reply_markup: chatKeyboard,

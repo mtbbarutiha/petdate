@@ -54,7 +54,7 @@ function ownerChatReplyKeyboard() {
  */
 async function pushOwnerChatKeyboard(chatId: string): Promise<boolean> {
   const keyboard = ownerChatReplyKeyboard();
-  for (const carrier of ['\u2060', '·', '.'] as const) {
+  for (const carrier of ['\u2060', '·', '.', '-'] as const) {
     const sent = await telegramCall('sendMessage', {
       chat_id: chatId,
       text: carrier,
@@ -73,25 +73,23 @@ async function notifyOwnerChatOpen(
   who: string
 ): Promise<boolean> {
   const keyboard = ownerChatReplyKeyboard();
-  // Content without keyboard + sticky push (parity with bot sticky middleware).
+  // Keyboard on content first — sticky send+delete alone can leave no menu.
   const intro = await telegramCall('sendMessage', {
     chat_id: chatId,
     text,
     parse_mode: 'HTML',
+    reply_markup: keyboard,
   });
   if (!intro.ok) {
-    // Fallback: keyboard on content so the peer still enters chat UI.
-    const withKb = await telegramCall('sendMessage', {
+    const plain = await telegramCall('sendMessage', {
       chat_id: chatId,
       text,
       parse_mode: 'HTML',
-      reply_markup: keyboard,
     });
-    if (!withKb.ok) {
-      console.warn(`startOwnerChatFromApi: intro failed (${who})`, withKb.description);
+    if (!plain.ok) {
+      console.warn(`startOwnerChatFromApi: intro failed (${who})`, plain.description);
       return false;
     }
-    return true;
   }
   const kbOk = await pushOwnerChatKeyboard(chatId);
   if (!kbOk) {
