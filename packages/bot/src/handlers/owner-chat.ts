@@ -706,13 +706,34 @@ export async function handleOwnerChatRelay(ctx: Context): Promise<boolean> {
   }
 
   const peer = session.ownerChatPeerTelegramId;
-  const playdateId = session.ownerChatPlaydateId;
+  let playdateId = session.ownerChatPlaydateId;
   const secure = !!session.ownerChatSecure;
   const protect = protectOpts(secure);
 
   // Messages the API forwarded from the web app — do not re-relay
   if (text?.startsWith('💬 پیام همبازی از')) {
     return false;
+  }
+
+  /** Resolve playdate id from Redis session or live API (web↔TG sync). */
+  async function resolvePlaydateId(): Promise<number | undefined> {
+    if (playdateId && Number.isFinite(playdateId) && playdateId > 0) return playdateId;
+    const active = await getActiveOwnerChat(String(from!.id));
+    if (active?.playdateId && Number.isFinite(active.playdateId) && active.playdateId > 0) {
+      playdateId = active.playdateId;
+      await upsertSession(String(from!.id), {
+        ownerChatPlaydateId: active.playdateId,
+        ownerChatPeerTelegramId: active.peerTelegramId || peer,
+        ownerChatPeerUserId: active.peerUserId,
+        ownerChatMyPetId: active.myPetId,
+        ownerChatPeerPetId: active.peerPetId,
+        ownerChatSecure: Boolean(active.chatSecure),
+        step: 'owner_chat',
+      });
+      return playdateId;
+    }
+    console.warn('owner chat persist skipped: no playdateId', { telegramId: from!.id });
+    return undefined;
   }
 
   async function persistMedia(
@@ -722,10 +743,14 @@ export async function handleOwnerChatRelay(ctx: Context): Promise<boolean> {
     mimeType?: string,
     fileName?: string
   ) {
-    if (!playdateId) return;
+    const pdId = await resolvePlaydateId();
+    if (!pdId) return;
     const me = await getCtxUser(ctx);
-    if (!me?.id) return;
-    await postPlaydateChatMessage(playdateId, me.id, caption || '', {
+    if (!me?.id) {
+      console.warn('owner chat persist skipped: no sender user', { playdateId: pdId });
+      return;
+    }
+    await postPlaydateChatMessage(pdId, me.id, caption || '', {
       mediaKind: kind,
       telegramFileId: fileId,
       mimeType,
@@ -734,8 +759,9 @@ export async function handleOwnerChatRelay(ctx: Context): Promise<boolean> {
   }
 
   async function rememberPeerDelivery(messageId?: number) {
-    if (!playdateId || !messageId) return;
-    await postPlaydateChatTgRefs(playdateId, [
+    const pdId = await resolvePlaydateId();
+    if (!pdId || !messageId) return;
+    await postPlaydateChatTgRefs(pdId, [
       { telegramChatId: String(peer), messageId },
     ]);
   }
@@ -837,11 +863,14 @@ export async function handleOwnerChatRelay(ctx: Context): Promise<boolean> {
     if (text) {
       const sent = await ctx.api.sendMessage(peer, text, protect);
       await rememberPeerDelivery(sent.message_id);
-      // Persist so web ChatPage polling sees Telegram → web
-      if (playdateId) {
+      // Persist so web ChatPage (WS + poll) sees Telegram → web
+      const pdId = await resolvePlaydateId();
+      if (pdId) {
         const me = await getCtxUser(ctx);
         if (me?.id) {
-          await postPlaydateChatMessage(playdateId, me.id, text);
+          await postPlaydateChatMessage(pdId, me.id, text);
+        } else {
+          console.warn('owner chat text persist skipped: no sender user', { playdateId: pdId });
         }
       }
       return true;
