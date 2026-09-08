@@ -73,7 +73,7 @@ const HERO_SLIDES: {
     cta: { kind: 'hash', href: '#services', label: 'کشف کن' },
   },
   {
-    img: `${P}/1.jpg`,
+    img: `${P}/1-three-dogs.jpg`,
     kicker: 'عشق ما حیوانات‌اند',
     title: 'عشق و مراقبت، در کنار پت شما',
     lead: 'دامپزشکان قابل‌اعتماد که پت‌تان را در اولویت می‌گذارند.',
