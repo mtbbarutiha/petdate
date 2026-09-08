@@ -124,6 +124,25 @@ export function installConsoleErrorBridge(source = 'api'): void {
   };
 }
 
+/** Session probes that routinely 401 when the browser has no (or stale) web token. */
+function isExpectedUnauthNoise(req: Request, statusCode: number): boolean {
+  if (statusCode !== 401) return false;
+  const path = req.path || '';
+  const url = req.originalUrl || path;
+  if (path.startsWith('/api/admin') || url.startsWith('/api/admin')) return true;
+  // Logged-out landing / dock / wallet chip / role switch — not actionable ops errors.
+  const expected = [
+    '/api/auth/me',
+    '/api/auth/wallet',
+    '/api/auth/roles',
+    '/api/auth/vet-online',
+    '/api/auth/visit-fee',
+    '/api/shop/my-orders',
+    '/api/shop/checkout/card-status',
+  ];
+  return expected.some((p) => path === p || path.startsWith(`${p}/`) || url.startsWith(p));
+}
+
 /** Express middleware: log 4xx/5xx responses (except common auth noise). */
 export function responseErrorLogger(req: Request, res: Response, next: NextFunction): void {
   const started = Date.now();
@@ -131,12 +150,7 @@ export function responseErrorLogger(req: Request, res: Response, next: NextFunct
     if (res.statusCode < 400) return;
     // SPA / static 404s and unauthenticated admin probes are noise.
     if (res.statusCode === 404 && !req.path.startsWith('/api/')) return;
-    if (
-      res.statusCode === 401 &&
-      (req.path.startsWith('/api/admin') || req.originalUrl.startsWith('/api/admin'))
-    ) {
-      return;
-    }
+    if (isExpectedUnauthNoise(req, res.statusCode)) return;
     logAppEvent({
       level: res.statusCode >= 500 ? 'error' : 'warn',
       source: 'api',

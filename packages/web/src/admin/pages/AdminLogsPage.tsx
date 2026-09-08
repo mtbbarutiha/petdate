@@ -75,6 +75,17 @@ export function AdminLogsPage() {
     }
   }
 
+  async function clearAll() {
+    if (!window.confirm('همهٔ لاگ‌های ثبت‌شده پاک شوند؟ این عمل برگشت‌ناپذیر است.')) return;
+    try {
+      await adminFetch('/api/admin/logs', { method: 'DELETE' });
+      silentRef.current = false;
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'پاک‌سازی ناموفق بود');
+    }
+  }
+
   return (
     <div className="admin-page">
       <header className="admin-header">
@@ -115,6 +126,10 @@ export function AdminLogsPage() {
           <button type="button" className="admin-btn admin-btn--danger" onClick={() => void clearOld()}>
             <Trash2 size={16} />
             پاک‌سازی ۷روز
+          </button>
+          <button type="button" className="admin-btn admin-btn--danger" onClick={() => void clearAll()}>
+            <Trash2 size={16} />
+            پاک کردن همه
           </button>
         </div>
       </header>

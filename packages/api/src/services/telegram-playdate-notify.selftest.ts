@@ -71,10 +71,24 @@ async function main() {
     petPhotoStorageKeyFromUrl,
     resolvePlaydateNotifyPhoto,
     buildPlaydateNotifyCompositePhoto,
+    isSafeTelegramPhotoRef,
   } = await import('./telegram-playdate-notify');
   const { ownerOverlayPosition } = await import('./nearby-cards');
   const { ensureUserAvatarsRoot, resolveUserAvatarPath } = await import('./user-avatar-store');
   const { ensurePetPhotosRoot, resolvePetPhotoPath } = await import('./pet-photo-store');
+
+  assert.equal(isSafeTelegramPhotoRef(''), false);
+  assert.equal(isSafeTelegramPhotoRef('/api/pets/photos/1/a.jpg'), false);
+  assert.equal(isSafeTelegramPhotoRef('https://'), false);
+  assert.equal(isSafeTelegramPhotoRef('https://./x.jpg'), false);
+  assert.equal(isSafeTelegramPhotoRef('http://example.com/x.jpg'), false);
+  assert.equal(
+    isSafeTelegramPhotoRef(
+      'https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&w=800&q=80'
+    ),
+    true
+  );
+  assert.equal(isSafeTelegramPhotoRef('AgACAgQAAxkBAAI'), true);
 
   const photoDir = path.join(tmpRoot, 'pet-photos', '38');
   fs.mkdirSync(photoDir, { recursive: true });

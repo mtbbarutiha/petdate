@@ -94,6 +94,36 @@ export type ResolvedNotifyPhoto =
   | { kind: 'upload'; buffer: Buffer; filename: string; contentType: string };
 
 /**
+ * Telegram sendPhoto accepts https URLs (with a real host) or opaque file_ids.
+ * Relative paths / empty hosts → "invalid file HTTP URL specified: URL host is empty".
+ */
+export function isSafeTelegramPhotoRef(value: string): boolean {
+  const v = String(value ?? '').trim();
+  if (!v) return false;
+  if (/^https:\/\//i.test(v)) {
+    try {
+      const u = new URL(v);
+      const host = u.hostname.trim();
+      // Reject empty / placeholder hosts Telegram also rejects.
+      if (!host || host === '.' || host === 'localhost') return false;
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  // http://, protocol-relative, or site-relative paths are not safe to hand Telegram.
+  if (/^https?:\/\//i.test(v) || v.startsWith('/') || v.startsWith('//')) return false;
+  // Opaque file_id — reject obvious path-like leftovers.
+  if (v.includes('/') || v.includes('\\') || /\s/.test(v)) return false;
+  return v.length >= 8;
+}
+
+function safePhotoRef(pet: PetProfile, candidate: string): ResolvedNotifyPhoto {
+  if (isSafeTelegramPhotoRef(candidate)) return { kind: 'ref', value: candidate.trim() };
+  return { kind: 'ref', value: defaultPetPhoto(pet) };
+}
+
+/**
  * Turn pets.image_url into something Telegram sendPhoto accepts.
  * Relative `/api/pets/photos/...` paths have no host — Telegram rejects them
  * with "invalid file HTTP URL specified: URL host is empty". Prefer uploading
@@ -104,7 +134,7 @@ export function resolvePlaydateNotifyPhoto(pet: PetProfile): ResolvedNotifyPhoto
   if (!raw) return { kind: 'ref', value: defaultPetPhoto(pet) };
 
   if (/^https?:\/\//i.test(raw)) {
-    return { kind: 'ref', value: raw };
+    return safePhotoRef(pet, raw);
   }
 
   const storageKey = petPhotoStorageKeyFromUrl(raw);
@@ -123,19 +153,19 @@ export function resolvePlaydateNotifyPhoto(pet: PetProfile): ResolvedNotifyPhoto
       }
     }
     const origin = publicHttpsOrigin();
-    if (origin) return { kind: 'ref', value: `${origin}${raw}` };
+    if (origin && raw.startsWith('/')) return safePhotoRef(pet, `${origin}${raw}`);
     return { kind: 'ref', value: defaultPetPhoto(pet) };
   }
 
   // Other site-relative paths (avatars, proxied images, …)
   if (raw.startsWith('/')) {
     const origin = publicHttpsOrigin();
-    if (origin) return { kind: 'ref', value: `${origin}${raw}` };
+    if (origin) return safePhotoRef(pet, `${origin}${raw}`);
     return { kind: 'ref', value: defaultPetPhoto(pet) };
   }
 
   // Opaque Telegram file_id stored by the bot
-  return { kind: 'ref', value: raw };
+  return safePhotoRef(pet, raw);
 }
 
 /**
@@ -317,7 +347,7 @@ export async function notifyPlaydateRequestTelegram(opts: {
       caption,
       replyMarkup: reply_markup,
     });
-  } else {
+  } else if (isSafeTelegramPhotoRef(photo.value)) {
     sentPhoto = await telegramCall('sendPhoto', {
       chat_id: tgId,
       photo: photo.value,
@@ -325,6 +355,11 @@ export async function notifyPlaydateRequestTelegram(opts: {
       parse_mode: 'HTML',
       reply_markup,
     });
+  } else {
+    console.warn(
+      'telegram sendPhoto skipped unsafe photo ref:',
+      String(photo.value ?? '').slice(0, 80)
+    );
   }
   if (sentPhoto) return true;
 
