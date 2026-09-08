@@ -99,9 +99,14 @@ function isUsableTelegramId(telegramId: string | null | undefined): boolean {
 
 /**
  * Web/API → Telegram fan-out for a playdate chat line.
- * Always delivers one copy to the peer. Also echoes a labeled copy to the
- * sender's own bot chat (web→self sync). Callers that set skipTelegram must
- * not invoke this — the bot already shows the sender's typed line.
+ * Delivers exactly one copy to the peer's bot chat.
+ *
+ * Intentionally does NOT echo to the sender's own Telegram: Bot API messages
+ * always appear as incoming (left) from the bot, so a self-echo cannot look
+ * like a normal outgoing (right) bubble. Labeled «شما» echos were confusing;
+ * unlabeled left-side copies would look like peer messages. Own lines typed
+ * in the bot already appear correctly on the right. Callers that set
+ * skipTelegram must not invoke this — the bot already shows the sender's typed line.
  */
 function fanOutPlaydateChatTelegram(opts: {
   playdate: NonNullable<ReturnType<typeof dbService.getPlaydateRequest>>;
@@ -124,8 +129,11 @@ function fanOutPlaydateChatTelegram(opts: {
   const sender = dbService.getUserById(senderUserId);
   const senderName = sender?.name || 'همبازی';
   const peerTg = normalizeTelegramId(peer?.telegramId);
-  const senderTg = normalizeTelegramId(sender?.telegramId);
-  const common = {
+
+  if (!peerTg) return;
+
+  void notifyPlaydateChatTelegram({
+    toTelegramId: peerTg,
     senderName,
     text: opts.text,
     playdateId: playdate.id,
@@ -134,22 +142,7 @@ function fanOutPlaydateChatTelegram(opts: {
     storageKey: opts.storageKey,
     mimeType: opts.mimeType,
     fileName: opts.fileName,
-  };
-
-  if (peerTg) {
-    void notifyPlaydateChatTelegram({
-      ...common,
-      toTelegramId: peerTg,
-    });
-  }
-  // Self-echo so the sender's bot session mirrors what they sent on web.
-  if (senderTg && senderTg !== peerTg) {
-    void notifyPlaydateChatTelegram({
-      ...common,
-      toTelegramId: senderTg,
-      asSelf: true,
-    });
-  }
+  });
 }
 
 /** Fire-and-forget Telegram notify to recipient (bot-equivalent). */
