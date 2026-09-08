@@ -4276,6 +4276,9 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   /* Desktop / fallback: layout viewport. Mobile uses bottom: --tg-kb-inset only. */
   height: 100dvh;
   max-height: 100dvh;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   margin: 0;
   color: var(--tg-ink);
   background:
@@ -4283,6 +4286,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
     radial-gradient(90% 60% at 0% 100%, rgba(11, 165, 242, 0.1), transparent 45%),
     linear-gradient(160deg, #f7f8fb, #eef2f7);
   overflow: hidden;
+  overflow-x: clip;
   border: 0;
   border-radius: 0;
   font-family: var(--font-body, 'Vazirmatn', system-ui, sans-serif);
@@ -4513,11 +4517,17 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   position: relative;
   z-index: 50;
   overflow: visible;
+  /* RTL: without min-width:0, wide status-strip/header content expands the
+   * grid track past the viewport and overflow:hidden clips the physical LEFT. */
+  min-width: 0;
+  max-width: 100%;
 }
 
 .tg-thread-scroll {
   grid-area: thread-scroll;
+  min-width: 0;
   min-height: 0;
+  max-width: 100%;
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -4527,6 +4537,8 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 .tg-thread-foot {
   grid-area: thread-foot;
   flex: 0 0 auto;
+  min-width: 0;
+  max-width: 100%;
   z-index: 3;
 }
 
@@ -4570,6 +4582,9 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   /* Above wallpaper so the ⋮ / end-chat menu is not covered on mobile */
   position: relative;
   z-index: 40;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .tg-chat-back,
@@ -4652,11 +4667,25 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   color: #fff;
 }
 
+.tg-status-strip {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  padding: 8px 12px;
+}
+
 .tg-status-strip--with-action {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+}
+.tg-status-strip--with-action > span {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.45;
 }
 .tg-end-chat-chip {
   flex-shrink: 0;
@@ -4670,6 +4699,10 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   color: #fff;
   background: #d64545;
   min-height: 34px;
+  max-width: 42%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .tg-end-chat-chip:disabled {
   opacity: 0.6;

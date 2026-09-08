@@ -876,6 +876,8 @@ html.tg-chat-open body {
     right: 0 !important;
     bottom: 0 !important;
     width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
     height: auto !important;
     max-height: none !important;
     min-height: 0 !important;
@@ -886,14 +888,17 @@ html.tg-chat-open body {
     overscroll-behavior: none;
     touch-action: manipulation;
     display: grid !important;
-    grid-template-columns: 1fr !important;
+    grid-template-columns: minmax(0, 1fr) !important;
     grid-template-rows: minmax(0, 1fr) !important;
+    overflow-x: clip !important;
   }
 
   .tg-chat .tg-chat-list,
   .tg-chat .tg-thread {
     height: 100% !important;
+    min-width: 0 !important;
     min-height: 0 !important;
+    max-width: 100% !important;
     max-height: 100% !important;
   }
 
@@ -917,16 +922,39 @@ html.tg-chat-open body {
     overflow: visible !important;
     position: relative !important;
     z-index: 60 !important;
+    /* Keep wide strip/header from expanding the RTL grid past the screen */
+    min-width: 0 !important;
+    max-width: 100% !important;
   }
 
   .tg-chat .tg-thread-scroll {
     grid-area: thread-scroll !important;
+    min-width: 0 !important;
     min-height: 0 !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
     overflow-y: auto !important;
     overscroll-behavior: contain;
     /* Extra room when keyboard is open so last bubbles clear the lifted foot */
     padding-bottom: var(--tg-kb-inset, 0px) !important;
     z-index: 1 !important;
+  }
+
+  .tg-chat .tg-thread-foot {
+    min-width: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .tg-chat .tg-status-strip,
+  .tg-chat .tg-secure-strip {
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .tg-chat .tg-chat-wallpaper {
+    /* Preserve equal L/R gutters for incoming (left) bubbles on RTL phones */
+    padding-inline: max(12px, env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px)) !important;
   }
 
   .tg-chat .tg-chat-header {
