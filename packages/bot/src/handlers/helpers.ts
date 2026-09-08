@@ -32,10 +32,11 @@ export function menuKeyboardFor(
 
 /**
  * Carrier texts for sticky ReplyKeyboard push (send + delete).
- * Telegram rejects ZWNJ/ZWSP/NBSP as "text must be non-empty" — use Word Joiner
- * first (invisible), then visible fallbacks.
+ * Prefer short visible chars Telegram accepts; Word Joiner last among deletable.
+ * Final fallback below keeps a short visible message so buttons never vanish.
  */
-const KEYBOARD_CARRIERS = ['\u2060', '·', '.'] as const;
+const KEYBOARD_CARRIERS = ['·', '.', '\u2060'] as const;
+const KEYBOARD_FALLBACK_TEXT = '📋';
 
 type TelegramApiLike = {
   sendMessage: (
@@ -46,9 +47,14 @@ type TelegramApiLike = {
   deleteMessage: (chatId: string | number, messageId: number) => Promise<unknown>;
 };
 
+async function sleep(ms: number): Promise<void> {
+  await new Promise((r) => setTimeout(r, ms));
+}
+
 /**
- * اعمال ReplyKeyboard روی یک chatId بدون پیام ماندگار.
- * برای طرف مقابل (requester) که ctx.chat او نیست هم قابل استفاده است.
+ * اعمال ReplyKeyboard روی یک chatId بدون پیام ماندگار (در صورت امکان).
+ * اگر همهٔ carrierها شکست بخورند، یک پیام کوتاه با کیبورد می‌فرستد و نگه می‌دارد
+ * تا کاربر بدون دکمه نماند.
  */
 export async function pushReplyKeyboardToChat(
   api: TelegramApiLike,
@@ -56,16 +62,40 @@ export async function pushReplyKeyboardToChat(
   keyboard: Keyboard
 ): Promise<boolean> {
   for (const carrier of KEYBOARD_CARRIERS) {
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        const msg = await api.sendMessage(chatId, carrier, { reply_markup: keyboard });
+        await api.deleteMessage(chatId, msg.message_id).catch(() => undefined);
+        return true;
+      } catch (err) {
+        const msg = (err as Error)?.message ?? String(err);
+        console.warn(
+          'pushReplyKeyboardToChat carrier failed',
+          JSON.stringify(carrier),
+          `attempt=${attempt}`,
+          msg
+        );
+        if (attempt < 3 && /network|ECONNRESET|ETIMEDOUT|socket/i.test(msg)) {
+          await sleep(400 * attempt);
+          continue;
+        }
+        break;
+      }
+    }
+  }
+
+  // Last resort: visible message kept — never leave the user without buttons
+  for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      const msg = await api.sendMessage(chatId, carrier, { reply_markup: keyboard });
-      await api.deleteMessage(chatId, msg.message_id).catch(() => undefined);
+      await api.sendMessage(chatId, KEYBOARD_FALLBACK_TEXT, { reply_markup: keyboard });
       return true;
     } catch (err) {
       console.warn(
-        'pushReplyKeyboardToChat carrier failed',
-        JSON.stringify(carrier),
+        'pushReplyKeyboardToChat fallback failed',
+        `attempt=${attempt}`,
         (err as Error)?.message ?? err
       );
+      await sleep(500 * attempt);
     }
   }
   return false;
@@ -78,11 +108,12 @@ export async function pushReplyKeyboardToChat(
  * در تاریخچه بماند، هنگام اسکرول کیبورد «فیک» وسط صفحه شناور می‌شود.
  * با ارسال + حذف فوری، کیبورد پایینِ چت می‌ماند و با اسکرول جابه‌جا نمی‌شود.
  */
-export async function pushReplyKeyboard(ctx: Context, keyboard: Keyboard): Promise<void> {
+export async function pushReplyKeyboard(ctx: Context, keyboard: Keyboard): Promise<boolean> {
   const chatId = ctx.chat?.id ?? ctx.from?.id;
-  if (chatId == null) return;
+  if (chatId == null) return false;
   const ok = await pushReplyKeyboardToChat(ctx.api, chatId, keyboard);
   if (!ok) console.warn('pushReplyKeyboard failed for all carriers', chatId);
+  return ok;
 }
 
 /** متن محتوا + کیبورد پایین بدون پیام فیک اسکرولی */

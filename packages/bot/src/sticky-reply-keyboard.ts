@@ -1,7 +1,9 @@
 /**
- * کیبورد فیک تلگرام: اگر ReplyKeyboard روی پیامِ ماندگار در تاریخچه باشد،
- * روی بعضی کلاینت‌ها (اندروید) هنگام اسکرول وسط صفحه شناور می‌ماند.
- * این میدلور کیبورد را از پیام محتوا جدا می‌کند و با send+delete پایین می‌چسباند.
+ * کیبورد فیک تلگرام: ReplyKeyboard را روی پیام محتوا نگه می‌دارد (تا دکمه‌ها نپرند)
+ * و در صورت امکان با send+delete پایین می‌چسباند تا روی اندروید وسط صفحه شناور نشود.
+ *
+ * قبلی: کیبورد از محتوا حذف می‌شد و فقط با carrier می‌رفت — اگر carrier/شبکه
+ * شکست می‌خورد کاربر بدون هیچ دکمه‌ای می‌ماند.
  */
 import type { Context, MiddlewareFn } from 'grammy';
 import type { Keyboard } from 'grammy';
@@ -19,13 +21,6 @@ function extractReplyKeyboard(other: unknown): Keyboard | null {
   return null;
 }
 
-function stripKeyboard<T>(other: T): T {
-  if (!other || typeof other !== 'object') return other;
-  const copy = { ...(other as Record<string, unknown>) };
-  delete copy.reply_markup;
-  return copy as T;
-}
-
 function wrapReplyMethod<A extends unknown[]>(
   ctx: Context,
   orig: (...args: A) => Promise<unknown>
@@ -33,10 +28,13 @@ function wrapReplyMethod<A extends unknown[]>(
   return async (...args: A) => {
     const last = args[args.length - 1];
     const kb = extractReplyKeyboard(last);
-    if (!kb) return orig(...args);
-    const strippedArgs = [...args.slice(0, -1), stripKeyboard(last)] as A;
-    const msg = await orig(...strippedArgs);
-    await pushReplyKeyboard(ctx, kb);
+    // Keep keyboard on the content message so buttons never vanish if sticky push fails.
+    const msg = await orig(...args);
+    if (kb) {
+      await pushReplyKeyboard(ctx, kb).catch((err) => {
+        console.warn('stickyReplyKeyboard push failed (content still has keyboard)', err);
+      });
+    }
     return msg;
   };
 }
