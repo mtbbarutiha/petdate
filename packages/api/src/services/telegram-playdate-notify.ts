@@ -12,7 +12,6 @@ import {
   mimeFromPetPhotoKey,
   resolvePetPhotoPath,
 } from './pet-photo-store';
-import { telegramFetch } from './telegram-http';
 
 function escapeHtml(value: string): string {
   return value
@@ -145,7 +144,7 @@ async function telegramCall(
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const res = await telegramFetch(`https://api.telegram.org/bot${token}/${method}`, {
+    const res = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
@@ -188,7 +187,7 @@ async function telegramSendPhotoUpload(opts: {
       new Blob([new Uint8Array(opts.buffer)], { type: opts.contentType || 'image/jpeg' }),
       opts.filename || 'pet.jpg'
     );
-    const res = await telegramFetch(`https://api.telegram.org/bot${token}/sendPhoto`, {
+    const res = await fetch(`https://api.telegram.org/bot${token}/sendPhoto`, {
       method: 'POST',
       body: form,
       signal: controller.signal,
