@@ -7,9 +7,11 @@
  * and clears obsolete Workbox caches.
  */
 
-const BUST_GENERATION = 'petdate-sw-20260907-web-perf-v13';
+const BUST_GENERATION = 'petdate-sw-20260908-profile-pets-v14';
 const BUST_KEY = `pd_sw_bust_${BUST_GENERATION}`;
 const RELOAD_KEY = `pd_sw_reload_${BUST_GENERATION}`;
+/** Current Workbox cacheId from vite.config — never wipe this generation. */
+const ACTIVE_CACHE_ID = 'petdate-web-v14-pets-sync';
 
 function markBusted() {
   try {
@@ -33,7 +35,9 @@ async function clearStaleCaches() {
     const keys = await caches.keys();
     await Promise.all(
       keys
-        .filter((k) => /workbox|precache|petdate/i.test(k) && !k.includes('petdate-web-v3'))
+        // Keep only the active cacheId prefix. NOTE: do NOT use includes('petdate-web-v3')
+        // — that incorrectly preserved v13+ caches (substring of "v13").
+        .filter((k) => /workbox|precache|petdate/i.test(k) && !k.includes(ACTIVE_CACHE_ID))
         .map((k) => caches.delete(k)),
     );
   } catch {

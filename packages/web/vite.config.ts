@@ -28,7 +28,7 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         // New cache namespace so stuck clients drop the old 1.5s-poll bundle.
         // Bump when chat keyboard shell or PWA icons change so Home Screen clients refresh.
-        cacheId: 'petdate-web-v13-perf',
+        cacheId: 'petdate-web-v14-pets-sync',
         // Precache only shell assets — do not pull multi-MB media into SW install.
         globPatterns: ['**/*.{js,css,html,ico,svg,woff2}'],
         navigateFallbackDenylist: [/^\/api\//],

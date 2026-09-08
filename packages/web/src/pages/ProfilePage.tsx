@@ -40,7 +40,6 @@ import {
   toPersianDigits,
   userCommandId,
   userHasRole,
-  type PetProfile,
   type User,
   type UserGender,
 } from '@petdate/shared';
@@ -50,10 +49,10 @@ import { ProfileAvatarEditor } from '../components/ProfileAvatarEditor';
 import { RoleSwitchControl } from '../components/RoleSwitchControl';
 import { formatAge } from '../data/mock';
 import { useAuthStore } from '../hooks/useAuthStore';
+import { useMyPets } from '../hooks/useMyPets';
 import {
   deleteUserAccountById,
   fetchProfileCard,
-  listPets,
   listUserBlocks,
   listUserContacts,
   patchWebProfile,
@@ -79,9 +78,8 @@ export function ProfilePage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const editing = searchParams.get('edit') === '1';
   const { user, token, logout, isProfileComplete, saveProfile, refreshMe } = useAuthStore();
+  const { pets: myPets, loading: petsLoading } = useMyPets();
   const [busy, setBusy] = useState(false);
-  const [myPets, setMyPets] = useState<PetProfile[]>([]);
-  const [petsLoading, setPetsLoading] = useState(false);
   const [error, setError] = useState('');
   const [savedToast, setSavedToast] = useState(false);
   const [cardUser, setCardUser] = useState<User | null>(null);
@@ -136,29 +134,6 @@ export function ProfilePage() {
     };
   }, [user]);
 
-  useEffect(() => {
-    if (!user?.id || !userHasRole(user, 'pet_owner')) {
-      setMyPets([]);
-      setPetsLoading(false);
-      return;
-    }
-    let cancelled = false;
-    setPetsLoading(true);
-    void listPets({ ownerId: user.id })
-      .then((rows) => {
-        if (!cancelled) setMyPets(rows);
-      })
-      .catch(() => {
-        if (!cancelled) setMyPets([]);
-      })
-      .finally(() => {
-        if (!cancelled) setPetsLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [user?.id, user?.roles, user?.role, token]);
-
   const cities = useMemo(() => (province ? citiesForProvince(province) : []), [province]);
 
   if (!user) return null;
@@ -173,6 +148,9 @@ export function ProfilePage() {
   const mainRole = primaryRole(normalizeRoles(display.roles, display.role), display.role);
   const needsWizard = !isProfileComplete;
   const isPetOwner = userHasRole(display, 'pet_owner');
+  // Same pets as /my-pets: show block for owners OR whenever API returned pets
+  // (e.g. multi-role users whose card lags roles briefly).
+  const showPetsBlock = isPetOwner || myPets.length > 0 || petsLoading;
   const locationLabel = [display.city, display.province, display.country].filter(Boolean).join('، ') || '—';
   const primaryPet = myPets[0] ? petProfileToUiPet(myPets[0]) : null;
   const avatarSrc =
@@ -727,7 +705,7 @@ export function ProfilePage() {
         </section>
       ) : null}
 
-      {isPetOwner ? (
+      {showPetsBlock ? (
         <section className="pepito-profile-block" aria-label="پت‌های من">
           <header className="pepito-home-section-head">
             <p className="pepito-eyebrow">پت‌ها</p>
@@ -736,7 +714,7 @@ export function ProfilePage() {
               {petsLoading
                 ? 'در حال بارگذاری…'
                 : myPets.length
-                  ? `${toPersianDigits(String(myPets.length))} پت — همان داده‌های «پت‌های من».`
+                  ? `${toPersianDigits(String(myPets.length))} پت — همان لیست «پت‌های من».`
                   : 'هنوز پتی ثبت نشده — از مسیر پت‌ها اضافه کن.'}
             </p>
           </header>

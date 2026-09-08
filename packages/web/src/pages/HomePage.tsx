@@ -1,11 +1,9 @@
 import { Link, Navigate } from 'react-router-dom';
-import { useEffect, useState } from 'react';
 import { PawPrint, Stethoscope } from 'lucide-react';
 import { BRAND, dashboardPathForRole, primaryRole } from '@petdate/shared';
-import type { PetProfile } from '@petdate/shared';
 import { useAuthStore } from '../hooks/useAuthStore';
+import { useMyPets } from '../hooks/useMyPets';
 import { useUserStore } from '../hooks/useUserStore';
-import { listPets } from '../lib/api';
 
 const HERO_IMG = '/pepito/uploads/3.jpg';
 
@@ -27,26 +25,8 @@ function VetIcon({ size = 16 }: { size?: number }) {
 
 export function HomePage() {
   const { user } = useUserStore();
-  const { user: authUser, isProfileComplete, token } = useAuthStore();
-  const [myPets, setMyPets] = useState<PetProfile[]>([]);
-
-  useEffect(() => {
-    if (!authUser?.id) {
-      setMyPets([]);
-      return;
-    }
-    let cancelled = false;
-    void listPets({ ownerId: authUser.id })
-      .then((rows) => {
-        if (!cancelled) setMyPets(rows);
-      })
-      .catch(() => {
-        if (!cancelled) setMyPets([]);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [authUser?.id, token]);
+  const { user: authUser, isProfileComplete } = useAuthStore();
+  const { pets: myPets } = useMyPets();
 
   // نقش فعال (نه فقط «داشتن نقش») — هم‌تراز ربات و RoleSwitchControl
   const active =
