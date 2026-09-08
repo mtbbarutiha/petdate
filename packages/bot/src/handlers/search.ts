@@ -17,7 +17,12 @@ import {
   textStepKeyboard,
 } from '../keyboards';
 import { getSession, upsertSession } from '../session';
+<<<<<<< HEAD
 import { getCtxUser, menuKeyboardFor, pushMainMenuKeyboard, pushReplyKeyboard } from './helpers';
+=======
+import { resolveTelegramPhotoUrl } from '../urls';
+import { getCtxUser, menuKeyboardFor } from './helpers';
+>>>>>>> be47c7b (fix(api,bot): send pet photo on playdate Telegram notify)
 
 const PAGE_SIZE = 8;
 
@@ -248,7 +253,7 @@ export async function handleSearchPetView(ctx: Context, petId: number): Promise<
   await ctx.answerCallbackQuery();
   const text = `🐾 <b>پروفایل پت</b>\n\n${formatPet(pet, true)}`;
   const kb = searchPetDetailKeyboard(mode, page);
-  const photo = pet.imageUrl || defaultSearchPetPhoto(pet);
+  const photo = resolveTelegramPhotoUrl(pet.imageUrl) || defaultSearchPetPhoto(pet);
 
   try {
     await ctx.replyWithPhoto(photo, {

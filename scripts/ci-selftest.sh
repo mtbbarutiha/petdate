@@ -21,6 +21,7 @@ run src/services/prescription-html.selftest.ts
 run src/services/prescription-chat.selftest.ts
 run src/services/candoo.selftest.ts
 run src/services/telegram-profile-sync.selftest.ts
+run src/services/telegram-playdate-notify.selftest.ts
 
 # SQLite cascade (uses temp/local DB via API helpers — not production path)
 run src/services/user-delete-cascade.selftest.ts
