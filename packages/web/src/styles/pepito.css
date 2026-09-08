@@ -11146,6 +11146,24 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   .pepito-my-pets {
     padding-bottom: calc(108px + env(safe-area-inset-bottom, 0px));
   }
+  .pepito-my-pets-grid {
+    grid-template-columns: 1fr;
+    gap: 0.85rem;
+  }
+  .pepito-my-pets-card-photo.pet-avatar,
+  .pepito-my-pets-card-photo.pet-avatar--cover,
+  .pepito-my-pets-card-photo.pet-avatar--lg {
+    aspect-ratio: 16 / 11;
+  }
+  .pepito-my-pets-card-actions {
+    flex-wrap: nowrap;
+  }
+  .pepito-my-pets-action {
+    flex: 1 1 0;
+    min-width: 0;
+    padding-inline: 0.5rem;
+    font-size: 0.78rem;
+  }
 }
 
 
