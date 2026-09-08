@@ -140,8 +140,13 @@ import {
   handleVetChatRxManual,
   handleVetChatRxMedPick,
   handleVetChatRxMore,
+  handleSecureWipeVetCallback,
 } from './vet-chat';
-import { enterOwnerChatFromCallback, handleOwnerChatRelay } from './owner-chat';
+import {
+  enterOwnerChatFromCallback,
+  handleOwnerChatRelay,
+  handleSecureWipePlaydateCallback,
+} from './owner-chat';
 import {
   handlePatientChatInvite,
   handleVetOnlineToggle,
@@ -665,6 +670,25 @@ export function registerHandlers(bot: Bot): void {
   bot.callbackQuery('vchat:rxmore', (ctx) => handleVetChatRxMore(ctx));
   bot.callbackQuery('vchat:rxmanual', (ctx) => handleVetChatRxManual(ctx));
   bot.callbackQuery('vchat:rxok', (ctx) => handleVetChatRxConfirm(ctx));
+
+  // Secure chat end → wipe entire conversation (inline CTA; not sticky ReplyKeyboard)
+  bot.callbackQuery(/^securewipe:pd:(\d+)$/, async (ctx) => {
+    try {
+      await handleSecureWipePlaydateCallback(ctx, Number(ctx.match![1]));
+    } catch (err) {
+      console.error('securewipe playdate failed:', err);
+      await ctx.answerCallbackQuery({ text: 'خطا', show_alert: true }).catch(() => undefined);
+    }
+  });
+  bot.callbackQuery(/^securewipe:vc:(\d+)$/, async (ctx) => {
+    try {
+      await handleSecureWipeVetCallback(ctx, Number(ctx.match![1]));
+    } catch (err) {
+      console.error('securewipe vet failed:', err);
+      await ctx.answerCallbackQuery({ text: 'خطا', show_alert: true }).catch(() => undefined);
+    }
+  });
+
   bot.callbackQuery(/^vet:/, (ctx) => handleComingSoon(ctx, 'مشاوره دامپزشک'));
   bot.callbackQuery('shop:home', (ctx) => handleShopHome(ctx));
   bot.callbackQuery('shop:orders', (ctx) => handleShopOrders(ctx));

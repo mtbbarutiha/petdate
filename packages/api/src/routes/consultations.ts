@@ -912,6 +912,7 @@ consultationsRouter.post('/:id/end-chat', async (req, res) => {
     return;
   }
 
+  const wasSecure = Boolean(gate.consult.chatSecure);
   purgeVetConsultUploads(id);
   const updated = dbService.endVetConsultChat(id);
   const bothTelegramIds = consultPeerTelegramIds(gate.consult);
@@ -920,14 +921,23 @@ consultationsRouter.post('/:id/end-chat', async (req, res) => {
     consultId: id,
     telegramIds: bothTelegramIds,
   });
-  for (const telegramId of consultPeerTelegramIds(gate.consult, userId)) {
-    void notifyVetChatEndedTelegram({ toTelegramId: telegramId });
+  // Secure chat: wipe CTA for BOTH participants. Otherwise notify peer only.
+  const notifyIds = wasSecure
+    ? bothTelegramIds
+    : consultPeerTelegramIds(gate.consult, userId);
+  for (const telegramId of notifyIds) {
+    void notifyVetChatEndedTelegram({
+      toTelegramId: telegramId,
+      wasSecure,
+      consultId: id,
+    });
   }
   notifyVetThread(id, [gate.consult.vetUserId, gate.consult.patientUserId], {
     chatEnded: true,
     chatSecure: false,
+    wasSecure,
   });
-  res.json({ ok: true, consultation: updated });
+  res.json({ ok: true, consultation: updated, wasSecure });
 });
 
 consultationsRouter.patch('/:id/chat-secure', async (req, res) => {

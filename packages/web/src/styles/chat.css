@@ -837,6 +837,15 @@
   min-height: 48px !important;
   border-radius: 14px !important;
 }
+.tg-ended-bar.is-secure-wipe {
+  background: linear-gradient(180deg, rgba(255, 244, 230, 0.98), rgba(255, 255, 255, 0.97)) !important;
+  border-top: 1px solid rgba(200, 120, 40, 0.28);
+}
+.tg-ended-bar.is-secure-wipe .tg-wipe-btn {
+  background: #c45c26;
+  color: #fff;
+  font-weight: 700;
+}
 
 /* Ensure chrome stays hidden on chat routes */
 .pepito-app-shell--chat .pepito-footer,

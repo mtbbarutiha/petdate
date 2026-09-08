@@ -267,10 +267,49 @@ export async function notifyPlaydateChatSecureTelegram(opts: {
   return (await telegramCall('sendMessage', { chat_id: opts.toTelegramId, text })).ok;
 }
 
+/** Inline wipe CTA after secure chat ends — separate from sticky ReplyKeyboard. */
+export const SECURE_WIPE_CB = {
+  playdate: (playdateId: number) => `securewipe:pd:${Math.trunc(playdateId)}`,
+  vet: (consultId: number) => `securewipe:vc:${Math.trunc(consultId)}`,
+} as const;
+
+export function secureChatEndedWipeText(kind: 'playdate' | 'vet'): string {
+  const label = kind === 'playdate' ? 'همبازی' : 'مشاوره';
+  return [
+    `🔒 چت امن ${label} پایان یافت.`,
+    '',
+    'برای پاک‌کردن کل گفتگو (پیام‌های ربات + کپی وب) دکمه زیر را بزن.',
+    'اگر چیزی از پیام‌های خودت در تلگرام ماند، همان را هم دستی پاک کن.',
+  ].join('\n');
+}
+
+export function secureChatWipeInlineKeyboard(
+  kind: 'playdate' | 'vet',
+  threadId: number
+): { inline_keyboard: Array<Array<{ text: string; callback_data: string }>> } {
+  const callback_data =
+    kind === 'playdate' ? SECURE_WIPE_CB.playdate(threadId) : SECURE_WIPE_CB.vet(threadId);
+  return {
+    inline_keyboard: [[{ text: '🗑 حذف کل چت', callback_data }]],
+  };
+}
+
 export async function notifyPlaydateChatEndedTelegram(opts: {
   toTelegramId: string;
+  /** When true, send wipe CTA with inline button (secure chat privacy). */
+  wasSecure?: boolean;
+  playdateId?: number;
 }): Promise<boolean> {
   if (!infra.telegram.botToken || !usableTelegramId(opts.toTelegramId)) return false;
+  if (opts.wasSecure && opts.playdateId != null && Number.isFinite(opts.playdateId)) {
+    return (
+      await telegramCall('sendMessage', {
+        chat_id: opts.toTelegramId,
+        text: secureChatEndedWipeText('playdate'),
+        reply_markup: secureChatWipeInlineKeyboard('playdate', opts.playdateId),
+      })
+    ).ok;
+  }
   return (
     await telegramCall('sendMessage', {
       chat_id: opts.toTelegramId,
@@ -489,8 +528,19 @@ export async function notifyVetChatSecureTelegram(opts: {
 
 export async function notifyVetChatEndedTelegram(opts: {
   toTelegramId: string;
+  wasSecure?: boolean;
+  consultId?: number;
 }): Promise<boolean> {
   if (!infra.telegram.botToken || !usableTelegramId(opts.toTelegramId)) return false;
+  if (opts.wasSecure && opts.consultId != null && Number.isFinite(opts.consultId)) {
+    return (
+      await telegramCall('sendMessage', {
+        chat_id: opts.toTelegramId,
+        text: secureChatEndedWipeText('vet'),
+        reply_markup: secureChatWipeInlineKeyboard('vet', opts.consultId),
+      })
+    ).ok;
+  }
   return (
     await telegramCall('sendMessage', {
       chat_id: opts.toTelegramId,

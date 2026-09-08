@@ -17,6 +17,7 @@ import {
   addPetMedicalEntry,
   createConsultationPrescription,
   endVetConsultChatViaApi,
+  clearVetConsultChatMessagesViaApi,
   fetchPrescriptionPdfBuffer,
   getPet,
   getPetMedical,
@@ -367,6 +368,16 @@ export async function handleVetChatEnd(ctx: Context): Promise<boolean> {
   const peerId = session.vetChatPeerTelegramId;
   const user = await getCtxUser(ctx);
 
+  let wasSecure = false;
+  if (consultId) {
+    try {
+      const consult = await getVetConsultation(consultId);
+      wasSecure = Boolean(consult?.chatSecure);
+    } catch {
+      /* ignore — end still proceeds */
+    }
+  }
+
   // Clear local session first so sticky keyboard stops even if API is slow.
   await upsertSession(String(from.id), clearVetChatPatch());
   if (peerId) {
@@ -383,34 +394,74 @@ export async function handleVetChatEnd(ctx: Context): Promise<boolean> {
     }
   }
 
+  // Menu restore via ReplyKeyboard only — secure wipe CTA is a separate API inline message.
+  const endPeerText = wasSecure
+    ? '🔌 چت مشاوره قطع شد.\nمنوی اصلی دوباره فعال است — /start یا «📋 منو» را بزن.\n🔒 چت امن بود — پیام حذف کل چت را ببین و دکمه را بزن.'
+    : '🔌 چت مشاوره قطع شد.\nمنوی اصلی دوباره فعال است — /start یا «📋 منو» را بزن.\n🗑 در صورت نیاز گفتگو را از تلگرام پاک کن.';
+
+  const endSelfText = wasSecure
+    ? 'چت مشاوره پایان یافت.\n🔒 چت امن بود — پیام حذف کل چت را ببین و دکمه را بزن.'
+    : ['چت مشاوره پایان یافت.', '', '🗑 در صورت نیاز گفتگو را از تلگرام پاک کن.'].join('\n');
+
   if (peerId) {
     try {
       const peerUser = await getUserByTelegramId(peerId);
-      await ctx.api.sendMessage(
-        peerId,
-        '🔌 چت مشاوره قطع شد.\nمنوی اصلی دوباره فعال است — /start یا «📋 منو» را بزن.\n🗑 در صورت نیاز گفتگو را از تلگرام پاک کن.',
-        {
-          reply_markup: mainMenuKeyboard(peerUser?.role, peerUser?.roles, Number(peerId), {
-            vetOnline: peerUser?.vetOnline,
-          }),
-        }
-      );
+      await ctx.api.sendMessage(peerId, endPeerText, {
+        reply_markup: mainMenuKeyboard(peerUser?.role, peerUser?.roles, Number(peerId), {
+          vetOnline: peerUser?.vetOnline,
+        }),
+      });
     } catch {
       try {
-        await ctx.api.sendMessage(
-          peerId,
-          '🔌 چت مشاوره قطع شد.\nمنوی اصلی دوباره فعال است — /start یا «📋 منو» را بزن.'
-        );
+        await ctx.api.sendMessage(peerId, endPeerText);
       } catch {
         /* ignore */
       }
     }
   }
 
-  await ctx.reply(['چت مشاوره پایان یافت.', '', '🗑 در صورت نیاز گفتگو را از تلگرام پاک کن.'].join('\n'), {
+  await ctx.reply(endSelfText, {
     reply_markup: menuKeyboardFor(ctx, user),
   });
   return true;
+}
+
+/** Inline «حذف کل چت» after secure vet consult chat ended. */
+export async function handleSecureWipeVetCallback(
+  ctx: Context,
+  consultId: number
+): Promise<void> {
+  const from = ctx.from;
+  if (!from) {
+    await ctx.answerCallbackQuery({ text: 'شناسه نامعتبر', show_alert: true }).catch(() => undefined);
+    return;
+  }
+  const user = await getCtxUser(ctx);
+  if (!user?.id) {
+    await ctx.answerCallbackQuery({ text: 'اول /start بزن', show_alert: true }).catch(() => undefined);
+    return;
+  }
+  if (!Number.isFinite(consultId) || consultId <= 0) {
+    await ctx.answerCallbackQuery({ text: 'چت نامعتبر', show_alert: true }).catch(() => undefined);
+    return;
+  }
+
+  try {
+    await clearVetConsultChatMessagesViaApi(consultId, user.id);
+    await ctx.answerCallbackQuery({ text: 'گفتگو پاک شد ✅' }).catch(() => undefined);
+    try {
+      await ctx.editMessageText(
+        '✅ کل گفتگوی مشاوره پاک شد.\nاگر چیزی از پیام‌های خودت در تلگرام ماند، دستی پاکش کن.',
+      );
+    } catch {
+      await ctx.reply('✅ کل گفتگوی مشاوره پاک شد.').catch(() => undefined);
+    }
+  } catch (err) {
+    console.warn('secure wipe vet failed:', err);
+    await ctx
+      .answerCallbackQuery({ text: 'پاک‌کردن ناموفق بود', show_alert: true })
+      .catch(() => undefined);
+  }
 }
 
 function formatVetPetProfileCard(pet: PetProfile): string {

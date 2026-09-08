@@ -85,6 +85,9 @@ import { formatTimeAgo } from '../data/mock';
 const CHAT_WIPE_HINT =
   'لطفاً کل این گفتگو را پاک کنید تا اثری از پیام‌ها (متن، عکس، ویس و …) نماند.';
 
+const SECURE_WIPE_HINT =
+  '🔒 چت امن پایان یافت — برای پاک‌کردن کامل گفتگو دکمه «حذف کل چت» را بزن.';
+
 const FALLBACK_POLL_MS = 12_000;
 const OFFLINE_FALLBACK_POLL_MS = 8_000;
 const MESSAGE_FALLBACK_POLL_MS = 8_000;
@@ -197,6 +200,7 @@ export function VetChatPage() {
   const [secure, setSecure] = useState(false);
   const [ended, setEnded] = useState(false);
   const [wiped, setWiped] = useState(false);
+  const [needsSecureWipe, setNeedsSecureWipe] = useState(false);
   const [contactAdded, setContactAdded] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [emojiOpen, setEmojiOpen] = useState(false);
@@ -223,6 +227,8 @@ export function VetChatPage() {
   const lastIdRef = useRef(0);
   const stickToBottomRef = useRef(true);
   const smoothScrollRef = useRef(false);
+  const secureRef = useRef(false);
+  secureRef.current = secure;
 
   const isVetSide = Boolean(user && consult && user.id === consult.vetUserId);
   const isVetUser = userHasRole(user, 'vet');
@@ -328,7 +334,10 @@ export function VetChatPage() {
     return found;
   }, [user?.id, consultId, isVetUser]);
 
-  const applyConsultFlags = useCallback((next: VetConsultation, opts?: { announce?: boolean }) => {
+  const applyConsultFlags = useCallback((
+    next: VetConsultation,
+    opts?: { announce?: boolean; wasSecure?: boolean },
+  ) => {
     setSecure((prev) => {
       const value = Boolean(next.chatSecure);
       if (opts?.announce && prev !== value) {
@@ -346,9 +355,17 @@ export function VetChatPage() {
     setEnded((prev) => {
       const value = Boolean(next.chatEnded);
       if (opts?.announce && !prev && value) {
+        const secureEnded = Boolean(opts.wasSecure) || secureRef.current;
+        if (secureEnded) setNeedsSecureWipe(true);
         setMessages((msgs) => [
           ...msgs,
-          systemMessage(['چت مشاوره قطع شد.', '', CHAT_WIPE_HINT].join('\n')),
+          systemMessage(
+            [
+              'چت مشاوره قطع شد.',
+              '',
+              secureEnded ? SECURE_WIPE_HINT : CHAT_WIPE_HINT,
+            ].join('\n'),
+          ),
         ]);
         void softReloadConversations();
       }
@@ -407,13 +424,21 @@ export function VetChatPage() {
       if (event.type === 'thread' && event.channel === 'vet' && event.threadId === consultId) {
         const patch = event.patch || {};
         if (typeof patch.chatSecure === 'boolean' || patch.chatEnded || patch.messagesCleared) {
+          if (patch.chatEnded && (patch.wasSecure || secureRef.current)) {
+            setNeedsSecureWipe(true);
+          }
           void loadConsult().then((next) => {
             if (!next) return;
             setConsult(next);
-            applyConsultFlags(next, { announce: true });
+            applyConsultFlags(next, {
+              announce: true,
+              wasSecure: Boolean(patch.wasSecure),
+            });
             if (patch.messagesCleared) {
               setMessages([]);
               lastIdRef.current = 0;
+              setWiped(true);
+              setNeedsSecureWipe(false);
             }
           });
         }
@@ -923,18 +948,19 @@ export function VetChatPage() {
 
   async function endChat() {
     if (!user?.id || !consult || ending || ended || consult.status !== 'active') return;
+    const secureEnded = secureRef.current;
     setMenuOpen(false);
     setEnding(true);
     setActionError(null);
     setEnded(true);
+    if (secureEnded) setNeedsSecureWipe(true);
     setMessages((prev) => [
       ...prev,
       systemMessage(
         [
           'چت مشاوره پایان یافت.',
           '',
-          CHAT_WIPE_HINT,
-          secure ? 'چت امن فعال بود — حتماً گفتگو را پاک کن.' : null,
+          secureEnded ? SECURE_WIPE_HINT : CHAT_WIPE_HINT,
         ]
           .filter(Boolean)
           .join('\n'),
@@ -965,6 +991,7 @@ export function VetChatPage() {
       setMessages([systemMessage('گفتگو به‌طور کامل پاک شد.')]);
       lastIdRef.current = 0;
       setWiped(true);
+      setNeedsSecureWipe(false);
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'پاک‌کردن گفتگو ناموفق بود');
     } finally {
@@ -1791,13 +1818,20 @@ export function VetChatPage() {
                   </div>
                 </>
               ) : (
-                <div className="tg-ended-bar">
-                  <p>{wiped ? 'گفتگو کاملاً پاک شد.' : CHAT_WIPE_HINT}</p>
+                <div className={`tg-ended-bar${needsSecureWipe ? ' is-secure-wipe' : ''}`}>
+                  <p>
+                    {wiped
+                      ? 'گفتگو کاملاً پاک شد.'
+                      : needsSecureWipe
+                        ? SECURE_WIPE_HINT
+                        : CHAT_WIPE_HINT}
+                  </p>
                   <button
                     type="button"
                     className="tg-wipe-btn"
                     onClick={() => void wipeConversation()}
                     disabled={wiping || wiped}
+                    data-testid="vet-wipe-chat"
                   >
                     {wiped ? (
                       <>
@@ -1806,7 +1840,7 @@ export function VetChatPage() {
                     ) : wiping ? (
                       'در حال پاک‌کردن…'
                     ) : (
-                      'پاک کردن کل گفتگو'
+                      'حذف کل چت'
                     )}
                   </button>
                   <Link to="/chats" className="tg-chat-link-btn">
