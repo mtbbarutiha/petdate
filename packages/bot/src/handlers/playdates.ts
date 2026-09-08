@@ -282,9 +282,15 @@ export async function handlePlaydateAsk(ctx: Context, toPetId: number): Promise<
     return;
   }
 
-  await ctx.editMessageText('کدوم پتت رو می‌فرستی؟', {
-    reply_markup: fromPetKeyboard(myPets, toPetId),
-  });
+  try {
+    await ctx.editMessageText('کدوم پتت رو می‌فرستی؟', {
+      reply_markup: fromPetKeyboard(myPets, toPetId),
+    });
+  } catch {
+    await ctx.reply('کدوم پتت رو می‌فرستی؟', {
+      reply_markup: fromPetKeyboard(myPets, toPetId),
+    });
+  }
 }
 
 export async function handlePlaydateFrom(ctx: Context, fromPetId: number, toPetId: number): Promise<void> {

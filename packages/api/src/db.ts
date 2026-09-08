@@ -1696,6 +1696,11 @@ function mapPet(row: Record<string, unknown>): PetProfile {
     ownerCity: (row.owner_city as string | undefined) ?? undefined,
     ownerName: (row.owner_name as string | undefined) ?? undefined,
     ownerVerified: row.owner_verified != null ? Boolean(row.owner_verified) : undefined,
+    ownerAvatarUrl: (row.owner_avatar_url as string | undefined) ?? undefined,
+    ownerLastSeenAt:
+      (row.owner_location_updated_at as string | undefined) ||
+      (row.owner_last_seen_at as string | undefined) ||
+      undefined,
     distanceKm,
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
@@ -3403,22 +3408,30 @@ export const dbService = {
 
   /**
    * پت‌های نزدیک بر اساس lat/lng صاحب‌ها.
-   * شعاع ثابت کوچک نداریم — نسبت به نزدیک‌ترین‌ها مرتب می‌کنیم و تا limit برمی‌گردانیم.
+   * اگر radiusKm داده شود فقط داخل همان شعاع؛ وگرنه نزدیک‌ترین‌ها تا limit.
    */
   listNearbyPets(opts: {
     lat: number;
     lng: number;
     excludeOwnerId?: number;
     limit?: number;
+    radiusKm?: number;
   }): PetProfile[] {
     const limit = Math.min(Math.max(1, Math.floor(opts.limit ?? 30)), 80);
+    const radiusKm =
+      opts.radiusKm != null && Number.isFinite(opts.radiusKm) && opts.radiusKm > 0
+        ? opts.radiusKm
+        : undefined;
     let sql = `
       SELECT pets.*,
              users.province AS owner_province,
              users.city AS owner_city,
              users.name AS owner_name,
+             users.avatar_url AS owner_avatar_url,
              users.lat AS owner_lat,
              users.lng AS owner_lng,
+             users.location_updated_at AS owner_location_updated_at,
+             users.last_seen_at AS owner_last_seen_at,
              CASE WHEN users.verification_status = 'verified' THEN 1 ELSE 0 END AS owner_verified
       FROM pets
       INNER JOIN users ON users.id = pets.owner_id
@@ -3437,6 +3450,7 @@ export const dbService = {
         const oLng = Number(row.owner_lng);
         if (!Number.isFinite(oLat) || !Number.isFinite(oLng)) return null;
         const distanceKm = haversineKm(opts.lat, opts.lng, oLat, oLng);
+        if (radiusKm != null && distanceKm > radiusKm) return null;
         return { ...row, distance_km: distanceKm };
       })
       .filter((r): r is Record<string, unknown> & { distance_km: number } => r != null)
@@ -3472,6 +3486,10 @@ export const dbService = {
         `SELECT pets.*,
                 users.province AS owner_province,
                 users.city AS owner_city,
+                users.name AS owner_name,
+                users.avatar_url AS owner_avatar_url,
+                users.location_updated_at AS owner_location_updated_at,
+                users.last_seen_at AS owner_last_seen_at,
                 CASE WHEN users.verification_status = 'verified' THEN 1 ELSE 0 END AS owner_verified
          FROM pets
          LEFT JOIN users ON users.id = pets.owner_id

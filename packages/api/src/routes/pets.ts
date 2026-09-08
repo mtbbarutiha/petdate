@@ -1,13 +1,14 @@
 import fs from 'fs';
 import { Router } from 'express';
 import multer from 'multer';
-import { dbService } from '../db';
+import { dbService, haversineKm } from '../db';
 import {
   MAX_PET_PHOTO_BYTES,
   mimeFromPetPhotoKey,
   resolvePetPhotoPath,
   savePetPhoto,
 } from '../services/pet-photo-store';
+import { renderNearbyListCard, renderPetProfileCard } from '../services/nearby-cards';
 
 export const petsRouter = Router();
 
@@ -135,13 +136,89 @@ petsRouter.get('/nearby', (req, res) => {
     ? Number(req.query.excludeOwnerId)
     : undefined;
   const limit = req.query.limit ? Number(req.query.limit) : 30;
+  const radiusKm = req.query.radiusKm != null ? Number(req.query.radiusKm) : undefined;
   const pets = dbService.listNearbyPets({
     lat,
     lng,
     excludeOwnerId: Number.isFinite(excludeOwnerId) ? excludeOwnerId : undefined,
     limit: Number.isFinite(limit) ? limit : 30,
+    radiusKm: Number.isFinite(radiusKm) ? radiusKm : undefined,
   });
   res.json(pets);
+});
+
+/** کارت تصویری لیست نزدیک (سبک دوردوریا) — قبل از /:id */
+petsRouter.get('/nearby/list-card', async (req, res) => {
+  try {
+    const lat = Number(req.query.lat);
+    const lng = Number(req.query.lng);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      res.status(400).json({ error: 'lat و lng الزامی است' });
+      return;
+    }
+    const radiusKm = Number(req.query.radiusKm ?? 5);
+    const excludeOwnerId = req.query.excludeOwnerId
+      ? Number(req.query.excludeOwnerId)
+      : undefined;
+    const page = Math.max(0, Number(req.query.page ?? 0) || 0);
+    const pageSize = Math.min(12, Math.max(1, Number(req.query.pageSize ?? 8) || 8));
+    const all = dbService.listNearbyPets({
+      lat,
+      lng,
+      excludeOwnerId: Number.isFinite(excludeOwnerId) ? excludeOwnerId : undefined,
+      limit: 80,
+      radiusKm: Number.isFinite(radiusKm) ? radiusKm : 5,
+    });
+    const slice = all.slice(page * pageSize, page * pageSize + pageSize);
+    const buf = await renderNearbyListCard({
+      pets: slice,
+      radiusKm: Number.isFinite(radiusKm) ? radiusKm : 5,
+      page,
+      totalCount: all.length,
+    });
+    res.setHeader('Content-Type', 'image/jpeg');
+    res.setHeader('Cache-Control', 'private, max-age=30');
+    res.send(buf);
+  } catch (err) {
+    console.warn('nearby list-card failed:', (err as Error).message);
+    res.status(500).json({ error: 'ساخت لیست تصویری ناموفق بود' });
+  }
+});
+
+/** کارت پروفایل پت با عکس صاحب در گوشه — قبل از /:id */
+petsRouter.get('/:id/profile-card', async (req, res) => {
+  try {
+    const pet = dbService.getPet(Number(req.params.id));
+    if (!pet) {
+      res.status(404).json({ error: 'پت پیدا نشد' });
+      return;
+    }
+    const viewerLat = req.query.viewerLat != null ? Number(req.query.viewerLat) : undefined;
+    const viewerLng = req.query.viewerLng != null ? Number(req.query.viewerLng) : undefined;
+    let distanceKm = pet.distanceKm;
+    if (
+      distanceKm == null &&
+      viewerLat != null &&
+      viewerLng != null &&
+      Number.isFinite(viewerLat) &&
+      Number.isFinite(viewerLng)
+    ) {
+      const owner = dbService.getUserById(pet.ownerId);
+      if (owner?.lat != null && owner?.lng != null) {
+        distanceKm = Math.round(haversineKm(viewerLat, viewerLng, owner.lat, owner.lng) * 10) / 10;
+      }
+    }
+    const buf = await renderPetProfileCard({
+      pet: { ...pet, distanceKm },
+      corner: 'br',
+    });
+    res.setHeader('Content-Type', 'image/jpeg');
+    res.setHeader('Cache-Control', 'private, max-age=60');
+    res.send(buf);
+  } catch (err) {
+    console.warn('pet profile-card failed:', (err as Error).message);
+    res.status(500).json({ error: 'ساخت کارت پروفایل ناموفق بود' });
+  }
 });
 
 petsRouter.get('/:id', (req, res) => {

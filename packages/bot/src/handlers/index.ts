@@ -179,8 +179,12 @@ import {
   handleWalletStarsTopUpMenu,
 } from './coins';
 import {
+  handleNearbyListCallback,
   handleNearbyLocationMessage,
   handleNearbyPets,
+  handleNearbyPickRadiusCallback,
+  handleNearbyRadiusCallback,
+  handleNearbySummaryCallback,
   handleSearchAll,
   handleSearchBreedText,
   handleSearchByBreedStart,
@@ -188,6 +192,7 @@ import {
   handleSearchMashhad,
   handleSearchMenuCallback,
   handleSearchNearbyAskLocCallback,
+  handleSearchOwnerView,
   handleSearchPage,
   handleSearchPetsMenu,
   handleSearchPetView,
@@ -727,9 +732,20 @@ export function registerHandlers(bot: Bot): void {
   bot.callbackQuery(/^search:pet:(\d+)$/, (ctx) =>
     handleSearchPetView(ctx, Number(ctx.match![1]))
   );
+  bot.callbackQuery(/^search:owner:(\d+)$/, (ctx) =>
+    handleSearchOwnerView(ctx, Number(ctx.match![1]))
+  );
   bot.callbackQuery('search:menu', (ctx) => handleSearchMenuCallback(ctx));
   bot.callbackQuery('search:home', (ctx) => handleSearchHomeCallback(ctx));
   bot.callbackQuery('search:nearby:askloc', (ctx) => handleSearchNearbyAskLocCallback(ctx));
+  bot.callbackQuery(/^nearby:radius:(\d+)$/, (ctx) =>
+    handleNearbyRadiusCallback(ctx, Number(ctx.match![1]))
+  );
+  bot.callbackQuery('nearby:pick-radius', (ctx) => handleNearbyPickRadiusCallback(ctx));
+  bot.callbackQuery('nearby:summary', (ctx) => handleNearbySummaryCallback(ctx));
+  bot.callbackQuery(/^nearby:list:(\d+)$/, (ctx) =>
+    handleNearbyListCallback(ctx, Number(ctx.match![1]))
+  );
 
   bot.on('message:location', async (ctx) => {
     if (await handleNearbyLocationMessage(ctx)) return;
