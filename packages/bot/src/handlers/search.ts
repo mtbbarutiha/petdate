@@ -35,13 +35,14 @@ import {
   nearbyInlineListKeyboard,
   searchPetDetailKeyboard,
   searchPetsListKeyboard,
+  searchPetsMenuInlineKeyboard,
   searchPetsMenuKeyboard,
   speciesReplyKeyboard,
   textStepKeyboard,
 } from '../keyboards';
 import { getSession, upsertSession } from '../session';
 import { resolveTelegramPhotoUrl } from '../urls';
-import { getCtxUser, pushMainMenuKeyboard, pushReplyKeyboard } from './helpers';
+import { getCtxUser, pushMainMenuKeyboard } from './helpers';
 import { replyWithOwnerProfile } from './owner-chat';
 
 const PAGE_SIZE = 8;
@@ -449,21 +450,17 @@ export async function handleSearchPetsMenu(ctx: Context): Promise<void> {
   }
   await ctx.reply(
     [
-      '🔎 <b>جستجوی پت</b>',
+      '🔍 <b>جستجوی پت</b> — یک گزینه را انتخاب کن:',
       '',
-      'یکی رو انتخاب کن:',
-      '• گونه → نژاد',
-      '• هم‌استان',
-      '• مشهد',
-      '• همه پت‌ها',
+      'هم‌استانی · هم‌نژاد · همه · پیشرفته · جدید · محبوب',
     ].join('\n'),
     {
       parse_mode: 'HTML',
-      reply_markup: searchPetsMenuKeyboard(),
+      reply_markup: searchPetsMenuInlineKeyboard(),
     }
   );
   if (user) {
-    /* keep search submenu keyboard as primary */
+    await pushMainMenuKeyboard(ctx, user);
   }
 }
 
@@ -481,14 +478,14 @@ export async function handleSearchByBreedStart(ctx: Context): Promise<void> {
   } catch (err) {
     console.error('listSpecies failed:', err);
     await ctx.reply('لیست گونه در دسترس نیست. کمی بعد دوباره امتحان کن.', {
-      reply_markup: searchPetsMenuKeyboard(),
+      reply_markup: searchPetsMenuInlineKeyboard(),
     });
     return;
   }
 
   if (!species.length) {
     await ctx.reply('لیست گونه خالی است. کمی بعد دوباره امتحان کن.', {
-      reply_markup: searchPetsMenuKeyboard(),
+      reply_markup: searchPetsMenuInlineKeyboard(),
     });
     return;
   }
@@ -531,7 +528,7 @@ export async function handleSearchSameProvince(ctx: Context): Promise<void> {
   }
   if (!user.province) {
     await ctx.reply('اول در پروفایل استانت رو ثبت کن.', {
-      reply_markup: searchPetsMenuKeyboard(),
+      reply_markup: searchPetsMenuInlineKeyboard(),
     });
     return;
   }
@@ -543,14 +540,58 @@ export async function handleSearchSameProvince(ctx: Context): Promise<void> {
   await showSearchResults(ctx, 'province', 0);
 }
 
-export async function handleSearchMashhad(ctx: Context): Promise<void> {
-  if (!ctx.from) return;
+/** هم‌نژاد با پت‌های ثبت‌شدهٔ کاربر */
+export async function handleSearchSameBreed(ctx: Context): Promise<void> {
+  const user = await getCtxUser(ctx);
+  if (!user?.id || !ctx.from) {
+    await ctx.reply('اول /start بزن.');
+    return;
+  }
+  let mine: PetProfile[];
+  try {
+    mine = await listPets({ ownerId: user.id });
+  } catch (err) {
+    console.error('listPets mine for samebreed failed:', err);
+    await ctx.reply('خطا در دریافت پت‌های تو. کمی بعد دوباره امتحان کن.', {
+      reply_markup: searchPetsMenuInlineKeyboard(),
+    });
+    return;
+  }
+  const breeds = [
+    ...new Set(
+      mine
+        .map((p) => (p.breed ?? '').trim())
+        .filter((b) => b.length > 0)
+    ),
+  ];
+  if (breeds.length === 0) {
+    await ctx.reply(
+      'برای «هم نژادها» اول حداقل یک پت با نژاد ثبت کن، یا از «جستجو پیشرفته» استفاده کن.',
+      { reply_markup: searchPetsMenuInlineKeyboard() }
+    );
+    return;
+  }
   await upsertSession(String(ctx.from.id), {
     step: 'ready',
-    searchMode: 'mashhad',
+    searchMode: 'samebreed',
     searchPage: 0,
+    searchBreed: breeds.join('|'),
   });
-  await showSearchResults(ctx, 'mashhad', 0);
+  await showSearchResults(ctx, 'samebreed', 0);
+}
+
+/** @deprecated دکمه مشهد حذف شد */
+export async function handleSearchMashhad(ctx: Context): Promise<void> {
+  if (ctx.callbackQuery) {
+    try {
+      await ctx.answerCallbackQuery({ text: 'دکمه مشهد حذف شد' });
+    } catch {
+      /* ignore */
+    }
+  }
+  await ctx.reply('دکمه «مشهد» حذف شده. از منوی جستجو یکی از گزینه‌ها را انتخاب کن:', {
+    reply_markup: searchPetsMenuInlineKeyboard(),
+  });
 }
 
 export async function handleSearchAll(ctx: Context): Promise<void> {
@@ -561,6 +602,53 @@ export async function handleSearchAll(ctx: Context): Promise<void> {
     searchPage: 0,
   });
   await showSearchResults(ctx, 'all', 0);
+}
+
+export async function handleSearchNewest(ctx: Context): Promise<void> {
+  if (!ctx.from) return;
+  await upsertSession(String(ctx.from.id), {
+    step: 'ready',
+    searchMode: 'newest',
+    searchPage: 0,
+  });
+  await showSearchResults(ctx, 'newest', 0);
+}
+
+export async function handleSearchPopular(ctx: Context): Promise<void> {
+  if (!ctx.from) return;
+  await upsertSession(String(ctx.from.id), {
+    step: 'ready',
+    searchMode: 'popular',
+    searchPage: 0,
+  });
+  await showSearchResults(ctx, 'popular', 0);
+}
+
+/** callback منوی اینلاین: search:go:<mode> */
+export async function handleSearchGoCallback(ctx: Context, mode: string): Promise<void> {
+  try {
+    await ctx.answerCallbackQuery();
+  } catch {
+    /* ignore */
+  }
+  switch (mode) {
+    case 'province':
+      return handleSearchSameProvince(ctx);
+    case 'samebreed':
+      return handleSearchSameBreed(ctx);
+    case 'all':
+      return handleSearchAll(ctx);
+    case 'advanced':
+      return handleSearchByBreedStart(ctx);
+    case 'newest':
+      return handleSearchNewest(ctx);
+    case 'popular':
+      return handleSearchPopular(ctx);
+    default:
+      await ctx.reply('گزینه نامعتبر. دوباره از منوی جستجو انتخاب کن:', {
+        reply_markup: searchPetsMenuInlineKeyboard(),
+      });
+  }
 }
 
 export async function handleSearchPage(
@@ -746,7 +834,7 @@ function defaultSearchPetPhoto(pet: { species?: string; id: number }): string {
   return pool[pet.id % pool.length]!;
 }
 
-type SearchMode = 'nearby' | 'breed' | 'province' | 'mashhad' | 'all';
+type SearchMode = 'nearby' | 'breed' | 'province' | 'samebreed' | 'newest' | 'popular' | 'all';
 
 async function fetchPetsForMode(
   mode: SearchMode,
@@ -794,8 +882,18 @@ async function fetchPetsForMode(
     case 'province':
       if (!user.province) return [];
       return listPets({ ...base, province: user.province });
-    case 'mashhad':
-      return listPets({ ...base, city: 'مشهد' });
+    case 'samebreed': {
+      const breeds = (breed ?? '')
+        .split('|')
+        .map((b) => b.trim())
+        .filter(Boolean);
+      if (!breeds.length) return [];
+      return listPets({ ...base, breeds });
+    }
+    case 'newest':
+      return listPets({ ...base, sort: 'newest' });
+    case 'popular':
+      return listPets({ ...base, sort: 'popular' });
     case 'all':
       return listPets({ ...base });
     default:
@@ -810,11 +908,15 @@ function modeTitle(mode: SearchMode, breed?: string, species?: string): string {
     case 'breed':
       return `🧬 ${speciesTitle(species)}${breed ? ` · ${breed}` : ''}`;
     case 'province':
-      return '🗺 پت‌های هم‌استان';
-    case 'mashhad':
-      return '🏙 پت‌های مشهد';
+      return '📍🍷 پت‌های هم‌استان';
+    case 'samebreed':
+      return '🧬 هم نژادها';
+    case 'newest':
+      return '🙋 پت‌های جدید';
+    case 'popular':
+      return '❤️📊 پت‌های محبوب';
     case 'all':
-      return '🐾 همه پت‌ها';
+      return '📋 مشاهده همه';
     default:
       return '🔎 جستجو';
   }
@@ -871,7 +973,7 @@ async function showSearchResults(
     const emptyKb =
       mode === 'nearby'
         ? nearbyLocationKeyboard()
-        : searchPetsMenuKeyboard();
+        : searchPetsMenuInlineKeyboard();
 
     if (opts?.edit && ctx.callbackQuery) {
       try {
@@ -918,20 +1020,24 @@ async function showSearchResults(
 
   // کیبورد reply منو را یک‌بار نگه می‌داریم (نه روی هر صفحه)
   if (!opts?.edit) {
-    if (mode === 'nearby') {
-      await pushMainMenuKeyboard(ctx, user);
-    } else {
-      await pushReplyKeyboard(ctx, searchPetsMenuKeyboard());
-    }
+    await pushMainMenuKeyboard(ctx, user);
   }
 }
 
 function isSearchSubmenuNav(text: string): boolean {
+  const m = SEARCH_PETS_MENU;
   return (
-    text === SEARCH_PETS_MENU.sameProvince ||
-    text === SEARCH_PETS_MENU.mashhad ||
-    text === SEARCH_PETS_MENU.allPets ||
-    text === SEARCH_PETS_MENU.backToMenu
+    text === m.sameProvince ||
+    text === m.sameProvinceLegacy ||
+    text === m.sameBreed ||
+    text === m.viewAll ||
+    text === m.allPets ||
+    text === m.newest ||
+    text === m.popular ||
+    text === m.advanced ||
+    text === m.byBreed ||
+    text === m.mashhad ||
+    text === m.backToMenu
   );
 }
 
@@ -993,7 +1099,7 @@ async function handleSearchSpeciesText(ctx: Context, text: string): Promise<bool
     speciesList = await listSpecies();
   } catch {
     await ctx.reply('خطا در دریافت گونه. دوباره امتحان کن.', {
-      reply_markup: searchPetsMenuKeyboard(),
+      reply_markup: searchPetsMenuInlineKeyboard(),
     });
     return true;
   }

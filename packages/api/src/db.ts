@@ -3362,12 +3362,18 @@ export const dbService = {
     city?: string;
     province?: string;
     breed?: string;
+    /** چند نژاد (هم‌نژاد با پت‌های کاربر) */
+    breeds?: string[];
     excludeOwnerId?: number;
+    /** newest = جدیدترین؛ popular = لایک صاحب؛ پیش‌فرض updated */
+    sort?: 'newest' | 'popular' | 'updated';
   }): PetProfile[] {
     let sql = `
       SELECT pets.*,
              users.province AS owner_province,
              users.city AS owner_city,
+             users.name AS owner_name,
+             users.likes_count AS owner_likes_count,
              CASE WHEN users.verification_status = 'verified' THEN 1 ELSE 0 END AS owner_verified
       FROM pets
       LEFT JOIN users ON users.id = pets.owner_id
@@ -3402,7 +3408,22 @@ export const dbService = {
       sql += " AND LOWER(TRIM(COALESCE(pets.breed, ''))) = LOWER(TRIM(?))";
       params.push(filters.breed);
     }
-    sql += ' ORDER BY pets.updated_at DESC';
+    const breeds = (filters?.breeds ?? [])
+      .map((b) => String(b ?? '').trim())
+      .filter((b) => b.length > 0);
+    if (breeds.length > 0) {
+      const placeholders = breeds.map(() => '?').join(', ');
+      sql += ` AND LOWER(TRIM(COALESCE(pets.breed, ''))) IN (${placeholders})`;
+      for (const b of breeds) params.push(b.toLowerCase());
+    }
+    const sort = filters?.sort ?? 'updated';
+    if (sort === 'newest') {
+      sql += ' ORDER BY pets.created_at DESC';
+    } else if (sort === 'popular') {
+      sql += ' ORDER BY COALESCE(users.likes_count, 0) DESC, pets.created_at DESC';
+    } else {
+      sql += ' ORDER BY pets.updated_at DESC';
+    }
     return (db.prepare(sql).all(...params) as Record<string, unknown>[]).map(mapPet);
   },
 
