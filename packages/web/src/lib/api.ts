@@ -21,9 +21,12 @@ const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/
 /**
  * Resolve stored media paths for <img src> / CSS backgrounds.
  * Relative `/api/...` must be prefixed with VITE_API_URL when the web origin differs.
- * Opaque Telegram file_ids are not displayable in the browser.
+ * Opaque Telegram file_ids are mapped to the pet/media image proxy when possible.
  */
-export function resolvePublicMediaUrl(url?: string | null): string {
+export function resolvePublicMediaUrl(
+  url?: string | null,
+  opts?: { petId?: number }
+): string {
   const raw = String(url ?? '').trim();
   if (!raw) return '';
   if (
@@ -34,6 +37,13 @@ export function resolvePublicMediaUrl(url?: string | null): string {
     return raw;
   }
   if (raw.startsWith('/')) return `${API_BASE}${raw}`;
+  // Telegram Bot API file_id — not a browser URL
+  if (/^(AgAC|AQAD|BAAC|BQAC|AwAC|CQAC|DQAC)/.test(raw) || /^[A-Za-z0-9_-]{24,}$/.test(raw)) {
+    if (opts?.petId != null && Number.isFinite(opts.petId) && opts.petId > 0) {
+      return `${API_BASE}/api/pets/${opts.petId}/image`;
+    }
+    return `${API_BASE}/api/media/telegram/${encodeURIComponent(raw)}`;
+  }
   return '';
 }
 

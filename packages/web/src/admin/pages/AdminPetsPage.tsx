@@ -2,6 +2,14 @@ import { useCallback, useEffect, useState } from 'react';
 import { Search, Trash2 } from 'lucide-react';
 import { petPublicIdOf, type PetProfile } from '@petdate/shared';
 import { adminFetch, formatNumFa } from '../api';
+import { resolvePublicMediaUrl } from '../../lib/api';
+import { EMPTY_STATE_PHOTO } from '../../data/petImages';
+
+function adminPetThumbSrc(pet: PetProfile): string {
+  return (
+    resolvePublicMediaUrl(pet.imageUrl, { petId: pet.id }) || EMPTY_STATE_PHOTO
+  );
+}
 
 export function AdminPetsPage() {
   const [pets, setPets] = useState<PetProfile[]>([]);
@@ -42,7 +50,19 @@ export function AdminPetsPage() {
             const publicId = petPublicIdOf(pet);
             return (
               <tr key={pet.id}>
-                <td>{pet.imageUrl ? <img src={pet.imageUrl} alt="" className="admin-thumb" /> : '—'}</td>
+                <td>
+                  <img
+                    src={adminPetThumbSrc(pet)}
+                    alt=""
+                    className="admin-thumb"
+                    onError={(e) => {
+                      const el = e.currentTarget;
+                      if (el.dataset.fallback === '1') return;
+                      el.dataset.fallback = '1';
+                      el.src = EMPTY_STATE_PHOTO;
+                    }}
+                  />
+                </td>
                 <td>
                   <code className="admin-mono" dir="ltr">{publicId}</code>
                   <div className="admin-muted admin-mono">#{pet.id}</div>
