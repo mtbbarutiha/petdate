@@ -9,7 +9,6 @@ import {
   userCommandIdOf,
 } from '@petdate/shared';
 import {
-  fetchNearbyListCardBuffer,
   fetchPetProfileCardBuffer,
   getPet,
   getUserById,
@@ -30,7 +29,7 @@ import {
   nearbyLocationKeyboard,
   nearbyRadiusKeyboard,
   nearbySummaryKeyboard,
-  nearbyVisualListKeyboard,
+  nearbyInlineListKeyboard,
   searchPetDetailKeyboard,
   searchPetsListKeyboard,
   searchPetsMenuKeyboard,
@@ -343,16 +342,28 @@ async function showNearbySummary(ctx: Context, radiusKm: number): Promise<void> 
   const text = [
     `🛰️ <b>اطراف من ≤ ${toFaDigits(radiusKm)} کیلومتر (${toFaDigits(pets.length)})</b>`,
     '',
-    'برای دیدن لیست، دکمه زیر را بزن و اسکرول کن.',
+    'برای دیدن <b>لیست اینلاین</b> افراد نزدیک، دکمه زیر را بزن.',
   ].join('\n');
 
   await replyNearbyMarkup(ctx, text, nearbySummaryKeyboard(radiusKm));
 }
 
+/**
+ * «📋 نمایش بصورت لیستی» — لیست اینلاین تلگرام (یک ردیف دکمه به ازای هر نفر)،
+ * نه تصویر JPEG ترکیبی.
+ */
 export async function handleNearbyListCallback(ctx: Context, page: number): Promise<void> {
+  if (!ctx.from) {
+    await safeAnswerNearbyCallback(ctx, { text: 'اول /start بزن', show_alert: true });
+    return;
+  }
+
+  // فوری — مثل شعاع؛ دیگر تصویر لیست ساخته نمی‌شود
+  await safeAnswerNearbyCallback(ctx);
+
   const user = await getCtxUser(ctx);
-  if (!user?.id || !ctx.from) {
-    await ctx.answerCallbackQuery({ text: 'اول /start بزن', show_alert: true });
+  if (!user?.id) {
+    await ctx.reply('اول /start بزن.');
     return;
   }
 
@@ -361,12 +372,9 @@ export async function handleNearbyListCallback(ctx: Context, page: number): Prom
   const lng = session?.searchLng;
   const radiusKm = session?.searchRadiusKm ?? 5;
   if (lat == null || lng == null) {
-    await ctx.answerCallbackQuery({ text: 'اول موقعیت بفرست', show_alert: true });
     await askNearbyLocation(ctx);
     return;
   }
-
-  await ctx.answerCallbackQuery({ text: 'در حال ساخت لیست…' });
 
   let pets: PetProfile[] = [];
   try {
@@ -399,39 +407,14 @@ export async function handleNearbyListCallback(ctx: Context, page: number): Prom
     searchRadiusKm: radiusKm,
   });
 
-  const caption = [
-    `🛰️ اطراف من ≤ ${toFaDigits(radiusKm)} کیلومتر (${toFaDigits(pets.length)})`,
-    'روی هر مورد در دکمه‌ها بزن تا پروفایل پت باز بشه.',
+  const text = [
+    `🛰️ <b>اطراف من ≤ ${toFaDigits(radiusKm)} کیلومتر (${toFaDigits(pets.length)})</b>`,
+    '',
+    'روی هر ردیف بزن تا پروفایل پت باز بشه.',
   ].join('\n');
 
-  const kb = nearbyVisualListKeyboard(slice, safePage, NEARBY_LIST_PAGE_SIZE, pets.length);
-
-  try {
-    const buf = await fetchNearbyListCardBuffer({
-      lat,
-      lng,
-      radiusKm,
-      excludeOwnerId: user.id,
-      page: safePage,
-      pageSize: NEARBY_LIST_PAGE_SIZE,
-    });
-    await ctx.replyWithPhoto(new InputFile(buf, 'nearby-list.jpg'), {
-      caption,
-      reply_markup: kb,
-    });
-    return;
-  } catch (err) {
-    console.warn('nearby list card failed, fallback inline:', (err as Error).message);
-  }
-
-  // Fallback: متن + اینلاین (اگر ساخت تصویر شکست بخورد)
-  await ctx.reply(
-    [`<b>${caption}</b>`, '', 'لیست متنی (پشتیبان):'].join('\n'),
-    {
-      parse_mode: 'HTML',
-      reply_markup: searchPetsListKeyboard(pets, 'nearby', safePage, NEARBY_LIST_PAGE_SIZE),
-    }
-  );
+  const kb = nearbyInlineListKeyboard(slice, safePage, NEARBY_LIST_PAGE_SIZE, pets.length);
+  await replyNearbyMarkup(ctx, text, kb);
 }
 
 export async function handleSearchOwnerView(ctx: Context, ownerId: number): Promise<void> {
