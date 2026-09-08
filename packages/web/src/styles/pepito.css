@@ -2312,6 +2312,13 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   }
 }
 
+/* Mobile: site footer is redundant with the bottom dock — keep desktop only */
+@media (max-width: 859px) {
+  .pepito-footer {
+    display: none !important;
+  }
+}
+
 @keyframes pepito-rise {
   from { opacity: 0; transform: translateY(18px); }
   to { opacity: 1; transform: translateY(0); }
