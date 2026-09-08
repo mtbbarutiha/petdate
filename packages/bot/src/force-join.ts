@@ -37,7 +37,7 @@ function isForceJoinBypass(ctx: Context): boolean {
   const text = ctx.message?.text?.trim();
   if (text) {
     // /start@BotName و مشابه
-    if (/^\/(start|menu|help|cancel)(@\w+)?(\s|$)/i.test(text)) return true;
+    if (/^\/(start|menu|help|cancel|u_?\d+)(@\w+)?(\s|$)/i.test(text)) return true;
     // دکمه‌های خروج از جریان گیرکرده
     if (text === '📋 منو' || text === 'منو' || text === 'منوی اصلی' || text === '❌ انصراف') {
       return true;

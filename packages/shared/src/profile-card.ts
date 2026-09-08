@@ -9,7 +9,7 @@ import {
   normalizeRoles,
   primaryRole,
   toPersianDigits,
-  userPublicIdOf,
+  userCommandIdOf,
   type UserGender,
   type UserRole,
   type VerificationStatus,
@@ -136,9 +136,9 @@ export function isProfileComplete(user: ProfileCardUser): boolean {
   return PROFILE_REQUIRED_FIELDS.every((f) => isProfileSectionFilled(f, user));
 }
 
-/** شناسهٔ دستور‌مانند تلگرام: /user_PD-U00014 */
+/** شناسهٔ دستور تلگرام (قابل‌ضربه): /u00014 — بدون خط تیره (محدودیت charset بات) */
 export function userCommandId(user: ProfileCardUser): string {
-  return `/user_${userPublicIdOf({ id: user.id, publicId: user.publicId })}`;
+  return userCommandIdOf({ id: user.id, publicId: user.publicId });
 }
 
 export function profileLanguageCode(user: ProfileCardUser): string {

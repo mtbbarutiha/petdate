@@ -6,7 +6,8 @@ import {
   USER_ROLE_LABELS,
   VERIFIED_BADGE,
   normalizeRoles,
-  userPublicIdOf,
+  toUserCommandId,
+  userCommandIdOf,
 } from '@petdate/shared';
 import {
   addUserContact,
@@ -113,9 +114,9 @@ async function sendOwnerChatWebHintOnce(
 const CHAT_WIPE_HINT =
   '🗑 لطفاً کل این گفتگو را از تلگرام پاک کنید تا اثری از پیام‌ها (متن، عکس، ویس و …) نماند.';
 
-/** Playmate chat: show stable public آیدی only — never Telegram @username. */
+/** Playmate chat: tappable bot-command آیدی (/u00042) — never Telegram @username. */
 function playmatePeerIdLabel(user: { id: number; publicId?: string | null }): string {
-  return userPublicIdOf(user);
+  return userCommandIdOf(user);
 }
 
 function formatPeerOwnerCard(user: User): string {
@@ -130,7 +131,7 @@ function formatPeerOwnerCard(user: User): string {
     '👤 <b>پروفایل طرف مقابل</b>',
     verified ? VERIFIED_BADGE : null,
     '',
-    `<b>آیدی:</b> <code>${escapeHtml(peerId)}</code>${verified ? ' ✅' : ''}`,
+    `<b>آیدی:</b> ${escapeHtml(peerId)}${verified ? ' ✅' : ''}`,
     user.age != null ? `<b>سن:</b> ${user.age}` : null,
     `<b>جنسیت:</b> ${gender}`,
     `<b>نقش:</b> ${role}`,
@@ -210,7 +211,7 @@ export async function startOwnerChat(
   const accepterIntro = [
     '💬 <b>چت با صاحب پت فعال شد</b>',
     '',
-    `طرف مقابل: <b>${escapeHtml(playmatePeerIdLabel(requester))}</b>`,
+    `طرف مقابل: ${escapeHtml(playmatePeerIdLabel(requester))}`,
     petLine,
     '',
     '👋 به همبازی جدید سلام کن!',
@@ -224,7 +225,7 @@ export async function startOwnerChat(
   const requesterIntro = [
     '✅ <b>درخواست همبازی پذیرفته شد!</b>',
     '',
-    `طرف مقابل: <b>${escapeHtml(playmatePeerIdLabel(accepter))}</b>`,
+    `طرف مقابل: ${escapeHtml(playmatePeerIdLabel(accepter))}`,
     petLine,
     '',
     '💬 چت همبازی همین الان فعال شد.',
@@ -580,7 +581,7 @@ export async function resumeOwnerChatOnStart(ctx: Context): Promise<boolean> {
     [
       '💬 چت همبازی هنوز فعاله.',
       active.peerPublicId
-        ? `طرف مقابل: ${active.peerPublicId}`
+        ? `طرف مقابل: ${toUserCommandId(active.peerPublicId)}`
         : active.peerUserId
           ? `طرف مقابل: ${playmatePeerIdLabel({ id: active.peerUserId })}`
           : null,
@@ -652,7 +653,7 @@ export async function enterOwnerChatFromCallback(
     [
       '💬 <b>چت همبازی فعال است</b>',
       '',
-      `طرف مقابل: <b>${escapeHtml(playmatePeerIdLabel(peer))}</b>`,
+      `طرف مقابل: ${escapeHtml(playmatePeerIdLabel(peer))}`,
       '👋 به همبازی جدید سلام کن!',
       'از حالا پیام‌هایت مستقیم می‌رسد.',
     ].join('\n'),
@@ -684,7 +685,7 @@ export async function handleOwnerChatRelay(ctx: Context): Promise<boolean> {
         [
           '💬 چت همبازی دوباره فعال شد.',
           ensured.active.peerPublicId
-            ? `طرف مقابل: ${ensured.active.peerPublicId}`
+            ? `طرف مقابل: ${toUserCommandId(ensured.active.peerPublicId)}`
             : ensured.active.peerUserId
               ? `طرف مقابل: ${playmatePeerIdLabel({ id: ensured.active.peerUserId })}`
               : null,

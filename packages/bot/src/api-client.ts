@@ -374,7 +374,7 @@ export type ActiveOwnerChat = {
   peerUserId: number;
   myPetId: number;
   peerPetId: number;
-  /** Stable public آیدی (PD-U#####) — never Telegram username */
+  /** Stable tappable آیدی (/u#####) — never Telegram username */
   peerPublicId?: string;
   /** @deprecated use peerPublicId — kept for older API payloads */
   peerName?: string;

@@ -9,16 +9,22 @@ import {
   USER_AGE_MAX,
   USER_AGE_MIN,
   USER_GENDER_LABELS,
+  USER_ROLE_LABELS,
+  VERIFIED_BADGE,
   VET_CREDENTIAL_STATUS_LABELS,
   formatProfileCardHtml,
   isProfileComplete,
+  normalizeRoles,
   parseUserAge,
+  parseUserIdFromCommand,
   toEnglishDigits,
   toPersianDigits,
+  userCommandIdOf,
   userHasRole,
 } from '@petdate/shared';
 import {
   deleteUserAccount,
+  getUserById,
   listPets,
   listUserBlocks,
   listUserContacts,
@@ -72,6 +78,88 @@ function stepTitle(n: number): string {
 
 function escapeHtml(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/** کارت عمومی کاربر وقتی کسی `/u#####` را می‌زند */
+function formatPublicUserCard(user: User, petNames: string[] = []): string {
+  const gender = user.gender ? USER_GENDER_LABELS[user.gender] : '—';
+  const roles = normalizeRoles(user.roles, user.role);
+  const role = roles.length ? roles.map((r) => USER_ROLE_LABELS[r]).join(' · ') : '—';
+  const verified = (user.verificationStatus ?? 'none') === 'verified';
+  const location = [user.province, user.city].filter(Boolean).join('، ') || '—';
+  const cmd = userCommandIdOf(user);
+  const pets =
+    petNames.length > 0
+      ? petNames.map((n) => `• ${escapeHtml(n)}`).join('\n')
+      : 'هنوز پتی ثبت نشده';
+
+  return [
+    '👤 <b>پروفایل کاربر</b>',
+    verified ? VERIFIED_BADGE : null,
+    '',
+    // Bare command — tappable in Telegram clients
+    `<b>آیدی:</b> ${escapeHtml(cmd)}${verified ? ' ✅' : ''}`,
+    user.age != null ? `<b>سن:</b> ${user.age}` : null,
+    `<b>جنسیت:</b> ${gender}`,
+    `<b>نقش:</b> ${role}`,
+    `<b>موقعیت:</b> ${escapeHtml(location)}`,
+    user.bio ? `\n💬 ${escapeHtml(user.bio)}` : null,
+    '',
+    `🐾 پت‌ها (${petNames.length})`,
+    pets,
+    user.isActive === false ? '\n⏸ حساب فعلاً غیرفعال است' : null,
+  ]
+    .filter(Boolean)
+    .join('\n');
+}
+
+/**
+ * نمایش پروفایل عمومی با آیدی دستور (`/u00042` یا پی‌لود `u_00042`).
+ * عکس پروفایل در صورت وجود با URL مطلق ارسال می‌شود.
+ */
+export async function showPublicUserById(ctx: Context, userId: number): Promise<void> {
+  const user = await getUserById(userId);
+  if (!user || user.isActive === false) {
+    await ctx.reply('کاربری با این آیدی پیدا نشد.');
+    return;
+  }
+
+  let pets: Awaited<ReturnType<typeof listPets>> = [];
+  try {
+    pets = await listPets({ ownerId: user.id });
+  } catch {
+    pets = [];
+  }
+  const text = formatPublicUserCard(
+    user,
+    pets.map((p) => p.name)
+  );
+  const photo = resolveTelegramPhotoUrl(user.avatarUrl);
+  if (photo) {
+    try {
+      await ctx.replyWithPhoto(photo, { caption: text, parse_mode: 'HTML' });
+      return;
+    } catch (err) {
+      console.warn('public profile photo failed:', (err as Error).message);
+    }
+  }
+  await ctx.reply(
+    photo
+      ? text
+      : `${text}\n\n📷 عکس پروفایل ثبت نشده.`,
+    { parse_mode: 'HTML' }
+  );
+}
+
+/** هندلر `/u00042` / `/u00042@Petdatebot` */
+export async function handleUserCommandId(ctx: Context): Promise<void> {
+  const raw = ctx.message?.text?.trim() || '';
+  const id = parseUserIdFromCommand(raw.split(/\s+/)[0] || '');
+  if (!id) {
+    await ctx.reply('آیدی نامعتبر است. مثال: /u00042');
+    return;
+  }
+  await showPublicUserById(ctx, id);
 }
 
 /** کارت کامل پروفایل کاربر — هم‌تراز وب/PWA */

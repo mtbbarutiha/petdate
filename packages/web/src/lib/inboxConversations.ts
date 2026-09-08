@@ -1,5 +1,5 @@
 import type { User, UserRole, VetConsultation } from '@petdate/shared';
-import { makeUserPublicId, primaryRole, userHasRole } from '@petdate/shared';
+import { makeUserPublicId, primaryRole, toUserCommandId, userHasRole } from '@petdate/shared';
 import type { MatchRequest, Pet } from '../types';
 import {
   acceptVetConsultation,
@@ -99,11 +99,11 @@ export function playmateToInbox(match: MatchRequest): InboxConversation {
     key: `playmate:${match.id}`,
     kind: 'playmate',
     id: match.id,
-    // Accepted chat: stable public آیدی only (never Telegram username / display name).
+    // Accepted chat: tappable/copyable /u##### (never Telegram username / display name).
     // Pending requests keep pet name so the seeker sees which pet was requested.
     title:
       match.status === 'accepted' && peer.ownerId
-        ? makeUserPublicId(peer.ownerId)
+        ? toUserCommandId(makeUserPublicId(peer.ownerId))
         : peer.ownerName || peer.name,
     preview,
     createdAt: match.createdAt,
