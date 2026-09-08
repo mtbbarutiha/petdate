@@ -2,7 +2,8 @@ import fs from 'fs';
 import path from 'path';
 import type { Api, Context } from 'grammy';
 import { InputFile } from 'grammy';
-import { BRAND } from '@petdate/shared';
+import { BRAND, SITE } from '@petdate/shared';
+import { effectiveWebUrl, isTelegramInlineUrl } from './urls';
 
 const ASSETS = path.join(__dirname, '..', 'assets');
 export const BOT_PROFILE_JPG = path.join(ASSETS, 'bot-profile.jpg');
@@ -12,7 +13,14 @@ export function logoExists(filePath: string): boolean {
   return fs.existsSync(filePath);
 }
 
-/** Set bot name, profile photo, descriptions, and Menu commands on boot. */
+/** HTTPS origin for MenuButtonWebApp (not the t.me short link). */
+function menuWebAppUrl(): string {
+  const fromEnv = effectiveWebUrl().replace(/\/$/, '');
+  if (isTelegramInlineUrl(fromEnv)) return `${fromEnv}/`;
+  return `${SITE.origin}/`;
+}
+
+/** Set bot descriptions, commands, and Mini App menu button on boot. */
 export async function applyBotBranding(api: Api): Promise<void> {
   // نام را هر بار ست نکن — محدودیت 429 تلگرام
   try {
@@ -31,10 +39,17 @@ export async function applyBotBranding(api: Api): Promise<void> {
       { command: 'cancel', description: 'لغو عملیات جاری' },
       { command: 'profile', description: 'پروفایل' },
     ]);
-    await api.setChatMenuButton({ menu_button: { type: 'commands' } });
-    console.log('   Branding: commands + menu button set');
+    const webAppUrl = menuWebAppUrl();
+    await api.setChatMenuButton({
+      menu_button: {
+        type: 'web_app',
+        text: BRAND?.menuButtonTextFa ?? 'پت‌دیت',
+        web_app: { url: webAppUrl },
+      },
+    });
+    console.log(`   Branding: commands + Mini App menu button → ${webAppUrl}`);
   } catch (err) {
-    console.warn('   Branding: commands skipped —', (err as Error).message);
+    console.warn('   Branding: commands/menu skipped —', (err as Error).message);
   }
 }
 

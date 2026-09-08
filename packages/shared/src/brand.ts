@@ -10,6 +10,11 @@ export const SITE = {
   newsletterEmail: 'news@petdate.ir',
   telegramBot: 'https://t.me/Petdatebot',
   telegramBotUsername: 'Petdatebot',
+  /** Official Mini App short link (BotFather direct-link name: Petdate). */
+  telegramMiniApp: 'https://t.me/Petdatebot/Petdate',
+  /** Channel username without @ */
+  telegramChannel: 'petdating',
+  telegramChannelUrl: 'https://t.me/petdating',
   /** Absolute OG / social share image (1200-class landscape). */
   ogImage: 'https://petdate.ir/brand/petdate-banner.jpg',
   /** Square asset from لوگو مادر (full wordmark on soft canvas) for icons / schema. */
@@ -34,13 +39,18 @@ export const BRAND = {
   displayNameFa: 'پت‌دیت',
   taglineEn: 'PLAY • MEET • FRIENDS',
   taglineFa: 'همبازی برای پت‌ات',
-  shortDescriptionFa: '🐾 petdate — همبازی برای پت | PLAY • MEET • FRIENDS',
+  shortDescriptionFa: '🐾 پت‌دیت — همبازی برای پت | مینی‌اپ در منو',
   descriptionFa:
-    '🐾 petdate — پیدا کردن همبازی برای پت، مشاوره دامپزشک و خدمات پت\nPLAY • MEET • FRIENDS',
+    '🐾 پت‌دیت — پیدا کردن همبازی برای پت، مشاوره دامپزشک و خدمات پت\nPLAY • MEET • FRIENDS\n\nمینی‌اپ: https://t.me/Petdatebot/Petdate',
+  /** Channel about / description (Telegram ~255 chars). */
+  channelDescriptionFa:
+    '🐾 کانال رسمی پت‌دیت\nهمبازی برای پت · PLAY • MEET • FRIENDS\nمینی‌اپ: https://t.me/Petdatebot/Petdate\nربات: @Petdatebot',
   welcomeFa: 'به petdate خوش اومدی — همبازی برای پت‌ات',
   botTitle: 'petdate',
   domain: SITE.domain,
   url: SITE.origin,
   email: SITE.email,
   newsletterEmail: SITE.newsletterEmail,
+  /** Menu button label (Telegram MenuButtonWebApp text). */
+  menuButtonTextFa: 'پت‌دیت',
 } as const;
