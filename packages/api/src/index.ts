@@ -21,6 +21,7 @@ import {
 import path from 'path';
 import { gamesRouter } from './routes/games';
 import { petsRouter } from './routes/pets';
+import { mediaRouter } from './routes/media';
 import { playdatesRouter } from './routes/playdates';
 import { sectionsRouter } from './routes/sections';
 import { usersRouter } from './routes/users';
@@ -149,6 +150,7 @@ app.use('/api/prescriptions', prescriptionsFileRouter);
 app.use('/rx', prescriptionWebRouter);
 app.use('/api/games', gamesRouter);
 app.use('/api/pets', petsRouter);
+app.use('/api/media', mediaRouter);
 app.use('/api/playdate-requests', playdatesRouter);
 app.use('/api/sections', sectionsRouter);
 app.use('/api/auth', authRouter);
