@@ -146,29 +146,68 @@ export async function handleChatsEntry(ctx: Context): Promise<void> {
   await pushMainMenuKeyboard(ctx, user);
 }
 
+/**
+ * متن دعوت دوستان — HTML (نه Markdown legacy).
+ * لینک `ref_<id>` زیرخط دارد؛ Markdown تلگرام `_` را italic می‌گیرد و sendMessage 400 می‌دهد.
+ */
+export function buildInviteFriendsHtml(userId: number): {
+  text: string;
+  parse_mode: 'HTML';
+  shareUrl: string;
+  link: string;
+} {
+  const link = inviteTelegramLink(userId);
+  const rewardFa = escapeHtml(formatNum(REFERRAL_BONUS_COINS));
+  const text = [
+    '🎁 <b>دعوت دوستان</b>',
+    '',
+    'دوستات رو به petdate دعوت کن و سکه بگیر!',
+    '',
+    'لینک دعوت تو:',
+    `<code>${escapeHtml(link)}</code>`,
+    '',
+    `به ازای هر دوست که ثبت‌نام کنه، <b>${rewardFa} سکه</b> هدیه می‌گیری.`,
+  ].join('\n');
+  return {
+    text,
+    parse_mode: 'HTML',
+    shareUrl: inviteTelegramShareUrl(userId),
+    link,
+  };
+}
+
 export async function handleInviteFriends(ctx: Context): Promise<void> {
   const user = await getCtxUser(ctx);
-  const link = inviteTelegramLink(user?.id ?? 0);
-  const rewardFa = formatNum(REFERRAL_BONUS_COINS);
+  if (!user) {
+    await ctx.reply('اول /start بزن.');
+    return;
+  }
 
-  await ctx.reply(
-    [
-      '🎁 **دعوت دوستان**',
-      '',
-      'دوستات رو به petdate دعوت کن و سکه بگیر!',
-      '',
-      `لینک دعوت تو:`,
-      link,
-      '',
-      `به ازای هر دوست که ثبت‌نام کنه، **${rewardFa} سکه** هدیه می‌گیری.`,
-    ].join('\n'),
-    {
-      parse_mode: 'Markdown',
-      reply_markup: new InlineKeyboard()
-        .url('📤 اشتراک‌گذاری لینک', inviteTelegramShareUrl(user?.id ?? 0))
-        .success(),
-    }
-  );
+  const invite = buildInviteFriendsHtml(user.id);
+  const kb = new InlineKeyboard().url('📤 اشتراک‌گذاری لینک', invite.shareUrl);
+
+  try {
+    await ctx.reply(invite.text, {
+      parse_mode: invite.parse_mode,
+      reply_markup: kb,
+    });
+  } catch (err) {
+    // Fallback بدون parse_mode — لینک ref_ نباید دوباره پیام را بشکند
+    console.error('handleInviteFriends HTML send failed:', err);
+    await ctx.reply(
+      [
+        '🎁 دعوت دوستان',
+        '',
+        'دوستات رو به petdate دعوت کن و سکه بگیر!',
+        '',
+        'لینک دعوت تو:',
+        invite.link,
+        '',
+        `به ازای هر دوست که ثبت‌نام کنه، ${formatNum(REFERRAL_BONUS_COINS)} سکه هدیه می‌گیری.`,
+      ].join('\n'),
+      { reply_markup: kb }
+    );
+  }
   await pushMainMenuKeyboard(ctx, user);
 }
 
