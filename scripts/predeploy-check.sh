@@ -41,6 +41,8 @@ check_md5() {
 
 # لوگو مادر full wordmark for header; PWA = mark-only crop (no type) — see generate-brand-assets.py
 check_md5 packages/web/public/pepito/img/logo.png beda5e5ccdd11c32dd06a4f1bce2c6bf
+# Rx PDF/HTML brand copy must stay identical to لوگو مادر
+check_md5 packages/api/assets/brand/petdate-dr-logo.png beda5e5ccdd11c32dd06a4f1bce2c6bf
 check_md5 packages/web/public/pwa-192.png 16a1f783d32a55f7a2c948b6951da303
 check_md5 packages/web/public/favicon.png ab82dcfaeed55aad89b4ba8ec16726cb
 

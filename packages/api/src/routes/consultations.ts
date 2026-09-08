@@ -1149,7 +1149,7 @@ function sendPrescriptionHtml(req: { get(name: string): string | undefined }, re
     medicationText: rx.text,
     dateIso: rx.createdAt,
     pdfUrl: prescriptionPdfPublicUrl(rx.id),
-    logoUrl: '/assets/brand/petdate-dr-logo.png',
+    // logoUrl omitted → لوگو مادر embedded as data URI
   });
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.setHeader('Cache-Control', 'private, max-age=60');

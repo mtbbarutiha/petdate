@@ -1,12 +1,15 @@
 /**
  * Public web (HTML) view of a veterinary prescription —
- * RTL, transparent logo asset, English brand only (no Persian wordmark).
+ * RTL, لوگو مادر (mother logo) embedded as base64 for reliable PDF/print.
  */
 import fs from 'fs';
 import path from 'path';
 import { PET_SPECIES_LABELS, SITE } from '@petdate/shared';
 
 const RX_BRAND_EN = 'Pet Date Dr';
+
+/** Same file as packages/web/public/pepito/img/logo.png (لوگو مادر). */
+export const PRESCRIPTION_LOGO_ASSET = 'petdate-dr-logo.png';
 
 export type PrescriptionHtmlInput = {
   prescriptionId: number;
@@ -18,8 +21,40 @@ export type PrescriptionHtmlInput = {
   medicationText: string;
   dateIso?: string;
   pdfUrl?: string;
+  /** Override logo src; default embeds لوگو مادر as data URI. */
   logoUrl?: string;
 };
+
+/**
+ * Resolve لوگو مادر for Rx HTML/PDF — prefers api brand copy of pepito logo.png.
+ */
+export function resolvePrescriptionLogoPath(): string | null {
+  const candidates = [
+    path.join(__dirname, '..', 'assets', 'brand', PRESCRIPTION_LOGO_ASSET),
+    path.join(__dirname, '..', '..', 'assets', 'brand', PRESCRIPTION_LOGO_ASSET),
+    path.join(process.cwd(), 'assets', 'brand', PRESCRIPTION_LOGO_ASSET),
+    path.join(process.cwd(), 'packages', 'api', 'assets', 'brand', PRESCRIPTION_LOGO_ASSET),
+    path.join(process.cwd(), 'packages', 'web', 'public', 'pepito', 'img', 'logo.png'),
+  ];
+  for (const p of candidates) {
+    if (fs.existsSync(p)) return p;
+  }
+  return null;
+}
+
+/** data:image/png;base64,… of لوگو مادر, or static path fallback. */
+export function prescriptionLogoSrc(): string {
+  const p = resolvePrescriptionLogoPath();
+  if (p) {
+    try {
+      const buf = fs.readFileSync(p);
+      return `data:image/png;base64,${buf.toString('base64')}`;
+    } catch {
+      /* fall through */
+    }
+  }
+  return `/assets/brand/${PRESCRIPTION_LOGO_ASSET}`;
+}
 
 function escapeHtml(s: string): string {
   return String(s ?? '')
@@ -184,7 +219,7 @@ export function renderPrescriptionHtml(input: PrescriptionHtmlInput): string {
   const petBits = [input.petName, speciesLabel(input.petSpecies), input.petBreed]
     .filter(Boolean)
     .join(' — ');
-  const logoUrl = input.logoUrl || '/assets/brand/petdate-dr-logo.png';
+  const logoUrl = input.logoUrl || prescriptionLogoSrc();
   const pdfUrl = input.pdfUrl || prescriptionPdfWebPath(input.prescriptionId);
   const disclaimer =
     'این نسخه صرفاً جهت اطلاع صاحب حیوان خانگی است و جایگزین معاینه حضوری نیست. در صورت بروز عارضه با دامپزشک خود تماس بگیرید.';
@@ -255,8 +290,9 @@ export function renderPrescriptionHtml(input: PrescriptionHtmlInput): string {
       border-radius: 2px;
     }
     .logo {
-      width: 96px;
-      height: 96px;
+      height: 52px;
+      width: auto;
+      max-width: min(220px, 48vw);
       object-fit: contain;
       flex-shrink: 0;
       background: transparent;
@@ -357,7 +393,7 @@ export function renderPrescriptionHtml(input: PrescriptionHtmlInput): string {
     }
     .btn:hover { filter: brightness(0.96); }
     @media (max-width: 520px) {
-      .logo { width: 78px; height: 78px; }
+      .logo { height: 40px; max-width: min(180px, 55vw); }
       .header { padding: 14px 14px 12px; }
       .body { padding: 16px 14px 20px; }
     }
@@ -376,7 +412,7 @@ export function renderPrescriptionHtml(input: PrescriptionHtmlInput): string {
         <p class="kicker">نسخه دامپزشکی · کلینیک آنلاین</p>
         <div class="rule" aria-hidden="true"></div>
       </div>
-      <img class="logo" src="${escapeHtml(logoUrl)}" alt="${RX_BRAND_EN}" width="96" height="96" />
+      <img class="logo" src="${escapeHtml(logoUrl)}" alt="${RX_BRAND_EN}" />
     </header>
     <div class="body">
       <div class="meta">
