@@ -31,6 +31,47 @@ export function menuKeyboardFor(
 }
 
 /**
+ * Carrier texts for sticky ReplyKeyboard push (send + delete).
+ * Telegram rejects ZWNJ/ZWSP/NBSP as "text must be non-empty" — use Word Joiner
+ * first (invisible), then visible fallbacks.
+ */
+const KEYBOARD_CARRIERS = ['\u2060', '·', '.'] as const;
+
+type TelegramApiLike = {
+  sendMessage: (
+    chatId: string | number,
+    text: string,
+    other?: { reply_markup?: Keyboard }
+  ) => Promise<{ message_id: number }>;
+  deleteMessage: (chatId: string | number, messageId: number) => Promise<unknown>;
+};
+
+/**
+ * اعمال ReplyKeyboard روی یک chatId بدون پیام ماندگار.
+ * برای طرف مقابل (requester) که ctx.chat او نیست هم قابل استفاده است.
+ */
+export async function pushReplyKeyboardToChat(
+  api: TelegramApiLike,
+  chatId: string | number,
+  keyboard: Keyboard
+): Promise<boolean> {
+  for (const carrier of KEYBOARD_CARRIERS) {
+    try {
+      const msg = await api.sendMessage(chatId, carrier, { reply_markup: keyboard });
+      await api.deleteMessage(chatId, msg.message_id).catch(() => undefined);
+      return true;
+    } catch (err) {
+      console.warn(
+        'pushReplyKeyboardToChat carrier failed',
+        JSON.stringify(carrier),
+        (err as Error)?.message ?? err
+      );
+    }
+  }
+  return false;
+}
+
+/**
  * اعمال ReplyKeyboard بدون پیام ماندگار در چت.
  *
  * روی بعضی کلاینت‌های تلگرام (به‌خصوص اندروید) اگر پیامِ حامل کیبورد
@@ -40,12 +81,8 @@ export function menuKeyboardFor(
 export async function pushReplyKeyboard(ctx: Context, keyboard: Keyboard): Promise<void> {
   const chatId = ctx.chat?.id ?? ctx.from?.id;
   if (chatId == null) return;
-  try {
-    const msg = await ctx.api.sendMessage(chatId, '\u200c', { reply_markup: keyboard });
-    await ctx.api.deleteMessage(chatId, msg.message_id).catch(() => undefined);
-  } catch (err) {
-    console.warn('pushReplyKeyboard failed', err);
-  }
+  const ok = await pushReplyKeyboardToChat(ctx.api, chatId, keyboard);
+  if (!ok) console.warn('pushReplyKeyboard failed for all carriers', chatId);
 }
 
 /** متن محتوا + کیبورد پایین بدون پیام فیک اسکرولی */

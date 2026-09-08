@@ -20,7 +20,7 @@ import {
   type ActiveOwnerChat,
 } from '../api-client';
 import { getSession, upsertSession } from '../session';
-import { getCtxUser, menuKeyboardFor } from './helpers';
+import { getCtxUser, menuKeyboardFor, pushReplyKeyboardToChat } from './helpers';
 import { formatPet } from '../format';
 import { MAIN_MENU_ALIASES, MAIN_MENU_BTN, MENU_LABELS, mainMenuKeyboard } from '../keyboards';
 import { effectiveWebUrl, isTelegramInlineUrl, resolveTelegramPhotoUrl } from '../urls';
@@ -142,6 +142,10 @@ function protectOpts(secure: boolean): { protect_content?: true } {
 /**
  * بعد از قبول درخواست همبازی توسط گیرنده:
  * هر دو طرف بلافاصله وارد چت می‌شوند — بدون دکمه «شروع چت».
+ *
+ * مهم: intro را با ctx.api.sendMessage می‌فرستیم (نه ctx.reply) تا sticky-middleware
+ * کیبورد را از پیام محتوا جدا نکند قبل از push؛ سپس کیبورد چت را sticky می‌کنیم.
+ * notify هر طرف مستقل است تا خطای یکی، طرف دیگر را از دست ندهد.
  */
 export async function startOwnerChat(
   ctx: Context,
@@ -155,15 +159,17 @@ export async function startOwnerChat(
     toPetId?: number;
   }
 ): Promise<void> {
-  if (!accepter.telegramId || !requester.telegramId) {
+  const accepterTg = accepter.telegramId != null ? String(accepter.telegramId).trim() : '';
+  const requesterTg = requester.telegramId != null ? String(requester.telegramId).trim() : '';
+  if (!accepterTg || !requesterTg) {
     await ctx.reply('برای شروع چت، هر دو طرف باید از ربات استفاده کرده باشند.');
     return;
   }
 
-  await upsertSession(String(accepter.telegramId), {
+  await upsertSession(accepterTg, {
     step: 'owner_chat',
     ownerChatPlaydateId: playdateId,
-    ownerChatPeerTelegramId: String(requester.telegramId),
+    ownerChatPeerTelegramId: requesterTg,
     ownerChatPeerUserId: requester.id,
     ownerChatMyPetId: opts?.toPetId,
     ownerChatPeerPetId: opts?.fromPetId,
@@ -171,10 +177,10 @@ export async function startOwnerChat(
     ownerChatWebHintSent: false,
   });
 
-  await upsertSession(String(requester.telegramId), {
+  await upsertSession(requesterTg, {
     step: 'owner_chat',
     ownerChatPlaydateId: playdateId,
-    ownerChatPeerTelegramId: String(accepter.telegramId),
+    ownerChatPeerTelegramId: accepterTg,
     ownerChatPeerUserId: accepter.id,
     ownerChatMyPetId: opts?.fromPetId,
     ownerChatPeerPetId: opts?.toPetId,
@@ -223,20 +229,50 @@ export async function startOwnerChat(
     .filter(Boolean)
     .join('\n');
 
-  await ctx.reply(accepterIntro, {
-    parse_mode: 'HTML',
-    reply_markup: ownerChatReplyKeyboard(false),
-  });
-  await sendOwnerChatWebHintOnce(ctx, String(accepter.telegramId), playdateId);
+  const chatKeyboard = ownerChatReplyKeyboard(false);
 
-  try {
-    await ctx.api.sendMessage(requester.telegramId, requesterIntro, {
-      parse_mode: 'HTML',
-      reply_markup: ownerChatReplyKeyboard(false),
-    });
-    await sendOwnerChatWebHintOnce(ctx, String(requester.telegramId), playdateId);
-  } catch (err) {
-    console.warn('notify requester owner chat open failed:', err);
+  /** Content without reply_markup + sticky keyboard push (survives Android float fix). */
+  const openChatFor = async (telegramId: string, intro: string, who: string): Promise<boolean> => {
+    try {
+      await ctx.api.sendMessage(telegramId, intro, { parse_mode: 'HTML' });
+    } catch (err) {
+      console.warn(`owner chat intro failed (${who}):`, err);
+      // Fallback: try with keyboard on the content message so user still enters chat UI.
+      try {
+        await ctx.api.sendMessage(telegramId, intro, {
+          parse_mode: 'HTML',
+          reply_markup: chatKeyboard,
+        });
+        return true;
+      } catch (err2) {
+        console.warn(`owner chat intro+keyboard failed (${who}):`, err2);
+        return false;
+      }
+    }
+    const kbOk = await pushReplyKeyboardToChat(ctx.api, telegramId, chatKeyboard);
+    if (!kbOk) {
+      // Last resort: attach keyboard to a short visible prompt so chat mode is obvious.
+      try {
+        await ctx.api.sendMessage(telegramId, '👋 به همبازی سلام کن!', {
+          reply_markup: chatKeyboard,
+        });
+      } catch (err) {
+        console.warn(`owner chat keyboard fallback failed (${who}):`, err);
+      }
+    }
+    return true;
+  };
+
+  const accepterOk = await openChatFor(accepterTg, accepterIntro, 'accepter');
+  if (accepterOk) {
+    await sendOwnerChatWebHintOnce(ctx, accepterTg, playdateId);
+  }
+
+  const requesterOk = await openChatFor(requesterTg, requesterIntro, 'requester');
+  if (requesterOk) {
+    await sendOwnerChatWebHintOnce(ctx, requesterTg, playdateId);
+  } else {
+    console.warn('notify requester owner chat open failed for playdate', playdateId);
   }
 }
 
