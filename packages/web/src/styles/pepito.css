@@ -2471,9 +2471,11 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 }
 .floating-nav,
 .mobile-nav {
-  background: rgba(255, 255, 255, 0.94) !important;
-  border: 1px solid rgba(92, 77, 145, 0.1);
-  box-shadow: 0 16px 40px rgba(25, 6, 61, 0.14) !important;
+  background: rgba(255, 255, 255, 0.72) !important;
+  border: 1px solid rgba(92, 77, 145, 0.12);
+  box-shadow: 0 8px 28px rgba(25, 6, 61, 0.08) !important;
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
 }
 .nav-item.active {
   color: var(--pepito-base) !important;
@@ -4559,15 +4561,18 @@ div.pepito-profile-stat:active {
     display: none !important;
     grid-template-columns: repeat(4, 1fr);
     position: fixed;
-    inset-inline: 12px;
-    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    inset-inline: 0;
+    bottom: 0;
     z-index: 50;
     gap: 0.15rem;
-    padding: 0.45rem 0.35rem;
-    background: rgba(255, 255, 255, 0.96);
-    border: 1px solid rgba(92, 77, 145, 0.1);
-    border-radius: 18px;
-    box-shadow: 0 14px 36px rgba(25, 6, 61, 0.12);
+    padding: 0.45rem 0.35rem calc(0.45rem + env(safe-area-inset-bottom, 0px));
+    background: rgba(255, 255, 255, 0.72);
+    border: 0;
+    border-top: 0.5px solid rgba(25, 6, 61, 0.12);
+    border-radius: 0;
+    box-shadow: none;
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
   }
   .pepito-app-mobile-link {
     display: flex;
@@ -9149,21 +9154,38 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
     letter-spacing: 0.02em;
   }
 
+  /* Instagram-like frosted glass bottom tab bar */
   .pepito-landing-mobile-dock {
     display: flex;
     align-items: stretch;
     justify-content: space-between;
     position: fixed;
-    inset-inline: 8px;
-    bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+    inset-inline: 0;
+    bottom: 0;
     z-index: 60;
     gap: 0;
-    padding: 0.4rem 0.12rem;
-    background: rgba(255, 255, 255, 0.97);
-    border: 1px solid rgba(92, 77, 145, 0.12);
-    border-radius: 18px;
-    box-shadow: 0 14px 36px rgba(25, 6, 61, 0.14);
-    backdrop-filter: blur(10px);
+    padding: 0.35rem 0.2rem calc(0.35rem + env(safe-area-inset-bottom, 0px));
+    background: rgba(255, 255, 255, 0.72);
+    border: 0;
+    border-top: 0.5px solid rgba(25, 6, 61, 0.12);
+    border-radius: 0;
+    box-shadow: none;
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+  }
+
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .pepito-landing-mobile-dock {
+      background: rgba(255, 255, 255, 0.92);
+    }
+  }
+
+  @media (prefers-reduced-transparency: reduce) {
+    .pepito-landing-mobile-dock {
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
   }
 
   .pepito-landing-mobile-dock-link {
@@ -9174,13 +9196,15 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
     justify-content: center;
     gap: 0.12rem;
     min-width: 0;
+    min-height: 44px;
     padding: 0.28rem 0.04rem;
-    color: var(--pepito-muted);
+    color: rgba(25, 6, 61, 0.55);
     text-decoration: none;
     font-size: 0.54rem;
     font-weight: 700;
     line-height: 1.15;
     text-align: center;
+    -webkit-tap-highlight-color: transparent;
   }
 
   .pepito-landing-mobile-dock-link span {
@@ -9193,6 +9217,10 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
 
   .pepito-landing-mobile-dock-link.is-active {
     color: var(--pepito-base);
+  }
+
+  .pepito-landing-mobile-dock-link.is-active svg {
+    stroke-width: 2.35;
   }
 
   .pepito-landing--with-dock .pepito-footer {
