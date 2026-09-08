@@ -1,8 +1,11 @@
+import fs from 'fs';
+import path from 'path';
 import { infra } from '../config/infra';
 import type { PlaydateChatMediaKind } from '@petdate/shared';
 import { dbService } from '../db';
 import { telegramFetch, telegramBotApiUrl, telegramFileApiUrl } from './telegram-http';
 import { usableTelegramId } from './telegram-id';
+import { resolveStoragePath } from './chat-upload-store';
 
 type TelegramSendResult = { ok: boolean; messageId?: number };
 
@@ -34,12 +37,99 @@ async function telegramCall(
   }
 }
 
+async function telegramSendMultipart(
+  method: string,
+  fields: Record<string, string>,
+  fileField: string,
+  file: { buffer: Buffer; filename: string; contentType: string }
+): Promise<TelegramSendResult> {
+  const token = infra.telegram.botToken;
+  if (!token) return { ok: false };
+  try {
+    const form = new FormData();
+    for (const [k, v] of Object.entries(fields)) {
+      if (v != null && v !== '') form.append(k, v);
+    }
+    form.append(
+      fileField,
+      new Blob([new Uint8Array(file.buffer)], { type: file.contentType || 'application/octet-stream' }),
+      file.filename || 'file'
+    );
+    const res = await telegramFetch(telegramBotApiUrl(token, method), {
+      method: 'POST',
+      body: form,
+    });
+    const data = (await res.json()) as {
+      ok?: boolean;
+      description?: string;
+      result?: { message_id?: number };
+    };
+    if (!data.ok) {
+      console.warn(`telegram ${method} upload failed:`, data.description ?? res.status);
+      return { ok: false };
+    }
+    return { ok: true, messageId: data.result?.message_id };
+  } catch (err) {
+    console.warn(`telegram ${method} upload error:`, (err as Error).message);
+    return { ok: false };
+  }
+}
+
+function rememberDelivery(playdateId: number, chatId: string, messageId?: number) {
+  if (!messageId) return;
+  try {
+    dbService.recordPlaydateChatTgRef(playdateId, chatId, messageId);
+  } catch (err) {
+    console.warn('record playdate tg ref failed:', (err as Error).message);
+  }
+}
+
 /**
- * Playmate chat is web-only: do NOT mirror lines to Telegram as
- * "💬 پیام همبازی از …". Delivery stays on web chat / WebSocket.
- * Kept as a no-op so call sites remain stable if re-enabled later.
+ * Sticky ReplyKeyboard on the *content* message (never send+delete carrier).
+ * Labels match packages/bot ownerChatReplyKeyboard.
  */
-export async function notifyPlaydateChatTelegram(_opts: {
+function ownerChatStickyKeyboard(secure = false) {
+  return {
+    keyboard: [
+      [
+        { text: secure ? '🔓 خاموش‌کردن چت امن' : '🔒 چت امن' },
+        { text: '👤 پروفایل طرف مقابل' },
+      ],
+      [{ text: '🐾 مشاهده پروفایل پت' }, { text: '➕ افزودن مخاطب' }],
+      [{ text: '🔌 قطع چت همبازی' }],
+    ],
+    resize_keyboard: true,
+    is_persistent: true,
+  };
+}
+
+function mediaPlaceholder(kind?: PlaydateChatMediaKind | null): string {
+  switch (kind) {
+    case 'photo':
+      return '[تصویر]';
+    case 'video':
+    case 'animation':
+    case 'video_note':
+      return '[ویدیو]';
+    case 'voice':
+      return '[پیام صوتی]';
+    case 'audio':
+      return '[فایل صوتی]';
+    case 'sticker':
+      return '[استیکر]';
+    case 'document':
+      return '[فایل]';
+    default:
+      return '[رسانه]';
+  }
+}
+
+/**
+ * Mirror a web (or API) playdate chat line to the PEER's Telegram bot chat.
+ * Plain text — no «💬 پیام همبازی از» prefix (bot filters that / looks like an echo).
+ * Bot-originated lines call the messages API with skipTelegram=true to avoid double-send.
+ */
+export async function notifyPlaydateChatTelegram(opts: {
   toTelegramId: string;
   senderName: string;
   text: string;
@@ -50,7 +140,111 @@ export async function notifyPlaydateChatTelegram(_opts: {
   mimeType?: string | null;
   fileName?: string | null;
 }): Promise<boolean> {
-  return false;
+  if (!infra.telegram.botToken || !usableTelegramId(opts.toTelegramId)) return false;
+  void opts.senderName; // kept for call-site compatibility; not shown in plain relay
+
+  const chatId = String(opts.toTelegramId).trim();
+  const secure = Boolean(opts.protectContent);
+  const protect = secure ? { protect_content: true } : {};
+  const keyboard = ownerChatStickyKeyboard(secure);
+  const caption = (opts.text || '').trim();
+  const storageAbs = opts.storageKey ? resolveStoragePath(opts.storageKey) : null;
+  const hasFile = Boolean(storageAbs && fs.existsSync(storageAbs));
+
+  let result: TelegramSendResult = { ok: false };
+
+  if (hasFile && storageAbs) {
+    const buffer = fs.readFileSync(storageAbs);
+    const filename =
+      (opts.fileName && path.basename(opts.fileName)) ||
+      path.basename(storageAbs) ||
+      'file';
+    const contentType = opts.mimeType || 'application/octet-stream';
+    const kind = opts.mediaKind || 'document';
+    const fields: Record<string, string> = {
+      chat_id: chatId,
+      ...(caption ? { caption: caption.slice(0, 1024) } : {}),
+      ...(secure ? { protect_content: 'true' } : {}),
+      reply_markup: JSON.stringify(keyboard),
+    };
+
+    if (kind === 'photo') {
+      result = await telegramSendMultipart('sendPhoto', fields, 'photo', {
+        buffer,
+        filename,
+        contentType: contentType.startsWith('image/') ? contentType : 'image/jpeg',
+      });
+    } else if (kind === 'sticker') {
+      // Stickers are often webp — sendDocument is more reliable than sendPhoto
+      result = await telegramSendMultipart('sendDocument', fields, 'document', {
+        buffer,
+        filename: filename.endsWith('.webp') ? filename : `${filename}.webp`,
+        contentType: contentType.startsWith('image/') ? contentType : 'image/webp',
+      });
+    } else if (kind === 'video' || kind === 'animation' || kind === 'video_note') {
+      const method = kind === 'animation' ? 'sendAnimation' : 'sendVideo';
+      const field = kind === 'animation' ? 'animation' : 'video';
+      result = await telegramSendMultipart(method, fields, field, {
+        buffer,
+        filename,
+        contentType: contentType || 'video/mp4',
+      });
+    } else if (kind === 'voice' || kind === 'audio') {
+      const method = kind === 'voice' ? 'sendVoice' : 'sendAudio';
+      const field = kind === 'voice' ? 'voice' : 'audio';
+      result = await telegramSendMultipart(method, fields, field, {
+        buffer,
+        filename,
+        contentType: contentType || 'audio/ogg',
+      });
+    } else {
+      result = await telegramSendMultipart('sendDocument', fields, 'document', {
+        buffer,
+        filename,
+        contentType,
+      });
+    }
+
+    // Fallbacks: document upload, then text so peer still learns something arrived
+    if (!result.ok && kind !== 'document' && kind !== 'sticker') {
+      result = await telegramSendMultipart('sendDocument', fields, 'document', {
+        buffer,
+        filename,
+        contentType,
+      });
+    }
+    if (!result.ok) {
+      const notice = (caption || mediaPlaceholder(kind)).slice(0, 4096);
+      result = await telegramCall('sendMessage', {
+        chat_id: chatId,
+        text: notice,
+        ...protect,
+        reply_markup: keyboard,
+      });
+    }
+  } else if (caption) {
+    result = await telegramCall('sendMessage', {
+      chat_id: chatId,
+      text: caption.slice(0, 4096),
+      ...protect,
+      reply_markup: keyboard,
+    });
+  } else if (opts.mediaKind) {
+    // DB has media metadata but file missing on disk — still notify peer
+    result = await telegramCall('sendMessage', {
+      chat_id: chatId,
+      text: mediaPlaceholder(opts.mediaKind),
+      ...protect,
+      reply_markup: keyboard,
+    });
+  } else {
+    return false;
+  }
+
+  if (result.ok) {
+    rememberDelivery(opts.playdateId, chatId, result.messageId);
+  }
+  return result.ok;
 }
 
 export async function notifyPlaydateChatSecureTelegram(opts: {
