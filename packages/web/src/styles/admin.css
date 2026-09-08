@@ -1159,6 +1159,16 @@
   background: #d8f8ef;
   color: #0f766e;
 }
+.admin-app .admin-role-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-width: 220px;
+}
+.admin-app .admin-role-badges .admin-badge {
+  font-size: 0.72rem;
+  padding: 2px 6px;
+}
 .admin-app .admin-card--wide {
   grid-column: 1 / -1;
 }

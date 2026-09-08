@@ -139,7 +139,9 @@ adminRouter.get('/pets', (req, res) => {
       p.name.toLowerCase().includes(lower) ||
       (p.breed || '').toLowerCase().includes(lower) ||
       (p.city || '').toLowerCase().includes(lower) ||
-      String(p.id) === q
+      String(p.id) === q ||
+      (p.publicId || '').toLowerCase().includes(lower) ||
+      `pd-p${String(p.id).padStart(5, '0')}` === lower
     );
   }
   res.json({ total: pets.length, pets });

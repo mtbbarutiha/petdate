@@ -1,7 +1,20 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Search } from 'lucide-react';
-import { USER_ROLES, USER_ROLE_LABELS, type User, type UserRole } from '@petdate/shared';
+import {
+  USER_ROLES,
+  USER_ROLE_LABELS,
+  userPublicIdOf,
+  type User,
+  type UserRole,
+} from '@petdate/shared';
 import { adminFetch, formatNumFa } from '../api';
+
+function activeRolesOf(user: User): UserRole[] {
+  const fromList = (user.roles || []).filter((r): r is UserRole => USER_ROLES.includes(r));
+  if (fromList.length) return fromList;
+  if (user.role && USER_ROLES.includes(user.role)) return [user.role];
+  return [];
+}
 
 export function AdminUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -62,7 +75,7 @@ export function AdminUsersPage() {
     <div className="admin-page">
       <header className="admin-header"><div><h1>کاربران</h1><p>{formatNumFa(total)} کاربر</p></div></header>
       <div className="admin-toolbar">
-        <div className="admin-search"><Search size={16} /><input placeholder="جستجو…" value={q} onChange={(e) => setQ(e.target.value)} /></div>
+        <div className="admin-search"><Search size={16} /><input placeholder="نام، آیدی PD-U، موبایل…" value={q} onChange={(e) => setQ(e.target.value)} /></div>
         <select className="admin-select" value={role} onChange={(e) => setRole(e.target.value)}>
           <option value="">همه نقش‌ها</option>
           {USER_ROLES.map((r) => <option key={r} value={r}>{USER_ROLE_LABELS[r]}</option>)}
@@ -81,33 +94,74 @@ export function AdminUsersPage() {
       </div>
       {error ? <p className="admin-error">{error}</p> : null}
       <div className="admin-table-wrap admin-card"><table className="admin-table">
-        <thead><tr><th>ID</th><th>نام</th><th>نقش</th><th>کیف پول</th><th>وضعیت</th><th>عملیات</th></tr></thead>
+        <thead>
+          <tr>
+            <th>آیدی</th>
+            <th>نام</th>
+            <th>موبایل</th>
+            <th>نقش‌های فعال</th>
+            <th>نقش اصلی</th>
+            <th>کیف پول</th>
+            <th>وضعیت</th>
+            <th>عملیات</th>
+          </tr>
+        </thead>
         <tbody>
-          {users.map((u) => (
-            <tr key={u.id}>
-              <td className="admin-mono">{u.id}</td>
-              <td><strong>{u.name}</strong><div className="admin-muted">{u.username ? `@${u.username}` : u.phone || u.telegramId || '—'}</div></td>
-              <td>
-                <select className="admin-select" value={u.role || ''} disabled={busyId === u.id}
-                  onChange={(e) => void setPrimaryRole(u, e.target.value as UserRole)}>
-                  {USER_ROLES.map((r) => <option key={r} value={r}>{USER_ROLE_LABELS[r]}</option>)}
-                </select>
-              </td>
-              <td className="admin-mono">C:{formatNumFa(u.coins ?? 0)} · T:{formatNumFa(u.walletToman ?? 0)}</td>
-              <td><span className={`admin-badge ${u.isActive === false ? 'admin-badge--error' : 'admin-badge--info'}`}>{u.isActive === false ? 'مسدود' : 'فعال'}</span></td>
-              <td>
-                <div className="admin-row-actions">
-                  <button type="button" className="admin-btn admin-btn--ghost" disabled={busyId === u.id}
-                    onClick={() => setCredit({ userId: u.id, amount: '10000', currency: 'toman' })}>اعتبار</button>
-                  <button type="button" className={`admin-btn ${u.isActive === false ? 'admin-btn--primary' : 'admin-btn--danger'}`}
-                    disabled={busyId === u.id} onClick={() => void toggleBan(u)}>
-                    {u.isActive === false ? 'رفع مسدودی' : 'مسدود'}
-                  </button>
-                </div>
-              </td>
-            </tr>
-          ))}
-          {!users.length ? <tr><td colSpan={6} className="admin-muted">کاربری یافت نشد</td></tr> : null}
+          {users.map((u) => {
+            const publicId = userPublicIdOf(u);
+            const roles = activeRolesOf(u);
+            return (
+              <tr key={u.id}>
+                <td>
+                  <code className="admin-mono" dir="ltr">{publicId}</code>
+                  <div className="admin-muted admin-mono">#{u.id}</div>
+                </td>
+                <td>
+                  <strong>{u.name}</strong>
+                  <div className="admin-muted">
+                    {u.username ? `@${u.username}` : u.telegramId || '—'}
+                  </div>
+                </td>
+                <td className="admin-mono" dir="ltr">
+                  {u.phone ? u.phone : <span className="admin-muted">—</span>}
+                </td>
+                <td>
+                  <div className="admin-role-badges">
+                    {roles.length
+                      ? roles.map((r) => (
+                          <span
+                            key={r}
+                            className={`admin-badge ${r === u.role ? 'admin-badge--info' : ''}`}
+                            title={r === u.role ? 'نقش اصلی' : undefined}
+                          >
+                            {USER_ROLE_LABELS[r] || r}
+                          </span>
+                        ))
+                      : <span className="admin-muted">بدون نقش</span>}
+                  </div>
+                </td>
+                <td>
+                  <select className="admin-select" value={u.role || ''} disabled={busyId === u.id}
+                    onChange={(e) => void setPrimaryRole(u, e.target.value as UserRole)}>
+                    {USER_ROLES.map((r) => <option key={r} value={r}>{USER_ROLE_LABELS[r]}</option>)}
+                  </select>
+                </td>
+                <td className="admin-mono">C:{formatNumFa(u.coins ?? 0)} · T:{formatNumFa(u.walletToman ?? 0)}</td>
+                <td><span className={`admin-badge ${u.isActive === false ? 'admin-badge--error' : 'admin-badge--info'}`}>{u.isActive === false ? 'مسدود' : 'فعال'}</span></td>
+                <td>
+                  <div className="admin-row-actions">
+                    <button type="button" className="admin-btn admin-btn--ghost" disabled={busyId === u.id}
+                      onClick={() => setCredit({ userId: u.id, amount: '10000', currency: 'toman' })}>اعتبار</button>
+                    <button type="button" className={`admin-btn ${u.isActive === false ? 'admin-btn--primary' : 'admin-btn--danger'}`}
+                      disabled={busyId === u.id} onClick={() => void toggleBan(u)}>
+                      {u.isActive === false ? 'رفع مسدودی' : 'مسدود'}
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            );
+          })}
+          {!users.length ? <tr><td colSpan={8} className="admin-muted">کاربری یافت نشد</td></tr> : null}
         </tbody>
       </table></div>
       {credit ? (
