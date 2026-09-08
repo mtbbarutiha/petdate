@@ -10657,3 +10657,23 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
     text-align: center;
   }
 }
+
+
+.pepito-profile-command-id {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+.pepito-profile-command-id code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: 0.02em;
+}
+.pepito-profile-command-id:hover code,
+.pepito-profile-command-id:focus-visible code {
+  text-decoration: underline dotted;
+  text-underline-offset: 3px;
+}

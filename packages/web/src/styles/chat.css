@@ -1491,3 +1491,18 @@ html.tg-chat-open body {
     animation: none !important;
   }
 }
+
+
+/* Tappable/copyable peer command id (/u00042) */
+.tg-peer-command-id {
+  cursor: pointer;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: 0.02em;
+  text-decoration: underline dotted rgba(255, 255, 255, 0.35);
+  text-underline-offset: 3px;
+}
+.tg-peer-command-id:hover,
+.tg-peer-command-id:focus-visible {
+  text-decoration-color: rgba(21, 204, 160, 0.85);
+  outline: none;
+}

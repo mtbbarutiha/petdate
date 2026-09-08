@@ -83,6 +83,10 @@ export {
   toPersianDigits,
   userHasRole,
   userPublicIdOf,
+  userCommandIdOf,
+  toUserCommandId,
+  makeUserCommandToken,
+  parseUserIdFromCommand,
   VERIFIED_BADGE,
 } from './petdate';
 export type {

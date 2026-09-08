@@ -69,10 +69,12 @@ import {
   handleProfileSilentToggle,
   handleProfileSkip,
   handleProfileWizardText,
+  handleUserCommandId,
   handleVetCredentialDocument,
   handleVetCredentialPhoto,
   handleVetCredentialText,
   showProfileEditMenu,
+  showPublicUserById,
   startProfileSectionEdit,
   startProfileWizard,
   startVetCredentialUpload,
@@ -266,6 +268,9 @@ export function registerHandlers(bot: Bot): void {
   bot.command('start', handleStart);
   bot.command('menu', handleMenu);
   bot.command('help', handleHelp);
+
+  // Tappable public ids: /u00042 (hyphen-free; Telegram bot_command charset)
+  bot.hears(/^\/u_?\d{1,10}(?:@\w+)?(?:\s|$)/i, (ctx) => handleUserCommandId(ctx));
 
   bot.callbackQuery(/^wpend:(ok|no):([a-f0-9]{32})$/i, async (ctx) => {
     const accept = String(ctx.match![1]).toLowerCase() === 'ok';

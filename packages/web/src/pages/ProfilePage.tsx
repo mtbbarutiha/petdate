@@ -588,7 +588,20 @@ export function ProfilePage() {
           {display.phone ? <div><dt>موبایل</dt><dd dir="ltr">{display.phone}</dd></div> : null}
           <div>
             <dt>آیدی</dt>
-            <dd><code dir="ltr">{userCommandId(display)}</code></dd>
+            <dd>
+              <button
+                type="button"
+                className="pepito-profile-command-id"
+                dir="ltr"
+                title="کپی آیدی"
+                onClick={() => {
+                  const id = userCommandId(display);
+                  void navigator.clipboard?.writeText(id);
+                }}
+              >
+                <code>{userCommandId(display)}</code>
+              </button>
+            </dd>
           </div>
         </dl>
         {display.bio ? <p className="pepito-profile-bio">{display.bio}</p> : (

@@ -5,6 +5,7 @@ import {
   ROLE_CONFIRM_LABEL,
   USER_ROLE_LABELS,
   normalizeRoles,
+  parseUserIdFromCommand,
   primaryRole,
 } from '@petdate/shared';
 import {
@@ -32,7 +33,7 @@ import { parseWebLoginStartPayload, parseWebPendingLoginPayload } from '../teleg
 import { webLinkHint } from '../urls';
 import { displayName, getCtxUser, menuKeyboardFor } from './helpers';
 import { resumeOwnerChatOnStart } from './owner-chat';
-import { startProfileWizard } from './profile';
+import { showPublicUserById, startProfileWizard } from './profile';
 
 export {
   displayName,
@@ -235,6 +236,27 @@ export async function handleStart(ctx: Context): Promise<void> {
       });
       const { handleWalletStarsTopUpMenu } = await import('./coins');
       await handleWalletStarsTopUpMenu(ctx);
+      return;
+    }
+
+    // Deep link: /start u_00042 or /start u00042 → open that user's public profile
+    const profileId = payload ? parseUserIdFromCommand(payload) : null;
+    if (profileId) {
+      const roles = normalizeRoles(user.roles, user.role);
+      await upsertSession(telegramId, {
+        userId: user.id,
+        role: user.role,
+        draftRoles: roles,
+        step: roles.length ? 'ready' : 'role_select',
+        locale: 'fa',
+        pendingPhone: undefined,
+      });
+      await showPublicUserById(ctx, profileId);
+      if (!roles.length) {
+        await ctx.reply('برای ادامه، نقشت را انتخاب کن:', {
+          reply_markup: roleReplyKeyboard(),
+        });
+      }
       return;
     }
 

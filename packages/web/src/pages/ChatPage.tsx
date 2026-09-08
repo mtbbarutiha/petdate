@@ -61,7 +61,7 @@ import {
   resolvePublicMediaUrl,
 } from '../lib/api';
 import type { PlaydateChatMediaKind, PlaydateChatMessage } from '@petdate/shared';
-import { PLAYDATE_REQUEST_TTL_MS, isPendingRequestExpired, makeUserPublicId, userPublicIdOf } from '@petdate/shared';
+import { PLAYDATE_REQUEST_TTL_MS, isPendingRequestExpired, makeUserPublicId, toUserCommandId, userCommandIdOf } from '@petdate/shared';
 import { playdateToMatchRequest } from '../lib/playdateMap';
 import { subscribeIncomingRefresh } from '../lib/liveIncoming';
 import {
@@ -860,13 +860,13 @@ export function ChatPage() {
       return;
     }
     let cancelled = false;
-    // Prefer public آیدی immediately; refine from API if stored publicId differs.
-    const fallbackId = makeUserPublicId(ownerId);
+    // Prefer tappable/copyable command id (/u#####) immediately.
+    const fallbackId = toUserCommandId(makeUserPublicId(ownerId));
     setPeerOwnerLabel(fallbackId);
     void getUserById(ownerId)
       .then((user) => {
         if (cancelled || !user?.id) return;
-        const label = userPublicIdOf(user);
+        const label = userCommandIdOf(user);
         setPeerOwnerLabel(label);
         setPeerOwnerAvatar(resolvePublicMediaUrl(user.avatarUrl));
         setPeerOwnerMeta({
@@ -893,7 +893,7 @@ export function ChatPage() {
         );
       })
       .catch(() => {
-        /* keep PD-U##### fallback */
+        /* keep /u##### fallback */
       });
     return () => {
       cancelled = true;
@@ -939,8 +939,18 @@ export function ChatPage() {
   const peerOwnerId = peerPet?.ownerId;
   const peerOwnerName =
     peerOwnerLabel ||
-    (peerOwnerId ? makeUserPublicId(peerOwnerId) : null) ||
+    (peerOwnerId ? toUserCommandId(makeUserPublicId(peerOwnerId)) : null) ||
     'صاحب پت';
+
+  async function copyPeerCommandId() {
+    const id = peerOwnerName.startsWith('/') ? peerOwnerName : null;
+    if (!id || typeof navigator === 'undefined' || !navigator.clipboard?.writeText) return;
+    try {
+      await navigator.clipboard.writeText(id);
+    } catch {
+      /* ignore */
+    }
+  }
   const isExpiredRequest =
     Boolean(match?.expired) ||
     match?.status === 'expired' ||
@@ -1414,7 +1424,26 @@ export function ChatPage() {
                     />
                   )}
                   <span>
-                    <strong>{peerOwnerName}</strong>
+                    <strong
+                      dir="ltr"
+                      className="tg-peer-command-id"
+                      title="کپی آیدی"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void copyPeerCommandId();
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          void copyPeerCommandId();
+                        }
+                      }}
+                      role="button"
+                      tabIndex={0}
+                    >
+                      {peerOwnerName}
+                    </strong>
                     <small>
                       {ended
                         ? 'چت پایان یافته'
@@ -1698,7 +1727,22 @@ export function ChatPage() {
                       )}
                       <h3>پروفایل طرف مقابل</h3>
                       <p>
-                        <strong>{peerOwnerName}</strong>
+                        <strong
+                          dir="ltr"
+                          className="tg-peer-command-id"
+                          title="کپی آیدی"
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => void copyPeerCommandId()}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              void copyPeerCommandId();
+                            }
+                          }}
+                        >
+                          {peerOwnerName}
+                        </strong>
                       </p>
                       <ul>
                         {peerOwnerMeta?.age != null ? <li>سن: {peerOwnerMeta.age}</li> : null}

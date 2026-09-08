@@ -30,6 +30,7 @@ import { getSession, upsertSession } from '../session';
 import { getCtxUser, menuKeyboardFor, pushMainMenuKeyboard } from './helpers';
 import { handleAdminVerifyQueue } from './verification';
 import type { User } from '@petdate/shared';
+import { userCommandIdOf } from '@petdate/shared';
 
 const ADMIN_VET_LIST_PAGE_SIZE = 10;
 
@@ -37,11 +38,9 @@ function escapeHtml(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-/** شناسهٔ نمایشی پزشک — publicId ذخیره‌شده یا PD-U##### */
+/** شناسهٔ نمایشی پزشک — دستور قابل‌ضربه /u##### */
 function adminVetPublicId(user: User): string {
-  const stored = (user as User & { publicId?: string | null }).publicId;
-  if (stored && String(stored).trim()) return String(stored).trim();
-  return `PD-U${String(Math.trunc(user.id)).padStart(5, '0')}`;
+  return userCommandIdOf(user);
 }
 
 export async function showAdminPanel(ctx: Context): Promise<void> {
@@ -335,7 +334,7 @@ function formatAdminVetCard(user: User): string {
   return [
     `🩺 <b>${escapeHtml(user.name)}</b>`,
     user.username ? `@${escapeHtml(user.username)}` : null,
-    `<b>آیدی:</b> <code>${escapeHtml(adminVetPublicId(user))}</code>`,
+    `<b>آیدی:</b> ${escapeHtml(adminVetPublicId(user))}`,
     user.telegramId ? `<b>تلگرام:</b> <code>${escapeHtml(user.telegramId)}</code>` : null,
     `<b>وضعیت:</b> ${enabled ? '✅ فعال' : '⏸ غیرفعال'}`,
     `<b>آنلاین:</b> ${online ? '🟢 بله' : '🔴 خیر'}`,
@@ -353,7 +352,7 @@ function formatAdminVetListLine(user: User, index: number): string {
   const phone = user.phone ? escapeHtml(user.phone) : null;
   const parts = [
     `${index}. <b>${escapeHtml(user.name)}</b>`,
-    `<code>${escapeHtml(adminVetPublicId(user))}</code>`,
+    escapeHtml(adminVetPublicId(user)),
     enabled ? '✅ فعال' : '⏸ غیرفعال',
     online ? '🟢 آنلاین' : '🔴 آفلاین',
   ];

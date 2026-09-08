@@ -106,6 +106,60 @@ export function petPublicIdOf(pet: { id: number; publicId?: string | null }): st
   return (pet.publicId && String(pet.publicId).trim()) || makePetPublicId(pet.id);
 }
 
+/**
+ * توکن دستور تلگرام (بدون `/`) — فقط a-z / 0-9 / _ (خط تیرهٔ PD-U مجاز نیست).
+ * مثال: PD-U00042 → u00042
+ */
+export function makeUserCommandToken(internalId: number): string {
+  return `u${String(Math.trunc(internalId)).padStart(5, '0')}`;
+}
+
+/**
+ * آیدی قابل‌ضربه در تلگرام: `/u00042`
+ * کلاینت‌ها آن را به‌عنوان bot command تشخیص می‌دهند.
+ */
+export function userCommandIdOf(user: { id: number; publicId?: string | null }): string {
+  const publicId = userPublicIdOf(user);
+  const fromPublic = /^PD-U(\d+)$/i.exec(publicId);
+  if (fromPublic) return `/u${fromPublic[1]}`;
+  return `/${makeUserCommandToken(user.id)}`;
+}
+
+/** تبدیل PD-U##### یا /u##### یا u_##### به فرم دستور `/u#####` */
+export function toUserCommandId(raw: string | { id: number; publicId?: string | null }): string {
+  if (typeof raw !== 'string') return userCommandIdOf(raw);
+  const s = String(raw).trim();
+  if (!s) return s;
+  const cmd = /^\/?u_?(\d{1,10})(?:@\w+)?$/i.exec(s);
+  if (cmd) return `/u${cmd[1]}`;
+  const pd = /^(?:\/?user_)?PD-U(\d{1,10})$/i.exec(s);
+  if (pd) return `/u${pd[1]}`;
+  if (s.startsWith('/')) return s;
+  return `/${s.replace(/[^a-zA-Z0-9_]/g, '')}`;
+}
+
+/**
+ * استخراج id داخلی از دستور/پی‌لود:
+ * `/u00042`, `/u00042@Bot`, `u_00042`, `u00042`, `PD-U00042`, `/user_PD-U00042`
+ */
+export function parseUserIdFromCommand(raw: string): number | null {
+  const s = String(raw || '').trim();
+  if (!s) return null;
+  const stripped = s.replace(/@\w+$/i, '').trim();
+  const patterns = [
+    /^\/?u_?(\d{1,10})$/i,
+    /^(?:\/?user_)?PD-U(\d{1,10})$/i,
+    /^\/?user_PD-U(\d{1,10})$/i,
+  ];
+  for (const re of patterns) {
+    const m = re.exec(stripped);
+    if (!m) continue;
+    const id = Number(m[1]);
+    if (Number.isFinite(id) && id > 0) return Math.trunc(id);
+  }
+  return null;
+}
+
 /** متن معرفی احراز چهره — سبک دوردوریا */
 export function faceVerifyIntroText(rewardCoins: number): string {
   const reward = new Intl.NumberFormat('fa-IR').format(rewardCoins);
