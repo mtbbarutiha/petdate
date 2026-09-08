@@ -1,41 +1,77 @@
 # Google Search Console — پت‌دیت
 
-## وضعیت اتوماسیون
+## وضعیت فعلی (۲۰۲۶-۰۹-۰۸)
 
-در محیط Cloud Agent **اعتبارنامه Search Console / Google API وجود ندارد** (`GOOGLE_APPLICATION_CREDENTIALS` و مشابه خالی است). بنابراین ارسال خودکار sitemap انجام نشد.
+| مورد | وضعیت |
+|------|--------|
+| متای HTML تأیید | **روی سایت زنده است** (`https://petdate.ir/` و `https://www.petdate.ir/`) |
+| DNS TXT تأیید Domain | **اضافه نشده** — فقط SPF موجود است؛ NS روی ParsPack است (`jungle/garden.parspack.net`) و از VPS قابل ویرایش نیست |
+| Sitemap | `https://petdate.ir/sitemap.xml` (اشاره در `robots.txt`) |
 
-Sitemap تولید و روی سایت در دسترس است:
+توکن تأیید:
 
-- `https://petdate.ir/sitemap.xml`
-- اشاره در `https://petdate.ir/robots.txt` → `Sitemap: https://petdate.ir/sitemap.xml`
+```
+google-site-verification=xaV-T_LTYV_FDK2Yvd7AVCxzHRk1RRDrkxiuAEbBdvo
+```
 
-تولید مجدد هنگام بیلد وب: `npm run sitemap -w @petdate/web` (و `prebuild`).
+در HTML:
 
-## اقدام کاربر (یک‌بار)
+```html
+<meta name="google-site-verification" content="xaV-T_LTYV_FDK2Yvd7AVCxzHRk1RRDrkxiuAEbBdvo" />
+```
 
-1. باز کردن [Google Search Console](https://search.google.com/search-console).
-2. افزودن ملک:
-   - ترجیحاً **Domain** برای `petdate.ir` (شامل www و غیرwww)، یا
-   - URL-prefix برای `https://petdate.ir` و در صورت نیاز `https://www.petdate.ir`.
-3. تأیید مالکیت — یکی از روش‌ها:
-   - **HTML tag** (آماده روی سایت): متای زیر در `packages/web/index.html` است و بعد از دیپلوی وب در HTML اولیه همه صفحات عمومی دیده می‌شود:
-     ```html
-     <meta name="google-site-verification" content="xaV-T_LTYV_FDK2Yvd7AVCxzHRk1RRDrkxiuAEbBdvo" />
-     ```
-     در Search Console روی **Verify** بزنید.
-   - یا DNS TXT / فایل HTML روی سرور.
-4. **Sitemaps** → ارسال `https://petdate.ir/sitemap.xml`.
-5. (پیشنهاد) در nginx یک **۳۰۱** از `www` به apex (یا برعکس) تا با canonicalهای فعلی (`https://petdate.ir/...`) هم‌خوان شود.
+در Cloud Agent اعتبارنامه Search Console / Google API نیست؛ Verify را باید مالک در پنل بزند.
 
-## اگر بعداً API خواستید
+---
 
-متغیرهای پیشنهادی (در Secrets، نه در git):
+## مسیر سریع پیشنهادی (همین الان)
 
-- `GOOGLE_APPLICATION_CREDENTIALS` → مسیر JSON سرویس‌اکانت با نقش Search Console
-- یا OAuth client برای کاربر مالک ملک
+چون متای HTML زنده است، **روش Domain (DNS)** را رها کنید و از **URL-prefix** استفاده کنید:
 
-سپس می‌توان اسکریپت `webmasters.sitemaps.submit` را اضافه کرد؛ تا آن موقع همین مسیر دستی کافی است.
+1. Search Console → **Add property** → **URL prefix**
+2. آدرس را دقیقاً بگذارید: `https://www.petdate.ir/`  
+   (یا `https://petdate.ir/` — هر دو متا دارند؛ با canonical فعلی apex ترجیح دارد اگر redirect یکدست شود)
+3. روش تأیید: **HTML tag**
+4. دکمه **Verify** را بزنید (متا از قبل روی سایت است؛ نیازی به کپی مجدد نیست)
+5. بعد از تأیید: **Sitemaps** → ارسال `https://petdate.ir/sitemap.xml`
+
+---
+
+## اگر روی Domain (`petdate.ir`) ماندید
+
+DNS را **فقط** در پنل دامنه / ParsPack عوض کنید (نه روی VPS — bind محلی نیست).
+
+1. وارد پنل DNS دامنه شوید (ParsPack / ثبت‌کننده).
+2. یک رکورد **TXT جدید** در apex (`@` یا خالی) اضافه کنید — **SPF را حذف نکنید**:
+   - Type: `TXT`
+   - Host/Name: `@`
+   - Value: `google-site-verification=xaV-T_LTYV_FDK2Yvd7AVCxzHRk1RRDrkxiuAEbBdvo`
+3. چند ساعت صبر کنید تا منتشر شود، بعد در Search Console روی **Verify** بزنید.
+4. چک از ترمینال:
+
+```bash
+dig TXT petdate.ir +short
+# باید هم SPF و هم google-site-verification را ببینید
+```
+
+رکورد فعلی که Google پیدا کرده (فقط SPF):
+
+```
+v=spf1 ip4:185.110.189.218 a:mail.petdate.ir mx -all
+```
+
+جزئیات SPF/DKIM/DMARC میل: `docs/infra/mail-petdate.md`.
+
+---
+
+## اتوماسیون بعدی (اختیاری)
+
+Secrets پیشنهادی (نه در git):
+
+- `GOOGLE_APPLICATION_CREDENTIALS` → JSON سرویس‌اکانت با دسترسی Search Console
+
+سپس می‌توان `webmasters.sitemaps.submit` را اسکریپت کرد؛ تا آن موقع مسیر دستی کافی است.
 
 ## Bing (اختیاری)
 
-[Bing Webmaster Tools](https://www.bing.com/webmasters) → Import from Google یا ارسال همان sitemap.
+[Bing Webmaster Tools](https://www.bing.com/webmasters) → Import from Google یا همان sitemap.
