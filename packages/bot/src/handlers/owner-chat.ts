@@ -133,15 +133,15 @@ function formatPeerOwnerCard(
     heading,
     verified ? VERIFIED_BADGE : null,
     '',
-    `<b>آیدی:</b> <code>${escapeHtml(peerId)}</code>${verified ? ' ✅' : ''}`,,
+    `<b>آیدی:</b> <code>${escapeHtml(peerId)}</code>${verified ? ' ✅' : ''}`,
     user.age != null ? `<b>سن:</b> ${user.age}` : null,
     `<b>جنسیت:</b> ${gender}`,
     `<b>نقش:</b> ${role}`,
     `<b>موقعیت:</b> ${escapeHtml(location)}`,
-    user.bio ? `\n💬 ${escapeHtml(user.bio)}` : null,,
+    user.bio ? `\n💬 ${escapeHtml(user.bio)}` : null,
   ]
     .filter(Boolean)
-    .join('\n');;
+    .join('\n');
 }
 
 function protectOpts(secure: boolean): { protect_content?: true } {
