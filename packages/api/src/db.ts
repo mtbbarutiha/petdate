@@ -783,6 +783,22 @@ function migrateSchema() {
   if (!userPresenceNames.has('last_seen_at')) {
     db.exec('ALTER TABLE users ADD COLUMN last_seen_at TEXT');
   }
+  /** اتصال Telegram Business برای خواندن موجودی Stars شخصی کاربر */
+  if (!userPresenceNames.has('tg_business_connection_id')) {
+    db.exec('ALTER TABLE users ADD COLUMN tg_business_connection_id TEXT');
+  }
+  if (!userPresenceNames.has('tg_business_enabled')) {
+    db.exec('ALTER TABLE users ADD COLUMN tg_business_enabled INTEGER NOT NULL DEFAULT 0');
+  }
+  if (!userPresenceNames.has('tg_business_can_view_stars')) {
+    db.exec('ALTER TABLE users ADD COLUMN tg_business_can_view_stars INTEGER NOT NULL DEFAULT 0');
+  }
+  if (!userPresenceNames.has('tg_stars_cached')) {
+    db.exec('ALTER TABLE users ADD COLUMN tg_stars_cached INTEGER');
+  }
+  if (!userPresenceNames.has('tg_stars_synced_at')) {
+    db.exec('ALTER TABLE users ADD COLUMN tg_stars_synced_at TEXT');
+  }
 
   // Backfill roles JSON + migrate removed roles (pet_sitter / community_seeker → drop or pet_owner)
   const roleRows = db
@@ -2864,6 +2880,76 @@ export const dbService = {
     const user = this.getUserById(userId);
     if (!user) return null;
     return user.wallet ?? walletFromUserFields(user);
+  },
+
+  getTelegramBusinessConnection(userId: number): {
+    connectionId: string | null;
+    isEnabled: boolean;
+    canViewStars: boolean;
+    cachedStars: number | null;
+    syncedAt: string | null;
+  } | null {
+    const row = db
+      .prepare(
+        `SELECT tg_business_connection_id, tg_business_enabled, tg_business_can_view_stars,
+                tg_stars_cached, tg_stars_synced_at
+         FROM users WHERE id = ?`
+      )
+      .get(userId) as
+      | {
+          tg_business_connection_id: string | null;
+          tg_business_enabled: number | null;
+          tg_business_can_view_stars: number | null;
+          tg_stars_cached: number | null;
+          tg_stars_synced_at: string | null;
+        }
+      | undefined;
+    if (!row) return null;
+    const connectionId =
+      row.tg_business_connection_id != null && String(row.tg_business_connection_id).trim()
+        ? String(row.tg_business_connection_id).trim()
+        : null;
+    return {
+      connectionId,
+      isEnabled: Boolean(row.tg_business_enabled),
+      canViewStars: Boolean(row.tg_business_can_view_stars),
+      cachedStars:
+        row.tg_stars_cached != null && Number.isFinite(Number(row.tg_stars_cached))
+          ? Math.floor(Number(row.tg_stars_cached))
+          : null,
+      syncedAt: row.tg_stars_synced_at ? String(row.tg_stars_synced_at) : null,
+    };
+  },
+
+  upsertTelegramBusinessConnection(input: {
+    telegramId: string;
+    connectionId: string;
+    isEnabled: boolean;
+    canViewStars: boolean;
+  }): { ok: true; userId: number } | { ok: false; reason: 'user_missing' } {
+    const user = this.getUserByTelegramId(String(input.telegramId));
+    if (!user) return { ok: false, reason: 'user_missing' };
+    db.prepare(
+      `UPDATE users SET
+         tg_business_connection_id = ?,
+         tg_business_enabled = ?,
+         tg_business_can_view_stars = ?
+       WHERE id = ?`
+    ).run(
+      String(input.connectionId).trim(),
+      input.isEnabled ? 1 : 0,
+      input.canViewStars ? 1 : 0,
+      user.id
+    );
+    return { ok: true, userId: user.id };
+  },
+
+  cacheTelegramAccountStars(userId: number, amount: number): void {
+    const safe = Math.floor(Number(amount));
+    if (!Number.isFinite(safe)) return;
+    db.prepare(
+      `UPDATE users SET tg_stars_cached = ?, tg_stars_synced_at = datetime('now') WHERE id = ?`
+    ).run(safe, userId);
   },
 
   /**

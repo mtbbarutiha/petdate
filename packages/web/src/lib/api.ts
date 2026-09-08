@@ -556,6 +556,12 @@ export async function fetchWallet(token: string) {
       topUpDeepLink: string | null;
       viewStarsDeepLink?: string | null;
       viewStarsHttpsHint?: string | null;
+      connectBusinessDeepLink?: string | null;
+      businessConnected?: boolean;
+      businessCanViewStars?: boolean;
+      botBusinessReady?: boolean;
+      syncErrorFa?: string | null;
+      syncedAt?: string | null;
     };
   }>('/api/auth/wallet', token);
 }

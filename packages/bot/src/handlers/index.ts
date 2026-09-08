@@ -221,8 +221,12 @@ import {
 } from './phone-verify';
 import { touchTelegramPresence } from '../api-client';
 import { stickyReplyKeyboardMiddleware } from '../sticky-reply-keyboard';
+import { registerBusinessHandlers } from './business';
 
 export function registerHandlers(bot: Bot): void {
+  // قبل از force-join: آپدیت Business connection نباید بلاک شود
+  registerBusinessHandlers(bot);
+
   // کیبورد reply را پایین بچسبان (جلوگیری از کیبورد فیک هنگام اسکرول)
   bot.use(stickyReplyKeyboardMiddleware());
   // عضویت اجباری در کانال‌ها — قبل از همهٔ دستورات

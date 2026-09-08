@@ -102,7 +102,18 @@ async function main(): Promise<void> {
 
   if (config.webhookUrl) {
     const secret = config.webhookSecret ?? `petdate-${Date.now()}`;
-    await bot.api.setWebhook(config.webhookUrl, { secret_token: secret });
+    await bot.api.setWebhook(config.webhookUrl, {
+      secret_token: secret,
+      allowed_updates: [
+        'message',
+        'callback_query',
+        'pre_checkout_query',
+        'business_connection',
+        'edited_message',
+        'my_chat_member',
+        'chat_member',
+      ],
+    });
     console.log(`🤖 petdate bot webhook → ${config.webhookUrl}`);
     console.log('   (برای dev از polling استفاده کن — BOT_WEBHOOK_URL را خالی بگذار)');
   } else {
@@ -114,6 +125,15 @@ async function main(): Promise<void> {
     }
     await bot.start({
       drop_pending_updates: true,
+      allowed_updates: [
+        'message',
+        'callback_query',
+        'pre_checkout_query',
+        'business_connection',
+        'edited_message',
+        'my_chat_member',
+        'chat_member',
+      ],
       onStart: () => console.log(`   API: ${config.apiUrl} | Web: ${config.webUrl}`),
     });
   }

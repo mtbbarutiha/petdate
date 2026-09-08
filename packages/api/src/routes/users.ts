@@ -57,6 +57,36 @@ usersRouter.post('/telegram/:telegramId/presence', async (req, res) => {
   res.json(dbService.getUserPresence(user.id));
 });
 
+/**
+ * ذخیرهٔ اتصال Telegram Business از آپدیت ربات
+ * (برای خواندن موجودی Stars با getBusinessAccountStarBalance).
+ */
+usersRouter.post('/telegram/:telegramId/business-connection', (req, res) => {
+  const telegramId = String(req.params.telegramId || '').trim();
+  const connectionId = String(req.body?.connectionId ?? '').trim();
+  const isEnabled = Boolean(req.body?.isEnabled);
+  const canViewStars = Boolean(req.body?.canViewStars);
+  if (!telegramId || !connectionId) {
+    res.status(400).json({ error: 'connectionId لازم است' });
+    return;
+  }
+  const result = dbService.upsertTelegramBusinessConnection({
+    telegramId,
+    connectionId,
+    isEnabled,
+    canViewStars,
+  });
+  if (!result.ok) {
+    res.status(404).json({ error: 'کاربر پیدا نشد — اول /start بزن' });
+    return;
+  }
+  res.json({
+    ok: true,
+    userId: result.userId,
+    connection: dbService.getTelegramBusinessConnection(result.userId),
+  });
+});
+
 usersRouter.get('/id/:id', (req, res) => {
   const user = dbService.getUserById(Number(req.params.id));
   if (!user) {

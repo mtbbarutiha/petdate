@@ -48,6 +48,23 @@ export async function touchTelegramPresence(telegramId: string): Promise<void> {
   }
 }
 
+/** ذخیره اتصال Telegram Business (برای خواندن Stars حساب کاربر). */
+export async function upsertTelegramBusinessConnection(data: {
+  telegramId: string;
+  connectionId: string;
+  isEnabled: boolean;
+  canViewStars: boolean;
+}): Promise<{ ok: true; userId: number }> {
+  return request(`/api/users/telegram/${encodeURIComponent(data.telegramId)}/business-connection`, {
+    method: 'POST',
+    body: JSON.stringify({
+      connectionId: data.connectionId,
+      isEnabled: data.isEnabled,
+      canViewStars: data.canViewStars,
+    }),
+  });
+}
+
 /** Complete web→Telegram attach from /start wlink_<token>. */
 export async function completeWebTelegramLink(data: {
   token: string;

@@ -77,9 +77,15 @@ export function WalletPage() {
     reasonFa: string;
     topUpDeepLink: string | null;
     viewStarsDeepLink: string | null;
+    connectBusinessDeepLink: string | null;
     telegramAccountLabelFa: string;
     petdateLabelFa: string;
     petdateBalance: number;
+    telegramAccountBalance: number | null;
+    businessConnected: boolean;
+    businessCanViewStars: boolean;
+    botBusinessReady: boolean;
+    syncErrorFa: string | null;
   } | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(() => !user);
@@ -131,6 +137,8 @@ export function WalletPage() {
       setWallet((prev) => (sameWallet(prev, res.wallet) ? prev : res.wallet));
       hasLocalRef.current = true;
       if (res.telegramStars) {
+        const tgBal =
+          res.telegramStars.telegramAccountBalance ?? res.telegramStars.nativeBalance ?? null;
         setTelegramStarsMeta({
           nativeReadable: Boolean(res.telegramStars.nativeReadable),
           reasonFa: res.telegramStars.reasonFa,
@@ -139,6 +147,7 @@ export function WalletPage() {
             res.telegramStars.viewStarsDeepLink ||
             res.telegramStars.viewStarsHttpsHint ||
             'tg://stars',
+          connectBusinessDeepLink: res.telegramStars.connectBusinessDeepLink || 'tg://settings/business',
           telegramAccountLabelFa:
             res.telegramStars.telegramAccountLabelFa || 'موجودی Stars شما در تلگرام',
           petdateLabelFa:
@@ -149,6 +158,12 @@ export function WalletPage() {
               Number(res.telegramStars.petdateBalance ?? res.telegramStars.walletStars ?? res.wallet.stars) || 0
             )
           ),
+          telegramAccountBalance:
+            tgBal != null && Number.isFinite(Number(tgBal)) ? Math.max(0, Math.floor(Number(tgBal))) : null,
+          businessConnected: Boolean(res.telegramStars.businessConnected),
+          businessCanViewStars: Boolean(res.telegramStars.businessCanViewStars),
+          botBusinessReady: Boolean(res.telegramStars.botBusinessReady),
+          syncErrorFa: res.telegramStars.syncErrorFa ?? null,
         });
       }
       if (res.telegram) {
@@ -319,14 +334,19 @@ export function WalletPage() {
                 <span className="pepito-wallet-tg-stars-label">
                   {telegramStarsMeta?.telegramAccountLabelFa || 'موجودی Stars شما در تلگرام'}
                 </span>
-                {linked && telegramStarsMeta?.viewStarsDeepLink ? (
+                {telegramStarsMeta?.nativeReadable && telegramStarsMeta.telegramAccountBalance != null ? (
+                  <strong className="pepito-wallet-tg-stars-val">
+                    {formatBal(telegramStarsMeta.telegramAccountBalance)}
+                    <span className="pepito-wallet-tg-stars-unit"> ستاره</span>
+                  </strong>
+                ) : linked && telegramStarsMeta?.connectBusinessDeepLink ? (
                   <a
                     className="pepito-wallet-tg-stars-val pepito-wallet-tg-stars-open"
-                    href={telegramStarsMeta.viewStarsDeepLink}
+                    href={telegramStarsMeta.connectBusinessDeepLink}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    مشاهده در تلگرام
+                    اتصال Business برای خواندن عدد
                   </a>
                 ) : (
                   <strong className="pepito-wallet-tg-stars-val pepito-wallet-tg-stars-val--muted">
@@ -334,7 +354,10 @@ export function WalletPage() {
                   </strong>
                 )}
                 <span className="pepito-wallet-tg-stars-hint">
-                  عدد موجودی شخصی فقط داخل اپ تلگرام (My Stars) دیده می‌شود؛ از اینجا همان صفحه باز می‌شود.
+                  {telegramStarsMeta?.syncErrorFa ||
+                    (telegramStarsMeta?.nativeReadable
+                      ? 'از تلگرام با اجازهٔ Business خوانده شد.'
+                      : 'با اتصال Business و دسترسی Gifts and Stars، عدد اینجا نشان داده می‌شود.')}
                 </span>
               </span>
             </p>
@@ -405,7 +428,9 @@ export function WalletPage() {
           >
             {linked
               ? syncedAt
-                ? 'همگام‌سازی: ستارهٔ پنل تازه شد. برای عدد Stars تلگرام از «مشاهده در تلگرام» استفاده کن.'
+                ? telegramStarsMeta?.nativeReadable
+                  ? 'همگام‌سازی: ستارهٔ پنل و Stars تلگرام تازه شدند.'
+                  : 'همگام‌سازی: ستارهٔ پنل تازه شد. برای عدد Stars تلگرام Business را وصل کن.'
                 : '\u00a0'
               : linkHint || '\u00a0'}
           </p>
