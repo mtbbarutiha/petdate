@@ -36,7 +36,7 @@ export function petProfileToUiPet(pet?: PetProfile | null): Pet {
     gender: (pet?.gender as Pet['gender']) || 'male',
     city: pet?.city || pet?.ownerCity || '',
     neighborhood: pet?.neighborhood || '',
-    ownerName: '',
+    ownerName: (pet?.ownerName && String(pet.ownerName).trim()) || '',
     ownerId: pet?.ownerId ?? 0,
     imageUrl: resolveImage(pet?.imageUrl),
     emoji: PET_TYPE_EMOJI[type],
