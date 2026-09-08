@@ -351,6 +351,27 @@ if [[ -f ecosystem.config.cjs ]]; then
   grep -q 'DATABASE_PATH' ecosystem.config.cjs && echo "OK: single DATABASE_PATH in ecosystem"
 fi
 
+# Fail fast if bot Telegram HTTP client cannot load (undici missing → crash loop)
+if [[ "\$SCOPE" == "all" || "\$SCOPE" == "bot" || "\$SCOPE" == "api" ]]; then
+  echo "==> Post-deploy: require telegram-http + undici"
+  node -e "require('undici'); console.log('OK: undici')"
+  if [[ -f packages/bot/dist/telegram-http.js ]]; then
+    node -e "require('./packages/bot/dist/telegram-http.js'); console.log('OK: bot telegram-http')"
+  fi
+  if [[ -f packages/api/dist/services/telegram-http.js ]]; then
+    node -e "require('./packages/api/dist/services/telegram-http.js'); console.log('OK: api telegram-http')"
+  fi
+  if [[ "\$SCOPE" == "all" || "\$SCOPE" == "bot" ]]; then
+    pm2 describe petdate-bot >/tmp/pm2-bot.txt 2>/dev/null || true
+    if grep -qi 'status.*errored\|status.*stopped' /tmp/pm2-bot.txt 2>/dev/null; then
+      echo "ERROR: petdate-bot not online after deploy" >&2
+      pm2 logs petdate-bot --err --lines 30 --nostream || true
+      exit 1
+    fi
+    echo "OK: petdate-bot process present"
+  fi
+fi
+
 echo ""
 echo "Deploy done (scope=\$SCOPE)."
 echo "Web:   http://SERVER_IP/"

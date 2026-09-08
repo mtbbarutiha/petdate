@@ -1,6 +1,6 @@
 import type { User, VetConsultation } from '@petdate/shared';
 import { infra } from '../config/infra';
-import { telegramFetch } from './telegram-http';
+import { telegramFetch, telegramBotApiUrl } from './telegram-http';
 import { normalizeTelegramId } from './telegram-id';
 
 function escapeHtml(value: string | number | null | undefined): string {
@@ -18,7 +18,7 @@ async function telegramCall(method: string, body: Record<string, unknown>): Prom
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), TELEGRAM_CALL_TIMEOUT_MS);
   try {
-    const res = await telegramFetch(`https://api.telegram.org/bot${token}/${method}`, {
+    const res = await telegramFetch(telegramBotApiUrl(token, method), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),

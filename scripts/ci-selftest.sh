@@ -23,6 +23,11 @@ run src/services/candoo.selftest.ts
 run src/services/telegram-profile-sync.selftest.ts
 run src/services/telegram-playdate-notify.selftest.ts
 
+# Bot guards (sticky keyboard + IPv4 Telegram HTTP) — no network / no DB
+echo "==> selftest: bot sticky + telegram-http"
+npx tsx "$ROOT/packages/bot/src/sticky-reply-keyboard.selftest.ts"
+npx tsx "$ROOT/packages/bot/src/telegram-http.selftest.ts"
+
 # SQLite cascade (uses temp/local DB via API helpers — not production path)
 run src/services/user-delete-cascade.selftest.ts
 

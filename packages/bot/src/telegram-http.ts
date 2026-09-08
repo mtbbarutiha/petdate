@@ -3,6 +3,7 @@
  * - Force IPv4 (IPv6 to api.telegram.org SSL-times out ~5–10s here)
  * - Keep-alive connection pool
  * - Short exponential retries on transient disconnects (not multi-minute loops)
+ * - Optional TELEGRAM_API_ROOT for local Bot API / proxy
  */
 import dns from 'node:dns';
 import { Agent, fetch as undiciFetch, type RequestInfo, type RequestInit } from 'undici';
@@ -16,6 +17,12 @@ try {
 
 const MAX_ATTEMPTS = Math.max(1, Math.min(6, Number(process.env.TELEGRAM_HTTP_RETRIES ?? 4)));
 const BASE_DELAY_MS = Math.max(50, Number(process.env.TELEGRAM_HTTP_RETRY_MS ?? 250));
+
+/** Bot API origin (no trailing slash). Override with TELEGRAM_API_ROOT for local Bot API. */
+export function telegramApiRoot(): string {
+  const raw = (process.env.TELEGRAM_API_ROOT ?? 'https://api.telegram.org').trim();
+  return raw.replace(/\/+$/, '') || 'https://api.telegram.org';
+}
 
 export const telegramDispatcher = new Agent({
   connect: { family: 4, timeout: 12_000 },
@@ -82,6 +89,7 @@ export async function telegramFetch(input: RequestInfo, init?: RequestInit): Pro
 
 export function grammyClientOptions(): ApiClientOptions {
   return {
+    apiRoot: telegramApiRoot(),
     baseFetchConfig: {
       duplex: 'half',
     } as ApiClientOptions['baseFetchConfig'],

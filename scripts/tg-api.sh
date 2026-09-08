@@ -12,7 +12,9 @@ TOKEN="${TELEGRAM_BOT_TOKEN:-}"
 METHOD="${1:-}"
 [[ -n "$METHOD" ]] || { echo "Usage: $0 <method> [json-body]" >&2; exit 1; }
 BODY="${2:-}"
-URL="https://api.telegram.org/bot${TOKEN}/${METHOD}"
+API_ROOT="${TELEGRAM_API_ROOT:-https://api.telegram.org}"
+API_ROOT="${API_ROOT%/}"
+URL="${API_ROOT}/bot${TOKEN}/${METHOD}"
 MAX="${TELEGRAM_HTTP_RETRIES:-4}"
 DELAY="${TELEGRAM_HTTP_RETRY_MS:-250}"
 attempt=1
@@ -34,6 +36,8 @@ while [[ "$attempt" -le "$MAX" ]]; do
     exit 1
   fi
   sleep_ms=$((DELAY * (1 << (attempt - 1))))
+  # Cap per-retry sleep so ops never burn multi-minute loops (max ~2s)
+  if [[ "$sleep_ms" -gt 2000 ]]; then sleep_ms=2000; fi
   sleep "$(awk -v ms="$sleep_ms" 'BEGIN{printf "%.3f", ms/1000}')"
   attempt=$((attempt + 1))
 done
