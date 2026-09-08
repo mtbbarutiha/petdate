@@ -36,7 +36,7 @@ export const VERIFICATION_STATUS_LABELS: Record<VerificationStatus, string> = {
 };
 
 /** روش خرید سکه */
-export type PaymentMethod = 'card' | 'stars';
+export type PaymentMethod = 'card' | 'stars' | 'coins' | 'toman';
 
 /**
  * وضعیت سفارش پرداخت:
@@ -189,8 +189,12 @@ export interface PetdateUser {
   vetCredentialStatus?: VetCredentialStatus;
   /** دامپزشک آنلاین و آماده پذیرش بیمار */
   vetOnline?: boolean;
+  /** دنبال‌کننده پت — آماده پذیرش / فرزندخواندگی */
+  readyToAdopt?: boolean;
   /** false = توسط ادمین از لیست/اتصال پزشک‌ها خارج شده */
   vetEnabled?: boolean;
+  /** مبلغ ویزیت دامپزشک به سکه (قابل تنظیم از پنل پزشک) */
+  visitFeeCoins?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -360,6 +364,10 @@ export interface VetConsultation {
   petId?: number;
   status: VetConsultStatus;
   notes?: string;
+  /** مبلغ ویزیت توافق‌شده هنگام ایجاد درخواست (سکه) */
+  feeCoins?: number;
+  /** زمان واریز درآمد به دامپزشک (idempotent payout) */
+  vetPaidAt?: string;
   /** چت امن برای پیام‌های مشاوره (protect_content در تلگرام) */
   chatSecure?: boolean;
   /** چت از طرف یکی از کاربران قطع شده */
@@ -521,7 +529,11 @@ export interface BotSession {
   shopCheckout?: {
     productId: string;
     qty: number;
-    method?: 'coins' | 'stars';
+    /**
+     * coins=سکه پنل · wallet_stars=ستاره پنل · telegram_stars/stars=فاکتور XTR تلگرام
+     * toman=کیف‌پول تومان · card=کارت‌به‌کارت (رسید → تأیید ادمین)
+     */
+    method?: 'coins' | 'wallet_stars' | 'telegram_stars' | 'stars' | 'toman' | 'card';
     name?: string;
     phone?: string;
     address?: string;
@@ -674,6 +686,7 @@ export type BotStep =
   | 'vet_chat'
   | 'vet_medical_note'
   | 'vet_prescription'
+  | 'vet_visit_fee'
   | 'owner_chat'
   | 'shop_checkout_name'
   | 'shop_checkout_phone'

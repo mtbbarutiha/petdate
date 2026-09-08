@@ -34,7 +34,13 @@ import { displayName, getCtxUser, menuKeyboardFor } from './helpers';
 import { resumeOwnerChatOnStart } from './owner-chat';
 import { startProfileWizard } from './profile';
 
-export { displayName, getCtxUser, menuKeyboardFor } from './helpers';
+export {
+  displayName,
+  getCtxUser,
+  menuKeyboardFor,
+  pushMainMenuKeyboard,
+  pushReplyKeyboard,
+} from './helpers';
 
 function roleLabels(user: User): string {
   const roles = normalizeRoles(user.roles, user.role);
@@ -216,6 +222,88 @@ export async function handleStart(ctx: Context): Promise<void> {
       name,
       username: from.username,
     });
+
+    if (payload === 'wstars' || payload.startsWith('wstars')) {
+      const roles = normalizeRoles(user.roles, user.role);
+      await upsertSession(telegramId, {
+        userId: user.id,
+        role: user.role,
+        draftRoles: roles,
+        step: roles.length ? 'ready' : 'role_select',
+        locale: 'fa',
+        pendingPhone: undefined,
+      });
+      const { handleWalletStarsTopUpMenu } = await import('./coins');
+      await handleWalletStarsTopUpMenu(ctx);
+      return;
+    }
+
+    const shopPayMatch = /^shoppay_(\d+)$/.exec(payload || '');
+    if (shopPayMatch) {
+      const roles = normalizeRoles(user.roles, user.role);
+      await upsertSession(telegramId, {
+        userId: user.id,
+        role: user.role,
+        draftRoles: roles,
+        step: roles.length ? 'ready' : 'role_select',
+        locale: 'fa',
+        pendingPhone: undefined,
+      });
+      const { sendShopStarsInvoiceForPaymentOrder } = await import('./shop');
+      await sendShopStarsInvoiceForPaymentOrder(ctx, Number(shopPayMatch[1]));
+      return;
+    }
+
+    const shopCardMatch = /^shopcard_(\d+)$/.exec(payload || '');
+    if (shopCardMatch) {
+      const roles = normalizeRoles(user.roles, user.role);
+      const paymentOrderId = Number(shopCardMatch[1]);
+      await upsertSession(telegramId, {
+        userId: user.id,
+        role: user.role,
+        draftRoles: roles,
+        step: 'payment_receipt',
+        locale: 'fa',
+        pendingPhone: undefined,
+        paymentPendingOrderId: paymentOrderId,
+      });
+      try {
+        const { getPaymentOrder } = await import('../api-client');
+        const { paymentCardInfo } = await import('../economy');
+        const order = await getPaymentOrder(paymentOrderId);
+        const card = paymentCardInfo();
+        if (!order || String(order.packageId) !== 'shopcard') {
+          await ctx.reply('فاکتور کارت فروشگاه پیدا نشد یا منقضی است.');
+          return;
+        }
+        if (order.status === 'approved' || order.status === 'paid') {
+          await ctx.reply('این پرداخت فروشگاه قبلاً تأیید شده است.');
+          return;
+        }
+        if (order.status === 'rejected') {
+          await ctx.reply('این پرداخت رد شده است. دوباره از شاپ اقدام کن.');
+          return;
+        }
+        await ctx.reply(
+          [
+            '🛒 پرداخت کارت‌به‌کارت شاپ',
+            '',
+            `شماره پیگیری: #${paymentOrderId}`,
+            `مبلغ: ${(order.amountToman ?? 0).toLocaleString('fa-IR')} تومان`,
+            '',
+            `کارت: ${card.number}`,
+            `به‌نام: ${card.holder}`,
+            '',
+            order.status === 'awaiting_receipt'
+              ? 'عکس رسید واریز را همین‌جا بفرست.'
+              : 'رسید قبلاً ارسال شده و در صف بررسی ادمین است.',
+          ].join('\n')
+        );
+      } catch (e) {
+        await ctx.reply(e instanceof Error ? e.message : 'خطا در بازیابی پرداخت فروشگاه');
+      }
+      return;
+    }
 
     if (payload.startsWith('wlink_')) {
       const roles = normalizeRoles(user.roles, user.role);
@@ -688,25 +776,23 @@ export async function handleHelp(ctx: Context): Promise<void> {
   const active = primaryRole(user?.roles, user?.role);
   const isOwner = active === 'pet_owner';
   const isVet = active === 'vet';
+  const isSeeker = active === 'pet_seeker';
+  const isNoPet = active === 'no_pet';
 
   const lines = isOwner
     ? [
         `🐾 **${BRAND.name}** — راهنمای صاحب پت`,
         `_${BRAND.taglineEn}_`,
         '',
-        '🔍 **پیدا کردن همبازی** — درخواست خودکار به هم‌گروه‌ها',
-        '📍 **پت‌های نزدیک من** — بر اساس شهر/استان',
+        '🔍 **پیدا کردن همبازی** — درخواست به هم‌گروه‌ها',
+        '📍 **پت‌های نزدیک** — بر اساس شهر/استان',
         '🔎 **جستجوی پت** — نژاد، هم‌استان، مشهد، همه',
-        '👤 **پروفایل خودم** — اطلاعات حساب + احراز چهره و موبایل',
-        '🛡 از پروفایل «احراز چهره» و «احراز موبایل» بزن',
         '🐾 **پت‌های من** — مدیریت و ثبت پت',
-        '🪙 **سکه** — موجودی، سکه روزانه و خرید',
+        '👤 **پروفایل** — اطلاعات + احراز',
+        '⚡ **مشاوره سریع پزشک** — درخواست فوری',
         '💵 **کسب درآمد** — فروش سکه',
-        '🩺 **پزشکی** — سلامت و کلینیک',
-        '🎁 **معرفی به دوستان** — دعوت و پاداش',
-        '⚡ **مشاوره سریع با پزشک** — درخواست مشاوره فوری',
-        '🛒 **پت شاپ** — خرید لوازم',
         '🛠 **خدمات** — مربی، grooming، حمل',
+        '🪙 **سکه** · 🛒 **پت‌شاپ** · 🎁 **دعوت** · ❓ **راهنما**',
         '',
         '📋 **منو** — بازگشت به منوی اصلی',
         '/start — بازگشت به منو',
@@ -718,28 +804,54 @@ export async function handleHelp(ctx: Context): Promise<void> {
           `🐾 **${BRAND.name}** — راهنمای دامپزشک`,
           `_${BRAND.taglineEn}_`,
           '',
-          '🟢 **آنلاین هستم…** — آماده پذیرش بیمار شو / آفلاین شو',
-          '🩺 **آخرین بیمارها** — ۵ بیمار آخر و درخواست چت مجدد',
-          '👤 **پروفایل** — اطلاعات حساب + احراز چهره و موبایل',
-          '🛡 از پروفایل «احراز چهره» و «احراز موبایل» بزن',
+          '🟢 **آنلاین — آماده پذیرش** / 🔴 **آفلاین**',
+          '🩺 **بیماران اخیر** — ۵ بیمار آخر',
+          '💰 **تعرفه ویزیت** — تنظیم به سکه',
+          '👤 **پروفایل** — اطلاعات + احراز',
+          '🪙 **سکه** · 🛒 **پت‌شاپ** · 🎁 **دعوت** · ❓ **راهنما**',
           '',
           '/start — شروع یا بازگشت به منو',
           '/menu — نمایش منو',
-          '/profile — پروفایل',
           '/help — راهنما',
           '/cancel — لغو عملیات جاری',
         ]
-      : [
-          `🐾 **${BRAND.name}** — ${BRAND.taglineFa}`,
-          `_${BRAND.taglineEn}_`,
-          '',
-          '/start — شروع یا بازگشت',
-          '/menu — نمایش منو',
-          '/explore — کشف همبازی‌ها',
-          '/pets — پت‌های من',
-          '/profile — پروفایل',
-          '/help — راهنما',
-        ];
+      : isSeeker
+        ? [
+            `🐾 **${BRAND.name}** — راهنمای دنبال پت`,
+            `_${BRAND.taglineEn}_`,
+            '',
+            '🐾 **پت‌ها و همبازی** — مرور و جستجوی پت',
+            '💚 **آماده پذیرش پت هستم** — اعلام آمادگی',
+            '👤 **پروفایل** — اطلاعات + احراز',
+            '🪙 **سکه** · 🛒 **پت‌شاپ** · 🎁 **دعوت** · ❓ **راهنما**',
+            '',
+            '/menu — نمایش منو',
+            '/help — راهنما',
+            '/cancel — لغو عملیات جاری',
+          ]
+        : isNoPet
+          ? [
+              `🐾 **${BRAND.name}** — راهنمای بدون پت`,
+              `_${BRAND.taglineEn}_`,
+              '',
+              '🛒 **به دنبال مشاوره برای خرید** — مشاوره دامپزشک برای انتخاب پت',
+              '👤 **پروفایل** — اطلاعات + احراز',
+              '🪙 **سکه** · 🛒 **پت‌شاپ** · 🎁 **دعوت** · ❓ **راهنما**',
+              '',
+              '/menu — نمایش منو',
+              '/help — راهنما',
+              '/cancel — لغو عملیات جاری',
+            ]
+          : [
+              `🐾 **${BRAND.name}** — ${BRAND.taglineFa}`,
+              `_${BRAND.taglineEn}_`,
+              '',
+              '🪙 **سکه** · 🛒 **پت‌شاپ** · 🎁 **دعوت** · ❓ **راهنما**',
+              '',
+              '/start — شروع یا بازگشت',
+              '/menu — نمایش منو',
+              '/help — راهنما',
+            ];
 
   await ctx.reply(lines.join('\n'), {
     parse_mode: 'Markdown',

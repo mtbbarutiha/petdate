@@ -49,7 +49,7 @@ import { ProfileAvatarEditor } from '../components/ProfileAvatarEditor';
 import { RoleSwitchControl } from '../components/RoleSwitchControl';
 import { formatAge } from '../data/mock';
 import { useAuthStore } from '../hooks/useAuthStore';
-import { usePetStore } from '../hooks/usePetStore';
+import { useMyPets } from '../hooks/useMyPets';
 import {
   deleteUserAccountById,
   fetchProfileCard,
@@ -58,6 +58,8 @@ import {
   patchWebProfile,
   setSilentChatRequests,
 } from '../lib/api';
+import { petProfileToUiPet } from '../lib/playdateMap';
+import { PET_TYPE_LABELS } from '../types';
 
 const HERO_IMG = '/pepito/uploads/2.jpg';
 
@@ -75,8 +77,8 @@ export function ProfilePage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const editing = searchParams.get('edit') === '1';
-  const { myPet } = usePetStore();
   const { user, token, logout, isProfileComplete, saveProfile, refreshMe } = useAuthStore();
+  const { pets: myPets, loading: petsLoading } = useMyPets();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [savedToast, setSavedToast] = useState(false);
@@ -146,9 +148,13 @@ export function ProfilePage() {
   const mainRole = primaryRole(normalizeRoles(display.roles, display.role), display.role);
   const needsWizard = !isProfileComplete;
   const isPetOwner = userHasRole(display, 'pet_owner');
+  // Same pets as /my-pets: show block for owners OR whenever API returned pets
+  // (e.g. multi-role users whose card lags roles briefly).
+  const showPetsBlock = isPetOwner || myPets.length > 0 || petsLoading;
   const locationLabel = [display.city, display.province, display.country].filter(Boolean).join('، ') || '—';
-  const avatarSrc = display.avatarUrl || (isPetOwner && myPet.imageUrl ? myPet.imageUrl : '');
-  const hasPetName = Boolean(myPet?.name && myPet.name !== 'پت من');
+  const primaryPet = myPets[0] ? petProfileToUiPet(myPets[0]) : null;
+  const avatarSrc =
+    display.avatarUrl || (isPetOwner && primaryPet?.imageUrl ? primaryPet.imageUrl : '');
   const genderLabel = display.gender ? USER_GENDER_LABELS[display.gender] : null;
   const likes = display.likesCount ?? 0;
   const contactsCount = display.contactsCount ?? 0;
@@ -699,24 +705,72 @@ export function ProfilePage() {
         </section>
       ) : null}
 
-      {isPetOwner ? (
+      {showPetsBlock ? (
         <section className="pepito-profile-block" aria-label="پت‌های من">
           <header className="pepito-home-section-head">
             <p className="pepito-eyebrow">پت‌ها</p>
             <h2>پت‌های من</h2>
-            <p>خلاصه پت ثبت‌شده — مدیریت کامل از مسیر پت‌ها.</p>
+            <p>
+              {petsLoading
+                ? 'در حال بارگذاری…'
+                : myPets.length
+                  ? `${toPersianDigits(String(myPets.length))} پت — همان لیست «پت‌های من».`
+                  : 'هنوز پتی ثبت نشده — از مسیر پت‌ها اضافه کن.'}
+            </p>
           </header>
-          <Link to="/my-pets" className="pepito-profile-pet-row">
-            <PetAvatar type={myPet.type} size="sm" imageUrl={myPet.imageUrl} name={myPet.name} />
-            <div className="pepito-profile-pet-row-text">
-              <strong>{hasPetName ? myPet.name : 'هنوز پتی ثبت نشده'}</strong>
-              <span>
-                {hasPetName
-                  ? `${myPet.breed} · ${formatAge(myPet)} · ${myPet.neighborhood || locationLabel}`
-                  : 'پروفایل، ویرایش و پرونده پزشکی'}
-              </span>
+          {petsLoading ? (
+            <div className="pepito-profile-pet-row pepito-profile-pet-row--muted" aria-busy="true">
+              <span>…</span>
             </div>
-            <ChevronLeft size={18} strokeWidth={2.25} className="pepito-profile-pet-row-chevron" aria-hidden />
+          ) : myPets.length === 0 ? (
+            <Link to="/add-pet" className="pepito-profile-pet-row">
+              <PetAvatar type="dog" size="sm" name="پت" />
+              <div className="pepito-profile-pet-row-text">
+                <strong>هنوز پتی ثبت نشده</strong>
+                <span>پروفایل، ویرایش و پرونده پزشکی</span>
+              </div>
+              <ChevronLeft size={18} strokeWidth={2.25} className="pepito-profile-pet-row-chevron" aria-hidden />
+            </Link>
+          ) : (
+            <ul className="pepito-profile-pet-list">
+              {myPets.map((pet) => {
+                const ui = petProfileToUiPet(pet);
+                return (
+                  <li key={pet.id}>
+                    <Link to={`/pets/${pet.id}`} className="pepito-profile-pet-row">
+                      <PetAvatar
+                        type={ui.type}
+                        size="sm"
+                        imageUrl={ui.imageUrl}
+                        name={pet.name}
+                      />
+                      <div className="pepito-profile-pet-row-text">
+                        <strong>{pet.name}</strong>
+                        <span>
+                          {[
+                            PET_TYPE_LABELS[ui.type] || pet.species,
+                            formatAge(ui),
+                            pet.breed,
+                            pet.city || pet.ownerCity || locationLabel,
+                          ]
+                            .filter(Boolean)
+                            .join(' · ')}
+                        </span>
+                      </div>
+                      <ChevronLeft
+                        size={18}
+                        strokeWidth={2.25}
+                        className="pepito-profile-pet-row-chevron"
+                        aria-hidden
+                      />
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          <Link to="/my-pets" className="pepito-profile-action pepito-profile-action--wide">
+            مدیریت کامل پت‌ها
           </Link>
         </section>
       ) : null}

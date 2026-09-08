@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ShoppingCart } from 'lucide-react';
+import { Loader2, ShoppingCart } from 'lucide-react';
 import {
   BADGE_LABELS,
   formatToman,
@@ -7,19 +7,32 @@ import {
   productDiscountPercent,
   type ShopProduct,
 } from '../../data/shopCatalog';
+import { useShopCart } from '../../hooks/useShopCart';
 
 export function ShopProductCard({
   product,
   onAdd,
 }: {
   product: ShopProduct;
+  /** اختیاری — پیش‌فرض addAnimated با لودینگ و toast */
   onAdd?: (id: string) => void;
 }) {
+  const { addAnimated, pendingAddId } = useShopCart();
   const brand = getBrand(product.brandId);
   const discount = productDiscountPercent(product);
   const paramLine = Object.entries(product.params)
     .map(([k, v]) => `${k}: ${v}`)
     .join(' · ');
+  const busy = pendingAddId === product.id;
+
+  const handleAdd = () => {
+    if (!product.inStock || busy) return;
+    if (onAdd) {
+      onAdd(product.id);
+      return;
+    }
+    void addAnimated(product.id);
+  };
 
   return (
     <article className={`pd-shop-card${!product.inStock ? ' is-oos' : ''}`}>
@@ -46,17 +59,20 @@ export function ShopProductCard({
             ) : null}
             <span className="pd-shop-price-now">{formatToman(product.priceToman)}</span>
           </div>
-          {onAdd ? (
-            <button
-              type="button"
-              className="pd-shop-add-btn"
-              disabled={!product.inStock}
-              onClick={() => onAdd(product.id)}
-            >
+          <button
+            type="button"
+            className={`pd-shop-add-btn${busy ? ' is-loading' : ''}`}
+            disabled={!product.inStock || busy}
+            aria-busy={busy}
+            onClick={handleAdd}
+          >
+            {busy ? (
+              <Loader2 size={15} strokeWidth={2.4} className="pd-shop-add-spin" aria-hidden />
+            ) : (
               <ShoppingCart size={15} strokeWidth={2.2} aria-hidden />
-              {product.inStock ? 'بخر' : 'ناموجود'}
-            </button>
-          ) : null}
+            )}
+            {busy ? 'در حال افزودن…' : product.inStock ? 'افزودن به سبد خرید' : 'ناموجود'}
+          </button>
         </div>
       </div>
     </article>

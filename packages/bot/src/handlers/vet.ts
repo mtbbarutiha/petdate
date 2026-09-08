@@ -1,16 +1,27 @@
 import type { Context } from 'grammy';
 import { InlineKeyboard } from 'grammy';
 import type { User, VetConsultation } from '@petdate/shared';
-import { userHasRole } from '@petdate/shared';
+import {
+  MAX_VET_VISIT_FEE_COINS,
+  MIN_VET_VISIT_FEE_COINS,
+  normalizeVisitFeeCoins,
+  toEnglishDigits,
+  userHasRole,
+  vetVisitFeeCoins,
+} from '@petdate/shared';
 import {
   createVetConsultation,
   getUserById,
   listVetConsultations,
   setVetOnline,
+  setVetVisitFee,
   updateVetConsultationStatus,
 } from '../api-client';
+import { formatNum } from '../economy';
+import { getSession, upsertSession } from '../session';
 import { getCtxUser, menuKeyboardFor } from './helpers';
 import { startVetChat } from './vet-chat';
+import { WIZARD_NAV } from '../keyboards';
 
 const RECENT_LIMIT = 5;
 
@@ -161,6 +172,167 @@ export async function handleVetRecentPatients(ctx: Context): Promise<void> {
 
 /** سازگاری با نام قدیمی */
 export const handleVetPatients = handleVetRecentPatients;
+
+const VISIT_FEE_PRESETS = [1, 5, 10, 20, 50, 100] as const;
+
+function visitFeeKeyboard(current: number): InlineKeyboard {
+  const kb = new InlineKeyboard();
+  for (let i = 0; i < VISIT_FEE_PRESETS.length; i += 1) {
+    const fee = VISIT_FEE_PRESETS[i]!;
+    const label = fee === current ? `✓ ${fee} سکه` : `${fee} سکه`;
+    kb.text(label, `vet:fee:${fee}`);
+    if (i % 3 === 2) kb.row();
+  }
+  if (VISIT_FEE_PRESETS.length % 3 !== 0) kb.row();
+  kb.text('✏️ مبلغ دلخواه', 'vet:fee:custom').primary();
+  return kb;
+}
+
+/** نمایش/تنظیم مبلغ ویزیت دامپزشک */
+export async function handleVetVisitFeeMenu(ctx: Context): Promise<void> {
+  const from = ctx.from;
+  if (!from) return;
+
+  const user = await getCtxUser(ctx);
+  if (!user) {
+    await ctx.reply('اول /start بزن.');
+    return;
+  }
+  if (!userHasRole(user, 'vet')) {
+    await ctx.reply('این بخش مخصوص دامپزشکان است.', {
+      reply_markup: menuKeyboardFor(ctx, user),
+    });
+    return;
+  }
+
+  const fee = vetVisitFeeCoins(user);
+  await upsertSession(String(from.id), { step: 'ready' });
+  await ctx.reply(
+    [
+      '💰 <b>مبلغ ویزیت</b>',
+      '',
+      `مبلغ فعلی: <b>${formatNum(fee)}</b> سکه`,
+      '',
+      'این مبلغ از بیمار هنگام درخواست مشاوره سریع کسر می‌شود.',
+      `محدوده مجاز: ${formatNum(MIN_VET_VISIT_FEE_COINS)} تا ${formatNum(MAX_VET_VISIT_FEE_COINS)} سکه.`,
+      '',
+      'یک مبلغ آماده انتخاب کن یا «مبلغ دلخواه» را بزن.',
+    ].join('\n'),
+    {
+      parse_mode: 'HTML',
+      reply_markup: visitFeeKeyboard(fee),
+    }
+  );
+}
+
+export async function handleVetVisitFeePick(ctx: Context, feeCoins: number): Promise<void> {
+  const from = ctx.from;
+  if (!from) return;
+
+  const user = await getCtxUser(ctx);
+  if (!user || !userHasRole(user, 'vet')) {
+    await ctx.answerCallbackQuery({ text: 'فقط دامپزشک', show_alert: true });
+    return;
+  }
+
+  const fee = normalizeVisitFeeCoins(feeCoins);
+  try {
+    const updated = await setVetVisitFee(String(from.id), fee);
+    await upsertSession(String(from.id), { step: 'ready' });
+    await ctx.answerCallbackQuery({ text: `ثبت شد: ${fee} سکه` });
+    await ctx.editMessageText(
+      [
+        '✅ <b>مبلغ ویزیت به‌روز شد</b>',
+        '',
+        `مبلغ جدید: <b>${formatNum(vetVisitFeeCoins(updated))}</b> سکه`,
+        '',
+        'از منو «💰 مبلغ ویزیت» هر وقت خواستی دوباره تغییر بده.',
+      ].join('\n'),
+      { parse_mode: 'HTML' }
+    ).catch(async () => {
+      await ctx.reply(
+        `✅ مبلغ ویزیت روی <b>${formatNum(vetVisitFeeCoins(updated))}</b> سکه تنظیم شد.`,
+        { parse_mode: 'HTML', reply_markup: menuKeyboardFor(ctx, updated) }
+      );
+    });
+  } catch (err) {
+    console.error('setVetVisitFee failed:', err);
+    await ctx.answerCallbackQuery({ text: 'ثبت نشد', show_alert: true });
+  }
+}
+
+export async function handleVetVisitFeeCustomPrompt(ctx: Context): Promise<void> {
+  const from = ctx.from;
+  if (!from) return;
+
+  const user = await getCtxUser(ctx);
+  if (!user || !userHasRole(user, 'vet')) {
+    await ctx.answerCallbackQuery({ text: 'فقط دامپزشک', show_alert: true });
+    return;
+  }
+
+  await upsertSession(String(from.id), { step: 'vet_visit_fee' });
+  await ctx.answerCallbackQuery();
+  await ctx.reply(
+    [
+      '✏️ <b>مبلغ دلخواه ویزیت</b>',
+      '',
+      `یک عدد بین ${formatNum(MIN_VET_VISIT_FEE_COINS)} تا ${formatNum(MAX_VET_VISIT_FEE_COINS)} بفرست.`,
+      'برای انصراف «❌ انصراف» را بزن.',
+    ].join('\n'),
+    { parse_mode: 'HTML' }
+  );
+}
+
+export async function handleVetVisitFeeText(ctx: Context, text: string): Promise<boolean> {
+  const from = ctx.from;
+  if (!from) return false;
+
+  const session = await getSession(String(from.id));
+  if (!session || session.step !== 'vet_visit_fee') return false;
+
+  const user = await getCtxUser(ctx);
+  if (!user || !userHasRole(user, 'vet')) {
+    await upsertSession(String(from.id), { step: 'ready' });
+    return true;
+  }
+
+  if (text === WIZARD_NAV.cancel || text === WIZARD_NAV.back) {
+    await upsertSession(String(from.id), { step: 'ready' });
+    await ctx.reply('انصراف از تغییر مبلغ ویزیت.', {
+      reply_markup: menuKeyboardFor(ctx, user),
+    });
+    return true;
+  }
+
+  const raw = toEnglishDigits(text).replace(/[^\d]/g, '');
+  const fee = Number(raw);
+  if (!Number.isFinite(fee) || fee < MIN_VET_VISIT_FEE_COINS || fee > MAX_VET_VISIT_FEE_COINS) {
+    await ctx.reply(
+      `عدد معتبر بفرست (${formatNum(MIN_VET_VISIT_FEE_COINS)} تا ${formatNum(MAX_VET_VISIT_FEE_COINS)}).`
+    );
+    return true;
+  }
+
+  try {
+    const updated = await setVetVisitFee(String(from.id), fee);
+    await upsertSession(String(from.id), { step: 'ready' });
+    await ctx.reply(
+      [
+        '✅ <b>مبلغ ویزیت ثبت شد</b>',
+        '',
+        `مبلغ جدید: <b>${formatNum(vetVisitFeeCoins(updated))}</b> سکه`,
+      ].join('\n'),
+      { parse_mode: 'HTML', reply_markup: menuKeyboardFor(ctx, updated) }
+    );
+  } catch (err) {
+    console.error('setVetVisitFee text failed:', err);
+    await ctx.reply('ثبت مبلغ ممکن نشد. کمی بعد دوباره امتحان کن.', {
+      reply_markup: menuKeyboardFor(ctx, user),
+    });
+  }
+  return true;
+}
 
 /** دامپزشک از لیست آخرین بیمارها درخواست چت می‌دهد */
 export async function handleVetRequestRechat(

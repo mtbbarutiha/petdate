@@ -11,19 +11,35 @@ import {
   type BotSession,
 } from '@petdate/shared';
 import {
+  checkoutShopWithCardTelegram,
   checkoutShopWithCoinsTelegram,
   checkoutShopWithStarsTelegram,
+  checkoutShopWithTomanTelegram,
+  checkoutShopWithWalletStarsTelegram,
+  fetchMyShopOrdersTelegram,
   fetchShopCategories,
   fetchShopProduct,
   fetchShopProducts,
   type ShopApiCategory,
   type ShopApiProduct,
 } from '../api-client';
+import { paymentCardInfo } from '../economy';
 import { getSession, upsertSession } from '../session';
 import { effectiveWebUrl, isTelegramInlineUrl } from '../urls';
-import { getCtxUser, menuKeyboardFor } from './helpers';
+import { getCtxUser, menuKeyboardFor, pushMainMenuKeyboard } from './helpers';
 
 const PAGE_SIZE = 6;
+type ShopPayMethod = 'coins' | 'wallet_stars' | 'telegram_stars' | 'toman' | 'card';
+
+function normalizeShopPayMethod(raw?: string | null): ShopPayMethod {
+  const m = String(raw || '').trim();
+  if (m === 'wallet_stars' || m === 'wstars') return 'wallet_stars';
+  if (m === 'telegram_stars' || m === 'stars' || m === 'xtr') return 'telegram_stars';
+  if (m === 'toman' || m === 'rial' || m === 'irr') return 'toman';
+  if (m === 'card' || m === 'card2card') return 'card';
+  return 'coins';
+}
+
 const PET_TYPES = [
   { id: 'dog' as const, label: '🐕 سگ' },
   { id: 'cat' as const, label: '🐈 گربه' },
@@ -83,8 +99,11 @@ function homeKeyboard(balance: number): InlineKeyboard {
   }
   if (PET_TYPES.length % 2 === 1) kb.row();
   kb.text('⭐ پیشنهادی', 'shop:featured').row();
+  kb.text('📦 سفارش‌های من', 'shop:orders').row();
   const site = webShopUrl('/shop');
+  const ordersSite = webShopUrl('/shop/orders');
   if (site) kb.url('🌐 باز کردن در سایت', site).row();
+  if (ordersSite) kb.url('🌐 سفارش‌ها در سایت', ordersSite).row();
   kb.text('🪙 کیف سکه', 'coins:back');
   void balance;
   return kb;
@@ -133,8 +152,7 @@ function productsKeyboard(
 function productKeyboard(product: ShopApiProduct, categorySlug?: string): InlineKeyboard {
   const kb = new InlineKeyboard();
   if (product.inStock) {
-    kb.text('🛒 خرید با سکه', `shop:buy:${product.id}:1`).row();
-    kb.text('⭐ خرید با ستاره', `shop:buyStars:${product.id}:1`).row();
+    kb.text('🛒 خرید', `shop:buy:${product.id}:1`).row();
   }
   const site = webShopUrl(`/shop/p/${product.slug || product.id}`);
   if (site) kb.url('🌐 جزئیات در سایت', site).row();
@@ -144,13 +162,46 @@ function productKeyboard(product: ShopApiProduct, categorySlug?: string): Inline
   return kb;
 }
 
-function confirmKeyboard(productId: string, qty: number, method: 'coins' | 'stars' = 'coins'): InlineKeyboard {
-  const payCb = method === 'stars' ? `shop:payStars:${productId}:${qty}` : `shop:pay:${productId}:${qty}`;
-  const label = method === 'stars' ? '✅ تأیید و پرداخت با ستاره' : '✅ تأیید و پرداخت سکه';
+function confirmKeyboard(productId: string, qty: number, method: ShopPayMethod = 'coins'): InlineKeyboard {
+  const mark = (m: ShopPayMethod, label: string) => (method === m ? `✓ ${label}` : label);
   return new InlineKeyboard()
-    .text(label, payCb)
+    .text(mark('coins', '🪙 سکه پنل'), `shop:method:coins:${productId}:${qty}`)
+    .row()
+    .text(mark('wallet_stars', '⭐ ستاره پنل'), `shop:method:wstars:${productId}:${qty}`)
+    .row()
+    .text(mark('toman', '﷼ ریال پنل'), `shop:method:toman:${productId}:${qty}`)
+    .row()
+    .text(mark('card', '💳 کارت‌به‌کارت'), `shop:method:card:${productId}:${qty}`)
+    .row()
+    .text(mark('telegram_stars', '📱 فاکتور تلگرام'), `shop:method:xtr:${productId}:${qty}`)
+    .row()
+    .text('✅ پرداخت', `shop:payNow:${productId}:${qty}`)
     .row()
     .text('❌ انصراف', 'shop:home');
+}
+
+function payMethodHint(method: ShopPayMethod): string {
+  if (method === 'wallet_stars') {
+    return 'با پرداخت، ستاره از پنل پت‌دیت (کیف‌پول مشترک) کسر می‌شود.';
+  }
+  if (method === 'toman') {
+    return 'با پرداخت، تومان از کیف‌پول پنل کسر می‌شود.';
+  }
+  if (method === 'card') {
+    return 'کارت‌به‌کارت واریز کن و عکس رسید را بفرست؛ بعد از تأیید ادمین سفارش ثبت می‌شود.';
+  }
+  if (method === 'telegram_stars') {
+    return 'فاکتور Stars صادر می‌شود؛ همان‌جا در تلگرام پرداخت کن (مستقیم به ربات).';
+  }
+  return 'با پرداخت، سکه از پنل پت‌دیت (کیف‌پول مشترک) کسر می‌شود.';
+}
+
+function payMethodLine(method: ShopPayMethod, coins: number, stars: number, toman: number): string {
+  if (method === 'wallet_stars') return `روش: ستاره پنل · ${formatStars(stars)}`;
+  if (method === 'toman') return `روش: ریال پنل · ${formatToman(toman)}`;
+  if (method === 'card') return `روش: کارت‌به‌کارت · ${formatToman(toman)}`;
+  if (method === 'telegram_stars') return `روش: فاکتور تلگرام · ${formatStars(stars)}`;
+  return `روش: سکه پنل · ${formatCoins(coins)}`;
 }
 
 export async function handlePetShop(ctx: Context): Promise<void> {
@@ -161,13 +212,14 @@ export async function handlePetShop(ctx: Context): Promise<void> {
   const text = [
     '🛒 <b>پت شاپ</b>',
     '',
-    'همان کاتالوگ و قیمت سایت — پرداخت با سکه یا ستاره (کیف پول مشترک وب و ربات).',
+    'همان کاتالوگ و قیمت سایت — پرداخت با سکه، ریال پنل، کارت‌به‌کارت یا Stars.',
     `موجودی سکه: <b>${formatCoins(balance)}</b>`,
-    `موجودی ستاره: <b>${formatStars(starsBalance)}</b>`,
+    `موجودی ستاره کیف‌پول: ⭐ <b>${formatStars(starsBalance)}</b>`,
+    `موجودی ریال: <b>${formatToman(user?.wallet?.toman ?? user?.walletToman ?? 0)}</b>`,
     `نرخ: هر سکه/ستاره ≈ ${COIN_PRICE_TOMAN.toLocaleString('fa-IR')} تومان`,
     cats.total ? `دسته‌ها در فروشگاه: ${cats.total.toLocaleString('fa-IR')}` : '',
     '',
-    'نوع پت را انتخاب کن:',
+    'نوع پت را انتخاب کن یا سفارش‌هایت را ببین:',
   ]
     .filter(Boolean)
     .join('\n');
@@ -182,7 +234,7 @@ export async function handlePetShop(ctx: Context): Promise<void> {
     }
   }
   await ctx.reply(text, { parse_mode: 'HTML', reply_markup: homeKeyboard(balance) });
-  await ctx.reply('منوی اصلی 👇', { reply_markup: menuKeyboardFor(ctx, user) });
+  await pushMainMenuKeyboard(ctx, user);
 }
 
 export async function handleShopHome(ctx: Context): Promise<void> {
@@ -369,7 +421,7 @@ export async function handleShopBuy(
   ctx: Context,
   productId: string,
   qtyRaw: number,
-  method: 'coins' | 'stars' = 'coins'
+  method: ShopPayMethod | 'stars' = 'coins'
 ): Promise<void> {
   const user = await getCtxUser(ctx);
   if (!user?.telegramId) {
@@ -384,50 +436,28 @@ export async function handleShopBuy(
     return;
   }
 
+  const payMethod = normalizeShopPayMethod(method);
   const coins = (p.coins ?? tomanToShopCoins(p.priceToman)) * qty;
   const stars = tomanToShopStars(p.priceToman) * qty;
-  if (method === 'coins') {
-    const balance = user.coins ?? user.wallet?.coins ?? 0;
-    if (balance < coins) {
-      await ctx.answerCallbackQuery({
-        text: `سکه کافی نیست. نیاز ${coins.toLocaleString('fa-IR')} — موجودی ${balance.toLocaleString('fa-IR')}`,
-        show_alert: true,
-      });
-      return;
-    }
-  } else {
-    const starsBalance = user.wallet?.stars ?? user.walletStars ?? 0;
-    if (starsBalance < stars) {
-      await ctx.answerCallbackQuery({
-        text: `ستاره کافی نیست. نیاز ${stars.toLocaleString('fa-IR')} — موجودی ${starsBalance.toLocaleString('fa-IR')}`,
-        show_alert: true,
-      });
-      return;
-    }
-  }
 
   await patchSession(user.telegramId, {
     shopCheckout: {
       productId: p.id,
       qty,
-      method,
+      method: payMethod,
       name: user.name,
       phone: user.phone,
     },
     step: user.phone ? 'shop_checkout_address' : 'shop_checkout_name',
   });
 
-  const costLine =
-    method === 'stars'
-      ? `${formatStars(stars)} (≈ ${STAR_PRICE_TOMAN.toLocaleString('fa-IR')} تومان/ستاره)`
-      : formatCoins(coins);
-
   await ctx.answerCallbackQuery().catch(() => undefined);
   if (!user.phone) {
     await ctx.reply(
       [
         `🛒 خرید: <b>${escapeHtml(p.title)}</b>`,
-        `تعداد: ${qty.toLocaleString('fa-IR')} · ${costLine}`,
+        `تعداد: ${qty.toLocaleString('fa-IR')}`,
+        `معادل: ${formatCoins(coins)} یا ${formatStars(stars)}`,
         '',
         'نام گیرنده را بفرست:',
       ].join('\n'),
@@ -439,7 +469,8 @@ export async function handleShopBuy(
   await ctx.reply(
     [
       `🛒 خرید: <b>${escapeHtml(p.title)}</b>`,
-      `تعداد: ${qty.toLocaleString('fa-IR')} · ${costLine}`,
+      `تعداد: ${qty.toLocaleString('fa-IR')}`,
+      `معادل: ${formatCoins(coins)} یا ${formatStars(stars)}`,
       `گیرنده: ${escapeHtml(user.name)}`,
       `موبایل: ${escapeHtml(user.phone)}`,
       '',
@@ -454,7 +485,7 @@ export async function handleShopBuyStars(
   productId: string,
   qtyRaw: number
 ): Promise<void> {
-  await handleShopBuy(ctx, productId, qtyRaw, 'stars');
+  await handleShopBuy(ctx, productId, qtyRaw, 'telegram_stars');
 }
 
 export async function handleShopCheckoutText(ctx: Context, text: string): Promise<boolean> {
@@ -472,7 +503,7 @@ export async function handleShopCheckoutText(ctx: Context, text: string): Promis
   }
 
   const draft = { ...session.shopCheckout };
-  const method = draft.method === 'stars' ? 'stars' : 'coins';
+  const method = normalizeShopPayMethod(draft.method);
   const product = (await fetchShopProduct(draft.productId))?.product;
   if (!product) {
     await patchSession(telegramId, { step: 'ready', shopCheckout: undefined });
@@ -509,14 +540,11 @@ export async function handleShopCheckoutText(ctx: Context, text: string): Promis
     await ctx.reply('آدرس کامل‌تری بفرست (حداقل چند کلمه).');
     return true;
   }
+  draft.method = method;
   await patchSession(telegramId, { shopCheckout: draft, step: 'ready' });
 
   const coins = (product.coins ?? tomanToShopCoins(product.priceToman)) * draft.qty;
   const stars = tomanToShopStars(product.priceToman) * draft.qty;
-  const payLine =
-    method === 'stars'
-      ? `پرداخت: ${formatStars(stars)}`
-      : `پرداخت: ${formatCoins(coins)}`;
   await ctx.reply(
     [
       '📋 <b>تأیید سفارش پت شاپ</b>',
@@ -524,14 +552,13 @@ export async function handleShopCheckoutText(ctx: Context, text: string): Promis
       `محصول: ${escapeHtml(product.title)}`,
       `تعداد: ${draft.qty.toLocaleString('fa-IR')}`,
       `مبلغ: ${formatToman(product.priceToman * draft.qty)}`,
-      payLine,
+      payMethodLine(method, coins, stars, product.priceToman * draft.qty),
       `گیرنده: ${escapeHtml(draft.name || '')}`,
       `موبایل: ${escapeHtml(draft.phone || '')}`,
       `آدرس: ${escapeHtml(draft.address)}`,
       '',
-      method === 'stars'
-        ? 'با تأیید، ستاره از کیف پول مشترک وب و ربات کسر می‌شود.'
-        : 'با تأیید، سکه از کیف پول مشترک کسر می‌شود.',
+      'روش پرداخت را انتخاب کن، بعد «پرداخت» را بزن.',
+      payMethodHint(method),
     ].join('\n'),
     {
       parse_mode: 'HTML',
@@ -541,11 +568,11 @@ export async function handleShopCheckoutText(ctx: Context, text: string): Promis
   return true;
 }
 
-export async function handleShopPay(
+export async function handleShopSetPayMethod(
   ctx: Context,
+  methodRaw: string,
   productId: string,
-  qtyRaw: number,
-  method: 'coins' | 'stars' = 'coins'
+  qtyRaw: number
 ): Promise<void> {
   const user = await getCtxUser(ctx);
   if (!user?.telegramId) {
@@ -555,7 +582,63 @@ export async function handleShopPay(
   const session = await getSession(user.telegramId);
   const draft = session?.shopCheckout;
   const qty = Math.max(1, Math.min(10, Math.floor(qtyRaw || 1)));
-  const payMethod = method === 'stars' || draft?.method === 'stars' ? 'stars' : 'coins';
+  if (!draft || draft.productId !== productId) {
+    await ctx.answerCallbackQuery({ text: 'سفارش منقضی شد — دوباره بخر', show_alert: true });
+    return;
+  }
+  const method = normalizeShopPayMethod(methodRaw);
+  const next = { ...draft, method, qty };
+  await patchSession(user.telegramId, { shopCheckout: next, step: 'ready' });
+  const product = (await fetchShopProduct(productId))?.product;
+  if (!product) {
+    await ctx.answerCallbackQuery({ text: 'محصول پیدا نشد', show_alert: true });
+    return;
+  }
+  const coins = (product.coins ?? tomanToShopCoins(product.priceToman)) * qty;
+  const stars = tomanToShopStars(product.priceToman) * qty;
+  await ctx.answerCallbackQuery({ text: 'روش پرداخت انتخاب شد' }).catch(() => undefined);
+  const textMsg = [
+    '📋 <b>تأیید سفارش پت شاپ</b>',
+    '',
+    `محصول: ${escapeHtml(product.title)}`,
+    `تعداد: ${qty.toLocaleString('fa-IR')}`,
+    `مبلغ: ${formatToman(product.priceToman * qty)}`,
+    payMethodLine(method, coins, stars, product.priceToman * qty),
+    `گیرنده: ${escapeHtml(next.name || '')}`,
+    `موبایل: ${escapeHtml(next.phone || '')}`,
+    `آدرس: ${escapeHtml(next.address || '')}`,
+    '',
+    'روش پرداخت را انتخاب کن، بعد «پرداخت» را بزن.',
+    payMethodHint(method),
+  ].join('\n');
+  try {
+    await ctx.editMessageText(textMsg, {
+      parse_mode: 'HTML',
+      reply_markup: confirmKeyboard(productId, qty, method),
+    });
+  } catch {
+    await ctx.reply(textMsg, {
+      parse_mode: 'HTML',
+      reply_markup: confirmKeyboard(productId, qty, method),
+    });
+  }
+}
+
+export async function handleShopPay(
+  ctx: Context,
+  productId: string,
+  qtyRaw: number,
+  methodHint?: string
+): Promise<void> {
+  const user = await getCtxUser(ctx);
+  if (!user?.telegramId) {
+    await ctx.answerCallbackQuery({ text: 'اول /start بزن', show_alert: true });
+    return;
+  }
+  const session = await getSession(user.telegramId);
+  const draft = session?.shopCheckout;
+  const qty = Math.max(1, Math.min(10, Math.floor(qtyRaw || 1)));
+  const payMethod = normalizeShopPayMethod(methodHint || draft?.method);
   if (!draft || draft.productId !== productId) {
     await ctx.answerCallbackQuery({ text: 'سفارش منقضی شد — دوباره بخر', show_alert: true });
     return;
@@ -565,10 +648,47 @@ export async function handleShopPay(
     return;
   }
 
+  const product = (await fetchShopProduct(productId))?.product;
+  const coinsNeeded = product
+    ? (product.coins ?? tomanToShopCoins(product.priceToman)) * qty
+    : 0;
+  const starsNeeded = product ? tomanToShopStars(product.priceToman) * qty : 0;
+  if (payMethod === 'coins') {
+    const balance = user.coins ?? user.wallet?.coins ?? 0;
+    if (balance < coinsNeeded) {
+      await ctx.answerCallbackQuery({
+        text: `سکه کافی نیست. نیاز ${coinsNeeded.toLocaleString('fa-IR')} — موجودی ${balance.toLocaleString('fa-IR')}`,
+        show_alert: true,
+      });
+      return;
+    }
+  }
+  if (payMethod === 'wallet_stars') {
+    const balance = user.wallet?.stars ?? user.walletStars ?? 0;
+    if (balance < starsNeeded) {
+      await ctx.answerCallbackQuery({
+        text: `ستاره پنل کافی نیست. نیاز ${starsNeeded.toLocaleString('fa-IR')} — موجودی ${balance.toLocaleString('fa-IR')}`,
+        show_alert: true,
+      });
+      return;
+    }
+  }
+  const tomanNeeded = product ? product.priceToman * qty : 0;
+  if (payMethod === 'toman') {
+    const balance = user.wallet?.toman ?? user.walletToman ?? 0;
+    if (balance < tomanNeeded) {
+      await ctx.answerCallbackQuery({
+        text: `تومان کافی نیست. نیاز ${tomanNeeded.toLocaleString('fa-IR')} — موجودی ${balance.toLocaleString('fa-IR')}`,
+        show_alert: true,
+      });
+      return;
+    }
+  }
+
   await ctx.answerCallbackQuery({ text: 'در حال پرداخت…' }).catch(() => undefined);
   try {
-    if (payMethod === 'stars') {
-      const result = await checkoutShopWithStarsTelegram({
+    if (payMethod === 'telegram_stars') {
+      const prepared = await checkoutShopWithStarsTelegram({
         telegramId: user.telegramId,
         items: [{ productId, qty }],
         customerName: draft.name,
@@ -576,21 +696,111 @@ export async function handleShopPay(
         address: draft.address,
       });
       await patchSession(user.telegramId, { shopCheckout: undefined, step: 'ready' });
-      const site = webShopUrl('/shop');
+      const stars = prepared.stars ?? prepared.starsNeeded;
+      const title = `خرید شاپ ${stars}⭐`.slice(0, 32);
+      const description = `پت شاپ همبازی — ${(prepared.titleHint || 'سفارش').slice(0, 200)}`.slice(
+        0,
+        255
+      );
+      const payload = `pay:${prepared.paymentOrderId}:shopxtr`;
+      try {
+        await ctx.replyWithInvoice(
+          title,
+          description,
+          payload,
+          'XTR',
+          [{ label: 'خرید پت شاپ', amount: stars }],
+          { provider_token: '' }
+        );
+        await ctx.reply(
+          [
+            '⭐ فاکتور Telegram Stars ارسال شد.',
+            `مبلغ: ${formatStars(stars)} (≈ ${formatToman(prepared.totalToman)})`,
+            '',
+            'با پرداخت، ستاره‌ها مستقیم به ربات واریز و سفارش شاپ ثبت می‌شود.',
+          ].join('\n'),
+          { reply_markup: new InlineKeyboard().text('🛒 پت شاپ', 'shop:home') }
+        );
+      } catch (err) {
+        console.error('sendInvoice shop stars failed:', err);
+        await ctx.reply(
+          'ارسال فاکتور Stars ممکن نشد. اگر پرداخت Stars برای ربات فعال نیست، با پشتیبانی هماهنگ کن.',
+          { reply_markup: new InlineKeyboard().text('🛒 پت شاپ', 'shop:home') }
+        );
+      }
+    } else if (payMethod === 'wallet_stars') {
+      const result = await checkoutShopWithWalletStarsTelegram({
+        telegramId: user.telegramId,
+        items: [{ productId, qty }],
+        customerName: draft.name,
+        customerPhone: draft.phone,
+        address: draft.address,
+      });
+      await patchSession(user.telegramId, { shopCheckout: undefined, step: 'ready' });
+      const site = webShopUrl('/shop/orders');
+      const kb = new InlineKeyboard().text('🛒 پت شاپ', 'shop:home');
+      if (site) kb.row().url('📦 سفارش‌ها در سایت', site);
       await ctx.reply(
         [
-          '✅ <b>سفارش با ستاره ثبت شد</b>',
+          '✅ <b>سفارش ثبت شد</b>',
           `شماره: #${result.orderId}`,
-          `کسر شده: ${formatStars(result.starsSpent)}`,
-          `مانده ستاره: ${formatStars(result.starsRemaining)}`,
-          `مبلغ معادل: ${formatToman(result.totalToman)}`,
+          `کسر شده: ${formatStars(result.starsSpent)} از پنل پت‌دیت`,
+          `مانده ستاره پنل: ${formatStars(result.starsRemaining)}`,
+        ].join('\n'),
+        { parse_mode: 'HTML', reply_markup: kb }
+      );
+    } else if (payMethod === 'toman') {
+      const result = await checkoutShopWithTomanTelegram({
+        telegramId: user.telegramId,
+        items: [{ productId, qty }],
+        customerName: draft.name,
+        customerPhone: draft.phone,
+        address: draft.address,
+      });
+      await patchSession(user.telegramId, { shopCheckout: undefined, step: 'ready' });
+      const site = webShopUrl('/shop/orders');
+      const kb = new InlineKeyboard().text('🛒 پت شاپ', 'shop:home');
+      if (site) kb.row().url('📦 سفارش‌ها در سایت', site);
+      await ctx.reply(
+        [
+          '✅ <b>سفارش ثبت شد</b>',
+          `شماره: #${result.orderId}`,
+          `کسر شده: ${formatToman(result.tomanSpent)} از کیف‌پول`,
+          `مانده تومان: ${formatToman(result.tomanRemaining)}`,
+        ].join('\n'),
+        { parse_mode: 'HTML', reply_markup: kb }
+      );
+    } else if (payMethod === 'card') {
+      const prepared = await checkoutShopWithCardTelegram({
+        telegramId: user.telegramId,
+        items: [{ productId, qty }],
+        customerName: draft.name,
+        customerPhone: draft.phone,
+        address: draft.address,
+      });
+      const card = paymentCardInfo();
+      await patchSession(user.telegramId, {
+        shopCheckout: undefined,
+        step: 'payment_receipt',
+        paymentPendingOrderId: prepared.paymentOrderId,
+      });
+      await ctx.reply(
+        [
+          '🛒 <b>پرداخت کارت‌به‌کارت شاپ</b>',
           '',
-          'سفارش در پنل ادمین و سایت هم دیده می‌شود.',
-          site ? `سایت: ${site}` : '',
-        ]
-          .filter(Boolean)
-          .join('\n'),
-        { parse_mode: 'HTML', reply_markup: new InlineKeyboard().text('🛒 ادامه خرید', 'shop:home') }
+          `شماره پیگیری: #${prepared.paymentOrderId}`,
+          `مبلغ: ${formatToman(prepared.totalToman)}`,
+          '',
+          `کارت: <code>${escapeHtml(prepared.cardNumber || card.number)}</code>`,
+          `به‌نام: ${escapeHtml(prepared.cardHolder || card.holder)}`,
+          '',
+          'بعد از واریز، همین‌جا <b>عکس رسید</b> را بفرست.',
+          'ادمین بررسی می‌کند و سفارش فروشگاه ثبت می‌شود.',
+        ].join('\n'),
+        {
+          parse_mode: 'HTML',
+          reply_markup: new InlineKeyboard().text('🛒 پت شاپ', 'shop:home'),
+        }
       );
     } else {
       const result = await checkoutShopWithCoinsTelegram({
@@ -601,26 +811,24 @@ export async function handleShopPay(
         address: draft.address,
       });
       await patchSession(user.telegramId, { shopCheckout: undefined, step: 'ready' });
-      const site = webShopUrl('/shop');
+      const site = webShopUrl('/shop/orders');
+      const kb = new InlineKeyboard().text('🛒 پت شاپ', 'shop:home');
+      if (site) kb.row().url('📦 سفارش‌ها در سایت', site);
       await ctx.reply(
         [
           '✅ <b>سفارش ثبت شد</b>',
           `شماره: #${result.orderId}`,
           `کسر شده: ${formatCoins(result.coinsSpent)}`,
           `مانده سکه: ${formatCoins(result.coinsRemaining)}`,
-          `مبلغ معادل: ${formatToman(result.totalToman)}`,
-          '',
-          'سفارش در پنل ادمین و سایت هم دیده می‌شود.',
-          site ? `سایت: ${site}` : '',
-        ]
-          .filter(Boolean)
-          .join('\n'),
-        { parse_mode: 'HTML', reply_markup: new InlineKeyboard().text('🛒 ادامه خرید', 'shop:home') }
+        ].join('\n'),
+        { parse_mode: 'HTML', reply_markup: kb }
       );
     }
   } catch (err) {
-    const msg = err instanceof Error ? err.message : 'پرداخت ناموفق بود';
-    await ctx.reply(`❌ ${msg}`);
+    const msg = err instanceof Error ? err.message : 'پرداخت ناموفق بود.';
+    await ctx.reply(`❌ ${msg}`, {
+      reply_markup: new InlineKeyboard().text('🛒 پت شاپ', 'shop:home'),
+    });
   }
 }
 
@@ -629,9 +837,169 @@ export async function handleShopPayStars(
   productId: string,
   qtyRaw: number
 ): Promise<void> {
-  await handleShopPay(ctx, productId, qtyRaw, 'stars');
+  await handleShopPay(ctx, productId, qtyRaw, 'telegram_stars');
+}
+
+/** ارسال دوباره فاکتور XTR برای سفارش در انتظار (deep link shoppay_<id>) */
+export async function sendShopStarsInvoiceForPaymentOrder(
+  ctx: Context,
+  paymentOrderId: number
+): Promise<boolean> {
+  const user = await getCtxUser(ctx);
+  if (!user?.telegramId) {
+    await ctx.reply('اول /start بزن.');
+    return true;
+  }
+  const { getPaymentOrder } = await import('../api-client');
+  const order = await getPaymentOrder(paymentOrderId);
+  if (!order || order.packageId !== 'shopxtr' || order.method !== 'stars') {
+    await ctx.reply('فاکتور فروشگاه پیدا نشد یا منقضی است.');
+    return true;
+  }
+  const ownerTg = order.userTelegramId != null ? String(order.userTelegramId).trim() : '';
+  const payerTg = String(user.telegramId).trim();
+  if (ownerTg && payerTg && ownerTg !== payerTg) {
+    // همان کاربر ممکن است چند اکانت داشته باشد؛ فاکتور را برای پرداخت‌کننده فعلی می‌فرستیم.
+    console.warn('shoppay deep-link telegram mismatch (sending invoice anyway)', {
+      paymentOrderId,
+      ownerTg,
+      payerTg,
+    });
+  }
+  if (order.status === 'paid') {
+    await ctx.reply('این سفارش قبلاً پرداخت شده است.');
+    return true;
+  }
+  if (order.status !== 'awaiting_stars') {
+    await ctx.reply('وضعیت این فاکتور برای پرداخت مناسب نیست.');
+    return true;
+  }
+  const stars = Math.floor(Number(order.amountStars ?? 0));
+  if (stars <= 0) {
+    await ctx.reply('مبلغ ستاره نامعتبر است.');
+    return true;
+  }
+  let titleHint = 'سفارش پت شاپ';
+  try {
+    const meta = JSON.parse(String(order.adminNote || '{}')) as { titleHint?: string };
+    if (meta.titleHint) titleHint = meta.titleHint;
+  } catch {
+    /* ignore */
+  }
+  const title = `خرید شاپ ${stars}⭐`.slice(0, 32);
+  const description = `پت شاپ همبازی — ${titleHint}`.slice(0, 255);
+  const payload = `pay:${order.id}:shopxtr`;
+  try {
+    await ctx.replyWithInvoice(
+      title,
+      description,
+      payload,
+      'XTR',
+      [{ label: 'خرید پت شاپ', amount: stars }],
+      { provider_token: '' }
+    );
+  } catch (err) {
+    console.error('sendInvoice shoppay deep link failed:', err);
+    await ctx.reply('ارسال فاکتور Stars ممکن نشد.');
+  }
+  return true;
 }
 
 export async function handleShopNoop(ctx: Context): Promise<void> {
   await ctx.answerCallbackQuery().catch(() => undefined);
+}
+
+const STATUS_FA: Record<string, string> = {
+  pending: 'در انتظار',
+  paid: 'پرداخت‌شده',
+  shipped: 'ارسال‌شده',
+  completed: 'تکمیل‌شده',
+  cancelled: 'لغوشده',
+};
+
+function orderPayLine(o: {
+  paymentCurrency?: string;
+  paymentAmount?: number;
+  totalToman: number;
+}): string {
+  const cur = o.paymentCurrency || 'toman';
+  const amt = o.paymentAmount ?? o.totalToman;
+  if (cur === 'stars_xtr') return `⭐ ${formatStars(Number(amt))} (تلگرام)`;
+  if (cur === 'stars') return `⭐ ${formatStars(Number(amt))}`;
+  if (cur === 'coins') return formatCoins(Number(amt));
+  return formatToman(o.totalToman);
+}
+
+export async function handleShopOrders(ctx: Context): Promise<void> {
+  const user = await getCtxUser(ctx);
+  if (!user?.telegramId) {
+    await ctx.answerCallbackQuery({ text: 'اول /start بزن', show_alert: true }).catch(() => undefined);
+    return;
+  }
+  await ctx.answerCallbackQuery().catch(() => undefined);
+
+  let orders: Awaited<ReturnType<typeof fetchMyShopOrdersTelegram>>['orders'] = [];
+  try {
+    const data = await fetchMyShopOrdersTelegram(user.telegramId);
+    orders = data.orders;
+  } catch (err) {
+    console.warn('fetchMyShopOrdersTelegram failed', err);
+    await ctx.reply('❌ دریافت سفارش‌ها ناموفق بود. دوباره تلاش کن.', {
+      reply_markup: new InlineKeyboard().text('🏠 منوی شاپ', 'shop:home'),
+    });
+    return;
+  }
+
+  if (!orders.length) {
+    await ctx.reply(
+      ['📦 <b>سفارش‌های من</b>', '', 'هنوز سفارشی ثبت نشده.', 'از منوی شاپ خرید کن.'].join('\n'),
+      {
+        parse_mode: 'HTML',
+        reply_markup: new InlineKeyboard()
+          .text('🛒 خرید', 'shop:home')
+          .row()
+          .text('🏠 منوی شاپ', 'shop:home'),
+      }
+    );
+    await pushMainMenuKeyboard(ctx, user);
+    return;
+  }
+
+  const lines = [
+    '📦 <b>سفارش‌های من</b>',
+    `آخرین ${orders.length.toLocaleString('fa-IR')} سفارش:`,
+    '',
+  ];
+  for (const o of orders.slice(0, 12)) {
+    const items = Array.isArray(o.items) ? o.items : [];
+    const titles = items
+      .map((it) => {
+        const t = escapeHtml(String(it.title || it.productId || 'کالا'));
+        const q = Math.max(1, Number(it.qty) || 1);
+        return q > 1 ? `${t}×${q}` : t;
+      })
+      .join('، ');
+    const st = STATUS_FA[o.status] || o.status;
+    lines.push(
+      [
+        `<b>#${o.id}</b> — ${escapeHtml(st)}`,
+        titles ? `· ${titles}` : null,
+        `· ${formatToman(o.totalToman)} · ${orderPayLine(o)}`,
+        o.createdAt ? `· <code>${escapeHtml(o.createdAt)}</code>` : null,
+      ]
+        .filter(Boolean)
+        .join('\n')
+    );
+    lines.push('');
+  }
+
+  const kb = new InlineKeyboard().text('🏠 منوی شاپ', 'shop:home').row();
+  const site = webShopUrl('/shop/orders');
+  if (site) kb.url('🌐 سفارش‌ها در سایت', site);
+
+  await ctx.reply(lines.join('\n').trim(), {
+    parse_mode: 'HTML',
+    reply_markup: kb,
+  });
+  await pushMainMenuKeyboard(ctx, user);
 }

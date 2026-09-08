@@ -195,8 +195,12 @@ export interface User {
   vetCredentialStatus?: VetCredentialStatus;
   /** دامپزشک آنلاین و آماده پذیرش بیمار */
   vetOnline?: boolean;
+  /** دنبال‌کننده پت — آماده پذیرش / فرزندخواندگی */
+  readyToAdopt?: boolean;
   /** false = توسط ادمین از لیست/اتصال پزشک‌ها خارج شده */
   vetEnabled?: boolean;
+  /** مبلغ ویزیت دامپزشک به سکه (قابل تنظیم از پنل پزشک) */
+  visitFeeCoins?: number;
   /** میانگین امتیاز کاربران (۱–۵) — فقط برای دامپزشک */
   avgRating?: number;
   /** تعداد نظرات ثبت‌شده برای دامپزشک */

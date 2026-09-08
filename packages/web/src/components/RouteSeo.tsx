@@ -34,6 +34,14 @@ function metaForPath(pathname: string): PageMeta {
         robots: 'noindex,follow',
       };
     }
+    if (p === '/shop/orders') {
+      return {
+        title: SEO.titleTemplate('سفارش‌های من'),
+        description: 'لیست سفارش‌های پت‌دیت شاپ.',
+        canonicalPath: '/shop/orders',
+        robots: 'noindex,follow',
+      };
+    }
     return {
       title: SEO.titleTemplate('پت‌شاپ'),
       description: 'خرید غذا، اسباب‌بازی و لوازم پت از پت‌دیت شاپ.',

@@ -11,13 +11,17 @@ import {
 } from 'lucide-react';
 import {
   BRAND,
+  MAX_VET_VISIT_FEE_COINS,
+  MIN_VET_VISIT_FEE_COINS,
   QUICK_VET_COST,
   VET_CREDENTIAL_STATUS_LABELS,
   formatPersianDateTime,
   isPrimaryRole,
   toPersianDigits,
   userHasRole,
+  vetVisitFeeCoins,
   type PetProfile,
+  type User,
   type VetConsultation,
   type VetCredentialStatus,
 } from '@petdate/shared';
@@ -25,6 +29,7 @@ import { useAuthStore } from '../hooks/useAuthStore';
 import { useLiveAjaxPoll } from '../hooks/useLiveAjaxPoll';
 import {
   acceptVetConsultation,
+  listOnlineVets,
   listPets,
   listVetConsultations,
   quickVetConnect,
@@ -35,8 +40,15 @@ import { subscribeIncomingRefresh } from '../lib/liveIncoming';
 
 type Phase = 'ready' | 'sending' | 'waiting' | 'connected';
 
+const VISIT_FEE_PRESETS = [1, 5, 10, 20, 50, 100] as const;
+
 function formatCoins(n: number): string {
   return toPersianDigits(String(n));
+}
+
+function quickConnectCostForVets(vets: User[]): number {
+  if (!vets.length) return QUICK_VET_COST;
+  return Math.max(QUICK_VET_COST, ...vets.map((v) => vetVisitFeeCoins(v)));
 }
 
 function credentialLabel(status?: VetCredentialStatus | null): string {
@@ -56,6 +68,120 @@ function patientLabel(c: VetConsultation): string {
   const name = c.patientName?.trim() || `بیمار #${c.patientUserId}`;
   const pet = c.petName?.trim();
   return pet ? `${name} · ${pet}` : name;
+}
+
+function VetVisitFeeCard({
+  currentFee,
+  busy,
+  needsLogin,
+  onSave,
+}: {
+  currentFee: number;
+  busy: boolean;
+  needsLogin: boolean;
+  onSave: (fee: number) => void | Promise<void>;
+}) {
+  const [custom, setCustom] = useState('');
+  const locked = busy || needsLogin;
+
+  return (
+    <section className="pepito-vet-fee-panel" aria-label="مبلغ ویزیت">
+      <div className="pepito-vet-fee-head">
+        <h2>مبلغ ویزیت</h2>
+        <p>
+          مبلغ فعلی: <strong>{formatCoins(currentFee)} سکه</strong>
+        </p>
+        <p className="pepito-vet-fee-hint">
+          این مبلغ هنگام درخواست مشاوره سریع از بیمار کسر می‌شود ({formatCoins(MIN_VET_VISIT_FEE_COINS)} تا{' '}
+          {formatCoins(MAX_VET_VISIT_FEE_COINS)} سکه).
+        </p>
+      </div>
+      <div className="pepito-vet-fee-presets" role="group" aria-label="مبالغ آماده">
+        {VISIT_FEE_PRESETS.map((fee) => (
+          <button
+            key={fee}
+            type="button"
+            className={`pepito-vet-fee-chip${fee === currentFee ? ' is-active' : ''}`}
+            disabled={locked}
+            onClick={() => void onSave(fee)}
+          >
+            {fee === currentFee ? '✓ ' : ''}
+            {formatCoins(fee)} سکه
+          </button>
+        ))}
+      </div>
+      <form
+        className="pepito-vet-fee-custom"
+        onSubmit={(e) => {
+          e.preventDefault();
+          const n = Math.floor(Number(custom));
+          if (!Number.isFinite(n)) return;
+          void onSave(n);
+          setCustom('');
+        }}
+      >
+        <label htmlFor="vet-visit-fee-custom">مبلغ دلخواه</label>
+        <div className="pepito-vet-fee-custom-row">
+          <input
+            id="vet-visit-fee-custom"
+            type="number"
+            min={MIN_VET_VISIT_FEE_COINS}
+            max={MAX_VET_VISIT_FEE_COINS}
+            inputMode="numeric"
+            placeholder="مثلاً ۱۵"
+            value={custom}
+            disabled={locked}
+            onChange={(e) => setCustom(e.target.value)}
+          />
+          <button type="submit" className="pepito-btn button-1" disabled={locked || !custom.trim()}>
+            ذخیره
+          </button>
+        </div>
+      </form>
+    </section>
+  );
+}
+
+function OnlineVetsList({
+  vets,
+  loading,
+  connectCost,
+}: {
+  vets: User[];
+  loading: boolean;
+  connectCost: number;
+}) {
+  return (
+    <section className="pepito-vet-online-list" aria-label="پزشک‌های آنلاین">
+      <div className="pepito-vet-online-list-head">
+        <h2>پزشک‌های آنلاین</h2>
+        <p>
+          {loading
+            ? 'در حال دریافت لیست…'
+            : vets.length
+              ? `${formatCoins(vets.length)} پزشک آماده پذیرش — هزینه اتصال: ${formatCoins(connectCost)} سکه`
+              : 'الان هیچ دامپزشک آنلاینی آماده پذیرش نیست.'}
+        </p>
+      </div>
+      {!loading && vets.length ? (
+        <ul className="pepito-vet-online-list-ul">
+          {vets.map((vet) => {
+            const fee = vetVisitFeeCoins(vet);
+            const city = vet.city?.trim();
+            return (
+              <li key={vet.id}>
+                <div>
+                  <strong>{vet.name}</strong>
+                  {city ? <span className="pepito-vet-online-list-city">{city}</span> : null}
+                </div>
+                <span className="pepito-vet-online-list-fee">{formatCoins(fee)} سکه</span>
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
+    </section>
+  );
 }
 
 function VetOnlineCard({
@@ -305,7 +431,7 @@ function VetInboxSection({
 
 export function VetConsultPage() {
   const navigate = useNavigate();
-  const { user, token, isLoggedIn, refreshMe, setVetOnline } = useAuthStore();
+  const { user, token, isLoggedIn, refreshMe, setVetOnline, setVisitFee } = useAuthStore();
 
   const [pets, setPets] = useState<PetProfile[]>([]);
   const [petsLoading, setPetsLoading] = useState(false);
@@ -319,6 +445,9 @@ export function VetConsultPage() {
   const [recent, setRecent] = useState<VetConsultation[]>([]);
   const [actingId, setActingId] = useState<number | null>(null);
   const [onlineBusy, setOnlineBusy] = useState(false);
+  const [feeBusy, setFeeBusy] = useState(false);
+  const [onlineVets, setOnlineVets] = useState<User[]>([]);
+  const [onlineVetsLoading, setOnlineVetsLoading] = useState(false);
   const autoNavRef = useRef<number | null>(null);
 
   const coins = user?.coins ?? user?.wallet?.coins ?? 0;
@@ -326,6 +455,12 @@ export function VetConsultPage() {
   const hasVetRole = userHasRole(user, 'vet');
   const isVetDashboard = isPrimaryRole(user, 'vet');
   const vetOnline = Boolean(user?.vetOnline);
+  const myVisitFee = vetVisitFeeCoins(user);
+  const patientOnlineVets = useMemo(
+    () => onlineVets.filter((v) => v.id !== user?.id),
+    [onlineVets, user?.id]
+  );
+  const connectCost = quickConnectCostForVets(patientOnlineVets);
 
   const loadPets = useCallback(async () => {
     if (!user?.id || isVetDashboard) {
@@ -341,6 +476,21 @@ export function VetConsultPage() {
       setPetsLoading(false);
     }
   }, [user?.id, isVetDashboard]);
+
+  const loadOnlineVets = useCallback(async () => {
+    if (isVetDashboard) {
+      setOnlineVets([]);
+      return;
+    }
+    setOnlineVetsLoading(true);
+    try {
+      setOnlineVets(await listOnlineVets());
+    } catch {
+      setOnlineVets([]);
+    } finally {
+      setOnlineVetsLoading(false);
+    }
+  }, [isVetDashboard]);
 
   const refreshConsultStatus = useCallback(async () => {
     if (!user?.id || isVetDashboard) return;
@@ -437,6 +587,10 @@ export function VetConsultPage() {
   }, [loadPets]);
 
   useEffect(() => {
+    void loadOnlineVets();
+  }, [loadOnlineVets]);
+
+  useEffect(() => {
     void refreshConsultStatus();
   }, [refreshConsultStatus]);
 
@@ -479,7 +633,8 @@ export function VetConsultPage() {
 
   const needsLogin = !isLoggedIn || !user?.id;
   const needsPet = !needsLogin && !petsLoading && pets.length === 0;
-  const lowCoins = !needsLogin && !needsPet && coins < QUICK_VET_COST;
+  const noOnlineVets = !needsLogin && !needsPet && !onlineVetsLoading && patientOnlineVets.length === 0;
+  const lowCoins = !needsLogin && !needsPet && !noOnlineVets && coins < connectCost;
 
   const lead = useMemo(() => {
     if (isVetDashboard) {
@@ -489,11 +644,12 @@ export function VetConsultPage() {
     }
     if (needsLogin) return 'برای ارتباط سریع با پزشک وارد حساب شو.';
     if (needsPet) return 'برای درخواست ارتباط با پزشک، اول باید حداقل یک پت ثبت کنی.';
+    if (noOnlineVets) return 'الان هیچ دامپزشک آنلاینی آماده پذیرش نیست. کمی بعد دوباره سر بزن.';
     if (lowCoins) {
-      return `برای اتصال سریع حداقل ${formatCoins(QUICK_VET_COST)} سکه لازم داری. موجودی: ${formatCoins(coins)} — از ربات «سکه» بگیر.`;
+      return `برای اتصال سریع حداقل ${formatCoins(connectCost)} سکه لازم داری. موجودی: ${formatCoins(coins)} — از ربات «سکه» بگیر.`;
     }
-    return 'درخواست وب برای پزشک‌های آنلاین ربات و پزشک‌های آنلاین وب ارسال می‌شود.';
-  }, [isVetDashboard, vetOnline, needsLogin, needsPet, lowCoins, coins]);
+    return 'پزشک‌های آنلاین و مبلغ ویزیت‌شان را ببین، بعد درخواست بفرست.';
+  }, [isVetDashboard, vetOnline, needsLogin, needsPet, noOnlineVets, lowCoins, coins, connectCost]);
 
   async function onToggleOnline() {
     if (!token) return;
@@ -508,6 +664,19 @@ export function VetConsultPage() {
     }
   }
 
+  async function onSaveVisitFee(fee: number) {
+    if (!token) return;
+    setFeeBusy(true);
+    setError(null);
+    try {
+      await setVisitFee(fee);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'ثبت مبلغ ویزیت ناموفق بود');
+    } finally {
+      setFeeBusy(false);
+    }
+  }
+
   async function onConnect() {
     if (!user?.id) {
       setError('اول وارد حساب شو.');
@@ -517,9 +686,14 @@ export function VetConsultPage() {
       setError('برای درخواست ارتباط با پزشک، اول باید حداقل یک پت ثبت کنی.');
       return;
     }
-    if (coins < QUICK_VET_COST) {
+    if (!patientOnlineVets.length) {
+      setError('الان هیچ دامپزشک آنلاینی آماده پذیرش نیست.');
+      await loadOnlineVets();
+      return;
+    }
+    if (coins < connectCost) {
       setError(
-        `برای اتصال سریع حداقل ${formatCoins(QUICK_VET_COST)} سکه لازم داری.
+        `برای اتصال سریع حداقل ${formatCoins(connectCost)} سکه لازم داری.
 موجودی: ${formatCoins(coins)} — از ربات «سکه» بگیر.`
       );
       return;
@@ -527,8 +701,9 @@ export function VetConsultPage() {
 
     const payOk = window.confirm(
       [
-        `هزینه این درخواست: ${formatCoins(QUICK_VET_COST)} سکه`,
+        `هزینه این درخواست: ${formatCoins(connectCost)} سکه`,
         `موجودی فعلی: ${formatCoins(coins)} سکه`,
+        `پزشک‌های هدف: ${patientOnlineVets.length}`,
         '',
         'با تأیید، سکه از موجودی‌ات کسر می‌شود و درخواست برای پزشک‌های آنلاین ارسال می‌شود.',
         'ادامه می‌دهی؟',
@@ -639,6 +814,12 @@ export function VetConsultPage() {
           credentialStatus={user?.vetCredentialStatus}
           onToggle={() => void onToggleOnline()}
         />
+        <VetVisitFeeCard
+          currentFee={myVisitFee}
+          busy={feeBusy}
+          needsLogin={needsLogin}
+          onSave={onSaveVisitFee}
+        />
         {error ? (
           <p className="auth-error pepito-vet-consult-status" role="alert">
             {error}
@@ -670,6 +851,12 @@ export function VetConsultPage() {
             credentialStatus={user?.vetCredentialStatus}
             onToggle={() => void onToggleOnline()}
           />
+          <VetVisitFeeCard
+            currentFee={myVisitFee}
+            busy={feeBusy}
+            needsLogin={needsLogin}
+            onSave={onSaveVisitFee}
+          />
           <VetInboxSection
             incoming={incoming}
             recent={recent}
@@ -680,6 +867,12 @@ export function VetConsultPage() {
         </>
       ) : null}
 
+      <OnlineVetsList
+        vets={patientOnlineVets}
+        loading={onlineVetsLoading}
+        connectCost={connectCost}
+      />
+
       <section className="pepito-vet-connect-panel" aria-label="ارتباط سریع با پزشک">
         <div className="pepito-vet-consult-cost" role="status">
           <span className="pepito-vet-cost-mark" aria-hidden>
@@ -687,7 +880,13 @@ export function VetConsultPage() {
           </span>
           <div>
             <strong>هزینه اتصال فوری</strong>
-            <span>{formatCoins(QUICK_VET_COST)} سکه — قبل از ارسال کسر می‌شود</span>
+            <span>
+              {onlineVetsLoading
+                ? 'در حال محاسبه…'
+                : noOnlineVets
+                  ? 'پزشک آنلاینی نیست'
+                  : `${formatCoins(connectCost)} سکه — قبل از ارسال کسر می‌شود`}
+            </span>
           </div>
           {!needsLogin ? (
             <small>
@@ -719,15 +918,19 @@ export function VetConsultPage() {
             type="button"
             className="pepito-btn button-1"
             data-testid="vet-quick-connect"
-            disabled={phase === 'sending' || petsLoading || lowCoins}
+            disabled={
+              phase === 'sending' || petsLoading || onlineVetsLoading || lowCoins || noOnlineVets
+            }
             onClick={() => void onConnect()}
           >
             <PawIcon />
             {phase === 'sending'
               ? 'در حال کسر سکه و ارسال…'
-              : phase === 'waiting' || phase === 'connected'
-                ? 'ارسال دوباره درخواست'
-                : `تأیید پرداخت (${formatCoins(QUICK_VET_COST)} سکه) و اتصال`}
+              : noOnlineVets
+                ? 'پزشک آنلاینی نیست'
+                : phase === 'waiting' || phase === 'connected'
+                  ? 'ارسال دوباره درخواست'
+                  : `تأیید پرداخت (${formatCoins(connectCost)} سکه) و اتصال`}
           </button>
         )}
 

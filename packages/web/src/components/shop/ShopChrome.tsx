@@ -7,6 +7,7 @@ import { useShopCatalogSync } from '../../hooks/useShopCatalogSync';
 import { NavUserCluster } from '../NavUserCluster';
 import { SiteDesktopNav } from '../SiteDesktopNav';
 import { SiteFooter } from '../SiteFooter';
+import { ShopAddToast } from './ShopAddToast';
 
 
 export function ShopChrome({
@@ -49,16 +50,20 @@ export function ShopChrome({
           <img src="/pepito/img/logo.png" alt={BRAND.displayName} />
         </Link>
         <nav className="pepito-nav-links pepito-nav-links--app" aria-label="پت دیت شاپ">
+          <NavLink to="/shop" end>
+            فروشگاه
+          </NavLink>
+          <NavLink to="/shop/orders">سفارش‌ها</NavLink>
+          <NavLink to="/shop/cart">سبد</NavLink>
           <NavLink to="/shop/c/dog-food">سگ</NavLink>
           <NavLink to="/shop/c/cat-food">گربه</NavLink>
           <NavLink to="/shop/c/bird-food">پرنده</NavLink>
-          <Link to="/#services">خدمات</Link>
         </nav>
-        <NavUserCluster showCart />
+        <NavUserCluster showCart showOrders />
         <div className="pepito-nav-actions">
           <SiteDesktopNav />
         </div>
-</header>
+      </header>
 
       {!hideBanner ? (
         <section className="pd-shop-hero pd-shop-hero--full" aria-label={bannerTitle}>
@@ -89,6 +94,7 @@ export function ShopChrome({
         {children}
       </main>
 
+      <ShopAddToast />
       <SiteFooter />
     </div>
   );

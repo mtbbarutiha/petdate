@@ -8,6 +8,8 @@ import {
   MAIN_MENU_BTN,
   PET_OWNER_MENU,
   DEFAULT_MENU,
+  NO_PET_MENU,
+  PET_SEEKER_MENU,
   VET_MENU,
   ADMIN_MENU,
   MY_PETS_SECTION,
@@ -91,14 +93,20 @@ import {
 import { menuKeyboardFor } from './helpers';
 import {
   handleComingSoon,
+  handleChatsEntry,
   handleInviteFriends,
-  handleMedical,
   handleQuickVet,
   handleQuickVetConnect,
   handleQuickVetReconnect,
   handleServices,
   handleVetConsultDecision,
 } from './services';
+import {
+  handleBuyPetConsult,
+  handleBuyPetConsultConnect,
+  handlePetsAndPlaymates,
+  handleReadyToAdoptToggle,
+} from './role-menus';
 import {
   handlePetShop,
   handleShopBackCategories,
@@ -109,10 +117,12 @@ import {
   handleShopFeatured,
   handleShopHome,
   handleShopNoop,
+  handleShopOrders,
   handleShopPage,
   handleShopPay,
   handleShopPayStars,
   handleShopPetType,
+  handleShopSetPayMethod,
   handleShopView,
 } from './shop';
 import {
@@ -133,6 +143,10 @@ import {
   handleVetOnlineToggle,
   handleVetRecentPatients,
   handleVetRequestRechat,
+  handleVetVisitFeeCustomPrompt,
+  handleVetVisitFeeMenu,
+  handleVetVisitFeePick,
+  handleVetVisitFeeText,
 } from './vet';
 import {
   handleCoins,
@@ -157,6 +171,8 @@ import {
   handlePaymentReject,
   handlePreCheckout,
   handleSuccessfulPayment,
+  handleWalletStarsTopUpBuy,
+  handleWalletStarsTopUpMenu,
 } from './coins';
 import {
   handleNearbyPets,
@@ -204,8 +220,15 @@ import {
   handlePhoneVerifyText,
 } from './phone-verify';
 import { touchTelegramPresence } from '../api-client';
+import { stickyReplyKeyboardMiddleware } from '../sticky-reply-keyboard';
+import { registerBusinessHandlers } from './business';
 
 export function registerHandlers(bot: Bot): void {
+  // قبل از force-join: آپدیت Business connection نباید بلاک شود
+  registerBusinessHandlers(bot);
+
+  // کیبورد reply را پایین بچسبان (جلوگیری از کیبورد فیک هنگام اسکرول)
+  bot.use(stickyReplyKeyboardMiddleware());
   // عضویت اجباری در کانال‌ها — قبل از همهٔ دستورات
   bot.use(forceJoinMiddleware);
 
@@ -563,6 +586,10 @@ export function registerHandlers(bot: Bot): void {
   bot.callbackQuery('vet:connect:resend', (ctx) =>
     handleQuickVetConnect(ctx, { confirmResend: true })
   );
+  bot.callbackQuery('vet:buyconsult:connect', (ctx) => handleBuyPetConsultConnect(ctx));
+  bot.callbackQuery('vet:buyconsult:resend', (ctx) =>
+    handleBuyPetConsultConnect(ctx, { confirmResend: true })
+  );
   bot.callbackQuery('vet:connect:cancel', async (ctx) => {
     await ctx.answerCallbackQuery({ text: 'لغو شد' }).catch(() => undefined);
     try {
@@ -580,6 +607,10 @@ export function registerHandlers(bot: Bot): void {
   bot.callbackQuery(/^vet:consult:reject:(\d+)$/, (ctx) =>
     handleVetConsultDecision(ctx, Number(ctx.match![1]), 'reject')
   );
+  bot.callbackQuery(/^vet:fee:(\d+)$/, (ctx) =>
+    handleVetVisitFeePick(ctx, Number(ctx.match![1]))
+  );
+  bot.callbackQuery('vet:fee:custom', (ctx) => handleVetVisitFeeCustomPrompt(ctx));
   bot.callbackQuery(/^vet:rechat:(\d+)$/, (ctx) =>
     handleVetRequestRechat(ctx, Number(ctx.match![1]))
   );
@@ -615,6 +646,7 @@ export function registerHandlers(bot: Bot): void {
   bot.callbackQuery('vchat:rxok', (ctx) => handleVetChatRxConfirm(ctx));
   bot.callbackQuery(/^vet:/, (ctx) => handleComingSoon(ctx, 'مشاوره دامپزشک'));
   bot.callbackQuery('shop:home', (ctx) => handleShopHome(ctx));
+  bot.callbackQuery('shop:orders', (ctx) => handleShopOrders(ctx));
   bot.callbackQuery('shop:featured', (ctx) => handleShopFeatured(ctx));
   bot.callbackQuery('shop:backcat', (ctx) => handleShopBackCategories(ctx));
   bot.callbackQuery('shop:noop', (ctx) => handleShopNoop(ctx));
@@ -632,8 +664,14 @@ export function registerHandlers(bot: Bot): void {
   bot.callbackQuery(/^shop:buyStars:([^:]+):(\d+)$/, (ctx) =>
     handleShopBuyStars(ctx, ctx.match![1]!, Number(ctx.match![2]))
   );
-  bot.callbackQuery(/^shop:pay:([^:]+):(\d+)$/, (ctx) =>
+  bot.callbackQuery(/^shop:method:(coins|wstars|xtr|toman|card):([^:]+):(\d+)$/, (ctx) =>
+    handleShopSetPayMethod(ctx, ctx.match![1]!, ctx.match![2]!, Number(ctx.match![3]))
+  );
+  bot.callbackQuery(/^shop:payNow:([^:]+):(\d+)$/, (ctx) =>
     handleShopPay(ctx, ctx.match![1]!, Number(ctx.match![2]))
+  );
+  bot.callbackQuery(/^shop:pay:([^:]+):(\d+)$/, (ctx) =>
+    handleShopPay(ctx, ctx.match![1]!, Number(ctx.match![2]), 'coins')
   );
   bot.callbackQuery(/^shop:payStars:([^:]+):(\d+)$/, (ctx) =>
     handleShopPayStars(ctx, ctx.match![1]!, Number(ctx.match![2]))
@@ -658,6 +696,9 @@ export function registerHandlers(bot: Bot): void {
     handlePaymentReject(ctx, Number(ctx.match![1]))
   );
 
+  bot.callbackQuery(/^wstars:buy:(\d+)$/, (ctx) =>
+    handleWalletStarsTopUpBuy(ctx, ctx.match![1]!)
+  );
   bot.on('pre_checkout_query', (ctx) => handlePreCheckout(ctx));
   bot.on('message:successful_payment', (ctx) => handleSuccessfulPayment(ctx));
 
@@ -816,12 +857,15 @@ async function handleTextMessage(ctx: Context): Promise<void> {
   if (await handleEarnCardText(ctx, text)) return;
   if (await handleSearchBreedText(ctx, text)) return;
   if (await handleVetCredentialText(ctx, text)) return;
+  if (await handleVetVisitFeeText(ctx, text)) return;
   if (await handleProfileWizardText(ctx, text)) return;
   if (await handlePetEditText(ctx, text)) return;
   if (await handleWizardText(ctx, text)) return;
 
   const m = PET_OWNER_MENU;
   const d = DEFAULT_MENU;
+  const n = NO_PET_MENU;
+  const s = PET_SEEKER_MENU;
   const v = VET_MENU;
   const petsSection = MY_PETS_SECTION;
   const search = SEARCH_PETS_MENU;
@@ -829,20 +873,39 @@ async function handleTextMessage(ctx: Context): Promise<void> {
   switch (text) {
     case m.findPlaymate:
     case d.explore:
+    case n.explore:
+    case s.explore:
       return handleFindPlaymate(ctx);
-    case v.goOnline: {
+    case s.petsAndPlaymates:
+      return handlePetsAndPlaymates(ctx);
+    case s.readyAdoptOn:
+      return handleReadyToAdoptToggle(ctx, true);
+    case s.readyAdoptOff:
+      return handleReadyToAdoptToggle(ctx, false);
+    case n.buyConsult:
+      return handleBuyPetConsult(ctx);
+    case v.goOnline:
+    case '🟢 آنلاین هستم و آماده پذیرش بیمار': {
       if (!(await ensureVetPhoneVerified(ctx))) return;
       return handleVetOnlineToggle(ctx, true);
     }
-    case v.goOffline: {
+    case v.goOffline:
+    case '🔴 آفلاین هستم': {
       if (!(await ensureVetPhoneVerified(ctx))) return;
       return handleVetOnlineToggle(ctx, false);
     }
-    case v.recentPatients: {
+    case v.recentPatients:
+    case '🩺 آخرین بیمارها': {
       if (!(await ensureVetPhoneVerified(ctx))) return;
       return handleVetRecentPatients(ctx);
     }
+    case v.visitFee:
+    case '💰 مبلغ ویزیت': {
+      if (!(await ensureVetPhoneVerified(ctx))) return;
+      return handleVetVisitFeeMenu(ctx);
+    }
     case m.nearbyPets:
+    case '📍 پت‌های نزدیک من':
       return handleNearbyPets(ctx);
     case m.searchPets:
       return handleSearchPetsMenu(ctx);
@@ -858,51 +921,101 @@ async function handleTextMessage(ctx: Context): Promise<void> {
     case search.menu:
     case m.menu:
     case d.menu:
+    case n.menu:
+    case s.menu:
     case v.menu:
     case petsSection.menu:
     case petsSection.backToMenu: {
       return handleMenu(ctx);
     }
     case m.myProfile:
+    case '👤 پروفایل خودم':
     case d.profile:
+    case n.profile:
+    case s.profile:
     case v.profile:
       return handleProfile(ctx);
     case m.verify:
     case d.verify:
+    case n.verify:
+    case s.verify:
     case v.verify:
     case '🛡 احراز هویت':
       return handleVerifyStart(ctx);
     case m.phoneVerify:
     case d.phoneVerify:
+    case n.phoneVerify:
+    case s.phoneVerify:
     case v.phoneVerify:
       return handlePhoneVerifyStart(ctx);
     case m.myPets:
     case d.myPets:
+    case n.myPets:
+    case s.myPets:
       return handleMyPets(ctx);
     case m.addPet:
     case d.addPet:
     case petsSection.addPet:
       return handleAddPetCommand(ctx);
     case m.coins:
+    case d.coins:
+    case n.coins:
+    case s.coins:
+    case v.coins:
       return handleCoins(ctx);
     case m.earn:
       return handleEarn(ctx);
-    case m.medical:
-      return handleMedical(ctx);
+    case '🩺 پزشکی':
+      // دکمه قدیمی حذف‌شده از منو
+      {
+        const user = await getCtxUser(ctx);
+        await ctx.reply('این دکمه از منوی ربات حذف شده.', {
+          reply_markup: menuKeyboardFor(ctx, user),
+        });
+      }
+      return;
     case m.invite:
+    case '🎁 معرفی به دوستان':
+    case d.invite:
+    case n.invite:
+    case s.invite:
+    case v.invite:
       return handleInviteFriends(ctx);
+    case m.chat:
+    case d.chat:
+    case n.chat:
+    case s.chat:
+    case v.chat:
+      // دکمه چت از همه نقش‌ها حذف شد
+      {
+        const user = await getCtxUser(ctx);
+        await ctx.reply('دکمه چت از منوی ربات حذف شده. از وب یا گفتگوی مستقیم استفاده کن.', {
+          reply_markup: menuKeyboardFor(ctx, user),
+        });
+      }
+      return;
     case m.help:
     case d.help:
+    case n.help:
+    case s.help:
     case v.help:
       return handleHelp(ctx);
     case m.myRoles:
     case d.myRoles:
+    case n.myRoles:
+    case s.myRoles:
     case v.myRoles:
       return handleMyRoles(ctx);
     case m.quickVet:
+    case '⚡ مشاوره سریع با پزشک':
     case '⚡ ارتباط سریع با پزشک':
       return handleQuickVet(ctx);
     case m.shop:
+    case '🛒 پت شاپ':
+    case d.shop:
+    case n.shop:
+    case s.shop:
+    case v.shop:
       return handlePetShop(ctx);
     case m.services:
       return handleServices(ctx);

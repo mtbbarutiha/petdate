@@ -1,3 +1,5 @@
+import fs from 'fs';
+import path from 'path';
 import {
   PET_GENDER_LABELS,
   PET_SIZE_LABELS,
@@ -6,6 +8,10 @@ import {
   type PetProfile,
 } from '@petdate/shared';
 import { infra } from '../config/infra';
+import {
+  mimeFromPetPhotoKey,
+  resolvePetPhotoPath,
+} from './pet-photo-store';
 
 function escapeHtml(value: string): string {
   return value
@@ -52,14 +58,91 @@ function formatPetHtml(pet: PetProfile): string {
   return lines.filter(Boolean).join('\n');
 }
 
-/** Keep Telegram calls short so playdate create never blocks the HTTP response. */
+/** Keep JSON Telegram calls short; multipart photo upload may need longer. */
 const TELEGRAM_CALL_TIMEOUT_MS = 4000;
+const TELEGRAM_UPLOAD_TIMEOUT_MS = 20000;
 
-async function telegramCall(method: string, body: Record<string, unknown>): Promise<boolean> {
+function publicHttpsOrigin(): string | null {
+  for (const cand of [
+    process.env.PUBLIC_API_URL,
+    process.env.API_PUBLIC_URL,
+    process.env.PUBLIC_WEB_URL,
+    process.env.WEB_URL,
+  ]) {
+    const v = String(cand ?? '')
+      .trim()
+      .replace(/\/$/, '');
+    if (/^https:\/\//i.test(v)) return v;
+  }
+  return null;
+}
+
+/** Local pet-photos API path → storage key `ownerId/filename`. */
+export function petPhotoStorageKeyFromUrl(url: string): string | null {
+  const m = String(url ?? '')
+    .trim()
+    .match(/^\/api\/pets\/photos\/(\d+\/[\w.~-]+)$/);
+  return m?.[1] ?? null;
+}
+
+export type ResolvedNotifyPhoto =
+  | { kind: 'ref'; value: string }
+  | { kind: 'upload'; buffer: Buffer; filename: string; contentType: string };
+
+/**
+ * Turn pets.image_url into something Telegram sendPhoto accepts.
+ * Relative `/api/pets/photos/...` paths have no host — Telegram rejects them
+ * with "invalid file HTTP URL specified: URL host is empty". Prefer uploading
+ * the local file; otherwise absolutize with a public HTTPS origin.
+ */
+export function resolvePlaydateNotifyPhoto(pet: PetProfile): ResolvedNotifyPhoto {
+  const raw = String(pet.imageUrl ?? '').trim();
+  if (!raw) return { kind: 'ref', value: defaultPetPhoto(pet) };
+
+  if (/^https?:\/\//i.test(raw)) {
+    return { kind: 'ref', value: raw };
+  }
+
+  const storageKey = petPhotoStorageKeyFromUrl(raw);
+  if (storageKey) {
+    const abs = resolvePetPhotoPath(storageKey);
+    if (abs && fs.existsSync(abs)) {
+      try {
+        return {
+          kind: 'upload',
+          buffer: fs.readFileSync(abs),
+          filename: path.basename(storageKey) || 'pet.jpg',
+          contentType: mimeFromPetPhotoKey(storageKey),
+        };
+      } catch (err) {
+        console.warn('playdate notify read local photo failed:', (err as Error).message);
+      }
+    }
+    const origin = publicHttpsOrigin();
+    if (origin) return { kind: 'ref', value: `${origin}${raw}` };
+    return { kind: 'ref', value: defaultPetPhoto(pet) };
+  }
+
+  // Other site-relative paths (avatars, proxied images, …)
+  if (raw.startsWith('/')) {
+    const origin = publicHttpsOrigin();
+    if (origin) return { kind: 'ref', value: `${origin}${raw}` };
+    return { kind: 'ref', value: defaultPetPhoto(pet) };
+  }
+
+  // Opaque Telegram file_id stored by the bot
+  return { kind: 'ref', value: raw };
+}
+
+async function telegramCall(
+  method: string,
+  body: Record<string, unknown>,
+  timeoutMs = TELEGRAM_CALL_TIMEOUT_MS
+): Promise<boolean> {
   const token = infra.telegram.botToken;
   if (!token) return false;
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), TELEGRAM_CALL_TIMEOUT_MS);
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const res = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
       method: 'POST',
@@ -75,6 +158,48 @@ async function telegramCall(method: string, body: Record<string, unknown>): Prom
     return true;
   } catch (err) {
     console.warn(`telegram ${method} error:`, (err as Error).message);
+    return false;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function telegramSendPhotoUpload(opts: {
+  chatId: string;
+  buffer: Buffer;
+  filename: string;
+  contentType: string;
+  caption: string;
+  replyMarkup: unknown;
+}): Promise<boolean> {
+  const token = infra.telegram.botToken;
+  if (!token) return false;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), TELEGRAM_UPLOAD_TIMEOUT_MS);
+  try {
+    const form = new FormData();
+    form.append('chat_id', opts.chatId);
+    form.append('caption', opts.caption.slice(0, 1024));
+    form.append('parse_mode', 'HTML');
+    form.append('reply_markup', JSON.stringify(opts.replyMarkup));
+    form.append(
+      'photo',
+      new Blob([new Uint8Array(opts.buffer)], { type: opts.contentType || 'image/jpeg' }),
+      opts.filename || 'pet.jpg'
+    );
+    const res = await fetch(`https://api.telegram.org/bot${token}/sendPhoto`, {
+      method: 'POST',
+      body: form,
+      signal: controller.signal,
+    });
+    const data = (await res.json()) as { ok?: boolean; description?: string };
+    if (!data.ok) {
+      console.warn('telegram sendPhoto upload failed:', data.description ?? res.status);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.warn('telegram sendPhoto upload error:', (err as Error).message);
     return false;
   } finally {
     clearTimeout(timer);
@@ -119,7 +244,6 @@ export async function notifyPlaydateRequestTelegram(opts: {
     .join('\n')
     .slice(0, 1024);
 
-  const photo = opts.fromPet.imageUrl || defaultPetPhoto(opts.fromPet);
   const reply_markup = {
     inline_keyboard: [
       [
@@ -129,13 +253,26 @@ export async function notifyPlaydateRequestTelegram(opts: {
     ],
   };
 
-  const sentPhoto = await telegramCall('sendPhoto', {
-    chat_id: tgId,
-    photo,
-    caption,
-    parse_mode: 'HTML',
-    reply_markup,
-  });
+  const photo = resolvePlaydateNotifyPhoto(opts.fromPet);
+  let sentPhoto = false;
+  if (photo.kind === 'upload') {
+    sentPhoto = await telegramSendPhotoUpload({
+      chatId: tgId,
+      buffer: photo.buffer,
+      filename: photo.filename,
+      contentType: photo.contentType,
+      caption,
+      replyMarkup: reply_markup,
+    });
+  } else {
+    sentPhoto = await telegramCall('sendPhoto', {
+      chat_id: tgId,
+      photo: photo.value,
+      caption,
+      parse_mode: 'HTML',
+      reply_markup,
+    });
+  }
   if (sentPhoto) return true;
 
   return telegramCall('sendMessage', {

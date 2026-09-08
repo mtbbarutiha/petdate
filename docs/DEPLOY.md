@@ -38,6 +38,13 @@ Also create Environment **production** (Settings → Environments) and optionall
 - **No sitter roles** — `pet_sitter` / `community_seeker` only in `REMOVED_USER_ROLES`.
 - **web-cta-once-v2** — CTA at most once per chat+user (api + bot markers checked in predeploy).
 - **Transactions / wallet** — api route markers must remain (predeploy greps).
+- **Full shop UI** — `ShopOrdersPage`, add-to-cart CTA, toman/rial + card-to-card checkout (`ShopCartPage` / `ShopCardPayPage`). Thin feature-branch `dist` must never rsync `--delete` over live shop.
+- **Profile = My Pets** — `ProfilePage` must use `useMyPets` (same API source).
+- **Playdate accept → chat** — bot enter-chat markers checked in predeploy.
+
+### Why `main` must stay complete
+
+Production features historically lived only on feature branches while `main` lagged. Agents then deployed from incomplete trees and wiped shop/playdate/profile. **Merge the full restored tree into `main` before any CI deploy** so the next push to `main` cannot regress live UI. Prefer `DEPLOY_SCOPE=all` from that complete tree; never break-glass `ALLOW_DEPLOY=1` from a thin branch.
 
 ## Root cause (ad-hoc rsync)
 

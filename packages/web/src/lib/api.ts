@@ -543,6 +543,12 @@ export async function fetchWallet(token: string) {
       telegramId: string | null;
       username: string | null;
     };
+    telegramStars?: {
+      linked: boolean;
+      petdateBalance?: number;
+      walletStars: number;
+      topUpDeepLink: string | null;
+    };
   }>('/api/auth/wallet', token);
 }
 
@@ -770,6 +776,20 @@ export async function patchWebVetOnline(token: string, online: boolean) {
     headers: { Authorization: `Bearer ${token}` },
     body: JSON.stringify({ online }),
   });
+}
+
+/** مبلغ ویزیت دامپزشک (وب — هم‌تراز ربات) */
+export async function patchWebVisitFee(token: string, visitFeeCoins: number) {
+  return request<{ ok: true; user: User }>('/api/auth/visit-fee', {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ visitFeeCoins }),
+  });
+}
+
+/** دامپزشک‌های آنلاین آماده پذیرش (+ مبلغ ویزیت) */
+export async function listOnlineVets(): Promise<User[]> {
+  return request<User[]>('/api/users/vets/online');
 }
 
 export type QuickVetConnectResult = {
@@ -1104,6 +1124,20 @@ export type ShopCoinCheckoutResult = {
 
 export type ShopStarsCheckoutResult = {
   ok: true;
+  paymentOrderId: number;
+  stars: number;
+  starsNeeded: number;
+  totalToman: number;
+  titleHint?: string;
+  botDeepLink: string;
+  webSuccessUrl?: string;
+  receiptToken?: string;
+  requiresTelegramStars: true;
+  message?: string;
+};
+
+export type ShopWalletStarsCheckoutResult = {
+  ok: true;
   orderId: number;
   order: {
     id: number;
@@ -1118,6 +1152,88 @@ export type ShopStarsCheckoutResult = {
   message: string;
   wallet?: { ton: number; stars: number; coins: number; toman: number };
 };
+
+export type ShopStarsPaymentStatus = {
+  ok: true;
+  paymentOrderId: number;
+  status: string;
+  stars: number;
+  totalToman: number;
+  titleHint?: string;
+  shopOrderId?: number;
+  chargeId?: string;
+  paidAt?: string;
+  botDeepLink: string;
+  webSuccessUrl: string;
+  paid: boolean;
+};
+
+export async function fetchShopStarsPaymentStatus(
+  token: string | null | undefined,
+  paymentOrderId: number,
+  receiptToken?: string | null
+): Promise<ShopStarsPaymentStatus> {
+  const qs = receiptToken ? `?t=${encodeURIComponent(receiptToken)}` : '';
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}/api/shop/checkout/stars-status/${paymentOrderId}${qs}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    });
+  } catch {
+    throw new Error('اتصال به سرور برقرار نشد.');
+  }
+  const json = (await res.json()) as ShopStarsPaymentStatus & { error?: string; ok?: boolean };
+  if (!res.ok || json.ok !== true) {
+    throw new Error(json.error || `خطای ${res.status}`);
+  }
+  return json;
+}
+
+export type MyShopOrder = {
+  id: number;
+  status: string;
+  totalToman: number;
+  paymentCurrency?: string;
+  paymentAmount?: number;
+  customerName?: string;
+  customerPhone?: string;
+  note?: string;
+  items: unknown[];
+  createdAt: string;
+  updatedAt?: string;
+};
+
+export async function fetchMyShopOrders(token: string): Promise<{
+  ok: true;
+  total: number;
+  orders: MyShopOrder[];
+  statusLabelsFa?: Record<string, string>;
+}> {
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}/api/shop/my-orders?limit=50`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  } catch {
+    throw new Error('اتصال به سرور برقرار نشد.');
+  }
+  const json = (await res.json()) as {
+    ok?: boolean;
+    total?: number;
+    orders?: MyShopOrder[];
+    statusLabelsFa?: Record<string, string>;
+    error?: string;
+  };
+  if (!res.ok || json.ok !== true) {
+    throw new Error(json.error || `خطای ${res.status}`);
+  }
+  return {
+    ok: true,
+    total: json.total ?? json.orders?.length ?? 0,
+    orders: json.orders ?? [],
+    statusLabelsFa: json.statusLabelsFa,
+  };
+}
 
 async function postShopCheckout<T extends { ok?: boolean; error?: string }>(
   path: string,
@@ -1169,6 +1285,7 @@ export async function checkoutShopWithCoins(
   return postShopCheckout<ShopCoinCheckoutResult>('/api/shop/checkout/coins', token, payload);
 }
 
+/** فاکتور Telegram Stars (XTR → ربات) */
 export async function checkoutShopWithStars(
   token: string,
   payload: {
@@ -1180,6 +1297,105 @@ export async function checkoutShopWithStars(
   }
 ): Promise<ShopStarsCheckoutResult> {
   return postShopCheckout<ShopStarsCheckoutResult>('/api/shop/checkout/stars', token, payload);
+}
+
+/** کسر ستاره پنل پت‌دیت (wallet_stars) */
+export async function checkoutShopWithWalletStars(
+  token: string,
+  payload: {
+    items: ShopCoinCheckoutItem[];
+    customerName: string;
+    customerPhone: string;
+    address: string;
+    note?: string;
+  }
+): Promise<ShopWalletStarsCheckoutResult> {
+  return postShopCheckout<ShopWalletStarsCheckoutResult>('/api/shop/checkout/wallet-stars', token, payload);
+}
+
+export type ShopTomanCheckoutResult = {
+  ok: true;
+  orderId: number;
+  tomanSpent: number;
+  tomanRemaining: number;
+  totalToman: number;
+  message?: string;
+};
+
+export type ShopCardCheckoutResult = {
+  ok: true;
+  paymentOrderId: number;
+  totalToman: number;
+  botDeepLink: string;
+  webSuccessUrl?: string;
+  cardNumber: string;
+  cardHolder: string;
+  receiptToken?: string;
+  message?: string;
+};
+
+export type ShopCardPaymentStatus = {
+  ok: true;
+  paid: boolean;
+  status: string;
+  totalToman: number;
+  shopOrderId?: number;
+  botDeepLink: string;
+  cardNumber: string;
+  cardHolder: string;
+  paidAt?: string;
+};
+
+/** پرداخت با تومان پنل */
+export async function checkoutShopWithToman(
+  token: string,
+  payload: {
+    items: ShopCoinCheckoutItem[];
+    customerName: string;
+    customerPhone: string;
+    address: string;
+    note?: string;
+  }
+): Promise<ShopTomanCheckoutResult> {
+  return postShopCheckout<ShopTomanCheckoutResult>('/api/shop/checkout/toman', token, payload);
+}
+
+/** کارت‌به‌کارت شاپ */
+export async function checkoutShopWithCard(
+  token: string,
+  payload: {
+    items: ShopCoinCheckoutItem[];
+    customerName: string;
+    customerPhone: string;
+    address: string;
+    note?: string;
+  }
+): Promise<ShopCardCheckoutResult> {
+  return postShopCheckout<ShopCardCheckoutResult>('/api/shop/checkout/card', token, payload);
+}
+
+export async function fetchShopCardPaymentStatus(
+  token: string | null | undefined,
+  paymentOrderId: number,
+  receiptToken?: string
+): Promise<ShopCardPaymentStatus> {
+  const qs = receiptToken ? `?t=${encodeURIComponent(receiptToken)}` : '';
+  const headers: Record<string, string> = {};
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const res = await fetch(`${API_BASE}/api/shop/checkout/card-status/${paymentOrderId}${qs}`, {
+    headers,
+  });
+  const body = await res.text();
+  let json: ShopCardPaymentStatus & { error?: string; ok?: boolean };
+  try {
+    json = JSON.parse(body) as ShopCardPaymentStatus & { error?: string; ok?: boolean };
+  } catch {
+    throw new Error(body || `خطای ${res.status}`);
+  }
+  if (!res.ok || !json?.ok) {
+    throw new Error(json?.error || body || `خطای ${res.status}`);
+  }
+  return json;
 }
 
 export type PublicShopProduct = {

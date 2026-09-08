@@ -6,6 +6,7 @@
 import Redis from 'ioredis';
 import type { User } from '@petdate/shared';
 import { infra, hasRedisConfig } from '../config/infra';
+import { normalizeTelegramId } from './telegram-id';
 
 const KEY_PREFIX = 'petdate:bot:session:';
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
@@ -55,14 +56,6 @@ function sessionKey(telegramId: string): string {
   return `${KEY_PREFIX}${telegramId}`;
 }
 
-function usableTelegramId(id?: string | null): id is string {
-  if (!id) return false;
-  const t = id.trim();
-  if (!t) return false;
-  if (t.startsWith('fake_') || t.startsWith('demo_')) return false;
-  return true;
-}
-
 async function upsertVetChatSession(opts: {
   telegramId: string;
   consultId: number;
@@ -105,10 +98,8 @@ export async function activateBotVetChatSessions(opts: {
   vet: User;
   patient: User;
 }): Promise<{ vet: boolean; patient: boolean }> {
-  const vetId = usableTelegramId(opts.vet.telegramId) ? opts.vet.telegramId.trim() : null;
-  const patientId = usableTelegramId(opts.patient.telegramId)
-    ? opts.patient.telegramId.trim()
-    : null;
+  const vetId = normalizeTelegramId(opts.vet.telegramId);
+  const patientId = normalizeTelegramId(opts.patient.telegramId);
   const result = { vet: false, patient: false };
   if (vetId) {
     try {

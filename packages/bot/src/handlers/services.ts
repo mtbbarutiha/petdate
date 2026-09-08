@@ -4,19 +4,36 @@ import type { User } from '@petdate/shared';
 import {
   isPendingRequestExpired,
   VET_CONSULT_REQUEST_TTL_MS,
+  vetVisitFeeCoins,
 } from '@petdate/shared';
 import {
   getUserById,
   getVetConsultation,
+  listOnlineVets,
   listPets,
   quickVetConnect,
   updateVetConsultationStatus,
 } from '../api-client';
 import { QUICK_VET_COST, formatNum } from '../economy';
 import { myPetsActionKeyboard } from '../keyboards';
-import { getCtxUser, menuKeyboardFor } from './helpers';
+import { effectiveWebUrl, isTelegramInlineUrl } from '../urls';
+import { getCtxUser, menuKeyboardFor, pushMainMenuKeyboard } from './helpers';
 import { startVetChat } from './vet-chat';
 import { handleAddPetCommand } from './wizard';
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/** هزینه اتصال سریع = max(حداقل سیستم، مبلغ ویزیت پزشک‌های آنلاین) */
+function quickConnectCostForVets(vets: User[]): number {
+  if (!vets.length) return QUICK_VET_COST;
+  return Math.max(QUICK_VET_COST, ...vets.map((v) => vetVisitFeeCoins(v)));
+}
 
 /**
  * بیمار بدون پت نمی‌تواند درخواست ارتباط با پزشک بدهد.
@@ -59,7 +76,7 @@ async function ensurePatientHasPetForVet(
     ].join('\n'),
     { reply_markup: myPetsActionKeyboard() }
   );
-  await ctx.reply('منوی اصلی 👇', { reply_markup: menuKeyboardFor(ctx, user) });
+  await pushMainMenuKeyboard(ctx, user);
   await handleAddPetCommand(ctx);
   return false;
 }
@@ -99,7 +116,32 @@ export async function handleMedical(ctx: Context): Promise<void> {
         .success(),
     }
   );
-  await ctx.reply('منوی اصلی 👇', { reply_markup: menuKeyboardFor(ctx, user) });
+  await pushMainMenuKeyboard(ctx, user);
+}
+
+export async function handleChatsEntry(ctx: Context): Promise<void> {
+  const user = await getCtxUser(ctx);
+  const webBase = effectiveWebUrl().replace(/\/$/, '');
+  const chatsUrl = `${webBase}/chats`;
+  const vetUrl = `${webBase}/vet-consult`;
+  const lines = [
+    '💬 <b>چت و گفتگوها</b>',
+    '',
+    'گفتگوهای همبازی و مشاوره دامپزشک در وب هم در دسترس‌اند.',
+    'اگر چت فعالی در ربات داری، پیام‌ها همین‌جا رد و بدل می‌شوند.',
+  ];
+  const kb = new InlineKeyboard();
+  if (isTelegramInlineUrl(chatsUrl)) {
+    kb.url('💬 گفتگوهای وب', chatsUrl).row();
+  }
+  if (isTelegramInlineUrl(vetUrl)) {
+    kb.url('🩺 مشاوره سریع', vetUrl).row();
+  }
+  await ctx.reply(lines.join('\n'), {
+    parse_mode: 'HTML',
+    reply_markup: kb,
+  });
+  await pushMainMenuKeyboard(ctx, user);
 }
 
 export async function handleInviteFriends(ctx: Context): Promise<void> {
@@ -128,7 +170,7 @@ export async function handleInviteFriends(ctx: Context): Promise<void> {
         .success(),
     }
   );
-  await ctx.reply('منوی اصلی 👇', { reply_markup: menuKeyboardFor(ctx, user) });
+  await pushMainMenuKeyboard(ctx, user);
 }
 
 export async function handleQuickVet(ctx: Context): Promise<void> {
@@ -139,30 +181,65 @@ export async function handleQuickVet(ctx: Context): Promise<void> {
   }
   if (!(await ensurePatientHasPetForVet(ctx, user))) return;
 
+  let vets: User[] = [];
+  try {
+    vets = (await listOnlineVets()).filter((v) => v.id !== user.id);
+  } catch (err) {
+    console.error('listOnlineVets failed:', err);
+    await ctx.reply('خطا در دریافت لیست پزشک‌های آنلاین. کمی بعد دوباره امتحان کن.', {
+      reply_markup: menuKeyboardFor(ctx, user),
+    });
+    return;
+  }
+
   const balance = user.coins ?? 0;
+  if (!vets.length) {
+    await ctx.reply(
+      [
+        '⚡ <b>مشاوره سریع با پزشک</b>',
+        '',
+        'الان هیچ دامپزشک آنلاینی آماده پذیرش نیست.',
+        'کمی بعد دوباره امتحان کن.',
+        '',
+        `موجودی تو: <b>${formatNum(balance)}</b> سکه`,
+      ].join('\n'),
+      { parse_mode: 'HTML', reply_markup: menuKeyboardFor(ctx, user) }
+    );
+    return;
+  }
+
+  const cost = quickConnectCostForVets(vets);
+  const listLines = vets.map((vet, index) => {
+    const fee = vetVisitFeeCoins(vet);
+    const city = vet.city?.trim() ? ` · ${escapeHtml(vet.city.trim())}` : '';
+    return `${index + 1}. <b>${escapeHtml(vet.name)}</b>${city} — <b>${formatNum(fee)}</b> سکه`;
+  });
+
   await ctx.reply(
     [
       '⚡ <b>مشاوره سریع با پزشک</b>',
       '',
-      'دامپزشک آنلاین در دسترسه.',
-      `هزینه اتصال فوری: <b>${formatNum(QUICK_VET_COST)}</b> سکه`,
+      `پزشک‌های آنلاین آماده پذیرش (<b>${formatNum(vets.length)}</b>):`,
+      ...listLines,
+      '',
+      `هزینه اتصال: <b>${formatNum(cost)}</b> سکه`,
       `موجودی تو: <b>${formatNum(balance)}</b> سکه`,
       '',
-      balance < QUICK_VET_COST
+      balance < cost
         ? 'موجودی کافی نیست — اول از منو «🪙 سکه» بگیر.'
-        : 'با زدن دکمه زیر، سکه از موجودی‌ات کسر می‌شود و درخواست برای پزشک‌های آنلاین ارسال می‌شود.',
+        : 'با زدن دکمه زیر، سکه کسر می‌شود و درخواست برای همین پزشک‌های آنلاین ارسال می‌شود.',
     ].join('\n'),
     {
       parse_mode: 'HTML',
       reply_markup:
-        balance < QUICK_VET_COST
+        balance < cost
           ? undefined
           : new InlineKeyboard()
               .text('🩺 تأیید پرداخت و اتصال', 'vet:connect')
               .success(),
     }
   );
-  await ctx.reply('منوی اصلی 👇', { reply_markup: menuKeyboardFor(ctx, user) });
+  await pushMainMenuKeyboard(ctx, user);
 }
 
 /** اتصال فوری: کسر سکه و ارسال درخواست به همه دامپزشک‌های واجد شرایط */
@@ -185,14 +262,21 @@ export async function handleQuickVetConnect(
 
   if (!(await ensurePatientHasPetForVet(ctx, user))) return;
 
+  let onlineVets: User[] = [];
+  try {
+    onlineVets = (await listOnlineVets()).filter((v) => v.id !== user.id);
+  } catch (err) {
+    console.error('listOnlineVets before connect failed:', err);
+  }
+  const estimatedCost = quickConnectCostForVets(onlineVets);
   const balance = user.coins ?? 0;
-  if (balance < QUICK_VET_COST) {
+  if (balance < estimatedCost) {
     await ctx.answerCallbackQuery({
       text: `سکه کافی نیست (موجودی: ${balance})`,
       show_alert: true,
     });
     await ctx.reply(
-      `برای اتصال سریع حداقل ${formatNum(QUICK_VET_COST)} سکه لازم داری.\nموجودی: ${formatNum(balance)} — از منو «🪙 سکه» بگیر.`,
+      `برای اتصال سریع حداقل ${formatNum(estimatedCost)} سکه لازم داری.\nموجودی: ${formatNum(balance)} — از منو «🪙 سکه» بگیر.`,
       { reply_markup: menuKeyboardFor(ctx, user) }
     );
     return;
@@ -410,7 +494,7 @@ export async function handleServices(ctx: Context): Promise<void> {
         .primary(),
     }
   );
-  await ctx.reply('منوی اصلی 👇', { reply_markup: menuKeyboardFor(ctx, user) });
+  await pushMainMenuKeyboard(ctx, user);
 }
 
 export async function handleComingSoon(ctx: Context, feature: string): Promise<void> {

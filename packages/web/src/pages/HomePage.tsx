@@ -2,7 +2,7 @@ import { Link, Navigate } from 'react-router-dom';
 import { PawPrint, Stethoscope } from 'lucide-react';
 import { BRAND, dashboardPathForRole, primaryRole } from '@petdate/shared';
 import { useAuthStore } from '../hooks/useAuthStore';
-import { usePetStore } from '../hooks/usePetStore';
+import { useMyPets } from '../hooks/useMyPets';
 import { useUserStore } from '../hooks/useUserStore';
 
 const HERO_IMG = '/pepito/uploads/3.jpg';
@@ -24,9 +24,9 @@ function VetIcon({ size = 16 }: { size?: number }) {
 }
 
 export function HomePage() {
-  const { myPet } = usePetStore();
   const { user } = useUserStore();
   const { user: authUser, isProfileComplete } = useAuthStore();
+  const { pets: myPets } = useMyPets();
 
   // نقش فعال (نه فقط «داشتن نقش») — هم‌تراز ربات و RoleSwitchControl
   const active =
@@ -40,13 +40,14 @@ export function HomePage() {
 
   const isPetOwner = active === 'pet_owner';
   const displayName = authUser?.name?.trim() || 'دوست';
-  const hasPetName = Boolean(myPet?.name && myPet.name !== 'پت من');
+  const primaryPetName = myPets[0]?.name?.trim() || '';
+  const hasPetName = Boolean(primaryPetName);
   const needsProfile = !isProfileComplete;
 
   const lead = needsProfile
     ? 'پروفایلت را کامل کن تا همبازی و خدمات نزدیک‌تر شوند.'
     : isPetOwner && hasPetName
-      ? `همبازی برای ${myPet.name} — درخواست بفرست و مدیریت کن در همان فضای Pet Date.`
+      ? `همبازی برای ${primaryPetName} — درخواست بفرست و مدیریت کن در همان فضای Pet Date.`
       : isPetOwner
         ? 'پت‌ات را ثبت کن و همبازی پیدا کن — همان حساب وب و تلگرام.'
         : 'از پروفایل، کلینیک، پت شاپ و مشاوره را در همین محیط ادامه بده.';

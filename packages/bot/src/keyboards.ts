@@ -49,23 +49,35 @@ export const MAIN_MENU_ALIASES = new Set<string>([
 /** Labels for pet_owner main menu */
 export const PET_OWNER_MENU = {
   findPlaymate: '🔍 پیدا کردن همبازی',
-  nearbyPets: '📍 پت‌های نزدیک من',
+  nearbyPets: '📍 پت‌های نزدیک',
   searchPets: '🔎 جستجوی پت',
-  myProfile: '👤 پروفایل خودم',
+  myProfile: '👤 پروفایل',
   myPets: '🐾 پت‌های من',
   addPet: '➕ ثبت پت',
   coins: '🪙 سکه',
   earn: '💵 کسب درآمد',
   verify: '🛡 احراز چهره',
   phoneVerify: '📱 احراز موبایل',
-  medical: '🩺 پزشکی',
-  invite: '🎁 معرفی به دوستان',
+  invite: '🎁 دعوت دوستان',
   help: '❓ راهنما',
   menu: MAIN_MENU_BTN,
-  quickVet: '⚡ مشاوره سریع با پزشک',
-  shop: '🛒 پت شاپ',
+  quickVet: '⚡ مشاوره سریع پزشک',
+  shop: '🛒 پت‌شاپ',
+  /** @deprecated حذف از منو — نگه‌داری برای کیبوردهای قدیمی تلگرام */
+  chat: '💬 چت',
   services: '🛠 خدمات',
   myRoles: MY_ROLES_LABEL,
+} as const;
+
+/**
+ * دکمه‌های مشترک همه نقش‌ها
+ * — سکه، شاپ، دعوت، راهنما (بدون چت)
+ */
+export const COMMON_MENU = {
+  coins: PET_OWNER_MENU.coins,
+  shop: PET_OWNER_MENU.shop,
+  invite: PET_OWNER_MENU.invite,
+  help: PET_OWNER_MENU.help,
 } as const;
 
 /** زیرمنوی پنل ادمین (reply keyboard) */
@@ -90,28 +102,77 @@ export const SEARCH_PETS_MENU = {
   menu: MAIN_MENU_BTN,
 } as const;
 
-export const DEFAULT_MENU = {
-  explore: '🔍 کشف همبازی',
-  myPets: '🐾 پت‌های من',
+/** منوی نقش «بدون پت» */
+export const NO_PET_MENU = {
+  buyConsult: '🛒 به دنبال مشاوره برای خرید',
   profile: '👤 پروفایل',
   verify: '🛡 احراز چهره',
   phoneVerify: '📱 احراز موبایل',
-  addPet: '➕ ثبت پت',
+  coins: COMMON_MENU.coins,
+  shop: COMMON_MENU.shop,
+  invite: COMMON_MENU.invite,
   myRoles: MY_ROLES_LABEL,
-  help: '❓ راهنما',
+  help: COMMON_MENU.help,
+  menu: MAIN_MENU_BTN,
+  /** برچسب‌های قدیمی — فقط برای کیبورد کش‌شده تلگرام */
+  explore: '🔍 کشف همبازی',
+  myPets: '🐾 پت‌های من',
+  chat: '💬 چت',
+} as const;
+
+/** منوی نقش «دنبال پت» */
+export const PET_SEEKER_MENU = {
+  petsAndPlaymates: '🐾 پت‌ها و همبازی',
+  readyAdoptOn: '💚 آماده پذیرش پت هستم',
+  readyAdoptOff: '⏸ فعلاً آماده پذیرش نیستم',
+  profile: '👤 پروفایل',
+  verify: '🛡 احراز چهره',
+  phoneVerify: '📱 احراز موبایل',
+  coins: COMMON_MENU.coins,
+  shop: COMMON_MENU.shop,
+  invite: COMMON_MENU.invite,
+  myRoles: MY_ROLES_LABEL,
+  help: COMMON_MENU.help,
+  menu: MAIN_MENU_BTN,
+  /** برچسب‌های قدیمی — فقط برای کیبورد کش‌شده تلگرام */
+  explore: '🔍 کشف همبازی',
+  myPets: '🐾 پت‌های من',
+  chat: '💬 چت',
+} as const;
+
+/** @deprecated استفاده از NO_PET_MENU / PET_SEEKER_MENU — نگه‌داری برای سازگاری */
+export const DEFAULT_MENU = {
+  explore: NO_PET_MENU.explore,
+  myPets: NO_PET_MENU.myPets,
+  profile: NO_PET_MENU.profile,
+  verify: NO_PET_MENU.verify,
+  phoneVerify: NO_PET_MENU.phoneVerify,
+  addPet: '➕ ثبت پت',
+  coins: COMMON_MENU.coins,
+  shop: COMMON_MENU.shop,
+  invite: COMMON_MENU.invite,
+  chat: NO_PET_MENU.chat,
+  myRoles: MY_ROLES_LABEL,
+  help: COMMON_MENU.help,
   menu: MAIN_MENU_BTN,
 } as const;
 
-/** منوی دامپزشک (بدون کشف همبازی) — فقط وقتی نقش فعال vet باشد */
+/** منوی دامپزشک — فقط وقتی نقش فعال vet باشد */
 export const VET_MENU = {
-  goOnline: '🟢 آنلاین هستم و آماده پذیرش بیمار',
-  goOffline: '🔴 آفلاین هستم',
-  recentPatients: '🩺 آخرین بیمارها',
+  goOnline: '🟢 آنلاین — آماده پذیرش',
+  goOffline: '🔴 آفلاین شدم',
+  recentPatients: '🩺 بیماران اخیر',
+  visitFee: '💰 تعرفه ویزیت',
   profile: '👤 پروفایل',
   verify: '🛡 احراز چهره',
   phoneVerify: '📱 احراز موبایل',
+  coins: COMMON_MENU.coins,
+  shop: COMMON_MENU.shop,
+  invite: COMMON_MENU.invite,
+  /** @deprecated حذف از منو */
+  chat: '💬 چت',
   myRoles: MY_ROLES_LABEL,
-  help: '❓ راهنما',
+  help: COMMON_MENU.help,
   menu: MAIN_MENU_BTN,
 } as const;
 
@@ -409,14 +470,16 @@ export function mainMenuKeyboard(
   role?: UserRole | string | null,
   roles?: UserRole[] | null,
   telegramId?: string | number | null,
-  options?: { vetOnline?: boolean },
+  options?: { vetOnline?: boolean; readyToAdopt?: boolean },
 ): Keyboard {
   const list = normalizeRoles(roles as UserRole[] | null | undefined, role as UserRole | null | undefined);
   const active = primaryRole(list, role as UserRole | null | undefined);
 
   if (active === 'pet_owner') return petOwnerMenuKeyboard(telegramId);
   if (active === 'vet') return vetMenuKeyboard(telegramId, options);
-  return defaultMenuKeyboard(telegramId);
+  if (active === 'pet_seeker') return petSeekerMenuKeyboard(telegramId, options);
+  if (active === 'no_pet') return noPetMenuKeyboard(telegramId);
+  return noPetMenuKeyboard(telegramId);
 }
 
 /**
@@ -432,6 +495,22 @@ function appendAccessRow(kb: Keyboard, telegramId?: string | number | null): Key
   return kb;
 }
 
+/** سکه / شاپ / دعوت / راهنما — مشترک همه نقش‌ها (بدون چت) */
+function appendCommonMenuRows(kb: Keyboard): Keyboard {
+  const c = COMMON_MENU;
+  return kb
+    .row()
+    .text(c.coins)
+    .primary()
+    .text(c.shop)
+    .primary()
+    .row()
+    .text(c.invite)
+    .success()
+    .text(c.help)
+    .primary();
+}
+
 export function vetMenuKeyboard(
   telegramId?: string | number | null,
   options?: { vetOnline?: boolean },
@@ -445,54 +524,70 @@ export function vetMenuKeyboard(
     .row()
     .text(m.recentPatients)
     .primary()
+    .text(m.visitFee)
+    .primary()
     .row()
     .text(m.profile)
-    .primary()
-    .text(m.help)
-    .primary()
-    .resized()
-    .persistent();
-  return appendAccessRow(kb, telegramId);
+    .primary();
+  appendCommonMenuRows(kb);
+  return appendAccessRow(kb.resized().persistent(), telegramId);
 }
 
 export function petOwnerMenuKeyboard(telegramId?: string | number | null): Keyboard {
   const m = PET_OWNER_MENU;
   const kb = new Keyboard()
     .text(m.findPlaymate)
-    .primary()
+    .success()
     .row()
     .text(m.nearbyPets)
-    .success()
+    .primary()
     .text(m.searchPets)
     .primary()
     .row()
-    .text(m.myProfile)
-    .primary()
     .text(m.myPets)
     .primary()
-    .row()
-    .text(m.coins)
+    .text(m.myProfile)
     .primary()
-    .text(m.earn)
-    .success()
-    .row()
-    .text(m.medical)
-    .primary()
-    .text(m.invite)
-    .success()
     .row()
     .text(m.quickVet)
-    .primary()
-    .text(m.shop)
+    .success()
+    .text(m.earn)
     .primary()
     .row()
     .text(m.services)
-    .primary()
-    .text(m.help)
-    .primary()
-    .resized()
-    .persistent();
-  return appendAccessRow(kb, telegramId);
+    .primary();
+  appendCommonMenuRows(kb);
+  return appendAccessRow(kb.resized().persistent(), telegramId);
+}
+
+export function petSeekerMenuKeyboard(
+  telegramId?: string | number | null,
+  options?: { readyToAdopt?: boolean },
+): Keyboard {
+  const m = PET_SEEKER_MENU;
+  const ready = options?.readyToAdopt === true;
+  const kb = new Keyboard()
+    .text(m.petsAndPlaymates)
+    .success()
+    .row()
+    .text(ready ? m.readyAdoptOff : m.readyAdoptOn);
+  if (ready) kb.danger();
+  else kb.success();
+  kb.row().text(m.profile).primary();
+  appendCommonMenuRows(kb);
+  return appendAccessRow(kb.resized().persistent(), telegramId);
+}
+
+export function noPetMenuKeyboard(telegramId?: string | number | null): Keyboard {
+  const m = NO_PET_MENU;
+  const kb = new Keyboard()
+    .text(m.buyConsult)
+    .success()
+    .row()
+    .text(m.profile)
+    .primary();
+  appendCommonMenuRows(kb);
+  return appendAccessRow(kb.resized().persistent(), telegramId);
 }
 
 export function searchPetsMenuKeyboard(): Keyboard {
@@ -515,22 +610,9 @@ export function searchPetsMenuKeyboard(): Keyboard {
     .persistent();
 }
 
+/** @deprecated — از noPetMenuKeyboard استفاده کن */
 export function defaultMenuKeyboard(telegramId?: string | number | null): Keyboard {
-  const m = DEFAULT_MENU;
-  const kb = new Keyboard()
-    .text(m.explore)
-    .primary()
-    .row()
-    .text(m.myPets)
-    .primary()
-    .text(m.profile)
-    .primary()
-    .row()
-    .text(m.help)
-    .primary()
-    .resized()
-    .persistent();
-  return appendAccessRow(kb, telegramId);
+  return noPetMenuKeyboard(telegramId);
 }
 
 /** کیبورد پنل ادمین بعد از ورود */
@@ -1024,11 +1106,24 @@ export function confirmPetDeleteKeyboard(petId: number): InlineKeyboard {
 export const MENU_LABELS = new Set<string>([
   ...Object.values(PET_OWNER_MENU),
   ...Object.values(DEFAULT_MENU),
+  ...Object.values(NO_PET_MENU),
+  ...Object.values(PET_SEEKER_MENU),
   ...Object.values(VET_MENU),
+  ...Object.values(COMMON_MENU),
   ...Object.values(ADMIN_MENU),
   ...Object.values(MY_PETS_SECTION),
   ...Object.values(SEARCH_PETS_MENU),
   ...MAIN_MENU_ALIASES,
+  // برچسب‌های قدیمی کیبورد تلگرام (کش‌شده)
+  '📍 پت‌های نزدیک من',
+  '👤 پروفایل خودم',
+  '🎁 معرفی به دوستان',
+  '🛒 پت شاپ',
+  '⚡ مشاوره سریع با پزشک',
+  '🟢 آنلاین هستم و آماده پذیرش بیمار',
+  '🔴 آفلاین هستم',
+  '🩺 آخرین بیمارها',
+  '💰 مبلغ ویزیت',
 ]);
 
 /** کیبورد فروشگاه سکه + سکه روزانه */

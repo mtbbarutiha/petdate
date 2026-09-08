@@ -11,14 +11,12 @@ import {
   getCategory,
   type ShopPetType,
 } from '../../data/shopCatalog';
-import { useShopCart } from '../../hooks/useShopCart';
 import { ShopChrome } from '../../components/shop/ShopChrome';
 import { ShopProductCard } from '../../components/shop/ShopProductCard';
 
 export function ShopCategoryPage() {
   const { category = 'all' } = useParams<{ category: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { add } = useShopCart();
 
   const brandFromUrl = searchParams.get('brand') ?? '';
   const petFromUrl = (searchParams.get('pet') as ShopPetType | null) ?? 'all';
@@ -311,7 +309,7 @@ export function ShopCategoryPage() {
             ) : (
               <div className="pd-shop-product-grid">
                 {products.map((p) => (
-                  <ShopProductCard key={p.id} product={p} onAdd={add} />
+                  <ShopProductCard key={p.id} product={p} />
                 ))}
               </div>
             )}

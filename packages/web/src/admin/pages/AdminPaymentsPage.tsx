@@ -1,11 +1,59 @@
-import { useCallback, useEffect, useState } from 'react';
+import { Fragment, useCallback, useEffect, useState } from 'react';
 import type { PaymentOrder } from '@petdate/shared';
 import { adminFetch, formatNumFa, formatTomanFa } from '../api';
 
+const STATUS_OPTIONS: { value: string; label: string }[] = [
+  { value: '', label: 'همه' },
+  { value: 'pending', label: 'در انتظار بررسی (کارت)' },
+  { value: 'awaiting_receipt', label: 'منتظر رسید' },
+  { value: 'awaiting_stars', label: 'فاکتور Stars' },
+  { value: 'paid', label: 'پرداخت‌شده' },
+  { value: 'approved', label: 'تأییدشده (کارت)' },
+  { value: 'rejected', label: 'ردشده' },
+  { value: 'cancelled', label: 'لغو' },
+];
+
+function statusLabel(status: string): string {
+  return STATUS_OPTIONS.find((s) => s.value === status)?.label || status;
+}
+
+function packageLabel(o: PaymentOrder): string {
+  const pkg = o.packageId || '—';
+  if (pkg === 'shopxtr') return 'پت شاپ · Stars تلگرام';
+  if (pkg === 'shopwallet') return 'پت شاپ · ستاره پنل';
+  if (pkg === 'shopcoins') return 'پت شاپ · سکه پنل';
+  if (pkg === 'shoptoman') return 'پت شاپ · ریال پنل';
+  if (pkg === 'shopcard') return 'پت شاپ · کارت‌به‌کارت';
+  if (pkg.startsWith('wstars:')) return `کیف‌پول Stars · ${pkg}`;
+  if (o.coins > 0) return `${pkg} · ${formatNumFa(o.coins)} سکه`;
+  return pkg;
+}
+
+function amountLabel(o: PaymentOrder): string {
+  const parts: string[] = [];
+  if (o.amountToman != null) parts.push(formatTomanFa(o.amountToman));
+  if (o.amountStars != null) parts.push(`${formatNumFa(o.amountStars)}⭐`);
+  return parts.length ? parts.join(' / ') : '—';
+}
+
+function parseShopMeta(note?: string): { shopOrderId?: number; titleHint?: string } | null {
+  if (!note?.trim().startsWith('{')) return null;
+  try {
+    const j = JSON.parse(note) as { kind?: string; shopOrderId?: number; titleHint?: string };
+    if (j?.kind === 'shopxtr' || j?.kind === 'shopwallet' || j?.kind === 'shopcoins' || j?.kind === 'shopcard' || j?.kind === 'shoptoman') {
+      return { shopOrderId: j.shopOrderId, titleHint: j.titleHint };
+    }
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
 export function AdminPaymentsPage() {
   const [orders, setOrders] = useState<PaymentOrder[]>([]);
-  const [status, setStatus] = useState('pending');
+  const [status, setStatus] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [openId, setOpenId] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -51,16 +99,17 @@ export function AdminPaymentsPage() {
     <div className="admin-page">
       <header className="admin-header">
         <div>
-          <h1>پرداخت‌های کارت / سکه</h1>
-          <p>{formatNumFa(orders.length)} سفارش پرداخت</p>
+          <h1>پرداخت‌ها</h1>
+          <p>
+            {formatNumFa(orders.length)} مورد — کارت‌به‌کارت، سکه، Stars و شاپ
+          </p>
         </div>
         <select className="admin-select" value={status} onChange={(e) => setStatus(e.target.value)}>
-          <option value="">همه</option>
-          <option value="pending">pending</option>
-          <option value="awaiting_receipt">awaiting_receipt</option>
-          <option value="approved">approved</option>
-          <option value="rejected">rejected</option>
-          <option value="paid">paid</option>
+          {STATUS_OPTIONS.map((s) => (
+            <option key={s.value || 'all'} value={s.value}>
+              {s.label}
+            </option>
+          ))}
         </select>
       </header>
 
@@ -72,50 +121,109 @@ export function AdminPaymentsPage() {
             <tr>
               <th>#</th>
               <th>کاربر</th>
-              <th>بسته</th>
+              <th>بسته / منبع</th>
               <th>مبلغ</th>
               <th>روش</th>
               <th>وضعیت</th>
+              <th>زمان</th>
               <th></th>
             </tr>
           </thead>
           <tbody>
-            {orders.map((o) => (
-              <tr key={o.id}>
-                <td className="admin-mono">{o.id}</td>
-                <td>
-                  {o.userName || o.userId}
-                  <div className="admin-muted">{o.userUsername ? `@${o.userUsername}` : ''}</div>
-                </td>
-                <td>
-                  {o.packageId} · {formatNumFa(o.coins)} سکه
-                </td>
-                <td>
-                  {o.amountToman != null ? formatTomanFa(o.amountToman) : '—'}
-                  {o.amountStars != null ? ` / ${o.amountStars}⭐` : ''}
-                </td>
-                <td>{o.method}</td>
-                <td>
-                  <span className="admin-badge">{o.status}</span>
-                </td>
-                <td>
-                  {o.status === 'pending' && o.method === 'card' ? (
-                    <div className="admin-row-actions">
-                      <button type="button" className="admin-btn admin-btn--primary" onClick={() => void approve(o.id)}>
-                        تأیید
-                      </button>
-                      <button type="button" className="admin-btn admin-btn--danger" onClick={() => void reject(o.id)}>
-                        رد
-                      </button>
-                    </div>
+            {orders.map((o) => {
+              const open = openId === o.id;
+              const shopMeta = parseShopMeta(o.adminNote);
+              return (
+                <Fragment key={o.id}>
+                  <tr>
+                    <td className="admin-mono">{o.id}</td>
+                    <td>
+                      {o.userName || `user #${o.userId}`}
+                      <div className="admin-muted">
+                        {o.userUsername ? `@${o.userUsername}` : ''}
+                        {o.userTelegramId ? ` · tg ${o.userTelegramId}` : ''}
+                      </div>
+                    </td>
+                    <td>
+                      {packageLabel(o)}
+                      {shopMeta?.titleHint ? (
+                        <div className="admin-muted">{shopMeta.titleHint}</div>
+                      ) : null}
+                      {shopMeta?.shopOrderId != null ? (
+                        <div className="admin-muted">سفارش شاپ #{shopMeta.shopOrderId}</div>
+                      ) : null}
+                    </td>
+                    <td>{amountLabel(o)}</td>
+                    <td>
+                      {o.method === 'stars'
+                        ? '⭐ Stars'
+                        : o.method === 'coins'
+                          ? '🪙 سکه'
+                          : o.method === 'toman'
+                            ? '﷼ ریال'
+                            : o.method === 'card'
+                              ? 'کارت'
+                              : o.method}
+                    </td>
+                    <td>
+                      <span className="admin-badge">{statusLabel(o.status)}</span>
+                    </td>
+                    <td>{new Date(o.createdAt).toLocaleString('fa-IR')}</td>
+                    <td>
+                      <div className="admin-row-actions">
+                        <button
+                          type="button"
+                          className="admin-btn ghost"
+                          onClick={() => setOpenId(open ? null : o.id)}
+                        >
+                          {open ? 'بستن' : 'جزئیات'}
+                        </button>
+                        {o.status === 'pending' && o.method === 'card' ? (
+                          <>
+                            <button
+                              type="button"
+                              className="admin-btn admin-btn--primary"
+                              onClick={() => void approve(o.id)}
+                            >
+                              تأیید
+                            </button>
+                            <button
+                              type="button"
+                              className="admin-btn admin-btn--danger"
+                              onClick={() => void reject(o.id)}
+                            >
+                              رد
+                            </button>
+                          </>
+                        ) : null}
+                      </div>
+                    </td>
+                  </tr>
+                  {open ? (
+                    <tr>
+                      <td colSpan={8}>
+                        <div className="admin-muted" style={{ whiteSpace: 'pre-wrap', padding: '0.5rem 0' }}>
+                          {o.telegramPaymentChargeId
+                            ? `charge: ${o.telegramPaymentChargeId}\n`
+                            : ''}
+                          {o.receiptFileId ? `receipt: ${o.receiptFileId}\n` : ''}
+                          {o.reviewedAt
+                            ? `reviewed: ${new Date(o.reviewedAt).toLocaleString('fa-IR')}\n`
+                            : ''}
+                          {o.adminNote || 'بدون یادداشت'}
+                        </div>
+                      </td>
+                    </tr>
                   ) : null}
-                </td>
-              </tr>
-            ))}
+                </Fragment>
+              );
+            })}
             {!orders.length ? (
               <tr>
-                <td colSpan={7} className="admin-muted">
-                  موردی نیست
+                <td colSpan={8} className="admin-muted">
+                  {status
+                    ? `موردی با وضعیت «${statusLabel(status)}» نیست — فیلتر را روی «همه» بگذارید.`
+                    : 'هنوز پرداختی ثبت نشده.'}
                 </td>
               </tr>
             ) : null}

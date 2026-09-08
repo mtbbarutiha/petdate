@@ -49,7 +49,7 @@ import {
   textStepKeyboard,
 } from '../keyboards';
 import { getSession, upsertSession } from '../session';
-import { getCtxUser, menuKeyboardFor } from './helpers';
+import { getCtxUser, menuKeyboardFor, pushMainMenuKeyboard } from './helpers';
 
 const PROFILE_TOTAL = 10;
 
@@ -249,7 +249,7 @@ export async function handleProfile(ctx: Context): Promise<void> {
   }
 
   await sendOwnProfileCard(ctx, cardUser, pets.length, card);
-  await ctx.reply('منوی اصلی 👇', { reply_markup: menuKeyboardFor(ctx, cardUser) });
+  await pushMainMenuKeyboard(ctx, cardUser);
 }
 
 export async function startProfileWizard(ctx: Context): Promise<void> {
@@ -1348,7 +1348,7 @@ async function finishProfileWizard(
       pets.map((p) => p.name)
     )}`;
     await sendOwnProfileCard(ctx, user, pets.length, text);
-    await ctx.reply('منوی اصلی 👇', { reply_markup: menuKeyboardFor(ctx, user) });
+    await pushMainMenuKeyboard(ctx, user);
   } catch (err) {
     console.error('finishProfileWizard failed:', err);
     await ctx.reply('ثبت پروفایل با خطا مواجه شد. یک بار دیگه «✅ ثبت علایق» رو بزن یا از /profile دوباره شروع کن.');

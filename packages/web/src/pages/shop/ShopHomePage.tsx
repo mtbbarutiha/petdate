@@ -10,7 +10,6 @@ import {
   getFeaturedProducts,
   type ShopPetType,
 } from '../../data/shopCatalog';
-import { useShopCart } from '../../hooks/useShopCart';
 import { ShopChrome } from '../../components/shop/ShopChrome';
 import { ShopProductCard } from '../../components/shop/ShopProductCard';
 
@@ -62,7 +61,6 @@ const JOURNEY = [
 ] as const;
 
 export function ShopHomePage() {
-  const { add } = useShopCart();
   const [petType, setPetType] = useState<ShopPetType>('all');
   const featured = useMemo(() => getFeaturedProducts(), []);
   const cats = useMemo(() => categoriesForPet(petType), [petType]);
@@ -153,7 +151,7 @@ export function ShopHomePage() {
           </div>
           <div className="pd-shop-product-grid">
             {featured.map((p) => (
-              <ShopProductCard key={p.id} product={p} onAdd={add} />
+              <ShopProductCard key={p.id} product={p} />
             ))}
           </div>
           <div className="pd-shop-home-cta">

@@ -48,6 +48,23 @@ export async function touchTelegramPresence(telegramId: string): Promise<void> {
   }
 }
 
+/** ذخیره اتصال Telegram Business (برای خواندن Stars حساب کاربر). */
+export async function upsertTelegramBusinessConnection(data: {
+  telegramId: string;
+  connectionId: string;
+  isEnabled: boolean;
+  canViewStars: boolean;
+}): Promise<{ ok: true; userId: number }> {
+  return request(`/api/users/telegram/${encodeURIComponent(data.telegramId)}/business-connection`, {
+    method: 'POST',
+    body: JSON.stringify({
+      connectionId: data.connectionId,
+      isEnabled: data.isEnabled,
+      canViewStars: data.canViewStars,
+    }),
+  });
+}
+
 /** Complete web→Telegram attach from /start wlink_<token>. */
 export async function completeWebTelegramLink(data: {
   token: string;
@@ -497,7 +514,7 @@ export type QuickVetConnectFailure = {
  */
 export async function quickVetConnect(
   patientUserId: number,
-  opts?: { confirmResend?: boolean }
+  opts?: { confirmResend?: boolean; purchaseAdvice?: boolean }
 ): Promise<QuickVetConnectResult | QuickVetConnectFailure> {
   const res = await fetch(`${config.apiUrl}/api/consultations/quick-connect`, {
     method: 'POST',
@@ -505,6 +522,8 @@ export async function quickVetConnect(
     body: JSON.stringify({
       patientUserId,
       confirmResend: Boolean(opts?.confirmResend),
+      purchaseAdvice: Boolean(opts?.purchaseAdvice),
+      intent: opts?.purchaseAdvice ? 'purchase_advice' : undefined,
     }),
   });
   const body = await res.text();
@@ -563,6 +582,11 @@ export async function listVerifiedVets(): Promise<User[]> {
   return request<User[]>('/api/users/vets/verified');
 }
 
+/** دامپزشک‌های آنلاین آماده پذیرش (+ مبلغ ویزیت) */
+export async function listOnlineVets(): Promise<User[]> {
+  return request<User[]>('/api/users/vets/online');
+}
+
 /** همه دامپزشک‌ها برای پنل ادمین */
 export async function listAllVets(): Promise<User[]> {
   return request<User[]>('/api/users/vets');
@@ -591,6 +615,28 @@ export async function setVetOnline(telegramId: string, online: boolean): Promise
     {
       method: 'POST',
       body: JSON.stringify({ online }),
+    }
+  );
+}
+
+/** آماده پذیرش پت — نقش دنبال‌کننده */
+export async function setReadyToAdopt(telegramId: string, ready: boolean): Promise<User> {
+  return request<User>(
+    `/api/users/telegram/${encodeURIComponent(telegramId)}/ready-to-adopt`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ ready }),
+    }
+  );
+}
+
+/** مبلغ ویزیت دامپزشک (سکه) */
+export async function setVetVisitFee(telegramId: string, visitFeeCoins: number): Promise<User> {
+  return request<User>(
+    `/api/users/telegram/${encodeURIComponent(telegramId)}/visit-fee`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ visitFeeCoins }),
     }
   );
 }
@@ -899,7 +945,10 @@ export async function attachPaymentReceipt(
 export async function approveCardPayment(
   orderId: number,
   note?: string
-): Promise<{ ok: true; order: PaymentOrder; user: User } | { ok: false; reason: string }> {
+): Promise<
+  | { ok: true; order: PaymentOrder; user: User; shopOrder?: { id: number }; kind?: string }
+  | { ok: false; reason: string }
+> {
   const res = await fetch(`${config.apiUrl}/api/users/payments/${orderId}/approve`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -909,13 +958,21 @@ export async function approveCardPayment(
     ok?: boolean;
     order?: PaymentOrder;
     user?: User;
+    shopOrder?: { id: number };
+    kind?: string;
     reason?: string;
     error?: string;
   };
   if (!res.ok || !body.ok || !body.order || !body.user) {
     return { ok: false, reason: body.reason ?? body.error ?? 'error' };
   }
-  return { ok: true, order: body.order, user: body.user };
+  return {
+    ok: true,
+    order: body.order,
+    user: body.user,
+    shopOrder: body.shopOrder,
+    kind: body.kind,
+  };
 }
 
 export async function rejectCardPayment(
@@ -944,7 +1001,17 @@ export async function completeStarsPayment(
   orderId: number,
   telegramPaymentChargeId: string
 ): Promise<
-  | { ok: true; order: PaymentOrder; user: User; credited: boolean }
+  | {
+      ok: true;
+      order: PaymentOrder;
+      user: User;
+      credited: boolean;
+      creditKind: 'coins' | 'wallet_stars' | 'shop_order';
+      shopOrderId?: number;
+      starsSpent?: number;
+      totalToman?: number;
+      webSuccessUrl?: string;
+    }
   | { ok: false; reason: string }
 > {
   const res = await fetch(`${config.apiUrl}/api/users/payments/${orderId}/stars/complete`, {
@@ -957,6 +1024,11 @@ export async function completeStarsPayment(
     order?: PaymentOrder;
     user?: User;
     credited?: boolean;
+    creditKind?: 'coins' | 'wallet_stars' | 'shop_order';
+    shopOrderId?: number;
+    starsSpent?: number;
+    totalToman?: number;
+    webSuccessUrl?: string;
     reason?: string;
     error?: string;
   };
@@ -968,6 +1040,16 @@ export async function completeStarsPayment(
     order: body.order,
     user: body.user,
     credited: Boolean(body.credited),
+    creditKind:
+      body.creditKind === 'wallet_stars'
+        ? 'wallet_stars'
+        : body.creditKind === 'shop_order'
+          ? 'shop_order'
+          : 'coins',
+    shopOrderId: body.shopOrderId,
+    starsSpent: body.starsSpent,
+    totalToman: body.totalToman,
+    webSuccessUrl: body.webSuccessUrl,
   };
 }
 
@@ -1240,14 +1322,103 @@ export async function checkoutShopWithStarsTelegram(payload: {
   note?: string;
 }): Promise<{
   ok: true;
-  orderId: number;
-  starsSpent: number;
-  starsRemaining: number;
+  paymentOrderId: number;
+  stars: number;
+  starsNeeded: number;
   totalToman: number;
+  titleHint: string;
+  botDeepLink: string;
+  requiresTelegramStars: true;
   message?: string;
 }> {
   return request('/api/shop/checkout/stars-telegram', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
+}
+
+export async function checkoutShopWithWalletStarsTelegram(payload: {
+  telegramId: string;
+  items: Array<{ productId: string; qty: number }>;
+  customerName: string;
+  customerPhone: string;
+  address: string;
+  note?: string;
+}): Promise<{
+  ok: true;
+  orderId: number;
+  starsSpent: number;
+  starsRemaining: number;
+  totalToman: number;
+  message?: string;
+}> {
+  return request('/api/shop/checkout/wallet-stars-telegram', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function checkoutShopWithTomanTelegram(payload: {
+  telegramId: string;
+  items: Array<{ productId: string; qty: number }>;
+  customerName: string;
+  customerPhone: string;
+  address: string;
+  note?: string;
+}): Promise<{
+  ok: true;
+  orderId: number;
+  tomanSpent: number;
+  tomanRemaining: number;
+  totalToman: number;
+  message?: string;
+}> {
+  return request('/api/shop/checkout/toman-telegram', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export async function checkoutShopWithCardTelegram(payload: {
+  telegramId: string;
+  items: Array<{ productId: string; qty: number }>;
+  customerName: string;
+  customerPhone: string;
+  address: string;
+  note?: string;
+}): Promise<{
+  ok: true;
+  paymentOrderId: number;
+  totalToman: number;
+  cardNumber: string;
+  cardHolder: string;
+  botDeepLink: string;
+  message?: string;
+}> {
+  return request('/api/shop/checkout/card-telegram', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export type BotShopOrder = {
+  id: number;
+  status: string;
+  totalToman: number;
+  paymentCurrency?: string;
+  paymentAmount?: number;
+  customerName?: string;
+  items: Array<{ title?: string; productId?: string; qty?: number }>;
+  createdAt: string;
+};
+
+export async function fetchMyShopOrdersTelegram(telegramId: string): Promise<{
+  ok: true;
+  total: number;
+  orders: BotShopOrder[];
+  statusLabelsFa?: Record<string, string>;
+}> {
+  return request(
+    `/api/shop/orders-telegram?telegramId=${encodeURIComponent(telegramId)}&limit=15`
+  );
 }

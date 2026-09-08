@@ -1,6 +1,7 @@
 import { infra } from '../config/infra';
 import type { PlaydateChatMediaKind } from '@petdate/shared';
 import { dbService } from '../db';
+import { usableTelegramId } from './telegram-id';
 
 type TelegramSendResult = { ok: boolean; messageId?: number };
 
@@ -30,12 +31,6 @@ async function telegramCall(
     console.warn(`telegram ${method} error:`, (err as Error).message);
     return { ok: false };
   }
-}
-
-function usableTelegramId(id?: string | null): id is string {
-  if (!id) return false;
-  if (id.startsWith('fake_') || id.startsWith('fake_owner_')) return false;
-  return true;
 }
 
 /**

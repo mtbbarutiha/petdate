@@ -23,7 +23,8 @@ import {
   playdateResendConfirmKeyboard,
 } from '../keyboards';
 import { upsertSession } from '../session';
-import { getCtxUser, menuKeyboardFor } from './helpers';
+import { resolveTelegramPhotoUrl } from '../urls';
+import { getCtxUser, menuKeyboardFor, pushMainMenuKeyboard } from './helpers';
 import { startOwnerChat } from './owner-chat';
 
 export function defaultPetPhoto(pet: { species?: string; id: number }): string {
@@ -37,6 +38,14 @@ export function defaultPetPhoto(pet: { species?: string; id: number }): string {
   ];
   const pool = pet.species === 'cat' ? cats : dogs;
   return pool[pet.id % pool.length]!;
+}
+
+function petPhotoForTelegram(pet: {
+  species?: string;
+  id: number;
+  imageUrl?: string | null;
+}): string {
+  return resolveTelegramPhotoUrl(pet.imageUrl) || defaultPetPhoto(pet);
 }
 
 /** اطلاع درخواست همبازی به صاحب پت مقصد — با عکس پروفایل پت فرستنده */
@@ -62,7 +71,7 @@ export async function notifyIncomingPlaydateRequest(
     .join('\n')
     .slice(0, 1024);
 
-  const photo = opts.fromPet.imageUrl || defaultPetPhoto(opts.fromPet);
+  const photo = petPhotoForTelegram(opts.fromPet);
   const kb = playdateActionKeyboard(opts.requestId);
 
   try {
@@ -129,7 +138,7 @@ export async function handleMyPetView(ctx: Context, petId: number): Promise<void
   }
   const text = `🐾 <b>پروفایل پت</b>\n\n${formatPet(pet, true)}`;
   const kb = myPetProfileKeyboard(pet.id);
-  const photo = pet.imageUrl || defaultPetPhoto(pet);
+  const photo = petPhotoForTelegram(pet);
 
   try {
     await ctx.replyWithPhoto(photo, {
@@ -512,5 +521,5 @@ export async function handlePlaydateCancel(ctx: Context): Promise<void> {
   await upsertSession(String(ctx.from!.id), { step: 'ready', selectedPetId: undefined, selectedToPetId: undefined });
   await ctx.editMessageText('انصراف دادی.');
   const u = await getCtxUser(ctx);
-  await ctx.reply('منوی اصلی:', { reply_markup: menuKeyboardFor(ctx, u) });
+  await pushMainMenuKeyboard(ctx, u);
 }

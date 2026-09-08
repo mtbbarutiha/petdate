@@ -10,6 +10,7 @@ import { saveChatUpload } from './chat-upload-store';
 import type { SmsDeliveryStatus } from './prescription';
 import { notifyVetMessage } from '../ws/chatHub';
 import type { VetConsultChatMessage } from '@petdate/shared';
+import { normalizeTelegramId } from './telegram-id';
 
 export type PrescriptionChatDelivery = {
   chatMessage: VetConsultChatMessage | null;
@@ -18,12 +19,6 @@ export type PrescriptionChatDelivery = {
   /** Human-readable status for vet UIs */
   note: string;
 };
-
-function usableTelegramId(id?: string | null): id is string {
-  if (!id) return false;
-  if (id.startsWith('fake_') || id.startsWith('fake_owner_')) return false;
-  return true;
-}
 
 function smsSkippedNoPhone(sms: SmsDeliveryStatus): boolean {
   return (
@@ -192,9 +187,9 @@ export async function deliverPrescriptionToConsultChat(opts: {
   const patient = dbService.getUserById(opts.patientUserId);
   const consult = dbService.getVetConsultation(opts.consultId);
   const protect = Boolean(consult?.chatSecure);
-  const tgId = patient?.telegramId;
+  const tgId = normalizeTelegramId(patient?.telegramId);
 
-  if (usableTelegramId(tgId)) {
+  if (tgId) {
     // Prefer document+caption; fall back to plain text with the PDF URL.
     if (opts.pdfPath && fs.existsSync(opts.pdfPath)) {
       telegramDelivered = await telegramSendDocument({

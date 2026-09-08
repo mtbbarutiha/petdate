@@ -1,5 +1,6 @@
 import type { User } from '@petdate/shared';
 import { infra } from '../config/infra';
+import { activateBotOwnerChatSessions } from './bot-owner-chat-session';
 
 function escapeHtml(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -32,18 +33,21 @@ function usableTelegramId(id?: string | null): id is string {
   return true;
 }
 
-function enterChatKeyboard(playdateId: number) {
+/** Same labels as packages/bot owner-chat reply keyboard */
+function ownerChatReplyKeyboard() {
   return {
-    inline_keyboard: [
-      [{ text: '💬 شروع چت', callback_data: `playdate:enterchat:${playdateId}` }],
+    keyboard: [
+      [{ text: '🔒 چت امن' }, { text: '👤 پروفایل طرف مقابل' }],
+      [{ text: '🐾 مشاهده پروفایل پت' }, { text: '➕ افزودن مخاطب' }],
+      [{ text: '🔌 قطع چت همبازی' }],
     ],
+    resize_keyboard: true,
   };
 }
 
 /**
- * After a playdate is accepted on the web, invite both Telegram users to
- * explicitly tap «شروع چت». Do NOT auto-enter owner_chat sessions — that
- * made chat feel connected without each side confirming.
+ * After a playdate is accepted (web or API), put both Telegram users into
+ * owner_chat immediately — no «شروع چت» tap required.
  */
 export async function startOwnerChatFromApi(opts: {
   playdateId: number;
@@ -64,19 +68,37 @@ export async function startOwnerChatFromApi(opts: {
     return false;
   }
 
+  await activateBotOwnerChatSessions({
+    playdateId,
+    accepter,
+    requester,
+    fromPetId: opts.fromPetId,
+    toPetId: opts.toPetId,
+  });
+
   const petLine =
     opts.fromPetName && opts.toPetName
       ? `پت‌ها: <b>${escapeHtml(opts.fromPetName)}</b> ↔ <b>${escapeHtml(opts.toPetName)}</b>`
       : null;
 
+  const tipLines = [
+    'دکمه‌های چت:',
+    '• 🔒 چت امن — پیام‌ها غیرقابل ذخیره/فوروارد',
+    '• 👤 پروفایل طرف مقابل / 🐾 پروفایل پت',
+    '• ➕ افزودن مخاطب',
+    '• 🔌 قطع چت همبازی',
+  ].join('\n');
+
   const accepterIntro = [
-    '✅ <b>درخواست همبازی را قبول کردی</b>',
+    '💬 <b>چت همبازی فعال شد</b>',
     '',
     `طرف مقابل: <b>${escapeHtml(requester.name)}</b>`,
     petLine,
     '',
-    'برای شروع گفتگو دکمهٔ <b>شروع چت</b> را بزن.',
-    'تا وقتی وارد چت نشوی، پیام‌ها رد و بدل نمی‌شوند.',
+    '👋 به همبازی جدید سلام کن!',
+    'هر پیامی بفرستی مستقیم می‌رسد — نیازی به شروع جداگانه نیست.',
+    '',
+    tipLines,
   ]
     .filter(Boolean)
     .join('\n');
@@ -87,13 +109,15 @@ export async function startOwnerChatFromApi(opts: {
     `طرف مقابل: <b>${escapeHtml(accepter.name)}</b>`,
     petLine,
     '',
-    'برای شروع گفتگو دکمهٔ <b>شروع چت</b> را بزن.',
-    'تا وقتی طرف مقابل هم وارد چت نشود / تو وارد نشوی، اتصال کامل نیست.',
+    '💬 چت همبازی همین الان فعال شد.',
+    '👋 به همبازی جدید سلام کن!',
+    '',
+    tipLines,
   ]
     .filter(Boolean)
     .join('\n');
 
-  const keyboard = enterChatKeyboard(playdateId);
+  const keyboard = ownerChatReplyKeyboard();
   const aOk = await telegramCall('sendMessage', {
     chat_id: accepter.telegramId,
     text: accepterIntro,

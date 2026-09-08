@@ -27,7 +27,7 @@ import {
   adminVetToggleKeyboard,
 } from '../keyboards';
 import { getSession, upsertSession } from '../session';
-import { getCtxUser, menuKeyboardFor } from './helpers';
+import { getCtxUser, menuKeyboardFor, pushMainMenuKeyboard } from './helpers';
 import { handleAdminVerifyQueue } from './verification';
 import type { User } from '@petdate/shared';
 
@@ -197,7 +197,7 @@ export async function handleAdminPendingPayments(ctx: Context): Promise<void> {
 
 export async function handleAdminBackToMenu(ctx: Context): Promise<void> {
   const user = await getCtxUser(ctx);
-  await ctx.reply('منوی اصلی 👇', { reply_markup: menuKeyboardFor(ctx, user) });
+  await pushMainMenuKeyboard(ctx, user);
 }
 
 function formatVetCard(user: Awaited<ReturnType<typeof listPendingVetCredentials>>[number]): string {

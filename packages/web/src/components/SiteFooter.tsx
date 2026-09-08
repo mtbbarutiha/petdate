@@ -26,6 +26,7 @@ const BOTTOM_LINKS: { to: string; label: string }[] = [
 const QUICK_LINKS: { to: string; label: string }[] = [
   { to: '/chats', label: 'هم بازی' },
   { to: '/shop', label: 'پت دیت شاپ' },
+  { to: '/shop/orders', label: 'سفارش‌های من' },
   { to: '/shop/cart', label: 'سبد خرید' },
   { to: '/my-pets', label: 'پت‌های من' },
   { to: '/vet-consult', label: 'مشاوره دامپزشک' },

@@ -267,15 +267,23 @@ authRouter.get('/wallet', (req, res) => {
     res.status(404).json({ error: 'کاربر پیدا نشد' });
     return;
   }
+  const linked = Boolean(user.telegramId);
+  const botUsername = String(process.env.TELEGRAM_BOT_USERNAME || 'Petdatebot').replace(/^@/, '');
   res.json({
     ok: true,
     wallet,
-    /** coins همان سکه ربات است؛ برای سازگاری با کلاینت‌های قدیمی */
     coins: wallet.coins,
     telegram: {
-      linked: Boolean(user.telegramId),
+      linked,
       telegramId: user.telegramId ?? null,
       username: user.username ?? null,
+    },
+    /** فقط ستاره پنل پت‌دیت — موجودی Stars حساب تلگرام نمایش داده نمی‌شود */
+    telegramStars: {
+      linked,
+      petdateBalance: wallet.stars,
+      walletStars: wallet.stars,
+      topUpDeepLink: linked ? `https://t.me/${botUsername}?start=wstars` : null,
     },
   });
 });
@@ -532,6 +540,31 @@ authRouter.patch('/vet-online', (req, res) => {
   const updated = dbService.setVetOnline(session.user.id, online);
   if (!updated) {
     res.status(400).json({ error: 'تغییر وضعیت آنلاین ممکن نشد' });
+    return;
+  }
+  res.json({ ok: true, user: updated });
+});
+
+/** مبلغ ویزیت دامپزشک (وب) */
+authRouter.patch('/visit-fee', (req, res) => {
+  const session = getUserFromBearer(req.header('authorization') ?? undefined);
+  if (!session) {
+    res.status(401).json({ error: 'وارد نشده‌اید' });
+    return;
+  }
+  if (!userHasRole(session.user, 'vet')) {
+    res.status(403).json({ error: 'این بخش مخصوص دامپزشکان است' });
+    return;
+  }
+  const raw = req.body?.visitFeeCoins ?? req.body?.feeCoins ?? req.body?.fee;
+  const fee = Number(raw);
+  if (!Number.isFinite(fee) || fee < 1 || fee > 500) {
+    res.status(400).json({ error: 'مبلغ ویزیت باید بین ۱ تا ۵۰۰ سکه باشد' });
+    return;
+  }
+  const updated = dbService.setVisitFeeCoins(session.user.id, fee);
+  if (!updated) {
+    res.status(400).json({ error: 'ثبت مبلغ ویزیت ممکن نشد' });
     return;
   }
   res.json({ ok: true, user: updated });

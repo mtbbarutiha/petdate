@@ -4,6 +4,7 @@ import {
   CheckCircle2,
   ChevronLeft,
   Info,
+  Loader2,
   Minus,
   Plus,
   RefreshCcw,
@@ -40,10 +41,9 @@ type DetailTab = 'desc' | 'specs' | 'reviews';
 export function ShopProductPage() {
   const { id = '' } = useParams<{ id: string }>();
   const product = getProduct(id);
-  const { add } = useShopCart();
+  const { addAnimated, pendingAddId } = useShopCart();
   const [activeImg, setActiveImg] = useState(0);
   const [tab, setTab] = useState<DetailTab>('desc');
-  const [addedFlash, setAddedFlash] = useState(false);
   const [qty, setQty] = useState(1);
   const [colorIdx, setColorIdx] = useState(0);
   const [sizeIdx, setSizeIdx] = useState(0);
@@ -86,11 +86,10 @@ export function ShopProductPage() {
   const paramEntries = Object.entries(product.params);
   const mainSrc = gallery[Math.min(activeImg, Math.max(gallery.length - 1, 0))] ?? product.image;
 
+  const adding = pendingAddId === product.id;
   const onAdd = () => {
-    if (!product.inStock) return;
-    for (let i = 0; i < qty; i += 1) add(product.id);
-    setAddedFlash(true);
-    window.setTimeout(() => setAddedFlash(false), 1600);
+    if (!product.inStock || adding) return;
+    void addAnimated(product.id, qty);
   };
 
   return (
@@ -309,12 +308,17 @@ export function ShopProductPage() {
 
             <button
               type="button"
-              className="pepito-btn button-1 pd-dk-add"
-              disabled={!product.inStock}
+              className={`pepito-btn button-1 pd-dk-add${adding ? ' is-loading' : ''}`}
+              disabled={!product.inStock || adding}
+              aria-busy={adding}
               onClick={onAdd}
             >
-              <ShoppingBag size={16} strokeWidth={2} aria-hidden />
-              {product.inStock ? (addedFlash ? 'به سبد اضافه شد' : 'افزودن به سبد') : 'ناموجود'}
+              {adding ? (
+                <Loader2 size={16} strokeWidth={2.4} className="pd-shop-add-spin" aria-hidden />
+              ) : (
+                <ShoppingBag size={16} strokeWidth={2} aria-hidden />
+              )}
+              {adding ? 'در حال افزودن…' : product.inStock ? 'افزودن به سبد' : 'ناموجود'}
             </button>
             <Link to="/shop/cart" className="pd-dk-cart-link">
               مشاهده سبد خرید
@@ -449,7 +453,7 @@ export function ShopProductPage() {
             </div>
             <div className="pd-shop-product-grid">
               {related.map((p) => (
-                <ShopProductCard key={p.id} product={p} onAdd={add} />
+                <ShopProductCard key={p.id} product={p} />
               ))}
             </div>
           </section>
@@ -464,8 +468,23 @@ export function ShopProductPage() {
           ) : null}
           <strong>{formatToman(product.priceToman)}</strong>
         </div>
-        <button type="button" className="pepito-btn button-1" disabled={!product.inStock} onClick={onAdd}>
-          {product.inStock ? 'افزودن به سبد' : 'ناموجود'}
+        <button
+          type="button"
+          className={`pepito-btn button-1${adding ? ' is-loading' : ''}`}
+          disabled={!product.inStock || adding}
+          aria-busy={adding}
+          onClick={onAdd}
+        >
+          {adding ? (
+            <>
+              <Loader2 size={16} className="pd-shop-add-spin" aria-hidden />
+              در حال افزودن…
+            </>
+          ) : product.inStock ? (
+            'افزودن به سبد'
+          ) : (
+            'ناموجود'
+          )}
         </button>
       </div>
     </ShopChrome>

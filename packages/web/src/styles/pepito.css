@@ -3765,6 +3765,23 @@ div.pepito-profile-stat:active {
   color: inherit;
   transition: color 0.2s ease, opacity 0.2s ease;
 }
+.pepito-profile-pet-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.pepito-profile-pet-list .pepito-profile-pet-row {
+  border-block-start: 0;
+}
+.pepito-profile-pet-list > li:first-child .pepito-profile-pet-row {
+  border-block-start: 1px solid rgba(92, 77, 145, 0.12);
+}
+.pepito-profile-pet-row--muted {
+  opacity: 0.65;
+  pointer-events: none;
+}
 .pepito-profile-pet-row:hover {
   opacity: 0.88;
 }
@@ -5659,6 +5676,117 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   color: var(--pepito-dark);
 }
 .pepito-vet-consult-panel,
+.pepito-vet-fee-panel,
+.pepito-vet-online-list {
+  margin-inline: var(--pepito-container-pad, 15px);
+  margin-bottom: 0.95rem;
+  padding: 1rem 1.05rem 1.15rem;
+  border-radius: 20px;
+  border: 1px solid rgba(31, 36, 48, 0.08);
+  background: #fff;
+  box-shadow: 0 8px 22px rgba(25, 6, 61, 0.04);
+}
+.pepito-vet-fee-head h2,
+.pepito-vet-online-list-head h2 {
+  margin: 0 0 0.35rem;
+  font-family: var(--font-display);
+  font-size: 1.12rem;
+  color: var(--pepito-dark);
+}
+.pepito-vet-fee-head p,
+.pepito-vet-online-list-head p {
+  margin: 0;
+  color: #435366;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+.pepito-vet-fee-hint {
+  margin-top: 0.35rem !important;
+  font-size: 0.82rem !important;
+  color: var(--pepito-muted) !important;
+}
+.pepito-vet-fee-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.85rem;
+}
+.pepito-vet-fee-chip {
+  border: 1px solid rgba(31, 36, 48, 0.12);
+  background: rgba(11, 165, 242, 0.06);
+  color: var(--pepito-dark);
+  border-radius: 999px;
+  padding: 0.4rem 0.75rem;
+  font-weight: 700;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.pepito-vet-fee-chip.is-active {
+  background: var(--pepito-sky);
+  border-color: transparent;
+  color: #fff;
+}
+.pepito-vet-fee-chip:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.pepito-vet-fee-custom {
+  margin-top: 0.9rem;
+  display: grid;
+  gap: 0.4rem;
+}
+.pepito-vet-fee-custom label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--pepito-muted);
+}
+.pepito-vet-fee-custom-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+.pepito-vet-fee-custom-row input {
+  flex: 1;
+  min-width: 0;
+  border: 1px solid rgba(31, 36, 48, 0.14);
+  border-radius: 12px;
+  padding: 0.55rem 0.75rem;
+  font-size: 0.95rem;
+}
+.pepito-vet-online-list-ul {
+  list-style: none;
+  margin: 0.85rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+.pepito-vet-online-list-ul li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.7rem 0.8rem;
+  border-radius: 14px;
+  background: rgba(11, 165, 242, 0.06);
+  border: 1px solid rgba(11, 165, 242, 0.12);
+}
+.pepito-vet-online-list-ul strong {
+  display: block;
+  color: var(--pepito-dark);
+}
+.pepito-vet-online-list-city {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.8rem;
+  color: var(--pepito-muted);
+}
+.pepito-vet-online-list-fee {
+  flex-shrink: 0;
+  font-weight: 800;
+  color: #0b7a5c;
+  font-variant-numeric: tabular-nums;
+}
+
 .pepito-vet-connect-panel {
   display: grid;
   gap: 1rem;
@@ -6116,6 +6244,128 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   0% { transform: scale(1); }
   40% { transform: scale(0.94); }
   100% { transform: scale(1); }
+}
+
+.pd-shop-add-spin {
+  animation: pd-shop-spin 0.7s linear infinite;
+}
+@keyframes pd-shop-spin {
+  to { transform: rotate(360deg); }
+}
+.pd-shop-add-btn.is-loading,
+.pd-dk-add.is-loading {
+  opacity: 0.92;
+  cursor: wait;
+}
+
+/* Toast گوشه‌ای افزودن به سبد */
+.pd-shop-add-toast {
+  position: fixed;
+  z-index: 120;
+  inset-inline-start: max(0.85rem, env(safe-area-inset-left, 0px));
+  bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
+  width: min(22rem, calc(100vw - 1.7rem));
+  pointer-events: none;
+}
+.pd-shop-add-toast-inner {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.65rem 0.7rem;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(26, 77, 143, 0.12);
+  box-shadow:
+    0 14px 36px rgba(15, 40, 80, 0.16),
+    0 2px 8px rgba(15, 40, 80, 0.06);
+  backdrop-filter: blur(10px);
+  animation: pd-shop-toast-in 0.38s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.pd-shop-add-toast-check {
+  flex: 0 0 auto;
+  width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(145deg, #15cca0, #0c8b6c);
+  color: #fff;
+}
+.pd-shop-add-toast-thumb {
+  flex: 0 0 auto;
+  width: 2.55rem;
+  height: 2.55rem;
+  border-radius: 12px;
+  object-fit: cover;
+  background: #f3f6fb;
+  border: 1px solid rgba(26, 77, 143, 0.08);
+}
+.pd-shop-add-toast-thumb--empty {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #1a4d8f;
+}
+.pd-shop-add-toast-copy {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+.pd-shop-add-toast-copy strong {
+  font-size: 0.86rem;
+  font-weight: 800;
+  color: #12325a;
+}
+.pd-shop-add-toast-copy span {
+  font-size: 0.76rem;
+  font-weight: 600;
+  color: #5b6b82;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pd-shop-add-toast-cart {
+  flex: 0 0 auto;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: #0a6fa8;
+  text-decoration: none;
+  padding: 0.35rem 0.55rem;
+  border-radius: 10px;
+  background: rgba(11, 165, 242, 0.12);
+}
+.pd-shop-add-toast-close {
+  flex: 0 0 auto;
+  width: 1.55rem;
+  height: 1.55rem;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(26, 77, 143, 0.06);
+  color: #5b6b82;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+@keyframes pd-shop-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pd-shop-add-spin,
+  .pd-shop-add-toast-inner {
+    animation: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -6619,18 +6869,20 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   appearance: none;
   border: 0;
   border-radius: 999px;
-  padding: 0.65rem 1rem;
+  padding: 0.65rem 0.85rem;
   width: 100%;
   background: var(--pepito-base);
   color: #fff;
   font-weight: 800;
-  font-size: 0.92rem;
+  font-size: 0.82rem;
+  line-height: 1.25;
   font-family: var(--font-display);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.4rem;
+  gap: 0.35rem;
+  white-space: nowrap;
   transition: background 0.2s ease, transform 0.2s ease;
 }
 .pd-shop-add-btn:hover:not(:disabled) {
@@ -7702,6 +7954,50 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
 .pd-shop-pay-actions .pepito-btn {
   width: 100%;
 }
+.pd-shop-pay-methods {
+  margin: 0 0 0.85rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid rgba(26, 77, 143, 0.12);
+  border-radius: 14px;
+  display: grid;
+  gap: 0.45rem;
+}
+.pd-shop-pay-methods legend {
+  padding-inline: 0.35rem;
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: var(--pepito-dark, #1a2b4a);
+}
+.pd-shop-pay-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 12px;
+  background: rgba(26, 77, 143, 0.04);
+  cursor: pointer;
+}
+.pd-shop-pay-option.is-active {
+  background: rgba(11, 165, 242, 0.12);
+  outline: 1px solid rgba(11, 165, 242, 0.35);
+}
+.pd-shop-pay-option input {
+  margin-top: 0.2rem;
+}
+.pd-shop-pay-option span {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+.pd-shop-pay-option strong {
+  font-size: 0.92rem;
+}
+.pd-shop-pay-option small {
+  font-size: 0.78rem;
+  color: var(--pepito-muted, #6b7280);
+  font-weight: 600;
+}
 .pd-shop-checkout-form label {
   display: flex;
   flex-direction: column;
@@ -8046,6 +8342,26 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   padding: 0;
   animation: pepito-flow-rise 0.55s ease 0.12s both;
 }
+.pepito-wallet-featured--dual {
+  grid-template-columns: 1fr 1fr;
+  grid-template-areas:
+    'coins stars'
+    'side side';
+}
+.pepito-wallet-featured--dual .pepito-wallet-featured-main--coins {
+  grid-area: coins;
+}
+.pepito-wallet-featured--dual .pepito-wallet-featured-main--stars {
+  grid-area: stars;
+  background:
+    radial-gradient(120% 90% at 0% 0%, rgba(255, 210, 120, 0.35), transparent 55%),
+    linear-gradient(155deg, #9a4d00 0%, #fd961e 78%);
+  box-shadow: 0 14px 36px rgba(196, 106, 0, 0.22);
+}
+.pepito-wallet-featured--dual .pepito-wallet-featured-side {
+  grid-area: side;
+  grid-template-columns: repeat(2, 1fr);
+}
 .pepito-wallet-featured.is-pending {
   opacity: 0.72;
 }
@@ -8062,6 +8378,12 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   flex-direction: column;
   justify-content: center;
   gap: 0.25rem;
+}
+.pepito-wallet-featured-unit {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 700;
+  opacity: 0.92;
 }
 .pepito-wallet-featured-label {
   font-size: 0.82rem;
@@ -8166,21 +8488,26 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 1.55rem;
-  height: 1.55rem;
-  margin-inline-end: 0.35rem;
-  border-radius: 8px;
+  width: 2.1rem;
+  height: 2.1rem;
+  border-radius: 10px;
   background: rgba(253, 150, 30, 0.16);
   color: #c46a00;
-  font-size: 0.85rem;
-}
-.pepito-wallet-tg-stars {
-  display: inline-flex;
-  align-items: center;
+  font-size: 1.05rem;
+  flex: 0 0 auto;
 }
 @media (max-width: 640px) {
   .pepito-wallet-featured {
     grid-template-columns: 1fr;
+  }
+  .pepito-wallet-featured--dual {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      'coins stars'
+      'side side';
+  }
+  .pepito-wallet-featured--dual .pepito-wallet-featured-side {
+    grid-template-columns: repeat(2, 1fr);
   }
   .pepito-wallet-featured-side {
     grid-template-columns: repeat(3, 1fr);
@@ -8354,12 +8681,11 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
 
 .pepito-wallet-tg-body {
   display: grid;
-  grid-template-rows: minmax(1.5rem, auto) minmax(2.6rem, auto) minmax(2.6rem, auto) minmax(1.2rem, auto);
+  grid-template-rows: auto auto minmax(2.6rem, auto) minmax(2.6rem, auto) minmax(1.2rem, auto);
   gap: 0.65rem;
   align-items: start;
   justify-items: start;
-  /* Covers linked (stars+sync) and unlinked (link+sync) without height swap */
-  min-height: 11.25rem;
+  min-height: 12.5rem;
 }
 
 .pepito-wallet-tg-slot {
@@ -8406,15 +8732,105 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
 
 .pepito-wallet-tg-stars {
   margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
   font-size: 0.98rem;
   color: var(--pepito-dark);
+  width: 100%;
+  padding: 0.85rem 0.95rem;
+  border-radius: 16px;
+  background: rgba(253, 150, 30, 0.12);
+  border: 1px solid rgba(196, 106, 0, 0.18);
 }
 
+.pepito-wallet-stars-split {
+  display: grid;
+  gap: 0.75rem;
+  width: 100%;
+}
+@media (min-width: 640px) {
+  .pepito-wallet-stars-split {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.pepito-wallet-stars-split .pepito-wallet-tg-stars--hero {
+  min-height: auto;
+  align-items: flex-start;
+}
+.pepito-wallet-tg-stars--telegram {
+  background: rgba(26, 77, 143, 0.07);
+  border-color: rgba(26, 77, 143, 0.14);
+}
+.pepito-wallet-tg-stars-val--muted {
+  font-size: 1.05rem !important;
+  color: #1a4d8f !important;
+}
+.pepito-wallet-tg-stars-open {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  margin-top: 0.15rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.92rem !important;
+  font-weight: 800 !important;
+  color: #fff !important;
+  background: #1a4d8f;
+  text-decoration: none;
+  line-height: 1.2;
+}
+.pepito-wallet-tg-stars-open:hover {
+  filter: brightness(1.06);
+}
+.pepito-wallet-tg-stars-hint {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  font-weight: 600;
+  color: var(--pepito-muted, #6b7280);
+}
+
+.pepito-wallet-tg-stars--hero {
+  min-height: 4.2rem;
+}
+
+.pepito-wallet-tg-stars-copy {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.pepito-wallet-tg-stars-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--pepito-muted);
+}
+
+.pepito-wallet-tg-stars-val,
 .pepito-wallet-tg-stars strong {
   font-family: var(--font-display);
   font-weight: 800;
-  color: var(--pepito-base);
+  font-size: 1.65rem;
+  line-height: 1.1;
+  color: #c46a00;
   font-variant-numeric: tabular-nums;
+}
+
+.pepito-wallet-tg-stars-unit {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-inline-start: 0.25rem;
+  color: #9a5b12;
+}
+
+.pepito-wallet-tg-meta-inline {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--pepito-muted);
+  line-height: 1.45;
 }
 
 .pepito-wallet-tg-sync,
@@ -8423,6 +8839,7 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
+  text-decoration: none;
   min-height: 2.4rem;
   min-width: 0;
   width: auto;
@@ -8672,14 +9089,20 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
 }
 
 @media (max-width: 420px) {
+  /* Keep coin + Stars counts visible on narrow phones (was fully hidden). */
   .pepito-nav-wallet-chip-line {
+    display: inline-flex !important;
+    font-size: 0.62rem !important;
+  }
+  .pepito-nav-wallet-chip-item--toman,
+  .pepito-nav-wallet-chip-sep--toman {
     display: none !important;
   }
   .pepito-nav-wallet-btn {
-    width: 36px !important;
-    max-width: 36px !important;
-    padding: 0 !important;
-    justify-content: center !important;
+    width: auto !important;
+    max-width: min(48vw, 8.5rem) !important;
+    padding: 0 0.4rem 0 0.3rem !important;
+    justify-content: flex-start !important;
   }
 }
 
@@ -10143,5 +10566,94 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
 @media (max-width: 640px) {
   .pepito-earn-balance {
     grid-template-columns: 1fr;
+  }
+}
+
+
+/* —— سفارش‌های من: آیکن کنار سبد (بدون نوار سه‌تایی موبایل) —— */
+@media (max-width: 859px) {
+  .pd-shop-page .pepito-nav-orders-link {
+    display: inline-flex !important;
+  }
+}
+
+/* —— سفارش‌های من (پت شاپ) —— */
+.pd-shop-orders-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+.pd-shop-orders-head h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+.pd-shop-orders-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.85rem;
+}
+.pd-shop-order-card {
+  background: #fff;
+  border: 1px solid rgba(92, 77, 145, 0.1);
+  border-radius: 20px;
+  padding: 1rem 1.15rem;
+  text-align: start;
+}
+.pd-shop-order-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.45rem;
+}
+.pd-shop-order-status {
+  font-size: 0.82rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(92, 77, 145, 0.08);
+}
+.pd-shop-order-status--paid,
+.pd-shop-order-status--completed {
+  background: rgba(21, 204, 160, 0.15);
+  color: #0c8b6c;
+}
+.pd-shop-order-status--shipped {
+  background: rgba(11, 165, 242, 0.12);
+  color: #1a4d8f;
+}
+.pd-shop-order-status--cancelled {
+  background: rgba(253, 150, 30, 0.15);
+  color: #b35c00;
+}
+.pd-shop-order-status--cancelled {
+  background: rgba(201, 24, 74, 0.1);
+  color: #9b2226;
+}
+.pd-shop-order-items {
+  margin: 0.2rem 0 0.45rem;
+  font-weight: 600;
+}
+.pd-shop-muted {
+  margin: 0.15rem 0;
+  opacity: 0.72;
+  font-size: 0.9rem;
+}
+@media (max-width: 720px) {
+  .pd-shop-orders-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .pd-shop-orders-head .pd-shop-pay-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
+  .pd-shop-orders-head .pd-shop-pay-actions .pepito-btn {
+    flex: 1;
+    text-align: center;
   }
 }

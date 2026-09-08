@@ -83,13 +83,14 @@ export function packagePickerLabel(p: CoinPackage): string {
 
 export function coinsShopIntroText(balance: number, starsBalance = 0): string {
   return [
-    '💰 <b>سکه‌ها</b>',
+    '💰 <b>سکه‌ها و ستاره‌ها</b>',
     '',
-    `موجودی سکه: <b>${formatNum(balance)}</b>`,
-    `موجودی ستاره (کیف پول مشترک وب/ربات): <b>⭐${formatNum(starsBalance)}</b>`,
+    `🪙 موجودی سکه پنل پت‌دیت: <b>${formatNum(balance)}</b>`,
+    `⭐ موجودی ستاره پنل پت‌دیت (خریداری‌شده): <b>${formatNum(starsBalance)}</b>`,
+    '📱 موجودی Stars شما در تلگرام: فقط داخل خود اپ تلگرام دیده می‌شود (ربات عدد آن را نمی‌خواند).',
     '',
     `قیمت هر سکه: ${formatNum(COIN_PRICE_TOMAN)} تومان یا ${formatNum(COIN_PRICE_STARS)} Star`,
-    `نرخ فروشگاه: هر Star ≈ ${formatNum(COIN_PRICE_TOMAN)} تومان (همان کیف پول وب)`,
+    `نرخ فروشگاه: هر Star ≈ ${formatNum(COIN_PRICE_TOMAN)} تومان`,
     `🎁 هر روز ${formatNum(DAILY_COIN_REWARD)} سکه رایگان — دکمه بالای لیست`,
     '',
     'بسته را بزن → پرداخت با ستاره یا کارت به کارت',

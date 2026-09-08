@@ -17,7 +17,8 @@ import {
   textStepKeyboard,
 } from '../keyboards';
 import { getSession, upsertSession } from '../session';
-import { getCtxUser, menuKeyboardFor } from './helpers';
+import { resolveTelegramPhotoUrl } from '../urls';
+import { getCtxUser, menuKeyboardFor, pushMainMenuKeyboard, pushReplyKeyboard } from './helpers';
 
 const PAGE_SIZE = 8;
 
@@ -224,9 +225,7 @@ export async function handleSearchHomeCallback(ctx: Context): Promise<void> {
       searchPage: undefined,
     });
   }
-  await ctx.reply('منوی اصلی 👇', {
-    reply_markup: menuKeyboardFor(ctx, user),
-  });
+  await pushMainMenuKeyboard(ctx, user);
 }
 
 /** باز کردن کارت پروفایل پت از لیست جستجو */
@@ -250,7 +249,7 @@ export async function handleSearchPetView(ctx: Context, petId: number): Promise<
   await ctx.answerCallbackQuery();
   const text = `🐾 <b>پروفایل پت</b>\n\n${formatPet(pet, true)}`;
   const kb = searchPetDetailKeyboard(mode, page);
-  const photo = pet.imageUrl || defaultSearchPetPhoto(pet);
+  const photo = resolveTelegramPhotoUrl(pet.imageUrl) || defaultSearchPetPhoto(pet);
 
   try {
     await ctx.replyWithPhoto(photo, {
@@ -367,19 +366,14 @@ async function showSearchResults(
     if (opts?.edit && ctx.callbackQuery) {
       try {
         await ctx.editMessageText(empty, { parse_mode: 'HTML' });
-        await ctx.reply(
-          mode === 'nearby' ? 'منوی اصلی 👇' : 'جستجوی پت 👇',
-          { reply_markup: emptyKb }
-        );
+        await pushReplyKeyboard(ctx, emptyKb);
         return;
       } catch {
         /* fall through */
       }
     }
-    await ctx.reply(empty, {
-      parse_mode: 'HTML',
-      reply_markup: emptyKb,
-    });
+    await ctx.reply(empty, { parse_mode: 'HTML' });
+    await pushReplyKeyboard(ctx, emptyKb);
     return;
   }
 
@@ -413,11 +407,9 @@ async function showSearchResults(
   // کیبورد reply منو را یک‌بار نگه می‌داریم (نه روی هر صفحه)
   if (!opts?.edit) {
     if (mode === 'nearby') {
-      await ctx.reply('منوی اصلی 👇', {
-        reply_markup: menuKeyboardFor(ctx, user),
-      });
+      await pushMainMenuKeyboard(ctx, user);
     } else {
-      await ctx.reply('جستجوی پت 👇', { reply_markup: searchPetsMenuKeyboard() });
+      await pushReplyKeyboard(ctx, searchPetsMenuKeyboard());
     }
   }
 }

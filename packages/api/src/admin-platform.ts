@@ -456,6 +456,21 @@ export const adminPlatform = {
     return (d.prepare(sql).all(...params) as Record<string, unknown>[]).map(mapShopOrder);
   },
 
+  listShopOrdersForUser(userId: number, filters?: { limit?: number }): ShopOrderRow[] {
+    const d = db();
+    const limit = Math.min(Math.max(filters?.limit ?? 50, 1), 100);
+    return (
+      d
+        .prepare(
+          `SELECT * FROM shop_orders
+           WHERE user_id = ?
+           ORDER BY created_at DESC, id DESC
+           LIMIT ?`
+        )
+        .all(userId, limit) as Record<string, unknown>[]
+    ).map(mapShopOrder);
+  },
+
   getShopOrder(id: number): ShopOrderRow | null {
     const row = db().prepare('SELECT * FROM shop_orders WHERE id = ?').get(id) as
       | Record<string, unknown>

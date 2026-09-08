@@ -1,11 +1,9 @@
-import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, PawPrint, Pencil, Plus, Stethoscope } from 'lucide-react';
-import type { PetProfile } from '@petdate/shared';
 import { BRAND, toPersianDigits } from '@petdate/shared';
 import { PetAvatar } from '../components/PetAvatar';
 import { useAuthStore } from '../hooks/useAuthStore';
-import { listPets } from '../lib/api';
+import { useMyPets } from '../hooks/useMyPets';
 import { petProfileToUiPet } from '../lib/playdateMap';
 import { PET_TYPE_LABELS } from '../types';
 import { formatAge } from '../data/mock';
@@ -21,33 +19,8 @@ function PawIcon({ size = 16 }: { size?: number }) {
 /** Owner hub: list pets with profile + edit + medical entry points (mobile + desktop). */
 export function MyPetsPage() {
   const navigate = useNavigate();
-  const { user, isLoggedIn, token } = useAuthStore();
-  const [pets, setPets] = useState<PetProfile[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    if (!isLoggedIn || !user?.id) {
-      setPets([]);
-      setLoading(false);
-      return;
-    }
-    let cancelled = false;
-    setLoading(true);
-    void listPets({ ownerId: user.id })
-      .then((rows) => {
-        if (!cancelled) setPets(rows);
-      })
-      .catch((err) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : 'بارگذاری پت‌ها ناموفق بود');
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [isLoggedIn, user?.id, token]);
+  const { isLoggedIn } = useAuthStore();
+  const { pets, loading, error } = useMyPets();
 
   if (!isLoggedIn) {
     return (

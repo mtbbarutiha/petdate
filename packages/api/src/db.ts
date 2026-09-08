@@ -1,6 +1,7 @@
 import './load-env';
 import Database from 'better-sqlite3';
 import path from 'path';
+import { createPgCompatDatabase, isPostgresUrl } from './db/pg-compat';
 import type {
   CoinAward,
   Game,
@@ -52,6 +53,7 @@ import {
   USER_ROLES,
   sanitizeRoleList,
   VET_CONSULT_REQUEST_TTL_MS,
+  vetVisitFeeCoins,
   walletFromUserFields,
   walletLedgerLabelFa,
   type CoinSellRequestStatus,
@@ -72,8 +74,8 @@ export type WalletLedgerMeta = {
 
 /**
  * Single source of truth for profile/pet data.
- * Absolute DATABASE_PATH wins; otherwise always `packages/api/data/petdate.db`
- * (relative env paths ignored — cwd varies across worktrees / pm2).
+ * - DATABASE_URL=postgresql://… → PostgreSQL (production target)
+ * - else absolute DATABASE_PATH / default SQLite file
  * Bot must not keep a divergent user/pet store; it talks to this API DB via HTTP.
  */
 function resolveDbPath(): string {
@@ -84,29 +86,64 @@ function resolveDbPath(): string {
 
 const dbPath = resolveDbPath();
 
-/** Absolute path of the live SQLite file (for health / ops proof). */
+/** Absolute path of the live SQLite file (empty when Postgres is SoT). */
 export function getResolvedDatabasePath(): string {
-  return dbPath;
+  return isPostgresUrl(process.env.DATABASE_URL) ? '' : dbPath;
 }
 
-let db: Database.Database;
+export function getStorageDriver(): 'postgres' | 'sqlite' {
+  return isPostgresUrl(process.env.DATABASE_URL) ? 'postgres' : 'sqlite';
+}
 
-export function getDb(): Database.Database {
+type AppDatabase = Database.Database;
+
+let db: AppDatabase;
+
+export function getDb(): AppDatabase {
   if (!db) {
-    const fs = require('fs');
-    const dir = path.dirname(dbPath);
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    db = new Database(dbPath);
-    db.pragma('journal_mode = WAL');
-    db.pragma('foreign_keys = ON');
-    initSchema();
-    seedIfEmpty();
     // Demo/fake users+pets only when explicitly enabled — never auto-reseed after a production wipe.
-    if (process.env.SEED_DEMO_DATA === '1') {
-      seedDemoPetsIfEmpty();
-      seedFakeDogOwners();
+    // Blocked on production-like hosts even if SEED_DEMO_DATA is mistakenly set.
+    const allowDemoSeed =
+      process.env.SEED_DEMO_DATA === '1' &&
+      process.env.NODE_ENV !== 'production' &&
+      process.env.ALLOW_DEMO_SEED !== '0';
+    const maybeSeedDemo = () => {
+      if (allowDemoSeed) {
+        seedDemoPetsIfEmpty();
+        seedFakeDogOwners();
+      } else if (process.env.SEED_DEMO_DATA === '1') {
+        console.warn('SEED_DEMO_DATA ignored (production / ALLOW_DEMO_SEED=0)');
+      }
+    };
+
+    const usePostgres = isPostgresUrl(process.env.DATABASE_URL);
+    if (usePostgres) {
+      db = createPgCompatDatabase() as unknown as Database.Database;
+      try {
+        migrateSchema();
+      } catch (err) {
+        console.warn(
+          'postgres migrateSchema soft-patch skipped/failed:',
+          (err as Error).message
+        );
+      }
+      seedIfEmpty();
+      maybeSeedDemo();
+      console.log(
+        `   PostgreSQL (source of truth): ${String(process.env.DATABASE_URL).replace(/:[^:@/]+@/, ':***@')}`
+      );
+    } else {
+      const fs = require('fs');
+      const dir = path.dirname(dbPath);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      db = new Database(dbPath);
+      db.pragma('journal_mode = WAL');
+      db.pragma('foreign_keys = ON');
+      initSchema();
+      seedIfEmpty();
+      maybeSeedDemo();
+      console.log(`   SQLite (source of truth): ${dbPath}`);
     }
-    console.log(`   SQLite (source of truth): ${dbPath}`);
   }
   return db;
 }
@@ -281,8 +318,14 @@ function migrateSchema() {
   if (!names.has('vet_online')) {
     db.exec('ALTER TABLE users ADD COLUMN vet_online INTEGER NOT NULL DEFAULT 0');
   }
+  if (!names.has('ready_to_adopt')) {
+    db.exec('ALTER TABLE users ADD COLUMN ready_to_adopt INTEGER NOT NULL DEFAULT 0');
+  }
   if (!names.has('vet_enabled')) {
     db.exec('ALTER TABLE users ADD COLUMN vet_enabled INTEGER NOT NULL DEFAULT 1');
+  }
+  if (!names.has('visit_fee_coins')) {
+    db.exec('ALTER TABLE users ADD COLUMN visit_fee_coins INTEGER NOT NULL DEFAULT 1');
   }
 
   db.exec(`
@@ -717,6 +760,12 @@ function migrateSchema() {
   if (!vcNames.has('chat_ended')) {
     db.exec('ALTER TABLE vet_consultations ADD COLUMN chat_ended INTEGER NOT NULL DEFAULT 0');
   }
+  if (!vcNames.has('fee_coins')) {
+    db.exec('ALTER TABLE vet_consultations ADD COLUMN fee_coins INTEGER');
+  }
+  if (!vcNames.has('vet_paid_at')) {
+    db.exec('ALTER TABLE vet_consultations ADD COLUMN vet_paid_at TEXT');
+  }
 
   const vchatCols = db
     .prepare('PRAGMA table_info(vet_consult_chat_messages)')
@@ -742,6 +791,22 @@ function migrateSchema() {
   const userPresenceNames = new Set(userPresenceCols.map((c) => c.name));
   if (!userPresenceNames.has('last_seen_at')) {
     db.exec('ALTER TABLE users ADD COLUMN last_seen_at TEXT');
+  }
+  /** اتصال Telegram Business برای خواندن موجودی Stars شخصی کاربر */
+  if (!userPresenceNames.has('tg_business_connection_id')) {
+    db.exec('ALTER TABLE users ADD COLUMN tg_business_connection_id TEXT');
+  }
+  if (!userPresenceNames.has('tg_business_enabled')) {
+    db.exec('ALTER TABLE users ADD COLUMN tg_business_enabled INTEGER NOT NULL DEFAULT 0');
+  }
+  if (!userPresenceNames.has('tg_business_can_view_stars')) {
+    db.exec('ALTER TABLE users ADD COLUMN tg_business_can_view_stars INTEGER NOT NULL DEFAULT 0');
+  }
+  if (!userPresenceNames.has('tg_stars_cached')) {
+    db.exec('ALTER TABLE users ADD COLUMN tg_stars_cached INTEGER');
+  }
+  if (!userPresenceNames.has('tg_stars_synced_at')) {
+    db.exec('ALTER TABLE users ADD COLUMN tg_stars_synced_at TEXT');
   }
 
   // Backfill roles JSON + migrate removed roles (pet_sitter / community_seeker → drop or pet_owner)
@@ -1068,6 +1133,16 @@ function seedSpeciesCatalog() {
 function seedIfEmpty() {
   const count = db.prepare('SELECT COUNT(*) as c FROM sections').get() as { c: number };
   if (count.c > 0) return;
+
+  // Never insert demo_host / demo_player / sample games unless explicitly allowed.
+  // Production DBs must not regain fake users after a wipe.
+  if (
+    process.env.SEED_DEMO_DATA !== '1' ||
+    process.env.NODE_ENV === 'production' ||
+    process.env.ALLOW_DEMO_SEED === '0'
+  ) {
+    return;
+  }
 
   const insertSection = db.prepare(
     'INSERT INTO sections (name, description, city) VALUES (?, ?, ?)'
@@ -1480,9 +1555,14 @@ function mapUser(row: Record<string, unknown>): User {
   const role =
     (row.role as UserRole | undefined) ??
     (roles.includes('pet_owner') ? 'pet_owner' : roles[0]);
+  const telegramRaw = row.telegram_id;
+  const phoneRaw = row.phone;
   return {
     id: row.id as number,
-    telegramId: row.telegram_id as string | undefined,
+    telegramId:
+      telegramRaw != null && String(telegramRaw).trim() !== ''
+        ? String(telegramRaw).trim()
+        : undefined,
     name: row.name as string,
     username: row.username as string | undefined,
     sectionId: row.section_id as number | undefined,
@@ -1494,7 +1574,10 @@ function mapUser(row: Record<string, unknown>): User {
     country: row.country as string | undefined,
     city: row.city as string | undefined,
     province: row.province as string | undefined,
-    phone: row.phone as string | undefined,
+    phone:
+      phoneRaw != null && String(phoneRaw).trim() !== ''
+        ? String(phoneRaw).trim()
+        : undefined,
     email: (row.email as string | undefined) ?? undefined,
     emailVerified: row.email_verified == null ? false : Boolean(row.email_verified),
     phoneVerified: row.phone_verified == null ? false : Boolean(row.phone_verified),
@@ -1528,8 +1611,13 @@ function mapUser(row: Record<string, unknown>): User {
     vetCredentialFileId: (row.vet_credential_file_id as string | undefined) ?? undefined,
     vetCredentialStatus: parseVetCredentialStatus(row.vet_credential_status),
     vetOnline: row.vet_online == null ? false : Boolean(row.vet_online),
+    readyToAdopt: row.ready_to_adopt == null ? false : Boolean(row.ready_to_adopt),
     /** false = توسط ادمین از لیست پزشک‌ها خارج شده */
     vetEnabled: row.vet_enabled == null ? true : Boolean(row.vet_enabled),
+    visitFeeCoins:
+      row.visit_fee_coins != null && Number.isFinite(Number(row.visit_fee_coins))
+        ? Math.max(1, Math.floor(Number(row.visit_fee_coins)))
+        : 1,
     avgRating:
       row.avg_rating != null && Number.isFinite(Number(row.avg_rating))
         ? Math.round(Number(row.avg_rating) * 10) / 10
@@ -1663,7 +1751,10 @@ function mapPaymentOrder(row: Record<string, unknown>): PaymentOrder {
     createdAt: row.created_at as string,
     reviewedAt: (row.reviewed_at as string | undefined) ?? undefined,
     userName: (row.user_name as string | undefined) ?? undefined,
-    userTelegramId: (row.user_telegram_id as string | undefined) ?? undefined,
+    userTelegramId:
+      row.user_telegram_id != null && String(row.user_telegram_id).trim() !== ''
+        ? String(row.user_telegram_id).trim()
+        : undefined,
     userUsername: (row.user_username as string | undefined) ?? undefined,
   };
 }
@@ -1691,6 +1782,11 @@ function mapVetConsultation(row: Record<string, unknown>): VetConsultation {
     petId: row.pet_id != null ? Number(row.pet_id) : undefined,
     status: row.status as VetConsultStatus,
     notes: (row.notes as string | undefined) ?? undefined,
+    feeCoins:
+      row.fee_coins != null && Number.isFinite(Number(row.fee_coins))
+        ? Math.max(0, Math.floor(Number(row.fee_coins)))
+        : undefined,
+    vetPaidAt: (row.vet_paid_at as string | undefined) ?? undefined,
     chatSecure: Boolean(row.chat_secure),
     chatEnded: Boolean(row.chat_ended),
     createdAt: row.created_at as string,
@@ -2063,6 +2159,25 @@ export const dbService = {
       const ownedPets = this.listPets({ ownerId: userId });
       for (const pet of ownedPets) {
         this.deletePet(pet.id, userId);
+      }
+      // Belt-and-suspenders: listPets/deletePet can miss rows on some PG paths
+      try {
+        const leftover = db
+          .prepare('SELECT id FROM pets WHERE owner_id = ?')
+          .all(userId) as { id: number }[];
+        for (const row of leftover) {
+          db.prepare(
+            'DELETE FROM playdate_requests WHERE from_pet_id = ? OR to_pet_id = ?'
+          ).run(row.id, row.id);
+          try {
+            db.prepare('UPDATE vet_consultations SET pet_id = NULL WHERE pet_id = ?').run(row.id);
+          } catch {
+            /* older schemas */
+          }
+          db.prepare('DELETE FROM pets WHERE id = ?').run(row.id);
+        }
+      } catch {
+        /* ignore */
       }
 
       // 2) Playdates still pointing at this user (no owned pets)
@@ -2480,6 +2595,36 @@ export const dbService = {
     return this.setVetOnline(user.id, online);
   },
 
+  setReadyToAdopt(userId: number, ready: boolean): User | null {
+    const existing = this.getUserById(userId);
+    if (!existing) return null;
+    const result = db
+      .prepare(`UPDATE users SET ready_to_adopt = ? WHERE id = ?`)
+      .run(ready ? 1 : 0, userId);
+    if (result.changes === 0) return null;
+    return this.getUserById(userId);
+  },
+
+  setReadyToAdoptByTelegramId(telegramId: string, ready: boolean): User | null {
+    const user = this.getUserByTelegramId(telegramId);
+    if (!user) return null;
+    return this.setReadyToAdopt(user.id, ready);
+  },
+
+  setVisitFeeCoins(userId: number, feeCoins: number): User | null {
+    const existing = this.getUserById(userId);
+    if (!existing) return null;
+    const fee = Math.min(500, Math.max(1, Math.floor(Number(feeCoins) || 1)));
+    db.prepare(`UPDATE users SET visit_fee_coins = ? WHERE id = ?`).run(fee, userId);
+    return this.getUserById(userId);
+  },
+
+  setVisitFeeCoinsByTelegramId(telegramId: string, feeCoins: number): User | null {
+    const user = this.getUserByTelegramId(telegramId);
+    if (!user) return null;
+    return this.setVisitFeeCoins(user.id, feeCoins);
+  },
+
   listPreviousVetsForPatient(patientUserId: number): PreviousVet[] {
     const rows = db
       .prepare(
@@ -2773,6 +2918,76 @@ export const dbService = {
     const user = this.getUserById(userId);
     if (!user) return null;
     return user.wallet ?? walletFromUserFields(user);
+  },
+
+  getTelegramBusinessConnection(userId: number): {
+    connectionId: string | null;
+    isEnabled: boolean;
+    canViewStars: boolean;
+    cachedStars: number | null;
+    syncedAt: string | null;
+  } | null {
+    const row = db
+      .prepare(
+        `SELECT tg_business_connection_id, tg_business_enabled, tg_business_can_view_stars,
+                tg_stars_cached, tg_stars_synced_at
+         FROM users WHERE id = ?`
+      )
+      .get(userId) as
+      | {
+          tg_business_connection_id: string | null;
+          tg_business_enabled: number | null;
+          tg_business_can_view_stars: number | null;
+          tg_stars_cached: number | null;
+          tg_stars_synced_at: string | null;
+        }
+      | undefined;
+    if (!row) return null;
+    const connectionId =
+      row.tg_business_connection_id != null && String(row.tg_business_connection_id).trim()
+        ? String(row.tg_business_connection_id).trim()
+        : null;
+    return {
+      connectionId,
+      isEnabled: Boolean(row.tg_business_enabled),
+      canViewStars: Boolean(row.tg_business_can_view_stars),
+      cachedStars:
+        row.tg_stars_cached != null && Number.isFinite(Number(row.tg_stars_cached))
+          ? Math.floor(Number(row.tg_stars_cached))
+          : null,
+      syncedAt: row.tg_stars_synced_at ? String(row.tg_stars_synced_at) : null,
+    };
+  },
+
+  upsertTelegramBusinessConnection(input: {
+    telegramId: string;
+    connectionId: string;
+    isEnabled: boolean;
+    canViewStars: boolean;
+  }): { ok: true; userId: number } | { ok: false; reason: 'user_missing' } {
+    const user = this.getUserByTelegramId(String(input.telegramId));
+    if (!user) return { ok: false, reason: 'user_missing' };
+    db.prepare(
+      `UPDATE users SET
+         tg_business_connection_id = ?,
+         tg_business_enabled = ?,
+         tg_business_can_view_stars = ?
+       WHERE id = ?`
+    ).run(
+      String(input.connectionId).trim(),
+      input.isEnabled ? 1 : 0,
+      input.canViewStars ? 1 : 0,
+      user.id
+    );
+    return { ok: true, userId: user.id };
+  },
+
+  cacheTelegramAccountStars(userId: number, amount: number): void {
+    const safe = Math.floor(Number(amount));
+    if (!Number.isFinite(safe)) return;
+    db.prepare(
+      `UPDATE users SET tg_stars_cached = ?, tg_stars_synced_at = datetime('now') WHERE id = ?`
+    ).run(safe, userId);
   },
 
   /**
@@ -3974,22 +4189,27 @@ export const dbService = {
     petId?: number;
     status?: VetConsultStatus;
     notes?: string;
+    feeCoins?: number;
   }): VetConsultation {
+    const fee =
+      data.feeCoins != null && Number.isFinite(Number(data.feeCoins))
+        ? Math.max(0, Math.floor(Number(data.feeCoins)))
+        : null;
     const result = db
       .prepare(
         `INSERT INTO vet_consultations (
-          vet_user_id, patient_user_id, pet_id, status, notes
-        ) VALUES (?, ?, ?, ?, ?)`
+          vet_user_id, patient_user_id, pet_id, status, notes, fee_coins
+        ) VALUES (?, ?, ?, ?, ?, ?)`
       )
       .run(
         data.vetUserId,
         data.patientUserId,
         data.petId ?? null,
         data.status ?? 'requested',
-        data.notes ?? null
+        data.notes ?? null,
+        fee
       );
-    const rows = this.listVetConsultations({ vetUserId: data.vetUserId });
-    const created = rows.find((r) => r.id === Number(result.lastInsertRowid));
+    const created = this.getVetConsultation(Number(result.lastInsertRowid));
     return (
       created ?? {
         id: Number(result.lastInsertRowid),
@@ -3998,6 +4218,7 @@ export const dbService = {
         petId: data.petId,
         status: data.status ?? 'requested',
         notes: data.notes,
+        feeCoins: fee ?? undefined,
         createdAt: new Date().toISOString(),
       }
     );
@@ -4075,6 +4296,94 @@ export const dbService = {
       )
       .run(patientUserId, keepId);
     return result.changes;
+  },
+
+  /**
+   * واریز درآمد دامپزشک بعد از قبول مشاوره (idempotent).
+   * مبلغ: fee_coins ذخیره‌شده روی مشاوره، وگرنه مبلغ ویزیت فعلی دامپزشک.
+   */
+  payVetForAcceptedConsult(consultId: number): {
+    paid: boolean;
+    amount: number;
+    alreadyPaid: boolean;
+    consult: VetConsultation | null;
+  } {
+    const consult = this.getVetConsultation(consultId);
+    if (!consult) {
+      return { paid: false, amount: 0, alreadyPaid: false, consult: null };
+    }
+    if (consult.status !== 'active' && consult.status !== 'completed') {
+      return { paid: false, amount: 0, alreadyPaid: false, consult };
+    }
+    if (consult.vetPaidAt) {
+      return {
+        paid: false,
+        amount: consult.feeCoins ?? 0,
+        alreadyPaid: true,
+        consult,
+      };
+    }
+
+    const vet = this.getUserById(consult.vetUserId);
+    if (!vet) {
+      return { paid: false, amount: 0, alreadyPaid: false, consult };
+    }
+
+    const amount = Math.max(
+      0,
+      Math.floor(
+        Number(
+          consult.feeCoins != null && consult.feeCoins > 0
+            ? consult.feeCoins
+            : vetVisitFeeCoins(vet)
+        )
+      )
+    );
+
+    if (amount <= 0) {
+      db.prepare(
+        `UPDATE vet_consultations
+         SET vet_paid_at = datetime('now'),
+             fee_coins = COALESCE(fee_coins, 0)
+         WHERE id = ? AND vet_paid_at IS NULL`
+      ).run(consultId);
+      return {
+        paid: false,
+        amount: 0,
+        alreadyPaid: false,
+        consult: this.getVetConsultation(consultId),
+      };
+    }
+
+    const marked = db
+      .prepare(
+        `UPDATE vet_consultations
+         SET vet_paid_at = datetime('now'),
+             fee_coins = COALESCE(fee_coins, ?)
+         WHERE id = ? AND vet_paid_at IS NULL`
+      )
+      .run(amount, consultId);
+    if (marked.changes === 0) {
+      return {
+        paid: false,
+        amount,
+        alreadyPaid: true,
+        consult: this.getVetConsultation(consultId),
+      };
+    }
+
+    this.creditCoins(consult.vetUserId, amount, undefined, {
+      reason: 'درآمد مشاوره دامپزشک',
+      refType: 'vet_consult_payout',
+      refId: consultId,
+    });
+
+    return {
+      paid: true,
+      amount,
+      alreadyPaid: false,
+      consult: this.getVetConsultation(consultId),
+    };
   },
 
   listVetConsultChatMessages(
@@ -4302,12 +4611,13 @@ export const dbService = {
     amountStars?: number;
     method: PaymentMethod;
     status: PaymentOrderStatus;
+    adminNote?: string;
   }): PaymentOrder {
     const result = db
       .prepare(
         `INSERT INTO payment_orders (
-          user_id, package_id, coins, amount_toman, amount_stars, method, status
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)`
+          user_id, package_id, coins, amount_toman, amount_stars, method, status, admin_note
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .run(
         input.userId,
@@ -4316,9 +4626,17 @@ export const dbService = {
         input.amountToman ?? null,
         input.amountStars ?? null,
         input.method,
-        input.status
+        input.status,
+        input.adminNote?.trim() || null
       );
     return this.getPaymentOrder(Number(result.lastInsertRowid))!;
+  },
+
+  updatePaymentOrderAdminNote(orderId: number, adminNote: string): void {
+    db.prepare(`UPDATE payment_orders SET admin_note = ? WHERE id = ?`).run(
+      adminNote,
+      orderId
+    );
   },
 
   getPaymentOrder(id: number): PaymentOrder | null {
@@ -4439,6 +4757,17 @@ export const dbService = {
     if (existing.method !== 'card' || existing.status !== 'pending') {
       return { ok: false, reason: 'bad_status' };
     }
+    let adminNote = note?.trim() || null;
+    if (String(existing.packageId) === 'shopcard' && existing.adminNote?.trim().startsWith('{')) {
+      try {
+        const meta = JSON.parse(existing.adminNote) as Record<string, unknown>;
+        meta.rejectNote = note?.trim() || undefined;
+        meta.rejected = true;
+        adminNote = JSON.stringify(meta);
+      } catch {
+        /* keep plain note */
+      }
+    }
     const updated = db
       .prepare(
         `UPDATE payment_orders
@@ -4447,7 +4776,7 @@ export const dbService = {
              reviewed_at = datetime('now')
          WHERE id = ? AND status = 'pending'`
       )
-      .run(note?.trim() || null, orderId);
+      .run(adminNote, orderId);
     if (updated.changes !== 1) return { ok: false, reason: 'bad_status' };
     return {
       ok: true,
@@ -4460,7 +4789,7 @@ export const dbService = {
     orderId: number;
     telegramPaymentChargeId: string;
   }):
-    | { ok: true; order: PaymentOrder; user: User; credited: boolean }
+    | { ok: true; order: PaymentOrder; user: User; credited: boolean; creditKind: 'coins' | 'wallet_stars' }
     | { ok: false; reason: 'missing' | 'bad_status' | 'already' } {
     const existing = this.getPaymentOrder(input.orderId);
     if (!existing) return { ok: false, reason: 'missing' };
@@ -4471,9 +4800,14 @@ export const dbService = {
         order: existing,
         user: this.getUserById(existing.userId)!,
         credited: false,
+        creditKind: String(existing.packageId || '').startsWith('wstars:') ? 'wallet_stars' : 'coins',
       };
     }
     if (existing.status !== 'awaiting_stars') return { ok: false, reason: 'bad_status' };
+
+    const isWalletStarsTopUp = String(existing.packageId || '').startsWith('wstars:');
+    const starsAmount = Math.max(0, Math.floor(Number(existing.amountStars ?? 0)));
+    const coinsAmount = Math.max(0, Math.floor(Number(existing.coins ?? 0)));
 
     const chargeId = input.telegramPaymentChargeId.trim();
     const tx = db.transaction(() => {
@@ -4487,19 +4821,37 @@ export const dbService = {
         )
         .run(chargeId || null, input.orderId);
       if (updated.changes !== 1) throw new Error('BAD_STATUS');
-      db.prepare(`UPDATE users SET coins = COALESCE(coins, 0) + ? WHERE id = ?`).run(
-        existing.coins,
-        existing.userId
-      );
-      this.appendWalletLedger({
-        userId: existing.userId,
-        currency: 'coins',
-        amount: existing.coins,
-        direction: 'credit',
-        reason: 'خرید سکه (ستاره‌های تلگرام)',
-        refType: 'payment_order',
-        refId: input.orderId,
-      });
+
+      if (isWalletStarsTopUp) {
+        const credit = starsAmount > 0 ? starsAmount : coinsAmount;
+        if (credit <= 0) throw new Error('BAD_AMOUNT');
+        db.prepare(
+          `UPDATE users SET wallet_stars = COALESCE(wallet_stars, 0) + ? WHERE id = ?`
+        ).run(credit, existing.userId);
+        this.appendWalletLedger({
+          userId: existing.userId,
+          currency: 'stars',
+          amount: credit,
+          direction: 'credit',
+          reason: 'شارژ ستاره با Telegram Stars (واریز به ربات)',
+          refType: 'payment_order',
+          refId: input.orderId,
+        });
+      } else {
+        db.prepare(`UPDATE users SET coins = COALESCE(coins, 0) + ? WHERE id = ?`).run(
+          coinsAmount,
+          existing.userId
+        );
+        this.appendWalletLedger({
+          userId: existing.userId,
+          currency: 'coins',
+          amount: coinsAmount,
+          direction: 'credit',
+          reason: 'خرید سکه (ستاره‌های تلگرام)',
+          refType: 'payment_order',
+          refId: input.orderId,
+        });
+      }
     });
 
     try {
@@ -4513,6 +4865,7 @@ export const dbService = {
             order: again,
             user: this.getUserById(existing.userId)!,
             credited: false,
+            creditKind: isWalletStarsTopUp ? 'wallet_stars' : 'coins',
           };
         }
         return { ok: false, reason: 'bad_status' };
@@ -4525,6 +4878,7 @@ export const dbService = {
       order: this.getPaymentOrder(input.orderId)!,
       user: this.getUserById(existing.userId)!,
       credited: true,
+      creditKind: isWalletStarsTopUp ? 'wallet_stars' : 'coins',
     };
   },
 

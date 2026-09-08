@@ -6,17 +6,13 @@ import type { User } from '@petdate/shared';
 import { infra } from '../config/infra';
 import { activateBotVetChatSessions } from './bot-vet-chat-session';
 import { claimWebChatCtaOnce } from './web-chat-cta-once';
+import { normalizeTelegramId } from './telegram-id';
 
-function escapeHtml(value: string): string {
-  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
-function usableTelegramId(id?: string | null): id is string {
-  if (!id) return false;
-  const t = id.trim();
-  if (!t) return false;
-  if (t.startsWith('fake_') || t.startsWith('demo_')) return false;
-  return true;
+function escapeHtml(value: string | number | null | undefined): string {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
 }
 
 async function telegramCall(method: string, body: Record<string, unknown>): Promise<boolean> {
@@ -123,10 +119,8 @@ export async function startVetChatFromApi(opts: {
   });
 
   let anyOk = false;
-  const vetTg = usableTelegramId(opts.vet.telegramId) ? opts.vet.telegramId.trim() : null;
-  const patientTg = usableTelegramId(opts.patient.telegramId)
-    ? opts.patient.telegramId.trim()
-    : null;
+  const vetTg = normalizeTelegramId(opts.vet.telegramId);
+  const patientTg = normalizeTelegramId(opts.patient.telegramId);
 
   if (vetTg && !opts.skipVetNotify) {
     const vetIntro = [

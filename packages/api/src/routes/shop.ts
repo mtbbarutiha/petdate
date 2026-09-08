@@ -4,6 +4,11 @@ import { getUserFromBearer } from '../services/web-otp';
 import {
   checkoutShopWithCoins,
   checkoutShopWithStars,
+  checkoutShopWithToman,
+  getShopCardStatus,
+  getShopStarsXtrStatus,
+  prepareShopCardCheckout,
+  prepareShopStarsXtrCheckout,
   quoteShopCoins,
   quoteShopStars,
 } from '../services/shop-checkout';
@@ -252,6 +257,46 @@ shopRouter.post('/checkout/stars', (req, res) => {
 
   const body = req.body ?? {};
   const items = Array.isArray(body.items) ? body.items : [];
+  const result = prepareShopStarsXtrCheckout({
+    userId: session.user.id,
+    items: items.map((it: { productId?: string; qty?: number }) => ({
+      productId: String(it?.productId ?? ''),
+      qty: Number(it?.qty ?? 0),
+    })),
+    customerName: String(body.customerName ?? body.name ?? ''),
+    customerPhone: String(body.customerPhone ?? body.phone ?? ''),
+    address: String(body.address ?? ''),
+    note: body.note != null ? String(body.note) : undefined,
+  });
+
+  if (!result.ok) {
+    res.status(200).json(result);
+    return;
+  }
+
+  res.status(201).json({
+    ok: true,
+    paymentOrderId: result.paymentOrderId,
+    stars: result.stars,
+    starsNeeded: result.stars,
+    totalToman: result.totalToman,
+    lines: result.lines,
+    titleHint: result.titleHint,
+    botDeepLink: result.botDeepLink,
+    webSuccessUrl: result.webSuccessUrl,
+    receiptToken: result.receiptToken,
+    requiresTelegramStars: true,
+    message: result.message,
+  });
+});
+
+/** پرداخت با ستاره پنل پت‌دیت (wallet_stars) — کسر از موجودی مشترک وب/ربات */
+shopRouter.post('/checkout/wallet-stars', (req, res) => {
+  const session = requireSession(req, res, 'برای پرداخت با ستاره پنل وارد حساب شوید.');
+  if (!session) return;
+
+  const body = req.body ?? {};
+  const items = Array.isArray(body.items) ? body.items : [];
   const result = checkoutShopWithStars({
     userId: session.user.id,
     items: items.map((it: { productId?: string; qty?: number }) => ({
@@ -270,7 +315,6 @@ shopRouter.post('/checkout/stars', (req, res) => {
   }
 
   const user = dbService.getUserById(session.user.id);
-  const wallet = user?.wallet ?? dbService.getWallet(session.user.id);
   res.status(201).json({
     ok: true,
     orderId: result.order.id,
@@ -279,8 +323,216 @@ shopRouter.post('/checkout/stars', (req, res) => {
     starsRemaining: result.starsRemaining,
     totalToman: result.totalToman,
     lines: result.lines,
-    wallet,
-    message: `سفارش #${result.order.id} با ${result.starsSpent.toLocaleString('fa-IR')} ستاره پرداخت شد.`,
+    wallet: user?.wallet ?? dbService.getWallet(session.user.id),
+    message: `سفارش #${result.order.id} با ${result.starsSpent.toLocaleString('fa-IR')} ستاره پنل پرداخت شد.`,
+  });
+});
+
+shopRouter.get('/checkout/stars-status/:paymentOrderId', (req, res) => {
+  const paymentOrderId = Number(req.params.paymentOrderId);
+  if (!Number.isFinite(paymentOrderId) || paymentOrderId <= 0) {
+    res.status(400).json({ ok: false, reason: 'bad_id', error: 'شناسه فاکتور نامعتبر است.' });
+    return;
+  }
+  const receiptToken = String(req.query.t ?? req.query.token ?? '').trim() || undefined;
+  const session = getUserFromBearer(req.header('authorization') ?? undefined);
+  if (!session && !receiptToken) {
+    res.status(401).json({ error: 'برای پیگیری پرداخت وارد حساب شوید.', reason: 'unauthorized' });
+    return;
+  }
+  const result = getShopStarsXtrStatus(paymentOrderId, {
+    userId: session?.user.id,
+    receiptToken,
+  });
+  if (!result.ok) {
+    res.status(result.reason === 'forbidden' ? 403 : 404).json(result);
+    return;
+  }
+  res.json(result);
+});
+
+/** پرداخت با تومان پنل (wallet_toman) */
+shopRouter.post('/checkout/toman', (req, res) => {
+  const session = requireSession(req, res, 'برای پرداخت با ریال وارد حساب شوید.');
+  if (!session) return;
+
+  const body = req.body ?? {};
+  const items = Array.isArray(body.items) ? body.items : [];
+  const result = checkoutShopWithToman({
+    userId: session.user.id,
+    items: items.map((it: { productId?: string; qty?: number }) => ({
+      productId: String(it?.productId ?? ''),
+      qty: Number(it?.qty ?? 0),
+    })),
+    customerName: String(body.customerName ?? body.name ?? ''),
+    customerPhone: String(body.customerPhone ?? body.phone ?? ''),
+    address: String(body.address ?? ''),
+    note: body.note != null ? String(body.note) : undefined,
+  });
+
+  if (!result.ok) {
+    res.status(200).json(result);
+    return;
+  }
+
+  const user = dbService.getUserById(session.user.id);
+  res.status(201).json({
+    ok: true,
+    orderId: result.order.id,
+    order: result.order,
+    tomanSpent: result.tomanSpent,
+    tomanRemaining: result.tomanRemaining,
+    totalToman: result.totalToman,
+    lines: result.lines,
+    wallet: user?.wallet ?? dbService.getWallet(session.user.id),
+    message: `سفارش #${result.order.id} با ${result.tomanSpent.toLocaleString('fa-IR')} تومان پرداخت شد.`,
+  });
+});
+
+/** کارت‌به‌کارت شاپ — منتظر رسید */
+shopRouter.post('/checkout/card', (req, res) => {
+  const session = requireSession(req, res, 'برای پرداخت کارت‌به‌کارت وارد حساب شوید.');
+  if (!session) return;
+
+  const body = req.body ?? {};
+  const items = Array.isArray(body.items) ? body.items : [];
+  const result = prepareShopCardCheckout({
+    userId: session.user.id,
+    items: items.map((it: { productId?: string; qty?: number }) => ({
+      productId: String(it?.productId ?? ''),
+      qty: Number(it?.qty ?? 0),
+    })),
+    customerName: String(body.customerName ?? body.name ?? ''),
+    customerPhone: String(body.customerPhone ?? body.phone ?? ''),
+    address: String(body.address ?? ''),
+    note: body.note != null ? String(body.note) : undefined,
+  });
+
+  if (!result.ok) {
+    res.status(200).json(result);
+    return;
+  }
+
+  res.status(201).json({
+    ok: true,
+    paymentOrderId: result.paymentOrderId,
+    totalToman: result.totalToman,
+    lines: result.lines,
+    titleHint: result.titleHint,
+    botDeepLink: result.botDeepLink,
+    webSuccessUrl: result.webSuccessUrl,
+    receiptToken: result.receiptToken,
+    cardNumber: result.cardNumber,
+    cardHolder: result.cardHolder,
+    requiresCardReceipt: true,
+    message: result.message,
+  });
+});
+
+shopRouter.get('/checkout/card-status/:paymentOrderId', (req, res) => {
+  const paymentOrderId = Number(req.params.paymentOrderId);
+  if (!Number.isFinite(paymentOrderId) || paymentOrderId <= 0) {
+    res.status(400).json({ ok: false, reason: 'bad_id', error: 'شناسه فاکتور نامعتبر است.' });
+    return;
+  }
+  const receiptToken = String(req.query.t ?? req.query.token ?? '').trim() || undefined;
+  const session = getUserFromBearer(req.header('authorization') ?? undefined);
+  if (!session && !receiptToken) {
+    res.status(401).json({ error: 'برای پیگیری پرداخت وارد حساب شوید.', reason: 'unauthorized' });
+    return;
+  }
+  const result = getShopCardStatus(paymentOrderId, {
+    userId: session?.user.id,
+    receiptToken,
+  });
+  if (!result.ok) {
+    res.status(result.reason === 'forbidden' ? 403 : 404).json(result);
+    return;
+  }
+  res.json(result);
+});
+
+shopRouter.post('/checkout/toman-telegram', (req, res) => {
+  const body = req.body ?? {};
+  const telegramId = String(body.telegramId ?? '').trim();
+  if (!telegramId) {
+    res.status(400).json({ ok: false, reason: 'bad_user', error: 'telegramId الزامی است.' });
+    return;
+  }
+  const user = dbService.getUserByTelegramId(telegramId);
+  if (!user) {
+    res.status(404).json({ ok: false, reason: 'user_missing', error: 'کاربر پیدا نشد. اول /start بزن.' });
+    return;
+  }
+  const items = Array.isArray(body.items) ? body.items : [];
+  const result = checkoutShopWithToman({
+    userId: user.id,
+    items: items.map((it: { productId?: string; qty?: number }) => ({
+      productId: String(it?.productId ?? ''),
+      qty: Number(it?.qty ?? 0),
+    })),
+    customerName: String(body.customerName ?? body.name ?? user.name ?? ''),
+    customerPhone: String(body.customerPhone ?? body.phone ?? user.phone ?? ''),
+    address: String(body.address ?? ''),
+    note: body.note != null ? String(body.note) : undefined,
+  });
+  if (!result.ok) {
+    res.status(result.reason === 'user_missing' ? 404 : 400).json(result);
+    return;
+  }
+  const fresh = dbService.getUserById(user.id);
+  res.status(201).json({
+    ok: true,
+    orderId: result.order.id,
+    order: result.order,
+    tomanSpent: result.tomanSpent,
+    tomanRemaining: result.tomanRemaining,
+    totalToman: result.totalToman,
+    lines: result.lines,
+    wallet: fresh?.wallet ?? dbService.getWallet(user.id),
+    message: `سفارش #${result.order.id} با ${result.tomanSpent.toLocaleString('fa-IR')} تومان پرداخت شد.`,
+  });
+});
+
+shopRouter.post('/checkout/card-telegram', (req, res) => {
+  const body = req.body ?? {};
+  const telegramId = String(body.telegramId ?? '').trim();
+  if (!telegramId) {
+    res.status(400).json({ ok: false, reason: 'bad_user', error: 'telegramId الزامی است.' });
+    return;
+  }
+  const user = dbService.getUserByTelegramId(telegramId);
+  if (!user) {
+    res.status(404).json({ ok: false, reason: 'user_missing', error: 'کاربر پیدا نشد. اول /start بزن.' });
+    return;
+  }
+  const items = Array.isArray(body.items) ? body.items : [];
+  const result = prepareShopCardCheckout({
+    userId: user.id,
+    items: items.map((it: { productId?: string; qty?: number }) => ({
+      productId: String(it?.productId ?? ''),
+      qty: Number(it?.qty ?? 0),
+    })),
+    customerName: String(body.customerName ?? body.name ?? user.name ?? ''),
+    customerPhone: String(body.customerPhone ?? body.phone ?? user.phone ?? ''),
+    address: String(body.address ?? ''),
+    note: body.note != null ? String(body.note) : undefined,
+  });
+  if (!result.ok) {
+    res.status(result.reason === 'user_missing' ? 404 : 400).json(result);
+    return;
+  }
+  res.status(201).json({
+    ok: true,
+    paymentOrderId: result.paymentOrderId,
+    totalToman: result.totalToman,
+    lines: result.lines,
+    titleHint: result.titleHint,
+    botDeepLink: result.botDeepLink,
+    cardNumber: result.cardNumber,
+    cardHolder: result.cardHolder,
+    requiresCardReceipt: true,
+    message: result.message,
   });
 });
 
@@ -347,6 +599,54 @@ shopRouter.post('/checkout/stars-telegram', (req, res) => {
   }
 
   const items = Array.isArray(body.items) ? body.items : [];
+  const result = prepareShopStarsXtrCheckout({
+    userId: user.id,
+    items: items.map((it: { productId?: string; qty?: number }) => ({
+      productId: String(it?.productId ?? ''),
+      qty: Number(it?.qty ?? 0),
+    })),
+    customerName: String(body.customerName ?? body.name ?? user.name ?? ''),
+    customerPhone: String(body.customerPhone ?? body.phone ?? user.phone ?? ''),
+    address: String(body.address ?? ''),
+    note: body.note != null ? String(body.note) : undefined,
+  });
+
+  if (!result.ok) {
+    const status = result.reason === 'user_missing' ? 404 : 400;
+    res.status(status).json(result);
+    return;
+  }
+
+  res.status(201).json({
+    ok: true,
+    paymentOrderId: result.paymentOrderId,
+    stars: result.stars,
+    starsNeeded: result.stars,
+    totalToman: result.totalToman,
+    lines: result.lines,
+    titleHint: result.titleHint,
+    botDeepLink: result.botDeepLink,
+    webSuccessUrl: result.webSuccessUrl,
+    requiresTelegramStars: true,
+    message: result.message,
+  });
+});
+
+shopRouter.post('/checkout/wallet-stars-telegram', (req, res) => {
+  const body = req.body ?? {};
+  const telegramId = String(body.telegramId ?? '').trim();
+  if (!telegramId) {
+    res.status(400).json({ ok: false, reason: 'bad_user', error: 'telegramId الزامی است.' });
+    return;
+  }
+
+  const user = dbService.getUserByTelegramId(telegramId);
+  if (!user) {
+    res.status(404).json({ ok: false, reason: 'user_missing', error: 'کاربر پیدا نشد. اول /start بزن.' });
+    return;
+  }
+
+  const items = Array.isArray(body.items) ? body.items : [];
   const result = checkoutShopWithStars({
     userId: user.id,
     items: items.map((it: { productId?: string; qty?: number }) => ({
@@ -375,6 +675,85 @@ shopRouter.post('/checkout/stars-telegram', (req, res) => {
     totalToman: result.totalToman,
     lines: result.lines,
     wallet: fresh?.wallet ?? dbService.getWallet(user.id),
-    message: `سفارش #${result.order.id} با ${result.starsSpent.toLocaleString('fa-IR')} ستاره پرداخت شد.`,
+    message: `سفارش #${result.order.id} با ${result.starsSpent.toLocaleString('fa-IR')} ستاره پنل پرداخت شد.`,
+  });
+});
+function publicShopOrder(o: ReturnType<typeof adminPlatform.getShopOrder>) {
+  if (!o) return null;
+  const items = Array.isArray(o.items) ? o.items : [];
+  return {
+    id: o.id,
+    status: o.status,
+    totalToman: o.totalToman,
+    paymentCurrency: o.paymentCurrency ?? 'toman',
+    paymentAmount: o.paymentAmount ?? o.totalToman,
+    customerName: o.customerName,
+    customerPhone: o.customerPhone,
+    note: o.note,
+    items,
+    createdAt: o.createdAt,
+    updatedAt: o.updatedAt,
+  };
+}
+
+const ORDER_STATUS_FA: Record<string, string> = {
+  pending: 'در انتظار',
+  paid: 'پرداخت‌شده',
+  shipped: 'ارسال‌شده',
+  completed: 'تکمیل‌شده',
+  cancelled: 'لغوشده',
+};
+
+shopRouter.get('/my-orders', (req, res) => {
+  const session = requireSession(req, res, 'برای دیدن سفارش‌ها وارد حساب شوید.');
+  if (!session) return;
+  const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 100);
+  const orders = adminPlatform.listShopOrdersForUser(session.user.id, { limit }).map(publicShopOrder);
+  res.json({
+    ok: true,
+    total: orders.length,
+    orders,
+    statusLabelsFa: ORDER_STATUS_FA,
+  });
+});
+
+shopRouter.get('/my-orders/:id', (req, res) => {
+  const session = requireSession(req, res, 'برای دیدن سفارش وارد حساب شوید.');
+  if (!session) return;
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id) || id <= 0) {
+    res.status(400).json({ ok: false, reason: 'bad_id', error: 'شناسه نامعتبر است.' });
+    return;
+  }
+  const order = adminPlatform.getShopOrder(id);
+  if (!order || order.userId !== session.user.id) {
+    res.status(404).json({ ok: false, reason: 'missing', error: 'سفارش پیدا نشد.' });
+    return;
+  }
+  res.json({
+    ok: true,
+    order: publicShopOrder(order),
+    statusLabelsFa: ORDER_STATUS_FA,
+  });
+});
+
+shopRouter.get('/orders-telegram', (req, res) => {
+  const telegramId = String(req.query.telegramId ?? '').trim();
+  if (!telegramId) {
+    res.status(400).json({ ok: false, reason: 'bad_user', error: 'telegramId الزامی است.' });
+    return;
+  }
+  const user = dbService.getUserByTelegramId(telegramId);
+  if (!user) {
+    res.status(404).json({ ok: false, reason: 'user_missing', error: 'کاربر پیدا نشد.' });
+    return;
+  }
+  const limit = Math.min(Math.max(Number(req.query.limit) || 20, 1), 50);
+  const orders = adminPlatform.listShopOrdersForUser(user.id, { limit }).map(publicShopOrder);
+  res.json({
+    ok: true,
+    total: orders.length,
+    orders,
+    statusLabelsFa: ORDER_STATUS_FA,
   });
 });

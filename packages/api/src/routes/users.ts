@@ -1,9 +1,14 @@
 import { Router } from 'express';
 import type { OnboardingStatus, UserRole } from '@petdate/shared';
-import { FACE_VERIFY_REWARD, ONBOARDING_STATUS_LABELS, USER_ROLES } from '@petdate/shared';
+import { FACE_VERIFY_REWARD, ONBOARDING_STATUS_LABELS, USER_ROLES, userHasRole } from '@petdate/shared';
 import { dbService } from '../db';
 import { sendPhoneOtp, verifyPhoneOtp } from '../services/phone-otp';
 import { sendVetEnabledSms } from '../services/vet-status-sms';
+import {
+  completeShopCardPayment,
+  completeShopStarsXtrPayment,
+  isShopXtrPackageId,
+} from '../services/shop-checkout';
 
 export const usersRouter = Router();
 
@@ -54,6 +59,36 @@ usersRouter.post('/telegram/:telegramId/presence', async (req, res) => {
     /* optional */
   }
   res.json(dbService.getUserPresence(user.id));
+});
+
+/**
+ * ذخیرهٔ اتصال Telegram Business از آپدیت ربات
+ * (برای خواندن موجودی Stars با getBusinessAccountStarBalance).
+ */
+usersRouter.post('/telegram/:telegramId/business-connection', (req, res) => {
+  const telegramId = String(req.params.telegramId || '').trim();
+  const connectionId = String(req.body?.connectionId ?? '').trim();
+  const isEnabled = Boolean(req.body?.isEnabled);
+  const canViewStars = Boolean(req.body?.canViewStars);
+  if (!telegramId || !connectionId) {
+    res.status(400).json({ error: 'connectionId لازم است' });
+    return;
+  }
+  const result = dbService.upsertTelegramBusinessConnection({
+    telegramId,
+    connectionId,
+    isEnabled,
+    canViewStars,
+  });
+  if (!result.ok) {
+    res.status(404).json({ error: 'کاربر پیدا نشد — اول /start بزن' });
+    return;
+  }
+  res.json({
+    ok: true,
+    userId: result.userId,
+    connection: dbService.getTelegramBusinessConnection(result.userId),
+  });
 });
 
 usersRouter.get('/id/:id', (req, res) => {
@@ -333,6 +368,11 @@ usersRouter.get('/vets/verified', (_req, res) => {
   res.json(dbService.listVerifiedVets());
 });
 
+/** دامپزشک‌های آنلاین آماده پذیرش (برای نمایش لیست + مبلغ ویزیت قبل از اتصال سریع) */
+usersRouter.get('/vets/online', (_req, res) => {
+  res.json(dbService.listOnlineVetsForQuickConnect());
+});
+
 /** لیست همه دامپزشک‌ها برای پنل ادمین (فعال و غیرفعال) */
 usersRouter.get('/vets', (_req, res) => {
   res.json(dbService.listAllVets());
@@ -371,6 +411,54 @@ usersRouter.post('/telegram/:telegramId/vet-online', (req, res) => {
     return;
   }
   const user = dbService.setVetOnlineByTelegramId(req.params.telegramId, online);
+  if (!user) {
+    res.status(404).json({ error: 'کاربر پیدا نشد' });
+    return;
+  }
+  res.json(user);
+});
+
+/** آماده پذیرش پت — نقش دنبال‌کننده پت */
+usersRouter.post('/telegram/:telegramId/ready-to-adopt', (req, res) => {
+  const ready = Boolean(req.body?.ready ?? req.body?.readyToAdopt);
+  const existing = dbService.getUserByTelegramId(req.params.telegramId);
+  if (!existing) {
+    res.status(404).json({ error: 'کاربر پیدا نشد' });
+    return;
+  }
+  if (!userHasRole(existing, 'pet_seeker')) {
+    res.status(403).json({ error: 'این بخش مخصوص نقش «دنبال پت» است' });
+    return;
+  }
+  const user = dbService.setReadyToAdoptByTelegramId(req.params.telegramId, ready);
+  if (!user) {
+    res.status(404).json({ error: 'کاربر پیدا نشد' });
+    return;
+  }
+  res.json(user);
+});
+
+/** مبلغ ویزیت دامپزشک (سکه) — پنل نقش پزشک در ربات/وب */
+usersRouter.post('/telegram/:telegramId/visit-fee', (req, res) => {
+  const existing = dbService.getUserByTelegramId(req.params.telegramId);
+  if (!existing) {
+    res.status(404).json({ error: 'کاربر پیدا نشد' });
+    return;
+  }
+  if (!userHasRole(existing, 'vet')) {
+    res.status(403).json({ error: 'این بخش مخصوص دامپزشکان است' });
+    return;
+  }
+  const raw = req.body?.visitFeeCoins ?? req.body?.feeCoins ?? req.body?.fee;
+  const fee = Number(raw);
+  if (!Number.isFinite(fee) || fee < 1 || fee > 500) {
+    res.status(400).json({
+      error: 'مبلغ ویزیت باید بین ۱ تا ۵۰۰ سکه باشد',
+      reason: 'invalid_visit_fee',
+    });
+    return;
+  }
+  const user = dbService.setVisitFeeCoinsByTelegramId(req.params.telegramId, fee);
   if (!user) {
     res.status(404).json({ error: 'کاربر پیدا نشد' });
     return;
@@ -661,7 +749,17 @@ usersRouter.post('/telegram/:telegramId/payments', (req, res) => {
   const amountStars =
     req.body?.amountStars != null ? Number(req.body.amountStars) : undefined;
 
-  if (!packageId || !Number.isFinite(coins) || coins <= 0) {
+  const isWalletStarsTopUp = packageId.startsWith('wstars:');
+  if (!packageId) {
+    res.status(400).json({ error: 'بسته نامعتبر', reason: 'package' });
+    return;
+  }
+  if (isWalletStarsTopUp) {
+    if (!Number.isFinite(amountStars) || Number(amountStars) <= 0) {
+      res.status(400).json({ error: 'تعداد ستاره نامعتبر', reason: 'package' });
+      return;
+    }
+  } else if (!Number.isFinite(coins) || coins <= 0) {
     res.status(400).json({ error: 'بسته نامعتبر', reason: 'package' });
     return;
   }
@@ -674,7 +772,7 @@ usersRouter.post('/telegram/:telegramId/payments', (req, res) => {
   const order = dbService.createPaymentOrder({
     userId: user.id,
     packageId,
-    coins: Math.floor(coins),
+    coins: isWalletStarsTopUp ? 0 : Math.floor(coins),
     amountToman: amountToman != null && Number.isFinite(amountToman) ? amountToman : undefined,
     amountStars: amountStars != null && Number.isFinite(amountStars) ? amountStars : undefined,
     method,
@@ -710,7 +808,28 @@ usersRouter.post('/payments/:id/receipt', (req, res) => {
 
 usersRouter.post('/payments/:id/approve', (req, res) => {
   const note = req.body?.note != null ? String(req.body.note) : undefined;
-  const result = dbService.approveCardPayment(Number(req.params.id), note);
+  const id = Number(req.params.id);
+  const existing = dbService.getPaymentOrder(id);
+  if (existing && String(existing.packageId) === 'shopcard') {
+    const result = completeShopCardPayment({ orderId: id, adminNote: note });
+    if (!result.ok) {
+      res.status(result.reason === 'payment_missing' ? 404 : 409).json({
+        ok: false,
+        reason: result.reason,
+        error: result.error,
+      });
+      return;
+    }
+    res.json({
+      ok: true,
+      order: result.paymentOrder,
+      user: result.user,
+      shopOrder: result.shopOrder,
+      kind: 'shopcard',
+    });
+    return;
+  }
+  const result = dbService.approveCardPayment(id, note);
   if (!result.ok) {
     res.status(result.reason === 'missing' ? 404 : 409).json({
       ok: false,
@@ -736,8 +855,59 @@ usersRouter.post('/payments/:id/reject', (req, res) => {
 
 usersRouter.post('/payments/:id/stars/complete', (req, res) => {
   const chargeId = String(req.body?.telegramPaymentChargeId ?? '').trim();
+  const orderId = Number(req.params.id);
+  const existing = dbService.getPaymentOrder(orderId);
+
+  if (existing && isShopXtrPackageId(existing.packageId)) {
+    const result = completeShopStarsXtrPayment({
+      orderId,
+      telegramPaymentChargeId: chargeId,
+    });
+    if (!result.ok) {
+      const status = result.reason === 'missing' ? 404 : 409;
+      res.status(status).json({ ok: false, reason: result.reason, error: result.error });
+      return;
+    }
+    const user = dbService.getUserById(result.paymentOrder.userId);
+    if (!user) {
+      res.status(404).json({ ok: false, reason: 'user_missing' });
+      return;
+    }
+    res.json({
+      ok: true,
+      order: result.paymentOrder,
+      user,
+      credited: result.credited,
+      creditKind: 'shop_order',
+      shopOrderId: result.shopOrder.id,
+      shopOrder: result.shopOrder,
+      starsSpent: result.starsSpent,
+      totalToman: result.totalToman,
+      webSuccessUrl: (() => {
+        const meta = (() => {
+          try {
+            return JSON.parse(String(result.paymentOrder.adminNote || '{}')) as {
+              receiptToken?: string;
+            };
+          } catch {
+            return {};
+          }
+        })();
+        const web = String(process.env.PUBLIC_WEB_URL || process.env.WEB_URL || 'https://petdate.ir').replace(
+          /\/$/,
+          ''
+        );
+        const base = `${web}/shop/stars-pay/${result.paymentOrder.id}`;
+        return meta.receiptToken
+          ? `${base}?t=${encodeURIComponent(meta.receiptToken)}`
+          : base;
+      })(),
+    });
+    return;
+  }
+
   const result = dbService.completeStarsPayment({
-    orderId: Number(req.params.id),
+    orderId,
     telegramPaymentChargeId: chargeId,
   });
   if (!result.ok) {
@@ -752,6 +922,7 @@ usersRouter.post('/payments/:id/stars/complete', (req, res) => {
     order: result.order,
     user: result.user,
     credited: result.credited,
+    creditKind: result.creditKind,
   });
 });
 

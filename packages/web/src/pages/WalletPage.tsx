@@ -19,11 +19,13 @@ import {
   type WalletTransactionDto,
 } from '../lib/api';
 
-const ORDER: WalletCurrency[] = ['coins', 'toman', 'stars', 'ton'];
-const FEATURED: WalletCurrency = 'coins';
+const ORDER: WalletCurrency[] = ['coins', 'stars', 'toman', 'ton'];
+const HERO: WalletCurrency[] = ['coins', 'stars'];
 
 function formatBal(n: number): string {
-  return toPersianDigits(new Intl.NumberFormat('en-US').format(Math.max(0, Math.floor(n))));
+  const x = Math.floor(Number(n));
+  const safe = Number.isFinite(x) && x > 0 ? x : 0;
+  return toPersianDigits(new Intl.NumberFormat('en-US').format(safe));
 }
 
 function formatDelta(tx: WalletTransactionDto): string {
@@ -70,6 +72,7 @@ export function WalletPage() {
   const [wallet, setWallet] = useState<WalletBalances | null>(null);
   const [telegramLinked, setTelegramLinked] = useState<boolean>(() => Boolean(user?.telegramId));
   const [telegramId, setTelegramId] = useState<string | null>(user?.telegramId ?? null);
+  const [topUpDeepLink, setTopUpDeepLink] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(() => !user);
   const [syncing, setSyncing] = useState(false);
@@ -119,6 +122,7 @@ export function WalletPage() {
       const res = await fetchWallet(tok);
       setWallet((prev) => (sameWallet(prev, res.wallet) ? prev : res.wallet));
       hasLocalRef.current = true;
+      setTopUpDeepLink(res.telegramStars?.topUpDeepLink ?? null);
       if (res.telegram) {
         setTelegramLinked(Boolean(res.telegram.linked));
         setTelegramId(res.telegram.telegramId);
@@ -149,6 +153,8 @@ export function WalletPage() {
 
   const balances: WalletBalances =
     wallet ?? (user ? user.wallet ?? walletFromUserFields(user) : { ton: 0, stars: 0, coins: 0, toman: 0 });
+  const starsCount = Math.max(0, Math.floor(Number(balances.stars) || 0));
+  const coinsCount = Math.max(0, Math.floor(Number(balances.coins) || 0));
 
   const linked = telegramLinked || Boolean(user?.telegramId);
   const tgDisplay = telegramId || user?.telegramId || null;
@@ -183,7 +189,7 @@ export function WalletPage() {
     }
   }
 
-  const secondary = ORDER.filter((k) => k !== FEATURED);
+  const secondary = ORDER.filter((k) => !HERO.includes(k));
 
   return (
     <div className="pepito-wallet-page">
@@ -202,16 +208,25 @@ export function WalletPage() {
       </header>
 
       <section
-        className={`pepito-wallet-featured${loading && !wallet ? ' is-pending' : ''}`}
+        className={`pepito-wallet-featured pepito-wallet-featured--dual${loading && !wallet ? ' is-pending' : ''}`}
         aria-label="موجودی اصلی"
       >
-        <div className="pepito-wallet-featured-main">
-          <span className="pepito-wallet-featured-label">{WALLET_CURRENCY_LABELS_FA[FEATURED]}</span>
+        <div className="pepito-wallet-featured-main pepito-wallet-featured-main--coins">
+          <span className="pepito-wallet-featured-label">{WALLET_CURRENCY_LABELS_FA.coins}</span>
           <p className="pepito-wallet-featured-val">
-            <span aria-hidden>{WALLET_CURRENCY_SYMBOLS[FEATURED]}</span>
-            {formatBal(balances[FEATURED])}
+            <span aria-hidden>{WALLET_CURRENCY_SYMBOLS.coins}</span>
+            {formatBal(coinsCount)}
           </p>
-          <p className="pepito-wallet-featured-note">{WALLET_CURRENCY_STATUS[FEATURED].noteFa}</p>
+          <p className="pepito-wallet-featured-note">{WALLET_CURRENCY_STATUS.coins.noteFa}</p>
+        </div>
+        <div className="pepito-wallet-featured-main pepito-wallet-featured-main--stars" aria-live="polite">
+          <span className="pepito-wallet-featured-label">ستاره</span>
+          <p className="pepito-wallet-featured-val">
+            <span aria-hidden>{WALLET_CURRENCY_SYMBOLS.stars}</span>
+            {formatBal(starsCount)}
+          </p>
+          <p className="pepito-wallet-featured-unit">موجودی پنل</p>
+          <p className="pepito-wallet-featured-note">{WALLET_CURRENCY_STATUS.stars.noteFa}</p>
         </div>
         <ul className="pepito-wallet-featured-side" aria-label="سایر موجودی‌ها">
           {secondary.map((key) => (
@@ -244,9 +259,9 @@ export function WalletPage() {
             <Sparkles size={18} />
           </span>
           <div>
-            <h2 id="wallet-tg-title">ستاره‌های تلگرام</h2>
+            <h2 id="wallet-tg-title">شارژ ستاره با فاکتور تلگرام</h2>
             <p className="pepito-wallet-tg-lead">
-              موجودی مشترک با ربات (wallet_stars) — از API بومی تلگرام خوانده نمی‌شود.
+              فاکتور Stars در ربات صادر می‌شود؛ همان‌جا در تلگرام پرداخت کن تا ستارهٔ پنل شارژ شود
             </p>
           </div>
         </div>
@@ -262,18 +277,24 @@ export function WalletPage() {
             </p>
           ) : (
             <p className="pepito-wallet-tg-status pepito-wallet-tg-status--off">
-              تلگرام هنوز به این حساب وب وصل نشده است.
+              برای صدور فاکتور و پرداخت در تلگرام، اول حساب را وصل کن.
             </p>
           )}
 
           <div className="pepito-wallet-tg-slot pepito-wallet-tg-slot--secondary">
-            {linked ? (
-              <p className="pepito-wallet-tg-stars">
-                <span className="pepito-wallet-tg-stars-badge" aria-hidden>★</span>
-                <span>
-                  موجودی ستاره:{' '}
-                  <strong>{formatBal(balances.stars)}</strong>
-                </span>
+            {linked && topUpDeepLink ? (
+              <a
+                className="pepito-btn button-1 pepito-wallet-tg-link"
+                href={topUpDeepLink}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Sparkles size={16} aria-hidden />
+                صدور فاکتور شارژ در تلگرام
+              </a>
+            ) : linked ? (
+              <p className="pepito-wallet-tg-meta-inline">
+                در ربات /start wstars را بزن تا فاکتور Stars برایت ارسال شود.
               </p>
             ) : (
               <button
@@ -283,7 +304,7 @@ export function WalletPage() {
                 disabled={linkBusy}
               >
                 <Link2 size={16} aria-hidden />
-                {linkBusy ? 'در حال ساخت لینک…' : 'اتصال به تلگرام'}
+                {linkBusy ? 'در حال ساخت لینک…' : 'اتصال / سینک تلگرام'}
               </button>
             )}
           </div>
@@ -300,7 +321,7 @@ export function WalletPage() {
               {linked
                 ? syncing
                   ? 'در حال همگام‌سازی…'
-                  : 'همگام‌سازی / تازه‌سازی'
+                  : 'همگام‌سازی کیف‌پول'
                 : 'بعد از Start در ربات — همگام‌سازی'}
             </button>
           </div>
@@ -311,7 +332,7 @@ export function WalletPage() {
           >
             {linked
               ? syncedAt
-                ? 'آخرین همگام‌سازی از همان کیف پول ربات انجام شد.'
+                ? 'بعد از پرداخت فاکتور در تلگرام، همگام‌سازی بزن تا ستارهٔ پنل تازه شود.'
                 : '\u00a0'
               : linkHint || '\u00a0'}
           </p>

@@ -15,6 +15,7 @@ import {
   type PaymentOrder,
 } from '../api-client';
 import { config } from '../config';
+import { effectiveWebUrl, isTelegramInlineUrl } from '../urls';
 import { isAdminAuthorized } from './admin-auth';
 import {
   COIN_PACKAGES,
@@ -46,7 +47,7 @@ import {
 } from '../keyboards';
 import { getSession, upsertSession } from '../session';
 import { telegramWebLoginUrl } from '../telegram-web-link';
-import { getCtxUser, menuKeyboardFor } from './helpers';
+import { getCtxUser, menuKeyboardFor, pushMainMenuKeyboard } from './helpers';
 
 export const SEND_RECEIPT_BTN = '📤 ارسال فیش';
 export const CANCEL_PAYMENT_BTN = '↩️ انصراف از پرداخت';
@@ -55,15 +56,19 @@ function escapeHtml(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
+function userStarsBalance(user: { wallet?: { stars?: number }; walletStars?: number } | null | undefined): number {
+  return user?.wallet?.stars ?? user?.walletStars ?? 0;
+}
+
 export async function handleCoins(ctx: Context): Promise<void> {
   const user = await getCtxUser(ctx);
   const balance = user?.coins ?? 0;
-  const starsBalance = user?.wallet?.stars ?? user?.walletStars ?? 0;
+  const starsBalance = userStarsBalance(user);
   await ctx.reply(coinsShopIntroText(balance, starsBalance), {
     parse_mode: 'HTML',
     reply_markup: coinsShopKeyboard(user?.lastDailyCoinAt),
   });
-  await ctx.reply('منوی اصلی 👇', { reply_markup: menuKeyboardFor(ctx, user) });
+  await pushMainMenuKeyboard(ctx, user);
 }
 
 export async function handleCoinsDaily(ctx: Context): Promise<void> {
@@ -92,7 +97,7 @@ export async function handleCoinsDaily(ctx: Context): Promise<void> {
   });
   const text = coinsShopIntroText(
     result.user.coins ?? 0,
-    result.user.wallet?.stars ?? result.user.walletStars ?? 0
+    userStarsBalance(result.user)
   );
   try {
     await ctx.editMessageText(text, {
@@ -325,7 +330,7 @@ export async function handleCoinsPayCancel(ctx: Context): Promise<void> {
   }
   await ctx.answerCallbackQuery({ text: 'لغو شد' });
   const user = await getCtxUser(ctx);
-  const text = coinsShopIntroText(user?.coins ?? 0);
+  const text = coinsShopIntroText(user?.coins ?? 0, userStarsBalance(user));
   try {
     await ctx.editMessageText(text, {
       parse_mode: 'HTML',
@@ -342,7 +347,7 @@ export async function handleCoinsPayCancel(ctx: Context): Promise<void> {
 export async function handleCoinsBack(ctx: Context): Promise<void> {
   const user = await getCtxUser(ctx);
   await ctx.answerCallbackQuery();
-  const text = coinsShopIntroText(user?.coins ?? 0);
+  const text = coinsShopIntroText(user?.coins ?? 0, userStarsBalance(user));
   try {
     await ctx.editMessageText(text, {
       parse_mode: 'HTML',
@@ -483,6 +488,35 @@ export async function handlePaymentApprove(ctx: Context, orderId: number): Promi
   } catch {
     /* ignore */
   }
+
+  const isShopCard = String(result.order.packageId || '') === 'shopcard';
+  if (isShopCard) {
+    const shopOrderId = (result as { shopOrder?: { id?: number } }).shopOrder?.id;
+    await ctx.reply(
+      [
+        `✅ سفارش کارت شاپ #${orderId} تأیید شد.`,
+        shopOrderId ? `سفارش فروشگاه #${shopOrderId} ثبت شد.` : 'سفارش فروشگاه ثبت شد.',
+        `کاربر: ${escapeHtml(result.user.name)}`,
+      ].join('\n'),
+      { parse_mode: 'HTML' }
+    );
+    if (result.user.telegramId) {
+      try {
+        await ctx.api.sendMessage(
+          result.user.telegramId,
+          [
+            '✅ پرداخت کارت‌به‌کارت شاپ تأیید شد.',
+            shopOrderId ? `سفارش فروشگاه #${shopOrderId} ثبت شد.` : 'سفارشت ثبت شد.',
+            'از «سفارش‌های من» در شاپ پیگیری کن.',
+          ].join('\n')
+        );
+      } catch (err) {
+        console.warn('notify user shop card approved failed:', err);
+      }
+    }
+    return;
+  }
+
   await ctx.reply(
     `✅ سفارش #${orderId} تأیید شد.\n${formatNum(result.order.coins)} سکه به ${escapeHtml(result.user.name)} واریز شد.`,
     { parse_mode: 'HTML' }
@@ -558,16 +592,57 @@ export async function handlePreCheckout(ctx: Context): Promise<void> {
   const orderId = Number(match[1]);
   const pkgId = match[2]!;
   const order = await getPaymentOrder(orderId);
-  const pkg = COIN_PACKAGES.find((p) => p.id === pkgId);
   if (
     !order ||
-    !pkg ||
     order.method !== 'stars' ||
     order.status !== 'awaiting_stars' ||
     order.packageId !== pkgId ||
-    q.currency !== 'XTR' ||
-    q.total_amount !== pkg.stars
+    q.currency !== 'XTR'
   ) {
+    await ctx.answerPreCheckoutQuery(false, {
+      error_message: 'این فاکتور منقضی یا نامعتبر است',
+    });
+    return;
+  }
+
+  // فاکتور XTR داخل همان چت تلگرام پرداخت می‌شود؛ مقایسهٔ سخت مالکیت
+  // (number vs string / چند اکانت) خرید شاپ را بی‌دلیل بلاک می‌کرد.
+  const payerTg = String(q.from?.id ?? ctx.from?.id ?? '').trim();
+  const ownerTg = order.userTelegramId != null ? String(order.userTelegramId).trim() : '';
+  if (ownerTg && payerTg && ownerTg !== payerTg && pkgId !== 'shopxtr') {
+    console.warn('pre_checkout telegram mismatch', {
+      orderId,
+      pkgId,
+      ownerTg,
+      payerTg,
+    });
+    await ctx.answerPreCheckoutQuery(false, {
+      error_message: 'این فاکتور برای حساب دیگری است',
+    });
+    return;
+  }
+  if (ownerTg && payerTg && ownerTg !== payerTg && pkgId === 'shopxtr') {
+    console.warn('pre_checkout shopxtr telegram mismatch (allowed)', {
+      orderId,
+      ownerTg,
+      payerTg,
+    });
+  }
+
+  if (pkgId === 'shopxtr' || pkgId.startsWith('wstars:')) {
+    const stars = Math.floor(Number(order.amountStars ?? 0));
+    if (stars <= 0 || q.total_amount !== stars) {
+      await ctx.answerPreCheckoutQuery(false, {
+        error_message: 'مبلغ ستاره نامعتبر است',
+      });
+      return;
+    }
+    await ctx.answerPreCheckoutQuery(true);
+    return;
+  }
+
+  const pkg = COIN_PACKAGES.find((p) => p.id === pkgId);
+  if (!pkg || q.total_amount !== pkg.stars) {
     await ctx.answerPreCheckoutQuery(false, {
       error_message: 'این فاکتور منقضی یا نامعتبر است',
     });
@@ -576,7 +651,7 @@ export async function handlePreCheckout(ctx: Context): Promise<void> {
   await ctx.answerPreCheckoutQuery(true);
 }
 
-/** successful_payment — واریز سکه بعد از Stars */
+/** successful_payment — واریز سکه / شارژ wallet_stars / ثبت سفارش شاپ بعد از Stars (XTR → ربات) */
 export async function handleSuccessfulPayment(ctx: Context): Promise<void> {
   const payment = ctx.message?.successful_payment;
   if (!payment) return;
@@ -587,18 +662,89 @@ export async function handleSuccessfulPayment(ctx: Context): Promise<void> {
     return;
   }
   const orderId = Number(match[1]);
+  const pkgId = match[2]!;
   const result = await completeStarsPayment(orderId, payment.telegram_payment_charge_id);
   if (!result.ok) {
-    await ctx.reply('پرداخت ثبت شد ولی واریز سکه با خطا روبه‌رو شد. با پشتیبانی هماهنگ کن.');
+    await ctx.reply('پرداخت ثبت شد ولی واریز موجودی با خطا روبه‌رو شد. با پشتیبانی هماهنگ کن.');
     console.error('completeStarsPayment failed:', result.reason, orderId);
     return;
   }
 
   const user = result.user;
+  if (pkgId === 'shopxtr' || result.creditKind === 'shop_order') {
+    const stars = Math.floor(
+      Number(result.starsSpent ?? result.order.amountStars ?? payment.total_amount ?? 0)
+    );
+    const shopId = result.shopOrderId;
+    const paymentId = result.order.id;
+    const chargeId = payment.telegram_payment_charge_id;
+    const base = effectiveWebUrl().replace(/\/$/, '');
+    let receiptUrl = result.webSuccessUrl || (base ? `${base}/shop/stars-pay/${paymentId}` : '');
+    if (!result.webSuccessUrl) {
+      try {
+        const meta = JSON.parse(String(result.order.adminNote || '{}')) as { receiptToken?: string };
+        if (meta.receiptToken && base) {
+          receiptUrl = `${base}/shop/stars-pay/${paymentId}?t=${encodeURIComponent(meta.receiptToken)}`;
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+    const kb = new InlineKeyboard();
+    if (receiptUrl && isTelegramInlineUrl(receiptUrl)) {
+      kb.url('🧾 مشاهده رسید تراکنش', receiptUrl).row();
+    }
+    kb.text('🛒 پت شاپ', 'shop:home');
+    await ctx.reply(
+      [
+        '✅ <b>تراکنش موفق — خرید پت شاپ</b>',
+        '',
+        'ستاره‌ها از اکانت تلگرامت کسر و مستقیم به ربات واریز شد.',
+        'سفارش نهایی شد و در پنل ادمین قابل مشاهده است.',
+        shopId != null ? `📦 شماره سفارش شاپ: <b>#${shopId}</b>` : null,
+        `🧾 فاکتور: <b>#${paymentId}</b>`,
+        `⭐ مبلغ: <b>${formatNum(stars)}</b> ستاره`,
+        result.totalToman != null
+          ? `💰 معادل: <b>${Math.floor(result.totalToman).toLocaleString('fa-IR')}</b> تومان`
+          : null,
+        chargeId ? `🔗 شناسه تراکنش تلگرام:\n<code>${escapeHtml(chargeId)}</code>` : null,
+        '',
+        receiptUrl
+          ? 'برای دیدن صفحه رسید موفق روی دکمه زیر بزن:'
+          : 'سفارش در پنل ادمین و سایت ثبت شد.',
+      ]
+        .filter(Boolean)
+        .join('\n'),
+      {
+        parse_mode: 'HTML',
+        reply_markup: kb,
+      }
+    );
+    await pushMainMenuKeyboard(ctx, user).catch(() => undefined);
+    return;
+  }
+
+  if (pkgId.startsWith('wstars:') || result.creditKind === 'wallet_stars') {
+    const stars = Math.floor(Number(result.order.amountStars ?? payment.total_amount ?? 0));
+    await ctx.reply(
+      [
+        '⭐ پرداخت Stars تلگرام موفق بود!',
+        `ستاره‌ها مستقیم به ربات واریز شد و <b>${formatNum(stars)}</b> ستاره به پنل پت‌دیتت اضافه شد.`,
+        `⭐ موجودی ستاره پنل پت‌دیت: <b>${formatNum(user.wallet?.stars ?? user.walletStars ?? 0)}</b>`,
+        '📱 موجودی Stars حساب تلگرام فقط داخل خود تلگرام دیده می‌شود.',
+      ].join('\n'),
+      {
+        parse_mode: 'HTML',
+        reply_markup: menuKeyboardFor(ctx, user),
+      }
+    );
+    return;
+  }
+
   await ctx.reply(
     [
       '⭐ پرداخت با ستاره موفق بود!',
-      `${formatNum(result.order.coins)} سکه به موجودی‌ات اضافه شد.`,
+      `ستاره‌ها به ربات واریز شد و <b>${formatNum(result.order.coins)}</b> سکه به موجودی‌ات اضافه شد.`,
       `موجودی فعلی: <b>${formatNum(user.coins ?? 0)}</b> سکه`,
     ].join('\n'),
     {
@@ -606,6 +752,81 @@ export async function handleSuccessfulPayment(ctx: Context): Promise<void> {
       reply_markup: menuKeyboardFor(ctx, user),
     }
   );
+}
+
+/** بسته‌های شارژ wallet_stars با پرداخت واقعی Telegram Stars (XTR) */
+export const WALLET_STARS_TOPUP_PACKS = [10, 25, 50, 100, 250] as const;
+
+export async function handleWalletStarsTopUpMenu(ctx: Context): Promise<void> {
+  const user = await getCtxUser(ctx);
+  if (!user?.telegramId) {
+    await ctx.reply('اول /start بزن.');
+    return;
+  }
+  const stars = userStarsBalance(user);
+  const kb = new InlineKeyboard();
+  for (const amount of WALLET_STARS_TOPUP_PACKS) {
+    kb.text(`⭐ ${formatNum(amount)} ستاره`, `wstars:buy:${amount}`).row();
+  }
+  await ctx.reply(
+    [
+      '⭐ <b>شارژ ستاره پنل با فاکتور تلگرام</b>',
+      '',
+      `⭐ موجودی فعلی پنل: <b>${formatNum(stars)}</b>`,
+      '',
+      'بسته را انتخاب کن → فاکتور Stars برایت ارسال می‌شود → همان‌جا در تلگرام پرداخت کن.',
+      'بعد از پرداخت، همان مقدار به ستارهٔ پنل پت‌دیت اضافه می‌شود.',
+    ].join('\n'),
+    { parse_mode: 'HTML', reply_markup: kb }
+  );
+  await pushMainMenuKeyboard(ctx, user);
+}
+
+export async function handleWalletStarsTopUpBuy(ctx: Context, amountRaw: string): Promise<void> {
+  const user = await getCtxUser(ctx);
+  if (!user?.telegramId || !ctx.from) {
+    await ctx.answerCallbackQuery({ text: 'اول /start بزن', show_alert: true });
+    return;
+  }
+  const amount = Math.floor(Number(amountRaw));
+  if (!Number.isFinite(amount) || amount <= 0 || amount > 5000) {
+    await ctx.answerCallbackQuery({ text: 'مبلغ نامعتبر', show_alert: true });
+    return;
+  }
+
+  const packageId = `wstars:${amount}`;
+  const created = await createPaymentOrder(user.telegramId, {
+    packageId,
+    coins: 0,
+    amountStars: amount,
+    method: 'stars',
+  });
+  if (!created.ok) {
+    await ctx.answerCallbackQuery({ text: 'ثبت سفارش ناموفق', show_alert: true });
+    return;
+  }
+
+  await ctx.answerCallbackQuery();
+  const title = `شارژ ${amount} ستاره`.slice(0, 32);
+  const description = `شارژ کیف‌پول پت‌دیت — ${amount} Telegram Stars مستقیم به ربات`.slice(0, 255);
+  const payload = `pay:${created.order.id}:${packageId}`;
+
+  try {
+    await ctx.replyWithInvoice(
+      title,
+      description,
+      payload,
+      'XTR',
+      [{ label: `${amount} ستاره کیف‌پول`, amount }],
+      { provider_token: '' }
+    );
+  } catch (err) {
+    console.error('sendInvoice wallet stars top-up failed:', err);
+    await ctx.reply(
+      'ارسال فاکتور Stars ممکن نشد. اگر پرداخت Stars برای ربات فعال نیست، با پشتیبانی هماهنگ کن.',
+      { reply_markup: menuKeyboardFor(ctx, user) }
+    );
+  }
 }
 
 export async function handleEarn(ctx: Context): Promise<void> {
@@ -624,7 +845,7 @@ export async function handleEarn(ctx: Context): Promise<void> {
     parse_mode: 'HTML',
     reply_markup: earnKeyboard(canSell),
   });
-  await ctx.reply('منوی اصلی 👇', { reply_markup: menuKeyboardFor(ctx, user) });
+  await pushMainMenuKeyboard(ctx, user);
 }
 
 export async function handleEarnSell(ctx: Context): Promise<void> {
