@@ -119,6 +119,31 @@ petsRouter.get('/', (req, res) => {
   res.json(pets);
 });
 
+/** پت‌های نزدیک بر اساس مختصات — قبل از /:id ثبت شود */
+petsRouter.get('/nearby', (req, res) => {
+  const lat = Number(req.query.lat);
+  const lng = Number(req.query.lng);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    res.status(400).json({ error: 'lat و lng الزامی است' });
+    return;
+  }
+  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+    res.status(400).json({ error: 'مختصات نامعتبر است' });
+    return;
+  }
+  const excludeOwnerId = req.query.excludeOwnerId
+    ? Number(req.query.excludeOwnerId)
+    : undefined;
+  const limit = req.query.limit ? Number(req.query.limit) : 30;
+  const pets = dbService.listNearbyPets({
+    lat,
+    lng,
+    excludeOwnerId: Number.isFinite(excludeOwnerId) ? excludeOwnerId : undefined,
+    limit: Number.isFinite(limit) ? limit : 30,
+  });
+  res.json(pets);
+});
+
 petsRouter.get('/:id', (req, res) => {
   const pet = dbService.getPet(Number(req.params.id));
   if (!pet) {

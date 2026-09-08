@@ -195,6 +195,8 @@ export const WIZARD_NAV = {
   custom: '✏️ نوشتن دستی',
   otherCity: '✏️ شهر دیگر',
   sharePhone: '📱 ارسال شماره تماس',
+  /** دکمه request_location تلگرام — پت‌های نزدیک */
+  shareLocation: '📍 ارسال موقعیت',
   interestsDone: '✅ ثبت علایق',
   keepName: '✓ همین نام',
 } as const;
@@ -337,6 +339,21 @@ export function phoneWizardKeyboard(): Keyboard {
     .danger()
     .row()
     .text(MAIN_MENU_BTN).primary()
+    .resized()
+    .persistent();
+}
+
+/** کیبورد درخواست موقعیت برای «پت‌های نزدیک» (سبک دوردوریا) */
+export function nearbyLocationKeyboard(): Keyboard {
+  return new Keyboard()
+    .requestLocation(WIZARD_NAV.shareLocation)
+    .primary()
+    .row()
+    .text(WIZARD_NAV.cancel)
+    .danger()
+    .row()
+    .text(MAIN_MENU_BTN)
+    .primary()
     .resized()
     .persistent();
 }
@@ -1221,9 +1238,15 @@ export function searchPetsListKeyboard(
   const safePage = Math.min(Math.max(0, page), totalPages - 1);
   const slice = pets.slice(safePage * pageSize, (safePage + 1) * pageSize);
 
-  slice.forEach((pet) => {
-    const bits = [pet.breed, pet.ownerCity || pet.city].filter(Boolean).join(' · ');
-    let label = bits ? `${pet.name} (${bits})` : pet.name;
+  slice.forEach((pet, idx) => {
+    const n = safePage * pageSize + idx + 1;
+    const dist =
+      pet.distanceKm != null && Number.isFinite(pet.distanceKm)
+        ? formatNearbyDistance(pet.distanceKm)
+        : null;
+    const place = pet.ownerCity || pet.city || pet.ownerName;
+    const bits = [pet.breed, place, dist].filter(Boolean).join(' · ');
+    let label = bits ? `${n}. ${pet.name} (${bits})` : `${n}. ${pet.name}`;
     if (label.length > 56) label = `${label.slice(0, 53)}…`;
     kb.text(`🐾 ${label}`, `search:pet:${pet.id}`).primary().row();
   });
@@ -1236,11 +1259,19 @@ export function searchPetsListKeyboard(
   }
 
   if (mode === 'nearby') {
+    kb.text('📍 موقعیت دوباره', 'search:nearby:askloc').primary().row();
     kb.text('🔙 منوی اصلی', 'search:home').primary();
   } else {
     kb.text('🔎 منوی جستجو', 'search:menu').primary();
   }
   return kb;
+}
+
+function formatNearbyDistance(km: number): string {
+  if (km < 0.1) return 'نزدیک';
+  if (km < 1) return `${Math.round(km * 1000)} متر`;
+  const rounded = km < 10 ? Math.round(km * 10) / 10 : Math.round(km);
+  return `${rounded} کیلومتر`;
 }
 
 /** پروفایل پت در نتایج جستجو — بازگشت به لیست */
