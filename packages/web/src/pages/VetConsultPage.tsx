@@ -216,17 +216,17 @@ function VetOnlineCard({
             <p className="pepito-vet-online-kicker">{dualRole ? 'نقش دامپزشک' : 'وضعیت پذیرش'}</p>
             <strong>
               <span className="pepito-vet-online-state">{vetOnline ? 'آنلاین' : 'آفلاین'}</span>
-              {vetOnline ? <span className="pepito-vet-online-sep"> · </span> : null}
+              <span className="pepito-vet-online-sep"> · </span>
               {vetOnline ? 'آماده پذیرش' : 'خارج از پذیرش'}
             </strong>
             <span className="pepito-vet-online-hint">
               {vetOnline
                 ? dualRole
-                  ? 'درخواست‌های بیمار همین‌جا می‌آیند'
-                  : 'در لیست پزشک‌های آماده هستی'
+                  ? 'درخواست‌های بیمار همین‌جا می‌رسند.'
+                  : 'در فهرست پزشکان آماده قرار داری.'
                 : dualRole
-                  ? 'آنلاین شو تا درخواست جدید بگیری'
-                  : 'درخواست جدید نمی‌آید؛ موارد در انتظار همچنان اینجاست'}
+                  ? 'آنلاین شو تا درخواست‌های جدید برسند.'
+                  : 'درخواست جدیدی نمی‌رسد؛ موارد در انتظار همین‌جا می‌مانند.'}
             </span>
           </div>
         </div>
