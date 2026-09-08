@@ -87,6 +87,9 @@ import {
 const CHAT_WIPE_HINT =
   'لطفاً کل این گفتگو را پاک کنید تا اثری از پیام‌ها (متن، عکس، ویس و …) نماند.';
 
+const SECURE_WIPE_HINT =
+  '🔒 چت امن پایان یافت — برای پاک‌کردن کامل گفتگو دکمه «حذف کل چت» را بزن.';
+
 /** Soft inbox refresh — backup even when WS is up (missed inbox events). */
 const FALLBACK_POLL_MS = 12_000;
 const OFFLINE_FALLBACK_POLL_MS = 8_000;
@@ -452,6 +455,8 @@ export function ChatPage() {
   const [draft, setDraft] = useState('');
   const [ended, setEnded] = useState(false);
   const [wiped, setWiped] = useState(false);
+  /** After secure chat ends, keep wipe CTA visible (don't force-exit to inbox). */
+  const [needsSecureWipe, setNeedsSecureWipe] = useState(false);
   const [messages, setMessages] = useState<ChatMsg[]>([]);
   const [sendError, setSendError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -489,6 +494,8 @@ export function ChatPage() {
   const bootstrappedRef = useRef<number | null>(null);
   const stickToBottomRef = useRef(true);
   const smoothScrollRef = useRef(false);
+  const secureRef = useRef(false);
+  secureRef.current = secure;
 
   const showList = desktop || !hasThread;
   const showThread = desktop || hasThread;
@@ -588,20 +595,31 @@ export function ChatPage() {
           });
         }
         if (patch.chatEnded) {
+          const secureEnded = Boolean(patch.wasSecure) || secureRef.current;
           setEnded(true);
+          if (secureEnded) setNeedsSecureWipe(true);
           setMessages((msgs) => [
             ...msgs,
-            systemMessage(['چت همبازی قطع شد.', '', CHAT_WIPE_HINT].join('\n')),
+            systemMessage(
+              [
+                'چت همبازی قطع شد.',
+                '',
+                secureEnded ? SECURE_WIPE_HINT : CHAT_WIPE_HINT,
+              ].join('\n'),
+            ),
           ]);
           softReloadConversations();
-          // همه تب‌ها/مرورگرها فوراً از محیط چت خارج شوند
-          navigate('/chats', { replace: true });
+          // Secure chats stay open so the wipe CTA is reachable; otherwise exit.
+          if (!secureEnded) {
+            navigate('/chats', { replace: true });
+          }
           return;
         }
         if (patch.messagesCleared) {
           setMessages([]);
           lastMsgIdRef.current = 0;
           setWiped(true);
+          setNeedsSecureWipe(false);
         }
         if (typeof patch.status === 'string' && patch.status !== match?.status) {
           void getPlaydateRequest(selectedId).then((req) => {
@@ -859,13 +877,27 @@ export function ChatPage() {
           return next;
         });
         if (req.chatEnded) {
-          setEnded(true);
-          setMessages((msgs) => [
-            ...msgs,
-            systemMessage(['چت همبازی قطع شد.', '', CHAT_WIPE_HINT].join('\n')),
-          ]);
-          softReloadConversations();
-          navigate('/chats', { replace: true });
+          setEnded((prev) => {
+            if (!prev) {
+              const secureEnded = secureRef.current;
+              if (secureEnded) setNeedsSecureWipe(true);
+              setMessages((msgs) => [
+                ...msgs,
+                systemMessage(
+                  [
+                    'چت همبازی قطع شد.',
+                    '',
+                    secureEnded ? SECURE_WIPE_HINT : CHAT_WIPE_HINT,
+                  ].join('\n'),
+                ),
+              ]);
+              softReloadConversations();
+              if (!secureEnded) {
+                navigate('/chats', { replace: true });
+              }
+            }
+            return true;
+          });
         }
       } catch {
         /* ignore — retried on interval / reconnect */
@@ -1342,11 +1374,19 @@ export function ChatPage() {
 
   async function endChat() {
     if (!myUserId || !match || ending || ended || match.status !== 'accepted') return;
+    const secureEnded = secureRef.current;
     setMenuOpen(false);
     setEnding(true);
     setActionError(null);
     setEnded(true);
     setInfoCard('none');
+    if (secureEnded) {
+      setNeedsSecureWipe(true);
+      setMessages((prev) => [
+        ...prev,
+        systemMessage(['چت همبازی پایان یافت.', '', SECURE_WIPE_HINT].join('\n')),
+      ]);
+    }
     try {
       await endPlaydateChat(match.id, myUserId);
       void reloadConversations();
@@ -1359,8 +1399,10 @@ export function ChatPage() {
       setActionError(err instanceof Error ? err.message : 'قطع چت روی سرور ناموفق بود');
     } finally {
       setEnding(false);
-      // خود کاربر هم فوراً از محیط چت خارج شود (همه تب‌های طرف مقابل با WS/poll)
-      navigate('/chats', { replace: true });
+      // Secure: stay for wipe CTA. Otherwise exit to inbox.
+      if (!secureEnded) {
+        navigate('/chats', { replace: true });
+      }
     }
   }
 
@@ -1373,6 +1415,9 @@ export function ChatPage() {
       setMessages([systemMessage('گفتگو به‌طور کامل پاک شد.')]);
       lastMsgIdRef.current = 0;
       setWiped(true);
+      setNeedsSecureWipe(false);
+      // After secure wipe, return to inbox
+      window.setTimeout(() => navigate('/chats', { replace: true }), 600);
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'پاک‌کردن گفتگو ناموفق بود');
     } finally {
@@ -2123,13 +2168,20 @@ export function ChatPage() {
                   </div>
                 </>
               ) : (
-                <div className="tg-ended-bar">
-                  <p>{wiped ? 'گفتگو کاملاً پاک شد.' : CHAT_WIPE_HINT}</p>
+                <div className={`tg-ended-bar${needsSecureWipe ? ' is-secure-wipe' : ''}`}>
+                  <p>
+                    {wiped
+                      ? 'گفتگو کاملاً پاک شد.'
+                      : needsSecureWipe
+                        ? SECURE_WIPE_HINT
+                        : CHAT_WIPE_HINT}
+                  </p>
                   <button
                     type="button"
                     className="tg-wipe-btn"
                     onClick={() => void wipeConversation()}
                     disabled={wiping || wiped}
+                    data-testid="playmate-wipe-chat"
                   >
                     {wiped ? (
                       <>
@@ -2138,7 +2190,7 @@ export function ChatPage() {
                     ) : wiping ? (
                       'در حال پاک‌کردن…'
                     ) : (
-                      'پاک کردن کل گفتگو'
+                      'حذف کل چت'
                     )}
                   </button>
                   <Link to="/chats" className="tg-chat-link-btn">

@@ -554,6 +554,7 @@ playdatesRouter.post('/:id/end-chat', async (req, res) => {
     return;
   }
 
+  const wasSecure = Boolean(gate.playdate.chatSecure);
   purgePlaydateUploads(playdateId);
   const updated = dbService.endPlaydateChat(playdateId);
   const bothTelegramIds = peerTelegramIds(gate.playdate);
@@ -562,17 +563,25 @@ playdatesRouter.post('/:id/end-chat', async (req, res) => {
     playdateId,
     telegramIds: bothTelegramIds,
   });
-  for (const telegramId of peerTelegramIds(gate.playdate, userId)) {
-    void notifyPlaydateChatEndedTelegram({ toTelegramId: telegramId });
+  // Secure chat: wipe CTA for BOTH participants. Otherwise notify peer only.
+  const notifyIds = wasSecure
+    ? bothTelegramIds
+    : peerTelegramIds(gate.playdate, userId);
+  for (const telegramId of notifyIds) {
+    void notifyPlaydateChatEndedTelegram({
+      toTelegramId: telegramId,
+      wasSecure,
+      playdateId,
+    });
   }
   notifyPlaymateThread(
     playdateId,
     [gate.playdate.fromUserId, gate.playdate.toUserId].filter(
       (id): id is number => Number.isFinite(id as number) && (id as number) > 0,
     ),
-    { chatEnded: true, chatSecure: false },
+    { chatEnded: true, chatSecure: false, wasSecure },
   );
-  res.json({ ok: true, playdate: enrichPlaydate(updated) });
+  res.json({ ok: true, playdate: enrichPlaydate(updated), wasSecure });
 });
 
 playdatesRouter.patch('/:id/chat-secure', async (req, res) => {

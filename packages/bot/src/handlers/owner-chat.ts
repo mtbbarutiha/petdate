@@ -16,6 +16,7 @@ import {
   postPlaydateChatTgRefs,
   endPlaydateChatViaApi,
   setPlaydateChatSecureViaApi,
+  clearPlaydateChatMessagesViaApi,
   type ActiveOwnerChat,
 } from '../api-client';
 import { getSession, upsertSession } from '../session';
@@ -459,23 +460,21 @@ export async function handleOwnerChatEnd(ctx: Context): Promise<boolean> {
     await endPlaydateChatViaApi(playdateId, user.id);
   }
 
-  const endSelf = [
-    'چت همبازی پایان یافت.',
-    '',
-    CHAT_WIPE_HINT,
-    wasSecure ? 'چت امن فعال بود — حتماً گفتگو را پاک کن.' : null,
-  ]
-    .filter(Boolean)
-    .join('\n');
+  // Menu restore via ReplyKeyboard — never attach InlineKeyboard here (sticky menu).
+  // Secure wipe CTA is a separate API message with inline button.
+  const endSelf = wasSecure
+    ? ['چت همبازی پایان یافت.', '', '🔒 چت امن بود — پیام حذف کل چت را ببین و دکمه را بزن.'].join(
+        '\n',
+      )
+    : ['چت همبازی پایان یافت.', '', CHAT_WIPE_HINT].join('\n');
 
-  const endPeer = [
-    '🔌 چت همبازی قطع شد.',
-    '',
-    CHAT_WIPE_HINT,
-    wasSecure ? 'چت امن فعال بود — حتماً گفتگو را پاک کن.' : null,
-  ]
-    .filter(Boolean)
-    .join('\n');
+  const endPeer = wasSecure
+    ? [
+        '🔌 چت همبازی قطع شد.',
+        '',
+        '🔒 چت امن بود — پیام حذف کل چت را ببین و دکمه را بزن.',
+      ].join('\n')
+    : ['🔌 چت همبازی قطع شد.', '', CHAT_WIPE_HINT].join('\n');
 
   if (peerId) {
     await upsertSession(peerId, clearOwnerChatPatch());
@@ -499,6 +498,44 @@ export async function handleOwnerChatEnd(ctx: Context): Promise<boolean> {
     reply_markup: menuKeyboardFor(ctx, user),
   });
   return true;
+}
+
+/** Inline «حذف کل چت» after secure playmate chat ended. */
+export async function handleSecureWipePlaydateCallback(
+  ctx: Context,
+  playdateId: number
+): Promise<void> {
+  const from = ctx.from;
+  if (!from) {
+    await ctx.answerCallbackQuery({ text: 'شناسه نامعتبر', show_alert: true }).catch(() => undefined);
+    return;
+  }
+  const user = await getCtxUser(ctx);
+  if (!user?.id) {
+    await ctx.answerCallbackQuery({ text: 'اول /start بزن', show_alert: true }).catch(() => undefined);
+    return;
+  }
+  if (!Number.isFinite(playdateId) || playdateId <= 0) {
+    await ctx.answerCallbackQuery({ text: 'چت نامعتبر', show_alert: true }).catch(() => undefined);
+    return;
+  }
+
+  try {
+    await clearPlaydateChatMessagesViaApi(playdateId, user.id);
+    await ctx.answerCallbackQuery({ text: 'گفتگو پاک شد ✅' }).catch(() => undefined);
+    try {
+      await ctx.editMessageText(
+        '✅ کل گفتگوی همبازی پاک شد.\nپیام‌های ربات حذف شدند. اگر چیزی از پیام‌های خودت ماند، دستی پاکش کن.',
+      );
+    } catch {
+      await ctx.reply('✅ کل گفتگوی همبازی پاک شد.').catch(() => undefined);
+    }
+  } catch (err) {
+    console.warn('secure wipe playdate failed:', err);
+    await ctx
+      .answerCallbackQuery({ text: 'پاک‌کردن ناموفق بود', show_alert: true })
+      .catch(() => undefined);
+  }
 }
 
 async function handleOwnerChatAction(ctx: Context, text: string): Promise<boolean> {

@@ -564,6 +564,16 @@ export async function endPlaydateChatViaApi(playdateId: number, userId: number):
   }
 }
 
+/** Wipe playmate chat messages (DB + bot-delivered Telegram copies). */
+export async function clearPlaydateChatMessagesViaApi(
+  playdateId: number,
+  userId: number
+): Promise<{ ok: boolean; cleared?: number; telegramDeleted?: number }> {
+  return request(`/api/playdate-requests/${playdateId}/messages?userId=${userId}`, {
+    method: 'DELETE',
+  });
+}
+
 export async function setPlaydateChatSecureViaApi(
   playdateId: number,
   userId: number,
@@ -1260,6 +1270,16 @@ export async function endVetConsultChatViaApi(consultId: number, userId: number)
   } catch (err) {
     console.error('Failed to end vet consult chat via API:', err);
   }
+}
+
+/** Wipe vet consult chat messages (DB). */
+export async function clearVetConsultChatMessagesViaApi(
+  consultId: number,
+  userId: number
+): Promise<{ ok: boolean; cleared?: number }> {
+  return request(`/api/consultations/${consultId}/messages?userId=${userId}`, {
+    method: 'DELETE',
+  });
 }
 
 export type CreatePrescriptionResponse = {
