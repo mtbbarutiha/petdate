@@ -1,51 +1,254 @@
-import { Link, useLocation } from 'react-router-dom';
+import { useCallback, useEffect, useId, useRef, useState, type MouseEvent, type TouchEvent } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Check, UserRound } from 'lucide-react';
+import {
+  USER_ROLE_LABELS,
+  dashboardPathForRole,
+  normalizeRoles,
+  primaryRole,
+  type UserRole,
+} from '@petdate/shared';
 import { useAuthStore } from '../hooks/useAuthStore';
+import { resolvePublicMediaUrl } from '../lib/api';
 import { loginPath } from '../lib/authRedirect';
-import { SITE_NAV_GUEST, siteNavMobileForUser } from '../lib/siteNav';
+import { SITE_NAV_GUEST, siteNavMobileForUser, type SiteNavItem } from '../lib/siteNav';
+
+const LONG_PRESS_MS = 480;
 
 /**
- * Site-wide mobile bottom dock — items follow the active primary role.
- * Guest: شاپ / هم بازی / پت‌های من / ورود
- * Owner: شاپ / هم بازی / پت‌های من / کیف پول / پروفایل
- * Vet: شاپ / پنل پزشک / گفتگو / کیف پول / پروفایل
+ * Instagram-style mobile bottom dock.
+ * Profile tab shows the user photo; long-press opens role switcher.
  */
 export function LandingMobileDock() {
   const { pathname } = useLocation();
-  const { isLoggedIn, user } = useAuthStore();
+  const navigate = useNavigate();
+  const { isLoggedIn, user, setPrimaryRole } = useAuthStore();
+  const [roleOpen, setRoleOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [toast, setToast] = useState<string | null>(null);
+  const panelId = useId();
+  const longPressTimer = useRef<number | null>(null);
+  const longPressFired = useRef(false);
+  const sheetRef = useRef<HTMLDivElement>(null);
 
-  // Hide during auth / onboarding so primary CTAs (esp. «ثبت نقش‌ها») are not
-  // covered by the fixed dock (z-index 60 vs role bar previously at 40).
-  if (
+  const items = isLoggedIn ? siteNavMobileForUser(user) : SITE_NAV_GUEST;
+  const roles = normalizeRoles(user?.roles, user?.role);
+  const activeRole = primaryRole(roles, user?.role);
+  const photo = resolvePublicMediaUrl(user?.avatarUrl);
+  const initial = (user?.name?.trim()?.[0] || 'پ').toUpperCase();
+
+  const hideDock =
     pathname.startsWith('/admin') ||
     pathname.startsWith('/auth') ||
     pathname.startsWith('/onboarding') ||
     pathname === '/chats' ||
     pathname.startsWith('/chats/') ||
-    pathname.startsWith('/vet-chats')
-  ) {
-    return null;
-  }
+    pathname.startsWith('/vet-chats');
 
-  const items = isLoggedIn ? siteNavMobileForUser(user) : SITE_NAV_GUEST;
+  useEffect(() => {
+    if (!toast) return;
+    const t = window.setTimeout(() => setToast(null), 2200);
+    return () => window.clearTimeout(t);
+  }, [toast]);
+
+  useEffect(() => {
+    if (!roleOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setRoleOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [roleOpen]);
+
+  const clearLongPress = useCallback(() => {
+    if (longPressTimer.current != null) {
+      window.clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  }, []);
+
+  const startLongPress = useCallback(() => {
+    if (!isLoggedIn || roles.length === 0) return;
+    longPressFired.current = false;
+    clearLongPress();
+    longPressTimer.current = window.setTimeout(() => {
+      longPressFired.current = true;
+      setRoleOpen(true);
+      if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+        try {
+          navigator.vibrate?.(12);
+        } catch {
+          /* ignore */
+        }
+      }
+    }, LONG_PRESS_MS);
+  }, [clearLongPress, isLoggedIn, roles.length]);
+
+  const goProfile = () => {
+    if (longPressFired.current) {
+      longPressFired.current = false;
+      return;
+    }
+    navigate(isLoggedIn ? '/profile' : loginPath('/profile'));
+  };
+
+  const handleSwitchRole = async (role: UserRole) => {
+    if (busy || !user) return;
+    if (activeRole === role) {
+      setRoleOpen(false);
+      setToast(`نقش فعال: ${USER_ROLE_LABELS[role]}`);
+      navigate(dashboardPathForRole(role));
+      return;
+    }
+    setBusy(true);
+    try {
+      const updated = await setPrimaryRole(role);
+      const next = primaryRole(updated.roles, updated.role) ?? role;
+      setRoleOpen(false);
+      setToast(`نقش فعال: ${USER_ROLE_LABELS[next]}`);
+      navigate(dashboardPathForRole(next));
+    } catch (err) {
+      setToast(err instanceof Error ? err.message : 'تعویض نقش ناموفق بود');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (hideDock) return null;
+
+  const renderIcon = (item: SiteNavItem, active: boolean) => {
+    if (item.key === 'profile' && isLoggedIn) {
+      return photo ? (
+        <img
+          src={photo}
+          alt=""
+          className={`pepito-landing-mobile-dock-avatar${active ? ' is-active' : ''}`}
+          draggable={false}
+        />
+      ) : (
+        <span
+          className={`pepito-landing-mobile-dock-avatar pepito-landing-mobile-dock-avatar--fallback${active ? ' is-active' : ''}`}
+          aria-hidden
+        >
+          {initial || <UserRound size={16} strokeWidth={2.25} />}
+        </span>
+      );
+    }
+    return <item.icon size={24} strokeWidth={active ? 2.35 : 1.85} aria-hidden />;
+  };
+
+  const onProfilePointerDown = (e: MouseEvent | TouchEvent) => {
+    if ('button' in e && e.button !== 0) return;
+    startLongPress();
+  };
 
   return (
-    <nav className="pepito-landing-mobile-dock" aria-label="میانبرهای موبایل">
-      {items.map((item) => {
-        const href = item.gate && !isLoggedIn ? loginPath(item.to) : item.to;
-        const active = item.match?.(pathname) ?? pathname === item.to;
-        return (
-          <Link
-            key={item.key}
-            to={href}
-            className={`pepito-landing-mobile-dock-link${active ? ' is-active' : ''}`}
-            aria-label={item.label}
-            aria-current={active ? 'page' : undefined}
+    <>
+      <nav className="pepito-landing-mobile-dock" aria-label="میانبرهای موبایل">
+        {items.map((item) => {
+          const href = item.gate && !isLoggedIn ? loginPath(item.to) : item.to;
+          const active = item.match?.(pathname) ?? pathname === item.to;
+          const isProfile = item.key === 'profile';
+
+          if (isProfile) {
+            return (
+              <button
+                key={item.key}
+                type="button"
+                className={`pepito-landing-mobile-dock-link pepito-landing-mobile-dock-link--profile${active || roleOpen ? ' is-active' : ''}`}
+                aria-label={`${item.label} — نگه‌داشتن برای تغییر نقش`}
+                aria-haspopup="dialog"
+                aria-expanded={roleOpen}
+                aria-controls={roleOpen ? panelId : undefined}
+                aria-current={active ? 'page' : undefined}
+                onClick={goProfile}
+                onContextMenu={(e) => e.preventDefault()}
+                onTouchStart={onProfilePointerDown}
+                onTouchEnd={clearLongPress}
+                onTouchCancel={clearLongPress}
+                onTouchMove={clearLongPress}
+                onMouseDown={onProfilePointerDown}
+                onMouseUp={clearLongPress}
+                onMouseLeave={clearLongPress}
+              >
+                {renderIcon(item, active || roleOpen)}
+              </button>
+            );
+          }
+
+          return (
+            <Link
+              key={item.key}
+              to={href}
+              className={`pepito-landing-mobile-dock-link${active ? ' is-active' : ''}`}
+              aria-label={item.label}
+              aria-current={active ? 'page' : undefined}
+            >
+              {renderIcon(item, active)}
+            </Link>
+          );
+        })}
+      </nav>
+
+      {roleOpen ? (
+        <div className="pepito-dock-role-sheet-root" role="presentation">
+          <button
+            type="button"
+            className="pepito-dock-role-sheet-backdrop"
+            aria-label="بستن"
+            onClick={() => setRoleOpen(false)}
+          />
+          <div
+            ref={sheetRef}
+            id={panelId}
+            className="pepito-dock-role-sheet"
+            role="dialog"
+            aria-label="تغییر نقش"
           >
-            <item.icon size={22} strokeWidth={2} aria-hidden />
-            <span>{item.label}</span>
-          </Link>
-        );
-      })}
-    </nav>
+            <div className="pepito-dock-role-sheet-handle" aria-hidden />
+            <p className="pepito-dock-role-sheet-title">نقش‌های من</p>
+            <p className="pepito-dock-role-sheet-hint">نگه‌داشتن روی عکس پروفایل این منو را باز می‌کند</p>
+            <ul className="pepito-dock-role-sheet-list">
+              {roles.map((role) => {
+                const isActive = role === activeRole;
+                return (
+                  <li key={role}>
+                    <button
+                      type="button"
+                      className={`pepito-dock-role-sheet-item${isActive ? ' is-active' : ''}`}
+                      disabled={busy}
+                      onClick={() => void handleSwitchRole(role)}
+                    >
+                      <span>{USER_ROLE_LABELS[role]}</span>
+                      {isActive ? (
+                        <span className="pepito-dock-role-sheet-badge">
+                          <Check size={14} strokeWidth={2.5} aria-hidden />
+                          فعال
+                        </span>
+                      ) : (
+                        <span className="pepito-dock-role-sheet-switch">انتخاب</span>
+                      )}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+            <Link
+              to="/profile"
+              className="pepito-dock-role-sheet-profile"
+              onClick={() => setRoleOpen(false)}
+            >
+              رفتن به پروفایل
+            </Link>
+          </div>
+        </div>
+      ) : null}
+
+      {toast ? (
+        <div className="pepito-dock-role-toast" role="status">
+          {toast}
+        </div>
+      ) : null}
+    </>
   );
 }
