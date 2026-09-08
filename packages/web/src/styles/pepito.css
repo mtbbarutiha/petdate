@@ -9167,73 +9167,248 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
     letter-spacing: 0.02em;
   }
 
-  /* Instagram-like frosted glass bottom tab bar */
+  /* Instagram-like floating dark pill dock */
   .pepito-landing-mobile-dock {
     display: flex;
-    align-items: stretch;
+    align-items: center;
     justify-content: space-between;
     position: fixed;
-    inset-inline: 0;
-    bottom: 0;
+    inset-inline: 12px;
+    bottom: calc(10px + env(safe-area-inset-bottom, 0px));
     z-index: 60;
-    gap: 0;
-    padding: 0.35rem 0.2rem calc(0.35rem + env(safe-area-inset-bottom, 0px));
-    background: rgba(255, 255, 255, 0.72);
-    border: 0;
-    border-top: 0.5px solid rgba(25, 6, 61, 0.12);
-    border-radius: 0;
-    box-shadow: none;
-    backdrop-filter: saturate(180%) blur(20px);
-    -webkit-backdrop-filter: saturate(180%) blur(20px);
+    gap: 0.15rem;
+    height: 58px;
+    padding: 0.35rem 0.55rem;
+    background: rgba(18, 18, 18, 0.92);
+    border: 0.5px solid rgba(255, 255, 255, 0.08);
+    border-radius: 999px;
+    box-shadow:
+      0 10px 28px rgba(0, 0, 0, 0.35),
+      0 1px 0 rgba(255, 255, 255, 0.06) inset;
+    backdrop-filter: saturate(160%) blur(18px);
+    -webkit-backdrop-filter: saturate(160%) blur(18px);
   }
 
   @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     .pepito-landing-mobile-dock {
-      background: rgba(255, 255, 255, 0.92);
+      background: rgba(22, 22, 22, 0.98);
     }
   }
 
   @media (prefers-reduced-transparency: reduce) {
     .pepito-landing-mobile-dock {
-      background: rgba(255, 255, 255, 0.96);
+      background: #161616;
       backdrop-filter: none;
       -webkit-backdrop-filter: none;
     }
   }
 
   .pepito-landing-mobile-dock-link {
-    display: flex;
+    display: inline-flex;
     flex: 1 1 0;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 0.12rem;
     min-width: 0;
     min-height: 44px;
-    padding: 0.28rem 0.04rem;
-    color: rgba(25, 6, 61, 0.55);
+    height: 44px;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    border-radius: 14px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.92);
     text-decoration: none;
-    font-size: 0.54rem;
-    font-weight: 700;
-    line-height: 1.15;
-    text-align: center;
+    cursor: pointer;
     -webkit-tap-highlight-color: transparent;
+    appearance: none;
+    font: inherit;
   }
 
-  .pepito-landing-mobile-dock-link span {
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    max-width: 100%;
+  .pepito-landing-mobile-dock-link svg {
+    display: block;
+    flex-shrink: 0;
   }
 
   .pepito-landing-mobile-dock-link.is-active {
-    color: var(--pepito-base);
+    background: rgba(255, 255, 255, 0.14);
+    color: #fff;
   }
 
-  .pepito-landing-mobile-dock-link.is-active svg {
-    stroke-width: 2.35;
+  .pepito-landing-mobile-dock-link--profile {
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: manipulation;
+  }
+
+  .pepito-landing-mobile-dock-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    object-fit: cover;
+    display: block;
+    border: 1.5px solid transparent;
+    background: rgba(255, 255, 255, 0.12);
+  }
+
+  .pepito-landing-mobile-dock-avatar.is-active,
+  .pepito-landing-mobile-dock-link--profile.is-active .pepito-landing-mobile-dock-avatar {
+    border-color: #fff;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.35);
+  }
+
+  .pepito-landing-mobile-dock-avatar--fallback {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: #fff;
+    letter-spacing: 0;
+  }
+
+  .pepito-dock-role-sheet-root {
+    position: fixed;
+    inset: 0;
+    z-index: 70;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    pointer-events: none;
+  }
+
+  .pepito-dock-role-sheet-backdrop {
+    position: absolute;
+    inset: 0;
+    border: 0;
+    margin: 0;
+    padding: 0;
+    background: rgba(0, 0, 0, 0.45);
+    pointer-events: auto;
+    cursor: pointer;
+  }
+
+  .pepito-dock-role-sheet {
+    position: relative;
+    z-index: 1;
+    width: min(100%, 420px);
+    margin: 0 10px calc(78px + env(safe-area-inset-bottom, 0px));
+    padding: 0.55rem 0.85rem 0.95rem;
+    border-radius: 22px;
+    background: #1c1c1e;
+    color: #fff;
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.4);
+    pointer-events: auto;
+    animation: pepito-dock-sheet-up 0.22s ease both;
+  }
+
+  @keyframes pepito-dock-sheet-up {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .pepito-dock-role-sheet-handle {
+    width: 36px;
+    height: 4px;
+    margin: 0.15rem auto 0.75rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.28);
+  }
+
+  .pepito-dock-role-sheet-title {
+    margin: 0 0 0.2rem;
+    text-align: center;
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 1.05rem;
+  }
+
+  .pepito-dock-role-sheet-hint {
+    margin: 0 0 0.85rem;
+    text-align: center;
+    font-size: 0.72rem;
+    color: rgba(255, 255, 255, 0.55);
+    line-height: 1.4;
+  }
+
+  .pepito-dock-role-sheet-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .pepito-dock-role-sheet-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.78rem 0.85rem;
+    border: 0;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    font: inherit;
+    font-weight: 700;
+    text-align: start;
+    cursor: pointer;
+  }
+
+  .pepito-dock-role-sheet-item.is-active {
+    background: rgba(255, 255, 255, 0.16);
+  }
+
+  .pepito-dock-role-sheet-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.72rem;
+    font-weight: 800;
+    color: #9ef0b0;
+  }
+
+  .pepito-dock-role-sheet-switch {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.55);
+  }
+
+  .pepito-dock-role-sheet-profile {
+    display: block;
+    margin-top: 0.75rem;
+    padding: 0.7rem;
+    text-align: center;
+    text-decoration: none;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-weight: 800;
+    font-size: 0.88rem;
+  }
+
+  .pepito-dock-role-toast {
+    position: fixed;
+    left: 50%;
+    bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+    z-index: 80;
+    transform: translateX(-50%);
+    max-width: min(90vw, 320px);
+    padding: 0.55rem 0.9rem;
+    border-radius: 999px;
+    background: rgba(28, 28, 30, 0.94);
+    color: #fff;
+    font-size: 0.82rem;
+    font-weight: 700;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+    pointer-events: none;
   }
 
   .pepito-landing--with-dock .pepito-footer {
