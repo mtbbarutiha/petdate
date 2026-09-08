@@ -36,6 +36,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Voice chat uploads convert webm/m4a → OGG/Opus (Telegram sendVoice).
+      - name: Install ffmpeg (voice → ogg)
+        run: sudo apt-get update -qq && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq ffmpeg
+
       - name: Build shared → api → bot → web
         run: npm run build:all
 

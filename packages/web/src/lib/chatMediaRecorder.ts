@@ -3,12 +3,13 @@
 export const MAX_VOICE_SECONDS = 5 * 60;
 export const MAX_VIDEO_SECONDS = 60;
 
+/** Prefer OGG/Opus when the browser can record it (Firefox); else webm/mp4 → API converts. */
 const VOICE_MIME_CANDIDATES = [
+  'audio/ogg;codecs=opus',
+  'audio/ogg',
   'audio/webm;codecs=opus',
   'audio/webm',
   'audio/mp4',
-  'audio/ogg;codecs=opus',
-  'audio/ogg',
 ];
 
 const VIDEO_MIME_CANDIDATES = [
@@ -82,17 +83,23 @@ export function mediaPermissionErrorMessage(err: unknown, kind: 'audio' | 'video
     : 'شروع ضبط ویدیو ناموفق بود. دوباره امتحان کن.';
 }
 
+export function isOggOpusMime(mime: string | undefined): boolean {
+  const m = (mime || '').toLowerCase();
+  return m.includes('audio/ogg') || m.includes('audio/opus') || /(^|;)opus/.test(m);
+}
+
 export function buildCaptureFile(
   blob: Blob,
   kind: 'voice' | 'video',
   mimeHint?: string,
 ): File {
-  const mime = (blob.type || mimeHint || (kind === 'voice' ? 'audio/webm' : 'video/webm')).split(
-    ';',
-  )[0];
+  const raw =
+    blob.type || mimeHint || (kind === 'voice' ? 'audio/webm' : 'video/webm');
+  const mime = raw.split(';')[0].trim() || (kind === 'voice' ? 'audio/webm' : 'video/webm');
   const ext = extensionForMime(mime, kind === 'voice' ? 'audio' : 'video');
   const prefix = kind === 'voice' ? 'voice' : 'video';
   const name = `${prefix}-${Date.now()}.${ext}`;
+  // Keep a clean type (no codecs=) so upload + Telegram sniffing see audio/ogg vs audio/webm.
   return new File([blob], name, { type: mime, lastModified: Date.now() });
 }
 

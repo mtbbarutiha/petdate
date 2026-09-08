@@ -195,8 +195,7 @@ export async function notifyPlaydateChatTelegram(opts: {
         contentType: contentType || 'video/mp4',
       });
     } else if (kind === 'voice' || kind === 'audio') {
-      // Telegram sendVoice requires OGG/OPUS. Browser MediaRecorder usually
-      // produces webm/mp4 — use sendAudio so peers still get a playable bubble.
+      // sendVoice needs OGG/Opus (API normalizes voice uploads). Non-OGG → sendAudio.
       const isOggOpus =
         /audio\/(ogg|opus)/i.test(contentType) || /\.(ogg|opus)$/i.test(filename);
       const useVoice = kind === 'voice' && isOggOpus;
@@ -421,8 +420,7 @@ export async function notifyVetChatTelegram(opts: {
         contentType: contentType || 'video/mp4',
       });
     } else if (kind === 'voice' || kind === 'audio') {
-      // Telegram sendVoice requires OGG/OPUS. Browser MediaRecorder usually
-      // produces webm/mp4 — use sendAudio so peers still get a playable bubble.
+      // sendVoice needs OGG/Opus (API normalizes voice uploads). Non-OGG → sendAudio.
       const isOggOpus =
         /audio\/(ogg|opus)/i.test(contentType) || /\.(ogg|opus)$/i.test(filename);
       const useVoice = kind === 'voice' && isOggOpus;

@@ -90,6 +90,8 @@ jobs:
           node-version: '22'
           cache: npm
       - run: npm ci
+      - name: Install ffmpeg (voice → ogg)
+        run: sudo apt-get update -qq && sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq ffmpeg
       - run: npm run build:all
       - run: bash ./scripts/ci-selftest.sh
       - name: Predeploy check
