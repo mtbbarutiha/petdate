@@ -1699,7 +1699,7 @@ function mapPet(row: Record<string, unknown>): PetProfile {
     ownerAvatarUrl: (row.owner_avatar_url as string | undefined) ?? undefined,
     ownerLastSeenAt:
       (row.owner_location_updated_at as string | undefined) ||
-      (row.owner_updated_at as string | undefined) ||
+      (row.owner_last_seen_at as string | undefined) ||
       undefined,
     distanceKm,
     createdAt: row.created_at as string,
@@ -3431,7 +3431,7 @@ export const dbService = {
              users.lat AS owner_lat,
              users.lng AS owner_lng,
              users.location_updated_at AS owner_location_updated_at,
-             users.updated_at AS owner_updated_at,
+             users.last_seen_at AS owner_last_seen_at,
              CASE WHEN users.verification_status = 'verified' THEN 1 ELSE 0 END AS owner_verified
       FROM pets
       INNER JOIN users ON users.id = pets.owner_id
@@ -3489,7 +3489,7 @@ export const dbService = {
                 users.name AS owner_name,
                 users.avatar_url AS owner_avatar_url,
                 users.location_updated_at AS owner_location_updated_at,
-                users.updated_at AS owner_updated_at,
+                users.last_seen_at AS owner_last_seen_at,
                 CASE WHEN users.verification_status = 'verified' THEN 1 ELSE 0 END AS owner_verified
          FROM pets
          LEFT JOIN users ON users.id = pets.owner_id
