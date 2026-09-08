@@ -39,7 +39,8 @@ export const BRAND = {
   displayNameFa: 'پت‌دیت',
   taglineEn: 'PLAY • MEET • FRIENDS',
   taglineFa: 'همبازی برای پت‌ات',
-  shortDescriptionFa: '🐾 پت‌دیت — همبازی برای پت | مینی‌اپ در منو',
+  /** Profile short bio. Main Mini App (Open App on profile) is BotFather-only — see docs/MAIN_MINI_APP.md */
+  shortDescriptionFa: '🐾 پت‌دیت — همبازی برای پت | مینی‌اپ: t.me/Petdatebot/Petdate',
   descriptionFa:
     '🐾 پت‌دیت — پیدا کردن همبازی برای پت، مشاوره دامپزشک و خدمات پت\nPLAY • MEET • FRIENDS\n\nمینی‌اپ: https://t.me/Petdatebot/Petdate',
   /** Channel about / description (Telegram ~255 chars). */

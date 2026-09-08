@@ -13,14 +13,21 @@ export function logoExists(filePath: string): boolean {
   return fs.existsSync(filePath);
 }
 
-/** HTTPS origin for MenuButtonWebApp (not the t.me short link). */
+/**
+ * HTTPS origin for MenuButtonWebApp (compose-bar button).
+ * This is NOT the profile "Open App" Main Mini App — that is BotFather-only
+ * (`has_main_web_app` in getMe). See docs/MAIN_MINI_APP.md.
+ */
 function menuWebAppUrl(): string {
   const fromEnv = effectiveWebUrl().replace(/\/$/, '');
   if (isTelegramInlineUrl(fromEnv)) return `${fromEnv}/`;
   return `${SITE.origin}/`;
 }
 
-/** Set bot descriptions, commands, and Mini App menu button on boot. */
+/**
+ * Set bot descriptions, commands, and chat Menu Button on boot.
+ * Does not (and cannot) enable Main Mini App / profile Open App via Bot API.
+ */
 export async function applyBotBranding(api: Api): Promise<void> {
   // نام را هر بار ست نکن — محدودیت 429 تلگرام
   try {
@@ -40,6 +47,7 @@ export async function applyBotBranding(api: Api): Promise<void> {
       { command: 'profile', description: 'پروفایل' },
     ]);
     const webAppUrl = menuWebAppUrl();
+    // Chat compose-bar menu only — not profile Open App (Main Mini App).
     await api.setChatMenuButton({
       menu_button: {
         type: 'web_app',
@@ -47,7 +55,10 @@ export async function applyBotBranding(api: Api): Promise<void> {
         web_app: { url: webAppUrl },
       },
     });
-    console.log(`   Branding: commands + Mini App menu button → ${webAppUrl}`);
+    console.log(`   Branding: commands + chat Menu Button → ${webAppUrl}`);
+    console.log(
+      '   Branding: Main Mini App (profile Open App) is BotFather-only — docs/MAIN_MINI_APP.md'
+    );
   } catch (err) {
     console.warn('   Branding: commands/menu skipped —', (err as Error).message);
   }
