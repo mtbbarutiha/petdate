@@ -22,6 +22,7 @@ import {
   saveChatUpload,
 } from '../services/chat-upload-store';
 import { startOwnerChatFromApi } from '../services/telegram-owner-chat-start';
+import { clearBotOwnerChatSessions } from '../services/bot-owner-chat-session';
 import {
   notifyInbox,
   notifyPlaymateMessage,
@@ -533,12 +534,22 @@ playdatesRouter.post('/:id/end-chat', async (req, res) => {
 
   purgePlaydateUploads(playdateId);
   const updated = dbService.endPlaydateChat(playdateId);
+  const bothTelegramIds = peerTelegramIds(gate.playdate);
+  // Clear sticky bot owner_chat for BOTH sides — stops mobile/desktop keyboard interference
+  void clearBotOwnerChatSessions({
+    playdateId,
+    telegramIds: bothTelegramIds,
+  });
   for (const telegramId of peerTelegramIds(gate.playdate, userId)) {
     void notifyPlaydateChatEndedTelegram({ toTelegramId: telegramId });
   }
-    notifyPlaymateThread(playdateId, [gate.playdate.fromUserId, gate.playdate.toUserId].filter(
-    (id): id is number => Number.isFinite(id as number) && (id as number) > 0,
-  ), { chatEnded: true, chatSecure: false });
+  notifyPlaymateThread(
+    playdateId,
+    [gate.playdate.fromUserId, gate.playdate.toUserId].filter(
+      (id): id is number => Number.isFinite(id as number) && (id as number) > 0,
+    ),
+    { chatEnded: true, chatSecure: false },
+  );
   res.json({ ok: true, playdate: enrichPlaydate(updated) });
 });
 

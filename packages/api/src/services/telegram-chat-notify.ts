@@ -72,7 +72,7 @@ export async function notifyPlaydateChatEndedTelegram(opts: {
     await telegramCall('sendMessage', {
       chat_id: opts.toTelegramId,
       text:
-        '🔌 چت همبازی از وب قطع شد.\n🗑 لطفاً کل این گفتگو را از تلگرام پاک کنید تا اثری نماند.',
+        '🔌 چت همبازی قطع شد.\nمنوی اصلی دوباره فعال است — /start یا «📋 منو» را بزن.\n🗑 در صورت نیاز گفتگو را از تلگرام پاک کن.',
     })
   ).ok;
 }
