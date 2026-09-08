@@ -2,6 +2,8 @@ import type { Context } from 'grammy';
 import { InlineKeyboard } from 'grammy';
 import type { User } from '@petdate/shared';
 import {
+  inviteTelegramLink,
+  inviteTelegramShareUrl,
   isPendingRequestExpired,
   VET_CONSULT_REQUEST_TTL_MS,
   vetVisitFeeCoins,
@@ -14,7 +16,7 @@ import {
   quickVetConnect,
   updateVetConsultationStatus,
 } from '../api-client';
-import { QUICK_VET_COST, formatNum } from '../economy';
+import { QUICK_VET_COST, REFERRAL_BONUS_COINS, formatNum } from '../economy';
 import { myPetsActionKeyboard } from '../keyboards';
 import { effectiveWebUrl, isTelegramInlineUrl } from '../urls';
 import { getCtxUser, menuKeyboardFor, pushMainMenuKeyboard } from './helpers';
@@ -146,27 +148,24 @@ export async function handleChatsEntry(ctx: Context): Promise<void> {
 
 export async function handleInviteFriends(ctx: Context): Promise<void> {
   const user = await getCtxUser(ctx);
-  const botUsername = process.env.TELEGRAM_BOT_USERNAME ?? 'Petdatebot';
-  const link = `https://t.me/${botUsername}?start=ref_${user?.id ?? '0'}`;
+  const link = inviteTelegramLink(user?.id ?? 0);
+  const rewardFa = formatNum(REFERRAL_BONUS_COINS);
 
   await ctx.reply(
     [
-      '🎁 **معرفی به دوستان**',
+      '🎁 **دعوت دوستان**',
       '',
       'دوستات رو به petdate دعوت کن و سکه بگیر!',
       '',
       `لینک دعوت تو:`,
       link,
       '',
-      'به ازای هر دوست که ثبت‌نام کنه، **۵۰ سکه** هدیه می‌گیری.',
+      `به ازای هر دوست که ثبت‌نام کنه، **${rewardFa} سکه** هدیه می‌گیری.`,
     ].join('\n'),
     {
       parse_mode: 'Markdown',
       reply_markup: new InlineKeyboard()
-        .url(
-          '📤 اشتراک‌گذاری لینک',
-          `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(`بیا تو petdate همبازی برای پتت پیدا کن! 🐾\nPLAY • MEET • FRIENDS`)}`
-        )
+        .url('📤 اشتراک‌گذاری لینک', inviteTelegramShareUrl(user?.id ?? 0))
         .success(),
     }
   );

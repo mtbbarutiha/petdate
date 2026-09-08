@@ -11,6 +11,7 @@ import {
   type WalletBalances,
   type WalletCurrency,
 } from '@petdate/shared';
+import { InviteFriendsCard } from '../components/InviteFriendsCard';
 import { useAuthStore } from '../hooks/useAuthStore';
 import {
   fetchWallet,
@@ -396,6 +397,8 @@ export function WalletPage() {
       </section>
 
       <p className="pepito-wallet-soon">به‌زودی واریز مستقیم از وب</p>
+
+      <InviteFriendsCard variant="card" className="pepito-wallet-invite" />
 
       <div className="pepito-wallet-actions">
         <Link to="/wallet/earn" className="pepito-btn button-1">

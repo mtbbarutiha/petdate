@@ -84,11 +84,15 @@ async function withEnsuredAvatar(user: User): Promise<User> {
 }
 
 usersRouter.post('/register', async (req, res) => {
-  const { telegramId, name, username } = req.body;
+  const { telegramId, name, username, referredBy: rawReferredBy } = req.body;
   if (!name) {
     res.status(400).json({ error: 'نام الزامی است' });
     return;
   }
+  const referredBy =
+    rawReferredBy != null && Number.isFinite(Number(rawReferredBy))
+      ? Math.floor(Number(rawReferredBy))
+      : null;
   const { user, created } = dbService.findOrCreateUser({ telegramId, name, username });
   // Pull Telegram profile photo (or materialize file_id) so bot/web profile views have a face.
   let synced = await withEnsuredAvatar(user);
@@ -104,9 +108,41 @@ usersRouter.post('/register', async (req, res) => {
     res.json(synced);
     return;
   }
+  const awards: NonNullable<User['awardedRewards']> = [];
   const bonus = dbService.claimSignupBonus(synced.id);
   if (bonus.awarded && bonus.user && bonus.award) {
-    res.json({ ...bonus.user, awardedRewards: [bonus.award] });
+    synced = bonus.user;
+    awards.push(bonus.award);
+  }
+  let referralAward: { referrerId: number; amount: number } | undefined;
+  if (referredBy != null && referredBy > 0) {
+    const referral = dbService.applyReferralBonus(synced.id, referredBy);
+    if (referral.awarded && referral.award) {
+      referralAward = { referrerId: referredBy, amount: referral.award.amount };
+      // اطلاع به معرف در پس‌زمینه
+      void (async () => {
+        try {
+          const { notifyReferralBonusTelegram } = await import('../services/telegram-referral-notify');
+          const referrer = referral.referrer;
+          if (referrer?.telegramId) {
+            await notifyReferralBonusTelegram({
+              toTelegramId: referrer.telegramId,
+              amount: referral.award!.amount,
+              invitedName: synced.name,
+            });
+          }
+        } catch (err) {
+          console.warn('referral notify failed:', (err as Error).message);
+        }
+      })();
+    }
+  }
+  if (awards.length || referralAward) {
+    res.json({
+      ...synced,
+      awardedRewards: awards.length ? awards : undefined,
+      referralAward,
+    });
     return;
   }
   res.json(synced);

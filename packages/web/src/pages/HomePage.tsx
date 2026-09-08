@@ -1,6 +1,7 @@
 import { Link, Navigate } from 'react-router-dom';
 import { PawPrint, Stethoscope } from 'lucide-react';
 import { BRAND, dashboardPathForRole, primaryRole } from '@petdate/shared';
+import { InviteFriendsCard } from '../components/InviteFriendsCard';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { useMyPets } from '../hooks/useMyPets';
 import { useUserStore } from '../hooks/useUserStore';
@@ -148,6 +149,8 @@ export function HomePage() {
           ) : null}
         </div>
       </section>
+
+      <InviteFriendsCard variant="card" className="pepito-home-invite" />
 
       {!isPetOwner ? (
         <section className="pepito-home-services" aria-label="خدمات">

@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronDown, PawPrint } from 'lucide-react';
 import { LandingChrome } from '../components/LandingChrome';
-import { SITE } from '@petdate/shared';
+import { REFERRAL_BONUS_COINS, SITE, formatFaInt } from '@petdate/shared';
 
-/** ۱۰ پرسش پرتکرار — منطبق با قابلیت‌های واقعی پت‌دیت */
+/** پرسش‌های پرتکرار — منطبق با قابلیت‌های واقعی پت‌دیت */
 export const FAQ_ITEMS: { q: string; a: string }[] = [
   {
     q: 'پت‌دیت چیست و برای چه کسانی است؟',
@@ -41,6 +41,10 @@ export const FAQ_ITEMS: { q: string; a: string }[] = [
   {
     q: 'اگر کد OTP نیامد یا ورود مشکل داشت چه کنم؟',
     a: 'شماره را با پیش‌شماره صحیح وارد کنید، چند دقیقه صبر کنید و دوباره درخواست کد بدهید. اگر مشکل ادامه داشت از فوتر سایت یا ربات تلگرام پت‌دیت پشتیبانی بگیرید.',
+  },
+  {
+    q: 'دعوت دوستان چه جایزه‌ای دارد؟',
+    a: `از ربات یا وب لینک دعوت خودت را بگیر و برای دوستات بفرست. با هر ثبت‌نام جدید از لینک تو، ${formatFaInt(REFERRAL_BONUS_COINS)} سکه به موجودی‌ات اضافه می‌شود.`,
   },
   {
     q: 'اطلاعات و پیام‌های من چقدر امن است؟',
@@ -90,7 +94,7 @@ export function FaqPage() {
             پشتیبانی
           </p>
           <h1>سؤالات متداول</h1>
-          <p>ده پرسش پرتکرار درباره پت‌دیت، همبازی، شاپ، پذیرش و دامپزشک.</p>
+          <p>پرسش‌های پرتکرار درباره پت‌دیت، همبازی، شاپ، پذیرش، دامپزشک و دعوت دوستان.</p>
           <Link to="/chats" className="pepito-btn button-1">
             رفتن به پنل همبازی
           </Link>

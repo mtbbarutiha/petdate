@@ -24,6 +24,7 @@ import {
 import {
   COIN_PACKAGES,
   DAILY_COIN_REWARD,
+  REFERRAL_BONUS_COINS,
   canClaimDaily,
   formatNum,
   packagePickerLabel,
@@ -1305,6 +1306,7 @@ export function coinsShopKeyboard(lastDailyCoinAt?: string | null): InlineKeyboa
     kb.row();
   }
   kb.text('📜 تراکنش‌ها', 'coins:tx').primary().row();
+  kb.text(`🎁 دعوت دوستان (+${formatNum(REFERRAL_BONUS_COINS)})`, 'coins:invite').success().row();
   return kb;
 }
 

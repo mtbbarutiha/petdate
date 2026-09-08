@@ -254,12 +254,16 @@ export const SIGNUP_BONUS = 20;
 export const PROFILE_SECTION_REWARD = 5;
 /** جایزه تأیید احراز هویت تصویری توسط ادمین */
 export const FACE_VERIFY_REWARD = 100;
+/** جایزه دعوت دوست (به معرف، به‌ازای هر ثبت‌نام جدید از لینک دعوت) */
+export const REFERRAL_BONUS_COINS = 30;
 
 /** کلیدهای ledger برای idempotency */
 export const COIN_REASON = {
   signup: 'signup',
   faceVerify: 'face_verify',
   daily: 'daily',
+  /** جایزه معرف برای کاربر دعوت‌شده */
+  referral: (invitedUserId: number) => `referral:${invitedUserId}` as const,
   profile: (section: ProfileRewardSection) => `profile:${section}` as const,
 } as const;
 
@@ -304,6 +308,9 @@ export function formatCoinAwardMessage(awards: CoinAward[]): string {
   if (awards.length === 1 && awards[0]!.reason === COIN_REASON.faceVerify) {
     return `🎁 ${fa} سکه جایزه احراز هویت به موجودی‌ات اضافه شد.`;
   }
+  if (awards.length === 1 && String(awards[0]!.reason).startsWith('referral:')) {
+    return `🎁 ${fa} سکه جایزه دعوت دوست به موجودی‌ات اضافه شد.`;
+  }
   const sections = awards
     .filter((a) => a.section)
     .map((a) => PROFILE_SECTION_LABELS_FA[a.section!])
@@ -344,6 +351,7 @@ export function walletLedgerLabelFa(reason: string): string {
   if (r === COIN_REASON.signup || r === 'signup') return 'جایزه ثبت‌نام';
   if (r === COIN_REASON.faceVerify || r === 'face_verify') return 'جایزه احراز هویت';
   if (r === COIN_REASON.daily || r === 'daily') return 'سکه روزانه';
+  if (r.startsWith('referral:')) return 'جایزه دعوت دوستان';
   if (r.startsWith('profile:')) {
     const section = r.slice('profile:'.length) as ProfileRewardSection;
     const label = PROFILE_SECTION_LABELS_FA[section];

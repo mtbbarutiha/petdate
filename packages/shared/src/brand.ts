@@ -44,3 +44,21 @@ export const BRAND = {
   email: SITE.email,
   newsletterEmail: SITE.newsletterEmail,
 } as const;
+
+/** لینک دعوت تلگرام برای کاربر (deep link /start=ref_<id>) */
+export function inviteTelegramLink(userId: number | string): string {
+  const id = Math.floor(Number(userId) || 0);
+  return `https://t.me/${SITE.telegramBotUsername}?start=ref_${id > 0 ? id : 0}`;
+}
+
+/** متن اشتراک‌گذاری دعوت */
+export function inviteShareText(userId: number | string): string {
+  const link = inviteTelegramLink(userId);
+  return `بیا تو petdate همبازی برای پتت پیدا کن! 🐾\n${BRAND.taglineEn}\n${link}`;
+}
+
+/** لینک t.me/share برای دکمه اشتراک */
+export function inviteTelegramShareUrl(userId: number | string): string {
+  const link = inviteTelegramLink(userId);
+  return `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(inviteShareText(userId))}`;
+}
