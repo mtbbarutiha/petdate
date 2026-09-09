@@ -14,8 +14,14 @@ function assert(cond: unknown, msg: string): asserts cond {
 }
 
 async function main() {
-  const { offlineAiAdvice, generateAiConsultAdvice, trainerTopicHint, trainerTypingDelayMs, buildTrainerOpeningGreeting } =
-    await import('./ai-consult');
+  const {
+    offlineAiAdvice,
+    generateAiConsultAdvice,
+    trainerTopicHint,
+    trainerTypingDelayMs,
+    buildTrainerOpeningGreeting,
+    speciesLabelFa,
+  } = await import('./ai-consult');
   const {
     startAiFallbackConsult,
     isAiAssistantUserId,
@@ -25,9 +31,17 @@ async function main() {
   const { dbService, getDb } = await import('../db');
   getDb();
 
+  assert(speciesLabelFa('dog') === 'سگ', 'dog → سگ');
+  assert(speciesLabelFa('DOG') === 'سگ', 'DOG → سگ');
+  assert(speciesLabelFa('cat') === 'گربه', 'cat → گربه');
+  assert(speciesLabelFa('CAT') === 'گربه', 'CAT → گربه');
+  assert(speciesLabelFa('bird') === 'پرنده', 'bird → پرنده');
+
   const tip = offlineAiAdvice({ kind: 'trainer', petName: 'رکس', petSpecies: 'dog' });
   assert(tip.includes('پاشا یزدانی'), 'offline trainer introduces as Pasha');
   assert(/احوال|سلام|حالت چطوره/.test(tip), 'offline trainer opens with greeting/احوال‌پرسی');
+  assert(!/\bDOG\b|\bdog\b/i.test(tip), 'offline greeting must not echo English species DOG');
+  assert(/سگ/.test(tip), 'offline greeting uses Persian سگ for dog species');
   assert(
     !/برای شروع معمولاً این‌طور می‌چینم|۱\) روزی دو سه جلسه/.test(tip),
     'offline first intro must not dump numbered training curriculum'
@@ -50,9 +64,16 @@ async function main() {
   const opening = buildTrainerOpeningGreeting({
     patientName: 'محمد',
     petName: 'رکس',
-    petSpecies: 'dog',
+    petSpecies: 'DOG',
   });
   assert(/احوال|حالت چطوره|سلام|خوبی/.test(opening), 'opening greeting is احوال‌پرسی');
+  assert(/سگ/.test(opening) && !/\bDOG\b|\bdog\b/i.test(opening), 'opening greeting uses سگ not DOG');
+  const openingCat = buildTrainerOpeningGreeting({
+    patientName: 'سارا',
+    petName: 'ملوس',
+    petSpecies: 'cat',
+  });
+  assert(/گربه/.test(openingCat) && !/\bCAT\b|\bcat\b/i.test(openingCat), 'opening greeting uses گربه not CAT');
   assert(
     !/اول احوال|احوال‌پرسی.*(بعد|بعداً).*(آموزش|تمرین)|اول یه کم بشناسم|الان احوال‌پرسی/.test(opening),
     'opening must not narrate greeting-then-train meta script'
@@ -173,6 +194,7 @@ async function main() {
     'session intro must not narrate greeting-then-train workflow'
   );
   assert(/عکس/.test(msgs[0]!.text), 'session intro mentions pet photo');
+  assert(/سگ/.test(msgs[0]!.text) && !/\bDOG\b|\bdog\b/i.test(msgs[0]!.text), 'session intro uses سگ not dog/DOG');
 
   const leashTip = await generateAiConsultAdvice({
     kind: 'trainer',

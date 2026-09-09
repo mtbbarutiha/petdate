@@ -58,8 +58,7 @@ const SPECIES_LABEL_FA: Record<string, string> = {
 export function speciesLabelFa(species?: string | null): string {
   const raw = String(species || '').trim();
   if (!raw) return '';
-  const key = raw.toLowerCase();
-  return SPECIES_LABEL_FA[key] || (/^[a-z_]+$/i.test(raw) ? raw : raw);
+  return SPECIES_LABEL_FA[raw.toLowerCase()] || raw;
 }
 
 const AI_TELEGRAM_ID = 'petdate_ai_assistant';
@@ -117,6 +116,7 @@ function systemPrompt(kind: AiConsultKind): string {
       'روش‌ها: جایزه و تقویت مثبت، بدون زور و تنبیه بدنی، کلیکر/کلمهٔ آفرین، آروم‌کردن ترس، قلاده، فاصلهٔ امن، بازی و enrichment.',
       'محتوا باید دقیق باشد ولی لحن انسانی: ۲–۳ پاراگراف حرف زدنی. اگر مرحله می‌گویی با «اول… بعد…» بگو نه با تیتر درسی. آخرش یک سؤال خودمونی بپرس («الان بیشتر تو خونه می‌کشه یا بیرون؟»).',
       'توله با بالغ فرق دارد؛ گربه با سگ یکی نیست. اگر چیزی کم بود خودمونی بپرس.',
+      'در پاسخ فارسی از DOG/CAT یا کد انگلیسی گونه استفاده نکن؛ بگو سگ یا گربه (یا پرنده/خرگوش/همستر/…).',
       'پزشکی/اورژانس: نگران شو، بفرست پیش دامپزشک؛ دارو تجویز نکن.',
       'تنبیه بدنی، خفه، شوک، آلفا رول ممنوع.',
       'تضمین صددرصد نده. مثل آدم واقعی حرف بزن که دلش برای پت و صاحبش می‌سوزد.',
@@ -126,6 +126,7 @@ function systemPrompt(kind: AiConsultKind): string {
   return [
     'تو دستیار هوشمند مشاوره دامپزشکی عمومی در پلتفرم پت‌دیت هستی.',
     'به فارسی، کوتاه، شفاف و محتاط پاسخ بده.',
+    'در پاسخ فارسی از DOG/CAT یا کد انگلیسی گونه استفاده نکن؛ بگو سگ یا گربه.',
     'راهنمایی عمومی مراقبت، تغذیه، پیشگیری و زمان مراجعه به دامپزشک بده.',
     'تشخیص قطعی نده؛ نسخه دارو ننویس؛ در علائم خطرناک فوری به مراجعه حضوری تأکید کن.',
     'واضح بگو که جایگزین دامپزشک آنلاین/حضوری نیستی و وقتی پزشک آنلاین باشد اتصال انسانی اولویت دارد.',
@@ -136,7 +137,8 @@ function buildUserPrompt(ctx: AiConsultContext): string {
   const bits: string[] = [];
   if (ctx.patientName) bits.push(`نام کاربر: ${ctx.patientName}`);
   if (ctx.petName) bits.push(`نام پت: ${ctx.petName}`);
-  if (ctx.petSpecies) bits.push(`گونه: ${ctx.petSpecies}`);
+  const speciesFa = speciesLabelFa(ctx.petSpecies);
+  if (speciesFa) bits.push(`گونه: ${speciesFa}`);
   if (ctx.petBreed) bits.push(`نژاد: ${ctx.petBreed}`);
   const intro =
     ctx.kind === 'support'
@@ -161,8 +163,9 @@ export function buildTrainerOpeningGreeting(
   const owner = ctx.patientName?.trim() || 'دوست عزیز';
   const pet = ctx.petName?.trim() || 'پت';
   const hasPhoto = Boolean(ctx.petImageUrl?.trim());
+  const speciesFa = speciesLabelFa(ctx.petSpecies);
   const profileBits = [
-    ctx.petSpecies ? `گونه ${ctx.petSpecies}` : null,
+    speciesFa ? speciesFa : null,
     ctx.petBreed ? `نژاد ${ctx.petBreed}` : null,
     ctx.petAgeMonths != null && Number.isFinite(ctx.petAgeMonths)
       ? `حدود ${ctx.petAgeMonths} ماه`
@@ -202,7 +205,7 @@ export function trainerTypingDelayMs(replyText: string): number {
 }
 
 function petLabel(ctx: AiConsultContext): string {
-  return [ctx.petName, ctx.petBreed || ctx.petSpecies].filter(Boolean).join(' · ') || 'پت';
+  return [ctx.petName, ctx.petBreed || speciesLabelFa(ctx.petSpecies)].filter(Boolean).join(' · ') || 'پت';
 }
 
 function ageAwareAside(ctx: AiConsultContext): string {
@@ -1014,7 +1017,8 @@ function petContextBits(ctx: AiConsultContext): string[] {
   const ctxBits: string[] = [];
   if (ctx.patientName) ctxBits.push(`نام صاحب پت: ${ctx.patientName}`);
   if (ctx.petName) ctxBits.push(`نام پت: ${ctx.petName}`);
-  if (ctx.petSpecies) ctxBits.push(`گونه: ${ctx.petSpecies}`);
+  const speciesFa = speciesLabelFa(ctx.petSpecies);
+  if (speciesFa) ctxBits.push(`گونه: ${speciesFa}`);
   if (ctx.petBreed) ctxBits.push(`نژاد: ${ctx.petBreed}`);
   if (ctx.petAgeMonths != null && Number.isFinite(ctx.petAgeMonths)) {
     ctxBits.push(`سن تقریبی: ${ctx.petAgeMonths} ماه`);
