@@ -307,7 +307,7 @@ consultationsRouter.post('/quick-connect', async (req, res) => {
             adviceSource: ai.source,
             message:
               serviceKind === 'trainer'
-                ? `مربی انسانی آنلاین نبود — چت با ${AI_TRAINER_DISPLAY_NAME} (مربی آنلاین) شروع شد (بدون کسر سکه).`
+                ? `گفتگو با ${AI_TRAINER_DISPLAY_NAME} (مربی آنلاین) شروع شد (بدون کسر سکه).`
                 : 'دامپزشک انسانی آنلاین نبود — چت با دستیار هوشمند شروع شد (بدون کسر سکه).',
           });
           return;

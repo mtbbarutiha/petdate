@@ -26,12 +26,14 @@ async function main() {
 
   const tip = offlineAiAdvice({ kind: 'trainer', petName: 'رکس', petSpecies: 'dog' });
   assert(tip.includes('پاشا یزدانی'), 'offline trainer introduces as Pasha');
+  assert(!/دستیار هوشمند|ربات|هوش مصنوعی|\bAI\b/i.test(tip), 'offline trainer must not sound like a bot');
   const sitTip = offlineAiAdvice({
     kind: 'trainer',
     userMessage: 'چطور بشین یاد بگیره؟',
     petName: 'رکس',
   });
   assert(sitTip.includes('بشین'), 'trainer topic hint for sit');
+  assert(!/دستیار هوشمند|ربات|هوش مصنوعی/i.test(sitTip), 'sit tip must not sound like a bot');
 
   const vetTip = offlineAiAdvice({ kind: 'vet', petName: 'ملوس' });
   assert(vetTip.includes('دامپزشک'), 'offline vet tip');
@@ -55,6 +57,17 @@ async function main() {
   assert(decorateAiConsultDisplay(session!.consult).vetName === 'پاشا یزدانی', 'display name');
   const msgs = dbService.listVetConsultChatMessages(session!.consult.id);
   assert(msgs[0]!.text.includes('پاشا یزدانی'), 'intro mentions Pasha');
+  assert(!/دستیار هوشمند|ربات|هوش مصنوعی/i.test(msgs[0]!.text), 'trainer intro must not sound like a bot');
+  assert(msgs[0]!.text.includes('گفتگو با'), 'intro uses human chat framing');
+
+  const leashTip = await generateAiConsultAdvice({
+    kind: 'trainer',
+    userMessage: 'قلاده می‌کشه',
+    petName: 'رکس',
+  });
+  assert(leashTip.source === 'offline', 'no API key → offline');
+  assert(!/دستیار هوشمند|ربات|هوش مصنوعی/i.test(leashTip.text), 'generated trainer text not robotic');
+  assert(/قلاده|کشید|تشویقی/.test(leashTip.text), 'leash topic covered');
 
   const turn1 = await generateAiConsultAdvice({
     kind: 'support',

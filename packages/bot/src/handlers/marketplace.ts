@@ -245,7 +245,7 @@ export async function handleRequestTrainer(ctx: Context): Promise<void> {
     [
       '🎓 درخواست مربی',
       `هزینه اتصال انسانی: ${TRAINER_CONSULT_COST} سکه (۲۵ مربی + ۲۵ پلتفرم).`,
-      'اگر مربی آنلاین نباشد، پاشا یزدانی (مربی آنلاین) رایگان پاسخ می‌دهد.',
+      'اگر مربی دیگری آنلاین نباشد، پاشا یزدانی (مربی آنلاین) رایگان پاسخ می‌دهد.',
     ].join('\n'),
     { reply_markup: menuKeyboardFor(ctx, await getCtxUser(ctx)) }
   );
