@@ -370,7 +370,9 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
         <p>
           {isProvider
             ? meta.providerHint
-            : `هزینه اتصال انسانی ${formatCoins(cost)} سکه · اگر آنلاین نباشد دستیار هوشمند رایگان پاسخ می‌دهد`}
+            : kind === 'trainer'
+              ? `هزینه اتصال انسانی ${formatCoins(cost)} سکه · اگر آنلاین نباشد پاشا یزدانی (مربی آنلاین) رایگان پاسخ می‌دهد`
+              : `هزینه اتصال انسانی ${formatCoins(cost)} سکه · اگر آنلاین نباشد دستیار هوشمند رایگان پاسخ می‌دهد`}
         </p>
         {meta.disclaimer && !isProvider ? <p className="muted">{meta.disclaimer}</p> : null}
       </header>
@@ -455,7 +457,7 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
               ? onlineCount > 0
                 ? `${toPersianDigits(String(onlineCount))} نفر آنلاین آماده پذیرش`
                 : kind === 'trainer'
-                  ? 'مربی انسانی آنلاین نیست — با زدن دکمه، دستیار هوشمند آموزش پاسخ می‌دهد (رایگان).'
+                  ? 'مربی انسانی آنلاین نیست — با زدن دکمه، پاشا یزدانی (مربی آنلاین) پاسخ می‌دهد (رایگان).'
                   : meta.noProviders
               : 'برای ارسال درخواست وارد حساب شو.'}
           </p>
@@ -481,7 +483,7 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
                 {busy
                   ? 'در حال ارسال…'
                   : onlineCount === 0 && kind === 'trainer'
-                    ? 'مشورت با دستیار هوشمند (رایگان)'
+                    ? 'مشورت با پاشا یزدانی (رایگان)'
                     : confirmPay
                       ? `تأیید و ارسال (${formatCoins(cost)} سکه)`
                       : `${meta.patientCta} (${formatCoins(cost)} سکه)`}
