@@ -14,7 +14,8 @@ function assert(cond: unknown, msg: string): asserts cond {
 }
 
 async function main() {
-  const { offlineAiAdvice, generateAiConsultAdvice, trainerTopicHint } = await import('./ai-consult');
+  const { offlineAiAdvice, generateAiConsultAdvice, trainerTopicHint, trainerTypingDelayMs, buildTrainerOpeningGreeting } =
+    await import('./ai-consult');
   const {
     startAiFallbackConsult,
     isAiAssistantUserId,
@@ -26,7 +27,32 @@ async function main() {
 
   const tip = offlineAiAdvice({ kind: 'trainer', petName: 'رکس', petSpecies: 'dog' });
   assert(tip.includes('پاشا یزدانی'), 'offline trainer introduces as Pasha');
+  assert(/احوال|سلام|حالت چطوره/.test(tip), 'offline trainer opens with greeting/احوال‌پرسی');
+  assert(
+    !/برای شروع معمولاً این‌طور می‌چینم|۱\) روزی دو سه جلسه/.test(tip),
+    'offline first intro must not dump numbered training curriculum'
+  );
   assert(!/دستیار هوشمند|ربات|هوش مصنوعی|\bAI\b/i.test(tip), 'offline trainer must not sound like a bot');
+  const tipWithPhoto = offlineAiAdvice({
+    kind: 'trainer',
+    petName: 'رکس',
+    petSpecies: 'dog',
+    petImageUrl: 'https://cdn.example/pet.jpg',
+  });
+  assert(/عکس/.test(tipWithPhoto) && /دیدم/.test(tipWithPhoto), 'offline greeting acknowledges pet photo');
+  const tipNoPhoto = offlineAiAdvice({ kind: 'trainer', petName: 'رکس', petSpecies: 'dog' });
+  assert(/عکس/.test(tipNoPhoto) && /بفرست/.test(tipNoPhoto), 'offline greeting asks for pet photo when missing');
+
+  const shortDelay = trainerTypingDelayMs('سلام');
+  const longDelay = trainerTypingDelayMs('x'.repeat(500));
+  assert(shortDelay >= 1500 && shortDelay <= 4000, 'typing delay lower bound');
+  assert(longDelay >= shortDelay && longDelay <= 4000, 'typing delay scales and caps');
+  assert(
+    /احوال|حالت چطوره|سلام/.test(
+      buildTrainerOpeningGreeting({ patientName: 'محمد', petName: 'رکس', petSpecies: 'dog' })
+    ),
+    'opening greeting is احوال‌پرسی'
+  );
   const sitTip = offlineAiAdvice({
     kind: 'trainer',
     userMessage: 'چطور بشین یاد بگیره؟',
@@ -88,7 +114,12 @@ async function main() {
   const msgs = dbService.listVetConsultChatMessages(session!.consult.id);
   assert(msgs[0]!.text.includes('پاشا یزدانی'), 'intro mentions Pasha');
   assert(!/دستیار هوشمند|ربات|هوش مصنوعی/i.test(msgs[0]!.text), 'trainer intro must not sound like a bot');
-  assert(msgs[0]!.text.includes('گفتگو با'), 'intro uses human chat framing');
+  assert(/احوال|سلام|حالت چطوره/.test(msgs[0]!.text), 'trainer intro is greeting-first احوال‌پرسی');
+  assert(
+    !/برای شروع معمولاً این‌طور می‌چینم|۱\) روزی دو سه جلسه/.test(msgs[0]!.text),
+    'session intro must not jump straight to numbered curriculum'
+  );
+  assert(/عکس/.test(msgs[0]!.text), 'session intro mentions pet photo');
 
   const leashTip = await generateAiConsultAdvice({
     kind: 'trainer',

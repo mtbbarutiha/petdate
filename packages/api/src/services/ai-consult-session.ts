@@ -3,7 +3,9 @@ import { dbService } from '../db';
 import {
   AI_TRAINER_DISPLAY_NAME,
   aiAssistantTelegramId,
+  buildTrainerOpeningGreeting,
   generateAiConsultAdvice,
+  trainerTypingDelayMs,
 } from './ai-consult';
 import { notifyInbox, notifyVetMessage, notifyVetThread } from '../ws/chatHub';
 
@@ -44,6 +46,20 @@ function toAiKind(kind: ConsultServiceKind): 'vet' | 'trainer' | null {
   return null;
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function petPromptFields(pet: ReturnType<typeof dbService.getPet> | null | undefined) {
+  return {
+    petName: pet?.name,
+    petSpecies: pet?.species,
+    petBreed: pet?.breed,
+    petImageUrl: pet?.imageUrl,
+    petAgeMonths: pet?.ageMonths,
+  };
+}
+
 export async function startAiFallbackConsult(opts: {
   patient: User;
   serviceKind: ConsultServiceKind;
@@ -65,14 +81,29 @@ export async function startAiFallbackConsult(opts: {
       ? dbService.getPet(opts.petId)
       : dbService.listPets({ ownerId: opts.patient.id })[0];
 
-  const generated = await generateAiConsultAdvice({
-    kind: aiKind,
-    patientName: opts.patient.name,
-    petName: pet?.name,
-    petSpecies: pet?.species,
-    petBreed: pet?.breed,
-    userMessage: opts.userMessage,
-  });
+  const petFields = petPromptFields(pet);
+  const userMessage = opts.userMessage?.trim();
+
+  let adviceText: string;
+  let source: 'llm' | 'offline';
+
+  if (aiKind === 'trainer' && !userMessage) {
+    // Greeting-first: no curriculum dump on session open.
+    adviceText = buildTrainerOpeningGreeting({
+      patientName: opts.patient.name,
+      ...petFields,
+    });
+    source = 'offline';
+  } else {
+    const generated = await generateAiConsultAdvice({
+      kind: aiKind,
+      patientName: opts.patient.name,
+      ...petFields,
+      userMessage,
+    });
+    adviceText = generated.text;
+    source = generated.source;
+  }
 
   const consult = dbService.createVetConsultation({
     vetUserId: ai.id,
@@ -88,15 +119,15 @@ export async function startAiFallbackConsult(opts: {
     providerShareCoins: 0,
   });
 
-  const intro =
+  const messageText =
     aiKind === 'trainer'
-      ? `گفتگو با ${AI_TRAINER_DISPLAY_NAME} (مربی آنلاین پت‌دیت) شروع شد. خوش اومدی — بگو از کجا شروع کنیم؟`
-      : 'دامپزشک انسانی آنلاین نبود — چت با دستیار هوشمند شروع شد.';
+      ? adviceText
+      : `دامپزشک انسانی آنلاین نبود — چت با دستیار هوشمند شروع شد.\n\n${adviceText}`;
 
   dbService.createVetConsultChatMessage({
     consultId: consult.id,
     senderUserId: ai.id,
-    text: `${intro}\n\n${generated.text}`,
+    text: messageText,
   });
 
   notifyVetThread(consult.id, [opts.patient.id, ai.id], {
@@ -109,7 +140,7 @@ export async function startAiFallbackConsult(opts: {
     id: consult.id,
   });
 
-  return { consult, advice: generated.text, source: generated.source };
+  return { consult, advice: adviceText, source };
 }
 
 /** After a patient message in an AI consult, generate and store an assistant reply. */
@@ -147,9 +178,16 @@ export async function maybeReplyAsAiAssistant(opts: {
     petName: pet?.name || consult.petName,
     petSpecies: pet?.species || consult.petSpecies,
     petBreed: pet?.breed || consult.petBreed,
+    petImageUrl: pet?.imageUrl,
+    petAgeMonths: pet?.ageMonths,
     userMessage: opts.patientText,
     history: recent.slice(0, -1),
   });
+
+  // Human pacing for trainer AI only — HTTP path already fire-and-forgets this call.
+  if (aiKind === 'trainer') {
+    await sleep(trainerTypingDelayMs(generated.text));
+  }
 
   const message = dbService.createVetConsultChatMessage({
     consultId: opts.consultId,

@@ -21,6 +21,9 @@ export type AiConsultContext = {
   petName?: string;
   petSpecies?: string;
   petBreed?: string;
+  /** Pet profile photo URL / storage key when available */
+  petImageUrl?: string;
+  petAgeMonths?: number;
   history?: Array<{ role: 'user' | 'assistant'; content: string }>;
 };
 
@@ -69,6 +72,9 @@ function systemPrompt(kind: AiConsultKind): string {
       'مثل یک مربی واقعی حرف بزن: اول‌شخص، گرم، صمیمی، کمی ادبی ولی طبیعی و گفت‌وگو‌محور — نه ربات، نه بولت‌لیست خشک مگر کاربر صریحاً چک‌لیست بخواهد.',
       `هرگز نگو و اشاره نکن که دستیار هوشمند، هوش مصنوعی، ربات، AI، مدل زبانی، یا «جایگزین مربی» هستی. اگر پرسیدند کی هستی: «من ${AI_TRAINER_DISPLAY_NAME} هستم، مربی آنلاین پت‌دیت.»`,
       'نرم بگو که وقتی مربی دیگری آزاد نباشد از همین‌جا آنلاین همراهی می‌کنی؛ شخصیت انسانِ مربی را نشکن.',
+      'جریان گفتگو: در ۱–۲ نوبت اول اول احوال‌پرسی گرم با صاحب پت، حال خودشان و حال پت؛ عکس پت را ببین/بخواه و به پروفایل پت (نام، گونه، نژاد، سن) اشاره کن. هنوز برنامهٔ آموزشی شماره‌دار کامل نریز مگر کاربر صریحاً سؤال ترینینگ پرسیده باشد.',
+      'اگر کاربر همان اول سؤال آموزش/رفتار پرسید: یک جملهٔ کوتاه احوال‌پرسی/تأیید، بعد جواب عملی — ولی پیام افتتاحیه‌ات وقتی سؤال خاصی نیست فقط احوال‌پرسی + عکس/پروفایل است.',
+      'اگر در زمینهٔ پیام «عکس پت را دیدی» آمده، طبیعی اشاره کن که عکس را دیدی؛ اگر نبود مؤدبانه بخواه عکس بفرستند یا در پروفایل بگذارند.',
       'این آثار را درونی کرده‌ای و مثل تخصص خودت به‌کار می‌بری (عنوان کتاب را در جواب‌های عادی نگو مگر کاربر صریحاً «منبع» / کتاب / مأخذ بخواهد):',
       '• Culture Clash (Jean Donaldson) — افسانهٔ آلفا/سلطه را رد کن؛ یادگیری واقعی سگ با تقویت، مدیریت و پیشگیری؛ نه «رهبر گله شدن».',
       '• Puppy Primer (Patricia McConnell) — جامعه‌پذیری و پایه‌های ماه‌های اول توله: مواجههٔ ملایم، بازی درست، گازبازی، برنامهٔ کوتاه روزانه.',
@@ -113,9 +119,50 @@ function buildUserPrompt(ctx: AiConsultContext): string {
     (ctx.kind === 'support'
       ? 'سلام؛ چطور می‌توانم کمکت کنم؟'
       : ctx.kind === 'trainer'
-        ? 'سلام؛ برای شروع آموزش پت از کجا شروع کنیم؟'
+        ? 'سلام؛ اول احوال‌پرسی کن و دربارهٔ عکس/پروفایل پت بپرس — هنوز برنامهٔ آموزشی کامل نده.'
         : 'برای مراقبت کلی از پت چه نکات مهمی داری؟');
   return [intro, bits.length ? bits.join(' · ') : null, '', ask].filter(Boolean).join('\n');
+}
+
+/** First trainer message: warm احوال‌پرسی + pet photo/profile — no curriculum dump. */
+export function buildTrainerOpeningGreeting(
+  ctx: Omit<AiConsultContext, 'kind' | 'userMessage' | 'history'>
+): string {
+  const owner = ctx.patientName?.trim() || 'دوست عزیز';
+  const pet = ctx.petName?.trim() || 'پت';
+  const hasPhoto = Boolean(ctx.petImageUrl?.trim());
+  const profileBits = [
+    ctx.petSpecies ? `گونه ${ctx.petSpecies}` : null,
+    ctx.petBreed ? `نژاد ${ctx.petBreed}` : null,
+    ctx.petAgeMonths != null && Number.isFinite(ctx.petAgeMonths)
+      ? `حدود ${ctx.petAgeMonths} ماه`
+      : null,
+  ].filter(Boolean);
+
+  const photoLine = hasPhoto
+    ? `عکس ${pet} را هم دیدم — قشنگه؛ یه نگاه به پروفایلش می‌اندازم.`
+    : `اگر عکس ${pet} را بفرستی (یا تو پروفایل پت بگذاری) اول یه نگاه می‌اندازم تا بهتر بشناسمش.`;
+
+  const profileLine = profileBits.length
+    ? `از پروفایل می‌بینم: ${profileBits.join(' · ')}.`
+    : `اگر سن و نژاد ${pet} را هم بگی، بهتر جا می‌افتم.`;
+
+  return [
+    `سلام ${owner}، من ${AI_TRAINER_DISPLAY_NAME}ام؛ مربی آنلاین پت‌دیت. خوش اومدی.`,
+    ``,
+    `حالت چطوره؟ ${pet} چطوره این روزها؟`,
+    photoLine,
+    profileLine,
+    ``,
+    `هر وقت آماده بودی بگو روی چی کار کنیم — اول احوال‌پرسی، بعد می‌ریم سراغ آموزش.`,
+  ].join('\n');
+}
+
+/** Simulated human typing pause before trainer AI replies (ms). */
+export function trainerTypingDelayMs(replyText: string): number {
+  const len = String(replyText || '').length;
+  const scaled = 1500 + Math.floor(len * 12);
+  return Math.max(1500, Math.min(4000, scaled));
 }
 
 function petLabel(ctx: AiConsultContext): string {
@@ -760,24 +807,23 @@ export function offlineAiAdvice(ctx: AiConsultContext): string {
         `می‌توانی بپرسی: بشین، بمان، بیا، قلاده، باکس، دستشویی، پارس، گاز، پریدن، تنهایی، جامعه‌پذیری، کلیکر، غنی‌سازی، ولش‌کن، یا رفتار گربه.`,
       ].join('\n');
     }
-    const greetings = [
-      `سلام، من ${AI_TRAINER_DISPLAY_NAME} هستم؛ مربی آنلاین پت‌دیت. خوش اومدی.`,
-      `سلام! ${AI_TRAINER_DISPLAY_NAME}ام. از همین‌جا برای آموزش ${pet} کنارت هستم.`,
-    ];
-    const greet = greetings[(ctx.petName?.length ?? 0) % greetings.length]!;
-    return [
-      greet,
-      ``,
-      `برای شروع معمولاً این‌طور می‌چینم:`,
-      `۱) روزی دو سه جلسهٔ کوتاه پنج تا ده دقیقه‌ای — مغز تازه بهتر یاد می‌گیرد`,
-      `۲) یک فرمان پایه مثل بشین یا بیا با تشویقیِ به‌موقع و مارکر ثابت`,
-      `۳) محیط آرام، بدون تنبیه؛ فقط تقویت مثبت و مدیریت فاصله`,
-      `۴) خواب، دستشویی و enrichment را جدی بگیر — آموزش روی خستگی و هرج‌ومرج سوار نمی‌شود`,
-      ``,
-      q
-        ? `دربارهٔ «${q}»: سن و رفتار فعلی ${pet} را بگو تا مرحله‌به‌مرحله و عمیق راهنمایی‌ات کنم.`
-        : `هر سؤالی دربارهٔ آموزش یا رفتار داری — بشین، قلاده، پارس، توله، گربه، اضطراب جدایی و بقیه — همین‌جا بپرس.`,
-    ].join('\n');
+    const greet = buildTrainerOpeningGreeting({
+      patientName: ctx.patientName,
+      petName: ctx.petName,
+      petSpecies: ctx.petSpecies,
+      petBreed: ctx.petBreed,
+      petImageUrl: ctx.petImageUrl,
+      petAgeMonths: ctx.petAgeMonths,
+    });
+    // Soft greeting-only open; if they typed something vague (no topic match), invite them gently.
+    if (q) {
+      return [
+        greet,
+        ``,
+        `دربارهٔ «${q}» بعد از اینکه کمی بیشتر بگی (سن، محیط، و اگر عکس داری)، دقیق‌تر جلو می‌رویم.`,
+      ].join('\n');
+    }
+    return greet;
   }
   return [
     `👋 من دستیار هوشمند پت‌دیت هستم (دامپزشک انسانی الان آنلاین نیست).`,
@@ -801,6 +847,16 @@ function petContextBits(ctx: AiConsultContext): string[] {
   if (ctx.petName) ctxBits.push(`نام پت: ${ctx.petName}`);
   if (ctx.petSpecies) ctxBits.push(`گونه: ${ctx.petSpecies}`);
   if (ctx.petBreed) ctxBits.push(`نژاد: ${ctx.petBreed}`);
+  if (ctx.petAgeMonths != null && Number.isFinite(ctx.petAgeMonths)) {
+    ctxBits.push(`سن تقریبی: ${ctx.petAgeMonths} ماه`);
+  }
+  if (ctx.kind === 'trainer') {
+    if (ctx.petImageUrl?.trim()) {
+      ctxBits.push('عکس پت را دیدی: بله (در پروفایل موجود است — طبیعی اشاره کن)');
+    } else {
+      ctxBits.push('عکس پت را دیدی: خیر — مؤدبانه بخواه عکس بفرستند یا در پروفایل بگذارند');
+    }
+  }
   return ctxBits;
 }
 
