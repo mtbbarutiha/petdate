@@ -91,6 +91,24 @@ async function main() {
     /ببین|خودمونی|راستش|خب عملاً|آها/.test(sitTip),
     'sit tip uses spoken human openings/phrasing'
   );
+  assert(
+    !/گفتی که|پرسیدی که|این سؤال «|در مورد «/.test(sitTip),
+    'sit tip must not echo/restate the user question'
+  );
+
+  const biteQ = 'سگم گاز می‌گیره دستمو';
+  const biteTip = offlineAiAdvice({
+    kind: 'trainer',
+    userMessage: biteQ,
+    petName: 'رکس',
+    history: [{ role: 'user', content: 'سلام' }, { role: 'assistant', content: 'سلام خوبی؟' }],
+  });
+  assert(biteTip.length > 200, 'bite tip substantial');
+  assert(
+    !/گفتی که|پرسیدی که|این سؤال «|در مورد «|گاز می‌گیره/.test(biteTip.split('\n')[0] || ''),
+    'bite tip opening must not restate user question'
+  );
+  assert(!biteTip.startsWith(biteQ) && !/گفتی.*گاز/.test(biteTip), 'bite tip must not paraphrase user Q');
 
   const richTopics: Array<{ q: string; needle: RegExp }> = [
     { q: 'قلاده می‌کشه تو خیابان', needle: /قلاده|بند|شل/ },
@@ -251,6 +269,10 @@ async function main() {
   assert(turn1.text !== turn2.text, 'trainer follow-up differs from first reply');
   assert(/بشین|معیار|عیب|سخت/.test(turn2.text), 'trainer follow-up stays on sit and digs deeper');
   assert(turn2.text.length > 200, 'deeper follow-up is substantial');
+  assert(
+    !/گفتی که|پرسیدی که|این سؤال «|در مورد «|روی «/.test(turn2.text.split('\n')[0] || ''),
+    'follow-up opening must not echo question/topic title'
+  );
 
   const supportTurn1 = await generateAiConsultAdvice({
     kind: 'support',

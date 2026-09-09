@@ -112,6 +112,7 @@ function systemPrompt(kind: AiConsultKind): string {
       'هرگز پروتکل گفتگو را اعلام نکن. ممنوع در پیام کاربر: «اول احوال‌پرسی بعد می‌ریم سراغ آموزش»، «الان احوال‌پرسی می‌کنم»، «اول بشناسمتون بعد تمرین»، یا هر جملهٔ متا که برنامهٔ سلام→آموزش را توضیح دهد. فقط انجام بده، روایت نکن.',
       'اگر تاریخچه یا احوال‌پرسی قبلاً بوده، آیین سلام/احوال‌پرسی را تکرار نکن؛ مستقیم مفید و خودمونی جواب بده.',
       'اگر همان اول سؤال تمرین پرسید: یک جملهٔ گرم کوتاه، بعد جواب خودمونی و کاربردی — بدون اعلام «اول احوال بعد آموزش».',
+      'سؤال یا پیام کاربر را تکرار یا بازنویسی نکن؛ مستقیم جواب بده. ممنوع: «گفتی که…»، «پرسیدی که…»، «در مورد X که گفتی…»، یا بازگو کردن صورت مسئله قبل از راهنمایی.',
       'دانش درونی‌ات (عنوان کتاب را مگر با سؤال «منبع» نگو): Culture Clash / Donaldson، Puppy Primer / McConnell، Think Like a Cat / Johnson-Bennett، Total Cat Mojo / Galaxy، Companion Parrot Handbook / Blanchard، Manual of Exotic Pet Practice / Mitchell & Tully.',
       'روش‌ها: جایزه و تقویت مثبت، بدون زور و تنبیه بدنی، کلیکر/کلمهٔ آفرین، آروم‌کردن ترس، قلاده، فاصلهٔ امن، بازی و enrichment.',
       'محتوا باید دقیق باشد ولی لحن انسانی: ۲–۳ پاراگراف حرف زدنی. اگر مرحله می‌گویی با «اول… بعد…» بگو نه با تیتر درسی. آخرش یک سؤال خودمونی بپرس («الان بیشتر تو خونه می‌کشه یا بیرون؟»).',
@@ -749,15 +750,16 @@ function formatTrainerTopicReply(
 ): string {
   const body = depth >= 2 ? topic.deeper : topic.primary;
   const hasHistory = (ctx.history?.length ?? 0) > 0;
+  // Never restate/echo the user's question or topic title — answer directly.
   const openings = hasHistory
     ? [
-        `آها، «${topic.title}» — ببین من معمولاً این‌جوری جمعش می‌کنم:`,
-        `خب در مورد «${topic.title}» بذار خودمونی بگم چی کار کنی:`,
-        `این سؤال «${topic.title}» رو خیلی می‌شنوم. راستش راهش اینه:`,
+        `ببین من معمولاً این‌جوری جمعش می‌کنم:`,
+        `خب بذار خودمونی بگم چی کار کنی:`,
+        `راستش راهش اینه:`,
       ]
     : [
         `سلام، من ${AI_TRAINER_DISPLAY_NAME}ام. خوش اومدی — بریم سر اصل مطلب.`,
-        `سلام! ${AI_TRAINER_DISPLAY_NAME} هستم. درمورد حرف‌ات همین الان می‌گم چی کار کنیم.`,
+        `سلام! ${AI_TRAINER_DISPLAY_NAME} هستم. همین الان می‌گم چی کار کنیم.`,
       ];
   const seed = (ctx.userMessage?.length ?? 0) + (ctx.petName?.length ?? 0) + topic.id.length;
   const opening = opts?.followUpLabel
@@ -786,7 +788,7 @@ function trainerFollowUpReply(ctx: AiConsultContext): string | null {
     if (topic) {
       const depth = Math.max(2, (tracked?.depth ?? 1) + 1);
       return formatTrainerTopicReply(ctx, topic, depth, {
-        followUpLabel: `باشه، بریم عمیق‌تر روی «${topic.title}».`,
+        followUpLabel: `باشه، بریم عمیق‌تر.`,
       });
     }
   }
@@ -797,7 +799,7 @@ function trainerFollowUpReply(ctx: AiConsultContext): string | null {
     const prior = history.some((h) => h.role === 'user' && findTrainerTopic(h.content)?.id === current.id);
     if (prior) {
       return formatTrainerTopicReply(ctx, current, 2, {
-        followUpLabel: `ادامه بدیم روی «${current.title}» — این بار می‌ریم سراغ گیرها و جزئیات:`,
+        followUpLabel: `ادامه بدیم — این بار می‌ریم سراغ گیرها و جزئیات:`,
       });
     }
   }
@@ -971,7 +973,7 @@ export function offlineAiAdvice(ctx: AiConsultContext): string {
       return withTone(
         [
           q
-            ? `در مورد «${q}» می‌خوام دقیق جلو برم. ${ageAwareAside(ctx)}`
+            ? `باشه، می‌خوام دقیق جلو برم. ${ageAwareAside(ctx)}`
             : `بگو الان دقیقاً کجا گیر کردی تا همان را باز کنیم.`,
           ``,
           `برای اینکه نسخهٔ درست بدهم بگو: سن تقریبی، محیط (خانه/خیابان)، و از کی این رفتار را می‌بینی. اگر عکس یا ویدیوی کوتاه هم داری بفرست.`,
@@ -991,7 +993,7 @@ export function offlineAiAdvice(ctx: AiConsultContext): string {
         [
           greet,
           ``,
-          `دربارهٔ «${q}» بعد از اینکه کمی بیشتر بگی (سن، محیط، و اگر عکس داری)، دقیق‌تر جلو می‌رویم.`,
+          `یه کم بیشتر بگو (سن، محیط، و اگر عکس داری) تا دقیق‌تر جلو بریم — مستقیم می‌ریم سر کار.`,
         ].join('\n')
       );
     }
@@ -1056,8 +1058,10 @@ async function callOpenAiCompatible(ctx: AiConsultContext): Promise<string | nul
     const prefix = includeCtx ? `${ctxBits.join(' · ')}\n\n` : '';
     const followHint =
       ctx.kind === 'trainer' && (ctx.history?.length ?? 0) > 0
-        ? '\n\n(یادآوری: روی موضوع جاری عمیق‌تر برو؛ تکرار صرفِ پیام قبل ممنوع.)'
-        : '';
+        ? '\n\n(یادآوری: روی موضوع جاری عمیق‌تر برو؛ سؤال کاربر را تکرار/بازنویسی نکن؛ مستقیم جواب بده.)'
+        : ctx.kind === 'trainer'
+          ? '\n\n(یادآوری: سؤال یا پیام کاربر را تکرار یا بازنویسی نکن؛ مستقیم جواب بده.)'
+          : '';
     messages.push({ role: 'user', content: `${prefix}${userText}${followHint}` });
   } else {
     messages.push({ role: 'user', content: buildUserPrompt(ctx) });
