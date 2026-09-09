@@ -2,16 +2,15 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Check, Circle, Clock, MessageCircle, X } from 'lucide-react';
 import {
-  SEEKER_ADVICE_COST,
   SITTER_CONNECT_COST,
   TRAINER_CONSULT_COST,
   VET_CREDENTIAL_STATUS_LABELS,
   formatPersianDateTime,
   isPrimaryRole,
   toPersianDigits,
-  userHasRole,
   type ConsultServiceKind,
   type PetProfile,
+  type User,
   type VetConsultation,
   type VetCredentialStatus,
 } from '@petdate/shared';
@@ -19,6 +18,7 @@ import { useAuthStore } from '../hooks/useAuthStore';
 import { useLiveAjaxPoll } from '../hooks/useLiveAjaxPoll';
 import {
   acceptVetConsultation,
+  listOnlineProviders,
   listPets,
   listVetConsultations,
   patchWebProviderOnline,
@@ -43,6 +43,7 @@ const COPY: Record<
     patientCta: string;
     providerHint: string;
     noProviders: string;
+    needPet: string;
     disclaimer?: string;
   }
 > = {
@@ -51,14 +52,16 @@ const COPY: Record<
     role: 'trainer',
     patientCta: 'درخواست مربی',
     providerHint: 'آنلاین شو تا درخواست‌های مشاوره مربی را بگیری.',
-    noProviders: 'فعلاً مربی آنلاینی نیست.',
+    noProviders: 'فعلاً مربی آنلاینی برای اتصال پیدا نشد.',
+    needPet: 'برای درخواست مربی، اول باید حداقل یک پت ثبت کنی.',
   },
   sitter: {
     title: 'پنل پرستار پت',
     role: 'pet_sitter',
     patientCta: 'درخواست پرستار پت',
     providerHint: 'آنلاین شو تا درخواست‌های پرستار را بگیری.',
-    noProviders: 'فعلاً پرستار آنلاینی نیست.',
+    noProviders: 'فعلاً پرستار پت آنلاینی برای اتصال پیدا نشد.',
+    needPet: 'برای ارتباط با پرستار، اول باید حداقل یک پت ثبت کنی.',
     disclaimer:
       'پت‌دیت فقط شما را به پرستار متصل می‌کند و مسئولیتی فراتر از اتصال ندارد.',
   },
@@ -80,13 +83,17 @@ function patientLabel(c: VetConsultation): string {
   return pet ? `${name} · ${pet}` : name;
 }
 
+function errMessage(err: unknown, fallback: string): string {
+  return err instanceof Error && err.message.trim() ? err.message : fallback;
+}
+
 export function ServiceConsultPage({ kind }: { kind: Kind }) {
   const navigate = useNavigate();
   const { user, token, isLoggedIn, refreshMe } = useAuthStore();
   const meta = COPY[kind];
   const cost = COST[kind];
+  /** فقط نقش فعال ارائه‌دهنده — نه داشتن نقش فرعی (صاحب‌پت چندنقشی نباید پنل مدرک ببیند). */
   const isProvider = isPrimaryRole(user, meta.role);
-  const hasRole = userHasRole(user, meta.role);
   const credStatus =
     kind === 'trainer' ? user?.trainerCredentialStatus : user?.sitterCredentialStatus;
   const online =
@@ -96,8 +103,12 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
   const botUrl = telegramBotDeepLink();
 
   const [pets, setPets] = useState<PetProfile[]>([]);
+  const [onlineProviders, setOnlineProviders] = useState<User[]>([]);
   const [busy, setBusy] = useState(false);
   const [onlineBusy, setOnlineBusy] = useState(false);
+  const [confirmPay, setConfirmPay] = useState(false);
+  const [needsResendConfirm, setNeedsResendConfirm] = useState(false);
+  const [statusMsg, setStatusMsg] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [incoming, setIncoming] = useState<VetConsultation[]>([]);
   const [recent, setRecent] = useState<VetConsultation[]>([]);
@@ -114,6 +125,18 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
       setPets([]);
     }
   }, [user?.id, isProvider]);
+
+  const loadOnline = useCallback(async () => {
+    if (isProvider) {
+      setOnlineProviders([]);
+      return;
+    }
+    try {
+      setOnlineProviders(await listOnlineProviders(kind));
+    } catch {
+      setOnlineProviders([]);
+    }
+  }, [isProvider, kind]);
 
   const loadLists = useCallback(async () => {
     if (!user?.id) return;
@@ -141,12 +164,19 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
   useEffect(() => {
     void loadPets();
     void loadLists();
-  }, [loadPets, loadLists]);
+    void loadOnline();
+  }, [loadPets, loadLists, loadOnline]);
 
-  useLiveAjaxPoll(loadLists, {
-    enabled: Boolean(user?.id),
-    intervalMs: 8_000,
-  });
+  useLiveAjaxPoll(
+    async () => {
+      await loadLists();
+      await loadOnline();
+    },
+    {
+      enabled: Boolean(user?.id),
+      intervalMs: 8_000,
+    }
+  );
   useEffect(() => subscribeIncomingRefresh(() => void loadLists()), [loadLists]);
 
   async function onToggleOnline(next: boolean) {
@@ -168,48 +198,81 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
       await patchWebProviderOnline(token, kind, next);
       await refreshMe();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'تغییر وضعیت ناموفق بود');
+      setError(errMessage(err, 'تغییر وضعیت ناموفق بود'));
     } finally {
       setOnlineBusy(false);
     }
   }
 
-  async function onConnect() {
+  function validatePatient(): string | null {
+    if (!user?.id || !token) return 'اول وارد حساب شو.';
+    if (!pets.length) return meta.needPet;
+    if (coins < cost) {
+      return `حداقل ${formatCoins(cost)} سکه لازم است. موجودی: ${formatCoins(coins)}`;
+    }
+    const others = onlineProviders.filter((p) => p.id !== user.id);
+    if (!others.length) return meta.noProviders;
+    return null;
+  }
+
+  async function sendRequest(confirmResend = false) {
     if (!user?.id || !token) {
       setError('اول وارد حساب شو.');
       return;
     }
-    if (!pets.length) {
-      setError('اول حداقل یک پت ثبت کن.');
+    const gate = validatePatient();
+    if (gate) {
+      setError(gate);
+      setConfirmPay(false);
       return;
     }
-    if (coins < cost) {
-      setError(`حداقل ${formatCoins(cost)} سکه لازم است. موجودی: ${formatCoins(coins)}`);
-      return;
-    }
-    const ok = window.confirm(
-      [
-        `${meta.patientCta}`,
-        `هزینه: ${formatCoins(cost)} سکه`,
-        meta.disclaimer || '',
-        'ادامه می‌دهی؟',
-      ]
-        .filter(Boolean)
-        .join('\n')
-    );
-    if (!ok) return;
     setBusy(true);
     setError(null);
+    setStatusMsg(null);
     try {
-      const res = await quickVetConnect(user.id, token, { kind });
+      let res;
+      try {
+        res = await quickVetConnect(user.id, token, { kind, confirmResend });
+      } catch (err) {
+        const needsConfirm =
+          err instanceof Error &&
+          ((err as Error & { requiresResendConfirm?: boolean }).requiresResendConfirm ||
+            /میخوای مجدد/.test(err.message));
+        if (needsConfirm && !confirmResend) {
+          setNeedsResendConfirm(true);
+          setConfirmPay(true);
+          setError('درخواست قبلی منقضی شده. برای ارسال مجدد دوباره تأیید کن.');
+          return;
+        }
+        throw err;
+      }
       await refreshMe();
       await loadLists();
-      window.alert(res.message);
+      await loadOnline();
+      setConfirmPay(false);
+      setNeedsResendConfirm(false);
+      setStatusMsg(res.message);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'ارسال درخواست ناموفق بود');
+      setError(errMessage(err, 'ارسال درخواست ناموفق بود'));
     } finally {
       setBusy(false);
     }
+  }
+
+  async function onPrimaryClick() {
+    setError(null);
+    setStatusMsg(null);
+    const gate = validatePatient();
+    if (gate) {
+      setError(gate);
+      setConfirmPay(false);
+      return;
+    }
+    if (!confirmPay) {
+      setConfirmPay(true);
+      return;
+    }
+    await sendRequest(needsResendConfirm);
   }
 
   async function onAccept(id: number) {
@@ -220,7 +283,7 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
       await loadLists();
       navigate(`/vet-chats/${id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'قبول درخواست ناموفق بود');
+      setError(errMessage(err, 'قبول درخواست ناموفق بود'));
     } finally {
       setActingId(null);
     }
@@ -233,11 +296,13 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
       await rejectVetConsultation(id, token);
       await loadLists();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'رد درخواست ناموفق بود');
+      setError(errMessage(err, 'رد درخواست ناموفق بود'));
     } finally {
       setActingId(null);
     }
   }
+
+  const onlineCount = onlineProviders.filter((p) => p.id !== user?.id).length;
 
   return (
     <div className="pepito-vet-consult" dir="rtl">
@@ -251,9 +316,18 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
         {meta.disclaimer && !isProvider ? <p className="muted">{meta.disclaimer}</p> : null}
       </header>
 
-      {error ? <p className="pepito-vet-consult-error">{error}</p> : null}
+      {error ? (
+        <p className="auth-error pepito-vet-consult-status" role="alert">
+          {error}
+        </p>
+      ) : null}
+      {statusMsg ? (
+        <p className="pepito-vet-consult-status" role="status">
+          {statusMsg}
+        </p>
+      ) : null}
 
-      {isProvider || hasRole ? (
+      {isProvider ? (
         <section className="pepito-vet-online-card">
           <p>
             وضعیت مدرک: <strong>{credentialLabel(credStatus)}</strong>
@@ -290,19 +364,59 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
 
       {!isProvider ? (
         <section className="pepito-vet-consult-cta">
+          <p className="pepito-vet-consult-hint" data-testid={`${kind}-online-count`}>
+            {isLoggedIn
+              ? onlineCount > 0
+                ? `${toPersianDigits(String(onlineCount))} نفر آنلاین آماده پذیرش`
+                : meta.noProviders
+              : 'برای ارسال درخواست وارد حساب شو.'}
+          </p>
           {!isLoggedIn ? (
             <Link to="/auth/login" className="pepito-btn button-1">
               ورود
             </Link>
           ) : (
-            <button
-              type="button"
-              className="pepito-btn button-1"
-              disabled={busy}
-              onClick={() => void onConnect()}
-            >
-              {busy ? 'در حال ارسال…' : `${meta.patientCta} (${formatCoins(cost)} سکه)`}
-            </button>
+            <>
+              {confirmPay ? (
+                <p className="pepito-vet-consult-hint" role="status">
+                  تأیید نهایی: {formatCoins(cost)} سکه از موجودی کسر می‌شود
+                  {meta.disclaimer ? ` — ${meta.disclaimer}` : ''}.
+                </p>
+              ) : null}
+              <button
+                type="button"
+                className="pepito-btn button-1"
+                disabled={busy}
+                data-testid={`${kind}-request-cta`}
+                onClick={() => void onPrimaryClick()}
+              >
+                {busy
+                  ? 'در حال ارسال…'
+                  : confirmPay
+                    ? `تأیید و ارسال (${formatCoins(cost)} سکه)`
+                    : `${meta.patientCta} (${formatCoins(cost)} سکه)`}
+              </button>
+              {confirmPay ? (
+                <button
+                  type="button"
+                  className="pepito-btn pepito-btn--ghost"
+                  disabled={busy}
+                  onClick={() => setConfirmPay(false)}
+                >
+                  انصراف
+                </button>
+              ) : null}
+              {!pets.length ? (
+                <Link to="/add-pet" className="pepito-btn pepito-btn--ghost">
+                  ثبت پت
+                </Link>
+              ) : null}
+              {coins < cost ? (
+                <Link to="/wallet" className="pepito-btn pepito-btn--ghost">
+                  شارژ سکه
+                </Link>
+              ) : null}
+            </>
           )}
         </section>
       ) : null}
@@ -363,12 +477,6 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
           </ul>
         )}
       </section>
-
-      {!isProvider ? (
-        <p className="muted">
-          هزینه مشورت خرید از صاحب پت: {formatCoins(SEEKER_ADVICE_COST)} سکه — از منوی دنبال پت.
-        </p>
-      ) : null}
     </div>
   );
 }

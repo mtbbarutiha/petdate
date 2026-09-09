@@ -841,6 +841,13 @@ export async function listOnlineVets(): Promise<User[]> {
   return request<User[]>('/api/users/vets/online');
 }
 
+/** مربی / پرستار آنلاین تأییدشده برای درخواست سریع */
+export async function listOnlineProviders(
+  kind: 'trainer' | 'sitter'
+): Promise<User[]> {
+  return request<User[]>(`/api/users/providers/online?kind=${encodeURIComponent(kind)}`);
+}
+
 export type QuickVetConnectResult = {
   ok: true;
   sent: number;
