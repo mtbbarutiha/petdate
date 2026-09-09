@@ -313,8 +313,11 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
     margin-top: 0;
   }
   .pepito-hero {
-    --pepito-hero-h: calc(85vh - var(--pepito-nav-h));
-    min-height: var(--pepito-hero-h);
+    /* Keep 16:9 banner sizing on tablet/app shell too */
+    aspect-ratio: 16 / 9;
+    max-height: min(36rem, 72vh);
+    min-height: 14rem;
+    height: auto;
   }
   .pepito-app-layout {
     padding-top: 0 !important;
@@ -378,19 +381,22 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 }
 
 /* Hero — Pepito `.header.slider-fade` / `.banner-header` measurements
-   Absolute slides + fixed min-height keep carousel height stable across swaps.
-   Per-slide object-position (--focus-*) keeps subjects visible when cover crops
-   tall viewports (new photos often sit lower in frame with empty upper space). */
+   Size to the 16:9 photo band (same as uploads) instead of near-full viewport;
+   that avoids a tall dark strip / hard charcoal edge above the white page.
+   Per-slide object-position (--focus-*) keeps subjects visible when cover crops. */
 .pepito-hero {
   position: relative;
   width: 100%;
   max-width: 100%;
   /* Fixed-nav offset only when nav is fixed — see @media (min-width: 860px) below */
   margin-top: 0;
-  /* Stable band: min + preferred height so slide opacity fades don't reflow */
-  --pepito-hero-h: calc(93vh - var(--pepito-nav-h));
-  min-height: var(--pepito-hero-h);
+  /* Match slide JPEG aspect; cap so ultrawide doesn't get a huge band */
+  --pepito-hero-h: min(40rem, calc(100vw * 9 / 16));
+  aspect-ratio: 16 / 9;
+  width: 100%;
   height: auto;
+  min-height: 16rem;
+  max-height: min(40rem, 78vh);
   display: grid;
   align-items: center;
   overflow: hidden;
@@ -398,28 +404,9 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   color: #fff;
   touch-action: pan-y;
   box-sizing: border-box;
-  /* Avoid a harsh hairline where the dark slide meets the white page */
   border: 0;
-  border-bottom: none;
-  box-shadow: none;
-}
-/* Soft blend into the white section below — no hard charcoal edge */
-.pepito-hero::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: clamp(3.25rem, 8vh, 5.5rem);
-  z-index: 3;
-  pointer-events: none;
-  background: linear-gradient(
-    to bottom,
-    rgba(255, 255, 255, 0) 0%,
-    rgba(255, 255, 255, 0.22) 42%,
-    rgba(255, 255, 255, 0.72) 78%,
-    #fff 100%
-  );
+  /* If a 1px seam appears, it must not read as a black hairline */
+  background-color: #fff;
 }
 @media (min-width: 860px) {
   .pepito-hero,
@@ -428,9 +415,10 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
     margin-top: var(--pepito-nav-h);
   }
   .pepito-hero {
-    /* Lock desktop height so copy padding can't stretch differently per slide */
-    min-height: var(--pepito-hero-h);
-    height: var(--pepito-hero-h);
+    /* Keep 16:9 lock — don't stretch to arbitrary vh */
+    height: auto;
+    min-height: 18rem;
+    max-height: min(42rem, 78vh);
   }
 }
 .pepito-hero-slides {
@@ -450,7 +438,8 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   transition: opacity 1.1s ease;
   z-index: 0;
   overflow: hidden;
-  background-color: #1a0f2e;
+  /* Match page — never flash a charcoal letterbox under the photo */
+  background-color: #fff;
   background-position: center top;
   pointer-events: none;
 }
@@ -546,7 +535,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   width: min(var(--pepito-container-max), 100%);
   margin-inline: auto;
   padding-inline: var(--pepito-container-pad);
-  padding-block: calc(env(safe-area-inset-top, 0px) + 5.5rem) 5rem;
+  padding-block: calc(env(safe-area-inset-top, 0px) + 4.5rem) 3.25rem;
   box-sizing: border-box;
   animation: pepito-rise 0.75s ease both;
 }
@@ -560,22 +549,19 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   position: absolute;
   z-index: 5;
   inset-inline: 0;
-  /* Sit above the soft bottom fade so dots aren't clipped against the page edge */
-  bottom: clamp(1.35rem, 3.8vh, 2.75rem);
+  bottom: 1.25rem;
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 0.65rem;
-  padding-block: 0.35rem;
+  gap: 0.55rem;
   pointer-events: none;
 }
 .pepito-hero-dot {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  border: 1.5px solid rgba(255, 255, 255, 0.85);
-  background: rgba(0, 0, 0, 0.18);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.22);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  background: transparent;
   padding: 0;
   cursor: pointer;
   pointer-events: auto;
@@ -591,8 +577,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 .pepito-hero-dot.is-active {
   background: #fff;
   border-color: #fff;
-  transform: scale(1.12);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.28);
+  transform: scale(1.08);
 }
 /* Pepito `.slider-fade .owl-theme .owl-nav` — side circular chevrons */
 .pepito-hero-nav {
@@ -769,8 +754,10 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 
 @media screen and (max-width: 720px) {
   .pepito-hero {
-    --pepito-hero-h: calc(85vh - var(--pepito-nav-h));
-    min-height: var(--pepito-hero-h);
+    aspect-ratio: 16 / 9;
+    max-height: min(28rem, 62vh);
+    min-height: 12.5rem;
+    height: auto;
   }
   .pepito-kicker {
     font-size: 16px;
@@ -9152,21 +9139,18 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
     margin-top: 0;
   }
   .pepito-hero {
-    /* Prefer svh only — dvh changes with mobile URL chrome and causes jump */
-    --pepito-hero-h: calc(100svh - var(--pepito-nav-h));
-    min-height: var(--pepito-hero-h);
-    /* Allow copy to grow on short phones without clipping CTAs */
+    /* Banner-sized 16:9 — not full-viewport (that left a dark bottom seam) */
+    aspect-ratio: 16 / 9;
+    max-height: min(26rem, 58vh);
+    min-height: 12rem;
     height: auto;
     max-width: 100%;
   }
   .pepito-hero-inner {
-    padding-block: calc(env(safe-area-inset-top, 0px) + 1.35rem) 3.25rem;
-  }
-  .pepito-hero::after {
-    height: clamp(2.75rem, 7vh, 4.25rem);
+    padding-block: calc(env(safe-area-inset-top, 0px) + 1.35rem) 2.5rem;
   }
   .pepito-hero-dots {
-    bottom: calc(0.85rem + env(safe-area-inset-bottom, 0px));
+    bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
   }
   .pepito-hero-media,
   .pepito-hero-slide.is-active .pepito-hero-media {
