@@ -27,6 +27,7 @@ import {
   fetchPrescriptionPdfBuffer,
   getPet,
   getPetMedical,
+  getUserById,
   getUserByTelegramId,
   getVetConsultation,
   listPets,
@@ -38,16 +39,29 @@ import { getCtxUser, menuKeyboardFor } from './helpers';
 import { MENU_LABELS, mainMenuKeyboard } from '../keyboards';
 import { effectiveWebUrl, isTelegramInlineUrl, resolveTelegramPhotoUrl } from '../urls';
 import { claimWebChatCtaOnce } from '../web-chat-cta-once';
+import { replyWithOwnerProfile } from './owner-chat';
 
 /** Reply-keyboard labels for vet chat (short so buttons stay compact). */
 export const VET_CHAT_BTNS = {
   /** Keep on the first keyboard row — on Telegram mobile the 3rd row is easy to miss. */
   end: '🔌 بستن چت',
   petProfile: '🐾 پروفایل پت',
+  ownerProfile: '👤 پروفایل صاحب پت',
   medical: '📋 پرونده',
   addNote: '📝 ثبت پرونده',
   prescription: '💊 نسخه',
 } as const;
+
+const VET_CHAT_MEDICAL_BTNS = new Set<string>([
+  VET_CHAT_BTNS.medical,
+  VET_CHAT_BTNS.addNote,
+  VET_CHAT_BTNS.prescription,
+]);
+
+const VET_CHAT_PROFILE_BTNS = new Set<string>([
+  VET_CHAT_BTNS.petProfile,
+  VET_CHAT_BTNS.ownerProfile,
+]);
 
 /** Previous end-chat label — still accept it until clients get the new keyboard. */
 const VET_CHAT_END_ALIASES = [VET_CHAT_BTNS.end, '🔌 قطع چت'] as const;
@@ -143,34 +157,47 @@ async function promptPrescriptionComposer(
 
 /**
  * Vet chat reply keyboard.
- * Doctor (vet consult only): end chat → pet/medical → note/Rx.
- * Trainer/sitter provider or patient: end-chat only (no medical tools).
+ * Doctor (vet): end → pet/medical → note/Rx.
+ * Trainer/sitter provider: end → pet profile + owner profile (no medical tools).
+ * Patient (any kind): end-chat only.
  */
 export function vetChatReplyKeyboard(
   isProvider: boolean,
   serviceKind: ConsultServiceKind = 'vet'
 ): Keyboard {
-  const medicalTools = isProvider && serviceKind === 'vet';
-  if (!medicalTools) {
+  if (!isProvider) {
     return new Keyboard()
       .text(VET_CHAT_BTNS.end)
       .danger()
       .resized()
       .persistent();
   }
+  if (serviceKind === 'vet') {
+    return new Keyboard()
+      .text(VET_CHAT_BTNS.end)
+      .danger()
+      .row()
+      .text(VET_CHAT_BTNS.petProfile)
+      .primary()
+      .text(VET_CHAT_BTNS.medical)
+      .primary()
+      .row()
+      .text(VET_CHAT_BTNS.addNote)
+      .success()
+      .text(VET_CHAT_BTNS.prescription)
+      .success()
+      .resized()
+      .persistent();
+  }
+  // Trainer / sitter / other non-medical providers: profile views only.
   return new Keyboard()
     .text(VET_CHAT_BTNS.end)
     .danger()
     .row()
     .text(VET_CHAT_BTNS.petProfile)
     .primary()
-    .text(VET_CHAT_BTNS.medical)
+    .text(VET_CHAT_BTNS.ownerProfile)
     .primary()
-    .row()
-    .text(VET_CHAT_BTNS.addNote)
-    .success()
-    .text(VET_CHAT_BTNS.prescription)
-    .success()
     .resized()
     .persistent();
 }
@@ -329,9 +356,11 @@ export async function startVetChat(
         '',
         `صاحب پت: <b>${escapeHtml(patient.name)}</b>`,
         'هر پیامی بفرستی مستقیم به صاحب پت می‌رسد.',
-        'ابزار پزشکی (نسخه/پرونده/پروفایل پت) در این گفتگو نیست.',
+        'ابزار پزشکی (نسخه/پرونده) در این گفتگو نیست.',
         '',
-        `پایان چت: ${VET_CHAT_BTNS.end}`,
+        `• ${VET_CHAT_BTNS.petProfile}`,
+        `• ${VET_CHAT_BTNS.ownerProfile}`,
+        `• ${VET_CHAT_BTNS.end}`,
       ].join('\n');
 
   const patientIntro = [
@@ -576,6 +605,35 @@ async function showProfileForPatientPets(
   await ctx.reply('پروفایل کدام پت؟', { reply_markup: kb });
 }
 
+export async function handleVetChatOwnerProfileView(ctx: Context): Promise<boolean> {
+  const from = ctx.from;
+  if (!from) return false;
+  const session = await getSession(String(from.id));
+  if (!session?.vetChatConsultId) return false;
+  if (!CHAT_STEPS.has(session.step)) return false;
+  if (session.vetChatRole !== 'vet') {
+    await ctx.reply('این دکمه فقط برای ارائه‌دهنده خدمت است.');
+    return true;
+  }
+
+  const consult = await getVetConsultation(session.vetChatConsultId);
+  if (!consult) {
+    await ctx.reply('مشاوره پیدا نشد.');
+    return true;
+  }
+
+  const owner = await getUserById(consult.patientUserId);
+  if (!owner) {
+    await ctx.reply('پروفایل صاحب پت پیدا نشد.');
+    return true;
+  }
+
+  await replyWithOwnerProfile(ctx, owner, {
+    heading: '👤 <b>پروفایل صاحب پت</b>',
+  });
+  return true;
+}
+
 export async function handleVetChatPetProfileView(ctx: Context): Promise<boolean> {
   const from = ctx.from;
   if (!from) return false;
@@ -583,7 +641,7 @@ export async function handleVetChatPetProfileView(ctx: Context): Promise<boolean
   if (!session?.vetChatConsultId) return false;
   if (!CHAT_STEPS.has(session.step)) return false;
   if (session.vetChatRole !== 'vet') {
-    await ctx.reply('این دکمه فقط برای دامپزشک است.');
+    await ctx.reply('این دکمه فقط برای ارائه‌دهنده خدمت است.');
     return true;
   }
 
@@ -1229,26 +1287,23 @@ export async function handleVetChatRelay(ctx: Context): Promise<boolean> {
   const text = ctx.message?.text?.trim();
   if (text) {
     if (isVetChatEndLabel(text)) return handleVetChatEnd(ctx);
-    if (
-      text === VET_CHAT_BTNS.petProfile ||
-      text === VET_CHAT_BTNS.medical ||
-      text === VET_CHAT_BTNS.addNote ||
-      text === VET_CHAT_BTNS.prescription
-    ) {
+    if (VET_CHAT_PROFILE_BTNS.has(text) || VET_CHAT_MEDICAL_BTNS.has(text)) {
       const consultId = session.vetChatConsultId;
-      if (consultId) {
-        const consult = await getVetConsultation(consultId).catch(() => null);
-        if ((consult?.serviceKind ?? 'vet') !== 'vet') {
-          await ctx.reply('ابزار پزشکی فقط در مشاوره دامپزشک در دسترس است.', {
-            reply_markup: vetChatReplyKeyboard(
-              session.vetChatRole === 'vet',
-              consult?.serviceKind ?? 'trainer'
-            ),
-          });
-          return true;
-        }
+      const consult = consultId
+        ? await getVetConsultation(consultId).catch(() => null)
+        : null;
+      const serviceKind = consult?.serviceKind ?? 'vet';
+      const isProvider = session.vetChatRole === 'vet';
+
+      if (VET_CHAT_MEDICAL_BTNS.has(text) && serviceKind !== 'vet') {
+        await ctx.reply('ابزار پزشکی فقط در مشاوره دامپزشک در دسترس است.', {
+          reply_markup: vetChatReplyKeyboard(isProvider, serviceKind),
+        });
+        return true;
       }
+
       if (text === VET_CHAT_BTNS.petProfile) return handleVetChatPetProfileView(ctx);
+      if (text === VET_CHAT_BTNS.ownerProfile) return handleVetChatOwnerProfileView(ctx);
       if (text === VET_CHAT_BTNS.medical) return handleVetChatMedicalView(ctx);
       if (text === VET_CHAT_BTNS.addNote) return handleVetChatAddNoteStart(ctx);
       if (text === VET_CHAT_BTNS.prescription) return handleVetChatPrescriptionStart(ctx);

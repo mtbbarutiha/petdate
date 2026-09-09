@@ -50,6 +50,7 @@ import { RequestCountdown } from '../components/RequestCountdown';
 import {
   VetChatDoctorSheets,
   VetChatDoctorToolbar,
+  VetChatProfileToolbar,
   type VetDoctorPanel,
 } from '../components/VetChatDoctorTools';
 import { useAuthStore } from '../hooks/useAuthStore';
@@ -290,7 +291,10 @@ export function VetChatPage() {
 
   const isVetSide = Boolean(user && consult && user.id === consult.vetUserId);
   const isMedicalConsult = (consult?.serviceKind ?? 'vet') === 'vet';
-  const showDoctorTools = isVetSide && isMedicalConsult;
+  const showMedicalTools = isVetSide && isMedicalConsult;
+  /** Trainer/sitter provider: pet + owner profile (no Rx/medical). */
+  const showProfileTools = isVetSide && !isMedicalConsult;
+  const showProviderSheets = showMedicalTools || showProfileTools;
   const isVetUser = userHasRole(user, 'vet');
   const peerUserId = consult
     ? isVetSide
@@ -1480,7 +1484,7 @@ export function VetChatPage() {
                     </button>
                     {menuOpen ? (
                       <div className="tg-chat-menu" role="menu">
-                        {showDoctorTools ? (
+                        {showMedicalTools ? (
                           <>
                             <button
                               type="button"
@@ -1521,6 +1525,30 @@ export function VetChatPage() {
                               }}
                             >
                               پروفایل پت
+                            </button>
+                          </>
+                        ) : null}
+                        {showProfileTools ? (
+                          <>
+                            <button
+                              type="button"
+                              role="menuitem"
+                              onClick={() => {
+                                setMenuOpen(false);
+                                setDoctorPanel('pet');
+                              }}
+                            >
+                              پروفایل پت
+                            </button>
+                            <button
+                              type="button"
+                              role="menuitem"
+                              onClick={() => {
+                                setMenuOpen(false);
+                                setDoctorPanel('owner');
+                              }}
+                            >
+                              پروفایل صاحب پت
                             </button>
                           </>
                         ) : null}
@@ -1753,8 +1781,18 @@ export function VetChatPage() {
                 </div>
               ) : chatUnlocked ? (
                 <>
-                  {showDoctorTools ? (
+                  {showMedicalTools ? (
                     <VetChatDoctorToolbar
+                      disabled={sending || ending}
+                      onOpen={(panel) => {
+                        setEmojiOpen(false);
+                        setMenuOpen(false);
+                        setDoctorPanel(panel);
+                      }}
+                    />
+                  ) : null}
+                  {showProfileTools ? (
+                    <VetChatProfileToolbar
                       disabled={sending || ending}
                       onOpen={(panel) => {
                         setEmojiOpen(false);
@@ -1928,7 +1966,7 @@ export function VetChatPage() {
         </section>
       ) : null}
 
-      {showDoctorTools && consult && user && chatUnlocked ? (
+      {showProviderSheets && consult && user && chatUnlocked ? (
         <VetChatDoctorSheets
           open={doctorPanel}
           onClose={() => setDoctorPanel(null)}

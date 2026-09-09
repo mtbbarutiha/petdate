@@ -373,10 +373,13 @@ export async function wipePlaydateChatTelegram(opts: {
 }
 
 /**
- * Sticky ReplyKeyboard for vet consult chat (role-aware).
+ * Sticky ReplyKeyboard for vet consult chat (role + serviceKind aware).
  * Labels match packages/bot vetChatReplyKeyboard — never send+delete carriers.
  */
-function vetChatStickyKeyboard(peerRole: 'vet' | 'patient') {
+function vetChatStickyKeyboard(
+  peerRole: 'vet' | 'patient',
+  serviceKind: 'vet' | 'trainer' | 'sitter' | 'seeker_advice' | string = 'vet'
+) {
   if (peerRole === 'patient') {
     return {
       keyboard: [[{ text: '🔌 بستن چت' }]],
@@ -384,11 +387,22 @@ function vetChatStickyKeyboard(peerRole: 'vet' | 'patient') {
       is_persistent: true,
     };
   }
+  if (serviceKind === 'vet') {
+    return {
+      keyboard: [
+        [{ text: '🔌 بستن چت' }],
+        [{ text: '🐾 پروفایل پت' }, { text: '📋 پرونده' }],
+        [{ text: '📝 ثبت پرونده' }, { text: '💊 نسخه' }],
+      ],
+      resize_keyboard: true,
+      is_persistent: true,
+    };
+  }
+  // Trainer / sitter providers: profile views only (no medical tools).
   return {
     keyboard: [
       [{ text: '🔌 بستن چت' }],
-      [{ text: '🐾 پروفایل پت' }, { text: '📋 پرونده' }],
-      [{ text: '📝 ثبت پرونده' }, { text: '💊 نسخه' }],
+      [{ text: '🐾 پروفایل پت' }, { text: '👤 پروفایل صاحب پت' }],
     ],
     resize_keyboard: true,
     is_persistent: true,
@@ -406,6 +420,7 @@ export async function notifyVetChatTelegram(opts: {
   peerRole: 'vet' | 'patient';
   text: string;
   protectContent?: boolean;
+  serviceKind?: 'vet' | 'trainer' | 'sitter' | 'seeker_advice' | string | null;
   mediaKind?: PlaydateChatMediaKind | null;
   storageKey?: string | null;
   mimeType?: string | null;
@@ -416,7 +431,7 @@ export async function notifyVetChatTelegram(opts: {
   const chatId = String(opts.toTelegramId).trim();
   const secure = Boolean(opts.protectContent);
   const protect = secure ? { protect_content: true } : {};
-  const keyboard = vetChatStickyKeyboard(opts.peerRole);
+  const keyboard = vetChatStickyKeyboard(opts.peerRole, opts.serviceKind ?? 'vet');
   const caption = (opts.text || '').trim();
   const storageAbs = opts.storageKey ? resolveStoragePath(opts.storageKey) : null;
   const hasFile = Boolean(storageAbs && fs.existsSync(storageAbs));
