@@ -206,6 +206,27 @@ function useIsDesktop() {
   return desktop;
 }
 
+function inboxListTitle(scope: InboxScope): string {
+  if (scope === 'vet') return 'گفتگوهای پزشک';
+  if (scope === 'trainer') return 'گفتگوهای مربی';
+  if (scope === 'sitter') return 'گفتگوهای پرستار';
+  return 'هم بازی';
+}
+
+function inboxKindBadge(c: InboxConversation): string {
+  if (c.kind === 'playmate') return 'همبازی';
+  if (c.serviceKind === 'trainer') return 'آموزش';
+  if (c.serviceKind === 'sitter') return 'پرستار';
+  return 'مشاوره';
+}
+
+function providerHomePath(scope: InboxScope): string {
+  if (scope === 'vet') return '/vet-consult';
+  if (scope === 'trainer') return '/trainer-consult';
+  if (scope === 'sitter') return '/sitter-consult';
+  return '/home';
+}
+
 function ConversationListPane({
   conversations,
   loading,
@@ -231,22 +252,24 @@ function ConversationListPane({
   onReject: (item: InboxConversation) => void;
   onViewOwner: (item: InboxConversation) => void;
 }) {
+  const isPlaymateHub = scope === 'owner';
+  const panelPath = providerHomePath(scope);
   return (
     <aside className="tg-chat-list" aria-label="فهرست گفتگوها">
       <header className="tg-chat-list-head">
         <Link
-          to={scope === 'vet' ? '/vet-consult' : '/home'}
+          to={panelPath}
           className="tg-icon-btn"
-          aria-label={scope === 'vet' ? 'بازگشت به پنل پزشک' : 'بازگشت'}
+          aria-label={isPlaymateHub ? 'بازگشت' : 'بازگشت به پنل'}
         >
           <ArrowRight size={18} />
         </Link>
         <div className="tg-chat-list-brand">
           <SiteLogo className="tg-chat-list-logo" height={34} />
-          <h1>{scope === 'vet' ? 'گفتگوهای پزشک' : 'هم بازی'}</h1>
+          <h1>{inboxListTitle(scope)}</h1>
         </div>
-        {scope !== 'vet' ? <FindPlaymatePanel variant="header" onSent={onRefresh} /> : null}
-        {scope === 'vet' ? (
+        {isPlaymateHub ? <FindPlaymatePanel variant="header" onSent={onRefresh} /> : null}
+        {!isPlaymateHub ? (
           <button
             type="button"
             className="tg-icon-btn"
@@ -270,7 +293,7 @@ function ConversationListPane({
           </div>
          ) : conversations.length === 0 ? (
           <div
-            className={`tg-chat-list-empty${scope !== 'vet' ? ' tg-chat-list-empty--hub' : ''}`}
+            className={`tg-chat-list-empty${isPlaymateHub ? ' tg-chat-list-empty--hub' : ''}`}
           >
             {scope === 'vet' ? (
               <>
@@ -283,6 +306,33 @@ function ConversationListPane({
                   رفتن به پنل پزشک
                 </Link>
               </>
+            ) : scope === 'trainer' ? (
+              <>
+                <div className="tg-empty-mark" aria-hidden>
+                  <SiteLogo className="tg-chat-empty-logo" height={40} />
+                </div>
+                <h2>هماهنگی آموزش حضوری</h2>
+                <p>
+                  اینجا فقط با صاحبان پت برای هماهنگی زمان و جزئیات آموزش حضوری گفتگو
+                  می‌کنی — همبازی نیست.
+                </p>
+                <Link to="/trainer-consult" className="tg-chat-link-btn">
+                  رفتن به پنل مربی
+                </Link>
+              </>
+            ) : scope === 'sitter' ? (
+              <>
+                <div className="tg-empty-mark" aria-hidden>
+                  <SiteLogo className="tg-chat-empty-logo" height={40} />
+                </div>
+                <h2>هماهنگی پرستاری</h2>
+                <p>
+                  اینجا با صاحبان پت برای هماهنگی پرستاری گفتگو می‌کنی — همبازی نیست.
+                </p>
+                <Link to="/sitter-consult" className="tg-chat-link-btn">
+                  رفتن به پنل پرستار
+                </Link>
+              </>
             ) : (
               <FindPlaymatePanel compact onSent={onRefresh} />
             )}
@@ -293,6 +343,7 @@ function ConversationListPane({
               const active = activeKey === c.key;
               const busy = busyKey === c.key;
               const peer = c.peerPet;
+              const badge = inboxKindBadge(c);
               return (
                 <li key={c.key} className={`tg-chat-list-row${c.ongoing ? ' is-ongoing-row' : ''}`}>
                   <button
@@ -317,8 +368,12 @@ function ConversationListPane({
                     <span className="tg-chat-list-meta">
                       <strong>
                         {c.title}
-                        <em className={`tg-chat-list-kind${c.kind === 'vet' ? ' is-vet' : ''}`}>
-                          {c.kind === 'vet' ? 'مشاوره' : 'همبازی'}
+                        <em
+                          className={`tg-chat-list-kind${
+                            c.kind === 'vet' ? ' is-vet' : ''
+                          }`}
+                        >
+                          {badge}
                         </em>
                       </strong>
                       <small>{c.preview}</small>
@@ -397,16 +452,48 @@ function ThreadEmptyState({
   scope: InboxScope;
   desktop?: boolean;
 }) {
-  const isVet = scope === 'vet';
-  if (isVet) {
+  if (scope === 'vet') {
     return (
       <div className="tg-thread-empty">
         <div className="tg-empty-mark" aria-hidden>
           <SiteLogo className="tg-chat-empty-logo" height={40} />
         </div>
         <h2>مشاوره‌ای را شروع کن</h2>
+        <p>از فهرست یک گفتگوی مشاوره را باز کن یا از پنل پزشک درخواست جدید بپذیر.</p>
         <Link to="/vet-consult" className="tg-chat-link-btn">
           رفتن به پنل پزشک
+        </Link>
+      </div>
+    );
+  }
+  if (scope === 'trainer') {
+    return (
+      <div className="tg-thread-empty">
+        <div className="tg-empty-mark" aria-hidden>
+          <SiteLogo className="tg-chat-empty-logo" height={40} />
+        </div>
+        <h2>هماهنگی آموزش حضوری</h2>
+        <p>
+          اینجا با صاحبان پت برای هماهنگی آموزش حضوری گفتگو می‌کنی — همبازی نیست.
+        </p>
+        <Link to="/trainer-consult" className="tg-chat-link-btn">
+          رفتن به پنل مربی
+        </Link>
+      </div>
+    );
+  }
+  if (scope === 'sitter') {
+    return (
+      <div className="tg-thread-empty">
+        <div className="tg-empty-mark" aria-hidden>
+          <SiteLogo className="tg-chat-empty-logo" height={40} />
+        </div>
+        <h2>هماهنگی پرستاری</h2>
+        <p>
+          اینجا با صاحبان پت برای هماهنگی پرستاری گفتگو می‌کنی — همبازی نیست.
+        </p>
+        <Link to="/sitter-consult" className="tg-chat-link-btn">
+          رفتن به پنل پرستار
         </Link>
       </div>
     );
@@ -677,8 +764,16 @@ export function ChatPage() {
     return subscribeIncomingRefresh((detail) => {
       softReloadConversations();
       // Fresh playmate request → open گفتگو thread (request card).
+      // Provider scopes (vet/trainer/sitter) stay on service inbox — no playmate jump.
       const playmateId = detail?.kinds?.includes('playmate') ? detail.ids?.[0] : undefined;
-      if (!playmateId || inboxScope === 'vet') return;
+      if (
+        !playmateId ||
+        inboxScope === 'vet' ||
+        inboxScope === 'trainer' ||
+        inboxScope === 'sitter'
+      ) {
+        return;
+      }
       const target = `/chats/${playmateId}`;
       if (window.location.pathname === target) return;
       if (
@@ -690,9 +785,12 @@ export function ChatPage() {
     });
   }, [myUserId, softReloadConversations, inboxScope, navigate]);
 
-  // Playmate threads belong to owner scope — leave them when acting as vet.
+  // Playmate threads belong to owner scope — leave them in provider roles.
   useEffect(() => {
-    if (inboxScope === 'vet' && hasThread) {
+    if (
+      (inboxScope === 'vet' || inboxScope === 'trainer' || inboxScope === 'sitter') &&
+      hasThread
+    ) {
       navigate('/chats', { replace: true });
     }
   }, [inboxScope, hasThread, navigate]);
@@ -1526,15 +1624,20 @@ export function ChatPage() {
 
   // Incomplete registration: don't render broken empty chat chrome — clear CTA instead.
   if (!isProfileComplete) {
+    const gateCopy =
+      inboxScope === 'trainer'
+        ? 'برای دیدن گفتگوهای هماهنگی آموزش حضوری، اول ثبت‌نام را تمام کن (نام، سن، جنسیت و شهر).'
+        : inboxScope === 'sitter'
+          ? 'برای دیدن گفتگوهای هماهنگی پرستاری، اول ثبت‌نام را تمام کن (نام، سن، جنسیت و شهر).'
+          : inboxScope === 'vet'
+            ? 'برای دیدن گفتگوهای مشاوره دامپزشکی، اول ثبت‌نام را تمام کن (نام، سن، جنسیت و شهر).'
+            : 'برای دیدن هم بازی و پیدا کردن همبازی، اول ثبت‌نام را تمام کن (نام، سن، جنسیت و شهر).';
     return (
       <div className="tg-chat tg-chat--gate" dir="rtl">
         <div className="tg-profile-gate">
           <SiteLogo className="tg-chat-empty-logo" height={52} />
           <h1>پروفایلت هنوز کامل نیست</h1>
-          <p>
-            برای دیدن هم بازی و پیدا کردن همبازی، اول ثبت‌نام را تمام کن
-            (نام، سن، جنسیت و شهر).
-          </p>
+          <p>{gateCopy}</p>
           <Link to="/onboarding/profile" className="pepito-btn button-1 tg-profile-gate__cta">
             تکمیل پروفایل
           </Link>

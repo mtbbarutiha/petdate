@@ -1,8 +1,9 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { SEO, SITE } from '@petdate/shared';
+import { primaryRole, SEO, SITE } from '@petdate/shared';
 import { getAdoptionPet } from '../data/adoptionPets';
 import { getCategory, getProduct } from '../data/shopCatalog';
+import { useAuthStore } from '../hooks/useAuthStore';
 
 type PageMeta = {
   title: string;
@@ -14,7 +15,7 @@ type PageMeta = {
 const DEFAULT_DESC = SEO.description;
 
 /** Public / app routes → document title (+ optional description). */
-function metaForPath(pathname: string): PageMeta {
+function metaForPath(pathname: string, role?: ReturnType<typeof primaryRole>): PageMeta {
   const p = pathname.replace(/\/+$/, '') || '/';
 
   if (p === '/' || p === '/welcome') {
@@ -167,7 +168,15 @@ function metaForPath(pathname: string): PageMeta {
     return { title: SEO.titleTemplate('پروفایل پت'), robots: 'noindex,follow' };
   }
   if (p === '/chats' || p.startsWith('/chats/') || p.startsWith('/vet-chats')) {
-    return { title: SEO.titleTemplate('هم بازی'), robots: 'noindex,nofollow' };
+    const chatsTitle =
+      role === 'vet'
+        ? 'گفتگوهای پزشک'
+        : role === 'trainer'
+          ? 'گفتگوهای مربی'
+          : role === 'pet_sitter'
+            ? 'گفتگوهای پرستار'
+            : 'هم بازی';
+    return { title: SEO.titleTemplate(chatsTitle), robots: 'noindex,nofollow' };
   }
   if (p.startsWith('/onboarding')) {
     return { title: SEO.titleTemplate('راه‌اندازی حساب'), robots: 'noindex,follow' };
@@ -218,9 +227,11 @@ function upsertHreflang(hreflang: string, href: string) {
  */
 export function RouteSeo() {
   const { pathname } = useLocation();
+  const { user } = useAuthStore();
+  const role = primaryRole(user?.roles, user?.role);
 
   useEffect(() => {
-    const meta = metaForPath(pathname);
+    const meta = metaForPath(pathname, role);
     document.title = meta.title;
 
     const description = meta.description ?? DEFAULT_DESC;
@@ -247,7 +258,7 @@ export function RouteSeo() {
     upsertMeta('name', 'twitter:title', meta.title);
     upsertMeta('name', 'twitter:description', description);
     upsertMeta('name', 'twitter:image', SITE.ogImage);
-  }, [pathname]);
+  }, [pathname, role]);
 
   return null;
 }
