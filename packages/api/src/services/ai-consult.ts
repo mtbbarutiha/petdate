@@ -120,7 +120,9 @@ function systemPrompt(kind: AiConsultKind): string {
       'ترجیح بده اول یک راهنمایی مفید جزئی بدهی، بعد حداکثر یک سؤال سبک؛ گفتگو را با فرم پذیرش یا لیست «بگو سن، محیط، از کی…» متوقف نکن.',
       'دانش درونی‌ات (عنوان کتاب را مگر با سؤال «منبع» نگو): Culture Clash / Donaldson، Puppy Primer / McConnell، Think Like a Cat / Johnson-Bennett، Total Cat Mojo / Galaxy، Companion Parrot Handbook / Blanchard، Manual of Exotic Pet Practice / Mitchell & Tully.',
       'روش‌ها: جایزه و تقویت مثبت، بدون زور و تنبیه بدنی، کلیکر/کلمهٔ آفرین، آروم‌کردن ترس، قلاده، فاصلهٔ امن، بازی و enrichment.',
-      'محتوا باید دقیق باشد ولی لحن انسانی: ۲–۳ پاراگراف حرف زدنی. اگر مرحله می‌گویی با «اول… بعد…» بگو نه با تیتر درسی. آخرش یک سؤال خودمونی بپرس («الان بیشتر تو خونه می‌کشه یا بیرون؟»).',
+      'محتوا باید دقیق باشد ولی لحن انسانی: ۲–۳ پاراگراف حرف زدنی. اگر مرحله می‌گویی با «اول… بعد…» بگو نه با تیتر درسی.',
+      'گفتگو را ادامه بده؛ بعد از احوال‌پرسی اولیه هی سؤال تکراری نپرس. اگر سن/محیط را قبلاً پرسیدی یا کاربر جواب داد، دوباره نپرس.',
+      'لازم نیست هر پیام با سؤال تمام شود. بیشتر راهنمایی بده و بگو تمرین را انجام دهد و نتیجه را بگوید؛ فقط وقتی چیز تازه‌ای لازم است یک سؤال کوتاه تازه بپرس.',
       'توله با بالغ فرق دارد؛ گربه با سگ یکی نیست. اگر چیزی کم بود خودمونی و کوتاه بپرس — بدون متای «برای اینکه درست راهنمایی کنم».',
       'در پاسخ فارسی از DOG/CAT یا کد انگلیسی گونه استفاده نکن؛ بگو سگ یا گربه (یا پرنده/خرگوش/همستر/…).',
       'پزشکی/اورژانس: نگران شو، بفرست پیش دامپزشک؛ دارو تجویز نکن.',
@@ -214,11 +216,65 @@ function petLabel(ctx: AiConsultContext): string {
   return [ctx.petName, ctx.petBreed || speciesLabelFa(ctx.petSpecies)].filter(Boolean).join(' · ') || 'پت';
 }
 
+/** True if profile or chat history already contains a usable pet age. */
+function conversationHasPetAge(ctx: AiConsultContext): boolean {
+  if (ctx.petAgeMonths != null && Number.isFinite(ctx.petAgeMonths)) return true;
+  const blobs = [
+    ...(ctx.history ?? []).map((h) => h.content),
+    ctx.userMessage ?? '',
+  ];
+  return blobs.some((t) => extractPetAgeMonthsFromText(t) != null);
+}
+
+/** Parse rough age in months from Persian/English owner replies. */
+export function extractPetAgeMonthsFromText(text: string): number | null {
+  const raw = String(text || '')
+    .replace(/[۰-۹]/g, (d) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)))
+    .replace(/[٠-٩]/g, (d) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)))
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!raw || raw.length > 80) return null;
+  // Longer suffixes first so «سالشه» is not eaten by «سال».
+  const year = raw.match(/(?:^|[^\d])(\d{1,2})\s*(?:سالشه|ساله|سال|yo|years?)/i);
+  if (year) {
+    const y = Number(year[1]);
+    if (y >= 0 && y <= 30) return y * 12;
+  }
+  const month = raw.match(/(?:^|[^\d])(\d{1,2})\s*(?:ماهشه|ماهه|ماه|months?)/i);
+  if (month) {
+    const mth = Number(month[1]);
+    if (mth >= 1 && mth <= 360) return mth;
+  }
+  if (/^\d{1,2}$/.test(raw)) {
+    const n = Number(raw);
+    if (n >= 1 && n <= 20) return n * 12;
+  }
+  return null;
+}
+
+function assistantAlreadyAskedAge(ctx: AiConsultContext): boolean {
+  return (ctx.history ?? []).some(
+    (h) =>
+      h.role === 'assistant' &&
+      /چند\s*سال|چندسال|سن(?:ش)?\b|ماهش/.test(h.content)
+  );
+}
+
+function assistantAlreadyAskedHomeOrOut(ctx: AiConsultContext): boolean {
+  return (ctx.history ?? []).some(
+    (h) =>
+      h.role === 'assistant' &&
+      /خونه‌?ست یا بیرون|تو خونه|خونه می‌کشه|بیرون؟/.test(h.content)
+  );
+}
+
 function ageAwareAside(ctx: AiConsultContext): string {
   const species = String(ctx.petSpecies || '').toLowerCase();
   const breed = String(ctx.petBreed || '').trim();
   const name = ctx.petName || 'پت';
-  const hasAge = ctx.petAgeMonths != null && Number.isFinite(ctx.petAgeMonths);
+  const hasAge =
+    (ctx.petAgeMonths != null && Number.isFinite(ctx.petAgeMonths)) ||
+    conversationHasPetAge(ctx);
   if (/cat|گربه/.test(species) || /گربه|میو/.test(`${ctx.petName || ''} ${breed}`)) {
     return `راستی برای ${name} یادت باشه گربه‌ها با زور جلو نمی‌رن؛ جلسه‌های خیلی کوتاه و با حق انتخاب معمولاً بهتر جواب می‌ده.`;
   }
@@ -232,13 +288,19 @@ function ageAwareAside(ctx: AiConsultContext): string {
     return `با توجه به نژاد ${breed}، انرژی و حساسیت ${name} رو در نظر بگیر و تمرین رو آروم‌آروم سخت‌تر کن.`;
   }
   if (hasAge) {
-    const months = ctx.petAgeMonths as number;
-    if (months < 12) {
+    const months =
+      ctx.petAgeMonths != null && Number.isFinite(ctx.petAgeMonths)
+        ? (ctx.petAgeMonths as number)
+        : null;
+    if (months != null && months < 12) {
       return `با حدود ${months} ماهگی، جلسه‌ها رو کوتاه و پرتکرار نگه دار.`;
     }
     return `با سن بالغ‌تر، آروم‌آروم سخت‌تر کن ولی عجله نکن.`;
   }
-  // Brief natural ask — no meta «برای اینکه درست راهنمایی کنم».
+  // Ask age at most once per conversation — never loop the same intake question.
+  if (assistantAlreadyAskedAge(ctx)) {
+    return `هر وقت خواستی بگو تمرین چطور پیش رفت — همین‌جا ادامه می‌دیم.`;
+  }
   return `تقریباً چندساله‌ست؟`;
 }
 
@@ -750,11 +812,37 @@ function findTrainerTopicFromHistory(
 
 function isShortTrainerFollowUp(message: string): boolean {
   const normalized = message.replace(/\s+/g, ' ').trim();
-  if (normalized.length > 64) return false;
-  return /^(بله|آره|اره|باشه|مرسی|ممنون|بیشتر|ادامه|چطور|چجوری|چگونه|بعد|بعدش|؟|\?|ok|okay)([\s،.!؟]*)$|^(بیشتر\s+توضیح|ادامه\s+بده|مرحله\s+بعد|دقیق‌?تر|عمیق‌?تر|اگر\s+گیر)/i.test(
+  if (normalized.length > 72) return false;
+  return /^(بله|آره|اره|باشه|مرسی|ممنون|بیشتر|ادامه|چطور|چجوری|چگونه|بعد|بعدش|خب|اوکی|باشه خب|؟|\?|ok|okay)([\s،.!؟]*)$|^(بیشتر\s+توضیح|ادامه\s+بده|مرحله\s+بعد|دقیق‌?تر|عمیق‌?تر|اگر\s+گیر|خب\s+بعدش|بعدش\s+چی|بعد\s+چی|بعدی\s+چی|خب\s+بعد)/i.test(
     normalized
   );
 }
+
+function isClarifyingAnswer(message: string): boolean {
+  const normalized = message.replace(/\s+/g, ' ').trim();
+  if (!normalized || normalized.length > 72) return false;
+  if (extractPetAgeMonthsFromText(normalized) != null) return true;
+  if (isShortTrainerFollowUp(normalized)) return true;
+  return /^(خونه|خانه|بیرون|هر\s*دو|هردو|پارک|کوچه|آپارتمان|بله|آره|نه|نمیاد|میاد)([\s،.!؟]*)$/i.test(
+    normalized
+  );
+}
+
+function lastTrainerTopicFromHistory(ctx: AiConsultContext): { topic: TrainerTopic; depth: number } | null {
+  const histOnly = { ...ctx, userMessage: '' };
+  return findTrainerTopicFromHistory(histOnly);
+}
+
+function continuationCoachNotes(topic: TrainerTopic, depth: number): string {
+  const tips = [
+    `الان که تا اینجا اومدیم، برو روی تکرارهای خیلی کوتاه ولی تمیز — کیفیت از تعداد مهم‌تره. اگر یک تکرار خراب شد، معیار رو یک پله آروم‌تر کن و دوباره بساز.`,
+    `یه ترفند کاربردی: قبل از سخت‌تر کردن محیط، سه موفقیت پشت‌سرهم تو حالت آسان بگیر. بعد فقط یک چیز را سخت کن (زمان یا فاصله یا حواس‌پرتی) — نه هر سه با هم.`,
+    `اگر حس می‌کنی گیر کردید، ویدیوی کوتاه از همون لحظه بگیر و برام بفرست؛ از روی جزئیات بدن و زمان‌بندی جایزه بهتر می‌تونم تنظیمش کنیم.`,
+    `برای تثبیت، بین تمرین‌های رسمی زندگی روزمره را قاطی کن: قبل غذا، قبل در، قبل بستن قلاده — همون رفتار را با جایزهٔ کوچک قلاب کن.`,
+  ];
+  return tips[(depth + topic.id.length) % tips.length]!;
+}
+
 
 function formatTrainerTopicReply(
   ctx: AiConsultContext,
@@ -762,7 +850,11 @@ function formatTrainerTopicReply(
   depth: number,
   opts?: { followUpLabel?: string }
 ): string {
-  const body = depth >= 2 ? topic.deeper : topic.primary;
+  const baseBody = depth >= 2 ? topic.deeper : topic.primary;
+  const body =
+    depth >= 3
+      ? `${topic.deeper}\n\n${continuationCoachNotes(topic, depth)}`
+      : baseBody;
   const hasHistory = (ctx.history?.length ?? 0) > 0;
   // Never restate/echo the user's question or topic title — answer directly.
   const openings = hasHistory
@@ -795,14 +887,19 @@ function trainerFollowUpReply(ctx: AiConsultContext): string | null {
   if (!history.length) return null;
 
   const lastUser = [...history].reverse().find((h) => h.role === 'user')?.content?.trim();
-  if (isShortTrainerFollowUp(q) && lastUser) {
+  if ((isShortTrainerFollowUp(q) || isClarifyingAnswer(q)) && lastUser) {
     const fromLast = findTrainerTopic(lastUser);
     const tracked = findTrainerTopicFromHistory({ ...ctx, userMessage: lastUser });
-    const topic = fromLast || tracked?.topic;
+    const fromHist = lastTrainerTopicFromHistory(ctx);
+    const topic = fromLast || tracked?.topic || fromHist?.topic;
     if (topic) {
-      const depth = Math.max(2, (tracked?.depth ?? 1) + 1);
+      const depth = Math.max(2, (tracked?.depth ?? fromHist?.depth ?? 1) + 1);
+      const ageBit =
+        extractPetAgeMonthsFromText(q) != null
+          ? `باشه، سن رو گرفتم.`
+          : `باشه،`;
       return formatTrainerTopicReply(ctx, topic, depth, {
-        followUpLabel: `باشه، بریم عمیق‌تر.`,
+        followUpLabel: `${ageBit} بریم ادامه بدیم و عمیق‌ترش کنیم.`,
       });
     }
   }
@@ -810,9 +907,13 @@ function trainerFollowUpReply(ctx: AiConsultContext): string | null {
   // Same-topic follow-up question (not just «بیشتر») → deeper protocol
   const current = findTrainerTopic(q);
   if (current) {
-    const prior = history.some((h) => h.role === 'user' && findTrainerTopic(h.content)?.id === current.id);
+    const prior = history.some(
+      (h) => h.role === 'user' && findTrainerTopic(h.content)?.id === current.id
+    );
     if (prior) {
-      return formatTrainerTopicReply(ctx, current, 2, {
+      const tracked = findTrainerTopicFromHistory(ctx);
+      const depth = Math.max(2, (tracked?.depth ?? 1) + 1);
+      return formatTrainerTopicReply(ctx, current, depth, {
         followUpLabel: `ادامه بدیم — این بار می‌ریم سراغ گیرها و جزئیات:`,
       });
     }
@@ -984,9 +1085,23 @@ export function offlineAiAdvice(ctx: AiConsultContext): string {
       return withTone(formatTrainerTopicReply(ctx, topic, depth));
     }
     if (hasHistory) {
-      const lightAsk =
-        ctx.petAgeMonths != null && Number.isFinite(ctx.petAgeMonths)
-          ? `بیشتر تو خونه‌ست یا بیرون؟`
+      const tracked = lastTrainerTopicFromHistory(ctx);
+      if (tracked) {
+        return withTone(
+          formatTrainerTopicReply(ctx, tracked.topic, Math.max(2, tracked.depth + 1), {
+            followUpLabel: `باشه، ادامه می‌دیم.`,
+          })
+        );
+      }
+      const ageKnown =
+        (ctx.petAgeMonths != null && Number.isFinite(ctx.petAgeMonths)) ||
+        conversationHasPetAge(ctx);
+      const lightAsk = ageKnown
+        ? assistantAlreadyAskedHomeOrOut(ctx)
+          ? `بگو تمرین چطور پیش رفت تا دقیق‌تر تنظیمش کنیم.`
+          : `بیشتر تو خونه‌ست یا بیرون؟`
+        : assistantAlreadyAskedAge(ctx)
+          ? `بگو تمرین چطور پیش رفت تا دقیق‌تر تنظیمش کنیم.`
           : `تقریباً چندساله‌ست؟`;
       return withTone(
         [
@@ -1080,9 +1195,9 @@ async function callOpenAiCompatible(ctx: AiConsultContext): Promise<string | nul
     const prefix = includeCtx ? `${ctxBits.join(' · ')}\n\n` : '';
     const followHint =
       ctx.kind === 'trainer' && (ctx.history?.length ?? 0) > 0
-        ? '\n\n(یادآوری: روی موضوع جاری عمیق‌تر برو؛ سؤال کاربر را تکرار/بازنویسی نکن؛ مستقیم جواب بده. از «نسخه» و متای «برای اینکه درست راهنمایی کنم…» استفاده نکن؛ اول راهنمایی جزئی، بعد حداکثر یک سؤال کوتاه مثل «چند سالشه؟».)'
+        ? '\n\n(یادآوری: روی موضوع جاری عمیق‌تر برو؛ سؤال کاربر را تکرار/بازنویسی نکن؛ مستقیم جواب بده. از «نسخه» و متای «برای اینکه درست راهنمایی کنم…» استفاده نکن؛ اول راهنمایی جزئی بده و گفتگو را ادامه بده؛ سؤال تکراری (سن/محیط) نپرس؛ فقط اگر چیز تازه‌ای لازم بود یک سؤال کوتاه تازه بپرس.)'
         : ctx.kind === 'trainer'
-          ? '\n\n(یادآوری: سؤال کاربر را تکرار نکن؛ مستقیم جواب بده. «نسخه» و متای «برای اینکه درست/دقیق راهنمایی کنم باید بدونم…» ممنوع؛ اگر سن لازم بود فقط «چند سالشه؟» بپرس.)'
+          ? '\n\n(یادآوری: سؤال کاربر را تکرار نکن؛ مستقیم جواب بده. «نسخه» و متای «برای اینکه درست/دقیق راهنمایی کنم باید بدونم…» ممنوع؛ گفتگو را ادامه بده؛ سن/محیط را اگر قبلاً پرسیدی یا جواب داده دوباره نپرس.)'
           : '';
     messages.push({ role: 'user', content: `${prefix}${userText}${followHint}` });
   } else {
