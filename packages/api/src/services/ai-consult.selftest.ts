@@ -166,10 +166,37 @@ async function main() {
     userMessage: 'قلاده می‌کشه',
     petName: 'رکس',
   });
-  assert(leashTip.source === 'offline', 'no API key → offline');
+  assert(leashTip.source === 'offline', 'known topic → offline without needing API');
   assert(!/دستیار هوشمند|ربات|هوش مصنوعی/i.test(leashTip.text), 'generated trainer text not robotic');
   assert(/قلاده|کشید|تشویقی|بند/.test(leashTip.text), 'leash topic covered');
   assert(leashTip.text.length > 280, 'leash offline advice is detailed');
+
+  const { trainerShouldGoOnline, trainerQuestionUnknownOffline } = await import('./ai-consult');
+  assert(
+    !trainerShouldGoOnline({ kind: 'trainer', userMessage: 'چطور بشین یاد بگیره؟' }),
+    'without API key, known topic does not force online'
+  );
+  assert(
+    trainerQuestionUnknownOffline({
+      kind: 'trainer',
+      userMessage: 'xyzzy plugh fnord 12345',
+    }),
+    'out-of-domain gibberish is unknown offline'
+  );
+  process.env.AI_CONSULT_API_KEY = 'test-key-not-used';
+  assert(
+    trainerShouldGoOnline({
+      kind: 'trainer',
+      userMessage: 'xyzzy plugh fnord 12345',
+    }),
+    'with API key, real questions go online'
+  );
+  assert(
+    trainerShouldGoOnline({ kind: 'trainer', userMessage: 'چطور بشین یاد بگیره؟' }),
+    'with API key, even known topics go online for richer answers'
+  );
+  delete process.env.AI_CONSULT_API_KEY;
+  delete process.env.OPENAI_API_KEY;
 
   const turn1 = await generateAiConsultAdvice({
     kind: 'trainer',
