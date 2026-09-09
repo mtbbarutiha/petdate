@@ -61,6 +61,10 @@ async function main() {
   assert(sitTip.includes('بشین'), 'trainer topic hint for sit');
   assert(sitTip.length > 280, 'sit advice should be rich multi-paragraph');
   assert(!/دستیار هوشمند|ربات|هوش مصنوعی/i.test(sitTip), 'sit tip must not sound like a bot');
+  assert(
+    /ببین|خودمونی|راستش|خب عملاً|آها/.test(sitTip),
+    'sit tip uses spoken human openings/phrasing'
+  );
 
   const richTopics: Array<{ q: string; needle: RegExp }> = [
     { q: 'قلاده می‌کشه تو خیابان', needle: /قلاده|بند|شل/ },
