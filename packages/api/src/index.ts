@@ -30,6 +30,7 @@ import { authRouter } from './routes/auth';
 import { adminRouter } from './routes/admin';
 import { shopRouter } from './routes/shop';
 import { newsletterRouter } from './routes/newsletter';
+import { supportRouter } from './routes/support';
 import {
   expressErrorHandler,
   installConsoleErrorBridge,
@@ -158,6 +159,7 @@ app.use('/api/users', usersRouter);
 app.use('/api/presence', presenceRouter);
 app.use('/api/shop', shopRouter);
 app.use('/api/newsletter', newsletterRouter);
+app.use('/api/support', supportRouter);
 app.use('/api/admin', adminRouter);
 
 app.get('/api/games-for-section/:sectionId', (req, res) => {

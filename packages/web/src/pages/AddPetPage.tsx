@@ -6,6 +6,7 @@ import { PetAgePicker } from '../components/AgePicker';
 import { PetPhotoUpload } from '../components/PetPhotoUpload';
 import { DEFAULT_IMAGES, imageForType } from '../data/petImages';
 import { useAuthStore } from '../hooks/useAuthStore';
+import { useAppToast } from '../hooks/useAppToast';
 import { usePetStore } from '../hooks/usePetStore';
 import { createPet } from '../lib/api';
 import type { PetGender, PetSize, PetType } from '../types';
@@ -21,7 +22,7 @@ export function AddPetPage() {
   const navigate = useNavigate();
   const { addPet, myPet } = usePetStore();
   const { user: authUser, isLoggedIn } = useAuthStore();
-  const [showToast, setShowToast] = useState(false);
+  const { toastSuccess, toastError } = useAppToast();
   const [saving, setSaving] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [form, setForm] = useState({
@@ -56,7 +57,7 @@ export function AddPetPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim()) {
-      setSubmitError('نام پت الزامی است');
+      setSubmitError('نام پت الزامی است'); toastError('نام پت الزامی است');
       return;
     }
     setSaving(true);
@@ -110,13 +111,11 @@ export function AddPetPage() {
         healthNotes: form.healthNotes,
         distanceKm: 0.5,
       });
-      setShowToast(true);
-      setTimeout(() => {
-        setShowToast(false);
-        navigate('/my-pets');
-      }, 2000);
+      toastSuccess('پت ثبت شد!');
+      window.setTimeout(() => navigate('/my-pets'), 1600);
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : 'ثبت پت ناموفق بود');
+      const msg = err instanceof Error ? err.message : 'ثبت پت ناموفق بود';
+      setSubmitError(msg); toastError(msg);
     } finally {
       setSaving(false);
     }
@@ -290,9 +289,6 @@ export function AddPetPage() {
         </button>
       </form>
 
-      {showToast && (
-        <div className="toast" role="status">پت ثبت شد!</div>
-      )}
     </div>
   );
 }

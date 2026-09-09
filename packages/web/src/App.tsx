@@ -4,6 +4,7 @@ import { AppGuards } from './components/AuthGuard';
 import { Layout } from './components/Layout';
 import { RouteSeo } from './components/RouteSeo';
 import { ShopCartProvider } from './hooks/useShopCart';
+import { AppToastProvider } from './hooks/useAppToast';
 import { LandingMobileDock } from './components/LandingMobileDock';
 import { ScrollToTop } from './components/ScrollToTop';
 import { WelcomePage } from './pages/WelcomePage';
@@ -68,6 +69,9 @@ const ProfilePage = lazy(() =>
   import('./pages/ProfilePage').then((m) => ({ default: m.ProfilePage })),
 );
 const WalletPage = lazy(() => import('./pages/WalletPage').then((m) => ({ default: m.WalletPage })));
+const SupportChatPage = lazy(() =>
+  import('./pages/SupportChatPage').then((m) => ({ default: m.SupportChatPage }))
+);
 const EarningsPage = lazy(() =>
   import('./pages/EarningsPage').then((m) => ({ default: m.EarningsPage })),
 );
@@ -187,6 +191,7 @@ function RouteFallback() {
 export default function App() {
   return (
     <AppGuards>
+      <AppToastProvider>
       <ShopCartProvider>
         <ScrollToTop />
         <RouteSeo />
@@ -223,6 +228,7 @@ export default function App() {
               <Route path="chats/:matchId" element={<ChatPage />} />
               <Route path="profile" element={<ProfilePage />} />
               <Route path="wallet" element={<WalletPage />} />
+              <Route path="support" element={<SupportChatPage />} />
               <Route path="wallet/earn" element={<EarningsPage />} />
               <Route path="earn" element={<Navigate to="/wallet/earn" replace />} />
               <Route path="vet-consult" element={<VetConsultPage />} />
@@ -271,6 +277,7 @@ export default function App() {
         </Suspense>
         <LandingMobileDock />
       </ShopCartProvider>
+      </AppToastProvider>
     </AppGuards>
   );
 }

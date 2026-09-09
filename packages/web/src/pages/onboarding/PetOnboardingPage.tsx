@@ -6,6 +6,7 @@ import { PetAgePicker } from '../../components/AgePicker';
 import { PetPhotoUpload } from '../../components/PetPhotoUpload';
 import { DEFAULT_IMAGES, imageForType } from '../../data/petImages';
 import { useAuthStore } from '../../hooks/useAuthStore';
+import { useAppToast } from '../../hooks/useAppToast';
 import { usePetStore } from '../../hooks/usePetStore';
 import { useUserStore } from '../../hooks/useUserStore';
 import { createPet } from '../../lib/api';
@@ -22,7 +23,7 @@ export function PetOnboardingPage() {
   const { updatePet, myPet } = usePetStore();
   const { saveOnboardingToApi } = useUserStore();
   const { user: authUser, isLoggedIn } = useAuthStore();
-  const [showToast, setShowToast] = useState(false);
+  const { toastSuccess, toastError } = useAppToast();
   const [saving, setSaving] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [form, setForm] = useState({
@@ -68,7 +69,7 @@ export function PetOnboardingPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim()) {
-      setSubmitError('نام پت الزامی است');
+      setSubmitError('نام پت الزامی است'); toastError('نام پت الزامی است');
       return;
     }
     setSaving(true);
@@ -137,13 +138,11 @@ export function PetOnboardingPage() {
       }
 
       await saveOnboardingToApi('profile_complete');
-      setShowToast(true);
-      setTimeout(() => {
-        setShowToast(false);
-        navigate('/home', { replace: true });
-      }, 1500);
+      toastSuccess('پروفایل تکمیل شد!');
+      window.setTimeout(() => navigate('/home', { replace: true }), 1400);
     } catch (err) {
-      setSubmitError(err instanceof Error ? err.message : 'ثبت پروفایل ناموفق بود');
+      const msg = err instanceof Error ? err.message : 'ثبت پروفایل ناموفق بود';
+      setSubmitError(msg); toastError(msg);
     } finally {
       setSaving(false);
     }
@@ -294,7 +293,6 @@ export function PetOnboardingPage() {
         </button>
       </form>
 
-      {showToast && <div className="toast" role="status">پروفایل تکمیل شد!</div>}
     </AuthShell>
   );
 }

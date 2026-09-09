@@ -15,6 +15,7 @@ import {
   type VetCredentialStatus,
 } from '@petdate/shared';
 import { useAuthStore } from '../hooks/useAuthStore';
+import { useAppToast } from '../hooks/useAppToast';
 import { useLiveAjaxPoll } from '../hooks/useLiveAjaxPoll';
 import {
   acceptVetConsultation,
@@ -117,6 +118,7 @@ function errMessage(err: unknown, fallback: string): string {
 export function ServiceConsultPage({ kind }: { kind: Kind }) {
   const navigate = useNavigate();
   const { user, token, isLoggedIn, refreshMe } = useAuthStore();
+  const { toastError, toastSuccess, toastInfo } = useAppToast();
   const meta = COPY[kind];
   const cost = COST[kind];
   /** فقط نقش فعال ارائه‌دهنده — نه داشتن نقش فرعی (صاحب‌پت چندنقشی نباید پنل مدرک ببیند). */
@@ -141,6 +143,16 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
   const [incoming, setIncoming] = useState<VetConsultation[]>([]);
   const [recent, setRecent] = useState<VetConsultation[]>([]);
   const [actingId, setActingId] = useState<number | null>(null);
+
+  function flashError(msg: string) {
+    setError(msg);
+    toastError(msg);
+  }
+
+  function flashSuccess(msg: string) {
+    setStatusMsg(msg);
+    toastSuccess(msg);
+  }
 
   const loadPets = useCallback(async () => {
     if (!user?.id || isProvider) {
@@ -217,75 +229,55 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
   useEffect(() => subscribeIncomingRefresh(() => void loadLists()), [loadLists]);
 
   async function onToggleOnline(next: boolean) {
-    if (!token) {
-      setError('اول وارد حساب شو.');
-      return;
-    }
+    if (!token) { flashError('اول وارد حساب شو.'); return; }
     if (next && !verified) {
-      setError(
+      flashError(
         credStatus === 'pending'
           ? 'مدرک هنوز تأیید نشده؛ بعد از تأیید ادمین آنلاین شو.'
           : 'اول مدرک را همین‌جا یا در ربات آپلود کن تا پنل فعال شود.'
       );
       return;
     }
-    setOnlineBusy(true);
-    setError(null);
+    setOnlineBusy(true); setError(null);
     try {
       await patchWebProviderOnline(token, kind, next);
       await refreshMe();
+      toastSuccess(next ? 'آنلاین شدی.' : 'آفلاین شدی.');
     } catch (err) {
-      setError(errMessage(err, 'تغییر وضعیت ناموفق بود'));
-    } finally {
-      setOnlineBusy(false);
-    }
+      flashError(errMessage(err, 'تغییر وضعیت ناموفق بود'));
+    } finally { setOnlineBusy(false); }
   }
 
   async function onUploadCredential(file: File | null | undefined) {
-    if (!token) {
-      setError('اول وارد حساب شو.');
-      return;
-    }
+    if (!token) { flashError('اول وارد حساب شو.'); return; }
     if (!file) return;
-    setUploadBusy(true);
-    setError(null);
-    setStatusMsg(null);
+    setUploadBusy(true); setError(null); setStatusMsg(null);
     try {
       await uploadProviderCredential(token, kind, file);
       await refreshMe();
-      setStatusMsg('مدرک ارسال شد و در صف تأیید ادمین است. بعد از تأیید می‌توانی آنلاین شوی.');
+      flashSuccess('مدرک ارسال شد و در صف تأیید ادمین است. بعد از تأیید می‌توانی آنلاین شوی.');
     } catch (err) {
-      setError(errMessage(err, 'آپلود مدرک ناموفق بود'));
-    } finally {
-      setUploadBusy(false);
-    }
+      flashError(errMessage(err, 'آپلود مدرک ناموفق بود'));
+    } finally { setUploadBusy(false); }
   }
 
   function validatePatient(): string | null {
     if (!user?.id || !token) return 'اول وارد حساب شو.';
     if (!pets.length) return meta.needPet;
+    const others = onlineProviders.filter((p) => p.id !== user.id);
+    // No human online → API starts free AI consult (trainer/vet). Don't block.
+    if (!others.length) return null;
     if (coins < cost) {
       return `حداقل ${formatCoins(cost)} سکه لازم است. موجودی: ${formatCoins(coins)}`;
     }
-    const others = onlineProviders.filter((p) => p.id !== user.id);
-    if (!others.length) return meta.noProviders;
     return null;
   }
 
   async function sendRequest(confirmResend = false) {
-    if (!user?.id || !token) {
-      setError('اول وارد حساب شو.');
-      return;
-    }
+    if (!user?.id || !token) { flashError('اول وارد حساب شو.'); return; }
     const gate = validatePatient();
-    if (gate) {
-      setError(gate);
-      setConfirmPay(false);
-      return;
-    }
-    setBusy(true);
-    setError(null);
-    setStatusMsg(null);
+    if (gate) { flashError(gate); setConfirmPay(false); return; }
+    setBusy(true); setError(null); setStatusMsg(null);
     try {
       let res;
       try {
@@ -296,9 +288,8 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
           ((err as Error & { requiresResendConfirm?: boolean }).requiresResendConfirm ||
             /میخوای مجدد/.test(err.message));
         if (needsConfirm && !confirmResend) {
-          setNeedsResendConfirm(true);
-          setConfirmPay(true);
-          setError('درخواست قبلی منقضی شده. برای ارسال مجدد دوباره تأیید کن.');
+          setNeedsResendConfirm(true); setConfirmPay(true);
+          flashError('درخواست قبلی منقضی شده. برای ارسال مجدد دوباره تأیید کن.');
           return;
         }
         throw err;
@@ -308,25 +299,39 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
       await loadOnline();
       setConfirmPay(false);
       setNeedsResendConfirm(false);
+      flashSuccess(res.message);
       setStatusMsg(res.message);
+      if (res.aiFallback) {
+        const consultId = res.consultations?.[0]?.id;
+        if (consultId) {
+          navigate(`/vet-chats/${consultId}`);
+          return;
+        }
+      }
+      if (res.consultations?.length === 1 && res.consultations[0]?.status === 'active') {
+        navigate(`/vet-chats/${res.consultations[0].id}`);
+      }
     } catch (err) {
-      setError(errMessage(err, 'ارسال درخواست ناموفق بود'));
-    } finally {
-      setBusy(false);
-    }
+      flashError(errMessage(err, 'ارسال درخواست ناموفق بود'));
+    } finally { setBusy(false); }
   }
 
   async function onPrimaryClick() {
-    setError(null);
-    setStatusMsg(null);
+    setError(null); setStatusMsg(null);
     const gate = validatePatient();
     if (gate) {
-      setError(gate);
+      flashError(gate);
       setConfirmPay(false);
+      return;
+    }
+    const humanOnline = onlineProviders.filter((p) => p.id !== user?.id).length > 0;
+    if (!humanOnline) {
+      await sendRequest(needsResendConfirm);
       return;
     }
     if (!confirmPay) {
       setConfirmPay(true);
+      toastInfo(`با تأیید، ${formatCoins(cost)} سکه کسر می‌شود. دوباره بزن تا ارسال شود.`);
       return;
     }
     await sendRequest(needsResendConfirm);
@@ -340,10 +345,8 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
       await loadLists();
       navigate(`/vet-chats/${id}`);
     } catch (err) {
-      setError(errMessage(err, 'قبول درخواست ناموفق بود'));
-    } finally {
-      setActingId(null);
-    }
+      flashError(errMessage(err, 'قبول درخواست ناموفق بود'));
+    } finally { setActingId(null); }
   }
 
   async function onReject(id: number) {
@@ -352,11 +355,10 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
     try {
       await rejectVetConsultation(id, token);
       await loadLists();
+      toastSuccess('درخواست رد شد.');
     } catch (err) {
-      setError(errMessage(err, 'رد درخواست ناموفق بود'));
-    } finally {
-      setActingId(null);
-    }
+      flashError(errMessage(err, 'رد درخواست ناموفق بود'));
+    } finally { setActingId(null); }
   }
 
   const onlineCount = onlineProviders.filter((p) => p.id !== user?.id).length;
@@ -368,7 +370,7 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
         <p>
           {isProvider
             ? meta.providerHint
-            : `هزینه ${formatCoins(cost)} سکه · بدون اتصال پزشک`}
+            : `هزینه اتصال انسانی ${formatCoins(cost)} سکه · اگر آنلاین نباشد دستیار هوشمند رایگان پاسخ می‌دهد`}
         </p>
         {meta.disclaimer && !isProvider ? <p className="muted">{meta.disclaimer}</p> : null}
       </header>
@@ -452,7 +454,9 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
             {isLoggedIn
               ? onlineCount > 0
                 ? `${toPersianDigits(String(onlineCount))} نفر آنلاین آماده پذیرش`
-                : meta.noProviders
+                : kind === 'trainer'
+                  ? 'مربی انسانی آنلاین نیست — با زدن دکمه، دستیار هوشمند آموزش پاسخ می‌دهد (رایگان).'
+                  : meta.noProviders
               : 'برای ارسال درخواست وارد حساب شو.'}
           </p>
           {!isLoggedIn ? (
@@ -461,7 +465,7 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
             </Link>
           ) : (
             <>
-              {confirmPay ? (
+              {confirmPay && onlineCount > 0 ? (
                 <p className="pepito-vet-consult-hint" role="status">
                   تأیید نهایی: {formatCoins(cost)} سکه از موجودی کسر می‌شود
                   {meta.disclaimer ? ` — ${meta.disclaimer}` : ''}.
@@ -476,11 +480,13 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
               >
                 {busy
                   ? 'در حال ارسال…'
-                  : confirmPay
-                    ? `تأیید و ارسال (${formatCoins(cost)} سکه)`
-                    : `${meta.patientCta} (${formatCoins(cost)} سکه)`}
+                  : onlineCount === 0 && kind === 'trainer'
+                    ? 'مشورت با دستیار هوشمند (رایگان)'
+                    : confirmPay
+                      ? `تأیید و ارسال (${formatCoins(cost)} سکه)`
+                      : `${meta.patientCta} (${formatCoins(cost)} سکه)`}
               </button>
-              {confirmPay ? (
+              {confirmPay && onlineCount > 0 ? (
                 <button
                   type="button"
                   className="pepito-btn pepito-btn--ghost"
