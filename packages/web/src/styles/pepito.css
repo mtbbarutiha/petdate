@@ -313,12 +313,8 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
     margin-top: 0;
   }
   .pepito-hero {
-    /* Mobile/tablet: tall enough for title + CTA (16:9 of phone width is too short) */
-    aspect-ratio: auto;
-    --pepito-hero-h: min(34rem, 78svh);
+    --pepito-hero-h: calc(85vh - var(--pepito-nav-h));
     min-height: var(--pepito-hero-h);
-    height: var(--pepito-hero-h);
-    max-height: none;
   }
   .pepito-app-layout {
     padding-top: 0 !important;
@@ -382,32 +378,20 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 }
 
 /* Hero — Pepito `.header.slider-fade` / `.banner-header` measurements
-   Size to the 16:9 photo band (same as uploads) instead of near-full viewport;
-   that avoids a tall dark strip / hard charcoal edge above the white page.
-   Per-slide object-position (--focus-*) keeps subjects visible when cover crops. */
+   Anchor cover to the TOP (Pepito `.parallax-header` uses `50% 0` / center top):
+   center/center crops dog heads when the hero is shorter than the scaled image,
+   and the fixed nav then hides another ~70px of that already-cropped top. */
 .pepito-hero {
   position: relative;
   width: 100%;
-  max-width: 100%;
   /* Fixed-nav offset only when nav is fixed — see @media (min-width: 860px) below */
   margin-top: 0;
-  /* Match slide JPEG aspect; cap so ultrawide doesn't get a huge band */
-  --pepito-hero-h: min(40rem, calc(100vw * 9 / 16));
-  aspect-ratio: 16 / 9;
-  width: 100%;
-  height: auto;
-  min-height: 16rem;
-  max-height: min(40rem, 78vh);
+  min-height: calc(93vh - var(--pepito-nav-h));
   display: grid;
   align-items: center;
   overflow: hidden;
-  isolation: isolate;
   color: #fff;
   touch-action: pan-y;
-  box-sizing: border-box;
-  border: 0;
-  /* If a 1px seam appears, it must not read as a black hairline */
-  background-color: #fff;
 }
 @media (min-width: 860px) {
   .pepito-hero,
@@ -415,20 +399,12 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   .pd-shop-hero {
     margin-top: var(--pepito-nav-h);
   }
-  .pepito-hero {
-    /* Keep 16:9 lock — don't stretch to arbitrary vh */
-    height: auto;
-    min-height: 18rem;
-    max-height: min(42rem, 78vh);
-  }
 }
 .pepito-hero-slides {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  overflow: hidden;
-  z-index: 0;
 }
 .pepito-hero-slide {
   position: absolute;
@@ -438,11 +414,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   opacity: 0;
   transition: opacity 1.1s ease;
   z-index: 0;
-  overflow: hidden;
-  /* Match page — never flash a charcoal letterbox under the photo */
-  background-color: #fff;
   background-position: center top;
-  pointer-events: none;
 }
 .pepito-hero-slide.is-active {
   opacity: 1;
@@ -463,7 +435,6 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
     ),
     rgba(5, 1, 12, 0.18);
   pointer-events: none;
-  transition: background 0.45s ease;
 }
 [dir='rtl'] .pepito-hero-wash {
   background:
@@ -476,58 +447,18 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
     ),
     rgba(5, 1, 12, 0.18);
 }
-/* High-key slides (white/pink negative space) — deepen wash so white type stays readable */
-.pepito-hero--light .pepito-hero-wash {
-  background:
-    linear-gradient(
-      105deg,
-      rgba(5, 1, 12, 0.72) 0%,
-      rgba(5, 1, 12, 0.48) 40%,
-      rgba(5, 1, 12, 0.22) 70%,
-      rgba(5, 1, 12, 0.1) 100%
-    ),
-    rgba(5, 1, 12, 0.28);
-}
-[dir='rtl'] .pepito-hero--light .pepito-hero-wash {
-  background:
-    linear-gradient(
-      255deg,
-      rgba(5, 1, 12, 0.72) 0%,
-      rgba(5, 1, 12, 0.48) 40%,
-      rgba(5, 1, 12, 0.22) 70%,
-      rgba(5, 1, 12, 0.1) 100%
-    ),
-    rgba(5, 1, 12, 0.28);
-}
 .pepito-hero-media {
   display: block;
   width: 100%;
   height: 100%;
-  max-width: none;
   object-fit: cover;
+  /* img equivalent of background-position: center top */
   object-position: center top;
   transform: scale(1.04);
-  transform-origin: center top;
   animation: pepito-ken 14s ease-in-out infinite alternate;
-  /* Avoid layout thrash from intrinsic image size before cover paints */
-  position: absolute;
-  inset: 0;
 }
 .pepito-hero-slide.is-active .pepito-hero-media {
   animation: pepito-ken 14s ease-in-out infinite alternate;
-}
-/* Bottom-heavy compositions (peeking pets, row of subjects low in frame) */
-.pepito-hero-media--focus-lower {
-  object-position: center 68%;
-  transform-origin: center 68%;
-}
-.pepito-hero-media--focus-bottom {
-  object-position: center 88%;
-  transform-origin: center bottom;
-}
-.pepito-hero-media--focus-top {
-  object-position: center top;
-  transform-origin: center top;
 }
 /* Bootstrap `.container` (max 1220 / pad 15) + vertically centered caption */
 .pepito-hero-inner {
@@ -536,7 +467,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   width: min(var(--pepito-container-max), 100%);
   margin-inline: auto;
   padding-inline: var(--pepito-container-pad);
-  padding-block: calc(env(safe-area-inset-top, 0px) + 4.5rem) 3.25rem;
+  padding-block: calc(env(safe-area-inset-top, 0px) + 5.5rem) 4rem;
   box-sizing: border-box;
   animation: pepito-rise 0.75s ease both;
 }
@@ -548,25 +479,22 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 }
 .pepito-hero-dots {
   position: absolute;
-  z-index: 5;
+  z-index: 4;
   inset-inline: 0;
-  bottom: 1.25rem;
+  bottom: 4vh;
   display: flex;
   justify-content: center;
-  align-items: center;
   gap: 0.55rem;
-  pointer-events: none;
 }
 .pepito-hero-dot {
-  width: 10px;
-  height: 10px;
+  width: 11px;
+  height: 11px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.7);
   background: transparent;
   padding: 0;
   cursor: pointer;
-  pointer-events: auto;
-  transition: background 0.25s ease, border-color 0.25s ease, transform 0.2s ease;
+  transition: background 0.25s ease, border-color 0.25s ease;
   /* Expand tap target without changing visual size */
   position: relative;
 }
@@ -578,7 +506,6 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 .pepito-hero-dot.is-active {
   background: #fff;
   border-color: #fff;
-  transform: scale(1.08);
 }
 /* Pepito `.slider-fade .owl-theme .owl-nav` — side circular chevrons */
 .pepito-hero-nav {
@@ -755,11 +682,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 
 @media screen and (max-width: 720px) {
   .pepito-hero {
-    aspect-ratio: auto;
-    --pepito-hero-h: min(30rem, 75svh);
-    min-height: var(--pepito-hero-h);
-    height: var(--pepito-hero-h);
-    max-height: none;
+    min-height: calc(85vh - var(--pepito-nav-h));
   }
   .pepito-kicker {
     font-size: 16px;
@@ -9141,19 +9064,11 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
     margin-top: 0;
   }
   .pepito-hero {
-    /* Mobile: tall usable band — 16:9 of phone width is too short for copy/CTA */
-    aspect-ratio: auto;
-    --pepito-hero-h: min(34rem, 78svh);
-    min-height: var(--pepito-hero-h);
-    height: var(--pepito-hero-h);
-    max-height: none;
-    max-width: 100%;
+    /* Prefer svh only — dvh changes with mobile URL chrome and causes jump */
+    min-height: calc(100svh - var(--pepito-nav-h));
   }
   .pepito-hero-inner {
-    padding-block: calc(env(safe-area-inset-top, 0px) + 1.35rem) 3rem;
-  }
-  .pepito-hero-dots {
-    bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+    padding-block: calc(env(safe-area-inset-top, 0px) + 1.35rem) 2.25rem;
   }
   .pepito-hero-media,
   .pepito-hero-slide.is-active .pepito-hero-media {
@@ -9161,45 +9076,7 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
     transform: none !important;
     animation: none !important;
     object-fit: cover;
-  }
-  /* Keep per-slide focus — do NOT force center top (crops bottom subjects) */
-  .pepito-hero-media--focus-top {
     object-position: center top;
-  }
-  .pepito-hero-media--focus-lower {
-    object-position: center 72%;
-  }
-  .pepito-hero-media--focus-bottom {
-    object-position: center bottom;
-  }
-  /* High-key / bottom-subject slides: keep copy in upper negative space */
-  .pepito-hero--light {
-    align-items: start;
-  }
-  .pepito-hero--light .pepito-hero-inner {
-    padding-block: calc(env(safe-area-inset-top, 0px) + 1.1rem) 3.5rem;
-  }
-  .pepito-hero--light .pepito-hero-wash {
-    background:
-      linear-gradient(
-        180deg,
-        rgba(5, 1, 12, 0.62) 0%,
-        rgba(5, 1, 12, 0.38) 42%,
-        rgba(5, 1, 12, 0.16) 72%,
-        rgba(5, 1, 12, 0.08) 100%
-      ),
-      rgba(5, 1, 12, 0.22);
-  }
-  [dir='rtl'] .pepito-hero--light .pepito-hero-wash {
-    background:
-      linear-gradient(
-        180deg,
-        rgba(5, 1, 12, 0.62) 0%,
-        rgba(5, 1, 12, 0.38) 42%,
-        rgba(5, 1, 12, 0.16) 72%,
-        rgba(5, 1, 12, 0.08) 100%
-      ),
-      rgba(5, 1, 12, 0.22);
   }
 }
 
