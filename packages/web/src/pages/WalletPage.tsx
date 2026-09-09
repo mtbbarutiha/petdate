@@ -13,6 +13,7 @@ import {
 } from '@petdate/shared';
 import { InviteFriendsCard } from '../components/InviteFriendsCard';
 import { useAuthStore } from '../hooks/useAuthStore';
+import { useAppToast } from '../hooks/useAppToast';
 import {
   fetchWallet,
   fetchWalletTransactions,
@@ -72,6 +73,7 @@ function sameWallet(a: WalletBalances | null, b: WalletBalances): boolean {
  */
 export function WalletPage() {
   const { user, token, refreshMe } = useAuthStore();
+  const { toastError, toastInfo } = useAppToast();
   const [wallet, setWallet] = useState<WalletBalances | null>(null);
   const [telegramLinked, setTelegramLinked] = useState<boolean>(() => Boolean(user?.telegramId));
   const [telegramId, setTelegramId] = useState<string | null>(user?.telegramId ?? null);
@@ -141,13 +143,15 @@ export function WalletPage() {
       setError('');
       void loadTransactions();
     } catch {
-      setError('نتوانستیم موجودی را از سرور تازه کنیم؛ آخرین موجودی محلی نمایش داده شد.');
+      const msg = 'نتوانستیم موجودی را از سرور تازه کنیم؛ آخرین موجودی محلی نمایش داده شد.';
+      setError(msg);
+      if (!soft) toastError(msg);
     } finally {
       setLoading(false);
       setSyncing(false);
       inFlightRef.current = false;
     }
-  }, [loadTransactions]);
+  }, [loadTransactions, toastError]);
 
   useEffect(() => {
     if (!token) return;
@@ -176,15 +180,17 @@ export function WalletPage() {
       if (res.alreadyLinked) {
         setTelegramLinked(true);
         setTelegramId(res.telegramId ?? null);
-        setLinkHint('حساب شما از قبل به تلگرام وصل است.');
+        const msg = 'حساب شما از قبل به تلگرام وصل است.';
+        setLinkHint(msg); toastInfo(msg);
         await loadWallet({ soft: true });
         return;
       }
-      setLinkHint('ربات را باز کن، دکمه Start را بزن، بعد اینجا «همگام‌سازی» را بزن.');
+      const msg = 'ربات را باز کن، دکمه Start را بزن، بعد اینجا «همگام‌سازی» را بزن.';
+      setLinkHint(msg); toastInfo(msg);
       window.open(res.deepLink, '_blank', 'noopener,noreferrer');
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'ساخت لینک اتصال ناموفق بود';
-      setLinkHint(msg);
+      setLinkHint(msg); toastError(msg);
     } finally {
       setLinkBusy(false);
     }

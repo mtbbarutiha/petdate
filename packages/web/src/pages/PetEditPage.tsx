@@ -6,6 +6,7 @@ import { toEnglishDigits, toPersianDigits } from '@petdate/shared';
 import { PetAgePicker } from '../components/AgePicker';
 import { PetPhotoUpload } from '../components/PetPhotoUpload';
 import { useAuthStore } from '../hooks/useAuthStore';
+import { useAppToast } from '../hooks/useAppToast';
 import { getPet, updatePet } from '../lib/api';
 import type { PetGender, PetSize, PetType } from '../types';
 import { PET_GENDER_LABELS, PET_SIZE_LABELS, PET_TYPE_LABELS } from '../types';
@@ -27,6 +28,7 @@ export function PetEditPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, isLoggedIn } = useAuthStore();
+  const { toastError, toastSuccess } = useAppToast();
   const [pet, setPet] = useState<PetProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -113,7 +115,7 @@ export function PetEditPage() {
     e.preventDefault();
     if (!pet || !ownerId) return;
     if (!form.name.trim()) {
-      setError('نام پت الزامی است');
+      setError('نام پت الزامی است'); toastError('نام پت الزامی است');
       return;
     }
     setSaving(true);
@@ -140,9 +142,10 @@ export function PetEditPage() {
         personality: form.traits.length ? { traits: form.traits } : { traits: [] },
         diseases: form.healthNotes.trim() || undefined,
       });
+      toastSuccess('تغییرات ذخیره شد');
       navigate(`/pets/${updated.id}`, { replace: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'ذخیره ناموفق بود');
+      const msg = err instanceof Error ? err.message : 'ذخیره ناموفق بود'; setError(msg); toastError(msg);
     } finally {
       setSaving(false);
     }

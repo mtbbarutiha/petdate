@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Check, HeartHandshake, Stethoscope, X } from 'lucide-react';
 import { userHasRole, type VetConsultation } from '@petdate/shared';
 import { useAuthStore } from '../hooks/useAuthStore';
+import { useAppToast } from '../hooks/useAppToast';
 import { useChatSocket } from '../hooks/useChatSocket';
 import { useLiveAjaxPoll } from '../hooks/useLiveAjaxPoll';
 import {
@@ -72,6 +73,7 @@ export function LiveIncomingRequests() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, isLoggedIn, token } = useAuthStore();
+  const { toastError, toastSuccess } = useAppToast();
   const myUserId = user?.id;
   const canPlaymate = Boolean(myUserId && userHasRole(user, 'pet_owner'));
   const canVet = Boolean(myUserId && userHasRole(user, 'vet'));
@@ -229,7 +231,7 @@ export function LiveIncomingRequests() {
       dismissCurrent();
       navigate(href);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'قبول درخواست ناموفق بود');
+      const msg = err instanceof Error ? err.message : 'قبول درخواست ناموفق بود'; setError(msg); toastError(msg);
     } finally {
       setBusy(false);
     }
@@ -248,8 +250,9 @@ export function LiveIncomingRequests() {
         emitIncomingRefresh({ kinds: ['vet'], ids: [current.id] });
       }
       dismissCurrent();
+      toastSuccess('درخواست رد شد.');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'رد درخواست ناموفق بود');
+      const msg = err instanceof Error ? err.message : 'رد درخواست ناموفق بود'; setError(msg); toastError(msg);
     } finally {
       setBusy(false);
     }
