@@ -119,6 +119,9 @@ export type {
   VetConsultation,
   VetConsultStatus,
   VetCredentialStatus,
+  ConsultServiceKind,
+  PhotoModerationStatus,
+  ProviderCredentialStatus,
 } from './petdate';
 export {
   COUNTRY_IRAN,
@@ -211,6 +214,18 @@ export interface User {
   vetEnabled?: boolean;
   /** مبلغ ویزیت دامپزشک به سکه (قابل تنظیم از پنل پزشک) */
   visitFeeCoins?: number;
+  /** مدرک / آنلاین / فعال بودن مربی */
+  trainerCredentialFileId?: string;
+  trainerCredentialStatus?: VetCredentialStatus;
+  trainerOnline?: boolean;
+  trainerEnabled?: boolean;
+  /** مدرک / آنلاین / فعال بودن پرستار پت */
+  sitterCredentialFileId?: string;
+  sitterCredentialStatus?: VetCredentialStatus;
+  sitterOnline?: boolean;
+  sitterEnabled?: boolean;
+  /** صاحب پت: پذیرش مشورت خرید از دنبال‌کننده بدون پت */
+  acceptSeekerAdvice?: boolean;
   /** آخرین عرض جغرافیایی اشتراک‌گذاری‌شده (ربات — پت‌های نزدیک) */
   lat?: number;
   /** آخرین طول جغرافیایی اشتراک‌گذاری‌شده */

@@ -18,6 +18,7 @@ const ROLE_DESCRIPTIONS: Record<UserRole, string> = {
   no_pet: 'فعلاً پت نداری ولی علاقه‌مند به دنیای پت‌ها هستی',
   pet_seeker: 'دنبال پت مناسب برای خانه‌ات هستی',
   trainer: 'مربی یا آموزش‌دهنده حیوانات هستی',
+  pet_sitter: 'پرستار پت هستی و مراقبت از پت دیگران را می‌پذیری',
 };
 
 export function RoleSelectPage() {

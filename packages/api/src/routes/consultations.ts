@@ -1,8 +1,14 @@
 import { Router } from 'express';
 import fs from 'fs';
 import multer from 'multer';
-import { QUICK_VET_COST, vetVisitFeeCoins, type VetConsultStatus } from '@petdate/shared';
-import { dbService } from '../db';
+import {
+  CONSULT_SERVICE_KINDS,
+  QUICK_VET_COST,
+  vetVisitFeeCoins,
+  type ConsultServiceKind,
+  type VetConsultStatus,
+} from '@petdate/shared';
+import { consultFeeSplit, dbService } from '../db';
 import { createPrescriptionWithDelivery } from '../services/prescription';
 import { deliverPrescriptionToConsultChat } from '../services/prescription-chat';
 import {
@@ -129,6 +135,10 @@ consultationsRouter.get('/', (req, res) => {
     ? Number(req.query.patientUserId)
     : undefined;
   const status = req.query.status as VetConsultStatus | undefined;
+  const kindRaw = String(req.query.kind ?? req.query.serviceKind ?? '').trim();
+  const serviceKind = CONSULT_SERVICE_KINDS.includes(kindRaw as ConsultServiceKind)
+    ? (kindRaw as ConsultServiceKind)
+    : undefined;
 
   if (
     (vetUserId == null || Number.isNaN(vetUserId)) &&
@@ -151,6 +161,7 @@ consultationsRouter.get('/', (req, res) => {
         ? patientUserId
         : undefined,
     status,
+    serviceKind,
   });
   res.json(consultations);
 });
@@ -174,7 +185,8 @@ consultationsRouter.get('/previous-vets', (req, res) => {
 
 /**
  * اتصال سریع وب — همان سازوکار ربات:
- * پت اجباری → بررسی سکه → دامپزشک آنلاین → کسر سکه → ایجاد مشاوره + نوتیف تلگرام
+ * پت اجباری (جز seeker_advice) → بررسی سکه → ارائه‌دهندگان آنلاین → کسر سکه → ایجاد مشاوره + نوتیف تلگرام
+ * kind: vet | trainer | sitter | seeker_advice
  */
 consultationsRouter.post('/quick-connect', async (req, res) => {
   const session = getUserFromBearer(req.header('authorization') ?? undefined);
@@ -183,6 +195,12 @@ consultationsRouter.post('/quick-connect', async (req, res) => {
   const patientUserId = session?.user?.id ?? bodyPatientId;
   /** When true, skip the «resend after expiry» confirm gate (client already confirmed). */
   const confirmResend = Boolean(req.body?.confirmResend);
+  const kindRaw = String(req.body?.kind ?? 'vet').trim();
+  const serviceKind: ConsultServiceKind = CONSULT_SERVICE_KINDS.includes(
+    kindRaw as ConsultServiceKind
+  )
+    ? (kindRaw as ConsultServiceKind)
+    : 'vet';
 
   if (!patientUserId || !Number.isFinite(patientUserId)) {
     res.status(400).json({ error: 'patientUserId الزامی است', reason: 'missing_patient' });
@@ -203,19 +221,32 @@ consultationsRouter.post('/quick-connect', async (req, res) => {
   const purchaseAdvice = Boolean(
     req.body?.purchaseAdvice || req.body?.intent === 'purchase_advice'
   );
-  if (!pets.length && !purchaseAdvice) {
+  if (serviceKind === 'vet' && !pets.length && !purchaseAdvice) {
     res.status(400).json({
       error: 'برای درخواست ارتباط با پزشک، اول باید حداقل یک پت ثبت کنی.',
       reason: 'no_pet',
     });
     return;
   }
+  if ((serviceKind === 'trainer' || serviceKind === 'sitter') && !pets.length) {
+    res.status(400).json({
+      error:
+        serviceKind === 'trainer'
+          ? 'برای درخواست مربی، اول باید حداقل یک پت ثبت کنی.'
+          : 'برای ارتباط با پرستار، اول باید حداقل یک پت ثبت کنی.',
+      reason: 'no_pet',
+    });
+    return;
+  }
+  if (serviceKind === 'seeker_advice') {
+    // seeker may have no pet — that's fine
+  }
 
   dbService.expireStaleVetConsultRequests();
 
-  if (dbService.hasPendingVetConsultForPatient(patient.id)) {
+  if (dbService.hasPendingVetConsultForPatient(patient.id, serviceKind)) {
     res.status(409).json({
-      error: 'هنوز درخواست مشاوره‌ات در انتظار پاسخ پزشک است.',
+      error: 'هنوز درخواست مشاوره‌ات در انتظار پاسخ است.',
       reason: 'already_pending',
       code: 'ALREADY_PENDING',
     });
@@ -223,7 +254,7 @@ consultationsRouter.post('/quick-connect', async (req, res) => {
   }
 
   // After a prior expired consult, require explicit resend confirm (same copy as playmate).
-  if (!confirmResend && dbService.hasExpiredVetConsultForPatient(patient.id)) {
+  if (!confirmResend && dbService.hasExpiredVetConsultForPatient(patient.id, serviceKind)) {
     res.status(409).json({
       error: 'میخوای مجدد درخواست بدی به اون شخص؟',
       reason: 'resend_confirm',
@@ -234,26 +265,42 @@ consultationsRouter.post('/quick-connect', async (req, res) => {
   }
 
   const balance = patient.coins ?? 0;
-  // دسکتاپ/وب: هم آنلاین‌های ربات، هم آنلاین‌های وب
-  let vets = dbService
-    .listOnlineVetsForQuickConnect()
-    .filter((v) => v.id !== patient.id);
-  if (!vets.length) {
+  const split = consultFeeSplit(serviceKind);
+
+  let providers =
+    serviceKind === 'vet'
+      ? dbService.listOnlineVetsForQuickConnect()
+      : serviceKind === 'trainer'
+        ? dbService.listOnlineProvidersForQuickConnect('trainer')
+        : serviceKind === 'sitter'
+          ? dbService.listOnlineProvidersForQuickConnect('sitter')
+          : dbService.listOwnersAcceptingSeekerAdvice();
+  providers = providers.filter((v) => v.id !== patient.id);
+
+  if (!providers.length) {
+    const emptyMsg =
+      serviceKind === 'vet'
+        ? 'فعلاً دامپزشک آنلاینی (ربات یا وب) برای اتصال پیدا نشد. کمی بعد دوباره امتحان کن.'
+        : serviceKind === 'trainer'
+          ? 'فعلاً مربی آنلاینی برای اتصال پیدا نشد.'
+          : serviceKind === 'sitter'
+            ? 'فعلاً پرستار پت آنلاینی برای اتصال پیدا نشد.'
+            : 'فعلاً صاحب پتی برای مشورت خرید آنلاین نیست.';
     res.status(409).json({
-      error: 'فعلاً دامپزشک آنلاینی (ربات یا وب) برای اتصال پیدا نشد. کمی بعد دوباره امتحان کن.',
-      reason: 'no_online_vets',
+      error: emptyMsg,
+      reason: 'no_online_providers',
     });
     return;
   }
 
-  const cost = Math.max(
-    QUICK_VET_COST,
-    ...vets.map((v) => vetVisitFeeCoins(v)),
-  );
+  const cost =
+    serviceKind === 'vet'
+      ? Math.max(QUICK_VET_COST, ...providers.map((v) => vetVisitFeeCoins(v)))
+      : split.cost;
 
   if (balance < cost) {
     res.status(400).json({
-      error: `برای اتصال سریع حداقل ${cost} سکه لازم داری. موجودی: ${balance}`,
+      error: `برای این اتصال حداقل ${cost} سکه لازم داری. موجودی: ${balance}`,
       reason: 'insufficient_coins',
       balance,
       cost,
@@ -262,8 +309,8 @@ consultationsRouter.post('/quick-connect', async (req, res) => {
   }
 
   const debited = dbService.debitCoins(patient.id, cost, {
-    reason: 'مشاوره سریع دامپزشک',
-    refType: 'vet_consult',
+    reason: split.debitReason,
+    refType: `${serviceKind}_consult`,
   });
   if (!debited) {
     res.status(400).json({
@@ -277,29 +324,40 @@ consultationsRouter.post('/quick-connect', async (req, res) => {
 
   const consultations = [];
   let notifiedTelegram = 0;
-  for (const vet of vets) {
+  const notesDefault =
+    serviceKind === 'vet'
+      ? purchaseAdvice
+        ? 'مشاوره برای خرید پت (بدون پت ثبت‌شده)'
+        : 'اتصال سریع آنلاین'
+      : serviceKind === 'trainer'
+        ? 'درخواست مشاوره مربی'
+        : serviceKind === 'sitter'
+          ? 'درخواست پرستار پت — پلتفرم فقط اتصال می‌دهد و مسئولیتی فراتر ندارد'
+          : 'درخواست مشورت خرید پت';
+
+  for (const provider of providers) {
     try {
-      const feeCoins = vetVisitFeeCoins(vet);
+      const feeCoins = serviceKind === 'vet' ? vetVisitFeeCoins(provider) : cost;
       const consult = dbService.createVetConsultation({
-        vetUserId: vet.id,
+        vetUserId: provider.id,
         patientUserId: patient.id,
-        notes: purchaseAdvice
-          ? 'مشاوره برای خرید پت (بدون پت ثبت‌شده)'
-          : 'اتصال سریع آنلاین',
+        notes: notesDefault,
         feeCoins,
+        serviceKind,
+        providerShareCoins: serviceKind === 'vet' ? feeCoins : split.providerShare,
       });
       consultations.push(consult);
-      if (vet.telegramId) {
+      if (provider.telegramId) {
         const ok = await notifyVetQuickConsultTelegram({
           consult,
-          vetTelegramId: vet.telegramId,
+          vetTelegramId: provider.telegramId,
           patient,
           visitFeeCoins: feeCoins,
         });
         if (ok) notifiedTelegram += 1;
       }
     } catch (err) {
-      console.warn('create consult for vet failed:', vet.id, err);
+      console.warn('create consult for provider failed:', provider.id, err);
     }
   }
 
@@ -307,11 +365,11 @@ consultationsRouter.post('/quick-connect', async (req, res) => {
   if (consultations.length === 0) {
     dbService.creditCoins(patient.id, cost, undefined, {
       reason: 'بازگشت سکه مشاوره (ناموفق)',
-      refType: 'vet_consult_refund',
+      refType: `${serviceKind}_consult_refund`,
     });
     const refunded = dbService.getUserById(patient.id);
     res.status(502).json({
-      error: 'ارسال به پزشک‌ها ناموفق بود؛ سکه‌ات برگشت داده شد.',
+      error: 'ارسال درخواست ناموفق بود؛ سکه‌ات برگشت داده شد.',
       reason: 'notify_failed',
       refunded: true,
       cost,
@@ -335,14 +393,21 @@ consultationsRouter.post('/quick-connect', async (req, res) => {
     sent,
     notifiedTelegram,
     cost,
+    serviceKind,
     coins: updatedPatient?.coins ?? 0,
     consultations,
     message: [
-      'درخواستت برای پزشک‌های آنلاین (ربات و وب) ارسال شد.',
-      `پزشک‌های هدف: ${sent}`,
+      serviceKind === 'vet'
+        ? 'درخواستت برای پزشک‌های آنلاین (ربات و وب) ارسال شد.'
+        : serviceKind === 'trainer'
+          ? 'درخواستت برای مربی‌های آنلاین ارسال شد.'
+          : serviceKind === 'sitter'
+            ? 'درخواستت برای پرستارهای آنلاین ارسال شد.'
+            : 'درخواست مشورت خرید برای صاحبان پت ارسال شد.',
+      `هدف‌ها: ${sent}`,
       notifiedTelegram > 0 ? `اعلان تلگرام: ${notifiedTelegram}` : null,
       `سکه کسر شده: ${cost}`,
-      'به‌زودی یکی از دامپزشک‌ها در چت وب یا ربات جواب می‌دهد.',
+      'به‌زودی در چت وب یا ربات جواب می‌گیری.',
     ]
       .filter(Boolean)
       .join('\n'),

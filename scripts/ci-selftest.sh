@@ -43,6 +43,7 @@ run src/services/telegram-profile-sync.selftest.ts
 run src/services/telegram-playdate-notify.selftest.ts
 run src/services/nearby-cards.selftest.ts
 run src/services/vet-online.selftest.ts
+run src/services/marketplace-roles.selftest.ts
 run src/services/chat-upload-store.selftest.ts
 
 # Bot guards (sticky keyboard + IPv4 Telegram HTTP) — no network / no DB

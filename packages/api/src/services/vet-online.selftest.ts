@@ -2,6 +2,8 @@
  * Vet online/offline admission toggle — DB write + idempotent no-op.
  * Run: cd packages/api && npx tsx src/services/vet-online.selftest.ts
  */
+export {};
+
 // Force local SQLite before importing db (ESM imports hoist otherwise).
 process.env.DATABASE_URL = '';
 process.env.DATABASE_PATH = `/tmp/petdate-selftest-vet-online-${process.pid}.db`;
@@ -25,6 +27,10 @@ async function main() {
   // Ensure vet role so product paths accept the toggle.
   const withRole = dbService.setUserRoles(user.id, ['vet']) ?? user;
   assert(withRole, 'set vet role');
+
+  // Credential must be verified before going online.
+  dbService.submitVetCredential(user.id, 'selftest_file_id');
+  dbService.approveVetCredential(user.id);
 
   const online = dbService.setVetOnline(user.id, true);
   assert(online, 'go online must succeed');

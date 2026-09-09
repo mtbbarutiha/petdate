@@ -63,6 +63,10 @@ export const PET_OWNER_MENU = {
   help: '❓ راهنما',
   menu: MAIN_MENU_BTN,
   quickVet: '⚡ مشاوره سریع پزشک',
+  requestTrainer: '🎓 درخواست مربی',
+  requestSitter: '🏠 درخواست پرستار پت',
+  seekerAdviceOn: '💬 پذیرش مشورت خرید — روشن',
+  seekerAdviceOff: '💬 پذیرش مشورت خرید — خاموش',
   shop: '🛒 پت‌شاپ',
   /** @deprecated حذف از منو — نگه‌داری برای کیبوردهای قدیمی تلگرام */
   chat: '💬 چت',
@@ -87,6 +91,9 @@ export const ADMIN_MENU = {
   panel: '🛠 پنل ادمین',
   faceQueue: '📋 صف احراز چهره',
   vetQueue: '📄 صف مدارک دامپزشک',
+  trainerQueue: '🎓 صف مدارک مربی',
+  sitterQueue: '🏠 صف مدارک پرستار',
+  photoQueue: '🖼 صف عکس پت',
   vetList: '🩺 مدیریت پزشک‌ها',
   stats: '📊 وضعیت صف‌ها',
   pendingPayments: '💳 پرداخت‌های در انتظار',
@@ -145,6 +152,7 @@ export const NO_PET_MENU = {
 /** منوی نقش «دنبال پت» */
 export const PET_SEEKER_MENU = {
   petsAndPlaymates: '🐾 پت‌ها و همبازی',
+  requestOwnerAdvice: '💬 مشورت خرید از صاحب پت',
   readyAdoptOn: '💚 آماده پذیرش پت هستم',
   readyAdoptOff: '⏸ فعلاً آماده پذیرش نیستم',
   profile: '👤 پروفایل',
@@ -193,6 +201,40 @@ export const VET_MENU = {
   invite: COMMON_MENU.invite,
   /** @deprecated حذف از منو */
   chat: '💬 چت',
+  myRoles: MY_ROLES_LABEL,
+  help: COMMON_MENU.help,
+  menu: MAIN_MENU_BTN,
+} as const;
+
+/** منوی مربی — بدون ابزار پزشکی */
+export const TRAINER_MENU = {
+  goOnline: '🟢 آنلاین مربی — آماده پذیرش',
+  goOffline: '🔴 آفلاین مربی',
+  recentClients: '🎓 مراجعان اخیر',
+  uploadCredential: '📄 آپلود مدرک مربی',
+  profile: '👤 پروفایل',
+  verify: '🛡 احراز چهره',
+  phoneVerify: '📱 احراز موبایل',
+  coins: COMMON_MENU.coins,
+  shop: COMMON_MENU.shop,
+  invite: COMMON_MENU.invite,
+  myRoles: MY_ROLES_LABEL,
+  help: COMMON_MENU.help,
+  menu: MAIN_MENU_BTN,
+} as const;
+
+/** منوی پرستار پت — بدون ابزار پزشکی */
+export const SITTER_MENU = {
+  goOnline: '🟢 آنلاین پرستار — آماده پذیرش',
+  goOffline: '🔴 آفلاین پرستار',
+  recentClients: '🏠 درخواست‌های اخیر',
+  uploadCredential: '📄 آپلود مدرک پرستار',
+  profile: '👤 پروفایل',
+  verify: '🛡 احراز چهره',
+  phoneVerify: '📱 احراز موبایل',
+  coins: COMMON_MENU.coins,
+  shop: COMMON_MENU.shop,
+  invite: COMMON_MENU.invite,
   myRoles: MY_ROLES_LABEL,
   help: COMMON_MENU.help,
   menu: MAIN_MENU_BTN,
@@ -622,13 +664,21 @@ export function mainMenuKeyboard(
   role?: UserRole | string | null,
   roles?: UserRole[] | null,
   telegramId?: string | number | null,
-  options?: { vetOnline?: boolean; readyToAdopt?: boolean },
+  options?: {
+    vetOnline?: boolean;
+    readyToAdopt?: boolean;
+    trainerOnline?: boolean;
+    sitterOnline?: boolean;
+    acceptSeekerAdvice?: boolean;
+  },
 ): Keyboard {
   const list = normalizeRoles(roles as UserRole[] | null | undefined, role as UserRole | null | undefined);
   const active = primaryRole(list, role as UserRole | null | undefined);
 
-  if (active === 'pet_owner') return petOwnerMenuKeyboard(telegramId);
+  if (active === 'pet_owner') return petOwnerMenuKeyboard(telegramId, options);
   if (active === 'vet') return vetMenuKeyboard(telegramId, options);
+  if (active === 'trainer') return trainerMenuKeyboard(telegramId, options);
+  if (active === 'pet_sitter') return sitterMenuKeyboard(telegramId, options);
   if (active === 'pet_seeker') return petSeekerMenuKeyboard(telegramId, options);
   if (active === 'no_pet') return noPetMenuKeyboard(telegramId);
   return noPetMenuKeyboard(telegramId);
@@ -685,8 +735,12 @@ export function vetMenuKeyboard(
   return appendAccessRow(kb.resized().persistent(), telegramId);
 }
 
-export function petOwnerMenuKeyboard(telegramId?: string | number | null): Keyboard {
+export function petOwnerMenuKeyboard(
+  telegramId?: string | number | null,
+  options?: { acceptSeekerAdvice?: boolean },
+): Keyboard {
   const m = PET_OWNER_MENU;
+  const acceptAdvice = options?.acceptSeekerAdvice === true;
   const kb = new Keyboard()
     .text(m.findPlaymate)
     .success()
@@ -703,7 +757,59 @@ export function petOwnerMenuKeyboard(telegramId?: string | number | null): Keybo
     .row()
     .text(m.quickVet)
     .success()
+    .text(m.requestTrainer)
+    .primary()
+    .row()
+    .text(m.requestSitter)
+    .primary()
     .text(m.earn)
+    .primary()
+    .row()
+    .text(acceptAdvice ? m.seekerAdviceOn : m.seekerAdviceOff)
+    .primary();
+  appendCommonMenuRows(kb);
+  return appendAccessRow(kb.resized().persistent(), telegramId);
+}
+
+export function trainerMenuKeyboard(
+  telegramId?: string | number | null,
+  options?: { trainerOnline?: boolean },
+): Keyboard {
+  const m = TRAINER_MENU;
+  const online = options?.trainerOnline === true;
+  const kb = new Keyboard().text(online ? m.goOffline : m.goOnline);
+  if (online) kb.danger();
+  else kb.success();
+  kb
+    .row()
+    .text(m.recentClients)
+    .primary()
+    .text(m.uploadCredential)
+    .primary()
+    .row()
+    .text(m.profile)
+    .primary();
+  appendCommonMenuRows(kb);
+  return appendAccessRow(kb.resized().persistent(), telegramId);
+}
+
+export function sitterMenuKeyboard(
+  telegramId?: string | number | null,
+  options?: { sitterOnline?: boolean },
+): Keyboard {
+  const m = SITTER_MENU;
+  const online = options?.sitterOnline === true;
+  const kb = new Keyboard().text(online ? m.goOffline : m.goOnline);
+  if (online) kb.danger();
+  else kb.success();
+  kb
+    .row()
+    .text(m.recentClients)
+    .primary()
+    .text(m.uploadCredential)
+    .primary()
+    .row()
+    .text(m.profile)
     .primary();
   appendCommonMenuRows(kb);
   return appendAccessRow(kb.resized().persistent(), telegramId);
@@ -718,6 +824,9 @@ export function petSeekerMenuKeyboard(
   const kb = new Keyboard()
     .text(m.petsAndPlaymates)
     .success()
+    .row()
+    .text(m.requestOwnerAdvice)
+    .primary()
     .row()
     .text(ready ? m.readyAdoptOff : m.readyAdoptOn);
   if (ready) kb.danger();
@@ -784,6 +893,13 @@ export function adminPanelKeyboard(): Keyboard {
     .row()
     .text(m.vetQueue)
     .primary()
+    .text(m.trainerQueue)
+    .primary()
+    .row()
+    .text(m.sitterQueue)
+    .primary()
+    .text(m.photoQueue)
+    .primary()
     .row()
     .text(m.vetList)
     .primary()
@@ -827,6 +943,35 @@ export function adminVetCredentialKeyboard(userId: number): InlineKeyboard {
     .row()
     .text('⏭ بعدی', 'vetcred:admin:next').primary()
     .text('📋 صف', 'vetcred:admin:queue').primary();
+}
+
+export function adminProviderCredentialKeyboard(
+  userId: number,
+  kind: 'trainer' | 'sitter'
+): InlineKeyboard {
+  return new InlineKeyboard()
+    .text('✅ تأیید مدرک', `provcred:approve:${kind}:${userId}`)
+    .success()
+    .text('❌ رد', `provcred:reject:${kind}:${userId}`)
+    .danger()
+    .row()
+    .text('⏭ بعدی', `provcred:admin:next:${kind}`)
+    .primary()
+    .text('📋 صف', `provcred:admin:queue:${kind}`)
+    .primary();
+}
+
+export function adminPetPhotoKeyboard(petId: number): InlineKeyboard {
+  return new InlineKeyboard()
+    .text('✅ تأیید عکس', `petphoto:approve:${petId}`)
+    .success()
+    .text('❌ رد', `petphoto:reject:${petId}`)
+    .danger()
+    .row()
+    .text('⏭ بعدی', 'petphoto:admin:next')
+    .primary()
+    .text('📋 صف', 'petphoto:admin:queue')
+    .primary();
 }
 
 /** لیست فشردهٔ پزشک‌ها با انتخاب جزئیات + صفحه‌بندی */
@@ -1272,6 +1417,8 @@ export const MENU_LABELS = new Set<string>([
   ...Object.values(NO_PET_MENU),
   ...Object.values(PET_SEEKER_MENU),
   ...Object.values(VET_MENU),
+  ...Object.values(TRAINER_MENU),
+  ...Object.values(SITTER_MENU),
   ...Object.values(COMMON_MENU),
   ...Object.values(ADMIN_MENU),
   ...Object.values(MY_PETS_SECTION),

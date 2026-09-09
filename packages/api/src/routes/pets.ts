@@ -139,6 +139,8 @@ petsRouter.get('/', (req, res) => {
     breed,
     breeds,
     sort,
+    // Public discovery hides pending/rejected photos; owners always see their pets.
+    publicOnly: ownerId == null,
   });
   res.json(pets);
 });

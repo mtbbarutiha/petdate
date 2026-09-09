@@ -1,6 +1,7 @@
 /** Shared admin API client — password from session (verified against ADMIN_PASSWORD). */
 
 const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ?? '';
+export { API_BASE };
 const PWD_KEY = 'petdate_admin_pwd';
 
 export function getAdminPassword(): string {

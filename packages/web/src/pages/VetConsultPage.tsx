@@ -649,6 +649,17 @@ export function VetConsultPage() {
       setError('اول وارد حساب شو.');
       return;
     }
+    if (nextOnline) {
+      const cred = user?.vetCredentialStatus ?? 'none';
+      if (cred === 'none') {
+        setError('اول مدرک دامپزشکی را آپلود کن تا پنل فعال شود (از ربات یا پروفایل).');
+        return;
+      }
+      if (cred !== 'verified') {
+        setError('مدرک هنوز تأیید نشده؛ بعد از تأیید ادمین می‌توانی آنلاین شوی.');
+        return;
+      }
+    }
     if (onlineBusyRef.current) return;
     if (Boolean(user?.vetOnline) === nextOnline) return;
 

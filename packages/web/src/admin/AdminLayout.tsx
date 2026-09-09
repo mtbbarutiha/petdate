@@ -20,6 +20,7 @@ const NAV_GROUPS: NavGroup[] = [
     { to: '/admin/playdates', icon: ClipboardList, label: 'همبازی' },
     { to: '/admin/consults', icon: Stethoscope, label: 'مشاوره دامپزشک' },
     { to: '/admin/verification', icon: ShieldCheck, label: 'احراز هویت' },
+    { to: '/admin/marketplace-moderation', icon: ClipboardList, label: 'مدارک و عکس' },
   ]},
   { title: 'مالی', items: [
     { to: '/admin/finance', icon: TrendingUp, label: 'داشبورد مالی' },

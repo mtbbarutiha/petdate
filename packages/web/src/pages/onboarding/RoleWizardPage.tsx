@@ -55,6 +55,15 @@ const WIZARD_STEPS: Partial<Record<UserRole, WizardStep[]>> = {
       ],
     },
   ],
+  pet_sitter: [
+    {
+      title: 'پروفایل پرستار پت',
+      fields: [
+        { key: 'specialty', label: 'نوع مراقبت', placeholder: 'نگهداری روزانه، شبانه' },
+        { key: 'experience', label: 'سابقه (سال)', placeholder: '۲' },
+      ],
+    },
+  ],
 };
 
 export function RoleWizardPage() {
