@@ -1,6 +1,7 @@
 import type { ConsultServiceKind, User, VetConsultation } from '@petdate/shared';
 import { dbService } from '../db';
 import {
+  AI_TRAINER_DISPLAY_NAME,
   aiAssistantTelegramId,
   generateAiConsultAdvice,
 } from './ai-consult';
@@ -27,6 +28,15 @@ export function ensureAiAssistantUser(): User {
 export function isAiAssistantUserId(userId: number): boolean {
   const u = dbService.getUserById(userId);
   return Boolean(u?.telegramId && u.telegramId === aiAssistantTelegramId());
+}
+
+/** نام نمایشی مربی/پزشک در چت وقتی طرف AI است */
+export function decorateAiConsultDisplay(consult: VetConsultation): VetConsultation {
+  if (!isAiAssistantUserId(consult.vetUserId)) return consult;
+  if (consult.serviceKind === 'trainer') {
+    return { ...consult, vetName: AI_TRAINER_DISPLAY_NAME };
+  }
+  return { ...consult, vetName: consult.vetName?.trim() || 'دستیار هوشمند پت‌دیت' };
 }
 
 function toAiKind(kind: ConsultServiceKind): 'vet' | 'trainer' | null {
@@ -71,7 +81,7 @@ export async function startAiFallbackConsult(opts: {
     status: 'active',
     notes:
       aiKind === 'trainer'
-        ? 'مشاوره هوشمند آموزش (مربی انسانی آنلاین نبود)'
+        ? `مشاوره آنلاین ${AI_TRAINER_DISPLAY_NAME} (مربی انسانی آنلاین نبود)`
         : 'مشاوره هوشمند دامپزشکی (پزشک انسانی آنلاین نبود)',
     feeCoins: 0,
     serviceKind: aiKind,
@@ -80,7 +90,7 @@ export async function startAiFallbackConsult(opts: {
 
   const intro =
     aiKind === 'trainer'
-      ? 'مربی انسانی آنلاین نبود — چت با دستیار هوشمند آموزش شروع شد.'
+      ? `مربی انسانی آنلاین نبود — چت با ${AI_TRAINER_DISPLAY_NAME} (مربی آنلاین پت‌دیت) شروع شد.`
       : 'دامپزشک انسانی آنلاین نبود — چت با دستیار هوشمند شروع شد.';
 
   dbService.createVetConsultChatMessage({
@@ -128,8 +138,10 @@ export async function maybeReplyAsAiAssistant(opts: {
     }))
     .filter((m) => m.content);
 
+  const patient = dbService.getUserById(consult.patientUserId);
   const generated = await generateAiConsultAdvice({
     kind: aiKind,
+    patientName: patient?.name,
     petName: pet?.name || consult.petName,
     petSpecies: pet?.species || consult.petSpecies,
     petBreed: pet?.breed || consult.petBreed,

@@ -23,7 +23,12 @@ import {
 import { notifyVetQuickConsultTelegram } from '../services/telegram-vet-consult-notify';
 import { startVetChatFromApi } from '../services/telegram-vet-chat-start';
 import { clearBotVetChatSessions } from '../services/bot-vet-chat-session';
-import { startAiFallbackConsult, maybeReplyAsAiAssistant } from '../services/ai-consult-session';
+import { AI_TRAINER_DISPLAY_NAME } from '../services/ai-consult';
+import {
+  decorateAiConsultDisplay,
+  startAiFallbackConsult,
+  maybeReplyAsAiAssistant,
+} from '../services/ai-consult-session';
 import {
   notifyVetChatEndedTelegram,
   notifyVetChatSecureTelegram,
@@ -165,7 +170,7 @@ consultationsRouter.get('/', (req, res) => {
     status,
     serviceKind,
   });
-  res.json(consultations);
+  res.json(consultations.map(decorateAiConsultDisplay));
 });
 
 /** دامپزشک‌های قبلی بیمار — قبل از /:id تا route اشتباه نشود */
@@ -297,12 +302,12 @@ consultationsRouter.post('/quick-connect', async (req, res) => {
             cost: 0,
             serviceKind,
             coins: updatedPatient?.coins ?? 0,
-            consultations: [ai.consult],
+            consultations: [decorateAiConsultDisplay(ai.consult)],
             advice: ai.advice,
             adviceSource: ai.source,
             message:
               serviceKind === 'trainer'
-                ? 'مربی انسانی آنلاین نبود — چت با دستیار هوشمند آموزش شروع شد (بدون کسر سکه).'
+                ? `مربی انسانی آنلاین نبود — چت با ${AI_TRAINER_DISPLAY_NAME} (مربی آنلاین) شروع شد (بدون کسر سکه).`
                 : 'دامپزشک انسانی آنلاین نبود — چت با دستیار هوشمند شروع شد (بدون کسر سکه).',
           });
           return;

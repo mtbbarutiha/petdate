@@ -221,12 +221,12 @@ async function runQuickConnect(
   }
 
   if (result.aiFallback) {
+    const title =
+      kind === 'trainer'
+        ? '🎓 پاشا یزدانی — مربی آنلاین پت‌دیت'
+        : '🤖 دستیار هوشمند پت‌دیت';
     await ctx.reply(
-      [
-        '🤖 دستیار هوشمند پت‌دیت',
-        result.message,
-        result.advice ? '\n' + result.advice.slice(0, 3500) : '',
-      ]
+      [title, result.message, result.advice ? '\n' + result.advice.slice(0, 3500) : '']
         .filter(Boolean)
         .join('\n'),
       { reply_markup: menuKeyboardFor(ctx, user) }
@@ -245,7 +245,7 @@ export async function handleRequestTrainer(ctx: Context): Promise<void> {
     [
       '🎓 درخواست مربی',
       `هزینه اتصال انسانی: ${TRAINER_CONSULT_COST} سکه (۲۵ مربی + ۲۵ پلتفرم).`,
-      'اگر مربی آنلاین نباشد، دستیار هوشمند آموزش رایگان پاسخ می‌دهد.',
+      'اگر مربی آنلاین نباشد، پاشا یزدانی (مربی آنلاین) رایگان پاسخ می‌دهد.',
     ].join('\n'),
     { reply_markup: menuKeyboardFor(ctx, await getCtxUser(ctx)) }
   );
