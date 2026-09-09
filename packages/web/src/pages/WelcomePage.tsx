@@ -44,12 +44,19 @@ type HeroCta =
   | { kind: 'hash'; href: string; label: string }
   | { kind: 'gated'; to: string; label: string };
 
+/** Where the photo subject lives — drives object-position so cover crops stay stable. */
+type HeroFocus = 'top' | 'lower' | 'bottom';
+
 const HERO_SLIDES: {
   img: string;
   kicker: string;
   title: string;
   lead: string;
   cta: HeroCta;
+  /** Subject bias for object-fit:cover (default top matches classic Pepito headers). */
+  focus?: HeroFocus;
+  /** Brighter / high-key photo — extra wash so white copy stays readable. */
+  light?: boolean;
 }[] = [
   {
     img: `${P}/3.jpg`,
@@ -57,6 +64,7 @@ const HERO_SLIDES: {
     title: 'همین حالا به دامپزشک وصل شو',
     lead: 'درخواست اتصال فوری به پزشک آنلاین — پس از تأیید پرداخت سکه، چت مشاوره شروع می‌شود.',
     cta: { kind: 'gated', to: '/vet-consult', label: 'مشاوره سریع' },
+    focus: 'top',
   },
   {
     img: `${P}/2.jpg`,
@@ -64,6 +72,7 @@ const HERO_SLIDES: {
     title: 'مراقبت از پت‌های شما',
     lead: 'دامپزشکان قابل‌اعتماد که پت‌تان را در اولویت می‌گذارند.',
     cta: { kind: 'hash', href: '#services', label: 'کشف کن' },
+    focus: 'top',
   },
   {
     img: `${P}/4.jpg`,
@@ -71,6 +80,7 @@ const HERO_SLIDES: {
     title: 'آماده‌ایم از پت‌تان مراقبت کنیم',
     lead: 'دامپزشکان قابل‌اعتماد که پت‌تان را در اولویت می‌گذارند.',
     cta: { kind: 'hash', href: '#services', label: 'کشف کن' },
+    focus: 'top',
   },
   {
     img: `${P}/1-three-dogs.jpg`,
@@ -78,6 +88,8 @@ const HERO_SLIDES: {
     title: 'عشق و مراقبت، در کنار پت شما',
     lead: 'دامپزشکان قابل‌اعتماد که پت‌تان را در اولویت می‌گذارند.',
     cta: { kind: 'hash', href: '#services', label: 'کشف کن' },
+    focus: 'bottom',
+    light: true,
   },
   {
     img: `${P}/5-kittens.jpg`,
@@ -85,6 +97,7 @@ const HERO_SLIDES: {
     title: 'پت‌تان شایسته بهترین‌هاست',
     lead: 'دامپزشکان قابل‌اعتماد که پت‌تان را در اولویت می‌گذارند.',
     cta: { kind: 'hash', href: '#services', label: 'کشف کن' },
+    focus: 'lower',
   },
   {
     img: `${P}/06-pink-cat.jpg`,
@@ -92,6 +105,8 @@ const HERO_SLIDES: {
     title: 'مراقبت دامپزشکی حرفه‌ای',
     lead: 'دامپزشکان قابل‌اعتماد که پت‌تان را در اولویت می‌گذارند.',
     cta: { kind: 'hash', href: '#services', label: 'کشف کن' },
+    focus: 'bottom',
+    light: true,
   },
 ];
 
@@ -419,24 +434,33 @@ export function WelcomePage() {
         </div>
 </header>
 
-      <section className="pepito-hero" aria-roledescription="carousel" aria-label="اسلایدر صفحه اصلی">
+      <section
+        className={`pepito-hero${current.light ? ' pepito-hero--light' : ''}`}
+        aria-roledescription="carousel"
+        aria-label="اسلایدر صفحه اصلی"
+      >
         <div className="pepito-hero-slides">
-          {HERO_SLIDES.map((s, i) => (
-            <div
-              key={s.img}
-              className={`pepito-hero-slide${i === slide ? ' is-active' : ''}`}
-              aria-hidden={i !== slide}
-            >
-              <img
-                className="pepito-hero-media"
-                src={s.img}
-                alt={i === 0 ? 'پت‌دیت — همبازی پت و مراقبت حیوانات خانگی' : s.title}
-                decoding={i === 0 ? "sync" : "async"}
-                loading={i === 0 ? "eager" : "lazy"}
-                fetchPriority={i === 0 ? "high" : "auto"}
-              />
-            </div>
-          ))}
+          {HERO_SLIDES.map((s, i) => {
+            const focus = s.focus ?? 'top';
+            return (
+              <div
+                key={s.img}
+                className={`pepito-hero-slide pepito-hero-slide--focus-${focus}${
+                  s.light ? ' pepito-hero-slide--light' : ''
+                }${i === slide ? ' is-active' : ''}`}
+                aria-hidden={i !== slide}
+              >
+                <img
+                  className={`pepito-hero-media pepito-hero-media--focus-${focus}`}
+                  src={s.img}
+                  alt={i === 0 ? 'پت‌دیت — همبازی پت و مراقبت حیوانات خانگی' : s.title}
+                  decoding={i === 0 ? 'sync' : 'async'}
+                  loading={i === 0 ? 'eager' : 'lazy'}
+                  fetchPriority={i === 0 ? 'high' : 'auto'}
+                />
+              </div>
+            );
+          })}
         </div>
         <div className="pepito-hero-wash" aria-hidden />
         <div className="pepito-hero-inner" key={slide}>
