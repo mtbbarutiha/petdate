@@ -1624,15 +1624,20 @@ export function ChatPage() {
 
   // Incomplete registration: don't render broken empty chat chrome — clear CTA instead.
   if (!isProfileComplete) {
+    const gateCopy =
+      inboxScope === 'trainer'
+        ? 'برای دیدن گفتگوهای هماهنگی آموزش حضوری، اول ثبت‌نام را تمام کن (نام، سن، جنسیت و شهر).'
+        : inboxScope === 'sitter'
+          ? 'برای دیدن گفتگوهای هماهنگی پرستاری، اول ثبت‌نام را تمام کن (نام، سن، جنسیت و شهر).'
+          : inboxScope === 'vet'
+            ? 'برای دیدن گفتگوهای مشاوره دامپزشکی، اول ثبت‌نام را تمام کن (نام، سن، جنسیت و شهر).'
+            : 'برای دیدن هم بازی و پیدا کردن همبازی، اول ثبت‌نام را تمام کن (نام، سن، جنسیت و شهر).';
     return (
       <div className="tg-chat tg-chat--gate" dir="rtl">
         <div className="tg-profile-gate">
           <SiteLogo className="tg-chat-empty-logo" height={52} />
           <h1>پروفایلت هنوز کامل نیست</h1>
-          <p>
-            برای دیدن هم بازی و پیدا کردن همبازی، اول ثبت‌نام را تمام کن
-            (نام، سن، جنسیت و شهر).
-          </p>
+          <p>{gateCopy}</p>
           <Link to="/onboarding/profile" className="pepito-btn button-1 tg-profile-gate__cta">
             تکمیل پروفایل
           </Link>
