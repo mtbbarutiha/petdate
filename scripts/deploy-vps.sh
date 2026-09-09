@@ -344,8 +344,9 @@ else
   echo "WARNING: web-cta-once module missing after deploy"
 fi
 if grep -q "pet_sitter" packages/shared/src/petdate.ts 2>/dev/null; then
-  grep -q 'REMOVED_USER_ROLES' packages/shared/src/petdate.ts \
-    && echo "OK: pet_sitter listed only as REMOVED_USER_ROLES (no sitter role)"
+  grep -q "REMOVED_USER_ROLES = \\['community_seeker'\\]" packages/shared/src/petdate.ts \
+    && grep -q "'pet_sitter'" packages/shared/src/petdate.ts \
+    && echo "OK: pet_sitter active role; community_seeker still removed"
 fi
 if [[ -f ecosystem.config.cjs ]]; then
   grep -q 'DATABASE_PATH' ecosystem.config.cjs && echo "OK: single DATABASE_PATH in ecosystem"
