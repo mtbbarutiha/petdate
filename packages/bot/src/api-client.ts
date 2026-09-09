@@ -1730,15 +1730,31 @@ export async function fetchMyShopOrdersTelegram(telegramId: string): Promise<{
 
 export async function postSupportMessageAsTelegram(
   telegramId: string,
-  text: string
+  text: string,
+  media?: {
+    mediaKind: 'voice' | 'audio';
+    telegramFileId: string;
+    mimeType?: string;
+  }
 ): Promise<{
   ok: true;
   messages: Array<{ id: number; role: 'user' | 'assistant'; text: string; createdAt: string }>;
   assistantMessage: { text: string };
+  transcript?: string;
+  sttUnavailable?: boolean;
 }> {
   return request(`/api/support/telegram/${encodeURIComponent(telegramId)}/messages`, {
     method: 'POST',
-    body: JSON.stringify({ text }),
+    body: JSON.stringify({
+      text,
+      ...(media
+        ? {
+            mediaKind: media.mediaKind,
+            telegramFileId: media.telegramFileId,
+            mimeType: media.mimeType,
+          }
+        : {}),
+    }),
   });
 }
 

@@ -46,6 +46,8 @@ run src/services/vet-online.selftest.ts
 run src/services/marketplace-roles.selftest.ts
 run src/services/chat-upload-store.selftest.ts
 run src/services/pasha-user-tone.selftest.ts
+run src/services/speech-to-text.selftest.ts
+run src/services/ai-consult.selftest.ts
 
 # Bot guards (sticky keyboard + IPv4 Telegram HTTP) — no network / no DB
 echo "==> selftest: bot sticky + telegram-http + nearby-radius + nearby-inline-list + pet-search-menu + invite-friends + urls"

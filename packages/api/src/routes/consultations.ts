@@ -28,6 +28,7 @@ import {
   decorateAiConsultDisplay,
   startAiFallbackConsult,
   maybeReplyAsAiAssistant,
+  maybeTranscribeAndReplyAsAiAssistant,
 } from '../services/ai-consult-session';
 import {
   notifyVetChatEndedTelegram,
@@ -773,15 +774,26 @@ consultationsRouter.post('/:id/messages', async (req, res) => {
         fileName: message.fileName,
       });
     }
-    // AI provider auto-reply for patient messages.
-    if (senderUserId === gate.consult.patientUserId && text.trim()) {
-      void maybeReplyAsAiAssistant({
-        consultId: id,
-        patientUserId: senderUserId,
-        patientText: text,
-      }).catch((err) => {
-        console.warn('ai auto-reply failed:', (err as Error).message);
-      });
+    // AI provider auto-reply for patient messages (text or voice/audio → STT).
+    if (senderUserId === gate.consult.patientUserId) {
+      const voiceLike = mediaKind === 'voice' || mediaKind === 'audio';
+      if (voiceLike) {
+        void maybeTranscribeAndReplyAsAiAssistant({
+          consultId: id,
+          patientUserId: senderUserId,
+          message,
+        }).catch((err) => {
+          console.warn('ai voice auto-reply failed:', (err as Error).message);
+        });
+      } else if (text.trim()) {
+        void maybeReplyAsAiAssistant({
+          consultId: id,
+          patientUserId: senderUserId,
+          patientText: text,
+        }).catch((err) => {
+          console.warn('ai auto-reply failed:', (err as Error).message);
+        });
+      }
     }
 
     res.status(201).json(message);
@@ -894,6 +906,32 @@ consultationsRouter.post('/:id/messages/upload', (req, res) => {
         mimeType: message.mimeType,
         fileName: message.fileName,
       });
+      // AI provider: web voice/audio upload → Whisper STT → reply.
+      if (
+        senderUserId === gate.consult.patientUserId &&
+        (mediaKind === 'voice' || mediaKind === 'audio')
+      ) {
+        void maybeTranscribeAndReplyAsAiAssistant({
+          consultId: id,
+          patientUserId: senderUserId,
+          message,
+        }).catch((err) => {
+          console.warn('ai voice upload auto-reply failed:', (err as Error).message);
+        });
+      } else if (
+        senderUserId === gate.consult.patientUserId &&
+        caption.trim() &&
+        mediaKind !== 'voice' &&
+        mediaKind !== 'audio'
+      ) {
+        void maybeReplyAsAiAssistant({
+          consultId: id,
+          patientUserId: senderUserId,
+          patientText: caption,
+        }).catch((err) => {
+          console.warn('ai auto-reply failed:', (err as Error).message);
+        });
+      }
       res.status(201).json(message);
     } catch (err) {
       if (err instanceof Error && err.message === 'FILE_TOO_LARGE') {

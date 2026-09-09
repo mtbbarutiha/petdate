@@ -97,7 +97,7 @@ import {
   getCtxUser,
 } from './start';
 import { menuKeyboardFor } from './helpers';
-import { handleSupportChat, handleSupportChatText } from './support';
+import { handleSupportChat, handleSupportChatText, handleSupportChatVoice } from './support';
 import {
   handleComingSoon,
   handleChatsEntry,
@@ -920,6 +920,13 @@ export function registerHandlers(bot: Bot): void {
   });
 
   bot.on('message:voice', async (ctx) => {
+    if (await handleSupportChatVoice(ctx)) return;
+    if (await handleOwnerChatRelay(ctx)) return;
+    if (await handleVetChatRelay(ctx)) return;
+  });
+
+  bot.on('message:audio', async (ctx) => {
+    if (await handleSupportChatVoice(ctx)) return;
     if (await handleOwnerChatRelay(ctx)) return;
     if (await handleVetChatRelay(ctx)) return;
   });

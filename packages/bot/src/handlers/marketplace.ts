@@ -7,6 +7,7 @@ import {
   userHasRole,
 } from '@petdate/shared';
 import {
+  getUserById,
   listVetConsultations,
   quickVetConnect,
   setAcceptSeekerAdvice,
@@ -15,7 +16,7 @@ import {
 } from '../api-client';
 import { getSession, upsertSession } from '../session';
 import { getCtxUser, menuKeyboardFor } from './helpers';
-import { startVetChat } from './vet-chat';
+import { startVetChat, enterAiConsultChatAsPatient } from './vet-chat';
 import { SITTER_MENU, TRAINER_MENU, textStepKeyboard } from '../keyboards';
 
 function patientLabel(c: VetConsultation): string {
@@ -228,9 +229,21 @@ async function runQuickConnect(
     await ctx.reply(
       [title, result.message, result.advice ? '\n' + result.advice.slice(0, 3500) : '']
         .filter(Boolean)
-        .join('\n'),
-      { reply_markup: menuKeyboardFor(ctx, user) }
+        .join('\n')
     );
+    const consult = result.consultations?.[0];
+    if (consult) {
+      const ai = await getUserById(consult.vetUserId).catch(() => null);
+      if (ai) {
+        await enterAiConsultChatAsPatient(ctx, consult.id, ai, user, {
+          openingAlreadySent: true,
+        });
+        return;
+      }
+    }
+    await ctx.reply('می‌توانی در چت وب ادامه بدهی.', {
+      reply_markup: menuKeyboardFor(ctx, user),
+    });
     return;
   }
   await ctx.reply(

@@ -5,6 +5,7 @@
  *   AI_CONSULT_API_KEY / OPENAI_API_KEY
  *   AI_CONSULT_BASE_URL / OPENAI_BASE_URL  (default https://api.openai.com/v1)
  *   AI_CONSULT_MODEL / OPENAI_MODEL        (default gpt-4o-mini)
+ *   AI_CONSULT_STT_MODEL / OPENAI_STT_MODEL (default whisper-1; voice notes)
  *
  * When no key is configured, returns a careful offline advisory so users never
  * get a hard "no online provider" error for vet/trainer.

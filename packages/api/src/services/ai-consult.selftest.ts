@@ -270,6 +270,35 @@ async function main() {
   assert(supportTurn1.text !== supportTurn2.text, 'follow-up differs from first reply');
   assert(supportTurn2.text.includes('OTP') || supportTurn2.text.includes('پیامک'), 'follow-up stays on topic');
 
+  // Voice in AI consult without STT key → polite Persian fallback (no throw).
+  {
+    const { maybeTranscribeAndReplyAsAiAssistant } = await import('./ai-consult-session');
+    const { STT_UNAVAILABLE_FA } = await import('./speech-to-text');
+    const voiceMsg = dbService.createVetConsultChatMessage({
+      consultId: session!.consult.id,
+      senderUserId: patient.id,
+      text: '',
+      mediaKind: 'voice',
+      telegramFileId: 'AgAC_fake_voice_file_id_for_selftest_only_xxxxxxxx',
+      mimeType: 'audio/ogg',
+    });
+    assert(voiceMsg.text === '[پیام صوتی]', 'voice placeholder stored');
+    await maybeTranscribeAndReplyAsAiAssistant({
+      consultId: session!.consult.id,
+      patientUserId: patient.id,
+      message: voiceMsg,
+    });
+    const after = dbService.listVetConsultChatMessages(session!.consult.id);
+    const last = after[after.length - 1]!;
+    assert(last.senderUserId === aiUser.id, 'AI replied to voice');
+    assert(last.text === STT_UNAVAILABLE_FA, 'STT fallback copy');
+  }
+
+  const { usableTelegramId, isSyntheticTelegramId } = await import('./telegram-id');
+  assert(isSyntheticTelegramId('petdate_ai_assistant'), 'AI tg id synthetic');
+  assert(!usableTelegramId('petdate_ai_assistant'), 'AI tg id not sendable');
+  assert(usableTelegramId('123456789'), 'numeric tg id ok');
+
   for (let i = 0; i < 25; i++) {
     dbService.addSupportMessage(patient.id, 'user', `msg ${i}`);
     dbService.addSupportMessage(patient.id, 'assistant', `reply ${i}`);
