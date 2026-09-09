@@ -1165,6 +1165,16 @@ consultationsRouter.post('/:id/prescription', async (req, res) => {
     return;
   }
 
+  const consult = dbService.getVetConsultation(consultId);
+  if (!consult) {
+    res.status(404).json({ error: 'مشاوره پیدا نشد' });
+    return;
+  }
+  if ((consult.serviceKind ?? 'vet') !== 'vet') {
+    res.status(403).json({ error: 'صدور نسخه فقط برای مشاوره دامپزشکی مجاز است' });
+    return;
+  }
+
   const created = await createPrescriptionWithDelivery({
     consultId,
     vetUserId,
