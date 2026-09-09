@@ -12,6 +12,12 @@
  * Production note: without AI_CONSULT_API_KEY on the VPS, trainer replies use the
  * rich offline knowledge base below (پاشا یزدانی). Set the key for deeper LLM answers.
  */
+import {
+  applyOfflineToneStyle,
+  formatToneSystemInstruction,
+  type UserToneProfile,
+} from './pasha-user-tone';
+
 export type AiConsultKind = 'vet' | 'trainer' | 'support';
 
 export type AiConsultContext = {
@@ -25,6 +31,8 @@ export type AiConsultContext = {
   petImageUrl?: string;
   petAgeMonths?: number;
   history?: Array<{ role: 'user' | 'assistant'; content: string }>;
+  /** Learned per-user chat tone for trainer mirroring */
+  userTone?: UserToneProfile | null;
 };
 
 const AI_TELEGRAM_ID = 'petdate_ai_assistant';
@@ -83,6 +91,7 @@ function systemPrompt(kind: AiConsultKind): string {
       'پزشکی/اورژانس: نگران شو، بفرست پیش دامپزشک؛ دارو تجویز نکن.',
       'تنبیه بدنی، خفه، شوک، آلفا رول ممنوع.',
       'تضمین صددرصد نده. مثل آدم واقعی حرف بزن که دلش برای پت و صاحبش می‌سوزد.',
+      'اگر «راهنمای لحن این کاربر» در پیام سیستم بعدی آمد، لحن جوابت را با همان کاربر هم‌تراز کن (تو/شما، کوتاه/بلند، ایموجی، انرژی) بدون اینکه محتوای آموزشی را فدا کنی.',
     ].join('\n');
   }
   return [
@@ -914,25 +923,28 @@ export function offlineAiAdvice(ctx: AiConsultContext): string {
     ].join('\n');
   }
   if (ctx.kind === 'trainer') {
+    const withTone = (text: string) =>
+      ctx.userTone ? applyOfflineToneStyle(text, ctx.userTone) : text;
     const q = ctx.userMessage?.trim() ?? '';
     const hasHistory = (ctx.history?.length ?? 0) > 0;
     const followUp = trainerFollowUpReply(ctx);
-    if (followUp) return followUp;
+    if (followUp) return withTone(followUp);
     const topic = q ? findTrainerTopic(q) : null;
     if (topic) {
       const tracked = findTrainerTopicFromHistory(ctx);
       const depth = tracked && tracked.topic.id === topic.id ? tracked.depth : 1;
-      return formatTrainerTopicReply(ctx, topic, depth);
+      return withTone(formatTrainerTopicReply(ctx, topic, depth));
     }
     if (hasHistory) {
-      // Unknown topic without LLM — stay in character and gather detail (online path preferred when key exists)
-      return [
-        q
-          ? `در مورد «${q}» می‌خوام دقیق جلو برم. ${ageAwareAside(ctx)}`
-          : `بگو الان دقیقاً کجا گیر کردی تا همان را باز کنیم.`,
-        ``,
-        `برای اینکه نسخهٔ درست بدهم بگو: سن تقریبی، محیط (خانه/خیابان)، و از کی این رفتار را می‌بینی. اگر عکس یا ویدیوی کوتاه هم داری بفرست.`,
-      ].join('\n');
+      return withTone(
+        [
+          q
+            ? `در مورد «${q}» می‌خوام دقیق جلو برم. ${ageAwareAside(ctx)}`
+            : `بگو الان دقیقاً کجا گیر کردی تا همان را باز کنیم.`,
+          ``,
+          `برای اینکه نسخهٔ درست بدهم بگو: سن تقریبی، محیط (خانه/خیابان)، و از کی این رفتار را می‌بینی. اگر عکس یا ویدیوی کوتاه هم داری بفرست.`,
+        ].join('\n')
+      );
     }
     const greet = buildTrainerOpeningGreeting({
       patientName: ctx.patientName,
@@ -942,15 +954,16 @@ export function offlineAiAdvice(ctx: AiConsultContext): string {
       petImageUrl: ctx.petImageUrl,
       petAgeMonths: ctx.petAgeMonths,
     });
-    // Soft greeting-only open; if they typed something vague (no topic match), invite them gently.
     if (q) {
-      return [
-        greet,
-        ``,
-        `دربارهٔ «${q}» بعد از اینکه کمی بیشتر بگی (سن، محیط، و اگر عکس داری)، دقیق‌تر جلو می‌رویم.`,
-      ].join('\n');
+      return withTone(
+        [
+          greet,
+          ``,
+          `دربارهٔ «${q}» بعد از اینکه کمی بیشتر بگی (سن، محیط، و اگر عکس داری)، دقیق‌تر جلو می‌رویم.`,
+        ].join('\n')
+      );
     }
-    return greet;
+    return withTone(greet);
   }
   return [
     `👋 من دستیار هوشمند پت‌دیت هستم (دامپزشک انسانی الان آنلاین نیست).`,
@@ -995,6 +1008,9 @@ async function callOpenAiCompatible(ctx: AiConsultContext): Promise<string | nul
   const messages: Array<{ role: string; content: string }> = [
     { role: 'system', content: systemPrompt(ctx.kind) },
   ];
+  if (ctx.kind === 'trainer' && ctx.userTone && ctx.userTone.samples > 0) {
+    messages.push({ role: 'system', content: formatToneSystemInstruction(ctx.userTone) });
+  }
   for (const h of ctx.history ?? []) {
     messages.push({ role: h.role, content: h.content });
   }

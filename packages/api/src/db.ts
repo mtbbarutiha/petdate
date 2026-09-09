@@ -457,6 +457,10 @@ function migrateSchema() {
   if (!names.has('location_updated_at')) {
     db.exec('ALTER TABLE users ADD COLUMN location_updated_at TEXT');
   }
+  /** Learned chat tone for AI trainer (پاشا) — JSON UserToneProfile */
+  if (!names.has('ai_tone_json')) {
+    db.exec('ALTER TABLE users ADD COLUMN ai_tone_json TEXT');
+  }
   db.exec(`CREATE INDEX IF NOT EXISTS idx_users_lat_lng ON users (lat, lng);`);
 
   db.exec(`
@@ -2240,6 +2244,17 @@ export const dbService = {
   getUserById(id: number): User | null {
     const row = db.prepare('SELECT * FROM users WHERE id = ?').get(id) as Record<string, unknown> | undefined;
     return row ? mapUser(row) : null;
+  },
+
+  getUserAiToneJson(userId: number): string | null {
+    const row = db
+      .prepare('SELECT ai_tone_json FROM users WHERE id = ?')
+      .get(userId) as { ai_tone_json?: string | null } | undefined;
+    return row?.ai_tone_json ?? null;
+  },
+
+  setUserAiToneJson(userId: number, json: string): void {
+    db.prepare('UPDATE users SET ai_tone_json = ? WHERE id = ?').run(json, userId);
   },
 
   getUserByTelegramId(telegramId: string): User | null {
