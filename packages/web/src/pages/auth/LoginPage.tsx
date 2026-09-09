@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { Mail, Send, Smartphone } from 'lucide-react';
 import { AuthShell } from '../../components/AuthShell';
 import { useAuthStore } from '../../hooks/useAuthStore';
+import { useAppToast } from '../../hooks/useAppToast';
 import {
   pollTelegramPendingLogin,
   prefersSameBrowserTelegramLogin,
@@ -29,6 +30,7 @@ export function LoginPage() {
   );
   const { requestOtp, isLoggedIn, isProfileComplete, hasRole, user, acceptSession } =
     useAuthStore();
+  const { toastError, toastSuccess, toastInfo } = useAppToast();
   const [channel, setChannel] = useState<WebOtpChannel>('phone');
   const [target, setTarget] = useState('');
   const [busy, setBusy] = useState(false);
@@ -111,16 +113,14 @@ export function LoginPage() {
     try {
       const res = await requestOtp(channel, target.trim());
       if (res.devCode) setDevHint(`کد توسعه: ${res.devCode}`);
+      toastSuccess('کد ارسال شد');
       navigate(`/auth/otp?next=${encodeURIComponent(next)}`, {
         state: res.devCode ? { devCode: res.devCode, next } : { next },
       });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'ارسال کد ناموفق بود';
-      setError(
-        channel === 'phone'
-          ? `${msg} اگر پیامک نرسید، از تب ایمیل استفاده کن.`
-          : msg
-      );
+      const full = channel === 'phone' ? `${msg} اگر پیامک نرسید، از تب ایمیل استفاده کن.` : msg;
+      setError(full); toastError(full);
     } finally {
       setBusy(false);
     }
@@ -140,8 +140,9 @@ export function LoginPage() {
       });
       // Open Telegram for confirmation only — stay on this waiting tab.
       window.open(res.deepLink, '_blank', 'noopener,noreferrer');
+      toastInfo('تلگرام را باز کن و ورود را تأیید کن.');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'شروع ورود تلگرام ناموفق بود');
+      const msg = err instanceof Error ? err.message : 'شروع ورود تلگرام ناموفق بود'; setError(msg); toastError(msg);
     } finally {
       setTgBusy(false);
     }

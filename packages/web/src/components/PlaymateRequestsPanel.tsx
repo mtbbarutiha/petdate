@@ -6,6 +6,7 @@ import { RequestCountdown } from './RequestCountdown';
 import { formatTimeAgo } from '../data/mock';
 import { EMPTY_STATE_PHOTO } from '../data/petImages';
 import { useAuthStore } from '../hooks/useAuthStore';
+import { useAppToast } from '../hooks/useAppToast';
 import { useUserStore } from '../hooks/useUserStore';
 import { listPlaydateRequests, updatePlaydateStatus } from '../lib/api';
 import { subscribeIncomingRefresh } from '../lib/liveIncoming';
@@ -30,12 +31,12 @@ export function PlaymateRequestsPanel({
   const navigate = useNavigate();
   const { user } = useUserStore();
   const { user: authUser, isLoggedIn } = useAuthStore();
+  const { toastError, toastSuccess } = useAppToast();
   const [tab, setTab] = useState<Tab>(initialTab);
   const [matches, setMatches] = useState<MatchRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<number | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
 
   const myUserId = authUser?.id ?? user.id;
 
@@ -100,32 +101,28 @@ export function PlaymateRequestsPanel({
     tab === 'incoming' ? incomingPending : tab === 'sent' ? sentPending : accepted;
 
   async function onAccept(id: number) {
-    setBusyId(id);
-    setError(null);
+    setBusyId(id); setError(null);
     try {
       if (!myUserId) throw new Error('وارد حساب نشده‌اید');
       await updatePlaydateStatus(id, 'accepted', myUserId);
       navigate(`/chats/${id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'قبول درخواست ناموفق بود');
-      setBusyId(null);
+      const msg = err instanceof Error ? err.message : 'قبول درخواست ناموفق بود';
+      setError(msg); toastError(msg); setBusyId(null);
     }
   }
 
   async function onReject(id: number) {
-    setBusyId(id);
-    setError(null);
+    setBusyId(id); setError(null);
     try {
       if (!myUserId) throw new Error('وارد حساب نشده‌اید');
       await updatePlaydateStatus(id, 'rejected', myUserId);
-      setToast('درخواست رد شد.');
+      toastSuccess('درخواست رد شد.');
       await reload();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'رد درخواست ناموفق بود');
-    } finally {
-      setBusyId(null);
-      setTimeout(() => setToast(null), 2500);
-    }
+      const msg = err instanceof Error ? err.message : 'رد درخواست ناموفق بود';
+      setError(msg); toastError(msg);
+    } finally { setBusyId(null); }
   }
 
   return (
@@ -306,11 +303,6 @@ export function PlaymateRequestsPanel({
         </div>
       )}
 
-      {toast && (
-        <div className="toast" role="status">
-          {toast}
-        </div>
-      )}
     </div>
   );
 }

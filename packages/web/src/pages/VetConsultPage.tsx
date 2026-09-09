@@ -26,6 +26,7 @@ import {
   type VetCredentialStatus,
 } from '@petdate/shared';
 import { useAuthStore } from '../hooks/useAuthStore';
+import { useAppToast } from '../hooks/useAppToast';
 import { useLiveAjaxPoll } from '../hooks/useLiveAjaxPoll';
 import {
   acceptVetConsultation,
@@ -423,6 +424,7 @@ function VetInboxSection({
 export function VetConsultPage() {
   const navigate = useNavigate();
   const { user, token, isLoggedIn, refreshMe, setVetOnline, setVisitFee } = useAuthStore();
+  const { toastError, toastSuccess } = useAppToast();
 
   const [pets, setPets] = useState<PetProfile[]>([]);
   const [petsLoading, setPetsLoading] = useState(false);
@@ -645,53 +647,39 @@ export function VetConsultPage() {
   }, [isVetDashboard, vetOnline, needsLogin, needsPet, noOnlineVets, lowCoins, coins, connectCost]);
 
   async function onSetVetOnline(nextOnline: boolean) {
-    if (!token) {
-      setError('اول وارد حساب شو.');
-      return;
-    }
+    if (!token) { const msg = 'اول وارد حساب شو.'; setError(msg); toastError(msg); return; }
     if (nextOnline) {
       const cred = user?.vetCredentialStatus ?? 'none';
       if (cred === 'none') {
-        setError('اول مدرک دامپزشکی را آپلود کن تا پنل فعال شود (از ربات یا پروفایل).');
-        return;
+        const msg = 'اول مدرک دامپزشکی را آپلود کن تا پنل فعال شود (از ربات یا پروفایل).';
+        setError(msg); toastError(msg); return;
       }
       if (cred !== 'verified') {
-        setError('مدرک هنوز تأیید نشده؛ بعد از تأیید ادمین می‌توانی آنلاین شوی.');
-        return;
+        const msg = 'مدرک هنوز تأیید نشده؛ بعد از تأیید ادمین می‌توانی آنلاین شوی.';
+        setError(msg); toastError(msg); return;
       }
     }
     if (onlineBusyRef.current) return;
     if (Boolean(user?.vetOnline) === nextOnline) return;
-
-    onlineBusyRef.current = true;
-    setOnlineBusy(true);
-    setError(null);
-
-    // Never leave the segmented control disabled forever if the PATCH hangs.
+    onlineBusyRef.current = true; setOnlineBusy(true); setError(null);
     if (onlineToggleTimerRef.current) clearTimeout(onlineToggleTimerRef.current);
     let timedOut = false;
     onlineToggleTimerRef.current = setTimeout(() => {
-      timedOut = true;
-      onlineBusyRef.current = false;
-      setOnlineBusy(false);
-      setError('تغییر وضعیت بیش از حد طول کشید. دوباره تلاش کن.');
+      timedOut = true; onlineBusyRef.current = false; setOnlineBusy(false);
+      const msg = 'تغییر وضعیت بیش از حد طول کشید. دوباره تلاش کن.';
+      setError(msg); toastError(msg);
     }, 12_000);
-
     try {
       await setVetOnline(nextOnline);
+      toastSuccess(nextOnline ? 'آنلاین شدی.' : 'آفلاین شدی.');
     } catch (err) {
       if (!timedOut) {
-        setError(err instanceof Error ? err.message : 'تغییر وضعیت آنلاین ناموفق بود');
+        const msg = err instanceof Error ? err.message : 'تغییر وضعیت آنلاین ناموفق بود';
+        setError(msg); toastError(msg);
       }
     } finally {
-      if (onlineToggleTimerRef.current) {
-        clearTimeout(onlineToggleTimerRef.current);
-        onlineToggleTimerRef.current = null;
-      }
-      if (!timedOut) {
-        onlineBusyRef.current = false;
-        setOnlineBusy(false);
-      }
+      if (onlineToggleTimerRef.current) { clearTimeout(onlineToggleTimerRef.current); onlineToggleTimerRef.current = null; }
+      if (!timedOut) { onlineBusyRef.current = false; setOnlineBusy(false); }
     }
   }
 
@@ -703,32 +691,28 @@ export function VetConsultPage() {
 
   async function onSaveVisitFee(fee: number) {
     if (!token) return;
-    setFeeBusy(true);
-    setError(null);
+    setFeeBusy(true); setError(null);
     try {
       await setVisitFee(fee);
+      toastSuccess('مبلغ ویزیت ذخیره شد.');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'ثبت مبلغ ویزیت ناموفق بود');
-    } finally {
-      setFeeBusy(false);
-    }
+      const msg = err instanceof Error ? err.message : 'ثبت مبلغ ویزیت ناموفق بود';
+      setError(msg); toastError(msg);
+    } finally { setFeeBusy(false); }
   }
 
   async function onConnect() {
-    if (!user?.id) {
-      setError('اول وارد حساب شو.');
-      return;
-    }
+    if (!user?.id) { const msg = 'اول وارد حساب شو.'; setError(msg); toastError(msg); return; }
     if (pets.length === 0) {
-      setError('برای درخواست ارتباط با پزشک، اول باید حداقل یک پت ثبت کنی.');
-      return;
+      const msg = 'برای درخواست ارتباط با پزشک، اول باید حداقل یک پت ثبت کنی.';
+      setError(msg); toastError(msg); return;
     }
     // If no human vet is online, API starts a free AI consult — don't block.
     if (patientOnlineVets.length && coins < connectCost) {
-      setError(
-        `برای اتصال سریع حداقل ${formatCoins(connectCost)} سکه لازم داری.
-موجودی: ${formatCoins(coins)} — از ربات «سکه» بگیر.`
-      );
+      const msg = `برای اتصال سریع حداقل ${formatCoins(connectCost)} سکه لازم داری.
+موجودی: ${formatCoins(coins)} — از ربات «سکه» بگیر.`;
+      setError(msg);
+      toastError(msg);
       return;
     }
 
@@ -751,36 +735,31 @@ export function VetConsultPage() {
     setStatusLines(null);
     setActiveConsult(null);
     autoNavRef.current = null;
-
     try {
       let result;
-      try {
-        result = await quickVetConnect(user.id, token);
-      } catch (err) {
+      try { result = await quickVetConnect(user.id, token); }
+      catch (err) {
         const needsConfirm =
           err instanceof Error &&
           ((err as Error & { requiresResendConfirm?: boolean }).requiresResendConfirm ||
             /میخوای مجدد/.test(err.message));
         if (needsConfirm) {
           const ok = window.confirm('میخوای مجدد درخواست بدی به اون شخص؟');
-          if (!ok) {
-            setPhase('ready');
-            return;
-          }
+          if (!ok) { setPhase('ready'); return; }
           result = await quickVetConnect(user.id, token, { confirmResend: true });
-        } else {
-          throw err;
-        }
+        } else { throw err; }
       }
       setSentCount(result.sent);
       setRequestedIds(result.consultations.map((c) => c.id));
       if (result.aiFallback) {
         const consultId = result.consultations?.[0]?.id;
-        setStatusLines([
+        const aiLines = [
           result.message,
           'چت با دستیار هوشمند باز شد — می‌توانی سؤال‌ات را بفرستی.',
-        ]);
+        ];
+        setStatusLines(aiLines);
         setPhase('ready');
+        toastSuccess(aiLines[0]!);
         try {
           await refreshMe();
         } catch {
@@ -791,51 +770,44 @@ export function VetConsultPage() {
         }
         return;
       }
-      setStatusLines([
+      const lines = [
         'درخواستت برای پزشک‌های آنلاین ربات و وب ارسال شد.',
         `پزشک‌های هدف: ${formatCoins(result.sent)}`,
         `سکه کسر شده: ${formatCoins(result.cost)}`,
         `موجودی باقی‌مانده: ${formatCoins(result.coins)}`,
         'در انتظار پذیرش دامپزشک — تا قبول پزشک چت باز نمی‌شود.',
-      ]);
-      setPhase('waiting');
-      try {
-        await refreshMe();
-      } catch {
-        /* wallet chip may lag */
-      }
+      ];
+      setStatusLines(lines); setPhase('waiting'); toastSuccess(lines[0]!);
+      try { await refreshMe(); } catch { /* */ }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'خطا در ارسال درخواست');
-      setPhase('ready');
+      const msg = err instanceof Error ? err.message : 'خطا در ارسال درخواست';
+      setError(msg); toastError(msg); setPhase('ready');
     }
   }
 
   async function onAcceptIncoming(id: number) {
     if (!token) return;
-    setActingId(id);
-    setError(null);
+    setActingId(id); setError(null);
     try {
       await acceptVetConsultation(id, token);
       navigate(`/vet-chats/${id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'قبول درخواست ناموفق بود');
-    } finally {
-      setActingId(null);
-    }
+      const msg = err instanceof Error ? err.message : 'قبول درخواست ناموفق بود';
+      setError(msg); toastError(msg);
+    } finally { setActingId(null); }
   }
 
   async function onRejectIncoming(id: number) {
     if (!token) return;
-    setActingId(id);
-    setError(null);
+    setActingId(id); setError(null);
     try {
       await rejectVetConsultation(id, token);
       await loadIncoming();
+      toastSuccess('درخواست رد شد.');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'رد درخواست ناموفق بود');
-    } finally {
-      setActingId(null);
-    }
+      const msg = err instanceof Error ? err.message : 'رد درخواست ناموفق بود';
+      setError(msg); toastError(msg);
+    } finally { setActingId(null); }
   }
 
   const hero = (

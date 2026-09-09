@@ -4,6 +4,7 @@ import { AppGuards } from './components/AuthGuard';
 import { Layout } from './components/Layout';
 import { RouteSeo } from './components/RouteSeo';
 import { ShopCartProvider } from './hooks/useShopCart';
+import { AppToastProvider } from './hooks/useAppToast';
 import { LandingMobileDock } from './components/LandingMobileDock';
 import { ScrollToTop } from './components/ScrollToTop';
 import { WelcomePage } from './pages/WelcomePage';
@@ -190,6 +191,7 @@ function RouteFallback() {
 export default function App() {
   return (
     <AppGuards>
+      <AppToastProvider>
       <ShopCartProvider>
         <ScrollToTop />
         <RouteSeo />
@@ -275,6 +277,7 @@ export default function App() {
         </Suspense>
         <LandingMobileDock />
       </ShopCartProvider>
+      </AppToastProvider>
     </AppGuards>
   );
 }

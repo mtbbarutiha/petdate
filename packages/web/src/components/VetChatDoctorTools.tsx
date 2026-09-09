@@ -1,17 +1,21 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ClipboardList, FilePlus2, Loader2, PawPrint, Pill, X } from 'lucide-react';
+import { ClipboardList, FilePlus2, Loader2, PawPrint, Pill, UserRound, X } from 'lucide-react';
 import {
   RX_CONDITION_CATEGORIES,
+  USER_GENDER_LABELS,
   formatMedicalEntryAttribution,
   formatPetAge,
   formatRxMedicationTemplate,
   formatVetAuthorName,
   getRxCategoryById,
   getRxMedication,
+  profileVerifyStatusLabel,
+  userPublicIdOf,
   type PetMedicalEntry,
   type PetMedicalRecord,
   type PetProfile,
+  type User,
   type VetConsultation,
 } from '@petdate/shared';
 import {
@@ -19,6 +23,7 @@ import {
   createConsultationPrescription,
   getPet,
   getPetMedical,
+  getUserById,
   listPets,
   type CreatePrescriptionResponse,
 } from '../lib/api';
@@ -26,7 +31,7 @@ import {
 const RX_NOTE =
   'پیشنهادها فقط راهنما هستند؛ دوز و مدت را خودتان تکمیل/ویرایش کنید.';
 
-export type VetDoctorPanel = 'rx' | 'medical' | 'note' | 'pet' | null;
+export type VetDoctorPanel = 'rx' | 'medical' | 'note' | 'pet' | 'owner' | null;
 
 type Props = {
   open: VetDoctorPanel;
@@ -98,6 +103,40 @@ export function VetChatDoctorToolbar({
   );
 }
 
+/** Trainer/sitter: non-medical profile views only. */
+export function VetChatProfileToolbar({
+  disabled,
+  onOpen,
+}: {
+  disabled?: boolean;
+  onOpen: (panel: 'pet' | 'owner') => void;
+}) {
+  return (
+    <div className="tg-vet-tools" role="toolbar" aria-label="پروفایل طرف مقابل">
+      <button
+        type="button"
+        className="tg-vet-tool-btn"
+        disabled={disabled}
+        onClick={() => onOpen('pet')}
+        data-testid="service-chat-pet-open"
+      >
+        <PawPrint size={16} aria-hidden />
+        پروفایل پت
+      </button>
+      <button
+        type="button"
+        className="tg-vet-tool-btn"
+        disabled={disabled}
+        onClick={() => onOpen('owner')}
+        data-testid="service-chat-owner-open"
+      >
+        <UserRound size={16} aria-hidden />
+        پروفایل صاحب پت
+      </button>
+    </div>
+  );
+}
+
 export function VetChatDoctorSheets({
   open,
   onClose,
@@ -148,7 +187,9 @@ export function VetChatDoctorSheets({
               ? 'پرونده پزشکی'
               : open === 'note'
                 ? 'ثبت در پرونده'
-                : 'پروفایل پت'
+                : open === 'owner'
+                  ? 'پروفایل صاحب پت'
+                  : 'پروفایل پت'
         }
         onClick={(e) => e.stopPropagation()}
       >
@@ -160,7 +201,9 @@ export function VetChatDoctorSheets({
                 ? '📋 پرونده پزشکی'
                 : open === 'note'
                   ? '📝 ثبت در پرونده'
-                  : '🐾 پروفایل پت'}
+                  : open === 'owner'
+                    ? '👤 پروفایل صاحب پت'
+                    : '🐾 پروفایل پت'}
           </h2>
           <button type="button" className="tg-vet-sheet-close" onClick={onClose} aria-label="بستن">
             <X size={20} />
@@ -190,6 +233,7 @@ export function VetChatDoctorSheets({
           />
         ) : null}
         {open === 'pet' ? <PetSheetBody consult={consult} /> : null}
+        {open === 'owner' ? <OwnerSheetBody consult={consult} /> : null}
       </div>
     </div>
   );
@@ -813,6 +857,97 @@ function PetSheetBody({ consult }: { consult: VetConsultation }) {
           ) : null}
         </dl>
         {display.bio ? <p className="tg-vet-sheet-hint">{truncate(display.bio, 400)}</p> : null}
+      </div>
+    </div>
+  );
+}
+
+function OwnerSheetBody({ consult }: { consult: VetConsultation }) {
+  const [owner, setOwner] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const row = await getUserById(consult.patientUserId);
+        if (!cancelled) setOwner(row);
+      } catch (err) {
+        if (!cancelled) {
+          setOwner(null);
+          setError(err instanceof Error ? err.message : 'بارگذاری پروفایل ناموفق بود');
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [consult.patientUserId]);
+
+  if (loading) {
+    return (
+      <div className="tg-vet-sheet-body tg-vet-sheet-loading">
+        <Loader2 className="tg-spin" size={22} />
+      </div>
+    );
+  }
+
+  if (!owner) {
+    return (
+      <div className="tg-vet-sheet-body">
+        <p className="tg-vet-sheet-hint">
+          {error || 'پروفایل صاحب پت در دسترس نیست.'}
+          {consult.patientName ? ` · ${consult.patientName}` : ''}
+        </p>
+      </div>
+    );
+  }
+
+  const publicId = userPublicIdOf(owner);
+  const gender = owner.gender ? USER_GENDER_LABELS[owner.gender] : null;
+  const place = [owner.province, owner.city].filter(Boolean).join('، ') || owner.city || null;
+  const verify = profileVerifyStatusLabel(owner.verificationStatus);
+
+  return (
+    <div className="tg-vet-sheet-body">
+      <div className="tg-vet-pet-card">
+        <h3>{owner.name?.trim() || consult.patientName || 'صاحب پت'}</h3>
+        <dl>
+          <div>
+            <dt>آیدی</dt>
+            <dd>{publicId}</dd>
+          </div>
+          {owner.age != null ? (
+            <div>
+              <dt>سن</dt>
+              <dd>{owner.age}</dd>
+            </div>
+          ) : null}
+          {gender ? (
+            <div>
+              <dt>جنسیت</dt>
+              <dd>{gender}</dd>
+            </div>
+          ) : null}
+          {place ? (
+            <div>
+              <dt>موقعیت</dt>
+              <dd>{place}</dd>
+            </div>
+          ) : null}
+          {verify ? (
+            <div>
+              <dt>احراز</dt>
+              <dd>{verify}</dd>
+            </div>
+          ) : null}
+        </dl>
+        {owner.bio ? <p className="tg-vet-sheet-hint">{truncate(owner.bio, 400)}</p> : null}
       </div>
     </div>
   );

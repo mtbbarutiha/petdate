@@ -5,6 +5,7 @@ import { BRAND, primaryRole, type PetProfile } from '@petdate/shared';
 import { PlaymateRequestsPanel } from './PlaymateRequestsPanel';
 import { EMPTY_STATE_PHOTO } from '../data/petImages';
 import { useAuthStore } from '../hooks/useAuthStore';
+import { useAppToast } from '../hooks/useAppToast';
 import { useUserStore } from '../hooks/useUserStore';
 import { listPets } from '../lib/api';
 import { findAndSendPlaymates, type FindPlaymateResult } from '../lib/playmateActions';
@@ -42,6 +43,7 @@ export function FindPlaymatePanel({
 }: FindPlaymatePanelProps) {
   const { user } = useUserStore();
   const { user: authUser, isLoggedIn } = useAuthStore();
+  const { toastError, toastSuccess, toastInfo } = useAppToast();
   const [myPets, setMyPets] = useState<PetProfile[]>([]);
   const [petsLoading, setPetsLoading] = useState(false);
   const [findPhase, setFindPhase] = useState<FindPhase>('idle');
@@ -76,29 +78,23 @@ export function FindPlaymatePanel({
 
   async function runFindForPet(pet: PetProfile) {
     if (!myUserId) {
-      setFindError('برای ارسال درخواست همبازی وارد حساب شو.');
-      return;
+      const msg = 'برای ارسال درخواست همبازی وارد حساب شو.';
+      setFindError(msg); toastError(msg); return;
     }
-    setFindPhase('sending');
-    setFindError(null);
-    setFindResult(null);
-    setStatusLine(null);
+    setFindPhase('sending'); setFindError(null); setFindResult(null); setStatusLine(null);
     try {
       const result = await findAndSendPlaymates(pet, myUserId);
-      setFindResult(result);
-      setFindPhase('done');
+      setFindResult(result); setFindPhase('done');
       if (result.sent === 0) {
-        setStatusLine(
-          `برای ${result.sourceName} فعلاً همبازی هم‌گروه پیدا نشد. درخواست ارسال نشد.`,
-        );
+        const msg = `برای ${result.sourceName} فعلاً همبازی هم‌گروه پیدا نشد. درخواست ارسال نشد.`;
+        setStatusLine(msg); toastInfo(msg);
       } else {
-        setStatusLine(
-          `✅ ${result.sent} درخواست برای ${result.sourceName} ارسال شد — در گفتگوها می‌بینی.`,
-        );
-        onSent?.();
+        const msg = `${result.sent} درخواست برای ${result.sourceName} ارسال شد — در گفتگوها می‌بینی.`;
+        setStatusLine(`✅ ${msg}`); toastSuccess(msg); onSent?.();
       }
     } catch (err) {
-      setFindError(err instanceof Error ? err.message : 'ارسال درخواست‌ها ناموفق بود');
+      const msg = err instanceof Error ? err.message : 'ارسال درخواست‌ها ناموفق بود';
+      setFindError(msg); toastError(msg);
       setFindPhase(myPets.length > 1 ? 'pick' : 'idle');
     }
   }

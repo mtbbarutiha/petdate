@@ -114,6 +114,7 @@ function fanOutVetChatTelegram(opts: {
     peerRole,
     text: opts.text,
     protectContent: Boolean(consult.chatSecure),
+    serviceKind: consult.serviceKind ?? 'vet',
     mediaKind: (opts.mediaKind ?? null) as VetConsultChatMediaKind | null,
     storageKey: opts.storageKey,
     mimeType: opts.mimeType,

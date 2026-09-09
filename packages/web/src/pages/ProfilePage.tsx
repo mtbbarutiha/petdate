@@ -51,6 +51,7 @@ import { ProfileAvatarEditor } from '../components/ProfileAvatarEditor';
 import { RoleSwitchControl } from '../components/RoleSwitchControl';
 import { formatAge } from '../data/mock';
 import { useAuthStore } from '../hooks/useAuthStore';
+import { useAppToast } from '../hooks/useAppToast';
 import { useMyPets } from '../hooks/useMyPets';
 import {
   deleteUserAccountById,
@@ -81,10 +82,10 @@ export function ProfilePage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const editing = searchParams.get('edit') === '1';
   const { user, token, logout, isProfileComplete, saveProfile, refreshMe } = useAuthStore();
+  const { toastSuccess, toastError } = useAppToast();
   const { pets: myPets, loading: petsLoading } = useMyPets();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [savedToast, setSavedToast] = useState(false);
   const [cardUser, setCardUser] = useState<User | null>(null);
   const [interactions, setInteractions] = useState<{
     likes: number;
@@ -200,13 +201,13 @@ export function ProfilePage() {
   }
   async function onSave(e: FormEvent) {
     e.preventDefault();
-    if (name.trim().length < 2) { setError('نام را درست وارد کن'); return; }
+    if (name.trim().length < 2) { setError('نام را درست وارد کن'); toastError('نام را درست وارد کن'); return; }
     const ageNum = parseUserAge(age);
-    if (ageNum == null) { setError('سن معتبر نیست'); return; }
-    if (!gender) { setError('جنسیت را انتخاب کن'); return; }
-    if (!country.trim()) { setError('کشور را مشخص کن'); return; }
-    if (country === 'ایران' && !province) { setError('استان را انتخاب کن'); return; }
-    if (city.trim().length < 2) { setError('شهر را وارد کن'); return; }
+    if (ageNum == null) { setError('سن معتبر نیست'); toastError('سن معتبر نیست'); return; }
+    if (!gender) { setError('جنسیت را انتخاب کن'); toastError('جنسیت را انتخاب کن'); return; }
+    if (!country.trim()) { setError('کشور را مشخص کن'); toastError('کشور را مشخص کن'); return; }
+    if (country === 'ایران' && !province) { setError('استان را انتخاب کن'); toastError('استان را انتخاب کن'); return; }
+    if (city.trim().length < 2) { setError('شهر را وارد کن'); toastError('شهر را وارد کن'); return; }
     setBusy(true);
     setError('');
     try {
@@ -221,12 +222,11 @@ export function ProfilePage() {
         interests,
         onboarding: 'profile_complete',
       });
-      setSavedToast(true);
-      setTimeout(() => setSavedToast(false), 2200);
+      toastSuccess('ذخیره شد');
       closeEdit();
       await refreshMe();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'ذخیره پروفایل ناموفق بود');
+      const msg = err instanceof Error ? err.message : 'ذخیره پروفایل ناموفق بود'; setError(msg); toastError(msg);
     } finally {
       setBusy(false);
     }
@@ -297,10 +297,9 @@ export function ProfilePage() {
       const updated = await setSilentChatRequests(userId, !silentOn);
       setCardUser(updated);
       await refreshMe();
-      setSavedToast(true);
-      setTimeout(() => setSavedToast(false), 1800);
+      toastSuccess('ذخیره شد');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'تغییر سایلنت ناموفق بود');
+      const msg = err instanceof Error ? err.message : 'تغییر سایلنت ناموفق بود'; setError(msg); toastError(msg);
     } finally {
       setBusy(false);
     }
@@ -312,8 +311,9 @@ export function ProfilePage() {
       await patchWebProfile(token, { isActive: false });
       await refreshMe();
       setPanel(null);
+      toastSuccess('حساب غیرفعال شد.');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'غیرفعال‌سازی ناموفق بود');
+      const msg = err instanceof Error ? err.message : 'غیرفعال‌سازی ناموفق بود'; setError(msg); toastError(msg);
     } finally {
       setBusy(false);
     }
@@ -325,8 +325,9 @@ export function ProfilePage() {
       await patchWebProfile(token, { isActive: true });
       await refreshMe();
       setPanel(null);
+      toastSuccess('حساب فعال شد.');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'فعال‌سازی ناموفق بود');
+      const msg = err instanceof Error ? err.message : 'فعال‌سازی ناموفق بود'; setError(msg); toastError(msg);
     } finally {
       setBusy(false);
     }
@@ -339,7 +340,7 @@ export function ProfilePage() {
       await logout();
       navigate('/auth/login', { replace: true });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'حذف حساب ناموفق بود');
+      const msg = err instanceof Error ? err.message : 'حذف حساب ناموفق بود'; setError(msg); toastError(msg);
       setBusy(false);
     }
   }
@@ -878,11 +879,6 @@ export function ProfilePage() {
           {busy ? 'خروج…' : 'خروج از حساب'}
         </button>
       </section>
-      {savedToast ? (
-        <div className="toast" role="status">
-          ذخیره شد
-        </div>
-      ) : null}
     </div>
   );
 }
