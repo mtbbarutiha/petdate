@@ -12,6 +12,7 @@
  * Production note: without AI_CONSULT_API_KEY on the VPS, trainer replies use the
  * rich offline knowledge base below (پاشا یزدانی). Set the key for deeper LLM answers.
  */
+import { PET_SPECIES } from '@petdate/shared';
 import {
   applyOfflineToneStyle,
   formatToneSystemInstruction,
@@ -34,6 +35,31 @@ export type AiConsultContext = {
   /** Learned per-user chat tone for trainer mirroring */
   userTone?: UserToneProfile | null;
 };
+
+/** Extra English aliases that may appear in prompts / legacy data (DB codes stay lowercase). */
+const SPECIES_LABEL_ALIASES: Record<string, string> = {
+  parrot: 'طوطی',
+  bird: 'پرنده',
+  reptile: 'خزنده',
+  puppy: 'توله سگ',
+  canine: 'سگ',
+  feline: 'گربه',
+};
+
+const SPECIES_LABEL_FA: Record<string, string> = {
+  ...Object.fromEntries(PET_SPECIES.map((s) => [s.code, s.labelFa])),
+  ...SPECIES_LABEL_ALIASES,
+};
+
+/**
+ * Map DB species enum/code (dog/cat/…) to Persian for prompts and user-visible text.
+ * Keeps DB enums unchanged — only display/prompt layer.
+ */
+export function speciesLabelFa(species?: string | null): string {
+  const raw = String(species || '').trim();
+  if (!raw) return '';
+  return SPECIES_LABEL_FA[raw.toLowerCase()] || raw;
+}
 
 const AI_TELEGRAM_ID = 'petdate_ai_assistant';
 
@@ -82,12 +108,15 @@ function systemPrompt(kind: AiConsultKind): string {
       'جمله‌ها را کوتاه و زنده نگه دار. گاهی یک حس یا خاطرهٔ کوتاه آموزشی بگو («خیلی از خونواده‌ها همین‌جا گیر می‌کنن»). نه شعار تبلیغاتی.',
       `هرگز نگو دستیار هوشمند / هوش مصنوعی / ربات / AI / مدل زبانی هستی. اگر پرسید کیستی: «من ${AI_TRAINER_DISPLAY_NAME}ام، مربی آنلاین پت‌دیت.»`,
       'شروع پیام را هر بار عوض کن؛ با «سلام من مربی آنلاین…» تکراری باز نکن. اگر وسط گفتگو هستید مستقیم سر اصل مطلب برو.',
-      '۱–۲ پیام اول: احوال‌پرسی واقعی با صاحب و پت، عکس را ببین/بخواه، یه اشارهٔ کوتاه به اسم/سن/نژاد اگر هست. درس شماره‌دار نده مگر خودش سؤال تمرین پرسیده.',
-      'اگر همان اول سؤال تمرین پرسید: یک جملهٔ گرم کوتاه، بعد جواب خودمونی و کاربردی.',
+      'رفتار داخلی (نه متن برای بلند گفتن): در ۱–۲ پیام اول واقعاً گرم احوال‌پرسی کن، عکس را ببین/بخواه، اشارهٔ کوتاه به اسم/سن/نژاد؛ درس شماره‌دار نده مگر خودش سؤال تمرین پرسیده.',
+      'هرگز پروتکل گفتگو را اعلام نکن. ممنوع در پیام کاربر: «اول احوال‌پرسی بعد می‌ریم سراغ آموزش»، «الان احوال‌پرسی می‌کنم»، «اول بشناسمتون بعد تمرین»، یا هر جملهٔ متا که برنامهٔ سلام→آموزش را توضیح دهد. فقط انجام بده، روایت نکن.',
+      'اگر تاریخچه یا احوال‌پرسی قبلاً بوده، آیین سلام/احوال‌پرسی را تکرار نکن؛ مستقیم مفید و خودمونی جواب بده.',
+      'اگر همان اول سؤال تمرین پرسید: یک جملهٔ گرم کوتاه، بعد جواب خودمونی و کاربردی — بدون اعلام «اول احوال بعد آموزش».',
       'دانش درونی‌ات (عنوان کتاب را مگر با سؤال «منبع» نگو): Culture Clash / Donaldson، Puppy Primer / McConnell، Think Like a Cat / Johnson-Bennett، Total Cat Mojo / Galaxy، Companion Parrot Handbook / Blanchard، Manual of Exotic Pet Practice / Mitchell & Tully.',
       'روش‌ها: جایزه و تقویت مثبت، بدون زور و تنبیه بدنی، کلیکر/کلمهٔ آفرین، آروم‌کردن ترس، قلاده، فاصلهٔ امن، بازی و enrichment.',
       'محتوا باید دقیق باشد ولی لحن انسانی: ۲–۳ پاراگراف حرف زدنی. اگر مرحله می‌گویی با «اول… بعد…» بگو نه با تیتر درسی. آخرش یک سؤال خودمونی بپرس («الان بیشتر تو خونه می‌کشه یا بیرون؟»).',
       'توله با بالغ فرق دارد؛ گربه با سگ یکی نیست. اگر چیزی کم بود خودمونی بپرس.',
+      'در پاسخ فارسی از DOG/CAT یا کد انگلیسی گونه استفاده نکن؛ بگو سگ یا گربه (یا پرنده/خرگوش/همستر/…).',
       'پزشکی/اورژانس: نگران شو، بفرست پیش دامپزشک؛ دارو تجویز نکن.',
       'تنبیه بدنی، خفه، شوک، آلفا رول ممنوع.',
       'تضمین صددرصد نده. مثل آدم واقعی حرف بزن که دلش برای پت و صاحبش می‌سوزد.',
@@ -97,6 +126,7 @@ function systemPrompt(kind: AiConsultKind): string {
   return [
     'تو دستیار هوشمند مشاوره دامپزشکی عمومی در پلتفرم پت‌دیت هستی.',
     'به فارسی، کوتاه، شفاف و محتاط پاسخ بده.',
+    'در پاسخ فارسی از DOG/CAT یا کد انگلیسی گونه استفاده نکن؛ بگو سگ یا گربه.',
     'راهنمایی عمومی مراقبت، تغذیه، پیشگیری و زمان مراجعه به دامپزشک بده.',
     'تشخیص قطعی نده؛ نسخه دارو ننویس؛ در علائم خطرناک فوری به مراجعه حضوری تأکید کن.',
     'واضح بگو که جایگزین دامپزشک آنلاین/حضوری نیستی و وقتی پزشک آنلاین باشد اتصال انسانی اولویت دارد.',
@@ -107,7 +137,8 @@ function buildUserPrompt(ctx: AiConsultContext): string {
   const bits: string[] = [];
   if (ctx.patientName) bits.push(`نام کاربر: ${ctx.patientName}`);
   if (ctx.petName) bits.push(`نام پت: ${ctx.petName}`);
-  if (ctx.petSpecies) bits.push(`گونه: ${ctx.petSpecies}`);
+  const speciesFa = speciesLabelFa(ctx.petSpecies);
+  if (speciesFa) bits.push(`گونه: ${speciesFa}`);
   if (ctx.petBreed) bits.push(`نژاد: ${ctx.petBreed}`);
   const intro =
     ctx.kind === 'support'
@@ -120,7 +151,7 @@ function buildUserPrompt(ctx: AiConsultContext): string {
     (ctx.kind === 'support'
       ? 'سلام؛ چطور می‌توانم کمکت کنم؟'
       : ctx.kind === 'trainer'
-        ? 'سلام؛ اول احوال‌پرسی کن و دربارهٔ عکس/پروفایل پت بپرس — هنوز برنامهٔ آموزشی کامل نده.'
+        ? 'پیام افتتاحیه بنویس: گرم سلام کن، حال صاحب و پت را بپرس، به عکس/پروفایل اشاره کن؛ هنوز برنامهٔ آموزشی کامل نریز. این دستورالعمل را بلند نگو و نگو «اول احوال‌پرسی بعد آموزش» — فقط انجام بده.'
         : 'برای مراقبت کلی از پت چه نکات مهمی داری؟');
   return [intro, bits.length ? bits.join(' · ') : null, '', ask].filter(Boolean).join('\n');
 }
@@ -132,8 +163,9 @@ export function buildTrainerOpeningGreeting(
   const owner = ctx.patientName?.trim() || 'دوست عزیز';
   const pet = ctx.petName?.trim() || 'پت';
   const hasPhoto = Boolean(ctx.petImageUrl?.trim());
+  const speciesFa = speciesLabelFa(ctx.petSpecies);
   const profileBits = [
-    ctx.petSpecies ? `گونه ${ctx.petSpecies}` : null,
+    speciesFa ? speciesFa : null,
     ctx.petBreed ? `نژاد ${ctx.petBreed}` : null,
     ctx.petAgeMonths != null && Number.isFinite(ctx.petAgeMonths)
       ? `حدود ${ctx.petAgeMonths} ماه`
@@ -157,11 +189,11 @@ export function buildTrainerOpeningGreeting(
   return [
     hello,
     ``,
-    `راستش اول بگو خودت خوبی؟ ${pet} این روزا حالش چطوره — سرحال و بازیگوشه یا یه‌کم بی‌قراره؟`,
+    `راستش بگو خودت خوبی؟ ${pet} این روزا حالش چطوره — سرحال و بازیگوشه یا یه‌کم بی‌قراره؟`,
     photoLine,
     profileLine,
     ``,
-    `هر وقت خواستی بگو روی چی کار کنیم؛ عجله‌ای نیست، اول یه کم بشناسمتون بعد می‌ریم سر تمرین.`,
+    `هر وقت خواستی بگو روی چی کار کنیم؛ من اینجام.`,
   ].join('\n');
 }
 
@@ -173,7 +205,7 @@ export function trainerTypingDelayMs(replyText: string): number {
 }
 
 function petLabel(ctx: AiConsultContext): string {
-  return [ctx.petName, ctx.petBreed || ctx.petSpecies].filter(Boolean).join(' · ') || 'پت';
+  return [ctx.petName, ctx.petBreed || speciesLabelFa(ctx.petSpecies)].filter(Boolean).join(' · ') || 'پت';
 }
 
 function ageAwareAside(ctx: AiConsultContext): string {
@@ -985,7 +1017,8 @@ function petContextBits(ctx: AiConsultContext): string[] {
   const ctxBits: string[] = [];
   if (ctx.patientName) ctxBits.push(`نام صاحب پت: ${ctx.patientName}`);
   if (ctx.petName) ctxBits.push(`نام پت: ${ctx.petName}`);
-  if (ctx.petSpecies) ctxBits.push(`گونه: ${ctx.petSpecies}`);
+  const speciesFa = speciesLabelFa(ctx.petSpecies);
+  if (speciesFa) ctxBits.push(`گونه: ${speciesFa}`);
   if (ctx.petBreed) ctxBits.push(`نژاد: ${ctx.petBreed}`);
   if (ctx.petAgeMonths != null && Number.isFinite(ctx.petAgeMonths)) {
     ctxBits.push(`سن تقریبی: ${ctx.petAgeMonths} ماه`);

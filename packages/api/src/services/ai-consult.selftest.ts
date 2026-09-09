@@ -14,8 +14,14 @@ function assert(cond: unknown, msg: string): asserts cond {
 }
 
 async function main() {
-  const { offlineAiAdvice, generateAiConsultAdvice, trainerTopicHint, trainerTypingDelayMs, buildTrainerOpeningGreeting } =
-    await import('./ai-consult');
+  const {
+    offlineAiAdvice,
+    generateAiConsultAdvice,
+    trainerTopicHint,
+    trainerTypingDelayMs,
+    buildTrainerOpeningGreeting,
+    speciesLabelFa,
+  } = await import('./ai-consult');
   const {
     startAiFallbackConsult,
     isAiAssistantUserId,
@@ -25,9 +31,17 @@ async function main() {
   const { dbService, getDb } = await import('../db');
   getDb();
 
+  assert(speciesLabelFa('dog') === 'سگ', 'dog → سگ');
+  assert(speciesLabelFa('DOG') === 'سگ', 'DOG → سگ');
+  assert(speciesLabelFa('cat') === 'گربه', 'cat → گربه');
+  assert(speciesLabelFa('CAT') === 'گربه', 'CAT → گربه');
+  assert(speciesLabelFa('bird') === 'پرنده', 'bird → پرنده');
+
   const tip = offlineAiAdvice({ kind: 'trainer', petName: 'رکس', petSpecies: 'dog' });
   assert(tip.includes('پاشا یزدانی'), 'offline trainer introduces as Pasha');
   assert(/احوال|سلام|حالت چطوره/.test(tip), 'offline trainer opens with greeting/احوال‌پرسی');
+  assert(!/\bDOG\b|\bdog\b/i.test(tip), 'offline greeting must not echo English species DOG');
+  assert(/سگ/.test(tip), 'offline greeting uses Persian سگ for dog species');
   assert(
     !/برای شروع معمولاً این‌طور می‌چینم|۱\) روزی دو سه جلسه/.test(tip),
     'offline first intro must not dump numbered training curriculum'
@@ -47,12 +61,24 @@ async function main() {
   const longDelay = trainerTypingDelayMs('x'.repeat(500));
   assert(shortDelay >= 1500 && shortDelay <= 4000, 'typing delay lower bound');
   assert(longDelay >= shortDelay && longDelay <= 4000, 'typing delay scales and caps');
+  const opening = buildTrainerOpeningGreeting({
+    patientName: 'محمد',
+    petName: 'رکس',
+    petSpecies: 'DOG',
+  });
+  assert(/احوال|حالت چطوره|سلام|خوبی/.test(opening), 'opening greeting is احوال‌پرسی');
+  assert(/سگ/.test(opening) && !/\bDOG\b|\bdog\b/i.test(opening), 'opening greeting uses سگ not DOG');
+  const openingCat = buildTrainerOpeningGreeting({
+    patientName: 'سارا',
+    petName: 'ملوس',
+    petSpecies: 'cat',
+  });
+  assert(/گربه/.test(openingCat) && !/\bCAT\b|\bcat\b/i.test(openingCat), 'opening greeting uses گربه not CAT');
   assert(
-    /احوال|حالت چطوره|سلام/.test(
-      buildTrainerOpeningGreeting({ patientName: 'محمد', petName: 'رکس', petSpecies: 'dog' })
-    ),
-    'opening greeting is احوال‌پرسی'
+    !/اول احوال|احوال‌پرسی.*(بعد|بعداً).*(آموزش|تمرین)|اول یه کم بشناسم|الان احوال‌پرسی/.test(opening),
+    'opening must not narrate greeting-then-train meta script'
   );
+  assert(!/اول احوال|احوال‌پرسی.*(بعد|بعداً).*(آموزش|تمرین)|اول یه کم بشناسم/.test(tip), 'offline tip no meta greeting script');
   const sitTip = offlineAiAdvice({
     kind: 'trainer',
     userMessage: 'چطور بشین یاد بگیره؟',
@@ -158,12 +184,17 @@ async function main() {
   const msgs = dbService.listVetConsultChatMessages(session!.consult.id);
   assert(msgs[0]!.text.includes('پاشا یزدانی'), 'intro mentions Pasha');
   assert(!/دستیار هوشمند|ربات|هوش مصنوعی/i.test(msgs[0]!.text), 'trainer intro must not sound like a bot');
-  assert(/احوال|سلام|حالت چطوره/.test(msgs[0]!.text), 'trainer intro is greeting-first احوال‌پرسی');
+  assert(/احوال|سلام|حالت چطوره|خوبی/.test(msgs[0]!.text), 'trainer intro is greeting-first احوال‌پرسی');
   assert(
     !/برای شروع معمولاً این‌طور می‌چینم|۱\) روزی دو سه جلسه/.test(msgs[0]!.text),
     'session intro must not jump straight to numbered curriculum'
   );
+  assert(
+    !/اول احوال|احوال‌پرسی.*(بعد|بعداً).*(آموزش|تمرین)|اول یه کم بشناسم|الان احوال‌پرسی/.test(msgs[0]!.text),
+    'session intro must not narrate greeting-then-train workflow'
+  );
   assert(/عکس/.test(msgs[0]!.text), 'session intro mentions pet photo');
+  assert(/سگ/.test(msgs[0]!.text) && !/\bDOG\b|\bdog\b/i.test(msgs[0]!.text), 'session intro uses سگ not dog/DOG');
 
   const leashTip = await generateAiConsultAdvice({
     kind: 'trainer',
