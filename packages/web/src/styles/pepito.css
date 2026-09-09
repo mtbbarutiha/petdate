@@ -313,11 +313,12 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
     margin-top: 0;
   }
   .pepito-hero {
-    /* Keep 16:9 banner sizing on tablet/app shell too */
-    aspect-ratio: 16 / 9;
-    max-height: min(36rem, 72vh);
-    min-height: 14rem;
-    height: auto;
+    /* Mobile/tablet: tall enough for title + CTA (16:9 of phone width is too short) */
+    aspect-ratio: auto;
+    --pepito-hero-h: min(34rem, 78svh);
+    min-height: var(--pepito-hero-h);
+    height: var(--pepito-hero-h);
+    max-height: none;
   }
   .pepito-app-layout {
     padding-top: 0 !important;
@@ -754,10 +755,11 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 
 @media screen and (max-width: 720px) {
   .pepito-hero {
-    aspect-ratio: 16 / 9;
-    max-height: min(28rem, 62vh);
-    min-height: 12.5rem;
-    height: auto;
+    aspect-ratio: auto;
+    --pepito-hero-h: min(30rem, 75svh);
+    min-height: var(--pepito-hero-h);
+    height: var(--pepito-hero-h);
+    max-height: none;
   }
   .pepito-kicker {
     font-size: 16px;
@@ -9139,18 +9141,19 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
     margin-top: 0;
   }
   .pepito-hero {
-    /* Banner-sized 16:9 — not full-viewport (that left a dark bottom seam) */
-    aspect-ratio: 16 / 9;
-    max-height: min(26rem, 58vh);
-    min-height: 12rem;
-    height: auto;
+    /* Mobile: tall usable band — 16:9 of phone width is too short for copy/CTA */
+    aspect-ratio: auto;
+    --pepito-hero-h: min(34rem, 78svh);
+    min-height: var(--pepito-hero-h);
+    height: var(--pepito-hero-h);
+    max-height: none;
     max-width: 100%;
   }
   .pepito-hero-inner {
-    padding-block: calc(env(safe-area-inset-top, 0px) + 1.35rem) 2.5rem;
+    padding-block: calc(env(safe-area-inset-top, 0px) + 1.35rem) 3rem;
   }
   .pepito-hero-dots {
-    bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+    bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
   }
   .pepito-hero-media,
   .pepito-hero-slide.is-active .pepito-hero-media {
@@ -9174,7 +9177,7 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
     align-items: start;
   }
   .pepito-hero--light .pepito-hero-inner {
-    padding-block: calc(env(safe-area-inset-top, 0px) + 1.1rem) 5.5rem;
+    padding-block: calc(env(safe-area-inset-top, 0px) + 1.1rem) 3.5rem;
   }
   .pepito-hero--light .pepito-hero-wash {
     background:
