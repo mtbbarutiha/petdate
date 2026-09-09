@@ -1,5 +1,5 @@
 import { Link, Navigate } from 'react-router-dom';
-import { PawPrint, Stethoscope } from 'lucide-react';
+import { GraduationCap, HandHelping, PawPrint, Stethoscope } from 'lucide-react';
 import { BRAND, dashboardPathForRole, primaryRole } from '@petdate/shared';
 import { InviteFriendsCard } from '../components/InviteFriendsCard';
 import { useAuthStore } from '../hooks/useAuthStore';
@@ -24,6 +24,22 @@ function VetIcon({ size = 16 }: { size?: number }) {
   );
 }
 
+function TrainerIcon({ size = 16 }: { size?: number }) {
+  return (
+    <span className="pepito-btn-icon" aria-hidden>
+      <GraduationCap size={size} />
+    </span>
+  );
+}
+
+function SitterIcon({ size = 16 }: { size?: number }) {
+  return (
+    <span className="pepito-btn-icon" aria-hidden>
+      <HandHelping size={size} />
+    </span>
+  );
+}
+
 export function HomePage() {
   const { user } = useUserStore();
   const { user: authUser, isProfileComplete } = useAuthStore();
@@ -34,9 +50,9 @@ export function HomePage() {
     primaryRole(authUser?.roles, authUser?.role) ??
     primaryRole(user.roles, user.role);
 
-  // دامپزشک فعال → داشبورد اختصاصی پزشک (نه پنل صاحب‌پت)
-  if (active === 'vet') {
-    return <Navigate to={dashboardPathForRole('vet')} replace />;
+  // نقش‌های ارائه‌دهنده → داشبورد اختصاصی (نه پنل صاحب‌پت)
+  if (active === 'vet' || active === 'trainer' || active === 'pet_sitter') {
+    return <Navigate to={dashboardPathForRole(active)} replace />;
   }
 
   const isPetOwner = active === 'pet_owner';
@@ -106,6 +122,26 @@ export function HomePage() {
                 مشاوره سریع
               </Link>
             ) : null}
+            {isPetOwner ? (
+              <Link
+                to="/trainer-consult"
+                className="pepito-btn pepito-btn--ghost pepito-home-cta-ghost"
+                data-testid="owner-request-trainer-cta"
+              >
+                <TrainerIcon />
+                پیدا کردن مربی
+              </Link>
+            ) : null}
+            {isPetOwner ? (
+              <Link
+                to="/sitter-consult"
+                className="pepito-btn pepito-btn--ghost pepito-home-cta-ghost"
+                data-testid="owner-request-sitter-cta"
+              >
+                <SitterIcon />
+                پیدا کردن پرستار
+              </Link>
+            ) : null}
           </div>
         </div>
       </section>
@@ -145,6 +181,26 @@ export function HomePage() {
             >
               <strong>مشاوره سریع با پزشک</strong>
               <span>درخواست فوری — کسر سکه از کیف پول</span>
+            </Link>
+          ) : null}
+          {isPetOwner ? (
+            <Link
+              to="/trainer-consult"
+              className="pepito-home-action"
+              data-testid="owner-request-trainer-home-action"
+            >
+              <strong>پیدا کردن مربی</strong>
+              <span>درخواست به مربی‌های آنلاین — ۵۰ سکه</span>
+            </Link>
+          ) : null}
+          {isPetOwner ? (
+            <Link
+              to="/sitter-consult"
+              className="pepito-home-action"
+              data-testid="owner-request-sitter-home-action"
+            >
+              <strong>پیدا کردن پرستار پت</strong>
+              <span>اتصال به پرستار — ۲۰ سکه · فقط اتصال</span>
             </Link>
           ) : null}
         </div>
