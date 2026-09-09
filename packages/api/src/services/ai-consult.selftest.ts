@@ -91,6 +91,46 @@ async function main() {
     assert(hint && hint.length > 120, `trainerTopicHint exported for: ${t.q}`);
   }
 
+  // Book-canon offline KB: substantial puppy + cat (+ bird/exotic/dominance/sources)
+  const puppyCanon = offlineAiAdvice({
+    kind: 'trainer',
+    userMessage: 'توله دو ماهه از کجا شروع کنم برای جامعه‌پذیری؟',
+    petName: 'رکس',
+    petSpecies: 'dog',
+  });
+  assert(puppyCanon.includes('پاشا یزدانی') || /توله|جامعه|جلسه/.test(puppyCanon), 'puppy canon topic');
+  assert(puppyCanon.length > 350, 'puppy offline reply substantial');
+  assert(!/دستیار هوشمند|ربات|هوش مصنوعی|\bAI\b/i.test(puppyCanon), 'puppy voice human');
+  assert(!/Culture Clash|Puppy Primer|Think Like a Cat|Total Cat Mojo|Companion Parrot|Exotic Pet Practice/i.test(puppyCanon), 'do not spam book titles unless asked');
+
+  const catCanon = offlineAiAdvice({
+    kind: 'trainer',
+    userMessage: 'گربه‌ام litter نمی‌ره و استرس داره',
+    petName: 'ملوس',
+    petSpecies: 'cat',
+  });
+  assert(catCanon.length > 350, 'cat offline reply substantial');
+  assert(/بستر|litter|دامپزشک|خاک/i.test(catCanon), 'cat litter guidance present');
+  assert(!/دستیار هوشمند|ربات|هوش مصنوعی/i.test(catCanon), 'cat voice human');
+  assert(!/Culture Clash|Puppy Primer|Johnson-Bennett|Jackson Galaxy/i.test(catCanon), 'no unsolicited book dump on cat');
+
+  const mojo = offlineAiAdvice({ kind: 'trainer', userMessage: 'گربه ترسو پنهان می‌شه mojo نداره', petName: 'ملوس', petSpecies: 'cat' });
+  assert(mojo.length > 280 && /عمودی|قلمرو|پنهان|شکار|mojo/i.test(mojo), 'cat mojo topic');
+
+  const dominance = offlineAiAdvice({ kind: 'trainer', userMessage: 'می‌گن باید آلفا باشم و رهبر گله', petName: 'رکس' });
+  assert(/آلفا|سلطه|تقویت|force-free|افسانه/i.test(dominance) && dominance.length > 280, 'dominance myth debunked');
+  assert(!/Culture Clash/i.test(dominance), 'no book title spam on dominance');
+
+  const bird = offlineAiAdvice({ kind: 'trainer', userMessage: 'طوطی زیاد جیغ می‌کشه و پر می‌کنه', petName: 'جیک', petSpecies: 'parrot' });
+  assert(bird.length > 280 && /جیغ|foraging|پر|اگزوتیک|دامپزشک/i.test(bird), 'bird topic');
+
+  const exotic = offlineAiAdvice({ kind: 'trainer', userMessage: 'خرگوشم نگهداری و تغذیه', petName: 'پف', petSpecies: 'rabbit' });
+  assert(exotic.length > 250 && /خرگوش|یونجه|دامپزشک اگزوتیک|دارو/i.test(exotic), 'exotic husbandry');
+
+  const sources = offlineAiAdvice({ kind: 'trainer', userMessage: 'منبع کتاب‌هات چیه؟', petName: 'رکس' });
+  assert(/Culture Clash|Puppy Primer|Think Like a Cat|Total Cat Mojo|Companion Parrot|Exotic Pet Practice/i.test(sources), 'sources names books when asked');
+  assert(/Donaldson|McConnell|Johnson-Bennett|Galaxy|Blanchard|Mitchell/i.test(sources), 'authors present when asked');
+
   const vetTip = offlineAiAdvice({ kind: 'vet', petName: 'ملوس' });
   assert(vetTip.includes('دامپزشک'), 'offline vet tip');
   const supportTip = offlineAiAdvice({ kind: 'support', userMessage: 'OTP نیومد' });
