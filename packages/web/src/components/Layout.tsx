@@ -10,6 +10,7 @@ import {
   ShoppingBag,
   Stethoscope,
   UserRound,
+  LifeBuoy,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { primaryRole, type UserRole } from '@petdate/shared';
@@ -28,6 +29,7 @@ const OWNER_NAV: { to: string; icon: LucideIcon; label: string }[] = [
   { to: '/trainer-consult', icon: GraduationCap, label: 'پیدا کردن مربی' },
   { to: '/sitter-consult', icon: HandHelping, label: 'پیدا کردن پرستار' },
   { to: '/shop', icon: ShoppingBag, label: 'پت‌شاپ' },
+  { to: '/support', icon: LifeBuoy, label: 'پشتیبانی' },
 ];
 
 const VET_NAV: { to: string; icon: LucideIcon; label: string }[] = [
@@ -35,6 +37,7 @@ const VET_NAV: { to: string; icon: LucideIcon; label: string }[] = [
   { to: '/vet-consult', icon: Stethoscope, label: 'پنل پزشک' },
   { to: '/chats', icon: MessagesSquare, label: 'گفتگوها' },
   { to: '/profile', icon: UserRound, label: 'پروفایل' },
+  { to: '/support', icon: LifeBuoy, label: 'پشتیبانی' },
   { to: '/shop', icon: ShoppingBag, label: 'پت‌شاپ' },
 ];
 
@@ -43,6 +46,7 @@ const TRAINER_NAV: { to: string; icon: LucideIcon; label: string }[] = [
   { to: '/trainer-consult', icon: GraduationCap, label: 'پنل مربی' },
   { to: '/chats', icon: MessagesSquare, label: 'گفتگوها' },
   { to: '/profile', icon: UserRound, label: 'پروفایل' },
+  { to: '/support', icon: LifeBuoy, label: 'پشتیبانی' },
   { to: '/shop', icon: ShoppingBag, label: 'پت‌شاپ' },
 ];
 
@@ -51,11 +55,13 @@ const SITTER_NAV: { to: string; icon: LucideIcon; label: string }[] = [
   { to: '/sitter-consult', icon: HandHelping, label: 'پنل پرستار' },
   { to: '/chats', icon: MessagesSquare, label: 'گفتگوها' },
   { to: '/profile', icon: UserRound, label: 'پروفایل' },
+  { to: '/support', icon: LifeBuoy, label: 'پشتیبانی' },
   { to: '/shop', icon: ShoppingBag, label: 'پت‌شاپ' },
 ];
 
 const DEFAULT_NAV: { to: string; icon: LucideIcon; label: string }[] = [
   { to: '/', icon: Home, label: 'خانه' },
+  { to: '/support', icon: LifeBuoy, label: 'پشتیبانی' },
   { to: '/home', icon: LayoutDashboard, label: 'پنل' },
   { to: '/chats', icon: MessagesSquare, label: 'گفتگوها' },
   { to: '/profile', icon: UserRound, label: 'پروفایل' },

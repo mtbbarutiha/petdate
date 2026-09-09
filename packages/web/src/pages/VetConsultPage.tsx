@@ -161,7 +161,7 @@ function OnlineVetsList({
             ? 'در حال دریافت لیست…'
             : vets.length
               ? `${formatCoins(vets.length)} پزشک آماده پذیرش — هزینه اتصال: ${formatCoins(connectCost)} سکه`
-              : 'الان هیچ دامپزشک آنلاینی آماده پذیرش نیست.'}
+              : 'دامپزشک انسانی آنلاین نیست — دستیار هوشمند آماده پاسخ است.'}
         </p>
       </div>
       {!loading && vets.length ? (
@@ -639,7 +639,7 @@ export function VetConsultPage() {
     }
     if (needsLogin) return 'برای ارتباط سریع با پزشک وارد حساب شو.';
     if (needsPet) return 'برای درخواست ارتباط با پزشک، اول باید حداقل یک پت ثبت کنی.';
-    if (noOnlineVets) return 'الان هیچ دامپزشک آنلاینی آماده پذیرش نیست. کمی بعد دوباره سر بزن.';
+    if (noOnlineVets) return 'دامپزشک انسانی آنلاین نیست — با زدن دکمه، دستیار هوشمند رایگان پاسخ می‌دهد.';
     if (lowCoins) {
       return `برای اتصال سریع حداقل ${formatCoins(connectCost)} سکه لازم داری. موجودی: ${formatCoins(coins)} — از ربات «سکه» بگیر.`;
     }
@@ -707,27 +707,34 @@ export function VetConsultPage() {
       const msg = 'برای درخواست ارتباط با پزشک، اول باید حداقل یک پت ثبت کنی.';
       setError(msg); toastError(msg); return;
     }
-    if (!patientOnlineVets.length) {
-      const msg = 'الان هیچ دامپزشک آنلاینی آماده پذیرش نیست.';
-      setError(msg); toastError(msg); await loadOnlineVets(); return;
-    }
-    if (coins < connectCost) {
+    // If no human vet is online, API starts a free AI consult — don't block.
+    if (patientOnlineVets.length && coins < connectCost) {
       const msg = `برای اتصال سریع حداقل ${formatCoins(connectCost)} سکه لازم داری.
 موجودی: ${formatCoins(coins)} — از ربات «سکه» بگیر.`;
-      setError(msg); toastError(msg); return;
+      setError(msg);
+      toastError(msg);
+      return;
     }
-    const payOk = window.confirm(
-      [
-        `هزینه این درخواست: ${formatCoins(connectCost)} سکه`,
-        `موجودی فعلی: ${formatCoins(coins)} سکه`,
-        `پزشک‌های هدف: ${patientOnlineVets.length}`,
-        '',
-        'با تأیید، سکه از موجودی‌ات کسر می‌شود و درخواست برای پزشک‌های آنلاین ارسال می‌شود.',
-        'ادامه می‌دهی؟',
-      ].join('\n')
-    );
-    if (!payOk) return;
-    setPhase('sending'); setError(null); setStatusLines(null); setActiveConsult(null); autoNavRef.current = null;
+
+    if (patientOnlineVets.length) {
+      const payOk = window.confirm(
+        [
+          `هزینه این درخواست: ${formatCoins(connectCost)} سکه`,
+          `موجودی فعلی: ${formatCoins(coins)} سکه`,
+          `پزشک‌های هدف: ${patientOnlineVets.length}`,
+          '',
+          'با تأیید، سکه از موجودی‌ات کسر می‌شود و درخواست برای پزشک‌های آنلاین ارسال می‌شود.',
+          'ادامه می‌دهی؟',
+        ].join('\n')
+      );
+      if (!payOk) return;
+    }
+
+    setPhase('sending');
+    setError(null);
+    setStatusLines(null);
+    setActiveConsult(null);
+    autoNavRef.current = null;
     try {
       let result;
       try { result = await quickVetConnect(user.id, token); }
@@ -744,6 +751,25 @@ export function VetConsultPage() {
       }
       setSentCount(result.sent);
       setRequestedIds(result.consultations.map((c) => c.id));
+      if (result.aiFallback) {
+        const consultId = result.consultations?.[0]?.id;
+        const aiLines = [
+          result.message,
+          'چت با دستیار هوشمند باز شد — می‌توانی سؤال‌ات را بفرستی.',
+        ];
+        setStatusLines(aiLines);
+        setPhase('ready');
+        toastSuccess(aiLines[0]!);
+        try {
+          await refreshMe();
+        } catch {
+          /* wallet chip may lag */
+        }
+        if (consultId) {
+          navigate(`/vet-chats/${consultId}`);
+        }
+        return;
+      }
       const lines = [
         'درخواستت برای پزشک‌های آنلاین ربات و وب ارسال شد.',
         `پزشک‌های هدف: ${formatCoins(result.sent)}`,
@@ -882,7 +908,7 @@ export function VetConsultPage() {
               {onlineVetsLoading
                 ? 'در حال محاسبه…'
                 : noOnlineVets
-                  ? 'پزشک آنلاینی نیست'
+                  ? 'مشورت با دستیار هوشمند (رایگان)'
                   : `${formatCoins(connectCost)} سکه — قبل از ارسال کسر می‌شود`}
             </span>
           </div>
@@ -917,7 +943,7 @@ export function VetConsultPage() {
             className="pepito-btn button-1"
             data-testid="vet-quick-connect"
             disabled={
-              phase === 'sending' || petsLoading || onlineVetsLoading || lowCoins || noOnlineVets
+              phase === 'sending' || petsLoading || onlineVetsLoading || lowCoins
             }
             onClick={() => void onConnect()}
           >
@@ -925,7 +951,7 @@ export function VetConsultPage() {
             {phase === 'sending'
               ? 'در حال کسر سکه و ارسال…'
               : noOnlineVets
-                ? 'پزشک آنلاینی نیست'
+                ? 'مشورت با دستیار هوشمند'
                 : phase === 'waiting' || phase === 'connected'
                   ? 'ارسال دوباره درخواست'
                   : `تأیید پرداخت (${formatCoins(connectCost)} سکه) و اتصال`}

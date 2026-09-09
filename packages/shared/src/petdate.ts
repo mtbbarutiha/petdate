@@ -877,6 +877,7 @@ export type BotStep =
   | 'shop_checkout_name'
   | 'shop_checkout_phone'
   | 'shop_checkout_address'
+  | 'support_chat'
   | 'ready';
 
 export interface PetDraft {

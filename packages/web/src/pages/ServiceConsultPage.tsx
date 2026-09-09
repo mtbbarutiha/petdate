@@ -264,9 +264,12 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
   function validatePatient(): string | null {
     if (!user?.id || !token) return 'اول وارد حساب شو.';
     if (!pets.length) return meta.needPet;
-    if (coins < cost) return `حداقل ${formatCoins(cost)} سکه لازم است. موجودی: ${formatCoins(coins)}`;
     const others = onlineProviders.filter((p) => p.id !== user.id);
-    if (!others.length) return meta.noProviders;
+    // No human online → API starts free AI consult (trainer/vet). Don't block.
+    if (!others.length) return null;
+    if (coins < cost) {
+      return `حداقل ${formatCoins(cost)} سکه لازم است. موجودی: ${formatCoins(coins)}`;
+    }
     return null;
   }
 
@@ -291,9 +294,23 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
         }
         throw err;
       }
-      await refreshMe(); await loadLists(); await loadOnline();
-      setConfirmPay(false); setNeedsResendConfirm(false);
+      await refreshMe();
+      await loadLists();
+      await loadOnline();
+      setConfirmPay(false);
+      setNeedsResendConfirm(false);
       flashSuccess(res.message);
+      setStatusMsg(res.message);
+      if (res.aiFallback) {
+        const consultId = res.consultations?.[0]?.id;
+        if (consultId) {
+          navigate(`/vet-chats/${consultId}`);
+          return;
+        }
+      }
+      if (res.consultations?.length === 1 && res.consultations[0]?.status === 'active') {
+        navigate(`/vet-chats/${res.consultations[0].id}`);
+      }
     } catch (err) {
       flashError(errMessage(err, 'ارسال درخواست ناموفق بود'));
     } finally { setBusy(false); }
@@ -302,7 +319,16 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
   async function onPrimaryClick() {
     setError(null); setStatusMsg(null);
     const gate = validatePatient();
-    if (gate) { flashError(gate); setConfirmPay(false); return; }
+    if (gate) {
+      flashError(gate);
+      setConfirmPay(false);
+      return;
+    }
+    const humanOnline = onlineProviders.filter((p) => p.id !== user?.id).length > 0;
+    if (!humanOnline) {
+      await sendRequest(needsResendConfirm);
+      return;
+    }
     if (!confirmPay) {
       setConfirmPay(true);
       toastInfo(`با تأیید، ${formatCoins(cost)} سکه کسر می‌شود. دوباره بزن تا ارسال شود.`);
@@ -344,7 +370,7 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
         <p>
           {isProvider
             ? meta.providerHint
-            : `هزینه ${formatCoins(cost)} سکه · بدون اتصال پزشک`}
+            : `هزینه اتصال انسانی ${formatCoins(cost)} سکه · اگر آنلاین نباشد دستیار هوشمند رایگان پاسخ می‌دهد`}
         </p>
         {meta.disclaimer && !isProvider ? <p className="muted">{meta.disclaimer}</p> : null}
       </header>
@@ -428,7 +454,9 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
             {isLoggedIn
               ? onlineCount > 0
                 ? `${toPersianDigits(String(onlineCount))} نفر آنلاین آماده پذیرش`
-                : meta.noProviders
+                : kind === 'trainer'
+                  ? 'مربی انسانی آنلاین نیست — با زدن دکمه، دستیار هوشمند آموزش پاسخ می‌دهد (رایگان).'
+                  : meta.noProviders
               : 'برای ارسال درخواست وارد حساب شو.'}
           </p>
           {!isLoggedIn ? (
@@ -437,7 +465,7 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
             </Link>
           ) : (
             <>
-              {confirmPay ? (
+              {confirmPay && onlineCount > 0 ? (
                 <p className="pepito-vet-consult-hint" role="status">
                   تأیید نهایی: {formatCoins(cost)} سکه از موجودی کسر می‌شود
                   {meta.disclaimer ? ` — ${meta.disclaimer}` : ''}.
@@ -452,11 +480,13 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
               >
                 {busy
                   ? 'در حال ارسال…'
-                  : confirmPay
-                    ? `تأیید و ارسال (${formatCoins(cost)} سکه)`
-                    : `${meta.patientCta} (${formatCoins(cost)} سکه)`}
+                  : onlineCount === 0 && kind === 'trainer'
+                    ? 'مشورت با دستیار هوشمند (رایگان)'
+                    : confirmPay
+                      ? `تأیید و ارسال (${formatCoins(cost)} سکه)`
+                      : `${meta.patientCta} (${formatCoins(cost)} سکه)`}
               </button>
-              {confirmPay ? (
+              {confirmPay && onlineCount > 0 ? (
                 <button
                   type="button"
                   className="pepito-btn pepito-btn--ghost"

@@ -232,12 +232,31 @@ export async function handleQuickVet(ctx: Context): Promise<void> {
 
   const balance = user.coins ?? 0;
   if (!vets.length) {
+    // Start free AI consult instead of hard-stopping.
+    const result = await quickVetConnect(user.id, {});
+    if (result.ok && result.aiFallback) {
+      await ctx.reply(
+        [
+          '🤖 <b>دستیار هوشمند پت‌دیت</b>',
+          '',
+          'دامپزشک انسانی آنلاین نبود — چت هوشمند رایگان شروع شد.',
+          '',
+          result.message,
+          result.advice ? '\n' + result.advice.slice(0, 3500) : '',
+          '',
+          'می‌توانی در چت وب یا ربات ادامه بدهی.',
+        ]
+          .filter(Boolean)
+          .join('\n'),
+        { parse_mode: 'HTML', reply_markup: menuKeyboardFor(ctx, user) }
+      );
+      return;
+    }
     await ctx.reply(
       [
         '⚡ <b>مشاوره سریع با پزشک</b>',
         '',
-        'الان هیچ دامپزشک آنلاینی آماده پذیرش نیست.',
-        'کمی بعد دوباره امتحان کن.',
+        result.ok === false ? result.error : 'الان دامپزشک آنلاین نیست و دستیار هوشمند هم در دسترس نبود.',
         '',
         `موجودی تو: <b>${formatNum(balance)}</b> سکه`,
       ].join('\n'),
@@ -308,7 +327,7 @@ export async function handleQuickVetConnect(
   }
   const estimatedCost = quickConnectCostForVets(onlineVets);
   const balance = user.coins ?? 0;
-  if (balance < estimatedCost) {
+  if (onlineVets.length && balance < estimatedCost) {
     await ctx.answerCallbackQuery({
       text: `سکه کافی نیست (موجودی: ${balance})`,
       show_alert: true,
@@ -375,7 +394,25 @@ export async function handleQuickVetConnect(
     return;
   }
 
-  await ctx.answerCallbackQuery({ text: 'درخواست ارسال شد' });
+  await ctx.answerCallbackQuery({
+    text: result.aiFallback ? 'دستیار هوشمند شروع شد' : 'درخواست ارسال شد',
+  });
+  if (result.aiFallback) {
+    await ctx.reply(
+      [
+        '🤖 <b>دستیار هوشمند پت‌دیت</b>',
+        '',
+        result.message,
+        result.advice ? '\n' + result.advice.slice(0, 3500) : '',
+        '',
+        'می‌توانی سؤال بعدی را در چت بفرستی.',
+      ]
+        .filter(Boolean)
+        .join('\n'),
+      { parse_mode: 'HTML', reply_markup: menuKeyboardFor(ctx, user) }
+    );
+    return;
+  }
   await ctx.reply(
     [
       '✅ درخواستت برای پزشک‌های آنلاین ارسال شد.',

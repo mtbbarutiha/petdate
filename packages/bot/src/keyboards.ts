@@ -61,6 +61,7 @@ export const PET_OWNER_MENU = {
   phoneVerify: '📱 احراز موبایل',
   invite: '🎁 دعوت دوستان',
   help: '❓ راهنما',
+  support: '🛟 پشتیبانی',
   menu: MAIN_MENU_BTN,
   quickVet: '⚡ مشاوره سریع پزشک',
   requestTrainer: '🎓 درخواست مربی',
@@ -84,6 +85,7 @@ export const COMMON_MENU = {
   shop: PET_OWNER_MENU.shop,
   invite: PET_OWNER_MENU.invite,
   help: PET_OWNER_MENU.help,
+  support: PET_OWNER_MENU.support,
 } as const;
 
 /** زیرمنوی پنل ادمین (reply keyboard) */
@@ -709,6 +711,7 @@ function appendCommonMenuRows(kb: Keyboard): Keyboard {
     .row()
     .text(c.invite)
     .success()
+    .text(c.support)
     .text(c.help)
     .primary();
 }
