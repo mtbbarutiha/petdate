@@ -133,10 +133,38 @@ export function AdminMarketplaceModerationPage() {
       {tab !== 'photos' ? (
         <ul className="admin-list">
           {!list.length ? <li>صف خالی است.</li> : null}
-          {list.map((u) => (
+          {list.map((u) => {
+            const fileRef =
+              tab === 'trainer'
+                ? u.trainerCredentialFileId
+                : tab === 'sitter'
+                  ? u.sitterCredentialFileId
+                  : u.vetCredentialFileId;
+            const webUrl =
+              fileRef && String(fileRef).startsWith('/api/')
+                ? `${API_BASE}${fileRef}`
+                : null;
+            return (
             <li key={u.id} style={{ marginBottom: 12 }}>
               <strong>{u.name}</strong> · #{u.id}
               {u.telegramId ? ` · TG ${u.telegramId}` : ''}
+              {webUrl ? (
+                <div style={{ marginTop: 6 }}>
+                  {String(fileRef).toLowerCase().endsWith('.pdf') ? (
+                    <a href={webUrl} target="_blank" rel="noreferrer">
+                      مشاهده PDF مدرک
+                    </a>
+                  ) : (
+                    <img
+                      src={webUrl}
+                      alt={`مدرک ${u.name}`}
+                      style={{ maxWidth: 220, borderRadius: 8 }}
+                    />
+                  )}
+                </div>
+              ) : fileRef ? (
+                <p style={{ marginTop: 6, opacity: 0.75 }}>فایل تلگرام (از صف ربات ببین)</p>
+              ) : null}
               <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
                 <button
                   type="button"
@@ -164,7 +192,8 @@ export function AdminMarketplaceModerationPage() {
                 </button>
               </div>
             </li>
-          ))}
+            );
+          })}
         </ul>
       ) : (
         <ul className="admin-list">

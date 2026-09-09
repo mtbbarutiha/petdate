@@ -25,6 +25,7 @@ import {
   quickVetConnect,
   rejectVetConsultation,
   telegramBotDeepLink,
+  uploadProviderCredential,
 } from '../lib/api';
 import { subscribeIncomingRefresh } from '../lib/liveIncoming';
 
@@ -106,6 +107,7 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
   const [onlineProviders, setOnlineProviders] = useState<User[]>([]);
   const [busy, setBusy] = useState(false);
   const [onlineBusy, setOnlineBusy] = useState(false);
+  const [uploadBusy, setUploadBusy] = useState(false);
   const [confirmPay, setConfirmPay] = useState(false);
   const [needsResendConfirm, setNeedsResendConfirm] = useState(false);
   const [statusMsg, setStatusMsg] = useState<string | null>(null);
@@ -186,9 +188,9 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
     }
     if (next && !verified) {
       setError(
-        credStatus === 'none'
-          ? 'اول مدرک را از ربات آپلود کن تا پنل فعال شود.'
-          : 'مدرک هنوز تأیید نشده؛ بعد از تأیید ادمین آنلاین شو.'
+        credStatus === 'pending'
+          ? 'مدرک هنوز تأیید نشده؛ بعد از تأیید ادمین آنلاین شو.'
+          : 'اول مدرک را همین‌جا یا در ربات آپلود کن تا پنل فعال شود.'
       );
       return;
     }
@@ -201,6 +203,26 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
       setError(errMessage(err, 'تغییر وضعیت ناموفق بود'));
     } finally {
       setOnlineBusy(false);
+    }
+  }
+
+  async function onUploadCredential(file: File | null | undefined) {
+    if (!token) {
+      setError('اول وارد حساب شو.');
+      return;
+    }
+    if (!file) return;
+    setUploadBusy(true);
+    setError(null);
+    setStatusMsg(null);
+    try {
+      await uploadProviderCredential(token, kind, file);
+      await refreshMe();
+      setStatusMsg('مدرک ارسال شد و در صف تأیید ادمین است. بعد از تأیید می‌توانی آنلاین شوی.');
+    } catch (err) {
+      setError(errMessage(err, 'آپلود مدرک ناموفق بود'));
+    } finally {
+      setUploadBusy(false);
     }
   }
 
@@ -333,19 +355,45 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
             وضعیت مدرک: <strong>{credentialLabel(credStatus)}</strong>
           </p>
           {!verified ? (
-            <p>
-              برای فعال‌شدن پنل، مدرک را در{' '}
-              <a href={botUrl} target="_blank" rel="noreferrer">
-                ربات تلگرام
-              </a>{' '}
-              آپلود کن و منتظر تأیید ادمین بمان.
-            </p>
+            <div className="pepito-provider-cred-upload">
+              <p>
+                برای فعال‌شدن پنل، مدرک را آپلود کن و منتظر تأیید ادمین بمان
+                {credStatus === 'pending' ? ' — مدرکت در صف بررسی است.' : '.'}
+              </p>
+              <label className="pepito-btn button-1 pepito-provider-cred-label">
+                {uploadBusy
+                  ? 'در حال آپلود…'
+                  : credStatus === 'pending'
+                    ? 'ارسال مجدد مدرک'
+                    : 'آپلود مدرک'}
+                <input
+                  type="file"
+                  accept="image/*,application/pdf"
+                  disabled={uploadBusy}
+                  hidden
+                  data-testid={`${kind}-credential-upload`}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    e.target.value = '';
+                    void onUploadCredential(file);
+                  }}
+                />
+              </label>
+              <p className="muted">
+                یا از{' '}
+                <a href={botUrl} target="_blank" rel="noreferrer">
+                  ربات تلگرام
+                </a>{' '}
+                هم می‌توانی بفرستی.
+              </p>
+            </div>
           ) : null}
           <div className="pepito-vet-online-seg">
             <button
               type="button"
               className={`pepito-vet-online-seg-btn${online ? ' is-active is-online' : ''}`}
-              disabled={onlineBusy || !verified}
+              disabled={onlineBusy}
+              data-testid={`${kind}-online-toggle-on`}
               onClick={() => void onToggleOnline(true)}
             >
               <Circle size={14} /> آنلاین
@@ -354,6 +402,7 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
               type="button"
               className={`pepito-vet-online-seg-btn${!online ? ' is-active is-offline' : ''}`}
               disabled={onlineBusy}
+              data-testid={`${kind}-online-toggle-off`}
               onClick={() => void onToggleOnline(false)}
             >
               آفلاین

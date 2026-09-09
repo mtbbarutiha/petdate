@@ -26,6 +26,12 @@ import {
   resolveUserAvatarPath,
   saveUserAvatar,
 } from '../services/user-avatar-store';
+import {
+  MAX_PROVIDER_CREDENTIAL_BYTES,
+  mimeFromProviderCredentialKey,
+  resolveProviderCredentialPath,
+  saveProviderCredential,
+} from '../services/provider-credential-store';
 import { rateLimit } from '../middleware/rate-limit';
 import {
   getUserFromBearer,
@@ -66,6 +72,11 @@ const telegramLoginStatusLimit = rateLimit({
 const avatarUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: MAX_USER_AVATAR_BYTES, files: 1 },
+});
+
+const credentialUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: MAX_PROVIDER_CREDENTIAL_BYTES, files: 1 },
 });
 
 /**
@@ -514,6 +525,100 @@ authRouter.get('/avatar/:userId/:filename', (req, res) => {
   }
   res.setHeader('Content-Type', mimeFromUserAvatarKey(storageKey));
   res.setHeader('Cache-Control', 'public, max-age=86400');
+  res.send(fs.readFileSync(abs));
+});
+
+/**
+ * آپلود مدرک مربی / پرستار از وب (multipart field: `file`, body/query: kind).
+ * بعد از آپلود وضعیت pending می‌شود تا ادمین تأیید کند.
+ */
+authRouter.post('/provider-credential', (req, res) => {
+  const session = getUserFromBearer(req.header('authorization') ?? undefined);
+  if (!session) {
+    res.status(401).json({ error: 'وارد نشده‌اید' });
+    return;
+  }
+
+  credentialUpload.single('file')(req, res, (uploadErr) => {
+    if (uploadErr) {
+      const tooLarge =
+        uploadErr instanceof multer.MulterError && uploadErr.code === 'LIMIT_FILE_SIZE';
+      res.status(tooLarge ? 413 : 400).json({
+        error: tooLarge
+          ? 'حجم فایل بیش از حد مجاز است (حداکثر ۸ مگابایت)'
+          : 'آپلود مدرک ناموفق بود',
+      });
+      return;
+    }
+
+    const kindRaw = String(req.body?.kind ?? req.query?.kind ?? '').trim();
+    const kind = kindRaw === 'sitter' ? 'sitter' : kindRaw === 'trainer' ? 'trainer' : null;
+    if (!kind) {
+      res.status(400).json({ error: 'kind باید trainer یا sitter باشد' });
+      return;
+    }
+    const role = kind === 'trainer' ? 'trainer' : 'pet_sitter';
+    if (!userHasRole(session.user, role)) {
+      res.status(403).json({ error: 'نقش لازم را نداری' });
+      return;
+    }
+
+    const file = req.file;
+    if (!file?.buffer?.length) {
+      res.status(400).json({ error: 'فایل مدرک الزامی است' });
+      return;
+    }
+
+    try {
+      const saved = saveProviderCredential({
+        userId: session.user.id,
+        originalName: file.originalname || 'credential.jpg',
+        mimeType: file.mimetype,
+        buffer: file.buffer,
+      });
+      const result = dbService.submitProviderCredential(
+        session.user.id,
+        kind,
+        saved.urlPath
+      );
+      if (!result.ok) {
+        res.status(result.reason === 'missing' ? 404 : 400).json({
+          error: result.reason === 'no_file' ? 'فایل مدرک لازم است' : 'کاربر پیدا نشد',
+        });
+        return;
+      }
+      res.status(201).json({
+        ok: true,
+        url: saved.urlPath,
+        user: dbService.enrichUserProfileCard(result.user),
+      });
+    } catch (err) {
+      if (err instanceof Error && err.message === 'FILE_TOO_LARGE') {
+        res.status(413).json({ error: 'حجم فایل بیش از حد مجاز است (حداکثر ۸ مگابایت)' });
+        return;
+      }
+      if (err instanceof Error && err.message === 'INVALID_MIME') {
+        res.status(400).json({ error: 'فقط عکس یا PDF مجاز است' });
+        return;
+      }
+      console.warn('provider credential upload failed:', (err as Error).message);
+      res.status(500).json({ error: 'ذخیره مدرک ناموفق بود' });
+    }
+  });
+});
+
+/** Serve a web-uploaded provider credential file. */
+authRouter.get('/provider-credential-file/:userId/:filename', (req, res) => {
+  const userId = String(req.params.userId || '');
+  const filename = String(req.params.filename || '');
+  const storageKey = `${userId}/${filename}`;
+  const abs = resolveProviderCredentialPath(storageKey);
+  if (!abs || !fs.existsSync(abs)) {
+    res.status(404).json({ error: 'فایل پیدا نشد' });
+    return;
+  }
+  res.setHeader('Content-Type', mimeFromProviderCredentialKey(storageKey));
+  res.setHeader('Cache-Control', 'private, max-age=3600');
   res.send(fs.readFileSync(abs));
 });
 
