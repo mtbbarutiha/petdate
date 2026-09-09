@@ -1406,7 +1406,7 @@ export function VetChatPage() {
                     </button>
                     {menuOpen ? (
                       <div className="tg-chat-menu" role="menu">
-                        {isVetSide ? (
+                        {isVetSide && (consult?.serviceKind ?? 'vet') === 'vet' ? (
                           <>
                             <button
                               type="button"

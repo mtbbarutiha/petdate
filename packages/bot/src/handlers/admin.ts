@@ -1,11 +1,16 @@
 import type { Context } from 'grammy';
 import {
+  approveProviderCredential,
   approveVetCredential,
   listAllVets,
   listPendingCardPayments,
+  listPendingPetPhotos,
+  listPendingProviderCredentials,
   listPendingVerifications,
   listPendingVetCredentials,
+  rejectProviderCredential,
   rejectVetCredential,
+  setPetPhotoModeration,
   setVetEnabled,
   type PaymentOrder,
 } from '../api-client';
@@ -22,6 +27,8 @@ import {
   ADMIN_MENU,
   adminPanelKeyboard,
   adminPaymentKeyboard,
+  adminPetPhotoKeyboard,
+  adminProviderCredentialKeyboard,
   adminVetCredentialKeyboard,
   adminVetListKeyboard,
   adminVetToggleKeyboard,
@@ -98,6 +105,9 @@ export async function handleAdminStats(ctx: Context): Promise<void> {
   if (!(await requireAdminAuth(ctx))) return;
   let face = 0;
   let vet = 0;
+  let trainer = 0;
+  let sitter = 0;
+  let photos = 0;
   let payments = 0;
   try {
     face = (await listPendingVerifications()).length;
@@ -110,6 +120,21 @@ export async function handleAdminStats(ctx: Context): Promise<void> {
     console.error('admin stats vet queue failed:', err);
   }
   try {
+    trainer = (await listPendingProviderCredentials('trainer')).length;
+  } catch (err) {
+    console.error('admin stats trainer queue failed:', err);
+  }
+  try {
+    sitter = (await listPendingProviderCredentials('sitter')).length;
+  } catch (err) {
+    console.error('admin stats sitter queue failed:', err);
+  }
+  try {
+    photos = (await listPendingPetPhotos()).length;
+  } catch (err) {
+    console.error('admin stats photo queue failed:', err);
+  }
+  try {
     payments = (await listPendingCardPayments()).length;
   } catch (err) {
     console.error('admin stats payment queue failed:', err);
@@ -120,6 +145,9 @@ export async function handleAdminStats(ctx: Context): Promise<void> {
       '',
       `🛡 احراز چهره: <b>${face}</b>`,
       `📄 مدارک دامپزشک: <b>${vet}</b>`,
+      `🎓 مدارک مربی: <b>${trainer}</b>`,
+      `🏠 مدارک پرستار: <b>${sitter}</b>`,
+      `🖼 عکس پت: <b>${photos}</b>`,
       `💳 پرداخت‌های در انتظار: <b>${payments}</b>`,
     ].join('\n'),
     { parse_mode: 'HTML', reply_markup: adminPanelKeyboard() }
@@ -539,6 +567,15 @@ export async function handleAdminMenuText(ctx: Context, text: string): Promise<b
     case m.vetQueue:
       await handleAdminVetCredentialQueue(ctx);
       return true;
+    case m.trainerQueue:
+      await handleAdminProviderCredentialQueue(ctx, 'trainer');
+      return true;
+    case m.sitterQueue:
+      await handleAdminProviderCredentialQueue(ctx, 'sitter');
+      return true;
+    case m.photoQueue:
+      await handleAdminPetPhotoQueue(ctx);
+      return true;
     case m.vetList:
       await handleAdminVetList(ctx);
       return true;
@@ -555,4 +592,140 @@ export async function handleAdminMenuText(ctx: Context, text: string): Promise<b
     default:
       return false;
   }
+}
+
+export async function handleAdminProviderCredentialQueue(
+  ctx: Context,
+  kind: 'trainer' | 'sitter'
+): Promise<void> {
+  if (!(await requireAdminAuth(ctx))) return;
+  let pending: Awaited<ReturnType<typeof listPendingProviderCredentials>>;
+  try {
+    pending = await listPendingProviderCredentials(kind);
+  } catch (err) {
+    console.error('listPendingProviderCredentials failed:', err);
+    await ctx.reply('خطا در دریافت صف مدارک.', { reply_markup: adminPanelKeyboard() });
+    return;
+  }
+  const label = kind === 'trainer' ? 'مربی' : 'پرستار';
+  if (!pending.length) {
+    await ctx.reply(`📭 صف مدارک ${label} خالی است.`, {
+      reply_markup: adminPanelKeyboard(),
+    });
+    return;
+  }
+  await ctx.reply(`📋 ${pending.length} مدرک ${label} در صف:`, {
+    reply_markup: adminPanelKeyboard(),
+  });
+  const user = pending[0]!;
+  const fileId =
+    kind === 'trainer' ? user.trainerCredentialFileId : user.sitterCredentialFileId;
+  const caption = [
+    `📄 <b>مدرک ${label}</b>`,
+    '',
+    `<b>نام:</b> ${escapeHtml(user.name)}`,
+    user.telegramId ? `<b>تلگرام:</b> <code>${escapeHtml(user.telegramId)}</code>` : null,
+    `<b>آیدی:</b> <code>${user.id}</code>`,
+  ]
+    .filter(Boolean)
+    .join('\n');
+  const kb = adminProviderCredentialKeyboard(user.id, kind);
+  if (fileId) {
+    try {
+      await ctx.replyWithPhoto(fileId, { caption, parse_mode: 'HTML', reply_markup: kb });
+      return;
+    } catch {
+      /* try document */
+    }
+    try {
+      await ctx.replyWithDocument(fileId, { caption, parse_mode: 'HTML', reply_markup: kb });
+      return;
+    } catch {
+      /* fall through */
+    }
+  }
+  await ctx.reply(`${caption}\n\n⚠️ فایل در دسترس نیست.`, {
+    parse_mode: 'HTML',
+    reply_markup: kb,
+  });
+}
+
+export async function handleAdminProviderCredentialAction(
+  ctx: Context,
+  kind: 'trainer' | 'sitter',
+  userId: number,
+  approve: boolean
+): Promise<void> {
+  if (!(await requireAdminAuth(ctx))) return;
+  try {
+    if (approve) await approveProviderCredential(userId, kind);
+    else await rejectProviderCredential(userId, kind);
+    await ctx.reply(approve ? '✅ مدرک تأیید شد.' : '❌ مدرک رد شد.');
+  } catch (err) {
+    console.error('provider credential action failed:', err);
+    await ctx.reply('عملیات ناموفق بود.');
+  }
+  await handleAdminProviderCredentialQueue(ctx, kind);
+}
+
+export async function handleAdminPetPhotoQueue(ctx: Context): Promise<void> {
+  if (!(await requireAdminAuth(ctx))) return;
+  let pending: Awaited<ReturnType<typeof listPendingPetPhotos>>;
+  try {
+    pending = await listPendingPetPhotos();
+  } catch (err) {
+    console.error('listPendingPetPhotos failed:', err);
+    await ctx.reply('خطا در دریافت صف عکس.', { reply_markup: adminPanelKeyboard() });
+    return;
+  }
+  if (!pending.length) {
+    await ctx.reply('📭 صف عکس پت خالی است.', { reply_markup: adminPanelKeyboard() });
+    return;
+  }
+  await ctx.reply(`🖼 ${pending.length} عکس در صف تأیید:`, {
+    reply_markup: adminPanelKeyboard(),
+  });
+  const pet = pending[0]!;
+  const caption = [
+    '🖼 <b>عکس پت در انتظار تأیید</b>',
+    '',
+    `<b>پت:</b> ${escapeHtml(pet.name)}`,
+    pet.ownerName ? `<b>صاحب:</b> ${escapeHtml(pet.ownerName)}` : null,
+    `<b>آیدی پت:</b> <code>${pet.id}</code>`,
+  ]
+    .filter(Boolean)
+    .join('\n');
+  const kb = adminPetPhotoKeyboard(pet.id);
+  if (pet.imageUrl) {
+    try {
+      await ctx.replyWithPhoto(pet.imageUrl, {
+        caption,
+        parse_mode: 'HTML',
+        reply_markup: kb,
+      });
+      return;
+    } catch {
+      /* fall through */
+    }
+  }
+  await ctx.reply(`${caption}\n\n⚠️ عکس در دسترس نیست.`, {
+    parse_mode: 'HTML',
+    reply_markup: kb,
+  });
+}
+
+export async function handleAdminPetPhotoAction(
+  ctx: Context,
+  petId: number,
+  approve: boolean
+): Promise<void> {
+  if (!(await requireAdminAuth(ctx))) return;
+  try {
+    await setPetPhotoModeration(petId, approve ? 'approved' : 'rejected');
+    await ctx.reply(approve ? '✅ عکس تأیید شد.' : '❌ عکس رد شد.');
+  } catch (err) {
+    console.error('pet photo moderation failed:', err);
+    await ctx.reply('عملیات ناموفق بود.');
+  }
+  await handleAdminPetPhotoQueue(ctx);
 }

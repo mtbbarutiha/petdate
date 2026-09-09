@@ -7,6 +7,28 @@ export const QUICK_VET_COST = 1;
 export const MIN_VET_VISIT_FEE_COINS = 1;
 export const MAX_VET_VISIT_FEE_COINS = 500;
 
+/** مشاوره مربی: کل هزینه → سهم مربی + کارمزد پلتفرم */
+export const TRAINER_CONSULT_COST = 50;
+export const TRAINER_PROVIDER_SHARE = 25;
+export const TRAINER_SYSTEM_FEE = TRAINER_CONSULT_COST - TRAINER_PROVIDER_SHARE;
+
+/** مشورت خرید از صاحب پت (دنبال‌کننده پت) */
+export const SEEKER_ADVICE_COST = 10;
+export const SEEKER_OWNER_SHARE = 5;
+export const SEEKER_SYSTEM_FEE = SEEKER_ADVICE_COST - SEEKER_OWNER_SHARE;
+
+/** اتصال پرستار پت */
+export const SITTER_CONNECT_COST = 20;
+export const SITTER_PROVIDER_SHARE = 10;
+export const SITTER_SYSTEM_FEE = SITTER_CONNECT_COST - SITTER_PROVIDER_SHARE;
+
+/** کلیدهای لجر برای کارمزد پلتفرم (بدون واریز به کاربر) */
+export const SYSTEM_FEE_REASON = {
+  trainer: 'system_fee:trainer_consult',
+  sitter: 'system_fee:sitter_connect',
+  seekerAdvice: 'system_fee:seeker_advice',
+} as const;
+
 /** نرمال‌سازی مبلغ ویزیت دامپزشک؛ مقدار نامعتبر → پیش‌فرض */
 export function normalizeVisitFeeCoins(value: unknown, fallback = QUICK_VET_COST): number {
   const n = Math.floor(Number(value));
@@ -356,6 +378,25 @@ export function walletLedgerLabelFa(reason: string): string {
     const section = r.slice('profile:'.length) as ProfileRewardSection;
     const label = PROFILE_SECTION_LABELS_FA[section];
     return label ? `جایزه پروفایل (${label})` : 'جایزه پروفایل';
+  }
+  if (r === SYSTEM_FEE_REASON.trainer || r.includes('system_fee:trainer')) {
+    return 'کارمزد پلتفرم (مشاوره مربی)';
+  }
+  if (r === SYSTEM_FEE_REASON.sitter || r.includes('system_fee:sitter')) {
+    return 'کارمزد پلتفرم (پرستار پت)';
+  }
+  if (r === SYSTEM_FEE_REASON.seekerAdvice || r.includes('system_fee:seeker')) {
+    return 'کارمزد پلتفرم (مشورت خرید)';
+  }
+  if (r.startsWith('system_fee:')) return 'کارمزد پلتفرم';
+  if (r.includes('درآمد مشاوره مربی') || r === 'trainer_consult_payout') {
+    return 'درآمد مشاوره مربی';
+  }
+  if (r.includes('درآمد پرستار') || r === 'sitter_connect_payout') {
+    return 'درآمد پرستار پت';
+  }
+  if (r.includes('درآمد مشورت خرید') || r === 'seeker_advice_payout') {
+    return 'درآمد مشورت خرید پت';
   }
   return r;
 }

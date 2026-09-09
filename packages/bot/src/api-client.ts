@@ -250,6 +250,91 @@ export async function rejectVetCredential(userId: number): Promise<{ ok: true; u
   });
 }
 
+export async function listPendingProviderCredentials(
+  kind: 'trainer' | 'sitter'
+): Promise<User[]> {
+  return request<User[]>(
+    `/api/users/provider-credentials/pending?kind=${encodeURIComponent(kind)}`
+  );
+}
+
+export async function approveProviderCredential(
+  userId: number,
+  kind: 'trainer' | 'sitter'
+): Promise<{ ok: true; user: User }> {
+  return request<{ ok: true; user: User }>(`/api/users/${userId}/provider-credential/approve`, {
+    method: 'POST',
+    body: JSON.stringify({ kind }),
+  });
+}
+
+export async function rejectProviderCredential(
+  userId: number,
+  kind: 'trainer' | 'sitter'
+): Promise<{ ok: true; user: User }> {
+  return request<{ ok: true; user: User }>(`/api/users/${userId}/provider-credential/reject`, {
+    method: 'POST',
+    body: JSON.stringify({ kind }),
+  });
+}
+
+export async function submitProviderCredential(
+  telegramId: string,
+  kind: 'trainer' | 'sitter',
+  fileId: string
+): Promise<{ ok: true; user: User }> {
+  return request<{ ok: true; user: User }>(
+    `/api/users/telegram/${encodeURIComponent(telegramId)}/provider-credential`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ kind, fileId }),
+    }
+  );
+}
+
+export async function listPendingPetPhotos(): Promise<
+  Array<{ id: number; name: string; imageUrl?: string; ownerName?: string; ownerId: number }>
+> {
+  return request('/api/users/pet-photos/pending');
+}
+
+export async function setPetPhotoModeration(
+  petId: number,
+  status: 'approved' | 'rejected'
+): Promise<{ ok: true; pet: unknown }> {
+  return request(`/api/users/pets/${petId}/photo-moderation`, {
+    method: 'POST',
+    body: JSON.stringify({ status }),
+  });
+}
+
+export async function setProviderOnline(
+  telegramId: string,
+  kind: 'trainer' | 'sitter',
+  online: boolean
+): Promise<User> {
+  return request<User>(
+    `/api/users/telegram/${encodeURIComponent(telegramId)}/provider-online`,
+    {
+      method: 'POST',
+      body: JSON.stringify({ kind, online }),
+    }
+  );
+}
+
+export async function setAcceptSeekerAdvice(
+  telegramId: string,
+  accept: boolean
+): Promise<User> {
+  return request<User>(
+    `/api/users/telegram/${encodeURIComponent(telegramId)}/accept-seeker-advice`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({ accept }),
+    }
+  );
+}
+
 export async function setUserActive(telegramId: string, isActive: boolean): Promise<User> {
   return request<User>(`/api/users/telegram/${encodeURIComponent(telegramId)}/active`, {
     method: 'PATCH',
@@ -589,8 +674,29 @@ export async function setPlaydateChatSecureViaApi(
   }
 }
 
-export async function listVetConsultations(vetUserId: number): Promise<VetConsultation[]> {
-  const params = new URLSearchParams({ vetUserId: String(vetUserId) });
+export async function listVetConsultations(
+  vetUserIdOrFilters:
+    | number
+    | {
+        vetUserId?: number;
+        patientUserId?: number;
+        kind?: string;
+        status?: string;
+      }
+): Promise<VetConsultation[]> {
+  const params = new URLSearchParams();
+  if (typeof vetUserIdOrFilters === 'number') {
+    params.set('vetUserId', String(vetUserIdOrFilters));
+  } else {
+    if (vetUserIdOrFilters.vetUserId != null) {
+      params.set('vetUserId', String(vetUserIdOrFilters.vetUserId));
+    }
+    if (vetUserIdOrFilters.patientUserId != null) {
+      params.set('patientUserId', String(vetUserIdOrFilters.patientUserId));
+    }
+    if (vetUserIdOrFilters.kind) params.set('kind', vetUserIdOrFilters.kind);
+    if (vetUserIdOrFilters.status) params.set('status', vetUserIdOrFilters.status);
+  }
   return request<VetConsultation[]>(`/api/consultations?${params.toString()}`);
 }
 
@@ -635,7 +741,11 @@ export type QuickVetConnectFailure = {
  */
 export async function quickVetConnect(
   patientUserId: number,
-  opts?: { confirmResend?: boolean; purchaseAdvice?: boolean }
+  opts?: {
+    confirmResend?: boolean;
+    purchaseAdvice?: boolean;
+    kind?: 'vet' | 'trainer' | 'sitter' | 'seeker_advice';
+  }
 ): Promise<QuickVetConnectResult | QuickVetConnectFailure> {
   const res = await fetch(`${config.apiUrl}/api/consultations/quick-connect`, {
     method: 'POST',
@@ -645,6 +755,7 @@ export async function quickVetConnect(
       confirmResend: Boolean(opts?.confirmResend),
       purchaseAdvice: Boolean(opts?.purchaseAdvice),
       intent: opts?.purchaseAdvice ? 'purchase_advice' : undefined,
+      kind: opts?.kind ?? 'vet',
     }),
   });
   const body = await res.text();

@@ -807,6 +807,26 @@ export async function patchWebVetOnline(token: string, online: boolean) {
   });
 }
 
+export async function patchWebProviderOnline(
+  token: string,
+  kind: 'trainer' | 'sitter',
+  online: boolean
+) {
+  return request<{ ok: true; user: User }>('/api/auth/provider-online', {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ kind, online }),
+  });
+}
+
+export async function patchWebAcceptSeekerAdvice(token: string, accept: boolean) {
+  return request<{ ok: true; user: User }>('/api/auth/accept-seeker-advice', {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ accept }),
+  });
+}
+
 /** مبلغ ویزیت دامپزشک (وب — هم‌تراز ربات) */
 export async function patchWebVisitFee(token: string, visitFeeCoins: number) {
   return request<{ ok: true; user: User }>('/api/auth/visit-fee', {
@@ -833,7 +853,10 @@ export type QuickVetConnectResult = {
 export async function quickVetConnect(
   patientUserId: number,
   token?: string | null,
-  opts?: { confirmResend?: boolean }
+  opts?: {
+    confirmResend?: boolean;
+    kind?: 'vet' | 'trainer' | 'sitter' | 'seeker_advice';
+  }
 ): Promise<QuickVetConnectResult> {
   return request<QuickVetConnectResult>('/api/consultations/quick-connect', {
     method: 'POST',
@@ -841,6 +864,7 @@ export async function quickVetConnect(
     body: JSON.stringify({
       patientUserId,
       confirmResend: Boolean(opts?.confirmResend),
+      kind: opts?.kind ?? 'vet',
     }),
   });
 }
@@ -849,11 +873,13 @@ export async function listVetConsultations(filters: {
   patientUserId?: number;
   vetUserId?: number;
   status?: VetConsultStatus;
+  kind?: string;
 }): Promise<VetConsultation[]> {
   const params = new URLSearchParams();
   if (filters.patientUserId) params.set('patientUserId', String(filters.patientUserId));
   if (filters.vetUserId) params.set('vetUserId', String(filters.vetUserId));
   if (filters.status) params.set('status', filters.status);
+  if (filters.kind) params.set('kind', filters.kind);
   const qs = params.toString();
   return request<VetConsultation[]>(`/api/consultations${qs ? `?${qs}` : ''}`);
 }

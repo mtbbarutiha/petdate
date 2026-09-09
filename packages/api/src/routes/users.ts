@@ -574,7 +574,120 @@ usersRouter.post('/telegram/:telegramId/vet-online', (req, res) => {
     });
     return;
   }
+  if (online) {
+    const cred = existing.vetCredentialStatus ?? 'none';
+    if (cred === 'none') {
+      res.status(403).json({
+        error: 'اول مدرک دامپزشکی‌ات را آپلود کن تا پنل فعال شود.',
+        reason: 'credential_required',
+      });
+      return;
+    }
+    if (cred !== 'verified') {
+      res.status(403).json({
+        error: 'مدرک دامپزشکی هنوز تأیید نشده؛ بعد از تأیید ادمین می‌توانی آنلاین شوی.',
+        reason: 'credential_pending',
+      });
+      return;
+    }
+  }
   const user = dbService.setVetOnlineByTelegramId(req.params.telegramId, online);
+  if (!user) {
+    res.status(404).json({ error: 'کاربر پیدا نشد' });
+    return;
+  }
+  res.json(user);
+});
+
+/** آنلاین مربی / پرستار پت */
+usersRouter.post('/telegram/:telegramId/provider-online', (req, res) => {
+  const kindRaw = String(req.body?.kind ?? '').trim();
+  const kind = kindRaw === 'sitter' ? 'sitter' : kindRaw === 'trainer' ? 'trainer' : null;
+  if (!kind) {
+    res.status(400).json({ error: 'kind باید trainer یا sitter باشد' });
+    return;
+  }
+  const raw = req.body?.online;
+  const online =
+    raw === true || raw === 1 || raw === '1' || raw === 'true';
+  const existing = dbService.getUserByTelegramId(req.params.telegramId);
+  if (!existing) {
+    res.status(404).json({ error: 'کاربر پیدا نشد' });
+    return;
+  }
+  const role = kind === 'trainer' ? 'trainer' : 'pet_sitter';
+  if (!userHasRole(existing, role)) {
+    res.status(403).json({ error: 'نقش لازم را نداری' });
+    return;
+  }
+  const enabled =
+    kind === 'trainer' ? existing.trainerEnabled !== false : existing.sitterEnabled !== false;
+  if (online && !enabled) {
+    res.status(403).json({
+      error: 'حساب شما توسط مدیر غیرفعال شده است',
+      reason: 'provider_disabled',
+    });
+    return;
+  }
+  const cred =
+    kind === 'trainer'
+      ? existing.trainerCredentialStatus ?? 'none'
+      : existing.sitterCredentialStatus ?? 'none';
+  if (online && cred !== 'verified') {
+    res.status(403).json({
+      error:
+        cred === 'none'
+          ? 'اول مدرک را آپلود کن تا پنل فعال شود.'
+          : 'مدرک هنوز تأیید نشده؛ بعد از تأیید ادمین آنلاین شو.',
+      reason: cred === 'none' ? 'credential_required' : 'credential_pending',
+    });
+    return;
+  }
+  const user = dbService.setProviderOnline(existing.id, kind, online);
+  if (!user) {
+    res.status(400).json({ error: 'تغییر وضعیت ممکن نشد' });
+    return;
+  }
+  res.json(user);
+});
+
+/** صاحب پت: پذیرش مشورت خرید از دنبال‌کننده بدون پت */
+usersRouter.patch('/:id/accept-seeker-advice', (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id) || id <= 0) {
+    res.status(400).json({ error: 'شناسه نامعتبر' });
+    return;
+  }
+  const accept = Boolean(req.body?.accept ?? req.body?.acceptSeekerAdvice);
+  const existing = dbService.getUserById(id);
+  if (!existing) {
+    res.status(404).json({ error: 'کاربر پیدا نشد' });
+    return;
+  }
+  if (!userHasRole(existing, 'pet_owner')) {
+    res.status(403).json({ error: 'این تنظیم مخصوص صاحب پت است' });
+    return;
+  }
+  const user = dbService.setAcceptSeekerAdvice(id, accept);
+  if (!user) {
+    res.status(404).json({ error: 'کاربر پیدا نشد' });
+    return;
+  }
+  res.json(user);
+});
+
+usersRouter.patch('/telegram/:telegramId/accept-seeker-advice', (req, res) => {
+  const accept = Boolean(req.body?.accept ?? req.body?.acceptSeekerAdvice);
+  const existing = dbService.getUserByTelegramId(req.params.telegramId);
+  if (!existing) {
+    res.status(404).json({ error: 'کاربر پیدا نشد' });
+    return;
+  }
+  if (!userHasRole(existing, 'pet_owner')) {
+    res.status(403).json({ error: 'این تنظیم مخصوص صاحب پت است' });
+    return;
+  }
+  const user = dbService.setAcceptSeekerAdvice(existing.id, accept);
   if (!user) {
     res.status(404).json({ error: 'کاربر پیدا نشد' });
     return;
@@ -810,6 +923,102 @@ usersRouter.post('/:id/vet-credential/reject', (req, res) => {
     return;
   }
   res.json({ ok: true, user });
+});
+
+/** صف مدارک مربی / پرستار */
+usersRouter.get('/provider-credentials/pending', (req, res) => {
+  const kindRaw = String(req.query.kind ?? '').trim();
+  const kind = kindRaw === 'sitter' ? 'sitter' : kindRaw === 'trainer' ? 'trainer' : null;
+  if (!kind) {
+    res.status(400).json({ error: 'kind باید trainer یا sitter باشد' });
+    return;
+  }
+  res.json(dbService.listPendingProviderCredentials(kind));
+});
+
+usersRouter.post('/telegram/:telegramId/provider-credential', (req, res) => {
+  const kindRaw = String(req.body?.kind ?? '').trim();
+  const kind = kindRaw === 'sitter' ? 'sitter' : kindRaw === 'trainer' ? 'trainer' : null;
+  if (!kind) {
+    res.status(400).json({ error: 'kind باید trainer یا sitter باشد' });
+    return;
+  }
+  const user = dbService.getUserByTelegramId(req.params.telegramId);
+  if (!user) {
+    res.status(404).json({ error: 'کاربر پیدا نشد' });
+    return;
+  }
+  const fileId = String(req.body?.fileId ?? req.body?.credentialFileId ?? '').trim();
+  const result = dbService.submitProviderCredential(user.id, kind, fileId);
+  if (!result.ok) {
+    res.status(result.reason === 'missing' ? 404 : 400).json({
+      ok: false,
+      reason: result.reason,
+      error: result.reason === 'no_file' ? 'فایل مدرک لازم است' : 'کاربر پیدا نشد',
+    });
+    return;
+  }
+  res.json({ ok: true, user: result.user });
+});
+
+usersRouter.post('/:id/provider-credential/approve', (req, res) => {
+  const kindRaw = String(req.body?.kind ?? req.query.kind ?? '').trim();
+  const kind = kindRaw === 'sitter' ? 'sitter' : kindRaw === 'trainer' ? 'trainer' : null;
+  if (!kind) {
+    res.status(400).json({ error: 'kind باید trainer یا sitter باشد' });
+    return;
+  }
+  const user = dbService.approveProviderCredential(Number(req.params.id), kind);
+  if (!user) {
+    res.status(404).json({ error: 'مدرک در صف نیست' });
+    return;
+  }
+  res.json({ ok: true, user });
+});
+
+usersRouter.post('/:id/provider-credential/reject', (req, res) => {
+  const kindRaw = String(req.body?.kind ?? req.query.kind ?? '').trim();
+  const kind = kindRaw === 'sitter' ? 'sitter' : kindRaw === 'trainer' ? 'trainer' : null;
+  if (!kind) {
+    res.status(400).json({ error: 'kind باید trainer یا sitter باشد' });
+    return;
+  }
+  const user = dbService.rejectProviderCredential(Number(req.params.id), kind);
+  if (!user) {
+    res.status(404).json({ error: 'مدرک در صف نیست' });
+    return;
+  }
+  res.json({ ok: true, user });
+});
+
+/** صف تأیید عکس پت */
+usersRouter.get('/pet-photos/pending', (_req, res) => {
+  res.json(dbService.listPendingPetPhotos());
+});
+
+usersRouter.post('/pets/:id/photo-moderation', (req, res) => {
+  const petId = Number(req.params.id);
+  const statusRaw = String(req.body?.status ?? '').trim();
+  if (statusRaw !== 'approved' && statusRaw !== 'rejected') {
+    res.status(400).json({ error: 'status باید approved یا rejected باشد' });
+    return;
+  }
+  const pet = dbService.setPetPhotoModerationStatus(petId, statusRaw);
+  if (!pet) {
+    res.status(404).json({ error: 'پت پیدا نشد' });
+    return;
+  }
+  res.json({ ok: true, pet });
+});
+
+usersRouter.get('/providers/online', (req, res) => {
+  const kindRaw = String(req.query.kind ?? '').trim();
+  const kind = kindRaw === 'sitter' ? 'sitter' : kindRaw === 'trainer' ? 'trainer' : null;
+  if (!kind) {
+    res.status(400).json({ error: 'kind باید trainer یا sitter باشد' });
+    return;
+  }
+  res.json(dbService.listOnlineProvidersForQuickConnect(kind));
 });
 
 /** دریافت سکه روزانه */

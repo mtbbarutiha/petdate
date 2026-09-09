@@ -32,6 +32,9 @@ import type {
   VetRatingStats,
   VetRating,
   PreviousVet,
+  ConsultServiceKind,
+  PhotoModerationStatus,
+  ProviderCredentialStatus,
   VetConsultation,
   VetConsultChatMessage,
   VetConsultStatus,
@@ -48,6 +51,14 @@ import {
   PET_MEDICAL_FIELD_LABELS,
   PET_SPECIES,
   petPublicIdOf,
+  QUICK_VET_COST,
+  SEEKER_ADVICE_COST,
+  SEEKER_OWNER_SHARE,
+  SITTER_CONNECT_COST,
+  SITTER_PROVIDER_SHARE,
+  SYSTEM_FEE_REASON,
+  TRAINER_CONSULT_COST,
+  TRAINER_PROVIDER_SHARE,
   PLAYDATE_REQUEST_TTL_MS,
   PROFILE_REWARD_SECTIONS,
   PROFILE_SECTION_REWARD,
@@ -398,6 +409,33 @@ function migrateSchema() {
   }
   if (!names.has('visit_fee_coins')) {
     db.exec('ALTER TABLE users ADD COLUMN visit_fee_coins INTEGER NOT NULL DEFAULT 1');
+  }
+  if (!names.has('trainer_credential_file_id')) {
+    db.exec('ALTER TABLE users ADD COLUMN trainer_credential_file_id TEXT');
+  }
+  if (!names.has('trainer_credential_status')) {
+    db.exec("ALTER TABLE users ADD COLUMN trainer_credential_status TEXT NOT NULL DEFAULT 'none'");
+  }
+  if (!names.has('trainer_online')) {
+    db.exec('ALTER TABLE users ADD COLUMN trainer_online INTEGER NOT NULL DEFAULT 0');
+  }
+  if (!names.has('trainer_enabled')) {
+    db.exec('ALTER TABLE users ADD COLUMN trainer_enabled INTEGER NOT NULL DEFAULT 1');
+  }
+  if (!names.has('sitter_credential_file_id')) {
+    db.exec('ALTER TABLE users ADD COLUMN sitter_credential_file_id TEXT');
+  }
+  if (!names.has('sitter_credential_status')) {
+    db.exec("ALTER TABLE users ADD COLUMN sitter_credential_status TEXT NOT NULL DEFAULT 'none'");
+  }
+  if (!names.has('sitter_online')) {
+    db.exec('ALTER TABLE users ADD COLUMN sitter_online INTEGER NOT NULL DEFAULT 0');
+  }
+  if (!names.has('sitter_enabled')) {
+    db.exec('ALTER TABLE users ADD COLUMN sitter_enabled INTEGER NOT NULL DEFAULT 1');
+  }
+  if (!names.has('accept_seeker_advice')) {
+    db.exec('ALTER TABLE users ADD COLUMN accept_seeker_advice INTEGER NOT NULL DEFAULT 0');
   }
   /** شناسهٔ عمومی پایدار نمایشی — PD-U##### */
   if (!names.has('public_id')) {
@@ -784,6 +822,12 @@ function migrateSchema() {
   if (!petNames.has('public_id')) {
     db.exec('ALTER TABLE pets ADD COLUMN public_id TEXT');
   }
+  if (!petNames.has('photo_moderation_status')) {
+    // Existing pets stay publicly visible; new uploads default to pending via create/update.
+    db.exec(
+      "ALTER TABLE pets ADD COLUMN photo_moderation_status TEXT NOT NULL DEFAULT 'approved'"
+    );
+  }
 
   // Backfill / normalize public ids (idempotent — safe on every startup)
   backfillPublicIds();
@@ -859,6 +903,14 @@ function migrateSchema() {
   }
   if (!vcNames.has('vet_paid_at')) {
     db.exec('ALTER TABLE vet_consultations ADD COLUMN vet_paid_at TEXT');
+  }
+  if (!vcNames.has('service_kind')) {
+    db.exec(
+      "ALTER TABLE vet_consultations ADD COLUMN service_kind TEXT NOT NULL DEFAULT 'vet'"
+    );
+  }
+  if (!vcNames.has('provider_share_coins')) {
+    db.exec('ALTER TABLE vet_consultations ADD COLUMN provider_share_coins INTEGER');
   }
 
   const vchatCols = db
@@ -1716,6 +1768,18 @@ function mapUser(row: Record<string, unknown>): User {
       row.visit_fee_coins != null && Number.isFinite(Number(row.visit_fee_coins))
         ? Math.max(1, Math.floor(Number(row.visit_fee_coins)))
         : 1,
+    trainerCredentialFileId:
+      (row.trainer_credential_file_id as string | undefined) ?? undefined,
+    trainerCredentialStatus: parseVetCredentialStatus(row.trainer_credential_status),
+    trainerOnline: row.trainer_online == null ? false : Boolean(row.trainer_online),
+    trainerEnabled: row.trainer_enabled == null ? true : Boolean(row.trainer_enabled),
+    sitterCredentialFileId:
+      (row.sitter_credential_file_id as string | undefined) ?? undefined,
+    sitterCredentialStatus: parseVetCredentialStatus(row.sitter_credential_status),
+    sitterOnline: row.sitter_online == null ? false : Boolean(row.sitter_online),
+    sitterEnabled: row.sitter_enabled == null ? true : Boolean(row.sitter_enabled),
+    acceptSeekerAdvice:
+      row.accept_seeker_advice == null ? false : Boolean(row.accept_seeker_advice),
     lat:
       row.lat != null && Number.isFinite(Number(row.lat)) ? Number(row.lat) : undefined,
     lng:
@@ -1742,6 +1806,79 @@ function parseVetCredentialStatus(value: unknown): VetCredentialStatus {
     return value;
   }
   return 'none';
+}
+
+function parsePhotoModerationStatus(value: unknown): PhotoModerationStatus {
+  if (value === 'pending' || value === 'approved' || value === 'rejected') {
+    return value;
+  }
+  return 'approved';
+}
+
+function parseConsultServiceKind(value: unknown): ConsultServiceKind {
+  if (
+    value === 'trainer' ||
+    value === 'sitter' ||
+    value === 'seeker_advice' ||
+    value === 'vet'
+  ) {
+    return value;
+  }
+  return 'vet';
+}
+
+/** هزینه کل + سهم ارائه‌دهنده برای هر نوع سرویس */
+export function consultFeeSplit(kind: ConsultServiceKind): {
+  cost: number;
+  providerShare: number;
+  systemFee: number;
+  systemReason: string;
+  debitReason: string;
+  payoutReason: string;
+  payoutRefType: string;
+} {
+  switch (kind) {
+    case 'trainer':
+      return {
+        cost: TRAINER_CONSULT_COST,
+        providerShare: TRAINER_PROVIDER_SHARE,
+        systemFee: TRAINER_CONSULT_COST - TRAINER_PROVIDER_SHARE,
+        systemReason: SYSTEM_FEE_REASON.trainer,
+        debitReason: 'مشاوره مربی',
+        payoutReason: 'درآمد مشاوره مربی',
+        payoutRefType: 'trainer_consult_payout',
+      };
+    case 'sitter':
+      return {
+        cost: SITTER_CONNECT_COST,
+        providerShare: SITTER_PROVIDER_SHARE,
+        systemFee: SITTER_CONNECT_COST - SITTER_PROVIDER_SHARE,
+        systemReason: SYSTEM_FEE_REASON.sitter,
+        debitReason: 'اتصال پرستار پت',
+        payoutReason: 'درآمد پرستار پت',
+        payoutRefType: 'sitter_connect_payout',
+      };
+    case 'seeker_advice':
+      return {
+        cost: SEEKER_ADVICE_COST,
+        providerShare: SEEKER_OWNER_SHARE,
+        systemFee: SEEKER_ADVICE_COST - SEEKER_OWNER_SHARE,
+        systemReason: SYSTEM_FEE_REASON.seekerAdvice,
+        debitReason: 'مشورت خرید پت',
+        payoutReason: 'درآمد مشورت خرید پت',
+        payoutRefType: 'seeker_advice_payout',
+      };
+    default:
+      return {
+        cost: QUICK_VET_COST,
+        providerShare: 0,
+        systemFee: 0,
+        systemReason: '',
+        debitReason: 'مشاوره سریع دامپزشک',
+        payoutReason: 'درآمد مشاوره دامپزشک',
+        payoutRefType: 'vet_consult_payout',
+      };
+  }
 }
 
 function parseJsonObject(value: unknown): Record<string, unknown> {
@@ -1781,6 +1918,7 @@ function mapPet(row: Record<string, unknown>): PetProfile {
     imageUrl: publicImageUrlForStored(row.image_url as string | undefined, {
       petId: row.id as number,
     }),
+    photoModerationStatus: parsePhotoModerationStatus(row.photo_moderation_status),
     city: row.city as string | undefined,
     neighborhood: row.neighborhood as string | undefined,
     ownerProvince: (row.owner_province as string | undefined) ?? undefined,
@@ -1910,11 +2048,16 @@ function mapVetConsultation(row: Record<string, unknown>): VetConsultation {
     vetUserId: row.vet_user_id as number,
     patientUserId: row.patient_user_id as number,
     petId: row.pet_id != null ? Number(row.pet_id) : undefined,
+    serviceKind: parseConsultServiceKind(row.service_kind),
     status: row.status as VetConsultStatus,
     notes: (row.notes as string | undefined) ?? undefined,
     feeCoins:
       row.fee_coins != null && Number.isFinite(Number(row.fee_coins))
         ? Math.max(0, Math.floor(Number(row.fee_coins)))
+        : undefined,
+    providerShareCoins:
+      row.provider_share_coins != null && Number.isFinite(Number(row.provider_share_coins))
+        ? Math.max(0, Math.floor(Number(row.provider_share_coins)))
         : undefined,
     vetPaidAt: (row.vet_paid_at as string | undefined) ?? undefined,
     chatSecure: Boolean(row.chat_secure),
@@ -2552,6 +2695,122 @@ export const dbService = {
     return this.getUserById(userId);
   },
 
+  listPendingProviderCredentials(kind: 'trainer' | 'sitter'): User[] {
+    const col =
+      kind === 'trainer' ? 'trainer_credential_status' : 'sitter_credential_status';
+    return (
+      db
+        .prepare(
+          `SELECT * FROM users
+           WHERE ${col} = 'pending'
+           ORDER BY id ASC`
+        )
+        .all() as Record<string, unknown>[]
+    ).map(mapUser);
+  },
+
+  submitProviderCredential(
+    userId: number,
+    kind: 'trainer' | 'sitter',
+    fileId: string
+  ): { ok: true; user: User } | { ok: false; reason: 'missing' | 'no_file' } {
+    const existing = this.getUserById(userId);
+    if (!existing) return { ok: false, reason: 'missing' };
+    const file = fileId?.trim();
+    if (!file) return { ok: false, reason: 'no_file' };
+    if (kind === 'trainer') {
+      db.prepare(
+        `UPDATE users SET
+           trainer_credential_status = 'pending',
+           trainer_credential_file_id = ?
+         WHERE id = ?`
+      ).run(file, userId);
+    } else {
+      db.prepare(
+        `UPDATE users SET
+           sitter_credential_status = 'pending',
+           sitter_credential_file_id = ?
+         WHERE id = ?`
+      ).run(file, userId);
+    }
+    return { ok: true, user: this.getUserById(userId)! };
+  },
+
+  approveProviderCredential(
+    userId: number,
+    kind: 'trainer' | 'sitter'
+  ): User | null {
+    const existing = this.getUserById(userId);
+    if (!existing) return null;
+    const status =
+      kind === 'trainer'
+        ? existing.trainerCredentialStatus
+        : existing.sitterCredentialStatus;
+    if (status !== 'pending') return null;
+    const col =
+      kind === 'trainer' ? 'trainer_credential_status' : 'sitter_credential_status';
+    db.prepare(`UPDATE users SET ${col} = 'verified' WHERE id = ?`).run(userId);
+    return this.getUserById(userId);
+  },
+
+  rejectProviderCredential(
+    userId: number,
+    kind: 'trainer' | 'sitter'
+  ): User | null {
+    const existing = this.getUserById(userId);
+    if (!existing) return null;
+    const status =
+      kind === 'trainer'
+        ? existing.trainerCredentialStatus
+        : existing.sitterCredentialStatus;
+    if (status !== 'pending') return null;
+    if (kind === 'trainer') {
+      db.prepare(
+        `UPDATE users SET
+           trainer_credential_status = 'none',
+           trainer_credential_file_id = NULL
+         WHERE id = ?`
+      ).run(userId);
+    } else {
+      db.prepare(
+        `UPDATE users SET
+           sitter_credential_status = 'none',
+           sitter_credential_file_id = NULL
+         WHERE id = ?`
+      ).run(userId);
+    }
+    return this.getUserById(userId);
+  },
+
+  listPendingPetPhotos(): PetProfile[] {
+    return (
+      db
+        .prepare(
+          `SELECT pets.*,
+                  users.province AS owner_province,
+                  users.city AS owner_city,
+                  users.name AS owner_name
+           FROM pets
+           LEFT JOIN users ON users.id = pets.owner_id
+           WHERE COALESCE(pets.photo_moderation_status, 'approved') = 'pending'
+           ORDER BY pets.id ASC`
+        )
+        .all() as Record<string, unknown>[]
+    ).map(mapPet);
+  },
+
+  setPetPhotoModerationStatus(
+    petId: number,
+    status: PhotoModerationStatus
+  ): PetProfile | null {
+    const existing = this.getPet(petId);
+    if (!existing) return null;
+    db.prepare(
+      `UPDATE pets SET photo_moderation_status = ?, updated_at = datetime('now') WHERE id = ?`
+    ).run(status, petId);
+    return this.getPet(petId);
+  },
+
   submitVerification(
     userId: number,
     photoFileId: string
@@ -2642,8 +2901,7 @@ export const dbService = {
   /**
    * هدف‌های اتصال سریع وب/دسکتاپ:
    * فقط دامپزشک‌هایی که صریحاً آنلاین شده‌اند (vet_online=1) —
-   * چه از ربات، چه از پنل وب. نشست وب به‌تنهایی کافی نیست
-   * (سشن‌ها هفته‌ها زنده می‌مانند و درخواست را به پزشک‌های غیرفعال می‌فرستاد).
+   * مدرک تأییدشده + فعال بودن ادمین الزامی است.
    */
   listOnlineVetsForQuickConnect(): User[] {
     const rows = db
@@ -2653,6 +2911,7 @@ export const dbService = {
          WHERE u.is_active = 1
            AND COALESCE(u.vet_enabled, 1) = 1
            AND COALESCE(u.vet_online, 0) = 1
+           AND COALESCE(u.vet_credential_status, 'none') = 'verified'
            AND (
              u.role = 'vet'
              OR u.roles LIKE '%"vet"%'
@@ -2666,7 +2925,62 @@ export const dbService = {
       .map(mapUser)
       .filter((u) => {
         const roles = u.roles?.length ? u.roles : u.role ? [u.role] : [];
-        return roles.includes('vet');
+        return roles.includes('vet') && u.vetCredentialStatus === 'verified';
+      });
+  },
+
+  /** ارائه‌دهندگان آنلاین تأییدشده برای مربی / پرستار */
+  listOnlineProvidersForQuickConnect(kind: 'trainer' | 'sitter'): User[] {
+    const role = kind === 'trainer' ? 'trainer' : 'pet_sitter';
+    const onlineCol = kind === 'trainer' ? 'trainer_online' : 'sitter_online';
+    const enabledCol = kind === 'trainer' ? 'trainer_enabled' : 'sitter_enabled';
+    const credCol =
+      kind === 'trainer' ? 'trainer_credential_status' : 'sitter_credential_status';
+    const rows = db
+      .prepare(
+        `SELECT u.*
+         FROM users u
+         WHERE u.is_active = 1
+           AND COALESCE(u.${enabledCol}, 1) = 1
+           AND COALESCE(u.${onlineCol}, 0) = 1
+           AND COALESCE(u.${credCol}, 'none') = 'verified'
+           AND (
+             u.role = ?
+             OR u.roles LIKE ?
+           )
+         ORDER BY u.id DESC`
+      )
+      .all(role, `%"${role}"%`) as Record<string, unknown>[];
+    return rows
+      .map(mapUser)
+      .filter((u) => {
+        const roles = u.roles?.length ? u.roles : u.role ? [u.role] : [];
+        if (!roles.includes(role)) return false;
+        if (kind === 'trainer') return u.trainerCredentialStatus === 'verified';
+        return u.sitterCredentialStatus === 'verified';
+      });
+  },
+
+  /** صاحبان پت که مشورت خرید از دنبال‌کننده را پذیرفته‌اند */
+  listOwnersAcceptingSeekerAdvice(): User[] {
+    const rows = db
+      .prepare(
+        `SELECT u.*
+         FROM users u
+         WHERE u.is_active = 1
+           AND COALESCE(u.accept_seeker_advice, 0) = 1
+           AND (
+             u.role = 'pet_owner'
+             OR u.roles LIKE '%"pet_owner"%'
+           )
+         ORDER BY u.id DESC`
+      )
+      .all() as Record<string, unknown>[];
+    return rows
+      .map(mapUser)
+      .filter((u) => {
+        const roles = u.roles?.length ? u.roles : u.role ? [u.role] : [];
+        return roles.includes('pet_owner') && u.acceptSeekerAdvice === true;
       });
   },
 
@@ -2716,6 +3030,12 @@ export const dbService = {
     if (online && existing.vetEnabled === false) {
       return null;
     }
+    // Panel stays inactive until credential is uploaded; receiving requests needs verified.
+    if (online) {
+      const status = existing.vetCredentialStatus ?? 'none';
+      if (status === 'none') return null;
+      if (status !== 'verified') return null;
+    }
     // Already in the requested state — success (avoids false failures when
     // pg-compat/SQLite reports changes=0 for a no-op UPDATE).
     if (Boolean(existing.vetOnline) === online) {
@@ -2733,6 +3053,47 @@ export const dbService = {
     const user = this.getUserByTelegramId(telegramId);
     if (!user) return null;
     return this.setVetOnline(user.id, online);
+  },
+
+  setProviderOnline(
+    userId: number,
+    kind: 'trainer' | 'sitter',
+    online: boolean
+  ): User | null {
+    const id = Number(userId);
+    if (!Number.isFinite(id) || id <= 0) return null;
+    const existing = this.getUserById(id);
+    if (!existing) return null;
+    const enabled =
+      kind === 'trainer' ? existing.trainerEnabled !== false : existing.sitterEnabled !== false;
+    if (online && !enabled) return null;
+    const cred =
+      kind === 'trainer'
+        ? existing.trainerCredentialStatus ?? 'none'
+        : existing.sitterCredentialStatus ?? 'none';
+    if (online && cred !== 'verified') return null;
+    const current =
+      kind === 'trainer' ? Boolean(existing.trainerOnline) : Boolean(existing.sitterOnline);
+    if (current === online) return existing;
+    const col = kind === 'trainer' ? 'trainer_online' : 'sitter_online';
+    db.prepare(`UPDATE users SET ${col} = ? WHERE id = ?`).run(online ? 1 : 0, id);
+    const updated = this.getUserById(id);
+    if (!updated) return null;
+    const next =
+      kind === 'trainer' ? Boolean(updated.trainerOnline) : Boolean(updated.sitterOnline);
+    if (next !== online) return null;
+    return updated;
+  },
+
+  setAcceptSeekerAdvice(userId: number, accept: boolean): User | null {
+    const existing = this.getUserById(userId);
+    if (!existing) return null;
+    if (Boolean(existing.acceptSeekerAdvice) === accept) return existing;
+    db.prepare(`UPDATE users SET accept_seeker_advice = ? WHERE id = ?`).run(
+      accept ? 1 : 0,
+      userId
+    );
+    return this.getUserById(userId);
   },
 
   setReadyToAdopt(userId: number, ready: boolean): User | null {
@@ -3534,6 +3895,8 @@ export const dbService = {
     excludeOwnerId?: number;
     /** newest = جدیدترین؛ popular = لایک صاحب؛ پیش‌فرض updated */
     sort?: 'newest' | 'popular' | 'updated';
+    /** وقتی true فقط عکس‌های تأییدشده (لیست عمومی) */
+    publicOnly?: boolean;
   }): PetProfile[] {
     let sql = `
       SELECT pets.*,
@@ -3553,6 +3916,9 @@ export const dbService = {
     if (filters?.excludeOwnerId) {
       sql += ' AND pets.owner_id != ?';
       params.push(filters.excludeOwnerId);
+    }
+    if (filters?.publicOnly) {
+      sql += " AND COALESCE(pets.photo_moderation_status, 'approved') = 'approved'";
     }
     if (filters?.lookingForPlaymate !== undefined) {
       sql += ' AND pets.looking_for_playmate = ?';
@@ -3625,7 +3991,8 @@ export const dbService = {
       INNER JOIN users ON users.id = pets.owner_id
       WHERE users.lat IS NOT NULL
         AND users.lng IS NOT NULL
-        AND COALESCE(users.is_active, 1) = 1`;
+        AND COALESCE(users.is_active, 1) = 1
+        AND COALESCE(pets.photo_moderation_status, 'approved') = 'approved'`;
     const params: unknown[] = [];
     if (opts.excludeOwnerId) {
       sql += ' AND pets.owner_id != ?';
@@ -3784,28 +4151,36 @@ export const dbService = {
   },
 
   /** True when patient has any expired quick-consult (for resend confirm). */
-  hasExpiredVetConsultForPatient(patientUserId: number): boolean {
+  hasExpiredVetConsultForPatient(
+    patientUserId: number,
+    serviceKind: ConsultServiceKind = 'vet'
+  ): boolean {
     this.expireStaleVetConsultRequests();
     const row = db
       .prepare(
         `SELECT id FROM vet_consultations
          WHERE patient_user_id = ? AND status = 'expired'
+           AND COALESCE(service_kind, 'vet') = ?
          LIMIT 1`
       )
-      .get(patientUserId) as Record<string, unknown> | undefined;
+      .get(patientUserId, serviceKind) as Record<string, unknown> | undefined;
     return Boolean(row);
   },
 
   /** True when patient still has an open requested consult. */
-  hasPendingVetConsultForPatient(patientUserId: number): boolean {
+  hasPendingVetConsultForPatient(
+    patientUserId: number,
+    serviceKind: ConsultServiceKind = 'vet'
+  ): boolean {
     this.expireStaleVetConsultRequests();
     const row = db
       .prepare(
         `SELECT id FROM vet_consultations
          WHERE patient_user_id = ? AND status = 'requested'
+           AND COALESCE(service_kind, 'vet') = ?
          LIMIT 1`
       )
-      .get(patientUserId) as Record<string, unknown> | undefined;
+      .get(patientUserId, serviceKind) as Record<string, unknown> | undefined;
     return Boolean(row);
   },
 
@@ -3857,13 +4232,15 @@ export const dbService = {
     city?: string;
     neighborhood?: string;
   }): PetProfile {
+    const hasPhoto = Boolean(data.imageUrl?.trim());
+    const moderation: PhotoModerationStatus = hasPhoto ? 'pending' : 'approved';
     const result = db
       .prepare(
         `INSERT INTO pets (
           owner_id, name, species, breed, gender, age_months, size, color, bio,
           vaccinated, neutered, looking_for_playmate, personality, health,
-          image_url, city, neighborhood
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          image_url, city, neighborhood, photo_moderation_status
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .run(
         data.ownerId,
@@ -3882,7 +4259,8 @@ export const dbService = {
         JSON.stringify(data.health ?? {}),
         data.imageUrl ?? null,
         data.city ?? null,
-        data.neighborhood ?? null
+        data.neighborhood ?? null,
+        moderation
       );
     const petId = Number(result.lastInsertRowid);
     db.prepare('UPDATE pets SET public_id = ? WHERE id = ?').run(makePetPublicId(petId), petId);
@@ -3926,7 +4304,14 @@ export const dbService = {
     if (patch.lookingForPlaymate !== undefined) { fields.push('looking_for_playmate = ?'); values.push(patch.lookingForPlaymate ? 1 : 0); }
     if (patch.personality !== undefined) { fields.push('personality = ?'); values.push(JSON.stringify(patch.personality)); }
     if (patch.health !== undefined) { fields.push('health = ?'); values.push(JSON.stringify(patch.health)); }
-    if (patch.imageUrl !== undefined) { fields.push('image_url = ?'); values.push(patch.imageUrl); }
+    if (patch.imageUrl !== undefined) {
+      fields.push('image_url = ?');
+      values.push(patch.imageUrl);
+      // New/changed photo must be re-moderated before public listing.
+      if (String(patch.imageUrl || '').trim()) {
+        fields.push("photo_moderation_status = 'pending'");
+      }
+    }
     if (patch.city !== undefined) { fields.push('city = ?'); values.push(patch.city); }
     if (patch.neighborhood !== undefined) { fields.push('neighborhood = ?'); values.push(patch.neighborhood); }
 
@@ -4441,6 +4826,7 @@ export const dbService = {
     vetUserId?: number;
     patientUserId?: number;
     status?: VetConsultStatus;
+    serviceKind?: ConsultServiceKind;
     /** When true, allow listing without vet/patient filter (admin) */
     all?: boolean;
   }): VetConsultation[] {
@@ -4483,6 +4869,10 @@ export const dbService = {
       sql += ' AND vc.status = ?';
       params.push(filters.status);
     }
+    if (filters.serviceKind) {
+      sql += " AND COALESCE(vc.service_kind, 'vet') = ?";
+      params.push(filters.serviceKind);
+    }
     sql += ` ORDER BY COALESCE(
       (SELECT MAX(m.created_at) FROM vet_consult_chat_messages m WHERE m.consult_id = vc.id),
       vc.created_at
@@ -4497,16 +4887,26 @@ export const dbService = {
     status?: VetConsultStatus;
     notes?: string;
     feeCoins?: number;
+    serviceKind?: ConsultServiceKind;
+    providerShareCoins?: number;
   }): VetConsultation {
     const fee =
       data.feeCoins != null && Number.isFinite(Number(data.feeCoins))
         ? Math.max(0, Math.floor(Number(data.feeCoins)))
         : null;
+    const kind = data.serviceKind ?? 'vet';
+    const share =
+      data.providerShareCoins != null && Number.isFinite(Number(data.providerShareCoins))
+        ? Math.max(0, Math.floor(Number(data.providerShareCoins)))
+        : kind === 'vet'
+          ? fee
+          : consultFeeSplit(kind).providerShare;
     const result = db
       .prepare(
         `INSERT INTO vet_consultations (
-          vet_user_id, patient_user_id, pet_id, status, notes, fee_coins
-        ) VALUES (?, ?, ?, ?, ?, ?)`
+          vet_user_id, patient_user_id, pet_id, status, notes, fee_coins,
+          service_kind, provider_share_coins
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .run(
         data.vetUserId,
@@ -4514,7 +4914,9 @@ export const dbService = {
         data.petId ?? null,
         data.status ?? 'requested',
         data.notes ?? null,
-        fee
+        fee,
+        kind,
+        share
       );
     const created = this.getVetConsultation(Number(result.lastInsertRowid));
     return (
@@ -4523,9 +4925,11 @@ export const dbService = {
         vetUserId: data.vetUserId,
         patientUserId: data.patientUserId,
         petId: data.petId,
+        serviceKind: kind,
         status: data.status ?? 'requested',
         notes: data.notes,
         feeCoins: fee ?? undefined,
+        providerShareCoins: share ?? undefined,
         createdAt: new Date().toISOString(),
       }
     );
@@ -4593,21 +4997,28 @@ export const dbService = {
     return updated ? mapVetConsultation(updated) : null;
   },
 
-  /** وقتی یک پزشک قبول می‌کند، بقیهٔ درخواست‌های هم‌زمان همان بیمار لغو شوند */
-  cancelSiblingVetConsultations(patientUserId: number, keepId: number): number {
+  /** وقتی یک ارائه‌دهنده قبول می‌کند، بقیهٔ درخواست‌های هم‌زمان همان بیمار (همان kind) لغو شوند */
+  cancelSiblingVetConsultations(
+    patientUserId: number,
+    keepId: number,
+    serviceKind?: ConsultServiceKind
+  ): number {
+    const keep = this.getVetConsultation(keepId);
+    const kind = serviceKind ?? keep?.serviceKind ?? 'vet';
     const result = db
       .prepare(
         `UPDATE vet_consultations
          SET status = 'cancelled'
-         WHERE patient_user_id = ? AND id != ? AND status = 'requested'`
+         WHERE patient_user_id = ? AND id != ? AND status = 'requested'
+           AND COALESCE(service_kind, 'vet') = ?`
       )
-      .run(patientUserId, keepId);
+      .run(patientUserId, keepId, kind);
     return result.changes;
   },
 
   /**
-   * واریز درآمد دامپزشک بعد از قبول مشاوره (idempotent).
-   * مبلغ: fee_coins ذخیره‌شده روی مشاوره، وگرنه مبلغ ویزیت فعلی دامپزشک.
+   * واریز درآمد ارائه‌دهنده بعد از قبول مشاوره (idempotent).
+   * دامپزشک: کل fee_coins؛ مربی/پرستار/مشورت: فقط سهم ارائه‌دهنده + لجر کارمزد پلتفرم.
    */
   payVetForAcceptedConsult(consultId: number): {
     paid: boolean;
@@ -4625,29 +5036,48 @@ export const dbService = {
     if (consult.vetPaidAt) {
       return {
         paid: false,
-        amount: consult.feeCoins ?? 0,
+        amount: consult.providerShareCoins ?? consult.feeCoins ?? 0,
         alreadyPaid: true,
         consult,
       };
     }
 
-    const vet = this.getUserById(consult.vetUserId);
-    if (!vet) {
+    const provider = this.getUserById(consult.vetUserId);
+    if (!provider) {
       return { paid: false, amount: 0, alreadyPaid: false, consult };
     }
 
-    const amount = Math.max(
+    const kind = consult.serviceKind ?? 'vet';
+    const split = consultFeeSplit(kind);
+    const totalFee = Math.max(
       0,
       Math.floor(
         Number(
           consult.feeCoins != null && consult.feeCoins > 0
             ? consult.feeCoins
-            : vetVisitFeeCoins(vet)
+            : kind === 'vet'
+              ? vetVisitFeeCoins(provider)
+              : split.cost
         )
       )
     );
+    const providerAmount =
+      kind === 'vet'
+        ? totalFee
+        : Math.max(
+            0,
+            Math.floor(
+              Number(
+                consult.providerShareCoins != null && consult.providerShareCoins > 0
+                  ? consult.providerShareCoins
+                  : split.providerShare
+              )
+            )
+          );
+    const systemFee =
+      kind === 'vet' ? 0 : Math.max(0, totalFee - providerAmount);
 
-    if (amount <= 0) {
+    if (totalFee <= 0 && providerAmount <= 0) {
       db.prepare(
         `UPDATE vet_consultations
          SET vet_paid_at = datetime('now'),
@@ -4666,28 +5096,44 @@ export const dbService = {
       .prepare(
         `UPDATE vet_consultations
          SET vet_paid_at = datetime('now'),
-             fee_coins = COALESCE(fee_coins, ?)
+             fee_coins = COALESCE(fee_coins, ?),
+             provider_share_coins = COALESCE(provider_share_coins, ?)
          WHERE id = ? AND vet_paid_at IS NULL`
       )
-      .run(amount, consultId);
+      .run(totalFee, providerAmount, consultId);
     if (marked.changes === 0) {
       return {
         paid: false,
-        amount,
+        amount: providerAmount,
         alreadyPaid: true,
         consult: this.getVetConsultation(consultId),
       };
     }
 
-    this.creditCoins(consult.vetUserId, amount, undefined, {
-      reason: 'درآمد مشاوره دامپزشک',
-      refType: 'vet_consult_payout',
-      refId: consultId,
-    });
+    if (providerAmount > 0) {
+      this.creditCoins(consult.vetUserId, providerAmount, undefined, {
+        reason: split.payoutReason,
+        refType: split.payoutRefType,
+        refId: consultId,
+      });
+    }
+
+    if (systemFee > 0 && split.systemReason) {
+      // Platform fee: ledger only (null user) — do not credit a fake user.
+      this.appendWalletLedger({
+        userId: null,
+        currency: 'coins',
+        amount: systemFee,
+        direction: 'credit',
+        reason: split.systemReason,
+        refType: 'system_fee',
+        refId: consultId,
+      });
+    }
 
     return {
       paid: true,
-      amount,
+      amount: providerAmount,
       alreadyPaid: false,
       consult: this.getVetConsultation(consultId),
     };

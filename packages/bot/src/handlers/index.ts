@@ -11,6 +11,8 @@ import {
   NO_PET_MENU,
   PET_SEEKER_MENU,
   VET_MENU,
+  TRAINER_MENU,
+  SITTER_MENU,
   ADMIN_MENU,
   MY_PETS_SECTION,
   SEARCH_PETS_MENU,
@@ -225,6 +227,10 @@ import {
   handleAdminEntry,
   handleAdminMenuText,
   handleAdminPasswordText,
+  handleAdminPetPhotoAction,
+  handleAdminPetPhotoQueue,
+  handleAdminProviderCredentialAction,
+  handleAdminProviderCredentialQueue,
   handleAdminVetCredentialApprove,
   handleAdminVetCredentialNext,
   handleAdminVetCredentialQueue,
@@ -233,6 +239,16 @@ import {
   handleAdminVetToggle,
   handleAdminVetView,
 } from './admin';
+import {
+  handleProviderCredentialPhoto,
+  handleProviderCredentialStart,
+  handleProviderOnlineToggle,
+  handleProviderRecentClients,
+  handleRequestSeekerAdvice,
+  handleRequestSitter,
+  handleRequestTrainer,
+  handleToggleSeekerAdvice,
+} from './marketplace';
 import {
   ensureVetPhoneVerified,
   handlePhoneVerifyContact,
@@ -579,6 +595,46 @@ export function registerHandlers(bot: Bot): void {
     handleAdminVetCredentialReject(ctx, Number(ctx.match![1]))
   );
 
+  bot.callbackQuery(/^provcred:admin:queue:(trainer|sitter)$/, async (ctx) => {
+    await ctx.answerCallbackQuery().catch(() => undefined);
+    await handleAdminProviderCredentialQueue(ctx, ctx.match![1] as 'trainer' | 'sitter');
+  });
+  bot.callbackQuery(/^provcred:admin:next:(trainer|sitter)$/, async (ctx) => {
+    await ctx.answerCallbackQuery().catch(() => undefined);
+    await handleAdminProviderCredentialQueue(ctx, ctx.match![1] as 'trainer' | 'sitter');
+  });
+  bot.callbackQuery(/^provcred:approve:(trainer|sitter):(\d+)$/, async (ctx) => {
+    await handleAdminProviderCredentialAction(
+      ctx,
+      ctx.match![1] as 'trainer' | 'sitter',
+      Number(ctx.match![2]),
+      true
+    );
+  });
+  bot.callbackQuery(/^provcred:reject:(trainer|sitter):(\d+)$/, async (ctx) => {
+    await handleAdminProviderCredentialAction(
+      ctx,
+      ctx.match![1] as 'trainer' | 'sitter',
+      Number(ctx.match![2]),
+      false
+    );
+  });
+
+  bot.callbackQuery('petphoto:admin:queue', async (ctx) => {
+    await ctx.answerCallbackQuery().catch(() => undefined);
+    await handleAdminPetPhotoQueue(ctx);
+  });
+  bot.callbackQuery('petphoto:admin:next', async (ctx) => {
+    await ctx.answerCallbackQuery().catch(() => undefined);
+    await handleAdminPetPhotoQueue(ctx);
+  });
+  bot.callbackQuery(/^petphoto:approve:(\d+)$/, async (ctx) => {
+    await handleAdminPetPhotoAction(ctx, Number(ctx.match![1]), true);
+  });
+  bot.callbackQuery(/^petphoto:reject:(\d+)$/, async (ctx) => {
+    await handleAdminPetPhotoAction(ctx, Number(ctx.match![1]), false);
+  });
+
   bot.callbackQuery(/^admin:vet:list:(\d+)$/, async (ctx) => {
     await handleAdminVetList(ctx, Number(ctx.match![1]));
   });
@@ -817,6 +873,12 @@ export function registerHandlers(bot: Bot): void {
     }
     if (step === 'vet_credential') {
       if (await handleVetCredentialPhoto(ctx)) return;
+    }
+    if (step === 'trainer_credential') {
+      if (await handleProviderCredentialPhoto(ctx, 'trainer')) return;
+    }
+    if (step === 'sitter_credential') {
+      if (await handleProviderCredentialPhoto(ctx, 'sitter')) return;
     }
     if (step === 'profile_photo') {
       if (await handleProfilePhoto(ctx)) return;
@@ -1123,6 +1185,32 @@ async function handleTextMessage(ctx: Context): Promise<void> {
     case '⚡ مشاوره سریع با پزشک':
     case '⚡ ارتباط سریع با پزشک':
       return handleQuickVet(ctx);
+    case m.requestTrainer:
+      return handleRequestTrainer(ctx);
+    case m.requestSitter:
+      return handleRequestSitter(ctx);
+    case m.seekerAdviceOn:
+      return handleToggleSeekerAdvice(ctx, false);
+    case m.seekerAdviceOff:
+      return handleToggleSeekerAdvice(ctx, true);
+    case s.requestOwnerAdvice:
+      return handleRequestSeekerAdvice(ctx);
+    case TRAINER_MENU.goOnline:
+      return handleProviderOnlineToggle(ctx, 'trainer', true);
+    case TRAINER_MENU.goOffline:
+      return handleProviderOnlineToggle(ctx, 'trainer', false);
+    case TRAINER_MENU.recentClients:
+      return handleProviderRecentClients(ctx, 'trainer');
+    case TRAINER_MENU.uploadCredential:
+      return handleProviderCredentialStart(ctx, 'trainer');
+    case SITTER_MENU.goOnline:
+      return handleProviderOnlineToggle(ctx, 'sitter', true);
+    case SITTER_MENU.goOffline:
+      return handleProviderOnlineToggle(ctx, 'sitter', false);
+    case SITTER_MENU.recentClients:
+      return handleProviderRecentClients(ctx, 'sitter');
+    case SITTER_MENU.uploadCredential:
+      return handleProviderCredentialStart(ctx, 'sitter');
     case m.shop:
     case '🛒 پت شاپ':
     case d.shop:

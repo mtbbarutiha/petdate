@@ -78,13 +78,17 @@ grep -q "WEB_CTA_ONCE_MARKER = 'web-cta-once-v2'" packages/bot/src/web-chat-cta-
   || fail "bot web-cta-once-v2 marker missing"
 ok "web-cta-once-v2"
 
-grep -q "REMOVED_USER_ROLES = \\['pet_sitter', 'community_seeker'\\]" packages/shared/src/petdate.ts \
-  || fail "REMOVED_USER_ROLES (no sitter) missing"
-# Ensure sitter is not offered as an active selectable role in shared enums of live roles
-if grep -n "pet_sitter" packages/shared/src/petdate.ts | grep -v REMOVED | grep -v removed | grep -qi 'role'; then
-  fail "pet_sitter still looks like an active role"
-fi
-ok "no sitter roles (removed only)"
+grep -q "REMOVED_USER_ROLES = \\['community_seeker'\\]" packages/shared/src/petdate.ts \
+  || fail "REMOVED_USER_ROLES (community_seeker only) missing"
+# pet_sitter + trainer are live roles again (PR #83 marketplace)
+grep -q "'pet_sitter'" packages/shared/src/petdate.ts \
+  || fail "pet_sitter missing from shared roles"
+grep -q "'trainer'" packages/shared/src/petdate.ts \
+  || fail "trainer missing from shared roles"
+grep -q "pet_sitter" packages/shared/src/petdate.ts \
+  && grep -q "USER_ROLES" packages/shared/src/petdate.ts \
+  || fail "USER_ROLES / pet_sitter markers missing"
+ok "marketplace roles (trainer + pet_sitter live; community_seeker removed)"
 
 grep -q 'DATABASE_PATH' ecosystem.config.cjs \
   || fail "ecosystem.config.cjs must define single DATABASE_PATH"

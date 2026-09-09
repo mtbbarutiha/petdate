@@ -74,6 +74,12 @@ const EarningsPage = lazy(() =>
 const VetConsultPage = lazy(() =>
   import('./pages/VetConsultPage').then((m) => ({ default: m.VetConsultPage })),
 );
+const TrainerConsultPage = lazy(() =>
+  import('./pages/ServiceConsultPage').then((m) => ({ default: m.TrainerConsultPage })),
+);
+const SitterConsultPage = lazy(() =>
+  import('./pages/ServiceConsultPage').then((m) => ({ default: m.SitterConsultPage })),
+);
 const VetChatPage = lazy(() =>
   import('./pages/VetChatPage').then((m) => ({ default: m.VetChatPage })),
 );
@@ -101,6 +107,11 @@ const AdminPetFormPage = lazy(() =>
 );
 const AdminVerificationPage = lazy(() =>
   import('./admin/pages/AdminVerificationPage').then((m) => ({ default: m.AdminVerificationPage })),
+);
+const AdminMarketplaceModerationPage = lazy(() =>
+  import('./admin/pages/AdminMarketplaceModerationPage').then((m) => ({
+    default: m.AdminMarketplaceModerationPage,
+  })),
 );
 const AdminLogsPage = lazy(() =>
   import('./admin/pages/AdminLogsPage').then((m) => ({ default: m.AdminLogsPage })),
@@ -215,6 +226,8 @@ export default function App() {
               <Route path="wallet/earn" element={<EarningsPage />} />
               <Route path="earn" element={<Navigate to="/wallet/earn" replace />} />
               <Route path="vet-consult" element={<VetConsultPage />} />
+              <Route path="trainer-consult" element={<TrainerConsultPage />} />
+              <Route path="sitter-consult" element={<SitterConsultPage />} />
               <Route path="vet-chats" element={<Navigate to="/vet-consult" replace />} />
               <Route path="vet-chats/:consultId" element={<VetChatPage />} />
             </Route>
@@ -232,6 +245,7 @@ export default function App() {
                 <Route path="matches" element={<Navigate to="/admin/playdates" replace />} />
                 <Route path="consults" element={<AdminConsultsPage />} />
                 <Route path="verification" element={<AdminVerificationPage />} />
+                <Route path="marketplace-moderation" element={<AdminMarketplaceModerationPage />} />
                 <Route path="shop/products" element={<AdminShopProductsPage />} />
                 <Route path="shop/products/new" element={<AdminShopProductFormPage />} />
                 <Route path="shop/products/:id" element={<AdminShopProductFormPage />} />

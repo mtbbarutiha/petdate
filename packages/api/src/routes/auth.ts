@@ -539,9 +539,98 @@ authRouter.patch('/vet-online', (req, res) => {
     });
     return;
   }
+  if (online) {
+    const cred = existing.vetCredentialStatus ?? 'none';
+    if (cred === 'none') {
+      res.status(403).json({
+        error: 'اول مدرک دامپزشکی‌ات را آپلود کن تا پنل فعال شود.',
+        reason: 'credential_required',
+      });
+      return;
+    }
+    if (cred !== 'verified') {
+      res.status(403).json({
+        error: 'مدرک دامپزشکی هنوز تأیید نشده؛ بعد از تأیید ادمین می‌توانی آنلاین شوی.',
+        reason: 'credential_pending',
+      });
+      return;
+    }
+  }
   const updated = dbService.setVetOnline(Number(session.user.id), online);
   if (!updated) {
     res.status(400).json({ error: 'تغییر وضعیت آنلاین ممکن نشد' });
+    return;
+  }
+  res.json({ ok: true, user: dbService.enrichUserProfileCard(updated) });
+});
+
+/** آنلاین مربی / پرستار (وب) */
+authRouter.patch('/provider-online', (req, res) => {
+  const session = getUserFromBearer(req.header('authorization') ?? undefined);
+  if (!session) {
+    res.status(401).json({ error: 'وارد نشده‌اید' });
+    return;
+  }
+  const kindRaw = String(req.body?.kind ?? '').trim();
+  const kind = kindRaw === 'sitter' ? 'sitter' : kindRaw === 'trainer' ? 'trainer' : null;
+  if (!kind) {
+    res.status(400).json({ error: 'kind باید trainer یا sitter باشد' });
+    return;
+  }
+  const role = kind === 'trainer' ? 'trainer' : 'pet_sitter';
+  if (!userHasRole(session.user, role)) {
+    res.status(403).json({ error: 'نقش لازم را نداری' });
+    return;
+  }
+  const raw = req.body?.online;
+  const online =
+    raw === true || raw === 1 || raw === '1' || raw === 'true';
+  const existing = dbService.getUserById(session.user.id) ?? session.user;
+  const enabled =
+    kind === 'trainer' ? existing.trainerEnabled !== false : existing.sitterEnabled !== false;
+  if (online && !enabled) {
+    res.status(403).json({
+      error: 'حساب شما توسط مدیر غیرفعال شده است',
+      reason: 'provider_disabled',
+    });
+    return;
+  }
+  const cred =
+    kind === 'trainer'
+      ? existing.trainerCredentialStatus ?? 'none'
+      : existing.sitterCredentialStatus ?? 'none';
+  if (online && cred !== 'verified') {
+    res.status(403).json({
+      error:
+        cred === 'none'
+          ? 'اول مدرک را آپلود کن تا پنل فعال شود.'
+          : 'مدرک هنوز تأیید نشده؛ بعد از تأیید ادمین آنلاین شو.',
+      reason: cred === 'none' ? 'credential_required' : 'credential_pending',
+    });
+    return;
+  }
+  const updated = dbService.setProviderOnline(session.user.id, kind, online);
+  if (!updated) {
+    res.status(400).json({ error: 'تغییر وضعیت آنلاین ممکن نشد' });
+    return;
+  }
+  res.json({ ok: true, user: dbService.enrichUserProfileCard(updated) });
+});
+
+authRouter.patch('/accept-seeker-advice', (req, res) => {
+  const session = getUserFromBearer(req.header('authorization') ?? undefined);
+  if (!session) {
+    res.status(401).json({ error: 'وارد نشده‌اید' });
+    return;
+  }
+  if (!userHasRole(session.user, 'pet_owner')) {
+    res.status(403).json({ error: 'این تنظیم مخصوص صاحب پت است' });
+    return;
+  }
+  const accept = Boolean(req.body?.accept ?? req.body?.acceptSeekerAdvice);
+  const updated = dbService.setAcceptSeekerAdvice(session.user.id, accept);
+  if (!updated) {
+    res.status(400).json({ error: 'ثبت تنظیم ممکن نشد' });
     return;
   }
   res.json({ ok: true, user: dbService.enrichUserProfileCard(updated) });

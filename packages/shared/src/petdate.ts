@@ -5,10 +5,11 @@ export type UserRole =
   | 'vet'
   | 'no_pet'
   | 'pet_seeker'
-  | 'trainer';
+  | 'trainer'
+  | 'pet_sitter';
 
 /** Legacy roles removed from UX — migrated to pet_owner when they were the only role. */
-export const REMOVED_USER_ROLES = ['pet_sitter', 'community_seeker'] as const;
+export const REMOVED_USER_ROLES = ['community_seeker'] as const;
 export type RemovedUserRole = (typeof REMOVED_USER_ROLES)[number];
 
 export type OnboardingStatus =
@@ -236,8 +237,9 @@ export function faceVerifyIntroText(rewardCoins: number): string {
   ].join('\n');
 }
 
-/** وضعیت مدرک دامپزشک */
+/** وضعیت مدرک دامپزشک / مربی / پرستار */
 export type VetCredentialStatus = 'none' | 'pending' | 'verified';
+export type ProviderCredentialStatus = VetCredentialStatus;
 
 export const VET_CREDENTIAL_STATUSES: VetCredentialStatus[] = [
   'none',
@@ -249,6 +251,38 @@ export const VET_CREDENTIAL_STATUS_LABELS: Record<VetCredentialStatus, string> =
   none: 'مدرک ارسال نشده',
   pending: 'در انتظار بررسی مدرک',
   verified: 'مدرک تأیید شده',
+};
+
+/** نوع سرویس مشاوره روی جدول vet_consultations */
+export type ConsultServiceKind = 'vet' | 'trainer' | 'sitter' | 'seeker_advice';
+
+export const CONSULT_SERVICE_KINDS: ConsultServiceKind[] = [
+  'vet',
+  'trainer',
+  'sitter',
+  'seeker_advice',
+];
+
+export const CONSULT_SERVICE_KIND_LABELS: Record<ConsultServiceKind, string> = {
+  vet: 'مشاوره دامپزشک',
+  trainer: 'مشاوره مربی',
+  sitter: 'ارتباط پرستار پت',
+  seeker_advice: 'مشورت خرید پت',
+};
+
+/** وضعیت تأیید عکس عمومی (پت / آواتار) */
+export type PhotoModerationStatus = 'pending' | 'approved' | 'rejected';
+
+export const PHOTO_MODERATION_STATUSES: PhotoModerationStatus[] = [
+  'pending',
+  'approved',
+  'rejected',
+];
+
+export const PHOTO_MODERATION_STATUS_LABELS: Record<PhotoModerationStatus, string> = {
+  pending: 'در انتظار تأیید',
+  approved: 'تأیید شده',
+  rejected: 'رد شده',
 };
 
 export interface PetdateUser {
@@ -305,6 +339,18 @@ export interface PetdateUser {
   vetEnabled?: boolean;
   /** مبلغ ویزیت دامپزشک به سکه (قابل تنظیم از پنل پزشک) */
   visitFeeCoins?: number;
+  /** مدرک / آنلاین / فعال بودن مربی */
+  trainerCredentialFileId?: string;
+  trainerCredentialStatus?: ProviderCredentialStatus;
+  trainerOnline?: boolean;
+  trainerEnabled?: boolean;
+  /** مدرک / آنلاین / فعال بودن پرستار پت */
+  sitterCredentialFileId?: string;
+  sitterCredentialStatus?: ProviderCredentialStatus;
+  sitterOnline?: boolean;
+  sitterEnabled?: boolean;
+  /** صاحب پت: پذیرفتن درخواست مشورت از دنبال‌کننده‌های بدون پت */
+  acceptSeekerAdvice?: boolean;
   /** آخرین عرض جغرافیایی اشتراک‌گذاری‌شده */
   lat?: number;
   /** آخرین طول جغرافیایی اشتراک‌گذاری‌شده */
@@ -361,6 +407,8 @@ export interface PetProfile {
   personality: Record<string, unknown>;
   health: Record<string, unknown>;
   imageUrl?: string;
+  /** تأیید ادمین قبل از نمایش عمومی عکس پت */
+  photoModerationStatus?: PhotoModerationStatus;
   city?: string;
   neighborhood?: string;
   /** از پروفایل صاحب پت (برای مچ همبازی) */
@@ -485,10 +533,14 @@ export interface VetConsultation {
   vetUserId: number;
   patientUserId: number;
   petId?: number;
+  /** نوع سرویس — پیش‌فرض vet برای رکوردهای قدیمی */
+  serviceKind?: ConsultServiceKind;
   status: VetConsultStatus;
   notes?: string;
   /** مبلغ ویزیت توافق‌شده هنگام ایجاد درخواست (سکه) */
   feeCoins?: number;
+  /** سهم ارائه‌دهنده از مبلغ کل (سکه) — برای trainer/sitter/seeker */
+  providerShareCoins?: number;
   /** زمان واریز درآمد به دامپزشک (idempotent payout) */
   vetPaidAt?: string;
   /** چت امن برای پیام‌های مشاوره (protect_content در تلگرام) */
@@ -786,6 +838,8 @@ export type BotStep =
   | 'profile_interests'
   | 'profile_edit_menu'
   | 'vet_credential'
+  | 'trainer_credential'
+  | 'sitter_credential'
   | 'search_species'
   | 'search_breed'
   | 'awaiting_location_for_nearby'
@@ -855,6 +909,7 @@ export const USER_ROLES: UserRole[] = [
   'no_pet',
   'pet_seeker',
   'trainer',
+  'pet_sitter',
 ];
 
 export const USER_ROLE_LABELS: Record<UserRole, string> = {
@@ -863,6 +918,7 @@ export const USER_ROLE_LABELS: Record<UserRole, string> = {
   no_pet: '🏠 بدون پت',
   pet_seeker: '🔍 دنبال پت',
   trainer: '🎓 مربی',
+  pet_sitter: '🏠 پرستار پت',
 };
 
 export const ROLE_CONFIRM_LABEL = '✅ ثبت نقش‌ها';
@@ -878,7 +934,8 @@ export const ROLE_DASHBOARD_PATHS: Record<UserRole, string> = {
   vet: '/vet-consult',
   no_pet: '/home',
   pet_seeker: '/home',
-  trainer: '/home',
+  trainer: '/trainer-consult',
+  pet_sitter: '/sitter-consult',
 };
 
 /**
