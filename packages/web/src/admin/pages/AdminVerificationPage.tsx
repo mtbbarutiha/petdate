@@ -113,11 +113,31 @@ export function AdminVerificationPage() {
               {user.telegramId ? ` · tg ${user.telegramId}` : ''}
               {user.username ? ` · @${user.username}` : ''}
             </p>
-            {(user.verificationPhotoFileId || user.avatarUrl) && (
-              <p className="muted" style={{ fontSize: 12, wordBreak: 'break-all' }}>
-                file: {user.verificationPhotoFileId || user.avatarUrl}
-              </p>
-            )}
+            {(user.verificationPhotoFileId || user.avatarUrl) && (() => {
+              const raw = String(user.verificationPhotoFileId || user.avatarUrl || '').trim();
+              const src = /^https?:\/\//i.test(raw)
+                ? raw
+                : raw.startsWith('/')
+                  ? `${API_BASE}${raw}`
+                  : `${API_BASE}/api/media/telegram/${encodeURIComponent(raw)}`;
+              return (
+                <div style={{ marginTop: 10 }}>
+                  <a href={src} target="_blank" rel="noreferrer">
+                    <img
+                      src={src}
+                      alt={`احراز ${user.name}`}
+                      style={{
+                        maxWidth: 220,
+                        maxHeight: 280,
+                        borderRadius: 10,
+                        border: '1px solid rgba(0,0,0,0.08)',
+                        display: 'block',
+                      }}
+                    />
+                  </a>
+                </div>
+              );
+            })()}
             <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
               <button
                 type="button"

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { API_BASE } from '../api';
+import { API_BASE, adminFetch } from '../api';
 import type { User } from '@petdate/shared';
 
 type PetRow = {
@@ -10,16 +10,27 @@ type PetRow = {
   ownerId: number;
 };
 
-async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(init?.headers || {}),
-    },
-  });
-  if (!res.ok) throw new Error(await res.text());
-  return res.json() as Promise<T>;
+function looksLikeTelegramFileId(value: string): boolean {
+  const v = value.trim();
+  if (!v || /^https?:\/\//i.test(v) || v.startsWith('/')) return false;
+  if (/^(AgAC|AQAD|BAAC|BQAC|AwAC|CQAC|DQAC)/.test(v)) return true;
+  return /^[A-Za-z0-9_-]{24,}$/.test(v);
+}
+
+/** Resolve credential storage ref → browser-loadable URL. */
+function credentialSrc(fileRef?: string | null): string | null {
+  const raw = String(fileRef ?? '').trim();
+  if (!raw) return null;
+  if (/^https?:\/\//i.test(raw)) return raw;
+  if (raw.startsWith('/')) return `${API_BASE}${raw}`;
+  if (looksLikeTelegramFileId(raw)) {
+    return `${API_BASE}/api/media/telegram/${encodeURIComponent(raw)}`;
+  }
+  return null;
+}
+
+function isPdfRef(fileRef?: string | null): boolean {
+  return /\.pdf($|\?)/i.test(String(fileRef ?? ''));
 }
 
 export function AdminMarketplaceModerationPage() {
@@ -35,10 +46,10 @@ export function AdminMarketplaceModerationPage() {
     setError(null);
     try {
       const [v, t, s, p] = await Promise.all([
-        fetchJson<User[]>('/api/users/vet-credentials/pending'),
-        fetchJson<User[]>('/api/users/provider-credentials/pending?kind=trainer'),
-        fetchJson<User[]>('/api/users/provider-credentials/pending?kind=sitter'),
-        fetchJson<PetRow[]>('/api/users/pet-photos/pending'),
+        adminFetch<User[]>('/api/users/vet-credentials/pending'),
+        adminFetch<User[]>('/api/users/provider-credentials/pending?kind=trainer'),
+        adminFetch<User[]>('/api/users/provider-credentials/pending?kind=sitter'),
+        adminFetch<PetRow[]>('/api/users/pet-photos/pending'),
       ]);
       setVets(v);
       setTrainers(t);
@@ -56,7 +67,7 @@ export function AdminMarketplaceModerationPage() {
   async function actVet(id: number, approve: boolean) {
     setBusyId(`vet-${id}`);
     try {
-      await fetchJson(`/api/users/${id}/vet-credential/${approve ? 'approve' : 'reject'}`, {
+      await adminFetch(`/api/users/${id}/vet-credential/${approve ? 'approve' : 'reject'}`, {
         method: 'POST',
         body: '{}',
       });
@@ -71,7 +82,7 @@ export function AdminMarketplaceModerationPage() {
   async function actProvider(id: number, kind: 'trainer' | 'sitter', approve: boolean) {
     setBusyId(`${kind}-${id}`);
     try {
-      await fetchJson(
+      await adminFetch(
         `/api/users/${id}/provider-credential/${approve ? 'approve' : 'reject'}`,
         {
           method: 'POST',
@@ -89,7 +100,7 @@ export function AdminMarketplaceModerationPage() {
   async function actPhoto(id: number, approve: boolean) {
     setBusyId(`photo-${id}`);
     try {
-      await fetchJson(`/api/users/pets/${id}/photo-moderation`, {
+      await adminFetch(`/api/users/pets/${id}/photo-moderation`, {
         method: 'POST',
         body: JSON.stringify({ status: approve ? 'approved' : 'rejected' }),
       });
@@ -106,8 +117,15 @@ export function AdminMarketplaceModerationPage() {
 
   return (
     <div className="admin-page" dir="rtl">
-      <h1>تأیید مدارک و عکس‌ها</h1>
-      <p>صف سریع تأیید مدرک دامپزشک / مربی / پرستار و عکس پت‌ها.</p>
+      <header className="admin-header">
+        <div>
+          <h1>تأیید مدارک و عکس‌ها</h1>
+          <p>صف سریع تأیید مدرک دامپزشک / مربی / پرستار و عکس پت‌ها.</p>
+        </div>
+        <button type="button" className="admin-btn" onClick={() => void load()}>
+          بروزرسانی
+        </button>
+      </header>
       {error ? <p className="admin-error">{error}</p> : null}
 
       <div className="admin-tabs" style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
@@ -140,97 +158,126 @@ export function AdminMarketplaceModerationPage() {
                 : tab === 'sitter'
                   ? u.sitterCredentialFileId
                   : u.vetCredentialFileId;
-            const webUrl =
-              fileRef && String(fileRef).startsWith('/api/')
-                ? `${API_BASE}${fileRef}`
-                : null;
+            const src = credentialSrc(fileRef);
+            const pdf = isPdfRef(fileRef);
             return (
-            <li key={u.id} style={{ marginBottom: 12 }}>
-              <strong>{u.name}</strong> · #{u.id}
-              {u.telegramId ? ` · TG ${u.telegramId}` : ''}
-              {webUrl ? (
-                <div style={{ marginTop: 6 }}>
-                  {String(fileRef).toLowerCase().endsWith('.pdf') ? (
-                    <a href={webUrl} target="_blank" rel="noreferrer">
+              <li key={u.id} className="admin-credential-row" style={{ marginBottom: 16 }}>
+                <strong>{u.name}</strong> · #{u.id}
+                {u.telegramId ? ` · TG ${u.telegramId}` : ''}
+                <div className="admin-credential-preview" style={{ marginTop: 8 }}>
+                  {src && !pdf ? (
+                    <a href={src} target="_blank" rel="noreferrer" title="باز کردن تمام‌صفحه">
+                      <img
+                        src={src}
+                        alt={`مدرک ${u.name}`}
+                        style={{
+                          display: 'block',
+                          maxWidth: 280,
+                          maxHeight: 360,
+                          width: 'auto',
+                          height: 'auto',
+                          borderRadius: 10,
+                          border: '1px solid rgba(0,0,0,0.08)',
+                          background: '#f6f6f8',
+                        }}
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).style.display = 'none';
+                          const fallback = e.currentTarget.nextElementSibling as HTMLElement | null;
+                          if (fallback) fallback.hidden = false;
+                        }}
+                      />
+                      <span hidden style={{ color: '#b91c1c', fontSize: 13 }}>
+                        بارگذاری تصویر ناموفق بود —{' '}
+                        <a href={src} target="_blank" rel="noreferrer">
+                          لینک مستقیم
+                        </a>
+                      </span>
+                    </a>
+                  ) : null}
+                  {src && pdf ? (
+                    <a href={src} target="_blank" rel="noreferrer" className="admin-btn primary">
                       مشاهده PDF مدرک
                     </a>
-                  ) : (
-                    <img
-                      src={webUrl}
-                      alt={`مدرک ${u.name}`}
-                      style={{ maxWidth: 220, borderRadius: 8 }}
-                    />
-                  )}
+                  ) : null}
+                  {!src ? (
+                    <p className="muted" style={{ margin: 0 }}>
+                      فایل مدرک در دسترس نیست.
+                    </p>
+                  ) : null}
                 </div>
-              ) : fileRef ? (
-                <p style={{ marginTop: 6, opacity: 0.75 }}>فایل تلگرام (از صف ربات ببین)</p>
-              ) : null}
-              <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
-                <button
-                  type="button"
-                  className="admin-btn primary"
-                  disabled={busyId != null}
-                  onClick={() =>
-                    void (tab === 'vet'
-                      ? actVet(u.id, true)
-                      : actProvider(u.id, tab, true))
-                  }
-                >
-                  تأیید
-                </button>
-                <button
-                  type="button"
-                  className="admin-btn"
-                  disabled={busyId != null}
-                  onClick={() =>
-                    void (tab === 'vet'
-                      ? actVet(u.id, false)
-                      : actProvider(u.id, tab, false))
-                  }
-                >
-                  رد
-                </button>
-              </div>
-            </li>
+                <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                  <button
+                    type="button"
+                    className="admin-btn primary"
+                    disabled={busyId != null}
+                    onClick={() =>
+                      void (tab === 'vet' ? actVet(u.id, true) : actProvider(u.id, tab, true))
+                    }
+                  >
+                    تأیید
+                  </button>
+                  <button
+                    type="button"
+                    className="admin-btn"
+                    disabled={busyId != null}
+                    onClick={() =>
+                      void (tab === 'vet' ? actVet(u.id, false) : actProvider(u.id, tab, false))
+                    }
+                  >
+                    رد
+                  </button>
+                </div>
+              </li>
             );
           })}
         </ul>
       ) : (
         <ul className="admin-list">
           {!photos.length ? <li>صف خالی است.</li> : null}
-          {photos.map((p) => (
-            <li key={p.id} style={{ marginBottom: 12 }}>
-              <strong>{p.name}</strong> · پت #{p.id}
-              {p.ownerName ? ` · صاحب: ${p.ownerName}` : ''}
-              {p.imageUrl ? (
-                <div style={{ marginTop: 6 }}>
-                  <img
-                    src={p.imageUrl.startsWith('http') ? p.imageUrl : `${API_BASE}${p.imageUrl}`}
-                    alt={p.name}
-                    style={{ maxWidth: 180, borderRadius: 8 }}
-                  />
+          {photos.map((p) => {
+            const src = p.imageUrl
+              ? p.imageUrl.startsWith('http')
+                ? p.imageUrl
+                : p.imageUrl.startsWith('/')
+                  ? `${API_BASE}${p.imageUrl}`
+                  : credentialSrc(p.imageUrl)
+              : null;
+            return (
+              <li key={p.id} style={{ marginBottom: 12 }}>
+                <strong>{p.name}</strong> · پت #{p.id}
+                {p.ownerName ? ` · صاحب: ${p.ownerName}` : ''}
+                {src ? (
+                  <div style={{ marginTop: 6 }}>
+                    <a href={src} target="_blank" rel="noreferrer">
+                      <img
+                        src={src}
+                        alt={p.name}
+                        style={{ maxWidth: 180, borderRadius: 8 }}
+                      />
+                    </a>
+                  </div>
+                ) : null}
+                <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+                  <button
+                    type="button"
+                    className="admin-btn primary"
+                    disabled={busyId != null}
+                    onClick={() => void actPhoto(p.id, true)}
+                  >
+                    تأیید عکس
+                  </button>
+                  <button
+                    type="button"
+                    className="admin-btn"
+                    disabled={busyId != null}
+                    onClick={() => void actPhoto(p.id, false)}
+                  >
+                    رد
+                  </button>
                 </div>
-              ) : null}
-              <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
-                <button
-                  type="button"
-                  className="admin-btn primary"
-                  disabled={busyId != null}
-                  onClick={() => void actPhoto(p.id, true)}
-                >
-                  تأیید عکس
-                </button>
-                <button
-                  type="button"
-                  className="admin-btn"
-                  disabled={busyId != null}
-                  onClick={() => void actPhoto(p.id, false)}
-                >
-                  رد
-                </button>
-              </div>
-            </li>
-          ))}
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>
