@@ -887,6 +887,11 @@ usersRouter.get('/vet-credentials/pending', (_req, res) => {
   res.json(dbService.listPendingVetCredentials());
 });
 
+/** آرشیو مدارک دامپزشک تأییدشده */
+usersRouter.get('/vet-credentials/verified', (_req, res) => {
+  res.json(dbService.listVerifiedVetCredentials());
+});
+
 /** آپلود مدرک دامپزشک */
 usersRouter.post('/telegram/:telegramId/vet-credential', (req, res) => {
   const user = dbService.getUserByTelegramId(req.params.telegramId);
@@ -934,6 +939,17 @@ usersRouter.get('/provider-credentials/pending', (req, res) => {
     return;
   }
   res.json(dbService.listPendingProviderCredentials(kind));
+});
+
+/** آرشیو مدارک مربی / پرستار تأییدشده */
+usersRouter.get('/provider-credentials/verified', (req, res) => {
+  const kindRaw = String(req.query.kind ?? '').trim();
+  const kind = kindRaw === 'sitter' ? 'sitter' : kindRaw === 'trainer' ? 'trainer' : null;
+  if (!kind) {
+    res.status(400).json({ error: 'kind باید trainer یا sitter باشد' });
+    return;
+  }
+  res.json(dbService.listVerifiedProviderCredentials(kind));
 });
 
 usersRouter.post('/telegram/:telegramId/provider-credential', (req, res) => {

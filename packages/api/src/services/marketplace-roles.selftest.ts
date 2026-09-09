@@ -55,8 +55,30 @@ async function main() {
   const online = dbService.setProviderOnline(trainer.id, 'trainer', true);
   assert(online?.trainerOnline === true, 'online after verify');
 
+  const archiveTrainer = dbService.listVerifiedProviderCredentials('trainer');
+  assert(
+    archiveTrainer.some((u) => u.id === trainer.id && u.trainerCredentialFileId === 'file_x'),
+    'trainer credential archived after approve'
+  );
+
   const listed = dbService.listOnlineProvidersForQuickConnect('trainer');
   assert(listed.some((u) => u.id === trainer.id), 'listed online');
+
+  const tgVet = `selftest_mkt_vet_${Date.now()}`;
+  const { user: vet } = dbService.findOrCreateUser({
+    telegramId: tgVet,
+    name: 'VetDoc',
+    username: 'vetdoc',
+  });
+  dbService.setUserRoles(vet.id, ['vet']);
+  dbService.submitVetCredential(vet.id, 'vet_file_y');
+  dbService.approveVetCredential(vet.id);
+  const archiveVet = dbService.listVerifiedVetCredentials();
+  assert(
+    archiveVet.some((u) => u.id === vet.id && u.vetCredentialFileId === 'vet_file_y'),
+    'vet credential archived after approve'
+  );
+  dbService.deleteUserByTelegramId(tgVet);
 
   // Create consult + pay split
   const consult = dbService.createVetConsultation({

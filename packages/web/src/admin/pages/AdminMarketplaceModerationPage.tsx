@@ -10,6 +10,9 @@ type PetRow = {
   ownerId: number;
 };
 
+type CredTab = 'vet' | 'trainer' | 'sitter' | 'photos';
+type ViewMode = 'queue' | 'archive';
+
 function looksLikeTelegramFileId(value: string): boolean {
   const v = value.trim();
   if (!v || /^https?:\/\//i.test(v) || v.startsWith('/')) return false;
@@ -33,11 +36,21 @@ function isPdfRef(fileRef?: string | null): boolean {
   return /\.pdf($|\?)/i.test(String(fileRef ?? ''));
 }
 
+function credentialFileRef(u: User, tab: 'vet' | 'trainer' | 'sitter'): string | undefined {
+  if (tab === 'trainer') return u.trainerCredentialFileId;
+  if (tab === 'sitter') return u.sitterCredentialFileId;
+  return u.vetCredentialFileId;
+}
+
 export function AdminMarketplaceModerationPage() {
-  const [tab, setTab] = useState<'vet' | 'trainer' | 'sitter' | 'photos'>('vet');
-  const [vets, setVets] = useState<User[]>([]);
-  const [trainers, setTrainers] = useState<User[]>([]);
-  const [sitters, setSitters] = useState<User[]>([]);
+  const [tab, setTab] = useState<CredTab>('vet');
+  const [mode, setMode] = useState<ViewMode>('queue');
+  const [pendingVets, setPendingVets] = useState<User[]>([]);
+  const [pendingTrainers, setPendingTrainers] = useState<User[]>([]);
+  const [pendingSitters, setPendingSitters] = useState<User[]>([]);
+  const [archiveVets, setArchiveVets] = useState<User[]>([]);
+  const [archiveTrainers, setArchiveTrainers] = useState<User[]>([]);
+  const [archiveSitters, setArchiveSitters] = useState<User[]>([]);
   const [photos, setPhotos] = useState<PetRow[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
@@ -45,15 +58,21 @@ export function AdminMarketplaceModerationPage() {
   const load = useCallback(async () => {
     setError(null);
     try {
-      const [v, t, s, p] = await Promise.all([
+      const [pv, pt, ps, av, at, as, p] = await Promise.all([
         adminFetch<User[]>('/api/users/vet-credentials/pending'),
         adminFetch<User[]>('/api/users/provider-credentials/pending?kind=trainer'),
         adminFetch<User[]>('/api/users/provider-credentials/pending?kind=sitter'),
+        adminFetch<User[]>('/api/users/vet-credentials/verified'),
+        adminFetch<User[]>('/api/users/provider-credentials/verified?kind=trainer'),
+        adminFetch<User[]>('/api/users/provider-credentials/verified?kind=sitter'),
         adminFetch<PetRow[]>('/api/users/pet-photos/pending'),
       ]);
-      setVets(v);
-      setTrainers(t);
-      setSitters(s);
+      setPendingVets(pv);
+      setPendingTrainers(pt);
+      setPendingSitters(ps);
+      setArchiveVets(av);
+      setArchiveTrainers(at);
+      setArchiveSitters(as);
       setPhotos(p);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'بارگذاری ناموفق');
@@ -112,15 +131,38 @@ export function AdminMarketplaceModerationPage() {
     }
   }
 
+  const isArchive = mode === 'archive' && tab !== 'photos';
   const list =
-    tab === 'vet' ? vets : tab === 'trainer' ? trainers : tab === 'sitter' ? sitters : [];
+    tab === 'photos'
+      ? []
+      : tab === 'vet'
+        ? isArchive
+          ? archiveVets
+          : pendingVets
+        : tab === 'trainer'
+          ? isArchive
+            ? archiveTrainers
+            : pendingTrainers
+          : isArchive
+            ? archiveSitters
+            : pendingSitters;
+
+  const tabCounts = {
+    vet: mode === 'archive' ? archiveVets.length : pendingVets.length,
+    trainer: mode === 'archive' ? archiveTrainers.length : pendingTrainers.length,
+    sitter: mode === 'archive' ? archiveSitters.length : pendingSitters.length,
+    photos: photos.length,
+  };
 
   return (
     <div className="admin-page" dir="rtl">
       <header className="admin-header">
         <div>
           <h1>تأیید مدارک و عکس‌ها</h1>
-          <p>صف سریع تأیید مدرک دامپزشک / مربی / پرستار و عکس پت‌ها.</p>
+          <p>
+            صف سریع تأیید مدرک دامپزشک / مربی / پرستار و عکس پت‌ها — مدارک تأییدشده در آرشیو
+            می‌مانند.
+          </p>
         </div>
         <button type="button" className="admin-btn" onClick={() => void load()}>
           بروزرسانی
@@ -128,13 +170,40 @@ export function AdminMarketplaceModerationPage() {
       </header>
       {error ? <p className="admin-error">{error}</p> : null}
 
-      <div className="admin-tabs" style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
+      <div
+        className="admin-tabs"
+        style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}
+      >
         {(
           [
-            ['vet', `دامپزشک (${vets.length})`],
-            ['trainer', `مربی (${trainers.length})`],
-            ['sitter', `پرستار (${sitters.length})`],
-            ['photos', `عکس پت (${photos.length})`],
+            ['queue', 'صف بررسی'],
+            ['archive', 'آرشیو تأییدشده'],
+          ] as const
+        ).map(([key, label]) => (
+          <button
+            key={key}
+            type="button"
+            className={mode === key ? 'admin-btn primary' : 'admin-btn'}
+            onClick={() => {
+              setMode(key);
+              if (key === 'archive' && tab === 'photos') setTab('vet');
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div
+        className="admin-tabs"
+        style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}
+      >
+        {(
+          [
+            ['vet', `دامپزشک (${tabCounts.vet})`],
+            ['trainer', `مربی (${tabCounts.trainer})`],
+            ['sitter', `پرستار (${tabCounts.sitter})`],
+            ...(mode === 'queue' ? ([['photos', `عکس پت (${tabCounts.photos})`]] as const) : []),
           ] as const
         ).map(([key, label]) => (
           <button
@@ -150,20 +219,31 @@ export function AdminMarketplaceModerationPage() {
 
       {tab !== 'photos' ? (
         <ul className="admin-list">
-          {!list.length ? <li>صف خالی است.</li> : null}
+          {!list.length ? (
+            <li>{isArchive ? 'آرشیو خالی است.' : 'صف خالی است.'}</li>
+          ) : null}
           {list.map((u) => {
-            const fileRef =
-              tab === 'trainer'
-                ? u.trainerCredentialFileId
-                : tab === 'sitter'
-                  ? u.sitterCredentialFileId
-                  : u.vetCredentialFileId;
+            const fileRef = credentialFileRef(u, tab);
             const src = credentialSrc(fileRef);
             const pdf = isPdfRef(fileRef);
             return (
               <li key={u.id} className="admin-credential-row" style={{ marginBottom: 16 }}>
                 <strong>{u.name}</strong> · #{u.id}
                 {u.telegramId ? ` · TG ${u.telegramId}` : ''}
+                {isArchive ? (
+                  <span
+                    style={{
+                      marginInlineStart: 8,
+                      fontSize: 12,
+                      color: '#166534',
+                      background: '#dcfce7',
+                      padding: '2px 8px',
+                      borderRadius: 999,
+                    }}
+                  >
+                    تأیید شده
+                  </span>
+                ) : null}
                 <div className="admin-credential-preview" style={{ marginTop: 8 }}>
                   {src && !pdf ? (
                     <a href={src} target="_blank" rel="noreferrer" title="باز کردن تمام‌صفحه">
@@ -205,28 +285,30 @@ export function AdminMarketplaceModerationPage() {
                     </p>
                   ) : null}
                 </div>
-                <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-                  <button
-                    type="button"
-                    className="admin-btn primary"
-                    disabled={busyId != null}
-                    onClick={() =>
-                      void (tab === 'vet' ? actVet(u.id, true) : actProvider(u.id, tab, true))
-                    }
-                  >
-                    تأیید
-                  </button>
-                  <button
-                    type="button"
-                    className="admin-btn"
-                    disabled={busyId != null}
-                    onClick={() =>
-                      void (tab === 'vet' ? actVet(u.id, false) : actProvider(u.id, tab, false))
-                    }
-                  >
-                    رد
-                  </button>
-                </div>
+                {!isArchive ? (
+                  <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                    <button
+                      type="button"
+                      className="admin-btn primary"
+                      disabled={busyId != null}
+                      onClick={() =>
+                        void (tab === 'vet' ? actVet(u.id, true) : actProvider(u.id, tab, true))
+                      }
+                    >
+                      تأیید
+                    </button>
+                    <button
+                      type="button"
+                      className="admin-btn"
+                      disabled={busyId != null}
+                      onClick={() =>
+                        void (tab === 'vet' ? actVet(u.id, false) : actProvider(u.id, tab, false))
+                      }
+                    >
+                      رد
+                    </button>
+                  </div>
+                ) : null}
               </li>
             );
           })}
