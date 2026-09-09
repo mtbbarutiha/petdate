@@ -110,6 +110,50 @@ async function main() {
   );
   assert(!biteTip.startsWith(biteQ) && !/گفتی.*گاز/.test(biteTip), 'bite tip must not paraphrase user Q');
 
+  const unclearQ = 'یه مشکل عجیب داره نمی‌دونم چی بگم';
+  const unclearTip = offlineAiAdvice({
+    kind: 'trainer',
+    userMessage: unclearQ,
+    petName: 'رکس',
+    history: [{ role: 'user', content: 'سلام' }, { role: 'assistant', content: 'سلام خوبی؟' }],
+  });
+  assert(
+    !/نسخه|برای اینکه.*(درست|دقیق)|باید بدونم|سن تقریبی، محیط/.test(unclearTip),
+    'unknown offline must not use نسخه/meta intake clarifiers'
+  );
+  assert(
+    /تقویت مثبت|فاصله|جایزه/.test(unclearTip),
+    'unknown offline should still give partial useful advice'
+  );
+  assert(
+    /چند\s*ساله|چندساله‌ست/.test(unclearTip),
+    'unknown offline asks age briefly when missing'
+  );
+  assert(
+    !/اگه سن.*بگی.*تنظیم|حرفامون دقیق‌تر|تا دقیق‌تر جلو/.test(unclearTip),
+    'unknown offline must not explain why it needs age'
+  );
+
+  const openingNoProfile = buildTrainerOpeningGreeting({
+    patientName: 'علی',
+    petName: 'باران',
+  });
+  assert(
+    !/حرفامون دقیق‌تر|برای اینکه|نسخه/.test(openingNoProfile),
+    'opening age/breed ask must not be meta'
+  );
+  assert(/چند سالشه/.test(openingNoProfile), 'opening asks age naturally when profile empty');
+
+  const sitWithAge = offlineAiAdvice({
+    kind: 'trainer',
+    userMessage: 'چطور بشین یاد بگیره؟',
+    petName: 'رکس',
+    petSpecies: 'dog',
+    petAgeMonths: 8,
+  });
+  assert(!/تقریباً چندساله‌ست|چند سالشه/.test(sitWithAge), 'known age must not re-ask age');
+  assert(!/نسخهٔ?\s*درست|برای اینکه نسخه/.test(sitWithAge), 'topic reply must not use نسخه framing');
+
   const richTopics: Array<{ q: string; needle: RegExp }> = [
     { q: 'قلاده می‌کشه تو خیابان', needle: /قلاده|بند|شل/ },
     { q: 'چطور بیا یادش بدم؟', needle: /بیا|برگشت|جایزه/ },
