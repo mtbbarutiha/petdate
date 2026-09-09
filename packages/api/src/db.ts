@@ -5362,6 +5362,21 @@ export const dbService = {
     return row ? mapVetConsultChatMessage(row) : null;
   },
 
+  /** Replace message text (e.g. after voice transcription). Keeps media fields. */
+  updateVetConsultChatMessageText(
+    id: number,
+    text: string
+  ): VetConsultChatMessage | null {
+    const trimmed = text.trim();
+    if (!trimmed) return null;
+    if (trimmed.length > 4000) throw new Error('TEXT_TOO_LONG');
+    db.prepare('UPDATE vet_consult_chat_messages SET text = ? WHERE id = ?').run(
+      trimmed,
+      id
+    );
+    return this.getVetConsultChatMessage(id);
+  },
+
   setVetConsultChatSecure(id: number, secure: boolean): VetConsultation | null {
     db.prepare(
       `UPDATE vet_consultations SET chat_secure = ? WHERE id = ?`

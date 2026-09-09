@@ -416,6 +416,95 @@ export async function startVetChat(
   }
 }
 
+/** True for internal AI assistant telegram ids (not a real Bot API chat). */
+function isAiPeerTelegramId(id: string | undefined | null): boolean {
+  const t = String(id || '').trim();
+  return t === 'petdate_ai_assistant' || t.startsWith('petdate_ai_');
+}
+
+/**
+ * Patient enters sticky ReplyKeyboard chat with AI (پاشا / دستیار).
+ * Opening greeting was already sent by the API; this only arms the session.
+ */
+export async function enterAiConsultChatAsPatient(
+  ctx: Context,
+  consultId: number,
+  aiProvider: User,
+  patient: User,
+  opts?: { openingAlreadySent?: boolean }
+): Promise<void> {
+  const current = await getVetConsultation(consultId).catch(() => null);
+  if (!current || current.status !== 'active' || current.chatEnded) {
+    await ctx.reply(
+      current?.chatEnded
+        ? CHAT_ENDED_FA
+        : 'چت فقط بعد از قبول درخواست فعال می‌شود.'
+    );
+    return;
+  }
+  if (!patient.telegramId) return;
+
+  const serviceKind: ConsultServiceKind = current.serviceKind ?? 'vet';
+  const providerLabel =
+    serviceKind === 'trainer' ? 'پاشا یزدانی' : providerChatLabel(serviceKind);
+  const displayName =
+    serviceKind === 'trainer'
+      ? 'پاشا یزدانی'
+      : aiProvider.name?.trim() || 'دستیار هوشمند پت‌دیت';
+
+  await upsertSession(String(patient.telegramId), {
+    step: 'vet_chat',
+    vetChatConsultId: consultId,
+    vetChatPeerTelegramId: String(aiProvider.telegramId || 'petdate_ai_assistant'),
+    vetChatRole: 'patient',
+    vetChatWebHintSent: true,
+    medicalNotePetId: undefined,
+    prescriptionPetId: undefined,
+    prescriptionDraft: undefined,
+  });
+
+  const webBase = effectiveWebUrl().replace(/\/$/, '');
+  const webChatUrl = `${webBase}/vet-chats/${consultId}`;
+  const canWebButton = isTelegramInlineUrl(webChatUrl);
+
+  if (!opts?.openingAlreadySent) {
+    await ctx.reply(
+      [
+        `💬 <b>چت با ${escapeHtml(providerLabel)} فعال شد</b>`,
+        '',
+        `${providerLabel}: <b>${escapeHtml(displayName)}</b>`,
+        'متن یا ویس بفرست — همین‌جا جواب می‌دهم.',
+        '',
+        `پایان چت: ${VET_CHAT_BTNS.end}`,
+      ].join('\n'),
+      {
+        parse_mode: 'HTML',
+        reply_markup: vetChatReplyKeyboard(false, serviceKind),
+      }
+    );
+  } else {
+    await ctx.reply('می‌توانی ادامه بدهی — متن یا ویس بفرست.', {
+      reply_markup: vetChatReplyKeyboard(false, serviceKind),
+    });
+  }
+
+  if (await claimWebChatCtaOnce('vet', consultId, String(patient.telegramId))) {
+    const webHintText = canWebButton
+      ? '🌐 می‌توانید در وب هم چت کنید — اگر همین‌جا ادامه دهید، پیام‌ها در ربات رد و بدل می‌شوند.'
+      : ['🌐 می‌توانید در وب هم چت کنید:', webChatUrl].join('\n');
+    try {
+      await ctx.reply(
+        webHintText,
+        canWebButton
+          ? { reply_markup: new InlineKeyboard().url('ورود به چت وب', webChatUrl) }
+          : undefined
+      );
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
 export async function handleVetChatEnd(ctx: Context): Promise<boolean> {
   const from = ctx.from;
   if (!from) return false;
@@ -1371,7 +1460,9 @@ export async function handleVetChatRelay(ctx: Context): Promise<boolean> {
       const fileId = ctx.message.photo[ctx.message.photo.length - 1]!.file_id;
       const caption = ctx.message.caption || undefined;
       await persistMedia('photo', fileId, caption, 'image/jpeg');
-      await ctx.api.sendPhoto(peer, fileId, { caption, ...protect });
+      if (!isAiPeerTelegramId(peer)) {
+        await ctx.api.sendPhoto(peer, fileId, { caption, ...protect });
+      }
       return true;
     }
     if (ctx.message?.video) {
@@ -1383,7 +1474,9 @@ export async function handleVetChatRelay(ctx: Context): Promise<boolean> {
         ctx.message.video.mime_type,
         ctx.message.video.file_name
       );
-      await ctx.api.sendVideo(peer, ctx.message.video.file_id, { caption, ...protect });
+      if (!isAiPeerTelegramId(peer)) {
+        await ctx.api.sendVideo(peer, ctx.message.video.file_id, { caption, ...protect });
+      }
       return true;
     }
     if (ctx.message?.animation) {
@@ -1395,15 +1488,19 @@ export async function handleVetChatRelay(ctx: Context): Promise<boolean> {
         ctx.message.animation.mime_type,
         ctx.message.animation.file_name
       );
-      await ctx.api.sendAnimation(peer, ctx.message.animation.file_id, {
-        caption,
-        ...protect,
-      });
+      if (!isAiPeerTelegramId(peer)) {
+        await ctx.api.sendAnimation(peer, ctx.message.animation.file_id, {
+          caption,
+          ...protect,
+        });
+      }
       return true;
     }
     if (ctx.message?.video_note) {
       await persistMedia('video_note', ctx.message.video_note.file_id, undefined, 'video/mp4');
-      await ctx.api.sendVideoNote(peer, ctx.message.video_note.file_id, protect);
+      if (!isAiPeerTelegramId(peer)) {
+        await ctx.api.sendVideoNote(peer, ctx.message.video_note.file_id, protect);
+      }
       return true;
     }
     if (ctx.message?.document) {
@@ -1415,15 +1512,21 @@ export async function handleVetChatRelay(ctx: Context): Promise<boolean> {
         ctx.message.document.mime_type,
         ctx.message.document.file_name
       );
-      await ctx.api.sendDocument(peer, ctx.message.document.file_id, {
-        caption,
-        ...protect,
-      });
+      if (!isAiPeerTelegramId(peer)) {
+        await ctx.api.sendDocument(peer, ctx.message.document.file_id, {
+          caption,
+          ...protect,
+        });
+      }
       return true;
     }
     if (ctx.message?.voice) {
       await persistMedia('voice', ctx.message.voice.file_id, undefined, ctx.message.voice.mime_type);
-      await ctx.api.sendVoice(peer, ctx.message.voice.file_id, protect);
+      if (!isAiPeerTelegramId(peer)) {
+        await ctx.api.sendVoice(peer, ctx.message.voice.file_id, protect);
+      } else {
+        await ctx.replyWithChatAction('typing').catch(() => undefined);
+      }
       return true;
     }
     if (ctx.message?.audio) {
@@ -1435,7 +1538,11 @@ export async function handleVetChatRelay(ctx: Context): Promise<boolean> {
         ctx.message.audio.mime_type,
         ctx.message.audio.file_name
       );
-      await ctx.api.sendAudio(peer, ctx.message.audio.file_id, { caption, ...protect });
+      if (!isAiPeerTelegramId(peer)) {
+        await ctx.api.sendAudio(peer, ctx.message.audio.file_id, { caption, ...protect });
+      } else {
+        await ctx.replyWithChatAction('typing').catch(() => undefined);
+      }
       return true;
     }
     if (ctx.message?.sticker) {
@@ -1445,7 +1552,9 @@ export async function handleVetChatRelay(ctx: Context): Promise<boolean> {
         undefined,
         ctx.message.sticker.is_animated || ctx.message.sticker.is_video ? undefined : 'image/webp'
       );
-      await ctx.api.sendSticker(peer, ctx.message.sticker.file_id, protect);
+      if (!isAiPeerTelegramId(peer)) {
+        await ctx.api.sendSticker(peer, ctx.message.sticker.file_id, protect);
+      }
       return true;
     }
     if (text) {
@@ -1456,7 +1565,11 @@ export async function handleVetChatRelay(ctx: Context): Promise<boolean> {
         throw new Error('NO_SENDER_USER');
       }
       await postVetConsultChatMessage(consultId, me.id, text);
-      await ctx.api.sendMessage(peer, text, protect);
+      if (!isAiPeerTelegramId(peer)) {
+        await ctx.api.sendMessage(peer, text, protect);
+      } else {
+        await ctx.replyWithChatAction('typing').catch(() => undefined);
+      }
       return true;
     }
   } catch (err) {

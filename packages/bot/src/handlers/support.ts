@@ -92,3 +92,35 @@ export async function handleSupportChatText(ctx: Context, text: string): Promise
   }
   return true;
 }
+
+/** Voice / audio in support_chat → API Whisper STT → same reply path. */
+export async function handleSupportChatVoice(ctx: Context): Promise<boolean> {
+  const from = ctx.from;
+  if (!from) return false;
+  const telegramId = String(from.id);
+  const session = await getSession(telegramId);
+  if (!session || session.step !== 'support_chat') return false;
+
+  const voice = ctx.message?.voice;
+  const audio = ctx.message?.audio;
+  if (!voice && !audio) return false;
+
+  const user = await getCtxUser(ctx);
+  await ctx.replyWithChatAction('typing').catch(() => undefined);
+  try {
+    const res = await postSupportMessageAsTelegram(telegramId, '', {
+      mediaKind: voice ? 'voice' : 'audio',
+      telegramFileId: voice?.file_id || audio!.file_id,
+      mimeType: voice?.mime_type || audio?.mime_type,
+    });
+    const reply = res.assistantMessage?.text?.trim() || 'پاسخی دریافت نشد. دوباره امتحان کن.';
+    await ctx.reply(reply, { reply_markup: menuKeyboardFor(ctx, user) });
+  } catch (err) {
+    console.warn('support voice reply failed:', (err as Error).message);
+    await ctx.reply(
+      'ویس‌ات رسید، ولی الان تحلیل صوت ممکن نشد. لطفاً سؤالت را تایپ کن.',
+      { reply_markup: menuKeyboardFor(ctx, user) }
+    );
+  }
+  return true;
+}

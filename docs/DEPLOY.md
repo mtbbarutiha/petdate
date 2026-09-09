@@ -119,6 +119,7 @@ Do **not** invent a new PWA mark or neon icon.
 
 - App root: `/opt/petdate` (`VPS_PATH`)
 - AI trainer/vet fallback: set `AI_CONSULT_API_KEY` (or `OPENAI_API_KEY`) in `/opt/petdate/.env` and restart `petdate-api`. Without it, پاشا یزدانی uses the rich offline knowledge base only.
+- Voice notes for AI chats (پاشا / support): same key enables Whisper STT (`AI_CONSULT_STT_MODEL`, default `whisper-1`). Without a key, users get a polite “please type” Persian fallback.
 - Web: `/opt/petdate/packages/web/dist` (nginx root)
 - API/Bot: `/opt/petdate/packages/{api,bot}/dist` + `pm2 restart petdate-api petdate-bot`
 - DB: `/opt/petdate/packages/api/data/petdate.db` via `DATABASE_PATH` in `ecosystem.config.cjs`

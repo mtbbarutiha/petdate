@@ -1,12 +1,38 @@
 import { Router } from 'express';
 import { dbService } from '../db';
 import { generateAiConsultAdvice } from '../services/ai-consult';
+import {
+  STT_UNAVAILABLE_FA,
+  isSpeechToTextConfigured,
+  transcribeAudio,
+} from '../services/speech-to-text';
+import { fetchTelegramFileBytes } from '../services/telegram-media';
 import { getUserFromBearer } from '../services/web-otp';
 
 export const supportRouter = Router();
 
 function requireUser(req: { header: (n: string) => string | undefined }) {
   return getUserFromBearer(req.header('authorization') ?? undefined)?.user ?? null;
+}
+
+async function replySupportTurn(opts: {
+  userId: number;
+  userName?: string;
+  text: string;
+}) {
+  const userMsg = dbService.addSupportMessage(opts.userId, 'user', opts.text);
+  const history = dbService.listSupportMessages(opts.userId, 20).map((m) => ({
+    role: m.role,
+    content: m.text,
+  }));
+  const generated = await generateAiConsultAdvice({
+    kind: 'support',
+    patientName: opts.userName,
+    userMessage: opts.text,
+    history: history.slice(0, -1),
+  });
+  const assistantMsg = dbService.addSupportMessage(opts.userId, 'assistant', generated.text);
+  return { userMsg, assistantMsg, generated };
 }
 
 /** تاریخچه چت پشتیبانی کاربر */
@@ -45,18 +71,11 @@ supportRouter.post('/messages', async (req, res) => {
   }
 
   try {
-    const userMsg = dbService.addSupportMessage(user.id, 'user', text);
-    const history = dbService.listSupportMessages(user.id, 20).map((m) => ({
-      role: m.role,
-      content: m.text,
-    }));
-    const generated = await generateAiConsultAdvice({
-      kind: 'support',
-      patientName: user.name,
-      userMessage: text,
-      history: history.slice(0, -1),
+    const { userMsg, assistantMsg, generated } = await replySupportTurn({
+      userId: user.id,
+      userName: user.name,
+      text,
     });
-    const assistantMsg = dbService.addSupportMessage(user.id, 'assistant', generated.text);
     res.status(201).json({
       ok: true,
       userMessage: userMsg,
@@ -112,28 +131,71 @@ supportRouter.post('/telegram/:telegramId/messages', async (req, res) => {
     res.status(404).json({ error: 'کاربر پیدا نشد' });
     return;
   }
-  const text = String(req.body?.text ?? '').trim();
+
+  let text = String(req.body?.text ?? '').trim();
+  const telegramFileId =
+    typeof req.body?.telegramFileId === 'string' ? req.body.telegramFileId.trim() : '';
+  const mediaKind =
+    typeof req.body?.mediaKind === 'string' ? req.body.mediaKind.trim() : '';
+
+  // Voice / audio from Telegram → Whisper STT, then same support reply path.
+  if (!text && telegramFileId && (mediaKind === 'voice' || mediaKind === 'audio')) {
+    if (!isSpeechToTextConfigured()) {
+      res.status(201).json({
+        ok: true,
+        assistantMessage: { text: STT_UNAVAILABLE_FA },
+        messages: dbService.listSupportMessages(user.id),
+        sttUnavailable: true,
+      });
+      return;
+    }
+    const file = await fetchTelegramFileBytes(telegramFileId);
+    if (!file) {
+      res.status(201).json({
+        ok: true,
+        assistantMessage: { text: STT_UNAVAILABLE_FA },
+        messages: dbService.listSupportMessages(user.id),
+        sttUnavailable: true,
+      });
+      return;
+    }
+    const mimeType =
+      typeof req.body?.mimeType === 'string' && req.body.mimeType.trim()
+        ? req.body.mimeType.trim()
+        : file.contentType;
+    const stt = await transcribeAudio({
+      buffer: file.buffer,
+      filename: mediaKind === 'voice' ? 'voice.ogg' : 'audio.ogg',
+      mimeType,
+      language: 'fa',
+    });
+    if (!stt.ok) {
+      res.status(201).json({
+        ok: true,
+        assistantMessage: { text: STT_UNAVAILABLE_FA },
+        messages: dbService.listSupportMessages(user.id),
+        sttUnavailable: true,
+      });
+      return;
+    }
+    text = stt.text;
+  }
+
   if (!text) {
     res.status(400).json({ error: 'متن پیام الزامی است' });
     return;
   }
   try {
-    dbService.addSupportMessage(user.id, 'user', text);
-    const history = dbService.listSupportMessages(user.id, 20).map((m) => ({
-      role: m.role,
-      content: m.text,
-    }));
-    const generated = await generateAiConsultAdvice({
-      kind: 'support',
-      patientName: user.name,
-      userMessage: text,
-      history: history.slice(0, -1),
+    const { assistantMsg } = await replySupportTurn({
+      userId: user.id,
+      userName: user.name,
+      text,
     });
-    const assistantMessage = dbService.addSupportMessage(user.id, 'assistant', generated.text);
     res.status(201).json({
       ok: true,
-      assistantMessage,
+      assistantMessage: assistantMsg,
       messages: dbService.listSupportMessages(user.id),
+      transcript: telegramFileId ? text : undefined,
     });
   } catch (err) {
     console.warn('support telegram chat failed:', (err as Error).message);

@@ -20,7 +20,7 @@ import { QUICK_VET_COST, REFERRAL_BONUS_COINS, formatNum } from '../economy';
 import { myPetsActionKeyboard } from '../keyboards';
 import { effectiveWebUrl, isTelegramInlineUrl } from '../urls';
 import { getCtxUser, menuKeyboardFor, pushMainMenuKeyboard } from './helpers';
-import { startVetChat } from './vet-chat';
+import { startVetChat, enterAiConsultChatAsPatient } from './vet-chat';
 import { handleAddPetCommand } from './wizard';
 
 function escapeHtml(value: string): string {
@@ -243,13 +243,24 @@ export async function handleQuickVet(ctx: Context): Promise<void> {
           '',
           result.message,
           result.advice ? '\n' + result.advice.slice(0, 3500) : '',
-          '',
-          'می‌توانی در چت وب یا ربات ادامه بدهی.',
         ]
           .filter(Boolean)
           .join('\n'),
-        { parse_mode: 'HTML', reply_markup: menuKeyboardFor(ctx, user) }
+        { parse_mode: 'HTML' }
       );
+      const consult = result.consultations?.[0];
+      if (consult) {
+        const ai = await getUserById(consult.vetUserId).catch(() => null);
+        if (ai) {
+          await enterAiConsultChatAsPatient(ctx, consult.id, ai, user, {
+            openingAlreadySent: true,
+          });
+          return;
+        }
+      }
+      await ctx.reply('می‌توانی در چت وب ادامه بدهی.', {
+        reply_markup: menuKeyboardFor(ctx, user),
+      });
       return;
     }
     await ctx.reply(
@@ -404,13 +415,24 @@ export async function handleQuickVetConnect(
         '',
         result.message,
         result.advice ? '\n' + result.advice.slice(0, 3500) : '',
-        '',
-        'می‌توانی سؤال بعدی را در چت بفرستی.',
       ]
         .filter(Boolean)
         .join('\n'),
-      { parse_mode: 'HTML', reply_markup: menuKeyboardFor(ctx, user) }
+      { parse_mode: 'HTML' }
     );
+    const consult = result.consultations?.[0];
+    if (consult) {
+      const ai = await getUserById(consult.vetUserId).catch(() => null);
+      if (ai) {
+        await enterAiConsultChatAsPatient(ctx, consult.id, ai, user, {
+          openingAlreadySent: true,
+        });
+        return;
+      }
+    }
+    await ctx.reply('می‌توانی سؤال بعدی را در چت وب بفرستی.', {
+      reply_markup: menuKeyboardFor(ctx, user),
+    });
     return;
   }
   await ctx.reply(

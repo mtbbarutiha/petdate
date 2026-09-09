@@ -1,4 +1,10 @@
-import type { ConsultServiceKind, User, VetConsultation } from '@petdate/shared';
+import fs from 'fs';
+import type {
+  ConsultServiceKind,
+  User,
+  VetConsultation,
+  VetConsultChatMessage,
+} from '@petdate/shared';
 import { dbService } from '../db';
 import {
   AI_TRAINER_DISPLAY_NAME,
@@ -12,6 +18,15 @@ import {
   mergeUserTone,
   parseStoredTone,
 } from './pasha-user-tone';
+import { resolveStoragePath } from './chat-upload-store';
+import {
+  STT_UNAVAILABLE_FA,
+  isSpeechToTextConfigured,
+  transcribeAudio,
+} from './speech-to-text';
+import { fetchTelegramFileBytes } from './telegram-media';
+import { notifyVetChatTelegram } from './telegram-chat-notify';
+import { normalizeTelegramId } from './telegram-id';
 import { notifyInbox, notifyVetMessage, notifyVetThread } from '../ws/chatHub';
 
 function sleep(ms: number): Promise<void> {
@@ -216,4 +231,125 @@ export async function maybeReplyAsAiAssistant(opts: {
     text: generated.text,
   });
   notifyVetMessage(opts.consultId, message, [consult.vetUserId, consult.patientUserId]);
+  fanOutAiReplyToPatientTelegram(consult, generated.text);
+}
+
+function fanOutAiReplyToPatientTelegram(
+  consult: VetConsultation,
+  text: string
+): void {
+  const patient = dbService.getUserById(consult.patientUserId);
+  const peerTg = normalizeTelegramId(patient?.telegramId);
+  if (!peerTg) return;
+  void notifyVetChatTelegram({
+    toTelegramId: peerTg,
+    peerRole: 'patient',
+    text,
+    protectContent: Boolean(consult.chatSecure),
+    serviceKind: consult.serviceKind ?? 'vet',
+  });
+}
+
+function isVoiceMediaPlaceholder(text: string, mediaKind: string | null | undefined): boolean {
+  const t = text.trim();
+  if (!t) return true;
+  if (mediaKind === 'voice' && t === '[پیام صوتی]') return true;
+  if (mediaKind === 'audio' && t === '[فایل صوتی]') return true;
+  return false;
+}
+
+async function loadConsultAudioBytes(
+  message: VetConsultChatMessage
+): Promise<{ buffer: Buffer; filename: string; mimeType: string } | null> {
+  if (message.storageKey) {
+    const abs = resolveStoragePath(message.storageKey);
+    if (abs && fs.existsSync(abs)) {
+      return {
+        buffer: fs.readFileSync(abs),
+        filename: message.fileName || 'voice.ogg',
+        mimeType: message.mimeType || 'audio/ogg',
+      };
+    }
+  }
+  if (message.telegramFileId) {
+    const file = await fetchTelegramFileBytes(message.telegramFileId);
+    if (file) {
+      return {
+        buffer: file.buffer,
+        filename: message.fileName || 'voice.ogg',
+        mimeType: message.mimeType || file.contentType || 'audio/ogg',
+      };
+    }
+  }
+  return null;
+}
+
+async function postAiPlainReply(opts: {
+  consult: VetConsultation;
+  text: string;
+}): Promise<void> {
+  const message = dbService.createVetConsultChatMessage({
+    consultId: opts.consult.id,
+    senderUserId: opts.consult.vetUserId,
+    text: opts.text,
+  });
+  notifyVetMessage(opts.consult.id, message, [
+    opts.consult.vetUserId,
+    opts.consult.patientUserId,
+  ]);
+  fanOutAiReplyToPatientTelegram(opts.consult, opts.text);
+}
+
+/**
+ * When a patient sends voice/audio in an AI consult, transcribe then reply.
+ * Human trainer/vet chats are unchanged (no auto-STT).
+ */
+export async function maybeTranscribeAndReplyAsAiAssistant(opts: {
+  consultId: number;
+  patientUserId: number;
+  message: VetConsultChatMessage;
+}): Promise<void> {
+  const consult = dbService.getVetConsultation(opts.consultId);
+  if (!consult || consult.status !== 'active' || consult.chatEnded) return;
+  if (!isAiAssistantUserId(consult.vetUserId)) return;
+  if (consult.patientUserId !== opts.patientUserId) return;
+
+  const kind = opts.message.mediaKind;
+  if (kind !== 'voice' && kind !== 'audio') return;
+
+  const rawText = String(opts.message.text || '').trim();
+  let patientText = isVoiceMediaPlaceholder(rawText, kind) ? '' : rawText;
+
+  if (!patientText) {
+    if (!isSpeechToTextConfigured()) {
+      await postAiPlainReply({ consult, text: STT_UNAVAILABLE_FA });
+      return;
+    }
+    const audio = await loadConsultAudioBytes(opts.message);
+    if (!audio) {
+      await postAiPlainReply({ consult, text: STT_UNAVAILABLE_FA });
+      return;
+    }
+    const stt = await transcribeAudio({
+      buffer: audio.buffer,
+      filename: audio.filename,
+      mimeType: audio.mimeType,
+      language: 'fa',
+    });
+    if (!stt.ok) {
+      await postAiPlainReply({ consult, text: STT_UNAVAILABLE_FA });
+      return;
+    }
+    patientText = stt.text;
+    const updated = dbService.updateVetConsultChatMessageText(opts.message.id, patientText);
+    if (updated) {
+      notifyVetMessage(opts.consultId, updated, [consult.vetUserId, consult.patientUserId]);
+    }
+  }
+
+  await maybeReplyAsAiAssistant({
+    consultId: opts.consultId,
+    patientUserId: opts.patientUserId,
+    patientText,
+  });
 }
