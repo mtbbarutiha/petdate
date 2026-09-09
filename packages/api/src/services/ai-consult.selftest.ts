@@ -47,12 +47,17 @@ async function main() {
   const longDelay = trainerTypingDelayMs('x'.repeat(500));
   assert(shortDelay >= 1500 && shortDelay <= 4000, 'typing delay lower bound');
   assert(longDelay >= shortDelay && longDelay <= 4000, 'typing delay scales and caps');
+  const opening = buildTrainerOpeningGreeting({
+    patientName: 'محمد',
+    petName: 'رکس',
+    petSpecies: 'dog',
+  });
+  assert(/احوال|حالت چطوره|سلام|خوبی/.test(opening), 'opening greeting is احوال‌پرسی');
   assert(
-    /احوال|حالت چطوره|سلام/.test(
-      buildTrainerOpeningGreeting({ patientName: 'محمد', petName: 'رکس', petSpecies: 'dog' })
-    ),
-    'opening greeting is احوال‌پرسی'
+    !/اول احوال|احوال‌پرسی.*(بعد|بعداً).*(آموزش|تمرین)|اول یه کم بشناسم|الان احوال‌پرسی/.test(opening),
+    'opening must not narrate greeting-then-train meta script'
   );
+  assert(!/اول احوال|احوال‌پرسی.*(بعد|بعداً).*(آموزش|تمرین)|اول یه کم بشناسم/.test(tip), 'offline tip no meta greeting script');
   const sitTip = offlineAiAdvice({
     kind: 'trainer',
     userMessage: 'چطور بشین یاد بگیره؟',
@@ -158,10 +163,14 @@ async function main() {
   const msgs = dbService.listVetConsultChatMessages(session!.consult.id);
   assert(msgs[0]!.text.includes('پاشا یزدانی'), 'intro mentions Pasha');
   assert(!/دستیار هوشمند|ربات|هوش مصنوعی/i.test(msgs[0]!.text), 'trainer intro must not sound like a bot');
-  assert(/احوال|سلام|حالت چطوره/.test(msgs[0]!.text), 'trainer intro is greeting-first احوال‌پرسی');
+  assert(/احوال|سلام|حالت چطوره|خوبی/.test(msgs[0]!.text), 'trainer intro is greeting-first احوال‌پرسی');
   assert(
     !/برای شروع معمولاً این‌طور می‌چینم|۱\) روزی دو سه جلسه/.test(msgs[0]!.text),
     'session intro must not jump straight to numbered curriculum'
+  );
+  assert(
+    !/اول احوال|احوال‌پرسی.*(بعد|بعداً).*(آموزش|تمرین)|اول یه کم بشناسم|الان احوال‌پرسی/.test(msgs[0]!.text),
+    'session intro must not narrate greeting-then-train workflow'
   );
   assert(/عکس/.test(msgs[0]!.text), 'session intro mentions pet photo');
 
