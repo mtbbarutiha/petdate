@@ -924,12 +924,13 @@ export function offlineAiAdvice(ctx: AiConsultContext): string {
       return formatTrainerTopicReply(ctx, topic, depth);
     }
     if (hasHistory) {
+      // Unknown topic without LLM — stay in character and gather detail (online path preferred when key exists)
       return [
         q
-          ? `دربارهٔ «${q}» با تقویت مثبت و جلسات کوتاه جلو می‌رویم. ${ageAwareAside(ctx)}`
-          : `بگو الان بیشتر روی بشین، بیا، قلاده، پارس، دستشویی، توله یا اضطراب جدایی گیر کرده‌ای — با هم عمیق‌تر می‌رویم.`,
+          ? `در مورد «${q}» می‌خوام دقیق جلو برم. ${ageAwareAside(ctx)}`
+          : `بگو الان دقیقاً کجا گیر کردی تا همان را باز کنیم.`,
         ``,
-        `می‌توانی بپرسی: بشین، بمان، بیا، قلاده، باکس، دستشویی، پارس، گاز، پریدن، تنهایی، جامعه‌پذیری، کلیکر، غنی‌سازی، ولش‌کن، رفتار گربه، جیغ طوطی، خرگوش/همستر، یا منبع.`,
+        `برای اینکه نسخهٔ درست بدهم بگو: سن تقریبی، محیط (خانه/خیابان)، و از کی این رفتار را می‌بینی. اگر عکس یا ویدیوی کوتاه هم داری بفرست.`,
       ].join('\n');
     }
     const greet = buildTrainerOpeningGreeting({
@@ -1049,10 +1050,51 @@ async function callOpenAiCompatible(ctx: AiConsultContext): Promise<string | nul
   }
 }
 
+/**
+ * When should پاشا call the live LLM?
+ * - Empty / greeting-only → offline opener
+ * - Any real user question + API key configured → online (even if a local topic exists),
+ *   so answers stay deep and not stuck in templates
+ * - Real question, no API key, no local topic → would need online but can't (caller still offline)
+ * - Real question, no API key, local topic → offline KB
+ */
+export function trainerShouldGoOnline(ctx: AiConsultContext): boolean {
+  if (ctx.kind !== 'trainer') return false;
+  const q = ctx.userMessage?.trim() ?? '';
+  if (!q) return false;
+  if (!isAiConsultConfigured()) return false;
+  return true;
+}
+
+/** True when local KB has no topic for this question (Pasha "doesn't understand" offline). */
+export function trainerQuestionUnknownOffline(ctx: AiConsultContext): boolean {
+  if (ctx.kind !== 'trainer') return false;
+  const q = ctx.userMessage?.trim() ?? '';
+  if (!q || q.length < 3) return false;
+  if (isShortTrainerFollowUp(q)) {
+    const lastUser = [...(ctx.history ?? [])]
+      .reverse()
+      .find((h) => h.role === 'user')
+      ?.content?.trim();
+    if (lastUser && findTrainerTopic(lastUser)) return false;
+  }
+  return !findTrainerTopic(q);
+}
+
 export async function generateAiConsultAdvice(ctx: AiConsultContext): Promise<{
   text: string;
   source: 'llm' | 'offline';
 }> {
+  if (ctx.kind === 'trainer') {
+    // Prefer online whenever configured and the user said something real.
+    // Especially important for questions outside the local topic list.
+    if (trainerShouldGoOnline(ctx) || (trainerQuestionUnknownOffline(ctx) && isAiConsultConfigured())) {
+      const llm = await callOpenAiCompatible(ctx);
+      if (llm) return { text: llm, source: 'llm' };
+    }
+    return { text: offlineAiAdvice(ctx), source: 'offline' };
+  }
+
   const llm = await callOpenAiCompatible(ctx);
   if (llm) return { text: llm, source: 'llm' };
   return { text: offlineAiAdvice(ctx), source: 'offline' };
