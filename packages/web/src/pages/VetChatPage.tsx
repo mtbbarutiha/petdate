@@ -231,6 +231,8 @@ export function VetChatPage() {
   secureRef.current = secure;
 
   const isVetSide = Boolean(user && consult && user.id === consult.vetUserId);
+  const isMedicalConsult = (consult?.serviceKind ?? 'vet') === 'vet';
+  const showDoctorTools = isVetSide && isMedicalConsult;
   const isVetUser = userHasRole(user, 'vet');
   const peerUserId = consult
     ? isVetSide
@@ -1406,7 +1408,7 @@ export function VetChatPage() {
                     </button>
                     {menuOpen ? (
                       <div className="tg-chat-menu" role="menu">
-                        {isVetSide && (consult?.serviceKind ?? 'vet') === 'vet' ? (
+                        {showDoctorTools ? (
                           <>
                             <button
                               type="button"
@@ -1679,7 +1681,7 @@ export function VetChatPage() {
                 </div>
               ) : chatUnlocked ? (
                 <>
-                  {isVetSide ? (
+                  {showDoctorTools ? (
                     <VetChatDoctorToolbar
                       disabled={sending || ending}
                       onOpen={(panel) => {
@@ -1854,7 +1856,7 @@ export function VetChatPage() {
         </section>
       ) : null}
 
-      {isVetSide && consult && user && chatUnlocked ? (
+      {showDoctorTools && consult && user && chatUnlocked ? (
         <VetChatDoctorSheets
           open={doctorPanel}
           onClose={() => setDoctorPanel(null)}
