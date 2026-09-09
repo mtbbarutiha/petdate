@@ -318,6 +318,45 @@ async function main() {
     'follow-up opening must not echo question/topic title'
   );
 
+  // Multi-turn continuity: do not re-ask age; keep coaching after clarifying answers.
+  const ageTurn1 = await generateAiConsultAdvice({
+    kind: 'trainer',
+    petName: 'رِکس',
+    userMessage: 'سگم بشین بلد نیست',
+    history: [],
+  });
+  assert(/چندسال|چند سال/.test(ageTurn1.text), 'first turn may ask age once when unknown');
+  const ageTurn2 = await generateAiConsultAdvice({
+    kind: 'trainer',
+    petName: 'رِکس',
+    userMessage: '۳ سالشه',
+    history: [
+      { role: 'user', content: 'سگم بشین بلد نیست' },
+      { role: 'assistant', content: ageTurn1.text },
+    ],
+  });
+  assert(!/چندسال|چند سال/.test(ageTurn2.text), 'after age answer must not re-ask age');
+  assert(/بشین|جایزه|تشویق|تمرین|ادامه/.test(ageTurn2.text), 'age answer continues sit coaching');
+  const ageTurn3 = await generateAiConsultAdvice({
+    kind: 'trainer',
+    petName: 'رِکس',
+    userMessage: 'خب بعدش چی؟',
+    history: [
+      { role: 'user', content: 'سگم بشین بلد نیست' },
+      { role: 'assistant', content: ageTurn1.text },
+      { role: 'user', content: '۳ سالشه' },
+      { role: 'assistant', content: ageTurn2.text },
+    ],
+  });
+  assert(ageTurn3.text.length > 80, 'turn 3 still continues with substance');
+  assert(!/چندسال|چند سال/.test(ageTurn3.text), 'turn 3 must not re-ask age');
+  assert(ageTurn2.text !== ageTurn3.text, 'later turns should keep advancing');
+
+  const { extractPetAgeMonthsFromText } = await import('./ai-consult');
+  assert(extractPetAgeMonthsFromText('۳ سالشه') === 36, 'parse 3 years');
+  assert(extractPetAgeMonthsFromText('18 ماهه') === 18, 'parse 18 months');
+
+
   const supportTurn1 = await generateAiConsultAdvice({
     kind: 'support',
     patientName: 'تست',
