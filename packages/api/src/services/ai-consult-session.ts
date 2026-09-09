@@ -128,8 +128,10 @@ export async function maybeReplyAsAiAssistant(opts: {
 
   const pet = consult.petId != null ? dbService.getPet(consult.petId) : null;
   const allMsgs = dbService.listVetConsultChatMessages(opts.consultId, { limit: 200 });
+  // Trainer multi-turn needs a wider window so follow-ups stay on-topic and deepen.
+  const historyWindow = aiKind === 'trainer' ? 24 : 12;
   const recent = allMsgs
-    .slice(-12)
+    .slice(-historyWindow)
     .map((m) => ({
       role: (m.senderUserId === consult.vetUserId ? 'assistant' : 'user') as
         | 'assistant'

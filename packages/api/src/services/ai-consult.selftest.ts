@@ -14,7 +14,7 @@ function assert(cond: unknown, msg: string): asserts cond {
 }
 
 async function main() {
-  const { offlineAiAdvice, generateAiConsultAdvice } = await import('./ai-consult');
+  const { offlineAiAdvice, generateAiConsultAdvice, trainerTopicHint } = await import('./ai-consult');
   const {
     startAiFallbackConsult,
     isAiAssistantUserId,
@@ -33,7 +33,37 @@ async function main() {
     petName: 'رکس',
   });
   assert(sitTip.includes('بشین'), 'trainer topic hint for sit');
+  assert(sitTip.length > 280, 'sit advice should be rich multi-paragraph');
   assert(!/دستیار هوشمند|ربات|هوش مصنوعی/i.test(sitTip), 'sit tip must not sound like a bot');
+
+  const richTopics: Array<{ q: string; needle: RegExp }> = [
+    { q: 'قلاده می‌کشه تو خیابان', needle: /قلاده|بند|شل/ },
+    { q: 'چطور بیا یادش بدم؟', needle: /بیا|برگشت|جایزه/ },
+    { q: 'بمان بلد نیست', needle: /بمان|آزاد/ },
+    { q: 'دستشویی توی خونه می‌کنه', needle: /دستشویی|جایزه|برنامه/ },
+    { q: 'باکس قبول نمی‌کنه', needle: /باکس|پناهگاه|قفس/ },
+    { q: 'خیلی پارس می‌کنه', needle: /پارس|محرک|آروم/ },
+    { q: 'دستمو گاز می‌گیره', needle: /گاز|نیش|ایمنی|بازی/ },
+    { q: 'روی مهمون می‌پره', needle: /پرید|چهار|توجه/ },
+    { q: 'اضطراب جدایی داره وقتی می‌رم', needle: /جدایی|تنهایی|ثانیه/ },
+    { q: 'توله دو ماهه از کجا شروع کنم', needle: /توله|جلسه|دستشویی|جامعه/ },
+    { q: 'گربه‌ام litter نمی‌ره', needle: /گربه|بستر|Litter|انتخاب/ },
+    { q: 'سر غذا غر می‌زنه محافظت منبع', needle: /منبع|فاصله|ایمن|کاسه/ },
+    { q: 'روی قلاده به سگ دیگر واکنش نشون می‌ده', needle: /فاصله|محرک|واکنش/ },
+    { q: 'کلیکر چطور بارگیری کنم؟', needle: /کلیکر|مارکر|جایزه/ },
+    { q: 'enrichment و پازل غذایی می‌خوام', needle: /غنی|پازل|بینی|خوراکی/ },
+    { q: 'ولش کن برای آشغال خیابان', needle: /ولش|رها|آشغال/ },
+    { q: 'از صدای رعد می‌ترسه', needle: /ترس|فاصله|آرام/ },
+    { q: 'جامعه‌پذیری توله', needle: /جامعه|فاصله|تجربه/ },
+  ];
+  for (const t of richTopics) {
+    const text = offlineAiAdvice({ kind: 'trainer', userMessage: t.q, petName: 'رکس', petSpecies: 'dog' });
+    assert(text.length > 220, `rich offline length for: ${t.q}`);
+    assert(t.needle.test(text), `topic coverage for: ${t.q}`);
+    assert(!/دستیار هوشمند|ربات|هوش مصنوعی|\bAI\b/i.test(text), `human voice for: ${t.q}`);
+    const hint = trainerTopicHint(t.q);
+    assert(hint && hint.length > 120, `trainerTopicHint exported for: ${t.q}`);
+  }
 
   const vetTip = offlineAiAdvice({ kind: 'vet', petName: 'ملوس' });
   assert(vetTip.includes('دامپزشک'), 'offline vet tip');
@@ -67,25 +97,45 @@ async function main() {
   });
   assert(leashTip.source === 'offline', 'no API key → offline');
   assert(!/دستیار هوشمند|ربات|هوش مصنوعی/i.test(leashTip.text), 'generated trainer text not robotic');
-  assert(/قلاده|کشید|تشویقی/.test(leashTip.text), 'leash topic covered');
+  assert(/قلاده|کشید|تشویقی|بند/.test(leashTip.text), 'leash topic covered');
+  assert(leashTip.text.length > 280, 'leash offline advice is detailed');
 
   const turn1 = await generateAiConsultAdvice({
+    kind: 'trainer',
+    petName: 'رکس',
+    userMessage: 'چطور بشین یاد بگیره؟',
+    history: [],
+  });
+  const turn2 = await generateAiConsultAdvice({
+    kind: 'trainer',
+    petName: 'رکس',
+    userMessage: 'بیشتر توضیح بده',
+    history: [
+      { role: 'user', content: 'چطور بشین یاد بگیره؟' },
+      { role: 'assistant', content: turn1.text },
+    ],
+  });
+  assert(turn1.text !== turn2.text, 'trainer follow-up differs from first reply');
+  assert(/بشین|معیار|عیب|سخت/.test(turn2.text), 'trainer follow-up stays on sit and digs deeper');
+  assert(turn2.text.length > 200, 'deeper follow-up is substantial');
+
+  const supportTurn1 = await generateAiConsultAdvice({
     kind: 'support',
     patientName: 'تست',
     userMessage: 'OTP نمیاد',
     history: [],
   });
-  const turn2 = await generateAiConsultAdvice({
+  const supportTurn2 = await generateAiConsultAdvice({
     kind: 'support',
     patientName: 'تست',
     userMessage: 'بیشتر توضیح بده',
     history: [
       { role: 'user', content: 'OTP نمیاد' },
-      { role: 'assistant', content: turn1.text },
+      { role: 'assistant', content: supportTurn1.text },
     ],
   });
-  assert(turn1.text !== turn2.text, 'follow-up differs from first reply');
-  assert(turn2.text.includes('OTP') || turn2.text.includes('پیامک'), 'follow-up stays on topic');
+  assert(supportTurn1.text !== supportTurn2.text, 'follow-up differs from first reply');
+  assert(supportTurn2.text.includes('OTP') || supportTurn2.text.includes('پیامک'), 'follow-up stays on topic');
 
   for (let i = 0; i < 25; i++) {
     dbService.addSupportMessage(patient.id, 'user', `msg ${i}`);
