@@ -1,5 +1,5 @@
 /**
- * AI consult offline advisor + assistant user — selftest.
+ * AI consult offline advisor + assistant user + support thread — selftest.
  * Run: cd packages/api && npx tsx src/services/ai-consult.selftest.ts
  */
 export {};
@@ -14,7 +14,7 @@ function assert(cond: unknown, msg: string): asserts cond {
 }
 
 async function main() {
-  const { offlineAiAdvice } = await import('./ai-consult');
+  const { offlineAiAdvice, generateAiConsultAdvice } = await import('./ai-consult');
   const { startAiFallbackConsult, isAiAssistantUserId, ensureAiAssistantUser } =
     await import('./ai-consult-session');
   const { dbService, getDb } = await import('../db');
@@ -24,6 +24,17 @@ async function main() {
   assert(tip.includes('دستیار هوشمند'), 'offline trainer tip');
   const vetTip = offlineAiAdvice({ kind: 'vet', petName: 'ملوس' });
   assert(vetTip.includes('دامپزشک'), 'offline vet tip');
+  const supportTip = offlineAiAdvice({ kind: 'support', userMessage: 'OTP نیومد' });
+  assert(supportTip.includes('پشتیبانی'), 'offline support tip');
+  assert(supportTip.includes('OTP') || supportTip.includes('ورود'), 'support mentions topic');
+
+  const generated = await generateAiConsultAdvice({
+    kind: 'support',
+    patientName: 'تست',
+    userMessage: 'چطور پت ثبت کنم؟',
+  });
+  assert(generated.source === 'offline', 'no key → offline');
+  assert(generated.text.includes('پشتیبانی') || generated.text.includes('پت'), 'support advice');
 
   const tg = `selftest_ai_patient_${Date.now()}`;
   const { user: patient } = dbService.findOrCreateUser({
@@ -57,6 +68,19 @@ async function main() {
     serviceKind: 'vet',
   });
   assert(vetSession, 'vet ai session');
+
+  // Support chat persistence
+  assert(dbService.listSupportMessages(patient.id).length === 0, 'empty support thread');
+  const uMsg = dbService.addSupportMessage(patient.id, 'user', 'سلام؛ شاپ کار نمی‌کنه');
+  const aMsg = dbService.addSupportMessage(
+    patient.id,
+    'assistant',
+    offlineAiAdvice({ kind: 'support', userMessage: 'شاپ کار نمی‌کنه' })
+  );
+  const supportMsgs = dbService.listSupportMessages(patient.id);
+  assert(supportMsgs.length === 2, 'two support messages');
+  assert(supportMsgs[0]!.id === uMsg.id && supportMsgs[0]!.role === 'user', 'user first');
+  assert(supportMsgs[1]!.id === aMsg.id && supportMsgs[1]!.role === 'assistant', 'assistant second');
 
   dbService.deleteUserByTelegramId(tg);
   console.log('ai-consult.selftest: ok');

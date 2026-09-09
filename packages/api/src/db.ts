@@ -549,6 +549,29 @@ function migrateSchema() {
   `);
 
   db.exec(`
+    CREATE TABLE IF NOT EXISTS support_threads (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL UNIQUE REFERENCES users(id),
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+  `);
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS support_messages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      thread_id INTEGER NOT NULL REFERENCES support_threads(id),
+      role TEXT NOT NULL,
+      text TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+  `);
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_support_messages_thread
+      ON support_messages (thread_id, id);
+  `);
+
+
+  db.exec(`
     CREATE TABLE IF NOT EXISTS vet_ratings (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       consult_id INTEGER NOT NULL UNIQUE REFERENCES vet_consultations(id),
@@ -5347,6 +5370,80 @@ export const dbService = {
       )
       .all(consultId) as { storage_key: string }[];
     return rows.map((r) => r.storage_key).filter(Boolean);
+  },
+
+
+  ensureSupportThread(userId: number): { id: number; userId: number } {
+    const existing = db
+      .prepare('SELECT id, user_id FROM support_threads WHERE user_id = ?')
+      .get(userId) as { id: number; user_id: number } | undefined;
+    if (existing) {
+      return { id: existing.id, userId: existing.user_id };
+    }
+    const result = db
+      .prepare('INSERT INTO support_threads (user_id) VALUES (?)')
+      .run(userId);
+    return { id: Number(result.lastInsertRowid), userId };
+  },
+
+  listSupportMessages(userId: number, limit = 80): Array<{
+    id: number;
+    role: 'user' | 'assistant';
+    text: string;
+    createdAt: string;
+  }> {
+    const thread = db
+      .prepare('SELECT id FROM support_threads WHERE user_id = ?')
+      .get(userId) as { id: number } | undefined;
+    if (!thread) return [];
+    const lim = Math.min(Math.max(1, limit), 200);
+    const rows = db
+      .prepare(
+        `SELECT id, role, text, created_at FROM support_messages
+         WHERE thread_id = ?
+         ORDER BY id ASC
+         LIMIT ?`
+      )
+      .all(thread.id, lim) as Array<{ id: number; role: string; text: string; created_at: string }>;
+    return rows.map((r) => ({
+      id: r.id,
+      role: r.role === 'assistant' ? 'assistant' : 'user',
+      text: r.text,
+      createdAt: r.created_at,
+    }));
+  },
+
+  addSupportMessage(
+    userId: number,
+    role: 'user' | 'assistant',
+    text: string
+  ): { id: number; role: 'user' | 'assistant'; text: string; createdAt: string } {
+    const thread = this.ensureSupportThread(userId);
+    const body = text.trim();
+    if (!body) throw new Error('EMPTY_TEXT');
+    if (body.length > 4000) throw new Error('TEXT_TOO_LONG');
+    const result = db
+      .prepare(
+        `INSERT INTO support_messages (thread_id, role, text) VALUES (?, ?, ?)`
+      )
+      .run(thread.id, role, body);
+    db.prepare(
+      `UPDATE support_threads SET updated_at = datetime('now') WHERE id = ?`
+    ).run(thread.id);
+    const row = db
+      .prepare('SELECT id, role, text, created_at FROM support_messages WHERE id = ?')
+      .get(result.lastInsertRowid) as {
+      id: number;
+      role: string;
+      text: string;
+      created_at: string;
+    };
+    return {
+      id: row.id,
+      role: row.role === 'assistant' ? 'assistant' : 'user',
+      text: row.text,
+      createdAt: row.created_at,
+    };
   },
 
   clearVetConsultChatMessages(consultId: number): number {

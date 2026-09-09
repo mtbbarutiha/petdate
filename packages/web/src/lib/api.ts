@@ -1543,3 +1543,36 @@ export async function fetchPublicShopCatalog(): Promise<{
     coinPriceToman: productsRes.coinPriceToman ?? categoriesRes.coinPriceToman,
   };
 }
+
+
+export type SupportChatMessage = {
+  id: number;
+  role: 'user' | 'assistant';
+  text: string;
+  createdAt: string;
+};
+
+export async function fetchSupportMessages(
+  token: string
+): Promise<{ ok: true; messages: SupportChatMessage[]; welcome: string | null }> {
+  return request('/api/support/messages', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function sendSupportMessage(
+  token: string,
+  text: string
+): Promise<{
+  ok: true;
+  messages: SupportChatMessage[];
+  userMessage: SupportChatMessage;
+  assistantMessage: SupportChatMessage;
+  adviceSource?: 'llm' | 'offline';
+}> {
+  return request('/api/support/messages', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ text }),
+  });
+}

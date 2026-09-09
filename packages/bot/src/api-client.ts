@@ -1726,3 +1726,27 @@ export async function fetchMyShopOrdersTelegram(telegramId: string): Promise<{
     `/api/shop/orders-telegram?telegramId=${encodeURIComponent(telegramId)}&limit=15`
   );
 }
+
+
+export async function postSupportMessageAsTelegram(
+  telegramId: string,
+  text: string
+): Promise<{
+  ok: true;
+  messages: Array<{ id: number; role: 'user' | 'assistant'; text: string; createdAt: string }>;
+  assistantMessage: { text: string };
+}> {
+  return request(`/api/support/telegram/${encodeURIComponent(telegramId)}/messages`, {
+    method: 'POST',
+    body: JSON.stringify({ text }),
+  });
+}
+
+export async function getSupportMessagesAsTelegram(
+  telegramId: string
+): Promise<{
+  messages: Array<{ id: number; role: 'user' | 'assistant'; text: string; createdAt: string }>;
+  welcome: string | null;
+}> {
+  return request(`/api/support/telegram/${encodeURIComponent(telegramId)}/messages`);
+}

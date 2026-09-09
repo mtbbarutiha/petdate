@@ -97,6 +97,7 @@ import {
   getCtxUser,
 } from './start';
 import { menuKeyboardFor } from './helpers';
+import { handleSupportChat, handleSupportChatText } from './support';
 import {
   handleComingSoon,
   handleChatsEntry,
@@ -1000,6 +1001,7 @@ async function handleTextMessage(ctx: Context): Promise<void> {
   if (await handleProfileWizardText(ctx, text)) return;
   if (await handlePetEditText(ctx, text)) return;
   if (await handleWizardText(ctx, text)) return;
+  if (await handleSupportChatText(ctx, text)) return;
 
   // اگر منتظر موقعیت هستیم و کاربر متن فرستاد — یادآوری دکمه
   if (ctx.from) {
@@ -1175,6 +1177,8 @@ async function handleTextMessage(ctx: Context): Promise<void> {
     case s.help:
     case v.help:
       return handleHelp(ctx);
+    case m.support:
+      return handleSupportChat(ctx);
     case m.myRoles:
     case d.myRoles:
     case n.myRoles:

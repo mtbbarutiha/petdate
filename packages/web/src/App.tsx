@@ -68,6 +68,9 @@ const ProfilePage = lazy(() =>
   import('./pages/ProfilePage').then((m) => ({ default: m.ProfilePage })),
 );
 const WalletPage = lazy(() => import('./pages/WalletPage').then((m) => ({ default: m.WalletPage })));
+const SupportChatPage = lazy(() =>
+  import('./pages/SupportChatPage').then((m) => ({ default: m.SupportChatPage }))
+);
 const EarningsPage = lazy(() =>
   import('./pages/EarningsPage').then((m) => ({ default: m.EarningsPage })),
 );
@@ -223,6 +226,7 @@ export default function App() {
               <Route path="chats/:matchId" element={<ChatPage />} />
               <Route path="profile" element={<ProfilePage />} />
               <Route path="wallet" element={<WalletPage />} />
+              <Route path="support" element={<SupportChatPage />} />
               <Route path="wallet/earn" element={<EarningsPage />} />
               <Route path="earn" element={<Navigate to="/wallet/earn" replace />} />
               <Route path="vet-consult" element={<VetConsultPage />} />

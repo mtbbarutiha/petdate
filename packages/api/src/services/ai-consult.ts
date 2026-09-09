@@ -9,7 +9,7 @@
  * When no key is configured, returns a careful offline advisory so users never
  * get a hard "no online provider" error for vet/trainer.
  */
-export type AiConsultKind = 'vet' | 'trainer';
+export type AiConsultKind = 'vet' | 'trainer' | 'support';
 
 export type AiConsultContext = {
   kind: AiConsultKind;
@@ -47,6 +47,16 @@ export function isAiConsultConfigured(): boolean {
 }
 
 function systemPrompt(kind: AiConsultKind): string {
+  if (kind === 'support') {
+    return [
+      'تو پشتیبانی هوشمند پلتفرم پت‌دیت هستی.',
+      'به فارسی، کوتاه، واضح و صمیمی راهنمایی کن.',
+      'کمک کن کاربر بفهمد چطور: ورود OTP، ثبت پت، همبازی، مربی، پرستار، دامپزشک، شاپ، کیف پول/سکه، و اتصال وب↔ربات کار می‌کند.',
+      'اگر مشکل فنی حل نشد بگو از ربات تلگرام پت‌دیت یا ادمین پیگیری کنند.',
+      'تشخیص پزشکی یا تجویز دارو نده؛ برای درمان به دامپزشک ارجاع بده.',
+      'وانمود نکن انسان هستی؛ بگو دستیار پشتیبانی پت‌دیت هستی.',
+    ].join('\n');
+  }
   if (kind === 'trainer') {
     return [
       'تو دستیار هوشمند آموزش پت در پلتفرم پت‌دیت هستی.',
@@ -73,14 +83,18 @@ function buildUserPrompt(ctx: AiConsultContext): string {
   if (ctx.petSpecies) bits.push(`گونه: ${ctx.petSpecies}`);
   if (ctx.petBreed) bits.push(`نژاد: ${ctx.petBreed}`);
   const intro =
-    ctx.kind === 'trainer'
-      ? 'مربی انسانی آنلاین نیست. لطفاً برای هماهنگی/شروع آموزش راهنمایی بده.'
-      : 'دامپزشک آنلاین نیست. لطفاً راهنمایی عمومی بده.';
+    ctx.kind === 'support'
+      ? 'کاربر از پشتیبانی پت‌دیت کمک می‌خواهد.'
+      : ctx.kind === 'trainer'
+        ? 'مربی انسانی آنلاین نیست. لطفاً برای هماهنگی/شروع آموزش راهنمایی بده.'
+        : 'دامپزشک آنلاین نیست. لطفاً راهنمایی عمومی بده.';
   const ask =
     ctx.userMessage?.trim() ||
-    (ctx.kind === 'trainer'
-      ? 'برای شروع آموزش پت چه برنامهٔ ساده‌ای پیشنهاد می‌کنی؟'
-      : 'برای مراقبت کلی از پت چه نکات مهمی داری؟');
+    (ctx.kind === 'support'
+      ? 'سلام؛ چطور می‌توانم کمکت کنم؟'
+      : ctx.kind === 'trainer'
+        ? 'برای شروع آموزش پت چه برنامهٔ ساده‌ای پیشنهاد می‌کنی؟'
+        : 'برای مراقبت کلی از پت چه نکات مهمی داری؟');
   return [intro, bits.length ? bits.join(' · ') : null, '', ask].filter(Boolean).join('\n');
 }
 
@@ -88,6 +102,25 @@ function buildUserPrompt(ctx: AiConsultContext): string {
 export function offlineAiAdvice(ctx: AiConsultContext): string {
   const pet =
     [ctx.petName, ctx.petBreed || ctx.petSpecies].filter(Boolean).join(' · ') || 'پت';
+  if (ctx.kind === 'support') {
+    const q = ctx.userMessage?.trim();
+    return [
+      `👋 من پشتیبانی هوشمند پت‌دیت هستم.`,
+      ``,
+      q
+        ? `دربارهٔ «${q}»:`
+        : `بگو روی کدام بخش گیر کردی: ورود، پت، همبازی، مربی، دامپزشک، شاپ یا سکه.`,
+      ``,
+      `راهنمای سریع:`,
+      `• ورود وب با OTP پیامک — همان حساب ربات تلگرام`,
+      `• ثبت پت از «پت‌های من» یا ربات`,
+      `• همبازی از پنل صاحب پت / گفتگوها`,
+      `• مربی و دامپزشک از پنل‌های مربوط؛ اگر آنلاین نباشند دستیار هوشمند پاسخ می‌دهد`,
+      `• سکه از منوی کیف پول / ربات`,
+      ``,
+      `اگر مشکل ادامه داشت جزئیات بیشتری بفرست (مثلاً اسکرین یا پیام خطا).`,
+    ].join('\n');
+  }
   if (ctx.kind === 'trainer') {
     return [
       `👋 من دستیار هوشمند آموزش پت‌دیت هستم (مربی انسانی الان آنلاین نیست).`,
