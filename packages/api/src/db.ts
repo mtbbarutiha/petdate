@@ -5401,10 +5401,11 @@ export const dbService = {
       .prepare(
         `SELECT id, role, text, created_at FROM support_messages
          WHERE thread_id = ?
-         ORDER BY id ASC
+         ORDER BY id DESC
          LIMIT ?`
       )
       .all(thread.id, lim) as Array<{ id: number; role: string; text: string; created_at: string }>;
+    rows.reverse();
     return rows.map((r) => ({
       id: r.id,
       role: r.role === 'assistant' ? 'assistant' : 'user',

@@ -23,6 +23,9 @@ export type AiConsultContext = {
 
 const AI_TELEGRAM_ID = 'petdate_ai_assistant';
 
+/** نام نمایشی مربی هوشمند آنلاین (وقتی مربی انسانی آنلاین نیست) */
+export const AI_TRAINER_DISPLAY_NAME = 'پاشا یزدانی';
+
 export function aiAssistantTelegramId(): string {
   return AI_TELEGRAM_ID;
 }
@@ -59,12 +62,15 @@ function systemPrompt(kind: AiConsultKind): string {
   }
   if (kind === 'trainer') {
     return [
-      'تو دستیار هوشمند آموزش پت در پلتفرم پت‌دیت هستی.',
-      'به فارسی، کوتاه، عملی و مهربان پاسخ بده.',
-      'تمرکز: آموزش حضوری/رفتاری سگ و گربه، برنامه‌ریزی تمرین، جامعه‌پذیری، دستورات پایه.',
+      `تو ${AI_TRAINER_DISPLAY_NAME} هستی — مربی آموزش سگ و گربه در پلتفرم پت‌دیت.`,
+      `همیشه خودت را «${AI_TRAINER_DISPLAY_NAME}» معرفی کن (در اولین پیام یا وقتی کاربر می‌پرسد تو کی هستی).`,
+      'به فارسی، عملی، صمیمی و مرحله‌به‌مرحله پاسخ بده.',
+      'حوزهٔ تخصص: فرمان‌های پایه (بشین، بیا، پایین، جا)، جامعه‌پذیری، قلاده، کنترل پارس/پرخاش، آموزش توله، برنامهٔ تمرین روزانه، تقویت مثبت.',
+      'به هر سؤال مرتبط با ترینینگ/رفتار پت جواب بده؛ اگر اطلاعات کم است ۱–۲ سؤال کوتاه بپرس (سن، نژاد، محیط).',
       'اگر موضوع پزشکی/اورژانس بود بگو با دامپزشک تماس بگیرند.',
-      'واضح بگو که جایگزین مربی انسانی نیستی و وقتی مربی آنلاین باشد اتصال انسانی اولویت دارد.',
-      'از ادعاهای قطعی پزشکی یا تضمین نتیجه خودداری کن.',
+      'وقتی مربی انسانی آنلاین باشد اتصال حضوری/انسانی اولویت دارد؛ تو راهنمای آنلاین وقتی مربی در دسترس نیست.',
+      'از تنبیه فیزیکی و روش‌های خشن دوری کن؛ تقویت مثبت را پیشنهاد بده.',
+      'از ادعاهای قطعی پزشکی یا تضمین ۱۰۰٪ نتیجه خودداری کن.',
     ].join('\n');
   }
   return [
@@ -98,44 +104,309 @@ function buildUserPrompt(ctx: AiConsultContext): string {
   return [intro, bits.length ? bits.join(' · ') : null, '', ask].filter(Boolean).join('\n');
 }
 
+function trainerTopicHint(message: string): string | null {
+  const q = message.toLowerCase();
+  if (/بشین|نشست|sit/.test(q)) {
+    return [
+      `آموزش «بشین»:`,
+      `۱) تشویقی جلوی بینی — وقتی پشتش نشست فوراً جایزه بده`,
+      `۲) جلسه ۵ دقیقه، ۵–۱۰ تکرار موفق`,
+      `۳) کلمهٔ ثابت (مثلاً «بشین») + لحن آرام`,
+      `۴) بعد از ۸۰٪ موفقیت، کمی تأخیر قبل از تشویقی`,
+    ].join('\n');
+  }
+  if (/بیا|برگشت|recall|صدا/.test(q)) {
+    return [
+      `آموزش «بیا» / recall:`,
+      `۱) اول در فاصلهٔ کوتاه و بدون حواس‌پرتی`,
+      `۲) صدای شاد + جایزهٔ باارزش وقتی آمد`,
+      `۳) هرگز برای برگشت تنبیه نکن`,
+      `۴) تدریجاً فاصله و محیط را سخت‌تر کن`,
+    ].join('\n');
+  }
+  if (/قلاده|کشید|leash|پیاده/.test(q)) {
+    return [
+      `آموزش قلاده:`,
+      `۱) اول داخل خانه با قلاده سبک و تشویقی`,
+      `۲) اگر می‌کشد: بایست، وقتی سگ توجه کرد جایزه`,
+      `۳) راه رفتن کوتاه با پاداش کنار پا`,
+    ].join('\n');
+  }
+  if (/گاز|پرخاش|عض|bite|حمله/.test(q)) {
+    return [
+      `پرخاش / گاز گرفتن:`,
+      `۱) علت را پیدا کن: ترس، درد، محافظت منبع، هیجان`,
+      `۲) محرک را موقتاً کم کن؛ ایمنی اول`,
+      `۳) با مدیریت فاصله و تقویت آرام شروع کن`,
+    ].join('\n');
+  }
+  if (/پارس|صد|bark|هاپ/.test(q)) {
+    return [
+      `کنترل پارس:`,
+      `۱) بفهم چه موقع پارس می‌کند (زنگ، تنها، هیجان)`,
+      `۲) قبل از پارس: «آروم» + تشویقی برای سکوت کوتاه`,
+      `۳) انرژی اضافه را با بازی و پیاده‌روی تخلیه کن`,
+    ].join('\n');
+  }
+  if (/دستشوی|پد|potty|توالت|مدفوع/.test(q)) {
+    return [
+      `آموزش دستشویی:`,
+      `۱) برنامهٔ ثابت بعد از بیداری، غذا، بازی`,
+      `۲) یک نقطهٔ ثابت بیرون یا پد`,
+      `۳) جایزه فوری وقتی درست انجام داد`,
+    ].join('\n');
+  }
+  if (/توله|puppy|جوجه/.test(q)) {
+    return [
+      `آموزش توله:`,
+      `۱) جلسات ۳–۵ دقیقه، چند بار در روز`,
+      `۲) جامعه‌پذیری ملایم با آدم/صدا/محیط`,
+      `۳) گاز بازی = توقف بازی + جایگزین اسباب`,
+    ].join('\n');
+  }
+  if (/گربه|cat|میو/.test(q)) {
+    return [
+      `آموزش گربه:`,
+      `۱) تقویت مثبت با تشویقی/بازی`,
+      `۲) بستر و جای scratching مشخص`,
+      `۳) فشار نیاور — گربه به زمان نیاز دارد`,
+    ].join('\n');
+  }
+  if (/ترس|اضطراب|anxiety|استرس/.test(q)) {
+    return [
+      `ترس و اضطراب:`,
+      `۱) محرک را از فاصلهٔ امن شروع کن`,
+      `۲) پاداش برای آرام ماندن، نه برای وحشت`,
+      `۳) پیشرفت آهسته — هر روز یک قدم`,
+    ].join('\n');
+  }
+  if (/تشویق|جایزه|reward|کلیکر/.test(q)) {
+    return [
+      `تقویت مثبت:`,
+      `۱) جایزه فوری (زیر ۲ ثانیه)`,
+      `۲) تشویقی باارزش برای کار سخت`,
+      `۳) Marker ثابت (کلمه یا کلیکر)`,
+    ].join('\n');
+  }
+  return null;
+}
+
+function trainerFollowUpReply(ctx: AiConsultContext): string | null {
+  const q = ctx.userMessage?.trim() ?? '';
+  const history = ctx.history ?? [];
+  if (!history.length) return null;
+  const lastUser = [...history].reverse().find((h) => h.role === 'user')?.content?.trim();
+  const normalized = q.replace(/\s+/g, ' ').trim();
+  const isShortFollowUp =
+    normalized.length <= 48 &&
+    /^(بله|آره|اره|باشه|مرسی|ممنون|بیشتر|ادامه|چطور|چجوری|چگونه|بعد|بعدش|؟|\?|ok|okay)([\s،.!؟]*)$|^(بیشتر\s+توضیح|ادامه\s+بده|مرحله\s+بعد)/i.test(
+      normalized
+    );
+  if (isShortFollowUp && lastUser) {
+    const hint = trainerTopicHint(lastUser);
+    if (hint) {
+      return [
+        `${AI_TRAINER_DISPLAY_NAME} — ادامهٔ راهنما برای «${lastUser}»:`,
+        ``,
+        hint,
+        ``,
+        `اگر سن یا نژاد ${ctx.petName || 'پت'} را بگویی دقیق‌تر راهنمایی می‌کنم.`,
+      ].join('\n');
+    }
+  }
+  return null;
+}
+
+function supportTopicHint(message: string): string | null {
+  const q = message.toLowerCase();
+  if (/otp|کد|پیامک|ورود|لاگین|login|رمز/.test(q)) {
+    return [
+      `ورود وب با OTP:`,
+      `۱) شماره موبایل را در petdate.ir وارد کن`,
+      `۲) کد ۶ رقمی پیامک را بزن (۱–۲ دقیقه صبر کن)`,
+      `۳) همان شماره در ربات تلگرام = همان حساب`,
+      `اگر کد نمی‌آید: آنتن، اسپم، و شمارهٔ درست را چک کن؛ بعد «ارسال مجدد».`,
+    ].join('\n');
+  }
+  if (/پت|ثبت.*سگ|ثبت.*گربه|پروفایل.*پت|pet/.test(q)) {
+    return [
+      `ثبت پت:`,
+      `• وب: منو → «پت‌های من» → افزودن پت`,
+      `• ربات: منو → ثبت/ویرایش پت و مراحل را پر کن`,
+      `عکس پت بعد از تأیید ادمین نمایش داده می‌شود.`,
+    ].join('\n');
+  }
+  if (/همبازی|playdate|نزدیک|جستجو/.test(q)) {
+    return [
+      `همبازی:`,
+      `• پت را ثبت کن و «دنبال همبازی» را فعال کن`,
+      `• از «جستجوی پت» یا «پت‌های نزدیک» فیلتر بزن`,
+      `• درخواست بفرست؛ بعد از قبول، گفتگو باز می‌شود`,
+    ].join('\n');
+  }
+  if (/مربی|trainer|آموزش/.test(q)) {
+    return [
+      `مربی:`,
+      `• منو → درخواست مربی / پنل مربی`,
+      `• اگر مربی آنلاین باشد اتصال انسانی؛ وگرنه دستیار هوشمند راهنمایی می‌کند`,
+      `• مدارک مربی باید تأیید شده باشد`,
+    ].join('\n');
+  }
+  if (/پرستار|sitter|نگهداری/.test(q)) {
+    return [
+      `پرستار:`,
+      `• منو → درخواست پرستار`,
+      `• زمان و محل را مشخص کن؛ پرستار تأییدشده هماهنگ می‌کند`,
+    ].join('\n');
+  }
+  if (/دامپزشک|vet|مشاوره.*پزشک|پزشک/.test(q)) {
+    return [
+      `دامپزشک:`,
+      `• منو → مشاوره سریع / پنل دامپزشک`,
+      `• اگر پزشک آنلاین نباشد دستیار هوشمند پاسخ اولیه می‌دهد`,
+      `• اورژانس = مراجعه حضوری فوری، نه چت`,
+    ].join('\n');
+  }
+  if (/شاپ|فروشگاه|shop|خرید/.test(q)) {
+    return [
+      `شاپ:`,
+      `• منو → فروشگاه؛ محصول را انتخاب و آدرس/تلفن را وارد کن`,
+      `• پرداخت با سکه یا رسید (طبق راهنمای checkout)`,
+      `• خطا؟ متن خطا + اسکرین بفرست`,
+    ].join('\n');
+  }
+  if (/سکه|coin|کیف\s*پول|wallet|شارژ|پرداخت/.test(q)) {
+    return [
+      `سکه / کیف پول:`,
+      `• منو → کیف پول / سکه`,
+      `• برای مشاوره و برخی خدمات سکه لازم است`,
+      `• شارژ از راهنمای «ارسال رسید» در ربات`,
+    ].join('\n');
+  }
+  if (/ربات|تلگرام|telegram|bot/.test(q)) {
+    return [
+      `ربات تلگرام:`,
+      `• /start برای ساخت/بازیابی حساب`,
+      `• منوی پایین = همان امکانات اصلی`,
+      `• وب و ربات با یک شماره OTP یکی می‌شوند`,
+    ].join('\n');
+  }
+  if (/وب|سایت|petdate/.test(q)) {
+    return [
+      `وب petdate.ir:`,
+      `• ورود OTP → داشبورد نقش‌ات`,
+      `• پشتیبانی: منو → «پشتیبانی» (/support)`,
+    ].join('\n');
+  }
+  return null;
+}
+
+function supportFollowUpReply(ctx: AiConsultContext): string | null {
+  const q = ctx.userMessage?.trim() ?? '';
+  const history = ctx.history ?? [];
+  if (!history.length) return null;
+  const lastUser = [...history].reverse().find((h) => h.role === 'user')?.content?.trim();
+  const normalized = q.replace(/\s+/g, ' ').trim();
+  const isShortFollowUp =
+    normalized.length <= 48 &&
+    /^(بله|آره|اره|باشه|مرسی|ممنون|بیشتر|ادامه|چطور|چجوری|چگونه|بعد|بعدش|؟|\?|ok|okay)([\s،.!؟]*)$|^(بیشتر\s+توضیح|ادامه\s+بده|مرحله\s+بعد)/i.test(
+      normalized
+    );
+  if (isShortFollowUp && lastUser) {
+    const hint = supportTopicHint(lastUser);
+    if (hint) {
+      return [
+        `ادامهٔ راهنما برای «${lastUser}»:`,
+        ``,
+        hint,
+        ``,
+        `اگر هنوز گیر کردی، دقیق بگو کدام مرحله خطا می‌دهد.`,
+      ].join('\n');
+    }
+  }
+  return null;
+}
+
 /** Offline advisor when no LLM API key is configured. */
 export function offlineAiAdvice(ctx: AiConsultContext): string {
   const pet =
     [ctx.petName, ctx.petBreed || ctx.petSpecies].filter(Boolean).join(' · ') || 'پت';
   if (ctx.kind === 'support') {
-    const q = ctx.userMessage?.trim();
+    const q = ctx.userMessage?.trim() ?? '';
+    const hasHistory = (ctx.history?.length ?? 0) > 0;
+    const followUp = supportFollowUpReply(ctx);
+    if (followUp) return followUp;
+    const topic = q ? supportTopicHint(q) : null;
+    if (topic) {
+      const lines = hasHistory
+        ? [`دربارهٔ «${q}»:`, ``, topic]
+        : [`👋 من پشتیبانی هوشمند پت‌دیت هستم.`, ``, topic];
+      lines.push(``, `سؤال بعدی‌ات را بپرس — همین‌جا ادامه می‌دهیم.`);
+      return lines.join('\n');
+    }
+    if (hasHistory) {
+      return [
+        `دربارهٔ «${q || 'ادامهٔ گفتگو'}»:`,
+        ``,
+        `برای راهنمایی دقیق‌تر بگو کدام بخش: ورود، پت، همبازی، مربی، دامپزشک، شاپ یا سکه.`,
+        `اگر خطا دیدی متن خطا یا اسکرین بفرست.`,
+      ].join('\n');
+    }
     return [
       `👋 من پشتیبانی هوشمند پت‌دیت هستم.`,
       ``,
       q
-        ? `دربارهٔ «${q}»:`
+        ? `دربارهٔ «${q}» — یکی از این‌ها را امتحان کن یا جزئیات بیشتر بفرست:`
         : `بگو روی کدام بخش گیر کردی: ورود، پت، همبازی، مربی، دامپزشک، شاپ یا سکه.`,
       ``,
-      `راهنمای سریع:`,
       `• ورود وب با OTP پیامک — همان حساب ربات تلگرام`,
       `• ثبت پت از «پت‌های من» یا ربات`,
       `• همبازی از پنل صاحب پت / گفتگوها`,
       `• مربی و دامپزشک از پنل‌های مربوط؛ اگر آنلاین نباشند دستیار هوشمند پاسخ می‌دهد`,
       `• سکه از منوی کیف پول / ربات`,
       ``,
-      `اگر مشکل ادامه داشت جزئیات بیشتری بفرست (مثلاً اسکرین یا پیام خطا).`,
+      `سؤال بعدی‌ات را بپرس — گفتگو ادامه دارد.`,
     ].join('\n');
   }
   if (ctx.kind === 'trainer') {
+    const q = ctx.userMessage?.trim() ?? '';
+    const hasHistory = (ctx.history?.length ?? 0) > 0;
+    const followUp = trainerFollowUpReply(ctx);
+    if (followUp) return followUp;
+    const topic = q ? trainerTopicHint(q) : null;
+    if (topic) {
+      const lines = hasHistory
+        ? [`${AI_TRAINER_DISPLAY_NAME} — دربارهٔ «${q}»:`, ``, topic]
+        : [
+            `👋 سلام! من ${AI_TRAINER_DISPLAY_NAME} هستم — مربی آموزش پت در پت‌دیت.`,
+            `(مربی انسانی الان آنلاین نیست؛ من راهنمایی آنلاین می‌دهم.)`,
+            ``,
+            topic,
+          ];
+      lines.push(``, `سؤال بعدی‌ات را بپرس — در حوزهٔ ترینینگ جواب می‌دهم.`);
+      return lines.join('\n');
+    }
+    if (hasHistory) {
+      return [
+        `${AI_TRAINER_DISPLAY_NAME} — دربارهٔ «${q || 'ادامهٔ گفتگو'}»:`,
+        ``,
+        q
+          ? `برای «${q}» با تقویت مثبت و جلسات کوتاه پیش برو. سن، نژاد و محیط ${pet} را بگو تا برنامه دقیق‌تر بدهم.`
+          : `سؤال ترینینگت را بنویس — بشین، بیا، قلاده، پارس، توله و…`,
+      ].join('\n');
+    }
     return [
-      `👋 من دستیار هوشمند آموزش پت‌دیت هستم (مربی انسانی الان آنلاین نیست).`,
+      `👋 سلام! من ${AI_TRAINER_DISPLAY_NAME} هستم — مربی آموزش پت در پت‌دیت.`,
+      `(مربی انسانی الان آنلاین نیست.)`,
       ``,
       `برای ${pet} می‌توانیم از همین‌جا شروع کنیم:`,
       `۱) روزی ۲–۳ جلسهٔ کوتاه ۵ تا ۱۰ دقیقه‌ای`,
-      `۲) یک فرمان پایه (مثلاً بشین/بیا) با تشویقی کوچک`,
-      `۳) محیط آرام، بدون تنبیه`,
-      `۴) ثبت پیشرفت تا وقتی مربی آنلاین شد ادامه را حضوری هماهنگ کنید`,
+      `۲) یک فرمان پایه (بشین/بیا) با تشویقی`,
+      `۳) محیط آرام، بدون تنبیه — فقط تقویت مثبت`,
       ``,
-      ctx.userMessage?.trim()
-        ? `دربارهٔ «${ctx.userMessage.trim()}»: با تکرار کوتاه، پاداش فوری و پایان جلسه روی موفقیت پیش برو.`
-        : `سؤالت را همین‌جا بنویس تا مرحله‌به‌مرحله راهنمایی‌ات کنم.`,
-      ``,
-      `⚠️ این راهنما جایگزین مربی متخصص نیست.`,
+      q
+        ? `دربارهٔ «${q}»: جزئیات سن و رفتار فعلی ${pet} را بگو تا مرحله‌به‌مرحله راهنمایی‌ات کنم.`
+        : `هر سؤال ترینینگ داری همین‌جا بپرس.`,
     ].join('\n');
   }
   return [
@@ -165,7 +436,20 @@ async function callOpenAiCompatible(ctx: AiConsultContext): Promise<string | nul
   for (const h of ctx.history ?? []) {
     messages.push({ role: h.role, content: h.content });
   }
-  messages.push({ role: 'user', content: buildUserPrompt(ctx) });
+  if (ctx.kind === 'support' || ctx.kind === 'trainer') {
+    const userText = ctx.userMessage?.trim() || 'سلام';
+    const ctxBits: string[] = [];
+    if (!(ctx.history?.length ?? 0)) {
+      if (ctx.patientName) ctxBits.push(`نام صاحب پت: ${ctx.patientName}`);
+      if (ctx.petName) ctxBits.push(`نام پت: ${ctx.petName}`);
+      if (ctx.petSpecies) ctxBits.push(`گونه: ${ctx.petSpecies}`);
+      if (ctx.petBreed) ctxBits.push(`نژاد: ${ctx.petBreed}`);
+    }
+    const prefix = ctxBits.length ? `${ctxBits.join(' · ')}\n\n` : '';
+    messages.push({ role: 'user', content: `${prefix}${userText}` });
+  } else {
+    messages.push({ role: 'user', content: buildUserPrompt(ctx) });
+  }
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 28_000);

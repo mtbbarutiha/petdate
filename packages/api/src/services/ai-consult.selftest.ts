@@ -82,6 +82,33 @@ async function main() {
   assert(supportMsgs[0]!.id === uMsg.id && supportMsgs[0]!.role === 'user', 'user first');
   assert(supportMsgs[1]!.id === aMsg.id && supportMsgs[1]!.role === 'assistant', 'assistant second');
 
+  const turn1 = await generateAiConsultAdvice({
+    kind: 'support',
+    patientName: 'تست',
+    userMessage: 'OTP نمیاد',
+    history: [],
+  });
+  const turn2 = await generateAiConsultAdvice({
+    kind: 'support',
+    patientName: 'تست',
+    userMessage: 'بیشتر توضیح بده',
+    history: [
+      { role: 'user', content: 'OTP نمیاد' },
+      { role: 'assistant', content: turn1.text },
+    ],
+  });
+  assert(turn1.text !== turn2.text, 'follow-up differs from first reply');
+  assert(turn2.text.includes('OTP') || turn2.text.includes('پیامک'), 'follow-up stays on topic');
+
+  for (let i = 0; i < 25; i++) {
+    dbService.addSupportMessage(patient.id, 'user', `msg ${i}`);
+    dbService.addSupportMessage(patient.id, 'assistant', `reply ${i}`);
+  }
+  const recent = dbService.listSupportMessages(patient.id, 4);
+  assert(recent.length === 4, 'recent limit');
+  assert(recent[0]!.text === 'msg 23', 'oldest of recent window');
+  assert(recent[3]!.text === 'reply 24', 'newest message in window');
+
   dbService.deleteUserByTelegramId(tg);
   console.log('ai-consult.selftest: ok');
 }

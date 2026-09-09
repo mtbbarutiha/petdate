@@ -931,6 +931,14 @@ async function handleTextMessage(ctx: Context): Promise<void> {
   const text = ctx.message?.text?.trim();
   if (!text || text.startsWith('/')) return;
 
+  // پشتیبانی هوشمند — قبل از رله‌های چت تا پیام‌های بعدی گم نشوند
+  if (ctx.from) {
+    const supportSession = await getSession(String(ctx.from.id));
+    if (supportSession?.step === 'support_chat') {
+      if (await handleSupportChatText(ctx, text)) return;
+    }
+  }
+
   // چت همبازی مالک↔مالک و چت مشاوره دامپزشک — اولویت بالا
   if (await handleOwnerChatRelay(ctx)) return;
   if (await handleVetChatRelay(ctx)) return;
