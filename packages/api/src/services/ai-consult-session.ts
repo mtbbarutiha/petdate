@@ -3,7 +3,6 @@ import { dbService } from '../db';
 import {
   aiAssistantTelegramId,
   generateAiConsultAdvice,
-  type AiConsultKind,
 } from './ai-consult';
 import { notifyInbox, notifyVetMessage, notifyVetThread } from '../ws/chatHub';
 
@@ -30,7 +29,7 @@ export function isAiAssistantUserId(userId: number): boolean {
   return Boolean(u?.telegramId && u.telegramId === aiAssistantTelegramId());
 }
 
-function toAiKind(kind: ConsultServiceKind): AiConsultKind | null {
+function toAiKind(kind: ConsultServiceKind): 'vet' | 'trainer' | null {
   if (kind === 'vet' || kind === 'trainer') return kind;
   return null;
 }
