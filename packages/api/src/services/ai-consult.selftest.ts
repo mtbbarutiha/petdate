@@ -349,12 +349,25 @@ async function main() {
     ],
   });
   assert(turn1.text !== turn2.text, 'trainer follow-up differs from first reply');
-  assert(/بشین|معیار|عیب|سخت/.test(turn2.text), 'trainer follow-up stays on sit and digs deeper');
+  assert(/بشین|سخت|تشویق|جایزه|دست خالی|بمان/.test(turn2.text), 'trainer follow-up stays on sit and digs deeper');
   assert(turn2.text.length > 200, 'deeper follow-up is substantial');
   assert(
     !/گفتی که|پرسیدی که|این سؤال «|در مورد «|روی «/.test(turn2.text.split('\n')[0] || ''),
     'follow-up opening must not echo question/topic title'
   );
+
+  // Human sit coaching — conversational, not stiff worksheet.
+  const sitHuman = await generateAiConsultAdvice({
+    kind: 'trainer',
+    petName: 'رِکس',
+    userMessage: 'بشین بلد نیست',
+    history: [],
+  });
+  assert(/بشین|تشویقی|آفرین|جایزه/.test(sitHuman.text), 'sit coaching covers core cues');
+  assert(/ببین|خب|راستش|معمولاً|این‌جوری|اینجوری|اوکی|باشه/.test(sitHuman.text), 'sit coaching sounds spoken');
+  assert(!/برنامهٔ?\s*عملی|معیار موفقیت|پروتکل|کاربر/.test(sitHuman.text), 'sit coaching must not sound like a worksheet');
+  assert(!/^۱\)|\n۱\)/.test(sitHuman.text), 'sit coaching avoids numbered lesson list');
+
 
   // Multi-turn continuity: do not re-ask age; keep coaching after clarifying answers.
   const ageTurn1 = await generateAiConsultAdvice({
