@@ -35,6 +35,8 @@ export type AiConsultContext = {
   history?: Array<{ role: 'user' | 'assistant'; content: string }>;
   /** Learned per-user chat tone for trainer mirroring */
   userTone?: UserToneProfile | null;
+  /** Internal: unknown offline topic — nudge LLM to answer from full online knowledge */
+  forceOnlineUnknown?: boolean;
 };
 
 /** Extra English aliases that may appear in prompts / legacy data (DB codes stay lowercase). */
@@ -1193,12 +1195,17 @@ async function callOpenAiCompatible(ctx: AiConsultContext): Promise<string | nul
     const includeCtx =
       ctx.kind === 'trainer' ? ctxBits.length > 0 : !(ctx.history?.length ?? 0) && ctxBits.length > 0;
     const prefix = includeCtx ? `${ctxBits.join(' · ')}\n\n` : '';
+    const onlineUnknownHint = ctx.forceOnlineUnknown
+      ? '\n\n(این سؤال در دانش روتین آفلاین نیست — از دانش کامل مربی‌گری آنلاین جواب کاربردی و مشخص بده. نگو «نمی‌فهمم»؛ مستقیم راهنمایی کن.)'
+      : '';
     const followHint =
       ctx.kind === 'trainer' && (ctx.history?.length ?? 0) > 0
-        ? '\n\n(یادآوری: روی موضوع جاری عمیق‌تر برو؛ سؤال کاربر را تکرار/بازنویسی نکن؛ مستقیم جواب بده. از «نسخه» و متای «برای اینکه درست راهنمایی کنم…» استفاده نکن؛ اول راهنمایی جزئی بده و گفتگو را ادامه بده؛ سؤال تکراری (سن/محیط) نپرس؛ فقط اگر چیز تازه‌ای لازم بود یک سؤال کوتاه تازه بپرس.)'
+        ? '\n\n(یادآوری: روی موضوع جاری عمیق‌تر برو؛ سؤال کاربر را تکرار/بازنویسی نکن؛ مستقیم جواب بده. از «نسخه» و متای «برای اینکه درست راهنمایی کنم…» استفاده نکن؛ اول راهنمایی جزئی بده و گفتگو را ادامه بده؛ سؤال تکراری (سن/محیط) نپرس؛ فقط اگر چیز تازه‌ای لازم بود یک سؤال کوتاه تازه بپرس.)' +
+          onlineUnknownHint
         : ctx.kind === 'trainer'
-          ? '\n\n(یادآوری: سؤال کاربر را تکرار نکن؛ مستقیم جواب بده. «نسخه» و متای «برای اینکه درست/دقیق راهنمایی کنم باید بدونم…» ممنوع؛ گفتگو را ادامه بده؛ سن/محیط را اگر قبلاً پرسیدی یا جواب داده دوباره نپرس.)'
-          : '';
+          ? '\n\n(یادآوری: سؤال کاربر را تکرار نکن؛ مستقیم جواب بده. «نسخه» و متای «برای اینکه درست/دقیق راهنمایی کنم باید بدونم…» ممنوع؛ گفتگو را ادامه بده؛ سن/محیط را اگر قبلاً پرسیدی یا جواب داده دوباره نپرس.)' +
+            onlineUnknownHint
+          : onlineUnknownHint;
     messages.push({ role: 'user', content: `${prefix}${userText}${followHint}` });
   } else {
     messages.push({ role: 'user', content: buildUserPrompt(ctx) });
@@ -1262,14 +1269,40 @@ export function trainerQuestionUnknownOffline(ctx: AiConsultContext): boolean {
   if (ctx.kind !== 'trainer') return false;
   const q = ctx.userMessage?.trim() ?? '';
   if (!q || q.length < 3) return false;
-  if (isShortTrainerFollowUp(q)) {
+  // Short follow-ups / clarifying answers continue the prior topic — not "unknown".
+  if (isShortTrainerFollowUp(q) || isClarifyingAnswer(q)) {
     const lastUser = [...(ctx.history ?? [])]
       .reverse()
       .find((h) => h.role === 'user')
       ?.content?.trim();
     if (lastUser && findTrainerTopic(lastUser)) return false;
+    if (lastTrainerTopicFromHistory(ctx)) return false;
   }
   return !findTrainerTopic(q);
+}
+
+
+/** When local KB has no match, پاشا must use the live online model — not a vague offline template. */
+export function offlineUnknownNeedsOnlineReply(ctx: AiConsultContext): string {
+  const name = ctx.petName || 'پت';
+  const withTone = (text: string) =>
+    ctx.userTone ? applyOfflineToneStyle(text, ctx.userTone) : text;
+  if (!isAiConsultConfigured()) {
+    return withTone(
+      [
+        `این مورد رو باید از دانش آنلاین مربی‌گری دقیق جواب بدم، ولی الان اتصال آنلاین در دسترس نیست.`,
+        ``,
+        `تا برقرار بشه، همین‌قدر ایمن بگو: سن تقریبی ${name}، کجا گیر می‌کنه (خونه/بیرون)، و دقیقاً چه رفتاری می‌بینی — دوباره بفرست تا آنلاین کامل جواب بدم.`,
+      ].join('\n')
+    );
+  }
+  return withTone(
+    [
+      `این سؤال خارج از تمرین‌های روتینمه؛ دارم از دانش آنلاین مربی‌گری دقیق‌تر برات جمع می‌کنم.`,
+      ``,
+      `یک لحظه دیگه همان پیام را دوباره بفرست یا جزئیات سن/محیط/رفتار را اضافه کن تا جواب کامل آنلاین بگیرم.`,
+    ].join('\n')
+  );
 }
 
 export async function generateAiConsultAdvice(ctx: AiConsultContext): Promise<{
@@ -1277,9 +1310,20 @@ export async function generateAiConsultAdvice(ctx: AiConsultContext): Promise<{
   source: 'llm' | 'offline';
 }> {
   if (ctx.kind === 'trainer') {
-    // Prefer online whenever configured and the user said something real.
-    // Especially important for questions outside the local topic list.
-    if (trainerShouldGoOnline(ctx) || (trainerQuestionUnknownOffline(ctx) && isAiConsultConfigured())) {
+    const unknown = trainerQuestionUnknownOffline(ctx);
+    // Unknown topics must hit the online model when configured — never fake understanding offline.
+    if (unknown && isAiConsultConfigured()) {
+      const llm = await callOpenAiCompatible({ ...ctx, forceOnlineUnknown: true });
+      if (llm) return { text: llm, source: 'llm' };
+      // Online configured but call failed — do not dump generic offline KB.
+      console.warn('pasha unknown topic: online LLM failed; returning needs-online reply');
+      return { text: offlineUnknownNeedsOnlineReply(ctx), source: 'offline' };
+    }
+    if (unknown && !isAiConsultConfigured()) {
+      return { text: offlineUnknownNeedsOnlineReply(ctx), source: 'offline' };
+    }
+    // Known topics: prefer online when key exists (richer), else offline KB.
+    if (trainerShouldGoOnline(ctx)) {
       const llm = await callOpenAiCompatible(ctx);
       if (llm) return { text: llm, source: 'llm' };
     }

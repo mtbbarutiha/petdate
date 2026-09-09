@@ -295,6 +295,44 @@ async function main() {
   delete process.env.AI_CONSULT_API_KEY;
   delete process.env.OPENAI_API_KEY;
 
+  {
+    const { offlineUnknownNeedsOnlineReply } = await import('./ai-consult');
+    const unknownQ = 'سگم وقتی ماشین رد میشه یخ میزنه و زوزه عجیب میکشه بدون دلیل مشخص';
+    assert(
+      trainerQuestionUnknownOffline({ kind: 'trainer', userMessage: unknownQ }),
+      'out-of-KB behavior question is unknown offline'
+    );
+    const noKey = await generateAiConsultAdvice({
+      kind: 'trainer',
+      userMessage: unknownQ,
+      petName: 'رکس',
+    });
+    assert(noKey.source === 'offline', 'unknown without key stays offline marker');
+    assert(/آنلاین/.test(noKey.text), 'unknown without key must mention online path');
+    assert(
+      /اتصال آنلاین|دانش آنلاین/.test(noKey.text),
+      'unknown without key uses needs-online copy'
+    );
+
+    process.env.AI_CONSULT_API_KEY = 'test-key-not-used';
+    const failedOnline = await generateAiConsultAdvice({
+      kind: 'trainer',
+      userMessage: unknownQ,
+      petName: 'رکس',
+    });
+    assert(failedOnline.source === 'offline', 'failed online returns offline marker');
+    assert(/آنلاین/.test(failedOnline.text), 'failed online still signals online path');
+    assert(
+      !/تقویت مثبت|فاصلهٔ امن|زور و تنبیه نه/.test(failedOnline.text),
+      'failed online must not dump generic offline KB'
+    );
+    delete process.env.AI_CONSULT_API_KEY;
+    delete process.env.OPENAI_API_KEY;
+
+    const copy = offlineUnknownNeedsOnlineReply({ kind: 'trainer', petName: 'باران' });
+    assert(/آنلاین/.test(copy), 'needs-online helper mentions online');
+  }
+
   const turn1 = await generateAiConsultAdvice({
     kind: 'trainer',
     petName: 'رکس',
