@@ -50,9 +50,10 @@ run src/services/speech-to-text.selftest.ts
 run src/services/ai-consult.selftest.ts
 
 # Bot guards (sticky keyboard + IPv4 Telegram HTTP) — no network / no DB
-echo "==> selftest: bot sticky + telegram-http + nearby-radius + nearby-inline-list + pet-search-menu + invite-friends + urls"
+echo "==> selftest: bot sticky + telegram-http + quick-connect-parse + nearby-radius + nearby-inline-list + pet-search-menu + invite-friends + urls"
 npx tsx "$ROOT/packages/bot/src/sticky-reply-keyboard.selftest.ts"
 npx tsx "$ROOT/packages/bot/src/telegram-http.selftest.ts"
+npx tsx "$ROOT/packages/bot/src/quick-connect-parse.selftest.ts"
 npx tsx "$ROOT/packages/bot/src/urls.selftest.ts"
 npx tsx "$ROOT/packages/bot/src/handlers/nearby-radius.selftest.ts"
 npx tsx "$ROOT/packages/bot/src/handlers/nearby-inline-list.selftest.ts"

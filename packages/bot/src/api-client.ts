@@ -770,25 +770,15 @@ export async function quickVetConnect(
     json = {};
   }
   if (!res.ok) {
-    return {
-      ok: false,
-      status: res.status,
-      error:
-        (typeof json.error === 'string' && json.error) ||
-        (typeof json.message === 'string' && json.message) ||
-        body ||
-        `خطای ${res.status}`,
-      reason: typeof json.reason === 'string' ? json.reason : undefined,
-      code: typeof json.code === 'string' ? json.code : undefined,
-      requiresResendConfirm: Boolean(
-        json.requiresResendConfirm || json.code === 'RESEND_CONFIRM_REQUIRED'
-      ),
-      balance: typeof json.balance === 'number' ? json.balance : undefined,
-      cost: typeof json.cost === 'number' ? json.cost : undefined,
-      refunded: Boolean(json.refunded),
-      coins: typeof json.coins === 'number' ? json.coins : undefined,
-    };
+    return parseQuickVetConnectFailure(res.status, json, body);
   }
+  return parseQuickVetConnectSuccess(json);
+}
+
+/** Pure mapper — keep aiFallback/advice so bot can enter sticky Pasha/AI chat. */
+export function parseQuickVetConnectSuccess(
+  json: Record<string, unknown>
+): QuickVetConnectResult {
   return {
     ok: true,
     sent: Number(json.sent ?? 0),
@@ -800,6 +790,39 @@ export async function quickVetConnect(
       ? (json.consultations as VetConsultation[])
       : [],
     message: typeof json.message === 'string' ? json.message : 'درخواست ارسال شد.',
+    // Critical: without these, trainer/vet AI fallback never opens sticky vet_chat.
+    aiFallback: Boolean(json.aiFallback),
+    advice: typeof json.advice === 'string' ? json.advice : undefined,
+    adviceSource:
+      json.adviceSource === 'llm' || json.adviceSource === 'offline'
+        ? json.adviceSource
+        : undefined,
+    serviceKind: typeof json.serviceKind === 'string' ? json.serviceKind : undefined,
+  };
+}
+
+export function parseQuickVetConnectFailure(
+  status: number,
+  json: Record<string, unknown>,
+  body = ''
+): QuickVetConnectFailure {
+  return {
+    ok: false,
+    status,
+    error:
+      (typeof json.error === 'string' && json.error) ||
+      (typeof json.message === 'string' && json.message) ||
+      body ||
+      `خطای ${status}`,
+    reason: typeof json.reason === 'string' ? json.reason : undefined,
+    code: typeof json.code === 'string' ? json.code : undefined,
+    requiresResendConfirm: Boolean(
+      json.requiresResendConfirm || json.code === 'RESEND_CONFIRM_REQUIRED'
+    ),
+    balance: typeof json.balance === 'number' ? json.balance : undefined,
+    cost: typeof json.cost === 'number' ? json.cost : undefined,
+    refunded: Boolean(json.refunded),
+    coins: typeof json.coins === 'number' ? json.coins : undefined,
   };
 }
 
