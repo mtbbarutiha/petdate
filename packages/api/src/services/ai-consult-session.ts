@@ -7,7 +7,16 @@ import {
   generateAiConsultAdvice,
   trainerTypingDelayMs,
 } from './ai-consult';
+import {
+  inferUserToneFromMessages,
+  mergeUserTone,
+  parseStoredTone,
+} from './pasha-user-tone';
 import { notifyInbox, notifyVetMessage, notifyVetThread } from '../ws/chatHub';
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
+}
 
 export function ensureAiAssistantUser(): User {
   const tg = aiAssistantTelegramId();
@@ -44,10 +53,6 @@ export function decorateAiConsultDisplay(consult: VetConsultation): VetConsultat
 function toAiKind(kind: ConsultServiceKind): 'vet' | 'trainer' | null {
   if (kind === 'vet' || kind === 'trainer') return kind;
   return null;
-}
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function petPromptFields(pet: ReturnType<typeof dbService.getPet> | null | undefined) {
@@ -172,6 +177,21 @@ export async function maybeReplyAsAiAssistant(opts: {
     .filter((m) => m.content);
 
   const patient = dbService.getUserById(consult.patientUserId);
+  const userMsgs = recent.filter((m) => m.role === 'user').map((m) => m.content);
+  if (opts.patientText.trim()) userMsgs.push(opts.patientText.trim());
+
+  let userTone = null as ReturnType<typeof parseStoredTone>;
+  if (aiKind === 'trainer') {
+    const observed = inferUserToneFromMessages(userMsgs.slice(-12));
+    const previous = parseStoredTone(dbService.getUserAiToneJson(consult.patientUserId));
+    userTone = mergeUserTone(previous, observed);
+    try {
+      dbService.setUserAiToneJson(consult.patientUserId, JSON.stringify(userTone));
+    } catch (err) {
+      console.warn('persist user tone failed:', (err as Error).message);
+    }
+  }
+
   const generated = await generateAiConsultAdvice({
     kind: aiKind,
     patientName: patient?.name,
@@ -182,6 +202,7 @@ export async function maybeReplyAsAiAssistant(opts: {
     petAgeMonths: pet?.ageMonths,
     userMessage: opts.patientText,
     history: recent.slice(0, -1),
+    userTone,
   });
 
   // Human pacing for trainer AI only — HTTP path already fire-and-forgets this call.
