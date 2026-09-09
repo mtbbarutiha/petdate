@@ -224,6 +224,8 @@ export async function ensureWebAccessibleAvatar(userId: number): Promise<User | 
         avatarUrl: urlPath,
         // Preserve custom flag if user uploaded via bot wizard
         avatarCustom: user.avatarCustom ?? true,
+        // Rematerialize only — do not re-queue moderation
+        avatarModerationStatus: user.avatarModerationStatus ?? 'approved',
       });
       if (updated) return updated;
     }
@@ -268,6 +270,8 @@ export async function syncUserProfileFromTelegram(
     if (urlPath) {
       patch.avatarUrl = urlPath;
       if (user.avatarCustom == null) patch.avatarCustom = true;
+      // Keep existing moderation when only converting storage format
+      patch.avatarModerationStatus = user.avatarModerationStatus ?? 'approved';
     }
   }
 
@@ -286,6 +290,8 @@ export async function syncUserProfileFromTelegram(
     } else {
       patch.avatarUrl = urlPath;
       patch.avatarCustom = false;
+      // Fresh Telegram profile photo → wait for admin approval before public display
+      delete patch.avatarModerationStatus;
       console.info(`telegram profile sync: avatar saved user=${userId} path=${urlPath}`);
     }
   }

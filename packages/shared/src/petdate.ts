@@ -305,6 +305,8 @@ export interface PetdateUser {
   avatarUrl?: string;
   /** true when user uploaded a site avatar — Telegram login must not overwrite it */
   avatarCustom?: boolean;
+  /** تأیید ادمین برای نمایش عمومی عکس پروفایل */
+  avatarModerationStatus?: PhotoModerationStatus;
   age?: number;
   gender?: UserGender;
   city?: string;

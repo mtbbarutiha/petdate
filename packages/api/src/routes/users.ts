@@ -1027,6 +1027,26 @@ usersRouter.post('/pets/:id/photo-moderation', (req, res) => {
   res.json({ ok: true, pet });
 });
 
+/** صف تأیید عکس پروفایل کاربران */
+usersRouter.get('/user-avatars/pending', (_req, res) => {
+  res.json(dbService.listPendingUserAvatars());
+});
+
+usersRouter.post('/:id/avatar-moderation', (req, res) => {
+  const userId = Number(req.params.id);
+  const statusRaw = String(req.body?.status ?? '').trim();
+  if (statusRaw !== 'approved' && statusRaw !== 'rejected') {
+    res.status(400).json({ error: 'status باید approved یا rejected باشد' });
+    return;
+  }
+  const user = dbService.setAvatarModerationStatus(userId, statusRaw);
+  if (!user) {
+    res.status(404).json({ error: 'کاربر پیدا نشد' });
+    return;
+  }
+  res.json({ ok: true, user });
+});
+
 usersRouter.get('/providers/online', (req, res) => {
   const kindRaw = String(req.query.kind ?? '').trim();
   const kind = kindRaw === 'sitter' ? 'sitter' : kindRaw === 'trainer' ? 'trainer' : null;

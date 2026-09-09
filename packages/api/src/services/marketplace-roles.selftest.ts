@@ -114,6 +114,27 @@ async function main() {
   const public2 = dbService.listPets({ publicOnly: true });
   assert(public2.some((p) => p.id === pet.id), 'approved visible');
 
+  // User avatar moderation
+  const tgOwner = `selftest_mkt_owner_${Date.now()}`;
+  const { user: owner } = dbService.findOrCreateUser({
+    telegramId: tgOwner,
+    name: 'Owner',
+    username: 'owner',
+  });
+  dbService.updateUserProfile(owner.id, {
+    avatarUrl: '/api/auth/avatar/1/new.jpg',
+    avatarCustom: true,
+  });
+  const pendingOwner = dbService.getUserById(owner.id)!;
+  assert(pendingOwner.avatarModerationStatus === 'pending', 'avatar pending after upload');
+  assert(
+    dbService.listPendingUserAvatars().some((u) => u.id === owner.id),
+    'avatar in admin queue'
+  );
+  dbService.setAvatarModerationStatus(owner.id, 'approved');
+  assert(dbService.getUserById(owner.id)!.avatarModerationStatus === 'approved', 'avatar approved');
+  dbService.deleteUserByTelegramId(tgOwner);
+
   dbService.deleteUserByTelegramId(tgPatient);
   dbService.deleteUserByTelegramId(tgTrainer);
   console.log('marketplace-roles.selftest: ok');

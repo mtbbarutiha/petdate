@@ -523,6 +523,18 @@ authRouter.get('/avatar/:userId/:filename', (req, res) => {
     res.status(404).json({ error: 'عکس پیدا نشد' });
     return;
   }
+
+  const ownerId = Number(userId);
+  const session = getUserFromBearer(req.header('authorization') ?? undefined);
+  if (Number.isFinite(ownerId) && ownerId > 0) {
+    const owner = dbService.getUserById(ownerId);
+    const status = owner?.avatarModerationStatus ?? 'approved';
+    if (status !== 'approved' && session?.user?.id !== ownerId) {
+      res.status(403).json({ error: 'عکس هنوز تأیید نشده است' });
+      return;
+    }
+  }
+
   res.setHeader('Content-Type', mimeFromUserAvatarKey(storageKey));
   res.setHeader('Cache-Control', 'public, max-age=86400');
   res.send(fs.readFileSync(abs));

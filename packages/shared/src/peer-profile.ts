@@ -28,6 +28,7 @@ export type PeerProfileSource = {
   bio?: string | null;
   interests?: string[] | null;
   avatarUrl?: string | null;
+  avatarModerationStatus?: 'pending' | 'approved' | 'rejected' | null;
   role?: UserRole | null;
   roles?: UserRole[] | null;
   verificationStatus?: VerificationStatus | null;
@@ -130,7 +131,10 @@ export function toPeerPublicUser(user: PeerProfileSource): PeerPublicUser {
   if (user.interests && user.interests.length > 0) {
     out.interests = user.interests.map(String).filter((s) => s.trim());
   }
-  if (user.avatarUrl?.trim()) out.avatarUrl = String(user.avatarUrl).trim();
+  const avatarApproved = (user.avatarModerationStatus ?? 'approved') === 'approved';
+  if (avatarApproved && user.avatarUrl?.trim()) {
+    out.avatarUrl = String(user.avatarUrl).trim();
+  }
   if (user.role) out.role = user.role;
   const roles = normalizeRoles(user.roles, user.role);
   if (roles.length) out.roles = roles;

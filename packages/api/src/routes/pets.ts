@@ -17,8 +17,26 @@ import {
   petPhotoStorageKeyFromUrl,
   readLocalPetPhoto,
 } from '../services/telegram-media';
+import { getUserFromBearer } from '../services/web-otp';
+import type { PetProfile } from '@petdate/shared';
 
 export const petsRouter = Router();
+
+function viewerUserId(req: { header: (name: string) => string | undefined }): number | undefined {
+  const session = getUserFromBearer(req.header('authorization') ?? undefined);
+  return session?.user?.id;
+}
+
+/** Hide unapproved pet/owner photos from non-owners. */
+function sanitizePetForViewer(pet: PetProfile, viewerId?: number): PetProfile {
+  const isOwner = viewerId != null && viewerId === pet.ownerId;
+  if (isOwner) return pet;
+  const out = { ...pet };
+  if ((pet.photoModerationStatus ?? 'approved') !== 'approved') {
+    out.imageUrl = undefined;
+  }
+  return out;
+}
 
 const petPhotoUpload = multer({
   storage: multer.memoryStorage(),
@@ -97,6 +115,27 @@ petsRouter.get('/photos/:ownerId/:filename', (req, res) => {
     res.status(404).json({ error: 'عکس پیدا نشد' });
     return;
   }
+
+  const ownerNum = Number(ownerId);
+  const viewerId = viewerUserId(req);
+  if (Number.isFinite(ownerNum) && ownerNum > 0) {
+    // Find whether this file belongs to a pet that is still pending moderation.
+    const row = getDb()
+      .prepare(
+        `SELECT id, photo_moderation_status FROM pets
+         WHERE owner_id = ? AND image_url LIKE ?`
+      )
+      .get(ownerNum, `%/api/pets/photos/${ownerId}/${filename}%`) as
+      | { id: number; photo_moderation_status: string }
+      | undefined;
+    if (row && String(row.photo_moderation_status ?? 'approved') !== 'approved') {
+      if (viewerId !== ownerNum) {
+        res.status(403).json({ error: 'عکس هنوز تأیید نشده است' });
+        return;
+      }
+    }
+  }
+
   res.setHeader('Content-Type', mimeFromPetPhotoKey(storageKey));
   res.setHeader('Cache-Control', 'public, max-age=86400');
   res.send(fs.readFileSync(abs));
@@ -269,10 +308,26 @@ petsRouter.get('/:id/image', async (req, res) => {
   }
 
   const row = getDb()
-    .prepare('SELECT id, owner_id, image_url FROM pets WHERE id = ?')
-    .get(petId) as { id: number; owner_id: number; image_url: string | null } | undefined;
+    .prepare('SELECT id, owner_id, image_url, photo_moderation_status FROM pets WHERE id = ?')
+    .get(petId) as
+    | {
+        id: number;
+        owner_id: number;
+        image_url: string | null;
+        photo_moderation_status: string | null;
+      }
+    | undefined;
   if (!row) {
     res.status(404).json({ error: 'پت پیدا نشد' });
+    return;
+  }
+
+  const viewerId = viewerUserId(req);
+  if (
+    String(row.photo_moderation_status ?? 'approved') !== 'approved' &&
+    viewerId !== row.owner_id
+  ) {
+    res.status(403).json({ error: 'عکس هنوز تأیید نشده است' });
     return;
   }
 
@@ -326,7 +381,7 @@ petsRouter.get('/:id', (req, res) => {
     res.status(404).json({ error: 'پت پیدا نشد' });
     return;
   }
-  res.json(pet);
+  res.json(sanitizePetForViewer(pet, viewerUserId(req)));
 });
 
 petsRouter.post('/', (req, res) => {
