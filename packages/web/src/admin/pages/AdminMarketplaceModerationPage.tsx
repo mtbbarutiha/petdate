@@ -10,7 +10,7 @@ type PetRow = {
   ownerId: number;
 };
 
-type CredTab = 'vet' | 'trainer' | 'sitter' | 'photos';
+type CredTab = 'vet' | 'trainer' | 'sitter' | 'photos' | 'avatars';
 type ViewMode = 'queue' | 'archive';
 
 function looksLikeTelegramFileId(value: string): boolean {
@@ -20,8 +20,8 @@ function looksLikeTelegramFileId(value: string): boolean {
   return /^[A-Za-z0-9_-]{24,}$/.test(v);
 }
 
-/** Resolve credential storage ref → browser-loadable URL. */
-function credentialSrc(fileRef?: string | null): string | null {
+/** Resolve credential / photo storage ref → browser-loadable URL. */
+function mediaSrc(fileRef?: string | null): string | null {
   const raw = String(fileRef ?? '').trim();
   if (!raw) return null;
   if (/^https?:\/\//i.test(raw)) return raw;
@@ -52,13 +52,14 @@ export function AdminMarketplaceModerationPage() {
   const [archiveTrainers, setArchiveTrainers] = useState<User[]>([]);
   const [archiveSitters, setArchiveSitters] = useState<User[]>([]);
   const [photos, setPhotos] = useState<PetRow[]>([]);
+  const [avatars, setAvatars] = useState<User[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setError(null);
     try {
-      const [pv, pt, ps, av, at, as, p] = await Promise.all([
+      const [pv, pt, ps, av, at, as, p, ua] = await Promise.all([
         adminFetch<User[]>('/api/users/vet-credentials/pending'),
         adminFetch<User[]>('/api/users/provider-credentials/pending?kind=trainer'),
         adminFetch<User[]>('/api/users/provider-credentials/pending?kind=sitter'),
@@ -66,6 +67,7 @@ export function AdminMarketplaceModerationPage() {
         adminFetch<User[]>('/api/users/provider-credentials/verified?kind=trainer'),
         adminFetch<User[]>('/api/users/provider-credentials/verified?kind=sitter'),
         adminFetch<PetRow[]>('/api/users/pet-photos/pending'),
+        adminFetch<User[]>('/api/users/user-avatars/pending'),
       ]);
       setPendingVets(pv);
       setPendingTrainers(pt);
@@ -74,6 +76,7 @@ export function AdminMarketplaceModerationPage() {
       setArchiveTrainers(at);
       setArchiveSitters(as);
       setPhotos(p);
+      setAvatars(ua);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'بارگذاری ناموفق');
     }
@@ -131,9 +134,24 @@ export function AdminMarketplaceModerationPage() {
     }
   }
 
-  const isArchive = mode === 'archive' && tab !== 'photos';
+  async function actAvatar(id: number, approve: boolean) {
+    setBusyId(`avatar-${id}`);
+    try {
+      await adminFetch(`/api/users/${id}/avatar-moderation`, {
+        method: 'POST',
+        body: JSON.stringify({ status: approve ? 'approved' : 'rejected' }),
+      });
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'خطا');
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  const isArchive = mode === 'archive' && tab !== 'photos' && tab !== 'avatars';
   const list =
-    tab === 'photos'
+    tab === 'photos' || tab === 'avatars'
       ? []
       : tab === 'vet'
         ? isArchive
@@ -152,6 +170,7 @@ export function AdminMarketplaceModerationPage() {
     trainer: mode === 'archive' ? archiveTrainers.length : pendingTrainers.length,
     sitter: mode === 'archive' ? archiveSitters.length : pendingSitters.length,
     photos: photos.length,
+    avatars: avatars.length,
   };
 
   return (
@@ -160,8 +179,8 @@ export function AdminMarketplaceModerationPage() {
         <div>
           <h1>تأیید مدارک و عکس‌ها</h1>
           <p>
-            صف سریع تأیید مدرک دامپزشک / مربی / پرستار و عکس پت‌ها — مدارک تأییدشده در آرشیو
-            می‌مانند.
+            صف تأیید مدرک دامپزشک / مربی / پرستار و عکس پت و کاربر — مدارک تأییدشده در آرشیو
+            می‌مانند. عکس‌ها تا تأیید ادمین عمومی نیستند.
           </p>
         </div>
         <button type="button" className="admin-btn" onClick={() => void load()}>
@@ -186,7 +205,7 @@ export function AdminMarketplaceModerationPage() {
             className={mode === key ? 'admin-btn primary' : 'admin-btn'}
             onClick={() => {
               setMode(key);
-              if (key === 'archive' && tab === 'photos') setTab('vet');
+              if (key === 'archive' && (tab === 'photos' || tab === 'avatars')) setTab('vet');
             }}
           >
             {label}
@@ -203,7 +222,12 @@ export function AdminMarketplaceModerationPage() {
             ['vet', `دامپزشک (${tabCounts.vet})`],
             ['trainer', `مربی (${tabCounts.trainer})`],
             ['sitter', `پرستار (${tabCounts.sitter})`],
-            ...(mode === 'queue' ? ([['photos', `عکس پت (${tabCounts.photos})`]] as const) : []),
+            ...(mode === 'queue'
+              ? ([
+                  ['photos', `عکس پت (${tabCounts.photos})`],
+                  ['avatars', `عکس کاربر (${tabCounts.avatars})`],
+                ] as const)
+              : []),
           ] as const
         ).map(([key, label]) => (
           <button
@@ -217,14 +241,14 @@ export function AdminMarketplaceModerationPage() {
         ))}
       </div>
 
-      {tab !== 'photos' ? (
+      {tab !== 'photos' && tab !== 'avatars' ? (
         <ul className="admin-list">
           {!list.length ? (
             <li>{isArchive ? 'آرشیو خالی است.' : 'صف خالی است.'}</li>
           ) : null}
           {list.map((u) => {
             const fileRef = credentialFileRef(u, tab);
-            const src = credentialSrc(fileRef);
+            const src = mediaSrc(fileRef);
             const pdf = isPdfRef(fileRef);
             return (
               <li key={u.id} className="admin-credential-row" style={{ marginBottom: 16 }}>
@@ -313,6 +337,50 @@ export function AdminMarketplaceModerationPage() {
             );
           })}
         </ul>
+      ) : tab === 'avatars' ? (
+        <ul className="admin-list">
+          {!avatars.length ? <li>صف خالی است.</li> : null}
+          {avatars.map((u) => {
+            const src = mediaSrc(u.avatarUrl);
+            return (
+              <li key={u.id} style={{ marginBottom: 12 }}>
+                <strong>{u.name}</strong> · کاربر #{u.id}
+                {u.telegramId ? ` · TG ${u.telegramId}` : ''}
+                {src ? (
+                  <div style={{ marginTop: 6 }}>
+                    <a href={src} target="_blank" rel="noreferrer">
+                      <img
+                        src={src}
+                        alt={u.name}
+                        style={{ maxWidth: 180, borderRadius: 8 }}
+                      />
+                    </a>
+                  </div>
+                ) : (
+                  <p className="muted">فایل عکس در دسترس نیست.</p>
+                )}
+                <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
+                  <button
+                    type="button"
+                    className="admin-btn primary"
+                    disabled={busyId != null}
+                    onClick={() => void actAvatar(u.id, true)}
+                  >
+                    تأیید عکس
+                  </button>
+                  <button
+                    type="button"
+                    className="admin-btn"
+                    disabled={busyId != null}
+                    onClick={() => void actAvatar(u.id, false)}
+                  >
+                    رد
+                  </button>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
       ) : (
         <ul className="admin-list">
           {!photos.length ? <li>صف خالی است.</li> : null}
@@ -322,7 +390,7 @@ export function AdminMarketplaceModerationPage() {
                 ? p.imageUrl
                 : p.imageUrl.startsWith('/')
                   ? `${API_BASE}${p.imageUrl}`
-                  : credentialSrc(p.imageUrl)
+                  : mediaSrc(p.imageUrl)
               : null;
             return (
               <li key={p.id} style={{ marginBottom: 12 }}>

@@ -354,6 +354,12 @@ function migrateSchema() {
   if (!names.has('avatar_custom')) {
     db.exec('ALTER TABLE users ADD COLUMN avatar_custom INTEGER NOT NULL DEFAULT 0');
   }
+  if (!names.has('avatar_moderation_status')) {
+    // Existing avatars stay visible; new uploads go pending via profile update.
+    db.exec(
+      "ALTER TABLE users ADD COLUMN avatar_moderation_status TEXT NOT NULL DEFAULT 'approved'"
+    );
+  }
   if (!names.has('province')) db.exec('ALTER TABLE users ADD COLUMN province TEXT');
   if (!names.has('country')) db.exec("ALTER TABLE users ADD COLUMN country TEXT");
   if (!names.has('interests')) db.exec("ALTER TABLE users ADD COLUMN interests TEXT NOT NULL DEFAULT '[]'");
@@ -1735,6 +1741,7 @@ function mapUser(row: Record<string, unknown>): User {
     interests: parseInterests(row.interests),
     avatarUrl: row.avatar_url as string | undefined,
     avatarCustom: row.avatar_custom == null ? false : Boolean(row.avatar_custom),
+    avatarModerationStatus: parsePhotoModerationStatus(row.avatar_moderation_status),
     coins: row.coins != null ? Number(row.coins) : 0,
     walletTon: row.wallet_ton != null ? Number(row.wallet_ton) : 0,
     walletStars: row.wallet_stars != null ? Number(row.wallet_stars) : 0,
@@ -1925,7 +1932,14 @@ function mapPet(row: Record<string, unknown>): PetProfile {
     ownerCity: (row.owner_city as string | undefined) ?? undefined,
     ownerName: (row.owner_name as string | undefined) ?? undefined,
     ownerVerified: row.owner_verified != null ? Boolean(row.owner_verified) : undefined,
-    ownerAvatarUrl: (row.owner_avatar_url as string | undefined) ?? undefined,
+    ownerAvatarUrl: (() => {
+      const raw = (row.owner_avatar_url as string | undefined) ?? undefined;
+      if (!raw?.trim()) return undefined;
+      const status = parsePhotoModerationStatus(
+        row.owner_avatar_moderation_status ?? 'approved'
+      );
+      return status === 'approved' ? raw : undefined;
+    })(),
     ownerLastSeenAt:
       (row.owner_location_updated_at as string | undefined) ||
       (row.owner_last_seen_at as string | undefined) ||
@@ -2318,6 +2332,7 @@ export const dbService = {
       interests: string[];
       avatarUrl: string;
       avatarCustom: boolean;
+      avatarModerationStatus: PhotoModerationStatus;
       coins: number;
       onboarding: OnboardingStatus;
       isActive: boolean;
@@ -2356,7 +2371,23 @@ export const dbService = {
       fields.push('interests = ?');
       values.push(JSON.stringify(patch.interests));
     }
-    if (patch.avatarUrl !== undefined) { fields.push('avatar_url = ?'); values.push(patch.avatarUrl); }
+    if (patch.avatarUrl !== undefined) {
+      fields.push('avatar_url = ?');
+      values.push(patch.avatarUrl);
+      if (patch.avatarModerationStatus === undefined) {
+        // New/changed profile photo must be re-moderated before public display.
+        // Callers that only rematerialize storage can pass avatarModerationStatus to keep status.
+        if (String(patch.avatarUrl || '').trim()) {
+          fields.push("avatar_moderation_status = 'pending'");
+        } else {
+          fields.push("avatar_moderation_status = 'approved'");
+        }
+      }
+    }
+    if (patch.avatarModerationStatus !== undefined) {
+      fields.push('avatar_moderation_status = ?');
+      values.push(patch.avatarModerationStatus);
+    }
     if (patch.avatarCustom !== undefined) {
       fields.push('avatar_custom = ?');
       values.push(patch.avatarCustom ? 1 : 0);
@@ -2395,6 +2426,7 @@ export const dbService = {
       interests: string[];
       avatarUrl: string;
       avatarCustom: boolean;
+      avatarModerationStatus: PhotoModerationStatus;
       coins: number;
       onboarding: OnboardingStatus;
       isActive: boolean;
@@ -2557,6 +2589,7 @@ export const dbService = {
            bio = NULL,
            avatar_url = NULL,
            avatar_custom = 0,
+           avatar_moderation_status = 'approved',
            interests = '[]',
            roles = '[]',
            role = NULL,
@@ -2843,6 +2876,43 @@ export const dbService = {
       `UPDATE pets SET photo_moderation_status = ?, updated_at = datetime('now') WHERE id = ?`
     ).run(status, petId);
     return this.getPet(petId);
+  },
+
+  listPendingUserAvatars(): User[] {
+    return (
+      db
+        .prepare(
+          `SELECT * FROM users
+           WHERE COALESCE(avatar_moderation_status, 'approved') = 'pending'
+             AND avatar_url IS NOT NULL
+             AND TRIM(avatar_url) != ''
+           ORDER BY id ASC`
+        )
+        .all() as Record<string, unknown>[]
+    ).map(mapUser);
+  },
+
+  setAvatarModerationStatus(
+    userId: number,
+    status: PhotoModerationStatus
+  ): User | null {
+    const existing = this.getUserById(userId);
+    if (!existing) return null;
+    if (status === 'rejected') {
+      db.prepare(
+        `UPDATE users SET
+           avatar_moderation_status = 'rejected',
+           avatar_url = NULL,
+           avatar_custom = 0
+         WHERE id = ?`
+      ).run(userId);
+    } else {
+      db.prepare(`UPDATE users SET avatar_moderation_status = ? WHERE id = ?`).run(
+        status,
+        userId
+      );
+    }
+    return this.getUserById(userId);
   },
 
   submitVerification(
@@ -4016,6 +4086,7 @@ export const dbService = {
              users.city AS owner_city,
              users.name AS owner_name,
              users.avatar_url AS owner_avatar_url,
+             users.avatar_moderation_status AS owner_avatar_moderation_status,
              users.lat AS owner_lat,
              users.lng AS owner_lng,
              users.location_updated_at AS owner_location_updated_at,
@@ -4077,6 +4148,7 @@ export const dbService = {
                 users.city AS owner_city,
                 users.name AS owner_name,
                 users.avatar_url AS owner_avatar_url,
+                users.avatar_moderation_status AS owner_avatar_moderation_status,
                 users.location_updated_at AS owner_location_updated_at,
                 users.last_seen_at AS owner_last_seen_at,
                 CASE WHEN users.verification_status = 'verified' THEN 1 ELSE 0 END AS owner_verified

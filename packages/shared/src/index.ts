@@ -8,6 +8,7 @@ export * from './peer-profile';
 
 import type {
   OnboardingStatus,
+  PhotoModerationStatus,
   UserRole,
   VerificationStatus,
   VetCredentialStatus,
@@ -168,6 +169,8 @@ export interface User {
   avatarUrl?: string;
   /** true when user uploaded a site avatar — Telegram login must not overwrite it */
   avatarCustom?: boolean;
+  /** تأیید ادمین برای نمایش عمومی عکس پروفایل */
+  avatarModerationStatus?: PhotoModerationStatus;
   /** سکه ربات (هم‌تراز wallet.coins) */
   coins?: number;
   /** موجودی TON (Telegram Toncoin) */
