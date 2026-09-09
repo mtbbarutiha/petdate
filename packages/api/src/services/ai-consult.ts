@@ -113,10 +113,15 @@ function systemPrompt(kind: AiConsultKind): string {
       'هرگز پروتکل گفتگو را اعلام نکن. ممنوع در پیام کاربر: «اول احوال‌پرسی بعد می‌ریم سراغ آموزش»، «الان احوال‌پرسی می‌کنم»، «اول بشناسمتون بعد تمرین»، یا هر جملهٔ متا که برنامهٔ سلام→آموزش را توضیح دهد. فقط انجام بده، روایت نکن.',
       'اگر تاریخچه یا احوال‌پرسی قبلاً بوده، آیین سلام/احوال‌پرسی را تکرار نکن؛ مستقیم مفید و خودمونی جواب بده.',
       'اگر همان اول سؤال تمرین پرسید: یک جملهٔ گرم کوتاه، بعد جواب خودمونی و کاربردی — بدون اعلام «اول احوال بعد آموزش».',
+      'سؤال یا پیام کاربر را تکرار یا بازنویسی نکن؛ مستقیم جواب بده. ممنوع: «گفتی که…»، «پرسیدی که…»، «در مورد X که گفتی…»، یا بازگو کردن صورت مسئله قبل از راهنمایی.',
+      'تو مربی آموزش پت هستی، نه پزشک؛ برای چارچوب سؤال از «نسخه» / «نسخهٔ درست» / «نسخهٔ آموزشی» استفاده نکن.',
+      'قبل از سؤالِ روشن‌سازی جملهٔ متا نگو. ممنوع: «برای اینکه بتونم درست راهنمایی کنم باید بدونم…»، «برای اینکه نسخهٔ درست بدم…»، «تا دقیق/درست جواب بدم بگو…»، یا هر توضیحِ «چرا می‌پرسم».',
+      'اگر سن/وزن/نژاد واقعاً لازم بود: فقط یک سؤال کوتاه گفتاری بپرس («چند سالشه؟» / «تقریباً چندساله‌ست؟») بدون توضیح چرا.',
+      'ترجیح بده اول یک راهنمایی مفید جزئی بدهی، بعد حداکثر یک سؤال سبک؛ گفتگو را با فرم پذیرش یا لیست «بگو سن، محیط، از کی…» متوقف نکن.',
       'دانش درونی‌ات (عنوان کتاب را مگر با سؤال «منبع» نگو): Culture Clash / Donaldson، Puppy Primer / McConnell، Think Like a Cat / Johnson-Bennett، Total Cat Mojo / Galaxy، Companion Parrot Handbook / Blanchard، Manual of Exotic Pet Practice / Mitchell & Tully.',
       'روش‌ها: جایزه و تقویت مثبت، بدون زور و تنبیه بدنی، کلیکر/کلمهٔ آفرین، آروم‌کردن ترس، قلاده، فاصلهٔ امن، بازی و enrichment.',
       'محتوا باید دقیق باشد ولی لحن انسانی: ۲–۳ پاراگراف حرف زدنی. اگر مرحله می‌گویی با «اول… بعد…» بگو نه با تیتر درسی. آخرش یک سؤال خودمونی بپرس («الان بیشتر تو خونه می‌کشه یا بیرون؟»).',
-      'توله با بالغ فرق دارد؛ گربه با سگ یکی نیست. اگر چیزی کم بود خودمونی بپرس.',
+      'توله با بالغ فرق دارد؛ گربه با سگ یکی نیست. اگر چیزی کم بود خودمونی و کوتاه بپرس — بدون متای «برای اینکه درست راهنمایی کنم».',
       'در پاسخ فارسی از DOG/CAT یا کد انگلیسی گونه استفاده نکن؛ بگو سگ یا گربه (یا پرنده/خرگوش/همستر/…).',
       'پزشکی/اورژانس: نگران شو، بفرست پیش دامپزشک؛ دارو تجویز نکن.',
       'تنبیه بدنی، خفه، شوک، آلفا رول ممنوع.',
@@ -179,7 +184,7 @@ export function buildTrainerOpeningGreeting(
 
   const profileLine = profileBits.length
     ? `از چیزی که تو پروفایل هست: ${profileBits.join('، ')}.`
-    : `سن و نژاد ${pet} رو هم اگه بگی، حرفامون دقیق‌تر می‌شه.`;
+    : `چند سالشه؟ نژادشم اگه می‌دونی بگو.`;
 
   const hellos = [
     `سلام ${owner} 👋 من ${AI_TRAINER_DISPLAY_NAME}ام. خوشحالم اینجایی.`,
@@ -213,6 +218,7 @@ function ageAwareAside(ctx: AiConsultContext): string {
   const species = String(ctx.petSpecies || '').toLowerCase();
   const breed = String(ctx.petBreed || '').trim();
   const name = ctx.petName || 'پت';
+  const hasAge = ctx.petAgeMonths != null && Number.isFinite(ctx.petAgeMonths);
   if (/cat|گربه/.test(species) || /گربه|میو/.test(`${ctx.petName || ''} ${breed}`)) {
     return `راستی برای ${name} یادت باشه گربه‌ها با زور جلو نمی‌رن؛ جلسه‌های خیلی کوتاه و با حق انتخاب معمولاً بهتر جواب می‌ده.`;
   }
@@ -225,7 +231,15 @@ function ageAwareAside(ctx: AiConsultContext): string {
   if (breed) {
     return `با توجه به نژاد ${breed}، انرژی و حساسیت ${name} رو در نظر بگیر و تمرین رو آروم‌آروم سخت‌تر کن.`;
   }
-  return `اگه سن ${name} رو بگی (توله یا بالغ)، سرعت جلسه رو بهتر برات تنظیم می‌کنم.`;
+  if (hasAge) {
+    const months = ctx.petAgeMonths as number;
+    if (months < 12) {
+      return `با حدود ${months} ماهگی، جلسه‌ها رو کوتاه و پرتکرار نگه دار.`;
+    }
+    return `با سن بالغ‌تر، آروم‌آروم سخت‌تر کن ولی عجله نکن.`;
+  }
+  // Brief natural ask — no meta «برای اینکه درست راهنمایی کنم».
+  return `تقریباً چندساله‌ست؟`;
 }
 
 
@@ -750,15 +764,16 @@ function formatTrainerTopicReply(
 ): string {
   const body = depth >= 2 ? topic.deeper : topic.primary;
   const hasHistory = (ctx.history?.length ?? 0) > 0;
+  // Never restate/echo the user's question or topic title — answer directly.
   const openings = hasHistory
     ? [
-        `آها، «${topic.title}» — ببین من معمولاً این‌جوری جمعش می‌کنم:`,
-        `خب در مورد «${topic.title}» بذار خودمونی بگم چی کار کنی:`,
-        `این سؤال «${topic.title}» رو خیلی می‌شنوم. راستش راهش اینه:`,
+        `ببین من معمولاً این‌جوری جمعش می‌کنم:`,
+        `خب بذار خودمونی بگم چی کار کنی:`,
+        `راستش راهش اینه:`,
       ]
     : [
         `سلام، من ${AI_TRAINER_DISPLAY_NAME}ام. خوش اومدی — بریم سر اصل مطلب.`,
-        `سلام! ${AI_TRAINER_DISPLAY_NAME} هستم. درمورد حرف‌ات همین الان می‌گم چی کار کنیم.`,
+        `سلام! ${AI_TRAINER_DISPLAY_NAME} هستم. همین الان می‌گم چی کار کنیم.`,
       ];
   const seed = (ctx.userMessage?.length ?? 0) + (ctx.petName?.length ?? 0) + topic.id.length;
   const opening = opts?.followUpLabel
@@ -787,7 +802,7 @@ function trainerFollowUpReply(ctx: AiConsultContext): string | null {
     if (topic) {
       const depth = Math.max(2, (tracked?.depth ?? 1) + 1);
       return formatTrainerTopicReply(ctx, topic, depth, {
-        followUpLabel: `باشه، بریم عمیق‌تر روی «${topic.title}».`,
+        followUpLabel: `باشه، بریم عمیق‌تر.`,
       });
     }
   }
@@ -798,7 +813,7 @@ function trainerFollowUpReply(ctx: AiConsultContext): string | null {
     const prior = history.some((h) => h.role === 'user' && findTrainerTopic(h.content)?.id === current.id);
     if (prior) {
       return formatTrainerTopicReply(ctx, current, 2, {
-        followUpLabel: `ادامه بدیم روی «${current.title}» — این بار می‌ریم سراغ گیرها و جزئیات:`,
+        followUpLabel: `ادامه بدیم — این بار می‌ریم سراغ گیرها و جزئیات:`,
       });
     }
   }
@@ -969,13 +984,17 @@ export function offlineAiAdvice(ctx: AiConsultContext): string {
       return withTone(formatTrainerTopicReply(ctx, topic, depth));
     }
     if (hasHistory) {
+      const lightAsk =
+        ctx.petAgeMonths != null && Number.isFinite(ctx.petAgeMonths)
+          ? `بیشتر تو خونه‌ست یا بیرون؟`
+          : `تقریباً چندساله‌ست؟`;
       return withTone(
         [
           q
-            ? `در مورد «${q}» می‌خوام دقیق جلو برم. ${ageAwareAside(ctx)}`
-            : `بگو الان دقیقاً کجا گیر کردی تا همان را باز کنیم.`,
+            ? `ببین فعلاً بدون جزئیات بیشتر هم معمولاً از فاصلهٔ امن و تقویت مثبت شروع می‌کنم — زور و تنبیه نه.`
+            : `بگو الان کجا گیر کردی تا همون رو باز کنیم.`,
           ``,
-          `برای اینکه نسخهٔ درست بدهم بگو: سن تقریبی، محیط (خانه/خیابان)، و از کی این رفتار را می‌بینی. اگر عکس یا ویدیوی کوتاه هم داری بفرست.`,
+          lightAsk,
         ].join('\n')
       );
     }
@@ -988,11 +1007,15 @@ export function offlineAiAdvice(ctx: AiConsultContext): string {
       petAgeMonths: ctx.petAgeMonths,
     });
     if (q) {
+      const lightAsk =
+        ctx.petAgeMonths != null && Number.isFinite(ctx.petAgeMonths)
+          ? `بیشتر تو خونه‌ست یا بیرون؟`
+          : `چند سالشه؟`;
       return withTone(
         [
           greet,
           ``,
-          `دربارهٔ «${q}» بعد از اینکه کمی بیشتر بگی (سن، محیط، و اگر عکس داری)، دقیق‌تر جلو می‌رویم.`,
+          `فعلاً یه نکتهٔ کلی: اول فاصله و جایزه، نه زور. ${lightAsk}`,
         ].join('\n')
       );
     }
@@ -1057,8 +1080,10 @@ async function callOpenAiCompatible(ctx: AiConsultContext): Promise<string | nul
     const prefix = includeCtx ? `${ctxBits.join(' · ')}\n\n` : '';
     const followHint =
       ctx.kind === 'trainer' && (ctx.history?.length ?? 0) > 0
-        ? '\n\n(یادآوری: روی موضوع جاری عمیق‌تر برو؛ تکرار صرفِ پیام قبل ممنوع.)'
-        : '';
+        ? '\n\n(یادآوری: روی موضوع جاری عمیق‌تر برو؛ سؤال کاربر را تکرار/بازنویسی نکن؛ مستقیم جواب بده. از «نسخه» و متای «برای اینکه درست راهنمایی کنم…» استفاده نکن؛ اول راهنمایی جزئی، بعد حداکثر یک سؤال کوتاه مثل «چند سالشه؟».)'
+        : ctx.kind === 'trainer'
+          ? '\n\n(یادآوری: سؤال کاربر را تکرار نکن؛ مستقیم جواب بده. «نسخه» و متای «برای اینکه درست/دقیق راهنمایی کنم باید بدونم…» ممنوع؛ اگر سن لازم بود فقط «چند سالشه؟» بپرس.)'
+          : '';
     messages.push({ role: 'user', content: `${prefix}${userText}${followHint}` });
   } else {
     messages.push({ role: 'user', content: buildUserPrompt(ctx) });
