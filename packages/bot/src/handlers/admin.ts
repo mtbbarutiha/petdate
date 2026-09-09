@@ -631,6 +631,19 @@ export async function handleAdminProviderCredentialQueue(
     .join('\n');
   const kb = adminProviderCredentialKeyboard(user.id, kind);
   if (fileId) {
+    const webPath = String(fileId).startsWith('/api/') ? String(fileId) : null;
+    if (webPath) {
+      const base = (process.env.PUBLIC_WEB_URL || process.env.WEB_URL || 'https://petdate.ir').replace(
+        /\/$/,
+        ''
+      );
+      const url = `${base}${webPath}`;
+      await ctx.reply(`${caption}\n\n🔗 <a href="${escapeHtml(url)}">مشاهده مدرک</a>`, {
+        parse_mode: 'HTML',
+        reply_markup: kb,
+      });
+      return;
+    }
     try {
       await ctx.replyWithPhoto(fileId, { caption, parse_mode: 'HTML', reply_markup: kb });
       return;

@@ -819,6 +819,33 @@ export async function patchWebProviderOnline(
   });
 }
 
+/** آپلود مدرک مربی / پرستار از وب (بعد از آپلود: pending تا تأیید ادمین) */
+export async function uploadProviderCredential(
+  token: string,
+  kind: 'trainer' | 'sitter',
+  file: File
+): Promise<{ ok: true; url: string; user: User }> {
+  const form = new FormData();
+  form.append('kind', kind);
+  form.append('file', file);
+  const res = await fetch(`${API_BASE}/api/auth/provider-credential`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: form,
+  });
+  if (!res.ok) {
+    const body = await res.text();
+    try {
+      const json = JSON.parse(body) as { error?: string };
+      throw new Error(json.error || body || `خطای ${res.status}`);
+    } catch (err) {
+      if (err instanceof Error && err.message !== body) throw err;
+      throw new Error(body || `خطای ${res.status}`);
+    }
+  }
+  return res.json() as Promise<{ ok: true; url: string; user: User }>;
+}
+
 export async function patchWebAcceptSeekerAdvice(token: string, accept: boolean) {
   return request<{ ok: true; user: User }>('/api/auth/accept-seeker-advice', {
     method: 'PATCH',

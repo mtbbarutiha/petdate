@@ -6231,6 +6231,30 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
     box-shadow 0.28s ease,
     background 0.28s ease;
 }
+.pepito-provider-cred-upload {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin: 0.55rem 0 0.75rem;
+}
+.pepito-provider-cred-upload > p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: var(--pepito-muted, #5c5670);
+}
+.pepito-provider-cred-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  width: fit-content;
+  max-width: 100%;
+}
+.pepito-provider-cred-label:has(input:disabled) {
+  opacity: 0.65;
+  pointer-events: none;
+}
 .pepito-vet-online-card.is-online {
   border-color: rgba(21, 204, 160, 0.38);
   background:
