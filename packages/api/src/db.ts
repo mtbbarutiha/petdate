@@ -2659,6 +2659,21 @@ export const dbService = {
     ).map(mapUser);
   },
 
+  /** آرشیو مدارک دامپزشک تأییدشده (فایل مدرک حفظ می‌شود). */
+  listVerifiedVetCredentials(): User[] {
+    return (
+      db
+        .prepare(
+          `SELECT * FROM users
+           WHERE vet_credential_status = 'verified'
+             AND vet_credential_file_id IS NOT NULL
+             AND TRIM(vet_credential_file_id) != ''
+           ORDER BY id DESC`
+        )
+        .all() as Record<string, unknown>[]
+    ).map(mapUser);
+  },
+
   submitVetCredential(
     userId: number,
     fileId: string
@@ -2704,6 +2719,25 @@ export const dbService = {
           `SELECT * FROM users
            WHERE ${col} = 'pending'
            ORDER BY id ASC`
+        )
+        .all() as Record<string, unknown>[]
+    ).map(mapUser);
+  },
+
+  /** آرشیو مدارک مربی / پرستار تأییدشده. */
+  listVerifiedProviderCredentials(kind: 'trainer' | 'sitter'): User[] {
+    const statusCol =
+      kind === 'trainer' ? 'trainer_credential_status' : 'sitter_credential_status';
+    const fileCol =
+      kind === 'trainer' ? 'trainer_credential_file_id' : 'sitter_credential_file_id';
+    return (
+      db
+        .prepare(
+          `SELECT * FROM users
+           WHERE ${statusCol} = 'verified'
+             AND ${fileCol} IS NOT NULL
+             AND TRIM(${fileCol}) != ''
+           ORDER BY id DESC`
         )
         .all() as Record<string, unknown>[]
     ).map(mapUser);
