@@ -7,6 +7,8 @@ import {
   BellOff,
   ChevronLeft,
   Eye,
+  GraduationCap,
+  HandHelping,
   LogOut,
   MapPin,
   PawPrint,
@@ -707,19 +709,37 @@ export function ProfilePage() {
           ) : null}
 
           {mainRole === 'pet_owner' ? (
-            <section className="pepito-profile-block pepito-profile-consult" aria-label="مشاوره سریع با پزشک">
+            <section className="pepito-profile-block pepito-profile-consult" aria-label="خدمات برای صاحب پت">
               <div className="pepito-profile-consult-copy">
-                <h2>مشاوره سریع</h2>
-                <p>هزینه اتصال فوری از موجودی سکه کسر می‌شود.</p>
+                <h2>پزشک، مربی و پرستار</h2>
+                <p>درخواست به آنلاین‌ها — هزینه از موجودی سکه کسر می‌شود.</p>
               </div>
-              <Link
-                to="/vet-consult"
-                className="pepito-profile-consult-cta"
-                data-testid="owner-quick-vet-profile-cta"
-              >
-                <Stethoscope size={18} aria-hidden />
-                درخواست مشاوره سریع
-              </Link>
+              <div className="pepito-profile-consult-actions">
+                <Link
+                  to="/vet-consult"
+                  className="pepito-profile-consult-cta"
+                  data-testid="owner-quick-vet-profile-cta"
+                >
+                  <Stethoscope size={18} aria-hidden />
+                  مشاوره سریع پزشک
+                </Link>
+                <Link
+                  to="/trainer-consult"
+                  className="pepito-profile-consult-cta"
+                  data-testid="owner-request-trainer-profile-cta"
+                >
+                  <GraduationCap size={18} aria-hidden />
+                  پیدا کردن مربی
+                </Link>
+                <Link
+                  to="/sitter-consult"
+                  className="pepito-profile-consult-cta"
+                  data-testid="owner-request-sitter-profile-cta"
+                >
+                  <HandHelping size={18} aria-hidden />
+                  پیدا کردن پرستار
+                </Link>
+              </div>
             </section>
           ) : null}
         </div>

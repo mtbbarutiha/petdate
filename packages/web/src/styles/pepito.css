@@ -3601,6 +3601,12 @@ button.chip.is-on {
   text-decoration: none;
   transition: background 0.18s ease, transform 0.15s ease;
 }
+.pepito-profile-consult-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  justify-content: flex-end;
+}
 .pepito-profile-consult-cta:hover {
   background: var(--pepito-dark);
   transform: translateY(-1px);
@@ -3688,6 +3694,10 @@ button.chip.is-on {
   .pepito-profile-consult {
     flex-direction: column;
     align-items: stretch;
+  }
+  .pepito-profile-consult-actions {
+    flex-direction: column;
+    justify-content: stretch;
   }
   .pepito-profile-consult-cta {
     justify-content: center;
