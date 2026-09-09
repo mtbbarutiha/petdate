@@ -16,7 +16,7 @@ export { looksLikePublicUserId, playmateInboxTitle } from './inboxTitle';
 export type InboxKind = 'playmate' | 'vet';
 
 /** Scope of chats tied to the active primary role (no cross-role mixing). */
-export type InboxScope = 'vet' | 'owner';
+export type InboxScope = 'vet' | 'owner' | 'trainer' | 'sitter';
 
 export type InboxConversation = {
   key: string;
@@ -30,7 +30,7 @@ export type InboxConversation = {
   pending: boolean;
   ended: boolean;
   /**
-   * گفتگوی جاری/باز: همبازی پذیرفته‌شده بدون قطع، یا مشاورهٔ دامپزشک فعال.
+   * گفتگوی جاری/باز: همبازی پذیرفته‌شده بدون قطع، یا مشاورهٔ فعال.
    * درخواست‌های در انتظار و چت‌های پایان‌یافته ongoing نیستند.
    */
   ongoing: boolean;
@@ -39,10 +39,15 @@ export type InboxConversation = {
   canDecide: boolean;
   href: string;
   peerPet?: Pet;
+  /** برای برچسب لیست — پیش‌فرض vet وقتی kind=vet */
+  serviceKind?: 'vet' | 'trainer' | 'sitter' | 'seeker_advice';
 };
 
 export function inboxScopeForRole(role?: UserRole | null): InboxScope {
-  return role === 'vet' ? 'vet' : 'owner';
+  if (role === 'vet') return 'vet';
+  if (role === 'trainer') return 'trainer';
+  if (role === 'pet_sitter') return 'sitter';
+  return 'owner';
 }
 
 export function inboxScopeForUser(user?: User | null): InboxScope {
@@ -130,26 +135,62 @@ export function vetToInbox(
   if (mode === 'as_patient' && !asPatient) return null;
   if (!asVet && !asPatient) return null;
 
+  const serviceKind = c.serviceKind ?? 'vet';
   const pending = c.status === 'requested';
   const ended = c.status === 'completed' || Boolean(c.chatEnded);
-  /** Active vet consult that has not been completed/ended. */
+  /** Active consult that has not been completed/ended. */
   const ongoing = c.status === 'active' && !ended;
   const direction: 'incoming' | 'outgoing' = mode === 'as_vet' ? 'incoming' : 'outgoing';
 
   const peerTitle =
     mode === 'as_vet'
-      ? c.patientName?.trim() || (c.petName ? `بیمار · ${c.petName}` : `بیمار #${c.patientUserId}`)
-      : c.vetName?.trim() || `پزشک #${c.vetUserId}`;
+      ? c.patientName?.trim() ||
+        (c.petName
+          ? `صاحب پت · ${c.petName}`
+          : `صاحب پت #${c.patientUserId}`)
+      : c.vetName?.trim() ||
+        (serviceKind === 'trainer'
+          ? `مربی #${c.vetUserId}`
+          : serviceKind === 'sitter'
+            ? `پرستار #${c.vetUserId}`
+            : `پزشک #${c.vetUserId}`);
 
   const preview = pending
     ? mode === 'as_vet'
-      ? 'درخواست مشاوره جدید'
-      : 'در انتظار پذیرش دامپزشک'
+      ? serviceKind === 'trainer'
+        ? 'درخواست هماهنگی آموزش'
+        : serviceKind === 'sitter'
+          ? 'درخواست پرستار پت'
+          : 'درخواست مشاوره جدید'
+      : serviceKind === 'trainer'
+        ? 'در انتظار پذیرش مربی'
+        : serviceKind === 'sitter'
+          ? 'در انتظار پذیرش پرستار'
+          : 'در انتظار پذیرش دامپزشک'
     : ended
-      ? 'مشاوره پایان یافته'
+      ? serviceKind === 'trainer'
+        ? 'هماهنگی پایان یافته'
+        : serviceKind === 'sitter'
+          ? 'ارتباط پایان یافته'
+          : 'مشاوره پایان یافته'
       : c.petName
-        ? `مشاوره · ${c.petName}`
-        : 'مشاوره دامپزشک';
+        ? serviceKind === 'trainer'
+          ? `آموزش حضوری · ${c.petName}`
+          : serviceKind === 'sitter'
+            ? `پرستاری · ${c.petName}`
+            : `مشاوره · ${c.petName}`
+        : serviceKind === 'trainer'
+          ? 'هماهنگی آموزش حضوری'
+          : serviceKind === 'sitter'
+            ? 'ارتباط پرستار پت'
+            : 'مشاوره دامپزشک';
+
+  const patientPanel =
+    serviceKind === 'trainer'
+      ? '/trainer-consult'
+      : serviceKind === 'sitter'
+        ? '/sitter-consult'
+        : '/vet-consult';
 
   return {
     key: `vet:${c.id}`,
@@ -165,15 +206,17 @@ export function vetToInbox(
     direction,
     canDecide: pending && mode === 'as_vet',
     // Patient pending → waiting page, not a live chat thread.
-    href: pending && mode === 'as_patient' ? '/vet-consult' : `/vet-chats/${c.id}`,
+    href: pending && mode === 'as_patient' ? patientPanel : `/vet-chats/${c.id}`,
+    serviceKind,
   };
 }
 
 /**
  * Role-scoped inbox:
  * - primary vet → only consultations as veterinarian
+ * - primary trainer/sitter → only their service consultations as provider
  * - any other primary role → playmate chats + consultations as patient
- * Never mixes vet-practice threads into owner view (or the reverse).
+ * Never mixes provider-practice threads into owner view (or the reverse).
  */
 /** Soft-reload equality — order-independent, ignores lastActivityAt clock noise. */
 export function inboxRowsEquivalent(
@@ -193,7 +236,8 @@ export function inboxRowsEquivalent(
       row.title !== other.title ||
       row.canDecide !== other.canDecide ||
       row.kind !== other.kind ||
-      row.href !== other.href
+      row.href !== other.href ||
+      row.serviceKind !== other.serviceKind
     ) {
       return false;
     }
@@ -209,9 +253,26 @@ export async function loadInboxConversations(
 
   if (scope === 'vet') {
     if (!userHasRole(user, 'vet')) return [];
-    const rows = await listVetConsultations({ vetUserId: myUserId }).catch(
-      () => [] as VetConsultation[],
-    );
+    const rows = await listVetConsultations({
+      vetUserId: myUserId,
+      kind: 'vet',
+    }).catch(() => [] as VetConsultation[]);
+    const items: InboxConversation[] = [];
+    for (const row of rows) {
+      const item = vetToInbox(row, myUserId, 'as_vet');
+      if (item) items.push(item);
+    }
+    return sortInbox(items);
+  }
+
+  if (scope === 'trainer' || scope === 'sitter') {
+    const role = scope === 'trainer' ? 'trainer' : 'pet_sitter';
+    const kind = scope === 'trainer' ? 'trainer' : 'sitter';
+    if (!userHasRole(user, role)) return [];
+    const rows = await listVetConsultations({
+      vetUserId: myUserId,
+      kind,
+    }).catch(() => [] as VetConsultation[]);
     const items: InboxConversation[] = [];
     for (const row of rows) {
       const item = vetToInbox(row, myUserId, 'as_vet');
