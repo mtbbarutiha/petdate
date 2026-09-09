@@ -882,6 +882,10 @@ export type QuickVetConnectResult = {
   coins: number;
   consultations: VetConsultation[];
   message: string;
+  aiFallback?: boolean;
+  advice?: string;
+  adviceSource?: 'llm' | 'offline';
+  serviceKind?: string;
 };
 
 export async function quickVetConnect(

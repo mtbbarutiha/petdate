@@ -23,6 +23,7 @@ import {
 import { notifyVetQuickConsultTelegram } from '../services/telegram-vet-consult-notify';
 import { startVetChatFromApi } from '../services/telegram-vet-chat-start';
 import { clearBotVetChatSessions } from '../services/bot-vet-chat-session';
+import { startAiFallbackConsult, maybeReplyAsAiAssistant } from '../services/ai-consult-session';
 import {
   notifyVetChatEndedTelegram,
   notifyVetChatSecureTelegram,
@@ -278,6 +279,38 @@ consultationsRouter.post('/quick-connect', async (req, res) => {
   providers = providers.filter((v) => v.id !== patient.id);
 
   if (!providers.length) {
+    // Vet / trainer: fall back to AI assistant instead of hard error.
+    if (serviceKind === 'vet' || serviceKind === 'trainer') {
+      try {
+        const ai = await startAiFallbackConsult({
+          patient,
+          serviceKind,
+        });
+        if (ai) {
+          const updatedPatient = dbService.getUserById(patient.id);
+          res.status(201).json({
+            ok: true,
+            aiFallback: true,
+            sent: 1,
+            notifiedTelegram: 0,
+            cost: 0,
+            serviceKind,
+            coins: updatedPatient?.coins ?? 0,
+            consultations: [ai.consult],
+            advice: ai.advice,
+            adviceSource: ai.source,
+            message:
+              serviceKind === 'trainer'
+                ? 'مربی انسانی آنلاین نبود — چت با دستیار هوشمند آموزش شروع شد (بدون کسر سکه).'
+                : 'دامپزشک انسانی آنلاین نبود — چت با دستیار هوشمند شروع شد (بدون کسر سکه).',
+          });
+          return;
+        }
+      } catch (err) {
+        console.warn('ai fallback consult failed:', (err as Error).message);
+      }
+    }
+
     const emptyMsg =
       serviceKind === 'vet'
         ? 'فعلاً دامپزشک آنلاینی (ربات یا وب) برای اتصال پیدا نشد. کمی بعد دوباره امتحان کن.'
@@ -734,6 +767,17 @@ consultationsRouter.post('/:id/messages', async (req, res) => {
         fileName: message.fileName,
       });
     }
+    // AI provider auto-reply for patient messages.
+    if (senderUserId === gate.consult.patientUserId && text.trim()) {
+      void maybeReplyAsAiAssistant({
+        consultId: id,
+        patientUserId: senderUserId,
+        patientText: text,
+      }).catch((err) => {
+        console.warn('ai auto-reply failed:', (err as Error).message);
+      });
+    }
+
     res.status(201).json(message);
   } catch (err) {
     if (err instanceof Error && err.message === 'EMPTY_TEXT') {

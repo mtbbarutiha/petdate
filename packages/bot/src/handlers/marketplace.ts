@@ -220,6 +220,19 @@ async function runQuickConnect(
     return;
   }
 
+  if (result.aiFallback) {
+    await ctx.reply(
+      [
+        '🤖 دستیار هوشمند پت‌دیت',
+        result.message,
+        result.advice ? '\n' + result.advice.slice(0, 3500) : '',
+      ]
+        .filter(Boolean)
+        .join('\n'),
+      { reply_markup: menuKeyboardFor(ctx, user) }
+    );
+    return;
+  }
   await ctx.reply(
     result.message ||
       `درخواست ارسال شد. هزینه: ${costHint} سکه.`,
@@ -229,7 +242,11 @@ async function runQuickConnect(
 
 export async function handleRequestTrainer(ctx: Context): Promise<void> {
   await ctx.reply(
-    `🎓 درخواست مربی\nهزینه: ${TRAINER_CONSULT_COST} سکه (۲۵ مربی + ۲۵ پلتفرم).`,
+    [
+      '🎓 درخواست مربی',
+      `هزینه اتصال انسانی: ${TRAINER_CONSULT_COST} سکه (۲۵ مربی + ۲۵ پلتفرم).`,
+      'اگر مربی آنلاین نباشد، دستیار هوشمند آموزش رایگان پاسخ می‌دهد.',
+    ].join('\n'),
     { reply_markup: menuKeyboardFor(ctx, await getCtxUser(ctx)) }
   );
   await runQuickConnect(ctx, 'trainer', TRAINER_CONSULT_COST);
