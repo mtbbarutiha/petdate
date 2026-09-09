@@ -17,6 +17,7 @@ import {
 import { formatAge } from '../data/mock';
 import { EMPTY_STATE_PHOTO } from '../data/petImages';
 import { useAuthStore } from '../hooks/useAuthStore';
+import { useAppToast } from '../hooks/useAppToast';
 import {
   addPetWishlistTarget,
   getPet,
@@ -40,12 +41,12 @@ export function PetDetailPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { user: authUser, isLoggedIn } = useAuthStore();
+  const { toastSuccess, toastError, toastInfo } = useAppToast();
   const petId = Number(id);
 
   const [pet, setPet] = useState<PetProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [toast, setToast] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [myPets, setMyPets] = useState<PetProfile[]>([]);
   const [showPickFrom, setShowPickFrom] = useState(false);
@@ -153,11 +154,11 @@ export function PetDetailPage() {
       });
       setAlreadyRequested(true);
       setShowPickFrom(false);
-      setToast('درخواست همبازی ارسال شد');
-      window.setTimeout(() => setToast(null), 1200);
+      toastSuccess('درخواست همبازی ارسال شد');
       if (req?.id) navigate(`/chats/${req.id}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'ارسال درخواست ناموفق بود');
+      const msg = err instanceof Error ? err.message : 'ارسال درخواست ناموفق بود';
+      setError(msg); toastError(msg);
     } finally {
       setBusy(false);
     }
@@ -170,7 +171,7 @@ export function PetDetailPage() {
     }
     if (alreadyRequested || busy) return;
     if (myPets.length === 0) {
-      setError('اول یک پت ثبت کن');
+      const msg = 'اول یک پت ثبت کن'; setError(msg); toastError(msg);
       return;
     }
     if (myPets.length === 1) {
@@ -193,7 +194,7 @@ export function PetDetailPage() {
         setWishlist((rows) => [...rows, target]);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'ویش‌لیست به‌روز نشد');
+      const msg = err instanceof Error ? err.message : 'ویش‌لیست به‌روز نشد'; setError(msg); toastError(msg);
     } finally {
       setWishBusy(false);
     }
@@ -206,8 +207,7 @@ export function PetDetailPage() {
     const text = `پروفایل ${pet.name} را در پت‌دیت ببین`;
     const message = await shareOrCopyUrl({ url, title, text });
     if (!message) return;
-    setToast(message);
-    window.setTimeout(() => setToast(null), 2200);
+    toastInfo(message);
   }
 
   if (loading) {
@@ -260,7 +260,7 @@ export function PetDetailPage() {
                 disabled={wishBusy || myPets.length === 0}
                 onClick={() => {
                   if (myPets.length === 1) void toggleWish(pet);
-                  else setToast('از پروفایل پت خودت ویش‌لیست را مدیریت کن');
+                  else toastInfo('از پروفایل پت خودت ویش‌لیست را مدیریت کن');
                 }}
               >
                 <Heart size={18} />
@@ -339,7 +339,6 @@ export function PetDetailPage() {
         ) : null}
 
         {error ? <p className="auth-error">{error}</p> : null}
-        {toast ? <p className="pepito-pet-profile-toast" role="status">{toast}</p> : null}
 
         <section id="pet-medical" className="pepito-pet-medical" aria-label="پرونده پزشکی">
           <header className="pepito-pet-medical-head">

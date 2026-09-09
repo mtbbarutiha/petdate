@@ -1612,20 +1612,90 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   bottom: calc(var(--bottom-nav-height) + var(--safe-bottom) + 56px);
   left: 50%;
   transform: translateX(-50%);
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  max-width: min(92vw, 420px);
   background: var(--slate-900);
-  color: white;
-  padding: 12px 22px;
-  border-radius: var(--radius-full);
-  font-size: 0.84rem;
+  color: #fff;
+  padding: 12px 14px 12px 16px;
+  border-radius: 16px;
+  font-size: 0.86rem;
   font-weight: 600;
-  z-index: 200;
-  box-shadow: var(--shadow-lg);
-  animation: toastIn 0.3s ease;
+  line-height: 1.45;
+  z-index: 400;
+  box-shadow: var(--shadow-lg), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  animation: toastIn 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+  direction: rtl;
+  text-align: right;
+}
+
+.toast__icon {
+  flex: 0 0 auto;
+  display: flex;
+  margin-top: 1px;
+  opacity: 0.95;
+}
+
+.toast__msg {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.toast__close {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  margin: -4px -2px -4px 0;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: inherit;
+  opacity: 0.72;
+  cursor: pointer;
+}
+
+.toast__close:hover,
+.toast__close:focus-visible {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.12);
+  outline: none;
+}
+
+.toast--success {
+  background: #0f3d2e;
+  box-shadow: var(--shadow-lg), 0 0 0 1px rgba(16, 185, 129, 0.35);
+}
+
+.toast--success .toast__icon {
+  color: #6ee7b7;
+}
+
+.toast--error {
+  background: #4c1515;
+  box-shadow: var(--shadow-lg), 0 0 0 1px rgba(239, 68, 68, 0.4);
+}
+
+.toast--error .toast__icon {
+  color: #fca5a5;
+}
+
+.toast--info {
+  background: var(--slate-900);
+}
+
+.toast--info .toast__icon {
+  color: var(--brand-200);
 }
 
 @keyframes toastIn {
-  from { opacity: 0; transform: translateX(-50%) translateY(12px); }
-  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+  from { opacity: 0; transform: translateX(-50%) translateY(14px) scale(0.98); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
 }
 
 /* ── Desktop sidebar (hidden on mobile) ── */
@@ -1903,8 +1973,8 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   }
 
   @keyframes toastIn {
-    from { opacity: 0; transform: translateX(50%) translateY(12px); }
-    to { opacity: 1; transform: translateX(50%) translateY(0); }
+    from { opacity: 0; transform: translateX(50%) translateY(14px) scale(0.98); }
+    to { opacity: 1; transform: translateX(50%) translateY(0) scale(1); }
   }
 
   .map-placeholder {

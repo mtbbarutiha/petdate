@@ -4,6 +4,7 @@ import { Send } from 'lucide-react';
 import { normalizeRoles, userHasRole, dashboardPathForUser, primaryRole } from '@petdate/shared';
 import { AuthShell } from '../../components/AuthShell';
 import { useAuthStore } from '../../hooks/useAuthStore';
+import { useAppToast } from '../../hooks/useAppToast';
 import {
   pollTelegramPendingLogin,
   prefersSameBrowserTelegramLogin,
@@ -46,6 +47,7 @@ export function OtpPage() {
     requestOtp,
     acceptSession,
   } = useAuthStore();
+  const { toastError, toastSuccess } = useAppToast();
   const navDevCode = (location.state as { devCode?: string } | null)?.devCode;
   const initialDev = navDevCode || pendingDevCode || '';
   const [code, setCode] = useState(digitsOnly(initialDev));
@@ -147,7 +149,7 @@ export function OtpPage() {
       setTgWaiting({ id: res.id, deepLink: res.deepLink });
       window.open(res.deepLink, '_blank', 'noopener,noreferrer');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'شروع ورود تلگرام ناموفق بود');
+      const msg = err instanceof Error ? err.message : 'شروع ورود تلگرام ناموفق بود'; setError(msg); toastError(msg);
     } finally {
       setTgBusy(false);
     }
@@ -182,7 +184,7 @@ export function OtpPage() {
         navigate(destination, { replace: true });
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'تأیید کد ناموفق بود');
+      const msg = err instanceof Error ? err.message : 'تأیید کد ناموفق بود'; setError(msg); toastError(msg);
       submittingRef.current = false;
     } finally {
       setBusy(false);
@@ -291,11 +293,12 @@ export function OtpPage() {
         setDevHint(`کد توسعه (فقط لوکال): ${res.devCode}`);
         setCode(digitsOnly(res.devCode));
       }
+      toastSuccess('کد دوباره ارسال شد');
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'ارسال مجدد ناموفق بود';
       const m = msg.match(/(\d+)\s*ثانیه/);
       if (m) setResendIn(Math.max(1, Number(m[1])));
-      setError(msg);
+      setError(msg); toastError(msg);
     } finally {
       setBusy(false);
       window.setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 50);
