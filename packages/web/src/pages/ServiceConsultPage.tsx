@@ -84,6 +84,32 @@ function patientLabel(c: VetConsultation): string {
   return pet ? `${name} · ${pet}` : name;
 }
 
+function providerPeerLabel(c: VetConsultation): string {
+  const name = c.vetName?.trim() || `کاربر #${c.vetUserId}`;
+  const pet = c.petName?.trim();
+  return pet ? `${name} · ${pet}` : name;
+}
+
+function consultStatusLabel(status: VetConsultation['status']): {
+  text: string;
+  tone: 'wait' | 'active' | 'done';
+} {
+  switch (status) {
+    case 'requested':
+      return { text: 'در انتظار پاسخ', tone: 'wait' };
+    case 'active':
+      return { text: 'گفتگوی فعال', tone: 'active' };
+    case 'completed':
+      return { text: 'پایان‌یافته', tone: 'done' };
+    case 'cancelled':
+      return { text: 'لغو شده', tone: 'done' };
+    case 'expired':
+      return { text: 'منقضی شده', tone: 'done' };
+    default:
+      return { text: 'گفتگو', tone: 'done' };
+  }
+}
+
 function errMessage(err: unknown, fallback: string): string {
   return err instanceof Error && err.message.trim() ? err.message : fallback;
 }
@@ -149,7 +175,16 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
           kind,
         });
         setIncoming(rows.filter((r) => r.status === 'requested'));
-        setRecent(rows.filter((r) => r.status !== 'requested').slice(0, 12));
+        const recentRows = rows
+          .filter((r) => r.status !== 'requested')
+          .sort((a, b) => {
+            const rank = (s: string) => (s === 'active' ? 0 : s === 'completed' ? 1 : 2);
+            const d = rank(a.status) - rank(b.status);
+            if (d !== 0) return d;
+            return String(b.createdAt || '').localeCompare(String(a.createdAt || ''));
+          })
+          .slice(0, 12);
+        setRecent(recentRows);
       } else {
         const rows = await listVetConsultations({
           patientUserId: user.id,
@@ -470,62 +505,197 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
         </section>
       ) : null}
 
-      {isProvider && incoming.length > 0 ? (
-        <section>
-          <h2>درخواست‌های جدید</h2>
-          <ul className="pepito-vet-consult-incoming-list">
-            {incoming.map((c) => (
-              <li key={c.id}>
-                <div>
-                  <strong>{patientLabel(c)}</strong>
-                  {c.createdAt ? <small>{formatPersianDateTime(c.createdAt)}</small> : null}
-                </div>
-                <div className="pepito-vet-consult-incoming-actions">
-                  <button
-                    type="button"
-                    className="pepito-btn button-1"
-                    disabled={actingId === c.id}
-                    onClick={() => void onAccept(c.id)}
-                  >
-                    <Check size={16} /> قبول
-                  </button>
-                  <button
-                    type="button"
-                    className="pepito-btn pepito-btn--ghost"
-                    disabled={actingId === c.id}
-                    onClick={() => void onReject(c.id)}
-                  >
-                    <X size={16} /> رد
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
+      {isProvider ? (
+        <div className="pepito-vet-inbox-stack">
+          <section
+            className="pepito-vet-inbox-panel pepito-vet-inbox-panel--incoming"
+            aria-label="درخواست‌های ورودی"
+            data-testid={`${kind}-incoming-inbox`}
+          >
+            <header className="pepito-vet-inbox-head">
+              <div>
+                <p className="pepito-eyebrow">ورودی</p>
+                <h2>درخواست‌های جدید</h2>
+              </div>
+              {incoming.length > 0 ? (
+                <span className="pepito-vet-inbox-count" aria-label="تعداد درخواست">
+                  {toPersianDigits(String(incoming.length))}
+                </span>
+              ) : null}
+            </header>
+            {incoming.length === 0 ? (
+              <p className="pepito-vet-consult-hint">فعلاً درخواست جدیدی نیست.</p>
+            ) : (
+              <ul className="pepito-vet-consult-incoming-list">
+                {incoming.map((c) => (
+                  <li key={c.id} data-testid={`${kind}-incoming-${c.id}`}>
+                    <div className="pepito-vet-row-info">
+                      <strong>{patientLabel(c)}</strong>
+                      <span className="pepito-vet-status">
+                        <Clock size={12} aria-hidden />
+                        در انتظار پاسخ
+                      </span>
+                      {c.createdAt ? (
+                        <small>{formatPersianDateTime(c.createdAt)}</small>
+                      ) : null}
+                    </div>
+                    <div className="pepito-vet-consult-incoming-actions">
+                      <button
+                        type="button"
+                        className="pepito-btn button-1"
+                        disabled={actingId === c.id}
+                        onClick={() => void onAccept(c.id)}
+                        data-testid={`${kind}-accept-${c.id}`}
+                      >
+                        <Check size={16} aria-hidden />
+                        قبول و چت
+                      </button>
+                      <button
+                        type="button"
+                        className="pepito-btn pepito-btn--ghost pepito-vet-reject"
+                        disabled={actingId === c.id}
+                        onClick={() => void onReject(c.id)}
+                      >
+                        <X size={16} aria-hidden />
+                        رد
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
 
-      <section>
-        <h2>{isProvider ? 'گفتگوهای اخیر' : 'درخواست‌های من'}</h2>
-        {!recent.length ? (
-          <p className="muted">موردی نیست.</p>
-        ) : (
-          <ul className="pepito-vet-consult-incoming-list">
-            {recent.map((c) => (
-              <li key={c.id}>
-                <div>
-                  <strong>{patientLabel(c)}</strong>
-                  <small>
-                    <Clock size={12} /> {c.status}
-                  </small>
-                </div>
-                <Link to={`/vet-chats/${c.id}`} className="pepito-btn pepito-btn--ghost">
-                  <MessageCircle size={16} /> چت
-                </Link>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
+          <section
+            className="pepito-vet-inbox-panel"
+            aria-label="گفتگوهای اخیر"
+            data-testid={`${kind}-recent-chats`}
+          >
+            <header className="pepito-vet-inbox-head">
+              <div>
+                <p className="pepito-eyebrow">گفتگو</p>
+                <h2>گفتگوهای اخیر</h2>
+              </div>
+            </header>
+            {recent.length === 0 ? (
+              <p className="pepito-vet-consult-hint">هنوز گفتگویی ثبت نشده.</p>
+            ) : (
+              <ul className="pepito-vet-consult-incoming-list">
+                {recent.map((c) => {
+                  const st = consultStatusLabel(c.status);
+                  const canChat = c.status === 'active' || c.status === 'completed';
+                  return (
+                    <li key={c.id} data-testid={`${kind}-recent-${c.id}`}>
+                      <div className="pepito-vet-row-info">
+                        <strong>{patientLabel(c)}</strong>
+                        <span
+                          className={`pepito-vet-status${
+                            st.tone === 'active'
+                              ? ' is-active'
+                              : st.tone === 'done'
+                                ? ' is-done'
+                                : ''
+                          }`}
+                        >
+                          {st.tone === 'active' ? (
+                            <Circle size={10} fill="currentColor" aria-hidden />
+                          ) : (
+                            <Clock size={12} aria-hidden />
+                          )}
+                          {st.text}
+                        </span>
+                        {c.createdAt ? (
+                          <small>{formatPersianDateTime(c.createdAt)}</small>
+                        ) : null}
+                      </div>
+                      <div className="pepito-vet-consult-incoming-actions">
+                        {canChat ? (
+                          <Link
+                            to={`/vet-chats/${c.id}`}
+                            className={`pepito-btn ${
+                              c.status === 'active' ? 'button-1' : 'pepito-btn--ghost'
+                            }`}
+                            data-testid={`${kind}-open-chat-${c.id}`}
+                          >
+                            <MessageCircle size={16} aria-hidden />
+                            {c.status === 'active' ? 'ورود به چت' : 'مشاهده گفتگو'}
+                          </Link>
+                        ) : (
+                          <span className="pepito-vet-consult-hint">چت باز نیست</span>
+                        )}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </section>
+        </div>
+      ) : (
+        <section
+          className="pepito-vet-inbox-panel"
+          aria-label="درخواست‌های من"
+          data-testid={`${kind}-my-requests`}
+        >
+          <header className="pepito-vet-inbox-head">
+            <div>
+              <p className="pepito-eyebrow">درخواست‌ها</p>
+              <h2>درخواست‌های من</h2>
+            </div>
+          </header>
+          {recent.length === 0 ? (
+            <p className="pepito-vet-consult-hint">هنوز درخواستی نفرستاده‌ای.</p>
+          ) : (
+            <ul className="pepito-vet-consult-incoming-list">
+              {recent.map((c) => {
+                const st = consultStatusLabel(c.status);
+                const canChat = c.status === 'active' || c.status === 'completed';
+                return (
+                  <li key={c.id}>
+                    <div className="pepito-vet-row-info">
+                      <strong>{providerPeerLabel(c)}</strong>
+                      <span
+                        className={`pepito-vet-status${
+                          st.tone === 'active'
+                            ? ' is-active'
+                            : st.tone === 'done'
+                              ? ' is-done'
+                              : ''
+                        }`}
+                      >
+                        {st.tone === 'active' ? (
+                          <Circle size={10} fill="currentColor" aria-hidden />
+                        ) : (
+                          <Clock size={12} aria-hidden />
+                        )}
+                        {st.text}
+                      </span>
+                      {c.createdAt ? (
+                        <small>{formatPersianDateTime(c.createdAt)}</small>
+                      ) : null}
+                    </div>
+                    <div className="pepito-vet-consult-incoming-actions">
+                      {canChat ? (
+                        <Link
+                          to={`/vet-chats/${c.id}`}
+                          className={`pepito-btn ${
+                            c.status === 'active' ? 'button-1' : 'pepito-btn--ghost'
+                          }`}
+                        >
+                          <MessageCircle size={16} aria-hidden />
+                          {c.status === 'active' ? 'ورود به چت' : 'مشاهده گفتگو'}
+                        </Link>
+                      ) : (
+                        <span className="pepito-vet-consult-hint">{st.text}</span>
+                      )}
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
+      )}
     </div>
   );
 }
