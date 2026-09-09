@@ -81,6 +81,12 @@ async function main() {
     { q: 'ولش کن برای آشغال خیابان', needle: /ولش|رها|آشغال/ },
     { q: 'از صدای رعد می‌ترسه', needle: /ترس|فاصله|آرام/ },
     { q: 'جامعه‌پذیری توله', needle: /جامعه|فاصله|تجربه/ },
+    { q: 'می‌گن باید آلفا باشم', needle: /آلفا|سلطه|تقویت|افسانه/ },
+    { q: 'طوطی زیاد جیغ می‌کشه', needle: /جیغ|foraging|پر/ },
+    { q: 'همسترم قفس و نگهداری', needle: /همستر|اگزوتیک|دامپزشک|بستر|چرخ/ },
+    { q: 'منبع مطالعاتی‌ات چیست', needle: /Culture Clash|Puppy Primer|Donaldson/ },
+    { q: 'گربه ترسو پنهان می‌شه mojo نداره', needle: /عمودی|قلمرو|پنهان|شکار|mojo/ },
+    { q: 'گربه‌ام مبل رو می‌خراشه', needle: /خراش|اسکرچ|مبل/ },
   ];
   for (const t of richTopics) {
     const text = offlineAiAdvice({ kind: 'trainer', userMessage: t.q, petName: 'رکس', petSpecies: 'dog' });
@@ -90,6 +96,34 @@ async function main() {
     const hint = trainerTopicHint(t.q);
     assert(hint && hint.length > 120, `trainerTopicHint exported for: ${t.q}`);
   }
+
+  // Book-canon offline KB: no unsolicited book-title spam
+  const puppyCanon = offlineAiAdvice({
+    kind: 'trainer',
+    userMessage: 'توله دو ماهه از کجا شروع کنم برای جامعه‌پذیری؟',
+    petName: 'رکس',
+    petSpecies: 'dog',
+  });
+  assert(puppyCanon.length > 350, 'puppy offline reply substantial');
+  assert(
+    !/Culture Clash|Puppy Primer|Think Like a Cat|Total Cat Mojo|Companion Parrot|Exotic Pet Practice/i.test(
+      puppyCanon
+    ),
+    'do not spam book titles unless asked'
+  );
+  const dominance = offlineAiAdvice({
+    kind: 'trainer',
+    userMessage: 'می‌گن باید آلفا باشم و رهبر گله',
+    petName: 'رکس',
+  });
+  assert(dominance.length > 280 && !/Culture Clash/i.test(dominance), 'dominance without book spam');
+  const sources = offlineAiAdvice({ kind: 'trainer', userMessage: 'منبع کتاب‌هات چیه؟', petName: 'رکس' });
+  assert(
+    /Culture Clash|Puppy Primer|Think Like a Cat|Total Cat Mojo|Companion Parrot|Exotic Pet Practice/i.test(
+      sources
+    ),
+    'sources names books when asked'
+  );
 
   const vetTip = offlineAiAdvice({ kind: 'vet', petName: 'ملوس' });
   assert(vetTip.includes('دامپزشک'), 'offline vet tip');
