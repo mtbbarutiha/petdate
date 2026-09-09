@@ -79,8 +79,66 @@ import {
   loadInboxConversations,
   rejectInboxItem,
   type InboxConversation,
+  type InboxScope,
 } from '../lib/inboxConversations';
 import { formatTimeAgo } from '../data/mock';
+
+function providerInboxTitle(scope: InboxScope): string {
+  if (scope === 'vet') return 'گفتگوهای پزشک';
+  if (scope === 'trainer') return 'گفتگوهای مربی';
+  if (scope === 'sitter') return 'گفتگوهای پرستار';
+  return 'هم بازی';
+}
+
+function providerPanelPath(scope: InboxScope): string {
+  if (scope === 'vet') return '/vet-consult';
+  if (scope === 'trainer') return '/trainer-consult';
+  if (scope === 'sitter') return '/sitter-consult';
+  return '/chats';
+}
+
+function providerInboxEmptyCopy(scope: InboxScope): { title: string; body: string; cta: string } {
+  if (scope === 'vet') {
+    return {
+      title: 'هنوز گفتگویی نیست',
+      body: 'درخواست‌ها و چت‌های مشاوره دامپزشکی این نقش اینجا می‌آیند.',
+      cta: 'رفتن به پنل پزشک',
+    };
+  }
+  if (scope === 'trainer') {
+    return {
+      title: 'هماهنگی آموزش حضوری',
+      body: 'اینجا با صاحبان پت برای هماهنگی آموزش حضوری گفتگو می‌کنی — همبازی نیست.',
+      cta: 'رفتن به پنل مربی',
+    };
+  }
+  if (scope === 'sitter') {
+    return {
+      title: 'هماهنگی پرستاری',
+      body: 'اینجا با صاحبان پت برای هماهنگی پرستاری گفتگو می‌کنی — همبازی نیست.',
+      cta: 'رفتن به پنل پرستار',
+    };
+  }
+  return {
+    title: 'هنوز گفتگویی نیست',
+    body: 'درخواست‌های همبازی و مشاوره‌های شما به‌عنوان صاحب پت اینجا می‌آیند.',
+    cta: 'هم بازی',
+  };
+}
+
+function providerThreadEmptyTitle(scope: InboxScope): string {
+  if (scope === 'vet') return 'مشاوره‌ای را شروع کن';
+  if (scope === 'trainer') return 'هماهنگی آموزش حضوری';
+  if (scope === 'sitter') return 'هماهنگی پرستاری';
+  return 'هم بازی';
+}
+
+function inboxKindBadgeLabel(c: InboxConversation): string {
+  if (c.kind === 'playmate') return 'همبازی';
+  if (c.serviceKind === 'trainer') return 'آموزش';
+  if (c.serviceKind === 'sitter') return 'پرستار';
+  return 'مشاوره';
+}
 
 const CHAT_WIPE_HINT =
   'لطفاً کل این گفتگو را پاک کنید تا اثری از پیام‌ها (متن، عکس، ویس و …) نماند.';
@@ -1096,7 +1154,7 @@ export function VetChatPage() {
       navigate('/chats');
       return;
     }
-    navigate(inboxScope === 'vet' ? '/vet-consult' : '/chats');
+    navigate(providerPanelPath(inboxScope));
   }
 
   const pending =
@@ -1148,15 +1206,17 @@ export function VetChatPage() {
         <aside className="tg-chat-list" aria-label="فهرست گفتگوها">
           <header className="tg-chat-list-head">
             <Link
-              to={inboxScope === 'vet' ? '/vet-consult' : '/chats'}
+              to={providerPanelPath(inboxScope)}
               className="tg-icon-btn"
-              aria-label={inboxScope === 'vet' ? 'بازگشت به پنل پزشک' : 'بازگشت به گفتگو'}
+              aria-label={
+                inboxScope === 'owner' ? 'بازگشت به گفتگو' : 'بازگشت به پنل'
+              }
             >
               <ArrowRight size={18} />
             </Link>
             <div className="tg-chat-list-brand">
               <SiteLogo className="tg-chat-list-logo" height={34} />
-              <h1>{inboxScope === 'vet' ? 'گفتگوهای پزشک' : 'هم بازی'}</h1>
+              <h1>{providerInboxTitle(inboxScope)}</h1>
             </div>
             <button
               type="button"
@@ -1183,31 +1243,35 @@ export function VetChatPage() {
                 <div className="tg-empty-mark" aria-hidden>
                   <SiteLogo className="tg-chat-empty-logo" height={40} />
                 </div>
-                <h2>هنوز گفتگویی نیست</h2>
-                <p>
-                  {inboxScope === 'vet'
-                    ? 'درخواست‌ها و چت‌های مشاوره دامپزشکی این نقش اینجا می‌آیند.'
-                    : 'درخواست‌های همبازی و مشاوره‌های شما به‌عنوان صاحب پت اینجا می‌آیند.'}
-                </p>
-                <Link
-                  to={inboxScope === 'vet' ? '/vet-consult' : '/chats'}
-                  className={
-                    inboxScope === 'vet'
-                      ? 'tg-chat-link-btn'
-                      : 'pepito-btn button-1 tg-chat-playmate-cta'
-                  }
-                >
-                  {inboxScope === 'vet' ? (
-                    'رفتن به پنل پزشک'
-                  ) : (
+                {(() => {
+                  const empty = providerInboxEmptyCopy(inboxScope);
+                  const isOwner = inboxScope === 'owner';
+                  return (
                     <>
-                      <span className="pepito-btn-icon" aria-hidden>
-                        <i className="flaticon-pawprint-4" />
-                      </span>
-                      هم بازی
+                      <h2>{empty.title}</h2>
+                      <p>{empty.body}</p>
+                      <Link
+                        to={providerPanelPath(inboxScope)}
+                        className={
+                          isOwner
+                            ? 'pepito-btn button-1 tg-chat-playmate-cta'
+                            : 'tg-chat-link-btn'
+                        }
+                      >
+                        {isOwner ? (
+                          <>
+                            <span className="pepito-btn-icon" aria-hidden>
+                              <i className="flaticon-pawprint-4" />
+                            </span>
+                            {empty.cta}
+                          </>
+                        ) : (
+                          empty.cta
+                        )}
+                      </Link>
                     </>
-                  )}
-                </Link>
+                  );
+                })()}
               </div>
             ) : (
               <ul className="tg-chat-list-items">
@@ -1215,6 +1279,7 @@ export function VetChatPage() {
                   const activeRow = c.key === `vet:${consultId}`;
                   const busy = listActionKey === c.key;
                   const peer = c.peerPet;
+                  const badge = inboxKindBadgeLabel(c);
                   return (
                     <li key={c.key} className={`tg-chat-list-row${c.ongoing ? ' is-ongoing-row' : ''}`}>
                       <button
@@ -1240,7 +1305,7 @@ export function VetChatPage() {
                           <strong>
                             {c.title}
                             <em className={`tg-chat-list-kind${c.kind === 'vet' ? ' is-vet' : ''}`}>
-                              {c.kind === 'vet' ? 'مشاوره' : 'همبازی'}
+                              {badge}
                             </em>
                           </strong>
                           <small>{c.preview}</small>
@@ -1308,24 +1373,31 @@ export function VetChatPage() {
                 <div className="tg-empty-mark" aria-hidden>
                   <SiteLogo className="tg-chat-empty-logo" height={40} />
                 </div>
-                <h2>{inboxScope === 'vet' ? 'مشاوره‌ای را شروع کن' : 'هم بازی'}</h2>
+                <h2>{providerThreadEmptyTitle(inboxScope)}</h2>
+                {inboxScope === 'trainer' || inboxScope === 'sitter' ? (
+                  <p>
+                    {inboxScope === 'trainer'
+                      ? 'اینجا با صاحبان پت برای هماهنگی آموزش حضوری گفتگو می‌کنی — همبازی نیست.'
+                      : 'اینجا با صاحبان پت برای هماهنگی پرستاری گفتگو می‌کنی — همبازی نیست.'}
+                  </p>
+                ) : null}
                 <Link
-                  to={inboxScope === 'vet' ? '/vet-consult' : '/chats'}
+                  to={providerPanelPath(inboxScope)}
                   className={
-                    inboxScope === 'vet'
-                      ? 'tg-chat-link-btn'
-                      : 'pepito-btn button-1 tg-chat-playmate-cta'
+                    inboxScope === 'owner'
+                      ? 'pepito-btn button-1 tg-chat-playmate-cta'
+                      : 'tg-chat-link-btn'
                   }
                 >
-                  {inboxScope === 'vet' ? (
-                    'رفتن به پنل پزشک'
-                  ) : (
+                  {inboxScope === 'owner' ? (
                     <>
                       <span className="pepito-btn-icon" aria-hidden>
                         <i className="flaticon-pawprint-4" />
                       </span>
                       هم بازی
                     </>
+                  ) : (
+                    providerInboxEmptyCopy(inboxScope).cta
                   )}
                 </Link>
               </div>
