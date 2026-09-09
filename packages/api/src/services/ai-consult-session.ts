@@ -81,7 +81,7 @@ export async function startAiFallbackConsult(opts: {
     status: 'active',
     notes:
       aiKind === 'trainer'
-        ? `مشاوره آنلاین ${AI_TRAINER_DISPLAY_NAME} (مربی انسانی آنلاین نبود)`
+        ? `مشاوره آنلاین با ${AI_TRAINER_DISPLAY_NAME}`
         : 'مشاوره هوشمند دامپزشکی (پزشک انسانی آنلاین نبود)',
     feeCoins: 0,
     serviceKind: aiKind,
@@ -90,7 +90,7 @@ export async function startAiFallbackConsult(opts: {
 
   const intro =
     aiKind === 'trainer'
-      ? `مربی انسانی آنلاین نبود — چت با ${AI_TRAINER_DISPLAY_NAME} (مربی آنلاین پت‌دیت) شروع شد.`
+      ? `گفتگو با ${AI_TRAINER_DISPLAY_NAME} (مربی آنلاین پت‌دیت) شروع شد. خوش اومدی — بگو از کجا شروع کنیم؟`
       : 'دامپزشک انسانی آنلاین نبود — چت با دستیار هوشمند شروع شد.';
 
   dbService.createVetConsultChatMessage({
