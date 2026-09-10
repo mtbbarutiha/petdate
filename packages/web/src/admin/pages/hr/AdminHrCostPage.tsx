@@ -3,10 +3,18 @@ import type { HrEmployee } from '@petdate/shared';
 import { adminFetch, formatNumFa } from '../../api';
 import { adminCan } from '../../auth';
 import { AdminModal } from '../../AdminModal';
+import { AdminEntityCell, AdminThumb } from '../../AdminThumb';
 import { formatHrMoney } from './HrUi';
 
 type CostRow = {
-  employee: { id: number; publicId: string; personnelCode: string; name: string; jobTitle: string };
+  employee: {
+    id: number;
+    publicId: string;
+    personnelCode: string;
+    name: string;
+    jobTitle: string;
+    avatarUrl?: string;
+  };
   cost: { salary: number; insurance: number; tax: number; bonus: number; commission: number; eidiMonthly: number; sanavatMonthly: number; total: number };
 };
 
@@ -81,7 +89,20 @@ export function AdminHrCostPage() {
           <tbody>
             {costs.map((row) => (
               <tr key={row.employee.id}>
-                <td>{row.employee.name}<div className="admin-muted">{row.employee.personnelCode}</div></td>
+                <td>
+                  <AdminEntityCell
+                    thumb={
+                      <AdminThumb
+                        src={row.employee.avatarUrl || employees.find((e) => e.id === row.employee.id)?.avatarUrl}
+                        label={row.employee.name}
+                        kind="user"
+                        size={32}
+                      />
+                    }
+                    title={row.employee.name}
+                    subtitle={row.employee.personnelCode}
+                  />
+                </td>
                 <td>{formatNumFa(row.cost.salary)}</td>
                 <td>{formatNumFa(row.cost.insurance)}</td>
                 <td>{formatNumFa(row.cost.tax)}</td>

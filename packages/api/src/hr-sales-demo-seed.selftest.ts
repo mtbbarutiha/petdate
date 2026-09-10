@@ -65,6 +65,18 @@ async function main() {
   const owned = items.items.filter((i) => i.ownerId && String(i.ownerId).startsWith('SEED-'));
   assert(owned.length >= 3, 'sales owners linked to HR personnel codes');
 
+  const withAvatar = Number(
+    (
+      d
+        .prepare(
+          `SELECT COUNT(*) as c FROM hr_employees
+           WHERE personnel_code LIKE 'SEED-%' AND avatar_url IS NOT NULL AND avatar_url != ''`
+        )
+        .get() as { c: number }
+    ).c
+  );
+  assert(withAvatar === 5, `expected 5 SEED avatars, got ${withAvatar}`);
+
   const customers = listSalesCustomers();
   assert(customers.total >= 1, 'customers seeded');
 

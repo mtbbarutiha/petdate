@@ -118,6 +118,7 @@ export function ensureHrSchema(): void {
       access_status TEXT NOT NULL DEFAULT 'فعال',
       username TEXT NOT NULL DEFAULT '',
       password TEXT NOT NULL DEFAULT '',
+      avatar_url TEXT NOT NULL DEFAULT '',
       income_model_id INTEGER,
       career_layer_id INTEGER,
       permissions_json TEXT NOT NULL DEFAULT '{}',
@@ -220,6 +221,7 @@ export function ensureHrSchema(): void {
   `);
 
   ensureAdminRbacColumns();
+  ensureHrEmployeeColumns();
 
   d.exec(`CREATE INDEX IF NOT EXISTS idx_hr_employees_code ON hr_employees(personnel_code)`);
   d.exec(`CREATE INDEX IF NOT EXISTS idx_hr_contracts_employee ON hr_contracts(employee_id)`);
@@ -241,6 +243,17 @@ function ensureAdminRbacColumns(): void {
   );
   if (!roleCols.has('is_active')) {
     d.exec(`ALTER TABLE admin_roles ADD COLUMN is_active INTEGER NOT NULL DEFAULT 1`);
+  }
+}
+
+/** Additive columns for existing hr_employees DBs — never wipe. */
+function ensureHrEmployeeColumns(): void {
+  const d = db();
+  const cols = new Set(
+    (d.prepare(`PRAGMA table_info(hr_employees)`).all() as Array<{ name: string }>).map((c) => c.name)
+  );
+  if (!cols.has('avatar_url')) {
+    d.exec(`ALTER TABLE hr_employees ADD COLUMN avatar_url TEXT NOT NULL DEFAULT ''`);
   }
 }
 
@@ -454,6 +467,7 @@ function mapEmployee(row: Record<string, unknown>, withRelated = false): HrEmplo
     contractStatus: String(row.contract_status || ''),
     accessStatus: String(row.access_status || ''),
     username: String(row.username || row.personnel_code || ''),
+    avatarUrl: String(row.avatar_url || ''),
     incomeModelId: row.income_model_id != null ? Number(row.income_model_id) : null,
     careerLayerId: row.career_layer_id != null ? Number(row.career_layer_id) : null,
     permissions: parseJson<Record<string, boolean>>(row.permissions_json, {}),
@@ -570,9 +584,9 @@ export function createEmployee(input: HrEmployeeInput): HrEmployee {
         military_status, gmail, education_level, field_of_study, job_title, department,
         location, reporting_manager_title, reporting_manager_person_id, cooperation_type,
         benefits_json, extension, org_email, contract_status, access_status, username, password,
-        income_model_id, career_layer_id, permissions_json
+        avatar_url, income_model_id, career_layer_id, permissions_json
       ) VALUES (
-        ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
+        ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
       )`
     )
     .run(
@@ -607,6 +621,7 @@ export function createEmployee(input: HrEmployeeInput): HrEmployee {
       accessStatus,
       username,
       password,
+      String(input.avatarUrl || '').trim(),
       input.incomeModelId ?? null,
       input.careerLayerId ?? null,
       JSON.stringify(input.permissions || {})
@@ -640,7 +655,7 @@ export function updateEmployee(id: number, input: Partial<HrEmployeeInput>): HrE
       military_status=?, gmail=?, education_level=?, field_of_study=?, job_title=?, department=?,
       location=?, reporting_manager_title=?, reporting_manager_person_id=?, cooperation_type=?,
       benefits_json=?, extension=?, org_email=?, contract_status=?, access_status=?, username=?,
-      password=COALESCE(?, password), income_model_id=?, career_layer_id=?, permissions_json=?,
+      password=COALESCE(?, password), avatar_url=?, income_model_id=?, career_layer_id=?, permissions_json=?,
       updated_at=datetime('now')
      WHERE id=?`
   ).run(
@@ -674,6 +689,7 @@ export function updateEmployee(id: number, input: Partial<HrEmployeeInput>): HrE
     next.accessStatus,
     next.username,
     input.password?.trim() || null,
+    String(next.avatarUrl ?? prev.avatarUrl ?? '').trim(),
     next.incomeModelId ?? null,
     next.careerLayerId ?? null,
     JSON.stringify(next.permissions),

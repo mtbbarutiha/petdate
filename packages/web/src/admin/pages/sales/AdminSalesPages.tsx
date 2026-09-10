@@ -9,6 +9,7 @@ import {
 import { adminFetch, formatNumFa } from '../../api';
 import { adminCan } from '../../auth';
 import { AdminModal } from '../../AdminModal';
+import { AdminEntityCell, AdminThumb } from '../../AdminThumb';
 
 function ItemsPage({ kind }: { kind: SalesItemKind }) {
   const navigate = useNavigate();
@@ -104,7 +105,12 @@ function ItemsPage({ kind }: { kind: SalesItemKind }) {
             <td><Link to={`/admin/sales/${kind === 'lead' ? 'leads' : 'upgrades'}/${i.id}`}>{i.publicId}</Link><div>{i.first} {i.last}</div><div className="admin-muted">{i.mobile}</div></td>
             <td>{i.product}<div className="admin-muted">{formatNumFa(i.value)} ت</div></td>
             <td>{i.source}</td><td>{formatNumFa(i.score)}</td><td>{salesStageLabel(i.stage)}</td><td>{i.payStatus}</td>
-            <td>{i.ownerName || (canWrite ? <button type="button" className="admin-btn admin-btn--ghost" onClick={() => void adminFetch(`/api/admin/sales/items/${i.id}/claim`, { method: 'POST', body: '{}' }).then(load)}>برداشتن</button> : '—')}</td>
+            <td>{i.ownerName ? (
+              <AdminEntityCell
+                thumb={<AdminThumb src={i.ownerAvatarUrl} label={i.ownerName} kind="user" size={28} />}
+                title={i.ownerName}
+              />
+            ) : (canWrite ? <button type="button" className="admin-btn admin-btn--ghost" onClick={() => void adminFetch(`/api/admin/sales/items/${i.id}/claim`, { method: 'POST', body: '{}' }).then(load)}>برداشتن</button> : '—')}</td>
           </tr>
         ))}{!items.length ? <tr><td colSpan={7}>خالی</td></tr> : null}</tbody>
       </table></div>
@@ -308,7 +314,7 @@ export function AdminSalesDealsPage() {
     <div className="admin-page">
       <header className="admin-header"><div><h1>معاملات برنده</h1><p>پس از تایید مالی</p></div></header>
       <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>کد</th><th>نام</th><th>محصول</th><th>مبلغ</th><th>کارشناس</th></tr></thead>
-        <tbody>{items.map((i) => <tr key={i.id}><td><Link to={`/admin/sales/${i.kind === 'lead' ? 'leads' : 'upgrades'}/${i.id}`}>{i.publicId}</Link></td><td>{i.first} {i.last}</td><td>{i.product}</td><td>{formatNumFa(i.value)}</td><td>{i.ownerName || '—'}</td></tr>)}
+        <tbody>{items.map((i) => <tr key={i.id}><td><Link to={`/admin/sales/${i.kind === 'lead' ? 'leads' : 'upgrades'}/${i.id}`}>{i.publicId}</Link></td><td>{i.first} {i.last}</td><td>{i.product}</td><td>{formatNumFa(i.value)}</td><td>{i.ownerName ? <AdminEntityCell thumb={<AdminThumb src={i.ownerAvatarUrl} label={i.ownerName} kind="user" size={28} />} title={i.ownerName} /> : '—'}</td></tr>)}
           {!items.length ? <tr><td colSpan={5}>خالی</td></tr> : null}</tbody></table></div>
     </div>
   );

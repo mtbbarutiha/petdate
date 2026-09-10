@@ -579,6 +579,7 @@ export function listMonthlyCosts(year: number, month: number) {
         name: `${e.firstName} ${e.lastName}`.trim(),
         jobTitle: e.jobTitle,
         department: e.department,
+        avatarUrl: e.avatarUrl || '',
       },
       cost,
     };
@@ -918,7 +919,7 @@ export function getHrOverviewDashboard() {
   const recentLogs = (
     db()
       .prepare(
-        `SELECT l.*, e.first_name, e.last_name FROM hr_employee_logs l
+        `SELECT l.*, e.first_name, e.last_name, e.avatar_url FROM hr_employee_logs l
          JOIN hr_employees e ON e.id = l.employee_id
          ORDER BY l.id DESC LIMIT 8`
       )
@@ -926,6 +927,7 @@ export function getHrOverviewDashboard() {
   ).map((r) => ({
     employeeId: Number(r.employee_id),
     personName: `${r.first_name} ${r.last_name}`.trim(),
+    avatarUrl: String(r.avatar_url || ''),
     field: String(r.field || ''),
     oldValue: String(r.old_value || ''),
     newValue: String(r.new_value || ''),

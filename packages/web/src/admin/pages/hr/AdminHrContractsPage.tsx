@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { HrContract, HrEmployee } from '@petdate/shared';
 import { adminFetch, formatNumFa } from '../../api';
+import { AdminEntityCell, AdminThumb } from '../../AdminThumb';
 
 export function AdminHrContractsPage() {
   const [contracts, setContracts] = useState<HrContract[]>([]);
@@ -26,10 +27,7 @@ export function AdminHrContractsPage() {
     void load();
   }, [load]);
 
-  const nameOf = (id: number) => {
-    const e = employees.find((x) => x.id === id);
-    return e ? `${e.firstName} ${e.lastName}` : `#${id}`;
-  };
+  const empOf = (id: number) => employees.find((x) => x.id === id);
 
   return (
     <div className="admin-page">
@@ -61,21 +59,30 @@ export function AdminHrContractsPage() {
                 </td>
               </tr>
             ) : (
-              contracts.map((c) => (
-                <tr key={c.id}>
-                  <td className="admin-mono">{c.contractCode}</td>
-                  <td>
-                    <Link to={`/admin/hr/employees/${c.employeeId}`} className="admin-link">
-                      {nameOf(c.employeeId)}
-                    </Link>
-                  </td>
-                  <td>{c.startDate || '—'}</td>
-                  <td>{c.endDate || 'باز'}</td>
-                  <td>{formatNumFa(c.salary)}</td>
-                  <td>{formatNumFa(c.eidi)}</td>
-                  <td>{formatNumFa(c.sanavat)}</td>
-                </tr>
-              ))
+              contracts.map((c) => {
+                const e = empOf(c.employeeId);
+                const name = e ? `${e.firstName} ${e.lastName}` : `#${c.employeeId}`;
+                return (
+                  <tr key={c.id}>
+                    <td className="admin-mono">{c.contractCode}</td>
+                    <td>
+                      <AdminEntityCell
+                        thumb={<AdminThumb src={e?.avatarUrl} label={name} kind="user" size={32} />}
+                        title={
+                          <Link to={`/admin/hr/employees/${c.employeeId}`} className="admin-link">
+                            {name}
+                          </Link>
+                        }
+                      />
+                    </td>
+                    <td>{c.startDate || '—'}</td>
+                    <td>{c.endDate || 'باز'}</td>
+                    <td>{formatNumFa(c.salary)}</td>
+                    <td>{formatNumFa(c.eidi)}</td>
+                    <td>{formatNumFa(c.sanavat)}</td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>

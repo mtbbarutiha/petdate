@@ -3,6 +3,7 @@ import type { HrEmployee, HrServiceEntry } from '@petdate/shared';
 import { adminFetch, formatNumFa } from '../../api';
 import { adminCan } from '../../auth';
 import { AdminModal } from '../../AdminModal';
+import { AdminEntityCell, AdminThumb } from '../../AdminThumb';
 
 export function AdminHrServicePage() {
   const now = useMemo(() => new Date(), []);
@@ -25,7 +26,11 @@ export function AdminHrServicePage() {
     } catch (err) { setError(err instanceof Error ? err.message : 'خطا'); }
   }, [year, month]);
   useEffect(() => { void load(); }, [load]);
-  const empName = (id: number) => { const e = employees.find((x) => x.id === id); return e ? `${e.firstName} ${e.lastName}` : `#${id}`; };
+  const empOf = (id: number) => employees.find((x) => x.id === id);
+  const empName = (id: number) => {
+    const e = empOf(id);
+    return e ? `${e.firstName} ${e.lastName}` : `#${id}`;
+  };
   const totalHours = entries.reduce((s, e) => s + e.hours + e.minutes / 60, 0);
 
   const add = async (e: FormEvent) => {
@@ -64,15 +69,24 @@ export function AdminHrServicePage() {
         <table className="admin-table">
           <thead><tr><th>همکار</th><th>روز</th><th>ساعت</th><th>یادداشت</th><th></th></tr></thead>
           <tbody>
-            {entries.map((e) => (
-              <tr key={e.id}>
-                <td>{empName(e.employeeId)}</td>
-                <td>{formatNumFa(e.day)}</td>
-                <td>{formatNumFa(e.hours)}:{formatNumFa(e.minutes)}</td>
-                <td>{e.note || '—'}</td>
-                <td>{canWrite ? <button type="button" className="admin-btn admin-btn--ghost" onClick={() => void adminFetch(`/api/admin/hr/service/${e.id}`, { method: 'DELETE' }).then(load)}>حذف</button> : null}</td>
-              </tr>
-            ))}
+            {entries.map((e) => {
+              const emp = empOf(e.employeeId);
+              const name = empName(e.employeeId);
+              return (
+                <tr key={e.id}>
+                  <td>
+                    <AdminEntityCell
+                      thumb={<AdminThumb src={emp?.avatarUrl} label={name} kind="user" size={32} />}
+                      title={name}
+                    />
+                  </td>
+                  <td>{formatNumFa(e.day)}</td>
+                  <td>{formatNumFa(e.hours)}:{formatNumFa(e.minutes)}</td>
+                  <td>{e.note || '—'}</td>
+                  <td>{canWrite ? <button type="button" className="admin-btn admin-btn--ghost" onClick={() => void adminFetch(`/api/admin/hr/service/${e.id}`, { method: 'DELETE' }).then(load)}>حذف</button> : null}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

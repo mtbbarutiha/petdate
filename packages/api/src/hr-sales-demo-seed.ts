@@ -25,6 +25,20 @@ import { ADMIN_ROLE_PERMISSIONS } from '@petdate/shared';
 
 const SEED_MARKER = 'SEED-HR-01';
 
+/** Distinct demo avatars for SEED personnel (Dicebear — stable per code). */
+const SEED_AVATARS: Record<string, string> = {
+  'SEED-HR-01':
+    'https://api.dicebear.com/9.x/notionists/svg?seed=SEED-HR-01&backgroundColor=b6e3f4',
+  'SEED-HR-02':
+    'https://api.dicebear.com/9.x/notionists/svg?seed=SEED-HR-02&backgroundColor=c0aede',
+  'SEED-HR-03':
+    'https://api.dicebear.com/9.x/notionists/svg?seed=SEED-HR-03&backgroundColor=d1f4d7',
+  'SEED-HR-04':
+    'https://api.dicebear.com/9.x/notionists/svg?seed=SEED-HR-04&backgroundColor=ffd5dc',
+  'SEED-HR-05':
+    'https://api.dicebear.com/9.x/notionists/svg?seed=SEED-HR-05&backgroundColor=ffdfba',
+};
+
 function db() {
   return getDb();
 }
@@ -97,6 +111,19 @@ function employeeByCode(code: string) {
     .get(code) as { id: number } | undefined;
 }
 
+/** Fill avatar_url for SEED employees when empty — additive, never wipe custom photos. */
+export function ensureSeedEmployeeAvatars(): void {
+  const upd = db().prepare(
+    `UPDATE hr_employees SET avatar_url = ?, updated_at = datetime('now')
+     WHERE id = ? AND (avatar_url IS NULL OR avatar_url = '')`
+  );
+  for (const [code, url] of Object.entries(SEED_AVATARS)) {
+    const row = employeeByCode(code);
+    if (!row) continue;
+    upd.run(url, row.id);
+  }
+}
+
 function insertSalesItem(row: {
   kind: 'lead' | 'upgrade';
   first: string;
@@ -158,6 +185,8 @@ function seedAlreadyDone(): boolean {
 export function seedHrSalesDemoIfNeeded(): void {
   // Caller must ensure HR + Sales schemas first (migrateSchema / selftest).
   ensureSystemRolePermissionBackfill();
+  // Always backfill missing SEED avatars (even if full seed already ran).
+  ensureSeedEmployeeAvatars();
 
   if (seedAlreadyDone()) {
     return;
@@ -277,6 +306,7 @@ export function seedHrSalesDemoIfNeeded(): void {
       orgEmail: `${s.code.toLowerCase()}@petdate.ir`,
       careerLayerId: layer(s.layer),
       incomeModelId: s.model,
+      avatarUrl: SEED_AVATARS[s.code] || '',
       benefits: {
         eidi: true,
         sanavat: true,

@@ -6,6 +6,7 @@ import { HR_ACCESS_STATUSES, HR_CONTRACT_STATUSES } from '@petdate/shared';
 import { adminFetch, formatNumFa } from '../../api';
 import { adminCan } from '../../auth';
 import { AdminIdChip } from '../../AdminIds';
+import { AdminEntityCell, AdminThumb } from '../../AdminThumb';
 import { EmployeeCreateModal } from './EmployeeCreateModal';
 
 export function AdminHrEmployeesPage() {
@@ -122,32 +123,47 @@ export function AdminHrEmployeesPage() {
                 </td>
               </tr>
             ) : (
-              employees.map((e) => (
-                <tr key={e.id}>
-                  <td>
-                    <AdminIdChip publicId={e.publicId} />
-                  </td>
-                  <td>
-                    <Link to={`/admin/hr/employees/${e.id}`} className="admin-link">
-                      {e.firstName} {e.lastName}
-                    </Link>
-                  </td>
-                  <td className="admin-mono">{e.personnelCode}</td>
-                  <td>{e.jobTitle || '—'}</td>
-                  <td>{e.department || '—'}</td>
-                  <td>{e.location || '—'}</td>
-                  <td>
-                    <span className="admin-pill">{e.contractStatus}</span>
-                  </td>
-                  <td>
-                    <span
-                      className={`admin-pill${e.accessStatus === 'فعال' ? ' admin-pill--mint' : ' admin-pill--warn'}`}
-                    >
-                      {e.accessStatus}
-                    </span>
-                  </td>
-                </tr>
-              ))
+              employees.map((e) => {
+                const fullName = `${e.firstName} ${e.lastName}`.trim();
+                return (
+                  <tr key={e.id}>
+                    <td>
+                      <AdminIdChip publicId={e.publicId} />
+                    </td>
+                    <td>
+                      <AdminEntityCell
+                        thumb={
+                          <AdminThumb
+                            src={e.avatarUrl}
+                            label={fullName}
+                            kind="user"
+                            alt={fullName}
+                          />
+                        }
+                        title={
+                          <Link to={`/admin/hr/employees/${e.id}`} className="admin-link">
+                            {fullName}
+                          </Link>
+                        }
+                      />
+                    </td>
+                    <td className="admin-mono">{e.personnelCode}</td>
+                    <td>{e.jobTitle || '—'}</td>
+                    <td>{e.department || '—'}</td>
+                    <td>{e.location || '—'}</td>
+                    <td>
+                      <span className="admin-pill">{e.contractStatus}</span>
+                    </td>
+                    <td>
+                      <span
+                        className={`admin-pill${e.accessStatus === 'فعال' ? ' admin-pill--mint' : ' admin-pill--warn'}`}
+                      >
+                        {e.accessStatus}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
