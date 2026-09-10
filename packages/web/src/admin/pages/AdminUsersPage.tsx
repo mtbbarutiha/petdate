@@ -18,6 +18,7 @@ import {
   adminVerifyLabel,
 } from '../AdminListCells';
 import { AdminEntityCell, AdminThumb } from '../AdminThumb';
+import { AdminModal } from '../AdminModal';
 
 function activeRolesOf(user: User): UserRole[] {
   const fromList = (user.roles || []).filter((r): r is UserRole => USER_ROLES.includes(r));
@@ -219,24 +220,36 @@ export function AdminUsersPage() {
           </tbody>
         </table>
       </div>
-      {credit ? (
-        <div className="admin-modal"><div className="admin-modal-card">
-          <h3>واریز / برداشت کیف پول</h3>
-          <p className="admin-muted" dir="ltr">
-            {userPublicIdOf({ id: credit.userId })}
-          </p>
-          <label className="form-label">ارز</label>
-          <select className="admin-select" value={credit.currency} onChange={(e) => setCredit({ ...credit, currency: e.target.value })}>
-            <option value="toman">تومان</option><option value="coins">سکه</option><option value="stars">Stars</option><option value="ton">TON</option>
-          </select>
-          <label className="form-label">مبلغ</label>
-          <input className="form-input" value={credit.amount} onChange={(e) => setCredit({ ...credit, amount: e.target.value })} />
-          <div className="admin-row-actions" style={{ marginTop: 16 }}>
+      <AdminModal
+        open={Boolean(credit)}
+        title="واریز / برداشت کیف پول"
+        onClose={() => setCredit(null)}
+        size="sm"
+        footer={
+          <>
             <button type="button" className="admin-btn admin-btn--primary" onClick={() => void submitCredit()}>اعمال</button>
             <button type="button" className="admin-btn admin-btn--ghost" onClick={() => setCredit(null)}>انصراف</button>
-          </div>
-        </div></div>
-      ) : null}
+          </>
+        }
+      >
+        {credit ? (
+          <>
+            <p className="admin-muted" dir="ltr" style={{ marginTop: 0 }}>
+              {userPublicIdOf({ id: credit.userId })}
+            </p>
+            <label>
+              <span className="form-label">ارز</span>
+              <select className="admin-select" value={credit.currency} onChange={(e) => setCredit({ ...credit, currency: e.target.value })}>
+                <option value="toman">تومان</option><option value="coins">سکه</option><option value="stars">Stars</option><option value="ton">TON</option>
+              </select>
+            </label>
+            <label>
+              <span className="form-label">مبلغ</span>
+              <input className="form-input" value={credit.amount} onChange={(e) => setCredit({ ...credit, amount: e.target.value })} />
+            </label>
+          </>
+        ) : null}
+      </AdminModal>
     </div>
   );
 }

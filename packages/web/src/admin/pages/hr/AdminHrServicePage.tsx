@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import type { HrEmployee, HrServiceEntry } from '@petdate/shared';
 import { adminFetch, formatNumFa } from '../../api';
 import { adminCan } from '../../auth';
+import { AdminModal } from '../../AdminModal';
 
 export function AdminHrServicePage() {
   const now = useMemo(() => new Date(), []);
@@ -10,6 +11,9 @@ export function AdminHrServicePage() {
   const [entries, setEntries] = useState<HrServiceEntry[]>([]);
   const [employees, setEmployees] = useState<HrEmployee[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [form, setForm] = useState({ employeeId: '', hours: '8', note: '' });
   const canWrite = adminCan('hr.write');
   const load = useCallback(async () => {
     try {
@@ -24,16 +28,21 @@ export function AdminHrServicePage() {
   const empName = (id: number) => { const e = employees.find((x) => x.id === id); return e ? `${e.firstName} ${e.lastName}` : `#${id}`; };
   const totalHours = entries.reduce((s, e) => s + e.hours + e.minutes / 60, 0);
 
-  const add = async () => {
+  const add = async (e: FormEvent) => {
+    e.preventDefault();
     if (!canWrite || !employees.length) return;
-    const employeeId = Number(window.prompt(`شناسه همکار (مثلاً ${employees[0].id})`));
+    const employeeId = Number(form.employeeId || employees[0].id);
     if (!Number.isFinite(employeeId)) return;
-    const hours = Number(window.prompt('ساعت', '8') || 0);
-    const note = window.prompt('یادداشت') || '';
+    setBusy(true);
     try {
-      await adminFetch('/api/admin/hr/service', { method: 'POST', body: JSON.stringify({ employeeId, year, month, hours, minutes: 0, note }) });
+      await adminFetch('/api/admin/hr/service', {
+        method: 'POST',
+        body: JSON.stringify({ employeeId, year, month, hours: Number(form.hours) || 0, minutes: 0, note: form.note }),
+      });
+      setOpen(false);
       await load();
     } catch (err) { setError(err instanceof Error ? err.message : 'خطا'); }
+    finally { setBusy(false); }
   };
 
   return (
@@ -43,7 +52,10 @@ export function AdminHrServicePage() {
         <div className="admin-header-actions">
           <input type="number" className="admin-input" style={{ width: 90 }} value={year} onChange={(e) => setYear(Number(e.target.value))} />
           <input type="number" className="admin-input" style={{ width: 70 }} min={1} max={12} value={month} onChange={(e) => setMonth(Number(e.target.value))} />
-          {canWrite ? <button type="button" className="admin-btn" onClick={() => void add()}>+ ثبت ساعت</button> : null}
+          {canWrite ? <button type="button" className="admin-btn" onClick={() => {
+            setForm({ employeeId: employees[0] ? String(employees[0].id) : '', hours: '8', note: '' });
+            setOpen(true);
+          }}>+ ثبت ساعت</button> : null}
         </div>
       </header>
       {error ? <p className="admin-error">{error}</p> : null}
@@ -64,6 +76,24 @@ export function AdminHrServicePage() {
           </tbody>
         </table>
       </div>
+
+      <AdminModal open={open} title="ثبت ساعت" onClose={() => setOpen(false)} as="form" onSubmit={(e) => void add(e)} busy={busy}
+        footer={<><button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>ذخیره</button><button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setOpen(false)}>انصراف</button></>}>
+        <label>
+          <span className="form-label">همکار</span>
+          <select className="form-input" value={form.employeeId} onChange={(e) => setForm({ ...form, employeeId: e.target.value })}>
+            {employees.map((em) => <option key={em.id} value={String(em.id)}>{em.firstName} {em.lastName}</option>)}
+          </select>
+        </label>
+        <label>
+          <span className="form-label">ساعت</span>
+          <input className="form-input" dir="ltr" value={form.hours} onChange={(e) => setForm({ ...form, hours: e.target.value })} />
+        </label>
+        <label>
+          <span className="form-label">یادداشت</span>
+          <input className="form-input" value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} />
+        </label>
+      </AdminModal>
     </div>
   );
 }

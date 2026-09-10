@@ -960,13 +960,101 @@
   place-items: center;
   z-index: 50;
   padding: 16px;
+  overflow: auto;
 }
 .admin-app .admin-modal-card {
   width: min(420px, 100%);
+  max-height: min(92vh, 920px);
+  overflow: auto;
   background: #fff;
   border-radius: 12px;
   padding: 20px;
   border: 1px solid var(--admin-border);
+  box-shadow: 0 12px 40px rgba(44, 44, 44, 0.18);
+  outline: none;
+}
+.admin-app .admin-modal-card--sm { width: min(360px, 100%); }
+.admin-app .admin-modal-card--md { width: min(440px, 100%); }
+.admin-app .admin-modal-card--lg { width: min(640px, 100%); }
+.admin-app .admin-modal-card--xl { width: min(860px, 100%); }
+.admin-app .admin-modal-card--employee {
+  width: min(980px, 100%);
+  padding: 18px 20px 16px;
+}
+.admin-app .admin-modal-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.admin-app .admin-modal-head h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  line-height: 1.4;
+}
+.admin-app .admin-modal-close {
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--admin-muted);
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.admin-app .admin-modal-close:hover {
+  background: var(--admin-surface, #f3f1ee);
+  color: inherit;
+}
+.admin-app .admin-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.admin-app .admin-modal-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+  justify-content: flex-start;
+}
+.admin-app .admin-tabs--modal {
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.admin-app .admin-tabs--modal .admin-tab {
+  padding: 6px 10px;
+  font-size: 12px;
+  border-radius: 8px;
+}
+.admin-app .admin-subsection-title {
+  margin: 4px 0 10px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--admin-ink);
+}
+.admin-app .admin-benefit-block {
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--admin-border);
+}
+.admin-app .admin-check-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px 12px;
+}
+.admin-app .admin-hint {
+  margin: 10px 0 0;
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+@media (max-width: 720px) {
+  .admin-app .admin-check-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 .admin-app .admin-success {
   color: #0f766e;

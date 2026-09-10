@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import type { HrCareerLayer, HrContract, HrEmployee, HrIncomeModel } from '@petdate/shared';
 import {
@@ -9,6 +9,7 @@ import {
 } from '@petdate/shared';
 import { adminFetch, formatNumFa } from '../../api';
 import { adminCan } from '../../auth';
+import { AdminModal } from '../../AdminModal';
 import { AdminIdChip } from '../../AdminIds';
 
 export function AdminHrEmployeeDetailPage() {
@@ -19,6 +20,9 @@ export function AdminHrEmployeeDetailPage() {
   const [models, setModels] = useState<HrIncomeModel[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [contractOpen, setContractOpen] = useState(false);
+  const [contractBusy, setContractBusy] = useState(false);
+  const [contractForm, setContractForm] = useState({ startDate: '', salary: '0' });
   const [tab, setTab] = useState<'profile' | 'contracts' | 'logs'>('profile');
   const canWrite = adminCan('hr.write');
 
@@ -63,21 +67,25 @@ export function AdminHrEmployeeDetailPage() {
     }
   };
 
-  const addContract = async () => {
+  const addContract = async (e?: FormEvent) => {
+    e?.preventDefault();
     if (!employee || !canWrite) return;
-    const startDate = window.prompt('تاریخ شروع (مثلاً 1403/01/01)');
-    if (!startDate?.trim()) return;
-    const salaryRaw = window.prompt('حقوق ماهانه (تومان)', '0');
-    const salary = Number(String(salaryRaw || '0').replace(/[^0-9]/g, '')) || 0;
+    const startDate = contractForm.startDate.trim();
+    if (!startDate) return;
+    const salary = Number(String(contractForm.salary || '0').replace(/[^0-9]/g, '')) || 0;
+    setContractBusy(true);
     try {
       await adminFetch<{ contract: HrContract }>(`/api/admin/hr/employees/${employee.id}/contracts`, {
         method: 'POST',
-        body: JSON.stringify({ startDate: startDate.trim(), salary }),
+        body: JSON.stringify({ startDate, salary }),
       });
+      setContractOpen(false);
       await load();
       setTab('contracts');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'خطا');
+    } finally {
+      setContractBusy(false);
     }
   };
 
@@ -343,7 +351,7 @@ export function AdminHrEmployeeDetailPage() {
           <div className="admin-header" style={{ marginBottom: 12 }}>
             <h2 style={{ margin: 0, fontSize: '1rem' }}>قراردادها</h2>
             {canWrite ? (
-              <button type="button" className="admin-btn" onClick={() => void addContract()}>
+              <button type="button" className="admin-btn" onClick={() => { setContractForm({ startDate: '', salary: '0' }); setContractOpen(true); }}>
                 تمدید / قرارداد جدید
               </button>
             ) : null}
@@ -402,6 +410,31 @@ export function AdminHrEmployeeDetailPage() {
           </ul>
         </div>
       ) : null}
+      <AdminModal
+        open={contractOpen}
+        title="قرارداد جدید"
+        onClose={() => !contractBusy && setContractOpen(false)}
+        size="sm"
+        as="form"
+        onSubmit={(e) => void addContract(e)}
+        busy={contractBusy}
+        footer={
+          <>
+            <button type="submit" className="admin-btn admin-btn--primary" disabled={contractBusy}>ذخیره</button>
+            <button type="button" className="admin-btn admin-btn--ghost" disabled={contractBusy} onClick={() => setContractOpen(false)}>انصراف</button>
+          </>
+        }
+      >
+        <label>
+          <span className="form-label">تاریخ شروع</span>
+          <input className="form-input" required placeholder="1403/01/01" value={contractForm.startDate} onChange={(e) => setContractForm({ ...contractForm, startDate: e.target.value })} />
+        </label>
+        <label>
+          <span className="form-label">حقوق ماهانه (تومان)</span>
+          <input className="form-input" type="number" value={contractForm.salary} onChange={(e) => setContractForm({ ...contractForm, salary: e.target.value })} />
+        </label>
+      </AdminModal>
+
     </div>
   );
 }
