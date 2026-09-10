@@ -93,6 +93,10 @@ function translateSql(sql: string): string {
     'BIGSERIAL PRIMARY KEY'
   );
   s = s.replace(/\bAUTOINCREMENT\b/gi, '');
+  // SQLite-only collations — leave ORDER BY / column defs Postgres-safe
+  s = s.replace(/\s+COLLATE\s+NOCASE\b/gi, '');
+  s = s.replace(/\s+COLLATE\s+BINARY\b/gi, '');
+  s = s.replace(/\s+COLLATE\s+RTRIM\b/gi, '');
 
   let i = 0;
   s = s.replace(/\?/g, () => `$${++i}`);
