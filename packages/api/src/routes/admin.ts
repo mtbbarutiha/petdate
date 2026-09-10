@@ -2,8 +2,12 @@ import { Router } from 'express';
 import fs from 'fs';
 import net from 'net';
 import os from 'os';
-import type { UserRole } from '@petdate/shared';
-import { SITE, USER_ROLES } from '@petdate/shared';
+import type { UserGender, UserRole, VerificationStatus, WalletCurrency } from '@petdate/shared';
+import {
+  SITE,
+  USER_ROLES,
+  VERIFICATION_STATUSES,
+} from '@petdate/shared';
 import {
   hasElasticsearchConfig,
   hasPostgresConfig,
@@ -274,17 +278,102 @@ adminRouter.patch('/users/:id', (req, res) => {
   if (!Number.isFinite(id)) { res.status(400).json({ error: 'شناسه نامعتبر' }); return; }
   let user = dbService.getUserById(id);
   if (!user) { res.status(404).json({ error: 'کاربر پیدا نشد' }); return; }
-  if (typeof req.body?.isActive === 'boolean') {
-    user = adminPlatform.setUserActive(id, req.body.isActive) ?? user;
+  const body = req.body || {};
+
+  const profilePatch: Parameters<typeof dbService.updateUserProfile>[1] = {};
+  if (typeof body.name === 'string') {
+    const name = body.name.trim();
+    if (name) profilePatch.name = name;
   }
-  if (Array.isArray(req.body?.roles)) {
-    const roles = (req.body.roles as unknown[]).filter(
+  if (typeof body.username === 'string') {
+    profilePatch.username = body.username.trim().replace(/^@+/, '');
+  }
+  if (typeof body.phone === 'string') profilePatch.phone = body.phone.trim();
+  if (typeof body.email === 'string') profilePatch.email = body.email.trim();
+  if (typeof body.city === 'string') profilePatch.city = body.city.trim();
+  if (typeof body.province === 'string') profilePatch.province = body.province.trim();
+  if (typeof body.country === 'string') profilePatch.country = body.country.trim();
+  if (typeof body.bio === 'string') profilePatch.bio = body.bio.trim();
+  if (body.age !== undefined && body.age !== null && body.age !== '') {
+    const age = Number(body.age);
+    if (Number.isFinite(age) && age >= 0) profilePatch.age = Math.floor(age);
+  }
+  if (body.gender === 'male' || body.gender === 'female') {
+    profilePatch.gender = body.gender as UserGender;
+  }
+  if (Object.keys(profilePatch).length) {
+    user = dbService.updateUserProfile(id, profilePatch) ?? user;
+  }
+
+  if (typeof body.isActive === 'boolean') {
+    user = adminPlatform.setUserActive(id, body.isActive) ?? user;
+  }
+
+  if (Array.isArray(body.roles)) {
+    let roles = (body.roles as unknown[]).filter(
       (r): r is UserRole => typeof r === 'string' && USER_ROLES.includes(r as UserRole)
     );
-    if (roles.length) user = dbService.setUserRoles(id, roles) ?? user;
-  } else if (typeof req.body?.role === 'string' && USER_ROLES.includes(req.body.role as UserRole)) {
-    user = dbService.setUserRole(id, req.body.role as UserRole) ?? user;
+    if (roles.length) {
+      const primary =
+        typeof body.role === 'string' && USER_ROLES.includes(body.role as UserRole)
+          ? (body.role as UserRole)
+          : undefined;
+      if (primary && !roles.includes(primary)) roles = [primary, ...roles];
+      user = dbService.setUserRoles(id, roles) ?? user;
+      if (primary) user = dbService.setUserPrimaryRole(id, primary) ?? user;
+    }
+  } else if (typeof body.role === 'string' && USER_ROLES.includes(body.role as UserRole)) {
+    user = dbService.setUserRole(id, body.role as UserRole) ?? user;
   }
+
+  if (
+    typeof body.verificationStatus === 'string' &&
+    VERIFICATION_STATUSES.includes(body.verificationStatus as VerificationStatus)
+  ) {
+    const status = body.verificationStatus as VerificationStatus;
+    if (status !== user.verificationStatus) {
+      user = dbService.setVerificationStatusAdmin(id, status) ?? user;
+    }
+  }
+
+  const walletRaw = body.wallet;
+  if (walletRaw && typeof walletRaw === 'object') {
+    const currencies: WalletCurrency[] = ['coins', 'toman', 'stars', 'ton'];
+    const current = {
+      coins: Number(user.coins) || 0,
+      toman: Number(user.walletToman) || 0,
+      stars: Number(user.walletStars) || 0,
+      ton: Number(user.walletTon) || 0,
+    };
+    for (const currency of currencies) {
+      if (walletRaw[currency] === undefined || walletRaw[currency] === null || walletRaw[currency] === '') {
+        continue;
+      }
+      const target = Math.floor(Number(walletRaw[currency]));
+      if (!Number.isFinite(target) || target < 0) {
+        res.status(400).json({ error: `موجودی ${currency} نامعتبر است` });
+        return;
+      }
+      const delta = target - current[currency];
+      if (delta === 0) continue;
+      const result = dbService.creditWallet(id, currency, delta, {
+        reason: 'تنظیم ادمین',
+        refType: 'admin',
+      });
+      if (!result.ok) {
+        res.status(400).json({
+          error:
+            result.reason === 'missing_user'
+              ? 'کاربر پیدا نشد'
+              : `تنظیم کیف پول ${currency} ناموفق بود`,
+        });
+        return;
+      }
+      user = result.user;
+      current[currency] = target;
+    }
+  }
+
   res.json(user);
 });
 
