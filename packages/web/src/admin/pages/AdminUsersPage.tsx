@@ -124,7 +124,7 @@ export function AdminUsersPage() {
             return (
               <tr key={u.id}>
                 <td>
-                  <AdminIdChip publicId={publicId} numericId={u.id} />
+                  <AdminIdChip publicId={publicId} />
                 </td>
                 <td>
                   <AdminEntityCell
@@ -202,7 +202,9 @@ export function AdminUsersPage() {
       {credit ? (
         <div className="admin-modal"><div className="admin-modal-card">
           <h3>واریز / برداشت کیف پول</h3>
-          <p className="admin-muted">کاربر #{credit.userId}</p>
+          <p className="admin-muted" dir="ltr">
+            {userPublicIdOf({ id: credit.userId })}
+          </p>
           <label className="form-label">ارز</label>
           <select className="admin-select" value={credit.currency} onChange={(e) => setCredit({ ...credit, currency: e.target.value })}>
             <option value="toman">تومان</option><option value="coins">سکه</option><option value="stars">Stars</option><option value="ton">TON</option>

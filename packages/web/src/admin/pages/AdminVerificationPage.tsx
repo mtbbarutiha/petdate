@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { BadgeCheck, RefreshCw } from 'lucide-react';
 import type { User } from '@petdate/shared';
-import { VERIFIED_BADGE } from '@petdate/shared';
+import { VERIFIED_BADGE, userPublicIdOf } from '@petdate/shared';
 
 const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ?? '';
 
@@ -109,7 +109,7 @@ export function AdminVerificationPage() {
               <span className="admin-badge">{user.city || '—'}</span>
             </div>
             <p className="muted">
-              #{user.id}
+              <code dir="ltr">{userPublicIdOf(user)}</code>
               {user.telegramId ? ` · tg ${user.telegramId}` : ''}
               {user.username ? ` · @${user.username}` : ''}
             </p>

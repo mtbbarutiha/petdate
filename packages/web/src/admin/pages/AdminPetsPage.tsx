@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Search, Trash2 } from 'lucide-react';
-import { petPublicIdOf, type PetProfile } from '@petdate/shared';
+import { petPublicIdOf, userPublicIdOf, type PetProfile } from '@petdate/shared';
 import { adminFetch, formatNumFa } from '../api';
 import { AdminIdChip } from '../AdminIds';
 import { AdminEntityCell, AdminThumb } from '../AdminThumb';
@@ -45,7 +45,7 @@ export function AdminPetsPage() {
             return (
               <tr key={pet.id}>
                 <td>
-                  <AdminIdChip publicId={publicId} numericId={pet.id} />
+                  <AdminIdChip publicId={publicId} />
                 </td>
                 <td>
                   <AdminEntityCell
@@ -68,7 +68,11 @@ export function AdminPetsPage() {
                     pet.gender || null,
                   ].filter(Boolean).join(' · ') || '—'}
                 </td>
-                <td className="admin-mono" dir="ltr">#{pet.ownerId}</td>
+                <td>
+                  <code className="admin-mono admin-id-public" dir="ltr">
+                    {userPublicIdOf({ id: pet.ownerId })}
+                  </code>
+                </td>
                 <td>{pet.city || '—'}</td>
                 <td><button type="button" className="admin-btn admin-btn--danger" onClick={() => void remove(pet)}><Trash2 size={14} /></button></td>
               </tr>

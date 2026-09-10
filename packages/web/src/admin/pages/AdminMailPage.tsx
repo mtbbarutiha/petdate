@@ -575,7 +575,6 @@ export function AdminMailPage() {
           <table className="admin-table">
             <thead>
               <tr>
-                <th>#</th>
                 <th>زمان</th>
                 <th>به</th>
                 <th>موضوع</th>
@@ -587,7 +586,6 @@ export function AdminMailPage() {
             <tbody>
               {(data?.recentSends ?? []).map((row) => (
                 <tr key={row.id}>
-                  <td className="admin-mono">{row.id}</td>
                   <td className="admin-mono">{row.createdAt}</td>
                   <td className="admin-mono" dir="ltr">{row.to}</td>
                   <td>{row.subject}</td>
@@ -601,7 +599,7 @@ export function AdminMailPage() {
                 </tr>
               ))}
               {!data?.recentSends?.length ? (
-                <tr><td colSpan={7} className="admin-muted">هنوز لاگی ثبت نشده — بعد از OTP یا ارسال اینجا می‌آید</td></tr>
+                <tr><td colSpan={6} className="admin-muted">هنوز لاگی ثبت نشده — بعد از OTP یا ارسال اینجا می‌آید</td></tr>
               ) : null}
             </tbody>
           </table>

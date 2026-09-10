@@ -79,13 +79,12 @@ export function AdminFinanceOrdersPage() {
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th>#</th><th>مشتری</th><th>مبلغ</th><th>پرداخت</th><th>وضعیت</th><th>تاریخ</th>
+                    <th>مشتری</th><th>مبلغ</th><th>پرداخت</th><th>وضعیت</th><th>تاریخ</th>
                   </tr>
                 </thead>
                 <tbody>
                   {data.orders.map((o) => (
                     <tr key={o.id}>
-                      <td className="admin-mono">{o.id}</td>
                       <td>{o.customerName || '—'}</td>
                       <td>{formatTomanFa(o.totalToman)}</td>
                       <td>{CUR[o.paymentCurrency] || o.paymentCurrency}</td>
@@ -94,7 +93,7 @@ export function AdminFinanceOrdersPage() {
                     </tr>
                   ))}
                   {!data.orders.length ? (
-                    <tr><td colSpan={6} className="admin-muted">سفارشی نیست</td></tr>
+                    <tr><td colSpan={5} className="admin-muted">سفارشی نیست</td></tr>
                   ) : null}
                 </tbody>
               </table>
