@@ -29,6 +29,9 @@ npx tsx "$ROOT/packages/web/src/lib/share.selftest.ts"
 echo "==> selftest: web admin Jalali date helpers"
 npx tsx "$ROOT/packages/web/src/admin/JalaliDateSelect.selftest.ts"
 
+echo "==> selftest: web admin monitoring tone mapping"
+npx tsx "$ROOT/packages/web/src/admin/AdminMonitoringPage.selftest.ts"
+
 echo "==> selftest: web admin widget dashboard (layout + drill)"
 npx tsx "$ROOT/packages/web/src/admin/widgets/widgetDashboard.selftest.ts"
 
@@ -78,6 +81,7 @@ run src/crm.selftest.ts
 run src/crm-ticketing.selftest.ts
 run src/admin-notifications.selftest.ts
 run src/admin-platform-nav.selftest.ts
+run src/admin-monitoring.selftest.ts
 run src/admin-aggregate-dashboard.selftest.ts
 run src/admin-dashboard-activity.selftest.ts
 run src/hr-ats-followup.selftest.ts

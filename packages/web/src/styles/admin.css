@@ -586,6 +586,11 @@
   color: #065f46;
   border-color: #a7f3d0;
 }
+.admin-app .admin-health-banner.is-warn {
+  background: #fffbeb;
+  color: #92400e;
+  border-color: #fcd34d;
+}
 .admin-app .admin-health-banner.is-bad {
   background: #fef2f2;
   color: #991b1b;
@@ -612,15 +617,32 @@
   border: 1px solid var(--admin-border);
   background: #fff;
 }
-.admin-app .admin-check.is-ok { border-color: #a7f3d0; }
-.admin-app .admin-check.is-bad { border-color: #fecaca; background: #fff7f7; }
+.admin-app .admin-check.is-ok {
+  border-color: #6ee7b7;
+  background: #ecfdf5;
+  color: #047857;
+}
+.admin-app .admin-check.is-ok svg { color: #059669; }
+.admin-app .admin-check.is-warn {
+  border-color: #fcd34d;
+  background: #fffbeb;
+  color: #b45309;
+}
+.admin-app .admin-check.is-warn svg { color: #d97706; }
+.admin-app .admin-check.is-bad {
+  border-color: #fca5a5;
+  background: #fef2f2;
+  color: #b91c1c;
+}
+.admin-app .admin-check.is-bad svg { color: #dc2626; }
 .admin-app .admin-check.is-idle {
   border-color: #e2e8f0;
   background: #f8fafc;
   color: #64748b;
 }
-.admin-app .admin-check strong { display: block; font-size: 0.92rem; }
-.admin-app .admin-check span { font-size: 0.8rem; color: var(--admin-muted); }
+.admin-app .admin-check.is-idle svg { color: #94a3b8; }
+.admin-app .admin-check strong { display: block; font-size: 0.92rem; color: inherit; }
+.admin-app .admin-check span { font-size: 0.8rem; color: inherit; opacity: 0.85; }
 .admin-app .admin-badge {
   display: inline-block;
   padding: 2px 8px;
@@ -1315,6 +1337,7 @@
   border: 1px solid var(--admin-border);
 }
 .admin-app .admin-health-banner.is-ok { background: #e8f5e9; color: #1b5e20; border-color: #c8e6c9; }
+.admin-app .admin-health-banner.is-warn { background: #fff8e1; color: #e65100; border-color: #ffe082; }
 .admin-app .admin-health-banner.is-bad { background: #ffebee; color: #b71c1c; border-color: #ffcdd2; }
 .admin-app .admin-checks {
   display: grid;
@@ -1330,13 +1353,30 @@
   border: 1px solid var(--admin-border);
   background: #fff;
 }
-.admin-app .admin-check.is-ok { border-color: #c8e6c9; }
-.admin-app .admin-check.is-bad { border-color: #ffcdd2; background: #fff8f8; }
+.admin-app .admin-check.is-ok {
+  border-color: #a5d6a7;
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+.admin-app .admin-check.is-ok svg { color: #43a047; }
+.admin-app .admin-check.is-warn {
+  border-color: #ffe082;
+  background: #fff8e1;
+  color: #ef6c00;
+}
+.admin-app .admin-check.is-warn svg { color: #fb8c00; }
+.admin-app .admin-check.is-bad {
+  border-color: #ef9a9a;
+  background: #ffebee;
+  color: #c62828;
+}
+.admin-app .admin-check.is-bad svg { color: #e53935; }
 .admin-app .admin-check.is-idle {
   border-color: #e2e8f0;
   background: #f8fafc;
   color: #64748b;
 }
+.admin-app .admin-check.is-idle svg { color: #94a3b8; }
 
 @media (max-width: 960px) {
   .admin-app .admin-dash-grid,

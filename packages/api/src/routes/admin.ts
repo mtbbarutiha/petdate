@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import fs from 'fs';
 import net from 'net';
 import os from 'os';
+import path from 'path';
 import type { UserGender, UserRole, VerificationStatus, WalletCurrency } from '@petdate/shared';
 import {
   SITE,
@@ -15,7 +15,20 @@ import {
   hasS3Config,
   infra,
 } from '../config/infra';
-import { dbService, getStorageDriver } from '../db';
+import {
+  checkDown,
+  checkNotConfigured,
+  checkUp,
+  checkWarn,
+  classifyElasticsearchHealth,
+  classifyHttpResult,
+  diskCheck,
+  isNonCriticalCheck,
+  sqliteFileCheck,
+  type ServiceCheck,
+} from '../admin-monitoring';
+import { dbService, getResolvedDatabasePath, getStorageDriver } from '../db';
+import { isCandooConfigured } from '../services/candoo';
 import { adminPlatform } from '../admin-platform';
 import { adminFinance } from '../admin-finance';
 import { buildAggregateDashboard, getPlatformActivity } from '../admin-aggregate-dashboard';
@@ -1277,26 +1290,6 @@ adminRouter.get('/newsletter/subscribers', (req, res) => {
   });
 });
 
-type CheckStatus = 'up' | 'down' | 'not_configured';
-type ServiceCheck = {
-  ok: boolean;
-  status: CheckStatus;
-  detail: string;
-  freeGb?: number;
-  totalGb?: number;
-};
-
-function checkUp(detail: string, extra: Partial<ServiceCheck> = {}): ServiceCheck {
-  return { ok: true, status: 'up', detail, ...extra };
-}
-function checkDown(detail: string, extra: Partial<ServiceCheck> = {}): ServiceCheck {
-  return { ok: false, status: 'down', detail, ...extra };
-}
-function checkNotConfigured(detail = 'پیکربندی نشده'): ServiceCheck {
-  // Intentional unused services must not look like outages.
-  return { ok: true, status: 'not_configured', detail };
-}
-
 function checkTcpPort(host: string, port: number, timeoutMs = 1200): Promise<boolean> {
   return new Promise((resolve) => {
     const socket = net.connect({ host, port });
@@ -1390,10 +1383,114 @@ async function probeHttp(
   }
 }
 
+async function probeElasticsearch(): Promise<ServiceCheck> {
+  if (!hasElasticsearchConfig() || !infra.elasticsearch.url) {
+    return checkNotConfigured();
+  }
+  try {
+    const base = new URL(infra.elasticsearch.url);
+    const host = base.hostname || '127.0.0.1';
+    const port = Number(base.port || 9200);
+    const endpoint = formatServiceEndpoint(host, port, 'Elasticsearch');
+    const live = new URL('/_cluster/health', `${base.protocol}//${host}:${port}`);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 2000);
+    try {
+      const res = await fetch(live, { method: 'GET', signal: controller.signal });
+      if (!res.ok) return checkDown(`HTTP ${res.status} — ${endpoint}`);
+      const body = (await res.json()) as { status?: string };
+      return classifyElasticsearchHealth(String(body.status || ''), endpoint);
+    } finally {
+      clearTimeout(timer);
+    }
+  } catch (err) {
+    const tcp = await probeService(infra.elasticsearch.url, 9200, 'Elasticsearch');
+    if (tcp.status === 'up') {
+      return checkWarn(`${tcp.detail} · health خوانده نشد`);
+    }
+    return checkDown((err as Error).message);
+  }
+}
+
+async function probeRedis(): Promise<ServiceCheck> {
+  const url = process.env.REDIS_URL;
+  if (!url) return checkNotConfigured();
+  try {
+    const u = new URL(url);
+    const host = u.hostname || '127.0.0.1';
+    const port = Number(u.port || 6379);
+    const endpoint = formatServiceEndpoint(host, port, 'Redis');
+    const { default: Redis } = await import('ioredis');
+    const client = new Redis(url, {
+      connectTimeout: 1500,
+      maxRetriesPerRequest: 1,
+      enableOfflineQueue: false,
+      lazyConnect: true,
+    });
+    try {
+      await client.connect();
+      const pong = await Promise.race([
+        client.ping(),
+        new Promise<string>((_, reject) =>
+          setTimeout(() => reject(new Error('Redis PING timeout')), 1500),
+        ),
+      ]);
+      if (String(pong).toUpperCase() === 'PONG') {
+        return checkUp(endpoint);
+      }
+      return checkWarn(`${endpoint} · پاسخ غیرمنتظره`);
+    } finally {
+      try {
+        client.disconnect();
+      } catch {
+        /* */
+      }
+    }
+  } catch (err) {
+    const tcp = await probeService(process.env.REDIS_URL, 6379, 'Redis');
+    if (tcp.status === 'up') {
+      return checkWarn(`${tcp.detail} · PING ناموفق`);
+    }
+    return checkDown((err as Error).message);
+  }
+}
+
+async function probeSmtp(): Promise<ServiceCheck> {
+  if (!isSmtpConfigured()) return checkNotConfigured('SMTP_HOST نیست');
+  const smtp = getSmtpPublicConfig();
+  const host = smtp.host || '127.0.0.1';
+  const port = smtp.port || 587;
+  const endpoint = formatServiceEndpoint(host, port, 'SMTP');
+  const ok = await checkTcpPort(host, port, 1500);
+  return ok ? checkUp(endpoint) : checkDown(`غیرقابل دسترس — ${endpoint}`);
+}
+
+async function probeSms(): Promise<ServiceCheck> {
+  if (!isCandooConfigured()) return checkNotConfigured('Candoo پیکربندی نشده');
+  const base = (process.env.CANDOO_API_URL || 'https://api.candoosms.com').replace(/\/$/, '');
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 2500);
+  const started = Date.now();
+  try {
+    // Any HTTP response (incl. 401/404) means the SMS edge is reachable.
+    const res = await fetch(base, { method: 'GET', signal: controller.signal });
+    const latencyMs = Date.now() - started;
+    if (res.status > 0) {
+      return checkUp(`Candoo · HTTP ${res.status}`, { latencyMs });
+    }
+    return checkDown('Candoo · بدون پاسخ');
+  } catch (err) {
+    return checkDown(`Candoo · ${(err as Error).message}`);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 /** Probe a public HTTPS URL as users see it on the main domain. */
 async function probePublicUrl(url: string, label: string): Promise<ServiceCheck> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 2500);
+  const started = Date.now();
   try {
     const res = await fetch(url, {
       method: 'GET',
@@ -1401,10 +1498,7 @@ async function probePublicUrl(url: string, label: string): Promise<ServiceCheck>
       signal: controller.signal,
       headers: { Accept: 'application/json, text/html, */*' },
     });
-    if (res.ok) {
-      return checkUp(`${label} · HTTP ${res.status}`);
-    }
-    return checkDown(`${label} · HTTP ${res.status}`);
+    return classifyHttpResult(label, res.status, Date.now() - started);
   } catch (err) {
     return checkDown(`${label} · ${(err as Error).message}`);
   } finally {
@@ -1439,22 +1533,6 @@ async function probeTelegramBot(): Promise<ServiceCheck> {
   return checkDown('توکن هست؛ Telegram getMe ناموفق');
 }
 
-function diskCheck(dir: string): ServiceCheck {
-  try {
-    const st = fs.statfsSync(dir);
-    const total = Number(st.blocks) * Number(st.bsize);
-    const free = Number(st.bavail) * Number(st.bsize);
-    const freeGb = Math.round((free / 1024 ** 3) * 100) / 100;
-    const totalGb = Math.round((total / 1024 ** 3) * 100) / 100;
-    const detail = `${freeGb} / ${totalGb} GB آزاد`;
-    return free > 512 * 1024 * 1024
-      ? checkUp(detail, { freeGb, totalGb })
-      : checkDown(detail, { freeGb, totalGb });
-  } catch (err) {
-    return checkDown((err as Error).message);
-  }
-}
-
 adminRouter.get('/monitoring', async (_req, res) => {
   const mem = process.memoryUsage();
   const loadAvg = os.loadavg().map((n) => Math.round(n * 100) / 100);
@@ -1475,37 +1553,49 @@ adminRouter.get('/monitoring', async (_req, res) => {
   const apiHealthUrl = `${siteUrl}/api/health`;
   const apiHealthLocal = 'http://127.0.0.1:3001/api/health';
   const pdfUrl = pdfOrigin.replace(/\/$/, '') || `https://pdf.${apex}`;
+  const wsHealthUrl = `https://ws.${apex}/healthz`;
+  const sqlitePath =
+    getResolvedDatabasePath() ||
+    (process.env.DATABASE_PATH || '').trim() ||
+    path.join(process.cwd(), 'packages/api/data/petdate.db');
+  const sqliteRole = usePostgresStorage()
+    ? `${apex} · SQLite (بکاپ محلی)`
+    : `${apex} · SQLite (منبع حقیقت)`;
 
   const [
     sitePublic,
     wwwPublic,
     apiPublic,
     pdfPublic,
+    wsPublic,
     redis,
     postgres,
     s3,
     elasticsearch,
     telegramBot,
+    smtp,
+    sms,
   ] = await Promise.all([
     probePublicUrl(siteUrl, apex),
     probePublicUrl(wwwUrl, `www.${apex}`),
     // Prefer loopback for API health to avoid hairpin NAT stalls on the same VPS.
     probePublicUrl(apiHealthLocal, `${apex}/api`).then(async (local) => {
-      if (local.status === 'up') {
-        return checkUp(`${apex}/api · HTTP 200 (local)`);
+      if (local.status === 'up' || local.status === 'warn') {
+        return checkUp(`${apex}/api · HTTP 200 (local)`, { latencyMs: local.latencyMs });
       }
       return probePublicUrl(apiHealthUrl, `${apex}/api`);
     }),
     probePublicUrl(pdfUrl, new URL(pdfUrl).hostname),
-    probeService(process.env.REDIS_URL, 6379, 'Redis'),
+    probePublicUrl(wsHealthUrl, `ws.${apex}`),
+    probeRedis(),
     probeService(postgresUrl || 'postgresql://petdate@127.0.0.1:5432/petdate', 5432, 'Postgres'),
     hasS3Config()
       ? probeHttp(infra.s3.endpoint, '/minio/health/live', 9000, 'S3/MinIO')
       : Promise.resolve(checkNotConfigured()),
-    hasElasticsearchConfig()
-      ? probeHttp(infra.elasticsearch.url, '/_cluster/health', 9200, 'Elasticsearch')
-      : Promise.resolve(checkNotConfigured()),
+    probeElasticsearch(),
     probeTelegramBot(),
+    probeSmtp(),
+    probeSms(),
   ]);
   const counts = dbService.getOpsCounts();
   const logStats = dbService.getAppErrorLogStats();
@@ -1516,10 +1606,9 @@ adminRouter.get('/monitoring', async (_req, res) => {
     www: wwwPublic,
     api: apiPublic,
     pdf: pdfPublic,
+    websocket: wsPublic,
     telegramBot,
-    sqlite: usePostgresStorage()
-      ? checkUp(`${apex} · SQLite (بکاپ محلی)`)
-      : checkUp(`${apex} · SQLite (منبع حقیقت)`),
+    sqlite: sqliteFileCheck(sqlitePath, sqliteRole),
     postgres: postgresUrl
       ? (postgres.status === 'up'
           ? checkUp(
@@ -1529,21 +1618,25 @@ adminRouter.get('/monitoring', async (_req, res) => {
             )
           : postgres)
       : postgres.status === 'up'
-        ? checkUp(`${apex} · Postgres روی سرور روشن است — DATABASE_URL ست نیست`)
+        ? checkWarn(`${apex} · Postgres روی سرور روشن است — DATABASE_URL ست نیست`)
         : checkNotConfigured('کانتینر Postgres در دسترس نیست / DATABASE_URL ست نیست'),
     redis,
     s3,
     elasticsearch,
+    smtp,
+    sms,
     disk,
   };
   const unhealthy = Object.entries(checks)
     .filter(([, v]) => v.status === 'down')
     .map(([k]) => k);
-  // Elasticsearch optional; Postgres is critical only when it is the active SoT.
-  const nonCritical = new Set(['elasticsearch', ...(usePostgresStorage() ? [] : ['postgres'])]);
-  const criticalUnhealthy = unhealthy.filter((k) => !nonCritical.has(k));
+  const warnings = Object.entries(checks)
+    .filter(([, v]) => v.status === 'warn')
+    .map(([k]) => k);
+  const criticalUnhealthy = unhealthy.filter((k) => !isNonCriticalCheck(k, usePostgresStorage()));
   res.json({
     ok: criticalUnhealthy.length === 0,
+    degraded: warnings.length > 0,
     generatedAt: new Date().toISOString(),
     publicDomain: apex,
     publicWebUrl: siteUrl,
@@ -1569,10 +1662,13 @@ adminRouter.get('/monitoring', async (_req, res) => {
     logs: { total: logStats.total, errors24h: logStats.errors24h, warns24h: logStats.warns24h, lastErrorAt: logStats.lastErrorAt },
     checks,
     unhealthy,
+    warnings,
     redisConfigured: hasRedisConfig(),
     postgresConfigured: hasPostgresConfig(),
     s3Configured: hasS3Config(),
     elasticsearchConfigured: hasElasticsearchConfig(),
+    smtpConfigured: isSmtpConfigured(),
+    smsConfigured: isCandooConfigured(),
   });
 });
 
