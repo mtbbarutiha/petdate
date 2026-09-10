@@ -167,6 +167,9 @@ async function main() {
   assert(Array.isArray(dash.dailyInteractions) && dash.dailyInteractions.length === 7, '7-day series');
   assert(Array.isArray(dash.ticketStatus), 'ticket doughnut');
   assert(typeof dash.overallAchievement === 'number', 'overall achievement');
+  assert(typeof dash.qaQueue === 'number', 'qa queue');
+  assert(Array.isArray(dash.myTickets), 'my tickets');
+  assert(Array.isArray(dash.upcomingFollowups), 'followups');
   assert(crm.listCustomers().total >= 5, 'seed customers');
 
   console.log('crm.selftest: ok');
