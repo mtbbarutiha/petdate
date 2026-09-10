@@ -318,21 +318,264 @@ function ItemDetail({ kind }: { kind: SalesItemKind }) {
 export function AdminSalesLeadDetailPage() { return <ItemDetail kind="lead" />; }
 export function AdminSalesUpgradeDetailPage() { return <ItemDetail kind="upgrade" />; }
 
+function salesPipeTone(stage: number | 'lost'): string {
+  if (stage === 'lost') return 'lost';
+  if (stage === 0) return 'new';
+  if (stage === 1) return 'assigned';
+  if (stage === 2 || stage === 3) return 'contact';
+  if (stage === 4 || stage === 5) return 'qualify';
+  if (stage === 6) return 'pay';
+  if (stage === 7) return 'won';
+  return 'new';
+}
+
 export function AdminSalesPipelinePage() {
   const [stages, setStages] = useState<{ stage: number | 'lost'; label: string; items: SalesItem[]; value: number }[]>([]);
-  useEffect(() => { void adminFetch<{ stages: typeof stages }>('/api/admin/sales/pipeline').then((d) => setStages(d.stages)).catch(() => undefined); }, []);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<SalesItem | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [dragId, setDragId] = useState<number | null>(null);
+  const canWrite = adminCan('sales.write');
+
+  const load = useCallback(async () => {
+    try {
+      const d = await adminFetch<{ stages: typeof stages }>('/api/admin/sales/pipeline');
+      setStages(d.stages);
+      setError(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'خطا');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { void load(); }, [load]);
+
+  useEffect(() => {
+    setSelected((prev) => {
+      if (!prev) return null;
+      return stages.flatMap((s) => s.items).find((i) => i.id === prev.id) || prev;
+    });
+  }, [stages]);
+
+  const detailPath = (item: SalesItem) =>
+    `/admin/sales/${item.kind === 'lead' ? 'leads' : 'upgrades'}/${item.id}`;
+
+  const advanceSelected = async () => {
+    if (!selected || !canWrite) return;
+    setBusy(true);
+    try {
+      await adminFetch(`/api/admin/sales/items/${selected.id}/advance`, { method: 'POST', body: '{}' });
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'خطا');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const onDropAdvance = async (targetStage: number | 'lost') => {
+    if (dragId == null || !canWrite || targetStage === 'lost') {
+      setDragId(null);
+      return;
+    }
+    const item = stages.flatMap((s) => s.items).find((i) => i.id === dragId);
+    setDragId(null);
+    if (!item || typeof item.stage !== 'number') return;
+    // Preserve sales rules: only allow drop onto the immediate next stage.
+    if (targetStage !== item.stage + 1) return;
+    setBusy(true);
+    try {
+      await adminFetch(`/api/admin/sales/items/${item.id}/advance`, { method: 'POST', body: '{}' });
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'خطا');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const totalDeals = stages.reduce((n, s) => n + s.items.length, 0);
+  const totalValue = stages.reduce((n, s) => n + s.value, 0);
+  const canAdvanceSelected =
+    !!selected && typeof selected.stage === 'number' && selected.stage < 6;
+
   return (
-    <div className="admin-page">
-      <header className="admin-header"><div><h1>پایپ‌لاین</h1><p>قیف فروش Pet Date</p></div></header>
-      <div style={{ display: 'flex', gap: 10, overflowX: 'auto' }}>
-        {stages.map((s) => (
-          <div key={String(s.stage)} className="admin-card" style={{ minWidth: 190, flex: '0 0 190px' }}>
-            <h2 style={{ fontSize: 14 }}>{s.label}</h2>
-            <p className="admin-muted">{formatNumFa(s.items.length)} · {formatNumFa(s.value)} ت</p>
-            {s.items.map((i) => <Link key={i.id} to={`/admin/sales/${i.kind === 'lead' ? 'leads' : 'upgrades'}/${i.id}`} style={{ display: 'block', marginTop: 6 }}>{i.first} {i.last}</Link>)}
-          </div>
-        ))}
+    <div className="admin-page sales-pipe-page">
+      <header className="admin-header">
+        <div>
+          <h1>پایپ‌لاین</h1>
+          <p>قیف فروش Pet Date</p>
+        </div>
+        <div className="sales-pipe-summary" aria-live="polite">
+          <span className="admin-topbar-chip">{formatNumFa(totalDeals)} معامله</span>
+          <span className="admin-topbar-chip">{formatNumFa(totalValue)} ت</span>
+        </div>
+      </header>
+      {error ? <p className="admin-error">{error}</p> : null}
+      {loading && !stages.length ? <p className="admin-muted">در حال بارگذاری…</p> : null}
+
+      <div className="sales-pipe-board" role="list" aria-label="مراحل قیف فروش">
+        {stages.map((s) => {
+          const tone = salesPipeTone(s.stage);
+          return (
+            <section
+              key={String(s.stage)}
+              className={`sales-pipe-col sales-pipe-col--${tone}`}
+              role="listitem"
+              onDragOver={(e) => {
+                if (!canWrite || dragId == null) return;
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                void onDropAdvance(s.stage);
+              }}
+            >
+              <header className="sales-pipe-col-head">
+                <div className="sales-pipe-col-title">
+                  <h2>{s.label}</h2>
+                  <span className="sales-pipe-count">{formatNumFa(s.items.length)}</span>
+                </div>
+                <p className="sales-pipe-col-value">{formatNumFa(s.value)} تومان</p>
+              </header>
+
+              <div className="sales-pipe-col-body">
+                {s.items.length ? (
+                  s.items.map((i) => (
+                    <button
+                      key={i.id}
+                      type="button"
+                      className={`sales-pipe-card${dragId === i.id ? ' is-dragging' : ''}`}
+                      draggable={canWrite && typeof i.stage === 'number' && i.stage < 6}
+                      onDragStart={(e) => {
+                        setDragId(i.id);
+                        e.dataTransfer.setData('text/plain', String(i.id));
+                        e.dataTransfer.effectAllowed = 'move';
+                      }}
+                      onDragEnd={() => setDragId(null)}
+                      onClick={() => setSelected(i)}
+                    >
+                      <div className="sales-pipe-card-top">
+                        <strong className="sales-pipe-card-name">{i.first} {i.last}</strong>
+                        <span className={`sales-pipe-kind sales-pipe-kind--${i.kind}`}>
+                          {i.kind === 'lead' ? 'لید' : 'آپگرید'}
+                        </span>
+                      </div>
+                      <div className="sales-pipe-card-product">{i.product || '—'}</div>
+                      <div className="sales-pipe-card-bot">
+                        <span className="sales-pipe-card-value">{formatNumFa(i.value)} ت</span>
+                        {i.ownerName ? (
+                          <span className="sales-pipe-card-owner" title={i.ownerName}>
+                            <AdminThumb src={i.ownerAvatarUrl} label={i.ownerName} kind="user" size={22} />
+                            <span>{i.ownerName}</span>
+                          </span>
+                        ) : (
+                          <span className="admin-muted">بدون کارشناس</span>
+                        )}
+                      </div>
+                      <div className="sales-pipe-card-meta">
+                        <span className="admin-muted">{i.publicId}</span>
+                        <span className="admin-muted">{i.payStatus}</span>
+                      </div>
+                    </button>
+                  ))
+                ) : (
+                  <div className="sales-pipe-empty">
+                    <p>معامله‌ای در این مرحله نیست</p>
+                  </div>
+                )}
+              </div>
+            </section>
+          );
+        })}
       </div>
+
+      <AdminModal
+        open={!!selected}
+        title={selected ? `${selected.first} ${selected.last}` : 'معامله'}
+        onClose={() => !busy && setSelected(null)}
+        size="md"
+        busy={busy}
+        footer={
+          selected ? (
+            <>
+              {canWrite && canAdvanceSelected ? (
+                <button type="button" className="admin-btn admin-btn--primary" disabled={busy} onClick={() => void advanceSelected()}>
+                  پیشرفت مرحله
+                </button>
+              ) : null}
+              <Link className="admin-btn" to={detailPath(selected)} onClick={() => setSelected(null)}>
+                صفحه جزئیات
+              </Link>
+              <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setSelected(null)}>
+                بستن
+              </button>
+            </>
+          ) : null
+        }
+      >
+        {selected ? (
+          <div className="sales-pipe-detail">
+            <div className="sales-pipe-detail-grid">
+              <div>
+                <span className="form-label">کد</span>
+                <div>{selected.publicId}</div>
+              </div>
+              <div>
+                <span className="form-label">نوع</span>
+                <div>{selected.kind === 'lead' ? 'لید' : 'آپگرید'}</div>
+              </div>
+              <div>
+                <span className="form-label">موبایل</span>
+                <div dir="ltr">{selected.mobile}</div>
+              </div>
+              <div>
+                <span className="form-label">مرحله</span>
+                <div>{salesStageLabel(selected.stage)}</div>
+              </div>
+              <div>
+                <span className="form-label">محصول</span>
+                <div>{selected.product || '—'}</div>
+              </div>
+              <div>
+                <span className="form-label">مبلغ</span>
+                <div>{formatNumFa(selected.value)} تومان</div>
+              </div>
+              <div>
+                <span className="form-label">منبع</span>
+                <div>{selected.source || '—'}</div>
+              </div>
+              <div>
+                <span className="form-label">پرداخت</span>
+                <div>{selected.payStatus}</div>
+              </div>
+              <div>
+                <span className="form-label">کارشناس</span>
+                <div>
+                  {selected.ownerName ? (
+                    <AdminEntityCell
+                      thumb={<AdminThumb src={selected.ownerAvatarUrl} label={selected.ownerName} kind="user" size={28} />}
+                      title={selected.ownerName}
+                    />
+                  ) : '—'}
+                </div>
+              </div>
+              <div>
+                <span className="form-label">آخرین فعالیت</span>
+                <div>{formatAdminFaDateTime(selected.lastActivity)}</div>
+              </div>
+            </div>
+            {canWrite ? (
+              <p className="sales-pipe-hint admin-muted">
+                برای جابه‌جایی سریع، کارت را روی مرحلهٔ بعدی بکشید (فقط یک مرحله جلو).
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+      </AdminModal>
     </div>
   );
 }
