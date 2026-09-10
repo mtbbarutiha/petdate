@@ -571,10 +571,12 @@ export function seedHrSalesDemoIfNeeded(): void {
     })?.c ?? 0
   );
   if (salesItemCount === 0 && agent && lead && manager) {
+    // Owner ids must be HR personnel codes (SEED-HR-*) so sales↔HR cross-links
+    // and avatar lookup by personnel_code keep working (username is lowercased).
     const owners = [
-      { id: agent.username, name: agent.name },
-      { id: lead.username, name: lead.name },
-      { id: manager.username, name: manager.name },
+      { id: agent.code, name: agent.name },
+      { id: lead.code, name: lead.name },
+      { id: manager.code, name: manager.name },
     ];
 
     let platformUsers: Array<{ id: number; name: string; phone: string | null }> = [];

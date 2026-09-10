@@ -72,7 +72,9 @@ async function main() {
 
   const items = listSalesItems({ limit: 100 });
   assert(items.total >= 8, 'sales items seeded');
-  const owned = items.items.filter((i) => i.ownerId && String(i.ownerId).startsWith('SEED-'));
+  const owned = items.items.filter(
+    (i) => i.ownerId && String(i.ownerId).toUpperCase().startsWith('SEED-')
+  );
   assert(owned.length >= 3, 'sales owners linked to HR personnel codes');
 
   const withAvatar = Number(
