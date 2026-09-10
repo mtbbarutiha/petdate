@@ -137,6 +137,26 @@ adminRouter.use('/sales', salesAdminRouter);
 adminRouter.use('/crm', crmAdminRouter);
 adminRouter.use('/finance-os', financeOsAdminRouter);
 
+/** Platform sidebar open/pending badge counts (single aggregate query set). */
+adminRouter.get('/platform/nav-counts', (req, res) => {
+  const actor = req.adminActor;
+  if (!actor) {
+    res.status(401).json({ error: 'دسترسی ادمین مجاز نیست' });
+    return;
+  }
+  if (!actorHasPermission(actor, 'platform.read') && !actorHasPermission(actor, 'admin.full')
+    && !actorHasPermission(actor, 'platform.write')) {
+    res.status(403).json({ error: 'سطح دسترسی کافی نیست' });
+    return;
+  }
+  try {
+    res.json(adminPlatform.getPlatformNavCounts());
+  } catch (err) {
+    console.error('platform nav-counts:', err);
+    res.status(500).json({ error: (err as Error).message });
+  }
+});
+
 /** Header bell — any logged-in admin; items filtered by module permission. */
 adminRouter.get('/notifications', async (req, res) => {
   const actor = req.adminActor;

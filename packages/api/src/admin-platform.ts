@@ -2,7 +2,7 @@
  * Admin platform persistence — shop catalog, announcements, settings, dashboard stats.
  * Kept separate from db.ts to limit merge conflicts with parallel agents.
  */
-import type { User, UserRole, PaymentOrder } from '@petdate/shared';
+import type { User, UserRole, PaymentOrder, PlatformNavCounts } from '@petdate/shared';
 import { makeOrderPublicId, orderPublicIdOf } from '@petdate/shared';
 import { getDb, dbService } from './db';
 
@@ -239,6 +239,59 @@ export const adminPlatform = {
         openGames: q(`SELECT COUNT(*) as c FROM games WHERE status = 'open'`),
         errors24h: logStats.errors24h,
       },
+    };
+  },
+
+  /**
+   * Sidebar open/pending counts for Platform nav (mirrors Sales nav-counts).
+   * Prefer actionable queues over raw totals; hide zeros in the UI like Sales.
+   */
+  getPlatformNavCounts(): PlatformNavCounts {
+    const d = db();
+    const q = (sql: string) =>
+      Number((d.prepare(sql).get() as { c: number } | undefined)?.c ?? 0);
+    return {
+      users: q(
+        `SELECT COUNT(*) as c FROM users
+         WHERE COALESCE(avatar_moderation_status, 'approved') = 'pending'
+           AND COALESCE(is_active, 1) = 1`
+      ),
+      pets: q(
+        `SELECT COUNT(*) as c FROM pets
+         WHERE COALESCE(photo_moderation_status, 'approved') = 'pending'`
+      ),
+      playdates: q(
+        `SELECT COUNT(*) as c FROM playdate_requests WHERE status = 'pending'`
+      ),
+      consults: q(
+        `SELECT COUNT(*) as c FROM vet_consultations
+         WHERE status IN ('requested','active')`
+      ),
+      verification: q(
+        `SELECT COUNT(*) as c FROM users
+         WHERE verification_status = 'pending'
+           AND COALESCE(is_active, 1) = 1`
+      ),
+      // Full open queue on مدارک و عکس: credentials + pet photos + user avatars
+      docs:
+        q(
+          `SELECT COUNT(*) as c FROM users
+           WHERE COALESCE(is_active, 1) = 1
+             AND (
+               vet_credential_status = 'pending'
+               OR trainer_credential_status = 'pending'
+               OR sitter_credential_status = 'pending'
+             )`
+        ) +
+        q(
+          `SELECT COUNT(*) as c FROM pets
+           WHERE COALESCE(photo_moderation_status, 'approved') = 'pending'`
+        ) +
+        q(
+          `SELECT COUNT(*) as c FROM users
+           WHERE COALESCE(avatar_moderation_status, 'approved') = 'pending'
+             AND COALESCE(is_active, 1) = 1`
+        ),
     };
   },
 
