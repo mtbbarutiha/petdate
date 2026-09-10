@@ -1283,6 +1283,16 @@ function migrateSchema() {
     console.warn('Admin notifications schema ensure skipped/failed:', (err as Error).message);
   }
 
+  // Platform settings — modular dropdowns + module goals (additive; never wipe)
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { ensurePlatformSettingsSchema } =
+      require('./platform-settings-service') as typeof import('./platform-settings-service');
+    ensurePlatformSettingsSchema();
+  } catch (err) {
+    console.warn('Platform settings schema ensure skipped/failed:', (err as Error).message);
+  }
+
   // HR↔Sales interconnected demo (idempotent; never wipe / never duplicate)
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports

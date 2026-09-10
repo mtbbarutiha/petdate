@@ -727,6 +727,183 @@ adminRouter.put('/settings', (req, res) => {
   res.json({ settings: adminPlatform.setSettings(patch) });
 });
 
+/* ── Platform Settings: modular dropdowns + per-module goals ── */
+adminRouter.get('/platform-settings/modules', (_req, res) => {
+  try {
+    const {
+      listPlatformModules,
+      ensurePlatformSettingsSchema,
+    } = require('../platform-settings-service') as typeof import('../platform-settings-service');
+    ensurePlatformSettingsSchema();
+    res.json({ modules: listPlatformModules() });
+  } catch (err) {
+    res.status(500).json({ error: err instanceof Error ? err.message : 'خطا' });
+  }
+});
+
+adminRouter.get('/platform-settings/modules/:moduleKey/fields', (req, res) => {
+  try {
+    const { listDropdownFieldsForModule, ensurePlatformSettingsSchema } =
+      require('../platform-settings-service') as typeof import('../platform-settings-service');
+    ensurePlatformSettingsSchema();
+    res.json({ fields: listDropdownFieldsForModule(String(req.params.moduleKey)) });
+  } catch (err) {
+    res.status(500).json({ error: err instanceof Error ? err.message : 'خطا' });
+  }
+});
+
+adminRouter.get('/platform-settings/modules/:moduleKey/fields/:fieldKey/options', (req, res) => {
+  try {
+    const { listDropdownOptions, ensurePlatformSettingsSchema } =
+      require('../platform-settings-service') as typeof import('../platform-settings-service');
+    ensurePlatformSettingsSchema();
+    const includeInactive = String(req.query.includeInactive || '1') !== '0';
+    res.json({
+      options: listDropdownOptions(String(req.params.moduleKey), String(req.params.fieldKey), {
+        includeInactive,
+      }),
+    });
+  } catch (err) {
+    res.status(500).json({ error: err instanceof Error ? err.message : 'خطا' });
+  }
+});
+
+adminRouter.post('/platform-settings/modules/:moduleKey/fields/:fieldKey/options', (req, res) => {
+  try {
+    const { createDropdownOption } =
+      require('../platform-settings-service') as typeof import('../platform-settings-service');
+    const actor = req.adminActor;
+    const option = createDropdownOption({
+      moduleKey: String(req.params.moduleKey),
+      fieldKey: String(req.params.fieldKey),
+      value: typeof req.body?.value === 'string' ? req.body.value : undefined,
+      label: String(req.body?.label || ''),
+      sortOrder: req.body?.sortOrder != null ? Number(req.body.sortOrder) : undefined,
+      actor: actor?.displayName || actor?.username || actor?.role || 'admin',
+    });
+    res.status(201).json({ option });
+  } catch (err) {
+    res.status(400).json({ error: err instanceof Error ? err.message : 'خطا' });
+  }
+});
+
+adminRouter.patch('/platform-settings/options/:id', (req, res) => {
+  try {
+    const { updateDropdownOption } =
+      require('../platform-settings-service') as typeof import('../platform-settings-service');
+    const actor = req.adminActor;
+    const option = updateDropdownOption(Number(req.params.id), {
+      label: typeof req.body?.label === 'string' ? req.body.label : undefined,
+      sortOrder: req.body?.sortOrder != null ? Number(req.body.sortOrder) : undefined,
+      actor: actor?.displayName || actor?.username || actor?.role || 'admin',
+    });
+    res.json({ option });
+  } catch (err) {
+    res.status(400).json({ error: err instanceof Error ? err.message : 'خطا' });
+  }
+});
+
+adminRouter.delete('/platform-settings/options/:id', (req, res) => {
+  try {
+    const { softDeleteDropdownOption } =
+      require('../platform-settings-service') as typeof import('../platform-settings-service');
+    const actor = req.adminActor;
+    const option = softDeleteDropdownOption(
+      Number(req.params.id),
+      actor?.displayName || actor?.username || actor?.role || 'admin'
+    );
+    res.json({ option, softDeleted: true });
+  } catch (err) {
+    res.status(400).json({ error: err instanceof Error ? err.message : 'خطا' });
+  }
+});
+
+adminRouter.post('/platform-settings/options/:id/restore', (req, res) => {
+  try {
+    const { restoreDropdownOption } =
+      require('../platform-settings-service') as typeof import('../platform-settings-service');
+    const actor = req.adminActor;
+    const option = restoreDropdownOption(
+      Number(req.params.id),
+      actor?.displayName || actor?.username || actor?.role || 'admin'
+    );
+    res.json({ option });
+  } catch (err) {
+    res.status(400).json({ error: err instanceof Error ? err.message : 'خطا' });
+  }
+});
+
+adminRouter.get('/platform-settings/audit', (req, res) => {
+  try {
+    const { listDropdownAudit, ensurePlatformSettingsSchema } =
+      require('../platform-settings-service') as typeof import('../platform-settings-service');
+    ensurePlatformSettingsSchema();
+    const moduleKey = typeof req.query.moduleKey === 'string' ? req.query.moduleKey : undefined;
+    const fieldKey = typeof req.query.fieldKey === 'string' ? req.query.fieldKey : undefined;
+    const limit = req.query.limit ? Number(req.query.limit) : 100;
+    res.json({
+      audit: listDropdownAudit({
+        moduleKey,
+        fieldKey,
+        limit: Number.isFinite(limit) ? limit : 100,
+      }),
+    });
+  } catch (err) {
+    res.status(500).json({ error: err instanceof Error ? err.message : 'خطا' });
+  }
+});
+
+adminRouter.get('/platform-settings/goals', (_req, res) => {
+  try {
+    const { listAllModuleGoals, ensurePlatformSettingsSchema } =
+      require('../platform-settings-service') as typeof import('../platform-settings-service');
+    ensurePlatformSettingsSchema();
+    res.json({ goals: listAllModuleGoals() });
+  } catch (err) {
+    res.status(500).json({ error: err instanceof Error ? err.message : 'خطا' });
+  }
+});
+
+adminRouter.get('/platform-settings/modules/:moduleKey/goals', (req, res) => {
+  try {
+    const { getModuleGoals, ensurePlatformSettingsSchema } =
+      require('../platform-settings-service') as typeof import('../platform-settings-service');
+    const { getPlatformGoalMetrics } = require('@petdate/shared') as typeof import('@petdate/shared');
+    ensurePlatformSettingsSchema();
+    const moduleKey = String(req.params.moduleKey);
+    res.json({
+      goals: getModuleGoals(moduleKey),
+      metrics: getPlatformGoalMetrics(moduleKey),
+    });
+  } catch (err) {
+    res.status(400).json({ error: err instanceof Error ? err.message : 'خطا' });
+  }
+});
+
+adminRouter.put('/platform-settings/modules/:moduleKey/goals', (req, res) => {
+  try {
+    const { upsertModuleGoals } =
+      require('../platform-settings-service') as typeof import('../platform-settings-service');
+    const { getPlatformGoalMetrics } = require('@petdate/shared') as typeof import('@petdate/shared');
+    const actor = req.adminActor;
+    const targets =
+      req.body?.targets && typeof req.body.targets === 'object'
+        ? (req.body.targets as Record<string, number>)
+        : (req.body as Record<string, number>);
+    const goals = upsertModuleGoals({
+      moduleKey: String(req.params.moduleKey),
+      targets: targets || {},
+      actor: actor?.displayName || actor?.username || actor?.role || 'admin',
+    });
+    res.json({
+      goals,
+      metrics: getPlatformGoalMetrics(String(req.params.moduleKey)),
+    });
+  } catch (err) {
+    res.status(400).json({ error: err instanceof Error ? err.message : 'خطا' });
+  }
+});
+
 adminRouter.get('/logs', (req, res) => {
   const level = typeof req.query.level === 'string' ? req.query.level : undefined;
   const source = typeof req.query.source === 'string' ? req.query.source : undefined;

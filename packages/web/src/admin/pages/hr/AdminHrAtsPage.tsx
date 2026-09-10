@@ -10,6 +10,7 @@ import {
 import { adminFetch, formatNumFa, formatTomanFa } from '../../api';
 import { adminCan } from '../../auth';
 import { AdminModal } from '../../AdminModal';
+import { usePlatformDropdownOptions } from '../../usePlatformDropdownOptions';
 import {
   JalaliDateSelect,
   currentJalaliParts,
@@ -54,6 +55,12 @@ export function AdminHrAtsPage() {
   const [dupWarn, setDupWarn] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const canWrite = adminCan('hr.write');
+  const { options: stageOpts } = usePlatformDropdownOptions('ats', 'candidate_stages', HR_CANDIDATE_STAGES);
+  const { options: boardOpts } = usePlatformDropdownOptions('ats', 'job_boards', HR_JOB_BOARDS);
+  const { options: outcomeOpts } = usePlatformDropdownOptions('ats', 'call_outcomes', HR_CALL_OUTCOMES);
+  const candidateStages = stageOpts.map((o) => o.label);
+  const jobBoards = boardOpts.map((o) => o.label);
+  const callOutcomes = outcomeOpts.map((o) => o.label);
 
   const load = useCallback(async () => {
     try {
@@ -113,7 +120,13 @@ export function AdminHrAtsPage() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    setDraftOutcome(HR_CALL_OUTCOMES[0]);
+    if (callOutcomes[0]) {
+      setDraftOutcome((prev) => (callOutcomes.includes(prev) ? prev : callOutcomes[0]));
+    }
+  }, [callOutcomes]);
+
+  useEffect(() => {
+    setDraftOutcome(callOutcomes[0] || HR_CALL_OUTCOMES[0]);
     setDraftNote('');
     setDraftCallDate(null);
     if (selected?.followup.interviewNote) {
@@ -126,7 +139,7 @@ export function AdminHrAtsPage() {
     } else {
       setInterviewerId('');
     }
-  }, [selectedId, selected?.followup.callRound]);
+  }, [selectedId, selected?.followup.callRound, callOutcomes]);
 
   const openNewOpening = () => {
     setEditingOpeningId(null);
@@ -296,7 +309,7 @@ export function AdminHrAtsPage() {
       const recordedRound = calls[calls.length - 1]?.round ?? round;
       const wasConnected = draftOutcome === HR_CALL_CONNECTED;
       setMsg(`نتیجه تماس ${formatNumFa(recordedRound)} ثبت شد`);
-      setDraftOutcome(HR_CALL_OUTCOMES[0]);
+      setDraftOutcome(callOutcomes[0] || HR_CALL_OUTCOMES[0]);
       setDraftNote('');
       setDraftCallDate(null);
       await load();
@@ -432,7 +445,7 @@ export function AdminHrAtsPage() {
             value={draftOutcome}
             onChange={(e) => setDraftOutcome(e.target.value)}
           >
-            {HR_CALL_OUTCOMES.map((o) => (
+            {callOutcomes.map((o) => (
               <option key={o} value={o}>
                 {o}
               </option>
@@ -651,7 +664,7 @@ export function AdminHrAtsPage() {
           <div className="admin-toolbar">
             <select className="admin-select" value={stage} onChange={(e) => setStage(e.target.value)}>
               <option value="">همه وضعیت‌ها</option>
-              {HR_CANDIDATE_STAGES.map((s) => (
+              {candidateStages.map((s) => (
                 <option key={s} value={s}>
                   {s}
                 </option>
@@ -697,7 +710,7 @@ export function AdminHrAtsPage() {
                             value={c.stage}
                             onChange={(e) => void setCandidateStage(c.id, e.target.value)}
                           >
-                            {HR_CANDIDATE_STAGES.map((s) => (
+                            {candidateStages.map((s) => (
                               <option key={s} value={s}>
                                 {s}
                               </option>
@@ -1130,7 +1143,7 @@ export function AdminHrAtsPage() {
             onChange={(e) => setCandidateForm({ ...candidateForm, jobBoard: e.target.value })}
           >
             <option value="">—</option>
-            {HR_JOB_BOARDS.map((b) => (
+            {jobBoards.map((b) => (
               <option key={b} value={b}>
                 {b}
               </option>
