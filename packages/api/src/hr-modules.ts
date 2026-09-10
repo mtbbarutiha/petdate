@@ -1,0 +1,1084 @@
+/**
+ * پیوند HR expanded modules — onboarding, requests write, cost, service,
+ * notifications, dashboards, settings CRUD, Armita stub.
+ * Additive schema only (CREATE IF NOT EXISTS). No businessLine fields.
+ */
+import { randomUUID } from 'crypto';
+import {
+  HR_ANNUAL_LEAVE_DAYS,
+  effectiveCommissionPercent,
+  incomeModelFixedAddon,
+  isSalesJobTitle,
+  makeDefaultOnboardingTasks,
+  nextRequestStatus,
+  onboardingDurationFor,
+  type HrBenefitDef,
+  type HrCareerLayer,
+  type HrCockpitTask,
+  type HrCostEntry,
+  type HrIncomeModel,
+  type HrMonthlyCostBreakdown,
+  type HrNotification,
+  type HrOnboardingRecord,
+  type HrOnboardingTask,
+  type HrRequest,
+  type HrServiceEntry,
+} from '@petdate/shared';
+import { getDb } from './db';
+import {
+  createEmployee,
+  getEmployee,
+  listCandidates,
+  listCareerLayers,
+  listContracts,
+  listEmployees,
+  listIncomeModels,
+  listJobOpenings,
+  listBenefitDefs,
+  updateCandidateStage,
+} from './hr-service';
+
+function db() {
+  return getDb();
+}
+
+function parseJson<T>(raw: unknown, fallback: T): T {
+  if (raw == null || raw === '') return fallback;
+  try {
+    return JSON.parse(String(raw)) as T;
+  } catch {
+    return fallback;
+  }
+}
+
+export function ensureHrModuleTables(): void {
+  const d = db();
+  d.exec(`
+    CREATE TABLE IF NOT EXISTS hr_onboarding_records (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      candidate_id INTEGER,
+      employee_id INTEGER,
+      name TEXT NOT NULL DEFAULT '',
+      job_title TEXT NOT NULL DEFAULT '',
+      start_date TEXT NOT NULL DEFAULT '',
+      duration_days INTEGER NOT NULL DEFAULT 3,
+      tasks_json TEXT NOT NULL DEFAULT '[]',
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS hr_cost_entries (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      employee_id INTEGER NOT NULL,
+      year INTEGER NOT NULL,
+      month INTEGER NOT NULL,
+      insurance INTEGER NOT NULL DEFAULT 0,
+      tax INTEGER NOT NULL DEFAULT 0,
+      bonus INTEGER NOT NULL DEFAULT 0,
+      sales INTEGER NOT NULL DEFAULT 0,
+      UNIQUE(employee_id, year, month),
+      FOREIGN KEY (employee_id) REFERENCES hr_employees(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS hr_service_entries (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      employee_id INTEGER NOT NULL,
+      year INTEGER NOT NULL,
+      month INTEGER NOT NULL,
+      day INTEGER NOT NULL DEFAULT 1,
+      hours REAL NOT NULL DEFAULT 0,
+      minutes REAL NOT NULL DEFAULT 0,
+      note TEXT NOT NULL DEFAULT '',
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (employee_id) REFERENCES hr_employees(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS hr_notifications (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      text TEXT NOT NULL,
+      kind TEXT NOT NULL DEFAULT 'info',
+      date TEXT NOT NULL DEFAULT (datetime('now')),
+      read INTEGER NOT NULL DEFAULT 0
+    );
+  `);
+  d.exec(`CREATE INDEX IF NOT EXISTS idx_hr_onboarding_emp ON hr_onboarding_records(employee_id)`);
+  d.exec(`CREATE INDEX IF NOT EXISTS idx_hr_cost_ym ON hr_cost_entries(year, month)`);
+  d.exec(`CREATE INDEX IF NOT EXISTS idx_hr_service_ym ON hr_service_entries(year, month)`);
+}
+
+function mapOnboarding(row: Record<string, unknown>): HrOnboardingRecord {
+  return {
+    id: Number(row.id),
+    candidateId: row.candidate_id != null ? Number(row.candidate_id) : null,
+    employeeId: row.employee_id != null ? Number(row.employee_id) : null,
+    name: String(row.name || ''),
+    jobTitle: String(row.job_title || ''),
+    startDate: String(row.start_date || ''),
+    durationDays: Number(row.duration_days || 3),
+    tasks: parseJson<HrOnboardingTask[]>(row.tasks_json, makeDefaultOnboardingTasks()),
+    createdAt: String(row.created_at || ''),
+  };
+}
+
+export function listOnboarding(): HrOnboardingRecord[] {
+  return (
+    db()
+      .prepare('SELECT * FROM hr_onboarding_records ORDER BY id DESC')
+      .all() as Record<string, unknown>[]
+  ).map(mapOnboarding);
+}
+
+export function createOnboarding(input: {
+  candidateId?: number | null;
+  employeeId?: number | null;
+  name: string;
+  jobTitle?: string;
+  startDate?: string;
+}): HrOnboardingRecord {
+  const jobTitle = input.jobTitle || '';
+  const durationDays = onboardingDurationFor(jobTitle);
+  const tasks = makeDefaultOnboardingTasks();
+  const info = db()
+    .prepare(
+      `INSERT INTO hr_onboarding_records
+        (candidate_id, employee_id, name, job_title, start_date, duration_days, tasks_json)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      input.candidateId ?? null,
+      input.employeeId ?? null,
+      input.name.trim(),
+      jobTitle,
+      input.startDate || new Date().toISOString().slice(0, 10),
+      durationDays,
+      JSON.stringify(tasks)
+    );
+  const id = Number(info.lastInsertRowid);
+  return mapOnboarding(
+    db().prepare('SELECT * FROM hr_onboarding_records WHERE id = ?').get(id) as Record<string, unknown>
+  );
+}
+
+export function updateOnboardingTasks(
+  id: number,
+  tasks: HrOnboardingTask[]
+): HrOnboardingRecord | null {
+  const row = db().prepare('SELECT * FROM hr_onboarding_records WHERE id = ?').get(id) as
+    | Record<string, unknown>
+    | undefined;
+  if (!row) return null;
+  db()
+    .prepare('UPDATE hr_onboarding_records SET tasks_json = ? WHERE id = ?')
+    .run(JSON.stringify(tasks), id);
+  return mapOnboarding(
+    db().prepare('SELECT * FROM hr_onboarding_records WHERE id = ?').get(id) as Record<string, unknown>
+  );
+}
+
+export function pushNotification(
+  text: string,
+  kind: HrNotification['kind'] = 'info'
+): HrNotification {
+  const info = db()
+    .prepare(`INSERT INTO hr_notifications (text, kind, date, read) VALUES (?, ?, datetime('now'), 0)`)
+    .run(text, kind);
+  const id = Number(info.lastInsertRowid);
+  return mapNotification(
+    db().prepare('SELECT * FROM hr_notifications WHERE id = ?').get(id) as Record<string, unknown>
+  );
+}
+
+function mapNotification(row: Record<string, unknown>): HrNotification {
+  return {
+    id: Number(row.id),
+    text: String(row.text || ''),
+    kind: (String(row.kind || 'info') as HrNotification['kind']) || 'info',
+    date: String(row.date || ''),
+    read: Number(row.read || 0) === 1,
+  };
+}
+
+export function listNotifications(opts?: { unreadOnly?: boolean }): HrNotification[] {
+  const rows = (
+    opts?.unreadOnly
+      ? db()
+          .prepare('SELECT * FROM hr_notifications WHERE read = 0 ORDER BY id DESC LIMIT 100')
+          .all()
+      : db().prepare('SELECT * FROM hr_notifications ORDER BY id DESC LIMIT 100').all()
+  ) as Record<string, unknown>[];
+  return rows.map(mapNotification);
+}
+
+export function markNotificationRead(id: number): void {
+  db().prepare('UPDATE hr_notifications SET read = 1 WHERE id = ?').run(id);
+}
+
+export function markAllNotificationsRead(): void {
+  db().prepare('UPDATE hr_notifications SET read = 1 WHERE read = 0').run();
+}
+
+export function hireCandidate(candidateId: number): {
+  candidate: ReturnType<typeof updateCandidateStage>;
+  onboarding: HrOnboardingRecord;
+  employeeId?: number;
+} | null {
+  const candidates = listCandidates();
+  const cand = candidates.find((c) => c.id === candidateId);
+  if (!cand) return null;
+  if (cand.stage === 'استخدام‌شده') {
+    const updated = updateCandidateStage(candidateId, 'استخدام‌شده');
+    const existing = listOnboarding().find((o) => o.candidateId === candidateId);
+    return {
+      candidate: updated,
+      onboarding:
+        existing ||
+        createOnboarding({
+          candidateId,
+          name: `${cand.firstName} ${cand.lastName}`.trim(),
+          jobTitle: listJobOpenings().find((o) => o.id === cand.jobOpeningId)?.title || '',
+        }),
+      employeeId: existing?.employeeId ?? undefined,
+    };
+  }
+  const opening = listJobOpenings().find((o) => o.id === cand.jobOpeningId);
+  const jobTitle = opening?.title || '';
+  const department = opening?.department || '';
+  const updated = updateCandidateStage(candidateId, 'استخدام‌شده');
+  if (!updated) return null;
+
+  const draft = createEmployee({
+    firstName: cand.firstName,
+    lastName: cand.lastName,
+    gmail: cand.email,
+    jobTitle,
+    department,
+    contractStatus: 'در مرحله آزمایشی',
+    accessStatus: 'فعال',
+  });
+
+  const onboarding = createOnboarding({
+    candidateId,
+    employeeId: draft.id,
+    name: `${cand.firstName} ${cand.lastName}`.trim(),
+    jobTitle,
+    startDate: new Date().toISOString().slice(0, 10),
+  });
+
+  pushNotification(
+    `استخدام: ${cand.firstName} ${cand.lastName} — فرآیند شروع به کار ایجاد شد`,
+    'success'
+  );
+
+  return { candidate: updated, onboarding, employeeId: draft.id };
+}
+
+function mapRequest(r: Record<string, unknown>): HrRequest {
+  return {
+    id: Number(r.id),
+    employeeId: Number(r.employee_id),
+    type: String(r.type),
+    days: Number(r.days || 0),
+    fromDate: String(r.from_date || ''),
+    toDate: String(r.to_date || ''),
+    description: String(r.description || ''),
+    status: String(r.status || ''),
+    log: parseJson(r.log_json, []),
+    createdAt: String(r.created_at || ''),
+  };
+}
+
+export function createRequest(input: {
+  employeeId: number;
+  type: string;
+  days?: number;
+  fromDate?: string;
+  toDate?: string;
+  description?: string;
+}): HrRequest {
+  const emp = getEmployee(input.employeeId);
+  if (!emp) throw new Error('همکار پیدا نشد');
+  const status = 'ثبت‌شده';
+  const log = [{ at: new Date().toISOString(), status, note: 'ثبت اولیه' }];
+  const info = db()
+    .prepare(
+      `INSERT INTO hr_requests
+        (employee_id, type, days, from_date, to_date, description, status, log_json)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      input.employeeId,
+      input.type,
+      input.days ?? 0,
+      input.fromDate || '',
+      input.toDate || '',
+      input.description || '',
+      status,
+      JSON.stringify(log)
+    );
+  const id = Number(info.lastInsertRowid);
+  pushNotification(`درخواست جدید: ${input.type} — ${emp.firstName} ${emp.lastName}`, 'info');
+  return mapRequest(
+    db().prepare('SELECT * FROM hr_requests WHERE id = ?').get(id) as Record<string, unknown>
+  );
+}
+
+export function advanceRequest(id: number): HrRequest | null {
+  const row = db().prepare('SELECT * FROM hr_requests WHERE id = ?').get(id) as
+    | Record<string, unknown>
+    | undefined;
+  if (!row) return null;
+  const next = nextRequestStatus(String(row.status || ''));
+  if (!next) throw new Error('درخواست در مرحله نهایی است');
+  const log = parseJson<Array<{ at: string; status: string; note?: string }>>(row.log_json, []);
+  log.push({ at: new Date().toISOString(), status: next });
+  db()
+    .prepare('UPDATE hr_requests SET status = ?, log_json = ? WHERE id = ?')
+    .run(next, JSON.stringify(log), id);
+  if (next === 'تایید شده') {
+    pushNotification(`درخواست #${id} تایید شد`, 'success');
+  }
+  return mapRequest(
+    db().prepare('SELECT * FROM hr_requests WHERE id = ?').get(id) as Record<string, unknown>
+  );
+}
+
+export function rejectRequest(id: number, note?: string): HrRequest | null {
+  const row = db().prepare('SELECT * FROM hr_requests WHERE id = ?').get(id) as
+    | Record<string, unknown>
+    | undefined;
+  if (!row) return null;
+  const status = String(row.status || '');
+  if (!['ثبت‌شده', 'بررسی مدیر', 'بررسی HR'].includes(status)) {
+    throw new Error('در این مرحله رد مجاز نیست');
+  }
+  const log = parseJson<Array<{ at: string; status: string; note?: string }>>(row.log_json, []);
+  log.push({ at: new Date().toISOString(), status: 'رد شده', note });
+  db()
+    .prepare('UPDATE hr_requests SET status = ?, log_json = ? WHERE id = ?')
+    .run('رد شده', JSON.stringify(log), id);
+  pushNotification(`درخواست #${id} رد شد`, 'bad');
+  return mapRequest(
+    db().prepare('SELECT * FROM hr_requests WHERE id = ?').get(id) as Record<string, unknown>
+  );
+}
+
+export function leaveBalance(employeeId: number): {
+  annual: number;
+  used: number;
+  remaining: number;
+} {
+  const rows = db()
+    .prepare(
+      `SELECT days FROM hr_requests
+       WHERE employee_id = ? AND type = 'مرخصی' AND status = 'تایید شده'`
+    )
+    .all(employeeId) as Array<{ days: number }>;
+  const used = rows.reduce((s, r) => s + Number(r.days || 0), 0);
+  return {
+    annual: HR_ANNUAL_LEAVE_DAYS,
+    used,
+    remaining: HR_ANNUAL_LEAVE_DAYS - used,
+  };
+}
+
+export function leaveBalancesAll(): Array<{
+  employeeId: number;
+  name: string;
+  personnelCode: string;
+  annual: number;
+  used: number;
+  remaining: number;
+}> {
+  return listEmployees({ limit: 500 }).employees.map((e) => {
+    const bal = leaveBalance(e.id);
+    return {
+      employeeId: e.id,
+      name: `${e.firstName} ${e.lastName}`.trim(),
+      personnelCode: e.personnelCode,
+      ...bal,
+    };
+  });
+}
+
+function mapCost(row: Record<string, unknown>): HrCostEntry {
+  return {
+    id: Number(row.id),
+    employeeId: Number(row.employee_id),
+    year: Number(row.year),
+    month: Number(row.month),
+    insurance: Number(row.insurance || 0),
+    tax: Number(row.tax || 0),
+    bonus: Number(row.bonus || 0),
+    sales: Number(row.sales || 0),
+  };
+}
+
+export function listCostEntries(opts?: {
+  year?: number;
+  month?: number;
+  employeeId?: number;
+}): HrCostEntry[] {
+  const where: string[] = [];
+  const params: unknown[] = [];
+  if (opts?.year) {
+    where.push('year = ?');
+    params.push(opts.year);
+  }
+  if (opts?.month) {
+    where.push('month = ?');
+    params.push(opts.month);
+  }
+  if (opts?.employeeId) {
+    where.push('employee_id = ?');
+    params.push(opts.employeeId);
+  }
+  const clause = where.length ? `WHERE ${where.join(' AND ')}` : '';
+  return (
+    db()
+      .prepare(`SELECT * FROM hr_cost_entries ${clause} ORDER BY year DESC, month DESC, id DESC`)
+      .all(...params) as Record<string, unknown>[]
+  ).map(mapCost);
+}
+
+export function upsertCostEntry(input: {
+  employeeId: number;
+  year: number;
+  month: number;
+  insurance?: number;
+  tax?: number;
+  bonus?: number;
+  sales?: number;
+}): HrCostEntry {
+  if (!getEmployee(input.employeeId)) throw new Error('همکار پیدا نشد');
+  const existing = db()
+    .prepare(
+      'SELECT id FROM hr_cost_entries WHERE employee_id = ? AND year = ? AND month = ?'
+    )
+    .get(input.employeeId, input.year, input.month) as { id: number } | undefined;
+  if (existing) {
+    db()
+      .prepare(
+        `UPDATE hr_cost_entries
+         SET insurance = ?, tax = ?, bonus = ?, sales = ?
+         WHERE id = ?`
+      )
+      .run(
+        input.insurance ?? 0,
+        input.tax ?? 0,
+        input.bonus ?? 0,
+        input.sales ?? 0,
+        existing.id
+      );
+    return mapCost(
+      db().prepare('SELECT * FROM hr_cost_entries WHERE id = ?').get(existing.id) as Record<
+        string,
+        unknown
+      >
+    );
+  }
+  const info = db()
+    .prepare(
+      `INSERT INTO hr_cost_entries
+        (employee_id, year, month, insurance, tax, bonus, sales)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      input.employeeId,
+      input.year,
+      input.month,
+      input.insurance ?? 0,
+      input.tax ?? 0,
+      input.bonus ?? 0,
+      input.sales ?? 0
+    );
+  return mapCost(
+    db()
+      .prepare('SELECT * FROM hr_cost_entries WHERE id = ?')
+      .get(Number(info.lastInsertRowid)) as Record<string, unknown>
+  );
+}
+
+function activeContract(employeeId: number) {
+  const contracts = listContracts(employeeId);
+  const today = new Date().toISOString().slice(0, 10);
+  const active = contracts.find((c) => {
+    if (!c.startDate) return false;
+    if (c.startDate > today) return false;
+    if (c.endDate && c.endDate < today) return false;
+    return true;
+  });
+  return active || contracts[0] || null;
+}
+
+export function monthlyCostForPerson(
+  employeeId: number,
+  year: number,
+  month: number
+): HrMonthlyCostBreakdown {
+  const emp = getEmployee(employeeId);
+  const empty: HrMonthlyCostBreakdown = {
+    employeeId,
+    salary: 0,
+    insurance: 0,
+    tax: 0,
+    bonus: 0,
+    commission: 0,
+    eidiMonthly: 0,
+    sanavatMonthly: 0,
+    total: 0,
+  };
+  if (!emp) return empty;
+  const contract = activeContract(employeeId);
+  const models = listIncomeModels();
+  const model = models.find((m) => m.id === emp.incomeModelId) || null;
+  const entry =
+    listCostEntries({ employeeId, year, month })[0] ||
+    ({
+      insurance: 0,
+      tax: 0,
+      bonus: 0,
+      sales: 0,
+    } as HrCostEntry);
+
+  const salary = Number(contract?.salary || 0) + incomeModelFixedAddon(model);
+  const benefits = emp.benefits || {};
+  const insurance = benefits.insurance ? Number(entry.insurance || 0) : 0;
+  const tax = Number(entry.tax || 0);
+  const bonus = benefits.bonus ? Number(entry.bonus || 0) : 0;
+  const commission =
+    benefits.commission && isSalesJobTitle(emp.jobTitle)
+      ? Math.round(
+          (Number(entry.sales || 0) *
+            effectiveCommissionPercent(Number(contract?.commissionPercent || 0), model)) /
+            100
+        )
+      : 0;
+  const eidiMonthly = benefits.eidi ? Math.round(Number(contract?.eidi || 0) / 12) : 0;
+  const sanavatMonthly = benefits.sanavat ? Math.round(Number(contract?.sanavat || 0) / 12) : 0;
+  const total = salary + tax + insurance + commission + eidiMonthly + sanavatMonthly + bonus;
+  return {
+    employeeId,
+    salary,
+    insurance,
+    tax,
+    bonus,
+    commission,
+    eidiMonthly,
+    sanavatMonthly,
+    total,
+  };
+}
+
+export function listMonthlyCosts(year: number, month: number) {
+  return listEmployees({ limit: 500 }).employees.map((e) => {
+    const cost = monthlyCostForPerson(e.id, year, month);
+    return {
+      employee: {
+        id: e.id,
+        publicId: e.publicId,
+        personnelCode: e.personnelCode,
+        name: `${e.firstName} ${e.lastName}`.trim(),
+        jobTitle: e.jobTitle,
+        department: e.department,
+      },
+      cost,
+    };
+  });
+}
+
+function mapService(row: Record<string, unknown>): HrServiceEntry {
+  return {
+    id: Number(row.id),
+    employeeId: Number(row.employee_id),
+    year: Number(row.year),
+    month: Number(row.month),
+    day: Number(row.day || 1),
+    hours: Number(row.hours || 0),
+    minutes: Number(row.minutes || 0),
+    note: String(row.note || ''),
+    createdAt: String(row.created_at || ''),
+  };
+}
+
+export function listServiceEntries(opts?: {
+  year?: number;
+  month?: number;
+  employeeId?: number;
+}): HrServiceEntry[] {
+  const where: string[] = [];
+  const params: unknown[] = [];
+  if (opts?.year) {
+    where.push('year = ?');
+    params.push(opts.year);
+  }
+  if (opts?.month) {
+    where.push('month = ?');
+    params.push(opts.month);
+  }
+  if (opts?.employeeId) {
+    where.push('employee_id = ?');
+    params.push(opts.employeeId);
+  }
+  const clause = where.length ? `WHERE ${where.join(' AND ')}` : '';
+  return (
+    db()
+      .prepare(`SELECT * FROM hr_service_entries ${clause} ORDER BY id DESC LIMIT 500`)
+      .all(...params) as Record<string, unknown>[]
+  ).map(mapService);
+}
+
+export function createServiceEntry(input: {
+  employeeId: number;
+  year: number;
+  month: number;
+  day?: number;
+  hours?: number;
+  minutes?: number;
+  note?: string;
+}): HrServiceEntry {
+  if (!getEmployee(input.employeeId)) throw new Error('همکار پیدا نشد');
+  const info = db()
+    .prepare(
+      `INSERT INTO hr_service_entries
+        (employee_id, year, month, day, hours, minutes, note)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      input.employeeId,
+      input.year,
+      input.month,
+      input.day ?? 1,
+      input.hours ?? 0,
+      input.minutes ?? 0,
+      input.note || ''
+    );
+  return mapService(
+    db()
+      .prepare('SELECT * FROM hr_service_entries WHERE id = ?')
+      .get(Number(info.lastInsertRowid)) as Record<string, unknown>
+  );
+}
+
+export function deleteServiceEntry(id: number): boolean {
+  const r = db().prepare('DELETE FROM hr_service_entries WHERE id = ?').run(id);
+  return r.changes > 0;
+}
+
+export function totalServiceHours(year: number, month: number, employeeId?: number): number {
+  const entries = listServiceEntries({ year, month, employeeId });
+  return entries.reduce((s, e) => s + Number(e.hours || 0) + Number(e.minutes || 0) / 60, 0);
+}
+
+export function createCareerLayer(input: {
+  name: string;
+  sortOrder?: number;
+  unlocks?: string;
+}): HrCareerLayer {
+  const info = db()
+    .prepare(`INSERT INTO hr_career_layers (name, sort_order, unlocks) VALUES (?, ?, ?)`)
+    .run(input.name.trim(), input.sortOrder ?? 0, input.unlocks || '');
+  const id = Number(info.lastInsertRowid);
+  return listCareerLayers().find((l) => l.id === id)!;
+}
+
+export function updateCareerLayer(
+  id: number,
+  input: { name?: string; sortOrder?: number; unlocks?: string }
+): HrCareerLayer | null {
+  const prev = listCareerLayers().find((l) => l.id === id);
+  if (!prev) return null;
+  db()
+    .prepare(`UPDATE hr_career_layers SET name = ?, sort_order = ?, unlocks = ? WHERE id = ?`)
+    .run(
+      input.name !== undefined ? input.name.trim() : prev.name,
+      input.sortOrder !== undefined ? input.sortOrder : prev.sortOrder,
+      input.unlocks !== undefined ? input.unlocks : prev.unlocks,
+      id
+    );
+  return listCareerLayers().find((l) => l.id === id) || null;
+}
+
+export function deleteCareerLayer(id: number): boolean {
+  return db().prepare('DELETE FROM hr_career_layers WHERE id = ?').run(id).changes > 0;
+}
+
+export function createIncomeModel(input: {
+  name: string;
+  type?: string;
+  variableAmount?: number;
+  variablePercent?: number;
+}): HrIncomeModel {
+  const info = db()
+    .prepare(
+      `INSERT INTO hr_income_models (name, type, variable_amount, variable_percent)
+       VALUES (?, ?, ?, ?)`
+    )
+    .run(
+      input.name.trim(),
+      input.type || 'متغیر',
+      input.variableAmount ?? 0,
+      input.variablePercent ?? 0
+    );
+  const id = Number(info.lastInsertRowid);
+  return listIncomeModels().find((m) => m.id === id)!;
+}
+
+export function updateIncomeModel(
+  id: number,
+  input: {
+    name?: string;
+    type?: string;
+    variableAmount?: number;
+    variablePercent?: number;
+  }
+): HrIncomeModel | null {
+  const prev = listIncomeModels().find((m) => m.id === id);
+  if (!prev) return null;
+  db()
+    .prepare(
+      `UPDATE hr_income_models
+       SET name = ?, type = ?, variable_amount = ?, variable_percent = ?
+       WHERE id = ?`
+    )
+    .run(
+      input.name !== undefined ? input.name.trim() : prev.name,
+      input.type !== undefined ? input.type : prev.type,
+      input.variableAmount !== undefined ? input.variableAmount : prev.variableAmount,
+      input.variablePercent !== undefined ? input.variablePercent : prev.variablePercent,
+      id
+    );
+  return listIncomeModels().find((m) => m.id === id) || null;
+}
+
+export function deleteIncomeModel(id: number): boolean {
+  return db().prepare('DELETE FROM hr_income_models WHERE id = ?').run(id).changes > 0;
+}
+
+export function createBenefitDef(input: {
+  title: string;
+  category?: string;
+  careerLayerId?: number | null;
+  jobTitle?: string | null;
+  cost?: number;
+}): HrBenefitDef {
+  const info = db()
+    .prepare(
+      `INSERT INTO hr_benefit_defs (title, category, career_layer_id, job_title, cost)
+       VALUES (?, ?, ?, ?, ?)`
+    )
+    .run(
+      input.title.trim(),
+      input.category || '',
+      input.careerLayerId ?? null,
+      input.jobTitle ?? null,
+      input.cost ?? 0
+    );
+  const id = Number(info.lastInsertRowid);
+  return listBenefitDefs().find((b) => b.id === id)!;
+}
+
+export function updateBenefitDef(
+  id: number,
+  input: {
+    title?: string;
+    category?: string;
+    careerLayerId?: number | null;
+    jobTitle?: string | null;
+    cost?: number;
+  }
+): HrBenefitDef | null {
+  const prev = listBenefitDefs().find((b) => b.id === id);
+  if (!prev) return null;
+  db()
+    .prepare(
+      `UPDATE hr_benefit_defs
+       SET title = ?, category = ?, career_layer_id = ?, job_title = ?, cost = ?
+       WHERE id = ?`
+    )
+    .run(
+      input.title !== undefined ? input.title.trim() : prev.title,
+      input.category !== undefined ? input.category : prev.category,
+      input.careerLayerId !== undefined ? input.careerLayerId : prev.careerLayerId ?? null,
+      input.jobTitle !== undefined ? input.jobTitle : prev.jobTitle ?? null,
+      input.cost !== undefined ? input.cost : prev.cost,
+      id
+    );
+  return listBenefitDefs().find((b) => b.id === id) || null;
+}
+
+export function deleteBenefitDef(id: number): boolean {
+  return db().prepare('DELETE FROM hr_benefit_defs WHERE id = ?').run(id).changes > 0;
+}
+
+export function cockpitTasks(): HrCockpitTask[] {
+  const tasks: HrCockpitTask[] = [];
+  const today = new Date();
+  const { employees } = listEmployees({ limit: 500 });
+
+  for (const e of employees) {
+    if (e.birthDate) {
+      const parts = e.birthDate.split('-').map(Number);
+      if (parts.length >= 2) {
+        const [, m, d] = parts;
+        const thisYear = new Date(today.getFullYear(), (m || 1) - 1, d || 1);
+        const diff = Math.round((thisYear.getTime() - today.getTime()) / 86400000);
+        if (diff >= 0 && diff <= 14) {
+          tasks.push({
+            type: 'تولد نزدیک',
+            label: 'جذب و نگهداشت',
+            employeeId: e.id,
+            employeeName: `${e.firstName} ${e.lastName}`.trim(),
+            detail: `تولد تا ${diff} روز دیگر`,
+            daysLeft: diff,
+          });
+        }
+      }
+    }
+    if (e.contractStatus === 'در مرحله آزمایشی') {
+      tasks.push({
+        type: 'دوره آزمایشی',
+        label: 'ارزیابی',
+        employeeId: e.id,
+        employeeName: `${e.firstName} ${e.lastName}`.trim(),
+        detail: 'وضعیت قرارداد: در مرحله آزمایشی',
+      });
+    }
+    if (e.accessStatus === 'غیر فعال') {
+      tasks.push({
+        type: 'قطع دسترسی',
+        label: 'امنیت',
+        employeeId: e.id,
+        employeeName: `${e.firstName} ${e.lastName}`.trim(),
+        detail: 'دسترسی غیرفعال است',
+      });
+    }
+    const contracts = listContracts(e.id);
+    for (const c of contracts) {
+      if (!c.endDate) continue;
+      const end = new Date(c.endDate);
+      const diff = Math.round((end.getTime() - today.getTime()) / 86400000);
+      if (diff >= 0 && diff <= 30) {
+        tasks.push({
+          type: 'تمدید قرارداد',
+          label: 'قرارداد',
+          employeeId: e.id,
+          employeeName: `${e.firstName} ${e.lastName}`.trim(),
+          detail: `پایان قرارداد ${c.contractCode || ''} تا ${diff} روز`,
+          daysLeft: diff,
+        });
+      }
+    }
+  }
+
+  const pendingReqs = (
+    db()
+      .prepare(
+        `SELECT id, type, status, employee_id FROM hr_requests
+         WHERE status IN ('ثبت‌شده','بررسی مدیر','بررسی HR') ORDER BY id DESC LIMIT 50`
+      )
+      .all() as Array<{ id: number; type: string; status: string; employee_id: number }>
+  ).map((r) => {
+    const emp = getEmployee(r.employee_id);
+    return {
+      type: 'درخواست باز',
+      label: r.type,
+      employeeId: r.employee_id,
+      employeeName: emp ? `${emp.firstName} ${emp.lastName}`.trim() : `#${r.employee_id}`,
+      detail: `وضعیت: ${r.status}`,
+    } as HrCockpitTask;
+  });
+
+  for (const o of listOnboarding()) {
+    const done = o.tasks.filter((t) => t.done).length;
+    if (done < o.tasks.length) {
+      tasks.push({
+        type: 'شروع به کار',
+        label: 'آنبوردینگ',
+        employeeId: o.employeeId ?? undefined,
+        employeeName: o.name,
+        detail: `پیشرفت ${done}/${o.tasks.length}`,
+      });
+    }
+  }
+
+  return [...tasks, ...pendingReqs];
+}
+
+export function getHrOverviewDashboard() {
+  const { employees, total } = listEmployees({ limit: 500 });
+  const active = employees.filter((e) => e.accessStatus === 'فعال').length;
+  const inactive = total - active;
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
+  const hours = totalServiceHours(year, month);
+  const costs = listMonthlyCosts(year, month);
+  const orgCost = costs.reduce((s, c) => s + c.cost.total, 0);
+  const tasks = cockpitTasks();
+  const unread = listNotifications({ unreadOnly: true }).length;
+  const recentLogs = (
+    db()
+      .prepare(
+        `SELECT l.*, e.first_name, e.last_name FROM hr_employee_logs l
+         JOIN hr_employees e ON e.id = l.employee_id
+         ORDER BY l.id DESC LIMIT 8`
+      )
+      .all() as Array<Record<string, unknown>>
+  ).map((r) => ({
+    employeeId: Number(r.employee_id),
+    personName: `${r.first_name} ${r.last_name}`.trim(),
+    field: String(r.field || ''),
+    oldValue: String(r.old_value || ''),
+    newValue: String(r.new_value || ''),
+    date: String(r.logged_at || ''),
+  }));
+
+  return {
+    generatedAt: new Date().toISOString(),
+    kpis: {
+      personnel: total,
+      activeAccess: active,
+      inactiveAccess: inactive,
+      cockpitTasks: tasks.length,
+      serviceHoursMonth: Math.round(hours * 10) / 10,
+      orgCostMonth: orgCost,
+      unreadNotifications: unread,
+      openRequests: (
+        db()
+          .prepare(
+            `SELECT COUNT(*) as c FROM hr_requests
+             WHERE status IN ('ثبت‌شده','بررسی مدیر','بررسی HR')`
+          )
+          .get() as { c: number }
+      ).c,
+      openOnboarding: listOnboarding().filter(
+        (o) => o.tasks.filter((t) => t.done).length < o.tasks.length
+      ).length,
+    },
+    links: [
+      { to: '/admin/hr/employees', label: 'اطلاعات پرسنلی' },
+      { to: '/admin/hr/requests', label: 'درخواست‌های کارکنان' },
+      { to: '/admin/hr/cost', label: 'تخصیص هزینه' },
+      { to: '/admin/hr/cockpit', label: 'کارتابل فعالیت' },
+      { to: '/admin/hr/recruitment', label: 'داشبورد جذب' },
+      { to: '/admin/hr/reports', label: 'گزارشات' },
+    ],
+    recentLogs,
+    cockpitPreview: tasks.slice(0, 6),
+  };
+}
+
+export function getRecruitmentDashboard() {
+  const openings = listJobOpenings();
+  const candidates = listCandidates();
+  const openJobs = openings.filter((o) => o.status === 'باز').length;
+  const byStage: Record<string, number> = {};
+  for (const c of candidates) {
+    byStage[c.stage] = (byStage[c.stage] || 0) + 1;
+  }
+  const hired = byStage['استخدام‌شده'] || 0;
+  const onboarding = listOnboarding();
+  return {
+    generatedAt: new Date().toISOString(),
+    kpis: {
+      openJobs,
+      totalOpenings: openings.length,
+      candidates: candidates.length,
+      hired,
+      onboardingActive: onboarding.filter(
+        (o) => o.tasks.filter((t) => t.done).length < o.tasks.length
+      ).length,
+      pipelineInterview: byStage['مصاحبه'] || 0,
+      pipelineOffer: byStage['پیشنهاد شغلی'] || 0,
+      talentBank: byStage['بانک استعداد'] || 0,
+    },
+    byStage,
+    links: [
+      { to: '/admin/hr/ats', label: 'ATS — فرصت و متقاضی' },
+      { to: '/admin/hr/onboarding', label: 'شروع به کار' },
+      { to: '/admin/hr/employees', label: 'پرونده پرسنلی' },
+    ],
+    recentCandidates: candidates.slice(0, 8),
+    openings: openings.slice(0, 8),
+  };
+}
+
+export function getReportsSummary() {
+  const { employees, total } = listEmployees({ limit: 500 });
+  const byDept: Record<string, number> = {};
+  const byStatus: Record<string, number> = {};
+  const byLocation: Record<string, number> = {};
+  for (const e of employees) {
+    const d = e.department || 'نامشخص';
+    byDept[d] = (byDept[d] || 0) + 1;
+    byStatus[e.contractStatus || 'نامشخص'] = (byStatus[e.contractStatus || 'نامشخص'] || 0) + 1;
+    byLocation[e.location || 'نامشخص'] = (byLocation[e.location || 'نامشخص'] || 0) + 1;
+  }
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1;
+  return {
+    generatedAt: new Date().toISOString(),
+    personnelTotal: total,
+    byDept,
+    byStatus,
+    byLocation,
+    serviceHoursMonth: totalServiceHours(year, month),
+    leaveBalances: leaveBalancesAll(),
+    requestsOpen: (
+      db()
+        .prepare(
+          `SELECT COUNT(*) as c FROM hr_requests
+           WHERE status IN ('ثبت‌شده','بررسی مدیر','بررسی HR')`
+        )
+        .get() as { c: number }
+    ).c,
+  };
+}
+
+export function armitaAnswer(question: string): string {
+  const t = String(question || '').trim();
+  if (!t) return 'سوالی نپرسیدی. می‌توانی درباره پرسنل، مرخصی، استخدام یا کارتابل بپرسی.';
+
+  if (/مرخصی/.test(t)) {
+    const { employees } = listEmployees({ limit: 500 });
+    const hit = employees.find((e) => {
+      const full = `${e.firstName} ${e.lastName}`.trim();
+      return full && t.includes(full);
+    });
+    if (hit) {
+      const bal = leaveBalance(hit.id);
+      return `مانده مرخصی ${hit.firstName} ${hit.lastName}: ${bal.remaining} از ${bal.annual} روز (مصرف‌شده: ${bal.used}).`;
+    }
+    return 'برای مانده مرخصی، نام کامل همکار را هم در سوال بیاور.';
+  }
+
+  if (/چند نفر|تعداد پرسنل|پرسنل/.test(t)) {
+    const { employees, total } = listEmployees({ limit: 500 });
+    const active = employees.filter((e) => e.accessStatus === 'فعال').length;
+    return `در حال حاضر ${total} نفر در پرونده پرسنلی ثبت شده‌اند؛ دسترسی فعال: ${active}.`;
+  }
+
+  if (/وظیفه|کارتابل/.test(t)) {
+    return `در حال حاضر ${cockpitTasks().length} وظیفه در کارتابل فعالیت منابع انسانی باز است.`;
+  }
+
+  if (/استخدام|متقاضی/.test(t)) {
+    const openings = listJobOpenings().filter((o) => o.status === 'باز').length;
+    const candidates = listCandidates().length;
+    return `فرصت‌های شغلی باز: ${openings} · متقاضیان: ${candidates}.`;
+  }
+
+  if (/مسیر شغلی|لایه/.test(t)) {
+    return `در حال حاضر ${listCareerLayers().length} لایه مسیر شغلی تعریف شده است.`;
+  }
+
+  return 'من دستیار قاعده‌محور آرمیتا هستم (نه مدل زبانی واقعی). درباره تعداد پرسنل، مرخصی + نام همکار، کارتابل، استخدام یا مسیر شغلی بپرس؛ برای موارد پیچیده‌تر به HR یا مدیر مستقیم مراجعه کن.';
+}
+
+export function armitaChat(message: string): { id: string; question: string; answer: string } {
+  return {
+    id: randomUUID(),
+    question: message,
+    answer: armitaAnswer(message),
+  };
+}

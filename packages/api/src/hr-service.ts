@@ -226,6 +226,10 @@ export function ensureHrSchema(): void {
   d.exec(`CREATE INDEX IF NOT EXISTS idx_hr_candidates_opening ON hr_candidates(job_opening_id)`);
   d.exec(`CREATE INDEX IF NOT EXISTS idx_hr_requests_employee ON hr_requests(employee_id)`);
 
+  // Expanded modules (onboarding / cost / service / notifications) — additive only
+  const { ensureHrModuleTables } = require('./hr-modules') as typeof import('./hr-modules');
+  ensureHrModuleTables();
+
   seedHrDefaults();
   backfillHrPublicIds();
 }
