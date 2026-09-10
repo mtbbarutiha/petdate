@@ -81,8 +81,9 @@ export function AdminEntityId({
     code = adminUserPublicCode(id);
   } else if (kind === 'pet' && typeof id === 'number') {
     code = adminPetPublicCode(id);
-  } else if (typeof id === 'string' && /^PD-[A-Z]/d+/i.test(id)) {
-    code = id;
+  } else if (typeof id === 'string') {
+    const upper = id.toUpperCase();
+    if (upper.startsWith('PD-')) code = id;
   }
   if (!code) {
     return <span className="admin-muted">—</span>;
