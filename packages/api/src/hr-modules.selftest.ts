@@ -90,6 +90,15 @@ async function main() {
   assert(dash.kpis.personnel >= 2, 'overview personnel');
   assert(Array.isArray(dash.charts?.byDepartment), 'overview charts.byDepartment');
   assert(dash.charts.byDepartment.some((r) => r.name === 'فروش' && r.count >= 1), 'dept chart has فروش');
+  assert(Array.isArray(dash.charts?.costByDepartment), 'overview charts.costByDepartment');
+  assert(
+    dash.charts.costByDepartment.every(
+      (r) => typeof r.name === 'string' && typeof r.total === 'number' && r.total > 0
+    ),
+    'costByDepartment rows have name+positive total'
+  );
+  const costSum = dash.charts.costByDepartment.reduce((s, r) => s + r.total, 0);
+  assert(costSum === dash.kpis.orgCostMonth, 'costByDepartment sums to orgCostMonth');
   assert(Array.isArray(dash.charts?.byContractStatus), 'overview charts.byContractStatus');
   assert(Array.isArray(dash.charts?.byLocation), 'overview charts.byLocation');
   assert(typeof dash.monthLabel === 'string' && dash.monthLabel.length > 0, 'monthLabel');
