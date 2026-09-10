@@ -1,200 +1,255 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
+import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 import { adminFetch, formatNumFa } from '../../api';
-import { HrKpiGrid, HrLinkGrid } from './HrUi';
+import { IranPersonnelHeatmap } from './IranPersonnelHeatmap';
 
 type ChartRow = { name: string; count: number };
 
 type Report = {
   personnelTotal: number;
-  /** Chart arrays from API (`getReportsSummary`); maps kept for older payloads */
-  byDept: ChartRow[];
-  byStatus: ChartRow[];
-  byLocation: ChartRow[];
-  byDeptMap?: Record<string, number>;
-  byStatusMap?: Record<string, number>;
-  byLocationMap?: Record<string, number>;
+  departments: string[];
+  byProvince: ChartRow[];
+  byGender: ChartRow[];
+  byMarital: ChartRow[];
+  topProvince: ChartRow | null;
   serviceHoursMonth: number;
   requestsOpen: number;
 };
 
-const COLORS = ['#15cca0', '#5c4d91', '#fd961e', '#3b82f6', '#ec4899', '#14b8a6', '#8b5cf6', '#64748b'];
+const DONUT_COLORS = ['#14b8a6', '#3b82f6', '#8b5cf6', '#f59e0b', '#64748b', '#ec4899'];
 
-function toRows(data: ChartRow[] | Record<string, number> | undefined): ChartRow[] {
-  if (!data) return [];
-  if (Array.isArray(data)) return data;
-  return Object.entries(data)
-    .map(([name, count]) => ({ name, count: Number(count) || 0 }))
-    .sort((a, b) => b.count - a.count);
+const MONTH_OPTIONS = [
+  { v: '', label: 'کل سال' },
+  { v: '1', label: 'فروردین' },
+  { v: '2', label: 'اردیبهشت' },
+  { v: '3', label: 'خرداد' },
+  { v: '4', label: 'تیر' },
+  { v: '5', label: 'مرداد' },
+  { v: '6', label: 'شهریور' },
+  { v: '7', label: 'مهر' },
+  { v: '8', label: 'آبان' },
+  { v: '9', label: 'آذر' },
+  { v: '10', label: 'دی' },
+  { v: '11', label: 'بهمن' },
+  { v: '12', label: 'اسفند' },
+];
+
+function currentJalaliYear(): number {
+  try {
+    const parts = new Intl.DateTimeFormat('en-u-ca-persian', { year: 'numeric' }).formatToParts(
+      new Date()
+    );
+    const y = parts.find((p) => p.type === 'year')?.value;
+    const n = Number(String(y || '').replace(/[^\d]/g, ''));
+    return Number.isFinite(n) && n > 1300 ? n : 1404;
+  } catch {
+    return 1404;
+  }
 }
 
-function ChartTip({
+function toRows(data: ChartRow[] | undefined): ChartRow[] {
+  if (!data?.length) return [];
+  return data.filter((r) => r.count > 0);
+}
+
+function DonutTip({
   active,
   payload,
-  label,
 }: {
   active?: boolean;
-  payload?: Array<{ value?: number; payload?: ChartRow }>;
-  label?: string;
+  payload?: Array<{ name?: string; value?: number; payload?: ChartRow & { pct?: number } }>;
 }) {
   if (!active || !payload?.length) return null;
+  const row = payload[0]!;
+  const pct = row.payload?.pct;
   return (
     <div className="hr-chart-tooltip">
-      <div className="hr-chart-tooltip-label">{label || payload[0].payload?.name}</div>
-      <strong>{formatNumFa(Number(payload[0].value || 0))} نفر</strong>
+      <div className="hr-chart-tooltip-label">{row.name}</div>
+      <strong>
+        {formatNumFa(Number(row.value || 0))} نفر
+        {pct != null ? ` · ${formatNumFa(pct)}٪` : ''}
+      </strong>
     </div>
   );
 }
 
-function HorizontalBars({ rows, height }: { rows: ChartRow[]; height?: number }) {
-  if (!rows.length) return <p className="admin-muted">داده‌ای نیست</p>;
+function FrequencyDonut({ title, rows }: { title: string; rows: ChartRow[] }) {
+  const total = rows.reduce((s, r) => s + r.count, 0);
+  const pie = rows.map((r, i) => ({
+    ...r,
+    pct: total ? Math.round((r.count / total) * 100) : 0,
+    color: DONUT_COLORS[i % DONUT_COLORS.length]!,
+  }));
+
   return (
-    <div className="hr-dash-chart" style={{ height: height ?? Math.max(200, 34 * rows.length) }}>
-      <ResponsiveContainer width="100%" height="100%">
-        <BarChart layout="vertical" data={rows} margin={{ top: 4, right: 20, left: 4, bottom: 4 }}>
-          <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--admin-border)" />
-          <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11, fill: '#757086' }} axisLine={false} tickLine={false} />
-          <YAxis type="category" dataKey="name" width={100} tick={{ fontSize: 12, fill: '#3d3558' }} axisLine={false} tickLine={false} />
-          <Tooltip content={<ChartTip />} cursor={{ fill: 'rgba(92,77,145,0.06)' }} />
-          <Bar dataKey="count" radius={[0, 8, 8, 0]} maxBarSize={20}>
-            {rows.map((_, i) => (
-              <Cell key={i} fill={COLORS[i % COLORS.length]} />
+    <article className="admin-card hr-report-donut-card">
+      <div className="admin-card-head">
+        <h2>{title}</h2>
+      </div>
+      {pie.length ? (
+        <div className="hr-report-donut-body">
+          <div className="hr-report-donut-chart">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={pie}
+                  dataKey="count"
+                  nameKey="name"
+                  innerRadius={54}
+                  outerRadius={82}
+                  paddingAngle={2}
+                  stroke="#fff"
+                  strokeWidth={3}
+                >
+                  {pie.map((s) => (
+                    <Cell key={s.name} fill={s.color} />
+                  ))}
+                </Pie>
+                <Tooltip content={<DonutTip />} />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="hr-report-donut-center" aria-hidden>
+              <strong>{formatNumFa(total)}</strong>
+              <span>نفر</span>
+            </div>
+          </div>
+          <ul className="hr-report-donut-legend">
+            {pie.map((s) => (
+              <li key={s.name}>
+                <i style={{ background: s.color }} />
+                <div>
+                  <b>{s.name}</b>
+                  <span>
+                    {formatNumFa(s.pct)}٪ · {formatNumFa(s.count)} نفر
+                  </span>
+                </div>
+              </li>
             ))}
-          </Bar>
-        </BarChart>
-      </ResponsiveContainer>
-    </div>
+          </ul>
+        </div>
+      ) : (
+        <p className="admin-muted">داده‌ای برای نمایش نیست</p>
+      )}
+    </article>
   );
 }
 
 export function AdminHrReportsPage() {
   const [data, setData] = useState<Report | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [department, setDepartment] = useState('');
+  const [jalaliYear, setJalaliYear] = useState('');
+  const [jalaliMonth, setJalaliMonth] = useState('');
+
+  const yearOptions = useMemo(() => {
+    const cur = currentJalaliYear();
+    return [cur - 1, cur, cur + 1];
+  }, []);
+
   const load = useCallback(async () => {
     try {
-      setData(await adminFetch<Report>('/api/admin/hr/reports'));
+      const qs = new URLSearchParams();
+      if (department) qs.set('department', department);
+      if (jalaliYear) qs.set('jalaliYear', jalaliYear);
+      if (jalaliMonth) qs.set('jalaliMonth', jalaliMonth);
+      const path = `/api/admin/hr/reports${qs.toString() ? `?${qs}` : ''}`;
+      setData(await adminFetch<Report>(path));
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'خطا');
     }
-  }, []);
+  }, [department, jalaliYear, jalaliMonth]);
+
   useEffect(() => {
     void load();
   }, [load]);
 
-  const byDept = useMemo(
-    () => toRows(data?.byDept?.length ? data.byDept : data?.byDeptMap),
-    [data],
-  );
-  const byStatus = useMemo(
-    () => toRows(data?.byStatus?.length ? data.byStatus : data?.byStatusMap),
-    [data],
-  );
-  const byLocation = useMemo(
-    () => toRows(data?.byLocation?.length ? data.byLocation : data?.byLocationMap),
-    [data],
-  );
-  const statusPie = useMemo(
-    () => byStatus.map((s, i) => ({ ...s, color: COLORS[i % COLORS.length] })),
-    [byStatus]
-  );
+  const byProvince = useMemo(() => toRows(data?.byProvince), [data]);
+  const byGender = useMemo(() => toRows(data?.byGender), [data]);
+  const byMarital = useMemo(() => toRows(data?.byMarital), [data]);
 
   return (
-    <div className="admin-page hr-dash">
-      <header className="admin-header">
+    <div className="admin-page hr-reports-page">
+      <header className="admin-header hr-reports-header">
         <div>
-          <h1>گزارشات منابع انسانی</h1>
-          <p>توزیع پرسنل، ساعت فعالیت و درخواست‌ها</p>
+          <h1>گزارشات</h1>
+          <p>گزارش‌های پرسنلی و ارائه خدمات</p>
         </div>
-        <div className="admin-header-actions">
+        <div className="hr-reports-filters" role="group" aria-label="فیلتر گزارش">
+          <label className="hr-reports-filter">
+            <span>فیلتر بیزنس لاین</span>
+            <select
+              className="admin-select"
+              value={department}
+              onChange={(e) => setDepartment(e.target.value)}
+            >
+              <option value="">همه</option>
+              {(data?.departments || []).map((d) => (
+                <option key={d} value={d}>
+                  {d}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="hr-reports-filter">
+            <span>ماه</span>
+            <select
+              className="admin-select"
+              value={jalaliMonth}
+              onChange={(e) => setJalaliMonth(e.target.value)}
+              disabled={!jalaliYear}
+            >
+              {MONTH_OPTIONS.map((m) => (
+                <option key={m.v || 'all'} value={m.v}>
+                  {m.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="hr-reports-filter">
+            <span>سال</span>
+            <select
+              className="admin-select"
+              value={jalaliYear}
+              onChange={(e) => {
+                setJalaliYear(e.target.value);
+                if (!e.target.value) setJalaliMonth('');
+              }}
+            >
+              <option value="">همه سال‌ها</option>
+              {yearOptions.map((y) => (
+                <option key={y} value={String(y)}>
+                  {formatNumFa(y)}
+                </option>
+              ))}
+            </select>
+          </label>
           <Link to="/admin/hr" className="admin-btn admin-btn--ghost">
             داشبورد
           </Link>
         </div>
       </header>
+
       {error ? <p className="admin-error">{error}</p> : null}
-      {data ? (
-        <HrKpiGrid
-          items={[
-            { label: 'کل پرسنل', value: data.personnelTotal, tone: 'mint' },
-            { label: 'ساعت فعالیت ماه', value: data.serviceHoursMonth, tone: 'sky' },
-            { label: 'درخواست باز', value: data.requestsOpen, tone: 'orange' },
-          ]}
-        />
-      ) : null}
 
-      <div className="hr-dash-main-row" style={{ marginTop: 16 }}>
-        <article className="admin-card hr-dash-panel">
-          <div className="admin-card-head">
-            <h2>توزیع بر دپارتمان</h2>
-          </div>
-          <HorizontalBars rows={byDept} />
-        </article>
-        <article className="admin-card hr-dash-panel">
-          <div className="admin-card-head">
-            <h2>وضعیت قرارداد</h2>
-          </div>
-          <div className="hr-dash-donut-wrap">
-            {statusPie.length ? (
-              <>
-                <div className="hr-dash-chart" style={{ height: 200 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie data={statusPie} dataKey="count" nameKey="name" innerRadius={50} outerRadius={78} paddingAngle={2}>
-                        {statusPie.map((s) => (
-                          <Cell key={s.name} fill={s.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip content={<ChartTip />} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-                <ul className="hr-dash-legend">
-                  {statusPie.map((s) => (
-                    <li key={s.name}>
-                      <i style={{ background: s.color }} />
-                      {s.name}
-                      <span>{formatNumFa(s.count)}</span>
-                    </li>
-                  ))}
-                </ul>
-              </>
-            ) : (
-              <p className="admin-muted">داده‌ای نیست</p>
-            )}
-          </div>
-        </article>
-      </div>
-
-      <article className="admin-card hr-dash-panel" style={{ marginTop: 14 }}>
+      <article className="admin-card hr-report-heat-card">
         <div className="admin-card-head">
-          <h2>توزیع بر محل کار</h2>
+          <div>
+            <h2>نقشه حرارتی پرسنل بر اساس استان</h2>
+            <p className="admin-muted">
+              استان‌هایی که فراوانی بیشتری دارند با رنگ گرم‌تر مشخص شده‌اند
+              {data ? ` · مجموع ${formatNumFa(data.personnelTotal)} نفر` : ''}
+            </p>
+          </div>
         </div>
-        <HorizontalBars rows={byLocation} height={Math.max(180, 34 * Math.max(byLocation.length, 2))} />
+        <IranPersonnelHeatmap rows={byProvince} />
       </article>
 
-      <HrLinkGrid
-        links={[
-          { to: '/admin/hr/employees', label: 'پرسنل', sub: 'جزئیات پرونده' },
-          { to: '/admin/hr/cost', label: 'هزینه', sub: 'جمع ماهانه' },
-          { to: '/admin/hr/compensation', label: 'جبران خدمت', sub: 'مدل درآمد' },
-        ]}
-      />
-      <p style={{ marginTop: 12 }}>
-        <Link to="/admin/hr/requests">مانده مرخصی →</Link>
-      </p>
+      <div className="hr-report-donut-row">
+        <FrequencyDonut title="فراوانی وضعیت تأهل" rows={byMarital} />
+        <FrequencyDonut title="فراوانی جنسیت" rows={byGender} />
+      </div>
     </div>
   );
 }

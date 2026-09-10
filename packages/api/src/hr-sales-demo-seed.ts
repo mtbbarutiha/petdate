@@ -11,6 +11,7 @@ import {
   getEmployee,
   listEmployees,
   listJobOpenings,
+  updateEmployee,
 } from './hr-service';
 import {
   createOnboarding,
@@ -213,6 +214,9 @@ export function seedHrSalesDemoIfNeeded(): void {
     model: number | null;
     salary: number;
     commission: number;
+    gender: string;
+    maritalStatus: string;
+    province: string;
   }> = [
     {
       code: SEED_MARKER,
@@ -225,6 +229,9 @@ export function seedHrSalesDemoIfNeeded(): void {
       model: modelSales,
       salary: 45_000_000,
       commission: 2,
+      gender: 'آقا',
+      maritalStatus: 'متأهل',
+      province: 'تهران',
     },
     {
       code: 'SEED-HR-02',
@@ -237,6 +244,9 @@ export function seedHrSalesDemoIfNeeded(): void {
       model: modelSales,
       salary: 65_000_000,
       commission: 2.5,
+      gender: 'خانم',
+      maritalStatus: 'مجرد',
+      province: 'تهران',
     },
     {
       code: 'SEED-HR-03',
@@ -249,6 +259,9 @@ export function seedHrSalesDemoIfNeeded(): void {
       model: modelMgr,
       salary: 95_000_000,
       commission: 1,
+      gender: 'آقا',
+      maritalStatus: 'متأهل',
+      province: 'اصفهان',
     },
     {
       code: 'SEED-HR-04',
@@ -261,6 +274,9 @@ export function seedHrSalesDemoIfNeeded(): void {
       model: modelMgr,
       salary: 55_000_000,
       commission: 0,
+      gender: 'خانم',
+      maritalStatus: 'مجرد',
+      province: 'فارس',
     },
     {
       code: 'SEED-HR-05',
@@ -273,6 +289,39 @@ export function seedHrSalesDemoIfNeeded(): void {
       model: modelSales,
       salary: 38_000_000,
       commission: 0,
+      gender: 'آقا',
+      maritalStatus: 'مجرد',
+      province: 'البرز',
+    },
+    {
+      code: 'SEED-HR-06',
+      first: 'النا',
+      last: 'محصول',
+      job: 'کارشناس محصول',
+      dept: 'محصول',
+      loc: 'قبا',
+      layer: 1,
+      model: modelSales,
+      salary: 52_000_000,
+      commission: 0,
+      gender: 'خانم',
+      maritalStatus: 'متأهل',
+      province: 'تهران',
+    },
+    {
+      code: 'SEED-HR-07',
+      first: 'هستی',
+      last: 'مالی',
+      job: 'کارشناس مالی',
+      dept: 'مالی',
+      loc: 'سعادت‌آباد',
+      layer: 1,
+      model: modelMgr,
+      salary: 48_000_000,
+      commission: 0,
+      gender: 'خانم',
+      maritalStatus: 'مجرد',
+      province: 'تهران',
     },
   ];
 
@@ -293,9 +342,10 @@ export function seedHrSalesDemoIfNeeded(): void {
       jobTitle: s.job,
       department: s.dept,
       location: s.loc,
-      gender: 'نامشخص',
-      city: 'تهران',
-      province: 'تهران',
+      gender: s.gender,
+      maritalStatus: s.maritalStatus,
+      city: s.province === 'تهران' ? 'تهران' : s.province,
+      province: s.province,
       cooperationType: 'تمام وقت',
       contractStatus: 'در حال همکاری',
       accessStatus: 'فعال',
@@ -313,7 +363,7 @@ export function seedHrSalesDemoIfNeeded(): void {
       },
     });
     createContract(emp.id, {
-      startDate: '2025-06-01',
+      startDate: '2024-06-01',
       salary: s.salary,
       eidi: Math.round(s.salary / 12),
       sanavat: Math.round(s.salary / 24),
@@ -327,6 +377,18 @@ export function seedHrSalesDemoIfNeeded(): void {
       name: `${s.first} ${s.last}`,
       job: s.job,
       username: emp.username || s.code,
+    });
+  }
+
+  // Backfill demographics on existing seed rows so reports heatmap/donuts stay meaningful.
+  for (const s of specs) {
+    const row = employeeByCode(s.code);
+    if (!row) continue;
+    updateEmployee(row.id, {
+      gender: s.gender,
+      maritalStatus: s.maritalStatus,
+      province: s.province,
+      city: s.province === 'تهران' ? 'تهران' : s.province,
     });
   }
 

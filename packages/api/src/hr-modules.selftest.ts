@@ -104,6 +104,10 @@ async function main() {
   assert(Array.isArray(reports.byDept), 'reports.byDept chart array');
   assert(Array.isArray(reports.byStatus), 'reports.byStatus chart array');
   assert(Array.isArray(reports.byLocation), 'reports.byLocation chart array');
+  assert(Array.isArray(reports.byProvince), 'reports.byProvince chart array');
+  assert(Array.isArray(reports.byGender), 'reports.byGender chart array');
+  assert(Array.isArray(reports.byMarital), 'reports.byMarital chart array');
+  assert(Array.isArray(reports.departments), 'reports.departments');
   assert(reports.byDept.some((r) => typeof r.name === 'string' && typeof r.count === 'number'), 'byDept row shape');
 
   assert(/نفر/.test(hrMod.armitaAnswer('تعداد پرسنل چقدر است؟')), 'armita personnel answer');
