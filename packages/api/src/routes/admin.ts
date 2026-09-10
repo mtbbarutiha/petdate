@@ -14,7 +14,7 @@ import {
 import { dbService, getStorageDriver } from '../db';
 import { adminPlatform } from '../admin-platform';
 import { adminFinance } from '../admin-finance';
-import { buildAggregateDashboard } from '../admin-aggregate-dashboard';
+import { buildAggregateDashboard, getPlatformActivity } from '../admin-aggregate-dashboard';
 import { logAppEvent } from '../services/app-logger';
 import { completeShopCardPayment } from '../services/shop-checkout';
 import { telegramFetch, telegramBotApiUrl } from '../services/telegram-http';
@@ -172,7 +172,16 @@ adminRouter.get('/dashboard', async (req, res) => {
     return;
   }
   try {
-    res.json(await buildAggregateDashboard(actor));
+    const filters = {
+      from: typeof req.query.from === 'string' ? req.query.from : undefined,
+      to: typeof req.query.to === 'string' ? req.query.to : undefined,
+      team: typeof req.query.team === 'string' ? req.query.team : undefined,
+      personId: req.query.personId ? Number(req.query.personId) : undefined,
+      module: typeof req.query.module === 'string' ? req.query.module : undefined,
+      paymentType: typeof req.query.paymentType === 'string' ? req.query.paymentType : undefined,
+      salesStage: typeof req.query.salesStage === 'string' ? req.query.salesStage : undefined,
+    };
+    res.json(await buildAggregateDashboard(actor, filters));
   } catch (err) {
     console.error('aggregate dashboard failed', err instanceof Error ? err.message : err);
     // Additive fallback — never break the executive shell
@@ -191,6 +200,28 @@ adminRouter.get('/dashboard', async (req, res) => {
       links: null,
       error: 'بخشی از ماژول‌ها در دسترس نبود',
     });
+  }
+});
+
+adminRouter.get('/dashboard/activity', (req, res) => {
+  const actor = req.adminActor;
+  if (!actor) {
+    res.status(401).json({ error: 'دسترسی ادمین مجاز نیست' });
+    return;
+  }
+  try {
+    res.json(
+      getPlatformActivity({
+        from: typeof req.query.from === 'string' ? req.query.from : undefined,
+        to: typeof req.query.to === 'string' ? req.query.to : undefined,
+        team: typeof req.query.team === 'string' ? req.query.team : undefined,
+        personId: req.query.personId ? Number(req.query.personId) : undefined,
+        limit: req.query.limit ? Number(req.query.limit) : 80,
+      })
+    );
+  } catch (err) {
+    console.error('dashboard activity failed', err instanceof Error ? err.message : err);
+    res.json({ generatedAt: new Date().toISOString(), rows: [] });
   }
 });
 

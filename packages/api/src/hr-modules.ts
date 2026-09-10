@@ -240,7 +240,7 @@ export function hireCandidate(candidateId: number): {
     };
   }
   const opening = listJobOpenings().find((o) => o.id === cand.jobOpeningId);
-  const jobTitle = opening?.title || '';
+  const jobTitle = cand.jobTitle || opening?.title || '';
   const department = opening?.department || '';
   const updated = updateCandidateStage(candidateId, 'استخدام‌شده');
   if (!updated) return null;
@@ -901,6 +901,26 @@ export function cockpitTasks(): HrCockpitTask[] {
     }
   }
 
+  // Interview tasks from ATS follow-up
+  for (const c of listCandidates()) {
+    const at = c.followup?.interviewAt;
+    if (!at || c.stage === 'استخدام‌شده' || c.stage.startsWith('رد شده')) continue;
+    const when = new Date(at);
+    if (Number.isNaN(when.getTime())) continue;
+    const diff = Math.round((when.getTime() - today.getTime()) / 86400000);
+    if (diff < -1 || diff > 30) continue;
+    tasks.push({
+      type: 'مصاحبه جذب',
+      label: 'استخدام',
+      employeeId: c.followup.interviewerEmployeeId ?? undefined,
+      employeeName: c.followup.interviewerName || `${c.firstName} ${c.lastName}`.trim(),
+      detail: `مصاحبه با ${c.firstName} ${c.lastName} · ${at.replace('T', ' ').slice(0, 16)}`,
+      daysLeft: diff,
+      refType: 'candidate',
+      refId: c.id,
+    });
+  }
+
   return [...tasks, ...pendingReqs];
 }
 
@@ -913,6 +933,11 @@ function countBy(values: string[]): Array<{ name: string; count: number }> {
   return Object.entries(map)
     .map(([name, count]) => ({ name, count }))
     .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'fa'));
+}
+
+/** Like countBy but drop empty / نامشخص buckets (for gender/marital charts). */
+function countByKnown(values: string[]): Array<{ name: string; count: number }> {
+  return countBy(values).filter((r) => r.name && r.name !== 'نامشخص');
 }
 
 export function getHrOverviewDashboard() {
@@ -1001,6 +1026,24 @@ export function getRecruitmentDashboard() {
   }
   const hired = byStage['استخدام‌شده'] || 0;
   const onboarding = listOnboarding();
+  const funnelOrder = [
+    'متقاضی جدید',
+    'غربالگری تلفنی',
+    'مصاحبه',
+    'پیشنهاد شغلی',
+    'استخدام‌شده',
+    'رد شده',
+    'رد شده - عدم ارتباط گیری',
+    'بانک استعداد',
+  ];
+  const stageChart = funnelOrder
+    .map((name) => ({ name, count: byStage[name] || 0 }))
+    .filter((r) => r.count > 0)
+    .concat(
+      Object.entries(byStage)
+        .filter(([name]) => !funnelOrder.includes(name))
+        .map(([name, count]) => ({ name, count }))
+    );
   return {
     generatedAt: new Date().toISOString(),
     kpis: {
@@ -1016,7 +1059,8 @@ export function getRecruitmentDashboard() {
       talentBank: byStage['بانک استعداد'] || 0,
     },
     byStage,
-    stageChart: countBy(candidates.map((c) => c.stage || '')),
+    stageChart,
+    funnel: stageChart,
     links: [
       { to: '/admin/hr/ats', label: 'ATS — فرصت و متقاضی' },
       { to: '/admin/hr/onboarding', label: 'شروع به کار' },
@@ -1029,7 +1073,7 @@ export function getRecruitmentDashboard() {
 
 function normalizeGender(raw: string): string {
   const t = String(raw || '').trim();
-  if (!t || t === 'نامشخص') return 'نامشخص';
+  if (!t || t === 'نامشخص') return '';
   if (/^(آقا|مرد|male|m)$/i.test(t)) return 'آقا';
   if (/^(خانم|زن|female|f)$/i.test(t)) return 'خانم';
   return t;
@@ -1037,10 +1081,24 @@ function normalizeGender(raw: string): string {
 
 function normalizeMarital(raw: string): string {
   const t = String(raw || '').trim();
-  if (!t || t === 'نامشخص') return 'نامشخص';
+  if (!t || t === 'نامشخص') return '';
   if (/مجرد|single/i.test(t)) return 'مجرد';
   if (/متاهل|متأهل|married/i.test(t)) return 'متأهل';
   return t;
+}
+
+function ageFromBirthDate(raw: string, now = new Date()): number | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(raw || '').slice(0, 10));
+  if (!m) return null;
+  const y = Number(m[1]);
+  const mo = Number(m[2]);
+  const d = Number(m[3]);
+  if (!Number.isFinite(y) || y < 1900) return null;
+  let age = now.getFullYear() - y;
+  const birthThisYear = new Date(now.getFullYear(), mo - 1, d);
+  if (now < birthThisYear) age -= 1;
+  if (age < 15 || age > 90) return null;
+  return age;
 }
 
 /** Gregorian Y-M-D → Jalali Y-M-D (compact calendar convert). */
@@ -1111,9 +1169,22 @@ export function getReportsSummary(opts?: {
   const byDept = countBy(filtered.map((e) => e.department || ''));
   const byStatus = countBy(filtered.map((e) => e.contractStatus || ''));
   const byLocation = countBy(filtered.map((e) => e.location || ''));
-  const byProvince = countBy(filtered.map((e) => e.province || ''));
-  const byGender = countBy(filtered.map((e) => normalizeGender(e.gender)));
-  const byMarital = countBy(filtered.map((e) => normalizeMarital(e.maritalStatus)));
+  const byProvince = countByKnown(filtered.map((e) => e.province || ''));
+  const byGender = countByKnown(filtered.map((e) => normalizeGender(e.gender)));
+  const byMarital = countByKnown(filtered.map((e) => normalizeMarital(e.maritalStatus)));
+  const byJobTitle = countByKnown(filtered.map((e) => e.jobTitle || ''));
+  const ages = filtered
+    .map((e) => ageFromBirthDate(e.birthDate))
+    .filter((n): n is number => n != null);
+  const ageStats =
+    ages.length > 0
+      ? {
+          min: Math.min(...ages),
+          max: Math.max(...ages),
+          avg: Math.round((ages.reduce((a, b) => a + b, 0) / ages.length) * 10) / 10,
+          sample: ages.length,
+        }
+      : { min: null as number | null, max: null as number | null, avg: null as number | null, sample: 0 };
   const now = new Date();
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
@@ -1121,6 +1192,8 @@ export function getReportsSummary(opts?: {
   return {
     generatedAt: new Date().toISOString(),
     personnelTotal: filtered.length,
+    /** Hired headcount in the selected Jalali window (same as filtered set). */
+    hiredHeadcount: filtered.length,
     departments,
     filters: {
       department: opts?.department?.trim() || '',
@@ -1133,6 +1206,8 @@ export function getReportsSummary(opts?: {
     byProvince,
     byGender,
     byMarital,
+    byJobTitle,
+    ageStats,
     topProvince,
     /** @deprecated maps — prefer chart arrays above */
     byDeptMap: Object.fromEntries(byDept.map((r) => [r.name, r.count])),

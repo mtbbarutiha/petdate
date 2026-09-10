@@ -8,10 +8,18 @@ type ChartRow = { name: string; count: number };
 
 type Report = {
   personnelTotal: number;
+  hiredHeadcount?: number;
   departments: string[];
   byProvince: ChartRow[];
   byGender: ChartRow[];
   byMarital: ChartRow[];
+  byJobTitle?: ChartRow[];
+  ageStats?: {
+    min: number | null;
+    max: number | null;
+    avg: number | null;
+    sample: number;
+  };
   topProvince: ChartRow | null;
   serviceHoursMonth: number;
   requestsOpen: number;
@@ -50,7 +58,7 @@ function currentJalaliYear(): number {
 
 function toRows(data: ChartRow[] | undefined): ChartRow[] {
   if (!data?.length) return [];
-  return data.filter((r) => r.count > 0);
+  return data.filter((r) => r.count > 0 && r.name && r.name !== 'نامشخص');
 }
 
 function DonutTip({
@@ -168,17 +176,19 @@ export function AdminHrReportsPage() {
   const byProvince = useMemo(() => toRows(data?.byProvince), [data]);
   const byGender = useMemo(() => toRows(data?.byGender), [data]);
   const byMarital = useMemo(() => toRows(data?.byMarital), [data]);
+  const byJobTitle = useMemo(() => toRows(data?.byJobTitle), [data]);
+  const hired = data?.hiredHeadcount ?? data?.personnelTotal ?? 0;
 
   return (
     <div className="admin-page hr-reports-page">
       <header className="admin-header hr-reports-header">
         <div>
           <h1>گزارشات</h1>
-          <p>گزارش‌های پرسنلی و ارائه خدمات</p>
+          <p>گزارش‌های پرسنلی و ارائه خدمات · فراوانی استخدام بر اساس استان</p>
         </div>
         <div className="hr-reports-filters" role="group" aria-label="فیلتر گزارش">
           <label className="hr-reports-filter">
-            <span>فیلتر بیزنس لاین</span>
+            <span>دپارتمان‌ها</span>
             <select
               className="admin-select"
               value={department}
@@ -193,7 +203,7 @@ export function AdminHrReportsPage() {
             </select>
           </label>
           <label className="hr-reports-filter">
-            <span>ماه</span>
+            <span>ماه جلالی</span>
             <select
               className="admin-select"
               value={jalaliMonth}
@@ -208,7 +218,7 @@ export function AdminHrReportsPage() {
             </select>
           </label>
           <label className="hr-reports-filter">
-            <span>سال</span>
+            <span>سال جلالی</span>
             <select
               className="admin-select"
               value={jalaliYear}
@@ -236,19 +246,46 @@ export function AdminHrReportsPage() {
       <article className="admin-card hr-report-heat-card">
         <div className="admin-card-head">
           <div>
-            <h2>نقشه حرارتی پرسنل بر اساس استان</h2>
+            <h2>نقشه حرارتی استخدام بر اساس استان</h2>
             <p className="admin-muted">
-              استان‌هایی که فراوانی بیشتری دارند با رنگ گرم‌تر مشخص شده‌اند
-              {data ? ` · مجموع ${formatNumFa(data.personnelTotal)} نفر` : ''}
+              استان‌هایی با استخدام بیشتر تیره‌تر نمایش داده می‌شوند
+              {data ? ` · استخدام‌شده ${formatNumFa(hired)} نفر` : ''}
             </p>
           </div>
         </div>
         <IranPersonnelHeatmap rows={byProvince} />
       </article>
 
+      {data?.ageStats ? (
+        <div className="hr-dash-highlight-row" style={{ marginBottom: 16 }}>
+          <article className="hr-dash-highlight">
+            <span className="hr-dash-highlight-label">حداقل سن</span>
+            <strong className="hr-dash-highlight-value">
+              {data.ageStats.min != null ? formatNumFa(data.ageStats.min) : '—'}
+            </strong>
+          </article>
+          <article className="hr-dash-highlight">
+            <span className="hr-dash-highlight-label">حداکثر سن</span>
+            <strong className="hr-dash-highlight-value">
+              {data.ageStats.max != null ? formatNumFa(data.ageStats.max) : '—'}
+            </strong>
+          </article>
+          <article className="hr-dash-highlight">
+            <span className="hr-dash-highlight-label">میانگین سن</span>
+            <strong className="hr-dash-highlight-value">
+              {data.ageStats.avg != null ? formatNumFa(data.ageStats.avg) : '—'}
+            </strong>
+          </article>
+        </div>
+      ) : null}
+
       <div className="hr-report-donut-row">
         <FrequencyDonut title="فراوانی وضعیت تأهل" rows={byMarital} />
         <FrequencyDonut title="فراوانی جنسیت" rows={byGender} />
+      </div>
+
+      <div className="hr-report-donut-row" style={{ marginTop: 16 }}>
+        <FrequencyDonut title="فراوانی عنوان شغلی" rows={byJobTitle} />
       </div>
     </div>
   );

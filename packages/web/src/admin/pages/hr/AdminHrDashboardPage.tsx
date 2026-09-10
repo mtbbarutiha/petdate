@@ -13,7 +13,6 @@ import {
   YAxis,
 } from 'recharts';
 import { adminFetch, formatNumFa } from '../../api';
-import { AdminEntityCell, AdminThumb } from '../../AdminThumb';
 import { HrLinkGrid, formatHrMoney } from './HrUi';
 
 type ChartRow = { name: string; count: number };
@@ -37,14 +36,6 @@ type Dash = {
     byLocation: ChartRow[];
   };
   links: Array<{ to: string; label: string }>;
-  recentLogs: Array<{
-    personName: string;
-    avatarUrl?: string;
-    field: string;
-    oldValue: string;
-    newValue: string;
-    date: string;
-  }>;
   cockpitPreview: Array<{ type: string; employeeName?: string; detail: string; label?: string }>;
 };
 
@@ -69,14 +60,6 @@ function ChartTip({
       <strong>{formatNumFa(Number(row.value || 0))} نفر</strong>
     </div>
   );
-}
-
-function formatLogDate(raw: string): string {
-  if (!raw) return '—';
-  const normalized = raw.includes('T') || /Z$/.test(raw) ? raw : raw.replace(' ', 'T');
-  const d = new Date(normalized);
-  if (Number.isNaN(d.getTime())) return raw.slice(0, 10);
-  return d.toLocaleDateString('fa-IR');
 }
 
 export function AdminHrDashboardPage() {
@@ -163,10 +146,10 @@ export function AdminHrDashboardPage() {
       ) : null}
 
       <div className="hr-dash-main-row">
-        <article className="admin-card hr-dash-panel">
+        <article className="admin-card hr-dash-panel" style={{ gridColumn: '1 / -1' }}>
           <div className="admin-card-head">
             <h2>توزیع پرسنل بر واحد سازمانی</h2>
-            <span className="admin-muted">بر اساس دپارتمان (بدون بیزنس‌لاین)</span>
+            <span className="admin-muted">بر اساس دپارتمان</span>
           </div>
           <div className="hr-dash-chart" style={{ height: Math.max(220, 36 * Math.max(deptData.length, 3)) }}>
             {deptData.length ? (
@@ -187,33 +170,6 @@ export function AdminHrDashboardPage() {
               <p className="admin-muted">هنوز پرسنلی برای نمودار ثبت نشده</p>
             )}
           </div>
-        </article>
-
-        <article className="admin-card hr-dash-panel">
-          <div className="admin-card-head">
-            <h2>آخرین تغییرات</h2>
-            <span className="admin-muted">{formatNumFa(data?.recentLogs.length || 0)} مورد</span>
-          </div>
-          {data?.recentLogs?.length ? (
-            <ul className="hr-dash-changelog">
-              {data.recentLogs.map((l, i) => (
-                <li key={`${l.personName}-${i}`}>
-                  <AdminEntityCell
-                    thumb={<AdminThumb src={l.avatarUrl} label={l.personName} kind="user" size={32} />}
-                    title={<b>{l.personName}</b>}
-                    subtitle={
-                      <>
-                        {l.field}: {l.oldValue || '—'} ← {l.newValue || '—'}
-                      </>
-                    }
-                  />
-                  <time className="hr-dash-changelog-date">{formatLogDate(l.date)}</time>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="admin-muted">هنوز تغییری ثبت نشده</p>
-          )}
         </article>
       </div>
 

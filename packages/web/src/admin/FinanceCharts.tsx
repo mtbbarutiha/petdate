@@ -6,38 +6,62 @@ function maxOf(points: Point[], min = 1) {
   return Math.max(min, ...points.map((p) => p.value));
 }
 
+function ChartTipBox({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="admin-chart-tip">
+      <div className="admin-chart-tip-label">{label}</div>
+      <strong>{value.toLocaleString('fa-IR')}</strong>
+    </div>
+  );
+}
+
 export function AdminBarChart({
   points,
-  height = 180,
+  height = 200,
   color = '#5c4d91',
+  onSliceClick,
 }: {
   points: Point[];
   height?: number;
   color?: string;
+  onSliceClick?: (point: Point) => void;
 }) {
   if (!points.length) {
     return <p className="admin-muted">داده‌ای برای نمودار نیست</p>;
   }
   const max = maxOf(points);
-  const barW = Math.max(8, Math.min(28, Math.floor(520 / Math.max(points.length, 1)) - 4));
-  const gap = 6;
-  const width = points.length * (barW + gap) + 20;
+  const barW = Math.max(14, Math.min(36, Math.floor(560 / Math.max(points.length, 1)) - 6));
+  const gap = 10;
+  const labelH = 48;
+  const width = Math.max(280, points.length * (barW + gap) + 24);
   return (
     <div className="admin-chart-scroll">
-      <svg viewBox={`0 0 ${width} ${height + 36}`} className="admin-chart-svg" role="img">
+      <svg viewBox={`0 0 ${width} ${height + labelH}`} className="admin-chart-svg admin-chart-svg--lg" role="img">
         {points.map((p, i) => {
           const h = Math.round((p.value / max) * height);
-          const x = 10 + i * (barW + gap);
+          const x = 12 + i * (barW + gap);
           const y = height - h + 8;
           return (
-            <g key={`${p.label}-${i}`}>
-              <rect x={x} y={y} width={barW} height={Math.max(2, h)} rx={3} fill={color} opacity={0.9} />
+            <g
+              key={`${p.label}-${i}`}
+              className={onSliceClick ? 'admin-chart-hit' : undefined}
+              onClick={() => onSliceClick?.(p)}
+              style={onSliceClick ? { cursor: 'pointer' } : undefined}
+            >
+              <rect x={x} y={y} width={barW} height={Math.max(2, h)} rx={4} fill={color} opacity={0.92} />
               <title>{`${p.label}: ${p.value.toLocaleString('fa-IR')}`}</title>
-              {points.length <= 14 ? (
-                <text x={x + barW / 2} y={height + 28} textAnchor="middle" className="admin-chart-axis">
-                  {p.label.length > 10 ? p.label.slice(-5) : p.label}
-                </text>
-              ) : null}
+              <text
+                x={x + barW / 2}
+                y={height + 22}
+                textAnchor="middle"
+                className="admin-chart-axis"
+                transform={`rotate(-28 ${x + barW / 2} ${height + 22})`}
+              >
+                {p.label.length > 14 ? `${p.label.slice(0, 12)}…` : p.label}
+              </text>
+              <text x={x + barW / 2} y={y - 4} textAnchor="middle" className="admin-chart-val">
+                {p.value.toLocaleString('fa-IR')}
+              </text>
             </g>
           );
         })}
@@ -46,9 +70,67 @@ export function AdminBarChart({
   );
 }
 
+/** Horizontal funnel — wide top / narrow bottom with full Persian labels. */
+export function AdminFunnelChart({
+  points,
+  height,
+  colors = ['#5c4d91', '#15cca0', '#fd961e', '#3b82f6', '#ec4899', '#14b8a6', '#8b5cf6', '#64748b'],
+  onSliceClick,
+}: {
+  points: Point[];
+  height?: number;
+  colors?: string[];
+  onSliceClick?: (point: Point) => void;
+}) {
+  if (!points.length) {
+    return <p className="admin-muted">داده‌ای برای نمودار نیست</p>;
+  }
+  const max = maxOf(points);
+  const rowH = 44;
+  const padX = 12;
+  const width = 640;
+  const h = height ?? points.length * rowH + 16;
+  return (
+    <div className="admin-chart-scroll admin-funnel-wrap">
+      <svg viewBox={`0 0 ${width} ${h}`} className="admin-chart-svg admin-chart-svg--lg" role="img">
+        {points.map((p, i) => {
+          const ratio = p.value / max;
+          const barW = Math.max(80, Math.round((width - padX * 2) * (0.42 + ratio * 0.58)));
+          const x = (width - barW) / 2;
+          const y = 8 + i * rowH;
+          const color = colors[i % colors.length]!;
+          return (
+            <g
+              key={`${p.label}-${i}`}
+              className={onSliceClick ? 'admin-chart-hit' : undefined}
+              onClick={() => onSliceClick?.(p)}
+              style={onSliceClick ? { cursor: 'pointer' } : undefined}
+            >
+              <rect x={x} y={y} width={barW} height={34} rx={8} fill={color} opacity={0.9} />
+              <title>{`${p.label}: ${p.value.toLocaleString('fa-IR')}`}</title>
+              <text x={width / 2} y={y + 22} textAnchor="middle" className="admin-funnel-label">
+                {p.label} — {p.value.toLocaleString('fa-IR')}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+      <ul className="admin-funnel-legend" aria-hidden>
+        {points.map((p, i) => (
+          <li key={p.label}>
+            <span style={{ background: colors[i % colors.length] }} />
+            {p.label}
+            <strong>{p.value.toLocaleString('fa-IR')}</strong>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export function AdminLineChart({
   points,
-  height = 180,
+  height = 200,
   color = '#5c4d91',
 }: {
   points: Point[];
@@ -59,9 +141,9 @@ export function AdminLineChart({
     return <p className="admin-muted">داده‌ای برای نمودار نیست</p>;
   }
   const max = maxOf(points);
-  const width = 560;
-  const padX = 12;
-  const padY = 12;
+  const width = 640;
+  const padX = 14;
+  const padY = 14;
   const step = points.length > 1 ? (width - padX * 2) / (points.length - 1) : 0;
   const coords = points.map((p, i) => {
     const x = padX + i * step;
@@ -72,12 +154,12 @@ export function AdminLineChart({
   const area = `${path} L${coords[coords.length - 1].x},${height} L${coords[0].x},${height} Z`;
   return (
     <div className="admin-chart-scroll">
-      <svg viewBox={`0 0 ${width} ${height + 28}`} className="admin-chart-svg" role="img">
+      <svg viewBox={`0 0 ${width} ${height + 28}`} className="admin-chart-svg admin-chart-svg--lg" role="img">
         <path d={area} fill={color} opacity={0.12} />
         <path d={path} fill="none" stroke={color} strokeWidth={2.5} strokeLinejoin="round" />
         {coords.map((c, i) => (
           <g key={`${c.label}-${i}`}>
-            <circle cx={c.x} cy={c.y} r={3.2} fill={color} />
+            <circle cx={c.x} cy={c.y} r={4} fill={color} />
             <title>{`${c.label}: ${c.value.toLocaleString('fa-IR')}`}</title>
           </g>
         ))}
@@ -89,7 +171,7 @@ export function AdminLineChart({
 /** Multi-series line chart for executive aggregate trends. */
 export function AdminMultiLineChart({
   series,
-  height = 200,
+  height = 220,
 }: {
   series: Array<{ key: string; label: string; color: string; points: Point[] }>;
   height?: number;
@@ -108,7 +190,7 @@ export function AdminMultiLineChart({
 
   return (
     <div className="admin-chart-scroll">
-      <svg viewBox={`0 0 ${width} ${height + 36}`} className="admin-chart-svg" role="img">
+      <svg viewBox={`0 0 ${width} ${height + 36}`} className="admin-chart-svg admin-chart-svg--lg" role="img">
         {active.map((s) => {
           const coords = s.points.map((p, i) => {
             const x = padX + i * step;
@@ -118,9 +200,9 @@ export function AdminMultiLineChart({
           const path = coords.map((c, i) => `${i === 0 ? 'M' : 'L'}${c.x},${c.y}`).join(' ');
           return (
             <g key={s.key}>
-              <path d={path} fill="none" stroke={s.color} strokeWidth={2.4} strokeLinejoin="round" />
+              <path d={path} fill="none" stroke={s.color} strokeWidth={2.6} strokeLinejoin="round" />
               {coords.map((c, i) => (
-                <circle key={`${s.key}-${i}`} cx={c.x} cy={c.y} r={2.8} fill={s.color}>
+                <circle key={`${s.key}-${i}`} cx={c.x} cy={c.y} r={3.2} fill={s.color}>
                   <title>{`${s.label} · ${c.label}: ${c.value.toLocaleString('fa-IR')}`}</title>
                 </circle>
               ))}
@@ -142,22 +224,24 @@ export function AdminMultiLineChart({
 
 export function AdminDonutChart({
   slices,
-  size = 160,
+  size = 200,
+  onSliceClick,
 }: {
   slices: Array<{ label: string; value: number; color: string }>;
   size?: number;
+  onSliceClick?: (slice: { label: string; value: number; color: string }) => void;
 }) {
   const total = slices.reduce((a, s) => a + s.value, 0) || 1;
-  const r = 56;
+  const r = 62;
   const c = 2 * Math.PI * r;
   let offset = 0;
   const hasData = slices.some((s) => s.value > 0);
   return (
     <div className="admin-donut-wrap">
-      <svg width={size} height={size} viewBox="0 0 140 140" className="admin-chart-svg">
-        <g transform="translate(70,70) rotate(-90)">
+      <svg width={size} height={size} viewBox="0 0 160 160" className="admin-chart-svg admin-chart-svg--lg">
+        <g transform="translate(80,80) rotate(-90)">
           {!hasData ? (
-            <circle r={r} cx={0} cy={0} fill="transparent" stroke="#e2e8f0" strokeWidth={18} />
+            <circle r={r} cx={0} cy={0} fill="transparent" stroke="#e2e8f0" strokeWidth={20} />
           ) : (
             slices.map((s) => {
               const len = (s.value / total) * c;
@@ -169,26 +253,37 @@ export function AdminDonutChart({
                   cy={0}
                   fill="transparent"
                   stroke={s.color}
-                  strokeWidth={18}
+                  strokeWidth={20}
                   strokeDasharray={`${len} ${c - len}`}
                   strokeDashoffset={-offset}
-                />
+                  className={onSliceClick ? 'admin-chart-hit' : undefined}
+                  style={onSliceClick ? { cursor: 'pointer' } : undefined}
+                  onClick={() => onSliceClick?.(s)}
+                >
+                  <title>{`${s.label}: ${s.value.toLocaleString('fa-IR')} (${Math.round((s.value / total) * 100)}٪)`}</title>
+                </circle>
               );
               offset += len;
               return el;
             })
           )}
         </g>
-        <text x="70" y="68" textAnchor="middle" className="admin-donut-center">
+        <text x="80" y="76" textAnchor="middle" className="admin-donut-center">
           {(hasData ? total : 0).toLocaleString('fa-IR')}
         </text>
-        <text x="70" y="84" textAnchor="middle" className="admin-donut-sub">
+        <text x="80" y="94" textAnchor="middle" className="admin-donut-sub">
           جمع
         </text>
       </svg>
       <ul className="admin-donut-legend">
         {slices.map((s) => (
-          <li key={s.label}>
+          <li
+            key={s.label}
+            className={onSliceClick ? 'admin-chart-hit' : undefined}
+            onClick={() => onSliceClick?.(s)}
+            style={onSliceClick ? { cursor: 'pointer' } : undefined}
+            title={`${s.label}: ${s.value.toLocaleString('fa-IR')}`}
+          >
             <span style={{ background: s.color }} />
             {s.label}
             <strong>{s.value.toLocaleString('fa-IR')}</strong>
@@ -230,3 +325,6 @@ export function PeriodFilter({
     </div>
   );
 }
+
+// silence unused helper warning in some builds
+void ChartTipBox;

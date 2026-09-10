@@ -72,6 +72,8 @@ run src/crm.selftest.ts
 run src/crm-ticketing.selftest.ts
 run src/admin-notifications.selftest.ts
 run src/admin-aggregate-dashboard.selftest.ts
+run src/admin-dashboard-activity.selftest.ts
+run src/hr-ats-followup.selftest.ts
 run src/finance-os.selftest.ts
 
 echo "ci-selftest: all passed"

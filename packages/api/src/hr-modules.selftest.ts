@@ -99,6 +99,8 @@ async function main() {
   assert(rec.kpis.candidates >= 1, 'recruitment candidates');
   assert(Array.isArray(rec.stageChart), 'recruitment stageChart');
   assert(rec.stageChart.some((r) => r.count >= 1), 'stageChart non-empty');
+  assert(Array.isArray(rec.funnel), 'recruitment funnel');
+  assert(rec.funnel.every((r) => typeof r.name === 'string'), 'funnel labels');
 
   const reports = hrMod.getReportsSummary();
   assert(Array.isArray(reports.byDept), 'reports.byDept chart array');
@@ -107,6 +109,10 @@ async function main() {
   assert(Array.isArray(reports.byProvince), 'reports.byProvince chart array');
   assert(Array.isArray(reports.byGender), 'reports.byGender chart array');
   assert(Array.isArray(reports.byMarital), 'reports.byMarital chart array');
+  assert(Array.isArray(reports.byJobTitle), 'reports.byJobTitle chart array');
+  assert(reports.ageStats && typeof reports.ageStats.sample === 'number', 'ageStats');
+  assert(!reports.byGender.some((r) => r.name === 'نامشخص'), 'gender without نامشخص');
+  assert(!reports.byMarital.some((r) => r.name === 'نامشخص'), 'marital without نامشخص');
   assert(Array.isArray(reports.departments), 'reports.departments');
   assert(reports.byDept.some((r) => typeof r.name === 'string' && typeof r.count === 'number'), 'byDept row shape');
 
