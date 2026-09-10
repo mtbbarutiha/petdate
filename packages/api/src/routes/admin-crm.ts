@@ -29,6 +29,7 @@ import {
   listKpiModels,
   listQaReviews,
   listReferrals,
+  deleteSmsPattern,
   listSmsPatterns,
   listSurveys,
   listTasks,
@@ -38,11 +39,13 @@ import {
   respondReferral,
   runSlaWatcher,
   sendSmsPattern,
+  sendSmsPatternBulk,
   simulateInboundCall,
   updateCrmSettings,
   upsertSmsPattern,
   wrapUpInteraction,
 } from '../crm-service';
+import { candooBalance, isCandooConfigured } from '../services/candoo';
 
 export const crmAdminRouter = Router();
 
@@ -291,8 +294,23 @@ crmAdminRouter.post('/referrals/:id/respond', requirePermission('crm.write'), (r
   }
 });
 
-crmAdminRouter.get('/sms', (_req, res) => {
-  res.json({ patterns: listSmsPatterns() });
+crmAdminRouter.get('/sms', async (_req, res) => {
+  const panel: { configured: boolean; balance?: number | null; error?: string } = {
+    configured: isCandooConfigured(),
+  };
+  if (panel.configured) {
+    try {
+      const bal = await candooBalance();
+      if (bal.ok) {
+        panel.balance = bal.balance ?? null;
+      } else {
+        panel.error = bal.error || 'خواندن موجودی ناموفق';
+      }
+    } catch (err) {
+      panel.error = err instanceof Error ? err.message : 'خطا در پنل پیامک';
+    }
+  }
+  res.json({ patterns: listSmsPatterns(), panel });
 });
 
 crmAdminRouter.post('/sms/patterns', requirePermission('crm.admin'), (req, res) => {
@@ -303,13 +321,39 @@ crmAdminRouter.post('/sms/patterns', requirePermission('crm.admin'), (req, res) 
   }
 });
 
-crmAdminRouter.post('/sms/send', requirePermission('crm.write'), (req, res) => {
+crmAdminRouter.delete('/sms/patterns/:id', requirePermission('crm.admin'), (req, res) => {
   try {
+    deleteSmsPattern(Number(req.params.id));
+    res.json({ ok: true });
+  } catch (err) {
+    sendErr(res, err);
+  }
+});
+
+crmAdminRouter.post('/sms/send', requirePermission('crm.write'), async (req, res) => {
+  try {
+    const ids = Array.isArray(req.body?.customerIds)
+      ? (req.body.customerIds as unknown[]).map(Number)
+      : null;
+    if (ids?.length) {
+      res.json(await sendSmsPatternBulk(Number(req.body?.patternId), ids, actor(req)));
+      return;
+    }
     res.json(
-      sendSmsPattern(Number(req.body?.patternId), Number(req.body?.customerId), actor(req), {
+      await sendSmsPattern(Number(req.body?.patternId), Number(req.body?.customerId), actor(req), {
         ticketPublicId: req.body?.ticketPublicId,
+        requirePanel: true,
       })
     );
+  } catch (err) {
+    sendErr(res, err);
+  }
+});
+
+crmAdminRouter.post('/sms/send-bulk', requirePermission('crm.write'), async (req, res) => {
+  try {
+    const ids = Array.isArray(req.body?.customerIds) ? (req.body.customerIds as unknown[]).map(Number) : [];
+    res.json(await sendSmsPatternBulk(Number(req.body?.patternId), ids, actor(req)));
   } catch (err) {
     sendErr(res, err);
   }

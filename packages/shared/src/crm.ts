@@ -50,6 +50,15 @@ export const CRM_SMS_TRIGGERS = [
   'after_purchase', 'ticket_created', 'ticket_resolved', 'survey_done', 'sla_breach', 'manual',
 ] as const;
 
+export const CRM_SMS_TRIGGER_LABELS: Record<(typeof CRM_SMS_TRIGGERS)[number], string> = {
+  after_purchase: 'یک روز پس از خرید',
+  ticket_created: 'هنگام ثبت تیکت',
+  ticket_resolved: 'پس از حل تیکت',
+  survey_done: 'پس از نظرسنجی / توسط کارشناس',
+  sla_breach: 'هنگام عبور از زمان SLA',
+  manual: 'ارسال دستی توسط کارشناس',
+};
+
 /** First-response minutes, resolve hours */
 export const CRM_SLA_POLICY: Record<CrmPriority, [number, number]> = {
   'بحرانی': [15, 4],
