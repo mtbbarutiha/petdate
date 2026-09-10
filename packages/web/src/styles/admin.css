@@ -1419,3 +1419,170 @@
   text-transform: uppercase;
   color: var(--admin-muted);
 }
+
+/* ── Admin mail inbox split pane (RTL-safe) ── */
+.admin-app .admin-mail-inbox {
+  display: grid;
+  grid-template-columns: minmax(320px, 38%) minmax(0, 1fr);
+  gap: 0;
+  min-height: 420px;
+  max-height: min(70vh, 560px);
+  border: 1px solid var(--admin-border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.admin-app .admin-mail-list {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-inline-end: 1px solid var(--admin-border);
+  background: #fafbfc;
+}
+
+.admin-app .admin-mail-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 10px 12px;
+  border: 0;
+  border-bottom: 1px solid var(--admin-border);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+  appearance: none;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.admin-app .admin-mail-item:hover {
+  background: rgba(56, 189, 248, 0.06);
+}
+
+.admin-app .admin-mail-item.is-selected {
+  background: rgba(56, 189, 248, 0.12);
+}
+
+.admin-app .admin-mail-item.is-unread {
+  font-weight: 700;
+}
+
+.admin-app .admin-mail-item-dot {
+  flex: 0 0 12px;
+  width: 12px;
+  margin-top: 2px;
+  color: #0ea5e9;
+  font-size: 0.7rem;
+  line-height: 1.4;
+  text-align: center;
+}
+
+.admin-app .admin-mail-item-body {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.admin-app .admin-mail-item-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  min-width: 0;
+}
+
+.admin-app .admin-mail-item-from,
+.admin-app .admin-mail-item-subject,
+.admin-app .admin-mail-item-preview {
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-app .admin-mail-item-from {
+  flex: 1 1 0;
+  min-width: 0;
+  font-size: 0.82rem;
+}
+
+.admin-app .admin-mail-item-date {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 40%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.72rem;
+  color: var(--admin-muted);
+  font-weight: 400;
+}
+
+.admin-app .admin-mail-item-subject {
+  font-size: 0.9rem;
+  line-height: 1.35;
+}
+
+.admin-app .admin-mail-item-preview {
+  font-size: 0.78rem;
+  font-weight: 400;
+  line-height: 1.35;
+}
+
+.admin-app .admin-mail-list-empty,
+.admin-app .admin-mail-empty {
+  margin: 0;
+  padding: 24px 16px;
+  text-align: center;
+}
+
+.admin-app .admin-mail-reading {
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 14px 16px;
+  background: #fff;
+}
+
+.admin-app .admin-mail-body {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  background: rgba(0, 0, 0, 0.04);
+  padding: 12px;
+  border-radius: 8px;
+  max-height: 220px;
+  overflow: auto;
+  font-family: Tahoma, sans-serif;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+@media (max-width: 960px) {
+  .admin-app .admin-mail-inbox {
+    grid-template-columns: 1fr;
+    max-height: none;
+  }
+
+  .admin-app .admin-mail-list {
+    max-height: 280px;
+    border-inline-end: 0;
+    border-block-end: 1px solid var(--admin-border);
+  }
+
+  .admin-app .admin-mail-reading {
+    min-height: 240px;
+  }
+}

@@ -298,53 +298,57 @@ export function AdminMailPage() {
           </h2>
         </div>
         {inboxError ? <p className="admin-error">{inboxError}</p> : null}
-        <div className="admin-dash-grid" style={{ alignItems: 'stretch' }}>
-          <div className="admin-table-wrap" style={{ maxHeight: 420, overflow: 'auto' }}>
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th></th>
-                  <th>از</th>
-                  <th>موضوع</th>
-                  <th>زمان</th>
-                </tr>
-              </thead>
-              <tbody>
-                {inboxItems.map((row) => (
-                  <tr
-                    key={row.id}
-                    onClick={() => void openMessage(row.id)}
-                    style={{
-                      cursor: 'pointer',
-                      background: selectedId === row.id ? 'rgba(56, 189, 248, 0.12)' : undefined,
-                      fontWeight: row.unread ? 700 : 400,
-                    }}
-                  >
-                    <td>{row.unread ? '●' : ''}</td>
-                    <td className="admin-mono" dir="ltr">
-                      {row.fromName ? `${row.fromName} <${row.from}>` : row.from || '—'}
-                    </td>
-                    <td>
-                      <div>{row.subject}</div>
-                      <div className="admin-muted" style={{ fontSize: 12, fontWeight: 400 }}>
-                        {row.preview || '—'}
-                      </div>
-                    </td>
-                    <td className="admin-mono">{row.date ? row.date.replace('T', ' ').slice(0, 19) : '—'}</td>
-                  </tr>
-                ))}
-                {!inboxItems.length ? (
-                  <tr>
-                    <td colSpan={4} className="admin-muted">
-                      {inboxLoading ? 'در حال بارگذاری…' : 'پیامی در صندوق نیست'}
-                    </td>
-                  </tr>
-                ) : null}
-              </tbody>
-            </table>
+        <div className="admin-mail-inbox">
+          <div className="admin-mail-list" role="list" aria-label="لیست پیام‌ها">
+            {inboxItems.map((row) => {
+              const fromLabel = row.fromName
+                ? `${row.fromName} <${row.from}>`
+                : row.from || '—';
+              const when = row.date ? row.date.replace('T', ' ').slice(0, 19) : '—';
+              return (
+                <button
+                  key={row.id}
+                  type="button"
+                  role="listitem"
+                  className={[
+                    'admin-mail-item',
+                    selectedId === row.id ? 'is-selected' : '',
+                    row.unread ? 'is-unread' : '',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')}
+                  onClick={() => void openMessage(row.id)}
+                >
+                  <span className="admin-mail-item-dot" aria-hidden="true">
+                    {row.unread ? '●' : ''}
+                  </span>
+                  <span className="admin-mail-item-body">
+                    <span className="admin-mail-item-top">
+                      <span className="admin-mail-item-from admin-mono" dir="ltr" title={fromLabel}>
+                        {fromLabel}
+                      </span>
+                      <span className="admin-mail-item-date admin-mono" dir="ltr" title={when}>
+                        {when}
+                      </span>
+                    </span>
+                    <span className="admin-mail-item-subject" title={row.subject || undefined}>
+                      {row.subject || '(بدون موضوع)'}
+                    </span>
+                    <span className="admin-mail-item-preview admin-muted" title={row.preview || undefined}>
+                      {row.preview || '—'}
+                    </span>
+                  </span>
+                </button>
+              );
+            })}
+            {!inboxItems.length ? (
+              <p className="admin-mail-list-empty admin-muted">
+                {inboxLoading ? 'در حال بارگذاری…' : 'پیامی در صندوق نیست'}
+              </p>
+            ) : null}
           </div>
 
-          <div>
+          <div className="admin-mail-reading">
             {selected ? (
               <>
                 <ul className="admin-kv">
@@ -363,20 +367,7 @@ export function AdminMailPage() {
                     <strong className="admin-mono">{selected.date || '—'}</strong>
                   </li>
                 </ul>
-                <pre
-                  style={{
-                    whiteSpace: 'pre-wrap',
-                    wordBreak: 'break-word',
-                    background: 'rgba(0,0,0,0.04)',
-                    padding: 12,
-                    borderRadius: 8,
-                    maxHeight: 220,
-                    overflow: 'auto',
-                    fontFamily: 'Tahoma, sans-serif',
-                    fontSize: 14,
-                    lineHeight: 1.7,
-                  }}
-                >
+                <pre className="admin-mail-body">
                   {selected.text || '(بدون متن ساده — ممکن است فقط HTML باشد)'}
                 </pre>
                 <div className="form-group" style={{ marginTop: 12 }}>
@@ -406,7 +397,9 @@ export function AdminMailPage() {
                 ) : null}
               </>
             ) : (
-              <p className="admin-muted">یک پیام از لیست سمت چپ انتخاب کنید تا بخوانید و پاسخ دهید.</p>
+              <p className="admin-mail-empty admin-muted">
+                یک پیام از لیست پیام‌ها انتخاب کنید تا بخوانید و پاسخ دهید.
+              </p>
             )}
           </div>
         </div>
