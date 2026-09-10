@@ -6,7 +6,7 @@ import { ChevronDown,
   Store, Target, Ticket, TrendingUp, UserPlus, UserRound, Users, Wallet, X, ClipboardCheck, BarChart3, Coins,
   Route, Inbox, HandCoins, Bot, MessageSquare, Star, HeartHandshake, ArrowLeftRight,
 } from 'lucide-react';
-import type { SalesNavCounts } from '@petdate/shared';
+import type { PlatformNavCounts, SalesNavCounts } from '@petdate/shared';
 import { ADMIN_PANEL_ROLE_LABELS } from '@petdate/shared';
 import { AdminWordmark } from './AdminWordmark';
 import { AdminHeaderNotifications } from './AdminHeaderNotifications';
@@ -15,8 +15,16 @@ import { adminFetch, formatNumFa } from './api';
 import { SalesCallSimProvider } from './pages/sales/SalesCallSim';
 import '../styles/admin.css';
 
-type BadgeKey = keyof SalesNavCounts;
-type NavItem = { to: string; icon: typeof LayoutDashboard; label: string; perm?: string; badgeKey?: BadgeKey };
+type SalesBadgeKey = keyof SalesNavCounts;
+type PlatformBadgeKey = keyof PlatformNavCounts;
+type NavItem = {
+  to: string;
+  icon: typeof LayoutDashboard;
+  label: string;
+  perm?: string;
+  salesBadgeKey?: SalesBadgeKey;
+  platformBadgeKey?: PlatformBadgeKey;
+};
 type NavGroup = { title: string; items: NavItem[] };
 
 const NAV_GROUPS: NavGroup[] = [
@@ -46,20 +54,20 @@ const NAV_GROUPS: NavGroup[] = [
     { to: '/admin/hr/rbac', icon: Shield, label: 'نقش‌ها و دسترسی', perm: 'admin.full' },
   ]},
   { title: 'پلتفرم', items: [
-    { to: '/admin/users', icon: Users, label: 'کاربران', perm: 'platform.read' },
-    { to: '/admin/pets', icon: PawPrint, label: 'پت‌ها', perm: 'platform.read' },
-    { to: '/admin/playdates', icon: ClipboardList, label: 'همبازی', perm: 'platform.read' },
-    { to: '/admin/consults', icon: Stethoscope, label: 'مشاوره دامپزشک', perm: 'platform.read' },
-    { to: '/admin/verification', icon: ShieldCheck, label: 'احراز هویت', perm: 'platform.write' },
-    { to: '/admin/marketplace-moderation', icon: ClipboardList, label: 'مدارک و عکس', perm: 'platform.write' },
+    { to: '/admin/users', icon: Users, label: 'کاربران', perm: 'platform.read', platformBadgeKey: 'users' },
+    { to: '/admin/pets', icon: PawPrint, label: 'پت‌ها', perm: 'platform.read', platformBadgeKey: 'pets' },
+    { to: '/admin/playdates', icon: ClipboardList, label: 'همبازی', perm: 'platform.read', platformBadgeKey: 'playdates' },
+    { to: '/admin/consults', icon: Stethoscope, label: 'مشاوره دامپزشک', perm: 'platform.read', platformBadgeKey: 'consults' },
+    { to: '/admin/verification', icon: ShieldCheck, label: 'احراز هویت', perm: 'platform.write', platformBadgeKey: 'verification' },
+    { to: '/admin/marketplace-moderation', icon: ClipboardList, label: 'مدارک و عکس', perm: 'platform.write', platformBadgeKey: 'docs' },
   ]},
   { title: 'فروش', items: [
     { to: '/admin/sales', icon: Inbox, label: 'کارتابل من', perm: 'sales.read' },
-    { to: '/admin/sales/leads', icon: Users, label: 'لیدها', perm: 'sales.read', badgeKey: 'leads' },
-    { to: '/admin/sales/upgrades', icon: TrendingUp, label: 'آپگریدها', perm: 'sales.read', badgeKey: 'upgrades' },
-    { to: '/admin/sales/customers', icon: UserRound, label: 'مشتریان', perm: 'sales.read', badgeKey: 'customers' },
-    { to: '/admin/sales/tickets', icon: Ticket, label: 'تیکت فروش', perm: 'sales.read', badgeKey: 'tickets' },
-    { to: '/admin/sales/calls', icon: Headset, label: 'مرکز تماس و ارزیابی', perm: 'sales.read', badgeKey: 'callsQa' },
+    { to: '/admin/sales/leads', icon: Users, label: 'لیدها', perm: 'sales.read', salesBadgeKey: 'leads' },
+    { to: '/admin/sales/upgrades', icon: TrendingUp, label: 'آپگریدها', perm: 'sales.read', salesBadgeKey: 'upgrades' },
+    { to: '/admin/sales/customers', icon: UserRound, label: 'مشتریان', perm: 'sales.read', salesBadgeKey: 'customers' },
+    { to: '/admin/sales/tickets', icon: Ticket, label: 'تیکت فروش', perm: 'sales.read', salesBadgeKey: 'tickets' },
+    { to: '/admin/sales/calls', icon: Headset, label: 'مرکز تماس و ارزیابی', perm: 'sales.read', salesBadgeKey: 'callsQa' },
     { to: '/admin/sales/settings', icon: Settings, label: 'تنظیمات', perm: 'sales.read' },
     { to: '/admin/sales/reports', icon: LineChart, label: 'گزارشات', perm: 'sales.read' },
     { to: '/admin/sales/pipeline', icon: Target, label: 'پایپ‌لاین', perm: 'sales.read' },
@@ -116,6 +124,21 @@ function visibleGroups(): NavGroup[] {
   })).filter((g) => g.items.length > 0);
 }
 
+function itemBadge(
+  item: NavItem,
+  salesCounts: SalesNavCounts | null,
+  platformCounts: PlatformNavCounts | null
+): number {
+  if (item.salesBadgeKey && salesCounts) {
+    const n = Number(salesCounts[item.salesBadgeKey] || 0);
+    return Number.isFinite(n) ? n : 0;
+  }
+  if (item.platformBadgeKey && platformCounts) {
+    const n = Number(platformCounts[item.platformBadgeKey] || 0);
+    return Number.isFinite(n) ? n : 0;
+  }
+  return 0;
+}
 
 function AdminLayoutInner() {
   const navigate = useNavigate();
@@ -123,6 +146,7 @@ function AdminLayoutInner() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [salesCounts, setSalesCounts] = useState<SalesNavCounts | null>(null);
+  const [platformCounts, setPlatformCounts] = useState<PlatformNavCounts | null>(null);
   const groups = useMemo(() => visibleGroups(), []);
   const activeGroupTitle = useMemo(() => {
     for (const g of groups) {
@@ -159,20 +183,27 @@ function AdminLayoutInner() {
     });
   }, [groups, activeGroupTitle]);
 
-  const refreshSalesCounts = useCallback(() => {
-    if (!adminCan('sales.read') && !adminCan('admin.full')) {
+  const refreshNavCounts = useCallback(() => {
+    if (adminCan('sales.read') || adminCan('admin.full')) {
+      void adminFetch<SalesNavCounts>('/api/admin/sales/nav-counts', { cache: 'no-store' as RequestCache })
+        .then(setSalesCounts)
+        .catch(() => setSalesCounts(null));
+    } else {
       setSalesCounts(null);
-      return;
     }
-    void adminFetch<SalesNavCounts>('/api/admin/sales/nav-counts', { cache: 'no-store' as RequestCache })
-      .then(setSalesCounts)
-      .catch(() => setSalesCounts(null));
+    if (adminCan('platform.read') || adminCan('platform.write') || adminCan('admin.full')) {
+      void adminFetch<PlatformNavCounts>('/api/admin/platform/nav-counts', { cache: 'no-store' as RequestCache })
+        .then(setPlatformCounts)
+        .catch(() => setPlatformCounts(null));
+    } else {
+      setPlatformCounts(null);
+    }
   }, []);
   useEffect(() => {
-    refreshSalesCounts();
-    const t = window.setInterval(refreshSalesCounts, 45_000);
+    refreshNavCounts();
+    const t = window.setInterval(refreshNavCounts, 45_000);
     return () => window.clearInterval(t);
-  }, [refreshSalesCounts, location.pathname]);
+  }, [refreshNavCounts, location.pathname]);
   const pageTitle = useMemo(() => {
     const hit = Object.keys(TITLE_MAP).sort((a, b) => b.length - a.length).find((k) => location.pathname.startsWith(k));
     return hit ? TITLE_MAP[hit] : 'پنل مدیریت';
@@ -196,10 +227,10 @@ function AdminLayoutInner() {
           <nav className="admin-nav" aria-label="منوی ادمین">
             {groups.map((group) => {
               const isOpen = Boolean(openGroups[group.title]);
-              const groupBadge = group.items.reduce((sum, item) => {
-                const n = item.badgeKey && salesCounts ? Number(salesCounts[item.badgeKey] || 0) : 0;
-                return sum + (Number.isFinite(n) ? n : 0);
-              }, 0);
+              const groupBadge = group.items.reduce(
+                (sum, item) => sum + itemBadge(item, salesCounts, platformCounts),
+                0
+              );
               return (
                 <div
                   key={group.title}
@@ -219,7 +250,7 @@ function AdminLayoutInner() {
                   </button>
                   <div className="admin-nav-group-items" hidden={!isOpen && !collapsed}>
                       {group.items.map((item) => {
-                        const badge = item.badgeKey && salesCounts ? Number(salesCounts[item.badgeKey] || 0) : 0;
+                        const badge = itemBadge(item, salesCounts, platformCounts);
                         return (
                           <NavLink
                             key={item.to}
