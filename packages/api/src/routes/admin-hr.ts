@@ -77,17 +77,76 @@ hrAdminRouter.get('/employees/:id', (req, res) => {
     res.status(404).json({ error: 'همکار پیدا نشد' });
     return;
   }
-  res.json({ employee: emp });
+  res.json({
+    employee: emp,
+    plainPassword: hr.getEmployeePlainPassword(id),
+  });
 });
 
-hrAdminRouter.post('/employees', requirePermission('hr.write'), (req, res) => {
+hrAdminRouter.post('/employees', requirePermission('hr.write'), async (req, res) => {
   const body = req.body || {};
   if (typeof body.firstName !== 'string' || typeof body.lastName !== 'string') {
     res.status(400).json({ error: 'نام و نام خانوادگی الزامی است' });
     return;
   }
-  const employee = hr.createEmployee(body);
-  res.status(201).json({ employee });
+  if (body.username != null && String(body.username).trim()) {
+    const u = hr.sanitizeHrUsername(String(body.username));
+    if (!u) {
+      res.status(400).json({ error: 'نام کاربری فقط حروف لاتین کوچک، عدد و ._- (۲ تا ۶۴ کاراکتر)' });
+      return;
+    }
+    body.username = u;
+  }
+  let employee;
+  try {
+    employee = hr.createEmployee(body);
+  } catch (err) {
+    res.status(400).json({ error: err instanceof Error ? err.message : 'خطا' });
+    return;
+  }
+  const generatedPassword = hr.getEmployeePlainPassword(employee.id);
+  let credentialsSmsSent = false;
+
+  try {
+    hr.createAdminAccount({
+      username: employee.username,
+      password: generatedPassword || String(body.password || 'HrTemp12'),
+      roleKey: 'support',
+      displayName: `${employee.firstName} ${employee.lastName}`.trim(),
+      isActive: employee.accessStatus !== 'غیر فعال',
+    });
+  } catch {
+    /* duplicate username or role missing — non-fatal */
+  }
+
+  const mobile = String(employee.mobile || body.mobile || '').trim();
+  if (mobile && generatedPassword) {
+    try {
+      const { candooSendWithSrcFallback, isCandooConfigured } = await import('../services/candoo');
+      if (isCandooConfigured()) {
+        const text = [
+          'اطلاعات ورود پت‌دیت:',
+          `نام کاربری: ${employee.username}`,
+          `ایمیل سازمانی: ${employee.orgEmail}`,
+          `رمز: ${generatedPassword}`,
+        ].join('\n');
+        const sent = await candooSendWithSrcFallback({
+          recipient: mobile,
+          body: text.slice(0, 700),
+          type: 0,
+        });
+        credentialsSmsSent = Boolean(sent?.ok);
+      }
+    } catch {
+      credentialsSmsSent = false;
+    }
+  }
+
+  res.status(201).json({
+    employee,
+    generatedPassword: generatedPassword || undefined,
+    credentialsSmsSent,
+  });
 });
 
 hrAdminRouter.patch('/employees/:id', requirePermission('hr.write'), (req, res) => {
@@ -96,12 +155,39 @@ hrAdminRouter.patch('/employees/:id', requirePermission('hr.write'), (req, res) 
     res.status(400).json({ error: 'شناسه نامعتبر' });
     return;
   }
-  const employee = hr.updateEmployee(id, req.body || {});
+  let employee;
+  try {
+    employee = hr.updateEmployee(id, req.body || {});
+  } catch (err) {
+    res.status(400).json({ error: err instanceof Error ? err.message : 'خطا' });
+    return;
+  }
   if (!employee) {
     res.status(404).json({ error: 'همکار پیدا نشد' });
     return;
   }
   res.json({ employee });
+});
+
+hrAdminRouter.post('/employees/:id/reset-password', requirePermission('hr.write'), (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id)) {
+    res.status(400).json({ error: 'شناسه نامعتبر' });
+    return;
+  }
+  const custom =
+    typeof req.body?.password === 'string' && req.body.password.trim()
+      ? String(req.body.password).trim()
+      : undefined;
+  const plainPassword = hr.resetEmployeePassword(id, custom);
+  if (plainPassword == null) {
+    res.status(404).json({ error: 'همکار پیدا نشد' });
+    return;
+  }
+  res.json({
+    plainPassword,
+    employee: hr.getEmployee(id),
+  });
 });
 
 hrAdminRouter.delete('/employees/:id', requirePermission('hr.write'), (req, res) => {
@@ -498,8 +584,13 @@ hrAdminRouter.get('/settings/benefits', (_req, res) => {
   res.json({ benefitDefs: hr.listBenefitDefs() });
 });
 
-hrAdminRouter.get('/requests', (_req, res) => {
-  res.json({ requests: hr.listRequests() });
+hrAdminRouter.get('/requests', (req, res) => {
+  const employeeId = req.query.employeeId ? Number(req.query.employeeId) : undefined;
+  res.json({
+    requests: hr.listRequests({
+      employeeId: Number.isFinite(employeeId as number) ? employeeId : undefined,
+    }),
+  });
 });
 
 hrAdminRouter.get('/rbac/roles', requirePermission('admin.full'), (_req, res) => {
@@ -669,11 +760,23 @@ hrAdminRouter.post('/onboarding', requirePermission('hr.write'), (req, res) => {
 
 hrAdminRouter.patch('/onboarding/:id/tasks', requirePermission('hr.write'), (req, res) => {
   const id = Number(req.params.id);
-  if (!Number.isFinite(id) || !Array.isArray(req.body?.tasks)) {
+  if (!Number.isFinite(id)) {
     res.status(400).json({ error: 'پارامتر نامعتبر' });
     return;
   }
-  const record = hrMod.updateOnboardingTasks(id, req.body.tasks);
+  const body = req.body || {};
+  const hasTasks = Array.isArray(body.tasks);
+  const hasAccess = Array.isArray(body.accessItems);
+  const hasEquip = Array.isArray(body.equipmentItems);
+  if (!hasTasks && !hasAccess && !hasEquip) {
+    res.status(400).json({ error: 'پارامتر نامعتبر' });
+    return;
+  }
+  const record = hrMod.updateOnboardingChecklists(id, {
+    tasks: hasTasks ? body.tasks : undefined,
+    accessItems: hasAccess ? body.accessItems : undefined,
+    equipmentItems: hasEquip ? body.equipmentItems : undefined,
+  });
   if (!record) {
     res.status(404).json({ error: 'رکورد پیدا نشد' });
     return;
@@ -710,7 +813,9 @@ hrAdminRouter.post('/requests/:id/advance', requirePermission('hr.write'), (req,
     return;
   }
   try {
-    const request = hrMod.advanceRequest(id);
+    const request = hrMod.advanceRequest(id, {
+      result: typeof req.body?.result === 'string' ? req.body.result : undefined,
+    });
     if (!request) {
       res.status(404).json({ error: 'درخواست پیدا نشد' });
       return;
@@ -734,6 +839,27 @@ hrAdminRouter.post('/requests/:id/reject', requirePermission('hr.write'), (req, 
     );
     if (!request) {
       res.status(404).json({ error: 'درخواست پیدا نشد' });
+      return;
+    }
+    res.json({ request });
+  } catch (err) {
+    res.status(400).json({ error: err instanceof Error ? err.message : 'خطا' });
+  }
+});
+
+hrAdminRouter.post('/requests/:id/resolve', requirePermission('hr.write'), (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id)) {
+    res.status(400).json({ error: 'شناسه نامعتبر' });
+    return;
+  }
+  try {
+    const request = hrMod.resolveRequest(id, {
+      result: typeof req.body?.result === 'string' ? req.body.result : undefined,
+      note: typeof req.body?.note === 'string' ? req.body.note : undefined,
+    });
+    if (!request) {
+      res.status(404).json({ error: 'تیکت پیدا نشد' });
       return;
     }
     res.json({ request });

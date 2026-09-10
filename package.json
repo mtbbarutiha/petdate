@@ -13,6 +13,7 @@
     "test:self": "bash ./scripts/ci-selftest.sh",
     "test:self:dash-hr": "cd packages/api && npx tsx src/admin-dashboard-activity.selftest.ts && npx tsx src/hr-ats-followup.selftest.ts && npx tsx src/hr-modules.selftest.ts && npx tsx src/admin-aggregate-dashboard.selftest.ts",
     "test:self:admin-pets": "cd packages/api && npx tsx src/admin-pets-owner-spend.selftest.ts",
+    "test:self:hr-onboard": "cd packages/api && npx tsx src/hr-onboard-colleague.selftest.ts",
     "predeploy-check": "bash ./scripts/predeploy-check.sh",
     "preview": "npm run preview -w @petdate/web",
     "infra:up": "docker compose up -d",

@@ -15,8 +15,8 @@ import {
 } from './hr-service';
 import {
   createOnboarding,
-  createRequest,
   createServiceEntry,
+  ensureSampleHrTickets,
   pushNotification,
   upsertCostEntry,
 } from './hr-modules';
@@ -489,11 +489,11 @@ export function seedHrSalesDemoIfNeeded(): void {
   const reqCount = Number(
     (db().prepare('SELECT COUNT(*) as c FROM hr_requests').get() as { c: number })?.c ?? 0
   );
-  if (reqCount === 0) {
-    for (const e of employees.slice(0, 3)) {
-      createRequest({ employeeId: e.id, type: 'مرخصی', days: 1, description: 'نمونه SEED' });
-      createRequest({ employeeId: e.id, type: 'تجهیزات', days: 0, description: 'لپ‌تاپ SEED' });
-    }
+  if (reqCount === 0 && employees.length) {
+    ensureSampleHrTickets(employees[0].id);
+  } else if (employees.length) {
+    // Ensure the three SAMPLE-HR-TICKET types exist for first employee (additive / idempotent)
+    ensureSampleHrTickets(employees[0].id);
   }
   for (const e of employees) {
     upsertCostEntry({
@@ -571,10 +571,12 @@ export function seedHrSalesDemoIfNeeded(): void {
     })?.c ?? 0
   );
   if (salesItemCount === 0 && agent && lead && manager) {
+    // Owner ids must be HR personnel codes (SEED-HR-*) so sales↔HR cross-links
+    // and avatar lookup by personnel_code keep working (username is lowercased).
     const owners = [
-      { id: agent.username, name: agent.name },
-      { id: lead.username, name: lead.name },
-      { id: manager.username, name: manager.name },
+      { id: agent.code, name: agent.name },
+      { id: lead.code, name: lead.name },
+      { id: manager.code, name: manager.name },
     ];
 
     let platformUsers: Array<{ id: number; name: string; phone: string | null }> = [];
