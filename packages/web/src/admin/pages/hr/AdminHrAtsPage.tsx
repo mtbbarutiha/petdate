@@ -12,7 +12,10 @@ import { adminCan } from '../../auth';
 import { AdminModal } from '../../AdminModal';
 import {
   JalaliDateSelect,
+  currentJalaliParts,
+  formatAdminFaDate,
   formatAdminFaDateTime,
+  gregorianIsoToJalaliParts,
   jalaliPartsAndTimeToIso,
   jalaliPartsToGregorianIso,
   type JalaliDateValue,
@@ -79,8 +82,14 @@ export function AdminHrAtsPage() {
   );
 
   const [openingModal, setOpeningModal] = useState(false);
+  const [editingOpeningId, setEditingOpeningId] = useState<number | null>(null);
   const [candidateModal, setCandidateModal] = useState(false);
-  const [openingForm, setOpeningForm] = useState({ title: '', department: '' });
+  const [openingForm, setOpeningForm] = useState({
+    title: '',
+    department: '',
+    jobBoard: '',
+  });
+  const [openingPostedAt, setOpeningPostedAt] = useState<JalaliDateValue>(null);
   const [candidateForm, setCandidateForm] = useState({
     firstName: '',
     lastName: '',
@@ -116,20 +125,60 @@ export function AdminHrAtsPage() {
     }
   }, [selectedId, selected?.followup.callRound]);
 
-  const addOpening = async (e: FormEvent) => {
+  const openNewOpening = () => {
+    setEditingOpeningId(null);
+    setOpeningForm({ title: '', department: '', jobBoard: '' });
+    setOpeningPostedAt(currentJalaliParts());
+    setOpeningModal(true);
+  };
+
+  const openEditOpening = (o: HrJobOpening) => {
+    setEditingOpeningId(o.id);
+    setOpeningForm({
+      title: o.title,
+      department: o.department || '',
+      jobBoard: o.jobBoard || '',
+    });
+    setOpeningPostedAt(gregorianIsoToJalaliParts(o.postedAt || o.createdAt));
+    setOpeningModal(true);
+  };
+
+  const saveOpening = async (e: FormEvent) => {
     e.preventDefault();
     if (!canWrite || !openingForm.title.trim()) return;
+    const postedAt = jalaliPartsToGregorianIso(openingPostedAt);
+    if (!postedAt) {
+      setError('تاریخ درج آگهی الزامی است');
+      return;
+    }
+    if (!openingForm.jobBoard) {
+      setError('انتخاب جاب برد الزامی است');
+      return;
+    }
     setBusy(true);
     try {
-      await adminFetch('/api/admin/hr/ats/openings', {
-        method: 'POST',
-        body: JSON.stringify({
-          title: openingForm.title.trim(),
-          department: openingForm.department.trim(),
-        }),
-      });
+      const body = {
+        title: openingForm.title.trim(),
+        department: openingForm.department.trim(),
+        jobBoard: openingForm.jobBoard,
+        postedAt,
+      };
+      if (editingOpeningId != null) {
+        await adminFetch(`/api/admin/hr/ats/openings/${editingOpeningId}`, {
+          method: 'PATCH',
+          body: JSON.stringify(body),
+        });
+      } else {
+        await adminFetch('/api/admin/hr/ats/openings', {
+          method: 'POST',
+          body: JSON.stringify(body),
+        });
+      }
       setOpeningModal(false);
-      setOpeningForm({ title: '', department: '' });
+      setEditingOpeningId(null);
+      setOpeningForm({ title: '', department: '', jobBoard: '' });
+      setOpeningPostedAt(null);
+      setError(null);
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'خطا');
@@ -440,7 +489,7 @@ export function AdminHrAtsPage() {
         </div>
         {canWrite ? (
           <div className="admin-toolbar" style={{ margin: 0 }}>
-            <button type="button" className="admin-btn" onClick={() => setOpeningModal(true)}>
+            <button type="button" className="admin-btn" onClick={openNewOpening}>
               آگهی جدید
             </button>
             <button
@@ -500,14 +549,17 @@ export function AdminHrAtsPage() {
                   <tr>
                     <th>عنوان</th>
                     <th>دپارتمان</th>
+                    <th>جاب برد</th>
+                    <th>تاریخ درج</th>
                     <th>وضعیت</th>
                     <th>ظرفیت</th>
+                    <th />
                   </tr>
                 </thead>
                 <tbody>
                   {openings.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="admin-empty">
+                      <td colSpan={7} className="admin-empty">
                         آگهی‌ای نیست
                       </td>
                     </tr>
@@ -516,10 +568,23 @@ export function AdminHrAtsPage() {
                       <tr key={o.id}>
                         <td>{o.title}</td>
                         <td>{o.department || '—'}</td>
+                        <td>{o.jobBoard || '—'}</td>
+                        <td>{formatAdminFaDate(o.postedAt || o.createdAt) || '—'}</td>
                         <td>
                           <span className={stagePillClass(o.status)}>{o.status}</span>
                         </td>
                         <td>{formatNumFa(o.openings)}</td>
+                        <td>
+                          {canWrite ? (
+                            <button
+                              type="button"
+                              className="admin-btn admin-btn--ghost"
+                              onClick={() => openEditOpening(o)}
+                            >
+                              ویرایش
+                            </button>
+                          ) : null}
+                        </td>
                       </tr>
                     ))
                   )}
@@ -549,7 +614,7 @@ export function AdminHrAtsPage() {
                   <th>نام</th>
                   <th>موبایل</th>
                   <th>موقعیت</th>
-                  <th>جاب‌بورد</th>
+                  <th>جاب برد</th>
                   <th>وضعیت</th>
                   <th />
                 </tr>
@@ -825,10 +890,13 @@ export function AdminHrAtsPage() {
 
       <AdminModal
         open={openingModal}
-        title="آگهی جدید"
-        onClose={() => setOpeningModal(false)}
+        title={editingOpeningId != null ? 'ویرایش آگهی' : 'آگهی جدید'}
+        onClose={() => {
+          setOpeningModal(false);
+          setEditingOpeningId(null);
+        }}
         as="form"
-        onSubmit={(e) => void addOpening(e)}
+        onSubmit={(e) => void saveOpening(e)}
         busy={busy}
         footer={
           <>
@@ -839,7 +907,10 @@ export function AdminHrAtsPage() {
               type="button"
               className="admin-btn admin-btn--ghost"
               disabled={busy}
-              onClick={() => setOpeningModal(false)}
+              onClick={() => {
+                setOpeningModal(false);
+                setEditingOpeningId(null);
+              }}
             >
               انصراف
             </button>
@@ -861,8 +932,33 @@ export function AdminHrAtsPage() {
             className="form-input"
             value={openingForm.department}
             onChange={(e) => setOpeningForm({ ...openingForm, department: e.target.value })}
+            placeholder="مثلاً فروش — نه جاب‌بورد"
           />
         </label>
+        <label>
+          <span className="form-label">جاب برد</span>
+          <select
+            className="form-input"
+            required
+            value={openingForm.jobBoard}
+            onChange={(e) => setOpeningForm({ ...openingForm, jobBoard: e.target.value })}
+          >
+            <option value="">انتخاب جاب برد</option>
+            {HR_JOB_BOARDS.map((b) => (
+              <option key={b} value={b}>
+                {b}
+              </option>
+            ))}
+          </select>
+        </label>
+        <JalaliDateSelect
+          label="تاریخ درج آگهی"
+          value={openingPostedAt}
+          onChange={setOpeningPostedAt}
+          allowEmpty={false}
+          yearsBack={5}
+          yearsForward={1}
+        />
       </AdminModal>
 
       <AdminModal
@@ -926,7 +1022,7 @@ export function AdminHrAtsPage() {
           />
         </label>
         <label>
-          <span className="form-label">جاب‌بورد</span>
+          <span className="form-label">جاب برد</span>
           <select
             className="form-input"
             value={candidateForm.jobBoard}

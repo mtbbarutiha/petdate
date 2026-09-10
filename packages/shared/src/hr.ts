@@ -163,17 +163,47 @@ export const HR_CANDIDATE_STAGES = [
   'بانک استعداد',
 ] as const;
 
-/** Job boards for ATS source dropdown */
+/** Job boards for ATS ads + candidate source (exact product list) */
 export const HR_JOB_BOARDS = [
-  'جاب‌ویژن',
   'جابینجا',
+  'جاب ویژن',
   'لینکدین',
-  'ای استخدام',
-  'ایران استخدام',
+  'دارای معرف',
   'دیوار',
   'شیپور',
   'ایران تلنت',
+  'ای استخدام',
+  'ایران استخدام',
 ] as const;
+
+export type HrJobBoard = (typeof HR_JOB_BOARDS)[number];
+
+/** True when value matches a known job board (incl. legacy ZWNJ spellings). */
+export function isHrJobBoard(value: string): boolean {
+  const v = String(value || '').trim();
+  if (!v) return false;
+  if ((HR_JOB_BOARDS as readonly string[]).includes(v)) return true;
+  // Legacy spellings previously used in the admin UI
+  const legacy: Record<string, HrJobBoard> = {
+    'جاب‌ویژن': 'جاب ویژن',
+    'جابویژن': 'جاب ویژن',
+    'ای تسخدام': 'ای استخدام',
+  };
+  return Boolean(legacy[v]);
+}
+
+/** Normalize job-board label to the canonical HR_JOB_BOARDS value. */
+export function normalizeHrJobBoard(value: string): string {
+  const v = String(value || '').trim();
+  if (!v) return '';
+  if ((HR_JOB_BOARDS as readonly string[]).includes(v)) return v;
+  const legacy: Record<string, HrJobBoard> = {
+    'جاب‌ویژن': 'جاب ویژن',
+    'جابویژن': 'جاب ویژن',
+    'ای تسخدام': 'ای استخدام',
+  };
+  return legacy[v] || v;
+}
 
 /** Phone follow-up outcomes (call1/2/3) */
 export const HR_CALL_OUTCOMES = [
@@ -455,9 +485,22 @@ export type HrJobOpening = {
   id: number;
   title: string;
   department: string;
+  /** Job board / source channel — separate from department */
+  jobBoard: string;
+  /** Gregorian ISO date (YYYY-MM-DD) when the ad was posted */
+  postedAt: string;
   status: string;
   openings: number;
   createdAt: string;
+};
+
+/** Per job-board stats for HR reports */
+export type HrJobBoardReportRow = {
+  name: string;
+  /** تعداد آگهی */
+  openings: number;
+  /** تعداد بانک آگهی (متقاضیان مرتبط با این جاب‌بورد) */
+  applicants: number;
 };
 
 export type HrCandidateCallLog = {

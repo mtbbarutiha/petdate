@@ -6,6 +6,7 @@
 import { randomUUID } from 'crypto';
 import {
   HR_ANNUAL_LEAVE_DAYS,
+  HR_JOB_BOARDS,
   effectiveCommissionPercent,
   incomeModelFixedAddon,
   isSalesJobTitle,
@@ -15,12 +16,14 @@ import {
   makeDefaultOnboardingTasks,
   makeDefaultOnboardingTrainingItems,
   nextRequestStatus,
+  normalizeHrJobBoard,
   onboardingDurationFor,
   type HrBenefitDef,
   type HrCareerLayer,
   type HrCockpitTask,
   type HrCostEntry,
   type HrIncomeModel,
+  type HrJobBoardReportRow,
   type HrMonthlyCostBreakdown,
   type HrNotification,
   type HrOnboardingAccessItem,
@@ -1499,6 +1502,33 @@ export function getReportsSummary(opts?: {
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
   const topProvince = byProvince[0] || null;
+
+  // Job-board stats: ad count + applicant-bank count per board
+  const openingsAll = listJobOpenings();
+  const candidatesAll = listCandidates();
+  const boardStats = new Map<string, HrJobBoardReportRow>();
+  for (const name of HR_JOB_BOARDS) {
+    boardStats.set(name, { name, openings: 0, applicants: 0 });
+  }
+  for (const o of openingsAll) {
+    const name = normalizeHrJobBoard(o.jobBoard || '');
+    if (!name) continue;
+    const row = boardStats.get(name) || { name, openings: 0, applicants: 0 };
+    row.openings += 1;
+    boardStats.set(name, row);
+  }
+  for (const c of candidatesAll) {
+    const name = normalizeHrJobBoard(c.jobBoard || c.source || '');
+    if (!name) continue;
+    const row = boardStats.get(name) || { name, openings: 0, applicants: 0 };
+    row.applicants += 1;
+    boardStats.set(name, row);
+  }
+  const byJobBoard = [...boardStats.values()].sort((a, b) => {
+    const score = b.openings + b.applicants - (a.openings + a.applicants);
+    return score !== 0 ? score : a.name.localeCompare(b.name, 'fa');
+  });
+
   return {
     generatedAt: new Date().toISOString(),
     personnelTotal: filtered.length,
@@ -1521,6 +1551,7 @@ export function getReportsSummary(opts?: {
     byGender,
     byMarital,
     byJobTitle,
+    byJobBoard,
     ageStats,
     topProvince,
     /** @deprecated maps — prefer chart arrays above */

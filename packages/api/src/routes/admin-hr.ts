@@ -310,10 +310,34 @@ hrAdminRouter.post('/ats/openings', requirePermission('hr.write'), (req, res) =>
   const opening = hr.createJobOpening({
     title,
     department: typeof req.body?.department === 'string' ? req.body.department : '',
+    jobBoard: typeof req.body?.jobBoard === 'string' ? req.body.jobBoard : '',
+    postedAt: typeof req.body?.postedAt === 'string' ? req.body.postedAt : '',
     status: typeof req.body?.status === 'string' ? req.body.status : 'باز',
     openings: typeof req.body?.openings === 'number' ? req.body.openings : 1,
   });
   res.status(201).json({ opening });
+});
+
+hrAdminRouter.patch('/ats/openings/:id', requirePermission('hr.write'), (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id)) {
+    res.status(400).json({ error: 'پارامتر نامعتبر' });
+    return;
+  }
+  const body = req.body || {};
+  const opening = hr.updateJobOpening(id, {
+    title: typeof body.title === 'string' ? body.title : undefined,
+    department: typeof body.department === 'string' ? body.department : undefined,
+    jobBoard: typeof body.jobBoard === 'string' ? body.jobBoard : undefined,
+    postedAt: typeof body.postedAt === 'string' ? body.postedAt : undefined,
+    status: typeof body.status === 'string' ? body.status : undefined,
+    openings: typeof body.openings === 'number' ? body.openings : undefined,
+  });
+  if (!opening) {
+    res.status(404).json({ error: 'آگهی پیدا نشد' });
+    return;
+  }
+  res.json({ opening });
 });
 
 hrAdminRouter.get('/ats/candidates', (req, res) => {
