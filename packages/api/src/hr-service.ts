@@ -1211,7 +1211,10 @@ export function resolveAdminActor(opts: {
   const adminPwd = (process.env.ADMIN_PASSWORD || 'petdate').trim() || 'petdate';
   const supportPwd = (process.env.ADMIN_SUPPORT_PASSWORD || '').trim();
 
-  // Username+password against accounts table
+  // Username+password against accounts table.
+  // If username is present but no matching account (e.g. env bootstrap returns
+  // username "admin" after LOGIN without a typed username), fall through to
+  // ADMIN_PASSWORD / SUPPORT_PASSWORD checks instead of hard-failing.
   if (opts.username?.trim()) {
     const row = db()
       .prepare('SELECT * FROM admin_accounts WHERE username = ? AND is_active = 1')
@@ -1226,7 +1229,6 @@ export function resolveAdminActor(opts: {
         username: String(row.username),
       };
     }
-    return null;
   }
 
   // Legacy single ADMIN_PASSWORD → full admin (bootstrap super-admin)

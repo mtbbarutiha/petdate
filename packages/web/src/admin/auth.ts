@@ -68,7 +68,11 @@ export async function loginAdmin(
     sessionStorage.setItem(ROLE_KEY, data.role || 'admin');
     sessionStorage.setItem(PERMS_KEY, JSON.stringify(data.permissions || []));
     sessionStorage.setItem(NAME_KEY, data.displayName || '');
-    if (data.username) setAdminUsername(data.username);
+    // Only persist username when the operator typed one. Env bootstrap login
+    // returns username "admin" which must NOT be sent as x-admin-username
+    // (that path looks up admin_accounts and 401s for ADMIN_PASSWORD).
+    if (username?.trim()) setAdminUsername(username.trim());
+    else clearAdminUsername();
     return { ok: true, role: data.role };
   } catch {
     clearAdminPassword();
