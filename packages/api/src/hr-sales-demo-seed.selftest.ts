@@ -46,10 +46,20 @@ async function main() {
   assert(dash.kpis.orgCostMonth > 0, 'HR org cost non-zero');
   assert(dash.kpis.serviceHoursMonth > 0, 'HR service hours non-zero');
   assert(dash.kpis.unreadNotifications > 0 || dash.kpis.openRequests > 0, 'HR cockpit signals');
+  assert(Array.isArray(dash.charts?.byDepartment) && dash.charts.byDepartment.length >= 1, 'charts.byDepartment');
+  assert(Array.isArray(dash.charts?.byContractStatus), 'charts.byContractStatus');
+  assert(Array.isArray(dash.recentLogs) && dash.recentLogs.length >= 1, 'recentLogs seeded');
+  assert(dash.recentLogs[0]?.personName, 'recentLogs have personName');
 
   const rec = hrMod.getRecruitmentDashboard();
   assert(rec.kpis.candidates >= 4, 'recruitment candidates');
   assert(rec.kpis.openJobs >= 1, 'open jobs');
+  assert(Array.isArray(rec.stageChart) && rec.stageChart.length >= 1, 'stageChart');
+
+  const reports = hrMod.getReportsSummary();
+  assert(Array.isArray(reports.byDept) && reports.byDept.length >= 1, 'reports.byDept');
+  assert(Array.isArray(reports.byStatus), 'reports.byStatus');
+  assert(Array.isArray(reports.byLocation), 'reports.byLocation');
 
   const admin = resolveAdminActor({ password: 'super-admin-bootstrap' });
   assert(admin, 'admin actor');
