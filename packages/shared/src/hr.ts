@@ -295,6 +295,96 @@ export type HrEmployeeLog = {
   newValue: string;
 };
 
+export const HR_MILITARY_STATUSES = ['پایان خدمت', 'مشمول', 'معافیت'] as const;
+
+export const HR_EDUCATION_LEVELS = [
+  'دیپلم',
+  'کاردانی',
+  'کارشناسی',
+  'کارشناسی ارشد',
+  'دکترا',
+  'فوق‌دکترا',
+  'حوزوی',
+  'سایر',
+] as const;
+
+/** Common Iranian university fields of study */
+export const HR_FIELDS_OF_STUDY = [
+  'مهندسی کامپیوتر',
+  'مهندسی نرم‌افزار',
+  'مهندسی فناوری اطلاعات',
+  'علوم کامپیوتر',
+  'مهندسی برق',
+  'مهندسی الکترونیک',
+  'مهندسی مخابرات',
+  'مهندسی مکانیک',
+  'مهندسی صنایع',
+  'مهندسی عمران',
+  'مهندسی شیمی',
+  'مهندسی مواد',
+  'مهندسی هوافضا',
+  'مهندسی پزشکی',
+  'معماری',
+  'شهرسازی',
+  'ریاضی',
+  'آمار',
+  'فیزیک',
+  'شیمی',
+  'زیست‌شناسی',
+  'مدیریت بازرگانی',
+  'مدیریت صنعتی',
+  'مدیریت دولتی',
+  'مدیریت منابع انسانی',
+  'مدیریت اجرایی (MBA)',
+  'اقتصاد',
+  'حسابداری',
+  'مالی',
+  'بانکداری',
+  'بازاریابی',
+  'حقوق',
+  'روان‌شناسی',
+  'مشاوره',
+  'علوم اجتماعی',
+  'علوم سیاسی',
+  'روابط بین‌الملل',
+  'زبان و ادبیات فارسی',
+  'زبان انگلیسی',
+  'زبان‌های خارجی',
+  'مترجمی',
+  'ارتباطات',
+  'روزنامه‌نگاری',
+  'روابط عمومی',
+  'گرافیک',
+  'طراحی صنعتی',
+  'هنرهای تجسمی',
+  'موسیقی',
+  'سینما و تئاتر',
+  'پزشکی',
+  'دندانپزشکی',
+  'داروسازی',
+  'پرستاری',
+  'مامایی',
+  'علوم آزمایشگاهی',
+  'دامپزشکی',
+  'کشاورزی',
+  'منابع طبیعی',
+  'تربیت بدنی',
+  'علوم تربیتی',
+  'آموزش ابتدایی',
+  'الهیات و معارف اسلامی',
+  'فقه و حقوق اسلامی',
+  'فلسفه',
+  'تاریخ',
+  'جغرافیا',
+  'گردشگری',
+  'گردشگری و هتلداری',
+  'کتابداری و اطلاع‌رسانی',
+  'علم اطلاعات و دانش‌شناسی',
+  'ایمنی صنعتی',
+  'محیط زیست',
+  'سایر',
+] as const;
+
 export type HrEmployee = {
   id: number;
   publicId: string;
@@ -328,6 +418,8 @@ export type HrEmployee = {
   contractStatus: string;
   accessStatus: string;
   username: string;
+  /** Mobile for SMS credentials / contact */
+  mobile: string;
   /** Profile photo URL (absolute https or same-origin path). */
   avatarUrl: string;
   incomeModelId?: number | null;
@@ -435,6 +527,15 @@ export const HR_ANNUAL_LEAVE_DAYS = 26;
 
 export type HrOnboardingTask = { id: string; label: string; done: boolean };
 
+export type HrOnboardingAccessItem = { id: string; label: string; done: boolean };
+
+export type HrOnboardingEquipmentItem = {
+  id: string;
+  label: string;
+  done: boolean;
+  assetNo: string;
+};
+
 export type HrOnboardingRecord = {
   id: number;
   candidateId?: number | null;
@@ -444,6 +545,10 @@ export type HrOnboardingRecord = {
   startDate: string;
   durationDays: number;
   tasks: HrOnboardingTask[];
+  accessItems: HrOnboardingAccessItem[];
+  equipmentItems: HrOnboardingEquipmentItem[];
+  /** True when row comes from ATS hire / approved candidate */
+  approvedHire?: boolean;
   createdAt: string;
 };
 
@@ -510,6 +615,28 @@ export const DEFAULT_ONBOARDING_TASKS: readonly string[] = [
   'آموزش خوش‌آمدگویی (Orientation)',
 ];
 
+export const DEFAULT_ONBOARDING_ACCESS: readonly string[] = [
+  'پنل ادمین',
+  'ایمیل سازمانی',
+  'CRM',
+  'فروش',
+  'درایو',
+  'اسلک / پیام‌رسان داخلی',
+  'VPN',
+  'سامانه حضور و غیاب',
+];
+
+export const DEFAULT_ONBOARDING_EQUIPMENT: readonly string[] = [
+  'لپ‌تاپ',
+  'مانیتور',
+  'موس',
+  'کیبورد',
+  'هدست',
+  'سیم‌کارت سازمانی',
+  'کارت تردد',
+  'کوله / کیف',
+];
+
 export function onboardingDurationFor(jobTitle: string): number {
   const t = String(jobTitle || '');
   if (t.includes('مدیر')) return 30;
@@ -522,6 +649,23 @@ export function makeDefaultOnboardingTasks(): HrOnboardingTask[] {
     id: `t${i + 1}`,
     label,
     done: false,
+  }));
+}
+
+export function makeDefaultOnboardingAccessItems(): HrOnboardingAccessItem[] {
+  return DEFAULT_ONBOARDING_ACCESS.map((label, i) => ({
+    id: `a${i + 1}`,
+    label,
+    done: false,
+  }));
+}
+
+export function makeDefaultOnboardingEquipmentItems(): HrOnboardingEquipmentItem[] {
+  return DEFAULT_ONBOARDING_EQUIPMENT.map((label, i) => ({
+    id: `e${i + 1}`,
+    label,
+    done: false,
+    assetNo: '',
   }));
 }
 

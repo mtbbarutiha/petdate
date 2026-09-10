@@ -262,6 +262,9 @@ function ensureHrEmployeeColumns(): void {
   if (!cols.has('avatar_url')) {
     d.exec(`ALTER TABLE hr_employees ADD COLUMN avatar_url TEXT NOT NULL DEFAULT ''`);
   }
+  if (!cols.has('mobile')) {
+    d.exec(`ALTER TABLE hr_employees ADD COLUMN mobile TEXT NOT NULL DEFAULT ''`);
+  }
 }
 
 /** Additive columns for ATS candidates / follow-up workflow — never wipe. */
@@ -488,6 +491,7 @@ function mapEmployee(row: Record<string, unknown>, withRelated = false): HrEmplo
     contractStatus: String(row.contract_status || ''),
     accessStatus: String(row.access_status || ''),
     username: String(row.username || row.personnel_code || ''),
+    mobile: String(row.mobile || ''),
     avatarUrl: String(row.avatar_url || ''),
     incomeModelId: row.income_model_id != null ? Number(row.income_model_id) : null,
     careerLayerId: row.career_layer_id != null ? Number(row.career_layer_id) : null,
@@ -530,6 +534,133 @@ function genHrPassword(): string {
   return `Hr${rand}${num}`;
 }
 
+/** Sanitize Latin username like admin accounts. Returns '' if invalid. */
+export function sanitizeHrUsername(raw: string): string {
+  const u = String(raw || '')
+    .trim()
+    .toLowerCase();
+  if (!/^[a-z0-9._-]{2,64}$/.test(u)) return '';
+  return u;
+}
+
+/** Jalali → Gregorian for contract expiry checks. */
+function jalaliToGregorianParts(jy: number, jm: number, jd: number): {
+  gy: number;
+  gm: number;
+  gd: number;
+} {
+  const jy2 = jy <= 979 ? jy : jy - 979;
+  let days =
+    365 * jy2 +
+    Math.floor(jy2 / 33) * 8 +
+    Math.floor(((jy2 % 33) + 3) / 4) +
+    78 +
+    jd +
+    (jm < 7 ? (jm - 1) * 31 : (jm - 7) * 30 + 186);
+  let gy = 1600 + 400 * Math.floor(days / 146097);
+  days %= 146097;
+  let leap = true;
+  if (days >= 36525) {
+    days--;
+    gy += 100 * Math.floor(days / 36524);
+    days %= 36524;
+    if (days >= 365) days++;
+    else leap = false;
+  }
+  gy += 4 * Math.floor(days / 1461);
+  days %= 1461;
+  if (days >= 366) {
+    leap = false;
+    days--;
+    gy += Math.floor(days / 365);
+    days %= 365;
+  }
+  const sal_a = [
+    0,
+    31,
+    leap || (gy % 4 === 0 && gy % 100 !== 0) || gy % 400 === 0 ? 29 : 28,
+    31,
+    30,
+    31,
+    30,
+    31,
+    31,
+    30,
+    31,
+    30,
+    31,
+  ];
+  let gm = 0;
+  for (gm = 1; gm <= 12 && days >= sal_a[gm]; gm++) days -= sal_a[gm];
+  return { gy, gm, gd: days + 1 };
+}
+
+/** True when endDate is strictly before today (Jalali YYYY/MM/DD or Gregorian YYYY-MM-DD). */
+export function isHrContractEndPast(endDate: string, now = new Date()): boolean {
+  const raw = String(endDate || '').trim();
+  if (!raw) return false;
+  const jalali = raw.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
+  if (jalali) {
+    const { gy, gm, gd } = jalaliToGregorianParts(
+      Number(jalali[1]),
+      Number(jalali[2]),
+      Number(jalali[3])
+    );
+    const end = new Date(gy, gm - 1, gd, 23, 59, 59);
+    return end.getTime() < now.getTime();
+  }
+  const greg = raw.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (greg) {
+    const end = new Date(Number(greg[1]), Number(greg[2]) - 1, Number(greg[3]), 23, 59, 59);
+    return end.getTime() < now.getTime();
+  }
+  return false;
+}
+
+/**
+ * Disable panel access for employees whose latest contract end date has passed.
+ * Also deactivates matching admin_accounts. Logs once per transition.
+ */
+export function enforceExpiredContractAccess(): number {
+  const d = db();
+  ensureHrEmployeeColumns();
+  const rows = d
+    .prepare(
+      `SELECT e.id AS employee_id, e.username, e.access_status, c.end_date
+       FROM hr_employees e
+       INNER JOIN hr_contracts c ON c.id = (
+         SELECT c2.id FROM hr_contracts c2
+         WHERE c2.employee_id = e.id
+         ORDER BY c2.start_date DESC, c2.id DESC
+         LIMIT 1
+       )
+       WHERE e.access_status != 'غیر فعال'`
+    )
+    .all() as Array<{
+    employee_id: number;
+    username: string;
+    access_status: string;
+    end_date: string;
+  }>;
+  let disabled = 0;
+  for (const row of rows) {
+    if (!isHrContractEndPast(row.end_date)) continue;
+    d.prepare(
+      `UPDATE hr_employees SET access_status = 'غیر فعال', updated_at = datetime('now') WHERE id = ?`
+    ).run(row.employee_id);
+    appendLog(row.employee_id, 'accessStatus', row.access_status || 'فعال', 'غیر فعال');
+    appendLog(row.employee_id, 'پایان اعتبار قرارداد', row.end_date || '', 'دسترسی غیرفعال شد');
+    const uname = String(row.username || '').trim().toLowerCase();
+    if (uname) {
+      d.prepare(`UPDATE admin_accounts SET is_active = 0 WHERE username = ? AND is_active = 1`).run(
+        uname
+      );
+    }
+    disabled += 1;
+  }
+  return disabled;
+}
+
 const TRACKED_FIELDS: Array<keyof HrEmployee> = [
   'jobTitle',
   'department',
@@ -556,6 +687,11 @@ export function listEmployees(opts?: {
   limit?: number;
   offset?: number;
 }): { total: number; employees: HrEmployee[] } {
+  try {
+    enforceExpiredContractAccess();
+  } catch {
+    /* non-fatal */
+  }
   const d = db();
   const where: string[] = [];
   const params: unknown[] = [];
@@ -656,9 +792,15 @@ export function deleteEmployee(id: number): boolean {
 
 export function createEmployee(input: HrEmployeeInput): HrEmployee {
   const d = db();
+  ensureHrEmployeeColumns();
   const personnelCode = (input.personnelCode || nextPersonnelCode()).trim();
-  const username = personnelCode;
+  const fromInput = sanitizeHrUsername(String(input.username || ''));
+  const fromCode = sanitizeHrUsername(personnelCode.toLowerCase().replace(/[^a-z0-9._-]/g, '-'));
+  const username = fromInput || fromCode || sanitizeHrUsername(`u${Date.now().toString(36)}`);
   const password = input.password?.trim() || genHrPassword();
+  const orgEmail =
+    String(input.orgEmail || '').trim() || (username ? `${username}@petdate.ir` : '');
+  const mobile = String(input.mobile || '').trim();
   let contractStatus = input.contractStatus || 'در حال همکاری';
   let accessStatus = input.accessStatus || 'فعال';
   if (contractStatus === 'عدم تمدید' || contractStatus === 'اخراج') {
@@ -673,9 +815,9 @@ export function createEmployee(input: HrEmployeeInput): HrEmployee {
         military_status, gmail, education_level, field_of_study, job_title, department,
         location, reporting_manager_title, reporting_manager_person_id, cooperation_type,
         benefits_json, extension, org_email, contract_status, access_status, username, password,
-        avatar_url, income_model_id, career_layer_id, permissions_json
+        avatar_url, income_model_id, career_layer_id, permissions_json, mobile
       ) VALUES (
-        ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
+        ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
       )`
     )
     .run(
@@ -705,32 +847,49 @@ export function createEmployee(input: HrEmployeeInput): HrEmployee {
       input.cooperationType || 'تمام وقت',
       JSON.stringify(benefits),
       input.extension || '',
-      input.orgEmail || '',
+      orgEmail,
       contractStatus,
       accessStatus,
-      username,
+      username || personnelCode,
       password,
       String(input.avatarUrl || '').trim(),
       input.incomeModelId ?? null,
       input.careerLayerId ?? null,
-      JSON.stringify(input.permissions || {})
+      JSON.stringify(input.permissions || {}),
+      mobile
     );
   const id = Number(info.lastInsertRowid);
   d.prepare('UPDATE hr_employees SET public_id = ? WHERE id = ?').run(makeEmployeePublicId(id), id);
   return getEmployee(id)!;
 }
 
+/** Plain password stored on hr_employees (used once for SMS / admin account bootstrap). */
+export function getEmployeePlainPassword(id: number): string {
+  const row = db().prepare('SELECT password FROM hr_employees WHERE id = ?').get(id) as
+    | { password?: string }
+    | undefined;
+  return String(row?.password || '');
+}
+
 export function updateEmployee(id: number, input: Partial<HrEmployeeInput>): HrEmployee | null {
   const prev = getEmployee(id);
   if (!prev) return null;
   const d = db();
+  ensureHrEmployeeColumns();
+  const usernameFromInput =
+    input.username !== undefined ? sanitizeHrUsername(String(input.username)) : '';
   const next: HrEmployee = {
     ...prev,
     ...input,
     id: prev.id,
     publicId: prev.publicId,
     uuid: prev.uuid,
-    username: (input.personnelCode || prev.personnelCode),
+    username:
+      usernameFromInput ||
+      (input.personnelCode
+        ? sanitizeHrUsername(String(input.personnelCode).toLowerCase()) || prev.username
+        : prev.username),
+    mobile: input.mobile !== undefined ? String(input.mobile || '').trim() : prev.mobile,
     benefits: input.benefits || prev.benefits,
     permissions: input.permissions || prev.permissions,
   };
@@ -745,7 +904,7 @@ export function updateEmployee(id: number, input: Partial<HrEmployeeInput>): HrE
       location=?, reporting_manager_title=?, reporting_manager_person_id=?, cooperation_type=?,
       benefits_json=?, extension=?, org_email=?, contract_status=?, access_status=?, username=?,
       password=COALESCE(?, password), avatar_url=?, income_model_id=?, career_layer_id=?, permissions_json=?,
-      updated_at=datetime('now')
+      mobile=?, updated_at=datetime('now')
      WHERE id=?`
   ).run(
     next.personnelCode,
@@ -782,6 +941,7 @@ export function updateEmployee(id: number, input: Partial<HrEmployeeInput>): HrE
     next.incomeModelId ?? null,
     next.careerLayerId ?? null,
     JSON.stringify(next.permissions),
+    next.mobile || '',
     id
   );
   for (const field of TRACKED_FIELDS) {
@@ -809,6 +969,13 @@ export function createContract(
   const emp = getEmployee(employeeId);
   if (!emp) return null;
   const d = db();
+  const priorCount = Number(
+    (
+      d.prepare('SELECT COUNT(*) as c FROM hr_contracts WHERE employee_id = ?').get(employeeId) as {
+        c: number;
+      }
+    )?.c ?? 0
+  );
   // Close previous open contracts
   if (input.startDate) {
     d.prepare(
@@ -844,6 +1011,14 @@ export function createContract(
   const id = Number(info.lastInsertRowid);
   const code = makeContractCode(id);
   d.prepare('UPDATE hr_contracts SET contract_code = ? WHERE id = ?').run(code, id);
+  if (priorCount > 0) {
+    appendLog(employeeId, 'تمدید قرارداد', '', input.startDate);
+  } else {
+    appendLog(employeeId, 'شروع قرارداد', '', input.startDate);
+  }
+  if (input.endDate) {
+    appendLog(employeeId, 'پایان قرارداد', '', String(input.endDate));
+  }
   // Optional job fields on renew
   if (input as { jobTitle?: string }) {
     const patch = input as Partial<HrEmployee> & Partial<HrContract>;
@@ -1478,6 +1653,11 @@ export function resolveAdminActor(opts: {
   password?: string;
   username?: string;
 }): AdminAuthActor | null {
+  try {
+    enforceExpiredContractAccess();
+  } catch {
+    /* non-fatal */
+  }
   const password = (opts.password || '').trim();
   if (!password) return null;
 
@@ -1566,6 +1746,9 @@ export const hrService = {
   deleteEmployee,
   listContracts,
   createContract,
+  enforceExpiredContractAccess,
+  sanitizeHrUsername,
+  getEmployeePlainPassword,
   listCareerLayers,
   listIncomeModels,
   listBenefitDefs,

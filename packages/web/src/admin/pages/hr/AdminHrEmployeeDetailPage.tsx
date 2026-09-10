@@ -1,17 +1,23 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import type { HrCareerLayer, HrContract, HrEmployee, HrIncomeModel } from '@petdate/shared';
 import {
   HR_ACCESS_STATUSES,
   HR_CONTRACT_STATUSES,
   HR_COOPERATION_TYPES,
+  HR_EDUCATION_LEVELS,
+  HR_FIELDS_OF_STUDY,
   HR_LOCATIONS,
+  HR_MILITARY_STATUSES,
+  IRAN_PROVINCES,
+  citiesForProvince,
 } from '@petdate/shared';
 import { adminFetch, formatNumFa } from '../../api';
 import { adminCan } from '../../auth';
 import { AdminModal } from '../../AdminModal';
 import { AdminIdChip } from '../../AdminIds';
 import { AdminThumb } from '../../AdminThumb';
+import { JalaliDateSelect, formatJalaliSlash, parseJalaliSlash } from '../../JalaliDateSelect';
 
 export function AdminHrEmployeeDetailPage() {
   const { id } = useParams();
@@ -23,7 +29,7 @@ export function AdminHrEmployeeDetailPage() {
   const [saved, setSaved] = useState(false);
   const [contractOpen, setContractOpen] = useState(false);
   const [contractBusy, setContractBusy] = useState(false);
-  const [contractForm, setContractForm] = useState({ startDate: '', salary: '0' });
+  const [contractForm, setContractForm] = useState({ startDate: '', endDate: '', salary: '0' });
   const [tab, setTab] = useState<'profile' | 'contracts' | 'logs'>('profile');
   const canWrite = adminCan('hr.write');
 
@@ -47,6 +53,11 @@ export function AdminHrEmployeeDetailPage() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  const cityOptions = useMemo(
+    () => (employee ? citiesForProvince(employee.province) : []),
+    [employee?.province]
+  );
 
   const patch = <K extends keyof HrEmployee>(key: K, value: HrEmployee[K]) => {
     setEmployee((e) => (e ? { ...e, [key]: value } : e));
@@ -72,13 +83,17 @@ export function AdminHrEmployeeDetailPage() {
     e?.preventDefault();
     if (!employee || !canWrite) return;
     const startDate = contractForm.startDate.trim();
-    if (!startDate) return;
+    const endDate = contractForm.endDate.trim();
+    if (!startDate || !endDate) {
+      setError('تاریخ شروع و پایان قرارداد الزامی است');
+      return;
+    }
     const salary = Number(String(contractForm.salary || '0').replace(/[^0-9]/g, '')) || 0;
     setContractBusy(true);
     try {
       await adminFetch<{ contract: HrContract }>(`/api/admin/hr/employees/${employee.id}/contracts`, {
         method: 'POST',
-        body: JSON.stringify({ startDate, salary }),
+        body: JSON.stringify({ startDate, endDate, salary }),
       });
       setContractOpen(false);
       await load();
@@ -215,13 +230,43 @@ export function AdminHrEmployeeDetailPage() {
               className="form-input"
               disabled={!canWrite}
               value={employee.gender}
-              onChange={(e) => patch('gender', e.target.value)}
+              onChange={(e) => {
+                const gender = e.target.value;
+                patch('gender', gender);
+                if (gender !== 'آقا') patch('militaryStatus', '');
+              }}
             >
               <option value="">—</option>
               <option value="آقا">آقا</option>
               <option value="خانم">خانم</option>
             </select>
           </label>
+          <div>
+            <span className="form-label">تاریخ تولد</span>
+            <JalaliDateSelect
+              value={parseJalaliSlash(employee.birthDate || '')}
+              disabled={!canWrite}
+              onChange={(v) => patch('birthDate', formatJalaliSlash(v))}
+            />
+          </div>
+          {employee.gender === 'آقا' ? (
+            <label>
+              <span className="form-label">وضعیت نظام وظیفه</span>
+              <select
+                className="form-input"
+                disabled={!canWrite}
+                value={employee.militaryStatus || ''}
+                onChange={(e) => patch('militaryStatus', e.target.value)}
+              >
+                <option value="">—</option>
+                {HR_MILITARY_STATUSES.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
           <label>
             <span className="form-label">کد ملی</span>
             <input
@@ -229,6 +274,34 @@ export function AdminHrEmployeeDetailPage() {
               disabled={!canWrite}
               value={employee.nationalId}
               onChange={(e) => patch('nationalId', e.target.value)}
+            />
+          </label>
+          <label>
+            <span className="form-label">نام کاربری</span>
+            <input
+              className="form-input"
+              dir="ltr"
+              disabled={!canWrite}
+              value={employee.username || ''}
+              onChange={(e) =>
+                patch(
+                  'username',
+                  e.target.value
+                    .toLowerCase()
+                    .replace(/[^a-z0-9._-]/g, '')
+                    .slice(0, 64)
+                )
+              }
+            />
+          </label>
+          <label>
+            <span className="form-label">موبایل</span>
+            <input
+              className="form-input"
+              dir="ltr"
+              disabled={!canWrite}
+              value={employee.mobile || ''}
+              onChange={(e) => patch('mobile', e.target.value)}
             />
           </label>
           <label>
@@ -333,6 +406,73 @@ export function AdminHrEmployeeDetailPage() {
             />
           </label>
           <label>
+            <span className="form-label">مدرک تحصیلی</span>
+            <select
+              className="form-input"
+              disabled={!canWrite}
+              value={employee.educationLevel || ''}
+              onChange={(e) => patch('educationLevel', e.target.value)}
+            >
+              <option value="">—</option>
+              {HR_EDUCATION_LEVELS.map((l) => (
+                <option key={l} value={l}>
+                  {l}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            <span className="form-label">رشته تحصیلی</span>
+            <select
+              className="form-input"
+              disabled={!canWrite}
+              value={employee.fieldOfStudy || ''}
+              onChange={(e) => patch('fieldOfStudy', e.target.value)}
+            >
+              <option value="">—</option>
+              {HR_FIELDS_OF_STUDY.map((f) => (
+                <option key={f} value={f}>
+                  {f}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            <span className="form-label">استان</span>
+            <select
+              className="form-input"
+              disabled={!canWrite}
+              value={employee.province || ''}
+              onChange={(e) => {
+                patch('province', e.target.value);
+                patch('city', '');
+              }}
+            >
+              <option value="">—</option>
+              {IRAN_PROVINCES.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            <span className="form-label">شهر</span>
+            <select
+              className="form-input"
+              disabled={!canWrite || !employee.province}
+              value={employee.city || ''}
+              onChange={(e) => patch('city', e.target.value)}
+            >
+              <option value="">—</option>
+              {cityOptions.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
             <span className="form-label">لایه مسیر شغلی</span>
             <select
               className="form-input"
@@ -368,15 +508,6 @@ export function AdminHrEmployeeDetailPage() {
               ))}
             </select>
           </label>
-          <label>
-            <span className="form-label">شهر</span>
-            <input
-              className="form-input"
-              disabled={!canWrite}
-              value={employee.city}
-              onChange={(e) => patch('city', e.target.value)}
-            />
-          </label>
           <label className="admin-span-2">
             <span className="form-label">آدرس</span>
             <input
@@ -394,7 +525,14 @@ export function AdminHrEmployeeDetailPage() {
           <div className="admin-header" style={{ marginBottom: 12 }}>
             <h2 style={{ margin: 0, fontSize: '1rem' }}>قراردادها</h2>
             {canWrite ? (
-              <button type="button" className="admin-btn" onClick={() => { setContractForm({ startDate: '', salary: '0' }); setContractOpen(true); }}>
+              <button
+                type="button"
+                className="admin-btn"
+                onClick={() => {
+                  setContractForm({ startDate: '', endDate: '', salary: '0' });
+                  setContractOpen(true);
+                }}
+              >
                 تمدید / قرارداد جدید
               </button>
             ) : null}
@@ -451,6 +589,18 @@ export function AdminHrEmployeeDetailPage() {
               ))
             )}
           </ul>
+          {(employee.contracts || []).length > 0 ? (
+            <>
+              <h3 className="admin-subsection-title">قراردادها در تاریخچه</h3>
+              <ul className="admin-log-list">
+                {(employee.contracts || []).map((c) => (
+                  <li key={`c-${c.id}`}>
+                    شروع: {c.startDate || '—'} · پایان: {c.endDate || 'باز'} · {c.contractCode}
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : null}
         </div>
       ) : null}
       <AdminModal
@@ -463,21 +613,44 @@ export function AdminHrEmployeeDetailPage() {
         busy={contractBusy}
         footer={
           <>
-            <button type="submit" className="admin-btn admin-btn--primary" disabled={contractBusy}>ذخیره</button>
-            <button type="button" className="admin-btn admin-btn--ghost" disabled={contractBusy} onClick={() => setContractOpen(false)}>انصراف</button>
+            <button type="submit" className="admin-btn admin-btn--primary" disabled={contractBusy}>
+              ذخیره
+            </button>
+            <button
+              type="button"
+              className="admin-btn admin-btn--ghost"
+              disabled={contractBusy}
+              onClick={() => setContractOpen(false)}
+            >
+              انصراف
+            </button>
           </>
         }
       >
-        <label>
-          <span className="form-label">تاریخ شروع</span>
-          <input className="form-input" required placeholder="1403/01/01" value={contractForm.startDate} onChange={(e) => setContractForm({ ...contractForm, startDate: e.target.value })} />
-        </label>
+        <div>
+          <span className="form-label">تاریخ شروع *</span>
+          <JalaliDateSelect
+            value={parseJalaliSlash(contractForm.startDate)}
+            onChange={(v) => setContractForm({ ...contractForm, startDate: formatJalaliSlash(v) })}
+          />
+        </div>
+        <div>
+          <span className="form-label">تاریخ پایان *</span>
+          <JalaliDateSelect
+            value={parseJalaliSlash(contractForm.endDate)}
+            onChange={(v) => setContractForm({ ...contractForm, endDate: formatJalaliSlash(v) })}
+          />
+        </div>
         <label>
           <span className="form-label">حقوق ماهانه (تومان)</span>
-          <input className="form-input" type="number" value={contractForm.salary} onChange={(e) => setContractForm({ ...contractForm, salary: e.target.value })} />
+          <input
+            className="form-input"
+            type="number"
+            value={contractForm.salary}
+            onChange={(e) => setContractForm({ ...contractForm, salary: e.target.value })}
+          />
         </label>
       </AdminModal>
-
     </div>
   );
 }

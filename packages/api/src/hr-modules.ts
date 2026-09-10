@@ -9,6 +9,8 @@ import {
   effectiveCommissionPercent,
   incomeModelFixedAddon,
   isSalesJobTitle,
+  makeDefaultOnboardingAccessItems,
+  makeDefaultOnboardingEquipmentItems,
   makeDefaultOnboardingTasks,
   nextRequestStatus,
   onboardingDurationFor,
@@ -19,6 +21,8 @@ import {
   type HrIncomeModel,
   type HrMonthlyCostBreakdown,
   type HrNotification,
+  type HrOnboardingAccessItem,
+  type HrOnboardingEquipmentItem,
   type HrOnboardingRecord,
   type HrOnboardingTask,
   type HrRequest,
@@ -103,6 +107,40 @@ export function ensureHrModuleTables(): void {
   d.exec(`CREATE INDEX IF NOT EXISTS idx_hr_onboarding_emp ON hr_onboarding_records(employee_id)`);
   d.exec(`CREATE INDEX IF NOT EXISTS idx_hr_cost_ym ON hr_cost_entries(year, month)`);
   d.exec(`CREATE INDEX IF NOT EXISTS idx_hr_service_ym ON hr_service_entries(year, month)`);
+
+  // Additive columns for access / equipment checklists — never wipe
+  const onboardCols = new Set(
+    (d.prepare(`PRAGMA table_info(hr_onboarding_records)`).all() as Array<{ name: string }>).map(
+      (c) => c.name
+    )
+  );
+  if (!onboardCols.has('access_json')) {
+    d.exec(`ALTER TABLE hr_onboarding_records ADD COLUMN access_json TEXT NOT NULL DEFAULT '[]'`);
+  }
+  if (!onboardCols.has('equipment_json')) {
+    d.exec(`ALTER TABLE hr_onboarding_records ADD COLUMN equipment_json TEXT NOT NULL DEFAULT '[]'`);
+  }
+}
+
+function normalizeAccessItems(raw: unknown): HrOnboardingAccessItem[] {
+  const parsed = parseJson<HrOnboardingAccessItem[]>(raw, []);
+  if (!Array.isArray(parsed) || parsed.length === 0) return makeDefaultOnboardingAccessItems();
+  return parsed.map((item, i) => ({
+    id: String(item?.id || `a${i + 1}`),
+    label: String(item?.label || ''),
+    done: Boolean(item?.done),
+  }));
+}
+
+function normalizeEquipmentItems(raw: unknown): HrOnboardingEquipmentItem[] {
+  const parsed = parseJson<HrOnboardingEquipmentItem[]>(raw, []);
+  if (!Array.isArray(parsed) || parsed.length === 0) return makeDefaultOnboardingEquipmentItems();
+  return parsed.map((item, i) => ({
+    id: String(item?.id || `e${i + 1}`),
+    label: String(item?.label || ''),
+    done: Boolean(item?.done),
+    assetNo: String(item?.assetNo ?? ''),
+  }));
 }
 
 function mapOnboarding(row: Record<string, unknown>): HrOnboardingRecord {
@@ -115,11 +153,35 @@ function mapOnboarding(row: Record<string, unknown>): HrOnboardingRecord {
     startDate: String(row.start_date || ''),
     durationDays: Number(row.duration_days || 3),
     tasks: parseJson<HrOnboardingTask[]>(row.tasks_json, makeDefaultOnboardingTasks()),
+    accessItems: normalizeAccessItems(row.access_json),
+    equipmentItems: normalizeEquipmentItems(row.equipment_json),
+    approvedHire: row.candidate_id != null,
     createdAt: String(row.created_at || ''),
   };
 }
 
 export function listOnboarding(): HrOnboardingRecord[] {
+  ensureHrModuleTables();
+  // Ensure hired ATS candidates without an onboarding row get one (additive)
+  const hired = listCandidates({ stage: 'استخدام‌شده' });
+  const existing = (
+    db()
+      .prepare('SELECT * FROM hr_onboarding_records ORDER BY id DESC')
+      .all() as Record<string, unknown>[]
+  ).map(mapOnboarding);
+  const byCand = new Set(
+    existing.filter((r) => r.candidateId != null).map((r) => Number(r.candidateId))
+  );
+  for (const cand of hired) {
+    if (byCand.has(cand.id)) continue;
+    const opening = listJobOpenings().find((o) => o.id === cand.jobOpeningId);
+    createOnboarding({
+      candidateId: cand.id,
+      name: `${cand.firstName} ${cand.lastName}`.trim(),
+      jobTitle: cand.jobTitle || opening?.title || '',
+      startDate: cand.followup?.startDate || cand.applicationDate || undefined,
+    });
+  }
   return (
     db()
       .prepare('SELECT * FROM hr_onboarding_records ORDER BY id DESC')
@@ -134,14 +196,17 @@ export function createOnboarding(input: {
   jobTitle?: string;
   startDate?: string;
 }): HrOnboardingRecord {
+  ensureHrModuleTables();
   const jobTitle = input.jobTitle || '';
   const durationDays = onboardingDurationFor(jobTitle);
   const tasks = makeDefaultOnboardingTasks();
+  const accessItems = makeDefaultOnboardingAccessItems();
+  const equipmentItems = makeDefaultOnboardingEquipmentItems();
   const info = db()
     .prepare(
       `INSERT INTO hr_onboarding_records
-        (candidate_id, employee_id, name, job_title, start_date, duration_days, tasks_json)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`
+        (candidate_id, employee_id, name, job_title, start_date, duration_days, tasks_json, access_json, equipment_json)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       input.candidateId ?? null,
@@ -150,7 +215,9 @@ export function createOnboarding(input: {
       jobTitle,
       input.startDate || new Date().toISOString().slice(0, 10),
       durationDays,
-      JSON.stringify(tasks)
+      JSON.stringify(tasks),
+      JSON.stringify(accessItems),
+      JSON.stringify(equipmentItems)
     );
   const id = Number(info.lastInsertRowid);
   return mapOnboarding(
@@ -160,8 +227,13 @@ export function createOnboarding(input: {
 
 export function updateOnboardingTasks(
   id: number,
-  tasks: HrOnboardingTask[]
+  tasks: HrOnboardingTask[],
+  extras?: {
+    accessItems?: HrOnboardingAccessItem[];
+    equipmentItems?: HrOnboardingEquipmentItem[];
+  }
 ): HrOnboardingRecord | null {
+  ensureHrModuleTables();
   const row = db().prepare('SELECT * FROM hr_onboarding_records WHERE id = ?').get(id) as
     | Record<string, unknown>
     | undefined;
@@ -169,6 +241,49 @@ export function updateOnboardingTasks(
   db()
     .prepare('UPDATE hr_onboarding_records SET tasks_json = ? WHERE id = ?')
     .run(JSON.stringify(tasks), id);
+  if (extras?.accessItems) {
+    db()
+      .prepare('UPDATE hr_onboarding_records SET access_json = ? WHERE id = ?')
+      .run(JSON.stringify(extras.accessItems), id);
+  }
+  if (extras?.equipmentItems) {
+    db()
+      .prepare('UPDATE hr_onboarding_records SET equipment_json = ? WHERE id = ?')
+      .run(JSON.stringify(extras.equipmentItems), id);
+  }
+  return mapOnboarding(
+    db().prepare('SELECT * FROM hr_onboarding_records WHERE id = ?').get(id) as Record<string, unknown>
+  );
+}
+
+export function updateOnboardingChecklists(
+  id: number,
+  input: {
+    tasks?: HrOnboardingTask[];
+    accessItems?: HrOnboardingAccessItem[];
+    equipmentItems?: HrOnboardingEquipmentItem[];
+  }
+): HrOnboardingRecord | null {
+  ensureHrModuleTables();
+  const row = db().prepare('SELECT * FROM hr_onboarding_records WHERE id = ?').get(id) as
+    | Record<string, unknown>
+    | undefined;
+  if (!row) return null;
+  if (input.tasks) {
+    db()
+      .prepare('UPDATE hr_onboarding_records SET tasks_json = ? WHERE id = ?')
+      .run(JSON.stringify(input.tasks), id);
+  }
+  if (input.accessItems) {
+    db()
+      .prepare('UPDATE hr_onboarding_records SET access_json = ? WHERE id = ?')
+      .run(JSON.stringify(input.accessItems), id);
+  }
+  if (input.equipmentItems) {
+    db()
+      .prepare('UPDATE hr_onboarding_records SET equipment_json = ? WHERE id = ?')
+      .run(JSON.stringify(input.equipmentItems), id);
+  }
   return mapOnboarding(
     db().prepare('SELECT * FROM hr_onboarding_records WHERE id = ?').get(id) as Record<string, unknown>
   );

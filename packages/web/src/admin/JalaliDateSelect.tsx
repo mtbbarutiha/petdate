@@ -99,6 +99,25 @@ export function jalaliPartsToGregorianIso(parts: {
 
 export type JalaliDateValue = { year: number; month: number; day: number } | null;
 
+/** Parse `YYYY/MM/DD` Jalali string → parts (or null). */
+export function parseJalaliSlash(raw: string): JalaliDateValue {
+  const m = String(raw || '').trim().match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
+  if (!m) return null;
+  const year = Number(m[1]);
+  const month = Number(m[2]);
+  const day = Number(m[3]);
+  if (!year || month < 1 || month > 12 || day < 1) return null;
+  return { year, month, day };
+}
+
+/** Format parts → `YYYY/MM/DD` (empty string when null). */
+export function formatJalaliSlash(parts: JalaliDateValue): string {
+  if (!parts) return '';
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${parts.year}/${pad(parts.month)}/${pad(parts.day)}`;
+}
+
+
 type Props = {
   value: JalaliDateValue;
   onChange: (next: JalaliDateValue) => void;
@@ -106,6 +125,7 @@ type Props = {
   /** Allow clearing to empty */
   allowEmpty?: boolean;
   className?: string;
+  disabled?: boolean;
 };
 
 /**
@@ -118,6 +138,7 @@ export function JalaliDateSelect({
   label,
   allowEmpty = true,
   className = '',
+  disabled = false,
 }: Props) {
   const cur = useMemo(() => currentJalaliParts(), []);
   const years = useMemo(() => {
@@ -155,6 +176,7 @@ export function JalaliDateSelect({
         <select
           className="admin-select"
           aria-label="روز"
+          disabled={disabled}
           value={day || ''}
           onChange={(e) => setPart('day', e.target.value)}
         >
@@ -168,6 +190,7 @@ export function JalaliDateSelect({
         <select
           className="admin-select"
           aria-label="ماه"
+          disabled={disabled}
           value={month || ''}
           onChange={(e) => setPart('month', e.target.value)}
         >
@@ -181,6 +204,7 @@ export function JalaliDateSelect({
         <select
           className="admin-select"
           aria-label="سال"
+          disabled={disabled}
           value={year || ''}
           onChange={(e) => setPart('year', e.target.value)}
         >
