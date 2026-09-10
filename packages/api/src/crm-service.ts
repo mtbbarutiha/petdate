@@ -57,6 +57,10 @@ function db() {
 function nowIso(): string {
   return new Date().toISOString();
 }
+/** Active SLA policy from persisted CRM settings (falls back to defaults). */
+function activeSlaPolicy(): Record<string, [number, number]> {
+  return getCrmSettings().slaPolicy;
+}
 function parseJson<T>(raw: unknown, fallback: T): T {
   if (raw == null || raw === '') return fallback;
   try {
@@ -379,6 +383,7 @@ function seedCrmDefaults(): void {
   };
   setIfMissing('slaPolicy', CRM_SLA_POLICY);
   setIfMissing('reasonTree', CRM_REASON_TREE);
+  setIfMissing('deletedReasons', []);
   setIfMissing('scorecard', CRM_SCORECARD);
   setIfMissing('criticalErrors', CRM_CRITICAL_ERRORS);
   setIfMissing('surveyQuestions', CRM_SURVEY_QUESTIONS);
@@ -558,11 +563,11 @@ function enrichTicket(row: Record<string, unknown>): CrmTicket {
   const status = String(row.status || 'جدید');
   const priority = String(row.priority || 'متوسط');
   const createdAt = String(row.created_at);
-  const slaDue = String(row.sla_due || crmSlaDueIso(priority, createdAt));
+  const slaDue = String(row.sla_due || crmSlaDueIso(priority, createdAt, activeSlaPolicy()));
   const firstResponseDueAt =
     row.first_response_due_at != null && String(row.first_response_due_at)
       ? String(row.first_response_due_at)
-      : crmFirstResponseDueIso(priority, createdAt);
+      : crmFirstResponseDueIso(priority, createdAt, activeSlaPolicy());
   const slaState = crmSlaState({ status, slaDue });
   const unassigned = !row.agent_id;
   const customerId = Number(row.customer_id || 0);
@@ -1132,8 +1137,8 @@ export function createTicket(
   }
   const priority = String(input.priority || 'متوسط');
   const createdAt = nowIso();
-  const slaDue = crmSlaDueIso(priority, createdAt);
-  const firstDue = crmFirstResponseDueIso(priority, createdAt);
+  const slaDue = crmSlaDueIso(priority, createdAt, activeSlaPolicy());
+  const firstDue = crmFirstResponseDueIso(priority, createdAt, activeSlaPolicy());
   const queueId = String(input.queueId || 'q_support');
   const queue = crmQueueOf(queueId);
   const teamId = input.teamId != null ? input.teamId : queue?.team || null;
@@ -1330,8 +1335,8 @@ export function patchTicket(
   }
 
   if (input.priority != null && input.priority !== ticket.priority) {
-    slaDue = crmSlaDueIso(priority, ticket.createdAt);
-    firstResponseDueAt = crmFirstResponseDueIso(priority, nowIso());
+    slaDue = crmSlaDueIso(priority, ticket.createdAt, activeSlaPolicy());
+    firstResponseDueAt = crmFirstResponseDueIso(priority, nowIso(), activeSlaPolicy());
   }
 
   if (status === 'حل‌شده') {
@@ -1349,8 +1354,8 @@ export function patchTicket(
     reopenedCount += 1;
     resolvedAt = null;
     closedAt = null;
-    slaDue = crmSlaDueIso(priority, nowIso());
-    firstResponseDueAt = crmFirstResponseDueIso(priority, nowIso());
+    slaDue = crmSlaDueIso(priority, nowIso(), activeSlaPolicy());
+    firstResponseDueAt = crmFirstResponseDueIso(priority, nowIso(), activeSlaPolicy());
   }
 
   if (status === 'بسته‌شده') closedAt = nowIso();
@@ -2080,7 +2085,7 @@ export function createQaReview(
   const inter = getInteraction(input.interactionId);
   if (!inter) throw new Error('تعامل یافت نشد');
   const critical = Array.isArray(input.critical) ? input.critical.map(String) : [];
-  const total = crmQaTotal(input.scores || {}, critical);
+  const total = crmQaTotal(input.scores || {}, critical, getCrmSettings().scorecard);
   const coaching = Boolean(input.coaching) || critical.length > 0;
   const info = db()
     .prepare(
@@ -2475,6 +2480,7 @@ export function getCrmSettings(): CrmSettings {
   return {
     slaPolicy: read('slaPolicy', CRM_SLA_POLICY as unknown as Record<string, [number, number]>),
     reasonTree: read('reasonTree', CRM_REASON_TREE),
+    deletedReasons: read('deletedReasons', [] as CrmSettings['deletedReasons']),
     scorecard: read('scorecard', [...CRM_SCORECARD]),
     criticalErrors: read('criticalErrors', [...CRM_CRITICAL_ERRORS]),
     surveyQuestions: read('surveyQuestions', [...CRM_SURVEY_QUESTIONS]),
@@ -2487,6 +2493,7 @@ export function updateCrmSettings(patch: Partial<CrmSettings>): CrmSettings {
   const next: CrmSettings = {
     slaPolicy: patch.slaPolicy ?? cur.slaPolicy,
     reasonTree: patch.reasonTree ?? cur.reasonTree,
+    deletedReasons: patch.deletedReasons ?? cur.deletedReasons,
     scorecard: patch.scorecard ?? cur.scorecard,
     criticalErrors: patch.criticalErrors ?? cur.criticalErrors,
     surveyQuestions: patch.surveyQuestions ?? cur.surveyQuestions,
@@ -2497,6 +2504,7 @@ export function updateCrmSettings(patch: Partial<CrmSettings>): CrmSettings {
   );
   upsert.run('slaPolicy', JSON.stringify(next.slaPolicy));
   upsert.run('reasonTree', JSON.stringify(next.reasonTree));
+  upsert.run('deletedReasons', JSON.stringify(next.deletedReasons));
   upsert.run('scorecard', JSON.stringify(next.scorecard));
   upsert.run('criticalErrors', JSON.stringify(next.criticalErrors));
   upsert.run('surveyQuestions', JSON.stringify(next.surveyQuestions));

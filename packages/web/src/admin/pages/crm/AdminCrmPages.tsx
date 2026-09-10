@@ -8,7 +8,6 @@ import type {
   CrmInteraction,
   CrmQaReview,
   CrmReferral,
-  CrmSettings,
   CrmSurvey,
   CrmTicket,
 } from '@petdate/shared';
@@ -274,6 +273,7 @@ export function AdminCrmCallsPage() {
   const wrapId = search.get('wrap');
   const [interactions, setInteractions] = useState<CrmInteraction[]>([]);
   const [mobile, setMobile] = useState('0912');
+  const [reasonTree, setReasonTree] = useState(CRM_REASON_TREE);
   const [wrapForm, setWrapForm] = useState({
     reason: 'اطلاعات محصول',
     subReason: 'ویژگی‌ها',
@@ -289,9 +289,18 @@ export function AdminCrmCallsPage() {
   const load = () => void adminFetch<{ interactions: CrmInteraction[] }>('/api/admin/crm/calls').then((d) => setInteractions(d.interactions));
   useEffect(() => { load(); }, []);
   useEffect(() => { if (wrapId) setActiveWrap(Number(wrapId)); }, [wrapId]);
+  useEffect(() => {
+    void adminFetch<{ settings: { reasonTree: typeof CRM_REASON_TREE } }>('/api/admin/crm/settings')
+      .then((d) => {
+        if (d.settings?.reasonTree && Object.keys(d.settings.reasonTree).length) {
+          setReasonTree(d.settings.reasonTree);
+        }
+      })
+      .catch(() => { /* keep defaults */ });
+  }, []);
 
-  const reasons = Object.keys(CRM_REASON_TREE);
-  const subReasons = Object.keys(CRM_REASON_TREE[wrapForm.reason] || { عمومی: [] });
+  const reasons = Object.keys(reasonTree);
+  const subReasons = Object.keys(reasonTree[wrapForm.reason] || { عمومی: [] });
 
   return (
     <div className="admin-page">
@@ -334,7 +343,7 @@ export function AdminCrmCallsPage() {
         }}>
           <h2>ثبت Wrap-up #{activeWrap}</h2>
           <label><span className="form-label">دلیل</span>
-            <select className="form-input" value={wrapForm.reason} onChange={(e) => setWrapForm({ ...wrapForm, reason: e.target.value, subReason: Object.keys(CRM_REASON_TREE[e.target.value] || {})[0] || '' })}>
+            <select className="form-input" value={wrapForm.reason} onChange={(e) => setWrapForm({ ...wrapForm, reason: e.target.value, subReason: Object.keys(reasonTree[e.target.value] || {})[0] || '' })}>
               {reasons.map((r) => <option key={r} value={r}>{r}</option>)}
             </select>
           </label>
@@ -532,36 +541,4 @@ export function AdminCrmQaPage() {
 }
 
 export { AdminCrmReportsPage } from './AdminCrmReportsPage';
-
-export function AdminCrmSettingsPage() {
-  const [settings, setSettings] = useState<CrmSettings | null>(null);
-  const canAdmin = adminCan('crm.admin');
-  useEffect(() => {
-    void adminFetch<{ settings: CrmSettings }>('/api/admin/crm/settings').then((d) => setSettings(d.settings));
-  }, []);
-  if (!settings) return <div className="admin-page"><p>در حال بارگذاری…</p></div>;
-  return (
-    <div className="admin-page">
-      <header className="admin-header"><div><h1>تنظیمات امور مشتریان</h1><p>SLA · دلایل · اسکورکارت</p></div></header>
-      <section className="admin-card">
-        <div className="admin-card-head"><h2>سیاست SLA (ساعت حل)</h2></div>
-        <ul>{Object.entries(settings.slaPolicy).map(([k, v]) => (
-          <li key={k}>{k}: پاسخ اول {formatNumFa(v[0])} دقیقه · حل {formatNumFa(v[1])} ساعت</li>
-        ))}</ul>
-      </section>
-      <section className="admin-card" style={{ marginTop: 12 }}>
-        <div className="admin-card-head"><h2>درخت دلایل</h2></div>
-        <pre style={{ whiteSpace: 'pre-wrap', fontSize: 12 }}>{JSON.stringify(settings.reasonTree, null, 2)}</pre>
-      </section>
-      <section className="admin-card" style={{ marginTop: 12 }}>
-        <div className="admin-card-head"><h2>اسکورکارت QA</h2></div>
-        <ul>{settings.scorecard.map((s) => <li key={s.key}>{s.label} · وزن {formatNumFa(s.weight)}</li>)}</ul>
-      </section>
-      {canAdmin ? (
-        <button type="button" className="admin-btn" style={{ marginTop: 12 }} onClick={() => void adminFetch('/api/admin/crm/sla/watch', { method: 'POST', body: '{}' }).then((d) => alert(JSON.stringify(d)))}>
-          اجرای ناظر SLA
-        </button>
-      ) : null}
-    </div>
-  );
-}
+export { AdminCrmSettingsPage } from './AdminCrmSettingsPage';

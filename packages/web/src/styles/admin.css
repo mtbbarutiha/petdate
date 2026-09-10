@@ -4796,5 +4796,125 @@ body:has(.admin-app) {
   }
   .admin-app .sales-pipe-detail-grid {
     grid-template-columns: 1fr;
+/* ── CRM settings: SLA / reasons tree / scorecard ── */
+.admin-app .crm-settings-page .admin-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+.admin-app .crm-settings-page .admin-card-head h2 {
+  margin-left: auto;
+}
+.admin-app .crm-settings-toast {
+  position: sticky;
+  top: 8px;
+  z-index: 20;
+  margin-bottom: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: #e8faf3;
+  border: 1px solid #b7ebd9;
+  color: #0f9f7a;
+  font-size: 13px;
+}
+.admin-app .crm-settings-mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+}
+.admin-app .crm-settings-weight-warn {
+  color: #c47a00 !important;
+}
+.admin-app .crm-reason-tree {
+  display: grid;
+  gap: 6px;
+}
+.admin-app .crm-reason-node--l1 {
+  border: 1px solid var(--admin-border);
+  border-radius: 12px;
+  background: #fbfcfe;
+  padding: 8px 10px;
+}
+.admin-app .crm-reason-node--l2 {
+  margin: 6px 18px 4px 0;
+  padding: 6px 8px;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px dashed var(--admin-border);
+}
+.admin-app .crm-reason-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  justify-content: space-between;
+}
+.admin-app .crm-reason-row--leaf {
+  padding: 4px 0;
+  border-bottom: 1px solid #eef1f5;
+}
+.admin-app .crm-reason-row--leaf:last-child {
+  border-bottom: 0;
+}
+.admin-app .crm-reason-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+  text-align: right;
+  color: inherit;
+  padding: 4px 0;
+}
+.admin-app .crm-reason-chevron {
+  color: var(--admin-muted);
+  width: 1em;
+  text-align: center;
+}
+.admin-app .crm-reason-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.admin-app .crm-reason-leaves {
+  list-style: none;
+  margin: 6px 22px 0 0;
+  padding: 0;
+}
+.admin-app .crm-reason-leaf-label {
+  font-size: 13px;
+}
+.admin-app .crm-reason-deleted {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--admin-border);
+}
+.admin-app .crm-reason-deleted-list {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.admin-app .crm-reason-deleted-list li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #f7f8fb;
+  border: 1px solid var(--admin-border);
+  font-size: 13px;
+}
+@media (max-width: 720px) {
+  .admin-app .crm-reason-node--l2 {
+    margin-right: 8px;
+  }
+  .admin-app .crm-reason-leaves {
+    margin-right: 8px;
   }
 }

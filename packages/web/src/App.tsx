@@ -289,7 +289,7 @@ const AdminCrmTicketingPage = lazy(() => import('./admin/pages/crm/AdminCrmTicke
 const AdminCrmSmsPage = lazy(() => import('./admin/pages/crm/AdminCrmPages').then((m) => ({ default: m.AdminCrmSmsPage })));
 const AdminCrmQaPage = lazy(() => import('./admin/pages/crm/AdminCrmPages').then((m) => ({ default: m.AdminCrmQaPage })));
 const AdminCrmReportsPage = lazy(() => import('./admin/pages/crm/AdminCrmReportsPage').then((m) => ({ default: m.AdminCrmReportsPage })));
-const AdminCrmSettingsPage = lazy(() => import('./admin/pages/crm/AdminCrmPages').then((m) => ({ default: m.AdminCrmSettingsPage })));
+const AdminCrmSettingsPage = lazy(() => import('./admin/pages/crm/AdminCrmSettingsPage'));
 
 
 function RouteFallback() {
