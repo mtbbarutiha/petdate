@@ -792,6 +792,7 @@
 }
 .admin-app .admin-table-wrap {
   overflow: auto;
+  direction: rtl;
   /* Keep last columns (احراز / وضعیت / عملیات) from clipping at the edge */
   padding-inline-end: 4px;
 }
@@ -800,19 +801,25 @@
   border-collapse: collapse;
   font-size: 0.88rem;
   min-width: 960px;
+  direction: rtl;
+  text-align: right;
 }
 .admin-app .admin-table th,
 .admin-app .admin-table td {
   padding: 10px 8px;
   border-bottom: 1px solid var(--admin-border);
-  text-align: start;
+  text-align: right;
   vertical-align: middle;
 }
 .admin-app .admin-table th {
   color: var(--admin-muted);
   font-weight: 650;
   font-size: 0.78rem;
-  white-space: nowrap;
+  /* Allow Persian headers to wrap instead of clipping in sticky/scroll wraps */
+  white-space: normal;
+  overflow-wrap: break-word;
+  line-height: 1.35;
+  hyphens: manual;
 }
 .admin-app .admin-table--dense th,
 .admin-app .admin-table--dense td {
@@ -822,12 +829,56 @@
 .admin-app .admin-table td:last-child {
   padding-inline-end: 14px;
 }
+/*
+ * Pack cell stacks / LTR islands to the RTL inline-start (right).
+ * Block-level dir=ltr children otherwise stretch full-width and look
+ * left-aligned next to Persian columns — the common "tables not aligned" bug.
+ * Use inline-flex (not margin-inline auto): child's own direction:ltr would
+ * flip logical margins and pin the island to the physical left.
+ * Entity cells stay full-width so titles can ellipsis inside the column.
+ */
+.admin-app .admin-table td > .admin-cell-compact,
+.admin-app .admin-table td > .admin-id-chip,
+.admin-app .admin-table td > .admin-party-pair {
+  display: inline-flex;
+  flex-direction: column;
+  width: max-content;
+  max-width: 100%;
+  vertical-align: middle;
+}
+.admin-app .admin-table td > .admin-row-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  width: max-content;
+  max-width: 100%;
+  vertical-align: middle;
+}
+.admin-app .admin-table .admin-entity-cell,
+.admin-app .admin-table .admin-row-actions {
+  justify-content: flex-start;
+}
+.admin-app .admin-table .admin-id-chip {
+  align-items: flex-start;
+}
+/* Mono / LTR codes stay readable LTR; sit on the RTL start edge (right) with other cells */
+.admin-app .admin-table .admin-mono,
+.admin-app .admin-table [dir='ltr'] {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+.admin-app .admin-table td.admin-mono,
+.admin-app .admin-table th.admin-mono {
+  direction: ltr;
+  unicode-bidi: isolate;
+  text-align: right;
+}
 .admin-app .admin-cell-compact {
   display: flex;
   flex-direction: column;
   gap: 2px;
   line-height: 1.25;
   min-width: 0;
+  align-items: flex-start;
 }
 .admin-app .admin-cell-nowrap {
   white-space: nowrap;
@@ -2030,6 +2081,8 @@ body:has(.admin-app) {
   min-width: 720px;
   width: 100%;
   font-size: 0.875rem;
+  direction: rtl;
+  text-align: right;
 }
 
 .admin-app .admin-table thead th {
@@ -2040,11 +2093,17 @@ body:has(.admin-app) {
   border-bottom: 1px solid var(--admin-border);
   padding: 11px 12px;
   font-size: 0.74rem;
-  letter-spacing: 0.02em;
+  /* No Latin letter-spacing — it widens Persian headers and invites clipping */
+  letter-spacing: 0;
+  text-align: right;
+  white-space: normal;
+  overflow-wrap: break-word;
+  line-height: 1.35;
 }
 
 .admin-app .admin-table tbody td {
   padding: 11px 12px;
+  text-align: right;
 }
 
 .admin-app .admin-table tbody tr:hover td {
@@ -2054,6 +2113,11 @@ body:has(.admin-app) {
 .admin-app .admin-table--dense thead th,
 .admin-app .admin-table--dense tbody td {
   padding: 8px 10px;
+}
+
+/* Dense numeric/ID headers can stay single-line when short */
+.admin-app .admin-table th.admin-cell-nowrap {
+  white-space: nowrap;
 }
 
 /* Controls: buttons, fields, badges — soft radius, not pill-slop */

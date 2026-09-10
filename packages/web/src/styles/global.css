@@ -2207,12 +2207,14 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 .admin-card-head h2 { font-size: 1rem; font-weight: 700; }
 .admin-card-head a { font-size: 0.85rem; font-weight: 600; color: var(--primary); }
 
-.admin-table-wrap { overflow-x: auto; }
+.admin-table-wrap { overflow-x: auto; direction: rtl; }
 
 .admin-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.85rem;
+  direction: rtl;
+  text-align: right;
 }
 
 .admin-table th,
@@ -2220,12 +2222,16 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   padding: 12px 10px;
   text-align: right;
   border-bottom: 1px solid var(--border-light);
+  vertical-align: middle;
 }
 
 .admin-table th {
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--text-tertiary);
+  white-space: normal;
+  overflow-wrap: break-word;
+  line-height: 1.35;
 }
 
 .admin-thumb {
