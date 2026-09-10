@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Pencil, Plus, Search } from 'lucide-react';
 import {
   PET_SPECIES_LABELS,
   petPublicIdOf,
+  userPublicIdOf,
   type PetProfile,
 } from '@petdate/shared';
 import { adminFetch, formatNumFa, formatTomanFa } from '../api';
@@ -17,6 +18,22 @@ import {
   type JalaliDateValue,
 } from '../JalaliDateSelect';
 import { AdminPetFormModal } from './AdminPetFormPage';
+
+/** Admin users list focused on this owner (PD-U… preferred). */
+function adminOwnerUsersHref(owner: {
+  ownerId?: number;
+  ownerPublicId?: string | null;
+  id?: number;
+  publicId?: string | null;
+}): string | null {
+  const code =
+    (owner.ownerPublicId || owner.publicId || '').trim() ||
+    (owner.ownerId || owner.id
+      ? userPublicIdOf({ id: Number(owner.ownerId || owner.id) })
+      : '');
+  if (!code) return null;
+  return `/admin/users?q=${encodeURIComponent(code)}`;
+}
 
 type AdminPetRow = PetProfile & {
   ownerName?: string;
@@ -225,6 +242,10 @@ export function AdminPetsPage() {
               ]
                 .filter(Boolean)
                 .join(' · ');
+              const ownerHref = adminOwnerUsersHref(pet);
+              const ownerCode =
+                pet.ownerPublicId ||
+                (pet.ownerId ? userPublicIdOf({ id: pet.ownerId }) : null);
               return (
                 <tr key={pet.id}>
                   <td>
@@ -275,13 +296,27 @@ export function AdminPetsPage() {
                   <td className="admin-muted admin-cell-nowrap">{meta || '—'}</td>
                   <td>
                     <div className="admin-cell-compact">
-                      <strong>{pet.ownerName || '—'}</strong>
+                      {ownerHref ? (
+                        <Link to={ownerHref} className="admin-link" title="مشاهده کاربر مالک">
+                          <strong>{pet.ownerName || '—'}</strong>
+                        </Link>
+                      ) : (
+                        <strong>{pet.ownerName || '—'}</strong>
+                      )}
                       <span className="admin-muted" dir="ltr">
                         {pet.ownerPhone || '—'}
                       </span>
-                      <code className="admin-mono admin-id-public" dir="ltr">
-                        {pet.ownerPublicId || '—'}
-                      </code>
+                      {ownerHref && ownerCode ? (
+                        <Link to={ownerHref} className="admin-link" title="مشاهده کاربر مالک">
+                          <code className="admin-mono admin-id-public" dir="ltr">
+                            {ownerCode}
+                          </code>
+                        </Link>
+                      ) : (
+                        <code className="admin-mono admin-id-public" dir="ltr">
+                          {ownerCode || '—'}
+                        </code>
+                      )}
                     </div>
                   </td>
                   <td>
@@ -345,9 +380,30 @@ export function AdminPetsPage() {
             <section>
               <h3 style={{ margin: '0 0 8px', fontSize: '1rem' }}>مالک</h3>
               <p style={{ margin: 0 }}>
-                {dossier.owner.name || '—'} ·{' '}
-                <span dir="ltr">{dossier.owner.phone || '—'}</span> ·{' '}
-                <code dir="ltr">{dossier.owner.publicId}</code>
+                {(() => {
+                  const ownerHref = adminOwnerUsersHref(dossier.owner);
+                  const name = dossier.owner.name || '—';
+                  const code = dossier.owner.publicId;
+                  return (
+                    <>
+                      {ownerHref ? (
+                        <Link to={ownerHref} className="admin-link" title="مشاهده کاربر مالک">
+                          {name}
+                        </Link>
+                      ) : (
+                        name
+                      )}{' '}
+                      · <span dir="ltr">{dossier.owner.phone || '—'}</span> ·{' '}
+                      {ownerHref && code ? (
+                        <Link to={ownerHref} className="admin-link" title="مشاهده کاربر مالک">
+                          <code dir="ltr">{code}</code>
+                        </Link>
+                      ) : (
+                        <code dir="ltr">{code || '—'}</code>
+                      )}
+                    </>
+                  );
+                })()}
                 {dossier.vipOwner ? (
                   <>
                     {' '}

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Search } from 'lucide-react';
 import {
   USER_ROLES,
@@ -28,15 +29,22 @@ function activeRolesOf(user: User): UserRole[] {
 }
 
 export function AdminUsersPage() {
+  const [searchParams] = useSearchParams();
   const [users, setUsers] = useState<User[]>([]);
   const [total, setTotal] = useState(0);
-  const [q, setQ] = useState('');
+  /** Honor ?q= from deep-links (e.g. pets owner → users). */
+  const [q, setQ] = useState(() => searchParams.get('q') ?? '');
   const [role, setRole] = useState('');
   /** Default active-only — soft-deleted shells must not clutter the list. */
   const [status, setStatus] = useState<'active' | 'inactive' | 'all'>('active');
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<number | null>(null);
   const [credit, setCredit] = useState<{ userId: number; amount: string; currency: string } | null>(null);
+
+  useEffect(() => {
+    const fromUrl = searchParams.get('q') ?? '';
+    setQ((prev) => (prev === fromUrl ? prev : fromUrl));
+  }, [searchParams]);
 
   const load = useCallback(async () => {
     try {
