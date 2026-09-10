@@ -20,15 +20,19 @@ export function AdminBarChart({
   height = 140,
   color = '#5c4d91',
   onSliceClick,
+  interactive,
 }: {
   points: Point[];
   height?: number;
   color?: string;
   onSliceClick?: (point: Point) => void;
+  /** When false, clicks are ignored (e.g. already at finest drill level). */
+  interactive?: boolean;
 }) {
   if (!points.length) {
     return <p className="admin-muted">داده‌ای برای نمودار نیست</p>;
   }
+  const clickable = Boolean(onSliceClick) && interactive !== false;
   const max = maxOf(points);
   const barW = Math.max(14, Math.min(36, Math.floor(560 / Math.max(points.length, 1)) - 6));
   const gap = 10;
@@ -44,10 +48,21 @@ export function AdminBarChart({
           return (
             <g
               key={`${p.label}-${i}`}
-              className={onSliceClick ? 'admin-chart-hit' : undefined}
-              onClick={() => onSliceClick?.(p)}
-              style={onSliceClick ? { cursor: 'pointer' } : undefined}
+              className={clickable ? 'admin-chart-hit' : undefined}
+              onClick={
+                clickable
+                  ? (e) => {
+                      e.stopPropagation();
+                      onSliceClick?.(p);
+                    }
+                  : undefined
+              }
+              style={clickable ? { cursor: 'pointer' } : undefined}
             >
+              {/* Full-column hit target so short bars stay easy to click */}
+              {clickable ? (
+                <rect x={x - 2} y={0} width={barW + 4} height={height + 8} fill="transparent" />
+              ) : null}
               <rect x={x} y={y} width={barW} height={Math.max(2, h)} rx={4} fill={color} opacity={0.92} />
               <title>{`${p.label}: ${p.value.toLocaleString('fa-IR')}`}</title>
               <text
@@ -133,15 +148,18 @@ export function AdminLineChart({
   height = 140,
   color = '#5c4d91',
   onPointClick,
+  interactive,
 }: {
   points: Point[];
   height?: number;
   color?: string;
   onPointClick?: (point: Point) => void;
+  interactive?: boolean;
 }) {
   if (!points.length) {
     return <p className="admin-muted">داده‌ای برای نمودار نیست</p>;
   }
+  const clickable = Boolean(onPointClick) && interactive !== false;
   const max = maxOf(points);
   const width = 640;
   const padX = 14;
@@ -159,14 +177,29 @@ export function AdminLineChart({
       <svg viewBox={`0 0 ${width} ${height + 28}`} className="admin-chart-svg admin-chart-svg--compact" role="img">
         <path d={area} fill={color} opacity={0.12} />
         <path d={path} fill="none" stroke={color} strokeWidth={2.5} strokeLinejoin="round" />
+        {clickable
+          ? coords.map((c, i) => (
+              <rect
+                key={`hit-${c.label}-${i}`}
+                x={c.x - Math.max(10, step / 2)}
+                y={0}
+                width={Math.max(20, step)}
+                height={height + 28}
+                fill="transparent"
+                className="admin-chart-hit"
+                style={{ cursor: 'pointer' }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onPointClick?.({ label: c.label, value: c.value });
+                }}
+              >
+                <title>{`${c.label}: ${c.value.toLocaleString('fa-IR')}`}</title>
+              </rect>
+            ))
+          : null}
         {coords.map((c, i) => (
-          <g
-            key={`${c.label}-${i}`}
-            className={onPointClick ? 'admin-chart-hit' : undefined}
-            onClick={() => onPointClick?.({ label: c.label, value: c.value })}
-            style={onPointClick ? { cursor: 'pointer' } : undefined}
-          >
-            <circle cx={c.x} cy={c.y} r={onPointClick ? 5 : 4} fill={color} />
+          <g key={`${c.label}-${i}`} style={{ pointerEvents: 'none' }}>
+            <circle cx={c.x} cy={c.y} r={clickable ? 5 : 4} fill={color} />
             <title>{`${c.label}: ${c.value.toLocaleString('fa-IR')}`}</title>
           </g>
         ))}
@@ -180,16 +213,19 @@ export function AdminMultiLineChart({
   series,
   height = 140,
   onPointClick,
+  interactive,
 }: {
   series: Array<{ key: string; label: string; color: string; points: Point[] }>;
   height?: number;
   /** Fired with the x-axis label (shared across series) for time drill-down. */
   onPointClick?: (label: string) => void;
+  interactive?: boolean;
 }) {
   const active = series.filter((s) => s.points.length > 0);
   if (!active.length) {
     return <p className="admin-muted">داده‌ای برای نمودار نیست</p>;
   }
+  const clickable = Boolean(onPointClick) && interactive !== false;
   const allValues = active.flatMap((s) => s.points.map((p) => p.value));
   const max = Math.max(1, ...allValues);
   const len = Math.max(...active.map((s) => s.points.length));
@@ -202,7 +238,7 @@ export function AdminMultiLineChart({
   return (
     <div className="admin-chart-scroll">
       <svg viewBox={`0 0 ${width} ${height + 36}`} className="admin-chart-svg admin-chart-svg--compact" role="img">
-        {onPointClick
+        {clickable
           ? xLabels.map((label, i) => {
               const x = padX + i * step;
               return (
@@ -215,7 +251,10 @@ export function AdminMultiLineChart({
                   fill="transparent"
                   className="admin-chart-hit"
                   style={{ cursor: 'pointer' }}
-                  onClick={() => onPointClick(label)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onPointClick?.(label);
+                  }}
                 >
                   <title>{label}</title>
                 </rect>

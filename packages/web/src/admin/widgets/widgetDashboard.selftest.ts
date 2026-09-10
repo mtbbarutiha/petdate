@@ -11,6 +11,10 @@ import {
   detectTimeGrain,
   drillDownGrain,
   drillUpGrain,
+  filterPointsByFocus,
+  formatFocusLabel,
+  pointMatchesFocusKey,
+  timeDrillView,
 } from './drill.ts';
 import {
   normalizeBoard,
@@ -49,6 +53,30 @@ assert.equal(canDrillDown('day', 'day'), false);
 assert.equal(drillUpGrain('day'), 'week');
 assert.equal(drillDownGrain('month', 'day'), 'week');
 
+/* Focus / drill-into: month click → weeks in that month only */
+assert.equal(pointMatchesFocusKey(days[0]!, '2026-09'), true);
+assert.equal(pointMatchesFocusKey(days[5]!, '2026-09'), false);
+const sepDays = filterPointsByFocus(days, ['2026-09']);
+assert.equal(sepDays.length, 5);
+assert.equal(
+  sepDays.reduce((a, p) => a + p.value, 0),
+  15
+);
+
+const sepWeeks = timeDrillView(days, 'week', 'day', ['2026-09']);
+assert.ok(sepWeeks.length >= 1);
+assert.equal(
+  sepWeeks.reduce((a, p) => a + p.value, 0),
+  15
+);
+
+const weekKey = sepWeeks[0]!.label;
+assert.ok(/^2026-W\d{2}$/.test(weekKey));
+const weekDays = timeDrillView(days, 'day', 'day', ['2026-09', weekKey]);
+assert.ok(weekDays.length >= 1);
+assert.ok(weekDays.every((p) => pointMatchesFocusKey(p, weekKey)));
+assert.ok(formatFocusLabel(weekKey).includes('هفته'));
+
 const cats = [
   { label: 'CRM', value: 10 },
   { label: 'فروش', value: 4 },
@@ -56,7 +84,11 @@ const cats = [
 const drilled = categoryDrillDetail(cats, 'CRM');
 assert.equal(drilled.detail?.value, 10);
 assert.equal(drilled.view.length, 1);
+assert.equal(drilled.missing, false);
 assert.equal(categoryDrillDetail(cats, null).view.length, 2);
+const missing = categoryDrillDetail(cats, 'ghost');
+assert.equal(missing.missing, true);
+assert.equal(missing.view.length, 0);
 
 const catalog: WidgetCatalogItem[] = [
   { id: 'a', title: 'A', group: 'g', defaultW: 2, defaultH: 1 },
@@ -95,8 +127,8 @@ assert.deepEqual(
 const noop = reorderItems(board.items, 'a', 'a');
 assert.equal(noop, board.items);
 
-const missing = reorderItems(board.items, 'ghost', 'a');
-assert.equal(missing, board.items);
+const missingReorder = reorderItems(board.items, 'ghost', 'a');
+assert.equal(missingReorder, board.items);
 
 const swapEnd = reorderItems(
   [
