@@ -1277,27 +1277,38 @@ export function trainerQuestionUnknownOffline(ctx: AiConsultContext): boolean {
 }
 
 
-/** When local KB has no match, پاشا must use the live online model — not a vague offline template. */
+/** Best-effort human coaching when online LLM is unavailable — never block the chat. */
+/** @deprecated use offlineUnknownBestEffortReply — kept so old tests/imports do not break */
 export function offlineUnknownNeedsOnlineReply(ctx: AiConsultContext): string {
+  return offlineUnknownBestEffortReply(ctx);
+}
+
+export function offlineUnknownBestEffortReply(ctx: AiConsultContext): string {
   const name = ctx.petName || 'پت';
+  const q = (ctx.userMessage || '').trim();
   const withTone = (text: string) =>
     ctx.userTone ? applyOfflineToneStyle(text, ctx.userTone) : text;
-  if (!isAiConsultConfigured()) {
-    return withTone(
-      [
-        `این مورد رو باید از دانش آنلاین مربی‌گری دقیق جواب بدم، ولی الان اتصال آنلاین در دسترس نیست.`,
+  const fearish = /ترس|می‌ترسه|میترسه|یخ|قفل|جیغ|زوزه|فرار|وحشت|دوچرخه|ماشین|بلند|صدا/.test(q);
+  const body = fearish
+    ? [
+        `باشه، برای ${name} از فاصلهٔ امن شروع کن — اون محرک رو از دور ببینید، قبل از اینکه بترسه آفرین بده و یه تشویقی کوچیک، بعد آروم فاصله رو کم کن. زور و تنبیه نه.`,
         ``,
-        `تا برقرار بشه، همین‌قدر ایمن بگو: سن تقریبی ${name}، کجا گیر می‌کنه (خونه/بیرون)، و دقیقاً چه رفتاری می‌بینی — دوباره بفرست تا آنلاین کامل جواب بدم.`,
+        `جلسه کوتاه باشه. اگر قفل کرد یا زوزه کشید، یه قدم عقب‌تر برگرد و دوباره از جایی که آرومه جایزه بده.`,
+        ``,
+        ctx.petAgeMonths != null && Number.isFinite(ctx.petAgeMonths)
+          ? `بگو بیشتر تو خونه‌ست یا بیرون تا دقیق‌تر تنظیمش کنیم.`
+          : `تقریباً چندساله‌ست؟`,
       ].join('\n')
-    );
-  }
-  return withTone(
-    [
-      `این سؤال خارج از تمرین‌های روتینمه؛ دارم از دانش آنلاین مربی‌گری دقیق‌تر برات جمع می‌کنم.`,
-      ``,
-      `یک لحظه دیگه همان پیام را دوباره بفرست یا جزئیات سن/محیط/رفتار را اضافه کن تا جواب کامل آنلاین بگیرم.`,
-    ].join('\n')
-  );
+    : [
+        `باشه، برای ${name} فعلاً از ساده‌ترین حالت امن شروع می‌کنیم: فاصله، جایزه برای آرومی، بدون زور.`,
+        ``,
+        `یه تمرین کوتاه همین الان: محرک یا موقعیت رو از دور نگه دار، همون لحظه که آرومه آفرین بده و تشویقی بده. اگر به‌هم ریخت، فاصله رو بیشتر کن.`,
+        ``,
+        ctx.petAgeMonths != null && Number.isFinite(ctx.petAgeMonths)
+          ? `بگو بیشتر تو خونه‌ست یا بیرون؟`
+          : `تقریباً چندساله‌ست؟`,
+      ].join('\n');
+  return withTone(body);
 }
 
 export async function generateAiConsultAdvice(ctx: AiConsultContext): Promise<{
@@ -1306,18 +1317,17 @@ export async function generateAiConsultAdvice(ctx: AiConsultContext): Promise<{
 }> {
   if (ctx.kind === 'trainer') {
     const unknown = trainerQuestionUnknownOffline(ctx);
-    // Unknown topics must hit the online model when configured — never fake understanding offline.
+    // Unknown → try live online first when key exists; never wall the user with "offline/online down".
     if (unknown && isAiConsultConfigured()) {
       const llm = await callOpenAiCompatible({ ...ctx, forceOnlineUnknown: true });
       if (llm) return { text: llm, source: 'llm' };
-      // Online configured but call failed — do not dump generic offline KB.
-      console.warn('pasha unknown topic: online LLM failed; returning needs-online reply');
-      return { text: offlineUnknownNeedsOnlineReply(ctx), source: 'offline' };
+      console.warn('pasha unknown topic: online LLM failed; best-effort coaching');
+      return { text: offlineUnknownBestEffortReply(ctx), source: 'offline' };
     }
     if (unknown && !isAiConsultConfigured()) {
-      return { text: offlineUnknownNeedsOnlineReply(ctx), source: 'offline' };
+      console.warn('pasha unknown topic: AI_CONSULT_API_KEY missing; best-effort coaching');
+      return { text: offlineUnknownBestEffortReply(ctx), source: 'offline' };
     }
-    // Known topics: prefer online when key exists (richer), else offline KB.
     if (trainerShouldGoOnline(ctx)) {
       const llm = await callOpenAiCompatible(ctx);
       if (llm) return { text: llm, source: 'llm' };
