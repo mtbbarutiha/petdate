@@ -65,7 +65,7 @@ async function main() {
   const owned = items.items.filter((i) => i.ownerId && String(i.ownerId).startsWith('SEED-'));
   assert(owned.length >= 3, 'sales owners linked to HR personnel codes');
 
-  const customers = listSalesCustomers({ limit: 50 });
+  const customers = listSalesCustomers();
   assert(customers.total >= 1, 'customers seeded');
 
   console.log('hr-sales-demo-seed.selftest: ok');

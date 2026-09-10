@@ -426,7 +426,7 @@ export function seedHrSalesDemoIfNeeded(): void {
     (db().prepare('SELECT COUNT(*) as c FROM hr_notifications').get() as { c: number })?.c ?? 0
   );
   if (notifCount === 0) {
-    pushNotification('قرارداد SEED-HR-01 نزدیک تمدید است', 'warning');
+    pushNotification('قرارداد SEED-HR-01 نزدیک تمدید است', 'warn');
     pushNotification('۴ متقاضی جدید در ATS منتظر غربالگری‌اند', 'info');
     pushNotification('لیدهای بدون مالک در فروش را تخصیص دهید', 'info');
   }
