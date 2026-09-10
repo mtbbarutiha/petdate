@@ -405,6 +405,25 @@ export interface CrmDashboard {
   myTasks: CrmTask[];
 }
 
+/** One agent row for باشگاه مشتریان team report. */
+export interface CrmAgentReportRow {
+  agentId: string;
+  agentName: string;
+  teamLabel: string;
+  inbound: number;
+  outbound: number;
+  minutes: number;
+  aht: number;
+  fcrPct: number;
+  slaPct: number;
+  ticketsResolved: number;
+  ticketsOpen: number;
+  qaAvg: number | null;
+  csatAvg: number | null;
+  achievement: number;
+  standing: string;
+}
+
 export interface CrmReportSummary {
   ticketsResolved: number;
   ticketsOpen: number;
@@ -421,6 +440,22 @@ export interface CrmReportSummary {
   }>;
   byReason: Array<{ reason: string; count: number }>;
   dailyTickets: Array<{ day: string; count: number }>;
+  /** Inclusive range used for the team report (ISO date YYYY-MM-DD). */
+  from: string;
+  to: string;
+  overallAchievement: number;
+  overallStanding: string;
+  agents: CrmAgentReportRow[];
+  callReasons: CrmChartPoint[];
+  ticketAge: CrmChartPoint[];
+  kpiRings: CrmKpiRing[];
+  totals: {
+    interactions: number;
+    minutes: number;
+    tickets: number;
+    complaints: number;
+  };
+  slaPct: number;
 }
 
 export interface CrmSettings {

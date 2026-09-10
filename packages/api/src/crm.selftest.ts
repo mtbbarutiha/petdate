@@ -172,6 +172,14 @@ async function main() {
   assert(Array.isArray(dash.upcomingFollowups), 'followups');
   assert(crm.listCustomers().total >= 5, 'seed customers');
 
+  const report = crm.getCrmReportSummary(admin!);
+  assert(Array.isArray(report.agents), 'report agents');
+  assert(Array.isArray(report.kpiRings) && report.kpiRings.length >= 2, 'report kpi rings');
+  assert(Array.isArray(report.callReasons), 'call reasons');
+  assert(Array.isArray(report.ticketAge) && report.ticketAge.length === 4, 'ticket age buckets');
+  assert(typeof report.overallAchievement === 'number', 'overall achievement');
+  assert(report.from && report.to, 'report date range');
+
   console.log('crm.selftest: ok');
 }
 

@@ -330,8 +330,10 @@ crmAdminRouter.post('/qa/reviews', requirePermission('crm.admin'), (req, res) =>
 crmAdminRouter.get('/reports', (req, res) => {
   try {
     const agentId = typeof req.query.agentId === 'string' ? req.query.agentId : undefined;
+    const from = typeof req.query.from === 'string' ? req.query.from : undefined;
+    const to = typeof req.query.to === 'string' ? req.query.to : undefined;
     res.json({
-      summary: getCrmReportSummary(actor(req), { agentId }),
+      summary: getCrmReportSummary(actor(req), { agentId, from, to }),
       audit: listAuditLogs(50),
       isAdmin: isCrmAdmin(actor(req)),
     });

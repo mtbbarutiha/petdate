@@ -27,6 +27,8 @@ import {
   type CrmOrder,
   type CrmQaReview,
   type CrmReferral,
+  type CrmChartPoint,
+  type CrmKpiRing,
   type CrmReportSummary,
   type CrmSettings,
   type CrmSmsPattern,
@@ -2158,7 +2160,10 @@ export function getCrmDashboard(actor: AdminAuthActor): CrmDashboard {
   };
 }
 
-export function getCrmReportSummary(actor: AdminAuthActor, opts?: { agentId?: string }): CrmReportSummary {
+export function getCrmReportSummary(
+  actor: AdminAuthActor,
+  opts?: { agentId?: string; from?: string; to?: string }
+): CrmReportSummary {
   ensureCrmSchema();
   if (opts?.agentId && opts.agentId !== actorId(actor) && !canSeeTeamReports(actor)) {
     const err = new Error('دسترسی گزارش تیمی ندارید') as Error & { status?: number };
@@ -2166,83 +2171,252 @@ export function getCrmReportSummary(actor: AdminAuthActor, opts?: { agentId?: st
     throw err;
   }
   const agentFilter = canSeeTeamReports(actor) ? opts?.agentId : actorId(actor);
+
+  const to = opts?.to && /^\d{4}-\d{2}-\d{2}$/.test(opts.to)
+    ? opts.to
+    : new Date().toISOString().slice(0, 10);
+  const from = opts?.from && /^\d{4}-\d{2}-\d{2}$/.test(opts.from)
+    ? opts.from
+    : new Date(Date.now() - 6 * 86400_000).toISOString().slice(0, 10);
+  const fromIso = `${from}T00:00:00.000Z`;
+  const toIso = `${to}T23:59:59.999Z`;
+  const inRange = (iso: string | null | undefined) => !!iso && iso >= fromIso && iso <= toIso;
+
   let tickets = listTickets({ limit: 500 });
   if (agentFilter) tickets = tickets.filter((t) => t.agentId === agentFilter);
-  const resolved = tickets.filter((t) => t.status === 'حل‌شده' || t.status === 'بسته‌شده');
-  const open = tickets.filter((t) => !['حل‌شده', 'بسته‌شده'].includes(t.status));
-  const interactions = listInteractions({ agentId: agentFilter, limit: 500 });
-  const surveys = listSurveys(200);
-  const qa = listQaReviews(200);
+  const ticketsInRange = tickets.filter((t) => inRange(t.createdAt));
+  const resolved = ticketsInRange.filter((t) => t.status === 'حل‌شده' || t.status === 'بسته‌شده');
+  const openAll = tickets.filter((t) => !['حل‌شده', 'بسته‌شده'].includes(t.status));
+  const openInScope = openAll;
 
-  const byAgentMap = new Map<string, { agentId: string; agentName: string; tickets: number; calls: number; qa: number[]; }>();
-  for (const t of tickets) {
-    const key = t.agentId || 'unassigned';
-    const cur = byAgentMap.get(key) || {
-      agentId: key,
-      agentName: t.agentName || key,
-      tickets: 0,
-      calls: 0,
-      qa: [] as number[],
-    };
-    cur.tickets += 1;
-    byAgentMap.set(key, cur);
+  let interactions = listInteractions({ agentId: agentFilter, limit: 500 }).filter((i) =>
+    inRange(i.startedAt)
+  );
+  const surveys = listSurveys(200).filter((x) => inRange(x.createdAt));
+  const qa = listQaReviews(200).filter((x) => inRange(x.createdAt));
+  const complaints = listComplaints(200).filter((c) => inRange(c.createdAt));
+
+  type Agg = {
+    agentId: string;
+    agentName: string;
+    ticketsResolved: number;
+    ticketsOpen: number;
+    inbound: number;
+    outbound: number;
+    minutes: number;
+    fcrOk: number;
+    callCount: number;
+    slaOk: number;
+    slaTotal: number;
+    qa: number[];
+    csat: number[];
+  };
+  const map = new Map<string, Agg>();
+  const touch = (id: string, name: string): Agg => {
+    const key = id || 'unassigned';
+    let cur = map.get(key);
+    if (!cur) {
+      cur = {
+        agentId: key,
+        agentName: name || key,
+        ticketsResolved: 0,
+        ticketsOpen: 0,
+        inbound: 0,
+        outbound: 0,
+        minutes: 0,
+        fcrOk: 0,
+        callCount: 0,
+        slaOk: 0,
+        slaTotal: 0,
+        qa: [],
+        csat: [],
+      };
+      map.set(key, cur);
+    } else if (name && (!cur.agentName || cur.agentName === key)) {
+      cur.agentName = name;
+    }
+    return cur;
+  };
+
+  for (const t of ticketsInRange) {
+    const cur = touch(t.agentId || 'unassigned', t.agentName || 'بدون کارشناس');
+    if (t.status === 'حل‌شده' || t.status === 'بسته‌شده') cur.ticketsResolved += 1;
+  }
+  for (const t of openInScope) {
+    const cur = touch(t.agentId || 'unassigned', t.agentName || 'بدون کارشناس');
+    cur.ticketsOpen += 1;
+    if (t.slaState === 'ok' || t.slaState === 'at_risk' || t.slaState === 'breached') {
+      cur.slaTotal += 1;
+      if (t.slaState === 'ok') cur.slaOk += 1;
+    }
   }
   for (const i of interactions) {
-    const key = i.agentId || 'unassigned';
-    const cur = byAgentMap.get(key) || {
-      agentId: key,
-      agentName: i.agentName || key,
-      tickets: 0,
-      calls: 0,
-      qa: [] as number[],
-    };
-    if (i.channel === 'call_in' || i.channel === 'call_out') cur.calls += 1;
-    byAgentMap.set(key, cur);
+    const cur = touch(i.agentId || 'unassigned', i.agentName || 'بدون کارشناس');
+    if (i.channel === 'call_in' || i.channel === 'call_out') {
+      if (i.channel === 'call_in') cur.inbound += 1;
+      else cur.outbound += 1;
+      cur.callCount += 1;
+      cur.minutes += i.talkMinutes;
+      if (i.outcome === 'حل‌شده' && i.wrapDone) cur.fcrOk += 1;
+    }
   }
   for (const r of qa) {
-    const cur = byAgentMap.get(r.agentId) || {
-      agentId: r.agentId,
-      agentName: r.agentId,
-      tickets: 0,
-      calls: 0,
-      qa: [] as number[],
-    };
-    cur.qa.push(r.total);
-    byAgentMap.set(r.agentId, cur);
+    touch(r.agentId, r.agentId).qa.push(r.total);
   }
+  for (const s of surveys) {
+    touch(s.agentId, s.agentId).csat.push(s.rating);
+  }
+
+  const teamLabel = 'امور مشتریان';
+  const agents = [...map.values()]
+    .filter((a) => a.agentId !== 'unassigned' || a.ticketsResolved + a.ticketsOpen + a.callCount > 0)
+    .map((a) => {
+      const aht = a.callCount ? Math.round((a.minutes / a.callCount) * 10) / 10 : 0;
+      const fcrPct = a.callCount ? Math.round((a.fcrOk / a.callCount) * 100) : 0;
+      const slaPct = a.slaTotal ? Math.round((a.slaOk / a.slaTotal) * 100) : 100;
+      const qaAvg = a.qa.length ? Math.round(a.qa.reduce((s, n) => s + n, 0) / a.qa.length) : null;
+      const csatAvg = a.csat.length
+        ? Math.round((a.csat.reduce((s, n) => s + n, 0) / a.csat.length) * 10) / 10
+        : null;
+      const parts = [
+        crmKpiAchievement('calls_answered', a.inbound + a.outbound, 8),
+        crmKpiAchievement('talk_minutes', a.minutes, 60),
+        crmKpiAchievement('wait_seconds', aht, 12),
+        crmKpiAchievement('fcr', fcrPct, 60),
+        crmKpiAchievement('sla', slaPct, 90),
+        crmKpiAchievement('tickets_resolved', a.ticketsResolved, 3),
+        crmKpiAchievement('qa_score', qaAvg ?? 0, 85),
+      ];
+      const achievement = Math.round(parts.reduce((s, n) => s + n, 0) / parts.length);
+      return {
+        agentId: a.agentId,
+        agentName: a.agentName,
+        teamLabel,
+        inbound: a.inbound,
+        outbound: a.outbound,
+        minutes: Math.round(a.minutes),
+        aht,
+        fcrPct,
+        slaPct,
+        ticketsResolved: a.ticketsResolved,
+        ticketsOpen: a.ticketsOpen,
+        qaAvg,
+        csatAvg,
+        achievement,
+        standing: crmKpiStanding(achievement),
+      };
+    })
+    .sort((x, y) => y.achievement - x.achievement);
+
+  const overallAchievement = agents.length
+    ? Math.round(agents.reduce((s, a) => s + a.achievement, 0) / agents.length)
+    : 0;
+  const overallStanding = crmKpiStanding(overallAchievement);
 
   const reasonMap = new Map<string, number>();
   for (const i of interactions) {
     if (!i.reason) continue;
     reasonMap.set(i.reason, (reasonMap.get(i.reason) || 0) + 1);
   }
+  const byReason = [...reasonMap.entries()].map(([reason, count]) => ({ reason, count }));
+  const colors = ['#15cca0', '#3b82f6', '#14b8a6', '#ec4899', '#fd961e', '#8b5cf6', '#64748b'];
+  const callReasons: CrmChartPoint[] = byReason
+    .sort((a, b) => b.count - a.count)
+    .map((r, idx) => ({
+      key: r.reason,
+      label: r.reason,
+      value: r.count,
+      color: colors[idx % colors.length],
+    }));
+
+  const now = Date.now();
+  const ageCounts = [0, 0, 0, 0];
+  for (const t of openInScope) {
+    const ageH = (now - new Date(t.createdAt).getTime()) / 3600_000;
+    if (ageH < 24) ageCounts[0] += 1;
+    else if (ageH < 72) ageCounts[1] += 1;
+    else if (ageH < 168) ageCounts[2] += 1;
+    else ageCounts[3] += 1;
+  }
+  const ticketAge: CrmChartPoint[] = [
+    { key: 'lt24', label: 'کمتر از ۲۴ ساعت', value: ageCounts[0], color: '#3b82f6' },
+    { key: '1to3', label: '۱ تا ۳ روز', value: ageCounts[1], color: '#0ea5e9' },
+    { key: '3to7', label: '۳ تا ۷ روز', value: ageCounts[2], color: '#6366f1' },
+    { key: 'gt7', label: 'بیش از ۷ روز', value: ageCounts[3], color: '#94a3b8' },
+  ];
+
+  const openWithSla = openInScope.filter(
+    (t) => t.slaState === 'ok' || t.slaState === 'at_risk' || t.slaState === 'breached'
+  );
+  const slaOk = openWithSla.filter((t) => t.slaState === 'ok').length;
+  const slaPct = openWithSla.length ? Math.round((slaOk / openWithSla.length) * 1000) / 10 : 100;
+  const csatAvg = surveys.length
+    ? Math.round((surveys.reduce((s, x) => s + x.rating, 0) / surveys.length) * 10) / 10
+    : null;
+  const qaAvg = qa.length ? Math.round(qa.reduce((s, x) => s + x.total, 0) / qa.length) : null;
+
+  const kpiRings: CrmKpiRing[] = [
+    {
+      key: 'csat',
+      label: 'رضایت مشتری',
+      value: csatAvg ?? 0,
+      target: 5,
+      unit: 'از ۵',
+      pct: csatAvg != null ? Math.round((csatAvg / 5) * 1000) / 10 : 0,
+      standing: crmKpiStanding(csatAvg != null ? (csatAvg / 5) * 100 : 0),
+      direction: 'gte',
+    },
+    {
+      key: 'sla',
+      label: 'پایبندی به SLA',
+      value: slaPct,
+      target: 90,
+      unit: '٪',
+      pct: Math.round((slaPct / 90) * 1000) / 10,
+      standing: crmKpiStanding(slaPct),
+      direction: 'gte',
+    },
+  ];
 
   const dayMap = new Map<string, number>();
-  for (const t of tickets) {
+  for (const t of ticketsInRange) {
     const day = t.createdAt.slice(0, 10);
     dayMap.set(day, (dayMap.get(day) || 0) + 1);
   }
 
   return {
     ticketsResolved: resolved.length,
-    ticketsOpen: open.length,
+    ticketsOpen: openInScope.length,
     avgFirstResponseMin: null,
     avgResolveHours: null,
-    csatAvg: surveys.length
-      ? Math.round((surveys.reduce((s, x) => s + x.rating, 0) / surveys.length) * 10) / 10
-      : null,
-    qaAvg: qa.length ? Math.round(qa.reduce((s, x) => s + x.total, 0) / qa.length) : null,
-    byAgent: [...byAgentMap.values()].map((a) => ({
+    csatAvg,
+    qaAvg,
+    byAgent: agents.map((a) => ({
       agentId: a.agentId,
       agentName: a.agentName,
-      tickets: a.tickets,
-      calls: a.calls,
-      qaAvg: a.qa.length ? Math.round(a.qa.reduce((s, n) => s + n, 0) / a.qa.length) : null,
+      tickets: a.ticketsResolved + a.ticketsOpen,
+      calls: a.inbound + a.outbound,
+      qaAvg: a.qaAvg,
     })),
-    byReason: [...reasonMap.entries()].map(([reason, count]) => ({ reason, count })),
+    byReason,
     dailyTickets: [...dayMap.entries()]
       .sort((a, b) => a[0].localeCompare(b[0]))
       .map(([day, count]) => ({ day, count })),
+    from,
+    to,
+    overallAchievement,
+    overallStanding,
+    agents,
+    callReasons,
+    ticketAge,
+    kpiRings,
+    totals: {
+      interactions: interactions.length,
+      minutes: Math.round(interactions.reduce((s, i) => s + i.talkMinutes, 0)),
+      tickets: ticketsInRange.length,
+      complaints: complaints.length,
+    },
+    slaPct,
   };
 }
 

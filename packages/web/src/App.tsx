@@ -272,7 +272,7 @@ const AdminCrmCallsPage = lazy(() => import('./admin/pages/crm/AdminCrmPages').t
 const AdminCrmCasesPage = lazy(() => import('./admin/pages/crm/AdminCrmPages').then((m) => ({ default: m.AdminCrmCasesPage })));
 const AdminCrmSmsPage = lazy(() => import('./admin/pages/crm/AdminCrmPages').then((m) => ({ default: m.AdminCrmSmsPage })));
 const AdminCrmQaPage = lazy(() => import('./admin/pages/crm/AdminCrmPages').then((m) => ({ default: m.AdminCrmQaPage })));
-const AdminCrmReportsPage = lazy(() => import('./admin/pages/crm/AdminCrmPages').then((m) => ({ default: m.AdminCrmReportsPage })));
+const AdminCrmReportsPage = lazy(() => import('./admin/pages/crm/AdminCrmReportsPage').then((m) => ({ default: m.AdminCrmReportsPage })));
 const AdminCrmSettingsPage = lazy(() => import('./admin/pages/crm/AdminCrmPages').then((m) => ({ default: m.AdminCrmSettingsPage })));
 
 
