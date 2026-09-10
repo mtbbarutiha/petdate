@@ -1028,7 +1028,23 @@
 .admin-app .admin-tabs--modal .admin-tab {
   padding: 6px 10px;
   font-size: 12px;
-  border-radius: 8px;
+  border-radius: 999px;
+}
+/* Pepito mint active tab (matches employee create mockup) */
+.admin-app .admin-tabs--modal .admin-tab.is-on {
+  background: var(--admin-mint);
+  border-color: transparent;
+  color: #0b2a22;
+  font-weight: 700;
+}
+.admin-app .admin-modal-card--employee .admin-btn--primary {
+  background: var(--admin-mint);
+  border-color: transparent;
+  color: #0b2a22;
+}
+.admin-app .admin-modal-card--employee .admin-btn--primary:hover:not(:disabled) {
+  background: #12b890;
+  color: #0b2a22;
 }
 .admin-app .admin-subsection-title {
   margin: 4px 0 10px;
