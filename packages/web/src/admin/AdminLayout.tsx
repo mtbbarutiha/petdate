@@ -63,7 +63,7 @@ const NAV_GROUPS: NavGroup[] = [
     { to: '/admin/sales/settings', icon: Settings, label: 'تنظیمات فروش', perm: 'sales.read' },
   ]},
   { title: 'باشگاه مشتریان', items: [
-    { to: '/admin/crm', icon: LayoutDashboard, label: 'داشبورد امور مشتریان', perm: 'crm.read' },
+    { to: '/admin/crm', icon: LayoutDashboard, label: 'میز کار من', perm: 'crm.read' },
     { to: '/admin/crm/inbox', icon: Inbox, label: 'اینباکس', perm: 'crm.read' },
     { to: '/admin/crm/customers', icon: HeartHandshake, label: 'مشتریان ۳۶۰', perm: 'crm.read' },
     { to: '/admin/crm/experience', icon: Star, label: 'تجربه مشتری', perm: 'crm.read' },

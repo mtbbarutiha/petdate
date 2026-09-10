@@ -162,6 +162,14 @@ async function main() {
   seedCrmDemoIfNeeded(); // idempotent
   const dash = crm.getCrmDashboard(admin!);
   assert(dash.openTickets >= 1 || dash.callsToday >= 0, 'dashboard');
+  assert(Array.isArray(dash.kpis) && dash.kpis.length === 8, '8 kpi rings');
+  assert(Array.isArray(dash.channelDistribution), 'channel chart');
+  assert(Array.isArray(dash.dailyInteractions) && dash.dailyInteractions.length === 7, '7-day series');
+  assert(Array.isArray(dash.ticketStatus), 'ticket doughnut');
+  assert(typeof dash.overallAchievement === 'number', 'overall achievement');
+  assert(typeof dash.qaQueue === 'number', 'qa queue');
+  assert(Array.isArray(dash.myTickets), 'my tickets');
+  assert(Array.isArray(dash.upcomingFollowups), 'followups');
   assert(crm.listCustomers().total >= 5, 'seed customers');
 
   console.log('crm.selftest: ok');
