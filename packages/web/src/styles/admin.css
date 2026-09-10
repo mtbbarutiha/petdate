@@ -2924,6 +2924,16 @@ body:has(.admin-app) {
   font-size: 1rem;
 }
 .admin-app .hr-dash-chart { width: 100%; min-height: 180px; }
+/* LTR island + reserved right label lane for Persian department names (Recharts). */
+.admin-app .hr-dash-chart--dept-bars {
+  direction: ltr;
+  min-width: 0;
+  overflow: visible;
+}
+.admin-app .hr-dash-chart--dept-bars .recharts-cartesian-axis-tick text {
+  font-family: var(--admin-font);
+  unicode-bidi: plaintext;
+}
 .admin-app .hr-dash-changelog {
   list-style: none;
   margin: 0;
