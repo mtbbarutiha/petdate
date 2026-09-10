@@ -1,8 +1,9 @@
-/** Shared admin API client — password from session (verified against ADMIN_PASSWORD). */
+/** Shared admin API client — password from session (verified against ADMIN_PASSWORD / accounts). */
 
 const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ?? '';
 export { API_BASE };
 const PWD_KEY = 'petdate_admin_pwd';
+const USER_KEY = 'petdate_admin_user';
 
 export function getAdminPassword(): string {
   return sessionStorage.getItem(PWD_KEY) || '';
@@ -16,10 +17,24 @@ export function clearAdminPassword() {
   sessionStorage.removeItem(PWD_KEY);
 }
 
+export function getAdminUsername(): string {
+  return sessionStorage.getItem(USER_KEY) || '';
+}
+
+export function setAdminUsername(username: string) {
+  sessionStorage.setItem(USER_KEY, username);
+}
+
+export function clearAdminUsername() {
+  sessionStorage.removeItem(USER_KEY);
+}
+
 export async function adminFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
   const pwd = getAdminPassword();
   if (pwd) headers.set('x-admin-password', pwd);
+  const user = getAdminUsername();
+  if (user) headers.set('x-admin-username', user);
   if (init?.body && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
   }
@@ -43,6 +58,8 @@ export async function adminDownload(path: string, filename: string): Promise<voi
   const headers = new Headers();
   const pwd = getAdminPassword();
   if (pwd) headers.set('x-admin-password', pwd);
+  const user = getAdminUsername();
+  if (user) headers.set('x-admin-username', user);
   const res = await fetch(`${API_BASE}${path}`, { headers });
   if (!res.ok) {
     let msg = `HTTP ${res.status}`;

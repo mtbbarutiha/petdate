@@ -1244,6 +1244,16 @@ function migrateSchema() {
   );
 
   seedFinanceDefaults();
+
+  // پیوند (HR) — CREATE IF NOT EXISTS only; never wipe
+  try {
+    // Lazy require avoids circular import with getDb()
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { ensureHrSchema } = require('./hr-service') as typeof import('./hr-service');
+    ensureHrSchema();
+  } catch (err) {
+    console.warn('HR schema ensure skipped/failed:', (err as Error).message);
+  }
 }
 
 function seedFinanceDefaults() {

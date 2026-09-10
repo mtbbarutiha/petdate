@@ -1,0 +1,1058 @@
+/**
+ * پیوند HR persistence — separate from db.ts to limit merge conflicts.
+ * Schema ensured via ensureHrSchema() from migrateSchema (no wipe).
+ */
+import { randomBytes, randomUUID, scryptSync, timingSafeEqual } from 'crypto';
+import {
+  ADMIN_ROLE_PERMISSIONS,
+  defaultHrBenefits,
+  employeePublicIdOf,
+  makeContractCode,
+  makeEmployeePublicId,
+  type AdminAccount,
+  type AdminRoleDef,
+  type HrBenefitDef,
+  type HrCandidate,
+  type HrCareerLayer,
+  type HrContract,
+  type HrEmployee,
+  type HrEmployeeBenefits,
+  type HrEmployeeLog,
+  type HrIncomeModel,
+  type HrJobOpening,
+  type HrRequest,
+} from '@petdate/shared';
+import { getDb } from './db';
+
+function db() {
+  return getDb();
+}
+
+function parseJson<T>(raw: unknown, fallback: T): T {
+  if (raw == null || raw === '') return fallback;
+  try {
+    return JSON.parse(String(raw)) as T;
+  } catch {
+    return fallback;
+  }
+}
+
+function hashPassword(password: string, salt?: string): string {
+  const s = salt || randomBytes(16).toString('hex');
+  const hash = scryptSync(password, s, 32).toString('hex');
+  return `${s}:${hash}`;
+}
+
+function verifyPassword(password: string, stored: string): boolean {
+  const [salt, hash] = String(stored).split(':');
+  if (!salt || !hash) return false;
+  const next = scryptSync(password, salt, 32);
+  const prev = Buffer.from(hash, 'hex');
+  if (prev.length !== next.length) return false;
+  return timingSafeEqual(prev, next);
+}
+
+export function ensureHrSchema(): void {
+  const d = db();
+  d.exec(`
+    CREATE TABLE IF NOT EXISTS hr_career_layers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      sort_order INTEGER NOT NULL DEFAULT 0,
+      unlocks TEXT NOT NULL DEFAULT '',
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS hr_income_models (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      type TEXT NOT NULL DEFAULT 'متغیر',
+      variable_amount INTEGER NOT NULL DEFAULT 0,
+      variable_percent REAL NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS hr_benefit_defs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      category TEXT NOT NULL DEFAULT '',
+      career_layer_id INTEGER,
+      job_title TEXT,
+      cost INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS hr_employees (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      public_id TEXT,
+      uuid TEXT NOT NULL,
+      personnel_code TEXT NOT NULL,
+      first_name TEXT NOT NULL,
+      last_name TEXT NOT NULL,
+      gender TEXT NOT NULL DEFAULT '',
+      birth_date TEXT NOT NULL DEFAULT '',
+      birth_cert_no TEXT NOT NULL DEFAULT '',
+      national_id TEXT NOT NULL DEFAULT '',
+      father_name TEXT NOT NULL DEFAULT '',
+      province TEXT NOT NULL DEFAULT '',
+      city TEXT NOT NULL DEFAULT '',
+      address TEXT NOT NULL DEFAULT '',
+      marital_status TEXT NOT NULL DEFAULT '',
+      children_count TEXT NOT NULL DEFAULT '',
+      military_status TEXT NOT NULL DEFAULT '',
+      gmail TEXT NOT NULL DEFAULT '',
+      education_level TEXT NOT NULL DEFAULT '',
+      field_of_study TEXT NOT NULL DEFAULT '',
+      job_title TEXT NOT NULL DEFAULT '',
+      department TEXT NOT NULL DEFAULT '',
+      location TEXT NOT NULL DEFAULT '',
+      reporting_manager_title TEXT NOT NULL DEFAULT '',
+      reporting_manager_person_id TEXT NOT NULL DEFAULT '',
+      cooperation_type TEXT NOT NULL DEFAULT 'تمام وقت',
+      benefits_json TEXT NOT NULL DEFAULT '{}',
+      extension TEXT NOT NULL DEFAULT '',
+      org_email TEXT NOT NULL DEFAULT '',
+      contract_status TEXT NOT NULL DEFAULT 'در حال همکاری',
+      access_status TEXT NOT NULL DEFAULT 'فعال',
+      username TEXT NOT NULL DEFAULT '',
+      password TEXT NOT NULL DEFAULT '',
+      income_model_id INTEGER,
+      career_layer_id INTEGER,
+      permissions_json TEXT NOT NULL DEFAULT '{}',
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS hr_contracts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      contract_code TEXT,
+      employee_id INTEGER NOT NULL,
+      start_date TEXT NOT NULL DEFAULT '',
+      end_date TEXT NOT NULL DEFAULT '',
+      salary INTEGER NOT NULL DEFAULT 0,
+      eidi INTEGER NOT NULL DEFAULT 0,
+      sanavat INTEGER NOT NULL DEFAULT 0,
+      commission_percent REAL NOT NULL DEFAULT 0,
+      insurance_no TEXT NOT NULL DEFAULT '',
+      bank_account_no TEXT NOT NULL DEFAULT '',
+      sheba TEXT NOT NULL DEFAULT '',
+      card_no TEXT NOT NULL DEFAULT '',
+      bank_name TEXT NOT NULL DEFAULT '',
+      sales_affects_payout TEXT NOT NULL DEFAULT 'نامشخص',
+      contract_file_name TEXT NOT NULL DEFAULT '',
+      nda_file_name TEXT NOT NULL DEFAULT '',
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (employee_id) REFERENCES hr_employees(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS hr_employee_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      employee_id INTEGER NOT NULL,
+      logged_at TEXT NOT NULL DEFAULT (datetime('now')),
+      field TEXT NOT NULL,
+      old_value TEXT NOT NULL DEFAULT '',
+      new_value TEXT NOT NULL DEFAULT '',
+      FOREIGN KEY (employee_id) REFERENCES hr_employees(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS hr_job_openings (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      title TEXT NOT NULL,
+      department TEXT NOT NULL DEFAULT '',
+      status TEXT NOT NULL DEFAULT 'باز',
+      openings INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS hr_candidates (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      first_name TEXT NOT NULL,
+      last_name TEXT NOT NULL,
+      mobile TEXT NOT NULL DEFAULT '',
+      email TEXT NOT NULL DEFAULT '',
+      city TEXT NOT NULL DEFAULT '',
+      source TEXT NOT NULL DEFAULT '',
+      job_board TEXT NOT NULL DEFAULT '',
+      job_opening_id INTEGER,
+      application_date TEXT NOT NULL DEFAULT '',
+      notes TEXT NOT NULL DEFAULT '',
+      stage TEXT NOT NULL DEFAULT 'متقاضی جدید',
+      resume TEXT NOT NULL DEFAULT '',
+      logs_json TEXT NOT NULL DEFAULT '[]',
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS hr_requests (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      employee_id INTEGER NOT NULL,
+      type TEXT NOT NULL,
+      days REAL NOT NULL DEFAULT 0,
+      from_date TEXT NOT NULL DEFAULT '',
+      to_date TEXT NOT NULL DEFAULT '',
+      description TEXT NOT NULL DEFAULT '',
+      status TEXT NOT NULL DEFAULT 'ثبت‌شده',
+      log_json TEXT NOT NULL DEFAULT '[]',
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      FOREIGN KEY (employee_id) REFERENCES hr_employees(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS admin_roles (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      key TEXT NOT NULL UNIQUE,
+      name_fa TEXT NOT NULL,
+      description TEXT NOT NULL DEFAULT '',
+      permissions_json TEXT NOT NULL DEFAULT '[]',
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS admin_accounts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      username TEXT NOT NULL UNIQUE,
+      password_hash TEXT NOT NULL,
+      role_key TEXT NOT NULL DEFAULT 'support',
+      display_name TEXT NOT NULL DEFAULT '',
+      is_active INTEGER NOT NULL DEFAULT 1,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+  `);
+
+  d.exec(`CREATE INDEX IF NOT EXISTS idx_hr_employees_code ON hr_employees(personnel_code)`);
+  d.exec(`CREATE INDEX IF NOT EXISTS idx_hr_contracts_employee ON hr_contracts(employee_id)`);
+  d.exec(`CREATE INDEX IF NOT EXISTS idx_hr_candidates_opening ON hr_candidates(job_opening_id)`);
+  d.exec(`CREATE INDEX IF NOT EXISTS idx_hr_requests_employee ON hr_requests(employee_id)`);
+
+  seedHrDefaults();
+  backfillHrPublicIds();
+}
+
+function seedHrDefaults(): void {
+  const d = db();
+  const layerCount = Number(
+    (d.prepare('SELECT COUNT(*) as c FROM hr_career_layers').get() as { c: number })?.c ?? 0
+  );
+  if (layerCount === 0) {
+    const ins = d.prepare(
+      `INSERT INTO hr_career_layers (name, sort_order, unlocks) VALUES (?, ?, ?)`
+    );
+    ins.run('دوره آزمایشی', 0, 'دسترسی پایه، تجهیزات اولیه');
+    ins.run('تثبیت‌شده', 1, 'مزایای استاندارد کارکنان، بودجه آموزشی پایه');
+    ins.run('حرفه‌ای / عملکرد بالا', 2, 'واجد شرایط بازبینی حقوق، پاداش بالاتر، آموزش پیشرفته');
+    ins.run('رهبری / رشد', 3, 'کاندیدای سرپرستی/مدیریت، مسئولیت پروژه');
+  }
+
+  const modelCount = Number(
+    (d.prepare('SELECT COUNT(*) as c FROM hr_income_models').get() as { c: number })?.c ?? 0
+  );
+  if (modelCount === 0) {
+    const ins = d.prepare(
+      `INSERT INTO hr_income_models (name, type, variable_amount, variable_percent) VALUES (?, ?, ?, ?)`
+    );
+    ins.run('مدل استاندارد فروش', 'متغیر', 0, 2);
+    ins.run('مدل ثابت مدیریتی', 'ثابت + متغیر', 5000000, 1);
+  }
+
+  const benefitCount = Number(
+    (d.prepare('SELECT COUNT(*) as c FROM hr_benefit_defs').get() as { c: number })?.c ?? 0
+  );
+  if (benefitCount === 0) {
+    const layers = d
+      .prepare('SELECT id, sort_order FROM hr_career_layers ORDER BY sort_order')
+      .all() as Array<{ id: number; sort_order: number }>;
+    const byOrder = (n: number) => layers.find((l) => l.sort_order === n)?.id ?? null;
+    const ins = d.prepare(
+      `INSERT INTO hr_benefit_defs (title, category, career_layer_id, job_title, cost) VALUES (?, ?, ?, ?, ?)`
+    );
+    ins.run('بیمه تکمیلی', 'درمانی', byOrder(1), null, 2000000);
+    ins.run('کارت هدیه تولد', 'رفاهی', null, null, 1000000);
+    ins.run('بودجه آموزش پیشرفته', 'آموزشی', byOrder(2), null, 5000000);
+  }
+
+  const roleUpsert = d.prepare(
+    `INSERT INTO admin_roles (key, name_fa, description, permissions_json)
+     VALUES (?, ?, ?, ?)
+     ON CONFLICT(key) DO UPDATE SET
+       name_fa = excluded.name_fa,
+       description = excluded.description,
+       permissions_json = excluded.permissions_json`
+  );
+  roleUpsert.run(
+    'admin',
+    'مدیر کامل',
+    'دسترسی کامل به پنل ادمین و منابع انسانی',
+    JSON.stringify(ADMIN_ROLE_PERMISSIONS.admin)
+  );
+  roleUpsert.run(
+    'support',
+    'پشتیبانی',
+    'دسترسی محدود — خواندن پلتفرم و HR؛ آمادهٔ گسترش نقش‌های بعدی',
+    JSON.stringify(ADMIN_ROLE_PERMISSIONS.support)
+  );
+  // Future HR-specific stubs (display on RBAC page)
+  roleUpsert.run(
+    'hr_admin',
+    'HR Admin',
+    'دسترسی کامل به همه ماژول‌های منابع انسانی (آمادهٔ فعال‌سازی)',
+    JSON.stringify(['hr.read', 'hr.write'])
+  );
+  roleUpsert.run(
+    'recruiter',
+    'Recruiter',
+    'مدیریت استخدام و جذب (آمادهٔ فعال‌سازی)',
+    JSON.stringify(['hr.read', 'hr.write'])
+  );
+
+  // Optional support account from env — never overwrite existing hash if user changed password
+  const supportUser = (process.env.ADMIN_SUPPORT_USER || 'support').trim();
+  const supportPass = (process.env.ADMIN_SUPPORT_PASSWORD || '').trim();
+  if (supportPass) {
+    const existing = d
+      .prepare('SELECT id FROM admin_accounts WHERE username = ?')
+      .get(supportUser) as { id: number } | undefined;
+    if (!existing) {
+      d.prepare(
+        `INSERT INTO admin_accounts (username, password_hash, role_key, display_name, is_active)
+         VALUES (?, ?, 'support', 'پشتیبانی', 1)`
+      ).run(supportUser, hashPassword(supportPass));
+    }
+  }
+}
+
+function backfillHrPublicIds(): void {
+  const d = db();
+  const rows = d
+    .prepare(`SELECT id, public_id FROM hr_employees WHERE public_id IS NULL OR public_id = ''`)
+    .all() as Array<{ id: number; public_id: string | null }>;
+  const upd = d.prepare('UPDATE hr_employees SET public_id = ? WHERE id = ?');
+  for (const row of rows) {
+    upd.run(makeEmployeePublicId(row.id), row.id);
+  }
+  const contracts = d
+    .prepare(`SELECT id, contract_code FROM hr_contracts WHERE contract_code IS NULL OR contract_code = ''`)
+    .all() as Array<{ id: number; contract_code: string | null }>;
+  const cupd = d.prepare('UPDATE hr_contracts SET contract_code = ? WHERE id = ?');
+  for (const row of contracts) {
+    cupd.run(makeContractCode(row.id), row.id);
+  }
+}
+
+function mapBenefits(raw: unknown): HrEmployeeBenefits {
+  const o = parseJson<Partial<HrEmployeeBenefits>>(raw, {});
+  return { ...defaultHrBenefits(), ...o };
+}
+
+function mapContract(row: Record<string, unknown>): HrContract {
+  const id = Number(row.id);
+  return {
+    id,
+    contractCode: String(row.contract_code || makeContractCode(id)),
+    employeeId: Number(row.employee_id),
+    startDate: String(row.start_date || ''),
+    endDate: String(row.end_date || ''),
+    salary: Number(row.salary || 0),
+    eidi: Number(row.eidi || 0),
+    sanavat: Number(row.sanavat || 0),
+    commissionPercent: Number(row.commission_percent || 0),
+    insuranceNo: String(row.insurance_no || ''),
+    bankAccountNo: String(row.bank_account_no || ''),
+    sheba: String(row.sheba || ''),
+    cardNo: String(row.card_no || ''),
+    bankName: String(row.bank_name || ''),
+    salesAffectsPayout: String(row.sales_affects_payout || 'نامشخص'),
+    contractFileName: String(row.contract_file_name || ''),
+    ndaFileName: String(row.nda_file_name || ''),
+    createdAt: String(row.created_at || ''),
+  };
+}
+
+function mapEmployee(row: Record<string, unknown>, withRelated = false): HrEmployee {
+  const id = Number(row.id);
+  const emp: HrEmployee = {
+    id,
+    publicId: employeePublicIdOf({ id, publicId: row.public_id as string | undefined }),
+    uuid: String(row.uuid || ''),
+    personnelCode: String(row.personnel_code || ''),
+    firstName: String(row.first_name || ''),
+    lastName: String(row.last_name || ''),
+    gender: String(row.gender || ''),
+    birthDate: String(row.birth_date || ''),
+    birthCertNo: String(row.birth_cert_no || ''),
+    nationalId: String(row.national_id || ''),
+    fatherName: String(row.father_name || ''),
+    province: String(row.province || ''),
+    city: String(row.city || ''),
+    address: String(row.address || ''),
+    maritalStatus: String(row.marital_status || ''),
+    childrenCount: String(row.children_count || ''),
+    militaryStatus: String(row.military_status || ''),
+    gmail: String(row.gmail || ''),
+    educationLevel: String(row.education_level || ''),
+    fieldOfStudy: String(row.field_of_study || ''),
+    jobTitle: String(row.job_title || ''),
+    department: String(row.department || ''),
+    location: String(row.location || ''),
+    reportingManagerTitle: String(row.reporting_manager_title || ''),
+    reportingManagerPersonId: String(row.reporting_manager_person_id || ''),
+    cooperationType: String(row.cooperation_type || ''),
+    benefits: mapBenefits(row.benefits_json),
+    extension: String(row.extension || ''),
+    orgEmail: String(row.org_email || ''),
+    contractStatus: String(row.contract_status || ''),
+    accessStatus: String(row.access_status || ''),
+    username: String(row.username || row.personnel_code || ''),
+    incomeModelId: row.income_model_id != null ? Number(row.income_model_id) : null,
+    careerLayerId: row.career_layer_id != null ? Number(row.career_layer_id) : null,
+    permissions: parseJson<Record<string, boolean>>(row.permissions_json, {}),
+    createdAt: String(row.created_at || ''),
+    updatedAt: String(row.updated_at || ''),
+  };
+  if (withRelated) {
+    emp.contracts = listContracts(id);
+    emp.logs = listEmployeeLogs(id);
+  }
+  return emp;
+}
+
+export type HrEmployeeInput = Partial<HrEmployee> & {
+  firstName: string;
+  lastName: string;
+  password?: string;
+};
+
+function nextPersonnelCode(): string {
+  const d = db();
+  const row = d.prepare('SELECT COUNT(*) as c FROM hr_employees').get() as { c: number };
+  const n = Number(row?.c || 0) + 1;
+  return `PD-HR-${String(n).padStart(3, '0')}`;
+}
+
+function genHrPassword(): string {
+  const rand = randomBytes(3).toString('hex');
+  const num = String(Math.floor(Math.random() * 90) + 10);
+  return `Hr${rand}${num}`;
+}
+
+const TRACKED_FIELDS: Array<keyof HrEmployee> = [
+  'jobTitle',
+  'department',
+  'location',
+  'contractStatus',
+  'accessStatus',
+];
+
+function appendLog(employeeId: number, field: string, oldValue: string, newValue: string): void {
+  if (oldValue === newValue) return;
+  db()
+    .prepare(
+      `INSERT INTO hr_employee_logs (employee_id, field, old_value, new_value) VALUES (?, ?, ?, ?)`
+    )
+    .run(employeeId, field, oldValue, newValue);
+}
+
+export function listEmployees(opts?: {
+  q?: string;
+  contractStatus?: string;
+  accessStatus?: string;
+  limit?: number;
+  offset?: number;
+}): { total: number; employees: HrEmployee[] } {
+  const d = db();
+  const where: string[] = [];
+  const params: unknown[] = [];
+  if (opts?.q?.trim()) {
+    const q = `%${opts.q.trim()}%`;
+    where.push(
+      `(first_name LIKE ? OR last_name LIKE ? OR personnel_code LIKE ? OR public_id LIKE ? OR org_email LIKE ? OR job_title LIKE ?)`
+    );
+    params.push(q, q, q, q, q, q);
+  }
+  if (opts?.contractStatus) {
+    where.push('contract_status = ?');
+    params.push(opts.contractStatus);
+  }
+  if (opts?.accessStatus) {
+    where.push('access_status = ?');
+    params.push(opts.accessStatus);
+  }
+  const clause = where.length ? `WHERE ${where.join(' AND ')}` : '';
+  const total = Number(
+    (d.prepare(`SELECT COUNT(*) as c FROM hr_employees ${clause}`).get(...params) as { c: number })
+      ?.c ?? 0
+  );
+  const limit = Math.min(Math.max(opts?.limit ?? 100, 1), 500);
+  const offset = Math.max(opts?.offset ?? 0, 0);
+  const rows = d
+    .prepare(
+      `SELECT * FROM hr_employees ${clause} ORDER BY id DESC LIMIT ? OFFSET ?`
+    )
+    .all(...params, limit, offset) as Record<string, unknown>[];
+  return { total, employees: rows.map((r) => mapEmployee(r)) };
+}
+
+export function getEmployee(id: number): HrEmployee | null {
+  const row = db().prepare('SELECT * FROM hr_employees WHERE id = ?').get(id) as
+    | Record<string, unknown>
+    | undefined;
+  if (!row) return null;
+  return mapEmployee(row, true);
+}
+
+export function createEmployee(input: HrEmployeeInput): HrEmployee {
+  const d = db();
+  const personnelCode = (input.personnelCode || nextPersonnelCode()).trim();
+  const username = personnelCode;
+  const password = input.password?.trim() || genHrPassword();
+  let contractStatus = input.contractStatus || 'در حال همکاری';
+  let accessStatus = input.accessStatus || 'فعال';
+  if (contractStatus === 'عدم تمدید' || contractStatus === 'اخراج') {
+    accessStatus = 'غیر فعال';
+  }
+  const benefits = input.benefits || defaultHrBenefits();
+  const info = d
+    .prepare(
+      `INSERT INTO hr_employees (
+        uuid, personnel_code, first_name, last_name, gender, birth_date, birth_cert_no,
+        national_id, father_name, province, city, address, marital_status, children_count,
+        military_status, gmail, education_level, field_of_study, job_title, department,
+        location, reporting_manager_title, reporting_manager_person_id, cooperation_type,
+        benefits_json, extension, org_email, contract_status, access_status, username, password,
+        income_model_id, career_layer_id, permissions_json
+      ) VALUES (
+        ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
+      )`
+    )
+    .run(
+      randomUUID(),
+      personnelCode,
+      input.firstName.trim(),
+      input.lastName.trim(),
+      input.gender || '',
+      input.birthDate || '',
+      input.birthCertNo || '',
+      input.nationalId || '',
+      input.fatherName || '',
+      input.province || '',
+      input.city || '',
+      input.address || '',
+      input.maritalStatus || '',
+      input.childrenCount || '',
+      input.militaryStatus || '',
+      input.gmail || '',
+      input.educationLevel || '',
+      input.fieldOfStudy || '',
+      input.jobTitle || '',
+      input.department || '',
+      input.location || '',
+      input.reportingManagerTitle || '',
+      input.reportingManagerPersonId || '',
+      input.cooperationType || 'تمام وقت',
+      JSON.stringify(benefits),
+      input.extension || '',
+      input.orgEmail || '',
+      contractStatus,
+      accessStatus,
+      username,
+      password,
+      input.incomeModelId ?? null,
+      input.careerLayerId ?? null,
+      JSON.stringify(input.permissions || {})
+    );
+  const id = Number(info.lastInsertRowid);
+  d.prepare('UPDATE hr_employees SET public_id = ? WHERE id = ?').run(makeEmployeePublicId(id), id);
+  return getEmployee(id)!;
+}
+
+export function updateEmployee(id: number, input: Partial<HrEmployeeInput>): HrEmployee | null {
+  const prev = getEmployee(id);
+  if (!prev) return null;
+  const d = db();
+  const next: HrEmployee = {
+    ...prev,
+    ...input,
+    id: prev.id,
+    publicId: prev.publicId,
+    uuid: prev.uuid,
+    username: (input.personnelCode || prev.personnelCode),
+    benefits: input.benefits || prev.benefits,
+    permissions: input.permissions || prev.permissions,
+  };
+  if (next.contractStatus === 'عدم تمدید' || next.contractStatus === 'اخراج') {
+    next.accessStatus = 'غیر فعال';
+  }
+  d.prepare(
+    `UPDATE hr_employees SET
+      personnel_code=?, first_name=?, last_name=?, gender=?, birth_date=?, birth_cert_no=?,
+      national_id=?, father_name=?, province=?, city=?, address=?, marital_status=?, children_count=?,
+      military_status=?, gmail=?, education_level=?, field_of_study=?, job_title=?, department=?,
+      location=?, reporting_manager_title=?, reporting_manager_person_id=?, cooperation_type=?,
+      benefits_json=?, extension=?, org_email=?, contract_status=?, access_status=?, username=?,
+      password=COALESCE(?, password), income_model_id=?, career_layer_id=?, permissions_json=?,
+      updated_at=datetime('now')
+     WHERE id=?`
+  ).run(
+    next.personnelCode,
+    next.firstName,
+    next.lastName,
+    next.gender,
+    next.birthDate,
+    next.birthCertNo,
+    next.nationalId,
+    next.fatherName,
+    next.province,
+    next.city,
+    next.address,
+    next.maritalStatus,
+    next.childrenCount,
+    next.militaryStatus,
+    next.gmail,
+    next.educationLevel,
+    next.fieldOfStudy,
+    next.jobTitle,
+    next.department,
+    next.location,
+    next.reportingManagerTitle,
+    next.reportingManagerPersonId,
+    next.cooperationType,
+    JSON.stringify(next.benefits),
+    next.extension,
+    next.orgEmail,
+    next.contractStatus,
+    next.accessStatus,
+    next.username,
+    input.password?.trim() || null,
+    next.incomeModelId ?? null,
+    next.careerLayerId ?? null,
+    JSON.stringify(next.permissions),
+    id
+  );
+  for (const field of TRACKED_FIELDS) {
+    appendLog(id, String(field), String(prev[field] ?? ''), String(next[field] ?? ''));
+  }
+  return getEmployee(id);
+}
+
+export function listContracts(employeeId?: number): HrContract[] {
+  const d = db();
+  const rows = (
+    employeeId != null
+      ? d
+          .prepare('SELECT * FROM hr_contracts WHERE employee_id = ? ORDER BY start_date DESC, id DESC')
+          .all(employeeId)
+      : d.prepare('SELECT * FROM hr_contracts ORDER BY id DESC LIMIT 200').all()
+  ) as Record<string, unknown>[];
+  return rows.map(mapContract);
+}
+
+export function createContract(
+  employeeId: number,
+  input: Partial<HrContract> & { startDate: string; salary?: number }
+): HrContract | null {
+  const emp = getEmployee(employeeId);
+  if (!emp) return null;
+  const d = db();
+  // Close previous open contracts
+  if (input.startDate) {
+    d.prepare(
+      `UPDATE hr_contracts SET end_date = ?
+       WHERE employee_id = ? AND (end_date IS NULL OR end_date = '')`
+    ).run(input.startDate, employeeId);
+  }
+  const info = d
+    .prepare(
+      `INSERT INTO hr_contracts (
+        employee_id, start_date, end_date, salary, eidi, sanavat, commission_percent,
+        insurance_no, bank_account_no, sheba, card_no, bank_name, sales_affects_payout,
+        contract_file_name, nda_file_name
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
+    )
+    .run(
+      employeeId,
+      input.startDate,
+      input.endDate || '',
+      input.salary ?? 0,
+      input.eidi ?? 0,
+      input.sanavat ?? 0,
+      input.commissionPercent ?? 0,
+      input.insuranceNo || '',
+      input.bankAccountNo || '',
+      input.sheba || '',
+      input.cardNo || '',
+      input.bankName || '',
+      input.salesAffectsPayout || 'نامشخص',
+      input.contractFileName || '',
+      input.ndaFileName || ''
+    );
+  const id = Number(info.lastInsertRowid);
+  const code = makeContractCode(id);
+  d.prepare('UPDATE hr_contracts SET contract_code = ? WHERE id = ?').run(code, id);
+  // Optional job fields on renew
+  if (input as { jobTitle?: string }) {
+    const patch = input as Partial<HrEmployee> & Partial<HrContract>;
+    if (patch.jobTitle || patch.department || patch.cooperationType) {
+      updateEmployee(employeeId, {
+        jobTitle: (patch as HrEmployee).jobTitle,
+        department: (patch as HrEmployee).department,
+        cooperationType: (patch as HrEmployee).cooperationType,
+        reportingManagerTitle: (patch as HrEmployee).reportingManagerTitle,
+      });
+    }
+  }
+  return mapContract(
+    d.prepare('SELECT * FROM hr_contracts WHERE id = ?').get(id) as Record<string, unknown>
+  );
+}
+
+export function listEmployeeLogs(employeeId: number): HrEmployeeLog[] {
+  const rows = db()
+    .prepare('SELECT * FROM hr_employee_logs WHERE employee_id = ? ORDER BY id DESC LIMIT 100')
+    .all(employeeId) as Record<string, unknown>[];
+  return rows.map((row) => ({
+    id: Number(row.id),
+    employeeId: Number(row.employee_id),
+    loggedAt: String(row.logged_at || ''),
+    field: String(row.field || ''),
+    oldValue: String(row.old_value || ''),
+    newValue: String(row.new_value || ''),
+  }));
+}
+
+export function listCareerLayers(): HrCareerLayer[] {
+  return (
+    db().prepare('SELECT * FROM hr_career_layers ORDER BY sort_order, id').all() as Record<
+      string,
+      unknown
+    >[]
+  ).map((r) => ({
+    id: Number(r.id),
+    name: String(r.name),
+    sortOrder: Number(r.sort_order || 0),
+    unlocks: String(r.unlocks || ''),
+  }));
+}
+
+export function listIncomeModels(): HrIncomeModel[] {
+  return (
+    db().prepare('SELECT * FROM hr_income_models ORDER BY id').all() as Record<string, unknown>[]
+  ).map((r) => ({
+    id: Number(r.id),
+    name: String(r.name),
+    type: String(r.type),
+    variableAmount: Number(r.variable_amount || 0),
+    variablePercent: Number(r.variable_percent || 0),
+  }));
+}
+
+export function listBenefitDefs(): HrBenefitDef[] {
+  return (
+    db().prepare('SELECT * FROM hr_benefit_defs ORDER BY id').all() as Record<string, unknown>[]
+  ).map((r) => ({
+    id: Number(r.id),
+    title: String(r.title),
+    category: String(r.category || ''),
+    careerLayerId: r.career_layer_id != null ? Number(r.career_layer_id) : null,
+    jobTitle: r.job_title != null ? String(r.job_title) : null,
+    cost: Number(r.cost || 0),
+  }));
+}
+
+export function listJobOpenings(): HrJobOpening[] {
+  return (
+    db().prepare('SELECT * FROM hr_job_openings ORDER BY id DESC').all() as Record<string, unknown>[]
+  ).map((r) => ({
+    id: Number(r.id),
+    title: String(r.title),
+    department: String(r.department || ''),
+    status: String(r.status || 'باز'),
+    openings: Number(r.openings || 1),
+    createdAt: String(r.created_at || ''),
+  }));
+}
+
+export function createJobOpening(input: {
+  title: string;
+  department?: string;
+  status?: string;
+  openings?: number;
+}): HrJobOpening {
+  const info = db()
+    .prepare(
+      `INSERT INTO hr_job_openings (title, department, status, openings) VALUES (?, ?, ?, ?)`
+    )
+    .run(input.title.trim(), input.department || '', input.status || 'باز', input.openings ?? 1);
+  const id = Number(info.lastInsertRowid);
+  return listJobOpenings().find((j) => j.id === id)!;
+}
+
+export function listCandidates(opts?: { stage?: string; jobOpeningId?: number }): HrCandidate[] {
+  const d = db();
+  const where: string[] = [];
+  const params: unknown[] = [];
+  if (opts?.stage) {
+    where.push('stage = ?');
+    params.push(opts.stage);
+  }
+  if (opts?.jobOpeningId) {
+    where.push('job_opening_id = ?');
+    params.push(opts.jobOpeningId);
+  }
+  const clause = where.length ? `WHERE ${where.join(' AND ')}` : '';
+  const rows = d
+    .prepare(`SELECT * FROM hr_candidates ${clause} ORDER BY id DESC`)
+    .all(...params) as Record<string, unknown>[];
+  return rows.map(mapCandidate);
+}
+
+function mapCandidate(row: Record<string, unknown>): HrCandidate {
+  return {
+    id: Number(row.id),
+    firstName: String(row.first_name || ''),
+    lastName: String(row.last_name || ''),
+    mobile: String(row.mobile || ''),
+    email: String(row.email || ''),
+    city: String(row.city || ''),
+    source: String(row.source || ''),
+    jobBoard: String(row.job_board || ''),
+    jobOpeningId: row.job_opening_id != null ? Number(row.job_opening_id) : null,
+    applicationDate: String(row.application_date || ''),
+    notes: String(row.notes || ''),
+    stage: String(row.stage || ''),
+    resume: String(row.resume || ''),
+    logs: parseJson(row.logs_json, []),
+    createdAt: String(row.created_at || ''),
+  };
+}
+
+export function createCandidate(input: {
+  firstName: string;
+  lastName: string;
+  mobile?: string;
+  email?: string;
+  city?: string;
+  source?: string;
+  jobBoard?: string;
+  jobOpeningId?: number | null;
+  applicationDate?: string;
+  notes?: string;
+  stage?: string;
+}): { candidate: HrCandidate; duplicateMobile: boolean } {
+  const d = db();
+  const mobile = (input.mobile || '').trim();
+  let duplicateMobile = false;
+  if (mobile) {
+    const dup = d
+      .prepare('SELECT id FROM hr_candidates WHERE mobile = ? LIMIT 1')
+      .get(mobile) as { id: number } | undefined;
+    duplicateMobile = Boolean(dup);
+  }
+  const stage = input.stage || 'متقاضی جدید';
+  const logs = [{ at: new Date().toISOString(), stage, note: 'ثبت اولیه' }];
+  const info = d
+    .prepare(
+      `INSERT INTO hr_candidates (
+        first_name, last_name, mobile, email, city, source, job_board, job_opening_id,
+        application_date, notes, stage, logs_json
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`
+    )
+    .run(
+      input.firstName.trim(),
+      input.lastName.trim(),
+      mobile,
+      input.email || '',
+      input.city || '',
+      input.source || '',
+      input.jobBoard || '',
+      input.jobOpeningId ?? null,
+      input.applicationDate || new Date().toISOString().slice(0, 10),
+      input.notes || '',
+      stage,
+      JSON.stringify(logs)
+    );
+  const id = Number(info.lastInsertRowid);
+  return {
+    candidate: mapCandidate(
+      d.prepare('SELECT * FROM hr_candidates WHERE id = ?').get(id) as Record<string, unknown>
+    ),
+    duplicateMobile,
+  };
+}
+
+export function updateCandidateStage(id: number, stage: string): HrCandidate | null {
+  const d = db();
+  const row = d.prepare('SELECT * FROM hr_candidates WHERE id = ?').get(id) as
+    | Record<string, unknown>
+    | undefined;
+  if (!row) return null;
+  const logs = parseJson<Array<{ at: string; stage: string; note?: string }>>(row.logs_json, []);
+  logs.push({ at: new Date().toISOString(), stage });
+  d.prepare('UPDATE hr_candidates SET stage = ?, logs_json = ? WHERE id = ?').run(
+    stage,
+    JSON.stringify(logs),
+    id
+  );
+  return mapCandidate(
+    d.prepare('SELECT * FROM hr_candidates WHERE id = ?').get(id) as Record<string, unknown>
+  );
+}
+
+export function listRequests(): HrRequest[] {
+  return (
+    db().prepare('SELECT * FROM hr_requests ORDER BY id DESC LIMIT 200').all() as Record<
+      string,
+      unknown
+    >[]
+  ).map((r) => ({
+    id: Number(r.id),
+    employeeId: Number(r.employee_id),
+    type: String(r.type),
+    days: Number(r.days || 0),
+    fromDate: String(r.from_date || ''),
+    toDate: String(r.to_date || ''),
+    description: String(r.description || ''),
+    status: String(r.status || ''),
+    log: parseJson(r.log_json, []),
+    createdAt: String(r.created_at || ''),
+  }));
+}
+
+export function listAdminRoles(): AdminRoleDef[] {
+  return (
+    db().prepare('SELECT * FROM admin_roles ORDER BY id').all() as Record<string, unknown>[]
+  ).map((r) => ({
+    id: Number(r.id),
+    key: String(r.key),
+    nameFa: String(r.name_fa),
+    description: String(r.description || ''),
+    permissions: parseJson(r.permissions_json, []),
+  }));
+}
+
+export function listAdminAccounts(): AdminAccount[] {
+  return (
+    db().prepare('SELECT * FROM admin_accounts ORDER BY id').all() as Record<string, unknown>[]
+  ).map((r) => ({
+    id: Number(r.id),
+    username: String(r.username),
+    roleKey: String(r.role_key),
+    displayName: String(r.display_name || ''),
+    isActive: Number(r.is_active) === 1,
+    createdAt: String(r.created_at || ''),
+  }));
+}
+
+export type AdminAuthActor = {
+  kind: 'env_admin' | 'env_support' | 'account';
+  role: string;
+  permissions: string[];
+  displayName: string;
+  username?: string;
+};
+
+export function resolveAdminActor(opts: {
+  password?: string;
+  username?: string;
+}): AdminAuthActor | null {
+  const password = (opts.password || '').trim();
+  if (!password) return null;
+
+  const adminPwd = (process.env.ADMIN_PASSWORD || 'petdate').trim() || 'petdate';
+  const supportPwd = (process.env.ADMIN_SUPPORT_PASSWORD || '').trim();
+
+  // Username+password against accounts table
+  if (opts.username?.trim()) {
+    const row = db()
+      .prepare('SELECT * FROM admin_accounts WHERE username = ? AND is_active = 1')
+      .get(opts.username.trim()) as Record<string, unknown> | undefined;
+    if (row && verifyPassword(password, String(row.password_hash || ''))) {
+      const roleKey = String(row.role_key || 'support');
+      const roleRow = db()
+        .prepare('SELECT permissions_json FROM admin_roles WHERE key = ?')
+        .get(roleKey) as { permissions_json?: string } | undefined;
+      const permissions = roleRow
+        ? parseJson<string[]>(roleRow.permissions_json, [])
+        : [...(ADMIN_ROLE_PERMISSIONS.support || [])];
+      return {
+        kind: 'account',
+        role: roleKey,
+        permissions,
+        displayName: String(row.display_name || row.username),
+        username: String(row.username),
+      };
+    }
+    return null;
+  }
+
+  // Legacy single ADMIN_PASSWORD → full admin
+  if (password === adminPwd) {
+    return {
+      kind: 'env_admin',
+      role: 'admin',
+      permissions: [...ADMIN_ROLE_PERMISSIONS.admin],
+      displayName: 'مدیر سیستم',
+      username: 'admin',
+    };
+  }
+
+  // Optional SUPPORT_PASSWORD shortcut
+  if (supportPwd && password === supportPwd) {
+    return {
+      kind: 'env_support',
+      role: 'support',
+      permissions: [...ADMIN_ROLE_PERMISSIONS.support],
+      displayName: 'پشتیبانی',
+      username: 'support',
+    };
+  }
+
+  // Try matching any account password without username (last resort for single-field login)
+  const accounts = db()
+    .prepare('SELECT * FROM admin_accounts WHERE is_active = 1')
+    .all() as Record<string, unknown>[];
+  for (const row of accounts) {
+    if (verifyPassword(password, String(row.password_hash || ''))) {
+      const roleKey = String(row.role_key || 'support');
+      const roleRow = db()
+        .prepare('SELECT permissions_json FROM admin_roles WHERE key = ?')
+        .get(roleKey) as { permissions_json?: string } | undefined;
+      const permissions = roleRow
+        ? parseJson<string[]>(roleRow.permissions_json, [])
+        : [...ADMIN_ROLE_PERMISSIONS.support];
+      return {
+        kind: 'account',
+        role: roleKey,
+        permissions,
+        displayName: String(row.display_name || row.username),
+        username: String(row.username),
+      };
+    }
+  }
+
+  return null;
+}
+
+export function actorHasPermission(actor: AdminAuthActor, permission: string): boolean {
+  if (actor.role === 'admin' || actor.permissions.includes('admin.full')) return true;
+  return actor.permissions.includes(permission);
+}
+
+export const hrService = {
+  ensureHrSchema,
+  listEmployees,
+  getEmployee,
+  createEmployee,
+  updateEmployee,
+  listContracts,
+  createContract,
+  listCareerLayers,
+  listIncomeModels,
+  listBenefitDefs,
+  listJobOpenings,
+  createJobOpening,
+  listCandidates,
+  createCandidate,
+  updateCandidateStage,
+  listRequests,
+  listAdminRoles,
+  listAdminAccounts,
+  resolveAdminActor,
+  actorHasPermission,
+  hashPassword,
+};
