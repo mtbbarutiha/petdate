@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Activity,
@@ -144,6 +144,95 @@ type Dash = {
 
 const PAY_COLORS = ['#5c4d91', '#15cca0', '#f59e0b', '#0ea5e9', '#ec4899'];
 
+
+type Standing = 'در مسیر درست' | 'نیازمند تلاش بیشتر' | 'ضعیف';
+type DashKpi = { key: string; label: string; value: number; target: number; unit: string; standing: Standing; pct: number };
+
+const STANDING_COLOR: Record<string, string> = {
+  'در مسیر درست': '#15cca0',
+  'نیازمند تلاش بیشتر': '#fd961e',
+  ضعیف: '#c62828',
+};
+
+function standingOf(pct: number): Standing {
+  if (pct >= 90) return 'در مسیر درست';
+  if (pct >= 70) return 'نیازمند تلاش بیشتر';
+  return 'ضعیف';
+}
+
+function makeKpi(key: string, label: string, value: number, target: number, unit: string, invert = false): DashKpi {
+  const safeTarget = Math.max(1, target);
+  const raw = invert ? (value <= 0 ? 100 : Math.max(0, 100 - (value / safeTarget) * 100)) : (value / safeTarget) * 100;
+  const pct = Math.round(Math.max(0, Math.min(150, raw)));
+  return { key, label, value, target: safeTarget, unit, pct, standing: standingOf(pct) };
+}
+
+function GaugeSemi({ pct, standing }: { pct: number; standing: string }) {
+  const color = STANDING_COLOR[standing] || '#c62828';
+  const clamped = Math.max(0, Math.min(100, pct));
+  const r = 70;
+  const c = Math.PI * r;
+  const filled = (clamped / 100) * c;
+  return (
+    <div className="crm-gauge" aria-label={`تحقق ${pct} درصد`}>
+      <svg viewBox="0 0 180 110" width="180" height="110">
+        <path d="M 20 95 A 70 70 0 0 1 160 95" fill="none" stroke="var(--admin-border)" strokeWidth="14" strokeLinecap="round" />
+        <path
+          d="M 20 95 A 70 70 0 0 1 160 95"
+          fill="none"
+          stroke={color}
+          strokeWidth="14"
+          strokeLinecap="round"
+          strokeDasharray={`${filled} ${c}`}
+        />
+        <text x="90" y="78" textAnchor="middle" className="crm-gauge-value" fill={color}>
+          {formatNumFa(clamped)}٪
+        </text>
+        <text x="90" y="98" textAnchor="middle" className="crm-gauge-sub" fill="var(--admin-muted)">
+          سلامت کلی پلتفرم
+        </text>
+      </svg>
+      <span className="crm-standing-pill" style={{ background: `${color}22`, color, borderColor: `${color}55` }}>
+        {standing}
+      </span>
+    </div>
+  );
+}
+
+function KpiRing({ kpi }: { kpi: DashKpi }) {
+  const color = STANDING_COLOR[kpi.standing] || '#c62828';
+  const r = 28;
+  const circ = 2 * Math.PI * r;
+  const filled = (Math.min(100, Math.max(0, kpi.pct)) / 100) * circ;
+  return (
+    <div className="crm-kpi-ring">
+      <svg width="72" height="72" viewBox="0 0 72 72">
+        <circle cx="36" cy="36" r={r} fill="none" stroke="var(--admin-border)" strokeWidth="7" />
+        <circle
+          cx="36"
+          cy="36"
+          r={r}
+          fill="none"
+          stroke={color}
+          strokeWidth="7"
+          strokeLinecap="round"
+          strokeDasharray={`${filled} ${circ}`}
+          transform="rotate(-90 36 36)"
+        />
+        <text x="36" y="34" textAnchor="middle" className="crm-kpi-ring-num" fill="var(--admin-ink)">
+          {formatNumFa(kpi.value)}
+        </text>
+        <text x="36" y="48" textAnchor="middle" className="crm-kpi-ring-target" fill="var(--admin-muted)">
+          از {formatNumFa(kpi.target)}
+        </text>
+      </svg>
+      <div className="crm-kpi-ring-label">{kpi.label}</div>
+      <div className="admin-muted" style={{ fontSize: 11 }}>{kpi.unit}</div>
+    </div>
+  );
+}
+
+
 export function AdminDashboardPage() {
   const [data, setData] = useState<Dash | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -164,6 +253,27 @@ export function AdminDashboardPage() {
   const m = data?.modules;
   const series = data?.series;
   const links = data?.links;
+  const healthKpis = useMemo(() => {
+    if (!s || !m) return [] as DashKpi[];
+    return [
+      makeKpi('users', 'کاربران فعال پلتفرم', s.users, Math.max(s.users, 100), 'نفر'),
+      makeKpi('pets', 'پت‌های ثبت‌شده', s.pets, Math.max(s.pets, 80), 'پت'),
+      makeKpi('playdates', 'همبازی باز', s.playdatesPending, Math.max(8, Math.round(s.playdatesPending * 1.2) || 8), 'مورد', true),
+      makeKpi('consults', 'مشاوره باز', s.vetConsultsOpen, Math.max(6, Math.round(s.vetConsultsOpen * 1.2) || 6), 'مورد', true),
+      makeKpi('sales', 'لید فعال فروش', m.sales.activeLeads, Math.max(m.sales.activeLeads, 20), 'لید'),
+      makeKpi('crm_tickets', 'تیکت باز باشگاه', m.crm.openTickets, Math.max(10, Math.round(m.crm.openTickets * 1.15) || 10), 'تیکت', true),
+      makeKpi('sla', 'نقض SLA', m.crm.breachedSla, Math.max(3, m.crm.breachedSla || 3), 'مورد', true),
+      makeKpi('hr', 'درخواست باز HR', m.hr.openRequests, Math.max(5, Math.round(m.hr.openRequests * 1.2) || 5), 'درخواست', true),
+    ];
+  }, [s, m]);
+
+  const overallPct = useMemo(() => {
+    if (!healthKpis.length) return 0;
+    return Math.round(healthKpis.reduce((a, k) => a + Math.min(100, k.pct), 0) / healthKpis.length);
+  }, [healthKpis]);
+  const overallStanding = standingOf(overallPct);
+  const weakPoints = healthKpis.filter((k) => k.standing === 'ضعیف');
+
 
   const platformKpis = s
     ? [
@@ -302,6 +412,48 @@ export function AdminDashboardPage() {
       </header>
       {error ? <p className="admin-error">{error}</p> : null}
 
+
+      {healthKpis.length ? (
+        <section className="admin-card crm-kpi-panel" style={{ marginBottom: 16 }}>
+          <div className="admin-card-head">
+            <h2>وضعیت سلامت پلتفرم نسبت به شاخص‌ها</h2>
+            <span className="admin-muted">پنل پویا · مشابه باشگاه مشتریان</span>
+          </div>
+          <div className="crm-kpi-layout">
+            <GaugeSemi pct={overallPct} standing={overallStanding} />
+            <div className="crm-kpi-rings">
+              {healthKpis.map((k) => (
+                <KpiRing key={k.key} kpi={k} />
+              ))}
+            </div>
+            <div className="crm-kpi-legend">
+              <div className="crm-legend-item" style={{ borderColor: '#15cca055', background: '#15cca014' }}>
+                <strong style={{ color: '#0f9a78' }}>در مسیر درست</strong>
+                <span>۹۰٪ و بالاتر</span>
+              </div>
+              <div className="crm-legend-item" style={{ borderColor: '#fd961e55', background: '#fd961e14' }}>
+                <strong style={{ color: '#c77810' }}>نیازمند تلاش بیشتر</strong>
+                <span>۷۰٪ تا ۹۰٪</span>
+              </div>
+              <div className="crm-legend-item" style={{ borderColor: '#c6282855', background: '#c6282814' }}>
+                <strong style={{ color: '#c62828' }}>ضعیف</strong>
+                <span>زیر ۷۰٪</span>
+              </div>
+            </div>
+          </div>
+          {weakPoints.length ? (
+            <div className="crm-weak-points">
+              <strong>نقاط ضعف:</strong>{' '}
+              {weakPoints
+                .map((k) => `${k.label}: ${formatNumFa(k.value)} از ${formatNumFa(k.target)} (${formatNumFa(k.pct)}٪)`)
+                .join(' · ')}
+            </div>
+          ) : (
+            <div className="crm-weak-points crm-weak-points--ok">همه شاخص‌های اصلی در مسیر مطلوب هستند.</div>
+          )}
+        </section>
+      ) : null}
+
       <p className="admin-section-label">شاخص‌های زندهٔ پلتفرم</p>
       <div className="admin-stats admin-stats--dense">
         {platformKpis.map((k) => (
@@ -354,10 +506,19 @@ export function AdminDashboardPage() {
       {series ? (
         <>
           <p className="admin-section-label">گزارش تجمیعی · نمودارها</p>
-          <div className="admin-report-grid admin-report-grid--hero">
+          <div className="admin-report-grid admin-report-grid--3">
             <section className="admin-card admin-card--chart">
               <div className="admin-card-head">
-                <h2>روند ۱۴روزهٔ فعالیت پلتفرم</h2>
+                <h2>ترکیب بار ماژول‌ها</h2>
+                <Link to="/admin/crm">CRM</Link>
+              </div>
+              <div className="admin-chart-panel">
+                <AdminDonutChart slices={series.moduleMix} size={180} />
+              </div>
+            </section>
+            <section className="admin-card admin-card--chart">
+              <div className="admin-card-head">
+                <h2>حجم تعامل ۱۴ روز اخیر</h2>
                 <Link to="/admin/users">جزئیات</Link>
               </div>
               <div className="admin-chart-panel">
@@ -366,11 +527,18 @@ export function AdminDashboardPage() {
             </section>
             <section className="admin-card admin-card--chart">
               <div className="admin-card-head">
-                <h2>ترکیب بار ماژول‌ها</h2>
-                <Link to="/admin/crm">CRM</Link>
+                <h2>توزیع فعالیت‌ها</h2>
+                <Link to="/admin/crm/inbox">اینباکس</Link>
               </div>
               <div className="admin-chart-panel">
-                <AdminDonutChart slices={series.moduleMix} size={180} />
+                <AdminBarChart
+                  points={
+                    series.activityBreakdown?.length
+                      ? series.activityBreakdown
+                      : series.crmReasons
+                  }
+                  color="#5c4d91"
+                />
               </div>
             </section>
           </div>

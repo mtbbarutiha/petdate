@@ -3279,3 +3279,57 @@ body:has(.admin-app) {
 }
 .admin-app .crm-sms-modal { width: min(520px, 100%); max-height: min(90vh, 720px); overflow: auto; }
 .admin-app .crm-sms-modal-actions { display: flex; gap: 8px; justify-content: flex-start; margin-top: 12px; }
+
+
+/* —— سایدبار آکاردئونی · گروه‌های داشبورد —— */
+.admin-app .admin-nav-group-title {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  font: inherit;
+  text-align: inherit;
+  color: inherit;
+  padding-inline-end: 8px;
+}
+.admin-app .admin-nav-group-title:hover {
+  color: var(--admin-ink);
+}
+.admin-app .admin-nav-group-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.admin-app .admin-nav-chevron {
+  transition: transform 0.18s ease;
+  opacity: 0.7;
+}
+.admin-app .admin-nav-chevron.is-open {
+  transform: rotate(180deg);
+}
+.admin-app .admin-nav-group-items {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-bottom: 4px;
+}
+.admin-app .admin-nav-group.is-collapsed .admin-nav-group-items,
+.admin-app .admin-nav-group-items[hidden] {
+  display: none;
+}
+.admin-app .admin-nav-group.is-active-group > .admin-nav-group-title {
+  color: var(--admin-accent, #0f766e);
+}
+.admin-app.admin-app--collapsed .admin-nav-group-title {
+  display: none;
+}
+.admin-app.admin-app--collapsed .admin-nav-group.is-collapsed .admin-nav-group-items,
+.admin-app.admin-app--collapsed .admin-nav-group-items,
+.admin-app.admin-app--collapsed .admin-nav-group-items[hidden] {
+  display: flex !important;
+}
