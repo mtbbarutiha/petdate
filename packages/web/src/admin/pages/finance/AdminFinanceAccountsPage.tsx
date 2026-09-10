@@ -10,7 +10,7 @@ import { FinanceEditToggle, FinanceTabs, formatMoney, useFinanceEditMode } from 
 type Tab = 'accounts' | 'snappay' | 'income' | 'expense' | 'people';
 
 export function AdminFinanceAccountsPage() {
-  const canWrite = adminCan('platform.write') || adminCan('admin.full');
+  const canWrite = adminCan('finance.write') || adminCan('admin.full');
   const { editMode, setEditMode } = useFinanceEditMode(canWrite);
   const [tab, setTab] = useState<Tab>('accounts');
   const [data, setData] = useState<FinanceOsAccountsBundle | null>(null);

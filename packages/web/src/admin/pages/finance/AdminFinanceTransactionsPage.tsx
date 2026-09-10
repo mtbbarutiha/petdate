@@ -16,7 +16,7 @@ import {
 type Tab = 'import' | 'queue' | 'suspicious' | 'ledger';
 
 export function AdminFinanceTransactionsPage() {
-  const canWrite = adminCan('platform.write') || adminCan('admin.full');
+  const canWrite = adminCan('finance.write') || adminCan('admin.full');
   const { editMode, setEditMode } = useFinanceEditMode(canWrite);
   const [tab, setTab] = useState<Tab>('ledger');
   const [data, setData] = useState<FinanceOsTransactionsBundle | null>(null);

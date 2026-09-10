@@ -7,7 +7,7 @@ import {
   type RefObject,
 } from 'react';
 
-export type AdminModalSize = 'sm' | 'md' | 'lg' | 'xl';
+export type AdminModalSize = 'sm' | 'md' | 'lg' | 'xl' | 'full';
 
 type AdminModalProps = {
   open: boolean;

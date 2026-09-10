@@ -2,7 +2,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { AdminAccount, AdminPermission, AdminRoleDef } from '@petdate/shared';
 import {
   ADMIN_PANEL_ROLE_LABELS,
+  ADMIN_PERMISSION_ACTION_LABELS,
+  ADMIN_PERMISSION_ACTIONS,
   ADMIN_PERMISSION_LABELS,
+  ADMIN_PERMISSION_MODULES,
   ADMIN_PERMISSIONS,
   ADMIN_SYSTEM_ROLE_KEYS,
 } from '@petdate/shared';
@@ -189,6 +192,21 @@ export function AdminHrRbacPage() {
     });
   };
 
+  const hasFullAdmin = Boolean(roleForm?.permissions.includes('admin.full'));
+
+  const compactPermLabel = (p: string) => {
+    const known = ADMIN_PERMISSION_LABELS[p as AdminPermission];
+    if (!known) return p;
+    if (p === 'admin.full') return known;
+    const mod = ADMIN_PERMISSION_MODULES.find(
+      (m) => m.view === p || m.edit === p || m.create === p
+    );
+    if (!mod) return known;
+    if (mod.view === p) return `${mod.labelFa} · دیدن`;
+    if (mod.edit === p) return `${mod.labelFa} · ویرایش`;
+    return `${mod.labelFa} · ایجاد`;
+  };
+
   return (
     <div className="admin-page">
       <header className="admin-header">
@@ -259,7 +277,7 @@ export function AdminHrRbacPage() {
                       {r.permissions.length ? (
                         r.permissions.map((p) => (
                           <span key={p} className="admin-pill" title={p}>
-                            {ADMIN_PERMISSION_LABELS[p as AdminPermission] || p}
+                            {compactPermLabel(p)}
                           </span>
                         ))
                       ) : (
@@ -397,7 +415,7 @@ export function AdminHrRbacPage() {
           open
           title={roleForm.id ? 'ویرایش نقش' : 'نقش جدید'}
           onClose={() => !busy && setRoleForm(null)}
-          size="lg"
+          size="full"
           as="form"
           onSubmit={(e) => void saveRole(e)}
           busy={busy}
@@ -444,23 +462,64 @@ export function AdminHrRbacPage() {
             </label>
             <fieldset style={{ border: 'none', padding: 0, margin: '12px 0' }}>
               <legend className="form-label">مجوزها</legend>
-              <div className="admin-form-grid" style={{ marginTop: 8 }}>
-                {ADMIN_PERMISSIONS.map((perm) => (
-                  <label key={perm} className="admin-check-inline">
-                    <input
-                      type="checkbox"
-                      checked={roleForm.permissions.includes(perm)}
-                      onChange={() => togglePerm(perm)}
-                    />
-                    <span>
-                      {ADMIN_PERMISSION_LABELS[perm]}
-                      <span className="admin-muted" style={{ marginInlineStart: 6 }} dir="ltr">
-                        {perm}
-                      </span>
-                    </span>
-                  </label>
-                ))}
+              <label className="admin-perm-master">
+                <input
+                  type="checkbox"
+                  checked={hasFullAdmin}
+                  onChange={() => togglePerm('admin.full')}
+                />
+                <span>
+                  {ADMIN_PERMISSION_LABELS['admin.full']}
+                  <span className="admin-muted" style={{ marginInlineStart: 6 }} dir="ltr">
+                    admin.full
+                  </span>
+                </span>
+              </label>
+              <div className="admin-perm-matrix-wrap">
+                <table className="admin-perm-matrix">
+                  <thead>
+                    <tr>
+                      <th scope="col">ماژول</th>
+                      {ADMIN_PERMISSION_ACTIONS.map((action) => (
+                        <th key={action} scope="col">
+                          {ADMIN_PERMISSION_ACTION_LABELS[action]}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ADMIN_PERMISSION_MODULES.map((mod) => (
+                      <tr key={mod.id}>
+                        <th scope="row">
+                          {mod.labelFa}
+                          <span className="admin-muted" dir="ltr">
+                            {mod.id}
+                          </span>
+                        </th>
+                        {ADMIN_PERMISSION_ACTIONS.map((action) => {
+                          const key = mod[action];
+                          return (
+                            <td key={action}>
+                              <input
+                                type="checkbox"
+                                aria-label={`${mod.labelFa} — ${ADMIN_PERMISSION_ACTION_LABELS[action]}`}
+                                title={key}
+                                disabled={hasFullAdmin}
+                                checked={hasFullAdmin || roleForm.permissions.includes(key)}
+                                onChange={() => togglePerm(key)}
+                              />
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
+              <p className="admin-hint admin-muted">
+                ستون‌ها: دیدن = خواندن، ویرایش = نوشتن، ایجاد = ساختن یا مدیریت سطح بالا
+                (برای فروش و امور مشتریان همان کلید <code dir="ltr">*.admin</code>).
+              </p>
             </fieldset>
             {roleForm.id &&
             !(ADMIN_SYSTEM_ROLE_KEYS as readonly string[]).includes(roleForm.key) ? (

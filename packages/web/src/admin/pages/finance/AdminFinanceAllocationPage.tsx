@@ -13,7 +13,7 @@ type Tab = 'offices' | 'people' | 'equipment' | 'allocation' | 'invoices' | 'ban
 const NON_ALLOCATABLE_BUSINESSES = new Set(['هلدینگ', 'SBG', 'مشترک هلدینگ']);
 
 export function AdminFinanceAllocationPage() {
-  const canWrite = adminCan('platform.write') || adminCan('admin.full');
+  const canWrite = adminCan('finance.write') || adminCan('admin.full');
   const { editMode, setEditMode } = useFinanceEditMode(canWrite);
   const [tab, setTab] = useState<Tab>('allocation');
   const [data, setData] = useState<FinanceOsAllocationBundle | null>(null);

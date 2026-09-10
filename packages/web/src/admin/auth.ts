@@ -6,7 +6,7 @@ import {
   setAdminUsername,
   adminFetch,
 } from './api';
-import type { AdminPermission } from '@petdate/shared';
+import { permissionsSatisfy, type AdminPermission } from '@petdate/shared';
 
 const AUTH_KEY = 'petdate_admin_auth';
 const ROLE_KEY = 'petdate_admin_role';
@@ -39,8 +39,7 @@ export function getAdminDisplayName(): string {
 export function adminCan(permission: AdminPermission | string): boolean {
   const role = getAdminRole();
   if (role === 'admin') return true;
-  const perms = getAdminPermissions();
-  return perms.includes('admin.full') || perms.includes(permission);
+  return permissionsSatisfy(getAdminPermissions(), permission);
 }
 
 export async function loginAdmin(

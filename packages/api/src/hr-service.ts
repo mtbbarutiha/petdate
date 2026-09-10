@@ -16,6 +16,7 @@ import {
   makeEmployeePublicId,
   normalizeAdminPermissions,
   normalizeHrJobBoard,
+  permissionsSatisfy,
   type AdminAccount,
   type AdminRoleDef,
   type HrBenefitDef,
@@ -2002,8 +2003,8 @@ export function resolveAdminActor(opts: {
 }
 
 export function actorHasPermission(actor: AdminAuthActor, permission: string): boolean {
-  if (actor.role === 'admin' || actor.permissions.includes('admin.full')) return true;
-  return actor.permissions.includes(permission);
+  if (actor.role === 'admin') return true;
+  return permissionsSatisfy(actor.permissions, permission);
 }
 
 export const hrService = {
