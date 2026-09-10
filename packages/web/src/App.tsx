@@ -209,6 +209,45 @@ const AdminHrSettingsPage = lazy(() =>
 const AdminHrRbacPage = lazy(() =>
   import('./admin/pages/hr/AdminHrRbacPage').then((m) => ({ default: m.AdminHrRbacPage })),
 );
+const AdminHrDashboardPage = lazy(() =>
+  import('./admin/pages/hr/AdminHrDashboardPage').then((m) => ({ default: m.AdminHrDashboardPage })),
+);
+const AdminHrRecruitmentDashboardPage = lazy(() =>
+  import('./admin/pages/hr/AdminHrRecruitmentDashboardPage').then((m) => ({
+    default: m.AdminHrRecruitmentDashboardPage,
+  })),
+);
+const AdminHrOnboardingPage = lazy(() =>
+  import('./admin/pages/hr/AdminHrOnboardingPage').then((m) => ({
+    default: m.AdminHrOnboardingPage,
+  })),
+);
+const AdminHrRequestsPage = lazy(() =>
+  import('./admin/pages/hr/AdminHrRequestsPage').then((m) => ({ default: m.AdminHrRequestsPage })),
+);
+const AdminHrServicePage = lazy(() =>
+  import('./admin/pages/hr/AdminHrServicePage').then((m) => ({ default: m.AdminHrServicePage })),
+);
+const AdminHrReportsPage = lazy(() =>
+  import('./admin/pages/hr/AdminHrReportsPage').then((m) => ({ default: m.AdminHrReportsPage })),
+);
+const AdminHrCostPage = lazy(() =>
+  import('./admin/pages/hr/AdminHrCostPage').then((m) => ({ default: m.AdminHrCostPage })),
+);
+const AdminHrCompensationPage = lazy(() =>
+  import('./admin/pages/hr/AdminHrCompensationPage').then((m) => ({
+    default: m.AdminHrCompensationPage,
+  })),
+);
+const AdminHrCareerPage = lazy(() =>
+  import('./admin/pages/hr/AdminHrCareerPage').then((m) => ({ default: m.AdminHrCareerPage })),
+);
+const AdminHrCockpitPage = lazy(() =>
+  import('./admin/pages/hr/AdminHrCockpitPage').then((m) => ({ default: m.AdminHrCockpitPage })),
+);
+const AdminHrArmitaPage = lazy(() =>
+  import('./admin/pages/hr/AdminHrArmitaPage').then((m) => ({ default: m.AdminHrArmitaPage })),
+);
 
 function RouteFallback() {
   return <div className="pd-route-fallback" aria-hidden="true" />;
@@ -295,10 +334,21 @@ export default function App() {
                 <Route path="logs" element={<AdminLogsPage />} />
                 <Route path="monitoring" element={<AdminMonitoringPage />} />
                 <Route path="settings" element={<AdminSettingsPage />} />
+                <Route path="hr" element={<AdminHrDashboardPage />} />
+                <Route path="hr/recruitment" element={<AdminHrRecruitmentDashboardPage />} />
                 <Route path="hr/employees" element={<AdminHrEmployeesPage />} />
                 <Route path="hr/employees/:id" element={<AdminHrEmployeeDetailPage />} />
                 <Route path="hr/contracts" element={<AdminHrContractsPage />} />
                 <Route path="hr/ats" element={<AdminHrAtsPage />} />
+                <Route path="hr/onboarding" element={<AdminHrOnboardingPage />} />
+                <Route path="hr/requests" element={<AdminHrRequestsPage />} />
+                <Route path="hr/service" element={<AdminHrServicePage />} />
+                <Route path="hr/reports" element={<AdminHrReportsPage />} />
+                <Route path="hr/cost" element={<AdminHrCostPage />} />
+                <Route path="hr/compensation" element={<AdminHrCompensationPage />} />
+                <Route path="hr/career" element={<AdminHrCareerPage />} />
+                <Route path="hr/cockpit" element={<AdminHrCockpitPage />} />
+                <Route path="hr/armita" element={<AdminHrArmitaPage />} />
                 <Route path="hr/settings" element={<AdminHrSettingsPage />} />
                 <Route path="hr/rbac" element={<AdminHrRbacPage />} />
               </Route>

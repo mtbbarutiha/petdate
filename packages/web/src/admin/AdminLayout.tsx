@@ -3,7 +3,8 @@ import { useMemo, useState } from 'react';
 import {
   Activity, Bell, Briefcase, ClipboardList, FileText, LayoutDashboard, LineChart, LogOut, Mail, Menu, Package,
   PawPrint, PieChart, ScrollText, Settings, Shield, ShieldCheck, ShoppingBag, Stethoscope,
-  Store, TrendingUp, UserRound, Users, Wallet, X,
+  Store, TrendingUp, UserPlus, UserRound, Users, Wallet, X, ClipboardCheck, BarChart3, Coins,
+  Route, Inbox, HandCoins, Bot,
 } from 'lucide-react';
 import { AdminWordmark } from './AdminWordmark';
 import { adminCan, getAdminDisplayName, getAdminRole, logoutAdmin } from './auth';
@@ -14,7 +15,31 @@ type NavItem = { to: string; icon: typeof LayoutDashboard; label: string; perm?:
 type NavGroup = { title: string; items: NavItem[] };
 
 const NAV_GROUPS: NavGroup[] = [
-  { title: 'نمای کلی', items: [{ to: '/admin/dashboard', icon: LayoutDashboard, label: 'داشبورد' }] },
+  { title: 'نمای کلی', items: [{ to: '/admin/dashboard', icon: LayoutDashboard, label: 'داشبورد پلتفرم' }] },
+  { title: 'جذب و استخدام', items: [
+    { to: '/admin/hr/recruitment', icon: LayoutDashboard, label: 'داشبورد جذب', perm: 'hr.read' },
+    { to: '/admin/hr/ats', icon: Briefcase, label: 'استخدام و جذب (ATS)', perm: 'hr.read' },
+    { to: '/admin/hr/onboarding', icon: UserPlus, label: 'شروع به کار', perm: 'hr.read' },
+  ]},
+  { title: 'منابع انسانی', items: [
+    { to: '/admin/hr', icon: LayoutDashboard, label: 'داشبورد HR', perm: 'hr.read' },
+    { to: '/admin/hr/employees', icon: UserRound, label: 'اطلاعات پرسنلی', perm: 'hr.read' },
+    { to: '/admin/hr/requests', icon: ClipboardCheck, label: 'درخواست‌های کارکنان', perm: 'hr.read' },
+    { to: '/admin/hr/service', icon: HandCoins, label: 'ارائه خدمات', perm: 'hr.read' },
+    { to: '/admin/hr/reports', icon: BarChart3, label: 'گزارشات', perm: 'hr.read' },
+    { to: '/admin/hr/cost', icon: Coins, label: 'تخصیص هزینه نیروی کار', perm: 'hr.read' },
+    { to: '/admin/hr/compensation', icon: TrendingUp, label: 'جبران خدمت (مدل درآمدی)', perm: 'hr.read' },
+    { to: '/admin/hr/career', icon: Route, label: 'مسیر شغلی و مزایا', perm: 'hr.read' },
+    { to: '/admin/hr/cockpit', icon: Inbox, label: 'کارتابل فعالیت', perm: 'hr.read' },
+    { to: '/admin/hr/contracts', icon: FileText, label: 'قراردادها', perm: 'hr.read' },
+  ]},
+  { title: 'دستیار', items: [
+    { to: '/admin/hr/armita', icon: Bot, label: 'آرمیتا (دستیار هوشمند)', perm: 'hr.read' },
+  ]},
+  { title: 'پیکربندی', items: [
+    { to: '/admin/hr/settings', icon: Settings, label: 'تنظیمات HR', perm: 'hr.read' },
+    { to: '/admin/hr/rbac', icon: Shield, label: 'نقش‌ها و دسترسی', perm: 'admin.full' },
+  ]},
   { title: 'پلتفرم', items: [
     { to: '/admin/users', icon: Users, label: 'کاربران', perm: 'platform.read' },
     { to: '/admin/pets', icon: PawPrint, label: 'پت‌ها', perm: 'platform.read' },
@@ -22,13 +47,6 @@ const NAV_GROUPS: NavGroup[] = [
     { to: '/admin/consults', icon: Stethoscope, label: 'مشاوره دامپزشک', perm: 'platform.read' },
     { to: '/admin/verification', icon: ShieldCheck, label: 'احراز هویت', perm: 'platform.write' },
     { to: '/admin/marketplace-moderation', icon: ClipboardList, label: 'مدارک و عکس', perm: 'platform.write' },
-  ]},
-  { title: 'منابع انسانی', items: [
-    { to: '/admin/hr/employees', icon: UserRound, label: 'همکاران', perm: 'hr.read' },
-    { to: '/admin/hr/contracts', icon: FileText, label: 'قراردادها', perm: 'hr.read' },
-    { to: '/admin/hr/ats', icon: Briefcase, label: 'استخدام (ATS)', perm: 'hr.read' },
-    { to: '/admin/hr/settings', icon: Settings, label: 'تنظیمات HR', perm: 'hr.read' },
-    { to: '/admin/hr/rbac', icon: Shield, label: 'نقش‌ها و دسترسی', perm: 'admin.full' },
   ]},
   { title: 'مالی', items: [
     { to: '/admin/finance', icon: TrendingUp, label: 'داشبورد مالی', perm: 'platform.read' },
@@ -49,7 +67,7 @@ const NAV_GROUPS: NavGroup[] = [
     { to: '/admin/mail', icon: Mail, label: 'ایمیل / SMTP', perm: 'platform.read' },
     { to: '/admin/monitoring', icon: Activity, label: 'مانیتورینگ', perm: 'platform.read' },
     { to: '/admin/logs', icon: ScrollText, label: 'لاگ خطاها', perm: 'platform.read' },
-    { to: '/admin/settings', icon: Settings, label: 'تنظیمات', perm: 'platform.write' },
+    { to: '/admin/settings', icon: Settings, label: 'تنظیمات پلتفرم', perm: 'platform.write' },
   ]},
 ];
 
@@ -86,13 +104,16 @@ export function AdminLayout() {
         <aside className={`admin-sidebar${mobileOpen ? ' is-open' : ''}`}>
           <div className="admin-brand">
             <AdminWordmark />
+            <div className="admin-brand-sub" style={{ fontSize: 12, opacity: 0.75, marginTop: 4 }}>
+              پیوند · منابع انسانی
+            </div>
           </div>
           <nav className="admin-nav" aria-label="منوی ادمین">
             {groups.map((group) => (
               <div key={group.title} className="admin-nav-group">
                 <div className="admin-nav-group-title">{group.title}</div>
                 {group.items.map((item) => (
-                  <NavLink key={item.to} to={item.to} onClick={() => setMobileOpen(false)}
+                  <NavLink key={item.to} to={item.to} end={item.to === '/admin/hr'} onClick={() => setMobileOpen(false)}
                     className={({ isActive }) => `admin-nav-item${isActive ? ' active' : ''}`}>
                     <item.icon size={18} strokeWidth={2} />
                     <span>{item.label}</span>
