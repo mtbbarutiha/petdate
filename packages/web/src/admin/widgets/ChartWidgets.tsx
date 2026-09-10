@@ -7,7 +7,7 @@ import {
   AdminLineChart,
   AdminMultiLineChart,
 } from '../FinanceCharts';
-import { aggregateByGrain, canDrillDown } from './drill';
+import { aggregateByGrain, filterPointsByFocus } from './drill';
 import {
   CategoryDrillDetail,
   DrillToolbar,
@@ -17,6 +17,14 @@ import {
 import type { ChartPoint, WidgetRenderContext } from './types';
 
 type MultiSeries = Array<{ key: string; label: string; color: string; points: ChartPoint[] }>;
+
+function ChartEmpty({ hint }: { hint?: string }) {
+  return (
+    <p className="admin-muted wdg-chart-empty">
+      {hint || 'داده‌ای برای این سطح دریل نیست'}
+    </p>
+  );
+}
 
 export function TimeLineWidget({
   points,
@@ -34,17 +42,26 @@ export function TimeLineWidget({
         mode="time"
         grain={drill.grain}
         baseGrain={drill.baseGrain}
+        focusStack={drill.focusStack}
+        canUp={drill.canUp}
+        canDown={drill.canDown}
         onDrillUp={drill.drillUp}
         onDrillDown={drill.drillDown}
+        onCrumbClick={drill.goToCrumb}
       />
-      <AdminLineChart
-        points={drill.view}
-        color={color}
-        height={ctx.chartHeight}
-        onPointClick={() => {
-          if (canDrillDown(drill.grain, drill.baseGrain)) drill.drillDown();
-        }}
-      />
+      {drill.view.length ? (
+        <AdminLineChart
+          points={drill.view}
+          color={color}
+          height={ctx.chartHeight}
+          onPointClick={(p) => {
+            drill.drillInto(p.label);
+          }}
+          interactive={drill.canDown}
+        />
+      ) : (
+        <ChartEmpty />
+      )}
     </div>
   );
 }
@@ -65,17 +82,26 @@ export function TimeBarWidget({
         mode="time"
         grain={drill.grain}
         baseGrain={drill.baseGrain}
+        focusStack={drill.focusStack}
+        canUp={drill.canUp}
+        canDown={drill.canDown}
         onDrillUp={drill.drillUp}
         onDrillDown={drill.drillDown}
+        onCrumbClick={drill.goToCrumb}
       />
-      <AdminBarChart
-        points={drill.view}
-        color={color}
-        height={ctx.chartHeight}
-        onSliceClick={() => {
-          if (canDrillDown(drill.grain, drill.baseGrain)) drill.drillDown();
-        }}
-      />
+      {drill.view.length ? (
+        <AdminBarChart
+          points={drill.view}
+          color={color}
+          height={ctx.chartHeight}
+          onSliceClick={(p) => {
+            drill.drillInto(p.label);
+          }}
+          interactive={drill.canDown}
+        />
+      ) : (
+        <ChartEmpty />
+      )}
     </div>
   );
 }
@@ -96,26 +122,40 @@ export function TimeMultiLineWidget({
     () =>
       series.map((s) => ({
         ...s,
-        points: aggregateByGrain(s.points, drill.grain, drill.baseGrain),
+        points: aggregateByGrain(
+          filterPointsByFocus(s.points, drill.focusStack),
+          drill.grain,
+          drill.baseGrain
+        ),
       })),
-    [series, drill.grain, drill.baseGrain]
+    [series, drill.grain, drill.baseGrain, drill.focusStack]
   );
+  const hasPoints = aggSeries.some((s) => s.points.length > 0);
   return (
     <div className="wdg-chart">
       <DrillToolbar
         mode="time"
         grain={drill.grain}
         baseGrain={drill.baseGrain}
+        focusStack={drill.focusStack}
+        canUp={drill.canUp}
+        canDown={drill.canDown}
         onDrillUp={drill.drillUp}
         onDrillDown={drill.drillDown}
+        onCrumbClick={drill.goToCrumb}
       />
-      <AdminMultiLineChart
-        series={aggSeries}
-        height={ctx.chartHeight}
-        onPointClick={() => {
-          if (canDrillDown(drill.grain, drill.baseGrain)) drill.drillDown();
-        }}
-      />
+      {hasPoints ? (
+        <AdminMultiLineChart
+          series={aggSeries}
+          height={ctx.chartHeight}
+          onPointClick={(label) => {
+            drill.drillInto(label);
+          }}
+          interactive={drill.canDown}
+        />
+      ) : (
+        <ChartEmpty />
+      )}
     </div>
   );
 }
@@ -134,16 +174,27 @@ export function CategoryBarWidget({
   const drill = useCategoryDrill(points);
   return (
     <div className="wdg-chart">
-      <DrillToolbar mode="category" selectedCategory={drill.selected} onClearCategory={drill.clear} />
-      <AdminBarChart
-        points={drill.view}
-        color={color}
-        height={ctx.chartHeight}
-        onSliceClick={(p) => {
-          if (!drill.selected) drill.select(p.label);
-          onSliceClick?.(p);
-        }}
+      <DrillToolbar
+        mode="category"
+        selectedCategory={drill.selected}
+        onClearCategory={drill.clear}
       />
+      {drill.missing ? (
+        <ChartEmpty hint="این دسته در داده‌های فعلی نیست — دریل‌آپ را بزنید" />
+      ) : drill.view.length ? (
+        <AdminBarChart
+          points={drill.view}
+          color={color}
+          height={ctx.chartHeight}
+          onSliceClick={(p) => {
+            if (!drill.selected) drill.select(p.label);
+            onSliceClick?.(p);
+          }}
+          interactive={!drill.selected}
+        />
+      ) : (
+        <ChartEmpty hint="داده‌ای برای نمودار نیست" />
+      )}
       <CategoryDrillDetail detail={drill.detail} />
     </div>
   );
@@ -163,15 +214,25 @@ export function CategoryDonutWidget({
   const viewSlices = drill.selected ? slices.filter((s) => s.label === drill.selected) : slices;
   return (
     <div className="wdg-chart">
-      <DrillToolbar mode="category" selectedCategory={drill.selected} onClearCategory={drill.clear} />
-      <AdminDonutChart
-        slices={viewSlices}
-        size={ctx.donutSize}
-        onSliceClick={(s) => {
-          if (!drill.selected) drill.select(s.label);
-          onSliceClick?.(s);
-        }}
+      <DrillToolbar
+        mode="category"
+        selectedCategory={drill.selected}
+        onClearCategory={drill.clear}
       />
+      {drill.missing ? (
+        <ChartEmpty hint="این دسته در داده‌های فعلی نیست — دریل‌آپ را بزنید" />
+      ) : viewSlices.length ? (
+        <AdminDonutChart
+          slices={viewSlices}
+          size={ctx.donutSize}
+          onSliceClick={(s) => {
+            if (!drill.selected) drill.select(s.label);
+            onSliceClick?.(s);
+          }}
+        />
+      ) : (
+        <ChartEmpty hint="داده‌ای برای نمودار نیست" />
+      )}
       <CategoryDrillDetail detail={drill.detail} />
     </div>
   );
@@ -189,15 +250,25 @@ export function CategoryFunnelWidget({
   const drill = useCategoryDrill(points);
   return (
     <div className="wdg-chart">
-      <DrillToolbar mode="category" selectedCategory={drill.selected} onClearCategory={drill.clear} />
-      <AdminFunnelChart
-        points={drill.view}
-        height={Math.max(ctx.chartHeight, drill.view.length * 36 + 8)}
-        onSliceClick={(p) => {
-          if (!drill.selected) drill.select(p.label);
-          onSliceClick?.(p);
-        }}
+      <DrillToolbar
+        mode="category"
+        selectedCategory={drill.selected}
+        onClearCategory={drill.clear}
       />
+      {drill.missing ? (
+        <ChartEmpty hint="این دسته در داده‌های فعلی نیست — دریل‌آپ را بزنید" />
+      ) : drill.view.length ? (
+        <AdminFunnelChart
+          points={drill.view}
+          height={Math.max(ctx.chartHeight, drill.view.length * 36 + 8)}
+          onSliceClick={(p) => {
+            if (!drill.selected) drill.select(p.label);
+            onSliceClick?.(p);
+          }}
+        />
+      ) : (
+        <ChartEmpty hint="داده‌ای برای نمودار نیست" />
+      )}
       <CategoryDrillDetail detail={drill.detail} />
     </div>
   );

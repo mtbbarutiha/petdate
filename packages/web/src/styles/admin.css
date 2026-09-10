@@ -4509,6 +4509,8 @@ body:has(.admin-app) {
   flex: 1;
   padding: 6px 10px 14px;
   min-height: 0;
+  /* Chart / drill interactions stay in the body; drag is header-only */
+  touch-action: manipulation;
 }
 .admin-app .wdg-tile--dragging {
   opacity: 0.55;
@@ -4539,11 +4541,64 @@ body:has(.admin-app) {
 }
 .admin-app .wdg-tile:hover .wdg-resize { opacity: 1; }
 .admin-app .wdg-chart { display: grid; gap: 6px; }
+.admin-app .wdg-chart-empty {
+  margin: 8px 0 0;
+  padding: 12px 8px;
+  text-align: center;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px dashed var(--admin-border);
+}
 .admin-app .wdg-drill {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
+  direction: rtl;
+}
+.admin-app .wdg-drill-crumbs {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+}
+.admin-app .wdg-drill-crumb-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+.admin-app .wdg-drill-sep {
+  color: var(--admin-muted);
+  font-size: 11px;
+  padding: 0 1px;
+}
+.admin-app .wdg-drill-crumb {
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 650;
+  color: var(--admin-muted);
+  padding: 2px 6px;
+  border-radius: 6px;
+  cursor: pointer;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.admin-app .wdg-drill-crumb:hover:not(:disabled) {
+  background: #f1f5f9;
+  color: var(--admin-ink);
+}
+.admin-app .wdg-drill-crumb.is-active {
+  color: #0f766e;
+  background: #e8faf3;
+  cursor: default;
+}
+.admin-app .wdg-drill-crumb:disabled {
+  cursor: default;
 }
 .admin-app .wdg-drill-grain {
   font-size: 11px;

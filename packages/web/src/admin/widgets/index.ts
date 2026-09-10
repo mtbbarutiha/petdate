@@ -19,7 +19,12 @@ export {
   donutSizeForRow,
   drillDownGrain,
   drillUpGrain,
+  filterPointsByFocus,
+  formatFocusLabel,
+  GRAIN_LABEL,
   parsePointDate,
+  pointMatchesFocusKey,
+  timeDrillView,
 } from './drill';
 export {
   addItem,

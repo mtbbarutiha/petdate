@@ -76,6 +76,32 @@ export function drillDownGrain(grain: TimeGrain, base: TimeGrain): TimeGrain {
   return TIME_GRAINS[Math.max(b, i - 1)]!;
 }
 
+/** True when a source point belongs under an aggregated focus key (day/week/month). */
+export function pointMatchesFocusKey(point: ChartPoint, focusKey: string): boolean {
+  if (!focusKey) return true;
+  if (point.label === focusKey) return true;
+
+  const d = parsePointDate(point.label);
+  if (d) {
+    if (/^\d{4}-W\d{2}$/.test(focusKey)) return isoWeekKey(d) === focusKey;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(focusKey)) return isoDay(d) === focusKey;
+    if (/^\d{4}-\d{2}$/.test(focusKey)) return isoMonthKey(d) === focusKey;
+    return false;
+  }
+
+  // Aggregated labels vs coarser month focus (e.g. week label won't match month without a date).
+  if (/^\d{4}-\d{2}$/.test(focusKey) && point.label.startsWith(focusKey)) return true;
+  return false;
+}
+
+export function filterPointsByFocus(points: ChartPoint[], focusStack: string[]): ChartPoint[] {
+  if (!focusStack.length) return points;
+  return focusStack.reduce(
+    (pts, key) => pts.filter((p) => pointMatchesFocusKey(p, key)),
+    points
+  );
+}
+
 export function aggregateByGrain(
   points: ChartPoint[],
   grain: TimeGrain,
@@ -101,14 +127,41 @@ export function aggregateByGrain(
   return sumBy(points, keyFn);
 }
 
+/** Filter by drill-into stack, then aggregate to the active grain. */
+export function timeDrillView(
+  points: ChartPoint[],
+  grain: TimeGrain,
+  baseGrain: TimeGrain,
+  focusStack: string[],
+): ChartPoint[] {
+  return aggregateByGrain(filterPointsByFocus(points, focusStack), grain, baseGrain);
+}
+
 export function categoryDrillDetail(
   points: ChartPoint[],
   selectedLabel: string | null,
-): { view: ChartPoint[]; detail: ChartPoint | null } {
-  if (!selectedLabel) return { view: points, detail: null };
+): { view: ChartPoint[]; detail: ChartPoint | null; missing: boolean } {
+  if (!selectedLabel) return { view: points, detail: null, missing: false };
   const hit = points.find((p) => p.label === selectedLabel) || null;
-  return { view: hit ? [hit] : points, detail: hit };
+  if (!hit) return { view: [], detail: null, missing: true };
+  return { view: [hit], detail: hit, missing: false };
 }
+
+export function formatFocusLabel(key: string): string {
+  const week = key.match(/^(\d{4})-W(\d{2})$/);
+  if (week) return `هفته ${Number(week[2]).toLocaleString('fa-IR')} · ${week[1]}`;
+  const day = key.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (day) return key;
+  const month = key.match(/^(\d{4})-(\d{2})$/);
+  if (month) return key;
+  return key;
+}
+
+export const GRAIN_LABEL: Record<TimeGrain, string> = {
+  day: 'روز',
+  week: 'هفته',
+  month: 'ماه',
+};
 
 export function chartHeightForRow(h: 1 | 2 | 3): number {
   if (h >= 3) return 220;
