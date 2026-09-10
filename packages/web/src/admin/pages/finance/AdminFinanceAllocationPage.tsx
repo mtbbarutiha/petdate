@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { FinanceOsAllocationBundle, FinanceOsSbgExpense } from '@petdate/shared';
 import { Building2, Cpu, FileText, Users } from 'lucide-react';
 import { adminFetch, formatNumFa } from '../../api';
+import { formatAdminFaDate } from '../../JalaliDateSelect';
 import { adminCan } from '../../auth';
 import { AdminModal } from '../../AdminModal';
 import { FinanceEditToggle, FinanceTabs, formatMoney, useFinanceEditMode } from './FinanceOsUi';
@@ -299,7 +300,7 @@ export function AdminFinanceAllocationPage() {
                 <tbody>
                   {pending.map((e) => (
                     <tr key={e.id}>
-                      <td dir="ltr">{e.date}</td>
+                      <td>{formatAdminFaDate(e.date)}</td>
                       <td>{e.desc}</td>
                       <td>{e.category}</td>
                       <td>{formatMoney(Math.abs(e.amount))}</td>

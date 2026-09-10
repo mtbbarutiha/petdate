@@ -12,6 +12,7 @@ import { AdminEntityCell, AdminThumb } from '../AdminThumb';
 import { AdminModal } from '../AdminModal';
 import {
   JalaliDateSelect,
+  formatAdminFaDate,
   jalaliPartsToGregorianIso,
   type JalaliDateValue,
 } from '../JalaliDateSelect';
@@ -68,21 +69,6 @@ function genderFa(g?: string | null): string | null {
   if (s === 'male' || s === 'm' || s === 'نر') return 'نر';
   if (s === 'female' || s === 'f' || s === 'ماده') return 'ماده';
   return g;
-}
-
-function formatFaDate(iso?: string | null): string {
-  if (!iso) return '—';
-  const ms = Date.parse(iso);
-  if (!Number.isFinite(ms)) return '—';
-  try {
-    return new Intl.DateTimeFormat('fa-IR', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-    }).format(new Date(ms));
-  } catch {
-    return iso.slice(0, 10);
-  }
 }
 
 export function AdminPetsPage() {
@@ -302,7 +288,7 @@ export function AdminPetsPage() {
                     {pet.lastEvent ? (
                       <div className="admin-cell-compact">
                         <span>{pet.lastEvent.label}</span>
-                        <span className="admin-muted">{formatFaDate(pet.lastEvent.at)}</span>
+                        <span className="admin-muted">{formatAdminFaDate(pet.lastEvent.at)}</span>
                       </div>
                     ) : (
                       <span className="admin-muted">—</span>
@@ -388,7 +374,7 @@ export function AdminPetsPage() {
                 <ul className="admin-log-list">
                   {dossier.medicalEntries.map((e) => (
                     <li key={e.id}>
-                      <b>{e.authorName || '—'}</b> · {formatFaDate(e.createdAt)}
+                      <b>{e.authorName || '—'}</b> · {formatAdminFaDate(e.createdAt)}
                       <div>{e.text}</div>
                     </li>
                   ))}
@@ -402,7 +388,7 @@ export function AdminPetsPage() {
                 {dossier.shopOrders.map((o) => (
                   <li key={o.id}>
                     {o.publicId || `#${o.id}`} · {o.status} · {formatTomanFa(o.totalToman)} ·{' '}
-                    {formatFaDate(o.createdAt)}
+                    {formatAdminFaDate(o.createdAt)}
                   </li>
                 ))}
                 {!dossier.shopOrders.length ? (
@@ -417,7 +403,7 @@ export function AdminPetsPage() {
                 {dossier.consults.map((c) => (
                   <li key={c.id}>
                     {c.publicId || `#${c.id}`} · {c.status} · {formatTomanFa(c.feeToman)} ·{' '}
-                    {formatFaDate(c.createdAt)}
+                    {formatAdminFaDate(c.createdAt)}
                     {c.notes ? <div className="admin-muted">{c.notes}</div> : null}
                   </li>
                 ))}

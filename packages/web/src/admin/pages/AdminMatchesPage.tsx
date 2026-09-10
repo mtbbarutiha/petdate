@@ -2,6 +2,7 @@ import { Check, Trash2, X } from 'lucide-react';
 import { usePetStore } from '../../hooks/usePetStore';
 import { MATCH_STATUS_LABELS } from '../../types';
 import { AdminEntityCell, AdminThumb } from '../AdminThumb';
+import { formatAdminFaDate } from '../JalaliDateSelect';
 
 export function AdminMatchesPage() {
   const { matches, updateMatchStatus, deleteMatch } = usePetStore();
@@ -50,7 +51,7 @@ export function AdminMatchesPage() {
                     {MATCH_STATUS_LABELS[m.status]}
                   </span>
                 </td>
-                <td>{new Date(m.createdAt).toLocaleDateString('fa-IR')}</td>
+                <td>{formatAdminFaDate(m.createdAt)}</td>
                 <td>
                   <div className="admin-row-actions">
                     {m.status === 'pending' && (

@@ -26,7 +26,7 @@ import { adminCan } from '../../auth';
 import { AdminModal } from '../../AdminModal';
 import { AdminIdChip } from '../../AdminIds';
 import { AdminThumb } from '../../AdminThumb';
-import { JalaliDateSelect, formatJalaliSlash, parseJalaliSlash } from '../../JalaliDateSelect';
+import { JalaliDateSelect, formatAdminFaDate, formatJalaliSlash, parseJalaliSlash } from '../../JalaliDateSelect';
 
 const TABS = [
   { id: 'identity', label: 'هویتی - تحصیلی' },
@@ -75,10 +75,10 @@ const DEPT_SUGGESTIONS = [
 
 function ticketRange(r: HrRequest): string {
   if (r.fromDate || r.toDate) {
-    return `${r.fromDate || '—'} ← ${r.toDate || '—'}`;
+    return `${formatAdminFaDate(r.fromDate) || '—'} ← ${formatAdminFaDate(r.toDate) || '—'}`;
   }
   if (r.days) return `${formatNumFa(r.days)} روز`;
-  return r.createdAt ? r.createdAt.slice(0, 10) : '—';
+  return formatAdminFaDate(r.createdAt);
 }
 
 export function AdminHrEmployeeDetailPage() {
@@ -404,6 +404,8 @@ export function AdminHrEmployeeDetailPage() {
             <JalaliDateSelect
               value={parseJalaliSlash(employee.birthDate || '')}
               disabled={!canWrite}
+              yearsBack={80}
+              yearsForward={0}
               onChange={(v) => patch('birthDate', formatJalaliSlash(v))}
             />
           </div>
@@ -1083,6 +1085,8 @@ export function AdminHrEmployeeDetailPage() {
           <span className="form-label">تاریخ شروع *</span>
           <JalaliDateSelect
             value={parseJalaliSlash(contractForm.startDate)}
+            yearsBack={15}
+            yearsForward={5}
             onChange={(v) => setContractForm({ ...contractForm, startDate: formatJalaliSlash(v) })}
           />
         </div>
@@ -1090,6 +1094,8 @@ export function AdminHrEmployeeDetailPage() {
           <span className="form-label">تاریخ پایان *</span>
           <JalaliDateSelect
             value={parseJalaliSlash(contractForm.endDate)}
+            yearsBack={15}
+            yearsForward={5}
             onChange={(v) => setContractForm({ ...contractForm, endDate: formatJalaliSlash(v) })}
           />
         </div>

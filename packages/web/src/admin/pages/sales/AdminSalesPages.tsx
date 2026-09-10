@@ -10,6 +10,7 @@ import {
   SALES_TICKET_STATUSES, salesStageLabel,
 } from '@petdate/shared';
 import { adminFetch, formatNumFa } from '../../api';
+import { formatAdminFaDate, formatAdminFaDateTime } from '../../JalaliDateSelect';
 import { adminCan } from '../../auth';
 import { AdminModal } from '../../AdminModal';
 import { AdminEntityCell, AdminThumb } from '../../AdminThumb';
@@ -231,7 +232,7 @@ function ItemDetail({ kind }: { kind: SalesItemKind }) {
       ) : null}
       <section className="admin-card" style={{ marginTop: 12 }}>
         <div className="admin-card-head"><h2>تاریخچه</h2></div>
-        <ul>{data.activities.map((a) => <li key={a.id}>{new Date(a.at).toLocaleString('fa-IR')} — {a.text}</li>)}</ul>
+        <ul>{data.activities.map((a) => <li key={a.id}>{formatAdminFaDateTime(a.at)} — {a.text}</li>)}</ul>
         <div className="admin-card-head"><h2>پیشنهاد / پرداخت</h2></div>
         {data.offers.map((o) => <div key={o.id}>{o.product} · {formatNumFa(o.final)} · {o.discount}% · {o.approvalStatus}
           {canAdmin && o.approvalStatus === 'در انتظار تایید' ? (
@@ -370,7 +371,7 @@ export function AdminSalesCustomerDetailPage() {
         <div className="admin-stat"><div className="admin-stat-value">{formatNumFa(c.csat || 0)}</div><div className="admin-stat-label">CSAT</div></div>
       </div>
       <section className="admin-card" style={{ marginTop: 12 }}><div className="admin-card-head"><h2>سفارش‌ها</h2></div>
-        {data.orders.map((o) => <div key={o.id}>{o.product} · {formatNumFa(o.amount)} · {new Date(o.at).toLocaleDateString('fa-IR')}</div>)}
+        {data.orders.map((o) => <div key={o.id}>{o.product} · {formatNumFa(o.amount)} · {formatAdminFaDate(o.at)}</div>)}
       </section>
       <section className="admin-card" style={{ marginTop: 12 }}><div className="admin-card-head"><h2>آپگریدها</h2></div>
         {data.upgrades.map((u) => <div key={u.id}><Link to={`/admin/sales/upgrades/${u.id}`}>{u.publicId}</Link> · {salesStageLabel(u.stage)}</div>)}
@@ -497,7 +498,7 @@ export function AdminSalesTicketsPage() {
                 <td>{t.cat}</td>
                 <td>{t.priority}</td>
                 <td>{t.status}</td>
-                <td style={{ color: slaTone(t.slaDue, t.status) }}>{new Date(t.slaDue).toLocaleString('fa-IR')}</td>
+                <td style={{ color: slaTone(t.slaDue, t.status) }}>{formatAdminFaDateTime(t.slaDue)}</td>
                 <td style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                   {canAdmin && t.cat === 'استعلام مالی' && t.status === 'جدید' && t.paymentId ? (
                     <>
@@ -626,7 +627,7 @@ export function AdminSalesCallsPage() {
                 <td>{c.agentName}</td>
                 <td>{c.result}</td>
                 <td>{formatNumFa(c.talk)}</td>
-                <td>{new Date(c.startedAt).toLocaleString('fa-IR')}</td>
+                <td>{formatAdminFaDateTime(c.startedAt)}</td>
                 <td>{c.qaStatus}{c.qaScore != null ? ` (${formatNumFa(c.qaScore)})` : ''}</td>
                 <td>
                   {c.qaStatus !== 'ارزیابی شد' && canWrite ? (

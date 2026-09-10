@@ -1,6 +1,7 @@
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { Activity, AlertTriangle, RefreshCw, Trash2 } from 'lucide-react';
 import { adminFetch } from '../api';
+import { formatAdminFaDateTime } from '../JalaliDateSelect';
 
 type LogRow = {
   id: number;
@@ -188,7 +189,7 @@ export function AdminLogsPage() {
                     className={`admin-log-row admin-log-row--${row.level}`}
                     onClick={() => setExpanded(expanded === row.id ? null : row.id)}
                   >
-                    <td className="admin-mono">{row.createdAt}</td>
+                    <td className="admin-cell-nowrap">{formatAdminFaDateTime(row.createdAt)}</td>
                     <td>
                       <span className={`admin-badge admin-badge--${row.level}`}>{row.level}</span>
                     </td>

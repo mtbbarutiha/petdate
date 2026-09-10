@@ -6,6 +6,7 @@ import {
   type VetConsultation,
 } from '@petdate/shared';
 import { adminFetch, formatNumFa } from '../api';
+import { formatAdminFaDateTime } from '../JalaliDateSelect';
 import { AdminIdChip } from '../AdminIds';
 import { AdminEntityCell, AdminThumb } from '../AdminThumb';
 
@@ -138,7 +139,7 @@ export function AdminConsultsPage() {
                 </span>
               </td>
               <td><span className="admin-badge">{STATUS_FA[c.status] || c.status}</span></td>
-              <td className="admin-muted admin-cell-nowrap">{c.createdAt ? new Date(c.createdAt).toLocaleString('fa-IR') : '—'}</td>
+              <td className="admin-muted admin-cell-nowrap">{formatAdminFaDateTime(c.createdAt)}</td>
               <td>
                 <select
                   className="admin-select admin-select--compact"

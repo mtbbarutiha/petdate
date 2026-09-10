@@ -26,6 +26,9 @@ npx tsx "$ROOT/packages/web/src/lib/inboxTitle.selftest.ts"
 echo "==> selftest: web share helper (Web Share / clipboard)"
 npx tsx "$ROOT/packages/web/src/lib/share.selftest.ts"
 
+echo "==> selftest: web admin Jalali date helpers"
+npx tsx "$ROOT/packages/web/src/admin/JalaliDateSelect.selftest.ts"
+
 echo "==> selftest: web sitemap public routes"
 npx tsx "$ROOT/packages/web/src/lib/sitemap.selftest.ts"
 

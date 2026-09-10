@@ -12,6 +12,15 @@ import {
 } from 'recharts';
 import type { CrmAgentReportRow, CrmChartPoint, CrmKpiRing, CrmReportSummary } from '@petdate/shared';
 import { adminFetch, formatNumFa } from '../../api';
+import {
+  JalaliDateRange,
+  currentJalaliParts,
+  formatAdminFaDateTime,
+  formatJalaliSlash,
+  jalaliDaysAgo,
+  jalaliPartsToGregorianIso,
+  type JalaliDateValue,
+} from '../../JalaliDateSelect';
 
 type TabKey = 'team' | 'person' | 'quality' | 'changelog';
 type AuditRow = Record<string, unknown>;
@@ -21,16 +30,6 @@ const STANDING_COLOR: Record<string, string> = {
   'نیازمند تلاش بیشتر': '#fd961e',
   ضعیف: '#c62828',
 };
-
-function todayIso(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-
-function isoDaysAgo(n: number): string {
-  const d = new Date();
-  d.setDate(d.getDate() - n);
-  return d.toISOString().slice(0, 10);
-}
 
 function GaugeSemi({ pct, standing, label }: { pct: number; standing: string; label: string }) {
   const color = STANDING_COLOR[standing] || '#c62828';
@@ -156,8 +155,8 @@ function exportAgentsCsv(agents: CrmAgentReportRow[]) {
 
 export function AdminCrmReportsPage() {
   const [tab, setTab] = useState<TabKey>('team');
-  const [from, setFrom] = useState(() => isoDaysAgo(6));
-  const [to, setTo] = useState(() => todayIso());
+  const [from, setFrom] = useState<JalaliDateValue>(() => jalaliDaysAgo(6));
+  const [to, setTo] = useState<JalaliDateValue>(() => currentJalaliParts());
   const [agentId, setAgentId] = useState('');
   const [summary, setSummary] = useState<CrmReportSummary | null>(null);
   const [audit, setAudit] = useState<AuditRow[]>([]);
@@ -166,7 +165,9 @@ export function AdminCrmReportsPage() {
 
   const load = useCallback(() => {
     setLoading(true);
-    const qs = new URLSearchParams({ from, to });
+    const fromIso = jalaliPartsToGregorianIso(from) || '';
+    const toIso = jalaliPartsToGregorianIso(to) || '';
+    const qs = new URLSearchParams({ from: fromIso, to: toIso });
     if (agentId) qs.set('agentId', agentId);
     void adminFetch<{ summary: CrmReportSummary; audit?: AuditRow[] }>(`/api/admin/crm/reports?${qs}`)
       .then((d) => {
@@ -231,18 +232,46 @@ export function AdminCrmReportsPage() {
       </nav>
 
       <div className="crm-report-filters">
-        <label>
-          از تاریخ
-          <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
-        </label>
-        <label>
-          تا تاریخ
-          <input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
-        </label>
+        <JalaliDateRange
+          from={from}
+          to={to}
+          onFromChange={setFrom}
+          onToChange={setTo}
+          fromLabel="از تاریخ"
+          toLabel="تا تاریخ"
+        />
         <div className="crm-report-quick">
-          <button type="button" className="admin-btn admin-btn--ghost admin-btn--sm" onClick={() => { setFrom(isoDaysAgo(6)); setTo(todayIso()); }}>۷ روز</button>
-          <button type="button" className="admin-btn admin-btn--ghost admin-btn--sm" onClick={() => { setFrom(isoDaysAgo(29)); setTo(todayIso()); }}>۳۰ روز</button>
-          <button type="button" className="admin-btn admin-btn--ghost admin-btn--sm" onClick={() => { setFrom(isoDaysAgo(6)); setTo(todayIso()); setAgentId(''); }}>پاک‌کردن</button>
+          <button
+            type="button"
+            className="admin-btn admin-btn--ghost admin-btn--sm"
+            onClick={() => {
+              setFrom(jalaliDaysAgo(6));
+              setTo(currentJalaliParts());
+            }}
+          >
+            ۷ روز
+          </button>
+          <button
+            type="button"
+            className="admin-btn admin-btn--ghost admin-btn--sm"
+            onClick={() => {
+              setFrom(jalaliDaysAgo(29));
+              setTo(currentJalaliParts());
+            }}
+          >
+            ۳۰ روز
+          </button>
+          <button
+            type="button"
+            className="admin-btn admin-btn--ghost admin-btn--sm"
+            onClick={() => {
+              setFrom(jalaliDaysAgo(6));
+              setTo(currentJalaliParts());
+              setAgentId('');
+            }}
+          >
+            پاک‌کردن
+          </button>
         </div>
         <label>
           کارشناسان
@@ -268,7 +297,7 @@ export function AdminCrmReportsPage() {
               <tbody>
                 {audit.map((row, idx) => (
                   <tr key={idx}>
-                    <td>{row.at ? new Date(String(row.at)).toLocaleString('fa-IR') : '—'}</td>
+                    <td>{row.at ? formatAdminFaDateTime(String(row.at)) : '—'}</td>
                     <td>{String(row.user_id || '—')}</td>
                     <td>{String(row.category || '—')}</td>
                     <td>{String(row.action || '—')}</td>
@@ -399,7 +428,9 @@ export function AdminCrmReportsPage() {
           <section className="admin-card" style={{ marginTop: 14 }}>
             <div className="admin-card-head">
               <h2>{tab === 'person' ? 'کارت گزارش فردی' : 'جزئیات عملکرد کارشناسان'}</h2>
-              <span className="admin-muted">{from} → {to}</span>
+              <span className="admin-muted">
+                {formatJalaliSlash(from) || '…'} → {formatJalaliSlash(to) || '…'}
+              </span>
             </div>
             <div className="admin-table-wrap">
               <table className="admin-table">

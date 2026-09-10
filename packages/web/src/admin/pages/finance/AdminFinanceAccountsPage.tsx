@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react
 import type { FinanceOsAccountsBundle, FinanceOsAccount, FinanceOsPerson } from '@petdate/shared';
 import { Landmark, Plus } from 'lucide-react';
 import { adminFetch, formatNumFa } from '../../api';
+import { formatAdminFaDate } from '../../JalaliDateSelect';
 import { adminCan } from '../../auth';
 import { AdminModal } from '../../AdminModal';
 import { FinanceEditToggle, FinanceTabs, formatMoney, useFinanceEditMode } from './FinanceOsUi';
@@ -280,7 +281,7 @@ export function AdminFinanceAccountsPage() {
                   <thead><tr><th>تاریخ</th><th>بیزنس</th><th>مبلغ</th><th>یادداشت</th></tr></thead>
                   <tbody>
                     {data.accounts.find((a) => a.code === 'L-SNAPAY')!.refunds.map((r, i) => (
-                      <tr key={i}><td dir="ltr">{r.date}</td><td>{r.business}</td><td>{formatMoney(r.amount)}</td><td>{r.note || '—'}</td></tr>
+                      <tr key={i}><td>{formatAdminFaDate(r.date)}</td><td>{r.business}</td><td>{formatMoney(r.amount)}</td><td>{r.note || '—'}</td></tr>
                     ))}
                   </tbody>
                 </table>

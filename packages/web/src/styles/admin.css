@@ -2323,6 +2323,36 @@ body:has(.admin-app) {
   width: 5.25rem;
 }
 
+.admin-app .hr-reports-filters > .admin-date-range {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px 14px;
+}
+
+.admin-app .hr-reports-filters .admin-jalali-date-row .admin-select,
+.admin-app .crm-report-filters .admin-jalali-date-row .admin-select,
+.admin-app .admin-ats-interview .admin-jalali-date-row .admin-select {
+  min-height: var(--admin-control-h, 40px);
+  height: var(--admin-control-h, 40px);
+}
+
+.admin-app .crm-report-filters .admin-date-range {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px 14px;
+}
+
+.admin-app .crm-report-filters .admin-jalali-date-label {
+  color: var(--admin-muted);
+}
+
+.admin-app .admin-ats-interview {
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
 @media (max-width: 640px) {
   .admin-app .admin-filter-primary .admin-input,
   .admin-app .admin-filter-primary .admin-select {

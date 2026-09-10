@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react
 import type { FinanceOsTransaction, FinanceOsTransactionsBundle } from '@petdate/shared';
 import { AlertTriangle, Download, Upload } from 'lucide-react';
 import { adminFetch, formatNumFa } from '../../api';
+import { formatAdminFaDate, formatAdminFaDateTime } from '../../JalaliDateSelect';
 import { adminCan } from '../../auth';
 import { AdminModal } from '../../AdminModal';
 import {
@@ -262,7 +263,7 @@ export function AdminFinanceTransactionsPage() {
                 <tbody>
                   {(data?.importLog || []).map((l) => (
                     <tr key={l.id}>
-                      <td dir="ltr">{l.at.slice(0, 16).replace('T', ' ')}</td>
+                      <td>{formatAdminFaDateTime(l.at)}</td>
                       <td dir="ltr">{l.account}</td>
                       <td>{l.fileName}</td>
                       <td>{formatNumFa(l.rows)}</td>
@@ -314,7 +315,7 @@ export function AdminFinanceTransactionsPage() {
               <tbody>
                 {rows.map((t) => (
                   <tr key={t.id}>
-                    <td dir="ltr">{t.date}</td>
+                    <td>{formatAdminFaDate(t.date)}</td>
                     <td dir="ltr">{t.account}</td>
                     <td>{t.desc}</td>
                     <td style={{ color: t.amount >= 0 ? 'var(--admin-mint, #0f766e)' : 'var(--admin-orange, #c2410c)' }}>

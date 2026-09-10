@@ -4,19 +4,13 @@ import { Plus, Search, X } from 'lucide-react';
 import type { HrEmployee } from '@petdate/shared';
 import { HR_ACCESS_STATUSES, HR_CONTRACT_STATUSES } from '@petdate/shared';
 import { adminFetch, formatNumFa } from '../../api';
+import { formatAdminFaDate } from '../../JalaliDateSelect';
 import { adminCan } from '../../auth';
 import { AdminEntityCell, AdminThumb } from '../../AdminThumb';
 import { EmployeeCreateModal } from './EmployeeCreateModal';
 
 function formatHrDate(raw?: string | null): string {
-  if (!raw || !String(raw).trim()) return '—';
-  const s = String(raw).trim();
-  const isoLike = /^\d{4}-\d{2}-\d{2}/.test(s) || s.includes('T') || /Z$/.test(s);
-  if (!isoLike) return s;
-  const normalized = s.includes('T') || /Z$/.test(s) ? s : s.replace(' ', 'T');
-  const d = new Date(normalized.length === 10 ? `${normalized}T12:00:00` : normalized);
-  if (Number.isNaN(d.getTime())) return s.slice(0, 10);
-  return d.toLocaleDateString('fa-IR');
+  return formatAdminFaDate(raw);
 }
 
 function formatContractEnd(raw?: string | null): string {
