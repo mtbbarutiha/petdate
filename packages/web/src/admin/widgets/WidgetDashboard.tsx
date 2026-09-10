@@ -1,8 +1,8 @@
 import {
   useCallback,
+  useEffect,
   useRef,
   useState,
-  type DragEvent,
   type PointerEvent as ReactPointerEvent,
   type ReactNode,
 } from 'react';
@@ -25,6 +25,8 @@ type Props = {
   toolbarExtra?: ReactNode;
 };
 
+const DRAG_THRESHOLD_PX = 4;
+
 function clampCol(n: number): WidgetColSpan {
   if (n <= 1) return 1;
   if (n === 2) return 2;
@@ -38,25 +40,37 @@ function clampRow(n: number): WidgetRowSpan {
   return 3;
 }
 
+function tileIdFromPoint(clientX: number, clientY: number, skipId?: string | null): string | null {
+  if (typeof document === 'undefined') return null;
+  const stack = document.elementsFromPoint(clientX, clientY);
+  for (const el of stack) {
+    if (!(el instanceof Element)) continue;
+    const tile = el.closest('[data-widget-id]');
+    const id = tile?.getAttribute('data-widget-id');
+    if (id && id !== skipId) return id;
+  }
+  return null;
+}
+
 function WidgetTile({
   item,
   title,
   group,
+  dragging,
+  dropTarget,
   onRemove,
   onResize,
-  onDragStart,
-  onDragOver,
-  onDrop,
+  onReorderPointerDown,
   children,
 }: {
   item: WidgetLayoutItem;
   title: string;
   group?: string;
+  dragging: boolean;
+  dropTarget: boolean;
   onRemove: () => void;
   onResize: (w: WidgetColSpan, h: WidgetRowSpan) => void;
-  onDragStart: (e: DragEvent) => void;
-  onDragOver: (e: DragEvent) => void;
-  onDrop: (e: DragEvent) => void;
+  onReorderPointerDown: (e: ReactPointerEvent, id: string) => void;
   children: ReactNode;
 }) {
   const tileRef = useRef<HTMLElement | null>(null);
@@ -91,27 +105,41 @@ function WidgetTile({
     }
   };
 
+  const className = [
+    `wdg-tile wdg-tile--w${item.w} wdg-tile--h${item.h}`,
+    dragging ? 'wdg-tile--dragging' : '',
+    dropTarget ? 'wdg-tile--drop-target' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
   return (
     <article
       ref={tileRef as React.RefObject<HTMLElement>}
-      className={`wdg-tile wdg-tile--w${item.w} wdg-tile--h${item.h}`}
+      className={className}
       style={{ gridColumn: `span ${item.w}` }}
       data-widget-id={item.id}
-      onDragOver={onDragOver}
-      onDrop={onDrop}
     >
       <header className="wdg-tile-head">
-        <button
-          type="button"
+        {/*
+          Non-<button> handle: HTML5 draggable on <button> is unreliable
+          (Firefox/Safari often never fire dragstart). Pointer DnD below.
+        */}
+        <span
           className="wdg-drag"
-          draggable
-          onDragStart={onDragStart}
+          role="button"
+          tabIndex={0}
           aria-label="جابجایی ویجت"
-          title="کشیدن برای جابجایی"
+          title="بگیرید و بکشید برای جابجایی"
+          onPointerDown={(e) => onReorderPointerDown(e, item.id)}
         >
-          <GripVertical size={14} />
-        </button>
-        <div className="wdg-tile-titles">
+          <GripVertical size={14} aria-hidden />
+        </span>
+        <div
+          className="wdg-tile-titles wdg-tile-titles--drag"
+          title="بگیرید و بکشید برای جابجایی"
+          onPointerDown={(e) => onReorderPointerDown(e, item.id)}
+        >
           {group ? <span className="wdg-tile-group">{group}</span> : null}
           <h3>{title}</h3>
         </div>
@@ -144,27 +172,96 @@ export function WidgetDashboard({
 }: Props) {
   const { visible, availableToAdd, reorder, resize, remove, add, reset } = useWidgetLayout(dashboardId, catalog);
   const [catalogOpen, setCatalogOpen] = useState(false);
-  const dragId = useRef<string | null>(null);
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
+
+  const dragSession = useRef<{
+    id: string;
+    pointerId: number;
+    startX: number;
+    startY: number;
+    active: boolean;
+    target: HTMLElement;
+  } | null>(null);
 
   const catalogById = useCallback((id: string) => catalog.find((c) => c.id === id), [catalog]);
 
-  const onDragStart = (id: string) => (e: DragEvent) => {
-    dragId.current = id;
-    e.dataTransfer.effectAllowed = 'move';
-    e.dataTransfer.setData('text/plain', id);
-  };
+  const endDrag = useCallback(
+    (clientX: number, clientY: number) => {
+      const session = dragSession.current;
+      dragSession.current = null;
+      const from = session?.id ?? null;
+      const to =
+        from && session?.active ? tileIdFromPoint(clientX, clientY, from) : null;
+      setDraggingId(null);
+      setOverId(null);
+      if (from && to && from !== to) reorder(from, to);
+    },
+    [reorder],
+  );
 
-  const onDragOver = (e: DragEvent) => {
+  const onReorderPointerDown = useCallback((e: ReactPointerEvent, id: string) => {
+    if (e.button !== 0 && e.pointerType === 'mouse') return;
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  };
+    e.stopPropagation();
+    const target = e.currentTarget as HTMLElement;
+    try {
+      target.setPointerCapture(e.pointerId);
+    } catch {
+      /* ignore */
+    }
+    dragSession.current = {
+      id,
+      pointerId: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      active: false,
+      target,
+    };
+  }, []);
 
-  const onDrop = (toId: string) => (e: DragEvent) => {
-    e.preventDefault();
-    const from = dragId.current || e.dataTransfer.getData('text/plain');
-    dragId.current = null;
-    if (from) reorder(from, toId);
-  };
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => {
+      const session = dragSession.current;
+      if (!session || session.pointerId !== e.pointerId) return;
+      const dx = e.clientX - session.startX;
+      const dy = e.clientY - session.startY;
+      if (!session.active) {
+        if (dx * dx + dy * dy < DRAG_THRESHOLD_PX * DRAG_THRESHOLD_PX) return;
+        session.active = true;
+        setDraggingId(session.id);
+      }
+      e.preventDefault();
+      const hit = tileIdFromPoint(e.clientX, e.clientY, session.id);
+      setOverId(hit);
+    };
+    const onUp = (e: PointerEvent) => {
+      const session = dragSession.current;
+      if (!session || session.pointerId !== e.pointerId) return;
+      try {
+        session.target.releasePointerCapture(e.pointerId);
+      } catch {
+        /* ignore */
+      }
+      endDrag(e.clientX, e.clientY);
+    };
+    const onKey = (ev: KeyboardEvent) => {
+      if (ev.key !== 'Escape' || !dragSession.current) return;
+      dragSession.current = null;
+      setDraggingId(null);
+      setOverId(null);
+    };
+    window.addEventListener('pointermove', onMove, { passive: false });
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [endDrag]);
 
   return (
     <section className="wdg-board" aria-label={title}>
@@ -173,7 +270,7 @@ export function WidgetDashboard({
           <p className="admin-section-label" style={{ margin: 0 }}>
             {title}
           </p>
-          <span className="wdg-toolbar-hint">کشیدن · تغییر اندازه · دریل‌دان / دریل‌آپ</span>
+          <span className="wdg-toolbar-hint">دستگیره ⋮⋮ یا عنوان · تغییر اندازه گوشه · دریل‌دان / دریل‌آپ</span>
         </div>
         <div className="wdg-toolbar-end">
           {toolbarExtra}
@@ -210,7 +307,7 @@ export function WidgetDashboard({
         </div>
       ) : null}
 
-      <div className="wdg-grid">
+      <div className={`wdg-grid${draggingId ? ' wdg-grid--reordering' : ''}`}>
         {visible.map((item) => {
           const meta = catalogById(item.id);
           const ctx: WidgetRenderContext = {
@@ -225,11 +322,11 @@ export function WidgetDashboard({
               item={item}
               title={meta?.title || item.id}
               group={meta?.group}
+              dragging={draggingId === item.id}
+              dropTarget={overId === item.id}
               onRemove={() => remove(item.id)}
               onResize={(w, h) => resize(item.id, { w, h })}
-              onDragStart={onDragStart(item.id)}
-              onDragOver={onDragOver}
-              onDrop={onDrop(item.id)}
+              onReorderPointerDown={onReorderPointerDown}
             >
               {renderWidget(item.id, ctx)}
             </WidgetTile>

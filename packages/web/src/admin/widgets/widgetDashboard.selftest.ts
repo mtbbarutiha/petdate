@@ -87,6 +87,30 @@ assert.deepEqual(
   reordered.map((i) => i.id),
   ['c', 'a']
 );
+assert.deepEqual(
+  reordered.map((i) => i.order),
+  [0, 1]
+);
+
+const noop = reorderItems(board.items, 'a', 'a');
+assert.equal(noop, board.items);
+
+const missing = reorderItems(board.items, 'ghost', 'a');
+assert.equal(missing, board.items);
+
+const swapEnd = reorderItems(
+  [
+    { id: 'a', w: 2, h: 1, order: 0 },
+    { id: 'b', w: 2, h: 1, order: 1 },
+    { id: 'c', w: 2, h: 1, order: 2 },
+  ],
+  'a',
+  'c'
+);
+assert.deepEqual(
+  swapEnd.map((i) => i.id),
+  ['b', 'c', 'a']
+);
 
 assert.ok(storageKeyFor('platform', 'admin@x').includes('platform'));
 assert.ok(storageKeyFor('platform', 'admin@x').includes('admin'));
