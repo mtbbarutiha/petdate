@@ -182,7 +182,7 @@ function AdminLayoutInner() {
       setSalesCounts(null);
       return;
     }
-    void adminFetch<SalesNavCounts>('/api/admin/sales/nav-counts')
+    void adminFetch<SalesNavCounts>('/api/admin/sales/nav-counts', { cache: 'no-store' as RequestCache })
       .then(setSalesCounts)
       .catch(() => setSalesCounts(null));
   }, []);
