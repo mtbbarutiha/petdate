@@ -210,7 +210,7 @@ export function AdminPetsPage() {
               <th>سن / جنسیت</th>
               <th>مالک</th>
               <th>آخرین رویداد</th>
-              <th>هزینه ۶ ماه</th>
+              <th>خرید ۶ ماه اخیر</th>
               <th>شهر</th>
               <th></th>
             </tr>
@@ -356,7 +356,7 @@ export function AdminPetsPage() {
                 ) : null}
               </p>
               <p className="admin-muted" style={{ margin: '4px 0 0' }}>
-                هزینه ۶ ماه: {formatTomanFa(dossier.spendToman6m)}
+                خرید ۶ ماه اخیر: {formatTomanFa(dossier.spendToman6m)}
               </p>
             </section>
 
