@@ -3,7 +3,13 @@
  * Run: npx tsx packages/api/src/services/candoo.selftest.ts
  */
 import { formatIranMobileDisplay, normalizeIranMobile } from '@petdate/shared';
-import { buildSendPayload, isCandooSendAccepted, isCandooSrcRejection } from './candoo';
+import {
+  buildSendPayload,
+  CANDOO_BALANCE_TIMEOUT_MS,
+  CANDOO_SEND_TIMEOUT_MS,
+  isCandooSendAccepted,
+  isCandooSrcRejection,
+} from './candoo';
 
 function assert(cond: unknown, msg: string): void {
   if (!cond) throw new Error(msg);
@@ -59,6 +65,15 @@ assert(
 assert(
   !isCandooSrcRejection([{ status: 'ACCEPTED', statusCode: 200 }]),
   'accepted is not src rejection'
+);
+
+assert(
+  CANDOO_BALANCE_TIMEOUT_MS > 0 && CANDOO_BALANCE_TIMEOUT_MS <= 10_000,
+  'balance timeout must stay under nginx upstream limits'
+);
+assert(
+  CANDOO_SEND_TIMEOUT_MS >= CANDOO_BALANCE_TIMEOUT_MS && CANDOO_SEND_TIMEOUT_MS <= 30_000,
+  'send timeout must be finite and >= balance timeout'
 );
 
 console.log('candoo.selftest: OK');
