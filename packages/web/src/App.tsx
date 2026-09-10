@@ -392,6 +392,8 @@ export default function App() {
                 <Route path="sales/reports" element={<AdminSalesReportsPage />} />
                 <Route path="sales/settings" element={<AdminSalesSettingsPage />} />
                 <Route path="crm" element={<AdminCrmDashboardPage />} />
+                <Route path="crm/workspace" element={<AdminCrmDashboardPage />} />
+                <Route path="customers" element={<Navigate to="/admin/crm" replace />} />
                 <Route path="crm/inbox" element={<AdminCrmInboxPage />} />
                 <Route path="crm/customers" element={<AdminCrmCustomersPage />} />
                 <Route path="crm/customers/:id" element={<AdminCrmCustomerDetailPage />} />

@@ -9,6 +9,8 @@ import {
   CRM_SLA_POLICY,
   CRM_SURVEY_QUESTIONS,
   crmInboxBorderColor,
+  crmKpiAchievement,
+  crmKpiStanding,
   crmQaTotal,
   crmSlaDueIso,
   crmSlaState,
@@ -1988,24 +1990,146 @@ export function assignInboxItem(
 
 export function getCrmDashboard(actor: AdminAuthActor): CrmDashboard {
   ensureCrmSchema();
-  const tickets = listTickets({ limit: 200 });
+  const now = new Date();
+  const weekAgo = new Date(now.getTime() - 7 * 86400_000).toISOString();
+  const tickets = listTickets({ limit: 300 });
   const openTickets = tickets.filter((t) => !['حل‌شده', 'بسته‌شده'].includes(t.status));
   const breachedSla = openTickets.filter((t) => t.slaState === 'breached').length;
   const atRiskSla = openTickets.filter((t) => t.slaState === 'at_risk').length;
   const unassigned = openTickets.filter((t) => !t.agentId).length;
-  const wrapPending = listInteractions({ limit: 100 }).filter((i) => !i.wrapDone).length;
+  const interactions = listInteractions({ limit: 500 });
+  const weekInteractions = interactions.filter((i) => i.startedAt >= weekAgo);
+  const wrapPending = interactions.filter((i) => !i.wrapDone).length;
   const followups = listFollowups({ status: 'باز', limit: 100 });
   const overdueFollowups = followups.filter((f) => new Date(f.dueAt).getTime() < Date.now()).length;
   const openComplaints = listComplaints(100).filter((c) => !['حل‌شده', 'بسته‌شده'].includes(c.status)).length;
   const openReferrals = listReferrals(100).filter((r) => r.status === 'باز').length;
-  const calls = listInteractions({ limit: 200 }).filter((i) => i.channel === 'call_in' || i.channel === 'call_out');
+  const calls = interactions.filter((i) => i.channel === 'call_in' || i.channel === 'call_out');
+  const weekCalls = calls.filter((c) => c.startedAt >= weekAgo);
+  const inboundWeek = weekCalls.filter((c) => c.channel === 'call_in');
   const callsToday = calls.filter((c) => isToday(c.startedAt));
   const surveys = listSurveys(100);
   const qa = listQaReviews(100);
+  const qaQueue = interactions.filter((i) => i.qaStatus === 'در صف' && i.wrapDone).length;
   const inbox = listInbox({ limit: 8 });
+
+  const talkMinutesWeek = Math.round(weekCalls.reduce((s, c) => s + c.talkMinutes, 0));
+  const aht = inboundWeek.length
+    ? Math.round((inboundWeek.reduce((s, c) => s + c.talkMinutes, 0) / inboundWeek.length) * 10) / 10
+    : 0;
+  const firstCallResolved = weekInteractions.filter(
+    (i) => (i.channel === 'call_in' || i.channel === 'call_out') && i.outcome === 'حل‌شده' && i.wrapDone
+  ).length;
+  const fcrPct = weekCalls.length ? Math.round((firstCallResolved / weekCalls.length) * 100) : 0;
+  const weekTickets = tickets.filter((t) => t.createdAt >= weekAgo);
+  const openWithSla = openTickets.filter((t) => t.slaState === 'ok' || t.slaState === 'at_risk' || t.slaState === 'breached');
+  const slaOk = openWithSla.filter((t) => t.slaState === 'ok' || t.slaState === 'closed').length;
+  const slaPct = openWithSla.length ? Math.round((slaOk / openWithSla.length) * 100) : 100;
+  const resolvedWeek = tickets.filter(
+    (t) => (t.status === 'حل‌شده' || t.status === 'بسته‌شده') && (t.resolvedAt || t.updatedAt) >= weekAgo
+  ).length;
+  const qaAvg = qa.length ? Math.round((qa.reduce((s, x) => s + x.total, 0) / qa.length) * 10) / 10 : null;
+
+  const ringDefs: Array<{
+    key: string;
+    label: string;
+    value: number;
+    target: number;
+    unit: string;
+    metric: string;
+    direction: 'gte' | 'lte';
+  }> = [
+    { key: 'calls_in', label: 'تماس‌های ورودی پاسخ‌داده‌شده', value: inboundWeek.length, target: 8, unit: 'تماس', metric: 'calls_answered', direction: 'gte' },
+    { key: 'talk', label: 'مجموع دقایق مکالمه', value: talkMinutesWeek, target: 60, unit: 'دقیقه', metric: 'talk_minutes', direction: 'gte' },
+    { key: 'aht', label: 'میانگین مدت رسیدگی (AHT)', value: aht, target: 12, unit: 'دقیقه', metric: 'wait_seconds', direction: 'lte' },
+    { key: 'fcr', label: 'نرخ حل در تماس اول', value: fcrPct, target: 60, unit: '٪', metric: 'fcr', direction: 'gte' },
+    { key: 'sla', label: 'پایبندی به SLA', value: slaPct, target: 90, unit: '٪', metric: 'sla', direction: 'gte' },
+    { key: 'resolved', label: 'تیکت حل‌شده', value: resolvedWeek, target: 3, unit: 'تیکت', metric: 'tickets_resolved', direction: 'gte' },
+    { key: 'qa', label: 'امتیاز کنترل کیفیت', value: qaAvg ?? 0, target: 85, unit: 'امتیاز', metric: 'qa_score', direction: 'gte' },
+    { key: 'overdue_fu', label: 'پیگیری عقب‌افتاده', value: overdueFollowups, target: 0, unit: 'مورد', metric: 'sla_breach', direction: 'lte' },
+  ];
+
+  const kpis = ringDefs.map((d) => {
+    const pct = Math.round(crmKpiAchievement(d.metric, d.value, d.target));
+    return {
+      key: d.key,
+      label: d.label,
+      value: d.value,
+      target: d.target,
+      unit: d.unit,
+      pct,
+      standing: crmKpiStanding(pct),
+      direction: d.direction,
+    };
+  });
+  const overallAchievement = kpis.length
+    ? Math.round(kpis.reduce((s, k) => s + k.pct, 0) / kpis.length)
+    : 0;
+  const overallStanding = crmKpiStanding(overallAchievement);
+  const weakPoints = kpis
+    .filter((k) => k.pct < 70)
+    .map((k) => `${k.label}: ${k.value} از ${k.target} ${k.unit} (${k.pct}٪)`);
+
+  const channelMap = new Map<string, number>();
+  for (const i of weekInteractions) {
+    const key = i.channel === 'call_in' ? 'ورودی' : i.channel === 'call_out' ? 'خروجی' : CRM_CHANNEL_LABELS[i.channel] || i.channel;
+    channelMap.set(key, (channelMap.get(key) || 0) + 1);
+  }
+  // ensure common channels appear
+  for (const label of ['ورودی', 'پیامک', 'ایمیل', 'واتساپ']) {
+    if (!channelMap.has(label)) channelMap.set(label, 0);
+  }
+  const channelDistribution = [...channelMap.entries()]
+    .map(([label, value]) => ({ key: label, label, value }))
+    .sort((a, b) => b.value - a.value);
+
+  const dailyInteractions: Array<{ key: string; label: string; value: number }> = [];
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    const label = new Intl.DateTimeFormat('fa-IR-u-ca-persian', { month: 'numeric', day: 'numeric' }).format(d);
+    const count = weekInteractions.filter((x) => x.startedAt.slice(0, 10) === key).length;
+    dailyInteractions.push({ key, label, value: count });
+  }
+
+  const inProgress = openTickets.filter((t) => ['در حال بررسی', 'تخصیص‌یافته', 'در انتظار مشتری', 'بازگشایی‌شده'].includes(t.status)).length;
+  const ticketStatus = [
+    { key: 'in_progress', label: 'در حال بررسی', value: inProgress, color: '#0ba5f2' },
+    { key: 'unassigned', label: 'تخصیص‌نیافته', value: unassigned, color: '#5c4d91' },
+    { key: 'breached', label: 'نقض SLA', value: breachedSla, color: '#c62828' },
+    { key: 'resolved', label: 'حل‌شده (۷روز)', value: resolvedWeek, color: '#15cca0' },
+  ];
+
+  let dateLabel = '';
+  try {
+    dateLabel = new Intl.DateTimeFormat('fa-IR-u-ca-persian', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    }).format(now);
+  } catch {
+    dateLabel = now.toISOString().slice(0, 10);
+  }
+
+  const roleLabel =
+    actor.role === 'admin' || actor.role === 'crm_manager'
+      ? 'مدیر باشگاه مشتریان'
+      : actor.role === 'crm_lead'
+        ? 'سرپرست امور مشتریان'
+        : 'کارشناس امور مشتریان';
+
+  const myTickets = openTickets
+    .filter((t) => !t.agentId || t.agentId === actorId(actor) || isCrmAdmin(actor))
+    .slice(0, 8);
+  const upcomingFollowups = [...followups]
+    .sort((a, b) => a.dueAt.localeCompare(b.dueAt))
+    .slice(0, 5);
 
   return {
     greetingName: actorLabel(actor),
+    roleLabel,
+    dateLabel,
     openTickets: openTickets.length,
     breachedSla,
     atRiskSla,
@@ -2018,7 +2142,17 @@ export function getCrmDashboard(actor: AdminAuthActor): CrmDashboard {
     callsToday: callsToday.length,
     callMinutesToday: Math.round(callsToday.reduce((s, c) => s + c.talkMinutes, 0)),
     avgCsat: surveys.length ? Math.round((surveys.reduce((s, x) => s + x.rating, 0) / surveys.length) * 10) / 10 : null,
-    qaAvg: qa.length ? Math.round(qa.reduce((s, x) => s + x.total, 0) / qa.length) : null,
+    qaAvg,
+    qaQueue,
+    overallAchievement,
+    overallStanding,
+    weakPoints,
+    kpis,
+    channelDistribution,
+    dailyInteractions,
+    ticketStatus,
+    myTickets,
+    upcomingFollowups,
     inboxPreview: inbox.rows,
     myTasks: listTasks({ status: 'باز', limit: 10 }),
   };

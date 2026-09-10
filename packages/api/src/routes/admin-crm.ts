@@ -66,6 +66,14 @@ crmAdminRouter.get('/dashboard', (req, res) => {
   }
 });
 
+crmAdminRouter.get('/workspace', (req, res) => {
+  try {
+    res.json(getCrmDashboard(actor(req)));
+  } catch (err) {
+    sendErr(res, err, 500);
+  }
+});
+
 crmAdminRouter.get('/inbox', (req, res) => {
   res.json(
     listInbox({

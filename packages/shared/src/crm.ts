@@ -356,8 +356,28 @@ export interface CrmInboxRow {
   createdAt: string;
 }
 
+export interface CrmKpiRing {
+  key: string;
+  label: string;
+  value: number;
+  target: number;
+  unit: string;
+  pct: number;
+  standing: string;
+  direction: 'gte' | 'lte';
+}
+
+export interface CrmChartPoint {
+  key: string;
+  label: string;
+  value: number;
+  color?: string;
+}
+
 export interface CrmDashboard {
   greetingName: string;
+  roleLabel: string;
+  dateLabel: string;
   openTickets: number;
   breachedSla: number;
   atRiskSla: number;
@@ -371,6 +391,16 @@ export interface CrmDashboard {
   callMinutesToday: number;
   avgCsat: number | null;
   qaAvg: number | null;
+  qaQueue: number;
+  overallAchievement: number;
+  overallStanding: string;
+  weakPoints: string[];
+  kpis: CrmKpiRing[];
+  channelDistribution: CrmChartPoint[];
+  dailyInteractions: CrmChartPoint[];
+  ticketStatus: CrmChartPoint[];
+  myTickets: CrmTicket[];
+  upcomingFollowups: CrmFollowup[];
   inboxPreview: CrmInboxRow[];
   myTasks: CrmTask[];
 }
