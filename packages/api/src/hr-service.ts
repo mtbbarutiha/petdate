@@ -5,10 +5,12 @@
 import { randomBytes, randomUUID, scryptSync, timingSafeEqual } from 'crypto';
 import {
   ADMIN_ROLE_PERMISSIONS,
+  ADMIN_SYSTEM_ROLE_KEYS,
   defaultHrBenefits,
   employeePublicIdOf,
   makeContractCode,
   makeEmployeePublicId,
+  normalizeAdminPermissions,
   type AdminAccount,
   type AdminRoleDef,
   type HrBenefitDef,
@@ -202,6 +204,7 @@ export function ensureHrSchema(): void {
       name_fa TEXT NOT NULL,
       description TEXT NOT NULL DEFAULT '',
       permissions_json TEXT NOT NULL DEFAULT '[]',
+      is_active INTEGER NOT NULL DEFAULT 1,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
@@ -216,6 +219,8 @@ export function ensureHrSchema(): void {
     );
   `);
 
+  ensureAdminRbacColumns();
+
   d.exec(`CREATE INDEX IF NOT EXISTS idx_hr_employees_code ON hr_employees(personnel_code)`);
   d.exec(`CREATE INDEX IF NOT EXISTS idx_hr_contracts_employee ON hr_contracts(employee_id)`);
   d.exec(`CREATE INDEX IF NOT EXISTS idx_hr_candidates_opening ON hr_candidates(job_opening_id)`);
@@ -223,6 +228,16 @@ export function ensureHrSchema(): void {
 
   seedHrDefaults();
   backfillHrPublicIds();
+}
+
+function ensureAdminRbacColumns(): void {
+  const d = db();
+  const roleCols = new Set(
+    (d.prepare(`PRAGMA table_info(admin_roles)`).all() as Array<{ name: string }>).map((c) => c.name)
+  );
+  if (!roleCols.has('is_active')) {
+    d.exec(`ALTER TABLE admin_roles ADD COLUMN is_active INTEGER NOT NULL DEFAULT 1`);
+  }
 }
 
 function seedHrDefaults(): void {
@@ -267,38 +282,45 @@ function seedHrDefaults(): void {
     ins.run('بودجه آموزش پیشرفته', 'آموزشی', byOrder(2), null, 5000000);
   }
 
-  const roleUpsert = d.prepare(
-    `INSERT INTO admin_roles (key, name_fa, description, permissions_json)
-     VALUES (?, ?, ?, ?)
-     ON CONFLICT(key) DO UPDATE SET
-       name_fa = excluded.name_fa,
-       description = excluded.description,
-       permissions_json = excluded.permissions_json`
-  );
-  roleUpsert.run(
+  // Seed defaults only when missing — never overwrite UI edits on restart
+  const seedRoleIfMissing = (
+    key: string,
+    nameFa: string,
+    description: string,
+    permissions: readonly string[]
+  ) => {
+    const existing = d.prepare('SELECT id FROM admin_roles WHERE key = ?').get(key) as
+      | { id: number }
+      | undefined;
+    if (existing) return;
+    d.prepare(
+      `INSERT INTO admin_roles (key, name_fa, description, permissions_json, is_active)
+       VALUES (?, ?, ?, ?, 1)`
+    ).run(key, nameFa, description, JSON.stringify(permissions));
+  };
+  seedRoleIfMissing(
     'admin',
     'مدیر کامل',
     'دسترسی کامل به پنل ادمین و منابع انسانی',
-    JSON.stringify(ADMIN_ROLE_PERMISSIONS.admin)
+    ADMIN_ROLE_PERMISSIONS.admin
   );
-  roleUpsert.run(
+  seedRoleIfMissing(
     'support',
     'پشتیبانی',
     'دسترسی محدود — خواندن پلتفرم و HR؛ آمادهٔ گسترش نقش‌های بعدی',
-    JSON.stringify(ADMIN_ROLE_PERMISSIONS.support)
+    ADMIN_ROLE_PERMISSIONS.support
   );
-  // Future HR-specific stubs (display on RBAC page)
-  roleUpsert.run(
+  seedRoleIfMissing(
     'hr_admin',
-    'HR Admin',
-    'دسترسی کامل به همه ماژول‌های منابع انسانی (آمادهٔ فعال‌سازی)',
-    JSON.stringify(['hr.read', 'hr.write'])
+    'مدیر منابع انسانی',
+    'دسترسی کامل به همه ماژول‌های منابع انسانی',
+    ['hr.read', 'hr.write']
   );
-  roleUpsert.run(
+  seedRoleIfMissing(
     'recruiter',
-    'Recruiter',
-    'مدیریت استخدام و جذب (آمادهٔ فعال‌سازی)',
-    JSON.stringify(['hr.read', 'hr.write'])
+    'استخدام‌کننده',
+    'مدیریت استخدام و جذب',
+    ['hr.read', 'hr.write']
   );
 
   // Optional support account from env — never overwrite existing hash if user changed password
@@ -913,29 +935,248 @@ export function listRequests(): HrRequest[] {
   }));
 }
 
-export function listAdminRoles(): AdminRoleDef[] {
-  return (
-    db().prepare('SELECT * FROM admin_roles ORDER BY id').all() as Record<string, unknown>[]
-  ).map((r) => ({
+export function listAdminRoles(opts?: { includeInactive?: boolean }): AdminRoleDef[] {
+  const includeInactive = opts?.includeInactive === true;
+  const rows = (
+    includeInactive
+      ? db().prepare('SELECT * FROM admin_roles ORDER BY id').all()
+      : db().prepare('SELECT * FROM admin_roles WHERE is_active = 1 ORDER BY id').all()
+  ) as Record<string, unknown>[];
+  return rows.map(mapAdminRole);
+}
+
+function mapAdminRole(r: Record<string, unknown>): AdminRoleDef {
+  return {
     id: Number(r.id),
     key: String(r.key),
     nameFa: String(r.name_fa),
     description: String(r.description || ''),
     permissions: parseJson(r.permissions_json, []),
-  }));
+    isActive: Number(r.is_active ?? 1) === 1,
+  };
 }
 
-export function listAdminAccounts(): AdminAccount[] {
-  return (
-    db().prepare('SELECT * FROM admin_accounts ORDER BY id').all() as Record<string, unknown>[]
-  ).map((r) => ({
+export function getAdminRoleById(id: number): AdminRoleDef | null {
+  const row = db().prepare('SELECT * FROM admin_roles WHERE id = ?').get(id) as
+    | Record<string, unknown>
+    | undefined;
+  return row ? mapAdminRole(row) : null;
+}
+
+export function getAdminRoleByKey(key: string): AdminRoleDef | null {
+  const row = db().prepare('SELECT * FROM admin_roles WHERE key = ?').get(key) as
+    | Record<string, unknown>
+    | undefined;
+  return row ? mapAdminRole(row) : null;
+}
+
+function normalizeRoleKey(raw: string): string {
+  return String(raw || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9_]+/g, '_')
+    .replace(/^_+|_+$/g, '')
+    .slice(0, 64);
+}
+
+export function createAdminRole(input: {
+  key: string;
+  nameFa: string;
+  description?: string;
+  permissions?: unknown;
+}): AdminRoleDef {
+  const key = normalizeRoleKey(input.key);
+  const nameFa = String(input.nameFa || '').trim();
+  if (!key || !/^[a-z][a-z0-9_]{1,63}$/.test(key)) {
+    throw new Error('کلید نقش نامعتبر است (لاتین، با حرف شروع شود)');
+  }
+  if (!nameFa) throw new Error('نام نقش الزامی است');
+  if (getAdminRoleByKey(key)) throw new Error('این کلید نقش از قبل وجود دارد');
+  const permissions = normalizeAdminPermissions(input.permissions);
+  const info = db()
+    .prepare(
+      `INSERT INTO admin_roles (key, name_fa, description, permissions_json, is_active)
+       VALUES (?, ?, ?, ?, 1)`
+    )
+    .run(key, nameFa, String(input.description || '').trim(), JSON.stringify(permissions));
+  const created = getAdminRoleById(Number(info.lastInsertRowid));
+  if (!created) throw new Error('ایجاد نقش ناموفق بود');
+  return created;
+}
+
+export function updateAdminRole(
+  id: number,
+  input: {
+    nameFa?: string;
+    description?: string;
+    permissions?: unknown;
+    isActive?: boolean;
+  }
+): AdminRoleDef | null {
+  const prev = getAdminRoleById(id);
+  if (!prev) return null;
+  const nameFa =
+    input.nameFa !== undefined ? String(input.nameFa || '').trim() : prev.nameFa;
+  if (!nameFa) throw new Error('نام نقش الزامی است');
+  const description =
+    input.description !== undefined
+      ? String(input.description || '').trim()
+      : prev.description;
+  const permissions =
+    input.permissions !== undefined
+      ? normalizeAdminPermissions(input.permissions)
+      : normalizeAdminPermissions(prev.permissions);
+  let isActive = prev.isActive;
+  if (input.isActive !== undefined) {
+    if (
+      !input.isActive &&
+      (ADMIN_SYSTEM_ROLE_KEYS as readonly string[]).includes(prev.key)
+    ) {
+      throw new Error('نقش سیستم را نمی‌توان غیرفعال کرد');
+    }
+    isActive = Boolean(input.isActive);
+  }
+  db()
+    .prepare(
+      `UPDATE admin_roles
+       SET name_fa = ?, description = ?, permissions_json = ?, is_active = ?
+       WHERE id = ?`
+    )
+    .run(nameFa, description, JSON.stringify(permissions), isActive ? 1 : 0, id);
+  return getAdminRoleById(id);
+}
+
+export function deleteAdminRole(id: number): { ok: true } {
+  const prev = getAdminRoleById(id);
+  if (!prev) throw new Error('نقش پیدا نشد');
+  if ((ADMIN_SYSTEM_ROLE_KEYS as readonly string[]).includes(prev.key)) {
+    throw new Error('نقش سیستم را نمی‌توان حذف کرد');
+  }
+  const used = db()
+    .prepare('SELECT COUNT(*) as c FROM admin_accounts WHERE role_key = ?')
+    .get(prev.key) as { c: number };
+  if (Number(used?.c || 0) > 0) {
+    // Soft-deactivate when accounts still reference the role
+    db().prepare('UPDATE admin_roles SET is_active = 0 WHERE id = ?').run(id);
+    return { ok: true };
+  }
+  db().prepare('DELETE FROM admin_roles WHERE id = ?').run(id);
+  return { ok: true };
+}
+
+export function listAdminAccounts(opts?: { includeInactive?: boolean }): AdminAccount[] {
+  const includeInactive = opts?.includeInactive !== false;
+  const rows = (
+    includeInactive
+      ? db().prepare('SELECT * FROM admin_accounts ORDER BY id').all()
+      : db().prepare('SELECT * FROM admin_accounts WHERE is_active = 1 ORDER BY id').all()
+  ) as Record<string, unknown>[];
+  return rows.map(mapAdminAccount);
+}
+
+function mapAdminAccount(r: Record<string, unknown>): AdminAccount {
+  return {
     id: Number(r.id),
     username: String(r.username),
     roleKey: String(r.role_key),
     displayName: String(r.display_name || ''),
     isActive: Number(r.is_active) === 1,
     createdAt: String(r.created_at || ''),
-  }));
+  };
+}
+
+export function getAdminAccountById(id: number): AdminAccount | null {
+  const row = db().prepare('SELECT * FROM admin_accounts WHERE id = ?').get(id) as
+    | Record<string, unknown>
+    | undefined;
+  return row ? mapAdminAccount(row) : null;
+}
+
+export function createAdminAccount(input: {
+  username: string;
+  password: string;
+  roleKey: string;
+  displayName?: string;
+  isActive?: boolean;
+}): AdminAccount {
+  const username = String(input.username || '')
+    .trim()
+    .toLowerCase();
+  const password = String(input.password || '');
+  const roleKey = normalizeRoleKey(input.roleKey);
+  if (!username || username.length < 2) throw new Error('نام کاربری الزامی است');
+  if (!/^[a-z0-9._-]{2,64}$/.test(username)) {
+    throw new Error('نام کاربری فقط حروف لاتین، عدد و ._-');
+  }
+  if (password.length < 6) throw new Error('رمز عبور حداقل ۶ کاراکتر');
+  const role = getAdminRoleByKey(roleKey);
+  if (!role || !role.isActive) throw new Error('نقش انتخاب‌شده معتبر نیست');
+  const existing = db()
+    .prepare('SELECT id FROM admin_accounts WHERE username = ?')
+    .get(username) as { id: number } | undefined;
+  if (existing) throw new Error('این نام کاربری از قبل وجود دارد');
+  const displayName = String(input.displayName || '').trim() || username;
+  const isActive = input.isActive === false ? 0 : 1;
+  const info = db()
+    .prepare(
+      `INSERT INTO admin_accounts (username, password_hash, role_key, display_name, is_active)
+       VALUES (?, ?, ?, ?, ?)`
+    )
+    .run(username, hashPassword(password), roleKey, displayName, isActive);
+  const created = getAdminAccountById(Number(info.lastInsertRowid));
+  if (!created) throw new Error('ایجاد حساب ناموفق بود');
+  return created;
+}
+
+export function updateAdminAccount(
+  id: number,
+  input: {
+    password?: string;
+    roleKey?: string;
+    displayName?: string;
+    isActive?: boolean;
+  }
+): AdminAccount | null {
+  const prev = getAdminAccountById(id);
+  if (!prev) return null;
+  let roleKey = prev.roleKey;
+  if (input.roleKey !== undefined) {
+    roleKey = normalizeRoleKey(input.roleKey);
+    const role = getAdminRoleByKey(roleKey);
+    if (!role || !role.isActive) throw new Error('نقش انتخاب‌شده معتبر نیست');
+  }
+  const displayName =
+    input.displayName !== undefined
+      ? String(input.displayName || '').trim() || prev.username
+      : prev.displayName;
+  const isActive =
+    input.isActive !== undefined ? (input.isActive ? 1 : 0) : prev.isActive ? 1 : 0;
+  if (input.password !== undefined && String(input.password).length > 0) {
+    if (String(input.password).length < 6) throw new Error('رمز عبور حداقل ۶ کاراکتر');
+    db()
+      .prepare(
+        `UPDATE admin_accounts
+         SET password_hash = ?, role_key = ?, display_name = ?, is_active = ?
+         WHERE id = ?`
+      )
+      .run(hashPassword(String(input.password)), roleKey, displayName, isActive, id);
+  } else {
+    db()
+      .prepare(
+        `UPDATE admin_accounts
+         SET role_key = ?, display_name = ?, is_active = ?
+         WHERE id = ?`
+      )
+      .run(roleKey, displayName, isActive, id);
+  }
+  return getAdminAccountById(id);
+}
+
+export function deleteAdminAccount(id: number): { ok: true } {
+  const prev = getAdminAccountById(id);
+  if (!prev) throw new Error('حساب پیدا نشد');
+  db().prepare('DELETE FROM admin_accounts WHERE id = ?').run(id);
+  return { ok: true };
 }
 
 export type AdminAuthActor = {
@@ -945,6 +1186,16 @@ export type AdminAuthActor = {
   displayName: string;
   username?: string;
 };
+
+function permissionsForRoleKey(roleKey: string): string[] {
+  const roleRow = db()
+    .prepare('SELECT permissions_json, is_active FROM admin_roles WHERE key = ?')
+    .get(roleKey) as { permissions_json?: string; is_active?: number } | undefined;
+  if (roleRow) {
+    return parseJson<string[]>(roleRow.permissions_json, []);
+  }
+  return [...(ADMIN_ROLE_PERMISSIONS[roleKey as keyof typeof ADMIN_ROLE_PERMISSIONS] || [])];
+}
 
 export function resolveAdminActor(opts: {
   password?: string;
@@ -960,19 +1211,13 @@ export function resolveAdminActor(opts: {
   if (opts.username?.trim()) {
     const row = db()
       .prepare('SELECT * FROM admin_accounts WHERE username = ? AND is_active = 1')
-      .get(opts.username.trim()) as Record<string, unknown> | undefined;
+      .get(opts.username.trim().toLowerCase()) as Record<string, unknown> | undefined;
     if (row && verifyPassword(password, String(row.password_hash || ''))) {
       const roleKey = String(row.role_key || 'support');
-      const roleRow = db()
-        .prepare('SELECT permissions_json FROM admin_roles WHERE key = ?')
-        .get(roleKey) as { permissions_json?: string } | undefined;
-      const permissions = roleRow
-        ? parseJson<string[]>(roleRow.permissions_json, [])
-        : [...(ADMIN_ROLE_PERMISSIONS.support || [])];
       return {
         kind: 'account',
         role: roleKey,
-        permissions,
+        permissions: permissionsForRoleKey(roleKey),
         displayName: String(row.display_name || row.username),
         username: String(row.username),
       };
@@ -980,12 +1225,15 @@ export function resolveAdminActor(opts: {
     return null;
   }
 
-  // Legacy single ADMIN_PASSWORD → full admin
+  // Legacy single ADMIN_PASSWORD → full admin (bootstrap super-admin)
   if (password === adminPwd) {
+    const fromDb = getAdminRoleByKey('admin');
     return {
       kind: 'env_admin',
       role: 'admin',
-      permissions: [...ADMIN_ROLE_PERMISSIONS.admin],
+      permissions: fromDb?.permissions?.length
+        ? fromDb.permissions
+        : [...ADMIN_ROLE_PERMISSIONS.admin],
       displayName: 'مدیر سیستم',
       username: 'admin',
     };
@@ -993,10 +1241,13 @@ export function resolveAdminActor(opts: {
 
   // Optional SUPPORT_PASSWORD shortcut
   if (supportPwd && password === supportPwd) {
+    const fromDb = getAdminRoleByKey('support');
     return {
       kind: 'env_support',
       role: 'support',
-      permissions: [...ADMIN_ROLE_PERMISSIONS.support],
+      permissions: fromDb?.permissions?.length
+        ? fromDb.permissions
+        : [...ADMIN_ROLE_PERMISSIONS.support],
       displayName: 'پشتیبانی',
       username: 'support',
     };
@@ -1009,16 +1260,10 @@ export function resolveAdminActor(opts: {
   for (const row of accounts) {
     if (verifyPassword(password, String(row.password_hash || ''))) {
       const roleKey = String(row.role_key || 'support');
-      const roleRow = db()
-        .prepare('SELECT permissions_json FROM admin_roles WHERE key = ?')
-        .get(roleKey) as { permissions_json?: string } | undefined;
-      const permissions = roleRow
-        ? parseJson<string[]>(roleRow.permissions_json, [])
-        : [...ADMIN_ROLE_PERMISSIONS.support];
       return {
         kind: 'account',
         role: roleKey,
-        permissions,
+        permissions: permissionsForRoleKey(roleKey),
         displayName: String(row.display_name || row.username),
         username: String(row.username),
       };
@@ -1052,6 +1297,12 @@ export const hrService = {
   listRequests,
   listAdminRoles,
   listAdminAccounts,
+  createAdminRole,
+  updateAdminRole,
+  deleteAdminRole,
+  createAdminAccount,
+  updateAdminAccount,
+  deleteAdminAccount,
   resolveAdminActor,
   actorHasPermission,
   hashPassword,

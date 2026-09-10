@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { AdminWordmark } from './AdminWordmark';
 import { adminCan, getAdminDisplayName, getAdminRole, logoutAdmin } from './auth';
+import { ADMIN_PANEL_ROLE_LABELS } from '@petdate/shared';
 import '../styles/admin.css';
 
 type NavItem = { to: string; icon: typeof LayoutDashboard; label: string; perm?: string };
@@ -27,7 +28,7 @@ const NAV_GROUPS: NavGroup[] = [
     { to: '/admin/hr/contracts', icon: FileText, label: 'قراردادها', perm: 'hr.read' },
     { to: '/admin/hr/ats', icon: Briefcase, label: 'استخدام (ATS)', perm: 'hr.read' },
     { to: '/admin/hr/settings', icon: Settings, label: 'تنظیمات HR', perm: 'hr.read' },
-    { to: '/admin/hr/rbac', icon: Shield, label: 'نقش‌ها و دسترسی', perm: 'hr.read' },
+    { to: '/admin/hr/rbac', icon: Shield, label: 'نقش‌ها و دسترسی', perm: 'admin.full' },
   ]},
   { title: 'مالی', items: [
     { to: '/admin/finance', icon: TrendingUp, label: 'داشبورد مالی', perm: 'platform.read' },
@@ -73,7 +74,11 @@ export function AdminLayout() {
     const hit = Object.keys(TITLE_MAP).sort((a, b) => b.length - a.length).find((k) => location.pathname.startsWith(k));
     return hit ? TITLE_MAP[hit] : 'پنل مدیریت';
   }, [location.pathname]);
-  const roleLabel = getAdminRole() === 'support' ? 'پشتیبانی' : getAdminDisplayName() || 'مدیر';
+  const role = getAdminRole();
+  const roleLabel =
+    getAdminDisplayName() ||
+    ADMIN_PANEL_ROLE_LABELS[role] ||
+    (role === 'admin' ? 'مدیر' : role);
 
   return (
     <div className={`admin-app${collapsed ? ' admin-app--collapsed' : ''}`}>
