@@ -1,4 +1,4 @@
-import { Router, type NextFunction, type Request, type Response } from 'express';
+import { Router } from 'express';
 import fs from 'fs';
 import net from 'net';
 import os from 'os';
@@ -35,6 +35,9 @@ import {
 import { rateLimit } from '../middleware/rate-limit';
 import { publicPdfOrigin, publicWebOrigin } from '../services/prescription-html';
 import { decorateAiConsultDisplay } from '../services/ai-consult-session';
+import { requireAdminAuth } from '../admin-auth';
+import { actorHasPermission, resolveAdminActor } from '../hr-service';
+import { hrAdminRouter } from './admin-hr';
 
 export const adminRouter = Router();
 const STARTED_AT = Date.now();
@@ -49,39 +52,65 @@ const adminLoginLimit = rateLimit({
   message: 'تلاش ورود ادمین زیاد است. کمی بعد دوباره تلاش کن.',
 });
 
-function adminPassword(): string {
-  return (process.env.ADMIN_PASSWORD || 'petdate').trim() || 'petdate';
-}
-
-function requireAdmin(req: Request, res: Response, next: NextFunction): void {
-  if (req.path === '/auth/login' && req.method === 'POST') {
-    next();
-    return;
-  }
-  // Header only — never accept password via query string (leaks into access logs / Referer).
-  const header = req.header('x-admin-password') || '';
-  const bodyPwd =
-    req.body && typeof req.body === 'object' && typeof (req.body as { password?: string }).password === 'string'
-      ? (req.body as { password: string }).password
-      : '';
-  if ((header || bodyPwd) !== adminPassword()) {
-    res.status(401).json({ error: 'دسترسی ادمین مجاز نیست' });
-    return;
-  }
-  next();
-}
-
-adminRouter.use(requireAdmin);
+adminRouter.use(requireAdminAuth);
 
 adminRouter.post('/auth/login', adminLoginLimit, (req, res) => {
   const password = typeof req.body?.password === 'string' ? req.body.password : '';
-  if (password !== adminPassword()) {
+  const username =
+    typeof req.body?.username === 'string' && req.body.username.trim()
+      ? req.body.username.trim()
+      : undefined;
+  const resolved = resolveAdminActor({ password, username });
+  if (!resolved) {
     res.status(401).json({ error: 'رمز عبور اشتباه است' });
     return;
   }
-  res.json({ ok: true });
+  res.json({
+    ok: true,
+    role: resolved.role,
+    permissions: resolved.permissions,
+    displayName: resolved.displayName,
+    username: resolved.username || null,
+  });
 });
 
+adminRouter.get('/auth/me', (req, res) => {
+  const actor = req.adminActor;
+  if (!actor) {
+    res.status(401).json({ error: 'دسترسی ادمین مجاز نیست' });
+    return;
+  }
+  res.json({
+    role: actor.role,
+    permissions: actor.permissions,
+    displayName: actor.displayName,
+    username: actor.username || null,
+  });
+});
+
+/** Non-admin roles: read-only on platform routes (HR has its own write guard). */
+adminRouter.use((req, res, next) => {
+  if (req.method === 'GET' || req.method === 'HEAD' || req.method === 'OPTIONS') {
+    next();
+    return;
+  }
+  if (req.path === '/auth/login' || req.path.startsWith('/hr')) {
+    next();
+    return;
+  }
+  const actor = req.adminActor;
+  if (!actor) {
+    res.status(401).json({ error: 'دسترسی ادمین مجاز نیست' });
+    return;
+  }
+  if (actorHasPermission(actor, 'platform.write') || actorHasPermission(actor, 'admin.full')) {
+    next();
+    return;
+  }
+  res.status(403).json({ error: 'این نقش فقط خواندن دارد — برای تغییر به مدیر کامل نیاز است' });
+});
+
+adminRouter.use('/hr', hrAdminRouter);
 adminRouter.get('/dashboard', (_req, res) => {
   res.json({
     generatedAt: new Date().toISOString(),

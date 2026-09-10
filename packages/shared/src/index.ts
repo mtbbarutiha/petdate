@@ -5,6 +5,7 @@ export * from './economy';
 export * from './rx-suggestions';
 export * from './profile-card';
 export * from './peer-profile';
+export * from './hr';
 
 import type {
   OnboardingStatus,

@@ -183,6 +183,32 @@ const AdminFinanceProductsPage = lazy(() =>
     default: m.AdminFinanceProductsPage,
   })),
 );
+const AdminHrEmployeesPage = lazy(() =>
+  import('./admin/pages/hr/AdminHrEmployeesPage').then((m) => ({
+    default: m.AdminHrEmployeesPage,
+  })),
+);
+const AdminHrEmployeeDetailPage = lazy(() =>
+  import('./admin/pages/hr/AdminHrEmployeeDetailPage').then((m) => ({
+    default: m.AdminHrEmployeeDetailPage,
+  })),
+);
+const AdminHrContractsPage = lazy(() =>
+  import('./admin/pages/hr/AdminHrContractsPage').then((m) => ({
+    default: m.AdminHrContractsPage,
+  })),
+);
+const AdminHrAtsPage = lazy(() =>
+  import('./admin/pages/hr/AdminHrAtsPage').then((m) => ({ default: m.AdminHrAtsPage })),
+);
+const AdminHrSettingsPage = lazy(() =>
+  import('./admin/pages/hr/AdminHrSettingsPage').then((m) => ({
+    default: m.AdminHrSettingsPage,
+  })),
+);
+const AdminHrRbacPage = lazy(() =>
+  import('./admin/pages/hr/AdminHrRbacPage').then((m) => ({ default: m.AdminHrRbacPage })),
+);
 
 function RouteFallback() {
   return <div className="pd-route-fallback" aria-hidden="true" />;
@@ -269,6 +295,12 @@ export default function App() {
                 <Route path="logs" element={<AdminLogsPage />} />
                 <Route path="monitoring" element={<AdminMonitoringPage />} />
                 <Route path="settings" element={<AdminSettingsPage />} />
+                <Route path="hr/employees" element={<AdminHrEmployeesPage />} />
+                <Route path="hr/employees/:id" element={<AdminHrEmployeeDetailPage />} />
+                <Route path="hr/contracts" element={<AdminHrContractsPage />} />
+                <Route path="hr/ats" element={<AdminHrAtsPage />} />
+                <Route path="hr/settings" element={<AdminHrSettingsPage />} />
+                <Route path="hr/rbac" element={<AdminHrRbacPage />} />
               </Route>
             </Route>
 
