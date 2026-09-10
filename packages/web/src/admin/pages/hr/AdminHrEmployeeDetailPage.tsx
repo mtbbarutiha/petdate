@@ -11,6 +11,7 @@ import { adminFetch, formatNumFa } from '../../api';
 import { adminCan } from '../../auth';
 import { AdminModal } from '../../AdminModal';
 import { AdminIdChip } from '../../AdminIds';
+import { AdminThumb } from '../../AdminThumb';
 
 export function AdminHrEmployeeDetailPage() {
   const { id } = useParams();
@@ -99,21 +100,41 @@ export function AdminHrEmployeeDetailPage() {
     return <p className="admin-error">{error}</p>;
   }
 
+  const fullName = `${employee.firstName} ${employee.lastName}`.trim();
+
+  const uploadAvatar = async (file: File | null) => {
+    if (!file || !canWrite) return;
+    try {
+      const fd = new FormData();
+      fd.append('file', file);
+      const data = await adminFetch<{ employee: HrEmployee }>(
+        `/api/admin/hr/employees/${employee.id}/avatar`,
+        { method: 'POST', body: fd }
+      );
+      setEmployee(data.employee);
+      setSaved(true);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'خطا');
+    }
+  };
+
   return (
     <div className="admin-page">
       <header className="admin-header">
-        <div>
-          <p className="admin-muted">
-            <Link to="/admin/hr/employees" className="admin-link">
-              ← همکاران
-            </Link>
-          </p>
-          <h1>
-            {employee.firstName} {employee.lastName}
-          </h1>
-          <p>
-            <AdminIdChip publicId={employee.publicId} /> · {employee.personnelCode}
-          </p>
+        <div style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+          <AdminThumb src={employee.avatarUrl} label={fullName} kind="user" size={56} alt={fullName} />
+          <div>
+            <p className="admin-muted">
+              <Link to="/admin/hr/employees" className="admin-link">
+                ← همکاران
+              </Link>
+            </p>
+            <h1>{fullName}</h1>
+            <p>
+              <AdminIdChip publicId={employee.publicId} /> · {employee.personnelCode}
+            </p>
+          </div>
         </div>
         {canWrite ? (
           <button type="button" className="admin-btn admin-btn--primary" onClick={() => void save()}>
@@ -148,6 +169,28 @@ export function AdminHrEmployeeDetailPage() {
 
       {tab === 'profile' ? (
         <div className="admin-card admin-form-grid" style={{ padding: 16 }}>
+          <label className="admin-span-2">
+            <span className="form-label">آدرس عکس (URL)</span>
+            <input
+              className="form-input"
+              dir="ltr"
+              disabled={!canWrite}
+              placeholder="https://… یا /api/admin/hr/avatars/…"
+              value={employee.avatarUrl || ''}
+              onChange={(e) => patch('avatarUrl', e.target.value)}
+            />
+          </label>
+          {canWrite ? (
+            <label className="admin-span-2">
+              <span className="form-label">آپلود عکس</span>
+              <input
+                className="form-input"
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                onChange={(e) => void uploadAvatar(e.target.files?.[0] ?? null)}
+              />
+            </label>
+          ) : null}
           <label>
             <span className="form-label">نام</span>
             <input

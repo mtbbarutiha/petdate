@@ -4,6 +4,7 @@ import { HR_REQUEST_TYPES, nextRequestStatus } from '@petdate/shared';
 import { adminFetch, formatNumFa } from '../../api';
 import { adminCan } from '../../auth';
 import { AdminModal } from '../../AdminModal';
+import { AdminEntityCell, AdminThumb } from '../../AdminThumb';
 
 type Balance = { employeeId: number; name: string; personnelCode: string; annual: number; used: number; remaining: number };
 
@@ -27,7 +28,11 @@ export function AdminHrRequestsPage() {
     } catch (err) { setError(err instanceof Error ? err.message : 'خطا'); }
   }, []);
   useEffect(() => { void load(); }, [load]);
-  const empName = (id: number) => { const e = employees.find((x) => x.id === id); return e ? `${e.firstName} ${e.lastName}` : `#${id}`; };
+  const empOf = (id: number) => employees.find((x) => x.id === id);
+  const empName = (id: number) => {
+    const e = empOf(id);
+    return e ? `${e.firstName} ${e.lastName}` : `#${id}`;
+  };
 
   const create = async (e: FormEvent) => {
     e.preventDefault();
@@ -60,9 +65,18 @@ export function AdminHrRequestsPage() {
         <table className="admin-table">
           <thead><tr><th>همکار</th><th>نوع</th><th>روز</th><th>وضعیت</th><th>عملیات</th></tr></thead>
           <tbody>
-            {requests.map((r) => (
+            {requests.map((r) => {
+              const emp = empOf(r.employeeId);
+              const name = empName(r.employeeId);
+              return (
               <tr key={r.id}>
-                <td>{empName(r.employeeId)}</td><td>{r.type}</td><td>{formatNumFa(r.days)}</td><td>{r.status}</td>
+                <td>
+                  <AdminEntityCell
+                    thumb={<AdminThumb src={emp?.avatarUrl} label={name} kind="user" size={32} />}
+                    title={name}
+                  />
+                </td>
+                <td>{r.type}</td><td>{formatNumFa(r.days)}</td><td>{r.status}</td>
                 <td>
                   {canWrite && nextRequestStatus(r.status) ? (
                     <button type="button" className="admin-btn admin-btn--ghost" onClick={() => void adminFetch(`/api/admin/hr/requests/${r.id}/advance`, { method: 'POST', body: '{}' }).then(load).catch((e) => setError(String(e)))}>مرحله بعد</button>
@@ -72,7 +86,8 @@ export function AdminHrRequestsPage() {
                   ) : null}
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>
@@ -81,9 +96,23 @@ export function AdminHrRequestsPage() {
         <div className="admin-table-wrap">
           <table className="admin-table">
             <thead><tr><th>کد</th><th>نام</th><th>سقف</th><th>مصرف</th><th>مانده</th></tr></thead>
-            <tbody>{balances.map((b) => (
-              <tr key={b.employeeId}><td>{b.personnelCode}</td><td>{b.name}</td><td>{formatNumFa(b.annual)}</td><td>{formatNumFa(b.used)}</td><td>{formatNumFa(b.remaining)}</td></tr>
-            ))}</tbody>
+            <tbody>{balances.map((b) => {
+              const emp = empOf(b.employeeId);
+              return (
+              <tr key={b.employeeId}>
+                <td>{b.personnelCode}</td>
+                <td>
+                  <AdminEntityCell
+                    thumb={<AdminThumb src={emp?.avatarUrl} label={b.name} kind="user" size={28} />}
+                    title={b.name}
+                  />
+                </td>
+                <td>{formatNumFa(b.annual)}</td>
+                <td>{formatNumFa(b.used)}</td>
+                <td>{formatNumFa(b.remaining)}</td>
+              </tr>
+              );
+            })}</tbody>
           </table>
         </div>
       </section>

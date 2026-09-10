@@ -96,6 +96,7 @@ async function main() {
     .prepare(`PRAGMA table_info(hr_employees)`)
     .all() as Array<{ name: string }>;
   assert(!cols.some((c) => /business/i.test(c.name)), 'no businessLine column');
+  assert(cols.some((c) => c.name === 'avatar_url'), 'avatar_url column present');
 
   console.log('hr-modules.selftest: ok');
 }

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { adminFetch, formatNumFa } from '../../api';
+import { AdminEntityCell, AdminThumb } from '../../AdminThumb';
 import { HrKpiGrid, HrLinkGrid, formatHrMoney } from './HrUi';
 
 type Dash = {
@@ -10,7 +11,7 @@ type Dash = {
     openRequests: number; openOnboarding: number;
   };
   links: Array<{ to: string; label: string }>;
-  recentLogs: Array<{ personName: string; field: string; oldValue: string; newValue: string; date: string }>;
+  recentLogs: Array<{ personName: string; avatarUrl?: string; field: string; oldValue: string; newValue: string; date: string }>;
   cockpitPreview: Array<{ type: string; employeeName?: string; detail: string }>;
 };
 
@@ -57,7 +58,13 @@ export function AdminHrDashboardPage() {
           <h2 style={{ marginTop: 0, fontSize: '1rem' }}>آخرین تغییرات ({formatNumFa(data?.recentLogs.length || 0)})</h2>
           {data?.recentLogs?.length ? (
             <ul className="admin-log-list">{data.recentLogs.map((l, i) => (
-              <li key={i}><b>{l.personName}</b><div className="admin-muted">{l.field}: {l.oldValue || '—'} ← {l.newValue || '—'}</div></li>
+              <li key={i}>
+                <AdminEntityCell
+                  thumb={<AdminThumb src={l.avatarUrl} label={l.personName} kind="user" size={28} />}
+                  title={<b>{l.personName}</b>}
+                  subtitle={`${l.field}: ${l.oldValue || '—'} ← ${l.newValue || '—'}`}
+                />
+              </li>
             ))}</ul>
           ) : <p className="admin-muted">هنوز تغییری ثبت نشده</p>}
         </article>

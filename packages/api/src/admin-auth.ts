@@ -48,6 +48,14 @@ export function requireAdminAuth(req: Request, res: Response, next: NextFunction
     next();
     return;
   }
+  // HR avatar files are loaded by bare <img> (no admin headers); UUID filenames are unguessable.
+  if (
+    (req.method === 'GET' || req.method === 'HEAD') &&
+    /^\/hr\/avatars\/\d+\//.test(req.path)
+  ) {
+    next();
+    return;
+  }
   const actor = authenticateAdminRequest(req);
   if (!actor) {
     res.status(401).json({ error: 'دسترسی ادمین مجاز نیست' });

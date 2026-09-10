@@ -194,14 +194,16 @@ function seedSalesDefaults(): void {
 function mapItem(row: Record<string, unknown>): SalesItem {
   const id = Number(row.id);
   const kind = String(row.kind) as SalesItemKind;
+  const ownerId = row.owner_id != null ? String(row.owner_id) : null;
   return {
     id, publicId: makeSalesPublicId(kind, id), kind,
     first: String(row.first_name || ''), last: String(row.last_name || ''),
     mobile: String(row.mobile || ''), email: row.email != null ? String(row.email) : null,
     product: String(row.product || ''), source: String(row.source || ''),
     score: Number(row.score || 0),
-    ownerId: row.owner_id != null ? String(row.owner_id) : null,
+    ownerId,
     ownerName: row.owner_name != null ? String(row.owner_name) : null,
+    ownerAvatarUrl: lookupHrOwnerAvatar(ownerId),
     stage: parseStage(row.stage), value: Number(row.value || 0), discount: Number(row.discount || 0),
     createdAt: String(row.created_at), lastActivity: String(row.last_activity),
     nextFollowup: row.next_followup != null ? String(row.next_followup) : null,
@@ -210,6 +212,24 @@ function mapItem(row: Record<string, unknown>): SalesItem {
     payStatus: String(row.pay_status || 'بدون پرداخت'),
     payType: row.pay_type != null ? String(row.pay_type) : null,
   };
+}
+
+/** Resolve sales owner (personnel_code / username) → HR avatar URL. */
+function lookupHrOwnerAvatar(ownerId: string | null): string | null {
+  if (!ownerId) return null;
+  try {
+    const row = db()
+      .prepare(
+        `SELECT avatar_url FROM hr_employees
+         WHERE personnel_code = ? OR username = ?
+         LIMIT 1`
+      )
+      .get(ownerId, ownerId) as { avatar_url?: string } | undefined;
+    const url = String(row?.avatar_url || '').trim();
+    return url || null;
+  } catch {
+    return null;
+  }
 }
 
 function addActivity(itemId: number, text: string, kind = 'sys'): void {

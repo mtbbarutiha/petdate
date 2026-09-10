@@ -1,13 +1,44 @@
 /**
  * پیوند HR admin API routes.
  */
+import fs from 'fs';
 import { Router } from 'express';
+import multer from 'multer';
 import { ADMIN_PERMISSION_LABELS, ADMIN_PERMISSIONS } from '@petdate/shared';
 import { requirePermission } from '../admin-auth';
 import * as hr from '../hr-service';
 import * as hrMod from '../hr-modules';
+import {
+  MAX_HR_AVATAR_BYTES,
+  mimeFromHrAvatarKey,
+  resolveHrAvatarPath,
+  saveHrAvatar,
+} from '../services/hr-avatar-store';
 
 export const hrAdminRouter = Router();
+
+const hrAvatarUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: MAX_HR_AVATAR_BYTES },
+});
+
+/**
+ * Serve uploaded HR employee avatar without admin headers
+ * (browser <img> cannot send x-admin-password). Path uses UUID filename.
+ */
+hrAdminRouter.get('/avatars/:employeeId/:filename', (req, res) => {
+  const employeeId = String(req.params.employeeId || '');
+  const filename = String(req.params.filename || '');
+  const storageKey = `${employeeId}/${filename}`;
+  const abs = resolveHrAvatarPath(storageKey);
+  if (!abs || !fs.existsSync(abs)) {
+    res.status(404).json({ error: 'عکس پیدا نشد' });
+    return;
+  }
+  res.setHeader('Cache-Control', 'public, max-age=86400');
+  res.type(mimeFromHrAvatarKey(storageKey));
+  fs.createReadStream(abs).pipe(res);
+});
 
 hrAdminRouter.use(requirePermission('hr.read'));
 
@@ -67,6 +98,73 @@ hrAdminRouter.patch('/employees/:id', requirePermission('hr.write'), (req, res) 
   }
   res.json({ employee });
 });
+
+/** Upload employee avatar (multipart field: `file`). Sets avatarUrl on the employee. */
+hrAdminRouter.post(
+  '/employees/:id/avatar',
+  requirePermission('hr.write'),
+  (req, res) => {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) {
+      res.status(400).json({ error: 'شناسه نامعتبر' });
+      return;
+    }
+    if (!hr.getEmployee(id)) {
+      res.status(404).json({ error: 'همکار پیدا نشد' });
+      return;
+    }
+
+    hrAvatarUpload.single('file')(req, res, (uploadErr) => {
+      if (uploadErr) {
+        const tooLarge =
+          uploadErr instanceof multer.MulterError && uploadErr.code === 'LIMIT_FILE_SIZE';
+        res.status(tooLarge ? 413 : 400).json({
+          error: tooLarge
+            ? 'حجم عکس بیش از حد مجاز است (حداکثر ۸ مگابایت)'
+            : 'آپلود عکس ناموفق بود',
+        });
+        return;
+      }
+
+      const file = req.file;
+      if (!file?.buffer?.length) {
+        res.status(400).json({ error: 'فایل عکس الزامی است' });
+        return;
+      }
+
+      try {
+        const saved = saveHrAvatar({
+          employeeId: id,
+          originalName: file.originalname || 'avatar.jpg',
+          mimeType: file.mimetype,
+          buffer: file.buffer,
+        });
+        const employee = hr.updateEmployee(id, { avatarUrl: saved.urlPath });
+        if (!employee) {
+          res.status(404).json({ error: 'همکار پیدا نشد' });
+          return;
+        }
+        res.status(201).json({
+          ok: true,
+          url: saved.urlPath,
+          storageKey: saved.storageKey,
+          employee,
+        });
+      } catch (err) {
+        if (err instanceof Error && err.message === 'FILE_TOO_LARGE') {
+          res.status(413).json({ error: 'حجم عکس بیش از حد مجاز است (حداکثر ۸ مگابایت)' });
+          return;
+        }
+        if (err instanceof Error && err.message === 'INVALID_MIME') {
+          res.status(400).json({ error: 'فقط عکس (JPG، PNG، WebP، GIF) مجاز است' });
+          return;
+        }
+        console.warn('hr avatar upload failed:', (err as Error).message);
+        res.status(500).json({ error: 'ذخیره عکس ناموفق بود' });
+      }
+    });
+  }
+);
 
 hrAdminRouter.get('/contracts', (req, res) => {
   const employeeId = req.query.employeeId ? Number(req.query.employeeId) : undefined;

@@ -59,7 +59,10 @@ export interface SalesProduct {
 export interface SalesItem {
   id: number; publicId: string; kind: SalesItemKind; first: string; last: string;
   mobile: string; email: string | null; product: string; source: string; score: number;
-  ownerId: string | null; ownerName: string | null; stage: SalesStage; value: number;
+  ownerId: string | null; ownerName: string | null;
+  /** Avatar of linked HR personnel (ownerId ≈ personnel_code / username), when available. */
+  ownerAvatarUrl?: string | null;
+  stage: SalesStage; value: number;
   discount: number; createdAt: string; lastActivity: string; nextFollowup: string | null;
   lostReason: string | null; customerId: number | null; payStatus: string; payType: string | null;
 }

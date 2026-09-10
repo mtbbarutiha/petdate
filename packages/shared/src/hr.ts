@@ -300,6 +300,8 @@ export type HrEmployee = {
   contractStatus: string;
   accessStatus: string;
   username: string;
+  /** Profile photo URL (absolute https or same-origin path). */
+  avatarUrl: string;
   incomeModelId?: number | null;
   careerLayerId?: number | null;
   permissions: Record<string, boolean>;

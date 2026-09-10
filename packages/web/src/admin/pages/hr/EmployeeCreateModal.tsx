@@ -15,6 +15,7 @@ import {
 } from '@petdate/shared';
 import { adminFetch } from '../../api';
 import { AdminModal } from '../../AdminModal';
+import { AdminThumb } from '../../AdminThumb';
 
 const TABS = [
   { id: 'identity', label: 'هویتی - تحصیلی' },
@@ -92,6 +93,7 @@ type Draft = {
   careerLayerId: string;
   benefits: HrEmployeeBenefits;
   password: string;
+  avatarUrl: string;
   contractStart: string;
   contractEnd: string;
   salary: string;
@@ -133,6 +135,7 @@ function emptyDraft(): Draft {
     careerLayerId: '',
     benefits: defaultHrBenefits(),
     password: '',
+    avatarUrl: '',
     contractStart: '',
     contractEnd: '',
     salary: '',
@@ -158,6 +161,7 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
   const [peers, setPeers] = useState<HrEmployee[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
 
   const patch = useCallback(<K extends keyof Draft>(key: K, value: Draft[K]) => {
     setDraft((d) => ({ ...d, [key]: value }));
@@ -167,6 +171,7 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
     if (!open) return;
     setTab('identity');
     setDraft(emptyDraft());
+    setAvatarFile(null);
     setError(null);
     void Promise.all([
       adminFetch<{ careerLayers: HrCareerLayer[] }>('/api/admin/hr/settings/layers'),
@@ -232,11 +237,20 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
         incomeModelId: draft.incomeModelId ? Number(draft.incomeModelId) : null,
         careerLayerId: draft.careerLayerId ? Number(draft.careerLayerId) : null,
         password: draft.password.trim() || undefined,
+        avatarUrl: draft.avatarUrl.trim() || undefined,
       };
       const data = await adminFetch<{ employee: HrEmployee }>('/api/admin/hr/employees', {
         method: 'POST',
         body: JSON.stringify(body),
       });
+      if (avatarFile) {
+        const fd = new FormData();
+        fd.append('file', avatarFile);
+        await adminFetch<{ employee: HrEmployee }>(
+          `/api/admin/hr/employees/${data.employee.id}/avatar`,
+          { method: 'POST', body: fd }
+        );
+      }
       if (draft.contractStart.trim()) {
         const salary = Number(String(draft.salary || '0').replace(/[^0-9]/g, '')) || 0;
         await adminFetch(`/api/admin/hr/employees/${data.employee.id}/contracts`, {
@@ -302,6 +316,35 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
 
       {tab === 'identity' ? (
         <div className="admin-form-grid">
+          <div className="admin-span-2" style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
+            <AdminThumb
+              src={avatarFile ? URL.createObjectURL(avatarFile) : draft.avatarUrl || null}
+              label={`${draft.firstName} ${draft.lastName}`.trim() || 'همکار'}
+              kind="user"
+              size={56}
+            />
+            <div style={{ flex: 1, display: 'grid', gap: 8 }}>
+              <label>
+                <span className="form-label">آدرس عکس (URL)</span>
+                <input
+                  className="form-input"
+                  dir="ltr"
+                  placeholder="https://… یا /pepito/uploads/…"
+                  value={draft.avatarUrl}
+                  onChange={(e) => patch('avatarUrl', e.target.value)}
+                />
+              </label>
+              <label>
+                <span className="form-label">آپلود عکس</span>
+                <input
+                  className="form-input"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
+                  onChange={(e) => setAvatarFile(e.target.files?.[0] ?? null)}
+                />
+              </label>
+            </div>
+          </div>
           <label>
             <span className="form-label">نام *</span>
             <input className="form-input" required value={draft.firstName} onChange={(e) => patch('firstName', e.target.value)} />
