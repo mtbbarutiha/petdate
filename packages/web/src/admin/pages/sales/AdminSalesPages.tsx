@@ -1,15 +1,19 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import type {
-  SalesCall, SalesCustomer, SalesItem, SalesItemKind, SalesProduct, SalesReportSummary, SalesSettings, SalesTicket,
+  SalesCall, SalesCustomer, SalesGoal, SalesItem, SalesItemKind, SalesPattern, SalesProduct,
+  SalesReportSummary, SalesSettings, SalesTicket,
 } from '@petdate/shared';
 import {
-  SALES_CALL_RESULTS, SALES_LEAD_SOURCES, SALES_LOST_REASONS, SALES_MESSAGE_CHANNELS, SALES_STAGES, salesStageLabel,
+  SALES_CALL_RESULTS, SALES_LEAD_SOURCES, SALES_LOST_REASONS, SALES_MESSAGE_CHANNELS,
+  SALES_PRIORITIES, SALES_STAGES, SALES_TICKET_CATEGORIES, SALES_TICKET_DEPTS,
+  SALES_TICKET_STATUSES, salesStageLabel,
 } from '@petdate/shared';
 import { adminFetch, formatNumFa } from '../../api';
 import { adminCan } from '../../auth';
 import { AdminModal } from '../../AdminModal';
 import { AdminEntityCell, AdminThumb } from '../../AdminThumb';
+import { useSalesCallSimOptional } from './SalesCallSim';
 
 function ItemsPage({ kind }: { kind: SalesItemKind }) {
   const navigate = useNavigate();
@@ -414,50 +418,235 @@ export function AdminSalesProductsPage() {
 
 export function AdminSalesTicketsPage() {
   const [tickets, setTickets] = useState<SalesTicket[]>([]);
-  const canAdmin = adminCan('sales.admin');
-  const load = () => void adminFetch<{ tickets: SalesTicket[] }>('/api/admin/sales/tickets').then((d) => setTickets(d.tickets));
-  useEffect(() => { load(); }, []);
+  const [cat, setCat] = useState<string>('all');
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [form, setForm] = useState<{ title: string; cat: string; dept: string; priority: string; desc: string }>({ title: '', cat: SALES_TICKET_CATEGORIES[0], dept: SALES_TICKET_DEPTS[0], priority: 'متوسط', desc: '' });
+  const canWrite = adminCan('sales.write') || adminCan('admin.full');
+  const canAdmin = adminCan('sales.admin') || adminCan('admin.full');
+
+  const load = useCallback(() => {
+    const qs = cat !== 'all' ? `?cat=${encodeURIComponent(cat)}` : '';
+    void adminFetch<{ tickets: SalesTicket[] }>(`/api/admin/sales/tickets${qs}`).then((d) => setTickets(d.tickets));
+  }, [cat]);
+  useEffect(() => { load(); }, [load]);
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!form.title.trim()) return;
+    setBusy(true);
+    try {
+      await adminFetch('/api/admin/sales/tickets', {
+        method: 'POST',
+        body: JSON.stringify(form),
+      });
+      setOpen(false);
+      load();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const setStatus = (id: number, status: string) => {
+    void adminFetch(`/api/admin/sales/tickets/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    }).then(load);
+  };
+
+  const slaTone = (slaDue: string, status: string) => {
+    if (['حل‌شده', 'بسته‌شده', 'رد شده'].includes(status)) return undefined;
+    const ms = new Date(slaDue).getTime() - Date.now();
+    if (ms < 0) return '#c62828';
+    if (ms < 6 * 3600_000) return '#ef6c00';
+    return undefined;
+  };
+
   return (
-    <div className="admin-page">
-      <header className="admin-header"><div><h1>تیکتینگ فروش</h1><p>استعلام مالی و پشتیبانی</p></div></header>
-      <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>کد</th><th>عنوان</th><th>دسته</th><th>اولویت</th><th>وضعیت</th><th>SLA</th><th></th></tr></thead>
-        <tbody>{tickets.map((t) => (
-          <tr key={t.id}><td>{t.publicId}</td><td>{t.title}</td><td>{t.cat}</td><td>{t.priority}</td><td>{t.status}</td>
-            <td>{new Date(t.slaDue).toLocaleString('fa-IR')}</td>
-            <td>{canAdmin && t.cat === 'استعلام مالی' && t.status === 'جدید' && t.paymentId ? (
-              <><button type="button" className="admin-btn admin-btn--ghost" onClick={() => void adminFetch(`/api/admin/sales/payments/${t.paymentId}/finance-decide`, { method: 'POST', body: JSON.stringify({ approve: true }) }).then(load)}>تایید</button>
-              <button type="button" className="admin-btn admin-btn--ghost" onClick={() => void adminFetch(`/api/admin/sales/payments/${t.paymentId}/finance-decide`, { method: 'POST', body: JSON.stringify({ approve: false }) }).then(load)}>رد</button></>
-            ) : null}</td></tr>
-        ))}{!tickets.length ? <tr><td colSpan={7}>خالی</td></tr> : null}</tbody></table></div>
+    <div className="admin-page admin-page--wide">
+      <header className="admin-header">
+        <div><h1>تیکتینگ</h1><p>استعلام مالی، پشتیبانی فنی و تحویل · Pet Date</p></div>
+        {canWrite ? (
+          <button type="button" className="admin-btn admin-btn--primary" onClick={() => setOpen(true)}>+ تیکت</button>
+        ) : null}
+      </header>
+      <div className="admin-tabs">
+        <button type="button" className={`admin-tab${cat === 'all' ? ' is-on' : ''}`} onClick={() => setCat('all')}>همه</button>
+        {SALES_TICKET_CATEGORIES.map((c) => (
+          <button key={c} type="button" className={`admin-tab${cat === c ? ' is-on' : ''}`} onClick={() => setCat(c)}>{c}</button>
+        ))}
+      </div>
+      <div className="admin-table-wrap">
+        <table className="admin-table">
+          <thead><tr><th>کد</th><th>عنوان</th><th>مرتبط</th><th>واحد</th><th>دسته</th><th>اولویت</th><th>وضعیت</th><th>SLA</th><th></th></tr></thead>
+          <tbody>
+            {tickets.map((t) => (
+              <tr key={t.id}>
+                <td>{t.publicId}</td>
+                <td>{t.title}<div className="admin-muted">{t.desc || ''}</div></td>
+                <td>
+                  {t.refId ? (
+                    <Link to={`/admin/sales/${t.refKind === 'upgrade' ? 'upgrades' : 'leads'}/${t.refId}`}>
+                      {t.refKind}/{t.refId}
+                    </Link>
+                  ) : t.customerId ? (
+                    <Link to={`/admin/sales/customers/${t.customerId}`}>CU-{t.customerId}</Link>
+                  ) : '—'}
+                </td>
+                <td>{t.dept}</td>
+                <td>{t.cat}</td>
+                <td>{t.priority}</td>
+                <td>{t.status}</td>
+                <td style={{ color: slaTone(t.slaDue, t.status) }}>{new Date(t.slaDue).toLocaleString('fa-IR')}</td>
+                <td style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {canAdmin && t.cat === 'استعلام مالی' && t.status === 'جدید' && t.paymentId ? (
+                    <>
+                      <button type="button" className="admin-btn admin-btn--primary" onClick={() => void adminFetch(`/api/admin/sales/payments/${t.paymentId}/finance-decide`, { method: 'POST', body: JSON.stringify({ approve: true }) }).then(load)}>تایید مالی</button>
+                      <button type="button" className="admin-btn" onClick={() => void adminFetch(`/api/admin/sales/payments/${t.paymentId}/finance-decide`, { method: 'POST', body: JSON.stringify({ approve: false }) }).then(load)}>رد</button>
+                    </>
+                  ) : null}
+                  {canWrite && !['بسته‌شده', 'حل‌شده'].includes(t.status) ? (
+                    <select
+                      className="admin-select"
+                      value={t.status}
+                      onChange={(e) => setStatus(t.id, e.target.value)}
+                      style={{ minWidth: 120 }}
+                    >
+                      {SALES_TICKET_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                    </select>
+                  ) : null}
+                </td>
+              </tr>
+            ))}
+            {!tickets.length ? <tr><td colSpan={9}>خالی</td></tr> : null}
+          </tbody>
+        </table>
+      </div>
+
+      <AdminModal
+        open={open}
+        title="تیکت جدید"
+        onClose={() => !busy && setOpen(false)}
+        size="sm"
+        as="form"
+        onSubmit={(e) => void submit(e)}
+        busy={busy}
+        footer={(
+          <>
+            <button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>ایجاد</button>
+            <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setOpen(false)}>انصراف</button>
+          </>
+        )}
+      >
+        <label><span className="form-label">عنوان</span>
+          <input className="form-input" required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></label>
+        <label><span className="form-label">دسته</span>
+          <select className="admin-select" value={form.cat} onChange={(e) => setForm({ ...form, cat: e.target.value })}>
+            {SALES_TICKET_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select></label>
+        <label><span className="form-label">واحد</span>
+          <select className="admin-select" value={form.dept} onChange={(e) => setForm({ ...form, dept: e.target.value })}>
+            {SALES_TICKET_DEPTS.map((d) => <option key={d} value={d}>{d}</option>)}
+          </select></label>
+        <label><span className="form-label">اولویت</span>
+          <select className="admin-select" value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })}>
+            {SALES_PRIORITIES.map((p) => <option key={p} value={p}>{p}</option>)}
+          </select></label>
+        <label><span className="form-label">شرح</span>
+          <textarea className="form-input" rows={3} value={form.desc} onChange={(e) => setForm({ ...form, desc: e.target.value })} /></label>
+      </AdminModal>
     </div>
   );
 }
 
 export function AdminSalesCallsPage() {
   const [calls, setCalls] = useState<SalesCall[]>([]);
+  const [dir, setDir] = useState<'all' | 'call_out' | 'call_in'>('all');
+  const [qaOnly, setQaOnly] = useState(false);
   const [scoreOpen, setScoreOpen] = useState<number | null>(null);
   const [score, setScore] = useState('80');
   const [busy, setBusy] = useState(false);
-  const load = () => void adminFetch<{ calls: SalesCall[] }>('/api/admin/sales/calls').then((d) => setCalls(d.calls));
-  useEffect(() => { load(); }, []);
+  const sim = useSalesCallSimOptional();
+  const canWrite = adminCan('sales.write') || adminCan('admin.full');
+
+  const load = useCallback(() => {
+    const qs = new URLSearchParams();
+    if (dir !== 'all') qs.set('dir', dir);
+    if (qaOnly) qs.set('qaPendingOnly', '1');
+    void adminFetch<{ calls: SalesCall[] }>(`/api/admin/sales/calls?${qs}`).then((d) => setCalls(d.calls));
+  }, [dir, qaOnly]);
+  useEffect(() => { load(); }, [load]);
+
   const out = calls.filter((c) => c.dir === 'call_out');
   const inn = calls.filter((c) => c.dir === 'call_in');
+  const scored = calls.filter((c) => c.qaStatus === 'ارزیابی شد' && c.qaScore != null);
+  const avgQa = scored.length ? Math.round(scored.reduce((s, c) => s + (c.qaScore || 0), 0) / scored.length) : 0;
+  const pending = calls.filter((c) => c.qaStatus !== 'ارزیابی شد').length;
+
   return (
-    <div className="admin-page">
-      <header className="admin-header"><div><h1>مرکز تماس و ارزیابی</h1><p>QA فروش</p></div></header>
+    <div className="admin-page admin-page--wide">
+      <header className="admin-header">
+        <div><h1>مرکز تماس و ارزیابی</h1><p>شنود، QA و شبیه‌سازی تماس ورودی · Pet Date</p></div>
+        {canWrite && sim ? (
+          <button
+            type="button"
+            className="admin-btn admin-btn--primary"
+            disabled={Boolean(sim.call)}
+            onClick={() => void sim.simulateIncoming()}
+          >
+            شبیه‌سازی تماس ورودی
+          </button>
+        ) : null}
+      </header>
       <div className="admin-stats">
-        <div className="admin-stat"><div className="admin-stat-value">{formatNumFa(out.length)}</div><div className="admin-stat-label">خروجی</div></div>
+        <div className="admin-stat"><div className="admin-stat-value">{formatNumFa(out.length)}</div><div className="admin-stat-label">خروجی (فیلتر)</div></div>
         <div className="admin-stat"><div className="admin-stat-value">{formatNumFa(inn.length)}</div><div className="admin-stat-label">ورودی</div></div>
         <div className="admin-stat"><div className="admin-stat-value">{formatNumFa(calls.reduce((s, c) => s + c.talk, 0))}</div><div className="admin-stat-label">دقایق</div></div>
+        <div className="admin-stat admin-stat--mint"><div className="admin-stat-value">{formatNumFa(pending)}</div><div className="admin-stat-label">در انتظار QA</div></div>
+        <div className="admin-stat"><div className="admin-stat-value">{formatNumFa(avgQa)}</div><div className="admin-stat-label">میانگین QA</div></div>
       </div>
-      <div className="admin-table-wrap" style={{ marginTop: 12 }}><table className="admin-table">
-        <thead><tr><th>نوع</th><th>کارشناس</th><th>نتیجه</th><th>مدت</th><th>QA</th><th></th></tr></thead>
-        <tbody>{calls.map((c) => (
-          <tr key={c.id}><td>{c.dir === 'call_out' ? 'خروجی' : 'ورودی'}</td><td>{c.agentName}</td><td>{c.result}</td><td>{formatNumFa(c.talk)}</td>
-            <td>{c.qaStatus}{c.qaScore != null ? ` (${formatNumFa(c.qaScore)})` : ''}</td>
-            <td>{c.qaStatus !== 'ارزیابی شد' ? <button type="button" className="admin-btn admin-btn--ghost" onClick={() => { setScore('80'); setScoreOpen(c.id); }}>ارزیابی</button> : null}</td></tr>
-        ))}</tbody></table></div>
-      <AdminModal open={scoreOpen != null} title="امتیاز QA" onClose={() => !busy && setScoreOpen(null)} size="sm" as="form" busy={busy}
+      <div className="admin-toolbar" style={{ marginTop: 12 }}>
+        <select className="admin-select" value={dir} onChange={(e) => setDir(e.target.value as typeof dir)}>
+          <option value="all">همه جهت‌ها</option>
+          <option value="call_out">خروجی</option>
+          <option value="call_in">ورودی</option>
+        </select>
+        <label className="admin-check">
+          <input type="checkbox" checked={qaOnly} onChange={(e) => setQaOnly(e.target.checked)} />
+          فقط ارزیابی‌نشده
+        </label>
+      </div>
+      <div className="admin-table-wrap" style={{ marginTop: 12 }}>
+        <table className="admin-table">
+          <thead><tr><th>نوع</th><th>کارشناس</th><th>نتیجه</th><th>مدت</th><th>زمان</th><th>QA</th><th></th></tr></thead>
+          <tbody>
+            {calls.map((c) => (
+              <tr key={c.id}>
+                <td>{c.dir === 'call_out' ? 'خروجی' : 'ورودی'}</td>
+                <td>{c.agentName}</td>
+                <td>{c.result}</td>
+                <td>{formatNumFa(c.talk)}</td>
+                <td>{new Date(c.startedAt).toLocaleString('fa-IR')}</td>
+                <td>{c.qaStatus}{c.qaScore != null ? ` (${formatNumFa(c.qaScore)})` : ''}</td>
+                <td>
+                  {c.qaStatus !== 'ارزیابی شد' && canWrite ? (
+                    <button type="button" className="admin-btn admin-btn--ghost" onClick={() => { setScore('80'); setScoreOpen(c.id); }}>ارزیابی</button>
+                  ) : null}
+                  <Link to={`/admin/sales/${c.refKind === 'upgrade' ? 'upgrades' : 'leads'}/${c.refId}`} style={{ marginInlineStart: 8 }}>پرونده</Link>
+                </td>
+              </tr>
+            ))}
+            {!calls.length ? <tr><td colSpan={7}>خالی</td></tr> : null}
+          </tbody>
+        </table>
+      </div>
+      <AdminModal
+        open={scoreOpen != null}
+        title="امتیاز QA"
+        onClose={() => !busy && setScoreOpen(null)}
+        size="sm"
+        as="form"
+        busy={busy}
         onSubmit={(e) => {
           e.preventDefault();
           if (scoreOpen == null) return;
@@ -465,10 +654,18 @@ export function AdminSalesCallsPage() {
           void adminFetch(`/api/admin/sales/calls/${scoreOpen}/score`, { method: 'POST', body: JSON.stringify({ score: Number(score) || 0 }) })
             .then(() => { setScoreOpen(null); load(); }).finally(() => setBusy(false));
         }}
-        footer={<><button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>ذخیره</button>
-          <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setScoreOpen(null)}>انصراف</button></>}>
-        <label><span className="form-label">امتیاز ۰–۱۰۰</span>
-          <input className="form-input" type="number" min={0} max={100} value={score} onChange={(e) => setScore(e.target.value)} /></label>
+        footer={(
+          <>
+            <button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>ذخیره</button>
+            <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setScoreOpen(null)}>انصراف</button>
+          </>
+        )}
+      >
+        <label>
+          <span className="form-label">امتیاز ۰–۱۰۰</span>
+          <input className="form-input" type="number" min={0} max={100} value={score} onChange={(e) => setScore(e.target.value)} />
+        </label>
+        <p className="admin-muted">نتایج تماس استاندارد: {SALES_CALL_RESULTS.slice(0, 4).join('، ')}…</p>
       </AdminModal>
     </div>
   );
@@ -479,8 +676,8 @@ export function AdminSalesReportsPage() {
   useEffect(() => { void adminFetch<SalesReportSummary>('/api/admin/sales/reports').then(setR); }, []);
   if (!r) return <div className="admin-page"><p>…</p></div>;
   return (
-    <div className="admin-page">
-      <header className="admin-header"><div><h1>گزارشات فروش</h1><p>Pet Date · بدون تفکیک بیزنس‌لاین</p></div></header>
+    <div className="admin-page admin-page--wide">
+      <header className="admin-header"><div><h1>گزارشات</h1><p>Pet Date · بدون تفکیک بیزنس‌لاین</p></div></header>
       <div className="admin-stats">
         <div className="admin-stat"><div className="admin-stat-value">{formatNumFa(r.aov)}</div><div className="admin-stat-label">AOV</div></div>
         <div className="admin-stat"><div className="admin-stat-value">{formatNumFa(r.revenue)}</div><div className="admin-stat-label">درآمد</div></div>
@@ -494,25 +691,69 @@ export function AdminSalesReportsPage() {
       <section className="admin-card" style={{ marginTop: 12 }}><div className="admin-card-head"><h2>بر اساس منبع</h2></div>
         {r.bySource.map((s) => <div key={s.source}>{s.source}: {formatNumFa(s.value)}</div>)}
       </section>
+      <section className="admin-card" style={{ marginTop: 12 }}><div className="admin-card-head"><h2>روند ۱۴ روزه درآمد</h2></div>
+        <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>روز</th><th>درآمد</th><th>تماس</th></tr></thead>
+          <tbody>
+            {r.dailyRevenue.map((d, i) => (
+              <tr key={d.day}><td>{d.day}</td><td>{formatNumFa(d.value)}</td><td>{formatNumFa(r.dailyCalls[i]?.count || 0)}</td></tr>
+            ))}
+          </tbody>
+        </table></div>
+      </section>
     </div>
   );
 }
 
 export function AdminSalesSettingsPage() {
+  const [tab, setTab] = useState<'perf' | 'goals' | 'patterns' | 'admin'>('perf');
   const [settings, setSettings] = useState<SalesSettings | null>(null);
+  const [patterns, setPatterns] = useState<SalesPattern[]>([]);
+  const [goals, setGoals] = useState<SalesGoal[]>([]);
+  const [dash, setDash] = useState<{ callsToday: number; salesTodayCount: number; aov: number; overdueFollowups: number } | null>(null);
   const [open, setOpen] = useState(false);
+  const [patternOpen, setPatternOpen] = useState(false);
+  const [goalOpen, setGoalOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [sourcesRaw, setSourcesRaw] = useState('');
-  const canAdmin = adminCan('sales.admin');
-  useEffect(() => { void adminFetch<SalesSettings>('/api/admin/sales/settings').then(setSettings); }, []);
+  const [lostRaw, setLostRaw] = useState('');
+  const [patternForm, setPatternForm] = useState<{ channel: string; name: string; text: string }>({ channel: SALES_MESSAGE_CHANNELS[0], name: '', text: '' });
+  const [goalForm, setGoalForm] = useState({ name: '', team: 'فروش Pet Date', revenue: '50000000', salesCount: '20', calls: '100' });
+  const canAdmin = adminCan('sales.admin') || adminCan('admin.full');
+
+  const load = useCallback(() => {
+    void adminFetch<SalesSettings>('/api/admin/sales/settings').then(setSettings);
+    void adminFetch<{ patterns: SalesPattern[] }>('/api/admin/sales/patterns').then((d) => setPatterns(d.patterns));
+    void adminFetch<{ goals: SalesGoal[] }>('/api/admin/sales/goals').then((d) => setGoals(d.goals));
+    void adminFetch<{ callsToday: number; salesTodayCount: number; aov: number; overdueFollowups: number }>('/api/admin/sales/dashboard')
+      .then((d) => setDash({
+        callsToday: d.callsToday,
+        salesTodayCount: d.salesTodayCount,
+        aov: d.aov,
+        overdueFollowups: d.overdueFollowups,
+      }))
+      .catch(() => undefined);
+  }, []);
+  useEffect(() => { load(); }, [load]);
+
   if (!settings) return <div className="admin-page"><p>…</p></div>;
-  const submit = async (e: FormEvent) => {
+
+  const tabs: Array<{ k: typeof tab; fa: string; show?: boolean }> = [
+    { k: 'perf', fa: 'عملکرد من' },
+    { k: 'goals', fa: 'هدف‌گذاری', show: canAdmin },
+    { k: 'patterns', fa: 'پترن‌های پیامکی', show: canAdmin },
+    { k: 'admin', fa: 'پیکربندی عمومی', show: canAdmin },
+  ];
+
+  const saveSettings = async (e: FormEvent) => {
     e.preventDefault();
     setBusy(true);
     try {
       const next = await adminFetch<SalesSettings>('/api/admin/sales/settings', {
         method: 'PATCH',
-        body: JSON.stringify({ leadSources: sourcesRaw.split(',').map((s) => s.trim()).filter(Boolean) }),
+        body: JSON.stringify({
+          leadSources: sourcesRaw.split(',').map((s) => s.trim()).filter(Boolean),
+          lostReasons: lostRaw.split(',').map((s) => s.trim()).filter(Boolean),
+        }),
       });
       setSettings(next);
       setOpen(false);
@@ -520,21 +761,160 @@ export function AdminSalesSettingsPage() {
       setBusy(false);
     }
   };
+
   return (
-    <div className="admin-page">
-      <header className="admin-header"><div><h1>تنظیمات فروش</h1><p>منابع لید، دلایل ازدست‌رفتن، سقف تخفیف</p></div></header>
-      <section className="admin-card"><div className="admin-card-head"><h2>منابع لید</h2></div><p>{settings.leadSources.join(' · ')}</p>
-        {canAdmin ? <button type="button" className="admin-btn" onClick={() => { setSourcesRaw(settings.leadSources.join(',')); setOpen(true); }}>ویرایش</button> : null}
-      </section>
-      <section className="admin-card" style={{ marginTop: 12 }}><div className="admin-card-head"><h2>دلایل ازدست‌رفتن</h2></div><p>{settings.lostReasons.join(' · ')}</p></section>
-      <section className="admin-card" style={{ marginTop: 12 }}><div className="admin-card-head"><h2>سقف تخفیف نقش‌ها</h2></div>
-        {Object.entries(settings.discountLimits).map(([k, v]) => <div key={k}>{k}: {formatNumFa(v)}٪</div>)}
-      </section>
-      <AdminModal open={open} title="ویرایش منابع لید" onClose={() => !busy && setOpen(false)} size="sm" as="form" onSubmit={(e) => void submit(e)} busy={busy}
+    <div className="admin-page admin-page--wide">
+      <header className="admin-header">
+        <div><h1>تنظیمات</h1><p>عملکرد، اهداف، پترن پیام و پیکربندی · خط محصول Pet Date</p></div>
+      </header>
+      <div className="admin-tabs">
+        {tabs.filter((t) => t.show !== false).map((t) => (
+          <button key={t.k} type="button" className={`admin-tab${tab === t.k ? ' is-on' : ''}`} onClick={() => setTab(t.k)}>{t.fa}</button>
+        ))}
+      </div>
+
+      {tab === 'perf' ? (
+        <div className="admin-stats">
+          <div className="admin-stat admin-stat--mint"><div className="admin-stat-value">{formatNumFa(dash?.callsToday || 0)}</div><div className="admin-stat-label">تماس امروز</div></div>
+          <div className="admin-stat"><div className="admin-stat-value">{formatNumFa(dash?.salesTodayCount || 0)}</div><div className="admin-stat-label">فروش امروز</div></div>
+          <div className="admin-stat"><div className="admin-stat-value">{formatNumFa(dash?.aov || 0)}</div><div className="admin-stat-label">AOV</div></div>
+          <div className="admin-stat"><div className="admin-stat-value">{formatNumFa(dash?.overdueFollowups || 0)}</div><div className="admin-stat-label">پیگیری معوق</div></div>
+        </div>
+      ) : null}
+
+      {tab === 'goals' ? (
+        <section className="admin-card">
+          <div className="admin-card-head">
+            <h2>اهداف فعال</h2>
+            {canAdmin ? <button type="button" className="admin-btn admin-btn--primary" onClick={() => setGoalOpen(true)}>+ هدف</button> : null}
+          </div>
+          <div className="admin-table-wrap">
+            <table className="admin-table">
+              <thead><tr><th>نام</th><th>تیم</th><th>بازه</th><th>معیارها</th><th>وضعیت</th></tr></thead>
+              <tbody>
+                {goals.map((g) => (
+                  <tr key={g.id}>
+                    <td>{g.name}</td>
+                    <td>{g.team}</td>
+                    <td>{g.periodFrom || '—'} → {g.periodTo || '—'}</td>
+                    <td className="admin-muted">{JSON.stringify(g.metrics)}</td>
+                    <td>{g.active ? 'فعال' : 'غیرفعال'}</td>
+                  </tr>
+                ))}
+                {!goals.length ? <tr><td colSpan={5}>هدفی تعریف نشده</td></tr> : null}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : null}
+
+      {tab === 'patterns' ? (
+        <section className="admin-card">
+          <div className="admin-card-head">
+            <h2>پترن‌های پیامکی</h2>
+            {canAdmin ? <button type="button" className="admin-btn admin-btn--primary" onClick={() => { setPatternForm({ channel: SALES_MESSAGE_CHANNELS[0], name: '', text: '' }); setPatternOpen(true); }}>+ پترن</button> : null}
+          </div>
+          <div className="admin-table-wrap">
+            <table className="admin-table">
+              <thead><tr><th>کانال</th><th>نام</th><th>متن</th><th>وضعیت</th></tr></thead>
+              <tbody>
+                {patterns.map((p) => (
+                  <tr key={p.id}><td>{p.channel}</td><td>{p.name}</td><td>{p.text}</td><td>{p.active ? 'فعال' : 'غیرفعال'}</td></tr>
+                ))}
+                {!patterns.length ? <tr><td colSpan={4}>خالی</td></tr> : null}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : null}
+
+      {tab === 'admin' ? (
+        <>
+          <section className="admin-card">
+            <div className="admin-card-head"><h2>منابع لید</h2></div>
+            <p>{settings.leadSources.join(' · ')}</p>
+            {canAdmin ? (
+              <button type="button" className="admin-btn" onClick={() => {
+                setSourcesRaw(settings.leadSources.join(','));
+                setLostRaw(settings.lostReasons.join(','));
+                setOpen(true);
+              }}
+              >
+                ویرایش پیکربندی
+              </button>
+            ) : null}
+          </section>
+          <section className="admin-card" style={{ marginTop: 12 }}>
+            <div className="admin-card-head"><h2>دلایل ازدست‌رفتن</h2></div>
+            <p>{settings.lostReasons.join(' · ')}</p>
+          </section>
+          <section className="admin-card" style={{ marginTop: 12 }}>
+            <div className="admin-card-head"><h2>سقف تخفیف نقش‌ها</h2></div>
+            {Object.entries(settings.discountLimits).map(([k, v]) => <div key={k}>{k}: {formatNumFa(v)}٪</div>)}
+          </section>
+          <p className="admin-muted" style={{ marginTop: 12 }}>
+            پیش‌فرض‌های سیستم: {SALES_LEAD_SOURCES.length} منبع · {SALES_LOST_REASONS.length} دلیل
+          </p>
+        </>
+      ) : null}
+
+      <AdminModal open={open} title="ویرایش پیکربندی" onClose={() => !busy && setOpen(false)} size="sm" as="form" onSubmit={(e) => void saveSettings(e)} busy={busy}
         footer={<><button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>ذخیره</button>
           <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setOpen(false)}>انصراف</button></>}>
         <label><span className="form-label">منابع (با ویرگول)</span>
           <textarea className="form-input" rows={3} value={sourcesRaw} onChange={(e) => setSourcesRaw(e.target.value)} /></label>
+        <label><span className="form-label">دلایل ازدست‌رفتن (با ویرگول)</span>
+          <textarea className="form-input" rows={3} value={lostRaw} onChange={(e) => setLostRaw(e.target.value)} /></label>
+      </AdminModal>
+
+      <AdminModal open={patternOpen} title="پترن جدید" onClose={() => !busy && setPatternOpen(false)} size="sm" as="form" busy={busy}
+        onSubmit={(e) => {
+          e.preventDefault();
+          setBusy(true);
+          void adminFetch('/api/admin/sales/patterns', { method: 'POST', body: JSON.stringify(patternForm) })
+            .then(() => { setPatternOpen(false); load(); }).finally(() => setBusy(false));
+        }}
+        footer={<><button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>ذخیره</button>
+          <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setPatternOpen(false)}>انصراف</button></>}>
+        <label><span className="form-label">کانال</span>
+          <select className="admin-select" value={patternForm.channel} onChange={(e) => setPatternForm({ ...patternForm, channel: e.target.value })}>
+            {SALES_MESSAGE_CHANNELS.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select></label>
+        <label><span className="form-label">نام</span>
+          <input className="form-input" required value={patternForm.name} onChange={(e) => setPatternForm({ ...patternForm, name: e.target.value })} /></label>
+        <label><span className="form-label">متن</span>
+          <textarea className="form-input" rows={3} required value={patternForm.text} onChange={(e) => setPatternForm({ ...patternForm, text: e.target.value })} /></label>
+      </AdminModal>
+
+      <AdminModal open={goalOpen} title="هدف جدید" onClose={() => !busy && setGoalOpen(false)} size="sm" as="form" busy={busy}
+        onSubmit={(e) => {
+          e.preventDefault();
+          setBusy(true);
+          void adminFetch('/api/admin/sales/goals', {
+            method: 'POST',
+            body: JSON.stringify({
+              name: goalForm.name,
+              team: goalForm.team,
+              metrics: {
+                revenue: Number(goalForm.revenue) || 0,
+                salesCount: Number(goalForm.salesCount) || 0,
+                calls: Number(goalForm.calls) || 0,
+              },
+            }),
+          }).then(() => { setGoalOpen(false); load(); }).finally(() => setBusy(false));
+        }}
+        footer={<><button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>ذخیره</button>
+          <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setGoalOpen(false)}>انصراف</button></>}>
+        <label><span className="form-label">نام</span>
+          <input className="form-input" required value={goalForm.name} onChange={(e) => setGoalForm({ ...goalForm, name: e.target.value })} /></label>
+        <label><span className="form-label">تیم</span>
+          <input className="form-input" value={goalForm.team} onChange={(e) => setGoalForm({ ...goalForm, team: e.target.value })} /></label>
+        <label><span className="form-label">هدف درآمد</span>
+          <input className="form-input" type="number" value={goalForm.revenue} onChange={(e) => setGoalForm({ ...goalForm, revenue: e.target.value })} /></label>
+        <label><span className="form-label">تعداد فروش</span>
+          <input className="form-input" type="number" value={goalForm.salesCount} onChange={(e) => setGoalForm({ ...goalForm, salesCount: e.target.value })} /></label>
+        <label><span className="form-label">تعداد تماس</span>
+          <input className="form-input" type="number" value={goalForm.calls} onChange={(e) => setGoalForm({ ...goalForm, calls: e.target.value })} /></label>
       </AdminModal>
     </div>
   );
