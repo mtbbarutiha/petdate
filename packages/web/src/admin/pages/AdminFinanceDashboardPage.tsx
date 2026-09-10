@@ -5,13 +5,16 @@ import {
   ShoppingBag, TrendingUp, Wallet,
 } from 'lucide-react';
 import { adminDownload, adminFetch, formatNumFa, formatTomanFa } from '../api';
+import { PeriodFilter, type FinancePeriod } from '../FinanceCharts';
 import {
-  AdminBarChart,
-  AdminDonutChart,
-  AdminLineChart,
-  PeriodFilter,
-  type FinancePeriod,
-} from '../FinanceCharts';
+  CategoryBarWidget,
+  CategoryDonutWidget,
+  FINANCE_WIDGET_CATALOG,
+  TimeLineWidget,
+  WidgetDashboard,
+  WidgetEmpty,
+  type WidgetRenderContext,
+} from '../widgets';
 
 type ChartPoint = { label: string; value: number };
 type ChartSlice = { label: string; value: number; currency?: string };
@@ -39,7 +42,6 @@ const PAY_COLORS = ['#5c4d91', '#15cca0', '#fd961e', '#0ba5f2', '#db89ca'];
 const REV_COLORS = ['#5c4d91', '#15cca0', '#0ba5f2', '#fd961e'];
 
 function shortDayLabel(label: string): string {
-  // 2026-09-10 → 09-10 ; 2026-09 → 09
   if (/^\d{4}-\d{2}-\d{2}$/.test(label)) return label.slice(5);
   if (/^\d{4}-\d{2}$/.test(label)) return label.slice(5);
   return label;
@@ -101,6 +103,48 @@ export function AdminFinanceDashboardPage() {
     });
   };
 
+  const renderFinanceWidget = (id: string, ctx: WidgetRenderContext) => {
+    if (loading && !charts && !k) return <p className="admin-muted">در حال بارگذاری نمودار…</p>;
+    switch (id) {
+      case 'salesTrend':
+        return salesTrend.length ? (
+          <TimeLineWidget points={salesTrend} color="#5c4d91" ctx={ctx} />
+        ) : (
+          <WidgetEmpty />
+        );
+      case 'pnlCompare':
+        return pnlPoints.length ? (
+          <CategoryBarWidget points={pnlPoints} color="#15cca0" ctx={ctx} />
+        ) : (
+          <WidgetEmpty />
+        );
+      case 'categories':
+        return (charts?.categories?.length ?? 0) ? (
+          <CategoryBarWidget points={charts!.categories} color="#0ba5f2" ctx={ctx} />
+        ) : (
+          <WidgetEmpty />
+        );
+      case 'revenueMix': {
+        const mix = charts?.revenueMix?.length ? charts.revenueMix : charts?.paymentMix ?? [];
+        const colors = charts?.revenueMix?.length ? REV_COLORS : PAY_COLORS;
+        return mix.length ? (
+          <CategoryDonutWidget
+            ctx={ctx}
+            slices={mix.map((s, i) => ({
+              label: s.label,
+              value: s.value,
+              color: colors[i % colors.length]!,
+            }))}
+          />
+        ) : (
+          <WidgetEmpty />
+        );
+      }
+      default:
+        return <WidgetEmpty />;
+    }
+  };
+
   return (
     <div className="admin-page">
       <header className="admin-header">
@@ -136,61 +180,12 @@ export function AdminFinanceDashboardPage() {
         ) : null}
       </div>
 
-      <p className="admin-section-label">نمودارهای اصلی</p>
-      <div className="admin-dash-charts">
-        <section className="admin-card admin-card--chart-lg">
-          <div className="admin-card-head">
-            <h2>{period === 'year' ? 'روند فروش ماهانه' : 'روند فروش روزانه'}</h2>
-            <Link to="/admin/finance/sales" className="admin-link">جزئیات فروش</Link>
-          </div>
-          <div className="admin-chart-panel">
-            {loading && !charts ? (
-              <p className="admin-muted">در حال بارگذاری نمودار…</p>
-            ) : (
-              <AdminLineChart points={salesTrend} color="#5c4d91" height={220} />
-            )}
-          </div>
-        </section>
-        <section className="admin-card">
-          <div className="admin-card-head">
-            <h2>سود و زیان</h2>
-            <Link to="/admin/finance/pnl" className="admin-link">گزارش P&amp;L</Link>
-          </div>
-          <div className="admin-chart-panel">
-            {loading && !k ? (
-              <p className="admin-muted">در حال بارگذاری نمودار…</p>
-            ) : (
-              <AdminBarChart points={pnlPoints} color="#15cca0" height={200} />
-            )}
-          </div>
-        </section>
-      </div>
-
-      <div className="admin-dash-grid" style={{ marginTop: 14 }}>
-        <section className="admin-card">
-          <div className="admin-card-head"><h2>فروش بر اساس دسته</h2></div>
-          <div className="admin-chart-panel">
-            <AdminBarChart
-              color="#0ba5f2"
-              height={180}
-              points={charts?.categories ?? []}
-            />
-          </div>
-        </section>
-        <section className="admin-card">
-          <div className="admin-card-head"><h2>ترکیب درآمد / پرداخت</h2></div>
-          <div className="admin-chart-panel" style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'center' }}>
-            <AdminDonutChart
-              size={160}
-              slices={(charts?.revenueMix?.length ? charts.revenueMix : charts?.paymentMix ?? []).map((s, i) => ({
-                label: s.label,
-                value: s.value,
-                color: (charts?.revenueMix?.length ? REV_COLORS : PAY_COLORS)[i % 5]!,
-              }))}
-            />
-          </div>
-        </section>
-      </div>
+      <WidgetDashboard
+        dashboardId="finance"
+        catalog={FINANCE_WIDGET_CATALOG}
+        title="نمودارهای اصلی · ویجت‌ها"
+        renderWidget={renderFinanceWidget}
+      />
 
       {data ? (
         <section className="admin-card" style={{ marginTop: 16, padding: 16 }}>

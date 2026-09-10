@@ -29,6 +29,9 @@ npx tsx "$ROOT/packages/web/src/lib/share.selftest.ts"
 echo "==> selftest: web admin Jalali date helpers"
 npx tsx "$ROOT/packages/web/src/admin/JalaliDateSelect.selftest.ts"
 
+echo "==> selftest: web admin widget dashboard (layout + drill)"
+npx tsx "$ROOT/packages/web/src/admin/widgets/widgetDashboard.selftest.ts"
+
 echo "==> selftest: web sitemap public routes"
 npx tsx "$ROOT/packages/web/src/lib/sitemap.selftest.ts"
 
