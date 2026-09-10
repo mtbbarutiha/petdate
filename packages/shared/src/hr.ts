@@ -538,6 +538,21 @@ export type HrOnboardingEquipmentItem = {
   assetNo: string;
 };
 
+/** زمانبندی آموزش — optional scheduledDate as Gregorian YYYY-MM-DD */
+export type HrOnboardingTrainingItem = {
+  id: string;
+  label: string;
+  done: boolean;
+  scheduledDate: string;
+};
+
+/** مدارک دریافت‌شده */
+export type HrOnboardingDocumentItem = {
+  id: string;
+  label: string;
+  done: boolean;
+};
+
 export type HrOnboardingRecord = {
   id: number;
   candidateId?: number | null;
@@ -549,6 +564,8 @@ export type HrOnboardingRecord = {
   tasks: HrOnboardingTask[];
   accessItems: HrOnboardingAccessItem[];
   equipmentItems: HrOnboardingEquipmentItem[];
+  trainingItems: HrOnboardingTrainingItem[];
+  documentItems: HrOnboardingDocumentItem[];
   /** True when row comes from ATS hire / approved candidate */
   approvedHire?: boolean;
   createdAt: string;
@@ -669,6 +686,64 @@ export function makeDefaultOnboardingEquipmentItems(): HrOnboardingEquipmentItem
     done: false,
     assetNo: '',
   }));
+}
+
+export const DEFAULT_ONBOARDING_TRAINING: readonly string[] = [
+  'آموزش خوش‌آمدگویی (Orientation)',
+  'آموزش سامانه‌ها و ابزارها',
+  'آموزش نقش شغلی',
+  'آموزش امنیت و دسترسی‌ها',
+  'جلسه معارفه با مدیر مستقیم',
+];
+
+export const DEFAULT_ONBOARDING_DOCUMENTS: readonly string[] = [
+  'کارت ملی',
+  'شناسنامه',
+  'مدرک تحصیلی',
+  'گواهی عدم سوءپیشینه',
+  'عکس پرسنلی',
+  'شماره شبا / حساب بانکی',
+  'فرم‌های امضاشده',
+];
+
+export function makeDefaultOnboardingTrainingItems(): HrOnboardingTrainingItem[] {
+  return DEFAULT_ONBOARDING_TRAINING.map((label, i) => ({
+    id: `tr${i + 1}`,
+    label,
+    done: false,
+    scheduledDate: '',
+  }));
+}
+
+export function makeDefaultOnboardingDocumentItems(): HrOnboardingDocumentItem[] {
+  return DEFAULT_ONBOARDING_DOCUMENTS.map((label, i) => ({
+    id: `d${i + 1}`,
+    label,
+    done: false,
+  }));
+}
+
+/**
+ * Progress across all onboarding checklist buckets, including تحویل دسترسی‌ها
+ * (accessItems), زمانبندی آموزش, and مدارک دریافت‌شده.
+ */
+export function onboardingProgressPct(rec: {
+  tasks?: Array<{ done: boolean }>;
+  accessItems?: Array<{ done: boolean }>;
+  equipmentItems?: Array<{ done: boolean }>;
+  trainingItems?: Array<{ done: boolean }>;
+  documentItems?: Array<{ done: boolean }>;
+}): number {
+  const items = [
+    ...(rec.tasks || []),
+    ...(rec.accessItems || []),
+    ...(rec.equipmentItems || []),
+    ...(rec.trainingItems || []),
+    ...(rec.documentItems || []),
+  ];
+  if (!items.length) return 0;
+  const done = items.filter((t) => t.done).length;
+  return Math.round((done / items.length) * 100);
 }
 
 export function nextRequestStatus(current: string): string | null {

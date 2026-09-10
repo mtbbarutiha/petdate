@@ -84,6 +84,20 @@ async function main() {
   const hired = hrMod.hireCandidate(candidate.id);
   assert(hired?.candidate?.stage === 'استخدام‌شده', 'hire stage');
   assert(hired?.onboarding?.tasks.length === 5, 'default onboarding tasks');
+  assert((hired?.onboarding?.accessItems?.length || 0) >= 1, 'access delivery checklist');
+  assert((hired?.onboarding?.trainingItems?.length || 0) >= 1, 'training schedule checklist');
+  assert((hired?.onboarding?.documentItems?.length || 0) >= 1, 'received documents checklist');
+  {
+    const { onboardingProgressPct } = await import('@petdate/shared');
+    const base = hired!.onboarding!;
+    const zero = onboardingProgressPct(base);
+    assert(zero === 0, 'fresh onboarding progress 0');
+    const withAccess = {
+      ...base,
+      accessItems: base.accessItems.map((a, i) => (i === 0 ? { ...a, done: true } : a)),
+    };
+    assert(onboardingProgressPct(withAccess) > zero, 'access delivery counts toward progress');
+  }
   assert(hrMod.listNotifications().length >= 2, 'notifications created');
 
   const dash = hrMod.getHrOverviewDashboard();

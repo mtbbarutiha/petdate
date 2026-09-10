@@ -768,7 +768,9 @@ hrAdminRouter.patch('/onboarding/:id/tasks', requirePermission('hr.write'), (req
   const hasTasks = Array.isArray(body.tasks);
   const hasAccess = Array.isArray(body.accessItems);
   const hasEquip = Array.isArray(body.equipmentItems);
-  if (!hasTasks && !hasAccess && !hasEquip) {
+  const hasTraining = Array.isArray(body.trainingItems);
+  const hasDocuments = Array.isArray(body.documentItems);
+  if (!hasTasks && !hasAccess && !hasEquip && !hasTraining && !hasDocuments) {
     res.status(400).json({ error: 'پارامتر نامعتبر' });
     return;
   }
@@ -776,6 +778,8 @@ hrAdminRouter.patch('/onboarding/:id/tasks', requirePermission('hr.write'), (req
     tasks: hasTasks ? body.tasks : undefined,
     accessItems: hasAccess ? body.accessItems : undefined,
     equipmentItems: hasEquip ? body.equipmentItems : undefined,
+    trainingItems: hasTraining ? body.trainingItems : undefined,
+    documentItems: hasDocuments ? body.documentItems : undefined,
   });
   if (!record) {
     res.status(404).json({ error: 'رکورد پیدا نشد' });
