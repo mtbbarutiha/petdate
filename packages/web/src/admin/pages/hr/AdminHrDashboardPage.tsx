@@ -23,6 +23,7 @@ import {
 import { HrLinkGrid, formatHrMoney } from './HrUi';
 
 type ChartRow = { name: string; count: number };
+type CostDeptRow = { name: string; total: number };
 
 type Dash = {
   monthLabel?: string;
@@ -39,6 +40,7 @@ type Dash = {
   };
   charts?: {
     byDepartment: ChartRow[];
+    costByDepartment?: CostDeptRow[];
     byContractStatus: ChartRow[];
     byLocation: ChartRow[];
   };
@@ -53,20 +55,33 @@ function ChartTip({
   active,
   payload,
   label,
+  unit = 'نفر',
+  money = false,
 }: {
   active?: boolean;
-  payload?: Array<{ value?: number; name?: string; payload?: ChartRow }>;
+  payload?: Array<{ value?: number; name?: string; payload?: ChartRow | CostDeptRow }>;
   label?: string;
+  unit?: string;
+  money?: boolean;
 }) {
   if (!active || !payload?.length) return null;
   const row = payload[0];
   const title = label || row.payload?.name || row.name || '';
+  const n = Number(row.value || 0);
   return (
     <div className="hr-chart-tooltip">
       <div className="hr-chart-tooltip-label">{title}</div>
-      <strong>{formatNumFa(Number(row.value || 0))} نفر</strong>
+      <strong>{money ? formatHrMoney(n) : `${formatNumFa(n)} ${unit}`}</strong>
     </div>
   );
+}
+
+/** Compact axis ticks for large تومان amounts (میلیون). */
+function costAxisTick(v: number): string {
+  if (!Number.isFinite(v) || v === 0) return '۰';
+  if (Math.abs(v) >= 1_000_000) return `${formatNumFa(Math.round(v / 1_000_000))}م`;
+  if (Math.abs(v) >= 1_000) return `${formatNumFa(Math.round(v / 1_000))}ه`;
+  return formatNumFa(v);
 }
 
 export function AdminHrDashboardPage() {
@@ -86,12 +101,18 @@ export function AdminHrDashboardPage() {
 
   const k = data?.kpis;
   const deptData = data?.charts?.byDepartment || [];
+  const costDeptData = data?.charts?.costByDepartment || [];
   const statusData = data?.charts?.byContractStatus || [];
   const monthLabel = data?.monthLabel || '';
 
   const statusPie = useMemo(
     () => statusData.map((s, i) => ({ ...s, color: STATUS_COLORS[i % STATUS_COLORS.length] })),
     [statusData],
+  );
+
+  const chartRowHeight = Math.max(
+    220,
+    40 * Math.max(deptData.length, costDeptData.length, 3),
   );
 
   const topKpis = k
@@ -153,7 +174,7 @@ export function AdminHrDashboardPage() {
       ) : null}
 
       <div className="hr-dash-main-row">
-        <article className="admin-card hr-dash-panel" style={{ gridColumn: '1 / -1' }}>
+        <article className="admin-card hr-dash-panel">
           <div className="admin-card-head">
             <h2>توزیع پرسنل بر اساس واحد سازمانی</h2>
             <span className="admin-muted">بر اساس دپارتمان</span>
@@ -165,7 +186,7 @@ export function AdminHrDashboardPage() {
           <div
             className={`hr-dash-chart ${ADMIN_RTL_HBARS_CLASS}`}
             dir="ltr"
-            style={{ height: Math.max(220, 40 * Math.max(deptData.length, 3)) }}
+            style={{ height: chartRowHeight }}
           >
             {deptData.length ? (
               <ResponsiveContainer width="100%" height="100%">
@@ -183,6 +204,43 @@ export function AdminHrDashboardPage() {
               </ResponsiveContainer>
             ) : (
               <p className="admin-muted">هنوز پرسنلی برای نمودار ثبت نشده</p>
+            )}
+          </div>
+        </article>
+
+        <article className="admin-card hr-dash-panel">
+          <div className="admin-card-head">
+            <h2>میزان هزینه در هر واحد</h2>
+            <span className="admin-muted">{monthLabel ? monthLabel : 'این ماه'}</span>
+          </div>
+          <div
+            className={`hr-dash-chart ${ADMIN_RTL_HBARS_CLASS}`}
+            dir="ltr"
+            style={{ height: chartRowHeight }}
+          >
+            {costDeptData.length ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart layout="vertical" data={costDeptData} margin={{ ...adminRtlHBarsMargin }}>
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--admin-border)" />
+                  <XAxis
+                    {...adminRtlHBarsValueAxis}
+                    tickFormatter={costAxisTick}
+                    domain={[0, 'auto']}
+                  />
+                  <YAxis dataKey="name" {...adminRtlHBarsCategoryAxis} />
+                  <Tooltip
+                    content={<ChartTip money />}
+                    cursor={{ fill: 'rgba(92,77,145,0.06)' }}
+                  />
+                  <Bar dataKey="total" radius={adminRtlHBarsRadius} maxBarSize={22} name="هزینه">
+                    {costDeptData.map((_, i) => (
+                      <Cell key={i} fill={DEPT_COLORS[i % DEPT_COLORS.length]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <p className="admin-muted">هزینه‌ای برای این ماه ثبت نشده</p>
             )}
           </div>
         </article>

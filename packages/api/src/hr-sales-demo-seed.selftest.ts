@@ -47,6 +47,13 @@ async function main() {
   assert(dash.kpis.serviceHoursMonth > 0, 'HR service hours non-zero');
   assert(dash.kpis.unreadNotifications > 0 || dash.kpis.openRequests > 0, 'HR cockpit signals');
   assert(Array.isArray(dash.charts?.byDepartment) && dash.charts.byDepartment.length >= 1, 'charts.byDepartment');
+  assert(Array.isArray(dash.charts?.costByDepartment) && dash.charts.costByDepartment.length >= 1, 'charts.costByDepartment');
+  assert(
+    Math.abs(
+      dash.charts.costByDepartment.reduce((s, r) => s + r.total, 0) - dash.kpis.orgCostMonth
+    ) < 1,
+    'costByDepartment matches orgCostMonth'
+  );
   assert(Array.isArray(dash.charts?.byContractStatus), 'charts.byContractStatus');
   assert(Array.isArray(dash.recentLogs) && dash.recentLogs.length >= 1, 'recentLogs seeded');
   assert(dash.recentLogs[0]?.personName, 'recentLogs have personName');

@@ -1204,6 +1204,16 @@ export function getHrOverviewDashboard() {
   const byDepartment = countBy(employees.map((e) => e.department || ''));
   const byContractStatus = countBy(employees.map((e) => e.contractStatus || ''));
   const byLocation = countBy(employees.map((e) => e.location || ''));
+  /** Same period as orgCostMonth — sum monthlyCostForPerson totals by employee department. */
+  const costByDeptMap: Record<string, number> = {};
+  for (const row of costs) {
+    const key = (row.employee.department || '').trim() || 'نامشخص';
+    costByDeptMap[key] = (costByDeptMap[key] || 0) + (row.cost.total || 0);
+  }
+  const costByDepartment = Object.entries(costByDeptMap)
+    .map(([name, total]) => ({ name, total }))
+    .filter((r) => r.total > 0)
+    .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name, 'fa'));
   const monthLabel = now.toLocaleDateString('fa-IR', { month: 'long', year: 'numeric' });
 
   return {
@@ -1231,6 +1241,7 @@ export function getHrOverviewDashboard() {
     },
     charts: {
       byDepartment,
+      costByDepartment,
       byContractStatus,
       byLocation,
     },
