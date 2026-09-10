@@ -75,5 +75,6 @@ run src/admin-aggregate-dashboard.selftest.ts
 run src/admin-dashboard-activity.selftest.ts
 run src/hr-ats-followup.selftest.ts
 run src/finance-os.selftest.ts
+run src/admin-finance-dashboard.selftest.ts
 
 echo "ci-selftest: all passed"
