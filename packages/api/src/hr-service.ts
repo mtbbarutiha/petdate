@@ -1415,11 +1415,13 @@ export function updateCandidateStage(id: number, stage: string): HrCandidate | n
 
 /** Distinct job titles from personnel — for ATS position dropdown. */
 export function listPersonnelJobTitles(): string[] {
+  // Avoid `ORDER BY alias COLLATE NOCASE` — SQLite-only; Postgres treats
+  // `ORDER BY t COLLATE …` as a table column ref → column "t" does not exist (ATS /meta 500).
   const rows = db()
     .prepare(
       `SELECT DISTINCT TRIM(job_title) AS t FROM hr_employees
        WHERE TRIM(COALESCE(job_title,'')) != ''
-       ORDER BY t COLLATE NOCASE`
+       ORDER BY TRIM(job_title)`
     )
     .all() as Array<{ t: string }>;
   return rows.map((r) => String(r.t)).filter(Boolean);

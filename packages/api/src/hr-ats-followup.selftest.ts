@@ -37,6 +37,18 @@ async function main() {
   });
   const titles = listPersonnelJobTitles();
   assert(titles.includes('کارشناس منابع انسانی'), 'personnel job titles');
+  // Case-insensitive duplicate should collapse; query must stay PG-safe (no COLLATE NOCASE).
+  createEmployee({
+    firstName: 'نرگس',
+    lastName: 'دوم',
+    jobTitle: 'کارشناس منابع انسانی',
+    department: 'منابع انسانی',
+  });
+  const titles2 = listPersonnelJobTitles();
+  assert(
+    titles2.filter((t) => t === 'کارشناس منابع انسانی').length === 1,
+    'distinct job titles'
+  );
 
   const opening = createJobOpening({ title: 'کارشناس فروش', department: 'فروش' });
   const { candidate } = createCandidate({
