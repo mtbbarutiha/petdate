@@ -1263,6 +1263,16 @@ function migrateSchema() {
   } catch (err) {
     console.warn('Sales schema ensure skipped/failed:', (err as Error).message);
   }
+
+  // HR↔Sales interconnected demo (idempotent; never wipe / never duplicate)
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { seedHrSalesDemoIfNeeded } =
+      require('./hr-sales-demo-seed') as typeof import('./hr-sales-demo-seed');
+    seedHrSalesDemoIfNeeded();
+  } catch (err) {
+    console.warn('HR↔Sales demo seed skipped/failed:', (err as Error).message);
+  }
 }
 
 function seedFinanceDefaults() {
