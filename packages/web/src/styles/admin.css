@@ -1512,13 +1512,15 @@
 }
 
 .admin-app .admin-mail-item-from {
-  flex: 1 1 auto;
+  flex: 1 1 0;
+  min-width: 0;
   font-size: 0.82rem;
 }
 
 .admin-app .admin-mail-item-date {
-  flex: 0 0 auto;
-  max-width: 42%;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 40%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
