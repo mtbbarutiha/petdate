@@ -82,6 +82,32 @@ function sortInbox(items: InboxConversation[]): InboxConversation[] {
   });
 }
 
+/**
+ * Collapse duplicate ongoing AI provider rows in polluted DBs
+ * (same peer title + serviceKind — e.g. many «پاشا یزدانی» / دستیار هوشمند).
+ * Keeps the newest by lastActivityAt.
+ */
+function collapseDuplicateAiInboxRows(items: InboxConversation[]): InboxConversation[] {
+  const aiTitle =
+    /^(پاشا یزدانی|دستیار هوشمند پت‌دیت)$/;
+  const seen = new Map<string, InboxConversation>();
+  const out: InboxConversation[] = [];
+  for (const item of sortInbox(items)) {
+    if (
+      item.kind === 'vet' &&
+      item.ongoing &&
+      item.direction === 'outgoing' &&
+      aiTitle.test(item.title.trim())
+    ) {
+      const key = `ai:${item.serviceKind ?? 'vet'}:${item.title.trim()}`;
+      if (seen.has(key)) continue;
+      seen.set(key, item);
+    }
+    out.push(item);
+  }
+  return out;
+}
+
 export function playmateToInbox(match: MatchRequest): InboxConversation {
   const peer = match.fromPet;
   const pending = match.status === 'pending';
@@ -309,7 +335,7 @@ export async function loadInboxConversations(
     if (item) vetItems.push(item);
   }
 
-  return sortInbox([...playmates, ...vetItems]);
+  return collapseDuplicateAiInboxRows(sortInbox([...playmates, ...vetItems]));
 }
 
 export async function acceptInboxItem(

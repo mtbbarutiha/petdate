@@ -5,7 +5,7 @@ import type {
   VetConsultation,
   VetConsultChatMessage,
 } from '@petdate/shared';
-import { dbService } from '../db';
+import { dbService, getDb } from '../db';
 import {
   AI_TRAINER_DISPLAY_NAME,
   aiAssistantTelegramId,
@@ -89,6 +89,7 @@ export async function startAiFallbackConsult(opts: {
   consult: VetConsultation;
   advice: string;
   source: 'llm' | 'offline';
+  reused?: boolean;
 } | null> {
   const aiKind = toAiKind(opts.serviceKind);
   if (!aiKind) return null;
@@ -100,6 +101,48 @@ export async function startAiFallbackConsult(opts: {
     opts.petId != null
       ? dbService.getPet(opts.petId)
       : dbService.listPets({ ownerId: opts.patient.id })[0];
+
+  // Reuse an ongoing AI consult so inbox does not grow a new «فعال» row each tap.
+  const existing = dbService.findActiveAiConsultForPatient(opts.patient.id, aiKind, ai.id);
+  if (existing && existing.status === 'active' && !existing.chatEnded) {
+    // Collapse any sibling orphans left by older always-create bugs.
+    dbService.closeActiveAiConsultsForPatient(opts.patient.id, aiKind, ai.id, existing.id);
+
+    // Light refresh: attach pet when the open session had none.
+    let consult = existing;
+    if (pet?.id != null && existing.petId == null) {
+      try {
+        getDb()
+          .prepare(
+            `UPDATE vet_consultations SET pet_id = ? WHERE id = ? AND pet_id IS NULL`
+          )
+          .run(pet.id, existing.id);
+        consult = dbService.getVetConsultation(existing.id) ?? existing;
+      } catch {
+        /* ignore refresh failures — reuse still wins */
+      }
+    }
+
+    const prior = dbService.listVetConsultChatMessages(consult.id, { limit: 40 });
+    const lastAi = [...prior].reverse().find((m) => m.senderUserId === ai.id);
+    const adviceText =
+      lastAi?.text?.trim() ||
+      (aiKind === 'trainer'
+        ? `گفتگو با ${AI_TRAINER_DISPLAY_NAME} از قبل باز است.`
+        : 'گفتگو با دستیار هوشمند از قبل باز است.');
+
+    notifyVetThread(consult.id, [opts.patient.id, ai.id], {
+      reason: 'accepted',
+      status: 'active',
+    });
+    notifyInbox([opts.patient.id, ai.id], {
+      kind: 'vet',
+      reason: 'accepted',
+      id: consult.id,
+    });
+
+    return { consult, advice: adviceText, source: 'offline', reused: true };
+  }
 
   const petFields = petPromptFields(pet);
   const userMessage = opts.userMessage?.trim();
@@ -124,6 +167,9 @@ export async function startAiFallbackConsult(opts: {
     adviceText = generated.text;
     source = generated.source;
   }
+
+  // User ended a prior session (or orphans remain): close leftover actives before insert.
+  dbService.closeActiveAiConsultsForPatient(opts.patient.id, aiKind, ai.id, null);
 
   const consult = dbService.createVetConsultation({
     vetUserId: ai.id,
