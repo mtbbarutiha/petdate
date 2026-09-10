@@ -3068,13 +3068,13 @@ body:has(.admin-app) {
   font-size: 1rem;
 }
 .admin-app .hr-dash-chart { width: 100%; min-height: 180px; }
-/* LTR island + reserved right label lane for Persian department names (Recharts). */
-.admin-app .hr-dash-chart--dept-bars {
+/* Shared LTR island for Recharts horizontal category bars under dir=rtl. */
+.admin-app .admin-recharts-rtl-hbars {
   direction: ltr;
   min-width: 0;
   overflow: visible;
 }
-.admin-app .hr-dash-chart--dept-bars .recharts-cartesian-axis-tick text {
+.admin-app .admin-recharts-rtl-hbars .recharts-cartesian-axis-tick text {
   font-family: var(--admin-font);
   unicode-bidi: plaintext;
 }

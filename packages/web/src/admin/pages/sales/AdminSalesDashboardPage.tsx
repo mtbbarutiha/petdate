@@ -14,6 +14,13 @@ import type { SalesDashboard, SalesFollowup, SalesKpiRing } from '@petdate/share
 import { salesStageLabel } from '@petdate/shared';
 import { adminFetch, formatNumFa } from '../../api';
 import { adminCan } from '../../auth';
+import {
+  ADMIN_RTL_HBARS_CLASS,
+  adminRtlHBarsCategoryAxis,
+  adminRtlHBarsMargin,
+  adminRtlHBarsRadius,
+  adminRtlHBarsValueAxis,
+} from '../../rechartsRtlHBars';
 
 const STAGE_COLORS = ['#5c4d91', '#15cca0', '#3b82f6', '#fd961e', '#14b8a6', '#ec4899', '#8b5cf6', '#64748b'];
 
@@ -214,15 +221,23 @@ export function AdminSalesDashboardPage() {
           <div className="admin-card-head">
             <h2>قیف مراحل فروش</h2>
           </div>
-          <div className="sales-stage-chart" style={{ height: Math.max(240, 28 * Math.max(stageChart.length, 4)) }}>
+          {/*
+            Recharts SVG ticks clip under document dir=rtl (often to 1 Persian glyph).
+            Shared LTR island + right category lane (see rechartsRtlHBars).
+          */}
+          <div
+            className={`sales-stage-chart ${ADMIN_RTL_HBARS_CLASS}`}
+            dir="ltr"
+            style={{ height: Math.max(240, 36 * Math.max(stageChart.length, 4)) }}
+          >
             {stageChart.length ? (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart layout="vertical" data={stageChart} margin={{ top: 8, right: 16, left: 8, bottom: 8 }}>
+                <BarChart layout="vertical" data={stageChart} margin={{ ...adminRtlHBarsMargin }}>
                   <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--admin-border)" />
-                  <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11, fill: '#757086' }} axisLine={false} tickLine={false} />
-                  <YAxis type="category" dataKey="name" width={110} tick={{ fontSize: 12, fill: '#3d3558' }} axisLine={false} tickLine={false} />
+                  <XAxis {...adminRtlHBarsValueAxis} />
+                  <YAxis dataKey="name" {...adminRtlHBarsCategoryAxis} />
                   <Tooltip content={<ChartTip />} cursor={{ fill: 'rgba(92,77,145,0.06)' }} />
-                  <Bar dataKey="count" radius={[0, 8, 8, 0]} maxBarSize={18}>
+                  <Bar dataKey="count" radius={adminRtlHBarsRadius} maxBarSize={18}>
                     {stageChart.map((_, idx) => (
                       <Cell key={idx} fill={STAGE_COLORS[idx % STAGE_COLORS.length]} />
                     ))}
