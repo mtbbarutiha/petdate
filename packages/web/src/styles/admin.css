@@ -348,7 +348,8 @@
 
 .admin-app .admin-page {
   padding: 24px 28px 40px;
-  max-width: 1280px;
+  max-width: none;
+  width: 100%;
 }
 
 .admin-app .admin-header {
@@ -525,7 +526,10 @@
 }
 
 .admin-app .admin-page {
-  padding: 28px 24px 40px;
+  padding: 22px 28px 36px;
+  max-width: none;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 @media (max-width: 768px) {
@@ -1694,3 +1698,351 @@
   min-width: 0;
 }
 
+
+/* ── Full-width ops canvas (edge-to-edge beside sidebar) ──
+ * Neutralizes legacy global.css shell max-width / body padding so
+ * dashboards & tables use the full viewport. Pepito tokens only. */
+
+body:has(.admin-app) {
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+.admin-app {
+  width: 100%;
+  max-width: none;
+}
+
+.admin-app .admin-shell {
+  width: 100%;
+  max-width: none !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  overflow: visible !important;
+  min-height: 100dvh !important;
+  background: transparent;
+}
+
+.admin-app .admin-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  width: 100%;
+  background: transparent;
+}
+
+.admin-app .admin-page {
+  flex: 1;
+  width: 100%;
+  max-width: none !important;
+  margin: 0;
+  padding-inline: clamp(16px, 2.2vw, 36px);
+  padding-block: 20px 40px;
+  box-sizing: border-box;
+}
+
+.admin-app .admin-topbar {
+  padding-inline: clamp(16px, 2.2vw, 36px);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Forms: readable but not a cramped column on ultrawide */
+.admin-app .admin-form {
+  max-width: min(920px, 100%);
+}
+
+.admin-app .admin-form-grid {
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+}
+
+/* Spacing + type rhythm */
+.admin-app {
+  --admin-pad-page: clamp(16px, 2.2vw, 36px);
+  --admin-gap: 14px;
+  --admin-radius-sm: 10px;
+  --admin-radius: 12px;
+  --admin-control-h: 40px;
+}
+
+.admin-app .admin-header {
+  margin-bottom: 16px;
+  align-items: center;
+}
+
+.admin-app .admin-header h1 {
+  font-size: clamp(1.25rem, 1.1rem + 0.4vw, 1.55rem);
+  font-weight: 750;
+  letter-spacing: -0.025em;
+}
+
+.admin-app .admin-header p {
+  font-size: 0.88rem;
+}
+
+.admin-app .admin-section-label {
+  margin: 8px 0 12px;
+}
+
+/* KPI cards — denser, more columns on wide screens */
+.admin-app .admin-stats {
+  gap: var(--admin-gap);
+  margin-bottom: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+}
+
+.admin-app .admin-stats--dense {
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+}
+
+@media (min-width: 1400px) {
+  .admin-app .admin-stats,
+  .admin-app .admin-stats--dense {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  }
+  .admin-app .admin-dash-charts {
+    grid-template-columns: 1.55fr 1fr;
+    gap: 16px;
+  }
+  .admin-app .admin-finance-links,
+  .admin-app .admin-settings-grid {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  }
+}
+
+.admin-app .admin-stat {
+  padding: 14px 16px;
+  border-radius: var(--admin-radius);
+  border-color: color-mix(in srgb, var(--admin-border) 85%, #fff);
+  box-shadow: 0 1px 0 rgba(25, 6, 61, 0.03);
+}
+
+.admin-app .admin-stat-value {
+  font-family: var(--admin-display);
+  font-size: 1.12rem;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+}
+
+.admin-app .admin-stat-label {
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.admin-app .admin-stat-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--admin-radius-sm);
+}
+
+/* Cards + tables */
+.admin-app .admin-card {
+  border-radius: var(--admin-radius);
+  padding: 16px 18px;
+  box-shadow: 0 1px 0 rgba(25, 6, 61, 0.03);
+}
+
+.admin-app .admin-table-wrap {
+  width: 100%;
+  border-radius: var(--admin-radius);
+  background: var(--admin-surface);
+  border: 1px solid var(--admin-border);
+  overflow: auto;
+}
+
+.admin-app .admin-card > .admin-table-wrap {
+  border: 0;
+  border-radius: 0;
+  margin-inline: -2px;
+  background: transparent;
+}
+
+.admin-app .admin-table-wrap.admin-card {
+  padding: 0;
+  overflow: auto;
+}
+
+.admin-app .admin-table-wrap.admin-card .admin-table thead th:first-child,
+.admin-app .admin-table-wrap.admin-card .admin-table tbody td:first-child {
+  padding-inline-start: 16px;
+}
+.admin-app .admin-table-wrap.admin-card .admin-table thead th:last-child,
+.admin-app .admin-table-wrap.admin-card .admin-table tbody td:last-child {
+  padding-inline-end: 16px;
+}
+
+.admin-app .admin-table {
+  min-width: 720px;
+  width: 100%;
+  font-size: 0.875rem;
+}
+
+.admin-app .admin-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: color-mix(in srgb, var(--admin-accent-soft) 55%, #fff);
+  border-bottom: 1px solid var(--admin-border);
+  padding: 11px 12px;
+  font-size: 0.74rem;
+  letter-spacing: 0.02em;
+}
+
+.admin-app .admin-table tbody td {
+  padding: 11px 12px;
+}
+
+.admin-app .admin-table tbody tr:hover td {
+  background: color-mix(in srgb, var(--admin-promo-mint) 35%, #fff);
+}
+
+.admin-app .admin-table--dense thead th,
+.admin-app .admin-table--dense tbody td {
+  padding: 8px 10px;
+}
+
+/* Controls: buttons, fields, badges — soft radius, not pill-slop */
+.admin-app .admin-btn,
+.admin-app .admin-btn--primary,
+.admin-app .cta-btn,
+.admin-app button.cta-btn,
+.admin-app .admin-select,
+.admin-app .admin-search,
+.admin-app .form-input,
+.admin-app .admin-icon-btn {
+  border-radius: var(--admin-radius-sm) !important;
+  min-height: var(--admin-control-h);
+}
+
+.admin-app .admin-icon-btn {
+  width: var(--admin-control-h);
+  height: var(--admin-control-h);
+  min-height: 0;
+}
+
+.admin-app .admin-topbar-chip,
+.admin-app .admin-badge,
+.admin-app .admin-toggle {
+  border-radius: 8px;
+}
+
+.admin-app .admin-topbar-chip {
+  background: var(--admin-accent-soft);
+  color: var(--admin-accent);
+  border-color: color-mix(in srgb, var(--admin-border) 70%, var(--admin-accent));
+  font-weight: 700;
+}
+
+.admin-app .admin-topbar-chip--mint {
+  background: var(--admin-promo-mint);
+  color: #0f766e;
+  border-color: #b6f0df;
+}
+
+.admin-app .admin-badge {
+  padding: 3px 8px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  border: 1px solid transparent;
+}
+
+.admin-app .admin-badge--error {
+  background: #fde8e8;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
+.admin-app .admin-badge--warn {
+  background: var(--admin-promo-yellow);
+  color: #c2410c;
+  border-color: #fde68a;
+}
+
+.admin-app .admin-badge--info {
+  background: var(--admin-promo-blue);
+  color: #0369a1;
+  border-color: #bae6fd;
+}
+
+.admin-app .form-input:focus,
+.admin-app .admin-select:focus,
+.admin-app .admin-search:focus-within {
+  border-color: var(--admin-accent);
+  box-shadow: 0 0 0 3px rgba(92, 77, 145, 0.16);
+  outline: none;
+}
+
+.admin-app .admin-toolbar {
+  gap: 10px;
+  margin-bottom: 14px;
+  align-items: center;
+}
+
+.admin-app .admin-search {
+  background: var(--admin-surface);
+  min-height: var(--admin-control-h);
+}
+
+/* Sidebar readability (light Pepito, not navy CRM) */
+.admin-app .admin-sidebar {
+  width: 264px;
+  background: rgba(255, 255, 255, 0.94);
+}
+
+.admin-app .admin-nav-item {
+  border-radius: var(--admin-radius-sm);
+  padding: 9px 12px;
+  font-size: 0.88rem;
+}
+
+.admin-app .admin-nav-group-title {
+  color: color-mix(in srgb, var(--admin-muted) 80%, #19063d);
+  letter-spacing: 0.06em;
+}
+
+.admin-app .admin-nav-item:hover {
+  background: var(--admin-accent-soft);
+  color: var(--admin-ink);
+}
+
+.admin-app .admin-logout {
+  border-radius: var(--admin-radius-sm);
+  background: #fff;
+}
+
+.admin-app .admin-role-chip {
+  border-radius: var(--admin-radius-sm);
+}
+
+/* Dashboards stretch evenly */
+.admin-app .admin-dash-grid {
+  gap: var(--admin-gap);
+}
+
+.admin-app .admin-finance-links {
+  gap: var(--admin-gap);
+}
+
+@media (min-width: 1024px) {
+  .admin-app .admin-shell,
+  .admin-app.admin-shell {
+    max-width: none !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    min-height: 100dvh !important;
+  }
+}
+
+@media (max-width: 768px) {
+  .admin-app .admin-page {
+    padding-inline: 14px;
+    padding-block: 16px 28px;
+  }
+  .admin-app .admin-table {
+    min-width: 640px;
+  }
+}

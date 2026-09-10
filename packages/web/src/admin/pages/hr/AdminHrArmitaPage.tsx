@@ -30,7 +30,7 @@ export function AdminHrArmitaPage() {
     <div className="admin-page">
       <header className="admin-header"><div><h1>آرمیتا (دستیار هوشمند)</h1><p>پاسخ‌ها با تطبیق الگو از داده HR — صریحاً mock</p></div></header>
       {error ? <p className="admin-error">{error}</p> : null}
-      <section className="admin-card" style={{ padding: 16, maxWidth: 720 }}>
+      <section className="admin-card" style={{ padding: 16, maxWidth: 'min(960px, 100%)' }}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, minHeight: 280 }}>
           {msgs.map((m, i) => (
             <div key={i} style={{
