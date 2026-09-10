@@ -1,18 +1,22 @@
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Activity, Bell, Briefcase, ClipboardList, FileText, Headset, LayoutDashboard, LineChart, LogOut, Mail, Menu, Package,
   PawPrint, PieChart, ScrollText, Settings, Shield, ShieldCheck, ShoppingBag, Stethoscope,
   Store, Target, Ticket, TrendingUp, UserPlus, UserRound, Users, Wallet, X, ClipboardCheck, BarChart3, Coins,
-  Route, Inbox, HandCoins, Bot, MessageSquare, Star, HeartHandshake,
+  Route, Inbox, HandCoins, Bot, MessageSquare, Star, HeartHandshake, PhoneIncoming,
 } from 'lucide-react';
+import type { SalesNavCounts } from '@petdate/shared';
+import { ADMIN_PANEL_ROLE_LABELS } from '@petdate/shared';
 import { AdminWordmark } from './AdminWordmark';
 import { AdminHeaderNotifications } from './AdminHeaderNotifications';
 import { adminCan, getAdminDisplayName, getAdminRole, logoutAdmin } from './auth';
-import { ADMIN_PANEL_ROLE_LABELS } from '@petdate/shared';
+import { adminFetch, formatNumFa } from './api';
+import { SalesCallSimProvider, useSalesCallSimOptional } from './pages/sales/SalesCallSim';
 import '../styles/admin.css';
 
-type NavItem = { to: string; icon: typeof LayoutDashboard; label: string; perm?: string };
+type BadgeKey = keyof SalesNavCounts;
+type NavItem = { to: string; icon: typeof LayoutDashboard; label: string; perm?: string; badgeKey?: BadgeKey };
 type NavGroup = { title: string; items: NavItem[] };
 
 const NAV_GROUPS: NavGroup[] = [
@@ -50,17 +54,17 @@ const NAV_GROUPS: NavGroup[] = [
     { to: '/admin/marketplace-moderation', icon: ClipboardList, label: 'مدارک و عکس', perm: 'platform.write' },
   ]},
   { title: 'فروش', items: [
-    { to: '/admin/sales', icon: LayoutDashboard, label: 'داشبورد فروش', perm: 'sales.read' },
-    { to: '/admin/sales/leads', icon: Users, label: 'لیدها', perm: 'sales.read' },
+    { to: '/admin/sales', icon: Inbox, label: 'کارتابل من', perm: 'sales.read' },
+    { to: '/admin/sales/leads', icon: Users, label: 'لیدها', perm: 'sales.read', badgeKey: 'leads' },
+    { to: '/admin/sales/upgrades', icon: TrendingUp, label: 'آپگریدها', perm: 'sales.read', badgeKey: 'upgrades' },
+    { to: '/admin/sales/customers', icon: UserRound, label: 'مشتریان', perm: 'sales.read', badgeKey: 'customers' },
+    { to: '/admin/sales/tickets', icon: Ticket, label: 'تیکتینگ', perm: 'sales.read', badgeKey: 'tickets' },
+    { to: '/admin/sales/calls', icon: Headset, label: 'مرکز تماس و ارزیابی', perm: 'sales.read', badgeKey: 'callsQa' },
+    { to: '/admin/sales/settings', icon: Settings, label: 'تنظیمات', perm: 'sales.read' },
+    { to: '/admin/sales/reports', icon: LineChart, label: 'گزارشات', perm: 'sales.read' },
     { to: '/admin/sales/pipeline', icon: Target, label: 'پایپ‌لاین', perm: 'sales.read' },
-    { to: '/admin/sales/upgrades', icon: TrendingUp, label: 'آپگریدها', perm: 'sales.read' },
     { to: '/admin/sales/deals', icon: ShoppingBag, label: 'معاملات', perm: 'sales.read' },
-    { to: '/admin/sales/customers', icon: UserRound, label: 'مشتریان', perm: 'sales.read' },
     { to: '/admin/sales/products', icon: Package, label: 'محصولات و قیمت', perm: 'sales.read' },
-    { to: '/admin/sales/tickets', icon: Ticket, label: 'تیکتینگ', perm: 'sales.read' },
-    { to: '/admin/sales/calls', icon: Headset, label: 'مرکز تماس', perm: 'sales.read' },
-    { to: '/admin/sales/reports', icon: LineChart, label: 'گزارشات فروش', perm: 'sales.read' },
-    { to: '/admin/sales/settings', icon: Settings, label: 'تنظیمات فروش', perm: 'sales.read' },
   ]},
   { title: 'باشگاه مشتریان', items: [
     { to: '/admin/crm', icon: LayoutDashboard, label: 'میز کار من', perm: 'crm.read' },
@@ -108,12 +112,86 @@ function visibleGroups(): NavGroup[] {
   })).filter((g) => g.items.length > 0);
 }
 
-export function AdminLayout() {
+function SalesSidebarExtras({
+  counts,
+  onRefreshCounts,
+}: {
+  counts: SalesNavCounts | null;
+  onRefreshCounts: () => void;
+}) {
+  const sim = useSalesCallSimOptional();
+  const [busy, setBusy] = useState(false);
+  const canWrite = adminCan('sales.write') || adminCan('admin.full');
+  const role = getAdminRole();
+  const roleLabel =
+    getAdminDisplayName() ||
+    ADMIN_PANEL_ROLE_LABELS[role] ||
+    (role === 'admin' ? 'مدیر' : role);
+
+  const onSimulate = async () => {
+    if (!sim || !canWrite) return;
+    setBusy(true);
+    try {
+      await sim.simulateIncoming();
+      onRefreshCounts();
+    } catch {
+      /* ignore */
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="admin-sales-sidebar-meta">
+      <div className="admin-sales-meta-block">
+        <div className="admin-sales-meta-label">کاربر فعال</div>
+        <div className="admin-sales-meta-value">{roleLabel}</div>
+      </div>
+      <div className="admin-sales-meta-block">
+        <div className="admin-sales-meta-label">خط محصول</div>
+        <div className="admin-sales-meta-value">Pet Date</div>
+      </div>
+      {counts && counts.overdueFollowups > 0 ? (
+        <p className="admin-muted" style={{ fontSize: 12, margin: '6px 0 0' }}>
+          پیگیری سررسید: {formatNumFa(counts.overdueFollowups)}
+        </p>
+      ) : null}
+      {canWrite ? (
+        <button
+          type="button"
+          className="admin-btn admin-btn--primary admin-sales-simulate-btn"
+          disabled={busy || Boolean(sim?.call)}
+          onClick={() => void onSimulate()}
+        >
+          <PhoneIncoming size={16} /> شبیه‌سازی تماس ورودی
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+function AdminLayoutInner() {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
+  const [salesCounts, setSalesCounts] = useState<SalesNavCounts | null>(null);
   const groups = useMemo(() => visibleGroups(), []);
+  const refreshSalesCounts = useCallback(() => {
+    if (!adminCan('sales.read') && !adminCan('admin.full')) {
+      setSalesCounts(null);
+      return;
+    }
+    void adminFetch<SalesNavCounts>('/api/admin/sales/nav-counts')
+      .then(setSalesCounts)
+      .catch(() => setSalesCounts(null));
+  }, []);
+  useEffect(() => {
+    refreshSalesCounts();
+    const t = window.setInterval(refreshSalesCounts, 45_000);
+    return () => window.clearInterval(t);
+  }, [refreshSalesCounts, location.pathname]);
+  const showSalesMeta = adminCan('sales.read') || adminCan('admin.full');
   const pageTitle = useMemo(() => {
     const hit = Object.keys(TITLE_MAP).sort((a, b) => b.length - a.length).find((k) => location.pathname.startsWith(k));
     return hit ? TITLE_MAP[hit] : 'پنل مدیریت';
@@ -138,13 +216,25 @@ export function AdminLayout() {
             {groups.map((group) => (
               <div key={group.title} className="admin-nav-group">
                 <div className="admin-nav-group-title">{group.title}</div>
-                {group.items.map((item) => (
-                  <NavLink key={item.to} to={item.to} end={item.to === '/admin/hr' || item.to === '/admin/sales' || item.to === '/admin/crm'} onClick={() => setMobileOpen(false)}
-                    className={({ isActive }) => `admin-nav-item${isActive ? ' active' : ''}`}>
-                    <item.icon size={18} strokeWidth={2} />
-                    <span>{item.label}</span>
-                  </NavLink>
-                ))}
+                {group.title === 'فروش' && showSalesMeta ? (
+                  <SalesSidebarExtras counts={salesCounts} onRefreshCounts={refreshSalesCounts} />
+                ) : null}
+                {group.items.map((item) => {
+                  const badge = item.badgeKey && salesCounts ? Number(salesCounts[item.badgeKey] || 0) : 0;
+                  return (
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
+                      end={item.to === '/admin/hr' || item.to === '/admin/sales' || item.to === '/admin/crm'}
+                      onClick={() => setMobileOpen(false)}
+                      className={({ isActive }) => `admin-nav-item${isActive ? ' active' : ''}`}
+                    >
+                      <item.icon size={18} strokeWidth={2} />
+                      <span className="admin-nav-item-label">{item.label}</span>
+                      {badge > 0 ? <span className="admin-nav-count">{formatNumFa(badge)}</span> : null}
+                    </NavLink>
+                  );
+                })}
               </div>
             ))}
           </nav>
@@ -180,5 +270,13 @@ export function AdminLayout() {
         </div>
       </div>
     </div>
+  );
+}
+
+export function AdminLayout() {
+  return (
+    <SalesCallSimProvider>
+      <AdminLayoutInner />
+    </SalesCallSimProvider>
   );
 }

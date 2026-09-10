@@ -122,6 +122,26 @@ export interface SalesSettings {
   leadSources: string[]; lostReasons: string[]; discountLimits: Record<string, number>;
 }
 
+/** Live sidebar badge counts for Sales CRM nav (prototype parity). */
+export interface SalesNavCounts {
+  leads: number;
+  upgrades: number;
+  customers: number;
+  tickets: number;
+  callsQa: number;
+  overdueFollowups: number;
+  pendingFinance: number;
+  unassigned: number;
+}
+
+/** Incoming-call simulation stub payload (client shows call bar). */
+export interface SalesSimulateIncoming {
+  phone: string;
+  phase: 'ringing';
+  matchedItem: SalesItem | null;
+  productLine: 'Pet Date';
+}
+
 export function salesStageLabel(stage: SalesStage): string {
   if (stage === 'lost') return 'ازدست‌رفته';
   const n = Number(stage);

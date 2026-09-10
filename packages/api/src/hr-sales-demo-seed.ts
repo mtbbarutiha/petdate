@@ -188,10 +188,6 @@ export function seedHrSalesDemoIfNeeded(): void {
   // Always backfill missing SEED avatars (even if full seed already ran).
   ensureSeedEmployeeAvatars();
 
-  if (seedAlreadyDone()) {
-    return;
-  }
-
   const layers = db()
     .prepare('SELECT id, sort_order FROM hr_career_layers ORDER BY sort_order')
     .all() as Array<{ id: number; sort_order: number }>;
@@ -606,7 +602,7 @@ export function seedHrSalesDemoIfNeeded(): void {
           4 + i,
           i % 2 === 0 ? 'علاقه‌مند' : 'تماس بعدی',
           'تماس نمونه SEED',
-          i < 2 ? 'تایید شده' : 'ارزیابی نشده',
+          i < 2 ? 'ارزیابی شد' : 'ارزیابی نشده',
           i < 2 ? 80 + i * 5 : null
         );
     }
@@ -682,8 +678,82 @@ export function seedHrSalesDemoIfNeeded(): void {
     }
   }
 
+  ensureSalesCrmDemoTopUp();
+
   const totalEmp = listEmployees({ limit: 1 }).total;
   console.log(
     `🌱 HR↔Sales demo seed ready (employees≥${totalEmp}, marker=${SEED_MARKER})`
   );
+}
+
+/** Idempotent top-up so Sales badges stay non-empty without wiping. */
+export function ensureSalesCrmDemoTopUp(): void {
+  try {
+    // Fix legacy QA label typo
+    db()
+      .prepare(`UPDATE sales_calls SET qa_status = 'ارزیابی شد' WHERE qa_status = 'تایید شده' AND qa_score IS NOT NULL`)
+      .run();
+  } catch {
+    return;
+  }
+
+  const agent = employeeByCode(SEED_MARKER);
+  const agentEmp = agent ? getEmployee(agent.id) : null;
+  const agentUser = agentEmp?.username || SEED_MARKER;
+  const agentName = agentEmp ? `${agentEmp.firstName} ${agentEmp.lastName}` : 'نیما فروشنده';
+
+  const anyLead = db()
+    .prepare(`SELECT id FROM sales_items WHERE kind = 'lead' ORDER BY id DESC LIMIT 1`)
+    .get() as { id: number } | undefined;
+  if (!anyLead) return;
+
+  const openTickets = Number(
+    (db()
+      .prepare(`SELECT COUNT(*) as c FROM sales_tickets WHERE status IN ('جدید','در حال بررسی')`)
+      .get() as { c: number })?.c ?? 0
+  );
+  if (openTickets < 2) {
+    db()
+      .prepare(
+        `INSERT INTO sales_tickets (ref_kind, ref_id, title, dept, cat, priority, status, created_at, sla_due, desc_text, agent_id)
+         VALUES ('lead', ?, 'تیکت تکمیلی SEED', 'سایر', 'سایر', 'متوسط', 'جدید', ?, ?, 'تکمیل badge', ?)`
+      )
+      .run(anyLead.id, nowIso(), daysFromNow(1), agentUser);
+    db()
+      .prepare(
+        `INSERT INTO sales_tickets (ref_kind, ref_id, title, dept, cat, priority, status, created_at, sla_due, desc_text, agent_id)
+         VALUES ('lead', ?, 'مشکل فنی اپ SEED', 'پشتیبانی فنی', 'مشکل فنی', 'بالا', 'جدید', ?, ?, 'باگ ورود', ?)`
+      )
+      .run(anyLead.id, nowIso(), daysFromNow(1), agentUser);
+  }
+
+  const pendingQa = Number(
+    (db()
+      .prepare(`SELECT COUNT(*) as c FROM sales_calls WHERE qa_status != 'ارزیابی شد'`)
+      .get() as { c: number })?.c ?? 0
+  );
+  if (pendingQa < 3) {
+    for (let i = 0; i < 3 - pendingQa; i++) {
+      db()
+        .prepare(
+          `INSERT INTO sales_calls (ref_kind, ref_id, agent_id, agent_name, dir, started_at, talk, result, summary, qa_status, qa_score)
+           VALUES ('lead', ?, ?, ?, 'call_in', ?, ?, 'تماس بعدی', 'تکمیل QA SEED', 'ارزیابی نشده', NULL)`
+        )
+        .run(anyLead.id, agentUser, agentName, daysAgo(i), 2 + i);
+    }
+  }
+
+  const openFu = Number(
+    (db().prepare(`SELECT COUNT(*) as c FROM sales_followups WHERE status = 'باز'`).get() as { c: number })?.c ?? 0
+  );
+  if (openFu < 2) {
+    db()
+      .prepare(
+        `INSERT INTO sales_followups (ref_kind, ref_id, owner_id, type, at, priority, desc_text, status)
+         VALUES ('lead', ?, ?, 'تماس پیگیری', ?, 'بالا', 'پیگیری تکمیلی SEED', 'باز')`
+      )
+      .run(anyLead.id, agentUser, daysAgo(1));
+  }
+
+  console.log('🌱 Sales CRM demo top-up ready');
 }

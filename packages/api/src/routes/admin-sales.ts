@@ -20,6 +20,7 @@ import {
   getSalesCustomer,
   getSalesDashboard,
   getSalesItemDetail,
+  getSalesNavCounts,
   getSalesPipeline,
   getSalesReportSummary,
   getSalesSettings,
@@ -37,6 +38,7 @@ import {
   sendFinanceInquiry,
   sendPaymentLink,
   sendSalesMessage,
+  simulateIncomingCall,
   updateSalesSettings,
   updateSalesTicketStatus,
   upsertSalesPattern,
@@ -57,6 +59,18 @@ salesAdminRouter.get('/dashboard', (req, res) => {
     res.json(getSalesDashboard(actor(req)));
   } catch (err) {
     res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+salesAdminRouter.get('/nav-counts', (_req, res) => {
+  res.json(getSalesNavCounts());
+});
+
+salesAdminRouter.post('/simulate-incoming', requirePermission('sales.write'), (_req, res) => {
+  try {
+    res.json(simulateIncomingCall());
+  } catch (err) {
+    res.status(400).json({ error: (err as Error).message });
   }
 });
 
@@ -245,8 +259,15 @@ salesAdminRouter.post('/payments/:id/finance-decide', requirePermission('sales.a
   }
 });
 
-salesAdminRouter.get('/calls', (_req, res) => {
-  res.json({ calls: listSalesCalls({ limit: 200 }) });
+salesAdminRouter.get('/calls', (req, res) => {
+  const dir = req.query.dir === 'call_in' || req.query.dir === 'call_out' ? req.query.dir : undefined;
+  res.json({
+    calls: listSalesCalls({
+      limit: 200,
+      dir,
+      qaPendingOnly: req.query.qaPendingOnly === '1',
+    }),
+  });
 });
 
 salesAdminRouter.post('/calls/:id/score', requirePermission('sales.write'), (req, res) => {

@@ -19,6 +19,7 @@ import {
   type SalesItem,
   type SalesItemKind,
   type SalesMessage,
+  type SalesNavCounts,
   type SalesOffer,
   type SalesOrder,
   type SalesPattern,
@@ -26,6 +27,7 @@ import {
   type SalesProduct,
   type SalesReportSummary,
   type SalesSettings,
+  type SalesSimulateIncoming,
   type SalesStage,
   type SalesSurvey,
   type SalesTicket,
@@ -484,9 +486,67 @@ export function createSalesCall(input: {
   return { call: mapCall(callRow), item: next };
 }
 
-export function listSalesCalls(opts?: { limit?: number }): SalesCall[] {
+export function listSalesCalls(opts?: {
+  limit?: number;
+  dir?: 'call_out' | 'call_in';
+  qaPendingOnly?: boolean;
+}): SalesCall[] {
   ensureSalesSchema();
-  return (db().prepare('SELECT * FROM sales_calls ORDER BY started_at DESC LIMIT ?').all(Math.min(opts?.limit || 100, 300)) as Array<Record<string, unknown>>).map(mapCall);
+  const where: string[] = [];
+  const params: unknown[] = [];
+  if (opts?.dir) {
+    where.push('dir = ?');
+    params.push(opts.dir);
+  }
+  if (opts?.qaPendingOnly) {
+    where.push(`qa_status != 'ارزیابی شد'`);
+  }
+  params.push(Math.min(opts?.limit || 100, 300));
+  const sql = `SELECT * FROM sales_calls ${where.length ? `WHERE ${where.join(' AND ')}` : ''} ORDER BY started_at DESC LIMIT ?`;
+  return (db().prepare(sql).all(...params) as Array<Record<string, unknown>>).map(mapCall);
+}
+
+export function getSalesNavCounts(): SalesNavCounts {
+  ensureSalesSchema();
+  const items = listSalesItems({ limit: 1000 }).items;
+  const activeLeads = items.filter((i) => i.kind === 'lead' && typeof i.stage === 'number' && i.stage < 7);
+  const activeUpgrades = items.filter((i) => i.kind === 'upgrade' && typeof i.stage === 'number' && i.stage < 7);
+  const customers = listSalesCustomers().total;
+  const openTickets = listSalesTickets().filter((t) => !['حل‌شده', 'بسته‌شده', 'رد شده'].includes(t.status)).length;
+  const qaPending = listSalesCalls({ limit: 500, qaPendingOnly: true }).length;
+  const followups = listSalesFollowups({ openOnly: true });
+  const payments = (db().prepare('SELECT * FROM sales_payments').all() as Array<Record<string, unknown>>)
+    .map((r) => getPayment(Number(r.id))!);
+  return {
+    leads: activeLeads.length,
+    upgrades: activeUpgrades.length,
+    customers,
+    tickets: openTickets,
+    callsQa: qaPending,
+    overdueFollowups: followups.filter((f) => new Date(f.at).getTime() < Date.now()).length,
+    pendingFinance: payments.filter((p) => p.status === 'در حال بررسی مالی').length,
+    unassigned: items.filter((i) => !i.ownerId && typeof i.stage === 'number' && i.stage < 7).length,
+  };
+}
+
+const RING_POOL = ['09121234567', '09129876543', '09121112233', '09123334455', '09124445566'];
+
+/** Stub for sidebar «شبیه‌سازی تماس ورودی» — matches an existing lead by phone when possible. */
+export function simulateIncomingCall(): SalesSimulateIncoming {
+  ensureSalesSchema();
+  const leads = listSalesItems({ kind: 'lead', limit: 100 }).items.filter(
+    (i) => typeof i.stage === 'number' && i.stage < 7
+  );
+  const withMobile = leads.filter((l) => l.mobile && l.mobile.replace(/\D/g, '').length >= 10);
+  const pick = withMobile.length
+    ? withMobile[Math.floor(Math.random() * withMobile.length)]
+    : null;
+  const phone = pick?.mobile || RING_POOL[Math.floor(Math.random() * RING_POOL.length)];
+  const matched =
+    pick ||
+    leads.find((l) => l.mobile.replace(/\D/g, '').slice(-10) === phone.replace(/\D/g, '').slice(-10)) ||
+    null;
+  return { phone, phase: 'ringing', matchedItem: matched, productLine: 'Pet Date' };
 }
 
 export function scoreSalesCall(callId: number, score: number, actor: AdminAuthActor): SalesCall {

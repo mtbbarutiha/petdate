@@ -248,6 +248,7 @@ const AdminHrCockpitPage = lazy(() =>
 const AdminHrArmitaPage = lazy(() =>
   import('./admin/pages/hr/AdminHrArmitaPage').then((m) => ({ default: m.AdminHrArmitaPage })),
 );
+const SalesGuard = lazy(() => import('./admin/pages/sales/SalesGuard').then((m) => ({ default: m.SalesGuard })));
 const AdminSalesDashboardPage = lazy(() => import('./admin/pages/sales/AdminSalesDashboardPage').then((m) => ({ default: m.AdminSalesDashboardPage })));
 const AdminSalesLeadsPage = lazy(() => import('./admin/pages/sales/AdminSalesPages').then((m) => ({ default: m.AdminSalesLeadsPage })));
 const AdminSalesUpgradesPage = lazy(() => import('./admin/pages/sales/AdminSalesPages').then((m) => ({ default: m.AdminSalesUpgradesPage })));
@@ -377,20 +378,20 @@ export default function App() {
                 <Route path="hr/armita" element={<AdminHrArmitaPage />} />
                 <Route path="hr/settings" element={<AdminHrSettingsPage />} />
                 <Route path="hr/rbac" element={<AdminHrRbacPage />} />
-                <Route path="sales" element={<AdminSalesDashboardPage />} />
-                <Route path="sales/leads" element={<AdminSalesLeadsPage />} />
-                <Route path="sales/leads/:id" element={<AdminSalesLeadDetailPage />} />
-                <Route path="sales/upgrades" element={<AdminSalesUpgradesPage />} />
-                <Route path="sales/upgrades/:id" element={<AdminSalesUpgradeDetailPage />} />
-                <Route path="sales/pipeline" element={<AdminSalesPipelinePage />} />
-                <Route path="sales/deals" element={<AdminSalesDealsPage />} />
-                <Route path="sales/customers" element={<AdminSalesCustomersPage />} />
-                <Route path="sales/customers/:id" element={<AdminSalesCustomerDetailPage />} />
-                <Route path="sales/products" element={<AdminSalesProductsPage />} />
-                <Route path="sales/tickets" element={<AdminSalesTicketsPage />} />
-                <Route path="sales/calls" element={<AdminSalesCallsPage />} />
-                <Route path="sales/reports" element={<AdminSalesReportsPage />} />
-                <Route path="sales/settings" element={<AdminSalesSettingsPage />} />
+                <Route path="sales" element={<SalesGuard><AdminSalesDashboardPage /></SalesGuard>} />
+                <Route path="sales/leads" element={<SalesGuard><AdminSalesLeadsPage /></SalesGuard>} />
+                <Route path="sales/leads/:id" element={<SalesGuard><AdminSalesLeadDetailPage /></SalesGuard>} />
+                <Route path="sales/upgrades" element={<SalesGuard><AdminSalesUpgradesPage /></SalesGuard>} />
+                <Route path="sales/upgrades/:id" element={<SalesGuard><AdminSalesUpgradeDetailPage /></SalesGuard>} />
+                <Route path="sales/pipeline" element={<SalesGuard><AdminSalesPipelinePage /></SalesGuard>} />
+                <Route path="sales/deals" element={<SalesGuard><AdminSalesDealsPage /></SalesGuard>} />
+                <Route path="sales/customers" element={<SalesGuard><AdminSalesCustomersPage /></SalesGuard>} />
+                <Route path="sales/customers/:id" element={<SalesGuard><AdminSalesCustomerDetailPage /></SalesGuard>} />
+                <Route path="sales/products" element={<SalesGuard><AdminSalesProductsPage /></SalesGuard>} />
+                <Route path="sales/tickets" element={<SalesGuard><AdminSalesTicketsPage /></SalesGuard>} />
+                <Route path="sales/calls" element={<SalesGuard><AdminSalesCallsPage /></SalesGuard>} />
+                <Route path="sales/reports" element={<SalesGuard><AdminSalesReportsPage /></SalesGuard>} />
+                <Route path="sales/settings" element={<SalesGuard><AdminSalesSettingsPage /></SalesGuard>} />
                 <Route path="crm" element={<AdminCrmDashboardPage />} />
                 <Route path="crm/workspace" element={<AdminCrmDashboardPage />} />
                 <Route path="customers" element={<Navigate to="/admin/crm" replace />} />

@@ -58,6 +58,14 @@ async function main() {
   const dash = sales.getSalesDashboard(admin!);
   assert(typeof dash.activeLeads === 'number', 'dashboard ok');
 
+  const counts = sales.getSalesNavCounts();
+  assert(typeof counts.leads === 'number', 'nav counts');
+  assert(typeof counts.tickets === 'number', 'ticket badge');
+
+  const sim = sales.simulateIncomingCall();
+  assert(sim.phase === 'ringing' && sim.phone, 'simulate incoming');
+  assert(sim.productLine === 'Pet Date', 'single product line');
+
   console.log('sales-crm.selftest: ok');
 }
 
