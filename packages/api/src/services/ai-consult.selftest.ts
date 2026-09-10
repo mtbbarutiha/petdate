@@ -289,6 +289,28 @@ async function main() {
   assert(/عکس/.test(msgs[0]!.text), 'session intro mentions pet photo');
   assert(/سگ/.test(msgs[0]!.text) && !/\bDOG\b|\bdog\b/i.test(msgs[0]!.text), 'session intro uses سگ not dog/DOG');
 
+  // Inbox dedupe: second quick-connect / «مشورت با پاشا» reuses the same active consult.
+  const sessionAgain = await startAiFallbackConsult({ patient, serviceKind: 'trainer' });
+  assert(sessionAgain, 'second ai session returned');
+  assert(sessionAgain!.consult.id === session!.consult.id, 'second start reuses same consult id');
+  assert(sessionAgain!.reused === true, 'second start marked reused');
+  const activeTrainer = dbService
+    .listVetConsultations({ patientUserId: patient.id, status: 'active', serviceKind: 'trainer' })
+    .filter((c) => c.vetUserId === aiUser.id && !c.chatEnded);
+  assert(activeTrainer.length === 1, 'only one ongoing AI trainer consult after reuse');
+
+  // After user ends chat, a new start may create — but closes orphans.
+  dbService.endVetConsultChat(session!.consult.id);
+  dbService.updateVetConsultationStatus(session!.consult.id, 'completed');
+  const sessionFresh = await startAiFallbackConsult({ patient, serviceKind: 'trainer' });
+  assert(sessionFresh, 'new session after end');
+  assert(sessionFresh!.consult.id !== session!.consult.id, 'new consult after prior ended');
+  assert(!sessionFresh!.reused, 'fresh start is not reused');
+  const activeAfterFresh = dbService
+    .listVetConsultations({ patientUserId: patient.id, status: 'active', serviceKind: 'trainer' })
+    .filter((c) => c.vetUserId === aiUser.id && !c.chatEnded);
+  assert(activeAfterFresh.length === 1, 'still only one ongoing AI trainer after recreate');
+
   const leashTip = await generateAiConsultAdvice({
     kind: 'trainer',
     userMessage: 'قلاده می‌کشه',
@@ -456,8 +478,9 @@ async function main() {
   {
     const { maybeTranscribeAndReplyAsAiAssistant } = await import('./ai-consult-session');
     const { STT_UNAVAILABLE_FA } = await import('./speech-to-text');
+    const voiceConsultId = sessionFresh!.consult.id;
     const voiceMsg = dbService.createVetConsultChatMessage({
-      consultId: session!.consult.id,
+      consultId: voiceConsultId,
       senderUserId: patient.id,
       text: '',
       mediaKind: 'voice',
@@ -466,11 +489,11 @@ async function main() {
     });
     assert(voiceMsg.text === '[پیام صوتی]', 'voice placeholder stored');
     await maybeTranscribeAndReplyAsAiAssistant({
-      consultId: session!.consult.id,
+      consultId: voiceConsultId,
       patientUserId: patient.id,
       message: voiceMsg,
     });
-    const after = dbService.listVetConsultChatMessages(session!.consult.id);
+    const after = dbService.listVetConsultChatMessages(voiceConsultId);
     const last = after[after.length - 1]!;
     assert(last.senderUserId === aiUser.id, 'AI replied to voice');
     assert(last.text === STT_UNAVAILABLE_FA, 'STT fallback copy');

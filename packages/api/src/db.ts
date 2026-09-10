@@ -5100,6 +5100,75 @@ export const dbService = {
     return this.ensureVetConsultNotStale(mapVetConsultation(rows[0]!));
   },
 
+  /**
+   * Ongoing AI fallback consult for a patient (active, chat not ended).
+   * Newest by last message / created_at when duplicates exist from older bugs.
+   */
+  findActiveAiConsultForPatient(
+    patientUserId: number,
+    serviceKind: ConsultServiceKind,
+    aiUserId: number
+  ): VetConsultation | null {
+    this.expireStaleVetConsultRequests();
+    const row = db
+      .prepare(
+        `SELECT vc.*,
+                pu.name AS patient_name,
+                pu.city AS patient_city,
+                vu.name AS vet_name,
+                p.name AS pet_name,
+                p.species AS pet_species,
+                p.breed AS pet_breed
+         FROM vet_consultations vc
+         LEFT JOIN users pu ON pu.id = vc.patient_user_id
+         LEFT JOIN users vu ON vu.id = vc.vet_user_id
+         LEFT JOIN pets p ON p.id = vc.pet_id
+         WHERE vc.patient_user_id = ?
+           AND vc.vet_user_id = ?
+           AND vc.status = 'active'
+           AND COALESCE(vc.chat_ended, 0) = 0
+           AND COALESCE(vc.service_kind, 'vet') = ?
+         ORDER BY COALESCE(
+           (SELECT MAX(m.created_at) FROM vet_consult_chat_messages m WHERE m.consult_id = vc.id),
+           vc.created_at
+         ) DESC, vc.id DESC
+         LIMIT 1`
+      )
+      .get(patientUserId, aiUserId, serviceKind) as Record<string, unknown> | undefined;
+    return row ? this.ensureVetConsultNotStale(mapVetConsultation(row)) : null;
+  },
+
+  /**
+   * Close orphan active AI sessions of the same kind (chat_ended + completed),
+   * keeping `keepId` open. Avoids clearing message history.
+   */
+  closeActiveAiConsultsForPatient(
+    patientUserId: number,
+    serviceKind: ConsultServiceKind,
+    aiUserId: number,
+    keepId?: number | null
+  ): number {
+    const result = db
+      .prepare(
+        `UPDATE vet_consultations
+         SET status = 'completed', chat_ended = 1, chat_secure = 0
+         WHERE patient_user_id = ?
+           AND vet_user_id = ?
+           AND status = 'active'
+           AND COALESCE(chat_ended, 0) = 0
+           AND COALESCE(service_kind, 'vet') = ?
+           AND (? IS NULL OR id != ?)`
+      )
+      .run(
+        patientUserId,
+        aiUserId,
+        serviceKind,
+        keepId ?? null,
+        keepId ?? null
+      );
+    return result.changes;
+  },
+
   updateVetConsultationStatus(
     id: number,
     status: VetConsultStatus
