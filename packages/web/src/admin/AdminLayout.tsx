@@ -4,7 +4,7 @@ import {
   Activity, Bell, Briefcase, ClipboardList, FileText, Headset, LayoutDashboard, LineChart, LogOut, Mail, Menu, Package,
   PawPrint, PieChart, ScrollText, Settings, Shield, ShieldCheck, ShoppingBag, Stethoscope,
   Store, Target, Ticket, TrendingUp, UserPlus, UserRound, Users, Wallet, X, ClipboardCheck, BarChart3, Coins,
-  Route, Inbox, HandCoins, Bot, MessageSquare, Star, HeartHandshake, PhoneIncoming,
+  Route, Inbox, HandCoins, Bot, MessageSquare, Star, HeartHandshake,
 } from 'lucide-react';
 import type { SalesNavCounts } from '@petdate/shared';
 import { ADMIN_PANEL_ROLE_LABELS } from '@petdate/shared';
@@ -12,7 +12,7 @@ import { AdminWordmark } from './AdminWordmark';
 import { AdminHeaderNotifications } from './AdminHeaderNotifications';
 import { adminCan, getAdminDisplayName, getAdminRole, logoutAdmin } from './auth';
 import { adminFetch, formatNumFa } from './api';
-import { SalesCallSimProvider, useSalesCallSimOptional } from './pages/sales/SalesCallSim';
+import { SalesCallSimProvider } from './pages/sales/SalesCallSim';
 import '../styles/admin.css';
 
 type BadgeKey = keyof SalesNavCounts;
@@ -112,63 +112,6 @@ function visibleGroups(): NavGroup[] {
   })).filter((g) => g.items.length > 0);
 }
 
-function SalesSidebarExtras({
-  counts,
-  onRefreshCounts,
-}: {
-  counts: SalesNavCounts | null;
-  onRefreshCounts: () => void;
-}) {
-  const sim = useSalesCallSimOptional();
-  const [busy, setBusy] = useState(false);
-  const canWrite = adminCan('sales.write') || adminCan('admin.full');
-  const role = getAdminRole();
-  const roleLabel =
-    getAdminDisplayName() ||
-    ADMIN_PANEL_ROLE_LABELS[role] ||
-    (role === 'admin' ? 'مدیر' : role);
-
-  const onSimulate = async () => {
-    if (!sim || !canWrite) return;
-    setBusy(true);
-    try {
-      await sim.simulateIncoming();
-      onRefreshCounts();
-    } catch {
-      /* ignore */
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <div className="admin-sales-sidebar-meta">
-      <div className="admin-sales-meta-block">
-        <div className="admin-sales-meta-label">کاربر فعال</div>
-        <div className="admin-sales-meta-value">{roleLabel}</div>
-      </div>
-      <div className="admin-sales-meta-block">
-        <div className="admin-sales-meta-label">خط محصول</div>
-        <div className="admin-sales-meta-value">Pet Date</div>
-      </div>
-      {counts && counts.overdueFollowups > 0 ? (
-        <p className="admin-muted" style={{ fontSize: 12, margin: '6px 0 0' }}>
-          پیگیری سررسید: {formatNumFa(counts.overdueFollowups)}
-        </p>
-      ) : null}
-      {canWrite ? (
-        <button
-          type="button"
-          className="admin-btn admin-btn--primary admin-sales-simulate-btn"
-          disabled={busy || Boolean(sim?.call)}
-          onClick={() => void onSimulate()}
-        >
-          <PhoneIncoming size={16} /> شبیه‌سازی تماس ورودی
-        </button>
-      ) : null}
-    </div>
-  );
-}
 
 function AdminLayoutInner() {
   const navigate = useNavigate();
@@ -191,7 +134,6 @@ function AdminLayoutInner() {
     const t = window.setInterval(refreshSalesCounts, 45_000);
     return () => window.clearInterval(t);
   }, [refreshSalesCounts, location.pathname]);
-  const showSalesMeta = adminCan('sales.read') || adminCan('admin.full');
   const pageTitle = useMemo(() => {
     const hit = Object.keys(TITLE_MAP).sort((a, b) => b.length - a.length).find((k) => location.pathname.startsWith(k));
     return hit ? TITLE_MAP[hit] : 'پنل مدیریت';
@@ -216,9 +158,6 @@ function AdminLayoutInner() {
             {groups.map((group) => (
               <div key={group.title} className="admin-nav-group">
                 <div className="admin-nav-group-title">{group.title}</div>
-                {group.title === 'فروش' && showSalesMeta ? (
-                  <SalesSidebarExtras counts={salesCounts} onRefreshCounts={refreshSalesCounts} />
-                ) : null}
                 {group.items.map((item) => {
                   const badge = item.badgeKey && salesCounts ? Number(salesCounts[item.badgeKey] || 0) : 0;
                   return (
