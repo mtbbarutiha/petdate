@@ -233,6 +233,9 @@ export const adminFinance = {
     const aov = current.orders ? Math.round(current.revenue / current.orders) : 0;
     const marginPct = revenue > 0 ? Math.round((netProfit / revenue) * 1000) / 10 : 0;
 
+    // Embed primary chart series so the Finance OS dashboard is not just nav tiles.
+    const sales = this.getSalesCharts(period);
+
     return {
       period,
       since,
@@ -255,6 +258,29 @@ export const adminFinance = {
         operatingExpense: opEx,
         vetConsults: fees.vetCount,
         playdatesAccepted: fees.playdateCount,
+      },
+      charts: {
+        salesTrend: sales.dailyOrMonthly,
+        categories: sales.categories.slice(0, 8).map((c) => ({
+          label: c.label,
+          value: c.value,
+        })),
+        paymentMix: sales.paymentMix.map((p) => ({
+          label: p.label,
+          value: p.value,
+          currency: p.currency,
+        })),
+        pnlCompare: [
+          { label: 'درآمد', value: revenue },
+          { label: 'هزینه', value: expense },
+          { label: 'سود', value: Math.max(0, netProfit) },
+        ],
+        revenueMix: [
+          { label: 'فروشگاه', value: current.revenue },
+          { label: 'شارژ کیف پول', value: topups },
+          { label: 'دامپزشک', value: fees.vetRevenue },
+          { label: 'همبازی', value: fees.playdateRevenue },
+        ].filter((s) => s.value > 0),
       },
       previous: { revenue: prevRevenue, orders: previous.orders },
       settings: {
