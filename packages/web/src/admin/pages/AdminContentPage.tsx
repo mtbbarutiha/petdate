@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { Plus } from 'lucide-react';
 import { adminFetch, formatNumFa } from '../api';
 import { AdminModal } from '../AdminModal';
 
@@ -32,7 +33,7 @@ export function AdminContentPage() {
     void load();
   }, [load]);
 
-  const save = async (e: React.FormEvent) => {
+  const save = async (e: FormEvent) => {
     e.preventDefault();
     setBusy(true);
     try {
@@ -87,13 +88,13 @@ export function AdminContentPage() {
             setOpen(true);
           }}
         >
-          اعلان جدید
+          <Plus size={16} /> اعلان جدید
         </button>
       </header>
 
       {error ? <p className="admin-error">{error}</p> : null}
 
-      <div className="admin-table-wrap admin-card">
+      <div className="admin-table-wrap admin-card" style={{ marginTop: 16 }}>
         <table className="admin-table">
           <thead>
             <tr>
@@ -149,12 +150,16 @@ export function AdminContentPage() {
         busy={busy}
         footer={
           <>
-            <button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>انتشار</button>
-            <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setOpen(false)}>انصراف</button>
+            <button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>
+              انتشار
+            </button>
+            <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setOpen(false)}>
+              انصراف
+            </button>
           </>
         }
       >
-        <label className="admin-form-span">
+        <label>
           <span className="form-label">عنوان</span>
           <input
             className="form-input"
@@ -163,7 +168,7 @@ export function AdminContentPage() {
             onChange={(e) => setForm({ ...form, title: e.target.value })}
           />
         </label>
-        <label className="admin-form-span">
+        <label>
           <span className="form-label">متن</span>
           <textarea
             className="form-input"

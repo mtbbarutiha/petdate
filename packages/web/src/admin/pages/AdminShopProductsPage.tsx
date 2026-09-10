@@ -11,14 +11,21 @@ type Product = {
 };
 
 export function AdminShopProductsPage() {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const [products, setProducts] = useState<Product[]>([]);
   const [q, setQ] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [modalProductId, setModalProductId] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+
+  const modalNew = searchParams.get('new') === '1';
+  const editId = searchParams.get('edit');
+  const modalOpen = modalNew || Boolean(editId);
+
+  const closeModal = () => navigate('/admin/shop/products', { replace: true });
+  const openNew = () => navigate('/admin/shop/products?new=1');
+  const openEdit = (id: string) => navigate(`/admin/shop/products?edit=${encodeURIComponent(id)}`);
 
   const load = useCallback(async () => {
     try {
@@ -28,19 +35,6 @@ export function AdminShopProductsPage() {
     } catch (err) { setError(err instanceof Error ? err.message : 'خطا'); }
   }, [q]);
   useEffect(() => { void load(); }, [load]);
-
-  useEffect(() => {
-    if (searchParams.get('new') === '1') {
-      setModalProductId('new');
-      navigate('/admin/shop/products', { replace: true });
-      return;
-    }
-    const edit = searchParams.get('edit');
-    if (edit) {
-      setModalProductId(edit);
-      navigate('/admin/shop/products', { replace: true });
-    }
-  }, [searchParams, navigate]);
 
   const syncCatalog = async () => {
     if (!confirm('کاتالوگ وب روی دیتابیس بازنویسی شود؟')) return;
@@ -73,7 +67,7 @@ export function AdminShopProductsPage() {
           <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => void syncCatalog()}>
             <RefreshCw size={16} /> سینک از کاتالوگ وب
           </button>
-          <button type="button" className="admin-btn admin-btn--primary" onClick={() => setModalProductId('new')}>
+          <button type="button" className="admin-btn admin-btn--primary" onClick={openNew}>
             <Plus size={16} /> محصول جدید
           </button>
         </div>
@@ -92,12 +86,7 @@ export function AdminShopProductsPage() {
             <tr key={prod.id}>
               <td>{prod.image ? <img src={prod.image} alt="" className="admin-thumb" /> : '—'}</td>
               <td>
-                <button
-                  type="button"
-                  className="admin-btn admin-btn--ghost"
-                  style={{ padding: 0, border: 'none', background: 'transparent', font: 'inherit' }}
-                  onClick={() => setModalProductId(prod.id)}
-                >
+                <button type="button" className="admin-btn admin-btn--ghost" style={{ paddingInline: 0 }} onClick={() => openEdit(prod.id)}>
                   <strong>{prod.title}</strong>
                 </button>
                 <div className="admin-mono">{prod.slug}</div>
@@ -107,7 +96,7 @@ export function AdminShopProductsPage() {
               <td>{prod.inStock ? <span className="admin-badge admin-badge--info">{formatNumFa(prod.stockQty)}</span> : <span className="admin-badge admin-badge--error">ناموجود</span>}</td>
               <td>
                 <div className="admin-row-actions">
-                  <button type="button" className="admin-btn admin-btn--ghost" onClick={() => setModalProductId(prod.id)}>ویرایش</button>
+                  <button type="button" className="admin-btn admin-btn--ghost" onClick={() => openEdit(prod.id)}>ویرایش</button>
                   <button type="button" className="admin-btn admin-btn--danger" onClick={() => void remove(prod.id)}><Trash2 size={14} /></button>
                 </div>
               </td>
@@ -117,10 +106,10 @@ export function AdminShopProductsPage() {
       </table></div>
 
       <AdminShopProductFormModal
-        open={modalProductId != null}
-        productId={modalProductId}
-        onClose={() => setModalProductId(null)}
-        onSaved={() => { void load(); }}
+        open={modalOpen}
+        productId={modalNew ? null : editId}
+        onClose={closeModal}
+        onSaved={() => void load()}
       />
     </div>
   );

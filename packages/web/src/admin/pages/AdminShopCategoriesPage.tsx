@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { Plus } from 'lucide-react';
 import { adminFetch, formatNumFa } from '../api';
 import { AdminModal } from '../AdminModal';
 
@@ -17,7 +18,7 @@ export function AdminShopCategoriesPage() {
     } catch (err) { setError(err instanceof Error ? err.message : 'خطا'); }
   }, []);
   useEffect(() => { void load(); }, [load]);
-  const save = async (e: React.FormEvent) => {
+  const save = async (e: FormEvent) => {
     e.preventDefault();
     setBusy(true);
     try {
@@ -25,11 +26,8 @@ export function AdminShopCategoriesPage() {
       setForm({ slug: '', labelFa: '', petType: 'dog', description: '', emoji: '🛒' });
       setOpen(false);
       await load();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'خطا');
-    } finally {
-      setBusy(false);
-    }
+    } catch (err) { setError(err instanceof Error ? err.message : 'خطا'); }
+    finally { setBusy(false); }
   };
   const remove = async (slug: string) => {
     if (!confirm(`حذف ${slug}؟`)) return;
@@ -40,15 +38,8 @@ export function AdminShopCategoriesPage() {
     <div className="admin-page">
       <header className="admin-header">
         <div><h1>دسته‌بندی فروشگاه</h1><p>{formatNumFa(cats.length)} دسته</p></div>
-        <button
-          type="button"
-          className="admin-btn admin-btn--primary"
-          onClick={() => {
-            setForm({ slug: '', labelFa: '', petType: 'dog', description: '', emoji: '🛒' });
-            setOpen(true);
-          }}
-        >
-          دسته جدید
+        <button type="button" className="admin-btn admin-btn--primary" onClick={() => { setForm({ slug: '', labelFa: '', petType: 'dog', description: '', emoji: '🛒' }); setOpen(true); }}>
+          <Plus size={16} /> افزودن دسته
         </button>
       </header>
       {error ? <p className="admin-error">{error}</p> : null}
@@ -69,7 +60,7 @@ export function AdminShopCategoriesPage() {
         open={open}
         title="دسته جدید"
         onClose={() => !busy && setOpen(false)}
-        size="sm"
+        size="md"
         as="form"
         onSubmit={(e) => void save(e)}
         busy={busy}
@@ -80,14 +71,16 @@ export function AdminShopCategoriesPage() {
           </>
         }
       >
-        <label><span className="form-label">slug</span><input className="form-input" required value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} /></label>
-        <label><span className="form-label">عنوان</span><input className="form-input" required value={form.labelFa} onChange={(e) => setForm({ ...form, labelFa: e.target.value })} /></label>
-        <label><span className="form-label">نوع</span>
-          <select className="admin-select" value={form.petType} onChange={(e) => setForm({ ...form, petType: e.target.value })}>
-            <option value="dog">سگ</option><option value="cat">گربه</option><option value="bird">پرنده</option>
-          </select>
-        </label>
-        <label><span className="form-label">ایموجی</span><input className="form-input" value={form.emoji} onChange={(e) => setForm({ ...form, emoji: e.target.value })} /></label>
+        <div className="admin-form-grid">
+          <label><span className="form-label">slug</span><input className="form-input" required value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} /></label>
+          <label><span className="form-label">عنوان</span><input className="form-input" required value={form.labelFa} onChange={(e) => setForm({ ...form, labelFa: e.target.value })} /></label>
+          <label><span className="form-label">نوع</span>
+            <select className="admin-select" value={form.petType} onChange={(e) => setForm({ ...form, petType: e.target.value })}>
+              <option value="dog">سگ</option><option value="cat">گربه</option><option value="bird">پرنده</option>
+            </select>
+          </label>
+          <label><span className="form-label">ایموجی</span><input className="form-input" value={form.emoji} onChange={(e) => setForm({ ...form, emoji: e.target.value })} /></label>
+        </div>
       </AdminModal>
     </div>
   );
