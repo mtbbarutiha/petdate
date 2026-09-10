@@ -40,60 +40,180 @@ export const ADMIN_PANEL_ROLE_LABELS: Record<string, string> = {
   crm_manager: 'مدیر باشگاه مشتریان',
 };
 
-/** Permission claims — add new keys as modules grow */
+/**
+ * Permission claims — modular view/edit/create grid.
+ * Legacy keys (*.admin, support.inbox) map into create/view columns where noted.
+ */
 export const ADMIN_PERMISSIONS = [
   'admin.full',
+  'ats.read',
+  'ats.write',
+  'ats.create',
   'hr.read',
   'hr.write',
+  'hr.create',
+  'platform.read',
+  'platform.write',
+  'platform.create',
   'sales.read',
   'sales.write',
   'sales.admin',
+  'upgrade.read',
+  'upgrade.write',
+  'upgrade.create',
   'crm.read',
   'crm.write',
   'crm.admin',
   'loyalty.read',
   'loyalty.write',
+  'loyalty.create',
   'support.inbox',
-  'platform.read',
-  'platform.write',
+  'support.write',
+  'support.create',
+  'finance.read',
+  'finance.write',
+  'finance.create',
+  'shop.read',
+  'shop.write',
+  'shop.create',
 ] as const;
 export type AdminPermission = (typeof ADMIN_PERMISSIONS)[number];
 
 export const ADMIN_PERMISSION_LABELS: Record<AdminPermission, string> = {
   'admin.full': 'مدیر کامل (همهٔ دسترسی‌ها)',
-  'hr.read': 'منابع انسانی — خواندن',
-  'hr.write': 'منابع انسانی — نوشتن',
-  'sales.read': 'فروش — خواندن',
-  'sales.write': 'فروش — نوشتن',
-  'sales.admin': 'فروش — مدیریت (تخصیص، مالی، تنظیمات)',
-  'crm.read': 'امور مشتریان — خواندن',
-  'crm.write': 'امور مشتریان — نوشتن',
-  'crm.admin': 'امور مشتریان — مدیریت (تخصیص، QA، تنظیمات)',
-  'loyalty.read': 'باشگاه مشتریان / وفاداری — خواندن',
-  'loyalty.write': 'باشگاه مشتریان / وفاداری — نوشتن',
-  'support.inbox': 'صندوق پشتیبانی',
-  'platform.read': 'پلتفرم — خواندن',
-  'platform.write': 'پلتفرم — نوشتن',
+  'ats.read': 'جذب و استخدام — دیدن',
+  'ats.write': 'جذب و استخدام — ویرایش',
+  'ats.create': 'جذب و استخدام — ایجاد',
+  'hr.read': 'منابع انسانی — دیدن',
+  'hr.write': 'منابع انسانی — ویرایش',
+  'hr.create': 'منابع انسانی — ایجاد',
+  'platform.read': 'پلتفرم — دیدن',
+  'platform.write': 'پلتفرم — ویرایش',
+  'platform.create': 'پلتفرم — ایجاد',
+  'sales.read': 'فروش — دیدن',
+  'sales.write': 'فروش — ویرایش',
+  'sales.admin': 'فروش — ایجاد / مدیریت',
+  'upgrade.read': 'آپگرید — دیدن',
+  'upgrade.write': 'آپگرید — ویرایش',
+  'upgrade.create': 'آپگرید — ایجاد',
+  'crm.read': 'امور مشتریان — دیدن',
+  'crm.write': 'امور مشتریان — ویرایش',
+  'crm.admin': 'امور مشتریان — ایجاد / مدیریت',
+  'loyalty.read': 'باشگاه مشتریان — دیدن',
+  'loyalty.write': 'باشگاه مشتریان — ویرایش',
+  'loyalty.create': 'باشگاه مشتریان — ایجاد',
+  'support.inbox': 'پشتیبانی — دیدن',
+  'support.write': 'پشتیبانی — ویرایش',
+  'support.create': 'پشتیبانی — ایجاد',
+  'finance.read': 'مالی — دیدن',
+  'finance.write': 'مالی — ویرایش',
+  'finance.create': 'مالی — ایجاد',
+  'shop.read': 'فروشگاه — دیدن',
+  'shop.write': 'فروشگاه — ویرایش',
+  'shop.create': 'فروشگاه — ایجاد',
+};
+
+/** Grid columns in the role modal (RTL labels) */
+export const ADMIN_PERMISSION_ACTIONS = ['view', 'edit', 'create'] as const;
+export type AdminPermissionAction = (typeof ADMIN_PERMISSION_ACTIONS)[number];
+
+export const ADMIN_PERMISSION_ACTION_LABELS: Record<AdminPermissionAction, string> = {
+  view: 'دیدن',
+  edit: 'ویرایش',
+  create: 'ایجاد',
+};
+
+export type AdminPermissionModuleDef = {
+  id: string;
+  labelFa: string;
+  view: AdminPermission;
+  edit: AdminPermission;
+  create: AdminPermission;
+};
+
+/**
+ * Rows for the RBAC permissions grid.
+ * sales/crm «ایجاد» maps to existing *.admin so auth stays intact;
+ * support «دیدن» keeps support.inbox.
+ */
+export const ADMIN_PERMISSION_MODULES: readonly AdminPermissionModuleDef[] = [
+  { id: 'ats', labelFa: 'جذب و استخدام', view: 'ats.read', edit: 'ats.write', create: 'ats.create' },
+  { id: 'hr', labelFa: 'منابع انسانی', view: 'hr.read', edit: 'hr.write', create: 'hr.create' },
+  {
+    id: 'platform',
+    labelFa: 'پلتفرم',
+    view: 'platform.read',
+    edit: 'platform.write',
+    create: 'platform.create',
+  },
+  { id: 'sales', labelFa: 'فروش', view: 'sales.read', edit: 'sales.write', create: 'sales.admin' },
+  {
+    id: 'upgrade',
+    labelFa: 'آپگرید',
+    view: 'upgrade.read',
+    edit: 'upgrade.write',
+    create: 'upgrade.create',
+  },
+  { id: 'crm', labelFa: 'امور مشتریان', view: 'crm.read', edit: 'crm.write', create: 'crm.admin' },
+  {
+    id: 'loyalty',
+    labelFa: 'باشگاه مشتریان',
+    view: 'loyalty.read',
+    edit: 'loyalty.write',
+    create: 'loyalty.create',
+  },
+  {
+    id: 'support',
+    labelFa: 'پشتیبانی',
+    view: 'support.inbox',
+    edit: 'support.write',
+    create: 'support.create',
+  },
+  {
+    id: 'finance',
+    labelFa: 'مالی',
+    view: 'finance.read',
+    edit: 'finance.write',
+    create: 'finance.create',
+  },
+  { id: 'shop', labelFa: 'فروشگاه', view: 'shop.read', edit: 'shop.write', create: 'shop.create' },
+];
+
+/**
+ * Legacy / parent-module fallbacks so new module keys do not lock out existing roles.
+ * Checked only when the exact permission is missing.
+ */
+export const ADMIN_PERMISSION_FALLBACKS: Readonly<Record<string, readonly string[]>> = {
+  'ats.read': ['hr.read'],
+  'ats.write': ['hr.write'],
+  'ats.create': ['hr.create', 'hr.write'],
+  'hr.create': ['hr.write'],
+  'platform.create': ['platform.write'],
+  'upgrade.read': ['sales.read'],
+  'upgrade.write': ['sales.write'],
+  'upgrade.create': ['sales.admin', 'sales.write'],
+  'loyalty.create': ['loyalty.write'],
+  'support.write': ['crm.write'],
+  'support.create': ['crm.admin', 'crm.write'],
+  'finance.read': ['platform.read'],
+  'finance.write': ['platform.write'],
+  'finance.create': ['platform.create', 'platform.write'],
+  'shop.read': ['platform.read'],
+  'shop.write': ['platform.write'],
+  'shop.create': ['platform.create', 'platform.write'],
 };
 
 export const ADMIN_ROLE_PERMISSIONS: Record<AdminPanelRole, readonly AdminPermission[]> = {
-  admin: [
-    'admin.full',
+  admin: [...ADMIN_PERMISSIONS],
+  support: [
+    'support.inbox',
+    'support.write',
+    'platform.read',
     'hr.read',
-    'hr.write',
-    'sales.read',
-    'sales.write',
-    'sales.admin',
     'crm.read',
     'crm.write',
-    'crm.admin',
     'loyalty.read',
-    'loyalty.write',
-    'support.inbox',
-    'platform.read',
-    'platform.write',
   ],
-  support: ['support.inbox', 'platform.read', 'hr.read', 'crm.read', 'crm.write'],
 };
 
 export function isKnownAdminPermission(value: string): value is AdminPermission {
@@ -113,6 +233,18 @@ export function normalizeAdminPermissions(raw: unknown): AdminPermission[] {
   return out;
 }
 
+/** True if held permissions satisfy `need` (exact, admin.full, or documented fallback). */
+export function permissionsSatisfy(
+  held: readonly string[] | null | undefined,
+  need: AdminPermission | string
+): boolean {
+  const set = new Set((held || []).map(String));
+  if (set.has('admin.full') || set.has(need)) return true;
+  const fallbacks = ADMIN_PERMISSION_FALLBACKS[need];
+  if (!fallbacks) return false;
+  return fallbacks.some((f) => set.has(f));
+}
+
 export function roleHasPermission(
   role: AdminPanelRole | string,
   permission: AdminPermission | string,
@@ -120,8 +252,7 @@ export function roleHasPermission(
 ): boolean {
   if (role === 'admin') return true;
   const base = ADMIN_ROLE_PERMISSIONS[role as AdminPanelRole] || [];
-  const set = new Set<string>([...base, ...(extra || [])]);
-  return set.has('admin.full') || set.has(permission);
+  return permissionsSatisfy([...base, ...(extra || [])], permission);
 }
 
 export const HR_CONTRACT_STATUSES = [
