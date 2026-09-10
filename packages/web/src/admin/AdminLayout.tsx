@@ -1,9 +1,9 @@
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useMemo, useState } from 'react';
 import {
-  Activity, Bell, Briefcase, ClipboardList, FileText, LayoutDashboard, LineChart, LogOut, Mail, Menu, Package,
+  Activity, Bell, Briefcase, ClipboardList, FileText, Headset, LayoutDashboard, LineChart, LogOut, Mail, Menu, Package,
   PawPrint, PieChart, ScrollText, Settings, Shield, ShieldCheck, ShoppingBag, Stethoscope,
-  Store, TrendingUp, UserPlus, UserRound, Users, Wallet, X, ClipboardCheck, BarChart3, Coins,
+  Store, Target, Ticket, TrendingUp, UserPlus, UserRound, Users, Wallet, X, ClipboardCheck, BarChart3, Coins,
   Route, Inbox, HandCoins, Bot,
 } from 'lucide-react';
 import { AdminWordmark } from './AdminWordmark';
@@ -47,6 +47,19 @@ const NAV_GROUPS: NavGroup[] = [
     { to: '/admin/consults', icon: Stethoscope, label: 'مشاوره دامپزشک', perm: 'platform.read' },
     { to: '/admin/verification', icon: ShieldCheck, label: 'احراز هویت', perm: 'platform.write' },
     { to: '/admin/marketplace-moderation', icon: ClipboardList, label: 'مدارک و عکس', perm: 'platform.write' },
+  ]},
+  { title: 'فروش', items: [
+    { to: '/admin/sales', icon: LayoutDashboard, label: 'داشبورد فروش', perm: 'sales.read' },
+    { to: '/admin/sales/leads', icon: Users, label: 'لیدها', perm: 'sales.read' },
+    { to: '/admin/sales/pipeline', icon: Target, label: 'پایپ‌لاین', perm: 'sales.read' },
+    { to: '/admin/sales/upgrades', icon: TrendingUp, label: 'آپگریدها', perm: 'sales.read' },
+    { to: '/admin/sales/deals', icon: ShoppingBag, label: 'معاملات', perm: 'sales.read' },
+    { to: '/admin/sales/customers', icon: UserRound, label: 'مشتریان', perm: 'sales.read' },
+    { to: '/admin/sales/products', icon: Package, label: 'محصولات و قیمت', perm: 'sales.read' },
+    { to: '/admin/sales/tickets', icon: Ticket, label: 'تیکتینگ', perm: 'sales.read' },
+    { to: '/admin/sales/calls', icon: Headset, label: 'مرکز تماس', perm: 'sales.read' },
+    { to: '/admin/sales/reports', icon: LineChart, label: 'گزارشات فروش', perm: 'sales.read' },
+    { to: '/admin/sales/settings', icon: Settings, label: 'تنظیمات فروش', perm: 'sales.read' },
   ]},
   { title: 'مالی', items: [
     { to: '/admin/finance', icon: TrendingUp, label: 'داشبورد مالی', perm: 'platform.read' },

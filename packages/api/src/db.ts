@@ -1254,6 +1254,15 @@ function migrateSchema() {
   } catch (err) {
     console.warn('HR schema ensure skipped/failed:', (err as Error).message);
   }
+
+  // فروش (Sales CRM) — CREATE IF NOT EXISTS only; never wipe
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { ensureSalesSchema } = require('./sales-service') as typeof import('./sales-service');
+    ensureSalesSchema();
+  } catch (err) {
+    console.warn('Sales schema ensure skipped/failed:', (err as Error).message);
+  }
 }
 
 function seedFinanceDefaults() {
