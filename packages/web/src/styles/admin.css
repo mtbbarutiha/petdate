@@ -786,11 +786,16 @@
   font: inherit;
   background: transparent;
 }
-.admin-app .admin-table-wrap { overflow: auto; }
+.admin-app .admin-table-wrap {
+  overflow: auto;
+  /* Keep last columns (احراز / وضعیت / عملیات) from clipping at the edge */
+  padding-inline-end: 4px;
+}
 .admin-app .admin-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.88rem;
+  min-width: 960px;
 }
 .admin-app .admin-table th,
 .admin-app .admin-table td {
@@ -803,6 +808,90 @@
   color: var(--admin-muted);
   font-weight: 650;
   font-size: 0.78rem;
+  white-space: nowrap;
+}
+.admin-app .admin-table--dense th,
+.admin-app .admin-table--dense td {
+  padding: 8px 10px;
+}
+.admin-app .admin-table th:last-child,
+.admin-app .admin-table td:last-child {
+  padding-inline-end: 14px;
+}
+.admin-app .admin-cell-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1.25;
+  min-width: 0;
+}
+.admin-app .admin-cell-nowrap {
+  white-space: nowrap;
+}
+.admin-app .admin-ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 160px;
+  display: block;
+  font-size: 0.75rem;
+}
+.admin-app .admin-wallet-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(68px, 1fr));
+  gap: 4px;
+  min-width: 148px;
+}
+.admin-app .admin-wallet-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  background: #f4f6f8;
+  border: 1px solid #e6eaef;
+  line-height: 1.15;
+}
+.admin-app .admin-wallet-chip--zero {
+  opacity: 0.55;
+}
+.admin-app .admin-wallet-chip-label {
+  font-size: 0.65rem;
+  color: var(--admin-muted);
+  font-weight: 650;
+}
+.admin-app .admin-wallet-chip-value {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+.admin-app .admin-select--compact {
+  max-width: 140px;
+  padding: 6px 8px;
+  font-size: 0.8rem;
+}
+.admin-app .admin-badge--warn {
+  background: #fff7ed;
+  color: #c2410c;
+  border: 1px solid #fed7aa;
+}
+.admin-app .admin-party-pair {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.admin-app .admin-party-pair-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.admin-app .admin-party-pair-label {
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  color: var(--admin-muted);
+  min-width: 1.5rem;
 }
 .admin-app .admin-thumb {
   width: 40px;

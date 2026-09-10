@@ -32,8 +32,8 @@ function PetCell({ pet, petId }: { pet?: PetProfile; petId: number }) {
           alt={pet?.name || 'پت'}
         />
       }
-      title={<AdminIdChip publicId={petPublicIdOf(pet ?? { id })} />}
-      subtitle={pet?.name || null}
+      title={<strong>{pet?.name || '—'}</strong>}
+      subtitle={<AdminIdChip publicId={petPublicIdOf(pet ?? { id })} />}
     />
   );
 }
@@ -69,7 +69,7 @@ export function AdminPlaydatesPage() {
         </select>
       </header>
       {error ? <p className="admin-error">{error}</p> : null}
-      <div className="admin-table-wrap admin-card"><table className="admin-table">
+      <div className="admin-table-wrap admin-card"><table className="admin-table admin-table--dense">
         <thead>
           <tr>
             <th>از پت</th>
@@ -87,24 +87,28 @@ export function AdminPlaydatesPage() {
               <td><PetCell pet={m.fromPet} petId={m.fromPetId} /></td>
               <td><PetCell pet={m.toPet} petId={m.toPetId} /></td>
               <td>
-                <div className="admin-entity-cell" style={{ marginBottom: 6 }}>
-                  <AdminThumb src={m.fromUserAvatarUrl} label={m.fromUserName} kind="user" />
-                  <code className="admin-mono admin-id-public" dir="ltr">
-                    {userPublicIdOf({ id: m.fromUserId })}
-                  </code>
-                </div>
-                {m.toUserId != null ? (
-                  <div className="admin-entity-cell">
-                    <AdminThumb src={m.toUserAvatarUrl} label={m.toUserName} kind="user" />
+                <div className="admin-party-pair">
+                  <div className="admin-party-pair-row">
+                    <span className="admin-party-pair-label">از</span>
+                    <AdminThumb src={m.fromUserAvatarUrl} label={m.fromUserName} kind="user" size={28} />
                     <code className="admin-mono admin-id-public" dir="ltr">
-                      {userPublicIdOf({ id: m.toUserId })}
+                      {userPublicIdOf({ id: m.fromUserId })}
                     </code>
                   </div>
-                ) : null}
+                  {m.toUserId != null ? (
+                    <div className="admin-party-pair-row">
+                      <span className="admin-party-pair-label">به</span>
+                      <AdminThumb src={m.toUserAvatarUrl} label={m.toUserName} kind="user" size={28} />
+                      <code className="admin-mono admin-id-public" dir="ltr">
+                        {userPublicIdOf({ id: m.toUserId })}
+                      </code>
+                    </div>
+                  ) : null}
+                </div>
               </td>
               <td>{m.message || '—'}</td>
               <td><span className={`admin-status admin-status--${m.status}`}>{STATUS_FA[m.status] || m.status}</span></td>
-              <td>{new Date(m.createdAt).toLocaleString('fa-IR')}</td>
+              <td className="admin-cell-nowrap">{new Date(m.createdAt).toLocaleString('fa-IR')}</td>
               <td>
                 <div className="admin-row-actions">
                   {m.status === 'pending' ? (

@@ -1,9 +1,22 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Search, Trash2 } from 'lucide-react';
-import { petPublicIdOf, userPublicIdOf, type PetProfile } from '@petdate/shared';
+import {
+  PET_SPECIES_LABELS,
+  petPublicIdOf,
+  userPublicIdOf,
+  type PetProfile,
+} from '@petdate/shared';
 import { adminFetch, formatNumFa } from '../api';
 import { AdminIdChip } from '../AdminIds';
 import { AdminEntityCell, AdminThumb } from '../AdminThumb';
+
+function genderFa(g?: string | null): string | null {
+  if (!g) return null;
+  const s = String(g).toLowerCase();
+  if (s === 'male' || s === 'm' || s === 'نر') return 'نر';
+  if (s === 'female' || s === 'f' || s === 'ماده') return 'ماده';
+  return g;
+}
 
 export function AdminPetsPage() {
   const [pets, setPets] = useState<PetProfile[]>([]);
@@ -37,11 +50,16 @@ export function AdminPetsPage() {
         <button type="button" className="admin-btn" onClick={() => void load()}>جستجو</button>
       </div>
       {error ? <p className="admin-error">{error}</p> : null}
-      <div className="admin-table-wrap admin-card"><table className="admin-table">
+      <div className="admin-table-wrap admin-card"><table className="admin-table admin-table--dense">
         <thead><tr><th>آیدی پت</th><th>نام</th><th>گونه / نژاد</th><th>سن / جنسیت</th><th>مالک</th><th>شهر</th><th></th></tr></thead>
         <tbody>
           {pets.map((pet) => {
             const publicId = petPublicIdOf(pet);
+            const speciesLabel = PET_SPECIES_LABELS[pet.species] || pet.species;
+            const meta = [
+              pet.ageMonths != null ? `${Math.round(pet.ageMonths / 12)}س` : null,
+              genderFa(pet.gender),
+            ].filter(Boolean).join(' · ');
             return (
               <tr key={pet.id}>
                 <td>
@@ -61,19 +79,19 @@ export function AdminPetsPage() {
                     title={<strong>{pet.name}</strong>}
                   />
                 </td>
-                <td>{pet.species} · {pet.breed || '—'}</td>
-                <td className="admin-muted">
-                  {[
-                    pet.ageMonths != null ? `${Math.round(pet.ageMonths / 12)}س` : null,
-                    pet.gender || null,
-                  ].filter(Boolean).join(' · ') || '—'}
+                <td>
+                  <div className="admin-cell-compact">
+                    <span>{speciesLabel}</span>
+                    <span className="admin-muted">{pet.breed || '—'}</span>
+                  </div>
                 </td>
+                <td className="admin-muted admin-cell-nowrap">{meta || '—'}</td>
                 <td>
                   <code className="admin-mono admin-id-public" dir="ltr">
                     {userPublicIdOf({ id: pet.ownerId })}
                   </code>
                 </td>
-                <td>{pet.city || '—'}</td>
+                <td className="admin-cell-nowrap">{pet.city || '—'}</td>
                 <td><button type="button" className="admin-btn admin-btn--danger" onClick={() => void remove(pet)}><Trash2 size={14} /></button></td>
               </tr>
             );

@@ -9,6 +9,14 @@ import {
 } from '@petdate/shared';
 import { adminFetch, formatNumFa } from '../api';
 import { AdminIdChip } from '../AdminIds';
+import {
+  AdminContactCell,
+  AdminTelegramCell,
+  AdminWalletCell,
+  adminUserDemographics,
+  adminVerifyClass,
+  adminVerifyLabel,
+} from '../AdminListCells';
 import { AdminEntityCell, AdminThumb } from '../AdminThumb';
 
 function activeRolesOf(user: User): UserRole[] {
@@ -23,7 +31,7 @@ export function AdminUsersPage() {
   const [total, setTotal] = useState(0);
   const [q, setQ] = useState('');
   const [role, setRole] = useState('');
-  /** Default active-only — soft-deleted shells ([حذف‌شده #N]) must not clutter the list. */
+  /** Default active-only — soft-deleted shells must not clutter the list. */
   const [status, setStatus] = useState<'active' | 'inactive' | 'all'>('active');
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<number | null>(null);
@@ -78,7 +86,7 @@ export function AdminUsersPage() {
       <header className="admin-header">
         <div>
           <h1>کاربران</h1>
-          <p>{formatNumFa(total)} کاربر · فیلدها از جدول users</p>
+          <p>{formatNumFa(total)} کاربر · فیلدهای مهم مدیریتی از جدول users</p>
         </div>
       </header>
       <div className="admin-toolbar">
@@ -100,105 +108,117 @@ export function AdminUsersPage() {
         <button type="button" className="admin-btn" onClick={() => void load()}>اعمال</button>
       </div>
       {error ? <p className="admin-error">{error}</p> : null}
-      <div className="admin-table-wrap admin-card"><table className="admin-table">
-        <thead>
-          <tr>
-            <th>آیدی</th>
-            <th>نام</th>
-            <th>تلگرام</th>
-            <th>موبایل / ایمیل</th>
-            <th>شهر</th>
-            <th>نقش‌های فعال</th>
-            <th>نقش اصلی</th>
-            <th>کیف پول</th>
-            <th>احراز</th>
-            <th>ثبت</th>
-            <th>وضعیت</th>
-            <th>عملیات</th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.map((u) => {
-            const publicId = userPublicIdOf(u);
-            const roles = activeRolesOf(u);
-            return (
-              <tr key={u.id}>
-                <td>
-                  <AdminIdChip publicId={publicId} />
-                </td>
-                <td>
-                  <AdminEntityCell
-                    thumb={<AdminThumb src={u.avatarUrl} label={u.name} kind="user" alt={u.name} />}
-                    title={<strong>{u.name}</strong>}
-                    subtitle={
-                      u.age != null || u.gender
-                        ? [u.gender === 'male' ? 'مرد' : u.gender === 'female' ? 'زن' : null, u.age != null ? `${u.age}س` : null]
-                            .filter(Boolean)
-                            .join(' · ')
-                        : null
-                    }
-                  />
-                </td>
-                <td className="admin-mono" dir="ltr">
-                  {u.username ? `@${u.username}` : '—'}
-                  <div className="admin-muted">{u.telegramId || '—'}</div>
-                </td>
-                <td>
-                  <div className="admin-mono" dir="ltr">{u.phone || '—'}</div>
-                  <div className="admin-muted" style={{ fontSize: '0.75rem' }}>{u.email || '—'}</div>
-                </td>
-                <td>{[u.city, u.province].filter(Boolean).join('، ') || '—'}</td>
-                <td>
-                  <div className="admin-role-badges">
-                    {roles.length
-                      ? roles.map((r) => (
-                          <span
-                            key={r}
-                            className={`admin-badge ${r === u.role ? 'admin-badge--info' : ''}`}
-                            title={r === u.role ? 'نقش اصلی' : undefined}
-                          >
-                            {USER_ROLE_LABELS[r] || r}
-                          </span>
-                        ))
-                      : <span className="admin-muted">بدون نقش</span>}
-                  </div>
-                </td>
-                <td>
-                  <select className="admin-select" value={u.role || ''} disabled={busyId === u.id}
-                    onChange={(e) => void setPrimaryRole(u, e.target.value as UserRole)}>
-                    {USER_ROLES.map((r) => <option key={r} value={r}>{USER_ROLE_LABELS[r]}</option>)}
-                  </select>
-                </td>
-                <td className="admin-mono">
-                  C:{formatNumFa(u.coins ?? 0)}
-                  <div>T:{formatNumFa(u.walletToman ?? 0)}</div>
-                  <div className="admin-muted">★{formatNumFa(u.walletStars ?? 0)} · ₮{formatNumFa(u.walletTon ?? 0)}</div>
-                </td>
-                <td>
-                  <span className={`admin-badge ${u.verificationStatus === 'verified' ? 'admin-badge--ok' : ''}`}>
-                    {u.verificationStatus || '—'}
-                  </span>
-                </td>
-                <td className="admin-muted" style={{ whiteSpace: 'nowrap' }}>
-                  {u.createdAt ? new Date(u.createdAt).toLocaleDateString('fa-IR') : '—'}
-                </td>
-                <td><span className={`admin-badge ${u.isActive === false ? 'admin-badge--error' : 'admin-badge--info'}`}>{u.isActive === false ? 'مسدود' : 'فعال'}</span></td>
-                <td>
-                  <div className="admin-row-actions">
-                    <button type="button" className="admin-btn admin-btn--ghost" disabled={busyId === u.id}
-                      onClick={() => setCredit({ userId: u.id, amount: '10000', currency: 'toman' })}>اعتبار</button>
-                    <button type="button" className={`admin-btn ${u.isActive === false ? 'admin-btn--primary' : 'admin-btn--danger'}`}
-                      disabled={busyId === u.id} onClick={() => void toggleBan(u)}>
-                      {u.isActive === false ? 'رفع مسدودی' : 'مسدود'}
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            );
-          })}
-          {!users.length ? <tr><td colSpan={12} className="admin-muted">کاربری یافت نشد</td></tr> : null}
-        </tbody>
-      </table></div>
+      <div className="admin-table-wrap admin-card">
+        <table className="admin-table admin-table--dense">
+          <thead>
+            <tr>
+              <th>آیدی</th>
+              <th>نام</th>
+              <th>تلگرام</th>
+              <th>تماس</th>
+              <th>شهر</th>
+              <th>نقش‌ها</th>
+              <th>نقش اصلی</th>
+              <th>کیف پول</th>
+              <th>احراز</th>
+              <th>وضعیت</th>
+              <th>عملیات</th>
+            </tr>
+          </thead>
+          <tbody>
+            {users.map((u) => {
+              const publicId = userPublicIdOf(u);
+              const roles = activeRolesOf(u);
+              const demo = adminUserDemographics(u);
+              return (
+                <tr key={u.id}>
+                  <td>
+                    <AdminIdChip publicId={publicId} />
+                  </td>
+                  <td>
+                    <AdminEntityCell
+                      thumb={<AdminThumb src={u.avatarUrl} label={u.name} kind="user" alt={u.name} />}
+                      title={<strong>{u.name}</strong>}
+                      subtitle={demo}
+                    />
+                  </td>
+                  <td>
+                    <AdminTelegramCell username={u.username} telegramId={u.telegramId} />
+                  </td>
+                  <td>
+                    <AdminContactCell phone={u.phone} email={u.email} />
+                  </td>
+                  <td className="admin-cell-nowrap">{[u.city, u.province].filter(Boolean).join('، ') || '—'}</td>
+                  <td>
+                    <div className="admin-role-badges">
+                      {roles.length
+                        ? roles.map((r) => (
+                            <span
+                              key={r}
+                              className={`admin-badge ${r === u.role ? 'admin-badge--info' : ''}`}
+                              title={r === u.role ? 'نقش اصلی' : undefined}
+                            >
+                              {USER_ROLE_LABELS[r] || r}
+                            </span>
+                          ))
+                        : <span className="admin-muted">بدون نقش</span>}
+                    </div>
+                  </td>
+                  <td>
+                    <select
+                      className="admin-select admin-select--compact"
+                      value={u.role || ''}
+                      disabled={busyId === u.id}
+                      onChange={(e) => void setPrimaryRole(u, e.target.value as UserRole)}
+                    >
+                      {USER_ROLES.map((r) => <option key={r} value={r}>{USER_ROLE_LABELS[r]}</option>)}
+                    </select>
+                  </td>
+                  <td>
+                    <AdminWalletCell
+                      coins={u.coins}
+                      toman={u.walletToman}
+                      stars={u.walletStars}
+                      ton={u.walletTon}
+                    />
+                  </td>
+                  <td>
+                    <span className={adminVerifyClass(u.verificationStatus)}>
+                      {adminVerifyLabel(u.verificationStatus)}
+                    </span>
+                  </td>
+                  <td>
+                    <span className={`admin-badge ${u.isActive === false ? 'admin-badge--error' : 'admin-badge--info'}`}>
+                      {u.isActive === false ? 'مسدود' : 'فعال'}
+                    </span>
+                  </td>
+                  <td>
+                    <div className="admin-row-actions">
+                      <button
+                        type="button"
+                        className="admin-btn admin-btn--ghost"
+                        disabled={busyId === u.id}
+                        onClick={() => setCredit({ userId: u.id, amount: '10000', currency: 'toman' })}
+                      >
+                        اعتبار
+                      </button>
+                      <button
+                        type="button"
+                        className={`admin-btn ${u.isActive === false ? 'admin-btn--primary' : 'admin-btn--danger'}`}
+                        disabled={busyId === u.id}
+                        onClick={() => void toggleBan(u)}
+                      >
+                        {u.isActive === false ? 'رفع مسدودی' : 'مسدود'}
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+            {!users.length ? <tr><td colSpan={11} className="admin-muted">کاربری یافت نشد</td></tr> : null}
+          </tbody>
+        </table>
+      </div>
       {credit ? (
         <div className="admin-modal"><div className="admin-modal-card">
           <h3>واریز / برداشت کیف پول</h3>
