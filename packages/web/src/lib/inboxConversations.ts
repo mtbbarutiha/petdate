@@ -84,12 +84,12 @@ function sortInbox(items: InboxConversation[]): InboxConversation[] {
 
 /**
  * Collapse duplicate ongoing AI provider rows in polluted DBs
- * (same peer title + serviceKind — e.g. many «پاشا یزدانی» / دستیار هوشمند).
+ * (same peer title + serviceKind — e.g. many «پاشا یزدانی» / legacy دستیار names).
  * Keeps the newest by lastActivityAt.
  */
 function collapseDuplicateAiInboxRows(items: InboxConversation[]): InboxConversation[] {
   const aiTitle =
-    /^(پاشا یزدانی|دستیار هوشمند پت‌دیت)$/;
+    /^(پاشا یزدانی|دستیار هوشمند پت‌دیت|دستیار هوشمند پت|دستیار هوشمند)$/;
   const seen = new Map<string, InboxConversation>();
   const out: InboxConversation[] = [];
   for (const item of sortInbox(items)) {
@@ -99,7 +99,8 @@ function collapseDuplicateAiInboxRows(items: InboxConversation[]): InboxConversa
       item.direction === 'outgoing' &&
       aiTitle.test(item.title.trim())
     ) {
-      const key = `ai:${item.serviceKind ?? 'vet'}:${item.title.trim()}`;
+      // Collapse legacy + new titles into one bucket per serviceKind.
+      const key = `ai:${item.serviceKind ?? 'vet'}`;
       if (seen.has(key)) continue;
       seen.set(key, item);
     }

@@ -309,7 +309,7 @@ consultationsRouter.post('/quick-connect', async (req, res) => {
             message:
               serviceKind === 'trainer'
                 ? `گفتگو با ${AI_TRAINER_DISPLAY_NAME} (مربی آنلاین) شروع شد (بدون کسر سکه).`
-                : 'دامپزشک انسانی آنلاین نبود — چت با دستیار هوشمند شروع شد (بدون کسر سکه).',
+                : `دامپزشک انسانی آنلاین نبود — چت با ${AI_TRAINER_DISPLAY_NAME} شروع شد (بدون کسر سکه).`,
           });
           return;
         }
@@ -465,7 +465,7 @@ consultationsRouter.get('/:id', (req, res) => {
     res.status(404).json({ error: 'مشاوره پیدا نشد' });
     return;
   }
-  res.json(consultation);
+  res.json(decorateAiConsultDisplay(consultation));
 });
 
 consultationsRouter.post('/', (req, res) => {
@@ -587,7 +587,7 @@ consultationsRouter.post('/:id/accept', async (req, res) => {
     return;
   }
   if (consult.status === 'active') {
-    res.json(consult);
+    res.json(decorateAiConsultDisplay(consult));
     return;
   }
   if (consult.status === 'expired') {
@@ -630,7 +630,7 @@ consultationsRouter.post('/:id/accept', async (req, res) => {
   notifyVetThread(updated.id, [updated.vetUserId, updated.patientUserId], {
     status: 'active',
   });
-  res.json(updated);
+  res.json(decorateAiConsultDisplay(updated));
 });
 
 consultationsRouter.post('/:id/reject', (req, res) => {
@@ -1090,7 +1090,8 @@ consultationsRouter.post('/:id/end-chat', async (req, res) => {
     chatSecure: false,
     wasSecure,
   });
-  res.json({ ok: true, consultation: updated, wasSecure });
+  const ended = updated ?? gate.consult;
+  res.json({ ok: true, consultation: decorateAiConsultDisplay(ended), wasSecure });
 });
 
 consultationsRouter.patch('/:id/chat-secure', async (req, res) => {

@@ -423,7 +423,7 @@ function isAiPeerTelegramId(id: string | undefined | null): boolean {
 }
 
 /**
- * Patient enters sticky ReplyKeyboard chat with AI (پاشا / دستیار).
+ * Patient enters sticky ReplyKeyboard chat with AI (پاشا یزدانی).
  * Opening greeting was already sent by the API; this only arms the session.
  */
 export async function enterAiConsultChatAsPatient(
@@ -446,11 +446,8 @@ export async function enterAiConsultChatAsPatient(
 
   const serviceKind: ConsultServiceKind = current.serviceKind ?? 'vet';
   const providerLabel =
-    serviceKind === 'trainer' ? 'پاشا یزدانی' : providerChatLabel(serviceKind);
-  const displayName =
-    serviceKind === 'trainer'
-      ? 'پاشا یزدانی'
-      : aiProvider.name?.trim() || 'دستیار هوشمند پت‌دیت';
+    serviceKind === 'trainer' ? 'مربی آنلاین' : providerChatLabel(serviceKind);
+  const displayName = 'پاشا یزدانی';
 
   await upsertSession(String(patient.telegramId), {
     step: 'vet_chat',

@@ -66,8 +66,14 @@ export function speciesLabelFa(species?: string | null): string {
 
 const AI_TELEGRAM_ID = 'petdate_ai_assistant';
 
-/** نام نمایشی مربی آنلاین (وقتی مربی دیگری آزاد نیست) */
+/**
+ * Canonical public display name for the AI assistant
+ * (trainer fallback + vet fallback + related UI).
+ * Keep telegram id `petdate_ai_assistant` as the internal identity.
+ */
 export const AI_TRAINER_DISPLAY_NAME = 'پاشا یزدانی';
+/** Alias — same person everywhere users/admins see the AI assistant. */
+export const AI_ASSISTANT_DISPLAY_NAME = AI_TRAINER_DISPLAY_NAME;
 
 export function aiAssistantTelegramId(): string {
   return AI_TELEGRAM_ID;
@@ -103,7 +109,7 @@ function systemPrompt(kind: AiConsultKind): string {
       'کمک کن کاربر بفهمد چطور: ورود OTP، ثبت پت، همبازی، مربی، پرستار، دامپزشک، شاپ، کیف پول/سکه، و اتصال وب↔ربات کار می‌کند.',
       'اگر مشکل فنی حل نشد بگو از ربات تلگرام پت‌دیت یا ادمین پیگیری کنند.',
       'تشخیص پزشکی یا تجویز دارو نده؛ برای درمان به دامپزشک ارجاع بده.',
-      'وانمود نکن انسان هستی؛ بگو دستیار پشتیبانی پت‌دیت هستی.',
+      `اگر پرسیدند کی هستی بگو ${AI_TRAINER_DISPLAY_NAME} از پشتیبانی پت‌دیت هستی.`,
     ].join('\n');
   }
   if (kind === 'trainer') {
@@ -128,12 +134,12 @@ function systemPrompt(kind: AiConsultKind): string {
     ].join('\n');
   }
   return [
-    'تو دستیار هوشمند مشاوره دامپزشکی عمومی در پلتفرم پت‌دیت هستی.',
+    `تو ${AI_TRAINER_DISPLAY_NAME} هستی؛ مشاوره دامپزشکی عمومی در پلتفرم پت‌دیت می‌دهی.`,
     'به فارسی، کوتاه، شفاف و محتاط پاسخ بده.',
     'در پاسخ فارسی از DOG/CAT یا کد انگلیسی گونه استفاده نکن؛ بگو سگ یا گربه.',
     'راهنمایی عمومی مراقبت، تغذیه، پیشگیری و زمان مراجعه به دامپزشک بده.',
     'تشخیص قطعی نده؛ نسخه دارو ننویس؛ در علائم خطرناک فوری به مراجعه حضوری تأکید کن.',
-    'واضح بگو که جایگزین دامپزشک آنلاین/حضوری نیستی و وقتی پزشک آنلاین باشد اتصال انسانی اولویت دارد.',
+    `اگر پرسیدند کی هستی بگو ${AI_TRAINER_DISPLAY_NAME} هستی. واضح بگو جایگزین دامپزشک آنلاین/حضوری نیستی و وقتی پزشک آنلاین باشد اتصال انسانی اولویت دارد.`,
   ].join('\n');
 }
 
@@ -1094,7 +1100,7 @@ function supportTopicHint(message: string): string | null {
     return [
       `دامپزشک:`,
       `• منو → مشاوره سریع / پنل دامپزشک`,
-      `• اگر پزشک آنلاین نباشد دستیار هوشمند پاسخ اولیه می‌دهد`,
+      `• اگر پزشک آنلاین نباشد ${AI_TRAINER_DISPLAY_NAME} پاسخ اولیه می‌دهد`,
       `• اورژانس = مراجعه حضوری فوری، نه چت`,
     ].join('\n');
   }
@@ -1251,7 +1257,7 @@ export function offlineAiAdvice(ctx: AiConsultContext): string {
     return withTone(greet);
   }
   return [
-    `👋 من دستیار هوشمند پت‌دیت هستم (دامپزشک انسانی الان آنلاین نیست).`,
+    `👋 من ${AI_TRAINER_DISPLAY_NAME} هستم (دامپزشک انسانی الان آنلاین نیست).`,
     ``,
     `برای ${pet} چند نکتهٔ عمومی:`,
     `• آب تازه و غذای متناسب با سن/گونه`,

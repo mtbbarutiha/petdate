@@ -237,9 +237,9 @@ export async function handleQuickVet(ctx: Context): Promise<void> {
     if (result.ok && result.aiFallback) {
       await ctx.reply(
         [
-          '🤖 <b>دستیار هوشمند پت‌دیت</b>',
+          '🩺 <b>پاشا یزدانی</b>',
           '',
-          'دامپزشک انسانی آنلاین نبود — چت هوشمند رایگان شروع شد.',
+          'دامپزشک انسانی آنلاین نبود — چت رایگان با پاشا یزدانی شروع شد.',
           '',
           result.message,
           result.advice ? '\n' + result.advice.slice(0, 3500) : '',
@@ -267,7 +267,7 @@ export async function handleQuickVet(ctx: Context): Promise<void> {
       [
         '⚡ <b>مشاوره سریع با پزشک</b>',
         '',
-        result.ok === false ? result.error : 'الان دامپزشک آنلاین نیست و دستیار هوشمند هم در دسترس نبود.',
+        result.ok === false ? result.error : 'الان دامپزشک آنلاین نیست و پاشا یزدانی هم در دسترس نبود.',
         '',
         `موجودی تو: <b>${formatNum(balance)}</b> سکه`,
       ].join('\n'),
@@ -406,12 +406,12 @@ export async function handleQuickVetConnect(
   }
 
   await ctx.answerCallbackQuery({
-    text: result.aiFallback ? 'دستیار هوشمند شروع شد' : 'درخواست ارسال شد',
+    text: result.aiFallback ? 'پاشا یزدانی شروع شد' : 'درخواست ارسال شد',
   });
   if (result.aiFallback) {
     await ctx.reply(
       [
-        '🤖 <b>دستیار هوشمند پت‌دیت</b>',
+        '🩺 <b>پاشا یزدانی</b>',
         '',
         result.message,
         result.advice ? '\n' + result.advice.slice(0, 3500) : '',

@@ -34,6 +34,7 @@ import {
 } from '../services/mail-inbox';
 import { rateLimit } from '../middleware/rate-limit';
 import { publicPdfOrigin, publicWebOrigin } from '../services/prescription-html';
+import { decorateAiConsultDisplay } from '../services/ai-consult-session';
 
 export const adminRouter = Router();
 const STARTED_AT = Date.now();
@@ -87,7 +88,10 @@ adminRouter.get('/dashboard', (_req, res) => {
     stats: adminPlatform.getDashboardStats(),
     recentPets: dbService.listPets().slice(0, 8),
     recentPlaydates: dbService.listPlaydateRequests().slice(0, 8),
-    recentConsults: dbService.listVetConsultations({ all: true }).slice(0, 8),
+    recentConsults: dbService
+      .listVetConsultations({ all: true })
+      .slice(0, 8)
+      .map(decorateAiConsultDisplay),
     recentShopOrders: adminPlatform.listShopOrders({ limit: 8 }),
   });
 });
@@ -189,10 +193,12 @@ adminRouter.patch('/playdates/:id/status', (req, res) => {
 
 adminRouter.get('/consultations', (req, res) => {
   const status = typeof req.query.status === 'string' ? req.query.status : undefined;
-  const items = dbService.listVetConsultations({
-    all: true,
-    ...(status ? { status: status as never } : {}),
-  });
+  const items = dbService
+    .listVetConsultations({
+      all: true,
+      ...(status ? { status: status as never } : {}),
+    })
+    .map(decorateAiConsultDisplay);
   res.json({ total: items.length, consultations: items });
 });
 
@@ -201,7 +207,7 @@ adminRouter.patch('/consultations/:id/status', (req, res) => {
   const status = String(req.body?.status || '');
   const updated = dbService.updateVetConsultationStatus(id, status as never);
   if (!updated) { res.status(404).json({ error: 'مشاوره پیدا نشد' }); return; }
-  res.json(updated);
+  res.json(decorateAiConsultDisplay(updated));
 });
 
 adminRouter.get('/payments', (req, res) => {

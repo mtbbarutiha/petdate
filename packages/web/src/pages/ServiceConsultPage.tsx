@@ -372,7 +372,7 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
             ? meta.providerHint
             : kind === 'trainer'
               ? `هزینه اتصال انسانی ${formatCoins(cost)} سکه · اگر مربی آزاد نباشد پاشا یزدانی (مربی آنلاین) رایگان پاسخ می‌دهد`
-              : `هزینه اتصال انسانی ${formatCoins(cost)} سکه · اگر آنلاین نباشد دستیار هوشمند رایگان پاسخ می‌دهد`}
+              : `هزینه اتصال انسانی ${formatCoins(cost)} سکه`}
         </p>
         {meta.disclaimer && !isProvider ? <p className="muted">{meta.disclaimer}</p> : null}
       </header>

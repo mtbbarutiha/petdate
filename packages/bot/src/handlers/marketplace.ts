@@ -225,7 +225,7 @@ async function runQuickConnect(
     const title =
       kind === 'trainer'
         ? '🎓 پاشا یزدانی — مربی آنلاین پت‌دیت'
-        : '🤖 دستیار هوشمند پت‌دیت';
+        : '🩺 پاشا یزدانی';
     await ctx.reply(
       [title, result.message, result.advice ? '\n' + result.advice.slice(0, 3500) : '']
         .filter(Boolean)

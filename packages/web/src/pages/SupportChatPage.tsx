@@ -70,7 +70,7 @@ export function SupportChatPage() {
               <LifeBuoy size={22} style={{ verticalAlign: 'middle', marginLeft: 8 }} />
               چت با پشتیبانی
             </h1>
-            <p>دستیار هوشمند پت‌دیت راهنمایی‌ات می‌کند.</p>
+            <p>پاشا یزدانی راهنمایی‌ات می‌کند.</p>
           </div>
         </header>
         <p className="pepito-support-gate">
@@ -92,7 +92,7 @@ export function SupportChatPage() {
             <LifeBuoy size={22} style={{ verticalAlign: 'middle', marginLeft: 8 }} />
             چت با پشتیبانی
           </h1>
-          <p>دستیار هوشمند — ورود، پت، همبازی، مربی، دامپزشک، شاپ و سکه</p>
+          <p>پاشا یزدانی — ورود، پت، همبازی، مربی، دامپزشک، شاپ و سکه</p>
         </div>
       </header>
 
