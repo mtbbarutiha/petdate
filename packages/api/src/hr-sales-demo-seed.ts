@@ -85,6 +85,10 @@ export function ensureSystemRolePermissionBackfill(): void {
   merge('sales_manager', ['sales.read', 'sales.write', 'sales.admin']);
   merge('hr_admin', ['hr.read', 'hr.write']);
   merge('recruiter', ['hr.read', 'hr.write']);
+  merge('crm_agent', ['crm.read', 'crm.write', 'loyalty.read']);
+  merge('crm_lead', ['crm.read', 'crm.write', 'crm.admin', 'loyalty.read', 'loyalty.write']);
+  merge('crm_manager', ['crm.read', 'crm.write', 'crm.admin', 'loyalty.read', 'loyalty.write']);
+  merge('support', ['support.inbox', 'platform.read', 'hr.read', 'crm.read', 'crm.write', 'loyalty.read']);
 }
 
 function employeeByCode(code: string) {

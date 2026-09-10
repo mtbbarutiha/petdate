@@ -35,6 +35,9 @@ export const ADMIN_PANEL_ROLE_LABELS: Record<string, string> = {
   sales_agent: 'کارشناس فروش',
   sales_lead: 'سرپرست فروش',
   sales_manager: 'مدیر فروش',
+  crm_agent: 'کارشناس امور مشتریان',
+  crm_lead: 'سرپرست امور مشتریان',
+  crm_manager: 'مدیر باشگاه مشتریان',
 };
 
 /** Permission claims — add new keys as modules grow */
@@ -45,6 +48,11 @@ export const ADMIN_PERMISSIONS = [
   'sales.read',
   'sales.write',
   'sales.admin',
+  'crm.read',
+  'crm.write',
+  'crm.admin',
+  'loyalty.read',
+  'loyalty.write',
   'support.inbox',
   'platform.read',
   'platform.write',
@@ -58,6 +66,11 @@ export const ADMIN_PERMISSION_LABELS: Record<AdminPermission, string> = {
   'sales.read': 'فروش — خواندن',
   'sales.write': 'فروش — نوشتن',
   'sales.admin': 'فروش — مدیریت (تخصیص، مالی، تنظیمات)',
+  'crm.read': 'امور مشتریان — خواندن',
+  'crm.write': 'امور مشتریان — نوشتن',
+  'crm.admin': 'امور مشتریان — مدیریت (تخصیص، QA، تنظیمات)',
+  'loyalty.read': 'باشگاه مشتریان / وفاداری — خواندن',
+  'loyalty.write': 'باشگاه مشتریان / وفاداری — نوشتن',
   'support.inbox': 'صندوق پشتیبانی',
   'platform.read': 'پلتفرم — خواندن',
   'platform.write': 'پلتفرم — نوشتن',
@@ -71,11 +84,16 @@ export const ADMIN_ROLE_PERMISSIONS: Record<AdminPanelRole, readonly AdminPermis
     'sales.read',
     'sales.write',
     'sales.admin',
+    'crm.read',
+    'crm.write',
+    'crm.admin',
+    'loyalty.read',
+    'loyalty.write',
     'support.inbox',
     'platform.read',
     'platform.write',
   ],
-  support: ['support.inbox', 'platform.read', 'hr.read'],
+  support: ['support.inbox', 'platform.read', 'hr.read', 'crm.read', 'crm.write'],
 };
 
 export function isKnownAdminPermission(value: string): value is AdminPermission {

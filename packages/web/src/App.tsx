@@ -262,6 +262,17 @@ const AdminSalesTicketsPage = lazy(() => import('./admin/pages/sales/AdminSalesP
 const AdminSalesCallsPage = lazy(() => import('./admin/pages/sales/AdminSalesPages').then((m) => ({ default: m.AdminSalesCallsPage })));
 const AdminSalesReportsPage = lazy(() => import('./admin/pages/sales/AdminSalesPages').then((m) => ({ default: m.AdminSalesReportsPage })));
 const AdminSalesSettingsPage = lazy(() => import('./admin/pages/sales/AdminSalesPages').then((m) => ({ default: m.AdminSalesSettingsPage })));
+const AdminCrmDashboardPage = lazy(() => import('./admin/pages/crm/AdminCrmDashboardPage').then((m) => ({ default: m.AdminCrmDashboardPage })));
+const AdminCrmInboxPage = lazy(() => import('./admin/pages/crm/AdminCrmPages').then((m) => ({ default: m.AdminCrmInboxPage })));
+const AdminCrmCustomersPage = lazy(() => import('./admin/pages/crm/AdminCrmPages').then((m) => ({ default: m.AdminCrmCustomersPage })));
+const AdminCrmCustomerDetailPage = lazy(() => import('./admin/pages/crm/AdminCrmPages').then((m) => ({ default: m.AdminCrmCustomerDetailPage })));
+const AdminCrmExperiencePage = lazy(() => import('./admin/pages/crm/AdminCrmPages').then((m) => ({ default: m.AdminCrmExperiencePage })));
+const AdminCrmCallsPage = lazy(() => import('./admin/pages/crm/AdminCrmPages').then((m) => ({ default: m.AdminCrmCallsPage })));
+const AdminCrmCasesPage = lazy(() => import('./admin/pages/crm/AdminCrmPages').then((m) => ({ default: m.AdminCrmCasesPage })));
+const AdminCrmSmsPage = lazy(() => import('./admin/pages/crm/AdminCrmPages').then((m) => ({ default: m.AdminCrmSmsPage })));
+const AdminCrmQaPage = lazy(() => import('./admin/pages/crm/AdminCrmPages').then((m) => ({ default: m.AdminCrmQaPage })));
+const AdminCrmReportsPage = lazy(() => import('./admin/pages/crm/AdminCrmPages').then((m) => ({ default: m.AdminCrmReportsPage })));
+const AdminCrmSettingsPage = lazy(() => import('./admin/pages/crm/AdminCrmPages').then((m) => ({ default: m.AdminCrmSettingsPage })));
 
 
 function RouteFallback() {
@@ -380,6 +391,17 @@ export default function App() {
                 <Route path="sales/calls" element={<AdminSalesCallsPage />} />
                 <Route path="sales/reports" element={<AdminSalesReportsPage />} />
                 <Route path="sales/settings" element={<AdminSalesSettingsPage />} />
+                <Route path="crm" element={<AdminCrmDashboardPage />} />
+                <Route path="crm/inbox" element={<AdminCrmInboxPage />} />
+                <Route path="crm/customers" element={<AdminCrmCustomersPage />} />
+                <Route path="crm/customers/:id" element={<AdminCrmCustomerDetailPage />} />
+                <Route path="crm/experience" element={<AdminCrmExperiencePage />} />
+                <Route path="crm/calls" element={<AdminCrmCallsPage />} />
+                <Route path="crm/cases" element={<AdminCrmCasesPage />} />
+                <Route path="crm/sms" element={<AdminCrmSmsPage />} />
+                <Route path="crm/qa" element={<AdminCrmQaPage />} />
+                <Route path="crm/reports" element={<AdminCrmReportsPage />} />
+                <Route path="crm/settings" element={<AdminCrmSettingsPage />} />
 
               </Route>
             </Route>
