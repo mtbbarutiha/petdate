@@ -37,6 +37,11 @@ import { publicPdfOrigin, publicWebOrigin } from '../services/prescription-html'
 import { decorateAiConsultDisplay } from '../services/ai-consult-session';
 import { requireAdminAuth } from '../admin-auth';
 import { actorHasPermission, resolveAdminActor } from '../hr-service';
+import {
+  listAdminHeaderNotifications,
+  markAdminHeaderNotificationRead,
+  markAllAdminHeaderNotificationsRead,
+} from '../admin-notifications';
 import { hrAdminRouter } from './admin-hr';
 import { salesAdminRouter } from './admin-sales';
 import { crmAdminRouter } from './admin-crm';
@@ -100,7 +105,8 @@ adminRouter.use((req, res, next) => {
     req.path === '/auth/login' ||
     req.path.startsWith('/hr') ||
     req.path.startsWith('/sales') ||
-    req.path.startsWith('/crm')
+    req.path.startsWith('/crm') ||
+    req.path.startsWith('/notifications')
   ) {
     next();
     return;
@@ -120,6 +126,41 @@ adminRouter.use((req, res, next) => {
 adminRouter.use('/hr', hrAdminRouter);
 adminRouter.use('/sales', salesAdminRouter);
 adminRouter.use('/crm', crmAdminRouter);
+
+/** Header bell — any logged-in admin; items filtered by module permission. */
+adminRouter.get('/notifications', async (req, res) => {
+  const actor = req.adminActor;
+  if (!actor) {
+    res.status(401).json({ error: 'دسترسی ادمین مجاز نیست' });
+    return;
+  }
+  res.json(await listAdminHeaderNotifications(actor));
+});
+
+adminRouter.post('/notifications/read-all', (req, res) => {
+  const actor = req.adminActor;
+  if (!actor) {
+    res.status(401).json({ error: 'دسترسی ادمین مجاز نیست' });
+    return;
+  }
+  res.json(markAllAdminHeaderNotificationsRead(actor));
+});
+
+adminRouter.post('/notifications/:id/read', (req, res) => {
+  const actor = req.adminActor;
+  if (!actor) {
+    res.status(401).json({ error: 'دسترسی ادمین مجاز نیست' });
+    return;
+  }
+  const id = decodeURIComponent(String(req.params.id || ''));
+  const result = markAdminHeaderNotificationRead(actor, id);
+  if (!result.ok) {
+    res.status(result.error === 'سطح دسترسی کافی نیست' ? 403 : 404).json({ error: result.error });
+    return;
+  }
+  res.json({ ok: true });
+});
+
 adminRouter.get('/dashboard', (_req, res) => {
   res.json({
     generatedAt: new Date().toISOString(),
