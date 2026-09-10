@@ -33,6 +33,28 @@ function apiKey(): string {
   return (process.env.CANDOO_API_KEY || '').trim();
 }
 
+/** Admin SMS panel polls balance on every page load — keep this short so nginx never 502s. */
+export const CANDOO_BALANCE_TIMEOUT_MS = 4_000;
+/** Send/OTP can wait a bit longer, but must not hang for minutes on a dead provider. */
+export const CANDOO_SEND_TIMEOUT_MS = 15_000;
+
+async function candooFetch(url: string, init: RequestInit, timeoutMs: number): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+function isAbortError(err: unknown): boolean {
+  return (
+    (err instanceof Error && err.name === 'AbortError') ||
+    (typeof DOMException !== 'undefined' && err instanceof DOMException && err.name === 'AbortError')
+  );
+}
+
 function srcNumbers(): string[] {
   const raw = process.env.CANDOO_SRC_NUMBERS || '';
   return raw
@@ -154,14 +176,18 @@ export async function candooSend(items: CandooSendItem[]): Promise<CandooSendRes
   const payload = buildSendPayload(items);
 
   try {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': key,
+    const res = await candooFetch(
+      url,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': key,
+        },
+        body: JSON.stringify(payload),
       },
-      body: JSON.stringify(payload),
-    });
+      CANDOO_SEND_TIMEOUT_MS
+    );
     const text = await res.text();
     let raw: unknown = text;
     try {
@@ -195,12 +221,14 @@ export async function candooSend(items: CandooSendItem[]): Promise<CandooSendRes
       };
     }
     return { ok: true, status: res.status, raw };
-  } catch {
+  } catch (err) {
     return {
       ok: false,
       status: 0,
       raw: null,
-      error: 'ارتباط با سرویس پیامک برقرار نشد. کمی بعد دوباره تلاش کن.',
+      error: isAbortError(err)
+        ? 'سرویس پیامک پاسخ نداد (timeout). کمی بعد دوباره تلاش کن.'
+        : 'ارتباط با سرویس پیامک برقرار نشد. کمی بعد دوباره تلاش کن.',
     };
   }
 }
@@ -302,10 +330,14 @@ export async function candooBalance(): Promise<{
   }
   const url = `${apiBase()}/api/v3.0.1/balance`;
   try {
-    const res = await fetch(url, {
-      method: 'GET',
-      headers: { 'x-api-key': key },
-    });
+    const res = await candooFetch(
+      url,
+      {
+        method: 'GET',
+        headers: { 'x-api-key': key },
+      },
+      CANDOO_BALANCE_TIMEOUT_MS
+    );
     const text = await res.text();
     if (!res.ok) {
       return {
@@ -326,7 +358,11 @@ export async function candooBalance(): Promise<{
     return {
       ok: false,
       status: 0,
-      error: err instanceof Error ? err.message : 'خطای شبکه Candoo',
+      error: isAbortError(err)
+        ? `Candoo timeout (${CANDOO_BALANCE_TIMEOUT_MS}ms)`
+        : err instanceof Error
+          ? err.message
+          : 'خطای شبکه Candoo',
     };
   }
 }
