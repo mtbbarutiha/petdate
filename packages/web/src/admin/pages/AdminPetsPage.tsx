@@ -4,6 +4,7 @@ import { petPublicIdOf, type PetProfile } from '@petdate/shared';
 import { adminFetch, formatNumFa } from '../api';
 import { resolvePublicMediaUrl } from '../../lib/api';
 import { EMPTY_STATE_PHOTO } from '../../data/petImages';
+import { AdminIdChip } from '../AdminIds';
 
 function adminPetThumbSrc(pet: PetProfile): string {
   return (
@@ -34,7 +35,7 @@ export function AdminPetsPage() {
   };
   return (
     <div className="admin-page">
-      <header className="admin-header"><div><h1>مدیریت پت‌ها</h1><p>{formatNumFa(total)} پت</p></div></header>
+      <header className="admin-header"><div><h1>مدیریت پت‌ها</h1><p>{formatNumFa(total)} پت · جدول pets</p></div></header>
       <div className="admin-toolbar">
         <div className="admin-search"><Search size={16} /><input placeholder="نام، آیدی PD-P، نژاد، شهر…" value={q} onChange={(e) => setQ(e.target.value)} /></div>
         <select className="admin-select" value={species} onChange={(e) => setSpecies(e.target.value)}>
@@ -44,7 +45,7 @@ export function AdminPetsPage() {
       </div>
       {error ? <p className="admin-error">{error}</p> : null}
       <div className="admin-table-wrap admin-card"><table className="admin-table">
-        <thead><tr><th>عکس</th><th>آیدی</th><th>نام</th><th>گونه</th><th>مالک</th><th>شهر</th><th></th></tr></thead>
+        <thead><tr><th>عکس</th><th>آیدی پت</th><th>نام</th><th>گونه / نژاد</th><th>سن / جنسیت</th><th>مالک</th><th>شهر</th><th></th></tr></thead>
         <tbody>
           {pets.map((pet) => {
             const publicId = petPublicIdOf(pet);
@@ -64,18 +65,23 @@ export function AdminPetsPage() {
                   />
                 </td>
                 <td>
-                  <code className="admin-mono" dir="ltr">{publicId}</code>
-                  <div className="admin-muted admin-mono">#{pet.id}</div>
+                  <AdminIdChip publicId={publicId} numericId={pet.id} />
                 </td>
                 <td><strong>{pet.name}</strong></td>
                 <td>{pet.species} · {pet.breed || '—'}</td>
-                <td className="admin-mono">#{pet.ownerId}</td>
+                <td className="admin-muted">
+                  {[
+                    pet.ageMonths != null ? `${Math.round(pet.ageMonths / 12)}س` : null,
+                    pet.gender || null,
+                  ].filter(Boolean).join(' · ') || '—'}
+                </td>
+                <td className="admin-mono" dir="ltr">#{pet.ownerId}</td>
                 <td>{pet.city || '—'}</td>
                 <td><button type="button" className="admin-btn admin-btn--danger" onClick={() => void remove(pet)}><Trash2 size={14} /></button></td>
               </tr>
             );
           })}
-          {!pets.length ? <tr><td colSpan={7} className="admin-muted">پتی یافت نشد</td></tr> : null}
+          {!pets.length ? <tr><td colSpan={8} className="admin-muted">پتی یافت نشد</td></tr> : null}
         </tbody>
       </table></div>
     </div>

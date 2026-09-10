@@ -66,7 +66,7 @@ export function AdminLayout() {
           <div className="admin-brand">
             <AdminWordmark />
           </div>
-          <nav className="admin-nav">
+          <nav className="admin-nav" aria-label="منوی ادمین">
             {NAV_GROUPS.map((group) => (
               <div key={group.title} className="admin-nav-group">
                 <div className="admin-nav-group-title">{group.title}</div>
@@ -97,13 +97,13 @@ export function AdminLayout() {
                 <Menu size={18} />
               </button>
               <div>
-                <p className="admin-topbar-eyebrow">کنسول عملیات PetDate</p>
+                <p className="admin-topbar-eyebrow">Pet Date · کنسول عملیات</p>
                 <h1 className="admin-topbar-title">{pageTitle}</h1>
               </div>
             </div>
             <div className="admin-topbar-end">
               <span className="admin-topbar-chip">RTL · fa</span>
-              <span className="admin-topbar-chip admin-topbar-chip--mint">live</span>
+              <span className="admin-topbar-chip admin-topbar-chip--mint admin-live-pulse">live DB</span>
             </div>
           </header>
           <Outlet />
