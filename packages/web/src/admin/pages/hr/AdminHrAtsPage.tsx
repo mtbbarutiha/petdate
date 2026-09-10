@@ -7,7 +7,7 @@ import {
   HR_JOB_BOARDS,
   isHrCallNoContact,
 } from '@petdate/shared';
-import { adminFetch, formatNumFa } from '../../api';
+import { adminFetch, formatNumFa, formatTomanFa } from '../../api';
 import { adminCan } from '../../auth';
 import { AdminModal } from '../../AdminModal';
 import {
@@ -88,8 +88,11 @@ export function AdminHrAtsPage() {
     title: '',
     department: '',
     jobBoard: '',
+    postingCost: '',
   });
   const [openingPostedAt, setOpeningPostedAt] = useState<JalaliDateValue>(null);
+  const [openingReceiptFile, setOpeningReceiptFile] = useState<File | null>(null);
+  const [openingReceiptUrl, setOpeningReceiptUrl] = useState('');
   const [candidateForm, setCandidateForm] = useState({
     firstName: '',
     lastName: '',
@@ -127,8 +130,10 @@ export function AdminHrAtsPage() {
 
   const openNewOpening = () => {
     setEditingOpeningId(null);
-    setOpeningForm({ title: '', department: '', jobBoard: '' });
+    setOpeningForm({ title: '', department: '', jobBoard: '', postingCost: '' });
     setOpeningPostedAt(currentJalaliParts());
+    setOpeningReceiptFile(null);
+    setOpeningReceiptUrl('');
     setOpeningModal(true);
   };
 
@@ -138,8 +143,11 @@ export function AdminHrAtsPage() {
       title: o.title,
       department: o.department || '',
       jobBoard: o.jobBoard || '',
+      postingCost: o.postingCost > 0 ? String(o.postingCost) : '',
     });
     setOpeningPostedAt(gregorianIsoToJalaliParts(o.postedAt || o.createdAt));
+    setOpeningReceiptFile(null);
+    setOpeningReceiptUrl(o.paymentReceiptUrl || '');
     setOpeningModal(true);
   };
 
@@ -157,27 +165,43 @@ export function AdminHrAtsPage() {
     }
     setBusy(true);
     try {
+      const costRaw = openingForm.postingCost.replace(/[^\d]/g, '');
+      const postingCost = costRaw ? Number(costRaw) : 0;
       const body = {
         title: openingForm.title.trim(),
         department: openingForm.department.trim(),
         jobBoard: openingForm.jobBoard,
         postedAt,
+        postingCost: Number.isFinite(postingCost) ? postingCost : 0,
+        paymentReceiptUrl: openingReceiptUrl || undefined,
       };
+      let openingId = editingOpeningId;
       if (editingOpeningId != null) {
         await adminFetch(`/api/admin/hr/ats/openings/${editingOpeningId}`, {
           method: 'PATCH',
           body: JSON.stringify(body),
         });
       } else {
-        await adminFetch('/api/admin/hr/ats/openings', {
+        const created = await adminFetch<{ opening: HrJobOpening }>('/api/admin/hr/ats/openings', {
           method: 'POST',
           body: JSON.stringify(body),
+        });
+        openingId = created.opening.id;
+      }
+      if (openingReceiptFile && openingId != null) {
+        const fd = new FormData();
+        fd.append('file', openingReceiptFile);
+        await adminFetch(`/api/admin/hr/ats/openings/${openingId}/receipt`, {
+          method: 'POST',
+          body: fd,
         });
       }
       setOpeningModal(false);
       setEditingOpeningId(null);
-      setOpeningForm({ title: '', department: '', jobBoard: '' });
+      setOpeningForm({ title: '', department: '', jobBoard: '', postingCost: '' });
       setOpeningPostedAt(null);
+      setOpeningReceiptFile(null);
+      setOpeningReceiptUrl('');
       setError(null);
       await load();
     } catch (err) {
@@ -551,6 +575,8 @@ export function AdminHrAtsPage() {
                     <th>دپارتمان</th>
                     <th>جاب برد</th>
                     <th>تاریخ درج</th>
+                    <th>هزینه درج</th>
+                    <th>رسید</th>
                     <th>وضعیت</th>
                     <th>ظرفیت</th>
                     <th />
@@ -559,7 +585,7 @@ export function AdminHrAtsPage() {
                 <tbody>
                   {openings.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="admin-empty">
+                      <td colSpan={9} className="admin-empty">
                         آگهی‌ای نیست
                       </td>
                     </tr>
@@ -570,6 +596,35 @@ export function AdminHrAtsPage() {
                         <td>{o.department || '—'}</td>
                         <td>{o.jobBoard || '—'}</td>
                         <td>{formatAdminFaDate(o.postedAt || o.createdAt) || '—'}</td>
+                        <td>{o.postingCost > 0 ? formatTomanFa(o.postingCost) : '—'}</td>
+                        <td>
+                          {o.paymentReceiptUrl ? (
+                            <a
+                              className="admin-link"
+                              href={o.paymentReceiptUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              {/\.(png|jpe?g|gif|webp)(\?|$)/i.test(o.paymentReceiptUrl) ? (
+                                <img
+                                  src={o.paymentReceiptUrl}
+                                  alt="رسید پرداخت"
+                                  style={{
+                                    width: 40,
+                                    height: 40,
+                                    objectFit: 'cover',
+                                    borderRadius: 6,
+                                    display: 'block',
+                                  }}
+                                />
+                              ) : (
+                                'مشاهده رسید'
+                              )}
+                            </a>
+                          ) : (
+                            '—'
+                          )}
+                        </td>
                         <td>
                           <span className={stagePillClass(o.status)}>{o.status}</span>
                         </td>
@@ -959,6 +1014,52 @@ export function AdminHrAtsPage() {
           yearsBack={5}
           yearsForward={1}
         />
+        <label>
+          <span className="form-label">هزینه درج آگهی (تومان)</span>
+          <input
+            className="form-input"
+            type="text"
+            inputMode="numeric"
+            dir="ltr"
+            placeholder="مثلاً 2500000"
+            value={openingForm.postingCost}
+            onChange={(e) =>
+              setOpeningForm({
+                ...openingForm,
+                postingCost: e.target.value.replace(/[^\d]/g, ''),
+              })
+            }
+          />
+          {openingForm.postingCost ? (
+            <span className="admin-muted" style={{ display: 'block', marginTop: 4 }}>
+              {formatTomanFa(Number(openingForm.postingCost) || 0)}
+            </span>
+          ) : null}
+        </label>
+        <label>
+          <span className="form-label">محل درج رسید پرداخت آگهی</span>
+          <input
+            className="form-input"
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif,application/pdf"
+            onChange={(e) => setOpeningReceiptFile(e.target.files?.[0] ?? null)}
+          />
+          {openingReceiptFile ? (
+            <span className="admin-muted" style={{ display: 'block', marginTop: 4 }}>
+              {openingReceiptFile.name}
+            </span>
+          ) : openingReceiptUrl ? (
+            <a
+              className="admin-link"
+              href={openingReceiptUrl}
+              target="_blank"
+              rel="noreferrer"
+              style={{ display: 'inline-block', marginTop: 6 }}
+            >
+              رسید فعلی
+            </a>
+          ) : null}
+        </label>
       </AdminModal>
 
       <AdminModal

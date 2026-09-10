@@ -14,12 +14,23 @@ import {
   resolveHrAvatarPath,
   saveHrAvatar,
 } from '../services/hr-avatar-store';
+import {
+  MAX_HR_OPENING_RECEIPT_BYTES,
+  mimeFromHrOpeningReceiptKey,
+  resolveHrOpeningReceiptPath,
+  saveHrOpeningReceipt,
+} from '../services/hr-opening-receipt-store';
 
 export const hrAdminRouter = Router();
 
 const hrAvatarUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: MAX_HR_AVATAR_BYTES },
+});
+
+const hrOpeningReceiptUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: MAX_HR_OPENING_RECEIPT_BYTES },
 });
 
 /**
@@ -37,6 +48,21 @@ hrAdminRouter.get('/avatars/:employeeId/:filename', (req, res) => {
   }
   res.setHeader('Cache-Control', 'public, max-age=86400');
   res.type(mimeFromHrAvatarKey(storageKey));
+  fs.createReadStream(abs).pipe(res);
+});
+
+/** Serve job-ad payment receipt (image/PDF) without admin headers. */
+hrAdminRouter.get('/opening-receipts/:openingId/:filename', (req, res) => {
+  const openingId = String(req.params.openingId || '');
+  const filename = String(req.params.filename || '');
+  const storageKey = `${openingId}/${filename}`;
+  const abs = resolveHrOpeningReceiptPath(storageKey);
+  if (!abs || !fs.existsSync(abs)) {
+    res.status(404).json({ error: 'رسید پیدا نشد' });
+    return;
+  }
+  res.setHeader('Cache-Control', 'public, max-age=86400');
+  res.type(mimeFromHrOpeningReceiptKey(storageKey));
   fs.createReadStream(abs).pipe(res);
 });
 
@@ -307,11 +333,21 @@ hrAdminRouter.post('/ats/openings', requirePermission('hr.write'), (req, res) =>
     res.status(400).json({ error: 'عنوان آگهی الزامی است' });
     return;
   }
+  const postingCostRaw = req.body?.postingCost;
+  const postingCost =
+    typeof postingCostRaw === 'number'
+      ? postingCostRaw
+      : typeof postingCostRaw === 'string' && postingCostRaw.trim()
+        ? Number(postingCostRaw.replace(/[^\d.-]/g, ''))
+        : 0;
   const opening = hr.createJobOpening({
     title,
     department: typeof req.body?.department === 'string' ? req.body.department : '',
     jobBoard: typeof req.body?.jobBoard === 'string' ? req.body.jobBoard : '',
     postedAt: typeof req.body?.postedAt === 'string' ? req.body.postedAt : '',
+    postingCost: Number.isFinite(postingCost) ? postingCost : 0,
+    paymentReceiptUrl:
+      typeof req.body?.paymentReceiptUrl === 'string' ? req.body.paymentReceiptUrl : '',
     status: typeof req.body?.status === 'string' ? req.body.status : 'باز',
     openings: typeof req.body?.openings === 'number' ? req.body.openings : 1,
   });
@@ -325,11 +361,21 @@ hrAdminRouter.patch('/ats/openings/:id', requirePermission('hr.write'), (req, re
     return;
   }
   const body = req.body || {};
+  const postingCostRaw = body.postingCost;
+  let postingCost: number | undefined;
+  if (typeof postingCostRaw === 'number') postingCost = postingCostRaw;
+  else if (typeof postingCostRaw === 'string' && postingCostRaw.trim()) {
+    const n = Number(postingCostRaw.replace(/[^\d.-]/g, ''));
+    if (Number.isFinite(n)) postingCost = n;
+  }
   const opening = hr.updateJobOpening(id, {
     title: typeof body.title === 'string' ? body.title : undefined,
     department: typeof body.department === 'string' ? body.department : undefined,
     jobBoard: typeof body.jobBoard === 'string' ? body.jobBoard : undefined,
     postedAt: typeof body.postedAt === 'string' ? body.postedAt : undefined,
+    postingCost,
+    paymentReceiptUrl:
+      typeof body.paymentReceiptUrl === 'string' ? body.paymentReceiptUrl : undefined,
     status: typeof body.status === 'string' ? body.status : undefined,
     openings: typeof body.openings === 'number' ? body.openings : undefined,
   });
@@ -339,6 +385,55 @@ hrAdminRouter.patch('/ats/openings/:id', requirePermission('hr.write'), (req, re
   }
   res.json({ opening });
 });
+
+hrAdminRouter.post(
+  '/ats/openings/:id/receipt',
+  requirePermission('hr.write'),
+  (req, res) => {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id) || !hr.getJobOpening(id)) {
+      res.status(404).json({ error: 'آگهی پیدا نشد' });
+      return;
+    }
+    hrOpeningReceiptUpload.single('file')(req, res, (uploadErr) => {
+      if (uploadErr) {
+        const tooBig =
+          uploadErr instanceof multer.MulterError && uploadErr.code === 'LIMIT_FILE_SIZE';
+        res.status(400).json({
+          error: tooBig ? 'حجم فایل بیش از حد مجاز است' : 'آپلود ناموفق',
+        });
+        return;
+      }
+      try {
+        const file = req.file;
+        if (!file?.buffer?.length) {
+          res.status(400).json({ error: 'فایل ارسال نشده' });
+          return;
+        }
+        const saved = saveHrOpeningReceipt({
+          openingId: id,
+          originalName: file.originalname || 'receipt.jpg',
+          mimeType: file.mimetype,
+          buffer: file.buffer,
+        });
+        const opening = hr.updateJobOpening(id, { paymentReceiptUrl: saved.urlPath });
+        res.json({ opening, url: saved.urlPath });
+      } catch (err) {
+        const msg = (err as Error).message;
+        if (msg === 'INVALID_MIME') {
+          res.status(400).json({ error: 'فرمت فایل مجاز نیست (تصویر یا PDF)' });
+          return;
+        }
+        if (msg === 'FILE_TOO_LARGE') {
+          res.status(400).json({ error: 'حجم فایل بیش از حد مجاز است' });
+          return;
+        }
+        console.warn('hr opening receipt upload failed:', msg);
+        res.status(500).json({ error: 'خطا در ذخیره رسید' });
+      }
+    });
+  }
+);
 
 hrAdminRouter.get('/ats/candidates', (req, res) => {
   const stage = typeof req.query.stage === 'string' ? req.query.stage : undefined;

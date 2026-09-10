@@ -489,6 +489,10 @@ export type HrJobOpening = {
   jobBoard: string;
   /** Gregorian ISO date (YYYY-MM-DD) when the ad was posted */
   postedAt: string;
+  /** Ad posting cost in Toman */
+  postingCost: number;
+  /** Uploaded payment receipt URL/path */
+  paymentReceiptUrl: string;
   status: string;
   openings: number;
   createdAt: string;

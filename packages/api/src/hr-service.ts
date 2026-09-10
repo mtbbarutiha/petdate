@@ -170,6 +170,8 @@ export function ensureHrSchema(): void {
       department TEXT NOT NULL DEFAULT '',
       job_board TEXT NOT NULL DEFAULT '',
       posted_at TEXT NOT NULL DEFAULT '',
+      posting_cost INTEGER NOT NULL DEFAULT 0,
+      payment_receipt_url TEXT NOT NULL DEFAULT '',
       status TEXT NOT NULL DEFAULT 'باز',
       openings INTEGER NOT NULL DEFAULT 1,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -347,6 +349,12 @@ function ensureHrJobOpeningColumns(): void {
   }
   if (!cols.has('posted_at')) {
     d.exec(`ALTER TABLE hr_job_openings ADD COLUMN posted_at TEXT NOT NULL DEFAULT ''`);
+  }
+  if (!cols.has('posting_cost')) {
+    d.exec(`ALTER TABLE hr_job_openings ADD COLUMN posting_cost INTEGER NOT NULL DEFAULT 0`);
+  }
+  if (!cols.has('payment_receipt_url')) {
+    d.exec(`ALTER TABLE hr_job_openings ADD COLUMN payment_receipt_url TEXT NOT NULL DEFAULT ''`);
   }
   // Backfill posted_at from created_at date when empty
   d.prepare(
@@ -1222,6 +1230,8 @@ function mapJobOpening(r: Record<string, unknown>): HrJobOpening {
     department: String(r.department || ''),
     jobBoard: normalizeHrJobBoard(String(r.job_board || '')),
     postedAt: String(r.posted_at || '').slice(0, 10),
+    postingCost: Number(r.posting_cost || 0),
+    paymentReceiptUrl: String(r.payment_receipt_url || ''),
     status: String(r.status || 'باز'),
     openings: Number(r.openings || 1),
     createdAt: String(r.created_at || ''),
@@ -1233,6 +1243,8 @@ export function createJobOpening(input: {
   department?: string;
   jobBoard?: string;
   postedAt?: string;
+  postingCost?: number;
+  paymentReceiptUrl?: string;
   status?: string;
   openings?: number;
 }): HrJobOpening {
@@ -1249,16 +1261,23 @@ export function createJobOpening(input: {
   const postedAt =
     (input.postedAt && String(input.postedAt).slice(0, 10)) ||
     new Date().toISOString().slice(0, 10);
+  const postingCost =
+    typeof input.postingCost === 'number' && Number.isFinite(input.postingCost)
+      ? Math.max(0, Math.round(input.postingCost))
+      : 0;
   const info = db()
     .prepare(
-      `INSERT INTO hr_job_openings (title, department, job_board, posted_at, status, openings)
-       VALUES (?, ?, ?, ?, ?, ?)`
+      `INSERT INTO hr_job_openings (
+        title, department, job_board, posted_at, posting_cost, payment_receipt_url, status, openings
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       input.title.trim(),
       dept,
       jobBoard,
       postedAt,
+      postingCost,
+      (input.paymentReceiptUrl || '').trim(),
       input.status || 'باز',
       input.openings ?? 1
     );
@@ -1273,6 +1292,8 @@ export function updateJobOpening(
     department?: string;
     jobBoard?: string;
     postedAt?: string;
+    postingCost?: number;
+    paymentReceiptUrl?: string;
     status?: string;
     openings?: number;
   }
@@ -1304,6 +1325,14 @@ export function updateJobOpening(
     typeof input.postedAt === 'string' && input.postedAt.trim()
       ? input.postedAt.trim().slice(0, 10)
       : String(existing.posted_at || '').slice(0, 10);
+  const postingCost =
+    typeof input.postingCost === 'number' && Number.isFinite(input.postingCost)
+      ? Math.max(0, Math.round(input.postingCost))
+      : Number(existing.posting_cost || 0);
+  const paymentReceiptUrl =
+    typeof input.paymentReceiptUrl === 'string'
+      ? input.paymentReceiptUrl.trim()
+      : String(existing.payment_receipt_url || '');
   const status =
     typeof input.status === 'string' && input.status.trim()
       ? input.status.trim()
@@ -1316,12 +1345,30 @@ export function updateJobOpening(
   db()
     .prepare(
       `UPDATE hr_job_openings
-       SET title = ?, department = ?, job_board = ?, posted_at = ?, status = ?, openings = ?
+       SET title = ?, department = ?, job_board = ?, posted_at = ?,
+           posting_cost = ?, payment_receipt_url = ?, status = ?, openings = ?
        WHERE id = ?`
     )
-    .run(title, department, jobBoard, postedAt, status, openings, id);
+    .run(
+      title,
+      department,
+      jobBoard,
+      postedAt,
+      postingCost,
+      paymentReceiptUrl,
+      status,
+      openings,
+      id
+    );
 
   return listJobOpenings().find((j) => j.id === id) || null;
+}
+
+export function getJobOpening(id: number): HrJobOpening | null {
+  const row = db()
+    .prepare('SELECT * FROM hr_job_openings WHERE id = ?')
+    .get(id) as Record<string, unknown> | undefined;
+  return row ? mapJobOpening(row) : null;
 }
 
 export function listCandidates(opts?: { stage?: string; jobOpeningId?: number }): HrCandidate[] {
@@ -1978,7 +2025,9 @@ export const hrService = {
   listIncomeModels,
   listBenefitDefs,
   listJobOpenings,
+  getJobOpening,
   createJobOpening,
+  updateJobOpening,
   listCandidates,
   createCandidate,
   updateCandidateStage,

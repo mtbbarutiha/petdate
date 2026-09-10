@@ -99,6 +99,12 @@ async function main() {
   });
   assert(patched?.jobBoard === 'جاب ویژن', 'update jobBoard');
   assert(patched?.postedAt === '2026-04-01', 'update postedAt');
+  const withCost = updateJobOpening(opening.id, {
+    postingCost: 1_500_000,
+    paymentReceiptUrl: '/api/admin/hr/opening-receipts/1/demo.jpg',
+  });
+  assert(withCost?.postingCost === 1_500_000, 'postingCost');
+  assert(Boolean(withCost?.paymentReceiptUrl), 'paymentReceiptUrl');
 
   const { candidate } = createCandidate({
     firstName: 'سارا',
