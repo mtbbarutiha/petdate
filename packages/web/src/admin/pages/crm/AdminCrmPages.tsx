@@ -83,7 +83,7 @@ export function AdminCrmInboxPage() {
                     </button>
                   ) : null}
                   {r.kind === 'interaction' ? <Link to={`/admin/crm/calls?wrap=${r.id}`}>Wrap-up</Link> : null}
-                  {r.kind === 'ticket' ? <Link to={`/admin/crm/cases?tab=tickets`}>پرونده</Link> : null}
+                  {r.kind === 'ticket' ? <Link to={`/admin/crm/ticketing?view=detail&id=${r.id}`}>تیکتینگ</Link> : null}
                 </td>
               </tr>
             ))}
@@ -403,7 +403,10 @@ export function AdminCrmCasesPage() {
 
   return (
     <div className="admin-page">
-      <header className="admin-header"><div><h1>هاب پرونده‌ها</h1><p>تیکت · پیگیری · شکایت · ارجاع</p></div></header>
+      <header className="admin-header">
+        <div><h1>هاب پرونده‌ها</h1><p>تیکت · پیگیری · شکایت · ارجاع</p></div>
+        <Link to="/admin/crm/ticketing" className="admin-btn admin-btn--primary">باز کردن ماژول تیکتینگ</Link>
+      </header>
       <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
         {[
           ['tickets', 'تیکت‌ها'],
@@ -420,7 +423,9 @@ export function AdminCrmCasesPage() {
           <tbody>{tickets.map((t) => (
             <tr key={t.id} style={{ borderRight: `3px solid ${t.borderColor || '#ddd'}` }}>
               <td>{t.publicId}</td><td>{t.title}</td><td>{t.customerName}</td><td>{t.priority}</td><td>{t.status}</td><td>{t.slaState}</td>
-              <td>{canWrite && t.status !== 'حل‌شده' ? (
+              <td>
+                <Link to={`/admin/crm/ticketing?view=detail&id=${t.id}`} className="admin-btn admin-btn--ghost">جزئیات</Link>
+                {canWrite && t.status !== 'حل‌شده' ? (
                 <button type="button" className="admin-btn admin-btn--ghost" onClick={() => void adminFetch(`/api/admin/crm/tickets/${t.id}`, {
                   method: 'PATCH', body: JSON.stringify({ status: 'حل‌شده', resolutionCode: 'DONE', resolutionNote: 'از پنل' }),
                 }).then(load)}>حل</button>

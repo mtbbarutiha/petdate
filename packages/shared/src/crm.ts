@@ -29,9 +29,129 @@ export const CRM_OUTCOMES = [
 ] as const;
 
 export const CRM_TICKET_STATUSES = [
-  'جدید', 'تخصیص‌یافته', 'در حال بررسی', 'در انتظار مشتری',
+  'جدید', 'تخصیص‌یافته', 'در حال بررسی', 'در انتظار مشتری', 'در انتظار داخلی',
   'حل‌شده', 'بسته‌شده', 'بازگشایی‌شده', 'ارجاع به سطح بالاتر',
 ] as const;
+
+/** Open statuses — SLA resolution clock runs (except pause statuses). */
+export const CRM_TICKET_OPEN_STATUSES = [
+  'جدید', 'تخصیص‌یافته', 'در حال بررسی', 'در انتظار مشتری', 'در انتظار داخلی',
+  'ارجاع به سطح بالاتر', 'بازگشایی‌شده',
+] as const;
+
+/** Pause resolution SLA timer (awaiting customer). */
+export const CRM_TICKET_PAUSE_STATUSES = ['در انتظار مشتری'] as const;
+
+export const CRM_TICKET_CHANNELS = {
+  call_in: 'تماس ورودی',
+  call_out: 'تماس خروجی',
+  sms: 'پیامک',
+  email: 'ایمیل',
+  whatsapp: 'واتساپ',
+  telegram: 'تلگرام',
+  chat: 'چت سایت',
+  portal: 'پنل مشتری',
+  web: 'فرم وب سایت',
+  manual: 'ثبت دستی',
+} as const;
+
+export const CRM_TICKET_TYPES = [
+  'پشتیبانی', 'شکایت', 'درخواست', 'حادثه', 'مالی', 'بازگشت وجه',
+  'فروش', 'فنی', 'دسترسی', 'منابع انسانی', 'درخواست داخلی', 'تجربه مشتری', 'سایر',
+] as const;
+
+/** Type → category → subcategory (Pet Date operational taxonomy). */
+export const CRM_TICKET_TAXONOMY: Record<string, Record<string, string[]>> = {
+  'پشتیبانی': {
+    'همبازی': ['عدم تطابق', 'لغو قرار', 'مشکل چت'],
+    'پت پروفایل': ['عکس', 'ویرایش مشخصات', 'حذف'],
+  },
+  'شکایت': {
+    'فروش': ['اطلاعات نادرست', 'عدم تماس مجدد'],
+    'پشتیبانی': ['کیفیت پاسخگویی', 'تاخیر در رسیدگی'],
+    'کارمند': ['برخورد نامناسب'],
+  },
+  'مالی': {
+    'پرداخت': ['تایید تراکنش', 'تراکنش یافت نشد', 'کیف پول'],
+    'فاکتور': ['درخواست فاکتور', 'اصلاح فاکتور'],
+    'مغایرت': ['کسر دوباره وجه'],
+  },
+  'بازگشت وجه': {
+    'انصراف': ['انصراف از سفارش', 'انصراف از مشاوره'],
+    'خرید اشتباه': ['سفارش تکراری'],
+  },
+  'فروش': {
+    'خرید جدید': ['محصول فروشگاه', 'اشتراک'],
+    'ارتقا': ['ارتقای پلن'],
+  },
+  'فنی': {
+    'اختلال سرویس': ['قطعی سیستم', 'کندی پنل'],
+    'باگ': ['خطای نرم‌افزاری', 'نقشه همبازی'],
+  },
+  'دسترسی': {
+    'رمز عبور': ['فراموشی رمز', 'قفل حساب'],
+    'حساب کاربری': ['احراز هویت', 'تغییر نقش'],
+  },
+  'منابع انسانی': {
+    'مرخصی': ['اصلاح کارکرد'],
+    'حقوق و دستمزد': ['سوال فیش حقوقی'],
+  },
+  'درخواست داخلی': {
+    'تجهیزات': ['درخواست تجهیزات'],
+    'IT': ['دسترسی سیستم داخلی'],
+  },
+  'تجربه مشتری': {
+    'نظرسنجی': ['نارضایتی رضایت‌سنجی'],
+  },
+  'حادثه': {
+    'قطعی سراسری': ['عدم دسترسی همه کاربران'],
+  },
+  'سایر': {
+    'عمومی': ['سایر موارد'],
+  },
+};
+
+export const CRM_TICKET_SEVERITIES = ['بحرانی S1', 'عمده S2', 'متوسط S3', 'جزئی S4'] as const;
+
+export const CRM_TICKET_QUEUES = [
+  { id: 'q_support', name: 'پشتیبانی عمومی', team: 'امور مشتریان' },
+  { id: 'q_billing', name: 'صورت‌حساب و مالی', team: 'واحد مالی' },
+  { id: 'q_refund', name: 'بازگشت وجه', team: 'واحد مالی' },
+  { id: 'q_tech', name: 'فنی', team: 'تیم فنی' },
+  { id: 'q_vip', name: 'VIP', team: 'امور مشتریان' },
+  { id: 'q_complaints', name: 'شکایات', team: 'سرپرستی امور مشتریان' },
+  { id: 'q_sales', name: 'ارجاعات فروش', team: 'تیم فروش' },
+] as const;
+
+export const CRM_PENDING_REASONS = [
+  'در انتظار پاسخ مشتری', 'در انتظار مالی', 'در انتظار فروش', 'در انتظار فنی',
+  'در انتظار تایید مدیر', 'در انتظار مدارک', 'سایر',
+] as const;
+
+export const CRM_RESOLUTION_CODES = [
+  'راهنمایی تلفنی', 'رفع فنی', 'اصلاح دسترسی', 'ارجاع و رفع مالی',
+  'جایگزینی سرویس', 'آموزش مشتری', 'بدون نیاز به اقدام', 'سایر',
+] as const;
+
+export const CRM_ROOT_CAUSES = [
+  'خطای کاربر', 'نقص سیستم', 'خطای فرآیند', 'خطای کارشناس', 'مشکل تامین‌کننده', 'نامشخص',
+] as const;
+
+export const CRM_REOPEN_REASONS = [
+  'مشکل رفع نشده', 'بازگشت مشکل', 'راه‌حل ناقص', 'عدم موافقت مشتری', 'اطلاعات جدید',
+] as const;
+
+export function crmTicketCatsOf(type: string): string[] {
+  return Object.keys(CRM_TICKET_TAXONOMY[type] || { 'عمومی': [] });
+}
+
+export function crmTicketSubsOf(type: string, cat: string): string[] {
+  return (CRM_TICKET_TAXONOMY[type] || {})[cat] || ['عمومی'];
+}
+
+export function crmQueueOf(id: string | null | undefined): (typeof CRM_TICKET_QUEUES)[number] | undefined {
+  return CRM_TICKET_QUEUES.find((q) => q.id === id);
+}
 
 export const CRM_CUSTOMER_LEVELS = ['عادی', 'نقره‌ای', 'طلایی', 'ویژه'] as const;
 export const CRM_CUSTOMER_STATUSES = ['فعال', 'غیرفعال', 'مسدود'] as const;
@@ -176,12 +296,20 @@ export interface CrmTicket {
   publicId: string;
   customerId: number;
   customerName?: string;
+  customerMobile?: string;
+  customerLevel?: string;
+  customerEmail?: string | null;
   interactionId: number | null;
   title: string;
   description: string;
   type: string;
   category: string;
   subCategory: string;
+  channel: string;
+  queueId: string;
+  teamId: string | null;
+  tags: string[];
+  pendingReason: string | null;
   priority: CrmPriority | string;
   severity: string;
   status: string;
@@ -189,6 +317,7 @@ export interface CrmTicket {
   agentName: string | null;
   supervisorId: string;
   firstResponseAt: string | null;
+  firstResponseDueAt: string | null;
   slaDue: string;
   resolvedAt: string | null;
   closedAt: string | null;
@@ -199,7 +328,8 @@ export interface CrmTicket {
   nextAction: string;
   createdAt: string;
   updatedAt: string;
-  slaState?: 'breached' | 'at_risk' | 'ok' | 'closed';
+  slaState?: 'breached' | 'at_risk' | 'ok' | 'closed' | 'paused';
+  slaLabel?: string;
   borderColor?: string;
 }
 
@@ -207,8 +337,48 @@ export interface CrmTicketActivity {
   id: number;
   ticketId: number;
   userId: string;
+  userName?: string;
+  kind: string;
+  visibility: 'public' | 'internal' | string;
   text: string;
   at: string;
+  meta?: Record<string, unknown>;
+}
+
+export interface CrmTicketingAgent {
+  id: string;
+  name: string;
+  team: string;
+  role: string;
+}
+
+export interface CrmTicketingOverview {
+  tickets: CrmTicket[];
+  followups: CrmFollowup[];
+  referrals: CrmReferral[];
+  agents: CrmTicketingAgent[];
+  audit: Array<{
+    id: number;
+    at: string;
+    userId: string;
+    category: string;
+    entity: string;
+    recordUuid: string;
+    action: string;
+    prevValue: string | null;
+    newValue: string | null;
+  }>;
+  stats: {
+    open: number;
+    newToday: number;
+    resolvedToday: number;
+    atRisk: number;
+    breached: number;
+    unassigned: number;
+    openFollowups: number;
+    openReferrals: number;
+    slaPct: number;
+  };
 }
 
 export interface CrmFollowup {
@@ -492,18 +662,48 @@ export function crmSlaDueIso(priority: string, createdAt: string | Date): string
   return new Date(base.getTime() + hours * 3600_000).toISOString();
 }
 
+export function crmFirstResponseDueIso(priority: string, createdAt: string | Date): string {
+  const mins = (CRM_SLA_POLICY[priority as CrmPriority] || CRM_SLA_POLICY['متوسط'])[0];
+  const base = typeof createdAt === 'string' ? new Date(createdAt) : createdAt;
+  return new Date(base.getTime() + mins * 60_000).toISOString();
+}
+
 export function crmSlaState(opts: {
   status: string;
   slaDue: string;
   now?: Date;
-}): 'breached' | 'at_risk' | 'ok' | 'closed' {
+}): 'breached' | 'at_risk' | 'ok' | 'closed' | 'paused' {
   if (['حل‌شده', 'بسته‌شده'].includes(opts.status)) return 'closed';
+  if ((CRM_TICKET_PAUSE_STATUSES as readonly string[]).includes(opts.status)) return 'paused';
   const due = new Date(opts.slaDue).getTime();
   const now = (opts.now || new Date()).getTime();
   if (now > due) return 'breached';
   const hoursLeft = (due - now) / 3600_000;
-  if (hoursLeft <= 4) return 'at_risk';
+  if (hoursLeft <= 2) return 'at_risk';
+  if (hoursLeft <= 6) return 'at_risk';
   return 'ok';
+}
+
+export function crmSlaLabel(opts: {
+  status: string;
+  slaDue: string;
+  now?: Date;
+}): string {
+  const state = crmSlaState(opts);
+  if (state === 'closed') return 'پایان‌یافته';
+  if (state === 'paused') return 'متوقف‌شده';
+  const due = new Date(opts.slaDue).getTime();
+  const now = (opts.now || new Date()).getTime();
+  const left = due - now;
+  const abs = Math.abs(left);
+  const H = 3600_000;
+  const D = 24 * H;
+  const unit = abs < H ? [abs / 60_000, 'دقیقه'] : abs < D ? [abs / H, 'ساعت'] : [abs / D, 'روز'];
+  const n = Math.max(1, Math.round(Number(unit[0])));
+  const rel = left >= 0 ? `${n} ${unit[1]} دیگر` : `${n} ${unit[1]} پیش`;
+  if (state === 'breached') return `نقض SLA · ${rel}`;
+  if (state === 'at_risk') return left < 2 * H ? `در آستانه نقض · ${rel}` : `در معرض ریسک · ${rel}`;
+  return `سالم · ${rel}`;
 }
 
 export function crmInboxBorderColor(state: string, extra?: { unassigned?: boolean; wrapPending?: boolean; internal?: boolean }): string {
