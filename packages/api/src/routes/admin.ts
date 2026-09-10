@@ -15,6 +15,12 @@ import { dbService, getStorageDriver } from '../db';
 import { adminPlatform } from '../admin-platform';
 import { adminFinance } from '../admin-finance';
 import { buildAggregateDashboard, getPlatformActivity } from '../admin-aggregate-dashboard';
+import {
+  adminCreatePet,
+  adminUpdatePet,
+  getAdminPetDossier,
+  listAdminPets,
+} from '../admin-pets';
 import { logAppEvent } from '../services/app-logger';
 import { completeShopCardPayment } from '../services/shop-checkout';
 import { telegramFetch, telegramBotApiUrl } from '../services/telegram-http';
@@ -265,19 +271,105 @@ adminRouter.patch('/users/:id', (req, res) => {
 adminRouter.get('/pets', (req, res) => {
   const species = typeof req.query.species === 'string' ? req.query.species : undefined;
   const q = typeof req.query.q === 'string' ? req.query.q.trim() : '';
-  let pets = dbService.listPets({ species });
-  if (q) {
-    const lower = q.toLowerCase();
-    pets = pets.filter((p) =>
-      p.name.toLowerCase().includes(lower) ||
-      (p.breed || '').toLowerCase().includes(lower) ||
-      (p.city || '').toLowerCase().includes(lower) ||
-      String(p.id) === q ||
-      (p.publicId || '').toLowerCase().includes(lower) ||
-      `pd-p${String(p.id).padStart(5, '0')}` === lower
-    );
+  const ownerName = typeof req.query.ownerName === 'string' ? req.query.ownerName : undefined;
+  const ownerPhone = typeof req.query.ownerPhone === 'string' ? req.query.ownerPhone : undefined;
+  const lastEventFrom =
+    typeof req.query.lastEventFrom === 'string' ? req.query.lastEventFrom : undefined;
+  const lastEventTo =
+    typeof req.query.lastEventTo === 'string' ? req.query.lastEventTo : undefined;
+  const result = listAdminPets({
+    species,
+    q,
+    ownerName,
+    ownerPhone,
+    lastEventFrom,
+    lastEventTo,
+  });
+  res.json(result);
+});
+
+adminRouter.get('/pets/:id/dossier', (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id)) {
+    res.status(400).json({ error: 'شناسه نامعتبر' });
+    return;
   }
-  res.json({ total: pets.length, pets });
+  const dossier = getAdminPetDossier(id);
+  if (!dossier) {
+    res.status(404).json({ error: 'پت پیدا نشد' });
+    return;
+  }
+  res.json(dossier);
+});
+
+adminRouter.post('/pets', (req, res) => {
+  const body = req.body || {};
+  const ownerId = Number(body.ownerId);
+  const name = typeof body.name === 'string' ? body.name.trim() : '';
+  const species = typeof body.species === 'string' ? body.species.trim() : '';
+  if (!Number.isFinite(ownerId) || ownerId <= 0) {
+    res.status(400).json({ error: 'ownerId الزامی است' });
+    return;
+  }
+  if (!name || !species) {
+    res.status(400).json({ error: 'نام و گونه الزامی است' });
+    return;
+  }
+  if (!dbService.getUserById(ownerId)) {
+    res.status(404).json({ error: 'مالک پیدا نشد' });
+    return;
+  }
+  const ageMonths =
+    body.ageMonths != null
+      ? Number(body.ageMonths)
+      : body.age != null
+        ? Math.round(Number(body.age) * (body.ageUnit === 'month' ? 1 : 12))
+        : undefined;
+  const pet = adminCreatePet({
+    ownerId,
+    name,
+    species,
+    breed: typeof body.breed === 'string' ? body.breed : undefined,
+    gender: body.gender,
+    ageMonths: Number.isFinite(ageMonths as number) ? (ageMonths as number) : undefined,
+    size: body.size,
+    color: typeof body.color === 'string' ? body.color : undefined,
+    bio: typeof body.bio === 'string' ? body.bio : undefined,
+    vaccinated: typeof body.vaccinated === 'boolean' ? body.vaccinated : undefined,
+    neutered: typeof body.neutered === 'boolean' ? body.neutered : undefined,
+    lookingForPlaymate:
+      typeof body.lookingForPlaymate === 'boolean' ? body.lookingForPlaymate : undefined,
+    imageUrl: typeof body.imageUrl === 'string' ? body.imageUrl : undefined,
+    city: typeof body.city === 'string' ? body.city : undefined,
+    neighborhood: typeof body.neighborhood === 'string' ? body.neighborhood : undefined,
+  });
+  res.status(201).json(pet);
+});
+
+adminRouter.patch('/pets/:id', (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id)) {
+    res.status(400).json({ error: 'شناسه نامعتبر' });
+    return;
+  }
+  const body = { ...(req.body || {}) };
+  delete body.ownerId;
+  delete body.id;
+  if (body.age != null && body.ageMonths == null) {
+    body.ageMonths = Math.round(Number(body.age) * (body.ageUnit === 'month' ? 1 : 12));
+  }
+  delete body.age;
+  delete body.ageUnit;
+  if (typeof body.type === 'string' && !body.species) {
+    body.species = body.type;
+  }
+  delete body.type;
+  const pet = adminUpdatePet(id, body);
+  if (!pet) {
+    res.status(404).json({ error: 'پت پیدا نشد' });
+    return;
+  }
+  res.json(pet);
 });
 
 adminRouter.delete('/pets/:id', (req, res) => {

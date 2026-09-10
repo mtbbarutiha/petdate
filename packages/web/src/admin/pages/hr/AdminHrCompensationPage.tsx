@@ -18,6 +18,13 @@ export function AdminHrCompensationPage() {
     variablePercent: '0',
   });
   const canWrite = adminCan('hr.write');
+
+  /** «متغیر» only — hide fixed amount. «ثابت + متغیر» / types with ثابت: show fixed. */
+  const isVariableOnly =
+    form.type === 'متغیر' ||
+    (form.type.includes('متغیر') && !form.type.includes('ثابت'));
+  const showFixedAmount = !isVariableOnly;
+
   const load = useCallback(async () => {
     try {
       const res = await adminFetch<{ incomeModels: HrIncomeModel[] }>('/api/admin/hr/settings/income-models');
@@ -36,7 +43,7 @@ export function AdminHrCompensationPage() {
         body: JSON.stringify({
           name: form.name.trim(),
           type: form.type,
-          variableAmount: Number(form.variableAmount) || 0,
+          variableAmount: isVariableOnly ? 0 : Number(form.variableAmount) || 0,
           variablePercent: Number(form.variablePercent) || 0,
         }),
       });
@@ -93,10 +100,12 @@ export function AdminHrCompensationPage() {
             {HR_INCOME_MODEL_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
           </select>
         </label>
-        <label>
-          <span className="form-label">مبلغ ثابت</span>
-          <input className="form-input" dir="ltr" value={form.variableAmount} onChange={(e) => setForm({ ...form, variableAmount: e.target.value })} />
-        </label>
+        {showFixedAmount ? (
+          <label>
+            <span className="form-label">مبلغ ثابت</span>
+            <input className="form-input" dir="ltr" value={form.variableAmount} onChange={(e) => setForm({ ...form, variableAmount: e.target.value })} />
+          </label>
+        ) : null}
         <label>
           <span className="form-label">درصد متغیر</span>
           <input className="form-input" dir="ltr" value={form.variablePercent} onChange={(e) => setForm({ ...form, variablePercent: e.target.value })} />
