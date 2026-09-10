@@ -247,7 +247,7 @@ shopRouter.post('/checkout/coins', (req, res) => {
     lines: result.lines,
     wallet: user?.wallet ?? dbService.getWallet(session.user.id),
     coins: result.coinsRemaining,
-    message: `سفارش #${result.order.id} با ${result.coinsSpent.toLocaleString('fa-IR')} سکه پرداخت شد.`,
+    message: `سفارش ${result.order.publicId} با ${result.coinsSpent.toLocaleString('fa-IR')} سکه پرداخت شد.`,
   });
 });
 
@@ -324,7 +324,7 @@ shopRouter.post('/checkout/wallet-stars', (req, res) => {
     totalToman: result.totalToman,
     lines: result.lines,
     wallet: user?.wallet ?? dbService.getWallet(session.user.id),
-    message: `سفارش #${result.order.id} با ${result.starsSpent.toLocaleString('fa-IR')} ستاره پنل پرداخت شد.`,
+    message: `سفارش ${result.order.publicId} با ${result.starsSpent.toLocaleString('fa-IR')} ستاره پنل پرداخت شد.`,
   });
 });
 
@@ -385,7 +385,7 @@ shopRouter.post('/checkout/toman', (req, res) => {
     totalToman: result.totalToman,
     lines: result.lines,
     wallet: user?.wallet ?? dbService.getWallet(session.user.id),
-    message: `سفارش #${result.order.id} با ${result.tomanSpent.toLocaleString('fa-IR')} تومان پرداخت شد.`,
+    message: `سفارش ${result.order.publicId} با ${result.tomanSpent.toLocaleString('fa-IR')} تومان پرداخت شد.`,
   });
 });
 
@@ -490,7 +490,7 @@ shopRouter.post('/checkout/toman-telegram', (req, res) => {
     totalToman: result.totalToman,
     lines: result.lines,
     wallet: fresh?.wallet ?? dbService.getWallet(user.id),
-    message: `سفارش #${result.order.id} با ${result.tomanSpent.toLocaleString('fa-IR')} تومان پرداخت شد.`,
+    message: `سفارش ${result.order.publicId} با ${result.tomanSpent.toLocaleString('fa-IR')} تومان پرداخت شد.`,
   });
 });
 
@@ -580,7 +580,7 @@ shopRouter.post('/checkout/coins-telegram', (req, res) => {
     lines: result.lines,
     wallet: fresh?.wallet ?? dbService.getWallet(user.id),
     coins: result.coinsRemaining,
-    message: `سفارش #${result.order.id} با ${result.coinsSpent.toLocaleString('fa-IR')} سکه پرداخت شد.`,
+    message: `سفارش ${result.order.publicId} با ${result.coinsSpent.toLocaleString('fa-IR')} سکه پرداخت شد.`,
   });
 });
 
@@ -675,7 +675,7 @@ shopRouter.post('/checkout/wallet-stars-telegram', (req, res) => {
     totalToman: result.totalToman,
     lines: result.lines,
     wallet: fresh?.wallet ?? dbService.getWallet(user.id),
-    message: `سفارش #${result.order.id} با ${result.starsSpent.toLocaleString('fa-IR')} ستاره پنل پرداخت شد.`,
+    message: `سفارش ${result.order.publicId} با ${result.starsSpent.toLocaleString('fa-IR')} ستاره پنل پرداخت شد.`,
   });
 });
 function publicShopOrder(o: ReturnType<typeof adminPlatform.getShopOrder>) {
@@ -683,6 +683,7 @@ function publicShopOrder(o: ReturnType<typeof adminPlatform.getShopOrder>) {
   const items = Array.isArray(o.items) ? o.items : [];
   return {
     id: o.id,
+    publicId: o.publicId,
     status: o.status,
     totalToman: o.totalToman,
     paymentCurrency: o.paymentCurrency ?? 'toman',

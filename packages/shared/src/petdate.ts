@@ -86,7 +86,7 @@ export const VERIFIED_BADGE = '✅ احراز شده';
 /**
  * شناسهٔ عمومی پایدار (نمایشی) — جدا از id داخلی DB.
  * یک نفر = یک آیدی نمایشی برای وب و بات.
- * فرمت canonical: PD-U##### برای کاربر، PD-P##### برای پت.
+ * فرمت canonical: PD-U##### کاربر، PD-P##### پت، PD-O##### سفارش فروشگاه.
  * پس از تخصیص تغییر نمی‌کند.
  *
  * نکته: `/u#####` فقط دستور عمیق تلگرام است (charset بدون خط تیره) —
@@ -94,6 +94,7 @@ export const VERIFIED_BADGE = '✅ احراز شده';
  */
 export const USER_PUBLIC_ID_PREFIX = 'PD-U';
 export const PET_PUBLIC_ID_PREFIX = 'PD-P';
+export const ORDER_PUBLIC_ID_PREFIX = 'PD-O';
 
 export function makeUserPublicId(internalId: number): string {
   return `${USER_PUBLIC_ID_PREFIX}${String(Math.trunc(internalId)).padStart(5, '0')}`;
@@ -101,6 +102,10 @@ export function makeUserPublicId(internalId: number): string {
 
 export function makePetPublicId(internalId: number): string {
   return `${PET_PUBLIC_ID_PREFIX}${String(Math.trunc(internalId)).padStart(5, '0')}`;
+}
+
+export function makeOrderPublicId(internalId: number): string {
+  return `${ORDER_PUBLIC_ID_PREFIX}${String(Math.trunc(internalId)).padStart(5, '0')}`;
 }
 
 /**
@@ -162,6 +167,39 @@ export function parsePetIdFromPublicId(raw: string): number | null {
   const normalized = normalizePetPublicId(raw);
   if (!normalized) return null;
   const m = /^PD-P(\d+)$/i.exec(normalized);
+  return m ? Number(m[1]) : null;
+}
+
+/**
+ * نرمال‌سازی فرم‌های شناخته‌شده به PD-O##### (با پد ۵رقمی).
+ * قبول می‌کند: PD-O42، PD-O00042، o00042، …
+ */
+export function normalizeOrderPublicId(raw: string | null | undefined): string | null {
+  const s = String(raw ?? '').trim();
+  if (!s) return null;
+  const pd = /^PD-O(\d{1,10})$/i.exec(s);
+  if (pd) return makeOrderPublicId(Number(pd[1]));
+  const bare = /^o_?(\d{1,10})$/i.exec(s);
+  if (bare) return makeOrderPublicId(Number(bare[1]));
+  return null;
+}
+
+/** شناسهٔ نمایشی سفارش فروشگاه — publicId ذخیره‌شده یا مشتق از id */
+export function orderPublicIdOf(order: { id: number; publicId?: string | null }): string {
+  const raw = order.publicId != null ? String(order.publicId).trim() : '';
+  if (raw) {
+    const normalized = normalizeOrderPublicId(raw);
+    if (normalized) return normalized;
+    return raw;
+  }
+  return makeOrderPublicId(order.id);
+}
+
+/** استخراج id داخلی از آیدی عمومی سفارش (PD-O##### / o#####) */
+export function parseOrderIdFromPublicId(raw: string): number | null {
+  const normalized = normalizeOrderPublicId(raw);
+  if (!normalized) return null;
+  const m = /^PD-O(\d+)$/i.exec(normalized);
   return m ? Number(m[1]) : null;
 }
 

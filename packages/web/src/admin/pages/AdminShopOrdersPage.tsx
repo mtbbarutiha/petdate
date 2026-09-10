@@ -1,6 +1,8 @@
 import { Fragment, useCallback, useEffect, useState } from 'react';
-import { userPublicIdOf } from '@petdate/shared';
+import { Search } from 'lucide-react';
+import { orderPublicIdOf, userPublicIdOf } from '@petdate/shared';
 import { adminFetch, formatNumFa, formatTomanFa } from '../api';
+import { AdminIdChip } from '../AdminIds';
 import { AdminEntityCell, AdminThumb } from '../AdminThumb';
 
 type OrderItem = {
@@ -14,6 +16,7 @@ type OrderItem = {
 
 type Order = {
   id: number;
+  publicId?: string;
   userId?: number;
   status: string;
   totalToman: number;
@@ -54,19 +57,22 @@ function itemsSummary(items: OrderItem[]): string {
 export function AdminShopOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [status, setStatus] = useState('');
+  const [q, setQ] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [openId, setOpenId] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     try {
-      const qs = status ? `?status=${encodeURIComponent(status)}` : '';
-      const data = await adminFetch<{ orders: Order[] }>(`/api/admin/shop/orders${qs}`);
+      const qs = new URLSearchParams();
+      if (status) qs.set('status', status);
+      if (q.trim()) qs.set('q', q.trim());
+      const data = await adminFetch<{ orders: Order[] }>(`/api/admin/shop/orders?${qs}`);
       setOrders(data.orders);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'خطا');
     }
-  }, [status]);
+  }, [status, q]);
 
   useEffect(() => {
     void load();
@@ -100,11 +106,25 @@ export function AdminShopOrdersPage() {
           ))}
         </select>
       </header>
+      <div className="admin-toolbar">
+        <div className="admin-search">
+          <Search size={16} />
+          <input
+            placeholder="آیدی PD-O، نام مشتری، موبایل…"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+          />
+        </div>
+        <button type="button" className="admin-btn" onClick={() => void load()}>
+          جستجو
+        </button>
+      </div>
       {error ? <p className="admin-error">{error}</p> : null}
       <div className="admin-table-wrap admin-card">
         <table className="admin-table">
           <thead>
             <tr>
+              <th>آیدی سفارش</th>
               <th>کاربر / مشتری</th>
               <th>پرداخت</th>
               <th>مبلغ تومان</th>
@@ -117,9 +137,13 @@ export function AdminShopOrdersPage() {
           <tbody>
             {orders.map((o) => {
               const open = openId === o.id;
+              const publicId = orderPublicIdOf(o);
               return (
                 <Fragment key={o.id}>
                   <tr>
+                    <td>
+                      <AdminIdChip publicId={publicId} />
+                    </td>
                     <td>
                       <AdminEntityCell
                         thumb={
@@ -170,8 +194,11 @@ export function AdminShopOrdersPage() {
                   </tr>
                   {open ? (
                     <tr>
-                      <td colSpan={7}>
+                      <td colSpan={8}>
                         <div className="admin-muted" style={{ whiteSpace: 'pre-wrap', textAlign: 'start', padding: 8 }}>
+                          <div dir="ltr" style={{ marginBottom: 8 }}>
+                            <code className="admin-mono admin-id-public">{publicId}</code>
+                          </div>
                           {o.note || 'بدون یادداشت / آدرس'}
                           {'\n\n'}
                           آیتم‌ها: {JSON.stringify(o.items, null, 2)}
@@ -184,7 +211,7 @@ export function AdminShopOrdersPage() {
             })}
             {!orders.length ? (
               <tr>
-                <td colSpan={7} className="admin-muted">
+                <td colSpan={8} className="admin-muted">
                   سفارشی نیست
                 </td>
               </tr>

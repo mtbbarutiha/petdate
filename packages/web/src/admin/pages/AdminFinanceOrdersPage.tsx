@@ -1,9 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
+import { orderPublicIdOf } from '@petdate/shared';
 import { adminFetch, formatNumFa, formatTomanFa } from '../api';
+import { AdminIdChip } from '../AdminIds';
 
 type OrdersRes = {
   orders: Array<{
     id: number;
+    publicId?: string;
     status: string;
     totalToman: number;
     paymentCurrency: string;
@@ -79,12 +82,13 @@ export function AdminFinanceOrdersPage() {
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th>مشتری</th><th>مبلغ</th><th>پرداخت</th><th>وضعیت</th><th>تاریخ</th>
+                    <th>آیدی سفارش</th><th>مشتری</th><th>مبلغ</th><th>پرداخت</th><th>وضعیت</th><th>تاریخ</th>
                   </tr>
                 </thead>
                 <tbody>
                   {data.orders.map((o) => (
                     <tr key={o.id}>
+                      <td><AdminIdChip publicId={orderPublicIdOf(o)} /></td>
                       <td>{o.customerName || '—'}</td>
                       <td>{formatTomanFa(o.totalToman)}</td>
                       <td>{CUR[o.paymentCurrency] || o.paymentCurrency}</td>
@@ -93,7 +97,7 @@ export function AdminFinanceOrdersPage() {
                     </tr>
                   ))}
                   {!data.orders.length ? (
-                    <tr><td colSpan={5} className="admin-muted">سفارشی نیست</td></tr>
+                    <tr><td colSpan={6} className="admin-muted">سفارشی نیست</td></tr>
                   ) : null}
                 </tbody>
               </table>

@@ -1,4 +1,4 @@
-import { petPublicIdOf, userPublicIdOf } from '@petdate/shared';
+import { orderPublicIdOf, petPublicIdOf, userPublicIdOf } from '@petdate/shared';
 
 /** Compact public ID chip — PD-* only (never numeric DB row ids). */
 export function AdminIdChip({
@@ -38,6 +38,14 @@ export function AdminPetId({
   return <AdminIdChip publicId={petPublicIdOf(pet)} />;
 }
 
+export function AdminOrderId({
+  order,
+}: {
+  order: { id: number; publicId?: string | null };
+}) {
+  return <AdminIdChip publicId={orderPublicIdOf(order)} />;
+}
+
 /** Public user code from numeric id (and optional stored publicId). */
 export function adminUserPublicCode(
   userOrId: number | { id: number; publicId?: string | null } | null | undefined,
@@ -62,7 +70,19 @@ export function adminPetPublicCode(
   return petPublicIdOf(petOrId);
 }
 
-/** Inline public code for users/pets — never `#id`. */
+/** Public order code from numeric id (and optional stored publicId). */
+export function adminOrderPublicCode(
+  orderOrId: number | { id: number; publicId?: string | null } | null | undefined,
+): string | null {
+  if (orderOrId == null) return null;
+  if (typeof orderOrId === 'number') {
+    if (!Number.isFinite(orderOrId) || orderOrId <= 0) return null;
+    return orderPublicIdOf({ id: orderOrId });
+  }
+  return orderPublicIdOf(orderOrId);
+}
+
+/** Inline public code for users/pets/orders — never `#id`. */
 export function AdminEntityId({
   label,
   id,
@@ -70,8 +90,8 @@ export function AdminEntityId({
 }: {
   label?: string;
   id: number | string | null | undefined;
-  /** Derive PD-U / PD-P when kind is user/pet; raw shows nothing for bare numbers */
-  kind?: 'user' | 'pet' | 'raw';
+  /** Derive PD-U / PD-P / PD-O when kind is set; raw shows nothing for bare numbers */
+  kind?: 'user' | 'pet' | 'order' | 'raw';
 }) {
   if (id == null || id === '') {
     return <span className="admin-muted">—</span>;
@@ -81,6 +101,8 @@ export function AdminEntityId({
     code = adminUserPublicCode(id);
   } else if (kind === 'pet' && typeof id === 'number') {
     code = adminPetPublicCode(id);
+  } else if (kind === 'order' && typeof id === 'number') {
+    code = adminOrderPublicCode(id);
   } else if (typeof id === 'string') {
     const upper = id.toUpperCase();
     if (upper.startsWith('PD-')) code = id;
