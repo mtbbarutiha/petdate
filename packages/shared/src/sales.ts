@@ -38,7 +38,10 @@ export const SALES_PAYMENT_TYPES = ['لینک پرداخت کامل','لینک �
 export const SALES_PAY_STATUSES = ['بدون پرداخت','لینک ارسال‌شده','در حال بررسی مالی','پرداخت‌شده','رد شده مالی','ناموفق'] as const;
 export const SALES_TICKET_DEPTS = ['مالی','پشتیبانی فنی','تحویل محصول','سایر'] as const;
 export const SALES_TICKET_CATEGORIES = ['استعلام مالی','مشکل فنی','تحویل','سایر'] as const;
-export const SALES_TICKET_STATUSES = ['جدید','در حال بررسی','حل‌شده','رد شده','بسته‌شده'] as const;
+export const SALES_TICKET_STATUSES = [
+  'جدید', 'تخصیص‌یافته', 'در حال بررسی', 'در انتظار مشتری', 'در انتظار داخلی',
+  'حل‌شده', 'رد شده', 'بسته‌شده', 'بازگشایی‌شده',
+] as const;
 export const SALES_CUSTOMER_LEVELS = ['عادی','نقره‌ای','طلایی'] as const;
 export const SALES_MESSAGE_CHANNELS = ['پیامک','واتساپ','تلگرام','بله','ایمیل'] as const;
 

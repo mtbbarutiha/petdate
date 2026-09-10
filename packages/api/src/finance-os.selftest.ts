@@ -110,6 +110,29 @@ async function main() {
   assert(typeof counts.suspicious === 'number', 'nav suspicious');
   assert(typeof counts.pendingAllocation === 'number', 'nav pending');
 
+  // Simulate partial #155 scrub failure (desc column renamed → mid-pass abort).
+  const { getDb } = await import('./db');
+  const d = getDb();
+  d.prepare(
+    `UPDATE finance_os_invoices SET number = 'INV-SBG-1405-05-99' WHERE id = ?`
+  ).run(inv.id);
+  d.prepare(
+    `UPDATE finance_os_commitments SET desc_text = 'مالیات بر درآمد سالانه SBG' WHERE id = (
+       SELECT id FROM finance_os_commitments ORDER BY id LIMIT 1
+     )`
+  ).run();
+  d.prepare(`DELETE FROM finance_os_meta WHERE key LIKE 'sbg_rebrand%'`).run();
+  fos.scrubFinanceOsSbgBranding(true);
+  const healed = fos.getFinanceOsAllocationBundle();
+  assert(
+    healed.invoices.every((i) => !String(i.number).includes('SBG')),
+    'invoice SBG scrubbed'
+  );
+  assert(
+    healed.commitments.every((c) => !String(c.desc).includes('SBG')),
+    'commitment SBG scrubbed'
+  );
+
   console.log('finance-os.selftest: ok');
   process.exit(0);
 }

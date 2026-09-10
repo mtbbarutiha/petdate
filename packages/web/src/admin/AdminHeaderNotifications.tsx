@@ -175,6 +175,9 @@ export function AdminHeaderNotifications() {
             <Link to="/admin/sales/tickets" onClick={() => setOpen(false)}>
               تیکت فروش
             </Link>
+            <Link to="/admin/crm/ticketing" onClick={() => setOpen(false)}>
+              تیکتینگ
+            </Link>
             <Link to="/admin/mail" onClick={() => setOpen(false)}>
               ایمیل
             </Link>
