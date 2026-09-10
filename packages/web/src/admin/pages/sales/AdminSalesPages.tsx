@@ -421,7 +421,7 @@ export function AdminSalesTicketsPage() {
   const [cat, setCat] = useState<string>('all');
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [form, setForm] = useState({ title: '', cat: SALES_TICKET_CATEGORIES[0], dept: SALES_TICKET_DEPTS[0], priority: 'متوسط', desc: '' });
+  const [form, setForm] = useState<{ title: string; cat: string; dept: string; priority: string; desc: string }>({ title: '', cat: SALES_TICKET_CATEGORIES[0], dept: SALES_TICKET_DEPTS[0], priority: 'متوسط', desc: '' });
   const canWrite = adminCan('sales.write') || adminCan('admin.full');
   const canAdmin = adminCan('sales.admin') || adminCan('admin.full');
 
@@ -716,7 +716,7 @@ export function AdminSalesSettingsPage() {
   const [busy, setBusy] = useState(false);
   const [sourcesRaw, setSourcesRaw] = useState('');
   const [lostRaw, setLostRaw] = useState('');
-  const [patternForm, setPatternForm] = useState({ channel: SALES_MESSAGE_CHANNELS[0], name: '', text: '' });
+  const [patternForm, setPatternForm] = useState<{ channel: string; name: string; text: string }>({ channel: SALES_MESSAGE_CHANNELS[0], name: '', text: '' });
   const [goalForm, setGoalForm] = useState({ name: '', team: 'فروش Pet Date', revenue: '50000000', salesCount: '20', calls: '100' });
   const canAdmin = adminCan('sales.admin') || adminCan('admin.full');
 

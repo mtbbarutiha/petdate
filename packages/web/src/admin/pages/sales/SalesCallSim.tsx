@@ -40,7 +40,7 @@ export function SalesCallSimProvider({ children }: { children: ReactNode }) {
   const [call, setCall] = useState<CallState | null>(null);
   const [wrapOpen, setWrapOpen] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [result, setResult] = useState(SALES_CALL_RESULTS[0]);
+  const [result, setResult] = useState<string>(SALES_CALL_RESULTS[0]);
   const [summary, setSummary] = useState('');
   const navigate = useNavigate();
 
