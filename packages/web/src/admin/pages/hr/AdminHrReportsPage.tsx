@@ -9,6 +9,8 @@ type ChartRow = { name: string; count: number };
 type Report = {
   personnelTotal: number;
   hiredHeadcount?: number;
+  provinceKnownHeadcount?: number;
+  unknownProvinceCount?: number;
   departments: string[];
   byProvince: ChartRow[];
   byGender: ChartRow[];
@@ -178,6 +180,10 @@ export function AdminHrReportsPage() {
   const byMarital = useMemo(() => toRows(data?.byMarital), [data]);
   const byJobTitle = useMemo(() => toRows(data?.byJobTitle), [data]);
   const hired = data?.hiredHeadcount ?? data?.personnelTotal ?? 0;
+  const knownProvince =
+    data?.provinceKnownHeadcount ?? byProvince.reduce((s, r) => s + r.count, 0);
+  const unknownProvince =
+    data?.unknownProvinceCount ?? Math.max(0, hired - knownProvince);
 
   return (
     <div className="admin-page hr-reports-page">
@@ -249,11 +255,15 @@ export function AdminHrReportsPage() {
             <h2>نقشه حرارتی استخدام بر اساس استان</h2>
             <p className="admin-muted">
               استان‌هایی با استخدام بیشتر تیره‌تر نمایش داده می‌شوند
-              {data ? ` · استخدام‌شده ${formatNumFa(hired)} نفر` : ''}
+              {data
+                ? ` · استخدام‌شده ${formatNumFa(hired)} نفر · با استان مشخص ${formatNumFa(knownProvince)}${
+                    unknownProvince > 0 ? ` · بدون استان ${formatNumFa(unknownProvince)}` : ''
+                  }`
+                : ''}
             </p>
           </div>
         </div>
-        <IranPersonnelHeatmap rows={byProvince} />
+        <IranPersonnelHeatmap rows={byProvince} unknownCount={unknownProvince} />
       </article>
 
       {data?.ageStats ? (
