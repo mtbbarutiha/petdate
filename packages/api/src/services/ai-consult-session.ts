@@ -7,6 +7,7 @@ import type {
 } from '@petdate/shared';
 import { dbService, getDb } from '../db';
 import {
+  AI_ASSISTANT_DISPLAY_NAME,
   AI_TRAINER_DISPLAY_NAME,
   aiAssistantTelegramId,
   buildTrainerOpeningGreeting,
@@ -37,14 +38,14 @@ export function ensureAiAssistantUser(): User {
   const tg = aiAssistantTelegramId();
   const existing = dbService.getUserByTelegramId(tg);
   if (existing) {
-    if (existing.name !== 'دستیار هوشمند پت‌دیت') {
-      dbService.updateUserProfile(existing.id, { name: 'دستیار هوشمند پت‌دیت' });
+    if (existing.name !== AI_ASSISTANT_DISPLAY_NAME) {
+      dbService.updateUserProfile(existing.id, { name: AI_ASSISTANT_DISPLAY_NAME });
     }
     return dbService.getUserById(existing.id) ?? existing;
   }
   const { user } = dbService.findOrCreateUser({
     telegramId: tg,
-    name: 'دستیار هوشمند پت‌دیت',
+    name: AI_ASSISTANT_DISPLAY_NAME,
     username: 'petdate_ai',
   });
   dbService.setUserRoles(user.id, ['vet', 'trainer']);
@@ -56,13 +57,10 @@ export function isAiAssistantUserId(userId: number): boolean {
   return Boolean(u?.telegramId && u.telegramId === aiAssistantTelegramId());
 }
 
-/** نام نمایشی مربی/پزشک در چت وقتی طرف AI است */
+/** نام نمایشی مربی/پزشک در چت وقتی طرف AI است — همیشه پاشا یزدانی */
 export function decorateAiConsultDisplay(consult: VetConsultation): VetConsultation {
   if (!isAiAssistantUserId(consult.vetUserId)) return consult;
-  if (consult.serviceKind === 'trainer') {
-    return { ...consult, vetName: AI_TRAINER_DISPLAY_NAME };
-  }
-  return { ...consult, vetName: consult.vetName?.trim() || 'دستیار هوشمند پت‌دیت' };
+  return { ...consult, vetName: AI_ASSISTANT_DISPLAY_NAME };
 }
 
 function toAiKind(kind: ConsultServiceKind): 'vet' | 'trainer' | null {
@@ -127,9 +125,7 @@ export async function startAiFallbackConsult(opts: {
     const lastAi = [...prior].reverse().find((m) => m.senderUserId === ai.id);
     const adviceText =
       lastAi?.text?.trim() ||
-      (aiKind === 'trainer'
-        ? `گفتگو با ${AI_TRAINER_DISPLAY_NAME} از قبل باز است.`
-        : 'گفتگو با دستیار هوشمند از قبل باز است.');
+      `گفتگو با ${AI_ASSISTANT_DISPLAY_NAME} از قبل باز است.`;
 
     notifyVetThread(consult.id, [opts.patient.id, ai.id], {
       reason: 'accepted',
@@ -179,7 +175,7 @@ export async function startAiFallbackConsult(opts: {
     notes:
       aiKind === 'trainer'
         ? `مشاوره آنلاین با ${AI_TRAINER_DISPLAY_NAME}`
-        : 'مشاوره هوشمند دامپزشکی (پزشک انسانی آنلاین نبود)',
+        : `مشاوره با ${AI_ASSISTANT_DISPLAY_NAME} (پزشک انسانی آنلاین نبود)`,
     feeCoins: 0,
     serviceKind: aiKind,
     providerShareCoins: 0,
@@ -188,7 +184,7 @@ export async function startAiFallbackConsult(opts: {
   const messageText =
     aiKind === 'trainer'
       ? adviceText
-      : `دامپزشک انسانی آنلاین نبود — چت با دستیار هوشمند شروع شد.\n\n${adviceText}`;
+      : `دامپزشک انسانی آنلاین نبود — چت با ${AI_ASSISTANT_DISPLAY_NAME} شروع شد.\n\n${adviceText}`;
 
   dbService.createVetConsultChatMessage({
     consultId: consult.id,

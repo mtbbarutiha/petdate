@@ -256,6 +256,8 @@ async function main() {
 
   const vetTip = offlineAiAdvice({ kind: 'vet', petName: 'ملوس' });
   assert(vetTip.includes('دامپزشک'), 'offline vet tip');
+  assert(vetTip.includes('پاشا یزدانی'), 'offline vet introduces as Pasha');
+  assert(!/دستیار هوشمند پت/.test(vetTip), 'vet tip must not use old smart-assistant brand');
   const supportTip = offlineAiAdvice({ kind: 'support', userMessage: 'OTP نیومد' });
   assert(supportTip.includes('پشتیبانی'), 'offline support tip');
 
@@ -270,6 +272,7 @@ async function main() {
 
   const aiUser = ensureAiAssistantUser();
   assert(isAiAssistantUserId(aiUser.id), 'ai user flagged');
+  assert(aiUser.name === 'پاشا یزدانی', 'ai user profile name is Pasha');
 
   const session = await startAiFallbackConsult({ patient, serviceKind: 'trainer' });
   assert(session, 'ai session started');
@@ -298,6 +301,25 @@ async function main() {
     .listVetConsultations({ patientUserId: patient.id, status: 'active', serviceKind: 'trainer' })
     .filter((c) => c.vetUserId === aiUser.id && !c.chatEnded);
   assert(activeTrainer.length === 1, 'only one ongoing AI trainer consult after reuse');
+
+  // Vet AI fallback also displays as پاشا یزدانی (not legacy «دستیار هوشمند»).
+  const vetPatientTg = `selftest_ai_vet_${Date.now()}`;
+  const { user: vetPatient } = dbService.findOrCreateUser({
+    telegramId: vetPatientTg,
+    name: 'VetPatientAI',
+    username: 'vet_patient_ai',
+  });
+  dbService.setUserRoles(vetPatient.id, ['pet_owner']);
+  dbService.createPet({ ownerId: vetPatient.id, name: 'ملوس', species: 'cat' });
+  const vetSession = await startAiFallbackConsult({ patient: vetPatient, serviceKind: 'vet' });
+  assert(vetSession, 'vet ai session started');
+  assert(
+    decorateAiConsultDisplay(vetSession!.consult).vetName === 'پاشا یزدانی',
+    'vet AI display name is Pasha'
+  );
+  const vetMsgs = dbService.listVetConsultChatMessages(vetSession!.consult.id);
+  assert(vetMsgs[0]!.text.includes('پاشا یزدانی'), 'vet opening mentions Pasha');
+  assert(!/دستیار هوشمند/.test(vetMsgs[0]!.text), 'vet opening must not say smart assistant');
 
   // After user ends chat, a new start may create — but closes orphans.
   dbService.endVetConsultChat(session!.consult.id);
