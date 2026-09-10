@@ -5,6 +5,7 @@ import { Router } from 'express';
 import { ADMIN_PERMISSION_LABELS, ADMIN_PERMISSIONS } from '@petdate/shared';
 import { requirePermission } from '../admin-auth';
 import * as hr from '../hr-service';
+import * as hrMod from '../hr-modules';
 
 export const hrAdminRouter = Router();
 
@@ -138,6 +139,15 @@ hrAdminRouter.patch('/ats/candidates/:id/stage', requirePermission('hr.write'), 
   const stage = typeof req.body?.stage === 'string' ? req.body.stage : '';
   if (!Number.isFinite(id) || !stage) {
     res.status(400).json({ error: 'پارامتر نامعتبر' });
+    return;
+  }
+  if (stage === 'استخدام‌شده') {
+    const hired = hrMod.hireCandidate(id);
+    if (!hired) {
+      res.status(404).json({ error: 'متقاضی پیدا نشد' });
+      return;
+    }
+    res.json(hired);
     return;
   }
   const candidate = hr.updateCandidateStage(id, stage);
@@ -285,4 +295,328 @@ hrAdminRouter.delete('/rbac/accounts/:id', requirePermission('admin.full'), (req
   } catch (err) {
     res.status(400).json({ error: err instanceof Error ? err.message : 'خطا' });
   }
+});
+
+/* ---- Dashboards ---- */
+hrAdminRouter.get('/dashboard', (_req, res) => {
+  res.json(hrMod.getHrOverviewDashboard());
+});
+
+hrAdminRouter.get('/recruitment/dashboard', (_req, res) => {
+  res.json(hrMod.getRecruitmentDashboard());
+});
+
+hrAdminRouter.get('/reports', (_req, res) => {
+  res.json(hrMod.getReportsSummary());
+});
+
+hrAdminRouter.get('/onboarding', (_req, res) => {
+  res.json({ records: hrMod.listOnboarding() });
+});
+
+hrAdminRouter.post('/onboarding', requirePermission('hr.write'), (req, res) => {
+  const body = req.body || {};
+  if (typeof body.name !== 'string' || !body.name.trim()) {
+    res.status(400).json({ error: 'نام الزامی است' });
+    return;
+  }
+  const record = hrMod.createOnboarding({
+    name: body.name,
+    jobTitle: typeof body.jobTitle === 'string' ? body.jobTitle : '',
+    startDate: typeof body.startDate === 'string' ? body.startDate : undefined,
+    candidateId: body.candidateId != null ? Number(body.candidateId) : null,
+    employeeId: body.employeeId != null ? Number(body.employeeId) : null,
+  });
+  res.status(201).json({ record });
+});
+
+hrAdminRouter.patch('/onboarding/:id/tasks', requirePermission('hr.write'), (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id) || !Array.isArray(req.body?.tasks)) {
+    res.status(400).json({ error: 'پارامتر نامعتبر' });
+    return;
+  }
+  const record = hrMod.updateOnboardingTasks(id, req.body.tasks);
+  if (!record) {
+    res.status(404).json({ error: 'رکورد پیدا نشد' });
+    return;
+  }
+  res.json({ record });
+});
+
+hrAdminRouter.post('/requests', requirePermission('hr.write'), (req, res) => {
+  try {
+    const body = req.body || {};
+    const employeeId = Number(body.employeeId);
+    if (!Number.isFinite(employeeId) || typeof body.type !== 'string') {
+      res.status(400).json({ error: 'همکار و نوع درخواست الزامی است' });
+      return;
+    }
+    const request = hrMod.createRequest({
+      employeeId,
+      type: body.type,
+      days: typeof body.days === 'number' ? body.days : Number(body.days) || 0,
+      fromDate: typeof body.fromDate === 'string' ? body.fromDate : '',
+      toDate: typeof body.toDate === 'string' ? body.toDate : '',
+      description: typeof body.description === 'string' ? body.description : '',
+    });
+    res.status(201).json({ request });
+  } catch (err) {
+    res.status(400).json({ error: err instanceof Error ? err.message : 'خطا' });
+  }
+});
+
+hrAdminRouter.post('/requests/:id/advance', requirePermission('hr.write'), (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id)) {
+    res.status(400).json({ error: 'شناسه نامعتبر' });
+    return;
+  }
+  try {
+    const request = hrMod.advanceRequest(id);
+    if (!request) {
+      res.status(404).json({ error: 'درخواست پیدا نشد' });
+      return;
+    }
+    res.json({ request });
+  } catch (err) {
+    res.status(400).json({ error: err instanceof Error ? err.message : 'خطا' });
+  }
+});
+
+hrAdminRouter.post('/requests/:id/reject', requirePermission('hr.write'), (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id)) {
+    res.status(400).json({ error: 'شناسه نامعتبر' });
+    return;
+  }
+  try {
+    const request = hrMod.rejectRequest(
+      id,
+      typeof req.body?.note === 'string' ? req.body.note : undefined
+    );
+    if (!request) {
+      res.status(404).json({ error: 'درخواست پیدا نشد' });
+      return;
+    }
+    res.json({ request });
+  } catch (err) {
+    res.status(400).json({ error: err instanceof Error ? err.message : 'خطا' });
+  }
+});
+
+hrAdminRouter.get('/leave-balances', (_req, res) => {
+  res.json({ balances: hrMod.leaveBalancesAll() });
+});
+
+hrAdminRouter.get('/service', (req, res) => {
+  const year = req.query.year ? Number(req.query.year) : undefined;
+  const month = req.query.month ? Number(req.query.month) : undefined;
+  const employeeId = req.query.employeeId ? Number(req.query.employeeId) : undefined;
+  res.json({
+    entries: hrMod.listServiceEntries({
+      year: Number.isFinite(year as number) ? year : undefined,
+      month: Number.isFinite(month as number) ? month : undefined,
+      employeeId: Number.isFinite(employeeId as number) ? employeeId : undefined,
+    }),
+  });
+});
+
+hrAdminRouter.post('/service', requirePermission('hr.write'), (req, res) => {
+  try {
+    const body = req.body || {};
+    const entry = hrMod.createServiceEntry({
+      employeeId: Number(body.employeeId),
+      year: Number(body.year),
+      month: Number(body.month),
+      day: body.day != null ? Number(body.day) : 1,
+      hours: body.hours != null ? Number(body.hours) : 0,
+      minutes: body.minutes != null ? Number(body.minutes) : 0,
+      note: typeof body.note === 'string' ? body.note : '',
+    });
+    res.status(201).json({ entry });
+  } catch (err) {
+    res.status(400).json({ error: err instanceof Error ? err.message : 'خطا' });
+  }
+});
+
+hrAdminRouter.delete('/service/:id', requirePermission('hr.write'), (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id)) {
+    res.status(400).json({ error: 'شناسه نامعتبر' });
+    return;
+  }
+  res.json({ ok: hrMod.deleteServiceEntry(id) });
+});
+
+hrAdminRouter.get('/cost', (req, res) => {
+  const now = new Date();
+  const year = req.query.year ? Number(req.query.year) : now.getFullYear();
+  const month = req.query.month ? Number(req.query.month) : now.getMonth() + 1;
+  res.json({
+    year,
+    month,
+    entries: hrMod.listCostEntries({ year, month }),
+    costs: hrMod.listMonthlyCosts(year, month),
+    orgTotal: hrMod.listMonthlyCosts(year, month).reduce((s, c) => s + c.cost.total, 0),
+  });
+});
+
+hrAdminRouter.post('/cost', requirePermission('hr.write'), (req, res) => {
+  try {
+    const body = req.body || {};
+    const entry = hrMod.upsertCostEntry({
+      employeeId: Number(body.employeeId),
+      year: Number(body.year),
+      month: Number(body.month),
+      insurance: body.insurance != null ? Number(body.insurance) : 0,
+      tax: body.tax != null ? Number(body.tax) : 0,
+      bonus: body.bonus != null ? Number(body.bonus) : 0,
+      sales: body.sales != null ? Number(body.sales) : 0,
+    });
+    res.status(201).json({ entry });
+  } catch (err) {
+    res.status(400).json({ error: err instanceof Error ? err.message : 'خطا' });
+  }
+});
+
+hrAdminRouter.post('/settings/layers', requirePermission('hr.write'), (req, res) => {
+  const name = typeof req.body?.name === 'string' ? req.body.name.trim() : '';
+  if (!name) {
+    res.status(400).json({ error: 'نام لایه الزامی است' });
+    return;
+  }
+  const layer = hrMod.createCareerLayer({
+    name,
+    sortOrder: typeof req.body?.sortOrder === 'number' ? req.body.sortOrder : 0,
+    unlocks: typeof req.body?.unlocks === 'string' ? req.body.unlocks : '',
+  });
+  res.status(201).json({ layer });
+});
+
+hrAdminRouter.patch('/settings/layers/:id', requirePermission('hr.write'), (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id)) {
+    res.status(400).json({ error: 'شناسه نامعتبر' });
+    return;
+  }
+  const layer = hrMod.updateCareerLayer(id, req.body || {});
+  if (!layer) {
+    res.status(404).json({ error: 'لایه پیدا نشد' });
+    return;
+  }
+  res.json({ layer });
+});
+
+hrAdminRouter.delete('/settings/layers/:id', requirePermission('hr.write'), (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id)) {
+    res.status(400).json({ error: 'شناسه نامعتبر' });
+    return;
+  }
+  res.json({ ok: hrMod.deleteCareerLayer(id) });
+});
+
+hrAdminRouter.post('/settings/income-models', requirePermission('hr.write'), (req, res) => {
+  const name = typeof req.body?.name === 'string' ? req.body.name.trim() : '';
+  if (!name) {
+    res.status(400).json({ error: 'نام مدل الزامی است' });
+    return;
+  }
+  const model = hrMod.createIncomeModel({
+    name,
+    type: typeof req.body?.type === 'string' ? req.body.type : 'متغیر',
+    variableAmount: Number(req.body?.variableAmount) || 0,
+    variablePercent: Number(req.body?.variablePercent) || 0,
+  });
+  res.status(201).json({ model });
+});
+
+hrAdminRouter.patch('/settings/income-models/:id', requirePermission('hr.write'), (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id)) {
+    res.status(400).json({ error: 'شناسه نامعتبر' });
+    return;
+  }
+  const model = hrMod.updateIncomeModel(id, req.body || {});
+  if (!model) {
+    res.status(404).json({ error: 'مدل پیدا نشد' });
+    return;
+  }
+  res.json({ model });
+});
+
+hrAdminRouter.delete('/settings/income-models/:id', requirePermission('hr.write'), (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id)) {
+    res.status(400).json({ error: 'شناسه نامعتبر' });
+    return;
+  }
+  res.json({ ok: hrMod.deleteIncomeModel(id) });
+});
+
+hrAdminRouter.post('/settings/benefits', requirePermission('hr.write'), (req, res) => {
+  const title = typeof req.body?.title === 'string' ? req.body.title.trim() : '';
+  if (!title) {
+    res.status(400).json({ error: 'عنوان مزیت الزامی است' });
+    return;
+  }
+  const benefit = hrMod.createBenefitDef({
+    title,
+    category: typeof req.body?.category === 'string' ? req.body.category : '',
+    careerLayerId: req.body?.careerLayerId != null ? Number(req.body.careerLayerId) : null,
+    jobTitle: typeof req.body?.jobTitle === 'string' ? req.body.jobTitle : null,
+    cost: Number(req.body?.cost) || 0,
+  });
+  res.status(201).json({ benefit });
+});
+
+hrAdminRouter.patch('/settings/benefits/:id', requirePermission('hr.write'), (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id)) {
+    res.status(400).json({ error: 'شناسه نامعتبر' });
+    return;
+  }
+  const benefit = hrMod.updateBenefitDef(id, req.body || {});
+  if (!benefit) {
+    res.status(404).json({ error: 'مزیت پیدا نشد' });
+    return;
+  }
+  res.json({ benefit });
+});
+
+hrAdminRouter.delete('/settings/benefits/:id', requirePermission('hr.write'), (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id)) {
+    res.status(400).json({ error: 'شناسه نامعتبر' });
+    return;
+  }
+  res.json({ ok: hrMod.deleteBenefitDef(id) });
+});
+
+hrAdminRouter.get('/cockpit', (_req, res) => {
+  res.json({
+    tasks: hrMod.cockpitTasks(),
+    notifications: hrMod.listNotifications(),
+  });
+});
+
+hrAdminRouter.post('/notifications/:id/read', requirePermission('hr.write'), (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id)) {
+    res.status(400).json({ error: 'شناسه نامعتبر' });
+    return;
+  }
+  hrMod.markNotificationRead(id);
+  res.json({ ok: true });
+});
+
+hrAdminRouter.post('/notifications/read-all', requirePermission('hr.write'), (_req, res) => {
+  hrMod.markAllNotificationsRead();
+  res.json({ ok: true });
+});
+
+hrAdminRouter.post('/armita', (req, res) => {
+  const message = typeof req.body?.message === 'string' ? req.body.message : '';
+  res.json(hrMod.armitaChat(message));
 });

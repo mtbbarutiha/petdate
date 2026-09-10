@@ -336,3 +336,122 @@ export type AdminAccount = {
   isActive: boolean;
   createdAt: string;
 };
+
+/** Linear request workflow (prototype REQUEST_FLOW) */
+export const HR_REQUEST_FLOW = ['ثبت‌شده', 'بررسی مدیر', 'بررسی HR', 'تایید شده'] as const;
+
+export const HR_ANNUAL_LEAVE_DAYS = 26;
+
+export type HrOnboardingTask = { id: string; label: string; done: boolean };
+
+export type HrOnboardingRecord = {
+  id: number;
+  candidateId?: number | null;
+  employeeId?: number | null;
+  name: string;
+  jobTitle: string;
+  startDate: string;
+  durationDays: number;
+  tasks: HrOnboardingTask[];
+  createdAt: string;
+};
+
+export type HrCostEntry = {
+  id: number;
+  employeeId: number;
+  year: number;
+  month: number;
+  insurance: number;
+  tax: number;
+  bonus: number;
+  sales: number;
+};
+
+export type HrServiceEntry = {
+  id: number;
+  employeeId: number;
+  year: number;
+  month: number;
+  day: number;
+  hours: number;
+  minutes: number;
+  note: string;
+  createdAt: string;
+};
+
+export type HrNotification = {
+  id: number;
+  text: string;
+  kind: 'info' | 'success' | 'warn' | 'bad';
+  date: string;
+  read: boolean;
+};
+
+export type HrMonthlyCostBreakdown = {
+  employeeId: number;
+  salary: number;
+  insurance: number;
+  tax: number;
+  bonus: number;
+  commission: number;
+  eidiMonthly: number;
+  sanavatMonthly: number;
+  total: number;
+};
+
+export type HrCockpitTask = {
+  type: string;
+  label: string;
+  employeeId?: number;
+  employeeName?: string;
+  detail: string;
+  daysLeft?: number;
+};
+
+export const DEFAULT_ONBOARDING_TASKS: readonly string[] = [
+  'تکمیل قرارداد و NDA',
+  'راه‌اندازی حساب کاربری و دسترسی‌ها',
+  'تحویل تجهیزات',
+  'معارفه با تیم',
+  'آموزش خوش‌آمدگویی (Orientation)',
+];
+
+export function onboardingDurationFor(jobTitle: string): number {
+  const t = String(jobTitle || '');
+  if (t.includes('مدیر')) return 30;
+  if (t.includes('سرپرست')) return 7;
+  return 3;
+}
+
+export function makeDefaultOnboardingTasks(): HrOnboardingTask[] {
+  return DEFAULT_ONBOARDING_TASKS.map((label, i) => ({
+    id: `t${i + 1}`,
+    label,
+    done: false,
+  }));
+}
+
+export function nextRequestStatus(current: string): string | null {
+  const idx = (HR_REQUEST_FLOW as readonly string[]).indexOf(current);
+  if (idx < 0 || idx >= HR_REQUEST_FLOW.length - 1) return null;
+  return HR_REQUEST_FLOW[idx + 1];
+}
+
+export function isSalesJobTitle(jobTitle: string): boolean {
+  return ['مدیر فروش', 'سرپرست فروش', 'کارشناس فروش'].includes(String(jobTitle || ''));
+}
+
+export function incomeModelFixedAddon(model: HrIncomeModel | null | undefined): number {
+  if (!model) return 0;
+  return String(model.type || '').includes('ثابت') ? Number(model.variableAmount || 0) : 0;
+}
+
+export function effectiveCommissionPercent(
+  contractPercent: number,
+  model: HrIncomeModel | null | undefined
+): number {
+  if (model && String(model.type || '').includes('متغیر')) {
+    return Number(model.variablePercent || 0);
+  }
+  return Number(contractPercent || 0);
+}

@@ -65,5 +65,6 @@ npx tsx "$ROOT/packages/bot/src/handlers/invite-friends.selftest.ts"
 # SQLite cascade (uses temp/local DB via API helpers — not production path)
 run src/services/user-delete-cascade.selftest.ts
 run src/hr-rbac.selftest.ts
+run src/hr-modules.selftest.ts
 
 echo "ci-selftest: all passed"

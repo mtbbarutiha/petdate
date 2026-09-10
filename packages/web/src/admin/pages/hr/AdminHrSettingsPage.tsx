@@ -1,99 +1,29 @@
-import { useCallback, useEffect, useState } from 'react';
-import type { HrBenefitDef, HrCareerLayer, HrIncomeModel, HrRequest } from '@petdate/shared';
-import { adminFetch, formatNumFa } from '../../api';
+import { Link } from 'react-router-dom';
+import { adminCan } from '../../auth';
+import { HrLinkGrid } from './HrUi';
 
 export function AdminHrSettingsPage() {
-  const [layers, setLayers] = useState<HrCareerLayer[]>([]);
-  const [models, setModels] = useState<HrIncomeModel[]>([]);
-  const [benefits, setBenefits] = useState<HrBenefitDef[]>([]);
-  const [requests, setRequests] = useState<HrRequest[]>([]);
-  const [error, setError] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    try {
-      const [l, m, b, r] = await Promise.all([
-        adminFetch<{ careerLayers: HrCareerLayer[] }>('/api/admin/hr/settings/layers'),
-        adminFetch<{ incomeModels: HrIncomeModel[] }>('/api/admin/hr/settings/income-models'),
-        adminFetch<{ benefitDefs: HrBenefitDef[] }>('/api/admin/hr/settings/benefits'),
-        adminFetch<{ requests: HrRequest[] }>('/api/admin/hr/requests'),
-      ]);
-      setLayers(l.careerLayers);
-      setModels(m.incomeModels);
-      setBenefits(b.benefitDefs);
-      setRequests(r.requests);
-      setError(null);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'خطا');
-    }
-  }, []);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
-
+  const canRbac = adminCan('admin.full');
   return (
     <div className="admin-page">
       <header className="admin-header">
-        <div>
-          <h1>تنظیمات HR · پیوند</h1>
-          <p>لایه‌های شغلی، مدل درآمد، مزایا و درخواست‌ها (stub قابل گسترش)</p>
-        </div>
+        <div><h1>تنظیمات HR · پیکربندی</h1><p>پیوند — تنظیمات اختصاصی منابع انسانی و پیوند به RBAC</p></div>
       </header>
-      {error ? <p className="admin-error">{error}</p> : null}
-
-      <div className="admin-settings-grid">
-        <article className="admin-card" style={{ padding: 16 }}>
-          <h2 style={{ marginTop: 0, fontSize: '1rem' }}>مسیر شغلی ({formatNumFa(layers.length)})</h2>
-          <ul className="admin-log-list">
-            {layers.map((l) => (
-              <li key={l.id}>
-                <b>{l.name}</b>
-                <div className="admin-muted">{l.unlocks}</div>
-              </li>
-            ))}
-          </ul>
-        </article>
-        <article className="admin-card" style={{ padding: 16 }}>
-          <h2 style={{ marginTop: 0, fontSize: '1rem' }}>مدل درآمد ({formatNumFa(models.length)})</h2>
-          <ul className="admin-log-list">
-            {models.map((m) => (
-              <li key={m.id}>
-                <b>{m.name}</b> · {m.type}
-                <div className="admin-muted">
-                  ثابت: {formatNumFa(m.variableAmount)} · درصد: {m.variablePercent}%
-                </div>
-              </li>
-            ))}
-          </ul>
-        </article>
-        <article className="admin-card" style={{ padding: 16 }}>
-          <h2 style={{ marginTop: 0, fontSize: '1rem' }}>مزایا ({formatNumFa(benefits.length)})</h2>
-          <ul className="admin-log-list">
-            {benefits.map((b) => (
-              <li key={b.id}>
-                <b>{b.title}</b> · {b.category}
-                <div className="admin-muted">هزینه: {formatNumFa(b.cost)}</div>
-              </li>
-            ))}
-          </ul>
-        </article>
-        <article className="admin-card" style={{ padding: 16 }}>
-          <h2 style={{ marginTop: 0, fontSize: '1rem' }}>
-            درخواست‌های کارکنان ({formatNumFa(requests.length)})
-          </h2>
-          {requests.length === 0 ? (
-            <p className="admin-muted">هنوز درخواستی نیست — جداول آماده است</p>
-          ) : (
-            <ul className="admin-log-list">
-              {requests.map((r) => (
-                <li key={r.id}>
-                  #{r.id} · {r.type} · {r.status}
-                </li>
-              ))}
-            </ul>
-          )}
-        </article>
-      </div>
+      <HrLinkGrid links={[
+        { to: '/admin/hr/compensation', label: 'مدل‌های جبران خدمت', sub: 'ثابت / متغیر' },
+        { to: '/admin/hr/career', label: 'مسیر شغلی و مزایا', sub: 'لایه‌ها و Benefit Engine' },
+        { to: '/admin/hr/employees', label: 'لوکاپ‌های پرونده', sub: 'شغل، محل، نحوه همکاری' },
+        ...(canRbac ? [{ to: '/admin/hr/rbac', label: 'نقش‌ها و دسترسی (RBAC)', sub: 'حساب اپراتور و مجوزها' }] : []),
+      ]} />
+      <article className="admin-card" style={{ marginTop: 16, padding: 16 }}>
+        <h2 style={{ marginTop: 0, fontSize: '1rem' }}>نگاشت مهاجرت به Admin Panel</h2>
+        <ul className="admin-log-list">
+          {['نقش‌ها و دسترسی‌ها','پیکربندی گردش‌کار','قالب‌های اعلان','قالب‌های ایمیل/پیامک','لوکاپ‌های عمومی','Integrations','سیاست Audit'].map((c) => (
+            <li key={c}><b>{c}</b> · منابع انسانی → Admin Panel</li>
+          ))}
+        </ul>
+        {canRbac ? <p style={{ marginTop: 12 }}><Link to="/admin/hr/rbac">مدیریت نقش‌ها →</Link></p> : null}
+      </article>
     </div>
   );
 }
