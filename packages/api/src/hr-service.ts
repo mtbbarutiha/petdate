@@ -327,6 +327,35 @@ function seedHrDefaults(): void {
     ['hr.read', 'hr.write']
   );
 
+  // Backfill sales.* onto existing admin role (roles seeded before Sales CRM landed)
+  const mergeRolePerms = (key: string, required: readonly string[]) => {
+    const row = d.prepare('SELECT id, permissions_json FROM admin_roles WHERE key = ?').get(key) as
+      | { id: number; permissions_json: string }
+      | undefined;
+    if (!row) return;
+    let perms: string[] = [];
+    try {
+      perms = JSON.parse(String(row.permissions_json || '[]')) as string[];
+    } catch {
+      perms = [];
+    }
+    const set = new Set(perms.map(String));
+    let changed = false;
+    for (const p of required) {
+      if (!set.has(p)) {
+        set.add(p);
+        changed = true;
+      }
+    }
+    if (changed) {
+      d.prepare('UPDATE admin_roles SET permissions_json = ? WHERE id = ?').run(
+        JSON.stringify([...set]),
+        row.id
+      );
+    }
+  };
+  mergeRolePerms('admin', ADMIN_ROLE_PERMISSIONS.admin);
+
   // Optional support account from env — never overwrite existing hash if user changed password
   const supportUser = (process.env.ADMIN_SUPPORT_USER || 'support').trim();
   const supportPass = (process.env.ADMIN_SUPPORT_PASSWORD || '').trim();

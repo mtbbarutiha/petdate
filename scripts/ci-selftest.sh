@@ -67,5 +67,6 @@ run src/services/user-delete-cascade.selftest.ts
 run src/hr-rbac.selftest.ts
 run src/hr-modules.selftest.ts
 run src/sales-crm.selftest.ts
+run src/hr-sales-demo-seed.selftest.ts
 
 echo "ci-selftest: all passed"
