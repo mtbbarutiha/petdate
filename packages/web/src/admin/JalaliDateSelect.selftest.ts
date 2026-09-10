@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import {
   currentJalaliParts,
   formatAdminFaDate,
+  formatJalaliNumFa,
   formatJalaliSlash,
   gregorianIsoToJalaliParts,
   jalaliDaysAgo,
@@ -19,6 +20,11 @@ const now = currentJalaliParts();
 assert.ok(now.year >= 1400 && now.year <= 1500);
 assert.ok(now.month >= 1 && now.month <= 12);
 assert.ok(now.day >= 1 && now.day <= 31);
+
+// Years must never get thousands separators (۱,۴۰۵)
+const yearFa = formatJalaliNumFa(1405);
+assert.equal(yearFa, '۱۴۰۵');
+assert.ok(!/[,\u066C\u060C\u2009\u202F]/.test(yearFa));
 
 const g = jalaliToGregorianYmd(1403, 1, 1);
 assert.equal(g.gy, 2024);

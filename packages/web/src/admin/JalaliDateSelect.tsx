@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
-import { formatNumFa } from './api';
 import {
   JALALI_MONTHS,
   currentJalaliParts,
+  formatJalaliNumFa,
   type JalaliDateValue,
 } from './jalaliDate';
 
@@ -86,7 +86,7 @@ export function JalaliDateSelect({
           {allowEmpty ? <option value="">روز</option> : null}
           {Array.from({ length: maxDay }, (_, i) => i + 1).map((d) => (
             <option key={d} value={d}>
-              {formatNumFa(d)}
+              {formatJalaliNumFa(d)}
             </option>
           ))}
         </select>
@@ -114,7 +114,7 @@ export function JalaliDateSelect({
           {allowEmpty ? <option value="">سال</option> : null}
           {years.map((y) => (
             <option key={y} value={y}>
-              {formatNumFa(y)}
+              {formatJalaliNumFa(y)}
             </option>
           ))}
         </select>
