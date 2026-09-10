@@ -1,6 +1,7 @@
 import { Check, Trash2, X } from 'lucide-react';
 import { usePetStore } from '../../hooks/usePetStore';
 import { MATCH_STATUS_LABELS } from '../../types';
+import { AdminEntityCell, AdminThumb } from '../AdminThumb';
 
 export function AdminMatchesPage() {
   const { matches, updateMatchStatus, deleteMatch } = usePetStore();
@@ -29,13 +30,19 @@ export function AdminMatchesPage() {
             {matches.map((m) => (
               <tr key={m.id}>
                 <td>
-                  <div className="admin-match-cell">
-                    <img src={m.fromPet.imageUrl} alt={m.fromPet.name} className="admin-thumb" />
-                    <div>
-                      <strong>{m.fromPet.name}</strong>
-                      <small>{m.fromPet.breed}</small>
-                    </div>
-                  </div>
+                  <AdminEntityCell
+                    thumb={
+                      <AdminThumb
+                        src={m.fromPet.imageUrl}
+                        petId={Number(m.fromPet.id) || undefined}
+                        kind="pet"
+                        label={m.fromPet.name}
+                        alt={m.fromPet.name}
+                      />
+                    }
+                    title={<strong>{m.fromPet.name}</strong>}
+                    subtitle={m.fromPet.breed}
+                  />
                 </td>
                 <td>{m.message || '—'}</td>
                 <td>

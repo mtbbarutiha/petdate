@@ -9,6 +9,7 @@ import {
 } from '@petdate/shared';
 import { adminFetch, formatNumFa } from '../api';
 import { AdminIdChip } from '../AdminIds';
+import { AdminEntityCell, AdminThumb } from '../AdminThumb';
 
 function activeRolesOf(user: User): UserRole[] {
   const fromList = (user.roles || []).filter((r): r is UserRole => USER_ROLES.includes(r));
@@ -126,14 +127,17 @@ export function AdminUsersPage() {
                   <AdminIdChip publicId={publicId} numericId={u.id} />
                 </td>
                 <td>
-                  <strong>{u.name}</strong>
-                  {u.age != null || u.gender ? (
-                    <div className="admin-muted">
-                      {[u.gender === 'male' ? 'مرد' : u.gender === 'female' ? 'زن' : null, u.age != null ? `${u.age}س` : null]
-                        .filter(Boolean)
-                        .join(' · ')}
-                    </div>
-                  ) : null}
+                  <AdminEntityCell
+                    thumb={<AdminThumb src={u.avatarUrl} label={u.name} kind="user" alt={u.name} />}
+                    title={<strong>{u.name}</strong>}
+                    subtitle={
+                      u.age != null || u.gender
+                        ? [u.gender === 'male' ? 'مرد' : u.gender === 'female' ? 'زن' : null, u.age != null ? `${u.age}س` : null]
+                            .filter(Boolean)
+                            .join(' · ')
+                        : null
+                    }
+                  />
                 </td>
                 <td className="admin-mono" dir="ltr">
                   {u.username ? `@${u.username}` : '—'}

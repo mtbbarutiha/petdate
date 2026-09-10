@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import { petPublicIdOf, type PlaydateRequest } from '@petdate/shared';
+import { petPublicIdOf, type PetProfile, type PlaydateRequest } from '@petdate/shared';
 import { adminFetch, formatNumFa } from '../api';
 import { AdminIdChip } from '../AdminIds';
+import { AdminEntityCell, AdminThumb } from '../AdminThumb';
 
 const STATUS_FA: Record<string, string> = {
   pending: 'در انتظار',
@@ -11,14 +12,45 @@ const STATUS_FA: Record<string, string> = {
   expired: 'منقضی',
 };
 
+type AdminPlaydateRow = PlaydateRequest & {
+  fromUserAvatarUrl?: string;
+  toUserAvatarUrl?: string;
+  fromUserName?: string;
+  toUserName?: string;
+};
+
+function PetCell({ pet, petId }: { pet?: PetProfile; petId: number }) {
+  const id = pet?.id ?? petId;
+  return (
+    <AdminEntityCell
+      thumb={
+        <AdminThumb
+          src={pet?.imageUrl}
+          petId={id}
+          kind="pet"
+          label={pet?.name}
+          alt={pet?.name || `پت ${id}`}
+        />
+      }
+      title={
+        <AdminIdChip
+          publicId={petPublicIdOf(pet ?? { id })}
+          numericId={id}
+        />
+      }
+      subtitle={pet?.name || null}
+    />
+  );
+}
+
 export function AdminPlaydatesPage() {
-  const [items, setItems] = useState<PlaydateRequest[]>([]);
+  const [items, setItems] = useState<AdminPlaydateRow[]>([]);
   const [status, setStatus] = useState('');
   const [error, setError] = useState<string | null>(null);
   const load = useCallback(async () => {
     try {
       const qs = status ? `?status=${encodeURIComponent(status)}` : '';
-      const data = await adminFetch<{ playdates: PlaydateRequest[] }>(`/api/admin/playdates${qs}`);
+      const data = await adminFetch<{ playdates: AdminPlaydateRow[] }>(`/api/admin/playdates${qs}`);
       setItems(data.playdates); setError(null);
     } catch (err) { setError(err instanceof Error ? err.message : 'خطا'); }
   }, [status]);
@@ -59,21 +91,19 @@ export function AdminPlaydatesPage() {
           {items.map((m) => (
             <tr key={m.id}>
               <td><code className="admin-mono" dir="ltr">#{m.id}</code></td>
+              <td><PetCell pet={m.fromPet} petId={m.fromPetId} /></td>
+              <td><PetCell pet={m.toPet} petId={m.toPetId} /></td>
               <td>
-                <AdminIdChip
-                  publicId={petPublicIdOf({ id: m.fromPetId })}
-                  numericId={m.fromPetId}
-                />
-              </td>
-              <td>
-                <AdminIdChip
-                  publicId={petPublicIdOf({ id: m.toPetId })}
-                  numericId={m.toPetId}
-                />
-              </td>
-              <td className="admin-mono" dir="ltr">
-                #{m.fromUserId}
-                {m.toUserId != null ? ` → #${m.toUserId}` : ''}
+                <div className="admin-entity-cell" style={{ marginBottom: 6 }}>
+                  <AdminThumb src={m.fromUserAvatarUrl} label={m.fromUserName} kind="user" />
+                  <span className="admin-mono" dir="ltr">#{m.fromUserId}</span>
+                </div>
+                {m.toUserId != null ? (
+                  <div className="admin-entity-cell">
+                    <AdminThumb src={m.toUserAvatarUrl} label={m.toUserName} kind="user" />
+                    <span className="admin-mono" dir="ltr">#{m.toUserId}</span>
+                  </div>
+                ) : null}
               </td>
               <td>{m.message || '—'}</td>
               <td><span className={`admin-status admin-status--${m.status}`}>{STATUS_FA[m.status] || m.status}</span></td>

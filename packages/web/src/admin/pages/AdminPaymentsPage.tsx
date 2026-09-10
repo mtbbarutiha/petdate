@@ -1,6 +1,7 @@
 import { Fragment, useCallback, useEffect, useState } from 'react';
 import type { PaymentOrder } from '@petdate/shared';
 import { adminFetch, formatNumFa, formatTomanFa } from '../api';
+import { AdminEntityCell, AdminThumb } from '../AdminThumb';
 
 const STATUS_OPTIONS: { value: string; label: string }[] = [
   { value: '', label: 'همه' },
@@ -138,12 +139,28 @@ export function AdminPaymentsPage() {
                   <tr>
                     <td><code className="admin-mono" dir="ltr">#{o.id}</code></td>
                     <td>
-                      {o.userName || '—'}
-                      <div className="admin-muted admin-mono" dir="ltr">user #{o.userId}</div>
-                      <div className="admin-muted">
-                        {o.userUsername ? `@${o.userUsername}` : ''}
-                        {o.userTelegramId ? ` · tg ${o.userTelegramId}` : ''}
-                      </div>
+                      <AdminEntityCell
+                        thumb={
+                          <AdminThumb
+                            src={o.userAvatarUrl}
+                            label={o.userName}
+                            kind="user"
+                            alt={o.userName || 'کاربر'}
+                          />
+                        }
+                        title={o.userName || '—'}
+                        subtitle={
+                          <>
+                            <span className="admin-mono" dir="ltr">user #{o.userId}</span>
+                            {(o.userUsername || o.userTelegramId) ? (
+                              <div>
+                                {o.userUsername ? `@${o.userUsername}` : ''}
+                                {o.userTelegramId ? ` · tg ${o.userTelegramId}` : ''}
+                              </div>
+                            ) : null}
+                          </>
+                        }
+                      />
                     </td>
                     <td>
                       {packageLabel(o)}

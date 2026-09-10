@@ -76,6 +76,8 @@ export interface PaymentOrder {
   userName?: string;
   userTelegramId?: string;
   userUsername?: string;
+  /** join — عکس پروفایل کاربر برای لیست ادمین */
+  userAvatarUrl?: string;
 }
 
 /** بج نمایشی برای پروفایل‌های تأییدشده */
@@ -555,10 +557,13 @@ export interface VetConsultation {
   /** غنی‌سازی در API */
   patientName?: string;
   patientCity?: string;
+  patientAvatarUrl?: string;
   vetName?: string;
+  vetAvatarUrl?: string;
   petName?: string;
   petSpecies?: string;
   petBreed?: string;
+  petImageUrl?: string;
 }
 
 /** نوع رسانهٔ پیام چت مشاوره (همان مجموعهٔ همبازی) */

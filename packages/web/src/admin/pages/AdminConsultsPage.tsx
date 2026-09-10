@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { VetConsultation } from '@petdate/shared';
 import { adminFetch, formatNumFa } from '../api';
+import { AdminEntityCell, AdminThumb } from '../AdminThumb';
 
 const STATUSES = ['requested', 'active', 'completed', 'cancelled', 'expired'] as const;
 const STATUS_FA: Record<string, string> = {
@@ -60,16 +61,47 @@ export function AdminConsultsPage() {
             <tr key={c.id}>
               <td><code className="admin-mono" dir="ltr">#{c.id}</code></td>
               <td>
-                <strong>{c.patientName || '—'}</strong>
-                <div className="admin-muted admin-mono">user #{c.patientUserId}</div>
+                <AdminEntityCell
+                  thumb={
+                    <AdminThumb
+                      src={c.patientAvatarUrl}
+                      label={c.patientName}
+                      kind="user"
+                      alt={c.patientName || 'بیمار'}
+                    />
+                  }
+                  title={<strong>{c.patientName || '—'}</strong>}
+                  subtitle={<span className="admin-mono">user #{c.patientUserId}</span>}
+                />
               </td>
               <td>
-                <strong>{c.vetName || '—'}</strong>
-                <div className="admin-muted admin-mono">user #{c.vetUserId}</div>
+                <AdminEntityCell
+                  thumb={
+                    <AdminThumb
+                      src={c.vetAvatarUrl}
+                      label={c.vetName}
+                      kind="user"
+                      alt={c.vetName || 'پزشک'}
+                    />
+                  }
+                  title={<strong>{c.vetName || '—'}</strong>}
+                  subtitle={<span className="admin-mono">user #{c.vetUserId}</span>}
+                />
               </td>
               <td>
-                {c.petName || '—'}
-                {c.petId != null ? <div className="admin-muted admin-mono">pet #{c.petId}</div> : null}
+                <AdminEntityCell
+                  thumb={
+                    <AdminThumb
+                      src={c.petImageUrl}
+                      petId={c.petId}
+                      kind="pet"
+                      label={c.petName}
+                      alt={c.petName || 'پت'}
+                    />
+                  }
+                  title={c.petName || '—'}
+                  subtitle={c.petId != null ? <span className="admin-mono">pet #{c.petId}</span> : null}
+                />
               </td>
               <td><span className="admin-badge">{c.serviceKind || 'vet'}</span></td>
               <td><span className="admin-badge">{STATUS_FA[c.status] || c.status}</span></td>

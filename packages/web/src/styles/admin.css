@@ -810,6 +810,34 @@
   object-fit: cover;
   border-radius: 8px;
   background: #f5f5f5;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.admin-app .admin-thumb--user {
+  border-radius: 999px;
+}
+.admin-app .admin-thumb--placeholder {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #6b7280;
+  background: linear-gradient(145deg, #eceff3, #e2e6ec);
+  border: 1px solid #dde2ea;
+  letter-spacing: 0.02em;
+}
+.admin-app .admin-entity-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.admin-app .admin-entity-cell-text {
+  min-width: 0;
+}
+.admin-app .admin-entity-cell-title {
+  font-weight: 650;
+  line-height: 1.25;
 }
 .admin-app .admin-row-actions {
   display: flex;
