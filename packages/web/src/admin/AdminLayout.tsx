@@ -322,15 +322,15 @@ function AdminLayoutInner() {
               <AdminHeaderNotifications />
               <span className="admin-topbar-chip">RTL · fa</span>
               <span className="admin-topbar-chip admin-topbar-chip--mint admin-live-pulse">live DB</span>
-              {/* Visual left in RTL (dir=rtl): last child of topbar-end */}
-              <div className="admin-topbar-user" title={roleLabel}>
+              {/* Visual far-left of header actions (RTL topbar-end + CSS order) */}
+              <div className="admin-topbar-user" title={roleLabel} aria-label={`کاربر: ${roleLabel}`}>
                 {showAvatarImg ? (
                   <img
                     className="admin-topbar-avatar admin-topbar-avatar--photo"
                     src={resolvedAvatar!}
-                    alt=""
-                    width={28}
-                    height={28}
+                    alt={roleLabel}
+                    width={34}
+                    height={34}
                     onError={() => setAvatarFailed(true)}
                   />
                 ) : (
