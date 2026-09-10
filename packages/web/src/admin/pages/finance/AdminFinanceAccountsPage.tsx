@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import type { FinanceOsAccountsBundle, FinanceOsAccount, FinanceOsPerson } from '@petdate/shared';
 import { Landmark, Plus } from 'lucide-react';
-import { adminFetch, formatNumFa } from '../../api';
+import { adminFetch, formatNumFa, formatYearFa } from '../../api';
 import { formatAdminFaDate } from '../../JalaliDateSelect';
 import { adminCan } from '../../auth';
 import { AdminModal } from '../../AdminModal';
@@ -259,7 +259,7 @@ export function AdminFinanceAccountsPage() {
           ) : (
             data.snappay.volumes.map((v) => (
               <div key={`${v.jy}-${v.jm}`} style={{ marginTop: 12 }}>
-                <p className="admin-muted">ماه {formatNumFa(v.jm)} / {formatNumFa(v.jy)}</p>
+                <p className="admin-muted">ماه {formatNumFa(v.jm)} / {formatYearFa(v.jy)}</p>
                 <div className="admin-table-wrap">
                   <table className="admin-table admin-table--dense">
                     <thead><tr><th>بیزنس</th><th>حجم</th></tr></thead>
@@ -486,7 +486,7 @@ export function AdminFinanceAccountsPage() {
                   <thead><tr><th>ماه</th><th>نوع</th><th>مبلغ</th><th>یادداشت</th></tr></thead>
                   <tbody>
                     {personDetail.payments.map((p, i) => (
-                      <tr key={i}><td>{formatNumFa(p.jm)}/{formatNumFa(p.jy)}</td><td>{p.type}</td><td>{formatMoney(p.amount)}</td><td>{p.note || '—'}</td></tr>
+                      <tr key={i}><td>{formatNumFa(p.jm)}/{formatYearFa(p.jy)}</td><td>{p.type}</td><td>{formatMoney(p.amount)}</td><td>{p.note || '—'}</td></tr>
                     ))}
                   </tbody>
                 </table>

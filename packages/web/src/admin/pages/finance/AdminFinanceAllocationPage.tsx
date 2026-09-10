@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { FinanceOsAllocationBundle, FinanceOsSbgExpense } from '@petdate/shared';
 import { Building2, Cpu, FileText, Users } from 'lucide-react';
-import { adminFetch, formatNumFa } from '../../api';
+import { adminFetch, formatNumFa, formatYearFa } from '../../api';
 import { formatAdminFaDate } from '../../JalaliDateSelect';
 import { adminCan } from '../../auth';
 import { AdminModal } from '../../AdminModal';
@@ -224,7 +224,7 @@ export function AdminFinanceAllocationPage() {
               ) : <p className="admin-muted">فضایی تعریف نشده</p>}
               {o.spaceAllocations[0] ? (
                 <p className="admin-muted" style={{ marginTop: 8 }}>
-                  تخصیص متراژ {formatNumFa(o.spaceAllocations[0].jm)}/{formatNumFa(o.spaceAllocations[0].jy)}:{' '}
+                  تخصیص متراژ {formatNumFa(o.spaceAllocations[0].jm)}/{formatYearFa(o.spaceAllocations[0].jy)}:{' '}
                   {o.spaceAllocations[0].allocations.map((a) => `${a.business} ${formatNumFa(a.sqm)}م²`).join(' · ')}
                 </p>
               ) : null}
@@ -358,7 +358,7 @@ export function AdminFinanceAllocationPage() {
                 <tr key={inv.id}>
                   <td dir="ltr">{inv.number}</td>
                   <td>{inv.business}</td>
-                  <td>{formatNumFa(inv.jm)}/{formatNumFa(inv.jy)}</td>
+                  <td>{formatNumFa(inv.jm)}/{formatYearFa(inv.jy)}</td>
                   <td>{formatMoney(inv.total)}</td>
                   <td>{inv.status === 'issued' ? 'صادر شده' : inv.status === 'paid' ? 'پرداخت‌شده' : 'پیش‌نویس'}</td>
                   <td>{formatNumFa(inv.lines.length)}</td>

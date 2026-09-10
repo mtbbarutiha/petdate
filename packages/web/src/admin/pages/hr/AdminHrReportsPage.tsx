@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 import { adminFetch, formatNumFa } from '../../api';
+import { formatJalaliNumFa } from '../../JalaliDateSelect';
 import { IranPersonnelHeatmap } from './IranPersonnelHeatmap';
 
 type ChartRow = { name: string; count: number };
@@ -237,7 +238,7 @@ export function AdminHrReportsPage() {
               <option value="">همه سال‌ها</option>
               {yearOptions.map((y) => (
                 <option key={y} value={String(y)}>
-                  {formatNumFa(y)}
+                  {formatJalaliNumFa(y)}
                 </option>
               ))}
             </select>

@@ -1,6 +1,10 @@
 /** Pure Jalali date helpers for admin (no React). */
 
-function formatNumFa(n: number): string {
+/**
+ * Persian digits without thousands grouping — for years, days, months in date UIs.
+ * Do not use money formatters (`formatNumFa` from api) for Jalali years (avoids ۱,۴۰۵).
+ */
+export function formatJalaliNumFa(n: number): string {
   return new Intl.NumberFormat('fa-IR', { useGrouping: false }).format(n);
 }
 
@@ -164,7 +168,7 @@ export function formatAdminFaDate(raw?: string | Date | null): string {
   if (typeof raw === 'string' && /^\d{4}\/\d{1,2}\/\d{1,2}$/.test(raw.trim())) {
     const p = parseJalaliSlash(raw.trim());
     if (!p) return raw.trim();
-    return `${formatNumFa(p.year)}/${formatNumFa(p.month)}/${formatNumFa(p.day)}`;
+    return `${formatJalaliNumFa(p.year)}/${formatJalaliNumFa(p.month)}/${formatJalaliNumFa(p.day)}`;
   }
   const d = raw instanceof Date ? raw : parseAdminDateInput(raw);
   if (!d) return typeof raw === 'string' ? raw : '—';

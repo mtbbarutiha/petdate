@@ -89,3 +89,8 @@ export function formatTomanFa(n: number): string {
 export function formatNumFa(n: number): string {
   return new Intl.NumberFormat('fa-IR').format(n);
 }
+
+/** Persian digits without grouping — Jalali years / calendar parts (not money). */
+export function formatYearFa(n: number): string {
+  return new Intl.NumberFormat('fa-IR', { useGrouping: false }).format(n);
+}

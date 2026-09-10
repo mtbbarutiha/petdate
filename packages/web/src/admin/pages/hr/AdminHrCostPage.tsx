@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+import { Search } from 'lucide-react';
 import type { HrEmployee } from '@petdate/shared';
 import { adminFetch, formatNumFa } from '../../api';
 import { adminCan } from '../../auth';
@@ -6,6 +7,7 @@ import { AdminModal } from '../../AdminModal';
 import { AdminEntityCell, AdminThumb } from '../../AdminThumb';
 import {
   currentJalaliParts,
+  formatJalaliNumFa,
   jalaliToGregorianYmd,
   JALALI_MONTHS,
 } from '../../JalaliDateSelect';
@@ -107,6 +109,8 @@ export function AdminHrCostPage() {
     [filteredCosts]
   );
 
+  const displayOrgTotal = colleagueName.trim() ? filteredOrgTotal : orgTotal;
+
   const upsert = async (e: FormEvent) => {
     e.preventDefault();
     if (!canWrite || !employees.length) return;
@@ -137,18 +141,23 @@ export function AdminHrCostPage() {
 
   return (
     <div className="admin-page">
-      <header className="admin-header">
+      <header className="admin-header hr-reports-header hr-cost-header">
         <div>
           <h1>تخصیص هزینه نیروی کار</h1>
           <p>بدون تسهیم بیزنس‌لاین — قرارداد + مزایا + ورودی ماه</p>
+          <p className="hr-cost-org-total">
+            جمع سازمانی{colleagueName.trim() ? ' (فیلتر)' : ''}:{' '}
+            <strong>{formatHrMoney(displayOrgTotal)}</strong>
+          </p>
         </div>
-        <div className="admin-header-actions" style={{ flexWrap: 'wrap', gap: 8 }}>
-          <label>
-            <span className="form-label">ماه جلالی</span>
+        <div className="hr-reports-filters hr-cost-filters" role="group" aria-label="فیلتر تخصیص هزینه">
+          <label className="hr-reports-filter">
+            <span>ماه جلالی</span>
             <select
               className="admin-select"
               value={jalaliMonth}
               onChange={(e) => setJalaliMonth(Number(e.target.value))}
+              aria-label="ماه جلالی"
             >
               {JALALI_MONTHS.map((m) => (
                 <option key={m.v} value={m.v}>
@@ -157,27 +166,33 @@ export function AdminHrCostPage() {
               ))}
             </select>
           </label>
-          <label>
-            <span className="form-label">سال جلالی</span>
+          <label className="hr-reports-filter">
+            <span>سال جلالی</span>
             <select
               className="admin-select"
               value={jalaliYear}
               onChange={(e) => setJalaliYear(Number(e.target.value))}
+              aria-label="سال جلالی"
             >
               {yearOptions.map((y) => (
                 <option key={y} value={y}>
-                  {formatNumFa(y)}
+                  {formatJalaliNumFa(y)}
                 </option>
               ))}
             </select>
           </label>
-          <input
-            className="admin-input"
-            placeholder="نام همکار"
-            value={colleagueName}
-            onChange={(e) => setColleagueName(e.target.value)}
-            style={{ minWidth: 140 }}
-          />
+          <label className="hr-reports-filter hr-cost-colleague-filter">
+            <span>نام همکار</span>
+            <div className="admin-search">
+              <Search size={16} aria-hidden />
+              <input
+                placeholder="نام همکار"
+                value={colleagueName}
+                onChange={(e) => setColleagueName(e.target.value)}
+                aria-label="جستجوی نام همکار"
+              />
+            </div>
+          </label>
           {canWrite ? (
             <button
               type="button"
@@ -199,11 +214,6 @@ export function AdminHrCostPage() {
         </div>
       </header>
       {error ? <p className="admin-error">{error}</p> : null}
-      <p>
-        جمع سازمانی
-        {colleagueName.trim() ? ' (فیلتر)' : ''}:{' '}
-        <strong>{formatHrMoney(colleagueName.trim() ? filteredOrgTotal : orgTotal)}</strong>
-      </p>
 
       {deptTotals.length ? (
         <section className="admin-card" style={{ padding: 16, marginBottom: 16 }}>

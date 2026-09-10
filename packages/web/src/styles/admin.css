@@ -3708,7 +3708,46 @@ body:has(.admin-app) {
 }
 .admin-app .hr-reports-filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; }
 .admin-app .hr-reports-filter { display: grid; gap: 4px; font-size: 12px; color: var(--admin-muted); }
-.admin-app .hr-reports-filter .admin-select { min-width: 140px; }
+.admin-app .hr-reports-filter > span {
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.admin-app .hr-reports-filter .admin-select {
+  min-width: 140px;
+  min-height: var(--admin-control-h, 40px);
+  height: var(--admin-control-h, 40px);
+  box-sizing: border-box;
+}
+.admin-app .hr-cost-header .hr-cost-org-total {
+  margin: 6px 0 0;
+  font-size: 0.9rem;
+  color: var(--admin-ink, #1e1b2e);
+}
+.admin-app .hr-cost-filters {
+  gap: 10px 12px;
+}
+.admin-app .hr-cost-colleague-filter {
+  min-width: 180px;
+  flex: 1 1 180px;
+}
+.admin-app .hr-cost-filters .admin-search {
+  min-width: 160px;
+  width: 100%;
+  min-height: var(--admin-control-h, 40px);
+  height: var(--admin-control-h, 40px);
+  box-sizing: border-box;
+  flex: 0 0 auto;
+}
+.admin-app .hr-cost-filters .admin-search input {
+  padding: 0;
+  min-height: 0;
+  height: auto;
+}
+.admin-app .hr-cost-filters > .admin-btn {
+  align-self: flex-end;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
 .admin-app .hr-report-heat-card .admin-card-head h2 { margin: 0 0 4px; }
 .admin-app .hr-heat-layout {
   display: grid; grid-template-columns: minmax(200px, 260px) 1fr; gap: 16px; align-items: stretch;
