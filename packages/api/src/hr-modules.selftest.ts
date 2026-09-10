@@ -88,7 +88,24 @@ async function main() {
 
   const dash = hrMod.getHrOverviewDashboard();
   assert(dash.kpis.personnel >= 2, 'overview personnel');
-  assert(hrMod.getRecruitmentDashboard().kpis.candidates >= 1, 'recruitment candidates');
+  assert(Array.isArray(dash.charts?.byDepartment), 'overview charts.byDepartment');
+  assert(dash.charts.byDepartment.some((r) => r.name === 'فروش' && r.count >= 1), 'dept chart has فروش');
+  assert(Array.isArray(dash.charts?.byContractStatus), 'overview charts.byContractStatus');
+  assert(Array.isArray(dash.charts?.byLocation), 'overview charts.byLocation');
+  assert(typeof dash.monthLabel === 'string' && dash.monthLabel.length > 0, 'monthLabel');
+  assert(Array.isArray(dash.recentLogs), 'recentLogs array');
+
+  const rec = hrMod.getRecruitmentDashboard();
+  assert(rec.kpis.candidates >= 1, 'recruitment candidates');
+  assert(Array.isArray(rec.stageChart), 'recruitment stageChart');
+  assert(rec.stageChart.some((r) => r.count >= 1), 'stageChart non-empty');
+
+  const reports = hrMod.getReportsSummary();
+  assert(Array.isArray(reports.byDept), 'reports.byDept chart array');
+  assert(Array.isArray(reports.byStatus), 'reports.byStatus chart array');
+  assert(Array.isArray(reports.byLocation), 'reports.byLocation chart array');
+  assert(reports.byDept.some((r) => typeof r.name === 'string' && typeof r.count === 'number'), 'byDept row shape');
+
   assert(/نفر/.test(hrMod.armitaAnswer('تعداد پرسنل چقدر است؟')), 'armita personnel answer');
 
   const { getDb } = await import('./db');

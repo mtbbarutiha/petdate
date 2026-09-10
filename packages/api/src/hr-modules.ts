@@ -904,6 +904,17 @@ export function cockpitTasks(): HrCockpitTask[] {
   return [...tasks, ...pendingReqs];
 }
 
+function countBy(values: string[]): Array<{ name: string; count: number }> {
+  const map: Record<string, number> = {};
+  for (const raw of values) {
+    const key = (raw || '').trim() || 'نامشخص';
+    map[key] = (map[key] || 0) + 1;
+  }
+  return Object.entries(map)
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'fa'));
+}
+
 export function getHrOverviewDashboard() {
   const { employees, total } = listEmployees({ limit: 500 });
   const active = employees.filter((e) => e.accessStatus === 'فعال').length;
@@ -934,8 +945,14 @@ export function getHrOverviewDashboard() {
     date: String(r.logged_at || ''),
   }));
 
+  const byDepartment = countBy(employees.map((e) => e.department || ''));
+  const byContractStatus = countBy(employees.map((e) => e.contractStatus || ''));
+  const byLocation = countBy(employees.map((e) => e.location || ''));
+  const monthLabel = now.toLocaleDateString('fa-IR', { month: 'long', year: 'numeric' });
+
   return {
     generatedAt: new Date().toISOString(),
+    monthLabel,
     kpis: {
       personnel: total,
       activeAccess: active,
@@ -955,6 +972,11 @@ export function getHrOverviewDashboard() {
       openOnboarding: listOnboarding().filter(
         (o) => o.tasks.filter((t) => t.done).length < o.tasks.length
       ).length,
+    },
+    charts: {
+      byDepartment,
+      byContractStatus,
+      byLocation,
     },
     links: [
       { to: '/admin/hr/employees', label: 'اطلاعات پرسنلی' },
@@ -994,6 +1016,7 @@ export function getRecruitmentDashboard() {
       talentBank: byStage['بانک استعداد'] || 0,
     },
     byStage,
+    stageChart: countBy(candidates.map((c) => c.stage || '')),
     links: [
       { to: '/admin/hr/ats', label: 'ATS — فرصت و متقاضی' },
       { to: '/admin/hr/onboarding', label: 'شروع به کار' },
@@ -1006,15 +1029,9 @@ export function getRecruitmentDashboard() {
 
 export function getReportsSummary() {
   const { employees, total } = listEmployees({ limit: 500 });
-  const byDept: Record<string, number> = {};
-  const byStatus: Record<string, number> = {};
-  const byLocation: Record<string, number> = {};
-  for (const e of employees) {
-    const d = e.department || 'نامشخص';
-    byDept[d] = (byDept[d] || 0) + 1;
-    byStatus[e.contractStatus || 'نامشخص'] = (byStatus[e.contractStatus || 'نامشخص'] || 0) + 1;
-    byLocation[e.location || 'نامشخص'] = (byLocation[e.location || 'نامشخص'] || 0) + 1;
-  }
+  const byDept = countBy(employees.map((e) => e.department || ''));
+  const byStatus = countBy(employees.map((e) => e.contractStatus || ''));
+  const byLocation = countBy(employees.map((e) => e.location || ''));
   const now = new Date();
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
@@ -1024,6 +1041,10 @@ export function getReportsSummary() {
     byDept,
     byStatus,
     byLocation,
+    /** @deprecated maps — prefer chart arrays above */
+    byDeptMap: Object.fromEntries(byDept.map((r) => [r.name, r.count])),
+    byStatusMap: Object.fromEntries(byStatus.map((r) => [r.name, r.count])),
+    byLocationMap: Object.fromEntries(byLocation.map((r) => [r.name, r.count])),
     serviceHoursMonth: totalServiceHours(year, month),
     leaveBalances: leaveBalancesAll(),
     requestsOpen: (

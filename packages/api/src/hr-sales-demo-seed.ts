@@ -461,6 +461,48 @@ export function seedHrSalesDemoIfNeeded(): void {
     pushNotification('لیدهای بدون مالک در فروش را تخصیص دهید', 'info');
   }
 
+  // Sample personnel change log for HR dashboard «آخرین تغییرات»
+  const logCount = Number(
+    (db().prepare('SELECT COUNT(*) as c FROM hr_employee_logs').get() as { c: number })?.c ?? 0
+  );
+  if (logCount === 0 && employees.length) {
+    const samples: Array<{ code: string; field: string; oldValue: string; newValue: string }> = [
+      {
+        code: 'SEED-HR-01',
+        field: 'حقوق خالص',
+        oldValue: '۳۰٬۰۰۰٬۰۰۰',
+        newValue: '۳۵٬۰۰۰٬۰۰۰',
+      },
+      {
+        code: 'SEED-HR-02',
+        field: 'وضعیت قرارداد',
+        oldValue: 'در حال همکاری',
+        newValue: 'تمدید شده',
+      },
+      {
+        code: 'SEED-HR-03',
+        field: 'سمت',
+        oldValue: 'کارشناس فروش',
+        newValue: 'مدیر فروش',
+      },
+      {
+        code: 'SEED-HR-05',
+        field: 'محل کار',
+        oldValue: 'حضوری',
+        newValue: 'غیرحضوری',
+      },
+    ];
+    const insertLog = db().prepare(
+      `INSERT INTO hr_employee_logs (employee_id, field, old_value, new_value, logged_at)
+       VALUES (?, ?, ?, ?, datetime('now', ?))`
+    );
+    samples.forEach((s, i) => {
+      const emp = employees.find((e) => e.code === s.code) || employees[i % employees.length];
+      if (!emp) return;
+      insertLog.run(emp.id, s.field, s.oldValue, s.newValue, `-${(i + 1) * 3} days`);
+    });
+  }
+
   const salesItemCount = Number(
     (db().prepare(`SELECT COUNT(*) as c FROM sales_items WHERE mobile LIKE '0912SEED%'`).get() as {
       c: number;
