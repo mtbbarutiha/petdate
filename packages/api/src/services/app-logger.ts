@@ -37,6 +37,66 @@ function formatConsoleArgs(args: unknown[]): string {
     .slice(0, 4000);
 }
 
+/**
+ * Telegram 400s for deleted / blocked / never-started chats are expected ops noise
+ * (stale telegram_id on users). Keep console.warn for debugging; do not flood admin logs.
+ */
+export function isBenignTelegramWarn(message: string): boolean {
+  const lower = message.toLowerCase();
+  if (!lower.includes('telegram')) return false;
+  return (
+    lower.includes('chat not found') ||
+    lower.includes('bot was blocked') ||
+    lower.includes('bot was blocked by the user') ||
+    lower.includes('user is deactivated') ||
+    lower.includes('forbidden: bot was blocked') ||
+    lower.includes('peer_id_invalid') ||
+    lower.includes('chat_id is empty')
+  );
+}
+
+/** Known wrong / legacy admin auth paths some clients still hit. */
+const ADMIN_PROBE_404 = new Set([
+  '/api/admin/login',
+  '/api/admin/session',
+  '/api/auth/admin/login',
+]);
+
+/**
+ * HTTP responses that are expected product outcomes or internet noise —
+ * not actionable ops errors for «لاگ خطاها».
+ */
+export function isExpectedHttpNoise(
+  method: string,
+  pathOrUrl: string,
+  statusCode: number
+): boolean {
+  const path = (pathOrUrl || '').split('?')[0] || '';
+  const m = (method || 'GET').toUpperCase();
+
+  // Scanners / health probes under /api/* that are not our routes.
+  if (statusCode === 404) {
+    if (!path.startsWith('/api/')) return true;
+    if (ADMIN_PROBE_404.has(path)) return true;
+    // Keep admin 404s (broken UI links) except known probes above.
+    if (path.startsWith('/api/admin')) return false;
+    // Public API 404s are almost always scanners or stale clients.
+    return true;
+  }
+
+  // No online providers / AI fallback declined — expected 409 for users.
+  if (
+    statusCode === 409 &&
+    m === 'POST' &&
+    (path === '/api/consultations/quick-connect' ||
+      path.startsWith('/api/consultations/quick-connect'))
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
 export function logAppEvent(opts: {
   level?: AppLogLevel;
   source?: string;
@@ -101,6 +161,7 @@ export function installConsoleErrorBridge(source = 'api'): void {
     nativeConsoleWarn(...args);
     const message = formatConsoleArgs(args);
     if (!message) return;
+    if (isBenignTelegramWarn(message)) return;
     // Only persist operational failures — skip routine noise.
     const lower = message.toLowerCase();
     if (
@@ -151,6 +212,7 @@ export function responseErrorLogger(req: Request, res: Response, next: NextFunct
     // SPA / static 404s and unauthenticated admin probes are noise.
     if (res.statusCode === 404 && !req.path.startsWith('/api/')) return;
     if (isExpectedUnauthNoise(req, res.statusCode)) return;
+    if (isExpectedHttpNoise(req.method, req.originalUrl || req.path, res.statusCode)) return;
     logAppEvent({
       level: res.statusCode >= 500 ? 'error' : 'warn',
       source: 'api',
