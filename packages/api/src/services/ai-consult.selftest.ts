@@ -296,7 +296,7 @@ async function main() {
   delete process.env.OPENAI_API_KEY;
 
   {
-    const { offlineUnknownNeedsOnlineReply } = await import('./ai-consult');
+    const { offlineUnknownBestEffortReply } = await import('./ai-consult');
     const unknownQ = 'سگم وقتی ماشین رد میشه یخ میزنه و زوزه عجیب میکشه بدون دلیل مشخص';
     assert(
       trainerQuestionUnknownOffline({ kind: 'trainer', userMessage: unknownQ }),
@@ -307,12 +307,9 @@ async function main() {
       userMessage: unknownQ,
       petName: 'رکس',
     });
-    assert(noKey.source === 'offline', 'unknown without key stays offline marker');
-    assert(/آنلاین/.test(noKey.text), 'unknown without key must mention online path');
-    assert(
-      /اتصال آنلاین|دانش آنلاین/.test(noKey.text),
-      'unknown without key uses needs-online copy'
-    );
+    assert(noKey.source === 'offline', 'unknown without key stays offline');
+    assert(!/اتصال آنلاین در دسترس نیست|دانش آنلاین مربی/.test(noKey.text), 'must not show online-unavailable wall');
+    assert(/فاصله|جایزه|آفرین|تشویق/.test(noKey.text), 'unknown without key still coaches');
 
     process.env.AI_CONSULT_API_KEY = 'test-key-not-used';
     const failedOnline = await generateAiConsultAdvice({
@@ -320,17 +317,15 @@ async function main() {
       userMessage: unknownQ,
       petName: 'رکس',
     });
-    assert(failedOnline.source === 'offline', 'failed online returns offline marker');
-    assert(/آنلاین/.test(failedOnline.text), 'failed online still signals online path');
-    assert(
-      !/تقویت مثبت|فاصلهٔ امن|زور و تنبیه نه/.test(failedOnline.text),
-      'failed online must not dump generic offline KB'
-    );
+    assert(failedOnline.source === 'offline', 'failed online returns offline');
+    assert(!/اتصال آنلاین در دسترس نیست/.test(failedOnline.text), 'failed online must not wall the user');
+    assert(/فاصله|جایزه|آفرین|تشویق/.test(failedOnline.text), 'failed online still coaches');
     delete process.env.AI_CONSULT_API_KEY;
     delete process.env.OPENAI_API_KEY;
 
-    const copy = offlineUnknownNeedsOnlineReply({ kind: 'trainer', petName: 'باران' });
-    assert(/آنلاین/.test(copy), 'needs-online helper mentions online');
+    const copy = offlineUnknownBestEffortReply({ kind: 'trainer', petName: 'Teddy', userMessage: unknownQ });
+    assert(/Teddy/.test(copy), 'best-effort uses pet name');
+    assert(/فاصله|جایزه/.test(copy), 'best-effort coaches');
   }
 
   const turn1 = await generateAiConsultAdvice({
