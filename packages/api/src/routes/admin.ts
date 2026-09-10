@@ -712,7 +712,7 @@ adminRouter.get('/settings', (_req, res) => {
     shopEnabled: '1', playdatesEnabled: '1', vetConsultEnabled: '1', botForceJoin: '1',
     paymentCardEnabled: '1', paymentStarsEnabled: '1', maintenanceMode: '0',
     financeMarginPercent: '35',
-    vetConsultFeeToman: '250000',
+    vetConsultFeePercent: '20',
     playdateFeeToman: '0',
     financeOpExMonthlyToman: '5000000',
   };
