@@ -13,6 +13,13 @@ import {
   YAxis,
 } from 'recharts';
 import { adminFetch, formatNumFa } from '../../api';
+import {
+  ADMIN_RTL_HBARS_CLASS,
+  adminRtlHBarsCategoryAxis,
+  adminRtlHBarsMargin,
+  adminRtlHBarsRadius,
+  adminRtlHBarsValueAxis,
+} from '../../rechartsRtlHBars';
 import { HrLinkGrid, formatHrMoney } from './HrUi';
 
 type ChartRow = { name: string; count: number };
@@ -153,43 +160,21 @@ export function AdminHrDashboardPage() {
           </div>
           {/*
             Recharts SVG ticks clip under document dir=rtl (often to 1 Persian glyph).
-            Force an LTR chart island, put the category lane on the right, and reverse
-            the value axis so bars grow toward the labels (RTL-readable).
+            Shared LTR island + right category lane (see rechartsRtlHBars).
           */}
           <div
-            className="hr-dash-chart hr-dash-chart--dept-bars"
+            className={`hr-dash-chart ${ADMIN_RTL_HBARS_CLASS}`}
             dir="ltr"
             style={{ height: Math.max(220, 40 * Math.max(deptData.length, 3)) }}
           >
             {deptData.length ? (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  layout="vertical"
-                  data={deptData}
-                  margin={{ top: 8, right: 8, left: 20, bottom: 8 }}
-                >
+                <BarChart layout="vertical" data={deptData} margin={{ ...adminRtlHBarsMargin }}>
                   <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--admin-border)" />
-                  <XAxis
-                    type="number"
-                    reversed
-                    allowDecimals={false}
-                    tick={{ fontSize: 11, fill: '#757086' }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <YAxis
-                    type="category"
-                    dataKey="name"
-                    orientation="right"
-                    width={148}
-                    interval={0}
-                    tick={{ fontSize: 12, fill: '#3d3558' }}
-                    axisLine={false}
-                    tickLine={false}
-                    tickMargin={10}
-                  />
+                  <XAxis {...adminRtlHBarsValueAxis} />
+                  <YAxis dataKey="name" {...adminRtlHBarsCategoryAxis} />
                   <Tooltip content={<ChartTip />} cursor={{ fill: 'rgba(92,77,145,0.06)' }} />
-                  <Bar dataKey="count" radius={[8, 0, 0, 8]} maxBarSize={22} name="نفر">
+                  <Bar dataKey="count" radius={adminRtlHBarsRadius} maxBarSize={22} name="نفر">
                     {deptData.map((_, i) => (
                       <Cell key={i} fill={DEPT_COLORS[i % DEPT_COLORS.length]} />
                     ))}
