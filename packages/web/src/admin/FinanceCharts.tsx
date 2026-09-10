@@ -35,7 +35,7 @@ export function AdminBarChart({
               <title>{`${p.label}: ${p.value.toLocaleString('fa-IR')}`}</title>
               {points.length <= 14 ? (
                 <text x={x + barW / 2} y={height + 28} textAnchor="middle" className="admin-chart-axis">
-                  {p.label.slice(5) || p.label}
+                  {p.label.length > 10 ? p.label.slice(-5) : p.label}
                 </text>
               ) : null}
             </g>
@@ -86,6 +86,60 @@ export function AdminLineChart({
   );
 }
 
+/** Multi-series line chart for executive aggregate trends. */
+export function AdminMultiLineChart({
+  series,
+  height = 200,
+}: {
+  series: Array<{ key: string; label: string; color: string; points: Point[] }>;
+  height?: number;
+}) {
+  const active = series.filter((s) => s.points.length > 0);
+  if (!active.length) {
+    return <p className="admin-muted">داده‌ای برای نمودار نیست</p>;
+  }
+  const allValues = active.flatMap((s) => s.points.map((p) => p.value));
+  const max = Math.max(1, ...allValues);
+  const len = Math.max(...active.map((s) => s.points.length));
+  const width = 640;
+  const padX = 14;
+  const padY = 14;
+  const step = len > 1 ? (width - padX * 2) / (len - 1) : 0;
+
+  return (
+    <div className="admin-chart-scroll">
+      <svg viewBox={`0 0 ${width} ${height + 36}`} className="admin-chart-svg" role="img">
+        {active.map((s) => {
+          const coords = s.points.map((p, i) => {
+            const x = padX + i * step;
+            const y = padY + (height - padY * 2) * (1 - p.value / max);
+            return { x, y, ...p };
+          });
+          const path = coords.map((c, i) => `${i === 0 ? 'M' : 'L'}${c.x},${c.y}`).join(' ');
+          return (
+            <g key={s.key}>
+              <path d={path} fill="none" stroke={s.color} strokeWidth={2.4} strokeLinejoin="round" />
+              {coords.map((c, i) => (
+                <circle key={`${s.key}-${i}`} cx={c.x} cy={c.y} r={2.8} fill={s.color}>
+                  <title>{`${s.label} · ${c.label}: ${c.value.toLocaleString('fa-IR')}`}</title>
+                </circle>
+              ))}
+            </g>
+          );
+        })}
+      </svg>
+      <ul className="admin-chart-legend">
+        {active.map((s) => (
+          <li key={s.key}>
+            <span style={{ background: s.color }} />
+            {s.label}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export function AdminDonutChart({
   slices,
   size = 160,
@@ -97,31 +151,36 @@ export function AdminDonutChart({
   const r = 56;
   const c = 2 * Math.PI * r;
   let offset = 0;
+  const hasData = slices.some((s) => s.value > 0);
   return (
     <div className="admin-donut-wrap">
       <svg width={size} height={size} viewBox="0 0 140 140" className="admin-chart-svg">
         <g transform="translate(70,70) rotate(-90)">
-          {slices.map((s) => {
-            const len = (s.value / total) * c;
-            const el = (
-              <circle
-                key={s.label}
-                r={r}
-                cx={0}
-                cy={0}
-                fill="transparent"
-                stroke={s.color}
-                strokeWidth={18}
-                strokeDasharray={`${len} ${c - len}`}
-                strokeDashoffset={-offset}
-              />
-            );
-            offset += len;
-            return el;
-          })}
+          {!hasData ? (
+            <circle r={r} cx={0} cy={0} fill="transparent" stroke="#e2e8f0" strokeWidth={18} />
+          ) : (
+            slices.map((s) => {
+              const len = (s.value / total) * c;
+              const el = (
+                <circle
+                  key={s.label}
+                  r={r}
+                  cx={0}
+                  cy={0}
+                  fill="transparent"
+                  stroke={s.color}
+                  strokeWidth={18}
+                  strokeDasharray={`${len} ${c - len}`}
+                  strokeDashoffset={-offset}
+                />
+              );
+              offset += len;
+              return el;
+            })
+          )}
         </g>
         <text x="70" y="68" textAnchor="middle" className="admin-donut-center">
-          {total.toLocaleString('fa-IR')}
+          {(hasData ? total : 0).toLocaleString('fa-IR')}
         </text>
         <text x="70" y="84" textAnchor="middle" className="admin-donut-sub">
           جمع
