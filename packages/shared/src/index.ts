@@ -6,6 +6,7 @@ export * from './rx-suggestions';
 export * from './profile-card';
 export * from './peer-profile';
 export * from './hr';
+export * from './admin-notifications';
 
 import type {
   OnboardingStatus,

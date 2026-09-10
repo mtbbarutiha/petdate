@@ -1273,6 +1273,16 @@ function migrateSchema() {
     console.warn('CRM schema ensure skipped/failed:', (err as Error).message);
   }
 
+  // Admin header notifications — CREATE IF NOT EXISTS + idempotent seed; never wipe
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { ensureAdminNotificationsSchema } =
+      require('./admin-notifications') as typeof import('./admin-notifications');
+    ensureAdminNotificationsSchema();
+  } catch (err) {
+    console.warn('Admin notifications schema ensure skipped/failed:', (err as Error).message);
+  }
+
   // HR↔Sales interconnected demo (idempotent; never wipe / never duplicate)
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports

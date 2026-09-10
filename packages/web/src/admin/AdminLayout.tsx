@@ -7,6 +7,7 @@ import {
   Route, Inbox, HandCoins, Bot, MessageSquare, Star, HeartHandshake,
 } from 'lucide-react';
 import { AdminWordmark } from './AdminWordmark';
+import { AdminHeaderNotifications } from './AdminHeaderNotifications';
 import { adminCan, getAdminDisplayName, getAdminRole, logoutAdmin } from './auth';
 import { ADMIN_PANEL_ROLE_LABELS } from '@petdate/shared';
 import '../styles/admin.css';
@@ -170,6 +171,7 @@ export function AdminLayout() {
               </div>
             </div>
             <div className="admin-topbar-end">
+              <AdminHeaderNotifications />
               <span className="admin-topbar-chip">RTL · fa</span>
               <span className="admin-topbar-chip admin-topbar-chip--mint admin-live-pulse">live DB</span>
             </div>

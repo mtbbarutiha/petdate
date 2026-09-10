@@ -2150,3 +2150,192 @@ body:has(.admin-app) {
     min-width: 640px;
   }
 }
+
+/* ── Header notifications bell (RTL) ── */
+.admin-app .admin-notif {
+  position: relative;
+}
+.admin-app .admin-notif-bell {
+  position: relative;
+}
+.admin-app .admin-notif-badge {
+  position: absolute;
+  top: -4px;
+  inset-inline-end: -4px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #0f766e;
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 800;
+  line-height: 18px;
+  text-align: center;
+  border: 2px solid #fff;
+  pointer-events: none;
+}
+.admin-app .admin-notif-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  inset-inline-end: 0;
+  width: min(360px, calc(100vw - 24px));
+  max-height: min(70vh, 480px);
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border: 1px solid var(--admin-border);
+  border-radius: 12px;
+  box-shadow: 0 16px 40px rgba(25, 6, 61, 0.12);
+  z-index: 40;
+  overflow: hidden;
+  animation: admin-notif-in 0.18s ease;
+}
+@keyframes admin-notif-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.admin-app .admin-notif-panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--admin-border);
+  background: linear-gradient(180deg, #f7fffc, #fff);
+}
+.admin-app .admin-notif-panel-head strong {
+  display: block;
+  font-size: 0.95rem;
+}
+.admin-app .admin-notif-panel-head .admin-muted {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.72rem;
+}
+.admin-app .admin-notif-mark-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.72rem !important;
+  padding: 4px 8px !important;
+  white-space: nowrap;
+}
+.admin-app .admin-notif-list {
+  overflow: auto;
+  flex: 1;
+  padding: 6px;
+}
+.admin-app .admin-notif-empty,
+.admin-app .admin-notif-error {
+  margin: 16px 12px;
+  font-size: 0.85rem;
+  text-align: center;
+}
+.admin-app .admin-notif-error {
+  color: #b91c1c;
+}
+.admin-app .admin-notif-item {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: #fafafa;
+  margin-bottom: 6px;
+  overflow: hidden;
+}
+.admin-app .admin-notif-item.is-read {
+  background: transparent;
+  opacity: 0.72;
+}
+.admin-app .admin-notif-item--warn {
+  border-color: #ffedd5;
+  background: #fffbeb;
+}
+.admin-app .admin-notif-item--bad {
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+.admin-app .admin-notif-item--ok {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+}
+.admin-app .admin-notif-item-main {
+  flex: 1;
+  text-align: start;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: inherit;
+  font: inherit;
+}
+.admin-app .admin-notif-item-main:hover {
+  background: rgba(15, 118, 110, 0.06);
+}
+.admin-app .admin-notif-item-title {
+  font-size: 0.84rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+.admin-app .admin-notif-item-body {
+  font-size: 0.75rem;
+  color: var(--admin-muted);
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.admin-app .admin-notif-item-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 2px;
+  font-size: 0.68rem;
+  color: var(--admin-muted);
+}
+.admin-app .admin-notif-module {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #0f766e;
+}
+.admin-app .admin-notif-read-btn {
+  align-self: center;
+  margin-inline-end: 6px;
+  font-size: 0.7rem !important;
+  padding: 4px 8px !important;
+}
+.admin-app .admin-notif-panel-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--admin-border);
+  background: #fafafa;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.admin-app .admin-notif-panel-foot a {
+  color: #0f766e;
+  text-decoration: none;
+}
+.admin-app .admin-notif-panel-foot a:hover {
+  text-decoration: underline;
+}
+@media (max-width: 720px) {
+  .admin-app .admin-notif-panel {
+    position: fixed;
+    top: 56px;
+    inset-inline: 12px auto;
+    inset-inline-end: 12px;
+    width: auto;
+    max-width: none;
+  }
+}
