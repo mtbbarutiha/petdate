@@ -13,7 +13,11 @@ const FLAGS: { key: string; label: string; hint: string }[] = [
 
 const FINANCE_NUMS: { key: string; label: string; hint: string }[] = [
   { key: 'financeMarginPercent', label: 'حاشیه سود پیش‌فرض (%)', hint: 'اگر cost محصول خالی باشد برای COGS' },
-  { key: 'vetConsultFeeToman', label: 'کارمزد مشاوره (تومان)', hint: 'درآمد تخمینی هر مشاوره' },
+  {
+    key: 'vetConsultFeePercent',
+    label: 'کارمزد مشاوره (%)',
+    hint: 'درصدی از مبلغ فاکتور مشاوره (fee_coins → تومان)',
+  },
   { key: 'playdateFeeToman', label: 'کارمزد همبازی (تومان)', hint: 'درآمد تخمینی هر همبازی پذیرفته' },
   { key: 'financeOpExMonthlyToman', label: 'هزینه عملیاتی ماهانه', hint: 'برای P&L دوره' },
 ];

@@ -97,7 +97,9 @@ export function AdminFinancePnLPage() {
                 </table>
               </div>
               <p className="admin-muted" style={{ margin: '12px 16px' }}>
-                COGS از فیلد cost محصولات یا حاشیه پیش‌فرض {formatNumFa(data.settings.financeMarginPercent)}٪ محاسبه می‌شود.
+                COGS از فیلد cost محصولات یا حاشیه پیش‌فرض {formatNumFa(data.settings.financeMarginPercent)}٪
+                محاسبه می‌شود. کارمزد مشاوره = {formatNumFa(data.settings.vetConsultFeePercent ?? 20)}٪ از مبلغ فاکتور
+                (سکه × نرخ تومان).
               </p>
             </section>
             <section className="admin-card">

@@ -1310,9 +1310,20 @@ function seedFinanceDefaults() {
      ON CONFLICT(key) DO NOTHING`
   );
   upsert.run('financeMarginPercent', '35');
-  upsert.run('vetConsultFeeToman', '250000');
+  // Consult commission is a percent of invoice (fee_coins→toman), default 20%.
+  // Legacy `vetConsultFeeToman` (fixed Toman, e.g. 250000) is ignored when migrating.
+  upsert.run('vetConsultFeePercent', '20');
   upsert.run('playdateFeeToman', '0');
   upsert.run('financeOpExMonthlyToman', '5000000');
+
+  // Unit switch: if an old fixed-Toman row exists and percent was never customized past seed,
+  // keep percent at 20 (do not derive from the old Toman value).
+  const legacyToman = db
+    .prepare(`SELECT value FROM admin_settings WHERE key = 'vetConsultFeeToman'`)
+    .get() as { value: string } | undefined;
+  if (legacyToman) {
+    upsert.run('vetConsultFeePercent', '20');
+  }
 
   const orderCount = Number(
     (db.prepare('SELECT COUNT(*) as c FROM shop_orders').get() as { c: number } | undefined)?.c ?? 0

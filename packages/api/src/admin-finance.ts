@@ -1,7 +1,7 @@
 /**
  * Admin finance analytics — P&L, sales charts, wallet ledger, top products.
  */
-import { orderPublicIdOf } from '@petdate/shared';
+import { COIN_PRICE_TOMAN, orderPublicIdOf } from '@petdate/shared';
 import { getDb } from './db';
 import { adminPlatform } from './admin-platform';
 
@@ -169,9 +169,13 @@ function serviceFees(since: string, until?: string): {
   playdateRevenue: number;
   playdateCount: number;
 } {
-  const vetFee = settingNum('vetConsultFeeToman', 250000);
+  // Platform consult commission = percent of invoice (fee_coins × COIN_PRICE_TOMAN).
+  // Legacy admin_settings.vetConsultFeeToman (fixed Toman) is ignored.
+  const vetPct = Math.min(100, Math.max(0, settingNum('vetConsultFeePercent', 20))) / 100;
   const playFee = settingNum('playdateFeeToman', 0);
-  let vetSql = `SELECT COUNT(*) as c FROM vet_consultations
+  let vetSql = `SELECT COUNT(*) as c,
+                       COALESCE(SUM(COALESCE(fee_coins, 0)), 0) as coins
+                FROM vet_consultations
                 WHERE status IN ('completed','closed','done','active') AND created_at >= ?`;
   let playSql = `SELECT COUNT(*) as c FROM playdate_requests
                  WHERE status = 'accepted' AND created_at >= ?`;
@@ -181,12 +185,14 @@ function serviceFees(since: string, until?: string): {
     playSql += ' AND created_at < ?';
     params.push(until);
   }
-  const vetCount = Number((db().prepare(vetSql).get(...params) as { c: number }).c || 0);
+  const vetRow = db().prepare(vetSql).get(...params) as { c: number; coins: number };
+  const vetCount = Number(vetRow.c || 0);
+  const invoiceToman = Math.round(Number(vetRow.coins || 0) * COIN_PRICE_TOMAN);
   const playdateCount = Number((db().prepare(playSql).get(...params) as { c: number }).c || 0);
   return {
     vetCount,
     playdateCount,
-    vetRevenue: vetCount * vetFee,
+    vetRevenue: Math.round(invoiceToman * vetPct),
     playdateRevenue: playdateCount * playFee,
   };
 }
@@ -285,7 +291,7 @@ export const adminFinance = {
       previous: { revenue: prevRevenue, orders: previous.orders },
       settings: {
         financeMarginPercent: settingNum('financeMarginPercent', 35),
-        vetConsultFeeToman: settingNum('vetConsultFeeToman', 250000),
+        vetConsultFeePercent: settingNum('vetConsultFeePercent', 20),
         playdateFeeToman: settingNum('playdateFeeToman', 0),
         financeOpExMonthlyToman: settingNum('financeOpExMonthlyToman', 5000000),
       },
