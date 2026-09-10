@@ -275,6 +275,217 @@ hrAdminRouter.patch('/ats/candidates/:id/stage', requirePermission('hr.write'), 
   res.json({ candidate });
 });
 
+hrAdminRouter.get('/ats/meta', (_req, res) => {
+  res.json({
+    jobTitles: hr.listPersonnelJobTitles(),
+    openings: hr.listJobOpenings(),
+    interviewers: hr.listEmployees({ limit: 200 }).employees.map((e) => ({
+      id: e.id,
+      name: `${e.firstName} ${e.lastName}`.trim(),
+      jobTitle: e.jobTitle,
+      department: e.department,
+    })),
+  });
+});
+
+hrAdminRouter.get('/ats/candidates/:id', (req, res) => {
+  const id = Number(req.params.id);
+  const candidate = hr.getCandidate(id);
+  if (!candidate) {
+    res.status(404).json({ error: 'متقاضی پیدا نشد' });
+    return;
+  }
+  res.json({ candidate });
+});
+
+hrAdminRouter.post('/ats/candidates/:id/calls', requirePermission('hr.write'), (req, res) => {
+  const id = Number(req.params.id);
+  const outcome = typeof req.body?.outcome === 'string' ? req.body.outcome : '';
+  if (!Number.isFinite(id) || !outcome) {
+    res.status(400).json({ error: 'پارامتر نامعتبر' });
+    return;
+  }
+  const candidate = hr.recordCandidateCall(id, {
+    outcome,
+    note: typeof req.body?.note === 'string' ? req.body.note : '',
+  });
+  if (!candidate) {
+    res.status(404).json({ error: 'متقاضی پیدا نشد' });
+    return;
+  }
+  res.json({ candidate });
+});
+
+hrAdminRouter.post('/ats/candidates/:id/interview', requirePermission('hr.write'), async (req, res) => {
+  const id = Number(req.params.id);
+  const interviewAt = typeof req.body?.interviewAt === 'string' ? req.body.interviewAt : '';
+  if (!Number.isFinite(id) || !interviewAt) {
+    res.status(400).json({ error: 'زمان مصاحبه الزامی است' });
+    return;
+  }
+  let interviewerName = typeof req.body?.interviewerName === 'string' ? req.body.interviewerName : '';
+  const interviewerEmployeeId =
+    req.body?.interviewerEmployeeId != null ? Number(req.body.interviewerEmployeeId) : null;
+  if (interviewerEmployeeId && Number.isFinite(interviewerEmployeeId)) {
+    const emp = hr.getEmployee(interviewerEmployeeId);
+    if (emp) interviewerName = `${emp.firstName} ${emp.lastName}`.trim();
+  }
+  const candidate = hr.scheduleCandidateInterview(id, {
+    interviewAt,
+    interviewerEmployeeId: Number.isFinite(interviewerEmployeeId as number)
+      ? interviewerEmployeeId
+      : null,
+    interviewerName,
+  });
+  if (!candidate) {
+    res.status(404).json({ error: 'متقاضی پیدا نشد' });
+    return;
+  }
+
+  const notify = await notifyCandidateInterview(candidate);
+  res.json({ candidate: hr.getCandidate(id) || candidate, notify });
+});
+
+hrAdminRouter.post('/ats/candidates/:id/decision', requirePermission('hr.write'), async (req, res) => {
+  const id = Number(req.params.id);
+  const decision = req.body?.decision === 'approve' || req.body?.decision === 'reject'
+    ? req.body.decision
+    : null;
+  if (!Number.isFinite(id) || !decision) {
+    res.status(400).json({ error: 'تصمیم نامعتبر' });
+    return;
+  }
+  const startDate = typeof req.body?.startDate === 'string' ? req.body.startDate : '';
+  let candidate = hr.setCandidateDecision(id, {
+    decision,
+    startDate,
+    note: typeof req.body?.note === 'string' ? req.body.note : '',
+  });
+  if (!candidate) {
+    res.status(404).json({ error: 'متقاضی پیدا نشد' });
+    return;
+  }
+
+  let hired: ReturnType<typeof hrMod.hireCandidate> | null = null;
+  if (decision === 'approve') {
+    // Move to hired + onboarding when HR confirms start
+    if (startDate) {
+      hired = hrMod.hireCandidate(id);
+      candidate = hired?.candidate || candidate;
+      if (hired?.onboarding && startDate) {
+        // start date already set via followup; onboarding uses today by default
+      }
+    }
+  }
+
+  const notify = await notifyCandidateDecision(candidate!, decision, startDate);
+  res.json({
+    candidate: hr.getCandidate(id) || candidate,
+    hired,
+    notify,
+  });
+});
+
+async function notifyCandidateInterview(candidate: NonNullable<ReturnType<typeof hr.getCandidate>>) {
+  const { HR_INTERVIEW_SITE_ADDRESS } = await import('@petdate/shared');
+  const c = candidate;
+  const when = (c.followup.interviewAt || '').replace('T', ' ').slice(0, 16);
+  const body =
+    `سلام ${c.firstName} عزیز،\n` +
+    `زمان مصاحبه شما: ${when}\n` +
+    `آدرس: ${HR_INTERVIEW_SITE_ADDRESS}\n` +
+    (c.followup.interviewerName ? `مصاحبه‌گر: ${c.followup.interviewerName}\n` : '') +
+    `پت‌دیت — منابع انسانی`;
+  return sendCandidateNotify(c, 'دعوت به مصاحبه — پت‌دیت', body);
+}
+
+async function notifyCandidateDecision(
+  candidate: NonNullable<ReturnType<typeof hr.getCandidate>>,
+  decision: 'approve' | 'reject',
+  startDate: string
+) {
+  if (decision === 'approve') {
+    const body =
+      `سلام ${candidate.firstName} عزیز،\n` +
+      `از پذیرش شما خوشحالیم.\n` +
+      (startDate ? `تاریخ شروع همکاری: ${startDate}\n` : '') +
+      `لطفاً مدارک لازم را به ایمیل منابع انسانی ارسال کنید.\n` +
+      `پت‌دیت — منابع انسانی`;
+    return sendCandidateNotify(candidate, 'تایید استخدام — پت‌دیت', body);
+  }
+  const body =
+    `سلام ${candidate.firstName} عزیز،\n` +
+    `از وقتی که برای فرآیند جذب گذاشتید سپاسگزاریم.\n` +
+    `در حال حاضر امکان ادامه همکاری فراهم نشد؛ برای شما آرزوی موفقیت داریم.\n` +
+    `پت‌دیت — منابع انسانی`;
+  return sendCandidateNotify(candidate, 'نتیجه فرآیند جذب — پت‌دیت', body);
+}
+
+async function sendCandidateNotify(
+  candidate: NonNullable<ReturnType<typeof hr.getCandidate>>,
+  subject: string,
+  text: string
+): Promise<{ email?: { ok: boolean; error?: string }; sms?: { ok: boolean; error?: string } }> {
+  const out: { email?: { ok: boolean; error?: string }; sms?: { ok: boolean; error?: string } } = {};
+  const emailTo = (candidate.email || '').trim();
+  if (emailTo) {
+    try {
+      const { sendMail, isSmtpConfigured } = await import('../services/mail');
+      if (isSmtpConfigured()) {
+        const sent = await sendMail({ to: emailTo, subject, text, purpose: 'hr-ats' });
+        out.email = sent.ok ? { ok: true } : { ok: false, error: sent.error };
+        hr.appendCandidateNotifyLog(candidate.id, {
+          channel: 'email',
+          ok: sent.ok,
+          detail: sent.ok ? subject : sent.error,
+        });
+      } else {
+        out.email = { ok: false, error: 'SMTP پیکربندی نشده' };
+        hr.appendCandidateNotifyLog(candidate.id, {
+          channel: 'email',
+          ok: false,
+          detail: 'SMTP پیکربندی نشده',
+        });
+      }
+    } catch (err) {
+      out.email = { ok: false, error: err instanceof Error ? err.message : 'خطای ایمیل' };
+    }
+  }
+
+  const mobile = (candidate.mobile || '').trim();
+  if (mobile) {
+    try {
+      const { candooSendWithSrcFallback, isCandooConfigured } = await import('../services/candoo');
+      if (isCandooConfigured()) {
+        const sent = await candooSendWithSrcFallback({
+          recipient: mobile,
+          body: text.slice(0, 700),
+          type: 0,
+        });
+        const ok = Boolean(sent?.ok);
+        out.sms = ok
+          ? { ok: true }
+          : { ok: false, error: String(sent?.error || 'ارسال ناموفق') };
+        hr.appendCandidateNotifyLog(candidate.id, {
+          channel: 'sms',
+          ok,
+          detail: ok ? 'ارسال شد' : out.sms.error,
+        });
+      } else {
+        out.sms = { ok: false, error: 'پیامک پیکربندی نشده' };
+        hr.appendCandidateNotifyLog(candidate.id, {
+          channel: 'sms',
+          ok: false,
+          detail: 'پیامک پیکربندی نشده',
+        });
+      }
+    } catch (err) {
+      out.sms = { ok: false, error: err instanceof Error ? err.message : 'خطای پیامک' };
+    }
+  }
+  return out;
+}
+
 hrAdminRouter.get('/settings/layers', (_req, res) => {
   res.json({ careerLayers: hr.listCareerLayers() });
 });

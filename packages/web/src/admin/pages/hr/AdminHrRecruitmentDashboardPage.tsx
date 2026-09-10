@@ -1,17 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from 'recharts';
 import type { HrCandidate, HrJobOpening } from '@petdate/shared';
-import { adminFetch, formatNumFa } from '../../api';
+import { adminFetch } from '../../api';
+import { AdminFunnelChart } from '../../FinanceCharts';
 import { HrKpiGrid, HrLinkGrid } from './HrUi';
 
 type ChartRow = { name: string; count: number };
@@ -29,30 +20,11 @@ type Dash = {
   };
   byStage: Record<string, number>;
   stageChart?: ChartRow[];
+  funnel?: ChartRow[];
   links: Array<{ to: string; label: string }>;
   recentCandidates: HrCandidate[];
   openings: HrJobOpening[];
 };
-
-const COLORS = ['#5c4d91', '#15cca0', '#fd961e', '#3b82f6', '#ec4899', '#14b8a6', '#8b5cf6'];
-
-function ChartTip({
-  active,
-  payload,
-  label,
-}: {
-  active?: boolean;
-  payload?: Array<{ value?: number }>;
-  label?: string;
-}) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="hr-chart-tooltip">
-      <div className="hr-chart-tooltip-label">{label}</div>
-      <strong>{formatNumFa(Number(payload[0].value || 0))} نفر</strong>
-    </div>
-  );
-}
 
 export function AdminHrRecruitmentDashboardPage() {
   const [data, setData] = useState<Dash | null>(null);
@@ -71,11 +43,14 @@ export function AdminHrRecruitmentDashboardPage() {
 
   const k = data?.kpis;
   const stageRows = useMemo(() => {
+    if (data?.funnel?.length) return data.funnel;
     if (data?.stageChart?.length) return data.stageChart;
     return Object.entries(data?.byStage || {})
       .map(([name, count]) => ({ name, count }))
       .sort((a, b) => b.count - a.count);
   }, [data]);
+
+  const funnelPoints = stageRows.map((r) => ({ label: r.name, value: r.count }));
 
   return (
     <div className="admin-page hr-dash">
@@ -112,23 +87,12 @@ export function AdminHrRecruitmentDashboardPage() {
       <div className="hr-dash-main-row" style={{ marginTop: 16 }}>
         <article className="admin-card hr-dash-panel">
           <div className="admin-card-head">
-            <h2>قیف / توزیع مراحل</h2>
+            <h2>قیف مراحل جذب</h2>
+            <span className="admin-muted">از متقاضی جدید تا استخدام</span>
           </div>
-          <div className="hr-dash-chart" style={{ height: Math.max(220, 36 * Math.max(stageRows.length, 3)) }}>
-            {stageRows.length ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart layout="vertical" data={stageRows} margin={{ top: 8, right: 24, left: 8, bottom: 8 }}>
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--admin-border)" />
-                  <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11, fill: '#757086' }} axisLine={false} tickLine={false} />
-                  <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 12, fill: '#3d3558' }} axisLine={false} tickLine={false} />
-                  <Tooltip content={<ChartTip />} cursor={{ fill: 'rgba(92,77,145,0.06)' }} />
-                  <Bar dataKey="count" radius={[0, 8, 8, 0]} maxBarSize={22}>
-                    {stageRows.map((_, i) => (
-                      <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+          <div className="hr-dash-chart" style={{ minHeight: 260 }}>
+            {funnelPoints.length ? (
+              <AdminFunnelChart points={funnelPoints} />
             ) : (
               <p className="admin-muted">متقاضی‌ای نیست</p>
             )}
@@ -145,7 +109,7 @@ export function AdminHrRecruitmentDashboardPage() {
                 <b>
                   {c.firstName} {c.lastName}
                 </b>{' '}
-                · {c.stage}
+                · <span className="admin-pill">{c.stage}</span>
               </li>
             ))}
             {!data?.recentCandidates?.length ? <li className="admin-muted">موردی نیست</li> : null}

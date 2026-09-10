@@ -47,10 +47,10 @@ export function IranPersonnelHeatmap({ rows }: { rows: Row[] }) {
       <aside className="hr-heat-legend-card" aria-label="رتبه‌بندی استان‌ها">
         {top ? (
           <p className="hr-heat-top">
-            استان با بیشترین فراوانی: <strong>{top.name}</strong> ({formatNumFa(top.count)} نفر)
+            استان با بیشترین استخدام: <strong>{top.name}</strong> ({formatNumFa(top.count)} نفر)
           </p>
         ) : (
-          <p className="hr-heat-top admin-muted">هنوز استانی با پرسنل ثبت نشده</p>
+          <p className="hr-heat-top admin-muted">هنوز استانی با استخدام ثبت نشده</p>
         )}
         <ul className="hr-heat-rank">
           {ranked.length ? (
@@ -103,6 +103,7 @@ export function IranPersonnelHeatmap({ rows }: { rows: Row[] }) {
             }
             const hot = max > 0 && count === max;
             const r = 8 + Math.round((count / Math.max(max, 1)) * 14);
+            const intensity = 0.35 + (count / Math.max(max, 1)) * 0.65;
             return (
               <g key={name}>
                 <circle
@@ -116,9 +117,10 @@ export function IranPersonnelHeatmap({ rows }: { rows: Row[] }) {
                   cy={pt.y}
                   r={r}
                   className={hot ? 'hr-heat-dot hr-heat-dot--hot' : 'hr-heat-dot hr-heat-dot--active'}
+                  style={{ opacity: intensity }}
                 >
                   <title>
-                    {name}: {count} نفر
+                    {name}: {count} استخدام
                   </title>
                 </circle>
                 <text x={pt.x} y={pt.y + r + 12} textAnchor="middle" className="hr-heat-label">

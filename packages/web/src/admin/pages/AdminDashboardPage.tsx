@@ -19,6 +19,7 @@ import { adminFetch, formatNumFa, formatTomanFa } from '../api';
 import {
   AdminBarChart,
   AdminDonutChart,
+  AdminFunnelChart,
   AdminLineChart,
   AdminMultiLineChart,
 } from '../FinanceCharts';
@@ -30,6 +31,10 @@ type ChartSlice = { label: string; value: number; color: string };
 
 type Dash = {
   generatedAt: string;
+  filterOptions?: {
+    teams: string[];
+    people: Array<{ id: number; name: string }>;
+  };
   stats: {
     users: number;
     pets: number;
@@ -142,8 +147,18 @@ type Dash = {
   }>;
 };
 
-const PAY_COLORS = ['#5c4d91', '#15cca0', '#f59e0b', '#0ea5e9', '#ec4899'];
+type ActivityRow = {
+  id: string;
+  at: string;
+  actor: string;
+  action: string;
+  entityType: string;
+  entityLabel: string;
+  refPath?: string;
+  source: string;
+};
 
+const PAY_COLORS = ['#5c4d91', '#15cca0', '#f59e0b', '#0ea5e9', '#ec4899'];
 
 type Standing = 'در مسیر درست' | 'نیازمند تلاش بیشتر' | 'ضعیف';
 type DashKpi = { key: string; label: string; value: number; target: number; unit: string; standing: Standing; pct: number };
@@ -232,22 +247,68 @@ function KpiRing({ kpi }: { kpi: DashKpi }) {
   );
 }
 
+type DashFilters = {
+  from: string;
+  to: string;
+  team: string;
+  personId: string;
+  module: string;
+  paymentType: string;
+  salesStage: string;
+};
+
+const emptyFilters: DashFilters = {
+  from: '',
+  to: '',
+  team: '',
+  personId: '',
+  module: '',
+  paymentType: '',
+  salesStage: '',
+};
+
+function filtersToQs(f: DashFilters): string {
+  const qs = new URLSearchParams();
+  if (f.from) qs.set('from', f.from);
+  if (f.to) qs.set('to', f.to);
+  if (f.team) qs.set('team', f.team);
+  if (f.personId) qs.set('personId', f.personId);
+  if (f.module) qs.set('module', f.module);
+  if (f.paymentType) qs.set('paymentType', f.paymentType);
+  if (f.salesStage) qs.set('salesStage', f.salesStage);
+  const s = qs.toString();
+  return s ? `?${s}` : '';
+}
 
 export function AdminDashboardPage() {
   const [data, setData] = useState<Dash | null>(null);
+  const [activity, setActivity] = useState<ActivityRow[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [tab, setTab] = useState<'overview' | 'activity'>('overview');
+  const [filters, setFilters] = useState<DashFilters>(emptyFilters);
+
   const load = useCallback(async () => {
     try {
-      const dash = await adminFetch<Dash>('/api/admin/dashboard');
+      const qs = filtersToQs(filters);
+      const [dash, act] = await Promise.all([
+        adminFetch<Dash>(`/api/admin/dashboard${qs}`),
+        adminFetch<{ rows: ActivityRow[] }>(`/api/admin/dashboard/activity${qs}`),
+      ]);
       setData(dash);
+      setActivity(act.rows || []);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'خطا');
     }
-  }, []);
+  }, [filters]);
+
   useEffect(() => {
     void load();
   }, [load]);
+
+  const applySlice = (patch: Partial<DashFilters>) => {
+    setFilters((prev) => ({ ...prev, ...patch }));
+  };
 
   const s = data?.stats;
   const m = data?.modules;
@@ -273,7 +334,6 @@ export function AdminDashboardPage() {
   }, [healthKpis]);
   const overallStanding = standingOf(overallPct);
   const weakPoints = healthKpis.filter((k) => k.standing === 'ضعیف');
-
 
   const platformKpis = s
     ? [
@@ -354,7 +414,7 @@ export function AdminDashboardPage() {
         },
         {
           key: 'crm',
-          title: 'باشگاه مشتریان',
+          title: 'باشگاه مشتریان · پشتیبانی',
           to: links?.crm || '/admin/crm',
           icon: Headphones,
           tone: 'sky',
@@ -394,6 +454,17 @@ export function AdminDashboardPage() {
         ]
       : [];
 
+  const activeFilterChips = [
+    filters.from || filters.to ? `بازه: ${filters.from || '…'} → ${filters.to || '…'}` : null,
+    filters.team ? `تیم: ${filters.team}` : null,
+    filters.personId
+      ? `فرد: ${data?.filterOptions?.people.find((p) => String(p.id) === filters.personId)?.name || filters.personId}`
+      : null,
+    filters.module ? `ماژول: ${filters.module}` : null,
+    filters.paymentType ? `پرداخت: ${filters.paymentType}` : null,
+    filters.salesStage ? `قیف فروش: ${filters.salesStage}` : null,
+  ].filter(Boolean) as string[];
+
   return (
     <div className="admin-page admin-page--exec">
       <header className="admin-header">
@@ -412,472 +483,604 @@ export function AdminDashboardPage() {
       </header>
       {error ? <p className="admin-error">{error}</p> : null}
 
-
-      {healthKpis.length ? (
-        <section className="admin-card crm-kpi-panel" style={{ marginBottom: 16 }}>
-          <div className="admin-card-head">
-            <h2>وضعیت سلامت پلتفرم نسبت به شاخص‌ها</h2>
-            <span className="admin-muted">پنل پویا · مشابه باشگاه مشتریان</span>
-          </div>
-          <div className="crm-kpi-layout">
-            <GaugeSemi pct={overallPct} standing={overallStanding} />
-            <div className="crm-kpi-rings">
-              {healthKpis.map((k) => (
-                <KpiRing key={k.key} kpi={k} />
-              ))}
-            </div>
-            <div className="crm-kpi-legend">
-              <div className="crm-legend-item" style={{ borderColor: '#15cca055', background: '#15cca014' }}>
-                <strong style={{ color: '#0f9a78' }}>در مسیر درست</strong>
-                <span>۹۰٪ و بالاتر</span>
-              </div>
-              <div className="crm-legend-item" style={{ borderColor: '#fd961e55', background: '#fd961e14' }}>
-                <strong style={{ color: '#c77810' }}>نیازمند تلاش بیشتر</strong>
-                <span>۷۰٪ تا ۹۰٪</span>
-              </div>
-              <div className="crm-legend-item" style={{ borderColor: '#c6282855', background: '#c6282814' }}>
-                <strong style={{ color: '#c62828' }}>ضعیف</strong>
-                <span>زیر ۷۰٪</span>
-              </div>
-            </div>
-          </div>
-          {weakPoints.length ? (
-            <div className="crm-weak-points">
-              <strong>نقاط ضعف:</strong>{' '}
-              {weakPoints
-                .map((k) => `${k.label}: ${formatNumFa(k.value)} از ${formatNumFa(k.target)} (${formatNumFa(k.pct)}٪)`)
-                .join(' · ')}
-            </div>
-          ) : (
-            <div className="crm-weak-points crm-weak-points--ok">همه شاخص‌های اصلی در مسیر مطلوب هستند.</div>
-          )}
-        </section>
-      ) : null}
-
-      <p className="admin-section-label">شاخص‌های زندهٔ پلتفرم</p>
-      <div className="admin-stats admin-stats--dense">
-        {platformKpis.map((k) => (
-          <Link
-            key={k.label}
-            to={k.to}
-            className={`admin-stat admin-stat--${k.tone}`}
-            style={{ textDecoration: 'none', color: 'inherit' }}
-          >
-            <div className="admin-stat-icon">
-              <k.icon size={18} />
-            </div>
-            <div>
-              <div className="admin-stat-value">{k.value}</div>
-              <div className="admin-stat-label">{k.label}</div>
-            </div>
-          </Link>
-        ))}
+      <div className="admin-tabs" role="tablist">
+        <button
+          type="button"
+          className={`admin-tab${tab === 'overview' ? ' is-on' : ''}`}
+          onClick={() => setTab('overview')}
+        >
+          نمای کلی
+        </button>
+        <button
+          type="button"
+          className={`admin-tab${tab === 'activity' ? ' is-on' : ''}`}
+          onClick={() => setTab('activity')}
+        >
+          فعالیت‌ها
+        </button>
       </div>
 
-      {moduleCards.length ? (
+      <section className="admin-card admin-dash-filters" style={{ marginBottom: 16, padding: 14 }}>
+        <div className="admin-card-head" style={{ marginBottom: 10 }}>
+          <h2 style={{ fontSize: '0.95rem', margin: 0 }}>فیلترها</h2>
+          <button type="button" className="admin-btn admin-btn--ghost" onClick={() => setFilters(emptyFilters)}>
+            پاک کردن
+          </button>
+        </div>
+        <div className="hr-reports-filters" role="group" aria-label="فیلتر داشبورد">
+          <label className="hr-reports-filter">
+            <span>از تاریخ</span>
+            <input
+              type="date"
+              className="admin-select"
+              value={filters.from}
+              onChange={(e) => setFilters((f) => ({ ...f, from: e.target.value }))}
+            />
+          </label>
+          <label className="hr-reports-filter">
+            <span>تا تاریخ</span>
+            <input
+              type="date"
+              className="admin-select"
+              value={filters.to}
+              onChange={(e) => setFilters((f) => ({ ...f, to: e.target.value }))}
+            />
+          </label>
+          <label className="hr-reports-filter">
+            <span>تیم / دپارتمان</span>
+            <select
+              className="admin-select"
+              value={filters.team}
+              onChange={(e) => setFilters((f) => ({ ...f, team: e.target.value }))}
+            >
+              <option value="">همه</option>
+              {(data?.filterOptions?.teams || []).map((t) => (
+                <option key={t} value={t}>{t}</option>
+              ))}
+            </select>
+          </label>
+          <label className="hr-reports-filter">
+            <span>فرد</span>
+            <select
+              className="admin-select"
+              value={filters.personId}
+              onChange={(e) => setFilters((f) => ({ ...f, personId: e.target.value }))}
+            >
+              <option value="">همه</option>
+              {(data?.filterOptions?.people || []).map((p) => (
+                <option key={p.id} value={String(p.id)}>{p.name}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+        {activeFilterChips.length ? (
+          <div className="admin-filter-chips" style={{ marginTop: 10, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {activeFilterChips.map((c) => (
+              <span key={c} className="admin-pill admin-pill--line">{c}</span>
+            ))}
+            <span className="admin-muted" style={{ fontSize: 12 }}>
+              کلیک روی برش نمودار، فیلتر را اعمال می‌کند
+            </span>
+          </div>
+        ) : null}
+      </section>
+
+      {tab === 'activity' ? (
+        <section className="admin-card">
+          <div className="admin-card-head">
+            <h2>فعالیت‌های سیستم</h2>
+            <span className="admin-muted">{formatNumFa(activity.length)} ردیف</span>
+          </div>
+          <div className="admin-table-wrap">
+            <table className="admin-table admin-table--dense">
+              <thead>
+                <tr>
+                  <th>زمان</th>
+                  <th>عامل</th>
+                  <th>اقدام</th>
+                  <th>مرجع</th>
+                  <th>منبع</th>
+                </tr>
+              </thead>
+              <tbody>
+                {activity.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="admin-muted">فعالیتی نیست</td>
+                  </tr>
+                ) : (
+                  activity.map((row) => (
+                    <tr key={row.id}>
+                      <td className="admin-mono" dir="ltr">
+                        {row.at ? new Date(row.at).toLocaleString('fa-IR') : '—'}
+                      </td>
+                      <td>{row.actor}</td>
+                      <td>{row.action}</td>
+                      <td>
+                        {row.refPath ? (
+                          <Link to={row.refPath}>{row.entityLabel || row.entityType}</Link>
+                        ) : (
+                          row.entityLabel || row.entityType
+                        )}
+                      </td>
+                      <td>
+                        <span className="admin-pill">{row.source}</span>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : (
         <>
-          <p className="admin-section-label">ماژول‌های سازمانی</p>
-          <div className="admin-module-kpi-grid">
-            {moduleCards.map((card) => (
-              <Link
-                key={card.key}
-                to={card.to}
-                className={`admin-module-kpi admin-module-kpi--${card.tone}`}
-              >
-                <div className="admin-module-kpi-head">
-                  <card.icon size={18} />
-                  <strong>{card.title}</strong>
-                  <span>باز کردن</span>
-                </div>
-                <div className="admin-module-kpi-body">
-                  {card.items.map((it) => (
-                    <div key={it.label}>
-                      <em>{it.value}</em>
-                      <span>{it.label}</span>
-                    </div>
+          {healthKpis.length ? (
+            <section className="admin-card crm-kpi-panel" style={{ marginBottom: 16 }}>
+              <div className="admin-card-head">
+                <h2>وضعیت سلامت پلتفرم نسبت به شاخص‌ها</h2>
+                <span className="admin-muted">پنل پویا · مشابه باشگاه مشتریان</span>
+              </div>
+              <div className="crm-kpi-layout">
+                <GaugeSemi pct={overallPct} standing={overallStanding} />
+                <div className="crm-kpi-rings">
+                  {healthKpis.map((k) => (
+                    <KpiRing key={k.key} kpi={k} />
                   ))}
+                </div>
+                <div className="crm-kpi-legend">
+                  <div className="crm-legend-item" style={{ borderColor: '#15cca055', background: '#15cca014' }}>
+                    <strong style={{ color: '#0f9a78' }}>در مسیر درست</strong>
+                    <span>۹۰٪ و بالاتر</span>
+                  </div>
+                  <div className="crm-legend-item" style={{ borderColor: '#fd961e55', background: '#fd961e14' }}>
+                    <strong style={{ color: '#c77810' }}>نیازمند تلاش بیشتر</strong>
+                    <span>۷۰٪ تا ۹۰٪</span>
+                  </div>
+                  <div className="crm-legend-item" style={{ borderColor: '#c6282855', background: '#c6282814' }}>
+                    <strong style={{ color: '#c62828' }}>ضعیف</strong>
+                    <span>زیر ۷۰٪</span>
+                  </div>
+                </div>
+              </div>
+              {weakPoints.length ? (
+                <div className="crm-weak-points">
+                  <strong>نقاط ضعف:</strong>{' '}
+                  {weakPoints
+                    .map((k) => `${k.label}: ${formatNumFa(k.value)} از ${formatNumFa(k.target)} (${formatNumFa(k.pct)}٪)`)
+                    .join(' · ')}
+                </div>
+              ) : (
+                <div className="crm-weak-points crm-weak-points--ok">همه شاخص‌های اصلی در مسیر مطلوب هستند.</div>
+              )}
+            </section>
+          ) : null}
+
+          <p className="admin-section-label">شاخص‌های زندهٔ پلتفرم</p>
+          <div className="admin-stats admin-stats--dense">
+            {platformKpis.map((k) => (
+              <Link
+                key={k.label}
+                to={k.to}
+                className={`admin-stat admin-stat--${k.tone}`}
+                style={{ textDecoration: 'none', color: 'inherit' }}
+              >
+                <div className="admin-stat-icon">
+                  <k.icon size={18} />
+                </div>
+                <div>
+                  <div className="admin-stat-value">{k.value}</div>
+                  <div className="admin-stat-label">{k.label}</div>
                 </div>
               </Link>
             ))}
           </div>
-        </>
-      ) : null}
 
-      {series ? (
-        <>
-          <p className="admin-section-label">گزارش تجمیعی · نمودارها</p>
-          <div className="admin-report-grid admin-report-grid--3">
-            <section className="admin-card admin-card--chart">
-              <div className="admin-card-head">
-                <h2>ترکیب بار ماژول‌ها</h2>
-                <Link to="/admin/crm">CRM</Link>
-              </div>
-              <div className="admin-chart-panel">
-                <AdminDonutChart slices={series.moduleMix} size={180} />
-              </div>
-            </section>
-            <section className="admin-card admin-card--chart">
-              <div className="admin-card-head">
-                <h2>حجم تعامل ۱۴ روز اخیر</h2>
-                <Link to="/admin/users">جزئیات</Link>
-              </div>
-              <div className="admin-chart-panel">
-                <AdminMultiLineChart series={trendSeries} />
-              </div>
-            </section>
-            <section className="admin-card admin-card--chart">
-              <div className="admin-card-head">
-                <h2>توزیع فعالیت‌ها</h2>
-                <Link to="/admin/crm/inbox">اینباکس</Link>
-              </div>
-              <div className="admin-chart-panel">
-                <AdminBarChart
-                  points={
-                    series.activityBreakdown?.length
-                      ? series.activityBreakdown
-                      : series.crmReasons
-                  }
-                  color="#5c4d91"
-                />
-              </div>
-            </section>
-          </div>
-
-          <div className="admin-report-grid admin-report-grid--3">
-            <section className="admin-card admin-card--chart">
-              <div className="admin-card-head">
-                <h2>درآمد فروشگاه (ماه)</h2>
-                <Link to="/admin/finance/sales">مالی</Link>
-              </div>
-              <div className="admin-chart-panel">
-                <AdminLineChart points={series.revenueTrend} color="#5c4d91" />
-              </div>
-            </section>
-            <section className="admin-card admin-card--chart">
-              <div className="admin-card-head">
-                <h2>مراحل قیف فروش</h2>
-                <Link to="/admin/sales">فروش</Link>
-              </div>
-              <div className="admin-chart-panel">
-                <AdminBarChart points={series.salesStages} color="#f59e0b" />
-              </div>
-            </section>
-            <section className="admin-card admin-card--chart">
-              <div className="admin-card-head">
-                <h2>ترکیب پرداخت</h2>
-                <Link to="/admin/payments">پرداخت‌ها</Link>
-              </div>
-              <div className="admin-chart-panel">
-                <AdminDonutChart
-                  slices={series.paymentMix.map((p, i) => ({
-                    label: p.label,
-                    value: p.value,
-                    color: PAY_COLORS[i % PAY_COLORS.length],
-                  }))}
-                />
-              </div>
-            </section>
-          </div>
-
-          <div className="admin-report-grid">
-            <section className="admin-card admin-card--chart">
-              <div className="admin-card-head">
-                <h2>تیکت‌های باشگاه مشتریان</h2>
-                <Link to="/admin/crm/reports">گزارش CRM</Link>
-              </div>
-              <div className="admin-chart-panel">
-                <AdminLineChart
-                  points={
-                    series.crmDailyTickets.length
-                      ? series.crmDailyTickets
-                      : series.crmReasons.map((r) => ({ label: r.label, value: r.value }))
-                  }
-                  color="#0ea5e9"
-                />
-              </div>
-            </section>
-            <section className="admin-card admin-card--chart">
-              <div className="admin-card-head">
-                <h2>دلایل تماس / تعامل CRM</h2>
-                <Link to="/admin/crm/inbox">
-                  <Inbox size={14} /> اینباکس
-                </Link>
-              </div>
-              <div className="admin-chart-panel">
-                <AdminBarChart
-                  points={
-                    series.crmReasons.length
-                      ? series.crmReasons
-                      : series.activityBreakdown
-                  }
-                  color="#15cca0"
-                />
-              </div>
-            </section>
-          </div>
-
-          <div className="admin-report-grid">
-            <section className="admin-card admin-card--chart">
-              <div className="admin-card-head">
-                <h2>درآمد روزانهٔ فروش CRM</h2>
-                <Link to="/admin/sales/reports">گزارش فروش</Link>
-              </div>
-              <div className="admin-chart-panel">
-                <AdminLineChart points={series.salesDailyRevenue} color="#ec4899" />
-              </div>
-            </section>
-            <section className="admin-card admin-card--chart">
-              <div className="admin-card-head">
-                <h2>تماس‌های فروش (۱۴ روز)</h2>
-                <Link to="/admin/sales">داشبورد فروش</Link>
-              </div>
-              <div className="admin-chart-panel">
-                <AdminBarChart points={series.salesDailyCalls} color="#5c4d91" />
-              </div>
-            </section>
-          </div>
-        </>
-      ) : null}
-
-      <p className="admin-section-label">آخرین فعالیت‌ها</p>
-      <div className="admin-dash-grid">
-        <section className="admin-card">
-          <div className="admin-card-head">
-            <h2>آخرین پت‌ها</h2>
-            <Link to="/admin/pets">همه</Link>
-          </div>
-          <div className="admin-table-wrap">
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>آیدی</th>
-                  <th>نام</th>
-                  <th>گونه</th>
-                  <th>مالک</th>
-                  <th>شهر</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(data?.recentPets ?? []).map((pet) => (
-                  <tr key={pet.id}>
-                    <td>
-                      <AdminIdChip publicId={petPublicIdOf(pet)} />
-                    </td>
-                    <td>
-                      <AdminEntityCell
-                        thumb={
-                          <AdminThumb
-                            src={pet.imageUrl}
-                            petId={pet.id}
-                            kind="pet"
-                            label={pet.name}
-                            alt={pet.name}
-                          />
-                        }
-                        title={<strong>{pet.name}</strong>}
-                        subtitle={pet.breed || '—'}
-                      />
-                    </td>
-                    <td>{pet.species}</td>
-                    <td>
-                      <code className="admin-mono admin-id-public" dir="ltr">
-                        {userPublicIdOf({ id: pet.ownerId })}
-                      </code>
-                    </td>
-                    <td>{pet.city || '—'}</td>
-                  </tr>
+          {moduleCards.length ? (
+            <>
+              <p className="admin-section-label">ماژول‌های سازمانی · پشتیبانی / جذب / فروش</p>
+              <div className="admin-module-kpi-grid admin-module-kpi-grid--separated">
+                {moduleCards.map((card) => (
+                  <Link
+                    key={card.key}
+                    to={card.to}
+                    className={`admin-module-kpi admin-module-kpi--${card.tone} admin-module-kpi--block`}
+                  >
+                    <div className="admin-module-kpi-head">
+                      <card.icon size={18} />
+                      <strong>{card.title}</strong>
+                      <span>باز کردن</span>
+                    </div>
+                    <div className="admin-module-kpi-body">
+                      {card.items.map((it) => (
+                        <div key={it.label}>
+                          <em>{it.value}</em>
+                          <span>{it.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </Link>
                 ))}
-                {!data?.recentPets?.length ? (
-                  <tr>
-                    <td colSpan={5} className="admin-muted">
-                      موردی نیست
-                    </td>
-                  </tr>
-                ) : null}
-              </tbody>
-            </table>
-          </div>
-        </section>
-        <section className="admin-card">
-          <div className="admin-card-head">
-            <h2>سفارش فروشگاه</h2>
-            <Link to="/admin/shop/orders">همه</Link>
-          </div>
-          <div className="admin-table-wrap">
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>آیدی سفارش</th>
-                  <th>کاربر</th>
-                  <th>مبلغ</th>
-                  <th>وضعیت</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(data?.recentShopOrders ?? []).map((o) => (
-                  <tr key={o.id}>
-                    <td>
-                      <AdminIdChip publicId={orderPublicIdOf(o)} />
-                    </td>
-                    <td>
-                      <AdminEntityCell
-                        thumb={
-                          <AdminThumb
-                            src={o.userAvatarUrl}
-                            label={o.userName || o.customerName}
-                            kind="user"
-                          />
-                        }
-                        title={
-                          o.userId != null ? (
-                            <code className="admin-mono admin-id-public" dir="ltr">
-                              {userPublicIdOf({ id: o.userId })}
-                            </code>
-                          ) : (
-                            '—'
-                          )
-                        }
-                        subtitle={o.userName || o.customerName || null}
+              </div>
+            </>
+          ) : null}
+
+          {series ? (
+            <>
+              <p className="admin-section-label">گزارش تجمیعی · نمودارها</p>
+              <div className="admin-report-grid admin-report-grid--3">
+                <section className="admin-card admin-card--chart admin-card--chart-lg">
+                  <div className="admin-card-head">
+                    <h2>ترکیب بار ماژول‌ها</h2>
+                    <Link to="/admin/crm">CRM</Link>
+                  </div>
+                  <div className="admin-chart-panel">
+                    <AdminDonutChart
+                      slices={series.moduleMix}
+                      size={210}
+                      onSliceClick={(s) => applySlice({ module: s.label })}
+                    />
+                  </div>
+                </section>
+                <section className="admin-card admin-card--chart admin-card--chart-lg">
+                  <div className="admin-card-head">
+                    <h2>حجم تعامل ۱۴ روز اخیر</h2>
+                    <Link to="/admin/users">جزئیات</Link>
+                  </div>
+                  <div className="admin-chart-panel">
+                    <AdminMultiLineChart series={trendSeries} />
+                  </div>
+                </section>
+                <section className="admin-card admin-card--chart admin-card--chart-lg">
+                  <div className="admin-card-head">
+                    <h2>توزیع فعالیت‌ها</h2>
+                    <Link to="/admin/crm/inbox">اینباکس</Link>
+                  </div>
+                  <div className="admin-chart-panel">
+                    <AdminBarChart
+                      points={
+                        series.activityBreakdown?.length
+                          ? series.activityBreakdown
+                          : series.crmReasons
+                      }
+                      color="#5c4d91"
+                      height={220}
+                    />
+                  </div>
+                </section>
+              </div>
+
+              <div className="admin-module-section admin-module-section--sales">
+                <p className="admin-section-label">فروش</p>
+                <div className="admin-report-grid admin-report-grid--3">
+                  <section className="admin-card admin-card--chart admin-card--chart-lg">
+                    <div className="admin-card-head">
+                      <h2>درآمد فروشگاه (ماه)</h2>
+                      <Link to="/admin/finance/sales">مالی</Link>
+                    </div>
+                    <div className="admin-chart-panel">
+                      <AdminLineChart points={series.revenueTrend} color="#5c4d91" height={220} />
+                    </div>
+                  </section>
+                  <section className="admin-card admin-card--chart admin-card--chart-lg">
+                    <div className="admin-card-head">
+                      <h2>قیف فروش</h2>
+                      <Link to="/admin/sales">فروش</Link>
+                    </div>
+                    <div className="admin-chart-panel">
+                      <AdminFunnelChart
+                        points={series.salesStages}
+                        onSliceClick={(p) => applySlice({ salesStage: p.label })}
                       />
-                    </td>
-                    <td>{formatTomanFa(o.totalToman)}</td>
-                    <td>
-                      <span className="admin-badge">{o.status}</span>
-                    </td>
-                  </tr>
-                ))}
-                {!data?.recentShopOrders?.length ? (
-                  <tr>
-                    <td colSpan={4} className="admin-muted">
-                      سفارشی نیست
-                    </td>
-                  </tr>
-                ) : null}
-              </tbody>
-            </table>
-          </div>
-        </section>
-        <section className="admin-card">
-          <div className="admin-card-head">
-            <h2>مشاوره دامپزشک</h2>
-            <Link to="/admin/consults">صف</Link>
-          </div>
-          <div className="admin-table-wrap">
-            <table className="admin-table">
-              <thead>
-                <tr>
-                  <th>آیدی</th>
-                  <th>بیمار</th>
-                  <th>پزشک</th>
-                  <th>پت</th>
-                  <th>وضعیت</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(data?.recentConsults ?? []).map((c) => (
-                  <tr key={c.id}>
-                    <td>
-                      <AdminIdChip publicId={consultPublicIdOf(c)} />
-                    </td>
-                    <td>
-                      <AdminEntityCell
-                        thumb={<AdminThumb src={c.patientAvatarUrl} label={c.patientName} kind="user" />}
-                        title={c.patientName || '—'}
-                        subtitle={
+                    </div>
+                  </section>
+                  <section className="admin-card admin-card--chart admin-card--chart-lg">
+                    <div className="admin-card-head">
+                      <h2>ترکیب پرداخت</h2>
+                      <Link to="/admin/payments">پرداخت‌ها</Link>
+                    </div>
+                    <div className="admin-chart-panel">
+                      <AdminDonutChart
+                        size={210}
+                        slices={series.paymentMix.map((p, i) => ({
+                          label: p.label,
+                          value: p.value,
+                          color: PAY_COLORS[i % PAY_COLORS.length],
+                        }))}
+                        onSliceClick={(s) => applySlice({ paymentType: s.label })}
+                      />
+                    </div>
+                  </section>
+                </div>
+              </div>
+
+              <div className="admin-module-section admin-module-section--support">
+                <p className="admin-section-label">پشتیبانی · باشگاه مشتریان</p>
+                <div className="admin-report-grid">
+                  <section className="admin-card admin-card--chart admin-card--chart-lg">
+                    <div className="admin-card-head">
+                      <h2>تیکت‌های باشگاه مشتریان</h2>
+                      <Link to="/admin/crm/reports">گزارش CRM</Link>
+                    </div>
+                    <div className="admin-chart-panel">
+                      <AdminLineChart
+                        height={220}
+                        points={
+                          series.crmDailyTickets.length
+                            ? series.crmDailyTickets
+                            : series.crmReasons.map((r) => ({ label: r.label, value: r.value }))
+                        }
+                        color="#0ea5e9"
+                      />
+                    </div>
+                  </section>
+                  <section className="admin-card admin-card--chart admin-card--chart-lg">
+                    <div className="admin-card-head">
+                      <h2>دلایل تماس / تعامل CRM</h2>
+                      <Link to="/admin/crm/inbox">
+                        <Inbox size={14} /> اینباکس
+                      </Link>
+                    </div>
+                    <div className="admin-chart-panel">
+                      <AdminBarChart
+                        height={220}
+                        points={
+                          series.crmReasons.length
+                            ? series.crmReasons
+                            : series.activityBreakdown
+                        }
+                        color="#15cca0"
+                      />
+                    </div>
+                  </section>
+                </div>
+              </div>
+
+              <div className="admin-report-grid">
+                <section className="admin-card admin-card--chart admin-card--chart-lg">
+                  <div className="admin-card-head">
+                    <h2>درآمد روزانهٔ فروش CRM</h2>
+                    <Link to="/admin/sales/reports">گزارش فروش</Link>
+                  </div>
+                  <div className="admin-chart-panel">
+                    <AdminLineChart points={series.salesDailyRevenue} color="#ec4899" height={220} />
+                  </div>
+                </section>
+                <section className="admin-card admin-card--chart admin-card--chart-lg">
+                  <div className="admin-card-head">
+                    <h2>تماس‌های فروش (۱۴ روز)</h2>
+                    <Link to="/admin/sales">داشبورد فروش</Link>
+                  </div>
+                  <div className="admin-chart-panel">
+                    <AdminBarChart points={series.salesDailyCalls} color="#5c4d91" height={220} />
+                  </div>
+                </section>
+              </div>
+            </>
+          ) : null}
+
+          <p className="admin-section-label">آخرین فعالیت‌ها</p>
+          <div className="admin-dash-grid">
+            <section className="admin-card">
+              <div className="admin-card-head">
+                <h2>آخرین پت‌ها</h2>
+                <Link to="/admin/pets">همه</Link>
+              </div>
+              <div className="admin-table-wrap">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>آیدی</th>
+                      <th>نام</th>
+                      <th>گونه</th>
+                      <th>مالک</th>
+                      <th>شهر</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(data?.recentPets ?? []).map((pet) => (
+                      <tr key={pet.id}>
+                        <td>
+                          <AdminIdChip publicId={petPublicIdOf(pet)} />
+                        </td>
+                        <td>
+                          <AdminEntityCell
+                            thumb={
+                              <AdminThumb
+                                src={pet.imageUrl}
+                                petId={pet.id}
+                                kind="pet"
+                                label={pet.name}
+                                alt={pet.name}
+                              />
+                            }
+                            title={<strong>{pet.name}</strong>}
+                            subtitle={pet.breed || '—'}
+                          />
+                        </td>
+                        <td>{pet.species}</td>
+                        <td>
                           <code className="admin-mono admin-id-public" dir="ltr">
-                            {userPublicIdOf({ id: c.patientUserId })}
+                            {userPublicIdOf({ id: pet.ownerId })}
                           </code>
-                        }
-                      />
-                    </td>
-                    <td>
-                      <AdminEntityCell
-                        thumb={<AdminThumb src={c.vetAvatarUrl} label={c.vetName} kind="user" />}
-                        title={c.vetName || '—'}
-                        subtitle={
-                          <code className="admin-mono admin-id-public" dir="ltr">
-                            {userPublicIdOf({ id: c.vetUserId })}
-                          </code>
-                        }
-                      />
-                    </td>
-                    <td>
-                      <AdminEntityCell
-                        thumb={
-                          <AdminThumb
-                            src={c.petImageUrl}
-                            petId={c.petId ?? undefined}
-                            kind="pet"
-                            label={c.petName}
+                        </td>
+                        <td>{pet.city || '—'}</td>
+                      </tr>
+                    ))}
+                    {!data?.recentPets?.length ? (
+                      <tr>
+                        <td colSpan={5} className="admin-muted">موردی نیست</td>
+                      </tr>
+                    ) : null}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+            <section className="admin-card">
+              <div className="admin-card-head">
+                <h2>سفارش فروشگاه</h2>
+                <Link to="/admin/shop/orders">همه</Link>
+              </div>
+              <div className="admin-table-wrap">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>آیدی سفارش</th>
+                      <th>کاربر</th>
+                      <th>مبلغ</th>
+                      <th>وضعیت</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(data?.recentShopOrders ?? []).map((o) => (
+                      <tr key={o.id}>
+                        <td>
+                          <AdminIdChip publicId={orderPublicIdOf(o)} />
+                        </td>
+                        <td>
+                          <AdminEntityCell
+                            thumb={
+                              <AdminThumb
+                                src={o.userAvatarUrl}
+                                label={o.userName || o.customerName}
+                                kind="user"
+                              />
+                            }
+                            title={
+                              o.userId != null ? (
+                                <code className="admin-mono admin-id-public" dir="ltr">
+                                  {userPublicIdOf({ id: o.userId })}
+                                </code>
+                              ) : (
+                                '—'
+                              )
+                            }
+                            subtitle={o.userName || o.customerName || null}
                           />
-                        }
-                        title={c.petName || '—'}
-                        subtitle={
-                          c.petId != null ? (
-                            <code className="admin-mono admin-id-public" dir="ltr">
-                              {petPublicIdOf({ id: c.petId })}
-                            </code>
-                          ) : null
-                        }
-                      />
-                    </td>
-                    <td>
-                      <span className="admin-badge">{c.status}</span>
-                    </td>
-                  </tr>
-                ))}
-                {!data?.recentConsults?.length ? (
-                  <tr>
-                    <td colSpan={5} className="admin-muted">
-                      موردی نیست
-                    </td>
-                  </tr>
-                ) : null}
-              </tbody>
-            </table>
+                        </td>
+                        <td>{formatTomanFa(o.totalToman)}</td>
+                        <td>
+                          <span className="admin-badge">{o.status}</span>
+                        </td>
+                      </tr>
+                    ))}
+                    {!data?.recentShopOrders?.length ? (
+                      <tr>
+                        <td colSpan={4} className="admin-muted">سفارشی نیست</td>
+                      </tr>
+                    ) : null}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+            <section className="admin-card">
+              <div className="admin-card-head">
+                <h2>مشاوره دامپزشک</h2>
+                <Link to="/admin/consults">صف</Link>
+              </div>
+              <div className="admin-table-wrap">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>آیدی</th>
+                      <th>بیمار</th>
+                      <th>پزشک</th>
+                      <th>پت</th>
+                      <th>وضعیت</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(data?.recentConsults ?? []).map((c) => (
+                      <tr key={c.id}>
+                        <td>
+                          <AdminIdChip publicId={consultPublicIdOf(c)} />
+                        </td>
+                        <td>
+                          <AdminEntityCell
+                            thumb={<AdminThumb src={c.patientAvatarUrl} label={c.patientName} kind="user" />}
+                            title={c.patientName || '—'}
+                            subtitle={
+                              <code className="admin-mono admin-id-public" dir="ltr">
+                                {userPublicIdOf({ id: c.patientUserId })}
+                              </code>
+                            }
+                          />
+                        </td>
+                        <td>
+                          <AdminEntityCell
+                            thumb={<AdminThumb src={c.vetAvatarUrl} label={c.vetName} kind="user" />}
+                            title={c.vetName || '—'}
+                            subtitle={
+                              <code className="admin-mono admin-id-public" dir="ltr">
+                                {userPublicIdOf({ id: c.vetUserId })}
+                              </code>
+                            }
+                          />
+                        </td>
+                        <td>
+                          <AdminEntityCell
+                            thumb={
+                              <AdminThumb
+                                src={c.petImageUrl}
+                                petId={c.petId ?? undefined}
+                                kind="pet"
+                                label={c.petName}
+                              />
+                            }
+                            title={c.petName || '—'}
+                            subtitle={
+                              c.petId != null ? (
+                                <code className="admin-mono admin-id-public" dir="ltr">
+                                  {petPublicIdOf({ id: c.petId })}
+                                </code>
+                              ) : null
+                            }
+                          />
+                        </td>
+                        <td>
+                          <span className="admin-badge">{c.status}</span>
+                        </td>
+                      </tr>
+                    ))}
+                    {!data?.recentConsults?.length ? (
+                      <tr>
+                        <td colSpan={5} className="admin-muted">موردی نیست</td>
+                      </tr>
+                    ) : null}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+            <section className="admin-card">
+              <div className="admin-card-head">
+                <h2>کیف پول کل</h2>
+                <Link to="/admin/finance/wallet">کیف پول</Link>
+              </div>
+              {s ? (
+                <ul className="admin-kv">
+                  <li>
+                    <span>سکه</span>
+                    <strong>{formatNumFa(s.walletTotals.coins)}</strong>
+                  </li>
+                  <li>
+                    <span>تومان</span>
+                    <strong>{formatNumFa(s.walletTotals.toman)}</strong>
+                  </li>
+                  <li>
+                    <span>TON</span>
+                    <strong>{formatNumFa(s.walletTotals.ton)}</strong>
+                  </li>
+                  <li>
+                    <span>Stars</span>
+                    <strong>{formatNumFa(s.walletTotals.stars)}</strong>
+                  </li>
+                </ul>
+              ) : (
+                <p className="admin-muted">…</p>
+              )}
+            </section>
           </div>
-        </section>
-        <section className="admin-card">
-          <div className="admin-card-head">
-            <h2>کیف پول کل</h2>
-            <Link to="/admin/finance/wallet">کیف پول</Link>
-          </div>
-          {s ? (
-            <ul className="admin-kv">
-              <li>
-                <span>سکه</span>
-                <strong>{formatNumFa(s.walletTotals.coins)}</strong>
-              </li>
-              <li>
-                <span>تومان</span>
-                <strong>{formatNumFa(s.walletTotals.toman)}</strong>
-              </li>
-              <li>
-                <span>TON</span>
-                <strong>{formatNumFa(s.walletTotals.ton)}</strong>
-              </li>
-              <li>
-                <span>Stars</span>
-                <strong>{formatNumFa(s.walletTotals.stars)}</strong>
-              </li>
-              <li>
-                <span>پرداخت در انتظار</span>
-                <strong>{formatNumFa(s.paymentOrdersPending)}</strong>
-              </li>
-              <li>
-                <span>پیام چت همبازی</span>
-                <strong>{formatNumFa(s.botRelated.chatMessages)}</strong>
-              </li>
-              <li>
-                <span>بازی باز</span>
-                <strong>{formatNumFa(s.botRelated.openGames)}</strong>
-              </li>
-            </ul>
-          ) : (
-            <p className="admin-muted">…</p>
-          )}
-        </section>
-      </div>
+        </>
+      )}
     </div>
   );
 }

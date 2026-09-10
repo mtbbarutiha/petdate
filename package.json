@@ -11,6 +11,7 @@
     "build:all": "npm run build -w @petdate/shared && npm run build -w @petdate/api && npm run build -w @petdate/bot && npm run build -w @petdate/web",
     "typecheck": "npm run build:all",
     "test:self": "bash ./scripts/ci-selftest.sh",
+    "test:self:dash-hr": "cd packages/api && npx tsx src/admin-dashboard-activity.selftest.ts && npx tsx src/hr-ats-followup.selftest.ts && npx tsx src/hr-modules.selftest.ts && npx tsx src/admin-aggregate-dashboard.selftest.ts",
     "predeploy-check": "bash ./scripts/predeploy-check.sh",
     "preview": "npm run preview -w @petdate/web",
     "infra:up": "docker compose up -d",

@@ -7,7 +7,10 @@ import {
   ADMIN_ROLE_PERMISSIONS,
   ADMIN_SYSTEM_ROLE_KEYS,
   defaultHrBenefits,
+  emptyCandidateFollowup,
   employeePublicIdOf,
+  HR_CALL_CONNECTED,
+  HR_REJECTED_NO_CONTACT,
   makeContractCode,
   makeEmployeePublicId,
   normalizeAdminPermissions,
@@ -15,6 +18,7 @@ import {
   type AdminRoleDef,
   type HrBenefitDef,
   type HrCandidate,
+  type HrCandidateFollowup,
   type HrCareerLayer,
   type HrContract,
   type HrEmployee,
@@ -176,12 +180,14 @@ export function ensureHrSchema(): void {
       city TEXT NOT NULL DEFAULT '',
       source TEXT NOT NULL DEFAULT '',
       job_board TEXT NOT NULL DEFAULT '',
+      job_title TEXT NOT NULL DEFAULT '',
       job_opening_id INTEGER,
       application_date TEXT NOT NULL DEFAULT '',
       notes TEXT NOT NULL DEFAULT '',
       stage TEXT NOT NULL DEFAULT 'متقاضی جدید',
       resume TEXT NOT NULL DEFAULT '',
       logs_json TEXT NOT NULL DEFAULT '[]',
+      followup_json TEXT NOT NULL DEFAULT '{}',
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
@@ -222,6 +228,7 @@ export function ensureHrSchema(): void {
 
   ensureAdminRbacColumns();
   ensureHrEmployeeColumns();
+  ensureHrCandidateColumns();
 
   d.exec(`CREATE INDEX IF NOT EXISTS idx_hr_employees_code ON hr_employees(personnel_code)`);
   d.exec(`CREATE INDEX IF NOT EXISTS idx_hr_contracts_employee ON hr_contracts(employee_id)`);
@@ -254,6 +261,20 @@ function ensureHrEmployeeColumns(): void {
   );
   if (!cols.has('avatar_url')) {
     d.exec(`ALTER TABLE hr_employees ADD COLUMN avatar_url TEXT NOT NULL DEFAULT ''`);
+  }
+}
+
+/** Additive columns for ATS candidates / follow-up workflow — never wipe. */
+function ensureHrCandidateColumns(): void {
+  const d = db();
+  const cols = new Set(
+    (d.prepare(`PRAGMA table_info(hr_candidates)`).all() as Array<{ name: string }>).map((c) => c.name)
+  );
+  if (!cols.has('job_title')) {
+    d.exec(`ALTER TABLE hr_candidates ADD COLUMN job_title TEXT NOT NULL DEFAULT ''`);
+  }
+  if (!cols.has('followup_json')) {
+    d.exec(`ALTER TABLE hr_candidates ADD COLUMN followup_json TEXT NOT NULL DEFAULT '{}'`);
   }
 }
 
@@ -941,6 +962,15 @@ export function listCandidates(opts?: { stage?: string; jobOpeningId?: number })
 }
 
 function mapCandidate(row: Record<string, unknown>): HrCandidate {
+  const followupRaw = parseJson<Partial<HrCandidateFollowup>>(row.followup_json, {});
+  const followup: HrCandidateFollowup = {
+    ...emptyCandidateFollowup(),
+    ...followupRaw,
+    calls: Array.isArray(followupRaw.calls) ? followupRaw.calls : [],
+    callRound: (followupRaw.callRound === 2 || followupRaw.callRound === 3
+      ? followupRaw.callRound
+      : 1) as 1 | 2 | 3,
+  };
   return {
     id: Number(row.id),
     firstName: String(row.first_name || ''),
@@ -950,12 +980,14 @@ function mapCandidate(row: Record<string, unknown>): HrCandidate {
     city: String(row.city || ''),
     source: String(row.source || ''),
     jobBoard: String(row.job_board || ''),
+    jobTitle: String(row.job_title || ''),
     jobOpeningId: row.job_opening_id != null ? Number(row.job_opening_id) : null,
     applicationDate: String(row.application_date || ''),
     notes: String(row.notes || ''),
     stage: String(row.stage || ''),
     resume: String(row.resume || ''),
     logs: parseJson(row.logs_json, []),
+    followup,
     createdAt: String(row.created_at || ''),
   };
 }
@@ -968,6 +1000,7 @@ export function createCandidate(input: {
   city?: string;
   source?: string;
   jobBoard?: string;
+  jobTitle?: string;
   jobOpeningId?: number | null;
   applicationDate?: string;
   notes?: string;
@@ -984,12 +1017,13 @@ export function createCandidate(input: {
   }
   const stage = input.stage || 'متقاضی جدید';
   const logs = [{ at: new Date().toISOString(), stage, note: 'ثبت اولیه' }];
+  const followup = emptyCandidateFollowup();
   const info = d
     .prepare(
       `INSERT INTO hr_candidates (
-        first_name, last_name, mobile, email, city, source, job_board, job_opening_id,
-        application_date, notes, stage, logs_json
-      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`
+        first_name, last_name, mobile, email, city, source, job_board, job_title, job_opening_id,
+        application_date, notes, stage, logs_json, followup_json
+      ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)`
     )
     .run(
       input.firstName.trim(),
@@ -999,11 +1033,13 @@ export function createCandidate(input: {
       input.city || '',
       input.source || '',
       input.jobBoard || '',
+      input.jobTitle || '',
       input.jobOpeningId ?? null,
       input.applicationDate || new Date().toISOString().slice(0, 10),
       input.notes || '',
       stage,
-      JSON.stringify(logs)
+      JSON.stringify(logs),
+      JSON.stringify(followup)
     );
   const id = Number(info.lastInsertRowid);
   return {
@@ -1012,6 +1048,118 @@ export function createCandidate(input: {
     ),
     duplicateMobile,
   };
+}
+
+export function getCandidate(id: number): HrCandidate | null {
+  const row = db().prepare('SELECT * FROM hr_candidates WHERE id = ?').get(id) as
+    | Record<string, unknown>
+    | undefined;
+  return row ? mapCandidate(row) : null;
+}
+
+function saveCandidateFollowup(id: number, followup: HrCandidateFollowup, stage?: string): HrCandidate | null {
+  const d = db();
+  const row = d.prepare('SELECT * FROM hr_candidates WHERE id = ?').get(id) as
+    | Record<string, unknown>
+    | undefined;
+  if (!row) return null;
+  if (stage) {
+    const logs = parseJson<Array<{ at: string; stage: string; note?: string }>>(row.logs_json, []);
+    logs.push({ at: new Date().toISOString(), stage });
+    d.prepare(
+      'UPDATE hr_candidates SET stage = ?, logs_json = ?, followup_json = ? WHERE id = ?'
+    ).run(stage, JSON.stringify(logs), JSON.stringify(followup), id);
+  } else {
+    d.prepare('UPDATE hr_candidates SET followup_json = ? WHERE id = ?').run(
+      JSON.stringify(followup),
+      id
+    );
+  }
+  return getCandidate(id);
+}
+
+/** Record call1/2/3 outcome; escalate or mark no-contact after 3 fails. */
+export function recordCandidateCall(
+  id: number,
+  input: { outcome: string; note?: string }
+): HrCandidate | null {
+  const cand = getCandidate(id);
+  if (!cand) return null;
+  const outcome = String(input.outcome || '').trim();
+  if (!outcome) return cand;
+  const followup = { ...cand.followup, calls: [...cand.followup.calls] };
+  const round = followup.callRound;
+  followup.calls.push({
+    round,
+    outcome,
+    at: new Date().toISOString(),
+    note: input.note || '',
+  });
+  let nextStage: string | undefined;
+  if (outcome === HR_CALL_CONNECTED) {
+    nextStage = 'غربالگری تلفنی';
+  } else {
+    // failed / deferred contact — escalate round
+    if (round >= 3) {
+      nextStage = HR_REJECTED_NO_CONTACT;
+    } else {
+      followup.callRound = (round + 1) as 1 | 2 | 3;
+      if (cand.stage === 'متقاضی جدید') nextStage = 'غربالگری تلفنی';
+    }
+  }
+  return saveCandidateFollowup(id, followup, nextStage);
+}
+
+export function scheduleCandidateInterview(
+  id: number,
+  input: {
+    interviewAt: string;
+    interviewerEmployeeId?: number | null;
+    interviewerName?: string;
+  }
+): HrCandidate | null {
+  const cand = getCandidate(id);
+  if (!cand) return null;
+  const followup: HrCandidateFollowup = {
+    ...cand.followup,
+    interviewAt: String(input.interviewAt || '').trim(),
+    interviewerEmployeeId: input.interviewerEmployeeId ?? null,
+    interviewerName: String(input.interviewerName || '').trim(),
+  };
+  return saveCandidateFollowup(id, followup, 'مصاحبه');
+}
+
+export function setCandidateDecision(
+  id: number,
+  input: { decision: 'approve' | 'reject'; startDate?: string; note?: string }
+): HrCandidate | null {
+  const cand = getCandidate(id);
+  if (!cand) return null;
+  const followup: HrCandidateFollowup = {
+    ...cand.followup,
+    decision: input.decision,
+    decisionNote: input.note || '',
+    decisionAt: new Date().toISOString(),
+    startDate: input.startDate || cand.followup.startDate || '',
+  };
+  const stage = input.decision === 'approve' ? 'پیشنهاد شغلی' : 'رد شده';
+  return saveCandidateFollowup(id, followup, stage);
+}
+
+export function appendCandidateNotifyLog(
+  id: number,
+  entry: { channel: 'sms' | 'email'; ok: boolean; detail?: string }
+): HrCandidate | null {
+  const cand = getCandidate(id);
+  if (!cand) return null;
+  const followup: HrCandidateFollowup = {
+    ...cand.followup,
+    notifyLog: [
+      ...(cand.followup.notifyLog || []),
+      { ...entry, at: new Date().toISOString() },
+    ],
+  };
+  return saveCandidateFollowup(id, followup);
 }
 
 export function updateCandidateStage(id: number, stage: string): HrCandidate | null {
@@ -1030,6 +1178,18 @@ export function updateCandidateStage(id: number, stage: string): HrCandidate | n
   return mapCandidate(
     d.prepare('SELECT * FROM hr_candidates WHERE id = ?').get(id) as Record<string, unknown>
   );
+}
+
+/** Distinct job titles from personnel — for ATS position dropdown. */
+export function listPersonnelJobTitles(): string[] {
+  const rows = db()
+    .prepare(
+      `SELECT DISTINCT TRIM(job_title) AS t FROM hr_employees
+       WHERE TRIM(COALESCE(job_title,'')) != ''
+       ORDER BY t COLLATE NOCASE`
+    )
+    .all() as Array<{ t: string }>;
+  return rows.map((r) => String(r.t)).filter(Boolean);
 }
 
 export function listRequests(): HrRequest[] {

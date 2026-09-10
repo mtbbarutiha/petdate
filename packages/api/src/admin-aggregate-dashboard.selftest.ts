@@ -71,6 +71,10 @@ async function main() {
   );
   assert(seeded.series!.salesStages.some((p) => p.value > 0), 'sales stages non-trivial');
   assert(seeded.series!.moduleMix.some((s) => s.value > 0), 'module mix non-trivial with seeds');
+  assert(Array.isArray(seeded.filterOptions?.teams), 'filterOptions.teams');
+
+  const filtered = await buildAggregateDashboard(admin!, { module: 'فروش' });
+  assert(filtered.filters?.module === 'فروش', 'module filter');
 
   // Idempotent second call — no wipe / shape stable
   const again = await buildAggregateDashboard(admin!);

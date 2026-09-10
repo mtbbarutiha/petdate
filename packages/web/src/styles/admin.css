@@ -3585,3 +3585,86 @@ body:has(.admin-app) {
   .admin-app .tk-brand { display: none; }
   .admin-app .tk-kanban { grid-template-columns: repeat(6, 190px); }
 }
+
+/* ── Platform dashboard: funnel + module separation + larger charts ── */
+.admin-app .admin-chart-svg--lg {
+  min-height: 200px;
+  width: 100%;
+}
+.admin-app .admin-card--chart-lg .admin-chart-panel {
+  min-height: 240px;
+}
+.admin-app .admin-chart-val {
+  font-size: 9px;
+  fill: var(--admin-muted);
+}
+.admin-app .admin-chart-hit:hover {
+  opacity: 0.85;
+  filter: brightness(1.05);
+}
+.admin-app .admin-funnel-wrap {
+  display: grid;
+  gap: 10px;
+}
+.admin-app .admin-funnel-label {
+  fill: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: inherit;
+  pointer-events: none;
+}
+.admin-app .admin-funnel-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  font-size: 12px;
+  color: var(--admin-muted);
+}
+.admin-app .admin-funnel-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.admin-app .admin-funnel-legend span {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  display: inline-block;
+}
+.admin-app .admin-funnel-legend strong {
+  color: var(--admin-ink);
+  font-weight: 700;
+}
+.admin-app .admin-module-section {
+  margin-top: 8px;
+  padding: 12px 14px 4px;
+  border-radius: 14px;
+  border: 1px solid var(--admin-border);
+  background: linear-gradient(180deg, rgba(255,255,255,0.7), transparent);
+}
+.admin-app .admin-module-section--sales {
+  border-color: rgba(245, 158, 11, 0.35);
+  background: linear-gradient(180deg, rgba(245, 158, 11, 0.06), transparent);
+}
+.admin-app .admin-module-section--support {
+  border-color: rgba(14, 165, 233, 0.35);
+  background: linear-gradient(180deg, rgba(14, 165, 233, 0.06), transparent);
+}
+.admin-app .admin-module-kpi--block {
+  border-width: 2px;
+}
+.admin-app .admin-module-kpi-grid--separated {
+  gap: 14px;
+}
+.admin-app .admin-dash-filters .hr-reports-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  align-items: end;
+}
+.admin-app .hr-ats-followup h3 {
+  margin: 18px 0 8px;
+}

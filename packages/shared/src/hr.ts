@@ -159,10 +159,38 @@ export const HR_CANDIDATE_STAGES = [
   'پیشنهاد شغلی',
   'استخدام‌شده',
   'رد شده',
+  'رد شده - عدم ارتباط گیری',
   'بانک استعداد',
 ] as const;
 
+/** Job boards for ATS source dropdown */
+export const HR_JOB_BOARDS = [
+  'جاب‌ویژن',
+  'جابینجا',
+  'لینکدین',
+  'ای استخدام',
+  'ایران استخدام',
+  'دیوار',
+  'شیپور',
+  'ایران تلنت',
+] as const;
+
+/** Phone follow-up outcomes (call1/2/3) */
+export const HR_CALL_OUTCOMES = [
+  'پاسخگو بود',
+  'نبود',
+  'عدم دسترسی',
+  'موکول به آینده',
+] as const;
+
+export const HR_CALL_CONNECTED = 'پاسخگو بود' as const;
+export const HR_REJECTED_NO_CONTACT = 'رد شده - عدم ارتباط گیری' as const;
+
 export const HR_JOB_OPENING_STATUSES = ['باز', 'بسته'] as const;
+
+/** Default interview venue text for SMS/email */
+export const HR_INTERVIEW_SITE_ADDRESS =
+  'تهران، سعادت‌آباد، میدان کاج — دفتر پت‌دیت';
 
 export const HR_REQUEST_TYPES = [
   'مرخصی',
@@ -324,6 +352,30 @@ export type HrJobOpening = {
   createdAt: string;
 };
 
+export type HrCandidateCallLog = {
+  round: 1 | 2 | 3;
+  outcome: string;
+  at: string;
+  note?: string;
+};
+
+export type HrCandidateFollowup = {
+  callRound: 1 | 2 | 3;
+  calls: HrCandidateCallLog[];
+  interviewAt?: string;
+  interviewerEmployeeId?: number | null;
+  interviewerName?: string;
+  startDate?: string;
+  decision?: 'approve' | 'reject' | null;
+  decisionNote?: string;
+  decisionAt?: string;
+  notifyLog?: Array<{ channel: 'sms' | 'email'; at: string; ok: boolean; detail?: string }>;
+};
+
+export function emptyCandidateFollowup(): HrCandidateFollowup {
+  return { callRound: 1, calls: [], decision: null };
+}
+
 export type HrCandidate = {
   id: number;
   firstName: string;
@@ -333,12 +385,15 @@ export type HrCandidate = {
   city: string;
   source: string;
   jobBoard: string;
+  /** Position / job title applied for (personnel title or opening) */
+  jobTitle: string;
   jobOpeningId?: number | null;
   applicationDate: string;
   notes: string;
   stage: string;
   resume: string;
   logs: Array<{ at: string; stage: string; note?: string }>;
+  followup: HrCandidateFollowup;
   createdAt: string;
 };
 
@@ -442,6 +497,9 @@ export type HrCockpitTask = {
   employeeName?: string;
   detail: string;
   daysLeft?: number;
+  /** Optional deep-link / reference id (e.g. candidate ATS) */
+  refType?: string;
+  refId?: number;
 };
 
 export const DEFAULT_ONBOARDING_TASKS: readonly string[] = [
