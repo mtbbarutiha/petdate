@@ -2,6 +2,7 @@
  * پیوند HR admin API routes.
  */
 import { Router } from 'express';
+import { ADMIN_PERMISSION_LABELS, ADMIN_PERMISSIONS } from '@petdate/shared';
 import { requirePermission } from '../admin-auth';
 import * as hr from '../hr-service';
 
@@ -163,6 +164,125 @@ hrAdminRouter.get('/requests', (_req, res) => {
   res.json({ requests: hr.listRequests() });
 });
 
-hrAdminRouter.get('/rbac/roles', (_req, res) => {
-  res.json({ roles: hr.listAdminRoles(), accounts: hr.listAdminAccounts() });
+hrAdminRouter.get('/rbac/roles', requirePermission('admin.full'), (_req, res) => {
+  res.json({
+    roles: hr.listAdminRoles({ includeInactive: true }),
+    accounts: hr.listAdminAccounts({ includeInactive: true }),
+  });
+});
+
+hrAdminRouter.get('/rbac/permissions', requirePermission('admin.full'), (_req, res) => {
+  res.json({
+    permissions: ADMIN_PERMISSIONS.map((key) => ({
+      key,
+      labelFa: ADMIN_PERMISSION_LABELS[key] || key,
+    })),
+  });
+});
+
+hrAdminRouter.post('/rbac/roles', requirePermission('admin.full'), (req, res) => {
+  try {
+    const body = req.body || {};
+    const role = hr.createAdminRole({
+      key: typeof body.key === 'string' ? body.key : '',
+      nameFa: typeof body.nameFa === 'string' ? body.nameFa : '',
+      description: typeof body.description === 'string' ? body.description : '',
+      permissions: body.permissions,
+    });
+    res.status(201).json({ role });
+  } catch (err) {
+    res.status(400).json({ error: err instanceof Error ? err.message : 'خطا' });
+  }
+});
+
+hrAdminRouter.patch('/rbac/roles/:id', requirePermission('admin.full'), (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id)) {
+    res.status(400).json({ error: 'شناسه نامعتبر' });
+    return;
+  }
+  try {
+    const body = req.body || {};
+    const role = hr.updateAdminRole(id, {
+      nameFa: typeof body.nameFa === 'string' ? body.nameFa : undefined,
+      description: typeof body.description === 'string' ? body.description : undefined,
+      permissions: body.permissions,
+      isActive: typeof body.isActive === 'boolean' ? body.isActive : undefined,
+    });
+    if (!role) {
+      res.status(404).json({ error: 'نقش پیدا نشد' });
+      return;
+    }
+    res.json({ role });
+  } catch (err) {
+    res.status(400).json({ error: err instanceof Error ? err.message : 'خطا' });
+  }
+});
+
+hrAdminRouter.delete('/rbac/roles/:id', requirePermission('admin.full'), (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id)) {
+    res.status(400).json({ error: 'شناسه نامعتبر' });
+    return;
+  }
+  try {
+    hr.deleteAdminRole(id);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(400).json({ error: err instanceof Error ? err.message : 'خطا' });
+  }
+});
+
+hrAdminRouter.post('/rbac/accounts', requirePermission('admin.full'), (req, res) => {
+  try {
+    const body = req.body || {};
+    const account = hr.createAdminAccount({
+      username: typeof body.username === 'string' ? body.username : '',
+      password: typeof body.password === 'string' ? body.password : '',
+      roleKey: typeof body.roleKey === 'string' ? body.roleKey : '',
+      displayName: typeof body.displayName === 'string' ? body.displayName : '',
+      isActive: typeof body.isActive === 'boolean' ? body.isActive : true,
+    });
+    res.status(201).json({ account });
+  } catch (err) {
+    res.status(400).json({ error: err instanceof Error ? err.message : 'خطا' });
+  }
+});
+
+hrAdminRouter.patch('/rbac/accounts/:id', requirePermission('admin.full'), (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id)) {
+    res.status(400).json({ error: 'شناسه نامعتبر' });
+    return;
+  }
+  try {
+    const body = req.body || {};
+    const account = hr.updateAdminAccount(id, {
+      password: typeof body.password === 'string' ? body.password : undefined,
+      roleKey: typeof body.roleKey === 'string' ? body.roleKey : undefined,
+      displayName: typeof body.displayName === 'string' ? body.displayName : undefined,
+      isActive: typeof body.isActive === 'boolean' ? body.isActive : undefined,
+    });
+    if (!account) {
+      res.status(404).json({ error: 'حساب پیدا نشد' });
+      return;
+    }
+    res.json({ account });
+  } catch (err) {
+    res.status(400).json({ error: err instanceof Error ? err.message : 'خطا' });
+  }
+});
+
+hrAdminRouter.delete('/rbac/accounts/:id', requirePermission('admin.full'), (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id)) {
+    res.status(400).json({ error: 'شناسه نامعتبر' });
+    return;
+  }
+  try {
+    hr.deleteAdminAccount(id);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(400).json({ error: err instanceof Error ? err.message : 'خطا' });
+  }
 });

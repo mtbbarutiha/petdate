@@ -20,13 +20,18 @@ export function employeePublicIdOf(row: { id: number; publicId?: string | null }
   return makeEmployeePublicId(row.id);
 }
 
-/** Admin panel roles — extensible without rewrite */
+/** Built-in panel roles — custom roles live in admin_roles */
 export const ADMIN_PANEL_ROLES = ['admin', 'support'] as const;
 export type AdminPanelRole = (typeof ADMIN_PANEL_ROLES)[number];
 
-export const ADMIN_PANEL_ROLE_LABELS: Record<AdminPanelRole, string> = {
+/** Role keys that cannot be deleted from the UI */
+export const ADMIN_SYSTEM_ROLE_KEYS = ['admin'] as const;
+
+export const ADMIN_PANEL_ROLE_LABELS: Record<string, string> = {
   admin: 'مدیر کامل',
   support: 'پشتیبانی',
+  hr_admin: 'مدیر منابع انسانی',
+  recruiter: 'استخدام‌کننده',
 };
 
 /** Permission claims — add new keys as modules grow */
@@ -40,6 +45,15 @@ export const ADMIN_PERMISSIONS = [
 ] as const;
 export type AdminPermission = (typeof ADMIN_PERMISSIONS)[number];
 
+export const ADMIN_PERMISSION_LABELS: Record<AdminPermission, string> = {
+  'admin.full': 'مدیر کامل (همهٔ دسترسی‌ها)',
+  'hr.read': 'منابع انسانی — خواندن',
+  'hr.write': 'منابع انسانی — نوشتن',
+  'support.inbox': 'صندوق پشتیبانی',
+  'platform.read': 'پلتفرم — خواندن',
+  'platform.write': 'پلتفرم — نوشتن',
+};
+
 export const ADMIN_ROLE_PERMISSIONS: Record<AdminPanelRole, readonly AdminPermission[]> = {
   admin: [
     'admin.full',
@@ -52,9 +66,26 @@ export const ADMIN_ROLE_PERMISSIONS: Record<AdminPanelRole, readonly AdminPermis
   support: ['support.inbox', 'platform.read', 'hr.read'],
 };
 
+export function isKnownAdminPermission(value: string): value is AdminPermission {
+  return (ADMIN_PERMISSIONS as readonly string[]).includes(value);
+}
+
+export function normalizeAdminPermissions(raw: unknown): AdminPermission[] {
+  if (!Array.isArray(raw)) return [];
+  const out: AdminPermission[] = [];
+  const seen = new Set<string>();
+  for (const item of raw) {
+    const key = String(item || '').trim();
+    if (!key || seen.has(key) || !isKnownAdminPermission(key)) continue;
+    seen.add(key);
+    out.push(key);
+  }
+  return out;
+}
+
 export function roleHasPermission(
   role: AdminPanelRole | string,
-  permission: AdminPermission,
+  permission: AdminPermission | string,
   extra?: readonly string[] | null
 ): boolean {
   if (role === 'admin') return true;
@@ -294,6 +325,7 @@ export type AdminRoleDef = {
   nameFa: string;
   description: string;
   permissions: string[];
+  isActive: boolean;
 };
 
 export type AdminAccount = {
