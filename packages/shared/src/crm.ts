@@ -356,8 +356,28 @@ export interface CrmInboxRow {
   createdAt: string;
 }
 
+export interface CrmKpiRing {
+  key: string;
+  label: string;
+  value: number;
+  target: number;
+  unit: string;
+  pct: number;
+  standing: string;
+  direction: 'gte' | 'lte';
+}
+
+export interface CrmChartPoint {
+  key: string;
+  label: string;
+  value: number;
+  color?: string;
+}
+
 export interface CrmDashboard {
   greetingName: string;
+  roleLabel: string;
+  dateLabel: string;
   openTickets: number;
   breachedSla: number;
   atRiskSla: number;
@@ -371,6 +391,16 @@ export interface CrmDashboard {
   callMinutesToday: number;
   avgCsat: number | null;
   qaAvg: number | null;
+  qaQueue: number;
+  overallAchievement: number;
+  overallStanding: string;
+  weakPoints: string[];
+  kpis: CrmKpiRing[];
+  channelDistribution: CrmChartPoint[];
+  dailyInteractions: CrmChartPoint[];
+  ticketStatus: CrmChartPoint[];
+  myTickets: CrmTicket[];
+  upcomingFollowups: CrmFollowup[];
   inboxPreview: CrmInboxRow[];
   myTasks: CrmTask[];
 }
@@ -464,9 +494,13 @@ export function crmSurveyRating(answers: Record<string, number>): number {
 
 export function crmKpiAchievement(metric: string, value: number, target: number): number {
   const lowerBetter = ['wait_seconds', 'sla_breach', 'complaints'].includes(metric);
+  if (lowerBetter) {
+    // target 0 (e.g. overdue follow-ups): any positive value is a full miss
+    if (target <= 0) return value <= 0 ? 100 : 0;
+    return value <= target ? 100 : Math.max(0, 100 - ((value - target) / Math.max(1, target)) * 100);
+  }
   if (!target) return 100;
-  if (!lowerBetter) return Math.min(150, (value / target) * 100);
-  return value <= target ? 100 : Math.max(0, 100 - ((value - target) / Math.max(1, target)) * 100);
+  return Math.min(150, (value / target) * 100);
 }
 
 export function crmKpiStanding(pct: number): string {

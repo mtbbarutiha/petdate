@@ -87,8 +87,13 @@ function seedAlreadyDone(): boolean {
 export function seedCrmDemoIfNeeded(): void {
   ensureCrmSchema();
   ensureCrmRolePermissionBackfill();
-  if (seedAlreadyDone()) return;
+  if (!seedAlreadyDone()) {
+    seedCrmDemoCore();
+  }
+  enrichCrmWorkspaceChartsIfNeeded();
+}
 
+function seedCrmDemoCore(): void {
   const actor = systemActor;
 
   // Import a few sales customers into CRM when present
@@ -370,4 +375,95 @@ export function seedCrmDemoIfNeeded(): void {
   // Ensure patterns exist
   void listSmsPatterns();
   void listCustomers();
+}
+
+const WORKSPACE_CHART_MARKER = 'crm_workspace_chart_seed_v1';
+
+function hoursAgo(n: number): string {
+  return new Date(Date.now() - n * 3600_000).toISOString();
+}
+
+/** Additive chart/KPI enrichment — never wipes; safe on already-seeded DBs. */
+export function enrichCrmWorkspaceChartsIfNeeded(): void {
+  ensureCrmSchema();
+  const existing = db()
+    .prepare('SELECT id FROM crm_interactions WHERE notes = ? LIMIT 1')
+    .get(WORKSPACE_CHART_MARKER) as { id: number } | undefined;
+  if (existing) return;
+
+  const actor = systemActor;
+  const majid = findOrCreateCustomerByMobile(
+    { mobile: '09120006088', first: 'مجید', last: 'علوی', product: 'اقساط', source: 'مالی' },
+    actor
+  );
+
+  const ins = db().prepare(
+    `INSERT INTO crm_interactions (
+      customer_id, channel, direction, agent_id, agent_name, started_at, ended_at,
+      wait_seconds, talk_minutes, reason, outcome, summary, notes, wrap_done, qa_status
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, ?)`
+  );
+
+  const channels: Array<{ ch: string; dir: string; day: number; talk: number; reason: string }> = [
+    { ch: 'call_in', dir: 'in', day: 6, talk: 7, reason: 'اطلاعات محصول' },
+    { ch: 'call_in', dir: 'in', day: 5, talk: 9, reason: 'استفاده' },
+    { ch: 'sms', dir: 'out', day: 5, talk: 0, reason: 'پیامک' },
+    { ch: 'email', dir: 'out', day: 4, talk: 0, reason: 'ایمیل' },
+    { ch: 'whatsapp', dir: 'in', day: 4, talk: 3, reason: 'اطلاعات محصول' },
+    { ch: 'call_in', dir: 'in', day: 3, talk: 11, reason: 'شکایت' },
+    { ch: 'call_out', dir: 'out', day: 2, talk: 6, reason: 'پیگیری' },
+    { ch: 'call_in', dir: 'in', day: 1, talk: 8, reason: 'اطلاعات محصول' },
+    { ch: 'call_in', dir: 'in', day: 0, talk: 10, reason: 'استفاده' },
+    { ch: 'whatsapp', dir: 'in', day: 0, talk: 2, reason: 'پیگیری' },
+  ];
+
+  for (const row of channels) {
+    const started = daysAgo(row.day);
+    ins.run(
+      majid.id,
+      row.ch,
+      row.dir,
+      'crm_seed',
+      'مریم احمدی',
+      started,
+      started,
+      8,
+      row.talk,
+      row.reason,
+      row.ch === 'call_in' && row.day === 0 ? 'حل‌شده' : 'پاسخ داده‌شده',
+      `تعامل دموی میز کار · ${row.ch}`,
+      WORKSPACE_CHART_MARKER,
+      row.day <= 1 ? 'در صف' : 'ارزیابی‌شده'
+    );
+  }
+
+  const ticket = createTicket(
+    {
+      customerId: majid.id,
+      title: 'قسط سررسیدشده و درخواست تمدید مهلت',
+      description: 'مشتری درخواست تمدید مهلت پرداخت قسط معوقه دارد',
+      priority: 'بالا',
+      category: 'مالی',
+      agentId: 'crm_seed',
+      agentName: 'مریم احمدی',
+    },
+    actor
+  );
+  db()
+    .prepare(
+      `UPDATE crm_tickets SET status = 'در انتظار مشتری', created_at = ?, sla_due = ?, agent_id = ?, agent_name = ? WHERE id = ?`
+    )
+    .run(daysAgo(2), daysAgo(1), 'crm_seed', 'مریم احمدی', ticket.id);
+
+  createFollowup(
+    {
+      customerId: majid.id,
+      ticketId: ticket.id,
+      kind: 'تماس',
+      dueAt: hoursAgo(6),
+      priority: 'بالا',
+      description: 'اعلام نتیجه بررسی مالی',
+    },
+    actor
+  );
 }
