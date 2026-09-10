@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
-import type { HrCandidate, HrJobOpening } from '@petdate/shared';
+import type { HrCandidate, HrCandidateCallLog, HrJobOpening } from '@petdate/shared';
 import {
   HR_CALL_CONNECTED,
   HR_CALL_OUTCOMES,
   HR_CANDIDATE_STAGES,
   HR_JOB_BOARDS,
+  isHrCallNoContact,
 } from '@petdate/shared';
 import { adminFetch, formatNumFa } from '../../api';
 import { adminCan } from '../../auth';
@@ -23,13 +24,20 @@ type AtsMeta = {
   interviewers: Array<{ id: number; name: string; jobTitle: string; department: string }>;
 };
 
-type Tab = 'list' | 'followup';
+type Tab = 'list' | 'followup' | 'interview';
 
 function stagePillClass(stage: string): string {
   if (stage.includes('استخدام')) return 'admin-pill admin-pill--mint';
   if (stage.startsWith('رد')) return 'admin-pill admin-pill--error';
   if (stage.includes('مصاحبه') || stage.includes('پیشنهاد')) return 'admin-pill admin-pill--warn';
   return 'admin-pill';
+}
+
+function callForRound(
+  calls: HrCandidateCallLog[] | undefined,
+  round: 1 | 2 | 3
+): HrCandidateCallLog | undefined {
+  return (calls || []).find((c) => c.round === round);
 }
 
 export function AdminHrAtsPage() {
@@ -82,12 +90,31 @@ export function AdminHrAtsPage() {
     jobBoard: '',
     jobTitle: '',
   });
-  const [callOutcome, setCallOutcome] = useState<string>(HR_CALL_OUTCOMES[0]);
+  const [draftOutcome, setDraftOutcome] = useState<string>(HR_CALL_OUTCOMES[0]);
+  const [draftNote, setDraftNote] = useState('');
+  const [draftCallDate, setDraftCallDate] = useState<JalaliDateValue>(null);
   const [interviewDate, setInterviewDate] = useState<JalaliDateValue>(null);
   const [interviewTime, setInterviewTime] = useState('10:00');
   const [interviewerId, setInterviewerId] = useState('');
+  const [interviewNote, setInterviewNote] = useState('');
   const [startDate, setStartDate] = useState<JalaliDateValue>(null);
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    setDraftOutcome(HR_CALL_OUTCOMES[0]);
+    setDraftNote('');
+    setDraftCallDate(null);
+    if (selected?.followup.interviewNote) {
+      setInterviewNote(selected.followup.interviewNote);
+    } else {
+      setInterviewNote('');
+    }
+    if (selected?.followup.interviewerEmployeeId) {
+      setInterviewerId(String(selected.followup.interviewerEmployeeId));
+    } else {
+      setInterviewerId('');
+    }
+  }, [selectedId, selected?.followup.callRound]);
 
   const addOpening = async (e: FormEvent) => {
     e.preventDefault();
@@ -171,15 +198,38 @@ export function AdminHrAtsPage() {
 
   const recordCall = async () => {
     if (!canWrite || !selected) return;
+    const round = selected.followup.callRound;
+    if (round >= 2 && !jalaliPartsToGregorianIso(draftCallDate)) {
+      setError(`تاریخ شمسی تماس ${formatNumFa(round)} الزامی است`);
+      return;
+    }
     setBusy(true);
     setMsg(null);
+    setError(null);
     try {
+      const atIso = round >= 2 ? jalaliPartsToGregorianIso(draftCallDate) : null;
       const res = await adminFetch<{ candidate: HrCandidate }>(
         `/api/admin/hr/ats/candidates/${selected.id}/calls`,
-        { method: 'POST', body: JSON.stringify({ outcome: callOutcome }) }
+        {
+          method: 'POST',
+          body: JSON.stringify({
+            outcome: draftOutcome,
+            note: draftNote.trim(),
+            ...(atIso ? { at: atIso } : {}),
+          }),
+        }
       );
-      setMsg(`نتیجه تماس ${formatNumFa(res.candidate.followup.callRound)} ثبت شد`);
+      const calls = res.candidate.followup.calls;
+      const recordedRound = calls[calls.length - 1]?.round ?? round;
+      const wasConnected = draftOutcome === HR_CALL_CONNECTED;
+      setMsg(`نتیجه تماس ${formatNumFa(recordedRound)} ثبت شد`);
+      setDraftOutcome(HR_CALL_OUTCOMES[0]);
+      setDraftNote('');
+      setDraftCallDate(null);
       await load();
+      if (wasConnected) {
+        setTab('interview');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'خطا');
     } finally {
@@ -194,21 +244,26 @@ export function AdminHrAtsPage() {
       setError('تاریخ و ساعت مصاحبه الزامی است');
       return;
     }
+    if (!interviewerId) {
+      setError('انتخاب مصاحبه‌گر از اطلاعات پرسنلی الزامی است');
+      return;
+    }
     setBusy(true);
     setMsg(null);
+    setError(null);
     try {
-      const res = await adminFetch<{ candidate: HrCandidate; notify?: unknown }>(
+      await adminFetch<{ candidate: HrCandidate; notify?: unknown }>(
         `/api/admin/hr/ats/candidates/${selected.id}/interview`,
         {
           method: 'POST',
           body: JSON.stringify({
             interviewAt,
-            interviewerEmployeeId: interviewerId ? Number(interviewerId) : null,
+            interviewerEmployeeId: Number(interviewerId),
+            interviewNote: interviewNote.trim(),
           }),
         }
       );
-      setMsg('مصاحبه زمان‌بندی شد · پیامک/ایمیل در صف ارسال');
-      void res;
+      setMsg('مصاحبه زمان‌بندی شد · تسک برای مصاحبه‌گر در کارتابل · پیامک/ایمیل در صف');
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'خطا');
@@ -251,7 +306,128 @@ export function AdminHrAtsPage() {
     ? meta.jobTitles
     : [...new Set(openings.map((o) => o.title).filter(Boolean))];
 
-  const lastConnected = selected?.followup.calls.some((c) => c.outcome === HR_CALL_CONNECTED);
+  const call1 = callForRound(selected?.followup.calls, 1);
+  const call2 = callForRound(selected?.followup.calls, 2);
+  const call3 = callForRound(selected?.followup.calls, 3);
+  const currentRound = selected?.followup.callRound ?? 1;
+  const rejected = selected?.stage.startsWith('رد شده') ?? false;
+
+  // Three no-contact cases on call 1 → open call 2 (+ Jalali date)
+  const showCall2 =
+    !!call2 ||
+    !!call3 ||
+    currentRound >= 2 ||
+    (call1 ? isHrCallNoContact(call1.outcome) : currentRound === 1 && isHrCallNoContact(draftOutcome));
+
+  // Second call also no-contact → open call 3 (+ Jalali date)
+  const showCall3 =
+    !!call3 ||
+    currentRound >= 3 ||
+    (call2
+      ? isHrCallNoContact(call2.outcome)
+      : showCall2 && currentRound === 2 && !call2 && isHrCallNoContact(draftOutcome));
+
+  const renderCallHistory = (c: HrCandidateCallLog) => (
+    <div className="hr-ats-call-done" key={`${c.round}-${c.at}`}>
+      <p>
+        تماس {formatNumFa(c.round)} · <b>{c.outcome}</b> · {formatAdminFaDateTime(c.at)}
+      </p>
+      {c.note ? <p className="admin-muted">توضیحات: {c.note}</p> : null}
+    </div>
+  );
+
+  const renderActiveCallForm = (round: 1 | 2 | 3) => {
+    if (currentRound !== round || rejected || callForRound(selected?.followup.calls, round)) {
+      return null;
+    }
+    return (
+      <div className="hr-ats-call-form">
+        {round >= 2 ? (
+          <JalaliDateSelect
+            label={`تاریخ تماس ${formatNumFa(round)} (شمسی)`}
+            value={draftCallDate}
+            onChange={setDraftCallDate}
+            allowEmpty
+            yearsBack={1}
+            yearsForward={0}
+          />
+        ) : null}
+        <label>
+          <span className="form-label">نتیجه تماس {formatNumFa(round)}</span>
+          <select
+            className="admin-select"
+            value={draftOutcome}
+            onChange={(e) => setDraftOutcome(e.target.value)}
+          >
+            {HR_CALL_OUTCOMES.map((o) => (
+              <option key={o} value={o}>
+                {o}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="hr-ats-call-note">
+          <span className="form-label">توضیحات</span>
+          <textarea
+            className="form-input"
+            rows={3}
+            value={draftNote}
+            onChange={(e) => setDraftNote(e.target.value)}
+            placeholder="یادداشت تماس…"
+          />
+        </label>
+        <div className="admin-toolbar">
+          <button
+            type="button"
+            className="admin-btn admin-btn--primary"
+            disabled={busy || !canWrite}
+            onClick={() => void recordCall()}
+          >
+            ثبت نتیجه تماس {formatNumFa(round)}
+            {round === 1 ? ' (خودکار تاریخ)' : ''}
+          </button>
+          {draftOutcome === HR_CALL_CONNECTED ? (
+            <span className="admin-muted">پس از ثبت → تب هماهنگی مصاحبه</span>
+          ) : null}
+        </div>
+      </div>
+    );
+  };
+
+  const applicantPicker = (
+    <div className="admin-toolbar" style={{ marginTop: 0 }}>
+      <label>
+        <span className="form-label">انتخاب متقاضی</span>
+        <select
+          className="admin-select"
+          value={selectedId ?? ''}
+          onChange={(e) => setSelectedId(e.target.value ? Number(e.target.value) : null)}
+        >
+          <option value="">—</option>
+          {candidates.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.firstName} {c.lastName} · {c.stage}
+            </option>
+          ))}
+        </select>
+      </label>
+    </div>
+  );
+
+  const selectedHead = selected ? (
+    <>
+      <div className="admin-card-head">
+        <h2>
+          {selected.firstName} {selected.lastName}
+        </h2>
+        <span className={stagePillClass(selected.stage)}>{selected.stage}</span>
+      </div>
+      <p className="admin-muted">
+        تماس فعلی: {formatNumFa(selected.followup.callRound)} از ۳ ·{' '}
+        {selected.jobTitle || openingTitle(selected.jobOpeningId)} · {selected.jobBoard || '—'}
+      </p>
+    </>
+  ) : null;
 
   return (
     <div className="admin-page">
@@ -304,6 +480,13 @@ export function AdminHrAtsPage() {
           onClick={() => setTab('followup')}
         >
           پیگیری تماس
+        </button>
+        <button
+          type="button"
+          className={`admin-tab${tab === 'interview' ? ' is-on' : ''}`}
+          onClick={() => setTab('interview')}
+        >
+          هماهنگی مصاحبه
         </button>
       </div>
 
@@ -423,128 +606,93 @@ export function AdminHrAtsPage() {
             </table>
           </div>
         </>
-      ) : (
-        <section className="admin-card" style={{ padding: 16 }}>
-          <div className="admin-toolbar" style={{ marginTop: 0 }}>
-            <label>
-              <span className="form-label">انتخاب متقاضی</span>
-              <select
-                className="admin-select"
-                value={selectedId ?? ''}
-                onChange={(e) => setSelectedId(e.target.value ? Number(e.target.value) : null)}
-              >
-                <option value="">—</option>
-                {candidates.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.firstName} {c.lastName} · {c.stage}
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
+      ) : null}
 
+      {tab === 'followup' ? (
+        <section className="admin-card" style={{ padding: 16 }}>
+          {applicantPicker}
           {!selected ? (
             <p className="admin-muted">یک متقاضی را انتخاب کنید یا از «متقاضی جدید» شروع کنید.</p>
           ) : (
             <div className="hr-ats-followup">
-              <div className="admin-card-head">
-                <h2>
-                  {selected.firstName} {selected.lastName}
-                </h2>
-                <span className={stagePillClass(selected.stage)}>{selected.stage}</span>
-              </div>
-              <p className="admin-muted">
-                تماس فعلی: {formatNumFa(selected.followup.callRound)} از ۳ ·{' '}
-                {selected.jobTitle || openingTitle(selected.jobOpeningId)} ·{' '}
-                {selected.jobBoard || '—'}
-              </p>
+              {selectedHead}
 
-              <h3 style={{ fontSize: '0.95rem' }}>نتیجه تماس</h3>
-              <div className="admin-toolbar">
-                <select
-                  className="admin-select"
-                  value={callOutcome}
-                  onChange={(e) => setCallOutcome(e.target.value)}
-                >
-                  {HR_CALL_OUTCOMES.map((o) => (
-                    <option key={o} value={o}>
-                      {o}
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  className="admin-btn admin-btn--primary"
-                  disabled={busy || !canWrite || selected.stage.startsWith('رد شده')}
-                  onClick={() => void recordCall()}
-                >
-                  ثبت نتیجه (خودکار تاریخ)
-                </button>
-              </div>
-
-              <ul className="admin-log-list">
-                {(selected.followup.calls || []).map((c, i) => (
-                  <li key={`${c.at}-${i}`}>
-                    تماس {formatNumFa(c.round)} · <b>{c.outcome}</b> ·{' '}
-                    {formatAdminFaDateTime(c.at)}
-                  </li>
-                ))}
-                {!selected.followup.calls?.length ? (
-                  <li className="admin-muted">هنوز تماسی ثبت نشده</li>
+              <div className="hr-ats-call-stage">
+                <h3 style={{ fontSize: '0.95rem' }}>تماس ۱</h3>
+                {call1 ? renderCallHistory(call1) : renderActiveCallForm(1)}
+                {!call1 && currentRound === 1 && isHrCallNoContact(draftOutcome) ? (
+                  <p className="admin-muted">
+                    با انتخاب یکی از سه حالت عدم ارتباط (نبود / عدم دسترسی / موکول به آینده) پس از ثبت،
+                    تماس ۲ و تاریخ شمسی باز می‌شود.
+                  </p>
                 ) : null}
-              </ul>
+              </div>
 
-              {lastConnected ? (
-                <>
-                  <h3 style={{ fontSize: '0.95rem' }}>زمان‌بندی مصاحبه</h3>
-                  <div className="admin-toolbar admin-ats-interview">
-                    <JalaliDateSelect
-                      label="تاریخ مصاحبه"
-                      value={interviewDate}
-                      onChange={setInterviewDate}
-                      yearsBack={1}
-                      yearsForward={1}
-                    />
-                    <label>
-                      <span className="form-label">ساعت</span>
-                      <input
-                        type="time"
-                        className="admin-select"
-                        value={interviewTime}
-                        onChange={(e) => setInterviewTime(e.target.value)}
+              {showCall2 ? (
+                <div className="hr-ats-call-stage">
+                  <h3 style={{ fontSize: '0.95rem' }}>تماس ۲</h3>
+                  {call2 ? renderCallHistory(call2) : null}
+                  {currentRound === 2 && !call2 ? renderActiveCallForm(2) : null}
+                  {!call2 && currentRound === 1 && isHrCallNoContact(draftOutcome) ? (
+                    <div className="hr-ats-call-preview">
+                      <JalaliDateSelect
+                        label="تاریخ تماس ۲ (شمسی)"
+                        value={draftCallDate}
+                        onChange={setDraftCallDate}
+                        allowEmpty
+                        yearsBack={1}
+                        yearsForward={0}
+                        disabled
                       />
-                    </label>
-                    <select
-                      className="admin-select"
-                      value={interviewerId}
-                      onChange={(e) => setInterviewerId(e.target.value)}
-                    >
-                      <option value="">مصاحبه‌گر (پرسنل)</option>
-                      {(meta?.interviewers || []).map((p) => (
-                        <option key={p.id} value={String(p.id)}>
-                          {p.name}
-                          {p.jobTitle ? ` — ${p.jobTitle}` : ''}
-                        </option>
-                      ))}
-                    </select>
-                    <button
-                      type="button"
-                      className="admin-btn"
-                      disabled={busy || !canWrite || !interviewDate || !interviewTime}
-                      onClick={() => void scheduleInterview()}
-                    >
-                      ثبت مصاحبه + پیامک/ایمیل
-                    </button>
-                  </div>
-                  {selected.followup.interviewAt ? (
-                    <p className="admin-muted">
-                      مصاحبه: {formatAdminFaDateTime(selected.followup.interviewAt)}
-                      {selected.followup.interviewerName
-                        ? ` · ${selected.followup.interviewerName}`
-                        : ''}
-                    </p>
+                      <p className="admin-muted">
+                        پس از ثبت تماس ۱ با یکی از سه حالت عدم ارتباط، این فیلدها فعال می‌شوند.
+                      </p>
+                    </div>
                   ) : null}
-                </>
+                </div>
+              ) : null}
+
+              {showCall3 ? (
+                <div className="hr-ats-call-stage">
+                  <h3 style={{ fontSize: '0.95rem' }}>تماس ۳</h3>
+                  {call3 ? renderCallHistory(call3) : null}
+                  {currentRound === 3 && !call3 ? renderActiveCallForm(3) : null}
+                  {!call3 && currentRound === 2 && isHrCallNoContact(draftOutcome) ? (
+                    <div className="hr-ats-call-preview">
+                      <JalaliDateSelect
+                        label="تاریخ تماس ۳ (شمسی)"
+                        value={null}
+                        onChange={() => undefined}
+                        allowEmpty
+                        yearsBack={1}
+                        yearsForward={0}
+                        disabled
+                      />
+                      <p className="admin-muted">
+                        پس از ثبت تماس ۲ با عدم ارتباط، فرم تماس ۳ فعال می‌شود.
+                      </p>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {!call1 && !selected.followup.calls?.length ? (
+                <p className="admin-muted" style={{ marginTop: 8 }}>
+                  هنوز تماسی ثبت نشده
+                </p>
+              ) : null}
+
+              {selected.followup.calls.some((c) => c.outcome === HR_CALL_CONNECTED) ? (
+                <p className="admin-success" style={{ marginTop: 12 }}>
+                  متقاضی پاسخگو بود —{' '}
+                  <button
+                    type="button"
+                    className="admin-btn admin-btn--ghost"
+                    onClick={() => setTab('interview')}
+                  >
+                    برو به هماهنگی مصاحبه
+                  </button>
+                </p>
               ) : null}
 
               <h3 style={{ fontSize: '0.95rem' }}>تصمیم نهایی</h3>
@@ -577,7 +725,103 @@ export function AdminHrAtsPage() {
             </div>
           )}
         </section>
-      )}
+      ) : null}
+
+      {tab === 'interview' ? (
+        <section className="admin-card" style={{ padding: 16 }}>
+          {applicantPicker}
+          {!selected ? (
+            <p className="admin-muted">یک متقاضی را انتخاب کنید.</p>
+          ) : (
+            <div className="hr-ats-followup">
+              {selectedHead}
+
+              {!selected.followup.calls.some((c) => c.outcome === HR_CALL_CONNECTED) ? (
+                <p className="admin-muted">
+                  هماهنگی مصاحبه پس از ثبت نتیجه «پاسخگو بود» در پیگیری تماس فعال می‌شود.
+                </p>
+              ) : (
+                <>
+                  <h3 style={{ fontSize: '0.95rem' }}>زمان‌بندی و تخصیص مصاحبه</h3>
+                  <div className="admin-toolbar admin-ats-interview" style={{ flexWrap: 'wrap' }}>
+                    <JalaliDateSelect
+                      label="تاریخ مصاحبه"
+                      value={interviewDate}
+                      onChange={setInterviewDate}
+                      yearsBack={1}
+                      yearsForward={1}
+                    />
+                    <label>
+                      <span className="form-label">ساعت</span>
+                      <input
+                        type="time"
+                        className="admin-select"
+                        value={interviewTime}
+                        onChange={(e) => setInterviewTime(e.target.value)}
+                      />
+                    </label>
+                    <label>
+                      <span className="form-label">مصاحبه‌گر (اطلاعات پرسنلی)</span>
+                      <select
+                        className="admin-select"
+                        value={interviewerId}
+                        onChange={(e) => setInterviewerId(e.target.value)}
+                      >
+                        <option value="">انتخاب پرسنل</option>
+                        {(meta?.interviewers || []).map((p) => (
+                          <option key={p.id} value={String(p.id)}>
+                            {p.name}
+                            {p.jobTitle ? ` — ${p.jobTitle}` : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                  <label className="hr-ats-call-note" style={{ display: 'block', marginTop: 12 }}>
+                    <span className="form-label">توضیحات مصاحبه‌گر</span>
+                    <textarea
+                      className="form-input"
+                      rows={3}
+                      value={interviewNote}
+                      onChange={(e) => setInterviewNote(e.target.value)}
+                      placeholder="نکات هماهنگی، موضوع مصاحبه، محل…"
+                    />
+                  </label>
+                  <div className="admin-toolbar" style={{ marginTop: 12 }}>
+                    <button
+                      type="button"
+                      className="admin-btn admin-btn--primary"
+                      disabled={
+                        busy || !canWrite || !interviewDate || !interviewTime || !interviewerId
+                      }
+                      onClick={() => void scheduleInterview()}
+                    >
+                      ثبت مصاحبه + تسک پرسنل + پیامک/ایمیل
+                    </button>
+                  </div>
+                  {selected.followup.interviewAt ? (
+                    <div className="hr-ats-call-done" style={{ marginTop: 12 }}>
+                      <p>
+                        مصاحبه ثبت‌شده:{' '}
+                        <b>{formatAdminFaDateTime(selected.followup.interviewAt)}</b>
+                        {selected.followup.interviewerName
+                          ? ` · ${selected.followup.interviewerName}`
+                          : ''}
+                      </p>
+                      {selected.followup.interviewNote ? (
+                        <p className="admin-muted">توضیحات: {selected.followup.interviewNote}</p>
+                      ) : null}
+                      <p className="admin-muted">
+                        تسک در کارتابل فعالیت منابع انسانی برای مصاحبه‌گر ایجاد می‌شود.
+                      </p>
+                    </div>
+                  ) : null}
+                </>
+              )}
+            </div>
+          )}
+        </section>
+      ) : null}
 
       <AdminModal
         open={openingModal}

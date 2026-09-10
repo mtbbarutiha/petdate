@@ -394,6 +394,7 @@ hrAdminRouter.post('/ats/candidates/:id/calls', requirePermission('hr.write'), (
   const candidate = hr.recordCandidateCall(id, {
     outcome,
     note: typeof req.body?.note === 'string' ? req.body.note : '',
+    at: typeof req.body?.at === 'string' ? req.body.at : '',
   });
   if (!candidate) {
     res.status(404).json({ error: 'متقاضی پیدا نشد' });
@@ -422,6 +423,7 @@ hrAdminRouter.post('/ats/candidates/:id/interview', requirePermission('hr.write'
       ? interviewerEmployeeId
       : null,
     interviewerName,
+    interviewNote: typeof req.body?.interviewNote === 'string' ? req.body.interviewNote : '',
   });
   if (!candidate) {
     res.status(404).json({ error: 'متقاضی پیدا نشد' });

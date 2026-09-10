@@ -3985,3 +3985,30 @@ body:has(.admin-app) {
 .admin-app .hr-ats-followup h3 {
   margin: 18px 0 8px;
 }
+.admin-app .hr-ats-call-stage {
+  margin-top: 8px;
+  padding-top: 4px;
+  border-top: 1px solid var(--admin-border, #e8e6ef);
+}
+.admin-app .hr-ats-call-stage:first-of-type {
+  border-top: 0;
+  padding-top: 0;
+}
+.admin-app .hr-ats-call-form,
+.admin-app .hr-ats-call-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 520px;
+}
+.admin-app .hr-ats-call-note textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 72px;
+}
+.admin-app .hr-ats-call-done {
+  margin: 4px 0 8px;
+}
+.admin-app .hr-ats-call-done p {
+  margin: 0 0 4px;
+}
