@@ -838,19 +838,22 @@
 }
 .admin-app .admin-wallet-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(68px, 1fr));
+  grid-template-columns: repeat(4, minmax(52px, auto));
   gap: 4px;
-  min-width: 148px;
+  min-width: 0;
+  width: max-content;
+  max-width: 280px;
 }
 .admin-app .admin-wallet-chip {
   display: flex;
   flex-direction: column;
   gap: 1px;
-  padding: 4px 6px;
+  padding: 3px 5px;
   border-radius: 6px;
   background: #f4f6f8;
   border: 1px solid #e6eaef;
-  line-height: 1.15;
+  line-height: 1.1;
+  min-width: 52px;
 }
 .admin-app .admin-wallet-chip--zero {
   opacity: 0.55;
