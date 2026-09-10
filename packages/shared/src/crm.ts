@@ -637,9 +637,18 @@ export interface CrmReportSummary {
   slaPct: number;
 }
 
+/** Soft-deleted reason-tree nodes — kept for report/history integrity. */
+export interface CrmDeletedReasonNode {
+  /** Path segments: [L1] | [L1, L2] | [L1, L2, leaf] */
+  path: string[];
+  deletedAt: string;
+}
+
 export interface CrmSettings {
   slaPolicy: Record<string, [number, number]>;
   reasonTree: Record<string, Record<string, string[]>>;
+  /** Soft-deleted nodes removed from the active tree but retained for reporting. */
+  deletedReasons: CrmDeletedReasonNode[];
   scorecard: Array<{ key: string; label: string; weight: number }>;
   criticalErrors: string[];
   surveyQuestions: string[];
@@ -656,14 +665,24 @@ export function makeCrmUuid(prefix: string, id: number): string {
   return `${prefix}-${suffix}`;
 }
 
-export function crmSlaDueIso(priority: string, createdAt: string | Date): string {
-  const hours = (CRM_SLA_POLICY[priority as CrmPriority] || CRM_SLA_POLICY['متوسط'])[1];
+export function crmSlaDueIso(
+  priority: string,
+  createdAt: string | Date,
+  policy?: Record<string, [number, number]>
+): string {
+  const pol: Record<string, [number, number]> = policy || { ...CRM_SLA_POLICY };
+  const hours = (pol[priority] || pol['متوسط'] || CRM_SLA_POLICY['متوسط'])[1];
   const base = typeof createdAt === 'string' ? new Date(createdAt) : createdAt;
   return new Date(base.getTime() + hours * 3600_000).toISOString();
 }
 
-export function crmFirstResponseDueIso(priority: string, createdAt: string | Date): string {
-  const mins = (CRM_SLA_POLICY[priority as CrmPriority] || CRM_SLA_POLICY['متوسط'])[0];
+export function crmFirstResponseDueIso(
+  priority: string,
+  createdAt: string | Date,
+  policy?: Record<string, [number, number]>
+): string {
+  const pol: Record<string, [number, number]> = policy || { ...CRM_SLA_POLICY };
+  const mins = (pol[priority] || pol['متوسط'] || CRM_SLA_POLICY['متوسط'])[0];
   const base = typeof createdAt === 'string' ? new Date(createdAt) : createdAt;
   return new Date(base.getTime() + mins * 60_000).toISOString();
 }
@@ -716,11 +735,16 @@ export function crmInboxBorderColor(state: string, extra?: { unassigned?: boolea
   return 'rgb(223, 229, 236)';
 }
 
-export function crmQaTotal(scores: Record<string, number>, critical: string[]): number {
+export function crmQaTotal(
+  scores: Record<string, number>,
+  critical: string[],
+  scorecard?: ReadonlyArray<{ key: string; label: string; weight: number }>
+): number {
   if (critical.length > 0) return 0;
   let sum = 0;
   let weightSum = 0;
-  for (const item of CRM_SCORECARD) {
+  const items = scorecard?.length ? scorecard : CRM_SCORECARD;
+  for (const item of items) {
     const score = Number(scores[item.key] ?? 0);
     sum += score * item.weight;
     weightSum += item.weight;
