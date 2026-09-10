@@ -302,14 +302,45 @@ async function main() {
   // After user ends chat, a new start may create — but closes orphans.
   dbService.endVetConsultChat(session!.consult.id);
   dbService.updateVetConsultationStatus(session!.consult.id, 'completed');
+  // Explicit close-all (keepId null) — must not throw on Postgres ("parameter $4" null-type bug).
+  assert(
+    dbService.closeActiveAiConsultsForPatient(patient.id, 'trainer', aiUser.id, null) >= 0,
+    'closeActive with null keepId succeeds'
+  );
   const sessionFresh = await startAiFallbackConsult({ patient, serviceKind: 'trainer' });
   assert(sessionFresh, 'new session after end');
   assert(sessionFresh!.consult.id !== session!.consult.id, 'new consult after prior ended');
   assert(!sessionFresh!.reused, 'fresh start is not reused');
+  // keepId path: orphan sibling closed while keeping fresh open
+  const orphan = dbService.createVetConsultation({
+    vetUserId: aiUser.id,
+    patientUserId: patient.id,
+    status: 'active',
+    notes: 'orphan selftest',
+    feeCoins: 0,
+    serviceKind: 'trainer',
+    providerShareCoins: 0,
+  });
+  const closed = dbService.closeActiveAiConsultsForPatient(
+    patient.id,
+    'trainer',
+    aiUser.id,
+    sessionFresh!.consult.id
+  );
+  assert(closed >= 1, 'closeActive with keepId closes orphans');
+  assert(
+    dbService.getVetConsultation(sessionFresh!.consult.id)?.status === 'active',
+    'kept consult stays active'
+  );
+  assert(
+    dbService.getVetConsultation(orphan.id)?.status === 'completed',
+    'orphan marked completed'
+  );
   const activeAfterFresh = dbService
     .listVetConsultations({ patientUserId: patient.id, status: 'active', serviceKind: 'trainer' })
     .filter((c) => c.vetUserId === aiUser.id && !c.chatEnded);
   assert(activeAfterFresh.length === 1, 'still only one ongoing AI trainer after recreate');
+  assert(activeAfterFresh[0]!.id === sessionFresh!.consult.id, 'only kept consult remains active');
 
   const leashTip = await generateAiConsultAdvice({
     kind: 'trainer',

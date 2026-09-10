@@ -5148,24 +5148,24 @@ export const dbService = {
     aiUserId: number,
     keepId?: number | null
   ): number {
-    const result = db
-      .prepare(
-        `UPDATE vet_consultations
-         SET status = 'completed', chat_ended = 1, chat_secure = 0
-         WHERE patient_user_id = ?
+    // Split keepId paths: Postgres rejects unbound typed `? IS NULL` when keepId is null
+    // ("could not determine data type of parameter $4").
+    const baseWhere = `WHERE patient_user_id = ?
            AND vet_user_id = ?
            AND status = 'active'
            AND COALESCE(chat_ended, 0) = 0
-           AND COALESCE(service_kind, 'vet') = ?
-           AND (? IS NULL OR id != ?)`
-      )
-      .run(
-        patientUserId,
-        aiUserId,
-        serviceKind,
-        keepId ?? null,
-        keepId ?? null
-      );
+           AND COALESCE(service_kind, 'vet') = ?`;
+    const setSql = `UPDATE vet_consultations
+         SET status = 'completed', chat_ended = 1, chat_secure = 0
+         ${baseWhere}`;
+    const keep = keepId != null && Number.isFinite(Number(keepId)) ? Number(keepId) : null;
+    const result =
+      keep == null
+        ? db.prepare(setSql).run(patientUserId, aiUserId, serviceKind)
+        : db
+            .prepare(`${setSql}
+           AND id != ?`)
+            .run(patientUserId, aiUserId, serviceKind, keep);
     return result.changes;
   },
 

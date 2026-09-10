@@ -92,6 +92,9 @@ export function isAiConsultConfigured(): boolean {
   return Boolean(envKey());
 }
 
+/** Avoid flooding pm2 error logs when AI_CONSULT_API_KEY is unset in production. */
+let warnedMissingAiConsultKey = false;
+
 function systemPrompt(kind: AiConsultKind): string {
   if (kind === 'support') {
     return [
@@ -1514,7 +1517,13 @@ export async function generateAiConsultAdvice(ctx: AiConsultContext): Promise<{
       return { text: offlineUnknownBestEffortReply(ctx), source: 'offline' };
     }
     if (unknown && !isAiConsultConfigured()) {
-      console.warn('pasha unknown topic: AI_CONSULT_API_KEY missing; best-effort coaching');
+      // Ops: set AI_CONSULT_API_KEY on the VPS for LLM answers. Log once — not per message.
+      if (!warnedMissingAiConsultKey) {
+        warnedMissingAiConsultKey = true;
+        console.warn(
+          'pasha unknown topic: AI_CONSULT_API_KEY missing; best-effort coaching (further warnings suppressed)'
+        );
+      }
       return { text: offlineUnknownBestEffortReply(ctx), source: 'offline' };
     }
     if (trainerShouldGoOnline(ctx)) {
