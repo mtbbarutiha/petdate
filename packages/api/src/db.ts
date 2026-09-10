@@ -46,13 +46,19 @@ import {
   isPendingRequestExpired,
   makePetPublicId,
   makeUserPublicId,
+  makeOrderPublicId,
+  makeConsultPublicId,
+  makePlaydatePublicId,
+  makePaymentPublicId,
   maskCardNumber,
   PET_BREEDS_SEED,
   PET_MEDICAL_FIELD_LABELS,
   PET_SPECIES,
   petPublicIdOf,
-  makeOrderPublicId,
   orderPublicIdOf,
+  consultPublicIdOf,
+  playdatePublicIdOf,
+  paymentPublicIdOf,
   QUICK_VET_COST,
   SEEKER_ADVICE_COST,
   SEEKER_OWNER_SHARE,
@@ -361,8 +367,69 @@ function backfillPublicIds(): void {
     console.warn('shop_orders public_id backfill skipped/failed:', (err as Error).message);
   }
 
+  backfillEntityPublicIds(
+    'vet_consultations',
+    makeConsultPublicId,
+    (id, publicId) => consultPublicIdOf({ id, publicId })
+  );
+  backfillEntityPublicIds(
+    'playdate_requests',
+    makePlaydatePublicId,
+    (id, publicId) => playdatePublicIdOf({ id, publicId })
+  );
+  backfillEntityPublicIds(
+    'payment_orders',
+    makePaymentPublicId,
+    (id, publicId) => paymentPublicIdOf({ id, publicId })
+  );
+
   db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_public_id ON users (public_id)');
   db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_pets_public_id ON pets (public_id)');
+  db.exec(
+    'CREATE UNIQUE INDEX IF NOT EXISTS idx_vet_consultations_public_id ON vet_consultations (public_id)'
+  );
+  db.exec(
+    'CREATE UNIQUE INDEX IF NOT EXISTS idx_playdate_requests_public_id ON playdate_requests (public_id)'
+  );
+  db.exec(
+    'CREATE UNIQUE INDEX IF NOT EXISTS idx_payment_orders_public_id ON payment_orders (public_id)'
+  );
+}
+
+function backfillEntityPublicIds(
+  table: string,
+  make: (id: number) => string,
+  canonicalOf: (id: number, publicId: string | null) => string
+): void {
+  try {
+    const cols = (
+      db.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>
+    ).map((c) => c.name);
+    if (!cols.includes('public_id')) return;
+    const missing = db
+      .prepare(
+        `SELECT id, public_id FROM ${table} WHERE public_id IS NULL OR trim(CAST(public_id AS TEXT)) = ''`
+      )
+      .all() as { id: number; public_id: string | null }[];
+    if (missing.length) {
+      const upd = db.prepare(`UPDATE ${table} SET public_id = ? WHERE id = ?`);
+      for (const row of missing) {
+        upd.run(make(Number(row.id)), Number(row.id));
+      }
+    }
+    const all = db
+      .prepare(`SELECT id, public_id FROM ${table} WHERE public_id IS NOT NULL`)
+      .all() as { id: number; public_id: string }[];
+    const updAll = db.prepare(`UPDATE ${table} SET public_id = ? WHERE id = ?`);
+    for (const row of all) {
+      const canonical = canonicalOf(Number(row.id), row.public_id);
+      if (canonical !== String(row.public_id).trim()) {
+        updAll.run(canonical, Number(row.id));
+      }
+    }
+  } catch (err) {
+    console.warn(`public_id backfill for ${table} skipped:`, (err as Error).message);
+  }
 }
 
 function migrateSchema() {
@@ -937,6 +1004,10 @@ function migrateSchema() {
   if (!pdNames.has('chat_ended')) {
     db.exec('ALTER TABLE playdate_requests ADD COLUMN chat_ended INTEGER NOT NULL DEFAULT 0');
   }
+  /** شناسهٔ عمومی پایدار نمایشی — PD-D##### */
+  if (!pdNames.has('public_id')) {
+    db.exec('ALTER TABLE playdate_requests ADD COLUMN public_id TEXT');
+  }
 
   const chatCols = db.prepare('PRAGMA table_info(playdate_chat_messages)').all() as { name: string }[];
   const chatNames = new Set(chatCols.map((c) => c.name));
@@ -978,6 +1049,10 @@ function migrateSchema() {
   }
   if (!vcNames.has('provider_share_coins')) {
     db.exec('ALTER TABLE vet_consultations ADD COLUMN provider_share_coins INTEGER');
+  }
+  /** شناسهٔ عمومی پایدار نمایشی — PD-C##### */
+  if (!vcNames.has('public_id')) {
+    db.exec('ALTER TABLE vet_consultations ADD COLUMN public_id TEXT');
   }
 
   const vchatCols = db
@@ -1139,6 +1214,14 @@ function migrateSchema() {
   }
   if (!shopOrderCols.includes('public_id')) {
     db.exec('ALTER TABLE shop_orders ADD COLUMN public_id TEXT');
+  }
+
+  const paymentOrderCols = (
+    db.prepare(`PRAGMA table_info(payment_orders)`).all() as Array<{ name: string }>
+  ).map((c) => c.name);
+  /** شناسهٔ عمومی پایدار نمایشی — PD-R##### */
+  if (!paymentOrderCols.includes('public_id')) {
+    db.exec('ALTER TABLE payment_orders ADD COLUMN public_id TEXT');
   }
 
   db.exec(`
@@ -2027,8 +2110,10 @@ export function haversineKm(lat1: number, lng1: number, lat2: number, lng2: numb
 }
 
 function mapPlaydate(row: Record<string, unknown>): PlaydateRequest {
+  const id = row.id as number;
   return {
-    id: row.id as number,
+    id,
+    publicId: playdatePublicIdOf({ id, publicId: row.public_id as string | undefined }),
     fromPetId: row.from_pet_id as number,
     toPetId: row.to_pet_id as number,
     fromUserId: row.from_user_id as number,
@@ -2082,8 +2167,10 @@ function mapPlaydateChatMessage(row: Record<string, unknown>): PlaydateChatMessa
 }
 
 function mapPaymentOrder(row: Record<string, unknown>): PaymentOrder {
+  const id = row.id as number;
   return {
-    id: row.id as number,
+    id,
+    publicId: paymentPublicIdOf({ id, publicId: row.public_id as string | undefined }),
     userId: row.user_id as number,
     packageId: row.package_id as string,
     coins: Number(row.coins),
@@ -2122,8 +2209,10 @@ function mapVetConsultChatMessage(row: Record<string, unknown>): VetConsultChatM
 }
 
 function mapVetConsultation(row: Record<string, unknown>): VetConsultation {
+  const id = row.id as number;
   return {
-    id: row.id as number,
+    id,
+    publicId: consultPublicIdOf({ id, publicId: row.public_id as string | undefined }),
     vetUserId: row.vet_user_id as number,
     patientUserId: row.patient_user_id as number,
     petId: row.pet_id != null ? Number(row.pet_id) : undefined,
@@ -4586,8 +4675,13 @@ export const dbService = {
         data.scheduledAt ?? null,
         data.location ?? null
       );
+    const newId = Number(result.lastInsertRowid);
+    db.prepare('UPDATE playdate_requests SET public_id = ? WHERE id = ?').run(
+      makePlaydatePublicId(newId),
+      newId
+    );
     return mapPlaydate(
-      db.prepare('SELECT * FROM playdate_requests WHERE id = ?').get(result.lastInsertRowid) as Record<string, unknown>
+      db.prepare('SELECT * FROM playdate_requests WHERE id = ?').get(newId) as Record<string, unknown>
     );
   },
 
@@ -5106,10 +5200,16 @@ export const dbService = {
         kind,
         share
       );
-    const created = this.getVetConsultation(Number(result.lastInsertRowid));
+    const newId = Number(result.lastInsertRowid);
+    db.prepare('UPDATE vet_consultations SET public_id = ? WHERE id = ?').run(
+      makeConsultPublicId(newId),
+      newId
+    );
+    const created = this.getVetConsultation(newId);
     return (
       created ?? {
-        id: Number(result.lastInsertRowid),
+        id: newId,
+        publicId: makeConsultPublicId(newId),
         vetUserId: data.vetUserId,
         patientUserId: data.patientUserId,
         petId: data.petId,
@@ -5741,7 +5841,12 @@ export const dbService = {
         input.status,
         input.adminNote?.trim() || null
       );
-    return this.getPaymentOrder(Number(result.lastInsertRowid))!;
+    const newId = Number(result.lastInsertRowid);
+    db.prepare('UPDATE payment_orders SET public_id = ? WHERE id = ?').run(
+      makePaymentPublicId(newId),
+      newId
+    );
+    return this.getPaymentOrder(newId)!;
   },
 
   updatePaymentOrderAdminNote(orderId: number, adminNote: string): void {

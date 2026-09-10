@@ -1,4 +1,11 @@
-import { orderPublicIdOf, petPublicIdOf, userPublicIdOf } from '@petdate/shared';
+import {
+  consultPublicIdOf,
+  orderPublicIdOf,
+  paymentPublicIdOf,
+  petPublicIdOf,
+  playdatePublicIdOf,
+  userPublicIdOf,
+} from '@petdate/shared';
 
 /** Compact public ID chip — PD-* only (never numeric DB row ids). */
 export function AdminIdChip({
@@ -82,7 +89,7 @@ export function adminOrderPublicCode(
   return orderPublicIdOf(orderOrId);
 }
 
-/** Inline public code for users/pets/orders — never `#id`. */
+/** Inline public code for tracked entities — never `#id`. */
 export function AdminEntityId({
   label,
   id,
@@ -90,19 +97,20 @@ export function AdminEntityId({
 }: {
   label?: string;
   id: number | string | null | undefined;
-  /** Derive PD-U / PD-P / PD-O when kind is set; raw shows nothing for bare numbers */
-  kind?: 'user' | 'pet' | 'order' | 'raw';
+  /** Derive PD-* when kind is set; raw shows nothing for bare numbers */
+  kind?: 'user' | 'pet' | 'order' | 'consult' | 'playdate' | 'payment' | 'raw';
 }) {
   if (id == null || id === '') {
     return <span className="admin-muted">—</span>;
   }
   let code: string | null = null;
-  if (kind === 'user' && typeof id === 'number') {
-    code = adminUserPublicCode(id);
-  } else if (kind === 'pet' && typeof id === 'number') {
-    code = adminPetPublicCode(id);
-  } else if (kind === 'order' && typeof id === 'number') {
-    code = adminOrderPublicCode(id);
+  if (typeof id === 'number') {
+    if (kind === 'user') code = adminUserPublicCode(id);
+    else if (kind === 'pet') code = adminPetPublicCode(id);
+    else if (kind === 'order') code = adminOrderPublicCode(id);
+    else if (kind === 'consult') code = consultPublicIdOf({ id });
+    else if (kind === 'playdate') code = playdatePublicIdOf({ id });
+    else if (kind === 'payment') code = paymentPublicIdOf({ id });
   } else if (typeof id === 'string') {
     const upper = id.toUpperCase();
     if (upper.startsWith('PD-')) code = id;

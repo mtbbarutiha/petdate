@@ -1,6 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
-import { petPublicIdOf, userPublicIdOf, type VetConsultation } from '@petdate/shared';
+import {
+  consultPublicIdOf,
+  petPublicIdOf,
+  userPublicIdOf,
+  type VetConsultation,
+} from '@petdate/shared';
 import { adminFetch, formatNumFa } from '../api';
+import { AdminIdChip } from '../AdminIds';
 import { AdminEntityCell, AdminThumb } from '../AdminThumb';
 
 const STATUSES = ['requested', 'active', 'completed', 'cancelled', 'expired'] as const;
@@ -41,8 +47,8 @@ export function AdminConsultsPage() {
     <div className="admin-page">
       <header className="admin-header">
         <div>
-          <h1>مشاوره‌ها</h1>
-          <p>{formatNumFa(items.length)} ردیف · جدول vet_consultations</p>
+          <h1>مشاوره دامپزشک</h1>
+          <p>{formatNumFa(items.length)} مشاوره</p>
         </div>
         <select className="admin-select" value={status} onChange={(e) => setStatus(e.target.value)}>
           <option value="">همه</option>
@@ -53,6 +59,7 @@ export function AdminConsultsPage() {
       <div className="admin-table-wrap admin-card"><table className="admin-table admin-table--dense">
         <thead>
           <tr>
+            <th>آیدی</th>
             <th>بیمار</th>
             <th>پزشک / مربی</th>
             <th>پت</th>
@@ -65,6 +72,9 @@ export function AdminConsultsPage() {
         <tbody>
           {items.map((c) => (
             <tr key={c.id}>
+              <td>
+                <AdminIdChip publicId={consultPublicIdOf(c)} />
+              </td>
               <td>
                 <AdminEntityCell
                   thumb={
@@ -140,7 +150,7 @@ export function AdminConsultsPage() {
               </td>
             </tr>
           ))}
-          {!items.length ? <tr><td colSpan={7} className="admin-muted">مشاوره‌ای نیست</td></tr> : null}
+          {!items.length ? <tr><td colSpan={8} className="admin-muted">مشاوره‌ای نیست</td></tr> : null}
         </tbody>
       </table></div>
     </div>

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Activity, HeartHandshake, Package, PawPrint, Stethoscope, Users, Wallet } from 'lucide-react';
-import { petPublicIdOf, orderPublicIdOf, userPublicIdOf } from '@petdate/shared';
+import { petPublicIdOf, orderPublicIdOf, consultPublicIdOf, userPublicIdOf } from '@petdate/shared';
 import { adminFetch, formatNumFa, formatTomanFa } from '../api';
 import { AdminBarChart, AdminLineChart } from '../FinanceCharts';
 import { AdminIdChip } from '../AdminIds';
@@ -19,7 +19,7 @@ type Dash = {
   recentPets: Array<{ id: number; publicId?: string; name: string; species: string; breed?: string; city?: string; ownerId: number; imageUrl?: string }>;
   recentShopOrders: Array<{ id: number; publicId?: string; status: string; totalToman: number; userId?: number; userAvatarUrl?: string; userName?: string; customerName?: string }>;
   recentConsults: Array<{
-    id: number; status: string; patientName?: string; vetName?: string; petName?: string;
+    id: number; publicId?: string; status: string; patientName?: string; vetName?: string; petName?: string;
     patientUserId: number; vetUserId: number; petId?: number | null;
     patientAvatarUrl?: string; vetAvatarUrl?: string; petImageUrl?: string;
   }>;
@@ -193,10 +193,11 @@ export function AdminDashboardPage() {
         <section className="admin-card">
           <div className="admin-card-head"><h2>مشاوره دامپزشک</h2><Link to="/admin/consults">صف</Link></div>
           <div className="admin-table-wrap"><table className="admin-table">
-            <thead><tr><th>بیمار</th><th>پزشک</th><th>پت</th><th>وضعیت</th></tr></thead>
+            <thead><tr><th>آیدی</th><th>بیمار</th><th>پزشک</th><th>پت</th><th>وضعیت</th></tr></thead>
             <tbody>
               {(data?.recentConsults ?? []).map((c) => (
                 <tr key={c.id}>
+                  <td><AdminIdChip publicId={consultPublicIdOf(c)} /></td>
                   <td>
                     <AdminEntityCell
                       thumb={<AdminThumb src={c.patientAvatarUrl} label={c.patientName} kind="user" />}
@@ -242,7 +243,7 @@ export function AdminDashboardPage() {
                   <td><span className="admin-badge">{c.status}</span></td>
                 </tr>
               ))}
-              {!data?.recentConsults?.length ? <tr><td colSpan={4} className="admin-muted">موردی نیست</td></tr> : null}
+              {!data?.recentConsults?.length ? <tr><td colSpan={5} className="admin-muted">موردی نیست</td></tr> : null}
             </tbody>
           </table></div>
         </section>

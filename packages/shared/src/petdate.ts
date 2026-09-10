@@ -60,6 +60,8 @@ export type PaymentOrderStatus =
 
 export interface PaymentOrder {
   id: number;
+  /** شناسه عمومی پایدار نمایشی (مثلاً PD-R00014) */
+  publicId?: string;
   userId: number;
   packageId: string;
   coins: number;
@@ -86,7 +88,8 @@ export const VERIFIED_BADGE = '✅ احراز شده';
 /**
  * شناسهٔ عمومی پایدار (نمایشی) — جدا از id داخلی DB.
  * یک نفر = یک آیدی نمایشی برای وب و بات.
- * فرمت canonical: PD-U##### کاربر، PD-P##### پت، PD-O##### سفارش فروشگاه.
+ * فرمت canonical: PD-U##### کاربر، PD-P##### پت، PD-O##### سفارش،
+ * PD-C##### مشاوره، PD-D##### همبازی، PD-R##### پرداخت.
  * پس از تخصیص تغییر نمی‌کند.
  *
  * نکته: `/u#####` فقط دستور عمیق تلگرام است (charset بدون خط تیره) —
@@ -95,6 +98,12 @@ export const VERIFIED_BADGE = '✅ احراز شده';
 export const USER_PUBLIC_ID_PREFIX = 'PD-U';
 export const PET_PUBLIC_ID_PREFIX = 'PD-P';
 export const ORDER_PUBLIC_ID_PREFIX = 'PD-O';
+/** مشاوره دامپزشک / مربی */
+export const CONSULT_PUBLIC_ID_PREFIX = 'PD-C';
+/** درخواست همبازی */
+export const PLAYDATE_PUBLIC_ID_PREFIX = 'PD-D';
+/** سفارش پرداخت / رسید */
+export const PAYMENT_PUBLIC_ID_PREFIX = 'PD-R';
 
 export function makeUserPublicId(internalId: number): string {
   return `${USER_PUBLIC_ID_PREFIX}${String(Math.trunc(internalId)).padStart(5, '0')}`;
@@ -106,6 +115,18 @@ export function makePetPublicId(internalId: number): string {
 
 export function makeOrderPublicId(internalId: number): string {
   return `${ORDER_PUBLIC_ID_PREFIX}${String(Math.trunc(internalId)).padStart(5, '0')}`;
+}
+
+export function makeConsultPublicId(internalId: number): string {
+  return `${CONSULT_PUBLIC_ID_PREFIX}${String(Math.trunc(internalId)).padStart(5, '0')}`;
+}
+
+export function makePlaydatePublicId(internalId: number): string {
+  return `${PLAYDATE_PUBLIC_ID_PREFIX}${String(Math.trunc(internalId)).padStart(5, '0')}`;
+}
+
+export function makePaymentPublicId(internalId: number): string {
+  return `${PAYMENT_PUBLIC_ID_PREFIX}${String(Math.trunc(internalId)).padStart(5, '0')}`;
 }
 
 /**
@@ -201,6 +222,69 @@ export function parseOrderIdFromPublicId(raw: string): number | null {
   if (!normalized) return null;
   const m = /^PD-O(\d+)$/i.exec(normalized);
   return m ? Number(m[1]) : null;
+}
+
+/**
+ * نرمال‌سازی فرم‌های شناخته‌شده به PD-C##### (با پد ۵رقمی).
+ */
+export function normalizeConsultPublicId(raw: string | null | undefined): string | null {
+  const s = String(raw ?? '').trim();
+  if (!s) return null;
+  const pd = /^PD-C(\d{1,10})$/i.exec(s);
+  if (pd) return makeConsultPublicId(Number(pd[1]));
+  return null;
+}
+
+export function consultPublicIdOf(consult: { id: number; publicId?: string | null }): string {
+  const raw = consult.publicId != null ? String(consult.publicId).trim() : '';
+  if (raw) {
+    const normalized = normalizeConsultPublicId(raw);
+    if (normalized) return normalized;
+    return raw;
+  }
+  return makeConsultPublicId(consult.id);
+}
+
+/**
+ * نرمال‌سازی فرم‌های شناخته‌شده به PD-D##### (با پد ۵رقمی).
+ */
+export function normalizePlaydatePublicId(raw: string | null | undefined): string | null {
+  const s = String(raw ?? '').trim();
+  if (!s) return null;
+  const pd = /^PD-D(\d{1,10})$/i.exec(s);
+  if (pd) return makePlaydatePublicId(Number(pd[1]));
+  return null;
+}
+
+export function playdatePublicIdOf(playdate: { id: number; publicId?: string | null }): string {
+  const raw = playdate.publicId != null ? String(playdate.publicId).trim() : '';
+  if (raw) {
+    const normalized = normalizePlaydatePublicId(raw);
+    if (normalized) return normalized;
+    return raw;
+  }
+  return makePlaydatePublicId(playdate.id);
+}
+
+/**
+ * نرمال‌سازی فرم‌های شناخته‌شده به PD-R##### (با پد ۵رقمی).
+ */
+export function normalizePaymentPublicId(raw: string | null | undefined): string | null {
+  const s = String(raw ?? '').trim();
+  if (!s) return null;
+  const pd = /^PD-R(\d{1,10})$/i.exec(s);
+  if (pd) return makePaymentPublicId(Number(pd[1]));
+  return null;
+}
+
+export function paymentPublicIdOf(payment: { id: number; publicId?: string | null }): string {
+  const raw = payment.publicId != null ? String(payment.publicId).trim() : '';
+  if (raw) {
+    const normalized = normalizePaymentPublicId(raw);
+    if (normalized) return normalized;
+    return raw;
+  }
+  return makePaymentPublicId(payment.id);
 }
 
 /**
@@ -514,6 +598,8 @@ export function requestRemainingMs(
 
 export interface PlaydateRequest {
   id: number;
+  /** شناسه عمومی پایدار نمایشی (مثلاً PD-D00014) */
+  publicId?: string;
   fromPetId: number;
   toPetId: number;
   fromUserId: number;
@@ -572,6 +658,8 @@ export const VET_CONSULT_REQUEST_TTL_MS = PLAYDATE_REQUEST_TTL_MS;
 /** رکورد مشاوره — برای لیست بیماران دامپزشک */
 export interface VetConsultation {
   id: number;
+  /** شناسه عمومی پایدار نمایشی (مثلاً PD-C00031) */
+  publicId?: string;
   vetUserId: number;
   patientUserId: number;
   petId?: number;
