@@ -55,7 +55,16 @@ export function AdminPetFormModal({ open, editId, onClose, onSaved }: PetFormMod
   useEffect(() => {
     if (!open) return;
     const cur = editId != null ? getPetById(editId) : undefined;
-    setForm(cur ?? blankPet(Math.max(0, ...pets.map((p) => p.ownerId)) + 1));
+    if (cur) {
+      setForm({
+        ...blankPet(cur.ownerId),
+        ...cur,
+        bio: cur.bio ?? '',
+        traits: cur.traits ?? ['بازیگوش'],
+      });
+    } else {
+      setForm(blankPet(Math.max(0, ...pets.map((p) => p.ownerId)) + 1));
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, editId]);
 
