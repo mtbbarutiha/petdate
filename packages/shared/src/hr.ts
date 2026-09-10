@@ -186,6 +186,22 @@ export const HR_CALL_OUTCOMES = [
 export const HR_CALL_CONNECTED = 'پاسخگو بود' as const;
 export const HR_REJECTED_NO_CONTACT = 'رد شده - عدم ارتباط گیری' as const;
 
+/**
+ * Three «عدم ارتباط» variants — any of these on call N opens call N+1
+ * (with Jalali date) in the ATS follow-up UI.
+ */
+export const HR_CALL_NO_CONTACT_OUTCOMES = [
+  'نبود',
+  'عدم دسترسی',
+  'موکول به آینده',
+] as const;
+
+export type HrCallNoContactOutcome = (typeof HR_CALL_NO_CONTACT_OUTCOMES)[number];
+
+export function isHrCallNoContact(outcome: string): boolean {
+  return (HR_CALL_NO_CONTACT_OUTCOMES as readonly string[]).includes(outcome);
+}
+
 export const HR_JOB_OPENING_STATUSES = ['باز', 'بسته'] as const;
 
 /** Default interview venue text for SMS/email */
@@ -457,6 +473,8 @@ export type HrCandidateFollowup = {
   interviewAt?: string;
   interviewerEmployeeId?: number | null;
   interviewerName?: string;
+  /** Notes for the assigned interviewer / interview coordination */
+  interviewNote?: string;
   startDate?: string;
   decision?: 'approve' | 'reject' | null;
   decisionNote?: string;

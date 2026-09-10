@@ -1314,7 +1314,7 @@ function saveCandidateFollowup(id: number, followup: HrCandidateFollowup, stage?
 /** Record call1/2/3 outcome; escalate or mark no-contact after 3 fails. */
 export function recordCandidateCall(
   id: number,
-  input: { outcome: string; note?: string }
+  input: { outcome: string; note?: string; at?: string }
 ): HrCandidate | null {
   const cand = getCandidate(id);
   if (!cand) return null;
@@ -1322,10 +1322,17 @@ export function recordCandidateCall(
   if (!outcome) return cand;
   const followup = { ...cand.followup, calls: [...cand.followup.calls] };
   const round = followup.callRound;
+  const rawAt = String(input.at || '').trim();
+  let at = new Date().toISOString();
+  if (rawAt) {
+    // Accept `YYYY-MM-DD` or `YYYY-MM-DDTHH:mm` — store as ISO.
+    const parsed = new Date(rawAt.length === 10 ? `${rawAt}T12:00:00` : rawAt);
+    if (!Number.isNaN(parsed.getTime())) at = parsed.toISOString();
+  }
   followup.calls.push({
     round,
     outcome,
-    at: new Date().toISOString(),
+    at,
     note: input.note || '',
   });
   let nextStage: string | undefined;
@@ -1349,6 +1356,7 @@ export function scheduleCandidateInterview(
     interviewAt: string;
     interviewerEmployeeId?: number | null;
     interviewerName?: string;
+    interviewNote?: string;
   }
 ): HrCandidate | null {
   const cand = getCandidate(id);
@@ -1358,6 +1366,7 @@ export function scheduleCandidateInterview(
     interviewAt: String(input.interviewAt || '').trim(),
     interviewerEmployeeId: input.interviewerEmployeeId ?? null,
     interviewerName: String(input.interviewerName || '').trim(),
+    interviewNote: String(input.interviewNote || '').trim(),
   };
   return saveCandidateFollowup(id, followup, 'مصاحبه');
 }

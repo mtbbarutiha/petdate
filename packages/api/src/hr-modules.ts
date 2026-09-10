@@ -1132,7 +1132,7 @@ export function cockpitTasks(): HrCockpitTask[] {
     }
   }
 
-  // Interview tasks from ATS follow-up
+  // Interview tasks from ATS follow-up (assigned to interviewer personnel)
   for (const c of listCandidates()) {
     const at = c.followup?.interviewAt;
     if (!at || c.stage === 'استخدام‌شده' || c.stage.startsWith('رد شده')) continue;
@@ -1140,12 +1140,15 @@ export function cockpitTasks(): HrCockpitTask[] {
     if (Number.isNaN(when.getTime())) continue;
     const diff = Math.round((when.getTime() - today.getTime()) / 86400000);
     if (diff < -1 || diff > 30) continue;
+    const note = (c.followup.interviewNote || '').trim();
     tasks.push({
       type: 'مصاحبه جذب',
       label: 'استخدام',
       employeeId: c.followup.interviewerEmployeeId ?? undefined,
       employeeName: c.followup.interviewerName || `${c.firstName} ${c.lastName}`.trim(),
-      detail: `مصاحبه با ${c.firstName} ${c.lastName} · ${at.replace('T', ' ').slice(0, 16)}`,
+      detail:
+        `مصاحبه با ${c.firstName} ${c.lastName} · ${at.replace('T', ' ').slice(0, 16)}` +
+        (note ? ` · ${note}` : ''),
       daysLeft: diff,
       refType: 'candidate',
       refId: c.id,
