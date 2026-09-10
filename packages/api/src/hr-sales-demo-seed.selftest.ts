@@ -34,15 +34,15 @@ async function main() {
       c: number;
     }).c
   );
-  assert(empCount === 5, `expected 5 SEED employees, got ${empCount}`);
+  assert(empCount >= 7, `expected ≥7 SEED employees, got ${empCount}`);
 
   const contracts = Number(
     (d.prepare('SELECT COUNT(*) as c FROM hr_contracts').get() as { c: number }).c
   );
-  assert(contracts >= 5, 'contracts linked to employees');
+  assert(contracts >= 7, 'contracts linked to employees');
 
   const dash = hrMod.getHrOverviewDashboard();
-  assert(dash.kpis.personnel >= 5, 'HR dashboard personnel');
+  assert(dash.kpis.personnel >= 7, 'HR dashboard personnel');
   assert(dash.kpis.orgCostMonth > 0, 'HR org cost non-zero');
   assert(dash.kpis.serviceHoursMonth > 0, 'HR service hours non-zero');
   assert(dash.kpis.unreadNotifications > 0 || dash.kpis.openRequests > 0, 'HR cockpit signals');

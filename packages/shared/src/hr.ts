@@ -305,6 +305,10 @@ export type HrEmployee = {
   incomeModelId?: number | null;
   careerLayerId?: number | null;
   permissions: Record<string, boolean>;
+  /** Latest contract start date (list join); empty when none. */
+  contractStartDate?: string;
+  /** Latest contract end date (list join); empty means ongoing («تاکنون»). */
+  contractEndDate?: string;
   contracts?: HrContract[];
   logs?: HrEmployeeLog[];
   createdAt: string;

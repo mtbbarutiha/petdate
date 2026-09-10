@@ -1756,6 +1756,56 @@
   color: #9a5b00;
 }
 
+.admin-app .admin-pill--error {
+  background: #fdecea;
+  border-color: #f5c6c2;
+  color: var(--admin-danger);
+}
+
+.admin-app .admin-pill--line {
+  background: var(--admin-accent-soft);
+  border-color: var(--admin-border);
+  color: var(--admin-ink);
+  max-width: 16rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── HR personnel list (اطلاعات پرسنلی) ── */
+.admin-app .admin-hr-personnel-card {
+  padding: 16px 18px 8px;
+}
+
+.admin-app .admin-hr-personnel-card-head {
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.admin-app .admin-hr-personnel-sum {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+}
+
+.admin-app .admin-hr-personnel-filters {
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  gap: 8px;
+}
+
+.admin-app .admin-hr-personnel-clear {
+  color: var(--admin-muted);
+}
+
+.admin-app .admin-hr-personnel-table {
+  min-width: 960px;
+}
+
+.admin-app .admin-hr-personnel-table th,
+.admin-app .admin-hr-personnel-table td {
+  vertical-align: middle;
+}
+
 .admin-app .admin-link {
   color: var(--admin-accent);
   font-weight: 600;
@@ -3333,3 +3383,71 @@ body:has(.admin-app) {
 .admin-app.admin-app--collapsed .admin-nav-group-items[hidden] {
   display: flex !important;
 }
+
+/* —— گزارشات منابع انسانی: نقشه حرارتی + دونات —— */
+.admin-app .hr-reports-page { display: grid; gap: 16px; }
+.admin-app .hr-reports-header {
+  display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 12px 16px;
+}
+.admin-app .hr-reports-filters { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; }
+.admin-app .hr-reports-filter { display: grid; gap: 4px; font-size: 12px; color: var(--admin-muted); }
+.admin-app .hr-reports-filter .admin-select { min-width: 140px; }
+.admin-app .hr-report-heat-card .admin-card-head h2 { margin: 0 0 4px; }
+.admin-app .hr-heat-layout {
+  display: grid; grid-template-columns: minmax(200px, 260px) 1fr; gap: 16px; align-items: stretch;
+}
+@media (max-width: 900px) {
+  .admin-app .hr-heat-layout { grid-template-columns: 1fr; }
+}
+.admin-app .hr-heat-legend-card {
+  border: 1px solid var(--admin-border); border-radius: 14px; background: #f8fafc; padding: 14px;
+}
+.admin-app .hr-heat-top { margin: 0 0 12px; font-size: 13px; line-height: 1.6; color: var(--admin-ink, #1e1b2e); }
+.admin-app .hr-heat-rank { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.admin-app .hr-heat-rank li {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 8px 10px; border-radius: 10px; background: #fff; border: 1px solid var(--admin-border); font-size: 13px;
+}
+.admin-app .hr-heat-rank li.is-hot { border-color: #fb923c; background: #fff7ed; color: #c2410c; }
+.admin-app .hr-heat-map {
+  border: 1px solid var(--admin-border); border-radius: 14px; overflow: hidden;
+  background: linear-gradient(180deg, #eff6ff 0%, #f8fafc 100%); min-height: 280px;
+}
+.admin-app .hr-heat-svg { width: 100%; height: auto; display: block; }
+.admin-app .hr-heat-land { fill: #e2e8f0; stroke: #cbd5e1; stroke-width: 2; }
+.admin-app .hr-heat-dot { stroke: #fff; stroke-width: 2; }
+.admin-app .hr-heat-dot--empty { fill: #cbd5e1; opacity: 0.55; }
+.admin-app .hr-heat-dot--active { fill: #14b8a6; }
+.admin-app .hr-heat-dot--hot { fill: #f97316; }
+.admin-app .hr-heat-glow { fill: rgba(20, 184, 166, 0.18); }
+.admin-app .hr-heat-glow--hot { fill: rgba(249, 115, 22, 0.22); }
+.admin-app .hr-heat-label { fill: #475569; font-size: 11px; font-family: inherit; }
+.admin-app .hr-report-donut-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 900px) {
+  .admin-app .hr-report-donut-row { grid-template-columns: 1fr; }
+}
+.admin-app .hr-report-donut-card { min-height: 280px; }
+.admin-app .hr-report-donut-body {
+  display: grid; grid-template-columns: 1.1fr 1fr; gap: 12px; align-items: center;
+}
+@media (max-width: 640px) {
+  .admin-app .hr-report-donut-body { grid-template-columns: 1fr; }
+}
+.admin-app .hr-report-donut-chart { position: relative; width: 100%; height: 220px; }
+.admin-app .hr-report-donut-center {
+  position: absolute; inset: 0; display: grid; place-content: center; text-align: center; pointer-events: none;
+}
+.admin-app .hr-report-donut-center strong { font-size: 1.6rem; line-height: 1.1; color: var(--admin-ink, #1e1b2e); }
+.admin-app .hr-report-donut-center span { font-size: 12px; color: var(--admin-muted); }
+.admin-app .hr-report-donut-legend { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.admin-app .hr-report-donut-legend li { display: flex; align-items: flex-start; gap: 10px; font-size: 13px; }
+.admin-app .hr-report-donut-legend i {
+  width: 10px; height: 10px; border-radius: 999px; margin-top: 5px; flex-shrink: 0;
+}
+.admin-app .hr-report-donut-legend b { display: block; color: var(--admin-ink, #1e1b2e); }
+.admin-app .hr-report-donut-legend span { color: var(--admin-muted); font-size: 12px; }
+.admin-app .hr-chart-tooltip {
+  background: #fff; border: 1px solid var(--admin-border); border-radius: 10px;
+  padding: 8px 10px; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+.admin-app .hr-chart-tooltip-label { font-size: 12px; color: var(--admin-muted); margin-bottom: 2px; }

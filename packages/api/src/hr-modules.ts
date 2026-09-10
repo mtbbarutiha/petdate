@@ -1027,20 +1027,113 @@ export function getRecruitmentDashboard() {
   };
 }
 
-export function getReportsSummary() {
-  const { employees, total } = listEmployees({ limit: 500 });
-  const byDept = countBy(employees.map((e) => e.department || ''));
-  const byStatus = countBy(employees.map((e) => e.contractStatus || ''));
-  const byLocation = countBy(employees.map((e) => e.location || ''));
+function normalizeGender(raw: string): string {
+  const t = String(raw || '').trim();
+  if (!t || t === 'نامشخص') return 'نامشخص';
+  if (/^(آقا|مرد|male|m)$/i.test(t)) return 'آقا';
+  if (/^(خانم|زن|female|f)$/i.test(t)) return 'خانم';
+  return t;
+}
+
+function normalizeMarital(raw: string): string {
+  const t = String(raw || '').trim();
+  if (!t || t === 'نامشخص') return 'نامشخص';
+  if (/مجرد|single/i.test(t)) return 'مجرد';
+  if (/متاهل|متأهل|married/i.test(t)) return 'متأهل';
+  return t;
+}
+
+/** Gregorian Y-M-D → Jalali Y-M-D (compact calendar convert). */
+function gregorianToJalali(gy: number, gm: number, gd: number): { jy: number; jm: number; jd: number } {
+  const g_d_m = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
+  let jy = gy <= 1600 ? 0 : 979;
+  let gy2 = gy <= 1600 ? gy - 621 : gy - 1600;
+  const gy2e = gm > 2 ? gy2 + 1 : gy2;
+  let days =
+    365 * gy2 +
+    Math.floor((gy2e + 3) / 4) -
+    Math.floor((gy2e + 99) / 100) +
+    Math.floor((gy2e + 399) / 400) -
+    80 +
+    gd +
+    g_d_m[gm - 1]!;
+  jy += 33 * Math.floor(days / 12053);
+  days %= 12053;
+  jy += 4 * Math.floor(days / 1461);
+  days %= 1461;
+  if (days > 365) {
+    jy += Math.floor((days - 1) / 365);
+    days = (days - 1) % 365;
+  }
+  const jm = days < 186 ? 1 + Math.floor(days / 31) : 7 + Math.floor((days - 186) / 30);
+  const jd = 1 + (days < 186 ? days % 31 : (days - 186) % 30);
+  return { jy, jm, jd };
+}
+
+function employeeJalaliParts(emp: {
+  contractStartDate?: string;
+  createdAt: string;
+}): { jy: number; jm: number } | null {
+  const raw = String(emp.contractStartDate || emp.createdAt || '').slice(0, 10);
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw);
+  if (!m) return null;
+  const j = gregorianToJalali(Number(m[1]), Number(m[2]), Number(m[3]));
+  return { jy: j.jy, jm: j.jm };
+}
+
+export function getReportsSummary(opts?: {
+  department?: string;
+  jalaliYear?: number;
+  jalaliMonth?: number;
+}) {
+  const { employees } = listEmployees({ limit: 500 });
+  const departments = [
+    ...new Set(employees.map((e) => (e.department || '').trim()).filter(Boolean)),
+  ].sort((a, b) => a.localeCompare(b, 'fa'));
+
+  let filtered = employees;
+  if (opts?.department?.trim()) {
+    const dept = opts.department.trim();
+    filtered = filtered.filter((e) => (e.department || '').trim() === dept);
+  }
+  if (opts?.jalaliYear && Number.isFinite(opts.jalaliYear)) {
+    const jy = Number(opts.jalaliYear);
+    const jm = opts.jalaliMonth && Number.isFinite(opts.jalaliMonth) ? Number(opts.jalaliMonth) : 0;
+    filtered = filtered.filter((e) => {
+      const parts = employeeJalaliParts(e);
+      if (!parts) return false;
+      if (parts.jy !== jy) return false;
+      if (jm >= 1 && jm <= 12 && parts.jm !== jm) return false;
+      return true;
+    });
+  }
+
+  const byDept = countBy(filtered.map((e) => e.department || ''));
+  const byStatus = countBy(filtered.map((e) => e.contractStatus || ''));
+  const byLocation = countBy(filtered.map((e) => e.location || ''));
+  const byProvince = countBy(filtered.map((e) => e.province || ''));
+  const byGender = countBy(filtered.map((e) => normalizeGender(e.gender)));
+  const byMarital = countBy(filtered.map((e) => normalizeMarital(e.maritalStatus)));
   const now = new Date();
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
+  const topProvince = byProvince[0] || null;
   return {
     generatedAt: new Date().toISOString(),
-    personnelTotal: total,
+    personnelTotal: filtered.length,
+    departments,
+    filters: {
+      department: opts?.department?.trim() || '',
+      jalaliYear: opts?.jalaliYear || null,
+      jalaliMonth: opts?.jalaliMonth || null,
+    },
     byDept,
     byStatus,
     byLocation,
+    byProvince,
+    byGender,
+    byMarital,
+    topProvince,
     /** @deprecated maps — prefer chart arrays above */
     byDeptMap: Object.fromEntries(byDept.map((r) => [r.name, r.count])),
     byStatusMap: Object.fromEntries(byStatus.map((r) => [r.name, r.count])),
