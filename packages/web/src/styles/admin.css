@@ -1756,6 +1756,56 @@
   color: #9a5b00;
 }
 
+.admin-app .admin-pill--error {
+  background: #fdecea;
+  border-color: #f5c6c2;
+  color: var(--admin-danger);
+}
+
+.admin-app .admin-pill--line {
+  background: var(--admin-accent-soft);
+  border-color: var(--admin-border);
+  color: var(--admin-ink);
+  max-width: 16rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── HR personnel list (اطلاعات پرسنلی) ── */
+.admin-app .admin-hr-personnel-card {
+  padding: 16px 18px 8px;
+}
+
+.admin-app .admin-hr-personnel-card-head {
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.admin-app .admin-hr-personnel-sum {
+  margin: 4px 0 0;
+  font-size: 0.85rem;
+}
+
+.admin-app .admin-hr-personnel-filters {
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  gap: 8px;
+}
+
+.admin-app .admin-hr-personnel-clear {
+  color: var(--admin-muted);
+}
+
+.admin-app .admin-hr-personnel-table {
+  min-width: 960px;
+}
+
+.admin-app .admin-hr-personnel-table th,
+.admin-app .admin-hr-personnel-table td {
+  vertical-align: middle;
+}
+
 .admin-app .admin-link {
   color: var(--admin-accent);
   font-weight: 600;

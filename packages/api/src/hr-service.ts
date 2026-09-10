@@ -474,9 +474,18 @@ function mapEmployee(row: Record<string, unknown>, withRelated = false): HrEmplo
     createdAt: String(row.created_at || ''),
     updatedAt: String(row.updated_at || ''),
   };
+  if (row.contract_start_date != null || row.contract_end_date != null) {
+    emp.contractStartDate = String(row.contract_start_date || '');
+    emp.contractEndDate = String(row.contract_end_date || '');
+  }
   if (withRelated) {
     emp.contracts = listContracts(id);
     emp.logs = listEmployeeLogs(id);
+    const latest = emp.contracts?.[0];
+    if (latest) {
+      emp.contractStartDate = latest.startDate;
+      emp.contractEndDate = latest.endDate;
+    }
   }
   return emp;
 }
@@ -521,6 +530,8 @@ export function listEmployees(opts?: {
   q?: string;
   contractStatus?: string;
   accessStatus?: string;
+  department?: string;
+  jobTitle?: string;
   limit?: number;
   offset?: number;
 }): { total: number; employees: HrEmployee[] } {
@@ -530,28 +541,52 @@ export function listEmployees(opts?: {
   if (opts?.q?.trim()) {
     const q = `%${opts.q.trim()}%`;
     where.push(
-      `(first_name LIKE ? OR last_name LIKE ? OR personnel_code LIKE ? OR public_id LIKE ? OR org_email LIKE ? OR job_title LIKE ?)`
+      `(e.first_name LIKE ? OR e.last_name LIKE ? OR e.personnel_code LIKE ? OR e.public_id LIKE ? OR e.org_email LIKE ? OR e.job_title LIKE ?)`
     );
     params.push(q, q, q, q, q, q);
   }
   if (opts?.contractStatus) {
-    where.push('contract_status = ?');
+    where.push('e.contract_status = ?');
     params.push(opts.contractStatus);
   }
   if (opts?.accessStatus) {
-    where.push('access_status = ?');
+    where.push('e.access_status = ?');
     params.push(opts.accessStatus);
+  }
+  if (opts?.department?.trim()) {
+    where.push('e.department = ?');
+    params.push(opts.department.trim());
+  }
+  if (opts?.jobTitle?.trim()) {
+    where.push('e.job_title = ?');
+    params.push(opts.jobTitle.trim());
   }
   const clause = where.length ? `WHERE ${where.join(' AND ')}` : '';
   const total = Number(
-    (d.prepare(`SELECT COUNT(*) as c FROM hr_employees ${clause}`).get(...params) as { c: number })
-      ?.c ?? 0
+    (
+      d.prepare(`SELECT COUNT(*) as c FROM hr_employees e ${clause}`).get(...params) as {
+        c: number;
+      }
+    )?.c ?? 0
   );
   const limit = Math.min(Math.max(opts?.limit ?? 100, 1), 500);
   const offset = Math.max(opts?.offset ?? 0, 0);
+  /** Latest contract per employee by start_date, then id. */
   const rows = d
     .prepare(
-      `SELECT * FROM hr_employees ${clause} ORDER BY id DESC LIMIT ? OFFSET ?`
+      `SELECT e.*,
+        lc.start_date AS contract_start_date,
+        lc.end_date AS contract_end_date
+       FROM hr_employees e
+       LEFT JOIN hr_contracts lc ON lc.id = (
+         SELECT c.id FROM hr_contracts c
+         WHERE c.employee_id = e.id
+         ORDER BY c.start_date DESC, c.id DESC
+         LIMIT 1
+       )
+       ${clause}
+       ORDER BY e.id DESC
+       LIMIT ? OFFSET ?`
     )
     .all(...params, limit, offset) as Record<string, unknown>[];
   return { total, employees: rows.map((r) => mapEmployee(r)) };
@@ -563,6 +598,39 @@ export function getEmployee(id: number): HrEmployee | null {
     | undefined;
   if (!row) return null;
   return mapEmployee(row, true);
+}
+
+/** Delete employee and related HR rows (contracts, logs, requests, modules). Never wipes DB. */
+export function deleteEmployee(id: number): boolean {
+  const d = db();
+  const exists = d.prepare('SELECT id FROM hr_employees WHERE id = ?').get(id) as
+    | { id: number }
+    | undefined;
+  if (!exists) return false;
+
+  const run = d.transaction(() => {
+    d.prepare('DELETE FROM hr_contracts WHERE employee_id = ?').run(id);
+    d.prepare('DELETE FROM hr_employee_logs WHERE employee_id = ?').run(id);
+    d.prepare('DELETE FROM hr_requests WHERE employee_id = ?').run(id);
+    try {
+      d.prepare('DELETE FROM hr_onboarding_records WHERE employee_id = ?').run(id);
+    } catch {
+      /* table may be absent on older DBs before module ensure */
+    }
+    try {
+      d.prepare('DELETE FROM hr_cost_entries WHERE employee_id = ?').run(id);
+    } catch {
+      /* optional module table */
+    }
+    try {
+      d.prepare('DELETE FROM hr_service_entries WHERE employee_id = ?').run(id);
+    } catch {
+      /* optional module table */
+    }
+    d.prepare('DELETE FROM hr_employees WHERE id = ?').run(id);
+  });
+  run();
+  return true;
 }
 
 export function createEmployee(input: HrEmployeeInput): HrEmployee {
@@ -1335,6 +1403,7 @@ export const hrService = {
   getEmployee,
   createEmployee,
   updateEmployee,
+  deleteEmployee,
   listContracts,
   createContract,
   listCareerLayers,

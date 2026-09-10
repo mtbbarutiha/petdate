@@ -48,6 +48,9 @@ hrAdminRouter.get('/employees', (req, res) => {
     typeof req.query.contractStatus === 'string' ? req.query.contractStatus : undefined;
   const accessStatus =
     typeof req.query.accessStatus === 'string' ? req.query.accessStatus : undefined;
+  const department =
+    typeof req.query.department === 'string' ? req.query.department : undefined;
+  const jobTitle = typeof req.query.jobTitle === 'string' ? req.query.jobTitle : undefined;
   const limit = req.query.limit ? Number(req.query.limit) : 100;
   const offset = req.query.offset ? Number(req.query.offset) : 0;
   res.json(
@@ -55,6 +58,8 @@ hrAdminRouter.get('/employees', (req, res) => {
       q,
       contractStatus,
       accessStatus,
+      department,
+      jobTitle,
       limit: Number.isFinite(limit) ? limit : 100,
       offset: Number.isFinite(offset) ? offset : 0,
     })
@@ -97,6 +102,20 @@ hrAdminRouter.patch('/employees/:id', requirePermission('hr.write'), (req, res) 
     return;
   }
   res.json({ employee });
+});
+
+hrAdminRouter.delete('/employees/:id', requirePermission('hr.write'), (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id)) {
+    res.status(400).json({ error: 'شناسه نامعتبر' });
+    return;
+  }
+  const ok = hr.deleteEmployee(id);
+  if (!ok) {
+    res.status(404).json({ error: 'همکار پیدا نشد' });
+    return;
+  }
+  res.status(204).end();
 });
 
 /** Upload employee avatar (multipart field: `file`). Sets avatarUrl on the employee. */
@@ -404,8 +423,17 @@ hrAdminRouter.get('/recruitment/dashboard', (_req, res) => {
   res.json(hrMod.getRecruitmentDashboard());
 });
 
-hrAdminRouter.get('/reports', (_req, res) => {
-  res.json(hrMod.getReportsSummary());
+hrAdminRouter.get('/reports', (req, res) => {
+  const department = typeof req.query.department === 'string' ? req.query.department : undefined;
+  const jalaliYearRaw = typeof req.query.jalaliYear === 'string' ? Number(req.query.jalaliYear) : NaN;
+  const jalaliMonthRaw = typeof req.query.jalaliMonth === 'string' ? Number(req.query.jalaliMonth) : NaN;
+  res.json(
+    hrMod.getReportsSummary({
+      department,
+      jalaliYear: Number.isFinite(jalaliYearRaw) ? jalaliYearRaw : undefined,
+      jalaliMonth: Number.isFinite(jalaliMonthRaw) ? jalaliMonthRaw : undefined,
+    })
+  );
 });
 
 hrAdminRouter.get('/onboarding', (_req, res) => {
