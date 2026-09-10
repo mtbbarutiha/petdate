@@ -1,4 +1,5 @@
 import { Fragment, useCallback, useEffect, useState } from 'react';
+import { userPublicIdOf } from '@petdate/shared';
 import { adminFetch, formatNumFa, formatTomanFa } from '../api';
 import { AdminEntityCell, AdminThumb } from '../AdminThumb';
 
@@ -104,7 +105,6 @@ export function AdminShopOrdersPage() {
         <table className="admin-table">
           <thead>
             <tr>
-              <th>آیدی سفارش</th>
               <th>کاربر / مشتری</th>
               <th>پرداخت</th>
               <th>مبلغ تومان</th>
@@ -120,7 +120,6 @@ export function AdminShopOrdersPage() {
               return (
                 <Fragment key={o.id}>
                   <tr>
-                    <td><code className="admin-mono" dir="ltr">#{o.id}</code></td>
                     <td>
                       <AdminEntityCell
                         thumb={
@@ -134,7 +133,9 @@ export function AdminShopOrdersPage() {
                         subtitle={
                           <>
                             {o.userId != null ? (
-                              <span className="admin-mono" dir="ltr">user #{o.userId}</span>
+                              <code className="admin-mono admin-id-public" dir="ltr">
+                                {userPublicIdOf({ id: o.userId })}
+                              </code>
                             ) : null}
                             {o.customerPhone ? <div>{o.customerPhone}</div> : null}
                           </>
@@ -169,7 +170,7 @@ export function AdminShopOrdersPage() {
                   </tr>
                   {open ? (
                     <tr>
-                      <td colSpan={8}>
+                      <td colSpan={7}>
                         <div className="admin-muted" style={{ whiteSpace: 'pre-wrap', textAlign: 'start', padding: 8 }}>
                           {o.note || 'بدون یادداشت / آدرس'}
                           {'\n\n'}
@@ -183,7 +184,7 @@ export function AdminShopOrdersPage() {
             })}
             {!orders.length ? (
               <tr>
-                <td colSpan={8} className="admin-muted">
+                <td colSpan={7} className="admin-muted">
                   سفارشی نیست
                 </td>
               </tr>

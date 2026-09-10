@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Activity, HeartHandshake, Package, PawPrint, Stethoscope, Users, Wallet } from 'lucide-react';
-import { petPublicIdOf } from '@petdate/shared';
+import { petPublicIdOf, userPublicIdOf } from '@petdate/shared';
 import { adminFetch, formatNumFa, formatTomanFa } from '../api';
 import { AdminBarChart, AdminLineChart } from '../FinanceCharts';
 import { AdminIdChip } from '../AdminIds';
@@ -124,7 +124,7 @@ export function AdminDashboardPage() {
             <tbody>
               {(data?.recentPets ?? []).map((pet) => (
                 <tr key={pet.id}>
-                  <td><AdminIdChip publicId={petPublicIdOf(pet)} numericId={pet.id} /></td>
+                  <td><AdminIdChip publicId={petPublicIdOf(pet)} /></td>
                   <td>
                     <AdminEntityCell
                       thumb={
@@ -141,7 +141,11 @@ export function AdminDashboardPage() {
                     />
                   </td>
                   <td>{pet.species}</td>
-                  <td><code className="admin-mono" dir="ltr">#{pet.ownerId}</code></td>
+                  <td>
+                    <code className="admin-mono admin-id-public" dir="ltr">
+                      {userPublicIdOf({ id: pet.ownerId })}
+                    </code>
+                  </td>
                   <td>{pet.city || '—'}</td>
                 </tr>
               ))}
@@ -152,11 +156,10 @@ export function AdminDashboardPage() {
         <section className="admin-card">
           <div className="admin-card-head"><h2>سفارش فروشگاه</h2><Link to="/admin/shop/orders">همه</Link></div>
           <div className="admin-table-wrap"><table className="admin-table">
-            <thead><tr><th>آیدی سفارش</th><th>کاربر</th><th>مبلغ</th><th>وضعیت</th></tr></thead>
+            <thead><tr><th>کاربر</th><th>مبلغ</th><th>وضعیت</th></tr></thead>
             <tbody>
               {(data?.recentShopOrders ?? []).map((o) => (
                 <tr key={o.id}>
-                  <td><code className="admin-mono" dir="ltr">#{o.id}</code></td>
                   <td>
                     <AdminEntityCell
                       thumb={
@@ -167,9 +170,13 @@ export function AdminDashboardPage() {
                         />
                       }
                       title={
-                        o.userId != null
-                          ? <code className="admin-mono" dir="ltr">#{o.userId}</code>
-                          : '—'
+                        o.userId != null ? (
+                          <code className="admin-mono admin-id-public" dir="ltr">
+                            {userPublicIdOf({ id: o.userId })}
+                          </code>
+                        ) : (
+                          '—'
+                        )
                       }
                       subtitle={o.userName || o.customerName || null}
                     />
@@ -178,30 +185,37 @@ export function AdminDashboardPage() {
                   <td><span className="admin-badge">{o.status}</span></td>
                 </tr>
               ))}
-              {!data?.recentShopOrders?.length ? <tr><td colSpan={4} className="admin-muted">سفارشی نیست</td></tr> : null}
+              {!data?.recentShopOrders?.length ? <tr><td colSpan={3} className="admin-muted">سفارشی نیست</td></tr> : null}
             </tbody>
           </table></div>
         </section>
         <section className="admin-card">
           <div className="admin-card-head"><h2>مشاوره دامپزشک</h2><Link to="/admin/consults">صف</Link></div>
           <div className="admin-table-wrap"><table className="admin-table">
-            <thead><tr><th>آیدی</th><th>بیمار</th><th>پزشک</th><th>پت</th><th>وضعیت</th></tr></thead>
+            <thead><tr><th>بیمار</th><th>پزشک</th><th>پت</th><th>وضعیت</th></tr></thead>
             <tbody>
               {(data?.recentConsults ?? []).map((c) => (
                 <tr key={c.id}>
-                  <td><code className="admin-mono" dir="ltr">#{c.id}</code></td>
                   <td>
                     <AdminEntityCell
                       thumb={<AdminThumb src={c.patientAvatarUrl} label={c.patientName} kind="user" />}
                       title={c.patientName || '—'}
-                      subtitle={<span className="admin-mono">user #{c.patientUserId}</span>}
+                      subtitle={
+                        <code className="admin-mono admin-id-public" dir="ltr">
+                          {userPublicIdOf({ id: c.patientUserId })}
+                        </code>
+                      }
                     />
                   </td>
                   <td>
                     <AdminEntityCell
                       thumb={<AdminThumb src={c.vetAvatarUrl} label={c.vetName} kind="user" />}
                       title={c.vetName || '—'}
-                      subtitle={<span className="admin-mono">user #{c.vetUserId}</span>}
+                      subtitle={
+                        <code className="admin-mono admin-id-public" dir="ltr">
+                          {userPublicIdOf({ id: c.vetUserId })}
+                        </code>
+                      }
                     />
                   </td>
                   <td>
@@ -215,13 +229,19 @@ export function AdminDashboardPage() {
                         />
                       }
                       title={c.petName || '—'}
-                      subtitle={c.petId != null ? <span className="admin-mono">pet #{c.petId}</span> : null}
+                      subtitle={
+                        c.petId != null ? (
+                          <code className="admin-mono admin-id-public" dir="ltr">
+                            {petPublicIdOf({ id: c.petId })}
+                          </code>
+                        ) : null
+                      }
                     />
                   </td>
                   <td><span className="admin-badge">{c.status}</span></td>
                 </tr>
               ))}
-              {!data?.recentConsults?.length ? <tr><td colSpan={5} className="admin-muted">موردی نیست</td></tr> : null}
+              {!data?.recentConsults?.length ? <tr><td colSpan={4} className="admin-muted">موردی نیست</td></tr> : null}
             </tbody>
           </table></div>
         </section>

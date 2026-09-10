@@ -106,11 +106,10 @@ export function AdminFinanceWalletPage() {
             <div className="admin-card-head"><h2>آخرین تراکنش‌ها</h2></div>
             <div className="admin-table-wrap">
               <table className="admin-table">
-                <thead><tr><th>#</th><th>ارز</th><th>مبلغ</th><th>جهت</th><th>دلیل</th><th>تاریخ</th></tr></thead>
+                <thead><tr><th>ارز</th><th>مبلغ</th><th>جهت</th><th>دلیل</th><th>تاریخ</th></tr></thead>
                 <tbody>
                   {data.recent.map((r) => (
                     <tr key={r.id}>
-                      <td className="admin-mono">{r.id}</td>
                       <td>{LABELS[r.currency] || r.currency}</td>
                       <td className="admin-mono">{formatNumFa(r.amount)}</td>
                       <td><span className={`admin-badge admin-badge--${r.direction === 'credit' ? 'ok' : 'warn'}`}>{r.direction === 'credit' ? 'واریز' : 'برداشت'}</span></td>
@@ -118,7 +117,7 @@ export function AdminFinanceWalletPage() {
                       <td className="admin-mono">{r.createdAt.slice(0, 16)}</td>
                     </tr>
                   ))}
-                  {!data.recent.length ? <tr><td colSpan={6} className="admin-muted">تراکنشی نیست</td></tr> : null}
+                  {!data.recent.length ? <tr><td colSpan={5} className="admin-muted">تراکنشی نیست</td></tr> : null}
                 </tbody>
               </table>
             </div>

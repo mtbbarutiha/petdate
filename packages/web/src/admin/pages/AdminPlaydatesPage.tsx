@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { petPublicIdOf, type PetProfile, type PlaydateRequest } from '@petdate/shared';
+import { petPublicIdOf, userPublicIdOf, type PetProfile, type PlaydateRequest } from '@petdate/shared';
 import { adminFetch, formatNumFa } from '../api';
 import { AdminIdChip } from '../AdminIds';
 import { AdminEntityCell, AdminThumb } from '../AdminThumb';
@@ -29,15 +29,10 @@ function PetCell({ pet, petId }: { pet?: PetProfile; petId: number }) {
           petId={id}
           kind="pet"
           label={pet?.name}
-          alt={pet?.name || `پت ${id}`}
+          alt={pet?.name || 'پت'}
         />
       }
-      title={
-        <AdminIdChip
-          publicId={petPublicIdOf(pet ?? { id })}
-          numericId={id}
-        />
-      }
+      title={<AdminIdChip publicId={petPublicIdOf(pet ?? { id })} />}
       subtitle={pet?.name || null}
     />
   );
@@ -77,7 +72,6 @@ export function AdminPlaydatesPage() {
       <div className="admin-table-wrap admin-card"><table className="admin-table">
         <thead>
           <tr>
-            <th>آیدی درخواست</th>
             <th>از پت</th>
             <th>به پت</th>
             <th>کاربران</th>
@@ -90,18 +84,21 @@ export function AdminPlaydatesPage() {
         <tbody>
           {items.map((m) => (
             <tr key={m.id}>
-              <td><code className="admin-mono" dir="ltr">#{m.id}</code></td>
               <td><PetCell pet={m.fromPet} petId={m.fromPetId} /></td>
               <td><PetCell pet={m.toPet} petId={m.toPetId} /></td>
               <td>
                 <div className="admin-entity-cell" style={{ marginBottom: 6 }}>
                   <AdminThumb src={m.fromUserAvatarUrl} label={m.fromUserName} kind="user" />
-                  <span className="admin-mono" dir="ltr">#{m.fromUserId}</span>
+                  <code className="admin-mono admin-id-public" dir="ltr">
+                    {userPublicIdOf({ id: m.fromUserId })}
+                  </code>
                 </div>
                 {m.toUserId != null ? (
                   <div className="admin-entity-cell">
                     <AdminThumb src={m.toUserAvatarUrl} label={m.toUserName} kind="user" />
-                    <span className="admin-mono" dir="ltr">#{m.toUserId}</span>
+                    <code className="admin-mono admin-id-public" dir="ltr">
+                      {userPublicIdOf({ id: m.toUserId })}
+                    </code>
                   </div>
                 ) : null}
               </td>
@@ -122,7 +119,7 @@ export function AdminPlaydatesPage() {
               </td>
             </tr>
           ))}
-          {!items.length ? <tr><td colSpan={8} className="admin-muted">درخواستی نیست</td></tr> : null}
+          {!items.length ? <tr><td colSpan={7} className="admin-muted">درخواستی نیست</td></tr> : null}
         </tbody>
       </table></div>
     </div>

@@ -1217,7 +1217,7 @@
 }
 
 
-/* ── ID chips (always show public + numeric) ── */
+/* ── ID chips (public PD-* only — never numeric row ids) ── */
 .admin-app .admin-id-chip {
   display: flex;
   flex-direction: column;
@@ -1238,10 +1238,6 @@
   padding: 2px 6px;
   border-radius: 6px;
   font-size: 0.78rem;
-}
-.admin-app .admin-id-num {
-  color: var(--admin-muted);
-  font-size: 0.72rem;
 }
 .admin-app .admin-id-inline {
   display: inline-flex;

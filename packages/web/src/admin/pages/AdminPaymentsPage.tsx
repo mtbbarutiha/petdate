@@ -1,5 +1,5 @@
 import { Fragment, useCallback, useEffect, useState } from 'react';
-import type { PaymentOrder } from '@petdate/shared';
+import { userPublicIdOf, type PaymentOrder } from '@petdate/shared';
 import { adminFetch, formatNumFa, formatTomanFa } from '../api';
 import { AdminEntityCell, AdminThumb } from '../AdminThumb';
 
@@ -120,7 +120,6 @@ export function AdminPaymentsPage() {
         <table className="admin-table">
           <thead>
             <tr>
-              <th>آیدی پرداخت</th>
               <th>کاربر</th>
               <th>بسته / منبع</th>
               <th>مبلغ</th>
@@ -137,7 +136,6 @@ export function AdminPaymentsPage() {
               return (
                 <Fragment key={o.id}>
                   <tr>
-                    <td><code className="admin-mono" dir="ltr">#{o.id}</code></td>
                     <td>
                       <AdminEntityCell
                         thumb={
@@ -151,7 +149,9 @@ export function AdminPaymentsPage() {
                         title={o.userName || '—'}
                         subtitle={
                           <>
-                            <span className="admin-mono" dir="ltr">user #{o.userId}</span>
+                            <code className="admin-mono admin-id-public" dir="ltr">
+                              {userPublicIdOf({ id: o.userId })}
+                            </code>
                             {(o.userUsername || o.userTelegramId) ? (
                               <div>
                                 {o.userUsername ? `@${o.userUsername}` : ''}
@@ -168,7 +168,7 @@ export function AdminPaymentsPage() {
                         <div className="admin-muted">{shopMeta.titleHint}</div>
                       ) : null}
                       {shopMeta?.shopOrderId != null ? (
-                        <div className="admin-muted">سفارش شاپ #{shopMeta.shopOrderId}</div>
+                        <div className="admin-muted">سفارش شاپ مرتبط</div>
                       ) : null}
                     </td>
                     <td>{amountLabel(o)}</td>
@@ -219,7 +219,7 @@ export function AdminPaymentsPage() {
                   </tr>
                   {open ? (
                     <tr>
-                      <td colSpan={8}>
+                      <td colSpan={7}>
                         <div className="admin-muted" style={{ whiteSpace: 'pre-wrap', padding: '0.5rem 0' }}>
                           {o.telegramPaymentChargeId
                             ? `charge: ${o.telegramPaymentChargeId}\n`
@@ -238,7 +238,7 @@ export function AdminPaymentsPage() {
             })}
             {!orders.length ? (
               <tr>
-                <td colSpan={8} className="admin-muted">
+                <td colSpan={7} className="admin-muted">
                   {status
                     ? `موردی با وضعیت «${statusLabel(status)}» نیست — فیلتر را روی «همه» بگذارید.`
                     : 'هنوز پرداختی ثبت نشده.'}

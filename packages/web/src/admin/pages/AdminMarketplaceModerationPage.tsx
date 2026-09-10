@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { API_BASE, adminFetch } from '../api';
-import type { User } from '@petdate/shared';
+import { petPublicIdOf, userPublicIdOf, type User } from '@petdate/shared';
 
 type PetRow = {
   id: number;
@@ -252,7 +252,8 @@ export function AdminMarketplaceModerationPage() {
             const pdf = isPdfRef(fileRef);
             return (
               <li key={u.id} className="admin-credential-row" style={{ marginBottom: 16 }}>
-                <strong>{u.name}</strong> · #{u.id}
+                <strong>{u.name}</strong> ·{' '}
+                <code dir="ltr">{userPublicIdOf(u)}</code>
                 {u.telegramId ? ` · TG ${u.telegramId}` : ''}
                 {isArchive ? (
                   <span
@@ -344,7 +345,8 @@ export function AdminMarketplaceModerationPage() {
             const src = mediaSrc(u.avatarUrl);
             return (
               <li key={u.id} style={{ marginBottom: 12 }}>
-                <strong>{u.name}</strong> · کاربر #{u.id}
+                <strong>{u.name}</strong> ·{' '}
+                <code dir="ltr">{userPublicIdOf(u)}</code>
                 {u.telegramId ? ` · TG ${u.telegramId}` : ''}
                 {src ? (
                   <div style={{ marginTop: 6 }}>
@@ -394,7 +396,8 @@ export function AdminMarketplaceModerationPage() {
               : null;
             return (
               <li key={p.id} style={{ marginBottom: 12 }}>
-                <strong>{p.name}</strong> · پت #{p.id}
+                <strong>{p.name}</strong> ·{' '}
+                <code dir="ltr">{petPublicIdOf(p)}</code>
                 {p.ownerName ? ` · صاحب: ${p.ownerName}` : ''}
                 {src ? (
                   <div style={{ marginTop: 6 }}>

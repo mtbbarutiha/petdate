@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { VetConsultation } from '@petdate/shared';
+import { petPublicIdOf, userPublicIdOf, type VetConsultation } from '@petdate/shared';
 import { adminFetch, formatNumFa } from '../api';
 import { AdminEntityCell, AdminThumb } from '../AdminThumb';
 
@@ -46,7 +46,6 @@ export function AdminConsultsPage() {
       <div className="admin-table-wrap admin-card"><table className="admin-table">
         <thead>
           <tr>
-            <th>آیدی مشاوره</th>
             <th>بیمار</th>
             <th>پزشک / مربی</th>
             <th>پت</th>
@@ -59,7 +58,6 @@ export function AdminConsultsPage() {
         <tbody>
           {items.map((c) => (
             <tr key={c.id}>
-              <td><code className="admin-mono" dir="ltr">#{c.id}</code></td>
               <td>
                 <AdminEntityCell
                   thumb={
@@ -71,7 +69,11 @@ export function AdminConsultsPage() {
                     />
                   }
                   title={<strong>{c.patientName || '—'}</strong>}
-                  subtitle={<span className="admin-mono">user #{c.patientUserId}</span>}
+                  subtitle={
+                    <code className="admin-mono admin-id-public" dir="ltr">
+                      {userPublicIdOf({ id: c.patientUserId })}
+                    </code>
+                  }
                 />
               </td>
               <td>
@@ -85,7 +87,11 @@ export function AdminConsultsPage() {
                     />
                   }
                   title={<strong>{c.vetName || '—'}</strong>}
-                  subtitle={<span className="admin-mono">user #{c.vetUserId}</span>}
+                  subtitle={
+                    <code className="admin-mono admin-id-public" dir="ltr">
+                      {userPublicIdOf({ id: c.vetUserId })}
+                    </code>
+                  }
                 />
               </td>
               <td>
@@ -100,7 +106,13 @@ export function AdminConsultsPage() {
                     />
                   }
                   title={c.petName || '—'}
-                  subtitle={c.petId != null ? <span className="admin-mono">pet #{c.petId}</span> : null}
+                  subtitle={
+                    c.petId != null ? (
+                      <code className="admin-mono admin-id-public" dir="ltr">
+                        {petPublicIdOf({ id: c.petId })}
+                      </code>
+                    ) : null
+                  }
                 />
               </td>
               <td><span className="admin-badge">{c.serviceKind || 'vet'}</span></td>
@@ -113,7 +125,7 @@ export function AdminConsultsPage() {
               </td>
             </tr>
           ))}
-          {!items.length ? <tr><td colSpan={8} className="admin-muted">مشاوره‌ای نیست</td></tr> : null}
+          {!items.length ? <tr><td colSpan={7} className="admin-muted">مشاوره‌ای نیست</td></tr> : null}
         </tbody>
       </table></div>
     </div>
