@@ -15,8 +15,8 @@ import {
 } from './hr-service';
 import {
   createOnboarding,
-  createRequest,
   createServiceEntry,
+  ensureSampleHrTickets,
   pushNotification,
   upsertCostEntry,
 } from './hr-modules';
@@ -489,11 +489,11 @@ export function seedHrSalesDemoIfNeeded(): void {
   const reqCount = Number(
     (db().prepare('SELECT COUNT(*) as c FROM hr_requests').get() as { c: number })?.c ?? 0
   );
-  if (reqCount === 0) {
-    for (const e of employees.slice(0, 3)) {
-      createRequest({ employeeId: e.id, type: 'مرخصی', days: 1, description: 'نمونه SEED' });
-      createRequest({ employeeId: e.id, type: 'تجهیزات', days: 0, description: 'لپ‌تاپ SEED' });
-    }
+  if (reqCount === 0 && employees.length) {
+    ensureSampleHrTickets(employees[0].id);
+  } else if (employees.length) {
+    // Ensure the three SAMPLE-HR-TICKET types exist for first employee (additive / idempotent)
+    ensureSampleHrTickets(employees[0].id);
   }
   for (const e of employees) {
     upsertCostEntry({

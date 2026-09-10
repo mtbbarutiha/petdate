@@ -200,6 +200,7 @@ export function ensureHrSchema(): void {
       to_date TEXT NOT NULL DEFAULT '',
       description TEXT NOT NULL DEFAULT '',
       status TEXT NOT NULL DEFAULT 'ثبت‌شده',
+      result TEXT NOT NULL DEFAULT '',
       log_json TEXT NOT NULL DEFAULT '[]',
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       FOREIGN KEY (employee_id) REFERENCES hr_employees(id)
@@ -229,6 +230,7 @@ export function ensureHrSchema(): void {
   ensureAdminRbacColumns();
   ensureHrEmployeeColumns();
   ensureHrCandidateColumns();
+  ensureHrRequestColumns();
 
   d.exec(`CREATE INDEX IF NOT EXISTS idx_hr_employees_code ON hr_employees(personnel_code)`);
   d.exec(`CREATE INDEX IF NOT EXISTS idx_hr_contracts_employee ON hr_contracts(employee_id)`);
@@ -265,6 +267,34 @@ function ensureHrEmployeeColumns(): void {
   if (!cols.has('mobile')) {
     d.exec(`ALTER TABLE hr_employees ADD COLUMN mobile TEXT NOT NULL DEFAULT ''`);
   }
+}
+
+/** Additive columns for hr_requests — never wipe. */
+export function ensureHrRequestColumns(): void {
+  const d = db();
+  const cols = new Set(
+    (d.prepare(`PRAGMA table_info(hr_requests)`).all() as Array<{ name: string }>).map((c) => c.name)
+  );
+  if (!cols.has('result')) {
+    d.exec(`ALTER TABLE hr_requests ADD COLUMN result TEXT NOT NULL DEFAULT ''`);
+  }
+}
+
+/** Throws if trimmed nationalId is non-empty and already used by another employee. */
+export function assertNationalIdUnique(nationalId: string, excludeId?: number): void {
+  const nid = String(nationalId || '').trim();
+  if (!nid) return;
+  const row =
+    excludeId != null
+      ? (db()
+          .prepare(
+            `SELECT id FROM hr_employees WHERE TRIM(national_id) = ? AND id != ? LIMIT 1`
+          )
+          .get(nid, excludeId) as { id: number } | undefined)
+      : (db()
+          .prepare(`SELECT id FROM hr_employees WHERE TRIM(national_id) = ? LIMIT 1`)
+          .get(nid) as { id: number } | undefined);
+  if (row) throw new Error('کد ملی تکراری است');
 }
 
 /** Additive columns for ATS candidates / follow-up workflow — never wipe. */
@@ -793,6 +823,8 @@ export function deleteEmployee(id: number): boolean {
 export function createEmployee(input: HrEmployeeInput): HrEmployee {
   const d = db();
   ensureHrEmployeeColumns();
+  const nationalId = String(input.nationalId || '').trim();
+  assertNationalIdUnique(nationalId);
   const personnelCode = (input.personnelCode || nextPersonnelCode()).trim();
   const fromInput = sanitizeHrUsername(String(input.username || ''));
   const fromCode = sanitizeHrUsername(personnelCode.toLowerCase().replace(/[^a-z0-9._-]/g, '-'));
@@ -828,7 +860,7 @@ export function createEmployee(input: HrEmployeeInput): HrEmployee {
       input.gender || '',
       input.birthDate || '',
       input.birthCertNo || '',
-      input.nationalId || '',
+      nationalId,
       input.fatherName || '',
       input.province || '',
       input.city || '',
@@ -871,11 +903,35 @@ export function getEmployeePlainPassword(id: number): string {
   return String(row?.password || '');
 }
 
+/** Regenerate (or set) employee plain password; syncs matching admin_accounts row. */
+export function resetEmployeePassword(id: number, password?: string): string | null {
+  const emp = getEmployee(id);
+  if (!emp) return null;
+  const next = String(password || '').trim() || genHrPassword();
+  db()
+    .prepare(`UPDATE hr_employees SET password = ?, updated_at = datetime('now') WHERE id = ?`)
+    .run(next, id);
+  const acct = db()
+    .prepare('SELECT id FROM admin_accounts WHERE username = ? LIMIT 1')
+    .get(emp.username) as { id: number } | undefined;
+  if (acct) {
+    try {
+      updateAdminAccount(acct.id, { password: next });
+    } catch {
+      /* role/account edge — non-fatal */
+    }
+  }
+  return next;
+}
+
 export function updateEmployee(id: number, input: Partial<HrEmployeeInput>): HrEmployee | null {
   const prev = getEmployee(id);
   if (!prev) return null;
   const d = db();
   ensureHrEmployeeColumns();
+  if (input.nationalId !== undefined) {
+    assertNationalIdUnique(String(input.nationalId || ''), id);
+  }
   const usernameFromInput =
     input.username !== undefined ? sanitizeHrUsername(String(input.username)) : '';
   const next: HrEmployee = {
@@ -884,6 +940,8 @@ export function updateEmployee(id: number, input: Partial<HrEmployeeInput>): HrE
     id: prev.id,
     publicId: prev.publicId,
     uuid: prev.uuid,
+    nationalId:
+      input.nationalId !== undefined ? String(input.nationalId || '').trim() : prev.nationalId,
     username:
       usernameFromInput ||
       (input.personnelCode
@@ -1367,13 +1425,16 @@ export function listPersonnelJobTitles(): string[] {
   return rows.map((r) => String(r.t)).filter(Boolean);
 }
 
-export function listRequests(): HrRequest[] {
-  return (
-    db().prepare('SELECT * FROM hr_requests ORDER BY id DESC LIMIT 200').all() as Record<
-      string,
-      unknown
-    >[]
-  ).map((r) => ({
+export function listRequests(opts?: { employeeId?: number }): HrRequest[] {
+  ensureHrRequestColumns();
+  const rows = (
+    opts?.employeeId != null
+      ? db()
+          .prepare('SELECT * FROM hr_requests WHERE employee_id = ? ORDER BY id DESC LIMIT 200')
+          .all(opts.employeeId)
+      : db().prepare('SELECT * FROM hr_requests ORDER BY id DESC LIMIT 200').all()
+  ) as Record<string, unknown>[];
+  return rows.map((r) => ({
     id: Number(r.id),
     employeeId: Number(r.employee_id),
     type: String(r.type),
@@ -1382,6 +1443,7 @@ export function listRequests(): HrRequest[] {
     toDate: String(r.to_date || ''),
     description: String(r.description || ''),
     status: String(r.status || ''),
+    result: String(r.result || ''),
     log: parseJson(r.log_json, []),
     createdAt: String(r.created_at || ''),
   }));
@@ -1749,6 +1811,9 @@ export const hrService = {
   enforceExpiredContractAccess,
   sanitizeHrUsername,
   getEmployeePlainPassword,
+  resetEmployeePassword,
+  assertNationalIdUnique,
+  ensureHrRequestColumns,
   listCareerLayers,
   listIncomeModels,
   listBenefitDefs,

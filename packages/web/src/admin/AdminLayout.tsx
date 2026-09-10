@@ -29,7 +29,7 @@ const NAV_GROUPS: NavGroup[] = [
   { title: 'منابع انسانی', items: [
     { to: '/admin/hr', icon: LayoutDashboard, label: 'داشبورد HR', perm: 'hr.read' },
     { to: '/admin/hr/employees', icon: UserRound, label: 'اطلاعات پرسنلی', perm: 'hr.read' },
-    { to: '/admin/hr/requests', icon: ClipboardCheck, label: 'درخواست‌های کارکنان', perm: 'hr.read' },
+    { to: '/admin/hr/requests', icon: ClipboardCheck, label: 'تیکت‌های منابع انسانی', perm: 'hr.read' },
     { to: '/admin/hr/service', icon: HandCoins, label: 'ارائه خدمات', perm: 'hr.read' },
     { to: '/admin/hr/reports', icon: BarChart3, label: 'گزارشات', perm: 'hr.read' },
     { to: '/admin/hr/cost', icon: Coins, label: 'تخصیص هزینه نیروی کار', perm: 'hr.read' },

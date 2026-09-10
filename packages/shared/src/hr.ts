@@ -498,6 +498,8 @@ export type HrRequest = {
   toDate: string;
   description: string;
   status: string;
+  /** HR outcome / نتیجه (set on resolve or final advance) */
+  result: string;
   log: Array<{ at: string; status: string; note?: string }>;
   createdAt: string;
 };

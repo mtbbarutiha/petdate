@@ -31,7 +31,7 @@ const TABS = [
   { id: 'comp', label: 'جبران خدمت' },
   { id: 'career', label: 'مسیر شغلی' },
   { id: 'benefits', label: 'مزایا' },
-  { id: 'requests', label: 'درخواست‌ها' },
+  { id: 'requests', label: 'تیکت‌های منابع انسانی' },
   { id: 'access', label: 'دسترسی' },
   { id: 'history', label: 'فعالیت / تاریخچه' },
 ] as const;
@@ -822,7 +822,30 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
       ) : null}
 
       {tab === 'requests' ? (
-        <p className="admin-muted">پس از ذخیره پرونده می‌توانید درخواست‌ها را ثبت کنید.</p>
+        <div>
+          <p className="admin-muted">
+            پس از ذخیره پرونده، تیکت‌های منابع انسانی این همکار در همین تب قابل مشاهده و اقدام است.
+          </p>
+          <div className="admin-table-wrap" style={{ marginTop: 12 }}>
+            <table className="admin-table admin-table--dense">
+              <thead>
+                <tr>
+                  <th>نوع</th>
+                  <th>بازه / تاریخ</th>
+                  <th>وضعیت</th>
+                  <th>نتیجه / اکشن</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colSpan={4} className="admin-empty">
+                    هنوز تیکتی ثبت نشده — پس از ایجاد پرونده نمونه و درخواست‌های جدید اینجا می‌آید.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
       ) : null}
 
       {tab === 'access' ? (
@@ -875,7 +898,7 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
             />
           </label>
           <div className="admin-span-2">
-            <span className="form-label">رمز تولیدشده</span>
+            <span className="form-label">رمز عبور (برای راهنمایی همکار توسط HR)</span>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <input className="form-input" dir="ltr" readOnly value={draft.password} style={{ flex: 1 }} />
               <button
@@ -886,7 +909,9 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
                 تولید مجدد
               </button>
             </div>
-            <p className="admin-muted admin-hint">این رمز فقط یک‌بار در این صفحه نمایش داده می‌شود و پس از ذخیره پیامک می‌شود.</p>
+            <p className="admin-muted admin-hint">
+              این رمز پس از ذخیره در پرونده همکار نگه داشته می‌شود تا HR بتواند آن را به همکار اعلام کند؛ در صورت تنظیم موبایل، پیامک نیز ارسال می‌شود.
+            </p>
           </div>
         </div>
       ) : null}
