@@ -8,7 +8,6 @@ import type {
   CrmInteraction,
   CrmQaReview,
   CrmReferral,
-  CrmReportSummary,
   CrmSettings,
   CrmSmsPattern,
   CrmSurvey,
@@ -589,37 +588,7 @@ export function AdminCrmQaPage() {
   );
 }
 
-export function AdminCrmReportsPage() {
-  const [summary, setSummary] = useState<CrmReportSummary | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  useEffect(() => {
-    void adminFetch<{ summary: CrmReportSummary }>('/api/admin/crm/reports')
-      .then((d) => setSummary(d.summary))
-      .catch((e) => setError(e instanceof Error ? e.message : 'خطا'));
-  }, []);
-  if (error) return <div className="admin-page"><Err error={error} /></div>;
-  if (!summary) return <div className="admin-page"><p>در حال بارگذاری…</p></div>;
-  return (
-    <div className="admin-page">
-      <header className="admin-header"><div><h1>گزارش‌های امور مشتریان</h1></div></header>
-      <div className="admin-stats">
-        <div className="admin-stat"><div className="admin-stat-value">{formatNumFa(summary.ticketsOpen)}</div><div className="admin-stat-label">تیکت باز</div></div>
-        <div className="admin-stat"><div className="admin-stat-value">{formatNumFa(summary.ticketsResolved)}</div><div className="admin-stat-label">حل‌شده</div></div>
-        <div className="admin-stat"><div className="admin-stat-value">{summary.csatAvg != null ? formatNumFa(summary.csatAvg) : '—'}</div><div className="admin-stat-label">CSAT</div></div>
-        <div className="admin-stat"><div className="admin-stat-value">{summary.qaAvg != null ? formatNumFa(summary.qaAvg) : '—'}</div><div className="admin-stat-label">میانگین QA</div></div>
-      </div>
-      <section className="admin-card" style={{ marginTop: 16 }}>
-        <div className="admin-card-head"><h2>بر اساس کارشناس</h2></div>
-        <div className="admin-table-wrap"><table className="admin-table">
-          <thead><tr><th>کارشناس</th><th>تیکت</th><th>تماس</th><th>QA</th></tr></thead>
-          <tbody>{summary.byAgent.map((a) => (
-            <tr key={a.agentId}><td>{a.agentName}</td><td>{formatNumFa(a.tickets)}</td><td>{formatNumFa(a.calls)}</td><td>{a.qaAvg != null ? formatNumFa(a.qaAvg) : '—'}</td></tr>
-          ))}</tbody>
-        </table></div>
-      </section>
-    </div>
-  );
-}
+export { AdminCrmReportsPage } from './AdminCrmReportsPage';
 
 export function AdminCrmSettingsPage() {
   const [settings, setSettings] = useState<CrmSettings | null>(null);

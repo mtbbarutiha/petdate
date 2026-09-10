@@ -2945,3 +2945,209 @@ body:has(.admin-app) {
   font-size: 12px;
 }
 .admin-app .hr-chart-tooltip-label { color: var(--admin-muted); margin-bottom: 2px; }
+
+/* —— CRM club team reports —— */
+.admin-app .crm-report-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.admin-app .crm-report-tabs button {
+  border: 1px solid var(--admin-border);
+  background: #fff;
+  color: var(--admin-ink);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.admin-app .crm-report-tabs button.is-active {
+  background: #15cca0;
+  border-color: #15cca0;
+  color: #fff;
+  font-weight: 700;
+}
+.admin-app .crm-report-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: end;
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--admin-border);
+  border-radius: 14px;
+  background: linear-gradient(180deg, #fff, #faf9fc);
+}
+.admin-app .crm-report-filters label {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--admin-muted);
+}
+.admin-app .crm-report-filters input,
+.admin-app .crm-report-filters select {
+  border: 1px solid var(--admin-border);
+  border-radius: 10px;
+  padding: 8px 10px;
+  min-width: 140px;
+  background: #fff;
+  color: var(--admin-ink);
+}
+.admin-app .crm-report-quick { display: flex; gap: 6px; flex-wrap: wrap; }
+.admin-app .crm-report-hero {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+@media (max-width: 1000px) {
+  .admin-app .crm-report-hero { grid-template-columns: 1fr; }
+}
+.admin-app .crm-report-overall {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: 16px;
+}
+.admin-app .crm-report-legend {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+}
+.admin-app .crm-report-legend div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--admin-border);
+  background: #fff;
+}
+.admin-app .crm-report-agent-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 10px;
+}
+.admin-app .crm-report-agent-card {
+  background: #fff;
+  border: 1px solid var(--admin-border);
+  border-inline-start-width: 4px;
+  border-radius: 14px;
+  padding: 12px;
+  display: grid;
+  gap: 8px;
+}
+.admin-app .crm-report-agent-card-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+}
+.admin-app .crm-report-agent-bar {
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(25,6,61,0.06);
+  overflow: hidden;
+}
+.admin-app .crm-report-agent-bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+.admin-app .crm-report-standing {
+  display: inline-flex;
+  width: fit-content;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+}
+.admin-app .crm-report-charts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+@media (max-width: 1100px) {
+  .admin-app .crm-report-charts { grid-template-columns: 1fr; }
+}
+.admin-app .crm-report-chart-box { min-height: 220px; }
+.admin-app .crm-report-reason-legend {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.admin-app .crm-report-reason-legend li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.admin-app .crm-report-reason-legend i {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  display: inline-block;
+}
+.admin-app .crm-report-reason-legend span { margin-inline-start: auto; color: var(--admin-muted); }
+.admin-app .crm-report-kpi-rings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+}
+.admin-app .crm-report-mini-ring {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  text-align: center;
+}
+.admin-app .crm-report-mini-ring strong { font-size: 12px; }
+.admin-app .crm-report-counters {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 12px;
+}
+.admin-app .crm-report-counters div,
+.admin-app .crm-report-stat-tile {
+  border: 1px solid var(--admin-border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: grid;
+  gap: 4px;
+  background: rgba(255,255,255,0.8);
+}
+.admin-app .crm-report-counters span { font-size: 11px; color: var(--admin-muted); }
+.admin-app .crm-report-counters b { font-size: 1.1rem; }
+.admin-app .crm-report-mini-progress {
+  display: grid;
+  gap: 4px;
+  min-width: 90px;
+}
+.admin-app .crm-report-mini-progress i {
+  display: block;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(25,6,61,0.06);
+  overflow: hidden;
+}
+.admin-app .crm-report-mini-progress b {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+.admin-app .crm-report-quality { display: grid; gap: 14px; }
+.admin-app .crm-report-gauge { display: grid; justify-items: center; }
+.admin-app .crm-chart-tooltip {
+  background: #fff;
+  border: 1px solid var(--admin-border);
+  border-radius: 10px;
+  padding: 8px 10px;
+  box-shadow: 0 8px 20px rgba(25, 6, 61, 0.08);
+  font-size: 12px;
+}
+.admin-app .crm-chart-tooltip-label { color: var(--admin-muted); margin-bottom: 2px; }
