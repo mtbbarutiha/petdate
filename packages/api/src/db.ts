@@ -4115,6 +4115,46 @@ export const dbService = {
     return this.getUserById(userId);
   },
 
+  /** Admin override — set verification status without pending-only gate. */
+  setVerificationStatusAdmin(userId: number, status: VerificationStatus): User | null {
+    const existing = this.getUserById(userId);
+    if (!existing) return null;
+    if (status === 'verified') {
+      db.prepare(
+        `UPDATE users SET
+           verification_status = 'verified',
+           verified_at = COALESCE(verified_at, datetime('now')),
+           verification_note = NULL
+         WHERE id = ?`
+      ).run(userId);
+    } else if (status === 'pending') {
+      db.prepare(
+        `UPDATE users SET
+           verification_status = 'pending',
+           verified_at = NULL,
+           verification_note = NULL
+         WHERE id = ?`
+      ).run(userId);
+    } else if (status === 'rejected') {
+      db.prepare(
+        `UPDATE users SET
+           verification_status = 'rejected',
+           verified_at = NULL
+         WHERE id = ?`
+      ).run(userId);
+    } else {
+      db.prepare(
+        `UPDATE users SET
+           verification_status = 'none',
+           verified_at = NULL,
+           verification_note = NULL,
+           verification_photo_file_id = NULL
+         WHERE id = ?`
+      ).run(userId);
+    }
+    return this.getUserById(userId);
+  },
+
   listSections(): Section[] {
     return (db.prepare('SELECT * FROM sections ORDER BY name').all() as Record<string, unknown>[]).map(
       mapSection
