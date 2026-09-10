@@ -1,6 +1,7 @@
 /**
  * Admin finance analytics — P&L, sales charts, wallet ledger, top products.
  */
+import { orderPublicIdOf } from '@petdate/shared';
 import { getDb } from './db';
 import { adminPlatform } from './admin-platform';
 
@@ -404,17 +405,24 @@ export const adminFinance = {
       )
       .all() as Array<{ status: string; count: number; revenue: number }>;
 
-    const orders = rows.map((row) => ({
-      id: Number(row.id),
-      userId: row.user_id != null ? Number(row.user_id) : undefined,
-      status: String(row.status),
-      totalToman: Number(row.total_toman ?? 0),
-      paymentCurrency: String(row.payment_currency ?? 'toman'),
-      cogsToman: row.cogs_toman != null ? Number(row.cogs_toman) : null,
-      customerName: (row.customer_name as string) || undefined,
-      items: parseItems(String(row.items_json || '[]')),
-      createdAt: String(row.created_at ?? ''),
-    }));
+    const orders = rows.map((row) => {
+      const id = Number(row.id);
+      return {
+        id,
+        publicId: orderPublicIdOf({
+          id,
+          publicId: (row.public_id as string | undefined) || undefined,
+        }),
+        userId: row.user_id != null ? Number(row.user_id) : undefined,
+        status: String(row.status),
+        totalToman: Number(row.total_toman ?? 0),
+        paymentCurrency: String(row.payment_currency ?? 'toman'),
+        cogsToman: row.cogs_toman != null ? Number(row.cogs_toman) : null,
+        customerName: (row.customer_name as string) || undefined,
+        items: parseItems(String(row.items_json || '[]')),
+        createdAt: String(row.created_at ?? ''),
+      };
+    });
 
     return {
       orders,

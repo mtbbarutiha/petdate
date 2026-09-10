@@ -51,6 +51,8 @@ import {
   PET_MEDICAL_FIELD_LABELS,
   PET_SPECIES,
   petPublicIdOf,
+  makeOrderPublicId,
+  orderPublicIdOf,
   QUICK_VET_COST,
   SEEKER_ADVICE_COST,
   SEEKER_OWNER_SHARE,
@@ -278,7 +280,7 @@ function initSchema() {
   seedSpeciesCatalog();
 }
 
-/** تخصیص / نرمال‌سازی PD-U##### و PD-P##### برای ردیف‌های بدون کد یا با پد ناقص */
+/** تخصیص / نرمال‌سازی PD-U##### و PD-P##### و PD-O##### برای ردیف‌های بدون کد یا با پد ناقص */
 function backfillPublicIds(): void {
   const userMissing = db
     .prepare(
@@ -325,6 +327,38 @@ function backfillPublicIds(): void {
     if (canonical !== String(row.public_id).trim()) {
       updPet.run(canonical, Number(row.id));
     }
+  }
+
+  try {
+    const orderCols = (
+      db.prepare(`PRAGMA table_info(shop_orders)`).all() as Array<{ name: string }>
+    ).map((c) => c.name);
+    if (orderCols.includes('public_id')) {
+      const orderMissing = db
+        .prepare(
+          `SELECT id, public_id FROM shop_orders WHERE public_id IS NULL OR trim(CAST(public_id AS TEXT)) = ''`
+        )
+        .all() as { id: number; public_id: string | null }[];
+      if (orderMissing.length) {
+        const upd = db.prepare('UPDATE shop_orders SET public_id = ? WHERE id = ?');
+        for (const row of orderMissing) {
+          upd.run(makeOrderPublicId(Number(row.id)), Number(row.id));
+        }
+      }
+      const orderAll = db
+        .prepare('SELECT id, public_id FROM shop_orders WHERE public_id IS NOT NULL')
+        .all() as { id: number; public_id: string }[];
+      const updOrder = db.prepare('UPDATE shop_orders SET public_id = ? WHERE id = ?');
+      for (const row of orderAll) {
+        const canonical = orderPublicIdOf({ id: Number(row.id), publicId: row.public_id });
+        if (canonical !== String(row.public_id).trim()) {
+          updOrder.run(canonical, Number(row.id));
+        }
+      }
+      db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_shop_orders_public_id ON shop_orders (public_id)');
+    }
+  } catch (err) {
+    console.warn('shop_orders public_id backfill skipped/failed:', (err as Error).message);
   }
 
   db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_public_id ON users (public_id)');
@@ -1102,6 +1136,9 @@ function migrateSchema() {
   }
   if (!shopOrderCols.includes('cogs_toman')) {
     db.exec('ALTER TABLE shop_orders ADD COLUMN cogs_toman INTEGER');
+  }
+  if (!shopOrderCols.includes('public_id')) {
+    db.exec('ALTER TABLE shop_orders ADD COLUMN public_id TEXT');
   }
 
   db.exec(`

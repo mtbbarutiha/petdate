@@ -1,5 +1,5 @@
 import { Fragment, useCallback, useEffect, useState } from 'react';
-import { userPublicIdOf, type PaymentOrder } from '@petdate/shared';
+import { makeOrderPublicId, userPublicIdOf, type PaymentOrder } from '@petdate/shared';
 import { adminFetch, formatNumFa, formatTomanFa } from '../api';
 import { AdminEntityCell, AdminThumb } from '../AdminThumb';
 
@@ -168,7 +168,9 @@ export function AdminPaymentsPage() {
                         <div className="admin-muted">{shopMeta.titleHint}</div>
                       ) : null}
                       {shopMeta?.shopOrderId != null ? (
-                        <div className="admin-muted">سفارش شاپ مرتبط</div>
+                        <div className="admin-muted" dir="ltr">
+                          سفارش شاپ {makeOrderPublicId(shopMeta.shopOrderId)}
+                        </div>
                       ) : null}
                     </td>
                     <td>{amountLabel(o)}</td>

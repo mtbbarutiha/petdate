@@ -3,6 +3,7 @@
  * Kept separate from db.ts to limit merge conflicts with parallel agents.
  */
 import type { User, UserRole, PaymentOrder } from '@petdate/shared';
+import { makeOrderPublicId, orderPublicIdOf } from '@petdate/shared';
 import { getDb, dbService } from './db';
 
 function db() {
@@ -70,6 +71,8 @@ export type ShopCategoryInput = {
 
 export type ShopOrderRow = {
   id: number;
+  /** شناسهٔ عمومی پایدار — PD-O##### */
+  publicId: string;
   userId?: number;
   status: string;
   totalToman: number;
@@ -158,6 +161,10 @@ function mapShopOrder(row: Record<string, unknown>): ShopOrderRow {
   }
   return {
     id: Number(row.id),
+    publicId: orderPublicIdOf({
+      id: Number(row.id),
+      publicId: (row.public_id as string | undefined) || undefined,
+    }),
     userId: row.user_id != null ? Number(row.user_id) : undefined,
     status: String(row.status),
     totalToman: Number(row.total_toman ?? 0),
@@ -450,7 +457,7 @@ export const adminPlatform = {
     return db().prepare('DELETE FROM shop_categories WHERE slug = ?').run(slug).changes > 0;
   },
 
-  listShopOrders(filters?: { status?: string; limit?: number }): ShopOrderRow[] {
+  listShopOrders(filters?: { status?: string; q?: string; limit?: number }): ShopOrderRow[] {
     const d = db();
     let sql = `SELECT so.*,
                       u.avatar_url AS user_avatar_url,
@@ -462,6 +469,23 @@ export const adminPlatform = {
     if (filters?.status) {
       sql += ' AND so.status = ?';
       params.push(filters.status);
+    }
+    if (filters?.q) {
+      const qTrim = filters.q.trim();
+      if (qTrim) {
+        const like = `%${qTrim}%`;
+        sql += ` AND (
+          CAST(so.id AS TEXT) = ?
+          OR IFNULL(so.public_id,'') LIKE ?
+          OR upper(IFNULL(so.public_id,'')) = upper(?)
+          OR IFNULL(so.customer_name,'') LIKE ?
+          OR IFNULL(so.customer_phone,'') LIKE ?
+          OR IFNULL(u.name,'') LIKE ?
+          OR IFNULL(u.public_id,'') LIKE ?
+          OR upper(IFNULL(u.public_id,'')) = upper(?)
+        )`;
+        params.push(qTrim, like, qTrim, like, like, like, like, qTrim);
+      }
     }
     sql += ' ORDER BY so.created_at DESC LIMIT ?';
     params.push(Math.min(Math.max(filters?.limit ?? 100, 1), 300));
@@ -528,7 +552,13 @@ export const adminPlatform = {
         input.paymentAmount ?? input.totalToman,
         input.cogsToman ?? null
       );
-    return this.getShopOrder(Number(r.lastInsertRowid))!;
+    const newId = Number(r.lastInsertRowid);
+    try {
+      db().prepare('UPDATE shop_orders SET public_id = ? WHERE id = ?').run(makeOrderPublicId(newId), newId);
+    } catch (err) {
+      console.warn('shop_orders public_id assign skipped/failed:', (err as Error).message);
+    }
+    return this.getShopOrder(newId)!;
   },
 
   updateShopOrderStatus(id: number, status: string): ShopOrderRow | null {

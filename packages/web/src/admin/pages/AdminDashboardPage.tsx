@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Activity, HeartHandshake, Package, PawPrint, Stethoscope, Users, Wallet } from 'lucide-react';
-import { petPublicIdOf, userPublicIdOf } from '@petdate/shared';
+import { petPublicIdOf, orderPublicIdOf, userPublicIdOf } from '@petdate/shared';
 import { adminFetch, formatNumFa, formatTomanFa } from '../api';
 import { AdminBarChart, AdminLineChart } from '../FinanceCharts';
 import { AdminIdChip } from '../AdminIds';
@@ -17,7 +17,7 @@ type Dash = {
     botRelated: { chatMessages: number; openGames: number; errors24h: number };
   };
   recentPets: Array<{ id: number; publicId?: string; name: string; species: string; breed?: string; city?: string; ownerId: number; imageUrl?: string }>;
-  recentShopOrders: Array<{ id: number; status: string; totalToman: number; userId?: number; userAvatarUrl?: string; userName?: string; customerName?: string }>;
+  recentShopOrders: Array<{ id: number; publicId?: string; status: string; totalToman: number; userId?: number; userAvatarUrl?: string; userName?: string; customerName?: string }>;
   recentConsults: Array<{
     id: number; status: string; patientName?: string; vetName?: string; petName?: string;
     patientUserId: number; vetUserId: number; petId?: number | null;
@@ -156,10 +156,11 @@ export function AdminDashboardPage() {
         <section className="admin-card">
           <div className="admin-card-head"><h2>سفارش فروشگاه</h2><Link to="/admin/shop/orders">همه</Link></div>
           <div className="admin-table-wrap"><table className="admin-table">
-            <thead><tr><th>کاربر</th><th>مبلغ</th><th>وضعیت</th></tr></thead>
+            <thead><tr><th>آیدی سفارش</th><th>کاربر</th><th>مبلغ</th><th>وضعیت</th></tr></thead>
             <tbody>
               {(data?.recentShopOrders ?? []).map((o) => (
                 <tr key={o.id}>
+                  <td><AdminIdChip publicId={orderPublicIdOf(o)} /></td>
                   <td>
                     <AdminEntityCell
                       thumb={
@@ -185,7 +186,7 @@ export function AdminDashboardPage() {
                   <td><span className="admin-badge">{o.status}</span></td>
                 </tr>
               ))}
-              {!data?.recentShopOrders?.length ? <tr><td colSpan={3} className="admin-muted">سفارشی نیست</td></tr> : null}
+              {!data?.recentShopOrders?.length ? <tr><td colSpan={4} className="admin-muted">سفارشی نیست</td></tr> : null}
             </tbody>
           </table></div>
         </section>

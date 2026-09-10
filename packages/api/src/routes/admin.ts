@@ -363,7 +363,8 @@ adminRouter.delete('/shop/categories/:slug', (req, res) => {
 
 adminRouter.get('/shop/orders', (req, res) => {
   const status = typeof req.query.status === 'string' ? req.query.status : undefined;
-  res.json({ orders: adminPlatform.listShopOrders({ status, limit: 150 }) });
+  const q = typeof req.query.q === 'string' ? req.query.q : undefined;
+  res.json({ orders: adminPlatform.listShopOrders({ status, q, limit: 150 }) });
 });
 
 adminRouter.patch('/shop/orders/:id/status', (req, res) => {
