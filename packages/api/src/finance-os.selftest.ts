@@ -35,7 +35,7 @@ async function main() {
     name: 'تست مالی',
     role: 'حسابدار',
     dept: 'مالی',
-    line: 'SBG',
+    line: 'هلدینگ',
     sales: false,
   });
   assert(person.name === 'تست مالی', 'create person');
@@ -98,7 +98,7 @@ async function main() {
     jm: 5,
     lines: [{ desc: pending!.desc, category: pending!.category, amount: allocated.splits[0].amount }],
   });
-  assert(inv.number.includes('INV-SBG'), 'invoice number');
+  assert(inv.number.includes('INV-PD'), 'invoice number');
   assert(inv.total === allocated.splits[0].amount, 'invoice total');
 
   const balBefore = fos.getFinanceOsAllocationBundle().bankBalance;

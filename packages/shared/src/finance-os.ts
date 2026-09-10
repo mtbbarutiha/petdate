@@ -1,5 +1,5 @@
 /**
- * Finance OS (هلدینگ) — accounts, ledger, SBG cost allocation.
+ * Finance OS (هلدینگ) — accounts, ledger, holding cost allocation.
  * Shared DTOs for admin API + web.
  */
 

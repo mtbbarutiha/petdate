@@ -8,6 +8,9 @@ import { FinanceEditToggle, FinanceTabs, formatMoney, useFinanceEditMode } from 
 
 type Tab = 'offices' | 'people' | 'equipment' | 'allocation' | 'invoices' | 'bank';
 
+/** Holding / shared lines excluded from per-business cost splits (legacy SBG name kept for old DBs). */
+const NON_ALLOCATABLE_BUSINESSES = new Set(['هلدینگ', 'SBG', 'مشترک هلدینگ']);
+
 export function AdminFinanceAllocationPage() {
   const canWrite = adminCan('platform.write') || adminCan('admin.full');
   const { editMode, setEditMode } = useFinanceEditMode(canWrite);
@@ -41,7 +44,7 @@ export function AdminFinanceAllocationPage() {
   const openAlloc = (e: FinanceOsSbgExpense) => {
     setAllocTarget(e);
     const abs = Math.abs(e.amount);
-    const biz = (data?.businesses || []).filter((b) => b.name !== 'SBG' && b.name !== 'مشترک هلدینگ');
+    const biz = (data?.businesses || []).filter((b) => !NON_ALLOCATABLE_BUSINESSES.has(b.name));
     if (!biz.length) {
       setSplitText('');
       return;
@@ -139,7 +142,7 @@ export function AdminFinanceAllocationPage() {
     <div className="admin-page">
       <header className="admin-header">
         <div>
-          <h1>تخصیص هزینه SBG</h1>
+          <h1>تخصیص هزینه</h1>
           <p>دفاتر · افراد · تجهیزات · تخصیص · فاکتورها · بانک</p>
         </div>
         <div className="admin-header-actions">
@@ -161,7 +164,7 @@ export function AdminFinanceAllocationPage() {
           <div className="admin-stat-icon"><Users size={18} /></div>
           <div>
             <div className="admin-stat-value">{formatNumFa(data?.sbgPeople.length || 0)}</div>
-            <div className="admin-stat-label">افراد SBG</div>
+            <div className="admin-stat-label">افراد ستاد</div>
           </div>
         </div>
         <div className="admin-stat admin-stat--orange">
@@ -173,7 +176,7 @@ export function AdminFinanceAllocationPage() {
         <div className="admin-stat admin-stat--mint">
           <div>
             <div className="admin-stat-value">{formatMoney(data?.bankBalance || 0)}</div>
-            <div className="admin-stat-label">موجودی بانک SBG</div>
+            <div className="admin-stat-label">موجودی بانک هلدینگ</div>
           </div>
         </div>
       </div>
@@ -187,7 +190,7 @@ export function AdminFinanceAllocationPage() {
           { id: 'equipment', label: 'تجهیزات' },
           { id: 'allocation', label: 'تخصیص', badge: data?.pendingAllocationCount },
           { id: 'invoices', label: 'فاکتورها' },
-          { id: 'bank', label: 'بانک SBG' },
+          { id: 'bank', label: 'بانک هلدینگ' },
         ]}
       />
 
@@ -331,7 +334,7 @@ export function AdminFinanceAllocationPage() {
             </div>
             <div className="admin-header-actions" style={{ marginTop: 12 }}>
               <select className="form-input" style={{ width: 180 }} value={invoiceBiz} onChange={(e) => setInvoiceBiz(e.target.value)}>
-                {(data.businesses || []).filter((b) => b.name !== 'SBG').map((b) => (
+                {(data.businesses || []).filter((b) => !NON_ALLOCATABLE_BUSINESSES.has(b.name)).map((b) => (
                   <option key={b.id}>{b.name}</option>
                 ))}
               </select>
@@ -369,7 +372,7 @@ export function AdminFinanceAllocationPage() {
       {data && tab === 'bank' ? (
         <div style={{ display: 'grid', gap: 16 }}>
           <section className="admin-card" style={{ padding: 16 }}>
-            <div className="admin-card-head"><h2>موجودی بانک / صندوق SBG</h2></div>
+            <div className="admin-card-head"><h2>موجودی بانک / صندوق هلدینگ</h2></div>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
               <input
                 className="form-input"
