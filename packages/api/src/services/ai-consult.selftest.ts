@@ -21,6 +21,8 @@ async function main() {
     trainerTypingDelayMs,
     buildTrainerOpeningGreeting,
     speciesLabelFa,
+    isTrainerGreetingMessage,
+    trainerQuestionUnknownOffline,
   } = await import('./ai-consult');
   const {
     startAiFallbackConsult,
@@ -67,6 +69,35 @@ async function main() {
     petSpecies: 'DOG',
   });
   assert(/احوال|حالت چطوره|سلام|خوبی/.test(opening), 'opening greeting is احوال‌پرسی');
+
+  assert(isTrainerGreetingMessage('سلام'), 'سلام is greeting');
+  assert(isTrainerGreetingMessage('سلام خوبی؟'), 'سلام خوبی is greeting');
+  assert(isTrainerGreetingMessage('صبح بخیر'), 'صبح بخیر is greeting');
+  assert(isTrainerGreetingMessage('hi'), 'hi is greeting');
+  assert(!isTrainerGreetingMessage('چطور بشین یاد بگیره؟'), 'sit question is not greeting');
+  assert(!trainerQuestionUnknownOffline({ kind: 'trainer', userMessage: 'سلام' }), 'سلام must not be unknown');
+  const salam = await generateAiConsultAdvice({
+    kind: 'trainer',
+    patientName: 'علی',
+    petName: 'Teddy',
+    userMessage: 'سلام',
+  });
+  assert(/سلام/.test(salam.text), 'سلام gets a سلام back');
+  assert(/خوبی|حالت|چطوره|احوال|خوش/.test(salam.text), 'سلام reply continues احوال‌پرسی');
+  assert(!/فاصلهٔ امن|جایزه برای آرومی|محرک یا موقعیت/.test(salam.text), 'سلام must not dump generic training tips');
+  const salamMid = await generateAiConsultAdvice({
+    kind: 'trainer',
+    patientName: 'علی',
+    petName: 'Teddy',
+    userMessage: 'سلام',
+    history: [
+      { role: 'user', content: 'بشین بلد نیست' },
+      { role: 'assistant', content: 'باشه بریم روی بشین کار کنیم.' },
+    ],
+  });
+  assert(/سلام/.test(salamMid.text), 'mid-chat سلام still answered');
+  assert(!/فاصلهٔ امن|محرک یا موقعیت/.test(salamMid.text), 'mid-chat سلام not unknown coaching dump');
+
   assert(/سگ/.test(opening) && !/\bDOG\b|\bdog\b/i.test(opening), 'opening greeting uses سگ not DOG');
   const openingCat = buildTrainerOpeningGreeting({
     patientName: 'سارا',
@@ -268,7 +299,7 @@ async function main() {
   assert(/قلاده|کشید|تشویقی|بند/.test(leashTip.text), 'leash topic covered');
   assert(leashTip.text.length > 280, 'leash offline advice is detailed');
 
-  const { trainerShouldGoOnline, trainerQuestionUnknownOffline } = await import('./ai-consult');
+  const { trainerShouldGoOnline } = await import('./ai-consult');
   assert(
     !trainerShouldGoOnline({ kind: 'trainer', userMessage: 'چطور بشین یاد بگیره؟' }),
     'without API key, known topic does not force online'
