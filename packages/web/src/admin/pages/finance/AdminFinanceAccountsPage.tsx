@@ -245,11 +245,11 @@ export function AdminFinanceAccountsPage() {
         <section className="admin-card" style={{ padding: 16 }}>
           <div className="admin-card-head">
             <h2>اسنپ‌پی (BNPL مشترک)</h2>
-            <span className="admin-muted">کارمزد ارائه‌دهنده + حاشیه SBG</span>
+            <span className="admin-muted">کارمزد ارائه‌دهنده + حاشیه پلتفرم</span>
           </div>
           <ul className="admin-kv">
             <li><span>کارمزد ارائه‌دهنده</span><strong>{formatNumFa(data.snappay.providerFeePercent)}٪</strong></li>
-            <li><span>حاشیه SBG</span><strong>{formatNumFa(data.snappay.sbgMarginPercent)}٪</strong></li>
+            <li><span>حاشیه پلتفرم</span><strong>{formatNumFa(data.snappay.sbgMarginPercent)}٪</strong></li>
             <li><span>جمع کارمزد</span><strong>{formatNumFa(data.snappay.providerFeePercent + data.snappay.sbgMarginPercent)}٪</strong></li>
           </ul>
           <h3 style={{ marginTop: 20, fontSize: '0.95rem' }}>تخصیص حجم ماهانه</h3>

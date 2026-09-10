@@ -82,7 +82,7 @@ const NAV_GROUPS: NavGroup[] = [
     { to: '/admin/finance', icon: TrendingUp, label: 'داشبورد مالی', perm: 'platform.read' },
     { to: '/admin/finance/accounts', icon: Landmark, label: 'حساب‌ها و داده‌های پایه', perm: 'platform.read' },
     { to: '/admin/finance/transactions', icon: ArrowLeftRight, label: 'تراکنش‌ها و دفتر', perm: 'platform.read' },
-    { to: '/admin/finance/allocation', icon: Building2, label: 'تخصیص هزینه SBG', perm: 'platform.read' },
+    { to: '/admin/finance/allocation', icon: Building2, label: 'تخصیص هزینه', perm: 'platform.read' },
     { to: '/admin/finance/pnl', icon: PieChart, label: 'سود و زیان', perm: 'platform.read' },
     { to: '/admin/finance/sales', icon: LineChart, label: 'نمودار فروش', perm: 'platform.read' },
     { to: '/admin/finance/orders', icon: ShoppingBag, label: 'درآمد سفارش', perm: 'platform.read' },

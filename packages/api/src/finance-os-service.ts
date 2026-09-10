@@ -1,5 +1,5 @@
 /**
- * Finance OS — accounts, transactions ledger, SBG cost allocation.
+ * Finance OS — accounts, transactions ledger, holding cost allocation.
  * Additive SQLite schema (no wipe). Demo seed when empty.
  */
 import type {
@@ -150,7 +150,7 @@ export function ensureFinanceOsSchema(): void {
       purchase_price INTEGER NOT NULL DEFAULT 0,
       current_value INTEGER NOT NULL DEFAULT 0,
       monthly_rate INTEGER NOT NULL DEFAULT 0,
-      ownership TEXT NOT NULL DEFAULT 'SBG',
+      ownership TEXT NOT NULL DEFAULT 'هلدینگ',
       assigned_business TEXT NOT NULL DEFAULT '',
       assigned_person TEXT NOT NULL DEFAULT ''
     );
@@ -198,6 +198,36 @@ export function ensureFinanceOsSchema(): void {
   migrateFinanceOsDescColumns();
   schemaReady = true;
   seedFinanceOsIfEmpty();
+  scrubSbgBrandingIfNeeded();
+}
+
+/** One-time, non-destructive rename of legacy SBG display strings → هلدینگ / پت‌دیت. */
+function scrubSbgBrandingIfNeeded(): void {
+  if (metaGet<boolean>('sbg_rebrand_v1', false)) return;
+  const d = db();
+  try {
+    d.prepare(`UPDATE finance_os_businesses SET name = 'هلدینگ' WHERE name = 'SBG'`).run();
+    d.prepare(`UPDATE finance_os_businesses SET code = 'HLD' WHERE code = 'SBG'`).run();
+    d.prepare(`UPDATE finance_os_accounts SET provider = 'صندوق هلدینگ' WHERE provider LIKE '%SBG%'`).run();
+    d.prepare(`UPDATE finance_os_accounts SET line = 'هلدینگ' WHERE line = 'SBG'`).run();
+    d.prepare(`UPDATE finance_os_accounts SET code = 'W-CASH-HLD' WHERE code = 'W-CASH-SBG'`).run();
+    d.prepare(`UPDATE finance_os_people SET line = 'هلدینگ' WHERE line = 'SBG'`).run();
+    d.prepare(`UPDATE finance_os_transactions SET line = 'هلدینگ' WHERE line = 'SBG'`).run();
+    d.prepare(`UPDATE finance_os_transactions SET account = 'W-CASH-HLD' WHERE account = 'W-CASH-SBG'`).run();
+    d.prepare(`UPDATE finance_os_sbg_expenses SET account = 'W-CASH-HLD' WHERE account = 'W-CASH-SBG'`).run();
+    d.prepare(`UPDATE finance_os_import_log SET account = 'W-CASH-HLD' WHERE account = 'W-CASH-SBG'`).run();
+    d.prepare(`UPDATE finance_os_equipment SET ownership = 'هلدینگ' WHERE ownership = 'SBG'`).run();
+    d.prepare(`UPDATE finance_os_equipment SET assigned_business = 'هلدینگ' WHERE assigned_business = 'SBG'`).run();
+    d.prepare(
+      `UPDATE finance_os_commitments SET desc = REPLACE(desc, 'SBG', 'هلدینگ') WHERE desc LIKE '%SBG%'`
+    ).run();
+    d.prepare(
+      `UPDATE finance_os_invoices SET number = REPLACE(number, 'INV-SBG-', 'INV-PD-') WHERE number LIKE 'INV-SBG-%'`
+    ).run();
+    metaSet('sbg_rebrand_v1', true);
+  } catch (err) {
+    console.warn('[finance-os] sbg rebrand scrub skipped:', err);
+  }
 }
 
 /** Read description column; prefer desc_text (PG-safe), fall back to legacy desc. */
@@ -299,7 +329,7 @@ function seedFinanceOsIfEmpty(): void {
     { name: 'هایپاد', code: 'HYP' },
     { name: 'آپدیت', code: 'UPD' },
     { name: 'ارتقا', code: 'ART' },
-    { name: 'SBG', code: 'SBG' },
+    { name: 'هلدینگ', code: 'HLD' },
     { name: 'مشترک هلدینگ', code: 'HLD-SHR' },
     { name: 'پت‌دیت', code: 'PD' },
   ];
@@ -384,11 +414,11 @@ function seedFinanceOsIfEmpty(): void {
       snapshots: [],
     },
     {
-      code: 'W-CASH-SBG',
+      code: 'W-CASH-HLD',
       type: 'کیف پول نقدی',
       dedication: 'اختصاصی',
-      provider: 'صندوق SBG',
-      line: 'SBG',
+      provider: 'صندوق هلدینگ',
+      line: 'هلدینگ',
       fee: 0,
       opening: 85000000,
       accountNumber: '—',
@@ -501,7 +531,7 @@ function seedFinanceOsIfEmpty(): void {
       name: 'امیر توکلی',
       role: 'حسابدار',
       dept: 'مالی',
-      line: 'SBG',
+      line: 'هلدینگ',
       sales: 0,
       team: null,
       hist: [],
@@ -637,13 +667,13 @@ function seedFinanceOsIfEmpty(): void {
       raw: {},
     },
     {
-      account: 'W-CASH-SBG',
+      account: 'W-CASH-HLD',
       date: '2026-08-05',
       amount: -32000000,
       desc: 'حقوق امیر توکلی - مرداد',
       status: 'classified',
       note: '',
-      line: 'SBG',
+      line: 'هلدینگ',
       expenseType: 'فاکتور هولدینگ',
       category: 'PEOPLE ← حقوق',
       relatedPerson: 'امیر توکلی',
@@ -748,7 +778,7 @@ function seedFinanceOsIfEmpty(): void {
     65000000,
     52000000,
     1500000,
-    'SBG',
+    'هلدینگ',
     'هایپاد',
     'سعید'
   );
@@ -767,8 +797,8 @@ function seedFinanceOsIfEmpty(): void {
     18000000,
     12000000,
     400000,
-    'SBG',
-    'SBG',
+    'هلدینگ',
+    'هلدینگ',
     'امیر توکلی'
   );
 
@@ -801,7 +831,7 @@ function seedFinanceOsIfEmpty(): void {
       desc: 'حقوق امیر توکلی - مرداد',
       category: 'PEOPLE ← حقوق',
       person: 'امیر توکلی',
-      account: 'W-CASH-SBG',
+      account: 'W-CASH-HLD',
       allocated: 1,
       splits: [
         { business: 'هایپاد', amount: 12800000, basis: 'زمان' },
@@ -816,7 +846,7 @@ function seedFinanceOsIfEmpty(): void {
       desc: 'بیمه امیر توکلی - مرداد',
       category: 'PEOPLE ← بیمه',
       person: 'امیر توکلی',
-      account: 'W-CASH-SBG',
+      account: 'W-CASH-HLD',
       allocated: 0,
       splits: [],
     },
@@ -826,7 +856,7 @@ function seedFinanceOsIfEmpty(): void {
       desc: 'اجاره دفتر مرکزی - مرداد',
       category: 'OVERHEAD ← اجاره و امکانات دفتر ← اجاره دفتر',
       person: '',
-      account: 'W-CASH-SBG',
+      account: 'W-CASH-HLD',
       allocated: 0,
       splits: [],
     },
@@ -846,13 +876,13 @@ function seedFinanceOsIfEmpty(): void {
   d.prepare(`
     INSERT INTO finance_os_commitments (desc_text, category, amount, due_date, status)
     VALUES (?,?,?,?,?)
-  `).run('مالیات بر درآمد سالانه SBG', 'مالیات بر درآمد', 180000000, '2027-03-20', 'pending');
+  `).run('مالیات بر درآمد سالانه هلدینگ', 'مالیات بر درآمد', 180000000, '2027-03-20', 'pending');
 
   d.prepare(`
     INSERT INTO finance_os_invoices (number, business, jy, jm, total, status, lines_json, created_at)
     VALUES (?,?,?,?,?,?,?,?)
   `).run(
-    'INV-SBG-1405-05-01',
+    'INV-PD-1405-05-01',
     'هایپاد',
     1405,
     5,
@@ -1422,7 +1452,7 @@ export function getFinanceOsAllocationBundle(): FinanceOsAllocationBundle {
         purchasePrice: Number(r.purchase_price) || 0,
         currentValue: Number(r.current_value) || 0,
         monthlyRate: Number(r.monthly_rate) || 0,
-        ownership: String(r.ownership || 'SBG'),
+        ownership: String(r.ownership || 'هلدینگ'),
         assignedBusiness: String(r.assigned_business || ''),
         assignedPerson: String(r.assigned_person || ''),
       })
@@ -1514,7 +1544,7 @@ export function issueFinanceOsInvoice(input: {
   const total = lines.reduce((s, l) => s + l.amount, 0);
   const seq =
     (db().prepare('SELECT COUNT(*) AS c FROM finance_os_invoices').get() as { c: number }).c + 1;
-  const number = `INV-SBG-${input.jy}-${String(input.jm).padStart(2, '0')}-${String(seq).padStart(2, '0')}`;
+  const number = `INV-PD-${input.jy}-${String(input.jm).padStart(2, '0')}-${String(seq).padStart(2, '0')}`;
   const createdAt = nowIso();
   const info = db()
     .prepare(
