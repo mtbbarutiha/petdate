@@ -18,6 +18,7 @@ import {
   type SalesGoal,
   type SalesItem,
   type SalesItemKind,
+  type SalesKpiRing,
   type SalesMessage,
   type SalesNavCounts,
   type SalesOffer,
@@ -877,14 +878,71 @@ export function getSalesDashboard(actor: AdminAuthActor): SalesDashboard {
   const wonToday = won.filter((i) => isToday(i.lastActivity));
   const activeLeads = items.filter((i) => i.kind === 'lead' && typeof i.stage === 'number' && i.stage < 7);
   const activeUpgrades = items.filter((i) => i.kind === 'upgrade' && typeof i.stage === 'number' && i.stage < 7);
+
+  const followedLeadIds = new Set<number>();
+  for (const c of callsToday) {
+    if (c.refKind === 'lead') followedLeadIds.add(c.refId);
+  }
+  for (const f of followups) {
+    if (f.refKind === 'lead' && f.refId != null && isToday(f.at)) followedLeadIds.add(f.refId);
+  }
+  const followedLeadsToday = followedLeadIds.size;
+
+  const monthKey = new Date().toISOString().slice(0, 7);
+  const wonThisMonth = won.filter((i) => String(i.lastActivity || '').startsWith(monthKey));
+  const leadsTouchedMonth = items.filter(
+    (i) => i.kind === 'lead' && String(i.lastActivity || '').startsWith(monthKey)
+  ).length;
+  const conversionRateMonth =
+    leadsTouchedMonth > 0 ? Math.round((wonThisMonth.length / leadsTouchedMonth) * 1000) / 10 : 0;
+
+  const goals = listSalesGoals().filter((g) => g.active);
+  const metrics = goals[0]?.metrics || {};
+  const workingDays = 22;
+  const dailyRevenueTarget = Math.max(1, Math.round(Number(metrics.revenue || 50_000_000) / workingDays));
+  const dailySalesCountTarget = Math.max(1, Math.round(Number(metrics.salesCount || 20) / workingDays));
+  const dailyCallsTarget = Math.max(1, Math.round(Number(metrics.calls || 100) / workingDays));
+  const callMinutesTarget = Math.max(30, dailyCallsTarget * 4);
+  const followedLeadsTarget = Math.max(5, Math.round(dailyCallsTarget * 0.6));
+  const aovTarget = Math.max(100_000, Number(metrics.aov || 900_000));
+  const conversionTarget = Math.max(5, Number(metrics.conversionPct || 25));
+  const commissionRatePct = Math.max(0, Number(metrics.commissionPct || 2));
+  const salesTodayValue = wonToday.reduce((s, i) => s + i.value, 0);
+  const aov = won.length ? Math.round(won.reduce((s, i) => s + i.value, 0) / won.length) : 0;
+  const callMinutesToday = callsToday.reduce((s, c) => s + c.talk, 0);
+
+  const ring = (
+    key: string,
+    label: string,
+    value: number,
+    target: number,
+    unit: string
+  ): SalesKpiRing => ({
+    key,
+    label,
+    value,
+    target,
+    unit,
+    pct: target > 0 ? Math.round((value / target) * 1000) / 10 : 0,
+  });
+
+  const kpiRings = [
+    ring('followedLeads', 'لیدهای پیگیری‌شده روزانه', followedLeadsToday, followedLeadsTarget, 'نفر'),
+    ring('talkMinutes', 'مدت مکالمه روزانه', callMinutesToday, callMinutesTarget, 'دقیقه'),
+    ring('conversion', 'نرخ تبدیل ماهانه', conversionRateMonth, conversionTarget, '٪'),
+    ring('salesValue', 'مبلغ فروش روزانه', salesTodayValue, dailyRevenueTarget, 'تومان'),
+    ring('aov', 'میانگین ارزش سفارش', aov, aovTarget, 'تومان'),
+    ring('salesCount', 'حداقل تعداد فروش روزانه', wonToday.length, dailySalesCountTarget, 'فروش'),
+  ];
+
   return {
     greetingName: actorLabel(actor),
     callsToday: callsToday.length,
-    callMinutesToday: callsToday.reduce((s, c) => s + c.talk, 0),
+    callMinutesToday,
     overdueFollowups: followups.filter((f) => new Date(f.at).getTime() < Date.now()).length,
     salesTodayCount: wonToday.length,
-    salesTodayValue: wonToday.reduce((s, i) => s + i.value, 0),
-    aov: won.length ? Math.round(won.reduce((s, i) => s + i.value, 0) / won.length) : 0,
+    salesTodayValue,
+    aov,
     activeLeads: activeLeads.length, activeUpgrades: activeUpgrades.length,
     totalWonValue: won.reduce((s, i) => s + i.value, 0),
     pendingFinance: payments.filter((p) => p.status === 'در حال بررسی مالی').length,
@@ -892,6 +950,12 @@ export function getSalesDashboard(actor: AdminAuthActor): SalesDashboard {
     nextActions: [...activeLeads].sort((a, b) => b.score - a.score).slice(0, 8),
     myFollowups: followups.slice(0, 20),
     stageCounts: Array.from({ length: 8 }, (_, stage) => ({ stage: String(stage), count: items.filter((i) => i.stage === stage).length })),
+    kpiRings,
+    followedLeadsToday,
+    conversionRateMonth,
+    estimatedCommission: Math.round(salesTodayValue * (commissionRatePct / 100)),
+    commissionRatePct,
+    productLine: 'Pet Date',
   };
 }
 

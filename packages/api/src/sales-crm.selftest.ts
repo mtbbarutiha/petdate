@@ -57,6 +57,10 @@ async function main() {
 
   const dash = sales.getSalesDashboard(admin!);
   assert(typeof dash.activeLeads === 'number', 'dashboard ok');
+  assert(Array.isArray(dash.kpiRings) && dash.kpiRings.length === 6, 'kpi rings');
+  assert(dash.productLine === 'Pet Date', 'product line');
+  assert(typeof dash.estimatedCommission === 'number', 'commission');
+  assert(typeof dash.conversionRateMonth === 'number', 'conversion');
 
   const counts = sales.getSalesNavCounts();
   assert(typeof counts.leads === 'number', 'nav counts');
