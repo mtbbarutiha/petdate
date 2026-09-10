@@ -702,7 +702,26 @@ export function listSalesTickets(opts?: { cat?: string; status?: string }): Sale
   if (opts?.cat) { where.push('cat = ?'); params.push(opts.cat); }
   if (opts?.status) { where.push('status = ?'); params.push(opts.status); }
   const sql = `SELECT * FROM sales_tickets ${where.length ? `WHERE ${where.join(' AND ')}` : ''} ORDER BY id DESC LIMIT 200`;
-  return (db().prepare(sql).all(...params) as Array<Record<string, unknown>>).map((r) => getTicket(Number(r.id))!);
+  return (db().prepare(sql).all(...params) as Array<Record<string, unknown>>).map((r) => {
+    const t = getTicket(Number(r.id))!;
+    // Soft-heal orphan FKs so admin pages never 500 on missing joins
+    if (t.customerId) {
+      const ok = db().prepare('SELECT id FROM sales_customers WHERE id = ?').get(t.customerId);
+      if (!ok) t.customerId = null;
+    }
+    if (t.refId && t.refKind) {
+      const ok = db().prepare('SELECT id FROM sales_items WHERE id = ? AND kind = ?').get(t.refId, t.refKind);
+      if (!ok) {
+        t.refId = null;
+        t.refKind = null;
+      }
+    }
+    if (t.paymentId) {
+      const ok = db().prepare('SELECT id FROM sales_payments WHERE id = ?').get(t.paymentId);
+      if (!ok) t.paymentId = null;
+    }
+    return t;
+  });
 }
 
 export function createSalesTicket(input: {

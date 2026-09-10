@@ -12,6 +12,7 @@ import {
   createReferral,
   createSurvey,
   createTicket,
+  escalateTicket,
   findOrCreateCustomerByMobile,
   getCrmDashboard,
   getCrmReportSummary,
@@ -19,6 +20,7 @@ import {
   getCustomerDetail,
   getInteraction,
   getTicket,
+  getTicketingOverview,
   isCrmAdmin,
   listAuditLogs,
   listComplaints,
@@ -35,9 +37,12 @@ import {
   listTasks,
   listTicketActivities,
   listTickets,
+  listTicketingAgents,
   patchTicket,
+  repairOrphanTicketRelations,
   respondReferral,
   runSlaWatcher,
+  runTicketMacro,
   sendSmsPattern,
   sendSmsPatternBulk,
   simulateInboundCall,
@@ -221,13 +226,59 @@ crmAdminRouter.get('/cases', (req, res) => {
   res.json({ tab: 'tickets', tickets: listTickets({ limit: 100 }) });
 });
 
+crmAdminRouter.get('/ticketing', (req, res) => {
+  try {
+    const repaired = repairOrphanTicketRelations();
+    res.json({ ...getTicketingOverview(actor(req)), relations: repaired });
+  } catch (err) {
+    sendErr(res, err);
+  }
+});
+
+crmAdminRouter.get('/ticketing/agents', (_req, res) => {
+  res.json({ agents: listTicketingAgents() });
+});
+
+crmAdminRouter.get('/tickets', (req, res) => {
+  res.json({
+    tickets: listTickets({
+      status: typeof req.query.status === 'string' ? req.query.status : undefined,
+      priority: typeof req.query.priority === 'string' ? req.query.priority : undefined,
+      agentId: typeof req.query.agentId === 'string' ? req.query.agentId : undefined,
+      unassignedOnly: req.query.unassigned === '1',
+      q: typeof req.query.q === 'string' ? req.query.q : undefined,
+      limit: 250,
+    }),
+  });
+});
+
 crmAdminRouter.get('/tickets/:id', (req, res) => {
   const ticket = getTicket(Number(req.params.id));
   if (!ticket) {
     res.status(404).json({ error: 'یافت نشد' });
     return;
   }
-  res.json({ ticket, activities: listTicketActivities(ticket.id) });
+  let customer = null as ReturnType<typeof getCustomerDetail>;
+  try {
+    customer = ticket.customerId ? getCustomerDetail(ticket.customerId) : null;
+  } catch {
+    customer = null;
+  }
+  const relatedTickets = ticket.customerId
+    ? listTickets({ limit: 50 }).filter((t) => t.customerId === ticket.customerId && t.id !== ticket.id).slice(0, 8)
+    : [];
+  const followups = listFollowups({ limit: 100 }).filter((f) => f.ticketId === ticket.id);
+  const referrals = listReferrals(100).filter((r) => r.ticketId === ticket.id);
+  res.json({
+    ticket,
+    activities: listTicketActivities(ticket.id),
+    customer: customer?.customer || null,
+    orders: customer?.orders || [],
+    relatedTickets,
+    followups,
+    referrals,
+    orphanCustomer: Boolean(ticket.customerId && !customer),
+  });
 });
 
 crmAdminRouter.post('/tickets', requirePermission('crm.write'), (req, res) => {
@@ -241,6 +292,27 @@ crmAdminRouter.post('/tickets', requirePermission('crm.write'), (req, res) => {
 crmAdminRouter.patch('/tickets/:id', requirePermission('crm.write'), (req, res) => {
   try {
     res.json({ ticket: patchTicket(Number(req.params.id), req.body || {}, actor(req)) });
+  } catch (err) {
+    sendErr(res, err);
+  }
+});
+
+crmAdminRouter.post('/tickets/:id/escalate', requirePermission('crm.write'), (req, res) => {
+  try {
+    res.json(escalateTicket(Number(req.params.id), req.body || {}, actor(req)));
+  } catch (err) {
+    sendErr(res, err);
+  }
+});
+
+crmAdminRouter.post('/tickets/:id/macro', requirePermission('crm.write'), (req, res) => {
+  try {
+    const key = String(req.body?.key || '') as 'refund' | 'vip';
+    if (key !== 'refund' && key !== 'vip') {
+      res.status(422).json({ error: 'ماکرو نامعتبر' });
+      return;
+    }
+    res.json({ ticket: runTicketMacro(Number(req.params.id), key, actor(req)) });
   } catch (err) {
     sendErr(res, err);
   }
@@ -285,7 +357,11 @@ crmAdminRouter.post('/referrals/:id/respond', requirePermission('crm.write'), (r
     res.json({
       referral: respondReferral(
         Number(req.params.id),
-        { approve: Boolean(req.body?.approve), response: req.body?.response },
+        {
+          approve: req.body?.approve !== false && req.body?.approve !== 'false',
+          response: req.body?.response,
+          status: typeof req.body?.status === 'string' ? req.body.status : undefined,
+        },
         actor(req)
       ),
     });

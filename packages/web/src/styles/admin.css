@@ -3451,3 +3451,137 @@ body:has(.admin-app) {
   padding: 8px 10px; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
 }
 .admin-app .hr-chart-tooltip-label { font-size: 12px; color: var(--admin-muted); margin-bottom: 2px; }
+
+/* —— Ticketing module (prototype parity, Pepito light RTL) —— */
+.admin-app .tk-module { position: relative; }
+.admin-app .tk-toast {
+  position: fixed; top: 16px; left: 16px; z-index: 80;
+  background: var(--admin-mint, #15cca0); color: #fff; border-radius: 10px;
+  padding: 10px 14px; box-shadow: 0 10px 28px rgba(15,23,42,.12); font-size: 13px;
+}
+.admin-app .tk-shell { display: flex; gap: 16px; align-items: flex-start; }
+.admin-app .tk-side {
+  width: 200px; flex: 0 0 200px; background: #fff; border: 1px solid var(--admin-border);
+  border-radius: 14px; padding: 12px 10px; position: sticky; top: 12px;
+  display: flex; flex-direction: column; gap: 4px;
+}
+.admin-app .tk-brand { padding: 4px 8px 12px; line-height: 1.5; }
+.admin-app .tk-brand b { display: block; font-size: 15px; font-weight: 800; color: var(--admin-ink); }
+.admin-app .tk-brand span { color: var(--admin-muted); font-size: 11px; }
+.admin-app .tk-nav {
+  display: flex; align-items: center; gap: 8px; width: 100%; text-align: right;
+  border: 1px solid transparent; background: transparent; border-radius: 10px;
+  padding: 8px 10px; color: var(--admin-muted); cursor: pointer; font: inherit; font-size: 13px;
+}
+.admin-app .tk-nav:hover { background: #f6f7fb; color: var(--admin-ink); }
+.admin-app .tk-nav.is-on {
+  background: #f0faf7; color: var(--admin-ink); border-color: #cdeee4;
+  box-shadow: inset -3px 0 0 var(--admin-mint, #15cca0);
+}
+.admin-app .tk-cnt {
+  margin-inline-start: auto; background: #eef1f6; border-radius: 999px;
+  padding: 1px 7px; font-size: 11px; color: var(--admin-muted);
+}
+.admin-app .tk-cnt.is-hot { background: #fee2e2; color: #b91c1c; }
+.admin-app .tk-new { width: 100%; justify-content: center; margin-top: 10px; }
+.admin-app .tk-main { flex: 1; min-width: 0; }
+.admin-app .tk-kpis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+.admin-app .tk-split { display: grid; grid-template-columns: 1.6fr 1fr; gap: 12px; margin-top: 12px; }
+.admin-app .tk-sla-big { font-size: 34px; font-weight: 900; margin: 8px 0; }
+.admin-app .tk-bar {
+  height: 8px; border-radius: 999px; background: #e8ecf3; overflow: hidden; display: block;
+}
+.admin-app .tk-bar i {
+  display: block; height: 100%; background: linear-gradient(90deg, #15cca0, #0ba5f2); border-radius: 999px;
+}
+.admin-app .tk-subhead { display: block; margin-top: 16px; margin-bottom: 8px; font-size: 12px; }
+.admin-app .tk-hbar {
+  display: grid; grid-template-columns: 120px 1fr 36px; gap: 8px; align-items: center;
+  margin-bottom: 7px; font-size: 12px; color: var(--admin-muted);
+}
+.admin-app .tk-hbar em { font-style: normal; color: var(--admin-ink); text-align: left; }
+.admin-app .tk-legend { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 8px; }
+.admin-app .tk-legend li { display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
+.admin-app .tk-tag {
+  display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px;
+  font-size: 11px; border: 1px solid; white-space: nowrap; margin-inline-start: 4px;
+}
+.admin-app .tk-tag--ok { color: #0f9f7a; border-color: #b7ebd9; background: #e8faf3; }
+.admin-app .tk-tag--warn { color: #c47a00; border-color: #f3d9a6; background: #fff7e8; }
+.admin-app .tk-tag--error { color: #c62828; border-color: #f3c0c0; background: #fdecec; }
+.admin-app .tk-tag--info { color: #0369a1; border-color: #b6daf3; background: #eaf5fd; }
+.admin-app .tk-tag--muted { color: var(--admin-muted); border-color: var(--admin-border); background: #f7f8fb; }
+.admin-app .tk-filters {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 12px;
+}
+.admin-app .tk-filters label { display: grid; gap: 4px; font-size: 11px; color: var(--admin-muted); }
+.admin-app .tk-filters input, .admin-app .tk-filters select,
+.admin-app .tk-field input, .admin-app .tk-field select, .admin-app .tk-field textarea {
+  width: 100%; border: 1px solid var(--admin-border); border-radius: 10px; padding: 8px 10px;
+  font: inherit; background: #fff; color: var(--admin-ink);
+}
+.admin-app .tk-field { display: grid; gap: 4px; font-size: 11px; color: var(--admin-muted); margin-bottom: 10px; }
+.admin-app .tk-f3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.admin-app .tk-mono { font-family: ui-monospace, Menlo, monospace; font-size: 11px; color: var(--admin-muted); }
+.admin-app .tk-row { cursor: pointer; }
+.admin-app .tk-row:hover td { background: #f7f9fc; }
+.admin-app .tk-kanban {
+  display: grid; grid-template-columns: repeat(6, minmax(180px, 1fr)); gap: 10px; overflow-x: auto;
+}
+.admin-app .tk-kcol {
+  background: #f7f8fb; border: 1px solid var(--admin-border); border-radius: 12px; padding: 9px; min-height: 140px;
+}
+.admin-app .tk-kcol h4 {
+  font-size: 11.5px; color: var(--admin-muted); margin: 2px 4px 8px; display: flex; justify-content: space-between;
+}
+.admin-app .tk-kcard {
+  background: #fff; border: 1px solid var(--admin-border); border-radius: 10px; padding: 8px 9px;
+  margin-bottom: 7px; cursor: pointer; font-size: 12px;
+}
+.admin-app .tk-kcard:hover { border-color: #c5ccd8; }
+.admin-app .tk-kcard-top, .admin-app .tk-kcard-bot {
+  display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-bottom: 4px;
+}
+.admin-app .tk-kcard-bot { margin-top: 6px; margin-bottom: 0; }
+.admin-app .tk-empty { text-align: center; padding: 14px 0; font-size: 12px; }
+.admin-app .tk-tabs { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 12px; }
+.admin-app .tk-link { cursor: pointer; color: #0ba5f2; }
+.admin-app .tk-detail-head { align-items: flex-start; }
+.admin-app .tk-detail-meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 6px; }
+.admin-app .tk-detail-sla { text-align: left; }
+.admin-app .tk-actions { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 12px; }
+.admin-app .tk-body { margin-top: 8px; line-height: 1.9; font-size: 13px; }
+.admin-app .tk-timeline { margin-top: 10px; }
+.admin-app .tk-msg {
+  border: 1px solid var(--admin-border); border-radius: 11px; padding: 10px 12px; margin-bottom: 8px; font-size: 13px;
+}
+.admin-app .tk-msg--public { background: #eef7fd; border-color: #c5e2f5; }
+.admin-app .tk-msg--internal { background: #fff8eb; border-color: #f0d9a8; }
+.admin-app .tk-msg--system { background: #f7f8fb; }
+.admin-app .tk-msg-h {
+  display: flex; justify-content: space-between; gap: 8px; margin-bottom: 4px;
+  font-size: 11px; color: var(--admin-muted);
+}
+.admin-app .tk-composer { margin-top: 12px; border-top: 1px solid var(--admin-border); padding-top: 12px; }
+.admin-app .tk-composer textarea { width: 100%; margin-bottom: 8px; }
+.admin-app .tk-mini { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--admin-border); font-size: 12.5px; }
+.admin-app .tk-warn {
+  background: #fff3e0; border: 1px solid #ffcc80; color: #e65100; border-radius: 10px;
+  padding: 10px 12px; margin-bottom: 12px; font-size: 13px;
+}
+.admin-app .tk-tax-row { margin-bottom: 10px; }
+.admin-app .tk-tax-row b { display: block; font-size: 13px; }
+.admin-app .tk-matches { display: grid; gap: 6px; margin-bottom: 10px; }
+.admin-app .tk-opt {
+  border: 1px solid var(--admin-border); background: #f7f8fb; border-radius: 9px; padding: 8px 10px;
+  text-align: right; cursor: pointer; font: inherit; font-size: 12.5px;
+}
+.admin-app .tk-opt:hover { border-color: #15cca0; background: #e8faf3; }
+@media (max-width: 1100px) {
+  .admin-app .tk-kpis { grid-template-columns: repeat(3, 1fr); }
+  .admin-app .tk-split, .admin-app .tk-f3, .admin-app .tk-filters { grid-template-columns: 1fr; }
+  .admin-app .tk-shell { flex-direction: column; }
+  .admin-app .tk-side { width: 100%; flex: none; position: static; flex-direction: row; flex-wrap: wrap; }
+  .admin-app .tk-brand { display: none; }
+  .admin-app .tk-kanban { grid-template-columns: repeat(6, 190px); }
+}

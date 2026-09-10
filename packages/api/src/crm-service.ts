@@ -8,11 +8,16 @@ import {
   CRM_SCORECARD,
   CRM_SLA_POLICY,
   CRM_SURVEY_QUESTIONS,
+  CRM_TICKET_OPEN_STATUSES,
+  CRM_TICKET_QUEUES,
+  crmFirstResponseDueIso,
   crmInboxBorderColor,
   crmKpiAchievement,
   crmKpiStanding,
   crmQaTotal,
+  crmQueueOf,
   crmSlaDueIso,
+  crmSlaLabel,
   crmSlaState,
   crmSurveyRating,
   formatIranMobileDisplay,
@@ -38,10 +43,12 @@ import {
   type CrmTask,
   type CrmTicket,
   type CrmTicketActivity,
+  type CrmTicketingAgent,
+  type CrmTicketingOverview,
 } from '@petdate/shared';
 import { getDb } from './db';
 import type { AdminAuthActor } from './hr-service';
-import { actorHasPermission } from './hr-service';
+import { actorHasPermission, listEmployees } from './hr-service';
 import { candooSendWithSrcFallback, isCandooConfigured } from './services/candoo';
 
 function db() {
@@ -324,7 +331,41 @@ export function ensureCrmSchema(): void {
     CREATE INDEX IF NOT EXISTS idx_crm_audit_at ON crm_audit_logs(at, category);
     CREATE INDEX IF NOT EXISTS idx_crm_followups_due ON crm_followups(status, due_at);
   `);
+  migrateCrmTicketColumns();
   seedCrmDefaults();
+}
+
+/** Additive column migrations — never drop/wipe. */
+function migrateCrmTicketColumns(): void {
+  const d = db();
+  const ticketCols = new Set(
+    (d.prepare(`PRAGMA table_info(crm_tickets)`).all() as Array<{ name: string }>).map((c) => c.name)
+  );
+  const addTicket = (name: string, ddl: string) => {
+    if (!ticketCols.has(name)) d.exec(`ALTER TABLE crm_tickets ADD COLUMN ${ddl}`);
+  };
+  addTicket('channel', `channel TEXT NOT NULL DEFAULT 'manual'`);
+  addTicket('queue_id', `queue_id TEXT NOT NULL DEFAULT 'q_support'`);
+  addTicket('team_id', `team_id TEXT`);
+  addTicket('tags_json', `tags_json TEXT NOT NULL DEFAULT '[]'`);
+  addTicket('pending_reason', `pending_reason TEXT`);
+  addTicket('first_response_due_at', `first_response_due_at TEXT`);
+
+  const actCols = new Set(
+    (d.prepare(`PRAGMA table_info(crm_ticket_activities)`).all() as Array<{ name: string }>).map((c) => c.name)
+  );
+  if (!actCols.has('kind')) d.exec(`ALTER TABLE crm_ticket_activities ADD COLUMN kind TEXT NOT NULL DEFAULT 'note'`);
+  if (!actCols.has('visibility')) {
+    d.exec(`ALTER TABLE crm_ticket_activities ADD COLUMN visibility TEXT NOT NULL DEFAULT 'internal'`);
+  }
+  if (!actCols.has('meta_json')) d.exec(`ALTER TABLE crm_ticket_activities ADD COLUMN meta_json TEXT NOT NULL DEFAULT '{}'`);
+  if (!actCols.has('user_name')) d.exec(`ALTER TABLE crm_ticket_activities ADD COLUMN user_name TEXT NOT NULL DEFAULT ''`);
+
+  // Backfill first_response_due_at for rows that only have sla_due
+  d.exec(`
+    UPDATE crm_tickets SET first_response_due_at = created_at
+    WHERE first_response_due_at IS NULL OR first_response_due_at = ''
+  `);
 }
 
 function seedCrmDefaults(): void {
@@ -515,27 +556,43 @@ function mapInteraction(row: Record<string, unknown>): CrmInteraction {
 function enrichTicket(row: Record<string, unknown>): CrmTicket {
   const id = Number(row.id);
   const status = String(row.status || 'جدید');
-  const slaDue = String(row.sla_due);
+  const priority = String(row.priority || 'متوسط');
+  const createdAt = String(row.created_at);
+  const slaDue = String(row.sla_due || crmSlaDueIso(priority, createdAt));
+  const firstResponseDueAt =
+    row.first_response_due_at != null && String(row.first_response_due_at)
+      ? String(row.first_response_due_at)
+      : crmFirstResponseDueIso(priority, createdAt);
   const slaState = crmSlaState({ status, slaDue });
   const unassigned = !row.agent_id;
+  const customerId = Number(row.customer_id || 0);
   return {
     id,
     publicId: makeCrmUuid('TK', id),
-    customerId: Number(row.customer_id),
+    customerId: Number.isFinite(customerId) ? customerId : 0,
     customerName: row.customer_name != null ? String(row.customer_name) : undefined,
+    customerMobile: row.customer_mobile != null ? String(row.customer_mobile) : undefined,
+    customerLevel: row.customer_level != null ? String(row.customer_level) : undefined,
+    customerEmail: row.customer_email != null ? String(row.customer_email) : null,
     interactionId: row.interaction_id != null ? Number(row.interaction_id) : null,
     title: String(row.title || ''),
     description: String(row.description || ''),
     type: String(row.type || ''),
     category: String(row.category || ''),
     subCategory: String(row.sub_category || ''),
-    priority: String(row.priority || 'متوسط'),
+    channel: String(row.channel || 'manual'),
+    queueId: String(row.queue_id || 'q_support'),
+    teamId: row.team_id != null && String(row.team_id) ? String(row.team_id) : null,
+    tags: parseJson<string[]>(row.tags_json, []),
+    pendingReason: row.pending_reason != null && String(row.pending_reason) ? String(row.pending_reason) : null,
+    priority,
     severity: String(row.severity || ''),
     status,
-    agentId: row.agent_id != null ? String(row.agent_id) : null,
+    agentId: row.agent_id != null && String(row.agent_id) ? String(row.agent_id) : null,
     agentName: row.agent_name != null ? String(row.agent_name) : null,
     supervisorId: String(row.supervisor_id || ''),
     firstResponseAt: row.first_response_at != null ? String(row.first_response_at) : null,
+    firstResponseDueAt,
     slaDue,
     resolvedAt: row.resolved_at != null ? String(row.resolved_at) : null,
     closedAt: row.closed_at != null ? String(row.closed_at) : null,
@@ -544,9 +601,10 @@ function enrichTicket(row: Record<string, unknown>): CrmTicket {
     resolutionCode: row.resolution_code != null ? String(row.resolution_code) : null,
     resolutionNote: row.resolution_note != null ? String(row.resolution_note) : null,
     nextAction: String(row.next_action || ''),
-    createdAt: String(row.created_at),
-    updatedAt: String(row.updated_at),
+    createdAt,
+    updatedAt: String(row.updated_at || createdAt),
     slaState,
+    slaLabel: crmSlaLabel({ status, slaDue }),
     borderColor: crmInboxBorderColor(slaState, { unassigned }),
   };
 }
@@ -792,9 +850,15 @@ export function getCustomerDetail(id: number): {
     >
   ).map(mapInteraction);
   const tickets = (
-    db().prepare('SELECT * FROM crm_tickets WHERE customer_id = ? ORDER BY created_at DESC').all(id) as Array<
-      Record<string, unknown>
-    >
+    db()
+      .prepare(
+        `SELECT t.*, trim(c.first_name || ' ' || c.last_name) as customer_name,
+                c.mobile as customer_mobile, c.level as customer_level, c.email as customer_email
+         FROM crm_tickets t
+         LEFT JOIN crm_customers c ON c.id = t.customer_id
+         WHERE t.customer_id = ? ORDER BY t.created_at DESC`
+      )
+      .all(id) as Array<Record<string, unknown>>
   ).map(enrichTicket);
   const followups = (
     db().prepare('SELECT * FROM crm_followups WHERE customer_id = ? ORDER BY due_at DESC').all(id) as Array<
@@ -1042,6 +1106,10 @@ export function createTicket(
     subCategory?: string;
     priority?: string;
     severity?: string;
+    channel?: string;
+    queueId?: string;
+    teamId?: string | null;
+    tags?: string[];
     agentId?: string | null;
     agentName?: string | null;
     supervisorId?: string;
@@ -1050,37 +1118,67 @@ export function createTicket(
   actor: AdminAuthActor
 ): CrmTicket {
   ensureCrmSchema();
+  const customerId = Number(input.customerId);
+  if (!Number.isFinite(customerId) || customerId <= 0) {
+    const err = new Error('مشتری نامعتبر است') as Error & { status?: number };
+    err.status = 422;
+    throw err;
+  }
+  const customer = getCustomer(customerId);
+  if (!customer) {
+    const err = new Error('مشتری یافت نشد — رابطه تیکت↔مشتری شکسته است') as Error & { status?: number };
+    err.status = 422;
+    throw err;
+  }
   const priority = String(input.priority || 'متوسط');
   const createdAt = nowIso();
   const slaDue = crmSlaDueIso(priority, createdAt);
+  const firstDue = crmFirstResponseDueIso(priority, createdAt);
+  const queueId = String(input.queueId || 'q_support');
+  const queue = crmQueueOf(queueId);
+  const teamId = input.teamId != null ? input.teamId : queue?.team || null;
   const info = db()
     .prepare(
       `INSERT INTO crm_tickets (
         customer_id, interaction_id, title, description, type, category, sub_category,
-        priority, severity, status, agent_id, agent_name, supervisor_id, sla_due, next_action, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        priority, severity, status, agent_id, agent_name, supervisor_id, sla_due,
+        next_action, channel, queue_id, team_id, tags_json, first_response_due_at,
+        created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
-      input.customerId,
+      customerId,
       input.interactionId ?? null,
       String(input.title || '').trim() || 'تیکت',
       String(input.description || ''),
-      String(input.type || 'عمومی'),
+      String(input.type || 'پشتیبانی'),
       String(input.category || ''),
       String(input.subCategory || ''),
       priority,
-      String(input.severity || priority),
+      String(input.severity || 'متوسط S3'),
       input.agentId ? 'تخصیص‌یافته' : 'جدید',
       input.agentId ?? null,
       input.agentName ?? null,
       String(input.supervisorId || 'crm_lead'),
       slaDue,
       String(input.nextAction || ''),
+      String(input.channel || 'manual'),
+      queueId,
+      teamId,
+      JSON.stringify(Array.isArray(input.tags) ? input.tags : []),
+      firstDue,
       createdAt,
       createdAt
     );
   const ticket = getTicket(Number(info.lastInsertRowid))!;
-  dispatchSmsEvent('ticket_created', { customerId: input.customerId, ticketPublicId: ticket.publicId }, actor);
+  addTicketActivity(ticket.id, {
+    userId: actorId(actor),
+    userName: actorLabel(actor),
+    kind: 'created',
+    visibility: 'internal',
+    text: `تیکت از طریق کانال ایجاد شد`,
+  });
+  dispatchSmsEvent('ticket_created', { customerId, ticketPublicId: ticket.publicId }, actor);
   audit({
     userId: actorId(actor),
     category: 'ticket',
@@ -1088,40 +1186,86 @@ export function createTicket(
     recordUuid: ticket.publicId,
     action: 'create',
   });
-  return ticket;
+  return getTicket(ticket.id)!;
 }
+
+const TICKET_SELECT = `SELECT t.*,
+  CASE WHEN c.id IS NULL THEN NULL ELSE trim(c.first_name || ' ' || c.last_name) END as customer_name,
+  c.mobile as customer_mobile, c.level as customer_level, c.email as customer_email
+  FROM crm_tickets t LEFT JOIN crm_customers c ON c.id = t.customer_id`;
 
 export function getTicket(id: number): CrmTicket | null {
   ensureCrmSchema();
   const row = db()
-    .prepare(
-      `SELECT t.*, trim(c.first_name || ' ' || c.last_name) as customer_name
-       FROM crm_tickets t LEFT JOIN crm_customers c ON c.id = t.customer_id WHERE t.id = ?`
-    )
+    .prepare(`${TICKET_SELECT} WHERE t.id = ?`)
     .get(id) as Record<string, unknown> | undefined;
   return row ? enrichTicket(row) : null;
 }
 
-export function listTickets(opts?: { status?: string; unassignedOnly?: boolean; limit?: number }): CrmTicket[] {
+export function listTickets(opts?: {
+  status?: string;
+  priority?: string;
+  agentId?: string;
+  unassignedOnly?: boolean;
+  q?: string;
+  limit?: number;
+}): CrmTicket[] {
   ensureCrmSchema();
-  const limit = Math.min(200, Math.max(1, opts?.limit || 50));
+  const limit = Math.min(300, Math.max(1, opts?.limit || 100));
   const clauses: string[] = [];
   const params: unknown[] = [];
   if (opts?.status) {
     clauses.push('t.status = ?');
     params.push(opts.status);
   }
-  if (opts?.unassignedOnly) clauses.push('(t.agent_id IS NULL OR t.agent_id = \'\')');
+  if (opts?.priority) {
+    clauses.push('t.priority = ?');
+    params.push(opts.priority);
+  }
+  if (opts?.agentId) {
+    clauses.push('t.agent_id = ?');
+    params.push(opts.agentId);
+  }
+  if (opts?.unassignedOnly) clauses.push(`(t.agent_id IS NULL OR t.agent_id = '')`);
+  if (opts?.q?.trim()) {
+    const q = `%${opts.q.trim()}%`;
+    clauses.push(`(t.title LIKE ? OR t.description LIKE ? OR cast(t.id as text) LIKE ? OR c.mobile LIKE ? OR c.first_name LIKE ? OR c.last_name LIKE ?)`);
+    params.push(q, q, q, q, q, q);
+  }
   const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
   params.push(limit);
   const rows = db()
-    .prepare(
-      `SELECT t.*, trim(c.first_name || ' ' || c.last_name) as customer_name
-       FROM crm_tickets t LEFT JOIN crm_customers c ON c.id = t.customer_id
-       ${where} ORDER BY t.created_at DESC LIMIT ?`
-    )
+    .prepare(`${TICKET_SELECT} ${where} ORDER BY t.created_at DESC LIMIT ?`)
     .all(...params) as Array<Record<string, unknown>>;
   return rows.map(enrichTicket);
+}
+
+function addTicketActivity(
+  ticketId: number,
+  opts: {
+    userId: string;
+    userName?: string;
+    kind?: string;
+    visibility?: string;
+    text: string;
+    meta?: Record<string, unknown>;
+  }
+): void {
+  db()
+    .prepare(
+      `INSERT INTO crm_ticket_activities (ticket_id, user_id, user_name, kind, visibility, text, meta_json, at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      ticketId,
+      opts.userId,
+      opts.userName || '',
+      opts.kind || 'note',
+      opts.visibility || 'internal',
+      opts.text,
+      JSON.stringify(opts.meta || {}),
+      nowIso()
+    );
 }
 
 export function patchTicket(
@@ -1129,32 +1273,65 @@ export function patchTicket(
   input: {
     status?: string;
     priority?: string;
+    severity?: string;
     agentId?: string | null;
     agentName?: string | null;
+    queueId?: string;
+    teamId?: string | null;
+    pendingReason?: string | null;
+    channel?: string;
+    tags?: string[];
+    type?: string;
+    category?: string;
+    subCategory?: string;
     resolutionCode?: string;
     resolutionNote?: string;
     rootCause?: string;
     nextAction?: string;
     activityText?: string;
+    activityKind?: string;
+    activityVisibility?: string;
   },
   actor: AdminAuthActor
 ): CrmTicket {
   ensureCrmSchema();
   const ticket = getTicket(id);
   if (!ticket) throw new Error('تیکت یافت نشد');
+  if (!ticket.customerId || !getCustomer(ticket.customerId)) {
+    const err = new Error('مشتری مرتبط با تیکت یافت نشد (رابطه یتیم)') as Error & { status?: number };
+    err.status = 409;
+    throw err;
+  }
 
   let status = input.status != null ? String(input.status) : ticket.status;
   let priority = input.priority != null ? String(input.priority) : ticket.priority;
   let slaDue = ticket.slaDue;
+  let firstResponseDueAt = ticket.firstResponseDueAt;
   let resolvedAt = ticket.resolvedAt;
   let closedAt = ticket.closedAt;
   let reopenedCount = ticket.reopenedCount;
   let firstResponseAt = ticket.firstResponseAt;
   let agentId = input.agentId !== undefined ? input.agentId : ticket.agentId;
   let agentName = input.agentName !== undefined ? input.agentName : ticket.agentName;
+  let queueId = input.queueId != null ? String(input.queueId) : ticket.queueId;
+  let teamId = input.teamId !== undefined ? input.teamId : ticket.teamId;
+  let pendingReason =
+    input.pendingReason !== undefined ? input.pendingReason : ticket.pendingReason;
+  const severity = input.severity != null ? String(input.severity) : ticket.severity;
+  const channel = input.channel != null ? String(input.channel) : ticket.channel;
+  const type = input.type != null ? String(input.type) : ticket.type;
+  const category = input.category != null ? String(input.category) : ticket.category;
+  const subCategory = input.subCategory != null ? String(input.subCategory) : ticket.subCategory;
+  const tags = input.tags != null ? input.tags : ticket.tags;
+
+  if (input.queueId != null) {
+    const q = crmQueueOf(queueId);
+    if (q && input.teamId === undefined) teamId = q.team;
+  }
 
   if (input.priority != null && input.priority !== ticket.priority) {
     slaDue = crmSlaDueIso(priority, ticket.createdAt);
+    firstResponseDueAt = crmFirstResponseDueIso(priority, nowIso());
   }
 
   if (status === 'حل‌شده') {
@@ -1165,38 +1342,68 @@ export function patchTicket(
       throw err;
     }
     resolvedAt = nowIso();
+    pendingReason = null;
   }
 
   if (status === 'بازگشایی‌شده') {
     reopenedCount += 1;
     resolvedAt = null;
     closedAt = null;
+    slaDue = crmSlaDueIso(priority, nowIso());
+    firstResponseDueAt = crmFirstResponseDueIso(priority, nowIso());
   }
 
   if (status === 'بسته‌شده') closedAt = nowIso();
 
-  if (!firstResponseAt && (status === 'در حال بررسی' || status === 'تخصیص‌یافته' || input.activityText)) {
-    firstResponseAt = nowIso();
+  if (status === 'تخصیص‌یافته' && !agentId) {
+    agentId = actorId(actor);
+    agentName = actorLabel(actor);
+  }
+
+  if (
+    !firstResponseAt &&
+    (input.activityVisibility === 'public' ||
+      status === 'در حال بررسی' ||
+      status === 'تخصیص‌یافته' ||
+      input.activityText)
+  ) {
+    if (input.activityVisibility === 'public' || status === 'در حال بررسی') {
+      firstResponseAt = nowIso();
+    }
+  }
+
+  if (['در انتظار مشتری', 'در انتظار داخلی'].includes(status) && !pendingReason) {
+    const err = new Error('دلیل تعلیق برای وضعیت انتظار الزامی است') as Error & { status?: number };
+    err.status = 422;
+    throw err;
+  }
+  if (!['در انتظار مشتری', 'در انتظار داخلی'].includes(status) && input.status != null) {
+    pendingReason = input.pendingReason !== undefined ? input.pendingReason : null;
   }
 
   db()
     .prepare(
       `UPDATE crm_tickets SET
-        status = ?, priority = ?, agent_id = ?, agent_name = ?, sla_due = ?,
-        resolved_at = ?, closed_at = ?, reopened_count = ?, first_response_at = ?,
+        status = ?, priority = ?, severity = ?, agent_id = ?, agent_name = ?, sla_due = ?,
+        first_response_due_at = ?, resolved_at = ?, closed_at = ?, reopened_count = ?,
+        first_response_at = ?,
         resolution_code = COALESCE(?, resolution_code),
         resolution_note = COALESCE(?, resolution_note),
         root_cause = COALESCE(?, root_cause),
         next_action = COALESCE(?, next_action),
+        channel = ?, queue_id = ?, team_id = ?, tags_json = ?, pending_reason = ?,
+        type = ?, category = ?, sub_category = ?,
         updated_at = ?
        WHERE id = ?`
     )
     .run(
       status,
       priority,
+      severity,
       agentId,
       agentName,
       slaDue,
+      firstResponseDueAt,
       resolvedAt,
       closedAt,
       reopenedCount,
@@ -1205,14 +1412,59 @@ export function patchTicket(
       input.resolutionNote != null ? String(input.resolutionNote) : null,
       input.rootCause != null ? String(input.rootCause) : null,
       input.nextAction != null ? String(input.nextAction) : null,
+      channel,
+      queueId,
+      teamId,
+      JSON.stringify(tags || []),
+      pendingReason,
+      type,
+      category,
+      subCategory,
       nowIso(),
       id
     );
 
   if (input.activityText) {
-    db()
-      .prepare('INSERT INTO crm_ticket_activities (ticket_id, user_id, text, at) VALUES (?, ?, ?, ?)')
-      .run(id, actorId(actor), String(input.activityText), nowIso());
+    addTicketActivity(id, {
+      userId: actorId(actor),
+      userName: actorLabel(actor),
+      kind: input.activityKind || 'note',
+      visibility: input.activityVisibility || 'internal',
+      text: String(input.activityText),
+    });
+  } else if (input.status != null && input.status !== ticket.status) {
+    addTicketActivity(id, {
+      userId: actorId(actor),
+      userName: actorLabel(actor),
+      kind: 'status_change',
+      visibility: 'internal',
+      text: `تغییر وضعیت به «${status}»${pendingReason ? ` — ${pendingReason}` : ''}`,
+    });
+  } else if (input.priority != null && input.priority !== ticket.priority) {
+    addTicketActivity(id, {
+      userId: actorId(actor),
+      userName: actorLabel(actor),
+      kind: 'priority_change',
+      visibility: 'internal',
+      text: `تغییر اولویت به «${priority}»`,
+    });
+  } else if (input.agentId !== undefined && input.agentId !== ticket.agentId) {
+    addTicketActivity(id, {
+      userId: actorId(actor),
+      userName: actorLabel(actor),
+      kind: 'assigned',
+      visibility: 'internal',
+      text: `تخصیص به ${agentName || agentId || '—'}`,
+    });
+  } else if (input.queueId != null && input.queueId !== ticket.queueId) {
+    const q = crmQueueOf(queueId);
+    addTicketActivity(id, {
+      userId: actorId(actor),
+      userName: actorLabel(actor),
+      kind: 'transferred',
+      visibility: 'internal',
+      text: `ارجاع به صف «${q?.name || queueId}»`,
+    });
   }
 
   const updated = getTicket(id)!;
@@ -1248,9 +1500,234 @@ export function listTicketActivities(ticketId: number): CrmTicketActivity[] {
     id: Number(r.id),
     ticketId: Number(r.ticket_id),
     userId: String(r.user_id),
+    userName: r.user_name != null ? String(r.user_name) : undefined,
+    kind: String(r.kind || 'note'),
+    visibility: String(r.visibility || 'internal'),
     text: String(r.text),
     at: String(r.at),
+    meta: parseJson(r.meta_json, {}),
   }));
+}
+
+export function listTicketingAgents(): CrmTicketingAgent[] {
+  ensureCrmSchema();
+  const agents = new Map<string, CrmTicketingAgent>();
+  try {
+    const { employees } = listEmployees({ accessStatus: 'فعال', limit: 200 });
+    for (const e of employees) {
+      const id = e.publicId || `emp-${e.id}`;
+      const name = `${e.firstName || ''} ${e.lastName || ''}`.trim() || id;
+      agents.set(id, {
+        id,
+        name,
+        team: e.department || 'Pet Date',
+        role: e.jobTitle || 'کارشناس',
+      });
+    }
+  } catch {
+    /* HR schema may be empty in selftests */
+  }
+  const ticketAgents = db()
+    .prepare(
+      `SELECT DISTINCT agent_id, agent_name, team_id FROM crm_tickets
+       WHERE agent_id IS NOT NULL AND agent_id != ''`
+    )
+    .all() as Array<{ agent_id: string; agent_name: string | null; team_id: string | null }>;
+  for (const a of ticketAgents) {
+    if (!agents.has(a.agent_id)) {
+      agents.set(a.agent_id, {
+        id: a.agent_id,
+        name: a.agent_name || a.agent_id,
+        team: a.team_id || 'امور مشتریان',
+        role: 'کارشناس',
+      });
+    }
+  }
+  return [...agents.values()].sort((a, b) => a.name.localeCompare(b.name, 'fa'));
+}
+
+export function getTicketingOverview(actor?: AdminAuthActor): CrmTicketingOverview {
+  ensureCrmSchema();
+  const tickets = listTickets({ limit: 250 });
+  const followups = listFollowups({ limit: 150 });
+  const referrals = listReferrals(150);
+  const agents = listTicketingAgents();
+  if (actor) {
+    const aid = actorId(actor);
+    if (!agents.some((a) => a.id === aid)) {
+      agents.unshift({
+        id: aid,
+        name: actorLabel(actor),
+        team: 'ادمین',
+        role: actor.role || 'admin',
+      });
+    }
+  }
+  const open = tickets.filter((t) => (CRM_TICKET_OPEN_STATUSES as readonly string[]).includes(t.status));
+  const today0 = new Date();
+  today0.setHours(0, 0, 0, 0);
+  const t0 = today0.getTime();
+  const newToday = tickets.filter((t) => new Date(t.createdAt).getTime() >= t0).length;
+  const resolvedToday = tickets.filter(
+    (t) => t.resolvedAt && new Date(t.resolvedAt).getTime() >= t0
+  ).length;
+  const atRisk = open.filter((t) => t.slaState === 'at_risk').length;
+  const breached = open.filter((t) => t.slaState === 'breached').length;
+  const unassigned = open.filter((t) => !t.agentId).length;
+  const eligible = tickets.filter((t) => t.resolvedAt || t.status === 'بسته‌شده');
+  const slaOk = eligible.filter((t) => {
+    const due = new Date(t.slaDue).getTime();
+    const done = new Date(t.resolvedAt || t.closedAt || Date.now()).getTime();
+    return done <= due;
+  }).length;
+  const slaPct = eligible.length ? Math.round((slaOk / eligible.length) * 100) : 100;
+  const auditRows = listAuditLogs(80);
+  return {
+    tickets,
+    followups,
+    referrals,
+    agents,
+    audit: auditRows.map((r) => ({
+      id: Number(r.id),
+      at: String(r.at),
+      userId: String(r.user_id),
+      category: String(r.category),
+      entity: String(r.entity),
+      recordUuid: String(r.record_uuid),
+      action: String(r.action),
+      prevValue: r.prev_value != null ? String(r.prev_value) : null,
+      newValue: r.new_value != null ? String(r.new_value) : null,
+    })),
+    stats: {
+      open: open.length,
+      newToday,
+      resolvedToday,
+      atRisk,
+      breached,
+      unassigned,
+      openFollowups: followups.filter((f) => f.status === 'باز').length,
+      openReferrals: referrals.filter((r) => r.status === 'باز' || r.status === 'پاسخ داده‌شده').length,
+      slaPct,
+    },
+  };
+}
+
+/** Cross-module handoff from ticket → finance/sales referral. */
+export function escalateTicket(
+  ticketId: number,
+  input: {
+    type: 'finance' | 'sales' | string;
+    reason?: string;
+    requestedAction: string;
+    priority?: string;
+    amount?: number;
+  },
+  actor: AdminAuthActor
+): { ticket: CrmTicket; referral: CrmReferral } {
+  const ticket = getTicket(ticketId);
+  if (!ticket) throw new Error('تیکت یافت نشد');
+  const referral = createReferral(
+    {
+      type: input.type,
+      customerId: ticket.customerId,
+      ticketId,
+      reason: input.reason,
+      requestedAction: input.requestedAction,
+      priority: input.priority || ticket.priority,
+      amount: input.amount,
+      targetTeam: input.type === 'finance' ? 'واحد مالی' : 'تیم فروش',
+    },
+    actor
+  );
+  const updated = patchTicket(
+    ticketId,
+    {
+      status: 'در انتظار داخلی',
+      pendingReason: input.type === 'finance' ? 'در انتظار مالی' : 'در انتظار فروش',
+      activityText: `ارجاع به ${referral.targetTeam}: ${input.requestedAction}`,
+      activityKind: 'escalation',
+    },
+    actor
+  );
+  return { ticket: updated, referral };
+}
+
+export function runTicketMacro(
+  ticketId: number,
+  key: 'refund' | 'vip',
+  actor: AdminAuthActor
+): CrmTicket {
+  const ticket = getTicket(ticketId);
+  if (!ticket) throw new Error('تیکت یافت نشد');
+  if (key === 'refund') {
+    const updated = patchTicket(
+      ticketId,
+      {
+        type: 'بازگشت وجه',
+        category: 'انصراف',
+        subCategory: 'انصراف از سفارش',
+        priority: 'بالا',
+        queueId: 'q_refund',
+        tags: [...new Set([...(ticket.tags || []), 'refund'])],
+        activityText: 'ماکرو «درخواست بازگشت وجه» اجرا شد',
+        activityKind: 'macro',
+      },
+      actor
+    );
+    escalateTicket(
+      ticketId,
+      {
+        type: 'finance',
+        reason: 'بازگشت وجه',
+        requestedAction: 'بررسی و پردازش درخواست بازگشت وجه',
+        priority: 'بالا',
+      },
+      actor
+    );
+    return getTicket(updated.id)!;
+  }
+  return patchTicket(
+    ticketId,
+    {
+      priority: 'بالا',
+      queueId: 'q_vip',
+      tags: [...new Set([...(ticket.tags || []), 'vip'])],
+      activityText: 'ماکرو «رسیدگی VIP» اجرا شد',
+      activityKind: 'macro',
+    },
+    actor
+  );
+}
+
+/** Soft-heal orphan ticket.customer_id references (customer deleted) for list safety. */
+export function repairOrphanTicketRelations(): { orphanTickets: number; orphanFollowups: number } {
+  ensureCrmSchema();
+  const orphanTickets = db()
+    .prepare(
+      `SELECT t.id FROM crm_tickets t
+       LEFT JOIN crm_customers c ON c.id = t.customer_id
+       WHERE c.id IS NULL`
+    )
+    .all() as Array<{ id: number }>;
+  // Keep rows but mark next_action so UI can show warning — do not delete.
+  for (const r of orphanTickets) {
+    db()
+      .prepare(
+        `UPDATE crm_tickets SET next_action = CASE
+           WHEN next_action LIKE '%[orphan]%' THEN next_action
+           ELSE '[orphan] مشتری حذف‌شده — ' || COALESCE(next_action, '')
+         END, updated_at = ? WHERE id = ?`
+      )
+      .run(nowIso(), r.id);
+  }
+  const orphanFollowups = db()
+    .prepare(
+      `SELECT f.id FROM crm_followups f
+       LEFT JOIN crm_customers c ON c.id = f.customer_id
+       WHERE c.id IS NULL`
+    )
+    .all() as Array<{ id: number }>;
+  return { orphanTickets: orphanTickets.length, orphanFollowups: orphanFollowups.length };
 }
 
 export function createFollowup(
@@ -1462,19 +1939,46 @@ export function listReferrals(limit = 50): CrmReferral[] {
 
 export function respondReferral(
   id: number,
-  input: { approve: boolean; response?: string },
+  input: { approve: boolean; response?: string; status?: string },
   actor: AdminAuthActor
 ): CrmReferral {
   ensureCrmSchema();
   const ref = getReferral(id);
   if (!ref) throw new Error('ارجاع یافت نشد');
-  const status = input.approve ? 'تایید' : 'رد شد';
+  const status =
+    input.status ||
+    (input.approve ? 'تایید' : 'رد شد');
   db()
     .prepare(`UPDATE crm_referrals SET status = ?, response = ? WHERE id = ?`)
     .run(status, String(input.response || ''), id);
 
-  if (!input.approve && ref.ticketId) {
-    patchTicket(ref.ticketId, { status: 'ارجاع به سطح بالاتر', activityText: 'رد ارجاع — اسکالیشن' }, actor);
+  if (ref.ticketId) {
+    const linked = getTicket(ref.ticketId);
+    if (linked) {
+      if (!input.approve && status !== 'تایید' && status !== 'انجام‌شده') {
+        patchTicket(
+          ref.ticketId,
+          {
+            status: 'ارجاع به سطح بالاتر',
+            pendingReason: null,
+            activityText: `رد ارجاع ${ref.targetTeam}: ${input.response || 'رد'}`,
+            activityKind: 'escalation_response',
+          },
+          actor
+        );
+      } else {
+        patchTicket(
+          ref.ticketId,
+          {
+            status: 'در حال بررسی',
+            pendingReason: null,
+            activityText: `پاسخ ${ref.targetTeam}: ${input.response || status} — نتیجه به تیکت اصلی بازگشت`,
+            activityKind: 'escalation_response',
+          },
+          actor
+        );
+      }
+    }
   }
 
   const updated = getReferral(id)!;

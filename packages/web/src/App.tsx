@@ -285,6 +285,7 @@ const AdminCrmCustomerDetailPage = lazy(() => import('./admin/pages/crm/AdminCrm
 const AdminCrmExperiencePage = lazy(() => import('./admin/pages/crm/AdminCrmPages').then((m) => ({ default: m.AdminCrmExperiencePage })));
 const AdminCrmCallsPage = lazy(() => import('./admin/pages/crm/AdminCrmPages').then((m) => ({ default: m.AdminCrmCallsPage })));
 const AdminCrmCasesPage = lazy(() => import('./admin/pages/crm/AdminCrmPages').then((m) => ({ default: m.AdminCrmCasesPage })));
+const AdminCrmTicketingPage = lazy(() => import('./admin/pages/crm/AdminCrmTicketingPage').then((m) => ({ default: m.AdminCrmTicketingPage })));
 const AdminCrmSmsPage = lazy(() => import('./admin/pages/crm/AdminCrmPages').then((m) => ({ default: m.AdminCrmSmsPage })));
 const AdminCrmQaPage = lazy(() => import('./admin/pages/crm/AdminCrmPages').then((m) => ({ default: m.AdminCrmQaPage })));
 const AdminCrmReportsPage = lazy(() => import('./admin/pages/crm/AdminCrmReportsPage').then((m) => ({ default: m.AdminCrmReportsPage })));
@@ -418,7 +419,9 @@ export default function App() {
                 <Route path="crm/customers/:id" element={<AdminCrmCustomerDetailPage />} />
                 <Route path="crm/experience" element={<AdminCrmExperiencePage />} />
                 <Route path="crm/calls" element={<AdminCrmCallsPage />} />
+                <Route path="crm/ticketing" element={<AdminCrmTicketingPage />} />
                 <Route path="crm/cases" element={<AdminCrmCasesPage />} />
+                <Route path="crm/tickets" element={<Navigate to="/admin/crm/ticketing" replace />} />
                 <Route path="crm/sms" element={<AdminCrmSmsPage />} />
                 <Route path="crm/qa" element={<AdminCrmQaPage />} />
                 <Route path="crm/reports" element={<AdminCrmReportsPage />} />

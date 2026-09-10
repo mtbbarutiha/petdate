@@ -278,8 +278,10 @@ export function AdminCrmDashboardPage() {
               <tbody>
                 {data.myTickets.map((t) => (
                   <tr key={t.id} style={{ borderRight: `3px solid ${t.borderColor || 'var(--admin-border)'}` }}>
-                    <td className="admin-muted">{t.publicId}</td>
-                    <td>{t.title}</td>
+                    <td className="admin-muted">
+                      <Link to={`/admin/crm/ticketing?view=detail&id=${t.id}`}>{t.publicId}</Link>
+                    </td>
+                    <td><Link to={`/admin/crm/ticketing?view=detail&id=${t.id}`}>{t.title}</Link></td>
                     <td>{t.customerName || '—'}</td>
                     <td><span className="crm-prio">{t.priority}</span></td>
                     <td>{t.status}</td>

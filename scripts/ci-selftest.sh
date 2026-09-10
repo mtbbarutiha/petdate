@@ -69,6 +69,7 @@ run src/hr-modules.selftest.ts
 run src/sales-crm.selftest.ts
 run src/hr-sales-demo-seed.selftest.ts
 run src/crm.selftest.ts
+run src/crm-ticketing.selftest.ts
 run src/admin-notifications.selftest.ts
 run src/admin-aggregate-dashboard.selftest.ts
 run src/finance-os.selftest.ts
