@@ -1907,7 +1907,28 @@ export type AdminAuthActor = {
   permissions: string[];
   displayName: string;
   username?: string;
+  /** HR employee photo when username matches an employee row */
+  avatarUrl?: string;
 };
+
+/** Resolve avatar from HR employee linked by admin username. */
+function avatarUrlForUsername(username?: string | null): string | undefined {
+  const u = String(username || '').trim();
+  if (!u) return undefined;
+  try {
+    const row = db()
+      .prepare(
+        `SELECT avatar_url FROM hr_employees
+         WHERE lower(trim(username)) = lower(?) AND trim(avatar_url) != ''
+         LIMIT 1`
+      )
+      .get(u) as { avatar_url?: string } | undefined;
+    const url = String(row?.avatar_url || '').trim();
+    return url || undefined;
+  } catch {
+    return undefined;
+  }
+}
 
 function permissionsForRoleKey(roleKey: string): string[] {
   const roleRow = db()
@@ -1944,12 +1965,14 @@ export function resolveAdminActor(opts: {
       .get(opts.username.trim().toLowerCase()) as Record<string, unknown> | undefined;
     if (row && verifyPassword(password, String(row.password_hash || ''))) {
       const roleKey = String(row.role_key || 'support');
+      const username = String(row.username);
       return {
         kind: 'account',
         role: roleKey,
         permissions: permissionsForRoleKey(roleKey),
         displayName: String(row.display_name || row.username),
-        username: String(row.username),
+        username,
+        avatarUrl: avatarUrlForUsername(username),
       };
     }
   }
@@ -1965,6 +1988,7 @@ export function resolveAdminActor(opts: {
         : [...ADMIN_ROLE_PERMISSIONS.admin],
       displayName: 'مدیر سیستم',
       username: 'admin',
+      avatarUrl: avatarUrlForUsername('admin'),
     };
   }
 
@@ -1979,6 +2003,7 @@ export function resolveAdminActor(opts: {
         : [...ADMIN_ROLE_PERMISSIONS.support],
       displayName: 'پشتیبانی',
       username: 'support',
+      avatarUrl: avatarUrlForUsername('support'),
     };
   }
 
@@ -1989,12 +2014,14 @@ export function resolveAdminActor(opts: {
   for (const row of accounts) {
     if (verifyPassword(password, String(row.password_hash || ''))) {
       const roleKey = String(row.role_key || 'support');
+      const username = String(row.username);
       return {
         kind: 'account',
         role: roleKey,
         permissions: permissionsForRoleKey(roleKey),
         displayName: String(row.display_name || row.username),
-        username: String(row.username),
+        username,
+        avatarUrl: avatarUrlForUsername(username),
       };
     }
   }

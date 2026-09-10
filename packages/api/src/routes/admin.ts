@@ -90,6 +90,7 @@ adminRouter.post('/auth/login', adminLoginLimit, (req, res) => {
     permissions: resolved.permissions,
     displayName: resolved.displayName,
     username: resolved.username || null,
+    avatarUrl: resolved.avatarUrl || null,
   });
 });
 
@@ -104,6 +105,7 @@ adminRouter.get('/auth/me', (req, res) => {
     permissions: actor.permissions,
     displayName: actor.displayName,
     username: actor.username || null,
+    avatarUrl: actor.avatarUrl || null,
   });
 });
 

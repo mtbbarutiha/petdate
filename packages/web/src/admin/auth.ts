@@ -12,6 +12,7 @@ const AUTH_KEY = 'petdate_admin_auth';
 const ROLE_KEY = 'petdate_admin_role';
 const PERMS_KEY = 'petdate_admin_perms';
 const NAME_KEY = 'petdate_admin_name';
+const AVATAR_KEY = 'petdate_admin_avatar';
 
 export function isAdminAuthenticated(): boolean {
   return sessionStorage.getItem(AUTH_KEY) === '1' && Boolean(getAdminPassword());
@@ -36,6 +37,16 @@ export function getAdminDisplayName(): string {
   return sessionStorage.getItem(NAME_KEY) || '';
 }
 
+export function getAdminAvatarUrl(): string {
+  return sessionStorage.getItem(AVATAR_KEY) || '';
+}
+
+export function setAdminAvatarUrl(url?: string | null): void {
+  const t = String(url || '').trim();
+  if (t) sessionStorage.setItem(AVATAR_KEY, t);
+  else sessionStorage.removeItem(AVATAR_KEY);
+}
+
 export function adminCan(permission: AdminPermission | string): boolean {
   const role = getAdminRole();
   if (role === 'admin') return true;
@@ -56,6 +67,7 @@ export async function loginAdmin(
       permissions: string[];
       displayName: string;
       username?: string | null;
+      avatarUrl?: string | null;
     }>('/api/admin/auth/login', {
       method: 'POST',
       body: JSON.stringify({
@@ -67,6 +79,7 @@ export async function loginAdmin(
     sessionStorage.setItem(ROLE_KEY, data.role || 'admin');
     sessionStorage.setItem(PERMS_KEY, JSON.stringify(data.permissions || []));
     sessionStorage.setItem(NAME_KEY, data.displayName || '');
+    setAdminAvatarUrl(data.avatarUrl);
     // Only persist username when the operator typed one. Env bootstrap login
     // returns username "admin" which must NOT be sent as x-admin-username
     // (that path looks up admin_accounts and 401s for ADMIN_PASSWORD).
@@ -80,6 +93,7 @@ export async function loginAdmin(
     sessionStorage.removeItem(ROLE_KEY);
     sessionStorage.removeItem(PERMS_KEY);
     sessionStorage.removeItem(NAME_KEY);
+    sessionStorage.removeItem(AVATAR_KEY);
     return { ok: false };
   }
 }
@@ -89,6 +103,7 @@ export function logoutAdmin() {
   sessionStorage.removeItem(ROLE_KEY);
   sessionStorage.removeItem(PERMS_KEY);
   sessionStorage.removeItem(NAME_KEY);
+  sessionStorage.removeItem(AVATAR_KEY);
   clearAdminPassword();
   clearAdminUsername();
 }

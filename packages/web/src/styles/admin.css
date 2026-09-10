@@ -292,28 +292,50 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 4px 8px 4px 4px;
+  padding: 3px 10px 3px 3px;
   border-radius: 999px;
   border: 1px solid var(--admin-border);
   background: #fff;
+  /* Keep user block on the visual far-left of the RTL topbar-end cluster */
+  order: 99;
+  margin-inline-start: 4px;
 }
 
 .admin-app .admin-topbar-avatar {
-  width: 28px;
-  height: 28px;
+  width: 34px;
+  height: 34px;
   border-radius: 50%;
   background: var(--admin-accent);
   color: #fff;
   display: grid;
   place-items: center;
-  font-size: 0.75rem;
+  font-size: 0.78rem;
   font-weight: 700;
+  flex-shrink: 0;
+  overflow: hidden;
+  box-shadow: 0 0 0 2px #fff, 0 0 0 3px color-mix(in srgb, var(--admin-accent) 35%, transparent);
+}
+
+.admin-app .admin-topbar-avatar--photo {
+  display: block;
+  object-fit: cover;
+  background: var(--admin-accent-soft);
 }
 
 .admin-app .admin-topbar-user-name {
   font-size: 0.82rem;
   font-weight: 600;
   padding-inline-end: 4px;
+  max-width: 10rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .admin-app .admin-topbar-user-name {
+    display: none;
+  }
 }
 
 .admin-app .admin-icon-btn {

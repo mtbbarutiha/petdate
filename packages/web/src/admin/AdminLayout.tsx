@@ -10,8 +10,9 @@ import type { PlatformNavCounts, SalesNavCounts } from '@petdate/shared';
 import { ADMIN_PANEL_ROLE_LABELS } from '@petdate/shared';
 import { AdminWordmark } from './AdminWordmark';
 import { AdminHeaderNotifications } from './AdminHeaderNotifications';
-import { adminCan, getAdminDisplayName, getAdminRole, logoutAdmin } from './auth';
+import { adminCan, getAdminAvatarUrl, getAdminDisplayName, getAdminRole, logoutAdmin, setAdminAvatarUrl } from './auth';
 import { adminFetch, formatNumFa } from './api';
+import { resolvePublicMediaUrl } from '../lib/api';
 import { SalesCallSimProvider } from './pages/sales/SalesCallSim';
 import '../styles/admin.css';
 
@@ -26,6 +27,14 @@ type NavItem = {
   platformBadgeKey?: PlatformBadgeKey;
 };
 type NavGroup = { title: string; items: NavItem[] };
+
+function adminInitials(label?: string | null): string {
+  const t = String(label ?? '').trim();
+  if (!t) return '؟';
+  const parts = t.split(/\s+/).filter(Boolean);
+  if (parts.length >= 2) return `${parts[0]![0] ?? ''}${parts[1]![0] ?? ''}`.slice(0, 2);
+  return t.slice(0, 2);
+}
 
 const NAV_GROUPS: NavGroup[] = [
   { title: 'نمای کلی', items: [{ to: '/admin/dashboard', icon: LayoutDashboard, label: 'داشبورد پلتفرم' }] },
@@ -147,6 +156,8 @@ function AdminLayoutInner() {
   const [collapsed, setCollapsed] = useState(false);
   const [salesCounts, setSalesCounts] = useState<SalesNavCounts | null>(null);
   const [platformCounts, setPlatformCounts] = useState<PlatformNavCounts | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState(() => getAdminAvatarUrl());
+  const [avatarFailed, setAvatarFailed] = useState(false);
   const groups = useMemo(() => visibleGroups(), []);
   const activeGroupTitle = useMemo(() => {
     for (const g of groups) {
@@ -183,6 +194,19 @@ function AdminLayoutInner() {
     });
   }, [groups, activeGroupTitle]);
 
+  useEffect(() => {
+    void adminFetch<{ displayName?: string; avatarUrl?: string | null }>('/api/admin/auth/me')
+      .then((data) => {
+        const url = String(data.avatarUrl || '').trim();
+        setAdminAvatarUrl(url || null);
+        setAvatarUrl(url);
+        setAvatarFailed(false);
+      })
+      .catch(() => {
+        /* keep session cache */
+      });
+  }, []);
+
   const refreshNavCounts = useCallback(() => {
     if (adminCan('sales.read') || adminCan('admin.full')) {
       void adminFetch<SalesNavCounts>('/api/admin/sales/nav-counts', { cache: 'no-store' as RequestCache })
@@ -213,6 +237,8 @@ function AdminLayoutInner() {
     getAdminDisplayName() ||
     ADMIN_PANEL_ROLE_LABELS[role] ||
     (role === 'admin' ? 'مدیر' : role);
+  const resolvedAvatar = resolvePublicMediaUrl(avatarUrl);
+  const showAvatarImg = Boolean(resolvedAvatar) && !avatarFailed;
 
   return (
     <div className={`admin-app${collapsed ? ' admin-app--collapsed' : ''}`}>
@@ -296,6 +322,24 @@ function AdminLayoutInner() {
               <AdminHeaderNotifications />
               <span className="admin-topbar-chip">RTL · fa</span>
               <span className="admin-topbar-chip admin-topbar-chip--mint admin-live-pulse">live DB</span>
+              {/* Visual far-left of header actions (RTL topbar-end + CSS order) */}
+              <div className="admin-topbar-user" title={roleLabel} aria-label={`کاربر: ${roleLabel}`}>
+                {showAvatarImg ? (
+                  <img
+                    className="admin-topbar-avatar admin-topbar-avatar--photo"
+                    src={resolvedAvatar!}
+                    alt={roleLabel}
+                    width={34}
+                    height={34}
+                    onError={() => setAvatarFailed(true)}
+                  />
+                ) : (
+                  <span className="admin-topbar-avatar" aria-hidden>
+                    {adminInitials(roleLabel)}
+                  </span>
+                )}
+                <span className="admin-topbar-user-name">{roleLabel}</span>
+              </div>
             </div>
           </header>
           <Outlet />
