@@ -114,7 +114,7 @@ export function ensureFinanceOsSchema(): void {
       account TEXT NOT NULL,
       date TEXT NOT NULL,
       amount INTEGER NOT NULL,
-      desc TEXT NOT NULL DEFAULT '',
+      desc_text TEXT NOT NULL DEFAULT '',
       status TEXT NOT NULL DEFAULT 'queued',
       note TEXT NOT NULL DEFAULT '',
       line TEXT NOT NULL DEFAULT '',
@@ -166,7 +166,7 @@ export function ensureFinanceOsSchema(): void {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       date TEXT NOT NULL,
       amount INTEGER NOT NULL,
-      desc TEXT NOT NULL DEFAULT '',
+      desc_text TEXT NOT NULL DEFAULT '',
       category TEXT NOT NULL DEFAULT '',
       related_person TEXT NOT NULL DEFAULT '',
       account TEXT NOT NULL DEFAULT '',
@@ -186,15 +186,43 @@ export function ensureFinanceOsSchema(): void {
     );
     CREATE TABLE IF NOT EXISTS finance_os_commitments (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      desc TEXT NOT NULL,
+      desc_text TEXT NOT NULL,
       category TEXT NOT NULL DEFAULT '',
       amount INTEGER NOT NULL DEFAULT 0,
       due_date TEXT NOT NULL DEFAULT '',
       status TEXT NOT NULL DEFAULT 'pending'
     );
   `);
+  // PostgreSQL rejects bare column name `desc` (reserved). Older SQLite demo DBs
+  // may still have it — rename when needed so both drivers share desc_text.
+  migrateFinanceOsDescColumns();
   schemaReady = true;
   seedFinanceOsIfEmpty();
+}
+
+/** Read description column; prefer desc_text (PG-safe), fall back to legacy desc. */
+function rowDesc(row: Record<string, unknown>): string {
+  return String(row.desc_text ?? row.desc ?? '');
+}
+
+function migrateFinanceOsDescColumns(): void {
+  const tables = [
+    'finance_os_transactions',
+    'finance_os_sbg_expenses',
+    'finance_os_commitments',
+  ] as const;
+  for (const table of tables) {
+    try {
+      const cols = db().prepare(`PRAGMA table_info(${table})`).all() as Array<{ name: string }>;
+      if (!cols.length) continue;
+      const names = new Set(cols.map((c) => c.name));
+      if (names.has('desc') && !names.has('desc_text')) {
+        db().exec(`ALTER TABLE ${table} RENAME COLUMN "desc" TO desc_text`);
+      }
+    } catch (err) {
+      console.warn(`finance-os migrate desc→desc_text on ${table}:`, (err as Error).message);
+    }
+  }
 }
 
 function metaGet<T>(key: string, fallback: T): T {
@@ -669,7 +697,7 @@ function seedFinanceOsIfEmpty(): void {
   ];
   const insTx = d.prepare(`
     INSERT INTO finance_os_transactions (
-      account, date, amount, desc, status, note, line, sale_type, expense_type, category,
+      account, date, amount, desc_text, status, note, line, sale_type, expense_type, category,
       campaign, product, payment_status, seller, related_person, raw_json, suspicious_reason, duplicate_of_id
     ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
   `);
@@ -804,7 +832,7 @@ function seedFinanceOsIfEmpty(): void {
     },
   ];
   const insSbg = d.prepare(`
-    INSERT INTO finance_os_sbg_expenses (date, amount, desc, category, related_person, account, allocated, splits_json)
+    INSERT INTO finance_os_sbg_expenses (date, amount, desc_text, category, related_person, account, allocated, splits_json)
     VALUES (?,?,?,?,?,?,?,?)
   `);
   for (const e of sbgEx) {
@@ -812,11 +840,11 @@ function seedFinanceOsIfEmpty(): void {
   }
 
   d.prepare(`
-    INSERT INTO finance_os_commitments (desc, category, amount, due_date, status)
+    INSERT INTO finance_os_commitments (desc_text, category, amount, due_date, status)
     VALUES (?,?,?,?,?)
   `).run('اجاره فصلی دفتر مرکزی به مالک ملک', 'اجاره به مالک ملک', 285000000, '2026-11-01', 'pending');
   d.prepare(`
-    INSERT INTO finance_os_commitments (desc, category, amount, due_date, status)
+    INSERT INTO finance_os_commitments (desc_text, category, amount, due_date, status)
     VALUES (?,?,?,?,?)
   `).run('مالیات بر درآمد سالانه SBG', 'مالیات بر درآمد', 180000000, '2027-03-20', 'pending');
 
@@ -898,7 +926,7 @@ function mapTx(row: Record<string, unknown>): FinanceOsTransaction {
     account: String(row.account),
     date: String(row.date),
     amount: Number(row.amount) || 0,
-    desc: String(row.desc || ''),
+    desc: rowDesc(row),
     status: (String(row.status || 'queued') as FinanceOsTxStatus),
     note: String(row.note || ''),
     line: String(row.line || ''),
@@ -1279,7 +1307,7 @@ export function importFinanceOsTransactions(input: {
   if (!acc) throw new Error('حساب یافت نشد');
   const rows = Array.isArray(input.rows) ? input.rows : [];
   const ins = db().prepare(`
-    INSERT INTO finance_os_transactions (account, date, amount, desc, status, note, line, raw_json)
+    INSERT INTO finance_os_transactions (account, date, amount, desc_text, status, note, line, raw_json)
     VALUES (?,?,?,?, 'queued', ?, ?, '{}')
   `);
   let imported = 0;
@@ -1356,7 +1384,7 @@ export function getFinanceOsAllocationBundle(): FinanceOsAllocationBundle {
       id: Number(r.id),
       date: String(r.date),
       amount: Number(r.amount) || 0,
-      desc: String(r.desc || ''),
+      desc: rowDesc(r),
       category: String(r.category || ''),
       relatedPerson: String(r.related_person || ''),
       account: String(r.account || ''),
@@ -1420,7 +1448,7 @@ export function getFinanceOsAllocationBundle(): FinanceOsAllocationBundle {
     ).map(
       (r): FinanceOsCommitment => ({
         id: Number(r.id),
-        desc: String(r.desc),
+        desc: rowDesc(r),
         category: String(r.category || ''),
         amount: Number(r.amount) || 0,
         dueDate: String(r.due_date || ''),
@@ -1460,7 +1488,7 @@ export function allocateFinanceOsExpense(
     id: Number(row.id),
     date: String(row.date),
     amount: Number(row.amount) || 0,
-    desc: String(row.desc || ''),
+    desc: rowDesc(row),
     category: String(row.category || ''),
     relatedPerson: String(row.related_person || ''),
     account: String(row.account || ''),
@@ -1525,7 +1553,7 @@ export function markFinanceOsCommitmentDone(id: number): FinanceOsCommitment {
   metaSet('bankBalance', bal - (Number(prev.amount) || 0));
   return {
     id: Number(prev.id),
-    desc: String(prev.desc),
+    desc: rowDesc(prev),
     category: String(prev.category || ''),
     amount: Number(prev.amount) || 0,
     dueDate: String(prev.due_date || ''),
