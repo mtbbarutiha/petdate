@@ -4,7 +4,6 @@ import {
   Activity,
   Briefcase,
   HeartHandshake,
-  Inbox,
   Mail,
   Package,
   PawPrint,
@@ -16,13 +15,6 @@ import {
 } from 'lucide-react';
 import { petPublicIdOf, orderPublicIdOf, consultPublicIdOf, userPublicIdOf } from '@petdate/shared';
 import { adminFetch, formatNumFa, formatTomanFa } from '../api';
-import {
-  AdminBarChart,
-  AdminDonutChart,
-  AdminFunnelChart,
-  AdminLineChart,
-  AdminMultiLineChart,
-} from '../FinanceCharts';
 import { AdminIdChip } from '../AdminIds';
 import { AdminEntityCell, AdminThumb } from '../AdminThumb';
 import {
@@ -32,6 +24,18 @@ import {
   jalaliPartsToGregorianIso,
   type JalaliDateValue,
 } from '../JalaliDateSelect';
+import {
+  CategoryBarWidget,
+  CategoryDonutWidget,
+  CategoryFunnelWidget,
+  PLATFORM_WIDGET_CATALOG,
+  TimeBarWidget,
+  TimeLineWidget,
+  TimeMultiLineWidget,
+  WidgetDashboard,
+  WidgetEmpty,
+  type WidgetRenderContext,
+} from '../widgets';
 
 type ChartPoint = { label: string; value: number };
 type ChartSlice = { label: string; value: number; color: string };
@@ -453,16 +457,6 @@ export function AdminDashboardPage() {
       ]
     : [];
 
-  const trendSeries =
-    series
-      ? [
-          { key: 'users', label: 'کاربران', color: '#5c4d91', points: series.usersTrend },
-          { key: 'pets', label: 'پت‌ها', color: '#15cca0', points: series.petsTrend },
-          { key: 'playdates', label: 'همبازی', color: '#f59e0b', points: series.playdatesTrend },
-          { key: 'consults', label: 'مشاوره', color: '#0ea5e9', points: series.consultsTrend },
-        ]
-      : [];
-
   const activeFilterChips = [
     filters.from || filters.to
       ? `بازه: ${formatJalaliSlash(filters.from) || '…'} → ${formatJalaliSlash(filters.to) || '…'}`
@@ -475,6 +469,88 @@ export function AdminDashboardPage() {
     filters.paymentType ? `پرداخت: ${filters.paymentType}` : null,
     filters.salesStage ? `قیف فروش: ${filters.salesStage}` : null,
   ].filter(Boolean) as string[];
+
+  const renderPlatformWidget = (id: string, ctx: WidgetRenderContext) => {
+    if (!series) return <WidgetEmpty />;
+    switch (id) {
+      case 'moduleMix':
+        return (
+          <CategoryDonutWidget
+            slices={series.moduleMix}
+            ctx={ctx}
+            onSliceClick={(s) => applySlice({ module: s.label })}
+          />
+        );
+      case 'volume14d':
+        return (
+          <TimeMultiLineWidget
+            ctx={ctx}
+            series={[
+              { key: 'users', label: 'کاربران', color: '#5c4d91', points: series.usersTrend },
+              { key: 'pets', label: 'پت‌ها', color: '#15cca0', points: series.petsTrend },
+              { key: 'playdates', label: 'همبازی', color: '#f59e0b', points: series.playdatesTrend },
+              { key: 'consults', label: 'مشاوره', color: '#0ea5e9', points: series.consultsTrend },
+            ]}
+          />
+        );
+      case 'activityBreakdown':
+        return (
+          <CategoryBarWidget
+            ctx={ctx}
+            color="#5c4d91"
+            points={series.activityBreakdown?.length ? series.activityBreakdown : series.crmReasons}
+          />
+        );
+      case 'revenueTrend':
+        return <TimeLineWidget points={series.revenueTrend} color="#5c4d91" ctx={ctx} />;
+      case 'salesFunnel':
+        return (
+          <CategoryFunnelWidget
+            ctx={ctx}
+            points={series.salesStages}
+            onSliceClick={(p) => applySlice({ salesStage: p.label })}
+          />
+        );
+      case 'paymentMix':
+        return (
+          <CategoryDonutWidget
+            ctx={ctx}
+            slices={series.paymentMix.map((p, i) => ({
+              label: p.label,
+              value: p.value,
+              color: PAY_COLORS[i % PAY_COLORS.length]!,
+            }))}
+            onSliceClick={(s) => applySlice({ paymentType: s.label })}
+          />
+        );
+      case 'crmTickets':
+        return (
+          <TimeLineWidget
+            ctx={ctx}
+            color="#0ea5e9"
+            points={
+              series.crmDailyTickets.length
+                ? series.crmDailyTickets
+                : series.crmReasons.map((r) => ({ label: r.label, value: r.value }))
+            }
+          />
+        );
+      case 'crmReasons':
+        return (
+          <CategoryBarWidget
+            ctx={ctx}
+            color="#15cca0"
+            points={series.crmReasons.length ? series.crmReasons : series.activityBreakdown}
+          />
+        );
+      case 'salesDailyRevenue':
+        return <TimeLineWidget points={series.salesDailyRevenue} color="#ec4899" ctx={ctx} />;
+      case 'salesDailyCalls':
+        return <TimeBarWidget points={series.salesDailyCalls} color="#5c4d91" ctx={ctx} />;
+      default:
+        return <WidgetEmpty />;
+    }
+  };
 
   return (
     <div className="admin-page admin-page--exec">
@@ -706,157 +782,12 @@ export function AdminDashboardPage() {
           ) : null}
 
           {series ? (
-            <>
-              <p className="admin-section-label">گزارش تجمیعی · نمودارها</p>
-              <div className="admin-report-grid admin-report-grid--3">
-                <section className="admin-card admin-card--chart admin-card--chart-lg">
-                  <div className="admin-card-head">
-                    <h2>ترکیب بار ماژول‌ها</h2>
-                    <Link to="/admin/crm">CRM</Link>
-                  </div>
-                  <div className="admin-chart-panel">
-                    <AdminDonutChart
-                      slices={series.moduleMix}
-                      size={210}
-                      onSliceClick={(s) => applySlice({ module: s.label })}
-                    />
-                  </div>
-                </section>
-                <section className="admin-card admin-card--chart admin-card--chart-lg">
-                  <div className="admin-card-head">
-                    <h2>حجم تعامل ۱۴ روز اخیر</h2>
-                    <Link to="/admin/users">جزئیات</Link>
-                  </div>
-                  <div className="admin-chart-panel">
-                    <AdminMultiLineChart series={trendSeries} />
-                  </div>
-                </section>
-                <section className="admin-card admin-card--chart admin-card--chart-lg">
-                  <div className="admin-card-head">
-                    <h2>توزیع فعالیت‌ها</h2>
-                    <Link to="/admin/crm/inbox">اینباکس</Link>
-                  </div>
-                  <div className="admin-chart-panel">
-                    <AdminBarChart
-                      points={
-                        series.activityBreakdown?.length
-                          ? series.activityBreakdown
-                          : series.crmReasons
-                      }
-                      color="#5c4d91"
-                      height={220}
-                    />
-                  </div>
-                </section>
-              </div>
-
-              <div className="admin-module-section admin-module-section--sales">
-                <p className="admin-section-label">فروش</p>
-                <div className="admin-report-grid admin-report-grid--3">
-                  <section className="admin-card admin-card--chart admin-card--chart-lg">
-                    <div className="admin-card-head">
-                      <h2>درآمد فروشگاه (ماه)</h2>
-                      <Link to="/admin/finance/sales">مالی</Link>
-                    </div>
-                    <div className="admin-chart-panel">
-                      <AdminLineChart points={series.revenueTrend} color="#5c4d91" height={220} />
-                    </div>
-                  </section>
-                  <section className="admin-card admin-card--chart admin-card--chart-lg">
-                    <div className="admin-card-head">
-                      <h2>قیف فروش</h2>
-                      <Link to="/admin/sales">فروش</Link>
-                    </div>
-                    <div className="admin-chart-panel">
-                      <AdminFunnelChart
-                        points={series.salesStages}
-                        onSliceClick={(p) => applySlice({ salesStage: p.label })}
-                      />
-                    </div>
-                  </section>
-                  <section className="admin-card admin-card--chart admin-card--chart-lg">
-                    <div className="admin-card-head">
-                      <h2>ترکیب پرداخت</h2>
-                      <Link to="/admin/payments">پرداخت‌ها</Link>
-                    </div>
-                    <div className="admin-chart-panel">
-                      <AdminDonutChart
-                        size={210}
-                        slices={series.paymentMix.map((p, i) => ({
-                          label: p.label,
-                          value: p.value,
-                          color: PAY_COLORS[i % PAY_COLORS.length],
-                        }))}
-                        onSliceClick={(s) => applySlice({ paymentType: s.label })}
-                      />
-                    </div>
-                  </section>
-                </div>
-              </div>
-
-              <div className="admin-module-section admin-module-section--support">
-                <p className="admin-section-label">پشتیبانی · باشگاه مشتریان</p>
-                <div className="admin-report-grid">
-                  <section className="admin-card admin-card--chart admin-card--chart-lg">
-                    <div className="admin-card-head">
-                      <h2>تیکت‌های باشگاه مشتریان</h2>
-                      <Link to="/admin/crm/reports">گزارش CRM</Link>
-                    </div>
-                    <div className="admin-chart-panel">
-                      <AdminLineChart
-                        height={220}
-                        points={
-                          series.crmDailyTickets.length
-                            ? series.crmDailyTickets
-                            : series.crmReasons.map((r) => ({ label: r.label, value: r.value }))
-                        }
-                        color="#0ea5e9"
-                      />
-                    </div>
-                  </section>
-                  <section className="admin-card admin-card--chart admin-card--chart-lg">
-                    <div className="admin-card-head">
-                      <h2>دلایل تماس / تعامل CRM</h2>
-                      <Link to="/admin/crm/inbox">
-                        <Inbox size={14} /> اینباکس
-                      </Link>
-                    </div>
-                    <div className="admin-chart-panel">
-                      <AdminBarChart
-                        height={220}
-                        points={
-                          series.crmReasons.length
-                            ? series.crmReasons
-                            : series.activityBreakdown
-                        }
-                        color="#15cca0"
-                      />
-                    </div>
-                  </section>
-                </div>
-              </div>
-
-              <div className="admin-report-grid">
-                <section className="admin-card admin-card--chart admin-card--chart-lg">
-                  <div className="admin-card-head">
-                    <h2>درآمد روزانهٔ فروش CRM</h2>
-                    <Link to="/admin/sales/reports">گزارش فروش</Link>
-                  </div>
-                  <div className="admin-chart-panel">
-                    <AdminLineChart points={series.salesDailyRevenue} color="#ec4899" height={220} />
-                  </div>
-                </section>
-                <section className="admin-card admin-card--chart admin-card--chart-lg">
-                  <div className="admin-card-head">
-                    <h2>تماس‌های فروش (۱۴ روز)</h2>
-                    <Link to="/admin/sales">داشبورد فروش</Link>
-                  </div>
-                  <div className="admin-chart-panel">
-                    <AdminBarChart points={series.salesDailyCalls} color="#5c4d91" height={220} />
-                  </div>
-                </section>
-              </div>
-            </>
+            <WidgetDashboard
+              dashboardId="platform"
+              catalog={PLATFORM_WIDGET_CATALOG}
+              title="گزارش تجمیعی · ویجت‌ها"
+              renderWidget={renderPlatformWidget}
+            />
           ) : null}
 
           <p className="admin-section-label">آخرین فعالیت‌ها</p>

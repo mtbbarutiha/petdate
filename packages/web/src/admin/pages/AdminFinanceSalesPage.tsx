@@ -1,9 +1,16 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Download } from 'lucide-react';
 import { adminDownload, adminFetch, formatTomanFa } from '../api';
+import { PeriodFilter, type FinancePeriod } from '../FinanceCharts';
 import {
-  AdminBarChart, AdminDonutChart, AdminLineChart, PeriodFilter, type FinancePeriod,
-} from '../FinanceCharts';
+  CategoryBarWidget,
+  CategoryDonutWidget,
+  FINANCE_SALES_WIDGET_CATALOG,
+  TimeLineWidget,
+  WidgetDashboard,
+  WidgetEmpty,
+  type WidgetRenderContext,
+} from '../widgets';
 
 type Sales = {
   period: FinancePeriod;
@@ -30,6 +37,43 @@ export function AdminFinanceSalesPage() {
   }, [period]);
 
   useEffect(() => { void load(); }, [load]);
+
+  const renderSalesWidget = (id: string, ctx: WidgetRenderContext) => {
+    if (!data) return <WidgetEmpty />;
+    switch (id) {
+      case 'dailyOrMonthly':
+        return data.dailyOrMonthly.length ? (
+          <TimeLineWidget points={data.dailyOrMonthly} color="#5c4d91" ctx={ctx} />
+        ) : (
+          <WidgetEmpty />
+        );
+      case 'salesCategories':
+        return data.categories.length ? (
+          <CategoryBarWidget
+            ctx={ctx}
+            color="#0ba5f2"
+            points={data.categories.slice(0, 8).map((c) => ({ label: c.label, value: c.value }))}
+          />
+        ) : (
+          <WidgetEmpty />
+        );
+      case 'salesPaymentMix':
+        return data.paymentMix.length ? (
+          <CategoryDonutWidget
+            ctx={ctx}
+            slices={data.paymentMix.map((p, i) => ({
+              label: p.label,
+              value: p.value,
+              color: PAY_COLORS[i % PAY_COLORS.length]!,
+            }))}
+          />
+        ) : (
+          <WidgetEmpty />
+        );
+      default:
+        return <WidgetEmpty />;
+    }
+  };
 
   return (
     <div className="admin-page">
@@ -70,41 +114,12 @@ export function AdminFinanceSalesPage() {
             </div>
           </div>
 
-          <p className="admin-section-label">۱ · روند زمانی</p>
-          <section className="admin-card" style={{ marginBottom: 14 }}>
-            <div className="admin-card-head">
-              <h2>{period === 'year' ? 'فروش ماهانه' : 'فروش روزانه'}</h2>
-            </div>
-            <div className="admin-chart-panel">
-              <AdminLineChart points={data.dailyOrMonthly} color="#5c4d91" height={220} />
-            </div>
-          </section>
-
-          <p className="admin-section-label">۲ · ترکیب</p>
-          <div className="admin-dash-grid">
-            <section className="admin-card">
-              <div className="admin-card-head"><h2>فروش بر اساس دسته</h2></div>
-              <div className="admin-chart-panel">
-                <AdminBarChart
-                  color="#0ba5f2"
-                  height={200}
-                  points={data.categories.slice(0, 8).map((c) => ({ label: c.label, value: c.value }))}
-                />
-              </div>
-            </section>
-            <section className="admin-card">
-              <div className="admin-card-head"><h2>ترکیب روش پرداخت</h2></div>
-              <div className="admin-chart-panel">
-                <AdminDonutChart
-                  slices={data.paymentMix.map((p, i) => ({
-                    label: p.label,
-                    value: p.value,
-                    color: PAY_COLORS[i % PAY_COLORS.length],
-                  }))}
-                />
-              </div>
-            </section>
-          </div>
+          <WidgetDashboard
+            dashboardId="finance-sales"
+            catalog={FINANCE_SALES_WIDGET_CATALOG}
+            title={period === 'year' ? 'فروش ماهانه · ویجت‌ها' : 'فروش روزانه · ویجت‌ها'}
+            renderWidget={renderSalesWidget}
+          />
         </>
       ) : null}
     </div>

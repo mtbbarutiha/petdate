@@ -17,7 +17,7 @@ function ChartTipBox({ label, value }: { label: string; value: number }) {
 
 export function AdminBarChart({
   points,
-  height = 200,
+  height = 140,
   color = '#5c4d91',
   onSliceClick,
 }: {
@@ -36,7 +36,7 @@ export function AdminBarChart({
   const width = Math.max(280, points.length * (barW + gap) + 24);
   return (
     <div className="admin-chart-scroll">
-      <svg viewBox={`0 0 ${width} ${height + labelH}`} className="admin-chart-svg admin-chart-svg--lg" role="img">
+      <svg viewBox={`0 0 ${width} ${height + labelH}`} className="admin-chart-svg admin-chart-svg--compact" role="img">
         {points.map((p, i) => {
           const h = Math.round((p.value / max) * height);
           const x = 12 + i * (barW + gap);
@@ -130,12 +130,14 @@ export function AdminFunnelChart({
 
 export function AdminLineChart({
   points,
-  height = 200,
+  height = 140,
   color = '#5c4d91',
+  onPointClick,
 }: {
   points: Point[];
   height?: number;
   color?: string;
+  onPointClick?: (point: Point) => void;
 }) {
   if (!points.length) {
     return <p className="admin-muted">داده‌ای برای نمودار نیست</p>;
@@ -154,12 +156,17 @@ export function AdminLineChart({
   const area = `${path} L${coords[coords.length - 1].x},${height} L${coords[0].x},${height} Z`;
   return (
     <div className="admin-chart-scroll">
-      <svg viewBox={`0 0 ${width} ${height + 28}`} className="admin-chart-svg admin-chart-svg--lg" role="img">
+      <svg viewBox={`0 0 ${width} ${height + 28}`} className="admin-chart-svg admin-chart-svg--compact" role="img">
         <path d={area} fill={color} opacity={0.12} />
         <path d={path} fill="none" stroke={color} strokeWidth={2.5} strokeLinejoin="round" />
         {coords.map((c, i) => (
-          <g key={`${c.label}-${i}`}>
-            <circle cx={c.x} cy={c.y} r={4} fill={color} />
+          <g
+            key={`${c.label}-${i}`}
+            className={onPointClick ? 'admin-chart-hit' : undefined}
+            onClick={() => onPointClick?.({ label: c.label, value: c.value })}
+            style={onPointClick ? { cursor: 'pointer' } : undefined}
+          >
+            <circle cx={c.x} cy={c.y} r={onPointClick ? 5 : 4} fill={color} />
             <title>{`${c.label}: ${c.value.toLocaleString('fa-IR')}`}</title>
           </g>
         ))}
@@ -171,10 +178,13 @@ export function AdminLineChart({
 /** Multi-series line chart for executive aggregate trends. */
 export function AdminMultiLineChart({
   series,
-  height = 220,
+  height = 140,
+  onPointClick,
 }: {
   series: Array<{ key: string; label: string; color: string; points: Point[] }>;
   height?: number;
+  /** Fired with the x-axis label (shared across series) for time drill-down. */
+  onPointClick?: (label: string) => void;
 }) {
   const active = series.filter((s) => s.points.length > 0);
   if (!active.length) {
@@ -187,10 +197,31 @@ export function AdminMultiLineChart({
   const padX = 14;
   const padY = 14;
   const step = len > 1 ? (width - padX * 2) / (len - 1) : 0;
+  const xLabels = active[0]?.points.map((p) => p.label) ?? [];
 
   return (
     <div className="admin-chart-scroll">
-      <svg viewBox={`0 0 ${width} ${height + 36}`} className="admin-chart-svg admin-chart-svg--lg" role="img">
+      <svg viewBox={`0 0 ${width} ${height + 36}`} className="admin-chart-svg admin-chart-svg--compact" role="img">
+        {onPointClick
+          ? xLabels.map((label, i) => {
+              const x = padX + i * step;
+              return (
+                <rect
+                  key={`hit-${label}-${i}`}
+                  x={x - Math.max(8, step / 2)}
+                  y={0}
+                  width={Math.max(16, step)}
+                  height={height + 36}
+                  fill="transparent"
+                  className="admin-chart-hit"
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => onPointClick(label)}
+                >
+                  <title>{label}</title>
+                </rect>
+              );
+            })
+          : null}
         {active.map((s) => {
           const coords = s.points.map((p, i) => {
             const x = padX + i * step;
@@ -224,7 +255,7 @@ export function AdminMultiLineChart({
 
 export function AdminDonutChart({
   slices,
-  size = 200,
+  size = 140,
   onSliceClick,
 }: {
   slices: Array<{ label: string; value: number; color: string }>;
