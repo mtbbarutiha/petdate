@@ -11,9 +11,11 @@ import {
   employeePublicIdOf,
   HR_CALL_CONNECTED,
   HR_REJECTED_NO_CONTACT,
+  isHrJobBoard,
   makeContractCode,
   makeEmployeePublicId,
   normalizeAdminPermissions,
+  normalizeHrJobBoard,
   type AdminAccount,
   type AdminRoleDef,
   type HrBenefitDef,
@@ -166,6 +168,10 @@ export function ensureHrSchema(): void {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       title TEXT NOT NULL,
       department TEXT NOT NULL DEFAULT '',
+      job_board TEXT NOT NULL DEFAULT '',
+      posted_at TEXT NOT NULL DEFAULT '',
+      posting_cost INTEGER NOT NULL DEFAULT 0,
+      payment_receipt_url TEXT NOT NULL DEFAULT '',
       status TEXT NOT NULL DEFAULT 'باز',
       openings INTEGER NOT NULL DEFAULT 1,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
@@ -230,6 +236,7 @@ export function ensureHrSchema(): void {
   ensureAdminRbacColumns();
   ensureHrEmployeeColumns();
   ensureHrCandidateColumns();
+  ensureHrJobOpeningColumns();
   ensureHrRequestColumns();
 
   d.exec(`CREATE INDEX IF NOT EXISTS idx_hr_employees_code ON hr_employees(personnel_code)`);
@@ -308,6 +315,69 @@ function ensureHrCandidateColumns(): void {
   }
   if (!cols.has('followup_json')) {
     d.exec(`ALTER TABLE hr_candidates ADD COLUMN followup_json TEXT NOT NULL DEFAULT '{}'`);
+  }
+  if (!cols.has('job_board')) {
+    d.exec(`ALTER TABLE hr_candidates ADD COLUMN job_board TEXT NOT NULL DEFAULT ''`);
+  }
+  // Normalize legacy spellings + backfill job_board from source when source is a board
+  const candRows = d
+    .prepare(`SELECT id, job_board, source FROM hr_candidates`)
+    .all() as Array<{ id: number; job_board: string; source: string }>;
+  const updCand = d.prepare(`UPDATE hr_candidates SET job_board = ? WHERE id = ?`);
+  for (const row of candRows) {
+    const raw = String(row.job_board || '').trim() || String(row.source || '').trim();
+    if (!raw) continue;
+    if (!String(row.job_board || '').trim() && !isHrJobBoard(raw)) continue;
+    const nb = normalizeHrJobBoard(raw);
+    if (nb && nb !== (row.job_board || '')) {
+      updCand.run(nb, row.id);
+    }
+  }
+}
+
+/**
+ * Additive columns for job openings — job board + posted date, never wipe.
+ * Also migrates misplaced job-board labels out of department.
+ */
+function ensureHrJobOpeningColumns(): void {
+  const d = db();
+  const cols = new Set(
+    (d.prepare(`PRAGMA table_info(hr_job_openings)`).all() as Array<{ name: string }>).map((c) => c.name)
+  );
+  if (!cols.has('job_board')) {
+    d.exec(`ALTER TABLE hr_job_openings ADD COLUMN job_board TEXT NOT NULL DEFAULT ''`);
+  }
+  if (!cols.has('posted_at')) {
+    d.exec(`ALTER TABLE hr_job_openings ADD COLUMN posted_at TEXT NOT NULL DEFAULT ''`);
+  }
+  if (!cols.has('posting_cost')) {
+    d.exec(`ALTER TABLE hr_job_openings ADD COLUMN posting_cost INTEGER NOT NULL DEFAULT 0`);
+  }
+  if (!cols.has('payment_receipt_url')) {
+    d.exec(`ALTER TABLE hr_job_openings ADD COLUMN payment_receipt_url TEXT NOT NULL DEFAULT ''`);
+  }
+  // Backfill posted_at from created_at date when empty
+  d.prepare(
+    `UPDATE hr_job_openings
+     SET posted_at = substr(created_at, 1, 10)
+     WHERE TRIM(COALESCE(posted_at, '')) = ''
+       AND TRIM(COALESCE(created_at, '')) != ''`
+  ).run();
+  // If department was wrongly used as job board (e.g. لینکدین), move it
+  const rows = d
+    .prepare(`SELECT id, department, job_board FROM hr_job_openings`)
+    .all() as Array<{ id: number; department: string; job_board: string }>;
+  const upd = d.prepare(
+    `UPDATE hr_job_openings SET department = ?, job_board = ? WHERE id = ?`
+  );
+  for (const row of rows) {
+    const dept = String(row.department || '').trim();
+    const board = normalizeHrJobBoard(row.job_board || '');
+    if (!board && isHrJobBoard(dept)) {
+      upd.run('', normalizeHrJobBoard(dept), row.id);
+    } else if (board && board !== (row.job_board || '')) {
+      upd.run(dept, board, row.id);
+    }
   }
 }
 
@@ -1150,29 +1220,155 @@ export function listBenefitDefs(): HrBenefitDef[] {
 export function listJobOpenings(): HrJobOpening[] {
   return (
     db().prepare('SELECT * FROM hr_job_openings ORDER BY id DESC').all() as Record<string, unknown>[]
-  ).map((r) => ({
+  ).map(mapJobOpening);
+}
+
+function mapJobOpening(r: Record<string, unknown>): HrJobOpening {
+  return {
     id: Number(r.id),
     title: String(r.title),
     department: String(r.department || ''),
+    jobBoard: normalizeHrJobBoard(String(r.job_board || '')),
+    postedAt: String(r.posted_at || '').slice(0, 10),
+    postingCost: Number(r.posting_cost || 0),
+    paymentReceiptUrl: String(r.payment_receipt_url || ''),
     status: String(r.status || 'باز'),
     openings: Number(r.openings || 1),
     createdAt: String(r.created_at || ''),
-  }));
+  };
 }
 
 export function createJobOpening(input: {
   title: string;
   department?: string;
+  jobBoard?: string;
+  postedAt?: string;
+  postingCost?: number;
+  paymentReceiptUrl?: string;
   status?: string;
   openings?: number;
 }): HrJobOpening {
+  const department = String(input.department || '').trim();
+  let jobBoard = normalizeHrJobBoard(input.jobBoard || '');
+  // Guard: never persist a job-board label as department
+  let dept = department;
+  if (!jobBoard && isHrJobBoard(dept)) {
+    jobBoard = normalizeHrJobBoard(dept);
+    dept = '';
+  } else if (isHrJobBoard(dept) && normalizeHrJobBoard(dept) === jobBoard) {
+    dept = '';
+  }
+  const postedAt =
+    (input.postedAt && String(input.postedAt).slice(0, 10)) ||
+    new Date().toISOString().slice(0, 10);
+  const postingCost =
+    typeof input.postingCost === 'number' && Number.isFinite(input.postingCost)
+      ? Math.max(0, Math.round(input.postingCost))
+      : 0;
   const info = db()
     .prepare(
-      `INSERT INTO hr_job_openings (title, department, status, openings) VALUES (?, ?, ?, ?)`
+      `INSERT INTO hr_job_openings (
+        title, department, job_board, posted_at, posting_cost, payment_receipt_url, status, openings
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
     )
-    .run(input.title.trim(), input.department || '', input.status || 'باز', input.openings ?? 1);
+    .run(
+      input.title.trim(),
+      dept,
+      jobBoard,
+      postedAt,
+      postingCost,
+      (input.paymentReceiptUrl || '').trim(),
+      input.status || 'باز',
+      input.openings ?? 1
+    );
   const id = Number(info.lastInsertRowid);
   return listJobOpenings().find((j) => j.id === id)!;
+}
+
+export function updateJobOpening(
+  id: number,
+  input: {
+    title?: string;
+    department?: string;
+    jobBoard?: string;
+    postedAt?: string;
+    postingCost?: number;
+    paymentReceiptUrl?: string;
+    status?: string;
+    openings?: number;
+  }
+): HrJobOpening | null {
+  const existing = db()
+    .prepare('SELECT * FROM hr_job_openings WHERE id = ?')
+    .get(id) as Record<string, unknown> | undefined;
+  if (!existing) return null;
+
+  const title =
+    typeof input.title === 'string' && input.title.trim()
+      ? input.title.trim()
+      : String(existing.title || '');
+  let department =
+    typeof input.department === 'string'
+      ? input.department.trim()
+      : String(existing.department || '');
+  let jobBoard =
+    typeof input.jobBoard === 'string'
+      ? normalizeHrJobBoard(input.jobBoard)
+      : normalizeHrJobBoard(String(existing.job_board || ''));
+  if (!jobBoard && isHrJobBoard(department)) {
+    jobBoard = normalizeHrJobBoard(department);
+    department = '';
+  } else if (isHrJobBoard(department) && normalizeHrJobBoard(department) === jobBoard) {
+    department = '';
+  }
+  const postedAt =
+    typeof input.postedAt === 'string' && input.postedAt.trim()
+      ? input.postedAt.trim().slice(0, 10)
+      : String(existing.posted_at || '').slice(0, 10);
+  const postingCost =
+    typeof input.postingCost === 'number' && Number.isFinite(input.postingCost)
+      ? Math.max(0, Math.round(input.postingCost))
+      : Number(existing.posting_cost || 0);
+  const paymentReceiptUrl =
+    typeof input.paymentReceiptUrl === 'string'
+      ? input.paymentReceiptUrl.trim()
+      : String(existing.payment_receipt_url || '');
+  const status =
+    typeof input.status === 'string' && input.status.trim()
+      ? input.status.trim()
+      : String(existing.status || 'باز');
+  const openings =
+    typeof input.openings === 'number' && Number.isFinite(input.openings)
+      ? input.openings
+      : Number(existing.openings || 1);
+
+  db()
+    .prepare(
+      `UPDATE hr_job_openings
+       SET title = ?, department = ?, job_board = ?, posted_at = ?,
+           posting_cost = ?, payment_receipt_url = ?, status = ?, openings = ?
+       WHERE id = ?`
+    )
+    .run(
+      title,
+      department,
+      jobBoard,
+      postedAt,
+      postingCost,
+      paymentReceiptUrl,
+      status,
+      openings,
+      id
+    );
+
+  return listJobOpenings().find((j) => j.id === id) || null;
+}
+
+export function getJobOpening(id: number): HrJobOpening | null {
+  const row = db()
+    .prepare('SELECT * FROM hr_job_openings WHERE id = ?')
+    .get(id) as Record<string, unknown> | undefined;
+  return row ? mapJobOpening(row) : null;
 }
 
 export function listCandidates(opts?: { stage?: string; jobOpeningId?: number }): HrCandidate[] {
@@ -1264,8 +1460,8 @@ export function createCandidate(input: {
       mobile,
       input.email || '',
       input.city || '',
-      input.source || '',
-      input.jobBoard || '',
+      input.source || input.jobBoard || '',
+      normalizeHrJobBoard(input.jobBoard || input.source || ''),
       input.jobTitle || '',
       input.jobOpeningId ?? null,
       input.applicationDate || new Date().toISOString().slice(0, 10),
@@ -1829,7 +2025,9 @@ export const hrService = {
   listIncomeModels,
   listBenefitDefs,
   listJobOpenings,
+  getJobOpening,
   createJobOpening,
+  updateJobOpening,
   listCandidates,
   createCandidate,
   updateCandidateStage,

@@ -16,6 +16,7 @@ type Report = {
   byGender: ChartRow[];
   byMarital: ChartRow[];
   byJobTitle?: ChartRow[];
+  byJobBoard?: Array<{ name: string; openings: number; applicants: number }>;
   ageStats?: {
     min: number | null;
     max: number | null;
@@ -297,6 +298,43 @@ export function AdminHrReportsPage() {
       <div className="hr-report-donut-row" style={{ marginTop: 16 }}>
         <FrequencyDonut title="فراوانی عنوان شغلی" rows={byJobTitle} />
       </div>
+
+      <article className="admin-card" style={{ marginTop: 16, padding: 16 }}>
+        <div className="admin-card-head">
+          <div>
+            <h2>آمار جاب برد</h2>
+            <p className="admin-muted">تعداد آگهی و تعداد بانک آگهی در هر جاب برد</p>
+          </div>
+        </div>
+        <div className="admin-table-wrap">
+          <table className="admin-table admin-table--dense">
+            <thead>
+              <tr>
+                <th>جاب برد</th>
+                <th>تعداد آگهی</th>
+                <th>تعداد بانک آگهی</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(data?.byJobBoard || []).length === 0 ? (
+                <tr>
+                  <td colSpan={3} className="admin-empty">
+                    داده‌ای نیست
+                  </td>
+                </tr>
+              ) : (
+                (data?.byJobBoard || []).map((row) => (
+                  <tr key={row.name}>
+                    <td>{row.name}</td>
+                    <td>{formatNumFa(row.openings)}</td>
+                    <td>{formatNumFa(row.applicants)}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </article>
     </div>
   );
 }

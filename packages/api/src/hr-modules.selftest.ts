@@ -74,12 +74,44 @@ async function main() {
   const bal = hrMod.leaveBalance(emp.id);
   assert(bal.used === 2 && bal.remaining === 24, 'leave balance');
 
-  const opening = createJobOpening({ title: 'کارشناس پشتیبانی', department: 'عملیات' });
+  const opening = createJobOpening({
+    title: 'کارشناس پشتیبانی',
+    department: 'عملیات',
+    jobBoard: 'جابینجا',
+    postedAt: '2026-03-20',
+  });
+  assert(opening.jobBoard === 'جابینجا', 'opening jobBoard');
+  assert(opening.postedAt === '2026-03-20', 'opening postedAt');
+  assert(opening.department === 'عملیات', 'opening department separate');
+
+  // Job board must not land in department
+  const linkedInMisplace = createJobOpening({
+    title: 'تست لینکدین',
+    department: 'لینکدین',
+  });
+  assert(linkedInMisplace.jobBoard === 'لینکدین', 'linkedin moved to jobBoard');
+  assert(linkedInMisplace.department === '', 'department cleared when it was a board');
+
+  const { updateJobOpening } = require('./hr-service') as typeof import('./hr-service');
+  const patched = updateJobOpening(opening.id, {
+    jobBoard: 'جاب ویژن',
+    postedAt: '2026-04-01',
+  });
+  assert(patched?.jobBoard === 'جاب ویژن', 'update jobBoard');
+  assert(patched?.postedAt === '2026-04-01', 'update postedAt');
+  const withCost = updateJobOpening(opening.id, {
+    postingCost: 1_500_000,
+    paymentReceiptUrl: '/api/admin/hr/opening-receipts/1/demo.jpg',
+  });
+  assert(withCost?.postingCost === 1_500_000, 'postingCost');
+  assert(Boolean(withCost?.paymentReceiptUrl), 'paymentReceiptUrl');
+
   const { candidate } = createCandidate({
     firstName: 'سارا',
     lastName: 'جدید',
     mobile: '09120000000',
     jobOpeningId: opening.id,
+    jobBoard: 'جابینجا',
   });
   const hired = hrMod.hireCandidate(candidate.id);
   assert(hired?.candidate?.stage === 'استخدام‌شده', 'hire stage');
@@ -133,6 +165,14 @@ async function main() {
   assert(Array.isArray(reports.byGender), 'reports.byGender chart array');
   assert(Array.isArray(reports.byMarital), 'reports.byMarital chart array');
   assert(Array.isArray(reports.byJobTitle), 'reports.byJobTitle chart array');
+  assert(Array.isArray(reports.byJobBoard), 'reports.byJobBoard');
+  assert(
+    reports.byJobBoard.every(
+      (r: { name: string; openings: number; applicants: number }) =>
+        typeof r.name === 'string' && typeof r.openings === 'number' && typeof r.applicants === 'number'
+    ),
+    'byJobBoard row shape'
+  );
   assert(reports.ageStats && typeof reports.ageStats.sample === 'number', 'ageStats');
   assert(!reports.byGender.some((r) => r.name === 'نامشخص'), 'gender without نامشخص');
   assert(!reports.byMarital.some((r) => r.name === 'نامشخص'), 'marital without نامشخص');

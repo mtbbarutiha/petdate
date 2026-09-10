@@ -7,12 +7,15 @@ import {
   HR_JOB_BOARDS,
   isHrCallNoContact,
 } from '@petdate/shared';
-import { adminFetch, formatNumFa } from '../../api';
+import { adminFetch, formatNumFa, formatTomanFa } from '../../api';
 import { adminCan } from '../../auth';
 import { AdminModal } from '../../AdminModal';
 import {
   JalaliDateSelect,
+  currentJalaliParts,
+  formatAdminFaDate,
   formatAdminFaDateTime,
+  gregorianIsoToJalaliParts,
   jalaliPartsAndTimeToIso,
   jalaliPartsToGregorianIso,
   type JalaliDateValue,
@@ -79,8 +82,17 @@ export function AdminHrAtsPage() {
   );
 
   const [openingModal, setOpeningModal] = useState(false);
+  const [editingOpeningId, setEditingOpeningId] = useState<number | null>(null);
   const [candidateModal, setCandidateModal] = useState(false);
-  const [openingForm, setOpeningForm] = useState({ title: '', department: '' });
+  const [openingForm, setOpeningForm] = useState({
+    title: '',
+    department: '',
+    jobBoard: '',
+    postingCost: '',
+  });
+  const [openingPostedAt, setOpeningPostedAt] = useState<JalaliDateValue>(null);
+  const [openingReceiptFile, setOpeningReceiptFile] = useState<File | null>(null);
+  const [openingReceiptUrl, setOpeningReceiptUrl] = useState('');
   const [candidateForm, setCandidateForm] = useState({
     firstName: '',
     lastName: '',
@@ -116,20 +128,81 @@ export function AdminHrAtsPage() {
     }
   }, [selectedId, selected?.followup.callRound]);
 
-  const addOpening = async (e: FormEvent) => {
+  const openNewOpening = () => {
+    setEditingOpeningId(null);
+    setOpeningForm({ title: '', department: '', jobBoard: '', postingCost: '' });
+    setOpeningPostedAt(currentJalaliParts());
+    setOpeningReceiptFile(null);
+    setOpeningReceiptUrl('');
+    setOpeningModal(true);
+  };
+
+  const openEditOpening = (o: HrJobOpening) => {
+    setEditingOpeningId(o.id);
+    setOpeningForm({
+      title: o.title,
+      department: o.department || '',
+      jobBoard: o.jobBoard || '',
+      postingCost: o.postingCost > 0 ? String(o.postingCost) : '',
+    });
+    setOpeningPostedAt(gregorianIsoToJalaliParts(o.postedAt || o.createdAt));
+    setOpeningReceiptFile(null);
+    setOpeningReceiptUrl(o.paymentReceiptUrl || '');
+    setOpeningModal(true);
+  };
+
+  const saveOpening = async (e: FormEvent) => {
     e.preventDefault();
     if (!canWrite || !openingForm.title.trim()) return;
+    const postedAt = jalaliPartsToGregorianIso(openingPostedAt);
+    if (!postedAt) {
+      setError('تاریخ درج آگهی الزامی است');
+      return;
+    }
+    if (!openingForm.jobBoard) {
+      setError('انتخاب جاب برد الزامی است');
+      return;
+    }
     setBusy(true);
     try {
-      await adminFetch('/api/admin/hr/ats/openings', {
-        method: 'POST',
-        body: JSON.stringify({
-          title: openingForm.title.trim(),
-          department: openingForm.department.trim(),
-        }),
-      });
+      const costRaw = openingForm.postingCost.replace(/[^\d]/g, '');
+      const postingCost = costRaw ? Number(costRaw) : 0;
+      const body = {
+        title: openingForm.title.trim(),
+        department: openingForm.department.trim(),
+        jobBoard: openingForm.jobBoard,
+        postedAt,
+        postingCost: Number.isFinite(postingCost) ? postingCost : 0,
+        paymentReceiptUrl: openingReceiptUrl || undefined,
+      };
+      let openingId = editingOpeningId;
+      if (editingOpeningId != null) {
+        await adminFetch(`/api/admin/hr/ats/openings/${editingOpeningId}`, {
+          method: 'PATCH',
+          body: JSON.stringify(body),
+        });
+      } else {
+        const created = await adminFetch<{ opening: HrJobOpening }>('/api/admin/hr/ats/openings', {
+          method: 'POST',
+          body: JSON.stringify(body),
+        });
+        openingId = created.opening.id;
+      }
+      if (openingReceiptFile && openingId != null) {
+        const fd = new FormData();
+        fd.append('file', openingReceiptFile);
+        await adminFetch(`/api/admin/hr/ats/openings/${openingId}/receipt`, {
+          method: 'POST',
+          body: fd,
+        });
+      }
       setOpeningModal(false);
-      setOpeningForm({ title: '', department: '' });
+      setEditingOpeningId(null);
+      setOpeningForm({ title: '', department: '', jobBoard: '', postingCost: '' });
+      setOpeningPostedAt(null);
+      setOpeningReceiptFile(null);
+      setOpeningReceiptUrl('');
+      setError(null);
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'خطا');
@@ -440,7 +513,7 @@ export function AdminHrAtsPage() {
         </div>
         {canWrite ? (
           <div className="admin-toolbar" style={{ margin: 0 }}>
-            <button type="button" className="admin-btn" onClick={() => setOpeningModal(true)}>
+            <button type="button" className="admin-btn" onClick={openNewOpening}>
               آگهی جدید
             </button>
             <button
@@ -500,14 +573,19 @@ export function AdminHrAtsPage() {
                   <tr>
                     <th>عنوان</th>
                     <th>دپارتمان</th>
+                    <th>جاب برد</th>
+                    <th>تاریخ درج</th>
+                    <th>هزینه درج</th>
+                    <th>رسید</th>
                     <th>وضعیت</th>
                     <th>ظرفیت</th>
+                    <th />
                   </tr>
                 </thead>
                 <tbody>
                   {openings.length === 0 ? (
                     <tr>
-                      <td colSpan={4} className="admin-empty">
+                      <td colSpan={9} className="admin-empty">
                         آگهی‌ای نیست
                       </td>
                     </tr>
@@ -516,10 +594,52 @@ export function AdminHrAtsPage() {
                       <tr key={o.id}>
                         <td>{o.title}</td>
                         <td>{o.department || '—'}</td>
+                        <td>{o.jobBoard || '—'}</td>
+                        <td>{formatAdminFaDate(o.postedAt || o.createdAt) || '—'}</td>
+                        <td>{o.postingCost > 0 ? formatTomanFa(o.postingCost) : '—'}</td>
+                        <td>
+                          {o.paymentReceiptUrl ? (
+                            <a
+                              className="admin-link"
+                              href={o.paymentReceiptUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              {/\.(png|jpe?g|gif|webp)(\?|$)/i.test(o.paymentReceiptUrl) ? (
+                                <img
+                                  src={o.paymentReceiptUrl}
+                                  alt="رسید پرداخت"
+                                  style={{
+                                    width: 40,
+                                    height: 40,
+                                    objectFit: 'cover',
+                                    borderRadius: 6,
+                                    display: 'block',
+                                  }}
+                                />
+                              ) : (
+                                'مشاهده رسید'
+                              )}
+                            </a>
+                          ) : (
+                            '—'
+                          )}
+                        </td>
                         <td>
                           <span className={stagePillClass(o.status)}>{o.status}</span>
                         </td>
                         <td>{formatNumFa(o.openings)}</td>
+                        <td>
+                          {canWrite ? (
+                            <button
+                              type="button"
+                              className="admin-btn admin-btn--ghost"
+                              onClick={() => openEditOpening(o)}
+                            >
+                              ویرایش
+                            </button>
+                          ) : null}
+                        </td>
                       </tr>
                     ))
                   )}
@@ -549,7 +669,7 @@ export function AdminHrAtsPage() {
                   <th>نام</th>
                   <th>موبایل</th>
                   <th>موقعیت</th>
-                  <th>جاب‌بورد</th>
+                  <th>جاب برد</th>
                   <th>وضعیت</th>
                   <th />
                 </tr>
@@ -825,10 +945,13 @@ export function AdminHrAtsPage() {
 
       <AdminModal
         open={openingModal}
-        title="آگهی جدید"
-        onClose={() => setOpeningModal(false)}
+        title={editingOpeningId != null ? 'ویرایش آگهی' : 'آگهی جدید'}
+        onClose={() => {
+          setOpeningModal(false);
+          setEditingOpeningId(null);
+        }}
         as="form"
-        onSubmit={(e) => void addOpening(e)}
+        onSubmit={(e) => void saveOpening(e)}
         busy={busy}
         footer={
           <>
@@ -839,7 +962,10 @@ export function AdminHrAtsPage() {
               type="button"
               className="admin-btn admin-btn--ghost"
               disabled={busy}
-              onClick={() => setOpeningModal(false)}
+              onClick={() => {
+                setOpeningModal(false);
+                setEditingOpeningId(null);
+              }}
             >
               انصراف
             </button>
@@ -861,7 +987,78 @@ export function AdminHrAtsPage() {
             className="form-input"
             value={openingForm.department}
             onChange={(e) => setOpeningForm({ ...openingForm, department: e.target.value })}
+            placeholder="مثلاً فروش — نه جاب‌بورد"
           />
+        </label>
+        <label>
+          <span className="form-label">جاب برد</span>
+          <select
+            className="form-input"
+            required
+            value={openingForm.jobBoard}
+            onChange={(e) => setOpeningForm({ ...openingForm, jobBoard: e.target.value })}
+          >
+            <option value="">انتخاب جاب برد</option>
+            {HR_JOB_BOARDS.map((b) => (
+              <option key={b} value={b}>
+                {b}
+              </option>
+            ))}
+          </select>
+        </label>
+        <JalaliDateSelect
+          label="تاریخ درج آگهی"
+          value={openingPostedAt}
+          onChange={setOpeningPostedAt}
+          allowEmpty={false}
+          yearsBack={5}
+          yearsForward={1}
+        />
+        <label>
+          <span className="form-label">هزینه درج آگهی (تومان)</span>
+          <input
+            className="form-input"
+            type="text"
+            inputMode="numeric"
+            dir="ltr"
+            placeholder="مثلاً 2500000"
+            value={openingForm.postingCost}
+            onChange={(e) =>
+              setOpeningForm({
+                ...openingForm,
+                postingCost: e.target.value.replace(/[^\d]/g, ''),
+              })
+            }
+          />
+          {openingForm.postingCost ? (
+            <span className="admin-muted" style={{ display: 'block', marginTop: 4 }}>
+              {formatTomanFa(Number(openingForm.postingCost) || 0)}
+            </span>
+          ) : null}
+        </label>
+        <label>
+          <span className="form-label">محل درج رسید پرداخت آگهی</span>
+          <input
+            className="form-input"
+            type="file"
+            accept="image/jpeg,image/png,image/webp,image/gif,application/pdf"
+            onChange={(e) => setOpeningReceiptFile(e.target.files?.[0] ?? null)}
+          />
+          {openingReceiptFile ? (
+            <span className="admin-muted" style={{ display: 'block', marginTop: 4 }}>
+              {openingReceiptFile.name}
+            </span>
+          ) : openingReceiptUrl ? (
+            <a
+              className="admin-link"
+              href={openingReceiptUrl}
+              target="_blank"
+              rel="noreferrer"
+              style={{ display: 'inline-block', marginTop: 6 }}
+            >
+              رسید فعلی
+            </a>
+          ) : null}
         </label>
       </AdminModal>
 
@@ -926,7 +1123,7 @@ export function AdminHrAtsPage() {
           />
         </label>
         <label>
-          <span className="form-label">جاب‌بورد</span>
+          <span className="form-label">جاب برد</span>
           <select
             className="form-input"
             value={candidateForm.jobBoard}
