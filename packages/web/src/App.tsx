@@ -426,6 +426,8 @@ export default function App() {
                 <Route path="crm/qa" element={<AdminCrmQaPage />} />
                 <Route path="crm/reports" element={<AdminCrmReportsPage />} />
                 <Route path="crm/settings" element={<AdminCrmSettingsPage />} />
+                <Route path="ticketing" element={<Navigate to="/admin/crm/ticketing" replace />} />
+                <Route path="ticketing/*" element={<Navigate to="/admin/crm/ticketing" replace />} />
 
               </Route>
             </Route>

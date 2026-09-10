@@ -198,35 +198,80 @@ export function ensureFinanceOsSchema(): void {
   migrateFinanceOsDescColumns();
   schemaReady = true;
   seedFinanceOsIfEmpty();
-  scrubSbgBrandingIfNeeded();
+  scrubFinanceOsSbgBranding();
 }
 
-/** One-time, non-destructive rename of legacy SBG display strings → هلدینگ / پت‌دیت. */
-function scrubSbgBrandingIfNeeded(): void {
-  if (metaGet<boolean>('sbg_rebrand_v1', false)) return;
-  const d = db();
+/** Run one scrub statement; never abort the whole pass on a single failure. */
+function scrubSql(sql: string, label: string): void {
   try {
-    d.prepare(`UPDATE finance_os_businesses SET name = 'هلدینگ' WHERE name = 'SBG'`).run();
-    d.prepare(`UPDATE finance_os_businesses SET code = 'HLD' WHERE code = 'SBG'`).run();
-    d.prepare(`UPDATE finance_os_accounts SET provider = 'صندوق هلدینگ' WHERE provider LIKE '%SBG%'`).run();
-    d.prepare(`UPDATE finance_os_accounts SET line = 'هلدینگ' WHERE line = 'SBG'`).run();
-    d.prepare(`UPDATE finance_os_accounts SET code = 'W-CASH-HLD' WHERE code = 'W-CASH-SBG'`).run();
-    d.prepare(`UPDATE finance_os_people SET line = 'هلدینگ' WHERE line = 'SBG'`).run();
-    d.prepare(`UPDATE finance_os_transactions SET line = 'هلدینگ' WHERE line = 'SBG'`).run();
-    d.prepare(`UPDATE finance_os_transactions SET account = 'W-CASH-HLD' WHERE account = 'W-CASH-SBG'`).run();
-    d.prepare(`UPDATE finance_os_sbg_expenses SET account = 'W-CASH-HLD' WHERE account = 'W-CASH-SBG'`).run();
-    d.prepare(`UPDATE finance_os_import_log SET account = 'W-CASH-HLD' WHERE account = 'W-CASH-SBG'`).run();
-    d.prepare(`UPDATE finance_os_equipment SET ownership = 'هلدینگ' WHERE ownership = 'SBG'`).run();
-    d.prepare(`UPDATE finance_os_equipment SET assigned_business = 'هلدینگ' WHERE assigned_business = 'SBG'`).run();
-    d.prepare(
-      `UPDATE finance_os_commitments SET desc = REPLACE(desc, 'SBG', 'هلدینگ') WHERE desc LIKE '%SBG%'`
-    ).run();
-    d.prepare(
-      `UPDATE finance_os_invoices SET number = REPLACE(number, 'INV-SBG-', 'INV-PD-') WHERE number LIKE 'INV-SBG-%'`
-    ).run();
+    db().prepare(sql).run();
+  } catch (err) {
+    console.warn(`[finance-os] sbg scrub step skipped (${label}):`, err);
+  }
+}
+
+/**
+ * Non-destructive rename of legacy SBG display strings → هلدینگ / پت‌دیت.
+ * v2: commitments use desc_text (PG-safe after #154); statements are independent
+ * so a mid-pass failure no longer leaves INV-SBG-* / commitment copy uncleansed.
+ * Pass `force` from selftests after planting legacy rows.
+ */
+export function scrubFinanceOsSbgBranding(force = false): void {
+  if (!force && metaGet<boolean>('sbg_rebrand_v2', false)) return;
+  scrubSql(`UPDATE finance_os_businesses SET name = 'هلدینگ' WHERE name = 'SBG'`, 'biz-name');
+  scrubSql(`UPDATE finance_os_businesses SET code = 'HLD' WHERE code = 'SBG'`, 'biz-code');
+  scrubSql(
+    `UPDATE finance_os_accounts SET provider = 'صندوق هلدینگ' WHERE provider LIKE '%SBG%'`,
+    'acct-provider'
+  );
+  scrubSql(`UPDATE finance_os_accounts SET line = 'هلدینگ' WHERE line = 'SBG'`, 'acct-line');
+  scrubSql(`UPDATE finance_os_accounts SET code = 'W-CASH-HLD' WHERE code = 'W-CASH-SBG'`, 'acct-code');
+  scrubSql(`UPDATE finance_os_people SET line = 'هلدینگ' WHERE line = 'SBG'`, 'people-line');
+  scrubSql(`UPDATE finance_os_transactions SET line = 'هلدینگ' WHERE line = 'SBG'`, 'txn-line');
+  scrubSql(
+    `UPDATE finance_os_transactions SET account = 'W-CASH-HLD' WHERE account = 'W-CASH-SBG'`,
+    'txn-acct'
+  );
+  scrubSql(
+    `UPDATE finance_os_sbg_expenses SET account = 'W-CASH-HLD' WHERE account = 'W-CASH-SBG'`,
+    'exp-acct'
+  );
+  scrubSql(
+    `UPDATE finance_os_import_log SET account = 'W-CASH-HLD' WHERE account = 'W-CASH-SBG'`,
+    'import-acct'
+  );
+  scrubSql(`UPDATE finance_os_equipment SET ownership = 'هلدینگ' WHERE ownership = 'SBG'`, 'equip-own');
+  scrubSql(
+    `UPDATE finance_os_equipment SET assigned_business = 'هلدینگ' WHERE assigned_business = 'SBG'`,
+    'equip-biz'
+  );
+  // Prefer desc_text (post-#154); also try legacy desc for older DBs.
+  scrubSql(
+    `UPDATE finance_os_commitments SET desc_text = REPLACE(desc_text, 'SBG', 'هلدینگ') WHERE desc_text LIKE '%SBG%'`,
+    'commit-desc_text'
+  );
+  try {
+    const cols = db()
+      .prepare(`PRAGMA table_info(finance_os_commitments)`)
+      .all() as Array<{ name: string }>;
+    if (cols.some((c) => c.name === 'desc')) {
+      scrubSql(
+        `UPDATE finance_os_commitments SET "desc" = REPLACE("desc", 'SBG', 'هلدینگ') WHERE "desc" LIKE '%SBG%'`,
+        'commit-desc-legacy'
+      );
+    }
+  } catch {
+    /* PG path — desc_text already handled */
+  }
+  scrubSql(
+    `UPDATE finance_os_invoices SET number = REPLACE(number, 'INV-SBG-', 'INV-PD-') WHERE number LIKE 'INV-SBG-%'`,
+    'invoice-number'
+  );
+  try {
+    metaSet('sbg_rebrand_v2', true);
     metaSet('sbg_rebrand_v1', true);
   } catch (err) {
-    console.warn('[finance-os] sbg rebrand scrub skipped:', err);
+    console.warn('[finance-os] sbg rebrand meta skip:', err);
   }
 }
 

@@ -465,7 +465,7 @@ export function AdminSalesTicketsPage() {
   return (
     <div className="admin-page admin-page--wide">
       <header className="admin-header">
-        <div><h1>تیکتینگ</h1><p>استعلام مالی، پشتیبانی فنی و تحویل · Pet Date</p></div>
+        <div><h1>تیکت‌های فروش</h1><p>استعلام مالی، پشتیبانی فنی و تحویل · Pet Date</p></div>
         {canWrite ? (
           <button type="button" className="admin-btn admin-btn--primary" onClick={() => setOpen(true)}>+ تیکت</button>
         ) : null}
