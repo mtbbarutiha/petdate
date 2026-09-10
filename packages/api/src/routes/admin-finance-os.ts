@@ -26,11 +26,21 @@ export const financeOsAdminRouter = Router();
 financeOsAdminRouter.use(requirePermission('platform.read'));
 
 financeOsAdminRouter.get('/nav-counts', (_req, res) => {
-  res.json(getFinanceOsNavCounts());
+  try {
+    res.json(getFinanceOsNavCounts());
+  } catch (err) {
+    console.error('finance-os nav-counts:', err);
+    res.status(500).json({ error: (err as Error).message || 'خطای داخلی سرور' });
+  }
 });
 
 financeOsAdminRouter.get('/accounts', (_req, res) => {
-  res.json(getFinanceOsAccountsBundle());
+  try {
+    res.json(getFinanceOsAccountsBundle());
+  } catch (err) {
+    console.error('finance-os accounts:', err);
+    res.status(500).json({ error: (err as Error).message || 'خطای داخلی سرور' });
+  }
 });
 
 financeOsAdminRouter.post('/accounts', requirePermission('platform.write'), (req, res) => {
@@ -74,13 +84,18 @@ financeOsAdminRouter.post('/people', requirePermission('platform.write'), (req, 
 });
 
 financeOsAdminRouter.get('/transactions', (req, res) => {
-  res.json(
-    getFinanceOsTransactionsBundle({
-      status: typeof req.query.status === 'string' ? req.query.status : undefined,
-      account: typeof req.query.account === 'string' ? req.query.account : undefined,
-      direction: typeof req.query.direction === 'string' ? req.query.direction : undefined,
-    })
-  );
+  try {
+    res.json(
+      getFinanceOsTransactionsBundle({
+        status: typeof req.query.status === 'string' ? req.query.status : undefined,
+        account: typeof req.query.account === 'string' ? req.query.account : undefined,
+        direction: typeof req.query.direction === 'string' ? req.query.direction : undefined,
+      })
+    );
+  } catch (err) {
+    console.error('finance-os transactions:', err);
+    res.status(500).json({ error: (err as Error).message || 'خطای داخلی سرور' });
+  }
 });
 
 financeOsAdminRouter.post('/transactions/import', requirePermission('platform.write'), (req, res) => {
@@ -119,7 +134,12 @@ financeOsAdminRouter.post('/transactions/:id/suspicious', requirePermission('pla
 });
 
 financeOsAdminRouter.get('/allocation', (_req, res) => {
-  res.json(getFinanceOsAllocationBundle());
+  try {
+    res.json(getFinanceOsAllocationBundle());
+  } catch (err) {
+    console.error('finance-os allocation:', err);
+    res.status(500).json({ error: (err as Error).message || 'خطای داخلی سرور' });
+  }
 });
 
 financeOsAdminRouter.post('/allocation/expenses/:id/allocate', requirePermission('platform.write'), (req, res) => {
