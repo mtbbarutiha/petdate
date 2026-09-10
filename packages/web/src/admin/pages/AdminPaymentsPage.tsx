@@ -117,7 +117,7 @@ export function AdminPaymentsPage() {
       {error ? <p className="admin-error">{error}</p> : null}
 
       <div className="admin-table-wrap admin-card">
-        <table className="admin-table">
+        <table className="admin-table admin-table--dense">
           <thead>
             <tr>
               <th>کاربر</th>
@@ -148,32 +148,31 @@ export function AdminPaymentsPage() {
                         }
                         title={o.userName || '—'}
                         subtitle={
-                          <>
+                          <div className="admin-cell-compact">
                             <code className="admin-mono admin-id-public" dir="ltr">
                               {userPublicIdOf({ id: o.userId })}
                             </code>
-                            {(o.userUsername || o.userTelegramId) ? (
-                              <div>
-                                {o.userUsername ? `@${o.userUsername}` : ''}
-                                {o.userTelegramId ? ` · tg ${o.userTelegramId}` : ''}
-                              </div>
+                            {o.userUsername ? (
+                              <span className="admin-muted" dir="ltr">@{o.userUsername}</span>
                             ) : null}
-                          </>
+                          </div>
                         }
                       />
                     </td>
                     <td>
-                      {packageLabel(o)}
-                      {shopMeta?.titleHint ? (
-                        <div className="admin-muted">{shopMeta.titleHint}</div>
-                      ) : null}
-                      {shopMeta?.shopOrderId != null ? (
-                        <div className="admin-muted" dir="ltr">
-                          سفارش شاپ {makeOrderPublicId(shopMeta.shopOrderId)}
-                        </div>
-                      ) : null}
+                      <div className="admin-cell-compact">
+                        <span>{packageLabel(o)}</span>
+                        {shopMeta?.titleHint ? (
+                          <span className="admin-muted">{shopMeta.titleHint}</span>
+                        ) : null}
+                        {shopMeta?.shopOrderId != null ? (
+                          <span className="admin-muted" dir="ltr">
+                            سفارش شاپ {makeOrderPublicId(shopMeta.shopOrderId)}
+                          </span>
+                        ) : null}
+                      </div>
                     </td>
-                    <td>{amountLabel(o)}</td>
+                    <td className="admin-cell-nowrap">{amountLabel(o)}</td>
                     <td>
                       {o.method === 'stars'
                         ? '⭐ Stars'
@@ -188,7 +187,7 @@ export function AdminPaymentsPage() {
                     <td>
                       <span className="admin-badge">{statusLabel(o.status)}</span>
                     </td>
-                    <td>{new Date(o.createdAt).toLocaleString('fa-IR')}</td>
+                    <td className="admin-cell-nowrap">{new Date(o.createdAt).toLocaleString('fa-IR')}</td>
                     <td>
                       <div className="admin-row-actions">
                         <button

@@ -11,6 +11,13 @@ const STATUS_FA: Record<string, string> = {
   cancelled: 'لغو',
   expired: 'منقضی',
 };
+const KIND_FA: Record<string, string> = {
+  vet: 'دامپزشک',
+  trainer: 'مربی',
+  ai: 'پاشا',
+  ai_trainer: 'پاشا',
+  ai_vet: 'پاشا',
+};
 
 export function AdminConsultsPage() {
   const [items, setItems] = useState<VetConsultation[]>([]);
@@ -43,7 +50,7 @@ export function AdminConsultsPage() {
         </select>
       </header>
       {error ? <p className="admin-error">{error}</p> : null}
-      <div className="admin-table-wrap admin-card"><table className="admin-table">
+      <div className="admin-table-wrap admin-card"><table className="admin-table admin-table--dense">
         <thead>
           <tr>
             <th>بیمار</th>
@@ -115,11 +122,19 @@ export function AdminConsultsPage() {
                   }
                 />
               </td>
-              <td><span className="admin-badge">{c.serviceKind || 'vet'}</span></td>
-              <td><span className="admin-badge">{STATUS_FA[c.status] || c.status}</span></td>
-              <td className="admin-muted">{c.createdAt ? new Date(c.createdAt).toLocaleString('fa-IR') : '—'}</td>
               <td>
-                <select className="admin-select" value={c.status} onChange={(e) => void patchStatus(c.id, e.target.value)}>
+                <span className="admin-badge">
+                  {KIND_FA[c.serviceKind || ''] || c.serviceKind || 'دامپزشک'}
+                </span>
+              </td>
+              <td><span className="admin-badge">{STATUS_FA[c.status] || c.status}</span></td>
+              <td className="admin-muted admin-cell-nowrap">{c.createdAt ? new Date(c.createdAt).toLocaleString('fa-IR') : '—'}</td>
+              <td>
+                <select
+                  className="admin-select admin-select--compact"
+                  value={c.status}
+                  onChange={(e) => void patchStatus(c.id, e.target.value)}
+                >
                   {STATUSES.map((s) => <option key={s} value={s}>{STATUS_FA[s] || s}</option>)}
                 </select>
               </td>

@@ -32,6 +32,13 @@ type Order = {
 };
 
 const STATUSES = ['pending', 'paid', 'shipped', 'completed', 'cancelled'];
+const STATUS_FA: Record<string, string> = {
+  pending: 'در انتظار',
+  paid: 'پرداخت‌شده',
+  shipped: 'ارسال‌شده',
+  completed: 'تکمیل',
+  cancelled: 'لغو',
+};
 
 function payLabel(o: Order): string {
   const cur = o.paymentCurrency || 'toman';
@@ -101,7 +108,7 @@ export function AdminShopOrdersPage() {
           <option value="">همه</option>
           {STATUSES.map((s) => (
             <option key={s} value={s}>
-              {s}
+              {STATUS_FA[s] || s}
             </option>
           ))}
         </select>
@@ -121,7 +128,7 @@ export function AdminShopOrdersPage() {
       </div>
       {error ? <p className="admin-error">{error}</p> : null}
       <div className="admin-table-wrap admin-card">
-        <table className="admin-table">
+        <table className="admin-table admin-table--dense">
           <thead>
             <tr>
               <th>آیدی سفارش</th>
@@ -155,37 +162,36 @@ export function AdminShopOrdersPage() {
                         }
                         title={o.customerName || o.userName || '—'}
                         subtitle={
-                          <>
+                          <div className="admin-cell-compact">
                             {o.userId != null ? (
                               <code className="admin-mono admin-id-public" dir="ltr">
                                 {userPublicIdOf({ id: o.userId })}
                               </code>
                             ) : null}
-                            {o.customerPhone ? <div>{o.customerPhone}</div> : null}
-                          </>
+                            {o.customerPhone ? (
+                              <span className="admin-muted admin-mono" dir="ltr">{o.customerPhone}</span>
+                            ) : null}
+                          </div>
                         }
                       />
                     </td>
-                    <td>
-                      <strong>{payLabel(o)}</strong>
-                      <div className="admin-muted">{o.paymentCurrency || 'toman'}</div>
-                    </td>
-                    <td>{formatTomanFa(o.totalToman)}</td>
+                    <td className="admin-cell-nowrap"><strong>{payLabel(o)}</strong></td>
+                    <td className="admin-cell-nowrap">{formatTomanFa(o.totalToman)}</td>
                     <td>{itemsSummary(o.items)}</td>
                     <td>
                       <select
-                        className="admin-select"
+                        className="admin-select admin-select--compact"
                         value={o.status}
                         onChange={(e) => void patch(o.id, e.target.value)}
                       >
                         {STATUSES.map((s) => (
                           <option key={s} value={s}>
-                            {s}
+                            {STATUS_FA[s] || s}
                           </option>
                         ))}
                       </select>
                     </td>
-                    <td>{new Date(o.createdAt).toLocaleString('fa-IR')}</td>
+                    <td className="admin-cell-nowrap">{new Date(o.createdAt).toLocaleString('fa-IR')}</td>
                     <td>
                       <button type="button" className="admin-btn ghost" onClick={() => setOpenId(open ? null : o.id)}>
                         {open ? 'بستن' : 'جزئیات'}
