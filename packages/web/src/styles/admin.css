@@ -4796,6 +4796,9 @@ body:has(.admin-app) {
   }
   .admin-app .sales-pipe-detail-grid {
     grid-template-columns: 1fr;
+  }
+}
+
 /* ── CRM settings: SLA / reasons tree / scorecard ── */
 .admin-app .crm-settings-page .admin-card-head {
   display: flex;
