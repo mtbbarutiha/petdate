@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { PlaydateRequest } from '@petdate/shared';
+import { petPublicIdOf, type PlaydateRequest } from '@petdate/shared';
 import { adminFetch, formatNumFa } from '../api';
+import { AdminIdChip } from '../AdminIds';
 
 const STATUS_FA: Record<string, string> = {
   pending: 'در انتظار',
@@ -31,7 +32,10 @@ export function AdminPlaydatesPage() {
   return (
     <div className="admin-page">
       <header className="admin-header">
-        <div><h1>درخواست‌های همبازی</h1><p>{formatNumFa(items.length)} مورد</p></div>
+        <div>
+          <h1>درخواست‌های همبازی</h1>
+          <p>{formatNumFa(items.length)} مورد · جدول playdate_requests</p>
+        </div>
         <select className="admin-select" value={status} onChange={(e) => setStatus(e.target.value)}>
           <option value="">همه</option><option value="pending">در انتظار</option><option value="accepted">پذیرفته</option>
           <option value="rejected">رد شده</option><option value="cancelled">لغو</option><option value="expired">منقضی</option>
@@ -39,12 +43,38 @@ export function AdminPlaydatesPage() {
       </header>
       {error ? <p className="admin-error">{error}</p> : null}
       <div className="admin-table-wrap admin-card"><table className="admin-table">
-        <thead><tr><th>#</th><th>از → به</th><th>پیام</th><th>وضعیت</th><th>زمان</th><th></th></tr></thead>
+        <thead>
+          <tr>
+            <th>آیدی درخواست</th>
+            <th>از پت</th>
+            <th>به پت</th>
+            <th>کاربران</th>
+            <th>پیام</th>
+            <th>وضعیت</th>
+            <th>زمان</th>
+            <th></th>
+          </tr>
+        </thead>
         <tbody>
           {items.map((m) => (
             <tr key={m.id}>
-              <td className="admin-mono">{m.id}</td>
-              <td>پت {m.fromPetId} → {m.toPetId}<div className="admin-muted">کاربر {m.fromUserId}{m.toUserId ? ` → ${m.toUserId}` : ''}</div></td>
+              <td><code className="admin-mono" dir="ltr">#{m.id}</code></td>
+              <td>
+                <AdminIdChip
+                  publicId={petPublicIdOf({ id: m.fromPetId })}
+                  numericId={m.fromPetId}
+                />
+              </td>
+              <td>
+                <AdminIdChip
+                  publicId={petPublicIdOf({ id: m.toPetId })}
+                  numericId={m.toPetId}
+                />
+              </td>
+              <td className="admin-mono" dir="ltr">
+                #{m.fromUserId}
+                {m.toUserId != null ? ` → #${m.toUserId}` : ''}
+              </td>
               <td>{m.message || '—'}</td>
               <td><span className={`admin-status admin-status--${m.status}`}>{STATUS_FA[m.status] || m.status}</span></td>
               <td>{new Date(m.createdAt).toLocaleString('fa-IR')}</td>
@@ -62,7 +92,7 @@ export function AdminPlaydatesPage() {
               </td>
             </tr>
           ))}
-          {!items.length ? <tr><td colSpan={6} className="admin-muted">درخواستی نیست</td></tr> : null}
+          {!items.length ? <tr><td colSpan={8} className="admin-muted">درخواستی نیست</td></tr> : null}
         </tbody>
       </table></div>
     </div>

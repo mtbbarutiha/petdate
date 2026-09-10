@@ -85,7 +85,7 @@ export function AdminShopOrdersPage() {
       <header className="admin-header">
         <div>
           <h1>سفارش‌های فروشگاه</h1>
-          <p>{formatNumFa(orders.length)} سفارش — شامل پرداخت Stars تلگرام</p>
+          <p>{formatNumFa(orders.length)} سفارش · جدول shop_orders</p>
         </div>
         <select className="admin-select" value={status} onChange={(e) => setStatus(e.target.value)}>
           <option value="">همه</option>
@@ -101,8 +101,8 @@ export function AdminShopOrdersPage() {
         <table className="admin-table">
           <thead>
             <tr>
-              <th>#</th>
-              <th>مشتری</th>
+              <th>آیدی سفارش</th>
+              <th>کاربر / مشتری</th>
               <th>پرداخت</th>
               <th>مبلغ تومان</th>
               <th>کالا</th>
@@ -117,9 +117,12 @@ export function AdminShopOrdersPage() {
               return (
                 <Fragment key={o.id}>
                   <tr>
-                    <td className="admin-mono">{o.id}</td>
+                    <td><code className="admin-mono" dir="ltr">#{o.id}</code></td>
                     <td>
-                      {o.customerName || (o.userId ? `user #${o.userId}` : '—')}
+                      {o.customerName || '—'}
+                      {o.userId != null ? (
+                        <div className="admin-muted admin-mono" dir="ltr">user #{o.userId}</div>
+                      ) : null}
                       <div className="admin-muted">{o.customerPhone || ''}</div>
                     </td>
                     <td>

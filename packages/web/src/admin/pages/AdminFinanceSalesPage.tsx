@@ -13,7 +13,7 @@ type Sales = {
   paymentMix: Array<{ currency: string; label: string; value: number }>;
 };
 
-const PAY_COLORS = ['#0f766e', '#5c4d91', '#c2410c', '#0369a1', '#64748b'];
+const PAY_COLORS = ['#5c4d91', '#15cca0', '#fd961e', '#0ba5f2', '#db89ca'];
 
 export function AdminFinanceSalesPage() {
   const [period, setPeriod] = useState<FinancePeriod>('month');
@@ -36,7 +36,7 @@ export function AdminFinanceSalesPage() {
       <header className="admin-header">
         <div>
           <h1>نمودارهای فروش</h1>
-          <p>فروش روزانه/ماهانه · دسته‌بندی · ترکیب پرداخت</p>
+          <p>لایو از سفارش‌ها و payment_orders · روزانه / ماهانه / دسته / پرداخت</p>
         </div>
         <div className="admin-header-actions">
           <PeriodFilter value={period} onChange={setPeriod} />
@@ -61,30 +61,40 @@ export function AdminFinanceSalesPage() {
 
       {data ? (
         <>
-          <p className="admin-muted" style={{ marginBottom: 12 }}>
-            جمع فروش پرداخت‌شده: <strong>{formatTomanFa(data.totalRevenue)}</strong>
-          </p>
+          <div className="admin-stats admin-stats--dense" style={{ marginBottom: 14 }}>
+            <div className="admin-stat admin-stat--violet">
+              <div>
+                <div className="admin-stat-value">{formatTomanFa(data.totalRevenue)}</div>
+                <div className="admin-stat-label">جمع فروش پرداخت‌شده</div>
+              </div>
+            </div>
+          </div>
+
+          <p className="admin-section-label">۱ · روند زمانی</p>
+          <section className="admin-card" style={{ marginBottom: 14 }}>
+            <div className="admin-card-head">
+              <h2>{period === 'year' ? 'فروش ماهانه' : 'فروش روزانه'}</h2>
+            </div>
+            <div className="admin-chart-panel">
+              <AdminLineChart points={data.dailyOrMonthly} color="#5c4d91" height={220} />
+            </div>
+          </section>
+
+          <p className="admin-section-label">۲ · ترکیب</p>
           <div className="admin-dash-grid">
-            <section className="admin-card admin-card--wide">
-              <div className="admin-card-head">
-                <h2>{period === 'year' ? 'فروش ماهانه' : 'فروش روزانه'}</h2>
-              </div>
-              <div style={{ padding: 16 }}>
-                <AdminLineChart points={data.dailyOrMonthly} />
-              </div>
-            </section>
             <section className="admin-card">
               <div className="admin-card-head"><h2>فروش بر اساس دسته</h2></div>
-              <div style={{ padding: 16 }}>
+              <div className="admin-chart-panel">
                 <AdminBarChart
-                  color="#0369a1"
+                  color="#0ba5f2"
+                  height={200}
                   points={data.categories.slice(0, 8).map((c) => ({ label: c.label, value: c.value }))}
                 />
               </div>
             </section>
             <section className="admin-card">
-              <div className="admin-card-head"><h2>ترکیب پرداخت</h2></div>
-              <div style={{ padding: 16 }}>
+              <div className="admin-card-head"><h2>ترکیب روش پرداخت</h2></div>
+              <div className="admin-chart-panel">
                 <AdminDonutChart
                   slices={data.paymentMix.map((p, i) => ({
                     label: p.label,

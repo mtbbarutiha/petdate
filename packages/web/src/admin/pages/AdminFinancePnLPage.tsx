@@ -104,7 +104,7 @@ export function AdminFinancePnLPage() {
               <div className="admin-card-head"><h2>مقایسه درآمد و هزینه</h2></div>
               <div style={{ padding: 16 }}>
                 <AdminBarChart
-                  color="#0f766e"
+                  color="#5c4d91"
                   points={[
                     { label: 'درآمد', value: data.revenue },
                     { label: 'هزینه', value: data.expense },

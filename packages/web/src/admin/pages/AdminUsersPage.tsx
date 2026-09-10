@@ -8,6 +8,7 @@ import {
   type UserRole,
 } from '@petdate/shared';
 import { adminFetch, formatNumFa } from '../api';
+import { AdminIdChip } from '../AdminIds';
 
 function activeRolesOf(user: User): UserRole[] {
   const fromList = (user.roles || []).filter((r): r is UserRole => USER_ROLES.includes(r));
@@ -73,9 +74,14 @@ export function AdminUsersPage() {
 
   return (
     <div className="admin-page">
-      <header className="admin-header"><div><h1>کاربران</h1><p>{formatNumFa(total)} کاربر</p></div></header>
+      <header className="admin-header">
+        <div>
+          <h1>کاربران</h1>
+          <p>{formatNumFa(total)} کاربر · فیلدها از جدول users</p>
+        </div>
+      </header>
       <div className="admin-toolbar">
-        <div className="admin-search"><Search size={16} /><input placeholder="نام، آیدی PD-U، موبایل…" value={q} onChange={(e) => setQ(e.target.value)} /></div>
+        <div className="admin-search"><Search size={16} /><input placeholder="نام، آیدی PD-U، موبایل، تلگرام…" value={q} onChange={(e) => setQ(e.target.value)} /></div>
         <select className="admin-select" value={role} onChange={(e) => setRole(e.target.value)}>
           <option value="">همه نقش‌ها</option>
           {USER_ROLES.map((r) => <option key={r} value={r}>{USER_ROLE_LABELS[r]}</option>)}
@@ -98,10 +104,14 @@ export function AdminUsersPage() {
           <tr>
             <th>آیدی</th>
             <th>نام</th>
-            <th>موبایل</th>
+            <th>تلگرام</th>
+            <th>موبایل / ایمیل</th>
+            <th>شهر</th>
             <th>نقش‌های فعال</th>
             <th>نقش اصلی</th>
             <th>کیف پول</th>
+            <th>احراز</th>
+            <th>ثبت</th>
             <th>وضعیت</th>
             <th>عملیات</th>
           </tr>
@@ -113,18 +123,27 @@ export function AdminUsersPage() {
             return (
               <tr key={u.id}>
                 <td>
-                  <code className="admin-mono" dir="ltr">{publicId}</code>
-                  <div className="admin-muted admin-mono">#{u.id}</div>
+                  <AdminIdChip publicId={publicId} numericId={u.id} />
                 </td>
                 <td>
                   <strong>{u.name}</strong>
-                  <div className="admin-muted">
-                    {u.username ? `@${u.username}` : u.telegramId || '—'}
-                  </div>
+                  {u.age != null || u.gender ? (
+                    <div className="admin-muted">
+                      {[u.gender === 'male' ? 'مرد' : u.gender === 'female' ? 'زن' : null, u.age != null ? `${u.age}س` : null]
+                        .filter(Boolean)
+                        .join(' · ')}
+                    </div>
+                  ) : null}
                 </td>
                 <td className="admin-mono" dir="ltr">
-                  {u.phone ? u.phone : <span className="admin-muted">—</span>}
+                  {u.username ? `@${u.username}` : '—'}
+                  <div className="admin-muted">{u.telegramId || '—'}</div>
                 </td>
+                <td>
+                  <div className="admin-mono" dir="ltr">{u.phone || '—'}</div>
+                  <div className="admin-muted" style={{ fontSize: '0.75rem' }}>{u.email || '—'}</div>
+                </td>
+                <td>{[u.city, u.province].filter(Boolean).join('، ') || '—'}</td>
                 <td>
                   <div className="admin-role-badges">
                     {roles.length
@@ -146,7 +165,19 @@ export function AdminUsersPage() {
                     {USER_ROLES.map((r) => <option key={r} value={r}>{USER_ROLE_LABELS[r]}</option>)}
                   </select>
                 </td>
-                <td className="admin-mono">C:{formatNumFa(u.coins ?? 0)} · T:{formatNumFa(u.walletToman ?? 0)}</td>
+                <td className="admin-mono">
+                  C:{formatNumFa(u.coins ?? 0)}
+                  <div>T:{formatNumFa(u.walletToman ?? 0)}</div>
+                  <div className="admin-muted">★{formatNumFa(u.walletStars ?? 0)} · ₮{formatNumFa(u.walletTon ?? 0)}</div>
+                </td>
+                <td>
+                  <span className={`admin-badge ${u.verificationStatus === 'verified' ? 'admin-badge--ok' : ''}`}>
+                    {u.verificationStatus || '—'}
+                  </span>
+                </td>
+                <td className="admin-muted" style={{ whiteSpace: 'nowrap' }}>
+                  {u.createdAt ? new Date(u.createdAt).toLocaleDateString('fa-IR') : '—'}
+                </td>
                 <td><span className={`admin-badge ${u.isActive === false ? 'admin-badge--error' : 'admin-badge--info'}`}>{u.isActive === false ? 'مسدود' : 'فعال'}</span></td>
                 <td>
                   <div className="admin-row-actions">
@@ -161,7 +192,7 @@ export function AdminUsersPage() {
               </tr>
             );
           })}
-          {!users.length ? <tr><td colSpan={8} className="admin-muted">کاربری یافت نشد</td></tr> : null}
+          {!users.length ? <tr><td colSpan={12} className="admin-muted">کاربری یافت نشد</td></tr> : null}
         </tbody>
       </table></div>
       {credit ? (

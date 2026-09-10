@@ -119,7 +119,7 @@ export function AdminPaymentsPage() {
         <table className="admin-table">
           <thead>
             <tr>
-              <th>#</th>
+              <th>آیدی پرداخت</th>
               <th>کاربر</th>
               <th>بسته / منبع</th>
               <th>مبلغ</th>
@@ -136,9 +136,10 @@ export function AdminPaymentsPage() {
               return (
                 <Fragment key={o.id}>
                   <tr>
-                    <td className="admin-mono">{o.id}</td>
+                    <td><code className="admin-mono" dir="ltr">#{o.id}</code></td>
                     <td>
-                      {o.userName || `user #${o.userId}`}
+                      {o.userName || '—'}
+                      <div className="admin-muted admin-mono" dir="ltr">user #{o.userId}</div>
                       <div className="admin-muted">
                         {o.userUsername ? `@${o.userUsername}` : ''}
                         {o.userTelegramId ? ` · tg ${o.userTelegramId}` : ''}

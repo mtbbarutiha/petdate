@@ -60,7 +60,7 @@ export function AdminFinanceDashboardPage() {
       <header className="admin-header">
         <div>
           <h1>داشبورد مالی</h1>
-          <p>پت دیت شاپ · کیف پول · کارمزد خدمات</p>
+          <p>لایو از shop_orders · payment_orders · کارمزد خدمات</p>
         </div>
         <div className="admin-header-actions">
           <PeriodFilter value={period} onChange={setPeriod} />

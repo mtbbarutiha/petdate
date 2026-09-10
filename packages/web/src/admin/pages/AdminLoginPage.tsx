@@ -35,7 +35,7 @@ export function AdminLoginPage() {
     <div className="admin-app admin-login-page">
       <form className="admin-login-card" onSubmit={(e) => void handleSubmit(e)}>
         <AdminWordmark className="admin-login-brand" size="lg" />
-        <p className="admin-login-subtitle">ورود اپراتور — ربات، فروشگاه، وب و محتوا</p>
+        <p className="admin-login-subtitle">ورود اپراتور Pet Date — ربات، فروشگاه، وب و محتوا</p>
         <div className="form-group">
           <label className="form-label">رمز عبور ادمین</label>
           <div className="admin-input-icon">

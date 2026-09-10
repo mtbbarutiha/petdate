@@ -9,7 +9,7 @@ function maxOf(points: Point[], min = 1) {
 export function AdminBarChart({
   points,
   height = 180,
-  color = '#0f766e',
+  color = '#5c4d91',
 }: {
   points: Point[];
   height?: number;
@@ -19,7 +19,7 @@ export function AdminBarChart({
     return <p className="admin-muted">داده‌ای برای نمودار نیست</p>;
   }
   const max = maxOf(points);
-  const barW = Math.max(8, Math.min(28, Math.floor(520 / points.length) - 4));
+  const barW = Math.max(8, Math.min(28, Math.floor(520 / Math.max(points.length, 1)) - 4));
   const gap = 6;
   const width = points.length * (barW + gap) + 20;
   return (

@@ -3,6 +3,13 @@ import type { VetConsultation } from '@petdate/shared';
 import { adminFetch, formatNumFa } from '../api';
 
 const STATUSES = ['requested', 'active', 'completed', 'cancelled', 'expired'] as const;
+const STATUS_FA: Record<string, string> = {
+  requested: 'درخواست',
+  active: 'فعال',
+  completed: 'تمام',
+  cancelled: 'لغو',
+  expired: 'منقضی',
+};
 
 export function AdminConsultsPage() {
   const [items, setItems] = useState<VetConsultation[]>([]);
@@ -25,31 +32,56 @@ export function AdminConsultsPage() {
   return (
     <div className="admin-page">
       <header className="admin-header">
-        <div><h1>ارتباط با پزشک</h1><p>{formatNumFa(items.length)} مشاوره</p></div>
+        <div>
+          <h1>مشاوره‌ها</h1>
+          <p>{formatNumFa(items.length)} ردیف · جدول vet_consultations</p>
+        </div>
         <select className="admin-select" value={status} onChange={(e) => setStatus(e.target.value)}>
           <option value="">همه</option>
-          {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+          {STATUSES.map((s) => <option key={s} value={s}>{STATUS_FA[s] || s}</option>)}
         </select>
       </header>
       {error ? <p className="admin-error">{error}</p> : null}
       <div className="admin-table-wrap admin-card"><table className="admin-table">
-        <thead><tr><th>#</th><th>بیمار</th><th>پزشک</th><th>پت</th><th>وضعیت</th><th>تغییر</th></tr></thead>
+        <thead>
+          <tr>
+            <th>آیدی مشاوره</th>
+            <th>بیمار</th>
+            <th>پزشک / مربی</th>
+            <th>پت</th>
+            <th>نوع</th>
+            <th>وضعیت</th>
+            <th>زمان</th>
+            <th>تغییر</th>
+          </tr>
+        </thead>
         <tbody>
           {items.map((c) => (
             <tr key={c.id}>
-              <td className="admin-mono">{c.id}</td>
-              <td>{c.patientName || c.patientUserId}</td>
-              <td>{c.vetName || c.vetUserId}</td>
-              <td>{c.petName || c.petId || '—'}</td>
-              <td><span className="admin-badge">{c.status}</span></td>
+              <td><code className="admin-mono" dir="ltr">#{c.id}</code></td>
+              <td>
+                <strong>{c.patientName || '—'}</strong>
+                <div className="admin-muted admin-mono">user #{c.patientUserId}</div>
+              </td>
+              <td>
+                <strong>{c.vetName || '—'}</strong>
+                <div className="admin-muted admin-mono">user #{c.vetUserId}</div>
+              </td>
+              <td>
+                {c.petName || '—'}
+                {c.petId != null ? <div className="admin-muted admin-mono">pet #{c.petId}</div> : null}
+              </td>
+              <td><span className="admin-badge">{c.serviceKind || 'vet'}</span></td>
+              <td><span className="admin-badge">{STATUS_FA[c.status] || c.status}</span></td>
+              <td className="admin-muted">{c.createdAt ? new Date(c.createdAt).toLocaleString('fa-IR') : '—'}</td>
               <td>
                 <select className="admin-select" value={c.status} onChange={(e) => void patchStatus(c.id, e.target.value)}>
-                  {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                  {STATUSES.map((s) => <option key={s} value={s}>{STATUS_FA[s] || s}</option>)}
                 </select>
               </td>
             </tr>
           ))}
-          {!items.length ? <tr><td colSpan={6} className="admin-muted">مشاوره‌ای نیست</td></tr> : null}
+          {!items.length ? <tr><td colSpan={8} className="admin-muted">مشاوره‌ای نیست</td></tr> : null}
         </tbody>
       </table></div>
     </div>
