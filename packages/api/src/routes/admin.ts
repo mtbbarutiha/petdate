@@ -14,6 +14,7 @@ import {
 import { dbService, getStorageDriver } from '../db';
 import { adminPlatform } from '../admin-platform';
 import { adminFinance } from '../admin-finance';
+import { buildAggregateDashboard } from '../admin-aggregate-dashboard';
 import { logAppEvent } from '../services/app-logger';
 import { completeShopCardPayment } from '../services/shop-checkout';
 import { telegramFetch, telegramBotApiUrl } from '../services/telegram-http';
@@ -161,18 +162,33 @@ adminRouter.post('/notifications/:id/read', (req, res) => {
   res.json({ ok: true });
 });
 
-adminRouter.get('/dashboard', (_req, res) => {
-  res.json({
-    generatedAt: new Date().toISOString(),
-    stats: adminPlatform.getDashboardStats(),
-    recentPets: dbService.listPets().slice(0, 8),
-    recentPlaydates: dbService.listPlaydateRequests().slice(0, 8),
-    recentConsults: dbService
-      .listVetConsultations({ all: true })
-      .slice(0, 8)
-      .map(decorateAiConsultDisplay),
-    recentShopOrders: adminPlatform.listShopOrders({ limit: 8 }),
-  });
+adminRouter.get('/dashboard', async (req, res) => {
+  const actor = req.adminActor;
+  if (!actor) {
+    res.status(401).json({ error: 'دسترسی ادمین مجاز نیست' });
+    return;
+  }
+  try {
+    res.json(await buildAggregateDashboard(actor));
+  } catch (err) {
+    console.error('aggregate dashboard failed', err instanceof Error ? err.message : err);
+    // Additive fallback — never break the executive shell
+    res.json({
+      generatedAt: new Date().toISOString(),
+      stats: adminPlatform.getDashboardStats(),
+      recentPets: dbService.listPets().slice(0, 8),
+      recentPlaydates: dbService.listPlaydateRequests().slice(0, 8),
+      recentConsults: dbService
+        .listVetConsultations({ all: true })
+        .slice(0, 8)
+        .map(decorateAiConsultDisplay),
+      recentShopOrders: adminPlatform.listShopOrders({ limit: 8 }),
+      modules: null,
+      series: null,
+      links: null,
+      error: 'بخشی از ماژول‌ها در دسترس نبود',
+    });
+  }
 });
 
 adminRouter.get('/users', (req, res) => {

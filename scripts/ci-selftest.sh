@@ -70,5 +70,6 @@ run src/sales-crm.selftest.ts
 run src/hr-sales-demo-seed.selftest.ts
 run src/crm.selftest.ts
 run src/admin-notifications.selftest.ts
+run src/admin-aggregate-dashboard.selftest.ts
 
 echo "ci-selftest: all passed"
