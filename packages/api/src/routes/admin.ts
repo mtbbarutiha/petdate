@@ -38,6 +38,7 @@ import { decorateAiConsultDisplay } from '../services/ai-consult-session';
 import { requireAdminAuth } from '../admin-auth';
 import { actorHasPermission, resolveAdminActor } from '../hr-service';
 import { hrAdminRouter } from './admin-hr';
+import { salesAdminRouter } from './admin-sales';
 
 export const adminRouter = Router();
 const STARTED_AT = Date.now();
@@ -94,7 +95,7 @@ adminRouter.use((req, res, next) => {
     next();
     return;
   }
-  if (req.path === '/auth/login' || req.path.startsWith('/hr')) {
+  if (req.path === '/auth/login' || req.path.startsWith('/hr') || req.path.startsWith('/sales')) {
     next();
     return;
   }
@@ -111,6 +112,7 @@ adminRouter.use((req, res, next) => {
 });
 
 adminRouter.use('/hr', hrAdminRouter);
+adminRouter.use('/sales', salesAdminRouter);
 adminRouter.get('/dashboard', (_req, res) => {
   res.json({
     generatedAt: new Date().toISOString(),

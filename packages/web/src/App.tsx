@@ -248,6 +248,21 @@ const AdminHrCockpitPage = lazy(() =>
 const AdminHrArmitaPage = lazy(() =>
   import('./admin/pages/hr/AdminHrArmitaPage').then((m) => ({ default: m.AdminHrArmitaPage })),
 );
+const AdminSalesDashboardPage = lazy(() => import('./admin/pages/sales/AdminSalesDashboardPage').then((m) => ({ default: m.AdminSalesDashboardPage })));
+const AdminSalesLeadsPage = lazy(() => import('./admin/pages/sales/AdminSalesPages').then((m) => ({ default: m.AdminSalesLeadsPage })));
+const AdminSalesUpgradesPage = lazy(() => import('./admin/pages/sales/AdminSalesPages').then((m) => ({ default: m.AdminSalesUpgradesPage })));
+const AdminSalesLeadDetailPage = lazy(() => import('./admin/pages/sales/AdminSalesPages').then((m) => ({ default: m.AdminSalesLeadDetailPage })));
+const AdminSalesUpgradeDetailPage = lazy(() => import('./admin/pages/sales/AdminSalesPages').then((m) => ({ default: m.AdminSalesUpgradeDetailPage })));
+const AdminSalesPipelinePage = lazy(() => import('./admin/pages/sales/AdminSalesPages').then((m) => ({ default: m.AdminSalesPipelinePage })));
+const AdminSalesDealsPage = lazy(() => import('./admin/pages/sales/AdminSalesPages').then((m) => ({ default: m.AdminSalesDealsPage })));
+const AdminSalesCustomersPage = lazy(() => import('./admin/pages/sales/AdminSalesPages').then((m) => ({ default: m.AdminSalesCustomersPage })));
+const AdminSalesCustomerDetailPage = lazy(() => import('./admin/pages/sales/AdminSalesPages').then((m) => ({ default: m.AdminSalesCustomerDetailPage })));
+const AdminSalesProductsPage = lazy(() => import('./admin/pages/sales/AdminSalesPages').then((m) => ({ default: m.AdminSalesProductsPage })));
+const AdminSalesTicketsPage = lazy(() => import('./admin/pages/sales/AdminSalesPages').then((m) => ({ default: m.AdminSalesTicketsPage })));
+const AdminSalesCallsPage = lazy(() => import('./admin/pages/sales/AdminSalesPages').then((m) => ({ default: m.AdminSalesCallsPage })));
+const AdminSalesReportsPage = lazy(() => import('./admin/pages/sales/AdminSalesPages').then((m) => ({ default: m.AdminSalesReportsPage })));
+const AdminSalesSettingsPage = lazy(() => import('./admin/pages/sales/AdminSalesPages').then((m) => ({ default: m.AdminSalesSettingsPage })));
+
 
 function RouteFallback() {
   return <div className="pd-route-fallback" aria-hidden="true" />;
@@ -351,6 +366,21 @@ export default function App() {
                 <Route path="hr/armita" element={<AdminHrArmitaPage />} />
                 <Route path="hr/settings" element={<AdminHrSettingsPage />} />
                 <Route path="hr/rbac" element={<AdminHrRbacPage />} />
+                <Route path="sales" element={<AdminSalesDashboardPage />} />
+                <Route path="sales/leads" element={<AdminSalesLeadsPage />} />
+                <Route path="sales/leads/:id" element={<AdminSalesLeadDetailPage />} />
+                <Route path="sales/upgrades" element={<AdminSalesUpgradesPage />} />
+                <Route path="sales/upgrades/:id" element={<AdminSalesUpgradeDetailPage />} />
+                <Route path="sales/pipeline" element={<AdminSalesPipelinePage />} />
+                <Route path="sales/deals" element={<AdminSalesDealsPage />} />
+                <Route path="sales/customers" element={<AdminSalesCustomersPage />} />
+                <Route path="sales/customers/:id" element={<AdminSalesCustomerDetailPage />} />
+                <Route path="sales/products" element={<AdminSalesProductsPage />} />
+                <Route path="sales/tickets" element={<AdminSalesTicketsPage />} />
+                <Route path="sales/calls" element={<AdminSalesCallsPage />} />
+                <Route path="sales/reports" element={<AdminSalesReportsPage />} />
+                <Route path="sales/settings" element={<AdminSalesSettingsPage />} />
+
               </Route>
             </Route>
 

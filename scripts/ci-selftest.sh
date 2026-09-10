@@ -66,5 +66,6 @@ npx tsx "$ROOT/packages/bot/src/handlers/invite-friends.selftest.ts"
 run src/services/user-delete-cascade.selftest.ts
 run src/hr-rbac.selftest.ts
 run src/hr-modules.selftest.ts
+run src/sales-crm.selftest.ts
 
 echo "ci-selftest: all passed"
