@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import type { HrCandidate, HrJobOpening } from '@petdate/shared';
-import { adminFetch, formatNumFa } from '../../api';
+import { adminFetch } from '../../api';
 import { AdminFunnelChart } from '../../FinanceCharts';
 import { HrKpiGrid, HrLinkGrid } from './HrUi';
 

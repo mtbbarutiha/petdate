@@ -75,7 +75,7 @@ export function AdminHrAtsPage() {
     jobBoard: '',
     jobTitle: '',
   });
-  const [callOutcome, setCallOutcome] = useState(HR_CALL_OUTCOMES[0]);
+  const [callOutcome, setCallOutcome] = useState<string>(HR_CALL_OUTCOMES[0]);
   const [interviewAt, setInterviewAt] = useState('');
   const [interviewerId, setInterviewerId] = useState('');
   const [startDate, setStartDate] = useState('');
@@ -450,7 +450,7 @@ export function AdminHrAtsPage() {
                 <select
                   className="admin-select"
                   value={callOutcome}
-                  onChange={(e) => setCallOutcome(e.target.value as (typeof HR_CALL_OUTCOMES)[number])}
+                  onChange={(e) => setCallOutcome(e.target.value)}
                 >
                   {HR_CALL_OUTCOMES.map((o) => (
                     <option key={o} value={o}>
