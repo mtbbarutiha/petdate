@@ -46,6 +46,7 @@ import {
 import { hrAdminRouter } from './admin-hr';
 import { salesAdminRouter } from './admin-sales';
 import { crmAdminRouter } from './admin-crm';
+import { financeOsAdminRouter } from './admin-finance-os';
 
 export const adminRouter = Router();
 const STARTED_AT = Date.now();
@@ -107,6 +108,7 @@ adminRouter.use((req, res, next) => {
     req.path.startsWith('/hr') ||
     req.path.startsWith('/sales') ||
     req.path.startsWith('/crm') ||
+    req.path.startsWith('/finance-os') ||
     req.path.startsWith('/notifications')
   ) {
     next();
@@ -127,6 +129,7 @@ adminRouter.use((req, res, next) => {
 adminRouter.use('/hr', hrAdminRouter);
 adminRouter.use('/sales', salesAdminRouter);
 adminRouter.use('/crm', crmAdminRouter);
+adminRouter.use('/finance-os', financeOsAdminRouter);
 
 /** Header bell — any logged-in admin; items filtered by module permission. */
 adminRouter.get('/notifications', async (req, res) => {

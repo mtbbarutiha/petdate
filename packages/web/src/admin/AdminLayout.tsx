@@ -1,10 +1,10 @@
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ChevronDown,
-  Activity, Bell, Briefcase, ClipboardList, FileText, Headset, LayoutDashboard, LineChart, LogOut, Mail, Menu, Package,
+  Activity, Bell, Briefcase, Building2, ClipboardList, FileText, Headset, Landmark, LayoutDashboard, LineChart, LogOut, Mail, Menu, Package,
   PawPrint, PieChart, ScrollText, Settings, Shield, ShieldCheck, ShoppingBag, Stethoscope,
   Store, Target, Ticket, TrendingUp, UserPlus, UserRound, Users, Wallet, X, ClipboardCheck, BarChart3, Coins,
-  Route, Inbox, HandCoins, Bot, MessageSquare, Star, HeartHandshake,
+  Route, Inbox, HandCoins, Bot, MessageSquare, Star, HeartHandshake, ArrowLeftRight,
 } from 'lucide-react';
 import type { SalesNavCounts } from '@petdate/shared';
 import { ADMIN_PANEL_ROLE_LABELS } from '@petdate/shared';
@@ -80,6 +80,9 @@ const NAV_GROUPS: NavGroup[] = [
   ]},
   { title: 'مالی', items: [
     { to: '/admin/finance', icon: TrendingUp, label: 'داشبورد مالی', perm: 'platform.read' },
+    { to: '/admin/finance/accounts', icon: Landmark, label: 'حساب‌ها و داده‌های پایه', perm: 'platform.read' },
+    { to: '/admin/finance/transactions', icon: ArrowLeftRight, label: 'تراکنش‌ها و دفتر', perm: 'platform.read' },
+    { to: '/admin/finance/allocation', icon: Building2, label: 'تخصیص هزینه SBG', perm: 'platform.read' },
     { to: '/admin/finance/pnl', icon: PieChart, label: 'سود و زیان', perm: 'platform.read' },
     { to: '/admin/finance/sales', icon: LineChart, label: 'نمودار فروش', perm: 'platform.read' },
     { to: '/admin/finance/orders', icon: ShoppingBag, label: 'درآمد سفارش', perm: 'platform.read' },
@@ -220,7 +223,7 @@ function AdminLayoutInner() {
                           <NavLink
                             key={item.to}
                             to={item.to}
-                            end={item.to === '/admin/hr' || item.to === '/admin/sales' || item.to === '/admin/crm' || item.to === '/admin/dashboard'}
+                            end={item.to === '/admin/hr' || item.to === '/admin/sales' || item.to === '/admin/crm' || item.to === '/admin/dashboard' || item.to === '/admin/finance'}
                             onClick={() => setMobileOpen(false)}
                             className={({ isActive }) => `admin-nav-item${isActive ? ' active' : ''}`}
                           >

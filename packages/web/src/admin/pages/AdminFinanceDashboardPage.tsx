@@ -60,7 +60,7 @@ export function AdminFinanceDashboardPage() {
       <header className="admin-header">
         <div>
           <h1>داشبورد مالی</h1>
-          <p>لایو از shop_orders · payment_orders · کارمزد خدمات</p>
+          <p>آنالیتیکس پلتفرم · Finance OS (حساب‌ها، تراکنش‌ها، تخصیص SBG)</p>
         </div>
         <div className="admin-header-actions">
           <PeriodFilter value={period} onChange={setPeriod} />
@@ -85,6 +85,15 @@ export function AdminFinanceDashboardPage() {
       </div>
 
       <div className="admin-finance-links">
+        <Link to="/admin/finance/accounts" className="admin-card admin-finance-link">
+          <TrendingUp size={20} /><div><strong>حساب‌ها و داده‌های پایه</strong><span>بانک · اسنپ‌پی · طبقه‌بندی · افراد</span></div>
+        </Link>
+        <Link to="/admin/finance/transactions" className="admin-card admin-finance-link">
+          <LineChart size={20} /><div><strong>تراکنش‌ها و دفتر</strong><span>ایمپورت · صف · مشکوک · Ledger</span></div>
+        </Link>
+        <Link to="/admin/finance/allocation" className="admin-card admin-finance-link">
+          <PieChart size={20} /><div><strong>تخصیص هزینه SBG</strong><span>دفاتر · تجهیزات · فاکتور هلدینگ</span></div>
+        </Link>
         <Link to="/admin/finance/pnl" className="admin-card admin-finance-link">
           <PieChart size={20} /><div><strong>سود و زیان</strong><span>درآمد در برابر هزینه و حاشیه سود</span></div>
         </Link>

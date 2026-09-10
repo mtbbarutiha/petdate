@@ -183,6 +183,21 @@ const AdminFinanceProductsPage = lazy(() =>
     default: m.AdminFinanceProductsPage,
   })),
 );
+const AdminFinanceAccountsPage = lazy(() =>
+  import('./admin/pages/finance/AdminFinanceAccountsPage').then((m) => ({
+    default: m.AdminFinanceAccountsPage,
+  })),
+);
+const AdminFinanceTransactionsPage = lazy(() =>
+  import('./admin/pages/finance/AdminFinanceTransactionsPage').then((m) => ({
+    default: m.AdminFinanceTransactionsPage,
+  })),
+);
+const AdminFinanceAllocationPage = lazy(() =>
+  import('./admin/pages/finance/AdminFinanceAllocationPage').then((m) => ({
+    default: m.AdminFinanceAllocationPage,
+  })),
+);
 const AdminHrEmployeesPage = lazy(() =>
   import('./admin/pages/hr/AdminHrEmployeesPage').then((m) => ({
     default: m.AdminHrEmployeesPage,
@@ -356,6 +371,9 @@ export default function App() {
                 <Route path="finance/orders" element={<AdminFinanceOrdersPage />} />
                 <Route path="finance/wallet" element={<AdminFinanceWalletPage />} />
                 <Route path="finance/products" element={<AdminFinanceProductsPage />} />
+                <Route path="finance/accounts" element={<AdminFinanceAccountsPage />} />
+                <Route path="finance/transactions" element={<AdminFinanceTransactionsPage />} />
+                <Route path="finance/allocation" element={<AdminFinanceAllocationPage />} />
                 <Route path="content" element={<AdminContentPage />} />
                 <Route path="mail" element={<AdminMailPage />} />
                 <Route path="logs" element={<AdminLogsPage />} />
