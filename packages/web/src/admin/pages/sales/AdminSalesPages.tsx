@@ -14,6 +14,7 @@ import { formatAdminFaDate, formatAdminFaDateTime } from '../../JalaliDateSelect
 import { adminCan } from '../../auth';
 import { AdminModal } from '../../AdminModal';
 import { AdminEntityCell, AdminThumb } from '../../AdminThumb';
+import { usePlatformDropdownOptions } from '../../usePlatformDropdownOptions';
 import { useSalesCallSimOptional } from './SalesCallSim';
 
 function ItemsPage({ kind }: { kind: SalesItemKind }) {
@@ -30,6 +31,8 @@ function ItemsPage({ kind }: { kind: SalesItemKind }) {
   const [form, setForm] = useState({ first: '', last: '', mobile: '', product: '', source: '' });
   const canWrite = adminCan('sales.write');
   const title = kind === 'lead' ? 'لیدها' : 'آپگریدها';
+  const { options: leadSourceOpts } = usePlatformDropdownOptions('sales', 'lead_sources', SALES_LEAD_SOURCES);
+  const leadSources = leadSourceOpts.map((o) => o.label);
   const load = useCallback(async () => {
     try {
       const qs = new URLSearchParams({ kind, limit: '100' });
@@ -58,7 +61,7 @@ function ItemsPage({ kind }: { kind: SalesItemKind }) {
           last: form.last.trim() || undefined,
           mobile: form.mobile.trim(),
           product: form.product || products[0]?.name,
-          source: form.source || (kind === 'lead' ? SALES_LEAD_SOURCES[0] : 'امور فروش'),
+          source: form.source || (kind === 'lead' ? (leadSources[0] || SALES_LEAD_SOURCES[0]) : 'امور فروش'),
         }),
       });
       setOpen(false);
@@ -84,7 +87,7 @@ function ItemsPage({ kind }: { kind: SalesItemKind }) {
                 last: '',
                 mobile: '',
                 product: products[0]?.name || '',
-                source: kind === 'lead' ? SALES_LEAD_SOURCES[0] : 'امور فروش',
+                source: kind === 'lead' ? (leadSources[0] || SALES_LEAD_SOURCES[0]) : 'امور فروش',
               });
               setOpen(true);
             }}
@@ -158,7 +161,7 @@ function ItemsPage({ kind }: { kind: SalesItemKind }) {
           <label>
             <span className="form-label">منبع</span>
             <select className="admin-select" value={form.source} onChange={(e) => setForm({ ...form, source: e.target.value })}>
-              {SALES_LEAD_SOURCES.map((s) => <option key={s} value={s}>{s}</option>)}
+              {leadSources.map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
           </label>
         ) : null}
@@ -172,6 +175,18 @@ export function AdminSalesUpgradesPage() { return <ItemsPage kind="upgrade" />; 
 
 function ItemDetail({ kind }: { kind: SalesItemKind }) {
   const { id } = useParams();
+  const { options: lostReasonOpts } = usePlatformDropdownOptions(
+    kind === 'upgrade' ? 'upgrade' : 'sales',
+    'lost_reasons',
+    SALES_LOST_REASONS
+  );
+  const { options: callResultOpts } = usePlatformDropdownOptions(
+    kind === 'upgrade' ? 'upgrade' : 'sales',
+    'call_results',
+    SALES_CALL_RESULTS
+  );
+  const lostReasons = lostReasonOpts.map((o) => o.label);
+  const callResults = callResultOpts.map((o) => o.label);
   const [data, setData] = useState<{
     item: SalesItem; activities: { id: number; at: string; text: string }[];
     offers: { id: number; product: string; final: number; discount: number; approvalStatus: string }[];
@@ -189,6 +204,16 @@ function ItemDetail({ kind }: { kind: SalesItemKind }) {
   const canWrite = adminCan('sales.write');
   const canAdmin = adminCan('sales.admin');
   const base = kind === 'lead' ? '/admin/sales/leads' : '/admin/sales/upgrades';
+  useEffect(() => {
+    if (lostReasons[0]) setLostReason((prev) => (lostReasons.includes(prev) ? prev : lostReasons[0]));
+  }, [lostReasons]);
+  useEffect(() => {
+    if (callResults[0]) {
+      setCallForm((prev) =>
+        callResults.includes(prev.result) ? prev : { ...prev, result: callResults[0] }
+      );
+    }
+  }, [callResults]);
   const reload = useCallback(async () => {
     if (!id) return;
     try { setData(await adminFetch(`/api/admin/sales/items/${id}`)); setError(null); }
@@ -213,7 +238,7 @@ function ItemDetail({ kind }: { kind: SalesItemKind }) {
       {error ? <p className="admin-error">{error}</p> : null}
       {canWrite ? (
         <div className="admin-toolbar" style={{ flexWrap: 'wrap', gap: 8 }}>
-          <button type="button" className="admin-btn" onClick={() => { setCallForm({ result: SALES_CALL_RESULTS[0], summary: '' }); setModal('call'); }}>تماس</button>
+          <button type="button" className="admin-btn" onClick={() => { setCallForm({ result: callResults[0] || SALES_CALL_RESULTS[0], summary: '' }); setModal('call'); }}>تماس</button>
           <button type="button" className="admin-btn" onClick={() => { setOfferDiscount('0'); setModal('offer'); }}>پیشنهاد</button>
           <button type="button" className="admin-btn" onClick={() => void act(`/api/admin/sales/items/${item.id}/advance`)}>پیشرفت</button>
           <button type="button" className="admin-btn" onClick={() => void act(`/api/admin/sales/items/${item.id}/payment-link`)}>لینک پرداخت</button>
@@ -224,7 +249,7 @@ function ItemDetail({ kind }: { kind: SalesItemKind }) {
               <button type="button" className="admin-btn" onClick={() => void act(`/api/admin/sales/payments/${lastPayment.id}/finance-decide`, { approve: false })}>رد مالی</button>
             </>
           ) : null}
-          <button type="button" className="admin-btn" onClick={() => { setLostReason(SALES_LOST_REASONS[0]); setModal('lost'); }}>ازدست‌رفته</button>
+          <button type="button" className="admin-btn" onClick={() => { setLostReason(lostReasons[0] || SALES_LOST_REASONS[0]); setModal('lost'); }}>ازدست‌رفته</button>
           {SALES_MESSAGE_CHANNELS.slice(0, 2).map((ch) => (
             <button key={ch} type="button" className="admin-btn admin-btn--ghost" onClick={() => void act(`/api/admin/sales/items/${item.id}/messages`, { channel: ch, text: `پیام ${ch}` })}>{ch}</button>
           ))}
@@ -254,7 +279,7 @@ function ItemDetail({ kind }: { kind: SalesItemKind }) {
           <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setModal(null)}>انصراف</button></>}>
         <label><span className="form-label">نتیجه</span>
           <select className="admin-select" value={callForm.result} onChange={(e) => setCallForm({ ...callForm, result: e.target.value })}>
-            {SALES_CALL_RESULTS.map((r) => <option key={r} value={r}>{r}</option>)}
+            {callResults.map((r) => <option key={r} value={r}>{r}</option>)}
           </select></label>
         <label><span className="form-label">خلاصه</span>
           <textarea className="form-input" required rows={3} value={callForm.summary} onChange={(e) => setCallForm({ ...callForm, summary: e.target.value })} /></label>
@@ -284,7 +309,7 @@ function ItemDetail({ kind }: { kind: SalesItemKind }) {
           <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setModal(null)}>انصراف</button></>}>
         <label><span className="form-label">دلیل</span>
           <select className="admin-select" value={lostReason} onChange={(e) => setLostReason(e.target.value)}>
-            {SALES_LOST_REASONS.map((r) => <option key={r} value={r}>{r}</option>)}
+            {lostReasons.map((r) => <option key={r} value={r}>{r}</option>)}
           </select></label>
       </AdminModal>
     </div>
@@ -855,6 +880,8 @@ export function AdminSalesSettingsPage() {
           </section>
           <p className="admin-muted" style={{ marginTop: 12 }}>
             پیش‌فرض‌های سیستم: {SALES_LEAD_SOURCES.length} منبع · {SALES_LOST_REASONS.length} دلیل
+            {' · '}
+            <Link to="/admin/settings">ویرایش ماژولار در تنظیمات پلتفرم</Link>
           </p>
         </>
       ) : null}

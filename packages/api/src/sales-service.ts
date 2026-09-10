@@ -280,9 +280,23 @@ export function getSalesSettings(): SalesSettings {
     const row = db().prepare('SELECT value FROM sales_settings WHERE key = ?').get(key) as { value: string } | undefined;
     return row ? parseJson(row.value, fallback) : fallback;
   };
+  let leadSources = get('leadSources', [...SALES_LEAD_SOURCES]) as string[];
+  let lostReasons = get('lostReasons', [...SALES_LOST_REASONS]) as string[];
+  // Prefer modular platform dropdown options when seeded (active-only for new selection)
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const plat = require('./platform-settings-service') as typeof import('./platform-settings-service');
+    plat.ensurePlatformSettingsSchema();
+    const src = plat.listActiveDropdownLabels('sales', 'lead_sources');
+    const lost = plat.listActiveDropdownLabels('sales', 'lost_reasons');
+    if (src.length) leadSources = src;
+    if (lost.length) lostReasons = lost;
+  } catch {
+    /* platform settings optional during early boot */
+  }
   return {
-    leadSources: get('leadSources', [...SALES_LEAD_SOURCES]) as string[],
-    lostReasons: get('lostReasons', [...SALES_LOST_REASONS]) as string[],
+    leadSources,
+    lostReasons,
     discountLimits: get('discountLimits', { sales_agent: 5, sales_lead: 15, sales_manager: 100 }) as Record<string, number>,
   };
 }

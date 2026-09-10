@@ -333,4 +333,5 @@ export const GAME_STATUS_LABELS: Record<GameStatus, string> = {
 export * from './admin-nav';
 export * from './sales'
 export * from './crm';
+export * from './platform-settings';
 export * from './finance-os';
