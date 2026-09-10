@@ -2065,6 +2065,7 @@ function mapPaymentOrder(row: Record<string, unknown>): PaymentOrder {
         ? String(row.user_telegram_id).trim()
         : undefined,
     userUsername: (row.user_username as string | undefined) ?? undefined,
+    userAvatarUrl: (row.user_avatar_url as string | undefined) ?? undefined,
   };
 }
 
@@ -2109,10 +2110,13 @@ function mapVetConsultation(row: Record<string, unknown>): VetConsultation {
       (row.created_at as string | undefined),
     patientName: (row.patient_name as string | undefined) ?? undefined,
     patientCity: (row.patient_city as string | undefined) ?? undefined,
+    patientAvatarUrl: (row.patient_avatar_url as string | undefined) ?? undefined,
     vetName: (row.vet_name as string | undefined) ?? undefined,
+    vetAvatarUrl: (row.vet_avatar_url as string | undefined) ?? undefined,
     petName: (row.pet_name as string | undefined) ?? undefined,
     petSpecies: (row.pet_species as string | undefined) ?? undefined,
     petBreed: (row.pet_breed as string | undefined) ?? undefined,
+    petImageUrl: (row.pet_image_url as string | undefined) ?? undefined,
   };
 }
 
@@ -4990,10 +4994,13 @@ export const dbService = {
              ) AS last_activity_at,
              patient.name AS patient_name,
              patient.city AS patient_city,
+             patient.avatar_url AS patient_avatar_url,
              vet.name AS vet_name,
+             vet.avatar_url AS vet_avatar_url,
              pets.name AS pet_name,
              pets.species AS pet_species,
-             pets.breed AS pet_breed
+             pets.breed AS pet_breed,
+             pets.image_url AS pet_image_url
       FROM vet_consultations vc
       LEFT JOIN users patient ON patient.id = vc.patient_user_id
       LEFT JOIN users vet ON vet.id = vc.vet_user_id
@@ -5085,10 +5092,13 @@ export const dbService = {
         `SELECT vc.*,
                 pu.name AS patient_name,
                 pu.city AS patient_city,
+                pu.avatar_url AS patient_avatar_url,
                 vu.name AS vet_name,
+                vu.avatar_url AS vet_avatar_url,
                 p.name AS pet_name,
                 p.species AS pet_species,
-                p.breed AS pet_breed
+                p.breed AS pet_breed,
+                p.image_url AS pet_image_url
          FROM vet_consultations vc
          LEFT JOIN users pu ON pu.id = vc.patient_user_id
          LEFT JOIN users vu ON vu.id = vc.vet_user_id
@@ -5115,10 +5125,13 @@ export const dbService = {
         `SELECT vc.*,
                 pu.name AS patient_name,
                 pu.city AS patient_city,
+                pu.avatar_url AS patient_avatar_url,
                 vu.name AS vet_name,
+                vu.avatar_url AS vet_avatar_url,
                 p.name AS pet_name,
                 p.species AS pet_species,
-                p.breed AS pet_breed
+                p.breed AS pet_breed,
+                p.image_url AS pet_image_url
          FROM vet_consultations vc
          LEFT JOIN users pu ON pu.id = vc.patient_user_id
          LEFT JOIN users vu ON vu.id = vc.vet_user_id
@@ -5178,10 +5191,13 @@ export const dbService = {
         `SELECT vc.*,
                 pu.name AS patient_name,
                 pu.city AS patient_city,
+                pu.avatar_url AS patient_avatar_url,
                 vu.name AS vet_name,
+                vu.avatar_url AS vet_avatar_url,
                 p.name AS pet_name,
                 p.species AS pet_species,
-                p.breed AS pet_breed
+                p.breed AS pet_breed,
+                p.image_url AS pet_image_url
          FROM vet_consultations vc
          LEFT JOIN users pu ON pu.id = vc.patient_user_id
          LEFT JOIN users vu ON vu.id = vc.vet_user_id
@@ -5196,10 +5212,13 @@ export const dbService = {
         `SELECT vc.*,
                 pu.name AS patient_name,
                 pu.city AS patient_city,
+                pu.avatar_url AS patient_avatar_url,
                 vu.name AS vet_name,
+                vu.avatar_url AS vet_avatar_url,
                 p.name AS pet_name,
                 p.species AS pet_species,
-                p.breed AS pet_breed
+                p.breed AS pet_breed,
+                p.image_url AS pet_image_url
          FROM vet_consultations vc
          LEFT JOIN users pu ON pu.id = vc.patient_user_id
          LEFT JOIN users vu ON vu.id = vc.vet_user_id
@@ -5701,7 +5720,8 @@ export const dbService = {
         `SELECT po.*,
                 u.name AS user_name,
                 u.telegram_id AS user_telegram_id,
-                u.username AS user_username
+                u.username AS user_username,
+                u.avatar_url AS user_avatar_url
          FROM payment_orders po
          LEFT JOIN users u ON u.id = po.user_id
          WHERE po.id = ?`
@@ -5717,7 +5737,8 @@ export const dbService = {
           `SELECT po.*,
                   u.name AS user_name,
                   u.telegram_id AS user_telegram_id,
-                  u.username AS user_username
+                  u.username AS user_username,
+                  u.avatar_url AS user_avatar_url
            FROM payment_orders po
            LEFT JOIN users u ON u.id = po.user_id
            WHERE po.method = 'card' AND po.status = 'pending'

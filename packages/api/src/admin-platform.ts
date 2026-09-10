@@ -82,6 +82,9 @@ export type ShopOrderRow = {
   cogsToman?: number;
   createdAt: string;
   updatedAt: string;
+  /** join — عکس پروفایل کاربر */
+  userAvatarUrl?: string;
+  userName?: string;
 };
 
 export type AnnouncementRow = {
@@ -167,6 +170,8 @@ function mapShopOrder(row: Record<string, unknown>): ShopOrderRow {
     cogsToman: row.cogs_toman != null ? Number(row.cogs_toman) : undefined,
     createdAt: String(row.created_at ?? ''),
     updatedAt: String(row.updated_at ?? ''),
+    userAvatarUrl: (row.user_avatar_url as string) || undefined,
+    userName: (row.user_name as string) || undefined,
   };
 }
 
@@ -447,13 +452,18 @@ export const adminPlatform = {
 
   listShopOrders(filters?: { status?: string; limit?: number }): ShopOrderRow[] {
     const d = db();
-    let sql = 'SELECT * FROM shop_orders WHERE 1=1';
+    let sql = `SELECT so.*,
+                      u.avatar_url AS user_avatar_url,
+                      u.name AS user_name
+               FROM shop_orders so
+               LEFT JOIN users u ON u.id = so.user_id
+               WHERE 1=1`;
     const params: unknown[] = [];
     if (filters?.status) {
-      sql += ' AND status = ?';
+      sql += ' AND so.status = ?';
       params.push(filters.status);
     }
-    sql += ' ORDER BY created_at DESC LIMIT ?';
+    sql += ' ORDER BY so.created_at DESC LIMIT ?';
     params.push(Math.min(Math.max(filters?.limit ?? 100, 1), 300));
     return (d.prepare(sql).all(...params) as Record<string, unknown>[]).map(mapShopOrder);
   },
@@ -474,9 +484,16 @@ export const adminPlatform = {
   },
 
   getShopOrder(id: number): ShopOrderRow | null {
-    const row = db().prepare('SELECT * FROM shop_orders WHERE id = ?').get(id) as
-      | Record<string, unknown>
-      | undefined;
+    const row = db()
+      .prepare(
+        `SELECT so.*,
+                u.avatar_url AS user_avatar_url,
+                u.name AS user_name
+         FROM shop_orders so
+         LEFT JOIN users u ON u.id = so.user_id
+         WHERE so.id = ?`
+      )
+      .get(id) as Record<string, unknown> | undefined;
     return row ? mapShopOrder(row) : null;
   },
 

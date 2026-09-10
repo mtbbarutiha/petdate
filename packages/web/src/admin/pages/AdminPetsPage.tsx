@@ -2,15 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { Search, Trash2 } from 'lucide-react';
 import { petPublicIdOf, type PetProfile } from '@petdate/shared';
 import { adminFetch, formatNumFa } from '../api';
-import { resolvePublicMediaUrl } from '../../lib/api';
-import { EMPTY_STATE_PHOTO } from '../../data/petImages';
 import { AdminIdChip } from '../AdminIds';
-
-function adminPetThumbSrc(pet: PetProfile): string {
-  return (
-    resolvePublicMediaUrl(pet.imageUrl, { petId: pet.id }) || EMPTY_STATE_PHOTO
-  );
-}
+import { AdminEntityCell, AdminThumb } from '../AdminThumb';
 
 export function AdminPetsPage() {
   const [pets, setPets] = useState<PetProfile[]>([]);
@@ -45,29 +38,29 @@ export function AdminPetsPage() {
       </div>
       {error ? <p className="admin-error">{error}</p> : null}
       <div className="admin-table-wrap admin-card"><table className="admin-table">
-        <thead><tr><th>عکس</th><th>آیدی پت</th><th>نام</th><th>گونه / نژاد</th><th>سن / جنسیت</th><th>مالک</th><th>شهر</th><th></th></tr></thead>
+        <thead><tr><th>آیدی پت</th><th>نام</th><th>گونه / نژاد</th><th>سن / جنسیت</th><th>مالک</th><th>شهر</th><th></th></tr></thead>
         <tbody>
           {pets.map((pet) => {
             const publicId = petPublicIdOf(pet);
             return (
               <tr key={pet.id}>
                 <td>
-                  <img
-                    src={adminPetThumbSrc(pet)}
-                    alt=""
-                    className="admin-thumb"
-                    onError={(e) => {
-                      const el = e.currentTarget;
-                      if (el.dataset.fallback === '1') return;
-                      el.dataset.fallback = '1';
-                      el.src = EMPTY_STATE_PHOTO;
-                    }}
-                  />
-                </td>
-                <td>
                   <AdminIdChip publicId={publicId} numericId={pet.id} />
                 </td>
-                <td><strong>{pet.name}</strong></td>
+                <td>
+                  <AdminEntityCell
+                    thumb={
+                      <AdminThumb
+                        src={pet.imageUrl}
+                        petId={pet.id}
+                        kind="pet"
+                        label={pet.name}
+                        alt={pet.name}
+                      />
+                    }
+                    title={<strong>{pet.name}</strong>}
+                  />
+                </td>
                 <td>{pet.species} · {pet.breed || '—'}</td>
                 <td className="admin-muted">
                   {[
@@ -81,7 +74,7 @@ export function AdminPetsPage() {
               </tr>
             );
           })}
-          {!pets.length ? <tr><td colSpan={8} className="admin-muted">پتی یافت نشد</td></tr> : null}
+          {!pets.length ? <tr><td colSpan={7} className="admin-muted">پتی یافت نشد</td></tr> : null}
         </tbody>
       </table></div>
     </div>

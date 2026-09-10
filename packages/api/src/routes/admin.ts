@@ -158,7 +158,21 @@ adminRouter.get('/playdates', (req, res) => {
   const status = typeof req.query.status === 'string' ? req.query.status : undefined;
   const items = dbService.listPlaydateRequests(
     status ? { status: status as 'pending' | 'accepted' | 'rejected' | 'cancelled' } : undefined
-  );
+  ).map((reqRow) => {
+    const fromPet = dbService.getPet(reqRow.fromPetId) ?? undefined;
+    const toPet = dbService.getPet(reqRow.toPetId) ?? undefined;
+    const fromUser = dbService.getUserById(reqRow.fromUserId);
+    const toUser = reqRow.toUserId != null ? dbService.getUserById(reqRow.toUserId) : null;
+    return {
+      ...reqRow,
+      fromPet,
+      toPet,
+      fromUserAvatarUrl: fromUser?.avatarUrl,
+      toUserAvatarUrl: toUser?.avatarUrl,
+      fromUserName: fromUser?.name,
+      toUserName: toUser?.name,
+    };
+  });
   res.json({ total: items.length, playdates: items });
 });
 

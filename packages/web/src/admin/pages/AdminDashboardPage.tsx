@@ -5,6 +5,7 @@ import { petPublicIdOf } from '@petdate/shared';
 import { adminFetch, formatNumFa, formatTomanFa } from '../api';
 import { AdminBarChart, AdminLineChart } from '../FinanceCharts';
 import { AdminIdChip } from '../AdminIds';
+import { AdminEntityCell, AdminThumb } from '../AdminThumb';
 
 type Dash = {
   generatedAt: string;
@@ -15,11 +16,12 @@ type Dash = {
     paymentOrdersPending: number;
     botRelated: { chatMessages: number; openGames: number; errors24h: number };
   };
-  recentPets: Array<{ id: number; publicId?: string; name: string; species: string; breed?: string; city?: string; ownerId: number }>;
-  recentShopOrders: Array<{ id: number; status: string; totalToman: number; userId?: number }>;
+  recentPets: Array<{ id: number; publicId?: string; name: string; species: string; breed?: string; city?: string; ownerId: number; imageUrl?: string }>;
+  recentShopOrders: Array<{ id: number; status: string; totalToman: number; userId?: number; userAvatarUrl?: string; userName?: string; customerName?: string }>;
   recentConsults: Array<{
     id: number; status: string; patientName?: string; vetName?: string; petName?: string;
     patientUserId: number; vetUserId: number; petId?: number | null;
+    patientAvatarUrl?: string; vetAvatarUrl?: string; petImageUrl?: string;
   }>;
 };
 
@@ -123,7 +125,21 @@ export function AdminDashboardPage() {
               {(data?.recentPets ?? []).map((pet) => (
                 <tr key={pet.id}>
                   <td><AdminIdChip publicId={petPublicIdOf(pet)} numericId={pet.id} /></td>
-                  <td><strong>{pet.name}</strong><div className="admin-muted">{pet.breed || '—'}</div></td>
+                  <td>
+                    <AdminEntityCell
+                      thumb={
+                        <AdminThumb
+                          src={pet.imageUrl}
+                          petId={pet.id}
+                          kind="pet"
+                          label={pet.name}
+                          alt={pet.name}
+                        />
+                      }
+                      title={<strong>{pet.name}</strong>}
+                      subtitle={pet.breed || '—'}
+                    />
+                  </td>
                   <td>{pet.species}</td>
                   <td><code className="admin-mono" dir="ltr">#{pet.ownerId}</code></td>
                   <td>{pet.city || '—'}</td>
@@ -141,7 +157,23 @@ export function AdminDashboardPage() {
               {(data?.recentShopOrders ?? []).map((o) => (
                 <tr key={o.id}>
                   <td><code className="admin-mono" dir="ltr">#{o.id}</code></td>
-                  <td>{o.userId != null ? <code className="admin-mono" dir="ltr">#{o.userId}</code> : '—'}</td>
+                  <td>
+                    <AdminEntityCell
+                      thumb={
+                        <AdminThumb
+                          src={o.userAvatarUrl}
+                          label={o.userName || o.customerName}
+                          kind="user"
+                        />
+                      }
+                      title={
+                        o.userId != null
+                          ? <code className="admin-mono" dir="ltr">#{o.userId}</code>
+                          : '—'
+                      }
+                      subtitle={o.userName || o.customerName || null}
+                    />
+                  </td>
                   <td>{formatTomanFa(o.totalToman)}</td>
                   <td><span className="admin-badge">{o.status}</span></td>
                 </tr>
@@ -159,16 +191,32 @@ export function AdminDashboardPage() {
                 <tr key={c.id}>
                   <td><code className="admin-mono" dir="ltr">#{c.id}</code></td>
                   <td>
-                    {c.patientName || '—'}
-                    <div className="admin-muted admin-mono">user #{c.patientUserId}</div>
+                    <AdminEntityCell
+                      thumb={<AdminThumb src={c.patientAvatarUrl} label={c.patientName} kind="user" />}
+                      title={c.patientName || '—'}
+                      subtitle={<span className="admin-mono">user #{c.patientUserId}</span>}
+                    />
                   </td>
                   <td>
-                    {c.vetName || '—'}
-                    <div className="admin-muted admin-mono">user #{c.vetUserId}</div>
+                    <AdminEntityCell
+                      thumb={<AdminThumb src={c.vetAvatarUrl} label={c.vetName} kind="user" />}
+                      title={c.vetName || '—'}
+                      subtitle={<span className="admin-mono">user #{c.vetUserId}</span>}
+                    />
                   </td>
                   <td>
-                    {c.petName || '—'}
-                    {c.petId != null ? <div className="admin-muted admin-mono">pet #{c.petId}</div> : null}
+                    <AdminEntityCell
+                      thumb={
+                        <AdminThumb
+                          src={c.petImageUrl}
+                          petId={c.petId ?? undefined}
+                          kind="pet"
+                          label={c.petName}
+                        />
+                      }
+                      title={c.petName || '—'}
+                      subtitle={c.petId != null ? <span className="admin-mono">pet #{c.petId}</span> : null}
+                    />
                   </td>
                   <td><span className="admin-badge">{c.status}</span></td>
                 </tr>

@@ -1,5 +1,6 @@
 import { Fragment, useCallback, useEffect, useState } from 'react';
 import { adminFetch, formatNumFa, formatTomanFa } from '../api';
+import { AdminEntityCell, AdminThumb } from '../AdminThumb';
 
 type OrderItem = {
   productId?: string;
@@ -22,6 +23,8 @@ type Order = {
   paymentCurrency?: string;
   paymentAmount?: number;
   createdAt: string;
+  userAvatarUrl?: string;
+  userName?: string;
 };
 
 const STATUSES = ['pending', 'paid', 'shipped', 'completed', 'cancelled'];
@@ -119,11 +122,24 @@ export function AdminShopOrdersPage() {
                   <tr>
                     <td><code className="admin-mono" dir="ltr">#{o.id}</code></td>
                     <td>
-                      {o.customerName || '—'}
-                      {o.userId != null ? (
-                        <div className="admin-muted admin-mono" dir="ltr">user #{o.userId}</div>
-                      ) : null}
-                      <div className="admin-muted">{o.customerPhone || ''}</div>
+                      <AdminEntityCell
+                        thumb={
+                          <AdminThumb
+                            src={o.userAvatarUrl}
+                            label={o.userName || o.customerName}
+                            kind="user"
+                          />
+                        }
+                        title={o.customerName || o.userName || '—'}
+                        subtitle={
+                          <>
+                            {o.userId != null ? (
+                              <span className="admin-mono" dir="ltr">user #{o.userId}</span>
+                            ) : null}
+                            {o.customerPhone ? <div>{o.customerPhone}</div> : null}
+                          </>
+                        }
+                      />
                     </td>
                     <td>
                       <strong>{payLabel(o)}</strong>
