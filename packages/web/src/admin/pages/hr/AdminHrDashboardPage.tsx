@@ -148,18 +148,48 @@ export function AdminHrDashboardPage() {
       <div className="hr-dash-main-row">
         <article className="admin-card hr-dash-panel" style={{ gridColumn: '1 / -1' }}>
           <div className="admin-card-head">
-            <h2>توزیع پرسنل بر واحد سازمانی</h2>
+            <h2>توزیع پرسنل بر اساس واحد سازمانی</h2>
             <span className="admin-muted">بر اساس دپارتمان</span>
           </div>
-          <div className="hr-dash-chart" style={{ height: Math.max(220, 36 * Math.max(deptData.length, 3)) }}>
+          {/*
+            Recharts SVG ticks clip under document dir=rtl (often to 1 Persian glyph).
+            Force an LTR chart island, put the category lane on the right, and reverse
+            the value axis so bars grow toward the labels (RTL-readable).
+          */}
+          <div
+            className="hr-dash-chart hr-dash-chart--dept-bars"
+            dir="ltr"
+            style={{ height: Math.max(220, 40 * Math.max(deptData.length, 3)) }}
+          >
             {deptData.length ? (
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart layout="vertical" data={deptData} margin={{ top: 8, right: 24, left: 8, bottom: 8 }}>
+                <BarChart
+                  layout="vertical"
+                  data={deptData}
+                  margin={{ top: 8, right: 8, left: 20, bottom: 8 }}
+                >
                   <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--admin-border)" />
-                  <XAxis type="number" allowDecimals={false} tick={{ fontSize: 11, fill: '#757086' }} axisLine={false} tickLine={false} />
-                  <YAxis type="category" dataKey="name" width={110} tick={{ fontSize: 12, fill: '#3d3558' }} axisLine={false} tickLine={false} />
+                  <XAxis
+                    type="number"
+                    reversed
+                    allowDecimals={false}
+                    tick={{ fontSize: 11, fill: '#757086' }}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis
+                    type="category"
+                    dataKey="name"
+                    orientation="right"
+                    width={148}
+                    interval={0}
+                    tick={{ fontSize: 12, fill: '#3d3558' }}
+                    axisLine={false}
+                    tickLine={false}
+                    tickMargin={10}
+                  />
                   <Tooltip content={<ChartTip />} cursor={{ fill: 'rgba(92,77,145,0.06)' }} />
-                  <Bar dataKey="count" radius={[0, 8, 8, 0]} maxBarSize={22} name="نفر">
+                  <Bar dataKey="count" radius={[8, 0, 0, 8]} maxBarSize={22} name="نفر">
                     {deptData.map((_, i) => (
                       <Cell key={i} fill={DEPT_COLORS[i % DEPT_COLORS.length]} />
                     ))}
