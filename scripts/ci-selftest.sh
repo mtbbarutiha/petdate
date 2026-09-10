@@ -18,6 +18,7 @@ npx tsx "$ROOT/packages/shared/src/peer-profile.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/user-command-id.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/pet-public-id.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/order-public-id.selftest.ts"
+npx tsx "$ROOT/packages/shared/src/entity-public-id.selftest.ts"
 
 echo "==> selftest: web inbox title (no public id)"
 npx tsx "$ROOT/packages/web/src/lib/inboxTitle.selftest.ts"

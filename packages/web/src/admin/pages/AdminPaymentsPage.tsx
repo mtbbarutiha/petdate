@@ -1,6 +1,7 @@
 import { Fragment, useCallback, useEffect, useState } from 'react';
-import { makeOrderPublicId, userPublicIdOf, type PaymentOrder } from '@petdate/shared';
+import { makeOrderPublicId, paymentPublicIdOf, userPublicIdOf, type PaymentOrder } from '@petdate/shared';
 import { adminFetch, formatNumFa, formatTomanFa } from '../api';
+import { AdminIdChip } from '../AdminIds';
 import { AdminEntityCell, AdminThumb } from '../AdminThumb';
 
 const STATUS_OPTIONS: { value: string; label: string }[] = [
@@ -120,6 +121,7 @@ export function AdminPaymentsPage() {
         <table className="admin-table admin-table--dense">
           <thead>
             <tr>
+              <th>آیدی</th>
               <th>کاربر</th>
               <th>بسته / منبع</th>
               <th>مبلغ</th>
@@ -136,6 +138,9 @@ export function AdminPaymentsPage() {
               return (
                 <Fragment key={o.id}>
                   <tr>
+                    <td>
+                      <AdminIdChip publicId={paymentPublicIdOf(o)} />
+                    </td>
                     <td>
                       <AdminEntityCell
                         thumb={
@@ -220,7 +225,7 @@ export function AdminPaymentsPage() {
                   </tr>
                   {open ? (
                     <tr>
-                      <td colSpan={7}>
+                      <td colSpan={8}>
                         <div className="admin-muted" style={{ whiteSpace: 'pre-wrap', padding: '0.5rem 0' }}>
                           {o.telegramPaymentChargeId
                             ? `charge: ${o.telegramPaymentChargeId}\n`
@@ -239,7 +244,7 @@ export function AdminPaymentsPage() {
             })}
             {!orders.length ? (
               <tr>
-                <td colSpan={7} className="admin-muted">
+                <td colSpan={8} className="admin-muted">
                   {status
                     ? `موردی با وضعیت «${statusLabel(status)}» نیست — فیلتر را روی «همه» بگذارید.`
                     : 'هنوز پرداختی ثبت نشده.'}

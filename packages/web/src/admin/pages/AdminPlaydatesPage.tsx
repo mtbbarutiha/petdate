@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { petPublicIdOf, userPublicIdOf, type PetProfile, type PlaydateRequest } from '@petdate/shared';
+import { petPublicIdOf, playdatePublicIdOf, userPublicIdOf, type PetProfile, type PlaydateRequest } from '@petdate/shared';
 import { adminFetch, formatNumFa } from '../api';
 import { AdminIdChip } from '../AdminIds';
 import { AdminEntityCell, AdminThumb } from '../AdminThumb';
@@ -61,7 +61,7 @@ export function AdminPlaydatesPage() {
       <header className="admin-header">
         <div>
           <h1>درخواست‌های همبازی</h1>
-          <p>{formatNumFa(items.length)} مورد · جدول playdate_requests</p>
+          <p>{formatNumFa(items.length)} مورد</p>
         </div>
         <select className="admin-select" value={status} onChange={(e) => setStatus(e.target.value)}>
           <option value="">همه</option><option value="pending">در انتظار</option><option value="accepted">پذیرفته</option>
@@ -72,6 +72,7 @@ export function AdminPlaydatesPage() {
       <div className="admin-table-wrap admin-card"><table className="admin-table admin-table--dense">
         <thead>
           <tr>
+            <th>آیدی</th>
             <th>از پت</th>
             <th>به پت</th>
             <th>کاربران</th>
@@ -84,6 +85,9 @@ export function AdminPlaydatesPage() {
         <tbody>
           {items.map((m) => (
             <tr key={m.id}>
+              <td>
+                <AdminIdChip publicId={playdatePublicIdOf(m)} />
+              </td>
               <td><PetCell pet={m.fromPet} petId={m.fromPetId} /></td>
               <td><PetCell pet={m.toPet} petId={m.toPetId} /></td>
               <td>
@@ -123,7 +127,7 @@ export function AdminPlaydatesPage() {
               </td>
             </tr>
           ))}
-          {!items.length ? <tr><td colSpan={7} className="admin-muted">درخواستی نیست</td></tr> : null}
+          {!items.length ? <tr><td colSpan={8} className="admin-muted">درخواستی نیست</td></tr> : null}
         </tbody>
       </table></div>
     </div>
