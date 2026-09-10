@@ -1,6 +1,7 @@
 import { Fragment, useCallback, useEffect, useState } from 'react';
 import { makeOrderPublicId, paymentPublicIdOf, userPublicIdOf, type PaymentOrder } from '@petdate/shared';
 import { adminFetch, formatNumFa, formatTomanFa } from '../api';
+import { formatAdminFaDateTime } from '../JalaliDateSelect';
 import { AdminIdChip } from '../AdminIds';
 import { AdminEntityCell, AdminThumb } from '../AdminThumb';
 
@@ -192,7 +193,7 @@ export function AdminPaymentsPage() {
                     <td>
                       <span className="admin-badge">{statusLabel(o.status)}</span>
                     </td>
-                    <td className="admin-cell-nowrap">{new Date(o.createdAt).toLocaleString('fa-IR')}</td>
+                    <td className="admin-cell-nowrap">{formatAdminFaDateTime(o.createdAt)}</td>
                     <td>
                       <div className="admin-row-actions">
                         <button
@@ -232,7 +233,7 @@ export function AdminPaymentsPage() {
                             : ''}
                           {o.receiptFileId ? `receipt: ${o.receiptFileId}\n` : ''}
                           {o.reviewedAt
-                            ? `reviewed: ${new Date(o.reviewedAt).toLocaleString('fa-IR')}\n`
+                            ? `reviewed: ${formatAdminFaDateTime(o.reviewedAt)}\n`
                             : ''}
                           {o.adminNote || 'بدون یادداشت'}
                         </div>

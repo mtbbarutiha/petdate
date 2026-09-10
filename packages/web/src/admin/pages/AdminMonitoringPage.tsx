@@ -11,6 +11,7 @@ import {
   XCircle,
 } from 'lucide-react';
 import { adminFetch } from '../api';
+import { formatAdminFaDateTime } from '../JalaliDateSelect';
 
 type CheckStatus = 'up' | 'down' | 'not_configured';
 type Check = {
@@ -103,15 +104,7 @@ function formatUptime(sec: number): string {
 }
 
 function formatGeneratedAt(iso: string): string {
-  try {
-    return new Intl.DateTimeFormat('fa-IR', {
-      dateStyle: 'medium',
-      timeStyle: 'medium',
-      timeZone: 'Asia/Tehran',
-    }).format(new Date(iso));
-  } catch {
-    return iso;
-  }
+  return formatAdminFaDateTime(iso);
 }
 
 function orderedChecks(checks: Record<string, Check>): Array<[string, Check]> {

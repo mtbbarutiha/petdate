@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { petPublicIdOf, playdatePublicIdOf, userPublicIdOf, type PetProfile, type PlaydateRequest } from '@petdate/shared';
 import { adminFetch, formatNumFa } from '../api';
+import { formatAdminFaDateTime } from '../JalaliDateSelect';
 import { AdminIdChip } from '../AdminIds';
 import { AdminEntityCell, AdminThumb } from '../AdminThumb';
 
@@ -112,7 +113,7 @@ export function AdminPlaydatesPage() {
               </td>
               <td>{m.message || '—'}</td>
               <td><span className={`admin-status admin-status--${m.status}`}>{STATUS_FA[m.status] || m.status}</span></td>
-              <td className="admin-cell-nowrap">{new Date(m.createdAt).toLocaleString('fa-IR')}</td>
+              <td className="admin-cell-nowrap">{formatAdminFaDateTime(m.createdAt)}</td>
               <td>
                 <div className="admin-row-actions">
                   {m.status === 'pending' ? (

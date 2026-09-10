@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { adminFetch, formatNumFa, formatTomanFa } from '../api';
+import { formatAdminFaDateTime } from '../JalaliDateSelect';
 import { AdminDonutChart } from '../FinanceCharts';
 
 type Wallet = {
@@ -114,7 +115,7 @@ export function AdminFinanceWalletPage() {
                       <td className="admin-mono">{formatNumFa(r.amount)}</td>
                       <td><span className={`admin-badge admin-badge--${r.direction === 'credit' ? 'ok' : 'warn'}`}>{r.direction === 'credit' ? 'واریز' : 'برداشت'}</span></td>
                       <td>{r.reason || '—'}</td>
-                      <td className="admin-mono">{r.createdAt.slice(0, 16)}</td>
+                      <td className="admin-cell-nowrap">{formatAdminFaDateTime(r.createdAt)}</td>
                     </tr>
                   ))}
                   {!data.recent.length ? <tr><td colSpan={5} className="admin-muted">تراکنشی نیست</td></tr> : null}

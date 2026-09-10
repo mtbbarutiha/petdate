@@ -15,6 +15,7 @@ import {
 } from 'recharts';
 import type { CrmDashboard, CrmKpiRing } from '@petdate/shared';
 import { adminFetch, formatNumFa } from '../../api';
+import { formatAdminFaDate, formatAdminFaDateTime } from '../../JalaliDateSelect';
 
 const STANDING_COLOR: Record<string, string> = {
   'در مسیر درست': '#15cca0',
@@ -310,7 +311,7 @@ export function AdminCrmDashboardPage() {
                     <li key={f.id}>
                       <div>
                         <strong>{f.description || f.kind}</strong>
-                        <div className="admin-muted">{f.customerName || '—'} · {f.dueAt.slice(0, 16).replace('T', ' ')}</div>
+                        <div className="admin-muted">{f.customerName || '—'} · {formatAdminFaDateTime(f.dueAt)}</div>
                         {overdue ? <span className="crm-badge crm-badge--danger">عقب‌افتاده</span> : null}
                       </div>
                       {f.status === 'باز' ? (
@@ -335,7 +336,7 @@ export function AdminCrmDashboardPage() {
                   <li key={t.id}>
                     <div>
                       <strong>{t.title}</strong>
-                      <div className="admin-muted">{t.kind} · {t.dueAt.slice(0, 10)} · {t.priority}</div>
+                      <div className="admin-muted">{t.kind} · {formatAdminFaDate(t.dueAt)} · {t.priority}</div>
                     </div>
                   </li>
                 ))}

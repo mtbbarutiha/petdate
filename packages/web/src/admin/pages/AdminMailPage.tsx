@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Inbox, Mail, PenLine, RefreshCw, Reply, Send } from 'lucide-react';
 import { adminFetch, formatNumFa } from '../api';
+import { formatAdminFaDateTime } from '../JalaliDateSelect';
 
 type SmtpConfig = {
   configured: boolean;
@@ -304,7 +305,7 @@ export function AdminMailPage() {
               const fromLabel = row.fromName
                 ? `${row.fromName} <${row.from}>`
                 : row.from || '—';
-              const when = row.date ? row.date.replace('T', ' ').slice(0, 19) : '—';
+              const when = formatAdminFaDateTime(row.date);
               return (
                 <button
                   key={row.id}
@@ -579,7 +580,7 @@ export function AdminMailPage() {
             <tbody>
               {(data?.recentSends ?? []).map((row) => (
                 <tr key={row.id}>
-                  <td className="admin-mono">{row.createdAt}</td>
+                  <td className="admin-cell-nowrap">{formatAdminFaDateTime(row.createdAt)}</td>
                   <td className="admin-mono" dir="ltr">{row.to}</td>
                   <td>{row.subject}</td>
                   <td><span className="admin-badge">{row.purpose || '—'}</span></td>
@@ -615,7 +616,7 @@ export function AdminMailPage() {
               {(data?.pendingEmailOtps ?? []).map((row) => (
                 <tr key={`${row.target}-${row.createdAt}`}>
                   <td className="admin-mono" dir="ltr">{row.target}</td>
-                  <td className="admin-mono">{row.createdAt}</td>
+                  <td className="admin-cell-nowrap">{formatAdminFaDateTime(row.createdAt)}</td>
                   <td className="admin-mono">{row.expiresAt}</td>
                   <td>{formatNumFa(row.attempts)}</td>
                 </tr>

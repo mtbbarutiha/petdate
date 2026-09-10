@@ -32,6 +32,7 @@ import {
 import { AdminModal } from '../../AdminModal';
 import { adminCan } from '../../auth';
 import { adminFetch, formatNumFa } from '../../api';
+import { formatAdminFaDateTime } from '../../JalaliDateSelect';
 
 type View = 'dash' | 'tickets' | 'queue' | 'followups' | 'escalations' | 'reports' | 'settings' | 'detail';
 type ModalKind =
@@ -68,12 +69,7 @@ function Tag({ tone, children }: { tone: string; children: ReactNode }) {
 }
 
 function faDate(iso?: string | null) {
-  if (!iso) return '—';
-  try {
-    return new Date(iso).toLocaleString('fa-IR');
-  } catch {
-    return iso;
-  }
+  return formatAdminFaDateTime(iso);
 }
 
 function Kpi({ label, value, tone }: { label: string; value: string; tone?: string }) {

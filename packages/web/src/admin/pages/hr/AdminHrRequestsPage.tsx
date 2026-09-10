@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import type { HrEmployee, HrRequest } from '@petdate/shared';
 import { HR_REQUEST_TYPES, nextRequestStatus } from '@petdate/shared';
 import { adminFetch, formatNumFa } from '../../api';
+import { formatAdminFaDate } from '../../JalaliDateSelect';
 import { adminCan } from '../../auth';
 import { AdminModal } from '../../AdminModal';
 import { AdminEntityCell, AdminThumb } from '../../AdminThumb';
@@ -17,10 +18,10 @@ type Balance = {
 
 function ticketRange(r: HrRequest): string {
   if (r.fromDate || r.toDate) {
-    return `${r.fromDate || '—'} ← ${r.toDate || '—'}`;
+    return `${formatAdminFaDate(r.fromDate) || '—'} ← ${formatAdminFaDate(r.toDate) || '—'}`;
   }
   if (r.days) return `${formatNumFa(r.days)} روز`;
-  return r.createdAt ? r.createdAt.slice(0, 10) : '—';
+  return formatAdminFaDate(r.createdAt);
 }
 
 export function AdminHrRequestsPage() {

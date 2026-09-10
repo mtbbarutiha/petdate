@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { orderPublicIdOf } from '@petdate/shared';
 import { adminFetch, formatNumFa, formatTomanFa } from '../api';
+import { formatAdminFaDateTime } from '../JalaliDateSelect';
 import { AdminIdChip } from '../AdminIds';
 
 type OrdersRes = {
@@ -93,7 +94,7 @@ export function AdminFinanceOrdersPage() {
                       <td>{formatTomanFa(o.totalToman)}</td>
                       <td>{CUR[o.paymentCurrency] || o.paymentCurrency}</td>
                       <td><span className="admin-badge">{o.status}</span></td>
-                      <td className="admin-mono">{o.createdAt.slice(0, 16)}</td>
+                      <td className="admin-cell-nowrap">{formatAdminFaDateTime(o.createdAt)}</td>
                     </tr>
                   ))}
                   {!data.orders.length ? (

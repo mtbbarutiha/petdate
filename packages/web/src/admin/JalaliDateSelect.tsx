@@ -1,122 +1,12 @@
 import { useMemo } from 'react';
 import { formatNumFa } from './api';
+import {
+  JALALI_MONTHS,
+  currentJalaliParts,
+  type JalaliDateValue,
+} from './jalaliDate';
 
-const JALALI_MONTHS = [
-  { v: 1, label: 'فروردین' },
-  { v: 2, label: 'اردیبهشت' },
-  { v: 3, label: 'خرداد' },
-  { v: 4, label: 'تیر' },
-  { v: 5, label: 'مرداد' },
-  { v: 6, label: 'شهریور' },
-  { v: 7, label: 'مهر' },
-  { v: 8, label: 'آبان' },
-  { v: 9, label: 'آذر' },
-  { v: 10, label: 'دی' },
-  { v: 11, label: 'بهمن' },
-  { v: 12, label: 'اسفند' },
-];
-
-export function currentJalaliParts(d = new Date()): { year: number; month: number; day: number } {
-  try {
-    const parts = new Intl.DateTimeFormat('en-u-ca-persian', {
-      year: 'numeric',
-      month: 'numeric',
-      day: 'numeric',
-    }).formatToParts(d);
-    const num = (t: string) =>
-      Number(String(parts.find((p) => p.type === t)?.value || '').replace(/[^\d]/g, ''));
-    const year = num('year');
-    const month = num('month');
-    const day = num('day');
-    if (year > 1300 && month >= 1 && month <= 12 && day >= 1) {
-      return { year, month, day };
-    }
-  } catch {
-    /* fall through */
-  }
-  return { year: 1404, month: 1, day: 1 };
-}
-
-/** Compact Jalali → Gregorian (day-level). */
-export function jalaliToGregorianYmd(
-  jy: number,
-  jm: number,
-  jd: number
-): { gy: number; gm: number; gd: number } {
-  let jy2 = jy <= 979 ? jy : jy - 979;
-  let days =
-    365 * jy2 +
-    Math.floor(jy2 / 33) * 8 +
-    Math.floor(((jy2 % 33) + 3) / 4) +
-    78 +
-    jd +
-    (jm < 7 ? (jm - 1) * 31 : (jm - 7) * 30 + 186);
-  let gy = days > 79 ? 1600 : 621;
-  days = days > 79 ? days - 79 : days - (-19 + 365);
-  const gy2 = 400 * Math.floor(days / 146097);
-  days %= 146097;
-  if (days > 36524) {
-    gy += 100 * Math.floor(--days / 36524);
-    days %= 36524;
-    if (days >= 365) days++;
-  }
-  gy += gy2 + 4 * Math.floor(days / 1461);
-  days %= 1461;
-  if (days > 365) {
-    gy += Math.floor((days - 1) / 365);
-    days = (days - 1) % 365;
-  }
-  const sal_a = [
-    0,
-    31,
-    (gy % 4 === 0 && gy % 100 !== 0) || gy % 400 === 0 ? 29 : 28,
-    31,
-    30,
-    31,
-    30,
-    31,
-    31,
-    30,
-    31,
-    30,
-    31,
-  ];
-  let gm = 0;
-  for (gm = 1; gm <= 12 && days >= sal_a[gm]!; gm++) days -= sal_a[gm]!;
-  return { gy, gm, gd: days + 1 };
-}
-
-export function jalaliPartsToGregorianIso(parts: {
-  year: number;
-  month: number;
-  day: number;
-} | null): string | null {
-  if (!parts?.year || !parts.month || !parts.day) return null;
-  const g = jalaliToGregorianYmd(parts.year, parts.month, parts.day);
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${g.gy}-${pad(g.gm)}-${pad(g.gd)}`;
-}
-
-export type JalaliDateValue = { year: number; month: number; day: number } | null;
-
-/** Parse `YYYY/MM/DD` Jalali string → parts (or null). */
-export function parseJalaliSlash(raw: string): JalaliDateValue {
-  const m = String(raw || '').trim().match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
-  if (!m) return null;
-  const year = Number(m[1]);
-  const month = Number(m[2]);
-  const day = Number(m[3]);
-  if (!year || month < 1 || month > 12 || day < 1) return null;
-  return { year, month, day };
-}
-
-/** Format parts → `YYYY/MM/DD` (empty string when null). */
-export function formatJalaliSlash(parts: JalaliDateValue): string {
-  if (!parts) return '';
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${parts.year}/${pad(parts.month)}/${pad(parts.day)}`;
-}
-
+export * from './jalaliDate';
 
 type Props = {
   value: JalaliDateValue;
@@ -126,10 +16,14 @@ type Props = {
   allowEmpty?: boolean;
   className?: string;
   disabled?: boolean;
+  /** How many Jalali years before current (default 3 — filters). */
+  yearsBack?: number;
+  /** How many Jalali years after current (default 1). */
+  yearsForward?: number;
 };
 
 /**
- * Minimal Jalali year/month/day selects for admin filters.
+ * Minimal Jalali year/month/day selects for admin filters & forms.
  * Emits Jalali parts; callers convert to Gregorian YYYY-MM-DD for API.
  */
 export function JalaliDateSelect({
@@ -139,13 +33,22 @@ export function JalaliDateSelect({
   allowEmpty = true,
   className = '',
   disabled = false,
+  yearsBack = 3,
+  yearsForward = 1,
 }: Props) {
   const cur = useMemo(() => currentJalaliParts(), []);
   const years = useMemo(() => {
     const list: number[] = [];
-    for (let y = cur.year - 3; y <= cur.year + 1; y++) list.push(y);
+    const start = cur.year - Math.max(0, yearsBack);
+    const end = cur.year + Math.max(0, yearsForward);
+    for (let y = end; y >= start; y--) list.push(y);
+    // Keep selected year visible even if outside default window
+    if (value?.year && !list.includes(value.year)) {
+      list.push(value.year);
+      list.sort((a, b) => b - a);
+    }
     return list;
-  }, [cur.year]);
+  }, [cur.year, yearsBack, yearsForward, value?.year]);
 
   const year = value?.year ?? 0;
   const month = value?.month ?? 0;
@@ -172,7 +75,7 @@ export function JalaliDateSelect({
   return (
     <label className={`admin-jalali-date ${className}`.trim()}>
       {label ? <span className="admin-jalali-date-label">{label}</span> : null}
-      <div className="admin-jalali-date-row">
+      <div className="admin-jalali-date-row" dir="rtl">
         <select
           className="admin-select admin-jalali-date-day"
           aria-label={label ? `${label} — روز` : 'روز'}
@@ -220,4 +123,48 @@ export function JalaliDateSelect({
   );
 }
 
-export { JALALI_MONTHS };
+/** Compact از / تا pair for filter bars. */
+export function JalaliDateRange({
+  from,
+  to,
+  onFromChange,
+  onToChange,
+  fromLabel = 'از تاریخ',
+  toLabel = 'تا تاریخ',
+  className = '',
+  disabled = false,
+  yearsBack,
+  yearsForward,
+}: {
+  from: JalaliDateValue;
+  to: JalaliDateValue;
+  onFromChange: (next: JalaliDateValue) => void;
+  onToChange: (next: JalaliDateValue) => void;
+  fromLabel?: string;
+  toLabel?: string;
+  className?: string;
+  disabled?: boolean;
+  yearsBack?: number;
+  yearsForward?: number;
+}) {
+  return (
+    <div className={`admin-date-range ${className}`.trim()} role="group" aria-label="بازه تاریخ شمسی">
+      <JalaliDateSelect
+        label={fromLabel}
+        value={from}
+        onChange={onFromChange}
+        disabled={disabled}
+        yearsBack={yearsBack}
+        yearsForward={yearsForward}
+      />
+      <JalaliDateSelect
+        label={toLabel}
+        value={to}
+        onChange={onToChange}
+        disabled={disabled}
+        yearsBack={yearsBack}
+        yearsForward={yearsForward}
+      />
+    </div>
+  );
+}

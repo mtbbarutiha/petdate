@@ -9,6 +9,13 @@ import {
 import { adminFetch, formatNumFa } from '../../api';
 import { adminCan } from '../../auth';
 import { AdminModal } from '../../AdminModal';
+import {
+  JalaliDateSelect,
+  formatAdminFaDateTime,
+  jalaliPartsAndTimeToIso,
+  jalaliPartsToGregorianIso,
+  type JalaliDateValue,
+} from '../../JalaliDateSelect';
 
 type AtsMeta = {
   jobTitles: string[];
@@ -76,9 +83,10 @@ export function AdminHrAtsPage() {
     jobTitle: '',
   });
   const [callOutcome, setCallOutcome] = useState<string>(HR_CALL_OUTCOMES[0]);
-  const [interviewAt, setInterviewAt] = useState('');
+  const [interviewDate, setInterviewDate] = useState<JalaliDateValue>(null);
+  const [interviewTime, setInterviewTime] = useState('10:00');
   const [interviewerId, setInterviewerId] = useState('');
-  const [startDate, setStartDate] = useState('');
+  const [startDate, setStartDate] = useState<JalaliDateValue>(null);
   const [busy, setBusy] = useState(false);
 
   const addOpening = async (e: FormEvent) => {
@@ -180,7 +188,12 @@ export function AdminHrAtsPage() {
   };
 
   const scheduleInterview = async () => {
-    if (!canWrite || !selected || !interviewAt) return;
+    if (!canWrite || !selected) return;
+    const interviewAt = jalaliPartsAndTimeToIso(interviewDate, interviewTime);
+    if (!interviewAt) {
+      setError('تاریخ و ساعت مصاحبه الزامی است');
+      return;
+    }
     setBusy(true);
     setMsg(null);
     try {
@@ -206,7 +219,8 @@ export function AdminHrAtsPage() {
 
   const decide = async (decision: 'approve' | 'reject') => {
     if (!canWrite || !selected) return;
-    if (decision === 'approve' && !startDate) {
+    const startIso = jalaliPartsToGregorianIso(startDate);
+    if (decision === 'approve' && !startIso) {
       setError('تاریخ شروع برای تایید الزامی است');
       return;
     }
@@ -215,7 +229,7 @@ export function AdminHrAtsPage() {
     try {
       await adminFetch(`/api/admin/hr/ats/candidates/${selected.id}/decision`, {
         method: 'POST',
-        body: JSON.stringify({ decision, startDate }),
+        body: JSON.stringify({ decision, startDate: startIso || '' }),
       });
       if (decision === 'approve') {
         await adminFetch(`/api/admin/hr/ats/candidates/${selected.id}/stage`, {
@@ -472,7 +486,7 @@ export function AdminHrAtsPage() {
                 {(selected.followup.calls || []).map((c, i) => (
                   <li key={`${c.at}-${i}`}>
                     تماس {formatNumFa(c.round)} · <b>{c.outcome}</b> ·{' '}
-                    {new Date(c.at).toLocaleString('fa-IR')}
+                    {formatAdminFaDateTime(c.at)}
                   </li>
                 ))}
                 {!selected.followup.calls?.length ? (
@@ -483,13 +497,23 @@ export function AdminHrAtsPage() {
               {lastConnected ? (
                 <>
                   <h3 style={{ fontSize: '0.95rem' }}>زمان‌بندی مصاحبه</h3>
-                  <div className="admin-toolbar">
-                    <input
-                      type="datetime-local"
-                      className="admin-select"
-                      value={interviewAt}
-                      onChange={(e) => setInterviewAt(e.target.value)}
+                  <div className="admin-toolbar admin-ats-interview">
+                    <JalaliDateSelect
+                      label="تاریخ مصاحبه"
+                      value={interviewDate}
+                      onChange={setInterviewDate}
+                      yearsBack={1}
+                      yearsForward={1}
                     />
+                    <label>
+                      <span className="form-label">ساعت</span>
+                      <input
+                        type="time"
+                        className="admin-select"
+                        value={interviewTime}
+                        onChange={(e) => setInterviewTime(e.target.value)}
+                      />
+                    </label>
                     <select
                       className="admin-select"
                       value={interviewerId}
@@ -506,7 +530,7 @@ export function AdminHrAtsPage() {
                     <button
                       type="button"
                       className="admin-btn"
-                      disabled={busy || !canWrite || !interviewAt}
+                      disabled={busy || !canWrite || !interviewDate || !interviewTime}
                       onClick={() => void scheduleInterview()}
                     >
                       ثبت مصاحبه + پیامک/ایمیل
@@ -514,7 +538,7 @@ export function AdminHrAtsPage() {
                   </div>
                   {selected.followup.interviewAt ? (
                     <p className="admin-muted">
-                      مصاحبه: {selected.followup.interviewAt.replace('T', ' ').slice(0, 16)}
+                      مصاحبه: {formatAdminFaDateTime(selected.followup.interviewAt)}
                       {selected.followup.interviewerName
                         ? ` · ${selected.followup.interviewerName}`
                         : ''}
@@ -525,15 +549,14 @@ export function AdminHrAtsPage() {
 
               <h3 style={{ fontSize: '0.95rem' }}>تصمیم نهایی</h3>
               <div className="admin-toolbar">
-                <label>
-                  <span className="form-label">تاریخ شروع</span>
-                  <input
-                    type="date"
-                    className="admin-select"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                  />
-                </label>
+                <JalaliDateSelect
+                  label="تاریخ شروع"
+                  value={startDate}
+                  onChange={setStartDate}
+                  allowEmpty
+                  yearsBack={1}
+                  yearsForward={2}
+                />
                 <button
                   type="button"
                   className="admin-btn admin-btn--primary"

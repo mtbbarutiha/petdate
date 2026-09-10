@@ -15,6 +15,7 @@ import type {
 import { CRM_CHANNEL_LABELS, CRM_OUTCOMES, CRM_PRIORITIES, CRM_REASON_TREE, CRM_SCORECARD } from '@petdate/shared';
 import { adminCan } from '../../auth';
 import { adminFetch, formatNumFa } from '../../api';
+import { formatAdminFaDate, formatAdminFaDateTime } from '../../JalaliDateSelect';
 
 function Err({ error }: { error: string | null }) {
   if (!error) return null;
@@ -194,7 +195,7 @@ export function AdminCrmCustomerDetailPage() {
         <div className="admin-stat"><div className="admin-stat-value">{formatNumFa(data.tickets.length)}</div><div className="admin-stat-label">تیکت</div></div>
       </div>
       <section className="admin-card" style={{ marginTop: 12 }}><div className="admin-card-head"><h2>سفارشات</h2></div>
-        {data.orders.map((o) => <div key={o.id}>{o.product} · {formatNumFa(o.amount)} ت · {o.orderedAt.slice(0, 10)}</div>)}
+        {data.orders.map((o) => <div key={o.id}>{o.product} · {formatNumFa(o.amount)} ت · {formatAdminFaDate(o.orderedAt)}</div>)}
         {!data.orders.length ? <p>سفارشی نیست</p> : null}
       </section>
       <section className="admin-card" style={{ marginTop: 12 }}><div className="admin-card-head"><h2>تیکت‌ها</h2></div>
@@ -261,7 +262,7 @@ export function AdminCrmExperiencePage() {
       <div className="admin-table-wrap"><table className="admin-table">
         <thead><tr><th>شناسه</th><th>مشتری</th><th>امتیاز</th><th>تاریخ</th></tr></thead>
         <tbody>{surveys.map((s) => (
-          <tr key={s.id}><td>{s.publicId}</td><td>{s.customerName || s.customerId}</td><td>{formatNumFa(s.rating)}</td><td>{s.createdAt.slice(0, 10)}</td></tr>
+          <tr key={s.id}><td>{s.publicId}</td><td>{s.customerName || s.customerId}</td><td>{formatNumFa(s.rating)}</td><td>{formatAdminFaDate(s.createdAt)}</td></tr>
         ))}</tbody>
       </table></div>
     </div>
@@ -439,7 +440,7 @@ export function AdminCrmCasesPage() {
           <thead><tr><th>شناسه</th><th>شرح</th><th>سررسید</th><th>وضعیت</th><th></th></tr></thead>
           <tbody>{followups.map((f) => (
             <tr key={f.id}>
-              <td>{f.publicId}</td><td>{f.description}</td><td>{f.dueAt.slice(0, 16)}</td><td>{f.status}</td>
+              <td>{f.publicId}</td><td>{f.description}</td><td>{formatAdminFaDateTime(f.dueAt)}</td><td>{f.status}</td>
               <td>{canWrite && f.status === 'باز' ? (
                 <button type="button" className="admin-btn admin-btn--ghost" onClick={() => void adminFetch(`/api/admin/crm/followups/${f.id}/complete`, {
                   method: 'POST', body: JSON.stringify({ result: 'انجام شد' }),

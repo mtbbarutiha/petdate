@@ -2,6 +2,7 @@ import { Fragment, useCallback, useEffect, useState } from 'react';
 import { Search } from 'lucide-react';
 import { orderPublicIdOf, userPublicIdOf } from '@petdate/shared';
 import { adminFetch, formatNumFa, formatTomanFa } from '../api';
+import { formatAdminFaDateTime } from '../JalaliDateSelect';
 import { AdminIdChip } from '../AdminIds';
 import { AdminEntityCell, AdminThumb } from '../AdminThumb';
 
@@ -191,7 +192,7 @@ export function AdminShopOrdersPage() {
                         ))}
                       </select>
                     </td>
-                    <td className="admin-cell-nowrap">{new Date(o.createdAt).toLocaleString('fa-IR')}</td>
+                    <td className="admin-cell-nowrap">{formatAdminFaDateTime(o.createdAt)}</td>
                     <td>
                       <button type="button" className="admin-btn ghost" onClick={() => setOpenId(open ? null : o.id)}>
                         {open ? 'بستن' : 'جزئیات'}

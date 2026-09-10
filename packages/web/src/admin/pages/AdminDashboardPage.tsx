@@ -25,6 +25,13 @@ import {
 } from '../FinanceCharts';
 import { AdminIdChip } from '../AdminIds';
 import { AdminEntityCell, AdminThumb } from '../AdminThumb';
+import {
+  JalaliDateRange,
+  formatAdminFaDateTime,
+  formatJalaliSlash,
+  jalaliPartsToGregorianIso,
+  type JalaliDateValue,
+} from '../JalaliDateSelect';
 
 type ChartPoint = { label: string; value: number };
 type ChartSlice = { label: string; value: number; color: string };
@@ -248,8 +255,8 @@ function KpiRing({ kpi }: { kpi: DashKpi }) {
 }
 
 type DashFilters = {
-  from: string;
-  to: string;
+  from: JalaliDateValue;
+  to: JalaliDateValue;
   team: string;
   personId: string;
   module: string;
@@ -258,8 +265,8 @@ type DashFilters = {
 };
 
 const emptyFilters: DashFilters = {
-  from: '',
-  to: '',
+  from: null,
+  to: null,
   team: '',
   personId: '',
   module: '',
@@ -269,8 +276,10 @@ const emptyFilters: DashFilters = {
 
 function filtersToQs(f: DashFilters): string {
   const qs = new URLSearchParams();
-  if (f.from) qs.set('from', f.from);
-  if (f.to) qs.set('to', f.to);
+  const fromIso = jalaliPartsToGregorianIso(f.from);
+  const toIso = jalaliPartsToGregorianIso(f.to);
+  if (fromIso) qs.set('from', fromIso);
+  if (toIso) qs.set('to', toIso);
   if (f.team) qs.set('team', f.team);
   if (f.personId) qs.set('personId', f.personId);
   if (f.module) qs.set('module', f.module);
@@ -455,7 +464,9 @@ export function AdminDashboardPage() {
       : [];
 
   const activeFilterChips = [
-    filters.from || filters.to ? `بازه: ${filters.from || '…'} → ${filters.to || '…'}` : null,
+    filters.from || filters.to
+      ? `بازه: ${formatJalaliSlash(filters.from) || '…'} → ${formatJalaliSlash(filters.to) || '…'}`
+      : null,
     filters.team ? `تیم: ${filters.team}` : null,
     filters.personId
       ? `فرد: ${data?.filterOptions?.people.find((p) => String(p.id) === filters.personId)?.name || filters.personId}`
@@ -474,7 +485,7 @@ export function AdminDashboardPage() {
             <span className="admin-live-pulse">زنده</span>
             {' '}
             گزارش یکپارچهٔ پلتفرم · پیوند · فروش · باشگاه مشتریان · ایمیل
-            {data?.generatedAt ? ` · ${new Date(data.generatedAt).toLocaleString('fa-IR')}` : ''}
+            {data?.generatedAt ? ` · ${formatAdminFaDateTime(data.generatedAt)}` : ''}
           </p>
         </div>
         <button type="button" className="admin-btn admin-btn--ghost" onClick={() => void load()}>
@@ -508,24 +519,14 @@ export function AdminDashboardPage() {
           </button>
         </div>
         <div className="hr-reports-filters" role="group" aria-label="فیلتر داشبورد">
-          <label className="hr-reports-filter">
-            <span>از تاریخ</span>
-            <input
-              type="date"
-              className="admin-select"
-              value={filters.from}
-              onChange={(e) => setFilters((f) => ({ ...f, from: e.target.value }))}
-            />
-          </label>
-          <label className="hr-reports-filter">
-            <span>تا تاریخ</span>
-            <input
-              type="date"
-              className="admin-select"
-              value={filters.to}
-              onChange={(e) => setFilters((f) => ({ ...f, to: e.target.value }))}
-            />
-          </label>
+          <JalaliDateRange
+            from={filters.from}
+            to={filters.to}
+            onFromChange={(from) => setFilters((f) => ({ ...f, from }))}
+            onToChange={(to) => setFilters((f) => ({ ...f, to }))}
+            fromLabel="از تاریخ"
+            toLabel="تا تاریخ"
+          />
           <label className="hr-reports-filter">
             <span>تیم / دپارتمان</span>
             <select
@@ -591,7 +592,7 @@ export function AdminDashboardPage() {
                   activity.map((row) => (
                     <tr key={row.id}>
                       <td className="admin-mono" dir="ltr">
-                        {row.at ? new Date(row.at).toLocaleString('fa-IR') : '—'}
+                        {row.at ? formatAdminFaDateTime(row.at) : '—'}
                       </td>
                       <td>{row.actor}</td>
                       <td>{row.action}</td>

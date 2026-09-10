@@ -453,6 +453,8 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
             <span className="form-label">تاریخ تولد</span>
             <JalaliDateSelect
               value={parseJalaliSlash(draft.birthDate)}
+              yearsBack={80}
+              yearsForward={0}
               onChange={(v) => patch('birthDate', formatJalaliSlash(v))}
             />
           </div>
@@ -715,6 +717,8 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
             <span className="form-label">تاریخ شروع *</span>
             <JalaliDateSelect
               value={parseJalaliSlash(draft.contractStart)}
+              yearsBack={15}
+              yearsForward={5}
               onChange={(v) => patch('contractStart', formatJalaliSlash(v))}
             />
           </div>
@@ -722,6 +726,8 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
             <span className="form-label">تاریخ پایان *</span>
             <JalaliDateSelect
               value={parseJalaliSlash(draft.contractEnd)}
+              yearsBack={15}
+              yearsForward={5}
               onChange={(v) => patch('contractEnd', formatJalaliSlash(v))}
             />
           </div>

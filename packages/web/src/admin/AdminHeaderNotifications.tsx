@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Bell, CheckCheck } from 'lucide-react';
 import type { AdminHeaderNotification, AdminNotificationsPayload } from '@petdate/shared';
 import { adminFetch, formatNumFa } from './api';
+import { formatAdminFaDateTime } from './JalaliDateSelect';
 
 const POLL_MS = 45_000;
 
@@ -14,13 +15,7 @@ function kindClass(kind: AdminHeaderNotification['kind']): string {
 }
 
 function formatWhen(iso: string): string {
-  try {
-    const d = new Date(iso.includes('T') ? iso : iso.replace(' ', 'T') + 'Z');
-    if (Number.isNaN(d.getTime())) return iso;
-    return d.toLocaleString('fa-IR', { dateStyle: 'short', timeStyle: 'short' });
-  } catch {
-    return iso;
-  }
+  return formatAdminFaDateTime(iso);
 }
 
 export function AdminHeaderNotifications() {
