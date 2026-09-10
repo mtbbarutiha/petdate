@@ -4417,13 +4417,31 @@ body:has(.admin-app) {
   background: transparent;
   color: var(--admin-muted);
   cursor: grab;
-  padding: 2px;
+  padding: 4px 2px;
   border-radius: 6px;
   line-height: 0;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
-.admin-app .wdg-drag:active { cursor: grabbing; }
+.admin-app .wdg-drag:active,
+.admin-app .wdg-grid--reordering .wdg-drag { cursor: grabbing; }
 .admin-app .wdg-drag:hover { background: #f1f5f9; color: var(--admin-ink); }
+.admin-app .wdg-drag:focus-visible {
+  outline: 2px solid #15cca0;
+  outline-offset: 1px;
+}
 .admin-app .wdg-tile-titles { flex: 1; min-width: 0; }
+.admin-app .wdg-tile-titles--drag {
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.admin-app .wdg-grid--reordering .wdg-tile-titles--drag { cursor: grabbing; }
 .admin-app .wdg-tile-group {
   display: block;
   font-size: 10px;
@@ -4452,6 +4470,22 @@ body:has(.admin-app) {
   flex: 1;
   padding: 6px 10px 14px;
   min-height: 0;
+}
+.admin-app .wdg-tile--dragging {
+  opacity: 0.55;
+  box-shadow: 0 8px 24px rgba(25, 6, 61, 0.12);
+  z-index: 2;
+}
+.admin-app .wdg-tile--drop-target {
+  border-color: #15cca0;
+  box-shadow: 0 0 0 2px rgba(21, 204, 160, 0.35);
+}
+.admin-app .wdg-grid--reordering {
+  cursor: grabbing;
+}
+.admin-app .wdg-grid--reordering .wdg-tile-body {
+  /* Keep chart clicks from competing while reordering; hits still work via elementsFromPoint */
+  pointer-events: none;
 }
 .admin-app .wdg-resize {
   position: absolute;
