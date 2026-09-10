@@ -152,7 +152,7 @@ export interface SalesNavCounts {
   unassigned: number;
 }
 
-/** Incoming-call simulation stub payload (client shows call bar). */
+/** Incoming-call simulation stub payload (client shows incoming-call popup). */
 export interface SalesSimulateIncoming {
   phone: string;
   phase: 'ringing';

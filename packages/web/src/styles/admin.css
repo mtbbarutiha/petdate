@@ -2595,80 +2595,9 @@ body:has(.admin-app) {
   background: rgba(15, 118, 110, 0.12);
   color: #0f766e;
 }
-.admin-app .admin-sales-sidebar-meta {
-  margin: 4px 8px 10px;
-  padding: 10px;
-  border: 1px solid var(--admin-border);
-  border-radius: 10px;
-  background: var(--admin-surface, #fff);
-}
-.admin-app .admin-sales-meta-block + .admin-sales-meta-block {
-  margin-top: 8px;
-}
-.admin-app .admin-sales-meta-label {
-  font-size: 11px;
-  color: var(--admin-muted);
-  margin-bottom: 2px;
-}
-.admin-app .admin-sales-meta-value {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--admin-ink);
-}
-.admin-app .admin-sales-simulate-btn {
-  width: 100%;
-  margin-top: 10px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
 .admin-app .admin-page--wide {
   max-width: none;
   width: 100%;
-}
-.admin-app .admin-sales-callbar {
-  position: fixed;
-  inset-inline: 0;
-  bottom: 0;
-  z-index: 80;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex-wrap: wrap;
-  padding: 12px 18px;
-  background: #0f172a;
-  color: #f8fafc;
-  border-top: 2px solid #14b8a6;
-  box-shadow: 0 -8px 24px rgba(15, 23, 42, 0.25);
-}
-.admin-app .admin-sales-callbar--active {
-  border-top-color: #22c55e;
-}
-.admin-app .admin-sales-callbar-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #f59e0b;
-  box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.5);
-  animation: admin-sales-pulse 1.4s ease-out infinite;
-}
-.admin-app .admin-sales-callbar-dot--live {
-  background: #22c55e;
-}
-@keyframes admin-sales-pulse {
-  0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.45); }
-  70% { box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
-}
-.admin-app .admin-sales-callbar .admin-pill {
-  background: rgba(255,255,255,0.12);
-  color: #fff;
-  border-color: transparent;
-  text-decoration: none;
-}
-.admin-app .admin-sales-callbar .admin-btn {
-  border-color: transparent;
 }
 
 
@@ -3151,3 +3080,133 @@ body:has(.admin-app) {
   font-size: 12px;
 }
 .admin-app .crm-chart-tooltip-label { color: var(--admin-muted); margin-bottom: 2px; }
+
+/* —— Sales incoming call popup —— */
+.admin-app .admin-sales-call-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(25, 6, 61, 0.45);
+  backdrop-filter: blur(4px);
+}
+.admin-app .admin-sales-call-popup {
+  width: min(100%, 380px);
+  border-radius: 24px;
+  background: #fff;
+  border: 1px solid var(--admin-border);
+  box-shadow: 0 24px 60px rgba(25, 6, 61, 0.18);
+  padding: 28px 24px 22px;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  text-align: center;
+}
+.admin-app .admin-sales-call-popup-pulse {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 4px;
+}
+.admin-app .admin-sales-call-popup-pulse > span {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid rgba(21, 204, 160, 0.35);
+  animation: admin-sales-ring 1.6s ease-out infinite;
+}
+.admin-app .admin-sales-call-popup-pulse > span:nth-child(2) {
+  animation-delay: 0.55s;
+}
+@keyframes admin-sales-ring {
+  0% { transform: scale(0.72); opacity: 0.85; }
+  100% { transform: scale(1.35); opacity: 0; }
+}
+.admin-app .admin-sales-call-popup-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(145deg, #15cca0, #0f9a78);
+  color: #fff;
+  box-shadow: 0 10px 24px rgba(21, 204, 160, 0.35);
+  z-index: 1;
+}
+.admin-app .admin-sales-call-popup-avatar--live {
+  background: linear-gradient(145deg, #5c4d91, #3d3558);
+  box-shadow: 0 10px 24px rgba(92, 77, 145, 0.28);
+  margin-bottom: 4px;
+}
+.admin-app .admin-sales-call-popup-eyebrow {
+  margin: 0;
+  font-size: 13px;
+  color: var(--admin-muted);
+  font-weight: 600;
+}
+.admin-app .admin-sales-call-popup-phone {
+  margin: 0;
+  font-size: 1.65rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: var(--admin-ink);
+  font-variant-numeric: tabular-nums;
+}
+.admin-app .admin-sales-call-popup-match {
+  display: grid;
+  gap: 4px;
+  margin-top: 2px;
+}
+.admin-app .admin-sales-call-popup-match strong {
+  font-size: 15px;
+  color: var(--admin-ink);
+}
+.admin-app .admin-sales-call-popup-match span {
+  font-size: 12px;
+  color: var(--admin-muted);
+}
+.admin-app .admin-sales-call-popup-unknown {
+  margin: 0;
+  font-size: 13px;
+  color: var(--admin-muted);
+}
+.admin-app .admin-sales-call-popup-link {
+  color: #0f9a78;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.admin-app .admin-sales-call-popup-link:hover { text-decoration: underline; }
+.admin-app .admin-sales-call-popup-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  width: 100%;
+  margin-top: 12px;
+}
+.admin-app .admin-sales-call-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: none;
+  border-radius: 14px;
+  padding: 12px 14px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.admin-app .admin-sales-call-btn--answer {
+  background: #15cca0;
+  color: #fff;
+}
+.admin-app .admin-sales-call-btn--answer:hover { background: #0f9a78; }
+.admin-app .admin-sales-call-btn--reject {
+  background: #fdecea;
+  color: #c62828;
+}
+.admin-app .admin-sales-call-btn--reject:hover { background: #f9d7d4; }
