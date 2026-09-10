@@ -9,7 +9,6 @@ import type {
   CrmQaReview,
   CrmReferral,
   CrmSettings,
-  CrmSmsPattern,
   CrmSurvey,
   CrmTicket,
 } from '@petdate/shared';
@@ -473,69 +472,7 @@ export function AdminCrmCasesPage() {
   );
 }
 
-export function AdminCrmSmsPage() {
-  const [patterns, setPatterns] = useState<CrmSmsPattern[]>([]);
-  const [customers, setCustomers] = useState<CrmCustomer[]>([]);
-  const [send, setSend] = useState({ patternId: '', customerId: '' });
-  const [form, setForm] = useState({ name: '', text: '', trigger: 'manual', auto: false });
-  const canAdmin = adminCan('crm.admin');
-  const canWrite = adminCan('crm.write');
-
-  const load = () => {
-    void adminFetch<{ patterns: CrmSmsPattern[] }>('/api/admin/crm/sms').then((d) => {
-      setPatterns(d.patterns);
-      if (!send.patternId && d.patterns[0]) setSend((s) => ({ ...s, patternId: String(d.patterns[0].id) }));
-    });
-    void adminFetch<{ customers: CrmCustomer[] }>('/api/admin/crm/customers?limit=50').then((d) => {
-      setCustomers(d.customers);
-      if (!send.customerId && d.customers[0]) setSend((s) => ({ ...s, customerId: String(d.customers[0].id) }));
-    });
-  };
-  useEffect(() => { load(); }, []);
-
-  return (
-    <div className="admin-page">
-      <header className="admin-header"><div><h1>پیامک و پترن‌ها</h1><p>قالب‌های خودکار رویدادمحور</p></div></header>
-      <div className="admin-table-wrap"><table className="admin-table">
-        <thead><tr><th>نام</th><th>تریگر</th><th>خودکار</th><th>متن</th></tr></thead>
-        <tbody>{patterns.map((p) => (
-          <tr key={p.id}><td>{p.name}</td><td>{p.trigger}</td><td>{p.auto ? 'بله' : 'خیر'}</td><td>{p.text}</td></tr>
-        ))}</tbody>
-      </table></div>
-      {canWrite ? (
-        <form className="admin-card" style={{ marginTop: 16, display: 'grid', gap: 8 }} onSubmit={(e) => {
-          e.preventDefault();
-          void adminFetch('/api/admin/crm/sms/send', {
-            method: 'POST',
-            body: JSON.stringify({ patternId: Number(send.patternId), customerId: Number(send.customerId) }),
-          }).then(() => alert('ارسال شد'));
-        }}>
-          <h2>ارسال گروهی / تکی</h2>
-          <select className="form-input" value={send.patternId} onChange={(e) => setSend({ ...send, patternId: e.target.value })}>
-            {patterns.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
-          <select className="form-input" value={send.customerId} onChange={(e) => setSend({ ...send, customerId: e.target.value })}>
-            {customers.map((c) => <option key={c.id} value={c.id}>{c.first} {c.last}</option>)}
-          </select>
-          <button type="submit" className="admin-btn admin-btn--primary">ارسال</button>
-        </form>
-      ) : null}
-      {canAdmin ? (
-        <form className="admin-card" style={{ marginTop: 16, display: 'grid', gap: 8 }} onSubmit={(e) => {
-          e.preventDefault();
-          void adminFetch('/api/admin/crm/sms/patterns', { method: 'POST', body: JSON.stringify(form) }).then(() => { setForm({ name: '', text: '', trigger: 'manual', auto: false }); load(); });
-        }}>
-          <h2>پترن جدید</h2>
-          <input className="form-input" placeholder="نام" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
-          <textarea className="form-input" placeholder="متن با {نام} {محصول} {شناسه}" value={form.text} onChange={(e) => setForm({ ...form, text: e.target.value })} required />
-          <input className="form-input" placeholder="تریگر" value={form.trigger} onChange={(e) => setForm({ ...form, trigger: e.target.value })} />
-          <label><input type="checkbox" checked={form.auto} onChange={(e) => setForm({ ...form, auto: e.target.checked })} /> خودکار</label>
-          <button type="submit" className="admin-btn">ذخیره پترن</button>
-        </form>
-      ) : null}
-    </div>
-  );
-}
+export { AdminCrmSmsPage } from './AdminCrmSmsPage';
 
 export function AdminCrmQaPage() {
   const [reviews, setReviews] = useState<CrmQaReview[]>([]);

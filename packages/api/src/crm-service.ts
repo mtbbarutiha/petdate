@@ -15,7 +15,9 @@ import {
   crmSlaDueIso,
   crmSlaState,
   crmSurveyRating,
+  formatIranMobileDisplay,
   makeCrmUuid,
+  normalizeIranMobile,
   type CrmChannel,
   type CrmComplaint,
   type CrmCustomer,
@@ -40,6 +42,7 @@ import {
 import { getDb } from './db';
 import type { AdminAuthActor } from './hr-service';
 import { actorHasPermission } from './hr-service';
+import { candooSendWithSrcFallback, isCandooConfigured } from './services/candoo';
 
 function db() {
   return getDb();
@@ -346,11 +349,41 @@ function seedCrmDefaults(): void {
     const ins = d.prepare(
       `INSERT INTO crm_sms_patterns (name, type, text, trigger_key, auto, active) VALUES (?, ?, ?, ?, ?, 1)`
     );
-    ins.run('خوش‌آمدگویی پس از خرید', 'dynamic', '{نام} عزیز، از خرید {محصول} در Pet Date سپاسگزاریم.', 'after_purchase', 1);
-    ins.run('ایجاد تیکت', 'dynamic', '{نام} عزیز، تیکت {شناسه} ثبت شد و در حال پیگیری است.', 'ticket_created', 1);
-    ins.run('حل تیکت', 'dynamic', '{نام} عزیز، تیکت {شناسه} حل شد. از همراهی شما ممنونیم.', 'ticket_resolved', 1);
-    ins.run('نظرسنجی تجربه', 'dynamic', '{نام} عزیز، لطفاً تجربه تماس با {کارشناس} را امتیاز دهید.', 'survey_done', 0);
-    ins.run('نقض SLA', 'dynamic', 'تیکت {شناسه} از SLA عبور کرد — اقدام فوری.', 'sla_breach', 1);
+    ins.run(
+      'تشکر پس از خرید',
+      'dynamic',
+      '{name} عزیز، از خرید {product} در Pet Date سپاسگزاریم. امیدواریم تجربهٔ خوبی داشته باشید.',
+      'after_purchase',
+      1
+    );
+    ins.run(
+      'ثبت تیکت',
+      'dynamic',
+      '{name} عزیز، تیکت {ticket} ثبت شد و در صف رسیدگی است.',
+      'ticket_created',
+      1
+    );
+    ins.run(
+      'اعلام حل مشکل',
+      'dynamic',
+      '{name} عزیز، تیکت {ticket} حل شد. از همراهی شما ممنونیم.',
+      'ticket_resolved',
+      1
+    );
+    ins.run(
+      'دعوت به نظرسنجی',
+      'dynamic',
+      '{name} عزیز، لطفاً تجربه تماس با {agent} را امتیاز دهید.',
+      'survey_done',
+      0
+    );
+    ins.run(
+      'پیگیری نقض SLA',
+      'dynamic',
+      'تیکت {ticket} از زمان SLA عبور کرد — اقدام فوری لازم است.',
+      'sla_breach',
+      1
+    );
   }
 
   const kpiCount = Number(
@@ -1757,26 +1790,64 @@ export function upsertSmsPattern(input: {
   return listSmsPatterns().find((p) => p.id === input.id)!;
 }
 
-export function renderSmsPattern(text: string, ctx: { customer?: CrmCustomer; ticketPublicId?: string; agentName?: string }): string {
-  const c = ctx.customer;
-  return text
-    .replace(/\{نام\}/g, c?.first || 'مشتری')
-    .replace(/\{محصول\}/g, c?.product || 'Pet Date')
-    .replace(/\{شناسه\}/g, ctx.ticketPublicId || '')
-    .replace(/\{کارشناس\}/g, ctx.agentName || '');
+export function deleteSmsPattern(id: number): void {
+  ensureCrmSchema();
+  const info = db().prepare('DELETE FROM crm_sms_patterns WHERE id = ?').run(id);
+  if (!info.changes) throw Object.assign(new Error('پترن یافت نشد'), { status: 404 });
 }
 
-export function sendSmsPattern(
+export function renderSmsPattern(
+  text: string,
+  ctx: { customer?: CrmCustomer; ticketPublicId?: string; agentName?: string }
+): string {
+  const c = ctx.customer;
+  const fullName = c ? `${c.first || ''} ${c.last || ''}`.trim() : '';
+  const name = fullName || c?.first || 'مشتری';
+  const product = c?.product || 'Pet Date';
+  const ticket = ctx.ticketPublicId || '';
+  const agent = ctx.agentName || '';
+  return text
+    .replace(/\{name\}/gi, name)
+    .replace(/\{product\}/gi, product)
+    .replace(/\{ticket\}/gi, ticket)
+    .replace(/\{agent\}/gi, agent)
+    .replace(/\{نام\}/g, name)
+    .replace(/\{محصول\}/g, product)
+    .replace(/\{شناسه\}/g, ticket)
+    .replace(/\{کارشناس\}/g, agent);
+}
+
+export type CrmSmsDelivery =
+  | { sent: true; phone: string }
+  | { sent: false; skipped: true; reason: string };
+
+export async function sendSmsPattern(
   patternId: number,
   customerId: number,
   actor: AdminAuthActor,
-  extra?: { ticketPublicId?: string }
-): { text: string; interactionId: number } {
+  extra?: { ticketPublicId?: string; requirePanel?: boolean }
+): Promise<{ text: string; interactionId: number; delivery: CrmSmsDelivery }> {
   ensureCrmSchema();
   const pattern = listSmsPatterns().find((p) => p.id === patternId);
   if (!pattern) throw new Error('پترن یافت نشد');
+  if (!pattern.active && extra?.requirePanel) {
+    throw new Error('این پترن غیرفعال است');
+  }
   const customer = getCustomer(customerId);
   if (!customer) throw new Error('مشتری یافت نشد');
+
+  if (extra?.requirePanel) {
+    if (!isCandooConfigured()) {
+      throw Object.assign(new Error('سرویس پیامک پیکربندی نشده'), { status: 503 });
+    }
+    if (!customer.mobile) {
+      throw Object.assign(new Error('شماره موبایل ثبت نشده'), { status: 400 });
+    }
+    if (!normalizeIranMobile(customer.mobile)) {
+      throw Object.assign(new Error('شماره موبایل نامعتبر است'), { status: 400 });
+    }
+  }
+
   const text = renderSmsPattern(pattern.text, {
     customer,
     ticketPublicId: extra?.ticketPublicId,
@@ -1790,7 +1861,76 @@ export function sendSmsPattern(
       ) VALUES (?, 'sms', 'out', ?, ?, ?, ?, 'پیامک', 'پاسخ داده‌شده', ?, 1)`
     )
     .run(customerId, actorId(actor), actorLabel(actor), nowIso(), nowIso(), text);
-  return { text, interactionId: Number(info.lastInsertRowid) };
+
+  let delivery: CrmSmsDelivery;
+  if (!isCandooConfigured()) {
+    delivery = { sent: false, skipped: true, reason: 'سرویس پیامک پیکربندی نشده' };
+  } else if (!customer.mobile) {
+    delivery = { sent: false, skipped: true, reason: 'شماره موبایل ثبت نشده' };
+  } else {
+    const recipient = normalizeIranMobile(customer.mobile);
+    if (!recipient) {
+      delivery = { sent: false, skipped: true, reason: 'شماره موبایل نامعتبر است' };
+    } else {
+      try {
+        const sent = await candooSendWithSrcFallback({
+          recipient,
+          body: text,
+          customerId: customer.platformUserId ?? undefined,
+          type: 0,
+        });
+        if (sent.ok) {
+          delivery = { sent: true, phone: formatIranMobileDisplay(recipient) };
+        } else {
+          delivery = { sent: false, skipped: true, reason: sent.error || 'ارسال پیامک ناموفق بود' };
+          if (extra?.requirePanel) {
+            throw Object.assign(new Error(delivery.reason), { status: 502 });
+          }
+        }
+      } catch (err) {
+        if (extra?.requirePanel && (err as Error & { status?: number }).status) throw err;
+        console.error('CRM SMS send failed:', err);
+        delivery = { sent: false, skipped: true, reason: 'خطا در ارسال پیامک' };
+        if (extra?.requirePanel) {
+          throw Object.assign(new Error(delivery.reason), { status: 502 });
+        }
+      }
+    }
+  }
+
+  return { text, interactionId: Number(info.lastInsertRowid), delivery };
+}
+
+export async function sendSmsPatternBulk(
+  patternId: number,
+  customerIds: number[],
+  actor: AdminAuthActor
+): Promise<{
+  ok: number;
+  failed: number;
+  results: Array<{ customerId: number; ok: boolean; error?: string; text?: string }>;
+}> {
+  const ids = [...new Set(customerIds.map(Number).filter((n) => Number.isFinite(n) && n > 0))];
+  if (!ids.length) throw new Error('حداقل یک مشتری انتخاب کنید');
+  if (ids.length > 100) throw new Error('حداکثر ۱۰۰ گیرنده در هر ارسال');
+  const results: Array<{ customerId: number; ok: boolean; error?: string; text?: string }> = [];
+  let ok = 0;
+  let failed = 0;
+  for (const customerId of ids) {
+    try {
+      const sent = await sendSmsPattern(patternId, customerId, actor, { requirePanel: true });
+      results.push({ customerId, ok: true, text: sent.text });
+      ok += 1;
+    } catch (err) {
+      failed += 1;
+      results.push({
+        customerId,
+        ok: false,
+        error: err instanceof Error ? err.message : 'خطا',
+      });
+    }
+  }
+  return { ok, failed, results };
 }
 
 function dispatchSmsEvent(
@@ -1801,11 +1941,9 @@ function dispatchSmsEvent(
   ensureCrmSchema();
   const patterns = listSmsPatterns().filter((p) => p.trigger === event && p.auto && p.active);
   for (const p of patterns) {
-    try {
-      sendSmsPattern(p.id, ctx.customerId, actor, { ticketPublicId: ctx.ticketPublicId });
-    } catch {
-      /* ignore per-pattern failures */
-    }
+    void sendSmsPattern(p.id, ctx.customerId, actor, { ticketPublicId: ctx.ticketPublicId }).catch((err) => {
+      console.error('CRM auto SMS failed:', p.id, err);
+    });
   }
 }
 
