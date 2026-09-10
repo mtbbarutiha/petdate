@@ -308,12 +308,30 @@
   place-items: center;
   font-size: 0.75rem;
   font-weight: 700;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.admin-app .admin-topbar-avatar--photo {
+  display: block;
+  object-fit: cover;
+  background: var(--admin-accent-soft);
 }
 
 .admin-app .admin-topbar-user-name {
   font-size: 0.82rem;
   font-weight: 600;
   padding-inline-end: 4px;
+  max-width: 10rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .admin-app .admin-topbar-user-name {
+    display: none;
+  }
 }
 
 .admin-app .admin-icon-btn {
