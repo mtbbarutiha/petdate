@@ -1090,7 +1090,8 @@ consultationsRouter.post('/:id/end-chat', async (req, res) => {
     chatSecure: false,
     wasSecure,
   });
-  res.json({ ok: true, consultation: decorateAiConsultDisplay(updated), wasSecure });
+  const ended = updated ?? gate.consult;
+  res.json({ ok: true, consultation: decorateAiConsultDisplay(ended), wasSecure });
 });
 
 consultationsRouter.patch('/:id/chat-secure', async (req, res) => {
