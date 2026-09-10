@@ -6,6 +6,7 @@ import { HR_ACCESS_STATUSES, HR_CONTRACT_STATUSES } from '@petdate/shared';
 import { adminFetch, formatNumFa } from '../../api';
 import { adminCan } from '../../auth';
 import { AdminIdChip } from '../../AdminIds';
+import { EmployeeCreateModal } from './EmployeeCreateModal';
 
 export function AdminHrEmployeesPage() {
   const [employees, setEmployees] = useState<HrEmployee[]>([]);
@@ -14,7 +15,7 @@ export function AdminHrEmployeesPage() {
   const [contractStatus, setContractStatus] = useState('');
   const [accessStatus, setAccessStatus] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [creating, setCreating] = useState(false);
+  const [createOpen, setCreateOpen] = useState(false);
   const canWrite = adminCan('hr.write');
 
   const load = useCallback(async () => {
@@ -39,25 +40,6 @@ export function AdminHrEmployeesPage() {
     void load();
   }, [load]);
 
-  const createQuick = async () => {
-    if (!canWrite) return;
-    const firstName = window.prompt('نام');
-    if (!firstName?.trim()) return;
-    const lastName = window.prompt('نام خانوادگی');
-    if (!lastName?.trim()) return;
-    setCreating(true);
-    try {
-      const data = await adminFetch<{ employee: HrEmployee }>('/api/admin/hr/employees', {
-        method: 'POST',
-        body: JSON.stringify({ firstName: firstName.trim(), lastName: lastName.trim() }),
-      });
-      window.location.href = `/admin/hr/employees/${data.employee.id}`;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'خطا');
-      setCreating(false);
-    }
-  };
-
   return (
     <div className="admin-page">
       <header className="admin-header">
@@ -69,8 +51,7 @@ export function AdminHrEmployeesPage() {
           <button
             type="button"
             className="admin-btn admin-btn--primary"
-            disabled={creating}
-            onClick={() => void createQuick()}
+            onClick={() => setCreateOpen(true)}
           >
             <Plus size={16} /> همکار جدید
           </button>
@@ -171,6 +152,12 @@ export function AdminHrEmployeesPage() {
           </tbody>
         </table>
       </div>
+
+      <EmployeeCreateModal
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onCreated={() => void load()}
+      />
     </div>
   );
 }
