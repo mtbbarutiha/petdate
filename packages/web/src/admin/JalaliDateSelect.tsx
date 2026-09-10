@@ -171,11 +171,11 @@ export function JalaliDateSelect({
 
   return (
     <label className={`admin-jalali-date ${className}`.trim()}>
-      {label ? <span className="form-label">{label}</span> : null}
-      <div className="admin-jalali-date-row" style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+      {label ? <span className="admin-jalali-date-label">{label}</span> : null}
+      <div className="admin-jalali-date-row">
         <select
-          className="admin-select"
-          aria-label="روز"
+          className="admin-select admin-jalali-date-day"
+          aria-label={label ? `${label} — روز` : 'روز'}
           disabled={disabled}
           value={day || ''}
           onChange={(e) => setPart('day', e.target.value)}
@@ -188,8 +188,8 @@ export function JalaliDateSelect({
           ))}
         </select>
         <select
-          className="admin-select"
-          aria-label="ماه"
+          className="admin-select admin-jalali-date-month"
+          aria-label={label ? `${label} — ماه` : 'ماه'}
           disabled={disabled}
           value={month || ''}
           onChange={(e) => setPart('month', e.target.value)}
@@ -202,8 +202,8 @@ export function JalaliDateSelect({
           ))}
         </select>
         <select
-          className="admin-select"
-          aria-label="سال"
+          className="admin-select admin-jalali-date-year"
+          aria-label={label ? `${label} — سال` : 'سال'}
           disabled={disabled}
           value={year || ''}
           onChange={(e) => setPart('year', e.target.value)}

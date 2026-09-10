@@ -162,45 +162,54 @@ export function AdminPetsPage() {
         </button>
       </header>
 
-      <div className="admin-toolbar" style={{ flexWrap: 'wrap', gap: 8 }}>
-        <div className="admin-search">
-          <Search size={16} />
+      <div className="admin-toolbar admin-toolbar--filters" role="search" aria-label="فیلتر پت‌ها">
+        <div className="admin-filter-primary">
+          <div className="admin-search">
+            <Search size={16} />
+            <input
+              placeholder="نام، آیدی PD-P، نژاد، شهر…"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              aria-label="جستجوی پت"
+            />
+          </div>
+          <select
+            className="admin-select"
+            value={species}
+            onChange={(e) => setSpecies(e.target.value)}
+            aria-label="گونه"
+          >
+            <option value="">همه گونه‌ها</option>
+            <option value="dog">سگ</option>
+            <option value="cat">گربه</option>
+            <option value="bird">پرنده</option>
+          </select>
           <input
-            placeholder="نام، آیدی PD-P، نژاد، شهر…"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
+            className="admin-input"
+            placeholder="نام مالک"
+            value={ownerName}
+            onChange={(e) => setOwnerName(e.target.value)}
+            aria-label="نام مالک"
           />
+          <input
+            className="admin-input"
+            placeholder="موبایل مالک"
+            value={ownerPhone}
+            onChange={(e) => setOwnerPhone(e.target.value)}
+            dir="ltr"
+            aria-label="موبایل مالک"
+          />
+          <button type="button" className="admin-btn" onClick={() => void load()}>
+            جستجو
+          </button>
         </div>
-        <select
-          className="admin-select"
-          value={species}
-          onChange={(e) => setSpecies(e.target.value)}
-        >
-          <option value="">همه گونه‌ها</option>
-          <option value="dog">سگ</option>
-          <option value="cat">گربه</option>
-          <option value="bird">پرنده</option>
-        </select>
-        <input
-          className="admin-input"
-          placeholder="نام مالک"
-          value={ownerName}
-          onChange={(e) => setOwnerName(e.target.value)}
-          style={{ minWidth: 120 }}
-        />
-        <input
-          className="admin-input"
-          placeholder="موبایل مالک"
-          value={ownerPhone}
-          onChange={(e) => setOwnerPhone(e.target.value)}
-          dir="ltr"
-          style={{ minWidth: 130 }}
-        />
-        <JalaliDateSelect label="از (آخرین رویداد)" value={eventFrom} onChange={setEventFrom} />
-        <JalaliDateSelect label="تا (آخرین رویداد)" value={eventTo} onChange={setEventTo} />
-        <button type="button" className="admin-btn" onClick={() => void load()}>
-          جستجو
-        </button>
+        <div className="admin-filter-dates" role="group" aria-label="بازه آخرین رویداد">
+          <span className="admin-filter-dates-label">آخرین رویداد</span>
+          <div className="admin-date-range">
+            <JalaliDateSelect label="از" value={eventFrom} onChange={setEventFrom} />
+            <JalaliDateSelect label="تا" value={eventTo} onChange={setEventTo} />
+          </div>
+        </div>
       </div>
 
       {error ? <p className="admin-error">{error}</p> : null}

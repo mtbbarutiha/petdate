@@ -2126,11 +2126,29 @@ body:has(.admin-app) {
 .admin-app .cta-btn,
 .admin-app button.cta-btn,
 .admin-app .admin-select,
+.admin-app .admin-input,
 .admin-app .admin-search,
 .admin-app .form-input,
 .admin-app .admin-icon-btn {
   border-radius: var(--admin-radius-sm) !important;
   min-height: var(--admin-control-h);
+}
+
+/* Shared text field (toolbar / filters) — matches admin-select height */
+.admin-app .admin-input {
+  box-sizing: border-box;
+  border: 1px solid var(--admin-border);
+  background: var(--admin-surface);
+  color: var(--admin-ink);
+  padding: 8px 12px;
+  font: inherit;
+  min-width: 0;
+}
+
+.admin-app .admin-input:focus {
+  border-color: var(--admin-accent);
+  box-shadow: 0 0 0 3px rgba(92, 77, 145, 0.16);
+  outline: none;
 }
 
 .admin-app .admin-icon-btn {
@@ -2197,6 +2215,132 @@ body:has(.admin-app) {
   gap: 10px;
   margin-bottom: 14px;
   align-items: center;
+}
+
+/* Multi-row filter toolbars (pets, CRM-style dense filters) */
+.admin-app .admin-toolbar--filters {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+}
+
+.admin-app .admin-filter-primary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-app .admin-filter-primary .admin-search {
+  flex: 1 1 220px;
+  min-width: min(100%, 200px);
+}
+
+.admin-app .admin-filter-primary .admin-select {
+  flex: 0 1 150px;
+  min-width: 132px;
+}
+
+.admin-app .admin-filter-primary .admin-input {
+  flex: 1 1 140px;
+  max-width: 220px;
+  min-width: 128px;
+}
+
+.admin-app .admin-filter-primary .admin-btn {
+  flex: 0 0 auto;
+}
+
+.admin-app .admin-filter-dates {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px 16px;
+  padding: 12px 14px;
+  background: color-mix(in srgb, var(--admin-accent-soft) 45%, #fff);
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius);
+}
+
+.admin-app .admin-filter-dates-label {
+  font-size: 0.78rem;
+  font-weight: 650;
+  color: var(--admin-muted);
+  white-space: nowrap;
+  align-self: center;
+  line-height: 1.2;
+}
+
+.admin-app .admin-date-range {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px 18px;
+  flex: 1 1 280px;
+  min-width: 0;
+}
+
+/* Jalali day/month/year control used in admin filters & forms */
+.admin-app .admin-jalali-date {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.admin-app .admin-jalali-date-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 650;
+  color: var(--admin-muted);
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.admin-app .admin-jalali-date-row {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.admin-app .admin-jalali-date-row .admin-select {
+  min-width: 0;
+  padding-inline: 8px;
+}
+
+.admin-app .admin-jalali-date-day {
+  flex: 0 0 4.25rem;
+  width: 4.25rem;
+}
+
+.admin-app .admin-jalali-date-month {
+  flex: 0 0 7rem;
+  width: 7rem;
+}
+
+.admin-app .admin-jalali-date-year {
+  flex: 0 0 5.25rem;
+  width: 5.25rem;
+}
+
+@media (max-width: 640px) {
+  .admin-app .admin-filter-primary .admin-input,
+  .admin-app .admin-filter-primary .admin-select {
+    flex: 1 1 100%;
+    max-width: none;
+  }
+
+  .admin-app .admin-jalali-date-row {
+    flex-wrap: wrap;
+  }
+
+  .admin-app .admin-jalali-date-day,
+  .admin-app .admin-jalali-date-month,
+  .admin-app .admin-jalali-date-year {
+    flex: 1 1 auto;
+    width: auto;
+    min-width: 4.5rem;
+  }
 }
 
 .admin-app .admin-search {
