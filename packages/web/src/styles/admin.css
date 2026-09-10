@@ -2566,7 +2566,7 @@ body:has(.admin-app) {
   .admin-app .admin-report-grid--3 {
     grid-template-columns: 1fr;
   }
-
+}
 
 /* —— Sales CRM nav badges + incoming call bar —— */
 .admin-app .admin-nav-item {
