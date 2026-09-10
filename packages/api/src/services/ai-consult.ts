@@ -1073,6 +1073,7 @@ export function offlineAiAdvice(ctx: AiConsultContext): string {
       ctx.userTone ? applyOfflineToneStyle(text, ctx.userTone) : text;
     const q = ctx.userMessage?.trim() ?? '';
     const hasHistory = (ctx.history?.length ?? 0) > 0;
+    if (q && isTrainerGreetingMessage(q)) return withTone(buildTrainerGreetingReply(ctx));
     const followUp = trainerFollowUpReply(ctx);
     if (followUp) return withTone(followUp);
     const topic = q ? findTrainerTopic(q) : null;
@@ -1255,15 +1256,74 @@ export function trainerShouldGoOnline(ctx: AiConsultContext): boolean {
   if (ctx.kind !== 'trainer') return false;
   const q = ctx.userMessage?.trim() ?? '';
   if (!q) return false;
+  if (isTrainerGreetingMessage(q)) return false;
   if (!isAiConsultConfigured()) return false;
   return true;
 }
 
 /** True when local KB has no topic for this question (Pasha "doesn't understand" offline). */
+
+/** Pure greeting / احوال‌پرسی — answer warmly; do not treat as unknown training topic. */
+export function isTrainerGreetingMessage(message: string): boolean {
+  const q = message.replace(/\s+/g, ' ').trim();
+  if (!q || q.length > 48) return false;
+  // Strip common punctuation / emoji-ish tails
+  const normalized = q
+    .replace(/[!?؟.,،~\-_/\\]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+  if (!normalized) return false;
+  // Exact or near-exact greetings
+  if (
+    /^(سلام|درود|هی|هالو|hello|hi|hey|سلام علیکم|سلام‌علیکم|صبح بخیر|ظهر بخیر|عصر بخیر|شب بخیر)([\sآا]?ی?م?ی?د?و?ن?م?)?$/.test(
+      normalized
+    )
+  ) {
+    return true;
+  }
+  // Short احوال‌پرسی replies / openers
+  if (
+    /^(سلام\s+)?(خوبی|حالت چطوره|چطوری|چه خبرا|چه خبر|چخبر)([\sی]?؟?)?$/.test(normalized) ||
+    /^(سلام|درود|hi|hello|hey)([\s،]+(خوبی|حالت چطوره|چطوری|پاشا|مربی))?$/.test(normalized)
+  ) {
+    return true;
+  }
+  return false;
+}
+
+export function buildTrainerGreetingReply(ctx: AiConsultContext): string {
+  const name = ctx.petName || 'پت';
+  const owner = (ctx.patientName || '').trim() || 'رفیق';
+  const withTone = (text: string) =>
+    ctx.userTone ? applyOfflineToneStyle(text, ctx.userTone) : text;
+  const hasHistory = (ctx.history?.length ?? 0) > 0;
+  if (hasHistory) {
+    // Mid-chat سلام — answer the greeting, don't re-introduce the whole opener.
+    const lines = [
+      `سلام ${owner}! خوبی؟ من اینجام 👋`,
+      `بگو برای ${name} الان روی چی کار کنیم؟`,
+    ];
+    return withTone(lines.join('\n'));
+  }
+  return withTone(
+    buildTrainerOpeningGreeting({
+      patientName: ctx.patientName,
+      petName: ctx.petName,
+      petSpecies: ctx.petSpecies,
+      petBreed: ctx.petBreed,
+      petImageUrl: ctx.petImageUrl,
+      petAgeMonths: ctx.petAgeMonths,
+      userTone: ctx.userTone,
+    })
+  );
+}
+
 export function trainerQuestionUnknownOffline(ctx: AiConsultContext): boolean {
   if (ctx.kind !== 'trainer') return false;
   const q = ctx.userMessage?.trim() ?? '';
-  if (!q || q.length < 3) return false;
+  if (!q || q.length < 2) return false;
+  if (isTrainerGreetingMessage(q)) return false;
   // Short follow-ups / clarifying answers continue the prior topic — not "unknown".
   if (isShortTrainerFollowUp(q) || isClarifyingAnswer(q)) {
     const lastUser = [...(ctx.history ?? [])]
@@ -1316,8 +1376,12 @@ export async function generateAiConsultAdvice(ctx: AiConsultContext): Promise<{
   source: 'llm' | 'offline';
 }> {
   if (ctx.kind === 'trainer') {
+    const q = ctx.userMessage?.trim() ?? '';
+    // When they say سلام / خوبی؟ — answer the greeting like a human (never dump training tips).
+    if (q && isTrainerGreetingMessage(q)) {
+      return { text: buildTrainerGreetingReply(ctx), source: 'offline' };
+    }
     const unknown = trainerQuestionUnknownOffline(ctx);
-    // Unknown → try live online first when key exists; never wall the user with "offline/online down".
     if (unknown && isAiConsultConfigured()) {
       const llm = await callOpenAiCompatible({ ...ctx, forceOnlineUnknown: true });
       if (llm) return { text: llm, source: 'llm' };
