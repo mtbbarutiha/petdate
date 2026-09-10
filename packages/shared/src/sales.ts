@@ -106,11 +106,29 @@ export interface SalesGoal {
   id: number; name: string; team: string; periodFrom: string | null; periodTo: string | null;
   active: boolean; createdAt: string; createdBy: string; metrics: Record<string, number>;
 }
+/** Circular KPI for sales cartable (value vs daily/monthly target). */
+export interface SalesKpiRing {
+  key: string;
+  label: string;
+  value: number;
+  target: number;
+  unit: string;
+  /** 0–100+ achievement percent */
+  pct: number;
+}
+
 export interface SalesDashboard {
   greetingName: string; callsToday: number; callMinutesToday: number; overdueFollowups: number;
   salesTodayCount: number; salesTodayValue: number; aov: number; activeLeads: number;
   activeUpgrades: number; totalWonValue: number; pendingFinance: number; unassigned: number;
   nextActions: SalesItem[]; myFollowups: SalesFollowup[]; stageCounts: { stage: string; count: number }[];
+  /** Cartable KPI rings (prototype parity, Pepito styling). */
+  kpiRings: SalesKpiRing[];
+  followedLeadsToday: number;
+  conversionRateMonth: number;
+  estimatedCommission: number;
+  commissionRatePct: number;
+  productLine: 'Pet Date';
 }
 export interface SalesReportSummary {
   aov: number; revenue: number; salesCount: number; callsCount: number; callMinutes: number;

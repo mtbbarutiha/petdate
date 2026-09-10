@@ -2670,3 +2670,119 @@ body:has(.admin-app) {
 .admin-app .admin-sales-callbar .admin-btn {
   border-color: transparent;
 }
+
+
+/* —— Sales cartable KPI rings —— */
+.admin-app .sales-kpi-rings {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 14px;
+}
+@media (max-width: 1200px) {
+  .admin-app .sales-kpi-rings { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (max-width: 720px) {
+  .admin-app .sales-kpi-rings { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+.admin-app .sales-kpi-ring {
+  background: var(--admin-surface, #fff);
+  border: 1px solid var(--admin-border);
+  border-radius: 16px;
+  padding: 14px 12px;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  text-align: center;
+  box-shadow: 0 1px 0 rgba(25, 6, 61, 0.03);
+}
+.admin-app .sales-kpi-ring-value { font-size: 13px; font-weight: 800; }
+.admin-app .sales-kpi-ring-target { font-size: 9px; }
+.admin-app .sales-kpi-ring-meta { display: grid; gap: 2px; }
+.admin-app .sales-kpi-ring-meta strong { font-size: 12px; line-height: 1.35; color: var(--admin-ink); }
+.admin-app .sales-kpi-ring-meta span { font-size: 11px; color: var(--admin-muted); }
+.admin-app .sales-commission-card {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 16px;
+  align-items: center;
+  padding: 18px 20px;
+  background: linear-gradient(135deg, rgba(21,204,160,0.08), rgba(92,77,145,0.06));
+}
+@media (max-width: 800px) {
+  .admin-app .sales-commission-card { grid-template-columns: 1fr; }
+}
+.admin-app .sales-commission-value {
+  display: block;
+  margin-top: 4px;
+  font-size: 1.7rem;
+  font-family: var(--admin-display);
+  font-weight: 800;
+}
+.admin-app .sales-commission-side {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.admin-app .sales-commission-side div {
+  background: rgba(255,255,255,0.7);
+  border: 1px solid var(--admin-border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: grid;
+  gap: 4px;
+}
+.admin-app .sales-commission-side b { font-size: 1.1rem; }
+.admin-app .sales-danger { color: #c62828; }
+.admin-app .sales-next-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 12px;
+}
+.admin-app .sales-next-card {
+  border: 1px solid var(--admin-border);
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: grid;
+  gap: 6px;
+  background: #fff;
+}
+.admin-app .sales-next-score {
+  display: inline-flex;
+  width: fit-content;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(21,204,160,0.12);
+  color: #0f9a78;
+  font-size: 11px;
+  font-weight: 700;
+}
+.admin-app .sales-next-actions-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 4px;
+}
+.admin-app .sales-dash-split {
+  display: grid;
+  grid-template-columns: 1fr 1.1fr;
+  gap: 14px;
+  margin-top: 14px;
+}
+@media (max-width: 1100px) {
+  .admin-app .sales-dash-split { grid-template-columns: 1fr; }
+}
+.admin-app .sales-badge {
+  display: inline-flex;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(92,77,145,0.08);
+  color: var(--admin-ink);
+  font-size: 11px;
+}
+.admin-app .sales-badge--danger {
+  background: #fdecea;
+  color: #c62828;
+}
+.admin-app .admin-btn--sm { padding: 6px 10px; font-size: 12px; }
