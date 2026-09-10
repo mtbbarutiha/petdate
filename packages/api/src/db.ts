@@ -1264,6 +1264,15 @@ function migrateSchema() {
     console.warn('Sales schema ensure skipped/failed:', (err as Error).message);
   }
 
+  // باشگاه مشتریان / امور مشتریان — CREATE IF NOT EXISTS only; never wipe
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { ensureCrmSchema } = require('./crm-service') as typeof import('./crm-service');
+    ensureCrmSchema();
+  } catch (err) {
+    console.warn('CRM schema ensure skipped/failed:', (err as Error).message);
+  }
+
   // HR↔Sales interconnected demo (idempotent; never wipe / never duplicate)
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -1272,6 +1281,15 @@ function migrateSchema() {
     seedHrSalesDemoIfNeeded();
   } catch (err) {
     console.warn('HR↔Sales demo seed skipped/failed:', (err as Error).message);
+  }
+
+  // CRM / باشگاه مشتریان demo (idempotent; never wipe)
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { seedCrmDemoIfNeeded } = require('./crm-demo-seed') as typeof import('./crm-demo-seed');
+    seedCrmDemoIfNeeded();
+  } catch (err) {
+    console.warn('CRM demo seed skipped/failed:', (err as Error).message);
   }
 }
 

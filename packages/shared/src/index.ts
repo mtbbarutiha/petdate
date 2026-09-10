@@ -329,4 +329,5 @@ export const GAME_STATUS_LABELS: Record<GameStatus, string> = {
   cancelled: 'لغو شده',
   completed: 'برگزار شده',
 };
-export * from './sales';
+export * from './sales'
+export * from './crm';

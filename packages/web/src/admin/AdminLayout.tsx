@@ -4,7 +4,7 @@ import {
   Activity, Bell, Briefcase, ClipboardList, FileText, Headset, LayoutDashboard, LineChart, LogOut, Mail, Menu, Package,
   PawPrint, PieChart, ScrollText, Settings, Shield, ShieldCheck, ShoppingBag, Stethoscope,
   Store, Target, Ticket, TrendingUp, UserPlus, UserRound, Users, Wallet, X, ClipboardCheck, BarChart3, Coins,
-  Route, Inbox, HandCoins, Bot,
+  Route, Inbox, HandCoins, Bot, MessageSquare, Star, HeartHandshake,
 } from 'lucide-react';
 import { AdminWordmark } from './AdminWordmark';
 import { adminCan, getAdminDisplayName, getAdminRole, logoutAdmin } from './auth';
@@ -60,6 +60,18 @@ const NAV_GROUPS: NavGroup[] = [
     { to: '/admin/sales/calls', icon: Headset, label: 'مرکز تماس', perm: 'sales.read' },
     { to: '/admin/sales/reports', icon: LineChart, label: 'گزارشات فروش', perm: 'sales.read' },
     { to: '/admin/sales/settings', icon: Settings, label: 'تنظیمات فروش', perm: 'sales.read' },
+  ]},
+  { title: 'باشگاه مشتریان', items: [
+    { to: '/admin/crm', icon: LayoutDashboard, label: 'داشبورد امور مشتریان', perm: 'crm.read' },
+    { to: '/admin/crm/inbox', icon: Inbox, label: 'اینباکس', perm: 'crm.read' },
+    { to: '/admin/crm/customers', icon: HeartHandshake, label: 'مشتریان ۳۶۰', perm: 'crm.read' },
+    { to: '/admin/crm/experience', icon: Star, label: 'تجربه مشتری', perm: 'crm.read' },
+    { to: '/admin/crm/calls', icon: Headset, label: 'تماس‌ها', perm: 'crm.read' },
+    { to: '/admin/crm/cases', icon: Ticket, label: 'پرونده‌ها', perm: 'crm.read' },
+    { to: '/admin/crm/sms', icon: MessageSquare, label: 'پیامک', perm: 'crm.read' },
+    { to: '/admin/crm/qa', icon: ClipboardCheck, label: 'کنترل کیفیت', perm: 'crm.read' },
+    { to: '/admin/crm/reports', icon: BarChart3, label: 'گزارش‌ها', perm: 'crm.read' },
+    { to: '/admin/crm/settings', icon: Settings, label: 'تنظیمات باشگاه', perm: 'crm.read' },
   ]},
   { title: 'مالی', items: [
     { to: '/admin/finance', icon: TrendingUp, label: 'داشبورد مالی', perm: 'platform.read' },
@@ -126,7 +138,7 @@ export function AdminLayout() {
               <div key={group.title} className="admin-nav-group">
                 <div className="admin-nav-group-title">{group.title}</div>
                 {group.items.map((item) => (
-                  <NavLink key={item.to} to={item.to} end={item.to === '/admin/hr'} onClick={() => setMobileOpen(false)}
+                  <NavLink key={item.to} to={item.to} end={item.to === '/admin/hr' || item.to === '/admin/sales' || item.to === '/admin/crm'} onClick={() => setMobileOpen(false)}
                     className={({ isActive }) => `admin-nav-item${isActive ? ' active' : ''}`}>
                     <item.icon size={18} strokeWidth={2} />
                     <span>{item.label}</span>

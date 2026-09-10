@@ -1,0 +1,2145 @@
+/**
+ * باشگاه مشتریان / امور مشتریان — persistence & workflows (additive, never wipe).
+ */
+import {
+  CRM_CHANNEL_LABELS,
+  CRM_CRITICAL_ERRORS,
+  CRM_REASON_TREE,
+  CRM_SCORECARD,
+  CRM_SLA_POLICY,
+  CRM_SURVEY_QUESTIONS,
+  crmInboxBorderColor,
+  crmQaTotal,
+  crmSlaDueIso,
+  crmSlaState,
+  crmSurveyRating,
+  makeCrmUuid,
+  type CrmChannel,
+  type CrmComplaint,
+  type CrmCustomer,
+  type CrmDashboard,
+  type CrmFollowup,
+  type CrmInboxRow,
+  type CrmInteraction,
+  type CrmKpiModel,
+  type CrmOrder,
+  type CrmQaReview,
+  type CrmReferral,
+  type CrmReportSummary,
+  type CrmSettings,
+  type CrmSmsPattern,
+  type CrmSurvey,
+  type CrmTask,
+  type CrmTicket,
+  type CrmTicketActivity,
+} from '@petdate/shared';
+import { getDb } from './db';
+import type { AdminAuthActor } from './hr-service';
+import { actorHasPermission } from './hr-service';
+
+function db() {
+  return getDb();
+}
+function nowIso(): string {
+  return new Date().toISOString();
+}
+function parseJson<T>(raw: unknown, fallback: T): T {
+  if (raw == null || raw === '') return fallback;
+  try {
+    return JSON.parse(String(raw)) as T;
+  } catch {
+    return fallback;
+  }
+}
+function actorId(actor: AdminAuthActor): string {
+  return actor.username || actor.role || 'admin';
+}
+function actorLabel(actor: AdminAuthActor): string {
+  return actor.displayName || actor.username || actor.role || 'admin';
+}
+export function isCrmAdmin(actor: AdminAuthActor): boolean {
+  return actorHasPermission(actor, 'crm.admin') || actorHasPermission(actor, 'admin.full');
+}
+function canSeeTeamReports(actor: AdminAuthActor): boolean {
+  return isCrmAdmin(actor) || actorHasPermission(actor, 'admin.full');
+}
+function normalizeMobile(raw: string): string {
+  const digits = String(raw || '').replace(/\D/g, '');
+  if (digits.startsWith('98') && digits.length === 12) return `0${digits.slice(2)}`;
+  if (digits.length === 10 && digits.startsWith('9')) return `0${digits}`;
+  return digits;
+}
+function isToday(iso: string): boolean {
+  const d = new Date(iso);
+  const n = new Date();
+  return d.getFullYear() === n.getFullYear() && d.getMonth() === n.getMonth() && d.getDate() === n.getDate();
+}
+
+function audit(opts: {
+  userId: string;
+  category: string;
+  entity: string;
+  recordUuid: string;
+  action: string;
+  prev?: unknown;
+  next?: unknown;
+}): void {
+  db()
+    .prepare(
+      `INSERT INTO crm_audit_logs (at, user_id, category, entity, record_uuid, action, prev_value, new_value)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      nowIso(),
+      opts.userId,
+      opts.category,
+      opts.entity,
+      opts.recordUuid,
+      opts.action,
+      opts.prev != null ? JSON.stringify(opts.prev) : null,
+      opts.next != null ? JSON.stringify(opts.next) : null
+    );
+}
+
+export function ensureCrmSchema(): void {
+  const d = db();
+  d.exec(`
+    CREATE TABLE IF NOT EXISTS crm_customers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      first_name TEXT NOT NULL DEFAULT '',
+      last_name TEXT NOT NULL DEFAULT '',
+      mobile TEXT NOT NULL DEFAULT '',
+      email TEXT,
+      product TEXT NOT NULL DEFAULT '',
+      level TEXT NOT NULL DEFAULT 'عادی',
+      status TEXT NOT NULL DEFAULT 'فعال',
+      sales_owner TEXT NOT NULL DEFAULT '',
+      source TEXT NOT NULL DEFAULT '',
+      csat REAL,
+      platform_user_id INTEGER,
+      sales_customer_id INTEGER,
+      finance_snapshot_json TEXT NOT NULL DEFAULT '{}',
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS crm_orders (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      customer_id INTEGER NOT NULL,
+      product TEXT NOT NULL,
+      amount INTEGER NOT NULL DEFAULT 0,
+      ordered_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS crm_interactions (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      customer_id INTEGER,
+      channel TEXT NOT NULL DEFAULT 'call_in',
+      direction TEXT NOT NULL DEFAULT 'in',
+      agent_id TEXT NOT NULL DEFAULT '',
+      agent_name TEXT NOT NULL DEFAULT '',
+      started_at TEXT NOT NULL DEFAULT (datetime('now')),
+      ended_at TEXT,
+      wait_seconds INTEGER NOT NULL DEFAULT 0,
+      talk_minutes REAL NOT NULL DEFAULT 0,
+      reason TEXT NOT NULL DEFAULT '',
+      sub_reason TEXT NOT NULL DEFAULT '',
+      detail_reason TEXT NOT NULL DEFAULT '',
+      outcome TEXT NOT NULL DEFAULT '',
+      summary TEXT NOT NULL DEFAULT '',
+      notes TEXT NOT NULL DEFAULT '',
+      wrap_done INTEGER NOT NULL DEFAULT 0,
+      ticket_id INTEGER,
+      referral_id INTEGER,
+      complaint_id INTEGER,
+      recorded INTEGER NOT NULL DEFAULT 0,
+      qa_status TEXT NOT NULL DEFAULT 'در صف',
+      qa_score INTEGER
+    );
+    CREATE TABLE IF NOT EXISTS crm_tickets (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      customer_id INTEGER NOT NULL,
+      interaction_id INTEGER,
+      title TEXT NOT NULL DEFAULT '',
+      description TEXT NOT NULL DEFAULT '',
+      type TEXT NOT NULL DEFAULT 'عمومی',
+      category TEXT NOT NULL DEFAULT '',
+      sub_category TEXT NOT NULL DEFAULT '',
+      priority TEXT NOT NULL DEFAULT 'متوسط',
+      severity TEXT NOT NULL DEFAULT 'متوسط',
+      status TEXT NOT NULL DEFAULT 'جدید',
+      agent_id TEXT,
+      agent_name TEXT,
+      supervisor_id TEXT NOT NULL DEFAULT '',
+      first_response_at TEXT,
+      sla_due TEXT NOT NULL,
+      resolved_at TEXT,
+      closed_at TEXT,
+      reopened_count INTEGER NOT NULL DEFAULT 0,
+      root_cause TEXT,
+      resolution_code TEXT,
+      resolution_note TEXT,
+      next_action TEXT NOT NULL DEFAULT '',
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS crm_ticket_activities (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      ticket_id INTEGER NOT NULL,
+      user_id TEXT NOT NULL,
+      text TEXT NOT NULL,
+      at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS crm_followups (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      customer_id INTEGER NOT NULL,
+      ticket_id INTEGER,
+      creator_id TEXT NOT NULL,
+      owner_id TEXT NOT NULL,
+      owner_name TEXT NOT NULL DEFAULT '',
+      kind TEXT NOT NULL DEFAULT 'تماس',
+      due_at TEXT NOT NULL,
+      priority TEXT NOT NULL DEFAULT 'متوسط',
+      description TEXT NOT NULL DEFAULT '',
+      status TEXT NOT NULL DEFAULT 'باز',
+      result TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS crm_complaints (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      customer_id INTEGER NOT NULL,
+      ticket_id INTEGER,
+      category TEXT NOT NULL DEFAULT '',
+      sub_category TEXT NOT NULL DEFAULT '',
+      severity TEXT NOT NULL DEFAULT 'متوسط',
+      description TEXT NOT NULL DEFAULT '',
+      against_team TEXT NOT NULL DEFAULT '',
+      against_agent_id TEXT,
+      supervisor_id TEXT NOT NULL DEFAULT '',
+      status TEXT NOT NULL DEFAULT 'جدید',
+      root_cause TEXT,
+      corrective_action TEXT,
+      resolution TEXT,
+      customer_feedback TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS crm_referrals (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      type TEXT NOT NULL DEFAULT 'finance',
+      customer_id INTEGER NOT NULL,
+      ticket_id INTEGER,
+      from_agent_id TEXT NOT NULL,
+      target_team TEXT NOT NULL DEFAULT '',
+      reason TEXT NOT NULL DEFAULT '',
+      requested_action TEXT NOT NULL DEFAULT '',
+      priority TEXT NOT NULL DEFAULT 'متوسط',
+      amount INTEGER NOT NULL DEFAULT 0,
+      due_at TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'باز',
+      response TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS crm_surveys (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      customer_id INTEGER NOT NULL,
+      agent_id TEXT NOT NULL,
+      assigned_to TEXT,
+      talk_minutes REAL NOT NULL DEFAULT 0,
+      answers_json TEXT NOT NULL DEFAULT '{}',
+      rating REAL NOT NULL DEFAULT 0,
+      notes TEXT NOT NULL DEFAULT '',
+      sms_sent INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS crm_qa_reviews (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      interaction_id INTEGER NOT NULL,
+      agent_id TEXT NOT NULL,
+      reviewer_id TEXT NOT NULL,
+      reason TEXT NOT NULL DEFAULT '',
+      scores_json TEXT NOT NULL DEFAULT '{}',
+      total INTEGER NOT NULL DEFAULT 0,
+      critical_json TEXT NOT NULL DEFAULT '[]',
+      comment TEXT NOT NULL DEFAULT '',
+      strength TEXT NOT NULL DEFAULT '',
+      improvement TEXT NOT NULL DEFAULT '',
+      coaching INTEGER NOT NULL DEFAULT 0,
+      status TEXT NOT NULL DEFAULT 'ارزیابی‌شده',
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS crm_tasks (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      kind TEXT NOT NULL DEFAULT 'عمومی',
+      title TEXT NOT NULL,
+      description TEXT NOT NULL DEFAULT '',
+      assignee_id TEXT NOT NULL,
+      about_agent_id TEXT,
+      due_at TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'باز',
+      priority TEXT NOT NULL DEFAULT 'متوسط',
+      source_review_id INTEGER,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE TABLE IF NOT EXISTS crm_sms_patterns (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      type TEXT NOT NULL DEFAULT 'dynamic',
+      text TEXT NOT NULL,
+      trigger_key TEXT NOT NULL DEFAULT 'manual',
+      auto INTEGER NOT NULL DEFAULT 0,
+      active INTEGER NOT NULL DEFAULT 1
+    );
+    CREATE TABLE IF NOT EXISTS crm_kpi_models (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      scope TEXT NOT NULL DEFAULT 'team',
+      ref TEXT NOT NULL DEFAULT '',
+      active INTEGER NOT NULL DEFAULT 1,
+      items_json TEXT NOT NULL DEFAULT '[]'
+    );
+    CREATE TABLE IF NOT EXISTS crm_audit_logs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      at TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      category TEXT NOT NULL,
+      entity TEXT NOT NULL,
+      record_uuid TEXT NOT NULL DEFAULT '',
+      action TEXT NOT NULL,
+      prev_value TEXT,
+      new_value TEXT
+    );
+    CREATE TABLE IF NOT EXISTS crm_settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL DEFAULT '',
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+    CREATE INDEX IF NOT EXISTS idx_crm_customers_mobile ON crm_customers(mobile);
+    CREATE INDEX IF NOT EXISTS idx_crm_interactions_agent ON crm_interactions(agent_id, started_at);
+    CREATE INDEX IF NOT EXISTS idx_crm_tickets_status_sla ON crm_tickets(status, sla_due);
+    CREATE INDEX IF NOT EXISTS idx_crm_audit_at ON crm_audit_logs(at, category);
+    CREATE INDEX IF NOT EXISTS idx_crm_followups_due ON crm_followups(status, due_at);
+  `);
+  seedCrmDefaults();
+}
+
+function seedCrmDefaults(): void {
+  const d = db();
+  const setIfMissing = (key: string, value: unknown) => {
+    if (d.prepare('SELECT key FROM crm_settings WHERE key = ?').get(key)) return;
+    d.prepare(`INSERT INTO crm_settings (key, value, updated_at) VALUES (?, ?, datetime('now'))`).run(
+      key,
+      JSON.stringify(value)
+    );
+  };
+  setIfMissing('slaPolicy', CRM_SLA_POLICY);
+  setIfMissing('reasonTree', CRM_REASON_TREE);
+  setIfMissing('scorecard', CRM_SCORECARD);
+  setIfMissing('criticalErrors', CRM_CRITICAL_ERRORS);
+  setIfMissing('surveyQuestions', CRM_SURVEY_QUESTIONS);
+
+  const patternCount = Number(
+    (d.prepare('SELECT COUNT(*) as c FROM crm_sms_patterns').get() as { c: number })?.c ?? 0
+  );
+  if (patternCount === 0) {
+    const ins = d.prepare(
+      `INSERT INTO crm_sms_patterns (name, type, text, trigger_key, auto, active) VALUES (?, ?, ?, ?, ?, 1)`
+    );
+    ins.run('خوش‌آمدگویی پس از خرید', 'dynamic', '{نام} عزیز، از خرید {محصول} در Pet Date سپاسگزاریم.', 'after_purchase', 1);
+    ins.run('ایجاد تیکت', 'dynamic', '{نام} عزیز، تیکت {شناسه} ثبت شد و در حال پیگیری است.', 'ticket_created', 1);
+    ins.run('حل تیکت', 'dynamic', '{نام} عزیز، تیکت {شناسه} حل شد. از همراهی شما ممنونیم.', 'ticket_resolved', 1);
+    ins.run('نظرسنجی تجربه', 'dynamic', '{نام} عزیز، لطفاً تجربه تماس با {کارشناس} را امتیاز دهید.', 'survey_done', 0);
+    ins.run('نقض SLA', 'dynamic', 'تیکت {شناسه} از SLA عبور کرد — اقدام فوری.', 'sla_breach', 1);
+  }
+
+  const kpiCount = Number(
+    (d.prepare('SELECT COUNT(*) as c FROM crm_kpi_models').get() as { c: number })?.c ?? 0
+  );
+  if (kpiCount === 0) {
+    const ins = d.prepare(
+      `INSERT INTO crm_kpi_models (name, scope, ref, active, items_json) VALUES (?, ?, ?, 1, ?)`
+    );
+    ins.run(
+      'شاخص تیم پشتیبانی',
+      'team',
+      'support',
+      JSON.stringify([
+        { metric: 'tickets_resolved', target: 20 },
+        { metric: 'csat', target: 4.2 },
+        { metric: 'sla_breach', target: 2 },
+      ])
+    );
+    ins.run(
+      'شاخص کارشناس',
+      'person',
+      '',
+      JSON.stringify([
+        { metric: 'calls_answered', target: 15 },
+        { metric: 'qa_score', target: 85 },
+        { metric: 'wrap_pending', target: 3 },
+      ])
+    );
+    ins.run(
+      'شاخص سرپرست',
+      'person',
+      'crm_lead',
+      JSON.stringify([
+        { metric: 'qa_reviews', target: 10 },
+        { metric: 'coaching_tasks', target: 3 },
+      ])
+    );
+  }
+
+  try {
+    const seedRoleIfMissing = (key: string, nameFa: string, description: string, permissions: readonly string[]) => {
+      if (d.prepare('SELECT id FROM admin_roles WHERE key = ?').get(key)) return;
+      d.prepare(
+        `INSERT INTO admin_roles (key, name_fa, description, permissions_json, is_active) VALUES (?, ?, ?, ?, 1)`
+      ).run(key, nameFa, description, JSON.stringify(permissions));
+    };
+    seedRoleIfMissing('crm_agent', 'کارشناس امور مشتریان', 'اینباکس، wrap-up، تیکت، پیگیری', [
+      'crm.read',
+      'crm.write',
+      'loyalty.read',
+    ]);
+    seedRoleIfMissing('crm_lead', 'سرپرست امور مشتریان', 'تخصیص، QA، گزارش تیمی', [
+      'crm.read',
+      'crm.write',
+      'crm.admin',
+      'loyalty.read',
+      'loyalty.write',
+    ]);
+    seedRoleIfMissing('crm_manager', 'مدیر باشگاه مشتریان', 'دسترسی کامل امور مشتریان', [
+      'crm.read',
+      'crm.write',
+      'crm.admin',
+      'loyalty.read',
+      'loyalty.write',
+    ]);
+  } catch {
+    /* admin_roles may not exist yet */
+  }
+}
+
+function mapCustomer(row: Record<string, unknown>): CrmCustomer {
+  const id = Number(row.id);
+  return {
+    id,
+    publicId: makeCrmUuid('CU', id),
+    first: String(row.first_name || ''),
+    last: String(row.last_name || ''),
+    mobile: String(row.mobile || ''),
+    email: row.email != null ? String(row.email) : null,
+    product: String(row.product || ''),
+    level: String(row.level || 'عادی'),
+    status: String(row.status || 'فعال'),
+    salesOwner: String(row.sales_owner || ''),
+    source: String(row.source || ''),
+    csat: row.csat != null ? Number(row.csat) : null,
+    platformUserId: row.platform_user_id != null ? Number(row.platform_user_id) : null,
+    salesCustomerId: row.sales_customer_id != null ? Number(row.sales_customer_id) : null,
+    financeSnapshot: parseJson(row.finance_snapshot_json, {}),
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at),
+    orderCount: row.order_count != null ? Number(row.order_count) : undefined,
+    openTickets: row.open_tickets != null ? Number(row.open_tickets) : undefined,
+  };
+}
+
+function mapInteraction(row: Record<string, unknown>): CrmInteraction {
+  const id = Number(row.id);
+  return {
+    id,
+    publicId: makeCrmUuid('IN', id),
+    customerId: row.customer_id != null ? Number(row.customer_id) : null,
+    customerName: row.customer_name != null ? String(row.customer_name) : undefined,
+    customerMobile: row.customer_mobile != null ? String(row.customer_mobile) : undefined,
+    channel: String(row.channel || 'call_in') as CrmChannel,
+    direction: String(row.direction || 'in') === 'out' ? 'out' : 'in',
+    agentId: String(row.agent_id || ''),
+    agentName: String(row.agent_name || ''),
+    startedAt: String(row.started_at),
+    endedAt: row.ended_at != null ? String(row.ended_at) : null,
+    waitSeconds: Number(row.wait_seconds || 0),
+    talkMinutes: Number(row.talk_minutes || 0),
+    reason: String(row.reason || ''),
+    subReason: String(row.sub_reason || ''),
+    detailReason: String(row.detail_reason || ''),
+    outcome: String(row.outcome || ''),
+    summary: String(row.summary || ''),
+    notes: String(row.notes || ''),
+    wrapDone: Boolean(row.wrap_done),
+    ticketId: row.ticket_id != null ? Number(row.ticket_id) : null,
+    referralId: row.referral_id != null ? Number(row.referral_id) : null,
+    complaintId: row.complaint_id != null ? Number(row.complaint_id) : null,
+    recorded: Boolean(row.recorded),
+    qaStatus: String(row.qa_status || 'در صف'),
+    qaScore: row.qa_score != null ? Number(row.qa_score) : null,
+  };
+}
+
+function enrichTicket(row: Record<string, unknown>): CrmTicket {
+  const id = Number(row.id);
+  const status = String(row.status || 'جدید');
+  const slaDue = String(row.sla_due);
+  const slaState = crmSlaState({ status, slaDue });
+  const unassigned = !row.agent_id;
+  return {
+    id,
+    publicId: makeCrmUuid('TK', id),
+    customerId: Number(row.customer_id),
+    customerName: row.customer_name != null ? String(row.customer_name) : undefined,
+    interactionId: row.interaction_id != null ? Number(row.interaction_id) : null,
+    title: String(row.title || ''),
+    description: String(row.description || ''),
+    type: String(row.type || ''),
+    category: String(row.category || ''),
+    subCategory: String(row.sub_category || ''),
+    priority: String(row.priority || 'متوسط'),
+    severity: String(row.severity || ''),
+    status,
+    agentId: row.agent_id != null ? String(row.agent_id) : null,
+    agentName: row.agent_name != null ? String(row.agent_name) : null,
+    supervisorId: String(row.supervisor_id || ''),
+    firstResponseAt: row.first_response_at != null ? String(row.first_response_at) : null,
+    slaDue,
+    resolvedAt: row.resolved_at != null ? String(row.resolved_at) : null,
+    closedAt: row.closed_at != null ? String(row.closed_at) : null,
+    reopenedCount: Number(row.reopened_count || 0),
+    rootCause: row.root_cause != null ? String(row.root_cause) : null,
+    resolutionCode: row.resolution_code != null ? String(row.resolution_code) : null,
+    resolutionNote: row.resolution_note != null ? String(row.resolution_note) : null,
+    nextAction: String(row.next_action || ''),
+    createdAt: String(row.created_at),
+    updatedAt: String(row.updated_at),
+    slaState,
+    borderColor: crmInboxBorderColor(slaState, { unassigned }),
+  };
+}
+
+function mapFollowup(row: Record<string, unknown>): CrmFollowup {
+  const id = Number(row.id);
+  return {
+    id,
+    publicId: makeCrmUuid('FU', id),
+    customerId: Number(row.customer_id),
+    customerName: row.customer_name != null ? String(row.customer_name) : undefined,
+    ticketId: row.ticket_id != null ? Number(row.ticket_id) : null,
+    creatorId: String(row.creator_id || ''),
+    ownerId: String(row.owner_id || ''),
+    ownerName: String(row.owner_name || ''),
+    kind: String(row.kind || ''),
+    dueAt: String(row.due_at),
+    priority: String(row.priority || ''),
+    description: String(row.description || ''),
+    status: String(row.status || 'باز'),
+    result: row.result != null ? String(row.result) : null,
+    createdAt: String(row.created_at),
+  };
+}
+
+function mapComplaint(row: Record<string, unknown>): CrmComplaint {
+  const id = Number(row.id);
+  return {
+    id,
+    publicId: makeCrmUuid('CP', id),
+    customerId: Number(row.customer_id),
+    customerName: row.customer_name != null ? String(row.customer_name) : undefined,
+    ticketId: row.ticket_id != null ? Number(row.ticket_id) : null,
+    category: String(row.category || ''),
+    subCategory: String(row.sub_category || ''),
+    severity: String(row.severity || ''),
+    description: String(row.description || ''),
+    againstTeam: String(row.against_team || ''),
+    againstAgentId: row.against_agent_id != null ? String(row.against_agent_id) : null,
+    supervisorId: String(row.supervisor_id || ''),
+    status: String(row.status || ''),
+    rootCause: row.root_cause != null ? String(row.root_cause) : null,
+    correctiveAction: row.corrective_action != null ? String(row.corrective_action) : null,
+    resolution: row.resolution != null ? String(row.resolution) : null,
+    customerFeedback: row.customer_feedback != null ? String(row.customer_feedback) : null,
+    createdAt: String(row.created_at),
+  };
+}
+
+function mapReferral(row: Record<string, unknown>): CrmReferral {
+  const id = Number(row.id);
+  return {
+    id,
+    publicId: makeCrmUuid('RF', id),
+    type: String(row.type || 'finance'),
+    customerId: Number(row.customer_id),
+    customerName: row.customer_name != null ? String(row.customer_name) : undefined,
+    ticketId: row.ticket_id != null ? Number(row.ticket_id) : null,
+    fromAgentId: String(row.from_agent_id || ''),
+    targetTeam: String(row.target_team || ''),
+    reason: String(row.reason || ''),
+    requestedAction: String(row.requested_action || ''),
+    priority: String(row.priority || ''),
+    amount: Number(row.amount || 0),
+    dueAt: String(row.due_at),
+    status: String(row.status || ''),
+    response: row.response != null ? String(row.response) : null,
+    createdAt: String(row.created_at),
+  };
+}
+
+function customerName(id: number | null | undefined): string {
+  if (!id) return '—';
+  const row = db().prepare('SELECT first_name, last_name FROM crm_customers WHERE id = ?').get(id) as
+    | { first_name: string; last_name: string }
+    | undefined;
+  if (!row) return '—';
+  return `${row.first_name || ''} ${row.last_name || ''}`.trim() || '—';
+}
+
+/** Identity: find/create CRM customer from mobile; link sales_customers / users when present. */
+export function findOrCreateCustomerByMobile(
+  input: {
+    mobile: string;
+    first?: string;
+    last?: string;
+    product?: string;
+    source?: string;
+  },
+  actor: AdminAuthActor
+): CrmCustomer {
+  ensureCrmSchema();
+  const mobile = normalizeMobile(input.mobile);
+  if (!mobile) throw new Error('شماره موبایل الزامی است');
+
+  const existing = db().prepare('SELECT * FROM crm_customers WHERE mobile = ?').get(mobile) as
+    | Record<string, unknown>
+    | undefined;
+  if (existing) return mapCustomer(existing);
+
+  let first = String(input.first || '').trim();
+  let last = String(input.last || '').trim();
+  let product = String(input.product || '').trim();
+  let source = String(input.source || 'تماس ورودی').trim();
+  let salesCustomerId: number | null = null;
+  let platformUserId: number | null = null;
+  let salesOwner = '';
+  let level = 'عادی';
+
+  try {
+    const sales = db()
+      .prepare('SELECT * FROM sales_customers WHERE mobile = ? ORDER BY id DESC LIMIT 1')
+      .get(mobile) as Record<string, unknown> | undefined;
+    if (sales) {
+      salesCustomerId = Number(sales.id);
+      if (!first) first = String(sales.first_name || '');
+      if (!last) last = String(sales.last_name || '');
+      salesOwner = String(sales.sales_owner || '');
+      level = String(sales.level || 'عادی');
+      source = source || 'فروش';
+    }
+  } catch {
+    /* sales table may be absent */
+  }
+
+  try {
+    const user = db()
+      .prepare(
+        `SELECT id, name, phone FROM users
+         WHERE phone = ? OR phone = ? OR replace(coalesce(phone,''), '+98', '0') = ? LIMIT 1`
+      )
+      .get(mobile, `+98${mobile.slice(1)}`, mobile) as Record<string, unknown> | undefined;
+    if (user) {
+      platformUserId = Number(user.id);
+      if (!first) {
+        const dn = String(user.name || '');
+        first = dn.split(/\s+/)[0] || first || 'کاربر';
+        if (!last) last = dn.split(/\s+/).slice(1).join(' ');
+      }
+      source = source || 'پلتفرم';
+    }
+  } catch {
+    /* users schema variants */
+  }
+
+  if (!first) first = 'مشتری';
+  const info = db()
+    .prepare(
+      `INSERT INTO crm_customers (
+        first_name, last_name, mobile, product, level, status, sales_owner, source,
+        platform_user_id, sales_customer_id, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, 'فعال', ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      first,
+      last,
+      mobile,
+      product,
+      level,
+      salesOwner,
+      source,
+      platformUserId,
+      salesCustomerId,
+      nowIso(),
+      nowIso()
+    );
+  const id = Number(info.lastInsertRowid);
+  const customer = getCustomer(id)!;
+  audit({
+    userId: actorId(actor),
+    category: 'customer',
+    entity: 'crm_customers',
+    recordUuid: customer.publicId,
+    action: 'create',
+    next: { mobile, first, last },
+  });
+  return customer;
+}
+
+export function listCustomers(opts?: { q?: string; limit?: number }): { total: number; customers: CrmCustomer[] } {
+  ensureCrmSchema();
+  const limit = Math.min(200, Math.max(1, opts?.limit || 50));
+  const q = String(opts?.q || '').trim();
+  let rows: Array<Record<string, unknown>>;
+  if (q) {
+    const like = `%${q}%`;
+    rows = db()
+      .prepare(
+        `SELECT c.*,
+          (SELECT COUNT(*) FROM crm_orders o WHERE o.customer_id = c.id) as order_count,
+          (SELECT COUNT(*) FROM crm_tickets t WHERE t.customer_id = c.id AND t.status NOT IN ('حل‌شده','بسته‌شده')) as open_tickets
+         FROM crm_customers c
+         WHERE c.mobile LIKE ? OR c.first_name LIKE ? OR c.last_name LIKE ?
+         ORDER BY c.id DESC LIMIT ?`
+      )
+      .all(like, like, like, limit) as Array<Record<string, unknown>>;
+  } else {
+    rows = db()
+      .prepare(
+        `SELECT c.*,
+          (SELECT COUNT(*) FROM crm_orders o WHERE o.customer_id = c.id) as order_count,
+          (SELECT COUNT(*) FROM crm_tickets t WHERE t.customer_id = c.id AND t.status NOT IN ('حل‌شده','بسته‌شده')) as open_tickets
+         FROM crm_customers c ORDER BY c.id DESC LIMIT ?`
+      )
+      .all(limit) as Array<Record<string, unknown>>;
+  }
+  const total = Number((db().prepare('SELECT COUNT(*) as c FROM crm_customers').get() as { c: number })?.c ?? 0);
+  return { total, customers: rows.map(mapCustomer) };
+}
+
+export function getCustomer(id: number): CrmCustomer | null {
+  ensureCrmSchema();
+  const row = db().prepare('SELECT * FROM crm_customers WHERE id = ?').get(id) as Record<string, unknown> | undefined;
+  return row ? mapCustomer(row) : null;
+}
+
+export function getCustomerDetail(id: number): {
+  customer: CrmCustomer;
+  orders: CrmOrder[];
+  interactions: CrmInteraction[];
+  tickets: CrmTicket[];
+  followups: CrmFollowup[];
+  complaints: CrmComplaint[];
+  referrals: CrmReferral[];
+  surveys: CrmSurvey[];
+} | null {
+  const customer = getCustomer(id);
+  if (!customer) return null;
+  const orders = (
+    db().prepare('SELECT * FROM crm_orders WHERE customer_id = ? ORDER BY ordered_at DESC').all(id) as Array<
+      Record<string, unknown>
+    >
+  ).map((r) => ({
+    id: Number(r.id),
+    customerId: Number(r.customer_id),
+    product: String(r.product),
+    amount: Number(r.amount),
+    orderedAt: String(r.ordered_at),
+  }));
+  const interactions = (
+    db().prepare('SELECT * FROM crm_interactions WHERE customer_id = ? ORDER BY started_at DESC').all(id) as Array<
+      Record<string, unknown>
+    >
+  ).map(mapInteraction);
+  const tickets = (
+    db().prepare('SELECT * FROM crm_tickets WHERE customer_id = ? ORDER BY created_at DESC').all(id) as Array<
+      Record<string, unknown>
+    >
+  ).map(enrichTicket);
+  const followups = (
+    db().prepare('SELECT * FROM crm_followups WHERE customer_id = ? ORDER BY due_at DESC').all(id) as Array<
+      Record<string, unknown>
+    >
+  ).map(mapFollowup);
+  const complaints = (
+    db().prepare('SELECT * FROM crm_complaints WHERE customer_id = ? ORDER BY created_at DESC').all(id) as Array<
+      Record<string, unknown>
+    >
+  ).map(mapComplaint);
+  const referrals = (
+    db().prepare('SELECT * FROM crm_referrals WHERE customer_id = ? ORDER BY created_at DESC').all(id) as Array<
+      Record<string, unknown>
+    >
+  ).map(mapReferral);
+  const surveys = (
+    db().prepare('SELECT * FROM crm_surveys WHERE customer_id = ? ORDER BY created_at DESC').all(id) as Array<
+      Record<string, unknown>
+    >
+  ).map((r) => mapSurvey(r));
+  return { customer, orders, interactions, tickets, followups, complaints, referrals, surveys };
+}
+
+function mapSurvey(row: Record<string, unknown>): CrmSurvey {
+  const id = Number(row.id);
+  return {
+    id,
+    publicId: makeCrmUuid('EX', id),
+    customerId: Number(row.customer_id),
+    customerName: row.customer_name != null ? String(row.customer_name) : undefined,
+    agentId: String(row.agent_id || ''),
+    assignedTo: row.assigned_to != null ? String(row.assigned_to) : null,
+    talkMinutes: Number(row.talk_minutes || 0),
+    answers: parseJson(row.answers_json, {}),
+    rating: Number(row.rating || 0),
+    notes: String(row.notes || ''),
+    smsSent: Boolean(row.sms_sent),
+    createdAt: String(row.created_at),
+  };
+}
+
+export function simulateInboundCall(
+  input: { mobile: string; first?: string; last?: string; waitSeconds?: number },
+  actor: AdminAuthActor
+): { customer: CrmCustomer; interaction: CrmInteraction } {
+  ensureCrmSchema();
+  const customer = findOrCreateCustomerByMobile(
+    { mobile: input.mobile, first: input.first, last: input.last, source: 'تماس ورودی' },
+    actor
+  );
+  const info = db()
+    .prepare(
+      `INSERT INTO crm_interactions (
+        customer_id, channel, direction, agent_id, agent_name, started_at, wait_seconds, talk_minutes, recorded
+      ) VALUES (?, 'call_in', 'in', ?, ?, ?, ?, 0, 1)`
+    )
+    .run(customer.id, actorId(actor), actorLabel(actor), nowIso(), Math.max(0, Number(input.waitSeconds) || 0));
+  const interaction = getInteraction(Number(info.lastInsertRowid))!;
+  audit({
+    userId: actorId(actor),
+    category: 'call',
+    entity: 'crm_interactions',
+    recordUuid: interaction.publicId,
+    action: 'simulate_inbound',
+  });
+  return { customer, interaction };
+}
+
+export function getInteraction(id: number): CrmInteraction | null {
+  ensureCrmSchema();
+  const row = db()
+    .prepare(
+      `SELECT i.*, trim(c.first_name || ' ' || c.last_name) as customer_name, c.mobile as customer_mobile
+       FROM crm_interactions i LEFT JOIN crm_customers c ON c.id = i.customer_id WHERE i.id = ?`
+    )
+    .get(id) as Record<string, unknown> | undefined;
+  return row ? mapInteraction(row) : null;
+}
+
+export function listInteractions(opts?: {
+  agentId?: string;
+  from?: string;
+  to?: string;
+  limit?: number;
+}): CrmInteraction[] {
+  ensureCrmSchema();
+  const limit = Math.min(200, Math.max(1, opts?.limit || 50));
+  const clauses: string[] = [];
+  const params: unknown[] = [];
+  if (opts?.agentId) {
+    clauses.push('i.agent_id = ?');
+    params.push(opts.agentId);
+  }
+  if (opts?.from) {
+    clauses.push('i.started_at >= ?');
+    params.push(opts.from);
+  }
+  if (opts?.to) {
+    clauses.push('i.started_at <= ?');
+    params.push(opts.to);
+  }
+  const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
+  params.push(limit);
+  const rows = db()
+    .prepare(
+      `SELECT i.*, trim(c.first_name || ' ' || c.last_name) as customer_name, c.mobile as customer_mobile
+       FROM crm_interactions i LEFT JOIN crm_customers c ON c.id = i.customer_id
+       ${where} ORDER BY i.started_at DESC LIMIT ?`
+    )
+    .all(...params) as Array<Record<string, unknown>>;
+  return rows.map(mapInteraction);
+}
+
+export function wrapUpInteraction(
+  id: number,
+  input: {
+    reason?: string;
+    subReason?: string;
+    detailReason?: string;
+    outcome?: string;
+    summary?: string;
+    notes?: string;
+    talkMinutes?: number;
+    requestedAction?: string;
+    amount?: number;
+    createTicket?: boolean;
+    ticketTitle?: string;
+    priority?: string;
+  },
+  actor: AdminAuthActor
+): CrmInteraction {
+  ensureCrmSchema();
+  const inter = getInteraction(id);
+  if (!inter) throw new Error('تعامل یافت نشد');
+
+  const reason = String(input.reason || '').trim();
+  const subReason = String(input.subReason || '').trim();
+  const outcome = String(input.outcome || '').trim();
+  const summary = String(input.summary || '').trim();
+  const wrapDone = Boolean(reason && subReason && outcome && summary.length >= 4);
+
+  db()
+    .prepare(
+      `UPDATE crm_interactions SET
+        reason = ?, sub_reason = ?, detail_reason = ?, outcome = ?, summary = ?, notes = ?,
+        talk_minutes = ?, wrap_done = ?, ended_at = COALESCE(ended_at, ?)
+       WHERE id = ?`
+    )
+    .run(
+      reason,
+      subReason,
+      String(input.detailReason || ''),
+      outcome,
+      summary,
+      String(input.notes || ''),
+      Number(input.talkMinutes ?? inter.talkMinutes),
+      wrapDone ? 1 : 0,
+      nowIso(),
+      id
+    );
+
+  let ticketId = inter.ticketId;
+  let referralId = inter.referralId;
+  let complaintId = inter.complaintId;
+
+  if (wrapDone && inter.customerId) {
+    if (input.createTicket || outcome.includes('تیکت')) {
+      const ticket = createTicket(
+        {
+          customerId: inter.customerId,
+          interactionId: id,
+          title: input.ticketTitle || summary.slice(0, 80) || reason,
+          description: summary,
+          category: reason,
+          subCategory: subReason,
+          priority: input.priority || 'متوسط',
+          agentId: actorId(actor),
+          agentName: actorLabel(actor),
+        },
+        actor
+      );
+      ticketId = ticket.id;
+    }
+
+    if (outcome === 'ارجاع به مالی' || outcome === 'ارجاع به فروش') {
+      const action = String(input.requestedAction || '').trim();
+      if (!action) throw new Error('برای ارجاع، اقدام درخواستی الزامی است');
+      const ref = createReferral(
+        {
+          type: outcome === 'ارجاع به مالی' ? 'finance' : 'sales',
+          customerId: inter.customerId,
+          ticketId: ticketId || undefined,
+          reason,
+          requestedAction: action,
+          priority: input.priority || 'متوسط',
+          amount: Number(input.amount) || 0,
+        },
+        actor
+      );
+      referralId = ref.id;
+    }
+
+    if (reason === 'شکایت') {
+      const complaint = createComplaint(
+        {
+          customerId: inter.customerId,
+          ticketId: ticketId || undefined,
+          category: reason,
+          subCategory: subReason,
+          severity: input.priority || 'متوسط',
+          description: summary,
+          againstTeam: 'پشتیبانی',
+        },
+        actor
+      );
+      complaintId = complaint.id;
+    }
+  }
+
+  db()
+    .prepare('UPDATE crm_interactions SET ticket_id = ?, referral_id = ?, complaint_id = ? WHERE id = ?')
+    .run(ticketId, referralId, complaintId, id);
+
+  const updated = getInteraction(id)!;
+  audit({
+    userId: actorId(actor),
+    category: 'wrapup',
+    entity: 'crm_interactions',
+    recordUuid: updated.publicId,
+    action: wrapDone ? 'wrapup_done' : 'wrapup_partial',
+    next: { reason, outcome, wrapDone },
+  });
+  return updated;
+}
+
+export function createTicket(
+  input: {
+    customerId: number;
+    interactionId?: number;
+    title: string;
+    description?: string;
+    type?: string;
+    category?: string;
+    subCategory?: string;
+    priority?: string;
+    severity?: string;
+    agentId?: string | null;
+    agentName?: string | null;
+    supervisorId?: string;
+    nextAction?: string;
+  },
+  actor: AdminAuthActor
+): CrmTicket {
+  ensureCrmSchema();
+  const priority = String(input.priority || 'متوسط');
+  const createdAt = nowIso();
+  const slaDue = crmSlaDueIso(priority, createdAt);
+  const info = db()
+    .prepare(
+      `INSERT INTO crm_tickets (
+        customer_id, interaction_id, title, description, type, category, sub_category,
+        priority, severity, status, agent_id, agent_name, supervisor_id, sla_due, next_action, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      input.customerId,
+      input.interactionId ?? null,
+      String(input.title || '').trim() || 'تیکت',
+      String(input.description || ''),
+      String(input.type || 'عمومی'),
+      String(input.category || ''),
+      String(input.subCategory || ''),
+      priority,
+      String(input.severity || priority),
+      input.agentId ? 'تخصیص‌یافته' : 'جدید',
+      input.agentId ?? null,
+      input.agentName ?? null,
+      String(input.supervisorId || 'crm_lead'),
+      slaDue,
+      String(input.nextAction || ''),
+      createdAt,
+      createdAt
+    );
+  const ticket = getTicket(Number(info.lastInsertRowid))!;
+  dispatchSmsEvent('ticket_created', { customerId: input.customerId, ticketPublicId: ticket.publicId }, actor);
+  audit({
+    userId: actorId(actor),
+    category: 'ticket',
+    entity: 'crm_tickets',
+    recordUuid: ticket.publicId,
+    action: 'create',
+  });
+  return ticket;
+}
+
+export function getTicket(id: number): CrmTicket | null {
+  ensureCrmSchema();
+  const row = db()
+    .prepare(
+      `SELECT t.*, trim(c.first_name || ' ' || c.last_name) as customer_name
+       FROM crm_tickets t LEFT JOIN crm_customers c ON c.id = t.customer_id WHERE t.id = ?`
+    )
+    .get(id) as Record<string, unknown> | undefined;
+  return row ? enrichTicket(row) : null;
+}
+
+export function listTickets(opts?: { status?: string; unassignedOnly?: boolean; limit?: number }): CrmTicket[] {
+  ensureCrmSchema();
+  const limit = Math.min(200, Math.max(1, opts?.limit || 50));
+  const clauses: string[] = [];
+  const params: unknown[] = [];
+  if (opts?.status) {
+    clauses.push('t.status = ?');
+    params.push(opts.status);
+  }
+  if (opts?.unassignedOnly) clauses.push('(t.agent_id IS NULL OR t.agent_id = \'\')');
+  const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
+  params.push(limit);
+  const rows = db()
+    .prepare(
+      `SELECT t.*, trim(c.first_name || ' ' || c.last_name) as customer_name
+       FROM crm_tickets t LEFT JOIN crm_customers c ON c.id = t.customer_id
+       ${where} ORDER BY t.created_at DESC LIMIT ?`
+    )
+    .all(...params) as Array<Record<string, unknown>>;
+  return rows.map(enrichTicket);
+}
+
+export function patchTicket(
+  id: number,
+  input: {
+    status?: string;
+    priority?: string;
+    agentId?: string | null;
+    agentName?: string | null;
+    resolutionCode?: string;
+    resolutionNote?: string;
+    rootCause?: string;
+    nextAction?: string;
+    activityText?: string;
+  },
+  actor: AdminAuthActor
+): CrmTicket {
+  ensureCrmSchema();
+  const ticket = getTicket(id);
+  if (!ticket) throw new Error('تیکت یافت نشد');
+
+  let status = input.status != null ? String(input.status) : ticket.status;
+  let priority = input.priority != null ? String(input.priority) : ticket.priority;
+  let slaDue = ticket.slaDue;
+  let resolvedAt = ticket.resolvedAt;
+  let closedAt = ticket.closedAt;
+  let reopenedCount = ticket.reopenedCount;
+  let firstResponseAt = ticket.firstResponseAt;
+  let agentId = input.agentId !== undefined ? input.agentId : ticket.agentId;
+  let agentName = input.agentName !== undefined ? input.agentName : ticket.agentName;
+
+  if (input.priority != null && input.priority !== ticket.priority) {
+    slaDue = crmSlaDueIso(priority, ticket.createdAt);
+  }
+
+  if (status === 'حل‌شده') {
+    const code = String(input.resolutionCode ?? ticket.resolutionCode ?? '').trim();
+    if (!code) {
+      const err = new Error('برای حل تیکت، کد راه‌حل الزامی است') as Error & { status?: number };
+      err.status = 422;
+      throw err;
+    }
+    resolvedAt = nowIso();
+  }
+
+  if (status === 'بازگشایی‌شده') {
+    reopenedCount += 1;
+    resolvedAt = null;
+    closedAt = null;
+  }
+
+  if (status === 'بسته‌شده') closedAt = nowIso();
+
+  if (!firstResponseAt && (status === 'در حال بررسی' || status === 'تخصیص‌یافته' || input.activityText)) {
+    firstResponseAt = nowIso();
+  }
+
+  db()
+    .prepare(
+      `UPDATE crm_tickets SET
+        status = ?, priority = ?, agent_id = ?, agent_name = ?, sla_due = ?,
+        resolved_at = ?, closed_at = ?, reopened_count = ?, first_response_at = ?,
+        resolution_code = COALESCE(?, resolution_code),
+        resolution_note = COALESCE(?, resolution_note),
+        root_cause = COALESCE(?, root_cause),
+        next_action = COALESCE(?, next_action),
+        updated_at = ?
+       WHERE id = ?`
+    )
+    .run(
+      status,
+      priority,
+      agentId,
+      agentName,
+      slaDue,
+      resolvedAt,
+      closedAt,
+      reopenedCount,
+      firstResponseAt,
+      input.resolutionCode != null ? String(input.resolutionCode) : null,
+      input.resolutionNote != null ? String(input.resolutionNote) : null,
+      input.rootCause != null ? String(input.rootCause) : null,
+      input.nextAction != null ? String(input.nextAction) : null,
+      nowIso(),
+      id
+    );
+
+  if (input.activityText) {
+    db()
+      .prepare('INSERT INTO crm_ticket_activities (ticket_id, user_id, text, at) VALUES (?, ?, ?, ?)')
+      .run(id, actorId(actor), String(input.activityText), nowIso());
+  }
+
+  const updated = getTicket(id)!;
+  if (status === 'حل‌شده' && ticket.status !== 'حل‌شده') {
+    dispatchSmsEvent('ticket_resolved', { customerId: ticket.customerId, ticketPublicId: updated.publicId }, actor);
+  }
+  audit({
+    userId: actorId(actor),
+    category: 'ticket',
+    entity: 'crm_tickets',
+    recordUuid: updated.publicId,
+    action: 'patch',
+    prev: { status: ticket.status, priority: ticket.priority },
+    next: { status, priority },
+  });
+  return updated;
+}
+
+export function assignTicketToMe(id: number, actor: AdminAuthActor): CrmTicket {
+  return patchTicket(
+    id,
+    { agentId: actorId(actor), agentName: actorLabel(actor), status: 'تخصیص‌یافته', activityText: 'تخصیص به خود' },
+    actor
+  );
+}
+
+export function listTicketActivities(ticketId: number): CrmTicketActivity[] {
+  ensureCrmSchema();
+  const rows = db()
+    .prepare('SELECT * FROM crm_ticket_activities WHERE ticket_id = ? ORDER BY at ASC')
+    .all(ticketId) as Array<Record<string, unknown>>;
+  return rows.map((r) => ({
+    id: Number(r.id),
+    ticketId: Number(r.ticket_id),
+    userId: String(r.user_id),
+    text: String(r.text),
+    at: String(r.at),
+  }));
+}
+
+export function createFollowup(
+  input: {
+    customerId: number;
+    ticketId?: number;
+    ownerId?: string;
+    ownerName?: string;
+    kind?: string;
+    dueAt: string;
+    priority?: string;
+    description?: string;
+  },
+  actor: AdminAuthActor
+): CrmFollowup {
+  ensureCrmSchema();
+  const info = db()
+    .prepare(
+      `INSERT INTO crm_followups (
+        customer_id, ticket_id, creator_id, owner_id, owner_name, kind, due_at, priority, description, status, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'باز', ?)`
+    )
+    .run(
+      input.customerId,
+      input.ticketId ?? null,
+      actorId(actor),
+      input.ownerId || actorId(actor),
+      input.ownerName || actorLabel(actor),
+      String(input.kind || 'تماس'),
+      input.dueAt,
+      String(input.priority || 'متوسط'),
+      String(input.description || ''),
+      nowIso()
+    );
+  return getFollowup(Number(info.lastInsertRowid))!;
+}
+
+export function getFollowup(id: number): CrmFollowup | null {
+  const row = db()
+    .prepare(
+      `SELECT f.*, trim(c.first_name || ' ' || c.last_name) as customer_name
+       FROM crm_followups f LEFT JOIN crm_customers c ON c.id = f.customer_id WHERE f.id = ?`
+    )
+    .get(id) as Record<string, unknown> | undefined;
+  return row ? mapFollowup(row) : null;
+}
+
+export function listFollowups(opts?: { status?: string; limit?: number }): CrmFollowup[] {
+  ensureCrmSchema();
+  const limit = Math.min(200, Math.max(1, opts?.limit || 50));
+  const rows = (
+    opts?.status
+      ? db()
+          .prepare(
+            `SELECT f.*, trim(c.first_name || ' ' || c.last_name) as customer_name
+             FROM crm_followups f LEFT JOIN crm_customers c ON c.id = f.customer_id
+             WHERE f.status = ? ORDER BY f.due_at ASC LIMIT ?`
+          )
+          .all(opts.status, limit)
+      : db()
+          .prepare(
+            `SELECT f.*, trim(c.first_name || ' ' || c.last_name) as customer_name
+             FROM crm_followups f LEFT JOIN crm_customers c ON c.id = f.customer_id
+             ORDER BY f.due_at ASC LIMIT ?`
+          )
+          .all(limit)
+  ) as Array<Record<string, unknown>>;
+  return rows.map(mapFollowup);
+}
+
+export function completeFollowup(id: number, result: string, actor: AdminAuthActor): CrmFollowup {
+  ensureCrmSchema();
+  db()
+    .prepare(`UPDATE crm_followups SET status = 'انجام‌شده', result = ? WHERE id = ?`)
+    .run(String(result || ''), id);
+  const fu = getFollowup(id);
+  if (!fu) throw new Error('پیگیری یافت نشد');
+  audit({
+    userId: actorId(actor),
+    category: 'followup',
+    entity: 'crm_followups',
+    recordUuid: fu.publicId,
+    action: 'complete',
+  });
+  return fu;
+}
+
+export function createComplaint(
+  input: {
+    customerId: number;
+    ticketId?: number;
+    category?: string;
+    subCategory?: string;
+    severity?: string;
+    description?: string;
+    againstTeam?: string;
+    againstAgentId?: string;
+    supervisorId?: string;
+  },
+  actor: AdminAuthActor
+): CrmComplaint {
+  ensureCrmSchema();
+  const info = db()
+    .prepare(
+      `INSERT INTO crm_complaints (
+        customer_id, ticket_id, category, sub_category, severity, description,
+        against_team, against_agent_id, supervisor_id, status, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'جدید', ?)`
+    )
+    .run(
+      input.customerId,
+      input.ticketId ?? null,
+      String(input.category || ''),
+      String(input.subCategory || ''),
+      String(input.severity || 'متوسط'),
+      String(input.description || ''),
+      String(input.againstTeam || ''),
+      input.againstAgentId ?? null,
+      String(input.supervisorId || 'crm_lead'),
+      nowIso()
+    );
+  return getComplaint(Number(info.lastInsertRowid))!;
+}
+
+export function getComplaint(id: number): CrmComplaint | null {
+  const row = db()
+    .prepare(
+      `SELECT cp.*, trim(c.first_name || ' ' || c.last_name) as customer_name
+       FROM crm_complaints cp LEFT JOIN crm_customers c ON c.id = cp.customer_id WHERE cp.id = ?`
+    )
+    .get(id) as Record<string, unknown> | undefined;
+  return row ? mapComplaint(row) : null;
+}
+
+export function listComplaints(limit = 50): CrmComplaint[] {
+  ensureCrmSchema();
+  const rows = db()
+    .prepare(
+      `SELECT cp.*, trim(c.first_name || ' ' || c.last_name) as customer_name
+       FROM crm_complaints cp LEFT JOIN crm_customers c ON c.id = cp.customer_id
+       ORDER BY cp.created_at DESC LIMIT ?`
+    )
+    .all(limit) as Array<Record<string, unknown>>;
+  return rows.map(mapComplaint);
+}
+
+export function createReferral(
+  input: {
+    type: 'finance' | 'sales' | string;
+    customerId: number;
+    ticketId?: number;
+    reason?: string;
+    requestedAction: string;
+    priority?: string;
+    amount?: number;
+    dueAt?: string;
+    targetTeam?: string;
+  },
+  actor: AdminAuthActor
+): CrmReferral {
+  ensureCrmSchema();
+  const due =
+    input.dueAt ||
+    new Date(Date.now() + 24 * 3600_000).toISOString();
+  const info = db()
+    .prepare(
+      `INSERT INTO crm_referrals (
+        type, customer_id, ticket_id, from_agent_id, target_team, reason, requested_action,
+        priority, amount, due_at, status, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'باز', ?)`
+    )
+    .run(
+      input.type,
+      input.customerId,
+      input.ticketId ?? null,
+      actorId(actor),
+      String(input.targetTeam || (input.type === 'finance' ? 'مالی' : 'فروش')),
+      String(input.reason || ''),
+      String(input.requestedAction || ''),
+      String(input.priority || 'متوسط'),
+      Math.max(0, Math.round(Number(input.amount) || 0)),
+      due,
+      nowIso()
+    );
+  return getReferral(Number(info.lastInsertRowid))!;
+}
+
+export function getReferral(id: number): CrmReferral | null {
+  const row = db()
+    .prepare(
+      `SELECT r.*, trim(c.first_name || ' ' || c.last_name) as customer_name
+       FROM crm_referrals r LEFT JOIN crm_customers c ON c.id = r.customer_id WHERE r.id = ?`
+    )
+    .get(id) as Record<string, unknown> | undefined;
+  return row ? mapReferral(row) : null;
+}
+
+export function listReferrals(limit = 50): CrmReferral[] {
+  ensureCrmSchema();
+  const rows = db()
+    .prepare(
+      `SELECT r.*, trim(c.first_name || ' ' || c.last_name) as customer_name
+       FROM crm_referrals r LEFT JOIN crm_customers c ON c.id = r.customer_id
+       ORDER BY r.created_at DESC LIMIT ?`
+    )
+    .all(limit) as Array<Record<string, unknown>>;
+  return rows.map(mapReferral);
+}
+
+export function respondReferral(
+  id: number,
+  input: { approve: boolean; response?: string },
+  actor: AdminAuthActor
+): CrmReferral {
+  ensureCrmSchema();
+  const ref = getReferral(id);
+  if (!ref) throw new Error('ارجاع یافت نشد');
+  const status = input.approve ? 'تایید' : 'رد شد';
+  db()
+    .prepare(`UPDATE crm_referrals SET status = ?, response = ? WHERE id = ?`)
+    .run(status, String(input.response || ''), id);
+
+  if (!input.approve && ref.ticketId) {
+    patchTicket(ref.ticketId, { status: 'ارجاع به سطح بالاتر', activityText: 'رد ارجاع — اسکالیشن' }, actor);
+  }
+
+  const updated = getReferral(id)!;
+  audit({
+    userId: actorId(actor),
+    category: 'referral',
+    entity: 'crm_referrals',
+    recordUuid: updated.publicId,
+    action: status,
+  });
+  return updated;
+}
+
+export function createSurvey(
+  input: {
+    customerId: number;
+    answers: Record<string, number>;
+    notes?: string;
+    talkMinutes?: number;
+    assignedTo?: string;
+    smsSent?: boolean;
+  },
+  actor: AdminAuthActor
+): CrmSurvey {
+  ensureCrmSchema();
+  const rating = crmSurveyRating(input.answers || {});
+  const info = db()
+    .prepare(
+      `INSERT INTO crm_surveys (
+        customer_id, agent_id, assigned_to, talk_minutes, answers_json, rating, notes, sms_sent, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      input.customerId,
+      actorId(actor),
+      input.assignedTo ?? null,
+      Number(input.talkMinutes) || 0,
+      JSON.stringify(input.answers || {}),
+      rating,
+      String(input.notes || ''),
+      input.smsSent ? 1 : 0,
+      nowIso()
+    );
+  db().prepare('UPDATE crm_customers SET csat = ?, updated_at = ? WHERE id = ?').run(rating, nowIso(), input.customerId);
+
+  // experience interaction
+  db()
+    .prepare(
+      `INSERT INTO crm_interactions (
+        customer_id, channel, direction, agent_id, agent_name, started_at, ended_at,
+        talk_minutes, reason, sub_reason, outcome, summary, wrap_done
+      ) VALUES (?, 'call_out', 'out', ?, ?, ?, ?, ?, 'تجربه مشتری', 'نظرسنجی', 'پاسخ داده‌شده', ?, 1)`
+    )
+    .run(
+      input.customerId,
+      actorId(actor),
+      actorLabel(actor),
+      nowIso(),
+      nowIso(),
+      Number(input.talkMinutes) || 0,
+      `نظرسنجی با امتیاز ${rating}`
+    );
+
+  dispatchSmsEvent('survey_done', { customerId: input.customerId }, actor);
+  return mapSurvey(
+    db().prepare('SELECT * FROM crm_surveys WHERE id = ?').get(Number(info.lastInsertRowid)) as Record<
+      string,
+      unknown
+    >
+  );
+}
+
+export function listSurveys(limit = 50): CrmSurvey[] {
+  ensureCrmSchema();
+  const rows = db()
+    .prepare(
+      `SELECT s.*, trim(c.first_name || ' ' || c.last_name) as customer_name
+       FROM crm_surveys s LEFT JOIN crm_customers c ON c.id = s.customer_id
+       ORDER BY s.created_at DESC LIMIT ?`
+    )
+    .all(limit) as Array<Record<string, unknown>>;
+  return rows.map(mapSurvey);
+}
+
+export function createQaReview(
+  input: {
+    interactionId: number;
+    scores: Record<string, number>;
+    critical?: string[];
+    comment?: string;
+    strength?: string;
+    improvement?: string;
+    coaching?: boolean;
+    reason?: string;
+  },
+  actor: AdminAuthActor
+): CrmQaReview {
+  ensureCrmSchema();
+  const inter = getInteraction(input.interactionId);
+  if (!inter) throw new Error('تعامل یافت نشد');
+  const critical = Array.isArray(input.critical) ? input.critical.map(String) : [];
+  const total = crmQaTotal(input.scores || {}, critical);
+  const coaching = Boolean(input.coaching) || critical.length > 0;
+  const info = db()
+    .prepare(
+      `INSERT INTO crm_qa_reviews (
+        interaction_id, agent_id, reviewer_id, reason, scores_json, total, critical_json,
+        comment, strength, improvement, coaching, status, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      input.interactionId,
+      inter.agentId,
+      actorId(actor),
+      String(input.reason || ''),
+      JSON.stringify(input.scores || {}),
+      total,
+      JSON.stringify(critical),
+      String(input.comment || ''),
+      String(input.strength || ''),
+      String(input.improvement || ''),
+      coaching ? 1 : 0,
+      coaching ? 'نیازمند کوچینگ' : 'ارزیابی‌شده',
+      nowIso()
+    );
+  const reviewId = Number(info.lastInsertRowid);
+  db()
+    .prepare(`UPDATE crm_interactions SET qa_status = ?, qa_score = ? WHERE id = ?`)
+    .run(coaching ? 'نیازمند کوچینگ' : 'ارزیابی‌شده', total, input.interactionId);
+
+  if (coaching) {
+    createTask(
+      {
+        kind: 'کوچینگ',
+        title: `کوچینگ ${inter.agentName || inter.agentId}`,
+        description: input.improvement || input.comment || 'نیاز به کوچینگ پس از QA',
+        assigneeId: 'crm_lead',
+        aboutAgentId: inter.agentId,
+        dueAt: new Date(Date.now() + 3 * 86400_000).toISOString(),
+        priority: 'بالا',
+        sourceReviewId: reviewId,
+      },
+      actor
+    );
+  }
+
+  return getQaReview(reviewId)!;
+}
+
+export function getQaReview(id: number): CrmQaReview | null {
+  const row = db().prepare('SELECT * FROM crm_qa_reviews WHERE id = ?').get(id) as
+    | Record<string, unknown>
+    | undefined;
+  if (!row) return null;
+  return {
+    id: Number(row.id),
+    publicId: makeCrmUuid('QA', Number(row.id)),
+    interactionId: Number(row.interaction_id),
+    agentId: String(row.agent_id),
+    reviewerId: String(row.reviewer_id),
+    reason: String(row.reason || ''),
+    scores: parseJson(row.scores_json, {}),
+    total: Number(row.total || 0),
+    critical: parseJson(row.critical_json, []),
+    comment: String(row.comment || ''),
+    strength: String(row.strength || ''),
+    improvement: String(row.improvement || ''),
+    coaching: Boolean(row.coaching),
+    status: String(row.status || ''),
+    createdAt: String(row.created_at),
+  };
+}
+
+export function listQaReviews(limit = 50): CrmQaReview[] {
+  ensureCrmSchema();
+  const rows = db()
+    .prepare('SELECT * FROM crm_qa_reviews ORDER BY created_at DESC LIMIT ?')
+    .all(limit) as Array<Record<string, unknown>>;
+  return rows.map((r) => getQaReview(Number(r.id))!);
+}
+
+export function createTask(
+  input: {
+    kind?: string;
+    title: string;
+    description?: string;
+    assigneeId: string;
+    aboutAgentId?: string;
+    dueAt: string;
+    priority?: string;
+    sourceReviewId?: number;
+  },
+  actor: AdminAuthActor
+): CrmTask {
+  ensureCrmSchema();
+  const info = db()
+    .prepare(
+      `INSERT INTO crm_tasks (
+        kind, title, description, assignee_id, about_agent_id, due_at, status, priority, source_review_id, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, 'باز', ?, ?, ?)`
+    )
+    .run(
+      String(input.kind || 'عمومی'),
+      String(input.title),
+      String(input.description || ''),
+      input.assigneeId,
+      input.aboutAgentId ?? null,
+      input.dueAt,
+      String(input.priority || 'متوسط'),
+      input.sourceReviewId ?? null,
+      nowIso()
+    );
+  return getTask(Number(info.lastInsertRowid))!;
+}
+
+export function getTask(id: number): CrmTask | null {
+  const row = db().prepare('SELECT * FROM crm_tasks WHERE id = ?').get(id) as Record<string, unknown> | undefined;
+  if (!row) return null;
+  return {
+    id: Number(row.id),
+    publicId: makeCrmUuid('TS', Number(row.id)),
+    kind: String(row.kind),
+    title: String(row.title),
+    description: String(row.description || ''),
+    assigneeId: String(row.assignee_id),
+    aboutAgentId: row.about_agent_id != null ? String(row.about_agent_id) : null,
+    dueAt: String(row.due_at),
+    status: String(row.status),
+    priority: String(row.priority),
+    sourceReviewId: row.source_review_id != null ? Number(row.source_review_id) : null,
+    createdAt: String(row.created_at),
+  };
+}
+
+export function listTasks(opts?: { assigneeId?: string; status?: string; limit?: number }): CrmTask[] {
+  ensureCrmSchema();
+  const limit = Math.min(100, opts?.limit || 50);
+  const clauses: string[] = [];
+  const params: unknown[] = [];
+  if (opts?.assigneeId) {
+    clauses.push('assignee_id = ?');
+    params.push(opts.assigneeId);
+  }
+  if (opts?.status) {
+    clauses.push('status = ?');
+    params.push(opts.status);
+  }
+  const where = clauses.length ? `WHERE ${clauses.join(' AND ')}` : '';
+  params.push(limit);
+  const rows = db()
+    .prepare(`SELECT * FROM crm_tasks ${where} ORDER BY due_at ASC LIMIT ?`)
+    .all(...params) as Array<Record<string, unknown>>;
+  return rows.map((r) => getTask(Number(r.id))!);
+}
+
+export function listSmsPatterns(): CrmSmsPattern[] {
+  ensureCrmSchema();
+  const rows = db().prepare('SELECT * FROM crm_sms_patterns ORDER BY id').all() as Array<Record<string, unknown>>;
+  return rows.map((r) => ({
+    id: Number(r.id),
+    publicId: makeCrmUuid('PT', Number(r.id)),
+    name: String(r.name),
+    type: String(r.type),
+    text: String(r.text),
+    trigger: String(r.trigger_key),
+    auto: Boolean(r.auto),
+    active: Boolean(r.active),
+  }));
+}
+
+export function upsertSmsPattern(input: {
+  id?: number;
+  name: string;
+  type?: string;
+  text: string;
+  trigger?: string;
+  auto?: boolean;
+  active?: boolean;
+}): CrmSmsPattern {
+  ensureCrmSchema();
+  const name = String(input.name || '').trim();
+  const text = String(input.text || '').trim();
+  if (!name || !text) throw new Error('نام و متن پترن الزامی است');
+  if (input.id) {
+    db()
+      .prepare(
+        `UPDATE crm_sms_patterns SET name = ?, type = ?, text = ?, trigger_key = ?, auto = ?, active = ? WHERE id = ?`
+      )
+      .run(
+        name,
+        String(input.type || 'dynamic'),
+        text,
+        String(input.trigger || 'manual'),
+        input.auto ? 1 : 0,
+        input.active === false ? 0 : 1,
+        input.id
+      );
+  } else {
+    const info = db()
+      .prepare(
+        `INSERT INTO crm_sms_patterns (name, type, text, trigger_key, auto, active) VALUES (?, ?, ?, ?, ?, ?)`
+      )
+      .run(
+        name,
+        String(input.type || 'dynamic'),
+        text,
+        String(input.trigger || 'manual'),
+        input.auto ? 1 : 0,
+        input.active === false ? 0 : 1
+      );
+    input.id = Number(info.lastInsertRowid);
+  }
+  return listSmsPatterns().find((p) => p.id === input.id)!;
+}
+
+export function renderSmsPattern(text: string, ctx: { customer?: CrmCustomer; ticketPublicId?: string; agentName?: string }): string {
+  const c = ctx.customer;
+  return text
+    .replace(/\{نام\}/g, c?.first || 'مشتری')
+    .replace(/\{محصول\}/g, c?.product || 'Pet Date')
+    .replace(/\{شناسه\}/g, ctx.ticketPublicId || '')
+    .replace(/\{کارشناس\}/g, ctx.agentName || '');
+}
+
+export function sendSmsPattern(
+  patternId: number,
+  customerId: number,
+  actor: AdminAuthActor,
+  extra?: { ticketPublicId?: string }
+): { text: string; interactionId: number } {
+  ensureCrmSchema();
+  const pattern = listSmsPatterns().find((p) => p.id === patternId);
+  if (!pattern) throw new Error('پترن یافت نشد');
+  const customer = getCustomer(customerId);
+  if (!customer) throw new Error('مشتری یافت نشد');
+  const text = renderSmsPattern(pattern.text, {
+    customer,
+    ticketPublicId: extra?.ticketPublicId,
+    agentName: actorLabel(actor),
+  });
+  const info = db()
+    .prepare(
+      `INSERT INTO crm_interactions (
+        customer_id, channel, direction, agent_id, agent_name, started_at, ended_at,
+        reason, outcome, summary, wrap_done
+      ) VALUES (?, 'sms', 'out', ?, ?, ?, ?, 'پیامک', 'پاسخ داده‌شده', ?, 1)`
+    )
+    .run(customerId, actorId(actor), actorLabel(actor), nowIso(), nowIso(), text);
+  return { text, interactionId: Number(info.lastInsertRowid) };
+}
+
+function dispatchSmsEvent(
+  event: string,
+  ctx: { customerId: number; ticketPublicId?: string },
+  actor: AdminAuthActor
+): void {
+  ensureCrmSchema();
+  const patterns = listSmsPatterns().filter((p) => p.trigger === event && p.auto && p.active);
+  for (const p of patterns) {
+    try {
+      sendSmsPattern(p.id, ctx.customerId, actor, { ticketPublicId: ctx.ticketPublicId });
+    } catch {
+      /* ignore per-pattern failures */
+    }
+  }
+}
+
+export function listKpiModels(): CrmKpiModel[] {
+  ensureCrmSchema();
+  const rows = db().prepare('SELECT * FROM crm_kpi_models ORDER BY id').all() as Array<Record<string, unknown>>;
+  return rows.map((r) => ({
+    id: Number(r.id),
+    name: String(r.name),
+    scope: String(r.scope),
+    ref: String(r.ref || ''),
+    active: Boolean(r.active),
+    items: parseJson(r.items_json, []),
+  }));
+}
+
+export function getCrmSettings(): CrmSettings {
+  ensureCrmSchema();
+  const read = <T,>(key: string, fallback: T): T => {
+    const row = db().prepare('SELECT value FROM crm_settings WHERE key = ?').get(key) as
+      | { value: string }
+      | undefined;
+    return row ? parseJson(row.value, fallback) : fallback;
+  };
+  return {
+    slaPolicy: read('slaPolicy', CRM_SLA_POLICY as unknown as Record<string, [number, number]>),
+    reasonTree: read('reasonTree', CRM_REASON_TREE),
+    scorecard: read('scorecard', [...CRM_SCORECARD]),
+    criticalErrors: read('criticalErrors', [...CRM_CRITICAL_ERRORS]),
+    surveyQuestions: read('surveyQuestions', [...CRM_SURVEY_QUESTIONS]),
+  };
+}
+
+export function updateCrmSettings(patch: Partial<CrmSettings>): CrmSettings {
+  ensureCrmSchema();
+  const cur = getCrmSettings();
+  const next: CrmSettings = {
+    slaPolicy: patch.slaPolicy ?? cur.slaPolicy,
+    reasonTree: patch.reasonTree ?? cur.reasonTree,
+    scorecard: patch.scorecard ?? cur.scorecard,
+    criticalErrors: patch.criticalErrors ?? cur.criticalErrors,
+    surveyQuestions: patch.surveyQuestions ?? cur.surveyQuestions,
+  };
+  const upsert = db().prepare(
+    `INSERT INTO crm_settings (key, value, updated_at) VALUES (?, ?, datetime('now'))
+     ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = datetime('now')`
+  );
+  upsert.run('slaPolicy', JSON.stringify(next.slaPolicy));
+  upsert.run('reasonTree', JSON.stringify(next.reasonTree));
+  upsert.run('scorecard', JSON.stringify(next.scorecard));
+  upsert.run('criticalErrors', JSON.stringify(next.criticalErrors));
+  upsert.run('surveyQuestions', JSON.stringify(next.surveyQuestions));
+  return next;
+}
+
+export function listInbox(opts?: {
+  q?: string;
+  kind?: string;
+  sla?: string;
+  agentId?: string;
+  unassignedOnly?: boolean;
+  limit?: number;
+}): { total: number; rows: CrmInboxRow[] } {
+  ensureCrmSchema();
+  const limit = Math.min(200, Math.max(1, opts?.limit || 80));
+  const rows: CrmInboxRow[] = [];
+
+  for (const t of listTickets({ limit: 100 })) {
+    rows.push({
+      kind: 'ticket',
+      id: t.id,
+      publicId: t.publicId,
+      title: t.title,
+      customerName: t.customerName || customerName(t.customerId),
+      customerMobile: '',
+      agentName: t.agentName || '—',
+      priority: String(t.priority),
+      status: t.status,
+      dueAt: t.slaDue,
+      slaState: t.slaState || 'ok',
+      borderColor: t.borderColor || crmInboxBorderColor(t.slaState || 'ok'),
+      createdAt: t.createdAt,
+    });
+  }
+  for (const f of listFollowups({ status: 'باز', limit: 50 })) {
+    const overdue = new Date(f.dueAt).getTime() < Date.now();
+    rows.push({
+      kind: 'followup',
+      id: f.id,
+      publicId: f.publicId,
+      title: f.description || f.kind,
+      customerName: f.customerName || customerName(f.customerId),
+      customerMobile: '',
+      agentName: f.ownerName || f.ownerId,
+      priority: f.priority,
+      status: f.status,
+      dueAt: f.dueAt,
+      slaState: overdue ? 'breached' : 'ok',
+      borderColor: crmInboxBorderColor(overdue ? 'breached' : 'ok'),
+      createdAt: f.createdAt,
+    });
+  }
+  for (const i of listInteractions({ limit: 40 }).filter((x) => !x.wrapDone)) {
+    rows.push({
+      kind: 'interaction',
+      id: i.id,
+      publicId: i.publicId,
+      title: `Wrap-up ناقص · ${CRM_CHANNEL_LABELS[i.channel] || i.channel}`,
+      customerName: i.customerName || customerName(i.customerId),
+      customerMobile: i.customerMobile || '',
+      agentName: i.agentName || i.agentId,
+      priority: 'متوسط',
+      status: 'wrap_pending',
+      dueAt: null,
+      slaState: 'at_risk',
+      borderColor: crmInboxBorderColor('at_risk', { wrapPending: true }),
+      createdAt: i.startedAt,
+    });
+  }
+  for (const task of listTasks({ status: 'باز', limit: 30 })) {
+    rows.push({
+      kind: 'task',
+      id: task.id,
+      publicId: task.publicId,
+      title: task.title,
+      customerName: '—',
+      customerMobile: '',
+      agentName: task.assigneeId,
+      priority: task.priority,
+      status: task.status,
+      dueAt: task.dueAt,
+      slaState: 'ok',
+      borderColor: crmInboxBorderColor('ok', { internal: true }),
+      createdAt: task.createdAt,
+    });
+  }
+
+  let filtered = rows;
+  if (opts?.kind) filtered = filtered.filter((r) => r.kind === opts.kind);
+  if (opts?.sla) filtered = filtered.filter((r) => r.slaState === opts.sla);
+  if (opts?.unassignedOnly) filtered = filtered.filter((r) => r.agentName === '—' || !r.agentName);
+  if (opts?.agentId) filtered = filtered.filter((r) => r.agentName.includes(opts.agentId!) || r.publicId);
+  if (opts?.q) {
+    const q = opts.q.toLowerCase();
+    filtered = filtered.filter(
+      (r) =>
+        r.title.toLowerCase().includes(q) ||
+        r.customerName.toLowerCase().includes(q) ||
+        r.publicId.toLowerCase().includes(q)
+    );
+  }
+  filtered.sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+  return { total: filtered.length, rows: filtered.slice(0, limit) };
+}
+
+export function assignInboxItem(
+  kind: string,
+  id: number,
+  actor: AdminAuthActor
+): { ok: true } {
+  ensureCrmSchema();
+  if (kind === 'ticket') {
+    assignTicketToMe(id, actor);
+    return { ok: true };
+  }
+  if (kind === 'followup') {
+    db()
+      .prepare(`UPDATE crm_followups SET owner_id = ?, owner_name = ? WHERE id = ?`)
+      .run(actorId(actor), actorLabel(actor), id);
+    return { ok: true };
+  }
+  if (kind === 'interaction') {
+    db()
+      .prepare(`UPDATE crm_interactions SET agent_id = ?, agent_name = ? WHERE id = ?`)
+      .run(actorId(actor), actorLabel(actor), id);
+    return { ok: true };
+  }
+  if (kind === 'task') {
+    db().prepare(`UPDATE crm_tasks SET assignee_id = ? WHERE id = ?`).run(actorId(actor), id);
+    return { ok: true };
+  }
+  throw new Error('نوع آیتم نامعتبر است');
+}
+
+export function getCrmDashboard(actor: AdminAuthActor): CrmDashboard {
+  ensureCrmSchema();
+  const tickets = listTickets({ limit: 200 });
+  const openTickets = tickets.filter((t) => !['حل‌شده', 'بسته‌شده'].includes(t.status));
+  const breachedSla = openTickets.filter((t) => t.slaState === 'breached').length;
+  const atRiskSla = openTickets.filter((t) => t.slaState === 'at_risk').length;
+  const unassigned = openTickets.filter((t) => !t.agentId).length;
+  const wrapPending = listInteractions({ limit: 100 }).filter((i) => !i.wrapDone).length;
+  const followups = listFollowups({ status: 'باز', limit: 100 });
+  const overdueFollowups = followups.filter((f) => new Date(f.dueAt).getTime() < Date.now()).length;
+  const openComplaints = listComplaints(100).filter((c) => !['حل‌شده', 'بسته‌شده'].includes(c.status)).length;
+  const openReferrals = listReferrals(100).filter((r) => r.status === 'باز').length;
+  const calls = listInteractions({ limit: 200 }).filter((i) => i.channel === 'call_in' || i.channel === 'call_out');
+  const callsToday = calls.filter((c) => isToday(c.startedAt));
+  const surveys = listSurveys(100);
+  const qa = listQaReviews(100);
+  const inbox = listInbox({ limit: 8 });
+
+  return {
+    greetingName: actorLabel(actor),
+    openTickets: openTickets.length,
+    breachedSla,
+    atRiskSla,
+    unassigned,
+    wrapPending,
+    openFollowups: followups.length,
+    overdueFollowups,
+    openComplaints,
+    openReferrals,
+    callsToday: callsToday.length,
+    callMinutesToday: Math.round(callsToday.reduce((s, c) => s + c.talkMinutes, 0)),
+    avgCsat: surveys.length ? Math.round((surveys.reduce((s, x) => s + x.rating, 0) / surveys.length) * 10) / 10 : null,
+    qaAvg: qa.length ? Math.round(qa.reduce((s, x) => s + x.total, 0) / qa.length) : null,
+    inboxPreview: inbox.rows,
+    myTasks: listTasks({ status: 'باز', limit: 10 }),
+  };
+}
+
+export function getCrmReportSummary(actor: AdminAuthActor, opts?: { agentId?: string }): CrmReportSummary {
+  ensureCrmSchema();
+  if (opts?.agentId && opts.agentId !== actorId(actor) && !canSeeTeamReports(actor)) {
+    const err = new Error('دسترسی گزارش تیمی ندارید') as Error & { status?: number };
+    err.status = 403;
+    throw err;
+  }
+  const agentFilter = canSeeTeamReports(actor) ? opts?.agentId : actorId(actor);
+  let tickets = listTickets({ limit: 500 });
+  if (agentFilter) tickets = tickets.filter((t) => t.agentId === agentFilter);
+  const resolved = tickets.filter((t) => t.status === 'حل‌شده' || t.status === 'بسته‌شده');
+  const open = tickets.filter((t) => !['حل‌شده', 'بسته‌شده'].includes(t.status));
+  const interactions = listInteractions({ agentId: agentFilter, limit: 500 });
+  const surveys = listSurveys(200);
+  const qa = listQaReviews(200);
+
+  const byAgentMap = new Map<string, { agentId: string; agentName: string; tickets: number; calls: number; qa: number[]; }>();
+  for (const t of tickets) {
+    const key = t.agentId || 'unassigned';
+    const cur = byAgentMap.get(key) || {
+      agentId: key,
+      agentName: t.agentName || key,
+      tickets: 0,
+      calls: 0,
+      qa: [] as number[],
+    };
+    cur.tickets += 1;
+    byAgentMap.set(key, cur);
+  }
+  for (const i of interactions) {
+    const key = i.agentId || 'unassigned';
+    const cur = byAgentMap.get(key) || {
+      agentId: key,
+      agentName: i.agentName || key,
+      tickets: 0,
+      calls: 0,
+      qa: [] as number[],
+    };
+    if (i.channel === 'call_in' || i.channel === 'call_out') cur.calls += 1;
+    byAgentMap.set(key, cur);
+  }
+  for (const r of qa) {
+    const cur = byAgentMap.get(r.agentId) || {
+      agentId: r.agentId,
+      agentName: r.agentId,
+      tickets: 0,
+      calls: 0,
+      qa: [] as number[],
+    };
+    cur.qa.push(r.total);
+    byAgentMap.set(r.agentId, cur);
+  }
+
+  const reasonMap = new Map<string, number>();
+  for (const i of interactions) {
+    if (!i.reason) continue;
+    reasonMap.set(i.reason, (reasonMap.get(i.reason) || 0) + 1);
+  }
+
+  const dayMap = new Map<string, number>();
+  for (const t of tickets) {
+    const day = t.createdAt.slice(0, 10);
+    dayMap.set(day, (dayMap.get(day) || 0) + 1);
+  }
+
+  return {
+    ticketsResolved: resolved.length,
+    ticketsOpen: open.length,
+    avgFirstResponseMin: null,
+    avgResolveHours: null,
+    csatAvg: surveys.length
+      ? Math.round((surveys.reduce((s, x) => s + x.rating, 0) / surveys.length) * 10) / 10
+      : null,
+    qaAvg: qa.length ? Math.round(qa.reduce((s, x) => s + x.total, 0) / qa.length) : null,
+    byAgent: [...byAgentMap.values()].map((a) => ({
+      agentId: a.agentId,
+      agentName: a.agentName,
+      tickets: a.tickets,
+      calls: a.calls,
+      qaAvg: a.qa.length ? Math.round(a.qa.reduce((s, n) => s + n, 0) / a.qa.length) : null,
+    })),
+    byReason: [...reasonMap.entries()].map(([reason, count]) => ({ reason, count })),
+    dailyTickets: [...dayMap.entries()]
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([day, count]) => ({ day, count })),
+  };
+}
+
+export function listAuditLogs(limit = 100): Array<Record<string, unknown>> {
+  ensureCrmSchema();
+  return db()
+    .prepare('SELECT * FROM crm_audit_logs ORDER BY at DESC LIMIT ?')
+    .all(limit) as Array<Record<string, unknown>>;
+}
+
+export function runSlaWatcher(actor?: AdminAuthActor): { breached: number } {
+  ensureCrmSchema();
+  const open = listTickets({ limit: 500 }).filter(
+    (t) => !['حل‌شده', 'بسته‌شده'].includes(t.status) && t.slaState === 'breached'
+  );
+  const fakeActor: AdminAuthActor = actor || {
+    kind: 'env_admin',
+    role: 'admin',
+    permissions: ['admin.full'],
+    displayName: 'سیستم',
+    username: 'system',
+  };
+  for (const t of open) {
+    dispatchSmsEvent('sla_breach', { customerId: t.customerId, ticketPublicId: t.publicId }, fakeActor);
+    audit({
+      userId: 'system',
+      category: 'sla',
+      entity: 'crm_tickets',
+      recordUuid: t.publicId,
+      action: 'sla_breach',
+    });
+  }
+  return { breached: open.length };
+}
