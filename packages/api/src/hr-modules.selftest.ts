@@ -113,6 +113,18 @@ async function main() {
   assert(reports.ageStats && typeof reports.ageStats.sample === 'number', 'ageStats');
   assert(!reports.byGender.some((r) => r.name === 'نامشخص'), 'gender without نامشخص');
   assert(!reports.byMarital.some((r) => r.name === 'نامشخص'), 'marital without نامشخص');
+  assert(!reports.byProvince.some((r) => r.name === 'نامشخص'), 'province without نامشخص');
+  assert(typeof reports.hiredHeadcount === 'number', 'hiredHeadcount');
+  assert(typeof reports.provinceKnownHeadcount === 'number', 'provinceKnownHeadcount');
+  assert(typeof reports.unknownProvinceCount === 'number', 'unknownProvinceCount');
+  assert(
+    reports.hiredHeadcount === reports.provinceKnownHeadcount + reports.unknownProvinceCount,
+    'hired = known provinces + unknown'
+  );
+  assert(
+    reports.provinceKnownHeadcount === reports.byProvince.reduce((s, r) => s + r.count, 0),
+    'provinceKnownHeadcount matches byProvince sum'
+  );
   assert(Array.isArray(reports.departments), 'reports.departments');
   assert(reports.byDept.some((r) => typeof r.name === 'string' && typeof r.count === 'number'), 'byDept row shape');
 

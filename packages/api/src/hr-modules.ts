@@ -1400,7 +1400,10 @@ export function getReportsSummary(opts?: {
   const byDept = countBy(filtered.map((e) => e.department || ''));
   const byStatus = countBy(filtered.map((e) => e.contractStatus || ''));
   const byLocation = countBy(filtered.map((e) => e.location || ''));
-  const byProvince = countByKnown(filtered.map((e) => e.province || ''));
+  const provinceRaw = filtered.map((e) => (e.province || '').trim());
+  const unknownProvinceCount = provinceRaw.filter((p) => !p || p === 'نامشخص').length;
+  const byProvince = countByKnown(provinceRaw);
+  const provinceKnownHeadcount = byProvince.reduce((s, r) => s + r.count, 0);
   const byGender = countByKnown(filtered.map((e) => normalizeGender(e.gender)));
   const byMarital = countByKnown(filtered.map((e) => normalizeMarital(e.maritalStatus)));
   const byJobTitle = countByKnown(filtered.map((e) => e.jobTitle || ''));
@@ -1425,6 +1428,10 @@ export function getReportsSummary(opts?: {
     personnelTotal: filtered.length,
     /** Hired headcount in the selected Jalali window (same as filtered set). */
     hiredHeadcount: filtered.length,
+    /** Sum of byProvince counts (excludes empty / نامشخص). */
+    provinceKnownHeadcount,
+    /** Hired with empty or نامشخص province — explains hiredHeadcount − provinceKnownHeadcount. */
+    unknownProvinceCount,
     departments,
     filters: {
       department: opts?.department?.trim() || '',
