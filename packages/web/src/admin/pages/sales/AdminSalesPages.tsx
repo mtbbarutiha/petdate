@@ -212,7 +212,8 @@ export function AdminSalesCustomerDetailPage() {
   const [data, setData] = useState<{ customer: SalesCustomer; orders: { id: number; product: string; amount: number; at: string }[]; upgrades: SalesItem[] } | null>(null);
   useEffect(() => {
     if (!id) return;
-    void adminFetch(`/api/admin/sales/customers/${id}`).then(setData).catch(() => undefined);
+    void adminFetch<{ customer: SalesCustomer; orders: { id: number; product: string; amount: number; at: string }[]; upgrades: SalesItem[] }>(`/api/admin/sales/customers/${id}`)
+      .then(setData).catch(() => undefined);
   }, [id]);
   if (!data) return <div className="admin-page"><p>…</p></div>;
   const c = data.customer;
@@ -340,7 +341,7 @@ export function AdminSalesSettingsPage() {
         {canAdmin ? <button type="button" className="admin-btn" onClick={() => {
           const raw = window.prompt('منابع (با ویرگول)', settings.leadSources.join(','));
           if (!raw) return;
-          void adminFetch('/api/admin/sales/settings', { method: 'PATCH', body: JSON.stringify({ leadSources: raw.split(',').map((s) => s.trim()).filter(Boolean) }) }).then(setSettings);
+          void adminFetch<SalesSettings>('/api/admin/sales/settings', { method: 'PATCH', body: JSON.stringify({ leadSources: raw.split(',').map((s) => s.trim()).filter(Boolean) }) }).then(setSettings);
         }}>ویرایش</button> : null}
       </section>
       <section className="admin-card" style={{ marginTop: 12 }}><div className="admin-card-head"><h2>دلایل ازدست‌رفتن</h2></div><p>{settings.lostReasons.join(' · ')}</p></section>

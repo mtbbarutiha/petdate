@@ -846,10 +846,10 @@ export function getSalesReportSummary(): SalesReportSummary {
   };
 }
 
-export function getSalesPipeline(): { stages: { stage: number | 'lost'; label: string; items: SalesItem[]; value: number }[] } {
+export function getSalesPipeline(): { stages: { stage: number | "lost"; label: string; items: SalesItem[]; value: number }[] } {
   ensureSalesSchema();
   const items = listSalesItems({ limit: 500 }).items;
-  const stages = SALES_STAGES.map((label, stage) => {
+  const stages: { stage: number | 'lost'; label: string; items: SalesItem[]; value: number }[] = SALES_STAGES.map((label, stage) => {
     const bucket = items.filter((i) => i.stage === stage);
     return { stage: stage as number | 'lost', label, items: bucket.slice(0, 20), value: bucket.reduce((s, i) => s + i.value, 0) };
   });
