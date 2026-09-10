@@ -1,6 +1,6 @@
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import {
+import { ChevronDown,
   Activity, Bell, Briefcase, ClipboardList, FileText, Headset, LayoutDashboard, LineChart, LogOut, Mail, Menu, Package,
   PawPrint, PieChart, ScrollText, Settings, Shield, ShieldCheck, ShoppingBag, Stethoscope,
   Store, Target, Ticket, TrendingUp, UserPlus, UserRound, Users, Wallet, X, ClipboardCheck, BarChart3, Coins,
@@ -120,6 +120,41 @@ function AdminLayoutInner() {
   const [collapsed, setCollapsed] = useState(false);
   const [salesCounts, setSalesCounts] = useState<SalesNavCounts | null>(null);
   const groups = useMemo(() => visibleGroups(), []);
+  const activeGroupTitle = useMemo(() => {
+    for (const g of groups) {
+      for (const it of g.items) {
+        if (location.pathname === it.to) return g.title;
+        if (it.to !== '/admin' && it.to !== '/admin/dashboard' && location.pathname.startsWith(it.to + '/')) return g.title;
+        if (it.to !== '/admin/dashboard' && location.pathname.startsWith(it.to) && location.pathname.length > it.to.length) return g.title;
+      }
+    }
+    // prefix match longest
+    let best = '';
+    let bestLen = -1;
+    for (const g of groups) {
+      for (const it of g.items) {
+        if (location.pathname.startsWith(it.to) && it.to.length > bestLen) {
+          best = g.title;
+          bestLen = it.to.length;
+        }
+      }
+    }
+    return best || groups[0]?.title || '';
+  }, [groups, location.pathname]);
+
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+  useEffect(() => {
+    setOpenGroups((prev) => {
+      const next = { ...prev };
+      for (const g of groups) {
+        // گروه‌ها پیش‌فرض بسته؛ فقط گروه صفحهٔ فعال باز می‌ماند
+        if (next[g.title] === undefined) next[g.title] = false;
+      }
+      if (activeGroupTitle) next[activeGroupTitle] = true;
+      return next;
+    });
+  }, [groups, activeGroupTitle]);
+
   const refreshSalesCounts = useCallback(() => {
     if (!adminCan('sales.read') && !adminCan('admin.full')) {
       setSalesCounts(null);
@@ -155,27 +190,50 @@ function AdminLayoutInner() {
             </div>
           </div>
           <nav className="admin-nav" aria-label="منوی ادمین">
-            {groups.map((group) => (
-              <div key={group.title} className="admin-nav-group">
-                <div className="admin-nav-group-title">{group.title}</div>
-                {group.items.map((item) => {
-                  const badge = item.badgeKey && salesCounts ? Number(salesCounts[item.badgeKey] || 0) : 0;
-                  return (
-                    <NavLink
-                      key={item.to}
-                      to={item.to}
-                      end={item.to === '/admin/hr' || item.to === '/admin/sales' || item.to === '/admin/crm'}
-                      onClick={() => setMobileOpen(false)}
-                      className={({ isActive }) => `admin-nav-item${isActive ? ' active' : ''}`}
-                    >
-                      <item.icon size={18} strokeWidth={2} />
-                      <span className="admin-nav-item-label">{item.label}</span>
-                      {badge > 0 ? <span className="admin-nav-count">{formatNumFa(badge)}</span> : null}
-                    </NavLink>
-                  );
-                })}
-              </div>
-            ))}
+            {groups.map((group) => {
+              const isOpen = Boolean(openGroups[group.title]);
+              const groupBadge = group.items.reduce((sum, item) => {
+                const n = item.badgeKey && salesCounts ? Number(salesCounts[item.badgeKey] || 0) : 0;
+                return sum + (Number.isFinite(n) ? n : 0);
+              }, 0);
+              return (
+                <div
+                  key={group.title}
+                  className={`admin-nav-group${isOpen ? ' is-open' : ' is-collapsed'}${activeGroupTitle === group.title ? ' is-active-group' : ''}`}
+                >
+                  <button
+                    type="button"
+                    className="admin-nav-group-title"
+                    aria-expanded={isOpen}
+                    onClick={() => setOpenGroups((prev) => ({ ...prev, [group.title]: !prev[group.title] }))}
+                  >
+                    <span>{group.title}</span>
+                    <span className="admin-nav-group-meta">
+                      {groupBadge > 0 ? <span className="admin-nav-count">{formatNumFa(groupBadge)}</span> : null}
+                      <ChevronDown size={14} className={`admin-nav-chevron${isOpen ? ' is-open' : ''}`} aria-hidden />
+                    </span>
+                  </button>
+                  <div className="admin-nav-group-items" hidden={!isOpen && !collapsed}>
+                      {group.items.map((item) => {
+                        const badge = item.badgeKey && salesCounts ? Number(salesCounts[item.badgeKey] || 0) : 0;
+                        return (
+                          <NavLink
+                            key={item.to}
+                            to={item.to}
+                            end={item.to === '/admin/hr' || item.to === '/admin/sales' || item.to === '/admin/crm' || item.to === '/admin/dashboard'}
+                            onClick={() => setMobileOpen(false)}
+                            className={({ isActive }) => `admin-nav-item${isActive ? ' active' : ''}`}
+                          >
+                            <item.icon size={18} strokeWidth={2} />
+                            <span className="admin-nav-item-label">{item.label}</span>
+                            {badge > 0 ? <span className="admin-nav-count">{formatNumFa(badge)}</span> : null}
+                          </NavLink>
+                        );
+                      })}
+                  </div>
+                </div>
+              );
+            })}
           </nav>
           <div className="admin-sidebar-foot">
             <p className="admin-role-chip">{roleLabel}</p>
