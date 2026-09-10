@@ -115,6 +115,7 @@ function systemPrompt(kind: AiConsultKind): string {
       '۱–۲ پیام اول اگر لازم بود گرم باش و عکس پت را ببین/بخواه؛ ولی پروتکل را بلند نگو.',
       'ممنوع متا: «اول احوال بعد آموزش»، «برای اینکه درست راهنمایی کنم…»، «نسخه»، بازگو کردن سؤال کاربر.',
       'اول راهنمایی ملموس بده (۲–۴ قدم خودمونی)، بعد اگر لازم بود یک سؤال کوتاه. هی سؤال نپرس.',
+      'سن یا «خونه/بیرون» را اگر قبلاً پرسیدی یا کاربر جواب داد (مثل «همش تو خونست») دوباره نپرس؛ جواب را بگیر و تمرین را با همان تنظیم کن.',
       'لازم نیست هر پیام با سؤال تمام شود. بگو بره تمرین کنه و بگه چی شد.',
       'دانش (عنوان کتاب را مگر با «منبع» نگو): Donaldson Culture Clash، McConnell Puppy Primer، و روش تقویت مثبت/کلیکر.',
       'توله با بالغ فرق دارد؛ گربه با سگ یکی نیست. تنبیه بدنی/خفه/شوک/آلفا رول ممنوع.',
@@ -252,12 +253,121 @@ function assistantAlreadyAskedAge(ctx: AiConsultContext): boolean {
   );
 }
 
+/** Indoor / outdoor preference from a short owner clarifier answer. */
+export type HomeOrOutPref = 'home' | 'out' | 'both';
+
+/**
+ * Parse indoor/outdoor preference from owner replies like «همش تو خونست»، «بیرون»، «هر دو».
+ * Avoids matching problem statements (toilet training, leash pulling, etc.).
+ */
+export function extractHomeOrOutFromText(text: string): HomeOrOutPref | null {
+  const raw = String(text || '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!raw || raw.length > 80) return null;
+  // Problem descriptions that mention «خونه» are not location clarifiers.
+  if (
+    /دستشویی|ادرار|مدفوع|جیش|پی\s*پی|پیپی|litter|بستر|می‌کشه|میکشه|پارس|گاز|می‌پره|میپره|اضطراب|بشین|بمان|بیا|قلاده|غذا|ترس|می‌ترسه|میترسه/.test(
+      raw
+    )
+  ) {
+    return null;
+  }
+  if (/هر\s*دو|هردو|هم\s*خون[ه‌ه]?\s*هم\s*بیرون|هم\s*خانه\s*هم\s*بیرون/.test(raw)) {
+    return 'both';
+  }
+  if (
+    /همش\s*(?:تو\s*)?خون/.test(raw) ||
+    /همیشه\s*(?:تو\s*)?خون/.test(raw) ||
+    /فقط\s*(?:تو\s*)?خون/.test(raw) ||
+    /بیشتر\s*(?:تو\s*)?خون/.test(raw) ||
+    /^(?:تو\s*|توی\s*)?(?:خونه|خانه|آپارتمان|خونست|خونه‌ست)([\s،.!؟]*)$/.test(raw)
+  ) {
+    return 'home';
+  }
+  if (
+    /همش\s*(?:تو\s*)?بیرون/.test(raw) ||
+    /همیشه\s*(?:تو\s*)?بیرون/.test(raw) ||
+    /فقط\s*(?:تو\s*)?بیرون/.test(raw) ||
+    /بیشتر\s*(?:تو\s*)?بیرون/.test(raw) ||
+    /^(?:تو\s*|توی\s*)?(?:بیرون|پارک|کوچه)([\s،.!؟]*)$/.test(raw)
+  ) {
+    return 'out';
+  }
+  return null;
+}
+
 function assistantAlreadyAskedHomeOrOut(ctx: AiConsultContext): boolean {
   return (ctx.history ?? []).some(
     (h) =>
       h.role === 'assistant' &&
-      /خونه‌?ست یا بیرون|تو خونه|خونه می‌کشه|بیرون؟/.test(h.content)
+      /خونه‌?ست یا بیرون/.test(h.content)
   );
+}
+
+/** True if the owner already stated indoor/outdoor preference in this chat. */
+function conversationHasHomeOrOut(ctx: AiConsultContext): boolean {
+  const blobs = [
+    ...(ctx.history ?? []).filter((h) => h.role === 'user').map((h) => h.content),
+    ctx.userMessage ?? '',
+  ];
+  return blobs.some((t) => extractHomeOrOutFromText(t) != null);
+}
+
+function homeOrOutAck(pref: HomeOrOutPref): string {
+  // Avoid «بیشتر تو خونه‌ست» phrasing — that is the clarifier question itself.
+  if (pref === 'home') return `باشه، پس بیشتر وقت‌ها تو خونه‌س.`;
+  if (pref === 'out') return `باشه، پس بیشتر وقت‌ها بیرون می‌ره.`;
+  return `باشه، پس هم خونه هم بیرون.`;
+}
+
+/** Next-step coaching after the owner answers the home/out clarifier — never re-ask it. */
+function homeOrOutContextAdvice(ctx: AiConsultContext, pref: HomeOrOutPref): string {
+  const name = ctx.petName || 'پت';
+  const ack = homeOrOutAck(pref);
+  if (pref === 'home') {
+    return [
+      ack,
+      ``,
+      `اوکی، تمرین ${name} رو برای فضای خونه می‌چینم: زنگ در، رد شدن از راهرو، مهمون، صدای آشپزخونه — اینا محرک‌های معمول خونه‌ان.`,
+      ``,
+      `از ته راهرو یا یه اتاق آروم شروع کن؛ همون لحظه که آرومه آفرین بده و یه تشویقی کوچیک. اگر به‌هم ریخت، یه قدم عقب‌تر. جلسه کوتاه، بدون زور.`,
+      ``,
+      `برو یکی دوتا تکرار کوتاه بکن و بگو کدوم محرک بیشتر به‌همش می‌ریزه — همون رو دقیق‌تر تنظیم می‌کنیم.`,
+    ].join('\n');
+  }
+  if (pref === 'out') {
+    return [
+      ack,
+      ``,
+      `پس برای ${name} بیرون کار می‌کنیم: اول کوچه خلوت یا پارک خلوت، از فاصله‌ای که هنوز آرومه. قبل از اینکه قفل کنه جایزه بده.`,
+      ``,
+      `قلاده شل، جلسه کوتاه. اگه به‌هم ریخت فاصله رو زیاد کن و دوباره از همون‌جا که آرومه جایزه بده. زور نه.`,
+      ``,
+      `برو یه دور کوتاه بزن و بگو کجا بیشتر سخت می‌شه — همون‌جا تنظیم می‌کنیم.`,
+    ].join('\n');
+  }
+  return [
+    ack,
+    ``,
+    `اول اعتبار رو تو خونه بساز، بعد همون الگو رو آروم‌آروم ببر بیرون. هر بار فقط یک چیز رو سخت‌تر کن.`,
+    ``,
+    `برو یه دور کوتاه تمرین کن و بگو کجا بیشتر گیر می‌کنی — همون رو اولویت می‌دیم.`,
+  ].join('\n');
+}
+
+/** Closing ask for unknown-topic coaching — never repeat an already-asked/answered clarifier. */
+function nextUnknownClarifierAsk(ctx: AiConsultContext): string {
+  const ageKnown =
+    (ctx.petAgeMonths != null && Number.isFinite(ctx.petAgeMonths)) || conversationHasPetAge(ctx);
+  const homeKnown = conversationHasHomeOrOut(ctx);
+  if (!ageKnown && !assistantAlreadyAskedAge(ctx)) {
+    return `تقریباً چندساله‌ست؟`;
+  }
+  if (!homeKnown && !assistantAlreadyAskedHomeOrOut(ctx)) {
+    return `بگو بیشتر تو خونه‌ست یا بیرون؟`;
+  }
+  return `برو یه دور کوتاه تمرین کن و بگو چی شد — همین‌جا تنظیمش می‌کنیم.`;
 }
 
 function ageAwareAside(ctx: AiConsultContext): string {
@@ -816,8 +926,9 @@ function isShortTrainerFollowUp(message: string): boolean {
 
 function isClarifyingAnswer(message: string): boolean {
   const normalized = message.replace(/\s+/g, ' ').trim();
-  if (!normalized || normalized.length > 72) return false;
+  if (!normalized || normalized.length > 80) return false;
   if (extractPetAgeMonthsFromText(normalized) != null) return true;
+  if (extractHomeOrOutFromText(normalized) != null) return true;
   if (isShortTrainerFollowUp(normalized)) return true;
   return /^(خونه|خانه|بیرون|هر\s*دو|هردو|پارک|کوچه|آپارتمان|بله|آره|نه|نمیاد|میاد)([\s،.!؟]*)$/i.test(
     normalized
@@ -882,6 +993,22 @@ function trainerFollowUpReply(ctx: AiConsultContext): string | null {
   const q = ctx.userMessage?.trim() ?? '';
   const history = ctx.history ?? [];
   if (!history.length) return null;
+
+  const homePref = extractHomeOrOutFromText(q);
+  // Owner just answered indoor/outdoor — acknowledge and advance; never re-ask.
+  if (homePref && (assistantAlreadyAskedHomeOrOut(ctx) || isClarifyingAnswer(q))) {
+    const lastUser = [...history].reverse().find((h) => h.role === 'user')?.content?.trim();
+    // Only deepen a topic the USER raised — ignore topics inferred from assistant prose.
+    const topic = lastUser ? findTrainerTopic(lastUser) : null;
+    if (topic) {
+      const tracked = findTrainerTopicFromHistory({ ...ctx, userMessage: lastUser || '' });
+      const depth = Math.max(2, (tracked?.depth ?? 1) + 1);
+      return formatTrainerTopicReply(ctx, topic, depth, {
+        followUpLabel: `${homeOrOutAck(homePref)} بریم ادامه بدیم و عمیق‌ترش کنیم.`,
+      });
+    }
+    return homeOrOutContextAdvice(ctx, homePref);
+  }
 
   const lastUser = [...history].reverse().find((h) => h.role === 'user')?.content?.trim();
   if ((isShortTrainerFollowUp(q) || isClarifyingAnswer(q)) && lastUser) {
@@ -1091,23 +1218,13 @@ export function offlineAiAdvice(ctx: AiConsultContext): string {
           })
         );
       }
-      const ageKnown =
-        (ctx.petAgeMonths != null && Number.isFinite(ctx.petAgeMonths)) ||
-        conversationHasPetAge(ctx);
-      const lightAsk = ageKnown
-        ? assistantAlreadyAskedHomeOrOut(ctx)
-          ? `بگو تمرین چطور پیش رفت تا دقیق‌تر تنظیمش کنیم.`
-          : `بیشتر تو خونه‌ست یا بیرون؟`
-        : assistantAlreadyAskedAge(ctx)
-          ? `بگو تمرین چطور پیش رفت تا دقیق‌تر تنظیمش کنیم.`
-          : `تقریباً چندساله‌ست؟`;
       return withTone(
         [
           q
             ? `ببین فعلاً بدون جزئیات بیشتر هم معمولاً از فاصلهٔ امن و تقویت مثبت شروع می‌کنم — زور و تنبیه نه.`
             : `بگو الان کجا گیر کردی تا همون رو باز کنیم.`,
           ``,
-          lightAsk,
+          nextUnknownClarifierAsk(ctx),
         ].join('\n')
       );
     }
@@ -1120,15 +1237,11 @@ export function offlineAiAdvice(ctx: AiConsultContext): string {
       petAgeMonths: ctx.petAgeMonths,
     });
     if (q) {
-      const lightAsk =
-        ctx.petAgeMonths != null && Number.isFinite(ctx.petAgeMonths)
-          ? `بیشتر تو خونه‌ست یا بیرون؟`
-          : `چند سالشه؟`;
       return withTone(
         [
           greet,
           ``,
-          `فعلاً یه نکتهٔ کلی: اول فاصله و جایزه، نه زور. ${lightAsk}`,
+          `فعلاً یه نکتهٔ کلی: اول فاصله و جایزه، نه زور. ${nextUnknownClarifierAsk(ctx)}`,
         ].join('\n')
       );
     }
@@ -1196,10 +1309,10 @@ async function callOpenAiCompatible(ctx: AiConsultContext): Promise<string | nul
       : '';
     const followHint =
       ctx.kind === 'trainer' && (ctx.history?.length ?? 0) > 0
-        ? '\n\n(یادآوری: روی موضوع جاری عمیق‌تر برو؛ سؤال کاربر را تکرار/بازنویسی نکن؛ مستقیم جواب بده. از «نسخه» و متای «برای اینکه درست راهنمایی کنم…» استفاده نکن؛ مثل مربی خودمونی چت کن نه جزوه؛ اول راهنمایی ملموس بده؛ سؤال تکراری نپرس؛ لازم نیست هر پیام سؤال داشته باشد.)' +
+        ? '\n\n(یادآوری: روی موضوع جاری عمیق‌تر برو؛ سؤال کاربر را تکرار/بازنویسی نکن؛ مستقیم جواب بده. از «نسخه» و متای «برای اینکه درست راهنمایی کنم…» استفاده نکن؛ مثل مربی خودمونی چت کن نه جزوه؛ اول راهنمایی ملموس بده؛ سؤال تکراری نپرس — مخصوصاً «خونه‌ست یا بیرون» و سن را اگر جواب داده دوباره نپرس؛ لازم نیست هر پیام سؤال داشته باشد.)' +
           onlineUnknownHint
         : ctx.kind === 'trainer'
-          ? '\n\n(یادآوری: سؤال کاربر را تکرار نکن؛ مستقیم جواب بده. «نسخه» و متای «برای اینکه درست/دقیق راهنمایی کنم باید بدونم…» ممنوع؛ گفتگو را ادامه بده؛ سن/محیط را اگر قبلاً پرسیدی یا جواب داده دوباره نپرس.)' +
+          ? '\n\n(یادآوری: سؤال کاربر را تکرار نکن؛ مستقیم جواب بده. «نسخه» و متای «برای اینکه درست/دقیق راهنمایی کنم باید بدونم…» ممنوع؛ گفتگو را ادامه بده؛ سن/خونه-بیرون را اگر قبلاً پرسیدی یا جواب داده دوباره نپرس.)' +
             onlineUnknownHint
           : onlineUnknownHint;
     messages.push({ role: 'user', content: `${prefix}${userText}${followHint}` });
@@ -1332,6 +1445,14 @@ export function trainerQuestionUnknownOffline(ctx: AiConsultContext): boolean {
       ?.content?.trim();
     if (lastUser && findTrainerTopic(lastUser)) return false;
     if (lastTrainerTopicFromHistory(ctx)) return false;
+    // Answering age / home-out after we asked — stay on coaching path, don't dump unknown template.
+    if (assistantAlreadyAskedHomeOrOut(ctx) || assistantAlreadyAskedAge(ctx)) return false;
+    if (
+      (ctx.history?.length ?? 0) > 0 &&
+      (extractHomeOrOutFromText(q) != null || extractPetAgeMonthsFromText(q) != null)
+    ) {
+      return false;
+    }
   }
   return !findTrainerTopic(q);
 }
@@ -1348,25 +1469,29 @@ export function offlineUnknownBestEffortReply(ctx: AiConsultContext): string {
   const q = (ctx.userMessage || '').trim();
   const withTone = (text: string) =>
     ctx.userTone ? applyOfflineToneStyle(text, ctx.userTone) : text;
+
+  // User just answered the indoor/outdoor clarifier — acknowledge and advance (never re-ask).
+  const answeredNow = extractHomeOrOutFromText(q);
+  if (answeredNow && ((ctx.history?.length ?? 0) > 0 || assistantAlreadyAskedHomeOrOut(ctx))) {
+    return withTone(homeOrOutContextAdvice(ctx, answeredNow));
+  }
+
   const fearish = /ترس|می‌ترسه|میترسه|یخ|قفل|جیغ|زوزه|فرار|وحشت|دوچرخه|ماشین|بلند|صدا/.test(q);
+  const closing = nextUnknownClarifierAsk(ctx);
   const body = fearish
     ? [
         `باشه، برای ${name} از فاصلهٔ امن شروع کن — اون محرک رو از دور ببینید، قبل از اینکه بترسه آفرین بده و یه تشویقی کوچیک، بعد آروم فاصله رو کم کن. زور و تنبیه نه.`,
         ``,
         `جلسه کوتاه باشه. اگر قفل کرد یا زوزه کشید، یه قدم عقب‌تر برگرد و دوباره از جایی که آرومه جایزه بده.`,
         ``,
-        ctx.petAgeMonths != null && Number.isFinite(ctx.petAgeMonths)
-          ? `بگو بیشتر تو خونه‌ست یا بیرون تا دقیق‌تر تنظیمش کنیم.`
-          : `تقریباً چندساله‌ست؟`,
+        closing,
       ].join('\n')
     : [
         `باشه، برای ${name} فعلاً از ساده‌ترین حالت امن شروع می‌کنیم: فاصله، جایزه برای آرومی، بدون زور.`,
         ``,
         `یه تمرین کوتاه همین الان: محرک یا موقعیت رو از دور نگه دار، همون لحظه که آرومه آفرین بده و تشویقی بده. اگر به‌هم ریخت، فاصله رو بیشتر کن.`,
         ``,
-        ctx.petAgeMonths != null && Number.isFinite(ctx.petAgeMonths)
-          ? `بگو بیشتر تو خونه‌ست یا بیرون؟`
-          : `تقریباً چندساله‌ست؟`,
+        closing,
       ].join('\n');
   return withTone(body);
 }

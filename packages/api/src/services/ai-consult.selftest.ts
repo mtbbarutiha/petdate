@@ -451,10 +451,86 @@ async function main() {
   assert(!/چندسال|چند سال/.test(ageTurn3.text), 'turn 3 must not re-ask age');
   assert(ageTurn2.text !== ageTurn3.text, 'later turns should keep advancing');
 
-  const { extractPetAgeMonthsFromText } = await import('./ai-consult');
+  const { extractPetAgeMonthsFromText, extractHomeOrOutFromText } = await import('./ai-consult');
   assert(extractPetAgeMonthsFromText('۳ سالشه') === 36, 'parse 3 years');
   assert(extractPetAgeMonthsFromText('18 ماهه') === 18, 'parse 18 months');
+  assert(extractHomeOrOutFromText('همش تو خونست') === 'home', 'parse همش تو خونست → home');
+  assert(extractHomeOrOutFromText('خونه') === 'home', 'parse خونه → home');
+  assert(extractHomeOrOutFromText('بیرون') === 'out', 'parse بیرون → out');
+  assert(extractHomeOrOutFromText('هر دو') === 'both', 'parse هر دو → both');
+  assert(
+    extractHomeOrOutFromText('دستشویی توی خونه می‌کنه') == null,
+    'toilet problem must not count as home clarifier'
+  );
 
+  // Screenshot bug: ask indoor/outdoor → user «همش تو خونست» → must NOT re-ask; acknowledge home.
+  {
+    const fearQ = 'سگم وقتی ماشین رد میشه یخ میزنه و زوزه عجیب میکشه بدون دلیل مشخص';
+    const homeTurn1 = await generateAiConsultAdvice({
+      kind: 'trainer',
+      petName: 'Teddy',
+      petAgeMonths: 24,
+      userMessage: fearQ,
+      history: [],
+    });
+    assert(
+      /خونه‌?ست یا بیرون/.test(homeTurn1.text),
+      'with known age, unknown topic may ask indoor/outdoor once'
+    );
+    const homeTurn2 = await generateAiConsultAdvice({
+      kind: 'trainer',
+      petName: 'Teddy',
+      petAgeMonths: 24,
+      userMessage: 'همش تو خونست',
+      history: [
+        { role: 'user', content: fearQ },
+        { role: 'assistant', content: homeTurn1.text },
+      ],
+    });
+    assert(
+      !/خونه‌?ست یا بیرون/.test(homeTurn2.text),
+      'after همش تو خونست must not re-ask indoor/outdoor'
+    );
+    assert(
+      /خون|خانه|آپارتمان|راهرو|زنگ|مهمون|خونه/.test(homeTurn2.text),
+      'home answer must reference indoor/home context'
+    );
+    assert(
+      /باشه|پس|اوکی|تنظیم/.test(homeTurn2.text),
+      'home answer should acknowledge and advance'
+    );
+    assert(
+      !trainerQuestionUnknownOffline({
+        kind: 'trainer',
+        petName: 'Teddy',
+        petAgeMonths: 24,
+        userMessage: 'همش تو خونست',
+        history: [
+          { role: 'user', content: fearQ },
+          { role: 'assistant', content: homeTurn1.text },
+        ],
+      }),
+      'همش تو خونست after clarifier is not an unknown topic'
+    );
+
+    // Second pass through best-effort template must also not echo the clarifier.
+    const { offlineUnknownBestEffortReply } = await import('./ai-consult');
+    const bestEffortAfter = offlineUnknownBestEffortReply({
+      kind: 'trainer',
+      petName: 'Teddy',
+      petAgeMonths: 24,
+      userMessage: 'همش تو خونست',
+      history: [
+        { role: 'user', content: fearQ },
+        { role: 'assistant', content: homeTurn1.text },
+      ],
+    });
+    assert(
+      !/خونه‌?ست یا بیرون/.test(bestEffortAfter),
+      'offlineUnknownBestEffortReply must not re-ask after home answer'
+    );
+    assert(/خون|راهرو|زنگ|مهمون|خونه/.test(bestEffortAfter), 'best-effort after home uses indoor tips');
+  }
 
   const supportTurn1 = await generateAiConsultAdvice({
     kind: 'support',
