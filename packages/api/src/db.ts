@@ -370,36 +370,31 @@ function backfillPublicIds(): void {
   backfillEntityPublicIds(
     'vet_consultations',
     makeConsultPublicId,
-    (id, publicId) => consultPublicIdOf({ id, publicId })
+    (id, publicId) => consultPublicIdOf({ id, publicId }),
+    'idx_vet_consultations_public_id'
   );
   backfillEntityPublicIds(
     'playdate_requests',
     makePlaydatePublicId,
-    (id, publicId) => playdatePublicIdOf({ id, publicId })
+    (id, publicId) => playdatePublicIdOf({ id, publicId }),
+    'idx_playdate_requests_public_id'
   );
   backfillEntityPublicIds(
     'payment_orders',
     makePaymentPublicId,
-    (id, publicId) => paymentPublicIdOf({ id, publicId })
+    (id, publicId) => paymentPublicIdOf({ id, publicId }),
+    'idx_payment_orders_public_id'
   );
 
   db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_public_id ON users (public_id)');
   db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_pets_public_id ON pets (public_id)');
-  db.exec(
-    'CREATE UNIQUE INDEX IF NOT EXISTS idx_vet_consultations_public_id ON vet_consultations (public_id)'
-  );
-  db.exec(
-    'CREATE UNIQUE INDEX IF NOT EXISTS idx_playdate_requests_public_id ON playdate_requests (public_id)'
-  );
-  db.exec(
-    'CREATE UNIQUE INDEX IF NOT EXISTS idx_payment_orders_public_id ON payment_orders (public_id)'
-  );
 }
 
 function backfillEntityPublicIds(
   table: string,
   make: (id: number) => string,
-  canonicalOf: (id: number, publicId: string | null) => string
+  canonicalOf: (id: number, publicId: string | null) => string,
+  uniqueIndexName?: string
 ): void {
   try {
     const cols = (
@@ -426,6 +421,9 @@ function backfillEntityPublicIds(
       if (canonical !== String(row.public_id).trim()) {
         updAll.run(canonical, Number(row.id));
       }
+    }
+    if (uniqueIndexName) {
+      db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS ${uniqueIndexName} ON ${table} (public_id)`);
     }
   } catch (err) {
     console.warn(`public_id backfill for ${table} skipped:`, (err as Error).message);
