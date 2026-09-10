@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { adminFetch, formatNumFa } from '../api';
+import { AdminModal } from '../AdminModal';
 
 type Ann = {
   id: number;
@@ -13,6 +14,8 @@ type Ann = {
 export function AdminContentPage() {
   const [items, setItems] = useState<Ann[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [form, setForm] = useState({ title: '', body: '', placement: 'landing', active: true });
 
   const load = useCallback(async () => {
@@ -31,15 +34,19 @@ export function AdminContentPage() {
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
+    setBusy(true);
     try {
       await adminFetch('/api/admin/content/announcements', {
         method: 'POST',
         body: JSON.stringify(form),
       });
       setForm({ title: '', body: '', placement: 'landing', active: true });
+      setOpen(false);
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'خطا');
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -72,50 +79,21 @@ export function AdminContentPage() {
           <h1>محتوا و اعلان‌ها</h1>
           <p>اسنیپت‌های لندینگ / بنر — {formatNumFa(items.length)} مورد</p>
         </div>
+        <button
+          type="button"
+          className="admin-btn admin-btn--primary"
+          onClick={() => {
+            setForm({ title: '', body: '', placement: 'landing', active: true });
+            setOpen(true);
+          }}
+        >
+          اعلان جدید
+        </button>
       </header>
 
       {error ? <p className="admin-error">{error}</p> : null}
 
-      <form className="admin-card admin-form" onSubmit={(e) => void save(e)}>
-        <div className="admin-form-grid">
-          <label className="admin-form-span">
-            <span className="form-label">عنوان</span>
-            <input
-              className="form-input"
-              required
-              value={form.title}
-              onChange={(e) => setForm({ ...form, title: e.target.value })}
-            />
-          </label>
-          <label className="admin-form-span">
-            <span className="form-label">متن</span>
-            <textarea
-              className="form-input"
-              rows={3}
-              value={form.body}
-              onChange={(e) => setForm({ ...form, body: e.target.value })}
-            />
-          </label>
-          <label>
-            <span className="form-label">جایگاه</span>
-            <select
-              className="admin-select"
-              value={form.placement}
-              onChange={(e) => setForm({ ...form, placement: e.target.value })}
-            >
-              <option value="landing">لندینگ</option>
-              <option value="shop">فروشگاه</option>
-              <option value="app">اپ</option>
-              <option value="bot">ربات</option>
-            </select>
-          </label>
-        </div>
-        <button type="submit" className="admin-btn admin-btn--primary" style={{ marginTop: 12 }}>
-          انتشار اعلان
-        </button>
-      </form>
-
-      <div className="admin-table-wrap admin-card" style={{ marginTop: 16 }}>
+      <div className="admin-table-wrap admin-card">
         <table className="admin-table">
           <thead>
             <tr>
@@ -160,6 +138,54 @@ export function AdminContentPage() {
           </tbody>
         </table>
       </div>
+
+      <AdminModal
+        open={open}
+        title="اعلان جدید"
+        onClose={() => !busy && setOpen(false)}
+        size="md"
+        as="form"
+        onSubmit={(e) => void save(e)}
+        busy={busy}
+        footer={
+          <>
+            <button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>انتشار</button>
+            <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setOpen(false)}>انصراف</button>
+          </>
+        }
+      >
+        <label className="admin-form-span">
+          <span className="form-label">عنوان</span>
+          <input
+            className="form-input"
+            required
+            value={form.title}
+            onChange={(e) => setForm({ ...form, title: e.target.value })}
+          />
+        </label>
+        <label className="admin-form-span">
+          <span className="form-label">متن</span>
+          <textarea
+            className="form-input"
+            rows={3}
+            value={form.body}
+            onChange={(e) => setForm({ ...form, body: e.target.value })}
+          />
+        </label>
+        <label>
+          <span className="form-label">جایگاه</span>
+          <select
+            className="admin-select"
+            value={form.placement}
+            onChange={(e) => setForm({ ...form, placement: e.target.value })}
+          >
+            <option value="landing">لندینگ</option>
+            <option value="shop">فروشگاه</option>
+            <option value="app">اپ</option>
+            <option value="bot">ربات</option>
+          </select>
+        </label>
+      </AdminModal>
     </div>
   );
 }

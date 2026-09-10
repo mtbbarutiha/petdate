@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Navigate, useParams } from 'react-router-dom';
 import { SHOP_BRANDS, SHOP_CATEGORIES } from '../../data/shopCatalog';
 import { adminFetch } from '../api';
+import { AdminModal } from '../AdminModal';
 
 type FormState = {
   id: string;
@@ -78,16 +79,25 @@ function linesToList(raw: string): string[] {
     .filter(Boolean);
 }
 
-export function AdminShopProductFormPage() {
-  const { id } = useParams();
-  const isNew = !id || id === 'new';
-  const navigate = useNavigate();
+type ModalProps = {
+  open: boolean;
+  productId?: string | null;
+  onClose: () => void;
+  onSaved: () => void;
+};
+
+export function AdminShopProductFormModal({ open, productId, onClose, onSaved }: ModalProps) {
+  const isNew = !productId || productId === 'new';
+  const id = productId && productId !== 'new' ? productId : undefined;
   const [form, setForm] = useState<FormState>(empty);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
-    if (isNew) return;
+    if (isNew) {
+      setForm(empty);
+      return;
+    }
     try {
       const prod = await adminFetch<Record<string, unknown>>(`/api/admin/shop/products/${id}`);
       const params =
@@ -169,8 +179,10 @@ export function AdminShopProductFormPage() {
   }, [id, isNew]);
 
   useEffect(() => {
+    if (!open) return;
+    setError(null);
     void load();
-  }, [load]);
+  }, [load, open]);
 
   const set = (patch: Partial<FormState>) => setForm((f) => ({ ...f, ...patch }));
 
@@ -257,7 +269,8 @@ export function AdminShopProductFormPage() {
     try {
       if (isNew) await adminFetch('/api/admin/shop/products', { method: 'POST', body: JSON.stringify(payload) });
       else await adminFetch(`/api/admin/shop/products/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
-      navigate('/admin/shop/products');
+      onSaved();
+      onClose();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'خطا');
     } finally {
@@ -266,18 +279,33 @@ export function AdminShopProductFormPage() {
   };
 
   return (
-    <div className="admin-page">
-      <header className="admin-header">
-        <div>
-          <h1>{isNew ? 'محصول جدید' : 'ویرایش محصول'}</h1>
-          <p>فیلدهای صفحه محصول (سبک دیجی‌کالا) + کاتالوگ شاپ</p>
-        </div>
-        <Link to="/admin/shop/products" className="admin-btn admin-btn--ghost">
-          بازگشت
-        </Link>
-      </header>
+    <AdminModal
+      open={open}
+      title={isNew ? 'محصول جدید' : 'ویرایش محصول'}
+      onClose={onClose}
+      size="xl"
+      as="form"
+      onSubmit={(e) => void save(e)}
+      busy={busy}
+      footer={
+        <>
+          <label className="admin-check-inline">
+            <input type="checkbox" checked={form.inStock} onChange={(e) => set({ inStock: e.target.checked })} /> موجود
+          </label>
+          <label className="admin-check-inline">
+            <input type="checkbox" checked={form.featured} onChange={(e) => set({ featured: e.target.checked })} /> ویژه
+          </label>
+          <button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>
+            {busy ? '…' : 'ذخیره'}
+          </button>
+          <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={onClose}>
+            انصراف
+          </button>
+        </>
+      }
+    >
       {error ? <p className="admin-error">{error}</p> : null}
-      <form className="admin-card admin-form" onSubmit={(e) => void save(e)}>
+      <p className="admin-muted" style={{ marginTop: 0 }}>فیلدهای صفحه محصول + کاتالوگ شاپ</p>
         <div className="admin-form-grid">
           <label>
             <span className="form-label">عنوان</span>
@@ -531,18 +559,15 @@ export function AdminShopProductFormPage() {
             />
           </label>
         </div>
-        <div className="admin-row-actions" style={{ marginTop: 12 }}>
-          <label className="admin-check-inline">
-            <input type="checkbox" checked={form.inStock} onChange={(e) => set({ inStock: e.target.checked })} /> موجود
-          </label>
-          <label className="admin-check-inline">
-            <input type="checkbox" checked={form.featured} onChange={(e) => set({ featured: e.target.checked })} /> ویژه
-          </label>
-          <button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>
-            {busy ? '…' : 'ذخیره'}
-          </button>
-        </div>
-      </form>
-    </div>
+    </AdminModal>
   );
+}
+
+export function AdminShopProductFormPage() {
+  const { id } = useParams();
+  const to =
+    !id || id === 'new'
+      ? '/admin/shop/products?new=1'
+      : `/admin/shop/products?edit=${encodeURIComponent(id)}`;
+  return <Navigate to={to} replace />;
 }
