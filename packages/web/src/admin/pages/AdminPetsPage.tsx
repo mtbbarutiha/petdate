@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Search, Trash2 } from 'lucide-react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Plus, Search, Trash2 } from 'lucide-react';
 import {
   PET_SPECIES_LABELS,
   petPublicIdOf,
@@ -9,6 +10,7 @@ import {
 import { adminFetch, formatNumFa } from '../api';
 import { AdminIdChip } from '../AdminIds';
 import { AdminEntityCell, AdminThumb } from '../AdminThumb';
+import { AdminPetFormModal } from './AdminPetFormPage';
 
 function genderFa(g?: string | null): string | null {
   if (!g) return null;
@@ -24,6 +26,16 @@ export function AdminPetsPage() {
   const [q, setQ] = useState('');
   const [species, setSpecies] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+
+  const modalNew = searchParams.get('new') === '1';
+  const editRaw = searchParams.get('edit');
+  const editId = editRaw ? Number(editRaw) : null;
+  const modalOpen = modalNew || (editId != null && Number.isFinite(editId));
+
+  const closeModal = () => navigate('/admin/pets', { replace: true });
+
   const load = useCallback(async () => {
     try {
       const qs = new URLSearchParams();
@@ -41,7 +53,12 @@ export function AdminPetsPage() {
   };
   return (
     <div className="admin-page">
-      <header className="admin-header"><div><h1>مدیریت پت‌ها</h1><p>{formatNumFa(total)} پت · جدول pets</p></div></header>
+      <header className="admin-header">
+        <div><h1>مدیریت پت‌ها</h1><p>{formatNumFa(total)} پت · جدول pets</p></div>
+        <button type="button" className="admin-btn admin-btn--primary" onClick={() => navigate('/admin/pets?new=1')}>
+          <Plus size={16} /> پت جدید
+        </button>
+      </header>
       <div className="admin-toolbar">
         <div className="admin-search"><Search size={16} /><input placeholder="نام، آیدی PD-P، نژاد، شهر…" value={q} onChange={(e) => setQ(e.target.value)} /></div>
         <select className="admin-select" value={species} onChange={(e) => setSpecies(e.target.value)}>
@@ -99,6 +116,13 @@ export function AdminPetsPage() {
           {!pets.length ? <tr><td colSpan={7} className="admin-muted">پتی یافت نشد</td></tr> : null}
         </tbody>
       </table></div>
+
+      <AdminPetFormModal
+        open={modalOpen}
+        editId={modalNew ? null : editId}
+        onClose={closeModal}
+        onSaved={() => void load()}
+      />
     </div>
   );
 }

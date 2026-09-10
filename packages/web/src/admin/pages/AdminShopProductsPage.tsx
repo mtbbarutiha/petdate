@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Plus, RefreshCw, Search, Trash2 } from 'lucide-react';
 import { SHOP_CATEGORIES, SHOP_PRODUCTS } from '../../data/shopCatalog';
 import { adminFetch, formatNumFa, formatTomanFa } from '../api';
+import { AdminShopProductFormModal } from './AdminShopProductFormPage';
 
 type Product = {
   id: string; slug: string; title: string; brandId: string; categorySlug: string;
@@ -15,6 +16,17 @@ export function AdminShopProductsPage() {
   const [error, setError] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+
+  const modalNew = searchParams.get('new') === '1';
+  const editId = searchParams.get('edit');
+  const modalOpen = modalNew || Boolean(editId);
+
+  const closeModal = () => navigate('/admin/shop/products', { replace: true });
+  const openNew = () => navigate('/admin/shop/products?new=1');
+  const openEdit = (id: string) => navigate(`/admin/shop/products?edit=${encodeURIComponent(id)}`);
+
   const load = useCallback(async () => {
     try {
       const qs = q.trim() ? `?q=${encodeURIComponent(q.trim())}` : '';
@@ -55,7 +67,9 @@ export function AdminShopProductsPage() {
           <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => void syncCatalog()}>
             <RefreshCw size={16} /> سینک از کاتالوگ وب
           </button>
-          <Link to="/admin/shop/products/new" className="admin-btn admin-btn--primary"><Plus size={16} /> محصول جدید</Link>
+          <button type="button" className="admin-btn admin-btn--primary" onClick={openNew}>
+            <Plus size={16} /> محصول جدید
+          </button>
         </div>
       </header>
       <div className="admin-toolbar">
@@ -71,13 +85,18 @@ export function AdminShopProductsPage() {
           {products.map((prod) => (
             <tr key={prod.id}>
               <td>{prod.image ? <img src={prod.image} alt="" className="admin-thumb" /> : '—'}</td>
-              <td><Link to={`/admin/shop/products/${prod.id}`}><strong>{prod.title}</strong></Link><div className="admin-mono">{prod.slug}</div></td>
+              <td>
+                <button type="button" className="admin-btn admin-btn--ghost" style={{ paddingInline: 0 }} onClick={() => openEdit(prod.id)}>
+                  <strong>{prod.title}</strong>
+                </button>
+                <div className="admin-mono">{prod.slug}</div>
+              </td>
               <td>{prod.categorySlug}</td>
               <td>{formatTomanFa(prod.priceToman)}</td>
               <td>{prod.inStock ? <span className="admin-badge admin-badge--info">{formatNumFa(prod.stockQty)}</span> : <span className="admin-badge admin-badge--error">ناموجود</span>}</td>
               <td>
                 <div className="admin-row-actions">
-                  <Link to={`/admin/shop/products/${prod.id}`} className="admin-btn admin-btn--ghost">ویرایش</Link>
+                  <button type="button" className="admin-btn admin-btn--ghost" onClick={() => openEdit(prod.id)}>ویرایش</button>
                   <button type="button" className="admin-btn admin-btn--danger" onClick={() => void remove(prod.id)}><Trash2 size={14} /></button>
                 </div>
               </td>
@@ -85,6 +104,13 @@ export function AdminShopProductsPage() {
           ))}
         </tbody>
       </table></div>
+
+      <AdminShopProductFormModal
+        open={modalOpen}
+        productId={modalNew ? null : editId}
+        onClose={closeModal}
+        onSaved={() => void load()}
+      />
     </div>
   );
 }

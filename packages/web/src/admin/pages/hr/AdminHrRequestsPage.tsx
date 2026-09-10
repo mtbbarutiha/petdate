@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import type { HrEmployee, HrRequest } from '@petdate/shared';
 import { HR_REQUEST_TYPES, nextRequestStatus } from '@petdate/shared';
 import { adminFetch, formatNumFa } from '../../api';
 import { adminCan } from '../../auth';
+import { AdminModal } from '../../AdminModal';
 
 type Balance = { employeeId: number; name: string; personnelCode: string; annual: number; used: number; remaining: number };
 
@@ -11,6 +12,9 @@ export function AdminHrRequestsPage() {
   const [employees, setEmployees] = useState<HrEmployee[]>([]);
   const [balances, setBalances] = useState<Balance[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [form, setForm] = useState({ employeeId: '', type: 'مرخصی', days: '1' });
   const canWrite = adminCan('hr.write');
   const load = useCallback(async () => {
     try {
@@ -25,24 +29,31 @@ export function AdminHrRequestsPage() {
   useEffect(() => { void load(); }, [load]);
   const empName = (id: number) => { const e = employees.find((x) => x.id === id); return e ? `${e.firstName} ${e.lastName}` : `#${id}`; };
 
-  const create = async () => {
+  const create = async (e: FormEvent) => {
+    e.preventDefault();
     if (!canWrite || !employees.length) return;
-    const employeeId = Number(window.prompt(`شناسه همکار (مثلاً ${employees[0].id})`));
+    const employeeId = Number(form.employeeId || employees[0].id);
     if (!Number.isFinite(employeeId)) return;
-    const type = window.prompt(`نوع (${HR_REQUEST_TYPES.slice(0, 3).join(' / ')}…)`, 'مرخصی');
-    if (!type) return;
-    const days = Number(window.prompt('تعداد روز', '1') || 0);
+    setBusy(true);
     try {
-      await adminFetch('/api/admin/hr/requests', { method: 'POST', body: JSON.stringify({ employeeId, type, days }) });
+      await adminFetch('/api/admin/hr/requests', {
+        method: 'POST',
+        body: JSON.stringify({ employeeId, type: form.type, days: Number(form.days) || 0 }),
+      });
+      setOpen(false);
       await load();
     } catch (err) { setError(err instanceof Error ? err.message : 'خطا'); }
+    finally { setBusy(false); }
   };
 
   return (
     <div className="admin-page">
       <header className="admin-header">
         <div><h1>درخواست‌های کارکنان</h1><p>گردش‌کار خطی · مانده مرخصی سالانه ۲۶ روز</p></div>
-        {canWrite ? <button type="button" className="admin-btn" onClick={() => void create()}>+ درخواست</button> : null}
+        {canWrite ? <button type="button" className="admin-btn" onClick={() => {
+          setForm({ employeeId: employees[0] ? String(employees[0].id) : '', type: 'مرخصی', days: '1' });
+          setOpen(true);
+        }}>+ درخواست</button> : null}
       </header>
       {error ? <p className="admin-error">{error}</p> : null}
       <div className="admin-table-wrap">
@@ -76,6 +87,26 @@ export function AdminHrRequestsPage() {
           </table>
         </div>
       </section>
+
+      <AdminModal open={open} title="درخواست جدید" onClose={() => setOpen(false)} as="form" onSubmit={(e) => void create(e)} busy={busy}
+        footer={<><button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>ذخیره</button><button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setOpen(false)}>انصراف</button></>}>
+        <label>
+          <span className="form-label">همکار</span>
+          <select className="form-input" required value={form.employeeId} onChange={(e) => setForm({ ...form, employeeId: e.target.value })}>
+            {employees.map((em) => <option key={em.id} value={String(em.id)}>{em.firstName} {em.lastName}</option>)}
+          </select>
+        </label>
+        <label>
+          <span className="form-label">نوع</span>
+          <select className="form-input" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
+            {HR_REQUEST_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+          </select>
+        </label>
+        <label>
+          <span className="form-label">تعداد روز</span>
+          <input className="form-input" dir="ltr" value={form.days} onChange={(e) => setForm({ ...form, days: e.target.value })} />
+        </label>
+      </AdminModal>
     </div>
   );
 }

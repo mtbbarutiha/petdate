@@ -8,6 +8,7 @@ import {
 } from '@petdate/shared';
 import { adminFetch, formatNumFa } from '../../api';
 import { adminCan, getAdminRole } from '../../auth';
+import { AdminModal } from '../../AdminModal';
 
 type RoleForm = {
   id?: number;
@@ -392,9 +393,21 @@ export function AdminHrRbacPage() {
       </section>
 
       {roleForm ? (
-        <div className="admin-modal">
-          <form className="admin-modal-card admin-form" onSubmit={(e) => void saveRole(e)}>
-            <h3>{roleForm.id ? 'ویرایش نقش' : 'نقش جدید'}</h3>
+        <AdminModal
+          open
+          title={roleForm.id ? 'ویرایش نقش' : 'نقش جدید'}
+          onClose={() => !busy && setRoleForm(null)}
+          size="lg"
+          as="form"
+          onSubmit={(e) => void saveRole(e)}
+          busy={busy}
+          footer={
+            <>
+              <button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>ذخیره</button>
+              <button type="button" className="admin-btn admin-btn--ghost" onClick={() => setRoleForm(null)}>انصراف</button>
+            </>
+          }
+        >
             {!roleForm.id ? (
               <label>
                 <span className="form-label">کلید (لاتین)</span>
@@ -460,26 +473,25 @@ export function AdminHrRbacPage() {
                 <span>فعال</span>
               </label>
             ) : null}
-            <div className="admin-row-actions" style={{ marginTop: 16 }}>
-              <button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>
-                ذخیره
-              </button>
-              <button
-                type="button"
-                className="admin-btn admin-btn--ghost"
-                onClick={() => setRoleForm(null)}
-              >
-                انصراف
-              </button>
-            </div>
-          </form>
-        </div>
+        </AdminModal>
       ) : null}
 
       {accountForm ? (
-        <div className="admin-modal">
-          <form className="admin-modal-card admin-form" onSubmit={(e) => void saveAccount(e)}>
-            <h3>{accountForm.id ? 'ویرایش حساب پنل' : 'حساب پنل جدید'}</h3>
+        <AdminModal
+          open
+          title={accountForm.id ? 'ویرایش حساب پنل' : 'حساب پنل جدید'}
+          onClose={() => !busy && setAccountForm(null)}
+          size="md"
+          as="form"
+          onSubmit={(e) => void saveAccount(e)}
+          busy={busy}
+          footer={
+            <>
+              <button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>ذخیره</button>
+              <button type="button" className="admin-btn admin-btn--ghost" onClick={() => setAccountForm(null)}>انصراف</button>
+            </>
+          }
+        >
             {accountForm.id ? (
               <p className="admin-muted">
                 کاربری: <code className="admin-mono">{accountForm.username}</code>
@@ -546,20 +558,7 @@ export function AdminHrRbacPage() {
               />
               <span>فعال</span>
             </label>
-            <div className="admin-row-actions" style={{ marginTop: 16 }}>
-              <button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>
-                ذخیره
-              </button>
-              <button
-                type="button"
-                className="admin-btn admin-btn--ghost"
-                onClick={() => setAccountForm(null)}
-              >
-                انصراف
-              </button>
-            </div>
-          </form>
-        </div>
+        </AdminModal>
       ) : null}
     </div>
   );

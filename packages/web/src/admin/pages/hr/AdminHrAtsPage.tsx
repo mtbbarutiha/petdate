@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import type { HrCandidate, HrJobOpening } from '@petdate/shared';
 import { HR_CANDIDATE_STAGES } from '@petdate/shared';
 import { adminFetch, formatNumFa } from '../../api';
 import { adminCan } from '../../auth';
+import { AdminModal } from '../../AdminModal';
 
 export function AdminHrAtsPage() {
   const [openings, setOpenings] = useState<HrJobOpening[]>([]);
@@ -31,49 +32,69 @@ export function AdminHrAtsPage() {
     void load();
   }, [load]);
 
-  const addOpening = async () => {
-    if (!canWrite) return;
-    const title = window.prompt('عنوان موقعیت شغلی');
-    if (!title?.trim()) return;
-    const department = window.prompt('دپارتمان') || '';
+  const [openingModal, setOpeningModal] = useState(false);
+  const [candidateModal, setCandidateModal] = useState(false);
+  const [openingForm, setOpeningForm] = useState({ title: '', department: '' });
+  const [candidateForm, setCandidateForm] = useState({
+    firstName: '',
+    lastName: '',
+    mobile: '',
+    jobOpeningId: '',
+  });
+  const [busy, setBusy] = useState(false);
+
+  const addOpening = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!canWrite || !openingForm.title.trim()) return;
+    setBusy(true);
     try {
       await adminFetch('/api/admin/hr/ats/openings', {
         method: 'POST',
-        body: JSON.stringify({ title: title.trim(), department }),
+        body: JSON.stringify({
+          title: openingForm.title.trim(),
+          department: openingForm.department.trim(),
+        }),
       });
+      setOpeningModal(false);
+      setOpeningForm({ title: '', department: '' });
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'خطا');
+    } finally {
+      setBusy(false);
     }
   };
 
-  const addCandidate = async () => {
-    if (!canWrite) return;
-    const firstName = window.prompt('نام متقاضی');
-    if (!firstName?.trim()) return;
-    const lastName = window.prompt('نام خانوادگی');
-    if (!lastName?.trim()) return;
-    const mobile = window.prompt('موبایل') || '';
-    const jobOpeningId = openings[0]?.id;
+  const addCandidate = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!canWrite || !candidateForm.firstName.trim() || !candidateForm.lastName.trim()) return;
+    setBusy(true);
     try {
+      const jobOpeningId = candidateForm.jobOpeningId
+        ? Number(candidateForm.jobOpeningId)
+        : openings[0]?.id ?? null;
       const res = await adminFetch<{ candidate: HrCandidate; duplicateMobile: boolean }>(
         '/api/admin/hr/ats/candidates',
         {
           method: 'POST',
           body: JSON.stringify({
-            firstName: firstName.trim(),
-            lastName: lastName.trim(),
-            mobile,
-            jobOpeningId: jobOpeningId ?? null,
+            firstName: candidateForm.firstName.trim(),
+            lastName: candidateForm.lastName.trim(),
+            mobile: candidateForm.mobile.trim(),
+            jobOpeningId,
           }),
         }
       );
       setDupWarn(
         res.duplicateMobile ? 'هشدار: موبایل تکراری — رکورد قبلی حذف نشد' : null
       );
+      setCandidateModal(false);
+      setCandidateForm({ firstName: '', lastName: '', mobile: '', jobOpeningId: '' });
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'خطا');
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -105,10 +126,13 @@ export function AdminHrAtsPage() {
         </div>
         {canWrite ? (
           <div className="admin-toolbar" style={{ margin: 0 }}>
-            <button type="button" className="admin-btn" onClick={() => void addOpening()}>
+            <button type="button" className="admin-btn" onClick={() => setOpeningModal(true)}>
               آگهی جدید
             </button>
-            <button type="button" className="admin-btn admin-btn--primary" onClick={() => void addCandidate()}>
+            <button type="button" className="admin-btn admin-btn--primary" onClick={() => {
+              setCandidateForm((f) => ({ ...f, jobOpeningId: openings[0] ? String(openings[0].id) : '' }));
+              setCandidateModal(true);
+            }}>
               متقاضی جدید
             </button>
           </div>
@@ -220,6 +244,65 @@ export function AdminHrAtsPage() {
           </tbody>
         </table>
       </div>
+
+      <AdminModal
+        open={openingModal}
+        title="آگهی جدید"
+        onClose={() => setOpeningModal(false)}
+        as="form"
+        onSubmit={(e) => void addOpening(e)}
+        busy={busy}
+        footer={
+          <>
+            <button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>ذخیره</button>
+            <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setOpeningModal(false)}>انصراف</button>
+          </>
+        }
+      >
+        <label>
+          <span className="form-label">عنوان موقعیت شغلی</span>
+          <input className="form-input" required value={openingForm.title} onChange={(e) => setOpeningForm({ ...openingForm, title: e.target.value })} />
+        </label>
+        <label>
+          <span className="form-label">دپارتمان</span>
+          <input className="form-input" value={openingForm.department} onChange={(e) => setOpeningForm({ ...openingForm, department: e.target.value })} />
+        </label>
+      </AdminModal>
+
+      <AdminModal
+        open={candidateModal}
+        title="متقاضی جدید"
+        onClose={() => setCandidateModal(false)}
+        as="form"
+        onSubmit={(e) => void addCandidate(e)}
+        busy={busy}
+        footer={
+          <>
+            <button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>ذخیره</button>
+            <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setCandidateModal(false)}>انصراف</button>
+          </>
+        }
+      >
+        <label>
+          <span className="form-label">نام</span>
+          <input className="form-input" required value={candidateForm.firstName} onChange={(e) => setCandidateForm({ ...candidateForm, firstName: e.target.value })} />
+        </label>
+        <label>
+          <span className="form-label">نام خانوادگی</span>
+          <input className="form-input" required value={candidateForm.lastName} onChange={(e) => setCandidateForm({ ...candidateForm, lastName: e.target.value })} />
+        </label>
+        <label>
+          <span className="form-label">موبایل</span>
+          <input className="form-input" dir="ltr" value={candidateForm.mobile} onChange={(e) => setCandidateForm({ ...candidateForm, mobile: e.target.value })} />
+        </label>
+        <label>
+          <span className="form-label">موقعیت شغلی</span>
+          <select className="form-input" value={candidateForm.jobOpeningId} onChange={(e) => setCandidateForm({ ...candidateForm, jobOpeningId: e.target.value })}>
+            <option value="">—</option>
+            {openings.map((o) => <option key={o.id} value={String(o.id)}>{o.title}</option>)}
+          </select>
+        </label>
+      </AdminModal>
     </div>
   );
 }
