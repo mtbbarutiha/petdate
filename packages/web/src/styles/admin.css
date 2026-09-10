@@ -1423,7 +1423,7 @@
 /* ── Admin mail inbox split pane (RTL-safe) ── */
 .admin-app .admin-mail-inbox {
   display: grid;
-  grid-template-columns: minmax(280px, 36%) minmax(0, 1fr);
+  grid-template-columns: minmax(320px, 38%) minmax(0, 1fr);
   gap: 0;
   min-height: 420px;
   max-height: min(70vh, 560px);
@@ -1438,6 +1438,7 @@
   max-width: 100%;
   overflow-x: hidden;
   overflow-y: auto;
+  overscroll-behavior: contain;
   border-inline-end: 1px solid var(--admin-border);
   background: #fafbfc;
 }
@@ -1459,6 +1460,7 @@
   cursor: pointer;
   appearance: none;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 .admin-app .admin-mail-item:hover {
