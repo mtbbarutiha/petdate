@@ -993,6 +993,14 @@ function migrateSchema() {
   if (!breedNames.has('sort_order')) {
     db.exec('ALTER TABLE pet_breeds ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 100');
   }
+  // Needed for ON CONFLICT(species_code, name_fa) on Postgres (legacy tables may lack UNIQUE).
+  try {
+    db.exec(
+      'CREATE UNIQUE INDEX IF NOT EXISTS pet_breeds_species_name_uq ON pet_breeds (species_code, name_fa)'
+    );
+  } catch (err) {
+    console.warn('pet_breeds unique index skipped/failed:', (err as Error).message);
+  }
 
   const medRecCols = db.prepare('PRAGMA table_info(pet_medical_records)').all() as { name: string }[];
   const medRecNames = new Set(medRecCols.map((c) => c.name));
@@ -1514,6 +1522,14 @@ function seedSpeciesCatalog() {
   );
   PET_SPECIES.forEach((s, i) => insertSpecies.run(s.code, s.labelFa, s.emoji, i));
 
+  try {
+    db.exec(
+      'CREATE UNIQUE INDEX IF NOT EXISTS pet_breeds_species_name_uq ON pet_breeds (species_code, name_fa)'
+    );
+  } catch {
+    /* ignore — upsert may still work if table UNIQUE exists */
+  }
+
   const upsertBreed = db.prepare(`
     INSERT INTO pet_breeds (species_code, name_fa, name_en, sort_order)
     VALUES (?, ?, ?, ?)
@@ -1521,11 +1537,34 @@ function seedSpeciesCatalog() {
       name_en = excluded.name_en,
       sort_order = excluded.sort_order
   `);
+  const updateBreed = db.prepare(`
+    UPDATE pet_breeds SET name_en = ?, sort_order = ?
+    WHERE species_code = ? AND name_fa = ?
+  `);
+  const insertBreed = db.prepare(`
+    INSERT INTO pet_breeds (species_code, name_fa, name_en, sort_order)
+    VALUES (?, ?, ?, ?)
+  `);
 
   const keepKeys = new Set<string>();
   for (const b of PET_BREEDS_SEED) {
-    upsertBreed.run(b.speciesCode, b.nameFa, b.nameEn ?? null, b.sortOrder);
     keepKeys.add(`${b.speciesCode}::${b.nameFa}`);
+    try {
+      upsertBreed.run(b.speciesCode, b.nameFa, b.nameEn ?? null, b.sortOrder);
+    } catch {
+      // Fallback when ON CONFLICT target is missing / dialect mismatch.
+      const updated = updateBreed.run(b.nameEn ?? null, b.sortOrder, b.speciesCode, b.nameFa);
+      if (!updated || Number((updated as { changes?: number }).changes || 0) === 0) {
+        try {
+          insertBreed.run(b.speciesCode, b.nameFa, b.nameEn ?? null, b.sortOrder);
+        } catch (err) {
+          console.warn(
+            `breed seed skip ${b.speciesCode}/${b.nameFa}:`,
+            (err as Error).message
+          );
+        }
+      }
+    }
   }
 
   // حذف نژادهای قدیمی که دیگر در کاتالوگ نیستند
@@ -1538,6 +1577,11 @@ function seedSpeciesCatalog() {
       del.run(row.id);
     }
   }
+
+  const total = (
+    db.prepare('SELECT COUNT(*) AS c FROM pet_breeds').get() as { c: number }
+  ).c;
+  console.log(`🐾 pet breed catalog ready (${total} breeds)`);
 }
 
 function seedIfEmpty() {
