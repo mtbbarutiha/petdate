@@ -1,7 +1,7 @@
 import type { Context } from 'grammy';
-import { rankPlaymateMatches, PET_SPECIES_LABELS } from '@petdate/shared';
+import { PET_SPECIES_LABELS, PLAYDATE_REQUEST_COST, toPersianDigits } from '@petdate/shared';
 import {
-  createPlaydate,
+  findPlaymates,
   getPet,
   listPets,
 } from '../api-client';
@@ -12,10 +12,41 @@ import {
 import { upsertSession } from '../session';
 import { getCtxUser, menuKeyboardFor, pushMainMenuKeyboard } from './helpers';
 
-const MAX_AUTO_REQUESTS = 30;
-
 function escapeHtml(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function formatCoins(n: number): string {
+  return toPersianDigits(String(n));
+}
+
+function parseApiErrorBody(err: unknown): {
+  message: string;
+  reason?: string;
+  balance?: number;
+  cost?: number;
+} {
+  const raw = err instanceof Error ? err.message : String(err ?? '');
+  const jsonStart = raw.indexOf('{');
+  if (jsonStart >= 0) {
+    try {
+      const json = JSON.parse(raw.slice(jsonStart)) as {
+        error?: string;
+        reason?: string;
+        balance?: number;
+        cost?: number;
+      };
+      return {
+        message: json.error || raw,
+        reason: json.reason,
+        balance: json.balance,
+        cost: json.cost,
+      };
+    } catch {
+      /* fall through */
+    }
+  }
+  return { message: raw || 'خطای ناشناخته' };
 }
 
 async function safeReply(
@@ -103,10 +134,14 @@ export async function handleExplorePickPet(ctx: Context): Promise<void> {
       explorePage: 0,
     });
 
+    const balance = user.coins ?? user.wallet?.coins ?? 0;
     const text = [
       '🔍 <b>پیدا کردن همبازی</b>',
       '',
       'کدوم پتت رو انتخاب می‌کنی؟',
+      '',
+      `💰 هزینه درخواست: <b>${formatCoins(PLAYDATE_REQUEST_COST)}</b> سکه`,
+      `موجودی: <b>${formatCoins(balance)}</b> سکه`,
       '',
       'با انتخاب پت، درخواست همبازی به‌صورت خودکار برای هم‌گروه‌ها ارسال می‌شه',
       '(اولویت: هم‌کشور ← هم‌استان ← هم‌دسته ← هم‌نژاد ← سن ← جنسیت متفاوت).',
@@ -137,7 +172,7 @@ export async function handleExplorePickPet(ctx: Context): Promise<void> {
   }
 }
 
-/** انتخاب پت → مچ اولویت‌دار → ارسال درخواست به همه هم‌گروه‌ها */
+/** انتخاب پت → مچ اولویت‌دار → ارسال درخواست (۲ سکه یک‌بار) */
 export async function handleExploreForPet(ctx: Context, petId: number | 'all'): Promise<void> {
   try {
     const user = await getCtxUser(ctx);
@@ -174,6 +209,23 @@ export async function handleExploreForPet(ctx: Context, petId: number | 'all'): 
       return;
     }
 
+    const balance = user.coins ?? user.wallet?.coins ?? 0;
+    if (balance < PLAYDATE_REQUEST_COST) {
+      const msg = [
+        `برای درخواست همبازی حداقل ${formatCoins(PLAYDATE_REQUEST_COST)} سکه لازم داری.`,
+        `موجودی: ${formatCoins(balance)} — از منو «🪙 سکه» بگیر.`,
+      ].join('\n');
+      try {
+        await ctx.answerCallbackQuery({ text: 'سکه کافی نیست', show_alert: true });
+      } catch {
+        /* ignore */
+      }
+      await editOrReply(ctx, msg, {
+        reply_markup: explorePickMyPetKeyboard(myPets),
+      });
+      return;
+    }
+
     try {
       await ctx.answerCallbackQuery({ text: 'در حال پیدا کردن همبازی…' });
     } catch {
@@ -186,14 +238,47 @@ export async function handleExploreForPet(ctx: Context, petId: number | 'all'): 
       explorePage: 0,
     });
 
-    // Immediate feedback so the button never looks hung while we match/send
-    await editOrReply(ctx, `⏳ در حال پیدا کردن همبازی برای <b>${escapeHtml(source.name)}</b>…`, {
-      parse_mode: 'HTML',
-    });
+    await editOrReply(
+      ctx,
+      [
+        `⏳ در حال پیدا کردن همبازی برای <b>${escapeHtml(source.name)}</b>…`,
+        '',
+        `💰 هزینه: ${formatCoins(PLAYDATE_REQUEST_COST)} سکه`,
+      ].join('\n'),
+      { parse_mode: 'HTML' }
+    );
 
-    const peers = await listPets({ lookingForPlaymate: true, species: source.species });
-    const matches = rankPlaymateMatches(source, peers, { max: MAX_AUTO_REQUESTS });
-    const speciesLabel = PET_SPECIES_LABELS[source.species] ?? source.species;
+    let result;
+    try {
+      result = await findPlaymates({
+        fromPetId: source.id,
+        fromUserId: user.id,
+      });
+    } catch (err) {
+      const parsed = parseApiErrorBody(err);
+      if (parsed.reason === 'insufficient_coins') {
+        const bal = parsed.balance ?? balance;
+        const cost = parsed.cost ?? PLAYDATE_REQUEST_COST;
+        await editOrReply(
+          ctx,
+          [
+            parsed.message,
+            '',
+            `موجودی: ${formatCoins(bal)} — حداقل ${formatCoins(cost)} سکه لازم است.`,
+            'از منو «🪙 سکه» بگیر.',
+          ].join('\n'),
+          { reply_markup: explorePickMyPetKeyboard(myPets) }
+        );
+        return;
+      }
+      throw err;
+    }
+
+    const speciesLabel =
+      result.speciesLabel || PET_SPECIES_LABELS[source.species] || source.species;
+    const oneSample = result.sampleLine
+      ? result.sampleLine.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      : undefined;
 
     console.log(
       'find-playmate: matching for pet',
@@ -201,11 +286,13 @@ export async function handleExploreForPet(ctx: Context, petId: number | 'all'): 
       source.name,
       'user',
       user.id,
-      'candidates',
-      matches.length
+      'sent',
+      result.sent,
+      'cost',
+      result.cost
     );
 
-    if (matches.length === 0) {
+    if (result.sent === 0) {
       const empty = [
         `برای <b>${escapeHtml(source.name)}</b> فعلاً همبازی هم‌گروه (${escapeHtml(speciesLabel)}) پیدا نشد.`,
         '',
@@ -218,51 +305,14 @@ export async function handleExploreForPet(ctx: Context, petId: number | 'all'): 
       return;
     }
 
-    let sent = 0;
-    let skipped = 0;
-    let sample: string | undefined;
-    let preferredSample: string | undefined;
-
-    for (const match of matches) {
-      try {
-        // API owns Telegram notify (async). Do not re-notify here.
-        await createPlaydate({
-          fromPetId: source.id,
-          toPetId: match.pet.id,
-          fromUserId: user.id,
-          confirmResend: true,
-        });
-        sent += 1;
-        const locReasons = match.reasons.filter(
-          (r) => r === 'هم‌کشور' || r === 'هم‌استان' || r === 'هم‌شهر'
-        );
-        const why =
-          locReasons.length > 0
-            ? locReasons.join(' · ')
-            : match.reasons.slice(0, 2).join(' · ');
-        const line = `• <b>${escapeHtml(match.pet.name)}</b>${why ? ` — ${escapeHtml(why)}` : ''}`;
-        if (!sample) sample = line;
-        if (
-          !preferredSample &&
-          (match.reasons.includes('هم‌استان') || match.reasons.includes('هم‌کشور'))
-        ) {
-          preferredSample = line;
-        }
-      } catch {
-        skipped += 1;
-      }
-    }
-
-    const oneSample = preferredSample ?? sample;
-
     const summary = [
-      sent > 0
-        ? `✅ برای <b>${escapeHtml(source.name)}</b> درخواست همبازی ارسال شد.`
-        : `⚠️ برای <b>${escapeHtml(source.name)}</b> الان درخواستی ارسال نشد.`,
+      `✅ برای <b>${escapeHtml(source.name)}</b> درخواست همبازی ارسال شد.`,
       '',
       `هم‌گروه: ${escapeHtml(speciesLabel)}`,
-      `ارسال‌شده: <b>${sent}</b> درخواست`,
-      skipped ? `رد شده/تکراری: ${skipped}` : null,
+      `ارسال‌شده: <b>${formatCoins(result.sent)}</b> درخواست`,
+      result.skipped ? `رد شده/تکراری: ${formatCoins(result.skipped)}` : null,
+      `💰 کسر شده: <b>${formatCoins(result.cost)}</b> سکه`,
+      `موجودی باقی‌مانده: <b>${formatCoins(result.coins)}</b>`,
       '',
       'اولویت مچ: هم‌کشور · هم‌استان · هم‌دسته · هم‌نژاد · سن · جنسیت متفاوت',
       '',

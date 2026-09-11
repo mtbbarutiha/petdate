@@ -4224,6 +4224,15 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   font-size: 0.95rem;
 }
 
+.find-playmate-one__fee,
+.find-playmate-panel__fee {
+  margin: 0 0 4px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-secondary, #5f7d93);
+  text-align: center;
+}
+
 .find-playmate-one__status {
   margin: 0;
   font-size: 0.86rem;
