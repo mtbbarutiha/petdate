@@ -64,7 +64,8 @@ export function isAllowedPaymentReceiptMime(mimeType: string | undefined): boole
 }
 
 export function paymentReceiptStorageKeyFromUrl(url: string): string | null {
-  const m = /^\/api\/payments\/receipts\/(\d+\/[\w.~-]+)$/.exec(String(url || '').trim());
+  const pathOnly = String(url || '').trim().split('?')[0] ?? '';
+  const m = /^\/api\/payments\/receipts\/(\d+\/[\w.~-]+)$/.exec(pathOnly);
   return m?.[1] ?? null;
 }
 

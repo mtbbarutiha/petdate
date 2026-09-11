@@ -21,6 +21,18 @@ function isAdminRequest(req: { header: (name: string) => string | undefined }): 
   return Boolean(provided) && provided === key;
 }
 
+function orderReceiptAccessToken(order: { adminNote?: string }): string | null {
+  const raw = String(order.adminNote || '').trim();
+  if (!raw.startsWith('{')) return null;
+  try {
+    const meta = JSON.parse(raw) as { receiptToken?: unknown };
+    const token = typeof meta.receiptToken === 'string' ? meta.receiptToken.trim() : '';
+    return token || null;
+  } catch {
+    return null;
+  }
+}
+
 paymentsRouter.get('/receipts/:orderId/:filename', (req, res) => {
   const orderId = Number(req.params.orderId);
   const filename = String(req.params.filename || '').trim();
@@ -42,8 +54,12 @@ paymentsRouter.get('/receipts/:orderId/:filename', (req, res) => {
   const keyFromOrder = paymentReceiptStorageKeyFromUrl(receiptRef);
   const referer = String(req.header('referer') || '');
   const adminReferer = /\/admin(\/|$)/i.test(referer);
+  /** Shop card-pay pages pass ?t=receiptToken so <img src> works without Bearer. */
+  const queryToken = String(req.query.t ?? req.query.token ?? '').trim();
+  const storedToken = orderReceiptAccessToken(order);
+  const tokenOk = Boolean(queryToken && storedToken && queryToken === storedToken);
 
-  if (!ownerOk && !adminOk && !(adminReferer && keyFromOrder === storageKey)) {
+  if (!ownerOk && !adminOk && !tokenOk && !(adminReferer && keyFromOrder === storageKey)) {
     res.status(401).json({ error: 'دسترسی ندارید' });
     return;
   }

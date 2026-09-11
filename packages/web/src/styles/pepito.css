@@ -12602,6 +12602,9 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   max-width: 220px;
   border-radius: 10px;
   margin-top: 0.35rem;
+  border: 1px solid color-mix(in srgb, var(--pepito-ink, #1f2937) 12%, transparent);
+  background: color-mix(in srgb, var(--pepito-white, #fff) 80%, transparent);
+  display: block;
 }
 .pepito-wallet-buy-history {
   list-style: none;

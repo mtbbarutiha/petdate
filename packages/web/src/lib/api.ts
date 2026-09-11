@@ -746,6 +746,30 @@ export async function uploadWalletPaymentReceipt(token: string, orderId: number,
   return json.order;
 }
 
+/**
+ * Payment receipt paths (`/api/payments/receipts/...`) require Bearer auth.
+ * `<img src>` cannot send Authorization, so load bytes with fetch and return a blob: URL.
+ * Caller must revoke the object URL when done.
+ */
+export async function fetchAuthedPaymentReceiptObjectUrl(
+  token: string,
+  receiptUrl: string
+): Promise<string> {
+  const raw = String(receiptUrl || '').trim();
+  const pathOnly = raw.split('?')[0] ?? raw;
+  if (!pathOnly.startsWith('/api/payments/receipts/')) {
+    throw new Error('not_authed_receipt_path');
+  }
+  const res = await fetch(`${API_BASE}${pathOnly}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    throw new Error(`receipt_fetch_${res.status}`);
+  }
+  const blob = await res.blob();
+  return URL.createObjectURL(blob);
+}
+
 export type EarnRequestSummary = {
   id: number;
   coins: number;
