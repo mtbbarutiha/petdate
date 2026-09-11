@@ -78,6 +78,23 @@ export async function subscribeNewsletter(email: string, source = 'footer') {
   });
 }
 
+export async function submitPetPurchaseLead(input: {
+  firstName: string;
+  lastName: string;
+  mobile: string;
+  sourcePage?: string;
+}) {
+  return request<{
+    ok: true;
+    id: number;
+    publicId: string;
+    message: string;
+  }>('/api/pet-purchase-leads', {
+    method: 'POST',
+    body: JSON.stringify(input),
+  });
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let res: Response;
   try {

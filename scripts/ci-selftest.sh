@@ -108,6 +108,7 @@ run src/hr-rbac.selftest.ts
 run src/admin-header-avatar.selftest.ts
 run src/hr-modules.selftest.ts
 run src/sales-crm.selftest.ts
+run src/pet-purchase-leads.selftest.ts
 run src/hr-sales-demo-seed.selftest.ts
 run src/crm.selftest.ts
 run src/crm-ticketing.selftest.ts

@@ -326,6 +326,36 @@ export function markAdminHeaderNotificationRead(
   return { ok: false, error: 'اعلان پیدا نشد' };
 }
 
+/** Push a one-off header notification (idempotent when sourceKey is set). */
+export function pushAdminHeaderNotification(input: {
+  title: string;
+  body?: string;
+  kind?: AdminNotificationKind;
+  href?: string;
+  module?: AdminHeaderNotification['module'];
+  permission?: string | null;
+  sourceKey?: string | null;
+}): void {
+  ensureTablesOnly();
+  const title = String(input.title || '').trim();
+  if (!title) return;
+  db()
+    .prepare(
+      `INSERT OR IGNORE INTO admin_notifications
+        (title, body, kind, href, module, permission, source_key, read, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 0, datetime('now'))`
+    )
+    .run(
+      title,
+      String(input.body || ''),
+      input.kind || 'info',
+      input.href || '/admin/dashboard',
+      input.module || 'platform',
+      input.permission ?? null,
+      input.sourceKey ?? null
+    );
+}
+
 export function markAllAdminHeaderNotificationsRead(actor: AdminAuthActor): { ok: true } {
   ensureAdminNotificationsSchema();
   const rows = db()

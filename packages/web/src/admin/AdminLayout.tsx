@@ -73,6 +73,7 @@ const NAV_GROUPS: NavGroup[] = [
   { title: 'فروش', items: [
     { to: '/admin/sales', icon: Inbox, label: 'کارتابل من', perm: 'sales.read' },
     { to: '/admin/sales/leads', icon: Users, label: 'لیدها', perm: 'sales.read', salesBadgeKey: 'leads' },
+    { to: '/admin/sales/pet-purchase-requests', icon: PawPrint, label: 'درخواست‌های خرید پت', perm: 'sales.read', salesBadgeKey: 'petPurchaseRequests' },
     { to: '/admin/sales/upgrades', icon: TrendingUp, label: 'آپگریدها', perm: 'upgrade.read', salesBadgeKey: 'upgrades' },
     { to: '/admin/sales/customers', icon: UserRound, label: 'مشتریان', perm: 'sales.read', salesBadgeKey: 'customers' },
     { to: '/admin/sales/tickets', icon: Ticket, label: 'تیکت فروش', perm: 'sales.read', salesBadgeKey: 'tickets' },

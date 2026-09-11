@@ -302,6 +302,7 @@ const AdminHrArmitaPage = lazy(() =>
 const SalesGuard = lazy(() => import('./admin/pages/sales/SalesGuard').then((m) => ({ default: m.SalesGuard })));
 const AdminSalesDashboardPage = lazy(() => import('./admin/pages/sales/AdminSalesDashboardPage').then((m) => ({ default: m.AdminSalesDashboardPage })));
 const AdminSalesLeadsPage = lazy(() => import('./admin/pages/sales/AdminSalesPages').then((m) => ({ default: m.AdminSalesLeadsPage })));
+const AdminPetPurchaseRequestsPage = lazy(() => import('./admin/pages/sales/AdminPetPurchaseRequestsPage').then((m) => ({ default: m.AdminPetPurchaseRequestsPage })));
 const AdminSalesUpgradesPage = lazy(() => import('./admin/pages/sales/AdminSalesPages').then((m) => ({ default: m.AdminSalesUpgradesPage })));
 const AdminSalesLeadDetailPage = lazy(() => import('./admin/pages/sales/AdminSalesPages').then((m) => ({ default: m.AdminSalesLeadDetailPage })));
 const AdminSalesUpgradeDetailPage = lazy(() => import('./admin/pages/sales/AdminSalesPages').then((m) => ({ default: m.AdminSalesUpgradeDetailPage })));
@@ -448,6 +449,7 @@ export default function App() {
                 <Route path="sales" element={<SalesGuard><AdminSalesDashboardPage /></SalesGuard>} />
                 <Route path="sales/leads" element={<SalesGuard><AdminSalesLeadsPage /></SalesGuard>} />
                 <Route path="sales/leads/:id" element={<SalesGuard><AdminSalesLeadDetailPage /></SalesGuard>} />
+                <Route path="sales/pet-purchase-requests" element={<SalesGuard><AdminPetPurchaseRequestsPage /></SalesGuard>} />
                 <Route path="sales/upgrades" element={<SalesGuard><AdminSalesUpgradesPage /></SalesGuard>} />
                 <Route path="sales/upgrades/:id" element={<SalesGuard><AdminSalesUpgradeDetailPage /></SalesGuard>} />
                 <Route path="sales/pipeline" element={<SalesGuard><AdminSalesPipelinePage /></SalesGuard>} />
