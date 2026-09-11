@@ -7,6 +7,21 @@ import { formatAdminFaDateTime } from '../../JalaliDateSelect';
 import { adminCan } from '../../auth';
 import { AdminModal } from '../../AdminModal';
 
+function statusBadgeClass(status: PetPurchaseLeadStatus): string {
+  switch (status) {
+    case 'جدید':
+      return 'admin-badge admin-badge--info';
+    case 'در حال پیگیری':
+      return 'admin-badge admin-badge--warn';
+    case 'ارجاع‌شده به فروش':
+      return 'admin-badge admin-badge--ok';
+    case 'بسته':
+      return 'admin-badge';
+    default:
+      return 'admin-badge';
+  }
+}
+
 export function AdminPetPurchaseRequestsPage() {
   const [items, setItems] = useState<PetPurchaseLead[]>([]);
   const [total, setTotal] = useState(0);
@@ -176,63 +191,103 @@ export function AdminPetPurchaseRequestsPage() {
         open={!!selected}
         onClose={() => setSelected(null)}
         title={selected ? `درخواست ${selected.publicId}` : 'درخواست'}
+        size="md"
         busy={busy}
       >
         {selected ? (
-          <div className="admin-stack" style={{ gap: 12 }}>
-            <p>
-              <strong>
-                {selected.firstName} {selected.lastName}
-              </strong>
-              <br />
-              <span dir="ltr">{formatIranMobileDisplay(selected.mobile)}</span>
-            </p>
-            <p className="admin-muted">
+          <div className="pp-req-detail">
+            <header className="pp-req-detail__hero">
+              <div className="pp-req-detail__identity">
+                <strong className="pp-req-detail__name">
+                  {selected.firstName} {selected.lastName}
+                </strong>
+                <span className="pp-req-detail__mobile" dir="ltr">
+                  {formatIranMobileDisplay(selected.mobile)}
+                </span>
+              </div>
+              <span className={statusBadgeClass(selected.status)}>{selected.status}</span>
+            </header>
+
+            <p className="pp-req-detail__meta admin-muted">
               منبع: {selected.sourcePage || '—'} · ثبت: {formatAdminFaDateTime(selected.createdAt)}
             </p>
-            <label>
-              وضعیت
-              <select
-                value={selected.status}
-                disabled={!canWrite || busy}
-                onChange={(e) => void patchStatus(selected.id, e.target.value as PetPurchaseLeadStatus)}
-              >
-                {PET_PURCHASE_LEAD_STATUSES.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <p>مسئول: {selected.assigneeName || 'تخصیص‌نشده'}</p>
-            {selected.salesItemId ? (
-              <p>
-                لید CRM:{' '}
-                <Link to={`/admin/sales/leads/${selected.salesItemId}`}>
-                  مشاهده در فروش
-                </Link>
-              </p>
-            ) : null}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {canWrite ? (
-                <button type="button" className="admin-btn admin-btn--primary" disabled={busy} onClick={() => void claim(selected.id)}>
-                  برداشتن / پیگیری توسط من
-                </button>
+
+            <div className="pp-req-detail__grid">
+              <div>
+                <span className="form-label">وضعیت</span>
+                <select
+                  className="admin-select"
+                  value={selected.status}
+                  disabled={!canWrite || busy}
+                  aria-label="وضعیت"
+                  onChange={(e) => void patchStatus(selected.id, e.target.value as PetPurchaseLeadStatus)}
+                >
+                  {PET_PURCHASE_LEAD_STATUSES.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <span className="form-label">مسئول</span>
+                <div className="pp-req-detail__value">
+                  {selected.assigneeName || 'تخصیص‌نیافته'}
+                </div>
+              </div>
+              {selected.salesItemId ? (
+                <div className="pp-req-detail__span">
+                  <span className="form-label">لید CRM</span>
+                  <div className="pp-req-detail__value">
+                    <Link to={`/admin/sales/leads/${selected.salesItemId}`}>مشاهده در فروش</Link>
+                  </div>
+                </div>
               ) : null}
             </div>
+
+            {canWrite ? (
+              <div className="pp-req-detail__actions">
+                <button
+                  type="button"
+                  className="admin-btn admin-btn--primary"
+                  disabled={busy}
+                  onClick={() => void claim(selected.id)}
+                >
+                  برداشتن / پیگیری توسط من
+                </button>
+              </div>
+            ) : null}
+
             {canAssign ? (
-              <div style={{ display: 'grid', gap: 8 }}>
-                <p className="admin-muted">ارجاع به تیم فروش</p>
-                <input
-                  placeholder="شناسه کارشناس (username / کد پرسنلی)"
-                  value={assignOwnerId}
-                  onChange={(e) => setAssignOwnerId(e.target.value)}
-                />
-                <input
-                  placeholder="نام نمایشی کارشناس"
-                  value={assignOwnerName}
-                  onChange={(e) => setAssignOwnerName(e.target.value)}
-                />
+              <section className="pp-req-detail__refer" aria-labelledby="pp-req-refer-title">
+                <h4 id="pp-req-refer-title" className="admin-subsection-title">
+                  ارجاع به تیم فروش
+                </h4>
+                <p className="admin-hint admin-muted">
+                  شناسه کارشناس فروش را وارد کنید تا درخواست به او منتقل شود.
+                </p>
+                <div className="pp-req-detail__refer-fields">
+                  <label>
+                    <span className="form-label">شناسه کارشناس</span>
+                    <input
+                      className="form-input"
+                      placeholder="username یا کد پرسنلی"
+                      value={assignOwnerId}
+                      onChange={(e) => setAssignOwnerId(e.target.value)}
+                      autoComplete="off"
+                    />
+                  </label>
+                  <label>
+                    <span className="form-label">نام نمایشی</span>
+                    <input
+                      className="form-input"
+                      placeholder="نام نمایشی کارشناس"
+                      value={assignOwnerName}
+                      onChange={(e) => setAssignOwnerName(e.target.value)}
+                      autoComplete="off"
+                    />
+                  </label>
+                </div>
                 <button
                   type="button"
                   className="admin-btn"
@@ -241,7 +296,7 @@ export function AdminPetPurchaseRequestsPage() {
                 >
                   ارجاع به فروش
                 </button>
-              </div>
+              </section>
             ) : null}
           </div>
         ) : null}

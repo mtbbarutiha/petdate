@@ -779,6 +779,42 @@ html[data-theme='dark'] .admin-app .admin-select option {
   color: var(--admin-ink);
 }
 
+/* Pet-purchase request detail modal — readable labels/inputs on dark surface */
+html[data-theme='dark'] .admin-app .pp-req-detail__refer {
+  background: color-mix(in srgb, var(--admin-accent-soft) 70%, var(--admin-bg));
+  border-color: var(--admin-border);
+}
+html[data-theme='dark'] .admin-app .pp-req-detail__refer .form-input,
+html[data-theme='dark'] .admin-app .pp-req-detail__grid .admin-select {
+  background: var(--admin-bg);
+  color: var(--admin-ink);
+  border-color: var(--admin-border);
+}
+html[data-theme='dark'] .admin-app .pp-req-detail__refer .form-input::placeholder {
+  color: #a39eb8;
+  opacity: 1;
+}
+html[data-theme='dark'] .admin-app .pp-req-detail .admin-badge--info {
+  background: #1a2c3a;
+  color: #7dd3fc;
+  border-color: #2a4055;
+}
+html[data-theme='dark'] .admin-app .pp-req-detail .admin-badge--warn {
+  background: #3a2e1c;
+  color: #ffb04a;
+  border-color: #5c4a28;
+}
+html[data-theme='dark'] .admin-app .pp-req-detail .admin-badge--ok {
+  background: #152820;
+  color: #5eead4;
+  border-color: #1f4a3a;
+}
+html[data-theme='dark'] .admin-app .pp-req-detail .admin-badge:not([class*='admin-badge--']) {
+  background: color-mix(in srgb, var(--admin-muted) 18%, var(--admin-bg));
+  color: var(--admin-muted);
+  border-color: var(--admin-border);
+}
+
 /* 2) Sales CRM kanban columns — dark tracks + readable headers */
 html[data-theme='dark'] .admin-app .sales-pipe-col {
   background: #1e2230;
