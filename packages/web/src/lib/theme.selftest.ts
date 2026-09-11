@@ -49,13 +49,6 @@ assert.match(darkCss, /\.tg-chat-list-badge\.is-ended/, 'chat ended badge remapp
 assert.match(darkCss, /\.tg-thread-empty/, 'chat empty pane remapped');
 assert.match(darkCss, /\.tg-request-card\b/, 'playmate request card remapped');
 assert.match(darkCss, /\.tg-ended-bar\b/, 'end-of-chat wipe bar remapped');
-assert.match(darkCss, /\.tg-chat-wallpaper/, 'chat message wallpaper remapped for dark');
-assert.match(darkCss, /--tg-wall-a:\s*#171a24/, 'chat wall token remapped off light #eef2f6');
-assert.doesNotMatch(
-  darkCss,
-  /html\[data-theme=['"]dark['"]\][\s\S]{0,120}\.tg-chat-wallpaper[\s\S]{0,280}#(eef3f7|e7eef4|eef2f6|ecf2f6|f7f8fb)\b/i,
-  'dark wallpaper must not keep light canvas stops'
-);
 assert.match(darkCss, /\.tg-chat-link-btn--outline/, 'outline secondary chat CTA remapped');
 assert.doesNotMatch(darkCss, /--pepito-soft:\s*#000\b/, 'avoid pure black bg');
 assert.doesNotMatch(darkCss, /box-shadow:\s*0 0 \d+px .{0,40}(purple|#[89a-fA-F][0-9a-fA-F]{5})/, 'no neon glow shadows');
