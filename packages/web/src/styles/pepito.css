@@ -1356,6 +1356,118 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   border-bottom-color: var(--pepito-base);
 }
 
+.pepito-adoption-lead-btn {
+  max-width: min(100%, 36rem);
+  padding: 10px 22px;
+  font-size: 15px;
+  line-height: 1.4;
+  white-space: normal;
+  text-wrap: balance;
+}
+.pepito-adoption-info .pepito-adoption-lead-btn {
+  margin-inline-start: 0.25rem;
+}
+.pepito-adoption-tag {
+  text-decoration: none;
+}
+
+/* Pet purchase lead modal (public CTA) */
+.pepito-lead-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background: rgba(28, 22, 48, 0.48);
+}
+.pepito-lead-modal {
+  width: min(100%, 420px);
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 18px 48px rgba(28, 22, 48, 0.18);
+  overflow: hidden;
+}
+.pepito-lead-modal__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 1rem 1.15rem;
+  border-bottom: 1px solid rgba(92, 77, 145, 0.12);
+}
+.pepito-lead-modal__head h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  color: var(--pepito-dark);
+}
+.pepito-lead-modal__close {
+  border: 0;
+  background: transparent;
+  color: var(--pepito-dark);
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0.15rem 0.4rem;
+}
+.pepito-lead-modal__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  padding: 1.15rem;
+}
+.pepito-lead-modal__lead {
+  margin: 0;
+  color: var(--pepito-text, #4a4460);
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+.pepito-lead-modal__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+  color: var(--pepito-dark);
+}
+.pepito-lead-modal__field input {
+  border: 1px solid rgba(92, 77, 145, 0.22);
+  border-radius: 12px;
+  padding: 0.7rem 0.85rem;
+  font-size: 1rem;
+  font-family: inherit;
+  background: #faf9fc;
+}
+.pepito-lead-modal__field input:focus {
+  outline: 2px solid rgba(92, 77, 145, 0.35);
+  outline-offset: 1px;
+  background: #fff;
+}
+.pepito-lead-modal__error {
+  margin: 0;
+  color: #b42318;
+  font-size: 0.9rem;
+}
+.pepito-lead-modal__success {
+  margin: 0 0 0.5rem;
+  color: var(--pepito-dark);
+  font-weight: 600;
+  line-height: 1.55;
+}
+.pepito-lead-modal__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 0.25rem;
+}
+.pepito-lead-modal__actions .pepito-btn {
+  flex: 1 1 auto;
+  min-width: 7rem;
+  padding: 10px 18px;
+  font-size: 16px;
+}
+
 /* legacy call-band kept for other uses */
 .pepito-call-band {
   margin-top: 2.25rem;

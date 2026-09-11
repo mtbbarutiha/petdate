@@ -5,6 +5,7 @@ import { BRAND } from '@petdate/shared';
 import { SiteFooter } from '../components/SiteFooter';
 import { NavUserCluster } from '../components/NavUserCluster';
 import { SiteDesktopNav } from '../components/SiteDesktopNav';
+import { AdoptionPurchaseCta } from '../components/AdoptionPurchaseCta';
 import { ADOPTION_PETS } from '../data/adoptionPets';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { loginPath } from '../lib/authRedirect';
@@ -13,10 +14,6 @@ import { formatAdminFaDate } from '../admin/jalaliDate';
 import { fetchMagazineFeatured, type MagazineCard } from './MagazinePage';
 
 const P = '/pepito/uploads';
-
-/** Display + tel: for Pepito-style “Call us” band */
-const CONTACT_PHONE_DISPLAY = '۰۲۱-۸۸۷۷۶۶۵۵';
-const CONTACT_PHONE_TEL = '+982188776655';
 
 const BLOB_PATH =
   'M30,16C46.588,6.484,54.481-2.058,64.3,1.452c3.145,1.125,6.861,3.657,10.212,9.426A40.611,40.611,0,0,1,59.5,66.544,41.151,41.151,0,0,1,3.482,51.629C0.134,45.865-.2,41.289.375,38.125,2.228,27.979,13.544,25.436,30,16Z';
@@ -711,16 +708,7 @@ export function WelcomePage() {
             </article>
           ))}
         </div>
-        <div className="pepito-adoption-info">
-          <span className="pepito-adoption-tag">پذیرش یک پت</span>
-          <p className="pepito-adoption-desc">
-            با ما تماس بگیرید{' '}
-            <a href={`tel:${CONTACT_PHONE_TEL}`} dir="ltr" className="pepito-adoption-phone">
-              {CONTACT_PHONE_DISPLAY}
-            </a>{' '}
-            برای اطلاعات بیشتر!
-          </p>
-        </div>
+        <AdoptionPurchaseCta adoptionTagAsLink />
       </section>
 
 <section className="pepito-section" id="team">

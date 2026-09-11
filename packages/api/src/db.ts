@@ -1386,6 +1386,16 @@ function migrateSchema() {
     console.warn('Sales schema ensure skipped/failed:', (err as Error).message);
   }
 
+  // درخواست خرید پت (public CTA → sales leads) — CREATE IF NOT EXISTS only
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { ensurePetPurchaseLeadsSchema } =
+      require('./pet-purchase-leads') as typeof import('./pet-purchase-leads');
+    ensurePetPurchaseLeadsSchema();
+  } catch (err) {
+    console.warn('Pet purchase leads schema ensure skipped/failed:', (err as Error).message);
+  }
+
   // باشگاه مشتریان / امور مشتریان — CREATE IF NOT EXISTS only; never wipe
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports

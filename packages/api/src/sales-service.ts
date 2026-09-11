@@ -541,6 +541,16 @@ export function getSalesNavCounts(): SalesNavCounts {
     overdueFollowups: followups.filter((f) => new Date(f.at).getTime() < Date.now()).length,
     pendingFinance: payments.filter((p) => p.status === 'در حال بررسی مالی').length,
     unassigned: items.filter((i) => !i.ownerId && typeof i.stage === 'number' && i.stage < 7).length,
+    petPurchaseRequests: (() => {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { countOpenPetPurchaseLeads } =
+          require('./pet-purchase-leads') as typeof import('./pet-purchase-leads');
+        return countOpenPetPurchaseLeads();
+      } catch {
+        return 0;
+      }
+    })(),
   };
 }
 

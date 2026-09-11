@@ -44,6 +44,14 @@ import {
   upsertSalesPattern,
   upsertSalesProduct,
 } from '../sales-service';
+import {
+  assignPetPurchaseLead,
+  claimPetPurchaseLead,
+  getPetPurchaseLead,
+  listPetPurchaseLeads,
+  updatePetPurchaseLeadStatus,
+} from '../pet-purchase-leads';
+import { isPetPurchaseLeadStatus } from '@petdate/shared';
 
 export const salesAdminRouter = Router();
 
@@ -386,4 +394,60 @@ salesAdminRouter.get('/meta', (req, res) => {
     isSalesAdmin: isSalesAdmin(actor(req)),
     settings: getSalesSettings(),
   });
+});
+
+/** درخواست‌های خرید پت (لید عمومی وبسایت) */
+salesAdminRouter.get('/pet-purchase-requests', (req, res) => {
+  res.json(
+    listPetPurchaseLeads({
+      status: typeof req.query.status === 'string' ? req.query.status : undefined,
+      q: typeof req.query.q === 'string' ? req.query.q : undefined,
+      limit: req.query.limit ? Number(req.query.limit) : 100,
+    })
+  );
+});
+
+salesAdminRouter.get('/pet-purchase-requests/:id', (req, res) => {
+  const item = getPetPurchaseLead(Number(req.params.id));
+  if (!item) {
+    res.status(404).json({ error: 'یافت نشد' });
+    return;
+  }
+  res.json({ item });
+});
+
+salesAdminRouter.patch('/pet-purchase-requests/:id/status', requirePermission('sales.write'), (req, res) => {
+  try {
+    const status = req.body?.status;
+    if (!isPetPurchaseLeadStatus(status)) {
+      res.status(400).json({ error: 'وضعیت نامعتبر است' });
+      return;
+    }
+    res.json({ item: updatePetPurchaseLeadStatus(Number(req.params.id), status, actor(req)) });
+  } catch (err) {
+    res.status(400).json({ error: (err as Error).message });
+  }
+});
+
+salesAdminRouter.post('/pet-purchase-requests/:id/claim', requirePermission('sales.write'), (req, res) => {
+  try {
+    res.json({ item: claimPetPurchaseLead(Number(req.params.id), actor(req)) });
+  } catch (err) {
+    res.status(400).json({ error: (err as Error).message });
+  }
+});
+
+salesAdminRouter.post('/pet-purchase-requests/:id/assign', requirePermission('sales.admin'), (req, res) => {
+  try {
+    res.json({
+      item: assignPetPurchaseLead(
+        Number(req.params.id),
+        String(req.body?.ownerId || ''),
+        String(req.body?.ownerName || req.body?.ownerId || ''),
+        actor(req)
+      ),
+    });
+  } catch (err) {
+    res.status(400).json({ error: (err as Error).message });
+  }
 });

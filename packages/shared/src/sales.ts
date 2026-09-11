@@ -153,6 +153,8 @@ export interface SalesNavCounts {
   overdueFollowups: number;
   pendingFinance: number;
   unassigned: number;
+  /** Open «درخواست‌های خرید پت» (جدید / در حال پیگیری / ارجاع‌شده). */
+  petPurchaseRequests: number;
 }
 
 /** Incoming-call simulation stub payload (client shows incoming-call popup). */

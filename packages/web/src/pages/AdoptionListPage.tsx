@@ -3,11 +3,9 @@ import { Link } from 'react-router-dom';
 import { PawPrint } from 'lucide-react';
 import { BRAND } from '@petdate/shared';
 import { SiteFooter } from '../components/SiteFooter';
+import { AdoptionPurchaseCta } from '../components/AdoptionPurchaseCta';
 import { ADOPTION_PETS } from '../data/adoptionPets';
 import { loginPath } from '../lib/authRedirect';
-
-const CONTACT_PHONE_DISPLAY = '۰۲۱-۸۸۷۷۶۶۵۵';
-const CONTACT_PHONE_TEL = '+982188776655';
 
 function PawIcon({ size = 16 }: { size?: number }) {
   return (
@@ -97,16 +95,7 @@ export function AdoptionListPage() {
             </article>
           ))}
         </div>
-        <div className="pepito-adoption-info">
-          <span className="pepito-adoption-tag">پذیرش یک پت</span>
-          <p className="pepito-adoption-desc">
-            با ما تماس بگیرید{' '}
-            <a href={`tel:${CONTACT_PHONE_TEL}`} dir="ltr" className="pepito-adoption-phone">
-              {CONTACT_PHONE_DISPLAY}
-            </a>{' '}
-            برای اطلاعات بیشتر!
-          </p>
-        </div>
+        <AdoptionPurchaseCta />
       </section>
 
       <SiteFooter />
