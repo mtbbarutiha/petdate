@@ -68,4 +68,21 @@ assert.match(welcome, /\/2\.jpg/, 'adoption hero restores removed 2.jpg slide');
 assert.match(welcome, /یک دوست پشمالوی جدید پیدا کن/, 'adoption hero title matches section');
 assert.doesNotMatch(welcome, /پیدا کردن پرستار|مراقبت شبانه|نگهداری پت/, 'no sitter leftover CTAs on welcome');
 
+
+// Services section — PetDate core product lines (not generic pet-care filler)
+assert.match(welcome, /عاشق حیواناتیم[\s\S]{0,400}خدمات پت دیت/, 'services eyebrow then خدمات پت دیت');
+assert.doesNotMatch(welcome, /خدمات مراقبت از پت ما/, 'generic care H2 removed');
+assert.match(welcome, /to: '\/chats',\s*title: 'پیدا کردن همبازی'/, 'services playmate → /chats');
+assert.match(welcome, /to: '\/vet-consult',\s*title: 'مشاوره دامپزشک آنلاین'/, 'services vet → /vet-consult');
+assert.match(welcome, /to: '\/trainer-consult',\s*title: 'مربی و آموزش پت'/, 'services trainer → /trainer-consult');
+assert.match(welcome, /to: '\/onboarding\/role',\s*title: 'شروع بدون پت'/, 'services no-pet → onboarding');
+assert.match(welcome, /to: '\/adoption',\s*title: 'پذیرش پت'/, 'services adoption → /adoption');
+assert.doesNotMatch(
+  welcome,
+  /title: 'بازی و پیاده‌روی'|title: 'واکسیناسیون و درمان'|title: 'پرونده سلامت'|title: 'گفتگوی امن'/,
+  'filler service cards removed'
+);
+assert.match(welcome, /pepito-service-icon--proto/, 'services use larger prototype icons');
+assert.doesNotMatch(welcome, /پیدا کردن پرستار|مراقبت شبانه|نگهداری پت/, 'no sitter leftover in welcome services');
+
 console.log('publicRoutes.selftest: ok');

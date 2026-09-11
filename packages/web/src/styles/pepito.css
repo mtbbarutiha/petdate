@@ -992,7 +992,14 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 .pepito-section-head--center h2 {
   font-size: clamp(2rem, 3.6vw, 2.8rem);
   font-weight: 600;
-  margin: 0;
+  margin: 0 0 0.75rem;
+}
+.pepito-services-lead {
+  margin: 0 auto;
+  max-width: 34rem;
+  color: var(--pepito-muted);
+  font-size: 1.05rem;
+  line-height: 1.75;
 }
 .pepito-eyebrow-icon {
   width: 40px;
@@ -1042,7 +1049,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   align-items: center;
   text-align: center;
   gap: 0.85rem;
-  padding: 60px 30px;
+  padding: 52px 28px 56px;
   border-radius: 20px;
   background: #fff;
   text-decoration: none;
@@ -1073,6 +1080,31 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   color: var(--pepito-dark);
   transition: color 0.5s ease;
 }
+/* Larger prototype icons for the services carousel */
+.pepito-service-icon--proto {
+  width: 132px;
+  height: 120px;
+  min-height: 120px;
+  margin-bottom: 1.45rem;
+}
+.pepito-service-halo {
+  position: absolute;
+  inset: -10px;
+  border-radius: 42% 58% 48% 52% / 52% 42% 58% 48%;
+  background: radial-gradient(
+    circle at 40% 35%,
+    rgba(255, 255, 255, 0.55),
+    transparent 68%
+  );
+  opacity: 0.9;
+  z-index: 0;
+  pointer-events: none;
+  transition: opacity 0.45s ease, transform 0.45s ease;
+}
+.pepito-service:hover .pepito-service-halo {
+  opacity: 0.35;
+  transform: scale(1.06);
+}
 .pepito-service:hover .pepito-service-icon {
   color: #fff;
 }
@@ -1086,6 +1118,11 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   fill-rule: evenodd;
   transition: fill 0.45s ease, opacity 0.45s ease;
 }
+.pepito-service-icon--proto .pepito-service-blob {
+  width: 132px;
+  height: 120px;
+  opacity: 0.88;
+}
 .pepito-service-blob.fill-1 { fill: var(--pepito-pink); }
 .pepito-service-blob.fill-2 { fill: #fec53a; }
 .pepito-service-blob.fill-3 { fill: #15cca0; }
@@ -1097,6 +1134,19 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 .pepito-service-icon > svg:not(.pepito-service-blob) {
   position: relative;
   z-index: 1;
+}
+.pepito-service-proto-glyph {
+  position: relative;
+  z-index: 1;
+  color: #fff;
+  width: 48px;
+  height: 48px;
+  filter: drop-shadow(0 2px 6px rgba(15, 23, 42, 0.18));
+  transition: transform 0.4s ease, filter 0.4s ease;
+}
+.pepito-service:hover .pepito-service-proto-glyph {
+  transform: scale(1.08);
+  filter: drop-shadow(0 4px 10px rgba(15, 23, 42, 0.22));
 }
 .pepito-service-icon > i[class^='flaticon-'] {
   position: relative;
@@ -2672,6 +2722,23 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   .pepito-adoption-tag {
     margin-inline-end: 0;
     margin-bottom: 0.5rem;
+  }
+
+  .pepito-service-icon--proto {
+    width: 112px;
+    height: 102px;
+    min-height: 102px;
+  }
+  .pepito-service-icon--proto .pepito-service-blob {
+    width: 112px;
+    height: 102px;
+  }
+  .pepito-service-proto-glyph {
+    width: 42px;
+    height: 42px;
+  }
+  .pepito-service {
+    padding: 44px 22px 48px;
   }
 
   .pepito-services-section {

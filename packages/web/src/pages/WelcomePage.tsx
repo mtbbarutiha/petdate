@@ -28,26 +28,52 @@ const P = '/pepito/uploads';
 const BLOB_PATH =
   'M30,16C46.588,6.484,54.481-2.058,64.3,1.452c3.145,1.125,6.861,3.657,10.212,9.426A40.611,40.611,0,0,1,59.5,66.544,41.151,41.151,0,0,1,3.482,51.629C0.134,45.865-.2,41.289.375,38.125,2.228,27.979,13.544,25.436,30,16Z';
 
-/** Pepito services — role value-props (همبازی → دامپزشک → مربی → بدون پت), no sitter leftovers */
+/**
+ * Core PetDate product lines only (no sitter / generic filler):
+ * همبازی → دامپزشک آنلاین → مربی → بدون پت → پذیرش
+ */
 const SERVICES: {
   to: string;
   title: string;
   desc: string;
-  icon: string;
+  Icon: LucideIcon;
   fill: 1 | 2 | 3 | 4;
 }[] = [
-  { to: '/chats', title: 'پیدا کردن همبازی', desc: 'همبازی مناسب برای پت‌ات در محله — درخواست بفرست و چت کن.', icon: 'flaticon-people-1', fill: 1 },
-  { to: '/chats', title: 'بازی و پیاده‌روی', desc: 'هماهنگی بازی و پیاده‌روی مشترک با صاحبان پت نزدیک.', icon: 'flaticon-animals-11', fill: 2 },
-  { to: '/vet-consult', title: 'مشاوره دامپزشک', desc: 'اتصال فوری به پزشک آنلاین با پرداخت سکه روی همان حساب.', icon: 'flaticon-veterinarian-hospital', fill: 3 },
-  { to: '/vet-consult', title: 'واکسیناسیون و درمان', desc: 'راهنمایی واکسن، دندان و پیگیری درمان با دامپزشک مجرب.', icon: 'flaticon-syringe', fill: 4 },
-  { to: '/trainer-consult', title: 'پیدا کردن مربی', desc: 'تربیت رفتاری و فرمان‌پذیری با مربیان تأییدشده آنلاین.', icon: 'flaticon-dog-training-3', fill: 2 },
-  { to: '/trainer-consult', title: 'آموزش توله', desc: 'برنامه آموزش پایه برای توله‌ها و گربه‌های جوان.', icon: 'flaticon-dog-puppy', fill: 1 },
-  { to: '/onboarding/role', title: 'شروع بدون پت', desc: 'هنوز پت نداری؟ نقش بدون پت را انتخاب کن و از مشاوره خرید شروع کن.', icon: 'flaticon-dog-and-pets-house', fill: 4 },
-  { to: '/adoption', title: 'پذیرش پت', desc: 'پت‌های نیازمند خانه را ببین و مسیر پذیرش مسئولانه را شروع کن.', icon: 'flaticon-animal-13', fill: 3 },
-  { to: '/shop', title: 'پت شاپ', desc: 'غذا، اسباب‌بازی و لوازم — سفارش روی همان حساب وب و ربات.', icon: 'flaticon-pet-food', fill: 1 },
-  { to: '/add-pet', title: 'ثبت پت', desc: 'پروفایل پت بساز تا همبازی، مربی و دامپزشک فعال شوند.', icon: 'flaticon-pawprint-4', fill: 2 },
-  { to: '/vet-consult', title: 'پرونده سلامت', desc: 'ویزیت و پیگیری روی همان حساب مشترک وب و تلگرام.', icon: 'flaticon-cross', fill: 4 },
-  { to: '/chats', title: 'گفتگوی امن', desc: 'چت همبازی و خدمات با همگام‌سازی وب و ربات.', icon: 'flaticon-dog-with-first-aid-kit-bag', fill: 3 },
+  {
+    to: '/chats',
+    title: 'پیدا کردن همبازی',
+    desc: 'صاحبان پت نزدیک را ببین، درخواست همبازی بفرست و روی همان حساب وب و تلگرام چت کن.',
+    Icon: HeartHandshake,
+    fill: 1,
+  },
+  {
+    to: '/vet-consult',
+    title: 'مشاوره دامپزشک آنلاین',
+    desc: 'اتصال فوری به دامپزشک آنلاین — پس از تأیید پرداخت سکه، مشاوره روی چت مشترک شروع می‌شود.',
+    Icon: Stethoscope,
+    fill: 3,
+  },
+  {
+    to: '/trainer-consult',
+    title: 'مربی و آموزش پت',
+    desc: 'به مربیان تأییدشده درخواست بده — تربیت رفتاری، فرمان‌پذیری و آموزش توله آنلاین.',
+    Icon: GraduationCap,
+    fill: 2,
+  },
+  {
+    to: '/onboarding/role',
+    title: 'شروع بدون پت',
+    desc: 'هنوز پت نداری؟ نقش بدون پت را انتخاب کن و از مشاوره خرید پت شروع کن.',
+    Icon: Home,
+    fill: 4,
+  },
+  {
+    to: '/adoption',
+    title: 'پذیرش پت',
+    desc: 'پت‌های نیازمند خانه را ببین و مسیر پذیرش مسئولانه را شروع کن.',
+    Icon: PawPrint,
+    fill: 1,
+  },
 ];
 
 type HeroRole = 'playmate' | 'vet' | 'trainer' | 'no_pet' | 'adoption';
@@ -605,7 +631,7 @@ export function WelcomePage() {
                   >
                     <path d={BLOB_PATH} />
                   </svg>
-                  <i className={s.icon} />
+                  <s.Icon size={22} strokeWidth={1.75} />
                 </span>
                 <span>
                   <strong>{s.title}</strong>
@@ -629,7 +655,10 @@ export function WelcomePage() {
             </span>
             عاشق حیواناتیم
           </p>
-          <h2>خدمات مراقبت از پت ما</h2>
+          <h2>خدمات پت دیت</h2>
+          <p className="pepito-services-lead">
+            همبازی، دامپزشک آنلاین، مربی، شروع بدون پت و پذیرش — روی یک حساب وب و تلگرام.
+          </p>
         </div>
         <div
           className="pepito-services-viewport"
@@ -640,15 +669,15 @@ export function WelcomePage() {
             {SERVICES.map((s) => (
               <article key={s.title} className="pepito-service-card">
                 <GatedLink to={s.to} className="pepito-service">
-                  <span className="pepito-service-icon">
+                  <span className="pepito-service-icon pepito-service-icon--proto" aria-hidden>
+                    <span className="pepito-service-halo" />
                     <svg
                       className={`pepito-service-blob fill-${s.fill}`}
                       viewBox="0 0 80 72"
-                      aria-hidden
                     >
                       <path d={BLOB_PATH} />
                     </svg>
-                    <i className={s.icon} />
+                    <s.Icon className="pepito-service-proto-glyph" size={48} strokeWidth={1.6} />
                   </span>
                   <h3>{s.title}</h3>
                   <p>{s.desc}</p>
