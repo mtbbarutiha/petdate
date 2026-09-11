@@ -13,7 +13,6 @@ import {
   isCtaPath,
   isPetdateHost,
   isValidGtmContainerId,
-  isValidGtmContainerId,
   isValidGa4MeasurementId,
   resolveGa4MeasurementId,
   setRuntimeGa4MeasurementId,
