@@ -159,7 +159,7 @@ function itemBadge(
 function AdminLayoutInner() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { t, lang } = useI18n();
+  const { t } = useI18n();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [salesCounts, setSalesCounts] = useState<SalesNavCounts | null>(null);
@@ -338,7 +338,6 @@ function AdminLayoutInner() {
               <LanguageToggle compact className="admin-lang-toggle" />
               <ThemeToggle compact className="admin-theme-toggle" />
               <AdminHeaderNotifications />
-              <span className="admin-topbar-chip">{lang === 'fa' ? 'RTL · FA' : 'LTR · EN'}</span>
               <span className="admin-topbar-chip admin-topbar-chip--mint admin-live-pulse">live DB</span>
             </div>
             {/* Far visual-left of RTL topbar (last flex child) — outside end cluster so it cannot clip */}
