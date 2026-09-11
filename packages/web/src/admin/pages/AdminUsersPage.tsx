@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { List, Map, Pencil, Search } from 'lucide-react';
+import { List, Map, Pencil, Search, Trash2 } from 'lucide-react';
 import {
   IranProvinceHeatmap,
   USERS_HEATMAP_COPY,
@@ -17,6 +17,7 @@ import {
   type VerificationStatus,
 } from '@petdate/shared';
 import { adminFetch, formatNumFa } from '../api';
+import { adminCan } from '../auth';
 import { AdminIdChip } from '../AdminIds';
 import {
   AdminContactCell,
@@ -28,6 +29,17 @@ import {
 } from '../AdminListCells';
 import { AdminEntityCell, AdminThumb } from '../AdminThumb';
 import { AdminModal } from '../AdminModal';
+
+/** Soft-deleted anonymized shell left for finance FK history. */
+function isDeletedUserShell(user: User): boolean {
+  return user.isActive === false && String(user.name || '').startsWith('[حذف‌شده');
+}
+
+function userStatusLabel(user: User): string {
+  if (isDeletedUserShell(user)) return 'حذف‌شده';
+  if (user.isActive === false) return 'مسدود';
+  return 'فعال';
+}
 
 type UsersView = 'list' | 'heatmap';
 
