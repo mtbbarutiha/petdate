@@ -4568,11 +4568,15 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 .tg-thread-empty {
   display: grid;
   place-items: center;
+  justify-items: stretch;
   align-content: center;
   gap: 10px;
   text-align: center;
-  padding: 36px 20px;
+  padding: 36px 16px;
   min-height: 100%;
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
 }
 
 .tg-chat-list-empty h2,
@@ -4586,9 +4590,11 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 .tg-thread-empty p {
   margin: 0;
   color: var(--tg-muted);
-  max-width: 28ch;
+  max-width: none;
+  width: 100%;
   line-height: 1.55;
   font-size: 0.9rem;
+  box-sizing: border-box;
 }
 
 .tg-skeleton {
