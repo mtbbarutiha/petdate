@@ -806,13 +806,6 @@ export function WelcomePage() {
             </article>
           ))}
         </div>
-        <div style={{ marginTop: 28, textAlign: 'center' }}>
-          {/* Pepito: Book now (button-3 pink) → contact / vet */}
-          <GatedLink to="/vet-consult" className="pepito-btn button-3">
-            <PawIcon />
-            همین حالا رزرو کن
-          </GatedLink>
-        </div>
       </section>
 
       <section className="pepito-section pepito-reviews-section" id="reviews">
