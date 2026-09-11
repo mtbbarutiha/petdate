@@ -288,18 +288,21 @@ html[data-theme='dark'] .admin-app .recharts-cartesian-grid line {
 }
 
 /* —— Chat dark remaps —— */
+html[data-theme='dark'] .tg-chat,
 html[data-theme='dark'] .tg-chat--shell {
-  --tg-ink: var(--pepito-dark);
-  --tg-muted: var(--pepito-muted);
+  --tg-ink: #f0eef8;
+  /* Brighter than global --pepito-muted so list subtitles survive opacity + small type */
+  --tg-muted: #c4bfd4;
   --tg-out: #1f3d36;
   --tg-in: #2a2f3d;
   --tg-send: var(--pepito-mint);
   --tg-accent: var(--pepito-sky);
   --tg-surface: #1e2230;
   --tg-surface-2: #262b3a;
-  --tg-line: rgba(232, 230, 242, 0.1);
+  --tg-line: rgba(232, 230, 242, 0.14);
   --tg-header: #12151e;
   --tg-header-2: #1a1e2a;
+  color: var(--tg-ink);
 }
 
 /* Chats empty pane: match shell tokens (was hardcoded light → light-on-light) */
@@ -346,50 +349,114 @@ html[data-theme='dark'] .tg-chat-list-head {
   background: rgba(36, 40, 54, 0.82);
 }
 
-/* Chat list secondary lines + pills — readable on dark surfaces */
+/* Inbox list typography — beat chat.css light-mode hardcodes */
+html[data-theme='dark'] .tg-chat-list-head h1,
+html[data-theme='dark'] .tg-chat-list-brand h1,
 html[data-theme='dark'] .tg-chat-list-meta strong {
   color: var(--tg-ink) !important;
 }
+html[data-theme='dark'] .tg-chat-list-kicker,
 html[data-theme='dark'] .tg-chat-list-meta small,
 html[data-theme='dark'] .tg-chat-list-time {
   color: var(--tg-muted) !important;
 }
+html[data-theme='dark'] .tg-chat-list-item.is-ended:not(.is-ongoing),
+html[data-theme='dark'] .tg-chat-list-item.is-ended {
+  opacity: 1;
+}
+html[data-theme='dark'] .tg-chat-list-item.is-ended:not(.is-ongoing) .tg-chat-list-meta small,
+html[data-theme='dark'] .tg-chat-list-item.is-ended:not(.is-ongoing) .tg-chat-list-time {
+  color: #b4afc6 !important;
+}
+
+/* Kind pills: light ink on tinted dark chips (not dark-on-tint) */
+html[data-theme='dark'] .tg-chat-list-kind {
+  color: #b6f5e4 !important;
+  background: rgba(45, 212, 176, 0.22) !important;
+  box-shadow: inset 0 0 0 1px rgba(45, 212, 176, 0.28);
+}
+html[data-theme='dark'] .tg-chat-list-item.is-pending .tg-chat-list-kind,
+html[data-theme='dark'] .tg-chat-list-kind.is-vet {
+  color: #b3e7ff !important;
+  background: rgba(59, 184, 245, 0.22) !important;
+  box-shadow: inset 0 0 0 1px rgba(59, 184, 245, 0.3);
+}
+html[data-theme='dark'] .tg-chat-list-kind.is-trainer {
+  color: #d7c9ff !important;
+  background: rgba(168, 154, 212, 0.24) !important;
+  box-shadow: inset 0 0 0 1px rgba(168, 154, 212, 0.32);
+}
+
+/* Status badges */
+html[data-theme='dark'] .tg-chat-list-badge.is-ended {
+  color: #e2e0ec !important;
+  background: rgba(148, 163, 184, 0.22) !important;
+  border-color: rgba(226, 224, 236, 0.28) !important;
+}
+html[data-theme='dark'] .tg-chat-list-badge.is-ongoing {
+  color: #b6f5e4 !important;
+  background: rgba(45, 212, 176, 0.22) !important;
+  border-color: rgba(45, 212, 176, 0.4) !important;
+}
+html[data-theme='dark'] .tg-chat-list-badge.is-pending {
+  color: #fff !important;
+}
+
+/* Ongoing row hardcodes (#0a5c48 / #0b7a5c) → mint ink */
 html[data-theme='dark'] .tg-chat-list-item.is-ongoing {
   background: linear-gradient(
     260deg,
     rgba(45, 212, 176, 0.16) 0%,
     rgba(45, 212, 176, 0.06) 42%,
-    rgba(36, 40, 54, 0.4) 100%
+    rgba(36, 40, 54, 0.55) 100%
   ) !important;
   border-inline-start-color: var(--pepito-mint);
+  box-shadow: inset 0 0 0 1px rgba(45, 212, 176, 0.22) !important;
 }
 html[data-theme='dark'] .tg-chat-list-item.is-ongoing .tg-chat-list-meta strong {
-  color: var(--pepito-mint) !important;
+  color: #e8fff8 !important;
 }
 html[data-theme='dark'] .tg-chat-list-item.is-ongoing .tg-chat-list-meta small,
 html[data-theme='dark'] .tg-chat-list-item.is-ongoing .tg-chat-list-time {
-  color: color-mix(in srgb, var(--pepito-mint) 70%, var(--tg-muted)) !important;
+  color: #9aedd8 !important;
 }
 html[data-theme='dark'] .tg-chat-list-item.is-pending .tg-chat-list-meta small {
-  color: var(--pepito-sky) !important;
+  color: #8fd4f7 !important;
 }
-html[data-theme='dark'] .tg-chat-list-kind {
-  color: var(--pepito-mint) !important;
-  background: rgba(45, 212, 176, 0.16) !important;
-}
-html[data-theme='dark'] .tg-chat-list-item.is-pending .tg-chat-list-kind,
-html[data-theme='dark'] .tg-chat-list-kind.is-vet {
-  color: var(--pepito-sky) !important;
-  background: rgba(59, 184, 245, 0.16) !important;
-}
-html[data-theme='dark'] .tg-chat-list-badge.is-ongoing {
-  color: #063528;
-  background: rgba(45, 212, 176, 0.85);
-  border-color: transparent;
-}
-html[data-theme='dark'] .tg-chat-list-head h1,
-html[data-theme='dark'] .tg-chat-list-brand h1 {
+
+/* Thread header + empty panes */
+html[data-theme='dark'] .tg-chat-peer strong {
   color: var(--tg-ink) !important;
+}
+html[data-theme='dark'] .tg-chat-peer small {
+  color: var(--tg-muted) !important;
+}
+html[data-theme='dark'] .tg-chat--empty,
+html[data-theme='dark'] .tg-thread-empty,
+html[data-theme='dark'] .tg-chat-list-empty {
+  background:
+    radial-gradient(circle at 20% 10%, rgba(45, 212, 176, 0.12), transparent 42%),
+    radial-gradient(circle at 90% 80%, rgba(59, 184, 245, 0.1), transparent 40%),
+    linear-gradient(160deg, #1a1e2a 0%, #171a24 100%) !important;
+  color: var(--tg-ink) !important;
+}
+html[data-theme='dark'] .tg-thread-empty h2,
+html[data-theme='dark'] .tg-chat-list-empty h2 {
+  color: var(--tg-ink) !important;
+}
+html[data-theme='dark'] .tg-thread-empty p,
+html[data-theme='dark'] .tg-chat-list-empty p {
+  color: var(--tg-muted) !important;
+}
+html[data-theme='dark'] .tg-empty-visual__ring--inner {
+  background: color-mix(in srgb, var(--tg-surface) 90%, var(--pepito-mint));
+}
+html[data-theme='dark'] .tg-empty-visual__paw {
+  color: #9aedd8;
+}
+html[data-theme='dark'] .tg-chat-link-btn {
+  background: rgba(45, 212, 176, 0.18) !important;
+  color: #b6f5e4 !important;
 }
 html[data-theme='dark'] .find-playmate-header-btn--cta {
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35) !important;

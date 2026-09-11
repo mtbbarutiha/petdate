@@ -356,7 +356,11 @@ function ConversationListPane({
                         {c.title}
                         <em
                           className={`tg-chat-list-kind${
-                            c.kind === 'vet' ? ' is-vet' : ''
+                            c.kind === 'vet'
+                              ? ' is-vet'
+                              : c.serviceKind === 'trainer'
+                                ? ' is-trainer'
+                                : ''
                           }`}
                         >
                           {badge}
