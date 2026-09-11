@@ -295,6 +295,9 @@ html[data-theme='dark'] .tg-chat--shell {
   --tg-line: rgba(232, 230, 242, 0.14);
   --tg-header: #12151e;
   --tg-header-2: #1a1e2a;
+  /* Message canvas — beat light #eef2f6 / #eef3f7 wallpaper tokens */
+  --tg-wall-a: #171a24;
+  --tg-wall-b: #1a1e2a;
   color: var(--tg-ink);
 }
 
@@ -457,6 +460,21 @@ html[data-theme='dark'] .tg-empty-visual__ring--inner {
 }
 html[data-theme='dark'] .tg-empty-visual__paw {
   color: #9aedd8;
+}
+
+/*
+ * Thread message canvas (ended playmate chat + active threads).
+ * chat.css hardcodes light #eef3f7 wallpaper with !important — remap so the
+ * request card sits on a dark full-bleed surface matching header / wipe bar.
+ */
+html[data-theme='dark'] .tg-chat-wallpaper,
+html[data-theme='dark'] .tg-thread-scroll.tg-chat-wallpaper {
+  background:
+    radial-gradient(900px 320px at 100% -10%, rgba(59, 184, 245, 0.08), transparent 55%),
+    radial-gradient(700px 280px at -10% 110%, rgba(45, 212, 176, 0.07), transparent 50%),
+    radial-gradient(rgba(232, 230, 242, 0.045) 1px, transparent 1px),
+    linear-gradient(180deg, #171a24 0%, #1a1e2a 100%) !important;
+  background-size: auto, auto, 16px 16px, auto !important;
 }
 
 /* Playmate request card + end-of-chat wipe bar (theme-coherent) */
