@@ -323,3 +323,165 @@ html[data-theme='dark'] select,
 html[data-theme='dark'] textarea {
   color-scheme: dark;
 }
+
+/* —— P0 dark contrast hotfixes (site + admin) —— */
+
+/* Footer: keep true dark surface (do not inherit remapped --pepito-dark ink). */
+html[data-theme='dark'] .pepito-footer {
+  --pepito-footer-bg: #12151e;
+  --pepito-footer-ink: rgba(232, 230, 242, 0.82);
+  background: var(--pepito-footer-bg);
+  color: var(--pepito-footer-ink);
+}
+html[data-theme='dark'] .pepito-footer-heading,
+html[data-theme='dark'] .pepito-footer-bottom-links a,
+html[data-theme='dark'] .pepito-footer-copy a {
+  color: #f4f3f8;
+}
+html[data-theme='dark'] .pepito-footer-lead,
+html[data-theme='dark'] .pepito-footer-meta,
+html[data-theme='dark'] .pepito-footer-meta a,
+html[data-theme='dark'] .pepito-footer-quick-list a {
+  color: rgba(232, 230, 242, 0.78);
+}
+html[data-theme='dark'] .pepito-footer-newsletter input {
+  color: rgba(244, 243, 248, 0.9);
+  border-color: color-mix(in srgb, var(--pepito-base) 55%, #3a3f55);
+}
+html[data-theme='dark'] .pepito-footer-newsletter input::placeholder {
+  color: rgba(232, 230, 242, 0.5);
+}
+html[data-theme='dark'] .pepito-footer-copy {
+  color: var(--pepito-muted);
+}
+
+/* News / magazine section headings stay light-on-dark */
+html[data-theme='dark'] .pepito-news {
+  background-color: var(--pepito-soft);
+  background-image: linear-gradient(
+    180deg,
+    #1a1d27 0%,
+    #1e2230 55%,
+    #242836 100%
+  );
+}
+html[data-theme='dark'] .pepito-news-card {
+  background: var(--pepito-white);
+  border: 1px solid var(--pd-border);
+}
+
+/* Nav chips: tokenized fill already; ensure hover/active stay readable */
+html[data-theme='dark'] .pepito-nav-wallet-btn:hover,
+html[data-theme='dark'] .pepito-site-desktop-nav-link:hover {
+  background: var(--pepito-lilac);
+  color: var(--pepito-base);
+}
+html[data-theme='dark'] .pepito-nav-wallet-btn svg {
+  color: var(--pepito-mint);
+}
+
+/* Vet desk cards: muted body copy + borders on dark surfaces */
+html[data-theme='dark'] .pepito-vet-online-card .pepito-vet-online-status strong,
+html[data-theme='dark'] .pepito-vet-online-card .pepito-vet-online-status p,
+html[data-theme='dark'] .pepito-vet-connect-panel,
+html[data-theme='dark'] .pepito-vet-consult-panel,
+html[data-theme='dark'] .pepito-vet-fee-panel,
+html[data-theme='dark'] .pepito-vet-online-list {
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-vet-online-card,
+html[data-theme='dark'] .pepito-vet-connect-panel,
+html[data-theme='dark'] .pepito-vet-consult-panel,
+html[data-theme='dark'] .pepito-vet-fee-panel,
+html[data-theme='dark'] .pepito-vet-online-list {
+  border-color: var(--pd-border);
+  box-shadow: var(--pd-shadow);
+}
+
+/* Admin: clearer nav ink + sticky chrome */
+html[data-theme='dark'] .admin-app {
+  --admin-sidebar: #1c1f2a;
+  --admin-sidebar-text: #c4bfd4;
+  --admin-muted: #b4afc6;
+}
+
+html[data-theme='dark'] .admin-app .admin-topbar-title {
+  color: var(--admin-ink);
+}
+
+html[data-theme='dark'] .admin-app .admin-nav-item {
+  color: var(--admin-sidebar-text);
+}
+
+html[data-theme='dark'] .admin-app .admin-nav-group-title {
+  color: color-mix(in srgb, var(--admin-muted) 85%, #fff);
+}
+
+html[data-theme='dark'] .admin-app .admin-nav-item.active {
+  color: #5eead4;
+  background: linear-gradient(90deg, var(--admin-active-bg), var(--admin-surface));
+}
+
+html[data-theme='dark'] .admin-app .admin-table th {
+  color: var(--admin-ink);
+}
+
+html[data-theme='dark'] .admin-app .admin-search,
+html[data-theme='dark'] .admin-app .admin-select,
+html[data-theme='dark'] .admin-app .admin-input,
+html[data-theme='dark'] .admin-app .form-input {
+  background: var(--admin-surface);
+  color: var(--admin-ink);
+  border-color: var(--admin-border);
+}
+
+html[data-theme='dark'] .admin-app .admin-search input {
+  color: var(--admin-ink);
+}
+
+html[data-theme='dark'] .admin-app .admin-search input::placeholder {
+  color: var(--admin-muted);
+}
+
+html[data-theme='dark'] .admin-app .admin-topbar-chip {
+  color: var(--admin-ink);
+}
+
+html[data-theme='dark'] .admin-app .admin-topbar-chip--mint {
+  color: #5eead4;
+  border-color: color-mix(in srgb, var(--admin-mint) 40%, var(--admin-border));
+}
+
+html[data-theme='dark'] .admin-app .admin-dash-kpi-value {
+  color: var(--admin-ink);
+}
+
+html[data-theme='dark'] .admin-app .admin-dash-kpi-label,
+html[data-theme='dark'] .admin-app .admin-dash-kpi-hint {
+  color: var(--admin-muted);
+}
+
+html[data-theme='dark'] .admin-app .admin-dash-kpi--slate .admin-dash-kpi-icon {
+  color: #c4bfd4;
+  background: color-mix(in srgb, var(--admin-muted) 18%, var(--admin-bg));
+}
+
+html[data-theme='dark'] .admin-app .admin-dash-kpi--mint .admin-dash-kpi-icon {
+  color: #5eead4;
+}
+html[data-theme='dark'] .admin-app .admin-dash-kpi--violet .admin-dash-kpi-icon {
+  color: #c9c0ea;
+}
+html[data-theme='dark'] .admin-app .admin-dash-kpi--orange .admin-dash-kpi-icon {
+  color: #ffb04a;
+}
+html[data-theme='dark'] .admin-app .admin-dash-kpi--sky .admin-dash-kpi-icon {
+  color: #7dd3fc;
+}
+
+html[data-theme='dark'] .admin-app .admin-icon-btn--danger {
+  color: #fca5a5;
+}
+html[data-theme='dark'] .admin-app .admin-icon-btn--ok {
+  color: #5eead4;
+}

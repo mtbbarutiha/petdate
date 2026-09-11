@@ -173,7 +173,7 @@
   font-size: 0.68rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #9e9e9e;
+  color: var(--admin-muted);
   padding: 8px 12px 6px;
   font-weight: 700;
 }
@@ -989,7 +989,7 @@
   color: inherit;
 }
 .admin-app button.admin-wallet-grid--action:hover .admin-wallet-chip {
-  border-color: color-mix(in srgb, var(--admin-accent) 45%, #e6eaef);
+  border-color: color-mix(in srgb, var(--admin-accent) 45%, var(--admin-border));
 }
 .admin-app button.admin-wallet-grid--action:focus-visible {
   outline: 2px solid var(--admin-accent);
@@ -1002,8 +1002,8 @@
   gap: 1px;
   padding: 3px 5px;
   border-radius: 6px;
-  background: #f4f6f8;
-  border: 1px solid #e6eaef;
+  background: var(--admin-bg);
+  border: 1px solid var(--admin-border);
   line-height: 1.1;
   min-width: 52px;
 }
@@ -1018,7 +1018,7 @@
 .admin-app .admin-wallet-chip-value {
   font-size: 0.78rem;
   font-weight: 700;
-  color: #1f2937;
+  color: var(--admin-ink);
 }
 .admin-app .admin-select--compact {
   max-width: 140px;
@@ -1070,13 +1070,13 @@
 }
 .admin-app .admin-icon-btn--danger {
   color: #b91c1c;
-  border-color: #fecaca;
-  background: #fff5f5;
+  border-color: color-mix(in srgb, var(--admin-danger) 35%, var(--admin-border));
+  background: color-mix(in srgb, var(--admin-danger) 12%, var(--admin-surface));
 }
 .admin-app .admin-icon-btn--ok {
   color: #0f766e;
-  border-color: #99f6e4;
-  background: #f0fdfa;
+  border-color: color-mix(in srgb, var(--admin-mint) 40%, var(--admin-border));
+  background: color-mix(in srgb, var(--admin-mint) 12%, var(--admin-surface));
 }
 /* Users list: fit viewport without forcing a wide scroll rail */
 .admin-app .admin-table-wrap--users {
@@ -1755,8 +1755,9 @@
 }
 .admin-app .admin-id-public {
   font-weight: 700;
-  color: var(--admin-accent);
+  color: var(--admin-ink);
   background: var(--admin-accent-soft);
+  border: 1px solid color-mix(in srgb, var(--admin-accent) 35%, var(--admin-border));
   padding: 2px 6px;
   border-radius: 6px;
   font-size: 0.78rem;
@@ -1776,7 +1777,7 @@
   box-shadow: 4px 0 24px rgba(25, 6, 61, 0.04);
 }
 .admin-app .admin-topbar {
-  background: rgba(255, 255, 255, 0.88);
+  background: color-mix(in srgb, var(--admin-surface) 92%, transparent);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
 }
@@ -1793,7 +1794,7 @@
   border-color: #b6f0df;
 }
 .admin-app .admin-nav-item.active {
-  background: linear-gradient(90deg, var(--admin-active-bg), #fff);
+  background: linear-gradient(90deg, var(--admin-active-bg), var(--admin-surface));
   color: #0f766e;
   border-inline-start-color: var(--admin-active-border);
 }
@@ -2366,7 +2367,7 @@ body:has(.admin-app) {
   position: sticky;
   top: 0;
   z-index: 1;
-  background: color-mix(in srgb, var(--admin-accent-soft) 55%, #fff);
+  background: color-mix(in srgb, var(--admin-accent-soft) 55%, var(--admin-surface));
   border-bottom: 1px solid var(--admin-border);
   padding: 11px 12px;
   font-size: 0.74rem;
@@ -2376,6 +2377,7 @@ body:has(.admin-app) {
   white-space: normal;
   overflow-wrap: break-word;
   line-height: 1.35;
+  color: var(--admin-ink);
 }
 
 .admin-app .admin-table tbody td {
@@ -2384,7 +2386,7 @@ body:has(.admin-app) {
 }
 
 .admin-app .admin-table tbody tr:hover td {
-  background: color-mix(in srgb, var(--admin-promo-mint) 35%, #fff);
+  background: color-mix(in srgb, var(--admin-promo-mint) 35%, var(--admin-surface));
 }
 
 .admin-app .admin-table--dense thead th,
@@ -2658,7 +2660,7 @@ body:has(.admin-app) {
 /* Sidebar readability (light Pepito, not navy CRM) */
 .admin-app .admin-sidebar {
   width: 264px;
-  background: rgba(255, 255, 255, 0.94);
+  background: var(--admin-sidebar);
 }
 
 .admin-app .admin-nav-item {
@@ -2668,7 +2670,7 @@ body:has(.admin-app) {
 }
 
 .admin-app .admin-nav-group-title {
-  color: color-mix(in srgb, var(--admin-muted) 80%, #19063d);
+  color: var(--admin-muted);
   letter-spacing: 0.06em;
 }
 
@@ -3007,8 +3009,8 @@ body:has(.admin-app) {
   gap: 12px;
   padding: 14px 16px;
   border-radius: var(--admin-radius);
-  border: 1px solid color-mix(in srgb, var(--admin-border) 85%, #fff);
-  background: color-mix(in srgb, #fff 92%, var(--admin-violet, #5c4d91) 8%);
+  border: 1px solid color-mix(in srgb, var(--admin-border) 85%, var(--admin-surface));
+  background: color-mix(in srgb, var(--admin-surface) 92%, var(--admin-accent) 8%);
   text-decoration: none;
   color: inherit;
   transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
@@ -3017,23 +3019,23 @@ body:has(.admin-app) {
 .admin-app .admin-module-kpi:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 24px rgba(25, 6, 61, 0.07);
-  border-color: color-mix(in srgb, var(--admin-violet, #5c4d91) 35%, #fff);
+  border-color: color-mix(in srgb, var(--admin-accent) 35%, var(--admin-surface));
 }
 
 .admin-app .admin-module-kpi--mint {
-  background: linear-gradient(145deg, #fff 55%, rgba(21, 204, 160, 0.08));
+  background: linear-gradient(145deg, var(--admin-surface) 55%, color-mix(in srgb, var(--admin-mint) 10%, var(--admin-surface)));
 }
 .admin-app .admin-module-kpi--orange {
-  background: linear-gradient(145deg, #fff 55%, rgba(245, 158, 11, 0.08));
+  background: linear-gradient(145deg, var(--admin-surface) 55%, color-mix(in srgb, var(--admin-orange) 10%, var(--admin-surface)));
 }
 .admin-app .admin-module-kpi--sky {
-  background: linear-gradient(145deg, #fff 55%, rgba(14, 165, 233, 0.08));
+  background: linear-gradient(145deg, var(--admin-surface) 55%, color-mix(in srgb, var(--admin-sky) 10%, var(--admin-surface)));
 }
 .admin-app .admin-module-kpi--violet {
-  background: linear-gradient(145deg, #fff 55%, rgba(92, 77, 145, 0.1));
+  background: linear-gradient(145deg, var(--admin-surface) 55%, color-mix(in srgb, var(--admin-accent) 12%, var(--admin-surface)));
 }
 .admin-app .admin-module-kpi--slate {
-  background: linear-gradient(145deg, #fff 55%, rgba(100, 116, 139, 0.08));
+  background: linear-gradient(145deg, var(--admin-surface) 55%, color-mix(in srgb, var(--admin-muted) 10%, var(--admin-surface)));
 }
 
 .admin-app .admin-module-kpi-head {
@@ -5624,29 +5626,29 @@ body:has(.admin-app) {
 }
 
 .admin-app .admin-dash-kpi--mint {
-  background: linear-gradient(145deg, #fff 40%, var(--admin-promo-mint));
+  background: linear-gradient(145deg, var(--admin-surface) 40%, var(--admin-promo-mint));
 }
 .admin-app .admin-dash-kpi--mint .admin-dash-kpi-icon { color: #0f9a78; background: rgba(21, 204, 160, 0.14); }
 
 .admin-app .admin-dash-kpi--violet {
-  background: linear-gradient(145deg, #fff 40%, var(--admin-promo-purple));
+  background: linear-gradient(145deg, var(--admin-surface) 40%, var(--admin-promo-purple));
 }
 .admin-app .admin-dash-kpi--violet .admin-dash-kpi-icon { color: #5c4d91; background: rgba(92, 77, 145, 0.12); }
 
 .admin-app .admin-dash-kpi--orange {
-  background: linear-gradient(145deg, #fff 40%, var(--admin-promo-yellow));
+  background: linear-gradient(145deg, var(--admin-surface) 40%, var(--admin-promo-yellow));
 }
 .admin-app .admin-dash-kpi--orange .admin-dash-kpi-icon { color: #c77810; background: rgba(253, 150, 30, 0.14); }
 
 .admin-app .admin-dash-kpi--sky {
-  background: linear-gradient(145deg, #fff 40%, var(--admin-promo-blue));
+  background: linear-gradient(145deg, var(--admin-surface) 40%, var(--admin-promo-blue));
 }
 .admin-app .admin-dash-kpi--sky .admin-dash-kpi-icon { color: #0284c7; background: rgba(11, 165, 242, 0.12); }
 
 .admin-app .admin-dash-kpi--slate {
-  background: linear-gradient(145deg, #fff 55%, #f8fafc);
+  background: linear-gradient(145deg, var(--admin-surface) 55%, var(--admin-bg));
 }
-.admin-app .admin-dash-kpi--slate .admin-dash-kpi-icon { color: #64748b; background: #f1f5f9; }
+.admin-app .admin-dash-kpi--slate .admin-dash-kpi-icon { color: #64748b; background: color-mix(in srgb, var(--admin-muted) 18%, var(--admin-bg)); }
 
 @media (max-width: 720px) {
   .admin-app .admin-dash-kpi--wide {
@@ -5668,7 +5670,7 @@ body:has(.admin-app) {
   gap: 12px;
   padding: 14px 16px;
   border-radius: var(--admin-radius);
-  border: 1px solid color-mix(in srgb, var(--admin-border) 85%, #fff);
+  border: 1px solid color-mix(in srgb, var(--admin-border) 85%, var(--admin-surface));
   background: var(--admin-surface);
   text-decoration: none;
   color: inherit;
@@ -5679,23 +5681,23 @@ body:has(.admin-app) {
 .admin-app .admin-dash-module:hover {
   transform: translateY(-2px);
   box-shadow: 0 10px 24px rgba(25, 6, 61, 0.07);
-  border-color: color-mix(in srgb, var(--admin-accent) 35%, #fff);
+  border-color: color-mix(in srgb, var(--admin-accent) 35%, var(--admin-surface));
 }
 
 .admin-app .admin-dash-module--mint {
-  background: linear-gradient(145deg, #fff 55%, rgba(21, 204, 160, 0.08));
+  background: linear-gradient(145deg, var(--admin-surface) 55%, color-mix(in srgb, var(--admin-mint) 10%, var(--admin-surface)));
 }
 .admin-app .admin-dash-module--orange {
-  background: linear-gradient(145deg, #fff 55%, rgba(245, 158, 11, 0.08));
+  background: linear-gradient(145deg, var(--admin-surface) 55%, color-mix(in srgb, var(--admin-orange) 10%, var(--admin-surface)));
 }
 .admin-app .admin-dash-module--sky {
-  background: linear-gradient(145deg, #fff 55%, rgba(14, 165, 233, 0.08));
+  background: linear-gradient(145deg, var(--admin-surface) 55%, color-mix(in srgb, var(--admin-sky) 10%, var(--admin-surface)));
 }
 .admin-app .admin-dash-module--violet {
-  background: linear-gradient(145deg, #fff 55%, rgba(92, 77, 145, 0.1));
+  background: linear-gradient(145deg, var(--admin-surface) 55%, color-mix(in srgb, var(--admin-accent) 12%, var(--admin-surface)));
 }
 .admin-app .admin-dash-module--slate {
-  background: linear-gradient(145deg, #fff 55%, rgba(100, 116, 139, 0.08));
+  background: linear-gradient(145deg, var(--admin-surface) 55%, color-mix(in srgb, var(--admin-muted) 10%, var(--admin-surface)));
 }
 
 .admin-app .admin-dash-module-head {
