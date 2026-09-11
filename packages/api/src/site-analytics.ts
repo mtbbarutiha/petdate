@@ -64,6 +64,12 @@ export type SiteAnalyticsReport = {
     dashboardUrl: string | null;
     note: string;
   };
+  gtm: {
+    configured: boolean;
+    containerId: string | null;
+    dashboardUrl: string | null;
+    note: string;
+  };
   requestedAgentId: string | null;
 };
 
@@ -71,6 +77,9 @@ const AGENT_UUID = '4b79bfb4-a025-4f0e-8b84-0f45c3acac64';
 
 /** Live Microsoft Clarity project for petdate.ir (short id — not the rejected agent UUID). */
 export const DEFAULT_CLARITY_PROJECT_ID = 'ygkl5nck6k';
+
+/** Live Google Tag Manager container for petdate.ir. */
+export const DEFAULT_GTM_ID = 'GTM-KQPJT9Q4';
 
 let ensured = false;
 
@@ -177,6 +186,34 @@ function clarityConfig(): SiteAnalyticsReport['clarity'] {
     note: ok
       ? 'پروژه Clarity پیکربندی شده — برای session replay و heatmap به داشبورد Clarity بروید.'
       : 'شناسهٔ داده‌شده (UUID ایجنت) توسط Clarity به‌عنوان project id رد شد؛ گزارش‌های زیر از آنالیتیکس اول‌شخص petdate است. برای Clarity یک Project ID معتبر را در VITE_CLARITY_PROJECT_ID ست کنید.',
+  };
+}
+
+export function isValidGtmContainerId(id: string | null | undefined): boolean {
+  if (!id) return false;
+  return /^GTM-[A-Z0-9]{4,12}$/i.test(id.trim());
+}
+
+function resolveGtmId(): string | null {
+  const fromEnv =
+    process.env.GTM_ID?.trim() ||
+    process.env.VITE_GTM_ID?.trim() ||
+    '';
+  if (fromEnv && !isValidGtmContainerId(fromEnv)) return null;
+  const id = fromEnv || DEFAULT_GTM_ID;
+  return isValidGtmContainerId(id) ? id.trim().toUpperCase() : null;
+}
+
+function gtmConfig(): SiteAnalyticsReport['gtm'] {
+  const raw = resolveGtmId();
+  const ok = Boolean(raw);
+  return {
+    configured: ok,
+    containerId: ok ? raw : null,
+    dashboardUrl: ok ? 'https://tagmanager.google.com/' : null,
+    note: ok
+      ? `کانتینر GTM (${raw}) پیکربندی شده — فقط روی مسیرهای عمومی بارگذاری می‌شود (نه /admin).`
+      : 'شناسهٔ GTM نامعتبر است. مقدار VITE_GTM_ID را به صورت GTM-XXXX تنظیم کنید.',
   };
 }
 
@@ -387,6 +424,7 @@ export function buildSiteAnalyticsReport(periodDays = 14): SiteAnalyticsReport {
       country: s.country || 'نامشخص',
     })),
     clarity: clarityConfig(),
+    gtm: gtmConfig(),
     requestedAgentId: AGENT_UUID,
   };
 }

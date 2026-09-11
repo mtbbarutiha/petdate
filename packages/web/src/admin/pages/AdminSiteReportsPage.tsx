@@ -30,6 +30,7 @@ type Report = {
   devices: Bucket[]; countries: Bucket[]; languages: Bucket[]; utmSources: Bucket[];
   recentSessions: SessionRow[];
   clarity: { configured: boolean; projectId: string | null; dashboardUrl: string | null; note: string };
+  gtm: { configured: boolean; containerId: string | null; dashboardUrl: string | null; note: string };
   requestedAgentId: string | null;
 };
 
@@ -149,6 +150,26 @@ export function AdminSiteReportsPage() {
             <p className="admin-muted" style={{ fontSize: '0.75rem' }}>
               آخرین بروزرسانی: {formatAdminFaDateTime(data.generatedAt)} · بازه {formatNumFa(data.periodDays)} روز
             </p>
+          </section>
+
+          <section className="admin-card site-reports-gtm" aria-label="وضعیت Google Tag Manager">
+            <div className="admin-card-head">
+              <h2>Google Tag Manager</h2>
+              <span className={`admin-status ${data.gtm.configured ? 'admin-status--accepted' : 'admin-status--pending'}`}>
+                {data.gtm.configured ? 'فعال' : 'پیکربندی نشده'}
+              </span>
+            </div>
+            <p className="admin-muted">{data.gtm.note}</p>
+            {data.gtm.containerId ? (
+              <p className="admin-muted" style={{ marginTop: 6 }}>
+                Container ID: <code dir="ltr">{data.gtm.containerId}</code>
+              </p>
+            ) : null}
+            {data.gtm.dashboardUrl ? (
+              <a className="admin-btn admin-btn--primary" href={data.gtm.dashboardUrl} target="_blank" rel="noreferrer">
+                <ExternalLink size={16} /> باز کردن Google Tag Manager
+              </a>
+            ) : null}
           </section>
 
           <div className="crm-report-charts">

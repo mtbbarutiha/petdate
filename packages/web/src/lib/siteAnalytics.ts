@@ -1,12 +1,16 @@
 /**
- * Public first-party analytics beacon + optional Microsoft Clarity.
+ * Public first-party analytics beacon + optional Microsoft Clarity + Google Tag Manager.
  * Clarity only loads when the project id is a valid Clarity id (NOT a UUID).
- * Override with VITE_CLARITY_PROJECT_ID; production default is the live petdate.ir project.
+ * GTM loads when container id matches GTM-XXXX (override with VITE_GTM_ID).
+ * Both skip /admin paths. Production defaults: live Clarity + GTM-KQPJT9Q4.
  */
 const SESSION_KEY = 'pd_analytics_sid';
 
 /** Live Microsoft Clarity project for petdate.ir (short id — not the rejected agent UUID). */
 export const DEFAULT_CLARITY_PROJECT_ID = 'ygkl5nck6k';
+
+/** Live Google Tag Manager container for petdate.ir. */
+export const DEFAULT_GTM_ID = 'GTM-KQPJT9Q4';
 
 function apiBase(): string {
   return (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ?? '';
@@ -27,6 +31,18 @@ function resolveClarityProjectId(): string | null {
   if (fromEnv && !isValidClarityProjectId(fromEnv)) return null;
   const id = fromEnv || DEFAULT_CLARITY_PROJECT_ID;
   return isValidClarityProjectId(id) ? id : null;
+}
+
+export function isValidGtmContainerId(id: string | undefined | null): boolean {
+  if (!id) return false;
+  return /^GTM-[A-Z0-9]{4,12}$/i.test(id.trim());
+}
+
+function resolveGtmId(): string | null {
+  const fromEnv = (import.meta.env.VITE_GTM_ID as string | undefined)?.trim() || '';
+  if (fromEnv && !isValidGtmContainerId(fromEnv)) return null;
+  const id = fromEnv || DEFAULT_GTM_ID;
+  return isValidGtmContainerId(id) ? id.toUpperCase() : null;
 }
 
 function getSessionId(): string {
@@ -58,6 +74,7 @@ function readUtm(): { utmSource: string | null; utmMedium: string | null; utmCam
 }
 
 let clarityBooted = false;
+let gtmBooted = false;
 
 function maybeInitClarity(): void {
   if (clarityBooted || typeof window === 'undefined' || typeof document === 'undefined') return;
@@ -84,12 +101,61 @@ function maybeInitClarity(): void {
   }
 }
 
+/**
+ * Inject standard GTM head script + noscript iframe (SPA-safe).
+ * Only once per session; skipped on /admin via trackPageview.
+ */
+function maybeInitGtm(): void {
+  if (gtmBooted || typeof window === 'undefined' || typeof document === 'undefined') return;
+  const containerId = resolveGtmId();
+  if (!containerId) return;
+  if (document.getElementById('petdate-gtm')) {
+    gtmBooted = true;
+    return;
+  }
+  gtmBooted = true;
+  try {
+    const w = window as Window & { dataLayer?: unknown[] };
+    w.dataLayer = w.dataLayer || [];
+    w.dataLayer.push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
+
+    const s = document.createElement('script');
+    s.async = true;
+    s.src = `https://www.googletagmanager.com/gtm.js?id=${containerId}`;
+    s.id = 'petdate-gtm';
+    const first = document.getElementsByTagName('script')[0];
+    first?.parentNode?.insertBefore(s, first);
+
+    if (!document.getElementById('petdate-gtm-noscript')) {
+      const noscript = document.createElement('noscript');
+      noscript.id = 'petdate-gtm-noscript';
+      const iframe = document.createElement('iframe');
+      iframe.src = `https://www.googletagmanager.com/ns.html?id=${containerId}`;
+      iframe.height = '0';
+      iframe.width = '0';
+      iframe.style.display = 'none';
+      iframe.style.visibility = 'hidden';
+      iframe.title = 'Google Tag Manager';
+      noscript.appendChild(iframe);
+      const body = document.body;
+      if (body?.firstChild) {
+        body.insertBefore(noscript, body.firstChild);
+      } else if (body) {
+        body.appendChild(noscript);
+      }
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
 export function trackPageview(pathname?: string): void {
   if (typeof window === 'undefined') return;
   const path = pathname ?? window.location.pathname;
   if (path.startsWith('/admin')) return;
 
   maybeInitClarity();
+  maybeInitGtm();
 
   const utm = readUtm();
   const payload = {
