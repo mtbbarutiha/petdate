@@ -416,3 +416,95 @@ export function listFeaturedMagazineArticles(limit = 6): MagazineArticle[] {
   const rest = articles.filter((a) => !a.featured);
   return [...featured, ...rest].slice(0, limit);
 }
+
+/** Related public articles — same category first, then recent; excludes current slug. */
+export function listRelatedMagazineArticles(
+  slug: string,
+  opts?: { category?: string; limit?: number }
+): MagazineArticle[] {
+  const limit = Math.min(Math.max(Number(opts?.limit) || 3, 1), 12);
+  const { articles } = listMagazineArticles({
+    publicOnly: true,
+    limit: 48,
+    status: 'all',
+  });
+  const others = articles.filter((a) => a.slug !== slug);
+  const cat = (opts?.category || '').trim();
+  if (!cat) return others.slice(0, limit);
+  const same = others.filter((a) => a.category === cat);
+  const rest = others.filter((a) => a.category !== cat);
+  return [...same, ...rest].slice(0, limit);
+}
+
+const SAMPLE_SEED: MagazineArticleInput[] = [
+  {
+    title: 'مراقبت از دندان پت',
+    slug: 'مراقبت-از-دندان-پت',
+    excerpt: 'نکات ساده برای سلامت دهان و دندان پت‌تان در خانه.',
+    bodyHtml:
+      '<p>مسواک زدن منظم، جویدنی‌های مناسب و معاینه دوره‌ای دامپزشک به سلامت دهان پت کمک می‌کند.</p>',
+    coverImage: '/pepito/uploads/01.jpg',
+    category: 'مراقبت',
+    tags: ['دندان', 'سلامت'],
+    author: 'پت‌دیت',
+    status: 'published',
+    featured: true,
+    publishAt: '2025-03-03 09:00:00',
+    metaTitle: 'مراقبت از دندان پت | مجله پت‌دیت',
+    metaDescription: 'نکات ساده برای سلامت دهان و دندان پت‌تان در خانه.',
+  },
+  {
+    title: 'سبک‌های آرایش سگ',
+    slug: 'سبکهای-آرایش-سگ',
+    excerpt: 'انتخاب کوتاهی مو متناسب با نژاد و فصل.',
+    bodyHtml:
+      '<p>کوتاهی مو باید با نژاد، آب‌وهوا و سبک زندگی سگ هماهنگ باشد تا هم ظاهر و هم راحتی حفظ شود.</p>',
+    coverImage: '/pepito/uploads/06.jpg',
+    category: 'پت',
+    tags: ['آرایش'],
+    author: 'پت‌دیت',
+    status: 'published',
+    featured: true,
+    publishAt: '2025-03-03 10:00:00',
+    metaTitle: 'سبک‌های آرایش سگ | مجله پت‌دیت',
+    metaDescription: 'انتخاب کوتاهی مو متناسب با نژاد و فصل.',
+  },
+  {
+    title: 'نکات ایمنی پت',
+    slug: 'نکات-ایمنی-پت',
+    excerpt: 'چطور خانه را برای پت‌ها امن‌تر کنیم.',
+    bodyHtml:
+      '<p>مواد سمی، سیم‌های لخت و پنجره‌های باز را ایمن کنید تا خانه برای پت‌ها جای امنی باشد.</p>',
+    coverImage: '/pepito/uploads/03.jpg',
+    category: 'ایمنی',
+    tags: ['ایمنی'],
+    author: 'پت‌دیت',
+    status: 'published',
+    featured: true,
+    publishAt: '2025-03-03 11:00:00',
+    metaTitle: 'نکات ایمنی پت | مجله پت‌دیت',
+    metaDescription: 'چطور خانه را برای پت‌ها امن‌تر کنیم.',
+  },
+];
+
+/**
+ * Seed 3 sample Persian posts only when the table has zero rows (incl. soft-deleted).
+ * Never overwrites existing content.
+ */
+export function seedMagazineSamplesIfEmpty(): number {
+  ensureMagazineSchema();
+  const row = db()
+    .prepare('SELECT COUNT(*) as c FROM magazine_articles')
+    .get() as { c: number };
+  if (Number(row?.c || 0) > 0) return 0;
+  let created = 0;
+  for (const sample of SAMPLE_SEED) {
+    try {
+      createMagazineArticle(sample);
+      created += 1;
+    } catch (err) {
+      console.warn('magazine seed skipped:', (err as Error).message);
+    }
+  }
+  return created;
+}

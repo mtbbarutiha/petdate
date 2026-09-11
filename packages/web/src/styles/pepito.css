@@ -2132,6 +2132,13 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   color: #b42318;
   margin: 1rem 0;
 }
+.pepito-magazine-related {
+  padding-block: 32px 96px;
+  background: transparent;
+}
+.pepito-magazine-related .pepito-magazine-grid {
+  margin-top: 8px;
+}
 
 .pepito-faq {
   display: grid;

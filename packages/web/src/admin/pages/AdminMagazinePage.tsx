@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { ExternalLink, Newspaper, Plus, Search, Trash2 } from 'lucide-react';
 import { adminFetch, formatNumFa } from '../api';
 import { formatAdminFaDate } from '../JalaliDateSelect';
+import { resolvePublicMediaUrl } from '../../lib/api';
 
 type Article = {
   id: number;
@@ -154,6 +155,7 @@ export function AdminMagazinePage() {
         <table className="admin-table">
           <thead>
             <tr>
+              <th>کاور</th>
               <th>عنوان</th>
               <th>وضعیت</th>
               <th>دسته</th>
@@ -165,79 +167,91 @@ export function AdminMagazinePage() {
           <tbody>
             {articles.length === 0 ? (
               <tr>
-                <td colSpan={6} className="admin-muted">
+                <td colSpan={7} className="admin-muted">
                   مطلبی نیست — اولین مقاله را بسازید.
                 </td>
               </tr>
             ) : (
-              articles.map((a) => (
-                <tr key={a.id}>
-                  <td>
-                    <Link to={`/admin/magazine/${a.id}`} className="admin-link">
-                      {a.title}
-                    </Link>
-                    <div className="admin-muted" dir="ltr" style={{ fontSize: 12 }}>
-                      /magazine/{a.slug}
-                    </div>
-                  </td>
-                  <td>
-                    <span className={`admin-pill admin-pill--${a.status === 'published' ? 'mint' : a.status === 'scheduled' ? 'sky' : 'slate'}`}>
-                      {STATUS_LABEL[a.status]}
-                    </span>
-                  </td>
-                  <td>{a.category || '—'}</td>
-                  <td className="admin-cell-nowrap">{formatAdminFaDate(a.publishAt)}</td>
-                  <td>{a.featured ? '★' : '—'}</td>
-                  <td>
-                    <div className="admin-row-actions">
-                      <button
-                        type="button"
-                        className="admin-btn admin-btn--ghost"
-                        onClick={() => navigate(`/admin/magazine/${a.id}`)}
-                      >
-                        ویرایش
-                      </button>
-                      {a.status === 'published' ? (
-                        <button
-                          type="button"
-                          className="admin-btn admin-btn--ghost"
-                          disabled={busy}
-                          onClick={() => void unpublish(a.id)}
-                        >
-                          لغو انتشار
-                        </button>
+              articles.map((a) => {
+                const thumb = resolvePublicMediaUrl(a.coverImage);
+                return (
+                  <tr key={a.id}>
+                    <td>
+                      {thumb ? (
+                        <img className="admin-thumb" src={thumb} alt="" />
                       ) : (
+                        <span className="admin-thumb admin-thumb--placeholder">—</span>
+                      )}
+                    </td>
+                    <td>
+                      <Link to={`/admin/magazine/${a.id}`} className="admin-link">
+                        {a.title}
+                      </Link>
+                      <div className="admin-muted" dir="ltr" style={{ fontSize: 12 }}>
+                        /magazine/{a.slug}
+                      </div>
+                    </td>
+                    <td>
+                      <span
+                        className={`admin-pill admin-pill--${a.status === 'published' ? 'mint' : a.status === 'scheduled' ? 'sky' : 'slate'}`}
+                      >
+                        {STATUS_LABEL[a.status]}
+                      </span>
+                    </td>
+                    <td>{a.category || '—'}</td>
+                    <td className="admin-cell-nowrap">{formatAdminFaDate(a.publishAt)}</td>
+                    <td>{a.featured ? '★' : '—'}</td>
+                    <td>
+                      <div className="admin-row-actions">
                         <button
                           type="button"
                           className="admin-btn admin-btn--ghost"
-                          disabled={busy}
-                          onClick={() => void publish(a.id)}
+                          onClick={() => navigate(`/admin/magazine/${a.id}`)}
                         >
-                          انتشار
+                          ویرایش
                         </button>
-                      )}
-                      {a.status === 'published' ? (
-                        <a
-                          className="admin-btn admin-btn--ghost"
-                          href={`/magazine/${a.slug}`}
-                          target="_blank"
-                          rel="noreferrer"
+                        {a.status === 'published' ? (
+                          <button
+                            type="button"
+                            className="admin-btn admin-btn--ghost"
+                            disabled={busy}
+                            onClick={() => void unpublish(a.id)}
+                          >
+                            لغو انتشار
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            className="admin-btn admin-btn--ghost"
+                            disabled={busy}
+                            onClick={() => void publish(a.id)}
+                          >
+                            انتشار
+                          </button>
+                        )}
+                        {a.status === 'published' ? (
+                          <a
+                            className="admin-btn admin-btn--ghost"
+                            href={`/magazine/${a.slug}`}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            <ExternalLink size={14} /> پیش‌نمایش
+                          </a>
+                        ) : null}
+                        <button
+                          type="button"
+                          className="admin-btn admin-btn--danger"
+                          disabled={busy}
+                          onClick={() => void remove(a.id)}
                         >
-                          <ExternalLink size={14} /> پیش‌نمایش
-                        </a>
-                      ) : null}
-                      <button
-                        type="button"
-                        className="admin-btn admin-btn--danger"
-                        disabled={busy}
-                        onClick={() => void remove(a.id)}
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>

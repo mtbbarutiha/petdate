@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { LandingChrome } from '../components/LandingChrome';
 import { resolvePublicMediaUrl } from '../lib/api';
 import { formatAdminFaDate } from '../admin/jalaliDate';
-import type { MagazineCard } from './MagazinePage';
+import { MagazineCardView, type MagazineCard } from './MagazinePage';
 
 type ArticleDetail = MagazineCard & {
   bodyHtml: string;
@@ -17,6 +17,7 @@ const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/
 export function MagazineArticlePage() {
   const { slug } = useParams();
   const [article, setArticle] = useState<ArticleDetail | null>(null);
+  const [related, setRelated] = useState<MagazineCard[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -30,17 +31,19 @@ export function MagazineArticlePage() {
           const body = (await res.json().catch(() => ({}))) as { error?: string };
           throw new Error(body.error || 'مقاله پیدا نشد');
         }
-        return res.json() as Promise<{ article: ArticleDetail }>;
+        return res.json() as Promise<{ article: ArticleDetail; related?: MagazineCard[] }>;
       })
       .then((data) => {
         if (!cancelled) {
           setArticle(data.article);
+          setRelated(data.related || []);
           setError(null);
         }
       })
       .catch((err) => {
         if (!cancelled) {
           setArticle(null);
+          setRelated([]);
           setError(err instanceof Error ? err.message : 'خطا');
         }
       })
@@ -134,6 +137,27 @@ export function MagazineArticlePage() {
           </>
         ) : null}
       </article>
+
+      {related.length > 0 ? (
+        <section className="pepito-section pepito-news pepito-magazine-related">
+          <div className="pepito-section-head pepito-section-head--center pepito-news-head">
+            <p className="pepito-eyebrow">
+              <span className="pepito-eyebrow-icon" aria-hidden>
+                <i className="flaticon-pawprint-4" />
+              </span>
+              مطالب مرتبط
+            </p>
+            <h2>
+              مقالات پیشنهادی<span className="pepito-news-dot">.</span>
+            </h2>
+          </div>
+          <div className="pepito-magazine-grid">
+            {related.map((a) => (
+              <MagazineCardView key={a.id} article={a} />
+            ))}
+          </div>
+        </section>
+      ) : null}
     </LandingChrome>
   );
 }

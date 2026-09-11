@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { LandingChrome } from '../components/LandingChrome';
 import { resolvePublicMediaUrl } from '../lib/api';
@@ -17,18 +17,24 @@ export type MagazineCard = {
 };
 
 const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ?? '';
+const PAGE_SIZE = 3;
 
 export async function fetchMagazineList(opts?: {
   q?: string;
   limit?: number;
-}): Promise<MagazineCard[]> {
+  offset?: number;
+}): Promise<{ articles: MagazineCard[]; total: number }> {
   const params = new URLSearchParams();
   if (opts?.q) params.set('q', opts.q);
   params.set('limit', String(opts?.limit ?? 24));
+  if (opts?.offset != null) params.set('offset', String(opts.offset));
   const res = await fetch(`${API_BASE}/api/magazine?${params}`, { cache: 'no-store' });
   if (!res.ok) throw new Error('بارگذاری مجله ناموفق بود');
-  const data = (await res.json()) as { articles: MagazineCard[] };
-  return data.articles || [];
+  const data = (await res.json()) as { articles: MagazineCard[]; total?: number };
+  return {
+    articles: data.articles || [],
+    total: typeof data.total === 'number' ? data.total : (data.articles || []).length,
+  };
 }
 
 export async function fetchMagazineFeatured(limit = 6): Promise<MagazineCard[]> {
@@ -76,17 +82,25 @@ export function MagazineCardView({ article }: { article: MagazineCard }) {
 
 export function MagazinePage() {
   const [articles, setArticles] = useState<MagazineCard[]>([]);
+  const [total, setTotal] = useState(0);
   const [q, setQ] = useState('');
+  const [page, setPage] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    void fetchMagazineList({ q: q.trim() || undefined })
-      .then((list) => {
+    void fetchMagazineList({
+      q: q.trim() || undefined,
+      limit: 48,
+      offset: 0,
+    })
+      .then((result) => {
         if (!cancelled) {
-          setArticles(list);
+          setArticles(result.articles);
+          setTotal(result.total);
+          setPage(0);
           setError(null);
         }
       })
@@ -100,6 +114,16 @@ export function MagazinePage() {
       cancelled = true;
     };
   }, [q]);
+
+  const pageCount = Math.max(1, Math.ceil(articles.length / PAGE_SIZE));
+  const pageArticles = useMemo(() => {
+    const start = page * PAGE_SIZE;
+    return articles.slice(start, start + PAGE_SIZE);
+  }, [articles, page]);
+
+  useEffect(() => {
+    if (page >= pageCount) setPage(Math.max(0, pageCount - 1));
+  }, [page, pageCount]);
 
   return (
     <LandingChrome
@@ -145,11 +169,33 @@ export function MagazinePage() {
             هنوز مطلب منتشرشده‌ای نیست.
           </p>
         ) : (
-          <div className="pepito-magazine-grid">
-            {articles.map((a) => (
-              <MagazineCardView key={a.id} article={a} />
-            ))}
-          </div>
+          <>
+            <div className="pepito-magazine-grid">
+              {pageArticles.map((a) => (
+                <MagazineCardView key={a.id} article={a} />
+              ))}
+            </div>
+            {pageCount > 1 ? (
+              <div className="pepito-news-dots" role="tablist" aria-label="صفحات مجله">
+                {Array.from({ length: pageCount }, (_, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    role="tab"
+                    aria-selected={i === page}
+                    className={`pepito-news-dot${i === page ? ' is-active' : ''}`}
+                    onClick={() => setPage(i)}
+                    aria-label={`صفحه ${i + 1}`}
+                  />
+                ))}
+              </div>
+            ) : null}
+            {total > 0 ? (
+              <p className="pepito-muted" style={{ textAlign: 'center', marginTop: 12 }}>
+                {total} مطلب
+              </p>
+            ) : null}
+          </>
         )}
       </section>
     </LandingChrome>
