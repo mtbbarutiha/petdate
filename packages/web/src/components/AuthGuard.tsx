@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { loginPath, postAuthPath, readNextFromSearch, sanitizeNext } from '../lib/authRedirect';
+import { stripTagAssistantParams, withTagAssistantParams } from '../lib/tagAssistantParams';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { TelegramSync } from './OnboardingGuard';
 import { dashboardPathForUser } from '@petdate/shared';
@@ -35,7 +36,11 @@ export function AuthGuard({ children }: { children?: React.ReactNode }) {
   }
 
   if (!isLoggedIn && !isPublic(location.pathname)) {
-    const next = sanitizeNext(location.pathname + location.search, '/home');
+    // Strip gtm_debug/_dbg out of `next`; loginPath re-attaches them top-level.
+    const next = sanitizeNext(
+      stripTagAssistantParams(location.pathname + location.search),
+      '/home',
+    );
     return <Navigate to={loginPath(next)} replace state={{ from: next }} />;
   }
 
@@ -46,15 +51,28 @@ export function AuthGuard({ children }: { children?: React.ReactNode }) {
     !location.pathname.startsWith('/onboarding/role') &&
     !isPublic(location.pathname)
   ) {
-    return <Navigate to="/onboarding/role" replace state={{ next: nextFromState }} />;
+    return (
+      <Navigate
+        to={withTagAssistantParams('/onboarding/role')}
+        replace
+        state={{ next: nextFromState }}
+      />
+    );
   }
 
   // پروفایل ناقص را مثل ربات اجباری نگه نمی‌داریم — «فعلاً رد کن» باید به اپ راه بدهد.
   // ورود اولیه هنوز از postAuthPath به /onboarding/profile هدایت می‌شود.
 
   if (isLoggedIn && isPublic(location.pathname) && location.pathname.startsWith('/auth')) {
-    if (!hasRole) return <Navigate to="/onboarding/role" replace />;
-    return <Navigate to={postAuthPath({ hasRole, isProfileComplete, next: nextFromQuery, roleHome })} replace />;
+    if (!hasRole) {
+      return <Navigate to={withTagAssistantParams('/onboarding/role')} replace />;
+    }
+    return (
+      <Navigate
+        to={postAuthPath({ hasRole, isProfileComplete, next: nextFromQuery, roleHome })}
+        replace
+      />
+    );
   }
 
   return <>{children ?? <Outlet />}</>;

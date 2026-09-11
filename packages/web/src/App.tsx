@@ -2,12 +2,14 @@ import { lazy, Suspense, useEffect } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { AppGuards } from './components/AuthGuard';
 import { Layout } from './components/Layout';
+import { PersistTagAssistantParams } from './components/PersistTagAssistantParams';
 import { RouteSeo } from './components/RouteSeo';
 import { ShopCartProvider } from './hooks/useShopCart';
 import { AppToastProvider } from './hooks/useAppToast';
 import { LandingMobileDock } from './components/LandingMobileDock';
 import { ScrollToTop } from './components/ScrollToTop';
 import { trackPageview } from './lib/siteAnalytics';
+import { withTagAssistantParams } from './lib/tagAssistantParams';
 import { WelcomePage } from './pages/WelcomePage';
 
 function SiteAnalyticsListener() {
@@ -17,6 +19,11 @@ function SiteAnalyticsListener() {
     trackPageview(`${location.pathname}${location.search}`);
   }, [location.pathname, location.search]);
   return null;
+}
+
+/** Alias / catch-all redirects must keep Tag Assistant debug query params. */
+function RedirectWithTagAssistant({ to }: { to: string }) {
+  return <Navigate to={withTagAssistantParams(to)} replace />;
 }
 
 import { LoginPage } from './pages/auth/LoginPage';
@@ -316,6 +323,7 @@ export default function App() {
       <AppToastProvider>
       <ShopCartProvider>
         <ScrollToTop />
+        <PersistTagAssistantParams />
         <SiteAnalyticsListener />
         <RouteSeo />
         <Suspense fallback={<RouteFallback />}>
@@ -341,7 +349,7 @@ export default function App() {
 
             <Route element={<Layout />}>
               <Route path="home" element={<HomePage />} />
-              <Route path="explore" element={<Navigate to="/chats" replace />} />
+              <Route path="explore" element={<RedirectWithTagAssistant to="/chats" />} />
               <Route path="pets/:id" element={<PetDetailPage />} />
               <Route path="pets/:id/edit" element={<PetEditPage />} />
               <Route path="my-pets" element={<MyPetsPage />} />
@@ -353,11 +361,11 @@ export default function App() {
               <Route path="wallet" element={<WalletPage />} />
               <Route path="support" element={<SupportChatPage />} />
               <Route path="wallet/earn" element={<EarningsPage />} />
-              <Route path="earn" element={<Navigate to="/wallet/earn" replace />} />
+              <Route path="earn" element={<RedirectWithTagAssistant to="/wallet/earn" />} />
               <Route path="vet-consult" element={<VetConsultPage />} />
               <Route path="trainer-consult" element={<TrainerConsultPage />} />
               <Route path="sitter-consult" element={<SitterConsultPage />} />
-              <Route path="vet-chats" element={<Navigate to="/vet-consult" replace />} />
+              <Route path="vet-chats" element={<RedirectWithTagAssistant to="/vet-consult" />} />
               <Route path="vet-chats/:consultId" element={<VetChatPage />} />
             </Route>
 
@@ -448,7 +456,7 @@ export default function App() {
               </Route>
             </Route>
 
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="*" element={<RedirectWithTagAssistant to="/" />} />
           </Routes>
         </Suspense>
         <LandingMobileDock />
