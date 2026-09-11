@@ -66,7 +66,7 @@ grep -q "newsletterEmail: 'news@petdate.ir'" packages/shared/src/brand.ts \
 [[ -f packages/api/src/routes/newsletter.ts ]] || fail "newsletter route missing"
 ok "newsletter news@"
 
-grep -q 'یک گفتگو را انتخاب کن' packages/web/src/pages/ChatPage.tsx \
+grep -qE "chats\.pickTitle|یک گفتگو را انتخاب کن" packages/web/src/pages/ChatPage.tsx \
   || fail "desktop chat empty-state missing"
 ok "desktop chat empty-state"
 
