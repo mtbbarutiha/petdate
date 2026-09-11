@@ -201,10 +201,6 @@ const FAQS = [
     a: 'ظاهر و عکس‌ها بر پایه قالب Pepito تنظیم شده تا تجربه دسکتاپ شبیه یک سایت مراقبت از پت واقعی باشد.' },
 ] as const;
 
-/** Pepito “Why rely on us?” — two-column checklist + pet3.png */
-const RELY_ITEMS_LEFT = ['عاشق سگ‌ها', 'راحتی', 'شفافیت', 'آرایشگر تأییدشده'] as const;
-const RELY_ITEMS_RIGHT = ['مراقبت شخصی', 'آرامش خیال', 'کار تیمی', 'بیش از ۲۰ سال تجربه'] as const;
-
 /** Pepito “Our featured products” — shop grid → real catalog */
 const PRODUCTS = [
   { name: 'ظرف غذای سگ کوچک', price: '۶۴۴٬۰۰۰ تومان', badge: 'تخفیف', img: `${P}/01-1.png`, to: '/shop/product/dog-bowls-1-p41' },
@@ -475,7 +471,6 @@ export function WelcomePage() {
         </Link>
         <nav className="pepito-nav-links" aria-label="بخش‌ها">
           <a href="#services">خدمات</a>
-          <a href="#rely">اعتماد</a>
           <Link to="/adoption">پذیرش</Link>
           <a href="#news">اخبار</a>
           <a href="#faq">سؤالات</a>
@@ -699,49 +694,6 @@ export function WelcomePage() {
               aria-label={s.title}
             />
           ))}
-        </div>
-      </section>
-
-      {/* Pepito “Why rely on us?” — media first in RTL → physical right (col-lg-4 offset) */}
-      <section className="pepito-section pepito-rely" id="rely">
-        <div className="pepito-rely-grid">
-          <div className="pepito-rely-media">
-            <img src={`${P}/pet3.png`} alt="پت خوشحال — چرا به پت‌دیت اعتماد کنید" loading="lazy" />
-          </div>
-          <div className="pepito-rely-copy">
-            <p className="pepito-eyebrow">
-              <span className="pepito-eyebrow-icon" aria-hidden>
-                <i className="flaticon-pawprint-4" />
-              </span>
-              عاشق حیواناتیم
-            </p>
-            <h2>چرا به ما اعتماد کنید؟</h2>
-            <p>
-              تیم petdate با تجربهٔ مراقبت از پت، شفافیت در خدمات و همراهی مداوم کنار شماست تا خیالتان از پت‌تان راحت باشد.
-            </p>
-            <div className="pepito-rely-lists">
-              <ul className="pepito-listext">
-                {RELY_ITEMS_LEFT.map((t) => (
-                  <li key={t}>
-                    <span className="pepito-listext-icon" aria-hidden>
-                      <i className="flaticon-pawprint-4" />
-                    </span>
-                    <span className="pepito-listext-text">{t}</span>
-                  </li>
-                ))}
-              </ul>
-              <ul className="pepito-listext">
-                {RELY_ITEMS_RIGHT.map((t) => (
-                  <li key={t}>
-                    <span className="pepito-listext-icon" aria-hidden>
-                      <i className="flaticon-pawprint-4" />
-                    </span>
-                    <span className="pepito-listext-text">{t}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
         </div>
       </section>
 
