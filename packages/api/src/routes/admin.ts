@@ -41,6 +41,17 @@ import {
 } from '../admin-pets';
 import { logAppEvent } from '../services/app-logger';
 import { completeShopCardPayment } from '../services/shop-checkout';
+import {
+  enqueueCard2CardFinanceOs,
+  notifyCardPaymentApprovedTelegram,
+  notifyCardPaymentRejectedTelegram,
+} from '../services/card2card-finance';
+import {
+  mimeFromPaymentReceiptKey,
+  paymentReceiptStorageKeyFromUrl,
+  resolvePaymentReceiptPath,
+} from '../services/payment-receipt-store';
+import fs from 'fs';
 import { telegramFetch, telegramBotApiUrl } from '../services/telegram-http';
 import {
   getSmtpPublicConfig,
@@ -572,6 +583,33 @@ adminRouter.get('/payments', (req, res) => {
   res.json({ orders: adminPlatform.listPaymentOrdersAdmin({ status, limit: 150 }) });
 });
 
+adminRouter.get('/payments/:id/receipt', (req, res) => {
+  const id = Number(req.params.id);
+  const order = dbService.getPaymentOrder(id);
+  if (!order) {
+    res.status(404).json({ error: 'سفارش پیدا نشد' });
+    return;
+  }
+  const raw = String(order.receiptFileId || order.receiptUrl || '').trim();
+  if (!raw) {
+    res.status(404).json({ error: 'رسیدی ثبت نشده' });
+    return;
+  }
+  if (raw.startsWith('/api/payments/receipts/')) {
+    const key = paymentReceiptStorageKeyFromUrl(raw);
+    const abs = key ? resolvePaymentReceiptPath(key) : null;
+    if (!key || !abs || !fs.existsSync(abs)) {
+      res.status(404).json({ error: 'فایل پیدا نشد' });
+      return;
+    }
+    res.setHeader('Content-Type', mimeFromPaymentReceiptKey(key));
+    res.setHeader('Cache-Control', 'private, max-age=300');
+    fs.createReadStream(abs).pipe(res);
+    return;
+  }
+  res.redirect(302, `/api/media/telegram/${encodeURIComponent(raw)}`);
+});
+
 adminRouter.post('/payments/:id/approve', (req, res) => {
   const id = Number(req.params.id);
   const note = typeof req.body?.note === 'string' ? req.body.note : undefined;
@@ -582,6 +620,18 @@ adminRouter.post('/payments/:id/approve', (req, res) => {
       res.status(400).json({ error: result.reason, message: result.error });
       return;
     }
+    enqueueCard2CardFinanceOs({
+      orderId: id,
+      amountToman: result.paymentOrder.amountToman ?? 0,
+      userId: result.paymentOrder.userId,
+      kind: 'shopcard',
+      packageId: result.paymentOrder.packageId,
+    });
+    void notifyCardPaymentApprovedTelegram({
+      toTelegramId: result.user?.telegramId ?? existing.userTelegramId,
+      shopOrderId: result.shopOrder.id,
+      kind: 'shopcard',
+    });
     res.json({
       ok: true,
       order: result.paymentOrder,
@@ -593,6 +643,18 @@ adminRouter.post('/payments/:id/approve', (req, res) => {
   }
   const result = dbService.approveCardPayment(id, note);
   if (!result.ok) { res.status(400).json({ error: result.reason }); return; }
+  enqueueCard2CardFinanceOs({
+    orderId: id,
+    amountToman: result.order.amountToman ?? 0,
+    userId: result.order.userId,
+    kind: 'coins',
+    packageId: result.order.packageId,
+  });
+  void notifyCardPaymentApprovedTelegram({
+    toTelegramId: result.user.telegramId ?? result.order.userTelegramId,
+    coins: result.order.coins,
+    kind: 'coins',
+  });
   res.json(result);
 });
 
@@ -601,6 +663,10 @@ adminRouter.post('/payments/:id/reject', (req, res) => {
   const note = typeof req.body?.note === 'string' ? req.body.note : undefined;
   const result = dbService.rejectCardPayment(id, note);
   if (!result.ok) { res.status(400).json({ error: result.reason }); return; }
+  void notifyCardPaymentRejectedTelegram({
+    toTelegramId: result.user?.telegramId ?? result.order.userTelegramId,
+    note,
+  });
   res.json(result);
 });
 

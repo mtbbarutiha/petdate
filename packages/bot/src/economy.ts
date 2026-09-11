@@ -16,12 +16,14 @@ import {
   COIN_PRICE_STARS as SHARED_COIN_PRICE_STARS,
   COIN_PRICE_TOMAN as SHARED_COIN_PRICE_TOMAN,
   COIN_SELL_PRICE_TOMAN as SHARED_COIN_SELL_PRICE_TOMAN,
+  COIN_PACKAGES as SHARED_COIN_PACKAGES,
   MIN_SELL_COINS as SHARED_MIN_SELL_COINS,
   REFERRAL_BONUS_COINS as SHARED_REFERRAL_BONUS_COINS,
   sellAmountToman as sharedSellAmountToman,
   normalizeCardNumber as sharedNormalizeCardNumber,
   validateIranCard as sharedValidateIranCard,
   formatCardGrouped as sharedFormatCardGrouped,
+  type CoinPackage as SharedCoinPackage,
 } from '@petdate/shared';
 
 export const COIN_PRICE_TOMAN = SHARED_COIN_PRICE_TOMAN;
@@ -34,35 +36,10 @@ export const REFERRAL_BONUS_COINS = SHARED_REFERRAL_BONUS_COINS;
 /** @deprecated استفاده از SIGNUP_BONUS */
 export const WELCOME_COINS = 20;
 
-export type CoinPackage = {
-  id: string;
-  coins: number;
-  toman: number;
-  stars: number;
-  vip?: boolean;
-  label: string;
-};
+export type CoinPackage = SharedCoinPackage;
 
-function pkg(id: string, coins: number, opts?: { vip?: boolean; label?: string }): CoinPackage {
-  return {
-    id,
-    coins,
-    toman: coins * COIN_PRICE_TOMAN,
-    stars: coins * COIN_PRICE_STARS,
-    vip: opts?.vip,
-    label: opts?.label ?? `${coins.toLocaleString('fa-IR')} سکه`,
-  };
-}
-
-/** پکیج سکه — هر سکه ۲٬۰۰۰ تومان یا ۱ Star */
-export const COIN_PACKAGES: CoinPackage[] = [
-  pkg('p50', 50),
-  pkg('p120', 120),
-  pkg('p300', 300),
-  pkg('p700', 700),
-  pkg('p1500', 1500),
-  pkg('p4000', 4000, { vip: true, label: '👑 VIP — ۴۰۰۰ سکه' }),
-];
+/** پکیج سکه — منبع واحد shared */
+export const COIN_PACKAGES: CoinPackage[] = SHARED_COIN_PACKAGES;
 
 export function formatNum(n: number): string {
   return new Intl.NumberFormat('fa-IR').format(n);
