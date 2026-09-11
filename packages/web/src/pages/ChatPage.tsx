@@ -370,6 +370,10 @@ function ConversationListPane({
                         <span className="tg-chat-list-badge is-ongoing" aria-label="گفتگوی فعال">
                           فعال
                         </span>
+                      ) : c.ended ? (
+                        <span className="tg-chat-list-badge is-ended" aria-label="گفتگوی بسته شده">
+                          بسته شده
+                        </span>
                       ) : c.pending ? (
                         <span className="tg-chat-list-badge is-pending" aria-label="در انتظار">
                           !

@@ -28,6 +28,12 @@ export type ChatSocketEvent =
       online: boolean;
       lastSeenAt?: string | null;
     }
+  | {
+      type: 'typing';
+      channel: 'playmate' | 'vet';
+      threadId: number;
+      userId: number;
+    }
   | { type: 'hello'; userId: number }
   | { type: 'error'; message: string };
 
@@ -38,6 +44,10 @@ type ClientState = {
 };
 
 const clients = new Set<ClientState>();
+
+/** Throttle patient typing → DB activity touches (ms). */
+const TYPING_TOUCH_MIN_MS = 5_000;
+const lastTypingTouchMs = new Map<number, number>();
 
 function roomInbox(userId: number) {
   return `inbox:${userId}`;
@@ -217,6 +227,40 @@ export function attachChatWebSocket(server: HttpServer) {
         if (!Number.isFinite(threadId) || threadId <= 0) return;
         if (channel === 'playmate') client.rooms.delete(roomPlaymate(threadId));
         if (channel === 'vet') client.rooms.delete(roomVet(threadId));
+        return;
+      }
+
+      // Patient typing in an active consult resets the idle-close timer.
+      if (type === 'typing') {
+        const channel = String(data.channel || '');
+        const threadId = Number(data.threadId);
+        if (channel !== 'vet' || !Number.isFinite(threadId) || threadId <= 0) return;
+        const consult = dbService.getVetConsultation(threadId);
+        if (
+          !consult ||
+          consult.status !== 'active' ||
+          Boolean(consult.chatEnded) ||
+          consult.patientUserId !== client.userId
+        ) {
+          return;
+        }
+        const now = Date.now();
+        const prev = lastTypingTouchMs.get(threadId) ?? 0;
+        if (now - prev >= TYPING_TOUCH_MIN_MS) {
+          lastTypingTouchMs.set(threadId, now);
+          dbService.touchVetConsultPatientActivity(threadId);
+        }
+        // Fan out typing indicator to the other participant (optional UI).
+        broadcast(
+          roomVet(threadId),
+          {
+            type: 'typing',
+            channel: 'vet',
+            threadId,
+            userId: client.userId,
+          },
+          client.userId
+        );
       }
     });
 

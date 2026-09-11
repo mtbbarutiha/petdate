@@ -120,6 +120,7 @@ export async function startAiFallbackConsult(opts: {
         consult = dbService.getVetConsultation(existing.id) ?? existing;
       } catch { /* ignore */ }
     }
+    dbService.touchVetConsultPatientActivity(consult.id);
     const prior = dbService.listVetConsultChatMessages(consult.id, { limit: 40 });
     const lastAi = [...prior].reverse().find((m) => m.senderUserId === ai.id);
     const adviceText = lastAi?.text?.trim() || `گفتگو با ${displayName} از قبل باز است.`;
