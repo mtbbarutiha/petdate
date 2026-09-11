@@ -45,7 +45,7 @@ export const EDITORIAL_ARTICLES: EditorialArticle[] = [
     featured: true,
     author: AUTHOR,
     status: 'published',
-    publishAt: '2026-09-11 14:40:00',
+    publishAt: '2026-09-11 09:50:00',
     metaTitle: 'علائم بیماری سگ و گربه | کی به دامپزشک مراجعه کنیم',
     metaDescription:
       'راهنمای علائم هشدار در سگ و گربه: استفراغ، اسهال، بی‌اشتهایی، تنگی نفس. تفاوت مشاوره آنلاین و مراجعه فوری به کلینیک.',
@@ -110,7 +110,7 @@ export const EDITORIAL_ARTICLES: EditorialArticle[] = [
     featured: true,
     author: AUTHOR,
     status: 'published',
-    publishAt: '2026-09-11 14:35:00',
+    publishAt: '2026-09-11 09:45:00',
     metaTitle: 'مشاوره دامپزشک آنلاین | ویزیت از راه دور پت‌دیت',
     metaDescription:
       'دامپزشک آنلاین چه زمانی کافی است، چه زمانی باید به کلینیک بروید، و چطور برای مشاوره متنی یا تصویری آماده شوید.',
@@ -157,7 +157,7 @@ export const EDITORIAL_ARTICLES: EditorialArticle[] = [
     featured: true,
     author: AUTHOR,
     status: 'published',
-    publishAt: '2026-09-11 14:30:00',
+    publishAt: '2026-09-11 09:40:00',
     metaTitle: 'واکسن سگ و گربه | برنامه واکسیناسیون حیوان خانگی',
     metaDescription:
       'راهنمای واکسن هسته‌ای سگ (DHPP) و گربه (FVRCP)، هاری، فاصله نوبت‌ها و یادآوری سالانه. برنامه دقیق را دامپزشک محل تعیین می‌کند.',
@@ -203,7 +203,7 @@ export const EDITORIAL_ARTICLES: EditorialArticle[] = [
     featured: false,
     author: AUTHOR,
     status: 'published',
-    publishAt: '2026-09-11 14:25:00',
+    publishAt: '2026-09-11 09:35:00',
     metaTitle: 'مسمومیت سگ و گربه | خوراکی‌های خطرناک خانگی',
     metaDescription:
       'شکلات، زایلیتول، انگور، پیاز، انگور، ضد یخ و داروهای انسانی. اگر پت چیزی خورد، استفراغ اجباری نکنید؛ با دامپزشک تماس بگیرید.',
@@ -255,7 +255,7 @@ export const EDITORIAL_ARTICLES: EditorialArticle[] = [
     featured: false,
     author: AUTHOR,
     status: 'published',
-    publishAt: '2026-09-11 14:20:00',
+    publishAt: '2026-09-11 09:30:00',
     metaTitle: 'خارش و بیماری پوستی سگ و گربه',
     metaDescription:
       'علل شایع خارش پت: کک، آلرژی غذایی، قارچ، کنه گوش. خوددرمانی با کورتون انسانی ممنوع است.',
@@ -299,7 +299,7 @@ export const EDITORIAL_ARTICLES: EditorialArticle[] = [
     featured: false,
     author: AUTHOR,
     status: 'published',
-    publishAt: '2026-09-11 14:15:00',
+    publishAt: '2026-09-11 09:25:00',
     metaTitle: 'کک و کنه و انگل حیوان خانگی',
     metaDescription:
       'چرخه کک در خانه، خطر کنه و بیماری‌های منتقله، و کرم‌های روده‌ای. محصول گربه را به سگ ندهید و برعکس.',
@@ -341,7 +341,7 @@ export const EDITORIAL_ARTICLES: EditorialArticle[] = [
     featured: true,
     author: AUTHOR,
     status: 'published',
-    publishAt: '2026-09-11 14:10:00',
+    publishAt: '2026-09-11 09:20:00',
     metaTitle: 'غذای سگ | راهنمای تغذیه و انتخاب برند',
     metaDescription:
       'چگونه غذای سگ را بر اساس سن، وزن و معده حساس انتخاب کنید. تغییر تدریجی ۷ روزه و علائم آلرژی غذایی.',
@@ -391,7 +391,7 @@ export const EDITORIAL_ARTICLES: EditorialArticle[] = [
     featured: true,
     author: AUTHOR,
     status: 'published',
-    publishAt: '2026-09-11 14:05:00',
+    publishAt: '2026-09-11 09:15:00',
     metaTitle: 'مراقبت از گربه | خاک، تغذیه و علائم بیماری',
     metaDescription:
       'راهنمای نگهداری گربه خانگی: تعداد خاک، غذای مرطوب، آب، بازی، و علائمی که نباید نادیده بگیرید.',
@@ -440,7 +440,7 @@ export const EDITORIAL_ARTICLES: EditorialArticle[] = [
     featured: true,
     author: AUTHOR,
     status: 'published',
-    publishAt: '2026-09-11 14:00:00',
+    publishAt: '2026-09-11 09:10:00',
     metaTitle: 'همبازی سگ | پیدا کردن دوست برای پت',
     metaDescription:
       'راهنمای پلی‌دیت و همبازی سگ: انتخاب جفت مناسب، زبان بدن، واکسن قبل از بازی، و علائم توقف جلسه.',
@@ -482,7 +482,7 @@ export const EDITORIAL_ARTICLES: EditorialArticle[] = [
     featured: true,
     author: AUTHOR,
     status: 'published',
-    publishAt: '2026-09-11 13:55:00',
+    publishAt: '2026-09-11 09:05:00',
     metaTitle: 'پذیرش پت | واگذاری مسئولانه سگ و گربه',
     metaDescription:
       'چک‌لیست پذیرش حیوان خانگی: هزینه درمان، زمان، سازگاری، و مسیر واگذاری اگر دیگر نمی‌توانید نگهداری کنید.',
@@ -523,7 +523,7 @@ export const EDITORIAL_ARTICLES: EditorialArticle[] = [
     featured: false,
     author: AUTHOR,
     status: 'published',
-    publishAt: '2026-09-11 13:50:00',
+    publishAt: '2026-09-11 09:00:00',
     metaTitle: 'اضطراب جدایی سگ | ناله و تخریب در تنهایی',
     metaDescription:
       'علائم اضطراب جدایی، تمرین خروج‌های کوتاه، و اشتباه تنبیه بعد از برگشتن به خانه.',
@@ -564,7 +564,7 @@ export const EDITORIAL_ARTICLES: EditorialArticle[] = [
     featured: false,
     author: AUTHOR,
     status: 'published',
-    publishAt: '2026-09-11 13:45:00',
+    publishAt: '2026-09-11 08:55:00',
     metaTitle: 'مراقبت از پت سالمند | مفصل، کلیه و چکاپ',
     metaDescription:
       'از چه سنی سگ و گربه سالمند حساب می‌شوند، چه آزمایش‌هایی مفید است، و چطور خانه را برای درد مفصل تنظیم کنید.',
@@ -602,7 +602,7 @@ export const EDITORIAL_ARTICLES: EditorialArticle[] = [
     featured: false,
     author: AUTHOR,
     status: 'published',
-    publishAt: '2026-09-11 13:40:00',
+    publishAt: '2026-09-11 08:50:00',
     metaTitle: 'مراقبت از دندان سگ و گربه',
     metaDescription:
       'چگونه دندان پت را مسواک بزنید، چه استخوان‌هایی خطرناک‌اند، و چرا جرم‌گیری بدون بیهوشی کامل نیست.',
@@ -642,7 +642,7 @@ export const EDITORIAL_ARTICLES: EditorialArticle[] = [
     featured: false,
     author: AUTHOR,
     status: 'published',
-    publishAt: '2026-09-11 13:35:00',
+    publishAt: '2026-09-11 08:45:00',
     metaTitle: 'ایمنی خانه برای حیوان خانگی',
     metaDescription:
       'چک‌لیست ایمن‌سازی خانه: پنجره، سیم، شوینده، گیاهان سمی، و بالکن برای گربه.',
@@ -682,7 +682,7 @@ export const EDITORIAL_ARTICLES: EditorialArticle[] = [
     featured: false,
     author: AUTHOR,
     status: 'published',
-    publishAt: '2026-09-11 13:30:00',
+    publishAt: '2026-09-11 08:40:00',
     metaTitle: 'آرایش سگ | کوتاهی مو متناسب با نژاد و فصل',
     metaDescription:
       'چه نژادهایی را نباید نزدیک پوست زد، حمام چند وقت یک‌بار، و علائم پوستی بعد از آرایشگاه.',
@@ -719,7 +719,7 @@ export const EDITORIAL_ARTICLES: EditorialArticle[] = [
     featured: false,
     author: AUTHOR,
     status: 'published',
-    publishAt: '2026-09-11 13:20:00',
+    publishAt: '2026-09-11 08:30:00',
     metaTitle: 'راهنمای نگهداری حیوان خانگی | مجله پت‌دیت',
     metaDescription:
       'چک‌لیست روز اول با پت و لینک به مقالات درمان، واکسن، تغذیه، ایمنی، همبازی و پذیرش در مجله پت‌دیت.',

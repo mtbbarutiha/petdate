@@ -53,8 +53,10 @@ async function main() {
 
   for (const a of seed.EDITORIAL_ARTICLES) {
     assert.ok(a.slug, 'slug');
-    assert.ok(a.bodyHtml.includes('<h2>'), `${a.slug} has headings`);
-    assert.ok(a.coverImage.startsWith('/pepito/'), `${a.slug} cover`);
+    const body = a.bodyHtml || '';
+    const cover = a.coverImage || '';
+    assert.ok(body.includes('<h2>'), `${a.slug} has headings`);
+    assert.ok(cover.startsWith('/pepito/'), `${a.slug} cover`);
   }
 
   console.log(`magazine-editorial-seed.selftest: ok (${first} articles)`);
