@@ -1907,24 +1907,76 @@ export type AdminAuthActor = {
   permissions: string[];
   displayName: string;
   username?: string;
-  /** HR employee photo when username matches an employee row */
+  /** Profile photo from HR employee (preferred) or linked platform user */
   avatarUrl?: string;
 };
 
-/** Resolve avatar from HR employee linked by admin username. */
-function avatarUrlForUsername(username?: string | null): string | undefined {
-  const u = String(username || '').trim();
-  if (!u) return undefined;
+/**
+ * Resolve the logged-in admin’s profile photo for the header avatar.
+ * Prefer HR employee avatar_url; fall back to platform users.avatar_url.
+ */
+function avatarUrlForAdminActor(opts: {
+  username?: string | null;
+  displayName?: string | null;
+}): string | undefined {
+  const username = String(opts.username || '').trim();
+  const displayName = String(opts.displayName || '')
+    .replace(/\s+/g, ' ')
+    .trim();
   try {
-    const row = db()
-      .prepare(
-        `SELECT avatar_url FROM hr_employees
-         WHERE lower(trim(username)) = lower(?) AND trim(avatar_url) != ''
-         LIMIT 1`
-      )
-      .get(u) as { avatar_url?: string } | undefined;
-    const url = String(row?.avatar_url || '').trim();
-    return url || undefined;
+    const d = db();
+    if (username) {
+      const hrByUser = d
+        .prepare(
+          `SELECT avatar_url FROM hr_employees
+           WHERE trim(avatar_url) != ''
+             AND (
+               lower(trim(username)) = lower(?)
+               OR lower(trim(personnel_code)) = lower(?)
+             )
+           LIMIT 1`
+        )
+        .get(username, username) as { avatar_url?: string } | undefined;
+      const hrUrl = String(hrByUser?.avatar_url || '').trim();
+      if (hrUrl) return hrUrl;
+
+      const userByLogin = d
+        .prepare(
+          `SELECT avatar_url FROM users
+           WHERE avatar_url IS NOT NULL AND trim(avatar_url) != ''
+             AND lower(trim(username)) = lower(?)
+           LIMIT 1`
+        )
+        .get(username) as { avatar_url?: string } | undefined;
+      const userUrl = String(userByLogin?.avatar_url || '').trim();
+      if (userUrl) return userUrl;
+    }
+
+    if (displayName) {
+      const hrByName = d
+        .prepare(
+          `SELECT avatar_url FROM hr_employees
+           WHERE trim(avatar_url) != ''
+             AND lower(trim(first_name || ' ' || last_name)) = lower(?)
+           LIMIT 1`
+        )
+        .get(displayName) as { avatar_url?: string } | undefined;
+      const hrNameUrl = String(hrByName?.avatar_url || '').trim();
+      if (hrNameUrl) return hrNameUrl;
+
+      const userByName = d
+        .prepare(
+          `SELECT avatar_url FROM users
+           WHERE avatar_url IS NOT NULL AND trim(avatar_url) != ''
+             AND lower(trim(name)) = lower(?)
+           LIMIT 1`
+        )
+        .get(displayName) as { avatar_url?: string } | undefined;
+      const userNameUrl = String(userByName?.avatar_url || '').trim();
+      if (userNameUrl) return userNameUrl;
+    }
+
+    return undefined;
   } catch {
     return undefined;
   }
@@ -1966,13 +2018,14 @@ export function resolveAdminActor(opts: {
     if (row && verifyPassword(password, String(row.password_hash || ''))) {
       const roleKey = String(row.role_key || 'support');
       const username = String(row.username);
+      const displayName = String(row.display_name || row.username);
       return {
         kind: 'account',
         role: roleKey,
         permissions: permissionsForRoleKey(roleKey),
-        displayName: String(row.display_name || row.username),
+        displayName,
         username,
-        avatarUrl: avatarUrlForUsername(username),
+        avatarUrl: avatarUrlForAdminActor({ username, displayName }),
       };
     }
   }
@@ -1980,30 +2033,34 @@ export function resolveAdminActor(opts: {
   // Legacy single ADMIN_PASSWORD → full admin (bootstrap super-admin)
   if (password === adminPwd) {
     const fromDb = getAdminRoleByKey('admin');
+    const displayName = 'مدیر سیستم';
+    const username = 'admin';
     return {
       kind: 'env_admin',
       role: 'admin',
       permissions: fromDb?.permissions?.length
         ? fromDb.permissions
         : [...ADMIN_ROLE_PERMISSIONS.admin],
-      displayName: 'مدیر سیستم',
-      username: 'admin',
-      avatarUrl: avatarUrlForUsername('admin'),
+      displayName,
+      username,
+      avatarUrl: avatarUrlForAdminActor({ username, displayName }),
     };
   }
 
   // Optional SUPPORT_PASSWORD shortcut
   if (supportPwd && password === supportPwd) {
     const fromDb = getAdminRoleByKey('support');
+    const displayName = 'پشتیبانی';
+    const username = 'support';
     return {
       kind: 'env_support',
       role: 'support',
       permissions: fromDb?.permissions?.length
         ? fromDb.permissions
         : [...ADMIN_ROLE_PERMISSIONS.support],
-      displayName: 'پشتیبانی',
-      username: 'support',
-      avatarUrl: avatarUrlForUsername('support'),
+      displayName,
+      username,
+      avatarUrl: avatarUrlForAdminActor({ username, displayName }),
     };
   }
 
@@ -2015,13 +2072,14 @@ export function resolveAdminActor(opts: {
     if (verifyPassword(password, String(row.password_hash || ''))) {
       const roleKey = String(row.role_key || 'support');
       const username = String(row.username);
+      const displayName = String(row.display_name || row.username);
       return {
         kind: 'account',
         role: roleKey,
         permissions: permissionsForRoleKey(roleKey),
-        displayName: String(row.display_name || row.username),
+        displayName,
         username,
-        avatarUrl: avatarUrlForUsername(username),
+        avatarUrl: avatarUrlForAdminActor({ username, displayName }),
       };
     }
   }
