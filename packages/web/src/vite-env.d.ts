@@ -8,6 +8,8 @@ interface ImportMetaEnv {
   readonly VITE_TELEGRAM_BOT_USERNAME?: string;
   /** Microsoft Clarity project id (short alphanumeric — not a UUID). */
   readonly VITE_CLARITY_PROJECT_ID?: string;
+  /** Google Tag Manager container id (e.g. GTM-KQPJT9Q4). */
+  readonly VITE_GTM_ID?: string;
 }
 
 interface ImportMeta {

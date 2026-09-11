@@ -23,6 +23,7 @@ async function main() {
     detectDevice,
     parseReferrerHost,
     isValidClarityProjectId,
+    isValidGtmContainerId,
     ensureSiteAnalyticsSchema,
   } = await import('./site-analytics');
 
@@ -36,7 +37,10 @@ async function main() {
   assert(!isValidClarityProjectId('4b79bfb4-a025-4f0e-8b84-0f45c3acac64'), 'uuid not clarity');
   assert(isValidClarityProjectId('abc12xyz'), 'short clarity ok');
   assert(isValidClarityProjectId('ygkl5nck6k'), 'live clarity id ok');
-
+  assert(isValidGtmContainerId('GTM-KQPJT9Q4'), 'live gtm ok');
+  assert(isValidGtmContainerId('gtm-kqpjt9q4'), 'gtm case insensitive');
+  assert(!isValidGtmContainerId('KQPJT9Q4'), 'gtm needs prefix');
+  assert(!isValidGtmContainerId('GTM'), 'gtm too short');
   ingestSiteAnalyticsEvent({
     sessionId: 'sess-test-0001',
     path: '/shop',
@@ -82,6 +86,8 @@ async function main() {
   // Default live project when env is unset.
   delete process.env.CLARITY_PROJECT_ID;
   delete process.env.VITE_CLARITY_PROJECT_ID;
+  delete process.env.GTM_ID;
+  delete process.env.VITE_GTM_ID;
   const reportDefault = buildSiteAnalyticsReport(7);
   assert(reportDefault.clarity.configured === true, 'clarity configured by default');
   assert(reportDefault.clarity.projectId === 'ygkl5nck6k', 'default clarity project id');
@@ -89,6 +95,9 @@ async function main() {
     reportDefault.clarity.dashboardUrl === 'https://clarity.microsoft.com/projects/view/ygkl5nck6k/',
     'clarity dashboard url',
   );
+  assert(reportDefault.gtm.configured === true, 'gtm configured by default');
+  assert(reportDefault.gtm.containerId === 'GTM-KQPJT9Q4', 'default gtm container id');
+  assert(reportDefault.gtm.dashboardUrl === 'https://tagmanager.google.com/', 'gtm dashboard url');
 
   // Explicit invalid UUID override must not silently fall back.
   process.env.VITE_CLARITY_PROJECT_ID = '4b79bfb4-a025-4f0e-8b84-0f45c3acac64';
@@ -96,6 +105,10 @@ async function main() {
   assert(reportUuid.clarity.configured === false, 'clarity not configured with uuid override');
   delete process.env.VITE_CLARITY_PROJECT_ID;
 
+  process.env.VITE_GTM_ID = 'not-a-gtm-id';
+  const reportBadGtm = buildSiteAnalyticsReport(7);
+  assert(reportBadGtm.gtm.configured === false, 'gtm not configured with invalid override');
+  delete process.env.VITE_GTM_ID;
   console.log('site-analytics.selftest: OK');
 }
 
