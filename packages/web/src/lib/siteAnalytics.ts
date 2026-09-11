@@ -1,13 +1,15 @@
 /**
  * Public first-party analytics beacon + optional Microsoft Clarity + Google Tag Manager.
  * Clarity only loads when the project id is a valid Clarity id (NOT a UUID).
- * GTM loads when container id matches GTM-XXXX (override with VITE_GTM_ID).
- * Both skip /admin paths. Production defaults: live Clarity + GTM-KQPJT9Q4.
  *
- * GTM wiring (site-side):
- * - dataLayer is created before gtm.js
- * - SPA route changes push `{ event: 'page_view', page_path, page_title, page_location }`
- * - Important link clicks push `{ event: 'link_click', ... }` (outbound / telegram / download / CTA)
+ * GTM container GTM-KQPJT9Q4 is installed in packages/web/index.html (official head +
+ * noscript) so Tag Assistant / crawlers see it in the initial HTML. This module:
+ * - ensures dataLayer exists (HTML snippet already creates it)
+ * - pushes SPA `{ event: 'page_view', page_path, page_title, page_location }`
+ * - pushes `{ event: 'link_click', ... }` for outbound / telegram / download / CTA
+ * - does NOT reinject gtm.js when the HTML snippet is present
+ * - skips /admin for Clarity, dataLayer SPA extras, and first-party beacons
+ *
  * Tags inside the GTM container are configured in Google’s UI — we do not invent GA4 IDs.
  */
 const SESSION_KEY = 'pd_analytics_sid';
@@ -270,9 +272,15 @@ function maybeInitClarity(): void {
 function pushGtmVirtualPageview(pathname: string): void {
   if (typeof window === 'undefined' || !resolveGtmId()) return;
   const path = pathname.split('?')[0] || '/';
+  const search = pathname.includes('?')
+    ? pathname.slice(pathname.indexOf('?'))
+    : typeof window !== 'undefined'
+      ? window.location.search
+      : '';
   // Dedupe identical consecutive SPA pushes (StrictMode double-effect / remounts).
-  if (lastGtmPagePath === path) return;
-  lastGtmPagePath = path;
+  const dedupeKey = `${path}${search}`;
+  if (lastGtmPagePath === dedupeKey) return;
+  lastGtmPagePath = dedupeKey;
   pushDataLayer(
     buildGtmPageViewPayload({
       path,
@@ -327,49 +335,59 @@ function maybeInitLinkTracking(): void {
   }
 }
 
+function gtmScriptAlreadyPresent(containerId: string): boolean {
+  if (typeof document === 'undefined') return false;
+  if (document.getElementById('petdate-gtm')) return true;
+  if (document.getElementById('petdate-gtm-html')) return true;
+  const scripts = document.querySelectorAll('script[src*="googletagmanager.com/gtm.js"]');
+  for (const el of scripts) {
+    const src = el.getAttribute('src') || '';
+    if (src.includes(`id=${containerId}`) || src.includes('id=GTM-')) return true;
+  }
+  return false;
+}
+
 /**
- * Inject standard GTM head script + noscript iframe (SPA-safe).
- * dataLayer is initialized BEFORE the gtm.js script tag.
- * Only once per session; skipped on /admin via trackPageview.
+ * Ensure dataLayer + (fallback) GTM script. Production prefers the index.html
+ * snippet for Tag Assistant; this path only injects if HTML snippet is absent.
+ * SPA page_view / link_click run regardless. Skipped on /admin via trackPageview.
  */
 function maybeInitGtm(): void {
   if (gtmBooted || typeof window === 'undefined' || typeof document === 'undefined') return;
   const containerId = resolveGtmId();
   if (!containerId) return;
-  if (document.getElementById('petdate-gtm')) {
-    gtmBooted = true;
-    maybeInitLinkTracking();
-    return;
-  }
   gtmBooted = true;
   try {
-    // Standard GTM snippet order: dataLayer → gtm.start push → async gtm.js
+    // Always create dataLayer before any further pushes (HTML snippet usually did this).
     ensureDataLayer();
-    pushDataLayer({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
 
-    const s = document.createElement('script');
-    s.async = true;
-    s.src = `https://www.googletagmanager.com/gtm.js?id=${containerId}`;
-    s.id = 'petdate-gtm';
-    const first = document.getElementsByTagName('script')[0];
-    first?.parentNode?.insertBefore(s, first);
+    if (!gtmScriptAlreadyPresent(containerId)) {
+      pushDataLayer({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
 
-    if (!document.getElementById('petdate-gtm-noscript')) {
-      const noscript = document.createElement('noscript');
-      noscript.id = 'petdate-gtm-noscript';
-      const iframe = document.createElement('iframe');
-      iframe.src = `https://www.googletagmanager.com/ns.html?id=${containerId}`;
-      iframe.height = '0';
-      iframe.width = '0';
-      iframe.style.display = 'none';
-      iframe.style.visibility = 'hidden';
-      iframe.title = 'Google Tag Manager';
-      noscript.appendChild(iframe);
-      const body = document.body;
-      if (body?.firstChild) {
-        body.insertBefore(noscript, body.firstChild);
-      } else if (body) {
-        body.appendChild(noscript);
+      const s = document.createElement('script');
+      s.async = true;
+      s.src = `https://www.googletagmanager.com/gtm.js?id=${containerId}`;
+      s.id = 'petdate-gtm';
+      const first = document.getElementsByTagName('script')[0];
+      first?.parentNode?.insertBefore(s, first);
+
+      if (!document.getElementById('petdate-gtm-noscript') && !document.getElementById('petdate-gtm-noscript-html')) {
+        const noscript = document.createElement('noscript');
+        noscript.id = 'petdate-gtm-noscript';
+        const iframe = document.createElement('iframe');
+        iframe.src = `https://www.googletagmanager.com/ns.html?id=${containerId}`;
+        iframe.height = '0';
+        iframe.width = '0';
+        iframe.style.display = 'none';
+        iframe.style.visibility = 'hidden';
+        iframe.title = 'Google Tag Manager';
+        noscript.appendChild(iframe);
+        const body = document.body;
+        if (body?.firstChild) {
+          body.insertBefore(noscript, body.firstChild);
+        } else if (body) {
+          body.appendChild(noscript);
+        }
       }
     }
     maybeInitLinkTracking();
