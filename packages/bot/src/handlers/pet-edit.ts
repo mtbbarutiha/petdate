@@ -278,19 +278,26 @@ async function promptPetEditField(
   }
 }
 
-async function askEditBreed(ctx: Context, species: string, page: number): Promise<void> {
-  const breeds = await listBreeds(species);
-  if (!breeds.length) {
-    await ctx.reply('🧬 <b>ویرایش نژاد</b>\n\nنژاد پت رو بنویس یا رد کن:', {
+async function askEditBreed(ctx: Context, species: string, page: number, filterQ?: string): Promise<void> {
+  const breeds = await listBreeds(species, filterQ);
+  if (!breeds.length && !filterQ) {
+    await ctx.reply('🧬 <b>ویرایش نژاد</b>\n\nنژادی در کاتالوگ این نوع نیست.', {
       parse_mode: 'HTML',
-      reply_markup: textStepKeyboard({ skip: true, noBack: true }),
+      reply_markup: textStepKeyboard({ noBack: true }),
+    });
+    return;
+  }
+  if (!breeds.length && filterQ) {
+    await ctx.reply(`چیزی با «${filterQ}» پیدا نشد. عبارت دیگری بنویس:`, {
+      reply_markup: breedReplyKeyboard(await listBreeds(species), 0),
     });
     return;
   }
   const totalPages = Math.max(1, Math.ceil(breeds.length / BREED_PAGE_SIZE));
   const safePage = Math.min(Math.max(0, page), totalPages - 1);
+  const filterNote = filterQ ? `\n🔍 فیلتر: ${filterQ}` : '\nبرای جستجو بخشی از نام را بنویس.';
   await ctx.reply(
-    `🧬 <b>ویرایش نژاد</b>\n\nنژاد رو انتخاب کن (صفحه ${safePage + 1}/${totalPages}):`,
+    `🧬 <b>ویرایش نژاد</b>\n\nنژاد رو از لیست انتخاب کن (صفحه ${safePage + 1}/${totalPages}):${filterNote}`,
     {
       parse_mode: 'HTML',
       reply_markup: breedReplyKeyboard(breeds, safePage),
@@ -494,7 +501,9 @@ export async function handlePetEditText(ctx: Context, text: string): Promise<boo
       return true;
     }
     if (text === WIZARD_NAV.custom) {
-      await ctx.reply('نژاد رو بنویس:', { reply_markup: textStepKeyboard({ skip: true }) });
+      await ctx.reply('نژاد را فقط از لیست انتخاب کن یا برای جستجو بخشی از نام را بنویس.', {
+        reply_markup: breedReplyKeyboard(breeds, breedPage),
+      });
       return true;
     }
     if (breeds.some((b) => b.nameFa === text)) {
@@ -509,14 +518,21 @@ export async function handlePetEditText(ctx: Context, text: string): Promise<boo
       return true;
     }
     if (text.length >= 1 && text.length <= 60 && !MENU_LABELS.has(text)) {
-      await finishPetField(
-        ctx,
-        telegramId,
-        owned.userId,
-        petId,
-        { species: draft.species, breed: text.slice(0, 60) },
-        `نژاد ذخیره شد: ${text.slice(0, 60)}`
-      );
+      const filtered = draft.species ? await listBreeds(draft.species, text) : [];
+      if (filtered.length === 1) {
+        const nameFa = filtered[0]!.nameFa;
+        await finishPetField(
+          ctx,
+          telegramId,
+          owned.userId,
+          petId,
+          { species: draft.species, breed: nameFa },
+          `نژاد ذخیره شد: ${nameFa}`
+        );
+        return true;
+      }
+      await upsertSession(telegramId, { breedPage: 0 });
+      await askEditBreed(ctx, draft.species ?? 'other', 0, text);
       return true;
     }
     await askEditBreed(ctx, draft.species ?? 'other', breedPage);

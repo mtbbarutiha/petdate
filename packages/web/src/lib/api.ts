@@ -206,11 +206,19 @@ export async function getPet(id: number): Promise<PetProfile | null> {
   }
 }
 
-export async function createPet(data: Record<string, unknown>): Promise<PetProfile> {
-  return request<PetProfile>('/api/pets', {
+export async function createPet(data: Record<string, unknown>): Promise<PetProfile & { owner?: User }> {
+  return request<PetProfile & { owner?: User }>('/api/pets', {
     method: 'POST',
     body: JSON.stringify(data),
   });
+}
+
+export async function listBreeds(species?: string, q?: string): Promise<import('@petdate/shared').PetBreed[]> {
+  const params = new URLSearchParams();
+  if (species) params.set('species', species);
+  if (q?.trim()) params.set('q', q.trim());
+  const qs = params.toString();
+  return request(`/api/catalog/breeds${qs ? `?${qs}` : ''}`);
 }
 
 export async function updatePet(

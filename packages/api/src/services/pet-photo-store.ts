@@ -1,17 +1,12 @@
 import fs from 'fs';
 import path from 'path';
 import { randomUUID } from 'crypto';
+import {
+  isAllowedUploadImageMime,
+  normalizeProfileImage,
+} from './image-normalize';
 
 const MAX_PET_PHOTO_BYTES = 8 * 1024 * 1024;
-const ALLOWED_MIME = new Set([
-  'image/jpeg',
-  'image/jpg',
-  'image/png',
-  'image/webp',
-  'image/gif',
-  'image/heic',
-  'image/heif',
-]);
 
 /** Pet profile photos live next to the SQLite database (same pattern as chat-uploads). */
 export function petPhotosRoot(): string {
@@ -59,32 +54,37 @@ export function resolvePetPhotoPath(storageKey: string): string | null {
   return abs;
 }
 
-export function isAllowedPetPhotoMime(mimeType: string | undefined): boolean {
-  if (!mimeType) return false;
-  return ALLOWED_MIME.has(mimeType.toLowerCase());
+export function isAllowedPetPhotoMime(
+  mimeType: string | undefined,
+  fileName?: string,
+  buffer?: Buffer
+): boolean {
+  return isAllowedUploadImageMime(mimeType, fileName, buffer);
 }
 
-export function savePetPhoto(opts: {
+export async function savePetPhoto(opts: {
   ownerId: number;
   originalName: string;
   mimeType?: string;
   buffer: Buffer;
-}): { storageKey: string; absolutePath: string; urlPath: string } {
-  if (opts.buffer.length > MAX_PET_PHOTO_BYTES) {
-    throw new Error('FILE_TOO_LARGE');
-  }
-  if (!isAllowedPetPhotoMime(opts.mimeType)) {
-    throw new Error('INVALID_MIME');
-  }
-  const storageKey = buildPetPhotoKey(opts.ownerId, opts.originalName, opts.mimeType);
+}): Promise<{ storageKey: string; absolutePath: string; urlPath: string; mimeType: string }> {
+  const normalized = await normalizeProfileImage({
+    buffer: opts.buffer,
+    mimeType: opts.mimeType,
+    originalName: opts.originalName || 'pet.jpg',
+    maxBytes: MAX_PET_PHOTO_BYTES,
+    maxEdge: 1600,
+  });
+  const storageKey = buildPetPhotoKey(opts.ownerId, normalized.originalName, normalized.mimeType);
   const abs = resolvePetPhotoPath(storageKey);
   if (!abs) throw new Error('INVALID_STORAGE_KEY');
   fs.mkdirSync(path.dirname(abs), { recursive: true });
-  fs.writeFileSync(abs, opts.buffer);
+  fs.writeFileSync(abs, normalized.buffer);
   return {
     storageKey,
     absolutePath: abs,
     urlPath: `/api/pets/photos/${storageKey}`,
+    mimeType: normalized.mimeType,
   };
 }
 

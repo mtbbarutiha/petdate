@@ -459,84 +459,84 @@ authRouter.post('/avatar', (req, res) => {
   }
 
   avatarUpload.single('file')(req, res, (uploadErr) => {
-    if (uploadErr) {
-      const tooLarge =
-        uploadErr instanceof multer.MulterError && uploadErr.code === 'LIMIT_FILE_SIZE';
-      res.status(tooLarge ? 413 : 400).json({
-        error: tooLarge
-          ? 'حجم عکس بیش از حد مجاز است (حداکثر ۸ مگابایت)'
-          : 'آپلود عکس ناموفق بود',
-      });
-      return;
-    }
+    void (async () => {
+      if (uploadErr) {
+        const tooLarge =
+          uploadErr instanceof multer.MulterError && uploadErr.code === 'LIMIT_FILE_SIZE';
+        res.status(tooLarge ? 413 : 400).json({
+          error: tooLarge
+            ? 'حجم عکس بیش از حد مجاز است (حداکثر ۸ مگابایت)'
+            : 'آپلود عکس ناموفق بود',
+        });
+        return;
+      }
 
-    const file = req.file;
-    if (!file?.buffer?.length) {
-      res.status(400).json({ error: 'فایل عکس الزامی است' });
-      return;
-    }
+      const file = req.file;
+      if (!file?.buffer?.length) {
+        res.status(400).json({ error: 'فایل عکس الزامی است' });
+        return;
+      }
 
-    try {
-      const saved = saveUserAvatar({
-        userId: session.user.id,
-        originalName: file.originalname || 'avatar.jpg',
-        mimeType: file.mimetype,
-        buffer: file.buffer,
-      });
-      const updated = dbService.updateUserProfile(session.user.id, {
-        avatarUrl: saved.urlPath,
-        avatarCustom: true,
-      });
-      if (!updated) {
-        res.status(404).json({ error: 'کاربر پیدا نشد' });
-        return;
+      try {
+        const saved = await saveUserAvatar({
+          userId: session.user.id,
+          originalName: file.originalname || 'avatar.jpg',
+          mimeType: file.mimetype,
+          buffer: file.buffer,
+        });
+        const updated = dbService.updateUserProfile(session.user.id, {
+          avatarUrl: saved.urlPath,
+          avatarCustom: true,
+        });
+        if (!updated) {
+          res.status(404).json({ error: 'کاربر پیدا نشد' });
+          return;
+        }
+        res.status(201).json({
+          ok: true,
+          url: saved.urlPath,
+          storageKey: saved.storageKey,
+          mimeType: saved.mimeType,
+          user: updated,
+        });
+      } catch (err) {
+        const code = err instanceof Error ? err.message : '';
+        if (code === 'FILE_TOO_LARGE') {
+          res.status(413).json({ error: 'حجم عکس بیش از حد مجاز است (حداکثر ۸ مگابایت)' });
+          return;
+        }
+        if (code === 'INVALID_MIME' || code === 'INVALID_IMAGE') {
+          res.status(400).json({
+            error:
+              code === 'INVALID_IMAGE'
+                ? 'فایل عکس قابل پردازش نیست. یک عکس دیگر انتخاب کن'
+                : 'فقط عکس مجاز است (JPG، PNG، WebP، HEIC، GIF)',
+          });
+          return;
+        }
+        console.warn('user avatar upload failed:', (err as Error).message);
+        res.status(500).json({ error: 'ذخیره عکس ناموفق بود' });
       }
-      res.status(201).json({
-        ok: true,
-        url: saved.urlPath,
-        storageKey: saved.storageKey,
-        mimeType: file.mimetype,
-        user: updated,
-      });
-    } catch (err) {
-      if (err instanceof Error && err.message === 'FILE_TOO_LARGE') {
-        res.status(413).json({ error: 'حجم عکس بیش از حد مجاز است (حداکثر ۸ مگابایت)' });
-        return;
-      }
-      if (err instanceof Error && err.message === 'INVALID_MIME') {
-        res.status(400).json({ error: 'فقط عکس (JPG، PNG، WebP، GIF) مجاز است' });
-        return;
-      }
-      console.warn('user avatar upload failed:', (err as Error).message);
-      res.status(500).json({ error: 'ذخیره عکس ناموفق بود' });
-    }
+    })();
   });
 });
 
-/** Serve an uploaded user avatar by storage key `userId/filename`. */
+/**
+ * Serve uploaded user avatar. UUID path is unguessable; pending URLs are withheld
+ * from public profile JSON, so <img> can load without Authorization.
+ */
 authRouter.get('/avatar/:userId/:filename', (req, res) => {
   const userId = String(req.params.userId || '');
   const filename = String(req.params.filename || '');
   const storageKey = `${userId}/${filename}`;
   const abs = resolveUserAvatarPath(storageKey);
   if (!abs || !fs.existsSync(abs)) {
-    res.status(404).json({ error: 'عکس پیدا نشد' });
+    res.status(404).end();
     return;
   }
 
-  const ownerId = Number(userId);
-  const session = getUserFromBearer(req.header('authorization') ?? undefined);
-  if (Number.isFinite(ownerId) && ownerId > 0) {
-    const owner = dbService.getUserById(ownerId);
-    const status = owner?.avatarModerationStatus ?? 'approved';
-    if (status !== 'approved' && session?.user?.id !== ownerId) {
-      res.status(403).json({ error: 'عکس هنوز تأیید نشده است' });
-      return;
-    }
-  }
-
   res.setHeader('Content-Type', mimeFromUserAvatarKey(storageKey));
-  res.setHeader('Cache-Control', 'public, max-age=86400');
+  res.setHeader('Cache-Control', 'private, max-age=3600');
   res.send(fs.readFileSync(abs));
 });
 

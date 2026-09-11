@@ -26,6 +26,7 @@ const TYPE_PHOTOS: Record<PetType, readonly string[]> = {
   cat: CAT_PHOTOS,
   bird: BIRD_PHOTOS,
   rabbit: RABBIT_PHOTOS,
+  hamster: OTHER_PHOTOS,
   other: OTHER_PHOTOS,
 };
 
@@ -39,6 +40,7 @@ export const DEFAULT_IMAGES: Record<PetType, string> = {
   cat: petLocal(CAT_PHOTOS[0]),
   bird: petLocal(BIRD_PHOTOS[0]),
   rabbit: petLocal(RABBIT_PHOTOS[0]),
+  hamster: petLocal(OTHER_PHOTOS[0]),
   other: petLocal(OTHER_PHOTOS[0]),
 };
 

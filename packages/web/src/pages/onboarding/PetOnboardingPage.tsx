@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { toEnglishDigits } from '@petdate/shared';
 import { AuthShell } from '../../components/AuthShell';
 import { PetAgePicker } from '../../components/AgePicker';
+import { BreedPicker } from '../../components/BreedPicker';
 import { PetPhotoUpload } from '../../components/PetPhotoUpload';
-import { DEFAULT_IMAGES, imageForType } from '../../data/petImages';
 import { useAuthStore } from '../../hooks/useAuthStore';
 import { useAppToast } from '../../hooks/useAppToast';
 import { usePetStore } from '../../hooks/usePetStore';
@@ -22,7 +22,7 @@ export function PetOnboardingPage() {
   const navigate = useNavigate();
   const { updatePet, myPet } = usePetStore();
   const { saveOnboardingToApi } = useUserStore();
-  const { user: authUser, isLoggedIn } = useAuthStore();
+  const { user: authUser, isLoggedIn, applyUser } = useAuthStore();
   const { toastSuccess, toastError } = useAppToast();
   const [saving, setSaving] = useState(false);
   const [submitError, setSubmitError] = useState('');
@@ -46,7 +46,6 @@ export function PetOnboardingPage() {
   });
 
   const ownerId = authUser?.id;
-  const previewFallback = imageForType(form.type, 0) || DEFAULT_IMAGES.dog;
 
   const update = (field: string, value: string | boolean | string[]) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -72,6 +71,10 @@ export function PetOnboardingPage() {
       setSubmitError('نام پت الزامی است'); toastError('نام پت الزامی است');
       return;
     }
+    if (!form.breed.trim()) {
+      setSubmitError('نژاد پت الزامی است — از لیست انتخاب کن'); toastError('نژاد پت الزامی است');
+      return;
+    }
     setSaving(true);
     setSubmitError('');
 
@@ -79,8 +82,6 @@ export function PetOnboardingPage() {
     const ageMonths = form.ageUnit === 'year' ? ageNum * 12 : ageNum;
     const ownerName = authUser?.name || myPet.ownerName;
     const resolvedOwnerId = ownerId ?? myPet.ownerId;
-    const resolvedImage = form.imageUrl || previewFallback;
-
     const petData = {
       name: form.name.trim(),
       type: form.type,
@@ -93,7 +94,7 @@ export function PetOnboardingPage() {
       neighborhood: form.neighborhood,
       ownerName,
       ownerId: resolvedOwnerId,
-      imageUrl: resolvedImage,
+      imageUrl: form.imageUrl || '',
       emoji: PET_TYPE_EMOJI[form.type],
       bio: form.bio,
       traits: form.traits,
@@ -112,7 +113,7 @@ export function PetOnboardingPage() {
           ownerId,
           name: form.name.trim(),
           species: form.type,
-          breed: form.breed.trim() || undefined,
+          breed: form.breed.trim(),
           gender: form.gender,
           ageMonths,
           size: form.size,
@@ -126,10 +127,11 @@ export function PetOnboardingPage() {
           city: form.city.trim() || authUser?.city,
           neighborhood: form.neighborhood.trim() || undefined,
         });
+        if (created.owner) applyUser(created.owner);
         localPatch = {
           ...localPatch,
           ownerId: created.ownerId,
-          imageUrl: created.imageUrl || resolvedImage,
+          imageUrl: created.imageUrl || form.imageUrl || '',
         };
         // First pet during onboarding becomes the primary local myPet
         updatePet(myPet.id, { ...localPatch, id: created.id });
@@ -148,8 +150,7 @@ export function PetOnboardingPage() {
     }
   };
 
-  // مثل ربات: فقط نام (و نوع که پیش‌فرض دارد) اجباری است
-  const isValid = Boolean(form.name.trim());
+  const isValid = Boolean(form.name.trim() && form.breed.trim());
 
   return (
     <AuthShell
@@ -157,19 +158,18 @@ export function PetOnboardingPage() {
       backTo="/onboarding/profile"
       backLabel="بازگشت به پروفایل"
       bannerTitle="پروفایل پت"
-      bannerLead="عکس، نژاد و محله اختیاری‌اند — مثل ربات می‌تونی رد کنی"
+      bannerLead="نام و نژاد الزامی‌اند — نژاد را از لیست انتخاب کن"
       bannerImage="/pepito/uploads/2.jpg"
     >
       <p className="pepito-auth-kicker">پت</p>
       <h1>پروفایل پت‌ات</h1>
       <p className="auth-lead">
-        اطلاعات پت رو وارد کن — عکس، نژاد و محله اختیاری‌اند (مثل ربات می‌تونی رد کنی)
+        اطلاعات پت رو وارد کن — نام و نژاد الزامی‌اند
       </p>
 
       <PetPhotoUpload
         ownerId={ownerId}
         imageUrl={form.imageUrl}
-        placeholderSrc={previewFallback}
         onChange={(url) => update('imageUrl', url)}
         label="عکس پت (اختیاری)"
       />
@@ -182,17 +182,25 @@ export function PetOnboardingPage() {
 
         <div className="form-group">
           <label className="form-label">نوع حیوان</label>
-          <select className="form-select" value={form.type} onChange={(e) => update('type', e.target.value)}>
+          <select
+            className="form-select"
+            value={form.type}
+            onChange={(e) => {
+              update('type', e.target.value);
+              update('breed', '');
+            }}
+          >
             {PET_TYPES.map((t) => (
               <option key={t} value={t}>{PET_TYPE_LABELS[t]}</option>
             ))}
           </select>
         </div>
 
-        <div className="form-group">
-          <label className="form-label">نژاد (اختیاری)</label>
-          <input className="form-input" placeholder="مثلاً: گلدن رتریور" value={form.breed} onChange={(e) => update('breed', e.target.value)} />
-        </div>
+        <BreedPicker
+          species={form.type}
+          value={form.breed}
+          onChange={(breed) => update('breed', breed)}
+        />
 
         <div className="form-group">
           <label className="form-label">سن پت</label>

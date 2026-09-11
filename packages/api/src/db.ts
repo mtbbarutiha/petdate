@@ -1846,22 +1846,30 @@ function seedFakeDogOwners() {
     console.log('🐾 seeded 10 fake owners with 20 dogs (+photos)');
   }
 
-  // پر کردن عکس برای پت‌هایی که هنوز image_url ندارند
-  const missing = db
-    .prepare(`SELECT id, species FROM pets WHERE image_url IS NULL OR image_url = ''`)
-    .all() as Array<{ id: number; species: string }>;
-  if (missing.length) {
-    const update = db.prepare('UPDATE pets SET image_url = ?, updated_at = datetime(\'now\') WHERE id = ?');
-    const catPhoto =
-      'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=800&q=80';
-    for (const pet of missing) {
-      const photo =
-        pet.species === 'cat'
-          ? catPhoto
-          : DEMO_DOG_PHOTOS[pet.id % DEMO_DOG_PHOTOS.length]!;
-      update.run(photo, pet.id);
+  // پر کردن عکس فقط برای دموهای همین seed — هرگز پت‌های واقعی بدون عکس را دست نزن
+  if (!existing) {
+    const missing = db
+      .prepare(
+        `SELECT id, species FROM pets
+         WHERE (image_url IS NULL OR image_url = '')
+           AND owner_id IN (SELECT id FROM users WHERE telegram_id LIKE 'fake_owner_%')`
+      )
+      .all() as Array<{ id: number; species: string }>;
+    if (missing.length) {
+      const update = db.prepare(
+        "UPDATE pets SET image_url = ?, updated_at = datetime('now') WHERE id = ?"
+      );
+      const catPhoto =
+        'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=800&q=80';
+      for (const pet of missing) {
+        const photo =
+          pet.species === 'cat'
+            ? catPhoto
+            : DEMO_DOG_PHOTOS[pet.id % DEMO_DOG_PHOTOS.length]!;
+        update.run(photo, pet.id);
+      }
+      console.log(`🐾 backfilled photos for ${missing.length} demo pets`);
     }
-    console.log(`🐾 backfilled photos for ${missing.length} pets`);
   }
 
   db.prepare("UPDATE pets SET name = 'داکوتا' WHERE name = 'داکota'").run();
@@ -4614,13 +4622,20 @@ export const dbService = {
     }));
   },
 
-  listBreeds(speciesCode?: string): PetBreed[] {
+  listBreeds(speciesCode?: string, query?: string): PetBreed[] {
     let sql = 'SELECT id, species_code, name_fa, name_en, sort_order FROM pet_breeds';
     const params: unknown[] = [];
+    const clauses: string[] = [];
     if (speciesCode) {
-      sql += ' WHERE species_code = ?';
+      clauses.push('species_code = ?');
       params.push(speciesCode);
     }
+    const q = String(query ?? '').trim().toLowerCase();
+    if (q) {
+      clauses.push('(LOWER(name_fa) LIKE ? OR LOWER(COALESCE(name_en, \'\')) LIKE ?)');
+      params.push(`%${q}%`, `%${q}%`);
+    }
+    if (clauses.length) sql += ` WHERE ${clauses.join(' AND ')}`;
     sql += ' ORDER BY sort_order ASC, name_fa ASC';
     const rows = db.prepare(sql).all(...params) as Record<string, unknown>[];
     return rows.map((row) => ({
@@ -4630,6 +4645,51 @@ export const dbService = {
       nameEn: (row.name_en as string | null) ?? undefined,
       sortOrder: row.sort_order != null ? Number(row.sort_order) : undefined,
     }));
+  },
+
+  findBreedByName(speciesCode: string, nameFa: string): PetBreed | null {
+    const name = String(nameFa ?? '').trim();
+    if (!name) return null;
+    const row = db
+      .prepare(
+        `SELECT id, species_code, name_fa, name_en, sort_order FROM pet_breeds
+         WHERE species_code = ? AND LOWER(TRIM(name_fa)) = LOWER(TRIM(?))
+         LIMIT 1`
+      )
+      .get(speciesCode, name) as Record<string, unknown> | undefined;
+    if (!row) return null;
+    return {
+      id: row.id as number,
+      speciesCode: row.species_code as PetBreed['speciesCode'],
+      nameFa: row.name_fa as string,
+      nameEn: (row.name_en as string | null) ?? undefined,
+      sortOrder: row.sort_order != null ? Number(row.sort_order) : undefined,
+    };
+  },
+
+  /**
+   * After first (or any) pet registration: «بدون پت» → «صاحب پت»
+   * and make pet_owner the active/primary role.
+   */
+  promoteNoPetToPetOwner(userId: number): User | null {
+    const existing = this.getUserById(userId);
+    if (!existing) return null;
+    const roles = parseRoles(existing.roles, existing.role);
+    const hadNoPet = roles.includes('no_pet') || existing.role === 'no_pet';
+    const alreadyOwner = roles.includes('pet_owner');
+    if (!hadNoPet && alreadyOwner && existing.role === 'pet_owner') {
+      return existing;
+    }
+    const next = [
+      'pet_owner' as UserRole,
+      ...roles.filter((r) => r !== 'no_pet' && r !== 'pet_owner'),
+    ];
+    db.prepare('UPDATE users SET role = ?, roles = ? WHERE id = ?').run(
+      'pet_owner',
+      JSON.stringify(next),
+      userId
+    );
+    return this.getUserById(userId);
   },
 
   createPet(data: {
@@ -4683,6 +4743,8 @@ export const dbService = {
       );
     const petId = Number(result.lastInsertRowid);
     db.prepare('UPDATE pets SET public_id = ? WHERE id = ?').run(makePetPublicId(petId), petId);
+    // First pet (or any pet) while «بدون پت» → switch session/role to «صاحب پت»
+    this.promoteNoPetToPetOwner(data.ownerId);
     return mapPet(db.prepare('SELECT * FROM pets WHERE id = ?').get(petId) as Record<string, unknown>);
   },
 

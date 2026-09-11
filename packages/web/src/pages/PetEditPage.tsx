@@ -4,6 +4,7 @@ import { ArrowRight, PawPrint } from 'lucide-react';
 import type { PetProfile } from '@petdate/shared';
 import { toEnglishDigits, toPersianDigits } from '@petdate/shared';
 import { PetAgePicker } from '../components/AgePicker';
+import { BreedPicker } from '../components/BreedPicker';
 import { PetPhotoUpload } from '../components/PetPhotoUpload';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { useAppToast } from '../hooks/useAppToast';
@@ -21,7 +22,9 @@ function speciesToType(species?: string): PetType {
   if (s.includes('cat') || s.includes('گربه')) return 'cat';
   if (s.includes('bird') || s.includes('پرنده')) return 'bird';
   if (s.includes('rabbit') || s.includes('خرگوش')) return 'rabbit';
-  return 'dog';
+  if (s.includes('hamster') || s.includes('همستر')) return 'hamster';
+  if (s.includes('dog') || s.includes('سگ')) return 'dog';
+  return 'other';
 }
 
 export function PetEditPage() {
@@ -118,6 +121,10 @@ export function PetEditPage() {
       setError('نام پت الزامی است'); toastError('نام پت الزامی است');
       return;
     }
+    if (!form.breed.trim()) {
+      setError('نژاد پت الزامی است — از لیست انتخاب کن'); toastError('نژاد پت الزامی است');
+      return;
+    }
     setSaving(true);
     setError('');
     const ageNum = Number(toEnglishDigits(form.age).replace(/[^\d]/g, '')) || 1;
@@ -127,7 +134,7 @@ export function PetEditPage() {
         ownerId,
         name: form.name.trim(),
         species: form.type,
-        breed: form.breed.trim() || undefined,
+        breed: form.breed.trim(),
         gender: form.gender,
         ageMonths,
         size: form.size,
@@ -250,20 +257,20 @@ export function PetEditPage() {
                     key={t}
                     type="button"
                     className={`pepito-choice${form.type === t ? ' is-on' : ''}`}
-                    onClick={() => setForm((f) => ({ ...f, type: t }))}
+                    onClick={() => setForm((f) => ({ ...f, type: t, breed: '' }))}
                   >
                     {PET_TYPE_LABELS[t]}
                   </button>
                 ))}
               </div>
             </div>
-            <label className="pepito-field">
-              نژاد
-              <input
+            <div className="pepito-field pepito-field--full">
+              <BreedPicker
+                species={form.type}
                 value={form.breed}
-                onChange={(e) => setForm((f) => ({ ...f, breed: e.target.value }))}
+                onChange={(breed) => setForm((f) => ({ ...f, breed }))}
               />
-            </label>
+            </div>
             <div className="pepito-field">
               <span className="pepito-field-label">سن</span>
               <PetAgePicker

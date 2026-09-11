@@ -352,9 +352,12 @@ export async function listSpecies(): Promise<PetSpecies[]> {
   return request<PetSpecies[]>('/api/catalog/species');
 }
 
-export async function listBreeds(species?: string): Promise<PetBreed[]> {
-  const qs = species ? `?species=${encodeURIComponent(species)}` : '';
-  return request<PetBreed[]>(`/api/catalog/breeds${qs}`);
+export async function listBreeds(species?: string, q?: string): Promise<PetBreed[]> {
+  const params = new URLSearchParams();
+  if (species) params.set('species', species);
+  if (q?.trim()) params.set('q', q.trim());
+  const qs = params.toString();
+  return request<PetBreed[]>(`/api/catalog/breeds${qs ? `?${qs}` : ''}`);
 }
 
 export async function listPets(filters?: {

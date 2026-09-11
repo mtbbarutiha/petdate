@@ -237,7 +237,10 @@ export function PetDetailPage() {
   return (
     <div className={`pepito-pet-profile${tabMedical ? ' is-medical-focus' : ''}`}>
       <div className="pepito-pet-profile-hero">
-        <img src={ui.imageUrl || EMPTY_STATE_PHOTO} alt={pet.name} />
+        <img src={ui.imageUrl || EMPTY_STATE_PHOTO} alt={pet.name} onError={(e) => {
+          const img = e.currentTarget;
+          if (img.src !== EMPTY_STATE_PHOTO) img.src = EMPTY_STATE_PHOTO;
+        }} />
         <div className="pepito-pet-profile-hero-wash" aria-hidden />
         <div className="pepito-pet-profile-hero-bar">
           <button type="button" className="icon-btn icon-btn--glass" onClick={() => navigate(-1)} aria-label="بازگشت">

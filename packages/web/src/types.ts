@@ -1,4 +1,4 @@
-export type PetType = 'dog' | 'cat' | 'bird' | 'rabbit' | 'other';
+export type PetType = 'dog' | 'cat' | 'bird' | 'rabbit' | 'hamster' | 'other';
 
 export type PetSize = 'small' | 'medium' | 'large';
 
@@ -68,6 +68,7 @@ export const PET_TYPE_LABELS: Record<PetType, string> = {
   cat: 'گربه',
   bird: 'پرنده',
   rabbit: 'خرگوش',
+  hamster: 'همستر',
   other: 'سایر',
 };
 
@@ -76,6 +77,7 @@ export const PET_TYPE_EMOJI: Record<PetType, string> = {
   cat: '🐈',
   bird: '🐦',
   rabbit: '🐇',
+  hamster: '🐹',
   other: '🐾',
 };
 

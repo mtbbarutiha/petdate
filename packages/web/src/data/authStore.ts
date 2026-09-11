@@ -110,6 +110,14 @@ class AuthStore {
     this.persist();
   }
 
+  /** Merge server user (e.g. after first-pet role upgrade). */
+  applyUser(user: User) {
+    userMutationSeq += 1;
+    this.data = { ...this.data, user };
+    this.persist();
+    if (this.data.token) invalidateAuthGetCache(this.data.token);
+  }
+
   clearPending() {
     this.data = {
       ...this.data,

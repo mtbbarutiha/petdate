@@ -20,7 +20,6 @@ import {
 } from '../api-client';
 import {
   BREED_PAGE_SIZE,
-  COMMON_CITIES,
   LOOKING_NO_LABEL,
   LOOKING_YES_LABEL,
   MENU_LABELS,
@@ -37,7 +36,6 @@ import {
   breedReplyKeyboard,
   lookingReplyKeyboard,
   mainMenuKeyboard,
-  myPetsSectionKeyboard,
   neuteredReplyKeyboard,
   petAgeReplyKeyboard,
   petColorReplyKeyboard,
@@ -133,19 +131,30 @@ async function askSpecies(ctx: Context): Promise<void> {
   }
 }
 
-async function askBreed(ctx: Context, speciesCode: string, page = 0): Promise<void> {
-  const breeds = await listBreeds(speciesCode);
-  if (breeds.length === 0) {
-    await ctx.reply(`🧬 **${stepLabel(3)}**\n\nنژاد پت رو بنویس:`, {
-      parse_mode: 'Markdown',
-      reply_markup: textStepKeyboard(),
-    });
+async function askBreed(ctx: Context, speciesCode: string, page = 0, filterQ?: string): Promise<void> {
+  const breeds = await listBreeds(speciesCode, filterQ);
+  if (breeds.length === 0 && !filterQ) {
+    await ctx.reply(
+      `🧬 **${stepLabel(3)}**\n\nنژادی در کاتالوگ این نوع نیست. نوع دیگری انتخاب کن یا «سایر» را بزن.`,
+      {
+        parse_mode: 'Markdown',
+        reply_markup: textStepKeyboard(),
+      }
+    );
+    return;
+  }
+  if (breeds.length === 0 && filterQ) {
+    await ctx.reply(
+      `چیزی با «${filterQ}» پیدا نشد.\nعبارت دیگری بنویس یا از لیست انتخاب کن:`,
+      { reply_markup: breedReplyKeyboard(await listBreeds(speciesCode), 0) }
+    );
     return;
   }
   const totalPages = Math.max(1, Math.ceil(breeds.length / BREED_PAGE_SIZE));
   const safePage = Math.min(Math.max(0, page), totalPages - 1);
+  const filterNote = filterQ ? `\n🔍 فیلتر: ${filterQ}` : '\nمی‌تونی نام نژاد رو برای جستجو تایپ کنی.';
   await ctx.reply(
-    `🧬 **${stepLabel(3)}**\n\nنژاد رو انتخاب کن (صفحه ${safePage + 1}/${totalPages}):`,
+    `🧬 **${stepLabel(3)}**\n\nنژاد رو از لیست انتخاب کن (صفحه ${safePage + 1}/${totalPages}):${filterNote}`,
     {
       parse_mode: 'Markdown',
       reply_markup: breedReplyKeyboard(breeds, safePage),
@@ -623,7 +632,9 @@ async function handleBreedText(
   }
 
   if (text === WIZARD_NAV.custom) {
-    await ctx.reply('نژاد رو بنویس:', { reply_markup: textStepKeyboard({ skip: true }) });
+    await ctx.reply('نژاد را فقط از لیست انتخاب کن یا برای جستجو بخشی از نام را بنویس.', {
+      reply_markup: breedReplyKeyboard(breeds, page),
+    });
     return true;
   }
 
@@ -635,11 +646,18 @@ async function handleBreedText(
     return true;
   }
 
-  // free-text / custom breed
-  if (text.trim().length >= 1 && !COMMON_CITIES.includes(text.trim() as (typeof COMMON_CITIES)[number])) {
-    draft.breed = text.trim().slice(0, 80);
-    await upsertSession(telegramId, { step: 'pet_gender', draftPet: draft });
-    await askGender(ctx);
+  // Search / filter — never accept free-text breeds
+  const q = text.trim();
+  if (q.length >= 1) {
+    const filtered = await listBreeds(species, q);
+    if (filtered.length === 1) {
+      draft.breed = filtered[0]!.nameFa;
+      await upsertSession(telegramId, { step: 'pet_gender', draftPet: draft, breedPage: 0 });
+      await askGender(ctx);
+      return true;
+    }
+    await upsertSession(telegramId, { breedPage: 0 });
+    await askBreed(ctx, species, 0, q);
     return true;
   }
 
@@ -655,7 +673,7 @@ async function handleSkipText(
   draft: PetDraft
 ): Promise<boolean> {
   if (step === 'pet_breed') {
-    await ctx.reply('نژاد رو از لیست انتخاب کن یا «نوشتن دستی» رو بزن.', {
+    await ctx.reply('نژاد الزامی است — از لیست انتخاب کن یا برای جستجو تایپ کن.', {
       reply_markup: breedReplyKeyboard(await listBreeds(draft.species ?? 'other'), 0),
     });
     return true;
@@ -740,8 +758,9 @@ export async function handleBreedCustom(ctx: Context): Promise<void> {
   const session = await getSession(telegramId);
   if (!session || session.step !== 'pet_breed') return;
 
-  await ctx.answerCallbackQuery();
-  await ctx.reply('نژاد رو بنویس:', { reply_markup: textStepKeyboard({ skip: true }) });
+  await ctx.answerCallbackQuery({ text: 'نژاد را از لیست انتخاب کن' });
+  const species = session.draftPet?.species ?? 'other';
+  await askBreed(ctx, species, session.breedPage ?? 0);
 }
 
 export async function handlePetGenderSelect(ctx: Context, gender: PetGender): Promise<void> {
@@ -926,13 +945,21 @@ async function finishPetWizard(
     await upsertSession(telegramId, { step: 'ready', draftPet: undefined, breedPage: undefined });
     return;
   }
+  if (!draft.breed?.trim()) {
+    await upsertSession(telegramId, { step: 'pet_breed', draftPet: draft, breedPage: 0 });
+    await ctx.reply('نژاد الزامی است — لطفاً از لیست انتخاب کن:', {
+      reply_markup: breedReplyKeyboard(await listBreeds(draft.species), 0),
+    });
+    return;
+  }
 
   const health: Record<string, unknown> = {};
   if (draft.diseases) health.diseases = draft.diseases;
 
   let pet;
+  let owner;
   try {
-    const owner = await getUserByTelegramId(telegramId);
+    owner = await getUserByTelegramId(telegramId);
     pet = await createPet({
       ownerId: userId,
       name: draft.name,
@@ -953,6 +980,8 @@ async function finishPetWizard(
       city: owner?.city,
       neighborhood: draft.neighborhood,
     });
+    // Refresh owner after no_pet → pet_owner promotion
+    owner = await getUserByTelegramId(telegramId);
   } catch (err) {
     console.error('createPet failed:', err);
     await ctx.reply('ثبت پت با خطا مواجه شد. دوباره امتحان کن یا انصراف بزن.', {
@@ -983,10 +1012,17 @@ async function finishPetWizard(
       : null,
     `واکسن: ${pet.vaccinated ? 'بله' : 'خیر'} · عقیم: ${pet.neutered ? 'بله' : 'خیر'}`,
     pet.lookingForPlaymate ? '🤝 دنبال همبازی' : null,
+    owner?.role === 'pet_owner' ? '🐾 نقش فعال: صاحب پت' : null,
   ].filter(Boolean);
 
   const caption = lines.join('\n');
-  const kb = myPetsSectionKeyboard();
+  const kb = mainMenuKeyboard(owner?.role, owner?.roles, ctx.from?.id, {
+    vetOnline: owner?.vetOnline,
+    readyToAdopt: owner?.readyToAdopt,
+    trainerOnline: owner?.trainerOnline,
+    sitterOnline: owner?.sitterOnline,
+    acceptSeekerAdvice: owner?.acceptSeekerAdvice,
+  });
   const photo = resolveTelegramPhotoUrl(pet.imageUrl);
 
   if (photo) {
