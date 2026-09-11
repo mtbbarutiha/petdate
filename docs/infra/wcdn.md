@@ -46,6 +46,17 @@ Until that toggle is on, treat www HTML 4xx as a **WCDN custom-error-page limit*
 
 **SPA clients must not call `response.json()` blindly on non-OK (or even OK) bodies.** `packages/web/src/lib/api.ts` reads text first and maps HTML / parse failures to short Persian messages via `apiErrorMessage.ts` (see `apiErrorMessage.selftest.ts`). Otherwise the profile medical card shows `Unexpected token '<', "<!DOCTYPE "... is not valid JSON`.
 
+## SPA routes under `/pets/` (stock photos vs medical tab)
+
+`packages/web/public/pets/` holds stock JPGs (`/pets/cat-01.jpg`, …). Origin nginx used to pin `location ^~ /pets/ { try_files $uri =404; }`, which **hard-404’d SPA deep links**:
+
+| URL | Before | After |
+|-----|--------|-------|
+| `/pets/cat-01.jpg` | 200 JPEG | 200 JPEG (cached 7d) |
+| `/pets/35` / `/pets/35?tab=medical` / `/pets/35/edit` | nginx **404** (WCDN «Upstream Error - Not Found» on www) | SPA `index.html` (no-cache) |
+
+Mobile owners opening «پرونده پزشکی» from My Pets (`/pets/:id?tab=medical`) hit a full document navigation more often than desktop — that path must serve the SPA shell. Public share URLs stay `/pet/:slug` (singular).
+
 Docs: [تنظیمات دیگر CDN پارس‌پک](https://docs.parspack.com/cdn/other-settings/).
 
 ## What origin will not do

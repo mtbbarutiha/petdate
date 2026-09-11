@@ -25,4 +25,22 @@ assert.doesNotMatch(
   'www is not origin-forced to HTTPS'
 );
 
+// /pets/:id SPA deep links (medical tab) must not hard-404 under the stock-photo prefix.
+assert.match(conf, /location \^~ \/pets\//, '/pets/ location exists');
+assert.match(
+  conf,
+  /location \^~ \/pets\/ \{[\s\S]*?try_files \$uri \/index\.html;/,
+  '/pets/ falls back to index.html for SPA routes like /pets/35?tab=medical'
+);
+assert.doesNotMatch(
+  conf,
+  /location \^~ \/pets\/ \{\s*add_header[\s\S]*?try_files \$uri =404;/,
+  '/pets/ must not try_files =404 alone (broke mobile medical deep links)'
+);
+assert.match(
+  conf,
+  /location \^~ \/pets\/ \{[\s\S]*?location ~\* \\\.\(\?:jpg\|jpeg\|png/,
+  '/pets/*.jpg stock photos still served as static files'
+);
+
 console.log('wcdnNginx.selftest: ok');

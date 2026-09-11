@@ -111,7 +111,11 @@ export function PetDetailPage() {
       setRecord(null);
       setEntries([]);
       setRxList([]);
-      setMedicalError('');
+      if (pet && tabMedical && (!myUserId || !isMyPet)) {
+        setMedicalError('دسترسی به پرونده پزشکی را نداری.');
+      } else {
+        setMedicalError('');
+      }
       return;
     }
     let cancelled = false;
@@ -143,7 +147,15 @@ export function PetDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [pet, myUserId, isMyPet]);
+  }, [pet, myUserId, isMyPet, tabMedical]);
+
+  useEffect(() => {
+    if (!tabMedical || loading || !pet) return;
+    const t = window.setTimeout(() => {
+      document.getElementById('pet-medical')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
+    return () => window.clearTimeout(t);
+  }, [tabMedical, loading, pet, isMyPet, medicalError]);
 
   useEffect(() => {
     if (!pet || !isMyPet) {
@@ -365,6 +377,21 @@ export function PetDetailPage() {
         ) : null}
 
         {error ? <p className="auth-error">{error}</p> : null}
+
+        {tabMedical && !isMyPet && medicalError ? (
+          <section id="pet-medical" className="pepito-pet-medical" aria-label="پرونده پزشکی">
+            <header className="pepito-pet-medical-head">
+              <Stethoscope size={20} aria-hidden />
+              <div>
+                <h2>پرونده پزشکی</h2>
+                <p>فقط صاحب پت می‌تواند این بخش را ببیند.</p>
+              </div>
+            </header>
+            <p className="pepito-pet-medical-muted" role="alert">
+              {medicalError}
+            </p>
+          </section>
+        ) : null}
 
         {isMyPet ? (
           <section id="pet-medical" className="pepito-pet-medical" aria-label="پرونده پزشکی">
