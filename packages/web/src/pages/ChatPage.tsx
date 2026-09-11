@@ -439,23 +439,35 @@ function ConversationListPane({
   );
 }
 
+function ChatEmptyVisual() {
+  return (
+    <div className="tg-empty-visual" aria-hidden>
+      <span className="tg-empty-visual__ring tg-empty-visual__ring--outer" />
+      <span className="tg-empty-visual__ring tg-empty-visual__ring--inner" />
+      <span className="tg-empty-visual__paw">
+        <PawPrint size={44} strokeWidth={1.75} />
+      </span>
+    </div>
+  );
+}
+
 function ThreadEmptyState({
   scope,
   desktop,
+  onFindSent,
 }: {
   scope: InboxScope;
   desktop?: boolean;
+  onFindSent?: () => void;
 }) {
   const { t } = useI18n();
   if (scope === 'vet') {
     return (
-      <div className="tg-thread-empty">
-        <div className="tg-empty-mark" aria-hidden>
-          <SiteLogo className="tg-chat-empty-logo" height={40} />
-        </div>
+      <div className="tg-thread-empty tg-thread-empty--pepito">
+        <ChatEmptyVisual />
         <h2>{t('chats.pickTitle')}</h2>
-        <p>{t('chats.pickLead')}</p>
-        <Link to="/vet-consult" className="tg-chat-link-btn">
+        <p>{t('chats.pickLeadVet')}</p>
+        <Link to="/vet-consult" className="pepito-btn button-1 tg-thread-empty__cta">
           {t('nav.vet_panel')}
         </Link>
       </div>
@@ -463,35 +475,32 @@ function ThreadEmptyState({
   }
   if (scope === 'trainer') {
     return (
-      <div className="tg-thread-empty">
-        <div className="tg-empty-mark" aria-hidden>
-          <SiteLogo className="tg-chat-empty-logo" height={40} />
-        </div>
-        <h2>{t('nav.trainer_panel')}</h2>
-        <p>
-          {t('chats.pickLead')}
-        </p>
-        <Link to="/trainer-consult" className="tg-chat-link-btn">
+      <div className="tg-thread-empty tg-thread-empty--pepito">
+        <ChatEmptyVisual />
+        <h2>{t('chats.pickTitleTrainer')}</h2>
+        <p>{t('chats.pickLeadTrainer')}</p>
+        <Link to="/trainer-consult" className="pepito-btn button-1 tg-thread-empty__cta">
           {t('nav.trainer_panel')}
         </Link>
       </div>
     );
   }
-  // Desktop already shows FindPlaymatePanel in the list pane — don't duplicate it here.
+  // Desktop split: Pepito empty pane with hierarchy + primary find CTA.
   if (desktop) {
     return (
-      <div className="tg-thread-empty">
-        <div className="tg-empty-mark" aria-hidden>
-          <SiteLogo className="tg-chat-empty-logo" height={40} />
-        </div>
+      <div className="tg-thread-empty tg-thread-empty--pepito">
+        <ChatEmptyVisual />
         <h2>{t('chats.pickTitle')}</h2>
         <p>{t('chats.pickLead')}</p>
+        <div className="tg-thread-empty__cta-wrap">
+          <FindPlaymatePanel compact showRequests={false} onSent={onFindSent} />
+        </div>
       </div>
     );
   }
   return (
     <div className="tg-thread-empty tg-thread-empty--hub">
-      <FindPlaymatePanel />
+      <FindPlaymatePanel onSent={onFindSent} />
     </div>
   );
 }
@@ -1647,7 +1656,11 @@ export function ChatPage() {
         >
           {!hasThread ? (
             <div className="tg-thread-scroll">
-              <ThreadEmptyState scope={inboxScope} desktop={desktop} />
+              <ThreadEmptyState
+                scope={inboxScope}
+                desktop={desktop}
+                onFindSent={() => void reloadConversations({ soft: true })}
+              />
             </div>
           ) : threadLoading ? (
             <div className="tg-thread-scroll">

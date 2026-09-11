@@ -379,21 +379,23 @@
 /* Empty states — calm, on-brand, denser */
 .tg-chat-list-empty,
 .tg-thread-empty {
-  gap: 10px !important;
+  gap: 12px !important;
   padding: 28px 18px !important;
   position: relative;
 }
 .tg-chat-list-empty h2,
 .tg-thread-empty h2 {
-  font-size: 1.05rem !important;
+  font-size: 1.15rem !important;
   font-weight: 800;
   color: var(--tg-ink);
+  letter-spacing: -0.02em;
 }
 .tg-chat-list-empty p,
 .tg-thread-empty p {
-  max-width: 30ch !important;
-  font-size: 0.84rem !important;
+  max-width: 32ch !important;
+  font-size: 0.9rem !important;
   line-height: 1.55 !important;
+  color: var(--tg-muted) !important;
 }
 
 .tg-empty-mark {
@@ -415,6 +417,70 @@
   height: auto;
 }
 
+/* Pepito chats empty pane — large paw motif (not favicon scrap) */
+.tg-thread-empty--pepito {
+  gap: 14px !important;
+  padding: 40px 24px !important;
+}
+.tg-empty-visual {
+  position: relative;
+  width: 112px;
+  height: 112px;
+  margin-inline: auto;
+  margin-bottom: 4px;
+  display: grid;
+  place-items: center;
+  animation: tgEmptyFloat 5s ease-in-out infinite;
+}
+.tg-empty-visual__ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+}
+.tg-empty-visual__ring--outer {
+  background:
+    radial-gradient(circle at 30% 22%, color-mix(in srgb, var(--pepito-mint) 28%, transparent), transparent 58%),
+    radial-gradient(circle at 78% 72%, color-mix(in srgb, var(--pepito-pink) 22%, transparent), transparent 55%),
+    linear-gradient(145deg, color-mix(in srgb, var(--pepito-sky) 16%, transparent), color-mix(in srgb, var(--pepito-mint) 14%, transparent));
+  box-shadow:
+    0 14px 32px color-mix(in srgb, var(--pepito-dark) 8%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--pepito-mint) 22%, transparent);
+}
+.tg-empty-visual__ring--inner {
+  inset: 18px;
+  background: color-mix(in srgb, var(--tg-surface, #fff) 88%, var(--pepito-mint));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pepito-pink) 18%, transparent);
+}
+.tg-empty-visual__paw {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  color: var(--pepito-mint);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--pepito-mint) 18%, transparent), color-mix(in srgb, var(--pepito-pink) 14%, transparent));
+}
+.tg-thread-empty__cta-wrap {
+  width: min(100%, 280px);
+  margin-top: 6px;
+}
+.tg-thread-empty__cta-wrap .find-playmate-panel,
+.tg-thread-empty__cta-wrap .find-playmate-one {
+  width: 100%;
+}
+.tg-thread-empty__cta-wrap .pepito-btn {
+  width: 100%;
+  justify-content: center;
+}
+.tg-thread-empty__cta {
+  margin-top: 4px;
+  min-width: min(100%, 220px);
+  justify-content: center;
+}
+
 @keyframes tgEmptyFloat {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-5px); }
@@ -428,13 +494,13 @@
 .tg-chat-link-btn {
   min-height: 44px !important;
   border-radius: 14px !important;
-  background: rgba(21, 204, 160, 0.12) !important;
-  color: #0b7a5c !important;
+  background: color-mix(in srgb, var(--pepito-mint) 14%, transparent) !important;
+  color: color-mix(in srgb, var(--pepito-mint) 35%, #0b7a5c) !important;
   padding: 0 16px !important;
   transition: background 0.16s ease, transform 0.16s ease;
 }
 .tg-chat-link-btn:hover {
-  background: rgba(21, 204, 160, 0.2) !important;
+  background: color-mix(in srgb, var(--pepito-mint) 22%, transparent) !important;
   transform: translateY(-1px);
 }
 
@@ -1128,13 +1194,16 @@ html.tg-chat-open body {
     max-width: min(440px, 92%);
     margin-inline: auto;
     text-align: center;
-    gap: 0.7rem;
+    gap: 0.75rem;
   }
   .tg-thread-empty p {
     margin: 0;
-    color: var(--pepito-muted, #6b6280);
+    color: var(--tg-muted) !important;
     font-size: 0.94rem;
     line-height: 1.55;
+  }
+  .tg-thread-empty--pepito {
+    max-width: min(420px, 94%);
   }
 
   .tg-composer {
