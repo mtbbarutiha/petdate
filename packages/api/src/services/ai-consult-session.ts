@@ -58,7 +58,14 @@ function agentDisplayName(aiUser: User): string {
 export function decorateAiConsultDisplay(consult: VetConsultation): VetConsultation {
   if (!isAiAssistantUserId(consult.vetUserId)) return consult;
   const ai = dbService.getUserById(consult.vetUserId);
-  return { ...consult, vetName: ai ? agentDisplayName(ai) : AI_ASSISTANT_DISPLAY_NAME };
+  const team = ai ? resolveTeamAgentForUserId(ai.id) : null;
+  const vetName = ai ? agentDisplayName(ai) : AI_ASSISTANT_DISPLAY_NAME;
+  const vetAvatarUrl =
+    (ai?.avatarUrl && String(ai.avatarUrl).trim()) ||
+    team?.avatarUrl ||
+    consult.vetAvatarUrl ||
+    undefined;
+  return { ...consult, vetName, vetAvatarUrl };
 }
 
 function toAiKind(kind: ConsultServiceKind): 'vet' | 'trainer' | null {

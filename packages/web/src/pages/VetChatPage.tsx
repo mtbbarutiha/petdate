@@ -23,7 +23,6 @@ import {
   RefreshCw,
   Send,
   Smile,
-  Stethoscope,
   UserPlus,
   X,
 } from 'lucide-react';
@@ -36,6 +35,7 @@ import {
   type VetConsultation,
 } from '@petdate/shared';
 import { SiteLogo } from '../components/SiteLogo';
+import { InboxPeerAvatar } from '../components/InboxPeerAvatar';
 import { PetAvatar } from '../components/PetAvatar';
 import { PresenceBadge } from '../components/PresenceBadge';
 import { ChatMediaCaptureProvider, ChatMediaCaptureTriggers } from '../components/ChatMediaCapture';
@@ -79,6 +79,7 @@ import {
   inboxScopeForUser,
   loadInboxConversations,
   rejectInboxItem,
+  resolveConsultPeerAvatarUrl,
   type InboxConversation,
   type InboxScope,
 } from '../lib/inboxConversations';
@@ -303,6 +304,11 @@ export function VetChatPage() {
       return consult.patientName?.trim() || `بیمار #${consult.patientUserId}`;
     }
     return consult.vetName?.trim() || `پزشک #${consult.vetUserId}`;
+  }, [consult, isVetSide]);
+
+  const peerAvatarUrl = useMemo(() => {
+    if (!consult) return undefined;
+    return resolveConsultPeerAvatarUrl(consult, isVetSide ? 'as_vet' : 'as_patient');
   }, [consult, isVetSide]);
 
   const peerSub = useMemo(() => {
@@ -1291,9 +1297,7 @@ export function VetChatPage() {
                             name={peer.name}
                           />
                         ) : (
-                          <span className="tg-chat-list-icon" aria-hidden>
-                            <Stethoscope size={22} strokeWidth={2} />
-                          </span>
+                          <InboxPeerAvatar avatarUrl={c.peerAvatarUrl} name={c.title} />
                         )}
                         <span className="tg-chat-list-meta">
                           <strong>
@@ -1427,9 +1431,7 @@ export function VetChatPage() {
                   <ArrowRight size={22} strokeWidth={2.2} />
                 </button>
                 <div className="tg-chat-peer" role="group" aria-label={peerName}>
-                  <span className="tg-chat-peer-avatar" aria-hidden>
-                    <Stethoscope size={18} />
-                  </span>
+                  <InboxPeerAvatar avatarUrl={peerAvatarUrl} name={peerName} size={40} />
                   <span>
                     <strong>{peerName}</strong>
                     <small>

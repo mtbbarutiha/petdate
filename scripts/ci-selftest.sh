@@ -26,6 +26,9 @@ npx tsx "$ROOT/packages/shared/src/sanitize-roles.selftest.ts"
 echo "==> selftest: web inbox title (no public id)"
 npx tsx "$ROOT/packages/web/src/lib/inboxTitle.selftest.ts"
 
+echo "==> selftest: web inbox consult agent avatars"
+npx tsx "$ROOT/packages/web/src/lib/inboxConversations.avatars.selftest.ts"
+
 echo "==> selftest: web share helper (Web Share / clipboard)"
 npx tsx "$ROOT/packages/web/src/lib/share.selftest.ts"
 

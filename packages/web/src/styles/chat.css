@@ -275,6 +275,30 @@
     rgba(21, 204, 160, 0.16),
     rgba(11, 165, 242, 0.1)
   ) !important;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.tg-chat-list-icon--photo {
+  padding: 0 !important;
+  background: #dfe3ea !important;
+  color: transparent !important;
+}
+
+.tg-chat-list-icon--photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.tg-chat-list-icon--initials {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #0f766e !important;
 }
 
 /* Inbox accept/reject/profile — grid so desktop never overlaps (esp. long profile label) */

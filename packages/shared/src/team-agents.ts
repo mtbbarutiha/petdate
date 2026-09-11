@@ -64,6 +64,25 @@ const TEAM_AGENT_SLUG_ALIASES: Record<string, string> = {
   'sara-nozi': 'sara-noori',
 };
 
+/** Legacy display names → current TEAM_AGENTS slug (inbox / decorate fallback). */
+const TEAM_AGENT_NAME_ALIASES: Record<string, string> = {
+  'پاشا یزدانی': 'leila-kiani',
+  'دکتر لیلا کیانی': 'leila-kiani',
+  'لیلا کیانی': 'leila-kiani',
+  'دکتر لایلا احمدی': 'faranak-ahmadi',
+  'لایلا احمدی': 'faranak-ahmadi',
+  'فرانک احمدی': 'faranak-ahmadi',
+  'دکتر ساناز غفاری': 'sanaz-ghaffari',
+  'ساناز غفاری': 'sanaz-ghaffari',
+  'دکتر سارا نوری': 'sara-noori',
+  'سارا نوری': 'sara-noori',
+  'دکتر سارا نوزی': 'sara-noori',
+  'سارا نوزی': 'sara-noori',
+  'دستیار هوشمند پت‌دیت': 'leila-kiani',
+  'دستیار هوشمند پت': 'leila-kiani',
+  'دستیار هوشمند': 'leila-kiani',
+};
+
 export const DEFAULT_TEAM_AGENT_SLUG = 'leila-kiani';
 
 export function getTeamAgentBySlug(slug: string | null | undefined): TeamAgentDef | null {
@@ -77,6 +96,16 @@ export function getTeamAgentByTelegramId(telegramId: string | null | undefined):
   const t = String(telegramId || '').trim();
   if (!t) return null;
   return TEAM_AGENTS.find((a) => a.telegramId === t) ?? null;
+}
+
+/** Resolve team agent by current or legacy Persian display name. */
+export function getTeamAgentByName(name: string | null | undefined): TeamAgentDef | null {
+  const key = String(name || '').trim();
+  if (!key) return null;
+  const byExact = TEAM_AGENTS.find((a) => a.name === key);
+  if (byExact) return byExact;
+  const slug = TEAM_AGENT_NAME_ALIASES[key];
+  return slug ? getTeamAgentBySlug(slug) : null;
 }
 
 export function isTeamAgentTelegramId(telegramId: string | null | undefined): boolean {

@@ -10,8 +10,10 @@ import {
 } from './api';
 import { playmateInboxTitle } from './inboxTitle';
 import { playdateToMatchRequest } from './playdateMap';
+import { resolveConsultPeerAvatarUrl } from './resolveConsultPeerAvatar';
 
 export { looksLikePublicUserId, playmateInboxTitle } from './inboxTitle';
+export { resolveConsultPeerAvatarUrl } from './resolveConsultPeerAvatar';
 
 export type InboxKind = 'playmate' | 'vet';
 
@@ -39,6 +41,8 @@ export type InboxConversation = {
   canDecide: boolean;
   href: string;
   peerPet?: Pet;
+  /** عکس طرف مقابل (دامپزشک/مربی یا بیمار) — برای لیست مشاوره */
+  peerAvatarUrl?: string;
   /** برای برچسب لیست — پیش‌فرض vet وقتی kind=vet */
   serviceKind?: 'vet' | 'trainer' | 'sitter' | 'seeker_advice';
 };
@@ -233,6 +237,7 @@ export function vetToInbox(
     canDecide: pending && mode === 'as_vet',
     // Patient pending → waiting page, not a live chat thread.
     href: pending && mode === 'as_patient' ? patientPanel : `/vet-chats/${c.id}`,
+    peerAvatarUrl: resolveConsultPeerAvatarUrl(c, mode),
     serviceKind,
   };
 }
@@ -263,7 +268,8 @@ export function inboxRowsEquivalent(
       row.canDecide !== other.canDecide ||
       row.kind !== other.kind ||
       row.href !== other.href ||
-      row.serviceKind !== other.serviceKind
+      row.serviceKind !== other.serviceKind ||
+      row.peerAvatarUrl !== other.peerAvatarUrl
     ) {
       return false;
     }
