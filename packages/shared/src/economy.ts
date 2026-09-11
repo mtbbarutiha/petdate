@@ -80,6 +80,40 @@ export const COIN_SELL_PRICE_TOMAN = 1_000;
 /** حداقل سکه برای ثبت درخواست فروش / برداشت */
 export const MIN_SELL_COINS = 50;
 
+/** بسته خرید سکه — مشترک وب، ربات و ادمین */
+export type CoinPackage = {
+  id: string;
+  coins: number;
+  toman: number;
+  stars: number;
+  vip?: boolean;
+  label: string;
+};
+
+function coinPkg(id: string, coins: number, opts?: { vip?: boolean; label?: string }): CoinPackage {
+  return {
+    id,
+    coins,
+    toman: coins * COIN_PRICE_TOMAN,
+    stars: coins * COIN_PRICE_STARS,
+    vip: opts?.vip,
+    label: opts?.label ?? `${coins.toLocaleString('fa-IR')} سکه`,
+  };
+}
+
+export const COIN_PACKAGES: CoinPackage[] = [
+  coinPkg('p50', 50),
+  coinPkg('p120', 120),
+  coinPkg('p300', 300),
+  coinPkg('p700', 700),
+  coinPkg('p1500', 1500),
+  coinPkg('p4000', 4000, { vip: true, label: '👑 VIP — ۴۰۰۰ سکه' }),
+];
+
+export function findCoinPackage(packageId: string): CoinPackage | undefined {
+  return COIN_PACKAGES.find((p) => p.id === packageId);
+}
+
 export type CoinSellRequestStatus = 'open' | 'paid' | 'rejected' | 'cancelled';
 
 export type CoinSellRequestSummary = {
@@ -225,7 +259,7 @@ export const WALLET_CURRENCY_STATUS: Record<
   },
   coins: {
     deposit: 'wired',
-    noteFa: 'سکه ربات — خرید/جایزه از بات و API',
+    noteFa: 'سکه پنل — خرید کارت‌به‌کارت از وب یا ربات؛ یک لجر مشترک',
   },
   toman: {
     deposit: 'stub',
