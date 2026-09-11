@@ -78,24 +78,23 @@
   text-align: start;
 }
 
-.admin-wordmark-mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 42px;
-  height: 42px;
-  border-radius: 10px;
-  background: var(--admin-accent);
-  color: #fff;
-  font-family: var(--admin-display);
-  font-size: 0.85rem;
-  font-weight: 700;
+.admin-wordmark-logo {
+  flex-shrink: 0;
+  max-width: min(168px, 100%);
+  height: auto;
+  object-fit: contain;
 }
 
-.admin-wordmark--lg .admin-wordmark-mark {
-  width: 52px;
-  height: 52px;
-  font-size: 1rem;
+.admin-wordmark--lg .admin-wordmark-logo {
+  max-width: min(200px, 100%);
+}
+
+.admin-wordmark-collapsed-mark {
+  display: none;
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 
 .admin-wordmark-copy {
@@ -103,18 +102,6 @@
   flex-direction: column;
   gap: 0;
   min-width: 0;
-}
-
-.admin-wordmark-title {
-  font-family: var(--admin-display);
-  font-size: 1.35rem;
-  font-weight: 700;
-  color: var(--admin-accent);
-  line-height: 1.15;
-}
-
-.admin-wordmark--lg .admin-wordmark-title {
-  font-size: 1.6rem;
 }
 
 .admin-wordmark-sub {
@@ -367,8 +354,13 @@
 .admin-app--collapsed .admin-sidebar { width: 84px; }
 .admin-app--collapsed .admin-nav-group-title,
 .admin-app--collapsed .admin-wordmark-copy,
+.admin-app--collapsed .admin-wordmark-logo,
 .admin-app--collapsed .admin-nav-item span,
 .admin-app--collapsed .admin-logout { display: none; }
+
+.admin-app--collapsed .admin-wordmark-collapsed-mark {
+  display: block;
+}
 
 .admin-app .admin-backdrop {
   position: fixed;
@@ -1800,10 +1792,6 @@
   background: linear-gradient(90deg, var(--admin-active-bg), var(--admin-surface));
   color: #0f766e;
   border-inline-start-color: var(--admin-active-border);
-}
-.admin-app .admin-wordmark-title {
-  font-family: var(--admin-display);
-  letter-spacing: -0.03em;
 }
 .admin-app .admin-stat {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
