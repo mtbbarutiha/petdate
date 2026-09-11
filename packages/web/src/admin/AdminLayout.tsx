@@ -201,6 +201,14 @@ function AdminLayoutInner() {
         setAdminAvatarUrl(url || null);
         setAvatarUrl(url);
         setAvatarFailed(false);
+        const name = String(data.displayName || '').trim();
+        if (name) {
+          try {
+            sessionStorage.setItem('petdate_admin_name', name);
+          } catch {
+            /* ignore */
+          }
+        }
       })
       .catch(() => {
         /* keep session cache */
@@ -322,24 +330,24 @@ function AdminLayoutInner() {
               <AdminHeaderNotifications />
               <span className="admin-topbar-chip">RTL · fa</span>
               <span className="admin-topbar-chip admin-topbar-chip--mint admin-live-pulse">live DB</span>
-              {/* Visual far-left of header actions (RTL topbar-end + CSS order) */}
-              <div className="admin-topbar-user" title={roleLabel} aria-label={`کاربر: ${roleLabel}`}>
-                {showAvatarImg ? (
-                  <img
-                    className="admin-topbar-avatar admin-topbar-avatar--photo"
-                    src={resolvedAvatar!}
-                    alt={roleLabel}
-                    width={34}
-                    height={34}
-                    onError={() => setAvatarFailed(true)}
-                  />
-                ) : (
-                  <span className="admin-topbar-avatar" aria-hidden>
-                    {adminInitials(roleLabel)}
-                  </span>
-                )}
-                <span className="admin-topbar-user-name">{roleLabel}</span>
-              </div>
+            </div>
+            {/* Far visual-left of RTL topbar (last flex child) — outside end cluster so it cannot clip */}
+            <div className="admin-topbar-user" title={roleLabel} aria-label={`کاربر واردشده: ${roleLabel}`}>
+              {showAvatarImg ? (
+                <img
+                  className="admin-topbar-avatar admin-topbar-avatar--photo"
+                  src={resolvedAvatar!}
+                  alt=""
+                  width={40}
+                  height={40}
+                  onError={() => setAvatarFailed(true)}
+                />
+              ) : (
+                <span className="admin-topbar-avatar" aria-hidden>
+                  {adminInitials(roleLabel)}
+                </span>
+              )}
+              <span className="admin-topbar-user-name">{roleLabel}</span>
             </div>
           </header>
           <Outlet />

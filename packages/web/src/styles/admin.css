@@ -241,20 +241,22 @@
 .admin-app .admin-topbar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  justify-content: flex-start;
+  gap: 12px;
   padding: 12px 24px;
   border-bottom: 1px solid var(--admin-border);
   background: #ffffff;
   position: sticky;
   top: 0;
   z-index: 20;
+  overflow: visible;
 }
 
 .admin-app .admin-topbar-start {
   display: flex;
   align-items: center;
   gap: 12px;
+  min-width: 0;
 }
 
 .admin-app .admin-breadcrumb {
@@ -276,6 +278,10 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-shrink: 1;
+  min-width: 0;
+  /* Sit between title (right) and avatar (far left) in RTL */
+  margin-inline-start: auto;
 }
 
 .admin-app .admin-topbar-chip {
@@ -292,28 +298,28 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 3px 10px 3px 3px;
+  padding: 4px 12px 4px 4px;
   border-radius: 999px;
   border: 1px solid var(--admin-border);
   background: #fff;
-  /* Keep user block on the visual far-left of the RTL topbar-end cluster */
-  order: 99;
-  margin-inline-start: 4px;
+  flex-shrink: 0;
+  z-index: 2;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
 }
 
 .admin-app .admin-topbar-avatar {
-  width: 34px;
-  height: 34px;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   background: var(--admin-accent);
   color: #fff;
   display: grid;
   place-items: center;
-  font-size: 0.78rem;
+  font-size: 0.85rem;
   font-weight: 700;
   flex-shrink: 0;
   overflow: hidden;
-  box-shadow: 0 0 0 2px #fff, 0 0 0 3px color-mix(in srgb, var(--admin-accent) 35%, transparent);
+  box-shadow: 0 0 0 2px #fff, 0 0 0 3px color-mix(in srgb, var(--admin-accent) 40%, transparent);
 }
 
 .admin-app .admin-topbar-avatar--photo {
@@ -323,18 +329,22 @@
 }
 
 .admin-app .admin-topbar-user-name {
-  font-size: 0.82rem;
-  font-weight: 600;
-  padding-inline-end: 4px;
-  max-width: 10rem;
+  font-size: 0.84rem;
+  font-weight: 650;
+  padding-inline-end: 6px;
+  max-width: 11rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  color: var(--admin-ink, #1e1b4b);
 }
 
 @media (max-width: 640px) {
   .admin-app .admin-topbar-user-name {
     display: none;
+  }
+  .admin-app .admin-topbar-user {
+    padding: 3px;
   }
 }
 
