@@ -1830,3 +1830,86 @@ html[data-theme='dark'] .pepito-lead-modal__actions .pepito-btn--ghost:hover {
 html[data-theme='dark'] .modal-overlay {
   background: var(--pd-overlay);
 }
+
+/* Pet profile — medical record + wishlist (kill orphan #faf9fc shell) */
+html[data-theme='dark'] .pepito-pet-medical {
+  background:
+    radial-gradient(120% 80% at 100% 0%, rgba(45, 212, 176, 0.12), transparent 55%),
+    var(--pd-surface);
+  border-color: var(--pd-border);
+  color: var(--pd-ink);
+  box-shadow: var(--pd-shadow);
+}
+html[data-theme='dark'] .pepito-pet-profile.is-medical-focus .pepito-pet-medical {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--pepito-mint) 35%, transparent), var(--pd-shadow);
+}
+html[data-theme='dark'] .pepito-pet-medical-head,
+html[data-theme='dark'] .pepito-pet-medical-head h2,
+html[data-theme='dark'] .pepito-pet-medical-entries h3,
+html[data-theme='dark'] .pepito-pet-medical-rx h3 {
+  color: var(--pd-ink);
+}
+html[data-theme='dark'] .pepito-pet-medical-head p,
+html[data-theme='dark'] .pepito-pet-medical-meta,
+html[data-theme='dark'] .pepito-pet-medical-muted,
+html[data-theme='dark'] .pepito-pet-medical-entry header {
+  color: var(--pd-muted);
+}
+html[data-theme='dark'] .pepito-pet-medical-card,
+html[data-theme='dark'] .pepito-pet-medical-entry,
+html[data-theme='dark'] .pepito-pet-medical-rx-card {
+  background: var(--pd-surface-2);
+  border-color: var(--pd-border);
+  color: var(--pd-ink);
+}
+html[data-theme='dark'] .pepito-pet-medical-card h3 {
+  color: var(--pepito-base);
+}
+html[data-theme='dark'] .pepito-pet-medical-card p,
+html[data-theme='dark'] .pepito-pet-medical-entry p,
+html[data-theme='dark'] .pepito-pet-medical-rx-card p,
+html[data-theme='dark'] .pepito-pet-medical-rx-card strong {
+  color: var(--pd-ink);
+}
+html[data-theme='dark'] .pepito-pet-medical-rx-links a {
+  color: var(--pepito-mint);
+}
+html[data-theme='dark'] .pepito-pet-wishlist {
+  background: var(--pd-surface);
+  border-color: var(--pd-border);
+  color: var(--pd-ink);
+  box-shadow: var(--pd-shadow);
+}
+html[data-theme='dark'] .pepito-pet-wishlist header h2 {
+  color: var(--pd-ink);
+}
+html[data-theme='dark'] .pepito-pet-wishlist header p {
+  color: var(--pd-muted);
+}
+html[data-theme='dark'] .pepito-pet-wishlist-grid li {
+  background: var(--pd-surface-2);
+  border-color: var(--pd-border);
+  color: var(--pd-ink);
+}
+html[data-theme='dark'] .pepito-pet-wishlist-grid a {
+  color: var(--pepito-mint);
+}
+html[data-theme='dark'] .pepito-pet-wishlist-grid button {
+  color: var(--pd-muted);
+}
+/* Status pills on pet profile stay readable on dark page */
+html[data-theme='dark'] .pepito-pet-profile-tags .tag.green {
+  background: color-mix(in srgb, var(--pepito-mint) 18%, var(--pd-surface));
+  border-color: color-mix(in srgb, var(--pepito-mint) 40%, var(--pd-border));
+  color: #7ee0c5;
+}
+html[data-theme='dark'] .pepito-pet-profile-tags .tag.blue {
+  background: color-mix(in srgb, var(--pepito-sky) 16%, var(--pd-surface));
+  border-color: color-mix(in srgb, var(--pepito-sky) 38%, var(--pd-border));
+  color: #7dd3fc;
+}
+html[data-theme='dark'] .pepito-pet-profile-tags .tag:not(.green):not(.blue) {
+  background: var(--pd-surface-2);
+  border-color: var(--pd-border);
+  color: var(--pd-ink);
+}
