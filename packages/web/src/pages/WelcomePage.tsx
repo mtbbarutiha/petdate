@@ -1,6 +1,15 @@
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Star, Stethoscope } from 'lucide-react';
+import {
+  ChevronLeft,
+  ChevronRight,
+  GraduationCap,
+  HeartHandshake,
+  Home,
+  Star,
+  Stethoscope,
+  type LucideIcon,
+} from 'lucide-react';
 import { BRAND } from '@petdate/shared';
 import { SiteFooter } from '../components/SiteFooter';
 import { NavUserCluster } from '../components/NavUserCluster';
@@ -21,7 +30,7 @@ const CONTACT_PHONE_TEL = '+982188776655';
 const BLOB_PATH =
   'M30,16C46.588,6.484,54.481-2.058,64.3,1.452c3.145,1.125,6.861,3.657,10.212,9.426A40.611,40.611,0,0,1,59.5,66.544,41.151,41.151,0,0,1,3.482,51.629C0.134,45.865-.2,41.289.375,38.125,2.228,27.979,13.544,25.436,30,16Z';
 
-/** Pepito “Our pet care services” — 12 cards with original Flaticon glyphs */
+/** Pepito services — role value-props (همبازی → دامپزشک → مربی → بدون پت), no sitter leftovers */
 const SERVICES: {
   to: string;
   title: string;
@@ -29,73 +38,76 @@ const SERVICES: {
   icon: string;
   fill: 1 | 2 | 3 | 4;
 }[] = [
-  { to: '/chats', title: 'نگهداری پت', desc: 'مراقبت روزانه در خانه با خیال راحت برای پت‌های خاص شما.', icon: 'flaticon-dog-and-pets-house', fill: 1 },
-  { to: '/chats', title: 'پیاده‌روی سگ', desc: 'پیاده‌روی منظم و امن برای سگ‌ها در محله و پارک‌های نزدیک.', icon: 'flaticon-animals-11', fill: 2 },
-  { to: '/vet-consult', title: 'دندان‌پزشکی پت', desc: 'بررسی و مراقبت از دندان و لثه با دامپزشکان مجرب.', icon: 'flaticon-veterinarian-hospital', fill: 3 },
-  { to: '/vet-consult', title: 'واکسیناسیون', desc: 'برنامه واکسن به‌موقع برای سلامت و ایمنی پت شما.', icon: 'flaticon-syringe', fill: 4 },
-  { to: '/shop', title: 'آرایش پت', desc: 'شست‌وشو، کوتاهی مو و نظافت حرفه‌ای برای ظاهر درخشان.', icon: 'flaticon-scissors', fill: 2 },
-  { to: '/add-pet', title: 'برنامه توله', desc: 'آموزش پایه و مراقبت ویژه برای توله‌ها و گربه‌های جوان.', icon: 'flaticon-dog-puppy', fill: 1 },
-  { to: '/vet-consult', title: 'خدمات دامپزشکی', desc: 'ویزیت، مشاوره و پیگیری درمان روی همان حساب مشترک.', icon: 'flaticon-cross', fill: 4 },
-  { to: '/chats', title: 'مراقبت شبانه', desc: 'اقامت شبانه امن وقتی نمی‌توانید کنار پت‌تان باشید.', icon: 'flaticon-animal-13', fill: 3 },
-  { to: '/shop', title: 'وعده‌های سالم', desc: 'تغذیه متعادل و وعده‌های مناسب سن و نژاد پت.', icon: 'flaticon-pet-food', fill: 1 },
-  { to: '/chats', title: 'فعالیت‌های سرگرم‌کننده', desc: 'بازی و همبازی برای انرژی و شادی روزانه پت‌ها.', icon: 'flaticon-people-1', fill: 2 },
-  { to: '/chats', title: 'خدمات آموزش', desc: 'تربیت رفتاری و فرمان‌پذیری با مربیان باتجربه.', icon: 'flaticon-dog-training-3', fill: 3 },
-  { to: '/vet-consult', title: 'میکروچیپ', desc: 'شناسایی دائمی پت برای امنیت بیشتر در گم‌شدن.', icon: 'flaticon-dog-with-first-aid-kit-bag', fill: 4 },
+  { to: '/chats', title: 'پیدا کردن همبازی', desc: 'همبازی مناسب برای پت‌ات در محله — درخواست بفرست و چت کن.', icon: 'flaticon-people-1', fill: 1 },
+  { to: '/chats', title: 'بازی و پیاده‌روی', desc: 'هماهنگی بازی و پیاده‌روی مشترک با صاحبان پت نزدیک.', icon: 'flaticon-animals-11', fill: 2 },
+  { to: '/vet-consult', title: 'مشاوره دامپزشک', desc: 'اتصال فوری به پزشک آنلاین با پرداخت سکه روی همان حساب.', icon: 'flaticon-veterinarian-hospital', fill: 3 },
+  { to: '/vet-consult', title: 'واکسیناسیون و درمان', desc: 'راهنمایی واکسن، دندان و پیگیری درمان با دامپزشک مجرب.', icon: 'flaticon-syringe', fill: 4 },
+  { to: '/trainer-consult', title: 'پیدا کردن مربی', desc: 'تربیت رفتاری و فرمان‌پذیری با مربیان تأییدشده آنلاین.', icon: 'flaticon-dog-training-3', fill: 2 },
+  { to: '/trainer-consult', title: 'آموزش توله', desc: 'برنامه آموزش پایه برای توله‌ها و گربه‌های جوان.', icon: 'flaticon-dog-puppy', fill: 1 },
+  { to: '/onboarding/role', title: 'شروع بدون پت', desc: 'هنوز پت نداری؟ نقش بدون پت را انتخاب کن و از مشاوره خرید شروع کن.', icon: 'flaticon-dog-and-pets-house', fill: 4 },
+  { to: '/adoption', title: 'پذیرش پت', desc: 'پت‌های نیازمند خانه را ببین و مسیر پذیرش مسئولانه را شروع کن.', icon: 'flaticon-animal-13', fill: 3 },
+  { to: '/shop', title: 'پت شاپ', desc: 'غذا، اسباب‌بازی و لوازم — سفارش روی همان حساب وب و ربات.', icon: 'flaticon-pet-food', fill: 1 },
+  { to: '/add-pet', title: 'ثبت پت', desc: 'پروفایل پت بساز تا همبازی، مربی و دامپزشک فعال شوند.', icon: 'flaticon-pawprint-4', fill: 2 },
+  { to: '/vet-consult', title: 'پرونده سلامت', desc: 'ویزیت و پیگیری روی همان حساب مشترک وب و تلگرام.', icon: 'flaticon-cross', fill: 4 },
+  { to: '/chats', title: 'گفتگوی امن', desc: 'چت همبازی و خدمات با همگام‌سازی وب و ربات.', icon: 'flaticon-dog-with-first-aid-kit-bag', fill: 3 },
 ];
 
+type HeroRole = 'playmate' | 'vet' | 'trainer' | 'no_pet';
+
 type HeroCta =
-  | { kind: 'hash'; href: string; label: string }
   | { kind: 'gated'; to: string; label: string }
   | { kind: 'link'; to: string; label: string };
 
+/** Marketing hero — fixed role order: همبازی → دامپزشک → مربی → بدون پت */
 const HERO_SLIDES: {
+  role: HeroRole;
   img: string;
   kicker: string;
   title: string;
   lead: string;
   cta: HeroCta;
+  testId: string;
+  Icon: LucideIcon;
 }[] = [
   {
+    role: 'playmate',
+    img: `${P}/1-hero.jpg`,
+    kicker: 'همبازی پت',
+    title: 'همبازی مناسب برای پت‌ات پیدا کن',
+    lead: 'صاحبان پت نزدیک را ببین، درخواست همبازی بفرست و روی همان حساب وب و تلگرام چت کن.',
+    cta: { kind: 'gated', to: '/chats', label: 'پیدا کردن همبازی' },
+    testId: 'hero-playmate-cta',
+    Icon: HeartHandshake,
+  },
+  {
+    role: 'vet',
     img: `${P}/3.jpg`,
-    kicker: 'مشاوره سریع با پزشک',
+    kicker: 'دامپزشک آنلاین',
     title: 'همین حالا به دامپزشک وصل شو',
     lead: 'درخواست اتصال فوری به پزشک آنلاین — پس از تأیید پرداخت سکه، چت مشاوره شروع می‌شود.',
-    cta: { kind: 'link', to: '/vet-consult', label: 'مشاوره سریع' },
+    cta: { kind: 'link', to: '/vet-consult', label: 'مشاوره دامپزشک' },
+    testId: 'hero-vet-consult-cta',
+    Icon: Stethoscope,
   },
   {
-    img: `${P}/2.jpg`,
-    kicker: 'عشق ما حیوانات‌اند',
-    title: 'مراقبت از پت‌های شما',
-    lead: 'دامپزشکان قابل‌اعتماد که پت‌تان را در اولویت می‌گذارند.',
-    cta: { kind: 'hash', href: '#services', label: 'کشف کن' },
-  },
-  {
-    img: `${P}/4.jpg`,
-    kicker: 'عشق ما حیوانات‌اند',
-    title: 'آماده‌ایم از پت‌تان مراقبت کنیم',
-    lead: 'دامپزشکان قابل‌اعتماد که پت‌تان را در اولویت می‌گذارند.',
-    cta: { kind: 'hash', href: '#services', label: 'کشف کن' },
-  },
-  {
-    img: `${P}/1-hero.jpg`,
-    kicker: 'عشق ما حیوانات‌اند',
-    title: 'عشق و مراقبت، در کنار پت شما',
-    lead: 'دامپزشکان قابل‌اعتماد که پت‌تان را در اولویت می‌گذارند.',
-    cta: { kind: 'hash', href: '#services', label: 'کشف کن' },
-  },
-  {
+    role: 'trainer',
     img: `${P}/5-hero.jpg`,
-    kicker: 'عشق ما حیوانات‌اند',
-    title: 'پت‌تان شایسته بهترین‌هاست',
-    lead: 'دامپزشکان قابل‌اعتماد که پت‌تان را در اولویت می‌گذارند.',
-    cta: { kind: 'hash', href: '#services', label: 'کشف کن' },
+    kicker: 'مربی پت',
+    title: 'مربی آنلاین برای آموزش پت‌ات',
+    lead: 'به مربی‌های تأییدشده درخواست بده — تربیت رفتاری و هماهنگی روی چت مشترک وب و ربات.',
+    cta: { kind: 'gated', to: '/trainer-consult', label: 'پیدا کردن مربی' },
+    testId: 'hero-trainer-cta',
+    Icon: GraduationCap,
   },
   {
+    role: 'no_pet',
     img: `${P}/06-hero.jpg`,
-    kicker: 'عشق ما حیوانات‌اند',
-    title: 'مراقبت دامپزشکی حرفه‌ای',
-    lead: 'دامپزشکان قابل‌اعتماد که پت‌تان را در اولویت می‌گذارند.',
-    cta: { kind: 'hash', href: '#services', label: 'کشف کن' },
+    kicker: 'بدون پت',
+    title: 'هنوز پت نداری؟ از همین‌جا شروع کن',
+    lead: 'نقش بدون پت را انتخاب کن، مشاوره خرید بگیر یا مسیر پذیرش را ببین — بدون اپ جدا.',
+    cta: { kind: 'gated', to: '/onboarding/role', label: 'شروع بدون پت' },
+    testId: 'hero-no-pet-cta',
+    Icon: Home,
   },
 ];
 
@@ -218,13 +230,17 @@ function GatedLink({
     to.startsWith('/shop/') ||
     to === '/adoption' ||
     to.startsWith('/adoption/');
+  // Role onboarding is auth-gated but must not require a complete profile.
+  const onboardingDest = to === '/onboarding/role' || to.startsWith('/onboarding/');
+  const href = onboardingDest
+    ? isLoggedIn
+      ? to
+      : loginPath(to)
+    : ready || publicDest
+      ? to
+      : loginPath(to);
   return (
-    <Link
-      to={ready || publicDest ? to : loginPath(to)}
-      className={className}
-      style={style}
-      data-testid={dataTestId}
-    >
+    <Link to={href} className={className} style={style} data-testid={dataTestId}>
       {children}
     </Link>
   );
@@ -238,11 +254,11 @@ function PawIcon() {
   );
 }
 
-/** Minimal white stethoscope for first-hero glass CTA (RTL: icon before label → right). */
-function HeroStethoscopeIcon() {
+/** Glass hero CTA icon (RTL: icon before label → right). */
+function HeroCtaIcon({ Icon }: { Icon: LucideIcon }) {
   return (
     <span className="pepito-hero-cta-icon" aria-hidden>
-      <Stethoscope size={20} strokeWidth={1.75} />
+      <Icon size={20} strokeWidth={1.75} />
     </span>
   );
 }
@@ -431,27 +447,31 @@ export function WelcomePage() {
         </div>
 </header>
 
-      <section className="pepito-hero" aria-roledescription="carousel" aria-label="اسلایدر صفحه اصلی">
+      <section
+        className="pepito-hero"
+        aria-roledescription="carousel"
+        aria-label="اسلایدر نقش‌ها — همبازی، دامپزشک، مربی، بدون پت"
+      >
         <div className="pepito-hero-slides">
           {HERO_SLIDES.map((s, i) => (
             <div
-              key={s.img}
+              key={s.role}
               className={`pepito-hero-slide${i === slide ? ' is-active' : ''}`}
               aria-hidden={i !== slide}
             >
               <img
                 className="pepito-hero-media"
                 src={s.img}
-                alt={i === 0 ? 'پت‌دیت — همبازی پت و مراقبت حیوانات خانگی' : s.title}
-                decoding={i === 0 ? "sync" : "async"}
-                loading={i === 0 ? "eager" : "lazy"}
-                fetchPriority={i === 0 ? "high" : "auto"}
+                alt={s.title}
+                decoding={i === 0 ? 'sync' : 'async'}
+                loading={i === 0 ? 'eager' : 'lazy'}
+                fetchPriority={i === 0 ? 'high' : 'auto'}
               />
             </div>
           ))}
         </div>
         <div className="pepito-hero-wash" aria-hidden />
-        <div className="pepito-hero-inner" key={slide}>
+        <div className="pepito-hero-inner" key={current.role}>
           <div className="pepito-hero-copy">
             <p className="pepito-kicker">
               <span className="pepito-kicker-dot">
@@ -460,34 +480,30 @@ export function WelcomePage() {
               {current.kicker}
             </p>
             {/* Stable brand H1 for SEO; slide headline stays visual (styled like former h1). */}
-            <h1 className="pd-sr-only">پت‌دیت — همبازی پت، پت‌شاپ و دامپزشک آنلاین</h1>
+            <h1 className="pd-sr-only">
+              پت‌دیت — همبازی پت، دامپزشک آنلاین، مربی و شروع بدون پت
+            </h1>
             <p className="pepito-hero-slide-title">{current.title}</p>
             <p className="pepito-hero-lead">{current.lead}</p>
-            {/* First slide → /vet-consult (coin-paid quick connect). Others keep Discover. */}
             <div className="pepito-hero-cta">
               {current.cta.kind === 'gated' ? (
                 <GatedLink
                   to={current.cta.to}
                   className="pepito-btn pepito-hero-cta-btn--glass"
-                  data-testid="hero-vet-consult-cta"
+                  data-testid={current.testId}
                 >
-                  <HeroStethoscopeIcon />
+                  <HeroCtaIcon Icon={current.Icon} />
                   {current.cta.label}
                 </GatedLink>
-              ) : current.cta.kind === 'link' ? (
+              ) : (
                 <Link
                   to={current.cta.to}
                   className="pepito-btn pepito-hero-cta-btn--glass"
-                  data-testid="hero-vet-consult-cta"
+                  data-testid={current.testId}
                 >
-                  <HeroStethoscopeIcon />
+                  <HeroCtaIcon Icon={current.Icon} />
                   {current.cta.label}
                 </Link>
-              ) : (
-                <a href={current.cta.href} className="pepito-btn button-1">
-                  <PawIcon />
-                  {current.cta.label}
-                </a>
               )}
             </div>
           </div>
@@ -512,16 +528,16 @@ export function WelcomePage() {
             <ChevronLeft size={16} strokeWidth={1.75} aria-hidden />
           </button>
         </div>
-        <div className="pepito-hero-dots" role="tablist" aria-label="اسلایدها">
+        <div className="pepito-hero-dots" role="tablist" aria-label="اسلایدهای نقش">
           {HERO_SLIDES.map((s, i) => (
             <button
-              key={s.img}
+              key={s.role}
               type="button"
               role="tab"
               aria-selected={i === slide}
               className={`pepito-hero-dot${i === slide ? ' is-active' : ''}`}
               onClick={() => goToSlide(i)}
-              aria-label={`اسلاید ${i + 1}`}
+              aria-label={s.kicker}
             />
           ))}
         </div>
@@ -957,13 +973,13 @@ export function WelcomePage() {
 
       <section className="pepito-cta">
         <div className="pepito-cta-inner">
-          <h2>آماده‌ای همبازی پیدا کنی؟</h2>
+          <h2>آماده‌ای از نقش خودت شروع کنی؟</h2>
           <p>
-            لندینگ آزاد است؛ برای امکانات اصلی با یک کد یکبارمصرف وارد دنیای مشترک وب و ربات شو.
+            همبازی، دامپزشک، مربی یا بدون پت — با یک کد یکبارمصرف وارد دنیای مشترک وب و ربات شو.
           </p>
           <GatedLink to="/chats" className="pepito-btn button-1 pepito-btn--lg pepito-btn--on-dark">
             <PawIcon />
-            پذیرش یک پت
+            پیدا کردن همبازی
           </GatedLink>
         </div>
       </section>
