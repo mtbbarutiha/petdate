@@ -15,9 +15,16 @@ import { InviteFriendsCard } from '../components/InviteFriendsCard';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { useAppToast } from '../hooks/useAppToast';
 import {
+  createCoinCardPayment,
+  fetchBuyCoinsCatalog,
+  fetchMyWalletPayments,
   fetchWallet,
   fetchWalletTransactions,
+  resolvePublicMediaUrl,
   startTelegramAttach,
+  uploadWalletPaymentReceipt,
+  type CoinPackageDto,
+  type WalletPaymentOrderDto,
   type WalletTransactionDto,
 } from '../lib/api';
 
@@ -58,6 +65,13 @@ function sameWallet(a: WalletBalances | null, b: WalletBalances): boolean {
   if (!a) return false;
   return a.ton === b.ton && a.stars === b.stars && a.coins === b.coins && a.toman === b.toman;
 }
+function paymentStatusFa(status: string): string {
+  if (status === 'awaiting_receipt') return 'منتظر رسید';
+  if (status === 'pending') return 'در صف تأیید';
+  if (status === 'approved' || status === 'paid') return 'تأیید شده';
+  if (status === 'rejected') return 'رد شده';
+  return status;
+}
 
 /**
  * Dedicated wallet page — multi-currency balances (same source as WalletChip).
@@ -73,7 +87,7 @@ function sameWallet(a: WalletBalances | null, b: WalletBalances): boolean {
  */
 export function WalletPage() {
   const { user, token, refreshMe } = useAuthStore();
-  const { toastError, toastInfo } = useAppToast();
+  const { toastError, toastInfo, toastSuccess } = useAppToast();
   const [wallet, setWallet] = useState<WalletBalances | null>(null);
   const [telegramLinked, setTelegramLinked] = useState<boolean>(() => Boolean(user?.telegramId));
   const [telegramId, setTelegramId] = useState<string | null>(user?.telegramId ?? null);
@@ -87,6 +101,14 @@ export function WalletPage() {
   const [transactions, setTransactions] = useState<WalletTransactionDto[]>([]);
   const [txLoading, setTxLoading] = useState(false);
   const [txError, setTxError] = useState('');
+  const [packages, setPackages] = useState<CoinPackageDto[]>([]);
+  const [cardInfo, setCardInfo] = useState<{ number: string; masked: string; grouped: string; holder: string } | null>(null);
+  const [activeOrder, setActiveOrder] = useState<WalletPaymentOrderDto | null>(null);
+  const [paymentHistory, setPaymentHistory] = useState<WalletPaymentOrderDto[]>([]);
+  const [buyBusy, setBuyBusy] = useState(false);
+  const [transferRef, setTransferRef] = useState('');
+  const [uploadBusy, setUploadBusy] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
   const inFlightRef = useRef(false);
   const hasLocalRef = useRef(Boolean(user));
   const tokenRef = useRef(token);
@@ -116,6 +138,22 @@ export function WalletPage() {
     }
   }, []);
 
+  const loadBuyCoins = useCallback(async () => {
+    const tok = tokenRef.current;
+    if (!tok) return;
+    try {
+      const [catalog, payments] = await Promise.all([
+        fetchBuyCoinsCatalog(tok),
+        fetchMyWalletPayments(tok, { limit: 20, method: 'card' }),
+      ]);
+      setPackages(catalog.packages ?? []);
+      setCardInfo(catalog.card ?? null);
+      const open = (catalog.openOrders ?? []).find((o) => (o.status === 'awaiting_receipt' || o.status === 'pending') && !String(o.packageId).startsWith('shop')) ?? null;
+      setActiveOrder(open);
+      setPaymentHistory((payments.orders ?? []).filter((o) => !String(o.packageId).startsWith('shop')));
+    } catch { /* optional */ }
+  }, []);
+
   const loadWallet = useCallback(async (opts?: { soft?: boolean }) => {
     const tok = tokenRef.current;
     if (!tok || inFlightRef.current) return;
@@ -142,6 +180,7 @@ export function WalletPage() {
       setSyncedAt(new Date().toISOString());
       setError('');
       void loadTransactions();
+      void loadBuyCoins();
     } catch {
       const msg = 'نتوانستیم موجودی را از سرور تازه کنیم؛ آخرین موجودی محلی نمایش داده شد.';
       setError(msg);
@@ -151,7 +190,7 @@ export function WalletPage() {
       setSyncing(false);
       inFlightRef.current = false;
     }
-  }, [loadTransactions, toastError]);
+  }, [loadBuyCoins, loadTransactions, toastError]);
 
   useEffect(() => {
     if (!token) return;
@@ -193,6 +232,35 @@ export function WalletPage() {
       setLinkHint(msg); toastError(msg);
     } finally {
       setLinkBusy(false);
+    }
+  }
+
+  async function onBuyPackage(pkg: CoinPackageDto) {
+    if (!token) return;
+    setBuyBusy(true);
+    try {
+      const res = await createCoinCardPayment(token, pkg.id);
+      setActiveOrder(res.order); setCardInfo(res.card);
+      toastInfo(res.message || 'سفارش ثبت شد — مبلغ را واریز و رسید را آپلود کن.');
+      await loadBuyCoins();
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : 'ثبت سفارش ناموفق بود');
+      await loadBuyCoins();
+    } finally { setBuyBusy(false); }
+  }
+  async function onUploadReceipt(file: File | null) {
+    if (!token || !activeOrder || !file) return;
+    setUploadBusy(true);
+    try {
+      const order = await uploadWalletPaymentReceipt(token, activeOrder.id, file, transferRef || undefined);
+      setActiveOrder(order);
+      toastSuccess('رسید ثبت شد — پس از تأیید ادمین سکه واریز می‌شود.');
+      await loadBuyCoins();
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : 'آپلود ناموفق بود');
+    } finally {
+      setUploadBusy(false);
+      if (fileRef.current) fileRef.current.value = '';
     }
   }
 
@@ -374,7 +442,7 @@ export function WalletPage() {
           </span>
           <div>
             <h2 id="wallet-tx-title">تراکنش‌ها</h2>
-            <p className="pepito-wallet-tx-lead">کسر و واریز سکه و سایر ارزها</p>
+            <p className="pepito-wallet-tx-lead">کسر و واریز سکه و سایر ارزها — مشترک با ربات</p>
           </div>
         </div>
 
@@ -423,7 +491,52 @@ export function WalletPage() {
         ) : null}
       </section>
 
-      <p className="pepito-wallet-soon">به‌زودی واریز مستقیم از وب</p>
+      <section className="pepito-wallet-tg pepito-wallet-buy" aria-labelledby="wallet-buy-title">
+        <div className="pepito-wallet-tg-head">
+          <span className="pepito-wallet-tg-mark" aria-hidden><Receipt size={18} /></span>
+          <div>
+            <h2 id="wallet-buy-title">شارژ سکه با کارت‌به‌کارت</h2>
+            <p className="pepito-wallet-tg-lead">همان کیف پول ربات — واریز کن، رسید را آپلود کن؛ ادمین تأیید می‌کند و در لجر ثبت می‌شود</p>
+          </div>
+        </div>
+        <div className="pepito-wallet-tg-body">
+          {activeOrder ? (
+            <div className="pepito-wallet-buy-active">
+              <p>سفارش فعال: <strong dir="ltr">#{activeOrder.id}</strong> · {toPersianDigits(activeOrder.coins)} سکه · {toPersianDigits(activeOrder.amountToman ?? 0)} تومان · {paymentStatusFa(activeOrder.status)}</p>
+              {cardInfo ? (<><p dir="ltr">کارت: <strong>{cardInfo.grouped || cardInfo.number}</strong></p><p>به‌نام: <strong>{cardInfo.holder}</strong></p></>) : null}
+              {activeOrder.status === 'awaiting_receipt' ? (
+                <>
+                  <label className="pepito-wallet-buy-ref"><span>شماره پیگیری (اختیاری)</span>
+                    <input value={transferRef} onChange={(e) => setTransferRef(e.target.value)} placeholder="کد پیگیری بانک" dir="ltr" />
+                  </label>
+                  <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden onChange={(e) => void onUploadReceipt(e.target.files?.[0] ?? null)} />
+                  <button type="button" className="pepito-btn button-1" disabled={uploadBusy} onClick={() => fileRef.current?.click()}>{uploadBusy ? 'در حال ارسال…' : 'آپلود عکس رسید'}</button>
+                </>
+              ) : (<p className="pepito-wallet-tg-meta">رسید ثبت شد — منتظر تأیید ادمین در پنل مالی.</p>)}
+              {activeOrder.receiptUrl ? <img className="pepito-wallet-buy-receipt" src={resolvePublicMediaUrl(activeOrder.receiptUrl)} alt="رسید پرداخت" /> : null}
+            </div>
+          ) : (
+            <ul className="pepito-wallet-buy-packages">
+              {packages.map((pkg) => (
+                <li key={pkg.id}>
+                  <button type="button" className="pepito-wallet-buy-pkg" disabled={buyBusy} onClick={() => void onBuyPackage(pkg)}>
+                    <strong>{pkg.label}</strong>
+                    <span>{toPersianDigits(pkg.toman)} تومان · ⭐{toPersianDigits(pkg.stars)}</span>
+                  </button>
+                </li>
+              ))}
+              {!packages.length ? <li className="pepito-wallet-tg-meta">در حال بارگذاری بسته‌ها…</li> : null}
+            </ul>
+          )}
+          {paymentHistory.length ? (
+            <ul className="pepito-wallet-buy-history" aria-label="درخواست‌های کارت‌به‌کارت">
+              {paymentHistory.slice(0, 6).map((o) => (
+                <li key={o.id}><span dir="ltr">#{o.id}</span><span>{toPersianDigits(o.coins)} سکه · {paymentStatusFa(o.status)}</span><span>{formatTxDate(o.createdAt)}</span></li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+      </section>
 
       <InviteFriendsCard variant="card" className="pepito-wallet-invite" />
 

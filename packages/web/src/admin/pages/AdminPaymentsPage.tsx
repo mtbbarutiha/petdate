@@ -1,13 +1,22 @@
 import { Fragment, useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { makeOrderPublicId, paymentPublicIdOf, userPublicIdOf, type PaymentOrder } from '@petdate/shared';
-import { adminFetch, formatNumFa, formatTomanFa } from '../api';
+import {
+  adminFetch,
+  API_BASE,
+  formatNumFa,
+  formatTomanFa,
+  getAdminPassword,
+  getAdminUsername,
+} from '../api';
+import { resolvePublicMediaUrl } from '../../lib/api';
 import { formatAdminFaDateTime } from '../JalaliDateSelect';
 import { AdminIdChip } from '../AdminIds';
 import { AdminEntityCell, AdminThumb } from '../AdminThumb';
 
 const STATUS_OPTIONS: { value: string; label: string }[] = [
-  { value: '', label: 'همه' },
   { value: 'pending', label: 'در انتظار بررسی (کارت)' },
+  { value: '', label: 'همه' },
   { value: 'awaiting_receipt', label: 'منتظر رسید' },
   { value: 'awaiting_stars', label: 'فاکتور Stars' },
   { value: 'paid', label: 'پرداخت‌شده' },
@@ -43,7 +52,13 @@ function parseShopMeta(note?: string): { shopOrderId?: number; titleHint?: strin
   if (!note?.trim().startsWith('{')) return null;
   try {
     const j = JSON.parse(note) as { kind?: string; shopOrderId?: number; titleHint?: string };
-    if (j?.kind === 'shopxtr' || j?.kind === 'shopwallet' || j?.kind === 'shopcoins' || j?.kind === 'shopcard' || j?.kind === 'shoptoman') {
+    if (
+      j?.kind === 'shopxtr' ||
+      j?.kind === 'shopwallet' ||
+      j?.kind === 'shopcoins' ||
+      j?.kind === 'shopcard' ||
+      j?.kind === 'shoptoman'
+    ) {
       return { shopOrderId: j.shopOrderId, titleHint: j.titleHint };
     }
   } catch {
@@ -52,11 +67,70 @@ function parseShopMeta(note?: string): { shopOrderId?: number; titleHint?: strin
   return null;
 }
 
+function receiptHeaders(): HeadersInit {
+  const headers: Record<string, string> = {};
+  const pwd = getAdminPassword();
+  if (pwd) headers['x-admin-password'] = pwd;
+  const user = getAdminUsername();
+  if (user) headers['x-admin-username'] = user;
+  return headers;
+}
+
+function AdminPaymentReceiptImg({ order }: { order: PaymentOrder }) {
+  const [src, setSrc] = useState('');
+  useEffect(() => {
+    let revoked = '';
+    let cancelled = false;
+    const raw = String(order.receiptUrl || order.receiptFileId || '').trim();
+    if (!raw) return;
+    if (raw.startsWith('/api/payments/receipts/')) {
+      void (async () => {
+        try {
+          const res = await fetch(`${API_BASE}/api/admin/payments/${order.id}/receipt`, {
+            headers: receiptHeaders(),
+          });
+          if (!res.ok) return;
+          const blob = await res.blob();
+          if (cancelled) return;
+          revoked = URL.createObjectURL(blob);
+          setSrc(revoked);
+        } catch {
+          /* ignore */
+        }
+      })();
+    } else {
+      setSrc(resolvePublicMediaUrl(raw));
+    }
+    return () => {
+      cancelled = true;
+      if (revoked) URL.revokeObjectURL(revoked);
+    };
+  }, [order.id, order.receiptFileId, order.receiptUrl]);
+
+  if (!src) return null;
+  return (
+    <a href={src} target="_blank" rel="noopener noreferrer">
+      <img
+        src={src}
+        alt="رسید"
+        style={{
+          width: 160,
+          maxHeight: 200,
+          objectFit: 'cover',
+          borderRadius: 8,
+          border: '1px solid var(--admin-border, #e5e7eb)',
+        }}
+      />
+    </a>
+  );
+}
+
 export function AdminPaymentsPage() {
   const [orders, setOrders] = useState<PaymentOrder[]>([]);
-  const [status, setStatus] = useState('');
+  const [status, setStatus] = useState('pending');
   const [error, setError] = useState<string | null>(null);
   const [openId, setOpenId] = useState<number | null>(null);
+  const [busyId, setBusyId] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -74,6 +148,7 @@ export function AdminPaymentsPage() {
   }, [load]);
 
   const approve = async (id: number) => {
+    setBusyId(id);
     try {
       await adminFetch(`/api/admin/payments/${id}/approve`, {
         method: 'POST',
@@ -82,11 +157,14 @@ export function AdminPaymentsPage() {
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'خطا');
+    } finally {
+      setBusyId(null);
     }
   };
 
   const reject = async (id: number) => {
     const note = prompt('دلیل رد (اختیاری)') || undefined;
+    setBusyId(id);
     try {
       await adminFetch(`/api/admin/payments/${id}/reject`, {
         method: 'POST',
@@ -95,6 +173,8 @@ export function AdminPaymentsPage() {
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'خطا');
+    } finally {
+      setBusyId(null);
     }
   };
 
@@ -102,18 +182,33 @@ export function AdminPaymentsPage() {
     <div className="admin-page">
       <header className="admin-header">
         <div>
-          <h1>پرداخت‌ها</h1>
+          <h1>پرداخت‌ها / کارت‌به‌کارت</h1>
           <p>
-            {formatNumFa(orders.length)} مورد — کارت‌به‌کارت، سکه، Stars و شاپ
+            {formatNumFa(orders.length)} مورد — صف تأیید کارت‌به‌کارت سکه و شاپ، هم‌تراز کیف پول و
+            Finance OS
           </p>
         </div>
-        <select className="admin-select" value={status} onChange={(e) => setStatus(e.target.value)}>
-          {STATUS_OPTIONS.map((s) => (
-            <option key={s.value || 'all'} value={s.value}>
-              {s.label}
-            </option>
-          ))}
-        </select>
+        <div
+          className="admin-header-actions"
+          style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}
+        >
+          <Link to="/admin/finance" className="admin-btn ghost">
+            داشبورد مالی
+          </Link>
+          <Link to="/admin/finance/wallet" className="admin-btn ghost">
+            لجر کیف پول
+          </Link>
+          <Link to="/admin/finance/transactions" className="admin-btn ghost">
+            Finance OS
+          </Link>
+          <select className="admin-select" value={status} onChange={(e) => setStatus(e.target.value)}>
+            {STATUS_OPTIONS.map((s) => (
+              <option key={s.value || 'all'} value={s.value}>
+                {s.label}
+              </option>
+            ))}
+          </select>
+        </div>
       </header>
 
       {error ? <p className="admin-error">{error}</p> : null}
@@ -136,6 +231,7 @@ export function AdminPaymentsPage() {
             {orders.map((o) => {
               const open = openId === o.id;
               const shopMeta = parseShopMeta(o.adminNote);
+              const hasReceipt = Boolean(o.receiptUrl || o.receiptFileId);
               return (
                 <Fragment key={o.id}>
                   <tr>
@@ -159,7 +255,9 @@ export function AdminPaymentsPage() {
                               {userPublicIdOf({ id: o.userId })}
                             </code>
                             {o.userUsername ? (
-                              <span className="admin-muted" dir="ltr">@{o.userUsername}</span>
+                              <span className="admin-muted" dir="ltr">
+                                @{o.userUsername}
+                              </span>
                             ) : null}
                           </div>
                         }
@@ -174,6 +272,11 @@ export function AdminPaymentsPage() {
                         {shopMeta?.shopOrderId != null ? (
                           <span className="admin-muted" dir="ltr">
                             سفارش شاپ {makeOrderPublicId(shopMeta.shopOrderId)}
+                          </span>
+                        ) : null}
+                        {o.transferRef ? (
+                          <span className="admin-muted" dir="ltr">
+                            پیگیری: {o.transferRef}
                           </span>
                         ) : null}
                       </div>
@@ -208,6 +311,7 @@ export function AdminPaymentsPage() {
                             <button
                               type="button"
                               className="admin-btn admin-btn--primary"
+                              disabled={busyId === o.id}
                               onClick={() => void approve(o.id)}
                             >
                               تأیید
@@ -215,6 +319,7 @@ export function AdminPaymentsPage() {
                             <button
                               type="button"
                               className="admin-btn admin-btn--danger"
+                              disabled={busyId === o.id}
                               onClick={() => void reject(o.id)}
                             >
                               رد
@@ -227,15 +332,27 @@ export function AdminPaymentsPage() {
                   {open ? (
                     <tr>
                       <td colSpan={8}>
-                        <div className="admin-muted" style={{ whiteSpace: 'pre-wrap', padding: '0.5rem 0' }}>
-                          {o.telegramPaymentChargeId
-                            ? `charge: ${o.telegramPaymentChargeId}\n`
-                            : ''}
-                          {o.receiptFileId ? `receipt: ${o.receiptFileId}\n` : ''}
-                          {o.reviewedAt
-                            ? `reviewed: ${formatAdminFaDateTime(o.reviewedAt)}\n`
-                            : ''}
-                          {o.adminNote || 'بدون یادداشت'}
+                        <div
+                          className="admin-muted"
+                          style={{
+                            whiteSpace: 'pre-wrap',
+                            padding: '0.5rem 0',
+                            display: 'grid',
+                            gap: 12,
+                            gridTemplateColumns: hasReceipt ? '160px 1fr' : '1fr',
+                          }}
+                        >
+                          {hasReceipt ? <AdminPaymentReceiptImg order={o} /> : null}
+                          <div>
+                            {o.telegramPaymentChargeId
+                              ? `charge: ${o.telegramPaymentChargeId}\n`
+                              : ''}
+                            {o.transferRef ? `پیگیری واریز: ${o.transferRef}\n` : ''}
+                            {o.reviewedAt
+                              ? `reviewed: ${formatAdminFaDateTime(o.reviewedAt)}\n`
+                              : ''}
+                            {o.adminNote || 'بدون یادداشت'}
+                          </div>
                         </div>
                       </td>
                     </tr>
