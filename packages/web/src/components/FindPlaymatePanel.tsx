@@ -1,7 +1,13 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PawPrint } from 'lucide-react';
-import { BRAND, primaryRole, type PetProfile } from '@petdate/shared';
+import {
+  BRAND,
+  PLAYDATE_REQUEST_COST,
+  primaryRole,
+  toPersianDigits,
+  type PetProfile,
+} from '@petdate/shared';
 import { PlaymateRequestsPanel } from './PlaymateRequestsPanel';
 import { EMPTY_STATE_PHOTO } from '../data/petImages';
 import { useAuthStore } from '../hooks/useAuthStore';
@@ -10,8 +16,13 @@ import { useUserStore } from '../hooks/useUserStore';
 import { listPets } from '../lib/api';
 import { findAndSendPlaymates, type FindPlaymateResult } from '../lib/playmateActions';
 import { petProfileToUiPet } from '../lib/playdateMap';
+import { authStore } from '../data/authStore';
 
 type FindPhase = 'idle' | 'pick' | 'sending' | 'done';
+
+function formatCoins(n: number): string {
+  return toPersianDigits(String(n));
+}
 
 function PawIcon({ size = 16 }: { size?: number }) {
   return (
@@ -76,11 +87,31 @@ export function FindPlaymatePanel({
     void loadMyPets();
   }, [loadMyPets]);
 
+  const coins = authUser?.coins ?? authUser?.wallet?.coins ?? 0;
+
+  function confirmFindFee(): boolean {
+    if (typeof window === 'undefined') return true;
+    return window.confirm(
+      [
+        `هزینه درخواست: ${formatCoins(PLAYDATE_REQUEST_COST)} سکه`,
+        `موجودی فعلی: ${formatCoins(coins)} سکه`,
+        '',
+        'با تأیید، سکه از موجودی‌ات کسر می‌شود و درخواست همبازی برای هم‌گروه‌ها ارسال می‌شود.',
+      ].join('\n')
+    );
+  }
+
   async function runFindForPet(pet: PetProfile) {
     if (!myUserId) {
       const msg = 'برای ارسال درخواست همبازی وارد حساب شو.';
       setFindError(msg); toastError(msg); return;
     }
+    if (coins < PLAYDATE_REQUEST_COST) {
+      const msg = `برای درخواست همبازی حداقل ${formatCoins(PLAYDATE_REQUEST_COST)} سکه لازم داری. موجودی: ${formatCoins(coins)}`;
+      setFindError(msg); toastError(msg); return;
+    }
+    if (!confirmFindFee()) return;
+
     setFindPhase('sending'); setFindError(null); setFindResult(null); setStatusLine(null);
     try {
       const result = await findAndSendPlaymates(pet, myUserId);
@@ -89,8 +120,11 @@ export function FindPlaymatePanel({
         const msg = `برای ${result.sourceName} فعلاً همبازی هم‌گروه پیدا نشد. درخواست ارسال نشد.`;
         setStatusLine(msg); toastInfo(msg);
       } else {
-        const msg = `${result.sent} درخواست برای ${result.sourceName} ارسال شد — در گفتگوها می‌بینی.`;
+        const feeNote =
+          result.cost > 0 ? ` · هزینه: ${formatCoins(result.cost)} سکه` : '';
+        const msg = `${result.sent} درخواست برای ${result.sourceName} ارسال شد${feeNote} — در گفتگوها می‌بینی.`;
         setStatusLine(`✅ ${msg}`); toastSuccess(msg); onSent?.();
+        void authStore.refreshMe();
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'ارسال درخواست‌ها ناموفق بود';
@@ -202,10 +236,19 @@ export function FindPlaymatePanel({
           <p className="pepito-eyebrow">{BRAND.taglineFa}</p>
           <h2>پیدا کردن همبازی</h2>
           <p>درخواست بفرست، قبول/رد کن و همین‌جا چت کن.</p>
+          <p className="find-playmate-panel__fee">
+            هزینه درخواست: {formatCoins(PLAYDATE_REQUEST_COST)} سکه
+          </p>
         </header>
       ) : null}
 
       <section className="find-playmate-one" aria-label="ارسال درخواست همبازی">
+        {!needsLogin && !needsPet ? (
+          <p className="find-playmate-one__fee" role="status" data-testid="find-playmate-fee">
+            هزینه درخواست: {formatCoins(PLAYDATE_REQUEST_COST)} سکه
+            {authUser ? ` · موجودی: ${formatCoins(coins)} سکه` : ''}
+          </p>
+        ) : null}
         {needsLogin ? (
           <Link to="/auth/login" className="pepito-btn button-1">
             <PawIcon />

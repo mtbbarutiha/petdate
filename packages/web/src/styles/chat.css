@@ -1144,6 +1144,13 @@ html.tg-chat-open body {
   flex-direction: column;
   gap: 0.65rem;
 }
+.find-playmate-panel .find-playmate-one__fee,
+.find-playmate-panel__fee {
+  margin: 0;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--pepito-muted, #6b6280);
+}
 .find-playmate-panel .find-playmate-one__status {
   margin: 0;
   font-size: 0.85rem;

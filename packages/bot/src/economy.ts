@@ -8,6 +8,8 @@ export {
   PROFILE_REWARD_SECTIONS,
   PROFILE_SECTION_LABELS_FA,
   QUICK_VET_COST,
+  PLAYDATE_REQUEST_COST,
+  PLAYDATE_FEE_REASON,
   formatCoinAwardMessage,
 } from '@petdate/shared';
 export type { CoinAward, ProfileRewardSection } from '@petdate/shared';

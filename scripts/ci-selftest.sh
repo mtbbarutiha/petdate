@@ -126,6 +126,7 @@ run src/magazine-editorial-seed.selftest.ts
 run src/routes/pets-id-guard.selftest.ts
 run src/routes/pets-public-list.selftest.ts
 run src/routes/playdates-auth.selftest.ts
+run src/services/playdate-fee.selftest.ts
 run src/site-analytics.selftest.ts
 
 echo "ci-selftest: all passed"

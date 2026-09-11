@@ -3,10 +3,20 @@ import { Router } from 'express';
 import fs from 'fs';
 import multer from 'multer';
 import type { PlaydateChatMediaKind, PlaydateStatus } from '@petdate/shared';
-import { userPublicIdOf } from '@petdate/shared';
+import {
+  PET_SPECIES_LABELS,
+  PLAYDATE_REQUEST_COST,
+  rankPlaymateMatches,
+  userPublicIdOf,
+} from '@petdate/shared';
 import { infra } from '../config/infra';
 import { dbService } from '../db';
 import { getUserFromBearer } from '../services/web-otp';
+import {
+  chargePlaydateFee,
+  insufficientPlaydateFeePayload,
+  refundPlaydateFee,
+} from '../services/playdate-fee';
 import { notifyPlaydateRequestTelegram } from '../services/telegram-playdate-notify';
 import {
   notifyPlaydateChatEndedTelegram,
@@ -773,6 +783,190 @@ playdatesRouter.get('/:id', (req, res) => {
   res.json(request);
 });
 
+const MAX_AUTO_PLAYMATE_REQUESTS = 30;
+
+/**
+ * پیدا کردن همبازی (وب + ربات): یک‌بار ۲ سکه از درخواست‌کننده، سپس ارسال به هم‌گروه‌ها.
+ * اگر مچ جدیدی نباشد، سکه‌ای کسر نمی‌شود.
+ */
+playdatesRouter.post('/find', async (req, res) => {
+  const fromPetId = Number(req.body?.fromPetId);
+  const fromUserId = Number(req.body?.fromUserId);
+  if (!Number.isFinite(fromPetId) || !Number.isFinite(fromUserId)) {
+    res.status(400).json({ error: 'fromPetId و fromUserId الزامی هستند' });
+    return;
+  }
+
+  const fromPet = dbService.getPet(fromPetId);
+  if (!fromPet) {
+    res.status(404).json({ error: 'پت مبدأ پیدا نشد' });
+    return;
+  }
+  if (fromPet.ownerId !== fromUserId) {
+    res.status(403).json({ error: 'این پت مال تو نیست' });
+    return;
+  }
+
+  const requester = dbService.getUserById(fromUserId);
+  if (!requester) {
+    res.status(404).json({ error: 'کاربر پیدا نشد' });
+    return;
+  }
+
+  dbService.expireStalePlaydateRequests();
+
+  const peers = dbService.listPets({
+    lookingForPlaymate: true,
+    species: fromPet.species,
+    excludeOwnerId: fromUserId,
+  });
+  const matches = rankPlaymateMatches(fromPet, peers, { max: MAX_AUTO_PLAYMATE_REQUESTS });
+  const speciesLabel = PET_SPECIES_LABELS[fromPet.species] ?? fromPet.species;
+
+  type MatchRow = (typeof matches)[number];
+  const toCreate: MatchRow[] = [];
+  let skipped = 0;
+  for (const match of matches) {
+    const toUid = match.pet.ownerId;
+    if (dbService.hasPendingPlaydate(fromPetId, match.pet.id)) {
+      skipped += 1;
+      continue;
+    }
+    if (toUid && dbService.hasPendingPlaydateBetweenUsers(fromUserId, toUid)) {
+      skipped += 1;
+      continue;
+    }
+    toCreate.push(match);
+  }
+
+  if (toCreate.length === 0) {
+    res.status(200).json({
+      ok: true,
+      sent: 0,
+      skipped: matches.length,
+      cost: 0,
+      coins: requester.coins ?? 0,
+      speciesLabel,
+      sourceName: fromPet.name,
+      sourcePetId: fromPet.id,
+      requests: [],
+      message: `برای ${fromPet.name} فعلاً همبازی هم‌گروه پیدا نشد.`,
+    });
+    return;
+  }
+
+  const balance = requester.coins ?? 0;
+  if (balance < PLAYDATE_REQUEST_COST) {
+    res.status(400).json(insufficientPlaydateFeePayload(balance));
+    return;
+  }
+
+  const charged = chargePlaydateFee(fromUserId, {
+    refType: 'playdate_find',
+    refId: fromPetId,
+  });
+  if (!charged.ok) {
+    res.status(400).json({
+      error: charged.error,
+      reason: charged.reason,
+      balance: charged.balance,
+      cost: charged.cost,
+    });
+    return;
+  }
+
+  const created: NonNullable<ReturnType<typeof enrichPlaydate>>[] = [];
+  let sampleLine: string | undefined;
+  let preferredSample: string | undefined;
+
+  for (const match of toCreate) {
+    try {
+      const toUid = match.pet.ownerId;
+      const request = dbService.createPlaydateRequest({
+        fromPetId,
+        toPetId: match.pet.id,
+        fromUserId,
+        toUserId: toUid,
+      });
+      const enriched = enrichPlaydate(request)!;
+      created.push(enriched);
+      const recipientUserId =
+        enriched.toUserId ?? enriched.toPet?.ownerId ?? toUid ?? undefined;
+      void notifyNewPlaydateTelegram(enriched).catch((err) => {
+        console.warn('playdate telegram notify failed:', (err as Error).message);
+      });
+      notifyInbox([recipientUserId, enriched.fromUserId], {
+        kind: 'playmate',
+        reason: 'request',
+        id: enriched.id,
+      });
+
+      const locReasons = match.reasons.filter(
+        (r) => r === 'هم‌کشور' || r === 'هم‌استان' || r === 'هم‌شهر'
+      );
+      const why =
+        locReasons.length > 0
+          ? locReasons.join(' · ')
+          : match.reasons.slice(0, 2).join(' · ');
+      const line = `• ${match.pet.name}${why ? ` — ${why}` : ''}`;
+      if (!sampleLine) sampleLine = line;
+      if (
+        !preferredSample &&
+        (match.reasons.includes('هم‌استان') || match.reasons.includes('هم‌کشور'))
+      ) {
+        preferredSample = line;
+      }
+    } catch (err) {
+      skipped += 1;
+      console.warn('playdate find create failed:', (err as Error).message);
+    }
+  }
+
+  if (created.length === 0) {
+    refundPlaydateFee(fromUserId, { refType: 'playdate_find_refund', refId: fromPetId });
+    res.status(200).json({
+      ok: true,
+      sent: 0,
+      skipped: matches.length,
+      cost: 0,
+      coins: dbService.getUserById(fromUserId)?.coins ?? balance,
+      speciesLabel,
+      sourceName: fromPet.name,
+      sourcePetId: fromPet.id,
+      requests: [],
+      message: `برای ${fromPet.name} الان درخواستی ارسال نشد.`,
+    });
+    return;
+  }
+
+  const coinsLeft = dbService.getUserById(fromUserId)?.coins ?? charged.user.coins ?? 0;
+  console.log(
+    'playdate find',
+    'pet',
+    fromPetId,
+    'user',
+    fromUserId,
+    'sent',
+    created.length,
+    'cost',
+    PLAYDATE_REQUEST_COST
+  );
+
+  res.status(201).json({
+    ok: true,
+    sent: created.length,
+    skipped: skipped + (toCreate.length - created.length),
+    cost: PLAYDATE_REQUEST_COST,
+    coins: coinsLeft,
+    speciesLabel,
+    sourceName: fromPet.name,
+    sourcePetId: fromPet.id,
+    sampleLine: preferredSample ?? sampleLine,
+    requests: created,
+    message: `${created.length} درخواست همبازی ارسال شد (هزینه: ${PLAYDATE_REQUEST_COST} سکه).`,
+  });
+});
+
 playdatesRouter.post('/', async (req, res) => {
   const { fromPetId, toPetId, fromUserId, toUserId, message, scheduledAt, location } = req.body;
 
@@ -801,24 +995,23 @@ playdatesRouter.post('/', async (req, res) => {
       ...enrichPlaydate(existing ?? null),
       telegramNotified: false,
       alreadyPending: true,
+      cost: 0,
     });
     return;
   }
 
-  // Same owner already has a pending request from this sender (other pet) —
-  // do not spam a second simultaneous request.
   if (toUid && dbService.hasPendingPlaydateBetweenUsers(fromUid, toUid)) {
     const existing = dbService.findPendingPlaydateBetweenUsers(fromUid, toUid);
     res.status(200).json({
       ...enrichPlaydate(existing),
       telegramNotified: false,
       alreadyPending: true,
+      cost: 0,
     });
     return;
   }
 
   const confirmResend = Boolean(req.body?.confirmResend);
-  // After a prior expired request to the same pet, require explicit resend confirm.
   if (!confirmResend && dbService.hasExpiredPlaydate(Number(fromPetId), Number(toPetId))) {
     res.status(409).json({
       error: 'میخوای مجدد درخواست بدی به اون شخص؟',
@@ -828,26 +1021,47 @@ playdatesRouter.post('/', async (req, res) => {
     return;
   }
 
-  const request = dbService.createPlaydateRequest({
-    fromPetId: Number(fromPetId),
-    toPetId: Number(toPetId),
-    fromUserId: fromUid,
-    toUserId: toUid,
-    message,
-    scheduledAt,
-    location,
+  const charged = chargePlaydateFee(fromUid, {
+    refType: 'playdate_request',
+    refId: `${fromPetId}->${toPetId}`,
   });
+  if (!charged.ok) {
+    res.status(400).json({
+      error: charged.error,
+      reason: charged.reason,
+      balance: charged.balance,
+      cost: charged.cost,
+    });
+    return;
+  }
+
+  let request;
+  try {
+    request = dbService.createPlaydateRequest({
+      fromPetId: Number(fromPetId),
+      toPetId: Number(toPetId),
+      fromUserId: fromUid,
+      toUserId: toUid,
+      message,
+      scheduledAt,
+      location,
+    });
+  } catch (err) {
+    refundPlaydateFee(fromUid, {
+      refType: 'playdate_fee_refund',
+      refId: `${fromPetId}->${toPetId}`,
+    });
+    console.warn('playdate create failed after fee:', (err as Error).message);
+    res.status(500).json({ error: 'ثبت درخواست همبازی ناموفق بود' });
+    return;
+  }
 
   const enriched = enrichPlaydate(request)!;
   const recipientUserId =
     enriched.toUserId ?? enriched.toPet?.ownerId ?? toUid ?? undefined;
-  // Never block HTTP on Telegram — slow/failed TG was hanging find-playmate
-  // for minutes (bot loops up to 30 creates, each awaiting notify).
   void notifyNewPlaydateTelegram(enriched).catch((err) => {
     console.warn('playdate telegram notify failed:', (err as Error).message);
   });
-  // Always fan-out to resolved recipient + sender so web desktop/mobile
-  // inboxes refresh even when to_user_id was null at insert time.
   notifyInbox([recipientUserId, enriched.fromUserId], {
     kind: 'playmate',
     reason: 'request',
@@ -862,12 +1076,15 @@ playdatesRouter.post('/', async (req, res) => {
     recipientUserId,
     'pets',
     `${enriched.fromPetId}->${enriched.toPetId}`,
+    'cost',
+    PLAYDATE_REQUEST_COST
   );
-  // telegramNotified:true = API owns delivery (async); bot must not double-send
   res.status(201).json({
     ...enriched,
     toUserId: recipientUserId ?? enriched.toUserId,
     telegramNotified: true,
+    cost: PLAYDATE_REQUEST_COST,
+    coins: charged.user.coins ?? 0,
   });
 });
 
