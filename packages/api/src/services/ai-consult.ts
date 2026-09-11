@@ -72,7 +72,7 @@ const AI_TELEGRAM_ID = 'petdate_ai_assistant';
 /**
  * Canonical public display name for the default AI assistant
  * (trainer/vet fallback when no human online).
- * Renamed from «پاشا یزدانی» → «دکتر لیلا کیانی» (same telegram id).
+ * Renamed from «پاشا یزدانی» → «دکتر لیلا کیانی» → «لیلا کیانی» (same telegram id).
  * Keep telegram id `petdate_ai_assistant` as the internal identity.
  */
 export const AI_TRAINER_DISPLAY_NAME = 'لیلا کیانی';
