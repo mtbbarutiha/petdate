@@ -114,20 +114,16 @@ html[data-theme='dark'] .landing-brand-mark {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.4rem;
+  width: 40px;
   height: 40px;
   min-height: 40px;
-  padding: 0 0.85rem;
+  padding: 0;
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--pepito-lilac) 80%, transparent);
   background: color-mix(in srgb, var(--pepito-white) 88%, transparent);
   color: var(--pepito-dark);
-  font-family: var(--font-display, 'Urbanist', 'Vazirmatn', system-ui, sans-serif);
-  font-size: 0.82rem;
-  font-weight: 700;
   cursor: pointer;
   transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease, color 0.2s ease;
-  white-space: nowrap;
   flex-shrink: 0;
 }
 .pd-theme-toggle:hover {
@@ -144,20 +140,7 @@ html[data-theme='dark'] .landing-brand-mark {
   width: 36px;
   height: 36px;
   min-height: 36px;
-  padding: 0;
-  border-radius: 10px;
-}
-.pd-theme-toggle-label {
-  line-height: 1;
-}
-@media (max-width: 720px) {
-  .pd-theme-toggle:not(.pd-theme-toggle--compact) .pd-theme-toggle-label {
-    display: none;
-  }
-  .pd-theme-toggle:not(.pd-theme-toggle--compact) {
-    width: 40px;
-    padding: 0;
-  }
+  border-radius: 999px;
 }
 
 /* Admin toggle sits in dense topbar */
