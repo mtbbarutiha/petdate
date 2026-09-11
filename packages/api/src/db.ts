@@ -78,6 +78,7 @@ import {
   USER_ROLES,
   sanitizeRoleList,
   userPublicIdOf,
+  VET_CONSULT_IDLE_CLOSE_MS,
   VET_CONSULT_REQUEST_TTL_MS,
   vetVisitFeeCoins,
   walletFromUserFields,
@@ -1158,6 +1159,10 @@ function migrateSchema() {
   /** شناسهٔ عمومی پایدار نمایشی — PD-C##### */
   if (!vcNames.has('public_id')) {
     db.exec('ALTER TABLE vet_consultations ADD COLUMN public_id TEXT');
+  }
+  /** Last patient typing / message — idle close after VET_CONSULT_IDLE_CLOSE_MS */
+  if (!vcNames.has('patient_last_activity_at')) {
+    db.exec('ALTER TABLE vet_consultations ADD COLUMN patient_last_activity_at TEXT');
   }
 
   const vchatCols = db
@@ -5619,18 +5624,21 @@ export const dbService = {
         : kind === 'vet'
           ? fee
           : consultFeeSplit(kind).providerShare;
+    const initialStatus = data.status ?? 'requested';
     const result = db
       .prepare(
         `INSERT INTO vet_consultations (
           vet_user_id, patient_user_id, pet_id, status, notes, fee_coins,
-          service_kind, provider_share_coins
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+          service_kind, provider_share_coins, patient_last_activity_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ${
+          initialStatus === 'active' ? `datetime('now')` : 'NULL'
+        })`
       )
       .run(
         data.vetUserId,
         data.patientUserId,
         data.petId ?? null,
-        data.status ?? 'requested',
+        initialStatus,
         data.notes ?? null,
         fee,
         kind,
@@ -5779,7 +5787,16 @@ export const dbService = {
       )
       .get(id) as Record<string, unknown> | undefined;
     if (!row) return null;
-    db.prepare(`UPDATE vet_consultations SET status = ? WHERE id = ?`).run(status, id);
+    if (status === 'active') {
+      db.prepare(
+        `UPDATE vet_consultations
+         SET status = ?,
+             patient_last_activity_at = COALESCE(patient_last_activity_at, datetime('now'))
+         WHERE id = ?`
+      ).run(status, id);
+    } else {
+      db.prepare(`UPDATE vet_consultations SET status = ? WHERE id = ?`).run(status, id);
+    }
     const updated = db
       .prepare(
         `SELECT vc.*,
@@ -6007,6 +6024,15 @@ export const dbService = {
         data.fileName ?? null,
         data.storageKey ?? null
       );
+    // Patient message resets idle-close timer (typing WS is separate).
+    const consultRow = db
+      .prepare(
+        `SELECT patient_user_id FROM vet_consultations WHERE id = ?`
+      )
+      .get(data.consultId) as { patient_user_id: number } | undefined;
+    if (consultRow && Number(consultRow.patient_user_id) === data.senderUserId) {
+      this.touchVetConsultPatientActivity(data.consultId);
+    }
     // Touch parent consult so inbox can surface latest chats first via message time.
     // (listVetConsultations already sorts by last message / created_at)
     return mapVetConsultChatMessage(
@@ -6050,6 +6076,74 @@ export const dbService = {
       `UPDATE vet_consultations SET chat_ended = 1, chat_secure = 0 WHERE id = ?`
     ).run(id);
     this.clearVetConsultChatMessages(id);
+    return this.getVetConsultation(id);
+  },
+
+  /**
+   * Patient typing or patient message — resets the 1-minute idle-close timer.
+   * No-op when consult is missing / not active / already ended.
+   */
+  touchVetConsultPatientActivity(id: number): boolean {
+    const result = db
+      .prepare(
+        `UPDATE vet_consultations
+         SET patient_last_activity_at = datetime('now')
+         WHERE id = ?
+           AND status = 'active'
+           AND COALESCE(chat_ended, 0) = 0`
+      )
+      .run(id);
+    return result.changes > 0;
+  },
+
+  /**
+   * Active consults whose patient has been idle longer than `idleMs`
+   * (typing + patient messages). Falls back to last patient message or created_at.
+   */
+  listIdleActiveVetConsultIds(
+    idleMs: number = VET_CONSULT_IDLE_CLOSE_MS,
+    limit = 50
+  ): number[] {
+    const idleSec = Math.max(1, Math.round(idleMs / 1000));
+    const lim = Math.min(Math.max(limit, 1), 200);
+    const rows = db
+      .prepare(
+        `SELECT vc.id AS id
+         FROM vet_consultations vc
+         WHERE vc.status = 'active'
+           AND COALESCE(vc.chat_ended, 0) = 0
+           AND datetime(
+             COALESCE(
+               vc.patient_last_activity_at,
+               (SELECT MAX(m.created_at)
+                FROM vet_consult_chat_messages m
+                WHERE m.consult_id = vc.id
+                  AND m.sender_user_id = vc.patient_user_id),
+               vc.created_at
+             )
+           ) <= datetime('now', ?)
+         ORDER BY vc.id ASC
+         LIMIT ?`
+      )
+      .all(`-${idleSec} seconds`, lim) as { id: number }[];
+    return rows.map((r) => Number(r.id)).filter((id) => Number.isFinite(id) && id > 0);
+  },
+
+  /**
+   * Idle auto-close: mark completed + ended without wiping message history
+   * (closing notice must remain visible).
+   */
+  closeVetConsultForIdle(id: number): VetConsultation | null {
+    const result = db
+      .prepare(
+        `UPDATE vet_consultations
+         SET status = 'completed', chat_ended = 1, chat_secure = 0
+         WHERE id = ?
+           AND status = 'active'
+           AND COALESCE(chat_ended, 0) = 0`
+      )
+      .run(id);
+    if (result.changes === 0) return this.getVetConsultation(id);
     return this.getVetConsultation(id);
   },
 

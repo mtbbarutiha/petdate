@@ -43,6 +43,7 @@ import {
 } from './services/app-logger';
 import { attachChatWebSocket } from './ws/chatHub';
 import { ensureAllTeamAgents } from './services/team-agents';
+import { sweepIdleConsultClosures } from './services/consult-idle-close';
 
 // Prefer IPv4 — Telegram notify fetch was timing out on IPv6
 try {
@@ -232,7 +233,7 @@ server.listen(PORT, () => {
   } catch (err) {
     console.warn('team agents boot failed:', (err as Error).message);
   }
-  // Sweep stale pending playmate / vet requests every 30s
+  // Sweep stale pending playmate / vet requests + idle active consults
   const sweep = () => {
     try {
       const pd = dbService.expireStalePlaydateRequests();
@@ -243,9 +244,17 @@ server.listen(PORT, () => {
     } catch (err) {
       console.warn('request expiry sweep failed:', (err as Error).message);
     }
+    try {
+      const closed = sweepIdleConsultClosures();
+      if (closed) {
+        console.log(`⏱ idle-closed consults: ${closed}`);
+      }
+    } catch (err) {
+      console.warn('consult idle-close sweep failed:', (err as Error).message);
+    }
   };
   sweep();
-  setInterval(sweep, 30_000).unref?.();
+  setInterval(sweep, 15_000).unref?.();
 });
 
 export { app, dbService, server };

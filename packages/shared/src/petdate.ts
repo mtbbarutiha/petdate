@@ -663,6 +663,16 @@ export type VetConsultStatus =
 /** Pending vet consult requests auto-close after 2 minutes (same as playmate). */
 export const VET_CONSULT_REQUEST_TTL_MS = PLAYDATE_REQUEST_TTL_MS;
 
+/**
+ * Active consult chats auto-close after this long without patient typing / messages.
+ * Server-side sweep uses the same window (not client-only timers).
+ */
+export const VET_CONSULT_IDLE_CLOSE_MS = 60_000;
+
+/** System line posted when an idle consult is closed. */
+export const VET_CONSULT_IDLE_CLOSE_MESSAGE_FA =
+  'اگر آنلاین نیستی، چت را می‌بندم.';
+
 /** رکورد مشاوره — برای لیست بیماران دامپزشک */
 export interface VetConsultation {
   id: number;

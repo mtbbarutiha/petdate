@@ -54,7 +54,7 @@ import {
   type VetDoctorPanel,
 } from '../components/VetChatDoctorTools';
 import { useAuthStore } from '../hooks/useAuthStore';
-import { useChatSocket, type ChatSocketEvent } from '../hooks/useChatSocket';
+import { useChatSocket, sendVetConsultTyping, type ChatSocketEvent } from '../hooks/useChatSocket';
 import { useChatViewportHeight } from '../hooks/useChatViewportHeight';
 import { useLiveAjaxPoll } from '../hooks/useLiveAjaxPoll';
 import { usePeerPresence, usePresenceHeartbeat } from '../hooks/usePresence';
@@ -242,6 +242,7 @@ export function VetChatPage() {
   consultRef.current = consult;
   const [messages, setMessages] = useState<UiMsg[]>([]);
   const [draft, setDraft] = useState('');
+  const lastTypingPingRef = useRef(0);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [acting, setActing] = useState(false);
@@ -862,6 +863,16 @@ export function VetChatPage() {
     };
   }
 
+  /** Ping server so 1-minute idle-close timer resets while patient types. */
+  function pingPatientTyping() {
+    if (!hasThread || ended || consult?.status !== 'active') return;
+    if (user?.id == null || consult?.patientUserId !== user.id) return;
+    const now = Date.now();
+    if (now - lastTypingPingRef.current < 4_000) return;
+    lastTypingPingRef.current = now;
+    sendVetConsultTyping(consultId);
+  }
+
   function insertEmoji(emoji: string) {
     const ta = inputRef.current;
     const sel = selectionRef.current;
@@ -870,6 +881,7 @@ export function VetChatPage() {
     const next = draft.slice(0, start) + emoji + draft.slice(end);
     const caret = start + emoji.length;
     setDraft(next);
+    pingPatientTyping();
     selectionRef.current = { start: caret, end: caret };
     requestAnimationFrame(() => {
       const el = inputRef.current;
@@ -1315,6 +1327,10 @@ export function VetChatPage() {
                           {c.ongoing ? (
                             <span className="tg-chat-list-badge is-ongoing" aria-label="گفتگوی فعال">
                               فعال
+                            </span>
+                          ) : c.ended ? (
+                            <span className="tg-chat-list-badge is-ended" aria-label="گفتگوی بسته شده">
+                              بسته شده
                             </span>
                           ) : c.pending ? (
                             <span className="tg-chat-list-badge is-pending" aria-label="در انتظار">
@@ -1886,6 +1902,7 @@ export function VetChatPage() {
                         onChange={(e) => {
                           setDraft(e.target.value);
                           rememberSelection();
+                          pingPatientTyping();
                         }}
                         onSelect={rememberSelection}
                         onClick={rememberSelection}

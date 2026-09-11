@@ -25,6 +25,12 @@ export type ChatSocketEvent =
       online: boolean;
       lastSeenAt?: string | null;
     }
+  | {
+      type: 'typing';
+      channel: 'playmate' | 'vet';
+      threadId: number;
+      userId: number;
+    }
   | { type: 'hello'; userId: number }
   | { type: 'error'; message: string };
 
@@ -394,4 +400,17 @@ export function useChatSocket({
   }, [enabled, token, thread?.channel, thread?.threadId, status]);
 
   return { status, connected: status === 'open' };
+}
+
+/** Patient typing ping — resets server idle-close timer for vet consults. */
+export function sendVetConsultTyping(threadId: number): void {
+  if (!shared?.ws || shared.ws.readyState !== WebSocket.OPEN) return;
+  if (!Number.isFinite(threadId) || threadId <= 0) return;
+  try {
+    shared.ws.send(
+      JSON.stringify({ type: 'typing', channel: 'vet', threadId })
+    );
+  } catch {
+    /* ignore */
+  }
 }
