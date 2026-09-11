@@ -271,9 +271,9 @@ export function IranProvinceHeatmap({
         >
           <defs>
             <linearGradient id={`${tipId}-sea`} x1="0" y1="0" x2="0.15" y2="1">
-              <stop offset="0%" stopColor="#e7f1fb" />
-              <stop offset="55%" stopColor="#f3f7fb" />
-              <stop offset="100%" stopColor="#f8fafc" />
+              <stop offset="0%" stopColor="var(--iran-heat-sea-0, #e7f1fb)" />
+              <stop offset="55%" stopColor="var(--iran-heat-sea-1, #f3f7fb)" />
+              <stop offset="100%" stopColor="var(--iran-heat-sea-2, #f8fafc)" />
             </linearGradient>
             <filter id={`${tipId}-glow`} x="-20%" y="-20%" width="140%" height="140%">
               <feDropShadow

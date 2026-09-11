@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { PawPrint } from 'lucide-react';
 import { BRAND } from '@petdate/shared';
 import { SiteFooter } from '../components/SiteFooter';
+import { ThemeToggle } from '../components/ThemeToggle';
 import { AdoptionPurchaseCta } from '../components/AdoptionPurchaseCta';
 import { ADOPTION_PETS } from '../data/adoptionPets';
 import { loginPath } from '../lib/authRedirect';
@@ -49,6 +50,7 @@ export function AdoptionListPage() {
           <Link to="/faq">سؤالات</Link>
         </nav>
         <div className="pepito-nav-actions">
+          <ThemeToggle />
           <Link to={loginPath('/home')} className="pepito-nav-login">
             ورود
           </Link>

@@ -4,6 +4,7 @@ import { Lock, User } from 'lucide-react';
 import { AdminWordmark } from '../AdminWordmark';
 import { isAdminAuthenticated, loginAdmin } from '../auth';
 import { sanitizeAdminNext } from '../redirect';
+import { ThemeToggle } from '../../components/ThemeToggle';
 import '../../styles/admin.css';
 
 export function AdminLoginPage() {
@@ -34,6 +35,9 @@ export function AdminLoginPage() {
 
   return (
     <div className="admin-app admin-login-page">
+      <div className="admin-login-theme">
+        <ThemeToggle compact />
+      </div>
       <form className="admin-login-card" onSubmit={(e) => void handleSubmit(e)}>
         <AdminWordmark className="admin-login-brand" size="lg" />
         <p className="admin-login-subtitle">ورود اپراتور Pet Date — ربات، فروشگاه، وب و منابع انسانی</p>

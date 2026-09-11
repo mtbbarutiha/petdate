@@ -194,7 +194,7 @@
 }
 
 .admin-app .admin-nav-item:hover {
-  background: #f5f5f5;
+  background: var(--admin-bg);
   color: var(--admin-ink);
 }
 
@@ -219,7 +219,7 @@
   padding: 10px;
   border: 1px solid var(--admin-border);
   border-radius: 8px;
-  background: #fff;
+  background: var(--admin-surface);
   color: var(--admin-muted);
   font-weight: 600;
   font-size: 0.85rem;
@@ -227,7 +227,7 @@
 }
 
 .admin-app .admin-logout:hover {
-  background: #fafafa;
+  background: var(--admin-bg);
   color: var(--admin-accent);
   border-color: #cfc8e8;
 }
@@ -245,7 +245,7 @@
   gap: 12px;
   padding: 12px 24px;
   border-bottom: 1px solid var(--admin-border);
-  background: #ffffff;
+  background: var(--admin-surface);
   position: sticky;
   top: 0;
   z-index: 20;
@@ -289,7 +289,7 @@
   font-weight: 700;
   padding: 4px 10px;
   border-radius: 999px;
-  background: #f5f5f5;
+  background: var(--admin-bg);
   color: #616161;
   border: 1px solid var(--admin-border);
 }
@@ -301,7 +301,7 @@
   padding: 4px 12px 4px 4px;
   border-radius: 999px;
   border: 1px solid var(--admin-border);
-  background: #fff;
+  background: var(--admin-surface);
   flex-shrink: 0;
   z-index: 2;
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
@@ -319,7 +319,7 @@
   font-weight: 700;
   flex-shrink: 0;
   overflow: hidden;
-  box-shadow: 0 0 0 2px #fff, 0 0 0 3px color-mix(in srgb, var(--admin-accent) 40%, transparent);
+  box-shadow: 0 0 0 2px var(--admin-surface), 0 0 0 3px color-mix(in srgb, var(--admin-accent) 40%, transparent);
 }
 
 .admin-app .admin-topbar-avatar--photo {
@@ -353,7 +353,7 @@
   height: 36px;
   border-radius: 8px;
   border: 1px solid var(--admin-border);
-  background: #fff;
+  background: var(--admin-surface);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -479,10 +479,18 @@
   align-items: center;
   justify-content: center;
   padding: 24px;
+  position: relative;
   background:
     radial-gradient(800px 400px at 20% 0%, rgba(219, 137, 202, 0.35), transparent 55%),
     radial-gradient(700px 360px at 90% 10%, rgba(92, 77, 145, 0.45), transparent 50%),
-    linear-gradient(165deg, #19063d 0%, #5c4d91 42%, #f4f4f7 42.2%, #f4f4f7 100%);
+    linear-gradient(165deg, #19063d 0%, #5c4d91 42%, var(--admin-bg) 42.2%, var(--admin-bg) 100%);
+}
+
+.admin-login-theme {
+  position: absolute;
+  inset-block-start: 16px;
+  inset-inline-end: 16px;
+  z-index: 2;
 }
 
 .admin-app .admin-login-card {
@@ -537,7 +545,7 @@
   border: 1px solid var(--admin-border);
   border-radius: 8px;
   padding: 11px 12px;
-  background: #fff;
+  background: var(--admin-surface);
   font: inherit;
   color: var(--admin-ink);
 }
@@ -594,7 +602,7 @@
 }
 .admin-app .admin-select {
   border: 1px solid var(--admin-border);
-  background: #fff;
+  background: var(--admin-surface);
   border-radius: 8px;
   padding: 8px 12px;
   font: inherit;
@@ -647,7 +655,7 @@
   padding: 12px;
   border-radius: 10px;
   border: 1px solid var(--admin-border);
-  background: #fff;
+  background: var(--admin-surface);
 }
 .admin-app .admin-check.is-ok {
   border-color: #6ee7b7;
@@ -669,7 +677,7 @@
 .admin-app .admin-check.is-bad svg { color: #dc2626; }
 .admin-app .admin-check.is-idle {
   border-color: #e2e8f0;
-  background: #f8fafc;
+  background: var(--admin-accent-soft);
   color: #64748b;
 }
 .admin-app .admin-check.is-idle svg { color: #94a3b8; }
@@ -782,7 +790,7 @@
 .admin-app .admin-stat--mint { background: var(--admin-promo-mint); }
 .admin-app .admin-stat--orange { background: var(--admin-promo-yellow); }
 .admin-app .admin-stat--sky { background: var(--admin-promo-blue); }
-.admin-app .admin-stat--slate { background: #fff; }
+.admin-app .admin-stat--slate { background: var(--admin-surface); }
 .admin-app .admin-stat--violet .admin-stat-icon,
 .admin-app .admin-stat--mint .admin-stat-icon,
 .admin-app .admin-stat--orange .admin-stat-icon,
@@ -832,7 +840,7 @@
   align-items: center;
   gap: 8px;
   border: 1px solid var(--admin-border);
-  background: #fff;
+  background: var(--admin-surface);
   border-radius: 8px;
   padding: 0 12px;
 }
@@ -1010,7 +1018,7 @@
   height: 40px;
   object-fit: cover;
   border-radius: 8px;
-  background: #f5f5f5;
+  background: var(--admin-bg);
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
@@ -1071,7 +1079,7 @@
   width: min(420px, 100%);
   max-height: min(92vh, 920px);
   overflow: auto;
-  background: #fff;
+  background: var(--admin-surface);
   border-radius: 12px;
   padding: 20px;
   border: 1px solid var(--admin-border);
@@ -1188,7 +1196,7 @@
   overflow: auto;
   border: 1px solid var(--admin-border);
   border-radius: 10px;
-  background: #fff;
+  background: var(--admin-surface);
 }
 .admin-app .admin-perm-matrix {
   width: 100%;
@@ -1275,7 +1283,7 @@
 }
 .admin-app .admin-toggle {
   border: 1px solid var(--admin-border);
-  background: #fafafa;
+  background: var(--admin-bg);
   border-radius: 999px;
   padding: 8px 14px;
   font-weight: 700;
@@ -1300,7 +1308,7 @@
 }
 .admin-app .admin-select {
   border: 1px solid var(--admin-border);
-  background: #fff;
+  background: var(--admin-surface);
   border-radius: 8px;
   padding: 8px 12px;
   font: inherit;
@@ -1311,7 +1319,7 @@
   border-color: #ffcdd2;
 }
 .admin-app .admin-btn--ghost {
-  background: #fff;
+  background: var(--admin-surface);
   color: var(--admin-ink);
   border: 1px solid var(--admin-border);
 }
@@ -1383,7 +1391,7 @@
   padding: 12px;
   border-radius: 10px;
   border: 1px solid var(--admin-border);
-  background: #fff;
+  background: var(--admin-surface);
 }
 .admin-app .admin-check.is-ok {
   border-color: #a5d6a7;
@@ -1405,7 +1413,7 @@
 .admin-app .admin-check.is-bad svg { color: #e53935; }
 .admin-app .admin-check.is-idle {
   border-color: #e2e8f0;
-  background: #f8fafc;
+  background: var(--admin-accent-soft);
   color: #64748b;
 }
 .admin-app .admin-check.is-idle svg { color: #94a3b8; }
@@ -1465,7 +1473,7 @@
   font-size: 0.9rem;
 }
 .admin-app .admin-hero-banner .admin-btn--primary {
-  background: #fff !important;
+  background: var(--admin-surface) !important;
   color: var(--admin-accent) !important;
   border-color: #fff !important;
   white-space: nowrap;
@@ -1491,7 +1499,7 @@
   cursor: pointer;
 }
 .admin-app .admin-period-btn.is-active {
-  background: #fff;
+  background: var(--admin-surface);
   color: var(--admin-ink);
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08);
 }
@@ -1541,7 +1549,7 @@
 }
 .admin-app .admin-chart-axis {
   font-size: 9px;
-  fill: #64748b;
+  fill: var(--pd-chart-tick, #64748b);
 }
 .admin-app .admin-donut-wrap {
   display: flex;
@@ -1730,7 +1738,7 @@
   border: 1px solid var(--admin-border);
   border-radius: 10px;
   overflow: hidden;
-  background: #fff;
+  background: var(--admin-surface);
 }
 
 .admin-app .admin-mail-list {
@@ -1852,7 +1860,7 @@
   overflow-x: hidden;
   overflow-y: auto;
   padding: 14px 16px;
-  background: #fff;
+  background: var(--admin-surface);
 }
 
 .admin-app .admin-mail-body {
@@ -2549,7 +2557,7 @@ body:has(.admin-app) {
 
 .admin-app .admin-logout {
   border-radius: var(--admin-radius-sm);
-  background: #fff;
+  background: var(--admin-surface);
 }
 
 .admin-app .admin-role-chip {
@@ -2618,7 +2626,7 @@ body:has(.admin-app) {
   max-height: min(70vh, 480px);
   display: flex;
   flex-direction: column;
-  background: #fff;
+  background: var(--admin-surface);
   border: 1px solid var(--admin-border);
   border-radius: 12px;
   box-shadow: 0 16px 40px rgba(25, 6, 61, 0.12);
@@ -2676,7 +2684,7 @@ body:has(.admin-app) {
   gap: 4px;
   border-radius: 10px;
   border: 1px solid transparent;
-  background: #fafafa;
+  background: var(--admin-bg);
   margin-bottom: 6px;
   overflow: hidden;
 }
@@ -2753,7 +2761,7 @@ body:has(.admin-app) {
   gap: 8px 12px;
   padding: 10px 14px;
   border-top: 1px solid var(--admin-border);
-  background: #fafafa;
+  background: var(--admin-bg);
   font-size: 0.72rem;
   font-weight: 700;
 }
@@ -2818,7 +2826,7 @@ body:has(.admin-app) {
 @media (max-width: 1100px) { .crm-charts-row { grid-template-columns: 1fr; } }
 .crm-chart-box { width: 100%; min-height: 220px; }
 .crm-chart-tooltip {
-  background: #fff; border: 1px solid var(--admin-border); border-radius: 10px;
+  background: var(--admin-surface); border: 1px solid var(--admin-border); border-radius: 10px;
   padding: 8px 10px; font-size: 12px; box-shadow: 0 8px 24px rgba(25, 6, 61, 0.08);
 }
 .crm-chart-tooltip-label { color: var(--admin-muted); margin-bottom: 2px; }
@@ -3109,7 +3117,7 @@ body:has(.admin-app) {
   padding: 12px 14px;
   display: grid;
   gap: 6px;
-  background: #fff;
+  background: var(--admin-surface);
 }
 .admin-app .sales-next-score {
   display: inline-flex;
@@ -3324,7 +3332,7 @@ body:has(.admin-app) {
   font-variant-numeric: tabular-nums;
 }
 .admin-app .hr-chart-tooltip {
-  background: #fff;
+  background: var(--admin-surface);
   border: 1px solid var(--admin-border);
   border-radius: 10px;
   padding: 8px 10px;
@@ -3342,7 +3350,7 @@ body:has(.admin-app) {
 }
 .admin-app .crm-report-tabs button {
   border: 1px solid var(--admin-border);
-  background: #fff;
+  background: var(--admin-surface);
   color: var(--admin-ink);
   border-radius: 999px;
   padding: 8px 14px;
@@ -3378,7 +3386,7 @@ body:has(.admin-app) {
   border-radius: 10px;
   padding: 8px 10px;
   min-width: 140px;
-  background: #fff;
+  background: var(--admin-surface);
   color: var(--admin-ink);
 }
 .admin-app .crm-report-quick { display: flex; gap: 6px; flex-wrap: wrap; }
@@ -3410,7 +3418,7 @@ body:has(.admin-app) {
   padding: 8px 10px;
   border-radius: 10px;
   border: 1px solid var(--admin-border);
-  background: #fff;
+  background: var(--admin-surface);
 }
 .admin-app .crm-report-agent-strip {
   display: grid;
@@ -3418,7 +3426,7 @@ body:has(.admin-app) {
   gap: 10px;
 }
 .admin-app .crm-report-agent-card {
-  background: #fff;
+  background: var(--admin-surface);
   border: 1px solid var(--admin-border);
   border-inline-start-width: 4px;
   border-radius: 14px;
@@ -3530,7 +3538,7 @@ body:has(.admin-app) {
 .admin-app .crm-report-quality { display: grid; gap: 14px; }
 .admin-app .crm-report-gauge { display: grid; justify-items: center; }
 .admin-app .crm-chart-tooltip {
-  background: #fff;
+  background: var(--admin-surface);
   border: 1px solid var(--admin-border);
   border-radius: 10px;
   padding: 8px 10px;
@@ -3553,7 +3561,7 @@ body:has(.admin-app) {
 .admin-app .admin-sales-call-popup {
   width: min(100%, 380px);
   border-radius: 24px;
-  background: #fff;
+  background: var(--admin-surface);
   border: 1px solid var(--admin-border);
   box-shadow: 0 24px 60px rgba(25, 6, 61, 0.18);
   padding: 28px 24px 22px;
@@ -3871,7 +3879,7 @@ body:has(.admin-app) {
 .admin-app .iran-heat-scale-caption { flex: 1 1 100%; margin-top: 2px; }
 .admin-app .iran-heat-empty {
   display: grid; place-items: center; gap: 8px; text-align: center;
-  padding: 22px 10px; border: 1px dashed #c5ddd6; border-radius: 12px; background: #fff;
+  padding: 22px 10px; border: 1px dashed #c5ddd6; border-radius: 12px; background: var(--admin-surface);
   color: var(--admin-muted); font-size: 13px;
 }
 .admin-app .iran-heat-empty-icon {
@@ -3884,7 +3892,7 @@ body:has(.admin-app) {
 }
 .admin-app .iran-heat-rank { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; max-height: 420px; overflow: auto; }
 .admin-app .iran-heat-rank li {
-  margin: 0; padding: 0; border-radius: 12px; background: #fff;
+  margin: 0; padding: 0; border-radius: 12px; background: var(--admin-surface);
   border: 1px solid var(--admin-border); font-size: 13px; overflow: hidden;
 }
 .admin-app .iran-heat-rank-btn {
@@ -3938,9 +3946,14 @@ body:has(.admin-app) {
 .admin-app .iran-heat-map {
   position: relative;
   border: 1px solid var(--admin-border); border-radius: 16px; overflow: hidden;
-  background: linear-gradient(165deg, #e7f1fb 0%, #f3f7fb 42%, #f8fafc 100%);
+  background: linear-gradient(
+    165deg,
+    var(--iran-heat-sea-0, #e7f1fb) 0%,
+    var(--iran-heat-sea-1, #f3f7fb) 42%,
+    var(--iran-heat-sea-2, #f8fafc) 100%
+  );
   min-height: 380px;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.65);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--admin-surface) 65%, transparent);
 }
 .admin-app .iran-heat-svg {
   width: 100%; height: auto; display: block; max-height: 660px;
@@ -4041,7 +4054,7 @@ body:has(.admin-app) {
 .admin-app .hr-report-donut-legend b { display: block; color: var(--admin-ink, #1e1b2e); }
 .admin-app .hr-report-donut-legend span { color: var(--admin-muted); font-size: 12px; }
 .admin-app .hr-chart-tooltip {
-  background: #fff; border: 1px solid var(--admin-border); border-radius: 10px;
+  background: var(--admin-surface); border: 1px solid var(--admin-border); border-radius: 10px;
   padding: 8px 10px; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
 }
 .admin-app .hr-chart-tooltip-label { font-size: 12px; color: var(--admin-muted); margin-bottom: 2px; }
@@ -4055,7 +4068,7 @@ body:has(.admin-app) {
 }
 .admin-app .tk-shell { display: flex; gap: 16px; align-items: flex-start; }
 .admin-app .tk-side {
-  width: 200px; flex: 0 0 200px; background: #fff; border: 1px solid var(--admin-border);
+  width: 200px; flex: 0 0 200px; background: var(--admin-surface); border: 1px solid var(--admin-border);
   border-radius: 14px; padding: 12px 10px; position: sticky; top: 12px;
   display: flex; flex-direction: column; gap: 4px;
 }
@@ -4112,7 +4125,7 @@ body:has(.admin-app) {
 .admin-app .tk-filters input, .admin-app .tk-filters select,
 .admin-app .tk-field input, .admin-app .tk-field select, .admin-app .tk-field textarea {
   width: 100%; border: 1px solid var(--admin-border); border-radius: 10px; padding: 8px 10px;
-  font: inherit; background: #fff; color: var(--admin-ink);
+  font: inherit; background: var(--admin-surface); color: var(--admin-ink);
 }
 .admin-app .tk-field { display: grid; gap: 4px; font-size: 11px; color: var(--admin-muted); margin-bottom: 10px; }
 .admin-app .tk-f3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
@@ -4129,7 +4142,7 @@ body:has(.admin-app) {
   font-size: 11.5px; color: var(--admin-muted); margin: 2px 4px 8px; display: flex; justify-content: space-between;
 }
 .admin-app .tk-kcard {
-  background: #fff; border: 1px solid var(--admin-border); border-radius: 10px; padding: 8px 9px;
+  background: var(--admin-surface); border: 1px solid var(--admin-border); border-radius: 10px; padding: 8px 9px;
   margin-bottom: 7px; cursor: pointer; font-size: 12px;
 }
 .admin-app .tk-kcard:hover { border-color: #c5ccd8; }
@@ -4384,7 +4397,7 @@ body:has(.admin-app) {
   border: 1px solid var(--admin-border);
   border-radius: 6px;
   padding: 2px 4px;
-  background: #fff;
+  background: var(--admin-surface);
   color: var(--admin-ink);
 }
 .admin-app .admin-widget-icon-btn {
@@ -4425,7 +4438,7 @@ body:has(.admin-app) {
   align-items: center;
   gap: 4px;
   border: 1px solid var(--admin-border);
-  background: #fff;
+  background: var(--admin-surface);
   border-radius: 6px;
   padding: 2px 8px;
   font: inherit;
@@ -4580,7 +4593,7 @@ body:has(.admin-app) {
   padding: 10px 12px;
   border: 1px solid var(--admin-border);
   border-radius: 10px;
-  background: #fff;
+  background: var(--admin-surface);
   cursor: pointer;
   font: inherit;
 }
@@ -4715,7 +4728,7 @@ body:has(.admin-app) {
   padding: 12px 8px;
   text-align: center;
   border-radius: 8px;
-  background: #f8fafc;
+  background: var(--admin-accent-soft);
   border: 1px dashed var(--admin-border);
 }
 .admin-app .wdg-drill {
@@ -4783,7 +4796,7 @@ body:has(.admin-app) {
 }
 .admin-app .wdg-drill-btn {
   border: 1px solid var(--admin-border);
-  background: #fff;
+  background: var(--admin-surface);
   border-radius: 6px;
   padding: 2px 8px;
   font: inherit;
@@ -4833,7 +4846,7 @@ body:has(.admin-app) {
 .admin-app .wdg-cal-mode {
   flex: 1;
   border: 1px solid var(--admin-border);
-  background: #fff;
+  background: var(--admin-surface);
   color: var(--admin-muted);
   border-radius: 10px;
   padding: 6px 10px;
@@ -4859,7 +4872,7 @@ body:has(.admin-app) {
   height: 30px;
   border-radius: 10px;
   border: 1px solid var(--admin-border);
-  background: #fff;
+  background: var(--admin-surface);
   color: var(--admin-ink);
   display: inline-flex;
   align-items: center;
@@ -4957,7 +4970,7 @@ body:has(.admin-app) {
 }
 .admin-app .wdg-cal-today-btn {
   border: 1px solid var(--admin-border);
-  background: #fff;
+  background: var(--admin-surface);
   color: var(--admin-ink);
   border-radius: 10px;
   padding: 5px 10px;
@@ -5299,7 +5312,7 @@ body:has(.admin-app) {
   margin: 6px 18px 4px 0;
   padding: 6px 8px;
   border-radius: 10px;
-  background: #fff;
+  background: var(--admin-surface);
   border: 1px dashed var(--admin-border);
 }
 .admin-app .crm-reason-row {
@@ -5432,7 +5445,7 @@ body:has(.admin-app) {
   padding: 12px 14px;
   border-radius: var(--admin-radius);
   border: 1px solid color-mix(in srgb, var(--admin-border) 88%, #fff);
-  background: #fff;
+  background: var(--admin-surface);
   box-shadow: 0 1px 2px rgba(25, 6, 61, 0.04);
   min-width: 0;
   transition: transform 0.18s ease, box-shadow 0.18s ease;
@@ -5534,7 +5547,7 @@ body:has(.admin-app) {
   padding: 14px 16px;
   border-radius: var(--admin-radius);
   border: 1px solid color-mix(in srgb, var(--admin-border) 85%, #fff);
-  background: #fff;
+  background: var(--admin-surface);
   text-decoration: none;
   color: inherit;
   box-shadow: 0 1px 2px rgba(25, 6, 61, 0.04);
@@ -5682,7 +5695,7 @@ body:has(.admin-app) {
   font-size: 0.85rem;
   color: var(--admin-muted);
   border-radius: 10px;
-  background: #f8fafc;
+  background: var(--admin-accent-soft);
   border: 1px dashed var(--admin-border);
   box-sizing: border-box;
 }
@@ -5767,7 +5780,7 @@ body:has(.admin-app) {
 
 .admin-app .admin-motion-svg-callout-bg {
   fill: #fff;
-  stroke: #e2e8f0;
+  stroke: var(--pd-chart-grid, #e2e8f0);
   stroke-width: 1;
   filter: drop-shadow(0 4px 10px rgba(28, 25, 45, 0.12));
 }
@@ -5899,7 +5912,7 @@ body:has(.admin-app) {
 .admin-app .mag-editor {
   border: 1px solid var(--admin-border);
   border-radius: 12px;
-  background: #fff;
+  background: var(--admin-surface);
   overflow: hidden;
 }
 .admin-app .mag-editor.is-disabled {
@@ -5927,11 +5940,11 @@ body:has(.admin-app) {
   cursor: pointer;
 }
 .admin-app .mag-editor-toolbar button:hover {
-  background: #fff;
+  background: var(--admin-surface);
   border-color: var(--admin-border);
 }
 .admin-app .mag-editor-toolbar button.is-on {
-  background: #fff;
+  background: var(--admin-surface);
   border-color: var(--admin-border);
   color: var(--admin-accent, #5c4d91);
 }

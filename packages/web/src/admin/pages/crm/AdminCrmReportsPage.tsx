@@ -385,8 +385,8 @@ export function AdminCrmReportsPage() {
               <div className="crm-report-chart-box" style={{ height: 260 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={ageBars} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
-                    <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#757086' }} axisLine={false} tickLine={false} />
-                    <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#757086' }} axisLine={false} tickLine={false} width={28} />
+                    <XAxis dataKey="label" tick={{ fontSize: 11, fill: 'var(--admin-muted)' }} axisLine={false} tickLine={false} />
+                    <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: 'var(--admin-muted)' }} axisLine={false} tickLine={false} width={28} />
                     <Tooltip content={<ChartTip />} cursor={{ fill: 'rgba(92,77,145,0.06)' }} />
                     <Bar dataKey="value" radius={[8, 8, 0, 0]} maxBarSize={36} {...motion}>
                       {ageBars.map((b) => <Cell key={b.key} fill={b.color || '#3b82f6'} />)}

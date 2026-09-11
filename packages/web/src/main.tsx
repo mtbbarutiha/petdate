@@ -6,6 +6,10 @@ import { registerPetdateSW } from './lib/swRegister';
 import './styles/global.css';
 import './styles/pepito.css';
 import './styles/chat.css';
+import './styles/theme-dark.css';
+import { initTheme } from './lib/theme';
+
+initTheme();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

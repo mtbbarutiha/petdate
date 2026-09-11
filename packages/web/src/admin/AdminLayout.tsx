@@ -14,6 +14,7 @@ import { adminCan, getAdminAvatarUrl, getAdminDisplayName, getAdminRole, logoutA
 import { adminFetch, formatNumFa } from './api';
 import { resolvePublicMediaUrl } from '../lib/api';
 import { SalesCallSimProvider } from './pages/sales/SalesCallSim';
+import { ThemeToggle } from '../components/ThemeToggle';
 import '../styles/admin.css';
 
 type SalesBadgeKey = keyof SalesNavCounts;
@@ -331,6 +332,7 @@ function AdminLayoutInner() {
               </div>
             </div>
             <div className="admin-topbar-end">
+              <ThemeToggle compact className="admin-theme-toggle" />
               <AdminHeaderNotifications />
               <span className="admin-topbar-chip">RTL · fa</span>
               <span className="admin-topbar-chip admin-topbar-chip--mint admin-live-pulse">live DB</span>

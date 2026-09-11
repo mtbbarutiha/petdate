@@ -1,0 +1,325 @@
+/**
+ * Dark theme token remap for Pepito site + admin (Pepito-light → soft charcoal/navy).
+ * Applied via html[data-theme="dark"] set early in index.html (no FOUC).
+ * Accents keep mint/pink brand; soft charcoal surfaces (not pure black).
+ */
+
+:root {
+  /* Semantic surfaces shared by site + app shell (light defaults) */
+  --pd-surface: var(--pepito-white, #ffffff);
+  --pd-surface-2: #faf9fc;
+  --pd-surface-muted: #f1f0f6;
+  --pd-border: var(--pepito-lilac, #e4e2f3);
+  --pd-border-strong: #d4d0e8;
+  --pd-ink: var(--pepito-dark, #19063d);
+  --pd-muted: var(--pepito-muted, #757086);
+  --pd-overlay: rgba(25, 6, 61, 0.45);
+  --pd-shadow: 0 8px 24px rgba(25, 6, 61, 0.08);
+  --pd-chart-tick: #64748b;
+  --pd-chart-grid: #e2e8f0;
+  --iran-heat-sea-0: #e7f1fb;
+  --iran-heat-sea-1: #f3f7fb;
+  --iran-heat-sea-2: #f8fafc;
+}
+
+html[data-theme='dark'] {
+  color-scheme: dark;
+
+  /* Pepito brand remap — soft charcoal / navy, not pure black */
+  --pepito-base: #a89ad4;
+  --pepito-dark: #e8e6f2;
+  --pepito-muted: #a39eb8;
+  --pepito-pink: #e5a8d8;
+  --pepito-soft: #1a1d27;
+  --pepito-lilac: #2c3040;
+  --pepito-orange: #ffb04a;
+  --pepito-sky: #3bb8f5;
+  --pepito-mint: #2dd4b0;
+  --pepito-white: #242836;
+
+  --brand-hero: var(--pepito-base);
+  --brand-50: #1e2130;
+  --brand-100: #2a2e42;
+  --brand-200: #3a3f58;
+  --brand-300: #5c5678;
+  --brand-400: #8578b8;
+  --brand-500: #a89ad4;
+  --brand-600: #b8ace0;
+  --brand-700: #c9c0ea;
+  --brand-800: #ddd6f2;
+
+  --bg: var(--pepito-soft);
+  --text: var(--pepito-dark);
+  --text-secondary: var(--pepito-muted);
+  --text-tertiary: #8b86a0;
+  --primary: var(--pepito-base);
+  --primary-soft: #2f2a48;
+  --surface: var(--pepito-white);
+  --surface-raised: #2c3040;
+  --border: #3a3f55;
+  --border-light: #2e3244;
+
+  --slate-50: #1e2130;
+  --slate-100: #262a38;
+  --slate-200: #343849;
+  --slate-300: #4a5066;
+  --slate-400: #8b86a0;
+  --slate-500: #a39eb8;
+  --slate-600: #c4bfd4;
+  --slate-800: #e8e6f2;
+  --slate-900: #f4f3f8;
+
+  --success-bg: #14352c;
+  --danger: #f07178;
+  --warning: #f0b429;
+
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.28);
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.32), 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.36), 0 2px 6px rgba(0, 0, 0, 0.22);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.42);
+  --shadow-nav: 0 12px 40px rgba(0, 0, 0, 0.45);
+
+  --pd-surface: var(--pepito-white);
+  --pd-surface-2: #2c3040;
+  --pd-surface-muted: #1e2130;
+  --pd-border: #3a3f55;
+  --pd-border-strong: #4a5066;
+  --pd-ink: var(--pepito-dark);
+  --pd-muted: var(--pepito-muted);
+  --pd-overlay: rgba(8, 10, 16, 0.62);
+  --pd-shadow: 0 10px 28px rgba(0, 0, 0, 0.38);
+  --pd-chart-tick: #b4afc6;
+  --pd-chart-grid: #3a3f55;
+  --iran-heat-sea-0: #1a2430;
+  --iran-heat-sea-1: #1e2733;
+  --iran-heat-sea-2: #222a36;
+}
+
+html[data-theme='dark'] body {
+  background: var(--pepito-soft);
+  color: var(--pepito-muted);
+}
+
+html[data-theme='dark'] h1,
+html[data-theme='dark'] h2,
+html[data-theme='dark'] h3,
+html[data-theme='dark'] h4,
+html[data-theme='dark'] .landing-brand-en,
+html[data-theme='dark'] .landing-brand-mark {
+  color: var(--pepito-dark);
+}
+
+/* —— Theme toggle chrome —— */
+.pd-theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  height: 40px;
+  min-height: 40px;
+  padding: 0 0.85rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--pepito-lilac) 80%, transparent);
+  background: color-mix(in srgb, var(--pepito-white) 88%, transparent);
+  color: var(--pepito-dark);
+  font-family: var(--font-display, 'Urbanist', 'Vazirmatn', system-ui, sans-serif);
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease, color 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.pd-theme-toggle:hover {
+  background: var(--pepito-white);
+  border-color: color-mix(in srgb, var(--pepito-mint) 45%, var(--pepito-lilac));
+  color: var(--pepito-base);
+  transform: translateY(-1px);
+}
+.pd-theme-toggle:focus-visible {
+  outline: 2px solid var(--pepito-mint);
+  outline-offset: 2px;
+}
+.pd-theme-toggle--compact {
+  width: 36px;
+  height: 36px;
+  min-height: 36px;
+  padding: 0;
+  border-radius: 10px;
+}
+.pd-theme-toggle-label {
+  line-height: 1;
+}
+@media (max-width: 720px) {
+  .pd-theme-toggle:not(.pd-theme-toggle--compact) .pd-theme-toggle-label {
+    display: none;
+  }
+  .pd-theme-toggle:not(.pd-theme-toggle--compact) {
+    width: 40px;
+    padding: 0;
+  }
+}
+
+/* Admin toggle sits in dense topbar */
+.admin-app .pd-theme-toggle {
+  border-color: var(--admin-border);
+  background: var(--admin-surface);
+  color: var(--admin-ink);
+}
+.admin-app .pd-theme-toggle:hover {
+  border-color: var(--admin-mint);
+  color: var(--admin-accent);
+}
+
+/* —— Admin dark remaps —— */
+html[data-theme='dark'] .admin-app {
+  --admin-bg: #171a24;
+  --admin-surface: #222636;
+  --admin-ink: #e6e4f0;
+  --admin-muted: #9b96ad;
+  --admin-border: #343849;
+  --admin-accent: #a89ad4;
+  --admin-accent-hover: #b8ace0;
+  --admin-accent-soft: #2a2740;
+  --admin-active-bg: #1a2e28;
+  --admin-active-border: #2dd4b0;
+  --admin-sidebar: rgba(28, 31, 42, 0.96);
+  --admin-sidebar-text: #9b96ad;
+  --admin-danger: #f07178;
+  --admin-promo-yellow: #3a2e1c;
+  --admin-promo-purple: #2a2740;
+  --admin-promo-blue: #1a2c3a;
+  --admin-promo-mint: #1a2e28;
+  --admin-orange: #ffb04a;
+  --admin-sky: #3bb8f5;
+  --admin-mint: #2dd4b0;
+  --admin-pink: #e5a8d8;
+
+  --primary: var(--admin-accent);
+  --primary-soft: var(--admin-accent-soft);
+  --brand-50: var(--admin-bg);
+  --brand-100: var(--admin-accent-soft);
+  --brand-500: var(--admin-accent);
+  --brand-600: var(--admin-accent-hover);
+  --brand-700: #c9c0ea;
+  --brand-hero: var(--admin-accent);
+  --bg: var(--admin-bg);
+  --text: var(--admin-ink);
+  --text-secondary: var(--admin-muted);
+
+  background:
+    radial-gradient(900px 420px at 100% -10%, rgba(229, 168, 216, 0.1), transparent 55%),
+    radial-gradient(700px 380px at -5% 20%, rgba(168, 154, 212, 0.1), transparent 50%),
+    radial-gradient(600px 320px at 80% 100%, rgba(45, 212, 176, 0.08), transparent 45%),
+    var(--admin-bg);
+  color: var(--admin-ink);
+}
+
+html[data-theme='dark'] .admin-app .admin-chart-axis {
+  fill: var(--pd-chart-tick);
+}
+
+html[data-theme='dark'] .admin-app .admin-dash-chart-empty {
+  background: var(--admin-accent-soft);
+}
+
+html[data-theme='dark'] .admin-app .recharts-cartesian-axis-tick text,
+html[data-theme='dark'] .admin-app .recharts-legend-item-text,
+html[data-theme='dark'] .admin-app .recharts-text {
+  fill: var(--pd-chart-tick) !important;
+}
+
+html[data-theme='dark'] .admin-app .recharts-cartesian-grid line {
+  stroke: var(--pd-chart-grid) !important;
+}
+
+/* —— Chat dark remaps —— */
+html[data-theme='dark'] .tg-chat--shell {
+  --tg-ink: var(--pepito-dark);
+  --tg-muted: var(--pepito-muted);
+  --tg-out: #1f3d36;
+  --tg-in: #2a2f3d;
+  --tg-send: var(--pepito-mint);
+  --tg-accent: var(--pepito-sky);
+  --tg-surface: #1e2230;
+  --tg-surface-2: #262b3a;
+  --tg-line: rgba(232, 230, 242, 0.1);
+  --tg-header: #12151e;
+  --tg-header-2: #1a1e2a;
+}
+
+html[data-theme='dark'] .tg-chat.tg-chat--shell {
+  background:
+    radial-gradient(100% 70% at 100% 0%, rgba(59, 184, 245, 0.08), transparent 52%),
+    radial-gradient(80% 55% at 0% 100%, rgba(45, 212, 176, 0.07), transparent 48%),
+    linear-gradient(165deg, #171a24 0%, #1c2030 100%) !important;
+}
+
+html[data-theme='dark'] .tg-chat-list {
+  background:
+    linear-gradient(180deg, rgba(36, 40, 54, 0.98) 0%, rgba(30, 34, 48, 0.99) 100%) !important;
+}
+
+html[data-theme='dark'] .tg-chat-list-head {
+  background: rgba(36, 40, 54, 0.82);
+}
+
+/* —— Site surface hotspots that stay readable in dark —— */
+html[data-theme='dark'] .pepito-nav {
+  background: color-mix(in srgb, var(--pepito-white) 92%, transparent);
+  border-bottom-color: var(--pd-border);
+}
+html[data-theme='dark'] .pepito-nav.is-scrolled {
+  background: color-mix(in srgb, var(--pepito-white) 96%, transparent);
+  box-shadow: var(--pd-shadow);
+}
+
+html[data-theme='dark'] .pepito-section--lilac {
+  background: linear-gradient(180deg, var(--pepito-white), var(--pepito-lilac));
+}
+
+html[data-theme='dark'] .btn-ghost {
+  color: var(--pepito-dark);
+  background: color-mix(in srgb, var(--pepito-white) 72%, transparent);
+  border-color: color-mix(in srgb, var(--pepito-sky) 35%, transparent);
+}
+html[data-theme='dark'] .btn-ghost:hover {
+  background: var(--pepito-white);
+}
+
+html[data-theme='dark'] .btn-soft {
+  color: var(--pepito-sky);
+  background: color-mix(in srgb, var(--pepito-sky) 16%, transparent);
+}
+
+html[data-theme='dark'] .admin-app .iran-heat-label-text {
+  stroke: rgba(18, 21, 30, 0.72);
+}
+html[data-theme='dark'] .admin-app .iran-heat-tooltip {
+  background: var(--admin-surface);
+  color: var(--admin-ink);
+  border-color: var(--admin-border);
+}
+html[data-theme='dark'] .leaflet-container {
+  background: #1a1d27;
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .leaflet-bar a,
+html[data-theme='dark'] .leaflet-control-attribution {
+  background: var(--pepito-white) !important;
+  color: var(--pepito-muted) !important;
+  border-color: var(--pd-border) !important;
+}
+html[data-theme='dark'] .leaflet-popup-content-wrapper,
+html[data-theme='dark'] .leaflet-popup-tip {
+  background: var(--pepito-white);
+  color: var(--pepito-dark);
+  box-shadow: var(--pd-shadow);
+}
+
+/* Forms / inputs inherit readable contrast */
+html[data-theme='dark'] input,
+html[data-theme='dark'] select,
+html[data-theme='dark'] textarea {
+  color-scheme: dark;
+}
