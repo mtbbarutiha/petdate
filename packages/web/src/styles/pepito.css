@@ -157,7 +157,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 }
 .button-3:hover,
 .pepito-btn.button-3:hover {
-  background: #fff;
+  background: var(--pepito-white);
   color: var(--pepito-dark) !important;
   transform: translate3d(0, -6px, 0.01px);
 }
@@ -198,7 +198,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 }
 .pepito-btn--on-dark,
 .pepito-cta-inner .pepito-btn {
-  background: #fff !important;
+  background: var(--pepito-white) !important;
   color: var(--pepito-base) !important;
 }
 .pepito-btn--on-dark:hover,
@@ -277,7 +277,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   padding-block: 0.85rem;
   padding-inline: var(--pepito-gutter-x);
   box-sizing: border-box;
-  background: #fff;
+  background: var(--pepito-white);
   backdrop-filter: none;
   border-bottom: 1px solid rgba(92, 77, 145, 0.08);
   box-shadow: 0 4px 18px rgba(25, 6, 61, 0.06);
@@ -504,7 +504,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   inset: -10px;
 }
 .pepito-hero-dot.is-active {
-  background: #fff;
+  background: var(--pepito-white);
   border-color: #fff;
 }
 /* Pepito `.slider-fade .owl-theme .owl-nav` — side circular chevrons */
@@ -832,7 +832,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   width: min(275px, calc(100% - 40px));
   padding: 40px 30px;
   border-radius: 20px;
-  background: #fff;
+  background: var(--pepito-white);
   box-shadow: 0 0 30px rgba(0, 0, 0, 0.08);
   overflow: hidden;
   transition: box-shadow 350ms cubic-bezier(0.37, 0, 0.63, 1);
@@ -944,7 +944,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   box-sizing: border-box;
 }
 .pepito-section--soft { background: var(--pepito-soft); }
-.pepito-section--lilac { background: linear-gradient(180deg, #fff, var(--pepito-lilac)); }
+.pepito-section--lilac { background: linear-gradient(180deg, var(--pepito-white), var(--pepito-lilac)); }
 .pepito-section-head {
   max-width: 40rem;
   margin: 0 auto 1.75rem;
@@ -1051,7 +1051,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   gap: 0.85rem;
   padding: 52px 28px 56px;
   border-radius: 20px;
-  background: #fff;
+  background: var(--pepito-white);
   text-decoration: none;
   color: inherit;
   min-height: 100%;
@@ -1229,7 +1229,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 
 /* White after services (soft gray) — rely section removed; keep stripe rhythm */
 .pepito-adoption {
-  background: #fff;
+  background: var(--pepito-white);
   padding-block: var(--pepito-section-y);
 }
 .pepito-adoption-grid {
@@ -1244,7 +1244,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   isolation: isolate;
   /* Pepito demo assets (01-2…04-2.jpg) are 700×700; cards size to image via w-100 */
   aspect-ratio: 1 / 1;
-  background: #fff;
+  background: var(--pepito-white);
 }
 .pepito-adoption-media {
   position: absolute;
@@ -1292,7 +1292,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   flex-direction: column;
   justify-content: center;
   padding: 60px 40px;
-  background: #fff;
+  background: var(--pepito-white);
   text-decoration: none;
   color: inherit;
   cursor: pointer;
@@ -1435,7 +1435,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 }
 .pepito-lead-modal {
   width: min(100%, 420px);
-  background: #fff;
+  background: var(--pepito-white);
   border-radius: 18px;
   box-shadow: 0 18px 48px rgba(28, 22, 48, 0.18);
   overflow: hidden;
@@ -1493,7 +1493,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 .pepito-lead-modal__field input:focus {
   outline: 2px solid rgba(92, 77, 145, 0.35);
   outline-offset: 1px;
-  background: #fff;
+  background: var(--pepito-white);
 }
 .pepito-lead-modal__error {
   margin: 0;
@@ -1617,7 +1617,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 /* Pepito testimonial / reviews — photo tilt + stars + trust band */
 .pepito-reviews-section {
   /* Pepito .bg-light-gray */
-  background-color: #f4f4f7;
+  background-color: var(--pepito-soft);
   background-image: linear-gradient(
     to bottom,
     #f4f4f7,
@@ -1630,7 +1630,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
     #fbfbfc,
     #fcfcfd,
     #fdfdfe,
-    #ffffff
+    var(--pepito-white)
   );
   padding-block: var(--pepito-section-y);
   overflow: hidden;
@@ -1646,7 +1646,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   margin-top: 30px;
   padding: 0 15px;
   border-radius: 20px;
-  background: #fff;
+  background: var(--pepito-white);
   box-shadow: 0 2px 18px 0 rgba(92, 77, 145, 0.03);
   overflow: visible;
 }
@@ -1749,7 +1749,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 
 /* ========== Pepito shop / featured products ========== */
 .pepito-shop {
-  background: #fff;
+  background: var(--pepito-white);
   padding-block: var(--pepito-section-y);
   overflow: hidden;
 }
@@ -1806,7 +1806,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   margin: 0;
   padding: 10px;
   border-radius: 50%;
-  background: #fff;
+  background: var(--pepito-white);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1863,7 +1863,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 
 /* ========== Pepito blog1 / Latest News ========== */
 .pepito-news {
-  background-color: #f4f4f7;
+  background-color: var(--pepito-soft);
   background-image: linear-gradient(
     to bottom,
     #f4f4f7,
@@ -1876,7 +1876,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
     #fbfbfc,
     #fcfcfd,
     #fdfdfe,
-    #ffffff
+    var(--pepito-white)
   );
   padding-block: var(--pepito-section-y);
   overflow: hidden;
@@ -1910,7 +1910,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   min-width: 0;
   position: relative;
   border-radius: 20px;
-  background: #fff;
+  background: var(--pepito-white);
   transition: transform 350ms cubic-bezier(0.37, 0, 0.63, 1);
 }
 .pepito-news-card:hover {
@@ -2212,7 +2212,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   margin: 0 auto;
 }
 .pepito-faq-item {
-  background: #fff;
+  background: var(--pepito-white);
   border-radius: 20px;
   border: 1px solid rgba(92, 77, 145, 0.1);
   overflow: hidden;
@@ -2811,7 +2811,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   background: var(--pepito-soft);
 }
 .desktop-sidebar {
-  background: linear-gradient(180deg, #fff 0%, #f7f5fc 100%);
+  background: linear-gradient(180deg, var(--pepito-white) 0%, #f7f5fc 100%);
   border-inline-end: 1px solid rgba(92, 77, 145, 0.1);
 }
 .desktop-nav-item {
@@ -2973,7 +2973,7 @@ button.chip.is-on {
 .pepito-flow-panel {
   padding: 2.5rem 0 3.5rem;
   background:
-    linear-gradient(180deg, #fff 0%, var(--pepito-soft) 55%, #fff 100%);
+    linear-gradient(180deg, var(--pepito-white) 0%, var(--pepito-soft) 55%, var(--pepito-white) 100%);
 }
 .pepito-flow-panel-inner {
   width: min(480px, 100%);
@@ -3032,7 +3032,7 @@ button.chip.is-on {
 .pepito-auth-flow .role-card {
   text-align: right;
   padding: 14px 16px;
-  background: linear-gradient(165deg, #fff, #f7f4fc);
+  background: linear-gradient(165deg, var(--pepito-white), #f7f4fc);
   border: 1.5px solid rgba(92, 77, 145, 0.16);
   border-radius: 16px;
   box-shadow: 0 6px 18px rgba(25, 6, 61, 0.04);
@@ -3077,7 +3077,7 @@ button.chip.is-on {
   border: 1px solid rgba(92, 77, 145, 0.2);
   border-radius: 16px;
   padding: 12px 14px;
-  background: #fff;
+  background: var(--pepito-white);
   font: inherit;
   color: var(--pepito-dark);
 }
@@ -3167,7 +3167,7 @@ button.chip.is-on {
   height: calc(100dvh - var(--pepito-nav-h));
   padding: 1.25rem 0.85rem 1.5rem;
   border-inline-end: 1px solid rgba(92, 77, 145, 0.08);
-  background: linear-gradient(180deg, #fff 0%, #faf9fc 100%);
+  background: linear-gradient(180deg, var(--pepito-white) 0%, #faf9fc 100%);
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -3418,7 +3418,7 @@ button.chip.is-on {
 .pepito-home-action:hover {
   transform: translateY(-3px);
   border-color: rgba(92, 77, 145, 0.22);
-  background: #fff;
+  background: var(--pepito-white);
 }
 .pepito-home-action strong {
   font-family: var(--font-display);
@@ -4436,7 +4436,7 @@ button.chip.is-on {
   gap: 0;
   margin: 0;
   padding: 0.15rem 0;
-  background: #fff;
+  background: var(--pepito-white);
   border-top: 1px solid rgba(92, 77, 145, 0.08);
 }
 .pepito-profile-stats--strip .pepito-profile-stat {
@@ -4477,7 +4477,7 @@ button.chip.is-on {
   padding: 0.55rem 0.35rem;
   border: 1px solid rgba(92, 77, 145, 0.1);
   border-radius: 14px;
-  background: #fff;
+  background: var(--pepito-white);
   color: var(--pepito-dark);
   font: inherit;
   text-align: center;
@@ -4494,7 +4494,7 @@ div.pepito-profile-stat {
 }
 .pepito-profile-stat:hover {
   border-color: rgba(92, 77, 145, 0.28);
-  background: #fff;
+  background: var(--pepito-white);
   transform: translateY(-1px);
 }
 div.pepito-profile-stat:hover {
@@ -4621,7 +4621,7 @@ div.pepito-profile-stat:active {
   padding: 0.7rem 0.85rem;
   border: 1.5px solid rgba(92, 77, 145, 0.16);
   border-radius: 16px;
-  background: #fff;
+  background: var(--pepito-white);
   color: var(--pepito-dark);
   font: inherit;
   font-size: 0.9rem;
@@ -4688,7 +4688,7 @@ div.pepito-profile-stat:active {
 .pepito-profile-panel {
   padding: 1rem 1.05rem 1.15rem;
   border-radius: 20px;
-  background: #fff;
+  background: var(--pepito-white);
   border: 1px solid rgba(92, 77, 145, 0.12);
   box-shadow: 0 10px 28px rgba(25, 6, 61, 0.06);
   animation: pepito-flow-rise 0.4s ease both;
@@ -5028,7 +5028,7 @@ div.pepito-profile-stat:active {
   padding: 0.75rem 0.85rem;
   border-radius: 14px;
   border: 1.5px solid rgba(92, 77, 145, 0.16);
-  background: #fff;
+  background: var(--pepito-white);
   text-align: start;
   cursor: pointer;
   font: inherit;
@@ -5120,7 +5120,7 @@ div.pepito-profile-stat:active {
   flex-shrink: 0;
 }
 .pepito-profile-icon-btn:hover {
-  background: #fff;
+  background: var(--pepito-white);
   border-color: rgba(92, 77, 145, 0.28);
 }
 .pepito-profile-edit-form {
@@ -5213,7 +5213,7 @@ div.pepito-profile-stat:active {
   border: 1px solid rgba(92, 77, 145, 0.2);
   border-radius: 16px;
   padding: 12px 14px;
-  background: #fff;
+  background: var(--pepito-white);
   font: inherit;
   color: var(--pepito-dark);
   box-sizing: border-box;
@@ -5247,7 +5247,7 @@ div.pepito-profile-stat:active {
   padding: 0.55rem 1.1rem;
   border-radius: 999px;
   border: 1.5px solid rgba(92, 77, 145, 0.22);
-  background: #fff;
+  background: var(--pepito-white);
   color: var(--pepito-dark);
   font: inherit;
   font-weight: 700;
@@ -5434,7 +5434,7 @@ div.pepito-profile-stat:active {
 
 .home-service-chip {
   border-radius: 30px !important;
-  background: #fff !important;
+  background: var(--pepito-white) !important;
   border-color: rgba(92, 77, 145, 0.14) !important;
   color: var(--pepito-dark) !important;
 }
@@ -5501,7 +5501,7 @@ div.pepito-profile-stat:active {
   overflow: auto;
   padding: 0.85rem 0.85rem 0.95rem;
   border-radius: 18px;
-  background: #fff;
+  background: var(--pepito-white);
   border: 1px solid rgba(92, 77, 145, 0.12);
   box-shadow: 0 18px 44px rgba(25, 6, 61, 0.16);
   animation: pepito-flow-rise 0.28s ease both;
@@ -5622,7 +5622,7 @@ div.pepito-profile-stat:active {
   padding: 0.65rem 0.75rem;
   border-radius: 14px;
   border: 1px solid rgba(92, 77, 145, 0.12);
-  background: #fff;
+  background: var(--pepito-white);
   text-align: start;
   cursor: pointer;
   font: inherit;
@@ -5790,7 +5790,7 @@ div.pepito-profile-stat:active {
   width: min(300px, calc(100vw - 1.5rem));
   padding: 0.75rem;
   border-radius: 18px;
-  background: #fff;
+  background: var(--pepito-white);
   border: 1px solid rgba(25, 6, 61, 0.1);
   box-shadow: 0 18px 44px rgba(25, 6, 61, 0.14);
   animation: pepito-flow-rise 0.28s ease both;
@@ -5928,7 +5928,7 @@ div.pepito-profile-stat:active {
   width: min(280px, calc(100vw - 1.5rem));
   padding: 0.7rem;
   border-radius: 18px;
-  background: #fff;
+  background: var(--pepito-white);
   border: 1px solid rgba(92, 77, 145, 0.12);
   box-shadow: 0 18px 44px rgba(25, 6, 61, 0.16);
   animation: pepito-flow-rise 0.28s ease both;
@@ -6111,7 +6111,7 @@ div.pepito-profile-stat:active {
 /* —— Pepito adoption single / detail page —— */
 .pepito-adoption-page {
   min-height: 100vh;
-  background: #fff;
+  background: var(--pepito-white);
 }
 .pepito-adopt-banner {
   position: relative;
@@ -6171,7 +6171,7 @@ div.pepito-profile-stat:active {
 }
 .pepito-adopt-single {
   padding: 90px 0 60px;
-  background: #fff;
+  background: var(--pepito-white);
 }
 .pepito-adopt-single-grid {
   width: min(var(--pepito-container-max), 100%);
@@ -6382,7 +6382,7 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   margin: 0;
   padding: 1.25rem 1.15rem;
   border-radius: 18px;
-  background: #fff;
+  background: var(--pepito-white);
   box-shadow: 0 10px 28px rgba(40, 24, 80, 0.06);
 }
 .pepito-vet-landing-card h3 {
@@ -6732,7 +6732,7 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   padding: 1rem 1.05rem 1.1rem;
   border-radius: 20px;
   border: 1px solid rgba(31, 36, 48, 0.08);
-  background: #fff;
+  background: var(--pepito-white);
   box-shadow: 0 8px 22px rgba(25, 6, 61, 0.04);
 }
 .pepito-vet-inbox-panel--incoming {
@@ -6790,7 +6790,7 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   padding: 1rem 1.05rem 1.15rem;
   border-radius: 20px;
   border: 1px solid rgba(31, 36, 48, 0.08);
-  background: #fff;
+  background: var(--pepito-white);
   box-shadow: 0 8px 22px rgba(25, 6, 61, 0.04);
 }
 .pepito-vet-fee-head h2,
@@ -7322,7 +7322,7 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   z-index: 9999;
   pointer-events: none;
   border-radius: 16px;
-  background-color: #fff;
+  background-color: var(--pepito-white);
   background-size: contain;
   background-repeat: no-repeat;
   background-position: center;
@@ -7514,7 +7514,7 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   gap: 0.75rem;
   padding: 1rem 1.05rem;
   border-radius: 20px;
-  background: #fff;
+  background: var(--pepito-white);
   border: 1px solid rgba(92, 77, 145, 0.1);
   box-shadow: 0 8px 20px rgba(25, 6, 61, 0.04);
   min-width: 0;
@@ -7564,7 +7564,7 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   align-self: center;
   padding: 0.35rem;
   border-radius: 999px;
-  background: #fff;
+  background: var(--pepito-white);
   border: 1px solid rgba(92, 77, 145, 0.12);
   box-shadow: 0 6px 18px rgba(25, 6, 61, 0.05);
   max-width: 100%;
@@ -7602,7 +7602,7 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   gap: 0.4rem;
   padding: 0.4rem;
   border-radius: 999px;
-  background: #fff;
+  background: var(--pepito-white);
   border: 1px solid rgba(92, 77, 145, 0.12);
   box-shadow: 0 6px 18px rgba(25, 6, 61, 0.05);
   scrollbar-width: none;
@@ -7657,7 +7657,7 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
 }
 .pd-shop-brand-chip,
 .pd-shop-filters .pd-shop-chip {
-  background: #fff;
+  background: var(--pepito-white);
   border-color: rgba(92, 77, 145, 0.16);
 }
 .pd-shop-chip:hover,
@@ -7756,7 +7756,7 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
 }
 .pd-shop-dk-cats .pd-shop-chip {
   flex: 0 0 auto;
-  background: #fff;
+  background: var(--pepito-white);
   border: 1px solid rgba(166, 124, 82, 0.22);
 }
 .pd-shop-dk-cats .pd-shop-chip.is-active {
@@ -7853,7 +7853,7 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
 .pd-shop-card {
   display: flex;
   flex-direction: column;
-  background: #fff;
+  background: var(--pepito-white);
   border-radius: 22px;
   overflow: hidden;
   border: 1px solid rgba(92, 77, 145, 0.1);
@@ -8018,7 +8018,7 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   gap: 1rem;
   padding: 0.85rem 1.05rem;
   border-radius: 18px;
-  background: #fff;
+  background: var(--pepito-white);
   border: 1px solid rgba(92, 77, 145, 0.1);
 }
 .pd-shop-listing-toolbar-copy {
@@ -8046,7 +8046,7 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   display: none;
   appearance: none;
   border: 1px solid rgba(92, 77, 145, 0.2);
-  background: #fff;
+  background: var(--pepito-white);
   border-radius: 999px;
   padding: 0.5rem 1rem;
   font-weight: 700;
@@ -8082,7 +8082,7 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   gap: 1.15rem;
   padding: 1.2rem 1.15rem;
   border-radius: 22px;
-  background: #fff;
+  background: var(--pepito-white);
   border: 1px solid rgba(92, 77, 145, 0.1);
   box-shadow: 0 10px 28px rgba(25, 6, 61, 0.05);
   max-height: calc(100dvh - var(--pepito-nav-h, 74px) - 24px);
@@ -8191,7 +8191,7 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
 .pd-shop-checkout-form textarea:focus {
   outline: none;
   border-color: var(--pepito-base);
-  background: #fff;
+  background: var(--pepito-white);
 }
 .pd-shop-filter-links {
   display: flex;
@@ -8297,7 +8297,7 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   padding: 2.5rem 1.25rem;
   text-align: center;
   color: var(--pepito-muted);
-  background: #fff;
+  background: var(--pepito-white);
   border-radius: 22px;
   border: 1px dashed rgba(92, 77, 145, 0.2);
   display: flex;
@@ -8355,7 +8355,7 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
 .pd-dk-gallery-main {
   position: relative;
   border-radius: 16px;
-  background: #fff;
+  background: var(--pepito-white);
   border: 1px solid rgba(92, 77, 145, 0.1);
   aspect-ratio: 1;
   display: grid;
@@ -8393,7 +8393,7 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   height: 4.25rem;
   border-radius: 12px;
   border: 1px solid rgba(92, 77, 145, 0.14);
-  background: #fff;
+  background: var(--pepito-white);
   padding: 0.25rem;
   cursor: pointer;
   overflow: hidden;
@@ -8505,7 +8505,7 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   gap: 0.75rem;
   padding: 1rem 1.05rem 1.15rem;
   border-radius: 16px;
-  background: #fff;
+  background: var(--pepito-white);
   border: 1px solid rgba(92, 77, 145, 0.12);
   box-shadow: 0 10px 28px rgba(25, 6, 61, 0.06);
 }
@@ -8580,7 +8580,7 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
 }
 .pd-dk-tabs-block {
   border-radius: 16px;
-  background: #fff;
+  background: var(--pepito-white);
   border: 1px solid rgba(92, 77, 145, 0.1);
   overflow: hidden;
 }
@@ -8610,7 +8610,7 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
 .pd-dk-tabs button.is-active {
   color: var(--pepito-base);
   border-bottom-color: var(--pepito-base);
-  background: #fff;
+  background: var(--pepito-white);
   border-radius: 10px 10px 0 0;
 }
 .pd-dk-tab-panel {
@@ -8720,7 +8720,7 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
 .pd-dk-size {
   appearance: none;
   border: 1px solid rgba(92, 77, 145, 0.18);
-  background: #fff;
+  background: var(--pepito-white);
   border-radius: 10px;
   padding: 0.45rem 0.75rem;
   font: inherit;
@@ -8897,7 +8897,7 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   gap: 1rem;
   padding: 0.55rem 0.75rem;
   border-radius: 12px;
-  background: #fff;
+  background: var(--pepito-white);
   border: 1px solid rgba(92, 77, 145, 0.08);
 }
 .pd-shop-params dt {
@@ -8929,7 +8929,7 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
 .pd-shop-cart-lines,
 .pd-shop-checkout,
 .pd-shop-order-ok {
-  background: #fff;
+  background: var(--pepito-white);
   border: 1px solid rgba(92, 77, 145, 0.1);
   border-radius: 24px;
   padding: 1.25rem 1.35rem;
@@ -8993,7 +8993,7 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   height: 28px;
   border-radius: 8px;
   border: 1px solid rgba(92, 77, 145, 0.18);
-  background: #fff;
+  background: var(--pepito-white);
   cursor: pointer;
   font-weight: 700;
 }
@@ -9325,7 +9325,7 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
 }
 
 /* PetDate brand preloader — Pepito circle + our mark */
-.pd-preloader{position:fixed;inset:0;z-index:100000;background:#fff;overflow:hidden;opacity:1;visibility:visible;transition:opacity .35s ease,visibility .35s ease}
+.pd-preloader{position:fixed;inset:0;z-index:100000;background: var(--pepito-white);overflow:hidden;opacity:1;visibility:visible;transition:opacity .35s ease,visibility .35s ease}
 .pd-preloader.is-done{opacity:0;visibility:hidden;pointer-events:none}
 .pd-preloader-centered{position:absolute;inset:0;text-align:center}
 .pd-preloader-centered::after{content:"";display:inline-block;height:100%;vertical-align:middle;margin-inline-end:-.25em}
@@ -9505,7 +9505,7 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   padding: 0.95rem 0.95rem 0.85rem;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.78)),
-    linear-gradient(145deg, #ffffff 0%, #f7f5fc 55%, #fff6ec 100%);
+    linear-gradient(145deg, var(--pepito-white) 0%, #f7f5fc 55%, #fff6ec 100%);
   border: 1px solid rgba(92, 77, 145, 0.12);
   box-shadow: 0 10px 28px rgba(25, 6, 61, 0.06);
 }
@@ -9863,7 +9863,7 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   gap: 1rem;
   min-height: 4.35rem;
   padding: 1rem 1.1rem;
-  background: #fff;
+  background: var(--pepito-white);
   border: 1px solid rgba(92, 77, 145, 0.1);
   border-radius: 18px;
   box-shadow: 0 8px 22px rgba(25, 6, 61, 0.05);
@@ -11125,7 +11125,7 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   overflow: hidden;
   border: 1px solid rgba(92, 77, 145, 0.12);
   border-radius: 22px;
-  background: #fff;
+  background: var(--pepito-white);
   box-shadow: 0 8px 28px rgba(25, 6, 61, 0.06);
   transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
   animation: pepito-flow-rise 0.5s ease both;
@@ -11518,7 +11518,7 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
 .pepito-pet-medical-card {
   padding: 0.7rem 0.75rem;
   border-radius: 14px;
-  background: #fff;
+  background: var(--pepito-white);
   border: 1px solid rgba(92, 77, 145, 0.08);
 }
 .pepito-pet-medical-card h3 {
@@ -11557,7 +11557,7 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
 .pepito-pet-medical-rx-card {
   padding: 0.75rem 0.8rem;
   border-radius: 14px;
-  background: #fff;
+  background: var(--pepito-white);
   border: 1px solid rgba(92, 77, 145, 0.08);
 }
 .pepito-pet-medical-entry header {
@@ -11582,7 +11582,7 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   padding: 1rem;
   border-radius: 18px;
   border: 1px solid rgba(92, 77, 145, 0.1);
-  background: #fff;
+  background: var(--pepito-white);
   display: grid;
   gap: 0.65rem;
 }
@@ -11980,7 +11980,7 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
 .pepito-earn-balance-main {
   padding: 1rem 1.05rem;
   border-radius: 18px;
-  background: linear-gradient(145deg, #fff 0%, #fff7ee 100%);
+  background: linear-gradient(145deg, var(--pepito-white) 0%, #fff7ee 100%);
   border: 1px solid rgba(253, 150, 30, 0.18);
 }
 
@@ -12112,7 +12112,7 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   padding: 0.75rem 0.85rem;
   border-radius: 12px;
   border: 1px solid rgba(92, 77, 145, 0.2);
-  background: #fff;
+  background: var(--pepito-white);
   font-size: 1rem;
   font-family: inherit;
   direction: ltr;
@@ -12269,7 +12269,7 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   gap: 0.85rem;
 }
 .pd-shop-order-card {
-  background: #fff;
+  background: var(--pepito-white);
   border: 1px solid rgba(92, 77, 145, 0.1);
   border-radius: 20px;
   padding: 1rem 1.15rem;

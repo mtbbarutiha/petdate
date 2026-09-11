@@ -259,8 +259,8 @@ export function AdminCrmDashboardPage() {
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={data.channelDistribution} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
               <MotionBarGradientDefs id="crmChanBar" from={MOTION_PALETTE.purple} to={MOTION_PALETTE.mint} />
-              <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#757086' }} axisLine={false} tickLine={false} />
-              <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#757086' }} axisLine={false} tickLine={false} width={28} />
+              <XAxis dataKey="label" tick={{ fontSize: 11, fill: 'var(--admin-muted)' }} axisLine={false} tickLine={false} />
+              <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: 'var(--admin-muted)' }} axisLine={false} tickLine={false} width={28} />
               <Tooltip content={<MotionChartTooltip />} />
               <Bar dataKey="value" radius={[8, 8, 4, 4]} fill="url(#crmChanBar)" maxBarSize={36} {...motion} />
             </BarChart>
@@ -271,8 +271,8 @@ export function AdminCrmDashboardPage() {
           <ResponsiveContainer width="100%" height={220}>
             <AreaChart data={data.dailyInteractions} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
               <MotionAreaGradientDefs id="crmArea" color={MOTION_PALETTE.mint} mid={MOTION_PALETTE.blue} />
-              <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#757086' }} axisLine={false} tickLine={false} />
-              <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#757086' }} axisLine={false} tickLine={false} width={28} />
+              <XAxis dataKey="label" tick={{ fontSize: 11, fill: 'var(--admin-muted)' }} axisLine={false} tickLine={false} />
+              <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: 'var(--admin-muted)' }} axisLine={false} tickLine={false} width={28} />
               <Tooltip content={<MotionChartTooltip />} />
               <Area
                 type="monotone"

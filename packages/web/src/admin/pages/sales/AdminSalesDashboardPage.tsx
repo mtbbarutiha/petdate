@@ -237,8 +237,8 @@ export function AdminSalesDashboardPage() {
           <ResponsiveContainer width="100%" height={240}>
             <AreaChart data={revenueTrend} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
               <MotionAreaGradientDefs id="salesRevArea" color={MOTION_PALETTE.purple} mid={MOTION_PALETTE.mint} />
-              <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#757086' }} axisLine={false} tickLine={false} />
-              <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#757086' }} axisLine={false} tickLine={false} width={40} />
+              <XAxis dataKey="label" tick={{ fontSize: 11, fill: 'var(--admin-muted)' }} axisLine={false} tickLine={false} />
+              <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: 'var(--admin-muted)' }} axisLine={false} tickLine={false} width={40} />
               <Tooltip content={<MotionChartTooltip />} />
               <Area
                 type="monotone"
@@ -257,8 +257,8 @@ export function AdminSalesDashboardPage() {
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={callsTrend} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
               <MotionBarGradientDefs id="salesCallsBar" from={MOTION_PALETTE.mint} to={MOTION_PALETTE.blue} />
-              <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#757086' }} axisLine={false} tickLine={false} />
-              <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#757086' }} axisLine={false} tickLine={false} width={28} />
+              <XAxis dataKey="label" tick={{ fontSize: 11, fill: 'var(--admin-muted)' }} axisLine={false} tickLine={false} />
+              <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: 'var(--admin-muted)' }} axisLine={false} tickLine={false} width={28} />
               <Tooltip content={<MotionChartTooltip />} />
               <Bar dataKey="value" radius={[8, 8, 4, 4]} fill="url(#salesCallsBar)" maxBarSize={28} {...motion} />
             </BarChart>

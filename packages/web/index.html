@@ -56,8 +56,34 @@
     <meta name="apple-mobile-web-app-title" content="petdate" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="theme-color" content="#5c4d91" />
-    <meta name="color-scheme" content="light" />
+    <meta name="color-scheme" content="light dark" />
     <meta name="format-detection" content="telephone=no" />
+    <!-- Prevent flash of wrong theme before CSS/JS hydrate -->
+    <script>
+      (function () {
+        try {
+          var key = 'petdate-theme';
+          var stored = null;
+          try {
+            stored = localStorage.getItem(key);
+          } catch (e) {}
+          var theme =
+            stored === 'light' || stored === 'dark'
+              ? stored
+              : window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
+                ? 'dark'
+                : 'light';
+          var root = document.documentElement;
+          root.setAttribute('data-theme', theme);
+          root.classList.add(theme === 'dark' ? 'theme-dark' : 'theme-light');
+          root.style.colorScheme = theme;
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute('content', theme === 'dark' ? '#1a1d27' : '#5c4d91');
+          var scheme = document.querySelector('meta[name="color-scheme"]');
+          if (scheme) scheme.setAttribute('content', theme);
+        } catch (e) {}
+      })();
+    </script>
 
     <link rel="canonical" href="https://petdate.ir/" />
     <link rel="alternate" hreflang="fa-IR" href="https://petdate.ir/" />

@@ -22,7 +22,7 @@ export const adminRtlHBarsValueAxis = {
   type: 'number' as const,
   reversed: true,
   allowDecimals: false,
-  tick: { fontSize: 11, fill: '#757086' },
+  tick: { fontSize: 11, fill: 'var(--admin-muted)' },
   axisLine: false as const,
   tickLine: false as const,
 };
@@ -33,7 +33,7 @@ export const adminRtlHBarsCategoryAxis = {
   orientation: 'right' as const,
   width: 148,
   interval: 0 as const,
-  tick: { fontSize: 12, fill: '#3d3558' },
+  tick: { fontSize: 12, fill: 'var(--admin-ink)' },
   axisLine: false as const,
   tickLine: false as const,
   tickMargin: 10,
@@ -44,7 +44,7 @@ export const adminRtlPathBarsCategoryAxis = {
   ...adminRtlHBarsCategoryAxis,
   width: 168,
   tickMargin: 12,
-  tick: { fontSize: 12, fill: '#3d3558', direction: 'ltr' as const },
+  tick: { fontSize: 12, fill: 'var(--admin-ink)', direction: 'ltr' as const },
 };
 
 /** Bar radius when bars grow leftward toward right-side labels. */
@@ -76,7 +76,7 @@ export function AdminRtlPathTick(props: PathTickProps): ReactElement {
         y={0}
         dy={4}
         textAnchor="start"
-        fill="#3d3558"
+        fill="var(--admin-ink)"
         fontSize={12}
         direction="ltr"
         style={{ unicodeBidi: 'plaintext' }}
@@ -112,7 +112,7 @@ export function AdminRtlBarCountLabel(props: CountLabelProps): ReactElement | nu
       y={cy}
       dy={4}
       textAnchor="end"
-      fill="#3d3558"
+      fill="var(--admin-ink)"
       fontSize={11}
       fontWeight={600}
       direction="ltr"

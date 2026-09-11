@@ -6,6 +6,7 @@ import { useAuthStore } from '../hooks/useAuthStore';
 import { SiteFooter } from './SiteFooter';
 import { NavUserCluster } from './NavUserCluster';
 import { SiteDesktopNav } from './SiteDesktopNav';
+import { ThemeToggle } from './ThemeToggle';
 
 const BANNER_IMG = '/pepito/uploads/3.jpg';
 
@@ -123,6 +124,7 @@ export function LandingChrome({
         <NavUserCluster showCart />
 
         <div className="pepito-nav-actions">
+          <ThemeToggle />
           <SiteDesktopNav />
           {actionLabel && onAction ? (
             <button type="button" className="pepito-nav-login pepito-nav-login--btn" onClick={onAction}>

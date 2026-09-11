@@ -63,6 +63,9 @@ npx tsx "$ROOT/packages/web/src/lib/publicRoutes.selftest.ts"
 echo "==> selftest: web authRedirect next=/vet-consult"
 npx tsx "$ROOT/packages/web/src/lib/authRedirect.selftest.ts"
 
+echo "==> selftest: web dark-mode theme tokens + toggle wiring"
+npx tsx "$ROOT/packages/web/src/lib/theme.selftest.ts"
+
 echo "==> selftest: nginx apex HTTPS + WCDN docs"
 npx tsx "$ROOT/packages/web/src/lib/wcdnNginx.selftest.ts"
 

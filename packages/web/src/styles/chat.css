@@ -657,7 +657,7 @@
   margin: 10px 12px 18px !important;
   border-radius: 20px !important;
   overflow: hidden;
-  background: #fff;
+  background: var(--tg-in);
   border: 1px solid rgba(25, 6, 61, 0.07) !important;
   box-shadow: 0 14px 36px rgba(25, 6, 61, 0.08) !important;
   max-width: min(100%, 420px);
@@ -813,7 +813,7 @@
 }
 .tg-composer textarea:focus {
   border-color: rgba(11, 165, 242, 0.42) !important;
-  background: #fff !important;
+  background: var(--tg-in) !important;
   box-shadow: 0 0 0 3px rgba(11, 165, 242, 0.12) !important;
 }
 
@@ -1210,7 +1210,7 @@ html.tg-chat-open body {
   padding: 0.6rem 0.75rem;
   border: 1px solid rgba(25, 6, 61, 0.08);
   border-radius: 14px;
-  background: #fff;
+  background: var(--tg-in);
   text-align: start;
   cursor: pointer;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
@@ -1321,7 +1321,7 @@ html.tg-chat-open body {
   padding: 0.45rem 0.8rem;
   border-radius: 12px;
   border: 1px solid rgba(25, 6, 61, 0.08);
-  background: #fff;
+  background: var(--tg-in);
   color: var(--pepito-dark, #19063d);
   font-size: 0.82rem;
   font-weight: 700;
@@ -1368,7 +1368,7 @@ html.tg-chat-open body {
   max-height: min(92dvh, calc(100dvh - var(--tg-kb-inset, 0px) - 24px));
   display: flex;
   flex-direction: column;
-  background: #fff;
+  background: var(--tg-in);
   border-radius: 22px 22px 0 0;
   box-shadow: 0 -14px 44px rgba(25, 6, 61, 0.2);
   overflow: hidden;
@@ -1518,7 +1518,7 @@ html.tg-chat-open body {
 .tg-vet-field textarea:focus {
   outline: none;
   border-color: rgba(11, 165, 242, 0.45);
-  background: #fff;
+  background: var(--tg-in);
   box-shadow: 0 0 0 3px rgba(11, 165, 242, 0.14);
 }
 .tg-vet-sheet-actions {
@@ -1528,7 +1528,7 @@ html.tg-chat-open body {
   position: sticky;
   bottom: 0;
   padding-top: 0.35rem;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0), #fff 28%);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0), var(--tg-in) 28%);
 }
 .tg-vet-action-primary,
 .tg-vet-action-secondary {
@@ -1601,7 +1601,7 @@ html.tg-chat-open body {
   padding: 0.65rem 0.75rem;
   border-radius: 12px;
   border: 1px solid rgba(25, 6, 61, 0.07);
-  background: #fff;
+  background: var(--tg-in);
 }
 .tg-vet-entries small {
   display: block;

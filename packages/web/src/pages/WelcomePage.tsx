@@ -15,6 +15,7 @@ import { BRAND } from '@petdate/shared';
 import { SiteFooter } from '../components/SiteFooter';
 import { NavUserCluster } from '../components/NavUserCluster';
 import { SiteDesktopNav } from '../components/SiteDesktopNav';
+import { ThemeToggle } from '../components/ThemeToggle';
 import { AdoptionPurchaseCta } from '../components/AdoptionPurchaseCta';
 import { ADOPTION_PETS } from '../data/adoptionPets';
 import { useAuthStore } from '../hooks/useAuthStore';
@@ -477,6 +478,7 @@ export function WelcomePage() {
         </nav>
         <NavUserCluster showCart />
         <div className="pepito-nav-actions">
+          <ThemeToggle />
           <SiteDesktopNav />
         </div>
 </header>
