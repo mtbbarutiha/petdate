@@ -96,8 +96,8 @@ export function RoleSelectPage() {
     <AuthShell
       wide
       footer={false}
-      bannerTitle="شروع کن"
-      bannerLead="نقش‌هات را انتخاب کن — همه چیز در همان محیط لندینگ می‌ماند"
+      bannerTitle="انتخاب نقش"
+      bannerLead="همبازی · دامپزشک · مربی · بدون پت — به ترتیب نیازت انتخاب کن"
       bannerImage="/pepito/uploads/1.jpg"
     >
       <div className="role-select">

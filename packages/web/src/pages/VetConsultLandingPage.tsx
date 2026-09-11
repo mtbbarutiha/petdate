@@ -31,11 +31,11 @@ function PawIcon({ size = 16 }: { size?: number }) {
 export function VetConsultLandingPage() {
   return (
     <LandingChrome
-      bannerTitle="ارتباط سریع با پزشک"
-      bannerLead="مشاوره دامپزشک آنلاین برای پت شما — بدون اپ جدا، روی همان حساب پت‌دیت."
+      bannerTitle="دامپزشک آنلاین"
+      bannerLead="نقش دامپزشک در پت‌دیت — مشاوره فوری برای پت شما، بدون اپ جدا، روی همان حساب."
       actionLabel="خانه"
       actionTo="/"
-      ctaLabel="ورود و مشاوره"
+      ctaLabel="مشاوره دامپزشک"
       ctaTo={loginPath('/vet-consult')}
       className="pepito-vet-landing-page"
     >

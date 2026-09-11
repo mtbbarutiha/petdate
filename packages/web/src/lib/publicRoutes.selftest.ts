@@ -36,4 +36,22 @@ assert.doesNotMatch(landing, /pepito-app-rail/, 'vet landing has no app sidebar'
 assert.match(welcome, /<Link to="\/adoption">پذیرش<\/Link>/, 'homepage پذیرش CTA goes to /adoption');
 assert.doesNotMatch(welcome, /href="#pets">پذیرش/, 'homepage پذیرش no longer uses #pets');
 
+// Marketing hero: fixed role order همبازی → دامپزشک → مربی → بدون پت
+const playmateIdx = welcome.indexOf("role: 'playmate'");
+const vetIdx = welcome.indexOf("role: 'vet'");
+const trainerIdx = welcome.indexOf("role: 'trainer'");
+const noPetIdx = welcome.indexOf("role: 'no_pet'");
+assert.ok(playmateIdx > 0 && vetIdx > playmateIdx, 'hero playmate before vet');
+assert.ok(trainerIdx > vetIdx, 'hero vet before trainer');
+assert.ok(noPetIdx > trainerIdx, 'hero trainer before no_pet');
+assert.match(welcome, /hero-playmate-cta/, 'hero playmate CTA testid');
+assert.match(welcome, /hero-vet-consult-cta/, 'hero vet CTA testid');
+assert.match(welcome, /hero-trainer-cta/, 'hero trainer CTA testid');
+assert.match(welcome, /hero-no-pet-cta/, 'hero no-pet CTA testid');
+assert.match(welcome, /to: '\/chats'/, 'playmate deep-links to /chats');
+assert.match(welcome, /to: '\/vet-consult'/, 'vet deep-links to /vet-consult');
+assert.match(welcome, /to: '\/trainer-consult'/, 'trainer deep-links to /trainer-consult');
+assert.match(welcome, /to: '\/onboarding\/role'/, 'no-pet deep-links to role onboarding');
+assert.doesNotMatch(welcome, /پیدا کردن پرستار|مراقبت شبانه|نگهداری پت/, 'no sitter leftover CTAs on welcome');
+
 console.log('publicRoutes.selftest: ok');
