@@ -376,12 +376,16 @@
   }
 }
 
-/* Empty states — calm, on-brand, denser */
+/* Empty states — calm, on-brand; full-bleed within chat content area */
 .tg-chat-list-empty,
 .tg-thread-empty {
   gap: 12px !important;
   padding: 28px 18px !important;
   position: relative;
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
+  justify-items: stretch;
 }
 .tg-chat-list-empty h2,
 .tg-thread-empty h2 {
@@ -389,13 +393,17 @@
   font-weight: 800;
   color: var(--tg-ink);
   letter-spacing: -0.02em;
+  text-align: center;
 }
 .tg-chat-list-empty p,
 .tg-thread-empty p {
-  max-width: 32ch !important;
+  max-width: none !important;
+  width: 100%;
   font-size: 0.9rem !important;
   line-height: 1.55 !important;
   color: var(--tg-muted) !important;
+  text-align: center;
+  box-sizing: border-box;
 }
 
 .tg-empty-mark {
@@ -417,10 +425,14 @@
   height: auto;
 }
 
-/* Pepito chats empty pane — large paw motif (not favicon scrap) */
+/* Pepito chats empty pane — large paw motif; edge-to-edge within thread */
 .tg-thread-empty--pepito {
   gap: 14px !important;
-  padding: 40px 24px !important;
+  padding: 40px 18px !important;
+  width: 100%;
+  max-width: none !important;
+  box-sizing: border-box;
+  justify-items: stretch;
 }
 .tg-empty-visual {
   position: relative;
@@ -431,6 +443,7 @@
   display: grid;
   place-items: center;
   animation: tgEmptyFloat 5s ease-in-out infinite;
+  justify-self: center;
 }
 .tg-empty-visual__ring {
   position: absolute;
@@ -464,12 +477,19 @@
   background: linear-gradient(160deg, color-mix(in srgb, var(--pepito-mint) 18%, transparent), color-mix(in srgb, var(--pepito-pink) 14%, transparent));
 }
 .tg-thread-empty__cta-wrap {
-  width: min(100%, 280px);
+  width: 100%;
+  max-width: none;
   margin-top: 6px;
+  box-sizing: border-box;
 }
 .tg-thread-empty__cta-wrap .find-playmate-panel,
-.tg-thread-empty__cta-wrap .find-playmate-one {
+.tg-thread-empty__cta-wrap .find-playmate-one,
+.tg-thread-empty .find-playmate-one,
+.tg-chat-list-empty .find-playmate-one {
   width: 100%;
+  max-width: none;
+  margin-inline: 0;
+  box-sizing: border-box;
 }
 .tg-thread-empty__cta-wrap .pepito-btn {
   width: 100%;
@@ -477,8 +497,11 @@
 }
 .tg-thread-empty__cta {
   margin-top: 4px;
-  min-width: min(100%, 220px);
+  width: 100%;
+  max-width: none;
   justify-content: center;
+  justify-self: stretch;
+  box-sizing: border-box;
 }
 
 @keyframes tgEmptyFloat {
@@ -1271,7 +1294,9 @@ html.tg-chat-open body {
     line-height: 1.55;
   }
   .tg-thread-empty--pepito {
-    max-width: min(420px, 94%);
+    max-width: none !important;
+    width: 100%;
+    padding-inline: 16px !important;
   }
 
   .tg-composer {
@@ -1284,15 +1309,21 @@ html.tg-chat-open body {
   }
 }
 
-/* Find-playmate hub inside chats */
+/* Find-playmate hub inside chats — full content width, normal page pad */
 .tg-thread-empty--hub,
 .tg-chat-list-empty--hub {
   align-items: stretch;
+  justify-items: stretch;
   text-align: start;
-  max-width: min(100%, 420px);
+  max-width: none;
   width: 100%;
-  margin-inline: auto;
-  padding: 1rem 0.85rem 1.25rem;
+  margin-inline: 0;
+  padding: 1rem 16px 1.25rem;
+  box-sizing: border-box;
+}
+.tg-thread-empty--hub p,
+.tg-chat-list-empty--hub p {
+  text-align: start;
 }
 .find-playmate-panel {
   display: flex;
