@@ -51,6 +51,10 @@ npx tsx "$ROOT/packages/web/src/admin/adminMagazineRoute.selftest.ts"
 echo "==> selftest: admin delete user route + UI"
 npx tsx "$ROOT/packages/web/src/admin/adminDeleteUser.selftest.ts"
 
+# Guard: admin users table stays compact (less horizontal scroll)
+echo "==> selftest: admin users table compact layout"
+npx tsx "$ROOT/packages/web/src/admin/adminUsersTableCompact.selftest.ts"
+
 echo "==> selftest: web admin widget dashboard (layout + drill)"
 npx tsx "$ROOT/packages/web/src/admin/widgets/widgetDashboard.selftest.ts"
 
