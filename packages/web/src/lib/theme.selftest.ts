@@ -82,6 +82,16 @@ assert.match(darkCss, /\.pepito-support-bubble\.is-assistant/, 'support chat bub
 assert.match(darkCss, /\.pepito-support-composer input/, 'support composer remapped');
 assert.match(darkCss, /\.pepito-vet-inbox-panel--incoming/, 'vet inbox panels remapped');
 
+/* Skeleton placeholders — no leftover light/white shimmer bars in dark */
+assert.match(darkCss, /--pd-skeleton-from/, 'skeleton shimmer tokens present');
+assert.match(darkCss, /\.tg-skeleton\b/, 'chat skeleton remapped for dark');
+assert.match(darkCss, /\.pepito-my-pets-card\.is-skeleton/, 'my-pets skeleton remapped for dark');
+assert.doesNotMatch(
+  darkCss,
+  /html\[data-theme=['"]dark['"]\][\s\S]{0,200}\.tg-skeleton[\s\S]{0,180}#(eceff4|f7f8fb|f3f1f7|faf9fc|fff)\b/i,
+  'dark skeleton must not keep light gray / white stops'
+);
+
 const toggle = readFileSync(join(root, 'src/components/ThemeToggle.tsx'), 'utf8');
 assert.match(toggle, /toggleTheme|setTheme/, 'ThemeToggle mutates theme');
 assert.match(toggle, /aria-label/, 'ThemeToggle accessible');

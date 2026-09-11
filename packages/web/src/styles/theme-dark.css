@@ -17,6 +17,11 @@
   --pd-shadow: 0 8px 24px rgba(25, 6, 61, 0.08);
   --pd-chart-tick: #64748b;
   --pd-chart-grid: #e2e8f0;
+  /* Skeleton shimmer stops (light) — keep exact prior gray bars */
+  --pd-skeleton-from: #eceff4;
+  --pd-skeleton-via: #f7f8fb;
+  --pd-skeleton-pets-from: #f3f1f7;
+  --pd-skeleton-pets-via: #faf9fc;
   --iran-heat-sea-0: #e7f1fb;
   --iran-heat-sea-1: #f3f7fb;
   --iran-heat-sea-2: #f8fafc;
@@ -90,6 +95,11 @@ html[data-theme='dark'] {
   --pd-shadow: 0 10px 28px rgba(0, 0, 0, 0.38);
   --pd-chart-tick: #b4afc6;
   --pd-chart-grid: #3a3f55;
+  /* Subtle dark shimmer — muted → lifted surface, not white bars */
+  --pd-skeleton-from: var(--pd-surface-muted);
+  --pd-skeleton-via: color-mix(in srgb, var(--pd-surface-2) 82%, var(--pepito-base) 18%);
+  --pd-skeleton-pets-from: var(--pd-surface-muted);
+  --pd-skeleton-pets-via: var(--pd-surface-2);
   --iran-heat-sea-0: #1a2430;
   --iran-heat-sea-1: #1e2733;
   --iran-heat-sea-2: #222a36;
@@ -1875,4 +1885,36 @@ html[data-theme='dark'] .pepito-lead-modal__actions .pepito-btn--ghost:hover {
 /* Shared app modal sheet: match dark overlay token */
 html[data-theme='dark'] .modal-overlay {
   background: var(--pd-overlay);
+}
+
+/*
+ * Skeleton loading placeholders
+ * Chat inbox rows + my-pets cards used hard light-gray / white shimmer bars
+ * on dark canvases. Remap to muted surface + subtle lifted shimmer.
+ */
+html[data-theme='dark'] .tg-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--pd-skeleton-from),
+    var(--pd-skeleton-via),
+    var(--pd-skeleton-from)
+  );
+  background-size: 200% 100%;
+}
+
+html[data-theme='dark'] .pepito-my-pets-card.is-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--pd-skeleton-pets-from),
+    var(--pd-skeleton-pets-via),
+    var(--pd-skeleton-pets-from)
+  );
+  background-size: 200% 100%;
+  border-color: var(--pd-border);
+  box-shadow: none;
+}
+
+html[data-theme='dark'] .pepito-my-pets-card {
+  border-color: var(--pd-border);
+  box-shadow: var(--pd-shadow);
 }
