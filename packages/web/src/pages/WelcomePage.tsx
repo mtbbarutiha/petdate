@@ -967,19 +967,6 @@ export function WelcomePage() {
         </p>
       </section>
 
-      <section className="pepito-cta">
-        <div className="pepito-cta-inner">
-          <h2>آماده‌ای از نقش خودت شروع کنی؟</h2>
-          <p>
-            همبازی، دامپزشک، مربی یا بدون پت — با یک کد یکبارمصرف وارد دنیای مشترک وب و ربات شو.
-          </p>
-          <GatedLink to="/chats" className="pepito-btn button-1 pepito-btn--lg pepito-btn--on-dark">
-            <PawIcon />
-            پیدا کردن همبازی
-          </GatedLink>
-        </div>
-      </section>
-
       <SiteFooter />
     </div>
   );

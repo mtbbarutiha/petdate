@@ -1866,16 +1866,8 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   background-color: var(--pepito-soft);
   background-image: linear-gradient(
     to bottom,
-    #f4f4f7,
-    #f5f5f7,
-    #f6f6f8,
-    #f7f7f9,
-    #f8f8fa,
-    #f9f9fb,
-    #fafafb,
-    #fbfbfc,
-    #fcfcfd,
-    #fdfdfe,
+    var(--pepito-soft),
+    color-mix(in srgb, var(--pepito-soft) 70%, var(--pepito-white)),
     var(--pepito-white)
   );
   padding-block: var(--pepito-section-y);
@@ -2320,9 +2312,12 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 }
 /* —— Pepito site footer (dark top + bottom link strip) —— */
 .pepito-footer {
+  /* Dedicated footer ink — never reuse --pepito-dark (remaps to light text in dark theme). */
+  --pepito-footer-bg: #19063d;
+  --pepito-footer-ink: rgba(255, 255, 255, 0.78);
   margin-top: 0;
-  background: var(--pepito-dark);
-  color: rgba(255, 255, 255, 0.72);
+  background: var(--pepito-footer-bg);
+  color: var(--pepito-footer-ink);
   font-size: 0.95rem;
   line-height: 1.7;
   border-top: none;
@@ -5737,8 +5732,8 @@ div.pepito-profile-stat:active {
   min-height: var(--pepito-nav-chip-h);
   padding: 0 0.75rem;
   border-radius: 999px;
-  border: 1.5px solid rgba(92, 77, 145, 0.14);
-  background: rgba(255, 255, 255, 0.88);
+  border: 1.5px solid color-mix(in srgb, var(--pepito-base) 22%, transparent);
+  background: color-mix(in srgb, var(--pepito-white) 88%, transparent);
   color: var(--pepito-dark);
   cursor: pointer;
   box-shadow: none;
@@ -6468,10 +6463,10 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   margin-inline: var(--pepito-container-pad, 15px);
   padding: 0.9rem 1rem;
   border-radius: 18px;
-  border: 1px solid rgba(31, 36, 48, 0.08);
+  border: 1px solid color-mix(in srgb, var(--pepito-dark) 10%, transparent);
   background:
-    radial-gradient(120% 90% at 100% 0%, rgba(92, 77, 145, 0.08), transparent 55%),
-    #fff;
+    radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--pepito-base) 12%, transparent), transparent 55%),
+    var(--pepito-white);
   box-shadow: 0 6px 18px rgba(25, 6, 61, 0.04);
   transition:
     border-color 0.28s ease,
@@ -6503,18 +6498,18 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   pointer-events: none;
 }
 .pepito-vet-online-card.is-online {
-  border-color: rgba(21, 204, 160, 0.38);
+  border-color: color-mix(in srgb, var(--pepito-mint) 45%, transparent);
   background:
-    radial-gradient(130% 100% at 100% 0%, rgba(21, 204, 160, 0.16), transparent 58%),
-    radial-gradient(90% 80% at 0% 100%, rgba(11, 165, 242, 0.08), transparent 50%),
-    #fff;
+    radial-gradient(130% 100% at 100% 0%, color-mix(in srgb, var(--pepito-mint) 18%, transparent), transparent 58%),
+    radial-gradient(90% 80% at 0% 100%, color-mix(in srgb, var(--pepito-sky) 12%, transparent), transparent 50%),
+    var(--pepito-white);
   box-shadow: 0 10px 28px rgba(21, 204, 160, 0.12);
 }
 .pepito-vet-online-card.is-offline {
-  border-color: rgba(117, 112, 134, 0.18);
+  border-color: color-mix(in srgb, var(--pepito-muted) 28%, transparent);
   background:
-    radial-gradient(120% 90% at 100% 0%, rgba(117, 112, 134, 0.08), transparent 55%),
-    #fff;
+    radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--pepito-muted) 12%, transparent), transparent 55%),
+    var(--pepito-white);
 }
 .pepito-vet-online-card-main {
   display: flex;
@@ -6803,7 +6798,7 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
 .pepito-vet-fee-head p,
 .pepito-vet-online-list-head p {
   margin: 0;
-  color: #435366;
+  color: var(--pepito-muted);
   font-size: 0.9rem;
   line-height: 1.6;
 }
@@ -6901,9 +6896,9 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   padding: 1.2rem 1.1rem 1.35rem;
   border-radius: 20px;
   background:
-    radial-gradient(120% 80% at 100% 0%, rgba(21, 204, 160, 0.12), transparent 55%),
-    #fff;
-  border: 1px solid rgba(31, 36, 48, 0.08);
+    radial-gradient(120% 80% at 100% 0%, color-mix(in srgb, var(--pepito-mint) 14%, transparent), transparent 55%),
+    var(--pepito-white);
+  border: 1px solid color-mix(in srgb, var(--pepito-dark) 10%, transparent);
   box-shadow: 0 8px 22px rgba(25, 6, 61, 0.04);
 }
 .pepito-vet-consult-cost {
@@ -6956,7 +6951,7 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
 .pepito-vet-consult-wait,
 .pepito-vet-consult-connected {
   margin: 0;
-  color: #435366;
+  color: var(--pepito-muted);
   font-size: 0.92rem;
   line-height: 1.7;
 }
@@ -10809,8 +10804,8 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
     font-size: 0.8rem;
     line-height: 1;
     color: var(--pepito-dark);
-    background: rgba(255, 255, 255, 0.88);
-    border: 1.5px solid rgba(92, 77, 145, 0.14);
+    background: color-mix(in srgb, var(--pepito-white) 88%, transparent);
+    border: 1.5px solid color-mix(in srgb, var(--pepito-base) 22%, transparent);
     transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
     white-space: nowrap;
     flex-shrink: 0;
