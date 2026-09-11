@@ -473,7 +473,7 @@ export function WelcomePage() {
           <a href="#services">خدمات</a>
           <Link to="/adoption">پذیرش</Link>
           <a href="#news">اخبار</a>
-          <a href="#faq">سؤالات</a>
+          <a href="#faq" className="pepito-nav-faq">سؤالات</a>
         </nav>
         <NavUserCluster showCart />
         <div className="pepito-nav-actions">
@@ -840,7 +840,7 @@ export function WelcomePage() {
         </div>
       </section>
 
-      <section className="pepito-section" id="faq">
+      <section className="pepito-section pepito-faq-section" id="faq">
         <div className="pepito-faq-layout">
           <div className="pepito-faq-intro">
             <p className="pepito-eyebrow">عمومی و پرتکرار</p>

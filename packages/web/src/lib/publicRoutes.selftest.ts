@@ -89,4 +89,21 @@ assert.doesNotMatch(welcome, /پیدا کردن پرستار|مراقبت شبا
 assert.doesNotMatch(welcome, /id="rely"|pepito-rely|چرا به ما اعتماد کنید/, 'welcome rely/trust section removed');
 assert.doesNotMatch(welcome, /href="#rely"/, 'nav trust anchor removed');
 
+// FAQ stays on desktop + /faq deep links; mobile hides landing FAQ section/nav CTAs
+assert.match(welcome, /id="faq"/, 'welcome FAQ section kept for desktop');
+assert.match(welcome, /pepito-faq-section/, 'welcome FAQ marked for mobile hide');
+assert.match(welcome, /pepito-nav-faq/, 'welcome FAQ nav marked for mobile hide');
+assert.match(app, /path="faq"\s+element=\{<FaqPage/, 'App keeps /faq route for deep links');
+const pepitoCss = readFileSync(join(webSrc, 'styles/pepito.css'), 'utf8');
+assert.match(
+  pepitoCss,
+  /@media \(max-width: 859px\)[\s\S]{0,400}\.pepito-faq-section[\s\S]{0,120}display:\s*none/,
+  'mobile CSS hides FAQ landing section'
+);
+assert.match(
+  pepitoCss,
+  /@media \(max-width: 859px\)[\s\S]{0,600}\.pepito-nav-faq[\s\S]{0,120}display:\s*none/,
+  'mobile CSS hides FAQ nav/CTA chips'
+);
+
 console.log('publicRoutes.selftest: ok');

@@ -2539,6 +2539,19 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   }
 }
 
+/* Mobile: hide FAQ surfacing (landing section + nav/CTA chips).
+   /faq deep links stay reachable; desktop keeps FAQ in nav/footer/section. */
+@media (max-width: 859px) {
+  #faq,
+  .pepito-faq-section {
+    display: none !important;
+  }
+  .pepito-nav-faq,
+  a.pepito-nav-faq {
+    display: none !important;
+  }
+}
+
 @keyframes pepito-rise {
   from { opacity: 0; transform: translateY(18px); }
   to { opacity: 1; transform: translateY(0); }

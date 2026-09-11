@@ -9,7 +9,7 @@ const CONTACT_EMAIL = SITE.email;
 const NEWSLETTER_FROM = SITE.newsletterEmail;
 const TELEGRAM_BOT = SITE.telegramBot;
 
-const BOTTOM_LINKS: { to: string; label: string }[] = [
+const BOTTOM_LINKS: { to: string; label: string; className?: string }[] = [
   { to: '/', label: 'خانه' },
   { to: '/#about', label: 'درباره' },
   { to: '/#services', label: 'خدمات' },
@@ -18,19 +18,19 @@ const BOTTOM_LINKS: { to: string; label: string }[] = [
   { to: '/chats', label: 'هم بازی' },
   { to: '/#news', label: 'اخبار' },
   { to: '/magazine', label: 'مجله' },
-  { to: '/faq', label: 'سؤالات' },
+  { to: '/faq', label: 'سؤالات', className: 'pepito-nav-faq' },
   { to: '/vet-consult', label: 'دامپزشک' },
   { to: '/auth/login', label: 'ورود' },
 ];
 
-const QUICK_LINKS: { to: string; label: string }[] = [
+const QUICK_LINKS: { to: string; label: string; className?: string }[] = [
   { to: '/chats', label: 'هم بازی' },
   { to: '/shop', label: 'پت دیت شاپ' },
   { to: '/shop/c/dog-food', label: 'غذای سگ' },
   { to: '/shop/c/cat-food', label: 'غذای گربه' },
   { to: '/vet-consult', label: 'مشاوره دامپزشک' },
   { to: '/adoption', label: 'پذیرش پت' },
-  { to: '/faq', label: 'سؤالات متداول' },
+  { to: '/faq', label: 'سؤالات متداول', className: 'pepito-nav-faq' },
   { to: '/auth/login', label: 'ورود / ثبت‌نام' },
 ];
 
@@ -144,7 +144,9 @@ export function SiteFooter() {
               <ul className="pepito-footer-quick-list">
                 {QUICK_LINKS.map((item) => (
                   <li key={item.to}>
-                    <FooterLink to={item.to}>{item.label}</FooterLink>
+                    <FooterLink to={item.to} className={item.className}>
+                      {item.label}
+                    </FooterLink>
                   </li>
                 ))}
               </ul>
@@ -191,7 +193,9 @@ export function SiteFooter() {
             <ul>
               {BOTTOM_LINKS.map((item) => (
                 <li key={`${item.to}-${item.label}`}>
-                  <FooterLink to={item.to}>{item.label}</FooterLink>
+                  <FooterLink to={item.to} className={item.className}>
+                    {item.label}
+                  </FooterLink>
                 </li>
               ))}
             </ul>
