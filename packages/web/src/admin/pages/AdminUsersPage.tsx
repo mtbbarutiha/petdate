@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { Pencil, Search } from 'lucide-react';
+import { List, Map, Pencil, Search } from 'lucide-react';
 import {
   IranProvinceHeatmap,
   USERS_HEATMAP_COPY,
@@ -28,6 +28,8 @@ import {
 } from '../AdminListCells';
 import { AdminEntityCell, AdminThumb } from '../AdminThumb';
 import { AdminModal } from '../AdminModal';
+
+type UsersView = 'list' | 'heatmap';
 
 function activeRolesOf(user: User): UserRole[] {
   const fromList = (user.roles || []).filter((r): r is UserRole => USER_ROLES.includes(r));
@@ -107,6 +109,7 @@ export function AdminUsersPage() {
   const [geoTotal, setGeoTotal] = useState(0);
   const [geoKnown, setGeoKnown] = useState(0);
   const [geoError, setGeoError] = useState<string | null>(null);
+  const [view, setView] = useState<UsersView>('list');
 
   const loadGeo = useCallback(async () => {
     try {
@@ -141,7 +144,9 @@ export function AdminUsersPage() {
     } catch (err) { setError(err instanceof Error ? err.message : 'خطا'); }
   }, [q, role, status]);
   useEffect(() => { void load(); }, [load]);
-  useEffect(() => { void loadGeo(); }, [loadGeo]);
+  useEffect(() => {
+    if (view === 'heatmap') void loadGeo();
+  }, [loadGeo, view]);
 
   const openEdit = (user: User) => {
     setEditing(user);
@@ -275,12 +280,40 @@ export function AdminUsersPage() {
           <p>{formatNumFa(total)} کاربر · فیلدهای مهم مدیریتی از جدول users</p>
         </div>
       </header>
+
+      <div className="admin-tabs" role="tablist" aria-label="نمای کاربران">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={view === 'list'}
+          className={`admin-tab${view === 'list' ? ' is-on' : ''}`}
+          onClick={() => setView('list')}
+        >
+          <List size={15} aria-hidden />
+          لیست
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={view === 'heatmap'}
+          className={`admin-tab${view === 'heatmap' ? ' is-on' : ''}`}
+          onClick={() => setView('heatmap')}
+        >
+          <Map size={15} aria-hidden />
+          نقشه پراکندگی
+        </button>
+      </div>
+
       <div className="admin-toolbar">
-        <div className="admin-search"><Search size={16} /><input placeholder="نام، آیدی PD-U، موبایل، تلگرام…" value={q} onChange={(e) => setQ(e.target.value)} /></div>
-        <select className="admin-select" value={role} onChange={(e) => setRole(e.target.value)}>
-          <option value="">همه نقش‌ها</option>
-          {USER_ROLES.map((r) => <option key={r} value={r}>{USER_ROLE_LABELS[r]}</option>)}
-        </select>
+        {view === 'list' ? (
+          <>
+            <div className="admin-search"><Search size={16} /><input placeholder="نام، آیدی PD-U، موبایل، تلگرام…" value={q} onChange={(e) => setQ(e.target.value)} /></div>
+            <select className="admin-select" value={role} onChange={(e) => setRole(e.target.value)}>
+              <option value="">همه نقش‌ها</option>
+              {USER_ROLES.map((r) => <option key={r} value={r}>{USER_ROLE_LABELS[r]}</option>)}
+            </select>
+          </>
+        ) : null}
         <select
           className="admin-select"
           value={status}
@@ -291,10 +324,20 @@ export function AdminUsersPage() {
           <option value="inactive">مسدود / حذف‌شده</option>
           <option value="all">همه</option>
         </select>
-        <button type="button" className="admin-btn" onClick={() => void load()}>اعمال</button>
+        <button
+          type="button"
+          className="admin-btn"
+          onClick={() => {
+            if (view === 'list') void load();
+            else void loadGeo();
+          }}
+        >
+          اعمال
+        </button>
       </div>
       {error ? <p className="admin-error">{error}</p> : null}
 
+      {view === 'heatmap' ? (
       <article className="admin-card users-geo-heat-card">
         <div className="admin-card-head">
           <div>
@@ -316,7 +359,7 @@ export function AdminUsersPage() {
           copy={USERS_HEATMAP_COPY}
         />
       </article>
-
+      ) : (
       <div className="admin-table-wrap admin-card">
         <table className="admin-table admin-table--dense">
           <thead>
@@ -437,6 +480,7 @@ export function AdminUsersPage() {
           </tbody>
         </table>
       </div>
+      )}
 
       <AdminModal
         open={Boolean(editing && editForm)}

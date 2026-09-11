@@ -22,6 +22,7 @@ import {
   storageKeyFor,
 } from './layoutStorage.ts';
 import type { WidgetCatalogItem } from './types.ts';
+import { PLATFORM_WIDGET_CATALOG } from './catalogs.ts';
 
 const days = [
   { label: '2026-09-01', value: 2 },
@@ -146,5 +147,21 @@ assert.deepEqual(
 
 assert.ok(storageKeyFor('platform', 'admin@x').includes('platform'));
 assert.ok(storageKeyFor('platform', 'admin@x').includes('admin'));
+
+assert.ok(PLATFORM_WIDGET_CATALOG.some((c) => c.id === 'dualCalendar'));
+const cal = PLATFORM_WIDGET_CATALOG.find((c) => c.id === 'dualCalendar')!;
+assert.equal(cal.drill, 'none');
+assert.equal(cal.defaultW, 2);
+assert.equal(cal.defaultH, 2);
+
+const withCal = normalizeBoard(
+  {
+    version: 1,
+    removed: [],
+    items: [{ id: 'moduleMix', w: 1, h: 1, order: 0 }],
+  },
+  PLATFORM_WIDGET_CATALOG
+);
+assert.ok(withCal.items.some((i) => i.id === 'dualCalendar'));
 
 console.log('widgetDashboard.selftest: ok');

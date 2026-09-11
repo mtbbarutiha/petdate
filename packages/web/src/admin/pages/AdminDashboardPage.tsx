@@ -28,6 +28,7 @@ import {
   CategoryBarWidget,
   CategoryDonutWidget,
   CategoryFunnelWidget,
+  CalendarWidget,
   PLATFORM_WIDGET_CATALOG,
   TimeBarWidget,
   TimeLineWidget,
@@ -485,6 +486,7 @@ export function AdminDashboardPage() {
   ].filter(Boolean) as string[];
 
   const renderPlatformWidget = (id: string, ctx: WidgetRenderContext) => {
+    if (id === 'dualCalendar') return <CalendarWidget ctx={ctx} />;
     if (!series) return <WidgetEmpty />;
     switch (id) {
       case 'moduleMix':

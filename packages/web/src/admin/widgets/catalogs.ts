@@ -11,6 +11,15 @@ export const PLATFORM_WIDGET_CATALOG: WidgetCatalogItem[] = [
   { id: 'crmReasons', title: 'دلایل تماس / تعامل CRM', group: 'پشتیبانی', drill: 'category', defaultW: 2, defaultH: 1 },
   { id: 'salesDailyRevenue', title: 'درآمد روزانهٔ فروش CRM', group: 'فروش CRM', drill: 'time', defaultW: 2, defaultH: 1 },
   { id: 'salesDailyCalls', title: 'تماس‌های فروش (۱۴ روز)', group: 'فروش CRM', drill: 'time', defaultW: 2, defaultH: 1 },
+  {
+    id: 'dualCalendar',
+    title: 'تقویم شمسی / میلادی',
+    group: 'ابزارها',
+    description: 'تقویم دوگانه با جابه‌جایی شمسی و میلادی',
+    drill: 'none',
+    defaultW: 2,
+    defaultH: 2,
+  },
 ];
 
 export const FINANCE_WIDGET_CATALOG: WidgetCatalogItem[] = [
