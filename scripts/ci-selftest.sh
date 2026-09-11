@@ -84,6 +84,9 @@ npx tsx "$ROOT/packages/web/src/lib/sitemap.selftest.ts"
 echo "==> selftest: web public marketing routes (vet-consult / adoption / magazine)"
 npx tsx "$ROOT/packages/web/src/lib/publicRoutes.selftest.ts"
 
+echo "==> selftest: web SW cache generation (guest vet landing bust)"
+npx tsx "$ROOT/packages/web/src/lib/swCache.selftest.ts"
+
 echo "==> selftest: web authRedirect next=/vet-consult"
 npx tsx "$ROOT/packages/web/src/lib/authRedirect.selftest.ts"
 

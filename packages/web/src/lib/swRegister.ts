@@ -7,11 +7,13 @@
  * and clears obsolete Workbox caches.
  */
 
-const BUST_GENERATION = 'petdate-sw-20260912-profile-about-pets-v2';
+// v14 cacheId stayed active even after later bust *keys*, so #213's guest
+// shell never replaced the controlling worker. New cacheId + generation.
+const BUST_GENERATION = 'petdate-sw-20260912-guest-vet-v16';
 const BUST_KEY = `pd_sw_bust_${BUST_GENERATION}`;
 const RELOAD_KEY = `pd_sw_reload_${BUST_GENERATION}`;
 /** Current Workbox cacheId from vite.config — never wipe this generation. */
-const ACTIVE_CACHE_ID = 'petdate-web-v14-pets-sync';
+const ACTIVE_CACHE_ID = 'petdate-web-v16-guest-vet';
 
 function markBusted() {
   try {
@@ -66,8 +68,9 @@ export async function registerPetdateSW(): Promise<void> {
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     markBusted();
     void clearStaleCaches().finally(() => {
-      // Only the migration generation auto-reloads; later visits stay put.
-      if (bustPending) reloadOnce();
+      // Always reload once per tab for this generation so a new precache
+      // is not left sitting behind the old in-memory bundle.
+      reloadOnce();
     });
   });
 

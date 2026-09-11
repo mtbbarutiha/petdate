@@ -459,7 +459,7 @@ export function WelcomePage() {
         </Link>
         <nav className="pepito-nav-links" aria-label={t('nav.sections')}>
           <a href="#services">{t('nav.services')}</a>
-          <Link to="/adoption">{t('nav.adoption')}</Link>
+          <Link to="/adoption" data-testid="nav-adoption">{t('nav.adoption')}</Link>
           <a href="#news">{t('nav.news')}</a>
           <a href="#faq" className="pepito-nav-faq">{t('nav.faq')}</a>
         </nav>
