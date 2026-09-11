@@ -69,6 +69,9 @@ export type SiteAnalyticsReport = {
 
 const AGENT_UUID = '4b79bfb4-a025-4f0e-8b84-0f45c3acac64';
 
+/** Live Microsoft Clarity project for petdate.ir (short id — not the rejected agent UUID). */
+export const DEFAULT_CLARITY_PROJECT_ID = 'ygkl5nck6k';
+
 let ensured = false;
 
 export function ensureSiteAnalyticsSchema(): void {
@@ -153,12 +156,20 @@ export function isValidClarityProjectId(id: string | null | undefined): boolean 
   return /^[a-zA-Z0-9_-]{4,64}$/.test(t);
 }
 
-function clarityConfig(): SiteAnalyticsReport['clarity'] {
-  const raw =
+function resolveClarityProjectId(): string | null {
+  const fromEnv =
     process.env.CLARITY_PROJECT_ID?.trim() ||
     process.env.VITE_CLARITY_PROJECT_ID?.trim() ||
     '';
-  const ok = isValidClarityProjectId(raw);
+  // Explicit invalid override (e.g. leftover UUID) — do not silently fall back.
+  if (fromEnv && !isValidClarityProjectId(fromEnv)) return null;
+  const id = fromEnv || DEFAULT_CLARITY_PROJECT_ID;
+  return isValidClarityProjectId(id) ? id : null;
+}
+
+function clarityConfig(): SiteAnalyticsReport['clarity'] {
+  const raw = resolveClarityProjectId();
+  const ok = Boolean(raw);
   return {
     configured: ok,
     projectId: ok ? raw : null,
