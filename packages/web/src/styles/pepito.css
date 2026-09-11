@@ -3195,7 +3195,21 @@ button.chip.is-on {
   flex-direction: column;
   gap: 0.25rem;
   flex: 1;
-  overflow: auto;
+  min-width: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(92, 77, 145, 0.28) transparent;
+}
+.pepito-app-rail-nav::-webkit-scrollbar {
+  width: 4px;
+}
+.pepito-app-rail-nav::-webkit-scrollbar-thumb {
+  background: rgba(92, 77, 145, 0.28);
+  border-radius: 999px;
+}
+.pepito-app-rail-nav::-webkit-scrollbar-track {
+  background: transparent;
 }
 .pepito-app-rail-link {
   display: flex;
@@ -5482,25 +5496,262 @@ div.pepito-profile-stat:active {
   font-weight: 600;
   color: var(--pepito-base);
 }
-.pepito-role-switch-trigger--rail {
+/* Sidebar «نقش‌های من» — inline card inside the 220px rail (no absolute overlay) */
+.pepito-role-rail {
   width: 100%;
-  justify-content: flex-start;
+  min-width: 0;
+  margin-top: 0.45rem;
+  padding-top: 0.45rem;
+  border-top: 1px solid rgba(92, 77, 145, 0.1);
+  box-sizing: border-box;
+}
+.pepito-role-rail-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem;
+  padding: 0.6rem 0.7rem;
   border: 0;
-  background: transparent;
-  cursor: pointer;
+  border-radius: 14px;
+  background: rgba(92, 77, 145, 0.07);
+  color: var(--pepito-dark);
   font: inherit;
   text-align: start;
+  cursor: pointer;
+  box-sizing: border-box;
 }
-.pepito-role-switch-trigger--rail .pepito-role-switch-trigger-label {
-  font-size: 0.9rem;
+.pepito-role-rail.is-open .pepito-role-rail-trigger,
+.pepito-role-rail-trigger:hover {
+  background: var(--pepito-lilac);
+  color: var(--pepito-base);
 }
-.pepito-role-switch-trigger--rail .pepito-role-switch-trigger-hint {
-  font-size: 0.72rem;
+.pepito-role-rail-trigger-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.08rem;
+  min-width: 0;
+  flex: 1;
 }
-.pepito-role-switch--rail .pepito-role-switch-panel {
-  inset-inline-start: 0;
-  inset-inline-end: auto;
-  min-width: min(320px, calc(100vw - 2rem));
+.pepito-role-rail-trigger-label {
+  font-weight: 800;
+  font-size: 0.86rem;
+  line-height: 1.25;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pepito-role-rail-trigger-hint {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--pepito-muted);
+}
+.pepito-role-rail.is-open .pepito-role-rail-trigger-hint,
+.pepito-role-rail-trigger:hover .pepito-role-rail-trigger-hint {
+  color: var(--pepito-base);
+}
+.pepito-role-rail-chevron {
+  flex-shrink: 0;
+  color: var(--pepito-muted);
+  transition: transform 0.2s ease;
+}
+.pepito-role-rail.is-open .pepito-role-rail-chevron {
+  transform: rotate(180deg);
+  color: var(--pepito-base);
+}
+.pepito-role-rail-card {
+  width: 100%;
+  margin-top: 0.4rem;
+  padding: 0.7rem 0.65rem 0.75rem;
+  border-radius: 16px;
+  background: var(--pepito-white);
+  border: 1px solid rgba(92, 77, 145, 0.12);
+  box-shadow: 0 10px 24px rgba(25, 6, 61, 0.08);
+  box-sizing: border-box;
+  overflow: hidden;
+  animation: pepito-flow-rise 0.22s ease both;
+}
+.pepito-role-rail-head {
+  margin-bottom: 0.55rem;
+}
+.pepito-role-rail-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.92rem;
+  color: var(--pepito-dark);
+  line-height: 1.3;
+}
+.pepito-role-rail-active {
+  margin: 0.28rem 0 0;
+  font-size: 0.74rem;
+  color: var(--pepito-muted);
+  line-height: 1.4;
+}
+.pepito-role-rail-active strong {
+  color: var(--pepito-base);
+  font-weight: 800;
+}
+.pepito-role-rail-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.pepito-role-rail-empty {
+  padding: 0.55rem 0.35rem;
+  font-size: 0.78rem;
+  color: var(--pepito-muted);
+  line-height: 1.4;
+}
+.pepito-role-rail-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+  padding: 0.62rem 0.65rem;
+  border: 1px solid rgba(92, 77, 145, 0.1);
+  border-radius: 12px;
+  background: #faf9fc;
+  color: var(--pepito-dark);
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.82rem;
+  cursor: pointer;
+  text-align: start;
+  box-sizing: border-box;
+}
+.pepito-role-rail-item:hover:not(:disabled) {
+  border-color: rgba(92, 77, 145, 0.22);
+  background: var(--pepito-lilac);
+}
+.pepito-role-rail-item:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+.pepito-role-rail-item.is-active {
+  background: linear-gradient(135deg, #5c4d91, #4a3d78);
+  border-color: transparent;
+  color: #fff;
+}
+.pepito-role-rail-item-label {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.3;
+}
+.pepito-role-rail-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 0.12rem 0.4rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+}
+.pepito-role-rail-pick {
+  flex-shrink: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--pepito-base);
+}
+.pepito-role-rail-add {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  margin-top: 0.55rem;
+  padding: 0.5rem 0.4rem;
+  border: 1px dashed rgba(92, 77, 145, 0.28);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--pepito-base);
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.78rem;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+.pepito-role-rail-add:hover:not(:disabled) {
+  background: rgba(92, 77, 145, 0.06);
+  border-style: solid;
+}
+.pepito-role-rail-add-lead {
+  margin: 0 0 0.5rem;
+  font-size: 0.74rem;
+  color: var(--pepito-muted);
+  line-height: 1.45;
+}
+.pepito-role-rail-add-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.pepito-role-rail-add-item {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.12rem;
+  padding: 0.55rem 0.6rem;
+  border-radius: 12px;
+  border: 1px solid rgba(92, 77, 145, 0.12);
+  background: #faf9fc;
+  text-align: start;
+  cursor: pointer;
+  font: inherit;
+  color: var(--pepito-dark);
+  box-sizing: border-box;
+}
+.pepito-role-rail-add-item.is-on {
+  background: linear-gradient(135deg, #5c4d91, #4a3d78);
+  border-color: transparent;
+  color: #fff;
+}
+.pepito-role-rail-add-label {
+  font-weight: 800;
+  font-size: 0.8rem;
+  line-height: 1.3;
+}
+.pepito-role-rail-add-desc {
+  font-size: 0.68rem;
+  opacity: 0.85;
+  line-height: 1.35;
+}
+.pepito-role-rail-footer {
+  margin-top: 0.55rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.pepito-role-rail-back {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--pepito-base);
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0.35rem 0.15rem;
+  text-align: start;
+}
+.pepito-role-rail-confirm {
+  width: 100%;
+  justify-content: center;
+  min-height: 2.35rem;
+  font-size: 0.82rem !important;
 }
 
 .pepito-role-switch-panel {
@@ -5509,13 +5760,28 @@ div.pepito-profile-stat:active {
   inset-inline-end: 0;
   width: min(340px, calc(100vw - 1.5rem));
   max-height: min(70vh, 520px);
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(92, 77, 145, 0.28) transparent;
   padding: 0.85rem 0.85rem 0.95rem;
   border-radius: 18px;
   background: var(--pepito-white);
   border: 1px solid rgba(92, 77, 145, 0.12);
   box-shadow: 0 18px 44px rgba(25, 6, 61, 0.16);
   animation: pepito-flow-rise 0.28s ease both;
+  box-sizing: border-box;
+}
+.pepito-role-switch-panel::-webkit-scrollbar {
+  width: 4px;
+}
+.pepito-role-switch-panel::-webkit-scrollbar-thumb {
+  background: rgba(92, 77, 145, 0.28);
+  border-radius: 999px;
+}
+.pepito-role-switch-panel::-webkit-scrollbar-track {
+  background: transparent;
 }
 .pepito-role-switch-panel.is-add {
   width: min(420px, calc(100vw - 1.25rem));
@@ -5565,6 +5831,7 @@ div.pepito-profile-stat:active {
   font-size: 0.9rem;
   cursor: pointer;
   text-align: start;
+  box-sizing: border-box;
 }
 .pepito-role-switch-item:hover {
   border-color: rgba(92, 77, 145, 0.22);
@@ -5575,7 +5842,18 @@ div.pepito-profile-stat:active {
   border-color: transparent;
   color: #fff;
 }
+.pepito-role-switch-item-label {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 .pepito-role-switch-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  flex-shrink: 0;
   font-size: 0.72rem;
   font-weight: 700;
   padding: 0.15rem 0.45rem;
@@ -5623,7 +5901,10 @@ div.pepito-profile-stat:active {
   grid-template-columns: 1fr;
   gap: 0.4rem;
   max-height: 42vh;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
 }
 .pepito-role-switch-add-card {
   display: flex;
@@ -10321,6 +10602,17 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
     box-shadow: 0 18px 40px rgba(0, 0, 0, 0.4);
     pointer-events: auto;
     animation: pepito-dock-sheet-up 0.22s ease both;
+    box-sizing: border-box;
+    overflow-x: hidden;
+    max-height: min(70dvh, 480px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+  }
+
+  .pepito-dock-role-sheet::-webkit-scrollbar {
+    width: 0;
+    height: 0;
   }
 
   @keyframes pepito-dock-sheet-up {
@@ -10385,7 +10677,11 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   }
 
   .pepito-dock-role-sheet-item.is-active {
-    background: rgba(255, 255, 255, 0.16);
+    background: linear-gradient(135deg, #5c4d91, #4a3d78);
+  }
+
+  .pepito-dock-role-sheet-item.is-active .pepito-dock-role-sheet-badge {
+    color: #fff;
   }
 
   .pepito-dock-role-sheet-badge {
