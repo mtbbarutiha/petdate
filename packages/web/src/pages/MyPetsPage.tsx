@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, PawPrint, Pencil, Plus, Stethoscope } from 'lucide-react';
-import { BRAND, toPersianDigits } from '@petdate/shared';
+import { BRAND, petPublicIdOf, toPersianDigits } from '@petdate/shared';
 import { PetAvatar } from '../components/PetAvatar';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { useMyPets } from '../hooks/useMyPets';
@@ -115,6 +115,9 @@ export function MyPetsPage() {
                       <small>
                         {[pet.breed, pet.city || pet.ownerCity].filter(Boolean).join(' · ') || '—'}
                       </small>
+                      <span className="pepito-my-pets-card-id" dir="ltr">
+                        شناسه پت: {petPublicIdOf(pet)}
+                      </span>
                     </div>
                   </div>
                 </Link>

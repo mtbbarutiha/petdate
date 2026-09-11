@@ -1,5 +1,12 @@
 import type { PetProfile, PlaydateRequest } from '@petdate/shared';
-import { PET_GENDER_LABELS, PET_SIZE_LABELS, PLAYDATE_STATUS_LABELS, formatPetAge } from '@petdate/shared';
+import {
+  PET_GENDER_LABELS,
+  PET_SIZE_LABELS,
+  PLAYDATE_STATUS_LABELS,
+  formatPetAge,
+  petPublicIdOf,
+  userPublicIdOf,
+} from '@petdate/shared';
 
 const SPECIES_LABELS: Record<string, string> = {
   dog: '🐕 سگ',
@@ -14,6 +21,7 @@ export function speciesLabel(species: string): string {
 export function formatPet(pet: PetProfile, detailed = false): string {
   const lines = [
     `🐾 <b>${escapeHtml(pet.name)}</b>`,
+    `شناسه پت: <code>${escapeHtml(petPublicIdOf(pet))}</code>`,
     `${speciesLabel(pet.species)}${pet.breed ? ` · ${escapeHtml(pet.breed)}` : ''}`,
   ];
   const ownerLoc = [pet.ownerProvince, pet.ownerCity || pet.city].filter(Boolean).join('، ');
@@ -22,6 +30,11 @@ export function formatPet(pet: PetProfile, detailed = false): string {
   } else if (pet.city) {
     lines.push(
       `📍 ${escapeHtml(pet.city)}${pet.neighborhood ? ` — ${escapeHtml(pet.neighborhood)}` : ''}`
+    );
+  }
+  if (pet.ownerId) {
+    lines.push(
+      `شناسه صاحب پت: <code>${escapeHtml(userPublicIdOf({ id: pet.ownerId }))}</code>`
     );
   }
   if (pet.ownerName) {
@@ -56,11 +69,23 @@ export function formatPlaydate(req: PlaydateRequest): string {
   const fromName = req.fromPet?.name ?? `#${req.fromPetId}`;
   const toName = req.toPet?.name ?? `#${req.toPetId}`;
   const status = PLAYDATE_STATUS_LABELS[req.status];
+  const fromPetId = req.fromPet
+    ? petPublicIdOf(req.fromPet)
+    : req.fromPetId
+      ? petPublicIdOf({ id: req.fromPetId })
+      : null;
+  const fromOwnerId = req.fromUserId
+    ? userPublicIdOf({ id: req.fromUserId })
+    : req.fromPet?.ownerId
+      ? userPublicIdOf({ id: req.fromPet.ownerId })
+      : null;
   const lines = [
     `📬 درخواست #${req.id}`,
     `${fromName} → ${toName}`,
+    fromPetId ? `شناسه پت درخواست‌دهنده: ${fromPetId}` : null,
+    fromOwnerId ? `شناسه صاحب پت: ${fromOwnerId}` : null,
     `وضعیت: ${status}`,
-  ];
+  ].filter(Boolean) as string[];
   if (req.message) lines.push(`💬 ${req.message}`);
   if (req.scheduledAt) lines.push(`📅 ${req.scheduledAt}`);
   if (req.location) lines.push(`📍 ${req.location}`);

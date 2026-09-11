@@ -218,7 +218,7 @@ export function formatPeerOwnerProfileHtml(
     verified ? VERIFIED_BADGE : null,
     '',
     `<b>نام:</b> ${escapeHtml(peer.name)}${verified ? ' ✅' : ''}`,
-    `<b>آیدی:</b> <code>${escapeHtml(publicId)}</code>`,
+    `<b>شناسه کاربر/صاحب پت:</b> <code>${escapeHtml(publicId)}</code>`,
     peer.age != null ? `<b>سن:</b> ${peer.age}` : null,
     `<b>جنسیت:</b> ${profileGenderEmoji(peer.gender)} ${gender}`,
     `<b>نقش:</b> ${escapeHtml(roles)}`,

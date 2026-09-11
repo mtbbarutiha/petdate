@@ -27,6 +27,7 @@ export function petProfileToUiPet(pet?: PetProfile | null): Pet {
   const age = ageUnit === 'year' ? Math.max(1, Math.round(ageMonths / 12)) : ageMonths;
   return {
     id: pet?.id ?? 0,
+    publicId: pet?.publicId,
     name: pet?.name ?? 'پت',
     type,
     breed: pet?.breed ?? '—',

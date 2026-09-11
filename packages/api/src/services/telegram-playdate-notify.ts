@@ -5,6 +5,8 @@ import {
   PET_SIZE_LABELS,
   PET_SPECIES_LABELS,
   formatPetAge,
+  petPublicIdOf,
+  userPublicIdOf,
   type PetProfile,
 } from '@petdate/shared';
 import { infra } from '../config/infra';
@@ -40,6 +42,7 @@ function formatPetHtml(pet: PetProfile): string {
   const species = PET_SPECIES_LABELS[pet.species] ?? pet.species;
   const lines = [
     `🐾 <b>${escapeHtml(pet.name)}</b>`,
+    `شناسه پت: <code>${escapeHtml(petPublicIdOf(pet))}</code>`,
     `${species}${pet.breed ? ` · ${escapeHtml(pet.breed)}` : ''}`,
   ];
   const ownerLoc = [pet.ownerProvince, pet.ownerCity || pet.city].filter(Boolean).join('، ');
@@ -47,6 +50,11 @@ function formatPetHtml(pet: PetProfile): string {
   else if (pet.city) {
     lines.push(
       `📍 ${escapeHtml(pet.city)}${pet.neighborhood ? ` — ${escapeHtml(pet.neighborhood)}` : ''}`
+    );
+  }
+  if (pet.ownerId) {
+    lines.push(
+      `شناسه صاحب پت: <code>${escapeHtml(userPublicIdOf({ id: pet.ownerId }))}</code>`
     );
   }
   if (pet.ownerName) lines.push(`👤 صاحب: ${escapeHtml(pet.ownerName)}`);

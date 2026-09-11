@@ -17,6 +17,7 @@ import {
   normalizeRoles,
   parseUserAge,
   parseUserIdFromCommand,
+  petPublicIdOf,
   toEnglishDigits,
   toPersianDigits,
   userCommandIdOf,
@@ -107,7 +108,7 @@ export async function showPublicUserById(ctx: Context, userId: number): Promise<
   }
   const text = formatPublicUserCard(
     user,
-    pets.map((p) => p.name)
+    pets.map((p) => `${p.name} · ${petPublicIdOf(p)}`)
   );
   const photo = resolveTelegramPhotoUrl(user.avatarUrl);
   if (photo) {
@@ -293,7 +294,7 @@ export async function handleProfile(ctx: Context): Promise<void> {
   }
 
   const pets = await listPets({ ownerId: cardUser.id });
-  const petNames = pets.map((p) => p.name);
+  const petNames = pets.map((p) => `${p.name} · ${petPublicIdOf(p)}`);
   const card = formatProfileCard(cardUser, pets.length, petNames);
 
   if (!isProfileComplete(cardUser)) {

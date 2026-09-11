@@ -56,6 +56,7 @@ assert(peerDtoHasSensitiveLeak(raw), 'raw still sensitive');
 
 const html = formatPeerOwnerProfileHtml(raw, { heading: '👤 <b>پروفایل صاحب پت</b>' });
 assert(html.includes('سارا'), 'html has name');
+assert(html.includes('شناسه کاربر/صاحب پت'), 'html labels owner id');
 assert(html.includes('PD-U00042'), 'html has public id');
 assert(!html.includes('/u00042'), 'html does not show command id as آیدی');
 assert(html.includes('تهران'), 'html has city');
