@@ -273,6 +273,10 @@ consultationsRouter.post('/quick-connect', async (req, res) => {
   const patientUserId = session?.user?.id ?? bodyPatientId;
   /** When true, skip the «resend after expiry» confirm gate (client already confirmed). */
   const confirmResend = Boolean(req.body?.confirmResend);
+  /** Always start free AI consult (لیلا کیانی) — skip human provider matching. */
+  const preferAi = Boolean(req.body?.preferAi || req.body?.aiOnly);
+  /** Human coach/doctor only — do not fall back to AI when nobody is online. */
+  const humanOnly = Boolean(req.body?.humanOnly || req.body?.preferHuman);
   const kindRaw = String(req.body?.kind ?? 'vet').trim();
   const serviceKind: ConsultServiceKind = CONSULT_SERVICE_KINDS.includes(
     kindRaw as ConsultServiceKind
@@ -297,11 +301,12 @@ consultationsRouter.post('/quick-connect', async (req, res) => {
     return;
   }
 
-  const patient = dbService.getUserById(patientUserId);
-  if (!patient) {
+  const patientRow = dbService.getUserById(patientUserId);
+  if (!patientRow) {
     res.status(404).json({ error: 'بیمار پیدا نشد', reason: 'missing_patient' });
     return;
   }
+  const patient = patientRow;
 
   const pets = dbService.listPets({ ownerId: patient.id });
   const purchaseAdvice = Boolean(
@@ -350,6 +355,48 @@ consultationsRouter.post('/quick-connect', async (req, res) => {
   const balance = patient.coins ?? 0;
   const split = consultFeeSplit(serviceKind);
 
+  async function respondWithAiConsult(reason: 'prefer_ai' | 'fallback') {
+    const ai = await startAiFallbackConsult({
+      patient,
+      serviceKind,
+    });
+    if (!ai) return false;
+    const updatedPatient = dbService.getUserById(patient.id);
+    res.status(201).json({
+      ok: true,
+      aiFallback: true,
+      preferAi: reason === 'prefer_ai',
+      sent: 1,
+      notifiedTelegram: 0,
+      cost: 0,
+      serviceKind,
+      coins: updatedPatient?.coins ?? 0,
+      consultations: [decorateAiConsultDisplay(ai.consult)],
+      advice: ai.advice,
+      adviceSource: ai.source,
+      message:
+        serviceKind === 'trainer'
+          ? `گفتگو با ${AI_TRAINER_DISPLAY_NAME} (مربی آنلاین) شروع شد (بدون کسر سکه).`
+          : reason === 'prefer_ai'
+            ? `چت با ${AI_TRAINER_DISPLAY_NAME} شروع شد (بدون کسر سکه).`
+            : `دامپزشک انسانی آنلاین نبود — چت با ${AI_TRAINER_DISPLAY_NAME} شروع شد (بدون کسر سکه).`,
+    });
+    return true;
+  }
+
+  if (preferAi && !humanOnly && (serviceKind === 'vet' || serviceKind === 'trainer')) {
+    try {
+      if (await respondWithAiConsult('prefer_ai')) return;
+    } catch (err) {
+      console.warn('prefer-ai consult failed:', (err as Error).message);
+    }
+    res.status(500).json({
+      error: 'شروع گفتگوی هوشمند ناموفق بود',
+      reason: 'ai_failed',
+    });
+    return;
+  }
+
   let providers =
     serviceKind === 'vet'
       ? dbService.listOnlineVetsForQuickConnect()
@@ -359,33 +406,13 @@ consultationsRouter.post('/quick-connect', async (req, res) => {
   providers = providers.filter((v) => v.id !== patient.id);
 
   if (!providers.length) {
-    // Vet / trainer: fall back to AI assistant instead of hard error.
-    if (serviceKind === 'vet' || serviceKind === 'trainer') {
+    // Vet / trainer: fall back to AI assistant instead of hard error (unless human-only).
+    if (
+      !humanOnly &&
+      (serviceKind === 'vet' || serviceKind === 'trainer')
+    ) {
       try {
-        const ai = await startAiFallbackConsult({
-          patient,
-          serviceKind,
-        });
-        if (ai) {
-          const updatedPatient = dbService.getUserById(patient.id);
-          res.status(201).json({
-            ok: true,
-            aiFallback: true,
-            sent: 1,
-            notifiedTelegram: 0,
-            cost: 0,
-            serviceKind,
-            coins: updatedPatient?.coins ?? 0,
-            consultations: [decorateAiConsultDisplay(ai.consult)],
-            advice: ai.advice,
-            adviceSource: ai.source,
-            message:
-              serviceKind === 'trainer'
-                ? `گفتگو با ${AI_TRAINER_DISPLAY_NAME} (مربی آنلاین) شروع شد (بدون کسر سکه).`
-                : `دامپزشک انسانی آنلاین نبود — چت با ${AI_TRAINER_DISPLAY_NAME} شروع شد (بدون کسر سکه).`,
-          });
-          return;
-        }
+        if (await respondWithAiConsult('fallback')) return;
       } catch (err) {
         console.warn('ai fallback consult failed:', (err as Error).message);
       }

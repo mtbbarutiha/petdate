@@ -1514,6 +1514,49 @@ html[data-theme='dark'] .pepito-vet-inbox-panel--incoming {
 html[data-theme='dark'] .pepito-vet-inbox-head h2 {
   color: var(--pepito-dark);
 }
+html[data-theme='dark'] .pepito-vet-consult-head p,
+html[data-theme='dark'] .pepito-vet-row-info strong {
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-vet-row-info small,
+html[data-theme='dark'] .pepito-eyebrow {
+  color: var(--pepito-muted);
+}
+html[data-theme='dark'] .pepito-vet-consult-incoming-list li {
+  border-color: var(--pd-border);
+  background: var(--pd-surface-2);
+}
+html[data-theme='dark'] .pepito-vet-consult-incoming-list .pepito-vet-status {
+  background: rgba(59, 184, 245, 0.18);
+  color: #9ad8f7;
+  border-color: rgba(59, 184, 245, 0.28);
+}
+html[data-theme='dark'] .pepito-vet-consult-incoming-list .pepito-vet-status.is-active {
+  background: rgba(45, 212, 176, 0.22);
+  color: #b6f5e4;
+  border-color: rgba(45, 212, 176, 0.4);
+}
+html[data-theme='dark'] .pepito-vet-consult-incoming-list .pepito-vet-status.is-done {
+  background: rgba(148, 163, 184, 0.18);
+  color: #e2e0ec;
+  border-color: rgba(226, 224, 236, 0.22);
+}
+html[data-theme='dark'] .pepito-btn.pepito-human-consult-cta,
+html[data-theme='dark'] a.pepito-btn.pepito-human-consult-cta {
+  background: var(--pd-surface-2) !important;
+  color: var(--pepito-dark) !important;
+  border-color: var(--pd-border) !important;
+}
+html[data-theme='dark'] .pepito-btn.pepito-human-consult-cta:hover:not(:disabled),
+html[data-theme='dark'] a.pepito-btn.pepito-human-consult-cta:hover {
+  background: color-mix(in srgb, var(--pepito-base) 18%, var(--pd-surface-2)) !important;
+  border-color: color-mix(in srgb, var(--pepito-base) 40%, var(--pd-border)) !important;
+}
+html[data-theme='dark'] .pepito-ai-consult-cta-badge {
+  background: #0b1220;
+  color: #e8e6f2;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
 html[data-theme='dark'] .pepito-vet-online-card,
 html[data-theme='dark'] .pepito-vet-online-card.is-online,
 html[data-theme='dark'] .pepito-vet-online-card.is-offline {

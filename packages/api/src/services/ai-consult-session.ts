@@ -34,6 +34,7 @@ import { fetchTelegramFileBytes } from './telegram-media';
 import { notifyVetChatTelegram } from './telegram-chat-notify';
 import { isSyntheticTelegramId, normalizeTelegramId } from './telegram-id';
 import { notifyInbox, notifyVetMessage, notifyVetThread } from '../ws/chatHub';
+import { sweepIdleConsultClosures } from './consult-idle-close';
 
 function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
@@ -97,6 +98,13 @@ export async function startAiFallbackConsult(opts: {
 } | null> {
   const aiKind = toAiKind(opts.serviceKind);
   if (!aiKind) return null;
+
+  // Ensure stale AI threads are closed before reuse / create (badge must not stay «فعال»).
+  try {
+    sweepIdleConsultClosures();
+  } catch (err) {
+    console.warn('ai consult idle sweep failed:', (err as Error).message);
+  }
 
   const slug = String(opts.agentSlug || '').trim() || DEFAULT_TEAM_AGENT_SLUG;
   const ai = ensureTeamAgentBySlug(slug) ?? ensureAiAssistantUser();

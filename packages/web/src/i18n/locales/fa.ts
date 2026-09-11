@@ -713,4 +713,23 @@ export const fa: Dict = {
     lastName: "نام خانوادگی",
     mobile: "شماره موبایل",
   },
+  consultDesk: {
+    aiBadge: 'Ai',
+    aiLeilaFree: 'مشورت با لیلا کیانی (رایگان)',
+    aiLeilaShort: 'مشورت با لیلا کیانی',
+    realTrainer: 'مشورت با مربی حقیقی',
+    realDoctor: 'مشورت با پزشک حقیقی',
+    sending: 'در حال ارسال…',
+    confirmPay: 'تأیید و ارسال ({cost} سکه)',
+    trainerLead:
+      'هزینه اتصال انسانی {cost} سکه · لیلا کیانی (مربی آنلاین) رایگان پاسخ می‌دهد',
+    doctorLeadAi:
+      'دامپزشک انسانی آنلاین نیست — لیلا کیانی رایگان پاسخ می‌دهد.',
+    doctorLeadReady: 'پزشک‌های آنلاین و مبلغ ویزیت‌شان را ببین، بعد درخواست بفرست.',
+    statusActive: 'گفتگوی فعال',
+    statusClosed: 'بسته شده',
+    statusWaiting: 'در انتظار پاسخ',
+    statusCancelled: 'لغو شده',
+    statusExpired: 'منقضی شده',
+  },
 };
