@@ -284,6 +284,20 @@ export function getMagazineArticleBySlug(
   return article;
 }
 
+/** Insert or update by slug — used by editorial seed (never wipes other rows). */
+export function upsertMagazineArticleBySlug(
+  input: MagazineArticleInput & { slug: string }
+): MagazineArticle {
+  ensureMagazineSchema();
+  const slug = String(input.slug || '').trim();
+  if (!slug) throw new Error('اسلاگ الزامی است');
+  const existing = getMagazineArticleBySlug(slug, { includeDeleted: true });
+  if (existing && !existing.deletedAt) {
+    return updateMagazineArticle(existing.id, { ...input, slug })!;
+  }
+  return createMagazineArticle({ ...input, slug });
+}
+
 export function createMagazineArticle(input: MagazineArticleInput): MagazineArticle {
   ensureMagazineSchema();
   const title = String(input.title || '').trim();

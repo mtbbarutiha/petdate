@@ -149,6 +149,9 @@ export function getDb(): AppDatabase {
         const { bootMagazineCms } =
           require('./magazine-service') as typeof import('./magazine-service');
         bootMagazineCms();
+        const { seedMagazineEditorial } =
+          require('./magazine-editorial-seed') as typeof import('./magazine-editorial-seed');
+        seedMagazineEditorial();
       } catch (err) {
         console.warn('Magazine boot skipped/failed:', (err as Error).message);
       }

@@ -2111,6 +2111,14 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 .pepito-magazine-body a {
   color: var(--pepito-base);
 }
+.pepito-magazine-body ul,
+.pepito-magazine-body ol {
+  margin: 0.6em 0 1em 1.2em;
+  padding-inline-start: 1.2em;
+}
+.pepito-magazine-body li {
+  margin: 0.35em 0;
+}
 .pepito-magazine-tags {
   display: flex;
   flex-wrap: wrap;

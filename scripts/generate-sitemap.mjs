@@ -78,6 +78,20 @@ for (const slug of adoptionSlugs()) {
   urls.push({ path: `/adoption/${slug}`, changefreq: 'weekly', priority: '0.7' });
 }
 
+/** Editorial magazine slugs from API seed (Persian paths). */
+function magazineEditorialSlugs() {
+  const src = read('packages/api/src/magazine-editorial-seed.ts');
+  return [...src.matchAll(/^\s+slug:\s*'([^']+)'/gm)].map((m) => m[1]);
+}
+
+for (const slug of magazineEditorialSlugs()) {
+  urls.push({
+    path: `/magazine/${encodeURI(slug)}`,
+    changefreq: 'weekly',
+    priority: '0.7',
+  });
+}
+
 const seen = new Set();
 const unique = [];
 for (const u of urls) {
