@@ -1531,3 +1531,141 @@ html[data-theme='dark'] .pepito-support-composer input::placeholder {
   color: var(--pepito-muted);
   opacity: 1;
 }
+
+/* —— Add / edit pet form (ثبت پت جدید) —— hard-coded light chrome —— */
+html[data-theme='dark'] .form-page {
+  color: var(--pepito-muted);
+}
+html[data-theme='dark'] .form-page h1 {
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .form-page .subtitle,
+html[data-theme='dark'] .form-label {
+  color: var(--pepito-muted);
+}
+
+/* Back circle: was near-white glass on dark canvas */
+html[data-theme='dark'] .form-page .icon-btn,
+html[data-theme='dark'] .icon-btn {
+  background: var(--pd-surface-2, #2c3040);
+  border-color: var(--pd-border);
+  color: var(--pepito-dark);
+  box-shadow: var(--pd-shadow);
+}
+
+/* Photo placeholder square was light grey gradient */
+html[data-theme='dark'] .pet-photo-preview-wrap {
+  background: linear-gradient(160deg, #2a2f3d 0%, #1e2230 100%);
+  border-color: var(--pd-border);
+  box-shadow: var(--pd-shadow);
+}
+html[data-theme='dark'] .pet-photo-placeholder {
+  color: var(--pepito-muted);
+}
+html[data-theme='dark'] .pet-photo-btn {
+  background: var(--pepito-white);
+  border-color: var(--pd-border);
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pet-photo-btn:hover:not(:disabled) {
+  background: #2a2f3d;
+  border-color: var(--pd-border-strong);
+}
+html[data-theme='dark'] .pet-photo-btn--secondary {
+  /* Match gallery — no light wash (was invisible light-on-light) */
+  background: var(--pepito-white);
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pet-photo-btn--ghost {
+  color: #f0a0a0;
+  background: transparent;
+}
+html[data-theme='dark'] .pet-photo-hint {
+  color: var(--pepito-muted);
+}
+html[data-theme='dark'] .pet-photo-error {
+  color: #f07178;
+}
+
+/* Shared inputs on add-pet / onboarding / pet-edit */
+html[data-theme='dark'] .form-input,
+html[data-theme='dark'] .form-select,
+html[data-theme='dark'] .form-textarea {
+  background: var(--pepito-white);
+  border-color: var(--pd-border);
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .form-input::placeholder,
+html[data-theme='dark'] .form-textarea::placeholder {
+  color: var(--pepito-muted);
+  opacity: 1;
+}
+html[data-theme='dark'] .form-select option {
+  background: #242836;
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .form-check-group {
+  background: #1e2130;
+  border-color: var(--pd-border);
+}
+html[data-theme='dark'] .form-check {
+  color: var(--pepito-dark);
+}
+
+/* Age stepper value was navy (#19063d) on dark surface */
+html[data-theme='dark'] .age-picker__input {
+  background: var(--pepito-white);
+  border-color: var(--pd-border-strong);
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .age-picker__bump {
+  background: var(--pepito-white);
+  border-color: var(--pd-border-strong);
+  color: var(--pepito-base);
+}
+html[data-theme='dark'] .age-picker__hint {
+  color: var(--pepito-muted);
+}
+
+/* Unselected age / trait chips: dark ink on dark surface → unreadable */
+html[data-theme='dark'] .chip {
+  background: var(--pepito-white);
+  border-color: var(--pd-border-strong);
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .chip:hover {
+  border-color: var(--pepito-base);
+}
+html[data-theme='dark'] .chip.is-on,
+html[data-theme='dark'] button.chip.is-on {
+  background: linear-gradient(135deg, #6b5cad, #5c4d91) !important;
+  border-color: transparent !important;
+  color: #f4f3f8 !important;
+  box-shadow: 0 8px 18px rgba(92, 77, 145, 0.35);
+}
+
+/* سال | ماه toggle */
+html[data-theme='dark'] .pepito-choice {
+  background: var(--pepito-white);
+  border-color: var(--pd-border-strong);
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-choice:hover {
+  border-color: var(--pepito-base);
+}
+html[data-theme='dark'] .pepito-choice.is-on {
+  background: var(--pepito-base);
+  border-color: var(--pepito-base);
+  color: #f4f3f8;
+}
+
+html[data-theme='dark'] .trait-chip {
+  background: var(--pepito-white);
+  border-color: var(--pd-border);
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .trait-chip.active {
+  background: color-mix(in srgb, var(--pepito-base) 22%, #2a2e42);
+  border-color: var(--pepito-base);
+  color: var(--pepito-dark);
+}
