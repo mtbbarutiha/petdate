@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import {
   Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
@@ -98,6 +98,13 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'clarity', label: 'Clarity' },
 ];
 
+const TAB_IDS = new Set<string>(TABS.map((t) => t.id));
+
+function parseAnalyticsTab(raw: string | null | undefined): Tab {
+  const v = String(raw || '').trim();
+  return TAB_IDS.has(v) ? (v as Tab) : 'overview';
+}
+
 function buildPreviewUrl(input: {
   path: string; utmSource: string; utmMedium: string; utmCampaign: string;
   utmContent: string; utmTerm: string;
@@ -152,7 +159,16 @@ function StatusCard({
 export function AdminSiteReportsPage() {
   const motion = useRechartsMotion();
   const canWrite = adminCan('platform.write') || adminCan('admin.full');
-  const [tab, setTab] = useState<Tab>('overview');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = parseAnalyticsTab(searchParams.get('tab'));
+  const setTab = useCallback((id: Tab) => {
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (id === 'overview') next.delete('tab');
+      else next.set('tab', id);
+      return next;
+    }, { replace: true });
+  }, [setSearchParams]);
   const [period, setPeriod] = useState(14);
   const [data, setData] = useState<Report | null>(null);
   const [tm, setTm] = useState<TagManagerReport | null>(null);

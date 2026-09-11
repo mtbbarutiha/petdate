@@ -33,6 +33,9 @@ npx tsx "$ROOT/packages/web/src/admin/JalaliDateSelect.selftest.ts"
 echo "==> selftest: web admin monitoring tone mapping"
 npx tsx "$ROOT/packages/web/src/admin/AdminMonitoringPage.selftest.ts"
 
+echo "==> selftest: admin /admin/tag-manager route + sidebar"
+npx tsx "$ROOT/packages/web/src/admin/adminTagManagerRoute.selftest.ts"
+
 echo "==> selftest: web admin widget dashboard (layout + drill)"
 npx tsx "$ROOT/packages/web/src/admin/widgets/widgetDashboard.selftest.ts"
 

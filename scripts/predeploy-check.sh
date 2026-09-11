@@ -118,6 +118,15 @@ grep -qE "payMethod === 'card'|ShopCardPayPage|/shop/card-pay" \
   || fail "ShopCardPayPage.tsx missing"
 ok "shop orders + toman/card checkout markers"
 
+# Admin Tag Manager direct URL (must not be analytics-tab-only)
+[[ -f packages/web/src/admin/pages/AdminTagManagerPage.tsx ]] \
+  || fail "AdminTagManagerPage.tsx missing"
+grep -q 'path="tag-manager"' packages/web/src/App.tsx \
+  || fail "/admin/tag-manager route missing from App.tsx"
+grep -q "/admin/tag-manager" packages/web/src/admin/AdminLayout.tsx \
+  || fail "sidebar link /admin/tag-manager missing"
+ok "admin tag-manager route + sidebar"
+
 # Profile / My Pets same API source (regression when partial web deploy shipped stale Profile)
 grep -q 'useMyPets' packages/web/src/pages/ProfilePage.tsx \
   || fail "ProfilePage must use useMyPets (same source as My Pets)"
