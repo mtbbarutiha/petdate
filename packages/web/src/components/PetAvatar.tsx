@@ -17,6 +17,13 @@ const SIZE_CLASS = {
   xl: 'pet-avatar--xl',
 };
 
+/** Neutral SVG data-URI — never swap in another animal stock photo on error. */
+const NEUTRAL_FALLBACK =
+  'data:image/svg+xml,' +
+  encodeURIComponent(
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><rect fill="#e8e4dc" width="120" height="120"/><circle cx="60" cy="48" r="22" fill="#c9c2b6"/><ellipse cx="60" cy="98" rx="36" ry="24" fill="#c9c2b6"/></svg>'
+  );
+
 export function PetAvatar({
   type,
   size = 'md',
@@ -27,7 +34,7 @@ export function PetAvatar({
 }: PetAvatarProps) {
   const sizeClass = SIZE_CLASS[size];
   const variantClass = variant === 'cover' ? 'pet-avatar--cover' : '';
-  const src = imageUrl || DEFAULT_IMAGES[type];
+  const src = imageUrl?.trim() || DEFAULT_IMAGES[type] || NEUTRAL_FALLBACK;
 
   return (
     <div className={`pet-avatar pet-avatar--photo ${sizeClass} ${variantClass} ${className}`}>
@@ -38,7 +45,7 @@ export function PetAvatar({
         decoding="async"
         onError={(e) => {
           const img = e.currentTarget;
-          if (img.src !== DEFAULT_IMAGES[type]) img.src = DEFAULT_IMAGES[type];
+          if (img.src !== NEUTRAL_FALLBACK) img.src = NEUTRAL_FALLBACK;
         }}
       />
     </div>

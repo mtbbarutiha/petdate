@@ -41,8 +41,11 @@ export function ProfileAvatarEditor({
 
   async function handleFile(file: File | undefined | null) {
     if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      setError('فقط فایل تصویری انتخاب کن');
+    const looksImage =
+      file.type.startsWith('image/') ||
+      /\.(jpe?g|png|gif|webp|heic|heif|bmp|tiff?)$/i.test(file.name || '');
+    if (!looksImage) {
+      setError('فقط فایل تصویری انتخاب کن (JPG، PNG، WebP، HEIC)');
       return;
     }
 
@@ -62,7 +65,13 @@ export function ProfileAvatarEditor({
         blobUrlRef.current = null;
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'آپلود ناموفق بود');
+      const raw = err instanceof Error ? err.message : 'آپلود ناموفق بود';
+      const friendly =
+        raw.trim().startsWith('{') || raw.trim().startsWith('[')
+          ? 'آپلود عکس ناموفق بود. یک عکس دیگر با فرمت JPG یا PNG امتحان کن.'
+          : raw;
+      setError(friendly);
+      setPreview(null);
     } finally {
       setUploading(false);
     }
@@ -109,14 +118,14 @@ export function ProfileAvatarEditor({
       <input
         ref={galleryRef}
         type="file"
-        accept="image/*"
+        accept="image/*,image/heic,image/heif,.heic,.heif"
         className="pepito-avatar-file-input"
         onChange={(e) => void handleFile(e.target.files?.[0])}
       />
       <input
         ref={cameraRef}
         type="file"
-        accept="image/*"
+        accept="image/*,image/heic,image/heif,.heic,.heif"
         capture="user"
         className="pepito-avatar-file-input"
         onChange={(e) => void handleFile(e.target.files?.[0])}

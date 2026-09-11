@@ -108,98 +108,90 @@ const petPhotoUpload = multer({
 /** Upload a pet profile photo (multipart field: `file`). Returns a public URL path. */
 petsRouter.post('/photos/upload', (req, res) => {
   petPhotoUpload.single('file')(req, res, (uploadErr) => {
-    if (uploadErr) {
-      const tooLarge =
-        uploadErr instanceof multer.MulterError && uploadErr.code === 'LIMIT_FILE_SIZE';
-      res.status(tooLarge ? 413 : 400).json({
-        error: tooLarge
-          ? 'حجم عکس بیش از حد مجاز است (حداکثر ۸ مگابایت)'
-          : 'آپلود عکس ناموفق بود',
-      });
-      return;
-    }
-
-    const ownerId = Number(
-      (req.body as { ownerId?: string })?.ownerId ?? req.query.ownerId
-    );
-    const file = req.file;
-
-    if (!Number.isFinite(ownerId) || ownerId <= 0) {
-      res.status(400).json({ error: 'ownerId الزامی است' });
-      return;
-    }
-    if (!file?.buffer?.length) {
-      res.status(400).json({ error: 'فایل عکس الزامی است' });
-      return;
-    }
-
-    const owner = dbService.getUserById(ownerId);
-    if (!owner) {
-      res.status(404).json({ error: 'صاحب پت پیدا نشد' });
-      return;
-    }
-
-    try {
-      const saved = savePetPhoto({
-        ownerId,
-        originalName: file.originalname || 'pet.jpg',
-        mimeType: file.mimetype,
-        buffer: file.buffer,
-      });
-      res.status(201).json({
-        ok: true,
-        url: saved.urlPath,
-        storageKey: saved.storageKey,
-        mimeType: file.mimetype,
-      });
-    } catch (err) {
-      if (err instanceof Error && err.message === 'FILE_TOO_LARGE') {
-        res.status(413).json({ error: 'حجم عکس بیش از حد مجاز است (حداکثر ۸ مگابایت)' });
+    void (async () => {
+      if (uploadErr) {
+        const tooLarge =
+          uploadErr instanceof multer.MulterError && uploadErr.code === 'LIMIT_FILE_SIZE';
+        res.status(tooLarge ? 413 : 400).json({
+          error: tooLarge
+            ? 'حجم عکس بیش از حد مجاز است (حداکثر ۸ مگابایت)'
+            : 'آپلود عکس ناموفق بود',
+        });
         return;
       }
-      if (err instanceof Error && err.message === 'INVALID_MIME') {
-        res.status(400).json({ error: 'فقط عکس (JPG، PNG، WebP، GIF) مجاز است' });
+
+      const ownerId = Number(
+        (req.body as { ownerId?: string })?.ownerId ?? req.query.ownerId
+      );
+      const file = req.file;
+
+      if (!Number.isFinite(ownerId) || ownerId <= 0) {
+        res.status(400).json({ error: 'ownerId الزامی است' });
         return;
       }
-      console.warn('pet photo upload failed:', (err as Error).message);
-      res.status(500).json({ error: 'ذخیره عکس ناموفق بود' });
-    }
+      if (!file?.buffer?.length) {
+        res.status(400).json({ error: 'فایل عکس الزامی است' });
+        return;
+      }
+
+      const owner = dbService.getUserById(ownerId);
+      if (!owner) {
+        res.status(404).json({ error: 'صاحب پت پیدا نشد' });
+        return;
+      }
+
+      try {
+        const saved = await savePetPhoto({
+          ownerId,
+          originalName: file.originalname || 'pet.jpg',
+          mimeType: file.mimetype,
+          buffer: file.buffer,
+        });
+        res.status(201).json({
+          ok: true,
+          url: saved.urlPath,
+          storageKey: saved.storageKey,
+          mimeType: saved.mimeType,
+        });
+      } catch (err) {
+        const code = err instanceof Error ? err.message : '';
+        if (code === 'FILE_TOO_LARGE') {
+          res.status(413).json({ error: 'حجم عکس بیش از حد مجاز است (حداکثر ۸ مگابایت)' });
+          return;
+        }
+        if (code === 'INVALID_MIME' || code === 'INVALID_IMAGE') {
+          res.status(400).json({
+            error:
+              code === 'INVALID_IMAGE'
+                ? 'فایل عکس قابل پردازش نیست. یک عکس دیگر انتخاب کن'
+                : 'فقط عکس مجاز است (JPG، PNG، WebP، HEIC، GIF)',
+          });
+          return;
+        }
+        console.warn('pet photo upload failed:', (err as Error).message);
+        res.status(500).json({ error: 'ذخیره عکس ناموفق بود' });
+      }
+    })();
   });
 });
 
-/** Serve an uploaded pet photo by storage key `ownerId/filename`. */
+/**
+ * Serve an uploaded pet photo by storage key `ownerId/filename`.
+ * UUID filenames are unguessable; pending URLs are omitted from public JSON,
+ * so we always stream the bytes for <img> (no Bearer — browsers can't send it).
+ */
 petsRouter.get('/photos/:ownerId/:filename', (req, res) => {
   const ownerId = String(req.params.ownerId || '');
   const filename = String(req.params.filename || '');
   const storageKey = `${ownerId}/${filename}`;
   const abs = resolvePetPhotoPath(storageKey);
   if (!abs || !fs.existsSync(abs)) {
-    res.status(404).json({ error: 'عکس پیدا نشد' });
+    res.status(404).end();
     return;
   }
 
-  const ownerNum = Number(ownerId);
-  const viewerId = viewerUserId(req);
-  if (Number.isFinite(ownerNum) && ownerNum > 0) {
-    // Find whether this file belongs to a pet that is still pending moderation.
-    const row = getDb()
-      .prepare(
-        `SELECT id, photo_moderation_status FROM pets
-         WHERE owner_id = ? AND image_url LIKE ?`
-      )
-      .get(ownerNum, `%/api/pets/photos/${ownerId}/${filename}%`) as
-      | { id: number; photo_moderation_status: string }
-      | undefined;
-    if (row && String(row.photo_moderation_status ?? 'approved') !== 'approved') {
-      if (viewerId !== ownerNum) {
-        res.status(403).json({ error: 'عکس هنوز تأیید نشده است' });
-        return;
-      }
-    }
-  }
-
   res.setHeader('Content-Type', mimeFromPetPhotoKey(storageKey));
-  res.setHeader('Cache-Control', 'public, max-age=86400');
+  res.setHeader('Cache-Control', 'private, max-age=3600');
   res.send(fs.readFileSync(abs));
 });
 
@@ -507,14 +499,28 @@ petsRouter.post('/', (req, res) => {
     neighborhood,
   } = req.body;
 
-  if (!ownerId || !name || !species) {
+  const nameTrim = typeof name === 'string' ? name.trim() : '';
+  const speciesTrim = typeof species === 'string' ? species.trim() : '';
+  const breedTrim = typeof breed === 'string' ? breed.trim() : '';
+
+  if (!ownerId || !nameTrim || !speciesTrim) {
     res.status(400).json({ error: 'ownerId، name و species الزامی هستند' });
+    return;
+  }
+  if (!breedTrim) {
+    res.status(400).json({ error: 'نژاد پت الزامی است — از لیست انتخاب کن' });
     return;
   }
 
   const owner = dbService.getUserById(Number(ownerId));
   if (!owner) {
     res.status(404).json({ error: 'صاحب پت پیدا نشد' });
+    return;
+  }
+
+  const catalogBreed = dbService.findBreedByName(speciesTrim, breedTrim);
+  if (!catalogBreed) {
+    res.status(400).json({ error: 'نژاد باید از لیست نژادهای همین نوع حیوان انتخاب شود' });
     return;
   }
 
@@ -526,11 +532,21 @@ petsRouter.post('/', (req, res) => {
     healthPayload.diseases = diseases.trim();
   }
 
+  // Only store real uploaded / telegram / http URLs — never stock placeholders.
+  const rawImage = typeof imageUrl === 'string' ? imageUrl.trim() : '';
+  const safeImageUrl =
+    rawImage &&
+    (rawImage.startsWith('/api/pets/photos/') ||
+      looksLikeTelegramFileId(rawImage) ||
+      /^https?:\/\//i.test(rawImage))
+      ? rawImage
+      : undefined;
+
   const pet = dbService.createPet({
     ownerId: Number(ownerId),
-    name,
-    species,
-    breed,
+    name: nameTrim,
+    species: speciesTrim,
+    breed: catalogBreed.nameFa,
     gender,
     ageMonths,
     size,
@@ -541,20 +557,20 @@ petsRouter.post('/', (req, res) => {
     lookingForPlaymate,
     personality,
     health: healthPayload,
-    imageUrl,
+    imageUrl: safeImageUrl,
     city,
     neighborhood,
   });
 
-  const rawImage = typeof imageUrl === 'string' ? imageUrl.trim() : '';
-  if (rawImage && looksLikeTelegramFileId(rawImage)) {
-    void materializePetTelegramPhoto(pet.id, pet.ownerId, rawImage).catch((err) => {
+  if (safeImageUrl && looksLikeTelegramFileId(safeImageUrl)) {
+    void materializePetTelegramPhoto(pet.id, pet.ownerId, safeImageUrl).catch((err) => {
       console.warn('background pet photo materialize failed:', (err as Error).message);
     });
   }
 
   dbService.setUserOnboarding(Number(ownerId), 'profile_complete');
-  res.status(201).json(pet);
+  const updatedOwner = dbService.getUserById(Number(ownerId));
+  res.status(201).json({ ...pet, owner: updatedOwner ?? undefined });
 });
 
 petsRouter.patch('/:id', (req, res) => {
@@ -589,6 +605,29 @@ petsRouter.patch('/:id', (req, res) => {
       diseases: body.diseases.trim() || undefined,
     };
     delete body.diseases;
+  }
+
+  const nextSpecies =
+    typeof body.species === 'string' && body.species.trim()
+      ? body.species.trim()
+      : existing.species;
+  if (body.breed !== undefined) {
+    const breedTrim = typeof body.breed === 'string' ? body.breed.trim() : '';
+    if (!breedTrim) {
+      res.status(400).json({ error: 'نژاد پت الزامی است — از لیست انتخاب کن' });
+      return;
+    }
+    const catalogBreed = dbService.findBreedByName(nextSpecies, breedTrim);
+    if (!catalogBreed) {
+      res.status(400).json({ error: 'نژاد باید از لیست نژادهای همین نوع حیوان انتخاب شود' });
+      return;
+    }
+    body.breed = catalogBreed.nameFa;
+    body.species = nextSpecies;
+  }
+  if (typeof body.name === 'string' && !body.name.trim()) {
+    res.status(400).json({ error: 'نام پت الزامی است' });
+    return;
   }
 
   const pet = dbService.updatePet(petId, body);

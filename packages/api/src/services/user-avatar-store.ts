@@ -1,17 +1,12 @@
 import fs from 'fs';
 import path from 'path';
 import { randomUUID } from 'crypto';
+import {
+  isAllowedUploadImageMime,
+  normalizeProfileImage,
+} from './image-normalize';
 
 export const MAX_USER_AVATAR_BYTES = 8 * 1024 * 1024;
-const ALLOWED_MIME = new Set([
-  'image/jpeg',
-  'image/jpg',
-  'image/png',
-  'image/webp',
-  'image/gif',
-  'image/heic',
-  'image/heif',
-]);
 
 /** User avatars live next to the SQLite database (same pattern as pet-photos). */
 export function userAvatarsRoot(): string {
@@ -58,32 +53,37 @@ export function resolveUserAvatarPath(storageKey: string): string | null {
   return abs;
 }
 
-export function isAllowedUserAvatarMime(mimeType: string | undefined): boolean {
-  if (!mimeType) return false;
-  return ALLOWED_MIME.has(mimeType.toLowerCase());
+export function isAllowedUserAvatarMime(
+  mimeType: string | undefined,
+  fileName?: string,
+  buffer?: Buffer
+): boolean {
+  return isAllowedUploadImageMime(mimeType, fileName, buffer);
 }
 
-export function saveUserAvatar(opts: {
+export async function saveUserAvatar(opts: {
   userId: number;
   originalName: string;
   mimeType?: string;
   buffer: Buffer;
-}): { storageKey: string; absolutePath: string; urlPath: string } {
-  if (opts.buffer.length > MAX_USER_AVATAR_BYTES) {
-    throw new Error('FILE_TOO_LARGE');
-  }
-  if (!isAllowedUserAvatarMime(opts.mimeType)) {
-    throw new Error('INVALID_MIME');
-  }
-  const storageKey = buildUserAvatarKey(opts.userId, opts.originalName, opts.mimeType);
+}): Promise<{ storageKey: string; absolutePath: string; urlPath: string; mimeType: string }> {
+  const normalized = await normalizeProfileImage({
+    buffer: opts.buffer,
+    mimeType: opts.mimeType,
+    originalName: opts.originalName || 'avatar.jpg',
+    maxBytes: MAX_USER_AVATAR_BYTES,
+    maxEdge: 1024,
+  });
+  const storageKey = buildUserAvatarKey(opts.userId, normalized.originalName, normalized.mimeType);
   const abs = resolveUserAvatarPath(storageKey);
   if (!abs) throw new Error('INVALID_STORAGE_KEY');
   fs.mkdirSync(path.dirname(abs), { recursive: true });
-  fs.writeFileSync(abs, opts.buffer);
+  fs.writeFileSync(abs, normalized.buffer);
   return {
     storageKey,
     absolutePath: abs,
     urlPath: `/api/auth/avatar/${storageKey}`,
+    mimeType: normalized.mimeType,
   };
 }
 

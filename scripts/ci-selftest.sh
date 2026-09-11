@@ -85,6 +85,8 @@ run src/services/nearby-cards.selftest.ts
 run src/services/vet-online.selftest.ts
 run src/services/marketplace-roles.selftest.ts
 run src/services/chat-upload-store.selftest.ts
+run src/services/image-normalize.selftest.ts
+run src/services/pet-owner-breed-photo.selftest.ts
 run src/services/pasha-user-tone.selftest.ts
 run src/services/speech-to-text.selftest.ts
 run src/services/ai-consult.selftest.ts

@@ -192,7 +192,7 @@ export async function materializeTelegramFileIdAsAvatar(
   const downloaded = await downloadTelegramFile(id);
   if (!downloaded) return null;
   try {
-    const saved = saveUserAvatar({
+    const saved = await saveUserAvatar({
       userId,
       originalName: downloaded.originalName,
       mimeType: downloaded.mimeType,

@@ -1,10 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { toEnglishDigits } from '@petdate/shared';
 import { PetAgePicker } from '../components/AgePicker';
+import { BreedPicker } from '../components/BreedPicker';
 import { PetPhotoUpload } from '../components/PetPhotoUpload';
-import { DEFAULT_IMAGES, imageForType } from '../data/petImages';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { useAppToast } from '../hooks/useAppToast';
 import { usePetStore } from '../hooks/usePetStore';
@@ -21,7 +21,7 @@ const PERSONALITY_TRAITS = ['بازیگوش', 'آرام', 'اجتماعی', 'پ�
 export function AddPetPage() {
   const navigate = useNavigate();
   const { addPet, myPet } = usePetStore();
-  const { user: authUser, isLoggedIn } = useAuthStore();
+  const { user: authUser, isLoggedIn, applyUser } = useAuthStore();
   const { toastSuccess, toastError } = useAppToast();
   const [saving, setSaving] = useState(false);
   const [submitError, setSubmitError] = useState('');
@@ -45,10 +45,6 @@ export function AddPetPage() {
   });
 
   const ownerId = authUser?.id;
-  const previewFallback = useMemo(
-    () => imageForType(form.type, 0) || DEFAULT_IMAGES.dog,
-    [form.type]
-  );
 
   const update = (field: string, value: string | boolean | string[]) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -60,20 +56,23 @@ export function AddPetPage() {
       setSubmitError('نام پت الزامی است'); toastError('نام پت الزامی است');
       return;
     }
+    if (!form.breed.trim()) {
+      setSubmitError('نژاد پت الزامی است — از لیست انتخاب کن'); toastError('نژاد پت الزامی است');
+      return;
+    }
     setSaving(true);
     setSubmitError('');
 
     const ageNum = Number(toEnglishDigits(form.age).replace(/[^\d]/g, '')) || 1;
     const ageMonths = form.ageUnit === 'year' ? ageNum * 12 : ageNum;
-    const resolvedImage = form.imageUrl || previewFallback;
 
     try {
       if (isLoggedIn && ownerId) {
-        await createPet({
+        const created = await createPet({
           ownerId,
           name: form.name.trim(),
           species: form.type,
-          breed: form.breed.trim() || undefined,
+          breed: form.breed.trim(),
           gender: form.gender,
           ageMonths,
           size: form.size,
@@ -87,30 +86,54 @@ export function AddPetPage() {
           city: form.city.trim() || authUser?.city,
           neighborhood: form.neighborhood.trim() || undefined,
         });
-      }
+        if (created.owner) applyUser(created.owner);
 
-      addPet({
-        name: form.name.trim(),
-        type: form.type,
-        breed: form.breed.trim(),
-        age: ageNum,
-        ageUnit: form.ageUnit,
-        size: form.size,
-        gender: form.gender,
-        city: form.city,
-        neighborhood: form.neighborhood,
-        ownerName: authUser?.name || myPet.ownerName,
-        ownerId: ownerId ?? myPet.ownerId,
-        imageUrl: resolvedImage,
-        emoji: PET_TYPE_EMOJI[form.type],
-        bio: form.bio,
-        traits: form.traits,
-        vaccinated: form.vaccinated,
-        neutered: form.neutered,
-        lookingForPlaymate: form.lookingForPlaymate,
-        healthNotes: form.healthNotes,
-        distanceKm: 0.5,
-      });
+        addPet({
+          name: form.name.trim(),
+          type: form.type,
+          breed: form.breed.trim(),
+          age: ageNum,
+          ageUnit: form.ageUnit,
+          size: form.size,
+          gender: form.gender,
+          city: form.city,
+          neighborhood: form.neighborhood,
+          ownerName: authUser?.name || myPet.ownerName,
+          ownerId: ownerId ?? myPet.ownerId,
+          imageUrl: created.imageUrl || form.imageUrl || '',
+          emoji: PET_TYPE_EMOJI[form.type],
+          bio: form.bio,
+          traits: form.traits,
+          vaccinated: form.vaccinated,
+          neutered: form.neutered,
+          lookingForPlaymate: form.lookingForPlaymate,
+          healthNotes: form.healthNotes,
+          distanceKm: 0.5,
+        });
+      } else {
+        addPet({
+          name: form.name.trim(),
+          type: form.type,
+          breed: form.breed.trim(),
+          age: ageNum,
+          ageUnit: form.ageUnit,
+          size: form.size,
+          gender: form.gender,
+          city: form.city,
+          neighborhood: form.neighborhood,
+          ownerName: authUser?.name || myPet.ownerName,
+          ownerId: ownerId ?? myPet.ownerId,
+          imageUrl: form.imageUrl || '',
+          emoji: PET_TYPE_EMOJI[form.type],
+          bio: form.bio,
+          traits: form.traits,
+          vaccinated: form.vaccinated,
+          neutered: form.neutered,
+          lookingForPlaymate: form.lookingForPlaymate,
+          healthNotes: form.healthNotes,
+          distanceKm: 0.5,
+        });
+      }
       toastSuccess('پت ثبت شد!');
       window.setTimeout(() => navigate('/my-pets'), 1600);
     } catch (err) {
@@ -121,8 +144,7 @@ export function AddPetPage() {
     }
   };
 
-  // مثل ربات: فقط نام اجباری؛ عکس / نژاد / محله اختیاری
-  const isValid = Boolean(form.name.trim());
+  const isValid = Boolean(form.name.trim() && form.breed.trim());
 
   return (
     <div className="form-page">
@@ -135,12 +157,11 @@ export function AddPetPage() {
       </button>
 
       <h1>ثبت پت جدید</h1>
-      <p className="subtitle">اطلاعات پت رو وارد کن — عکس، نژاد و محله اختیاری‌اند</p>
+      <p className="subtitle">نام و نژاد الزامی‌اند — نژاد را از لیست انتخاب کن</p>
 
       <PetPhotoUpload
         ownerId={ownerId}
         imageUrl={form.imageUrl}
-        placeholderSrc={previewFallback}
         onChange={(url) => update('imageUrl', url)}
         label="عکس پت (اختیاری)"
       />
@@ -158,22 +179,25 @@ export function AddPetPage() {
 
         <div className="form-group">
           <label className="form-label">نوع حیوان</label>
-          <select className="form-select" value={form.type} onChange={(e) => update('type', e.target.value)}>
+          <select
+            className="form-select"
+            value={form.type}
+            onChange={(e) => {
+              update('type', e.target.value);
+              update('breed', '');
+            }}
+          >
             {PET_TYPES.map((t) => (
               <option key={t} value={t}>{PET_TYPE_LABELS[t]}</option>
             ))}
           </select>
         </div>
 
-        <div className="form-group">
-          <label className="form-label">نژاد (اختیاری)</label>
-          <input
-            className="form-input"
-            placeholder="مثلاً: گلدن رتریور"
-            value={form.breed}
-            onChange={(e) => update('breed', e.target.value)}
-          />
-        </div>
+        <BreedPicker
+          species={form.type}
+          value={form.breed}
+          onChange={(breed) => update('breed', breed)}
+        />
 
         <div className="form-group">
           <label className="form-label">سن پت</label>

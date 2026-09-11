@@ -17,6 +17,7 @@ const authActions = {
   setPrimaryRole: authStore.setPrimaryRole.bind(authStore),
   setVetOnline: authStore.setVetOnline.bind(authStore),
   setVisitFee: authStore.setVisitFee.bind(authStore),
+  applyUser: authStore.applyUser.bind(authStore),
   logout: authStore.logout.bind(authStore),
   setPending: authStore.setPending.bind(authStore),
   clearPending: authStore.clearPending.bind(authStore),

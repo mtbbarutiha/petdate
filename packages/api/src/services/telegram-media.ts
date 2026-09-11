@@ -66,7 +66,7 @@ export async function materializePetTelegramPhoto(
     const mime =
       upstream.headers.get('content-type')?.split(';')[0]?.trim() ||
       mimeFromPath(file.filePath);
-    const saved = savePetPhoto({
+    const saved = await savePetPhoto({
       ownerId,
       originalName: path.basename(file.filePath) || 'telegram-pet.jpg',
       mimeType: mime.startsWith('image/') ? mime : 'image/jpeg',

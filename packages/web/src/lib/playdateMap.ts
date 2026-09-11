@@ -1,7 +1,6 @@
 import { PLAYDATE_STATUS_LABELS, type PetProfile, type PlaydateRequest } from '@petdate/shared';
 import type { MatchRequest, MatchStatus, Pet, PetType } from '../types';
 import { PET_TYPE_EMOJI } from '../types';
-import { EMPTY_STATE_PHOTO } from '../data/petImages';
 
 function speciesToType(species?: string): PetType {
   const s = (species || '').toLowerCase();
@@ -9,15 +8,16 @@ function speciesToType(species?: string): PetType {
   if (s === 'cat' || s === 'گربه') return 'cat';
   if (s === 'bird' || s === 'پرنده') return 'bird';
   if (s === 'rabbit' || s === 'خرگوش') return 'rabbit';
+  if (s === 'hamster' || s === 'همستر') return 'hamster';
   return 'other';
 }
 
 function resolveImage(url?: string | null): string {
-  if (!url?.trim()) return EMPTY_STATE_PHOTO;
+  if (!url?.trim()) return '';
   const u = url.trim();
   // Absolute remote, same-origin API uploads, or static /pets assets
   if (/^https?:\/\//i.test(u) || u.startsWith('/')) return u;
-  return EMPTY_STATE_PHOTO;
+  return '';
 }
 
 export function petProfileToUiPet(pet?: PetProfile | null): Pet {
