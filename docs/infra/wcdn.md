@@ -42,7 +42,9 @@ Confirmed with `Accept: application/json`. The wrap happens **after** origin (`w
 2. Enable **نمایش خطای سرور مقصد** (show origin-server errors) so 4xx/5xx from `/api/*` pass through.
 3. Or disable custom error pages for HTTP 400 / 401 / 403 / 404 on this hostname.
 
-Until that toggle is on, treat www HTML 4xx as a **WCDN custom-error-page limit**. Apex JSON is the source of truth. SPA clients on www already parse JSON on 200s; 401/400 HTML is only visible to raw `curl` / non-browser clients hitting www.
+Until that toggle is on, treat www HTML 4xx as a **WCDN custom-error-page limit**. Apex JSON is the source of truth.
+
+**SPA clients must not call `response.json()` blindly on non-OK (or even OK) bodies.** `packages/web/src/lib/api.ts` reads text first and maps HTML / parse failures to short Persian messages via `apiErrorMessage.ts` (see `apiErrorMessage.selftest.ts`). Otherwise the profile medical card shows `Unexpected token '<', "<!DOCTYPE "... is not valid JSON`.
 
 Docs: [تنظیمات دیگر CDN پارس‌پک](https://docs.parspack.com/cdn/other-settings/).
 

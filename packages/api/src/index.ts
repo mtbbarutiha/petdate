@@ -213,6 +213,12 @@ app.get('/api/my-section-games', (req, res) => {
   res.json({ user, section, games });
 });
 
+// Never return Express default HTML "Cannot GET" for unknown API paths —
+// www WCDN + SPA clients expect JSON (medical-record and others).
+app.use('/api', (req, res) => {
+  res.status(404).json({ error: 'مسیر API پیدا نشد', path: req.path });
+});
+
 app.use(expressErrorHandler);
 
 const server = http.createServer(app);
