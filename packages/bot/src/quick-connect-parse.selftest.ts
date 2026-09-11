@@ -44,9 +44,9 @@ const ai = parseQuickVetConnectSuccess({
   cost: 0,
   coins: 100,
   consultations: [{ id: 42, vetUserId: 7, serviceKind: 'trainer' }],
-  message: 'گفتگو با پاشا یزدانی شروع شد',
+  message: 'گفتگو با دکتر لیلا کیانی شروع شد',
   aiFallback: true,
-  advice: 'سلام — من پاشا یزدانی‌ام.',
+  advice: 'سلام — من دکتر لیلا کیانی‌ام.',
   adviceSource: 'offline',
   serviceKind: 'trainer',
 });

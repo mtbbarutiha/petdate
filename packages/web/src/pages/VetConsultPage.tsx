@@ -161,7 +161,7 @@ function OnlineVetsList({
             ? 'در حال دریافت لیست…'
             : vets.length
               ? `${formatCoins(vets.length)} پزشک آماده پذیرش — هزینه اتصال: ${formatCoins(connectCost)} سکه`
-              : 'دامپزشک انسانی آنلاین نیست — پاشا یزدانی آماده پاسخ است.'}
+              : 'دامپزشک انسانی آنلاین نیست — دکتر لیلا کیانی آماده پاسخ است.'}
         </p>
       </div>
       {!loading && vets.length ? (
@@ -639,7 +639,7 @@ export function VetConsultPage() {
     }
     if (needsLogin) return 'برای ارتباط سریع با پزشک وارد حساب شو.';
     if (needsPet) return 'برای درخواست ارتباط با پزشک، اول باید حداقل یک پت ثبت کنی.';
-    if (noOnlineVets) return 'دامپزشک انسانی آنلاین نیست — با زدن دکمه، پاشا یزدانی رایگان پاسخ می‌دهد.';
+    if (noOnlineVets) return 'دامپزشک انسانی آنلاین نیست — با زدن دکمه، دکتر لیلا کیانی رایگان پاسخ می‌دهد.';
     if (lowCoins) {
       return `برای اتصال سریع حداقل ${formatCoins(connectCost)} سکه لازم داری. موجودی: ${formatCoins(coins)} — از ربات «سکه» بگیر.`;
     }
@@ -755,7 +755,7 @@ export function VetConsultPage() {
         const consultId = result.consultations?.[0]?.id;
         const aiLines = [
           result.message,
-          'چت با پاشا یزدانی باز شد — می‌توانی سؤال‌ات را بفرستی.',
+          'چت با دکتر لیلا کیانی باز شد — می‌توانی سؤال‌ات را بفرستی.',
         ];
         setStatusLines(aiLines);
         setPhase('ready');
@@ -908,7 +908,7 @@ export function VetConsultPage() {
               {onlineVetsLoading
                 ? 'در حال محاسبه…'
                 : noOnlineVets
-                  ? 'مشورت با پاشا یزدانی (رایگان)'
+                  ? 'مشورت با دکتر لیلا کیانی (رایگان)'
                   : `${formatCoins(connectCost)} سکه — قبل از ارسال کسر می‌شود`}
             </span>
           </div>
@@ -951,7 +951,7 @@ export function VetConsultPage() {
             {phase === 'sending'
               ? 'در حال کسر سکه و ارسال…'
               : noOnlineVets
-                ? 'مشورت با پاشا یزدانی'
+                ? 'مشورت با دکتر لیلا کیانی'
                 : phase === 'waiting' || phase === 'connected'
                   ? 'ارسال دوباره درخواست'
                   : `تأیید پرداخت (${formatCoins(connectCost)} سکه) و اتصال`}

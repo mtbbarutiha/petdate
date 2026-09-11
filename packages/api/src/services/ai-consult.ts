@@ -37,6 +37,9 @@ export type AiConsultContext = {
   userTone?: UserToneProfile | null;
   /** Internal: unknown offline topic — nudge LLM to answer from full online knowledge */
   forceOnlineUnknown?: boolean;
+
+  /** Persona display name (team agent); defaults to لیلا کیانی */
+  agentName?: string;
 };
 
 /** Extra English aliases that may appear in prompts / legacy data (DB codes stay lowercase). */
@@ -67,16 +70,23 @@ export function speciesLabelFa(species?: string | null): string {
 const AI_TELEGRAM_ID = 'petdate_ai_assistant';
 
 /**
- * Canonical public display name for the AI assistant
- * (trainer fallback + vet fallback + related UI).
+ * Canonical public display name for the default AI assistant
+ * (trainer/vet fallback when no human online).
+ * Renamed from «پاشا یزدانی» → «دکتر لیلا کیانی» (same telegram id).
  * Keep telegram id `petdate_ai_assistant` as the internal identity.
  */
-export const AI_TRAINER_DISPLAY_NAME = 'پاشا یزدانی';
-/** Alias — same person everywhere users/admins see the AI assistant. */
+export const AI_TRAINER_DISPLAY_NAME = 'دکتر لیلا کیانی';
+/** Alias — default fallback persona (لیلا کیانی). */
 export const AI_ASSISTANT_DISPLAY_NAME = AI_TRAINER_DISPLAY_NAME;
 
 export function aiAssistantTelegramId(): string {
   return AI_TELEGRAM_ID;
+}
+
+/** Persona name for prompts / greetings. */
+export function consultAgentName(ctx: { agentName?: string } | null | undefined): string {
+  const n = String(ctx?.agentName || '').trim();
+  return n || AI_TRAINER_DISPLAY_NAME;
 }
 
 function envKey(): string {
@@ -101,7 +111,8 @@ export function isAiConsultConfigured(): boolean {
 /** Avoid flooding pm2 error logs when AI_CONSULT_API_KEY is unset in production. */
 let warnedMissingAiConsultKey = false;
 
-function systemPrompt(kind: AiConsultKind): string {
+function systemPrompt(kind: AiConsultKind, agentName = AI_TRAINER_DISPLAY_NAME): string {
+  const who = agentName || AI_TRAINER_DISPLAY_NAME;
   if (kind === 'support') {
     return [
       'تو پشتیبانی هوشمند پلتفرم پت‌دیت هستی.',
@@ -109,17 +120,17 @@ function systemPrompt(kind: AiConsultKind): string {
       'کمک کن کاربر بفهمد چطور: ورود OTP، ثبت پت، همبازی، مربی، دامپزشک، شاپ، کیف پول/سکه، و اتصال وب↔ربات کار می‌کند.',
       'اگر مشکل فنی حل نشد بگو از ربات تلگرام پت‌دیت یا ادمین پیگیری کنند.',
       'تشخیص پزشکی یا تجویز دارو نده؛ برای درمان به دامپزشک ارجاع بده.',
-      `اگر پرسیدند کی هستی بگو ${AI_TRAINER_DISPLAY_NAME} از پشتیبانی پت‌دیت هستی.`,
+      `اگر پرسیدند کی هستی بگو ${who} از پشتیبانی پت‌دیت هستی.`,
     ].join('\n');
   }
   if (kind === 'trainer') {
     return [
-      `تو ${AI_TRAINER_DISPLAY_NAME} هستی؛ مربی واقعی آموزش پت. مثل آدم واقعی توی چت حرف بزن، نه مثل ربات یا جزوه.`,
+      `تو ${who} هستی؛ مربی واقعی آموزش پت. مثل آدم واقعی توی چت حرف بزن، نه مثل ربات یا جزوه.`,
       'لحن: چت خودمونی تلگرامی. انگار داری برای یه دوست که سگ/گربه داره پیام می‌ذاری — گرم، مطمئن، کمی شوخ اگر جا داشته باشه، بدون ادا.',
       'فارسی کاملاً گفتاری: «ببین»، «راستش»، «یه‌کم»، «باشه»، «آفرین»، «دمش گرم»، «هیچی»، «اوکیه». ممنوع: لحن کتابی، لیست شماره‌دار درسی، واژه‌های اداری.',
       'جمله‌ها کوتاه و زنده. گاهی یه حس واقعی بگو («من خودم این‌جا با کلی سگ گیر کردم»). نه شعار، نه متن تبلیغاتی.',
       'روی فرمان‌ها (مخصوصاً بشین/بمان/بیا/قلاده) مثل مربی باتجربه عمیق جواب بده: چی کار کنه، چی نکنه، اگه گیر کرد چی، جلسه بعدی چی.',
-      `هرگز نگو هوش مصنوعی / ربات / AI هستی. اگر پرسید: «من ${AI_TRAINER_DISPLAY_NAME}ام، مربی آنلاین پت‌دیت.»`,
+      `هرگز نگو هوش مصنوعی / ربات / AI هستی. اگر پرسید: «من ${who}ام، مربی آنلاین پت‌دیت.»`,
       'شروع پیام را هر بار عوض کن. وسط گفتگو سلام تکراری و معرفی نکن.',
       '۱–۲ پیام اول اگر لازم بود گرم باش و عکس پت را ببین/بخواه؛ ولی پروتکل را بلند نگو.',
       'ممنوع متا: «اول احوال بعد آموزش»، «برای اینکه درست راهنمایی کنم…»، «نسخه»، بازگو کردن سؤال کاربر.',
@@ -134,12 +145,12 @@ function systemPrompt(kind: AiConsultKind): string {
     ].join('\n');
   }
   return [
-    `تو ${AI_TRAINER_DISPLAY_NAME} هستی؛ مشاوره دامپزشکی عمومی در پلتفرم پت‌دیت می‌دهی.`,
+    `تو ${who} هستی؛ مشاوره دامپزشکی عمومی در پلتفرم پت‌دیت می‌دهی.`,
     'به فارسی، کوتاه، شفاف و محتاط پاسخ بده.',
     'در پاسخ فارسی از DOG/CAT یا کد انگلیسی گونه استفاده نکن؛ بگو سگ یا گربه.',
     'راهنمایی عمومی مراقبت، تغذیه، پیشگیری و زمان مراجعه به دامپزشک بده.',
     'تشخیص قطعی نده؛ نسخه دارو ننویس؛ در علائم خطرناک فوری به مراجعه حضوری تأکید کن.',
-    `اگر پرسیدند کی هستی بگو ${AI_TRAINER_DISPLAY_NAME} هستی. واضح بگو جایگزین دامپزشک آنلاین/حضوری نیستی و وقتی پزشک آنلاین باشد اتصال انسانی اولویت دارد.`,
+    `اگر پرسیدند کی هستی بگو ${who} هستی. واضح بگو جایگزین دامپزشک آنلاین/حضوری نیستی و وقتی پزشک آنلاین باشد اتصال انسانی اولویت دارد.`,
   ].join('\n');
 }
 
@@ -190,10 +201,11 @@ export function buildTrainerOpeningGreeting(
     ? `از چیزی که تو پروفایل هست: ${profileBits.join('، ')}.`
     : `چند سالشه؟ نژادشم اگه می‌دونی بگو.`;
 
+  const who = consultAgentName(ctx);
   const hellos = [
-    `سلام ${owner} 👋 من ${AI_TRAINER_DISPLAY_NAME}ام. خوشحالم اینجایی.`,
-    `${owner} جان سلام، ${AI_TRAINER_DISPLAY_NAME} هستم. قشنگ شد که اومدی سراغ آموزش.`,
-    `سلام ${owner}! منم ${AI_TRAINER_DISPLAY_NAME}. از پت‌دیت آنلاین کنارت هستم.`,
+    `سلام ${owner} 👋 من ${who}ام. خوشحالم اینجایی.`,
+    `${owner} جان سلام، ${who} هستم. قشنگ شد که اومدی سراغ آموزش.`,
+    `سلام ${owner}! منم ${who}. از پت‌دیت آنلاین کنارت هستم.`,
   ];
   const hello = hellos[(owner.length + pet.length) % hellos.length]!;
   return [
@@ -981,8 +993,8 @@ function formatTrainerTopicReply(
         `دمش گرم، بریم سر کار:`,
       ]
     : [
-        `سلام، من ${AI_TRAINER_DISPLAY_NAME}ام 👋 خوش اومدی.`,
-        `سلام! ${AI_TRAINER_DISPLAY_NAME} هستم، بریم سر اصل مطلب.`,
+        `سلام، من ${consultAgentName(ctx)}ام 👋 خوش اومدی.`,
+        `سلام! ${consultAgentName(ctx)} هستم، بریم سر اصل مطلب.`,
       ];
   const seed = (ctx.userMessage?.length ?? 0) + (ctx.petName?.length ?? 0) + topic.id.length;
   const opening = opts?.followUpLabel
@@ -1257,7 +1269,7 @@ export function offlineAiAdvice(ctx: AiConsultContext): string {
     return withTone(greet);
   }
   return [
-    `👋 من ${AI_TRAINER_DISPLAY_NAME} هستم (دامپزشک انسانی الان آنلاین نیست).`,
+    `👋 من ${consultAgentName(ctx)} هستم (دامپزشک انسانی الان آنلاین نیست).`,
     ``,
     `برای ${pet} چند نکتهٔ عمومی:`,
     `• آب تازه و غذای متناسب با سن/گونه`,
@@ -1298,7 +1310,7 @@ async function callOpenAiCompatible(ctx: AiConsultContext): Promise<string | nul
   const base = envBaseUrl();
   const model = envModel();
   const messages: Array<{ role: string; content: string }> = [
-    { role: 'system', content: systemPrompt(ctx.kind) },
+    { role: 'system', content: systemPrompt(ctx.kind, consultAgentName(ctx)) },
   ];
   if (ctx.kind === 'trainer' && ctx.userTone && ctx.userTone.samples > 0) {
     messages.push({ role: 'system', content: formatToneSystemInstruction(ctx.userTone) });

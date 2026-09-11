@@ -9,6 +9,7 @@ export * from './pet-slug';
 export * from './hr';
 export * from './admin-notifications';
 export * from './gtm-contract';
+export * from './team-agents';
 
 import type {
   OnboardingStatus,

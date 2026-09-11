@@ -4,6 +4,8 @@ import multer from 'multer';
 import {
   CONSULT_SERVICE_KINDS,
   QUICK_VET_COST,
+  TEAM_AGENTS,
+  getTeamAgentBySlug,
   vetVisitFeeCoins,
   type ConsultServiceKind,
   type VetConsultStatus,
@@ -27,6 +29,7 @@ import { AI_TRAINER_DISPLAY_NAME } from '../services/ai-consult';
 import {
   decorateAiConsultDisplay,
   startAiFallbackConsult,
+  startTeamAgentConsult,
   maybeReplyAsAiAssistant,
   maybeTranscribeAndReplyAsAiAssistant,
 } from '../services/ai-consult-session';
@@ -189,6 +192,73 @@ consultationsRouter.get('/previous-vets', (req, res) => {
     return;
   }
   res.json(dbService.listPreviousVetsForPatient(patientUserId));
+});
+
+
+consultationsRouter.get('/team-agents', (_req, res) => {
+  res.json({
+    agents: TEAM_AGENTS.map((a) => ({
+      slug: a.slug,
+      name: a.name,
+      role: a.role,
+      kind: a.kind,
+      avatarUrl: a.avatarUrl,
+      chatPath: `/team-chat/${a.slug}`,
+    })),
+  });
+});
+
+consultationsRouter.post('/team-agent', async (req, res) => {
+  const session = getUserFromBearer(req.header('authorization') ?? undefined);
+  const bodyPatientId =
+    req.body?.patientUserId != null ? Number(req.body.patientUserId) : undefined;
+  const patientUserId = session?.user?.id ?? bodyPatientId;
+  const agentSlug = String(req.body?.agentSlug || req.body?.slug || '').trim();
+  const def = getTeamAgentBySlug(agentSlug);
+
+  if (!def) {
+    res.status(400).json({ error: 'ایجنت پیدا نشد', reason: 'unknown_agent' });
+    return;
+  }
+  if (!patientUserId || !Number.isFinite(patientUserId)) {
+    res.status(400).json({ error: 'patientUserId الزامی است', reason: 'missing_patient' });
+    return;
+  }
+  if (session?.user?.id && session.user.id !== patientUserId) {
+    res.status(403).json({ error: 'اجازه دسترسی ندارید', reason: 'forbidden' });
+    return;
+  }
+
+  const patient = dbService.getUserById(patientUserId);
+  if (!patient) {
+    res.status(404).json({ error: 'کاربر پیدا نشد', reason: 'missing_patient' });
+    return;
+  }
+
+  try {
+    const ai = await startTeamAgentConsult({ patient, agentSlug: def.slug });
+    if (!ai) {
+      res.status(500).json({ error: 'شروع گفتگو ناموفق بود', reason: 'ai_failed' });
+      return;
+    }
+    res.status(201).json({
+      ok: true,
+      aiFallback: true,
+      cost: 0,
+      serviceKind: def.kind,
+      agentSlug: def.slug,
+      agentName: def.name,
+      consultations: [decorateAiConsultDisplay(ai.consult)],
+      advice: ai.advice,
+      adviceSource: ai.source,
+      reused: Boolean(ai.reused),
+      message: `گفتگو با ${def.name} شروع شد.`,
+      chatPath: `/vet-chats/${ai.consult.id}`,
+    });
+  } catch (err) {
+    console.warn('team-agent consult failed:', (err as Error).message);
+    res.status(500).json({ error: 'شروع گفتگو ناموفق بود', reason: 'ai_failed' });
+  }
 });
 
 /**

@@ -1053,6 +1053,25 @@ export async function quickVetConnect(
   });
 }
 
+export type TeamAgentChatResult = QuickVetConnectResult & {
+  agentSlug?: string;
+  agentName?: string;
+  chatPath?: string;
+  reused?: boolean;
+};
+
+export async function startTeamAgentChat(
+  agentSlug: string,
+  patientUserId: number,
+  token?: string | null
+): Promise<TeamAgentChatResult> {
+  return request<TeamAgentChatResult>('/api/consultations/team-agent', {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    body: JSON.stringify({ agentSlug, patientUserId }),
+  });
+}
+
 export async function listVetConsultations(filters: {
   patientUserId?: number;
   vetUserId?: number;
