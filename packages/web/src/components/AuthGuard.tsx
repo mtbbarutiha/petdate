@@ -6,12 +6,13 @@ import { useAuthStore } from '../hooks/useAuthStore';
 import { TelegramSync } from './OnboardingGuard';
 import { dashboardPathForUser } from '@petdate/shared';
 
-const PUBLIC_EXACT = new Set(['/', '/welcome', '/faq']);
-const PUBLIC_PREFIXES = ['/auth', '/admin', '/adoption', '/shop'];
+const PUBLIC_EXACT = new Set(['/', '/welcome', '/faq', '/vet-consult', '/magazine', '/news']);
+const PUBLIC_PREFIXES = ['/auth', '/admin', '/adoption', '/shop', '/magazine', '/vet-consult'];
 
 function isPublic(pathname: string) {
-  if (PUBLIC_EXACT.has(pathname)) return true;
-  return PUBLIC_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+  const p = pathname.replace(/\/+$/, '') || '/';
+  if (PUBLIC_EXACT.has(p)) return true;
+  return PUBLIC_PREFIXES.some((prefix) => p === prefix || p.startsWith(`${prefix}/`));
 }
 
 export function AuthGuard({ children }: { children?: React.ReactNode }) {

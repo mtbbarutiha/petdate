@@ -40,6 +40,9 @@ const MagazinePage = lazy(() =>
 const MagazineArticlePage = lazy(() =>
   import('./pages/MagazineArticlePage').then((m) => ({ default: m.MagazineArticlePage })),
 );
+const AdoptionListPage = lazy(() =>
+  import('./pages/AdoptionListPage').then((m) => ({ default: m.AdoptionListPage })),
+);
 const AdoptionDetailPage = lazy(() =>
   import('./pages/AdoptionDetailPage').then((m) => ({ default: m.AdoptionDetailPage })),
 );
@@ -349,6 +352,7 @@ export default function App() {
             <Route path="magazine" element={<MagazinePage />} />
             <Route path="magazine/:slug" element={<MagazineArticlePage />} />
             <Route path="news" element={<Navigate to="/magazine" replace />} />
+            <Route path="adoption" element={<AdoptionListPage />} />
             <Route path="adoption/:slug" element={<AdoptionDetailPage />} />
             <Route path="shop" element={<ShopHomePage />} />
             <Route path="shop/c/:category" element={<ShopCategoryPage />} />

@@ -118,6 +118,13 @@ function metaForPath(pathname: string, role?: ReturnType<typeof primaryRole>): P
       canonicalPath: '/vet-consult',
     };
   }
+  if (p === '/adoption') {
+    return {
+      title: SEO.titleTemplate('پذیرش پت'),
+      description: 'پت‌های نیازمند خانه در پت‌دیت — پذیرش مسئولانه حیوان خانگی.',
+      canonicalPath: '/adoption',
+    };
+  }
   if (p.startsWith('/adoption/')) {
     const slug = p.slice('/adoption/'.length);
     const pet = getAdoptionPet(slug);

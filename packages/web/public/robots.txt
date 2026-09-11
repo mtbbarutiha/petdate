@@ -8,6 +8,9 @@ Allow: /faq
 Allow: /shop
 Allow: /shop/c/
 Allow: /shop/product/
+Allow: /magazine
+Allow: /magazine/
+Allow: /adoption
 Allow: /adoption/
 Allow: /vet-consult
 Allow: /auth/login

@@ -200,6 +200,8 @@ function isExpectedUnauthNoise(req: Request, statusCode: number): boolean {
     '/api/auth/visit-fee',
     '/api/shop/my-orders',
     '/api/shop/checkout/card-status',
+    '/api/playdate-requests',
+    '/api/pets/mine',
   ];
   return expected.some((p) => path === p || path.startsWith(`${p}/`) || url.startsWith(p));
 }

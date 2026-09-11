@@ -144,7 +144,19 @@ export function ShopProductPage() {
                     onClick={() => setActiveImg(i)}
                     aria-label={`تصویر ${i + 1}`}
                   >
-                    <img src={src} alt="" />
+                    <img
+                      src={src}
+                      alt=""
+                      onError={(e) => {
+                        const el = e.currentTarget;
+                        if (el.dataset.fallback === '1') {
+                          el.style.visibility = 'hidden';
+                          return;
+                        }
+                        el.dataset.fallback = '1';
+                        el.src = product.image;
+                      }}
+                    />
                   </button>
                 ))}
               </div>

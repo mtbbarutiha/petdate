@@ -134,7 +134,7 @@ export const SHOP_PRODUCTS: ShopProduct[] = [
     priceToman: 4_850_000,
     compareAtToman: 5_450_000,
     image: `${P}/01-1.png`,
-    images: [`${P}/01-1.png`, `${P}/01-2.jpg`, `${P}/01-3.png`, `${P}/2.jpg`],
+    images: [`${P}/01-1.png`, `${P}/01-2.jpg`, `${P}/01.jpg`, `${P}/2.jpg`],
     badge: 'hot',
     inStock: true,
     sku: 'PD-RC-MA-4KG',
@@ -3366,11 +3366,17 @@ export function productDiscountPercent(p: ShopProduct): number | null {
   return Math.round(((p.compareAtToman - p.priceToman) / p.compareAtToman) * 100);
 }
 
-/** گالری محصول — حداقل تصویر اصلی */
+/** گالری محصول — حداقل تصویر اصلی، بدون تکرار و بدون مسیر خالی */
 export function productGallery(p: ShopProduct): string[] {
-  const list = (p.images ?? []).map((u) => u.trim()).filter(Boolean);
-  if (list.length) return list;
-  return p.image ? [p.image] : [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const raw of [...(p.images ?? []), p.image]) {
+    const src = String(raw ?? '').trim();
+    if (!src || seen.has(src)) continue;
+    seen.add(src);
+    out.push(src);
+  }
+  return out;
 }
 
 export function productSellerName(p: ShopProduct): string {

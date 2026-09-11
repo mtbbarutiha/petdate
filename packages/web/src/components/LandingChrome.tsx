@@ -112,7 +112,7 @@ export function LandingChrome({
         ) : (
           <nav className="pepito-nav-links" aria-label="بخش‌ها">
             <Link to="/#services">خدمات</Link>
-            <Link to="/#pets">پذیرش</Link>
+            <Link to="/adoption">پذیرش</Link>
             <Link to="/shop">پت شاپ</Link>
             <Link to="/vet-consult">دامپزشک</Link>
             <Link to="/faq">سؤالات</Link>

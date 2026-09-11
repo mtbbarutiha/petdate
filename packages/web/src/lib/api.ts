@@ -18,6 +18,25 @@ import type {
 /** Empty = same-origin (Vite proxies /api → API). Override with VITE_API_URL if needed. */
 const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ?? '';
 
+const WEB_AUTH_STORAGE_KEY = 'petdate_web_auth_v1';
+
+function readStoredWebToken(): string | undefined {
+  if (typeof localStorage === 'undefined') return undefined;
+  try {
+    const raw = localStorage.getItem(WEB_AUTH_STORAGE_KEY);
+    if (!raw) return undefined;
+    const token = (JSON.parse(raw) as { token?: string }).token;
+    return typeof token === 'string' && token.trim() ? token.trim() : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function storedAuthHeaders(): Record<string, string> {
+  const token = readStoredWebToken();
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
 /**
  * Resolve stored media paths for <img src> / CSS backgrounds.
  * Relative `/api/...` must be prefixed with VITE_API_URL when the web origin differs.
@@ -279,12 +298,16 @@ export async function listPlaydateRequests(filters?: {
   if (filters?.petId) params.set('petId', String(filters.petId));
   if (filters?.status) params.set('status', filters.status);
   const qs = params.toString();
-  return request<PlaydateRequest[]>(`/api/playdate-requests${qs ? `?${qs}` : ''}`);
+  return request<PlaydateRequest[]>(`/api/playdate-requests${qs ? `?${qs}` : ''}`, {
+    headers: storedAuthHeaders(),
+  });
 }
 
 export async function getPlaydateRequest(id: number): Promise<PlaydateRequest | null> {
   try {
-    return await request<PlaydateRequest>(`/api/playdate-requests/${id}`);
+    return await request<PlaydateRequest>(`/api/playdate-requests/${id}`, {
+      headers: storedAuthHeaders(),
+    });
   } catch {
     return null;
   }

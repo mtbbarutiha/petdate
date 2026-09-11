@@ -1,7 +1,34 @@
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
+import fs from 'fs';
 import path from 'path';
+
+/** Serve local seed HTML in `vite` only — never copied into production dist. */
+function serveDevSeedHtml(): Plugin {
+  const seedsDir = path.resolve(__dirname, 'dev-seeds');
+  const names = new Set(['/dev-seed.html', '/panels-seed.html']);
+  return {
+    name: 'petdate-dev-seeds',
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const url = (req.url ?? '').split('?')[0];
+        if (!names.has(url)) {
+          next();
+          return;
+        }
+        const file = path.join(seedsDir, path.basename(url));
+        if (!fs.existsSync(file)) {
+          next();
+          return;
+        }
+        res.setHeader('Content-Type', 'text/html; charset=utf-8');
+        res.setHeader('Cache-Control', 'no-store');
+        res.end(fs.readFileSync(file));
+      });
+    },
+  };
+}
 
 export default defineConfig({
   resolve: {
@@ -10,6 +37,7 @@ export default defineConfig({
     },
   },
   plugins: [
+    serveDevSeedHtml(),
     react(),
     VitePWA({
       // prompt — autoUpdate+skipWaiting was full-reloading open tabs (e.g. /chats)
@@ -48,6 +76,9 @@ export default defineConfig({
         'sitemap.xml',
         'llms.txt',
         'llms-full.txt',
+        'offline.html',
+        'registerSW.js',
+        'manifest.json',
       ],
       manifest: {
         name: 'پت‌دیت | PetDate',
