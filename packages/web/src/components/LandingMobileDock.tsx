@@ -2,7 +2,6 @@ import { useCallback, useEffect, useId, useRef, useState, type MouseEvent, type 
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Check, UserRound } from 'lucide-react';
 import {
-  USER_ROLE_LABELS,
   dashboardPathForRole,
   normalizeRoles,
   primaryRole,
@@ -37,7 +36,7 @@ export function LandingMobileDock() {
   const roles = normalizeRoles(user?.roles, user?.role);
   const activeRole = primaryRole(roles, user?.role);
   const photo = resolvePublicMediaUrl(user?.avatarUrl);
-  const initial = (user?.name?.trim()?.[0] || 'پ').toUpperCase();
+  const initial = (user?.name?.trim()?.[0] || 'P').toUpperCase();
 
   const hideDock =
     pathname.startsWith('/admin') ||
@@ -94,11 +93,13 @@ export function LandingMobileDock() {
     navigate(isLoggedIn ? '/profile' : loginPath('/profile'));
   };
 
+  const roleLabel = (role: UserRole) => t(`roles.${role}`);
+
   const handleSwitchRole = async (role: UserRole) => {
     if (busy || !user) return;
     if (activeRole === role) {
       setRoleOpen(false);
-      setToast(`نقش فعال: ${USER_ROLE_LABELS[role]}`);
+      setToast(t('roles.activeToast', { role: roleLabel(role) }));
       navigate(dashboardPathForRole(role));
       return;
     }
@@ -107,10 +108,10 @@ export function LandingMobileDock() {
       const updated = await setPrimaryRole(role);
       const next = primaryRole(updated.roles, updated.role) ?? role;
       setRoleOpen(false);
-      setToast(`نقش فعال: ${USER_ROLE_LABELS[next]}`);
+      setToast(t('roles.activeToast', { role: roleLabel(next) }));
       navigate(dashboardPathForRole(next));
     } catch (err) {
-      setToast(err instanceof Error ? err.message : 'تعویض نقش ناموفق بود');
+      setToast(err instanceof Error ? err.message : t('roles.switchFailed'));
     } finally {
       setBusy(false);
     }
@@ -146,7 +147,7 @@ export function LandingMobileDock() {
 
   return (
     <>
-      <nav className="pepito-landing-mobile-dock" aria-label="میانبرهای موبایل">
+      <nav className="pepito-landing-mobile-dock" aria-label={t('nav.mobileShortcuts')}>
         {items.map((item) => {
           const href = item.gate && !isLoggedIn ? loginPath(item.to) : item.to;
           const active = item.match?.(pathname) ?? pathname === item.to;
@@ -205,11 +206,11 @@ export function LandingMobileDock() {
             id={panelId}
             className="pepito-dock-role-sheet"
             role="dialog"
-            aria-label="تغییر نقش"
+            aria-label={t('roles.switchTitle')}
           >
             <div className="pepito-dock-role-sheet-handle" aria-hidden />
-            <p className="pepito-dock-role-sheet-title">نقش‌های من</p>
-            <p className="pepito-dock-role-sheet-hint">نگه‌داشتن روی عکس پروفایل این منو را باز می‌کند</p>
+            <p className="pepito-dock-role-sheet-title">{t('roles.myRoles')}</p>
+            <p className="pepito-dock-role-sheet-hint">{t('roles.longPressHint')}</p>
             <ul className="pepito-dock-role-sheet-list">
               {roles.map((role) => {
                 const isActive = role === activeRole;
@@ -221,14 +222,14 @@ export function LandingMobileDock() {
                       disabled={busy}
                       onClick={() => void handleSwitchRole(role)}
                     >
-                      <span>{USER_ROLE_LABELS[role]}</span>
+                      <span>{roleLabel(role)}</span>
                       {isActive ? (
                         <span className="pepito-dock-role-sheet-badge">
                           <Check size={14} strokeWidth={2.5} aria-hidden />
-                          فعال
+                          {t('roles.activeBadge')}
                         </span>
                       ) : (
-                        <span className="pepito-dock-role-sheet-switch">انتخاب</span>
+                        <span className="pepito-dock-role-sheet-switch">{t('roles.select')}</span>
                       )}
                     </button>
                   </li>
@@ -240,7 +241,7 @@ export function LandingMobileDock() {
               className="pepito-dock-role-sheet-profile"
               onClick={() => setRoleOpen(false)}
             >
-              رفتن به پروفایل
+              {t('roles.goProfile')}
             </Link>
           </div>
         </div>

@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, PawPrint, Pencil, Plus, Stethoscope } from 'lucide-react';
-import { BRAND, petPublicIdOf, toPersianDigits } from '@petdate/shared';
+import { BRAND, petPublicIdOf } from '@petdate/shared';
 import { PetAvatar } from '../components/PetAvatar';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { useMyPets } from '../hooks/useMyPets';
@@ -37,7 +37,7 @@ export function MyPetsPage() {
               {BRAND.displayName}
             </p>
             <h1>{t('pets.title')}</h1>
-            <p className="pepito-my-pets-lead">برای دیدن و ویرایش پت‌ها وارد شو.</p>
+            <p className="pepito-my-pets-lead">{t('pets.loginLead')}</p>
           </div>
         </header>
         <Link to="/auth/login?next=/my-pets" className="pepito-btn button-1">
@@ -60,11 +60,11 @@ export function MyPetsPage() {
           </p>
           <h1>{t('pets.title')}</h1>
           <p className="pepito-my-pets-lead">
-            پروفایل، ویرایش و پرونده پزشکی هر پت — جدا از پروفایل خودت.
+            {t('pets.leadOwner')}
           </p>
           <Link to="/add-pet" className="pepito-btn button-1 pepito-my-pets-add">
             <Plus size={18} aria-hidden />
-            ثبت پت جدید
+            {t('pets.addNew')}
           </Link>
         </div>
       </header>
@@ -81,11 +81,11 @@ export function MyPetsPage() {
           <span className="pepito-my-pets-empty-mark" aria-hidden>
             <PawIcon size={28} />
           </span>
-          <h2>هنوز پتی ثبت نشده</h2>
-          <p>اولین پت را بساز تا همبازی و پرونده پزشکی فعال شود.</p>
+          <h2>{t('pets.emptyTitle')}</h2>
+          <p>{t('pets.emptyLead')}</p>
           <Link to="/add-pet" className="pepito-btn button-1">
             <Plus size={18} aria-hidden />
-            ثبت پت
+            {t('pets.add')}
           </Link>
         </div>
       ) : (
@@ -97,7 +97,7 @@ export function MyPetsPage() {
                 <Link to={`/pets/${pet.id}`} className="pepito-my-pets-card-main">
                   <div className="pepito-my-pets-card-media">
                     {pet.lookingForPlaymate ? (
-                      <span className="pepito-my-pets-chip">دنبال همبازی</span>
+                      <span className="pepito-my-pets-chip">{t('pets.lookingPlaymate')}</span>
                     ) : null}
                     <PetAvatar
                       type={ui.type}
@@ -118,7 +118,7 @@ export function MyPetsPage() {
                         {[pet.breed, pet.city || pet.ownerCity].filter(Boolean).join(' · ') || '—'}
                       </small>
                       <span className="pepito-my-pets-card-id" dir="ltr">
-                        شناسه پت: {petPublicIdOf(pet)}
+                        {t('pets.petId', { id: petPublicIdOf(pet) })}
                       </span>
                     </div>
                   </div>
@@ -127,25 +127,25 @@ export function MyPetsPage() {
                   <Link
                     to={`/pets/${pet.id}`}
                     className="pepito-my-pets-action"
-                    aria-label={`پروفایل ${pet.name}`}
+                    aria-label={t('pets.profileOf', { name: pet.name })}
                   >
-                    پروفایل
+                    {t('pets.profileShort')}
                   </Link>
                   <Link
                     to={`/pets/${pet.id}/edit`}
                     className="pepito-my-pets-action"
-                    aria-label={`ویرایش ${pet.name}`}
+                    aria-label={t('pets.editOf', { name: pet.name })}
                   >
                     <Pencil size={14} aria-hidden />
-                    ویرایش
+                    {t('pets.editShort')}
                   </Link>
                   <Link
                     to={`/pets/${pet.id}#pet-medical`}
                     className="pepito-my-pets-action pepito-my-pets-action--med"
-                    aria-label={`پرونده پزشکی ${pet.name}`}
+                    aria-label={t('pets.medicalOf', { name: pet.name })}
                   >
                     <Stethoscope size={14} aria-hidden />
-                    پرونده
+                    {t('pets.medicalShort')}
                   </Link>
                 </div>
               </li>
@@ -155,7 +155,7 @@ export function MyPetsPage() {
       )}
 
       <p className="pepito-my-pets-count" aria-live="polite">
-        {pets.length ? `${toPersianDigits(String(pets.length))} پت ثبت‌شده` : null}
+        {pets.length ? t('pets.countRegistered', { n: pets.length }) : null}
       </p>
 
       <button
@@ -164,7 +164,7 @@ export function MyPetsPage() {
         onClick={() => navigate(-1)}
       >
         <ArrowRight size={16} aria-hidden />
-        بازگشت
+        {t('common.back')}
       </button>
     </div>
   );

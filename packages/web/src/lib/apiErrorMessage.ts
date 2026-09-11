@@ -1,18 +1,30 @@
 /**
- * Map API error bodies to short Persian messages.
+ * Map API error bodies to short UI messages (FA/EN via optional lang).
  * www.petdate.ir (WCDN) often replaces 4xx/5xx JSON with HTML "Upstream Error" pages;
  * never surface raw `Unexpected token '<' ... is not valid JSON` to the UI.
  */
 
-export function apiStatusFallbackMessage(status: number): string {
-  if (status === 401) return 'برای ادامه وارد حساب شو.';
-  if (status === 403) return 'دسترسی به این بخش را نداری.';
-  if (status === 404) return 'مورد درخواستی پیدا نشد.';
-  if (status === 408 || status === 504) return 'پاسخ سرور طول کشید. دوباره تلاش کن.';
-  if (status === 429) return 'تعداد درخواست‌ها زیاد بود. کمی صبر کن.';
-  if (status >= 500) return 'خطای سرور. لطفاً دوباره تلاش کن.';
-  if (status >= 400) return `خطای ${status}`;
-  return 'پاسخ سرور نامعتبر بود.';
+import type { Lang } from '../i18n/types';
+import { createTranslator } from '../i18n/lookup';
+import { fa } from '../i18n/locales/fa';
+import { en } from '../i18n/locales/en';
+
+const tFa = createTranslator(fa);
+const tEn = createTranslator(en, fa);
+
+function tr(lang: Lang | undefined, key: string, vars?: Record<string, string | number>): string {
+  return (lang === 'en' ? tEn : tFa)(key, vars);
+}
+
+export function apiStatusFallbackMessage(status: number, lang: Lang = 'fa'): string {
+  if (status === 401) return tr(lang, 'errors.needLogin');
+  if (status === 403) return tr(lang, 'errors.forbidden');
+  if (status === 404) return tr(lang, 'errors.notFound');
+  if (status === 408 || status === 504) return tr(lang, 'errors.timeout');
+  if (status === 429) return tr(lang, 'errors.rateLimit');
+  if (status >= 500) return tr(lang, 'errors.server');
+  if (status >= 400) return tr(lang, 'errors.status', { status });
+  return tr(lang, 'errors.invalid');
 }
 
 export function looksLikeHtmlBody(body: string): boolean {
@@ -29,11 +41,13 @@ export function looksLikeHtmlBody(body: string): boolean {
 export function apiErrorMessageFromBody(
   status: number,
   body: string,
-  fallback = apiStatusFallbackMessage(status)
+  fallback?: string,
+  lang: Lang = 'fa'
 ): string {
+  const resolvedFallback = fallback ?? apiStatusFallbackMessage(status, lang);
   const trimmed = (body || '').trim();
-  if (!trimmed) return fallback;
-  if (looksLikeHtmlBody(trimmed)) return fallback;
+  if (!trimmed) return resolvedFallback;
+  if (looksLikeHtmlBody(trimmed)) return resolvedFallback;
 
   try {
     const json = JSON.parse(trimmed) as {
@@ -43,14 +57,13 @@ export function apiErrorMessageFromBody(
       requiresResendConfirm?: boolean;
     };
     const msg = (json.error || json.message || '').trim();
-    return msg || fallback;
+    return msg || resolvedFallback;
   } catch {
-    // Plain text from origin — keep short; never dump HTML/JSON parse noise
     if (
       /Unexpected token|is not valid JSON|JSON\.parse/i.test(trimmed) ||
       trimmed.length > 280
     ) {
-      return fallback;
+      return resolvedFallback;
     }
     return trimmed;
   }
@@ -58,17 +71,18 @@ export function apiErrorMessageFromBody(
 
 export function parseApiJsonBody<T>(
   status: number,
-  body: string
+  body: string,
+  lang: Lang = 'fa'
 ): { ok: true; data: T } | { ok: false; message: string; code?: string; requiresResendConfirm?: boolean } {
   const trimmed = (body || '').trim();
   if (!trimmed) {
     if (status >= 200 && status < 300) {
       return { ok: true, data: undefined as T };
     }
-    return { ok: false, message: apiStatusFallbackMessage(status) };
+    return { ok: false, message: apiStatusFallbackMessage(status, lang) };
   }
   if (looksLikeHtmlBody(trimmed)) {
-    return { ok: false, message: apiStatusFallbackMessage(status || 502) };
+    return { ok: false, message: apiStatusFallbackMessage(status || 502, lang) };
   }
   try {
     const data = JSON.parse(trimmed) as T & {
@@ -78,24 +92,19 @@ export function parseApiJsonBody<T>(
       requiresResendConfirm?: boolean;
     };
     if (status >= 200 && status < 300) {
-      return { ok: true, data: data as T };
+      return { ok: true, data };
     }
-    const message = apiErrorMessageFromBody(status, trimmed);
+    const msg =
+      (typeof data?.error === 'string' && data.error.trim()) ||
+      (typeof data?.message === 'string' && data.message.trim()) ||
+      apiStatusFallbackMessage(status, lang);
     return {
       ok: false,
-      message,
-      code: typeof data?.code === 'string' ? data.code : undefined,
-      requiresResendConfirm: Boolean(
-        data?.requiresResendConfirm || data?.code === 'RESEND_CONFIRM_REQUIRED'
-      ),
+      message: msg,
+      code: data?.code,
+      requiresResendConfirm: data?.requiresResendConfirm,
     };
   } catch {
-    return {
-      ok: false,
-      message:
-        status >= 200 && status < 300
-          ? 'پاسخ سرور قابل خواندن نبود.'
-          : apiStatusFallbackMessage(status),
-    };
+    return { ok: false, message: apiStatusFallbackMessage(status, lang) };
   }
 }

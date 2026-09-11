@@ -68,6 +68,7 @@ export function AdoptionDetailPage() {
     return <Navigate to="/adoption" replace />;
   }
 
+  const name = t(pet.nameKey);
   const related = ADOPTION_PETS;
 
   return (
@@ -80,9 +81,9 @@ export function AdoptionDetailPage() {
           <Link to="/#services">{t('nav.services')}</Link>
           <Link to="/adoption">{t('nav.adoption')}</Link>
           <Link to="/shop">{t('nav.petShop')}</Link>
-          <Link to="/#team">تیم</Link>
-          <Link to="/#reviews">نظرات</Link>
-          <Link to="/#faq" className="pepito-nav-faq">سؤالات</Link>
+          <Link to="/#team">{t('nav.team')}</Link>
+          <Link to="/#reviews">{t('nav.reviews')}</Link>
+          <Link to="/#faq" className="pepito-nav-faq">{t('nav.faq')}</Link>
         </nav>
         <div className="pepito-nav-actions">
           <LanguageToggle />
@@ -92,7 +93,7 @@ export function AdoptionDetailPage() {
           </Link>
           <GatedLink to="/chats" className="pepito-btn pepito-btn--nav">
             <PawIcon size={14} />
-            ارسال پیام
+            {t('common.sendMessage')}
           </GatedLink>
         </div>
       </header>
@@ -103,8 +104,8 @@ export function AdoptionDetailPage() {
       >
         <div className="pepito-adopt-banner-wash" aria-hidden />
         <div className="pepito-adopt-banner-inner">
-          <h1>نام پت: {pet.name}</h1>
-          <p>پذیرش یک پت</p>
+          <h1>{t('adoption.petNameLabel', { name })}</h1>
+          <p>{t('landing.adoptionEyebrow')}</p>
         </div>
       </section>
 
@@ -112,47 +113,47 @@ export function AdoptionDetailPage() {
         <div className="pepito-adopt-single-grid">
           <div className="pepito-adopt-gallery">
             <div className="pepito-adopt-gallery-main">
-              <img src={pet.gallery[0]} alt={pet.name} />
+              <img src={pet.gallery[0]} alt={name} />
             </div>
             <div className="pepito-adopt-gallery-row">
               {pet.gallery.slice(1, 3).map((src) => (
                 <div key={src} className="pepito-adopt-gallery-item">
-                  <img src={src} alt={`${pet.name} — گالری پذیرش`} loading="lazy" />
+                  <img src={src} alt={t('adoption.galleryAlt', { name })} loading="lazy" />
                 </div>
               ))}
             </div>
           </div>
 
           <div className="pepito-adopt-cont">
-            <h2>نام پت: {pet.name}</h2>
+            <h2>{t('adoption.petNameLabel', { name })}</h2>
             <ul className="pepito-adopt-list">
               {pet.details.map((d) => (
-                <li key={d.label}>
-                  <span className="pepito-adopt-list-label">{d.label}:</span>
-                  <span className="pepito-adopt-list-value">{d.value}</span>
+                <li key={d.labelKey}>
+                  <span className="pepito-adopt-list-label">{t(d.labelKey)}:</span>
+                  <span className="pepito-adopt-list-value">{t(d.valueKey, d.valueVars)}</span>
                 </li>
               ))}
             </ul>
 
-            <h3>درباره {pet.name}</h3>
-            <p className="pepito-adopt-about">{pet.about}</p>
+            <h3>{t('adoption.aboutHeading', { name })}</h3>
+            <p className="pepito-adopt-about">{t(pet.aboutKey)}</p>
             <ul className="pepito-adopt-traits">
-              {pet.traits.map((t) => (
-                <li key={t}>
+              {pet.traitKeys.map((key) => (
+                <li key={key}>
                   <i className="flaticon-pawprint-4" aria-hidden />
-                  <span>{t}</span>
+                  <span>{t(key)}</span>
                 </li>
               ))}
             </ul>
 
-            <h3>قوانین پذیرش</h3>
-            <p className="pepito-adopt-rules">{pet.rules}</p>
+            <h3>{t('adoption.rulesTitle')}</h3>
+            <p className="pepito-adopt-rules">{t(pet.rulesKey)}</p>
 
             <div className="pepito-adopt-ctas">
               <PetPurchaseLeadButton className="pepito-btn button-1 pepito-adoption-lead-btn" />
               <GatedLink to="/chats" className="pepito-btn button-3">
                 <PawIcon />
-                درخواست پذیرش
+                {t('adoption.requestAdoption')}
               </GatedLink>
             </div>
           </div>
@@ -165,32 +166,35 @@ export function AdoptionDetailPage() {
             <span className="pepito-eyebrow-icon" aria-hidden>
               <PawPrint size={18} />
             </span>
-            پذیرش یک پت
+            {t('landing.adoptionEyebrow')}
           </p>
-          <h2>یک دوست پشمالوی جدید پیدا کن</h2>
+          <h2>{t('landing.adoptionHeading')}</h2>
         </div>
         <div className="pepito-adoption-grid">
-          {related.map((p) => (
-            <article key={p.slug} className="pepito-adoption-card">
-              <div className="pepito-adoption-media">
-                <img src={p.img} alt={p.name} loading="lazy" />
-                <div className="pepito-adoption-shade" aria-hidden />
-              </div>
-              <div className="pepito-adoption-front">
-                <h3>{p.name}</h3>
-              </div>
-              <Link to={`/adoption/${p.slug}`} className="pepito-adoption-back">
-                <h3>{p.name}</h3>
-                <ul>
-                  {p.details.slice(0, 3).map((d) => (
-                    <li key={d.label}>
-                      {d.label}: {d.value}
-                    </li>
-                  ))}
-                </ul>
-              </Link>
-            </article>
-          ))}
+          {related.map((p) => {
+            const relatedName = t(p.nameKey);
+            return (
+              <article key={p.slug} className="pepito-adoption-card">
+                <div className="pepito-adoption-media">
+                  <img src={p.img} alt={relatedName} loading="lazy" />
+                  <div className="pepito-adoption-shade" aria-hidden />
+                </div>
+                <div className="pepito-adoption-front">
+                  <h3>{relatedName}</h3>
+                </div>
+                <Link to={`/adoption/${p.slug}`} className="pepito-adoption-back">
+                  <h3>{relatedName}</h3>
+                  <ul>
+                    {p.details.slice(0, 3).map((d) => (
+                      <li key={d.labelKey}>
+                        {t(d.labelKey)}: {t(d.valueKey, d.valueVars)}
+                      </li>
+                    ))}
+                  </ul>
+                </Link>
+              </article>
+            );
+          })}
         </div>
         <AdoptionPurchaseCta />
       </section>

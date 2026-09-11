@@ -1,3 +1,5 @@
+import { useI18n } from '../../i18n';
+import { shopLabel, productTitleForLang } from '../../lib/shopLocale';
 import { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import {
@@ -40,6 +42,7 @@ import { ShopProductCard } from '../../components/shop/ShopProductCard';
 type DetailTab = 'desc' | 'specs' | 'reviews';
 
 export function ShopProductPage() {
+  const { lang } = useI18n();
   const { id = '' } = useParams<{ id: string }>();
   const product = getProduct(id);
   const { addAnimated, pendingAddId } = useShopCart();
@@ -88,7 +91,7 @@ export function ShopProductPage() {
   const highlights = product.highlights?.length
     ? product.highlights
     : [
-        brand ? `برند ${brand.labelFa}` : 'برند پت‌دیت شاپ',
+        brand ? `برند ${shopLabel(lang, brand.labelFa, brand.labelEn)}` : 'برند پت‌دیت شاپ',
         product.inStock ? 'آماده ارسال از انبار پت‌دیت' : 'فعلاً ناموجود',
         warranty,
       ];
@@ -111,18 +114,18 @@ export function ShopProductPage() {
           {category ? (
             <>
               <span>/</span>
-              <Link to={`/shop/c/${category.slug}`}>{category.labelFa}</Link>
+              <Link to={`/shop/c/${category.slug}`}>{shopLabel(lang, category.labelFa, category.labelEn)}</Link>
             </>
           ) : null}
           <span>/</span>
-          <span>{product.title}</span>
+          <span>{productTitleForLang(lang, product.title, { titleEn: product.titleEn, slug: product.slug })}</span>
         </nav>
 
         <div className="pd-dk-pdp-top">
           {/* Gallery — Digikala style */}
           <div className="pd-dk-gallery">
             <div className="pd-dk-gallery-main">
-              <img src={mainSrc} alt={product.title} />
+              <img src={mainSrc} alt={productTitleForLang(lang, product.title, { titleEn: product.titleEn, slug: product.slug })} />
               {product.badge ? (
                 <span className={`pd-shop-badge pd-shop-badge--${product.badge}`}>
                   {BADGE_LABELS[product.badge]}
@@ -167,11 +170,11 @@ export function ShopProductPage() {
           <div className="pd-dk-info">
             {brand ? (
               <Link to={`/shop/c/${category?.slug ?? 'all'}?brand=${brand.id}`} className="pd-dk-brand">
-                {brand.labelFa}
+                {shopLabel(lang, brand.labelFa, brand.labelEn)}
                 <ChevronLeft size={14} aria-hidden />
               </Link>
             ) : null}
-            <h1 className="pd-dk-title">{product.title}</h1>
+            <h1 className="pd-dk-title">{productTitleForLang(lang, product.title, { titleEn: product.titleEn, slug: product.slug })}</h1>
             {product.titleEn ? <p className="pd-dk-title-en">{product.titleEn}</p> : null}
 
             <div className="pd-dk-meta">
@@ -198,7 +201,7 @@ export function ShopProductPage() {
                   <span className="pd-dk-meta-sep" aria-hidden>
                     |
                   </span>
-                  <Link to={`/shop/c/${category.slug}`}>{category.labelFa}</Link>
+                  <Link to={`/shop/c/${category.slug}`}>{shopLabel(lang, category.labelFa, category.labelEn)}</Link>
                 </>
               ) : null}
             </div>
@@ -381,11 +384,11 @@ export function ShopProductPage() {
                 <tbody>
                   <tr>
                     <th>برند</th>
-                    <td>{brand?.labelFa ?? '—'}</td>
+                    <td>{shopLabel(lang, brand?.labelFa ?? '', brand?.labelEn) ?? '—'}</td>
                   </tr>
                   <tr>
                     <th>دسته‌بندی</th>
-                    <td>{category?.labelFa ?? '—'}</td>
+                    <td>{shopLabel(lang, category?.labelFa ?? '', category?.labelEn) ?? '—'}</td>
                   </tr>
                   {product.sku ? (
                     <tr>

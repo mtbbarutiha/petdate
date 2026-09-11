@@ -19,6 +19,8 @@ assert.equal(looksLikeHtmlBody(wcdn403), true);
 assert.equal(looksLikeHtmlBody('{"error":"دسترسی به پرونده نداری"}'), false);
 
 assert.equal(apiStatusFallbackMessage(403), 'دسترسی به این بخش را نداری.');
+assert.equal(apiStatusFallbackMessage(403, 'en'), 'You do not have access to this section.');
+assert.equal(apiStatusFallbackMessage(401, 'en'), 'Log in to continue.');
 assert.equal(
   apiErrorMessageFromBody(403, wcdn403),
   'دسترسی به این بخش را نداری.'

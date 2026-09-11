@@ -100,6 +100,7 @@ export const fa: Dict = {
     conversations: 'گفتگوها',
     team: "تیم",
     reviews: "نظرات",
+    mobileShortcuts: "میانبرهای موبایل",
   },
   landing: {
     heroAria: 'اسلایدر نقش‌ها — همبازی، دامپزشک، مربی، بدون پت، پذیرش',
@@ -323,6 +324,12 @@ export const fa: Dict = {
     countRegistered: "{n} پت ثبت‌شده",
     addNew: "ثبت پت جدید",
     leadOwner: "پروفایل، ویرایش و پرونده پزشکی هر پت — جدا از پروفایل خودت.",
+    emptyTitle: "هنوز پتی ثبت نشده",
+    emptyLead: "اولین پت را بساز تا همبازی و پرونده پزشکی فعال شود.",
+    lookingPlaymate: "دنبال همبازی",
+    profileShort: "پروفایل",
+    editShort: "ویرایش",
+    medicalShort: "پرونده",
   },
   chats: {
     listAria: 'فهرست گفتگوها',
@@ -622,6 +629,12 @@ export const fa: Dict = {
     toman: "تومان",
     store: "فروشگاه",
     orders: "سفارش‌ها",
+    allProducts: "همه محصولات",
+    inCategory: " در «{name}»",
+    badgeHot: "پرفروش",
+    badgeSale: "تخفیف",
+    badgeNew: "جدید",
+    badgeLimited: "محدود",
   },
   magazine: {
     loadFail: "بارگذاری مجله ناموفق بود",

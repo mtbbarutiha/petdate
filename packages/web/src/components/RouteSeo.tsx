@@ -4,6 +4,9 @@ import { primaryRole, SEO, SITE } from '@petdate/shared';
 import { getAdoptionPet } from '../data/adoptionPets';
 import { getCategory, getProduct } from '../data/shopCatalog';
 import { useAuthStore } from '../hooks/useAuthStore';
+import { useI18n } from '../i18n';
+import type { Lang } from '../i18n';
+import { createTranslator, faDict, enDict } from '../i18n';
 
 type PageMeta = {
   title: string;
@@ -15,7 +18,8 @@ type PageMeta = {
 const DEFAULT_DESC = SEO.description;
 
 /** Public / app routes → document title (+ optional description). */
-function metaForPath(pathname: string, role?: ReturnType<typeof primaryRole>): PageMeta {
+function metaForPath(pathname: string, role?: ReturnType<typeof primaryRole>, lang: Lang = 'fa'): PageMeta {
+  const t = createTranslator(lang === 'en' ? enDict : faDict, faDict);
   const p = pathname.replace(/\/+$/, '') || '/';
 
   if (p === '/' || p === '/welcome') {
@@ -129,11 +133,10 @@ function metaForPath(pathname: string, role?: ReturnType<typeof primaryRole>): P
     const slug = p.slice('/adoption/'.length);
     const pet = getAdoptionPet(slug);
     if (pet) {
+      const name = t(pet.nameKey);
       return {
-        title: SEO.titleTemplate(`پذیرش ${pet.name} — حیوان خانگی`),
-        description:
-          pet.about ||
-          `جزئیات پذیرش ${pet.name} در پت‌دیت — پیدا کردن خانهٔ جدید برای حیوان خانگی.`,
+        title: SEO.titleTemplate(t('adoption.petNameLabel', { name })),
+        description: t(pet.aboutKey),
         canonicalPath: `/adoption/${pet.slug}`,
       };
     }
@@ -248,10 +251,11 @@ function upsertHreflang(hreflang: string, href: string) {
 export function RouteSeo() {
   const { pathname } = useLocation();
   const { user } = useAuthStore();
+  const { lang } = useI18n();
   const role = primaryRole(user?.roles, user?.role);
 
   useEffect(() => {
-    const meta = metaForPath(pathname, role);
+    const meta = metaForPath(pathname, role, lang);
     document.title = meta.title;
 
     const description = meta.description ?? DEFAULT_DESC;
@@ -278,7 +282,7 @@ export function RouteSeo() {
     upsertMeta('name', 'twitter:title', meta.title);
     upsertMeta('name', 'twitter:description', description);
     upsertMeta('name', 'twitter:image', SITE.ogImage);
-  }, [pathname, role]);
+  }, [pathname, role, lang]);
 
   return null;
 }
