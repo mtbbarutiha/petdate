@@ -1,0 +1,53 @@
+# ParsPack WCDN + origin (petdate.ir)
+
+Live topology confirmed 2026-09-11 (after #213):
+
+| Host | Edge | Origin pull |
+|------|------|-------------|
+| `https://petdate.ir` | Origin nginx (`server: nginx`) | Direct TLS to VPS |
+| `https://www.petdate.ir` | ParsPack **WCDN 3.9.6** (`wcdn-cache-policy: SMART`) | Flexible SSL → origin `:80` |
+| `http://www.petdate.ir` | WCDN / OpenResty **301** → `https://www.petdate.ir/` | Never hits origin |
+| `http://petdate.ir` | Origin nginx `:80` | Direct — **301** to HTTPS when not a CDN pull |
+
+Flexible SSL means: browser → CDN is HTTPS; CDN → origin is HTTP. Origin **must not** 301 every `:80` request, or www origin-pulls loop.
+
+## HTTP → HTTPS (`http://petdate.ir/`)
+
+`infra/nginx/petdate.conf` redirects **apex** HTTP to HTTPS when the request is not a CDN pull:
+
+- `$host = petdate.ir` **and**
+- `X-Forwarded-Proto` is not `https` **and**
+- no `WCDN-Edge` request header
+
+www `:80` stays HTTP 200 for Flexible origin pulls. `http://www.petdate.ir/` is already forced at the CDN edge.
+
+**Do not** add a blanket `:80` `return 301 https://$host…` for `www.petdate.ir`.
+
+If apex is later moved behind Flexible SSL without those headers, switch to a CDN “Always HTTPS” rule and remove the origin apex redirect.
+
+## www API 4xx bodies (JSON vs WCDN HTML)
+
+Origin always returns JSON for `/api/*` errors (`Content-Type: application/json`, `X-Content-Type-Options: nosniff`, `X-PetDate-API: 1`).
+
+| Request | Status | Body |
+|---------|--------|------|
+| `https://petdate.ir/api/pets/mine` (no auth) | 401 | `{"error":"وارد نشده‌اید"}` |
+| `https://www.petdate.ir/api/pets/mine` (no auth) | 401 | WCDN HTML **Upstream Error - Unauthorized** (~50KB) |
+
+Confirmed with `Accept: application/json`. The wrap happens **after** origin (`wcdn-nfc-reason: CacheControl_Header`). nginx cannot keep the JSON body on www without changing status codes (breaks clients) or turning Flexible SSL off.
+
+**CDN-only fix** (ParsPack panel — does not affect Flexible SSL):
+
+1. CDN → domain `www.petdate.ir` → **صفحات سفارشی** (Custom pages).
+2. Enable **نمایش خطای سرور مقصد** (show origin-server errors) so 4xx/5xx from `/api/*` pass through.
+3. Or disable custom error pages for HTTP 400 / 401 / 403 / 404 on this hostname.
+
+Until that toggle is on, treat www HTML 4xx as a **WCDN custom-error-page limit**. Apex JSON is the source of truth. SPA clients on www already parse JSON on 200s; 401/400 HTML is only visible to raw `curl` / non-browser clients hitting www.
+
+Docs: [تنظیمات دیگر CDN پارس‌پک](https://docs.parspack.com/cdn/other-settings/).
+
+## What origin will not do
+
+- Do not remap API 4xx → HTTP 200 `{ ok:false }` just to dodge WCDN error pages.
+- Do not force HTTPS on www `:80` (Flexible SSL).
+- Do not 301 www → apex on origin (do that in the CDN panel if desired).
