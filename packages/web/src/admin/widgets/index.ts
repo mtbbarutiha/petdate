@@ -60,6 +60,7 @@ export {
   TimeMultiLineWidget,
   WidgetEmpty,
 } from './ChartWidgets';
+export { CalendarWidget } from './CalendarWidget';
 export { useWidgetLayout, useWidgetUserKey } from './useWidgetLayout';
 
 // Re-export motion primitives so all admin panels share one kit

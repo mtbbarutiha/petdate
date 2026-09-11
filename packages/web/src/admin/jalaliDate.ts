@@ -141,6 +141,56 @@ export function jalaliDaysAgo(n: number, from = new Date()): JalaliDateValue {
   return currentJalaliParts(d);
 }
 
+/** Days in a Jalali month (Esfand leap-aware via Intl round-trip). */
+export function jalaliDaysInMonth(jy: number, jm: number): number {
+  if (jm < 1 || jm > 12) return 0;
+  if (jm <= 6) return 31;
+  if (jm <= 11) return 30;
+  const g = jalaliToGregorianYmd(jy, 12, 30);
+  const p = currentJalaliParts(new Date(g.gy, g.gm - 1, g.gd, 12, 0, 0));
+  return p.year === jy && p.month === 12 && p.day === 30 ? 30 : 29;
+}
+
+/** Gregorian days in month. */
+export function gregorianDaysInMonth(gy: number, gm: number): number {
+  return new Date(gy, gm, 0).getDate();
+}
+
+/**
+ * Weekday index with Saturday = 0 (Iranian week):
+ * ش ی د س چ پ ج → 0…6
+ */
+export function iranianWeekdayIndex(d: Date): number {
+  return (d.getDay() + 1) % 7;
+}
+
+/** Date at noon local for a Jalali Y/M/D. */
+export function jalaliPartsToDate(parts: {
+  year: number;
+  month: number;
+  day: number;
+}): Date {
+  const g = jalaliToGregorianYmd(parts.year, parts.month, parts.day);
+  return new Date(g.gy, g.gm - 1, g.gd, 12, 0, 0);
+}
+
+export const IRANIAN_WEEKDAY_LABELS = ['ش', 'ی', 'د', 'س', 'چ', 'پ', 'ج'] as const;
+
+export const GREGORIAN_MONTHS_FA = [
+  { v: 1, label: 'ژانویه' },
+  { v: 2, label: 'فوریه' },
+  { v: 3, label: 'مارس' },
+  { v: 4, label: 'آوریل' },
+  { v: 5, label: 'مه' },
+  { v: 6, label: 'ژوئن' },
+  { v: 7, label: 'ژوئیه' },
+  { v: 8, label: 'اوت' },
+  { v: 9, label: 'سپتامبر' },
+  { v: 10, label: 'اکتبر' },
+  { v: 11, label: 'نوامبر' },
+  { v: 12, label: 'دسامبر' },
+] as const;
+
 function parseAdminDateInput(raw?: string | null): Date | null {
   if (raw == null) return null;
   const s = String(raw).trim();

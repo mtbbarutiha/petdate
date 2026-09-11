@@ -8,9 +8,13 @@ import {
   formatAdminFaDate,
   formatJalaliNumFa,
   formatJalaliSlash,
+  gregorianDaysInMonth,
   gregorianIsoToJalaliParts,
+  iranianWeekdayIndex,
   jalaliDaysAgo,
+  jalaliDaysInMonth,
   jalaliPartsAndTimeToIso,
+  jalaliPartsToDate,
   jalaliPartsToGregorianIso,
   jalaliToGregorianYmd,
   parseJalaliSlash,
@@ -53,5 +57,19 @@ assert.match(jalaliDisplay, /۱۴۰۳|1403/);
 const gregDisplay = formatAdminFaDate('2024-03-20');
 assert.ok(gregDisplay && gregDisplay !== '—');
 assert.notEqual(gregDisplay, '2024-03-20');
+
+assert.equal(jalaliDaysInMonth(1403, 1), 31);
+assert.equal(jalaliDaysInMonth(1403, 7), 30);
+assert.equal(jalaliDaysInMonth(1403, 12), 30); // 1403 leap Esfand
+assert.equal(jalaliDaysInMonth(1402, 12), 29);
+assert.equal(gregorianDaysInMonth(2024, 2), 29);
+assert.equal(gregorianDaysInMonth(2023, 2), 28);
+
+const nowruz = jalaliPartsToDate({ year: 1403, month: 1, day: 1 });
+assert.equal(nowruz.getFullYear(), 2024);
+assert.equal(nowruz.getMonth(), 2);
+assert.equal(nowruz.getDate(), 20);
+// 2024-03-20 was Wednesday → Iranian week index (Sat=0): Wed=4
+assert.equal(iranianWeekdayIndex(nowruz), 4);
 
 console.log('JalaliDateSelect.selftest: ok');

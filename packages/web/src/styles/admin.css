@@ -1925,6 +1925,12 @@
   font-weight: 700;
 }
 
+.admin-app .admin-tabs .admin-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .admin-app .admin-pill {
   display: inline-flex;
   align-items: center;
@@ -4789,6 +4795,166 @@ body:has(.admin-app) {
 .admin-app .wdg-tile .admin-chart-panel { min-height: 0; padding: 0; }
 .admin-app .wdg-tile .admin-donut-wrap { gap: 8px; }
 .admin-app .wdg-tile .admin-donut-legend { font-size: 0.72rem; }
+
+/* Dual Jalali / Gregorian calendar widget */
+.admin-app .wdg-calendar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+  min-height: 0;
+}
+.admin-app .wdg-cal-modes {
+  display: flex;
+  gap: 6px;
+  align-self: stretch;
+}
+.admin-app .wdg-cal-mode {
+  flex: 1;
+  border: 1px solid var(--admin-border);
+  background: #fff;
+  color: var(--admin-muted);
+  border-radius: 10px;
+  padding: 6px 10px;
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease, border-color 160ms ease;
+}
+.admin-app .wdg-cal-mode.is-on {
+  background: color-mix(in srgb, var(--admin-mint) 22%, #fff);
+  border-color: color-mix(in srgb, var(--admin-mint) 55%, var(--admin-border));
+  color: #0b2a22;
+  font-weight: 700;
+}
+.admin-app .wdg-cal-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.admin-app .wdg-cal-nav-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  border: 1px solid var(--admin-border);
+  background: #fff;
+  color: var(--admin-ink);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.admin-app .wdg-cal-nav-btn:hover {
+  background: var(--admin-promo-mint);
+  border-color: color-mix(in srgb, var(--admin-mint) 40%, var(--admin-border));
+}
+.admin-app .wdg-cal-title {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.admin-app .wdg-cal-title strong {
+  font-size: 13px;
+  color: var(--admin-ink);
+  font-weight: 750;
+}
+.admin-app .wdg-cal-title span {
+  font-size: 11px;
+  color: var(--admin-muted);
+}
+.admin-app .wdg-cal-weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 2px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--admin-muted);
+  font-weight: 650;
+}
+.admin-app .wdg-cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 3px;
+  flex: 1;
+  min-height: 0;
+}
+.admin-app .wdg-cal-day {
+  aspect-ratio: 1;
+  min-height: 0;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--admin-promo-mint) 35%, #fff);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0;
+  padding: 2px;
+  cursor: pointer;
+  font-family: inherit;
+  transition: transform 140ms ease, background 140ms ease, border-color 140ms ease;
+}
+.admin-app .wdg-calendar:not(.wdg-calendar--reduced) .wdg-cal-day:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--admin-mint) 45%, var(--admin-border));
+}
+.admin-app .wdg-cal-day.is-out {
+  background: #f7f8fb;
+  opacity: 0.55;
+}
+.admin-app .wdg-cal-day.is-today {
+  background: color-mix(in srgb, var(--admin-mint) 28%, #fff);
+  border-color: var(--admin-mint);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--admin-mint) 35%, transparent);
+}
+.admin-app .wdg-cal-day.is-selected {
+  background: var(--admin-accent-soft);
+  border-color: var(--admin-accent);
+}
+.admin-app .wdg-cal-day-primary {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--admin-ink);
+  line-height: 1.1;
+}
+.admin-app .wdg-cal-day-secondary {
+  font-size: 9px;
+  color: var(--admin-muted);
+  line-height: 1.1;
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+.admin-app .wdg-cal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 2px;
+}
+.admin-app .wdg-cal-today-btn {
+  border: 1px solid var(--admin-border);
+  background: #fff;
+  color: var(--admin-ink);
+  border-radius: 10px;
+  padding: 5px 10px;
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.admin-app .wdg-cal-today-btn:hover {
+  background: var(--admin-promo-mint);
+}
+.admin-app .wdg-cal-hint {
+  font-size: 11px;
+  color: var(--admin-muted);
+}
+.admin-app .wdg-calendar--compact .wdg-cal-day-secondary { display: none; }
+.admin-app .wdg-calendar--compact .wdg-cal-hint { display: none; }
+.admin-app .wdg-calendar--compact .wdg-cal-day-primary { font-size: 11px; }
+
 @media (max-width: 1100px) {
   .admin-app .wdg-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .admin-app .wdg-tile--w3,
