@@ -1,6 +1,12 @@
 import { Fragment, useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { makeOrderPublicId, paymentPublicIdOf, userPublicIdOf, type PaymentOrder } from '@petdate/shared';
+import {
+  findCoinPackage,
+  makeOrderPublicId,
+  paymentPublicIdOf,
+  userPublicIdOf,
+  type PaymentOrder,
+} from '@petdate/shared';
 import {
   adminFetch,
   API_BASE,
@@ -14,7 +20,11 @@ import { formatAdminFaDateTime } from '../JalaliDateSelect';
 import { AdminIdChip } from '../AdminIds';
 import { AdminEntityCell, AdminThumb } from '../AdminThumb';
 
+/** Default: finance approval queue (pending + stuck receipt rows). */
+const REVIEW_QUEUE = 'review_queue';
+
 const STATUS_OPTIONS: { value: string; label: string }[] = [
+  { value: REVIEW_QUEUE, label: 'صف تأیید مالی (کارت)' },
   { value: 'pending', label: 'در انتظار بررسی (کارت)' },
   { value: '', label: 'همه' },
   { value: 'awaiting_receipt', label: 'منتظر رسید' },
@@ -37,14 +47,18 @@ function packageLabel(o: PaymentOrder): string {
   if (pkg === 'shoptoman') return 'پت شاپ · ریال پنل';
   if (pkg === 'shopcard') return 'پت شاپ · کارت‌به‌کارت';
   if (pkg.startsWith('wstars:')) return `کیف‌پول Stars · ${pkg}`;
-  if (o.coins > 0) return `${pkg} · ${formatNumFa(o.coins)} سکه`;
+  const coinPkg = findCoinPackage(pkg);
+  if (coinPkg) return `${coinPkg.label} · ${formatNumFa(coinPkg.coins)} سکه`;
+  if (o.coins > 0) return `${formatNumFa(o.coins)} سکه`;
   return pkg;
 }
 
 function amountLabel(o: PaymentOrder): string {
   const parts: string[] = [];
   if (o.amountToman != null) parts.push(formatTomanFa(o.amountToman));
-  if (o.amountStars != null) parts.push(`${formatNumFa(o.amountStars)}⭐`);
+  if (o.amountStars != null && o.method === 'stars') {
+    parts.push(`${formatNumFa(o.amountStars)}⭐`);
+  }
   return parts.length ? parts.join(' / ') : '—';
 }
 
@@ -74,6 +88,10 @@ function receiptHeaders(): HeadersInit {
   const user = getAdminUsername();
   if (user) headers['x-admin-username'] = user;
   return headers;
+}
+
+function canDecide(o: PaymentOrder): boolean {
+  return o.method === 'card' && o.status === 'pending';
 }
 
 function AdminPaymentReceiptImg({ order }: { order: PaymentOrder }) {
@@ -127,7 +145,7 @@ function AdminPaymentReceiptImg({ order }: { order: PaymentOrder }) {
 
 export function AdminPaymentsPage() {
   const [orders, setOrders] = useState<PaymentOrder[]>([]);
-  const [status, setStatus] = useState('pending');
+  const [status, setStatus] = useState(REVIEW_QUEUE);
   const [error, setError] = useState<string | null>(null);
   const [openId, setOpenId] = useState<number | null>(null);
   const [busyId, setBusyId] = useState<number | null>(null);
@@ -182,10 +200,10 @@ export function AdminPaymentsPage() {
     <div className="admin-page">
       <header className="admin-header">
         <div>
-          <h1>پرداخت‌ها / کارت‌به‌کارت</h1>
+          <h1>صف تأیید واریز / کارت‌به‌کارت</h1>
           <p>
-            {formatNumFa(orders.length)} مورد — صف تأیید کارت‌به‌کارت سکه و شاپ، هم‌تراز کیف پول و
-            Finance OS
+            {formatNumFa(orders.length)} مورد — تأیید رسید شارژ سکه و شاپ در پنل مالی (هم‌تراز کیف
+            پول کاربر)
           </p>
         </div>
         <div
@@ -236,7 +254,12 @@ export function AdminPaymentsPage() {
                 <Fragment key={o.id}>
                   <tr>
                     <td>
-                      <AdminIdChip publicId={paymentPublicIdOf(o)} />
+                      <div className="admin-cell-compact">
+                        <AdminIdChip publicId={paymentPublicIdOf(o)} />
+                        <span className="admin-muted" dir="ltr">
+                          #{o.id}
+                        </span>
+                      </div>
                     </td>
                     <td>
                       <AdminEntityCell
@@ -279,6 +302,9 @@ export function AdminPaymentsPage() {
                             پیگیری: {o.transferRef}
                           </span>
                         ) : null}
+                        {hasReceipt ? (
+                          <span className="admin-muted">رسید دارد</span>
+                        ) : null}
                       </div>
                     </td>
                     <td className="admin-cell-nowrap">{amountLabel(o)}</td>
@@ -306,7 +332,7 @@ export function AdminPaymentsPage() {
                         >
                           {open ? 'بستن' : 'جزئیات'}
                         </button>
-                        {o.status === 'pending' && o.method === 'card' ? (
+                        {canDecide(o) ? (
                           <>
                             <button
                               type="button"
@@ -363,9 +389,11 @@ export function AdminPaymentsPage() {
             {!orders.length ? (
               <tr>
                 <td colSpan={8} className="admin-muted">
-                  {status
-                    ? `موردی با وضعیت «${statusLabel(status)}» نیست — فیلتر را روی «همه» بگذارید.`
-                    : 'هنوز پرداختی ثبت نشده.'}
+                  {status === REVIEW_QUEUE
+                    ? 'صف تأیید خالی است — واریز منتظر تأییدی نیست.'
+                    : status
+                      ? `موردی با وضعیت «${statusLabel(status)}» نیست — فیلتر را روی «صف تأیید مالی» یا «همه» بگذارید.`
+                      : 'هنوز پرداختی ثبت نشده.'}
                 </td>
               </tr>
             ) : null}

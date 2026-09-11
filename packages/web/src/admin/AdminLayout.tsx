@@ -102,6 +102,13 @@ const NAV_GROUPS: NavGroup[] = [
   ]},
   { titleKey: 'admin.finance', items: [
     { to: '/admin/finance', icon: TrendingUp, labelKey: 'admin.financeDashboard', perm: 'finance.read' },
+    {
+      to: '/admin/payments',
+      icon: Wallet,
+      labelKey: 'admin.depositQueue',
+      perm: 'finance.read',
+      platformBadgeKey: 'payments',
+    },
     { to: '/admin/finance/accounts', icon: Landmark, labelKey: 'admin.accounts', perm: 'finance.read' },
     { to: '/admin/finance/transactions', icon: ArrowLeftRight, labelKey: 'admin.transactions', perm: 'finance.read' },
     { to: '/admin/finance/allocation', icon: Building2, labelKey: 'admin.allocation', perm: 'finance.read' },
@@ -115,7 +122,13 @@ const NAV_GROUPS: NavGroup[] = [
     { to: '/admin/shop/products', icon: Package, labelKey: 'admin.products', perm: 'shop.read' },
     { to: '/admin/shop/categories', icon: Store, labelKey: 'admin.categories', perm: 'shop.read' },
     { to: '/admin/shop/orders', icon: ShoppingBag, labelKey: 'admin.orders', perm: 'shop.read' },
-    { to: '/admin/payments', icon: Wallet, labelKey: 'admin.payments', perm: 'shop.read' },
+    {
+      to: '/admin/payments',
+      icon: Wallet,
+      labelKey: 'admin.payments',
+      perm: 'shop.read',
+      platformBadgeKey: 'payments',
+    },
   ]},
   { titleKey: 'admin.contentSystem', items: [
     { to: '/admin/magazine', icon: Newspaper, labelKey: 'admin.magazineNews', perm: 'platform.write' },

@@ -45,6 +45,25 @@ async function main() {
   assert(attached.ok && attached.order.status === 'pending', 'status pending');
   assert(attached.ok && attached.order.transferRef === 'TEST-REF-1', 'transfer ref saved');
 
+  const { adminPlatform } = await import('../admin-platform');
+  const queue = adminPlatform.listPaymentOrdersAdmin({ status: 'review_queue', limit: 20 });
+  assert(
+    queue.some((o) => o.id === order.id && o.status === 'pending'),
+    'order visible in finance review_queue'
+  );
+
+  // Stuck row with receipt still on awaiting_receipt must be re-queued on list.
+  getDb()
+    .prepare(
+      `UPDATE payment_orders SET status = 'awaiting_receipt', receipt_file_id = ? WHERE id = ?`
+    )
+    .run('/api/payments/receipts/1/demo.jpg', order.id);
+  const repaired = adminPlatform.listPaymentOrdersAdmin({ status: 'review_queue', limit: 20 });
+  assert(
+    repaired.some((o) => o.id === order.id && o.status === 'pending'),
+    'stuck awaiting_receipt+receipt re-queued'
+  );
+
   const approved = dbService.approveCardPayment(order.id);
   assert(approved.ok === true, 'approved');
   const after = dbService.getWallet(user.id)!;

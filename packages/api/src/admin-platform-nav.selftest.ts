@@ -23,6 +23,7 @@ async function main() {
   assert(typeof before.consults === 'number', 'consults count');
   assert(typeof before.verification === 'number', 'verification count');
   assert(typeof before.docs === 'number', 'docs count');
+  assert(typeof before.payments === 'number', 'payments count');
 
   const { user: owner } = dbService.findOrCreateUser({
     telegramId: `nav-badge-${process.pid}-${Date.now()}`,
@@ -49,11 +50,33 @@ async function main() {
     .prepare(`UPDATE pets SET photo_moderation_status = 'pending' WHERE id = ?`)
     .run(pet.id);
 
+  const pkgOrder = dbService.createPaymentOrder({
+    userId: owner.id,
+    packageId: 'p50',
+    coins: 50,
+    amountToman: 100_000,
+    method: 'card',
+    status: 'awaiting_receipt',
+  });
+  // Simulate stuck receipt (status not flipped) — listPaymentOrdersAdmin must re-queue.
+  getDb()
+    .prepare(
+      `UPDATE payment_orders SET receipt_file_id = ?, status = 'awaiting_receipt' WHERE id = ?`
+    )
+    .run('/api/payments/receipts/1/stuck.jpg', pkgOrder.id);
+
+  const queued = adminPlatform.listPaymentOrdersAdmin({ status: 'review_queue', limit: 50 });
+  assert(
+    queued.some((o) => o.id === pkgOrder.id && o.status === 'pending'),
+    'stuck receipt re-queued into review_queue as pending'
+  );
+
   const after = adminPlatform.getPlatformNavCounts();
   assert(after.users >= before.users + 1, 'users pending avatar');
   assert(after.pets >= before.pets + 1, 'pets pending photo');
   assert(after.verification >= before.verification + 1, 'verification pending');
   assert(after.docs >= before.docs + 2, 'docs includes credential + photo/avatar');
+  assert(after.payments >= before.payments + 1, 'payments queue badge');
 
   console.log('admin-platform-nav.selftest: ok', after);
 }

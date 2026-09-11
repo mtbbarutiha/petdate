@@ -314,7 +314,16 @@ export const adminPlatform = {
         stars: Number(wallet.stars ?? 0),
       },
       paymentOrdersPending: q(
-        `SELECT COUNT(*) as c FROM payment_orders WHERE status IN ('pending','awaiting_receipt')`
+        `SELECT COUNT(*) as c FROM payment_orders
+         WHERE method = 'card'
+           AND (
+             status = 'pending'
+             OR (
+               status = 'awaiting_receipt'
+               AND receipt_file_id IS NOT NULL
+               AND TRIM(receipt_file_id) != ''
+             )
+           )`
       ),
       botRelated: {
         chatMessages: q('SELECT COUNT(*) as c FROM playdate_chat_messages'),
@@ -374,6 +383,19 @@ export const adminPlatform = {
            WHERE COALESCE(avatar_moderation_status, 'approved') = 'pending'
              AND COALESCE(is_active, 1) = 1`
         ),
+      /** Card-to-card deposits waiting for finance approve/reject */
+      payments: q(
+        `SELECT COUNT(*) as c FROM payment_orders
+         WHERE method = 'card'
+           AND (
+             status = 'pending'
+             OR (
+               status = 'awaiting_receipt'
+               AND receipt_file_id IS NOT NULL
+               AND TRIM(receipt_file_id) != ''
+             )
+           )`
+      ),
     };
   },
 
@@ -426,13 +448,34 @@ export const adminPlatform = {
 
   listPaymentOrdersAdmin(filters?: { status?: string; limit?: number }): PaymentOrder[] {
     const d = db();
+    // Idempotent: flip stuck receipt+awaiting_receipt → pending so finance queue + approve work.
+    try {
+      d.prepare(
+        `UPDATE payment_orders
+         SET status = 'pending'
+         WHERE method = 'card'
+           AND status = 'awaiting_receipt'
+           AND receipt_file_id IS NOT NULL
+           AND TRIM(receipt_file_id) != ''`
+      ).run();
+    } catch {
+      /* ignore — column/table may be mid-migrate */
+    }
     let sql = `SELECT id FROM payment_orders WHERE 1=1`;
     const params: unknown[] = [];
-    if (filters?.status) {
+    const status = typeof filters?.status === 'string' ? filters.status.trim() : '';
+    /**
+     * Finance approval queue: card deposits with receipt awaiting admin.
+     * Includes stuck rows where receipt was saved but status never flipped to pending
+     * (those are re-queued above before this SELECT).
+     */
+    if (status === 'review_queue' || status === 'finance_queue') {
+      sql += ` AND method = 'card' AND status = 'pending'`;
+    } else if (status) {
       sql += ' AND status = ?';
-      params.push(filters.status);
+      params.push(status);
     }
-    sql += ' ORDER BY created_at DESC LIMIT ?';
+    sql += ' ORDER BY created_at DESC, id DESC LIMIT ?';
     params.push(Math.min(Math.max(filters?.limit ?? 100, 1), 300));
     const ids = d.prepare(sql).all(...params) as { id: number }[];
     return ids
