@@ -21,6 +21,12 @@ import {
   adminRtlHBarsValueAxis,
 } from '../../rechartsRtlHBars';
 import { AdminChartCard, AdminChartGrid, AdminDashPage, AdminKpiStrip, type AdminKpiItem } from '../../dash';
+import {
+  MOTION_PALETTE,
+  MotionBarGradientDefs,
+  MotionChartTooltip,
+  useRechartsMotion,
+} from '../../motionCharts';
 import { HrLinkGrid, formatHrMoney } from './HrUi';
 
 type ChartRow = { name: string; count: number };
@@ -52,27 +58,23 @@ type Dash = {
 const DEPT_COLORS = ['#15cca0', '#5c4d91', '#fd961e', '#3b82f6', '#ec4899', '#14b8a6', '#8b5cf6'];
 const STATUS_COLORS = ['#15cca0', '#fd961e', '#c62828', '#5c4d91', '#64748b'];
 
-function ChartTip({
+function HrMoneyTip({
   active,
   payload,
   label,
-  unit = 'نفر',
-  money = false,
 }: {
   active?: boolean;
   payload?: Array<{ value?: number; name?: string; payload?: ChartRow | CostDeptRow }>;
   label?: string;
-  unit?: string;
-  money?: boolean;
 }) {
   if (!active || !payload?.length) return null;
   const row = payload[0];
-  const title = label || row.payload?.name || row.name || '';
-  const n = Number(row.value || 0);
+  const title = label || row?.payload?.name || row?.name || '';
+  const n = Number(row?.value || 0);
   return (
-    <div className="hr-chart-tooltip">
-      <div className="hr-chart-tooltip-label">{title}</div>
-      <strong>{money ? formatHrMoney(n) : `${formatNumFa(n)} ${unit}`}</strong>
+    <div className="admin-motion-callout" role="tooltip">
+      <div className="admin-motion-callout-label">{title}</div>
+      <strong>{formatHrMoney(n)}</strong>
     </div>
   );
 }
@@ -86,6 +88,7 @@ function costAxisTick(v: number): string {
 }
 
 export function AdminHrDashboardPage() {
+  const motion = useRechartsMotion();
   const [data, setData] = useState<Dash | null>(null);
   const [error, setError] = useState<string | null>(null);
   const load = useCallback(async () => {
@@ -174,11 +177,12 @@ export function AdminHrDashboardPage() {
         >
           <ResponsiveContainer width="100%" height={chartRowHeight}>
             <BarChart layout="vertical" data={deptData} margin={{ ...adminRtlHBarsMargin }}>
+              <MotionBarGradientDefs id="hrDeptBar" from={MOTION_PALETTE.mint} to={MOTION_PALETTE.purple} />
               <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--admin-border)" />
               <XAxis {...adminRtlHBarsValueAxis} />
               <YAxis dataKey="name" {...adminRtlHBarsCategoryAxis} />
-              <Tooltip content={<ChartTip />} cursor={{ fill: 'rgba(92,77,145,0.06)' }} />
-              <Bar dataKey="count" radius={adminRtlHBarsRadius} maxBarSize={22} name="نفر">
+              <Tooltip content={<MotionChartTooltip />} cursor={{ fill: 'rgba(92,77,145,0.06)' }} />
+              <Bar dataKey="count" radius={adminRtlHBarsRadius} maxBarSize={22} name="نفر" {...motion}>
                 {deptData.map((_, i) => (
                   <Cell key={i} fill={DEPT_COLORS[i % DEPT_COLORS.length]} />
                 ))}
@@ -197,11 +201,12 @@ export function AdminHrDashboardPage() {
         >
           <ResponsiveContainer width="100%" height={chartRowHeight}>
             <BarChart layout="vertical" data={costDeptData} margin={{ ...adminRtlHBarsMargin }}>
+              <MotionBarGradientDefs id="hrCostBar" from={MOTION_PALETTE.coral} to={MOTION_PALETTE.purple} />
               <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--admin-border)" />
               <XAxis {...adminRtlHBarsValueAxis} tickFormatter={costAxisTick} domain={[0, 'auto']} />
               <YAxis dataKey="name" {...adminRtlHBarsCategoryAxis} />
-              <Tooltip content={<ChartTip money />} cursor={{ fill: 'rgba(92,77,145,0.06)' }} />
-              <Bar dataKey="total" radius={adminRtlHBarsRadius} maxBarSize={22} name="هزینه">
+              <Tooltip content={<HrMoneyTip />} cursor={{ fill: 'rgba(92,77,145,0.06)' }} />
+              <Bar dataKey="total" radius={adminRtlHBarsRadius} maxBarSize={22} name="هزینه" {...motion}>
                 {costDeptData.map((_, i) => (
                   <Cell key={i} fill={DEPT_COLORS[i % DEPT_COLORS.length]} />
                 ))}
@@ -217,12 +222,12 @@ export function AdminHrDashboardPage() {
             <div className="hr-dash-chart" style={{ height: 180 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={statusPie} dataKey="count" nameKey="name" innerRadius={48} outerRadius={72} paddingAngle={2}>
+                  <Pie data={statusPie} dataKey="count" nameKey="name" innerRadius={48} outerRadius={72} paddingAngle={2} {...motion}>
                     {statusPie.map((s) => (
                       <Cell key={s.name} fill={s.color} />
                     ))}
                   </Pie>
-                  <Tooltip content={<ChartTip />} />
+                  <Tooltip content={<MotionChartTooltip />} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
@@ -247,11 +252,12 @@ export function AdminHrDashboardPage() {
         >
           <ResponsiveContainer width="100%" height={Math.max(200, 36 * Math.max(locData.length, 3))}>
             <BarChart layout="vertical" data={locData} margin={{ ...adminRtlHBarsMargin }}>
+              <MotionBarGradientDefs id="hrLocBar" from={MOTION_PALETTE.purple} to={MOTION_PALETTE.blue} />
               <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--admin-border)" />
               <XAxis {...adminRtlHBarsValueAxis} />
               <YAxis dataKey="name" {...adminRtlHBarsCategoryAxis} />
-              <Tooltip content={<ChartTip />} cursor={{ fill: 'rgba(92,77,145,0.06)' }} />
-              <Bar dataKey="count" radius={adminRtlHBarsRadius} maxBarSize={18} fill="#5c4d91" />
+              <Tooltip content={<MotionChartTooltip />} cursor={{ fill: 'rgba(92,77,145,0.06)' }} />
+              <Bar dataKey="count" radius={adminRtlHBarsRadius} maxBarSize={18} fill="url(#hrLocBar-h)" {...motion} />
             </BarChart>
           </ResponsiveContainer>
         </AdminChartCard>

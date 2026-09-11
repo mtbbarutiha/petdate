@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import {
   Area,
@@ -31,6 +31,15 @@ import {
   adminRtlHBarsRadius,
   adminRtlHBarsValueAxis,
 } from '../../rechartsRtlHBars';
+import {
+  AdminProgressRing,
+  MOTION_PALETTE,
+  MotionAreaGradientDefs,
+  MotionBarGradientDefs,
+  MotionChartTooltip,
+  usePrefersReducedMotion,
+  useRechartsMotion,
+} from '../../motionCharts';
 
 const STANDING_COLOR: Record<string, string> = {
   'در مسیر درست': '#15cca0',
@@ -41,12 +50,20 @@ const STANDING_COLOR: Record<string, string> = {
 function GaugeSemi({ pct, standing }: { pct: number; standing: string }) {
   const color = STANDING_COLOR[standing] || '#c62828';
   const clamped = Math.max(0, Math.min(100, pct));
+  const reduced = usePrefersReducedMotion();
   const r = 70;
   const c = Math.PI * r;
   const filled = (clamped / 100) * c;
   return (
     <div className="crm-gauge" aria-label={`تحقق ${pct} درصد`}>
       <svg viewBox="0 0 180 110" width="180" height="110">
+        <defs>
+          <linearGradient id="crmGaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor={MOTION_PALETTE.blue} />
+            <stop offset="55%" stopColor={color} />
+            <stop offset="100%" stopColor={MOTION_PALETTE.mint} />
+          </linearGradient>
+        </defs>
         <path
           d="M 20 95 A 70 70 0 0 1 160 95"
           fill="none"
@@ -57,10 +74,19 @@ function GaugeSemi({ pct, standing }: { pct: number; standing: string }) {
         <path
           d="M 20 95 A 70 70 0 0 1 160 95"
           fill="none"
-          stroke={color}
+          stroke="url(#crmGaugeGrad)"
           strokeWidth="14"
           strokeLinecap="round"
           strokeDasharray={`${filled} ${c}`}
+          className={reduced ? undefined : 'admin-motion-ring-arc'}
+          style={
+            reduced
+              ? undefined
+              : ({
+                  ['--ring-target' as string]: String(filled),
+                  ['--ring-circ' as string]: String(c),
+                } as CSSProperties)
+          }
         />
         <text x="90" y="78" textAnchor="middle" className="crm-gauge-value" fill={color}>
           {formatNumFa(clamped)}٪
@@ -78,48 +104,18 @@ function GaugeSemi({ pct, standing }: { pct: number; standing: string }) {
 
 function KpiRing({ kpi }: { kpi: CrmKpiRing }) {
   const color = STANDING_COLOR[kpi.standing] || '#c62828';
-  const r = 28;
-  const circ = 2 * Math.PI * r;
-  const pct = Math.max(0, Math.min(150, kpi.pct));
-  const filled = (Math.min(100, pct) / 100) * circ;
   return (
     <div className="crm-kpi-ring">
-      <svg width="72" height="72" viewBox="0 0 72 72">
-        <circle cx="36" cy="36" r={r} fill="none" stroke="var(--admin-border)" strokeWidth="7" />
-        <circle
-          cx="36"
-          cy="36"
-          r={r}
-          fill="none"
-          stroke={color}
-          strokeWidth="7"
-          strokeLinecap="round"
-          strokeDasharray={`${filled} ${circ}`}
-          transform="rotate(-90 36 36)"
-        />
-        <text x="36" y="34" textAnchor="middle" className="crm-kpi-ring-num" fill="var(--admin-ink)">
-          {formatNumFa(kpi.value)}
-        </text>
-        <text x="36" y="48" textAnchor="middle" className="crm-kpi-ring-target" fill="var(--admin-muted)">
-          از {formatNumFa(kpi.target)}
-        </text>
-      </svg>
+      <AdminProgressRing
+        value={kpi.value}
+        max={Math.max(1, kpi.target)}
+        size={88}
+        color={color}
+        showPct={false}
+        label={`از ${formatNumFa(kpi.target)}`}
+      />
       <div className="crm-kpi-ring-label">{kpi.label}</div>
       <div className="admin-muted" style={{ fontSize: 11 }}>{kpi.unit}</div>
-    </div>
-  );
-}
-
-function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number; name?: string; color?: string }>; label?: string }) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="crm-chart-tooltip">
-      {label ? <div className="crm-chart-tooltip-label">{label}</div> : null}
-      {payload.map((p, i) => (
-        <div key={i} style={{ color: p.color || 'var(--admin-ink)' }}>
-          {formatNumFa(Number(p.value))}
-        </div>
-      ))}
     </div>
   );
 }
@@ -170,6 +166,8 @@ export function AdminCrmDashboardPage() {
     if (fromReport.length) return fromReport;
     return (data?.channelDistribution || []).map((c) => ({ name: c.label, count: c.value }));
   }, [data, report]);
+
+  const motion = useRechartsMotion();
 
   const stripKpis: AdminKpiItem[] = data
     ? [
@@ -260,10 +258,11 @@ export function AdminCrmDashboardPage() {
         <AdminChartCard title="توزیع کانال‌ها" empty={!data.channelDistribution.length} height={220}>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={data.channelDistribution} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+              <MotionBarGradientDefs id="crmChanBar" from={MOTION_PALETTE.purple} to={MOTION_PALETTE.mint} />
               <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#757086' }} axisLine={false} tickLine={false} />
               <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#757086' }} axisLine={false} tickLine={false} width={28} />
-              <Tooltip content={<ChartTooltip />} />
-              <Bar dataKey="value" radius={[8, 8, 4, 4]} fill="#5c4d91" maxBarSize={36} />
+              <Tooltip content={<MotionChartTooltip />} />
+              <Bar dataKey="value" radius={[8, 8, 4, 4]} fill="url(#crmChanBar)" maxBarSize={36} {...motion} />
             </BarChart>
           </ResponsiveContainer>
         </AdminChartCard>
@@ -271,16 +270,19 @@ export function AdminCrmDashboardPage() {
         <AdminChartCard title="حجم تعامل ۷ روز اخیر" empty={!data.dailyInteractions.length} height={220}>
           <ResponsiveContainer width="100%" height={220}>
             <AreaChart data={data.dailyInteractions} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-              <defs>
-                <linearGradient id="crmArea" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#15cca0" stopOpacity={0.35} />
-                  <stop offset="100%" stopColor="#15cca0" stopOpacity={0.02} />
-                </linearGradient>
-              </defs>
+              <MotionAreaGradientDefs id="crmArea" color={MOTION_PALETTE.mint} mid={MOTION_PALETTE.blue} />
               <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#757086' }} axisLine={false} tickLine={false} />
               <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#757086' }} axisLine={false} tickLine={false} width={28} />
-              <Tooltip content={<ChartTooltip />} />
-              <Area type="monotone" dataKey="value" stroke="#15cca0" strokeWidth={2.5} fill="url(#crmArea)" />
+              <Tooltip content={<MotionChartTooltip />} />
+              <Area
+                type="monotone"
+                dataKey="value"
+                stroke={MOTION_PALETTE.mint}
+                strokeWidth={2.5}
+                fill="url(#crmArea)"
+                {...motion}
+                animationDuration={motion.isAnimationActive ? 900 : 0}
+              />
             </AreaChart>
           </ResponsiveContainer>
         </AdminChartCard>
@@ -296,12 +298,13 @@ export function AdminCrmDashboardPage() {
                   innerRadius={48}
                   outerRadius={72}
                   paddingAngle={2}
+                  {...motion}
                 >
                   {ticketPie.map((s, i) => (
                     <Cell key={i} fill={s.color || '#5c4d91'} />
                   ))}
                 </Pie>
-                <Tooltip content={<ChartTooltip />} />
+                <Tooltip content={<MotionChartTooltip />} />
               </PieChart>
             </ResponsiveContainer>
             <div className="crm-donut-center">
@@ -333,8 +336,8 @@ export function AdminCrmDashboardPage() {
               <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--admin-border)" />
               <XAxis {...adminRtlHBarsValueAxis} />
               <YAxis dataKey="name" {...adminRtlHBarsCategoryAxis} />
-              <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(92,77,145,0.06)' }} />
-              <Bar dataKey="count" radius={adminRtlHBarsRadius} maxBarSize={22}>
+              <Tooltip content={<MotionChartTooltip />} cursor={{ fill: 'rgba(92,77,145,0.06)' }} />
+              <Bar dataKey="count" radius={adminRtlHBarsRadius} maxBarSize={22} {...motion}>
                 {slaBars.map((row) => (
                   <Cell
                     key={row.name}
@@ -354,11 +357,12 @@ export function AdminCrmDashboardPage() {
         >
           <ResponsiveContainer width="100%" height={Math.max(220, 36 * Math.max(reasonBars.length, 3))}>
             <BarChart layout="vertical" data={reasonBars} margin={{ ...adminRtlHBarsMargin }}>
+              <MotionBarGradientDefs id="crmReasonBar" from={MOTION_PALETTE.mint} to={MOTION_PALETTE.blue} />
               <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--admin-border)" />
               <XAxis {...adminRtlHBarsValueAxis} />
               <YAxis dataKey="name" {...adminRtlHBarsCategoryAxis} />
-              <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(92,77,145,0.06)' }} />
-              <Bar dataKey="count" radius={adminRtlHBarsRadius} maxBarSize={18} fill="#15cca0" />
+              <Tooltip content={<MotionChartTooltip />} cursor={{ fill: 'rgba(92,77,145,0.06)' }} />
+              <Bar dataKey="count" radius={adminRtlHBarsRadius} maxBarSize={18} fill="url(#crmReasonBar-h)" {...motion} />
             </BarChart>
           </ResponsiveContainer>
         </AdminChartCard>
