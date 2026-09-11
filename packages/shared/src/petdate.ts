@@ -69,6 +69,10 @@ export interface PaymentOrder {
   method: PaymentMethod;
   status: PaymentOrderStatus;
   receiptFileId?: string;
+  /** مسیر/URL عمومی رسید آپلودشده از وب (در صورت وجود) */
+  receiptUrl?: string;
+  /** شماره پیگیری واریز کارت‌به‌کارت (اختیاری) */
+  transferRef?: string;
   telegramPaymentChargeId?: string;
   adminNote?: string;
   createdAt: string;

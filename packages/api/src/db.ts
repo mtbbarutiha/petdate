@@ -47,7 +47,6 @@ import {
   isPendingRequestExpired,
   makePetPublicId,
   makeUserPublicId,
-  slugifyPetName,
   makeOrderPublicId,
   makeConsultPublicId,
   makePlaydatePublicId,
@@ -414,6 +413,20 @@ function backfillPublicIds(): void {
 
   db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_public_id ON users (public_id)');
   db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_pets_public_id ON pets (public_id)');
+}
+
+/** Local slug helper (pets.slug backfill) — keep wallet branch free of shared pet-slug export. */
+function slugifyPetName(name: string): string {
+  const raw = String(name || '')
+    .trim()
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '');
+  const slug = raw
+    .replace(/[^a-z0-9\u0600-\u06ff]+/gi, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 64);
+  return slug || 'pet';
 }
 
 /** Assign unique public URL slugs for pets missing them (idempotent). */

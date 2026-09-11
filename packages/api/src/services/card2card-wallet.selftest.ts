@@ -12,8 +12,7 @@ function assert(cond: unknown, msg: string): asserts cond {
 }
 
 async function main() {
-  // Relative import so local worktrees don't resolve a stale /agent @petdate/shared.
-  const { COIN_PACKAGES, findCoinPackage } = await import('../../../shared/src/economy');
+  const { COIN_PACKAGES, findCoinPackage } = await import('@petdate/shared');
   const { dbService, getDb } = await import('../db');
   getDb();
 
