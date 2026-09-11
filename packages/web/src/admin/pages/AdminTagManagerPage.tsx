@@ -156,8 +156,8 @@ export function AdminTagManagerPage() {
           <button type="button" className="admin-btn" onClick={() => void load()}>
             <RefreshCw size={16} /> بروزرسانی
           </button>
-          <Link to="/admin/site-reports" className="admin-btn">
-            گزارشات سایت
+          <Link to="/admin/analytics?tab=tag-manager" className="admin-btn">
+            آنالیتیکس · Tag Manager
           </Link>
         </div>
       </header>
