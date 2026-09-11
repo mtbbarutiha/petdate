@@ -110,6 +110,9 @@ export function AdminUsersPage() {
   const [geoKnown, setGeoKnown] = useState(0);
   const [geoError, setGeoError] = useState<string | null>(null);
   const [view, setView] = useState<UsersView>('list');
+  const [deleting, setDeleting] = useState<User | null>(null);
+  const [deleteBusy, setDeleteBusy] = useState(false);
+  const canManageUsers = adminCan('platform.write') || adminCan('admin.full');
 
   const loadGeo = useCallback(async () => {
     try {
@@ -270,6 +273,27 @@ export function AdminUsersPage() {
       setCredit(null); await load();
     } catch (err) { setError(err instanceof Error ? err.message : 'خطا'); }
     finally { setBusyId(null); }
+  };
+
+  const confirmDeleteUser = async () => {
+    if (!deleting || !canManageUsers) return;
+    setDeleteBusy(true);
+    setBusyId(deleting.id);
+    try {
+      await adminFetch(`/api/admin/users/${deleting.id}`, { method: 'DELETE' });
+      setDeleting(null);
+      setError(null);
+      // Default active filter drops the shell; inactive filter shows «حذف‌شده».
+      setUsers((prev) => prev.filter((u) => u.id !== deleting.id));
+      setTotal((t) => Math.max(0, t - 1));
+      await load();
+      await loadGeo();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'حذف کاربر ناموفق بود');
+    } finally {
+      setDeleteBusy(false);
+      setBusyId(null);
+    }
   };
 
   return (
@@ -441,36 +465,56 @@ export function AdminUsersPage() {
                   </td>
                   <td>
                     <span className={`admin-badge ${u.isActive === false ? 'admin-badge--error' : 'admin-badge--info'}`}>
-                      {u.isActive === false ? 'مسدود' : 'فعال'}
+                      {userStatusLabel(u)}
                     </span>
                   </td>
                   <td>
                     <div className="admin-row-actions">
-                      <button
-                        type="button"
-                        className="admin-btn"
-                        disabled={busyId === u.id}
-                        title="ویرایش"
-                        onClick={() => openEdit(u)}
-                      >
-                        <Pencil size={14} /> ویرایش
-                      </button>
-                      <button
-                        type="button"
-                        className="admin-btn admin-btn--ghost"
-                        disabled={busyId === u.id}
-                        onClick={() => setCredit({ userId: u.id, amount: '10000', currency: 'toman' })}
-                      >
-                        اعتبار
-                      </button>
-                      <button
-                        type="button"
-                        className={`admin-btn ${u.isActive === false ? 'admin-btn--primary' : 'admin-btn--danger'}`}
-                        disabled={busyId === u.id}
-                        onClick={() => void toggleBan(u)}
-                      >
-                        {u.isActive === false ? 'رفع مسدودی' : 'مسدود'}
-                      </button>
+                      {!isDeletedUserShell(u) ? (
+                        <button
+                          type="button"
+                          className="admin-btn"
+                          disabled={busyId === u.id}
+                          title="ویرایش"
+                          onClick={() => openEdit(u)}
+                        >
+                          <Pencil size={14} /> ویرایش
+                        </button>
+                      ) : null}
+                      {!isDeletedUserShell(u) ? (
+                        <button
+                          type="button"
+                          className="admin-btn admin-btn--ghost"
+                          disabled={busyId === u.id}
+                          onClick={() => setCredit({ userId: u.id, amount: '10000', currency: 'toman' })}
+                        >
+                          اعتبار
+                        </button>
+                      ) : null}
+                      {!isDeletedUserShell(u) ? (
+                        <button
+                          type="button"
+                          className={`admin-btn ${u.isActive === false ? 'admin-btn--primary' : 'admin-btn--danger'}`}
+                          disabled={busyId === u.id}
+                          onClick={() => void toggleBan(u)}
+                        >
+                          {u.isActive === false ? 'رفع مسدودی' : 'مسدود'}
+                        </button>
+                      ) : null}
+                      {canManageUsers && !isDeletedUserShell(u) ? (
+                        <button
+                          type="button"
+                          className="admin-btn admin-btn--danger"
+                          disabled={busyId === u.id}
+                          title="حذف کاربر"
+                          onClick={() => setDeleting(u)}
+                        >
+                          <Trash2 size={14} /> حذف کاربر
+                        </button>
+                      ) : null}
+                      {isDeletedUserShell(u) ? (
+                        <span className="admin-muted">پوسته ناشناس (تاریخچه مالی محفوظ)</span>
+                      ) : null}
                     </div>
                   </td>
                 </tr>
@@ -718,6 +762,53 @@ export function AdminUsersPage() {
                 />
               </div>
             </div>
+          </>
+        ) : null}
+      </AdminModal>
+
+      <AdminModal
+        open={Boolean(deleting)}
+        title="حذف کاربر"
+        onClose={() => {
+          if (deleteBusy) return;
+          setDeleting(null);
+        }}
+        size="sm"
+        busy={deleteBusy}
+        footer={
+          <>
+            <button
+              type="button"
+              className="admin-btn admin-btn--danger"
+              disabled={deleteBusy}
+              onClick={() => void confirmDeleteUser()}
+            >
+              تأیید حذف
+            </button>
+            <button
+              type="button"
+              className="admin-btn admin-btn--ghost"
+              disabled={deleteBusy}
+              onClick={() => setDeleting(null)}
+            >
+              انصراف
+            </button>
+          </>
+        }
+      >
+        {deleting ? (
+          <>
+            <p style={{ marginTop: 0 }}>
+              آیا از حذف کاربر «{deleting.name || userPublicIdOf(deleting)}» مطمئن هستید؟
+            </p>
+            <p className="admin-muted" dir="ltr">
+              {userPublicIdOf(deleting)}
+              {deleting.telegramId ? ` · tg:${deleting.telegramId}` : ''}
+            </p>
+            <p className="admin-error" role="alert">
+              هشدار: حساب غیرفعال و ناشناس می‌شود، ورود مسدود می‌گردد، پت‌ها و نشست‌ها پاک می‌شوند،
+              اما تاریخچه مالی/کیف‌پول برای گزارش‌ها حفظ می‌ماند. این کار برگشت‌پذیر نیست.
+            </p>
           </>
         ) : null}
       </AdminModal>

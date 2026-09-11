@@ -415,6 +415,49 @@ adminRouter.patch('/users/:id', (req, res) => {
   res.json(user);
 });
 
+/**
+ * Soft-delete platform user (admin):
+ * anonymize + deactivate shell, purge pets/sessions/identity,
+ * keep payment/wallet ledger rows for finance integrity.
+ * Requires platform.write / admin.full (router write guard).
+ */
+adminRouter.delete('/users/:id', (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id) || id <= 0) {
+    res.status(400).json({ error: 'شناسه نامعتبر' });
+    return;
+  }
+  const existing = dbService.getUserById(id);
+  if (!existing) {
+    res.status(404).json({ error: 'کاربر پیدا نشد' });
+    return;
+  }
+  // Already anonymized shell — idempotent success
+  if (existing.isActive === false && String(existing.name || '').startsWith('[حذف‌شده')) {
+    res.json({ ok: true, alreadyDeleted: true, user: existing });
+    return;
+  }
+  const ok = dbService.deleteUserById(id);
+  if (!ok) {
+    res.status(404).json({ error: 'کاربر پیدا نشد' });
+    return;
+  }
+  const shell = dbService.getUserById(id);
+  logAppEvent({
+    level: 'info',
+    source: 'admin',
+    message: `admin soft-delete user #${id}`,
+    path: `/api/admin/users/${id}`,
+    method: 'DELETE',
+    meta: {
+      userId: id,
+      actor: req.adminActor?.username || req.adminActor?.displayName || null,
+      role: req.adminActor?.role || null,
+    },
+  });
+  res.json({ ok: true, user: shell });
+});
+
 adminRouter.get('/pets', (req, res) => {
   const species = typeof req.query.species === 'string' ? req.query.species : undefined;
   const q = typeof req.query.q === 'string' ? req.query.q.trim() : '';

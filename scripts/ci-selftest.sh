@@ -43,6 +43,10 @@ npx tsx "$ROOT/packages/web/src/admin/adminTagManagerRoute.selftest.ts"
 echo "==> selftest: admin /admin/magazine route + TipTap + public /magazine"
 npx tsx "$ROOT/packages/web/src/admin/adminMagazineRoute.selftest.ts"
 
+# Guard: admin soft-delete user (حذف کاربر) wired in UI + API
+echo "==> selftest: admin delete user route + UI"
+npx tsx "$ROOT/packages/web/src/admin/adminDeleteUser.selftest.ts"
+
 echo "==> selftest: web admin widget dashboard (layout + drill)"
 npx tsx "$ROOT/packages/web/src/admin/widgets/widgetDashboard.selftest.ts"
 
@@ -91,6 +95,7 @@ run src/services/pet-owner-breed-photo.selftest.ts
 run src/services/pasha-user-tone.selftest.ts
 run src/services/speech-to-text.selftest.ts
 run src/services/ai-consult.selftest.ts
+run src/services/team-agents.selftest.ts
 
 # Bot guards (sticky keyboard + IPv4 Telegram HTTP) — no network / no DB
 echo "==> selftest: bot sticky + telegram-http + quick-connect-parse + nearby-radius + nearby-inline-list + pet-search-menu + invite-friends + urls"

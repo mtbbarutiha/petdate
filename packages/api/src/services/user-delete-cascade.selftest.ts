@@ -1,16 +1,20 @@
 /**
  * Prove account delete purges pets and clears mergeable identity
  * so re-register (/start → findOrCreateUser) starts with zero pets.
+ * Also: payment ledger rows survive; web sessions are purged.
  *
  * Run: cd packages/api && npx tsx src/services/user-delete-cascade.selftest.ts
  */
-import { dbService, getDb, getResolvedDatabasePath } from '../db';
+export {};
+process.env.DATABASE_URL = '';
+process.env.DATABASE_PATH = `/tmp/petdate-selftest-user-delete-${process.pid}.db`;
 
 function assert(cond: unknown, msg: string): asserts cond {
   if (!cond) throw new Error(msg);
 }
 
 async function main() {
+  const { dbService, getDb, getResolvedDatabasePath } = await import('../db');
   getDb();
   const tg = `selftest_del_${Date.now()}`;
   const d = getDb();
@@ -38,6 +42,23 @@ async function main() {
   const beforePets = dbService.listPets({ ownerId: user.id });
   assert(beforePets.length >= 1, 'precondition: at least one pet');
 
+  const payment = dbService.createPaymentOrder({
+    userId: user.id,
+    packageId: 'selftest_pack',
+    coins: 10,
+    amountToman: 1000,
+    method: 'card',
+    status: 'paid',
+    adminNote: 'selftest_ledger',
+  });
+  assert(payment?.id, 'payment order stub created');
+
+  dbService.createWebSession(
+    user.id,
+    `selftest_tok_${tg}`,
+    new Date(Date.now() + 3600_000).toISOString()
+  );
+
   const ok = dbService.deleteUserByTelegramId(tg);
   assert(ok, 'deleteUserByTelegramId must succeed');
 
@@ -52,6 +73,17 @@ async function main() {
   assert(!shell.email, 'email cleared (prevents merge resurrection)');
   assert(shell.isActive === false, 'inactive');
   assert((shell.coins ?? 0) === 0, 'coins zeroed');
+
+  const sessionCount = (
+    d.prepare('SELECT COUNT(*) as c FROM web_sessions WHERE user_id = ?').get(user.id) as {
+      c: number;
+    }
+  ).c;
+  assert(sessionCount === 0, 'web sessions purged on delete');
+
+  const paymentAlive = dbService.getPaymentOrder(payment.id);
+  assert(paymentAlive, 'payment ledger row kept after soft-delete');
+  assert(paymentAlive.userId === user.id, 'payment still points at anonymized shell');
 
   const afterPets = dbService.listPets({ ownerId: user.id });
   assert(afterPets.length === 0, `pets must be purged, got ${afterPets.length}`);
