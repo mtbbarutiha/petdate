@@ -480,7 +480,7 @@ export function AdminSiteReportsPage() {
             <div className={ADMIN_RTL_HBARS_CLASS} style={{ width: '100%', height: Math.max(220, Math.max(eventBars.length, 1) * 28), direction: 'ltr' }}>
               <ResponsiveContainer>
                 <BarChart data={eventBars} layout="vertical" margin={adminRtlHBarsMargin}>
-                  <MotionBarGradientDefs id="siteEventsBar" from={MOTION_PALETTE.purple} to={MOTION_PALETTE.orange} />
+                  <MotionBarGradientDefs id="siteEventsBar" from={MOTION_PALETTE.purple} to={MOTION_PALETTE.coral} />
                   <XAxis {...adminRtlHBarsValueAxis} />
                   <YAxis dataKey="label" {...adminRtlHBarsCategoryAxis} />
                   <Tooltip content={<Tip />} />
