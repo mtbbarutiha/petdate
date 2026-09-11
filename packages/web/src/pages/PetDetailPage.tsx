@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   ArrowRight,
   FileText,
@@ -42,6 +42,7 @@ const MED_FIELDS = Object.keys(PET_MEDICAL_FIELD_LABELS) as PetMedicalField[];
 export function PetDetailPage() {
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const { user: authUser, isLoggedIn } = useAuthStore();
   const { toastSuccess, toastError, toastInfo } = useAppToast();
@@ -66,7 +67,10 @@ export function PetDetailPage() {
   const isMyPet = Boolean(
     myUserId != null && pet != null && Number(pet.ownerId) === Number(myUserId)
   );
-  const tabMedical = searchParams.get('tab') === 'medical';
+  // Prefer #pet-medical — hash is not part of the CDN cache key; www still
+  // poisoned `?tab=medical` 404 responses from before the nginx SPA fallback.
+  const tabMedical =
+    searchParams.get('tab') === 'medical' || location.hash === '#pet-medical';
 
   const ui = useMemo(() => (pet ? petProfileToUiPet(pet) : null), [pet]);
 
