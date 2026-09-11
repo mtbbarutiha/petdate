@@ -348,7 +348,7 @@ else
 fi
 if grep -q "REMOVED_USER_ROLES = \\['pet_sitter', 'community_seeker'\\]" packages/shared/src/petdate.ts 2>/dev/null; then
   grep -q "'trainer'" packages/shared/src/petdate.ts \
-    && ! grep -A20 "export const USER_ROLES" packages/shared/src/petdate.ts | grep -q "pet_sitter" \
+    && ! awk '/export const USER_ROLES/,/];/' packages/shared/src/petdate.ts | grep -q "pet_sitter" \
     && echo "OK: pet_sitter removed from live roles; trainer active"
 fi
 if [[ -f ecosystem.config.cjs ]]; then

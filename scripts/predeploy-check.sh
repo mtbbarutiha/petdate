@@ -83,9 +83,9 @@ grep -q "REMOVED_USER_ROLES = \\['pet_sitter', 'community_seeker'\\]" packages/s
 # trainer stays live; pet_sitter is removed from UX (DB columns retained)
 grep -q "'trainer'" packages/shared/src/petdate.ts \
   || fail "trainer missing from shared roles"
-! grep -A20 "export const USER_ROLES" packages/shared/src/petdate.ts | grep -q "pet_sitter" \
+! awk '/export const USER_ROLES/,/];/' packages/shared/src/petdate.ts | grep -q "pet_sitter" \
   || fail "pet_sitter still listed in USER_ROLES"
-! grep -A15 "export type UserRole" packages/shared/src/petdate.ts | grep -q "pet_sitter" \
+! awk '/^export type UserRole/,/^$/' packages/shared/src/petdate.ts | grep -q "pet_sitter" \
   || fail "pet_sitter still in UserRole union"
 ok "marketplace roles (trainer live; pet_sitter + community_seeker removed)"
 
