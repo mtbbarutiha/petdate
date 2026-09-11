@@ -1202,7 +1202,8 @@ function migrateSchema() {
     db.exec('ALTER TABLE users ADD COLUMN tg_stars_synced_at TEXT');
   }
 
-  // Backfill roles JSON + migrate removed roles (pet_sitter / community_seeker → drop or pet_owner)
+  // Backfill roles JSON + migrate removed roles
+  // (pet_seeker → no_pet; pet_sitter / community_seeker → drop or pet_owner)
   const roleRows = db
     .prepare(
       `SELECT id, role, roles FROM users WHERE (role IS NOT NULL AND role != '') OR (roles IS NOT NULL AND roles != '[]' AND roles != '')`

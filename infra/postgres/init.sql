@@ -5,7 +5,6 @@ CREATE TYPE user_role AS ENUM (
   'pet_owner',
   'vet',
   'no_pet',
-  'pet_seeker',
   'trainer'
 );
 

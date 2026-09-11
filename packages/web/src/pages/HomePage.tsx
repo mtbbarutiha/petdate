@@ -67,13 +67,12 @@ export function HomePage() {
 
   const isPetOwner = active === 'pet_owner';
   const isNoPet = active === 'no_pet';
-  const isPetSeeker = active === 'pet_seeker';
   const displayName = authUser?.name?.trim() || 'دوست';
   const primaryPetName = myPets[0]?.name?.trim() || '';
   const hasPetName = Boolean(primaryPetName);
   const needsProfile = !isProfileComplete;
 
-  const heroImg = isNoPet || isPetSeeker ? HERO_IMG_NO_PET : isPetOwner ? HERO_IMG_PLAYMATE : HERO_IMG;
+  const heroImg = isNoPet ? HERO_IMG_NO_PET : isPetOwner ? HERO_IMG_PLAYMATE : HERO_IMG;
 
   const kicker = needsProfile
     ? BRAND.taglineFa
@@ -81,9 +80,7 @@ export function HomePage() {
       ? 'همبازی پت'
       : isNoPet
         ? 'بدون پت'
-        : isPetSeeker
-          ? 'دنبال پت'
-          : BRAND.taglineFa;
+        : BRAND.taglineFa;
 
   const headline = needsProfile
     ? `سلام ${displayName}`
@@ -93,9 +90,7 @@ export function HomePage() {
         ? `سلام ${displayName} — پت‌ات را ثبت کن`
         : isNoPet
           ? `سلام ${displayName} — شروع بدون پت`
-          : isPetSeeker
-            ? `سلام ${displayName} — پذیرش پت`
-            : `سلام ${displayName}`;
+          : `سلام ${displayName}`;
 
   const lead = needsProfile
     ? 'پروفایلت را کامل کن تا همبازی، دامپزشک و مربی نزدیک‌تر شوند.'
@@ -105,9 +100,7 @@ export function HomePage() {
         ? 'پت‌ات را ثبت کن و همبازی پیدا کن — همان حساب وب و تلگرام.'
         : isNoPet
           ? 'مشاوره خرید بگیر، پذیرش را ببین، یا وقتی آماده شدی پت ثبت کن.'
-          : isPetSeeker
-            ? 'پت‌های نیازمند خانه را ببین و مسیر پذیرش را ادامه بده.'
-            : 'از پروفایل، کلینیک، پت شاپ و مشاوره را در همین محیط ادامه بده.';
+          : 'از پروفایل، کلینیک، پت شاپ و مشاوره را در همین محیط ادامه بده.';
 
   /** Primary CTA — role order preference: همبازی → دامپزشک → مربی → بدون پت */
   const primaryTo = needsProfile
@@ -116,7 +109,7 @@ export function HomePage() {
       ? '/add-pet'
       : isPetOwner
         ? '/chats'
-        : isNoPet || isPetSeeker
+        : isNoPet
           ? '/adoption'
           : '/profile';
   const primaryLabel = needsProfile
@@ -125,7 +118,7 @@ export function HomePage() {
       ? 'ثبت پت'
       : isPetOwner
         ? 'پیدا کردن همبازی'
-        : isNoPet || isPetSeeker
+        : isNoPet
           ? 'پذیرش پت'
           : 'پروفایل من';
 
@@ -163,7 +156,7 @@ export function HomePage() {
                 همبازی
               </Link>
             ) : null}
-            {isPetOwner || isNoPet || isPetSeeker ? (
+            {isPetOwner || isNoPet ? (
               <Link
                 to="/vet-consult"
                 className="pepito-btn pepito-btn--ghost pepito-home-cta-ghost"
@@ -232,7 +225,7 @@ export function HomePage() {
               <span>پیدا کردن همبازی و مدیریت گفتگوها</span>
             </Link>
           ) : null}
-          {isPetOwner || isNoPet || isPetSeeker ? (
+          {isPetOwner || isNoPet ? (
             <Link
               to="/vet-consult"
               className="pepito-home-action"
@@ -252,13 +245,13 @@ export function HomePage() {
               <span>درخواست به مربی‌های آنلاین</span>
             </Link>
           ) : null}
-          {isNoPet || isPetSeeker ? (
+          {isNoPet ? (
             <Link to="/adoption" className="pepito-home-action" data-testid="home-action-no-pet">
               <strong>بدون پت / پذیرش</strong>
               <span>مشاوره خرید و پت‌های نیازمند خانه</span>
             </Link>
           ) : null}
-          {!isPetOwner && !isNoPet && !isPetSeeker ? (
+          {!isPetOwner && !isNoPet ? (
             <Link to="/profile" className="pepito-home-action">
               <strong>پروفایل و خدمات</strong>
               <span>پت شاپ و مشاوره</span>
@@ -285,7 +278,7 @@ export function HomePage() {
               <strong>مشاوره دامپزشک</strong>
               <span>ارتباط سریع با پزشک</span>
             </Link>
-            {isNoPet || isPetSeeker ? (
+            {isNoPet ? (
               <Link to="/adoption" className="pepito-home-action">
                 <strong>پذیرش پت</strong>
                 <span>شروع مسیر بدون پت</span>

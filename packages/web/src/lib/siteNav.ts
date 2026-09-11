@@ -152,7 +152,6 @@ export function siteNavMobileForRole(role?: UserRole | null): SiteNavItem[] {
     case 'pet_owner':
       // صاحب پت: هم بازی + پت‌های من کنار هم (= /chats و /my-pets)
       return [SHOP_AUTH, PLAYMATE_CHATS, MY_PETS, WALLET, PROFILE];
-    case 'pet_seeker':
     case 'no_pet':
       // بدون همبازی — گفتگو + پت‌های من
       return [SHOP_AUTH, CHATS, MY_PETS, WALLET, PROFILE];

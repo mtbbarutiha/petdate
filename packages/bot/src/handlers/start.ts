@@ -810,7 +810,6 @@ export async function handleHelp(ctx: Context): Promise<void> {
   const active = primaryRole(user?.roles, user?.role);
   const isOwner = active === 'pet_owner';
   const isVet = active === 'vet';
-  const isSeeker = active === 'pet_seeker';
   const isNoPet = active === 'no_pet';
   const inviteLine = `🎁 **دعوت دوستان** — ${new Intl.NumberFormat('fa-IR').format(REFERRAL_BONUS_COINS)} سکه جایزه`;
 
@@ -851,22 +850,7 @@ export async function handleHelp(ctx: Context): Promise<void> {
           '/help — راهنما',
           '/cancel — لغو عملیات جاری',
         ]
-      : isSeeker
-        ? [
-            `🐾 **${BRAND.name}** — راهنمای دنبال پت`,
-            `_${BRAND.taglineEn}_`,
-            '',
-            '🐾 **پت‌ها و همبازی** — مرور و جستجوی پت',
-            '💚 **آماده پذیرش پت هستم** — اعلام آمادگی',
-            '👤 **پروفایل** — اطلاعات + احراز',
-            inviteLine,
-            '🪙 **سکه** · 🛒 **پت‌شاپ** · 🎁 **دعوت** · 🛟 **پشتیبانی** · ❓ **راهنما**',
-            '',
-            '/menu — نمایش منو',
-            '/help — راهنما',
-            '/cancel — لغو عملیات جاری',
-          ]
-        : isNoPet
+      : isNoPet
           ? [
               `🐾 **${BRAND.name}** — راهنمای بدون پت`,
               `_${BRAND.taglineEn}_`,

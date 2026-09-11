@@ -37,15 +37,6 @@ const WIZARD_STEPS: Partial<Record<UserRole, WizardStep[]>> = {
       ],
     },
   ],
-  pet_seeker: [
-    {
-      title: 'دنبال چه پتی هستی؟',
-      fields: [
-        { key: 'species', label: 'نوع حیوان', placeholder: 'سگ، گربه، ...' },
-        { key: 'size', label: 'سایز ترجیحی', placeholder: 'کوچک، متوسط، بزرگ' },
-      ],
-    },
-  ],
   trainer: [
     {
       title: 'پروفایل مربی',

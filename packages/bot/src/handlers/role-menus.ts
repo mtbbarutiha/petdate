@@ -20,20 +20,20 @@ function quickConnectCostForVets(vets: User[]): number {
   return Math.max(QUICK_VET_COST, ...vets.map((v) => vetVisitFeeCoins(v)));
 }
 
-/** نقش دنبال پت — مرور پت‌ها و همبازی‌ها */
+/** مرور پت‌ها و همبازی‌ها (کیبورد قدیمی نقش دنبال پت) */
 export async function handlePetsAndPlaymates(ctx: Context): Promise<void> {
   await handleSearchPetsMenu(ctx);
 }
 
-/** سوییچ آماده پذیرش پت */
+/** سوییچ آماده پذیرش پت — برای بدون پت (و کیبورد کش‌شدهٔ دنبال پت) */
 export async function handleReadyToAdoptToggle(ctx: Context, ready: boolean): Promise<void> {
   const user = await getCtxUser(ctx);
   if (!user?.telegramId) {
     await ctx.reply('اول /start بزن.');
     return;
   }
-  if (!userHasRole(user, 'pet_seeker')) {
-    await ctx.reply('این دکمه مخصوص نقش «دنبال پت» است.', {
+  if (!userHasRole(user, 'no_pet')) {
+    await ctx.reply('این دکمه مخصوص نقش «بدون پت» است.', {
       reply_markup: menuKeyboardFor(ctx, user),
     });
     return;

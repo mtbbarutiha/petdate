@@ -699,7 +699,7 @@ usersRouter.patch('/telegram/:telegramId/accept-seeker-advice', (req, res) => {
   res.json(user);
 });
 
-/** آماده پذیرش پت — نقش دنبال‌کننده پت */
+/** آماده پذیرش پت — نقش بدون پت (ex «دنبال پت» migrated) */
 usersRouter.post('/telegram/:telegramId/ready-to-adopt', (req, res) => {
   const ready = Boolean(req.body?.ready ?? req.body?.readyToAdopt);
   const existing = dbService.getUserByTelegramId(req.params.telegramId);
@@ -707,8 +707,8 @@ usersRouter.post('/telegram/:telegramId/ready-to-adopt', (req, res) => {
     res.status(404).json({ error: 'کاربر پیدا نشد' });
     return;
   }
-  if (!userHasRole(existing, 'pet_seeker')) {
-    res.status(403).json({ error: 'این بخش مخصوص نقش «دنبال پت» است' });
+  if (!userHasRole(existing, 'no_pet')) {
+    res.status(403).json({ error: 'این بخش مخصوص نقش «بدون پت» است' });
     return;
   }
   const user = dbService.setReadyToAdoptByTelegramId(req.params.telegramId, ready);
