@@ -36,6 +36,13 @@ import {
   WidgetEmpty,
   type WidgetRenderContext,
 } from '../widgets';
+import {
+  AdminDashPage,
+  AdminKpiStrip,
+  AdminModuleCard,
+  AdminModuleGrid,
+  type AdminKpiItem,
+} from '../dash';
 
 type ChartPoint = { label: string; value: number };
 type ChartSlice = { label: string; value: number; color: string };
@@ -348,11 +355,12 @@ export function AdminDashboardPage() {
   const overallStanding = standingOf(overallPct);
   const weakPoints = healthKpis.filter((k) => k.standing === 'ضعیف');
 
-  const platformKpis = s
+  const platformKpis: AdminKpiItem[] = s
     ? [
-        { label: 'کاربران', value: formatNumFa(s.users), icon: Users, tone: 'violet', to: links?.users || '/admin/users' },
-        { label: 'پت‌ها', value: formatNumFa(s.pets), icon: PawPrint, tone: 'mint', to: links?.pets || '/admin/pets' },
+        { key: 'users', label: 'کاربران', value: formatNumFa(s.users), icon: Users, tone: 'violet', to: links?.users || '/admin/users' },
+        { key: 'pets', label: 'پت‌ها', value: formatNumFa(s.pets), icon: PawPrint, tone: 'mint', to: links?.pets || '/admin/pets' },
         {
+          key: 'playdates',
           label: 'همبازی (باز)',
           value: formatNumFa(s.playdatesPending),
           icon: HeartHandshake,
@@ -360,6 +368,7 @@ export function AdminDashboardPage() {
           to: links?.playdates || '/admin/playdates',
         },
         {
+          key: 'consults',
           label: 'مشاوره باز',
           value: formatNumFa(s.vetConsultsOpen),
           icon: Stethoscope,
@@ -367,6 +376,7 @@ export function AdminDashboardPage() {
           to: links?.consults || '/admin/consults',
         },
         {
+          key: 'shop',
           label: 'سفارش فروشگاه',
           value: formatNumFa(s.shopOrders),
           icon: Package,
@@ -374,13 +384,16 @@ export function AdminDashboardPage() {
           to: links?.shopOrders || '/admin/shop/orders',
         },
         {
+          key: 'revenue',
           label: 'درآمد فروشگاه',
           value: formatTomanFa(s.shopRevenueToman),
           icon: Wallet,
           tone: 'mint',
           to: links?.finance || '/admin/finance',
+          wide: true,
         },
         {
+          key: 'pending',
           label: 'پرداخت در انتظار',
           value: formatNumFa(s.paymentOrdersPending),
           icon: Wallet,
@@ -388,6 +401,7 @@ export function AdminDashboardPage() {
           to: links?.payments || '/admin/payments',
         },
         {
+          key: 'errors',
           label: 'خطای ۲۴س',
           value: formatNumFa(s.botRelated.errors24h),
           icon: Activity,
@@ -553,95 +567,92 @@ export function AdminDashboardPage() {
   };
 
   return (
-    <div className="admin-page admin-page--exec">
-      <header className="admin-header">
-        <div>
-          <h1>داشبورد پلتفرم</h1>
-          <p>
-            <span className="admin-live-pulse">زنده</span>
-            {' '}
-            گزارش یکپارچهٔ پلتفرم · پیوند · فروش · باشگاه مشتریان · ایمیل
-            {data?.generatedAt ? ` · ${formatAdminFaDateTime(data.generatedAt)}` : ''}
-          </p>
-        </div>
-        <button type="button" className="admin-btn admin-btn--ghost" onClick={() => void load()}>
-          بروزرسانی
-        </button>
-      </header>
-      {error ? <p className="admin-error">{error}</p> : null}
-
-      <div className="admin-tabs" role="tablist">
-        <button
-          type="button"
-          className={`admin-tab${tab === 'overview' ? ' is-on' : ''}`}
-          onClick={() => setTab('overview')}
-        >
-          نمای کلی
-        </button>
-        <button
-          type="button"
-          className={`admin-tab${tab === 'activity' ? ' is-on' : ''}`}
-          onClick={() => setTab('activity')}
-        >
-          فعالیت‌ها
-        </button>
-      </div>
-
-      <section className="admin-card admin-dash-filters" style={{ marginBottom: 16, padding: 14 }}>
-        <div className="admin-card-head" style={{ marginBottom: 10 }}>
-          <h2 style={{ fontSize: '0.95rem', margin: 0 }}>فیلترها</h2>
-          <button type="button" className="admin-btn admin-btn--ghost" onClick={() => setFilters(emptyFilters)}>
-            پاک کردن
+    <AdminDashPage
+      title="داشبورد پلتفرم"
+      live
+      subtitle={
+        <>
+          گزارش یکپارچهٔ پلتفرم · پیوند · فروش · باشگاه مشتریان · ایمیل
+          {data?.generatedAt ? ` · ${formatAdminFaDateTime(data.generatedAt)}` : ''}
+        </>
+      }
+      onRefresh={() => void load()}
+      error={error}
+      tabs={
+        <div className="admin-tabs" role="tablist">
+          <button
+            type="button"
+            className={`admin-tab${tab === 'overview' ? ' is-on' : ''}`}
+            onClick={() => setTab('overview')}
+          >
+            نمای کلی
+          </button>
+          <button
+            type="button"
+            className={`admin-tab${tab === 'activity' ? ' is-on' : ''}`}
+            onClick={() => setTab('activity')}
+          >
+            فعالیت‌ها
           </button>
         </div>
-        <div className="hr-reports-filters" role="group" aria-label="فیلتر داشبورد">
-          <JalaliDateRange
-            from={filters.from}
-            to={filters.to}
-            onFromChange={(from) => setFilters((f) => ({ ...f, from }))}
-            onToChange={(to) => setFilters((f) => ({ ...f, to }))}
-            fromLabel="از تاریخ"
-            toLabel="تا تاریخ"
-          />
-          <label className="hr-reports-filter">
-            <span>تیم / دپارتمان</span>
-            <select
-              className="admin-select"
-              value={filters.team}
-              onChange={(e) => setFilters((f) => ({ ...f, team: e.target.value }))}
-            >
-              <option value="">همه</option>
-              {(data?.filterOptions?.teams || []).map((t) => (
-                <option key={t} value={t}>{t}</option>
-              ))}
-            </select>
-          </label>
-          <label className="hr-reports-filter">
-            <span>فرد</span>
-            <select
-              className="admin-select"
-              value={filters.personId}
-              onChange={(e) => setFilters((f) => ({ ...f, personId: e.target.value }))}
-            >
-              <option value="">همه</option>
-              {(data?.filterOptions?.people || []).map((p) => (
-                <option key={p.id} value={String(p.id)}>{p.name}</option>
-              ))}
-            </select>
-          </label>
-        </div>
-        {activeFilterChips.length ? (
-          <div className="admin-filter-chips" style={{ marginTop: 10, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-            {activeFilterChips.map((c) => (
-              <span key={c} className="admin-pill admin-pill--line">{c}</span>
-            ))}
-            <span className="admin-muted" style={{ fontSize: 12 }}>
-              کلیک روی برش نمودار، فیلتر را اعمال می‌کند
-            </span>
+      }
+      filters={
+        <section className="admin-card admin-dash-filters" style={{ padding: 14 }}>
+          <div className="admin-card-head" style={{ marginBottom: 10 }}>
+            <h2 style={{ fontSize: '0.95rem', margin: 0 }}>فیلترها</h2>
+            <button type="button" className="admin-btn admin-btn--ghost" onClick={() => setFilters(emptyFilters)}>
+              پاک کردن
+            </button>
           </div>
-        ) : null}
-      </section>
-
+          <div className="hr-reports-filters" role="group" aria-label="فیلتر داشبورد">
+            <JalaliDateRange
+              from={filters.from}
+              to={filters.to}
+              onFromChange={(from) => setFilters((f) => ({ ...f, from }))}
+              onToChange={(to) => setFilters((f) => ({ ...f, to }))}
+              fromLabel="از تاریخ"
+              toLabel="تا تاریخ"
+            />
+            <label className="hr-reports-filter">
+              <span>تیم / دپارتمان</span>
+              <select
+                className="admin-select"
+                value={filters.team}
+                onChange={(e) => setFilters((f) => ({ ...f, team: e.target.value }))}
+              >
+                <option value="">همه</option>
+                {(data?.filterOptions?.teams || []).map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+            </label>
+            <label className="hr-reports-filter">
+              <span>فرد</span>
+              <select
+                className="admin-select"
+                value={filters.personId}
+                onChange={(e) => setFilters((f) => ({ ...f, personId: e.target.value }))}
+              >
+                <option value="">همه</option>
+                {(data?.filterOptions?.people || []).map((p) => (
+                  <option key={p.id} value={String(p.id)}>{p.name}</option>
+                ))}
+              </select>
+            </label>
+          </div>
+          {activeFilterChips.length ? (
+            <div className="admin-filter-chips" style={{ marginTop: 10, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+              {activeFilterChips.map((c) => (
+                <span key={c} className="admin-pill admin-pill--line">{c}</span>
+              ))}
+              <span className="admin-muted" style={{ fontSize: 12 }}>
+                کلیک روی برش نمودار، فیلتر را اعمال می‌کند
+              </span>
+            </div>
+          ) : null}
+        </section>
+      }
+    >
       {tab === 'activity' ? (
         <section className="admin-card">
           <div className="admin-card-head">
@@ -733,52 +744,21 @@ export function AdminDashboardPage() {
           ) : null}
 
           <p className="admin-section-label">شاخص‌های زندهٔ پلتفرم</p>
-          <div className="admin-stats admin-stats--dense">
-            {platformKpis.map((k) => (
-              <Link
-                key={k.label}
-                to={k.to}
-                className={`admin-stat admin-stat--${k.tone}`}
-                style={{ textDecoration: 'none', color: 'inherit' }}
-              >
-                <div className="admin-stat-icon">
-                  <k.icon size={18} />
-                </div>
-                <div>
-                  <div className="admin-stat-value">{k.value}</div>
-                  <div className="admin-stat-label">{k.label}</div>
-                </div>
-              </Link>
-            ))}
-          </div>
+          <AdminKpiStrip items={platformKpis} ariaLabel="شاخص‌های زنده پلتفرم" />
 
           {moduleCards.length ? (
-            <>
-              <p className="admin-section-label">ماژول‌های سازمانی · پشتیبانی / جذب / فروش</p>
-              <div className="admin-module-kpi-grid admin-module-kpi-grid--separated">
-                {moduleCards.map((card) => (
-                  <Link
-                    key={card.key}
-                    to={card.to}
-                    className={`admin-module-kpi admin-module-kpi--${card.tone} admin-module-kpi--block`}
-                  >
-                    <div className="admin-module-kpi-head">
-                      <card.icon size={18} />
-                      <strong>{card.title}</strong>
-                      <span>باز کردن</span>
-                    </div>
-                    <div className="admin-module-kpi-body">
-                      {card.items.map((it) => (
-                        <div key={it.label}>
-                          <em>{it.value}</em>
-                          <span>{it.label}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </>
+            <AdminModuleGrid label="ماژول‌های سازمانی · پشتیبانی / جذب / فروش">
+              {moduleCards.map((card) => (
+                <AdminModuleCard
+                  key={card.key}
+                  title={card.title}
+                  to={card.to}
+                  icon={card.icon}
+                  tone={card.tone as 'mint' | 'violet' | 'orange' | 'sky' | 'slate'}
+                  items={card.items}
+                />
+              ))}
+            </AdminModuleGrid>
           ) : null}
 
           {series ? (
@@ -1007,12 +987,12 @@ export function AdminDashboardPage() {
                   </li>
                 </ul>
               ) : (
-                <p className="admin-muted">…</p>
+                <p className="admin-dash-chart-empty">داده‌ای نیست</p>
               )}
             </section>
           </div>
         </>
       )}
-    </div>
+    </AdminDashPage>
   );
 }

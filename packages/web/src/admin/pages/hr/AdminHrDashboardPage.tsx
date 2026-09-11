@@ -12,14 +12,15 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import { Briefcase, Clock, UserCheck, UserX, Users, Wallet } from 'lucide-react';
 import { adminFetch, formatNumFa } from '../../api';
 import {
-  ADMIN_RTL_HBARS_CLASS,
   adminRtlHBarsCategoryAxis,
   adminRtlHBarsMargin,
   adminRtlHBarsRadius,
   adminRtlHBarsValueAxis,
 } from '../../rechartsRtlHBars';
+import { AdminChartCard, AdminChartGrid, AdminDashPage, AdminKpiStrip, type AdminKpiItem } from '../../dash';
 import { HrLinkGrid, formatHrMoney } from './HrUi';
 
 type ChartRow = { name: string; count: number };
@@ -103,6 +104,7 @@ export function AdminHrDashboardPage() {
   const deptData = data?.charts?.byDepartment || [];
   const costDeptData = data?.charts?.costByDepartment || [];
   const statusData = data?.charts?.byContractStatus || [];
+  const locData = data?.charts?.byLocation || [];
   const monthLabel = data?.monthLabel || '';
 
   const statusPie = useMemo(
@@ -115,197 +117,159 @@ export function AdminHrDashboardPage() {
     40 * Math.max(deptData.length, costDeptData.length, 3),
   );
 
-  const topKpis = k
+  const kpiItems: AdminKpiItem[] = k
     ? [
-        { label: 'کل پرسنل ثبت‌شده', value: formatNumFa(k.personnel), tone: 'mint' as const },
-        { label: 'دسترسی فعال', value: formatNumFa(k.activeAccess), tone: 'sky' as const },
-        { label: 'دسترسی غیرفعال', value: formatNumFa(k.inactiveAccess), tone: 'orange' as const },
-        { label: 'وظایف کارتابل', value: formatNumFa(k.cockpitTasks), tone: 'violet' as const },
+        { key: 'personnel', label: 'کل پرسنل', value: formatNumFa(k.personnel), icon: Users, tone: 'mint' },
+        { key: 'active', label: 'دسترسی فعال', value: formatNumFa(k.activeAccess), icon: UserCheck, tone: 'sky' },
+        { key: 'inactive', label: 'دسترسی غیرفعال', value: formatNumFa(k.inactiveAccess), icon: UserX, tone: 'orange' },
+        { key: 'cockpit', label: 'وظایف کارتابل', value: formatNumFa(k.cockpitTasks), icon: Briefcase, tone: 'violet' },
+        { key: 'requests', label: 'درخواست باز', value: formatNumFa(k.openRequests), icon: Briefcase, tone: 'orange' },
+        { key: 'onboard', label: 'آنبوردینگ', value: formatNumFa(k.openOnboarding), icon: Users, tone: 'sky' },
+        {
+          key: 'hours',
+          label: `ساعت فعالیت${monthLabel ? ` · ${monthLabel}` : ''}`,
+          value: `${formatNumFa(k.serviceHoursMonth)} س`,
+          icon: Clock,
+          tone: 'mint',
+        },
+        {
+          key: 'cost',
+          label: `هزینه سازمانی${monthLabel ? ` · ${monthLabel}` : ''}`,
+          value: formatHrMoney(k.orgCostMonth),
+          icon: Wallet,
+          tone: 'violet',
+          wide: true,
+        },
       ]
     : [];
 
   return (
-    <div className="admin-page hr-dash">
-      <header className="admin-header">
-        <div>
-          <h1>داشبورد</h1>
-          <p>خلاصه اطلاعات کلیدی منابع انسانی{monthLabel ? ` · ${monthLabel}` : ''}</p>
-        </div>
-        <div className="admin-header-actions">
+    <AdminDashPage
+      className="hr-dash"
+      title="داشبورد منابع انسانی"
+      subtitle={`خلاصه اطلاعات کلیدی پیوند${monthLabel ? ` · ${monthLabel}` : ''}`}
+      onRefresh={() => void load()}
+      error={error}
+      actions={
+        <>
           <Link to="/admin/hr/recruitment" className="admin-btn admin-btn--ghost">
             داشبورد جذب
           </Link>
           <Link to="/admin/hr/reports" className="admin-btn admin-btn--ghost">
             گزارشات
           </Link>
-        </div>
-      </header>
+        </>
+      }
+    >
+      <AdminKpiStrip items={kpiItems} ariaLabel="شاخص‌های HR" />
 
-      {error ? <p className="admin-error">{error}</p> : null}
+      <AdminChartGrid cols={2}>
+        <AdminChartCard
+          title="توزیع پرسنل بر اساس واحد سازمانی"
+          subtitle="بر اساس دپارتمان"
+          empty={!deptData.length}
+          emptyHint="هنوز پرسنلی برای نمودار ثبت نشده"
+          height={chartRowHeight}
+          rtlHBars
+        >
+          <ResponsiveContainer width="100%" height={chartRowHeight}>
+            <BarChart layout="vertical" data={deptData} margin={{ ...adminRtlHBarsMargin }}>
+              <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--admin-border)" />
+              <XAxis {...adminRtlHBarsValueAxis} />
+              <YAxis dataKey="name" {...adminRtlHBarsCategoryAxis} />
+              <Tooltip content={<ChartTip />} cursor={{ fill: 'rgba(92,77,145,0.06)' }} />
+              <Bar dataKey="count" radius={adminRtlHBarsRadius} maxBarSize={22} name="نفر">
+                {deptData.map((_, i) => (
+                  <Cell key={i} fill={DEPT_COLORS[i % DEPT_COLORS.length]} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </AdminChartCard>
 
-      {topKpis.length ? (
-        <div className="hr-dash-kpi-row">
-          {topKpis.map((item) => (
-            <article key={item.label} className={`hr-dash-kpi hr-dash-kpi--${item.tone}`}>
-              <span className="hr-dash-kpi-label">{item.label}</span>
-              <strong className="hr-dash-kpi-value">{item.value}</strong>
-            </article>
-          ))}
-        </div>
-      ) : null}
+        <AdminChartCard
+          title="میزان هزینه در هر واحد"
+          subtitle={monthLabel || 'این ماه'}
+          empty={!costDeptData.length}
+          emptyHint="هزینه‌ای برای این ماه ثبت نشده"
+          height={chartRowHeight}
+          rtlHBars
+        >
+          <ResponsiveContainer width="100%" height={chartRowHeight}>
+            <BarChart layout="vertical" data={costDeptData} margin={{ ...adminRtlHBarsMargin }}>
+              <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--admin-border)" />
+              <XAxis {...adminRtlHBarsValueAxis} tickFormatter={costAxisTick} domain={[0, 'auto']} />
+              <YAxis dataKey="name" {...adminRtlHBarsCategoryAxis} />
+              <Tooltip content={<ChartTip money />} cursor={{ fill: 'rgba(92,77,145,0.06)' }} />
+              <Bar dataKey="total" radius={adminRtlHBarsRadius} maxBarSize={22} name="هزینه">
+                {costDeptData.map((_, i) => (
+                  <Cell key={i} fill={DEPT_COLORS[i % DEPT_COLORS.length]} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </AdminChartCard>
+      </AdminChartGrid>
 
-      {k ? (
-        <div className="hr-dash-highlight-row">
-          <article className="hr-dash-highlight">
-            <span className="hr-dash-highlight-label">
-              ساعت فعالیت{monthLabel ? ` · ${monthLabel}` : ' این ماه'}
-            </span>
-            <strong className="hr-dash-highlight-value">
-              {formatNumFa(k.serviceHoursMonth)} <small>ساعت</small>
-            </strong>
-          </article>
-          <article className="hr-dash-highlight">
-            <span className="hr-dash-highlight-label">
-              جمع هزینه سازمانی{monthLabel ? ` · ${monthLabel}` : ' این ماه'}
-            </span>
-            <strong className="hr-dash-highlight-value">{formatHrMoney(k.orgCostMonth)}</strong>
-          </article>
-        </div>
-      ) : null}
-
-      <div className="hr-dash-main-row">
-        <article className="admin-card hr-dash-panel">
-          <div className="admin-card-head">
-            <h2>توزیع پرسنل بر اساس واحد سازمانی</h2>
-            <span className="admin-muted">بر اساس دپارتمان</span>
-          </div>
-          {/*
-            Recharts SVG ticks clip under document dir=rtl (often to 1 Persian glyph).
-            Shared LTR island + right category lane (see rechartsRtlHBars).
-          */}
-          <div
-            className={`hr-dash-chart ${ADMIN_RTL_HBARS_CLASS}`}
-            dir="ltr"
-            style={{ height: chartRowHeight }}
-          >
-            {deptData.length ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart layout="vertical" data={deptData} margin={{ ...adminRtlHBarsMargin }}>
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--admin-border)" />
-                  <XAxis {...adminRtlHBarsValueAxis} />
-                  <YAxis dataKey="name" {...adminRtlHBarsCategoryAxis} />
-                  <Tooltip content={<ChartTip />} cursor={{ fill: 'rgba(92,77,145,0.06)' }} />
-                  <Bar dataKey="count" radius={adminRtlHBarsRadius} maxBarSize={22} name="نفر">
-                    {deptData.map((_, i) => (
-                      <Cell key={i} fill={DEPT_COLORS[i % DEPT_COLORS.length]} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <p className="admin-muted">هنوز پرسنلی برای نمودار ثبت نشده</p>
-            )}
-          </div>
-        </article>
-
-        <article className="admin-card hr-dash-panel">
-          <div className="admin-card-head">
-            <h2>میزان هزینه در هر واحد</h2>
-            <span className="admin-muted">{monthLabel ? monthLabel : 'این ماه'}</span>
-          </div>
-          <div
-            className={`hr-dash-chart ${ADMIN_RTL_HBARS_CLASS}`}
-            dir="ltr"
-            style={{ height: chartRowHeight }}
-          >
-            {costDeptData.length ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart layout="vertical" data={costDeptData} margin={{ ...adminRtlHBarsMargin }}>
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--admin-border)" />
-                  <XAxis
-                    {...adminRtlHBarsValueAxis}
-                    tickFormatter={costAxisTick}
-                    domain={[0, 'auto']}
-                  />
-                  <YAxis dataKey="name" {...adminRtlHBarsCategoryAxis} />
-                  <Tooltip
-                    content={<ChartTip money />}
-                    cursor={{ fill: 'rgba(92,77,145,0.06)' }}
-                  />
-                  <Bar dataKey="total" radius={adminRtlHBarsRadius} maxBarSize={22} name="هزینه">
-                    {costDeptData.map((_, i) => (
-                      <Cell key={i} fill={DEPT_COLORS[i % DEPT_COLORS.length]} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <p className="admin-muted">هزینه‌ای برای این ماه ثبت نشده</p>
-            )}
-          </div>
-        </article>
-      </div>
-
-      <div className="hr-dash-secondary-row">
-        <article className="admin-card hr-dash-panel">
-          <div className="admin-card-head">
-            <h2>وضعیت قرارداد</h2>
-          </div>
+      <AdminChartGrid cols={3}>
+        <AdminChartCard title="وضعیت قرارداد" empty={!statusPie.length}>
           <div className="hr-dash-donut-wrap">
-            {statusPie.length ? (
-              <>
-                <div className="hr-dash-chart" style={{ height: 180 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie data={statusPie} dataKey="count" nameKey="name" innerRadius={48} outerRadius={72} paddingAngle={2}>
-                        {statusPie.map((s) => (
-                          <Cell key={s.name} fill={s.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip content={<ChartTip />} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-                <ul className="hr-dash-legend">
-                  {statusPie.map((s) => (
-                    <li key={s.name}>
-                      <i style={{ background: s.color }} />
-                      {s.name}
-                      <span>{formatNumFa(s.count)}</span>
-                    </li>
-                  ))}
-                </ul>
-              </>
-            ) : (
-              <p className="admin-muted">داده‌ای نیست</p>
-            )}
-          </div>
-        </article>
-
-        <article className="admin-card hr-dash-panel">
-          <div className="admin-card-head">
-            <h2>کارتابل (پیش‌نمایش)</h2>
-            <Link to="/admin/hr/cockpit" className="admin-muted">
-              کامل →
-            </Link>
-          </div>
-          {data?.cockpitPreview?.length ? (
-            <ul className="admin-log-list">
-              {data.cockpitPreview.map((t, i) => (
-                <li key={i}>
-                  <b>{t.type}</b>
-                  {t.employeeName ? ` · ${t.employeeName}` : ''}
-                  <div className="admin-muted">{t.detail || t.label || ''}</div>
+            <div className="hr-dash-chart" style={{ height: 180 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie data={statusPie} dataKey="count" nameKey="name" innerRadius={48} outerRadius={72} paddingAngle={2}>
+                    {statusPie.map((s) => (
+                      <Cell key={s.name} fill={s.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<ChartTip />} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <ul className="hr-dash-legend">
+              {statusPie.map((s) => (
+                <li key={s.name}>
+                  <i style={{ background: s.color }} />
+                  {s.name}
+                  <span>{formatNumFa(s.count)}</span>
                 </li>
               ))}
             </ul>
-          ) : (
-            <p className="admin-muted">وظیفه‌ای نیست</p>
-          )}
-        </article>
-      </div>
+          </div>
+        </AdminChartCard>
+
+        <AdminChartCard
+          title="توزیع مکانی"
+          empty={!locData.length}
+          emptyHint="موقعیتی ثبت نشده"
+          height={Math.max(200, 36 * Math.max(locData.length, 3))}
+          rtlHBars
+        >
+          <ResponsiveContainer width="100%" height={Math.max(200, 36 * Math.max(locData.length, 3))}>
+            <BarChart layout="vertical" data={locData} margin={{ ...adminRtlHBarsMargin }}>
+              <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--admin-border)" />
+              <XAxis {...adminRtlHBarsValueAxis} />
+              <YAxis dataKey="name" {...adminRtlHBarsCategoryAxis} />
+              <Tooltip content={<ChartTip />} cursor={{ fill: 'rgba(92,77,145,0.06)' }} />
+              <Bar dataKey="count" radius={adminRtlHBarsRadius} maxBarSize={18} fill="#5c4d91" />
+            </BarChart>
+          </ResponsiveContainer>
+        </AdminChartCard>
+
+        <AdminChartCard title="کارتابل (پیش‌نمایش)" href="/admin/hr/cockpit" hrefLabel="کامل →" empty={!data?.cockpitPreview?.length} emptyHint="وظیفه‌ای نیست">
+          <ul className="admin-log-list">
+            {(data?.cockpitPreview || []).map((t, i) => (
+              <li key={i}>
+                <b>{t.type}</b>
+                {t.employeeName ? ` · ${t.employeeName}` : ''}
+                <div className="admin-muted">{t.detail || t.label || ''}</div>
+              </li>
+            ))}
+          </ul>
+        </AdminChartCard>
+      </AdminChartGrid>
 
       {data ? <HrLinkGrid links={data.links.map((l) => ({ to: l.to, label: l.label, sub: 'باز کردن ماژول' }))} /> : null}
-    </div>
+    </AdminDashPage>
   );
 }

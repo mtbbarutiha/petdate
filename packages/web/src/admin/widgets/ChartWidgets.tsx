@@ -20,7 +20,7 @@ type MultiSeries = Array<{ key: string; label: string; color: string; points: Ch
 
 function ChartEmpty({ hint }: { hint?: string }) {
   return (
-    <p className="admin-muted wdg-chart-empty">
+    <p className="admin-dash-chart-empty wdg-chart-empty">
       {hint || 'داده‌ای برای این سطح دریل نیست'}
     </p>
   );
@@ -275,5 +275,5 @@ export function CategoryFunnelWidget({
 }
 
 export function WidgetEmpty(): ReactNode {
-  return <p className="admin-muted">داده‌ای برای نمودار نیست</p>;
+  return <p className="admin-dash-chart-empty">داده‌ای برای نمودار نیست</p>;
 }
