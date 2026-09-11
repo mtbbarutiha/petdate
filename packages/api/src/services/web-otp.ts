@@ -237,5 +237,10 @@ export function getUserFromBearer(authHeader?: string) {
   }
   const user = dbService.getUserById(session.userId);
   if (!user) return null;
+  // Banned / soft-deleted accounts cannot keep an active session
+  if (user.isActive === false) {
+    dbService.deleteWebSession(token);
+    return null;
+  }
   return { token, user };
 }
