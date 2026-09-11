@@ -35,6 +35,7 @@ async function main() {
   assert(parseReferrerHost(null) === '(direct)', 'direct');
   assert(!isValidClarityProjectId('4b79bfb4-a025-4f0e-8b84-0f45c3acac64'), 'uuid not clarity');
   assert(isValidClarityProjectId('abc12xyz'), 'short clarity ok');
+  assert(isValidClarityProjectId('ygkl5nck6k'), 'live clarity id ok');
 
   ingestSiteAnalyticsEvent({
     sessionId: 'sess-test-0001',
@@ -77,7 +78,23 @@ async function main() {
   assert(report.devices.length >= 1, 'devices');
   assert(report.recentSessions.length >= 2, 'recent sessions');
   assert(report.requestedAgentId === '4b79bfb4-a025-4f0e-8b84-0f45c3acac64', 'agent id note');
-  assert(report.clarity.configured === false, 'clarity not configured with uuid');
+
+  // Default live project when env is unset.
+  delete process.env.CLARITY_PROJECT_ID;
+  delete process.env.VITE_CLARITY_PROJECT_ID;
+  const reportDefault = buildSiteAnalyticsReport(7);
+  assert(reportDefault.clarity.configured === true, 'clarity configured by default');
+  assert(reportDefault.clarity.projectId === 'ygkl5nck6k', 'default clarity project id');
+  assert(
+    reportDefault.clarity.dashboardUrl === 'https://clarity.microsoft.com/projects/view/ygkl5nck6k/',
+    'clarity dashboard url',
+  );
+
+  // Explicit invalid UUID override must not silently fall back.
+  process.env.VITE_CLARITY_PROJECT_ID = '4b79bfb4-a025-4f0e-8b84-0f45c3acac64';
+  const reportUuid = buildSiteAnalyticsReport(7);
+  assert(reportUuid.clarity.configured === false, 'clarity not configured with uuid override');
+  delete process.env.VITE_CLARITY_PROJECT_ID;
 
   console.log('site-analytics.selftest: OK');
 }

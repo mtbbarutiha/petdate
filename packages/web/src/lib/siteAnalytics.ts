@@ -1,8 +1,12 @@
 /**
  * Public first-party analytics beacon + optional Microsoft Clarity.
- * Clarity only loads when VITE_CLARITY_PROJECT_ID is a valid (non-UUID) project id.
+ * Clarity only loads when the project id is a valid Clarity id (NOT a UUID).
+ * Override with VITE_CLARITY_PROJECT_ID; production default is the live petdate.ir project.
  */
 const SESSION_KEY = 'pd_analytics_sid';
+
+/** Live Microsoft Clarity project for petdate.ir (short id — not the rejected agent UUID). */
+export const DEFAULT_CLARITY_PROJECT_ID = 'ygkl5nck6k';
 
 function apiBase(): string {
   return (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ?? '';
@@ -15,6 +19,14 @@ function isValidClarityProjectId(id: string | undefined | null): boolean {
     return false;
   }
   return /^[a-zA-Z0-9_-]{4,64}$/.test(t);
+}
+
+function resolveClarityProjectId(): string | null {
+  const fromEnv = (import.meta.env.VITE_CLARITY_PROJECT_ID as string | undefined)?.trim() || '';
+  // Explicit invalid override (e.g. leftover UUID) — do not silently fall back.
+  if (fromEnv && !isValidClarityProjectId(fromEnv)) return null;
+  const id = fromEnv || DEFAULT_CLARITY_PROJECT_ID;
+  return isValidClarityProjectId(id) ? id : null;
 }
 
 function getSessionId(): string {
@@ -49,8 +61,8 @@ let clarityBooted = false;
 
 function maybeInitClarity(): void {
   if (clarityBooted || typeof window === 'undefined' || typeof document === 'undefined') return;
-  const projectId = (import.meta.env.VITE_CLARITY_PROJECT_ID as string | undefined)?.trim();
-  if (!isValidClarityProjectId(projectId)) return;
+  const projectId = resolveClarityProjectId();
+  if (!projectId) return;
   clarityBooted = true;
   try {
     const w = window as Window & { clarity?: ((...args: unknown[]) => void) & { q?: unknown[] } };
@@ -61,6 +73,7 @@ function maybeInitClarity(): void {
         (w.clarity as { q: unknown[] }).q.push(args);
       };
     const s = document.createElement('script');
+    s.type = 'text/javascript';
     s.async = true;
     s.src = `https://www.clarity.ms/tag/${projectId}`;
     s.id = 'petdate-clarity';
