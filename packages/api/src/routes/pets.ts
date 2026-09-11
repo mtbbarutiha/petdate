@@ -1,7 +1,9 @@
+import { createHash, timingSafeEqual } from 'crypto';
 import fs from 'fs';
 import { Router } from 'express';
 import multer from 'multer';
 import { dbService, getDb, haversineKm } from '../db';
+import { infra } from '../config/infra';
 import {
   MAX_PET_PHOTO_BYTES,
   mimeFromPetPhotoKey,
@@ -27,6 +29,20 @@ function viewerUserId(req: { header: (name: string) => string | undefined }): nu
   return session?.user?.id;
 }
 
+function tokensEqual(a: string, b: string): boolean {
+  const ha = createHash('sha256').update(a).digest();
+  const hb = createHash('sha256').update(b).digest();
+  return timingSafeEqual(ha, hb);
+}
+
+/** Internal Telegram bot (X-PetDate-Bot-Token === TELEGRAM_BOT_TOKEN). */
+function isInternalBot(req: { header: (name: string) => string | undefined }): boolean {
+  const expected = infra.telegram.botToken?.trim();
+  const got = String(req.header('x-petdate-bot-token') ?? '').trim();
+  if (!expected || !got) return false;
+  return tokensEqual(expected, got);
+}
+
 /** Hide unapproved pet/owner photos from non-owners. */
 function sanitizePetForViewer(pet: PetProfile, viewerId?: number): PetProfile {
   const isOwner = viewerId != null && viewerId === pet.ownerId;
@@ -36,6 +52,52 @@ function sanitizePetForViewer(pet: PetProfile, viewerId?: number): PetProfile {
     out.imageUrl = undefined;
   }
   return out;
+}
+
+/**
+ * Public discovery card — playmate matching needs species/city/ownerId de-dupe.
+ * Never include medical `health`, neighborhood, owner avatar, or last-seen.
+ */
+export function toPublicPetCard(pet: PetProfile): PetProfile {
+  return {
+    id: pet.id,
+    publicId: pet.publicId,
+    ownerId: pet.ownerId,
+    name: pet.name,
+    species: pet.species,
+    breed: pet.breed,
+    gender: pet.gender,
+    ageMonths: pet.ageMonths,
+    size: pet.size,
+    color: pet.color,
+    bio: pet.bio,
+    vaccinated: pet.vaccinated,
+    neutered: pet.neutered,
+    lookingForPlaymate: pet.lookingForPlaymate,
+    personality: pet.personality ?? {},
+    health: {},
+    imageUrl: pet.imageUrl,
+    city: pet.city,
+    ownerProvince: pet.ownerProvince,
+    ownerCity: pet.ownerCity,
+    ownerName: pet.ownerName,
+    ownerVerified: pet.ownerVerified,
+    distanceKm: pet.distanceKm,
+    createdAt: pet.createdAt,
+    updatedAt: pet.updatedAt,
+  };
+}
+
+function presentPet(
+  pet: PetProfile,
+  viewerId?: number,
+  opts?: { privileged?: boolean }
+): PetProfile {
+  const visible = sanitizePetForViewer(pet, viewerId);
+  if (opts?.privileged || (viewerId != null && viewerId === pet.ownerId)) {
+    return visible;
+  }
+  return toPublicPetCard(visible);
 }
 
 const petPhotoUpload = multer({
@@ -142,7 +204,10 @@ petsRouter.get('/photos/:ownerId/:filename', (req, res) => {
 });
 
 petsRouter.get('/', (req, res) => {
-  const ownerId = req.query.ownerId ? Number(req.query.ownerId) : undefined;
+  const viewerId = viewerUserId(req);
+  const privileged = isInternalBot(req);
+  const ownerIdRaw = req.query.ownerId ? Number(req.query.ownerId) : undefined;
+  const ownerId = Number.isFinite(ownerIdRaw) && ownerIdRaw! > 0 ? ownerIdRaw : undefined;
   const excludeOwnerId = req.query.excludeOwnerId ? Number(req.query.excludeOwnerId) : undefined;
   const species = typeof req.query.species === 'string' ? req.query.species : undefined;
   const city = typeof req.query.city === 'string' ? req.query.city : undefined;
@@ -168,10 +233,22 @@ petsRouter.get('/', (req, res) => {
         ? false
         : undefined;
 
+  // ownerId filter is a roster of one account — guests cannot scrape it.
+  if (ownerId != null && !privileged && viewerId == null) {
+    res.status(401).json({ error: 'وارد نشده‌اید' });
+    return;
+  }
+
+  // Unauthenticated discovery is playmate cards only — not a full pet roster.
+  const playmateFilter =
+    !privileged && viewerId == null && lookingForPlaymate === undefined
+      ? true
+      : lookingForPlaymate;
+
   const pets = dbService.listPets({
     ownerId,
-    excludeOwnerId,
-    lookingForPlaymate,
+    excludeOwnerId: Number.isFinite(excludeOwnerId) ? excludeOwnerId : undefined,
+    lookingForPlaymate: playmateFilter,
     species,
     city,
     province,
@@ -179,9 +256,9 @@ petsRouter.get('/', (req, res) => {
     breeds,
     sort,
     // Public discovery hides pending/rejected photos; owners always see their pets.
-    publicOnly: ownerId == null,
+    publicOnly: ownerId == null || ownerId !== viewerId,
   });
-  res.json(pets);
+  res.json(pets.map((pet) => presentPet(pet, viewerId, { privileged })));
 });
 
 /** پت‌های نزدیک بر اساس مختصات — قبل از /:id ثبت شود */
@@ -201,6 +278,8 @@ petsRouter.get('/nearby', (req, res) => {
     : undefined;
   const limit = req.query.limit ? Number(req.query.limit) : 30;
   const radiusKm = req.query.radiusKm != null ? Number(req.query.radiusKm) : undefined;
+  const viewerId = viewerUserId(req);
+  const privileged = isInternalBot(req);
   const pets = dbService.listNearbyPets({
     lat,
     lng,
@@ -208,7 +287,7 @@ petsRouter.get('/nearby', (req, res) => {
     limit: Number.isFinite(limit) ? limit : 30,
     radiusKm: Number.isFinite(radiusKm) ? radiusKm : undefined,
   });
-  res.json(pets);
+  res.json(pets.map((pet) => presentPet(pet, viewerId, { privileged })));
 });
 
 /** کارت تصویری لیست نزدیک (سبک دوردوریا) — قبل از /:id */
@@ -402,7 +481,8 @@ petsRouter.get('/:id', (req, res) => {
     res.status(404).json({ error: 'پت پیدا نشد' });
     return;
   }
-  res.json(sanitizePetForViewer(pet, viewerUserId(req)));
+  const viewerId = viewerUserId(req);
+  res.json(presentPet(pet, viewerId, { privileged: isInternalBot(req) }));
 });
 
 petsRouter.post('/', (req, res) => {

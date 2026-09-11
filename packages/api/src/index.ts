@@ -86,6 +86,12 @@ app.use(
   })
 );
 app.use(express.json({ limit: '2mb' }));
+app.use('/api', (_req, res, next) => {
+  // Help CDNs keep JSON on API errors (WCDN www still may wrap 4xx — see nginx notes).
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-PetDate-API', '1');
+  next();
+});
 app.use(responseErrorLogger);
 
 // Brand assets (transparent logo for web Rx)

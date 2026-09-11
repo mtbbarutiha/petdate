@@ -174,8 +174,7 @@ export function OtpPage() {
         user.onboarding === 'profile_complete' ||
         Boolean(user.name?.trim() && user.age && user.gender && user.country && user.city);
       const homeForRole = dashboardPathForUser(user);
-      const destination =
-        nextRaw === '/home' || nextRaw === '/vet-consult' ? homeForRole : nextRaw;
+      const destination = nextRaw === '/home' ? homeForRole : nextRaw;
       if (!roles.length) {
         navigate('/onboarding/role', { replace: true, state: { next: destination } });
       } else if (!complete) {

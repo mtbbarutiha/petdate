@@ -15,7 +15,7 @@ const BOTTOM_LINKS: { to: string; label: string }[] = [
   { to: '/', label: 'خانه' },
   { to: '/#about', label: 'درباره' },
   { to: '/#services', label: 'خدمات' },
-  { to: '/#pets', label: 'پذیرش' },
+  { to: '/adoption', label: 'پذیرش' },
   { to: '/shop', label: 'پت شاپ' },
   { to: '/chats', label: 'هم بازی' },
   { to: '/#news', label: 'اخبار' },
@@ -31,7 +31,7 @@ const QUICK_LINKS: { to: string; label: string }[] = [
   { to: '/shop/c/dog-food', label: 'غذای سگ' },
   { to: '/shop/c/cat-food', label: 'غذای گربه' },
   { to: '/vet-consult', label: 'مشاوره دامپزشک' },
-  { to: '/#pets', label: 'پذیرش پت' },
+  { to: '/adoption', label: 'پذیرش پت' },
   { to: '/faq', label: 'سؤالات متداول' },
   { to: '/auth/login', label: 'ورود / ثبت‌نام' },
 ];

@@ -102,8 +102,8 @@ const SupportChatPage = lazy(() =>
 const EarningsPage = lazy(() =>
   import('./pages/EarningsPage').then((m) => ({ default: m.EarningsPage })),
 );
-const VetConsultPage = lazy(() =>
-  import('./pages/VetConsultPage').then((m) => ({ default: m.VetConsultPage })),
+const VetConsultRoute = lazy(() =>
+  import('./pages/VetConsultRoute').then((m) => ({ default: m.VetConsultRoute })),
 );
 const TrainerConsultPage = lazy(() =>
   import('./pages/ServiceConsultPage').then((m) => ({ default: m.TrainerConsultPage })),
@@ -354,6 +354,7 @@ export default function App() {
             <Route path="news" element={<Navigate to="/magazine" replace />} />
             <Route path="adoption" element={<AdoptionListPage />} />
             <Route path="adoption/:slug" element={<AdoptionDetailPage />} />
+            <Route path="vet-consult" element={<VetConsultRoute />} />
             <Route path="shop" element={<ShopHomePage />} />
             <Route path="shop/c/:category" element={<ShopCategoryPage />} />
             <Route path="shop/product/:id" element={<ShopProductPage />} />
@@ -384,7 +385,6 @@ export default function App() {
               <Route path="support" element={<SupportChatPage />} />
               <Route path="wallet/earn" element={<EarningsPage />} />
               <Route path="earn" element={<RedirectWithTagAssistant to="/wallet/earn" />} />
-              <Route path="vet-consult" element={<VetConsultPage />} />
               <Route path="trainer-consult" element={<TrainerConsultPage />} />
               <Route path="sitter-consult" element={<SitterConsultPage />} />
               <Route path="vet-chats" element={<RedirectWithTagAssistant to="/vet-consult" />} />
