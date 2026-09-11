@@ -288,6 +288,15 @@ adminRouter.get('/users', (req, res) => {
   }));
 });
 
+/** Iran choropleth: active users grouped by province (platform user scatter). */
+adminRouter.get('/users/geo', (req, res) => {
+  const activeOnly =
+    req.query.active === '0' || req.query.active === 'false'
+      ? false
+      : true;
+  res.json(adminPlatform.getUsersGeoDistribution({ activeOnly }));
+});
+
 adminRouter.patch('/users/:id', (req, res) => {
   const id = Number(req.params.id);
   if (!Number.isFinite(id)) { res.status(400).json({ error: 'شناسه نامعتبر' }); return; }

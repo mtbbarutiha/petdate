@@ -3,11 +3,49 @@
  * Kept separate from db.ts to limit merge conflicts with parallel agents.
  */
 import type { User, UserRole, PaymentOrder, PlatformNavCounts } from '@petdate/shared';
-import { makeOrderPublicId, orderPublicIdOf } from '@petdate/shared';
+import { IRAN_PROVINCES, makeOrderPublicId, orderPublicIdOf } from '@petdate/shared';
 import { getDb, dbService } from './db';
 
 function db() {
   return getDb();
+}
+
+export type UsersGeoProvinceRow = { name: string; count: number };
+
+export type UsersGeoDistribution = {
+  generatedAt: string;
+  /** Active users counted (default). */
+  totalUsers: number;
+  /** Sum of byProvince counts (excludes empty / نامشخص). */
+  provinceKnownCount: number;
+  /** Users with empty or نامشخص province. */
+  unknownProvinceCount: number;
+  byProvince: UsersGeoProvinceRow[];
+};
+
+const IRAN_PROVINCE_SET = new Set<string>(IRAN_PROVINCES as readonly string[]);
+
+/** Map free-text province to canonical IRAN_PROVINCES name when possible. */
+function normalizeUserProvince(raw: string): string {
+  const t = (raw || '').trim();
+  if (!t || t === 'نامشخص') return '';
+  if (IRAN_PROVINCE_SET.has(t)) return t;
+  const aliases: Record<string, string> = {
+    'آذربایجانشرقی': 'آذربایجان شرقی',
+    'آذربایجانغربی': 'آذربایجان غربی',
+    'خراسانرضوی': 'خراسان رضوی',
+    'خراسانشمالی': 'خراسان شمالی',
+    'خراسانجنوبی': 'خراسان جنوبی',
+    'سیستانوبلوچستان': 'سیستان و بلوچستان',
+    'چهارمحالوبختیاری': 'چهارمحال و بختیاری',
+    'کهگیلویهوبویراحمد': 'کهگیلویه و بویراحمد',
+  };
+  const compact = t.replace(/\s+/g, '');
+  if (aliases[compact]) return aliases[compact];
+  for (const p of IRAN_PROVINCES) {
+    if (p.replace(/\s+/g, '') === compact) return p;
+  }
+  return t;
 }
 
 export type ShopProductRow = {
@@ -195,6 +233,50 @@ function mapAnnouncement(row: Record<string, unknown>): AnnouncementRow {
 }
 
 export const adminPlatform = {
+  /**
+   * Active platform users aggregated by province for the Iran choropleth heatmap.
+   * Empty / نامشخص provinces are excluded from byProvince and returned as unknownProvinceCount.
+   */
+  getUsersGeoDistribution(opts?: { activeOnly?: boolean }): UsersGeoDistribution {
+    const d = db();
+    const activeOnly = opts?.activeOnly !== false;
+    const where = activeOnly ? 'WHERE COALESCE(is_active, 1) = 1' : '';
+    const totalUsers = Number(
+      (d.prepare(`SELECT COUNT(*) as c FROM users ${where}`).get() as { c: number }).c
+    );
+    const rows = d
+      .prepare(
+        `SELECT TRIM(COALESCE(province, '')) AS province, COUNT(*) AS c
+         FROM users ${where}
+         GROUP BY TRIM(COALESCE(province, ''))`
+      )
+      .all() as Array<{ province: string; c: number }>;
+
+    const map = new Map<string, number>();
+    let unknownProvinceCount = 0;
+    for (const row of rows) {
+      const count = Number(row.c) || 0;
+      if (count <= 0) continue;
+      const normalized = normalizeUserProvince(row.province || '');
+      if (!normalized) {
+        unknownProvinceCount += count;
+        continue;
+      }
+      map.set(normalized, (map.get(normalized) || 0) + count);
+    }
+    const byProvince = [...map.entries()]
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name, 'fa'));
+    const provinceKnownCount = byProvince.reduce((s, r) => s + r.count, 0);
+    return {
+      generatedAt: new Date().toISOString(),
+      totalUsers,
+      provinceKnownCount,
+      unknownProvinceCount,
+      byProvince,
+    };
+  },
+
   getDashboardStats() {
     const d = db();
     const q = (sql: string) =>

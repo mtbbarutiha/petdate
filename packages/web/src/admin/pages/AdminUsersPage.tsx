@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Pencil, Search } from 'lucide-react';
 import {
+  IranProvinceHeatmap,
+  USERS_HEATMAP_COPY,
+  type IranHeatRow,
+} from '../geo';
+import {
   USER_ROLES,
   USER_ROLE_LABELS,
   VERIFICATION_STATUSES,
@@ -97,6 +102,31 @@ export function AdminUsersPage() {
   const [editForm, setEditForm] = useState<EditForm | null>(null);
   const [editBusy, setEditBusy] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
+  const [geoRows, setGeoRows] = useState<IranHeatRow[]>([]);
+  const [geoUnknown, setGeoUnknown] = useState(0);
+  const [geoTotal, setGeoTotal] = useState(0);
+  const [geoKnown, setGeoKnown] = useState(0);
+  const [geoError, setGeoError] = useState<string | null>(null);
+
+  const loadGeo = useCallback(async () => {
+    try {
+      // Map follows the users filter: inactive filter → inactive geo; else active users.
+      const qs = status === 'inactive' ? 'active=0' : 'active=1';
+      const data = await adminFetch<{
+        totalUsers: number;
+        provinceKnownCount: number;
+        unknownProvinceCount: number;
+        byProvince: IranHeatRow[];
+      }>(`/api/admin/users/geo?${qs}`);
+      setGeoRows(data.byProvince || []);
+      setGeoUnknown(data.unknownProvinceCount || 0);
+      setGeoTotal(data.totalUsers || 0);
+      setGeoKnown(data.provinceKnownCount || 0);
+      setGeoError(null);
+    } catch (err) {
+      setGeoError(err instanceof Error ? err.message : 'خطا در نقشه کاربران');
+    }
+  }, [status]);
 
   const load = useCallback(async () => {
     try {
@@ -111,6 +141,7 @@ export function AdminUsersPage() {
     } catch (err) { setError(err instanceof Error ? err.message : 'خطا'); }
   }, [q, role, status]);
   useEffect(() => { void load(); }, [load]);
+  useEffect(() => { void loadGeo(); }, [loadGeo]);
 
   const openEdit = (user: User) => {
     setEditing(user);
@@ -198,6 +229,7 @@ export function AdminUsersPage() {
       setEditForm(null);
       setEditError(null);
       await load();
+      await loadGeo();
     } catch (err) {
       setEditError(err instanceof Error ? err.message : 'خطا در ذخیره');
     } finally {
@@ -262,6 +294,29 @@ export function AdminUsersPage() {
         <button type="button" className="admin-btn" onClick={() => void load()}>اعمال</button>
       </div>
       {error ? <p className="admin-error">{error}</p> : null}
+
+      <article className="admin-card users-geo-heat-card">
+        <div className="admin-card-head">
+          <div>
+            <h2>نقشه حرارتی پراکندگی کاربران بر اساس استان</h2>
+            <p className="admin-muted">
+              استان‌هایی با کاربر بیشتر تیره‌تر نمایش داده می‌شوند
+              {geoTotal
+                ? ` · کاربر فعال ${formatNumFa(geoTotal)} · با استان مشخص ${formatNumFa(geoKnown)}${
+                    geoUnknown > 0 ? ` · بدون استان ${formatNumFa(geoUnknown)}` : ''
+                  }`
+                : ''}
+            </p>
+          </div>
+        </div>
+        {geoError ? <p className="admin-error">{geoError}</p> : null}
+        <IranProvinceHeatmap
+          rows={geoRows}
+          unknownCount={geoUnknown}
+          copy={USERS_HEATMAP_COPY}
+        />
+      </article>
+
       <div className="admin-table-wrap admin-card">
         <table className="admin-table admin-table--dense">
           <thead>
