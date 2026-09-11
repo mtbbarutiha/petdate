@@ -115,6 +115,10 @@ python3 packages/web/scripts/generate-brand-assets.py
 
 Do **not** invent a new PWA mark or neon icon.
 
+## CDN / HTTP
+
+See [`docs/infra/wcdn.md`](./infra/wcdn.md): apex HTTP→HTTPS on origin (skip WCDN Flexible pulls); www API 4xx HTML wrap is a ParsPack custom-error-page limit (enable «نمایش خطای سرور مقصد»).
+
 ## Live paths on VPS
 
 - App root: `/opt/petdate` (`VPS_PATH`)
