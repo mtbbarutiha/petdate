@@ -67,12 +67,8 @@
           try {
             stored = localStorage.getItem(key);
           } catch (e) {}
-          var theme =
-            stored === 'light' || stored === 'dark'
-              ? stored
-              : window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
-                ? 'dark'
-                : 'light';
+          /* Default template = dark when no stored preference (ignore OS scheme). */
+          var theme = stored === 'light' || stored === 'dark' ? stored : 'dark';
           var root = document.documentElement;
           root.setAttribute('data-theme', theme);
           root.classList.add(theme === 'dark' ? 'theme-dark' : 'theme-light');
@@ -81,6 +77,15 @@
           if (meta) meta.setAttribute('content', theme === 'dark' ? '#1a1d27' : '#5c4d91');
           var scheme = document.querySelector('meta[name="color-scheme"]');
           if (scheme) scheme.setAttribute('content', theme);
+
+          var langKey = 'petdate-lang';
+          var langStored = null;
+          try {
+            langStored = localStorage.getItem(langKey);
+          } catch (e2) {}
+          var lang = langStored === 'en' || langStored === 'fa' ? langStored : 'fa';
+          root.setAttribute('lang', lang);
+          root.setAttribute('dir', lang === 'en' ? 'ltr' : 'rtl');
         } catch (e) {}
       })();
     </script>

@@ -28,6 +28,7 @@ import {
 } from '../AdminListCells';
 import { AdminEntityCell, AdminThumb } from '../AdminThumb';
 import { AdminModal } from '../AdminModal';
+import { useI18n } from '../../i18n';
 
 /** Soft-deleted anonymized shell left for finance FK history. */
 function isDeletedUserShell(user: User): boolean {
@@ -102,6 +103,7 @@ function formFromUser(user: User): EditForm {
 }
 
 export function AdminUsersPage() {
+  const { t } = useI18n();
   const [users, setUsers] = useState<User[]>([]);
   const [total, setTotal] = useState(0);
   const [q, setQ] = useState('');
@@ -311,12 +313,12 @@ export function AdminUsersPage() {
     <div className="admin-page">
       <header className="admin-header">
         <div>
-          <h1>کاربران</h1>
+          <h1>{t('admin.usersTitle')}</h1>
           <p>{formatNumFa(total)} کاربر · فیلدهای مهم مدیریتی از جدول users</p>
         </div>
       </header>
 
-      <div className="admin-tabs" role="tablist" aria-label="نمای کاربران">
+      <div className="admin-tabs" role="tablist" aria-label={t('admin.usersTabsAria')}>
         <button
           type="button"
           role="tab"
@@ -325,7 +327,7 @@ export function AdminUsersPage() {
           onClick={() => setView('list')}
         >
           <List size={15} aria-hidden />
-          لیست
+          {t('admin.usersList')}
         </button>
         <button
           type="button"
@@ -335,16 +337,16 @@ export function AdminUsersPage() {
           onClick={() => setView('heatmap')}
         >
           <Map size={15} aria-hidden />
-          نقشه پراکندگی
+          {t('admin.usersMap')}
         </button>
       </div>
 
       <div className="admin-toolbar">
         {view === 'list' ? (
           <>
-            <div className="admin-search"><Search size={16} /><input placeholder="نام، آیدی PD-U، موبایل، تلگرام…" value={q} onChange={(e) => setQ(e.target.value)} /></div>
+            <div className="admin-search"><Search size={16} /><input placeholder={t('admin.usersSearchPh')} value={q} onChange={(e) => setQ(e.target.value)} /></div>
             <select className="admin-select" value={role} onChange={(e) => setRole(e.target.value)}>
-              <option value="">همه نقش‌ها</option>
+              <option value="">{t('admin.usersAllRoles')}</option>
               {USER_ROLES.map((r) => <option key={r} value={r}>{USER_ROLE_LABELS[r]}</option>)}
             </select>
           </>
@@ -353,10 +355,10 @@ export function AdminUsersPage() {
           className="admin-select"
           value={status}
           onChange={(e) => setStatus(e.target.value as 'active' | 'inactive' | 'all')}
-          aria-label="وضعیت حساب"
+          aria-label={t('admin.usersAccountStatus')}
         >
           <option value="active">فقط فعال</option>
-          <option value="inactive">مسدود / حذف‌شده</option>
+          <option value="inactive">{t('admin.usersInactive')}</option>
           <option value="all">همه</option>
         </select>
         <button
@@ -376,7 +378,7 @@ export function AdminUsersPage() {
       <article className="admin-card users-geo-heat-card">
         <div className="admin-card-head">
           <div>
-            <h2>نقشه حرارتی پراکندگی کاربران بر اساس استان</h2>
+            <h2>{t('admin.usersHeatmapTitle')}</h2>
             <p className="admin-muted">
               استان‌هایی با کاربر بیشتر تیره‌تر نمایش داده می‌شوند
               {geoTotal
@@ -399,13 +401,13 @@ export function AdminUsersPage() {
         <table className="admin-table admin-table--dense admin-table--users">
           <thead>
             <tr>
-              <th>آیدی</th>
-              <th>کاربر</th>
-              <th>تماس</th>
-              <th>نقش</th>
-              <th>کیف پول</th>
-              <th>وضعیت</th>
-              <th>عملیات</th>
+              <th>{t('admin.colId')}</th>
+              <th>{t('admin.colUser')}</th>
+              <th>{t('admin.colContact')}</th>
+              <th>{t('admin.colRole')}</th>
+              <th>{t('admin.colWallet')}</th>
+              <th>{t('admin.colStatus')}</th>
+              <th>{t('admin.colActions')}</th>
             </tr>
           </thead>
           <tbody>
@@ -465,7 +467,7 @@ export function AdminUsersPage() {
                         className="admin-select admin-select--compact"
                         value={u.role || ''}
                         disabled={busyId === u.id}
-                        aria-label="نقش اصلی"
+                        aria-label={t('admin.primaryRole')}
                         onChange={(e) => void setPrimaryRole(u, e.target.value as UserRole)}
                       >
                         {USER_ROLES.map((r) => (
@@ -511,8 +513,8 @@ export function AdminUsersPage() {
                           type="button"
                           className="admin-icon-btn"
                           disabled={busyId === u.id}
-                          title="ویرایش"
-                          aria-label="ویرایش"
+                          title={t('common.edit')}
+                          aria-label={t('common.edit')}
                           onClick={() => openEdit(u)}
                         >
                           <Pencil size={14} />
@@ -537,8 +539,8 @@ export function AdminUsersPage() {
                           type="button"
                           className="admin-icon-btn admin-icon-btn--danger"
                           disabled={busyId === u.id}
-                          title="حذف کاربر"
-                          aria-label="حذف کاربر"
+                          title={t('admin.deleteUser')}
+                          aria-label={t('admin.deleteUser')}
                           onClick={() => setDeleting(u)}
                         >
                           <Trash2 size={14} />

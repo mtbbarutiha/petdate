@@ -171,6 +171,60 @@ html[data-theme='dark'] .landing-brand-mark {
   color: var(--admin-accent);
 }
 
+/* —— Language toggle (mirrors theme chip) —— */
+.pd-lang-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  min-height: 40px;
+  min-width: 40px;
+  padding: 0 0.7rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--pepito-lilac) 80%, transparent);
+  background: color-mix(in srgb, var(--pepito-white) 88%, transparent);
+  color: var(--pepito-dark);
+  font-family: var(--font-display, 'Urbanist', 'Vazirmatn', system-ui, sans-serif);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease, color 0.2s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.pd-lang-toggle:hover {
+  background: var(--pepito-white);
+  border-color: color-mix(in srgb, var(--pepito-mint) 45%, var(--pepito-lilac));
+  color: var(--pepito-base);
+  transform: translateY(-1px);
+}
+.pd-lang-toggle:focus-visible {
+  outline: 2px solid var(--pepito-mint);
+  outline-offset: 2px;
+}
+.pd-lang-toggle--compact {
+  width: 36px;
+  height: 36px;
+  min-height: 36px;
+  min-width: 36px;
+  padding: 0;
+  border-radius: 10px;
+  font-size: 0.72rem;
+}
+.pd-lang-toggle-label {
+  line-height: 1;
+}
+.admin-app .pd-lang-toggle {
+  border-color: var(--admin-border);
+  background: var(--admin-surface);
+  color: var(--admin-ink);
+}
+.admin-app .pd-lang-toggle:hover {
+  border-color: var(--admin-mint);
+  color: var(--admin-accent);
+}
+
 /* —— Admin dark remaps —— */
 html[data-theme='dark'] .admin-app {
   --admin-bg: #171a24;

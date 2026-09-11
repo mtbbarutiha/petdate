@@ -4,6 +4,8 @@ import { PawPrint } from 'lucide-react';
 import { BRAND } from '@petdate/shared';
 import { SiteFooter } from '../components/SiteFooter';
 import { ThemeToggle } from '../components/ThemeToggle';
+import { LanguageToggle } from '../components/LanguageToggle';
+import { useI18n } from '../i18n';
 import { AdoptionPurchaseCta } from '../components/AdoptionPurchaseCta';
 import { ADOPTION_PETS } from '../data/adoptionPets';
 import { loginPath } from '../lib/authRedirect';
@@ -17,6 +19,7 @@ function PawIcon({ size = 16 }: { size?: number }) {
 }
 
 export function AdoptionListPage() {
+  const { t, dir } = useI18n();
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -37,22 +40,23 @@ export function AdoptionListPage() {
   }, []);
 
   return (
-    <div className="pepito-landing pepito-adoption-page" dir="rtl">
+    <div className="pepito-landing pepito-adoption-page" dir={dir}>
       <header className={`pepito-nav${scrolled ? ' is-scrolled' : ''}`}>
         <Link to="/" className="pepito-nav-logo" aria-label={BRAND.displayName}>
           <img src="/pepito/img/logo.png" alt={BRAND.displayName} />
         </Link>
-        <nav className="pepito-nav-links" aria-label="بخش‌ها">
-          <Link to="/#services">خدمات</Link>
-          <Link to="/adoption">پذیرش</Link>
-          <Link to="/shop">پت شاپ</Link>
-          <Link to="/vet-consult">دامپزشک</Link>
-          <Link to="/faq" className="pepito-nav-faq">سؤالات</Link>
+        <nav className="pepito-nav-links" aria-label={t('nav.sections')}>
+          <Link to="/#services">{t('nav.services')}</Link>
+          <Link to="/adoption">{t('nav.adoption')}</Link>
+          <Link to="/shop">{t('nav.petShop')}</Link>
+          <Link to="/vet-consult">{t('nav.vet')}</Link>
+          <Link to="/faq" className="pepito-nav-faq">{t('nav.faq')}</Link>
         </nav>
         <div className="pepito-nav-actions">
+          <LanguageToggle />
           <ThemeToggle />
           <Link to={loginPath('/home')} className="pepito-nav-login">
-            ورود
+            {t('common.login')}
           </Link>
           <Link to={loginPath('/chats')} className="pepito-btn pepito-btn--nav">
             <PawIcon size={14} />

@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../hooks/useAuthStore';
+import { useI18n } from '../i18n';
 import { loginPath } from '../lib/authRedirect';
 import { SITE_NAV_DESKTOP_GUEST, siteNavDesktopForUser } from '../lib/siteNav';
 
@@ -12,6 +13,7 @@ import { SITE_NAV_DESKTOP_GUEST, siteNavDesktopForUser } from '../lib/siteNav';
 export function SiteDesktopNav() {
   const { pathname } = useLocation();
   const { isLoggedIn, user } = useAuthStore();
+  const { t, dir } = useI18n();
 
   if (
     pathname.startsWith('/admin') ||
@@ -27,7 +29,7 @@ export function SiteDesktopNav() {
   const items = isLoggedIn ? siteNavDesktopForUser(user) : SITE_NAV_DESKTOP_GUEST;
 
   return (
-    <nav className="pepito-site-desktop-nav" aria-label="میانبرهای اصلی">
+    <nav className="pepito-site-desktop-nav" aria-label={t('nav.shortcuts')}>
       {items.map((item) => {
         const href = item.gate && !isLoggedIn ? loginPath(item.to) : item.to;
         const active = item.match?.(pathname) ?? pathname === item.to;
@@ -37,10 +39,10 @@ export function SiteDesktopNav() {
             to={href}
             className={`pepito-site-desktop-nav-link${active ? ' is-active' : ''}`}
             aria-current={active ? 'page' : undefined}
-            dir="rtl"
+            dir={dir}
           >
             <item.icon size={16} strokeWidth={2.25} aria-hidden />
-            <span>{item.label}</span>
+            <span>{t(`nav.${item.key}`)}</span>
           </Link>
         );
       })}

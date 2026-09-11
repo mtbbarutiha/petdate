@@ -9,6 +9,7 @@ import {
   type UserRole,
 } from '@petdate/shared';
 import { useAuthStore } from '../hooks/useAuthStore';
+import { useI18n } from '../i18n';
 import { resolvePublicMediaUrl } from '../lib/api';
 import { loginPath } from '../lib/authRedirect';
 import { SITE_NAV_GUEST, siteNavMobileForUser, type SiteNavItem } from '../lib/siteNav';
@@ -23,6 +24,7 @@ export function LandingMobileDock() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { isLoggedIn, user, setPrimaryRole } = useAuthStore();
+  const { t } = useI18n();
   const [roleOpen, setRoleOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -156,7 +158,7 @@ export function LandingMobileDock() {
                 key={item.key}
                 type="button"
                 className={`pepito-landing-mobile-dock-link pepito-landing-mobile-dock-link--profile${active || roleOpen ? ' is-active' : ''}`}
-                aria-label={`${item.label} — نگه‌داشتن برای تغییر نقش`}
+                aria-label={`${t(`nav.${item.key}`)}`}
                 aria-haspopup="dialog"
                 aria-expanded={roleOpen}
                 aria-controls={roleOpen ? panelId : undefined}
@@ -181,7 +183,7 @@ export function LandingMobileDock() {
               key={item.key}
               to={href}
               className={`pepito-landing-mobile-dock-link${active ? ' is-active' : ''}`}
-              aria-label={item.label}
+              aria-label={t(`nav.${item.key}`)}
               aria-current={active ? 'page' : undefined}
             >
               {renderIcon(item, active)}
@@ -195,7 +197,7 @@ export function LandingMobileDock() {
           <button
             type="button"
             className="pepito-dock-role-sheet-backdrop"
-            aria-label="بستن"
+            aria-label={t('common.close')}
             onClick={() => setRoleOpen(false)}
           />
           <div

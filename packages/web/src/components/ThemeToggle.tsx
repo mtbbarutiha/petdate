@@ -6,6 +6,7 @@ import {
   toggleTheme,
   type ThemeMode,
 } from '../lib/theme';
+import { useI18n } from '../i18n';
 
 type ThemeToggleProps = {
   className?: string;
@@ -18,8 +19,9 @@ type ThemeToggleProps = {
  * Theme is applied on <html> early via index.html; this keeps UI in sync.
  */
 export function ThemeToggle({ className = '', compact = false }: ThemeToggleProps) {
+  const { t } = useI18n();
   const [mode, setMode] = useState<ThemeMode>(() =>
-    typeof document !== 'undefined' ? getDocumentTheme() : 'light'
+    typeof document !== 'undefined' ? getDocumentTheme() : 'dark'
   );
 
   useEffect(() => {
@@ -31,8 +33,8 @@ export function ThemeToggle({ className = '', compact = false }: ThemeToggleProp
     return () => window.removeEventListener('storage', onStorage);
   }, []);
 
-  const nextLabel = mode === 'dark' ? 'روشن' : 'تیره';
-  const aria = mode === 'dark' ? 'فعال‌سازی حالت روشن' : 'فعال‌سازی حالت تیره';
+  const nextLabel = mode === 'dark' ? t('theme.toLight') : t('theme.toDark');
+  const aria = mode === 'dark' ? t('theme.ariaToLight') : t('theme.ariaToDark');
 
   return (
     <button

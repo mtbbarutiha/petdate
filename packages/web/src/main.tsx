@@ -8,14 +8,18 @@ import './styles/pepito.css';
 import './styles/chat.css';
 import './styles/theme-dark.css';
 import { initTheme } from './lib/theme';
+import { I18nProvider, initLang } from './i18n';
 
 initTheme();
+initLang();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
+    <I18nProvider>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </I18nProvider>
   </StrictMode>,
 );
 

@@ -3,10 +3,12 @@ import { Link, NavLink } from 'react-router-dom';
 import { PawPrint } from 'lucide-react';
 import { BRAND, primaryRole } from '@petdate/shared';
 import { useAuthStore } from '../hooks/useAuthStore';
+import { useI18n } from '../i18n';
 import { SiteFooter } from './SiteFooter';
 import { NavUserCluster } from './NavUserCluster';
 import { SiteDesktopNav } from './SiteDesktopNav';
 import { ThemeToggle } from './ThemeToggle';
+import { LanguageToggle } from './LanguageToggle';
 
 const BANNER_IMG = '/pepito/uploads/3.jpg';
 
@@ -46,8 +48,8 @@ export interface LandingChromeProps {
  */
 export function LandingChrome({
   children,
-  bannerTitle = BRAND.displayName,
-  bannerLead = BRAND.taglineFa,
+  bannerTitle,
+  bannerLead,
   bannerImage = BANNER_IMG,
   actionLabel: actionLabelProp,
   actionTo = '/',
@@ -61,14 +63,17 @@ export function LandingChrome({
 }: LandingChromeProps) {
   const [scrolled, setScrolled] = useState(false);
   const { isLoggedIn, user } = useAuthStore();
+  const { t, dir } = useI18n();
   const userPrimary = primaryRole(user?.roles, user?.role);
+  const resolvedBannerTitle = bannerTitle ?? BRAND.displayName;
+  const resolvedBannerLead = bannerLead ?? (dir === 'rtl' ? BRAND.taglineFa : BRAND.taglineEn);
   // App shell uses ProfileMenu for logout — no default “back” action in the top bar.
   const actionLabel =
     actionLabelProp !== undefined
       ? actionLabelProp
       : appNav
         ? ''
-        : 'خانه';
+        : t('common.home');
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -88,7 +93,7 @@ export function LandingChrome({
   }, []);
 
   return (
-    <div className={`pepito-landing pepito-flow-page${className ? ` ${className}` : ''}`} dir="rtl">
+    <div className={`pepito-landing pepito-flow-page${className ? ` ${className}` : ''}`} dir={dir}>
       <header
         className={`pepito-nav${scrolled ? ' is-scrolled' : ''}${
           appNav || isLoggedIn ? ' pepito-nav--app' : ' pepito-nav--tools'
@@ -100,23 +105,23 @@ export function LandingChrome({
         </Link>
 
         {appNav ? (
-          <nav className="pepito-nav-links pepito-nav-links--app" aria-label="منوی اصلی">
+          <nav className="pepito-nav-links pepito-nav-links--app" aria-label={t('nav.mainMenu')}>
             <NavLink to="/" end>
-              خانه
+              {t('common.home')}
             </NavLink>
             {userPrimary === 'vet' ? (
-              <NavLink to="/vet-consult">پنل پزشک</NavLink>
+              <NavLink to="/vet-consult">{t('nav.vet_panel')}</NavLink>
             ) : (
-              <NavLink to="/my-pets">پت‌های من</NavLink>
+              <NavLink to="/my-pets">{t('nav.my_pets')}</NavLink>
             )}
           </nav>
         ) : (
-          <nav className="pepito-nav-links" aria-label="بخش‌ها">
-            <Link to="/#services">خدمات</Link>
-            <Link to="/adoption">پذیرش</Link>
-            <Link to="/shop">پت شاپ</Link>
-            <Link to="/vet-consult">دامپزشک</Link>
-            <Link to="/faq" className="pepito-nav-faq">سؤالات</Link>
+          <nav className="pepito-nav-links" aria-label={t('nav.sections')}>
+            <Link to="/#services">{t('nav.services')}</Link>
+            <Link to="/adoption">{t('nav.adoption')}</Link>
+            <Link to="/shop">{t('nav.petShop')}</Link>
+            <Link to="/vet-consult">{t('nav.vet')}</Link>
+            <Link to="/faq" className="pepito-nav-faq">{t('nav.faq')}</Link>
           </nav>
         )}
 
@@ -124,6 +129,7 @@ export function LandingChrome({
         <NavUserCluster showCart />
 
         <div className="pepito-nav-actions">
+          <LanguageToggle />
           <ThemeToggle />
           <SiteDesktopNav />
           {actionLabel && onAction ? (
@@ -148,7 +154,7 @@ export function LandingChrome({
         <section
           className="pepito-flow-banner"
           style={{ backgroundImage: `url(${bannerImage})` }}
-          aria-label={bannerTitle}
+          aria-label={resolvedBannerTitle}
         >
           <div className="pepito-flow-banner-wash" aria-hidden />
           <div className="pepito-flow-banner-inner">
@@ -158,8 +164,8 @@ export function LandingChrome({
               </span>
               {BRAND.displayName}
             </p>
-            <h1>{bannerTitle}</h1>
-            {bannerLead ? <p>{bannerLead}</p> : null}
+            <h1>{resolvedBannerTitle}</h1>
+            {resolvedBannerLead ? <p>{resolvedBannerLead}</p> : null}
           </div>
         </section>
       )}

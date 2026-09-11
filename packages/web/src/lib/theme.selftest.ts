@@ -21,15 +21,20 @@ assert.equal(isThemeMode(null), false);
 assert.equal(resolveTheme('dark', false), 'dark');
 assert.equal(resolveTheme('light', true), 'light');
 assert.equal(resolveTheme(null, true), 'dark');
-assert.equal(resolveTheme(undefined, false), 'light');
+assert.equal(resolveTheme(undefined, false), 'dark');
 assert.equal(resolveTheme('weird', true), 'dark');
-assert.equal(resolveTheme('weird', false), 'light');
+assert.equal(resolveTheme('weird', false), 'dark');
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 const html = readFileSync(join(root, 'index.html'), 'utf8');
 assert.match(html, /petdate-theme/, 'FOUC script uses storage key');
 assert.match(html, /data-theme/, 'FOUC script sets data-theme early');
-assert.match(html, /prefers-color-scheme/, 'FOUC script respects OS preference');
+assert.match(html, /stored === 'light' \|\| stored === 'dark' \? stored : 'dark'/, 'default theme is dark');
+assert.doesNotMatch(
+  html,
+  /prefers-color-scheme: dark[\s\S]{0,80}\? 'dark'[\s\S]{0,40}: 'light'/,
+  'FOUC must not fall back to OS light'
+);
 assert.match(html, /color-scheme/, 'color-scheme meta present');
 
 const darkCss = readFileSync(join(root, 'src/styles/theme-dark.css'), 'utf8');
