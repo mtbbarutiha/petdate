@@ -161,7 +161,7 @@ const TEAM = [
   { slug: 'faranak-ahmadi', name: 'فرانک احمدی', role: 'مربی', img: `${P}/01-3.jpg` },
   { slug: 'leila-kiani', name: 'لیلا کیانی', role: 'مربی', img: `${P}/02-3.jpg` },
   { slug: 'sanaz-ghaffari', name: 'دکتر ساناز غفاری', role: 'دامپزشک', img: `${P}/03-3.jpg` },
-  { slug: 'sara-nozi', name: 'دکتر سارا نوری', role: 'دامپزشک', img: `${P}/04-3.jpg` },
+  { slug: 'sara-noori', name: 'دکتر سارا نوری', role: 'دامپزشک', img: `${P}/04-3.jpg` },
 ] as const;
 
 const TEAM_ALT = (name: string, role: string) => `${name} — ${role} پت‌دیت`;

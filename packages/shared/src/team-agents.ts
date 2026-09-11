@@ -47,19 +47,21 @@ export const TEAM_AGENTS: readonly TeamAgentDef[] = [
     cardImage: '/pepito/uploads/03-3.jpg',
   },
   {
-    slug: 'sara-nozi',
+    slug: 'sara-noori',
+    // Keep telegram id so the existing DB synthetic user is patched, not recreated.
     telegramId: 'petdate_ai_sara_nozi',
     name: 'دکتر سارا نوری',
     role: 'دامپزشک',
     kind: 'vet',
-    avatarUrl: '/agents/sara-nozi.jpg',
+    avatarUrl: '/agents/sara-noori.jpg',
     cardImage: '/pepito/uploads/04-3.jpg',
   },
 ] as const;
 
-/** Old public URLs (`/team-chat/layla-ahmadi`) still resolve. */
+/** Old public URLs still resolve after renames. */
 const TEAM_AGENT_SLUG_ALIASES: Record<string, string> = {
   'layla-ahmadi': 'faranak-ahmadi',
+  'sara-nozi': 'sara-noori',
 };
 
 export const DEFAULT_TEAM_AGENT_SLUG = 'leila-kiani';
