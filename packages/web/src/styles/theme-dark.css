@@ -1332,14 +1332,88 @@ html[data-theme='dark'] .pepito-vet-online-list {
   color: var(--pepito-dark);
 }
 
-/* Role switcher — inactive pills were #faf9fc + light ink */
+/*
+ * Role switcher / «نقش‌های من»
+ * Profile passport card kept a hard-coded lilac→white wash while ink remapped
+ * to light-on-dark → unreadable. Match app dark surfaces + elevated rows.
+ */
+html[data-theme='dark'] .pepito-profile--passport .pepito-profile-role-block,
+html[data-theme='dark'] .pepito-profile-role-block {
+  background:
+    linear-gradient(
+      160deg,
+      color-mix(in srgb, var(--pepito-base) 14%, var(--pd-surface-2)) 0%,
+      var(--pepito-white) 100%
+    );
+  border-color: var(--pd-border);
+  color: var(--pepito-dark);
+  box-shadow: var(--pd-shadow);
+}
+html[data-theme='dark'] .pepito-profile-role-block .pepito-profile-section-head h2,
+html[data-theme='dark'] .pepito-role-board-active-value,
+html[data-theme='dark'] .pepito-role-board-item-label,
+html[data-theme='dark'] .pepito-role-board-add-label {
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-profile-role-block .pepito-profile-section-head > p,
+html[data-theme='dark'] .pepito-role-board-active-label,
+html[data-theme='dark'] .pepito-role-board-active-desc,
+html[data-theme='dark'] .pepito-role-board-item-desc,
+html[data-theme='dark'] .pepito-role-board-empty,
+html[data-theme='dark'] .pepito-role-board-add-lead,
+html[data-theme='dark'] .pepito-role-board-add-desc {
+  color: var(--pepito-muted);
+}
+html[data-theme='dark'] .pepito-role-board-active {
+  border-bottom-color: var(--pd-border);
+}
+html[data-theme='dark'] .pepito-role-board-item {
+  border-bottom-color: var(--pd-border);
+  background: var(--pd-surface-2);
+  border-radius: 14px;
+  border: 1px solid var(--pd-border);
+  padding: 0.85rem 0.85rem;
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-role-board-item:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--pepito-base) 12%, var(--pd-surface-2));
+  border-color: color-mix(in srgb, var(--pepito-base) 35%, var(--pd-border));
+}
+html[data-theme='dark'] .pepito-role-board-item.is-active {
+  background: color-mix(in srgb, var(--pepito-base) 18%, var(--pd-surface-2));
+  border-color: color-mix(in srgb, var(--pepito-base) 45%, var(--pd-border));
+}
+html[data-theme='dark'] [dir='rtl'] .pepito-role-board-item.is-active {
+  background: color-mix(in srgb, var(--pepito-base) 18%, var(--pd-surface-2));
+}
+html[data-theme='dark'] .pepito-role-board-badge {
+  background: var(--pepito-base);
+  color: #1a1d27;
+}
+html[data-theme='dark'] .pepito-role-board-switch-hint {
+  color: var(--pepito-base);
+}
+html[data-theme='dark'] .pepito-role-board-add-btn {
+  border-color: color-mix(in srgb, var(--pepito-base) 45%, var(--pd-border));
+  color: var(--pepito-base);
+  background: transparent;
+}
+html[data-theme='dark'] .pepito-role-board-add-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--pepito-base) 14%, var(--pd-surface-2));
+  border-color: var(--pepito-base);
+  border-style: solid;
+}
+html[data-theme='dark'] .pepito-role-board-footer .pepito-btn--ghost {
+  border-color: var(--pd-border) !important;
+  color: var(--pepito-base) !important;
+}
 html[data-theme='dark'] .pepito-role-switch-item {
-  background: #2a2f3d;
+  background: var(--pd-surface-2);
   border-color: var(--pd-border);
   color: var(--pepito-dark);
 }
 html[data-theme='dark'] .pepito-role-switch-item:hover {
-  background: #32384a;
+  background: color-mix(in srgb, var(--pepito-base) 12%, var(--pd-surface-2));
   border-color: color-mix(in srgb, var(--pepito-base) 35%, var(--pd-border));
 }
 html[data-theme='dark'] .pepito-role-switch-item.is-active {
@@ -1348,7 +1422,7 @@ html[data-theme='dark'] .pepito-role-switch-item.is-active {
   color: #f4f3f8;
 }
 html[data-theme='dark'] .pepito-role-switch-add-card {
-  background: #2a2f3d;
+  background: var(--pd-surface-2);
   border-color: var(--pd-border);
   color: var(--pepito-dark);
 }
@@ -1358,40 +1432,68 @@ html[data-theme='dark'] .pepito-role-switch-add-card.is-on {
   color: #f4f3f8;
 }
 html[data-theme='dark'] .pepito-role-switch-panel {
-  background: #242836;
+  background: var(--pepito-white);
   border-color: var(--pd-border);
   box-shadow: var(--pd-shadow);
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-role-switch-panel-title {
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-role-switch-panel-active,
+html[data-theme='dark'] .pepito-role-switch-empty,
+html[data-theme='dark'] .pepito-role-switch-add-lead,
+html[data-theme='dark'] .pepito-role-switch-add-desc {
+  color: var(--pepito-muted);
+}
+html[data-theme='dark'] .pepito-role-switch-panel-active strong,
+html[data-theme='dark'] .pepito-role-switch-add,
+html[data-theme='dark'] .pepito-role-switch-back {
+  color: var(--pepito-base);
+}
+html[data-theme='dark'] .pepito-role-switch-badge {
+  background: rgba(255, 255, 255, 0.22);
+  color: #f4f3f8;
 }
 html[data-theme='dark'] .pepito-nav-profile-role-slot .pepito-role-switch-trigger {
-  background: #2a2f3d;
+  background: var(--pd-surface-2);
   border-color: var(--pd-border);
 }
+html[data-theme='dark'] .pepito-nav-profile-role-slot .pepito-role-switch-trigger-label {
+  color: var(--pepito-dark);
+}
 html[data-theme='dark'] .pepito-role-board-add-item {
-  background: #2a2f3d;
+  background: var(--pd-surface-2);
   border-color: var(--pd-border);
   color: var(--pepito-dark);
 }
 html[data-theme='dark'] .pepito-role-board-add-item.is-on {
-  background: color-mix(in srgb, var(--pepito-base) 18%, #2a2f3d);
+  background: color-mix(in srgb, var(--pepito-base) 18%, var(--pd-surface-2));
   border-color: var(--pepito-base);
   color: var(--pepito-dark);
 }
-html[data-theme='dark'] .pepito-role-board-item:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--pepito-base) 12%, transparent);
+html[data-theme='dark'] .pepito-role-board-add-check {
+  border-color: var(--pd-border-strong);
 }
-html[data-theme='dark'] .pepito-role-board-item.is-active {
-  background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--pepito-base) 18%, transparent) 0%,
-    transparent 100%
-  );
+
+/* Sibling profile slide-over panels share the same ink remap — keep surfaces dark */
+html[data-theme='dark'] .pepito-profile-panel {
+  background: var(--pepito-white);
+  border-color: var(--pd-border);
+  box-shadow: var(--pd-shadow);
+  color: var(--pepito-dark);
 }
-html[data-theme='dark'] [dir='rtl'] .pepito-role-board-item.is-active {
-  background: linear-gradient(
-    270deg,
-    color-mix(in srgb, var(--pepito-base) 18%, transparent) 0%,
-    transparent 100%
-  );
+html[data-theme='dark'] .pepito-profile-panel-list li {
+  background: var(--pd-surface-2);
+  border: 1px solid var(--pd-border);
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-profile-facts--rows {
+  background: var(--pepito-white);
+  border-color: var(--pd-border);
+}
+html[data-theme='dark'] .pepito-profile-facts--rows > div {
+  border-bottom-color: var(--pd-border);
 }
 
 /* Support AI chat — white chrome + grey bubbles while input went dark */
