@@ -17,6 +17,7 @@ import { useAppToast } from '../hooks/useAppToast';
 import { useI18n } from '../i18n';
 import {
   createCoinCardPayment,
+  fetchAuthedPaymentReceiptObjectUrl,
   fetchBuyCoinsCatalog,
   fetchMyWalletPayments,
   fetchWallet,
@@ -72,6 +73,57 @@ function paymentStatusFa(status: string): string {
   if (status === 'approved' || status === 'paid') return 'تأیید شده';
   if (status === 'rejected') return 'رد شده';
   return status;
+}
+
+/**
+ * Receipt files at `/api/payments/receipts/...` require Bearer auth.
+ * Browser `<img src>` cannot send Authorization → 401 broken image.
+ * Load with fetch(+token) and display via blob: URL (same pattern as admin payments).
+ */
+function WalletPaymentReceiptImg({
+  token,
+  receiptUrl,
+  alt,
+}: {
+  token: string;
+  receiptUrl: string;
+  alt: string;
+}) {
+  const [src, setSrc] = useState('');
+
+  useEffect(() => {
+    let revoked = '';
+    let cancelled = false;
+    const raw = String(receiptUrl || '').trim();
+    if (!raw) return;
+
+    const pathOnly = raw.split('?')[0] ?? raw;
+    if (pathOnly.startsWith('/api/payments/receipts/') && token) {
+      void (async () => {
+        try {
+          const objectUrl = await fetchAuthedPaymentReceiptObjectUrl(token, pathOnly);
+          if (cancelled) {
+            URL.revokeObjectURL(objectUrl);
+            return;
+          }
+          revoked = objectUrl;
+          setSrc(objectUrl);
+        } catch {
+          /* keep empty — avoid broken icon */
+        }
+      })();
+    } else {
+      setSrc(resolvePublicMediaUrl(raw));
+    }
+
+    return () => {
+      cancelled = true;
+      if (revoked) URL.revokeObjectURL(revoked);
+    };
+  }, [token, receiptUrl]);
+
+  if (!src) return null;
+  return <img className="pepito-wallet-buy-receipt" src={src} alt={alt} />;
 }
 
 /**
@@ -437,6 +489,59 @@ export function WalletPage() {
         </div>
       </section>
 
+      <section className="pepito-wallet-tg pepito-wallet-buy" aria-labelledby="wallet-buy-title">
+        <div className="pepito-wallet-tg-head">
+          <span className="pepito-wallet-tg-mark" aria-hidden><Receipt size={18} /></span>
+          <div>
+            <h2 id="wallet-buy-title">{t('wallet.cardTitle')}</h2>
+            <p className="pepito-wallet-tg-lead">{t('wallet.cardLead')}</p>
+          </div>
+        </div>
+        <div className="pepito-wallet-tg-body">
+          {activeOrder ? (
+            <div className="pepito-wallet-buy-active">
+              <p>سفارش فعال: <strong dir="ltr">#{activeOrder.id}</strong> · {toPersianDigits(activeOrder.coins)} سکه · {toPersianDigits(activeOrder.amountToman ?? 0)} تومان · {paymentStatusFa(activeOrder.status)}</p>
+              {cardInfo ? (<><p dir="ltr">کارت: <strong>{cardInfo.grouped || cardInfo.number}</strong></p><p>به‌نام: <strong>{cardInfo.holder}</strong></p></>) : null}
+              {activeOrder.status === 'awaiting_receipt' ? (
+                <>
+                  <label className="pepito-wallet-buy-ref"><span>شماره پیگیری (اختیاری)</span>
+                    <input value={transferRef} onChange={(e) => setTransferRef(e.target.value)} placeholder="کد پیگیری بانک" dir="ltr" />
+                  </label>
+                  <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden onChange={(e) => void onUploadReceipt(e.target.files?.[0] ?? null)} />
+                  <button type="button" className="pepito-btn button-1" disabled={uploadBusy} onClick={() => fileRef.current?.click()}>{uploadBusy ? 'در حال ارسال…' : 'آپلود عکس رسید'}</button>
+                </>
+              ) : (<p className="pepito-wallet-tg-meta">{t('wallet.receiptPending')}</p>)}
+              {activeOrder.receiptUrl && token ? (
+                <WalletPaymentReceiptImg
+                  token={token}
+                  receiptUrl={activeOrder.receiptUrl}
+                  alt={t('wallet.receiptAlt')}
+                />
+              ) : null}
+            </div>
+          ) : (
+            <ul className="pepito-wallet-buy-packages">
+              {packages.map((pkg) => (
+                <li key={pkg.id}>
+                  <button type="button" className="pepito-wallet-buy-pkg" disabled={buyBusy} onClick={() => void onBuyPackage(pkg)}>
+                    <strong>{pkg.label}</strong>
+                    <span>{toPersianDigits(pkg.toman)} تومان · ⭐{toPersianDigits(pkg.stars)}</span>
+                  </button>
+                </li>
+              ))}
+              {!packages.length ? <li className="pepito-wallet-tg-meta">در حال بارگذاری بسته‌ها…</li> : null}
+            </ul>
+          )}
+          {paymentHistory.length ? (
+            <ul className="pepito-wallet-buy-history" aria-label={t('wallet.cardRequests')}>
+              {paymentHistory.slice(0, 6).map((o) => (
+                <li key={o.id}><span dir="ltr">#{o.id}</span><span>{toPersianDigits(o.coins)} سکه · {paymentStatusFa(o.status)}</span><span>{formatTxDate(o.createdAt)}</span></li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+      </section>
+
       <section className="pepito-wallet-tx" aria-labelledby="wallet-tx-title">
         <div className="pepito-wallet-tx-head">
           <span className="pepito-wallet-tx-mark" aria-hidden>
@@ -491,53 +596,6 @@ export function WalletPage() {
             ))}
           </ul>
         ) : null}
-      </section>
-
-      <section className="pepito-wallet-tg pepito-wallet-buy" aria-labelledby="wallet-buy-title">
-        <div className="pepito-wallet-tg-head">
-          <span className="pepito-wallet-tg-mark" aria-hidden><Receipt size={18} /></span>
-          <div>
-            <h2 id="wallet-buy-title">{t('wallet.cardTitle')}</h2>
-            <p className="pepito-wallet-tg-lead">{t('wallet.cardLead')}</p>
-          </div>
-        </div>
-        <div className="pepito-wallet-tg-body">
-          {activeOrder ? (
-            <div className="pepito-wallet-buy-active">
-              <p>سفارش فعال: <strong dir="ltr">#{activeOrder.id}</strong> · {toPersianDigits(activeOrder.coins)} سکه · {toPersianDigits(activeOrder.amountToman ?? 0)} تومان · {paymentStatusFa(activeOrder.status)}</p>
-              {cardInfo ? (<><p dir="ltr">کارت: <strong>{cardInfo.grouped || cardInfo.number}</strong></p><p>به‌نام: <strong>{cardInfo.holder}</strong></p></>) : null}
-              {activeOrder.status === 'awaiting_receipt' ? (
-                <>
-                  <label className="pepito-wallet-buy-ref"><span>شماره پیگیری (اختیاری)</span>
-                    <input value={transferRef} onChange={(e) => setTransferRef(e.target.value)} placeholder="کد پیگیری بانک" dir="ltr" />
-                  </label>
-                  <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden onChange={(e) => void onUploadReceipt(e.target.files?.[0] ?? null)} />
-                  <button type="button" className="pepito-btn button-1" disabled={uploadBusy} onClick={() => fileRef.current?.click()}>{uploadBusy ? 'در حال ارسال…' : 'آپلود عکس رسید'}</button>
-                </>
-              ) : (<p className="pepito-wallet-tg-meta">رسید ثبت شد — منتظر تأیید ادمین در پنل مالی.</p>)}
-              {activeOrder.receiptUrl ? <img className="pepito-wallet-buy-receipt" src={resolvePublicMediaUrl(activeOrder.receiptUrl)} alt="رسید پرداخت" /> : null}
-            </div>
-          ) : (
-            <ul className="pepito-wallet-buy-packages">
-              {packages.map((pkg) => (
-                <li key={pkg.id}>
-                  <button type="button" className="pepito-wallet-buy-pkg" disabled={buyBusy} onClick={() => void onBuyPackage(pkg)}>
-                    <strong>{pkg.label}</strong>
-                    <span>{toPersianDigits(pkg.toman)} تومان · ⭐{toPersianDigits(pkg.stars)}</span>
-                  </button>
-                </li>
-              ))}
-              {!packages.length ? <li className="pepito-wallet-tg-meta">در حال بارگذاری بسته‌ها…</li> : null}
-            </ul>
-          )}
-          {paymentHistory.length ? (
-            <ul className="pepito-wallet-buy-history" aria-label="درخواست‌های کارت‌به‌کارت">
-              {paymentHistory.slice(0, 6).map((o) => (
-                <li key={o.id}><span dir="ltr">#{o.id}</span><span>{toPersianDigits(o.coins)} سکه · {paymentStatusFa(o.status)}</span><span>{formatTxDate(o.createdAt)}</span></li>
-              ))}
-            </ul>
-          ) : null}
-        </div>
       </section>
 
       <InviteFriendsCard variant="card" className="pepito-wallet-invite" />

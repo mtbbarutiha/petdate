@@ -1246,6 +1246,10 @@ export function getShopCardStatus(
 
   const card = paymentCardPublicInfo();
   const paid = payment.status === 'approved' || Boolean(meta?.shopOrderId);
+  let receiptUrl = payment.receiptUrl;
+  if (receiptUrl?.startsWith('/api/payments/receipts/') && meta?.receiptToken) {
+    receiptUrl = `${receiptUrl}?t=${encodeURIComponent(meta.receiptToken)}`;
+  }
   return {
     ok: true,
     paid,
@@ -1258,7 +1262,7 @@ export function getShopCardStatus(
     cardGrouped: card.cardGrouped,
     cardHolder: card.cardHolder,
     transferRef: payment.transferRef,
-    receiptUrl: payment.receiptUrl,
+    receiptUrl,
     paidAt: paid ? payment.reviewedAt ?? undefined : undefined,
   };
 }

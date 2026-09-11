@@ -1260,6 +1260,16 @@ html[data-theme='dark'] .pepito-wallet-buy-history {
   color: var(--pepito-muted);
   opacity: 1;
 }
+html[data-theme='dark'] .pepito-wallet-buy-receipt {
+  border-color: var(--pd-border);
+  background: var(--pd-surface-2);
+}
+html[data-theme='dark'] .pepito-wallet-buy-active {
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-wallet-buy-active .pepito-wallet-tg-meta {
+  color: var(--pepito-muted);
+}
 
 /* 13) My pets mobile hero */
 html[data-theme='dark'] .pepito-my-pets-hero {
