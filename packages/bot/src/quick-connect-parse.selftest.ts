@@ -51,7 +51,7 @@ const ai = parseQuickVetConnectSuccess({
   serviceKind: 'trainer',
 });
 assert(ai.aiFallback === true, 'AI path: aiFallback must be true');
-assert(ai.advice?.includes('پاشا'), 'AI path: advice preserved');
+assert(ai.advice?.includes('لیلا'), 'AI path: advice preserved');
 assert(ai.adviceSource === 'offline', 'AI path: adviceSource');
 assert(ai.serviceKind === 'trainer', 'AI path: serviceKind');
 assert(ai.consultations[0]?.id === 42, 'AI path: consult id');
