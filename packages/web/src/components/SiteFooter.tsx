@@ -5,8 +5,6 @@ import { BRAND, SITE } from '@petdate/shared';
 import { subscribeNewsletter } from '../lib/api';
 import { trackGenerateLead } from '../lib/siteAnalytics';
 
-const CONTACT_PHONE_DISPLAY = '۰۲۱-۸۸۷۷۶۶۵۵';
-const CONTACT_PHONE_TEL = '+982188776655';
 const CONTACT_EMAIL = SITE.email;
 const NEWSLETTER_FROM = SITE.newsletterEmail;
 const TELEGRAM_BOT = SITE.telegramBot;
@@ -131,11 +129,6 @@ export function SiteFooter() {
             <div className="pepito-footer-col">
               <h3 className="pepito-footer-heading">تماس</h3>
               <p className="pepito-footer-meta">تهران، ایران</p>
-              <p className="pepito-footer-meta">
-                <a href={`tel:${CONTACT_PHONE_TEL}`} dir="ltr">
-                  {CONTACT_PHONE_DISPLAY}
-                </a>
-              </p>
               <p className="pepito-footer-meta">
                 <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
               </p>
