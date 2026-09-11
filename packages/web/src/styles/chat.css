@@ -1261,6 +1261,20 @@ html.tg-chat-open body {
   font-weight: 600;
   color: var(--pepito-muted, #6b6280);
 }
+/* Empty chats card: cost divider must span full card width (not 32ch / pad inset) */
+.tg-thread-empty .find-playmate-one__fee,
+.tg-chat-list-empty .find-playmate-one__fee,
+.find-playmate-panel .find-playmate-one__fee {
+  margin: 0;
+  margin-inline: calc(-1 * var(--find-playmate-pad, 14px));
+  padding-inline: var(--find-playmate-pad, 14px);
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid var(--tg-line, rgba(31, 36, 48, 0.1));
+  max-width: none !important;
+  width: auto;
+  align-self: stretch;
+  box-sizing: border-box;
+}
 .find-playmate-panel .find-playmate-one__status {
   margin: 0;
   font-size: 0.85rem;
