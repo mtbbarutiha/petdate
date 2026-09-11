@@ -24,15 +24,18 @@ function rolesForKind(kind: TeamAgentDef['kind'], telegramId: string): Array<'ve
 }
 
 export function ensureTeamAgent(def: TeamAgentDef): User {
+  const desiredUsername = `agent_${def.slug.replace(/-/g, '_')}`;
   const existing = dbService.getUserByTelegramId(def.telegramId);
   if (existing) {
     const patch: {
       name?: string;
+      username?: string;
       avatarUrl?: string;
       avatarCustom?: boolean;
       avatarModerationStatus?: 'approved';
     } = {};
     if (existing.name !== def.name) patch.name = def.name;
+    if (existing.username !== desiredUsername) patch.username = desiredUsername;
     if (existing.avatarUrl !== def.avatarUrl) {
       patch.avatarUrl = def.avatarUrl;
       patch.avatarCustom = true;
@@ -48,7 +51,7 @@ export function ensureTeamAgent(def: TeamAgentDef): User {
   const { user } = dbService.findOrCreateUser({
     telegramId: def.telegramId,
     name: def.name,
-    username: `agent_${def.slug.replace(/-/g, '_')}`,
+    username: desiredUsername,
   });
   dbService.setUserRoles(user.id, rolesForKind(def.kind, def.telegramId));
   dbService.updateUserProfile(user.id, {

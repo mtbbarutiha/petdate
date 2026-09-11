@@ -19,18 +19,19 @@ export type TeamAgentDef = {
 /** Visual L→R on RTL landing matches reverse of this DOM order. */
 export const TEAM_AGENTS: readonly TeamAgentDef[] = [
   {
-    slug: 'layla-ahmadi',
+    slug: 'faranak-ahmadi',
+    // Keep telegram id so the existing DB synthetic user is patched, not recreated.
     telegramId: 'petdate_ai_layla_ahmadi',
-    name: 'دکتر لایلا احمدی',
+    name: 'فرانک احمدی',
     role: 'مربی',
     kind: 'trainer',
-    avatarUrl: '/agents/layla-ahmadi.jpg',
+    avatarUrl: '/agents/faranak-ahmadi.jpg',
     cardImage: '/pepito/uploads/01-3.jpg',
   },
   {
     slug: 'leila-kiani',
     telegramId: 'petdate_ai_assistant',
-    name: 'دکتر لیلا کیانی',
+    name: 'لیلا کیانی',
     role: 'مربی',
     kind: 'trainer',
     avatarUrl: '/agents/leila-kiani.jpg',
@@ -46,22 +47,30 @@ export const TEAM_AGENTS: readonly TeamAgentDef[] = [
     cardImage: '/pepito/uploads/03-3.jpg',
   },
   {
-    slug: 'sara-nozi',
+    slug: 'sara-noori',
+    // Keep telegram id so the existing DB synthetic user is patched, not recreated.
     telegramId: 'petdate_ai_sara_nozi',
-    name: 'دکتر سارا نوزی',
+    name: 'دکتر سارا نوری',
     role: 'دامپزشک',
     kind: 'vet',
-    avatarUrl: '/agents/sara-nozi.jpg',
+    avatarUrl: '/agents/sara-noori.jpg',
     cardImage: '/pepito/uploads/04-3.jpg',
   },
 ] as const;
+
+/** Old public URLs still resolve after renames. */
+const TEAM_AGENT_SLUG_ALIASES: Record<string, string> = {
+  'layla-ahmadi': 'faranak-ahmadi',
+  'sara-nozi': 'sara-noori',
+};
 
 export const DEFAULT_TEAM_AGENT_SLUG = 'leila-kiani';
 
 export function getTeamAgentBySlug(slug: string | null | undefined): TeamAgentDef | null {
   const key = String(slug || '').trim().toLowerCase();
   if (!key) return null;
-  return TEAM_AGENTS.find((a) => a.slug === key) ?? null;
+  const canonical = TEAM_AGENT_SLUG_ALIASES[key] ?? key;
+  return TEAM_AGENTS.find((a) => a.slug === canonical) ?? null;
 }
 
 export function getTeamAgentByTelegramId(telegramId: string | null | undefined): TeamAgentDef | null {

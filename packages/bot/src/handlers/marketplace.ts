@@ -241,8 +241,8 @@ async function runQuickConnect(
   if (result.aiFallback) {
     const title =
       kind === 'trainer'
-        ? '🎓 دکتر لیلا کیانی — مربی آنلاین پت‌دیت'
-        : '🩺 دکتر لیلا کیانی';
+        ? '🎓 لیلا کیانی — مربی آنلاین پت‌دیت'
+        : '🩺 لیلا کیانی';
     await ctx.reply(
       [title, result.message, result.advice ? '\n' + result.advice.slice(0, 3500) : '']
         .filter(Boolean)
@@ -275,7 +275,7 @@ export async function handleRequestTrainer(ctx: Context): Promise<void> {
     [
       '🎓 درخواست مربی',
       `هزینه اتصال انسانی: ${TRAINER_CONSULT_COST} سکه (۲۵ مربی + ۲۵ پلتفرم).`,
-      'اگر مربی دیگری آنلاین نباشد، دکتر لیلا کیانی (مربی آنلاین) رایگان پاسخ می‌دهد.',
+      'اگر مربی دیگری آنلاین نباشد، لیلا کیانی (مربی آنلاین) رایگان پاسخ می‌دهد.',
     ].join('\n'),
     { reply_markup: menuKeyboardFor(ctx, await getCtxUser(ctx)) }
   );

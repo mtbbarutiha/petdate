@@ -356,7 +356,7 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
           {isProvider
             ? meta.providerHint
             : kind === 'trainer'
-              ? `هزینه اتصال انسانی ${formatCoins(cost)} سکه · اگر مربی آزاد نباشد دکتر لیلا کیانی (مربی آنلاین) رایگان پاسخ می‌دهد`
+              ? `هزینه اتصال انسانی ${formatCoins(cost)} سکه · اگر مربی آزاد نباشد لیلا کیانی (مربی آنلاین) رایگان پاسخ می‌دهد`
               : `هزینه اتصال انسانی ${formatCoins(cost)} سکه`}
         </p>
         {meta.disclaimer && !isProvider ? <p className="muted">{meta.disclaimer}</p> : null}
@@ -442,7 +442,7 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
               ? onlineCount > 0
                 ? `${toPersianDigits(String(onlineCount))} نفر آنلاین آماده پذیرش`
                 : kind === 'trainer'
-                  ? 'الان مربی دیگری آنلاین نیست — با زدن دکمه، گفتگو با دکتر لیلا کیانی (مربی آنلاین) شروع می‌شود (رایگان).'
+                  ? 'الان مربی دیگری آنلاین نیست — با زدن دکمه، گفتگو با لیلا کیانی (مربی آنلاین) شروع می‌شود (رایگان).'
                   : meta.noProviders
               : 'برای ارسال درخواست وارد حساب شو.'}
           </p>
@@ -468,7 +468,7 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
                 {busy
                   ? 'در حال ارسال…'
                   : onlineCount === 0 && kind === 'trainer'
-                    ? 'مشورت با دکتر لیلا کیانی (رایگان)'
+                    ? 'مشورت با لیلا کیانی (رایگان)'
                     : confirmPay
                       ? `تأیید و ارسال (${formatCoins(cost)} سکه)`
                       : `${meta.patientCta} (${formatCoins(cost)} سکه)`}
