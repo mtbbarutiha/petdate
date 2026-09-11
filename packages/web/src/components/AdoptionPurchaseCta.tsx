@@ -1,6 +1,8 @@
-import { useEffect, useId, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useId, useState, type FormEvent } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useLocation } from 'react-router-dom';
 import { submitPetPurchaseLead } from '../lib/api';
+import { useAppToast } from '../hooks/useAppToast';
 
 const CTA_LABEL = 'درخواست خرید پت و تماس با مشاور پت دیت با شما';
 
@@ -12,6 +14,7 @@ type PetPurchaseLeadModalProps = {
 
 export function PetPurchaseLeadModal({ open, onClose, sourcePage }: PetPurchaseLeadModalProps) {
   const titleId = useId();
+  const { toastSuccess, toastError } = useAppToast();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [mobile, setMobile] = useState('');
@@ -19,6 +22,8 @@ export function PetPurchaseLeadModal({ open, onClose, sourcePage }: PetPurchaseL
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
 
+  // Reset only when the modal opens — do NOT depend on onClose identity.
+  // WelcomePage carousels re-render often; an inline onClose() => … would wipe the form mid-type/submit.
   useEffect(() => {
     if (!open) return;
     setFirstName('');
@@ -27,17 +32,22 @@ export function PetPurchaseLeadModal({ open, onClose, sourcePage }: PetPurchaseL
     setError(null);
     setDone(false);
     setBusy(false);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape' && !busy) onClose();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [open, onClose]);
+  }, [open, onClose, busy]);
 
   if (!open) return null;
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
+    if (busy) return;
     setBusy(true);
     setError(null);
     try {
@@ -48,14 +58,18 @@ export function PetPurchaseLeadModal({ open, onClose, sourcePage }: PetPurchaseL
         sourcePage,
       });
       setDone(true);
+      toastSuccess('درخواست ثبت شد — مشاور پت‌دیت به‌زودی تماس می‌گیرد.');
+      window.setTimeout(() => onClose(), 900);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'خطا در ثبت درخواست');
+      const msg = err instanceof Error ? err.message : 'خطا در ثبت درخواست';
+      setError(msg);
+      toastError(msg);
     } finally {
       setBusy(false);
     }
   };
 
-  return (
+  return createPortal(
     <div
       className="pepito-lead-modal-overlay"
       role="presentation"
@@ -141,7 +155,8 @@ export function PetPurchaseLeadModal({ open, onClose, sourcePage }: PetPurchaseL
           </form>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
@@ -153,6 +168,7 @@ export function AdoptionPurchaseCta({
 }) {
   const [open, setOpen] = useState(false);
   const location = useLocation();
+  const onClose = useCallback(() => setOpen(false), []);
   const tag = adoptionTagAsLink ? (
     <Link to="/adoption" className="pepito-adoption-tag">
       پذیرش یک پت
@@ -178,7 +194,7 @@ export function AdoptionPurchaseCta({
       </div>
       <PetPurchaseLeadModal
         open={open}
-        onClose={() => setOpen(false)}
+        onClose={onClose}
         sourcePage={location.pathname || '/'}
       />
     </>
@@ -194,6 +210,7 @@ export function PetPurchaseLeadButton({
 }) {
   const [open, setOpen] = useState(false);
   const location = useLocation();
+  const onClose = useCallback(() => setOpen(false), []);
   return (
     <>
       <button type="button" className={className} onClick={() => setOpen(true)}>
@@ -204,7 +221,7 @@ export function PetPurchaseLeadButton({
       </button>
       <PetPurchaseLeadModal
         open={open}
-        onClose={() => setOpen(false)}
+        onClose={onClose}
         sourcePage={location.pathname || '/'}
       />
     </>
