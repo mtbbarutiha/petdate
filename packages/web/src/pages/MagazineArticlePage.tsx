@@ -148,7 +148,7 @@ export function MagazineArticlePage() {
               مطالب مرتبط
             </p>
             <h2>
-              مقالات پیشنهادی<span className="pepito-news-dot">.</span>
+              مقالات پیشنهادی.
             </h2>
           </div>
           <div className="pepito-magazine-grid">
