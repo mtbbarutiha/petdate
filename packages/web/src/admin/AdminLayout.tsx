@@ -244,6 +244,26 @@ function AdminLayoutInner() {
     const t = window.setInterval(refreshNavCounts, 45_000);
     return () => window.clearInterval(t);
   }, [refreshNavCounts, location.pathname]);
+
+  /* Close mobile drawer on navigation (deep links / back). */
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMobileOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [mobileOpen]);
+
   const pageTitleKey = useMemo(() => {
     const hit = Object.keys(TITLE_KEY_MAP).sort((a, b) => b.length - a.length).find((k) => location.pathname.startsWith(k));
     return hit ? TITLE_KEY_MAP[hit]! : 'admin.platformDashboard';
@@ -257,9 +277,12 @@ function AdminLayoutInner() {
   const showAvatarImg = Boolean(resolvedAvatar) && !avatarFailed;
 
   return (
-    <div className={`admin-app${collapsed ? ' admin-app--collapsed' : ''}`}>
+    <div className={`admin-app${collapsed ? ' admin-app--collapsed' : ''}${mobileOpen ? ' admin-app--nav-open' : ''}`}>
       <div className="admin-shell">
-        <aside className={`admin-sidebar${mobileOpen ? ' is-open' : ''}`}>
+        <aside
+          id="admin-mobile-nav"
+          className={`admin-sidebar${mobileOpen ? ' is-open' : ''}`}
+        >
           <div className="admin-brand">
             <AdminWordmark />
             <div className="admin-brand-sub" style={{ fontSize: 12, opacity: 0.75, marginTop: 4 }}>
@@ -323,7 +346,14 @@ function AdminLayoutInner() {
         <div className="admin-main">
           <header className="admin-topbar">
             <div className="admin-topbar-start">
-              <button type="button" className="admin-icon-btn admin-icon-btn--mobile" onClick={() => setMobileOpen((v) => !v)} aria-label={t('admin.menu')}>
+              <button
+                type="button"
+                className="admin-icon-btn admin-icon-btn--mobile"
+                onClick={() => setMobileOpen((v) => !v)}
+                aria-label={t('admin.menu')}
+                aria-expanded={mobileOpen}
+                aria-controls="admin-mobile-nav"
+              >
                 {mobileOpen ? <X size={18} /> : <Menu size={18} />}
               </button>
               <button type="button" className="admin-icon-btn admin-icon-btn--desktop" onClick={() => setCollapsed((v) => !v)} aria-label={t('admin.collapseSidebar')}>

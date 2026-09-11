@@ -47,6 +47,9 @@ npx tsx "$ROOT/packages/web/src/admin/adminTagManagerRoute.selftest.ts"
 echo "==> selftest: admin /admin/magazine route + TipTap + public /magazine"
 npx tsx "$ROOT/packages/web/src/admin/adminMagazineRoute.selftest.ts"
 
+echo "==> selftest: admin mobile hamburger / drawer (RTL)"
+npx tsx "$ROOT/packages/web/src/admin/adminMobileNav.selftest.ts"
+
 # Guard: admin soft-delete user (حذف کاربر) wired in UI + API
 echo "==> selftest: admin delete user route + UI"
 npx tsx "$ROOT/packages/web/src/admin/adminDeleteUser.selftest.ts"
