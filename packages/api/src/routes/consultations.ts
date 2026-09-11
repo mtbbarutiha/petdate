@@ -301,11 +301,12 @@ consultationsRouter.post('/quick-connect', async (req, res) => {
     return;
   }
 
-  const patient = dbService.getUserById(patientUserId);
-  if (!patient) {
+  const patientRow = dbService.getUserById(patientUserId);
+  if (!patientRow) {
     res.status(404).json({ error: 'بیمار پیدا نشد', reason: 'missing_patient' });
     return;
   }
+  const patient = patientRow;
 
   const pets = dbService.listPets({ ownerId: patient.id });
   const purchaseAdvice = Boolean(
