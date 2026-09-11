@@ -188,7 +188,8 @@ export function ShopCartPage() {
       } else if (payMethod === 'card') {
         const result = await checkoutShopWithCard(token, payload);
         clear();
-        navigate(`/shop/card-pay/${result.paymentOrderId}`, { replace: true });
+        const qs = result.receiptToken ? `?t=${encodeURIComponent(result.receiptToken)}` : '';
+        navigate(`/shop/card-pay/${result.paymentOrderId}${qs}`, { replace: true });
         return;
       } else {
         const result = await checkoutShopWithStars(token, payload);
@@ -443,8 +444,8 @@ export function ShopCartPage() {
                     </button>
                   </div>
                   <p className="pd-shop-soon">
-                    سکه، ستاره و تومان پنل از کیف‌پول کسر می‌شوند. کارت‌به‌کارت با ارسال رسید در ربات تأیید
-                    می‌شود. فاکتور Stars هم داخل تلگرام پرداخت می‌شود.
+                    سکه، ستاره و تومان پنل از کیف‌پول کسر می‌شوند. کارت‌به‌کارت با آپلود رسید در
+                    همین سایت (یا ربات) تأیید می‌شود. فاکتور Stars هم داخل تلگرام پرداخت می‌شود.
                   </p>
                 </form>
               )}

@@ -7,6 +7,7 @@ import { tomanToShopCoins, tomanToShopStars, type PaymentOrder } from '@petdate/
 import { getDb, dbService } from '../db';
 import { adminPlatform, type ShopOrderRow } from '../admin-platform';
 import { lookupShopPrice } from './shop-price-index';
+import { paymentCardFromEnv, paymentCardPublicInfo } from './payment-card';
 
 /** payment_orders.package_id for shop checkout via Telegram Stars (XTR → bot) */
 export const SHOP_XTR_PACKAGE_ID = 'shopxtr';
@@ -1018,13 +1019,6 @@ function shopCardWebSuccessUrl(paymentOrderId: number, receiptToken?: string): s
   return receiptToken ? `${base}?t=${encodeURIComponent(receiptToken)}` : base;
 }
 
-function paymentCardFromEnv(): { number: string; holder: string } {
-  const number = String(
-    process.env.PAYMENT_CARD_NUMBER || '62198611052407631'
-  ).replace(/\s+/g, '');
-  const holder = String(process.env.PAYMENT_CARD_HOLDER || 'محمد تقی باروتیها');
-  return { number, holder };
-}
 
 /**
  * ثبت سفارش کارت‌به‌کارت شاپ — بعد از آپلود رسید و تأیید ادمین، سفارش شاپ ساخته می‌شود.
@@ -1225,7 +1219,11 @@ export function getShopCardStatus(
       shopOrderId?: number;
       botDeepLink: string;
       cardNumber: string;
+      cardMasked: string;
+      cardGrouped: string;
       cardHolder: string;
+      transferRef?: string;
+      receiptUrl?: string;
       paidAt?: string;
     }
   | { ok: false; reason: 'missing' | 'forbidden'; error: string } {
@@ -1246,7 +1244,7 @@ export function getShopCardStatus(
     return { ok: false, reason: 'forbidden', error: 'دسترسی ندارید.' };
   }
 
-  const card = paymentCardFromEnv();
+  const card = paymentCardPublicInfo();
   const paid = payment.status === 'approved' || Boolean(meta?.shopOrderId);
   return {
     ok: true,
@@ -1255,8 +1253,12 @@ export function getShopCardStatus(
     totalToman: payment.amountToman ?? meta?.totalToman ?? 0,
     shopOrderId: meta?.shopOrderId,
     botDeepLink: shopCardBotDeepLink(paymentOrderId),
-    cardNumber: card.number,
-    cardHolder: card.holder,
+    cardNumber: card.cardNumber,
+    cardMasked: card.cardMasked,
+    cardGrouped: card.cardGrouped,
+    cardHolder: card.cardHolder,
+    transferRef: payment.transferRef,
+    receiptUrl: payment.receiptUrl,
     paidAt: paid ? payment.reviewedAt ?? undefined : undefined,
   };
 }

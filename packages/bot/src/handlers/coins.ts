@@ -412,7 +412,9 @@ export async function handlePaymentReceiptPhoto(ctx: Context): Promise<boolean> 
       '✅ رسید ثبت شد.',
       `شماره سفارش: #${result.order.id}`,
       '',
-      'بعد از بررسی ادمین، سکه‌ها به موجودی‌ات اضافه می‌شود.',
+      String(result.order.packageId) === 'shopcard'
+        ? 'بعد از بررسی ادمین، سفارش شاپ ثبت می‌شود.'
+        : 'بعد از بررسی ادمین، سکه‌ها به کیف پول مشترک (وب + ربات) اضافه می‌شود.',
     ].join('\n'),
     { reply_markup: menuKeyboardFor(ctx, user) }
   );

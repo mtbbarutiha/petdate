@@ -15,6 +15,7 @@ import {
   completeShopStarsXtrPayment,
   isShopXtrPackageId,
 } from '../services/shop-checkout';
+import { enqueueCard2CardFinanceOs } from '../services/card2card-finance';
 import {
   ensureWebAccessibleAvatar,
   isWebAvatarUrl,
@@ -1219,7 +1220,9 @@ usersRouter.get('/payments/:id', (req, res) => {
 
 usersRouter.post('/payments/:id/receipt', (req, res) => {
   const fileId = String(req.body?.receiptFileId ?? req.body?.fileId ?? '').trim();
-  const result = dbService.attachPaymentReceipt(Number(req.params.id), fileId);
+  const transferRef =
+    req.body?.transferRef != null ? String(req.body.transferRef).trim().slice(0, 64) : undefined;
+  const result = dbService.attachPaymentReceipt(Number(req.params.id), fileId, { transferRef });
   if (!result.ok) {
     const status =
       result.reason === 'missing' ? 404 : result.reason === 'no_file' ? 400 : 409;
@@ -1243,6 +1246,13 @@ usersRouter.post('/payments/:id/approve', (req, res) => {
       });
       return;
     }
+    enqueueCard2CardFinanceOs({
+      orderId: id,
+      amountToman: result.paymentOrder.amountToman ?? 0,
+      userId: result.paymentOrder.userId,
+      kind: 'shopcard',
+      packageId: result.paymentOrder.packageId,
+    });
     res.json({
       ok: true,
       order: result.paymentOrder,
@@ -1260,6 +1270,13 @@ usersRouter.post('/payments/:id/approve', (req, res) => {
     });
     return;
   }
+  enqueueCard2CardFinanceOs({
+    orderId: id,
+    amountToman: result.order.amountToman ?? 0,
+    userId: result.order.userId,
+    kind: 'coins',
+    packageId: result.order.packageId,
+  });
   res.json({ ok: true, order: result.order, user: result.user });
 });
 

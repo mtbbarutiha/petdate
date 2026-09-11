@@ -69,6 +69,10 @@ export interface PaymentOrder {
   method: PaymentMethod;
   status: PaymentOrderStatus;
   receiptFileId?: string;
+  /** مسیر/URL عمومی رسید آپلودشده از وب (در صورت وجود) */
+  receiptUrl?: string;
+  /** شماره پیگیری واریز کارت‌به‌کارت (اختیاری) */
+  transferRef?: string;
   telegramPaymentChargeId?: string;
   adminNote?: string;
   createdAt: string;
@@ -517,6 +521,8 @@ export interface PetProfile {
   id: number;
   /** شناسه عمومی پایدار نمایشی (مثلاً PD-P00025) */
   publicId?: string;
+  /** اسلاگ عمومی URL — مثلاً benji برای /pet/benji */
+  slug?: string;
   ownerId: number;
   name: string;
   species: string;
@@ -878,6 +884,17 @@ export interface PetMedicalEntry {
   consultId?: number;
   text: string;
   createdAt: string;
+}
+
+/** یادداشت دفتر خاطرات پت — خواندن عمومی، نوشتن فقط صاحب پت */
+export interface PetDiaryEntry {
+  id: number;
+  petId: number;
+  authorUserId: number;
+  authorName?: string;
+  body: string;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 export type PetMedicalField =

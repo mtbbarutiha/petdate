@@ -3,7 +3,9 @@ import { Router } from 'express';
 import multer from 'multer';
 import type { OnboardingStatus, UserGender, UserRole } from '@petdate/shared';
 import {
+  COIN_PACKAGES,
   COIN_SELL_PRICE_TOMAN,
+  findCoinPackage,
   MIN_SELL_COINS,
   USER_ROLES,
   normalizeRoles,
@@ -32,6 +34,11 @@ import {
   resolveProviderCredentialPath,
   saveProviderCredential,
 } from '../services/provider-credential-store';
+import {
+  MAX_PAYMENT_RECEIPT_BYTES,
+  savePaymentReceipt,
+} from '../services/payment-receipt-store';
+import { paymentCardPublicInfo } from '../services/payment-card';
 import { rateLimit } from '../middleware/rate-limit';
 import {
   getUserFromBearer,
@@ -77,6 +84,11 @@ const avatarUpload = multer({
 const credentialUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: MAX_PROVIDER_CREDENTIAL_BYTES, files: 1 },
+});
+
+const paymentReceiptUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: MAX_PAYMENT_RECEIPT_BYTES, files: 1 },
 });
 
 /**
@@ -313,6 +325,189 @@ authRouter.get('/wallet/transactions', (req, res) => {
     offset: Number.isFinite(offset) ? offset : 0,
   });
   res.json({ ok: true, transactions });
+});
+
+/** بسته‌های خرید سکه + کارت مقصد (همان اقتصاد ربات) */
+authRouter.get('/wallet/buy-coins', (req, res) => {
+  const session = getUserFromBearer(req.header('authorization') ?? undefined);
+  if (!session) {
+    res.status(401).json({ error: 'وارد نشده‌اید' });
+    return;
+  }
+  const card = paymentCardPublicInfo();
+  const open = dbService
+    .listUserPaymentOrders(session.user.id, { limit: 10, method: 'card' })
+    .filter((o) => o.status === 'awaiting_receipt' || o.status === 'pending');
+  res.json({
+    ok: true,
+    packages: COIN_PACKAGES.map((p) => ({
+      id: p.id,
+      coins: p.coins,
+      toman: p.toman,
+      stars: p.stars,
+      vip: Boolean(p.vip),
+      label: p.label,
+    })),
+    card: {
+      number: card.cardNumber,
+      masked: card.cardMasked,
+      grouped: card.cardGrouped,
+      holder: card.cardHolder,
+    },
+    openOrders: open,
+    message:
+      'مبلغ را کارت‌به‌کارت واریز کن، عکس رسید را همین‌جا بفرست؛ بعد از تأیید ادمین سکه به کیف پول مشترک واریز می‌شود.',
+  });
+});
+
+authRouter.post('/wallet/buy-coins/card', (req, res) => {
+  const session = getUserFromBearer(req.header('authorization') ?? undefined);
+  if (!session) {
+    res.status(401).json({ error: 'وارد نشده‌اید' });
+    return;
+  }
+  const packageId = String(req.body?.packageId ?? '').trim();
+  const pkg = findCoinPackage(packageId);
+  if (!pkg) {
+    res.status(400).json({ ok: false, error: 'بسته نامعتبر', reason: 'package' });
+    return;
+  }
+  const open = dbService
+    .listUserPaymentOrders(session.user.id, { limit: 5, method: 'card' })
+    .find(
+      (o) =>
+        (o.status === 'awaiting_receipt' || o.status === 'pending') &&
+        !String(o.packageId).startsWith('shop') &&
+        !String(o.packageId).startsWith('wstars:')
+    );
+  if (open) {
+    const card = paymentCardPublicInfo();
+    res.status(409).json({
+      ok: false,
+      reason: 'open_order',
+      error: 'یک درخواست کارت‌به‌کارت باز داری — اول همان را تکمیل یا منتظر تأیید بمان.',
+      order: open,
+      card: {
+        number: card.cardNumber,
+        masked: card.cardMasked,
+        grouped: card.cardGrouped,
+        holder: card.cardHolder,
+      },
+    });
+    return;
+  }
+  const order = dbService.createPaymentOrder({
+    userId: session.user.id,
+    packageId: pkg.id,
+    coins: pkg.coins,
+    amountToman: pkg.toman,
+    amountStars: pkg.stars,
+    method: 'card',
+    status: 'awaiting_receipt',
+  });
+  const card = paymentCardPublicInfo();
+  res.status(201).json({
+    ok: true,
+    order,
+    package: pkg,
+    card: {
+      number: card.cardNumber,
+      masked: card.cardMasked,
+      grouped: card.cardGrouped,
+      holder: card.cardHolder,
+    },
+    message: `مبلغ ${pkg.toman.toLocaleString('fa-IR')} تومان را واریز کن و عکس رسید را آپلود کن.`,
+  });
+});
+
+authRouter.get('/wallet/payments', (req, res) => {
+  const session = getUserFromBearer(req.header('authorization') ?? undefined);
+  if (!session) {
+    res.status(401).json({ error: 'وارد نشده‌اید' });
+    return;
+  }
+  const limit = Number(req.query?.limit ?? 40);
+  const method = typeof req.query?.method === 'string' ? req.query.method : undefined;
+  const orders = dbService.listUserPaymentOrders(session.user.id, {
+    limit: Number.isFinite(limit) ? limit : 40,
+    method,
+  });
+  res.json({ ok: true, orders });
+});
+
+authRouter.post('/wallet/payments/:id/receipt', (req, res) => {
+  const session = getUserFromBearer(req.header('authorization') ?? undefined);
+  if (!session) {
+    res.status(401).json({ error: 'وارد نشده‌اید' });
+    return;
+  }
+  paymentReceiptUpload.single('file')(req, res, (uploadErr) => {
+    if (uploadErr) {
+      const tooBig =
+        uploadErr instanceof multer.MulterError && uploadErr.code === 'LIMIT_FILE_SIZE';
+      res.status(400).json({
+        ok: false,
+        error: tooBig ? 'حجم فایل زیاد است (حداکثر ۸ مگابایت).' : 'آپلود ناموفق بود.',
+      });
+      return;
+    }
+    try {
+      const orderId = Number(req.params.id);
+      const existing = dbService.getPaymentOrder(orderId);
+      if (!existing || existing.userId !== session.user.id) {
+        res.status(404).json({ ok: false, reason: 'missing', error: 'سفارش پیدا نشد.' });
+        return;
+      }
+      if (String(existing.packageId).startsWith('shop')) {
+        res.status(400).json({
+          ok: false,
+          reason: 'wrong_kind',
+          error: 'برای رسید شاپ از صفحه پرداخت شاپ استفاده کن.',
+        });
+        return;
+      }
+      const file = req.file;
+      if (!file?.buffer?.length) {
+        res.status(400).json({ ok: false, reason: 'no_file', error: 'فایل رسید لازم است.' });
+        return;
+      }
+      const transferRef =
+        typeof req.body?.transferRef === 'string' ? req.body.transferRef.trim().slice(0, 64) : undefined;
+      const saved = savePaymentReceipt({
+        orderId,
+        originalName: file.originalname || 'receipt.jpg',
+        mimeType: file.mimetype,
+        buffer: file.buffer,
+      });
+      const result = dbService.attachPaymentReceipt(orderId, saved.urlPath, { transferRef });
+      if (!result.ok) {
+        const status =
+          result.reason === 'missing' ? 404 : result.reason === 'no_file' ? 400 : 409;
+        res.status(status).json({
+          ok: false,
+          reason: result.reason,
+          error:
+            result.reason === 'bad_status'
+              ? 'این سفارش دیگر منتظر رسید نیست.'
+              : 'ثبت رسید ناموفق بود.',
+        });
+        return;
+      }
+      res.json({ ok: true, order: result.order });
+    } catch (err) {
+      const msg = (err as Error).message;
+      if (msg === 'FILE_TOO_LARGE') {
+        res.status(400).json({ ok: false, error: 'حجم فایل زیاد است.' });
+        return;
+      }
+      if (msg === 'INVALID_MIME') {
+        res.status(400).json({ ok: false, error: 'فقط تصویر JPG/PNG/WebP مجاز است.' });
+        return;
+      }
+      console.warn('wallet payment receipt upload failed:', msg);
+      res.status(500).json({ ok: false, error: 'خطا در ذخیره رسید.' });
+    }
+  });
 });
 
 /**

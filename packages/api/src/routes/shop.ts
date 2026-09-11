@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import multer from 'multer';
 import { COIN_PRICE_TOMAN, STAR_PRICE_TOMAN, tomanToShopCoins } from '@petdate/shared';
 import { getUserFromBearer } from '../services/web-otp';
 import {
@@ -7,6 +8,7 @@ import {
   checkoutShopWithToman,
   getShopCardStatus,
   getShopStarsXtrStatus,
+  parseShopCardMeta,
   prepareShopCardCheckout,
   prepareShopStarsXtrCheckout,
   quoteShopCoins,
@@ -14,8 +16,17 @@ import {
 } from '../services/shop-checkout';
 import { adminPlatform } from '../admin-platform';
 import { dbService } from '../db';
+import {
+  MAX_PAYMENT_RECEIPT_BYTES,
+  savePaymentReceipt,
+} from '../services/payment-receipt-store';
 
 export const shopRouter = Router();
+
+const shopReceiptUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: MAX_PAYMENT_RECEIPT_BYTES, files: 1 },
+});
 
 function requireSession(
   req: { header: (name: string) => string | undefined },
@@ -450,6 +461,80 @@ shopRouter.get('/checkout/card-status/:paymentOrderId', (req, res) => {
     return;
   }
   res.json(result);
+});
+
+/** آپلود رسید کارت‌به‌کارت شاپ از وب */
+shopRouter.post('/checkout/card-receipt/:paymentOrderId', (req, res) => {
+  const session = requireSession(req, res, 'برای ارسال رسید وارد حساب شوید.');
+  if (!session) return;
+  shopReceiptUpload.single('file')(req, res, (uploadErr) => {
+    if (uploadErr) {
+      const tooBig =
+        uploadErr instanceof multer.MulterError && uploadErr.code === 'LIMIT_FILE_SIZE';
+      res.status(400).json({
+        ok: false,
+        error: tooBig ? 'حجم فایل زیاد است (حداکثر ۸ مگابایت).' : 'آپلود ناموفق بود.',
+      });
+      return;
+    }
+    try {
+      const paymentOrderId = Number(req.params.paymentOrderId);
+      const existing = dbService.getPaymentOrder(paymentOrderId);
+      if (!existing || String(existing.packageId) !== 'shopcard') {
+        res.status(404).json({ ok: false, reason: 'missing', error: 'فاکتور پیدا نشد.' });
+        return;
+      }
+      const receiptToken = String(req.body?.receiptToken ?? req.query?.t ?? '').trim();
+      const meta = parseShopCardMeta(existing.adminNote);
+      const ownerOk = existing.userId === session.user.id;
+      const tokenOk =
+        Boolean(receiptToken) &&
+        Boolean(meta?.receiptToken) &&
+        receiptToken === meta?.receiptToken;
+      if (!ownerOk && !tokenOk) {
+        res.status(403).json({ ok: false, reason: 'forbidden', error: 'دسترسی ندارید.' });
+        return;
+      }
+      const file = req.file;
+      if (!file?.buffer?.length) {
+        res.status(400).json({ ok: false, reason: 'no_file', error: 'فایل رسید لازم است.' });
+        return;
+      }
+      const transferRef =
+        typeof req.body?.transferRef === 'string' ? req.body.transferRef.trim().slice(0, 64) : undefined;
+      const saved = savePaymentReceipt({
+        orderId: paymentOrderId,
+        originalName: file.originalname || 'receipt.jpg',
+        mimeType: file.mimetype,
+        buffer: file.buffer,
+      });
+      const result = dbService.attachPaymentReceipt(paymentOrderId, saved.urlPath, { transferRef });
+      if (!result.ok) {
+        res.status(result.reason === 'bad_status' ? 409 : 400).json({
+          ok: false,
+          reason: result.reason,
+          error:
+            result.reason === 'bad_status'
+              ? 'این فاکتور دیگر منتظر رسید نیست.'
+              : 'ثبت رسید ناموفق بود.',
+        });
+        return;
+      }
+      res.json({ ok: true, order: result.order, status: result.order.status });
+    } catch (err) {
+      const msg = (err as Error).message;
+      if (msg === 'FILE_TOO_LARGE') {
+        res.status(400).json({ ok: false, error: 'حجم فایل زیاد است.' });
+        return;
+      }
+      if (msg === 'INVALID_MIME') {
+        res.status(400).json({ ok: false, error: 'فقط تصویر JPG/PNG/WebP مجاز است.' });
+        return;
+      }
+      console.warn('shop card receipt upload failed:', msg);
+      res.status(500).json({ ok: false, error: 'خطا در ذخیره رسید.' });
+    }
+  });
 });
 
 shopRouter.post('/checkout/toman-telegram', (req, res) => {

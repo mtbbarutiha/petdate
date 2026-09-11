@@ -223,6 +223,9 @@ export function AdminFinanceDashboardPage() {
         <Link to="/admin/finance/wallet" className="admin-card admin-finance-link">
           <Wallet size={20} /><div><strong>دفتر کیف پول</strong><span>تومان · سکه · Stars · TON</span></div>
         </Link>
+        <Link to="/admin/payments" className="admin-card admin-finance-link">
+          <Wallet size={20} /><div><strong>صف کارت‌به‌کارت</strong><span>تأیید رسید سکه و شاپ</span></div>
+        </Link>
         <Link to="/admin/finance/products" className="admin-card admin-finance-link">
           <TrendingUp size={20} /><div><strong>محصولات برتر</strong><span>رتبه‌بندی درآمد</span></div>
         </Link>

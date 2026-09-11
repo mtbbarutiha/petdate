@@ -667,6 +667,41 @@ export async function fetchWalletTransactions(
   );
 }
 
+export type CoinPackageDto = {
+  id: string; coins: number; toman: number; stars: number; vip?: boolean; label: string;
+};
+export type WalletPaymentOrderDto = {
+  id: number; publicId?: string; packageId: string; coins: number; amountToman?: number;
+  method: string; status: string; receiptUrl?: string; transferRef?: string;
+  createdAt: string; reviewedAt?: string;
+};
+export async function fetchBuyCoinsCatalog(token: string) {
+  return request<{ ok: true; packages: CoinPackageDto[]; card: { number: string; masked: string; grouped: string; holder: string }; openOrders: WalletPaymentOrderDto[]; message?: string }>(
+    '/api/auth/wallet/buy-coins', { headers: { Authorization: `Bearer ${token}` } }
+  );
+}
+export async function createCoinCardPayment(token: string, packageId: string) {
+  return request<{ ok: true; order: WalletPaymentOrderDto; package: CoinPackageDto; card: { number: string; masked: string; grouped: string; holder: string }; message?: string }>(
+    '/api/auth/wallet/buy-coins/card', { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: JSON.stringify({ packageId }) }
+  );
+}
+export async function fetchMyWalletPayments(token: string, opts?: { limit?: number; method?: string }) {
+  const q = new URLSearchParams();
+  if (opts?.limit != null) q.set('limit', String(opts.limit));
+  if (opts?.method) q.set('method', opts.method);
+  const suffix = q.toString() ? `?${q}` : '';
+  return request<{ ok: true; orders: WalletPaymentOrderDto[] }>(`/api/auth/wallet/payments${suffix}`, { headers: { Authorization: `Bearer ${token}` } });
+}
+export async function uploadWalletPaymentReceipt(token: string, orderId: number, file: File, transferRef?: string) {
+  const form = new FormData(); form.append('file', file);
+  if (transferRef?.trim()) form.append('transferRef', transferRef.trim());
+  const res = await fetch(`${API_BASE}/api/auth/wallet/payments/${orderId}/receipt`, { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: form });
+  const body = await res.text();
+  const json = JSON.parse(body) as { ok?: boolean; order?: WalletPaymentOrderDto; error?: string };
+  if (!res.ok || !json.ok || !json.order) throw new Error(json.error || body || `خطای ${res.status}`);
+  return json.order;
+}
+
 export type EarnRequestSummary = {
   id: number;
   coins: number;
@@ -1494,7 +1529,11 @@ export type ShopCardPaymentStatus = {
   shopOrderId?: number;
   botDeepLink: string;
   cardNumber: string;
+  cardMasked?: string;
+  cardGrouped?: string;
   cardHolder: string;
+  transferRef?: string;
+  receiptUrl?: string;
   paidAt?: string;
 };
 
@@ -1547,6 +1586,27 @@ export async function fetchShopCardPaymentStatus(
   if (!res.ok || !json?.ok) {
     throw new Error(json?.error || body || `خطای ${res.status}`);
   }
+  return json;
+}
+
+export async function uploadShopCardReceipt(
+  token: string,
+  paymentOrderId: number,
+  file: File,
+  opts?: { transferRef?: string; receiptToken?: string }
+) {
+  const form = new FormData();
+  form.append('file', file);
+  if (opts?.transferRef?.trim()) form.append('transferRef', opts.transferRef.trim());
+  if (opts?.receiptToken) form.append('receiptToken', opts.receiptToken);
+  const res = await fetch(`${API_BASE}/api/shop/checkout/card-receipt/${paymentOrderId}`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: form,
+  });
+  const body = await res.text();
+  const json = JSON.parse(body) as { ok?: boolean; error?: string };
+  if (!res.ok || !json.ok) throw new Error(json.error || body || `خطای ${res.status}`);
   return json;
 }
 

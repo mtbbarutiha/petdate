@@ -12376,3 +12376,59 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
 .pepito-nav-wallet-invite {
   width: 100%;
 }
+
+
+/* Card-to-card coin top-up on /wallet */
+.pepito-wallet-buy-packages {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+.pepito-wallet-buy-pkg {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  text-align: right;
+  border: 1px solid color-mix(in srgb, var(--pepito-ink, #1f2937) 12%, transparent);
+  background: color-mix(in srgb, #fff 88%, #15cca0 12%);
+  border-radius: 12px;
+  padding: 0.75rem 0.9rem;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+.pepito-wallet-buy-pkg:disabled { opacity: 0.6; cursor: wait; }
+.pepito-wallet-buy-pkg strong { font-weight: 700; }
+.pepito-wallet-buy-pkg span { font-size: 0.85rem; opacity: 0.8; }
+.pepito-wallet-buy-active { display: grid; gap: 0.55rem; }
+.pepito-wallet-buy-ref { display: grid; gap: 0.35rem; }
+.pepito-wallet-buy-ref input {
+  border: 1px solid color-mix(in srgb, var(--pepito-ink, #1f2937) 14%, transparent);
+  border-radius: 10px;
+  padding: 0.55rem 0.7rem;
+  font: inherit;
+}
+.pepito-wallet-buy-receipt {
+  max-width: 220px;
+  border-radius: 10px;
+  margin-top: 0.35rem;
+}
+.pepito-wallet-buy-history {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  opacity: 0.85;
+}
+.pepito-wallet-buy-history li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
