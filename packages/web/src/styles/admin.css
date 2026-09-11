@@ -3249,6 +3249,14 @@ body:has(.admin-app) {
   font-family: var(--admin-font);
   unicode-bidi: plaintext;
 }
+.admin-app .admin-recharts-rtl-hbars .recharts-yAxis .recharts-cartesian-axis-tick {
+  /* Keep Persian category labels fully visible on the right lane */
+  overflow: visible;
+}
+.admin-app .admin-recharts-rtl-hbars .recharts-wrapper,
+.admin-app .admin-recharts-rtl-hbars .recharts-surface {
+  overflow: visible !important;
+}
 .admin-app .hr-dash-changelog {
   list-style: none;
   margin: 0;
@@ -5120,4 +5128,318 @@ body:has(.admin-app) {
   .admin-app .crm-reason-leaves {
     margin-right: 8px;
   }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Shared admin dashboard kit (.admin-dash-*) — Pepito scale
+   Soft cards, mint/violet/orange accents, RTL-first.
+   ═══════════════════════════════════════════════════════════ */
+
+.admin-app .admin-dash-page {
+  width: 100%;
+  max-width: none;
+}
+
+.admin-app .admin-dash-header {
+  gap: 12px;
+}
+
+.admin-app .admin-dash-header-copy {
+  min-width: 0;
+}
+
+.admin-app .admin-dash-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-app .admin-dash-filters-slot {
+  margin-bottom: 16px;
+}
+
+.admin-app .admin-dash-filters-slot > .admin-card {
+  margin-bottom: 0;
+}
+
+/* ── KPI strip ── */
+.admin-app .admin-dash-kpi-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.admin-app .admin-dash-kpi-strip--dense {
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  gap: 8px;
+}
+
+.admin-app .admin-dash-kpi {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: var(--admin-radius);
+  border: 1px solid color-mix(in srgb, var(--admin-border) 88%, #fff);
+  background: #fff;
+  box-shadow: 0 1px 2px rgba(25, 6, 61, 0.04);
+  min-width: 0;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.admin-app .admin-dash-kpi:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(25, 6, 61, 0.06);
+}
+
+.admin-app .admin-dash-kpi--wide {
+  grid-column: span 2;
+}
+
+.admin-app .admin-dash-kpi-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--admin-accent);
+}
+
+.admin-app .admin-dash-kpi-body {
+  min-width: 0;
+  display: grid;
+  gap: 1px;
+}
+
+.admin-app .admin-dash-kpi-value {
+  font-family: var(--admin-display);
+  font-size: 1.12rem;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--admin-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.admin-app .admin-dash-kpi-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--admin-muted);
+}
+
+.admin-app .admin-dash-kpi-hint {
+  font-size: 0.68rem;
+  color: var(--admin-muted);
+  opacity: 0.9;
+}
+
+.admin-app .admin-dash-kpi--mint {
+  background: linear-gradient(145deg, #fff 40%, var(--admin-promo-mint));
+}
+.admin-app .admin-dash-kpi--mint .admin-dash-kpi-icon { color: #0f9a78; background: rgba(21, 204, 160, 0.14); }
+
+.admin-app .admin-dash-kpi--violet {
+  background: linear-gradient(145deg, #fff 40%, var(--admin-promo-purple));
+}
+.admin-app .admin-dash-kpi--violet .admin-dash-kpi-icon { color: #5c4d91; background: rgba(92, 77, 145, 0.12); }
+
+.admin-app .admin-dash-kpi--orange {
+  background: linear-gradient(145deg, #fff 40%, var(--admin-promo-yellow));
+}
+.admin-app .admin-dash-kpi--orange .admin-dash-kpi-icon { color: #c77810; background: rgba(253, 150, 30, 0.14); }
+
+.admin-app .admin-dash-kpi--sky {
+  background: linear-gradient(145deg, #fff 40%, var(--admin-promo-blue));
+}
+.admin-app .admin-dash-kpi--sky .admin-dash-kpi-icon { color: #0284c7; background: rgba(11, 165, 242, 0.12); }
+
+.admin-app .admin-dash-kpi--slate {
+  background: linear-gradient(145deg, #fff 55%, #f8fafc);
+}
+.admin-app .admin-dash-kpi--slate .admin-dash-kpi-icon { color: #64748b; background: #f1f5f9; }
+
+@media (max-width: 720px) {
+  .admin-app .admin-dash-kpi--wide {
+    grid-column: span 1;
+  }
+}
+
+/* ── Module cards (HR / Sales / CRM / Mail) ── */
+.admin-app .admin-dash-module-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.admin-app .admin-dash-module {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: var(--admin-radius);
+  border: 1px solid color-mix(in srgb, var(--admin-border) 85%, #fff);
+  background: #fff;
+  text-decoration: none;
+  color: inherit;
+  box-shadow: 0 1px 2px rgba(25, 6, 61, 0.04);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.admin-app .admin-dash-module:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(25, 6, 61, 0.07);
+  border-color: color-mix(in srgb, var(--admin-accent) 35%, #fff);
+}
+
+.admin-app .admin-dash-module--mint {
+  background: linear-gradient(145deg, #fff 55%, rgba(21, 204, 160, 0.08));
+}
+.admin-app .admin-dash-module--orange {
+  background: linear-gradient(145deg, #fff 55%, rgba(245, 158, 11, 0.08));
+}
+.admin-app .admin-dash-module--sky {
+  background: linear-gradient(145deg, #fff 55%, rgba(14, 165, 233, 0.08));
+}
+.admin-app .admin-dash-module--violet {
+  background: linear-gradient(145deg, #fff 55%, rgba(92, 77, 145, 0.1));
+}
+.admin-app .admin-dash-module--slate {
+  background: linear-gradient(145deg, #fff 55%, rgba(100, 116, 139, 0.08));
+}
+
+.admin-app .admin-dash-module-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+}
+
+.admin-app .admin-dash-module-head strong {
+  flex: 1;
+  font-weight: 700;
+  min-width: 0;
+}
+
+.admin-app .admin-dash-module-head span {
+  font-size: 0.72rem;
+  color: var(--admin-muted);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.admin-app .admin-dash-module-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 12px;
+}
+
+.admin-app .admin-dash-module-body em {
+  display: block;
+  font-style: normal;
+  font-family: var(--admin-display);
+  font-size: 1.05rem;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+}
+
+.admin-app .admin-dash-module-body span {
+  font-size: 0.72rem;
+  color: var(--admin-muted);
+  font-weight: 600;
+}
+
+@media (max-width: 1100px) {
+  .admin-app .admin-dash-module-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .admin-app .admin-dash-module-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Chart cards + dense grid ── */
+.admin-app .admin-dash-chart-grid {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.admin-app .admin-dash-chart-grid--2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.admin-app .admin-dash-chart-grid--3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+@media (max-width: 960px) {
+  .admin-app .admin-dash-chart-grid--2,
+  .admin-app .admin-dash-chart-grid--3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+.admin-app .admin-dash-chart {
+  min-width: 0;
+  overflow: visible;
+}
+
+.admin-app .admin-dash-chart-head {
+  align-items: flex-start;
+}
+
+.admin-app .admin-dash-chart-head h2 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.admin-app .admin-dash-chart-link {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--admin-accent);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.admin-app .admin-dash-chart-link:hover {
+  text-decoration: underline;
+}
+
+.admin-app .admin-dash-chart-body {
+  min-width: 0;
+  min-height: 160px;
+}
+
+.admin-app .admin-dash-chart-body--empty {
+  display: grid;
+  place-items: center;
+}
+
+.admin-app .admin-dash-chart-empty {
+  margin: 0;
+  padding: 28px 16px;
+  width: 100%;
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--admin-muted);
+  border-radius: 10px;
+  background: #f8fafc;
+  border: 1px dashed var(--admin-border);
+  box-sizing: border-box;
+}
+
+/* Ensure RTL h-bars stay unclipped inside kit cards */
+.admin-app .admin-dash-chart-body.admin-recharts-rtl-hbars {
+  overflow: visible;
+  padding-inline-end: 2px;
 }

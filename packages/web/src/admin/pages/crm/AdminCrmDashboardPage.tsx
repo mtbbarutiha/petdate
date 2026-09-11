@@ -5,6 +5,7 @@ import {
   AreaChart,
   Bar,
   BarChart,
+  CartesianGrid,
   Cell,
   Pie,
   PieChart,
@@ -13,9 +14,23 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import type { CrmDashboard, CrmKpiRing } from '@petdate/shared';
+import type { CrmDashboard, CrmKpiRing, CrmReportSummary } from '@petdate/shared';
+import { AlertTriangle, Headphones, MessageSquare, ShieldAlert, Star } from 'lucide-react';
 import { adminFetch, formatNumFa } from '../../api';
 import { formatAdminFaDate, formatAdminFaDateTime } from '../../JalaliDateSelect';
+import {
+  AdminChartCard,
+  AdminChartGrid,
+  AdminDashPage,
+  AdminKpiStrip,
+  type AdminKpiItem,
+} from '../../dash';
+import {
+  adminRtlHBarsCategoryAxis,
+  adminRtlHBarsMargin,
+  adminRtlHBarsRadius,
+  adminRtlHBarsValueAxis,
+} from '../../rechartsRtlHBars';
 
 const STANDING_COLOR: Record<string, string> = {
   'در مسیر درست': '#15cca0',
@@ -26,7 +41,6 @@ const STANDING_COLOR: Record<string, string> = {
 function GaugeSemi({ pct, standing }: { pct: number; standing: string }) {
   const color = STANDING_COLOR[standing] || '#c62828';
   const clamped = Math.max(0, Math.min(100, pct));
-  // semicircle path via stroke-dasharray on 180deg arc
   const r = 70;
   const c = Math.PI * r;
   const filled = (clamped / 100) * c;
@@ -112,11 +126,26 @@ function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: 
 
 export function AdminCrmDashboardPage() {
   const [data, setData] = useState<CrmDashboard | null>(null);
+  const [report, setReport] = useState<CrmReportSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
-  useEffect(() => {
-    void adminFetch<CrmDashboard>('/api/admin/crm/workspace')
-      .then(setData)
+
+  const reload = () => {
+    void Promise.all([
+      adminFetch<CrmDashboard>('/api/admin/crm/workspace'),
+      adminFetch<{ summary: CrmReportSummary }>('/api/admin/crm/reports')
+        .then((r) => r.summary)
+        .catch(() => null),
+    ])
+      .then(([dash, rep]) => {
+        setData(dash);
+        setReport(rep);
+        setError(null);
+      })
       .catch((e) => setError(e instanceof Error ? e.message : 'خطا'));
+  };
+
+  useEffect(() => {
+    reload();
   }, []);
 
   const ticketPie = useMemo(
@@ -124,33 +153,72 @@ export function AdminCrmDashboardPage() {
     [data]
   );
 
-  if (error) return <div className="admin-page"><p className="admin-error">{error}</p></div>;
-  if (!data) return <div className="admin-page"><p>در حال بارگذاری…</p></div>;
+  const slaBars = useMemo(() => {
+    if (!data) return [];
+    const healthy = Math.max(0, data.openTickets - data.breachedSla - data.atRiskSla);
+    return [
+      { name: 'سالم', count: healthy },
+      { name: 'در معرض', count: data.atRiskSla },
+      { name: 'نقض‌شده', count: data.breachedSla },
+    ].filter((r) => r.count > 0);
+  }, [data]);
+
+  const reasonBars = useMemo(() => {
+    const fromReport = report?.callReasons?.length
+      ? report.callReasons.map((r) => ({ name: r.label, count: r.value }))
+      : report?.byReason?.map((r) => ({ name: r.reason, count: r.count })) || [];
+    if (fromReport.length) return fromReport;
+    return (data?.channelDistribution || []).map((c) => ({ name: c.label, count: c.value }));
+  }, [data, report]);
+
+  const stripKpis: AdminKpiItem[] = data
+    ? [
+        { key: 'open', label: 'تیکت باز', value: formatNumFa(data.openTickets), icon: MessageSquare, tone: 'sky' },
+        { key: 'sla', label: 'نقض SLA', value: formatNumFa(data.breachedSla), icon: ShieldAlert, tone: 'orange' },
+        { key: 'risk', label: 'در معرض SLA', value: formatNumFa(data.atRiskSla), icon: AlertTriangle, tone: 'orange' },
+        { key: 'complaints', label: 'شکایت باز', value: formatNumFa(data.openComplaints), icon: Headphones, tone: 'violet' },
+        {
+          key: 'csat',
+          label: 'CSAT',
+          value: data.avgCsat != null ? formatNumFa(data.avgCsat) : '—',
+          icon: Star,
+          tone: 'mint',
+        },
+        { key: 'calls', label: 'تماس امروز', value: formatNumFa(data.callsToday), icon: Headphones, tone: 'slate' },
+      ]
+    : [];
+
+  if (error && !data) {
+    return <AdminDashPage title="میز کار من" error={error} onRefresh={reload} />;
+  }
+  if (!data) {
+    return <AdminDashPage title="میز کار من" subtitle="در حال بارگذاری…" />;
+  }
 
   const completeFollowup = (id: number) => {
     void adminFetch(`/api/admin/crm/followups/${id}/complete`, {
       method: 'POST',
       body: JSON.stringify({ result: 'انجام شد از میز کار' }),
-    }).then(() =>
-      adminFetch<CrmDashboard>('/api/admin/crm/workspace').then(setData)
-    );
+    }).then(() => reload());
   };
 
   return (
-    <div className="admin-page crm-workspace">
-      <header className="admin-header crm-workspace-header">
-        <div>
-          <h1>میز کار من</h1>
-          <p>
-            {data.dateLabel} · {data.greetingName} · {data.roleLabel} · داده‌ها لحظه‌ای
-          </p>
-        </div>
-        <div className="crm-header-badges">
+    <AdminDashPage
+      className="crm-workspace"
+      title="میز کار من"
+      live
+      subtitle={`${data.dateLabel} · ${data.greetingName} · ${data.roleLabel}`}
+      onRefresh={reload}
+      error={error}
+      actions={
+        <>
           <span className="crm-badge crm-badge--danger">{formatNumFa(data.breachedSla)} نقض SLA</span>
           <span className="crm-badge">{formatNumFa(data.qaQueue)} در صف ارزیابی</span>
           <Link className="admin-btn admin-btn--primary" to="/admin/crm/inbox">اینباکس</Link>
-        </div>
-      </header>
+        </>
+      }
+    >
+      <AdminKpiStrip items={stripKpis} ariaLabel="شاخص‌های باشگاه مشتریان" />
 
       <section className="admin-card crm-kpi-panel">
         <div className="admin-card-head">
@@ -188,55 +256,48 @@ export function AdminCrmDashboardPage() {
         )}
       </section>
 
-      <div className="crm-charts-row">
-        <section className="admin-card">
-          <div className="admin-card-head"><h2>توزیع کانال‌ها</h2></div>
-          <div className="crm-chart-box">
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={data.channelDistribution} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#757086' }} axisLine={false} tickLine={false} />
-                <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#757086' }} axisLine={false} tickLine={false} width={28} />
-                <Tooltip content={<ChartTooltip />} />
-                <Bar dataKey="value" radius={[8, 8, 4, 4]} fill="#5c4d91" maxBarSize={36} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </section>
+      <AdminChartGrid cols={3}>
+        <AdminChartCard title="توزیع کانال‌ها" empty={!data.channelDistribution.length} height={220}>
+          <ResponsiveContainer width="100%" height={220}>
+            <BarChart data={data.channelDistribution} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+              <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#757086' }} axisLine={false} tickLine={false} />
+              <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#757086' }} axisLine={false} tickLine={false} width={28} />
+              <Tooltip content={<ChartTooltip />} />
+              <Bar dataKey="value" radius={[8, 8, 4, 4]} fill="#5c4d91" maxBarSize={36} />
+            </BarChart>
+          </ResponsiveContainer>
+        </AdminChartCard>
 
-        <section className="admin-card">
-          <div className="admin-card-head"><h2>حجم تعامل ۷ روز اخیر</h2></div>
-          <div className="crm-chart-box">
-            <ResponsiveContainer width="100%" height={220}>
-              <AreaChart data={data.dailyInteractions} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="crmArea" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#15cca0" stopOpacity={0.35} />
-                    <stop offset="100%" stopColor="#15cca0" stopOpacity={0.02} />
-                  </linearGradient>
-                </defs>
-                <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#757086' }} axisLine={false} tickLine={false} />
-                <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#757086' }} axisLine={false} tickLine={false} width={28} />
-                <Tooltip content={<ChartTooltip />} />
-                <Area type="monotone" dataKey="value" stroke="#15cca0" strokeWidth={2.5} fill="url(#crmArea)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </section>
+        <AdminChartCard title="حجم تعامل ۷ روز اخیر" empty={!data.dailyInteractions.length} height={220}>
+          <ResponsiveContainer width="100%" height={220}>
+            <AreaChart data={data.dailyInteractions} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+              <defs>
+                <linearGradient id="crmArea" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#15cca0" stopOpacity={0.35} />
+                  <stop offset="100%" stopColor="#15cca0" stopOpacity={0.02} />
+                </linearGradient>
+              </defs>
+              <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#757086' }} axisLine={false} tickLine={false} />
+              <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#757086' }} axisLine={false} tickLine={false} width={28} />
+              <Tooltip content={<ChartTooltip />} />
+              <Area type="monotone" dataKey="value" stroke="#15cca0" strokeWidth={2.5} fill="url(#crmArea)" />
+            </AreaChart>
+          </ResponsiveContainer>
+        </AdminChartCard>
 
-        <section className="admin-card">
-          <div className="admin-card-head"><h2>وضعیت تیکت‌ها</h2></div>
+        <AdminChartCard title="وضعیت تیکت‌ها" empty={!ticketPie.length} height={200}>
           <div className="crm-donut-wrap">
             <ResponsiveContainer width="100%" height={180}>
               <PieChart>
                 <Pie
-                  data={ticketPie.length ? ticketPie : [{ name: 'خالی', value: 1, color: '#e4e2f3' }]}
+                  data={ticketPie}
                   dataKey="value"
                   nameKey="name"
                   innerRadius={48}
                   outerRadius={72}
                   paddingAngle={2}
                 >
-                  {(ticketPie.length ? ticketPie : [{ color: '#e4e2f3' }]).map((s, i) => (
+                  {ticketPie.map((s, i) => (
                     <Cell key={i} fill={s.color || '#5c4d91'} />
                   ))}
                 </Pie>
@@ -257,8 +318,51 @@ export function AdminCrmDashboardPage() {
               ))}
             </ul>
           </div>
-        </section>
-      </div>
+        </AdminChartCard>
+      </AdminChartGrid>
+
+      <AdminChartGrid cols={2}>
+        <AdminChartCard
+          title="وضعیت SLA تیکت‌ها"
+          empty={!slaBars.length}
+          height={Math.max(200, 40 * Math.max(slaBars.length, 3))}
+          rtlHBars
+        >
+          <ResponsiveContainer width="100%" height={Math.max(200, 40 * Math.max(slaBars.length, 3))}>
+            <BarChart layout="vertical" data={slaBars} margin={{ ...adminRtlHBarsMargin }}>
+              <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--admin-border)" />
+              <XAxis {...adminRtlHBarsValueAxis} />
+              <YAxis dataKey="name" {...adminRtlHBarsCategoryAxis} />
+              <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(92,77,145,0.06)' }} />
+              <Bar dataKey="count" radius={adminRtlHBarsRadius} maxBarSize={22}>
+                {slaBars.map((row) => (
+                  <Cell
+                    key={row.name}
+                    fill={row.name === 'نقض‌شده' ? '#c62828' : row.name === 'در معرض' ? '#fd961e' : '#15cca0'}
+                  />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </AdminChartCard>
+
+        <AdminChartCard
+          title="دلایل تعامل / کانال"
+          empty={!reasonBars.length}
+          height={Math.max(220, 36 * Math.max(reasonBars.length, 3))}
+          rtlHBars
+        >
+          <ResponsiveContainer width="100%" height={Math.max(220, 36 * Math.max(reasonBars.length, 3))}>
+            <BarChart layout="vertical" data={reasonBars} margin={{ ...adminRtlHBarsMargin }}>
+              <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--admin-border)" />
+              <XAxis {...adminRtlHBarsValueAxis} />
+              <YAxis dataKey="name" {...adminRtlHBarsCategoryAxis} />
+              <Tooltip content={<ChartTooltip />} cursor={{ fill: 'rgba(92,77,145,0.06)' }} />
+              <Bar dataKey="count" radius={adminRtlHBarsRadius} maxBarSize={18} fill="#15cca0" />
+            </BarChart>
+          </ResponsiveContainer>
+        </AdminChartCard>
+      </AdminChartGrid>
 
       <div className="crm-bottom-row">
         <section className="admin-card crm-bottom-main">
@@ -324,7 +428,7 @@ export function AdminCrmDashboardPage() {
                 })}
               </ul>
             ) : (
-              <p className="admin-muted">پیگیری نزدیکی نیست</p>
+              <p className="admin-dash-chart-empty">پیگیری نزدیکی نیست</p>
             )}
           </section>
 
@@ -342,11 +446,11 @@ export function AdminCrmDashboardPage() {
                 ))}
               </ul>
             ) : (
-              <p className="admin-muted">وظیفه‌ای باز نیست</p>
+              <p className="admin-dash-chart-empty">وظیفه‌ای باز نیست</p>
             )}
           </section>
         </div>
       </div>
-    </div>
+    </AdminDashPage>
   );
 }

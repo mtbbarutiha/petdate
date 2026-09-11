@@ -15,6 +15,7 @@ import {
   WidgetEmpty,
   type WidgetRenderContext,
 } from '../widgets';
+import { AdminDashPage, AdminKpiStrip, type AdminKpiItem } from '../dash';
 
 type ChartPoint = { label: string; value: number };
 type ChartSlice = { label: string; value: number; currency?: string };
@@ -69,13 +70,19 @@ export function AdminFinanceDashboardPage() {
 
   const k = data?.kpis;
   const charts = data?.charts;
-  const cards = k ? [
-    { label: 'درآمد', value: formatTomanFa(k.revenue), icon: TrendingUp, tone: 'mint' },
-    { label: 'هزینه', value: formatTomanFa(k.expense), icon: ArrowDownRight, tone: 'orange' },
-    { label: 'سود خالص', value: formatTomanFa(k.netProfit), icon: ArrowUpRight, tone: 'violet' },
-    { label: 'سفارش‌ها', value: formatNumFa(k.orders), icon: ShoppingBag, tone: 'sky' },
-    { label: 'میانگین سفارش (AOV)', value: formatTomanFa(k.aov), icon: Wallet, tone: 'slate' },
-    { label: 'نرخ رشد', value: `${formatNumFa(k.growthRate)}٪`, icon: LineChart, tone: k.growthRate >= 0 ? 'mint' : 'orange' },
+  const kpiItems: AdminKpiItem[] = k ? [
+    { key: 'rev', label: 'درآمد', value: formatTomanFa(k.revenue), icon: TrendingUp, tone: 'mint', wide: true },
+    { key: 'exp', label: 'هزینه', value: formatTomanFa(k.expense), icon: ArrowDownRight, tone: 'orange' },
+    { key: 'net', label: 'سود خالص', value: formatTomanFa(k.netProfit), icon: ArrowUpRight, tone: 'violet' },
+    { key: 'orders', label: 'سفارش‌ها', value: formatNumFa(k.orders), icon: ShoppingBag, tone: 'sky' },
+    { key: 'aov', label: 'میانگین سفارش (AOV)', value: formatTomanFa(k.aov), icon: Wallet, tone: 'slate' },
+    {
+      key: 'growth',
+      label: 'نرخ رشد',
+      value: `${formatNumFa(k.growthRate)}٪`,
+      icon: LineChart,
+      tone: k.growthRate >= 0 ? 'mint' : 'orange',
+    },
   ] : [];
 
   const pnlPoints = charts?.pnlCompare?.length
@@ -104,7 +111,7 @@ export function AdminFinanceDashboardPage() {
   };
 
   const renderFinanceWidget = (id: string, ctx: WidgetRenderContext) => {
-    if (loading && !charts && !k) return <p className="admin-muted">در حال بارگذاری نمودار…</p>;
+    if (loading && !charts && !k) return <p className="admin-dash-chart-empty">در حال بارگذاری نمودار…</p>;
     switch (id) {
       case 'salesTrend':
         return salesTrend.length ? (
@@ -146,13 +153,13 @@ export function AdminFinanceDashboardPage() {
   };
 
   return (
-    <div className="admin-page">
-      <header className="admin-header">
-        <div>
-          <h1>داشبورد مالی</h1>
-          <p>آنالیتیکس پلتفرم · Finance OS (حساب‌ها، تراکنش‌ها، تخصیص هزینه)</p>
-        </div>
-        <div className="admin-header-actions">
+    <AdminDashPage
+      title="داشبورد مالی"
+      subtitle="آنالیتیکس پلتفرم · Finance OS (حساب‌ها، تراکنش‌ها، تخصیص هزینه)"
+      onRefresh={() => void load()}
+      error={error}
+      actions={
+        <>
           <PeriodFilter value={period} onChange={setPeriod} />
           <button type="button" className="admin-btn admin-btn--ghost" onClick={() => exportCsv('pnl')}>
             <Download size={16} /> خروجی P&L
@@ -160,25 +167,14 @@ export function AdminFinanceDashboardPage() {
           <button type="button" className="admin-btn admin-btn--ghost" onClick={() => exportCsv('sales')}>
             <Download size={16} /> خروجی فروش
           </button>
-        </div>
-      </header>
-
-      {error ? <p className="admin-error">{error}</p> : null}
-
-      <div className="admin-stats admin-stats--dense">
-        {cards.map((c) => (
-          <div key={c.label} className={`admin-stat admin-stat--${c.tone}`}>
-            <div className="admin-stat-icon"><c.icon size={18} /></div>
-            <div>
-              <div className="admin-stat-value">{c.value}</div>
-              <div className="admin-stat-label">{c.label}</div>
-            </div>
-          </div>
-        ))}
-        {!cards.length && loading ? (
-          <p className="admin-muted" style={{ padding: 8 }}>در حال بارگذاری شاخص‌ها…</p>
-        ) : null}
-      </div>
+        </>
+      }
+    >
+      {kpiItems.length ? (
+        <AdminKpiStrip items={kpiItems} ariaLabel="شاخص‌های مالی" />
+      ) : loading ? (
+        <p className="admin-muted" style={{ padding: 8 }}>در حال بارگذاری شاخص‌ها…</p>
+      ) : null}
 
       <WidgetDashboard
         dashboardId="finance"
@@ -231,6 +227,6 @@ export function AdminFinanceDashboardPage() {
           <TrendingUp size={20} /><div><strong>محصولات برتر</strong><span>رتبه‌بندی درآمد</span></div>
         </Link>
       </div>
-    </div>
+    </AdminDashPage>
   );
 }
