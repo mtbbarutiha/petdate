@@ -4216,16 +4216,16 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 }
 
 .find-playmate-one {
-  --find-playmate-pad: 14px;
-  margin: 0 16px 18px;
+  --find-playmate-pad: 12px;
+  margin: 0 16px 14px;
   padding: var(--find-playmate-pad);
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 10px;
-  border-radius: 16px;
+  gap: 8px;
+  border-radius: 14px;
   background: var(--surface);
-  box-shadow: 0 8px 22px rgba(40, 30, 70, 0.12);
+  box-shadow: 0 6px 18px rgba(40, 30, 70, 0.1);
 }
 
 .find-playmate-one .cta-btn {
@@ -4234,21 +4234,21 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   text-align: center;
   display: inline-flex;
   align-items: center;
-  min-height: 52px;
+  min-height: 40px;
   background: linear-gradient(135deg, #5ba8d2 0%, #2f6f96 100%);
   color: #fff;
 }
 
 .find-playmate-one__hint {
-  margin: 0 0 8px;
+  margin: 0 0 6px;
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: 0.85rem;
 }
 
 .find-playmate-one__fee,
 .find-playmate-panel__fee {
   margin: 0 0 4px;
-  font-size: 0.88rem;
+  font-size: 0.78rem;
   font-weight: 600;
   color: var(--text-secondary, #5f7d93);
   text-align: center;
@@ -4257,10 +4257,10 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 /* Full-bleed rule under cost line — edge-to-edge of the card (cancel pad) */
 .find-playmate-one__fee {
   margin: 0;
-  margin-inline: calc(-1 * var(--find-playmate-pad, 14px));
+  margin-inline: calc(-1 * var(--find-playmate-pad, 12px));
   margin-bottom: 0;
-  padding-inline: var(--find-playmate-pad, 14px);
-  padding-bottom: 0.65rem;
+  padding-inline: var(--find-playmate-pad, 12px);
+  padding-bottom: 0.45rem;
   border-bottom: 1px solid var(--tg-line, rgba(31, 36, 48, 0.1));
   max-width: none;
   width: auto;
@@ -4570,9 +4570,9 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   place-items: center;
   justify-items: stretch;
   align-content: center;
-  gap: 10px;
+  gap: 8px;
   text-align: center;
-  padding: 36px 16px;
+  padding: 24px 16px;
   min-height: 100%;
   width: 100%;
   max-width: none;
@@ -4583,7 +4583,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 .tg-thread-empty h2 {
   margin: 0;
   font-family: var(--font-display, 'Urbanist', 'Vazirmatn', system-ui, sans-serif);
-  font-size: 1.2rem;
+  font-size: 1rem;
 }
 
 .tg-chat-list-empty p,
@@ -4592,8 +4592,8 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   color: var(--tg-muted);
   max-width: none;
   width: 100%;
-  line-height: 1.55;
-  font-size: 0.9rem;
+  line-height: 1.45;
+  font-size: 0.8rem;
   box-sizing: border-box;
 }
 

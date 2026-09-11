@@ -258,12 +258,12 @@ export function FindPlaymatePanel({
         ) : null}
         {needsLogin ? (
           <Link to="/auth/login" className="pepito-btn button-1 find-playmate-one__btn">
-            <PawIcon size={20} />
+            <PawIcon size={16} />
             {t('chats.findCtaLogin')}
           </Link>
         ) : needsPet ? (
           <Link to="/add-pet" className="pepito-btn button-1 find-playmate-one__btn">
-            <PawIcon size={20} />
+            <PawIcon size={16} />
             {t('chats.findCtaAddPet')}
           </Link>
         ) : showPetPick ? (
@@ -300,7 +300,7 @@ export function FindPlaymatePanel({
             disabled={sending || petsLoading}
             onClick={() => void onPrimaryClick()}
           >
-            <PawIcon size={20} />
+            <PawIcon size={16} />
             {sending
               ? t('chats.findCtaSending')
               : findPhase === 'done'

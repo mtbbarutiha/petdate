@@ -445,7 +445,7 @@ function ChatEmptyVisual() {
       <span className="tg-empty-visual__ring tg-empty-visual__ring--outer" />
       <span className="tg-empty-visual__ring tg-empty-visual__ring--inner" />
       <span className="tg-empty-visual__paw">
-        <PawPrint size={44} strokeWidth={1.75} />
+        <PawPrint size={28} strokeWidth={1.75} />
       </span>
     </div>
   );
