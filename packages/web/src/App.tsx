@@ -402,6 +402,7 @@ export default function App() {
                 <Route path="mail" element={<AdminMailPage />} />
                 <Route path="logs" element={<AdminLogsPage />} />
                 <Route path="monitoring" element={<AdminMonitoringPage />} />
+                <Route path="analytics" element={<AdminSiteReportsPage />} />
                 <Route path="site-reports" element={<AdminSiteReportsPage />} />
                 <Route path="settings" element={<AdminSettingsPage />} />
                 <Route path="hr" element={<AdminHrDashboardPage />} />

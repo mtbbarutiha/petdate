@@ -1,6 +1,10 @@
 import { Router } from 'express';
 import { rateLimit } from '../middleware/rate-limit';
-import { ingestSiteAnalyticsEvent, type SiteAnalyticsEventInput } from '../site-analytics';
+import {
+  getSiteAnalyticsPublicConfig,
+  ingestSiteAnalyticsEvent,
+  type SiteAnalyticsEventInput,
+} from '../site-analytics';
 
 export const analyticsRouter = Router();
 
@@ -17,6 +21,11 @@ function countryFromReq(req: { headers: Record<string, unknown> }): string | nul
   }
   return null;
 }
+
+/** Public runtime config for GA4 / GTM / Clarity (no secrets). */
+analyticsRouter.get('/config', (_req, res) => {
+  res.json(getSiteAnalyticsPublicConfig());
+});
 
 analyticsRouter.post('/collect', collectLimit, (req, res) => {
   try {
@@ -42,6 +51,10 @@ analyticsRouter.post('/collect', collectLimit, (req, res) => {
       eventType:
         body.eventType === 'heartbeat' || body.eventType === 'event' ? body.eventType : 'pageview',
       eventName: typeof body.eventName === 'string' ? body.eventName : null,
+      meta:
+        body.meta && typeof body.meta === 'object' && !Array.isArray(body.meta)
+          ? (body.meta as Record<string, unknown>)
+          : null,
     };
 
     if (!input.language && typeof req.headers['accept-language'] === 'string') {

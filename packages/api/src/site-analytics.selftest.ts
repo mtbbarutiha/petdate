@@ -78,6 +78,10 @@ async function main() {
   const report = buildSiteAnalyticsReport(7);
   assert(report.overview.pageviews >= 3, 'pageviews');
   assert(report.overview.uniqueSessions >= 2, 'sessions');
+  assert(typeof report.overview.engagementRatePct === 'number', 'engagement');
+  assert(Array.isArray(report.events), 'events breakdown');
+  assert(Array.isArray(report.utmMediums), 'utm mediums');
+  assert(report.ga4 && typeof report.ga4.configured === 'boolean', 'ga4 status');
   assert(report.popularPages.some((p) => p.label === '/shop'), 'popular /shop');
   assert(report.devices.length >= 1, 'devices');
   assert(report.recentSessions.length >= 2, 'recent sessions');

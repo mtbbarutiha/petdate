@@ -10,6 +10,10 @@ interface ImportMetaEnv {
   readonly VITE_CLARITY_PROJECT_ID?: string;
   /** Google Tag Manager container id (e.g. GTM-KQPJT9Q4). */
   readonly VITE_GTM_ID?: string;
+  /** Optional GA4 Measurement ID (G-XXXXXXXX). Never invent — leave unset until real. */
+  readonly VITE_GA4_MEASUREMENT_ID?: string;
+  readonly VITE_GOOGLE_ANALYTICS_ID?: string;
+  readonly VITE_GA_MEASUREMENT_ID?: string;
 }
 
 interface ImportMeta {

@@ -7,6 +7,7 @@ export * from './profile-card';
 export * from './peer-profile';
 export * from './hr';
 export * from './admin-notifications';
+export * from './gtm-contract';
 
 import type {
   OnboardingStatus,
