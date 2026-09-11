@@ -24,7 +24,6 @@ import {
   RefreshCw,
   Send,
   Smile,
-  Stethoscope,
   UserPlus,
   UserRound,
   X,
@@ -33,6 +32,7 @@ import { SiteLogo } from '../components/SiteLogo';
 import { ChatMediaCaptureProvider, ChatMediaCaptureTriggers } from '../components/ChatMediaCapture';
 import { EmojiPicker } from '../components/EmojiPicker';
 import { FindPlaymatePanel } from '../components/FindPlaymatePanel';
+import { InboxPeerAvatar } from '../components/InboxPeerAvatar';
 import { PetAvatar } from '../components/PetAvatar';
 import { PresenceBadge } from '../components/PresenceBadge';
 import { RequestCountdown } from '../components/RequestCountdown';
@@ -347,9 +347,7 @@ function ConversationListPane({
                         name={peer.name}
                       />
                     ) : (
-                      <span className="tg-chat-list-icon" aria-hidden>
-                        <Stethoscope size={22} strokeWidth={2} />
-                      </span>
+                      <InboxPeerAvatar avatarUrl={c.peerAvatarUrl} name={c.title} />
                     )}
                     <span className="tg-chat-list-meta">
                       <strong>
