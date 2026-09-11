@@ -24,6 +24,7 @@ const urls = [
   { path: '/magazine', changefreq: 'daily', priority: '0.85' },
   { path: '/shop', changefreq: 'daily', priority: '0.9' },
   { path: '/shop/c/all', changefreq: 'daily', priority: '0.85' },
+  { path: '/adoption', changefreq: 'weekly', priority: '0.8' },
   { path: '/vet-consult', changefreq: 'weekly', priority: '0.85' },
   { path: '/auth/login', changefreq: 'monthly', priority: '0.4' },
 ];

@@ -249,10 +249,26 @@ petsRouter.get('/nearby/list-card', async (req, res) => {
   }
 });
 
+/** پت‌های صاحب فعلی (Bearer) — قبل از /:id تا «mine» به Number() نرود */
+petsRouter.get('/mine', (req, res) => {
+  const ownerId = viewerUserId(req);
+  if (!ownerId) {
+    res.status(401).json({ error: 'وارد نشده‌اید' });
+    return;
+  }
+  const pets = dbService.listPets({ ownerId, publicOnly: false });
+  res.json(pets);
+});
+
 /** کارت پروفایل پت با عکس دایره‌ای صاحب در بالا-چپ — قبل از /:id */
 petsRouter.get('/:id/profile-card', async (req, res) => {
   try {
-    const pet = dbService.getPet(Number(req.params.id));
+    const petId = Number(req.params.id);
+    if (!Number.isFinite(petId) || petId <= 0) {
+      res.status(400).json({ error: 'شناسه پت نامعتبر است' });
+      return;
+    }
+    const pet = dbService.getPet(petId);
     if (!pet) {
       res.status(404).json({ error: 'پت پیدا نشد' });
       return;
@@ -376,7 +392,12 @@ petsRouter.get('/:id/image', async (req, res) => {
 });
 
 petsRouter.get('/:id', (req, res) => {
-  const pet = dbService.getPet(Number(req.params.id));
+  const petId = Number(req.params.id);
+  if (!Number.isFinite(petId) || petId <= 0) {
+    res.status(400).json({ error: 'شناسه پت نامعتبر است' });
+    return;
+  }
+  const pet = dbService.getPet(petId);
   if (!pet) {
     res.status(404).json({ error: 'پت پیدا نشد' });
     return;

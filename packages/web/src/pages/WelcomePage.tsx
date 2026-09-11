@@ -45,7 +45,8 @@ const SERVICES: {
 
 type HeroCta =
   | { kind: 'hash'; href: string; label: string }
-  | { kind: 'gated'; to: string; label: string };
+  | { kind: 'gated'; to: string; label: string }
+  | { kind: 'link'; to: string; label: string };
 
 const HERO_SLIDES: {
   img: string;
@@ -59,7 +60,7 @@ const HERO_SLIDES: {
     kicker: 'مشاوره سریع با پزشک',
     title: 'همین حالا به دامپزشک وصل شو',
     lead: 'درخواست اتصال فوری به پزشک آنلاین — پس از تأیید پرداخت سکه، چت مشاوره شروع می‌شود.',
-    cta: { kind: 'gated', to: '/vet-consult', label: 'مشاوره سریع' },
+    cta: { kind: 'link', to: '/vet-consult', label: 'مشاوره سریع' },
   },
   {
     img: `${P}/2.jpg`,
@@ -210,9 +211,16 @@ function GatedLink({
 }) {
   const { isLoggedIn, hasRole, isProfileComplete } = useAuthStore();
   const ready = isLoggedIn && hasRole && isProfileComplete;
+  const publicDest =
+    to === '/vet-consult' ||
+    to.startsWith('/vet-consult') ||
+    to === '/shop' ||
+    to.startsWith('/shop/') ||
+    to === '/adoption' ||
+    to.startsWith('/adoption/');
   return (
     <Link
-      to={ready ? to : loginPath(to)}
+      to={ready || publicDest ? to : loginPath(to)}
       className={className}
       style={style}
       data-testid={dataTestId}
@@ -466,6 +474,15 @@ export function WelcomePage() {
                   <HeroStethoscopeIcon />
                   {current.cta.label}
                 </GatedLink>
+              ) : current.cta.kind === 'link' ? (
+                <Link
+                  to={current.cta.to}
+                  className="pepito-btn pepito-hero-cta-btn--glass"
+                  data-testid="hero-vet-consult-cta"
+                >
+                  <HeroStethoscopeIcon />
+                  {current.cta.label}
+                </Link>
               ) : (
                 <a href={current.cta.href} className="pepito-btn button-1">
                   <PawIcon />

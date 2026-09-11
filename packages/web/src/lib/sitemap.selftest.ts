@@ -22,6 +22,7 @@ assert(xml.includes('/faq'), 'missing faq');
 assert(xml.includes('/magazine'), 'missing magazine');
 assert(xml.includes('https://petdate.ir/shop</loc>'), 'missing shop');
 assert(xml.includes('/vet-consult'), 'missing vet');
+assert(xml.includes('https://petdate.ir/adoption</loc>'), 'missing adoption listing');
 assert(xml.includes('/adoption/'), 'missing adoption');
 assert(xml.includes('/shop/c/'), 'missing shop categories');
 assert(!xml.includes('/chats'), 'chats must not be in sitemap');

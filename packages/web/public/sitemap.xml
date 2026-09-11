@@ -31,6 +31,12 @@
     <priority>0.85</priority>
   </url>
   <url>
+    <loc>https://petdate.ir/adoption</loc>
+    <lastmod>2026-09-11</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://petdate.ir/vet-consult</loc>
     <lastmod>2026-09-11</lastmod>
     <changefreq>weekly</changefreq>

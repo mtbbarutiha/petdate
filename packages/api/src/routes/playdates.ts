@@ -1,9 +1,12 @@
+import { createHash, timingSafeEqual } from 'crypto';
 import { Router } from 'express';
 import fs from 'fs';
 import multer from 'multer';
 import type { PlaydateChatMediaKind, PlaydateStatus } from '@petdate/shared';
 import { userPublicIdOf } from '@petdate/shared';
+import { infra } from '../config/infra';
 import { dbService } from '../db';
+import { getUserFromBearer } from '../services/web-otp';
 import { notifyPlaydateRequestTelegram } from '../services/telegram-playdate-notify';
 import {
   notifyPlaydateChatEndedTelegram,
@@ -44,6 +47,24 @@ const chatUpload = multer({
 });
 
 export const playdatesRouter = Router();
+
+function tokensEqual(a: string, b: string): boolean {
+  const ha = createHash('sha256').update(a).digest();
+  const hb = createHash('sha256').update(b).digest();
+  return timingSafeEqual(ha, hb);
+}
+
+/** Internal Telegram bot (X-PetDate-Bot-Token === TELEGRAM_BOT_TOKEN). */
+function isInternalBot(req: { header: (name: string) => string | undefined }): boolean {
+  const expected = infra.telegram.botToken?.trim();
+  const got = String(req.header('x-petdate-bot-token') ?? '').trim();
+  if (!expected || !got) return false;
+  return tokensEqual(expected, got);
+}
+
+function viewerFromBearer(req: { header: (name: string) => string | undefined }) {
+  return getUserFromBearer(req.header('authorization') ?? undefined)?.user ?? null;
+}
 
 function purgePlaydateUploads(playdateId: number): void {
   for (const key of dbService.listPlaydateChatStorageKeys(playdateId)) {
@@ -186,13 +207,33 @@ async function openOwnerChatOnAccept(
 }
 
 playdatesRouter.get('/', (req, res) => {
-  const userId = req.query.userId ? Number(req.query.userId) : undefined;
-  const petId = req.query.petId ? Number(req.query.petId) : undefined;
+  const bot = isInternalBot(req);
+  const viewer = viewerFromBearer(req);
+  if (!bot && !viewer) {
+    res.status(401).json({ error: 'وارد نشده‌اید' });
+    return;
+  }
+
+  let userId = req.query.userId ? Number(req.query.userId) : undefined;
+  let petId = req.query.petId ? Number(req.query.petId) : undefined;
   const status = req.query.status as PlaydateStatus | undefined;
+
+  if (viewer && !bot) {
+    // Web session: always scope to the signed-in user (ignore spoofed userId).
+    userId = viewer.id;
+    petId = Number.isFinite(petId) && petId! > 0 ? petId : undefined;
+  } else if (bot && !Number.isFinite(userId) && !Number.isFinite(petId)) {
+    res.status(400).json({ error: 'userId یا petId الزامی است' });
+    return;
+  }
 
   dbService.expireStalePlaydateRequests();
   const requests = dbService
-    .listPlaydateRequests({ userId, petId, status })
+    .listPlaydateRequests({
+      userId: Number.isFinite(userId) ? userId : undefined,
+      petId: Number.isFinite(petId) ? petId : undefined,
+      status,
+    })
     .map((r) => enrichPlaydate(r)!);
   res.json(requests);
 });
@@ -706,11 +747,29 @@ playdatesRouter.post('/:id/telegram-message-refs', (req, res) => {
 });
 
 playdatesRouter.get('/:id', (req, res) => {
-  const request = enrichPlaydate(dbService.getPlaydateRequest(Number(req.params.id)));
+  const playdateId = Number(req.params.id);
+  if (!Number.isFinite(playdateId) || playdateId <= 0) {
+    res.status(400).json({ error: 'شناسه درخواست نامعتبر است' });
+    return;
+  }
+
+  const request = enrichPlaydate(dbService.getPlaydateRequest(playdateId));
   if (!request) {
     res.status(404).json({ error: 'درخواست پیدا نشد' });
     return;
   }
+
+  const bot = isInternalBot(req);
+  const viewer = viewerFromBearer(req);
+  if (!bot && !viewer) {
+    res.status(401).json({ error: 'وارد نشده‌اید' });
+    return;
+  }
+  if (viewer && !bot && !dbService.isPlaydateParticipant(request, viewer.id)) {
+    res.status(403).json({ error: 'دسترسی به این درخواست مجاز نیست' });
+    return;
+  }
+
   res.json(request);
 });
 

@@ -48,6 +48,12 @@ npx tsx "$ROOT/packages/web/src/admin/widgets/widgetDashboard.selftest.ts"
 echo "==> selftest: web sitemap public routes"
 npx tsx "$ROOT/packages/web/src/lib/sitemap.selftest.ts"
 
+echo "==> selftest: web public marketing routes (vet-consult / adoption / magazine)"
+npx tsx "$ROOT/packages/web/src/lib/publicRoutes.selftest.ts"
+
+echo "==> selftest: shop product gallery assets"
+npx tsx "$ROOT/packages/web/src/data/shopGallery.selftest.ts"
+
 echo "==> selftest: web GTM dataLayer / link helpers"
 npx tsx "$ROOT/packages/web/src/lib/siteAnalytics.selftest.ts"
 
@@ -108,6 +114,8 @@ run src/finance-os.selftest.ts
 run src/admin-finance-dashboard.selftest.ts
 run src/platform-settings.selftest.ts
 run src/magazine.selftest.ts
+run src/routes/pets-id-guard.selftest.ts
+run src/routes/playdates-auth.selftest.ts
 run src/site-analytics.selftest.ts
 
 echo "ci-selftest: all passed"
