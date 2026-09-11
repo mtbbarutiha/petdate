@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useId, useState, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
-import { Link, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { submitPetPurchaseLead } from '../lib/api';
 import { useAppToast } from '../hooks/useAppToast';
 
@@ -160,27 +160,15 @@ export function PetPurchaseLeadModal({ open, onClose, sourcePage }: PetPurchaseL
   );
 }
 
-/** Pepito adoption CTA strip: keep «پذیرش یک پت» + purchase-consult button (replaces phone). */
-export function AdoptionPurchaseCta({
-  adoptionTagAsLink = false,
-}: {
-  adoptionTagAsLink?: boolean;
-}) {
+/** Pepito adoption CTA strip: purchase-consult lead button only (adopting tag removed). */
+export function AdoptionPurchaseCta() {
   const [open, setOpen] = useState(false);
   const location = useLocation();
   const onClose = useCallback(() => setOpen(false), []);
-  const tag = adoptionTagAsLink ? (
-    <Link to="/adoption" className="pepito-adoption-tag">
-      پذیرش یک پت
-    </Link>
-  ) : (
-    <span className="pepito-adoption-tag">پذیرش یک پت</span>
-  );
 
   return (
     <>
       <div className="pepito-adoption-info">
-        {tag}
         <button
           type="button"
           className="pepito-btn pepito-adoption-lead-btn"
