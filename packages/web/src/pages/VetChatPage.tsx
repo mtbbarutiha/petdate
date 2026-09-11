@@ -1945,26 +1945,28 @@ export function VetChatPage() {
                         ? SECURE_WIPE_HINT
                         : CHAT_WIPE_HINT}
                   </p>
-                  <button
-                    type="button"
-                    className="tg-wipe-btn"
-                    onClick={() => void wipeConversation()}
-                    disabled={wiping || wiped}
-                    data-testid="vet-wipe-chat"
-                  >
-                    {wiped ? (
-                      <>
-                        <Check size={16} /> پاک شد
-                      </>
-                    ) : wiping ? (
-                      'در حال پاک‌کردن…'
-                    ) : (
-                      'حذف کل چت'
-                    )}
-                  </button>
-                  <Link to="/chats" className="tg-chat-link-btn">
-                    بازگشت به گفتگوها
-                  </Link>
+                  <div className="tg-ended-actions">
+                    <button
+                      type="button"
+                      className="tg-wipe-btn"
+                      onClick={() => void wipeConversation()}
+                      disabled={wiping || wiped}
+                      data-testid="vet-wipe-chat"
+                    >
+                      {wiped ? (
+                        <>
+                          <Check size={16} /> پاک شد
+                        </>
+                      ) : wiping ? (
+                        'در حال پاک‌کردن…'
+                      ) : (
+                        'حذف کل چت'
+                      )}
+                    </button>
+                    <Link to="/chats" className="tg-chat-link-btn tg-chat-link-btn--outline">
+                      بازگشت به گفتگوها
+                    </Link>
+                  </div>
                 </div>
               )}
               </div>
