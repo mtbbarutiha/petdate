@@ -1429,7 +1429,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   text-decoration: none;
 }
 
-/* Pet purchase lead modal (public CTA) */
+/* Pet purchase lead modal (public CTA) — uses --pd-* so dark theme remaps cleanly */
 .pepito-lead-modal-overlay {
   position: fixed;
   inset: 0;
@@ -1438,14 +1438,16 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   align-items: center;
   justify-content: center;
   padding: 1.25rem;
-  background: rgba(28, 22, 48, 0.48);
+  background: var(--pd-overlay);
 }
 .pepito-lead-modal {
   width: min(100%, 420px);
-  background: var(--pepito-white);
+  background: var(--pd-surface);
+  border: 1px solid var(--pd-border);
   border-radius: 18px;
-  box-shadow: 0 18px 48px rgba(28, 22, 48, 0.18);
+  box-shadow: var(--pd-shadow);
   overflow: hidden;
+  color: var(--pd-ink);
 }
 .pepito-lead-modal__head {
   display: flex;
@@ -1453,18 +1455,18 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   justify-content: space-between;
   gap: 0.75rem;
   padding: 1rem 1.15rem;
-  border-bottom: 1px solid rgba(92, 77, 145, 0.12);
+  border-bottom: 1px solid var(--pd-border);
 }
 .pepito-lead-modal__head h2 {
   margin: 0;
   font-family: var(--font-display);
   font-size: 1.15rem;
-  color: var(--pepito-dark);
+  color: var(--pd-ink);
 }
 .pepito-lead-modal__close {
   border: 0;
   background: transparent;
-  color: var(--pepito-dark);
+  color: var(--pd-ink);
   font-size: 1.5rem;
   line-height: 1;
   cursor: pointer;
@@ -1478,7 +1480,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 }
 .pepito-lead-modal__lead {
   margin: 0;
-  color: var(--pepito-text, #4a4460);
+  color: var(--pd-muted);
   font-size: 0.95rem;
   line-height: 1.55;
 }
@@ -1487,29 +1489,39 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   flex-direction: column;
   gap: 0.35rem;
   font-size: 0.9rem;
-  color: var(--pepito-dark);
+  color: var(--pd-ink);
 }
 .pepito-lead-modal__field input {
-  border: 1px solid rgba(92, 77, 145, 0.22);
+  border: 1px solid var(--pd-border-strong);
   border-radius: 12px;
   padding: 0.7rem 0.85rem;
   font-size: 1rem;
   font-family: inherit;
-  background: #faf9fc;
+  background: var(--pd-surface-2);
+  color: var(--pd-ink);
+  color-scheme: inherit;
+}
+.pepito-lead-modal__field input::placeholder {
+  color: var(--pd-muted);
+  opacity: 1;
 }
 .pepito-lead-modal__field input:focus {
-  outline: 2px solid rgba(92, 77, 145, 0.35);
+  outline: 2px solid color-mix(in srgb, var(--pepito-base) 45%, transparent);
   outline-offset: 1px;
-  background: var(--pepito-white);
+  background: var(--pd-surface);
+  border-color: var(--pepito-base);
+}
+.pepito-lead-modal__field input:disabled {
+  opacity: 0.7;
 }
 .pepito-lead-modal__error {
   margin: 0;
-  color: #b42318;
+  color: var(--danger, #b42318);
   font-size: 0.9rem;
 }
 .pepito-lead-modal__success {
   margin: 0 0 0.5rem;
-  color: var(--pepito-dark);
+  color: var(--pd-ink);
   font-weight: 600;
   line-height: 1.55;
 }

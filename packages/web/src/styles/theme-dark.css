@@ -1669,3 +1669,21 @@ html[data-theme='dark'] .trait-chip.active {
   border-color: var(--pepito-base);
   color: var(--pepito-dark);
 }
+
+/* Pet purchase lead modal — cancel stays readable on dark surface (not hero-glass white) */
+html[data-theme='dark'] .pepito-lead-modal__actions .pepito-btn--ghost {
+  background: transparent !important;
+  color: var(--pepito-dark) !important;
+  border: 1.5px solid var(--pd-border-strong) !important;
+  backdrop-filter: none;
+}
+html[data-theme='dark'] .pepito-lead-modal__actions .pepito-btn--ghost:hover {
+  background: var(--pd-surface-2) !important;
+  border-color: var(--pepito-base) !important;
+  color: var(--pepito-base) !important;
+}
+
+/* Shared app modal sheet: match dark overlay token */
+html[data-theme='dark'] .modal-overlay {
+  background: var(--pd-overlay);
+}
