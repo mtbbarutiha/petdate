@@ -6,6 +6,7 @@ import {
   GraduationCap,
   HeartHandshake,
   Home,
+  PawPrint,
   Star,
   Stethoscope,
   type LucideIcon,
@@ -49,13 +50,17 @@ const SERVICES: {
   { to: '/chats', title: 'گفتگوی امن', desc: 'چت همبازی و خدمات با همگام‌سازی وب و ربات.', icon: 'flaticon-dog-with-first-aid-kit-bag', fill: 3 },
 ];
 
-type HeroRole = 'playmate' | 'vet' | 'trainer' | 'no_pet';
+type HeroRole = 'playmate' | 'vet' | 'trainer' | 'no_pet' | 'adoption';
 
 type HeroCta =
   | { kind: 'gated'; to: string; label: string }
-  | { kind: 'link'; to: string; label: string };
+  | { kind: 'link'; to: string; label: string }
+  | { kind: 'hash'; href: string; label: string };
 
-/** Marketing hero — fixed role order: همبازی → دامپزشک → مربی → بدون پت */
+/**
+ * Marketing hero — role order first: همبازی → دامپزشک → مربی → بدون پت,
+ * then restored پذیرش پت slide (2.jpg) linking to the on-page adoption block.
+ */
 const HERO_SLIDES: {
   role: HeroRole;
   img: string;
@@ -105,6 +110,16 @@ const HERO_SLIDES: {
     cta: { kind: 'gated', to: '/onboarding/role', label: 'شروع بدون پت' },
     testId: 'hero-no-pet-cta',
     Icon: Home,
+  },
+  {
+    role: 'adoption',
+    img: `${P}/2.jpg`,
+    kicker: 'پذیرش یک پت',
+    title: 'یک دوست پشمالوی جدید پیدا کن',
+    lead: 'پت‌های نیازمند خانه را ببین — پذیرش مسئولانه، بازدید حضوری و همراهی تا استقرار.',
+    cta: { kind: 'hash', href: '#adoption', label: 'پذیرش یک پت' },
+    testId: 'hero-adoption-cta',
+    Icon: PawPrint,
   },
 ];
 
@@ -447,7 +462,7 @@ export function WelcomePage() {
       <section
         className="pepito-hero"
         aria-roledescription="carousel"
-        aria-label="اسلایدر نقش‌ها — همبازی، دامپزشک، مربی، بدون پت"
+        aria-label="اسلایدر نقش‌ها — همبازی، دامپزشک، مربی، بدون پت، پذیرش"
       >
         <div className="pepito-hero-slides">
           {HERO_SLIDES.map((s, i) => (
@@ -478,7 +493,7 @@ export function WelcomePage() {
             </p>
             {/* Stable brand H1 for SEO; slide headline stays visual (styled like former h1). */}
             <h1 className="pd-sr-only">
-              پت‌دیت — همبازی پت، دامپزشک آنلاین، مربی و شروع بدون پت
+              پت‌دیت — همبازی پت، دامپزشک آنلاین، مربی، شروع بدون پت و پذیرش پت
             </h1>
             <p className="pepito-hero-slide-title">{current.title}</p>
             <p className="pepito-hero-lead">{current.lead}</p>
@@ -492,7 +507,7 @@ export function WelcomePage() {
                   <HeroCtaIcon Icon={current.Icon} />
                   {current.cta.label}
                 </GatedLink>
-              ) : (
+              ) : current.cta.kind === 'link' ? (
                 <Link
                   to={current.cta.to}
                   className="pepito-btn pepito-hero-cta-btn--glass"
@@ -501,6 +516,15 @@ export function WelcomePage() {
                   <HeroCtaIcon Icon={current.Icon} />
                   {current.cta.label}
                 </Link>
+              ) : (
+                <a
+                  href={current.cta.href}
+                  className="pepito-btn pepito-hero-cta-btn--glass"
+                  data-testid={current.testId}
+                >
+                  <HeroCtaIcon Icon={current.Icon} />
+                  {current.cta.label}
+                </a>
               )}
             </div>
           </div>
@@ -525,7 +549,7 @@ export function WelcomePage() {
             <ChevronLeft size={16} strokeWidth={1.75} aria-hidden />
           </button>
         </div>
-        <div className="pepito-hero-dots" role="tablist" aria-label="اسلایدهای نقش">
+        <div className="pepito-hero-dots" role="tablist" aria-label="اسلایدهای نقش و پذیرش">
           {HERO_SLIDES.map((s, i) => (
             <button
               key={s.role}
@@ -691,7 +715,7 @@ export function WelcomePage() {
         </div>
       </section>
 
-      <section className="pepito-section pepito-adoption" id="pets">
+      <section className="pepito-section pepito-adoption" id="adoption">
         <div className="pepito-section-head pepito-section-head--center">
           <p className="pepito-eyebrow">
             <span className="pepito-eyebrow-icon" aria-hidden>
