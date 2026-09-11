@@ -358,7 +358,7 @@ function ConversationListPane({
                           className={`tg-chat-list-kind${
                             c.kind === 'vet'
                               ? ' is-vet'
-                              : c.kind === 'trainer'
+                              : c.serviceKind === 'trainer'
                                 ? ' is-trainer'
                                 : ''
                           }`}
