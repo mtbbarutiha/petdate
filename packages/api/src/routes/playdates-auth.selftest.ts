@@ -19,4 +19,8 @@ assert.match(
   'web list ignores spoofed userId'
 );
 
+assert.match(src, /chargePlaydateFee|PLAYDATE_REQUEST_COST/, 'playmate fee charge wired');
+assert.match(src, /post\('\/find'/, 'find endpoint exists');
+assert.match(src, /insufficientPlaydateFeePayload|insufficient_coins/, 'insufficient coins path');
+
 console.log('playdates-auth.selftest: ok');

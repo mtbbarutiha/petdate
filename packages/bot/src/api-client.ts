@@ -522,8 +522,33 @@ export async function createPlaydate(data: {
   message?: string;
   /** Skip API resend-confirm gate after a prior expired request. */
   confirmResend?: boolean;
-}): Promise<PlaydateRequest & { telegramNotified?: boolean }> {
-  return request<PlaydateRequest & { telegramNotified?: boolean }>('/api/playdate-requests', {
+}): Promise<PlaydateRequest & { telegramNotified?: boolean; cost?: number; coins?: number }> {
+  return request<PlaydateRequest & { telegramNotified?: boolean; cost?: number; coins?: number }>(
+    '/api/playdate-requests',
+    {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }
+  );
+}
+
+/** پیدا کردن همبازی — یک‌بار ۲ سکه، ارسال خودکار به هم‌گروه‌ها */
+export async function findPlaymates(data: {
+  fromPetId: number;
+  fromUserId: number;
+}): Promise<{
+  ok: boolean;
+  sent: number;
+  skipped: number;
+  cost: number;
+  coins: number;
+  speciesLabel: string;
+  sourceName: string;
+  sourcePetId: number;
+  sampleLine?: string;
+  message?: string;
+}> {
+  return request('/api/playdate-requests/find', {
     method: 'POST',
     body: JSON.stringify(data),
   });

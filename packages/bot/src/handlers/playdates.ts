@@ -366,7 +366,38 @@ async function sendPlaydateNow(
     fromUserId,
     // Local bot UI already confirmed when needed.
     confirmResend: true,
+  }).catch(async (err) => {
+    const raw = err instanceof Error ? err.message : String(err);
+    const jsonStart = raw.indexOf('{');
+    if (jsonStart >= 0) {
+      try {
+        const json = JSON.parse(raw.slice(jsonStart)) as {
+          error?: string;
+          reason?: string;
+          balance?: number;
+          cost?: number;
+        };
+        if (json.reason === 'insufficient_coins') {
+          const msg =
+            json.error ||
+            `برای درخواست همبازی حداقل ${json.cost ?? 2} سکه لازم داری. موجودی: ${json.balance ?? 0}`;
+          if (ctx.callbackQuery) {
+            try {
+              await ctx.answerCallbackQuery({ text: 'سکه کافی نیست', show_alert: true });
+            } catch {
+              /* ignore */
+            }
+          }
+          await ctx.reply(msg);
+          return null;
+        }
+      } catch {
+        /* fall through */
+      }
+    }
+    throw err;
   });
+  if (!req) return;
   await upsertSession(String(ctx.from!.id), {
     step: 'ready',
     selectedPetId: undefined,

@@ -332,10 +332,36 @@ export async function createPlaydateRequest(data: {
   scheduledAt?: string;
   location?: string;
   confirmResend?: boolean;
-}): Promise<PlaydateRequest> {
-  return request<PlaydateRequest>('/api/playdate-requests', {
+}): Promise<PlaydateRequest & { cost?: number; coins?: number; alreadyPending?: boolean }> {
+  return request<PlaydateRequest & { cost?: number; coins?: number; alreadyPending?: boolean }>(
+    '/api/playdate-requests',
+    {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }
+  );
+}
+
+/** پیدا کردن همبازی — یک‌بار ۲ سکه از درخواست‌کننده (هم‌تراز ربات) */
+export async function findPlaymatesRequest(data: {
+  fromPetId: number;
+  fromUserId: number;
+}): Promise<{
+  ok: boolean;
+  sent: number;
+  skipped: number;
+  cost: number;
+  coins: number;
+  speciesLabel: string;
+  sourceName: string;
+  sourcePetId: number;
+  sampleLine?: string;
+  message?: string;
+}> {
+  return request('/api/playdate-requests/find', {
     method: 'POST',
     body: JSON.stringify(data),
+    headers: storedAuthHeaders(),
   });
 }
 
