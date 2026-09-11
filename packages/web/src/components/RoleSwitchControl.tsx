@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Check, Plus, RefreshCw } from 'lucide-react';
+import { Check, ChevronDown, Plus, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import type { UserRole } from '@petdate/shared';
 import {
@@ -36,7 +36,7 @@ export interface RoleSwitchControlProps {
 /**
  * Post-login role switcher (bot parity: «نقش‌های من»).
  * Switch active/primary role among owned roles, or add more without full re-onboarding.
- * Profile variant is always-inline (mobile + desktop) — no floating dropdown.
+ * Profile + rail variants stay inline (no floating overlay that overflows chrome).
  */
 export function RoleSwitchControl({
   compact = false,
@@ -56,9 +56,11 @@ export function RoleSwitchControl({
   const roles = normalizeRoles(user?.roles, user?.role);
   const active = primaryRole(roles, user?.role);
   const isProfile = variant === 'profile';
+  const isRail = variant === 'rail';
+  const staysOpen = isProfile;
 
   useEffect(() => {
-    if (isProfile || mode === 'closed') return;
+    if (staysOpen || mode === 'closed') return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setMode('closed');
     };
@@ -77,7 +79,7 @@ export function RoleSwitchControl({
       document.removeEventListener('mousedown', onPointer);
       document.removeEventListener('touchstart', onPointer);
     };
-  }, [mode, isProfile]);
+  }, [mode, staysOpen]);
 
   useEffect(() => {
     if (!toast) return;
@@ -104,7 +106,7 @@ export function RoleSwitchControl({
   };
 
   const afterRoleChange = (nextActive: UserRole | undefined, message: string) => {
-    if (!isProfile) setMode('closed');
+    if (!staysOpen) setMode('closed');
     else setMode('switch');
     setToast(message);
     goToRoleDashboard(nextActive);
@@ -114,7 +116,7 @@ export function RoleSwitchControl({
     if (busy) return;
     if (active === role) {
       setToast(`نقش فعال: ${USER_ROLE_LABELS[role]}`);
-      if (!isProfile) setMode('closed');
+      if (!staysOpen) setMode('closed');
       goToRoleDashboard(role);
       return;
     }
@@ -169,6 +171,70 @@ export function RoleSwitchControl({
       )
     : null;
 
+  const renderAddBody = (prefix: 'board' | 'switch' | 'rail') => {
+    const leadClass =
+      prefix === 'board'
+        ? 'pepito-role-board-add-lead'
+        : prefix === 'rail'
+          ? 'pepito-role-rail-add-lead'
+          : 'pepito-role-switch-add-lead';
+    const gridClass =
+      prefix === 'board'
+        ? 'pepito-role-board-add-grid'
+        : prefix === 'rail'
+          ? 'pepito-role-rail-add-grid'
+          : 'pepito-role-switch-add-grid';
+    const itemClass =
+      prefix === 'board'
+        ? 'pepito-role-board-add-item'
+        : prefix === 'rail'
+          ? 'pepito-role-rail-add-item'
+          : 'pepito-role-switch-add-card';
+    const labelClass =
+      prefix === 'board'
+        ? 'pepito-role-board-add-label'
+        : prefix === 'rail'
+          ? 'pepito-role-rail-add-label'
+          : 'pepito-role-switch-add-label';
+    const descClass =
+      prefix === 'board'
+        ? 'pepito-role-board-add-desc'
+        : prefix === 'rail'
+          ? 'pepito-role-rail-add-desc'
+          : 'pepito-role-switch-add-desc';
+
+    return (
+      <>
+        <p className={leadClass}>
+          نقش‌های فعلی را نگه دار یا نقش جدید اضافه کن، بعد ثبت کن.
+        </p>
+        <div className={gridClass}>
+          {USER_ROLES.map((role) => {
+            const on = draft.includes(role);
+            return (
+              <button
+                key={role}
+                type="button"
+                className={`${itemClass}${on ? ' is-on' : ''}`}
+                aria-pressed={on}
+                disabled={busy}
+                onClick={() => toggleDraft(role)}
+              >
+                {prefix === 'board' ? (
+                  <span className="pepito-role-board-add-check" aria-hidden>
+                    {on ? <Check size={14} strokeWidth={2.5} /> : null}
+                  </span>
+                ) : null}
+                <span className={labelClass}>{USER_ROLE_LABELS[role]}</span>
+                <span className={descClass}>{ROLE_DESCRIPTIONS[role]}</span>
+              </button>
+            );
+          })}
+        </div>
+      </>
+    );
+  };
+
   /* ── Profile: always-visible inline role board ── */
   if (isProfile) {
     return (
@@ -187,30 +253,7 @@ export function RoleSwitchControl({
 
         {mode === 'add' ? (
           <div className="pepito-role-board-add" aria-label={ROLE_ADD_LABEL}>
-            <p className="pepito-role-board-add-lead">
-              نقش‌های فعلی را نگه دار یا نقش جدید اضافه کن، بعد ثبت کن.
-            </p>
-            <div className="pepito-role-board-add-grid">
-              {USER_ROLES.map((role) => {
-                const on = draft.includes(role);
-                return (
-                  <button
-                    key={role}
-                    type="button"
-                    className={`pepito-role-board-add-item${on ? ' is-on' : ''}`}
-                    aria-pressed={on}
-                    disabled={busy}
-                    onClick={() => toggleDraft(role)}
-                  >
-                    <span className="pepito-role-board-add-check" aria-hidden>
-                      {on ? <Check size={14} strokeWidth={2.5} /> : null}
-                    </span>
-                    <span className="pepito-role-board-add-label">{USER_ROLE_LABELS[role]}</span>
-                    <span className="pepito-role-board-add-desc">{ROLE_DESCRIPTIONS[role]}</span>
-                  </button>
-                );
-              })}
-            </div>
+            {renderAddBody('board')}
             <div className="pepito-role-board-footer">
               <button
                 type="button"
@@ -287,11 +330,137 @@ export function RoleSwitchControl({
     );
   }
 
-  /* ── Nav / rail: compact trigger + dropdown panel ── */
-  const triggerClass =
-    variant === 'rail'
-      ? `pepito-app-rail-link pepito-role-switch-trigger--rail${className ? ` ${className}` : ''}`
-      : `pepito-nav-login pepito-nav-login--btn pepito-role-switch-trigger${className ? ` ${className}` : ''}`;
+  /* ── Rail: compact inline card (fits 220px rail — no absolute overflow panel) ── */
+  if (isRail) {
+    const open = mode !== 'closed';
+    return (
+      <div
+        className={`pepito-role-rail${open ? ' is-open' : ''}${className ? ` ${className}` : ''}`}
+        ref={rootRef}
+      >
+        <button
+          type="button"
+          className="pepito-role-rail-trigger"
+          aria-haspopup="dialog"
+          aria-expanded={open}
+          aria-controls={panelId}
+          onClick={openSwitch}
+          title={MY_ROLES_LABEL}
+        >
+          <span className="pepito-role-rail-trigger-text">
+            <span className="pepito-role-rail-trigger-label">
+              {active ? USER_ROLE_LABELS[active] : MY_ROLES_LABEL}
+            </span>
+            <span className="pepito-role-rail-trigger-hint">تغییر نقش</span>
+          </span>
+          <ChevronDown
+            className="pepito-role-rail-chevron"
+            size={16}
+            strokeWidth={2.25}
+            aria-hidden
+          />
+        </button>
+
+        {open ? (
+          <div
+            id={panelId}
+            className={`pepito-role-rail-card${mode === 'add' ? ' is-add' : ''}`}
+            role="dialog"
+            aria-label={MY_ROLES_LABEL}
+          >
+            <div className="pepito-role-rail-head">
+              <p className="pepito-role-rail-title">{MY_ROLES_LABEL}</p>
+              {active ? (
+                <p className="pepito-role-rail-active">
+                  نقش فعال: <strong>{USER_ROLE_LABELS[active]}</strong>
+                </p>
+              ) : (
+                <p className="pepito-role-rail-active">هنوز نقشی نداری</p>
+              )}
+            </div>
+
+            {mode === 'switch' ? (
+              <>
+                <ul className="pepito-role-rail-list">
+                  {roles.length === 0 ? (
+                    <li className="pepito-role-rail-empty">نقشی ثبت نشده — اول نقش اضافه کن.</li>
+                  ) : (
+                    roles.map((role) => {
+                      const isActive = role === active;
+                      return (
+                        <li key={role}>
+                          <button
+                            type="button"
+                            className={`pepito-role-rail-item${isActive ? ' is-active' : ''}`}
+                            disabled={busy}
+                            onClick={() => void handleSwitch(role)}
+                            aria-current={isActive ? 'true' : undefined}
+                          >
+                            <span className="pepito-role-rail-item-label">
+                              {USER_ROLE_LABELS[role]}
+                            </span>
+                            {isActive ? (
+                              <span className="pepito-role-rail-badge">
+                                <Check size={12} strokeWidth={2.5} aria-hidden />
+                                فعال
+                              </span>
+                            ) : (
+                              <span className="pepito-role-rail-pick">انتخاب</span>
+                            )}
+                          </button>
+                        </li>
+                      );
+                    })
+                  )}
+                </ul>
+                <button
+                  type="button"
+                  className="pepito-role-rail-add"
+                  disabled={busy}
+                  onClick={openAdd}
+                >
+                  <Plus size={14} strokeWidth={2.5} aria-hidden />
+                  {ROLE_ADD_LABEL}
+                </button>
+              </>
+            ) : (
+              <>
+                {renderAddBody('rail')}
+                <div className="pepito-role-rail-footer">
+                  <button
+                    type="button"
+                    className="pepito-role-rail-back"
+                    disabled={busy}
+                    onClick={() => {
+                      setError(null);
+                      setMode('switch');
+                    }}
+                  >
+                    بازگشت
+                  </button>
+                  <button
+                    type="button"
+                    className="pepito-btn button-1 pepito-role-rail-confirm"
+                    disabled={busy || draft.length === 0}
+                    onClick={() => void handleSaveRoles()}
+                  >
+                    {busy ? 'در حال ثبت…' : ROLE_CONFIRM_LABEL}
+                  </button>
+                </div>
+              </>
+            )}
+
+            {error ? <p className="pepito-role-switch-error">{error}</p> : null}
+          </div>
+        ) : null}
+
+        {toastNode}
+      </div>
+    );
+  }
+
+  /* ── Nav: compact trigger + dropdown panel ── */
+  const triggerClass = `pepito-nav-login pepito-nav-login--btn pepito-role-switch-trigger${className ? ` ${className}` : ''}`;
 
   const triggerLabel = compact
     ? 'نقش'
@@ -299,10 +468,8 @@ export function RoleSwitchControl({
       ? USER_ROLE_LABELS[active]
       : MY_ROLES_LABEL;
 
-  const rootMod = variant === 'rail' ? ' pepito-role-switch--rail' : '';
-
   return (
-    <div className={`pepito-role-switch${rootMod}`} ref={rootRef}>
+    <div className="pepito-role-switch" ref={rootRef}>
       <button
         type="button"
         className={triggerClass}
@@ -352,8 +519,15 @@ export function RoleSwitchControl({
                           disabled={busy}
                           onClick={() => void handleSwitch(role)}
                         >
-                          <span>{USER_ROLE_LABELS[role]}</span>
-                          {isActive ? <span className="pepito-role-switch-badge">فعال</span> : null}
+                          <span className="pepito-role-switch-item-label">
+                            {USER_ROLE_LABELS[role]}
+                          </span>
+                          {isActive ? (
+                            <span className="pepito-role-switch-badge">
+                              <Check size={12} strokeWidth={2.5} aria-hidden />
+                              فعال
+                            </span>
+                          ) : null}
                         </button>
                       </li>
                     );
@@ -373,27 +547,7 @@ export function RoleSwitchControl({
             </>
           ) : (
             <>
-              <p className="pepito-role-switch-add-lead">
-                نقش‌های فعلی را نگه دار یا نقش جدید اضافه کن، بعد ثبت کن.
-              </p>
-              <div className="pepito-role-switch-add-grid">
-                {USER_ROLES.map((role) => {
-                  const on = draft.includes(role);
-                  return (
-                    <button
-                      key={role}
-                      type="button"
-                      className={`pepito-role-switch-add-card${on ? ' is-on' : ''}`}
-                      aria-pressed={on}
-                      disabled={busy}
-                      onClick={() => toggleDraft(role)}
-                    >
-                      <span className="pepito-role-switch-add-label">{USER_ROLE_LABELS[role]}</span>
-                      <span className="pepito-role-switch-add-desc">{ROLE_DESCRIPTIONS[role]}</span>
-                    </button>
-                  );
-                })}
-              </div>
+              {renderAddBody('switch')}
               <div className="pepito-role-switch-footer pepito-role-switch-footer--row">
                 <button
                   type="button"

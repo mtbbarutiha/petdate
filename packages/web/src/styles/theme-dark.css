@@ -1666,6 +1666,95 @@ html[data-theme='dark'] .pepito-nav-profile-role-slot .pepito-role-switch-trigge
 html[data-theme='dark'] .pepito-nav-profile-role-slot .pepito-role-switch-trigger-label {
   color: var(--pepito-dark);
 }
+
+/* Rail sidebar «نقش‌های من» card */
+html[data-theme='dark'] .pepito-role-rail {
+  border-top-color: var(--pd-border);
+}
+html[data-theme='dark'] .pepito-role-rail-trigger {
+  background: var(--pd-surface-2);
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-role-rail.is-open .pepito-role-rail-trigger,
+html[data-theme='dark'] .pepito-role-rail-trigger:hover {
+  background: color-mix(in srgb, var(--pepito-base) 14%, var(--pd-surface-2));
+  color: var(--pepito-base);
+}
+html[data-theme='dark'] .pepito-role-rail-trigger-hint {
+  color: var(--pepito-muted);
+}
+html[data-theme='dark'] .pepito-role-rail.is-open .pepito-role-rail-trigger-hint,
+html[data-theme='dark'] .pepito-role-rail-trigger:hover .pepito-role-rail-trigger-hint {
+  color: var(--pepito-base);
+}
+html[data-theme='dark'] .pepito-role-rail-chevron {
+  color: var(--pepito-muted);
+}
+html[data-theme='dark'] .pepito-role-rail.is-open .pepito-role-rail-chevron {
+  color: var(--pepito-base);
+}
+html[data-theme='dark'] .pepito-role-rail-card {
+  background: var(--pd-surface-2);
+  border-color: var(--pd-border);
+  box-shadow: var(--pd-shadow);
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-role-rail-title {
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-role-rail-active,
+html[data-theme='dark'] .pepito-role-rail-empty,
+html[data-theme='dark'] .pepito-role-rail-add-lead,
+html[data-theme='dark'] .pepito-role-rail-add-desc {
+  color: var(--pepito-muted);
+}
+html[data-theme='dark'] .pepito-role-rail-active strong,
+html[data-theme='dark'] .pepito-role-rail-pick,
+html[data-theme='dark'] .pepito-role-rail-add,
+html[data-theme='dark'] .pepito-role-rail-back {
+  color: var(--pepito-base);
+}
+html[data-theme='dark'] .pepito-role-rail-item {
+  background: color-mix(in srgb, var(--pepito-white) 70%, var(--pd-surface-2));
+  border-color: var(--pd-border);
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-role-rail-item:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--pepito-base) 12%, var(--pd-surface-2));
+  border-color: color-mix(in srgb, var(--pepito-base) 35%, var(--pd-border));
+}
+html[data-theme='dark'] .pepito-role-rail-item.is-active {
+  background: linear-gradient(135deg, #5c4d91, #4a3d78);
+  border-color: transparent;
+  color: #f4f3f8;
+}
+html[data-theme='dark'] .pepito-role-rail-badge {
+  background: rgba(255, 255, 255, 0.22);
+  color: #f4f3f8;
+}
+html[data-theme='dark'] .pepito-role-rail-add {
+  border-color: color-mix(in srgb, var(--pepito-base) 45%, var(--pd-border));
+  background: transparent;
+}
+html[data-theme='dark'] .pepito-role-rail-add:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--pepito-base) 12%, var(--pd-surface-2));
+}
+html[data-theme='dark'] .pepito-role-rail-add-item {
+  background: color-mix(in srgb, var(--pepito-white) 70%, var(--pd-surface-2));
+  border-color: var(--pd-border);
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-role-rail-add-item.is-on {
+  background: linear-gradient(135deg, #5c4d91, #4a3d78);
+  border-color: transparent;
+  color: #f4f3f8;
+}
+html[data-theme='dark'] .pepito-app-rail-nav {
+  scrollbar-color: rgba(168, 154, 212, 0.35) transparent;
+}
+html[data-theme='dark'] .pepito-app-rail-nav::-webkit-scrollbar-thumb {
+  background: rgba(168, 154, 212, 0.35);
+}
 html[data-theme='dark'] .pepito-role-board-add-item {
   background: var(--pd-surface-2);
   border-color: var(--pd-border);
