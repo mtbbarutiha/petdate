@@ -11964,10 +11964,10 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
 
 
 
-/* Empty-pane / panel primary find CTA */
+/* Empty-pane / panel primary find CTA — compact but still tappable */
 .tg-thread-empty__cta-wrap .pepito-btn,
 .tg-chat-list-empty .pepito-btn.button-1 {
-  min-height: 48px !important;
+  min-height: 40px !important;
   width: 100%;
   justify-content: center;
 }
@@ -12044,10 +12044,15 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   background: transparent;
 }
 .find-playmate-one__btn {
-  gap: 0.5rem;
-  min-height: 52px;
-  font-size: 1.05rem !important;
-  padding: 0.85rem 1.5rem !important;
+  gap: 0.4rem;
+  min-height: 40px;
+  font-size: 0.9rem !important;
+  padding: 0.55rem 1.1rem !important;
+}
+.find-playmate-one__btn .find-playmate-paw svg,
+.find-playmate-one__btn .pepito-btn-icon svg {
+  width: 16px;
+  height: 16px;
 }
 
 @media (max-width: 859px) {
@@ -12114,12 +12119,12 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   .tg-chat-list-hub-cta {
     display: none !important;
   }
-  /* Empty inbox: keep find action prominent with lavender pill + paw */
+  /* Empty inbox: compact find CTA, full-width lavender pill + paw */
   .tg-chat-list-empty .find-playmate-panel {
     background: transparent !important;
     border: 0 !important;
     box-shadow: none !important;
-    padding: 0.85rem 0.65rem !important;
+    padding: 0.55rem 0.5rem !important;
   }
   .tg-chat-list-empty .find-playmate-panel__head {
     display: none !important;
@@ -12131,10 +12136,10 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
     border: 0 !important;
     box-shadow: none !important;
     color: #fff !important;
-    font-size: 1rem !important;
+    font-size: 0.88rem !important;
     font-weight: 800 !important;
-    padding: 0.85rem 1.25rem !important;
-    min-height: 52px !important;
+    padding: 0.5rem 1rem !important;
+    min-height: 40px !important;
     border-radius: 999px !important;
   }
   .pepito-pet-profile-hero {
