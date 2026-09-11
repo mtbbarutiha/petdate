@@ -30,6 +30,9 @@ npx tsx "$ROOT/packages/web/src/lib/share.selftest.ts"
 echo "==> selftest: web admin Jalali date helpers"
 npx tsx "$ROOT/packages/web/src/admin/JalaliDateSelect.selftest.ts"
 
+echo "==> selftest: web admin analytics path labels"
+npx tsx "$ROOT/packages/web/src/admin/analyticsPathLabel.selftest.ts"
+
 echo "==> selftest: web admin monitoring tone mapping"
 npx tsx "$ROOT/packages/web/src/admin/AdminMonitoringPage.selftest.ts"
 

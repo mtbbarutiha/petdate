@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
-  Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
+  Bar, BarChart, CartesianGrid, Cell, LabelList, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
 import {
   Activity, ExternalLink, Globe2, MonitorSmartphone, RefreshCw, Smartphone, Tablet, Tags,
@@ -9,8 +9,18 @@ import {
 import { adminFetch, formatNumFa } from '../api';
 import { adminCan } from '../auth';
 import { formatAdminFaDateTime } from '../JalaliDateSelect';
+import { formatAnalyticsPathLabel, mapPathBars } from '../analyticsPathLabel';
 import {
-  ADMIN_RTL_HBARS_CLASS, adminRtlHBarsCategoryAxis, adminRtlHBarsMargin, adminRtlHBarsRadius, adminRtlHBarsValueAxis,
+  ADMIN_RTL_HBARS_CLASS,
+  AdminRtlBarCountLabel,
+  AdminRtlPathTick,
+  adminRtlHBarsHeight,
+  adminRtlHBarsMarginWithCounts,
+  adminRtlHBarsRadius,
+  adminRtlHBarsValueAxis,
+  adminRtlPathBarsCategoryAxis,
+  adminRtlHBarsCategoryAxis,
+  adminRtlHBarsMargin,
 } from '../rechartsRtlHBars';
 import {
   MOTION_PALETTE,
@@ -281,7 +291,12 @@ export function AdminSiteReportsPage() {
     () => (data?.sessionsDaily || []).map((r) => ({ ...r, labelShort: r.label.slice(5) })),
     [data],
   );
-  const pageBars = data?.popularPages || [];
+  const pageBars = useMemo(() => mapPathBars(data?.popularPages || []), [data]);
+  const pageBarFullByShort = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const r of pageBars) m[r.label] = r.fullLabel;
+    return m;
+  }, [pageBars]);
   const refBars = data?.referrers || [];
   const eventBars = data?.events || tm?.metrics.eventsByType || [];
   const utmPerf = data?.utmPerformance || [];
@@ -499,13 +514,22 @@ export function AdminSiteReportsPage() {
             </article>
             <article className="admin-card crm-report-chart-box">
               <div className="admin-card-head"><h2>صفحات پربازدید</h2></div>
-              <div className={ADMIN_RTL_HBARS_CLASS} style={{ width: '100%', height: Math.max(180, Math.max(pageBars.length, 1) * 32), direction: 'ltr' }}>
+              <div
+                className={ADMIN_RTL_HBARS_CLASS}
+                style={{ width: '100%', height: adminRtlHBarsHeight(pageBars.length, 38), direction: 'ltr' }}
+              >
                 <ResponsiveContainer>
-                  <BarChart data={pageBars} layout="vertical" margin={adminRtlHBarsMargin}>
+                  <BarChart data={pageBars} layout="vertical" margin={adminRtlHBarsMarginWithCounts}>
                     <XAxis {...adminRtlHBarsValueAxis} />
-                    <YAxis dataKey="label" {...adminRtlHBarsCategoryAxis} />
+                    <YAxis
+                      dataKey="label"
+                      {...adminRtlPathBarsCategoryAxis}
+                      tick={<AdminRtlPathTick fullLabelByShort={pageBarFullByShort} />}
+                    />
                     <Tooltip content={<Tip />} />
-                    <Bar dataKey="value" fill={MOTION_PALETTE.mint} radius={adminRtlHBarsRadius} {...motion} />
+                    <Bar dataKey="value" fill={MOTION_PALETTE.mint} radius={adminRtlHBarsRadius} maxBarSize={22} {...motion}>
+                      <LabelList dataKey="value" content={<AdminRtlBarCountLabel />} />
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -574,8 +598,8 @@ export function AdminSiteReportsPage() {
                       <td className="admin-cell-nowrap">{s.startedAt ? formatAdminFaDateTime(s.startedAt) : '—'}</td>
                       <td className="admin-cell-nowrap">{s.lastSeenAt ? formatAdminFaDateTime(s.lastSeenAt) : '—'}</td>
                       <td>{formatNumFa(s.pageviews)}</td>
-                      <td dir="ltr">{s.landingPath || '/'}</td>
-                      <td dir="ltr">{s.exitPath || '/'}</td>
+                      <td dir="ltr">{formatAnalyticsPathLabel(s.landingPath || '/')}</td>
+                      <td dir="ltr">{formatAnalyticsPathLabel(s.exitPath || '/')}</td>
                       <td dir="ltr">
                         {s.referrerHost || '(direct)'}
                         {s.utmCampaign ? <span className="admin-muted"> · {s.utmCampaign}</span> : null}
