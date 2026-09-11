@@ -330,7 +330,7 @@ export function PublicPetPage() {
                       <Pencil size={16} aria-hidden />
                       ویرایش پروفایل
                     </Link>
-                    <Link to={`/pets/${pet.id}?tab=medical`} className="pepito-btn button-1">
+                    <Link to={`/pets/${pet.id}#pet-medical`} className="pepito-btn button-1">
                       پرونده پزشکی
                     </Link>
                   </div>

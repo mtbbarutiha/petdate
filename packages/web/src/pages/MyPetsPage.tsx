@@ -138,7 +138,7 @@ export function MyPetsPage() {
                     ویرایش
                   </Link>
                   <Link
-                    to={`/pets/${pet.id}?tab=medical`}
+                    to={`/pets/${pet.id}#pet-medical`}
                     className="pepito-my-pets-action pepito-my-pets-action--med"
                     aria-label={`پرونده پزشکی ${pet.name}`}
                   >

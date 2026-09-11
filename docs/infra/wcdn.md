@@ -55,7 +55,9 @@ Until that toggle is on, treat www HTML 4xx as a **WCDN custom-error-page limit*
 | `/pets/cat-01.jpg` | 200 JPEG | 200 JPEG (cached 7d) |
 | `/pets/35` / `/pets/35?tab=medical` / `/pets/35/edit` | nginx **404** (WCDN «Upstream Error - Not Found» on www) | SPA `index.html` (no-cache) |
 
-Mobile owners opening «پرونده پزشکی» from My Pets (`/pets/:id?tab=medical`) hit a full document navigation more often than desktop — that path must serve the SPA shell. Public share URLs stay `/pet/:slug` (singular).
+Mobile owners opening «پرونده پزشکی» from My Pets use `/pets/:id#pet-medical` (hash is **not** sent to the CDN, so a poisoned `?tab=medical` WCDN 404 cannot stick). Legacy `?tab=medical` still works once the edge entry expires or is purged. Public share URLs stay `/pet/:slug` (singular).
+
+**After origin fix:** if www still serves «Upstream Error - Not Found» for an old URL, purge that path in the ParsPack panel (or open `/pets/:id` / `#pet-medical` instead). New responses under `/pets/:id` are `Cache-Control: no-cache`.
 
 Docs: [تنظیمات دیگر CDN پارس‌پک](https://docs.parspack.com/cdn/other-settings/).
 
