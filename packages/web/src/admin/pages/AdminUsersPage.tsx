@@ -229,6 +229,7 @@ export function AdminUsersPage() {
       setEditForm(null);
       setEditError(null);
       await load();
+      await loadGeo();
     } catch (err) {
       setEditError(err instanceof Error ? err.message : 'خطا در ذخیره');
     } finally {
