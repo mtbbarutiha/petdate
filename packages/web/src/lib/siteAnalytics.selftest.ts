@@ -9,12 +9,14 @@ import {
   classifyTrackedLink,
   DEFAULT_GTM_ID,
   GTM_DASHBOARD_URL,
+  inferPageType,
   isCtaPath,
   isPetdateHost,
   isValidGtmContainerId,
   isValidGa4MeasurementId,
   resolveGa4MeasurementId,
   setRuntimeGa4MeasurementId,
+  pushDataLayer,
 } from './siteAnalytics.ts';
 
 assert.equal(DEFAULT_GTM_ID, 'GTM-KQPJT9Q4');
@@ -40,15 +42,25 @@ assert.equal(isCtaPath('/shop/cart'), true);
 assert.equal(isCtaPath('/shop'), false);
 assert.equal(isCtaPath('/faq'), false);
 
+assert.equal(inferPageType('/'), 'home');
+assert.equal(inferPageType('/shop/product/abc'), 'product');
+assert.equal(inferPageType('/shop/cart'), 'checkout');
+assert.equal(inferPageType('/auth/login'), 'auth');
+assert.equal(inferPageType('/admin/users'), 'admin');
+
 const page = buildGtmPageViewPayload({
   path: '/shop?utm_source=tg',
   title: 'فروشگاه',
   locationHref: 'https://petdate.ir/shop?utm_source=tg',
+  user: { user_id: 'u_1', user_status: 'logged_in' },
 });
 assert.equal(page.event, 'page_view');
 assert.equal(page.page_path, '/shop');
 assert.equal(page.page_title, 'فروشگاه');
 assert.equal(page.page_location, 'https://petdate.ir/shop?utm_source=tg');
+assert.equal(page.page_type, 'shop');
+assert.equal(page.user_id, 'u_1');
+assert.equal(page.user_status, 'logged_in');
 
 const origin = 'https://petdate.ir';
 
@@ -90,10 +102,18 @@ const click = buildGtmLinkClickPayload({
   domain: 'example.com',
   outbound: true,
   text: '  بیشتر بخوانید  ',
+  clickId: 'cta-1',
 });
 assert.equal(click.event, 'link_click');
 assert.equal(click.link_kind, 'outbound');
 assert.equal(click.link_text, 'بیشتر بخوانید');
+assert.equal(click.click_text, 'بیشتر بخوانید');
+assert.equal(click.click_url, 'https://example.com/x');
+assert.equal(click.click_id, 'cta-1');
 assert.equal(click.outbound, true);
+
+// pushDataLayer no-ops off-window / without throwing
+pushDataLayer('login', { method: 'otp' });
+pushDataLayer({ event: 'sign_up', method: 'otp' });
 
 console.log('siteAnalytics.selftest: OK');
