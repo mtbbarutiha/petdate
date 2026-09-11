@@ -61,3 +61,18 @@ export {
   WidgetEmpty,
 } from './ChartWidgets';
 export { useWidgetLayout, useWidgetUserKey } from './useWidgetLayout';
+
+// Re-export motion primitives so all admin panels share one kit
+export {
+  AdminHProgress,
+  AdminMotionGauge,
+  AdminProgressRing,
+  AdminSparkline,
+  MOTION_DUR_MS,
+  MOTION_PALETTE,
+  MotionAreaGradientDefs,
+  MotionBarGradientDefs,
+  MotionChartTooltip,
+  usePrefersReducedMotion,
+  useRechartsMotion,
+} from '../motionCharts';

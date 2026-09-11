@@ -5505,3 +5505,205 @@ body:has(.admin-app) {
   overflow: visible;
   padding-inline-end: 2px;
 }
+
+/* ── Motion chart kit (shared SVG + Recharts polish) ── */
+@keyframes admin-motion-line-draw {
+  to { stroke-dashoffset: 0; }
+}
+@keyframes admin-motion-area-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes admin-motion-bar-grow {
+  from { transform: scaleY(0); }
+  to { transform: scaleY(1); }
+}
+@keyframes admin-motion-funnel-in {
+  from { opacity: 0; transform: scaleX(0.72); }
+  to { opacity: 0.92; transform: scaleX(1); }
+}
+@keyframes admin-motion-dot-pop {
+  from { opacity: 0; r: 0; }
+  to { opacity: 1; }
+}
+@keyframes admin-motion-donut-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes admin-motion-ring-draw {
+  from { stroke-dasharray: 0 var(--ring-circ, 220); }
+  to { stroke-dasharray: var(--ring-target, 100) calc(var(--ring-circ, 220) - var(--ring-target, 100)); }
+}
+@keyframes admin-motion-hprog {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+@keyframes admin-motion-gauge-pulse {
+  0%, 100% { opacity: 0.85; }
+  50% { opacity: 1; }
+}
+@keyframes admin-motion-gauge-spin {
+  from { transform: rotate(0deg); transform-origin: 80px 80px; }
+  to { transform: rotate(360deg); transform-origin: 80px 80px; }
+}
+@keyframes admin-motion-callout-pop {
+  from { opacity: 0; transform: translateY(4px) scale(0.94); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.admin-app .admin-motion-area-fade {
+  animation: admin-motion-area-fade 0.8s ease-out both;
+}
+.admin-app .admin-motion-bar-grow {
+  animation: admin-motion-bar-grow 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.admin-app .admin-motion-funnel-row {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: admin-motion-funnel-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.admin-app .admin-motion-dot-pop {
+  animation: admin-motion-dot-pop 0.35s ease-out both;
+}
+.admin-app .admin-motion-donut-seg {
+  animation: admin-motion-donut-in 0.55s ease-out both;
+}
+.admin-app .admin-motion-ring-arc {
+  animation: admin-motion-ring-draw 1s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.admin-app .admin-motion-gauge-pulse {
+  animation: admin-motion-gauge-pulse 2.8s ease-in-out infinite;
+}
+.admin-app .admin-motion-gauge-spin {
+  animation: admin-motion-gauge-spin 18s linear infinite;
+}
+
+.admin-app .admin-motion-svg-callout-bg {
+  fill: #fff;
+  stroke: #e2e8f0;
+  stroke-width: 1;
+  filter: drop-shadow(0 4px 10px rgba(28, 25, 45, 0.12));
+}
+.admin-app .admin-motion-svg-callout-text {
+  font-size: 11px;
+  font-weight: 700;
+  fill: var(--admin-ink);
+}
+.admin-app .admin-motion-svg-callout {
+  animation: admin-motion-callout-pop 0.28s ease-out both;
+}
+
+.admin-app .admin-motion-callout {
+  background: #1c192d;
+  color: #fff;
+  border-radius: 12px;
+  padding: 8px 12px;
+  box-shadow: 0 8px 22px rgba(28, 25, 45, 0.22);
+  font-size: 0.82rem;
+  animation: admin-motion-callout-pop 0.22s ease-out both;
+  max-width: 200px;
+}
+.admin-app .admin-motion-callout-label {
+  font-size: 0.72rem;
+  opacity: 0.75;
+  margin-bottom: 2px;
+}
+.admin-app .admin-motion-callout-row {
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.admin-app .admin-motion-callout-name {
+  opacity: 0.8;
+  font-size: 0.75rem;
+}
+
+.admin-app .admin-motion-ring {
+  display: grid;
+  place-items: center;
+}
+.admin-app .admin-motion-ring-num {
+  font-size: 14px;
+  font-weight: 800;
+  fill: var(--admin-ink);
+}
+.admin-app .admin-motion-ring-sub {
+  font-size: 8px;
+  fill: var(--admin-muted);
+}
+
+.admin-app .admin-motion-gauge {
+  display: grid;
+  place-items: center;
+}
+.admin-app .admin-motion-gauge-num {
+  font-size: 22px;
+  font-weight: 800;
+  fill: var(--admin-ink);
+}
+.admin-app .admin-motion-gauge-sub {
+  font-size: 10px;
+  fill: var(--admin-muted);
+}
+
+.admin-app .admin-motion-hprog {
+  display: grid;
+  gap: 6px;
+}
+.admin-app .admin-motion-hprog-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.82rem;
+  color: var(--admin-muted);
+}
+.admin-app .admin-motion-hprog-meta strong {
+  color: var(--admin-ink);
+  font-variant-numeric: tabular-nums;
+}
+.admin-app .admin-motion-hprog-track {
+  height: 10px;
+  border-radius: 999px;
+  background: #eef2f7;
+  overflow: hidden;
+}
+.admin-app .admin-motion-hprog-fill {
+  height: 100%;
+  border-radius: 999px;
+  transform-origin: inline-start center;
+}
+.admin-app .admin-motion-hprog-fill--anim {
+  animation: admin-motion-hprog 0.85s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.admin-app .admin-motion-spark {
+  display: block;
+  overflow: visible;
+}
+
+.admin-app .admin-motion-shell {
+  min-width: 0;
+}
+
+/* Soft vertical band highlight under Recharts active dots (motion energy) */
+.admin-app .recharts-area-dot,
+.admin-app .recharts-line-dot {
+  filter: drop-shadow(0 0 3px rgba(21, 204, 160, 0.35));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-app .admin-motion-area-fade,
+  .admin-app .admin-motion-bar-grow,
+  .admin-app .admin-motion-funnel-row,
+  .admin-app .admin-motion-dot-pop,
+  .admin-app .admin-motion-donut-seg,
+  .admin-app .admin-motion-ring-arc,
+  .admin-app .admin-motion-gauge-pulse,
+  .admin-app .admin-motion-gauge-spin,
+  .admin-app .admin-motion-svg-callout,
+  .admin-app .admin-motion-callout,
+  .admin-app .admin-motion-hprog-fill--anim {
+    animation: none !important;
+  }
+}

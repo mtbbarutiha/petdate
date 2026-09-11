@@ -21,6 +21,11 @@ import {
   jalaliPartsToGregorianIso,
   type JalaliDateValue,
 } from '../../JalaliDateSelect';
+import {
+  AdminProgressRing,
+  MotionChartTooltip,
+  useRechartsMotion,
+} from '../../motionCharts';
 
 type TabKey = 'team' | 'person' | 'quality' | 'changelog';
 type AuditRow = Record<string, unknown>;
@@ -62,31 +67,16 @@ function GaugeSemi({ pct, standing, label }: { pct: number; standing: string; la
 
 function MiniRing({ kpi }: { kpi: CrmKpiRing }) {
   const color = STANDING_COLOR[kpi.standing] || '#c62828';
-  const r = 30;
-  const circ = 2 * Math.PI * r;
-  const filled = (Math.min(100, Math.max(0, kpi.pct)) / 100) * circ;
   return (
     <div className="crm-report-mini-ring">
-      <svg width="80" height="80" viewBox="0 0 80 80">
-        <circle cx="40" cy="40" r={r} fill="none" stroke="var(--admin-border)" strokeWidth="8" />
-        <circle
-          cx="40"
-          cy="40"
-          r={r}
-          fill="none"
-          stroke={color}
-          strokeWidth="8"
-          strokeLinecap="round"
-          strokeDasharray={`${filled} ${circ - filled}`}
-          transform="rotate(-90 40 40)"
-        />
-        <text x="40" y="38" textAnchor="middle" fill="var(--admin-ink)" style={{ fontSize: 13, fontWeight: 800 }}>
-          {formatNumFa(kpi.value)}
-        </text>
-        <text x="40" y="52" textAnchor="middle" fill="var(--admin-muted)" style={{ fontSize: 9 }}>
-          {kpi.unit}
-        </text>
-      </svg>
+      <AdminProgressRing
+        value={kpi.value}
+        max={Math.max(1, kpi.target)}
+        size={80}
+        color={color}
+        showPct={false}
+        label={kpi.unit}
+      />
       <strong>{kpi.label}</strong>
     </div>
   );
@@ -122,13 +112,7 @@ function ChartTip({
   payload?: Array<{ value?: number }>;
   label?: string;
 }) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="crm-chart-tooltip">
-      {label ? <div className="crm-chart-tooltip-label">{label}</div> : null}
-      <strong>{formatNumFa(Number(payload[0].value || 0))}</strong>
-    </div>
-  );
+  return <MotionChartTooltip active={active} payload={payload} label={label} />;
 }
 
 function exportAgentsCsv(agents: CrmAgentReportRow[]) {
@@ -154,6 +138,7 @@ function exportAgentsCsv(agents: CrmAgentReportRow[]) {
 }
 
 export function AdminCrmReportsPage() {
+  const motion = useRechartsMotion();
   const [tab, setTab] = useState<TabKey>('team');
   const [from, setFrom] = useState<JalaliDateValue>(() => jalaliDaysAgo(6));
   const [to, setTo] = useState<JalaliDateValue>(() => currentJalaliParts());
@@ -375,7 +360,7 @@ export function AdminCrmReportsPage() {
                 {reasonPie.length ? (
                   <ResponsiveContainer width="100%" height={220}>
                     <PieChart>
-                      <Pie data={reasonPie} dataKey="value" nameKey="name" innerRadius={55} outerRadius={85} paddingAngle={2}>
+                      <Pie data={reasonPie} dataKey="value" nameKey="name" innerRadius={55} outerRadius={85} paddingAngle={2} {...motion}>
                         {reasonPie.map((r) => <Cell key={r.key} fill={r.color || '#15cca0'} />)}
                       </Pie>
                       <Tooltip content={<ChartTip />} />
@@ -403,7 +388,7 @@ export function AdminCrmReportsPage() {
                     <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#757086' }} axisLine={false} tickLine={false} />
                     <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#757086' }} axisLine={false} tickLine={false} width={28} />
                     <Tooltip content={<ChartTip />} cursor={{ fill: 'rgba(92,77,145,0.06)' }} />
-                    <Bar dataKey="value" radius={[8, 8, 0, 0]} maxBarSize={36}>
+                    <Bar dataKey="value" radius={[8, 8, 0, 0]} maxBarSize={36} {...motion}>
                       {ageBars.map((b) => <Cell key={b.key} fill={b.color || '#3b82f6'} />)}
                     </Bar>
                   </BarChart>

@@ -30,6 +30,14 @@ import {
   AdminKpiStrip,
   type AdminKpiItem,
 } from '../../dash';
+import {
+  AdminProgressRing,
+  MOTION_PALETTE,
+  MotionAreaGradientDefs,
+  MotionBarGradientDefs,
+  MotionChartTooltip,
+  useRechartsMotion,
+} from '../../motionCharts';
 
 const STAGE_COLORS = ['#5c4d91', '#15cca0', '#3b82f6', '#fd961e', '#14b8a6', '#ec4899', '#8b5cf6', '#64748b'];
 
@@ -41,31 +49,16 @@ function ringColor(pct: number): string {
 
 function KpiRingCard({ ring }: { ring: SalesKpiRing }) {
   const color = ringColor(ring.pct);
-  const r = 34;
-  const circ = 2 * Math.PI * r;
-  const filled = (Math.min(100, Math.max(0, ring.pct)) / 100) * circ;
   return (
     <article className="sales-kpi-ring admin-dash-kpi admin-dash-kpi--slate" aria-label={ring.label}>
-      <svg width="88" height="88" viewBox="0 0 88 88" role="img">
-        <circle cx="44" cy="44" r={r} fill="none" stroke="var(--admin-border)" strokeWidth="8" />
-        <circle
-          cx="44"
-          cy="44"
-          r={r}
-          fill="none"
-          stroke={color}
-          strokeWidth="8"
-          strokeLinecap="round"
-          strokeDasharray={`${filled} ${circ - filled}`}
-          transform="rotate(-90 44 44)"
-        />
-        <text x="44" y="42" textAnchor="middle" className="sales-kpi-ring-value" fill="var(--admin-ink)">
-          {formatNumFa(ring.value)}
-        </text>
-        <text x="44" y="56" textAnchor="middle" className="sales-kpi-ring-target" fill="var(--admin-muted)">
-          از {formatNumFa(ring.target)}
-        </text>
-      </svg>
+      <AdminProgressRing
+        value={ring.value}
+        max={Math.max(1, ring.target)}
+        size={88}
+        color={color}
+        showPct={false}
+        label={`از ${formatNumFa(ring.target)}`}
+      />
       <div className="sales-kpi-ring-meta">
         <strong>{ring.label}</strong>
         <span>
@@ -89,25 +82,8 @@ function relativeFa(iso: string): string {
   return diff >= 0 ? `${formatNumFa(days)} روز پیش` : `${formatNumFa(days)} روز دیگر`;
 }
 
-function ChartTip({
-  active,
-  payload,
-  label,
-}: {
-  active?: boolean;
-  payload?: Array<{ value?: number }>;
-  label?: string;
-}) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="hr-chart-tooltip">
-      <div className="hr-chart-tooltip-label">{label}</div>
-      <strong>{formatNumFa(Number(payload[0].value || 0))}</strong>
-    </div>
-  );
-}
-
 export function AdminSalesDashboardPage() {
+  const motion = useRechartsMotion();
   const [data, setData] = useState<SalesDashboard | null>(null);
   const [report, setReport] = useState<SalesReportSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -247,8 +223,8 @@ export function AdminSalesDashboardPage() {
               <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--admin-border)" />
               <XAxis {...adminRtlHBarsValueAxis} />
               <YAxis dataKey="name" {...adminRtlHBarsCategoryAxis} />
-              <Tooltip content={<ChartTip />} cursor={{ fill: 'rgba(92,77,145,0.06)' }} />
-              <Bar dataKey="count" radius={adminRtlHBarsRadius} maxBarSize={18}>
+              <Tooltip content={<MotionChartTooltip />} cursor={{ fill: 'rgba(92,77,145,0.06)' }} />
+              <Bar dataKey="count" radius={adminRtlHBarsRadius} maxBarSize={18} {...motion}>
                 {stageChart.map((_, idx) => (
                   <Cell key={idx} fill={STAGE_COLORS[idx % STAGE_COLORS.length]} />
                 ))}
@@ -260,16 +236,19 @@ export function AdminSalesDashboardPage() {
         <AdminChartCard title="روند درآمد روزانه" empty={!revenueTrend.length} height={240}>
           <ResponsiveContainer width="100%" height={240}>
             <AreaChart data={revenueTrend} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
-              <defs>
-                <linearGradient id="salesRevArea" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#5c4d91" stopOpacity={0.35} />
-                  <stop offset="100%" stopColor="#5c4d91" stopOpacity={0.02} />
-                </linearGradient>
-              </defs>
+              <MotionAreaGradientDefs id="salesRevArea" color={MOTION_PALETTE.purple} mid={MOTION_PALETTE.mint} />
               <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#757086' }} axisLine={false} tickLine={false} />
               <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#757086' }} axisLine={false} tickLine={false} width={40} />
-              <Tooltip content={<ChartTip />} />
-              <Area type="monotone" dataKey="value" stroke="#5c4d91" strokeWidth={2.5} fill="url(#salesRevArea)" />
+              <Tooltip content={<MotionChartTooltip />} />
+              <Area
+                type="monotone"
+                dataKey="value"
+                stroke={MOTION_PALETTE.purple}
+                strokeWidth={2.5}
+                fill="url(#salesRevArea)"
+                {...motion}
+                animationDuration={motion.isAnimationActive ? 900 : 0}
+              />
             </AreaChart>
           </ResponsiveContainer>
         </AdminChartCard>
@@ -277,10 +256,11 @@ export function AdminSalesDashboardPage() {
         <AdminChartCard title="روند تماس‌های روزانه" empty={!callsTrend.length} height={220}>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={callsTrend} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+              <MotionBarGradientDefs id="salesCallsBar" from={MOTION_PALETTE.mint} to={MOTION_PALETTE.blue} />
               <XAxis dataKey="label" tick={{ fontSize: 11, fill: '#757086' }} axisLine={false} tickLine={false} />
               <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: '#757086' }} axisLine={false} tickLine={false} width={28} />
-              <Tooltip content={<ChartTip />} />
-              <Bar dataKey="value" radius={[8, 8, 4, 4]} fill="#15cca0" maxBarSize={28} />
+              <Tooltip content={<MotionChartTooltip />} />
+              <Bar dataKey="value" radius={[8, 8, 4, 4]} fill="url(#salesCallsBar)" maxBarSize={28} {...motion} />
             </BarChart>
           </ResponsiveContainer>
         </AdminChartCard>
@@ -293,11 +273,12 @@ export function AdminSalesDashboardPage() {
         >
           <ResponsiveContainer width="100%" height={Math.max(200, 36 * Math.max(bySource.length, 3))}>
             <BarChart layout="vertical" data={bySource} margin={{ ...adminRtlHBarsMargin }}>
+              <MotionBarGradientDefs id="salesSrcBar" from={MOTION_PALETTE.coral} to={MOTION_PALETTE.pink} />
               <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--admin-border)" />
               <XAxis {...adminRtlHBarsValueAxis} />
               <YAxis dataKey="name" {...adminRtlHBarsCategoryAxis} />
-              <Tooltip content={<ChartTip />} cursor={{ fill: 'rgba(92,77,145,0.06)' }} />
-              <Bar dataKey="count" radius={adminRtlHBarsRadius} maxBarSize={18} fill="#fd961e" />
+              <Tooltip content={<MotionChartTooltip />} cursor={{ fill: 'rgba(92,77,145,0.06)' }} />
+              <Bar dataKey="count" radius={adminRtlHBarsRadius} maxBarSize={18} fill="url(#salesSrcBar-h)" {...motion} />
             </BarChart>
           </ResponsiveContainer>
         </AdminChartCard>

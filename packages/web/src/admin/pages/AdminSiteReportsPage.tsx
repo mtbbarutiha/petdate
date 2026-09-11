@@ -8,6 +8,12 @@ import { formatAdminFaDateTime } from '../JalaliDateSelect';
 import {
   ADMIN_RTL_HBARS_CLASS, adminRtlHBarsCategoryAxis, adminRtlHBarsMargin, adminRtlHBarsRadius, adminRtlHBarsValueAxis,
 } from '../rechartsRtlHBars';
+import {
+  MOTION_PALETTE,
+  MotionBarGradientDefs,
+  MotionChartTooltip,
+  useRechartsMotion,
+} from '../motionCharts';
 
 type Bucket = { label: string; value: number };
 type SessionRow = {
@@ -41,16 +47,11 @@ function deviceFa(d: string): string {
 }
 
 function Tip({ active, payload, label }: { active?: boolean; payload?: Array<{ value?: number }>; label?: string }) {
-  if (!active || !payload?.length) return null;
-  return (
-    <div className="hr-chart-tooltip">
-      <div className="hr-chart-tooltip-label">{label}</div>
-      <strong>{formatNumFa(Number(payload[0]?.value || 0))}</strong>
-    </div>
-  );
+  return <MotionChartTooltip active={active} payload={payload} label={label} />;
 }
 
 export function AdminSiteReportsPage() {
+  const motion = useRechartsMotion();
   const [period, setPeriod] = useState(14);
   const [data, setData] = useState<Report | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -156,11 +157,12 @@ export function AdminSiteReportsPage() {
               <div style={{ width: '100%', height: 240 }}>
                 <ResponsiveContainer>
                   <BarChart data={trafficChart}>
+                    <MotionBarGradientDefs id="siteTrafficBar" from={MOTION_PALETTE.purple} to={MOTION_PALETTE.mint} />
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--admin-border)" />
                     <XAxis dataKey="labelShort" tick={{ fontSize: 11 }} />
                     <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
                     <Tooltip content={<Tip />} />
-                    <Bar dataKey="value" name="بازدید" fill="#5c4d91" radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="value" name="بازدید" fill="url(#siteTrafficBar)" radius={[6, 6, 0, 0]} {...motion} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -170,10 +172,10 @@ export function AdminSiteReportsPage() {
               <div style={{ width: '100%', height: 240 }}>
                 <ResponsiveContainer>
                   <PieChart>
-                    <Pie data={data.devices} dataKey="value" nameKey="label" innerRadius={48} outerRadius={78} paddingAngle={2}>
+                    <Pie data={data.devices} dataKey="value" nameKey="label" innerRadius={48} outerRadius={78} paddingAngle={2} {...motion}>
                       {data.devices.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
                     </Pie>
-                    <Tooltip />
+                    <Tooltip content={<Tip />} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -191,10 +193,11 @@ export function AdminSiteReportsPage() {
               <div className={ADMIN_RTL_HBARS_CLASS} style={{ width: '100%', height: Math.max(180, Math.max(pageBars.length, 1) * 32), direction: 'ltr' }}>
                 <ResponsiveContainer>
                   <BarChart data={pageBars} layout="vertical" margin={adminRtlHBarsMargin}>
+                    <MotionBarGradientDefs id="sitePagesBar" from={MOTION_PALETTE.mint} to={MOTION_PALETTE.blue} />
                     <XAxis {...adminRtlHBarsValueAxis} />
                     <YAxis dataKey="label" {...adminRtlHBarsCategoryAxis} />
                     <Tooltip content={<Tip />} />
-                    <Bar dataKey="value" fill="#15cca0" radius={adminRtlHBarsRadius} />
+                    <Bar dataKey="value" fill="url(#sitePagesBar-h)" radius={adminRtlHBarsRadius} {...motion} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -204,10 +207,11 @@ export function AdminSiteReportsPage() {
               <div className={ADMIN_RTL_HBARS_CLASS} style={{ width: '100%', height: Math.max(180, Math.max(refBars.length, 1) * 32), direction: 'ltr' }}>
                 <ResponsiveContainer>
                   <BarChart data={refBars} layout="vertical" margin={adminRtlHBarsMargin}>
+                    <MotionBarGradientDefs id="siteRefBar" from={MOTION_PALETTE.blue} to={MOTION_PALETTE.teal} />
                     <XAxis {...adminRtlHBarsValueAxis} />
                     <YAxis dataKey="label" {...adminRtlHBarsCategoryAxis} />
                     <Tooltip content={<Tip />} />
-                    <Bar dataKey="value" fill="#0ea5e9" radius={adminRtlHBarsRadius} />
+                    <Bar dataKey="value" fill="url(#siteRefBar-h)" radius={adminRtlHBarsRadius} {...motion} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
