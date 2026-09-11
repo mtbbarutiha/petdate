@@ -553,25 +553,25 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
     display: none;
   }
 }
-/* Pepito `.header .caption h1` — 70px / weight 600 / lh 1.1 / mb 20
+/* Landing hero caption — desktop title was 70px (oversized); keep hierarchy smaller.
    Slide headline uses .pepito-hero-slide-title; brand H1 is visually hidden for SEO. */
 .pepito-hero h1:not(.pd-sr-only):not(.pepito-footer-sr),
 .pepito-hero .pepito-hero-slide-title {
-  margin: 0 0 20px;
+  margin: 0 0 16px;
   color: #fff;
   font-family: var(--font-display);
-  font-size: 70px;
-  line-height: 1.1em;
+  font-size: 48px;
+  line-height: 1.15em;
   font-weight: 600;
   letter-spacing: -0.02em;
   text-shadow: 0 2px 18px rgba(5, 1, 12, 0.35);
 }
-/* Pepito `.header .caption p` — 18px */
+/* Hero subtitle / lead */
 .pepito-hero-lead {
-  margin: 0 0 15px;
+  margin: 0 0 14px;
   max-width: none;
   color: rgba(255, 255, 255, 0.95);
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 400;
   line-height: 1.75;
   text-shadow: 0 1px 12px rgba(5, 1, 12, 0.4);
@@ -587,6 +587,10 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   font-size: 18px;
   line-height: 1.4;
   text-shadow: 0 1px 10px rgba(5, 1, 12, 0.35);
+}
+/* Banner kicker only — leave non-hero .pepito-kicker sizes alone */
+.pepito-hero .pepito-kicker {
+  font-size: 15px;
 }
 .pepito-kicker-dot {
   width: 40px;
@@ -655,10 +659,13 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   }
   .pepito-hero h1:not(.pd-sr-only):not(.pepito-footer-sr),
   .pepito-hero .pepito-hero-slide-title {
-    font-size: 35px;
+    font-size: 28px;
   }
   .pepito-hero-lead {
-    font-size: 18px;
+    font-size: 15px;
+  }
+  .pepito-hero .pepito-kicker {
+    font-size: 14px;
   }
   .pepito-hero-inner {
     padding-inline: var(--pepito-container-pad);
@@ -684,8 +691,8 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   .pepito-hero {
     min-height: calc(85vh - var(--pepito-nav-h));
   }
-  .pepito-kicker {
-    font-size: 16px;
+  .pepito-hero .pepito-kicker {
+    font-size: 13px;
   }
   .pepito-kicker-dot {
     width: 36px;
@@ -693,7 +700,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   }
   .pepito-hero h1:not(.pd-sr-only):not(.pepito-footer-sr),
   .pepito-hero .pepito-hero-slide-title {
-    font-size: 30px;
+    font-size: 24px;
   }
 }
 
