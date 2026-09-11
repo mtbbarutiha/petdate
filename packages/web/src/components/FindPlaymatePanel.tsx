@@ -13,6 +13,7 @@ import { EMPTY_STATE_PHOTO } from '../data/petImages';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { useAppToast } from '../hooks/useAppToast';
 import { useUserStore } from '../hooks/useUserStore';
+import { useI18n } from '../i18n';
 import { listPets } from '../lib/api';
 import { findAndSendPlaymates, type FindPlaymateResult } from '../lib/playmateActions';
 import { petProfileToUiPet } from '../lib/playdateMap';
@@ -24,10 +25,10 @@ function formatCoins(n: number): string {
   return toPersianDigits(String(n));
 }
 
-function PawIcon({ size = 16 }: { size?: number }) {
+function PawIcon({ size = 18 }: { size?: number }) {
   return (
-    <span className="pepito-btn-icon" aria-hidden>
-      <PawPrint size={size} />
+    <span className="pepito-btn-icon find-playmate-paw" aria-hidden>
+      <PawPrint size={size} strokeWidth={2.25} />
     </span>
   );
 }
@@ -52,6 +53,7 @@ export function FindPlaymatePanel({
   showRequests = true,
   onSent,
 }: FindPlaymatePanelProps) {
+  const { t } = useI18n();
   const { user } = useUserStore();
   const { user: authUser, isLoggedIn } = useAuthStore();
   const { toastError, toastSuccess, toastInfo } = useAppToast();
@@ -185,6 +187,7 @@ export function FindPlaymatePanel({
   const needsPet = !needsLogin && !petsLoading && myPets.length === 0;
   const showPetPick = findPhase === 'pick' && myPets.length > 1;
   const sending = findPhase === 'sending';
+  const ctaLabel = sending ? t('chats.findCtaSending') : t('chats.findCta');
 
   if (variant === 'header') {
     if (!isPetOwner) return null;
@@ -192,11 +195,13 @@ export function FindPlaymatePanel({
       <div className="find-playmate-header">
         {needsLogin ? (
           <Link to="/auth/login" className="find-playmate-header-btn">
-            ورود
+            <PawIcon size={18} />
+            <span>{t('common.login')}</span>
           </Link>
         ) : needsPet ? (
           <Link to="/add-pet" className="find-playmate-header-btn">
-            ثبت پت
+            <PawIcon size={18} />
+            <span>{t('chats.findCtaAddPet')}</span>
           </Link>
         ) : showPetPick ? (
           <div className="find-playmate-header-pick" role="menu">
@@ -208,7 +213,8 @@ export function FindPlaymatePanel({
                 disabled={sending}
                 onClick={() => void runFindForPet(pet)}
               >
-                {pet.name}
+                <PawIcon size={16} />
+                <span>{pet.name}</span>
               </button>
             ))}
           </div>
@@ -219,9 +225,10 @@ export function FindPlaymatePanel({
             data-testid="find-playmate-header"
             disabled={sending || petsLoading}
             onClick={() => void onPrimaryClick()}
-            aria-label="پیدا کردن همبازی"
+            aria-label={t('chats.findCta')}
           >
-            {sending ? 'در حال ارسال…' : 'پیدا کردن همبازی'}
+            <PawIcon size={18} />
+            <span>{ctaLabel}</span>
           </button>
         )}
         {findError ? <span className="find-playmate-header-err">{findError}</span> : null}
@@ -234,7 +241,7 @@ export function FindPlaymatePanel({
       {!compact ? (
         <header className="find-playmate-panel__head">
           <p className="pepito-eyebrow">{BRAND.taglineFa}</p>
-          <h2>پیدا کردن همبازی</h2>
+          <h2>{t('chats.findCta')}</h2>
           <p>درخواست بفرست، قبول/رد کن و همین‌جا چت کن.</p>
           <p className="find-playmate-panel__fee">
             هزینه درخواست: {formatCoins(PLAYDATE_REQUEST_COST)} سکه
@@ -242,7 +249,7 @@ export function FindPlaymatePanel({
         </header>
       ) : null}
 
-      <section className="find-playmate-one" aria-label="ارسال درخواست همبازی">
+      <section className="find-playmate-one" aria-label={t('chats.findCta')}>
         {!needsLogin && !needsPet ? (
           <p className="find-playmate-one__fee" role="status" data-testid="find-playmate-fee">
             هزینه درخواست: {formatCoins(PLAYDATE_REQUEST_COST)} سکه
@@ -250,18 +257,18 @@ export function FindPlaymatePanel({
           </p>
         ) : null}
         {needsLogin ? (
-          <Link to="/auth/login" className="pepito-btn button-1">
-            <PawIcon />
-            ورود برای پیدا کردن همبازی
+          <Link to="/auth/login" className="pepito-btn button-1 find-playmate-one__btn">
+            <PawIcon size={20} />
+            {t('chats.findCtaLogin')}
           </Link>
         ) : needsPet ? (
-          <Link to="/add-pet" className="pepito-btn button-1">
-            <PawIcon />
-            ثبت پت
+          <Link to="/add-pet" className="pepito-btn button-1 find-playmate-one__btn">
+            <PawIcon size={20} />
+            {t('chats.findCtaAddPet')}
           </Link>
         ) : showPetPick ? (
           <div className="find-playmate-one__pick">
-            <p className="find-playmate-one__hint">کدوم پتت؟</p>
+            <p className="find-playmate-one__hint">{t('chats.findCtaPickPet')}</p>
             <div className="find-playmate-pet-list">
               {myPets.map((pet) => {
                 const ui = petProfileToUiPet(pet);
@@ -288,17 +295,17 @@ export function FindPlaymatePanel({
         ) : (
           <button
             type="button"
-            className="pepito-btn button-1"
+            className="pepito-btn button-1 find-playmate-one__btn"
             data-testid="find-playmate-primary"
             disabled={sending || petsLoading}
             onClick={() => void onPrimaryClick()}
           >
-            <PawIcon />
+            <PawIcon size={20} />
             {sending
-              ? 'در حال ارسال…'
+              ? t('chats.findCtaSending')
               : findPhase === 'done'
-                ? 'ارسال دوباره درخواست'
-                : 'پیدا کردن همبازی'}
+                ? t('chats.findCtaAgain')
+                : t('chats.findCta')}
           </button>
         )}
 
