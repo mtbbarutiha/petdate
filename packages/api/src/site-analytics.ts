@@ -212,7 +212,7 @@ function gtmConfig(): SiteAnalyticsReport['gtm'] {
     containerId: ok ? raw : null,
     dashboardUrl: ok ? 'https://tagmanager.google.com/' : null,
     note: ok
-      ? `کانتینر GTM (${raw}) پیکربندی شده — فقط روی مسیرهای عمومی بارگذاری می‌شود (نه /admin).`
+      ? `کانتینر GTM (${raw}) در HTML اولیه (index.html) نصب شده تا Tag Assistant آن را ببیند؛ pageviewهای SPA روی مسیرهای عمومی به dataLayer push می‌شوند (نه /admin).`
       : 'شناسهٔ GTM نامعتبر است. مقدار VITE_GTM_ID را به صورت GTM-XXXX تنظیم کنید.',
   };
 }

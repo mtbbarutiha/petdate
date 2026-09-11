@@ -3,6 +3,12 @@
  * Clarity only loads when the project id is a valid Clarity id (NOT a UUID).
  * GTM loads when container id matches GTM-XXXX (override with VITE_GTM_ID).
  * Both skip /admin paths. Production defaults: live Clarity + GTM-KQPJT9Q4.
+ *
+ * GTM wiring (site-side):
+ * - dataLayer is created before gtm.js
+ * - SPA route changes push `{ event: 'page_view', page_path, page_title, page_location }`
+ * - Important link clicks push `{ event: 'link_click', ... }` (outbound / telegram / download / CTA)
+ * Tags inside the GTM container are configured in Google’s UI — we do not invent GA4 IDs.
  */
 const SESSION_KEY = 'pd_analytics_sid';
 
@@ -11,6 +17,47 @@ export const DEFAULT_CLARITY_PROJECT_ID = 'ygkl5nck6k';
 
 /** Live Google Tag Manager container for petdate.ir. */
 export const DEFAULT_GTM_ID = 'GTM-KQPJT9Q4';
+
+/** Public Tag Manager workspace entry (account/container path unknown — open + search by ID). */
+export const GTM_DASHBOARD_URL = 'https://tagmanager.google.com/';
+
+/** Internal path prefixes treated as conversion / signup CTAs for link_click. */
+export const GTM_CTA_PATH_PREFIXES = [
+  '/login',
+  '/otp',
+  '/auth',
+  '/onboarding',
+  '/role-select',
+  '/roles',
+  '/wallet',
+  '/shop/cart',
+  '/shop/checkout',
+  '/shop/pay',
+  '/vet-consult',
+  '/trainer-consult',
+  '/sitter-consult',
+  '/invite',
+] as const;
+
+export type GtmLinkKind = 'outbound' | 'cta' | 'download' | 'telegram' | 'contact';
+
+export type GtmPageViewPayload = {
+  event: 'page_view';
+  page_path: string;
+  page_title: string;
+  page_location: string;
+};
+
+export type GtmLinkClickPayload = {
+  event: 'link_click';
+  link_url: string;
+  link_text: string;
+  link_domain: string;
+  link_kind: GtmLinkKind;
+  outbound: boolean;
+};
+
+type DataLayerWindow = Window & { dataLayer?: unknown[] };
 
 function apiBase(): string {
   return (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ?? '';
@@ -73,8 +120,127 @@ function readUtm(): { utmSource: string | null; utmMedium: string | null; utmCam
   }
 }
 
+/** Ensure `window.dataLayer` exists before any GTM push / script insert. */
+export function ensureDataLayer(): unknown[] {
+  if (typeof window === 'undefined') return [];
+  const w = window as DataLayerWindow;
+  w.dataLayer = w.dataLayer || [];
+  return w.dataLayer;
+}
+
+/** Push a dataLayer object (no-op off-window). */
+export function pushDataLayer(payload: Record<string, unknown>): void {
+  if (typeof window === 'undefined') return;
+  try {
+    ensureDataLayer().push(payload);
+  } catch {
+    /* ignore */
+  }
+}
+
+export function buildGtmPageViewPayload(input: {
+  path: string;
+  title?: string | null;
+  locationHref?: string | null;
+}): GtmPageViewPayload {
+  const path = (input.path.split('?')[0] || '/').trim() || '/';
+  return {
+    event: 'page_view',
+    page_path: path.startsWith('/') ? path : `/${path}`,
+    page_title: (input.title || '').trim() || path,
+    page_location: (input.locationHref || '').trim() || path,
+  };
+}
+
+export function isPetdateHost(hostname: string): boolean {
+  const h = hostname.trim().toLowerCase();
+  return h === 'petdate.ir' || h.endsWith('.petdate.ir') || h === 'localhost' || h === '127.0.0.1';
+}
+
+export function isCtaPath(pathname: string): boolean {
+  const p = (pathname.split('?')[0] || '/').toLowerCase();
+  return GTM_CTA_PATH_PREFIXES.some((prefix) => p === prefix || p.startsWith(`${prefix}/`));
+}
+
+function looksLikeDownloadUrl(pathname: string, downloadAttr: boolean): boolean {
+  if (downloadAttr) return true;
+  return /\.(pdf|zip|rar|7z|csv|xlsx?|docx?|pptx?|apk|dmg|exe)(\?|#|$)/i.test(pathname);
+}
+
+/**
+ * Classify a clicked href for GTM link_click (null = do not track).
+ * Pure helper — safe for selftests.
+ */
+export function classifyTrackedLink(
+  href: string,
+  opts: {
+    currentOrigin: string;
+    downloadAttr?: boolean;
+    explicitCta?: boolean;
+  },
+): { kind: GtmLinkKind; url: string; domain: string; outbound: boolean } | null {
+  const raw = href.trim();
+  if (!raw || raw === '#' || raw.startsWith('javascript:')) return null;
+
+  const lower = raw.toLowerCase();
+  if (lower.startsWith('mailto:') || lower.startsWith('tel:') || lower.startsWith('sms:')) {
+    return {
+      kind: 'contact',
+      url: raw,
+      domain: lower.startsWith('mailto:') ? 'mailto' : lower.startsWith('tel:') ? 'tel' : 'sms',
+      outbound: true,
+    };
+  }
+
+  let url: URL;
+  try {
+    url = new URL(raw, opts.currentOrigin);
+  } catch {
+    return null;
+  }
+
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
+
+  const host = url.hostname.toLowerCase();
+  const outbound = !isPetdateHost(host) && url.origin !== opts.currentOrigin;
+  const telegram = /(^|\.)t\.me$/i.test(host) || /(^|\.)telegram\.(me|org)$/i.test(host);
+
+  if (looksLikeDownloadUrl(url.pathname, Boolean(opts.downloadAttr))) {
+    return { kind: 'download', url: url.href, domain: host, outbound };
+  }
+  if (telegram) {
+    return { kind: 'telegram', url: url.href, domain: host, outbound: true };
+  }
+  if (outbound) {
+    return { kind: 'outbound', url: url.href, domain: host, outbound: true };
+  }
+  if (opts.explicitCta || isCtaPath(url.pathname)) {
+    return { kind: 'cta', url: url.href, domain: host || 'petdate.ir', outbound: false };
+  }
+  return null;
+}
+
+export function buildGtmLinkClickPayload(input: {
+  kind: GtmLinkKind;
+  url: string;
+  domain: string;
+  outbound: boolean;
+  text?: string | null;
+}): GtmLinkClickPayload {
+  return {
+    event: 'link_click',
+    link_url: input.url,
+    link_text: (input.text || '').trim().slice(0, 120),
+    link_domain: input.domain,
+    link_kind: input.kind,
+    outbound: input.outbound,
+  };
+}
+
 let clarityBooted = false;
 let gtmBooted = false;
+let linkTrackingBooted = false;
+let lastGtmPagePath: string | null = null;
 
 function maybeInitClarity(): void {
   if (clarityBooted || typeof window === 'undefined' || typeof document === 'undefined') return;
@@ -101,8 +267,69 @@ function maybeInitClarity(): void {
   }
 }
 
+function pushGtmVirtualPageview(pathname: string): void {
+  if (typeof window === 'undefined' || !resolveGtmId()) return;
+  const path = pathname.split('?')[0] || '/';
+  // Dedupe identical consecutive SPA pushes (StrictMode double-effect / remounts).
+  if (lastGtmPagePath === path) return;
+  lastGtmPagePath = path;
+  pushDataLayer(
+    buildGtmPageViewPayload({
+      path,
+      title: typeof document !== 'undefined' ? document.title : path,
+      locationHref: window.location.href,
+    }),
+  );
+}
+
+function closestAnchor(target: EventTarget | null): HTMLAnchorElement | null {
+  if (!target || typeof (target as Element).closest !== 'function') return null;
+  return (target as Element).closest('a[href]') as HTMLAnchorElement | null;
+}
+
+function onDocumentLinkClick(ev: MouseEvent): void {
+  if (typeof window === 'undefined') return;
+  if (window.location.pathname.startsWith('/admin')) return;
+  // Ignore modified clicks (new tab / download gestures) that users intentionally open elsewhere —
+  // still track them; UX is unchanged either way.
+  const a = closestAnchor(ev.target);
+  if (!a) return;
+  const href = a.getAttribute('href') || '';
+  const classified = classifyTrackedLink(href, {
+    currentOrigin: window.location.origin,
+    downloadAttr: a.hasAttribute('download'),
+    explicitCta:
+      a.hasAttribute('data-gtm-cta') ||
+      a.getAttribute('data-analytics') === 'cta' ||
+      a.classList.contains('cta-btn'),
+  });
+  if (!classified) return;
+  const text = (a.innerText || a.getAttribute('aria-label') || a.title || '').replace(/\s+/g, ' ');
+  pushDataLayer(
+    buildGtmLinkClickPayload({
+      kind: classified.kind,
+      url: classified.url,
+      domain: classified.domain,
+      outbound: classified.outbound,
+      text,
+    }),
+  );
+}
+
+function maybeInitLinkTracking(): void {
+  if (linkTrackingBooted || typeof document === 'undefined') return;
+  if (!resolveGtmId()) return;
+  linkTrackingBooted = true;
+  try {
+    document.addEventListener('click', onDocumentLinkClick, true);
+  } catch {
+    /* ignore */
+  }
+}
+
 /**
  * Inject standard GTM head script + noscript iframe (SPA-safe).
+ * dataLayer is initialized BEFORE the gtm.js script tag.
  * Only once per session; skipped on /admin via trackPageview.
  */
 function maybeInitGtm(): void {
@@ -111,13 +338,14 @@ function maybeInitGtm(): void {
   if (!containerId) return;
   if (document.getElementById('petdate-gtm')) {
     gtmBooted = true;
+    maybeInitLinkTracking();
     return;
   }
   gtmBooted = true;
   try {
-    const w = window as Window & { dataLayer?: unknown[] };
-    w.dataLayer = w.dataLayer || [];
-    w.dataLayer.push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
+    // Standard GTM snippet order: dataLayer → gtm.start push → async gtm.js
+    ensureDataLayer();
+    pushDataLayer({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
 
     const s = document.createElement('script');
     s.async = true;
@@ -144,6 +372,7 @@ function maybeInitGtm(): void {
         body.appendChild(noscript);
       }
     }
+    maybeInitLinkTracking();
   } catch {
     /* ignore */
   }
@@ -156,6 +385,7 @@ export function trackPageview(pathname?: string): void {
 
   maybeInitClarity();
   maybeInitGtm();
+  pushGtmVirtualPageview(path);
 
   const utm = readUtm();
   const payload = {
