@@ -14,6 +14,7 @@ import {
   isPetdateHost,
   isValidGtmContainerId,
   isValidGa4MeasurementId,
+  parseUtmFromSearch,
   resolveGa4MeasurementId,
   setRuntimeGa4MeasurementId,
   pushDataLayer,
@@ -30,6 +31,16 @@ assert.equal(isValidGa4MeasurementId('G-XXXX'), false);
 setRuntimeGa4MeasurementId('G-TESTMEAS1');
 assert.equal(resolveGa4MeasurementId(), 'G-TESTMEAS1');
 setRuntimeGa4MeasurementId(null);
+
+const utmParsed = parseUtmFromSearch(
+  '?utm_source=telegram&utm_medium=social&utm_campaign=spring&utm_content=banner&gclid=abc',
+);
+assert.equal(utmParsed.utmSource, 'telegram');
+assert.equal(utmParsed.utmMedium, 'social');
+assert.equal(utmParsed.utmCampaign, 'spring');
+assert.equal(utmParsed.utmContent, 'banner');
+assert.equal(utmParsed.gclid, 'abc');
+assert.equal(utmParsed.fbclid, null);
 
 assert.equal(isPetdateHost('petdate.ir'), true);
 assert.equal(isPetdateHost('www.petdate.ir'), true);
@@ -53,6 +64,15 @@ const page = buildGtmPageViewPayload({
   title: 'فروشگاه',
   locationHref: 'https://petdate.ir/shop?utm_source=tg',
   user: { user_id: 'u_1', user_status: 'logged_in' },
+  utm: {
+    utmSource: 'tg',
+    utmMedium: 'social',
+    utmCampaign: 'launch',
+    utmContent: null,
+    utmTerm: null,
+    gclid: null,
+    fbclid: null,
+  },
 });
 assert.equal(page.event, 'page_view');
 assert.equal(page.page_path, '/shop');
@@ -61,6 +81,9 @@ assert.equal(page.page_location, 'https://petdate.ir/shop?utm_source=tg');
 assert.equal(page.page_type, 'shop');
 assert.equal(page.user_id, 'u_1');
 assert.equal(page.user_status, 'logged_in');
+assert.equal(page.utm_source, 'tg');
+assert.equal(page.utm_medium, 'social');
+assert.equal(page.utm_campaign, 'launch');
 
 const origin = 'https://petdate.ir';
 
