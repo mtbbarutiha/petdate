@@ -75,7 +75,7 @@ const AI_TELEGRAM_ID = 'petdate_ai_assistant';
  * Renamed from «پاشا یزدانی» → «دکتر لیلا کیانی» (same telegram id).
  * Keep telegram id `petdate_ai_assistant` as the internal identity.
  */
-export const AI_TRAINER_DISPLAY_NAME = 'دکتر لیلا کیانی';
+export const AI_TRAINER_DISPLAY_NAME = 'لیلا کیانی';
 /** Alias — default fallback persona (لیلا کیانی). */
 export const AI_ASSISTANT_DISPLAY_NAME = AI_TRAINER_DISPLAY_NAME;
 

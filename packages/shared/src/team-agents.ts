@@ -31,7 +31,7 @@ export const TEAM_AGENTS: readonly TeamAgentDef[] = [
   {
     slug: 'leila-kiani',
     telegramId: 'petdate_ai_assistant',
-    name: 'دکتر لیلا کیانی',
+    name: 'لیلا کیانی',
     role: 'مربی',
     kind: 'trainer',
     avatarUrl: '/agents/leila-kiani.jpg',

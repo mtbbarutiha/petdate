@@ -28,7 +28,8 @@ async function main() {
 
   assert.equal(TEAM_AGENTS.length, 4);
   assert.equal(DEFAULT_TEAM_AGENT_SLUG, 'leila-kiani');
-  assert.equal(AI_TRAINER_DISPLAY_NAME, 'دکتر لیلا کیانی');
+  assert.equal(AI_TRAINER_DISPLAY_NAME, 'لیلا کیانی');
+  assert.equal(getTeamAgentBySlug('leila-kiani')?.name, 'لیلا کیانی');
   assert.equal(getTeamAgentBySlug('leila-kiani')?.telegramId, 'petdate_ai_assistant');
   assert.equal(TEAM_AGENTS.filter((a) => a.telegramId === 'petdate_ai_assistant').length, 1);
   assert.equal(TEAM_AGENTS.filter((a) => a.kind === 'vet').length, 2);
@@ -36,12 +37,21 @@ async function main() {
   assert.ok(TEAM_AGENTS.some((a) => a.name === 'دکتر سارا نوزی'));
   assert.equal(getTeamAgentBySlug('faranak-ahmadi')?.name, 'فرانک احمدی');
   assert.equal(getTeamAgentBySlug('layla-ahmadi')?.slug, 'faranak-ahmadi');
-  assert.ok(!TEAM_AGENTS.some((a) => a.name.includes('لایلا') || a.name.startsWith('دکتر فرانک')));
+  assert.ok(
+    !TEAM_AGENTS.some(
+      (a) =>
+        a.name.includes('لایلا') ||
+        a.name.startsWith('دکتر فرانک') ||
+        a.name === 'دکتر لیلا کیانی' ||
+        (a.kind === 'trainer' && a.name.startsWith('دکتر ')),
+    ),
+  );
 
   const users = ensureAllTeamAgents();
   assert.equal(users.length, 4);
   const leila = ensureAiAssistantUser();
-  assert.equal(leila.name, 'دکتر لیلا کیانی');
+  assert.equal(leila.name, 'لیلا کیانی');
+  assert.ok(!leila.name.startsWith('دکتر'));
   assert.ok(isAiAssistantUserId(leila.id));
   assert.ok(leila.avatarUrl?.includes('leila-kiani'));
 

@@ -237,9 +237,9 @@ export async function handleQuickVet(ctx: Context): Promise<void> {
     if (result.ok && result.aiFallback) {
       await ctx.reply(
         [
-          '🩺 <b>دکتر لیلا کیانی</b>',
+          '🩺 <b>لیلا کیانی</b>',
           '',
-          'دامپزشک انسانی آنلاین نبود — چت رایگان با دکتر لیلا کیانی شروع شد.',
+          'دامپزشک انسانی آنلاین نبود — چت رایگان با لیلا کیانی شروع شد.',
           '',
           result.message,
           result.advice ? '\n' + result.advice.slice(0, 3500) : '',
@@ -267,7 +267,7 @@ export async function handleQuickVet(ctx: Context): Promise<void> {
       [
         '⚡ <b>مشاوره سریع با پزشک</b>',
         '',
-        result.ok === false ? result.error : 'الان دامپزشک آنلاین نیست و دکتر لیلا کیانی هم در دسترس نبود.',
+        result.ok === false ? result.error : 'الان دامپزشک آنلاین نیست و لیلا کیانی هم در دسترس نبود.',
         '',
         `موجودی تو: <b>${formatNum(balance)}</b> سکه`,
       ].join('\n'),
@@ -406,12 +406,12 @@ export async function handleQuickVetConnect(
   }
 
   await ctx.answerCallbackQuery({
-    text: result.aiFallback ? 'دکتر لیلا کیانی شروع شد' : 'درخواست ارسال شد',
+    text: result.aiFallback ? 'لیلا کیانی شروع شد' : 'درخواست ارسال شد',
   });
   if (result.aiFallback) {
     await ctx.reply(
       [
-        '🩺 <b>دکتر لیلا کیانی</b>',
+        '🩺 <b>لیلا کیانی</b>',
         '',
         result.message,
         result.advice ? '\n' + result.advice.slice(0, 3500) : '',
