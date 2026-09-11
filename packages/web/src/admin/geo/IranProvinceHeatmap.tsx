@@ -219,9 +219,31 @@ export function IranProvinceHeatmap({
               );
             })}
             {unknownCount > 0 ? (
-              <li className="iran-heat-rank-unknown">
-                <span>بدون استان</span>
-                <strong>{formatNumFa(unknownCount)}</strong>
+              <li className="iran-heat-rank-unknown" aria-label="بدون استان">
+                <span className="iran-heat-rank-row" role="presentation">
+                  <span className="iran-heat-rank-name">
+                    <i
+                      className="iran-heat-rank-swatch iran-heat-rank-swatch--unknown"
+                      aria-hidden
+                    />
+                    بدون استان
+                  </span>
+                  <span className="iran-heat-rank-meta">
+                    <strong>{formatNumFa(unknownCount)}</strong>
+                    <span className="iran-heat-rank-bar iran-heat-rank-bar--unknown" aria-hidden>
+                      <i
+                        style={{
+                          width: `${Math.max(
+                            8,
+                            Math.round(
+                              (unknownCount / Math.max(mappedTotal + unknownCount, 1)) * 100
+                            )
+                          )}%`,
+                        }}
+                      />
+                    </span>
+                  </span>
+                </span>
               </li>
             ) : null}
           </ul>

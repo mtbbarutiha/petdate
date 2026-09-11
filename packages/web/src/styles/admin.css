@@ -3915,8 +3915,24 @@ body:has(.admin-app) {
   box-shadow: 0 0 0 2px rgba(21, 204, 160, 0.18);
 }
 .admin-app .iran-heat-rank-unknown {
+  border-color: #d5dde8;
+  background: #f7f9fb;
+  color: var(--admin-muted, #64748b);
+}
+.admin-app .iran-heat-rank-unknown .iran-heat-rank-row {
   display: flex; align-items: center; justify-content: space-between; gap: 10px;
-  padding: 9px 10px; border-style: dashed; color: var(--admin-muted); background: #fafbfc;
+  width: 100%; padding: 9px 10px; direction: rtl; text-align: right;
+  font: inherit; color: inherit;
+}
+.admin-app .iran-heat-rank-swatch--unknown {
+  background: #94a3b8;
+  border-color: rgba(100, 116, 139, 0.35);
+}
+.admin-app .iran-heat-rank-unknown .iran-heat-rank-meta strong {
+  color: var(--admin-muted, #64748b);
+}
+.admin-app .iran-heat-rank-bar--unknown > i {
+  background: linear-gradient(90deg, #cbd5e1, #94a3b8);
 }
 .admin-app .iran-heat-sum { margin: 12px 0 0; font-size: 12px; line-height: 1.5; }
 .admin-app .iran-heat-map {
