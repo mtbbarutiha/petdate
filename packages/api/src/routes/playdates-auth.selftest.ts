@@ -4,10 +4,9 @@
  */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 
-const src = readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'playdates.ts'), 'utf8');
+const src = readFileSync(join(process.cwd(), 'src/routes/playdates.ts'), 'utf8');
 
 assert.match(src, /isInternalBot/, 'bot token helper exists');
 assert.match(src, /x-petdate-bot-token/i, 'checks X-PetDate-Bot-Token');

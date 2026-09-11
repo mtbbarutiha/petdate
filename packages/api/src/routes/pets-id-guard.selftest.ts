@@ -4,10 +4,9 @@
  */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 
-const src = readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'pets.ts'), 'utf8');
+const src = readFileSync(join(process.cwd(), 'src/routes/pets.ts'), 'utf8');
 
 assert.match(src, /petsRouter\.get\('\/mine'/, 'GET /mine is registered before /:id');
 assert.match(src, /شناسه پت نامعتبر است/, 'non-numeric pet id returns 400 copy');
