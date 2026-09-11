@@ -14,6 +14,7 @@ import type {
   PaymentOrderStatus,
   PetBreed,
   PetGender,
+  PetDiaryEntry,
   PetMedicalEntry,
   PetMedicalRecord,
   PetProfile,
@@ -46,6 +47,7 @@ import {
   isPendingRequestExpired,
   makePetPublicId,
   makeUserPublicId,
+  slugifyPetName,
   makeOrderPublicId,
   makeConsultPublicId,
   makePlaydatePublicId,
@@ -412,6 +414,52 @@ function backfillPublicIds(): void {
 
   db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_public_id ON users (public_id)');
   db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_pets_public_id ON pets (public_id)');
+}
+
+/** Assign unique public URL slugs for pets missing them (idempotent). */
+function backfillPetSlugs(): void {
+  try {
+    const cols = (db.prepare('PRAGMA table_info(pets)').all() as Array<{ name: string }>).map(
+      (c) => c.name
+    );
+    if (!cols.includes('slug')) return;
+    const missing = db
+      .prepare(
+        `SELECT id, name, slug FROM pets WHERE slug IS NULL OR trim(CAST(slug AS TEXT)) = ''`
+      )
+      .all() as { id: number; name: string; slug: string | null }[];
+    if (!missing.length) return;
+    const taken = new Set(
+      (
+        db
+          .prepare(
+            `SELECT slug FROM pets WHERE slug IS NOT NULL AND trim(CAST(slug AS TEXT)) != ''`
+          )
+          .all() as { slug: string }[]
+      ).map((r) => String(r.slug).toLowerCase())
+    );
+    const upd = db.prepare('UPDATE pets SET slug = ? WHERE id = ?');
+    for (const row of missing) {
+      const base = slugifyPetName(row.name || `pet-${row.id}`);
+      let candidate = base;
+      let n = 2;
+      while (taken.has(candidate)) {
+        candidate = `${base}-${n}`;
+        n += 1;
+        if (n > 500) {
+          candidate = `${base}-${row.id}`;
+          break;
+        }
+      }
+      taken.add(candidate);
+      upd.run(candidate, row.id);
+    }
+    if (missing.length) {
+      console.log(`🐾 backfilled slugs for ${missing.length} pets`);
+    }
+  } catch (err) {
+    console.warn('pets slug backfill skipped/failed:', (err as Error).message);
+  }
 }
 
 function backfillEntityPublicIds(
@@ -984,9 +1032,35 @@ function migrateSchema() {
       "ALTER TABLE pets ADD COLUMN photo_moderation_status TEXT NOT NULL DEFAULT 'approved'"
     );
   }
+  /** Public URL slug — /pet/benji (Latin transliteration of name) */
+  if (!petNames.has('slug')) {
+    db.exec('ALTER TABLE pets ADD COLUMN slug TEXT');
+  }
+  try {
+    db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_pets_slug ON pets (slug)');
+  } catch (err) {
+    console.warn('pets slug unique index skipped/failed:', (err as Error).message);
+  }
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS pet_diary_entries (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      pet_id INTEGER NOT NULL REFERENCES pets(id) ON DELETE CASCADE,
+      author_user_id INTEGER NOT NULL REFERENCES users(id),
+      author_name TEXT,
+      body TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+  `);
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_pet_diary_entries_pet
+      ON pet_diary_entries (pet_id, created_at DESC);
+  `);
 
   // Backfill / normalize public ids (idempotent — safe on every startup)
   backfillPublicIds();
+  backfillPetSlugs();
 
   const breedCols = db.prepare('PRAGMA table_info(pet_breeds)').all() as { name: string }[];
   const breedNames = new Set(breedCols.map((c) => c.name));
@@ -1252,6 +1326,9 @@ function migrateSchema() {
   /** شناسهٔ عمومی پایدار نمایشی — PD-R##### */
   if (!paymentOrderCols.includes('public_id')) {
     db.exec('ALTER TABLE payment_orders ADD COLUMN public_id TEXT');
+  }
+  if (!paymentOrderCols.includes('transfer_ref')) {
+    db.exec('ALTER TABLE payment_orders ADD COLUMN transfer_ref TEXT');
   }
 
   db.exec(`
@@ -2218,6 +2295,10 @@ function mapPet(row: Record<string, unknown>): PetProfile {
   return {
     id,
     publicId: petPublicIdOf({ id, publicId: row.public_id as string | undefined }),
+    slug: (() => {
+      const s = String(row.slug ?? '').trim();
+      return s || undefined;
+    })(),
     ownerId: row.owner_id as number,
     name: row.name as string,
     species: row.species as string,
@@ -2329,8 +2410,16 @@ function mapPlaydateChatMessage(row: Record<string, unknown>): PlaydateChatMessa
   };
 }
 
+function paymentReceiptPublicUrl(receiptFileId: string | undefined | null): string | undefined {
+  const raw = String(receiptFileId ?? '').trim();
+  if (!raw) return undefined;
+  if (raw.startsWith('/api/payments/receipts/')) return raw;
+  return publicImageUrlForStored(raw);
+}
+
 function mapPaymentOrder(row: Record<string, unknown>): PaymentOrder {
   const id = row.id as number;
+  const receiptFileId = (row.receipt_file_id as string | undefined) ?? undefined;
   return {
     id,
     publicId: paymentPublicIdOf({ id, publicId: row.public_id as string | undefined }),
@@ -2341,7 +2430,12 @@ function mapPaymentOrder(row: Record<string, unknown>): PaymentOrder {
     amountStars: row.amount_stars != null ? Number(row.amount_stars) : undefined,
     method: row.method as PaymentMethod,
     status: row.status as PaymentOrderStatus,
-    receiptFileId: (row.receipt_file_id as string | undefined) ?? undefined,
+    receiptFileId,
+    receiptUrl: paymentReceiptPublicUrl(receiptFileId),
+    transferRef:
+      row.transfer_ref != null && String(row.transfer_ref).trim() !== ''
+        ? String(row.transfer_ref).trim()
+        : undefined,
     telegramPaymentChargeId: (row.telegram_payment_charge_id as string | undefined) ?? undefined,
     adminNote: (row.admin_note as string | undefined) ?? undefined,
     createdAt: row.created_at as string,
@@ -4531,6 +4625,77 @@ export const dbService = {
     return row ? mapPet(row) : null;
   },
 
+  getPetBySlug(slug: string): PetProfile | null {
+    const key = String(slug ?? '').trim().toLowerCase();
+    if (!key) return null;
+    const row = db
+      .prepare(
+        `SELECT pets.*,
+                users.province AS owner_province,
+                users.city AS owner_city,
+                users.name AS owner_name,
+                users.avatar_url AS owner_avatar_url,
+                users.avatar_moderation_status AS owner_avatar_moderation_status,
+                users.location_updated_at AS owner_location_updated_at,
+                users.last_seen_at AS owner_last_seen_at,
+                CASE WHEN users.verification_status = 'verified' THEN 1 ELSE 0 END AS owner_verified
+         FROM pets
+         LEFT JOIN users ON users.id = pets.owner_id
+         WHERE lower(pets.slug) = ?`
+      )
+      .get(key) as Record<string, unknown> | undefined;
+    return row ? mapPet(row) : null;
+  },
+
+  /** Resolve numeric id or public slug. */
+  getPetByIdOrSlug(idOrSlug: string | number): PetProfile | null {
+    const raw = String(idOrSlug ?? '').trim();
+    if (!raw) return null;
+    if (/^\d+$/.test(raw)) {
+      const byId = this.getPet(Number(raw));
+      if (byId) return byId;
+    }
+    return this.getPetBySlug(raw);
+  },
+
+  /** Allocate a unique slug from a display name (optionally excluding one pet id). */
+  allocatePetSlug(name: string, excludePetId?: number): string {
+    const base = slugifyPetName(name);
+    const taken = (
+      db
+        .prepare(
+          `SELECT slug FROM pets
+           WHERE slug IS NOT NULL AND trim(CAST(slug AS TEXT)) != ''
+             ${excludePetId != null ? 'AND id != ?' : ''}`
+        )
+        .all(...(excludePetId != null ? [excludePetId] : [])) as { slug: string }[]
+    ).map((r) => String(r.slug).toLowerCase());
+    const set = new Set(taken);
+    let candidate = base;
+    let n = 2;
+    while (set.has(candidate)) {
+      candidate = `${base}-${n}`;
+      n += 1;
+      if (n > 500) {
+        candidate = `${base}-${excludePetId ?? Date.now().toString(36)}`;
+        break;
+      }
+    }
+    return candidate;
+  },
+
+  ensurePetSlug(petId: number): string | null {
+    const pet = this.getPet(petId);
+    if (!pet) return null;
+    if (pet.slug?.trim()) return pet.slug.trim();
+    const slug = this.allocatePetSlug(pet.name, petId);
+    db.prepare('UPDATE pets SET slug = ?, updated_at = datetime(\'now\') WHERE id = ?').run(
+      slug,
+      petId
+    );
+    return slug;
+  },
+
   /** Mark stale pending playmate requests as expired (TTL from created_at). */
   expireStalePlaydateRequests(): number {
     const ttlSec = Math.max(1, Math.round(PLAYDATE_REQUEST_TTL_MS / 1000));
@@ -4793,6 +4958,8 @@ export const dbService = {
       );
     const petId = Number(result.lastInsertRowid);
     db.prepare('UPDATE pets SET public_id = ? WHERE id = ?').run(makePetPublicId(petId), petId);
+    const slug = this.allocatePetSlug(data.name, petId);
+    db.prepare('UPDATE pets SET slug = ? WHERE id = ?').run(slug, petId);
     // First pet (or any pet) while «بدون پت» → switch session/role to «صاحب پت»
     this.promoteNoPetToPetOwner(data.ownerId);
     return mapPet(db.prepare('SELECT * FROM pets WHERE id = ?').get(petId) as Record<string, unknown>);
@@ -6147,9 +6314,52 @@ export const dbService = {
     ).map(mapPaymentOrder);
   },
 
+  listUserPaymentOrders(
+    userId: number,
+    opts?: { limit?: number; method?: string }
+  ): PaymentOrder[] {
+    const limit = Math.min(100, Math.max(1, Math.floor(Number(opts?.limit) || 40)));
+    const method = opts?.method?.trim();
+    if (method) {
+      return (
+        db
+          .prepare(
+            `SELECT po.*,
+                    u.name AS user_name,
+                    u.telegram_id AS user_telegram_id,
+                    u.username AS user_username,
+                    u.avatar_url AS user_avatar_url
+             FROM payment_orders po
+             LEFT JOIN users u ON u.id = po.user_id
+             WHERE po.user_id = ? AND po.method = ?
+             ORDER BY po.created_at DESC, po.id DESC
+             LIMIT ?`
+          )
+          .all(userId, method, limit) as Record<string, unknown>[]
+      ).map(mapPaymentOrder);
+    }
+    return (
+      db
+        .prepare(
+          `SELECT po.*,
+                  u.name AS user_name,
+                  u.telegram_id AS user_telegram_id,
+                  u.username AS user_username,
+                  u.avatar_url AS user_avatar_url
+           FROM payment_orders po
+           LEFT JOIN users u ON u.id = po.user_id
+           WHERE po.user_id = ?
+           ORDER BY po.created_at DESC, po.id DESC
+           LIMIT ?`
+        )
+        .all(userId, limit) as Record<string, unknown>[]
+    ).map(mapPaymentOrder);
+  },
+
   attachPaymentReceipt(
     orderId: number,
-    receiptFileId: string
+    receiptFileId: string,
+    opts?: { transferRef?: string }
   ):
     | { ok: true; order: PaymentOrder }
     | { ok: false; reason: 'missing' | 'bad_status' | 'no_file' } {
@@ -6160,11 +6370,12 @@ export const dbService = {
     if (existing.method !== 'card' || existing.status !== 'awaiting_receipt') {
       return { ok: false, reason: 'bad_status' };
     }
+    const transferRef = opts?.transferRef?.trim() || null;
     db.prepare(
       `UPDATE payment_orders
-       SET receipt_file_id = ?, status = 'pending'
+       SET receipt_file_id = ?, status = 'pending', transfer_ref = COALESCE(?, transfer_ref)
        WHERE id = ? AND status = 'awaiting_receipt'`
-    ).run(fileId, orderId);
+    ).run(fileId, transferRef, orderId);
     const order = this.getPaymentOrder(orderId);
     if (!order || order.status !== 'pending') return { ok: false, reason: 'bad_status' };
     return { ok: true, order };

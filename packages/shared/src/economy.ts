@@ -1,5 +1,15 @@
 /** اقتصاد سکه همبازی — ثابت‌های مشترک API و بات */
 
+/**
+ * هزینه درخواست همبازی (سکه ربات) — وب و ربات یکسان.
+ * «پیدا کردن همبازی» یک‌بار ۲ سکه از درخواست‌کننده کم می‌کند (حتی اگر چند مچ ارسال شود).
+ * درخواست تکی همبازی هم همان ۲ سکه است.
+ */
+export const PLAYDATE_REQUEST_COST = 2;
+
+/** دلیل لجر کیف‌پول برای کسر همبازی */
+export const PLAYDATE_FEE_REASON = 'هزینه همبازی';
+
 /** هزینه پیش‌فرض اتصال سریع به دامپزشک آنلاین (سکه ربات) — هم‌تراز ربات */
 export const QUICK_VET_COST = 1;
 
@@ -389,6 +399,14 @@ export function walletLedgerLabelFa(reason: string): string {
     return 'کارمزد پلتفرم (مشورت خرید)';
   }
   if (r.startsWith('system_fee:')) return 'کارمزد پلتفرم';
+  if (
+    r === PLAYDATE_FEE_REASON ||
+    r === 'playdate_request' ||
+    r === 'playdate_find' ||
+    r.includes('هزینه همبازی')
+  ) {
+    return PLAYDATE_FEE_REASON;
+  }
   if (r.includes('درآمد مشاوره مربی') || r === 'trainer_consult_payout') {
     return 'درآمد مشاوره مربی';
   }
