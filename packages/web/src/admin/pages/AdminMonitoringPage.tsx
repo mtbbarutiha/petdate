@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   Activity,
+  AlertTriangle,
   CheckCircle2,
   Cpu,
   Database,
@@ -12,18 +13,21 @@ import {
 } from 'lucide-react';
 import { adminFetch } from '../api';
 import { formatAdminFaDateTime } from '../JalaliDateSelect';
+import { checkTone, type CheckTone } from '../monitoringTone';
 
-type CheckStatus = 'up' | 'down' | 'not_configured';
+type CheckStatus = 'up' | 'down' | 'warn' | 'not_configured';
 type Check = {
   ok: boolean;
   status?: CheckStatus;
   detail?: string;
   freeGb?: number;
   totalGb?: number;
+  latencyMs?: number;
 };
 
 type Monitoring = {
   ok: boolean;
+  degraded?: boolean;
   generatedAt: string;
   publicDomain?: string;
   publicWebUrl?: string;
@@ -57,40 +61,40 @@ type Monitoring = {
   };
   checks: Record<string, Check>;
   unhealthy: string[];
+  warnings?: string[];
 };
-
-function checkTone(check: Check): 'ok' | 'bad' | 'idle' {
-  if (check.status === 'not_configured') return 'idle';
-  if (check.status === 'up' || (check.status == null && check.ok)) return 'ok';
-  return 'bad';
-}
 
 const CHECK_LABELS: Record<string, string> = {
   site: 'سایت اصلی',
   www: 'www',
   api: 'API عمومی',
   pdf: 'PDF',
+  websocket: 'WebSocket',
   telegramBot: 'ربات تلگرام',
   sqlite: 'SQLite',
   postgres: 'Postgres',
   redis: 'Redis',
   s3: 'S3 / MinIO',
   elasticsearch: 'Elasticsearch',
+  smtp: 'SMTP',
+  sms: 'پیامک (Candoo)',
   disk: 'دیسک',
 };
 
-/** Prefer public edge checks before internal infra in the grid. */
 const CHECK_ORDER = [
   'site',
   'www',
   'api',
   'pdf',
+  'websocket',
   'telegramBot',
   'sqlite',
   'postgres',
   'redis',
   's3',
   'elasticsearch',
+  'smtp',
+  'sms',
   'disk',
 ] as const;
 
@@ -120,6 +124,19 @@ function orderedChecks(checks: Record<string, Check>): Array<[string, Check]> {
     if (!seen.has(key)) out.push([key, check]);
   }
   return out;
+}
+
+function CheckIcon({ tone }: { tone: CheckTone }) {
+  if (tone === 'ok') return <CheckCircle2 size={18} aria-hidden />;
+  if (tone === 'warn') return <AlertTriangle size={18} aria-hidden />;
+  if (tone === 'idle') return <MinusCircle size={18} aria-hidden />;
+  return <XCircle size={18} aria-hidden />;
+}
+
+function bannerClass(data: Monitoring): string {
+  if (!data.ok) return 'is-bad';
+  if (data.degraded || (data.warnings && data.warnings.length > 0)) return 'is-warn';
+  return 'is-ok';
 }
 
 export function AdminMonitoringPage() {
@@ -166,10 +183,22 @@ export function AdminMonitoringPage() {
 
       {data ? (
         <>
-          <div className={`admin-health-banner ${data.ok ? 'is-ok' : 'is-bad'}`}>
-            {data.ok ? <CheckCircle2 size={20} /> : <XCircle size={20} />}
+          <div className={`admin-health-banner ${bannerClass(data)}`}>
+            {!data.ok ? (
+              <XCircle size={20} />
+            ) : data.degraded || (data.warnings && data.warnings.length > 0) ? (
+              <AlertTriangle size={20} />
+            ) : (
+              <CheckCircle2 size={20} />
+            )}
             <div>
-              <strong>{data.ok ? 'سیستم سالم است' : 'مشکل در سرویس‌های حیاتی'}</strong>
+              <strong>
+                {!data.ok
+                  ? 'مشکل در سرویس‌های حیاتی'
+                  : data.degraded || (data.warnings && data.warnings.length > 0)
+                    ? 'سیستم با هشدار کار می‌کند'
+                    : 'سیستم سالم است'}
+              </strong>
               <span>
                 {data.publicWebUrl || data.publicDomain || data.hostname}
                 {' · '}
@@ -230,14 +259,8 @@ export function AdminMonitoringPage() {
               {orderedChecks(data.checks).map(([key, check]) => {
                 const tone = checkTone(check);
                 return (
-                  <div key={key} className={`admin-check is-${tone}`}>
-                    {tone === 'ok' ? (
-                      <CheckCircle2 size={18} />
-                    ) : tone === 'idle' ? (
-                      <MinusCircle size={18} />
-                    ) : (
-                      <XCircle size={18} />
-                    )}
+                  <div key={key} className={`admin-check is-${tone}`} data-status={check.status || tone}>
+                    <CheckIcon tone={tone} />
                     <div>
                       <strong>{CHECK_LABELS[key] || key}</strong>
                       <span>
@@ -246,9 +269,11 @@ export function AdminMonitoringPage() {
                             ? `${check.freeGb} / ${check.totalGb} GB آزاد`
                             : tone === 'ok'
                               ? 'OK'
-                              : tone === 'idle'
-                                ? 'پیکربندی نشده'
-                                : 'DOWN')}
+                              : tone === 'warn'
+                                ? 'هشدار'
+                                : tone === 'idle'
+                                  ? 'پیکربندی نشده'
+                                  : 'DOWN')}
                       </span>
                     </div>
                   </div>
