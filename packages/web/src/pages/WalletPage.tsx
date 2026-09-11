@@ -14,6 +14,7 @@ import {
 import { InviteFriendsCard } from '../components/InviteFriendsCard';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { useAppToast } from '../hooks/useAppToast';
+import { useI18n } from '../i18n';
 import {
   createCoinCardPayment,
   fetchBuyCoinsCatalog,
@@ -86,6 +87,7 @@ function paymentStatusFa(status: string): string {
  * compact TG strip, ledger transactions. Balances stay visible on this page.
  */
 export function WalletPage() {
+  const { t } = useI18n();
   const { user, token, refreshMe } = useAuthStore();
   const { toastError, toastInfo, toastSuccess } = useAppToast();
   const [wallet, setWallet] = useState<WalletBalances | null>(null);
@@ -132,7 +134,7 @@ export function WalletPage() {
       setTransactions(res.transactions ?? []);
       setTxError('');
     } catch {
-      setTxError('نتوانستیم تراکنش‌ها را بارگذاری کنیم.');
+      setTxError(t('wallet.txLoadError'));
     } finally {
       setTxLoading(false);
     }
@@ -182,7 +184,7 @@ export function WalletPage() {
       void loadTransactions();
       void loadBuyCoins();
     } catch {
-      const msg = 'نتوانستیم موجودی را از سرور تازه کنیم؛ آخرین موجودی محلی نمایش داده شد.';
+      const msg = t('wallet.balanceStale');
       setError(msg);
       if (!soft) toastError(msg);
     } finally {
@@ -205,7 +207,7 @@ export function WalletPage() {
   const statusText = error
     ? error
     : loading
-      ? 'در حال بارگذاری موجودی…'
+      ? t('wallet.loadingBalance')
       : syncing
         ? 'در حال همگام‌سازی…'
         : '';
@@ -275,14 +277,14 @@ export function WalletPage() {
             <Wallet size={18} aria-hidden />
             {BRAND.displayName}
           </p>
-          <h1>کیف پول</h1>
-          <p className="pepito-wallet-lead">موجودی چندارزی — مشترک بین وب و ربات تلگرام</p>
+          <h1>{t('wallet.title')}</h1>
+          <p className="pepito-wallet-lead">{t('wallet.lead')}</p>
         </div>
       </header>
 
       <section
         className={`pepito-wallet-balances${loading && !wallet ? ' is-pending' : ''}`}
-        aria-label="موجودی‌ها"
+        aria-label={t('wallet.balances')}
       >
         <div className="pepito-wallet-folio">
           <div className="pepito-wallet-folio-top">
@@ -291,7 +293,7 @@ export function WalletPage() {
                 <Wallet size={16} />
               </span>
               <div>
-                <h2>موجودی‌ها</h2>
+                <h2>{t('wallet.balances')}</h2>
                 <p>چهار ارز فعال در پنل</p>
               </div>
             </div>
@@ -301,7 +303,7 @@ export function WalletPage() {
               onClick={() => void loadWallet({ soft: true })}
               disabled={syncing || loading}
               aria-busy={syncing || loading}
-              aria-label="همگام‌سازی موجودی"
+              aria-label={t('wallet.syncBalances')}
             >
               <RefreshCw size={15} aria-hidden className={syncing ? 'pepito-spin' : undefined} />
               تازه کردن
@@ -353,9 +355,9 @@ export function WalletPage() {
             <Sparkles size={18} />
           </span>
           <div>
-            <h2 id="wallet-tg-title">شارژ ستاره با فاکتور تلگرام</h2>
+            <h2 id="wallet-tg-title">{t('wallet.starsTitle')}</h2>
             <p className="pepito-wallet-tg-lead">
-              فاکتور Stars در ربات صادر می‌شود؛ همان‌جا در تلگرام پرداخت کن تا ستارهٔ پنل شارژ شود
+              {t('wallet.starsLead')}
             </p>
           </div>
         </div>
@@ -385,7 +387,7 @@ export function WalletPage() {
                   rel="noopener noreferrer"
                 >
                   <Sparkles size={16} aria-hidden />
-                  صدور فاکتور شارژ در تلگرام
+                  {t('wallet.starsInvoice')}
                 </a>
               ) : linked ? (
                 <p className="pepito-wallet-tg-meta-inline">
@@ -416,7 +418,7 @@ export function WalletPage() {
                 {linked
                   ? syncing
                     ? 'در حال همگام‌سازی…'
-                    : 'همگام‌سازی کیف‌پول'
+                    : t('wallet.syncWallet')
                   : 'بعد از Start در ربات — همگام‌سازی'}
               </button>
             </div>
@@ -441,7 +443,7 @@ export function WalletPage() {
             <Receipt size={18} />
           </span>
           <div>
-            <h2 id="wallet-tx-title">تراکنش‌ها</h2>
+            <h2 id="wallet-tx-title">{t('wallet.txTitle')}</h2>
             <p className="pepito-wallet-tx-lead">کسر و واریز سکه و سایر ارزها — مشترک با ربات</p>
           </div>
         </div>
@@ -454,13 +456,13 @@ export function WalletPage() {
 
         {txLoading && !transactions.length ? (
           <p className="pepito-wallet-tx-empty" aria-live="polite">
-            در حال بارگذاری تراکنش‌ها…
+            {t('wallet.loadingTx')}
           </p>
         ) : null}
 
         {!txLoading && !txError && !transactions.length ? (
           <p className="pepito-wallet-tx-empty" role="status">
-            هنوز تراکنشی ثبت نشده. از این به بعد کسر و واریزها اینجا دیده می‌شوند.
+            {t('wallet.emptyTx')}
           </p>
         ) : null}
 
@@ -495,8 +497,8 @@ export function WalletPage() {
         <div className="pepito-wallet-tg-head">
           <span className="pepito-wallet-tg-mark" aria-hidden><Receipt size={18} /></span>
           <div>
-            <h2 id="wallet-buy-title">شارژ سکه با کارت‌به‌کارت</h2>
-            <p className="pepito-wallet-tg-lead">همان کیف پول ربات — واریز کن، رسید را آپلود کن؛ ادمین تأیید می‌کند و در لجر ثبت می‌شود</p>
+            <h2 id="wallet-buy-title">{t('wallet.cardTitle')}</h2>
+            <p className="pepito-wallet-tg-lead">{t('wallet.cardLead')}</p>
           </div>
         </div>
         <div className="pepito-wallet-tg-body">

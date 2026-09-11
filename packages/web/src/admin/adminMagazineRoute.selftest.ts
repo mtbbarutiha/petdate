@@ -20,7 +20,7 @@ assert.match(app, /path="magazine\/:id"/, 'App registers /admin/magazine/:id');
 assert.match(app, /path="magazine"\s+element=\{<MagazinePage\s*\/>\}/, 'App registers public /magazine');
 assert.match(app, /path="magazine\/:slug"/, 'App registers public /magazine/:slug');
 assert.match(layout, /to:\s*'\/admin\/magazine'/, 'sidebar links to /admin/magazine');
-assert.match(layout, /label:\s*'مجله و اخبار'/, 'sidebar label مجله و اخبار');
+assert.match(layout, /labelKey:\s*'admin\.magazineNews'/, 'sidebar labelKey مجله و اخبار');
 assert.match(page, /AdminMagazinePage/, 'list page exists');
 assert.match(form, /MagazineRichTextEditor/, 'form uses TipTap editor');
 assert.match(editor, /@tiptap\/react/, 'TipTap editor wired');

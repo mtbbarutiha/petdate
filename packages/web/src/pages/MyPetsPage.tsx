@@ -7,6 +7,7 @@ import { useMyPets } from '../hooks/useMyPets';
 import { petProfileToUiPet } from '../lib/playdateMap';
 import { PET_TYPE_LABELS } from '../types';
 import { formatAge } from '../data/mock';
+import { useI18n } from '../i18n';
 
 function PawIcon({ size = 16 }: { size?: number }) {
   return (
@@ -18,6 +19,7 @@ function PawIcon({ size = 16 }: { size?: number }) {
 
 /** Owner hub: list pets with profile + edit + medical entry points (mobile + desktop). */
 export function MyPetsPage() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const { isLoggedIn } = useAuthStore();
   const { pets, loading, error } = useMyPets();
@@ -34,12 +36,12 @@ export function MyPetsPage() {
               </span>
               {BRAND.displayName}
             </p>
-            <h1>پت‌های من</h1>
+            <h1>{t('pets.title')}</h1>
             <p className="pepito-my-pets-lead">برای دیدن و ویرایش پت‌ها وارد شو.</p>
           </div>
         </header>
         <Link to="/auth/login?next=/my-pets" className="pepito-btn button-1">
-          ورود
+          {t('common.login')}
         </Link>
       </div>
     );
@@ -56,7 +58,7 @@ export function MyPetsPage() {
             </span>
             {BRAND.displayName}
           </p>
-          <h1>پت‌های من</h1>
+          <h1>{t('pets.title')}</h1>
           <p className="pepito-my-pets-lead">
             پروفایل، ویرایش و پرونده پزشکی هر پت — جدا از پروفایل خودت.
           </p>

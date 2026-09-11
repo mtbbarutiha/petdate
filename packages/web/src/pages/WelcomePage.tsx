@@ -16,6 +16,8 @@ import { SiteFooter } from '../components/SiteFooter';
 import { NavUserCluster } from '../components/NavUserCluster';
 import { SiteDesktopNav } from '../components/SiteDesktopNav';
 import { ThemeToggle } from '../components/ThemeToggle';
+import { LanguageToggle } from '../components/LanguageToggle';
+import { useI18n } from '../i18n';
 import { AdoptionPurchaseCta } from '../components/AdoptionPurchaseCta';
 import { ADOPTION_PETS } from '../data/adoptionPets';
 import { useAuthStore } from '../hooks/useAuthStore';
@@ -35,43 +37,43 @@ const BLOB_PATH =
  */
 const SERVICES: {
   to: string;
-  title: string;
-  desc: string;
+  titleKey: string;
+  descKey: string;
   Icon: LucideIcon;
   fill: 1 | 2 | 3 | 4;
 }[] = [
   {
     to: '/chats',
-    title: 'پیدا کردن همبازی',
-    desc: 'صاحبان پت نزدیک را ببین، درخواست همبازی بفرست و روی همان حساب وب و تلگرام چت کن.',
+    titleKey: 'landing.svcPlaymateTitle',
+    descKey: 'landing.svcPlaymateDesc',
     Icon: HeartHandshake,
     fill: 1,
   },
   {
     to: '/vet-consult',
-    title: 'مشاوره دامپزشک آنلاین',
-    desc: 'اتصال فوری به دامپزشک آنلاین — پس از تأیید پرداخت سکه، مشاوره روی چت مشترک شروع می‌شود.',
+    titleKey: 'landing.svcVetTitle',
+    descKey: 'landing.svcVetDesc',
     Icon: Stethoscope,
     fill: 3,
   },
   {
     to: '/trainer-consult',
-    title: 'مربی و آموزش پت',
-    desc: 'به مربیان تأییدشده درخواست بده — تربیت رفتاری، فرمان‌پذیری و آموزش توله آنلاین.',
+    titleKey: 'landing.svcTrainerTitle',
+    descKey: 'landing.svcTrainerDesc',
     Icon: GraduationCap,
     fill: 2,
   },
   {
     to: '/onboarding/role',
-    title: 'شروع بدون پت',
-    desc: 'هنوز پت نداری؟ نقش بدون پت را انتخاب کن و از مشاوره خرید پت شروع کن.',
+    titleKey: 'landing.svcNoPetTitle',
+    descKey: 'landing.svcNoPetDesc',
     Icon: Home,
     fill: 4,
   },
   {
     to: '/adoption',
-    title: 'پذیرش پت',
-    desc: 'پت‌های نیازمند خانه را ببین و مسیر پذیرش مسئولانه را شروع کن.',
+    titleKey: 'landing.svcAdoptionTitle',
+    descKey: 'landing.svcAdoptionDesc',
     Icon: PawPrint,
     fill: 1,
   },
@@ -80,9 +82,9 @@ const SERVICES: {
 type HeroRole = 'playmate' | 'vet' | 'trainer' | 'no_pet' | 'adoption';
 
 type HeroCta =
-  | { kind: 'gated'; to: string; label: string }
-  | { kind: 'link'; to: string; label: string }
-  | { kind: 'hash'; href: string; label: string };
+  | { kind: 'gated'; to: string; labelKey: string }
+  | { kind: 'link'; to: string; labelKey: string }
+  | { kind: 'hash'; href: string; labelKey: string };
 
 /**
  * Marketing hero — role order first: همبازی → دامپزشک → مربی → بدون پت,
@@ -91,9 +93,9 @@ type HeroCta =
 const HERO_SLIDES: {
   role: HeroRole;
   img: string;
-  kicker: string;
-  title: string;
-  lead: string;
+  kickerKey: string;
+  titleKey: string;
+  leadKey: string;
   cta: HeroCta;
   testId: string;
   Icon: LucideIcon;
@@ -101,50 +103,50 @@ const HERO_SLIDES: {
   {
     role: 'playmate',
     img: `${P}/1-hero.jpg`,
-    kicker: 'همبازی پت',
-    title: 'همبازی مناسب برای پت‌ات پیدا کن',
-    lead: 'صاحبان پت نزدیک را ببین، درخواست همبازی بفرست و روی همان حساب وب و تلگرام چت کن.',
-    cta: { kind: 'gated', to: '/chats', label: 'پیدا کردن همبازی' },
+    kickerKey: 'landing.heroPlaymateKicker',
+    titleKey: 'landing.heroPlaymateTitle',
+    leadKey: 'landing.heroPlaymateLead',
+    cta: { kind: 'gated', to: '/chats', labelKey: 'landing.heroPlaymateCta' },
     testId: 'hero-playmate-cta',
     Icon: HeartHandshake,
   },
   {
     role: 'vet',
     img: `${P}/3.jpg`,
-    kicker: 'دامپزشک آنلاین',
-    title: 'همین حالا به دامپزشک وصل شو',
-    lead: 'درخواست اتصال فوری به پزشک آنلاین — پس از تأیید پرداخت سکه، چت مشاوره شروع می‌شود.',
-    cta: { kind: 'link', to: '/vet-consult', label: 'مشاوره دامپزشک' },
+    kickerKey: 'landing.heroVetKicker',
+    titleKey: 'landing.heroVetTitle',
+    leadKey: 'landing.heroVetLead',
+    cta: { kind: 'link', to: '/vet-consult', labelKey: 'landing.heroVetCta' },
     testId: 'hero-vet-consult-cta',
     Icon: Stethoscope,
   },
   {
     role: 'trainer',
     img: `${P}/5-hero.jpg`,
-    kicker: 'مربی پت',
-    title: 'مربی آنلاین برای آموزش پت‌ات',
-    lead: 'به مربی‌های تأییدشده درخواست بده — تربیت رفتاری و هماهنگی روی چت مشترک وب و ربات.',
-    cta: { kind: 'gated', to: '/trainer-consult', label: 'پیدا کردن مربی' },
+    kickerKey: 'landing.heroTrainerKicker',
+    titleKey: 'landing.heroTrainerTitle',
+    leadKey: 'landing.heroTrainerLead',
+    cta: { kind: 'gated', to: '/trainer-consult', labelKey: 'landing.heroTrainerCta' },
     testId: 'hero-trainer-cta',
     Icon: GraduationCap,
   },
   {
     role: 'no_pet',
     img: `${P}/06-hero.jpg`,
-    kicker: 'بدون پت',
-    title: 'هنوز پت نداری؟ از همین‌جا شروع کن',
-    lead: 'نقش بدون پت را انتخاب کن، مشاوره خرید بگیر یا مسیر پذیرش را ببین — بدون اپ جدا.',
-    cta: { kind: 'gated', to: '/onboarding/role', label: 'شروع بدون پت' },
+    kickerKey: 'landing.heroNoPetKicker',
+    titleKey: 'landing.heroNoPetTitle',
+    leadKey: 'landing.heroNoPetLead',
+    cta: { kind: 'gated', to: '/onboarding/role', labelKey: 'landing.heroNoPetCta' },
     testId: 'hero-no-pet-cta',
     Icon: Home,
   },
   {
     role: 'adoption',
     img: `${P}/2.jpg`,
-    kicker: 'پذیرش یک پت',
-    title: 'یک دوست پشمالوی جدید پیدا کن',
-    lead: 'پت‌های نیازمند خانه را ببین — پذیرش مسئولانه، بازدید حضوری و همراهی تا استقرار.',
-    cta: { kind: 'hash', href: '#adoption', label: 'پذیرش یک پت' },
+    kickerKey: 'landing.heroAdoptionKicker',
+    titleKey: 'landing.heroAdoptionTitle',
+    leadKey: 'landing.heroAdoptionLead',
+    cta: { kind: 'hash', href: '#adoption', labelKey: 'landing.heroAdoptionCta' },
     testId: 'hero-adoption-cta',
     Icon: PawPrint,
   },
@@ -159,10 +161,10 @@ const PETS = ADOPTION_PETS.map((p) => ({
 
 const TEAM = [
   // DOM order (RTL): first item is visual-right. Visual L→R = سارا → ساناز → لیلا → فرانک.
-  { slug: 'faranak-ahmadi', name: 'فرانک احمدی', role: 'مربی', img: `${P}/01-3.jpg` },
-  { slug: 'leila-kiani', name: 'لیلا کیانی', role: 'مربی', img: `${P}/02-3.jpg` },
-  { slug: 'sanaz-ghaffari', name: 'دکتر ساناز غفاری', role: 'دامپزشک', img: `${P}/03-3.jpg` },
-  { slug: 'sara-noori', name: 'دکتر سارا نوری', role: 'دامپزشک', img: `${P}/04-3.jpg` },
+  { slug: 'faranak-ahmadi', name: 'فرانک احمدی', roleKey: 'landing.roleTrainer', img: `${P}/01-3.jpg` },
+  { slug: 'leila-kiani', name: 'لیلا کیانی', roleKey: 'landing.roleTrainer', img: `${P}/02-3.jpg` },
+  { slug: 'sanaz-ghaffari', name: 'دکتر ساناز غفاری', roleKey: 'landing.roleVet', img: `${P}/03-3.jpg` },
+  { slug: 'sara-noori', name: 'دکتر سارا نوری', roleKey: 'landing.roleVet', img: `${P}/04-3.jpg` },
 ] as const;
 
 const TEAM_ALT = (name: string, role: string) => `${name} — ${role} پت‌دیت`;
@@ -300,6 +302,7 @@ function HeroCtaIcon({ Icon }: { Icon: LucideIcon }) {
 }
 
 export function WelcomePage() {
+  const { t, dir } = useI18n();
   const { isLoggedIn } = useAuthStore();
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [scrolled, setScrolled] = useState(false);
@@ -464,20 +467,21 @@ export function WelcomePage() {
   const current = HERO_SLIDES[slide]!;
 
   return (
-    <div className="pepito-landing pepito-landing--with-dock" dir="rtl">
+    <div className="pepito-landing pepito-landing--with-dock" dir={dir}>
       <header className={`pepito-nav${scrolled ? ' is-scrolled' : ''}${isLoggedIn ? ' pepito-nav--app' : ''}`}>
         {/* Logo first so dir=rtl places it at inline-start (right). */}
         <Link to="/" className="pepito-nav-logo" aria-label={BRAND.displayName}>
           <img src="/pepito/img/logo.png" alt={BRAND.displayName} />
         </Link>
-        <nav className="pepito-nav-links" aria-label="بخش‌ها">
-          <a href="#services">خدمات</a>
-          <Link to="/adoption">پذیرش</Link>
-          <a href="#news">اخبار</a>
-          <a href="#faq" className="pepito-nav-faq">سؤالات</a>
+        <nav className="pepito-nav-links" aria-label={t('nav.sections')}>
+          <a href="#services">{t('nav.services')}</a>
+          <Link to="/adoption">{t('nav.adoption')}</Link>
+          <a href="#news">{t('nav.news')}</a>
+          <a href="#faq" className="pepito-nav-faq">{t('nav.faq')}</a>
         </nav>
         <NavUserCluster showCart />
         <div className="pepito-nav-actions">
+          <LanguageToggle />
           <ThemeToggle />
           <SiteDesktopNav />
         </div>
@@ -486,7 +490,7 @@ export function WelcomePage() {
       <section
         className="pepito-hero"
         aria-roledescription="carousel"
-        aria-label="اسلایدر نقش‌ها — همبازی، دامپزشک، مربی، بدون پت، پذیرش"
+        aria-label={t('landing.heroAria')}
       >
         <div className="pepito-hero-slides">
           {HERO_SLIDES.map((s, i) => (
@@ -498,7 +502,7 @@ export function WelcomePage() {
               <img
                 className="pepito-hero-media"
                 src={s.img}
-                alt={s.title}
+                alt={t(s.titleKey)}
                 decoding={i === 0 ? 'sync' : 'async'}
                 loading={i === 0 ? 'eager' : 'lazy'}
                 fetchPriority={i === 0 ? 'high' : 'auto'}
@@ -513,14 +517,14 @@ export function WelcomePage() {
               <span className="pepito-kicker-dot">
                 <i className="flaticon-pawprint-4" />
               </span>
-              {current.kicker}
+              {t(current.kickerKey)}
             </p>
             {/* Stable brand H1 for SEO; slide headline stays visual (styled like former h1). */}
             <h1 className="pd-sr-only">
-              پت‌دیت — همبازی پت، دامپزشک آنلاین، مربی، شروع بدون پت و پذیرش پت
+              {t('landing.heroSrTitle')}
             </h1>
-            <p className="pepito-hero-slide-title">{current.title}</p>
-            <p className="pepito-hero-lead">{current.lead}</p>
+            <p className="pepito-hero-slide-title">{t(current.titleKey)}</p>
+            <p className="pepito-hero-lead">{t(current.leadKey)}</p>
             <div className="pepito-hero-cta">
               {current.cta.kind === 'gated' ? (
                 <GatedLink
@@ -529,7 +533,7 @@ export function WelcomePage() {
                   data-testid={current.testId}
                 >
                   <HeroCtaIcon Icon={current.Icon} />
-                  {current.cta.label}
+                  {t(current.cta.labelKey)}
                 </GatedLink>
               ) : current.cta.kind === 'link' ? (
                 <Link
@@ -538,7 +542,7 @@ export function WelcomePage() {
                   data-testid={current.testId}
                 >
                   <HeroCtaIcon Icon={current.Icon} />
-                  {current.cta.label}
+                  {t(current.cta.labelKey)}
                 </Link>
               ) : (
                 <a
@@ -547,19 +551,19 @@ export function WelcomePage() {
                   data-testid={current.testId}
                 >
                   <HeroCtaIcon Icon={current.Icon} />
-                  {current.cta.label}
+                  {t(current.cta.labelKey)}
                 </a>
               )}
             </div>
           </div>
         </div>
         {/* Pepito `.slider-fade .owl-nav` — circular angle arrows, hover-reveal, hide ≤991px */}
-        <div className="pepito-hero-nav" aria-label="جابجایی اسلاید">
+        <div className="pepito-hero-nav" aria-label={t('landing.slideNav')}>
           <button
             type="button"
             className="pepito-hero-arrow pepito-hero-arrow--prev"
             onClick={goPrevSlide}
-            aria-label="اسلاید قبلی"
+            aria-label={t('landing.prevSlide')}
           >
             {/* RTL: prev sits inline-start (right); chevron points toward previous */}
             <ChevronRight size={16} strokeWidth={1.75} aria-hidden />
@@ -568,12 +572,12 @@ export function WelcomePage() {
             type="button"
             className="pepito-hero-arrow pepito-hero-arrow--next"
             onClick={goNextSlide}
-            aria-label="اسلاید بعدی"
+            aria-label={t('landing.nextSlide')}
           >
             <ChevronLeft size={16} strokeWidth={1.75} aria-hidden />
           </button>
         </div>
-        <div className="pepito-hero-dots" role="tablist" aria-label="اسلایدهای نقش و پذیرش">
+        <div className="pepito-hero-dots" role="tablist" aria-label={t('landing.slideTabs')}>
           {HERO_SLIDES.map((s, i) => (
             <button
               key={s.role}
@@ -582,7 +586,7 @@ export function WelcomePage() {
               aria-selected={i === slide}
               className={`pepito-hero-dot${i === slide ? ' is-active' : ''}`}
               onClick={() => goToSlide(i)}
-              aria-label={s.kicker}
+              aria-label={t(s.kickerKey)}
             />
           ))}
         </div>
@@ -621,7 +625,7 @@ export function WelcomePage() {
           </p>
           <ul className="pepito-about-features">
             {SERVICES.slice(0, 3).map((s) => (
-              <li key={s.title} className="pepito-about-feature">
+              <li key={s.titleKey} className="pepito-about-feature">
                 <span className="pepito-about-feature-icon" aria-hidden>
                   <svg
                     className={`pepito-service-blob fill-${s.fill}`}
@@ -632,8 +636,8 @@ export function WelcomePage() {
                   <s.Icon size={22} strokeWidth={1.75} />
                 </span>
                 <span>
-                  <strong>{s.title}</strong>
-                  <span>{s.desc}</span>
+                  <strong>{t(s.titleKey)}</strong>
+                  <span>{t(s.descKey)}</span>
                 </span>
               </li>
             ))}
@@ -653,9 +657,9 @@ export function WelcomePage() {
             </span>
             عاشق حیواناتیم
           </p>
-          <h2>خدمات پت دیت</h2>
+          <h2>{t('landing.servicesTitle')}</h2>
           <p className="pepito-services-lead">
-            همبازی، دامپزشک آنلاین، مربی، شروع بدون پت و پذیرش — روی یک حساب وب و تلگرام.
+            {t('landing.servicesLead')}
           </p>
         </div>
         <div
@@ -665,7 +669,7 @@ export function WelcomePage() {
         >
           <div className="pepito-services-track" ref={svcTrackRef}>
             {SERVICES.map((s) => (
-              <article key={s.title} className="pepito-service-card">
+              <article key={s.titleKey} className="pepito-service-card">
                 <GatedLink to={s.to} className="pepito-service">
                   <span className="pepito-service-icon pepito-service-icon--proto" aria-hidden>
                     <span className="pepito-service-halo" />
@@ -677,8 +681,8 @@ export function WelcomePage() {
                     </svg>
                     <s.Icon className="pepito-service-proto-glyph" size={48} strokeWidth={1.6} />
                   </span>
-                  <h3>{s.title}</h3>
-                  <p>{s.desc}</p>
+                  <h3>{t(s.titleKey)}</h3>
+                  <p>{t(s.descKey)}</p>
                 </GatedLink>
               </article>
             ))}
@@ -687,13 +691,13 @@ export function WelcomePage() {
         <div className="pepito-services-dots" role="tablist" aria-label="خدمات">
           {SERVICES.map((s, i) => (
             <button
-              key={s.title}
+              key={s.titleKey}
               type="button"
               role="tab"
               aria-selected={i === svcIndex}
               className={`pepito-services-dot${i === svcIndex ? ' is-active' : ''}`}
               onClick={() => setSvcIndex(i)}
-              aria-label={s.title}
+              aria-label={t(s.titleKey)}
             />
           ))}
         </div>
@@ -744,17 +748,17 @@ export function WelcomePage() {
           {TEAM.map((m) => (
             <article key={m.slug} className="pepito-member">
               <div className="pepito-member-photo">
-                <img src={m.img} alt={TEAM_ALT(m.name, m.role)} loading="lazy" width={600} height={700} decoding="async" />
+                <img src={m.img} alt={TEAM_ALT(m.name, t(m.roleKey))} loading="lazy" width={600} height={700} decoding="async" />
               </div>
               <div className="pepito-member-info">
                 <h3>{m.name}</h3>
-                <p>{m.role}</p>
+                <p>{t(m.roleKey)}</p>
                 <GatedLink
                   to={`/team-chat/${m.slug}`}
                   className="pepito-btn button-3 pepito-member-consult"
                   data-testid={`team-consult-${m.slug}`}
                 >
-                  💬 مشاوره آنلاین
+                  {t('landing.consultCta')}
                 </GatedLink>
               </div>
             </article>
@@ -770,7 +774,7 @@ export function WelcomePage() {
             </span>
             عاشقان خوشحال پت
           </p>
-          <h2>نظرات petdate</h2>
+          <h2>{t('landing.reviewsTitle')}</h2>
         </div>
         <div className="pepito-reviews">
           {REVIEWS.map((r) => (
@@ -846,7 +850,7 @@ export function WelcomePage() {
         <div className="pepito-faq-layout">
           <div className="pepito-faq-intro">
             <p className="pepito-eyebrow">عمومی و پرتکرار</p>
-            <h2>سؤالات متداول</h2>
+            <h2>{t('landing.faqTitle')}</h2>
             <p>پاسخ‌های کوتاه دربارهٔ حساب مشترک وب و ربات، OTP و همگام‌سازی داده.</p>
             {/* Pepito: Other FAQs → dedicated FAQ page */}
             <Link to="/faq" className="pepito-btn button-1">

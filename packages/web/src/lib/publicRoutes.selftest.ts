@@ -40,7 +40,7 @@ assert.match(route, /<Layout>/, 'logged-in vet-consult keeps app shell');
 assert.match(landing, /LandingChrome/, 'vet landing uses marketing chrome');
 assert.match(landing, /loginPath\('\/vet-consult'\)/, 'vet landing login returns to consult');
 assert.doesNotMatch(landing, /pepito-app-rail/, 'vet landing has no app sidebar');
-assert.match(welcome, /<Link to="\/adoption">پذیرش<\/Link>/, 'homepage پذیرش CTA goes to /adoption');
+assert.match(welcome, /<Link to="\/adoption">\{t\('nav\.adoption'\)\}<\/Link>/, 'homepage پذیرش CTA goes to /adoption');
 assert.doesNotMatch(welcome, /href="#pets">پذیرش/, 'homepage پذیرش no longer uses #pets');
 
 // Marketing hero: fixed role order همبازی → دامپزشک → مربی → بدون پت, then پذیرش
@@ -65,18 +65,18 @@ assert.match(welcome, /to: '\/onboarding\/role'/, 'no-pet deep-links to role onb
 assert.match(welcome, /href: '#adoption'/, 'adoption hero CTA anchors to #adoption');
 assert.match(welcome, /id="adoption"/, 'welcome adoption section has id=adoption');
 assert.match(welcome, /\/2\.jpg/, 'adoption hero restores removed 2.jpg slide');
-assert.match(welcome, /یک دوست پشمالوی جدید پیدا کن/, 'adoption hero title matches section');
+assert.match(welcome, /landing\.heroAdoptionTitle/, 'adoption hero title key present');
 assert.doesNotMatch(welcome, /پیدا کردن پرستار|مراقبت شبانه|نگهداری پت/, 'no sitter leftover CTAs on welcome');
 
 
 // Services section — PetDate core product lines (not generic pet-care filler)
-assert.match(welcome, /عاشق حیواناتیم[\s\S]{0,400}خدمات پت دیت/, 'services eyebrow then خدمات پت دیت');
+assert.match(welcome, /landing\.servicesTitle/, 'services title uses i18n key');
 assert.doesNotMatch(welcome, /خدمات مراقبت از پت ما/, 'generic care H2 removed');
-assert.match(welcome, /to: '\/chats',\s*title: 'پیدا کردن همبازی'/, 'services playmate → /chats');
-assert.match(welcome, /to: '\/vet-consult',\s*title: 'مشاوره دامپزشک آنلاین'/, 'services vet → /vet-consult');
-assert.match(welcome, /to: '\/trainer-consult',\s*title: 'مربی و آموزش پت'/, 'services trainer → /trainer-consult');
-assert.match(welcome, /to: '\/onboarding\/role',\s*title: 'شروع بدون پت'/, 'services no-pet → onboarding');
-assert.match(welcome, /to: '\/adoption',\s*title: 'پذیرش پت'/, 'services adoption → /adoption');
+assert.match(welcome, /to: '\/chats',\s*titleKey: 'landing\.svcPlaymateTitle'/, 'services playmate → /chats');
+assert.match(welcome, /to: '\/vet-consult',\s*titleKey: 'landing\.svcVetTitle'/, 'services vet → /vet-consult');
+assert.match(welcome, /to: '\/trainer-consult',\s*titleKey: 'landing\.svcTrainerTitle'/, 'services trainer → /trainer-consult');
+assert.match(welcome, /to: '\/onboarding\/role',\s*titleKey: 'landing\.svcNoPetTitle'/, 'services no-pet → onboarding');
+assert.match(welcome, /to: '\/adoption',\s*titleKey: 'landing\.svcAdoptionTitle'/, 'services adoption → /adoption');
 assert.doesNotMatch(
   welcome,
   /title: 'بازی و پیاده‌روی'|title: 'واکسیناسیون و درمان'|title: 'پرونده سلامت'|title: 'گفتگوی امن'/,

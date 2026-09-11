@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useI18n } from '../i18n';
 import { LandingChrome } from './LandingChrome';
 
 interface AuthShellProps {
@@ -20,19 +21,20 @@ interface AuthShellProps {
 export function AuthShell({
   children,
   wide = false,
-  backLabel = 'خانه',
+  backLabel,
   backTo = '/',
-  bannerTitle = 'همراه پت‌های خاص شما',
-  bannerLead = 'همان حساب وب و تلگرام — ورود و تکمیل پروفایل در همین محیط',
+  bannerTitle,
+  bannerLead,
   bannerImage,
   footer = true,
 }: AuthShellProps) {
+  const { t } = useI18n();
   return (
     <LandingChrome
-      bannerTitle={bannerTitle}
-      bannerLead={bannerLead}
+      bannerTitle={bannerTitle ?? t('auth.bannerTitle')}
+      bannerLead={bannerLead ?? t('auth.bannerLead')}
       bannerImage={bannerImage}
-      actionLabel={backLabel}
+      actionLabel={backLabel ?? t('common.home')}
       actionTo={backTo}
       className="pepito-auth-flow"
       footer={footer}

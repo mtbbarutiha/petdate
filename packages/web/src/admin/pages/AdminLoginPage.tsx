@@ -5,12 +5,15 @@ import { AdminWordmark } from '../AdminWordmark';
 import { isAdminAuthenticated, loginAdmin } from '../auth';
 import { sanitizeAdminNext } from '../redirect';
 import { ThemeToggle } from '../../components/ThemeToggle';
+import { LanguageToggle } from '../../components/LanguageToggle';
+import { useI18n } from '../../i18n';
 import '../../styles/admin.css';
 
 export function AdminLoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const next = sanitizeAdminNext(searchParams.get('next'));
+  const { t } = useI18n();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -30,25 +33,26 @@ export function AdminLoginPage() {
       navigate(next);
       return;
     }
-    setError('رمز عبور یا نام کاربری اشتباه است');
+    setError(t('admin.loginError'));
   };
 
   return (
     <div className="admin-app admin-login-page">
       <div className="admin-login-theme">
+        <LanguageToggle compact />
         <ThemeToggle compact />
       </div>
       <form className="admin-login-card" onSubmit={(e) => void handleSubmit(e)}>
         <AdminWordmark className="admin-login-brand" size="lg" />
-        <p className="admin-login-subtitle">ورود اپراتور Pet Date — ربات، فروشگاه، وب و منابع انسانی</p>
+        <p className="admin-login-subtitle">{t('admin.loginSubtitle')}</p>
         <div className="form-group">
-          <label className="form-label">نام کاربری (اختیاری — نقش پشتیبانی)</label>
+          <label className="form-label">{t('admin.loginUserLabel')}</label>
           <div className="admin-input-icon">
             <User size={16} />
             <input
               className="form-input"
               type="text"
-              placeholder="خالی = ورود مدیر با ADMIN_PASSWORD"
+              placeholder={t('admin.loginUserPh')}
               value={username}
               autoComplete="username"
               onChange={(e) => {
@@ -59,13 +63,13 @@ export function AdminLoginPage() {
           </div>
         </div>
         <div className="form-group">
-          <label className="form-label">رمز عبور</label>
+          <label className="form-label">{t('admin.loginPassLabel')}</label>
           <div className="admin-input-icon">
             <Lock size={16} />
             <input
               className="form-input"
               type="password"
-              placeholder="رمز عبور را وارد کنید"
+              placeholder={t('admin.loginPassPh')}
               value={password}
               autoComplete="current-password"
               onChange={(e) => {
@@ -77,11 +81,8 @@ export function AdminLoginPage() {
         </div>
         {error ? <p className="admin-error">{error}</p> : null}
         <button type="submit" className="cta-btn admin-btn--primary" disabled={busy}>
-          {busy ? 'در حال ورود…' : 'ورود به کنسول'}
+          {busy ? t('admin.loginBusy') : t('admin.loginSubmit')}
         </button>
-        <p className="admin-login-hint">
-          مدیر کامل: <code>ADMIN_PASSWORD</code> · پشتیبانی: <code>ADMIN_SUPPORT_PASSWORD</code> یا حساب جدول نقش‌ها
-        </p>
       </form>
     </div>
   );

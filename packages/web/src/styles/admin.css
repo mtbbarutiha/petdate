@@ -491,6 +491,9 @@
   inset-block-start: 16px;
   inset-inline-end: 16px;
   z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .admin-app .admin-login-card {

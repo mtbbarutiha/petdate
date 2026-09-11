@@ -16,7 +16,7 @@ const page = readFileSync(join(webRoot, 'src/admin/pages/AdminTagManagerPage.tsx
 assert.match(app, /AdminTagManagerPage/, 'App lazy-imports AdminTagManagerPage');
 assert.match(app, /path="tag-manager"\s+element=\{<AdminTagManagerPage\s*\/>\}/, 'App registers /admin/tag-manager');
 assert.match(layout, /to:\s*'\/admin\/tag-manager'/, 'sidebar links to /admin/tag-manager');
-assert.match(layout, /label:\s*'تگ منیجر'/, 'sidebar label تگ منیجر');
+assert.match(layout, /labelKey:\s*'admin\.tagManager'/, 'sidebar labelKey تگ منیجر');
 assert.match(page, /export function AdminTagManagerPage/, 'AdminTagManagerPage export present');
 assert.match(page, /\/api\/admin\/site-analytics\/tag-manager/, 'page fetches tag-manager API');
 
