@@ -78,6 +78,9 @@ assert.match(darkCss, /\.pepito-vet-inbox-panel--incoming/, 'vet inbox panels re
 const toggle = readFileSync(join(root, 'src/components/ThemeToggle.tsx'), 'utf8');
 assert.match(toggle, /toggleTheme|setTheme/, 'ThemeToggle mutates theme');
 assert.match(toggle, /aria-label/, 'ThemeToggle accessible');
+assert.match(toggle, /title=\{aria\}/, 'ThemeToggle title for tooltip/a11y');
+assert.doesNotMatch(toggle, /pd-theme-toggle-label|theme\.toLight|theme\.toDark/, 'ThemeToggle is icon-only (no روشن/خاموش / Light/Dark)');
+assert.match(toggle, /Sun|Moon/, 'ThemeToggle renders sun/moon icon');
 
 const landing = readFileSync(join(root, 'src/components/LandingChrome.tsx'), 'utf8');
 assert.match(landing, /ThemeToggle/, 'landing chrome exposes toggle');

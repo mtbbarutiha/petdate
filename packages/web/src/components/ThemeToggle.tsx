@@ -10,12 +10,13 @@ import { useI18n } from '../i18n';
 
 type ThemeToggleProps = {
   className?: string;
-  /** Compact icon-only chip for dense admin chrome */
+  /** Slightly denser size for admin chrome (still icon-only) */
   compact?: boolean;
 };
 
 /**
- * Visible theme switch for site header + admin header.
+ * Icon-only theme switch for site header + admin header.
+ * Visible label text (روشن/خاموش, Light/Dark) is omitted; aria-label/title remain for a11y.
  * Theme is applied on <html> early via index.html; this keeps UI in sync.
  */
 export function ThemeToggle({ className = '', compact = false }: ThemeToggleProps) {
@@ -33,7 +34,6 @@ export function ThemeToggle({ className = '', compact = false }: ThemeToggleProp
     return () => window.removeEventListener('storage', onStorage);
   }, []);
 
-  const nextLabel = mode === 'dark' ? t('theme.toLight') : t('theme.toDark');
   const aria = mode === 'dark' ? t('theme.ariaToLight') : t('theme.ariaToDark');
 
   return (
@@ -45,8 +45,11 @@ export function ThemeToggle({ className = '', compact = false }: ThemeToggleProp
       title={aria}
       data-theme-active={mode}
     >
-      {mode === 'dark' ? <Sun size={compact ? 16 : 18} strokeWidth={2.2} aria-hidden /> : <Moon size={compact ? 16 : 18} strokeWidth={2.2} aria-hidden />}
-      {!compact ? <span className="pd-theme-toggle-label">{nextLabel}</span> : null}
+      {mode === 'dark' ? (
+        <Sun size={compact ? 16 : 18} strokeWidth={2.2} aria-hidden />
+      ) : (
+        <Moon size={compact ? 16 : 18} strokeWidth={2.2} aria-hidden />
+      )}
     </button>
   );
 }
