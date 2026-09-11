@@ -2,7 +2,6 @@ import type { Context } from 'grammy';
 import type { User, VetConsultation } from '@petdate/shared';
 import {
   SEEKER_ADVICE_COST,
-  SITTER_CONNECT_COST,
   TRAINER_CONSULT_COST,
   userHasRole,
 } from '@petdate/shared';
@@ -17,7 +16,7 @@ import {
 import { getSession, upsertSession } from '../session';
 import { getCtxUser, menuKeyboardFor } from './helpers';
 import { startVetChat, enterAiConsultChatAsPatient } from './vet-chat';
-import { SITTER_MENU, TRAINER_MENU, textStepKeyboard } from '../keyboards';
+import { TRAINER_MENU, textStepKeyboard } from '../keyboards';
 
 function patientLabel(c: VetConsultation): string {
   const name = c.patientName?.trim() || `کاربر #${c.patientUserId}`;
@@ -25,11 +24,23 @@ function patientLabel(c: VetConsultation): string {
   return pet ? `${name} · ${pet}` : name;
 }
 
+/** Soft-deprecate find-sitter / pet_sitter UX (stale Telegram keyboards). */
+export async function handleRequestSitter(ctx: Context): Promise<void> {
+  await ctx.reply(
+    'سرویس «پیدا کردن پرستار» از پت‌دیت حذف شده است. از منوی اصلی مربی یا مشاوره پزشک را انتخاب کن.',
+    { reply_markup: menuKeyboardFor(ctx, await getCtxUser(ctx)) }
+  );
+}
+
 export async function handleProviderOnlineToggle(
   ctx: Context,
   kind: 'trainer' | 'sitter',
   online: boolean
 ): Promise<void> {
+  if (kind === 'sitter') {
+    await handleRequestSitter(ctx);
+    return;
+  }
   const from = ctx.from;
   if (!from) return;
   const user = await getCtxUser(ctx);
@@ -37,18 +48,17 @@ export async function handleProviderOnlineToggle(
     await ctx.reply('اول /start بزن.');
     return;
   }
-  const role = kind === 'trainer' ? 'trainer' : 'pet_sitter';
+  const role = 'trainer' as const;
   if (!userHasRole(user, role)) {
-    await ctx.reply(
-      kind === 'trainer' ? 'این بخش مخصوص مربی‌هاست.' : 'این بخش مخصوص پرستار پت است.',
-      { reply_markup: menuKeyboardFor(ctx, user) }
-    );
+    await ctx.reply('این بخش مخصوص مربی‌هاست.', {
+      reply_markup: menuKeyboardFor(ctx, user),
+    });
     return;
   }
 
   let updated: User;
   try {
-    updated = await setProviderOnline(String(from.id), kind, online);
+    updated = await setProviderOnline(String(from.id), 'trainer', online);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     if (online && (msg.includes('credential_required') || msg.includes('مدرک'))) {
@@ -70,7 +80,7 @@ export async function handleProviderOnlineToggle(
     return;
   }
 
-  const label = kind === 'trainer' ? 'مربی' : 'پرستار پت';
+  const label = 'مربی';
   if (online) {
     await ctx.reply(`🟢 آنلاین شدی — آماده پذیرش درخواست ${label}.`, {
       reply_markup: menuKeyboardFor(ctx, updated),
@@ -86,13 +96,16 @@ export async function handleProviderRecentClients(
   ctx: Context,
   kind: 'trainer' | 'sitter'
 ): Promise<void> {
+  if (kind === 'sitter') {
+    await handleRequestSitter(ctx);
+    return;
+  }
   const user = await getCtxUser(ctx);
   if (!user) {
     await ctx.reply('اول /start بزن.');
     return;
   }
-  const role = kind === 'trainer' ? 'trainer' : 'pet_sitter';
-  if (!userHasRole(user, role)) {
+  if (!userHasRole(user, 'trainer')) {
     await ctx.reply('این بخش مخصوص نقش فعال تو نیست.', {
       reply_markup: menuKeyboardFor(ctx, user),
     });
@@ -102,7 +115,7 @@ export async function handleProviderRecentClients(
   try {
     rows = await listVetConsultations({
       vetUserId: user.id,
-      kind: kind === 'trainer' ? 'trainer' : 'sitter',
+      kind: 'trainer',
     });
   } catch (err) {
     console.error('list provider consults failed:', err);
@@ -128,31 +141,35 @@ export async function handleProviderCredentialStart(
   ctx: Context,
   kind: 'trainer' | 'sitter'
 ): Promise<void> {
+  if (kind === 'sitter') {
+    await handleRequestSitter(ctx);
+    return;
+  }
   const user = await getCtxUser(ctx);
   if (!user) {
     await ctx.reply('اول /start بزن.');
     return;
   }
   await upsertSession(String(ctx.from!.id), {
-    step: kind === 'trainer' ? 'trainer_credential' : 'sitter_credential',
+    step: 'trainer_credential',
   });
-  await ctx.reply(
-    kind === 'trainer'
-      ? '📄 عکس یا فایل مدرک مربی‌گری را بفرست (ادمین بررسی می‌کند).'
-      : '📄 عکس یا فایل مدرک پرستار پت را بفرست (ادمین بررسی می‌کند).',
-    { reply_markup: textStepKeyboard({ noBack: true }) }
-  );
+  await ctx.reply('📄 عکس یا فایل مدرک مربی‌گری را بفرست (ادمین بررسی می‌کند).', {
+    reply_markup: textStepKeyboard({ noBack: true }),
+  });
 }
 
 export async function handleProviderCredentialPhoto(
   ctx: Context,
   kind: 'trainer' | 'sitter'
 ): Promise<boolean> {
+  if (kind === 'sitter') {
+    await handleRequestSitter(ctx);
+    return true;
+  }
   const from = ctx.from;
   if (!from) return false;
   const session = await getSession(String(from.id));
-  const expect =
-    kind === 'trainer' ? 'trainer_credential' : 'sitter_credential';
+  const expect = 'trainer_credential';
   if (!session || session.step !== expect) return false;
 
   const fileId =
@@ -166,7 +183,7 @@ export async function handleProviderCredentialPhoto(
   const user = await getCtxUser(ctx);
   if (!user) return true;
   try {
-    await submitProviderCredential(String(from.id), kind, fileId);
+    await submitProviderCredential(String(from.id), 'trainer', fileId);
     await upsertSession(String(from.id), { step: undefined });
     await ctx.reply(
       '✅ مدرک ارسال شد و در صف تأیید ادمین قرار گرفت. بعد از تأیید می‌توانی آنلاین شوی.',
@@ -265,19 +282,6 @@ export async function handleRequestTrainer(ctx: Context): Promise<void> {
   await runQuickConnect(ctx, 'trainer', TRAINER_CONSULT_COST);
 }
 
-export async function handleRequestSitter(ctx: Context): Promise<void> {
-  await ctx.reply(
-    [
-      '🏠 درخواست پرستار پت',
-      `هزینه اتصال: ${SITTER_CONNECT_COST} سکه (۱۰ پرستار + ۱۰ پلتفرم).`,
-      '',
-      '⚠️ پت‌دیت فقط شما را به پرستار متصل می‌کند و مسئولیتی فراتر از اتصال ندارد.',
-    ].join('\n'),
-    { reply_markup: menuKeyboardFor(ctx, await getCtxUser(ctx)) }
-  );
-  await runQuickConnect(ctx, 'sitter', SITTER_CONNECT_COST);
-}
-
 export async function handleRequestSeekerAdvice(ctx: Context): Promise<void> {
   await ctx.reply(
     `💬 مشورت خرید از صاحب پت\nهزینه: ${SEEKER_ADVICE_COST} سکه (۵ صاحب + ۵ پلتفرم). بدون اتصال پزشک.`,
@@ -328,5 +332,4 @@ export async function tryOpenProviderPendingChat(
 
 export const MARKETPLACE_MENU = {
   trainer: TRAINER_MENU,
-  sitter: SITTER_MENU,
 } as const;

@@ -39,7 +39,6 @@ export const GTM_CTA_PATH_PREFIXES = [
   '/shop/pay',
   '/vet-consult',
   '/trainer-consult',
-  '/sitter-consult',
   '/invite',
 ] as const;
 

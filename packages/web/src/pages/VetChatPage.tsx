@@ -87,14 +87,12 @@ import { formatTimeAgo } from '../data/mock';
 function providerInboxTitle(scope: InboxScope): string {
   if (scope === 'vet') return 'گفتگوهای پزشک';
   if (scope === 'trainer') return 'گفتگوهای مربی';
-  if (scope === 'sitter') return 'گفتگوهای پرستار';
   return 'هم بازی';
 }
 
 function providerPanelPath(scope: InboxScope): string {
   if (scope === 'vet') return '/vet-consult';
   if (scope === 'trainer') return '/trainer-consult';
-  if (scope === 'sitter') return '/sitter-consult';
   return '/chats';
 }
 
@@ -113,13 +111,6 @@ function providerInboxEmptyCopy(scope: InboxScope): { title: string; body: strin
       cta: 'رفتن به پنل مربی',
     };
   }
-  if (scope === 'sitter') {
-    return {
-      title: 'هماهنگی پرستاری',
-      body: 'اینجا با صاحبان پت برای هماهنگی پرستاری گفتگو می‌کنی — همبازی نیست.',
-      cta: 'رفتن به پنل پرستار',
-    };
-  }
   return {
     title: 'هنوز گفتگویی نیست',
     body: 'درخواست‌های همبازی و مشاوره‌های شما به‌عنوان صاحب پت اینجا می‌آیند.',
@@ -130,7 +121,6 @@ function providerInboxEmptyCopy(scope: InboxScope): { title: string; body: strin
 function providerThreadEmptyTitle(scope: InboxScope): string {
   if (scope === 'vet') return 'مشاوره‌ای را شروع کن';
   if (scope === 'trainer') return 'هماهنگی آموزش حضوری';
-  if (scope === 'sitter') return 'هماهنگی پرستاری';
   return 'هم بازی';
 }
 
@@ -1378,11 +1368,9 @@ export function VetChatPage() {
                   <SiteLogo className="tg-chat-empty-logo" height={40} />
                 </div>
                 <h2>{providerThreadEmptyTitle(inboxScope)}</h2>
-                {inboxScope === 'trainer' || inboxScope === 'sitter' ? (
+                {inboxScope === 'trainer' ? (
                   <p>
-                    {inboxScope === 'trainer'
-                      ? 'اینجا با صاحبان پت برای هماهنگی آموزش حضوری گفتگو می‌کنی — همبازی نیست.'
-                      : 'اینجا با صاحبان پت برای هماهنگی پرستاری گفتگو می‌کنی — همبازی نیست.'}
+                    اینجا با صاحبان پت برای هماهنگی آموزش حضوری گفتگو می‌کنی — همبازی نیست.
                   </p>
                 ) : null}
                 <Link

@@ -106,7 +106,6 @@ export async function handleAdminStats(ctx: Context): Promise<void> {
   let face = 0;
   let vet = 0;
   let trainer = 0;
-  let sitter = 0;
   let photos = 0;
   let payments = 0;
   try {
@@ -125,11 +124,6 @@ export async function handleAdminStats(ctx: Context): Promise<void> {
     console.error('admin stats trainer queue failed:', err);
   }
   try {
-    sitter = (await listPendingProviderCredentials('sitter')).length;
-  } catch (err) {
-    console.error('admin stats sitter queue failed:', err);
-  }
-  try {
     photos = (await listPendingPetPhotos()).length;
   } catch (err) {
     console.error('admin stats photo queue failed:', err);
@@ -146,7 +140,6 @@ export async function handleAdminStats(ctx: Context): Promise<void> {
       `🛡 احراز چهره: <b>${face}</b>`,
       `📄 مدارک دامپزشک: <b>${vet}</b>`,
       `🎓 مدارک مربی: <b>${trainer}</b>`,
-      `🏠 مدارک پرستار: <b>${sitter}</b>`,
       `🖼 عکس پت: <b>${photos}</b>`,
       `💳 پرداخت‌های در انتظار: <b>${payments}</b>`,
     ].join('\n'),
@@ -570,8 +563,10 @@ export async function handleAdminMenuText(ctx: Context, text: string): Promise<b
     case m.trainerQueue:
       await handleAdminProviderCredentialQueue(ctx, 'trainer');
       return true;
-    case m.sitterQueue:
-      await handleAdminProviderCredentialQueue(ctx, 'sitter');
+    case '🏠 صف مدارک پرستار':
+      await ctx.reply('صف مدارک پرستار حذف شده است.', {
+        reply_markup: adminPanelKeyboard(),
+      });
       return true;
     case m.photoQueue:
       await handleAdminPetPhotoQueue(ctx);

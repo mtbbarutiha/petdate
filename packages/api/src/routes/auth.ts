@@ -569,8 +569,14 @@ authRouter.post('/provider-credential', (req, res) => {
       res.status(400).json({ error: 'kind باید trainer یا sitter باشد' });
       return;
     }
-    const role = kind === 'trainer' ? 'trainer' : 'pet_sitter';
-    if (!userHasRole(session.user, role)) {
+    if (kind === 'sitter') {
+      res.status(410).json({
+        error: 'سرویس پرستار پت حذف شده است',
+        reason: 'sitter_removed',
+      });
+      return;
+    }
+    if (!userHasRole(session.user, 'trainer')) {
       res.status(403).json({ error: 'نقش لازم را نداری' });
       return;
     }
@@ -590,7 +596,7 @@ authRouter.post('/provider-credential', (req, res) => {
       });
       const result = dbService.submitProviderCredential(
         session.user.id,
-        kind,
+        'trainer',
         saved.urlPath
       );
       if (!result.ok) {
@@ -694,8 +700,14 @@ authRouter.patch('/provider-online', (req, res) => {
     res.status(400).json({ error: 'kind باید trainer یا sitter باشد' });
     return;
   }
-  const role = kind === 'trainer' ? 'trainer' : 'pet_sitter';
-  if (!userHasRole(session.user, role)) {
+  if (kind === 'sitter') {
+    res.status(410).json({
+      error: 'سرویس پرستار پت حذف شده است',
+      reason: 'sitter_removed',
+    });
+    return;
+  }
+  if (!userHasRole(session.user, 'trainer')) {
     res.status(403).json({ error: 'نقش لازم را نداری' });
     return;
   }
@@ -703,8 +715,7 @@ authRouter.patch('/provider-online', (req, res) => {
   const online =
     raw === true || raw === 1 || raw === '1' || raw === 'true';
   const existing = dbService.getUserById(session.user.id) ?? session.user;
-  const enabled =
-    kind === 'trainer' ? existing.trainerEnabled !== false : existing.sitterEnabled !== false;
+  const enabled = existing.trainerEnabled !== false;
   if (online && !enabled) {
     res.status(403).json({
       error: 'حساب شما توسط مدیر غیرفعال شده است',
@@ -712,10 +723,7 @@ authRouter.patch('/provider-online', (req, res) => {
     });
     return;
   }
-  const cred =
-    kind === 'trainer'
-      ? existing.trainerCredentialStatus ?? 'none'
-      : existing.sitterCredentialStatus ?? 'none';
+  const cred = existing.trainerCredentialStatus ?? 'none';
   if (online && cred !== 'verified') {
     res.status(403).json({
       error:
@@ -726,7 +734,7 @@ authRouter.patch('/provider-online', (req, res) => {
     });
     return;
   }
-  const updated = dbService.setProviderOnline(session.user.id, kind, online);
+  const updated = dbService.setProviderOnline(session.user.id, 'trainer', online);
   if (!updated) {
     res.status(400).json({ error: 'تغییر وضعیت آنلاین ممکن نشد' });
     return;

@@ -195,9 +195,7 @@ function metaForPath(pathname: string, role?: ReturnType<typeof primaryRole>): P
         ? 'گفتگوهای پزشک'
         : role === 'trainer'
           ? 'گفتگوهای مربی'
-          : role === 'pet_sitter'
-            ? 'گفتگوهای پرستار'
-            : 'هم بازی';
+          : 'هم بازی';
     return { title: SEO.titleTemplate(chatsTitle), robots: 'noindex,nofollow' };
   }
   if (p.startsWith('/onboarding')) {

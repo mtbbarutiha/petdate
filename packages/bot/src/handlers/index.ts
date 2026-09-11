@@ -879,7 +879,8 @@ export function registerHandlers(bot: Bot): void {
       if (await handleProviderCredentialPhoto(ctx, 'trainer')) return;
     }
     if (step === 'sitter_credential') {
-      if (await handleProviderCredentialPhoto(ctx, 'sitter')) return;
+      await handleRequestSitter(ctx);
+      return;
     }
     if (step === 'profile_photo') {
       if (await handleProfilePhoto(ctx)) return;
@@ -1206,7 +1207,7 @@ async function handleTextMessage(ctx: Context): Promise<void> {
       return handleQuickVet(ctx);
     case m.requestTrainer:
       return handleRequestTrainer(ctx);
-    case m.requestSitter:
+    case '🏠 درخواست پرستار پت':
       return handleRequestSitter(ctx);
     case m.seekerAdviceOn:
       return handleToggleSeekerAdvice(ctx, false);

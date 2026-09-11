@@ -65,7 +65,6 @@ export const PET_OWNER_MENU = {
   menu: MAIN_MENU_BTN,
   quickVet: '⚡ مشاوره سریع پزشک',
   requestTrainer: '🎓 درخواست مربی',
-  requestSitter: '🏠 درخواست پرستار پت',
   seekerAdviceOn: '💬 پذیرش مشورت خرید — روشن',
   seekerAdviceOff: '💬 پذیرش مشورت خرید — خاموش',
   shop: '🛒 پت‌شاپ',
@@ -94,7 +93,6 @@ export const ADMIN_MENU = {
   faceQueue: '📋 صف احراز چهره',
   vetQueue: '📄 صف مدارک دامپزشک',
   trainerQueue: '🎓 صف مدارک مربی',
-  sitterQueue: '🏠 صف مدارک پرستار',
   photoQueue: '🖼 صف عکس پت',
   vetList: '🩺 مدیریت پزشک‌ها',
   stats: '📊 وضعیت صف‌ها',
@@ -573,10 +571,9 @@ export function breedReplyKeyboard(breeds: PetBreed[], page: number): Keyboard {
     if (safePage < totalPages - 1) kb.text(WIZARD_NAV.nextPage).primary();
   }
 
-  // بازگشت و نوشتن دستی کنار هم — بدون رد کردن تا جا برای نژاد بیشتر باشد
+  // بازگشت — جستجو با تایپ متن؛ بدون نوشتن دستی آزاد
   kb.row();
   kb.text(WIZARD_NAV.back).primary();
-  kb.text(WIZARD_NAV.custom).primary();
   kb.row();
   kb.text(WIZARD_NAV.cancel).danger();
   kb.row().text(MAIN_MENU_BTN).primary();
@@ -680,7 +677,6 @@ export function mainMenuKeyboard(
   if (active === 'pet_owner') return petOwnerMenuKeyboard(telegramId, options);
   if (active === 'vet') return vetMenuKeyboard(telegramId, options);
   if (active === 'trainer') return trainerMenuKeyboard(telegramId, options);
-  if (active === 'pet_sitter') return sitterMenuKeyboard(telegramId, options);
   if (active === 'pet_seeker') return petSeekerMenuKeyboard(telegramId, options);
   if (active === 'no_pet') return noPetMenuKeyboard(telegramId);
   return noPetMenuKeyboard(telegramId);
@@ -763,8 +759,6 @@ export function petOwnerMenuKeyboard(
     .text(m.requestTrainer)
     .primary()
     .row()
-    .text(m.requestSitter)
-    .primary()
     .text(m.earn)
     .primary()
     .row()
@@ -899,8 +893,6 @@ export function adminPanelKeyboard(): Keyboard {
     .text(m.trainerQueue)
     .primary()
     .row()
-    .text(m.sitterQueue)
-    .primary()
     .text(m.photoQueue)
     .primary()
     .row()
@@ -1060,7 +1052,6 @@ export function breedKeyboard(breeds: PetBreed[]): InlineKeyboard {
   breeds.forEach((b) => {
     kb.text(b.nameFa, `breed:${b.id}`).primary().row();
   });
-  kb.text('✏️ نوشتن دستی', 'breed:custom');
   return kb;
 }
 
@@ -1415,6 +1406,8 @@ export function confirmPetDeleteKeyboard(petId: number): InlineKeyboard {
 }
 
 export const MENU_LABELS = new Set<string>([
+  '🏠 درخواست پرستار پت',
+  '🏠 صف مدارک پرستار',
   ...Object.values(PET_OWNER_MENU),
   ...Object.values(DEFAULT_MENU),
   ...Object.values(NO_PET_MENU),

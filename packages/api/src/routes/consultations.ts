@@ -210,6 +210,14 @@ consultationsRouter.post('/quick-connect', async (req, res) => {
     ? (kindRaw as ConsultServiceKind)
     : 'vet';
 
+  if (serviceKind === 'sitter') {
+    res.status(410).json({
+      error: 'سرویس پیدا کردن پرستار حذف شده است',
+      reason: 'sitter_removed',
+    });
+    return;
+  }
+
   if (!patientUserId || !Number.isFinite(patientUserId)) {
     res.status(400).json({ error: 'patientUserId الزامی است', reason: 'missing_patient' });
     return;
@@ -236,12 +244,9 @@ consultationsRouter.post('/quick-connect', async (req, res) => {
     });
     return;
   }
-  if ((serviceKind === 'trainer' || serviceKind === 'sitter') && !pets.length) {
+  if (serviceKind === 'trainer' && !pets.length) {
     res.status(400).json({
-      error:
-        serviceKind === 'trainer'
-          ? 'برای درخواست مربی، اول باید حداقل یک پت ثبت کنی.'
-          : 'برای ارتباط با پرستار، اول باید حداقل یک پت ثبت کنی.',
+      error: 'برای درخواست مربی، اول باید حداقل یک پت ثبت کنی.',
       reason: 'no_pet',
     });
     return;
@@ -280,9 +285,7 @@ consultationsRouter.post('/quick-connect', async (req, res) => {
       ? dbService.listOnlineVetsForQuickConnect()
       : serviceKind === 'trainer'
         ? dbService.listOnlineProvidersForQuickConnect('trainer')
-        : serviceKind === 'sitter'
-          ? dbService.listOnlineProvidersForQuickConnect('sitter')
-          : dbService.listOwnersAcceptingSeekerAdvice();
+        : dbService.listOwnersAcceptingSeekerAdvice();
   providers = providers.filter((v) => v.id !== patient.id);
 
   if (!providers.length) {
@@ -323,9 +326,7 @@ consultationsRouter.post('/quick-connect', async (req, res) => {
         ? 'فعلاً دامپزشک آنلاینی (ربات یا وب) برای اتصال پیدا نشد. کمی بعد دوباره امتحان کن.'
         : serviceKind === 'trainer'
           ? 'فعلاً مربی آنلاینی برای اتصال پیدا نشد.'
-          : serviceKind === 'sitter'
-            ? 'فعلاً پرستار پت آنلاینی برای اتصال پیدا نشد.'
-            : 'فعلاً صاحب پتی برای مشورت خرید آنلاین نیست.';
+          : 'فعلاً صاحب پتی برای مشورت خرید آنلاین نیست.';
     res.status(409).json({
       error: emptyMsg,
       reason: 'no_online_providers',
@@ -371,9 +372,7 @@ consultationsRouter.post('/quick-connect', async (req, res) => {
         : 'اتصال سریع آنلاین'
       : serviceKind === 'trainer'
         ? 'درخواست مشاوره مربی'
-        : serviceKind === 'sitter'
-          ? 'درخواست پرستار پت — پلتفرم فقط اتصال می‌دهد و مسئولیتی فراتر ندارد'
-          : 'درخواست مشورت خرید پت';
+        : 'درخواست مشورت خرید پت';
 
   for (const provider of providers) {
     try {
@@ -441,9 +440,7 @@ consultationsRouter.post('/quick-connect', async (req, res) => {
         ? 'درخواستت برای پزشک‌های آنلاین (ربات و وب) ارسال شد.'
         : serviceKind === 'trainer'
           ? 'درخواستت برای مربی‌های آنلاین ارسال شد.'
-          : serviceKind === 'sitter'
-            ? 'درخواستت برای پرستارهای آنلاین ارسال شد.'
-            : 'درخواست مشورت خرید برای صاحبان پت ارسال شد.',
+          : 'درخواست مشورت خرید برای صاحبان پت ارسال شد.',
       `هدف‌ها: ${sent}`,
       notifiedTelegram > 0 ? `اعلان تلگرام: ${notifiedTelegram}` : null,
       `سکه کسر شده: ${cost}`,

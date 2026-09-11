@@ -8,7 +8,6 @@ import {
   ChevronLeft,
   Eye,
   GraduationCap,
-  HandHelping,
   LogOut,
   MapPin,
   PawPrint,
@@ -712,7 +711,7 @@ export function ProfilePage() {
           {mainRole === 'pet_owner' ? (
             <section className="pepito-profile-block pepito-profile-consult" aria-label="خدمات برای صاحب پت">
               <div className="pepito-profile-consult-copy">
-                <h2>پزشک، مربی و پرستار</h2>
+<h2>پزشک و مربی</h2>
                 <p>درخواست به آنلاین‌ها — هزینه از موجودی سکه کسر می‌شود.</p>
               </div>
               <div className="pepito-profile-consult-actions">
@@ -731,14 +730,6 @@ export function ProfilePage() {
                 >
                   <GraduationCap size={18} aria-hidden />
                   پیدا کردن مربی
-                </Link>
-                <Link
-                  to="/sitter-consult"
-                  className="pepito-profile-consult-cta"
-                  data-testid="owner-request-sitter-profile-cta"
-                >
-                  <HandHelping size={18} aria-hidden />
-                  پیدا کردن پرستار
                 </Link>
               </div>
             </section>
