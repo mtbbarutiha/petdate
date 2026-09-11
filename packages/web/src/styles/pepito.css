@@ -2006,6 +2006,132 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   background: var(--pepito-base);
   transform: scale(1.15);
 }
+.pepito-news-more {
+  display: flex;
+  justify-content: center;
+  margin-top: 1.5rem;
+}
+
+/* Magazine listing + article detail */
+.pepito-magazine-page {
+  padding-block: 64px 96px;
+}
+.pepito-magazine-search {
+  display: flex;
+  gap: 10px;
+  max-width: 32rem;
+  margin: 0 auto 2rem;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.pepito-magazine-search input {
+  flex: 1;
+  min-width: 200px;
+  border: 1px solid rgba(92, 77, 145, 0.18);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font: inherit;
+}
+.pepito-magazine-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.pepito-magazine-grid .pepito-news-card {
+  flex: none;
+  width: 100%;
+}
+@media (max-width: 900px) {
+  .pepito-magazine-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 600px) {
+  .pepito-magazine-grid {
+    grid-template-columns: 1fr;
+  }
+}
+.pepito-magazine-article {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 48px 20px 96px;
+}
+.pepito-magazine-article-head h1 {
+  margin: 12px 0 8px;
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  color: var(--pepito-dark);
+  font-family: var(--font-display);
+  line-height: 1.35;
+}
+.pepito-magazine-badge {
+  display: inline-block;
+  padding: 4px 14px;
+  border-radius: 6px;
+  background: var(--pepito-base);
+  color: #fff;
+  font-size: 14px;
+}
+.pepito-magazine-meta {
+  color: var(--pepito-muted);
+  margin: 0 0 12px;
+}
+.pepito-magazine-lead {
+  font-size: 1.1rem;
+  color: var(--pepito-muted);
+  line-height: 1.7;
+}
+.pepito-magazine-cover {
+  margin: 24px 0;
+  border-radius: 20px;
+  overflow: hidden;
+}
+.pepito-magazine-cover img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+.pepito-magazine-body {
+  font-size: 1.05rem;
+  line-height: 1.85;
+  color: var(--pepito-dark);
+}
+.pepito-magazine-body h2,
+.pepito-magazine-body h3 {
+  margin-top: 1.4em;
+  font-family: var(--font-display);
+}
+.pepito-magazine-body img {
+  max-width: 100%;
+  border-radius: 12px;
+  margin: 1rem 0;
+}
+.pepito-magazine-body a {
+  color: var(--pepito-base);
+}
+.pepito-magazine-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+  margin: 28px 0 0;
+}
+.pepito-magazine-tags li {
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: rgba(92, 77, 145, 0.08);
+  font-size: 13px;
+  color: var(--pepito-dark);
+}
+.pepito-magazine-error,
+.pepito-magazine-error-box {
+  text-align: center;
+  color: #b42318;
+  margin: 1rem 0;
+}
 
 .pepito-faq {
   display: grid;

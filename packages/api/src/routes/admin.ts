@@ -71,6 +71,7 @@ import { hrAdminRouter } from './admin-hr';
 import { salesAdminRouter } from './admin-sales';
 import { crmAdminRouter } from './admin-crm';
 import { financeOsAdminRouter } from './admin-finance-os';
+import { magazineAdminRouter } from './admin-magazine';
 
 export const adminRouter = Router();
 const STARTED_AT = Date.now();
@@ -156,6 +157,7 @@ adminRouter.use('/hr', hrAdminRouter);
 adminRouter.use('/sales', salesAdminRouter);
 adminRouter.use('/crm', crmAdminRouter);
 adminRouter.use('/finance-os', financeOsAdminRouter);
+adminRouter.use('/magazine', magazineAdminRouter);
 
 /** Platform sidebar open/pending badge counts (single aggregate query set). */
 adminRouter.get('/platform/nav-counts', (req, res) => {

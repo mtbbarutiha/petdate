@@ -32,6 +32,7 @@ import { shopRouter } from './routes/shop';
 import { newsletterRouter } from './routes/newsletter';
 import { supportRouter } from './routes/support';
 import { analyticsRouter } from './routes/analytics';
+import { magazineRouter } from './routes/magazine';
 import {
   expressErrorHandler,
   installConsoleErrorBridge,
@@ -162,6 +163,7 @@ app.use('/api/shop', shopRouter);
 app.use('/api/newsletter', newsletterRouter);
 app.use('/api/support', supportRouter);
 app.use('/api/analytics', analyticsRouter);
+app.use('/api/magazine', magazineRouter);
 app.use('/api/admin', adminRouter);
 
 app.get('/api/games-for-section/:sectionId', (req, res) => {

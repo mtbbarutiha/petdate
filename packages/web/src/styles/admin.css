@@ -5878,3 +5878,81 @@ body:has(.admin-app) {
     animation: none !important;
   }
 }
+
+/* Magazine CMS TipTap editor */
+.admin-app .mag-editor {
+  border: 1px solid var(--admin-border);
+  border-radius: 12px;
+  background: #fff;
+  overflow: hidden;
+}
+.admin-app .mag-editor.is-disabled {
+  opacity: 0.65;
+  pointer-events: none;
+}
+.admin-app .mag-editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 8px;
+  border-bottom: 1px solid var(--admin-border);
+  background: var(--admin-accent-soft);
+}
+.admin-app .mag-editor-toolbar button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--admin-ink);
+  cursor: pointer;
+}
+.admin-app .mag-editor-toolbar button:hover {
+  background: #fff;
+  border-color: var(--admin-border);
+}
+.admin-app .mag-editor-toolbar button.is-on {
+  background: #fff;
+  border-color: var(--admin-border);
+  color: var(--admin-accent, #5c4d91);
+}
+.admin-app .mag-editor-sep {
+  width: 1px;
+  align-self: stretch;
+  background: var(--admin-border);
+  margin-inline: 4px;
+}
+.admin-app .mag-editor-body .tiptap,
+.admin-app .mag-editor-body .ProseMirror {
+  min-height: 220px;
+  padding: 14px 16px;
+  outline: none;
+  font-size: 15px;
+  line-height: 1.75;
+  direction: rtl;
+  text-align: right;
+}
+.admin-app .mag-editor-body .ProseMirror p.is-editor-empty:first-child::before {
+  color: #98a2b3;
+  content: attr(data-placeholder);
+  float: right;
+  height: 0;
+  pointer-events: none;
+}
+.admin-app .mag-editor-body .ProseMirror img {
+  max-width: 100%;
+  border-radius: 8px;
+}
+.admin-app .admin-pill--sky {
+  background: #e8f4ff;
+  border-color: rgba(56, 132, 220, 0.35);
+  color: #1d5bbf;
+}
+.admin-app .admin-pill--slate {
+  background: #f2f4f7;
+  border-color: #d0d5dd;
+  color: #475467;
+}

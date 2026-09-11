@@ -39,6 +39,9 @@ npx tsx "$ROOT/packages/web/src/admin/AdminMonitoringPage.selftest.ts"
 echo "==> selftest: admin /admin/tag-manager route + sidebar"
 npx tsx "$ROOT/packages/web/src/admin/adminTagManagerRoute.selftest.ts"
 
+echo "==> selftest: admin /admin/magazine route + TipTap + public /magazine"
+npx tsx "$ROOT/packages/web/src/admin/adminMagazineRoute.selftest.ts"
+
 echo "==> selftest: web admin widget dashboard (layout + drill)"
 npx tsx "$ROOT/packages/web/src/admin/widgets/widgetDashboard.selftest.ts"
 
@@ -104,6 +107,7 @@ run src/hr-ats-followup.selftest.ts
 run src/finance-os.selftest.ts
 run src/admin-finance-dashboard.selftest.ts
 run src/platform-settings.selftest.ts
+run src/magazine.selftest.ts
 run src/site-analytics.selftest.ts
 
 echo "ci-selftest: all passed"

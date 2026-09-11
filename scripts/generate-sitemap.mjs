@@ -21,6 +21,7 @@ const today = new Date().toISOString().slice(0, 10);
 const urls = [
   { path: '/', changefreq: 'daily', priority: '1.0' },
   { path: '/faq', changefreq: 'weekly', priority: '0.9' },
+  { path: '/magazine', changefreq: 'daily', priority: '0.85' },
   { path: '/shop', changefreq: 'daily', priority: '0.9' },
   { path: '/shop/c/all', changefreq: 'daily', priority: '0.85' },
   { path: '/vet-consult', changefreq: 'weekly', priority: '0.85' },
