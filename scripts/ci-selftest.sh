@@ -114,6 +114,7 @@ run src/finance-os.selftest.ts
 run src/admin-finance-dashboard.selftest.ts
 run src/platform-settings.selftest.ts
 run src/magazine.selftest.ts
+run src/magazine-editorial-seed.selftest.ts
 run src/routes/pets-id-guard.selftest.ts
 run src/routes/playdates-auth.selftest.ts
 run src/site-analytics.selftest.ts
