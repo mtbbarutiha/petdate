@@ -651,6 +651,11 @@ export const fa: Dict = {
     pageN: "صفحه {n}",
     readMore: "ادامه مطلب",
     backToList: "بازگشت به مجله",
+    byAuthor: "توسط",
+    newsEyebrow: "مجله و اخبار",
+    newsHeading: "مقالات و اخبار را ببینید",
+    empty: "هنوز مطلب منتشرشده‌ای نیست.",
+    articlesCount: "{n} مطلب",
   },
   adoption: {
     galleryAlt: "{name} — گالری پذیرش",

@@ -651,6 +651,11 @@ export const en: Dict = {
     pageN: "Page {n}",
     readMore: "Read more",
     backToList: "Back to magazine",
+    byAuthor: "By",
+    newsEyebrow: "Magazine & news",
+    newsHeading: "See articles and news",
+    empty: "No published articles yet.",
+    articlesCount: "{n} articles",
   },
   adoption: {
     galleryAlt: "{name} — adoption gallery",
