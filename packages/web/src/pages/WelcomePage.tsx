@@ -886,7 +886,7 @@ export function WelcomePage() {
             {t('landing.newsEyebrow')}
           </p>
           <h2>
-            {t('landing.newsTitle')}<span className="pepito-news-dot">.</span>
+            {t('landing.newsTitle')}.
           </h2>
         </div>
         <div className="pepito-news-viewport">

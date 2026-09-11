@@ -1883,9 +1883,6 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 .pepito-news-head {
   margin-bottom: 1.25rem;
 }
-.pepito-news-dot {
-  color: var(--pepito-pink);
-}
 .pepito-news-viewport {
   position: relative;
 }

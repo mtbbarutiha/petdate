@@ -151,8 +151,7 @@ export function MagazinePage() {
             {t('magazine.newsEyebrow')}
           </p>
           <h1>
-            {t('magazine.newsHeading')}
-            <span className="pepito-news-dot">.</span>
+            {t('magazine.newsHeading')}.
           </h1>
         </div>
 
