@@ -11662,6 +11662,14 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
 }
 
 
+
+/* Empty-pane / panel primary find CTA */
+.tg-thread-empty__cta-wrap .pepito-btn,
+.tg-chat-list-empty .pepito-btn.button-1 {
+  min-height: 48px !important;
+  width: 100%;
+  justify-content: center;
+}
 .find-playmate-header {
   display: flex;
   align-items: center;
