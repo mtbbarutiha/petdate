@@ -59,6 +59,8 @@ export async function notifyIncomingPlaydateRequest(
     fromPet: Pick<
       PetProfile,
       | 'id'
+      | 'publicId'
+      | 'ownerId'
       | 'name'
       | 'species'
       | 'breed'
@@ -67,6 +69,7 @@ export async function notifyIncomingPlaydateRequest(
       | 'ownerCity'
       | 'ownerProvince'
       | 'ownerVerified'
+      | 'ownerName'
     >;
     toPetName: string;
     speciesLabel?: string;

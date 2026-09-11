@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Check, Clock, MessageCircle, RefreshCw, Send, UserRound, X } from 'lucide-react';
+import { petPublicIdOf, userPublicIdOf } from '@petdate/shared';
 import { PetAvatar } from './PetAvatar';
+import { PublicIdBadge } from './PublicIdBadge';
 import { RequestCountdown } from './RequestCountdown';
 import { formatTimeAgo } from '../data/mock';
 import { EMPTY_STATE_PHOTO } from '../data/petImages';
@@ -218,6 +220,25 @@ export function PlaymateRequestsPanel({
                     {match.toPet?.name ? ` برای ${match.toPet.name}` : ''}
                   </p>
                 )}
+                {match.direction === 'incoming' ? (
+                  <div className="match-request-ids" aria-label="شناسه درخواست‌دهنده">
+                    <PublicIdBadge
+                      label="شناسه پت:"
+                      value={petPublicIdOf({
+                        id: match.fromPet.id,
+                        publicId: match.fromPet.publicId,
+                      })}
+                      size="sm"
+                    />
+                    {match.fromPet.ownerId ? (
+                      <PublicIdBadge
+                        label="شناسه صاحب پت:"
+                        value={userPublicIdOf({ id: match.fromPet.ownerId })}
+                        size="sm"
+                      />
+                    ) : null}
+                  </div>
+                ) : null}
                 {match.direction === 'outgoing' && match.status === 'pending' && (
                   <p className="match-msg">منتظر پاسخ صاحب {match.fromPet.name} باش.</p>
                 )}

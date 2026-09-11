@@ -39,6 +39,7 @@ import {
   profileVerifyStatusLabel,
   toPersianDigits,
   userDisplayPublicId,
+  petPublicIdOf,
   userHasRole,
   type User,
   type UserGender,
@@ -47,6 +48,7 @@ import { AgePicker } from '../components/AgePicker';
 import { InviteFriendsCard } from '../components/InviteFriendsCard';
 import { PetAvatar } from '../components/PetAvatar';
 import { ProfileAvatarEditor } from '../components/ProfileAvatarEditor';
+import { PublicIdBadge } from '../components/PublicIdBadge';
 import { RoleSwitchControl } from '../components/RoleSwitchControl';
 import { formatAge } from '../data/mock';
 import { useAuthStore } from '../hooks/useAuthStore';
@@ -640,17 +642,11 @@ export function ProfilePage() {
                 <li dir="ltr">{display.phone}</li>
               ) : null}
               <li>
-                <button
-                  type="button"
-                  className="pepito-profile-public-id"
-                  dir="ltr"
-                  title="کپی آیدی"
-                  onClick={() => {
-                    void navigator.clipboard?.writeText(publicId);
-                  }}
-                >
-                  <code>{publicId}</code>
-                </button>
+                <PublicIdBadge
+                  label="شناسه کاربر/صاحب پت:"
+                  value={publicId}
+                  className="pepito-profile-id-row"
+                />
               </li>
             </ul>
           </section>
@@ -689,6 +685,7 @@ export function ProfilePage() {
                 <ul className="pepito-profile-pet-rail">
                   {myPets.map((pet) => {
                     const ui = petProfileToUiPet(pet);
+                    const petIdLabel = petPublicIdOf(pet);
                     return (
                       <li key={pet.id}>
                         <Link to={`/pets/${pet.id}`} className="pepito-profile-pet-tile">
@@ -698,6 +695,9 @@ export function ProfilePage() {
                             {[PET_TYPE_LABELS[ui.type] || pet.species, formatAge(ui)]
                               .filter(Boolean)
                               .join(' · ')}
+                          </span>
+                          <span className="pepito-profile-pet-id" dir="ltr">
+                            {petIdLabel}
                           </span>
                         </Link>
                       </li>

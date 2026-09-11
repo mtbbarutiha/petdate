@@ -8,6 +8,8 @@ export type MatchStatus = 'pending' | 'accepted' | 'rejected' | 'expired';
 
 export interface Pet {
   id: number;
+  /** Display public id (PD-P#####) when known from API */
+  publicId?: string;
   name: string;
   type: PetType;
   breed: string;

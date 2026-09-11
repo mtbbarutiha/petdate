@@ -63,7 +63,7 @@ import {
   resolvePublicMediaUrl,
 } from '../lib/api';
 import type { PlaydateChatMediaKind, PlaydateChatMessage } from '@petdate/shared';
-import { PLAYDATE_REQUEST_TTL_MS, USER_GENDER_LABELS, isPendingRequestExpired, makeUserPublicId, userPublicIdOf } from '@petdate/shared';
+import { PLAYDATE_REQUEST_TTL_MS, USER_GENDER_LABELS, isPendingRequestExpired, makeUserPublicId, petPublicIdOf, userPublicIdOf } from '@petdate/shared';
 import { playdateToMatchRequest } from '../lib/playdateMap';
 import { subscribeIncomingRefresh } from '../lib/liveIncoming';
 import {
@@ -83,6 +83,7 @@ import {
   PET_TYPE_LABELS,
   type MatchRequest,
 } from '../types';
+import { PublicIdBadge } from '../components/PublicIdBadge';
 
 const CHAT_WIPE_HINT =
   'لطفاً کل این گفتگو را پاک کنید تا اثری از پیام‌ها (متن، عکس، ویس و …) نماند.';
@@ -1873,6 +1874,29 @@ export function ChatPage() {
                           </li>
                         ) : null}
                         {peerPet.city ? <li>📍 {peerPet.city}</li> : null}
+                        <li className="tg-request-card-ids">
+                          <PublicIdBadge
+                            label="شناسه پت:"
+                            value={petPublicIdOf({
+                              id: peerPet.id,
+                              publicId: peerPet.publicId,
+                            })}
+                            size="sm"
+                          />
+                          {peerOwnerPublicId ? (
+                            <PublicIdBadge
+                              label="شناسه صاحب پت:"
+                              value={peerOwnerPublicId}
+                              size="sm"
+                            />
+                          ) : peerPet.ownerId ? (
+                            <PublicIdBadge
+                              label="شناسه صاحب پت:"
+                              value={userPublicIdOf({ id: peerPet.ownerId })}
+                              size="sm"
+                            />
+                          ) : null}
+                        </li>
                       </ul>
                       {match.message ? (
                         <p className="tg-request-card-msg">«{match.message}»</p>
@@ -2003,7 +2027,7 @@ export function ChatPage() {
                       <p className="tg-info-owner-name">{peerOwnerName}</p>
                       {peerOwnerPublicId ? (
                         <p className="tg-info-owner-id-row">
-                          <span className="tg-info-owner-id-label">آیدی</span>
+                          <span className="tg-info-owner-id-label">شناسه کاربر/صاحب پت</span>
                           <strong
                             dir="ltr"
                             className="tg-peer-public-id-btn"
@@ -2039,7 +2063,12 @@ export function ChatPage() {
                           <li>🛡️ {peerOwnerMeta.verification}</li>
                         ) : null}
                         <li>محله: {peerPet.neighborhood || '—'}</li>
-                        <li>پت: {peerPet.name}</li>
+                        <li>
+                          پت: {peerPet.name}
+                          {peerPet.id
+                            ? ` · ${petPublicIdOf({ id: peerPet.id, publicId: peerPet.publicId })}`
+                            : ''}
+                        </li>
                       </ul>
                       {peerOwnerMeta?.bio ? (
                         <p className="tg-info-bio">{peerOwnerMeta.bio}</p>
@@ -2064,6 +2093,12 @@ export function ChatPage() {
                       <h3>
                         {peerPet.emoji} {peerPet.name}
                       </h3>
+                      <p className="tg-info-owner-id-row">
+                        <span className="tg-info-owner-id-label">شناسه پت</span>
+                        <strong dir="ltr" className="tg-peer-public-id-btn">
+                          {petPublicIdOf({ id: peerPet.id, publicId: peerPet.publicId })}
+                        </strong>
+                      </p>
                       <ul>
                         <li>
                           نوع: {PET_TYPE_LABELS[peerPet.type]} · {peerPet.breed}

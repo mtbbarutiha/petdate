@@ -11,9 +11,12 @@ import {
 import type { PetMedicalEntry, PetMedicalRecord, PetProfile, Prescription } from '@petdate/shared';
 import {
   PET_MEDICAL_FIELD_LABELS,
+  petPublicIdOf,
   type PetMedicalField,
   toPersianDigits,
+  userPublicIdOf,
 } from '@petdate/shared';
+import { PublicIdBadge } from '../components/PublicIdBadge';
 import { formatAge } from '../data/mock';
 import { EMPTY_STATE_PHOTO } from '../data/petImages';
 import { useAuthStore } from '../hooks/useAuthStore';
@@ -291,6 +294,16 @@ export function PetDetailPage() {
       </div>
 
       <div className="pepito-pet-profile-body">
+        <div className="pepito-pet-profile-ids" aria-label="شناسه‌های پت">
+          <PublicIdBadge label="شناسه پت:" value={petPublicIdOf(pet)} />
+          {pet.ownerId ? (
+            <PublicIdBadge
+              label="شناسه صاحب پت:"
+              value={userPublicIdOf({ id: pet.ownerId })}
+            />
+          ) : null}
+        </div>
+
         {isMyPet ? (
           <div className="pepito-pet-profile-owner-actions">
             <Link to={`/pets/${pet.id}/edit`} className="pepito-btn button-2">

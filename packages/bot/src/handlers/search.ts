@@ -702,7 +702,7 @@ function formatNearbyPetCaption(
         ? String(owner.publicId)
         : null;
   lines.push(`🐾 <b>${escapeHtml(pet.name)}</b>`);
-  lines.push(`آیدی پت: <code>${escapeHtml(petPublicIdOf(pet))}</code>`);
+  lines.push(`شناسه پت: <code>${escapeHtml(petPublicIdOf(pet))}</code>`);
   const species = PET_SPECIES_LABELS[pet.species] ?? pet.species;
   lines.push(`| ${species}${pet.breed ? ` · ${escapeHtml(pet.breed)}` : ''}`);
   if (pet.gender) lines.push(`| ${PET_GENDER_LABELS[pet.gender] ?? pet.gender}`);
@@ -719,7 +719,7 @@ function formatNearbyPetCaption(
   lines.push('');
   lines.push('👤 <b>صاحب پت</b>');
   if (ownerName) lines.push(`| نام: ${escapeHtml(ownerName)}`);
-  if (publicId) lines.push(`| آیدی: <code>${escapeHtml(publicId)}</code>`);
+  if (publicId) lines.push(`| شناسه صاحب پت: <code>${escapeHtml(publicId)}</code>`);
   if (owner?.age != null) lines.push(`| سن: ${owner.age}`);
   if (owner?.gender && owner.gender in USER_GENDER_LABELS) {
     lines.push(`| جنسیت: ${USER_GENDER_LABELS[owner.gender as keyof typeof USER_GENDER_LABELS]}`);

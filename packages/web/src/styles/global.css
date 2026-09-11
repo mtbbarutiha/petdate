@@ -1213,6 +1213,13 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   line-height: 1.6;
 }
 
+.match-request-ids {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.75rem;
+  margin: 0 0 12px;
+}
+
 .match-actions { display: flex; gap: 8px; }
 
 .match-actions button,

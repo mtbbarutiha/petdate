@@ -236,7 +236,7 @@ export function buildProfileCardLines(
   return {
     likes: `❤️ ${formatFaInt(likes)} لایک`,
     completion: `📊 تکمیل پروفایل: ${toPersianDigits(completion.percent)}٪`,
-    userId: `آیدی: ${userDisplayPublicId(user)}`,
+    userId: `شناسه کاربر/صاحب پت: ${userDisplayPublicId(user)}`,
     identity: `${profileGenderEmoji(user.gender)} ${name}${agePart} | ${profileLanguageCode(user)}`,
     location: `${profileCountryFlag(user.country)} ${profileLocationLine(user)}`,
     purpose: profilePurposeLabel(user),
