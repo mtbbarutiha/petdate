@@ -778,7 +778,7 @@ export function WelcomePage() {
             </article>
           ))}
         </div>
-        <AdoptionPurchaseCta adoptionTagAsLink />
+        <AdoptionPurchaseCta />
       </section>
 
 <section className="pepito-section" id="team">
