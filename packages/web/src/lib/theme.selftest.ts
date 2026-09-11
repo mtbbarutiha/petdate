@@ -42,6 +42,10 @@ assert.match(darkCss, /\[data-theme=['"]dark['"]\]/, 'dark token block present')
 assert.match(darkCss, /--pepito-soft/, 'pepito soft remapped');
 assert.match(darkCss, /--admin-bg/, 'admin tokens remapped');
 assert.match(darkCss, /--tg-in/, 'chat tokens remapped');
+assert.match(darkCss, /\.tg-chat-list-meta small/, 'chat list subtitle contrast remapped');
+assert.match(darkCss, /\.tg-chat-list-kind\b/, 'chat kind pills remapped for dark');
+assert.match(darkCss, /\.tg-chat-list-badge\.is-ended/, 'chat ended badge remapped');
+assert.match(darkCss, /\.tg-thread-empty/, 'chat empty pane remapped');
 assert.doesNotMatch(darkCss, /--pepito-soft:\s*#000\b/, 'avoid pure black bg');
 assert.doesNotMatch(darkCss, /box-shadow:\s*0 0 \d+px .{0,40}(purple|#[89a-fA-F][0-9a-fA-F]{5})/, 'no neon glow shadows');
 
