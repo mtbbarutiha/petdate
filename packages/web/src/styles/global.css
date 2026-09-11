@@ -5536,24 +5536,28 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 }
 
 .tg-ended-bar {
-  background: var(--surface);
+  background: var(--tg-surface, var(--surface));
   border-top: 1px solid var(--tg-line);
   padding: 14px;
   padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
   display: grid;
-  gap: 10px;
+  gap: 12px;
   text-align: center;
 }
 .tg-ended-bar p {
   margin: 0;
   color: var(--tg-muted);
-  font-size: .86rem;
-  line-height: 1.5;
+  font-size: .88rem;
+  line-height: 1.55;
+}
+.tg-ended-actions {
+  display: grid;
+  gap: 10px;
 }
 .tg-wipe-btn {
   border: 0;
   min-height: 48px;
-  border-radius: 12px;
+  border-radius: 14px;
   background: linear-gradient(135deg, #e53935, #c62828);
   color: #fff;
   font-weight: 800;
@@ -5562,6 +5566,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   justify-content: center;
   gap: 8px;
   cursor: pointer;
+  box-shadow: 0 8px 18px rgba(198, 40, 40, 0.22);
 }
 .tg-wipe-btn:disabled { opacity: .55; cursor: not-allowed; }
 
@@ -5569,13 +5574,20 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 42px;
-  border-radius: 12px;
-  background: rgba(21, 204, 160, 0.14);
-  color: #0f6b4c;
+  min-height: 44px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--pepito-mint, #15cca0) 10%, transparent);
+  color: #0a5c48;
+  border: 1.5px solid color-mix(in srgb, #0a5c48 28%, transparent);
   font-weight: 800;
   text-decoration: none;
   padding: 0 14px;
+  box-sizing: border-box;
+}
+.tg-chat-link-btn--outline {
+  background: transparent;
+  color: #0a5c48;
+  border: 1.5px solid color-mix(in srgb, #0f766e 38%, transparent);
 }
 
 /* Same purple pepito CTA + paw hover used on landing/home */

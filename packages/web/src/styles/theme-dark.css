@@ -312,8 +312,19 @@ html[data-theme='dark'] .tg-empty-visual__paw {
   color: var(--pepito-mint);
 }
 html[data-theme='dark'] .tg-chat-link-btn {
-  background: rgba(45, 212, 176, 0.16) !important;
-  color: var(--pepito-mint) !important;
+  background: rgba(45, 212, 176, 0.12) !important;
+  color: #b6f5e4 !important;
+  border-color: rgba(45, 212, 176, 0.42) !important;
+}
+html[data-theme='dark'] .tg-chat-link-btn--outline {
+  background: transparent !important;
+  color: #e8fff8 !important;
+  border-color: rgba(182, 245, 228, 0.45) !important;
+}
+html[data-theme='dark'] .tg-chat-link-btn--outline:hover,
+html[data-theme='dark'] .tg-chat-link-btn:hover {
+  background: rgba(45, 212, 176, 0.2) !important;
+  border-color: rgba(182, 245, 228, 0.6) !important;
 }
 
 html[data-theme='dark'] .tg-chat.tg-chat--shell {
@@ -437,9 +448,81 @@ html[data-theme='dark'] .tg-empty-visual__ring--inner {
 html[data-theme='dark'] .tg-empty-visual__paw {
   color: #9aedd8;
 }
-html[data-theme='dark'] .tg-chat-link-btn {
-  background: rgba(45, 212, 176, 0.18) !important;
-  color: #b6f5e4 !important;
+
+/* Playmate request card + end-of-chat wipe bar (theme-coherent) */
+html[data-theme='dark'] .tg-request-card {
+  background: var(--tg-surface) !important;
+  border-color: rgba(232, 230, 242, 0.12) !important;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.28) !important;
+  color: var(--tg-ink);
+}
+html[data-theme='dark'] .tg-request-card-body {
+  background: var(--tg-surface) !important;
+}
+html[data-theme='dark'] .tg-request-card-cover {
+  background-color: #242836;
+}
+html[data-theme='dark'] .tg-request-card-cover.is-placeholder {
+  background:
+    radial-gradient(circle at 30% 22%, rgba(45, 212, 176, 0.22), transparent 58%),
+    radial-gradient(circle at 78% 72%, rgba(59, 184, 245, 0.16), transparent 55%),
+    linear-gradient(145deg, #232736 0%, #1c2030 100%);
+}
+html[data-theme='dark'] .tg-request-card-cover-mark {
+  color: #9aedd8;
+  background: color-mix(in srgb, var(--tg-surface) 82%, var(--pepito-mint));
+  box-shadow:
+    0 10px 22px rgba(0, 0, 0, 0.28),
+    inset 0 0 0 1px rgba(45, 212, 176, 0.28);
+}
+html[data-theme='dark'] .tg-request-card-body h3 {
+  color: var(--tg-ink) !important;
+}
+html[data-theme='dark'] .tg-request-card-meta {
+  color: var(--tg-muted) !important;
+}
+html[data-theme='dark'] .tg-request-card-status {
+  color: #d7d3e6 !important;
+}
+html[data-theme='dark'] .tg-request-card-msg {
+  background: rgba(232, 230, 242, 0.06);
+  color: var(--tg-ink);
+}
+html[data-theme='dark'] .tg-request-card-wait {
+  color: #e8fff8 !important;
+  opacity: 0.9;
+}
+html[data-theme='dark'] .tg-request-profile {
+  background: rgba(45, 212, 176, 0.1);
+  color: #b6f5e4;
+  border-color: rgba(45, 212, 176, 0.28);
+}
+html[data-theme='dark'] .tg-request-composer-bar {
+  background: color-mix(in srgb, var(--tg-surface) 94%, transparent);
+  border-top-color: var(--tg-line);
+  color: var(--tg-muted);
+}
+html[data-theme='dark'] .tg-ended-bar {
+  background: color-mix(in srgb, var(--tg-surface) 96%, transparent) !important;
+  border-top-color: var(--tg-line) !important;
+  color: var(--tg-ink);
+}
+html[data-theme='dark'] .tg-ended-bar p {
+  color: var(--tg-muted) !important;
+}
+html[data-theme='dark'] .tg-ended-bar.is-secure-wipe {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, #f59e0b 14%, var(--tg-surface)),
+      var(--tg-surface)
+    ) !important;
+  border-top-color: rgba(245, 158, 11, 0.32);
+}
+html[data-theme='dark'] .tg-wipe-btn {
+  background: linear-gradient(135deg, #ef5350, #c62828) !important;
+  color: #fff !important;
+  box-shadow: 0 8px 18px rgba(198, 40, 40, 0.32);
 }
 html[data-theme='dark'] .find-playmate-header-btn--cta {
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35) !important;

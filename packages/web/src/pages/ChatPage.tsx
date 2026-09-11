@@ -708,7 +708,7 @@ export function ChatPage() {
             if (req.status === 'accepted') {
               setMessages([
                 systemMessage('درخواست پذیرفته شد — چت همبازی فعال شد.'),
-                systemMessage('👋 به همبازی جدید سلام کن!'),
+                systemMessage('به همبازی جدید سلام کن.'),
               ]);
             } else if (req.status === 'expired') {
               setMessages([systemMessage('درخواست همبازی منقضی شد (مهلت ۲ دقیقه).')]);
@@ -854,7 +854,7 @@ export function ChatPage() {
     if (match.status === 'accepted' && !ended) {
       setMessages([
         systemMessage('چت همبازی فعال شد.'),
-        systemMessage('👋 به همبازی جدید سلام کن!'),
+        systemMessage('به همبازی جدید سلام کن.'),
       ]);
     } else if (match.status === 'pending') {
       setMessages([]);
@@ -885,7 +885,7 @@ export function ChatPage() {
         if (req.status === 'accepted') {
           setMessages([
             systemMessage('درخواست پذیرفته شد — چت همبازی فعال شد.'),
-            systemMessage('👋 به همبازی جدید سلام کن!'),
+            systemMessage('به همبازی جدید سلام کن.'),
           ]);
           requestAnimationFrame(() => inputRef.current?.focus());
         } else if (req.status === 'expired') {
@@ -1264,7 +1264,7 @@ export function ChatPage() {
       setSecure(Boolean(updated.chatSecure));
       setMessages([
         systemMessage('درخواست پذیرفته شد — چت همبازی فعال شد.'),
-        systemMessage('👋 به همبازی جدید سلام کن!'),
+        systemMessage('به همبازی جدید سلام کن.'),
       ]);
       void reloadConversations();
       requestAnimationFrame(() => {
@@ -1851,9 +1851,22 @@ export function ChatPage() {
                     aria-label="کارت درخواست همبازی"
                   >
                     <div
-                      className="tg-request-card-cover"
-                      style={{ backgroundImage: `url(${peerPet.imageUrl})` }}
-                    />
+                      className={`tg-request-card-cover${
+                        peerPet.imageUrl?.trim() ? '' : ' is-placeholder'
+                      }`}
+                      style={
+                        peerPet.imageUrl?.trim()
+                          ? { backgroundImage: `url(${peerPet.imageUrl.trim()})` }
+                          : undefined
+                      }
+                      aria-hidden
+                    >
+                      {peerPet.imageUrl?.trim() ? null : (
+                        <span className="tg-request-card-cover-mark">
+                          <PawPrint size={40} strokeWidth={1.75} />
+                        </span>
+                      )}
+                    </div>
                     <div className="tg-request-card-body">
                       <p className="tg-request-card-kicker">
                         {incomingPending
@@ -1870,7 +1883,7 @@ export function ChatPage() {
                         {match.rawToName ?? match.toPet?.name ?? 'پت شما'}
                       </h3>
                       <ul className="tg-request-card-meta">
-                        <li>
+                        <li className="tg-request-card-status">
                           #{match.id} ·{' '}
                           {match.statusLabel ??
                             MATCH_STATUS_LABELS[match.status] ??
@@ -1896,7 +1909,7 @@ export function ChatPage() {
                             {PET_TYPE_LABELS[peerPet.type]} · {peerPet.breed}
                           </li>
                         ) : null}
-                        {peerPet.city ? <li>📍 {peerPet.city}</li> : null}
+                        {peerPet.city ? <li>{peerPet.city}</li> : null}
                         <li className="tg-request-card-ids">
                           <PublicIdBadge
                             label="شناسه پت:"
@@ -1971,7 +1984,7 @@ export function ChatPage() {
                         </div>
                       ) : match.status === 'accepted' ? (
                         <p className="tg-request-card-wait" role="status">
-                          👋 به همبازی جدید سلام کن!
+                          به همبازی جدید سلام کن
                         </p>
                       ) : null}
                     </div>
@@ -2299,26 +2312,28 @@ export function ChatPage() {
                         ? SECURE_WIPE_HINT
                         : CHAT_WIPE_HINT}
                   </p>
-                  <button
-                    type="button"
-                    className="tg-wipe-btn"
-                    onClick={() => void wipeConversation()}
-                    disabled={wiping || wiped}
-                    data-testid="playmate-wipe-chat"
-                  >
-                    {wiped ? (
-                      <>
-                        <Check size={16} /> پاک شد
-                      </>
-                    ) : wiping ? (
-                      'در حال پاک‌کردن…'
-                    ) : (
-                      'حذف کل چت'
-                    )}
-                  </button>
-                  <Link to="/chats" className="tg-chat-link-btn">
-                    بازگشت به همبازی
-                  </Link>
+                  <div className="tg-ended-actions">
+                    <button
+                      type="button"
+                      className="tg-wipe-btn"
+                      onClick={() => void wipeConversation()}
+                      disabled={wiping || wiped}
+                      data-testid="playmate-wipe-chat"
+                    >
+                      {wiped ? (
+                        <>
+                          <Check size={16} /> پاک شد
+                        </>
+                      ) : wiping ? (
+                        'در حال پاک‌کردن…'
+                      ) : (
+                        'حذف کل چت'
+                      )}
+                    </button>
+                    <Link to="/chats" className="tg-chat-link-btn tg-chat-link-btn--outline">
+                      بازگشت به همبازی
+                    </Link>
+                  </div>
                 </div>
               )}
               </div>
