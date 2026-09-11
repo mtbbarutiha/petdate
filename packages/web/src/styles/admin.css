@@ -6112,3 +6112,138 @@ body:has(.admin-app) {
   border-color: #d0d5dd;
   color: #475467;
 }
+
+/* ── Pet-purchase request detail modal ── */
+.admin-app .pp-req-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  direction: rtl;
+  text-align: start;
+  color: var(--admin-ink);
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+
+.admin-app .pp-req-detail__hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.admin-app .pp-req-detail__identity {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.admin-app .pp-req-detail__name {
+  font-size: 1.05rem;
+  font-weight: 750;
+  color: var(--admin-ink);
+  letter-spacing: -0.02em;
+}
+
+.admin-app .pp-req-detail__mobile {
+  font-family: var(--admin-mono);
+  font-size: 0.86rem;
+  color: var(--admin-muted);
+}
+
+.admin-app .pp-req-detail__meta {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.55;
+}
+
+.admin-app .pp-req-detail__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 14px;
+}
+
+.admin-app .pp-req-detail__grid .form-label {
+  margin-bottom: 4px;
+}
+
+.admin-app .pp-req-detail__grid .admin-select {
+  width: 100%;
+  box-sizing: border-box;
+  color: var(--admin-ink);
+}
+
+.admin-app .pp-req-detail__span {
+  grid-column: 1 / -1;
+}
+
+.admin-app .pp-req-detail__value {
+  color: var(--admin-ink);
+  font-size: 0.92rem;
+  min-height: var(--admin-control-h, 40px);
+  display: flex;
+  align-items: center;
+}
+
+.admin-app .pp-req-detail__value a {
+  color: var(--admin-accent);
+  font-weight: 650;
+  text-decoration: none;
+}
+
+.admin-app .pp-req-detail__value a:hover {
+  text-decoration: underline;
+}
+
+.admin-app .pp-req-detail__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 2px;
+}
+
+.admin-app .pp-req-detail__refer {
+  display: grid;
+  gap: 10px;
+  margin-top: 2px;
+  padding: 14px;
+  border: 1px solid var(--admin-border);
+  border-radius: var(--admin-radius-sm, 10px);
+  background: color-mix(in srgb, var(--admin-accent-soft) 55%, var(--admin-surface));
+}
+
+.admin-app .pp-req-detail__refer .admin-subsection-title {
+  margin: 0;
+}
+
+.admin-app .pp-req-detail__refer .admin-hint {
+  margin: 0;
+}
+
+.admin-app .pp-req-detail__refer-fields {
+  display: grid;
+  gap: 10px;
+}
+
+.admin-app .pp-req-detail__refer-fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.admin-app .pp-req-detail__refer .form-input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.admin-app .pp-req-detail__refer > .admin-btn {
+  justify-self: start;
+}
+
+@media (max-width: 520px) {
+  .admin-app .pp-req-detail__grid {
+    grid-template-columns: 1fr;
+  }
+}
