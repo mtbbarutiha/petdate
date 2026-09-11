@@ -10,7 +10,7 @@ type PetRow = {
   ownerId: number;
 };
 
-type CredTab = 'vet' | 'trainer' | 'sitter' | 'photos' | 'avatars';
+type CredTab = 'vet' | 'trainer' | 'photos' | 'avatars';
 type ViewMode = 'queue' | 'archive';
 
 function looksLikeTelegramFileId(value: string): boolean {
@@ -36,9 +36,8 @@ function isPdfRef(fileRef?: string | null): boolean {
   return /\.pdf($|\?)/i.test(String(fileRef ?? ''));
 }
 
-function credentialFileRef(u: User, tab: 'vet' | 'trainer' | 'sitter'): string | undefined {
+function credentialFileRef(u: User, tab: 'vet' | 'trainer'): string | undefined {
   if (tab === 'trainer') return u.trainerCredentialFileId;
-  if (tab === 'sitter') return u.sitterCredentialFileId;
   return u.vetCredentialFileId;
 }
 
@@ -47,10 +46,8 @@ export function AdminMarketplaceModerationPage() {
   const [mode, setMode] = useState<ViewMode>('queue');
   const [pendingVets, setPendingVets] = useState<User[]>([]);
   const [pendingTrainers, setPendingTrainers] = useState<User[]>([]);
-  const [pendingSitters, setPendingSitters] = useState<User[]>([]);
   const [archiveVets, setArchiveVets] = useState<User[]>([]);
   const [archiveTrainers, setArchiveTrainers] = useState<User[]>([]);
-  const [archiveSitters, setArchiveSitters] = useState<User[]>([]);
   const [photos, setPhotos] = useState<PetRow[]>([]);
   const [avatars, setAvatars] = useState<User[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -59,22 +56,18 @@ export function AdminMarketplaceModerationPage() {
   const load = useCallback(async () => {
     setError(null);
     try {
-      const [pv, pt, ps, av, at, as, p, ua] = await Promise.all([
+      const [pv, pt, av, at, p, ua] = await Promise.all([
         adminFetch<User[]>('/api/users/vet-credentials/pending'),
         adminFetch<User[]>('/api/users/provider-credentials/pending?kind=trainer'),
-        adminFetch<User[]>('/api/users/provider-credentials/pending?kind=sitter'),
         adminFetch<User[]>('/api/users/vet-credentials/verified'),
         adminFetch<User[]>('/api/users/provider-credentials/verified?kind=trainer'),
-        adminFetch<User[]>('/api/users/provider-credentials/verified?kind=sitter'),
         adminFetch<PetRow[]>('/api/users/pet-photos/pending'),
         adminFetch<User[]>('/api/users/user-avatars/pending'),
       ]);
       setPendingVets(pv);
       setPendingTrainers(pt);
-      setPendingSitters(ps);
       setArchiveVets(av);
       setArchiveTrainers(at);
-      setArchiveSitters(as);
       setPhotos(p);
       setAvatars(ua);
     } catch (err) {
@@ -101,7 +94,7 @@ export function AdminMarketplaceModerationPage() {
     }
   }
 
-  async function actProvider(id: number, kind: 'trainer' | 'sitter', approve: boolean) {
+  async function actProvider(id: number, kind: 'trainer', approve: boolean) {
     setBusyId(`${kind}-${id}`);
     try {
       await adminFetch(
@@ -157,18 +150,13 @@ export function AdminMarketplaceModerationPage() {
         ? isArchive
           ? archiveVets
           : pendingVets
-        : tab === 'trainer'
-          ? isArchive
-            ? archiveTrainers
-            : pendingTrainers
-          : isArchive
-            ? archiveSitters
-            : pendingSitters;
+        : isArchive
+          ? archiveTrainers
+          : pendingTrainers;
 
   const tabCounts = {
     vet: mode === 'archive' ? archiveVets.length : pendingVets.length,
     trainer: mode === 'archive' ? archiveTrainers.length : pendingTrainers.length,
-    sitter: mode === 'archive' ? archiveSitters.length : pendingSitters.length,
     photos: photos.length,
     avatars: avatars.length,
   };
@@ -179,7 +167,7 @@ export function AdminMarketplaceModerationPage() {
         <div>
           <h1>تأیید مدارک و عکس‌ها</h1>
           <p>
-            صف تأیید مدرک دامپزشک / مربی / پرستار و عکس پت و کاربر — مدارک تأییدشده در آرشیو
+            صف تأیید مدرک دامپزشک / مربی و عکس پت و کاربر — مدارک تأییدشده در آرشیو
             می‌مانند. عکس‌ها تا تأیید ادمین عمومی نیستند.
           </p>
         </div>
@@ -221,7 +209,6 @@ export function AdminMarketplaceModerationPage() {
           [
             ['vet', `دامپزشک (${tabCounts.vet})`],
             ['trainer', `مربی (${tabCounts.trainer})`],
-            ['sitter', `پرستار (${tabCounts.sitter})`],
             ...(mode === 'queue'
               ? ([
                   ['photos', `عکس پت (${tabCounts.photos})`],
@@ -317,7 +304,7 @@ export function AdminMarketplaceModerationPage() {
                       className="admin-btn primary"
                       disabled={busyId != null}
                       onClick={() =>
-                        void (tab === 'vet' ? actVet(u.id, true) : actProvider(u.id, tab, true))
+                        void (tab === 'vet' ? actVet(u.id, true) : actProvider(u.id, 'trainer', true))
                       }
                     >
                       تأیید
@@ -327,7 +314,7 @@ export function AdminMarketplaceModerationPage() {
                       className="admin-btn"
                       disabled={busyId != null}
                       onClick={() =>
-                        void (tab === 'vet' ? actVet(u.id, false) : actProvider(u.id, tab, false))
+                        void (tab === 'vet' ? actVet(u.id, false) : actProvider(u.id, 'trainer', false))
                       }
                     >
                       رد

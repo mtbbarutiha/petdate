@@ -7,7 +7,6 @@ import {
   ShoppingBag,
   Stethoscope,
   GraduationCap,
-  Home,
   UserRound,
   Wallet,
 } from 'lucide-react';
@@ -98,14 +97,6 @@ const TRAINER_PANEL: SiteNavItem = {
   match: (p) => p === '/trainer-consult' || p.startsWith('/trainer-consult'),
 };
 
-const SITTER_PANEL: SiteNavItem = {
-  key: 'sitter_panel',
-  label: 'پنل پرستار',
-  to: '/sitter-consult',
-  icon: Home,
-  match: (p) => p === '/sitter-consult' || p.startsWith('/sitter-consult'),
-};
-
 const LOGIN: SiteNavItem = {
   key: 'login',
   label: 'ورود',
@@ -158,8 +149,6 @@ export function siteNavMobileForRole(role?: UserRole | null): SiteNavItem[] {
       return [SHOP_AUTH, VET_PANEL, CHATS, WALLET, PROFILE];
     case 'trainer':
       return [SHOP_AUTH, TRAINER_PANEL, CHATS, WALLET, PROFILE];
-    case 'pet_sitter':
-      return [SHOP_AUTH, SITTER_PANEL, CHATS, WALLET, PROFILE];
     case 'pet_owner':
       // صاحب پت: هم بازی + پت‌های من کنار هم (= /chats و /my-pets)
       return [SHOP_AUTH, PLAYMATE_CHATS, MY_PETS, WALLET, PROFILE];

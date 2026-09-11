@@ -1,5 +1,5 @@
 import { Link, Navigate } from 'react-router-dom';
-import { GraduationCap, HandHelping, PawPrint, Stethoscope } from 'lucide-react';
+import { GraduationCap, PawPrint, Stethoscope } from 'lucide-react';
 import { BRAND, dashboardPathForRole, primaryRole } from '@petdate/shared';
 import { InviteFriendsCard } from '../components/InviteFriendsCard';
 import { useAuthStore } from '../hooks/useAuthStore';
@@ -32,13 +32,6 @@ function TrainerIcon({ size = 16 }: { size?: number }) {
   );
 }
 
-function SitterIcon({ size = 16 }: { size?: number }) {
-  return (
-    <span className="pepito-btn-icon" aria-hidden>
-      <HandHelping size={size} />
-    </span>
-  );
-}
 
 export function HomePage() {
   const { user } = useUserStore();
@@ -51,7 +44,7 @@ export function HomePage() {
     primaryRole(user.roles, user.role);
 
   // نقش‌های ارائه‌دهنده → داشبورد اختصاصی (نه پنل صاحب‌پت)
-  if (active === 'vet' || active === 'trainer' || active === 'pet_sitter') {
+  if (active === 'vet' || active === 'trainer') {
     return <Navigate to={dashboardPathForRole(active)} replace />;
   }
 
@@ -132,16 +125,6 @@ export function HomePage() {
                 پیدا کردن مربی
               </Link>
             ) : null}
-            {isPetOwner ? (
-              <Link
-                to="/sitter-consult"
-                className="pepito-btn pepito-btn--ghost pepito-home-cta-ghost"
-                data-testid="owner-request-sitter-cta"
-              >
-                <SitterIcon />
-                پیدا کردن پرستار
-              </Link>
-            ) : null}
           </div>
         </div>
       </section>
@@ -191,16 +174,6 @@ export function HomePage() {
             >
               <strong>پیدا کردن مربی</strong>
               <span>درخواست به مربی‌های آنلاین — ۵۰ سکه</span>
-            </Link>
-          ) : null}
-          {isPetOwner ? (
-            <Link
-              to="/sitter-consult"
-              className="pepito-home-action"
-              data-testid="owner-request-sitter-home-action"
-            >
-              <strong>پیدا کردن پرستار پت</strong>
-              <span>اتصال به پرستار — ۲۰ سکه · فقط اتصال</span>
             </Link>
           ) : null}
         </div>

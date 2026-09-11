@@ -346,10 +346,10 @@ if [[ -f packages/api/dist/services/web-chat-cta-once.js ]] || [[ -f packages/ap
 else
   echo "WARNING: web-cta-once module missing after deploy"
 fi
-if grep -q "pet_sitter" packages/shared/src/petdate.ts 2>/dev/null; then
-  grep -q "REMOVED_USER_ROLES = \\['community_seeker'\\]" packages/shared/src/petdate.ts \
-    && grep -q "'pet_sitter'" packages/shared/src/petdate.ts \
-    && echo "OK: pet_sitter active role; community_seeker still removed"
+if grep -q "REMOVED_USER_ROLES = \\['pet_sitter', 'community_seeker'\\]" packages/shared/src/petdate.ts 2>/dev/null; then
+  grep -q "'trainer'" packages/shared/src/petdate.ts \
+    && ! awk '/export const USER_ROLES/,/];/' packages/shared/src/petdate.ts | grep -q "pet_sitter" \
+    && echo "OK: pet_sitter removed from live roles; trainer active"
 fi
 if [[ -f ecosystem.config.cjs ]]; then
   grep -q 'DATABASE_PATH' ecosystem.config.cjs && echo "OK: single DATABASE_PATH in ecosystem"

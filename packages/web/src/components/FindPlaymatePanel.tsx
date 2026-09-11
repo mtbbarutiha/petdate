@@ -126,18 +126,6 @@ export function FindPlaymatePanel({
         </div>
       );
     }
-    if (active === 'pet_sitter') {
-      return (
-        <div className={`find-playmate-panel${compact ? ' is-compact' : ''}`}>
-          <p className="find-playmate-panel__hint">
-            اینجا با صاحبان پت برای هماهنگی پرستاری گفتگو می‌کنی.
-          </p>
-          <Link to="/sitter-consult" className="pepito-btn button-1" style={{ marginTop: 12 }}>
-            رفتن به پنل پرستار
-          </Link>
-        </div>
-      );
-    }
     if (active === 'vet') {
       return (
         <div className={`find-playmate-panel${compact ? ' is-compact' : ''}`}>

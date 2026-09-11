@@ -2,13 +2,11 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Check, Circle, Clock, MessageCircle, X } from 'lucide-react';
 import {
-  SITTER_CONNECT_COST,
   TRAINER_CONSULT_COST,
   VET_CREDENTIAL_STATUS_LABELS,
   formatPersianDateTime,
   isPrimaryRole,
   toPersianDigits,
-  type ConsultServiceKind,
   type PetProfile,
   type User,
   type VetConsultation,
@@ -30,18 +28,17 @@ import {
 } from '../lib/api';
 import { subscribeIncomingRefresh } from '../lib/liveIncoming';
 
-type Kind = Extract<ConsultServiceKind, 'trainer' | 'sitter'>;
+type Kind = 'trainer';
 
 const COST: Record<Kind, number> = {
   trainer: TRAINER_CONSULT_COST,
-  sitter: SITTER_CONNECT_COST,
 };
 
 const COPY: Record<
   Kind,
   {
     title: string;
-    role: 'trainer' | 'pet_sitter';
+    role: 'trainer';
     patientCta: string;
     providerHint: string;
     noProviders: string;
@@ -56,16 +53,6 @@ const COPY: Record<
     providerHint: 'آنلاین شو تا درخواست‌های مشاوره مربی را بگیری.',
     noProviders: 'فعلاً مربی آنلاینی برای اتصال پیدا نشد.',
     needPet: 'برای درخواست مربی، اول باید حداقل یک پت ثبت کنی.',
-  },
-  sitter: {
-    title: 'پنل پرستار پت',
-    role: 'pet_sitter',
-    patientCta: 'درخواست پرستار پت',
-    providerHint: 'آنلاین شو تا درخواست‌های پرستار را بگیری.',
-    noProviders: 'فعلاً پرستار پت آنلاینی برای اتصال پیدا نشد.',
-    needPet: 'برای ارتباط با پرستار، اول باید حداقل یک پت ثبت کنی.',
-    disclaimer:
-      'پت‌دیت فقط شما را به پرستار متصل می‌کند و مسئولیتی فراتر از اتصال ندارد.',
   },
 };
 
@@ -123,10 +110,8 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
   const cost = COST[kind];
   /** فقط نقش فعال ارائه‌دهنده — نه داشتن نقش فرعی (صاحب‌پت چندنقشی نباید پنل مدرک ببیند). */
   const isProvider = isPrimaryRole(user, meta.role);
-  const credStatus =
-    kind === 'trainer' ? user?.trainerCredentialStatus : user?.sitterCredentialStatus;
-  const online =
-    kind === 'trainer' ? Boolean(user?.trainerOnline) : Boolean(user?.sitterOnline);
+  const credStatus = user?.trainerCredentialStatus;
+  const online = Boolean(user?.trainerOnline);
   const verified = credStatus === 'verified';
   const coins = user?.coins ?? user?.wallet?.coins ?? 0;
   const botUrl = telegramBotDeepLink();
@@ -710,8 +695,4 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
 
 export function TrainerConsultPage() {
   return <ServiceConsultPage kind="trainer" />;
-}
-
-export function SitterConsultPage() {
-  return <ServiceConsultPage kind="sitter" />;
 }

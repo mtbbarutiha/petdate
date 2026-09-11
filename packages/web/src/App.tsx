@@ -108,9 +108,6 @@ const VetConsultRoute = lazy(() =>
 const TrainerConsultPage = lazy(() =>
   import('./pages/ServiceConsultPage').then((m) => ({ default: m.TrainerConsultPage })),
 );
-const SitterConsultPage = lazy(() =>
-  import('./pages/ServiceConsultPage').then((m) => ({ default: m.SitterConsultPage })),
-);
 const VetChatPage = lazy(() =>
   import('./pages/VetChatPage').then((m) => ({ default: m.VetChatPage })),
 );
@@ -386,7 +383,7 @@ export default function App() {
               <Route path="wallet/earn" element={<EarningsPage />} />
               <Route path="earn" element={<RedirectWithTagAssistant to="/wallet/earn" />} />
               <Route path="trainer-consult" element={<TrainerConsultPage />} />
-              <Route path="sitter-consult" element={<SitterConsultPage />} />
+              <Route path="sitter-consult" element={<Navigate to="/home" replace />} />
               <Route path="vet-chats" element={<RedirectWithTagAssistant to="/vet-consult" />} />
               <Route path="vet-chats/:consultId" element={<VetChatPage />} />
             </Route>

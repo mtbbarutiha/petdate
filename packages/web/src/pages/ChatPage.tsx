@@ -209,7 +209,6 @@ function useIsDesktop() {
 function inboxListTitle(scope: InboxScope): string {
   if (scope === 'vet') return 'گفتگوهای پزشک';
   if (scope === 'trainer') return 'گفتگوهای مربی';
-  if (scope === 'sitter') return 'گفتگوهای پرستار';
   return 'هم بازی';
 }
 
@@ -223,7 +222,6 @@ function inboxKindBadge(c: InboxConversation): string {
 function providerHomePath(scope: InboxScope): string {
   if (scope === 'vet') return '/vet-consult';
   if (scope === 'trainer') return '/trainer-consult';
-  if (scope === 'sitter') return '/sitter-consult';
   return '/home';
 }
 
@@ -318,19 +316,6 @@ function ConversationListPane({
                 </p>
                 <Link to="/trainer-consult" className="tg-chat-link-btn">
                   رفتن به پنل مربی
-                </Link>
-              </>
-            ) : scope === 'sitter' ? (
-              <>
-                <div className="tg-empty-mark" aria-hidden>
-                  <SiteLogo className="tg-chat-empty-logo" height={40} />
-                </div>
-                <h2>هماهنگی پرستاری</h2>
-                <p>
-                  اینجا با صاحبان پت برای هماهنگی پرستاری گفتگو می‌کنی — همبازی نیست.
-                </p>
-                <Link to="/sitter-consult" className="tg-chat-link-btn">
-                  رفتن به پنل پرستار
                 </Link>
               </>
             ) : (
@@ -478,22 +463,6 @@ function ThreadEmptyState({
         </p>
         <Link to="/trainer-consult" className="tg-chat-link-btn">
           رفتن به پنل مربی
-        </Link>
-      </div>
-    );
-  }
-  if (scope === 'sitter') {
-    return (
-      <div className="tg-thread-empty">
-        <div className="tg-empty-mark" aria-hidden>
-          <SiteLogo className="tg-chat-empty-logo" height={40} />
-        </div>
-        <h2>هماهنگی پرستاری</h2>
-        <p>
-          اینجا با صاحبان پت برای هماهنگی پرستاری گفتگو می‌کنی — همبازی نیست.
-        </p>
-        <Link to="/sitter-consult" className="tg-chat-link-btn">
-          رفتن به پنل پرستار
         </Link>
       </div>
     );
@@ -764,14 +733,9 @@ export function ChatPage() {
     return subscribeIncomingRefresh((detail) => {
       softReloadConversations();
       // Fresh playmate request → open گفتگو thread (request card).
-      // Provider scopes (vet/trainer/sitter) stay on service inbox — no playmate jump.
+      // Provider scopes (vet/trainer) stay on service inbox — no playmate jump.
       const playmateId = detail?.kinds?.includes('playmate') ? detail.ids?.[0] : undefined;
-      if (
-        !playmateId ||
-        inboxScope === 'vet' ||
-        inboxScope === 'trainer' ||
-        inboxScope === 'sitter'
-      ) {
+      if (!playmateId || inboxScope === 'vet' || inboxScope === 'trainer') {
         return;
       }
       const target = `/chats/${playmateId}`;
@@ -788,7 +752,7 @@ export function ChatPage() {
   // Playmate threads belong to owner scope — leave them in provider roles.
   useEffect(() => {
     if (
-      (inboxScope === 'vet' || inboxScope === 'trainer' || inboxScope === 'sitter') &&
+      (inboxScope === 'vet' || inboxScope === 'trainer') &&
       hasThread
     ) {
       navigate('/chats', { replace: true });
@@ -1627,11 +1591,9 @@ export function ChatPage() {
     const gateCopy =
       inboxScope === 'trainer'
         ? 'برای دیدن گفتگوهای هماهنگی آموزش حضوری، اول ثبت‌نام را تمام کن (نام، سن، جنسیت و شهر).'
-        : inboxScope === 'sitter'
-          ? 'برای دیدن گفتگوهای هماهنگی پرستاری، اول ثبت‌نام را تمام کن (نام، سن، جنسیت و شهر).'
-          : inboxScope === 'vet'
-            ? 'برای دیدن گفتگوهای مشاوره دامپزشکی، اول ثبت‌نام را تمام کن (نام، سن، جنسیت و شهر).'
-            : 'برای دیدن هم بازی و پیدا کردن همبازی، اول ثبت‌نام را تمام کن (نام، سن، جنسیت و شهر).';
+        : inboxScope === 'vet'
+          ? 'برای دیدن گفتگوهای مشاوره دامپزشکی، اول ثبت‌نام را تمام کن (نام، سن، جنسیت و شهر).'
+          : 'برای دیدن هم بازی و پیدا کردن همبازی، اول ثبت‌نام را تمام کن (نام، سن، جنسیت و شهر).';
     return (
       <div className="tg-chat tg-chat--gate" dir="rtl">
         <div className="tg-profile-gate">

@@ -16,7 +16,7 @@ export { looksLikePublicUserId, playmateInboxTitle } from './inboxTitle';
 export type InboxKind = 'playmate' | 'vet';
 
 /** Scope of chats tied to the active primary role (no cross-role mixing). */
-export type InboxScope = 'vet' | 'owner' | 'trainer' | 'sitter';
+export type InboxScope = 'vet' | 'owner' | 'trainer';
 
 export type InboxConversation = {
   key: string;
@@ -46,7 +46,6 @@ export type InboxConversation = {
 export function inboxScopeForRole(role?: UserRole | null): InboxScope {
   if (role === 'vet') return 'vet';
   if (role === 'trainer') return 'trainer';
-  if (role === 'pet_sitter') return 'sitter';
   return 'owner';
 }
 
@@ -216,7 +215,7 @@ export function vetToInbox(
     serviceKind === 'trainer'
       ? '/trainer-consult'
       : serviceKind === 'sitter'
-        ? '/sitter-consult'
+        ? '/home'
         : '/vet-consult';
 
   return {
@@ -241,7 +240,7 @@ export function vetToInbox(
 /**
  * Role-scoped inbox:
  * - primary vet → only consultations as veterinarian
- * - primary trainer/sitter → only their service consultations as provider
+ * - primary trainer → only their service consultations as provider
  * - any other primary role → playmate chats + consultations as patient
  * Never mixes provider-practice threads into owner view (or the reverse).
  */
@@ -292,13 +291,11 @@ export async function loadInboxConversations(
     return sortInbox(items);
   }
 
-  if (scope === 'trainer' || scope === 'sitter') {
-    const role = scope === 'trainer' ? 'trainer' : 'pet_sitter';
-    const kind = scope === 'trainer' ? 'trainer' : 'sitter';
-    if (!userHasRole(user, role)) return [];
+  if (scope === 'trainer') {
+    if (!userHasRole(user, 'trainer')) return [];
     const rows = await listVetConsultations({
       vetUserId: myUserId,
-      kind,
+      kind: 'trainer',
     }).catch(() => [] as VetConsultation[]);
     const items: InboxConversation[] = [];
     for (const row of rows) {

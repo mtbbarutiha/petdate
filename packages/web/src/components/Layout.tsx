@@ -2,7 +2,6 @@ import type { ReactNode } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
   GraduationCap,
-  HandHelping,
   Home,
   LayoutDashboard,
   MessagesSquare,
@@ -28,7 +27,6 @@ const OWNER_NAV: { to: string; icon: LucideIcon; label: string }[] = [
   { to: '/my-pets', icon: PawPrint, label: 'پت‌های من' },
   { to: '/vet-consult', icon: Stethoscope, label: 'مشاوره سریع' },
   { to: '/trainer-consult', icon: GraduationCap, label: 'پیدا کردن مربی' },
-  { to: '/sitter-consult', icon: HandHelping, label: 'پیدا کردن پرستار' },
   { to: '/shop', icon: ShoppingBag, label: 'پت‌شاپ' },
   { to: '/support', icon: LifeBuoy, label: 'پشتیبانی' },
 ];
@@ -51,15 +49,6 @@ const TRAINER_NAV: { to: string; icon: LucideIcon; label: string }[] = [
   { to: '/shop', icon: ShoppingBag, label: 'پت‌شاپ' },
 ];
 
-const SITTER_NAV: { to: string; icon: LucideIcon; label: string }[] = [
-  { to: '/', icon: Home, label: 'خانه' },
-  { to: '/sitter-consult', icon: HandHelping, label: 'پنل پرستار' },
-  { to: '/chats', icon: MessagesSquare, label: 'گفتگوها' },
-  { to: '/profile', icon: UserRound, label: 'پروفایل' },
-  { to: '/support', icon: LifeBuoy, label: 'پشتیبانی' },
-  { to: '/shop', icon: ShoppingBag, label: 'پت‌شاپ' },
-];
-
 const DEFAULT_NAV: { to: string; icon: LucideIcon; label: string }[] = [
   { to: '/', icon: Home, label: 'خانه' },
   { to: '/support', icon: LifeBuoy, label: 'پشتیبانی' },
@@ -72,7 +61,6 @@ const DEFAULT_NAV: { to: string; icon: LucideIcon; label: string }[] = [
 function navForRole(role?: UserRole): { to: string; icon: LucideIcon; label: string }[] {
   if (role === 'vet') return VET_NAV;
   if (role === 'trainer') return TRAINER_NAV;
-  if (role === 'pet_sitter') return SITTER_NAV;
   if (role === 'pet_owner') return OWNER_NAV;
   return DEFAULT_NAV;
 }

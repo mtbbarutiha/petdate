@@ -5,11 +5,10 @@ export type UserRole =
   | 'vet'
   | 'no_pet'
   | 'pet_seeker'
-  | 'trainer'
-  | 'pet_sitter';
+  | 'trainer';
 
 /** Legacy roles removed from UX — migrated to pet_owner when they were the only role. */
-export const REMOVED_USER_ROLES = ['community_seeker'] as const;
+export const REMOVED_USER_ROLES = ['pet_sitter', 'community_seeker'] as const;
 export type RemovedUserRole = (typeof REMOVED_USER_ROLES)[number];
 
 export type OnboardingStatus =
@@ -1043,7 +1042,6 @@ export const USER_ROLES: UserRole[] = [
   'no_pet',
   'pet_seeker',
   'trainer',
-  'pet_sitter',
 ];
 
 export const USER_ROLE_LABELS: Record<UserRole, string> = {
@@ -1052,7 +1050,6 @@ export const USER_ROLE_LABELS: Record<UserRole, string> = {
   no_pet: '🏠 بدون پت',
   pet_seeker: '🔍 دنبال پت',
   trainer: '🎓 مربی',
-  pet_sitter: '🏠 پرستار پت',
 };
 
 export const ROLE_CONFIRM_LABEL = '✅ ثبت نقش‌ها';
@@ -1069,7 +1066,6 @@ export const ROLE_DASHBOARD_PATHS: Record<UserRole, string> = {
   no_pet: '/home',
   pet_seeker: '/home',
   trainer: '/trainer-consult',
-  pet_sitter: '/sitter-consult',
 };
 
 /**
@@ -1090,7 +1086,7 @@ function isRemovedRole(value: unknown): value is RemovedUserRole {
 }
 
 /**
- * Drop removed roles (نگهبان / جامعه پت). If nothing valid remains but a
+ * Drop removed roles (پرستار پت / جامعه پت). If nothing valid remains but a
  * removed role was present, fall back to pet_owner so login/onboarding stay intact.
  */
 export function sanitizeRoleList(

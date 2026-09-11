@@ -3308,11 +3308,12 @@ export const dbService = {
 
   /** ارائه‌دهندگان آنلاین تأییدشده برای مربی / پرستار */
   listOnlineProvidersForQuickConnect(kind: 'trainer' | 'sitter'): User[] {
-    const role = kind === 'trainer' ? 'trainer' : 'pet_sitter';
-    const onlineCol = kind === 'trainer' ? 'trainer_online' : 'sitter_online';
-    const enabledCol = kind === 'trainer' ? 'trainer_enabled' : 'sitter_enabled';
-    const credCol =
-      kind === 'trainer' ? 'trainer_credential_status' : 'sitter_credential_status';
+    // Find-sitter UX removed — keep columns/historical consults, never list sitters for new connect.
+    if (kind === 'sitter') return [];
+    const role = 'trainer' as const;
+    const onlineCol = 'trainer_online';
+    const enabledCol = 'trainer_enabled';
+    const credCol = 'trainer_credential_status';
     const rows = db
       .prepare(
         `SELECT u.*
@@ -3333,8 +3334,7 @@ export const dbService = {
       .filter((u) => {
         const roles = u.roles?.length ? u.roles : u.role ? [u.role] : [];
         if (!roles.includes(role)) return false;
-        if (kind === 'trainer') return u.trainerCredentialStatus === 'verified';
-        return u.sitterCredentialStatus === 'verified';
+        return u.trainerCredentialStatus === 'verified';
       });
   },
 

@@ -607,6 +607,13 @@ usersRouter.post('/telegram/:telegramId/provider-online', (req, res) => {
     res.status(400).json({ error: 'kind باید trainer یا sitter باشد' });
     return;
   }
+  if (kind === 'sitter') {
+    res.status(410).json({
+      error: 'سرویس پرستار پت حذف شده است',
+      reason: 'sitter_removed',
+    });
+    return;
+  }
   const raw = req.body?.online;
   const online =
     raw === true || raw === 1 || raw === '1' || raw === 'true';
@@ -615,13 +622,12 @@ usersRouter.post('/telegram/:telegramId/provider-online', (req, res) => {
     res.status(404).json({ error: 'کاربر پیدا نشد' });
     return;
   }
-  const role = kind === 'trainer' ? 'trainer' : 'pet_sitter';
+  const role = 'trainer' as const;
   if (!userHasRole(existing, role)) {
     res.status(403).json({ error: 'نقش لازم را نداری' });
     return;
   }
-  const enabled =
-    kind === 'trainer' ? existing.trainerEnabled !== false : existing.sitterEnabled !== false;
+  const enabled = existing.trainerEnabled !== false;
   if (online && !enabled) {
     res.status(403).json({
       error: 'حساب شما توسط مدیر غیرفعال شده است',
@@ -629,10 +635,7 @@ usersRouter.post('/telegram/:telegramId/provider-online', (req, res) => {
     });
     return;
   }
-  const cred =
-    kind === 'trainer'
-      ? existing.trainerCredentialStatus ?? 'none'
-      : existing.sitterCredentialStatus ?? 'none';
+  const cred = existing.trainerCredentialStatus ?? 'none';
   if (online && cred !== 'verified') {
     res.status(403).json({
       error:
@@ -643,7 +646,7 @@ usersRouter.post('/telegram/:telegramId/provider-online', (req, res) => {
     });
     return;
   }
-  const user = dbService.setProviderOnline(existing.id, kind, online);
+  const user = dbService.setProviderOnline(existing.id, 'trainer', online);
   if (!user) {
     res.status(400).json({ error: 'تغییر وضعیت ممکن نشد' });
     return;
@@ -959,13 +962,20 @@ usersRouter.post('/telegram/:telegramId/provider-credential', (req, res) => {
     res.status(400).json({ error: 'kind باید trainer یا sitter باشد' });
     return;
   }
+  if (kind === 'sitter') {
+    res.status(410).json({
+      error: 'سرویس پرستار پت حذف شده است',
+      reason: 'sitter_removed',
+    });
+    return;
+  }
   const user = dbService.getUserByTelegramId(req.params.telegramId);
   if (!user) {
     res.status(404).json({ error: 'کاربر پیدا نشد' });
     return;
   }
   const fileId = String(req.body?.fileId ?? req.body?.credentialFileId ?? '').trim();
-  const result = dbService.submitProviderCredential(user.id, kind, fileId);
+  const result = dbService.submitProviderCredential(user.id, 'trainer', fileId);
   if (!result.ok) {
     res.status(result.reason === 'missing' ? 404 : 400).json({
       ok: false,
@@ -1054,7 +1064,11 @@ usersRouter.get('/providers/online', (req, res) => {
     res.status(400).json({ error: 'kind باید trainer یا sitter باشد' });
     return;
   }
-  res.json(dbService.listOnlineProvidersForQuickConnect(kind));
+  if (kind === 'sitter') {
+    res.json([]);
+    return;
+  }
+  res.json(dbService.listOnlineProvidersForQuickConnect('trainer'));
 });
 
 /** دریافت سکه روزانه */
