@@ -14,6 +14,7 @@ import type {
   VetConsultation,
   VetConsultStatus,
 } from '@petdate/shared';
+import { parseApiJsonBody } from './apiErrorMessage';
 
 /** Empty = same-origin (Vite proxies /api → API). Override with VITE_API_URL if needed. */
 const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ?? '';
@@ -107,30 +108,21 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   } catch {
     throw new Error('اتصال به سرور برقرار نشد. مطمئن شو API روشن است.');
   }
-  if (!res.ok) {
-    const body = await res.text();
-    try {
-      const json = JSON.parse(body) as {
-        error?: string;
-        message?: string;
-        code?: string;
-        requiresResendConfirm?: boolean;
-      };
-      const err = new Error(json.error || json.message || body || `خطای ${res.status}`) as Error & {
-        code?: string;
-        requiresResendConfirm?: boolean;
-        status?: number;
-      };
-      err.code = json.code;
-      err.requiresResendConfirm = Boolean(json.requiresResendConfirm || json.code === 'RESEND_CONFIRM_REQUIRED');
-      err.status = res.status;
-      throw err;
-    } catch (err) {
-      if (err instanceof Error && !err.message.startsWith('{') && err.message !== body) throw err;
-      throw new Error(body || `خطای ${res.status}`);
-    }
+  // Always read as text first: www WCDN may replace 4xx JSON with HTML error pages.
+  const body = await res.text();
+  const parsed = parseApiJsonBody<T>(res.status, body);
+  if (!parsed.ok) {
+    const err = new Error(parsed.message) as Error & {
+      code?: string;
+      requiresResendConfirm?: boolean;
+      status?: number;
+    };
+    err.code = parsed.code;
+    err.requiresResendConfirm = Boolean(parsed.requiresResendConfirm);
+    err.status = res.status;
+    throw err;
   }
-  return res.json() as Promise<T>;
+  return parsed.data;
 }
 
 export async function registerUser(data: {

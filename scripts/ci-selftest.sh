@@ -63,6 +63,9 @@ npx tsx "$ROOT/packages/web/src/lib/authRedirect.selftest.ts"
 echo "==> selftest: nginx apex HTTPS + WCDN docs"
 npx tsx "$ROOT/packages/web/src/lib/wcdnNginx.selftest.ts"
 
+echo "==> selftest: web API error message (WCDN HTML → Persian)"
+npx tsx "$ROOT/packages/web/src/lib/apiErrorMessage.selftest.ts"
+
 echo "==> selftest: shop product gallery assets"
 npx tsx "$ROOT/packages/web/src/data/shopGallery.selftest.ts"
 

@@ -783,30 +783,35 @@ petsRouter.delete('/:id', (req, res) => {
 });
 
 petsRouter.get('/:id/medical-record', (req, res) => {
-  const petId = Number(req.params.id);
-  const viewerId = req.query.viewerId ? Number(req.query.viewerId) : undefined;
-  if (!Number.isFinite(petId) || petId <= 0) {
-    res.status(400).json({ error: 'شناسه پت نامعتبر' });
-    return;
+  try {
+    const petId = Number(req.params.id);
+    const viewerId = req.query.viewerId ? Number(req.query.viewerId) : undefined;
+    if (!Number.isFinite(petId) || petId <= 0) {
+      res.status(400).json({ error: 'شناسه پت نامعتبر' });
+      return;
+    }
+    const pet = dbService.getPet(petId);
+    if (!pet) {
+      res.status(404).json({ error: 'پت پیدا نشد' });
+      return;
+    }
+    if (viewerId == null || !Number.isFinite(viewerId)) {
+      res.status(401).json({ error: 'viewerId الزامی است' });
+      return;
+    }
+    const access = dbService.canAccessPetMedical(petId, viewerId);
+    if (!access.ok) {
+      res.status(403).json({ error: 'دسترسی به پرونده نداری' });
+      return;
+    }
+    const record = dbService.getPetMedicalRecord(petId);
+    const entries = dbService.listPetMedicalEntries(petId);
+    const prescriptions = dbService.listPrescriptionsForPet(petId, 30);
+    res.json({ record, entries, prescriptions, pet });
+  } catch (err) {
+    console.error('GET medical-record failed:', err);
+    res.status(500).json({ error: 'خطا در بارگذاری پرونده پزشکی' });
   }
-  const pet = dbService.getPet(petId);
-  if (!pet) {
-    res.status(404).json({ error: 'پت پیدا نشد' });
-    return;
-  }
-  if (viewerId == null || !Number.isFinite(viewerId)) {
-    res.status(401).json({ error: 'viewerId الزامی است' });
-    return;
-  }
-  const access = dbService.canAccessPetMedical(petId, viewerId);
-  if (!access.ok) {
-    res.status(403).json({ error: 'دسترسی به پرونده نداری' });
-    return;
-  }
-  const record = dbService.getPetMedicalRecord(petId);
-  const entries = dbService.listPetMedicalEntries(petId);
-  const prescriptions = dbService.listPrescriptionsForPet(petId, 30);
-  res.json({ record, entries, prescriptions, pet });
 });
 
 petsRouter.get('/:id/prescriptions', (req, res) => {

@@ -18,6 +18,7 @@ assert.match(conf, /X-PetDate-API/, 'API responses marked for CDN passthrough');
 assert.match(doc, /نمایش خطای سرور مقصد/, 'documents ParsPack origin-error passthrough');
 assert.match(doc, /Flexible SSL/, 'documents Flexible SSL constraint');
 assert.match(doc, /http:\/\/petdate\.ir/, 'documents apex HTTP check');
+assert.match(doc, /apiErrorMessage/, 'documents SPA HTML→Persian error mapping');
 assert.doesNotMatch(
   conf,
   /if \(\$host = www\.petdate\.ir\) \{\s*return 301 https/,

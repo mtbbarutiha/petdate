@@ -63,7 +63,9 @@ export function PetDetailPage() {
   const [wishBusy, setWishBusy] = useState(false);
 
   const myUserId = authUser?.id;
-  const isMyPet = Boolean(myUserId && pet && pet.ownerId === myUserId);
+  const isMyPet = Boolean(
+    myUserId != null && pet != null && Number(pet.ownerId) === Number(myUserId)
+  );
   const tabMedical = searchParams.get('tab') === 'medical';
 
   const ui = useMemo(() => (pet ? petProfileToUiPet(pet) : null), [pet]);
@@ -103,10 +105,13 @@ export function PetDetailPage() {
   }, [myUserId]);
 
   useEffect(() => {
-    if (!pet || !myUserId) {
+    // Only the owner loads the medical dossier on this page (vets use chat tools).
+    // Avoid 403→WCDN-HTML→raw JSON parse errors for other logged-in viewers.
+    if (!pet || !myUserId || !isMyPet) {
       setRecord(null);
       setEntries([]);
       setRxList([]);
+      setMedicalError('');
       return;
     }
     let cancelled = false;
@@ -121,7 +126,12 @@ export function PetDetailPage() {
         if (cancelled) return;
         setRecord(null);
         setEntries([]);
-        setMedicalError(err instanceof Error ? err.message : '');
+        const raw = err instanceof Error ? err.message : '';
+        setMedicalError(
+          raw && !/Unexpected token|DOCTYPE|is not valid JSON/i.test(raw)
+            ? raw
+            : 'بارگذاری پرونده پزشکی ناموفق بود. لطفاً دوباره تلاش کن.'
+        );
       });
     void listPetPrescriptions(pet.id, myUserId)
       .then((rows) => {
@@ -133,7 +143,7 @@ export function PetDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [pet, myUserId]);
+  }, [pet, myUserId, isMyPet]);
 
   useEffect(() => {
     if (!pet || !isMyPet) {
@@ -356,86 +366,94 @@ export function PetDetailPage() {
 
         {error ? <p className="auth-error">{error}</p> : null}
 
-        <section id="pet-medical" className="pepito-pet-medical" aria-label="پرونده پزشکی">
-          <header className="pepito-pet-medical-head">
-            <Stethoscope size={20} aria-hidden />
-            <div>
-              <h2>پرونده پزشکی</h2>
-              <p>خلاصه سلامت + یادداشت پزشکان + نسخه‌ها — پزشک بعدی هم می‌بیند.</p>
-            </div>
-          </header>
-
-          {medicalError && !record ? (
-            <p className="pepito-pet-medical-muted">{medicalError || 'پرونده در دسترس نیست'}</p>
-          ) : (
-            <>
-              <div className="pepito-pet-medical-cards">
-                {MED_FIELDS.map((field) => {
-                  const value = record?.[field];
-                  if (!value && !isMyPet) return null;
-                  return (
-                    <article key={field} className="pepito-pet-medical-card">
-                      <h3>{PET_MEDICAL_FIELD_LABELS[field]}</h3>
-                      <p>{value || 'هنوز ثبت نشده'}</p>
-                    </article>
-                  );
-                })}
+        {isMyPet ? (
+          <section id="pet-medical" className="pepito-pet-medical" aria-label="پرونده پزشکی">
+            <header className="pepito-pet-medical-head">
+              <Stethoscope size={20} aria-hidden />
+              <div>
+                <h2>پرونده پزشکی</h2>
+                <p>خلاصه سلامت + یادداشت پزشکان + نسخه‌ها — پزشک بعدی هم می‌بیند.</p>
               </div>
+            </header>
 
-              {record?.lastUpdatedByName ? (
-                <p className="pepito-pet-medical-meta">
-                  آخرین به‌روزرسانی توسط {record.lastUpdatedByName}
-                  {record.updatedAt ? ` · ${toPersianDigits(record.updatedAt.slice(0, 10))}` : ''}
-                </p>
-              ) : null}
+            {medicalError && !record ? (
+              <p className="pepito-pet-medical-muted" role="alert">
+                {medicalError || 'پرونده در دسترس نیست'}
+              </p>
+            ) : (
+              <>
+                <div className="pepito-pet-medical-cards">
+                  {MED_FIELDS.map((field) => {
+                    const value = record?.[field];
+                    return (
+                      <article key={field} className="pepito-pet-medical-card">
+                        <h3>{PET_MEDICAL_FIELD_LABELS[field]}</h3>
+                        <p>{value || 'هنوز ثبت نشده'}</p>
+                      </article>
+                    );
+                  })}
+                </div>
 
-              <div className="pepito-pet-medical-entries">
-                <h3>یادداشت‌های بالینی</h3>
-                {entries.length === 0 ? (
-                  <p className="pepito-pet-medical-muted">هنوز یادداشتی نیست — پزشک از چت مشاوره ثبت می‌کند.</p>
-                ) : (
-                  <ul>
-                    {entries.map((e) => (
-                      <li key={e.id} className="pepito-pet-medical-entry">
-                        <header>
-                          <strong>{e.authorName || `پزشک #${e.authorUserId}`}</strong>
-                          <time>{toPersianDigits(e.createdAt.slice(0, 16).replace('T', ' '))}</time>
-                        </header>
-                        <p>{e.text}</p>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
+                {record?.lastUpdatedByName ? (
+                  <p className="pepito-pet-medical-meta">
+                    آخرین به‌روزرسانی توسط {record.lastUpdatedByName}
+                    {record.updatedAt ? ` · ${toPersianDigits(record.updatedAt.slice(0, 10))}` : ''}
+                  </p>
+                ) : null}
 
-              <div className="pepito-pet-medical-rx">
-                <h3>
-                  <FileText size={16} aria-hidden /> نسخه‌ها
-                </h3>
-                {rxList.length === 0 ? (
-                  <p className="pepito-pet-medical-muted">نسخه‌ای ثبت نشده.</p>
-                ) : (
-                  <ul>
-                    {rxList.map((rx) => (
-                      <li key={rx.id} className="pepito-pet-medical-rx-card">
-                        <strong>نسخه {toPersianDigits(String(rx.id))}</strong>
-                        <p>{rx.text.slice(0, 160)}{rx.text.length > 160 ? '…' : ''}</p>
-                        <div className="pepito-pet-medical-rx-links">
-                          <a href={prescriptionWebPath(rx.id)} target="_blank" rel="noreferrer">
-                            مشاهده
-                          </a>
-                          <a href={prescriptionPdfUrl(rx.id)} target="_blank" rel="noreferrer">
-                            PDF
-                          </a>
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            </>
-          )}
-        </section>
+                <div className="pepito-pet-medical-entries">
+                  <h3>یادداشت‌های بالینی</h3>
+                  {entries.length === 0 ? (
+                    <p className="pepito-pet-medical-muted">
+                      هنوز یادداشتی نیست — پزشک از چت مشاوره ثبت می‌کند.
+                    </p>
+                  ) : (
+                    <ul>
+                      {entries.map((e) => (
+                        <li key={e.id} className="pepito-pet-medical-entry">
+                          <header>
+                            <strong>{e.authorName || `پزشک #${e.authorUserId}`}</strong>
+                            <time>{toPersianDigits(e.createdAt.slice(0, 16).replace('T', ' '))}</time>
+                          </header>
+                          <p>{e.text}</p>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
+                <div className="pepito-pet-medical-rx">
+                  <h3>
+                    <FileText size={16} aria-hidden /> نسخه‌ها
+                  </h3>
+                  {rxList.length === 0 ? (
+                    <p className="pepito-pet-medical-muted">نسخه‌ای ثبت نشده.</p>
+                  ) : (
+                    <ul>
+                      {rxList.map((rx) => (
+                        <li key={rx.id} className="pepito-pet-medical-rx-card">
+                          <strong>نسخه {toPersianDigits(String(rx.id))}</strong>
+                          <p>
+                            {rx.text.slice(0, 160)}
+                            {rx.text.length > 160 ? '…' : ''}
+                          </p>
+                          <div className="pepito-pet-medical-rx-links">
+                            <a href={prescriptionWebPath(rx.id)} target="_blank" rel="noreferrer">
+                              مشاهده
+                            </a>
+                            <a href={prescriptionPdfUrl(rx.id)} target="_blank" rel="noreferrer">
+                              PDF
+                            </a>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </>
+            )}
+          </section>
+        ) : null}
 
         {isMyPet ? (
           <section className="pepito-pet-wishlist" aria-label="ویش‌لیست پت">
