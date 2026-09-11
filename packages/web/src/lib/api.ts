@@ -215,12 +215,47 @@ export async function listPets(filters?: {
   });
 }
 
-export async function getPet(id: number): Promise<PetProfile | null> {
+export async function getPet(idOrSlug: number | string): Promise<PetProfile | null> {
   try {
-    return await request<PetProfile>(`/api/pets/${id}`);
+    const key = encodeURIComponent(String(idOrSlug).trim());
+    return await request<PetProfile>(`/api/pets/${key}`, {
+      headers: storedAuthHeaders(),
+    });
   } catch {
     return null;
   }
+}
+
+export async function listPetDiary(
+  idOrSlug: number | string
+): Promise<{ petId: number; slug?: string; title: string; entries: import('@petdate/shared').PetDiaryEntry[] }> {
+  const key = encodeURIComponent(String(idOrSlug).trim());
+  return request(`/api/pets/${key}/diary`);
+}
+
+export async function createPetDiaryEntry(
+  idOrSlug: number | string,
+  body: string,
+  ownerId: number
+): Promise<import('@petdate/shared').PetDiaryEntry> {
+  const key = encodeURIComponent(String(idOrSlug).trim());
+  return request(`/api/pets/${key}/diary`, {
+    method: 'POST',
+    headers: storedAuthHeaders(),
+    body: JSON.stringify({ body, ownerId }),
+  });
+}
+
+export async function deletePetDiaryEntry(
+  idOrSlug: number | string,
+  entryId: number,
+  ownerId: number
+): Promise<void> {
+  const key = encodeURIComponent(String(idOrSlug).trim());
+  await request(`/api/pets/${key}/diary/${entryId}?ownerId=${ownerId}`, {
+    method: 'DELETE',
+    headers: storedAuthHeaders(),
+  });
 }
 
 export async function createPet(data: Record<string, unknown>): Promise<PetProfile & { owner?: User }> {

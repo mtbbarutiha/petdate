@@ -7,7 +7,15 @@ import { TelegramSync } from './OnboardingGuard';
 import { dashboardPathForUser } from '@petdate/shared';
 
 const PUBLIC_EXACT = new Set(['/', '/welcome', '/faq', '/vet-consult', '/magazine', '/news']);
-const PUBLIC_PREFIXES = ['/auth', '/admin', '/adoption', '/shop', '/magazine', '/vet-consult'];
+const PUBLIC_PREFIXES = [
+  '/auth',
+  '/admin',
+  '/adoption',
+  '/shop',
+  '/magazine',
+  '/vet-consult',
+  '/pet',
+];
 
 function isPublic(pathname: string) {
   const p = pathname.replace(/\/+$/, '') || '/';

@@ -17,7 +17,14 @@ const route = readFileSync(join(webSrc, 'pages/VetConsultRoute.tsx'), 'utf8');
 assert.match(guard, /PUBLIC_EXACT[\s\S]*\/vet-consult/, 'AuthGuard treats /vet-consult as public');
 assert.match(guard, /PUBLIC_PREFIXES[\s\S]*\/magazine/, 'AuthGuard treats /magazine as public');
 assert.match(guard, /\/adoption/, 'AuthGuard treats /adoption as public');
+assert.match(guard, /\/pet/, 'AuthGuard treats /pet as public');
 assert.match(app, /path="adoption"\s+element=\{<AdoptionListPage/, 'App registers /adoption listing');
+assert.match(app, /path="pet\/:slugOrId"\s+element=\{<PublicPetPage/, 'App registers public /pet/:slug');
+assert.doesNotMatch(
+  app,
+  /element=\{<Layout[\s\S]*path="pet\/:slugOrId"/,
+  'public /pet/:slug is not nested under the Layout route'
+);
 assert.match(
   app,
   /path="vet-consult"\s+element=\{<VetConsultRoute/,

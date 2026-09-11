@@ -27,6 +27,7 @@ export function OnboardingGuard({ children }: { children: React.ReactNode }) {
     !location.pathname.startsWith('/add-pet') &&
     !location.pathname.startsWith('/my-pets') &&
     !location.pathname.startsWith('/pets/') &&
+    !location.pathname.startsWith('/pet/') &&
     !location.pathname.startsWith('/profile')
   ) {
     return <Navigate to="/onboarding/pet" replace />;

@@ -5,6 +5,7 @@ export * from './economy';
 export * from './rx-suggestions';
 export * from './profile-card';
 export * from './peer-profile';
+export * from './pet-slug';
 export * from './hr';
 export * from './admin-notifications';
 export * from './gtm-contract';
@@ -119,6 +120,7 @@ export type {
   OnboardingStatus,
   PetDraft,
   PetGender,
+  PetDiaryEntry,
   PetMedicalEntry,
   PetMedicalField,
   PetMedicalRecord,

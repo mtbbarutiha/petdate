@@ -46,6 +46,7 @@ import {
   FACE_VERIFY_REWARD,
   isPendingRequestExpired,
   makePetPublicId,
+  slugifyPetName,
   makeUserPublicId,
   makeOrderPublicId,
   makeConsultPublicId,
@@ -413,20 +414,6 @@ function backfillPublicIds(): void {
 
   db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_public_id ON users (public_id)');
   db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_pets_public_id ON pets (public_id)');
-}
-
-/** Local slug helper (pets.slug backfill) — keep wallet branch free of shared pet-slug export. */
-function slugifyPetName(name: string): string {
-  const raw = String(name || '')
-    .trim()
-    .toLowerCase()
-    .normalize('NFKD')
-    .replace(/[\u0300-\u036f]/g, '');
-  const slug = raw
-    .replace(/[^a-z0-9\u0600-\u06ff]+/gi, '-')
-    .replace(/^-+|-+$/g, '')
-    .slice(0, 64);
-  return slug || 'pet';
 }
 
 /** Assign unique public URL slugs for pets missing them (idempotent). */
@@ -1070,6 +1057,7 @@ function migrateSchema() {
     CREATE INDEX IF NOT EXISTS idx_pet_diary_entries_pet
       ON pet_diary_entries (pet_id, created_at DESC);
   `);
+
 
   // Backfill / normalize public ids (idempotent — safe on every startup)
   backfillPublicIds();
@@ -6770,6 +6758,73 @@ export const dbService = {
         createdAt: new Date().toISOString(),
       }
     );
+  },
+
+  listPetDiaryEntries(petId: number, limit = 50): PetDiaryEntry[] {
+    const rows = db
+      .prepare(
+        `SELECT e.*,
+                COALESCE(NULLIF(trim(e.author_name), ''), u.name) AS author_name
+         FROM pet_diary_entries e
+         LEFT JOIN users u ON u.id = e.author_user_id
+         WHERE e.pet_id = ?
+         ORDER BY e.created_at DESC, e.id DESC
+         LIMIT ?`
+      )
+      .all(petId, Math.min(200, Math.max(1, limit))) as Record<string, unknown>[];
+    return rows.map((row) => ({
+      id: Number(row.id),
+      petId: Number(row.pet_id),
+      authorUserId: Number(row.author_user_id),
+      authorName: (row.author_name as string) || undefined,
+      body: String(row.body),
+      createdAt: String(row.created_at),
+      updatedAt: row.updated_at != null ? String(row.updated_at) : undefined,
+    }));
+  },
+
+  addPetDiaryEntry(input: {
+    petId: number;
+    authorUserId: number;
+    body: string;
+  }): PetDiaryEntry | null {
+    const pet = this.getPet(input.petId);
+    if (!pet || pet.ownerId !== input.authorUserId) return null;
+    const body = String(input.body ?? '').trim();
+    if (!body || body.length > 4000) return null;
+    const owner = this.getUserById(input.authorUserId);
+    const authorName = owner?.name?.trim() || '';
+    const result = db
+      .prepare(
+        `INSERT INTO pet_diary_entries (pet_id, author_user_id, author_name, body)
+         VALUES (?, ?, ?, ?)`
+      )
+      .run(input.petId, input.authorUserId, authorName || null, body);
+    const rows = this.listPetDiaryEntries(input.petId, 5);
+    return (
+      rows.find((e) => e.id === Number(result.lastInsertRowid)) ?? {
+        id: Number(result.lastInsertRowid),
+        petId: input.petId,
+        authorUserId: input.authorUserId,
+        authorName: authorName || undefined,
+        body,
+        createdAt: new Date().toISOString(),
+      }
+    );
+  },
+
+  deletePetDiaryEntry(entryId: number, requesterUserId: number): boolean {
+    const row = db
+      .prepare(
+        `SELECT e.id, e.pet_id, p.owner_id
+         FROM pet_diary_entries e
+         JOIN pets p ON p.id = e.pet_id
+         WHERE e.id = ?`
+      )
+      .get(entryId) as { id: number; pet_id: number; owner_id: number } | undefined;
+    if (!row || Number(row.owner_id) !== requesterUserId) return false;
+    const result = db.prepare('DELETE FROM pet_diary_entries WHERE id = ?').run(entryId);
+    return result.changes > 0;
   },
 
   /** آیا کاربر (دامپزشک با سابقه مشاوره یا صاحب پت) به پرونده دسترسی دارد */

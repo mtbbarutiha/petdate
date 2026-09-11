@@ -1,3 +1,5 @@
+import { petPublicPath } from '@petdate/shared';
+
 /**
  * Share a public URL via Web Share API when available; otherwise copy to clipboard.
  * Returns a short Persian status message for toast UI.
@@ -54,10 +56,17 @@ export async function shareOrCopyUrl(opts: {
   return 'کپی لینک ناموفق بود';
 }
 
-/** Absolute public URL for a pet profile page. */
-export function petPublicUrl(petId: number | string): string {
-  const id = String(petId).trim();
-  const path = `/pets/${id}`;
+/** Absolute public URL for a pet profile page (`/pet/:slug`). */
+export function petPublicUrl(
+  petOrId: number | string | { id: number; slug?: string | null }
+): string {
+  let path: string;
+  if (typeof petOrId === 'object' && petOrId != null && 'id' in petOrId) {
+    path = petPublicPath(petOrId);
+  } else {
+    const raw = String(petOrId).trim();
+    path = /^\d+$/.test(raw) ? `/pet/${raw}` : `/pet/${encodeURIComponent(raw)}`;
+  }
   if (typeof window !== 'undefined' && window.location?.origin) {
     return `${window.location.origin}${path}`;
   }

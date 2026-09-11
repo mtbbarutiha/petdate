@@ -62,6 +62,7 @@ export function toPublicPetCard(pet: PetProfile): PetProfile {
   return {
     id: pet.id,
     publicId: pet.publicId,
+    slug: pet.slug,
     ownerId: pet.ownerId,
     name: pet.name,
     species: pet.species,
@@ -463,18 +464,120 @@ petsRouter.get('/:id/image', async (req, res) => {
 });
 
 petsRouter.get('/:id', (req, res) => {
-  const petId = Number(req.params.id);
-  if (!Number.isFinite(petId) || petId <= 0) {
+  const raw = String(req.params.id ?? '').trim();
+  if (!raw) {
     res.status(400).json({ error: 'شناسه پت نامعتبر است' });
     return;
   }
-  const pet = dbService.getPet(petId);
+  // Legacy numeric ids still work; name slugs (e.g. teddy) resolve too.
+  // Pure non-slug garbage (empty after trim) already rejected above.
+  const pet = dbService.getPetByIdOrSlug(raw);
+  if (!pet) {
+    // Keep old 400 for clearly invalid tokens that are neither id nor plausible slug
+    if (!/^\d+$/.test(raw) && !/^[a-z0-9-]{1,64}$/i.test(raw)) {
+      res.status(400).json({ error: 'شناسه پت نامعتبر است' });
+      return;
+    }
+    res.status(404).json({ error: 'پت پیدا نشد' });
+    return;
+  }
+  if (!pet.slug) {
+    dbService.ensurePetSlug(pet.id);
+  }
+  const fresh = dbService.getPet(pet.id) ?? pet;
+  const viewerId = viewerUserId(req);
+  res.json(presentPet(fresh, viewerId, { privileged: isInternalBot(req) }));
+});
+
+/** دفتر خاطرات پت — خواندن عمومی */
+petsRouter.get('/:id/diary', (req, res) => {
+  const pet = dbService.getPetByIdOrSlug(String(req.params.id ?? '').trim());
   if (!pet) {
     res.status(404).json({ error: 'پت پیدا نشد' });
     return;
   }
-  const viewerId = viewerUserId(req);
-  res.json(presentPet(pet, viewerId, { privileged: isInternalBot(req) }));
+  const limitRaw = req.query.limit != null ? Number(req.query.limit) : 50;
+  const limit = Number.isFinite(limitRaw) ? limitRaw : 50;
+  res.json({
+    petId: pet.id,
+    slug: pet.slug,
+    title: `دفتر خاطرات ${pet.name}`,
+    entries: dbService.listPetDiaryEntries(pet.id, limit),
+  });
+});
+
+/** دفتر خاطرات — فقط صاحب پت می‌نویسد */
+petsRouter.post('/:id/diary', (req, res) => {
+  const pet = dbService.getPetByIdOrSlug(String(req.params.id ?? '').trim());
+  if (!pet) {
+    res.status(404).json({ error: 'پت پیدا نشد' });
+    return;
+  }
+  const sessionUserId = viewerUserId(req);
+  const bodyOwnerId = req.body?.ownerId != null ? Number(req.body.ownerId) : undefined;
+  const authorUserId = sessionUserId ?? bodyOwnerId;
+  if (authorUserId == null || !Number.isFinite(authorUserId)) {
+    res.status(401).json({ error: 'وارد نشده‌اید' });
+    return;
+  }
+  if (pet.ownerId !== authorUserId) {
+    res.status(403).json({ error: 'فقط صاحب پت می‌تواند در دفتر خاطرات بنویسد' });
+    return;
+  }
+  const body = typeof req.body?.body === 'string' ? req.body.body.trim() : '';
+  if (!body) {
+    res.status(400).json({ error: 'متن خاطره الزامی است' });
+    return;
+  }
+  if (body.length > 4000) {
+    res.status(400).json({ error: 'متن خاطره خیلی طولانی است' });
+    return;
+  }
+  const entry = dbService.addPetDiaryEntry({
+    petId: pet.id,
+    authorUserId,
+    body,
+  });
+  if (!entry) {
+    res.status(400).json({ error: 'ثبت خاطره ناموفق بود' });
+    return;
+  }
+  res.status(201).json(entry);
+});
+
+petsRouter.delete('/:id/diary/:entryId', (req, res) => {
+  const pet = dbService.getPetByIdOrSlug(String(req.params.id ?? '').trim());
+  if (!pet) {
+    res.status(404).json({ error: 'پت پیدا نشد' });
+    return;
+  }
+  const sessionUserId = viewerUserId(req);
+  const bodyOwnerId =
+    req.body?.ownerId != null
+      ? Number(req.body.ownerId)
+      : req.query.ownerId != null
+        ? Number(req.query.ownerId)
+        : undefined;
+  const authorUserId = sessionUserId ?? bodyOwnerId;
+  if (authorUserId == null || !Number.isFinite(authorUserId)) {
+    res.status(401).json({ error: 'وارد نشده‌اید' });
+    return;
+  }
+  if (pet.ownerId !== authorUserId) {
+    res.status(403).json({ error: 'اجازه نداری' });
+    return;
+  }
+  const entryId = Number(req.params.entryId);
+  if (!Number.isFinite(entryId) || entryId <= 0) {
+    res.status(400).json({ error: 'شناسه خاطره نامعتبر است' });
+    return;
+  }
+  const ok = dbService.deletePetDiaryEntry(entryId, authorUserId);
+  if (!ok) {
+    res.status(404).json({ error: 'خاطره پیدا نشد' });
+    return;
+  }
+  res.json({ ok: true });
 });
 
 petsRouter.post('/', (req, res) => {

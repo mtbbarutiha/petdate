@@ -83,6 +83,9 @@ const HomePage = lazy(() => import('./pages/HomePage').then((m) => ({ default: m
 const PetDetailPage = lazy(() =>
   import('./pages/PetDetailPage').then((m) => ({ default: m.PetDetailPage })),
 );
+const PublicPetPage = lazy(() =>
+  import('./pages/PublicPetPage').then((m) => ({ default: m.PublicPetPage })),
+);
 const PetEditPage = lazy(() =>
   import('./pages/PetEditPage').then((m) => ({ default: m.PetEditPage })),
 );
@@ -352,6 +355,7 @@ export default function App() {
             <Route path="news" element={<Navigate to="/magazine" replace />} />
             <Route path="adoption" element={<AdoptionListPage />} />
             <Route path="adoption/:slug" element={<AdoptionDetailPage />} />
+            <Route path="pet/:slugOrId" element={<PublicPetPage />} />
             <Route path="vet-consult" element={<VetConsultRoute />} />
             <Route path="shop" element={<ShopHomePage />} />
             <Route path="shop/c/:category" element={<ShopCategoryPage />} />
