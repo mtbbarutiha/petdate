@@ -182,4 +182,23 @@ ok "AGENT_SPEED.md"
 [[ -f scripts/tg-api.sh ]] || fail "scripts/tg-api.sh missing"
 ok "ops helper scripts"
 
+# Magazine CMS — additive only. Deploy must never wipe magazine_articles.
+# Hard DELETE/TRUNCATE/DROP of magazine_articles is allowed only inside *.selftest.ts (temp DB).
+mag_hits="$(
+  grep -R -n -E '(^|[^[:alnum:]_])(TRUNCATE[[:space:]]+(TABLE[[:space:]]+)?magazine_articles|DROP[[:space:]]+TABLE[[:space:]]+(IF[[:space:]]+EXISTS[[:space:]]+)?magazine_articles|DELETE[[:space:]]+FROM[[:space:]]+magazine_articles)' \
+    packages/api/src scripts --include='*.ts' --include='*.js' --include='*.mjs' --include='*.sh' 2>/dev/null \
+    | grep -v selftest \
+    | grep -vE '^\S+:[[:digit:]]+:[[:space:]]*(//|\*|\#)' \
+    || true
+)"
+if [[ -n "$mag_hits" ]]; then
+  echo "$mag_hits" >&2
+  fail "destructive magazine_articles SQL found outside selftests"
+fi
+grep -q 'bootMagazineCms' packages/api/src/db.ts \
+  || fail "getDb must boot magazine CMS via bootMagazineCms (seed-if-empty)"
+grep -q 'seedMagazineSamplesIfEmpty' packages/api/src/magazine-service.ts \
+  || fail "magazine seedMagazineSamplesIfEmpty missing"
+ok "magazine additive (no wipe SQL; boot seed-if-empty)"
+
 echo "predeploy-check passed — this tree may deploy."

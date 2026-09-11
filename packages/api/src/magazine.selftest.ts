@@ -65,12 +65,15 @@ async function main() {
   assert.equal(mag.softDeleteMagazineArticle(draft.id), true);
   assert.equal(mag.getMagazineArticleById(draft.id), null, 'soft-deleted hidden');
 
-  // Seed only when empty — wipe rows first via DELETE (test DB only)
+  // Seed only when empty — wipe rows first via DELETE (isolated temp DB only; never production)
   const { getDb: gdb } = await import('./db');
   gdb().exec('DELETE FROM magazine_articles');
-  const seeded = mag.seedMagazineSamplesIfEmpty();
-  assert.equal(seeded, 3, 'seeds 3 samples on empty table');
+  assert.equal(mag.countMagazineArticles(), 0, 'temp DB empty before seed');
+  const boot = mag.bootMagazineCms();
+  assert.equal(boot.seeded, 3, 'boot seeds 3 samples on empty table');
+  assert.equal(boot.total, 3, 'boot reports total=3');
   assert.equal(mag.seedMagazineSamplesIfEmpty(), 0, 'does not overwrite existing');
+  assert.equal(mag.bootMagazineCms().seeded, 0, 'second boot does not re-seed');
 
   const related = mag.listRelatedMagazineArticles('مراقبت-از-دندان-پت', {
     category: 'مراقبت',
