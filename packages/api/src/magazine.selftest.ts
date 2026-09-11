@@ -65,6 +65,20 @@ async function main() {
   assert.equal(mag.softDeleteMagazineArticle(draft.id), true);
   assert.equal(mag.getMagazineArticleById(draft.id), null, 'soft-deleted hidden');
 
+  // Seed only when empty — wipe rows first via DELETE (test DB only)
+  const { getDb: gdb } = await import('./db');
+  gdb().exec('DELETE FROM magazine_articles');
+  const seeded = mag.seedMagazineSamplesIfEmpty();
+  assert.equal(seeded, 3, 'seeds 3 samples on empty table');
+  assert.equal(mag.seedMagazineSamplesIfEmpty(), 0, 'does not overwrite existing');
+
+  const related = mag.listRelatedMagazineArticles('مراقبت-از-دندان-پت', {
+    category: 'مراقبت',
+    limit: 3,
+  });
+  assert.ok(related.every((a) => a.slug !== 'مراقبت-از-دندان-پت'), 'related excludes self');
+  assert.ok(related.length >= 1, 'related returns peers');
+
   console.log('magazine.selftest: ok');
 }
 

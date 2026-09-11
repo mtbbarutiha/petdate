@@ -10,6 +10,7 @@ import {
   type JalaliDateValue,
 } from '../JalaliDateSelect';
 import { MagazineRichTextEditor } from '../MagazineRichTextEditor';
+import { resolvePublicMediaUrl } from '../../lib/api';
 
 type FormState = {
   title: string;
@@ -352,7 +353,7 @@ export function AdminMagazineFormPage() {
           </div>
           {form.coverImage ? (
             <img
-              src={form.coverImage}
+              src={resolvePublicMediaUrl(form.coverImage) || form.coverImage}
               alt=""
               style={{ marginTop: 10, maxWidth: 280, borderRadius: 12, display: 'block' }}
             />

@@ -1315,9 +1315,13 @@ function migrateSchema() {
   // Magazine / news CMS (additive; never wipe)
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { ensureMagazineSchema } =
+    const { ensureMagazineSchema, seedMagazineSamplesIfEmpty } =
       require('./magazine-service') as typeof import('./magazine-service');
     ensureMagazineSchema();
+    const seeded = seedMagazineSamplesIfEmpty();
+    if (seeded > 0) {
+      console.log(`Magazine: seeded ${seeded} sample article(s)`);
+    }
   } catch (err) {
     console.warn('Magazine schema ensure skipped/failed:', (err as Error).message);
   }

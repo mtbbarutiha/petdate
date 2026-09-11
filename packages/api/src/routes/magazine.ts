@@ -7,6 +7,7 @@ import {
   getMagazineArticleBySlug,
   listFeaturedMagazineArticles,
   listMagazineArticles,
+  listRelatedMagazineArticles,
 } from '../magazine-service';
 import {
   mimeFromMagazineImageKey,
@@ -73,7 +74,11 @@ magazineRouter.get('/:slug', (req, res) => {
     res.status(404).json({ error: 'مقاله پیدا نشد' });
     return;
   }
-  res.json({ article: publicDetail(article) });
+  const related = listRelatedMagazineArticles(slug, {
+    category: article.category,
+    limit: 3,
+  }).map(publicCard);
+  res.json({ article: publicDetail(article), related });
 });
 
 function publicCard(a: {
