@@ -38,6 +38,7 @@ assert.doesNotMatch(
 assert.match(html, /color-scheme/, 'color-scheme meta present');
 
 const darkCss = readFileSync(join(root, 'src/styles/theme-dark.css'), 'utf8');
+const pepitoCss = readFileSync(join(root, 'src/styles/pepito.css'), 'utf8');
 assert.match(darkCss, /\[data-theme=['"]dark['"]\]/, 'dark token block present');
 assert.match(darkCss, /--pepito-soft/, 'pepito soft remapped');
 assert.match(darkCss, /--admin-bg/, 'admin tokens remapped');
@@ -70,6 +71,9 @@ assert.match(darkCss, /\.pepito-app-main\b/, 'app main canvas remapped');
 assert.match(darkCss, /\.pepito-home-action\b/, 'home action cards remapped');
 assert.match(darkCss, /\.pepito-vet-hero\b/, 'vet/trainer hero remapped');
 assert.match(darkCss, /\.pepito-invite-card\b/, 'invite friends card remapped');
+assert.match(darkCss, /\.pepito-invite-card \.pepito-eyebrow/, 'invite eyebrow keeps accent in dark');
+assert.match(pepitoCss, /\.pepito-invite-actions \.pepito-btn[\s\S]*?min-height:\s*36px/, 'invite buttons keep ≥36px tap target');
+assert.match(pepitoCss, /\.pepito-invite-card\s*\{[\s\S]*?padding:\s*0\.65rem/, 'invite card uses compact padding');
 assert.match(darkCss, /\.pepito-role-switch-item\b/, 'role switch pills remapped');
 assert.match(darkCss, /\.pepito-support-bubble\.is-assistant/, 'support chat bubbles remapped');
 assert.match(darkCss, /\.pepito-support-composer input/, 'support composer remapped');

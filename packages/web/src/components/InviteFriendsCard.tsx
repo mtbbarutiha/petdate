@@ -95,7 +95,7 @@ export function InviteFriendsCard({ variant = 'card', className = '' }: Props) {
       </p>
       <div className="pepito-invite-actions">
         <button type="button" className="pepito-btn button-1" onClick={() => void copyLink()}>
-          {copied ? <Check size={16} aria-hidden /> : <Copy size={16} aria-hidden />}
+          {copied ? <Check size={14} aria-hidden /> : <Copy size={14} aria-hidden />}
           {copied ? 'کپی شد' : 'کپی لینک'}
         </button>
         <a
@@ -104,7 +104,7 @@ export function InviteFriendsCard({ variant = 'card', className = '' }: Props) {
           target="_blank"
           rel="noreferrer"
         >
-          <Share2 size={16} aria-hidden />
+          <Share2 size={14} aria-hidden />
           اشتراک در تلگرام
         </a>
       </div>

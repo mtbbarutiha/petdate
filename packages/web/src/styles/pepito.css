@@ -12420,19 +12420,39 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   background: rgba(30, 42, 74, 0.09);
 }
 
-/* —— دعوت دوستان —— */
+/* —— دعوت دوستان (compact card) —— */
 .pepito-invite-card {
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
-  padding: 1.15rem 1.2rem;
-  border-radius: 20px;
+  gap: 0.45rem;
+  padding: 0.65rem 0.8rem;
+  border-radius: 14px;
   background: linear-gradient(145deg, rgba(253, 150, 30, 0.1), rgba(92, 77, 145, 0.06));
   border: 1px solid rgba(92, 77, 145, 0.12);
 }
+.pepito-invite-card .pepito-home-section-head {
+  margin-bottom: 0;
+}
+.pepito-invite-card .pepito-eyebrow {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.3;
+  color: var(--pepito-orange, #fd961e);
+}
+.pepito-invite-card .pepito-home-section-head h2 {
+  margin: 0.05rem 0 0.15rem;
+  font-size: clamp(0.98rem, 2vw, 1.12rem);
+  line-height: 1.25;
+}
+.pepito-invite-card .pepito-home-section-head > p {
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
 .pepito-home-invite,
 .pepito-wallet-invite {
-  margin: 0.15rem 0 0;
+  margin: 0.1rem 0 0;
 }
 
 .pepito-wallet-page--folio .pepito-invite-card {
@@ -12442,23 +12462,29 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
 }
 .pepito-invite-link {
   margin: 0;
-  padding: 0.65rem 0.8rem;
-  border-radius: 12px;
+  padding: 0.38rem 0.55rem;
+  border-radius: 8px;
   background: rgba(255, 255, 255, 0.85);
   border: 1px dashed rgba(92, 77, 145, 0.22);
-  font-size: 0.82rem;
+  font-size: 0.72rem;
+  line-height: 1.35;
   word-break: break-all;
   color: var(--pepito-dark);
 }
 .pepito-invite-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.55rem;
+  gap: 0.35rem;
 }
 .pepito-invite-actions .pepito-btn {
   display: inline-flex;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.28rem;
+  min-height: 36px;
+  padding: 0.35rem 0.85rem;
+  font-size: 0.82rem;
+  line-height: 1.2;
+  border-radius: 999px;
 }
 .pepito-invite-inline {
   display: flex;
