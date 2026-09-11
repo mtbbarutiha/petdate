@@ -1311,6 +1311,16 @@ function migrateSchema() {
   } catch (err) {
     console.warn('CRM demo seed skipped/failed:', (err as Error).message);
   }
+
+  // Magazine / news CMS (additive; never wipe)
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { ensureMagazineSchema } =
+      require('./magazine-service') as typeof import('./magazine-service');
+    ensureMagazineSchema();
+  } catch (err) {
+    console.warn('Magazine schema ensure skipped/failed:', (err as Error).message);
+  }
 }
 
 function seedFinanceDefaults() {

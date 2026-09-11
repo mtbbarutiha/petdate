@@ -1,7 +1,7 @@
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ChevronDown,
-  Activity, Bell, Briefcase, Building2, ClipboardList, FileText, Headset, Landmark, LayoutDashboard, LineChart, LogOut, Mail, Menu, Package,
+  Activity, Bell, Briefcase, Building2, ClipboardList, FileText, Headset, Landmark, LayoutDashboard, LineChart, LogOut, Mail, Menu, Newspaper, Package,
   PawPrint, PieChart, ScrollText, Settings, Shield, ShieldCheck, ShoppingBag, Stethoscope,
   Store, Target, Ticket, TrendingUp, UserPlus, UserRound, Users, Wallet, X, ClipboardCheck, BarChart3, Coins, Tags,
   Route, Inbox, HandCoins, Bot, MessageSquare, Star, HeartHandshake, ArrowLeftRight,
@@ -114,6 +114,7 @@ const NAV_GROUPS: NavGroup[] = [
     { to: '/admin/payments', icon: Wallet, label: 'پرداخت‌ها', perm: 'shop.read' },
   ]},
   { title: 'محتوا و سیستم', items: [
+    { to: '/admin/magazine', icon: Newspaper, label: 'مجله و اخبار', perm: 'platform.write' },
     { to: '/admin/content', icon: Bell, label: 'اعلان‌ها / محتوا', perm: 'platform.write' },
     { to: '/admin/mail', icon: Mail, label: 'ایمیل / SMTP', perm: 'platform.read' },
     { to: '/admin/analytics', icon: BarChart3, label: 'آنالیتیکس', perm: 'platform.read' },

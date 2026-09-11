@@ -8,6 +8,9 @@ import { SiteDesktopNav } from '../components/SiteDesktopNav';
 import { ADOPTION_PETS } from '../data/adoptionPets';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { loginPath } from '../lib/authRedirect';
+import { resolvePublicMediaUrl } from '../lib/api';
+import { formatAdminFaDate } from '../admin/jalaliDate';
+import { fetchMagazineFeatured, type MagazineCard } from './MagazinePage';
 
 const P = '/pepito/uploads';
 
@@ -158,57 +161,39 @@ const PRODUCTS = [
   { name: 'غذای خشک جوسرا', price: '۳٬۳۰۰٬۰۰۰ تومان', badge: 'پرفروش', img: `${P}/06-1.png`, to: '/shop/product/cat-food-2-p102' },
 ] as const;
 
-/** Pepito “Latest News” / blog1 carousel */
-const NEWS = [
+/** Fallback demo cards when CMS has no published articles yet */
+const NEWS_FALLBACK: MagazineCard[] = [
   {
+    id: -1,
     title: 'مراقبت از دندان پت',
     excerpt: 'نکات ساده برای سلامت دهان و دندان پت‌تان در خانه.',
-    date: '۱۳ اسفند ۱۴۰۳',
-    author: 'لیلی دورو',
-    tag: 'مراقبت',
-    img: `${P}/01.jpg`,
-    to: '/vet-consult' },
+    publishAt: '2025-03-03',
+    author: 'پت‌دیت',
+    category: 'مراقبت',
+    coverImage: `${P}/01.jpg`,
+    slug: '',
+  },
   {
+    id: -2,
     title: 'سبک‌های آرایش سگ',
     excerpt: 'انتخاب کوتاهی مو متناسب با نژاد و فصل.',
-    date: '۱۳ اسفند ۱۴۰۳',
-    author: 'فرانک وایت',
-    tag: 'پت',
-    img: `${P}/06.jpg`,
-    to: '/shop' },
+    publishAt: '2025-03-03',
+    author: 'پت‌دیت',
+    category: 'پت',
+    coverImage: `${P}/06.jpg`,
+    slug: '',
+  },
   {
+    id: -3,
     title: 'نکات ایمنی پت',
     excerpt: 'چطور خانه را برای پت‌ها امن‌تر کنیم.',
-    date: '۱۳ اسفند ۱۴۰۳',
-    author: 'اولیویا دان',
-    tag: 'دندان',
-    img: `${P}/03.jpg`,
-    to: '/faq' },
-  {
-    title: 'انگل‌های پت',
-    excerpt: 'پیشگیری و درمان به‌موقع انگل‌های رایج.',
-    date: '۱۳ اسفند ۱۴۰۳',
-    author: 'فرانک وایت',
-    tag: 'جراحی',
-    img: `${P}/04.jpg`,
-    to: '/vet-consult' },
-  {
-    title: 'خواب توله‌ها',
-    excerpt: 'عادت‌های سالم خواب برای توله‌های پرانرژی.',
-    date: '۱۳ اسفند ۱۴۰۳',
-    author: 'لیلی دورو',
-    tag: 'تشخیص',
-    img: `${P}/05.jpg`,
-    to: '/#pets' },
-  {
-    title: 'میکروچیپ گربه',
-    excerpt: 'شناسایی دائمی برای امنیت بیشتر در گم‌شدن.',
-    date: '۱۲ اسفند ۱۴۰۳',
-    author: 'اولیویا دان',
-    tag: 'ایمنی',
-    img: `${P}/02.jpg`,
-    to: '/vet-consult' },
-] as const;
+    publishAt: '2025-03-03',
+    author: 'پت‌دیت',
+    category: 'ایمنی',
+    coverImage: `${P}/03.jpg`,
+    slug: '',
+  },
+];
 
 function GatedLink({
   to,
@@ -267,6 +252,21 @@ export function WelcomePage() {
   const svcProgrammaticScrollRef = useRef(false);
   const [newsIndex, setNewsIndex] = useState(0);
   const newsTrackRef = useRef<HTMLDivElement>(null);
+  const [newsItems, setNewsItems] = useState<MagazineCard[]>(NEWS_FALLBACK);
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetchMagazineFeatured(6)
+      .then((list) => {
+        if (!cancelled && list.length > 0) setNewsItems(list);
+      })
+      .catch(() => {
+        /* keep fallback */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const goToSlide = (index: number) => {
     const len = HERO_SLIDES.length;
@@ -376,10 +376,14 @@ export function WelcomePage() {
     };
   }, []);
 
-  const newsPages = Math.max(1, NEWS.length - 2); // 3 visible on desktop → pages = n-2
+  const newsPages = Math.max(1, newsItems.length - 2); // 3 visible on desktop → pages = n-2
   const goNews = (index: number) => {
     setNewsIndex(((index % newsPages) + newsPages) % newsPages);
   };
+
+  useEffect(() => {
+    setNewsIndex(0);
+  }, [newsItems.length]);
 
   useEffect(() => {
     const track = newsTrackRef.current;
@@ -394,7 +398,7 @@ export function WelcomePage() {
       left: rtl ? -newsIndex * step : newsIndex * step,
       behavior: narrow ? 'auto' : 'smooth',
     });
-  }, [newsIndex]);
+  }, [newsIndex, newsItems]);
 
 
   const current = HERO_SLIDES[slide]!;
@@ -878,31 +882,40 @@ export function WelcomePage() {
             </button>
           </div>
           <div className="pepito-news-track" ref={newsTrackRef}>
-            {NEWS.map((n) => (
-              <article key={n.title} className="pepito-news-card">
-                <div className="pepito-news-img">
-                  <GatedLink to={n.to}>
-                    <img src={n.img} alt={n.title} loading="lazy" />
-                  </GatedLink>
-                  <span className="pepito-news-cat">{n.tag}</span>
-                </div>
-                <div className="pepito-news-cont">
-                  <h3>
-                    <GatedLink to={n.to}>{n.title}</GatedLink>
-                  </h3>
-                  <p>{n.excerpt}</p>
-                  <div className="pepito-news-author">
-                    <div>
-                      <h5>{n.date}</h5>
-                      <h5>
-                        توسط{' '}
-                        <span className="pepito-news-author-name">{n.author}</span>
-                      </h5>
+            {newsItems.map((n) => {
+              const to = n.slug ? `/magazine/${n.slug}` : '/magazine';
+              const img = resolvePublicMediaUrl(n.coverImage) || n.coverImage;
+              return (
+                <article key={n.id} className="pepito-news-card">
+                  <div className="pepito-news-img">
+                    <Link to={to}>
+                      <img src={img} alt={n.title} loading="lazy" />
+                    </Link>
+                    {n.category ? <span className="pepito-news-cat">{n.category}</span> : null}
+                  </div>
+                  <div className="pepito-news-cont">
+                    <h3>
+                      <Link to={to}>{n.title}</Link>
+                    </h3>
+                    <p>{n.excerpt}</p>
+                    <div className="pepito-news-author">
+                      <div>
+                        <h5>{formatAdminFaDate(n.publishAt)}</h5>
+                        <h5>
+                          {n.author ? (
+                            <>
+                              توسط <span className="pepito-news-author-name">{n.author}</span>
+                            </>
+                          ) : (
+                            <Link to="/magazine">مشاهده مجله</Link>
+                          )}
+                        </h5>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </article>
-            ))}
+                </article>
+              );
+            })}
           </div>
         </div>
         <div className="pepito-news-dots" role="tablist" aria-label="صفحات اخبار">
@@ -918,6 +931,11 @@ export function WelcomePage() {
             />
           ))}
         </div>
+        <p className="pepito-news-more">
+          <Link to="/magazine" className="pepito-btn button-1">
+            همه مقالات مجله
+          </Link>
+        </p>
       </section>
 
       <section className="pepito-cta">

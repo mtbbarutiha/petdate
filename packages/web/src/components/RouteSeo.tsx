@@ -33,6 +33,21 @@ function metaForPath(pathname: string, role?: ReturnType<typeof primaryRole>): P
       canonicalPath: '/faq',
     };
   }
+  if (p === '/magazine' || p.startsWith('/magazine/')) {
+    if (p === '/magazine') {
+      return {
+        title: SEO.titleTemplate('مجله و اخبار پت'),
+        description:
+          'مقالات و اخبار مراقبت از پت، سلامت، تغذیه و نکات نگهداری — مجله پت‌دیت.',
+        canonicalPath: '/magazine',
+      };
+    }
+    return {
+      title: SEO.titleTemplate('مقاله مجله پت‌دیت'),
+      description: 'مقاله مجله و اخبار پت‌دیت.',
+      canonicalPath: p,
+    };
+  }
   if (p === '/shop' || p.startsWith('/shop/')) {
     if (p === '/shop/cart') {
       return {

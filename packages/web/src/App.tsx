@@ -34,6 +34,12 @@ const TelegramLinkPage = lazy(() =>
   import('./pages/auth/TelegramLinkPage').then((m) => ({ default: m.TelegramLinkPage })),
 );
 const FaqPage = lazy(() => import('./pages/FaqPage').then((m) => ({ default: m.FaqPage })));
+const MagazinePage = lazy(() =>
+  import('./pages/MagazinePage').then((m) => ({ default: m.MagazinePage })),
+);
+const MagazineArticlePage = lazy(() =>
+  import('./pages/MagazineArticlePage').then((m) => ({ default: m.MagazineArticlePage })),
+);
 const AdoptionDetailPage = lazy(() =>
   import('./pages/AdoptionDetailPage').then((m) => ({ default: m.AdoptionDetailPage })),
 );
@@ -177,6 +183,12 @@ const AdminPaymentsPage = lazy(() =>
 );
 const AdminContentPage = lazy(() =>
   import('./admin/pages/AdminContentPage').then((m) => ({ default: m.AdminContentPage })),
+);
+const AdminMagazinePage = lazy(() =>
+  import('./admin/pages/AdminMagazinePage').then((m) => ({ default: m.AdminMagazinePage })),
+);
+const AdminMagazineFormPage = lazy(() =>
+  import('./admin/pages/AdminMagazineFormPage').then((m) => ({ default: m.AdminMagazineFormPage })),
 );
 const AdminSettingsPage = lazy(() =>
   import('./admin/pages/AdminSettingsPage').then((m) => ({ default: m.AdminSettingsPage })),
@@ -334,6 +346,9 @@ export default function App() {
             <Route index element={<WelcomePage />} />
             <Route path="welcome" element={<WelcomePage />} />
             <Route path="faq" element={<FaqPage />} />
+            <Route path="magazine" element={<MagazinePage />} />
+            <Route path="magazine/:slug" element={<MagazineArticlePage />} />
+            <Route path="news" element={<Navigate to="/magazine" replace />} />
             <Route path="adoption/:slug" element={<AdoptionDetailPage />} />
             <Route path="shop" element={<ShopHomePage />} />
             <Route path="shop/c/:category" element={<ShopCategoryPage />} />
@@ -402,6 +417,9 @@ export default function App() {
                 <Route path="finance/transactions" element={<AdminFinanceTransactionsPage />} />
                 <Route path="finance/allocation" element={<AdminFinanceAllocationPage />} />
                 <Route path="content" element={<AdminContentPage />} />
+                <Route path="magazine" element={<AdminMagazinePage />} />
+                <Route path="magazine/new" element={<AdminMagazineFormPage />} />
+                <Route path="magazine/:id" element={<AdminMagazineFormPage />} />
                 <Route path="mail" element={<AdminMailPage />} />
                 <Route path="logs" element={<AdminLogsPage />} />
                 <Route path="monitoring" element={<AdminMonitoringPage />} />
