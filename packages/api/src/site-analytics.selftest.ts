@@ -31,9 +31,25 @@ async function main() {
     isValidClarityProjectId,
     isValidGtmContainerId,
     ensureSiteAnalyticsSchema,
+    normalizePath,
+    formatAnalyticsPathLabel,
+    mergePathBuckets,
   } = await import('./site-analytics');
 
   ensureSiteAnalyticsSchema();
+
+  assert(normalizePath('/profile|') === '/profile', 'strip trailing pipe');
+  assert(normalizePath('|') === '/', 'pipe-only path');
+  assert(formatAnalyticsPathLabel('/profile|') === '/profile', 'display strip pipe');
+  assert(formatAnalyticsPathLabel('|') === '(خالی)', 'display pipe-only');
+  assert(formatAnalyticsPathLabel('') === '(خالی)', 'display empty');
+  assert(
+    mergePathBuckets([
+      { label: '/profile|', value: 2 },
+      { label: '/profile', value: 3 },
+    ])[0].value === 5,
+    'merge path variants',
+  );
 
   assert(detectDevice('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0)', 390) === 'mobile', 'iphone');
   assert(detectDevice('Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 1440) === 'desktop', 'desktop');

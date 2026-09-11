@@ -293,11 +293,62 @@ function clampStr(v: unknown, max: number): string | null {
   return t.slice(0, max);
 }
 
-function normalizePath(raw: unknown): string {
-  const s = clampStr(raw, 512) || '/';
-  if (!s.startsWith('/')) return `/${s}`.slice(0, 512);
-  const pathOnly = s.split('?')[0]?.split('#')[0] || '/';
-  return pathOnly.slice(0, 512) || '/';
+/**
+ * Normalize a page path for storage/aggregation.
+ * Strips query/hash, control chars, trailing junk (`|`), and empty/undefined → `/`.
+ */
+export function normalizePath(raw: unknown): string {
+  let s = typeof raw === 'string' ? raw : raw == null ? '' : String(raw);
+  s = s.trim();
+  if (!s || s === 'undefined' || s === 'null' || s === '(null)') return '/';
+  try {
+    if (/%[0-9A-Fa-f]{2}/.test(s)) s = decodeURIComponent(s);
+  } catch {
+    /* keep raw */
+  }
+  s = s.replace(/[\u0000-\u001F\u007F\u200B-\u200D\uFEFF]/g, '').trim();
+  const pathOnly = s.split('?')[0]?.split('#')[0] || '';
+  // Trailing `|` / backslashes are telemetry junk (seen as `/profile|` in admin charts).
+  let cleaned = pathOnly.replace(/[|\\]+$/g, '').replace(/\/{2,}/g, '/').trim();
+  if (!cleaned || cleaned === 'undefined' || cleaned === 'null') return '/';
+  // Path that was only delimiters (e.g. `|`, `||`) is empty, not home.
+  if (/^[|\\]+$/.test(pathOnly.trim())) return '/';
+  if (!cleaned.startsWith('/')) cleaned = `/${cleaned}`;
+  if (cleaned.length > 1) cleaned = cleaned.replace(/\/+$/, '');
+  return cleaned.slice(0, 512) || '/';
+}
+
+/**
+ * Admin chart label for a path bucket — never blank or junk.
+ * Empty / undefined / delimiter-only → `(خالی)`; otherwise normalized path.
+ */
+export function formatAnalyticsPathLabel(raw: unknown): string {
+  const original = typeof raw === 'string' ? raw.trim() : raw == null ? '' : String(raw).trim();
+  if (!original || original === 'undefined' || original === 'null' || original === '(null)' || original === 'نامشخص') {
+    return '(خالی)';
+  }
+  if (/^[|\\/\s]+$/.test(original) && !/^\/+$/.test(original)) {
+    return '(خالی)';
+  }
+  const normalized = normalizePath(original);
+  // Lone `/` from a junk-only input (e.g. `|`) should stay readable as empty.
+  if (normalized === '/' && /^[|\\]+$/.test(original.replace(/\s/g, ''))) {
+    return '(خالی)';
+  }
+  return normalized;
+}
+
+/** Merge path buckets after normalizing labels (collapses `/profile` + `/profile|`). */
+export function mergePathBuckets(rows: SiteAnalyticsBucket[], limit = 15): SiteAnalyticsBucket[] {
+  const map = new Map<string, number>();
+  for (const r of rows) {
+    const label = formatAnalyticsPathLabel(r.label);
+    map.set(label, (map.get(label) || 0) + (Number(r.value) || 0));
+  }
+  return [...map.entries()]
+    .map(([label, value]) => ({ label, value }))
+    .sort((a, b) => b.value - a.value || a.label.localeCompare(b.label))
+    .slice(0, limit);
 }
 
 export function parseReferrerHost(referrer: string | null | undefined): string {
@@ -692,10 +743,13 @@ export function buildSiteAnalyticsReport(periodDays = 14): SiteAnalyticsReport {
     },
     trafficDaily,
     sessionsDaily,
-    popularPages: topBucket(
-      `SELECT path AS label, COUNT(*) AS value FROM site_analytics_events
-       WHERE event_type = 'pageview' AND created_at >= ? AND created_at <= ?
-       GROUP BY path ORDER BY value DESC`, [from, to], 15),
+    popularPages: mergePathBuckets(
+      topBucket(
+        `SELECT path AS label, COUNT(*) AS value FROM site_analytics_events
+         WHERE event_type = 'pageview' AND created_at >= ? AND created_at <= ?
+         GROUP BY path ORDER BY value DESC`, [from, to], 40),
+      15,
+    ),
     referrers: topBucket(
       `SELECT referrer_host AS label, COUNT(*) AS value FROM site_analytics_events
        WHERE event_type = 'pageview' AND created_at >= ? AND created_at <= ?
@@ -757,8 +811,8 @@ export function buildSiteAnalyticsReport(periodDays = 14): SiteAnalyticsReport {
         startedAt,
         lastSeenAt,
         pageviews: pickRowNum(s, ['pageviews']),
-        landingPath: pickRowStr(s, ['landingPath', 'landing_path'], '/') || '/',
-        exitPath: pickRowStr(s, ['exitPath', 'exit_path'], '/') || '/',
+        landingPath: formatAnalyticsPathLabel(pickRowStr(s, ['landingPath', 'landing_path'], '/') || '/'),
+        exitPath: formatAnalyticsPathLabel(pickRowStr(s, ['exitPath', 'exit_path'], '/') || '/'),
         referrerHost: referrerHost || '(direct)',
         device: pickRowStr(s, ['device'], 'desktop') || 'desktop',
         country: pickRowStr(s, ['country'], 'نامشخص') || 'نامشخص',
@@ -882,11 +936,14 @@ export function buildTagManagerReport(periodDays = 14): TagManagerReport {
       customEvents,
       uniqueSessions,
       eventsByType,
-      topPages: topBucket(
-        `SELECT path AS label, COUNT(*) AS value FROM site_analytics_events
-         WHERE event_type = 'pageview' AND created_at >= ? AND created_at <= ?
-         GROUP BY path ORDER BY value DESC`,
-        [from, to],
+      topPages: mergePathBuckets(
+        topBucket(
+          `SELECT path AS label, COUNT(*) AS value FROM site_analytics_events
+           WHERE event_type = 'pageview' AND created_at >= ? AND created_at <= ?
+           GROUP BY path ORDER BY value DESC`,
+          [from, to],
+          40
+        ),
         15
       ),
       devices: deviceRows.map((d) => ({
@@ -901,7 +958,7 @@ export function buildTagManagerReport(periodDays = 14): TagManagerReport {
           const v = pickRowField(r, 'eventName', 'event_name');
           return v == null || v === '' ? null : String(v);
         })(),
-        path: pickRowStr(r, ['path'], '/'),
+        path: formatAnalyticsPathLabel(pickRowStr(r, ['path'], '/')),
         device: pickRowStr(r, ['device'], 'desktop') || 'desktop',
         createdAt: pickRowStr(r, ['createdAt', 'created_at']),
         meta: parseMeta(

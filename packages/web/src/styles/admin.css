@@ -3259,6 +3259,11 @@ body:has(.admin-app) {
   /* Keep Persian category labels fully visible on the right lane */
   overflow: visible;
 }
+.admin-app .admin-recharts-rtl-hbars .recharts-label-list text,
+.admin-app .admin-recharts-rtl-hbars .recharts-label {
+  font-family: var(--admin-font);
+  unicode-bidi: plaintext;
+}
 .admin-app .admin-recharts-rtl-hbars .recharts-wrapper,
 .admin-app .admin-recharts-rtl-hbars .recharts-surface {
   overflow: visible !important;

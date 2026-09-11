@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis,
+  Bar, BarChart, CartesianGrid, LabelList, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
 import {
   Activity, Copy, ExternalLink, Link2, Radar, RefreshCw, Tags,
@@ -8,8 +8,18 @@ import {
 import { Link } from 'react-router-dom';
 import { adminFetch, formatNumFa } from '../api';
 import { formatAdminFaDateTime } from '../JalaliDateSelect';
+import { formatAnalyticsPathLabel, mapPathBars } from '../analyticsPathLabel';
 import {
-  ADMIN_RTL_HBARS_CLASS, adminRtlHBarsCategoryAxis, adminRtlHBarsMargin, adminRtlHBarsRadius, adminRtlHBarsValueAxis,
+  ADMIN_RTL_HBARS_CLASS,
+  AdminRtlBarCountLabel,
+  AdminRtlPathTick,
+  adminRtlHBarsCategoryAxis,
+  adminRtlHBarsHeight,
+  adminRtlHBarsMargin,
+  adminRtlHBarsMarginWithCounts,
+  adminRtlHBarsRadius,
+  adminRtlHBarsValueAxis,
+  adminRtlPathBarsCategoryAxis,
 } from '../rechartsRtlHBars';
 import {
   MOTION_PALETTE,
@@ -131,7 +141,12 @@ export function AdminTagManagerPage() {
   }, []);
 
   const eventBars = useMemo(() => data?.metrics.eventsByType || [], [data]);
-  const pageBars = useMemo(() => data?.metrics.topPages || [], [data]);
+  const pageBars = useMemo(() => mapPathBars(data?.metrics.topPages || []), [data]);
+  const pageBarFullByShort = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const r of pageBars) m[r.label] = r.fullLabel;
+    return m;
+  }, [pageBars]);
 
   return (
     <div className="admin-page site-reports-page">
@@ -304,14 +319,20 @@ export function AdminTagManagerPage() {
                   <div className="admin-card-head"><h2>صفحات پربازدید</h2></div>
                   <div
                     className={ADMIN_RTL_HBARS_CLASS}
-                    style={{ width: '100%', height: Math.max(180, Math.max(pageBars.length, 1) * 28), direction: 'ltr' }}
+                    style={{ width: '100%', height: adminRtlHBarsHeight(pageBars.length, 38), direction: 'ltr' }}
                   >
                     <ResponsiveContainer>
-                      <BarChart data={pageBars} layout="vertical" margin={adminRtlHBarsMargin}>
+                      <BarChart data={pageBars} layout="vertical" margin={adminRtlHBarsMarginWithCounts}>
                         <XAxis {...adminRtlHBarsValueAxis} />
-                        <YAxis dataKey="label" {...adminRtlHBarsCategoryAxis} />
+                        <YAxis
+                          dataKey="label"
+                          {...adminRtlPathBarsCategoryAxis}
+                          tick={<AdminRtlPathTick fullLabelByShort={pageBarFullByShort} />}
+                        />
                         <Tooltip content={<Tip />} />
-                        <Bar dataKey="value" fill={MOTION_PALETTE.mint} radius={adminRtlHBarsRadius} {...motion} />
+                        <Bar dataKey="value" fill={MOTION_PALETTE.mint} radius={adminRtlHBarsRadius} maxBarSize={22} {...motion}>
+                          <LabelList dataKey="value" content={<AdminRtlBarCountLabel />} />
+                        </Bar>
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -336,7 +357,7 @@ export function AdminTagManagerPage() {
                         <tr key={e.id}>
                           <td>{formatAdminFaDateTime(e.createdAt)}</td>
                           <td dir="ltr">{e.eventName || e.eventType}</td>
-                          <td dir="ltr">{e.path}</td>
+                          <td dir="ltr">{formatAnalyticsPathLabel(e.path)}</td>
                           <td>{deviceFa(e.device)}</td>
                           <td dir="ltr" style={{ fontSize: '0.75rem' }}>{e.sessionId.slice(0, 12)}…</td>
                         </tr>
