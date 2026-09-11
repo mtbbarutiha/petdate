@@ -20,6 +20,7 @@ npx tsx "$ROOT/packages/shared/src/pet-public-id.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/order-public-id.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/entity-public-id.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/gtm-contract.selftest.ts"
+npx tsx "$ROOT/packages/shared/src/pet-slug.selftest.ts"
 
 echo "==> selftest: web inbox title (no public id)"
 npx tsx "$ROOT/packages/web/src/lib/inboxTitle.selftest.ts"
@@ -125,6 +126,7 @@ run src/platform-settings.selftest.ts
 run src/magazine.selftest.ts
 run src/magazine-editorial-seed.selftest.ts
 run src/routes/pets-id-guard.selftest.ts
+run src/routes/pets-slug-diary.selftest.ts
 run src/routes/pets-public-list.selftest.ts
 run src/routes/playdates-auth.selftest.ts
 run src/services/playdate-fee.selftest.ts

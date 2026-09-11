@@ -205,7 +205,7 @@ export function PetDetailPage() {
 
   async function onSharePet() {
     if (!pet) return;
-    const url = petPublicUrl(pet.id);
+    const url = petPublicUrl(pet);
     const title = `${pet.name} | پت‌دیت`;
     const text = `پروفایل ${pet.name} را در پت‌دیت ببین`;
     const message = await shareOrCopyUrl({ url, title, text });
