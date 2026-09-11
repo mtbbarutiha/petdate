@@ -145,6 +145,43 @@ async function main() {
   const stillFresh = dbService.getVetConsultation(fresh.id);
   assert(stillFresh?.status === 'active' && !stillFresh.chatEnded, 'fresh stays open');
 
+  // AI agent consults (لیلا / team agents) also idle-close after 1 minute.
+  const { ensureAiAssistantUser, isAiAssistantUserId } = await import(
+    './ai-consult-session'
+  );
+  const aiUser = ensureAiAssistantUser();
+  assert(isAiAssistantUserId(aiUser.id), 'AI assistant flagged');
+  const aiPatient = dbService.findOrCreateUser({
+    telegramId: `idle_ai_patient_${stamp}`,
+    name: 'AI Idle Patient',
+    username: `idle_ai_patient_${stamp}`,
+  }).user;
+  assert(aiPatient?.id, 'ai patient');
+  const aiStale = dbService.createVetConsultation({
+    vetUserId: aiUser.id,
+    patientUserId: aiPatient.id,
+    status: 'active',
+    serviceKind: 'trainer',
+    notes: 'idle-selftest-ai-agent',
+    feeCoins: 0,
+    providerShareCoins: 0,
+  });
+  getDb()
+    .prepare(
+      `UPDATE vet_consultations
+       SET patient_last_activity_at = datetime('now', '-120 seconds')
+       WHERE id = ?`
+    )
+    .run(aiStale.id);
+  assert(
+    dbService.listIdleActiveVetConsultIds(60_000).includes(aiStale.id),
+    'AI consult listed as idle'
+  );
+  assert(closeOneIdleConsult(aiStale.id), 'AI idle close ok');
+  const aiAfter = dbService.getVetConsultation(aiStale.id);
+  assert(aiAfter?.status === 'completed', 'AI status completed (not active)');
+  assert(aiAfter?.chatEnded === true, 'AI chatEnded true');
+
   console.log('consult-idle-close.selftest: OK');
 }
 

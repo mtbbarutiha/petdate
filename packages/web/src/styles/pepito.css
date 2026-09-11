@@ -7054,14 +7054,95 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   background: rgba(11, 165, 242, 0.12);
   color: #0b6fa8;
   width: fit-content;
+  border: 1px solid transparent;
 }
 .pepito-vet-consult-incoming-list .pepito-vet-status.is-active {
   background: rgba(21, 204, 160, 0.14);
   color: #0b7a5c;
+  border-color: rgba(21, 204, 160, 0.28);
 }
 .pepito-vet-consult-incoming-list .pepito-vet-status.is-done {
   background: rgba(31, 36, 48, 0.08);
   color: #5a6270;
+  border-color: rgba(31, 36, 48, 0.08);
+}
+
+/* Dual AI / human consult CTAs */
+.pepito-consult-cta-stack {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.7rem;
+  width: 100%;
+  max-width: 28rem;
+}
+.pepito-vet-consult-cta,
+.pepito-vet-connect-panel .pepito-consult-cta-stack {
+  margin-inline: var(--pepito-container-pad, 15px);
+}
+.pepito-vet-connect-panel .pepito-consult-cta-stack {
+  margin-inline: 0;
+  margin-top: 0.35rem;
+}
+.pepito-btn.pepito-ai-consult-cta {
+  position: relative;
+  width: 100%;
+  justify-content: center;
+  overflow: visible;
+  padding-inline: 1.35rem;
+}
+.pepito-ai-consult-cta-badge {
+  position: absolute;
+  top: -0.45rem;
+  inset-inline-end: 0.85rem;
+  z-index: 1;
+  min-width: 1.65rem;
+  padding: 0.12rem 0.42rem;
+  border-radius: 999px;
+  background: #101828;
+  color: #f8fafc;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  font-family: var(--font-display);
+  box-shadow: 0 4px 10px rgba(16, 24, 40, 0.22);
+  pointer-events: none;
+}
+.pepito-ai-consult-cta-label {
+  min-width: 0;
+}
+.pepito-btn.pepito-human-consult-cta,
+a.pepito-btn.pepito-human-consult-cta {
+  width: 100%;
+  justify-content: center;
+  background: color-mix(in srgb, var(--pepito-white) 88%, var(--pepito-dark)) !important;
+  color: var(--pepito-dark) !important;
+  border: 1.5px solid color-mix(in srgb, var(--pepito-dark) 18%, transparent) !important;
+  box-shadow: none;
+}
+.pepito-btn.pepito-human-consult-cta:hover:not(:disabled),
+a.pepito-btn.pepito-human-consult-cta:hover {
+  background: color-mix(in srgb, var(--pepito-base) 12%, var(--pepito-white)) !important;
+  color: var(--pepito-dark) !important;
+  border-color: color-mix(in srgb, var(--pepito-base) 35%, transparent) !important;
+  transform: translate3d(0, -4px, 0.01px);
+}
+.pepito-btn.pepito-human-consult-cta:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+.pepito-btn.pepito-human-consult-cta .pepito-btn-icon {
+  transform: none;
+}
+.pepito-btn.pepito-human-consult-cta:hover:not(:disabled) .pepito-btn-icon {
+  transform: rotate(-12deg);
+}
+@media (min-width: 720px) {
+  .pepito-vet-consult-cta {
+    margin-inline: 0;
+  }
 }
 @media (min-width: 720px) {
   .pepito-vet-consult-incoming-list li {

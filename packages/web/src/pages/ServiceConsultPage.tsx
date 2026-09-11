@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Check, Circle, Clock, MessageCircle, X } from 'lucide-react';
+import { Check, Circle, Clock, GraduationCap, MessageCircle, X } from 'lucide-react';
 import {
   TRAINER_CONSULT_COST,
   VET_CREDENTIAL_STATUS_LABELS,
@@ -12,9 +12,11 @@ import {
   type VetConsultation,
   type VetCredentialStatus,
 } from '@petdate/shared';
+import { AiConsultCtaButton } from '../components/AiConsultCtaButton';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { useAppToast } from '../hooks/useAppToast';
 import { useLiveAjaxPoll } from '../hooks/useLiveAjaxPoll';
+import { useI18n } from '../i18n';
 import {
   acceptVetConsultation,
   listOnlineProviders,
@@ -78,23 +80,27 @@ function providerPeerLabel(c: VetConsultation): string {
   return pet ? `${name} · ${pet}` : name;
 }
 
-function consultStatusLabel(status: VetConsultation['status']): {
+function consultStatusLabel(
+  c: Pick<VetConsultation, 'status' | 'chatEnded'>,
+  copy: { active: string; closed: string; waiting: string; cancelled: string; expired: string }
+): {
   text: string;
   tone: 'wait' | 'active' | 'done';
 } {
-  switch (status) {
+  if (c.chatEnded || c.status === 'completed') {
+    return { text: copy.closed, tone: 'done' };
+  }
+  switch (c.status) {
     case 'requested':
-      return { text: 'در انتظار پاسخ', tone: 'wait' };
+      return { text: copy.waiting, tone: 'wait' };
     case 'active':
-      return { text: 'گفتگوی فعال', tone: 'active' };
-    case 'completed':
-      return { text: 'پایان‌یافته', tone: 'done' };
+      return { text: copy.active, tone: 'active' };
     case 'cancelled':
-      return { text: 'لغو شده', tone: 'done' };
+      return { text: copy.cancelled, tone: 'done' };
     case 'expired':
-      return { text: 'منقضی شده', tone: 'done' };
+      return { text: copy.expired, tone: 'done' };
     default:
-      return { text: 'گفتگو', tone: 'done' };
+      return { text: copy.closed, tone: 'done' };
   }
 }
 
@@ -104,6 +110,7 @@ function errMessage(err: unknown, fallback: string): string {
 
 export function ServiceConsultPage({ kind }: { kind: Kind }) {
   const navigate = useNavigate();
+  const { t } = useI18n();
   const { user, token, isLoggedIn, refreshMe } = useAuthStore();
   const { toastError, toastSuccess, toastInfo } = useAppToast();
   const meta = COPY[kind];
@@ -115,10 +122,18 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
   const verified = credStatus === 'verified';
   const coins = user?.coins ?? user?.wallet?.coins ?? 0;
   const botUrl = telegramBotDeepLink();
+  const statusCopy = {
+    active: t('consultDesk.statusActive'),
+    closed: t('consultDesk.statusClosed'),
+    waiting: t('consultDesk.statusWaiting'),
+    cancelled: t('consultDesk.statusCancelled'),
+    expired: t('consultDesk.statusExpired'),
+  };
 
   const [pets, setPets] = useState<PetProfile[]>([]);
   const [onlineProviders, setOnlineProviders] = useState<User[]>([]);
   const [busy, setBusy] = useState(false);
+  const [busyMode, setBusyMode] = useState<'ai' | 'human' | null>(null);
   const [onlineBusy, setOnlineBusy] = useState(false);
   const [uploadBusy, setUploadBusy] = useState(false);
   const [confirmPay, setConfirmPay] = useState(false);
@@ -246,27 +261,41 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
     } finally { setUploadBusy(false); }
   }
 
-  function validatePatient(): string | null {
+  function validatePatient(opts?: { humanOnly?: boolean }): string | null {
     if (!user?.id || !token) return 'اول وارد حساب شو.';
     if (!pets.length) return meta.needPet;
     const others = onlineProviders.filter((p) => p.id !== user.id);
-    // No human online → API starts free AI consult (trainer/vet). Don't block.
-    if (!others.length) return null;
-    if (coins < cost) {
-      return `حداقل ${formatCoins(cost)} سکه لازم است. موجودی: ${formatCoins(coins)}`;
+    if (opts?.humanOnly) {
+      if (!others.length) return meta.noProviders;
+      if (coins < cost) {
+        return `حداقل ${formatCoins(cost)} سکه لازم است. موجودی: ${formatCoins(coins)}`;
+      }
+      return null;
     }
+    // AI path is free — no coin / online gate.
     return null;
   }
 
-  async function sendRequest(confirmResend = false) {
+  async function sendRequest(
+    mode: 'ai' | 'human',
+    confirmResend = false
+  ) {
     if (!user?.id || !token) { flashError('اول وارد حساب شو.'); return; }
-    const gate = validatePatient();
+    const gate = validatePatient({ humanOnly: mode === 'human' });
     if (gate) { flashError(gate); setConfirmPay(false); return; }
-    setBusy(true); setError(null); setStatusMsg(null);
+    setBusy(true);
+    setBusyMode(mode);
+    setError(null);
+    setStatusMsg(null);
     try {
       let res;
       try {
-        res = await quickVetConnect(user.id, token, { kind, confirmResend });
+        res = await quickVetConnect(user.id, token, {
+          kind,
+          confirmResend,
+          preferAi: mode === 'ai',
+          humanOnly: mode === 'human',
+        });
       } catch (err) {
         const needsConfirm =
           err instanceof Error &&
@@ -286,7 +315,7 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
       setNeedsResendConfirm(false);
       flashSuccess(res.message);
       setStatusMsg(res.message);
-      if (res.aiFallback) {
+      if (res.aiFallback || mode === 'ai') {
         const consultId = res.consultations?.[0]?.id;
         if (consultId) {
           navigate(`/vet-chats/${consultId}`);
@@ -298,20 +327,25 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
       }
     } catch (err) {
       flashError(errMessage(err, 'ارسال درخواست ناموفق بود'));
-    } finally { setBusy(false); }
+    } finally {
+      setBusy(false);
+      setBusyMode(null);
+    }
   }
 
-  async function onPrimaryClick() {
-    setError(null); setStatusMsg(null);
+  async function onAiClick() {
+    setError(null); setStatusMsg(null); setConfirmPay(false);
     const gate = validatePatient();
+    if (gate) { flashError(gate); return; }
+    await sendRequest('ai', needsResendConfirm);
+  }
+
+  async function onHumanClick() {
+    setError(null); setStatusMsg(null);
+    const gate = validatePatient({ humanOnly: true });
     if (gate) {
       flashError(gate);
       setConfirmPay(false);
-      return;
-    }
-    const humanOnline = onlineProviders.filter((p) => p.id !== user?.id).length > 0;
-    if (!humanOnline) {
-      await sendRequest(needsResendConfirm);
       return;
     }
     if (!confirmPay) {
@@ -319,7 +353,7 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
       toastInfo(`با تأیید، ${formatCoins(cost)} سکه کسر می‌شود. دوباره بزن تا ارسال شود.`);
       return;
     }
-    await sendRequest(needsResendConfirm);
+    await sendRequest('human', needsResendConfirm);
   }
 
   async function onAccept(id: number) {
@@ -355,9 +389,7 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
         <p>
           {isProvider
             ? meta.providerHint
-            : kind === 'trainer'
-              ? `هزینه اتصال انسانی ${formatCoins(cost)} سکه · اگر مربی آزاد نباشد لیلا کیانی (مربی آنلاین) رایگان پاسخ می‌دهد`
-              : `هزینه اتصال انسانی ${formatCoins(cost)} سکه`}
+            : t('consultDesk.trainerLead', { cost: formatCoins(cost) })}
         </p>
         {meta.disclaimer && !isProvider ? <p className="muted">{meta.disclaimer}</p> : null}
       </header>
@@ -441,9 +473,7 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
             {isLoggedIn
               ? onlineCount > 0
                 ? `${toPersianDigits(String(onlineCount))} نفر آنلاین آماده پذیرش`
-                : kind === 'trainer'
-                  ? 'الان مربی دیگری آنلاین نیست — با زدن دکمه، گفتگو با لیلا کیانی (مربی آنلاین) شروع می‌شود (رایگان).'
-                  : meta.noProviders
+                : meta.noProviders
               : 'برای ارسال درخواست وارد حساب شو.'}
           </p>
           {!isLoggedIn ? (
@@ -451,7 +481,16 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
               ورود
             </Link>
           ) : (
-            <>
+            <div className="pepito-consult-cta-stack">
+              <AiConsultCtaButton
+                testId={`${kind}-ai-request-cta`}
+                busy={busy && busyMode === 'ai'}
+                disabled={busy}
+                label={t('consultDesk.aiLeilaFree')}
+                busyLabel={t('consultDesk.sending')}
+                badge={t('consultDesk.aiBadge')}
+                onClick={() => void onAiClick()}
+              />
               {confirmPay && onlineCount > 0 ? (
                 <p className="pepito-vet-consult-hint" role="status">
                   تأیید نهایی: {formatCoins(cost)} سکه از موجودی کسر می‌شود
@@ -460,23 +499,24 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
               ) : null}
               <button
                 type="button"
-                className="pepito-btn button-1"
+                className="pepito-btn pepito-human-consult-cta"
                 disabled={busy}
-                data-testid={`${kind}-request-cta`}
-                onClick={() => void onPrimaryClick()}
+                data-testid={`${kind}-human-request-cta`}
+                onClick={() => void onHumanClick()}
               >
-                {busy
-                  ? 'در حال ارسال…'
-                  : onlineCount === 0 && kind === 'trainer'
-                    ? 'مشورت با لیلا کیانی (رایگان)'
-                    : confirmPay
-                      ? `تأیید و ارسال (${formatCoins(cost)} سکه)`
-                      : `${meta.patientCta} (${formatCoins(cost)} سکه)`}
+                <span className="pepito-btn-icon" aria-hidden>
+                  <GraduationCap size={16} strokeWidth={2.25} />
+                </span>
+                {busy && busyMode === 'human'
+                  ? t('consultDesk.sending')
+                  : confirmPay && onlineCount > 0
+                    ? t('consultDesk.confirmPay', { cost: formatCoins(cost) })
+                    : t('consultDesk.realTrainer')}
               </button>
               {confirmPay && onlineCount > 0 ? (
                 <button
                   type="button"
-                  className="pepito-btn pepito-btn--ghost"
+                  className="pepito-btn pepito-human-consult-cta pepito-human-consult-cta--cancel"
                   disabled={busy}
                   onClick={() => setConfirmPay(false)}
                 >
@@ -484,16 +524,16 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
                 </button>
               ) : null}
               {!pets.length ? (
-                <Link to="/add-pet" className="pepito-btn pepito-btn--ghost">
+                <Link to="/add-pet" className="pepito-btn pepito-human-consult-cta">
                   ثبت پت
                 </Link>
               ) : null}
               {coins < cost ? (
-                <Link to="/wallet" className="pepito-btn pepito-btn--ghost">
+                <Link to="/wallet" className="pepito-btn pepito-human-consult-cta">
                   شارژ سکه
                 </Link>
               ) : null}
-            </>
+            </div>
           )}
         </section>
       ) : null}
@@ -575,8 +615,9 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
             ) : (
               <ul className="pepito-vet-consult-incoming-list">
                 {recent.map((c) => {
-                  const st = consultStatusLabel(c.status);
-                  const canChat = c.status === 'active' || c.status === 'completed';
+                  const st = consultStatusLabel(c, statusCopy);
+                  const canChat =
+                    (!c.chatEnded && c.status === 'active') || c.status === 'completed';
                   return (
                     <li key={c.id} data-testid={`${kind}-recent-${c.id}`}>
                       <div className="pepito-vet-row-info">
@@ -606,12 +647,12 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
                           <Link
                             to={`/vet-chats/${c.id}`}
                             className={`pepito-btn ${
-                              c.status === 'active' ? 'button-1' : 'pepito-btn--ghost'
+                              st.tone === 'active' ? 'button-1' : 'pepito-btn--ghost'
                             }`}
                             data-testid={`${kind}-open-chat-${c.id}`}
                           >
                             <MessageCircle size={16} aria-hidden />
-                            {c.status === 'active' ? 'ورود به چت' : 'مشاهده گفتگو'}
+                            {st.tone === 'active' ? 'ورود به چت' : 'مشاهده گفتگو'}
                           </Link>
                         ) : (
                           <span className="pepito-vet-consult-hint">چت باز نیست</span>
@@ -641,8 +682,9 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
           ) : (
             <ul className="pepito-vet-consult-incoming-list">
               {recent.map((c) => {
-                const st = consultStatusLabel(c.status);
-                const canChat = c.status === 'active' || c.status === 'completed';
+                const st = consultStatusLabel(c, statusCopy);
+                const canChat =
+                  (!c.chatEnded && c.status === 'active') || c.status === 'completed';
                 return (
                   <li key={c.id}>
                     <div className="pepito-vet-row-info">
@@ -672,11 +714,11 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
                         <Link
                           to={`/vet-chats/${c.id}`}
                           className={`pepito-btn ${
-                            c.status === 'active' ? 'button-1' : 'pepito-btn--ghost'
+                            st.tone === 'active' ? 'button-1' : 'pepito-btn--ghost'
                           }`}
                         >
                           <MessageCircle size={16} aria-hidden />
-                          {c.status === 'active' ? 'ورود به چت' : 'مشاهده گفتگو'}
+                          {st.tone === 'active' ? 'ورود به چت' : 'مشاهده گفتگو'}
                         </Link>
                       ) : (
                         <span className="pepito-vet-consult-hint">{st.text}</span>

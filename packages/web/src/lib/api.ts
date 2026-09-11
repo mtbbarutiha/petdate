@@ -1056,6 +1056,10 @@ export async function quickVetConnect(
   opts?: {
     confirmResend?: boolean;
     kind?: 'vet' | 'trainer' | 'sitter' | 'seeker_advice';
+    /** Free AI (لیلا کیانی) — skip human matching. */
+    preferAi?: boolean;
+    /** Human coach/doctor only — no AI fallback when offline. */
+    humanOnly?: boolean;
   }
 ): Promise<QuickVetConnectResult> {
   return request<QuickVetConnectResult>('/api/consultations/quick-connect', {
@@ -1065,6 +1069,8 @@ export async function quickVetConnect(
       patientUserId,
       confirmResend: Boolean(opts?.confirmResend),
       kind: opts?.kind ?? 'vet',
+      preferAi: Boolean(opts?.preferAi),
+      humanOnly: Boolean(opts?.humanOnly),
     }),
   });
 }

@@ -713,4 +713,23 @@ export const en: Dict = {
     lastName: "Last name",
     mobile: "Mobile number",
   },
+  consultDesk: {
+    aiBadge: 'Ai',
+    aiLeilaFree: 'Consult Leila Kiani (free)',
+    aiLeilaShort: 'Consult Leila Kiani',
+    realTrainer: 'Consult a real coach',
+    realDoctor: 'Consult a real doctor',
+    sending: 'Sending…',
+    confirmPay: 'Confirm & send ({cost} coins)',
+    trainerLead:
+      'Human coach connection costs {cost} coins · Leila Kiani (online coach) replies for free',
+    doctorLeadAi:
+      'No human vet is online — Leila Kiani replies for free.',
+    doctorLeadReady: 'See online vets and their visit fees, then send a request.',
+    statusActive: 'Active chat',
+    statusClosed: 'Closed',
+    statusWaiting: 'Waiting for reply',
+    statusCancelled: 'Cancelled',
+    statusExpired: 'Expired',
+  },
 };
