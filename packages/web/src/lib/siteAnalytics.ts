@@ -5,23 +5,25 @@
  * GTM container GTM-KQPJT9Q4 is installed in packages/web/index.html (official head +
  * noscript) so Tag Assistant / crawlers see it in the initial HTML. This module:
  * - ensures dataLayer exists (HTML snippet already creates it)
- * - pushes SPA `{ event: 'page_view', page_path, page_title, page_location }`
- * - pushes `{ event: 'link_click', ... }` for outbound / telegram / download / CTA
- * - does NOT reinject gtm.js when the HTML snippet is present
+ * - pushDataLayer(event, payload) — shared helper for all SPA pushes
+ * - page_view on every client route (+ variables: page_*, user_*)
+ * - link_click / outbound_click / file_download for tracked anchors
+ * - auth / lead / ecommerce helpers for public flows
+ * - mirrors Custom Events to first-party /api/analytics/collect for admin reports
  * - skips /admin for Clarity, dataLayer SPA extras, and first-party beacons
  *
  * Tags inside the GTM container are configured in Google’s UI — we do not invent GA4 IDs.
  */
-const SESSION_KEY = 'pd_analytics_sid';
+import { CLARITY_PROJECT_ID, GTM_CONTAINER_ID } from '@petdate/shared';
 
 /** Live Microsoft Clarity project for petdate.ir (short id — not the rejected agent UUID). */
-export const DEFAULT_CLARITY_PROJECT_ID = 'ygkl5nck6k';
-
+export const DEFAULT_CLARITY_PROJECT_ID = CLARITY_PROJECT_ID;
 /** Live Google Tag Manager container for petdate.ir. */
-export const DEFAULT_GTM_ID = 'GTM-KQPJT9Q4';
+export const DEFAULT_GTM_ID = GTM_CONTAINER_ID;
 
 /** Public Tag Manager workspace entry (account/container path unknown — open + search by ID). */
 export const GTM_DASHBOARD_URL = 'https://tagmanager.google.com/';
+export const TAG_ASSISTANT_URL = 'https://tagassistant.google.com/';
 
 /** Internal path prefixes treated as conversion / signup CTAs for link_click. */
 export const GTM_CTA_PATH_PREFIXES = [
@@ -48,6 +50,9 @@ export type GtmPageViewPayload = {
   page_path: string;
   page_title: string;
   page_location: string;
+  page_type: string;
+  user_id: string | null;
+  user_status: 'guest' | 'logged_in';
 };
 
 export type GtmLinkClickPayload = {
@@ -57,9 +62,15 @@ export type GtmLinkClickPayload = {
   link_domain: string;
   link_kind: GtmLinkKind;
   outbound: boolean;
+  click_text: string;
+  click_url: string;
+  click_id: string | null;
 };
 
 type DataLayerWindow = Window & { dataLayer?: unknown[] };
+
+const SESSION_KEY = 'pd_analytics_sid';
+const AUTH_STORAGE_KEY = 'petdate_web_auth_v1';
 
 function apiBase(): string {
   return (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ?? '';
@@ -76,7 +87,6 @@ function isValidClarityProjectId(id: string | undefined | null): boolean {
 
 function resolveClarityProjectId(): string | null {
   const fromEnv = (import.meta.env.VITE_CLARITY_PROJECT_ID as string | undefined)?.trim() || '';
-  // Explicit invalid override (e.g. leftover UUID) — do not silently fall back.
   if (fromEnv && !isValidClarityProjectId(fromEnv)) return null;
   const id = fromEnv || DEFAULT_CLARITY_PROJECT_ID;
   return isValidClarityProjectId(id) ? id : null;
@@ -92,6 +102,127 @@ function resolveGtmId(): string | null {
   if (fromEnv && !isValidGtmContainerId(fromEnv)) return null;
   const id = fromEnv || DEFAULT_GTM_ID;
   return isValidGtmContainerId(id) ? id.toUpperCase() : null;
+}
+
+/** Optional GA4 Measurement ID — never invent one. Env first, then runtime (DB settings via /api/analytics/config). */
+let runtimeGa4MeasurementId: string | null = null;
+let runtimeConfigFetched = false;
+let ga4Booted = false;
+let heartbeatBooted = false;
+
+export function isValidGa4MeasurementId(id: string | null | undefined): boolean {
+  if (!id) return false;
+  return /^G-[A-Z0-9]{6,20}$/i.test(id.trim());
+}
+
+export function setRuntimeGa4MeasurementId(id: string | null | undefined): void {
+  if (!id || !isValidGa4MeasurementId(id)) {
+    runtimeGa4MeasurementId = null;
+    return;
+  }
+  runtimeGa4MeasurementId = id.trim().toUpperCase();
+}
+
+export function resolveGa4MeasurementId(): string | null {
+  const env = (typeof import.meta !== 'undefined' && import.meta.env) ? import.meta.env : ({} as ImportMetaEnv);
+  const raw =
+    (env.VITE_GA4_MEASUREMENT_ID as string | undefined)?.trim() ||
+    (env.VITE_GOOGLE_ANALYTICS_ID as string | undefined)?.trim() ||
+    (env.VITE_GA_MEASUREMENT_ID as string | undefined)?.trim() ||
+    '';
+  if (raw) {
+    return isValidGa4MeasurementId(raw) ? raw.toUpperCase() : null;
+  }
+  return runtimeGa4MeasurementId;
+}
+
+type GtagFn = ((...args: unknown[]) => void) & { q?: unknown[] };
+
+function maybeInitGa4(): void {
+  if (ga4Booted || typeof window === 'undefined' || typeof document === 'undefined') return;
+  const mid = resolveGa4MeasurementId();
+  if (!mid) return;
+  ga4Booted = true;
+  try {
+    const w = window as Window & { dataLayer?: unknown[]; gtag?: GtagFn };
+    w.dataLayer = w.dataLayer || [];
+    const gtag: GtagFn =
+      w.gtag ||
+      function (...args: unknown[]) {
+        w.dataLayer!.push(args);
+      };
+    w.gtag = gtag;
+    if (!document.getElementById('petdate-ga4-gtag')) {
+      const s = document.createElement('script');
+      s.async = true;
+      s.src = `https://www.googletagmanager.com/gtag/js?id=${mid}`;
+      s.id = 'petdate-ga4-gtag';
+      const first = document.getElementsByTagName('script')[0];
+      first?.parentNode?.insertBefore(s, first);
+    }
+    gtag('js', new Date());
+    gtag('config', mid, { send_page_view: false, anonymize_ip: true });
+    pushDataLayer({ ga4_measurement_id: mid });
+  } catch {
+    /* ignore */
+  }
+}
+
+function sendGtagPageView(path: string): void {
+  if (typeof window === 'undefined') return;
+  const mid = resolveGa4MeasurementId();
+  const gtag = (window as Window & { gtag?: GtagFn }).gtag;
+  if (!mid || !gtag) return;
+  try {
+    gtag('event', 'page_view', {
+      page_path: path.split('?')[0] || '/',
+      page_title: typeof document !== 'undefined' ? document.title : path,
+      page_location: window.location.href,
+      send_to: mid,
+    });
+  } catch {
+    /* ignore */
+  }
+}
+
+async function ensureRuntimeAnalyticsConfig(): Promise<void> {
+  if (runtimeConfigFetched || typeof window === 'undefined') return;
+  if (resolveGa4MeasurementId()) {
+    runtimeConfigFetched = true;
+    return;
+  }
+  runtimeConfigFetched = true;
+  try {
+    const res = await fetch(`${apiBase()}/api/analytics/config`, {
+      credentials: 'omit',
+      headers: { Accept: 'application/json' },
+    });
+    if (!res.ok) return;
+    const data = (await res.json()) as { ga4MeasurementId?: string | null };
+    setRuntimeGa4MeasurementId(data.ga4MeasurementId || null);
+    maybeInitGa4();
+  } catch {
+    /* ignore */
+  }
+}
+
+function maybeInitHeartbeat(): void {
+  if (heartbeatBooted || typeof window === 'undefined') return;
+  heartbeatBooted = true;
+  try {
+    window.setInterval(() => {
+      if (document.visibilityState !== 'visible') return;
+      const path = window.location.pathname;
+      if (path.startsWith('/admin')) return;
+      beaconCollect({
+        eventType: 'heartbeat',
+        eventName: 'user_engagement',
+        path: path.split('?')[0] || '/',
+      });
+    }, 30_000);
+  } catch {
+    /* ignore */
+  }
 }
 
 function getSessionId(): string {
@@ -130,27 +261,87 @@ export function ensureDataLayer(): unknown[] {
   return w.dataLayer;
 }
 
-/** Push a dataLayer object (no-op off-window). */
-export function pushDataLayer(payload: Record<string, unknown>): void {
+/**
+ * Shared helper — push to dataLayer.
+ * Usage: pushDataLayer('login', { method: 'otp' }) or pushDataLayer({ event: 'login', ... }).
+ */
+export function pushDataLayer(eventOrPayload: string | Record<string, unknown>, payload?: Record<string, unknown>): void {
   if (typeof window === 'undefined') return;
   try {
-    ensureDataLayer().push(payload);
+    const obj: Record<string, unknown> =
+      typeof eventOrPayload === 'string'
+        ? { event: eventOrPayload, ...(payload || {}) }
+        : eventOrPayload;
+    ensureDataLayer().push(obj);
   } catch {
     /* ignore */
   }
+}
+
+export type PublicUserContext = {
+  user_id: string | null;
+  user_status: 'guest' | 'logged_in';
+};
+
+/** Read public auth snapshot — internal numeric id only (no tokens / PII). */
+export function readPublicUserContext(): PublicUserContext {
+  if (typeof window === 'undefined') return { user_id: null, user_status: 'guest' };
+  try {
+    const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+    if (!raw) return { user_id: null, user_status: 'guest' };
+    const parsed = JSON.parse(raw) as { token?: string; user?: { id?: number } };
+    if (parsed?.token && typeof parsed.user?.id === 'number' && Number.isFinite(parsed.user.id)) {
+      return { user_id: `u_${parsed.user.id}`, user_status: 'logged_in' };
+    }
+  } catch {
+    /* ignore */
+  }
+  return { user_id: null, user_status: 'guest' };
+}
+
+export function inferPageType(pathname: string): string {
+  const p = (pathname.split('?')[0] || '/').toLowerCase() || '/';
+  if (p === '/' || p === '') return 'home';
+  if (p.startsWith('/admin')) return 'admin';
+  if (p.startsWith('/auth') || p.startsWith('/login') || p.startsWith('/otp')) return 'auth';
+  if (p.startsWith('/onboarding') || p.startsWith('/role')) return 'onboarding';
+  if (p.startsWith('/shop/cart') || p.startsWith('/shop/checkout') || p.startsWith('/shop/card-pay') || p.startsWith('/shop/stars-pay')) {
+    return 'checkout';
+  }
+  if (p.startsWith('/shop/') && /\/shop\/[^/]+$/.test(p) === false && p !== '/shop') {
+    // /shop/product/:id style
+  }
+  if (p.startsWith('/shop/')) {
+    if (/^\/shop\/[^/]+$/.test(p) && !['/shop/cart', '/shop/orders'].includes(p)) return 'product';
+    return 'shop';
+  }
+  if (p === '/shop') return 'shop';
+  if (p.startsWith('/wallet')) return 'wallet';
+  if (p.startsWith('/vet') || p.startsWith('/consult')) return 'consult';
+  if (p.startsWith('/chat') || p.startsWith('/inbox')) return 'chat';
+  if (p.startsWith('/pets') || p.startsWith('/pet')) return 'pets';
+  if (p.startsWith('/faq') || p.startsWith('/about')) return 'content';
+  if (p.startsWith('/home')) return 'app_home';
+  return 'other';
 }
 
 export function buildGtmPageViewPayload(input: {
   path: string;
   title?: string | null;
   locationHref?: string | null;
+  user?: PublicUserContext | null;
 }): GtmPageViewPayload {
   const path = (input.path.split('?')[0] || '/').trim() || '/';
+  const normalized = path.startsWith('/') ? path : `/${path}`;
+  const user = input.user || { user_id: null, user_status: 'guest' as const };
   return {
     event: 'page_view',
-    page_path: path.startsWith('/') ? path : `/${path}`,
+    page_path: normalized,
     page_title: (input.title || '').trim() || path,
     page_location: (input.locationHref || '').trim() || path,
+    page_type: inferPageType(normalized),
+    user_id: user.user_id,
+    user_status: user.user_status,
   };
 }
 
@@ -228,21 +419,216 @@ export function buildGtmLinkClickPayload(input: {
   domain: string;
   outbound: boolean;
   text?: string | null;
+  clickId?: string | null;
 }): GtmLinkClickPayload {
+  const text = (input.text || '').trim().slice(0, 120);
   return {
     event: 'link_click',
     link_url: input.url,
-    link_text: (input.text || '').trim().slice(0, 120),
+    link_text: text,
     link_domain: input.domain,
     link_kind: input.kind,
     outbound: input.outbound,
+    click_text: text,
+    click_url: input.url,
+    click_id: input.clickId?.trim() || null,
   };
+}
+
+type EcommerceItem = {
+  item_id: string;
+  item_name: string;
+  price?: number;
+  quantity?: number;
+  item_category?: string;
+};
+
+function beaconCollect(input: {
+  eventType: 'pageview' | 'heartbeat' | 'event';
+  eventName?: string | null;
+  path?: string;
+  title?: string | null;
+  meta?: Record<string, unknown> | null;
+}): void {
+  if (typeof window === 'undefined') return;
+  const path = (input.path || window.location.pathname).split('?')[0] || '/';
+  if (path.startsWith('/admin')) return;
+
+  const utm = readUtm();
+  const payload = {
+    sessionId: getSessionId(),
+    path,
+    title: input.title ?? (typeof document !== 'undefined' ? document.title : null),
+    referrer: typeof document !== 'undefined' ? document.referrer || null : null,
+    ...utm,
+    language: typeof navigator !== 'undefined' ? navigator.language : null,
+    screenW: window.innerWidth,
+    screenH: window.innerHeight,
+    userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
+    eventType: input.eventType,
+    eventName: input.eventName ?? null,
+    meta: input.meta ?? null,
+  };
+
+  const url = `${apiBase()}/api/analytics/collect`;
+  const body = JSON.stringify(payload);
+  try {
+    if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
+      const blob = new Blob([body], { type: 'application/json' });
+      if (navigator.sendBeacon(url, blob)) return;
+    }
+  } catch {
+    /* fall through */
+  }
+  void fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body,
+    keepalive: true,
+    credentials: 'omit',
+  }).catch(() => undefined);
+}
+
+/**
+ * Push a named Custom Event to dataLayer and mirror to first-party analytics.
+ */
+export function trackGtmEvent(
+  event: string,
+  payload: Record<string, unknown> = {},
+  opts?: { beacon?: boolean; path?: string },
+): void {
+  if (typeof window === 'undefined') return;
+  const path = (opts?.path || window.location.pathname).split('?')[0] || '/';
+  if (path.startsWith('/admin')) return;
+
+  const user = readPublicUserContext();
+  pushDataLayer(event, {
+    page_path: path,
+    page_location: window.location.href,
+    page_title: typeof document !== 'undefined' ? document.title : path,
+    page_type: inferPageType(path),
+    user_id: user.user_id,
+    user_status: user.user_status,
+    ...payload,
+  });
+
+  if (opts?.beacon === false) return;
+  beaconCollect({
+    eventType: 'event',
+    eventName: event.slice(0, 80),
+    path,
+    meta: payload,
+  });
+}
+
+export function trackAuthSuccess(input: {
+  isNewUser: boolean;
+  method?: string;
+  userId?: number | null;
+}): void {
+  const user_id =
+    typeof input.userId === 'number' && Number.isFinite(input.userId) ? `u_${input.userId}` : readPublicUserContext().user_id;
+  const base = { method: input.method || 'otp', user_id, user_status: 'logged_in' as const };
+  trackGtmEvent('login', base);
+  if (input.isNewUser) {
+    trackGtmEvent('sign_up', { ...base, method: input.method || 'otp' });
+  }
+}
+
+export function trackGenerateLead(input: {
+  formId?: string;
+  formName?: string;
+  method?: string;
+}): void {
+  trackGtmEvent('generate_lead', {
+    form_id: input.formId || null,
+    form_name: input.formName || 'newsletter',
+    method: input.method || 'email',
+  });
+}
+
+export function trackViewItem(input: {
+  itemId: string;
+  itemName: string;
+  price?: number;
+  category?: string;
+}): void {
+  const items: EcommerceItem[] = [
+    {
+      item_id: input.itemId,
+      item_name: input.itemName,
+      price: input.price,
+      quantity: 1,
+      item_category: input.category,
+    },
+  ];
+  trackGtmEvent('view_item', {
+    currency: 'IRR',
+    value: input.price ?? 0,
+    items,
+  });
+}
+
+export function trackAddToCart(input: {
+  itemId: string;
+  itemName: string;
+  price?: number;
+  quantity?: number;
+  category?: string;
+}): void {
+  const qty = Math.max(1, input.quantity || 1);
+  const unit = input.price ?? 0;
+  const items: EcommerceItem[] = [
+    {
+      item_id: input.itemId,
+      item_name: input.itemName,
+      price: unit,
+      quantity: qty,
+      item_category: input.category,
+    },
+  ];
+  trackGtmEvent('add_to_cart', {
+    currency: 'IRR',
+    value: unit * qty,
+    items,
+  });
+}
+
+export function trackBeginCheckout(input: {
+  value: number;
+  items: EcommerceItem[];
+  currency?: string;
+}): void {
+  trackGtmEvent('begin_checkout', {
+    currency: input.currency || 'IRR',
+    value: input.value,
+    items: input.items,
+  });
+}
+
+export function trackPurchase(input: {
+  transactionId: string;
+  value: number;
+  items: EcommerceItem[];
+  currency?: string;
+  paymentType?: string;
+}): void {
+  trackGtmEvent('purchase', {
+    transaction_id: input.transactionId,
+    currency: input.currency || 'IRR',
+    value: input.value,
+    items: input.items,
+    payment_type: input.paymentType || null,
+  });
 }
 
 let clarityBooted = false;
 let gtmBooted = false;
 let linkTrackingBooted = false;
+let scrollTrackingBooted = false;
+let ga4VarPushed = false;
 let lastGtmPagePath: string | null = null;
+let scrollMarkedPath: string | null = null;
 
 function maybeInitClarity(): void {
   if (clarityBooted || typeof window === 'undefined' || typeof document === 'undefined') return;
@@ -277,15 +663,16 @@ function pushGtmVirtualPageview(pathname: string): void {
     : typeof window !== 'undefined'
       ? window.location.search
       : '';
-  // Dedupe identical consecutive SPA pushes (StrictMode double-effect / remounts).
   const dedupeKey = `${path}${search}`;
   if (lastGtmPagePath === dedupeKey) return;
   lastGtmPagePath = dedupeKey;
+  scrollMarkedPath = null;
   pushDataLayer(
     buildGtmPageViewPayload({
       path,
       title: typeof document !== 'undefined' ? document.title : path,
       locationHref: window.location.href,
+      user: readPublicUserContext(),
     }),
   );
 }
@@ -298,8 +685,6 @@ function closestAnchor(target: EventTarget | null): HTMLAnchorElement | null {
 function onDocumentLinkClick(ev: MouseEvent): void {
   if (typeof window === 'undefined') return;
   if (window.location.pathname.startsWith('/admin')) return;
-  // Ignore modified clicks (new tab / download gestures) that users intentionally open elsewhere —
-  // still track them; UX is unchanged either way.
   const a = closestAnchor(ev.target);
   if (!a) return;
   const href = a.getAttribute('href') || '';
@@ -313,15 +698,43 @@ function onDocumentLinkClick(ev: MouseEvent): void {
   });
   if (!classified) return;
   const text = (a.innerText || a.getAttribute('aria-label') || a.title || '').replace(/\s+/g, ' ');
-  pushDataLayer(
-    buildGtmLinkClickPayload({
-      kind: classified.kind,
-      url: classified.url,
-      domain: classified.domain,
+  const clickId =
+    a.getAttribute('data-gtm-id') || a.id || a.getAttribute('data-analytics-id') || null;
+  const payload = buildGtmLinkClickPayload({
+    kind: classified.kind,
+    url: classified.url,
+    domain: classified.domain,
+    outbound: classified.outbound,
+    text,
+    clickId,
+  });
+  pushDataLayer(payload);
+  beaconCollect({
+    eventType: 'event',
+    eventName: 'link_click',
+    meta: {
+      link_kind: classified.kind,
+      link_url: classified.url,
       outbound: classified.outbound,
-      text,
-    }),
-  );
+      click_id: clickId,
+    },
+  });
+  if (classified.outbound && classified.kind === 'outbound') {
+    trackGtmEvent('outbound_click', {
+      click_text: payload.click_text,
+      click_url: payload.click_url,
+      click_id: clickId,
+      link_domain: classified.domain,
+    });
+  }
+  if (classified.kind === 'download') {
+    trackGtmEvent('file_download', {
+      click_text: payload.click_text,
+      click_url: payload.click_url,
+      click_id: clickId,
+      file_extension: (classified.url.split('?')[0].split('.').pop() || '').slice(0, 12),
+    });
+  }
 }
 
 function maybeInitLinkTracking(): void {
@@ -330,6 +743,31 @@ function maybeInitLinkTracking(): void {
   linkTrackingBooted = true;
   try {
     document.addEventListener('click', onDocumentLinkClick, true);
+  } catch {
+    /* ignore */
+  }
+}
+
+function onScrollDepth(): void {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return;
+  if (window.location.pathname.startsWith('/admin')) return;
+  const path = window.location.pathname.split('?')[0] || '/';
+  if (scrollMarkedPath === path) return;
+  const doc = document.documentElement;
+  const scrollTop = window.scrollY || doc.scrollTop || 0;
+  const height = Math.max(doc.scrollHeight - window.innerHeight, 1);
+  const pct = scrollTop / height;
+  if (pct < 0.75) return;
+  scrollMarkedPath = path;
+  trackGtmEvent('scroll', { percent_scrolled: 75 });
+}
+
+function maybeInitScrollTracking(): void {
+  if (scrollTrackingBooted || typeof window === 'undefined') return;
+  if (!resolveGtmId()) return;
+  scrollTrackingBooted = true;
+  try {
+    window.addEventListener('scroll', onScrollDepth, { passive: true });
   } catch {
     /* ignore */
   }
@@ -358,8 +796,15 @@ function maybeInitGtm(): void {
   if (!containerId) return;
   gtmBooted = true;
   try {
-    // Always create dataLayer before any further pushes (HTML snippet usually did this).
     ensureDataLayer();
+
+    if (!ga4VarPushed) {
+      ga4VarPushed = true;
+      const mid = resolveGa4MeasurementId();
+      if (mid) {
+        pushDataLayer({ ga4_measurement_id: mid });
+      }
+    }
 
     if (!gtmScriptAlreadyPresent(containerId)) {
       pushDataLayer({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
@@ -391,6 +836,7 @@ function maybeInitGtm(): void {
       }
     }
     maybeInitLinkTracking();
+    maybeInitScrollTracking();
   } catch {
     /* ignore */
   }
@@ -401,39 +847,17 @@ export function trackPageview(pathname?: string): void {
   const path = pathname ?? window.location.pathname;
   if (path.startsWith('/admin')) return;
 
+  void ensureRuntimeAnalyticsConfig();
   maybeInitClarity();
   maybeInitGtm();
+  maybeInitGa4();
+  maybeInitHeartbeat();
   pushGtmVirtualPageview(path);
+  sendGtagPageView(path);
 
-  const utm = readUtm();
-  const payload = {
-    sessionId: getSessionId(),
+  beaconCollect({
+    eventType: 'pageview',
+    eventName: 'page_view',
     path: path.split('?')[0] || '/',
-    title: typeof document !== 'undefined' ? document.title : null,
-    referrer: typeof document !== 'undefined' ? document.referrer || null : null,
-    ...utm,
-    language: typeof navigator !== 'undefined' ? navigator.language : null,
-    screenW: window.innerWidth,
-    screenH: window.innerHeight,
-    userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : null,
-    eventType: 'pageview' as const,
-  };
-
-  const url = `${apiBase()}/api/analytics/collect`;
-  const body = JSON.stringify(payload);
-  try {
-    if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
-      const blob = new Blob([body], { type: 'application/json' });
-      if (navigator.sendBeacon(url, blob)) return;
-    }
-  } catch {
-    /* fall through */
-  }
-  void fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body,
-    keepalive: true,
-    credentials: 'omit',
-  }).catch(() => undefined);
+  });
 }

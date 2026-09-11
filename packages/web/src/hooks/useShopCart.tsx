@@ -10,6 +10,7 @@ import {
 } from 'react';
 import { tomanToShopCoins, tomanToShopStars } from '@petdate/shared';
 import { getProduct, type ShopProduct } from '../data/shopCatalog';
+import { trackAddToCart } from '../lib/siteAnalytics';
 
 const STORAGE_KEY = 'petdate.shop.cart.v1';
 const ORDERS_KEY = 'petdate.shop.orders.v1';
@@ -183,6 +184,16 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
       }
       return [...prev, { productId, qty: n }];
     });
+    const product = getProduct(productId);
+    if (product) {
+      trackAddToCart({
+        itemId: product.id,
+        itemName: product.title,
+        price: product.priceToman,
+        quantity: n,
+        category: product.categorySlug,
+      });
+    }
   }, []);
 
   const dismissAddToast = useCallback(() => {

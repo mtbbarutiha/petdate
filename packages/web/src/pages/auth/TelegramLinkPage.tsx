@@ -5,6 +5,7 @@ import { useAuthStore } from '../../hooks/useAuthStore';
 import { exchangeTelegramWebLink } from '../../lib/api';
 import { postAuthPath, sanitizeNext } from '../../lib/authRedirect';
 import { dashboardPathForUser } from '@petdate/shared';
+import { trackAuthSuccess } from '../../lib/siteAnalytics';
 
 /**
  * Consumes a bot-signed deep link and opens a web session on the same user row.
@@ -34,6 +35,10 @@ export function TelegramLinkPage() {
         const res = await exchangeTelegramWebLink({ telegramId: tg, exp, sig });
         if (cancelled) return;
         acceptSession(res.token, res.user);
+        const createdMs = res.user.createdAt ? Date.parse(res.user.createdAt) : NaN;
+        const isNewUser =
+          Number.isFinite(createdMs) && Date.now() - createdMs < 15 * 60 * 1000;
+        trackAuthSuccess({ isNewUser, method: 'telegram_link', userId: res.user.id });
         const rolesOk = Boolean(res.user.role || (res.user.roles && res.user.roles.length));
         const profileOk =
           res.user.onboarding === 'profile_complete' ||

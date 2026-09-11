@@ -12,6 +12,7 @@ import {
   telegramWebLoginDeepLink,
 } from '../../lib/api';
 import { postAuthPath, sanitizeNext } from '../../lib/authRedirect';
+import { trackAuthSuccess } from '../../lib/siteAnalytics';
 
 type OtpCredentialLike = { code?: string };
 
@@ -163,6 +164,11 @@ export function OtpPage() {
     setError('');
     try {
       const user = await verifyOtp(value);
+      const createdMs = user.createdAt ? Date.parse(user.createdAt) : NaN;
+      const isNewUser =
+        (Number.isFinite(createdMs) && Date.now() - createdMs < 15 * 60 * 1000) ||
+        normalizeRoles(user.roles, user.role).length === 0;
+      trackAuthSuccess({ isNewUser, method: 'otp', userId: user.id });
       const roles = normalizeRoles(user.roles, user.role);
       const complete =
         user.onboarding === 'profile_complete' ||

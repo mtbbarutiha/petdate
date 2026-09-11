@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import {
   CheckCircle2,
@@ -33,6 +33,7 @@ import {
   productWarranty,
 } from '../../data/shopCatalog';
 import { useShopCart } from '../../hooks/useShopCart';
+import { trackViewItem } from '../../lib/siteAnalytics';
 import { ShopChrome } from '../../components/shop/ShopChrome';
 import { ShopProductCard } from '../../components/shop/ShopProductCard';
 
@@ -66,6 +67,16 @@ export function ShopProductPage() {
     return filterProducts({ categorySlug: product.categorySlug })
       .filter((p) => p.id !== product.id)
       .slice(0, 4);
+  }, [product]);
+
+  useEffect(() => {
+    if (!product) return;
+    trackViewItem({
+      itemId: product.id,
+      itemName: product.title,
+      price: product.priceToman,
+      category: product.categorySlug,
+    });
   }, [product]);
 
   if (!product) {

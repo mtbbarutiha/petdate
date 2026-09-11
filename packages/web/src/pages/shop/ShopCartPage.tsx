@@ -12,6 +12,7 @@ import {
   checkoutShopWithWalletStars,
 } from '../../lib/api';
 import { loginPath } from '../../lib/authRedirect';
+import { trackBeginCheckout, trackPurchase } from '../../lib/siteAnalytics';
 import { ShopChrome } from '../../components/shop/ShopChrome';
 
 type PayMethod = 'coins' | 'wallet_stars' | 'telegram_stars' | 'toman' | 'card';
@@ -104,6 +105,14 @@ export function ShopCartPage() {
       address: address.trim(),
       note: note.trim() || undefined,
     };
+    const ecomItems = lines.map((l) => ({
+      item_id: l.productId,
+      item_name: l.product.title,
+      price: l.product.priceToman,
+      quantity: l.qty,
+      item_category: l.product.categorySlug,
+    }));
+    trackBeginCheckout({ value: totalToman, items: ecomItems });
     try {
       if (payMethod === 'coins') {
         const result = await checkoutShopWithCoins(token, payload);
@@ -119,6 +128,12 @@ export function ShopCartPage() {
           totalCoins: result.coinsSpent,
           status: 'paid',
           paymentCurrency: 'coins',
+        });
+        trackPurchase({
+          transactionId: String(result.orderId),
+          value: result.totalToman,
+          items: ecomItems,
+          paymentType: 'coins',
         });
         clear();
         setPaidLabel(formatShopCoins(result.coinsSpent));
@@ -138,6 +153,12 @@ export function ShopCartPage() {
           status: 'paid',
           paymentCurrency: 'stars',
         });
+        trackPurchase({
+          transactionId: String(result.orderId),
+          value: result.totalToman,
+          items: ecomItems,
+          paymentType: 'wallet_stars',
+        });
         clear();
         setPaidLabel(formatShopStars(result.starsSpent));
         setOrderId(String(result.orderId));
@@ -154,6 +175,12 @@ export function ShopCartPage() {
           totalToman: result.totalToman,
           status: 'paid',
           paymentCurrency: 'toman',
+        });
+        trackPurchase({
+          transactionId: String(result.orderId),
+          value: result.totalToman,
+          items: ecomItems,
+          paymentType: 'toman',
         });
         clear();
         setPaidLabel(formatToman(result.tomanSpent));

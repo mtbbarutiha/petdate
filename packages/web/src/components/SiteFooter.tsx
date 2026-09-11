@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, AtSign, Mail, Send } from 'lucide-react';
 import { BRAND, SITE } from '@petdate/shared';
 import { subscribeNewsletter } from '../lib/api';
+import { trackGenerateLead } from '../lib/siteAnalytics';
 
 const CONTACT_PHONE_DISPLAY = '۰۲۱-۸۸۷۷۶۶۵۵';
 const CONTACT_PHONE_TEL = '+982188776655';
@@ -79,6 +80,7 @@ export function SiteFooter() {
     setNote(null);
     try {
       const res = await subscribeNewsletter(value, 'footer');
+      trackGenerateLead({ formId: 'footer-newsletter', formName: 'newsletter', method: 'email' });
       setNote(res.message || `ثبت شد — خبرها از ${NEWSLETTER_FROM} می‌آید.`);
       setEmail('');
     } catch (err) {

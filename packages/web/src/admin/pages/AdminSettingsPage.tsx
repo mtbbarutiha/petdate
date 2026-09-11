@@ -36,6 +36,15 @@ const FINANCE_NUMS: { key: string; label: string; hint: string }[] = [
   { key: 'financeOpExMonthlyToman', label: 'هزینه عملیاتی ماهانه', hint: 'برای P&L دوره' },
 ];
 
+const ANALYTICS_TEXT: { key: string; label: string; hint: string; placeholder: string }[] = [
+  {
+    key: 'ga4MeasurementId',
+    label: 'GA4 Measurement ID',
+    hint: 'شناسه G-XXXXXXXX — اختیاری؛ بدون اختراع شناسه. اولویت با env است.',
+    placeholder: 'G-XXXXXXXX',
+  },
+];
+
 type ModuleInfo = { key: PlatformModuleKey; label: string; dropdownCount: number; goalCount: number };
 type FieldInfo = { fieldKey: string; label: string; defaultCount: number };
 type Tab = 'flags' | 'dropdowns' | 'goals';
@@ -328,6 +337,29 @@ export function AdminSettingsPage() {
                     disabled={!canWrite}
                     onChange={(e) => {
                       setSettings((s) => ({ ...s, [f.key]: e.target.value }));
+                      setSaved(false);
+                    }}
+                  />
+                  <small className="admin-muted">{f.hint}</small>
+                </label>
+              ))}
+            </div>
+          </section>
+
+          <section className="admin-card" style={{ marginTop: 16, padding: 16 }}>
+            <h2 style={{ marginTop: 0, fontSize: '1rem' }}>آنالیتیکس / GA4</h2>
+            <div className="admin-form-grid" style={{ marginTop: 12 }}>
+              {ANALYTICS_TEXT.map((f) => (
+                <label key={f.key}>
+                  <span className="form-label">{f.label}</span>
+                  <input
+                    className="form-input"
+                    dir="ltr"
+                    placeholder={f.placeholder}
+                    value={settings[f.key] ?? ''}
+                    disabled={!canWrite}
+                    onChange={(e) => {
+                      setSettings((s) => ({ ...s, [f.key]: e.target.value.trim() }));
                       setSaved(false);
                     }}
                   />

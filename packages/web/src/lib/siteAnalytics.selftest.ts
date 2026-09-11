@@ -12,6 +12,9 @@ import {
   isCtaPath,
   isPetdateHost,
   isValidGtmContainerId,
+  isValidGa4MeasurementId,
+  resolveGa4MeasurementId,
+  setRuntimeGa4MeasurementId,
 } from './siteAnalytics.ts';
 
 assert.equal(DEFAULT_GTM_ID, 'GTM-KQPJT9Q4');
@@ -19,6 +22,12 @@ assert.equal(GTM_DASHBOARD_URL, 'https://tagmanager.google.com/');
 assert.ok(isValidGtmContainerId('GTM-KQPJT9Q4'));
 assert.ok(isValidGtmContainerId('gtm-kqpjt9q4'));
 assert.equal(isValidGtmContainerId('KQPJT9Q4'), false);
+assert.ok(isValidGa4MeasurementId('G-ABCDEF12'));
+assert.equal(isValidGa4MeasurementId('UA-123'), false);
+assert.equal(isValidGa4MeasurementId('G-XXXX'), false);
+setRuntimeGa4MeasurementId('G-TESTMEAS1');
+assert.equal(resolveGa4MeasurementId(), 'G-TESTMEAS1');
+setRuntimeGa4MeasurementId(null);
 
 assert.equal(isPetdateHost('petdate.ir'), true);
 assert.equal(isPetdateHost('www.petdate.ir'), true);
