@@ -32,7 +32,7 @@ import { isCandooConfigured } from '../services/candoo';
 import { adminPlatform } from '../admin-platform';
 import { adminFinance } from '../admin-finance';
 import { buildAggregateDashboard, getPlatformActivity } from '../admin-aggregate-dashboard';
-import { buildSiteAnalyticsReport, buildTagManagerReport } from '../site-analytics';
+import { buildSiteAnalyticsReport, buildTagManagerReport, createUtmCampaign, deleteUtmCampaign, listUtmCampaigns } from '../site-analytics';
 import {
   adminCreatePet,
   adminUpdatePet,
@@ -1562,6 +1562,51 @@ adminRouter.get('/site-analytics/tag-manager', (req, res) => {
     res.json(buildTagManagerReport(Number.isFinite(days) ? days : 14));
   } catch (err) {
     console.error('site-analytics tag-manager:', err);
+    res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+adminRouter.get('/site-analytics/utm-campaigns', (_req, res) => {
+  try {
+    res.json({ campaigns: listUtmCampaigns() });
+  } catch (err) {
+    console.error('utm-campaigns list:', err);
+    res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+adminRouter.post('/site-analytics/utm-campaigns', (req, res) => {
+  try {
+    const body = (req.body && typeof req.body === 'object' ? req.body : {}) as Record<string, unknown>;
+    const created = createUtmCampaign({
+      name: typeof body.name === 'string' ? body.name : '',
+      path: typeof body.path === 'string' ? body.path : '/',
+      utmSource: typeof body.utmSource === 'string' ? body.utmSource : '',
+      utmMedium: typeof body.utmMedium === 'string' ? body.utmMedium : '',
+      utmCampaign: typeof body.utmCampaign === 'string' ? body.utmCampaign : '',
+      utmContent: typeof body.utmContent === 'string' ? body.utmContent : null,
+      utmTerm: typeof body.utmTerm === 'string' ? body.utmTerm : null,
+    });
+    res.status(201).json(created);
+  } catch (err) {
+    res.status(400).json({ error: (err as Error).message });
+  }
+});
+
+adminRouter.delete('/site-analytics/utm-campaigns/:id', (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id) || id <= 0) {
+      res.status(400).json({ error: 'شناسه نامعتبر' });
+      return;
+    }
+    const ok = deleteUtmCampaign(id);
+    if (!ok) {
+      res.status(404).json({ error: 'یافت نشد' });
+      return;
+    }
+    res.json({ ok: true });
+  } catch (err) {
     res.status(500).json({ error: (err as Error).message });
   }
 });

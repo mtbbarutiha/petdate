@@ -24,6 +24,10 @@ export type SiteAnalyticsEventInput = {
   utmSource?: string | null;
   utmMedium?: string | null;
   utmCampaign?: string | null;
+  utmContent?: string | null;
+  utmTerm?: string | null;
+  gclid?: string | null;
+  fbclid?: string | null;
   language?: string | null;
   screenW?: number | null;
   screenH?: number | null;
@@ -35,6 +39,13 @@ export type SiteAnalyticsEventInput = {
 };
 
 export type SiteAnalyticsBucket = { label: string; value: number };
+export type SiteAnalyticsUtmRow = {
+  source: string;
+  medium: string;
+  campaign: string;
+  sessions: number;
+  pageviews: number;
+};
 export type SiteAnalyticsSessionRow = {
   sessionId: string;
   startedAt: string;
@@ -45,6 +56,9 @@ export type SiteAnalyticsSessionRow = {
   referrerHost: string;
   device: string;
   country: string;
+  utmSource: string | null;
+  utmMedium: string | null;
+  utmCampaign: string | null;
 };
 
 export type SiteAnalyticsRecentEvent = {
@@ -84,8 +98,10 @@ export type SiteAnalyticsReport = {
   utmSources: SiteAnalyticsBucket[];
   utmMediums: SiteAnalyticsBucket[];
   utmCampaigns: SiteAnalyticsBucket[];
+  utmPerformance: SiteAnalyticsUtmRow[];
   events: SiteAnalyticsBucket[];
   recentSessions: SiteAnalyticsSessionRow[];
+  savedUtmCampaigns: UtmCampaignRecord[];
   clarity: {
     configured: boolean;
     projectId: string | null;
@@ -163,7 +179,58 @@ export const DEFAULT_CLARITY_PROJECT_ID = CLARITY_PROJECT_ID;
 /** Live Google Tag Manager container for petdate.ir. */
 export const DEFAULT_GTM_ID = GTM_CONTAINER_ID;
 
+export type UtmCampaignRecord = {
+  id: number;
+  name: string;
+  path: string;
+  utmSource: string;
+  utmMedium: string;
+  utmCampaign: string;
+  utmContent: string | null;
+  utmTerm: string | null;
+  previewUrl: string;
+  createdAt: string;
+};
+
 let ensured = false;
+
+/**
+ * Postgres (via pg-compat) lowercases unquoted aliases — `AS startedAt` becomes `startedat`.
+ * Always read with case-insensitive fallback so SQLite + Postgres both work.
+ */
+export function pickRowField(
+  row: Record<string, unknown> | null | undefined,
+  ...names: string[]
+): unknown {
+  if (!row) return undefined;
+  for (const name of names) {
+    if (Object.prototype.hasOwnProperty.call(row, name) && row[name] != null && row[name] !== '') {
+      return row[name];
+    }
+  }
+  const lowerMap = new Map(Object.keys(row).map((k) => [k.toLowerCase(), k]));
+  for (const name of names) {
+    const real = lowerMap.get(name.toLowerCase());
+    if (real != null && row[real] != null && row[real] !== '') return row[real];
+  }
+  return undefined;
+}
+
+function pickRowStr(
+  row: Record<string, unknown>,
+  names: string[],
+  fallback = '',
+): string {
+  const v = pickRowField(row, ...names);
+  if (v == null) return fallback;
+  return String(v);
+}
+
+function pickRowNum(row: Record<string, unknown>, names: string[], fallback = 0): number {
+  const v = pickRowField(row, ...names);
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fallback;
+}
 
 export function ensureSiteAnalyticsSchema(): void {
   if (ensured) return;
@@ -193,13 +260,29 @@ export function ensureSiteAnalyticsSchema(): void {
     CREATE INDEX IF NOT EXISTS idx_site_analytics_session ON site_analytics_events(session_id);
     CREATE INDEX IF NOT EXISTS idx_site_analytics_path ON site_analytics_events(path);
     CREATE INDEX IF NOT EXISTS idx_site_analytics_event_name ON site_analytics_events(event_name);
+    CREATE TABLE IF NOT EXISTS utm_campaigns (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      path TEXT NOT NULL DEFAULT '/',
+      utm_source TEXT NOT NULL,
+      utm_medium TEXT NOT NULL,
+      utm_campaign TEXT NOT NULL,
+      utm_content TEXT,
+      utm_term TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
   `);
   const cols = (
     db.prepare(`PRAGMA table_info(site_analytics_events)`).all() as Array<{ name: string }>
   ).map((c) => c.name);
-  if (!cols.includes('meta_json')) {
-    db.exec(`ALTER TABLE site_analytics_events ADD COLUMN meta_json TEXT`);
-  }
+  const addCol = (name: string, ddl: string) => {
+    if (!cols.includes(name)) db.exec(`ALTER TABLE site_analytics_events ADD COLUMN ${ddl}`);
+  };
+  addCol('meta_json', 'meta_json TEXT');
+  addCol('utm_content', 'utm_content TEXT');
+  addCol('utm_term', 'utm_term TEXT');
+  addCol('gclid', 'gclid TEXT');
+  addCol('fbclid', 'fbclid TEXT');
   ensured = true;
 }
 
@@ -417,9 +500,10 @@ export function ingestSiteAnalyticsEvent(
     .prepare(
       `INSERT INTO site_analytics_events (
         session_id, event_type, event_name, path, title, referrer, referrer_host,
-        utm_source, utm_medium, utm_campaign, language, country, device,
+        utm_source, utm_medium, utm_campaign, utm_content, utm_term, gclid, fbclid,
+        language, country, device,
         screen_w, screen_h, user_agent, meta_json
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       sessionId,
@@ -432,6 +516,10 @@ export function ingestSiteAnalyticsEvent(
       clampStr(input.utmSource, 80),
       clampStr(input.utmMedium, 80),
       clampStr(input.utmCampaign, 120),
+      clampStr(input.utmContent, 120),
+      clampStr(input.utmTerm, 120),
+      clampStr(input.gclid, 120),
+      clampStr(input.fbclid, 120),
       clampStr(input.language, 32),
       country,
       device,
@@ -444,18 +532,19 @@ export function ingestSiteAnalyticsEvent(
   return { ok: true, id: Number(result.lastInsertRowid) };
 }
 
+/** Inclusive day window using space-separated timestamps (matches SQLite/PG TO_CHAR storage). */
 function daysBack(n: number): { from: string; to: string; days: string[] } {
   const days: string[] = [];
   const end = new Date();
-  end.setHours(12, 0, 0, 0);
+  // Use UTC calendar days so substr(created_at,1,10) buckets align with fillDaily labels.
+  const endUtc = Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate());
   for (let i = n - 1; i >= 0; i--) {
-    const d = new Date(end);
-    d.setDate(end.getDate() - i);
+    const d = new Date(endUtc - i * 24 * 60 * 60 * 1000);
     days.push(d.toISOString().slice(0, 10));
   }
   return {
-    from: `${days[0]}T00:00:00`,
-    to: `${days[days.length - 1]}T23:59:59`,
+    from: `${days[0]} 00:00:00`,
+    to: `${days[days.length - 1]} 23:59:59`,
     days,
   };
 }
@@ -543,23 +632,47 @@ export function buildSiteAnalyticsReport(periodDays = 14): SiteAnalyticsReport {
     ).all(from, to) as Array<{ d: string; c: number }>
   );
 
-  const recentSessions = db.prepare(
+  const recentSessionsRaw = db.prepare(
     `SELECT
-       session_id AS sessionId,
-       MIN(created_at) AS startedAt,
-       MAX(created_at) AS lastSeenAt,
-       SUM(CASE WHEN event_type = 'pageview' THEN 1 ELSE 0 END) AS pageviews,
-       (SELECT path FROM site_analytics_events e2 WHERE e2.session_id = e.session_id AND e2.event_type = 'pageview' ORDER BY e2.id ASC LIMIT 1) AS landingPath,
-       (SELECT path FROM site_analytics_events e3 WHERE e3.session_id = e.session_id AND e3.event_type = 'pageview' ORDER BY e3.id DESC LIMIT 1) AS exitPath,
-       COALESCE((SELECT referrer_host FROM site_analytics_events e4 WHERE e4.session_id = e.session_id ORDER BY e4.id ASC LIMIT 1), '(direct)') AS referrerHost,
-       COALESCE((SELECT device FROM site_analytics_events e5 WHERE e5.session_id = e.session_id ORDER BY e5.id ASC LIMIT 1), 'desktop') AS device,
-       COALESCE((SELECT country FROM site_analytics_events e6 WHERE e6.session_id = e.session_id ORDER BY e6.id ASC LIMIT 1), 'نامشخص') AS country
+       session_id AS "sessionId",
+       MIN(created_at) AS "startedAt",
+       MAX(created_at) AS "lastSeenAt",
+       SUM(CASE WHEN event_type = 'pageview' THEN 1 ELSE 0 END) AS "pageviews",
+       (SELECT path FROM site_analytics_events e2 WHERE e2.session_id = e.session_id AND e2.event_type = 'pageview' ORDER BY e2.id ASC LIMIT 1) AS "landingPath",
+       (SELECT path FROM site_analytics_events e3 WHERE e3.session_id = e.session_id AND e3.event_type = 'pageview' ORDER BY e3.id DESC LIMIT 1) AS "exitPath",
+       COALESCE((SELECT referrer_host FROM site_analytics_events e4 WHERE e4.session_id = e.session_id ORDER BY e4.id ASC LIMIT 1), '(direct)') AS "referrerHost",
+       COALESCE((SELECT device FROM site_analytics_events e5 WHERE e5.session_id = e.session_id ORDER BY e5.id ASC LIMIT 1), 'desktop') AS "device",
+       COALESCE((SELECT country FROM site_analytics_events e6 WHERE e6.session_id = e.session_id ORDER BY e6.id ASC LIMIT 1), 'نامشخص') AS "country",
+       (SELECT utm_source FROM site_analytics_events e7 WHERE e7.session_id = e.session_id AND e7.utm_source IS NOT NULL AND e7.utm_source != '' ORDER BY e7.id ASC LIMIT 1) AS "utmSource",
+       (SELECT utm_medium FROM site_analytics_events e8 WHERE e8.session_id = e.session_id AND e8.utm_medium IS NOT NULL AND e8.utm_medium != '' ORDER BY e8.id ASC LIMIT 1) AS "utmMedium",
+       (SELECT utm_campaign FROM site_analytics_events e9 WHERE e9.session_id = e.session_id AND e9.utm_campaign IS NOT NULL AND e9.utm_campaign != '' ORDER BY e9.id ASC LIMIT 1) AS "utmCampaign"
      FROM site_analytics_events e
      WHERE created_at >= ? AND created_at <= ?
      GROUP BY session_id
-     ORDER BY lastSeenAt DESC
+     ORDER BY MAX(created_at) DESC
      LIMIT 40`
-  ).all(from, to) as SiteAnalyticsSessionRow[];
+  ).all(from, to) as Array<Record<string, unknown>>;
+
+  const utmPerformanceRaw = db.prepare(
+    `SELECT
+       COALESCE(utm_source, '(none)') AS "source",
+       COALESCE(utm_medium, '(none)') AS "medium",
+       COALESCE(utm_campaign, '(none)') AS "campaign",
+       COUNT(DISTINCT session_id) AS "sessions",
+       SUM(CASE WHEN event_type = 'pageview' THEN 1 ELSE 0 END) AS "pageviews"
+     FROM site_analytics_events
+     WHERE created_at >= ? AND created_at <= ?
+       AND (
+         (utm_source IS NOT NULL AND utm_source != '')
+         OR (utm_medium IS NOT NULL AND utm_medium != '')
+         OR (utm_campaign IS NOT NULL AND utm_campaign != '')
+         OR (gclid IS NOT NULL AND gclid != '')
+         OR (fbclid IS NOT NULL AND fbclid != '')
+       )
+     GROUP BY 1, 2, 3
+     ORDER BY 5 DESC
+     LIMIT 40`
+  ).all(from, to) as Array<Record<string, unknown>>;
 
   return {
     generatedAt: new Date().toISOString(),
@@ -615,21 +728,46 @@ export function buildSiteAnalyticsReport(periodDays = 14): SiteAnalyticsReport {
        WHERE event_type = 'pageview' AND created_at >= ? AND created_at <= ?
          AND utm_campaign IS NOT NULL AND utm_campaign != ''
        GROUP BY label ORDER BY value DESC`, [from, to], 10),
+    utmPerformance: utmPerformanceRaw.map((r) => ({
+      source: pickRowStr(r, ['source'], '(none)'),
+      medium: pickRowStr(r, ['medium'], '(none)'),
+      campaign: pickRowStr(r, ['campaign'], '(none)'),
+      sessions: pickRowNum(r, ['sessions']),
+      pageviews: pickRowNum(r, ['pageviews']),
+    })),
     events: topBucket(
       `SELECT COALESCE(NULLIF(event_name, ''), event_type) AS label, COUNT(*) AS value
        FROM site_analytics_events
        WHERE created_at >= ? AND created_at <= ?
          AND event_type IN ('event', 'pageview', 'heartbeat')
        GROUP BY label ORDER BY value DESC`, [from, to], 25),
-    recentSessions: recentSessions.map((s) => ({
-      ...s,
-      pageviews: Number(s.pageviews) || 0,
-      landingPath: s.landingPath || '/',
-      exitPath: s.exitPath || '/',
-      referrerHost: s.referrerHost || '(direct)',
-      device: s.device || 'desktop',
-      country: s.country || 'نامشخص',
-    })),
+    recentSessions: recentSessionsRaw.map((s) => {
+      const startedAt = pickRowStr(s, ['startedAt', 'started_at']);
+      const lastSeenAt = pickRowStr(s, ['lastSeenAt', 'last_seen_at']);
+      const utmSource = pickRowStr(s, ['utmSource', 'utm_source'], '') || null;
+      const utmMedium = pickRowStr(s, ['utmMedium', 'utm_medium'], '') || null;
+      const utmCampaign = pickRowStr(s, ['utmCampaign', 'utm_campaign'], '') || null;
+      let referrerHost = pickRowStr(s, ['referrerHost', 'referrer_host'], '(direct)');
+      // Surface UTM as attribution when browser referrer was empty/direct.
+      if ((!referrerHost || referrerHost === '(direct)') && utmSource) {
+        referrerHost = `utm:${utmSource}${utmMedium ? '/' + utmMedium : ''}`;
+      }
+      return {
+        sessionId: pickRowStr(s, ['sessionId', 'session_id'], 'unknown'),
+        startedAt,
+        lastSeenAt,
+        pageviews: pickRowNum(s, ['pageviews']),
+        landingPath: pickRowStr(s, ['landingPath', 'landing_path'], '/') || '/',
+        exitPath: pickRowStr(s, ['exitPath', 'exit_path'], '/') || '/',
+        referrerHost: referrerHost || '(direct)',
+        device: pickRowStr(s, ['device'], 'desktop') || 'desktop',
+        country: pickRowStr(s, ['country'], 'نامشخص') || 'نامشخص',
+        utmSource,
+        utmMedium,
+        utmCampaign,
+      };
+    }),
+    savedUtmCampaigns: listUtmCampaigns(),
     clarity: clarityConfig(),
     gtm: gtmConfig(),
     ga4: ga4Config(),
@@ -686,32 +824,30 @@ export function buildTagManagerReport(periodDays = 14): TagManagerReport {
   );
 
   const recentRaw = db.prepare(
-    `SELECT id, session_id AS sessionId, event_type AS eventType, event_name AS eventName,
-            path, device, created_at AS createdAt, meta_json AS metaJson
+    `SELECT id, session_id AS "sessionId", event_type AS "eventType", event_name AS "eventName",
+            path, device, created_at AS "createdAt", meta_json AS "metaJson"
      FROM site_analytics_events
      WHERE created_at >= ? AND created_at <= ?
      ORDER BY id DESC
      LIMIT 60`
-  ).all(from, to) as Array<{
-    id: number;
-    sessionId: string;
-    eventType: string;
-    eventName: string | null;
-    path: string;
-    device: string;
-    createdAt: string;
-    metaJson: string | null;
-  }>;
+  ).all(from, to) as Array<Record<string, unknown>>;
 
-  const lastEventAt = (db.prepare(
-    `SELECT MAX(created_at) AS t FROM site_analytics_events`
-  ).get() as { t: string | null })?.t || null;
+  const lastEventAt = pickRowStr(
+    (db.prepare(`SELECT MAX(created_at) AS t FROM site_analytics_events`).get() as Record<string, unknown>) || {},
+    ['t'],
+  ) || null;
 
-  const lastPageviewAt = (db.prepare(
-    `SELECT MAX(created_at) AS t FROM site_analytics_events WHERE event_type = 'pageview'`
-  ).get() as { t: string | null })?.t || null;
+  const lastPageviewAt = pickRowStr(
+    (db.prepare(
+      `SELECT MAX(created_at) AS t FROM site_analytics_events WHERE event_type = 'pageview'`
+    ).get() as Record<string, unknown>) || {},
+    ['t'],
+  ) || null;
 
-  const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString().slice(0, 19).replace('T', ' ');
+  const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000)
+    .toISOString()
+    .slice(0, 19)
+    .replace('T', ' ');
   const eventsLast24h = Number(
     (db.prepare(
       `SELECT COUNT(*) AS c FROM site_analytics_events WHERE created_at >= ?`
@@ -758,14 +894,22 @@ export function buildTagManagerReport(periodDays = 14): TagManagerReport {
         value: d.value,
       })),
       recentEvents: recentRaw.map((r) => ({
-        id: Number(r.id),
-        sessionId: r.sessionId,
-        eventType: r.eventType,
-        eventName: r.eventName,
-        path: r.path,
-        device: r.device || 'desktop',
-        createdAt: r.createdAt,
-        meta: parseMeta(r.metaJson),
+        id: pickRowNum(r, ['id']),
+        sessionId: pickRowStr(r, ['sessionId', 'session_id']),
+        eventType: pickRowStr(r, ['eventType', 'event_type'], 'pageview'),
+        eventName: (() => {
+          const v = pickRowField(r, 'eventName', 'event_name');
+          return v == null || v === '' ? null : String(v);
+        })(),
+        path: pickRowStr(r, ['path'], '/'),
+        device: pickRowStr(r, ['device'], 'desktop') || 'desktop',
+        createdAt: pickRowStr(r, ['createdAt', 'created_at']),
+        meta: parseMeta(
+          (() => {
+            const v = pickRowField(r, 'metaJson', 'meta_json');
+            return v == null ? null : String(v);
+          })()
+        ),
       })),
     },
     health: {
@@ -777,4 +921,121 @@ export function buildTagManagerReport(periodDays = 14): TagManagerReport {
         : 'هنوز رویدادی در site_analytics ثبت نشده؛ پس از ترافیک عمومی اینجا پر می‌شود.',
     },
   };
+}
+
+const PUBLIC_SITE_ORIGIN = 'https://petdate.ir';
+
+export function buildUtmPreviewUrl(input: {
+  path?: string | null;
+  utmSource: string;
+  utmMedium: string;
+  utmCampaign: string;
+  utmContent?: string | null;
+  utmTerm?: string | null;
+}): string {
+  const pathRaw = (input.path || '/').trim() || '/';
+  const path = pathRaw.startsWith('/') ? pathRaw.split('?')[0] : `/${pathRaw.split('?')[0]}`;
+  const u = new URL(path, PUBLIC_SITE_ORIGIN);
+  u.searchParams.set('utm_source', input.utmSource.trim());
+  u.searchParams.set('utm_medium', input.utmMedium.trim());
+  u.searchParams.set('utm_campaign', input.utmCampaign.trim());
+  if (input.utmContent?.trim()) u.searchParams.set('utm_content', input.utmContent.trim());
+  if (input.utmTerm?.trim()) u.searchParams.set('utm_term', input.utmTerm.trim());
+  return u.toString();
+}
+
+export function listUtmCampaigns(): UtmCampaignRecord[] {
+  ensureSiteAnalyticsSchema();
+  const rows = getDb()
+    .prepare(
+      `SELECT id, name, path, utm_source AS "utmSource", utm_medium AS "utmMedium",
+              utm_campaign AS "utmCampaign", utm_content AS "utmContent", utm_term AS "utmTerm",
+              created_at AS "createdAt"
+       FROM utm_campaigns
+       ORDER BY id DESC
+       LIMIT 100`
+    )
+    .all() as Array<Record<string, unknown>>;
+  return rows.map((r) => {
+    const utmSource = pickRowStr(r, ['utmSource', 'utm_source']);
+    const utmMedium = pickRowStr(r, ['utmMedium', 'utm_medium']);
+    const utmCampaign = pickRowStr(r, ['utmCampaign', 'utm_campaign']);
+    const utmContent = pickRowStr(r, ['utmContent', 'utm_content'], '') || null;
+    const utmTerm = pickRowStr(r, ['utmTerm', 'utm_term'], '') || null;
+    const path = pickRowStr(r, ['path'], '/') || '/';
+    return {
+      id: pickRowNum(r, ['id']),
+      name: pickRowStr(r, ['name'], 'campaign'),
+      path,
+      utmSource,
+      utmMedium,
+      utmCampaign,
+      utmContent,
+      utmTerm,
+      previewUrl: buildUtmPreviewUrl({ path, utmSource, utmMedium, utmCampaign, utmContent, utmTerm }),
+      createdAt: pickRowStr(r, ['createdAt', 'created_at']),
+    };
+  });
+}
+
+export function createUtmCampaign(input: {
+  name: string;
+  path?: string | null;
+  utmSource: string;
+  utmMedium: string;
+  utmCampaign: string;
+  utmContent?: string | null;
+  utmTerm?: string | null;
+}): UtmCampaignRecord {
+  ensureSiteAnalyticsSchema();
+  const name = clampStr(input.name, 120);
+  const utmSource = clampStr(input.utmSource, 80);
+  const utmMedium = clampStr(input.utmMedium, 80);
+  const utmCampaign = clampStr(input.utmCampaign, 120);
+  if (!name || !utmSource || !utmMedium || !utmCampaign) {
+    throw new Error('نام، source، medium و campaign الزامی است');
+  }
+  const path = normalizePath(input.path || '/');
+  const result = getDb()
+    .prepare(
+      `INSERT INTO utm_campaigns (name, path, utm_source, utm_medium, utm_campaign, utm_content, utm_term)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      name,
+      path,
+      utmSource,
+      utmMedium,
+      utmCampaign,
+      clampStr(input.utmContent, 120),
+      clampStr(input.utmTerm, 120),
+    );
+  const id = Number(result.lastInsertRowid);
+  const created = listUtmCampaigns().find((c) => c.id === id);
+  if (created) return created;
+  return {
+    id,
+    name,
+    path,
+    utmSource,
+    utmMedium,
+    utmCampaign,
+    utmContent: clampStr(input.utmContent, 120),
+    utmTerm: clampStr(input.utmTerm, 120),
+    previewUrl: buildUtmPreviewUrl({
+      path,
+      utmSource,
+      utmMedium,
+      utmCampaign,
+      utmContent: input.utmContent,
+      utmTerm: input.utmTerm,
+    }),
+    createdAt: new Date().toISOString().slice(0, 19).replace('T', ' '),
+  };
+}
+
+export function deleteUtmCampaign(id: number): boolean {
+  ensureSiteAnalyticsSchema();
+  const result = getDb().prepare(`DELETE FROM utm_campaigns WHERE id = ?`).run(id);
+  return Number(result.changes) > 0;
 }

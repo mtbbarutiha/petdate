@@ -110,6 +110,55 @@ export const GTM_SITE_VARIABLES: GtmCatalogRow[] = [
     whereFired: 'link_click',
   },
   {
+    name: 'utm_source',
+    kind: 'variable',
+    descriptionFa: 'اولین utm_source لندینگ (persist در session)',
+    descriptionEn: 'First-touch utm_source',
+    whereFired: 'هر page_view پس از لندینگ UTM',
+  },
+  {
+    name: 'utm_medium',
+    kind: 'variable',
+    descriptionFa: 'utm_medium اول‌لمس',
+    descriptionEn: 'First-touch utm_medium',
+    whereFired: 'page_view',
+  },
+  {
+    name: 'utm_campaign',
+    kind: 'variable',
+    descriptionFa: 'utm_campaign اول‌لمس',
+    descriptionEn: 'First-touch utm_campaign',
+    whereFired: 'page_view',
+  },
+  {
+    name: 'utm_content',
+    kind: 'variable',
+    descriptionFa: 'utm_content اختیاری',
+    descriptionEn: 'Optional utm_content',
+    whereFired: 'page_view وقتی موجود',
+  },
+  {
+    name: 'utm_term',
+    kind: 'variable',
+    descriptionFa: 'utm_term اختیاری',
+    descriptionEn: 'Optional utm_term',
+    whereFired: 'page_view وقتی موجود',
+  },
+  {
+    name: 'gclid',
+    kind: 'variable',
+    descriptionFa: 'Google Ads click id',
+    descriptionEn: 'Google click id',
+    whereFired: 'لندینگ با gclid',
+  },
+  {
+    name: 'fbclid',
+    kind: 'variable',
+    descriptionFa: 'Meta/Facebook click id',
+    descriptionEn: 'Meta click id',
+    whereFired: 'لندینگ با fbclid',
+  },
+  {
     name: 'form_id',
     kind: 'variable',
     descriptionFa: 'شناسه فرم',
@@ -297,8 +346,16 @@ export const GTM_UI_SETUP_CHECKLIST: GtmUiChecklistItem[] = [
     titleEn: 'Constant / DL ga4_measurement_id',
     type: 'variable',
     detailFa:
-      'اگر VITE_GA4_MEASUREMENT_ID ست شده از dataLayer بخوانید؛ وگرنه Constant با PLACEHOLDER_G-XXXXXXXX بسازید و بعداً جایگزین کنید.',
+      'Measurement ID را از پنل آنالیتیکس (تنظیمات پلتفرم) یا dataLayer کلید ga4_measurement_id بخوانید. اگر خالی است Constant با PLACEHOLDER بسازید — شناسه ساختگی وارد نکنید.',
     requiresGa4: true,
+  },
+  {
+    id: 'var-dl-utm',
+    titleFa: 'Variables: DL - utm_* / gclid / fbclid',
+    titleEn: 'Data Layer UTM variables',
+    type: 'variable',
+    detailFa:
+      'برای هر کدام Data Layer Variable بسازید: utm_source, utm_medium, utm_campaign, utm_content, utm_term, gclid, fbclid',
   },
   {
     id: 'trig-ce-page-view',

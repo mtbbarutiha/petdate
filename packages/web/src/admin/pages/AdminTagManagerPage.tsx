@@ -13,7 +13,6 @@ import {
 } from '../rechartsRtlHBars';
 import {
   MOTION_PALETTE,
-  MotionBarGradientDefs,
   MotionChartTooltip,
   useRechartsMotion,
 } from '../motionCharts';
@@ -291,12 +290,11 @@ export function AdminTagManagerPage() {
                   >
                     <ResponsiveContainer>
                       <BarChart data={eventBars} layout="vertical" margin={adminRtlHBarsMargin}>
-                        <MotionBarGradientDefs id="tmEventsBar" from={MOTION_PALETTE.purple} to={MOTION_PALETTE.mint} />
                         <CartesianGrid strokeDasharray="3 3" stroke="var(--admin-border)" />
                         <XAxis {...adminRtlHBarsValueAxis} />
                         <YAxis dataKey="label" {...adminRtlHBarsCategoryAxis} />
                         <Tooltip content={<Tip />} />
-                        <Bar dataKey="value" fill="url(#tmEventsBar-h)" radius={adminRtlHBarsRadius} {...motion} />
+                        <Bar dataKey="value" fill={MOTION_PALETTE.purple} radius={adminRtlHBarsRadius} {...motion} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -310,11 +308,10 @@ export function AdminTagManagerPage() {
                   >
                     <ResponsiveContainer>
                       <BarChart data={pageBars} layout="vertical" margin={adminRtlHBarsMargin}>
-                        <MotionBarGradientDefs id="tmPagesBar" from={MOTION_PALETTE.mint} to={MOTION_PALETTE.blue} />
                         <XAxis {...adminRtlHBarsValueAxis} />
                         <YAxis dataKey="label" {...adminRtlHBarsCategoryAxis} />
                         <Tooltip content={<Tip />} />
-                        <Bar dataKey="value" fill="url(#tmPagesBar-h)" radius={adminRtlHBarsRadius} {...motion} />
+                        <Bar dataKey="value" fill={MOTION_PALETTE.mint} radius={adminRtlHBarsRadius} {...motion} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>

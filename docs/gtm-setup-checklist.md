@@ -1,61 +1,37 @@
-# GTM setup checklist — petdate.ir
+# GTM + UTM setup — petdate.ir
 
 Container: **GTM-KQPJT9Q4** (live in `packages/web/index.html`)  
 Clarity: **ygkl5nck6k**  
-Public SPA pushes a documented `dataLayer` contract; Tags inside Google’s container are created in the GTM UI (no Admin API OAuth in this repo).
+GA4 Measurement ID: set in admin «آنالیتیکس» / platform settings (`ga4MeasurementId`) — never invent one.
 
-Admin report: `/admin/tag-manager`
+Admin:
+- `/admin/analytics` (site reports hub) — tabs: نمای کلی / رویدادها / UTM / راه‌اندازی / Tag Manager / Clarity
+- `/admin/tag-manager` — catalog + first-party metrics
 
-## Site contract (already shipped)
+## First-party analytics (source of truth for admin charts)
 
-### Variables (dataLayer keys)
+SPA fires `/api/analytics/collect` on every public route change with:
+`sessionId`, path, referrer, persisted `utm_*` + `gclid`/`fbclid`, device, language, country (CF-IPCountry when nginx forwards it).
 
-| Key | When |
-| --- | --- |
-| `page_path`, `page_title`, `page_location`, `page_type` | every `page_view` |
-| `user_id`, `user_status` | every `page_view` / auth events (`guest` \| `logged_in`) |
-| `click_text`, `click_url`, `click_id`, `link_kind` | link tracking |
-| `form_id`, `form_name` | `generate_lead` |
-| `currency`, `value`, `items`, `transaction_id` | shop ecommerce |
-| `ga4_measurement_id` | first init **only if** `VITE_GA4_MEASUREMENT_ID` is set |
+UTM first-touch: parse URL on landing → `sessionStorage` + cookie → attach to every beacon.
 
-Helper: `pushDataLayer(event, payload)` in `packages/web/src/lib/siteAnalytics.ts`.
+## GTM UI (no Admin API OAuth in this environment)
 
-### Triggers / Custom Events
+Use admin tab **راه‌اندازی** for click-by-click steps, or:
 
-| Event | Where |
-| --- | --- |
-| `page_view` | SPA route changes (not `/admin`) |
-| `link_click` | CTA / outbound / telegram / download / contact |
-| `outbound_click` | external links |
-| `file_download` | file / `download` links |
-| `login` / `sign_up` | OTP + Telegram link success |
-| `generate_lead` | footer newsletter |
-| `view_item` / `add_to_cart` / `begin_checkout` / `purchase` | shop |
-| `scroll` | 75% depth once per path |
+1. **Variables** — Data Layer: `page_path`, `page_title`, `page_location`, `page_type`, `user_id`, `user_status`, `utm_source`, `utm_medium`, `utm_campaign`, `utm_content`, `utm_term`, `gclid`, `fbclid`, `click_*` …
+2. **Triggers** — Custom Event per `page_view`, `link_click`, `login`, `sign_up`, `purchase`, …
+3. **Tags** — GA4 Configuration (Send page view = False) + GA4 Event tags + Conversion Linker (All Pages)
 
 Shared catalog: `packages/shared/src/gtm-contract.ts`.
 
-## Create inside GTM UI
-
-1. **Variables** — Data Layer Variables for the keys above; optional Constant/DL for GA4 Measurement ID.
-2. **Triggers** — Custom Event triggers matching each event name (`page_view`, `login`, …).
-3. **Tags** (require a real Measurement ID — use `PLACEHOLDER_G-XXXXXXXX` until `VITE_GA4_MEASUREMENT_ID` exists):
-   - GA4 Configuration (do **not** auto-send page_view if you use the SPA `page_view` event tag)
-   - GA4 Event tags for `page_view` + other Custom Events
-   - Conversion Linker (All Pages)
-4. Exclude `/admin` via exception triggers if needed (site already skips admin).
-
-## Env
+## Verify
 
 ```bash
-VITE_GTM_ID=GTM-KQPJT9Q4
-GTM_ID=GTM-KQPJT9Q4
-# VITE_GA4_MEASUREMENT_ID=G-XXXXXXXX   # optional — do not invent
+# sample UTM collect
+curl -sS -X POST https://petdate.ir/api/analytics/collect \
+  -H 'Content-Type: application/json' -H 'CF-IPCountry: IR' \
+  -d '{"sessionId":"verify-sess-0001","path":"/shop","referrer":"https://t.me/x","utmSource":"telegram","utmMedium":"social","utmCampaign":"verify","language":"fa-IR","screenW":390,"userAgent":"Mozilla/5.0 (iPhone)","eventType":"pageview"}'
+
+# admin → آنالیتیکس: ترافیک روزانه / صفحات پربازدید / نشست‌های اخیر باید پر باشد
 ```
-
-## Deep links
-
-- [Google Tag Manager](https://tagmanager.google.com/) — search container `GTM-KQPJT9Q4`
-- [Tag Assistant](https://tagassistant.google.com/)
-- [Clarity](https://clarity.microsoft.com/projects/view/ygkl5nck6k/)

@@ -14,10 +14,31 @@ const collectLimit = rateLimit({
   message: 'تعداد رویدادهای آنالیتیکس زیاد است.',
 });
 
-function countryFromReq(req: { headers: Record<string, unknown> }): string | null {
-  const cf = req.headers['cf-ipcountry'];
-  if (typeof cf === 'string' && cf.trim() && cf.trim().toUpperCase() !== 'XX') {
-    return cf.trim().toUpperCase().slice(0, 8);
+/** Prefer edge geo headers (Cloudflare / common CDN) when nginx forwards them. */
+export function countryFromReq(req: { headers: Record<string, unknown> }): string | null {
+  const headers = req.headers;
+  const candidates = [
+    headers['cf-ipcountry'],
+    headers['CF-IPCountry'],
+    headers['x-country-code'],
+    headers['x-vercel-ip-country'],
+    headers['cloudfront-viewer-country'],
+    headers['x-appengine-country'],
+  ];
+  for (const raw of candidates) {
+    const v = Array.isArray(raw) ? raw[0] : raw;
+    if (typeof v !== 'string') continue;
+    const t = v.trim().toUpperCase();
+    if (!t || t === 'XX' || t === 'ZZ' || t === 'T1') continue;
+    if (/^[A-Z]{2}$/.test(t) || t === 'IR') return t.slice(0, 8);
+  }
+  return null;
+}
+
+function strField(body: Record<string, unknown>, ...keys: string[]): string | null {
+  for (const k of keys) {
+    const v = body[k];
+    if (typeof v === 'string' && v.trim()) return v;
   }
   return null;
 }
@@ -35,9 +56,13 @@ analyticsRouter.post('/collect', collectLimit, (req, res) => {
       path: typeof body.path === 'string' ? body.path : '/',
       title: typeof body.title === 'string' ? body.title : null,
       referrer: typeof body.referrer === 'string' ? body.referrer : null,
-      utmSource: typeof body.utmSource === 'string' ? body.utmSource : null,
-      utmMedium: typeof body.utmMedium === 'string' ? body.utmMedium : null,
-      utmCampaign: typeof body.utmCampaign === 'string' ? body.utmCampaign : null,
+      utmSource: strField(body, 'utmSource', 'utm_source'),
+      utmMedium: strField(body, 'utmMedium', 'utm_medium'),
+      utmCampaign: strField(body, 'utmCampaign', 'utm_campaign'),
+      utmContent: strField(body, 'utmContent', 'utm_content'),
+      utmTerm: strField(body, 'utmTerm', 'utm_term'),
+      gclid: strField(body, 'gclid'),
+      fbclid: strField(body, 'fbclid'),
       language: typeof body.language === 'string' ? body.language : null,
       screenW: typeof body.screenW === 'number' ? body.screenW : null,
       screenH: typeof body.screenH === 'number' ? body.screenH : null,

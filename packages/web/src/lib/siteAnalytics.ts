@@ -70,7 +70,134 @@ export type GtmLinkClickPayload = {
 type DataLayerWindow = Window & { dataLayer?: unknown[] };
 
 const SESSION_KEY = 'pd_analytics_sid';
+const UTM_STORAGE_KEY = 'pd_analytics_utm_v1';
 const AUTH_STORAGE_KEY = 'petdate_web_auth_v1';
+
+export type UtmAttribution = {
+  utmSource: string | null;
+  utmMedium: string | null;
+  utmCampaign: string | null;
+  utmContent: string | null;
+  utmTerm: string | null;
+  gclid: string | null;
+  fbclid: string | null;
+};
+
+function emptyUtm(): UtmAttribution {
+  return {
+    utmSource: null,
+    utmMedium: null,
+    utmCampaign: null,
+    utmContent: null,
+    utmTerm: null,
+    gclid: null,
+    fbclid: null,
+  };
+}
+
+/** Parse utm_* + click ids from a query string (first-touch persistence). */
+export function parseUtmFromSearch(search: string): UtmAttribution {
+  try {
+    const q = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search);
+    return {
+      utmSource: q.get('utm_source'),
+      utmMedium: q.get('utm_medium'),
+      utmCampaign: q.get('utm_campaign'),
+      utmContent: q.get('utm_content'),
+      utmTerm: q.get('utm_term'),
+      gclid: q.get('gclid'),
+      fbclid: q.get('fbclid'),
+    };
+  } catch {
+    return emptyUtm();
+  }
+}
+
+function utmHasValue(u: UtmAttribution): boolean {
+  return Boolean(
+    u.utmSource || u.utmMedium || u.utmCampaign || u.utmContent || u.utmTerm || u.gclid || u.fbclid,
+  );
+}
+
+function readStoredUtm(): UtmAttribution {
+  try {
+    const raw = sessionStorage.getItem(UTM_STORAGE_KEY);
+    if (!raw) return emptyUtm();
+    const parsed = JSON.parse(raw) as Partial<UtmAttribution>;
+    return {
+      utmSource: typeof parsed.utmSource === 'string' ? parsed.utmSource : null,
+      utmMedium: typeof parsed.utmMedium === 'string' ? parsed.utmMedium : null,
+      utmCampaign: typeof parsed.utmCampaign === 'string' ? parsed.utmCampaign : null,
+      utmContent: typeof parsed.utmContent === 'string' ? parsed.utmContent : null,
+      utmTerm: typeof parsed.utmTerm === 'string' ? parsed.utmTerm : null,
+      gclid: typeof parsed.gclid === 'string' ? parsed.gclid : null,
+      fbclid: typeof parsed.fbclid === 'string' ? parsed.fbclid : null,
+    };
+  } catch {
+    return emptyUtm();
+  }
+}
+
+function writeStoredUtm(u: UtmAttribution): void {
+  try {
+    sessionStorage.setItem(UTM_STORAGE_KEY, JSON.stringify(u));
+  } catch {
+    /* ignore */
+  }
+  try {
+    // 90-day first-party cookie backup (SameSite=Lax) for attribution across tabs.
+    const maxAge = 90 * 24 * 60 * 60;
+    document.cookie = `${UTM_STORAGE_KEY}=${encodeURIComponent(JSON.stringify(u))};path=/;max-age=${maxAge};SameSite=Lax`;
+  } catch {
+    /* ignore */
+  }
+}
+
+function readCookieUtm(): UtmAttribution {
+  try {
+    const parts = document.cookie.split(';');
+    for (const part of parts) {
+      const [k, ...rest] = part.trim().split('=');
+      if (k !== UTM_STORAGE_KEY) continue;
+      const parsed = JSON.parse(decodeURIComponent(rest.join('='))) as Partial<UtmAttribution>;
+      return {
+        utmSource: typeof parsed.utmSource === 'string' ? parsed.utmSource : null,
+        utmMedium: typeof parsed.utmMedium === 'string' ? parsed.utmMedium : null,
+        utmCampaign: typeof parsed.utmCampaign === 'string' ? parsed.utmCampaign : null,
+        utmContent: typeof parsed.utmContent === 'string' ? parsed.utmContent : null,
+        utmTerm: typeof parsed.utmTerm === 'string' ? parsed.utmTerm : null,
+        gclid: typeof parsed.gclid === 'string' ? parsed.gclid : null,
+        fbclid: typeof parsed.fbclid === 'string' ? parsed.fbclid : null,
+      };
+    }
+  } catch {
+    /* ignore */
+  }
+  return emptyUtm();
+}
+
+/**
+ * First-touch UTM: capture from URL on landing, persist for the session (and cookie),
+ * return attribution for every collect / dataLayer push.
+ */
+export function captureAndReadUtm(search?: string): UtmAttribution {
+  if (typeof window === 'undefined') return emptyUtm();
+  const fromUrl = parseUtmFromSearch(
+    search ?? (typeof window !== 'undefined' ? window.location.search : ''),
+  );
+  if (utmHasValue(fromUrl)) {
+    writeStoredUtm(fromUrl);
+    return fromUrl;
+  }
+  const stored = readStoredUtm();
+  if (utmHasValue(stored)) return stored;
+  const cookie = readCookieUtm();
+  if (utmHasValue(cookie)) {
+    writeStoredUtm(cookie);
+    return cookie;
+  }
+  return emptyUtm();
+}
 
 function apiBase(): string {
   return (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ?? '';
@@ -240,19 +367,6 @@ function getSessionId(): string {
   }
 }
 
-function readUtm(): { utmSource: string | null; utmMedium: string | null; utmCampaign: string | null } {
-  try {
-    const q = new URLSearchParams(window.location.search);
-    return {
-      utmSource: q.get('utm_source'),
-      utmMedium: q.get('utm_medium'),
-      utmCampaign: q.get('utm_campaign'),
-    };
-  } catch {
-    return { utmSource: null, utmMedium: null, utmCampaign: null };
-  }
-}
-
 /** Ensure `window.dataLayer` exists before any GTM push / script insert. */
 export function ensureDataLayer(): unknown[] {
   if (typeof window === 'undefined') return [];
@@ -329,10 +443,12 @@ export function buildGtmPageViewPayload(input: {
   title?: string | null;
   locationHref?: string | null;
   user?: PublicUserContext | null;
-}): GtmPageViewPayload {
+  utm?: UtmAttribution | null;
+}): GtmPageViewPayload & Record<string, unknown> {
   const path = (input.path.split('?')[0] || '/').trim() || '/';
   const normalized = path.startsWith('/') ? path : `/${path}`;
   const user = input.user || { user_id: null, user_status: 'guest' as const };
+  const utm = input.utm || emptyUtm();
   return {
     event: 'page_view',
     page_path: normalized,
@@ -341,6 +457,13 @@ export function buildGtmPageViewPayload(input: {
     page_type: inferPageType(normalized),
     user_id: user.user_id,
     user_status: user.user_status,
+    utm_source: utm.utmSource,
+    utm_medium: utm.utmMedium,
+    utm_campaign: utm.utmCampaign,
+    utm_content: utm.utmContent,
+    utm_term: utm.utmTerm,
+    gclid: utm.gclid,
+    fbclid: utm.fbclid,
   };
 }
 
@@ -453,7 +576,7 @@ function beaconCollect(input: {
   const path = (input.path || window.location.pathname).split('?')[0] || '/';
   if (path.startsWith('/admin')) return;
 
-  const utm = readUtm();
+  const utm = captureAndReadUtm();
   const payload = {
     sessionId: getSessionId(),
     path,
@@ -666,12 +789,14 @@ function pushGtmVirtualPageview(pathname: string): void {
   if (lastGtmPagePath === dedupeKey) return;
   lastGtmPagePath = dedupeKey;
   scrollMarkedPath = null;
+  const utm = captureAndReadUtm(search || window.location.search);
   pushDataLayer(
     buildGtmPageViewPayload({
       path,
       title: typeof document !== 'undefined' ? document.title : path,
       locationHref: window.location.href,
       user: readPublicUserContext(),
+      utm,
     }),
   );
 }
