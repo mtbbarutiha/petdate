@@ -35,6 +35,9 @@ npx tsx "$ROOT/packages/web/src/lib/share.selftest.ts"
 echo "==> selftest: web admin Jalali date helpers"
 npx tsx "$ROOT/packages/web/src/admin/JalaliDateSelect.selftest.ts"
 
+echo "==> selftest: admin wordmark uses لوگو مادر (not PD initials)"
+npx tsx "$ROOT/packages/web/src/admin/adminWordmark.selftest.ts"
+
 echo "==> selftest: web admin analytics path labels"
 npx tsx "$ROOT/packages/web/src/admin/analyticsPathLabel.selftest.ts"
 
