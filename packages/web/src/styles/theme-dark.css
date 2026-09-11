@@ -1077,9 +1077,69 @@ html[data-theme='dark'] .pepito-wallet-tx {
   background: var(--pepito-white);
   border-color: var(--pd-border);
 }
+/*
+ * Wallet «تراکنش‌ها» rows kept rgba(255,255,255,…) while ink remapped to
+ * light-on-dark → unreadable titles/timestamps. Elevate rows; keep ± colors
+ * and credit/debit edge strips.
+ */
+html[data-theme='dark'] .pepito-wallet-tx-row {
+  background: var(--pd-surface-2);
+  border-color: var(--pd-border);
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-wallet-tx-label {
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-wallet-tx-meta,
+html[data-theme='dark'] .pepito-wallet-tx-unit,
+html[data-theme='dark'] .pepito-wallet-tx-empty,
+html[data-theme='dark'] .pepito-wallet-tx-lead {
+  color: var(--pepito-muted);
+}
+html[data-theme='dark'] .pepito-wallet-tx-head h2 {
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-wallet-tx-mark {
+  background: color-mix(in srgb, var(--pepito-base) 18%, var(--pd-surface-2));
+  color: var(--pepito-base);
+}
+html[data-theme='dark'] .pepito-wallet-tx-row--credit {
+  border-inline-start-color: #15cca0;
+}
+html[data-theme='dark'] .pepito-wallet-tx-row--debit {
+  border-inline-start-color: #db5a5a;
+}
+html[data-theme='dark'] .pepito-wallet-tx-delta--credit {
+  color: #2dd4b0;
+}
+html[data-theme='dark'] .pepito-wallet-tx-delta--debit {
+  color: #f07178;
+}
 html[data-theme='dark'] .pepito-wallet-tg {
   background: var(--pepito-white);
   border-color: var(--pd-border);
+}
+/* Same wallet page: buy-package tiles also used hard white mixes */
+html[data-theme='dark'] .pepito-wallet-buy-pkg {
+  background: color-mix(in srgb, var(--pepito-mint) 12%, var(--pd-surface-2));
+  border-color: var(--pd-border);
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-wallet-buy-pkg strong {
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-wallet-buy-pkg span {
+  color: var(--pepito-muted);
+  opacity: 1;
+}
+html[data-theme='dark'] .pepito-wallet-buy-ref input {
+  background: var(--pd-surface-2);
+  border-color: var(--pd-border);
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-wallet-buy-history {
+  color: var(--pepito-muted);
+  opacity: 1;
 }
 
 /* 13) My pets mobile hero */
