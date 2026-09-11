@@ -302,6 +302,34 @@ html[data-theme='dark'] .tg-chat--shell {
   --tg-header-2: #1a1e2a;
 }
 
+/* Chats empty pane: match shell tokens (was hardcoded light → light-on-light) */
+html[data-theme='dark'] .tg-chat--empty,
+html[data-theme='dark'] .tg-thread-empty {
+  background:
+    radial-gradient(circle at 20% 10%, rgba(45, 212, 176, 0.14), transparent 42%),
+    radial-gradient(circle at 90% 80%, rgba(59, 184, 245, 0.1), transparent 40%),
+    linear-gradient(160deg, #1a1e2a 0%, #171a24 100%) !important;
+  color: var(--tg-ink);
+}
+html[data-theme='dark'] .tg-thread-empty h2,
+html[data-theme='dark'] .tg-chat-list-empty h2 {
+  color: var(--tg-ink) !important;
+}
+html[data-theme='dark'] .tg-thread-empty p,
+html[data-theme='dark'] .tg-chat-list-empty p {
+  color: var(--tg-muted) !important;
+}
+html[data-theme='dark'] .tg-empty-visual__ring--inner {
+  background: color-mix(in srgb, var(--tg-surface) 92%, var(--pepito-mint));
+}
+html[data-theme='dark'] .tg-empty-visual__paw {
+  color: var(--pepito-mint);
+}
+html[data-theme='dark'] .tg-chat-link-btn {
+  background: rgba(45, 212, 176, 0.16) !important;
+  color: var(--pepito-mint) !important;
+}
+
 html[data-theme='dark'] .tg-chat.tg-chat--shell {
   background:
     radial-gradient(100% 70% at 100% 0%, rgba(59, 184, 245, 0.08), transparent 52%),
