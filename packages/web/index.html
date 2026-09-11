@@ -2,11 +2,25 @@
 <html lang="fa" dir="rtl">
   <head>
     <meta charset="UTF-8" />
+    <!-- Google Tag Manager — must be in initial HTML for Tag Assistant / early tag firing -->
+    <script id="petdate-gtm-html">
+      (function (w, d, s, l, i) {
+        w[l] = w[l] || [];
+        w[l].push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
+        var f = d.getElementsByTagName(s)[0],
+          j = d.createElement(s),
+          dl = l != 'dataLayer' ? '&l=' + l : '';
+        j.async = true;
+        j.src = 'https://www.googletagmanager.com/gtm.js?id=' + i + dl;
+        f.parentNode.insertBefore(j, f);
+      })(window, document, 'script', 'dataLayer', 'GTM-KQPJT9Q4');
+    </script>
+    <!-- End Google Tag Manager -->
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=overlays-content"
     />
-    <!-- deploy marker: registration-ux-role-btn-v1 + ui-audit-fix-v2 + chat composer-fixed-v8 + pd-chat-ui-v2 + pd-panels-ui-v3c + web-perf-v14-pets-sync + wallet-stars-v2 + my-pets-lead-v1 + wallet-folio-v1 -->
+    <!-- deploy marker: registration-ux-role-btn-v1 + ui-audit-fix-v2 + chat composer-fixed-v8 + pd-chat-ui-v2 + pd-panels-ui-v3c + web-perf-v14-pets-sync + wallet-stars-v2 + my-pets-lead-v1 + wallet-folio-v1 + gtm-html-v1 -->
     <meta name="pd-chat-shell" content="composer-fixed-v8" />
     <meta name="pd-chat-ui" content="pd-chat-ui-v2" />
     <meta name="pd-ui-audit" content="ui-audit-fix-v2" />
@@ -165,6 +179,17 @@
     </script>
   </head>
   <body>
+    <!-- Google Tag Manager (noscript) -->
+    <noscript id="petdate-gtm-noscript-html"
+      ><iframe
+        src="https://www.googletagmanager.com/ns.html?id=GTM-KQPJT9Q4"
+        height="0"
+        width="0"
+        style="display: none; visibility: hidden"
+        title="Google Tag Manager"
+      ></iframe
+    ></noscript>
+    <!-- End Google Tag Manager (noscript) -->
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

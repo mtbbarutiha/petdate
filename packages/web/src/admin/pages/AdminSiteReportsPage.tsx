@@ -57,6 +57,7 @@ export function AdminSiteReportsPage() {
   const [data, setData] = useState<Report | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [gtmCopyMsg, setGtmCopyMsg] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true); setError(null);
@@ -68,6 +69,20 @@ export function AdminSiteReportsPage() {
   }, [period]);
 
   useEffect(() => { void load(); }, [load]);
+
+  const copyGtmId = useCallback(async (id: string) => {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(id);
+        setGtmCopyMsg('شناسه کپی شد');
+      } else {
+        setGtmCopyMsg('کپی در این مرورگر پشتیبانی نمی‌شود');
+      }
+    } catch {
+      setGtmCopyMsg('کپی ناموفق بود');
+    }
+    window.setTimeout(() => setGtmCopyMsg(null), 2200);
+  }, []);
 
   const trafficChart = useMemo(
     () => (data?.trafficDaily || []).map((r) => ({ ...r, labelShort: r.label.slice(5) })),
@@ -162,14 +177,34 @@ export function AdminSiteReportsPage() {
             <p className="admin-muted">{data.gtm.note}</p>
             {data.gtm.containerId ? (
               <p className="admin-muted" style={{ marginTop: 6 }}>
-                Container ID: <code dir="ltr">{data.gtm.containerId}</code>
+                Container ID:{' '}
+                <code dir="ltr" style={{ userSelect: 'all' }}>{data.gtm.containerId}</code>
+                {gtmCopyMsg ? (
+                  <span className="admin-muted" style={{ marginInlineStart: 8, fontSize: '0.78rem' }}>{gtmCopyMsg}</span>
+                ) : null}
               </p>
             ) : null}
-            {data.gtm.dashboardUrl ? (
-              <a className="admin-btn admin-btn--primary" href={data.gtm.dashboardUrl} target="_blank" rel="noreferrer">
-                <ExternalLink size={16} /> باز کردن Google Tag Manager
-              </a>
-            ) : null}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
+              {data.gtm.containerId ? (
+                <button
+                  type="button"
+                  className="admin-btn"
+                  onClick={() => void copyGtmId(data.gtm.containerId!)}
+                >
+                  کپی Container ID
+                </button>
+              ) : null}
+              {data.gtm.dashboardUrl ? (
+                <a className="admin-btn admin-btn--primary" href={data.gtm.dashboardUrl} target="_blank" rel="noreferrer">
+                  <ExternalLink size={16} /> باز کردن کانتینر GTM
+                </a>
+              ) : null}
+            </div>
+            <p className="admin-muted" style={{ marginTop: 10, fontSize: '0.75rem' }}>
+              در Tag Manager یک تگ GA4 (یا هر تگ دیگر) با تریگر Custom Event برابر <code dir="ltr">page_view</code>
+              {' '}و <code dir="ltr">link_click</code> بسازید. مسیر حساب داخل URL در دسترس نیست — پس از ورود، کانتینر{' '}
+              <code dir="ltr">{data.gtm.containerId || 'GTM-KQPJT9Q4'}</code> را پیدا کنید.
+            </p>
           </section>
 
           <div className="crm-report-charts">

@@ -13,8 +13,9 @@ import { WelcomePage } from './pages/WelcomePage';
 function SiteAnalyticsListener() {
   const location = useLocation();
   useEffect(() => {
-    trackPageview(location.pathname);
-  }, [location.pathname]);
+    // Include search so UTM landing + SPA query changes still push GTM page_view.
+    trackPageview(`${location.pathname}${location.search}`);
+  }, [location.pathname, location.search]);
   return null;
 }
 
