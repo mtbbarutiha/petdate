@@ -141,6 +141,19 @@ export function getDb(): AppDatabase {
       }
     };
 
+    const bootMagazine = () => {
+      // Always run after schema migrate/init (even if migrateSchema soft-failed mid-way).
+      // Additive only — boot seed-if-empty; deploys must not wipe magazine rows.
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { bootMagazineCms } =
+          require('./magazine-service') as typeof import('./magazine-service');
+        bootMagazineCms();
+      } catch (err) {
+        console.warn('Magazine boot skipped/failed:', (err as Error).message);
+      }
+    };
+
     const usePostgres = isPostgresUrl(process.env.DATABASE_URL);
     if (usePostgres) {
       db = createPgCompatDatabase() as unknown as Database.Database;
@@ -152,6 +165,7 @@ export function getDb(): AppDatabase {
           (err as Error).message
         );
       }
+      bootMagazine();
       seedIfEmpty();
       maybeSeedDemo();
       try {
@@ -170,6 +184,7 @@ export function getDb(): AppDatabase {
       db.pragma('journal_mode = WAL');
       db.pragma('foreign_keys = ON');
       initSchema();
+      bootMagazine();
       seedIfEmpty();
       maybeSeedDemo();
       try {
@@ -1312,16 +1327,13 @@ function migrateSchema() {
     console.warn('CRM demo seed skipped/failed:', (err as Error).message);
   }
 
-  // Magazine / news CMS (additive; never wipe)
+  // Magazine / news CMS (additive; never wipe). Primary boot also calls bootMagazineCms
+  // from getDb() so a mid-migrate throw cannot skip seeding forever.
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { ensureMagazineSchema, seedMagazineSamplesIfEmpty } =
+    const { ensureMagazineSchema } =
       require('./magazine-service') as typeof import('./magazine-service');
     ensureMagazineSchema();
-    const seeded = seedMagazineSamplesIfEmpty();
-    if (seeded > 0) {
-      console.log(`Magazine: seeded ${seeded} sample article(s)`);
-    }
   } catch (err) {
     console.warn('Magazine schema ensure skipped/failed:', (err as Error).message);
   }

@@ -487,16 +487,23 @@ const SAMPLE_SEED: MagazineArticleInput[] = [
   },
 ];
 
-/**
- * Seed 3 sample Persian posts only when the table has zero rows (incl. soft-deleted).
- * Never overwrites existing content.
- */
-export function seedMagazineSamplesIfEmpty(): number {
+/** Total rows including soft-deleted — used by empty-seed guard. */
+export function countMagazineArticles(): number {
   ensureMagazineSchema();
   const row = db()
     .prepare('SELECT COUNT(*) as c FROM magazine_articles')
     .get() as { c: number };
-  if (Number(row?.c || 0) > 0) return 0;
+  return Number(row?.c || 0);
+}
+
+/**
+ * Seed 3 sample Persian posts only when the table has zero rows (incl. soft-deleted).
+ * Never overwrites, updates, or DELETEs existing content.
+ * Deploy / boot paths must call this — never TRUNCATE or DELETE FROM magazine_articles.
+ */
+export function seedMagazineSamplesIfEmpty(): number {
+  ensureMagazineSchema();
+  if (countMagazineArticles() > 0) return 0;
   let created = 0;
   for (const sample of SAMPLE_SEED) {
     try {
@@ -507,4 +514,21 @@ export function seedMagazineSamplesIfEmpty(): number {
     }
   }
   return created;
+}
+
+/**
+ * Additive boot hook for SQLite + Postgres: ensure schema, seed only if empty, always log.
+ * Safe to call multiple times; never wipes magazine_articles.
+ */
+export function bootMagazineCms(): { total: number; seeded: number } {
+  ensureMagazineSchema();
+  const before = countMagazineArticles();
+  const seeded = seedMagazineSamplesIfEmpty();
+  const total = before + seeded;
+  if (seeded > 0) {
+    console.log(`Magazine: seeded ${seeded} sample article(s) (total=${total})`);
+  } else {
+    console.log(`Magazine: ${total} article(s) present (seed skipped — never wipe)`);
+  }
+  return { total, seeded };
 }

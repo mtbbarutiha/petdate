@@ -77,6 +77,8 @@ else
   "$ROOT/scripts/predeploy-check.sh"
 fi
 
+# Data safety: never rsync-delete SQLite/uploads. Postgres magazine_articles is SoT on
+# production — deploys must stay additive (boot seed-if-empty only; never TRUNCATE/DELETE).
 COMMON_EXCLUDES=(
   --exclude node_modules
   --exclude .git
@@ -88,6 +90,7 @@ COMMON_EXCLUDES=(
   --exclude 'packages/api/data/pet-photos'
   --exclude 'packages/api/data/user-avatars'
   --exclude 'packages/api/data/prescriptions'
+  --exclude 'packages/api/data/magazine-images'
   --exclude 'packages/bot/data/sessions.json'
 )
 
