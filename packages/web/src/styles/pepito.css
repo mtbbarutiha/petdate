@@ -39,6 +39,13 @@
   --pepito-container-max: 1220px;
   --pepito-container-pad: 15px;
   /*
+   * Landing section vertical rhythm. Featured sections used to force 120px
+   * top+bottom (240px white gap between neighbors). Keep readable air without
+   * the empty band; mobile is a touch tighter.
+   */
+  --pepito-section-y: 3.5rem;
+  --pepito-section-y-mobile: 2.75rem;
+  /*
    * Side inset matching the content edge of a centered `.container`.
    * `100%` resolves on the element that consumes this via padding-inline.
    */
@@ -216,9 +223,6 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   }
 }
 @media (max-width: 720px) {
-  .pepito-adoption {
-    padding-block: 4.5rem;
-  }
   .pepito-adoption-card {
     aspect-ratio: 1 / 1;
   }
@@ -231,10 +235,6 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   .pepito-adoption-tag {
     margin-inline-end: 0;
     margin-bottom: 0.5rem;
-  }
-
-  .pepito-services-section {
-    padding-block: 4.5rem;
   }
 
   .pepito-btn,
@@ -939,7 +939,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 }
 
 .pepito-section {
-  padding-block: 4.25rem;
+  padding-block: var(--pepito-section-y);
   padding-inline: var(--pepito-gutter-x);
   box-sizing: border-box;
 }
@@ -947,7 +947,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 .pepito-section--lilac { background: linear-gradient(180deg, #fff, var(--pepito-lilac)); }
 .pepito-section-head {
   max-width: 40rem;
-  margin: 0 auto 2.25rem;
+  margin: 0 auto 1.75rem;
   text-align: center;
 }
 .pepito-section-head .pepito-eyebrow {
@@ -969,14 +969,14 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 
 .pepito-services-section {
   background: var(--pepito-soft);
-  padding-block: 120px;
+  padding-block: var(--pepito-section-y);
   overflow: hidden;
 }
 .pepito-section-head--center {
   text-align: center;
   max-width: 720px;
   margin-inline: auto;
-  margin-bottom: 2.5rem;
+  margin-bottom: 1.75rem;
 }
 .pepito-section-head--center .pepito-eyebrow {
   display: inline-flex;
@@ -1230,7 +1230,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 /* White after services (soft gray) — rely section removed; keep stripe rhythm */
 .pepito-adoption {
   background: #fff;
-  padding-block: 120px;
+  padding-block: var(--pepito-section-y);
 }
 .pepito-adoption-grid {
   display: grid;
@@ -1364,7 +1364,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   visibility: visible;
 }
 .pepito-adoption-info {
-  margin-top: 30px;
+  margin-top: 1.25rem;
   text-align: center;
   display: flex;
   flex-wrap: wrap;
@@ -1632,7 +1632,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
     #fdfdfe,
     #ffffff
   );
-  padding-block: 120px;
+  padding-block: var(--pepito-section-y);
   overflow: hidden;
 }
 .pepito-reviews {
@@ -1703,7 +1703,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   color: var(--pepito-muted);
 }
 .pepito-review-trust {
-  margin-top: 2.5rem;
+  margin-top: 1.75rem;
   text-align: center;
   display: flex;
   flex-wrap: wrap;
@@ -1750,7 +1750,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 /* ========== Pepito shop / featured products ========== */
 .pepito-shop {
   background: #fff;
-  padding-block: 120px;
+  padding-block: var(--pepito-section-y);
   overflow: hidden;
 }
 .pepito-shop-grid {
@@ -1878,7 +1878,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
     #fdfdfe,
     #ffffff
   );
-  padding-block: 120px;
+  padding-block: var(--pepito-section-y);
   overflow: hidden;
 }
 .pepito-news-head {
@@ -2592,8 +2592,8 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   }
 }
 @media (max-width: 720px) {
-  .pepito-adoption {
-    padding-block: 4.5rem;
+  :root {
+    --pepito-section-y: var(--pepito-section-y-mobile);
   }
   .pepito-adoption-card {
     aspect-ratio: 1 / 1;
@@ -2626,17 +2626,6 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
     padding: 44px 22px 48px;
   }
 
-  .pepito-services-section {
-    padding-block: 4.5rem;
-  }
-  .pepito-reviews-section {
-    padding-block: 4.5rem;
-  }
-
-  .pepito-shop,
-  .pepito-news {
-    padding-block: 4.5rem;
-  }
   .pepito-news-card {
     flex-basis: min(86%, 320px);
   }
