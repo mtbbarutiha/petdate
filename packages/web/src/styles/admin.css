@@ -367,7 +367,9 @@
   inset: 0;
   background: rgba(44, 44, 44, 0.35);
   border: 0;
-  z-index: 30;
+  /* Below drawer (40) and mobile toggle (50); above main chrome (20). */
+  z-index: 35;
+  cursor: pointer;
 }
 
 .admin-app .admin-page {
@@ -568,21 +570,8 @@
 }
 
 @media (max-width: 768px) {
-  .admin-app .admin-shell {
-    flex-direction: column;
-  }
-  .admin-app .admin-sidebar {
-    width: 100%;
-    height: auto;
-    position: relative;
-  }
-  .admin-app .admin-nav {
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
-  .admin-app .admin-sidebar-foot {
-    display: none;
-  }
+  /* Keep drawer pattern from the 960px breakpoint — do not flatten the
+     sidebar into a static horizontal strip (that broke the hamburger). */
   .admin-app .admin-page {
     padding: 20px 16px;
   }
@@ -1542,20 +1531,37 @@
   }
   .admin-app .admin-icon-btn--mobile { display: inline-flex; }
   .admin-app .admin-icon-btn--desktop { display: none; }
+  /* Off-canvas drawer from inline-start (right in FA/RTL, left in EN/LTR).
+     translateX is physical: hide LTR left drawer with -X, RTL right drawer with +X. */
   .admin-app .admin-sidebar {
     position: fixed;
     inset-block: 0;
     inset-inline-start: 0;
+    inset-inline-end: auto;
     z-index: 40;
-    width: min(280px, 86vw);
-    transform: translateX(110%);
-    transition: transform 0.2s ease;
+    width: min(280px, 86vw) !important;
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transform: translateX(-110%);
+    visibility: hidden;
+    pointer-events: none;
+    transition: transform 0.2s ease, visibility 0.2s ease;
   }
   [dir='rtl'] .admin-app .admin-sidebar {
-    transform: translateX(-110%);
+    transform: translateX(110%);
   }
   .admin-app .admin-sidebar.is-open {
     transform: translateX(0) !important;
+    visibility: visible;
+    pointer-events: auto;
+  }
+  /* Hamburger sits on the same edge as the drawer — keep it above sidebar + backdrop. */
+  .admin-app--nav-open .admin-icon-btn--mobile {
+    position: relative;
+    z-index: 50;
   }
 }
 
