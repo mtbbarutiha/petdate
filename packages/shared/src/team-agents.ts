@@ -19,12 +19,13 @@ export type TeamAgentDef = {
 /** Visual L→R on RTL landing matches reverse of this DOM order. */
 export const TEAM_AGENTS: readonly TeamAgentDef[] = [
   {
-    slug: 'layla-ahmadi',
+    slug: 'faranak-ahmadi',
+    // Keep telegram id so the existing DB synthetic user is patched, not recreated.
     telegramId: 'petdate_ai_layla_ahmadi',
-    name: 'دکتر لایلا احمدی',
+    name: 'فرانک احمدی',
     role: 'مربی',
     kind: 'trainer',
-    avatarUrl: '/agents/layla-ahmadi.jpg',
+    avatarUrl: '/agents/faranak-ahmadi.jpg',
     cardImage: '/pepito/uploads/01-3.jpg',
   },
   {
@@ -56,12 +57,18 @@ export const TEAM_AGENTS: readonly TeamAgentDef[] = [
   },
 ] as const;
 
+/** Old public URLs (`/team-chat/layla-ahmadi`) still resolve. */
+const TEAM_AGENT_SLUG_ALIASES: Record<string, string> = {
+  'layla-ahmadi': 'faranak-ahmadi',
+};
+
 export const DEFAULT_TEAM_AGENT_SLUG = 'leila-kiani';
 
 export function getTeamAgentBySlug(slug: string | null | undefined): TeamAgentDef | null {
   const key = String(slug || '').trim().toLowerCase();
   if (!key) return null;
-  return TEAM_AGENTS.find((a) => a.slug === key) ?? null;
+  const canonical = TEAM_AGENT_SLUG_ALIASES[key] ?? key;
+  return TEAM_AGENTS.find((a) => a.slug === canonical) ?? null;
 }
 
 export function getTeamAgentByTelegramId(telegramId: string | null | undefined): TeamAgentDef | null {

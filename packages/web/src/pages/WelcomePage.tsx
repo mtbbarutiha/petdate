@@ -157,8 +157,8 @@ const PETS = ADOPTION_PETS.map((p) => ({
   details: p.details.slice(0, 3) }));
 
 const TEAM = [
-  // DOM order (RTL): first item is visual-right. Visual L→R = سارا → ساناز → لیلا → لایلا.
-  { slug: 'layla-ahmadi', name: 'دکتر لایلا احمدی', role: 'مربی', img: `${P}/01-3.jpg` },
+  // DOM order (RTL): first item is visual-right. Visual L→R = سارا → ساناز → لیلا → فرانک.
+  { slug: 'faranak-ahmadi', name: 'فرانک احمدی', role: 'مربی', img: `${P}/01-3.jpg` },
   { slug: 'leila-kiani', name: 'دکتر لیلا کیانی', role: 'مربی', img: `${P}/02-3.jpg` },
   { slug: 'sanaz-ghaffari', name: 'دکتر ساناز غفاری', role: 'دامپزشک', img: `${P}/03-3.jpg` },
   { slug: 'sara-nozi', name: 'دکتر سارا نوزی', role: 'دامپزشک', img: `${P}/04-3.jpg` },
