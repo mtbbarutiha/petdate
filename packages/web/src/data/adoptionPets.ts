@@ -2,96 +2,92 @@
 
 const P = '/pepito/uploads';
 
-export type AdoptionDetail = { label: string; value: string };
+export type AdoptionDetail = { labelKey: string; valueKey: string; valueVars?: Record<string, string | number> };
 
 export type AdoptionPet = {
   slug: string;
-  name: string;
+  nameKey: string;
   img: string;
   bannerImg: string;
   gallery: string[];
   details: AdoptionDetail[];
-  about: string;
-  traits: string[];
-  rules: string;
+  aboutKey: string;
+  traitKeys: string[];
+  rulesKey: string;
 };
 
 export const ADOPTION_PETS: AdoptionPet[] = [
   {
     slug: 'missy',
-    name: 'میسی',
+    nameKey: 'adoption.nameMissy',
     img: `${P}/01-2.jpg`,
     bannerImg: `${P}/01-2.jpg`,
     gallery: [`${P}/01-2.jpg`, `${P}/01.jpg`, `${P}/09-2.jpg`],
     details: [
-      { label: 'جنسیت', value: 'ماده' },
-      { label: 'عقیم‌شده', value: 'خیر' },
-      { label: 'سن', value: '۵ سال' },
-      { label: 'نژاد', value: 'میکس' },
-      { label: 'واکسینه‌شده', value: 'بله' },
-      { label: 'اندازه', value: 'متوسط' },
+      { labelKey: 'adoption.labelGender', valueKey: 'adoption.valFemale' },
+      { labelKey: 'adoption.labelNeutered', valueKey: 'adoption.valNo' },
+      { labelKey: 'adoption.labelAge', valueKey: 'adoption.ageYears', valueVars: { n: 5 } },
+      { labelKey: 'adoption.labelBreed', valueKey: 'adoption.valMix' },
+      { labelKey: 'adoption.labelVaccinated', valueKey: 'adoption.valYes' },
+      { labelKey: 'adoption.labelSize', valueKey: 'adoption.valMedium' },
     ],
-    about: 'میسی سگی مهربان و آرام است و آمادهٔ خانهٔ جدیدش!',
-    traits: ['دوستدار سگ‌های دیگر', 'مناسب آپارتمان', 'سازگار با کودکان'],
-    rules:
-      'پذیرش نیازمند بازدید حضوری، تعهد به مراقبت مسئولانه و تکمیل فرم پذیرش است.',
+    aboutKey: 'adoption.aboutMissy',
+    traitKeys: ['adoption.traitDogFriendly', 'adoption.traitApartment', 'adoption.traitKids'],
+    rulesKey: 'adoption.rules',
   },
   {
     slug: 'bella',
-    name: 'بلا',
+    nameKey: 'adoption.nameBella',
     img: `${P}/02-2.jpg`,
     bannerImg: `${P}/02-2.jpg`,
     gallery: [`${P}/02-2.jpg`, `${P}/02.jpg`, `${P}/09-2.jpg`],
     details: [
-      { label: 'جنسیت', value: 'نر' },
-      { label: 'عقیم‌شده', value: 'خیر' },
-      { label: 'سن', value: '۳ سال' },
-      { label: 'نژاد', value: 'میکس' },
-      { label: 'واکسینه‌شده', value: 'بله' },
-      { label: 'اندازه', value: 'بزرگ' },
+      { labelKey: 'adoption.labelGender', valueKey: 'adoption.valMale' },
+      { labelKey: 'adoption.labelNeutered', valueKey: 'adoption.valNo' },
+      { labelKey: 'adoption.labelAge', valueKey: 'adoption.ageYears', valueVars: { n: 3 } },
+      { labelKey: 'adoption.labelBreed', valueKey: 'adoption.valMix' },
+      { labelKey: 'adoption.labelVaccinated', valueKey: 'adoption.valYes' },
+      { labelKey: 'adoption.labelSize', valueKey: 'adoption.valLarge' },
     ],
-    about: 'بلا پرانرژی و وفادار است؛ عاشق بازی و پیاده‌روی طولانی!',
-    traits: ['دوستدار سگ‌های دیگر', 'نیازمند فضای باز', 'سازگار با کودکان'],
-    rules:
-      'پذیرش نیازمند بازدید حضوری، تعهد به مراقبت مسئولانه و تکمیل فرم پذیرش است.',
+    aboutKey: 'adoption.aboutBella',
+    traitKeys: ['adoption.traitDogFriendly', 'adoption.traitOutdoor', 'adoption.traitKids'],
+    rulesKey: 'adoption.rules',
   },
   {
     slug: 'kitty',
-    name: 'کیتی',
+    nameKey: 'adoption.nameKitty',
     img: `${P}/03-2.jpg`,
     bannerImg: `${P}/03-2.jpg`,
     gallery: [`${P}/03-2.jpg`, `${P}/03.jpg`, `${P}/09-2.jpg`],
     details: [
-      { label: 'جنسیت', value: 'ماده' },
-      { label: 'عقیم‌شده', value: 'بله' },
-      { label: 'سن', value: '۲ سال' },
-      { label: 'نژاد', value: 'میکس' },
-      { label: 'واکسینه‌شده', value: 'بله' },
-      { label: 'اندازه', value: 'کوچک' },
+      { labelKey: 'adoption.labelGender', valueKey: 'adoption.valFemale' },
+      { labelKey: 'adoption.labelNeutered', valueKey: 'adoption.valYes' },
+      { labelKey: 'adoption.labelAge', valueKey: 'adoption.ageYears', valueVars: { n: 2 } },
+      { labelKey: 'adoption.labelBreed', valueKey: 'adoption.valMix' },
+      { labelKey: 'adoption.labelVaccinated', valueKey: 'adoption.valYes' },
+      { labelKey: 'adoption.labelSize', valueKey: 'adoption.valSmall' },
     ],
-    about: 'کیتی بازیگوش و کنجکاو است و به‌راحتی با خانواده خو می‌گیرد.',
-    traits: ['دوستدار گربه‌های دیگر', 'مناسب آپارتمان', 'سازگار با کودکان'],
-    rules:
-      'پذیرش نیازمند بازدید حضوری، تعهد به مراقبت مسئولانه و تکمیل فرم پذیرش است.',
+    aboutKey: 'adoption.aboutKitty',
+    traitKeys: ['adoption.traitCatFriendly', 'adoption.traitApartment', 'adoption.traitKids'],
+    rulesKey: 'adoption.rules',
   },
   {
     slug: 'penny',
-    name: 'پنی',
+    nameKey: 'adoption.namePenny',
     img: `${P}/04-2.jpg`,
     bannerImg: `${P}/5.jpg`,
     gallery: [`${P}/adoption.jpg`, `${P}/04-2.jpg`, `${P}/09-2.jpg`],
     details: [
-      { label: 'جنسیت', value: 'نر' },
-      { label: 'عقیم‌شده', value: 'خیر' },
-      { label: 'سن', value: '۱ سال' },
-      { label: 'نژاد', value: 'بیگل' },
-      { label: 'واکسینه‌شده', value: 'بله' },
-      { label: 'اندازه', value: 'متوسط' },
+      { labelKey: 'adoption.labelGender', valueKey: 'adoption.valMale' },
+      { labelKey: 'adoption.labelNeutered', valueKey: 'adoption.valNo' },
+      { labelKey: 'adoption.labelAge', valueKey: 'adoption.ageYears', valueVars: { n: 1 } },
+      { labelKey: 'adoption.labelBreed', valueKey: 'adoption.valBeagle' },
+      { labelKey: 'adoption.labelVaccinated', valueKey: 'adoption.valYes' },
+      { labelKey: 'adoption.labelSize', valueKey: 'adoption.valMedium' },
     ],
-    about: 'پنی سگی بسیار شیرین و فعال است و آمادهٔ خانهٔ جدیدش!',
-    traits: ['دوستدار سگ‌های دیگر', 'مناسب آپارتمان', 'سازگار با کودکان'],
-    rules:
-      'پذیرش نیازمند بازدید حضوری، تعهد به مراقبت مسئولانه و تکمیل فرم پذیرش است.',
+    aboutKey: 'adoption.aboutPenny',
+    traitKeys: ['adoption.traitDogFriendly', 'adoption.traitApartment', 'adoption.traitKids'],
+    rulesKey: 'adoption.rules',
   },
 ];
 

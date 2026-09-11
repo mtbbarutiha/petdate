@@ -3,8 +3,7 @@ import { createPortal } from 'react-dom';
 import { useLocation } from 'react-router-dom';
 import { submitPetPurchaseLead } from '../lib/api';
 import { useAppToast } from '../hooks/useAppToast';
-
-const CTA_LABEL = 'درخواست خرید پت و تماس با مشاور پت دیت با شما';
+import { useI18n } from '../i18n';
 
 type PetPurchaseLeadModalProps = {
   open: boolean;
@@ -13,6 +12,7 @@ type PetPurchaseLeadModalProps = {
 };
 
 export function PetPurchaseLeadModal({ open, onClose, sourcePage }: PetPurchaseLeadModalProps) {
+  const { t, dir } = useI18n();
   const titleId = useId();
   const { toastSuccess, toastError } = useAppToast();
   const [firstName, setFirstName] = useState('');
@@ -23,7 +23,6 @@ export function PetPurchaseLeadModal({ open, onClose, sourcePage }: PetPurchaseL
   const [done, setDone] = useState(false);
 
   // Reset only when the modal opens — do NOT depend on onClose identity.
-  // WelcomePage carousels re-render often; an inline onClose() => … would wipe the form mid-type/submit.
   useEffect(() => {
     if (!open) return;
     setFirstName('');
@@ -58,10 +57,10 @@ export function PetPurchaseLeadModal({ open, onClose, sourcePage }: PetPurchaseL
         sourcePage,
       });
       setDone(true);
-      toastSuccess('درخواست ثبت شد — مشاور پت‌دیت به‌زودی تماس می‌گیرد.');
+      toastSuccess(t('adoption.ctaOk'));
       window.setTimeout(() => onClose(), 900);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'خطا در ثبت درخواست';
+      const msg = err instanceof Error ? err.message : t('adoption.ctaErr');
       setError(msg);
       toastError(msg);
     } finally {
@@ -82,14 +81,14 @@ export function PetPurchaseLeadModal({ open, onClose, sourcePage }: PetPurchaseL
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        dir="rtl"
+        dir={dir}
       >
         <header className="pepito-lead-modal__head">
-          <h2 id={titleId}>درخواست خرید پت</h2>
+          <h2 id={titleId}>{t('adoption.modalTitle')}</h2>
           <button
             type="button"
             className="pepito-lead-modal__close"
-            aria-label="بستن"
+            aria-label={t('adoption.close')}
             onClick={onClose}
             disabled={busy}
           >
@@ -98,20 +97,16 @@ export function PetPurchaseLeadModal({ open, onClose, sourcePage }: PetPurchaseL
         </header>
         {done ? (
           <div className="pepito-lead-modal__body">
-            <p className="pepito-lead-modal__success">
-              درخواست شما ثبت شد. مشاور پت‌دیت به‌زودی با شما تماس می‌گیرد.
-            </p>
+            <p className="pepito-lead-modal__success">{t('adoption.modalOkBody')}</p>
             <button type="button" className="pepito-btn" onClick={onClose}>
-              باشه
+              {t('adoption.modalOk')}
             </button>
           </div>
         ) : (
           <form className="pepito-lead-modal__body" onSubmit={(e) => void submit(e)}>
-            <p className="pepito-lead-modal__lead">
-              نام، نام خانوادگی و شماره موبایل را وارد کنید تا مشاور پت‌دیت با شما تماس بگیرد.
-            </p>
+            <p className="pepito-lead-modal__lead">{t('adoption.modalLead')}</p>
             <label className="pepito-lead-modal__field">
-              <span>نام</span>
+              <span>{t('adoption.firstName')}</span>
               <input
                 required
                 autoComplete="given-name"
@@ -121,7 +116,7 @@ export function PetPurchaseLeadModal({ open, onClose, sourcePage }: PetPurchaseL
               />
             </label>
             <label className="pepito-lead-modal__field">
-              <span>نام خانوادگی</span>
+              <span>{t('adoption.lastName')}</span>
               <input
                 required
                 autoComplete="family-name"
@@ -131,7 +126,7 @@ export function PetPurchaseLeadModal({ open, onClose, sourcePage }: PetPurchaseL
               />
             </label>
             <label className="pepito-lead-modal__field">
-              <span>شماره موبایل</span>
+              <span>{t('adoption.mobile')}</span>
               <input
                 required
                 inputMode="tel"
@@ -146,10 +141,10 @@ export function PetPurchaseLeadModal({ open, onClose, sourcePage }: PetPurchaseL
             {error ? <p className="pepito-lead-modal__error">{error}</p> : null}
             <div className="pepito-lead-modal__actions">
               <button type="submit" className="pepito-btn" disabled={busy}>
-                {busy ? 'در حال ارسال…' : 'ثبت درخواست'}
+                {busy ? t('adoption.sending') : t('adoption.submit')}
               </button>
               <button type="button" className="pepito-btn pepito-btn--ghost" onClick={onClose} disabled={busy}>
-                انصراف
+                {t('common.cancel')}
               </button>
             </div>
           </form>
@@ -162,6 +157,7 @@ export function PetPurchaseLeadModal({ open, onClose, sourcePage }: PetPurchaseL
 
 /** Pepito adoption CTA strip: purchase-consult lead button only (adopting tag removed). */
 export function AdoptionPurchaseCta() {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const location = useLocation();
   const onClose = useCallback(() => setOpen(false), []);
@@ -177,7 +173,7 @@ export function AdoptionPurchaseCta() {
           <span className="pepito-btn-icon" aria-hidden>
             <i className="flaticon-pawprint-4" />
           </span>
-          {CTA_LABEL}
+          {t('adoption.ctaLead')}
         </button>
       </div>
       <PetPurchaseLeadModal
@@ -191,11 +187,12 @@ export function AdoptionPurchaseCta() {
 
 export function PetPurchaseLeadButton({
   className = 'pepito-btn button-1',
-  label = CTA_LABEL,
+  label,
 }: {
   className?: string;
   label?: string;
 }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const location = useLocation();
   const onClose = useCallback(() => setOpen(false), []);
@@ -205,7 +202,7 @@ export function PetPurchaseLeadButton({
         <span className="pepito-btn-icon" aria-hidden>
           <i className="flaticon-pawprint-4" />
         </span>
-        {label}
+        {label ?? t('adoption.ctaLead')}
       </button>
       <PetPurchaseLeadModal
         open={open}
