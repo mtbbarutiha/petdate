@@ -168,6 +168,12 @@ export function getDb(): AppDatabase {
           (err as Error).message
         );
       }
+      // Additive catalog upsert — must run on Postgres too (not only SQLite initSchema).
+      try {
+        seedSpeciesCatalog();
+      } catch (err) {
+        console.warn('species/breed catalog seed skipped/failed:', (err as Error).message);
+      }
       bootMagazine();
       seedIfEmpty();
       maybeSeedDemo();
