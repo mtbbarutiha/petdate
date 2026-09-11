@@ -115,7 +115,7 @@ export function LandingChrome({
             <Link to="/adoption">پذیرش</Link>
             <Link to="/shop">پت شاپ</Link>
             <Link to="/vet-consult">دامپزشک</Link>
-            <Link to="/faq">سؤالات</Link>
+            <Link to="/faq" className="pepito-nav-faq">سؤالات</Link>
           </nav>
         )}
 
