@@ -1036,3 +1036,266 @@ html[data-theme='dark'] .pepito-review-body h3,
 html[data-theme='dark'] .pepito-review-body p {
   color: var(--pepito-dark);
 }
+
+/* —— Pass 4: logged-in app shell (kill leftover white canvases) —— */
+
+/* Main content plane was hardcoded #fff — light ink on white */
+html[data-theme='dark'] .pepito-app-shell {
+  background: var(--pepito-soft);
+}
+html[data-theme='dark'] .pepito-app-main {
+  background:
+    radial-gradient(640px 260px at 100% 0%, rgba(168, 154, 212, 0.1), transparent 55%),
+    radial-gradient(520px 220px at 0% 12%, rgba(59, 184, 245, 0.06), transparent 50%),
+    var(--pepito-soft);
+}
+html[data-theme='dark'] .pepito-app-rail {
+  background: linear-gradient(180deg, #242836 0%, #1e2230 100%);
+  border-inline-end-color: var(--pd-border);
+}
+html[data-theme='dark'] .pepito-app-shell--chat,
+html[data-theme='dark'] .pepito-app-shell:has(.tg-chat),
+html[data-theme='dark'] .pepito-app-shell:has(.pepito-support-chat) {
+  background: #171a24;
+}
+
+/* Home hub — action cards used rgba(255,255,255,…) */
+html[data-theme='dark'] .pepito-home-action {
+  background: color-mix(in srgb, var(--pepito-white) 88%, transparent);
+  border-color: var(--pd-border);
+  box-shadow: var(--pd-shadow);
+}
+html[data-theme='dark'] .pepito-home-action:hover {
+  background: var(--pepito-white);
+  border-color: color-mix(in srgb, var(--pepito-base) 40%, var(--pd-border));
+}
+html[data-theme='dark'] .pepito-home-action strong {
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-home-action span {
+  color: var(--pepito-muted);
+}
+html[data-theme='dark'] .pepito-home-section-head h2 {
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-home-section-head > p {
+  color: var(--pepito-muted);
+}
+
+/* Invite friends — pale peach + remapped light ink = invisible */
+html[data-theme='dark'] .pepito-invite-card {
+  background:
+    linear-gradient(145deg, rgba(253, 150, 30, 0.14), rgba(168, 154, 212, 0.1)),
+    var(--pepito-white);
+  border-color: var(--pd-border);
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-invite-card h2,
+html[data-theme='dark'] .pepito-invite-card h3,
+html[data-theme='dark'] .pepito-invite-card strong {
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-invite-card p,
+html[data-theme='dark'] .pepito-invite-card span {
+  color: var(--pepito-muted);
+}
+html[data-theme='dark'] .pepito-invite-link {
+  background: color-mix(in srgb, var(--pepito-soft) 70%, transparent);
+  border-color: var(--pd-border);
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-wallet-page--folio .pepito-invite-card {
+  background:
+    linear-gradient(160deg, rgba(42, 47, 61, 0.95), rgba(36, 40, 54, 0.98));
+  border-color: color-mix(in srgb, var(--pepito-orange) 35%, var(--pd-border));
+}
+
+/* My pets — empty state + mobile hero !important wash */
+html[data-theme='dark'] .pepito-my-pets-empty {
+  background:
+    radial-gradient(120% 80% at 50% 0%, rgba(168, 154, 212, 0.12), transparent 55%),
+    var(--pepito-white);
+  border-color: var(--pd-border);
+}
+html[data-theme='dark'] .pepito-my-pets-count {
+  color: var(--pepito-muted);
+}
+@media (max-width: 859px) {
+  html[data-theme='dark'] .pepito-my-pets-hero {
+    background:
+      linear-gradient(180deg, rgba(229, 168, 216, 0.14) 0%, transparent 42%),
+      radial-gradient(ellipse 75% 70% at 12% 0%, rgba(229, 168, 216, 0.16), transparent 55%),
+      radial-gradient(ellipse 55% 55% at 95% 35%, rgba(59, 184, 245, 0.12), transparent 50%),
+      linear-gradient(160deg, #1e2230 0%, #242836 55%, #2a2740 100%) !important;
+  }
+  html[data-theme='dark'] .pepito-wallet-hero {
+    background:
+      linear-gradient(180deg, rgba(253, 150, 30, 0.12) 0%, transparent 42%),
+      linear-gradient(125deg, rgba(45, 40, 70, 0.95) 0%, rgba(30, 34, 48, 0.95) 45%, rgba(36, 40, 54, 0.98) 100%),
+      linear-gradient(180deg, #1e2230, #1a1d27) !important;
+  }
+  html[data-theme='dark'] .pepito-vet-hero {
+    background:
+      linear-gradient(180deg, rgba(45, 212, 176, 0.14) 0%, transparent 42%),
+      radial-gradient(ellipse 80% 70% at 15% 0%, rgba(45, 212, 176, 0.16), transparent 55%),
+      radial-gradient(ellipse 60% 50% at 90% 30%, rgba(59, 184, 245, 0.12), transparent 50%),
+      linear-gradient(165deg, #1a2422 0%, #1e2230 55%, #242836 100%) !important;
+  }
+}
+
+/* Vet / trainer desk — hero was light mint/lilac + remapped light ink */
+html[data-theme='dark'] .pepito-vet-hero {
+  background:
+    radial-gradient(ellipse 80% 70% at 15% 0%, rgba(45, 212, 176, 0.16), transparent 55%),
+    radial-gradient(ellipse 60% 50% at 90% 30%, rgba(59, 184, 245, 0.12), transparent 50%),
+    linear-gradient(165deg, #1a2422 0%, #1e2230 55%, #242836 100%);
+}
+html[data-theme='dark'] .pepito-vet-hero-wash {
+  background: linear-gradient(180deg, transparent 20%, rgba(26, 29, 39, 0.55) 100%);
+}
+html[data-theme='dark'] .pepito-vet-hero-inner h1,
+html[data-theme='dark'] .pepito-vet-consult-head h1 {
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-vet-lead,
+html[data-theme='dark'] .pepito-vet-consult-hint,
+html[data-theme='dark'] .pepito-vet-consult-status,
+html[data-theme='dark'] .pepito-vet-consult-wait,
+html[data-theme='dark'] .pepito-vet-consult-connected {
+  color: var(--pepito-muted);
+}
+html[data-theme='dark'] .pepito-vet-inbox-panel,
+html[data-theme='dark'] .pepito-vet-inbox-panel--incoming {
+  background:
+    radial-gradient(120% 80% at 0% 0%, rgba(59, 184, 245, 0.08), transparent 55%),
+    var(--pepito-white);
+  border-color: var(--pd-border);
+  box-shadow: var(--pd-shadow);
+}
+html[data-theme='dark'] .pepito-vet-inbox-head h2 {
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-vet-online-card,
+html[data-theme='dark'] .pepito-vet-online-card.is-online,
+html[data-theme='dark'] .pepito-vet-online-card.is-offline {
+  background:
+    radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--pepito-base) 14%, transparent), transparent 55%),
+    var(--pepito-white);
+  border-color: var(--pd-border);
+  box-shadow: var(--pd-shadow);
+}
+html[data-theme='dark'] .pepito-vet-online-card.is-online {
+  border-color: color-mix(in srgb, var(--pepito-mint) 40%, var(--pd-border));
+  background:
+    radial-gradient(130% 100% at 100% 0%, color-mix(in srgb, var(--pepito-mint) 16%, transparent), transparent 58%),
+    var(--pepito-white);
+}
+html[data-theme='dark'] .pepito-vet-fee-panel,
+html[data-theme='dark'] .pepito-vet-consult-panel,
+html[data-theme='dark'] .pepito-vet-connect-panel,
+html[data-theme='dark'] .pepito-vet-online-list {
+  background:
+    radial-gradient(120% 80% at 100% 0%, color-mix(in srgb, var(--pepito-mint) 10%, transparent), transparent 55%),
+    var(--pepito-white);
+  border-color: var(--pd-border);
+  box-shadow: var(--pd-shadow);
+  color: var(--pepito-dark);
+}
+
+/* Role switcher — inactive pills were #faf9fc + light ink */
+html[data-theme='dark'] .pepito-role-switch-item {
+  background: #2a2f3d;
+  border-color: var(--pd-border);
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-role-switch-item:hover {
+  background: #32384a;
+  border-color: color-mix(in srgb, var(--pepito-base) 35%, var(--pd-border));
+}
+html[data-theme='dark'] .pepito-role-switch-item.is-active {
+  background: linear-gradient(135deg, #5c4d91, #4a3d78);
+  border-color: transparent;
+  color: #f4f3f8;
+}
+html[data-theme='dark'] .pepito-role-switch-add-card {
+  background: #2a2f3d;
+  border-color: var(--pd-border);
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-role-switch-add-card.is-on {
+  background: linear-gradient(135deg, #5c4d91, #4a3d78);
+  border-color: transparent;
+  color: #f4f3f8;
+}
+html[data-theme='dark'] .pepito-role-switch-panel {
+  background: #242836;
+  border-color: var(--pd-border);
+  box-shadow: var(--pd-shadow);
+}
+html[data-theme='dark'] .pepito-nav-profile-role-slot .pepito-role-switch-trigger {
+  background: #2a2f3d;
+  border-color: var(--pd-border);
+}
+html[data-theme='dark'] .pepito-role-board-add-item {
+  background: #2a2f3d;
+  border-color: var(--pd-border);
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-role-board-add-item.is-on {
+  background: color-mix(in srgb, var(--pepito-base) 18%, #2a2f3d);
+  border-color: var(--pepito-base);
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-role-board-item:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--pepito-base) 12%, transparent);
+}
+html[data-theme='dark'] .pepito-role-board-item.is-active {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--pepito-base) 18%, transparent) 0%,
+    transparent 100%
+  );
+}
+html[data-theme='dark'] [dir='rtl'] .pepito-role-board-item.is-active {
+  background: linear-gradient(
+    270deg,
+    color-mix(in srgb, var(--pepito-base) 18%, transparent) 0%,
+    transparent 100%
+  );
+}
+
+/* Support AI chat — white chrome + grey bubbles while input went dark */
+html[data-theme='dark'] .pepito-support-chat {
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-support-head h1 {
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-support-head p,
+html[data-theme='dark'] .pepito-support-gate {
+  color: var(--pepito-muted);
+}
+html[data-theme='dark'] .pepito-support-head .tg-icon-btn {
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-support-bubble.is-assistant {
+  background: #2a2f3d;
+  color: var(--pepito-dark);
+  border: 1px solid var(--pd-border);
+}
+html[data-theme='dark'] .pepito-support-bubble.is-user {
+  background: #4c1d95;
+  color: #f4f3f8;
+}
+html[data-theme='dark'] .pepito-support-composer {
+  background: color-mix(in srgb, var(--pepito-soft) 92%, transparent);
+}
+html[data-theme='dark'] .pepito-support-composer input {
+  background: #1e2230;
+  border-color: var(--pd-border);
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-support-composer input::placeholder {
+  color: var(--pepito-muted);
+  opacity: 1;
+}

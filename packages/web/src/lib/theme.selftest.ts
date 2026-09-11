@@ -61,6 +61,16 @@ assert.match(darkCss, /\.pepito-my-pets-hero/, 'my-pets hero remapped');
 assert.match(darkCss, /\.pd-shop-dk-cats/, 'shop categories remapped');
 assert.match(darkCss, /\.pepito-reviews-section/, 'reviews section remapped');
 
+/* Pass 4: logged-in app shell — no leftover white canvases */
+assert.match(darkCss, /\.pepito-app-main\b/, 'app main canvas remapped');
+assert.match(darkCss, /\.pepito-home-action\b/, 'home action cards remapped');
+assert.match(darkCss, /\.pepito-vet-hero\b/, 'vet/trainer hero remapped');
+assert.match(darkCss, /\.pepito-invite-card\b/, 'invite friends card remapped');
+assert.match(darkCss, /\.pepito-role-switch-item\b/, 'role switch pills remapped');
+assert.match(darkCss, /\.pepito-support-bubble\.is-assistant/, 'support chat bubbles remapped');
+assert.match(darkCss, /\.pepito-support-composer input/, 'support composer remapped');
+assert.match(darkCss, /\.pepito-vet-inbox-panel--incoming/, 'vet inbox panels remapped');
+
 const toggle = readFileSync(join(root, 'src/components/ThemeToggle.tsx'), 'utf8');
 assert.match(toggle, /toggleTheme|setTheme/, 'ThemeToggle mutates theme');
 assert.match(toggle, /aria-label/, 'ThemeToggle accessible');
