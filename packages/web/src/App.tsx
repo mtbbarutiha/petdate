@@ -147,6 +147,9 @@ const AdminMonitoringPage = lazy(() =>
 const AdminSiteReportsPage = lazy(() =>
   import('./admin/pages/AdminSiteReportsPage').then((m) => ({ default: m.AdminSiteReportsPage })),
 );
+const AdminTagManagerPage = lazy(() =>
+  import('./admin/pages/AdminTagManagerPage').then((m) => ({ default: m.AdminTagManagerPage })),
+);
 const AdminConsultsPage = lazy(() =>
   import('./admin/pages/AdminConsultsPage').then((m) => ({ default: m.AdminConsultsPage })),
 );
@@ -404,6 +407,7 @@ export default function App() {
                 <Route path="monitoring" element={<AdminMonitoringPage />} />
                 <Route path="analytics" element={<AdminSiteReportsPage />} />
                 <Route path="site-reports" element={<AdminSiteReportsPage />} />
+                <Route path="tag-manager" element={<AdminTagManagerPage />} />
                 <Route path="settings" element={<AdminSettingsPage />} />
                 <Route path="hr" element={<AdminHrDashboardPage />} />
                 <Route path="hr/recruitment" element={<AdminHrRecruitmentDashboardPage />} />

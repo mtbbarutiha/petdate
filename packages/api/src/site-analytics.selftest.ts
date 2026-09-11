@@ -20,6 +20,7 @@ async function main() {
   const {
     ingestSiteAnalyticsEvent,
     buildSiteAnalyticsReport,
+    buildTagManagerReport,
     detectDevice,
     parseReferrerHost,
     isValidClarityProjectId,
@@ -52,6 +53,7 @@ async function main() {
     screenH: 844,
     userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
     eventType: 'pageview',
+    eventName: 'page_view',
   });
   ingestSiteAnalyticsEvent({
     sessionId: 'sess-test-0001',
@@ -62,6 +64,7 @@ async function main() {
     screenW: 390,
     userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)',
     eventType: 'pageview',
+    eventName: 'page_view',
   });
   ingestSiteAnalyticsEvent({
     sessionId: 'sess-test-0002',
@@ -72,7 +75,18 @@ async function main() {
     screenW: 1440,
     userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
     eventType: 'pageview',
+    eventName: 'page_view',
     country: 'IR',
+  });
+  ingestSiteAnalyticsEvent({
+    sessionId: 'sess-test-0002',
+    path: '/shop/cart',
+    eventType: 'event',
+    eventName: 'add_to_cart',
+    meta: { value: 120000, currency: 'IRR' },
+    language: 'en-US',
+    screenW: 1440,
+    userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
   });
 
   const report = buildSiteAnalyticsReport(7);
@@ -86,6 +100,16 @@ async function main() {
   assert(report.devices.length >= 1, 'devices');
   assert(report.recentSessions.length >= 2, 'recent sessions');
   assert(report.requestedAgentId === '4b79bfb4-a025-4f0e-8b84-0f45c3acac64', 'agent id note');
+  assert(report.gtm.tagAssistantUrl === 'https://tagassistant.google.com/', 'tag assistant url');
+
+  const tm = buildTagManagerReport(7);
+  assert(tm.gtm.containerId === 'GTM-KQPJT9Q4', 'tm container');
+  assert(tm.catalog.variables.some((v) => v.name === 'page_path'), 'tm variables');
+  assert(tm.catalog.triggers.some((t) => t.name === 'purchase'), 'tm triggers');
+  assert(tm.checklist.length >= 5, 'tm checklist');
+  assert(tm.metrics.customEvents >= 1, 'tm custom events');
+  assert(tm.metrics.eventsByType.some((e) => e.label === 'add_to_cart'), 'tm event bucket');
+  assert(tm.health.eventsLast24h >= 1, 'tm health');
 
   // Default live project when env is unset.
   delete process.env.CLARITY_PROJECT_ID;

@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ChevronDown,
   Activity, Bell, Briefcase, Building2, ClipboardList, FileText, Headset, Landmark, LayoutDashboard, LineChart, LogOut, Mail, Menu, Package,
   PawPrint, PieChart, ScrollText, Settings, Shield, ShieldCheck, ShoppingBag, Stethoscope,
-  Store, Target, Ticket, TrendingUp, UserPlus, UserRound, Users, Wallet, X, ClipboardCheck, BarChart3, Coins,
+  Store, Target, Ticket, TrendingUp, UserPlus, UserRound, Users, Wallet, X, ClipboardCheck, BarChart3, Coins, Tags,
   Route, Inbox, HandCoins, Bot, MessageSquare, Star, HeartHandshake, ArrowLeftRight,
 } from 'lucide-react';
 import type { PlatformNavCounts, SalesNavCounts } from '@petdate/shared';
@@ -117,6 +117,7 @@ const NAV_GROUPS: NavGroup[] = [
     { to: '/admin/content', icon: Bell, label: 'اعلان‌ها / محتوا', perm: 'platform.write' },
     { to: '/admin/mail', icon: Mail, label: 'ایمیل / SMTP', perm: 'platform.read' },
     { to: '/admin/analytics', icon: BarChart3, label: 'آنالیتیکس', perm: 'platform.read' },
+    { to: '/admin/tag-manager', icon: Tags, label: 'تگ منیجر', perm: 'platform.read' },
     { to: '/admin/monitoring', icon: Activity, label: 'مانیتورینگ', perm: 'platform.read' },
     { to: '/admin/logs', icon: ScrollText, label: 'لاگ خطاها', perm: 'platform.read' },
     { to: '/admin/settings', icon: Settings, label: 'تنظیمات پلتفرم', perm: 'platform.write' },

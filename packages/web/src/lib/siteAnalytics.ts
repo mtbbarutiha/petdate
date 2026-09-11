@@ -305,17 +305,16 @@ export function inferPageType(pathname: string): string {
   if (p.startsWith('/admin')) return 'admin';
   if (p.startsWith('/auth') || p.startsWith('/login') || p.startsWith('/otp')) return 'auth';
   if (p.startsWith('/onboarding') || p.startsWith('/role')) return 'onboarding';
-  if (p.startsWith('/shop/cart') || p.startsWith('/shop/checkout') || p.startsWith('/shop/card-pay') || p.startsWith('/shop/stars-pay')) {
+  if (
+    p.startsWith('/shop/cart') ||
+    p.startsWith('/shop/checkout') ||
+    p.startsWith('/shop/card-pay') ||
+    p.startsWith('/shop/stars-pay')
+  ) {
     return 'checkout';
   }
-  if (p.startsWith('/shop/') && /\/shop\/[^/]+$/.test(p) === false && p !== '/shop') {
-    // /shop/product/:id style
-  }
-  if (p.startsWith('/shop/')) {
-    if (/^\/shop\/[^/]+$/.test(p) && !['/shop/cart', '/shop/orders'].includes(p)) return 'product';
-    return 'shop';
-  }
-  if (p === '/shop') return 'shop';
+  if (p.startsWith('/shop/product/')) return 'product';
+  if (p.startsWith('/shop')) return 'shop';
   if (p.startsWith('/wallet')) return 'wallet';
   if (p.startsWith('/vet') || p.startsWith('/consult')) return 'consult';
   if (p.startsWith('/chat') || p.startsWith('/inbox')) return 'chat';

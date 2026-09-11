@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { Link } from 'react-router-dom';
 import {
   Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from 'recharts';
@@ -304,14 +305,28 @@ export function AdminSiteReportsPage() {
               note={data.gtm.note}
               href={data.gtm.dashboardUrl}
               hrefLabel="باز کردن Tag Manager"
-              extra={data.gtm.containerId ? (
-                <p className="admin-muted" style={{ marginTop: 6 }}>
-                  Container: <code dir="ltr">{data.gtm.containerId}</code>
-                  <button type="button" className="admin-btn" style={{ marginInlineStart: 8 }}
-                    onClick={() => void copyGtmId(data.gtm.containerId!)}>کپی</button>
-                  {gtmCopyMsg ? <span className="admin-muted" style={{ marginInlineStart: 8 }}>{gtmCopyMsg}</span> : null}
-                </p>
-              ) : null}
+              extra={(
+                <div style={{ marginTop: 6 }}>
+                  {data.gtm.containerId ? (
+                    <p className="admin-muted">
+                      Container: <code dir="ltr">{data.gtm.containerId}</code>
+                      <button type="button" className="admin-btn" style={{ marginInlineStart: 8 }}
+                        onClick={() => void copyGtmId(data.gtm.containerId!)}>کپی</button>
+                      {gtmCopyMsg ? <span className="admin-muted" style={{ marginInlineStart: 8 }}>{gtmCopyMsg}</span> : null}
+                    </p>
+                  ) : null}
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
+                    {data.gtm.tagAssistantUrl ? (
+                      <a className="admin-btn" href={data.gtm.tagAssistantUrl} target="_blank" rel="noreferrer">
+                        <ExternalLink size={16} /> Tag Assistant
+                      </a>
+                    ) : null}
+                    <Link to="/admin/tag-manager" className="admin-btn">
+                      گزارش کامل Tag Manager
+                    </Link>
+                  </div>
+                </div>
+              )}
             />
             <StatusCard
               title="Microsoft Clarity"
