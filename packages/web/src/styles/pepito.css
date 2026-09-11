@@ -6480,9 +6480,7 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   padding: 0.9rem 1rem;
   border-radius: 18px;
   border: 1px solid color-mix(in srgb, var(--pepito-dark) 10%, transparent);
-  background:
-    radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--pepito-base) 12%, transparent), transparent 55%),
-    var(--pepito-white);
+  background: var(--pepito-white);
   box-shadow: 0 6px 18px rgba(25, 6, 61, 0.04);
   transition:
     border-color 0.28s ease,
@@ -6514,18 +6512,14 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   pointer-events: none;
 }
 .pepito-vet-online-card.is-online {
+  /* Online state: mint border + control accents only — no muddy radial wash */
   border-color: color-mix(in srgb, var(--pepito-mint) 45%, transparent);
-  background:
-    radial-gradient(130% 100% at 100% 0%, color-mix(in srgb, var(--pepito-mint) 18%, transparent), transparent 58%),
-    radial-gradient(90% 80% at 0% 100%, color-mix(in srgb, var(--pepito-sky) 12%, transparent), transparent 50%),
-    var(--pepito-white);
-  box-shadow: 0 10px 28px rgba(21, 204, 160, 0.12);
+  background: var(--pepito-white);
+  box-shadow: 0 6px 18px rgba(25, 6, 61, 0.04);
 }
 .pepito-vet-online-card.is-offline {
   border-color: color-mix(in srgb, var(--pepito-muted) 28%, transparent);
-  background:
-    radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--pepito-muted) 12%, transparent), transparent 55%),
-    var(--pepito-white);
+  background: var(--pepito-white);
 }
 .pepito-vet-online-card-main {
   display: flex;
@@ -6911,9 +6905,7 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   margin-inline: var(--pepito-container-pad, 15px);
   padding: 1.2rem 1.1rem 1.35rem;
   border-radius: 20px;
-  background:
-    radial-gradient(120% 80% at 100% 0%, color-mix(in srgb, var(--pepito-mint) 14%, transparent), transparent 55%),
-    var(--pepito-white);
+  background: var(--pepito-white);
   border: 1px solid color-mix(in srgb, var(--pepito-dark) 10%, transparent);
   box-shadow: 0 8px 22px rgba(25, 6, 61, 0.04);
 }
@@ -6997,9 +6989,7 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
   padding: 1rem 1.1rem 1.15rem;
   border-radius: 18px;
   border: 1px solid rgba(31, 36, 48, 0.08);
-  background:
-    radial-gradient(120% 80% at 0% 0%, rgba(21, 204, 160, 0.1), transparent 55%),
-    rgba(255, 255, 255, 0.92);
+  background: var(--pepito-white);
 }
 .pepito-vet-consult-incoming h2 {
   margin: 0 0 0.75rem;

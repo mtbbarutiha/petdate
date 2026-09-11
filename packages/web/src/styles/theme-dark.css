@@ -1454,23 +1454,17 @@ html[data-theme='dark'] .pepito-my-pets-count {
       linear-gradient(180deg, #1e2230, #1a1d27) !important;
   }
   html[data-theme='dark'] .pepito-vet-hero {
-    background:
-      linear-gradient(180deg, rgba(45, 212, 176, 0.14) 0%, transparent 42%),
-      radial-gradient(ellipse 80% 70% at 15% 0%, rgba(45, 212, 176, 0.16), transparent 55%),
-      radial-gradient(ellipse 60% 50% at 90% 30%, rgba(59, 184, 245, 0.12), transparent 50%),
-      linear-gradient(165deg, #1a2422 0%, #1e2230 55%, #242836 100%) !important;
+    /* Flat dark surface — no mint/teal radial wash under the header */
+    background: var(--pepito-white) !important;
   }
 }
 
-/* Vet / trainer desk — hero was light mint/lilac + remapped light ink */
+/* Vet / trainer desk — flat dark cards; keep online accents via border/text/buttons only */
 html[data-theme='dark'] .pepito-vet-hero {
-  background:
-    radial-gradient(ellipse 80% 70% at 15% 0%, rgba(45, 212, 176, 0.16), transparent 55%),
-    radial-gradient(ellipse 60% 50% at 90% 30%, rgba(59, 184, 245, 0.12), transparent 50%),
-    linear-gradient(165deg, #1a2422 0%, #1e2230 55%, #242836 100%);
+  background: var(--pepito-white);
 }
 html[data-theme='dark'] .pepito-vet-hero-wash {
-  background: linear-gradient(180deg, transparent 20%, rgba(26, 29, 39, 0.55) 100%);
+  background: none;
 }
 html[data-theme='dark'] .pepito-vet-hero-inner h1,
 html[data-theme='dark'] .pepito-vet-consult-head h1 {
@@ -1485,9 +1479,7 @@ html[data-theme='dark'] .pepito-vet-consult-connected {
 }
 html[data-theme='dark'] .pepito-vet-inbox-panel,
 html[data-theme='dark'] .pepito-vet-inbox-panel--incoming {
-  background:
-    radial-gradient(120% 80% at 0% 0%, rgba(59, 184, 245, 0.08), transparent 55%),
-    var(--pepito-white);
+  background: var(--pepito-white);
   border-color: var(--pd-border);
   box-shadow: var(--pd-shadow);
 }
@@ -1497,25 +1489,20 @@ html[data-theme='dark'] .pepito-vet-inbox-head h2 {
 html[data-theme='dark'] .pepito-vet-online-card,
 html[data-theme='dark'] .pepito-vet-online-card.is-online,
 html[data-theme='dark'] .pepito-vet-online-card.is-offline {
-  background:
-    radial-gradient(120% 90% at 100% 0%, color-mix(in srgb, var(--pepito-base) 14%, transparent), transparent 55%),
-    var(--pepito-white);
+  background: var(--pepito-white);
   border-color: var(--pd-border);
   box-shadow: var(--pd-shadow);
 }
 html[data-theme='dark'] .pepito-vet-online-card.is-online {
+  /* Intentional online cue: mint border only — no radial wash behind content */
   border-color: color-mix(in srgb, var(--pepito-mint) 40%, var(--pd-border));
-  background:
-    radial-gradient(130% 100% at 100% 0%, color-mix(in srgb, var(--pepito-mint) 16%, transparent), transparent 58%),
-    var(--pepito-white);
+  background: var(--pepito-white);
 }
 html[data-theme='dark'] .pepito-vet-fee-panel,
 html[data-theme='dark'] .pepito-vet-consult-panel,
 html[data-theme='dark'] .pepito-vet-connect-panel,
 html[data-theme='dark'] .pepito-vet-online-list {
-  background:
-    radial-gradient(120% 80% at 100% 0%, color-mix(in srgb, var(--pepito-mint) 10%, transparent), transparent 55%),
-    var(--pepito-white);
+  background: var(--pepito-white);
   border-color: var(--pd-border);
   box-shadow: var(--pd-shadow);
   color: var(--pepito-dark);
