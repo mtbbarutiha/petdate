@@ -49,7 +49,7 @@ export const TEAM_AGENTS: readonly TeamAgentDef[] = [
   {
     slug: 'sara-nozi',
     telegramId: 'petdate_ai_sara_nozi',
-    name: 'دکتر سارا نوزی',
+    name: 'دکتر سارا نوری',
     role: 'دامپزشک',
     kind: 'vet',
     avatarUrl: '/agents/sara-nozi.jpg',

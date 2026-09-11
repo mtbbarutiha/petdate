@@ -34,7 +34,7 @@ async function main() {
   assert.equal(TEAM_AGENTS.filter((a) => a.telegramId === 'petdate_ai_assistant').length, 1);
   assert.equal(TEAM_AGENTS.filter((a) => a.kind === 'vet').length, 2);
   assert.equal(TEAM_AGENTS.filter((a) => a.kind === 'trainer').length, 2);
-  assert.ok(TEAM_AGENTS.some((a) => a.name === 'دکتر سارا نوزی'));
+  assert.ok(TEAM_AGENTS.some((a) => a.name === 'دکتر سارا نوری'));
   assert.equal(getTeamAgentBySlug('faranak-ahmadi')?.name, 'فرانک احمدی');
   assert.equal(getTeamAgentBySlug('layla-ahmadi')?.slug, 'faranak-ahmadi');
   assert.ok(
@@ -67,7 +67,7 @@ async function main() {
   assert.equal(viaAlias.name, 'فرانک احمدی');
 
   const sara = ensureTeamAgentBySlug('sara-nozi')!;
-  assert.equal(sara.name, 'دکتر سارا نوزی');
+  assert.equal(sara.name, 'دکتر سارا نوری');
   assert.ok(isAiAssistantUserId(sara.id));
 
   const tg = `selftest_team_${Date.now()}`;
@@ -82,7 +82,7 @@ async function main() {
   const session = await startTeamAgentConsult({ patient, agentSlug: 'sara-nozi' });
   assert.ok(session);
   assert.equal(session!.consult.vetUserId, sara.id);
-  assert.equal(decorateAiConsultDisplay(session!.consult).vetName, 'دکتر سارا نوزی');
+  assert.equal(decorateAiConsultDisplay(session!.consult).vetName, 'دکتر سارا نوری');
   const reuse = await startTeamAgentConsult({ patient, agentSlug: 'sara-nozi' });
   assert.equal(reuse!.consult.id, session!.consult.id);
   assert.equal(reuse!.reused, true);
