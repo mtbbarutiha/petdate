@@ -8,20 +8,25 @@ import './styles/pepito.css';
 import './styles/chat.css';
 import './styles/theme-dark.css';
 import { initTheme } from './lib/theme';
-import { I18nProvider, initLang } from './i18n';
+import { I18nProvider, initLang, useI18n } from './i18n';
 
 initTheme();
 initLang();
+
+/** Remount app chrome when language changes so all surfaces refresh without a full page reload. */
+function LangKeyedApp() {
+  const { lang } = useI18n();
+  return <App key={lang} />;
+}
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <I18nProvider>
       <BrowserRouter>
-        <App />
+        <LangKeyedApp />
       </BrowserRouter>
     </I18nProvider>
   </StrictMode>,
 );
 
-// Do not block first paint on SW registration / cache bust.
 void registerPetdateSW();

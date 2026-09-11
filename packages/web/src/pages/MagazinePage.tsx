@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { LandingChrome } from '../components/LandingChrome';
 import { resolvePublicMediaUrl } from '../lib/api';
 import { formatAdminFaDate } from '../admin/jalaliDate';
+import { useI18n, createTranslator, faDict, enDict, readStoredLang } from '../i18n';
 
 export type MagazineCard = {
   id: number;
@@ -19,6 +20,11 @@ export type MagazineCard = {
 const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ?? '';
 const PAGE_SIZE = 3;
 
+function magT(key: string) {
+  const lang = readStoredLang() ?? 'fa';
+  return createTranslator(lang === 'en' ? enDict : faDict, faDict)(key);
+}
+
 export async function fetchMagazineList(opts?: {
   q?: string;
   limit?: number;
@@ -29,7 +35,7 @@ export async function fetchMagazineList(opts?: {
   params.set('limit', String(opts?.limit ?? 24));
   if (opts?.offset != null) params.set('offset', String(opts.offset));
   const res = await fetch(`${API_BASE}/api/magazine?${params}`, { cache: 'no-store' });
-  if (!res.ok) throw new Error('بارگذاری مجله ناموفق بود');
+  if (!res.ok) throw new Error(magT('magazine.loadFail'));
   const data = (await res.json()) as { articles: MagazineCard[]; total?: number };
   return {
     articles: data.articles || [],
@@ -41,12 +47,13 @@ export async function fetchMagazineFeatured(limit = 6): Promise<MagazineCard[]> 
   const res = await fetch(`${API_BASE}/api/magazine/featured?limit=${limit}`, {
     cache: 'no-store',
   });
-  if (!res.ok) throw new Error('بارگذاری اخبار ناموفق بود');
+  if (!res.ok) throw new Error(magT('magazine.newsLoadFail'));
   const data = (await res.json()) as { articles: MagazineCard[] };
   return data.articles || [];
 }
 
 export function MagazineCardView({ article }: { article: MagazineCard }) {
+  const { t } = useI18n();
   const img = resolvePublicMediaUrl(article.coverImage) || '/pepito/uploads/01.jpg';
   return (
     <article className="pepito-news-card">
@@ -67,10 +74,10 @@ export function MagazineCardView({ article }: { article: MagazineCard }) {
             <h5>
               {article.author ? (
                 <>
-                  توسط <span className="pepito-news-author-name">{article.author}</span>
+                  {t('magazine.byAuthor')} <span className="pepito-news-author-name">{article.author}</span>
                 </>
               ) : (
-                'پت‌دیت'
+                t('magazine.brand')
               )}
             </h5>
           </div>
@@ -81,6 +88,7 @@ export function MagazineCardView({ article }: { article: MagazineCard }) {
 }
 
 export function MagazinePage() {
+  const { t, dir } = useI18n();
   const [articles, setArticles] = useState<MagazineCard[]>([]);
   const [total, setTotal] = useState(0);
   const [q, setQ] = useState('');
@@ -105,7 +113,7 @@ export function MagazinePage() {
         }
       })
       .catch((err) => {
-        if (!cancelled) setError(err instanceof Error ? err.message : 'خطا');
+        if (!cancelled) setError(err instanceof Error ? err.message : t('magazine.error'));
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -113,7 +121,7 @@ export function MagazinePage() {
     return () => {
       cancelled = true;
     };
-  }, [q]);
+  }, [q, t]);
 
   const pageCount = Math.max(1, Math.ceil(articles.length / PAGE_SIZE));
   const pageArticles = useMemo(() => {
@@ -127,23 +135,24 @@ export function MagazinePage() {
 
   return (
     <LandingChrome
-      bannerTitle="مجله پت‌دیت"
-      bannerLead="مقالات و اخبار مراقبت از پت"
-      actionLabel="خانه"
+      bannerTitle={t('magazine.title')}
+      bannerLead={t('magazine.lead')}
+      actionLabel={t('magazine.home')}
       actionTo="/"
-      ctaLabel="همه اخبار"
+      ctaLabel={t('magazine.allNews')}
       ctaTo="/magazine"
     >
-      <section className="pepito-section pepito-news pepito-magazine-page">
+      <section className="pepito-section pepito-news pepito-magazine-page" dir={dir}>
         <div className="pepito-section-head pepito-section-head--center pepito-news-head">
           <p className="pepito-eyebrow">
             <span className="pepito-eyebrow-icon" aria-hidden>
               <i className="flaticon-pawprint-4" />
             </span>
-            مجله و اخبار
+            {t('magazine.newsEyebrow')}
           </p>
           <h1>
-            مقالات و اخبار را ببینید<span className="pepito-news-dot">.</span>
+            {t('magazine.newsHeading')}
+            <span className="pepito-news-dot">.</span>
           </h1>
         </div>
 
@@ -155,18 +164,23 @@ export function MagazinePage() {
             setQ(String(fd.get('q') || ''));
           }}
         >
-          <input name="q" defaultValue={q} placeholder="جستجو در مجله…" aria-label="جستجو" />
+          <input
+            name="q"
+            defaultValue={q}
+            placeholder={t('magazine.searchPh')}
+            aria-label={t('magazine.search')}
+          />
           <button type="submit" className="pepito-btn button-1">
-            جستجو
+            {t('magazine.search')}
           </button>
         </form>
 
         {error ? <p className="pepito-magazine-error">{error}</p> : null}
-        {loading ? <p className="pepito-muted">در حال بارگذاری…</p> : null}
+        {loading ? <p className="pepito-muted">{t('common.loading')}</p> : null}
 
         {!loading && articles.length === 0 ? (
           <p className="pepito-muted" style={{ textAlign: 'center' }}>
-            هنوز مطلب منتشرشده‌ای نیست.
+            {t('magazine.empty')}
           </p>
         ) : (
           <>
@@ -176,7 +190,7 @@ export function MagazinePage() {
               ))}
             </div>
             {pageCount > 1 ? (
-              <div className="pepito-news-dots" role="tablist" aria-label="صفحات مجله">
+              <div className="pepito-news-dots" role="tablist" aria-label={t('magazine.pages')}>
                 {Array.from({ length: pageCount }, (_, i) => (
                   <button
                     key={i}
@@ -185,14 +199,14 @@ export function MagazinePage() {
                     aria-selected={i === page}
                     className={`pepito-news-dot${i === page ? ' is-active' : ''}`}
                     onClick={() => setPage(i)}
-                    aria-label={`صفحه ${i + 1}`}
+                    aria-label={t('magazine.pageN', { n: i + 1 })}
                   />
                 ))}
               </div>
             ) : null}
             {total > 0 ? (
               <p className="pepito-muted" style={{ textAlign: 'center', marginTop: 12 }}>
-                {total} مطلب
+                {t('magazine.articlesCount', { n: total })}
               </p>
             ) : null}
           </>

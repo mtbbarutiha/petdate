@@ -1,3 +1,5 @@
+import { useI18n } from '../../i18n';
+import { shopLabel } from '../../lib/shopLocale';
 import { useMemo, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { Filter, RotateCcw, Search, X } from 'lucide-react';
@@ -15,6 +17,7 @@ import { ShopChrome } from '../../components/shop/ShopChrome';
 import { ShopProductCard } from '../../components/shop/ShopProductCard';
 
 export function ShopCategoryPage() {
+  const { lang, t } = useI18n();
   const { category = 'all' } = useParams<{ category: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -52,7 +55,11 @@ export function ShopCategoryPage() {
     [petType, category, brandId, minPrice, maxPrice, q, inStockOnly]
   );
 
-  const title = catMeta?.labelFa ?? (brandId ? getBrand(brandId)?.labelFa ?? 'همه محصولات' : 'همه محصولات');
+  const title = catMeta
+    ? shopLabel(lang, catMeta.labelFa, catMeta.labelEn)
+    : brandId
+      ? shopLabel(lang, getBrand(brandId)?.labelFa ?? '', getBrand(brandId)?.labelEn) || t('shop.allProducts')
+      : t('shop.allProducts');
   const lead = catMeta?.description ?? 'فیلتر بر اساس نوع پت، برند و بازه قیمت (تومان)';
 
   const syncUrl = (next: { brand?: string; pet?: ShopPetType; q?: string }) => {
@@ -145,7 +152,7 @@ export function ShopCategoryPage() {
                 syncUrl({ pet: t.id });
               }}
             >
-              {t.labelFa}
+              {shopLabel(lang, t.labelFa, (t as any).labelEn)}
             </button>
           ))}
         </div>
@@ -172,7 +179,7 @@ export function ShopCategoryPage() {
               <span className="pd-shop-filter-link-emoji" aria-hidden>
                 {c.emoji}
               </span>
-              {c.labelFa}
+              {shopLabel(lang, c.labelFa, c.labelEn)}
             </Link>
           ))}
         </div>
@@ -201,7 +208,7 @@ export function ShopCategoryPage() {
                 syncUrl({ brand: b.id });
               }}
             >
-              {b.labelFa}
+              {shopLabel(lang, b.labelFa, b.labelEn)}
             </button>
           ))}
         </div>
@@ -265,7 +272,7 @@ export function ShopCategoryPage() {
           <div className="pd-shop-listing-toolbar-copy">
             <p>
               {products.length.toLocaleString('fa-IR')} محصول
-              {catMeta ? ` در «${catMeta.labelFa}»` : ''}
+              {catMeta ? ` در «${shopLabel(lang, catMeta.labelFa, catMeta.labelEn)}»` : ''}
             </p>
             {activeFilterCount > 0 ? (
               <span className="pd-shop-listing-active">

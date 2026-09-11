@@ -60,7 +60,7 @@ export function AdoptionListPage() {
           </Link>
           <Link to={loginPath('/chats')} className="pepito-btn pepito-btn--nav">
             <PawIcon size={14} />
-            ارسال پیام
+            {t('common.sendMessage')}
           </Link>
         </div>
       </header>
@@ -71,35 +71,36 @@ export function AdoptionListPage() {
             <span className="pepito-eyebrow-icon" aria-hidden>
               <i className="flaticon-pawprint-4" />
             </span>
-            پذیرش یک پت
+            {t('landing.adoptionEyebrow')}
           </p>
-          <h1>یک دوست پشمالوی جدید پیدا کن</h1>
-          <p className="pepito-adoption-desc">
-            پت‌های نیازمند خانه در پت‌دیت — پذیرش مسئولانه، بازدید حضوری و همراهی تا استقرار.
-          </p>
+          <h1>{t('landing.adoptionHeading')}</h1>
+          <p className="pepito-adoption-desc">{t('adoption.listDesc')}</p>
         </div>
         <div className="pepito-adoption-grid">
-          {ADOPTION_PETS.map((p) => (
-            <article key={p.slug} className="pepito-adoption-card">
-              <div className="pepito-adoption-media">
-                <img src={p.img} alt={p.name} loading="lazy" />
-                <div className="pepito-adoption-shade" aria-hidden />
-              </div>
-              <div className="pepito-adoption-front">
-                <h2>{p.name}</h2>
-              </div>
-              <Link to={`/adoption/${p.slug}`} className="pepito-adoption-back">
-                <h2>{p.name}</h2>
-                <ul>
-                  {p.details.slice(0, 3).map((d) => (
-                    <li key={d.label}>
-                      {d.label}: {d.value}
-                    </li>
-                  ))}
-                </ul>
-              </Link>
-            </article>
-          ))}
+          {ADOPTION_PETS.map((p) => {
+            const name = t(p.nameKey);
+            return (
+              <article key={p.slug} className="pepito-adoption-card">
+                <div className="pepito-adoption-media">
+                  <img src={p.img} alt={name} loading="lazy" />
+                  <div className="pepito-adoption-shade" aria-hidden />
+                </div>
+                <div className="pepito-adoption-front">
+                  <h2>{name}</h2>
+                </div>
+                <Link to={`/adoption/${p.slug}`} className="pepito-adoption-back">
+                  <h2>{name}</h2>
+                  <ul>
+                    {p.details.slice(0, 3).map((d) => (
+                      <li key={d.labelKey}>
+                        {t(d.labelKey)}: {t(d.valueKey, d.valueVars)}
+                      </li>
+                    ))}
+                  </ul>
+                </Link>
+              </article>
+            );
+          })}
         </div>
         <AdoptionPurchaseCta />
       </section>

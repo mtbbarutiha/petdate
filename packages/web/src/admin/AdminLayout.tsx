@@ -252,7 +252,7 @@ function AdminLayoutInner() {
   const roleLabel =
     getAdminDisplayName() ||
     ADMIN_PANEL_ROLE_LABELS[role] ||
-    (role === 'admin' ? 'مدیر' : role);
+    (role === 'admin' ? t('admin.manager') : role);
   const resolvedAvatar = resolvePublicMediaUrl(avatarUrl);
   const showAvatarImg = Boolean(resolvedAvatar) && !avatarFailed;
 
@@ -330,7 +330,7 @@ function AdminLayoutInner() {
                 <Menu size={18} />
               </button>
               <div>
-                <p className="admin-topbar-eyebrow">Pet Date · {lang === 'fa' ? 'پیوند' : 'Peyvand'}</p>
+                <p className="admin-topbar-eyebrow">Pet Date · {t('admin.peyvand')}</p>
                 <h1 className="admin-topbar-title">{t(pageTitleKey)}</h1>
               </div>
             </div>

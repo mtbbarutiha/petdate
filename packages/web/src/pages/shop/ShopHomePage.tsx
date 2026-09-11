@@ -1,3 +1,5 @@
+import { useI18n } from '../../i18n';
+import { shopLabel } from '../../lib/shopLocale';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, Filter, PawPrint, ShoppingBag, Sparkles } from 'lucide-react';
@@ -61,6 +63,7 @@ const JOURNEY = [
 ] as const;
 
 export function ShopHomePage() {
+  const { lang } = useI18n();
   const [petType, setPetType] = useState<ShopPetType>('all');
   const featured = useMemo(() => getFeaturedProducts(), []);
   const cats = useMemo(() => categoriesForPet(petType), [petType]);
@@ -115,7 +118,7 @@ export function ShopHomePage() {
                 className={`pd-shop-chip${petType === t.id ? ' is-active' : ''}`}
                 onClick={() => setPetType(t.id)}
               >
-                {t.labelFa}
+                {shopLabel(lang, t.labelFa, t.labelEn)}
               </button>
             ))}
           </div>
@@ -132,7 +135,7 @@ export function ShopHomePage() {
                 <span className="pd-shop-dk-circle" aria-hidden>
                   <span className="pd-shop-dk-emoji">{c.emoji}</span>
                 </span>
-                <span className="pd-shop-dk-label">{c.labelFa}</span>
+                <span className="pd-shop-dk-label">{shopLabel(lang, c.labelFa, c.labelEn)}</span>
               </Link>
             ))}
             <Link to="/shop/c/all" className="pd-shop-dk-item pd-shop-dk-item--more" role="listitem">
@@ -172,7 +175,7 @@ export function ShopHomePage() {
           <div className="pd-shop-brand-row">
             {SHOP_BRANDS.map((b) => (
               <Link key={b.id} to={`/shop/c/all?brand=${b.id}`} className="pd-shop-brand-chip">
-                {b.labelFa}
+                {shopLabel(lang, b.labelFa, b.labelEn)}
               </Link>
             ))}
           </div>

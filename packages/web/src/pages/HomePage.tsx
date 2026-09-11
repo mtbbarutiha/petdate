@@ -5,6 +5,7 @@ import { InviteFriendsCard } from '../components/InviteFriendsCard';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { useMyPets } from '../hooks/useMyPets';
 import { useUserStore } from '../hooks/useUserStore';
+import { useI18n } from '../i18n';
 
 const HERO_IMG = '/pepito/uploads/3.jpg';
 const HERO_IMG_PLAYMATE = '/pepito/uploads/1-hero.jpg';
@@ -51,23 +52,24 @@ function NoPetIcon({ size = 16 }: { size?: number }) {
 }
 
 export function HomePage() {
+  const { t, lang } = useI18n();
   const { user } = useUserStore();
   const { user: authUser, isProfileComplete } = useAuthStore();
   const { pets: myPets } = useMyPets();
 
-  // نقش فعال (نه فقط «داشتن نقش») — هم‌تراز ربات و RoleSwitchControl
+  // Active role (not merely “has a role”) — aligned with bot + RoleSwitchControl
   const active =
     primaryRole(authUser?.roles, authUser?.role) ??
     primaryRole(user.roles, user.role);
 
-  // نقش‌های ارائه‌دهنده → داشبورد اختصاصی (نه پنل صاحب‌پت)
+  // Provider roles → dedicated dashboard (not pet-owner panel)
   if (active === 'vet' || active === 'trainer') {
     return <Navigate to={dashboardPathForRole(active)} replace />;
   }
 
   const isPetOwner = active === 'pet_owner';
   const isNoPet = active === 'no_pet';
-  const displayName = authUser?.name?.trim() || 'دوست';
+  const displayName = authUser?.name?.trim() || t('home.friend');
   const primaryPetName = myPets[0]?.name?.trim() || '';
   const hasPetName = Boolean(primaryPetName);
   const needsProfile = !isProfileComplete;
@@ -75,34 +77,38 @@ export function HomePage() {
   const heroImg = isNoPet ? HERO_IMG_NO_PET : isPetOwner ? HERO_IMG_PLAYMATE : HERO_IMG;
 
   const kicker = needsProfile
-    ? BRAND.taglineFa
+    ? lang === 'en'
+      ? BRAND.taglineEn
+      : BRAND.taglineFa
     : isPetOwner
-      ? 'همبازی پت'
+      ? t('home.kickerPlaymate')
       : isNoPet
-        ? 'بدون پت'
-        : BRAND.taglineFa;
+        ? t('home.kickerNoPet')
+        : lang === 'en'
+          ? BRAND.taglineEn
+          : BRAND.taglineFa;
 
   const headline = needsProfile
-    ? `سلام ${displayName}`
+    ? t('home.helloName', { name: displayName })
     : isPetOwner && hasPetName
-      ? `همبازی برای ${primaryPetName}`
+      ? t('home.playmateFor', { pet: primaryPetName })
       : isPetOwner
-        ? `سلام ${displayName} — پت‌ات را ثبت کن`
+        ? t('home.helloAddPet', { name: displayName })
         : isNoPet
-          ? `سلام ${displayName} — شروع بدون پت`
-          : `سلام ${displayName}`;
+          ? t('home.helloNoPet', { name: displayName })
+          : t('home.helloName', { name: displayName });
 
   const lead = needsProfile
-    ? 'پروفایلت را کامل کن تا همبازی، دامپزشک و مربی نزدیک‌تر شوند.'
+    ? t('home.leadProfile')
     : isPetOwner && hasPetName
-      ? `درخواست همبازی بفرست، بعد مشاوره دامپزشک یا مربی — همان فضای Pet Date.`
+      ? t('home.leadPlaymate')
       : isPetOwner
-        ? 'پت‌ات را ثبت کن و همبازی پیدا کن — همان حساب وب و تلگرام.'
+        ? t('home.leadAddPet')
         : isNoPet
-          ? 'مشاوره خرید بگیر، پذیرش را ببین، یا وقتی آماده شدی پت ثبت کن.'
-          : 'از پروفایل، کلینیک، پت شاپ و مشاوره را در همین محیط ادامه بده.';
+          ? t('home.leadNoPet')
+          : t('home.leadDefault');
 
-  /** Primary CTA — role order preference: همبازی → دامپزشک → مربی → بدون پت */
+  /** Primary CTA — role order preference: playmate → vet → trainer → no pet */
   const primaryTo = needsProfile
     ? '/onboarding/profile'
     : isPetOwner && !hasPetName
@@ -113,21 +119,21 @@ export function HomePage() {
           ? '/adoption'
           : '/profile';
   const primaryLabel = needsProfile
-    ? 'تکمیل پروفایل'
+    ? t('home.ctaProfile')
     : isPetOwner && !hasPetName
-      ? 'ثبت پت'
+      ? t('home.ctaAddPet')
       : isPetOwner
-        ? 'پیدا کردن همبازی'
+        ? t('home.ctaPlaymate')
         : isNoPet
-          ? 'پذیرش پت'
-          : 'پروفایل من';
+          ? t('home.ctaAdoption')
+          : t('home.ctaMyProfile');
 
   return (
     <div className="pepito-home">
       <section
         className="pepito-home-hero"
         style={{ backgroundImage: `url(${heroImg})` }}
-        aria-label="خوش‌آمد"
+        aria-label={t('home.welcomeAria')}
       >
         <div className="pepito-home-hero-wash" aria-hidden />
         <div className="pepito-home-hero-inner">
@@ -145,7 +151,6 @@ export function HomePage() {
               {isPetOwner && !needsProfile && hasPetName ? <PlaymateIcon /> : isNoPet ? <NoPetIcon /> : <PawIcon />}
               {primaryLabel}
             </Link>
-            {/* Role CTAs in fixed order: همبازی → دامپزشک → مربی → بدون پت */}
             {isPetOwner && primaryTo !== '/chats' ? (
               <Link
                 to="/chats"
@@ -153,7 +158,7 @@ export function HomePage() {
                 data-testid="home-playmate-cta"
               >
                 <PlaymateIcon />
-                همبازی
+                {t('home.playmate')}
               </Link>
             ) : null}
             {isPetOwner || isNoPet ? (
@@ -163,7 +168,7 @@ export function HomePage() {
                 data-testid="owner-quick-vet-cta"
               >
                 <VetIcon />
-                دامپزشک
+                {t('home.vet')}
               </Link>
             ) : null}
             {isPetOwner ? (
@@ -173,7 +178,7 @@ export function HomePage() {
                 data-testid="owner-request-trainer-cta"
               >
                 <TrainerIcon />
-                مربی
+                {t('home.trainer')}
               </Link>
             ) : null}
             {isNoPet ? (
@@ -183,7 +188,7 @@ export function HomePage() {
                 data-testid="home-no-pet-adoption-cta"
               >
                 <NoPetIcon />
-                پذیرش پت
+                {t('home.ctaAdoption')}
               </Link>
             ) : null}
             {isNoPet ? (
@@ -193,36 +198,36 @@ export function HomePage() {
                 data-testid="home-no-pet-add-pet-cta"
               >
                 <PawIcon />
-                ثبت پت
+                {t('home.ctaAddPet')}
               </Link>
             ) : null}
           </div>
         </div>
       </section>
 
-      <section className="pepito-home-next" aria-label="قدم بعدی">
+      <section className="pepito-home-next" aria-label={t('home.nextAria')}>
         <header className="pepito-home-section-head">
-          <p className="pepito-eyebrow">همین حالا</p>
-          <h2>قدم بعدی‌ات در Pet Date</h2>
-          <p>همبازی، دامپزشک، مربی یا بدون پت — بدون پنل جدا.</p>
+          <p className="pepito-eyebrow">{t('home.now')}</p>
+          <h2>{t('home.nextTitle')}</h2>
+          <p>{t('home.nextLead')}</p>
         </header>
         <div className="pepito-home-actions">
           {needsProfile ? (
             <Link to="/onboarding/profile" className="pepito-home-action">
-              <strong>تکمیل پروفایل</strong>
-              <span>نام، شهر و نقش را تمام کن</span>
+              <strong>{t('home.actProfile')}</strong>
+              <span>{t('home.actProfileSub')}</span>
             </Link>
           ) : null}
           {isPetOwner ? (
             <Link to="/my-pets" className="pepito-home-action">
-              <strong>پت‌های من</strong>
-              <span>ثبت یا ویرایش پت‌ها</span>
+              <strong>{t('home.actPets')}</strong>
+              <span>{t('home.actPetsSub')}</span>
             </Link>
           ) : null}
           {isPetOwner ? (
             <Link to="/chats" className="pepito-home-action" data-testid="home-action-playmate">
-              <strong>همبازی</strong>
-              <span>پیدا کردن همبازی و مدیریت گفتگوها</span>
+              <strong>{t('home.actPlaymate')}</strong>
+              <span>{t('home.actPlaymateSub')}</span>
             </Link>
           ) : null}
           {isPetOwner || isNoPet ? (
@@ -231,8 +236,8 @@ export function HomePage() {
               className="pepito-home-action"
               data-testid="owner-quick-vet-home-action"
             >
-              <strong>دامپزشک</strong>
-              <span>مشاوره سریع — کسر سکه از کیف پول</span>
+              <strong>{t('home.actVet')}</strong>
+              <span>{t('home.actVetSub')}</span>
             </Link>
           ) : null}
           {isPetOwner ? (
@@ -241,20 +246,20 @@ export function HomePage() {
               className="pepito-home-action"
               data-testid="owner-request-trainer-home-action"
             >
-              <strong>مربی</strong>
-              <span>درخواست به مربی‌های آنلاین</span>
+              <strong>{t('home.actTrainer')}</strong>
+              <span>{t('home.actTrainerSub')}</span>
             </Link>
           ) : null}
           {isNoPet ? (
             <Link to="/adoption" className="pepito-home-action" data-testid="home-action-no-pet">
-              <strong>بدون پت / پذیرش</strong>
-              <span>مشاوره خرید و پت‌های نیازمند خانه</span>
+              <strong>{t('home.actNoPet')}</strong>
+              <span>{t('home.actNoPetSub')}</span>
             </Link>
           ) : null}
           {!isPetOwner && !isNoPet ? (
             <Link to="/profile" className="pepito-home-action">
-              <strong>پروفایل و خدمات</strong>
-              <span>پت شاپ و مشاوره</span>
+              <strong>{t('home.actProfileSvc')}</strong>
+              <span>{t('home.actProfileSvcSub')}</span>
             </Link>
           ) : null}
         </div>
@@ -263,25 +268,25 @@ export function HomePage() {
       <InviteFriendsCard variant="card" className="pepito-home-invite" />
 
       {!isPetOwner ? (
-        <section className="pepito-home-services" aria-label="خدمات">
+        <section className="pepito-home-services" aria-label={t('home.svcAria')}>
           <header className="pepito-home-section-head">
-            <p className="pepito-eyebrow">خدمات</p>
-            <h2>ادامه در همین فضا</h2>
-            <p>پت شاپ و مشاوره — بدون ترک ظاهر لندینگ.</p>
+            <p className="pepito-eyebrow">{t('home.svcEyebrow')}</p>
+            <h2>{t('home.svcTitle')}</h2>
+            <p>{t('home.svcLead')}</p>
           </header>
           <div className="pepito-home-actions">
             <Link to="/shop" className="pepito-home-action">
-              <strong>پت شاپ</strong>
-              <span>لوازم و محصولات پت</span>
+              <strong>{t('home.svcShop')}</strong>
+              <span>{t('home.svcShopSub')}</span>
             </Link>
             <Link to="/vet-consult" className="pepito-home-action">
-              <strong>مشاوره دامپزشک</strong>
-              <span>ارتباط سریع با پزشک</span>
+              <strong>{t('home.svcVet')}</strong>
+              <span>{t('home.svcVetSub')}</span>
             </Link>
             {isNoPet ? (
               <Link to="/adoption" className="pepito-home-action">
-                <strong>پذیرش پت</strong>
-                <span>شروع مسیر بدون پت</span>
+                <strong>{t('home.svcAdopt')}</strong>
+                <span>{t('home.svcAdoptSub')}</span>
               </Link>
             ) : null}
           </div>

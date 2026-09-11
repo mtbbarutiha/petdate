@@ -154,97 +154,76 @@ const HERO_SLIDES: {
 
 /** Landing cards → Pepito adoption single pages (`/adoption/:slug`) */
 const PETS = ADOPTION_PETS.map((p) => ({
-  name: p.name,
+  nameKey: p.nameKey,
   img: p.img,
   to: `/adoption/${p.slug}`,
-  details: p.details.slice(0, 3) }));
+  details: p.details.slice(0, 3),
+}));
 
 const TEAM = [
-  // DOM order (RTL): first item is visual-right. Visual L→R = سارا → ساناز → لیلا → فرانک.
-  { slug: 'faranak-ahmadi', name: 'فرانک احمدی', roleKey: 'landing.roleTrainer', img: `${P}/01-3.jpg` },
-  { slug: 'leila-kiani', name: 'لیلا کیانی', roleKey: 'landing.roleTrainer', img: `${P}/02-3.jpg` },
-  { slug: 'sanaz-ghaffari', name: 'دکتر ساناز غفاری', roleKey: 'landing.roleVet', img: `${P}/03-3.jpg` },
-  { slug: 'sara-noori', name: 'دکتر سارا نوری', roleKey: 'landing.roleVet', img: `${P}/04-3.jpg` },
+  // DOM order (RTL): first item is visual-right.
+  { slug: 'faranak-ahmadi', nameKey: 'landing.team1', roleKey: 'landing.roleTrainer', img: `${P}/01-3.jpg` },
+  { slug: 'leila-kiani', nameKey: 'landing.team2', roleKey: 'landing.roleTrainer', img: `${P}/02-3.jpg` },
+  { slug: 'sanaz-ghaffari', nameKey: 'landing.team3', roleKey: 'landing.roleVet', img: `${P}/03-3.jpg` },
+  { slug: 'sara-noori', nameKey: 'landing.team4', roleKey: 'landing.roleVet', img: `${P}/04-3.jpg` },
 ] as const;
 
-const TEAM_ALT = (name: string, role: string) => `${name} — ${role} پت‌دیت`;
-
-/** Pepito “Happy pet lovers / Pepito reviews” — photo + stars + quote */
-const REVIEWS = [
-  {
-    handle: '@سارا',
-    text: 'قابل اعتماد و مهربون؛ معلومه عاشق حیوانان‌اند!',
-    img: `${P}/01-4.jpg` },
-  {
-    handle: '@مینا',
-    text: 'سگم عاشق همبازی‌شه و زمان‌بندی‌شون انعطاف‌پذیره.',
-    img: `${P}/02-4.jpg` },
-  {
-    handle: '@علی',
-    text: 'درستکار و مطمئن؛ خرگوش‌هام عاشقشون شدن!',
-    img: `${P}/03-4.jpg` },
-  {
-    handle: '@نگار',
-    text: 'دیدن اینکه بچه‌هام خوب مراقبت می‌شن همیشه لذت‌بخشه.',
-    img: `${P}/04-4.jpg` },
+const REVIEW_DEFS = [
+  { handleKey: 'landing.review1h', textKey: 'landing.review1t', img: `${P}/01-4.jpg` },
+  { handleKey: 'landing.review2h', textKey: 'landing.review2t', img: `${P}/02-4.jpg` },
+  { handleKey: 'landing.review3h', textKey: 'landing.review3t', img: `${P}/03-4.jpg` },
+  { handleKey: 'landing.review4h', textKey: 'landing.review4t', img: `${P}/04-4.jpg` },
 ] as const;
 
-const FAQS = [
-  {
-    q: 'آیا حساب وب و ربات یکی است؟',
-    a: 'بله. با همان موبایل یا ایمیل وارد شو؛ پت‌ها، درخواست‌ها و چت‌ها روی یک دیتابیس مشترک می‌مانند.' },
-  {
-    q: 'برای دیدن لندینگ باید وارد شوم؟',
-    a: 'خیر. لندینگ و پت شاپ آزادند. برای همبازی، ثبت پت، دامپزشک و چت با OTP وارد شو؛ ثبت سفارش شاپ هم ورود می‌خواهد.' },
-  {
-    q: 'اگر من وب باشم و طرف مقابل ربات؟',
-    a: 'پیام و درخواست از API مشترک رد می‌شود؛ هر دو طرف همان مکالمه را می‌بینند.' },
-  {
-    q: 'طراحی این صفحه از کجا آمده؟',
-    a: 'ظاهر و عکس‌ها بر پایه قالب Pepito تنظیم شده تا تجربه دسکتاپ شبیه یک سایت مراقبت از پت واقعی باشد.' },
+const FAQ_DEFS = [
+  { qKey: 'landing.faq1q', aKey: 'landing.faq1a' },
+  { qKey: 'landing.faq2q', aKey: 'landing.faq2a' },
+  { qKey: 'landing.faq3q', aKey: 'landing.faq3a' },
+  { qKey: 'landing.faq4q', aKey: 'landing.faq4a' },
 ] as const;
 
 /** Pepito “Our featured products” — shop grid → real catalog */
-const PRODUCTS = [
-  { name: 'ظرف غذای سگ کوچک', price: '۶۴۴٬۰۰۰ تومان', badge: 'تخفیف', img: `${P}/01-1.png`, to: '/shop/product/dog-bowls-1-p41' },
-  { name: 'توپ گربه', price: '۱۶۰٬۰۰۰ تومان', badge: 'پرفروش', img: `${P}/1-1.jpg`, to: '/shop/product/cat-toys-1-p131' },
-  { name: 'خاک گربه', price: '۳۹۰٬۰۰۰ تومان', badge: 'ویژه', img: `${P}/03.png`, to: '/shop/product/cat-litter-1-p161' },
-  { name: 'غذای خشک جوسرا', price: '۳٬۳۰۰٬۰۰۰ تومان', badge: 'پرفروش', img: `${P}/06-1.png`, to: '/shop/product/cat-food-2-p102' },
+const PRODUCT_DEFS = [
+  { nameKey: 'landing.prodBowl', priceKey: 'landing.priceBowl', badgeKey: 'landing.badgeSale', img: `${P}/01-1.png`, to: '/shop/product/dog-bowls-1-p41' },
+  { nameKey: 'landing.prodToy', priceKey: 'landing.priceToy', badgeKey: 'landing.badgeHot', img: `${P}/1-1.jpg`, to: '/shop/product/cat-toys-1-p131' },
+  { nameKey: 'landing.prodLitter', priceKey: 'landing.priceLitter', badgeKey: 'landing.badgeSpecial', img: `${P}/03.png`, to: '/shop/product/cat-litter-1-p161' },
+  { nameKey: 'landing.prodFood', priceKey: 'landing.priceFood', badgeKey: 'landing.badgeHot', img: `${P}/06-1.png`, to: '/shop/product/cat-food-2-p102' },
 ] as const;
 
-/** Fallback demo cards when CMS has no published articles yet */
-const NEWS_FALLBACK: MagazineCard[] = [
-  {
-    id: -1,
-    title: 'مراقبت از دندان پت',
-    excerpt: 'نکات ساده برای سلامت دهان و دندان پت‌تان در خانه.',
-    publishAt: '2025-03-03',
-    author: 'پت‌دیت',
-    category: 'مراقبت',
-    coverImage: `${P}/01.jpg`,
-    slug: '',
-  },
-  {
-    id: -2,
-    title: 'سبک‌های آرایش سگ',
-    excerpt: 'انتخاب کوتاهی مو متناسب با نژاد و فصل.',
-    publishAt: '2025-03-03',
-    author: 'پت‌دیت',
-    category: 'پت',
-    coverImage: `${P}/06.jpg`,
-    slug: '',
-  },
-  {
-    id: -3,
-    title: 'نکات ایمنی پت',
-    excerpt: 'چطور خانه را برای پت‌ها امن‌تر کنیم.',
-    publishAt: '2025-03-03',
-    author: 'پت‌دیت',
-    category: 'ایمنی',
-    coverImage: `${P}/03.jpg`,
-    slug: '',
-  },
-];
+function newsFallback(t: (key: string) => string): MagazineCard[] {
+  return [
+    {
+      id: -1,
+      title: t('landing.newsFb1t'),
+      excerpt: t('landing.newsFb1e'),
+      publishAt: '2025-03-03',
+      author: t('landing.newsAuthor'),
+      category: t('landing.newsCatCare'),
+      coverImage: `${P}/01.jpg`,
+      slug: '',
+    },
+    {
+      id: -2,
+      title: t('landing.newsFb2t'),
+      excerpt: t('landing.newsFb2e'),
+      publishAt: '2025-03-03',
+      author: t('landing.newsAuthor'),
+      category: t('landing.newsCatPet'),
+      coverImage: `${P}/06.jpg`,
+      slug: '',
+    },
+    {
+      id: -3,
+      title: t('landing.newsFb3t'),
+      excerpt: t('landing.newsFb3e'),
+      publishAt: '2025-03-03',
+      author: t('landing.newsAuthor'),
+      category: t('landing.newsCatSafety'),
+      coverImage: `${P}/03.jpg`,
+      slug: '',
+    },
+  ];
+}
 
 function GatedLink({
   to,
@@ -302,7 +281,7 @@ function HeroCtaIcon({ Icon }: { Icon: LucideIcon }) {
 }
 
 export function WelcomePage() {
-  const { t, dir } = useI18n();
+  const { t, dir, lang } = useI18n();
   const { isLoggedIn } = useAuthStore();
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [scrolled, setScrolled] = useState(false);
@@ -315,7 +294,12 @@ export function WelcomePage() {
   const svcProgrammaticScrollRef = useRef(false);
   const [newsIndex, setNewsIndex] = useState(0);
   const newsTrackRef = useRef<HTMLDivElement>(null);
-  const [newsItems, setNewsItems] = useState<MagazineCard[]>(NEWS_FALLBACK);
+  const [newsItems, setNewsItems] = useState<MagazineCard[]>(() => newsFallback(t));
+
+  useEffect(() => {
+    setNewsItems((prev) => (prev.some((n) => n.id < 0) ? newsFallback(t) : prev));
+  }, [lang, t]);
+
 
   useEffect(() => {
     let cancelled = false;
@@ -597,31 +581,30 @@ export function WelcomePage() {
         <div className="pepito-about-media">
           <div className="pepito-about-item">
             <div className="pepito-about-photo">
-              <img src={`${P}/about.jpg`} alt="مراقبت از حیوانات خانگی در پت‌دیت" loading="lazy" />
+              <img src={`${P}/about.jpg`} alt={t('landing.aboutImgAlt')} loading="lazy" />
             </div>
             {/* Pepito `.note.vert-move` floating quote on the about photo */}
-            <aside className="pepito-about-note pepito-vert-move" aria-label="نظر">
+            <aside className="pepito-about-note pepito-vert-move" aria-label={t('landing.aboutQuoteAria')}>
               <div className="pepito-about-note-stars" aria-hidden>
                 {Array.from({ length: 5 }, (_, i) => (
                   <Star key={i} size={14} fill="currentColor" strokeWidth={0} />
                 ))}
               </div>
               <p className="pepito-about-note-txt">
-                «از حیوانات طوری مراقبت کنید که انگار فرزندان‌تان هستند!»
+                {t('landing.aboutQuote')}
               </p>
               <p className="pepito-about-note-title">
                 <PawIcon />
-                اولیویا مارتین
+                {t('landing.aboutQuoteAuthor')}
               </p>
             </aside>
           </div>
         </div>
         <div className="pepito-about-copy">
-          <p className="pepito-eyebrow">عاشق حیواناتیم</p>
-          <h2>خدماتی برای پت‌های خاص شما!</h2>
+          <p className="pepito-eyebrow">{t('landing.aboutEyebrow')}</p>
+          <h2>{t('landing.aboutTitle')}</h2>
           <p>
-            امکانات ربات، با تجربهٔ دسکتاپ قالب Pepito — داده همان لحظه سینک می‌ماند.
-            دامپزشکان و همبازی‌ها روی یک حساب مشترک وب و تلگرام.
+            {t('landing.aboutLead')}
           </p>
           <ul className="pepito-about-features">
             {SERVICES.slice(0, 3).map((s) => (
@@ -644,7 +627,7 @@ export function WelcomePage() {
           </ul>
           <a href="#services" className="pepito-btn button-1">
             <PawIcon />
-            بیشتر بخوانید
+            {t('landing.aboutMore')}
           </a>
         </div>
       </section>
@@ -655,7 +638,7 @@ export function WelcomePage() {
             <span className="pepito-eyebrow-icon" aria-hidden>
               <i className="flaticon-pawprint-4" />
             </span>
-            عاشق حیواناتیم
+            {t('landing.aboutEyebrow')}
           </p>
           <h2>{t('landing.servicesTitle')}</h2>
           <p className="pepito-services-lead">
@@ -688,7 +671,7 @@ export function WelcomePage() {
             ))}
           </div>
         </div>
-        <div className="pepito-services-dots" role="tablist" aria-label="خدمات">
+        <div className="pepito-services-dots" role="tablist" aria-label={t('landing.servicesDots')}>
           {SERVICES.map((s, i) => (
             <button
               key={s.titleKey}
@@ -709,49 +692,52 @@ export function WelcomePage() {
             <span className="pepito-eyebrow-icon" aria-hidden>
               <i className="flaticon-pawprint-4" />
             </span>
-            پذیرش یک پت
+            {t('landing.adoptionEyebrow')}
           </p>
-          <h2>یک دوست پشمالوی جدید پیدا کن</h2>
+          <h2>{t('landing.adoptionHeading')}</h2>
         </div>
         <div className="pepito-adoption-grid">
-          {PETS.map((p) => (
-            <article key={p.name} className="pepito-adoption-card">
+          {PETS.map((p) => {
+            const name = t(p.nameKey);
+            return (
+            <article key={p.nameKey} className="pepito-adoption-card">
               <div className="pepito-adoption-media">
-                <img src={p.img} alt={p.name} loading="lazy" />
+                <img src={p.img} alt={name} loading="lazy" />
                 <div className="pepito-adoption-shade" aria-hidden />
               </div>
               <div className="pepito-adoption-front">
-                <h3>{p.name}</h3>
+                <h3>{name}</h3>
               </div>
               <Link to={p.to} className="pepito-adoption-back">
-                <h3>{p.name}</h3>
+                <h3>{name}</h3>
                 <ul>
                   {p.details.map((d) => (
-                    <li key={d.label}>
-                      {d.label}: {d.value}
+                    <li key={d.labelKey}>
+                      {t(d.labelKey)}: {t(d.valueKey, d.valueVars)}
                     </li>
                   ))}
                 </ul>
               </Link>
             </article>
-          ))}
+            );
+          })}
         </div>
         <AdoptionPurchaseCta />
       </section>
 
 <section className="pepito-section" id="team">
         <div className="pepito-section-head">
-          <p className="pepito-eyebrow">متخصصان واجد شرایط</p>
-          <h2>با تیم ما آشنا شو</h2>
+          <p className="pepito-eyebrow">{t('landing.teamEyebrow')}</p>
+          <h2>{t('landing.teamHeading')}</h2>
         </div>
         <div className="pepito-team">
           {TEAM.map((m) => (
             <article key={m.slug} className="pepito-member">
               <div className="pepito-member-photo">
-                <img src={m.img} alt={TEAM_ALT(m.name, t(m.roleKey))} loading="lazy" width={600} height={700} decoding="async" />
+                <img src={m.img} alt={t('landing.teamAlt', { name: t(m.nameKey), role: t(m.roleKey) })} loading="lazy" width={600} height={700} decoding="async" />
               </div>
               <div className="pepito-member-info">
-                <h3>{m.name}</h3>
+                <h3>{t(m.nameKey)}</h3>
                 <p>{t(m.roleKey)}</p>
                 <GatedLink
                   to={`/team-chat/${m.slug}`}
@@ -772,35 +758,39 @@ export function WelcomePage() {
             <span className="pepito-eyebrow-icon" aria-hidden>
               <i className="flaticon-pawprint-4" />
             </span>
-            عاشقان خوشحال پت
+            {t('landing.reviewsEyebrow')}
           </p>
           <h2>{t('landing.reviewsTitle')}</h2>
         </div>
         <div className="pepito-reviews">
-          {REVIEWS.map((r) => (
-            <article key={r.handle} className="pepito-review">
+          {REVIEW_DEFS.map((r) => {
+            const handle = t(r.handleKey);
+            return (
+            <article key={r.handleKey} className="pepito-review">
               <div className="pepito-review-img">
                 <div className="pepito-review-img-frame">
-                  <img src={r.img} alt={`نظر ${r.handle} درباره پت‌دیت`} loading="lazy" />
+                  <img src={r.img} alt={t('landing.reviewAlt', { handle })} loading="lazy" />
                 </div>
               </div>
               <div className="pepito-review-body">
-                <h3>{r.handle}</h3>
-                <div className="pepito-review-stars" aria-label="۵ از ۵ ستاره">
+                <h3>{handle}</h3>
+                <div className="pepito-review-stars" aria-label={t('landing.starsAria')}>
                   {Array.from({ length: 5 }, (_, i) => (
                     <Star key={i} size={16} fill="currentColor" strokeWidth={0} aria-hidden />
                   ))}
                 </div>
-                <p>{r.text}</p>
+                <p>{t(r.textKey)}</p>
               </div>
             </article>
-          ))}
+            );
+          })}
         </div>
         <div className="pepito-review-trust">
-          <span className="pepito-review-trust-tag">عاشقان پت</span>
+          <span className="pepito-review-trust-tag">{t('landing.trustTag')}</span>
           <p className="pepito-review-trust-desc">
-            بیش از ۱۰۰۰ نفر واقعی به مراقبت پت{' '}
-            <span className="pepito-underline-pink">petdate</span> اعتماد دارند.
+            {t('landing.trustDescBefore')}{' '}
+            <span className="pepito-underline-pink">petdate</span>{' '}
+            {t('landing.trustDescAfter')}
           </p>
         </div>
       </section>
@@ -812,36 +802,39 @@ export function WelcomePage() {
             <span className="pepito-eyebrow-icon" aria-hidden>
               <i className="flaticon-pawprint-4" />
             </span>
-            پت شاپ
+            {t('landing.shopEyebrow')}
           </p>
-          <h2>محصولات ویژه ما</h2>
+          <h2>{t('landing.shopTitle')}</h2>
         </div>
         <div className="pepito-shop-grid">
-          {PRODUCTS.map((p) => (
-            <article key={p.name} className="pepito-shop-item">
+          {PRODUCT_DEFS.map((p) => {
+            const name = t(p.nameKey);
+            return (
+            <article key={p.nameKey} className="pepito-shop-item">
               <Link to={p.to} className="pepito-shop-wrap">
                 <div className="pepito-shop-img">
-                  <img src={p.img} alt={p.name} loading="lazy" />
+                  <img src={p.img} alt={name} loading="lazy" />
                 </div>
                 <div className="pepito-shop-price" aria-hidden>
                   <h4>
-                    <span>{p.badge}</span>
-                    <span className="pepito-shop-amount">{p.price}</span>
+                    <span>{t(p.badgeKey)}</span>
+                    <span className="pepito-shop-amount">{t(p.priceKey)}</span>
                   </h4>
                 </div>
               </Link>
               <div className="pepito-shop-text">
                 <h3>
-                  <Link to={p.to}>{p.name}</Link>
+                  <Link to={p.to}>{name}</Link>
                 </h3>
               </div>
             </article>
-          ))}
+            );
+          })}
         </div>
         <div style={{ marginTop: 28, textAlign: 'center' }}>
           <Link to="/shop" className="pepito-btn button-1">
             <PawIcon />
-            ورود به پت شاپ
+            {t('landing.shopEnter')}
           </Link>
         </div>
       </section>
@@ -849,20 +842,21 @@ export function WelcomePage() {
       <section className="pepito-section pepito-faq-section" id="faq">
         <div className="pepito-faq-layout">
           <div className="pepito-faq-intro">
-            <p className="pepito-eyebrow">عمومی و پرتکرار</p>
+            <p className="pepito-eyebrow">{t('landing.faqEyebrow')}</p>
             <h2>{t('landing.faqTitle')}</h2>
-            <p>پاسخ‌های کوتاه دربارهٔ حساب مشترک وب و ربات، OTP و همگام‌سازی داده.</p>
+            <p>{t('landing.faqLead')}</p>
             {/* Pepito: Other FAQs → dedicated FAQ page */}
             <Link to="/faq" className="pepito-btn button-1">
               <PawIcon />
-              سایر سؤالات
+              {t('landing.faqMore')}
             </Link>
           </div>
           <div className="pepito-faq">
-            {FAQS.map((item, i) => {
+            {FAQ_DEFS.map((item, i) => {
               const open = openFaq === i;
+              const q = t(item.qKey);
               return (
-                <div key={item.q} className="pepito-faq-item">
+                <div key={item.qKey} className="pepito-faq-item">
                   <button
                     type="button"
                     className="pepito-faq-q"
@@ -870,11 +864,11 @@ export function WelcomePage() {
                     onClick={() => setOpenFaq(open ? null : i)}
                   >
                     <span>
-                      {String(i + 1).padStart(2, '0')} {item.q}
+                      {String(i + 1).padStart(2, '0')} {q}
                     </span>
                     <span aria-hidden>{open ? '−' : '+'}</span>
                   </button>
-                  {open ? <p className="pepito-faq-a">{item.a}</p> : null}
+                  {open ? <p className="pepito-faq-a">{t(item.aKey)}</p> : null}
                 </div>
               );
             })}
@@ -889,19 +883,19 @@ export function WelcomePage() {
             <span className="pepito-eyebrow-icon" aria-hidden>
               <i className="flaticon-pawprint-4" />
             </span>
-            آخرین اخبار
+            {t('landing.newsEyebrow')}
           </p>
           <h2>
-            مقالات و اخبار را ببینید<span className="pepito-news-dot">.</span>
+            {t('landing.newsTitle')}<span className="pepito-news-dot">.</span>
           </h2>
         </div>
         <div className="pepito-news-viewport">
-          <div className="pepito-news-nav" aria-label="جابجایی اخبار">
+          <div className="pepito-news-nav" aria-label={t('landing.newsNav')}>
             <button
               type="button"
               className="pepito-news-arrow pepito-news-arrow--prev"
               onClick={() => goNews(newsIndex - 1)}
-              aria-label="قبلی"
+              aria-label={t('landing.prev')}
             >
               <ChevronRight size={16} strokeWidth={1.75} aria-hidden />
             </button>
@@ -909,7 +903,7 @@ export function WelcomePage() {
               type="button"
               className="pepito-news-arrow pepito-news-arrow--next"
               onClick={() => goNews(newsIndex + 1)}
-              aria-label="بعدی"
+              aria-label={t('landing.next')}
             >
               <ChevronLeft size={16} strokeWidth={1.75} aria-hidden />
             </button>
@@ -937,10 +931,10 @@ export function WelcomePage() {
                         <h5>
                           {n.author ? (
                             <>
-                              توسط <span className="pepito-news-author-name">{n.author}</span>
+                              {t('landing.byAuthor')} <span className="pepito-news-author-name">{n.author}</span>
                             </>
                           ) : (
-                            <Link to="/magazine">مشاهده مجله</Link>
+                            <Link to="/magazine">{t('landing.newsMore')}</Link>
                           )}
                         </h5>
                       </div>
@@ -951,7 +945,7 @@ export function WelcomePage() {
             })}
           </div>
         </div>
-        <div className="pepito-news-dots" role="tablist" aria-label="صفحات اخبار">
+        <div className="pepito-news-dots" role="tablist" aria-label={t('landing.newsPages')}>
           {Array.from({ length: newsPages }, (_, i) => (
             <button
               key={i}
@@ -960,13 +954,13 @@ export function WelcomePage() {
               aria-selected={i === newsIndex}
               className={`pepito-news-dot${i === newsIndex ? ' is-active' : ''}`}
               onClick={() => goNews(i)}
-              aria-label={`صفحه ${i + 1}`}
+              aria-label={t('landing.pageN', { n: i + 1 })}
             />
           ))}
         </div>
         <p className="pepito-news-more">
           <Link to="/magazine" className="pepito-btn button-1">
-            همه مقالات مجله
+            {t('landing.allArticles')}
           </Link>
         </p>
       </section>

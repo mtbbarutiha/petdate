@@ -10,6 +10,7 @@ export type ShopPetType = 'dog' | 'cat' | 'bird' | 'all';
 export interface ShopCategory {
   slug: string;
   labelFa: string;
+  labelEn?: string;
   petType: Exclude<ShopPetType, 'all'>;
   description: string;
   emoji: string;
@@ -70,11 +71,11 @@ export interface ShopProduct {
   cons?: string[];
 }
 
-export const SHOP_PET_TYPES: { id: ShopPetType; labelFa: string }[] = [
-  { id: 'all', labelFa: 'همه' },
-  { id: 'dog', labelFa: 'سگ' },
-  { id: 'cat', labelFa: 'گربه' },
-  { id: 'bird', labelFa: 'پرنده' },
+export const SHOP_PET_TYPES: { id: ShopPetType; labelFa: string; labelEn: string }[] = [
+  { id: 'all', labelFa: 'همه', labelEn: 'All' },
+  { id: 'dog', labelFa: 'سگ', labelEn: 'Dog' },
+  { id: 'cat', labelFa: 'گربه', labelEn: 'Cat' },
+  { id: 'bird', labelFa: 'پرنده', labelEn: 'Bird' },
 ];
 
 /** Top-level shop categories by pet type */

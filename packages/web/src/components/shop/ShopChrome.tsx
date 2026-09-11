@@ -4,16 +4,18 @@ import { PawPrint } from 'lucide-react';
 import { BRAND } from '@petdate/shared';
 import { useAuthStore } from '../../hooks/useAuthStore';
 import { useShopCatalogSync } from '../../hooks/useShopCatalogSync';
+import { useI18n } from '../../i18n';
 import { NavUserCluster } from '../NavUserCluster';
 import { SiteDesktopNav } from '../SiteDesktopNav';
 import { SiteFooter } from '../SiteFooter';
 import { ShopAddToast } from './ShopAddToast';
-
+import { LanguageToggle } from '../LanguageToggle';
+import { ThemeToggle } from '../ThemeToggle';
 
 export function ShopChrome({
   children,
-  bannerTitle = 'پت دیت شاپ',
-  bannerLead = 'غذا، لوازم و اسباب‌بازی با قیمت تومان — پت دیت شاپ',
+  bannerTitle,
+  bannerLead,
   hideBanner = false,
 }: {
   children: ReactNode;
@@ -21,9 +23,12 @@ export function ShopChrome({
   bannerLead?: string;
   hideBanner?: boolean;
 }) {
+  const { t, dir } = useI18n();
   const [scrolled, setScrolled] = useState(false);
   const { isLoggedIn } = useAuthStore();
   const { ready } = useShopCatalogSync();
+  const title = bannerTitle ?? t('shop.brand');
+  const lead = bannerLead ?? t('shop.lead');
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -43,34 +48,35 @@ export function ShopChrome({
   }, []);
 
   return (
-    <div className="pepito-landing pepito-flow-page pd-shop-page" dir="rtl">
+    <div className="pepito-landing pepito-flow-page pd-shop-page" dir={dir}>
       <header className={`pepito-nav${scrolled ? ' is-scrolled' : ''}${isLoggedIn ? ' pepito-nav--app' : ''}`}>
-        {/* Logo first in DOM so dir=rtl places it at inline-start (right). */}
         <Link to="/" className="pepito-nav-logo" aria-label={BRAND.displayName}>
           <img src="/pepito/img/logo.png" alt={BRAND.displayName} />
         </Link>
-        <nav className="pepito-nav-links pepito-nav-links--app" aria-label="پت دیت شاپ">
+        <nav className="pepito-nav-links pepito-nav-links--app" aria-label={t('shop.brand')}>
           <NavLink to="/shop" end>
-            فروشگاه
+            {t('shop.store')}
           </NavLink>
-          <NavLink to="/shop/orders">سفارش‌ها</NavLink>
-          <NavLink to="/shop/cart">سبد</NavLink>
-          <NavLink to="/shop/c/dog-food">سگ</NavLink>
-          <NavLink to="/shop/c/cat-food">گربه</NavLink>
-          <NavLink to="/shop/c/bird-food">پرنده</NavLink>
+          <NavLink to="/shop/orders">{t('shop.orders')}</NavLink>
+          <NavLink to="/shop/cart">{t('shop.cart')}</NavLink>
+          <NavLink to="/shop/c/dog-food">{t('shop.dog')}</NavLink>
+          <NavLink to="/shop/c/cat-food">{t('shop.cat')}</NavLink>
+          <NavLink to="/shop/c/bird-food">{t('shop.bird')}</NavLink>
         </nav>
         <NavUserCluster showCart showOrders />
         <div className="pepito-nav-actions">
+          <LanguageToggle />
+          <ThemeToggle />
           <SiteDesktopNav />
         </div>
       </header>
 
       {!hideBanner ? (
-        <section className="pd-shop-hero pd-shop-hero--full" aria-label={bannerTitle}>
+        <section className="pd-shop-hero pd-shop-hero--full" aria-label={title}>
           <img
             className="pd-shop-hero-img"
             src="/media/shop/petdate-shop-hero.jpg"
-            alt="پت دیت شاپ — فضای برند فروشگاه حیوانات خانگی"
+            alt={t('shop.brandSpace')}
             width={1536}
             height={1024}
             decoding="async"
@@ -84,8 +90,8 @@ export function ShopChrome({
               </span>
               PetDate Shop
             </p>
-            <h1>{bannerTitle}</h1>
-            {bannerLead ? <p>{bannerLead}</p> : null}
+            <h1>{title}</h1>
+            {lead ? <p>{lead}</p> : null}
           </div>
         </section>
       ) : null}

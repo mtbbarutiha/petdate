@@ -93,5 +93,6 @@ assert.match(adminLogin, /LanguageToggle/, 'admin login exposes language toggle'
 const main = readFileSync(join(root, 'src/main.tsx'), 'utf8');
 assert.match(main, /I18nProvider/, 'app wrapped in I18nProvider');
 assert.match(main, /initLang/, 'lang initialized early');
+assert.match(main, /LangKeyedApp|key=\{lang\}/, 'language toggle remounts app chrome');
 
 console.log('i18n.selftest: ok');
