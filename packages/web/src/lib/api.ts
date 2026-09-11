@@ -193,7 +193,9 @@ export async function listPets(filters?: {
   }
   if (filters?.species) params.set('species', filters.species);
   const qs = params.toString();
-  return request<PetProfile[]>(`/api/pets${qs ? `?${qs}` : ''}`);
+  return request<PetProfile[]>(`/api/pets${qs ? `?${qs}` : ''}`, {
+    headers: storedAuthHeaders(),
+  });
 }
 
 export async function getPet(id: number): Promise<PetProfile | null> {

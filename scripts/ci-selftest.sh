@@ -51,6 +51,9 @@ npx tsx "$ROOT/packages/web/src/lib/sitemap.selftest.ts"
 echo "==> selftest: web public marketing routes (vet-consult / adoption / magazine)"
 npx tsx "$ROOT/packages/web/src/lib/publicRoutes.selftest.ts"
 
+echo "==> selftest: web authRedirect next=/vet-consult"
+npx tsx "$ROOT/packages/web/src/lib/authRedirect.selftest.ts"
+
 echo "==> selftest: shop product gallery assets"
 npx tsx "$ROOT/packages/web/src/data/shopGallery.selftest.ts"
 
@@ -116,6 +119,7 @@ run src/platform-settings.selftest.ts
 run src/magazine.selftest.ts
 run src/magazine-editorial-seed.selftest.ts
 run src/routes/pets-id-guard.selftest.ts
+run src/routes/pets-public-list.selftest.ts
 run src/routes/playdates-auth.selftest.ts
 run src/site-analytics.selftest.ts
 

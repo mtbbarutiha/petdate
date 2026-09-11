@@ -17,7 +17,7 @@ export function sanitizeNext(raw: string | null | undefined, fallback = '/home')
 export function loginPath(next?: string | null): string {
   const target = sanitizeNext(next, '/home');
   const base =
-    target === '/home' || target === '/vet-consult'
+    target === '/home'
       ? '/auth/login'
       : `/auth/login?next=${encodeURIComponent(target)}`;
   // Keep gtm_debug / _dbg on the login URL so Tag Assistant stays paired.
@@ -39,10 +39,7 @@ export function postAuthPath(opts: {
   if (!opts.hasRole) return withTagAssistantParams('/onboarding/role');
   if (!opts.isProfileComplete) return withTagAssistantParams('/onboarding/profile');
   const sanitized = sanitizeNext(opts.next, '/home');
-  if (
-    opts.roleHome &&
-    (sanitized === '/home' || sanitized === '/vet-consult')
-  ) {
+  if (opts.roleHome && sanitized === '/home') {
     return withTagAssistantParams(opts.roleHome);
   }
   return withTagAssistantParams(sanitized);

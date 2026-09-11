@@ -421,7 +421,7 @@ export function WelcomePage() {
         <nav className="pepito-nav-links" aria-label="بخش‌ها">
           <a href="#services">خدمات</a>
           <a href="#rely">اعتماد</a>
-          <a href="#pets">پذیرش</a>
+          <Link to="/adoption">پذیرش</Link>
           <a href="#news">اخبار</a>
           <a href="#faq">سؤالات</a>
         </nav>

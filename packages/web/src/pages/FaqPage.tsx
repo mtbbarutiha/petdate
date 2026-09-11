@@ -104,7 +104,7 @@ export function FaqPage() {
             <Link to="/vet-consult" className="pepito-btn button-3">
               دامپزشک آنلاین
             </Link>
-            <Link to="/#pets" className="pepito-btn button-3">
+            <Link to="/adoption" className="pepito-btn button-3">
               پذیرش پت
             </Link>
             <Link to="/chats" className="pepito-btn button-1">

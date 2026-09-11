@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
   GraduationCap,
@@ -76,7 +77,7 @@ function navForRole(role?: UserRole): { to: string; icon: LucideIcon; label: str
   return DEFAULT_NAV;
 }
 
-export function Layout() {
+export function Layout({ children }: { children?: ReactNode }) {
   const { pathname } = useLocation();
   const { user } = useAuthStore();
   const active = primaryRole(user?.roles, user?.role);
@@ -111,7 +112,7 @@ export function Layout() {
         </aside>
 
         <main className="pepito-app-main">
-          <Outlet />
+          {children ?? <Outlet />}
           <LiveIncomingRequests />
         </main>
       </div>
