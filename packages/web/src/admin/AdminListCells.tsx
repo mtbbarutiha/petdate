@@ -13,11 +13,17 @@ export function AdminWalletCell({
   toman = 0,
   stars = 0,
   ton = 0,
+  compact = false,
+  onOpenCredit,
 }: {
   coins?: number | null;
   toman?: number | null;
   stars?: number | null;
   ton?: number | null;
+  /** 2×2 chip grid for dense tables (less horizontal scroll). */
+  compact?: boolean;
+  /** Optional: open «اعتبار» modal instead of a separate action button. */
+  onOpenCredit?: () => void;
 }) {
   const rows: { key: WalletCurrency; value: number; short: string }[] = [
     { key: 'coins', value: Number(coins) || 0, short: 'سکه' },
@@ -25,20 +31,43 @@ export function AdminWalletCell({
     { key: 'stars', value: Number(stars) || 0, short: 'ستاره' },
     { key: 'ton', value: Number(ton) || 0, short: 'تون' },
   ];
+  const className = [
+    'admin-wallet-grid',
+    compact ? 'admin-wallet-grid--compact' : '',
+    onOpenCredit ? 'admin-wallet-grid--action' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+  const chips = rows.map((r) => (
+    <div
+      key={r.key}
+      className={`admin-wallet-chip${r.value ? '' : ' admin-wallet-chip--zero'}`}
+      title={WALLET_CURRENCY_LABELS_FA[r.key]}
+    >
+      <span className="admin-wallet-chip-label">{r.short}</span>
+      <span className="admin-wallet-chip-value admin-mono" dir="ltr">
+        {formatNumFa(r.value)}
+      </span>
+    </div>
+  ));
+
+  if (onOpenCredit) {
+    return (
+      <button
+        type="button"
+        className={className}
+        dir="rtl"
+        title="موجودی کیف پول — برای شارژ کلیک کنید"
+        onClick={onOpenCredit}
+      >
+        {chips}
+      </button>
+    );
+  }
+
   return (
-    <div className="admin-wallet-grid" dir="rtl" title="موجودی کیف پول">
-      {rows.map((r) => (
-        <div
-          key={r.key}
-          className={`admin-wallet-chip${r.value ? '' : ' admin-wallet-chip--zero'}`}
-          title={WALLET_CURRENCY_LABELS_FA[r.key]}
-        >
-          <span className="admin-wallet-chip-label">{r.short}</span>
-          <span className="admin-wallet-chip-value admin-mono" dir="ltr">
-            {formatNumFa(r.value)}
-          </span>
-        </div>
-      ))}
+    <div className={className} dir="rtl" title="موجودی کیف پول">
+      {chips}
     </div>
   );
 }

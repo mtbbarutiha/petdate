@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
-import { List, Map, Pencil, Search, Trash2 } from 'lucide-react';
+import { Ban, List, Map, Pencil, Search, ShieldCheck, Trash2 } from 'lucide-react';
 import {
   IranProvinceHeatmap,
   USERS_HEATMAP_COPY,
@@ -21,7 +21,6 @@ import { adminCan } from '../auth';
 import { AdminIdChip } from '../AdminIds';
 import {
   AdminContactCell,
-  AdminTelegramCell,
   AdminWalletCell,
   adminUserDemographics,
   adminVerifyClass,
@@ -396,19 +395,15 @@ export function AdminUsersPage() {
         />
       </article>
       ) : (
-      <div className="admin-table-wrap admin-card">
-        <table className="admin-table admin-table--dense">
+      <div className="admin-table-wrap admin-card admin-table-wrap--users">
+        <table className="admin-table admin-table--dense admin-table--users">
           <thead>
             <tr>
               <th>آیدی</th>
-              <th>نام</th>
-              <th>تلگرام</th>
+              <th>کاربر</th>
               <th>تماس</th>
-              <th>شهر</th>
-              <th>نقش‌ها</th>
-              <th>نقش اصلی</th>
+              <th>نقش</th>
               <th>کیف پول</th>
-              <th>احراز</th>
               <th>وضعیت</th>
               <th>عملیات</th>
             </tr>
@@ -418,6 +413,17 @@ export function AdminUsersPage() {
               const publicId = userPublicIdOf(u);
               const roles = activeRolesOf(u);
               const demo = adminUserDemographics(u);
+              const place = [u.city, u.province].filter(Boolean).join('، ');
+              const tgHandle = u.username ? `@${u.username}` : null;
+              const tgId =
+                u.telegramId != null && String(u.telegramId).trim()
+                  ? String(u.telegramId)
+                  : null;
+              const metaParts = [
+                demo,
+                tgHandle || (tgId ? `tg:${tgId}` : null),
+                place || null,
+              ].filter(Boolean);
               return (
                 <tr key={u.id}>
                   <td>
@@ -425,114 +431,128 @@ export function AdminUsersPage() {
                   </td>
                   <td>
                     <AdminEntityCell
-                      thumb={<AdminThumb src={u.avatarUrl} label={u.name} kind="user" alt={u.name} />}
+                      thumb={<AdminThumb src={u.avatarUrl} label={u.name} kind="user" alt={u.name} size={32} />}
                       title={<strong>{u.name}</strong>}
-                      subtitle={demo}
+                      subtitle={
+                        metaParts.length ? (
+                          <span
+                            className="admin-user-row-meta"
+                            title={tgId && tgHandle ? `Telegram ID: ${tgId}` : undefined}
+                          >
+                            {metaParts.join(' · ')}
+                          </span>
+                        ) : null
+                      }
                     />
-                  </td>
-                  <td>
-                    <AdminTelegramCell username={u.username} telegramId={u.telegramId} />
                   </td>
                   <td>
                     <AdminContactCell phone={u.phone} email={u.email} />
                   </td>
-                  <td className="admin-cell-nowrap">{[u.city, u.province].filter(Boolean).join('، ') || '—'}</td>
                   <td>
-                    <div className="admin-role-badges">
-                      {roles.length
-                        ? roles.map((r) => (
-                            <span
-                              key={r}
-                              className={`admin-badge ${r === u.role ? 'admin-badge--info' : ''}`}
-                              title={r === u.role ? 'نقش اصلی' : undefined}
-                            >
-                              {USER_ROLE_LABELS[r] || r}
-                            </span>
-                          ))
-                        : <span className="admin-muted">بدون نقش</span>}
+                    <div className="admin-user-role-cell">
+                      {roles.length > 1 ? (
+                        <div className="admin-role-badges admin-role-badges--tight">
+                          {roles
+                            .filter((r) => r !== u.role)
+                            .map((r) => (
+                              <span key={r} className="admin-badge">
+                                {USER_ROLE_LABELS[r] || r}
+                              </span>
+                            ))}
+                        </div>
+                      ) : null}
+                      <select
+                        className="admin-select admin-select--compact"
+                        value={u.role || ''}
+                        disabled={busyId === u.id}
+                        aria-label="نقش اصلی"
+                        onChange={(e) => void setPrimaryRole(u, e.target.value as UserRole)}
+                      >
+                        {USER_ROLES.map((r) => (
+                          <option key={r} value={r}>
+                            {USER_ROLE_LABELS[r]}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   </td>
                   <td>
-                    <select
-                      className="admin-select admin-select--compact"
-                      value={u.role || ''}
-                      disabled={busyId === u.id}
-                      onChange={(e) => void setPrimaryRole(u, e.target.value as UserRole)}
-                    >
-                      {USER_ROLES.map((r) => <option key={r} value={r}>{USER_ROLE_LABELS[r]}</option>)}
-                    </select>
-                  </td>
-                  <td>
                     <AdminWalletCell
+                      compact
                       coins={u.coins}
                       toman={u.walletToman}
                       stars={u.walletStars}
                       ton={u.walletTon}
+                      onOpenCredit={
+                        isDeletedUserShell(u)
+                          ? undefined
+                          : () => setCredit({ userId: u.id, amount: '10000', currency: 'toman' })
+                      }
                     />
                   </td>
                   <td>
-                    <span className={adminVerifyClass(u.verificationStatus)}>
-                      {adminVerifyLabel(u.verificationStatus)}
-                    </span>
+                    <div className="admin-cell-compact admin-user-status-cell">
+                      <span className={adminVerifyClass(u.verificationStatus)}>
+                        {adminVerifyLabel(u.verificationStatus)}
+                      </span>
+                      <span
+                        className={`admin-badge ${
+                          u.isActive === false ? 'admin-badge--error' : 'admin-badge--info'
+                        }`}
+                      >
+                        {userStatusLabel(u)}
+                      </span>
+                    </div>
                   </td>
                   <td>
-                    <span className={`admin-badge ${u.isActive === false ? 'admin-badge--error' : 'admin-badge--info'}`}>
-                      {userStatusLabel(u)}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="admin-row-actions">
+                    <div className="admin-row-actions admin-row-actions--icon">
                       {!isDeletedUserShell(u) ? (
                         <button
                           type="button"
-                          className="admin-btn"
+                          className="admin-icon-btn"
                           disabled={busyId === u.id}
                           title="ویرایش"
+                          aria-label="ویرایش"
                           onClick={() => openEdit(u)}
                         >
-                          <Pencil size={14} /> ویرایش
+                          <Pencil size={14} />
                         </button>
                       ) : null}
                       {!isDeletedUserShell(u) ? (
                         <button
                           type="button"
-                          className="admin-btn admin-btn--ghost"
+                          className={`admin-icon-btn ${
+                            u.isActive === false ? 'admin-icon-btn--ok' : 'admin-icon-btn--danger'
+                          }`}
                           disabled={busyId === u.id}
-                          onClick={() => setCredit({ userId: u.id, amount: '10000', currency: 'toman' })}
-                        >
-                          اعتبار
-                        </button>
-                      ) : null}
-                      {!isDeletedUserShell(u) ? (
-                        <button
-                          type="button"
-                          className={`admin-btn ${u.isActive === false ? 'admin-btn--primary' : 'admin-btn--danger'}`}
-                          disabled={busyId === u.id}
+                          title={u.isActive === false ? 'رفع مسدودی' : 'مسدود'}
+                          aria-label={u.isActive === false ? 'رفع مسدودی' : 'مسدود'}
                           onClick={() => void toggleBan(u)}
                         >
-                          {u.isActive === false ? 'رفع مسدودی' : 'مسدود'}
+                          {u.isActive === false ? <ShieldCheck size={14} /> : <Ban size={14} />}
                         </button>
                       ) : null}
                       {canManageUsers && !isDeletedUserShell(u) ? (
                         <button
                           type="button"
-                          className="admin-btn admin-btn--danger"
+                          className="admin-icon-btn admin-icon-btn--danger"
                           disabled={busyId === u.id}
                           title="حذف کاربر"
+                          aria-label="حذف کاربر"
                           onClick={() => setDeleting(u)}
                         >
-                          <Trash2 size={14} /> حذف کاربر
+                          <Trash2 size={14} />
                         </button>
                       ) : null}
                       {isDeletedUserShell(u) ? (
-                        <span className="admin-muted">پوسته ناشناس (تاریخچه مالی محفوظ)</span>
+                        <span className="admin-muted">پوسته ناشناس</span>
                       ) : null}
                     </div>
                   </td>
                 </tr>
               );
             })}
-            {!users.length ? <tr><td colSpan={11} className="admin-muted">کاربری یافت نشد</td></tr> : null}
+            {!users.length ? <tr><td colSpan={7} className="admin-muted">کاربری یافت نشد</td></tr> : null}
           </tbody>
         </table>
       </div>
