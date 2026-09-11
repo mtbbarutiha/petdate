@@ -4593,7 +4593,12 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 
 .tg-skeleton {
   border-radius: 12px;
-  background: linear-gradient(90deg, #eceff4, #f7f8fb, #eceff4);
+  background: linear-gradient(
+    90deg,
+    var(--pd-skeleton-from, #eceff4),
+    var(--pd-skeleton-via, #f7f8fb),
+    var(--pd-skeleton-from, #eceff4)
+  );
   background-size: 200% 100%;
   animation: tgShimmer 1.2s ease infinite;
 }

@@ -11151,10 +11151,16 @@ body:has(.tg-chat) .pepito-landing-mobile-dock {
 }
 .pepito-my-pets-card.is-skeleton {
   min-height: 320px;
-  background: linear-gradient(90deg, #f3f1f7, #faf9fc, #f3f1f7);
+  background: linear-gradient(
+    90deg,
+    var(--pd-skeleton-pets-from, #f3f1f7),
+    var(--pd-skeleton-pets-via, #faf9fc),
+    var(--pd-skeleton-pets-from, #f3f1f7)
+  );
   background-size: 200% 100%;
-  animation: pepito-flow-rise 1s ease infinite;
+  animation: tgShimmer 1.2s ease infinite;
   pointer-events: none;
+  box-shadow: none;
 }
 .pepito-my-pets-card-main {
   display: flex;
