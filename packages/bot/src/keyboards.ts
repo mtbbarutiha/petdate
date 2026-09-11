@@ -149,7 +149,7 @@ export const NO_PET_MENU = {
   chat: '💬 چت',
 } as const;
 
-/** منوی نقش «دنبال پت» */
+/** @deprecated نقش «دنبال پت» حذف شد — فقط برای کیبورد کش‌شده تلگرام */
 export const PET_SEEKER_MENU = {
   petsAndPlaymates: '🐾 پت‌ها و همبازی',
   requestOwnerAdvice: '💬 مشورت خرید از صاحب پت',
@@ -677,7 +677,6 @@ export function mainMenuKeyboard(
   if (active === 'pet_owner') return petOwnerMenuKeyboard(telegramId, options);
   if (active === 'vet') return vetMenuKeyboard(telegramId, options);
   if (active === 'trainer') return trainerMenuKeyboard(telegramId, options);
-  if (active === 'pet_seeker') return petSeekerMenuKeyboard(telegramId, options);
   if (active === 'no_pet') return noPetMenuKeyboard(telegramId);
   return noPetMenuKeyboard(telegramId);
 }
@@ -812,6 +811,7 @@ export function sitterMenuKeyboard(
   return appendAccessRow(kb.resized().persistent(), telegramId);
 }
 
+/** @deprecated نقش دنبال پت حذف شد — کیبورد قدیمی فقط برای سازگاری */
 export function petSeekerMenuKeyboard(
   telegramId?: string | number | null,
   options?: { readyToAdopt?: boolean },

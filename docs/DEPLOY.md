@@ -39,7 +39,7 @@ Also create Environment **production** (Settings → Environments) and optionall
 ### Preserve on every deploy
 
 - **Single `DATABASE_PATH`** — `ecosystem.config.cjs` absolute SQLite SoT; rsync **excludes** `*.db*` (never wipe live DB).
-- **Marketplace roles** — `trainer` is a live selectable role; `pet_sitter` and `community_seeker` stay in `REMOVED_USER_ROLES` (DB sitter columns retained; find-sitter UX removed).
+- **Marketplace roles** — `trainer` is a live selectable role; `pet_sitter`, `community_seeker`, and `pet_seeker` («دنبال پت») stay in `REMOVED_USER_ROLES` (`pet_seeker` → `no_pet`; others → `pet_owner`; DB sitter columns retained; find-sitter UX removed).
 - **web-cta-once-v2** — CTA at most once per chat+user (api + bot markers checked in predeploy).
 - **Transactions / wallet** — api route markers must remain (predeploy greps).
 - **Full shop UI** — `ShopOrdersPage`, add-to-cart CTA, toman/rial + card-to-card checkout (`ShopCartPage` / `ShopCardPayPage`). Thin feature-branch `dist` must never rsync `--delete` over live shop.

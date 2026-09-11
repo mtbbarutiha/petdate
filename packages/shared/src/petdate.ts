@@ -4,11 +4,14 @@ export type UserRole =
   | 'pet_owner'
   | 'vet'
   | 'no_pet'
-  | 'pet_seeker'
   | 'trainer';
 
-/** Legacy roles removed from UX — migrated to pet_owner when they were the only role. */
-export const REMOVED_USER_ROLES = ['pet_sitter', 'community_seeker'] as const;
+/**
+ * Legacy roles removed from UX.
+ * - pet_sitter / community_seeker → pet_owner when they were the only role
+ * - pet_seeker («دنبال پت») → no_pet when it was the only role
+ */
+export const REMOVED_USER_ROLES = ['pet_sitter', 'community_seeker', 'pet_seeker'] as const;
 export type RemovedUserRole = (typeof REMOVED_USER_ROLES)[number];
 
 export type OnboardingStatus =
@@ -1057,7 +1060,6 @@ export const USER_ROLES: UserRole[] = [
   'pet_owner',
   'vet',
   'no_pet',
-  'pet_seeker',
   'trainer',
 ];
 
@@ -1065,7 +1067,6 @@ export const USER_ROLE_LABELS: Record<UserRole, string> = {
   pet_owner: '🐾 صاحب پت',
   vet: '🩺 دامپزشک',
   no_pet: '🏠 بدون پت',
-  pet_seeker: '🔍 دنبال پت',
   trainer: '🎓 مربی',
 };
 
@@ -1081,7 +1082,6 @@ export const ROLE_DASHBOARD_PATHS: Record<UserRole, string> = {
   pet_owner: '/home',
   vet: '/vet-consult',
   no_pet: '/home',
-  pet_seeker: '/home',
   trainer: '/trainer-consult',
 };
 
@@ -1098,13 +1098,11 @@ export function primaryRole(roles: UserRole[] | undefined | null, fallback?: Use
   return list[0];
 }
 
-function isRemovedRole(value: unknown): value is RemovedUserRole {
-  return typeof value === 'string' && (REMOVED_USER_ROLES as readonly string[]).includes(value);
-}
-
 /**
- * Drop removed roles (پرستار پت / جامعه پت). If nothing valid remains but a
- * removed role was present, fall back to pet_owner so login/onboarding stay intact.
+ * Drop removed roles (پرستار پت / جامعه پت / دنبال پت).
+ * If nothing valid remains:
+ * - pet_seeker alone → no_pet (nearest role)
+ * - other removed roles → pet_owner so login/onboarding stay intact
  */
 export function sanitizeRoleList(
   roles?: readonly string[] | null,
@@ -1112,10 +1110,14 @@ export function sanitizeRoleList(
 ): UserRole[] {
   const raw = [...(roles ?? [])];
   if (fallback) raw.push(fallback);
-  const hadRemoved = raw.some(isRemovedRole);
+  const hadPetSeeker = raw.some((r) => r === 'pet_seeker');
+  const hadLegacyRemoved = raw.some(
+    (r) => r === 'pet_sitter' || r === 'community_seeker'
+  );
   const kept = raw.filter((r): r is UserRole => USER_ROLES.includes(r as UserRole));
   if (kept.length) return [...new Set(kept)];
-  if (hadRemoved) return ['pet_owner'];
+  if (hadPetSeeker) return ['no_pet'];
+  if (hadLegacyRemoved) return ['pet_owner'];
   return [];
 }
 

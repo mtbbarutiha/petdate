@@ -78,16 +78,20 @@ grep -q "WEB_CTA_ONCE_MARKER = 'web-cta-once-v2'" packages/bot/src/web-chat-cta-
   || fail "bot web-cta-once-v2 marker missing"
 ok "web-cta-once-v2"
 
-grep -q "REMOVED_USER_ROLES = \\['pet_sitter', 'community_seeker'\\]" packages/shared/src/petdate.ts \
-  || fail "REMOVED_USER_ROLES (pet_sitter + community_seeker) missing"
-# trainer stays live; pet_sitter is removed from UX (DB columns retained)
+grep -q "REMOVED_USER_ROLES = \\['pet_sitter', 'community_seeker', 'pet_seeker'\\]" packages/shared/src/petdate.ts \
+  || fail "REMOVED_USER_ROLES (pet_sitter + community_seeker + pet_seeker) missing"
+# trainer stays live; pet_sitter / community_seeker / pet_seeker removed from UX
 grep -q "'trainer'" packages/shared/src/petdate.ts \
   || fail "trainer missing from shared roles"
 ! awk '/export const USER_ROLES/,/];/' packages/shared/src/petdate.ts | grep -q "pet_sitter" \
   || fail "pet_sitter still listed in USER_ROLES"
+! awk '/export const USER_ROLES/,/];/' packages/shared/src/petdate.ts | grep -q "pet_seeker" \
+  || fail "pet_seeker still listed in USER_ROLES"
 ! awk '/^export type UserRole/,/^$/' packages/shared/src/petdate.ts | grep -q "pet_sitter" \
   || fail "pet_sitter still in UserRole union"
-ok "marketplace roles (trainer live; pet_sitter + community_seeker removed)"
+! awk '/^export type UserRole/,/^$/' packages/shared/src/petdate.ts | grep -q "pet_seeker" \
+  || fail "pet_seeker still in UserRole union"
+ok "marketplace roles (trainer live; pet_sitter + community_seeker + pet_seeker removed)"
 
 grep -q 'DATABASE_PATH' ecosystem.config.cjs \
   || fail "ecosystem.config.cjs must define single DATABASE_PATH"
