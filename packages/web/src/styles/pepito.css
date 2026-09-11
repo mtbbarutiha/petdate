@@ -1227,8 +1227,9 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 }
 
 
+/* White after services (soft gray) — rely section removed; keep stripe rhythm */
 .pepito-adoption {
-  background: var(--pepito-soft);
+  background: #fff;
   padding-block: 120px;
 }
 .pepito-adoption-grid {
@@ -1734,89 +1735,6 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   line-height: 1.5;
 }
 
-/* ========== Pepito “Why rely on us?” (banner / chose-us) ========== */
-/* LTR Pepito: copy col-lg-6 | offset-lg-2 | img col-lg-4 (image on the right).
-   RTL: media first → physical right, copy second → physical left. */
-.pepito-rely {
-  background: #fff;
-  padding-block: 120px;
-  overflow: hidden;
-}
-.pepito-rely-grid {
-  display: grid;
-  /* RTL col1 (right) = image ~4/12, col2 (left) = copy ~6/12, gap ≈ offset */
-  grid-template-columns: minmax(0, 0.72fr) minmax(0, 1fr);
-  column-gap: clamp(1.5rem, 6vw, 4.5rem);
-  row-gap: 1.75rem;
-  align-items: center;
-}
-.pepito-rely-copy {
-  min-width: 0;
-}
-.pepito-rely-copy .pepito-eyebrow {
-  margin: 0 0 0.55rem;
-  color: var(--pepito-dark);
-  font-weight: 500;
-  font-size: 18px;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.65rem;
-  letter-spacing: 0;
-}
-.pepito-rely-copy h2 {
-  margin: 0 0 0.85rem;
-  font-size: clamp(2rem, 3.6vw, 2.8rem);
-  font-weight: 600;
-  color: var(--pepito-dark);
-  line-height: 1.2;
-}
-.pepito-rely-copy > p {
-  margin: 0 0 1.5rem;
-  max-width: 34rem;
-  color: var(--pepito-muted);
-  font-size: 17px;
-  line-height: 1.75;
-}
-.pepito-rely-lists {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0.75rem 1.5rem;
-}
-.pepito-listext {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-.pepito-listext li {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-.pepito-listext li + li {
-  margin-top: 10px;
-}
-.pepito-listext-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--pepito-pink);
-  flex-shrink: 0;
-  transform: rotate(30deg);
-  font-size: 1.15rem;
-  line-height: 1;
-}
-.pepito-listext-icon i[class^='flaticon-']::before {
-  margin: 0;
-  font-size: inherit;
-  line-height: 1;
-}
-.pepito-about-listext {
-  margin: 0 0 1.35rem;
-}
-.pepito-about-listext .pepito-listext-text {
-  font-size: 1.05rem;
-  font-weight: 600;
-}
 .pepito-btn-icon i[class^='flaticon-'],
 .pepito-eyebrow-icon i[class^='flaticon-'] {
   display: inline-flex;
@@ -1827,39 +1745,6 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 .pepito-eyebrow-icon i[class^='flaticon-']::before {
   margin: 0;
   font-size: inherit;
-}
-.pepito-listext-text {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 500;
-  color: var(--pepito-dark);
-  line-height: 1.4;
-}
-.pepito-rely-media {
-  position: relative;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  min-width: 0;
-  min-height: 280px;
-}
-.pepito-rely-media img {
-  display: block;
-  width: 100%;
-  max-width: 420px;
-  height: auto;
-  object-fit: contain;
-  object-position: center bottom;
-  filter: drop-shadow(0 18px 40px rgba(25, 6, 61, 0.12));
-  animation: pepito-rely-float 3.2s ease-in-out infinite alternate;
-  will-change: transform;
-}
-@keyframes pepito-rely-float {
-  0% { transform: translateY(0); }
-  100% { transform: translateY(-14px); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .pepito-rely-media img { animation: none; }
 }
 
 /* ========== Pepito shop / featured products ========== */
@@ -2685,17 +2570,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   .pepito-about-photo {
     aspect-ratio: 5 / 4;
   }
-  .pepito-faq-layout,
-  .pepito-rely-grid { grid-template-columns: 1fr; }
-  /* Pepito mobile: copy first, then image */
-  .pepito-rely-copy { order: -1; }
-  .pepito-rely-media {
-    min-height: 0;
-  }
-  .pepito-rely-media img {
-    max-width: 320px;
-    margin-inline: auto;
-  }
+  .pepito-faq-layout { grid-template-columns: 1fr; }
   .pepito-shop-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -2758,13 +2633,9 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
     padding-block: 4.5rem;
   }
 
-  .pepito-rely,
   .pepito-shop,
   .pepito-news {
     padding-block: 4.5rem;
-  }
-  .pepito-rely-lists {
-    grid-template-columns: 1fr;
   }
   .pepito-news-card {
     flex-basis: min(86%, 320px);

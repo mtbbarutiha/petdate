@@ -85,4 +85,8 @@ assert.doesNotMatch(
 assert.match(welcome, /pepito-service-icon--proto/, 'services use larger prototype icons');
 assert.doesNotMatch(welcome, /پیدا کردن پرستار|مراقبت شبانه|نگهداری پت/, 'no sitter leftover in welcome services');
 
+// Rely / “why trust us” strip removed — avoid gray|white|gray sandwich collapse
+assert.doesNotMatch(welcome, /id="rely"|pepito-rely|چرا به ما اعتماد کنید/, 'welcome rely/trust section removed');
+assert.doesNotMatch(welcome, /href="#rely"/, 'nav trust anchor removed');
+
 console.log('publicRoutes.selftest: ok');
