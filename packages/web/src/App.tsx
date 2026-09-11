@@ -1,5 +1,5 @@
-import { lazy, Suspense } from 'react';
-import { Navigate, Route, Routes } from 'react-router-dom';
+import { lazy, Suspense, useEffect } from 'react';
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { AppGuards } from './components/AuthGuard';
 import { Layout } from './components/Layout';
 import { RouteSeo } from './components/RouteSeo';
@@ -7,7 +7,17 @@ import { ShopCartProvider } from './hooks/useShopCart';
 import { AppToastProvider } from './hooks/useAppToast';
 import { LandingMobileDock } from './components/LandingMobileDock';
 import { ScrollToTop } from './components/ScrollToTop';
+import { trackPageview } from './lib/siteAnalytics';
 import { WelcomePage } from './pages/WelcomePage';
+
+function SiteAnalyticsListener() {
+  const location = useLocation();
+  useEffect(() => {
+    trackPageview(location.pathname);
+  }, [location.pathname]);
+  return null;
+}
+
 import { LoginPage } from './pages/auth/LoginPage';
 
 /* Heavy / rarely-first routes — keep welcome + login in the main chunk. */
@@ -125,6 +135,9 @@ const AdminMailPage = lazy(() =>
 );
 const AdminMonitoringPage = lazy(() =>
   import('./admin/pages/AdminMonitoringPage').then((m) => ({ default: m.AdminMonitoringPage })),
+);
+const AdminSiteReportsPage = lazy(() =>
+  import('./admin/pages/AdminSiteReportsPage').then((m) => ({ default: m.AdminSiteReportsPage })),
 );
 const AdminConsultsPage = lazy(() =>
   import('./admin/pages/AdminConsultsPage').then((m) => ({ default: m.AdminConsultsPage })),
@@ -302,6 +315,7 @@ export default function App() {
       <AppToastProvider>
       <ShopCartProvider>
         <ScrollToTop />
+        <SiteAnalyticsListener />
         <RouteSeo />
         <Suspense fallback={<RouteFallback />}>
           <Routes>
@@ -379,6 +393,7 @@ export default function App() {
                 <Route path="mail" element={<AdminMailPage />} />
                 <Route path="logs" element={<AdminLogsPage />} />
                 <Route path="monitoring" element={<AdminMonitoringPage />} />
+                <Route path="site-reports" element={<AdminSiteReportsPage />} />
                 <Route path="settings" element={<AdminSettingsPage />} />
                 <Route path="hr" element={<AdminHrDashboardPage />} />
                 <Route path="hr/recruitment" element={<AdminHrRecruitmentDashboardPage />} />

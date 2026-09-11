@@ -32,6 +32,7 @@ import { isCandooConfigured } from '../services/candoo';
 import { adminPlatform } from '../admin-platform';
 import { adminFinance } from '../admin-finance';
 import { buildAggregateDashboard, getPlatformActivity } from '../admin-aggregate-dashboard';
+import { buildSiteAnalyticsReport } from '../site-analytics';
 import {
   adminCreatePet,
   adminUpdatePet,
@@ -1543,6 +1544,16 @@ async function probeTelegramBot(): Promise<ServiceCheck> {
   if (second) return second;
   return checkDown('توکن هست؛ Telegram getMe ناموفق');
 }
+
+adminRouter.get('/site-analytics/reports', (req, res) => {
+  try {
+    const days = req.query.days ? Number(req.query.days) : 14;
+    res.json(buildSiteAnalyticsReport(Number.isFinite(days) ? days : 14));
+  } catch (err) {
+    console.error('site-analytics reports:', err);
+    res.status(500).json({ error: (err as Error).message });
+  }
+});
 
 adminRouter.get('/monitoring', async (_req, res) => {
   const mem = process.memoryUsage();

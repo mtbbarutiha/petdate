@@ -116,6 +116,7 @@ const NAV_GROUPS: NavGroup[] = [
   { title: 'محتوا و سیستم', items: [
     { to: '/admin/content', icon: Bell, label: 'اعلان‌ها / محتوا', perm: 'platform.write' },
     { to: '/admin/mail', icon: Mail, label: 'ایمیل / SMTP', perm: 'platform.read' },
+    { to: '/admin/site-reports', icon: BarChart3, label: 'گزارشات سایت', perm: 'platform.read' },
     { to: '/admin/monitoring', icon: Activity, label: 'مانیتورینگ', perm: 'platform.read' },
     { to: '/admin/logs', icon: ScrollText, label: 'لاگ خطاها', perm: 'platform.read' },
     { to: '/admin/settings', icon: Settings, label: 'تنظیمات پلتفرم', perm: 'platform.write' },
