@@ -73,6 +73,23 @@ assert.match(darkCss, /\.pepito-reviews-section/, 'reviews section remapped');
 assert.match(darkCss, /\.pepito-app-main\b/, 'app main canvas remapped');
 assert.match(darkCss, /\.pepito-home-action\b/, 'home action cards remapped');
 assert.match(darkCss, /\.pepito-vet-hero\b/, 'vet/trainer hero remapped');
+assert.match(darkCss, /\.pepito-vet-online-card\.is-online/, 'vet online card remapped');
+/* No muddy mint/teal radial wash on dark vet desk surfaces */
+assert.doesNotMatch(
+  darkCss,
+  /\.pepito-vet-hero\s*\{[^}]*radial-gradient[^}]*45,\s*212,\s*176/,
+  'vet hero has no green radial wash in dark',
+);
+assert.doesNotMatch(
+  darkCss,
+  /\.pepito-vet-online-card\.is-online\s*\{[^}]*radial-gradient/,
+  'vet online card has no radial wash in dark',
+);
+assert.match(
+  darkCss,
+  /\.pepito-vet-online-card\.is-online\s*\{[^}]*border-color:\s*color-mix\(in srgb,\s*var\(--pepito-mint\)/,
+  'vet online keeps mint border accent in dark',
+);
 assert.match(darkCss, /\.pepito-invite-card\b/, 'invite friends card remapped');
 assert.match(darkCss, /\.pepito-invite-card \.pepito-eyebrow/, 'invite eyebrow keeps accent in dark');
 assert.match(pepitoCss, /\.pepito-invite-actions \.pepito-btn[\s\S]*?min-height:\s*36px/, 'invite buttons keep ≥36px tap target');
