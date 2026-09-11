@@ -42,6 +42,7 @@ import {
   responseErrorLogger,
 } from './services/app-logger';
 import { attachChatWebSocket } from './ws/chatHub';
+import { ensureAllTeamAgents } from './services/team-agents';
 
 // Prefer IPv4 — Telegram notify fetch was timing out on IPv6
 try {
@@ -219,6 +220,12 @@ attachChatWebSocket(server);
 
 server.listen(PORT, () => {
   console.log(`🐾 petdate API روی پورت ${PORT} اجرا شد (WebSocket: /api/ws/chat)`);
+  try {
+    const agents = ensureAllTeamAgents();
+    console.log(`👥 team agents ready: ${agents.map((a) => a.name).join(' · ')}`);
+  } catch (err) {
+    console.warn('team agents boot failed:', (err as Error).message);
+  }
   // Sweep stale pending playmate / vet requests every 30s
   const sweep = () => {
     try {

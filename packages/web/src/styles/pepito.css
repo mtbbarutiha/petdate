@@ -1602,6 +1602,16 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   font-weight: 500;
   font-size: 18px;
 }
+.pepito-member-consult {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  margin-top: 1rem;
+  padding: 0.55rem 1.1rem;
+  font-size: 0.92rem;
+  min-height: 0;
+}
 
 /* Pepito testimonial / reviews — photo tilt + stars + trust band */
 .pepito-reviews-section {

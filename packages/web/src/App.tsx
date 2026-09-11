@@ -111,6 +111,9 @@ const VetConsultRoute = lazy(() =>
 const TrainerConsultPage = lazy(() =>
   import('./pages/ServiceConsultPage').then((m) => ({ default: m.TrainerConsultPage })),
 );
+const TeamChatStartPage = lazy(() =>
+  import('./pages/TeamChatStartPage').then((m) => ({ default: m.TeamChatStartPage })),
+);
 const VetChatPage = lazy(() =>
   import('./pages/VetChatPage').then((m) => ({ default: m.VetChatPage })),
 );
@@ -357,6 +360,7 @@ export default function App() {
             <Route path="adoption/:slug" element={<AdoptionDetailPage />} />
             <Route path="pet/:slugOrId" element={<PublicPetPage />} />
             <Route path="vet-consult" element={<VetConsultRoute />} />
+            <Route path="team-chat/:agentSlug" element={<TeamChatStartPage />} />
             <Route path="shop" element={<ShopHomePage />} />
             <Route path="shop/c/:category" element={<ShopCategoryPage />} />
             <Route path="shop/product/:id" element={<ShopProductPage />} />

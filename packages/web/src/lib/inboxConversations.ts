@@ -88,7 +88,7 @@ function sortInbox(items: InboxConversation[]): InboxConversation[] {
  */
 function collapseDuplicateAiInboxRows(items: InboxConversation[]): InboxConversation[] {
   const aiTitle =
-    /^(پاشا یزدانی|دستیار هوشمند پت‌دیت|دستیار هوشمند پت|دستیار هوشمند)$/;
+    /^(پاشا یزدانی|دکتر لیلا کیانی|لیلا کیانی|دستیار هوشمند پت‌دیت|دستیار هوشمند پت|دستیار هوشمند)$/;
   const seen = new Map<string, InboxConversation>();
   const out: InboxConversation[] = [];
   for (const item of sortInbox(items)) {

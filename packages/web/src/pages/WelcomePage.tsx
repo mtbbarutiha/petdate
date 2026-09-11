@@ -157,10 +157,11 @@ const PETS = ADOPTION_PETS.map((p) => ({
   details: p.details.slice(0, 3) }));
 
 const TEAM = [
-  { name: 'دکتر سارا نوری', role: 'دامپزشک', img: `${P}/01-3.jpg` },
-  { name: 'دکتر امیر رضایی', role: 'مدیر آموزش', img: `${P}/02-3.jpg` },
-  { name: 'دکتر لیلا کیانی', role: 'مراقبت پت', img: `${P}/03-3.jpg` },
-  { name: 'دکتر پویا مرادی', role: 'مشاوره آنلاین', img: `${P}/04-3.jpg` },
+  // DOM order (RTL): first item is visual-right. Visual L→R = سارا → ساناز → لیلا → لایلا.
+  { slug: 'layla-ahmadi', name: 'دکتر لایلا احمدی', role: 'مربی', img: `${P}/01-3.jpg` },
+  { slug: 'leila-kiani', name: 'دکتر لیلا کیانی', role: 'مربی', img: `${P}/02-3.jpg` },
+  { slug: 'sanaz-ghaffari', name: 'دکتر ساناز غفاری', role: 'دامپزشک', img: `${P}/03-3.jpg` },
+  { slug: 'sara-nozi', name: 'دکتر سارا نوزی', role: 'دامپزشک', img: `${P}/04-3.jpg` },
 ] as const;
 
 const TEAM_ALT = (name: string, role: string) => `${name} — ${role} پت‌دیت`;
@@ -787,13 +788,20 @@ export function WelcomePage() {
         </div>
         <div className="pepito-team">
           {TEAM.map((m) => (
-            <article key={m.name} className="pepito-member">
+            <article key={m.slug} className="pepito-member">
               <div className="pepito-member-photo">
                 <img src={m.img} alt={TEAM_ALT(m.name, m.role)} loading="lazy" width={600} height={700} decoding="async" />
               </div>
               <div className="pepito-member-info">
                 <h3>{m.name}</h3>
                 <p>{m.role}</p>
+                <GatedLink
+                  to={`/team-chat/${m.slug}`}
+                  className="pepito-btn button-3 pepito-member-consult"
+                  data-testid={`team-consult-${m.slug}`}
+                >
+                  💬 مشاوره آنلاین
+                </GatedLink>
               </div>
             </article>
           ))}

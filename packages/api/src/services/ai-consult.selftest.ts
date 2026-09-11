@@ -40,7 +40,7 @@ async function main() {
   assert(speciesLabelFa('bird') === 'پرنده', 'bird → پرنده');
 
   const tip = offlineAiAdvice({ kind: 'trainer', petName: 'رکس', petSpecies: 'dog' });
-  assert(tip.includes('پاشا یزدانی'), 'offline trainer introduces as Pasha');
+  assert(tip.includes('دکتر لیلا کیانی'), 'offline trainer introduces as Pasha');
   assert(/احوال|سلام|حالت چطوره/.test(tip), 'offline trainer opens with greeting/احوال‌پرسی');
   assert(!/\bDOG\b|\bdog\b/i.test(tip), 'offline greeting must not echo English species DOG');
   assert(/سگ/.test(tip), 'offline greeting uses Persian سگ for dog species');
@@ -221,7 +221,7 @@ async function main() {
     petName: 'رکس',
     petSpecies: 'dog',
   });
-  assert(puppyCanon.includes('پاشا یزدانی') || /توله|جامعه|جلسه/.test(puppyCanon), 'puppy canon topic');
+  assert(puppyCanon.includes('دکتر لیلا کیانی') || /توله|جامعه|جلسه/.test(puppyCanon), 'puppy canon topic');
   assert(puppyCanon.length > 350, 'puppy offline reply substantial');
   assert(!/دستیار هوشمند|ربات|هوش مصنوعی|\bAI\b/i.test(puppyCanon), 'puppy voice human');
   assert(!/Culture Clash|Puppy Primer|Think Like a Cat|Total Cat Mojo|Companion Parrot|Exotic Pet Practice/i.test(puppyCanon), 'do not spam book titles unless asked');
@@ -256,7 +256,7 @@ async function main() {
 
   const vetTip = offlineAiAdvice({ kind: 'vet', petName: 'ملوس' });
   assert(vetTip.includes('دامپزشک'), 'offline vet tip');
-  assert(vetTip.includes('پاشا یزدانی'), 'offline vet introduces as Pasha');
+  assert(vetTip.includes('دکتر لیلا کیانی'), 'offline vet introduces as Pasha');
   assert(!/دستیار هوشمند پت/.test(vetTip), 'vet tip must not use old smart-assistant brand');
   const supportTip = offlineAiAdvice({ kind: 'support', userMessage: 'OTP نیومد' });
   assert(supportTip.includes('پشتیبانی'), 'offline support tip');
@@ -272,13 +272,13 @@ async function main() {
 
   const aiUser = ensureAiAssistantUser();
   assert(isAiAssistantUserId(aiUser.id), 'ai user flagged');
-  assert(aiUser.name === 'پاشا یزدانی', 'ai user profile name is Pasha');
+  assert(aiUser.name === 'دکتر لیلا کیانی', 'ai user profile name is Pasha');
 
   const session = await startAiFallbackConsult({ patient, serviceKind: 'trainer' });
   assert(session, 'ai session started');
-  assert(decorateAiConsultDisplay(session!.consult).vetName === 'پاشا یزدانی', 'display name');
+  assert(decorateAiConsultDisplay(session!.consult).vetName === 'دکتر لیلا کیانی', 'display name');
   const msgs = dbService.listVetConsultChatMessages(session!.consult.id);
-  assert(msgs[0]!.text.includes('پاشا یزدانی'), 'intro mentions Pasha');
+  assert(msgs[0]!.text.includes('دکتر لیلا کیانی'), 'intro mentions Pasha');
   assert(!/دستیار هوشمند|ربات|هوش مصنوعی/i.test(msgs[0]!.text), 'trainer intro must not sound like a bot');
   assert(/احوال|سلام|حالت چطوره|خوبی/.test(msgs[0]!.text), 'trainer intro is greeting-first احوال‌پرسی');
   assert(
@@ -302,7 +302,7 @@ async function main() {
     .filter((c) => c.vetUserId === aiUser.id && !c.chatEnded);
   assert(activeTrainer.length === 1, 'only one ongoing AI trainer consult after reuse');
 
-  // Vet AI fallback also displays as پاشا یزدانی (not legacy «دستیار هوشمند»).
+  // Vet AI fallback also displays as دکتر لیلا کیانی (not legacy «دستیار هوشمند»).
   const vetPatientTg = `selftest_ai_vet_${Date.now()}`;
   const { user: vetPatient } = dbService.findOrCreateUser({
     telegramId: vetPatientTg,
@@ -314,11 +314,11 @@ async function main() {
   const vetSession = await startAiFallbackConsult({ patient: vetPatient, serviceKind: 'vet' });
   assert(vetSession, 'vet ai session started');
   assert(
-    decorateAiConsultDisplay(vetSession!.consult).vetName === 'پاشا یزدانی',
+    decorateAiConsultDisplay(vetSession!.consult).vetName === 'دکتر لیلا کیانی',
     'vet AI display name is Pasha'
   );
   const vetMsgs = dbService.listVetConsultChatMessages(vetSession!.consult.id);
-  assert(vetMsgs[0]!.text.includes('پاشا یزدانی'), 'vet opening mentions Pasha');
+  assert(vetMsgs[0]!.text.includes('دکتر لیلا کیانی'), 'vet opening mentions Pasha');
   assert(!/دستیار هوشمند/.test(vetMsgs[0]!.text), 'vet opening must not say smart assistant');
 
   // After user ends chat, a new start may create — but closes orphans.

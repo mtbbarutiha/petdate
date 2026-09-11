@@ -5,15 +5,20 @@ import type {
   VetConsultation,
   VetConsultChatMessage,
 } from '@petdate/shared';
+import { DEFAULT_TEAM_AGENT_SLUG } from '@petdate/shared';
 import { dbService, getDb } from '../db';
 import {
   AI_ASSISTANT_DISPLAY_NAME,
   AI_TRAINER_DISPLAY_NAME,
-  aiAssistantTelegramId,
   buildTrainerOpeningGreeting,
   generateAiConsultAdvice,
   trainerTypingDelayMs,
 } from './ai-consult';
+import {
+  ensureAllTeamAgents,
+  ensureTeamAgentBySlug,
+  resolveTeamAgentForUserId,
+} from './team-agents';
 import {
   inferUserToneFromMessages,
   mergeUserTone,
@@ -27,7 +32,7 @@ import {
 } from './speech-to-text';
 import { fetchTelegramFileBytes } from './telegram-media';
 import { notifyVetChatTelegram } from './telegram-chat-notify';
-import { normalizeTelegramId } from './telegram-id';
+import { isSyntheticTelegramId, normalizeTelegramId } from './telegram-id';
 import { notifyInbox, notifyVetMessage, notifyVetThread } from '../ws/chatHub';
 
 function sleep(ms: number): Promise<void> {
@@ -35,32 +40,25 @@ function sleep(ms: number): Promise<void> {
 }
 
 export function ensureAiAssistantUser(): User {
-  const tg = aiAssistantTelegramId();
-  const existing = dbService.getUserByTelegramId(tg);
-  if (existing) {
-    if (existing.name !== AI_ASSISTANT_DISPLAY_NAME) {
-      dbService.updateUserProfile(existing.id, { name: AI_ASSISTANT_DISPLAY_NAME });
-    }
-    return dbService.getUserById(existing.id) ?? existing;
-  }
-  const { user } = dbService.findOrCreateUser({
-    telegramId: tg,
-    name: AI_ASSISTANT_DISPLAY_NAME,
-    username: 'petdate_ai',
-  });
-  dbService.setUserRoles(user.id, ['vet', 'trainer']);
-  return dbService.getUserById(user.id) ?? user;
+  ensureAllTeamAgents();
+  return ensureTeamAgentBySlug(DEFAULT_TEAM_AGENT_SLUG)!;
 }
 
 export function isAiAssistantUserId(userId: number): boolean {
   const u = dbService.getUserById(userId);
-  return Boolean(u?.telegramId && u.telegramId === aiAssistantTelegramId());
+  if (!u?.telegramId) return false;
+  if (isSyntheticTelegramId(u.telegramId)) return true;
+  return Boolean(resolveTeamAgentForUserId(userId));
 }
 
-/** نام نمایشی مربی/پزشک در چت وقتی طرف AI است — همیشه پاشا یزدانی */
+function agentDisplayName(aiUser: User): string {
+  return resolveTeamAgentForUserId(aiUser.id)?.name || aiUser.name || AI_ASSISTANT_DISPLAY_NAME;
+}
+
 export function decorateAiConsultDisplay(consult: VetConsultation): VetConsultation {
   if (!isAiAssistantUserId(consult.vetUserId)) return consult;
-  return { ...consult, vetName: AI_ASSISTANT_DISPLAY_NAME };
+  const ai = dbService.getUserById(consult.vetUserId);
+  return { ...consult, vetName: ai ? agentDisplayName(ai) : AI_ASSISTANT_DISPLAY_NAME };
 }
 
 function toAiKind(kind: ConsultServiceKind): 'vet' | 'trainer' | null {
@@ -83,6 +81,7 @@ export async function startAiFallbackConsult(opts: {
   serviceKind: ConsultServiceKind;
   petId?: number;
   userMessage?: string;
+  agentSlug?: string;
 }): Promise<{
   consult: VetConsultation;
   advice: string;
@@ -92,64 +91,44 @@ export async function startAiFallbackConsult(opts: {
   const aiKind = toAiKind(opts.serviceKind);
   if (!aiKind) return null;
 
-  const ai = ensureAiAssistantUser();
+  const slug = String(opts.agentSlug || '').trim() || DEFAULT_TEAM_AGENT_SLUG;
+  const ai = ensureTeamAgentBySlug(slug) ?? ensureAiAssistantUser();
   if (ai.id === opts.patient.id) return null;
+  const displayName = agentDisplayName(ai);
 
   const pet =
     opts.petId != null
       ? dbService.getPet(opts.petId)
       : dbService.listPets({ ownerId: opts.patient.id })[0];
 
-  // Reuse an ongoing AI consult so inbox does not grow a new «فعال» row each tap.
   const existing = dbService.findActiveAiConsultForPatient(opts.patient.id, aiKind, ai.id);
   if (existing && existing.status === 'active' && !existing.chatEnded) {
-    // Collapse any sibling orphans left by older always-create bugs.
     dbService.closeActiveAiConsultsForPatient(opts.patient.id, aiKind, ai.id, existing.id);
-
-    // Light refresh: attach pet when the open session had none.
     let consult = existing;
     if (pet?.id != null && existing.petId == null) {
       try {
         getDb()
-          .prepare(
-            `UPDATE vet_consultations SET pet_id = ? WHERE id = ? AND pet_id IS NULL`
-          )
+          .prepare(`UPDATE vet_consultations SET pet_id = ? WHERE id = ? AND pet_id IS NULL`)
           .run(pet.id, existing.id);
         consult = dbService.getVetConsultation(existing.id) ?? existing;
-      } catch {
-        /* ignore refresh failures — reuse still wins */
-      }
+      } catch { /* ignore */ }
     }
-
     const prior = dbService.listVetConsultChatMessages(consult.id, { limit: 40 });
     const lastAi = [...prior].reverse().find((m) => m.senderUserId === ai.id);
-    const adviceText =
-      lastAi?.text?.trim() ||
-      `گفتگو با ${AI_ASSISTANT_DISPLAY_NAME} از قبل باز است.`;
-
-    notifyVetThread(consult.id, [opts.patient.id, ai.id], {
-      reason: 'accepted',
-      status: 'active',
-    });
-    notifyInbox([opts.patient.id, ai.id], {
-      kind: 'vet',
-      reason: 'accepted',
-      id: consult.id,
-    });
-
+    const adviceText = lastAi?.text?.trim() || `گفتگو با ${displayName} از قبل باز است.`;
+    notifyVetThread(consult.id, [opts.patient.id, ai.id], { reason: 'accepted', status: 'active' });
+    notifyInbox([opts.patient.id, ai.id], { kind: 'vet', reason: 'accepted', id: consult.id });
     return { consult, advice: adviceText, source: 'offline', reused: true };
   }
 
   const petFields = petPromptFields(pet);
   const userMessage = opts.userMessage?.trim();
-
   let adviceText: string;
   let source: 'llm' | 'offline';
-
   if (aiKind === 'trainer' && !userMessage) {
-    // Greeting-first: no curriculum dump on session open.
     adviceText = buildTrainerOpeningGreeting({
       patientName: opts.patient.name,
+      agentName: displayName,
       ...petFields,
     });
     source = 'offline';
@@ -157,6 +136,7 @@ export async function startAiFallbackConsult(opts: {
     const generated = await generateAiConsultAdvice({
       kind: aiKind,
       patientName: opts.patient.name,
+      agentName: displayName,
       ...petFields,
       userMessage,
     });
@@ -164,45 +144,47 @@ export async function startAiFallbackConsult(opts: {
     source = generated.source;
   }
 
-  // User ended a prior session (or orphans remain): close leftover actives before insert.
   dbService.closeActiveAiConsultsForPatient(opts.patient.id, aiKind, ai.id, null);
-
   const consult = dbService.createVetConsultation({
     vetUserId: ai.id,
     patientUserId: opts.patient.id,
     petId: pet?.id,
     status: 'active',
-    notes:
-      aiKind === 'trainer'
-        ? `مشاوره آنلاین با ${AI_TRAINER_DISPLAY_NAME}`
-        : `مشاوره با ${AI_ASSISTANT_DISPLAY_NAME} (پزشک انسانی آنلاین نبود)`,
+    notes: aiKind === 'trainer' ? `مشاوره آنلاین با ${displayName}` : `مشاوره با ${displayName}`,
     feeCoins: 0,
     serviceKind: aiKind,
     providerShareCoins: 0,
   });
-
-  const messageText =
-    aiKind === 'trainer'
-      ? adviceText
-      : `دامپزشک انسانی آنلاین نبود — چت با ${AI_ASSISTANT_DISPLAY_NAME} شروع شد.\n\n${adviceText}`;
-
-  dbService.createVetConsultChatMessage({
-    consultId: consult.id,
-    senderUserId: ai.id,
-    text: messageText,
-  });
-
-  notifyVetThread(consult.id, [opts.patient.id, ai.id], {
-    reason: 'accepted',
-    status: 'active',
-  });
-  notifyInbox([opts.patient.id, ai.id], {
-    kind: 'vet',
-    reason: 'accepted',
-    id: consult.id,
-  });
-
+  const messageText = aiKind === 'trainer' ? adviceText : `چت با ${displayName} شروع شد.\n\n${adviceText}`;
+  dbService.createVetConsultChatMessage({ consultId: consult.id, senderUserId: ai.id, text: messageText });
+  notifyVetThread(consult.id, [opts.patient.id, ai.id], { reason: 'accepted', status: 'active' });
+  notifyInbox([opts.patient.id, ai.id], { kind: 'vet', reason: 'accepted', id: consult.id });
   return { consult, advice: adviceText, source };
+}
+
+export async function startTeamAgentConsult(opts: {
+  patient: User;
+  agentSlug: string;
+  petId?: number;
+}): Promise<{
+  consult: VetConsultation;
+  advice: string;
+  source: 'llm' | 'offline';
+  reused?: boolean;
+  agentSlug: string;
+} | null> {
+  const user = ensureTeamAgentBySlug(opts.agentSlug);
+  if (!user) return null;
+  const agent = resolveTeamAgentForUserId(user.id);
+  const kind = agent?.kind ?? 'trainer';
+  const session = await startAiFallbackConsult({
+    patient: opts.patient,
+    serviceKind: kind,
+    petId: opts.petId,
+    agentSlug: opts.agentSlug,
+  });
+  if (!session) return null;
+  return { ...session, agentSlug: agent?.slug ?? opts.agentSlug };
 }
 
 /** After a patient message in an AI consult, generate and store an assistant reply. */
@@ -249,6 +231,9 @@ export async function maybeReplyAsAiAssistant(opts: {
     }
   }
 
+  const aiUser = dbService.getUserById(consult.vetUserId);
+  const displayName = aiUser ? agentDisplayName(aiUser) : AI_ASSISTANT_DISPLAY_NAME;
+
   const generated = await generateAiConsultAdvice({
     kind: aiKind,
     patientName: patient?.name,
@@ -260,6 +245,7 @@ export async function maybeReplyAsAiAssistant(opts: {
     userMessage: opts.patientText,
     history: recent.slice(0, -1),
     userTone,
+    agentName: displayName,
   });
 
   // Human pacing for trainer AI only — HTTP path already fire-and-forgets this call.
