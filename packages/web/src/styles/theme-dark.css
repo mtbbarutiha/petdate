@@ -485,3 +485,500 @@ html[data-theme='dark'] .admin-app .admin-icon-btn--danger {
 html[data-theme='dark'] .admin-app .admin-icon-btn--ok {
   color: #5eead4;
 }
+
+/* —— P1 dark contrast pass 3 (remaining screenshot hotspots) —— */
+
+/* 1) Admin bare toolbar inputs + placeholders (pet purchase search, etc.) */
+html[data-theme='dark'] .admin-app input::placeholder,
+html[data-theme='dark'] .admin-app textarea::placeholder {
+  color: #a39eb8;
+  opacity: 1;
+}
+html[data-theme='dark'] .admin-app .admin-toolbar > input,
+html[data-theme='dark'] .admin-app .admin-toolbar > select,
+html[data-theme='dark'] .admin-app .admin-toolbar input:not([type='checkbox']):not([type='radio']),
+html[data-theme='dark'] .admin-app .admin-toolbar select {
+  background: var(--admin-surface);
+  color: var(--admin-ink);
+  border: 1px solid var(--admin-border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font: inherit;
+}
+html[data-theme='dark'] .admin-app .admin-select,
+html[data-theme='dark'] .admin-app .admin-input,
+html[data-theme='dark'] .admin-app .form-input {
+  color: var(--admin-ink);
+}
+html[data-theme='dark'] .admin-app .admin-select option {
+  background: var(--admin-surface);
+  color: var(--admin-ink);
+}
+
+/* 2) Sales CRM kanban columns — dark tracks + readable headers */
+html[data-theme='dark'] .admin-app .sales-pipe-col {
+  background: #1e2230;
+  border-color: var(--admin-border);
+  box-shadow: none;
+}
+html[data-theme='dark'] .admin-app .sales-pipe-col-head {
+  background: linear-gradient(180deg, #2a2f3d 0%, #1e2230 100%);
+  border-bottom-color: var(--admin-border);
+  color: var(--admin-ink);
+}
+html[data-theme='dark'] .admin-app .sales-pipe-col-title h2 {
+  color: var(--admin-ink);
+}
+html[data-theme='dark'] .admin-app .sales-pipe-count {
+  background: var(--admin-accent-soft);
+  color: #c9c0ea;
+}
+html[data-theme='dark'] .admin-app .sales-pipe-col-value {
+  color: var(--admin-muted);
+}
+html[data-theme='dark'] .admin-app .sales-pipe-empty {
+  background: rgba(36, 40, 54, 0.55);
+  border-color: var(--admin-border);
+}
+html[data-theme='dark'] .admin-app .sales-pipe-card:hover {
+  border-color: #4a5066;
+}
+html[data-theme='dark'] .admin-app .tk-kcol {
+  background: #1e2230;
+  border-color: var(--admin-border);
+}
+html[data-theme='dark'] .admin-app .tk-kcol h4 {
+  color: var(--admin-muted);
+}
+
+/* 3) Notifications dropdown header */
+html[data-theme='dark'] .admin-app .admin-notif-panel-head {
+  background: linear-gradient(180deg, #1a2e28, #222636);
+  color: var(--admin-ink);
+}
+html[data-theme='dark'] .admin-app .admin-notif-panel-head strong {
+  color: var(--admin-ink);
+}
+html[data-theme='dark'] .admin-app .admin-notif-badge {
+  border-color: var(--admin-surface);
+}
+html[data-theme='dark'] .admin-app .admin-notif-item--warn {
+  border-color: #5c4a28;
+  background: #2a2418;
+}
+html[data-theme='dark'] .admin-app .admin-notif-item--bad {
+  border-color: #5c2a2a;
+  background: #2a1a1c;
+}
+html[data-theme='dark'] .admin-app .admin-notif-item--ok {
+  border-color: #1f4a3a;
+  background: #152820;
+}
+html[data-theme='dark'] .admin-app .admin-notif-module {
+  color: #5eead4;
+}
+html[data-theme='dark'] .admin-app .admin-notif-panel-foot a {
+  color: #5eead4;
+}
+
+/* 4) Ticketing sidebar active pill + workload contrast */
+html[data-theme='dark'] .admin-app .tk-nav:hover {
+  background: #2a2e42;
+  color: var(--admin-ink);
+}
+html[data-theme='dark'] .admin-app .tk-nav.is-on {
+  background: #1a2e28;
+  color: #5eead4;
+  border-color: color-mix(in srgb, var(--admin-mint) 45%, var(--admin-border));
+  box-shadow: inset -3px 0 0 var(--admin-mint);
+}
+html[data-theme='dark'] .admin-app .tk-cnt {
+  background: #343849;
+  color: #c4bfd4;
+}
+html[data-theme='dark'] .admin-app .tk-cnt.is-hot {
+  background: #4a2030;
+  color: #fca5a5;
+}
+html[data-theme='dark'] .admin-app .tk-hbar {
+  color: #c4bfd4;
+}
+html[data-theme='dark'] .admin-app .tk-hbar em {
+  color: var(--admin-ink);
+}
+html[data-theme='dark'] .admin-app .tk-bar {
+  background: #343849;
+}
+html[data-theme='dark'] .admin-app .tk-nav:hover .tk-cnt {
+  color: var(--admin-ink);
+}
+
+/* 5) CRM / ticketing filter bars — no white wash */
+html[data-theme='dark'] .admin-app .crm-report-filters {
+  background: var(--admin-surface);
+  border-color: var(--admin-border);
+}
+html[data-theme='dark'] .admin-app .crm-report-filters label {
+  color: var(--admin-muted);
+}
+html[data-theme='dark'] .admin-app .admin-filter-dates {
+  background: color-mix(in srgb, var(--admin-accent-soft) 72%, var(--admin-bg));
+  border-color: var(--admin-border);
+}
+html[data-theme='dark'] .admin-app .admin-filter-dates-label,
+html[data-theme='dark'] .admin-app .admin-jalali-date-label {
+  color: var(--admin-muted);
+}
+html[data-theme='dark'] .admin-app .tk-filters {
+  background: var(--admin-surface);
+}
+html[data-theme='dark'] .admin-app .tk-filters label,
+html[data-theme='dark'] .admin-app .tk-field {
+  color: var(--admin-muted);
+}
+html[data-theme='dark'] .admin-app .admin-card.tk-filters {
+  background: var(--admin-surface);
+  border-color: var(--admin-border);
+}
+
+/* 6) CRM report counter / KPI tiles */
+html[data-theme='dark'] .admin-app .crm-report-counters div,
+html[data-theme='dark'] .admin-app .crm-report-stat-tile {
+  background: var(--admin-surface);
+  border-color: var(--admin-border);
+  color: var(--admin-ink);
+}
+html[data-theme='dark'] .admin-app .crm-report-counters span {
+  color: #c4bfd4;
+}
+html[data-theme='dark'] .admin-app .crm-report-counters b {
+  color: var(--admin-ink);
+}
+html[data-theme='dark'] .admin-app .crm-report-agent-bar {
+  background: rgba(232, 230, 242, 0.08);
+}
+html[data-theme='dark'] .admin-app .crm-report-mini-progress i {
+  background: rgba(232, 230, 242, 0.1);
+}
+html[data-theme='dark'] .admin-app .admin-stat--amber {
+  background: var(--admin-promo-yellow);
+}
+html[data-theme='dark'] .admin-app .admin-stat--rose {
+  background: #3a1e24;
+  border-color: #5c2a32;
+}
+html[data-theme='dark'] .admin-app .admin-stat-value {
+  color: var(--admin-ink);
+}
+html[data-theme='dark'] .admin-app .admin-stat-label {
+  color: #c4bfd4;
+}
+
+/* 7) CRM reason/taxonomy white panels */
+html[data-theme='dark'] .admin-app .crm-reason-node--l1 {
+  background: var(--admin-surface);
+  border-color: var(--admin-border);
+}
+html[data-theme='dark'] .admin-app .crm-reason-toggle,
+html[data-theme='dark'] .admin-app .crm-reason-toggle strong {
+  color: var(--admin-ink);
+}
+html[data-theme='dark'] .admin-app .crm-reason-row--leaf {
+  border-bottom-color: var(--admin-border);
+}
+html[data-theme='dark'] .admin-app .crm-settings-toast {
+  background: #1a2e28;
+  border-color: #2dd4b0;
+  color: #5eead4;
+}
+html[data-theme='dark'] .admin-app .tk-tax-row b {
+  color: var(--admin-ink);
+}
+html[data-theme='dark'] .admin-app .tk-opt {
+  background: #1e2230;
+  color: var(--admin-ink);
+}
+html[data-theme='dark'] .admin-app .tk-opt:hover {
+  background: #1a2e28;
+  border-color: var(--admin-mint);
+}
+html[data-theme='dark'] .admin-app .tk-row:hover td {
+  background: #262a38;
+}
+
+/* 8) Day/week/month/year segmented control */
+html[data-theme='dark'] .admin-app .admin-period-filter {
+  background: #2a2e42;
+}
+html[data-theme='dark'] .admin-app .admin-period-btn {
+  color: #c4bfd4;
+}
+html[data-theme='dark'] .admin-app .admin-period-btn.is-active {
+  background: var(--admin-surface);
+  color: var(--admin-ink);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+html[data-theme='dark'] .admin-app .wdg-cal-mode {
+  color: #c4bfd4;
+}
+html[data-theme='dark'] .admin-app .wdg-cal-mode.is-on {
+  background: var(--admin-surface);
+  color: var(--admin-ink);
+}
+
+/* 9) Email inbox list rows */
+html[data-theme='dark'] .admin-app .admin-mail-list {
+  background: var(--admin-bg);
+}
+html[data-theme='dark'] .admin-app .admin-mail-item-from,
+html[data-theme='dark'] .admin-app .admin-mail-item-subject {
+  color: var(--admin-ink);
+}
+html[data-theme='dark'] .admin-app .admin-mail-item-preview {
+  color: var(--admin-muted);
+}
+html[data-theme='dark'] .admin-app .admin-mail-item:hover {
+  background: rgba(59, 184, 245, 0.1);
+}
+html[data-theme='dark'] .admin-app .admin-mail-item.is-selected {
+  background: rgba(59, 184, 245, 0.16);
+}
+
+/* 10) Colored KPI / GTM stats — less muddy, clearer labels + icons */
+html[data-theme='dark'] .admin-app {
+  --admin-promo-yellow: #3d3420;
+  --admin-promo-purple: #332e4a;
+  --admin-promo-blue: #1e3344;
+  --admin-promo-mint: #1a322c;
+}
+html[data-theme='dark'] .admin-app .admin-stat--violet,
+html[data-theme='dark'] .admin-app .admin-stat--mint,
+html[data-theme='dark'] .admin-app .admin-stat--orange,
+html[data-theme='dark'] .admin-app .admin-stat--sky,
+html[data-theme='dark'] .admin-app .admin-stat--slate {
+  border-color: var(--admin-border);
+  color: var(--admin-ink);
+}
+html[data-theme='dark'] .admin-app .admin-stat--violet .admin-stat-icon,
+html[data-theme='dark'] .admin-app .admin-stat--mint .admin-stat-icon,
+html[data-theme='dark'] .admin-app .admin-stat--orange .admin-stat-icon,
+html[data-theme='dark'] .admin-app .admin-stat--sky .admin-stat-icon,
+html[data-theme='dark'] .admin-app .admin-stat--slate .admin-stat-icon {
+  background: rgba(18, 21, 30, 0.55);
+  color: #c9c0ea;
+}
+html[data-theme='dark'] .admin-app .admin-stat--mint .admin-stat-icon {
+  color: #5eead4;
+}
+html[data-theme='dark'] .admin-app .admin-stat--orange .admin-stat-icon {
+  color: #ffb04a;
+}
+html[data-theme='dark'] .admin-app .admin-stat--sky .admin-stat-icon {
+  color: #7dd3fc;
+}
+
+/* Iran heat legend / rank (sidebar white panel) */
+html[data-theme='dark'] .admin-app .iran-heat-legend-card {
+  background: linear-gradient(180deg, #1e2230 0%, #222636 100%);
+  box-shadow: none;
+  border-color: var(--admin-border);
+}
+html[data-theme='dark'] .admin-app .iran-heat-top {
+  color: var(--admin-ink);
+}
+html[data-theme='dark'] .admin-app .iran-heat-top strong {
+  color: #5eead4;
+}
+html[data-theme='dark'] .admin-app .iran-heat-rank li.is-hot {
+  border-color: #2dd4b0;
+  background: #1a2e28;
+  color: #5eead4;
+}
+html[data-theme='dark'] .admin-app .iran-heat-rank-unknown {
+  background: #1e2230;
+  border-color: var(--admin-border);
+}
+html[data-theme='dark'] .admin-app .iran-heat-rank-bar {
+  background: #343849;
+}
+html[data-theme='dark'] .admin-app .iran-heat-tooltip {
+  background: rgba(34, 38, 54, 0.97);
+  border-color: #2dd4b0;
+  color: var(--admin-ink);
+}
+html[data-theme='dark'] .admin-app .iran-heat-tooltip-name {
+  color: #5eead4;
+}
+html[data-theme='dark'] .admin-app .iran-heat-tooltip-meter {
+  background: #343849;
+}
+
+/* 11 + 15) Site header circular chips — dark fill + light icons */
+html[data-theme='dark'] .pepito-nav-cart-link {
+  background: color-mix(in srgb, var(--pepito-white) 92%, transparent);
+  border-color: color-mix(in srgb, var(--pepito-base) 32%, transparent);
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-nav-cart-link:hover {
+  background: var(--pepito-lilac);
+  color: var(--pepito-base);
+}
+html[data-theme='dark'] .pepito-nav-cart-link svg {
+  color: inherit;
+}
+html[data-theme='dark'] .pd-theme-toggle {
+  background: color-mix(in srgb, var(--pepito-white) 92%, transparent);
+  border-color: color-mix(in srgb, var(--pepito-base) 28%, transparent);
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pd-theme-toggle:hover {
+  background: var(--pepito-lilac);
+  color: var(--pepito-mint);
+}
+html[data-theme='dark'] .pepito-nav-wallet-btn {
+  background: color-mix(in srgb, var(--pepito-white) 92%, transparent);
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-nav-wallet-btn svg {
+  color: var(--pepito-mint);
+}
+html[data-theme='dark'] .pepito-nav-profile-btn {
+  background: linear-gradient(145deg, #2a2e42, #242836);
+  border-color: color-mix(in srgb, var(--pepito-base) 35%, transparent);
+  color: var(--pepito-base);
+  box-shadow: var(--pd-shadow);
+}
+
+/* 12) Mobile wallet — dark hero + folio (kill white washes) */
+html[data-theme='dark'] .pepito-wallet-hero {
+  background:
+    linear-gradient(125deg, rgba(45, 40, 70, 0.95) 0%, rgba(30, 34, 48, 0.95) 45%, rgba(36, 40, 54, 0.98) 100%),
+    linear-gradient(180deg, #1e2230, #1a1d27);
+}
+html[data-theme='dark'] .pepito-wallet-hero-wash {
+  background:
+    radial-gradient(ellipse 55% 70% at 8% 0%, rgba(253, 150, 30, 0.16), transparent 58%),
+    radial-gradient(ellipse 48% 55% at 92% 80%, rgba(168, 154, 212, 0.14), transparent 55%);
+  opacity: 0.85;
+}
+html[data-theme='dark'] .pepito-wallet-brand,
+html[data-theme='dark'] .pepito-wallet-hero h1 {
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-wallet-lead {
+  color: var(--pepito-muted);
+}
+html[data-theme='dark'] .pepito-wallet-folio {
+  background: linear-gradient(180deg, #2a2f3d, #242836 55%, #1e2230);
+  border-color: var(--pd-border);
+  box-shadow: var(--pd-shadow);
+}
+html[data-theme='dark'] .pepito-wallet-folio-refresh {
+  background: color-mix(in srgb, var(--pepito-white) 80%, transparent);
+  border-color: var(--pd-border);
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-wallet-rail {
+  background: color-mix(in srgb, var(--pepito-white) 55%, transparent);
+  border-color: var(--pd-border);
+}
+html[data-theme='dark'] .pepito-wallet-cell-label,
+html[data-theme='dark'] .pepito-wallet-cell-val,
+html[data-theme='dark'] .pepito-wallet-folio-title h2 {
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-wallet-cell-note,
+html[data-theme='dark'] .pepito-wallet-folio-title p,
+html[data-theme='dark'] .pepito-wallet-cell-unit {
+  color: var(--pepito-muted);
+}
+html[data-theme='dark'] .pepito-wallet-tx {
+  background: var(--pepito-white);
+  border-color: var(--pd-border);
+}
+html[data-theme='dark'] .pepito-wallet-tg {
+  background: var(--pepito-white);
+  border-color: var(--pd-border);
+}
+
+/* 13) My pets mobile hero */
+html[data-theme='dark'] .pepito-my-pets-hero {
+  background:
+    radial-gradient(ellipse 75% 70% at 12% 0%, rgba(229, 168, 216, 0.16), transparent 55%),
+    radial-gradient(ellipse 55% 55% at 95% 35%, rgba(59, 184, 245, 0.12), transparent 50%),
+    linear-gradient(160deg, #1e2230 0%, #242836 55%, #2a2740 100%);
+}
+html[data-theme='dark'] .pepito-my-pets-hero-wash {
+  background: linear-gradient(180deg, transparent 25%, rgba(26, 29, 39, 0.55));
+}
+html[data-theme='dark'] .pepito-my-pets-hero-inner h1,
+html[data-theme='dark'] .pepito-my-pets-head h1 {
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-my-pets-lead {
+  color: var(--pepito-muted);
+}
+html[data-theme='dark'] .pepito-my-pets-chip {
+  background: color-mix(in srgb, var(--pepito-white) 92%, transparent);
+  color: #7dd3fc;
+  box-shadow: var(--pd-shadow);
+}
+html[data-theme='dark'] .pepito-my-pets-empty {
+  background:
+    radial-gradient(120% 80% at 50% 0%, rgba(168, 154, 212, 0.12), transparent 55%),
+    var(--pepito-white);
+  border-color: var(--pd-border);
+}
+
+/* 14) Shop categories cream container */
+html[data-theme='dark'] .pd-shop-dk-cats {
+  background: linear-gradient(180deg, #2a2f3d 0%, #1e2230 100%);
+  border-color: var(--pd-border);
+  box-shadow: var(--pd-shadow);
+}
+html[data-theme='dark'] .pd-shop-dk-cats-title h2 {
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pd-shop-dk-cats-title p {
+  color: var(--pepito-muted);
+}
+html[data-theme='dark'] .pd-shop-dk-cats-all {
+  color: #e0b07a;
+}
+html[data-theme='dark'] .pd-shop-dk-cats .pd-shop-chip {
+  background: #1a1d27;
+  border-color: var(--pd-border);
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pd-shop-dk-cats .pd-shop-chip.is-active {
+  background: #6b5cad;
+  border-color: #6b5cad;
+  color: #f4f3f8;
+}
+html[data-theme='dark'] .pd-shop-dk-label {
+  color: var(--pepito-muted);
+}
+
+/* 16) Landing reviews / testimonials section */
+html[data-theme='dark'] .pepito-reviews-section {
+  background-color: var(--pepito-soft);
+  background-image: linear-gradient(
+    180deg,
+    #1a1d27 0%,
+    #1e2230 45%,
+    #242836 100%
+  );
+}
+html[data-theme='dark'] .pepito-reviews-section .pepito-section-head h2,
+html[data-theme='dark'] .pepito-reviews-section h2 {
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-review {
+  background: var(--pepito-white);
+  border: 1px solid var(--pd-border);
+  box-shadow: var(--pd-shadow);
+}
+html[data-theme='dark'] .pepito-review-body h3,
+html[data-theme='dark'] .pepito-review-body p {
+  color: var(--pepito-dark);
+}

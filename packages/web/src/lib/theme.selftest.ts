@@ -40,6 +40,22 @@ assert.match(darkCss, /--tg-in/, 'chat tokens remapped');
 assert.doesNotMatch(darkCss, /--pepito-soft:\s*#000\b/, 'avoid pure black bg');
 assert.doesNotMatch(darkCss, /box-shadow:\s*0 0 \d+px .{0,40}(purple|#[89a-fA-F][0-9a-fA-F]{5})/, 'no neon glow shadows');
 
+/* Pass 3 screenshot hotspots must keep dark surfaces + readable ink */
+assert.match(darkCss, /\.admin-app input::placeholder/, 'admin placeholders remapped');
+assert.match(darkCss, /\.sales-pipe-col\b/, 'sales kanban columns remapped');
+assert.match(darkCss, /\.admin-notif-panel-head/, 'notif panel head remapped');
+assert.match(darkCss, /\.tk-nav\.is-on/, 'ticketing active nav remapped');
+assert.match(darkCss, /\.crm-report-filters/, 'crm filter bar remapped');
+assert.match(darkCss, /\.crm-report-counters div/, 'crm counter tiles remapped');
+assert.match(darkCss, /\.crm-reason-node--l1/, 'crm taxonomy panels remapped');
+assert.match(darkCss, /\.admin-period-filter/, 'period segmented control remapped');
+assert.match(darkCss, /\.admin-mail-list/, 'mail inbox list remapped');
+assert.match(darkCss, /\.pepito-nav-cart-link/, 'nav cart chip remapped');
+assert.match(darkCss, /\.pepito-wallet-folio/, 'wallet folio remapped');
+assert.match(darkCss, /\.pepito-my-pets-hero/, 'my-pets hero remapped');
+assert.match(darkCss, /\.pd-shop-dk-cats/, 'shop categories remapped');
+assert.match(darkCss, /\.pepito-reviews-section/, 'reviews section remapped');
+
 const toggle = readFileSync(join(root, 'src/components/ThemeToggle.tsx'), 'utf8');
 assert.match(toggle, /toggleTheme|setTheme/, 'ThemeToggle mutates theme');
 assert.match(toggle, /aria-label/, 'ThemeToggle accessible');
