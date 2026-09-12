@@ -444,6 +444,8 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   display: grid;
   align-items: center;
   overflow: hidden;
+  /* Keep transparent: an opaque fill hid #pd-boot-lcp (outside #root) after #378. */
+  background: transparent;
   color: #fff;
   touch-action: pan-y;
 }
@@ -511,14 +513,16 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   transform: scale(1.04);
   animation: pepito-ken 14s ease-in-out infinite alternate;
 }
-/* HTML LCP node lives outside #root; height matches the compact #377 hero band. */
+/* HTML LCP node lives outside #root; height matches the compact #377 hero band.
+   absolute (not fixed) so the photo scrolls with the hero. z-index:1 so it paints
+   above #root/landing fills — fixed+z-0 left slide 0 as a black empty band. */
 body > #pd-boot-lcp {
-  position: fixed;
+  position: absolute;
   top: var(--pepito-nav-h);
   left: 0;
   width: 100%;
   height: var(--pepito-hero-h);
-  z-index: 0;
+  z-index: 1;
   pointer-events: none;
   margin: 0;
 }

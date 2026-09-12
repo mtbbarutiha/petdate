@@ -63,7 +63,7 @@ assert.doesNotMatch(
   /rel="preload"\s+as="style"/,
   'do not preload a stylesheet (unused-preload warning)'
 );
-assert.match(indexHtml, /web-perf-v27-short-cards/, 'deploy marker bumped so SW/HTML cache misses');
+assert.match(indexHtml, /web-perf-v28-hero-photo/, 'deploy marker bumped so SW/HTML cache misses');
 assert.match(indexHtml, /id="pd-boot-lcp"/, 'LCP img lives outside #root so React cannot replace it');
 assert.match(indexHtml, /id="pd-boot-lcp"[\s\S]*decoding="sync"/, 'LCP img decodes sync so main-thread JS cannot stall paint');
 assert.match(indexHtml, /data-pd-lcp="hero"/, 'static preload is marked so SEO inject does not duplicate it');
@@ -114,9 +114,21 @@ assert.doesNotMatch(welcome, /key=\{current\.role\}/, 'hero-inner must not remou
 assert.doesNotMatch(welcome, /from 'lucide-react'/, 'hero path does not parse lucide-react');
 assert.doesNotMatch(welcome, /magazineApi/, 'welcome critical path does not fetch magazine');
 assert.match(welcome, /logo-390\.webp/, 'nav logo is 390w so 2x density passes');
-assert.match(welcome, /pd-boot-lcp/, 'slide 0 parks the HTML LCP img instead of replacing it');
-assert.match(welcome, /i !== 0/, 'slide 0 does not mint a second LCP <img>');
+assert.match(welcome, /pd-boot-lcp/, 'HTML LCP img is parked after hydrate');
+assert.match(welcome, /classList\.add\('is-parked'\)/, 'boot LCP is parked so it cannot cover/hide the hero');
+assert.match(welcome, /i === slide \?/, 'every active slide including 0 renders an in-hero photo');
+assert.doesNotMatch(welcome, /i !== 0/, 'slide 0 must mint an in-hero <img> (out-of-root LCP painted a black band)');
 assert.doesNotMatch(welcome, /appendChild\(img\)/, 'must not move the LCP node (causes render delay)');
+assert.match(
+  indexHtml,
+  /body>#pd-boot-lcp\{position:absolute;[^}]*z-index:1/,
+  'critical CSS keeps the HTML LCP in document flow above #root fill'
+);
+assert.doesNotMatch(
+  indexHtml,
+  /\.pepito-hero\{[^}]*background:#14161e/,
+  'critical hero fill must stay transparent so the boot LCP can show before JS'
+);
 assert.match(below, /magazineApi/, 'magazine fetch stays on the below-fold chunk');
 assert.match(below, /svcIndex === 0/, 'service carousel skips sync layout on mount');
 assert.match(below, /ResizeObserver/, 'carousel step is measured off the React commit path');
@@ -155,6 +167,9 @@ assert.match(llms, /پت‌دیت/, 'llms.txt includes Persian product name');
 assert.match(robots, /Allow: \/llms\.txt/, 'robots.txt advertises llms.txt');
 
 const pepitoCss = readFileSync(join(webSrc, 'styles/pepito.css'), 'utf8');
+assert.match(pepitoCss, /body > #pd-boot-lcp \{[\s\S]*?position:\s*absolute/, 'hydrated boot LCP is absolute, not viewport-fixed');
+assert.match(pepitoCss, /body > #pd-boot-lcp \{[\s\S]*?z-index:\s*1/, 'hydrated boot LCP paints above landing fill');
+assert.match(pepitoCss, /\.pepito-hero \{[\s\S]*?background:\s*transparent/, 'hydrated hero does not paint over the photo');
 assert.match(pepitoCss, /--pepito-btn-1-bg:\s*#5c4d91/, 'button-1 fill stays AA vs white');
 assert.match(pepitoCss, /--pepito-btn-3-bg:\s*#a24a86/, 'button-3 fill is darkened pink for AA');
 assert.match(pepitoCss, /85svh - var\(--pepito-nav-h\)/, 'hydrated mobile hero matches critical 85svh');
