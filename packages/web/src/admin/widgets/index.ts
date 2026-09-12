@@ -43,6 +43,8 @@ export {
   FINANCE_WIDGET_CATALOG,
   FINANCE_SALES_WIDGET_CATALOG,
   defaultBoardItems,
+  DAILY_NOTES_WIDGET_ID,
+  DUAL_CALENDAR_WIDGET_ID,
 } from './catalogs';
 export { WidgetDashboard } from './WidgetDashboard';
 export {
@@ -61,6 +63,11 @@ export {
   WidgetEmpty,
 } from './ChartWidgets';
 export { CalendarWidget } from './CalendarWidget';
+export { DailyNotesWidget } from './DailyNotesWidget';
+export {
+  DashboardSelectedDateProvider,
+  useDashboardSelectedDate,
+} from './DashboardSelectedDate';
 export { useWidgetLayout, useWidgetUserKey } from './useWidgetLayout';
 
 // Re-export motion primitives so all admin panels share one kit

@@ -5365,6 +5365,138 @@ body:has(.admin-app) {
 .admin-app .wdg-calendar--compact .wdg-cal-hint { display: none; }
 .admin-app .wdg-calendar--compact .wdg-cal-day-primary { font-size: 11px; }
 
+/* Daily notes widget — sits beside dual calendar (2×2) */
+.admin-app .wdg-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+  min-height: 0;
+}
+.admin-app .wdg-notes-date {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--admin-ink);
+}
+.admin-app .wdg-notes-date-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  flex: 1;
+}
+.admin-app .wdg-notes-date-text strong {
+  font-size: 13px;
+  font-weight: 750;
+}
+.admin-app .wdg-notes-date-text span {
+  font-size: 11px;
+  color: var(--admin-muted);
+}
+.admin-app .wdg-notes-chip {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 999px;
+  padding: 3px 8px;
+  background: var(--admin-accent-soft);
+  color: var(--admin-accent);
+  border: 1px solid color-mix(in srgb, var(--admin-accent) 35%, var(--admin-border));
+}
+.admin-app .wdg-notes-chip.is-today {
+  background: color-mix(in srgb, var(--admin-mint) 22%, var(--admin-surface));
+  color: #0b2a22;
+  border-color: color-mix(in srgb, var(--admin-mint) 50%, var(--admin-border));
+}
+.admin-app .wdg-notes-error {
+  margin: 0;
+  font-size: 12px;
+  color: #b91c1c;
+  background: #fee2e2;
+  border-radius: 8px;
+  padding: 6px 8px;
+}
+.admin-app .wdg-notes-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+.admin-app .wdg-notes-empty {
+  margin: 0;
+  padding: 14px 8px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--admin-muted);
+  border: 1px dashed var(--admin-border);
+  border-radius: 10px;
+  background: var(--admin-accent-soft);
+}
+.admin-app .wdg-notes-item {
+  display: grid;
+  gap: 4px;
+  padding: 8px 8px 6px;
+  border: 1px solid var(--admin-border);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--admin-promo-mint) 28%, var(--admin-surface));
+}
+.admin-app .wdg-notes-body {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--admin-ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.admin-app .wdg-notes-meta {
+  font-size: 11px;
+  color: var(--admin-muted);
+}
+.admin-app .wdg-notes-item-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 4px;
+}
+.admin-app .wdg-notes-composer {
+  display: grid;
+  gap: 6px;
+}
+.admin-app .wdg-notes-input {
+  width: 100%;
+  resize: vertical;
+  min-height: 52px;
+  max-height: 120px;
+  border: 1px solid var(--admin-border);
+  border-radius: 10px;
+  background: var(--admin-surface);
+  color: var(--admin-ink);
+  font: inherit;
+  font-size: 13px;
+  padding: 8px 10px;
+}
+.admin-app .wdg-notes-input:focus {
+  outline: 2px solid color-mix(in srgb, var(--admin-mint) 55%, transparent);
+  outline-offset: 1px;
+}
+.admin-app .wdg-notes-composer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.admin-app .wdg-notes-count {
+  font-size: 11px;
+  color: var(--admin-muted);
+}
+.admin-app .wdg-notes--compact .wdg-notes-input { min-height: 40px; }
+.admin-app .wdg-notes--compact .wdg-notes-chip { display: none; }
+
 @media (max-width: 1100px) {
   .admin-app .wdg-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .admin-app .wdg-tile--w3,

@@ -10,6 +10,7 @@ export type WidgetColSpan = 1 | 2 | 3 | 4;
 export type WidgetRowSpan = 1 | 2 | 3;
 
 export type WidgetLayoutItem = {
+  /** Catalog widget id — stable per-user layout slot (resize / reorder key). */
   id: string;
   w: WidgetColSpan;
   h: WidgetRowSpan;
