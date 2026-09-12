@@ -228,6 +228,44 @@ assert.match(
   'dark edit sections paint --pd-surface'
 );
 
+/* Help / FAQ (/faq + /help) — no leftover #fff cards or hardcoded dark ink */
+assert.match(darkCss, /\.pepito-faq-item\b/, 'FAQ accordion remapped for dark');
+assert.match(darkCss, /\.pepito-help-card\b/, 'help role cards remapped for dark');
+assert.match(darkCss, /\.pepito-help-topic\b/, 'help topic chips remapped for dark');
+assert.match(darkCss, /\.pepito-help-toc a\b/, 'help TOC chips remapped for dark');
+assert.match(pepitoCss, /--pepito-card:\s*var\(--pepito-white\)/, 'pepito-card tracks white token');
+assert.match(pepitoCss, /--pepito-ink:\s*var\(--pepito-dark\)/, 'pepito-ink tracks dark token');
+assert.match(
+  pepitoCss,
+  /\.pepito-help-card,\s*\.pepito-help-section\s*\{[\s\S]{0,220}var\(--pd-surface/,
+  'help cards use --pd-surface (not hardcoded #fff)',
+);
+assert.doesNotMatch(
+  pepitoCss,
+  /\.pepito-help-card,\s*\.pepito-help-section\s*\{[^}]*#fff\b/,
+  'help cards must not hardcode #fff',
+);
+assert.doesNotMatch(
+  pepitoCss,
+  /\.pepito-help-dl dd\s*\{[^}]*#2b2440/,
+  'help answers must not hardcode light-only ink #2b2440',
+);
+assert.match(
+  darkCss,
+  /html\[data-theme=['"]dark['"]\][\s\S]{0,200}\.pepito-help-card[\s\S]{0,220}var\(--pd-surface\)/,
+  'dark help cards paint --pd-surface',
+);
+assert.match(
+  darkCss,
+  /html\[data-theme=['"]dark['"]\][\s\S]{0,200}\.pepito-faq-q[\s\S]{0,280}var\(--pd-ink\)/,
+  'dark FAQ questions use --pd-ink',
+);
+assert.doesNotMatch(
+  darkCss,
+  /html\[data-theme=['"]dark['"]\][\s\S]{0,80}\.pepito-(faq-item|help-card|help-section|help-topic)[\s\S]{0,160}#(fff|ffffff|faf9fc)\b/i,
+  'dark FAQ/help surfaces must not keep white fills',
+);
+
 /* Chat profile tools + sheets (پروفایل پت / پروفایل صاحب پت) — no white strip / white field cards */
 const chatCss = readFileSync(join(root, 'src/styles/chat.css'), 'utf8');
 assert.match(darkCss, /\.tg-vet-tools\b/, 'vet/profile toolbar remapped for dark');

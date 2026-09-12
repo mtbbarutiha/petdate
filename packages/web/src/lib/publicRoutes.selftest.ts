@@ -146,6 +146,7 @@ assert.match(app, /path="help"\s+element=\{<FaqPage/, 'App aliases /help to the 
 assert.match(guard, /PUBLIC_EXACT[\s\S]*\/help/, 'AuthGuard treats /help as public');
 assert.match(faq, /siteHelpSections|siteRoleGuides/, 'FAQ page renders shared help sections');
 assert.match(faq, /<Link to="\/games"/, 'help page links to games');
+assert.match(faq, /pepito-help-page/, 'FAQ page uses shared help/FAQ shell classes');
 const shopChrome = readFileSync(join(webSrc, 'components/shop/ShopChrome.tsx'), 'utf8');
 const invitePage = readFileSync(join(webSrc, 'pages/InvitePage.tsx'), 'utf8');
 const supportHub = readFileSync(join(webSrc, 'pages/SupportHubPage.tsx'), 'utf8');

@@ -42,6 +42,8 @@ html[data-theme='dark'] {
   --pepito-sky: #3bb8f5;
   --pepito-mint: #2dd4b0;
   --pepito-white: #242836;
+  --pepito-card: var(--pepito-white);
+  --pepito-ink: var(--pepito-dark);
 
   --brand-hero: var(--pepito-base);
   --brand-50: #1e2130;
@@ -3403,6 +3405,60 @@ html[data-theme='dark'] .pepito-games-type,
 html[data-theme='dark'] .pepito-games-meta li,
 html[data-theme='dark'] .pepito-games-item-note {
   color: var(--text-secondary, #94a3b8);
+}
+
+/* Help / FAQ (/faq + /help) — --pepito-card was undefined so cards kept #fff
+ * while headings remap to light --pepito-dark → unreadable light-on-white. */
+html[data-theme='dark'] .pepito-faq-page,
+html[data-theme='dark'] .pepito-help-page {
+  color: var(--pd-muted);
+}
+html[data-theme='dark'] .pepito-faq-item,
+html[data-theme='dark'] .pepito-help-card,
+html[data-theme='dark'] .pepito-help-section,
+html[data-theme='dark'] .pepito-help-topic {
+  background: var(--pd-surface);
+  border-color: var(--pd-border);
+  color: var(--pd-ink);
+  box-shadow: none;
+}
+html[data-theme='dark'] .pepito-help-topic {
+  background: var(--pd-surface-2);
+}
+html[data-theme='dark'] .pepito-faq-q,
+html[data-theme='dark'] .pepito-help-topic-q,
+html[data-theme='dark'] .pepito-help-card h3,
+html[data-theme='dark'] .pepito-help-block h2,
+html[data-theme='dark'] .pepito-help-section h3 {
+  color: var(--pd-ink);
+}
+html[data-theme='dark'] .pepito-faq-a,
+html[data-theme='dark'] .pepito-help-block-lead,
+html[data-theme='dark'] .pepito-faq-page-lead,
+html[data-theme='dark'] .pepito-faq-page-more {
+  color: var(--pd-muted);
+}
+html[data-theme='dark'] .pepito-help-dl dt {
+  color: var(--pepito-base);
+}
+html[data-theme='dark'] .pepito-help-dl dd {
+  color: var(--pd-ink);
+}
+html[data-theme='dark'] .pepito-help-toc a {
+  background: color-mix(in srgb, var(--pepito-base) 18%, transparent);
+  color: var(--pepito-base);
+}
+html[data-theme='dark'] .pepito-help-toc a:hover {
+  background: color-mix(in srgb, var(--pepito-base) 28%, transparent);
+}
+html[data-theme='dark'] .pepito-faq-page-more a,
+html[data-theme='dark'] .pepito-help-dl a,
+html[data-theme='dark'] .pepito-page-help-link {
+  color: var(--pepito-base);
+}
+html[data-theme='dark'] .pepito-faq-q svg,
+html[data-theme='dark'] .pepito-help-topic-q svg {
+  color: var(--pepito-base);
 }
 
 html[data-theme='dark'] .pepito-photo-pending {

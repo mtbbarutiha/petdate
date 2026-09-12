@@ -13,6 +13,10 @@
   --pepito-sky: #0ba5f2;
   --pepito-mint: #15cca0;
   --pepito-white: #ffffff;
+  /* Alias tokens used by help/FAQ cards — must track --pepito-white/--pepito-dark
+   * so dark remap in theme-dark.css cannot fall through to hardcoded #fff ink. */
+  --pepito-card: var(--pepito-white);
+  --pepito-ink: var(--pepito-dark);
 
   /* Map existing brand vars → Pepito look for whole app */
   --brand-hero: var(--pepito-base);
@@ -2314,10 +2318,11 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   margin: 0 auto;
 }
 .pepito-faq-item {
-  background: var(--pepito-white);
+  background: var(--pd-surface, var(--pepito-white));
   border-radius: 20px;
-  border: 1px solid rgba(92, 77, 145, 0.1);
+  border: 1px solid var(--pd-border, rgba(92, 77, 145, 0.1));
   overflow: hidden;
+  color: var(--pd-ink, var(--pepito-dark));
 }
 .pepito-faq-q {
   width: 100%;
@@ -2328,7 +2333,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   padding: 1rem 1.15rem;
   text-align: start;
   font-weight: 800;
-  color: var(--pepito-dark);
+  color: var(--pd-ink, var(--pepito-dark));
   background: none;
   border: 0;
   font: inherit;
@@ -2337,7 +2342,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 .pepito-faq-a {
   margin: 0;
   padding: 0 1.15rem 1.05rem;
-  color: var(--pepito-muted);
+  color: var(--pd-muted, var(--pepito-muted));
   line-height: 1.75;
 }
 .pepito-faq-page {
@@ -2361,7 +2366,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 
 .pepito-faq-page-lead {
   margin: 0 0 1rem;
-  color: var(--pepito-muted, #5a5470);
+  color: var(--pd-muted, var(--pepito-muted, #5a5470));
   font-size: 1.05rem;
   line-height: 1.7;
 }
@@ -2429,7 +2434,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 }
 .pepito-help-block-lead {
   margin: 0 0 1rem;
-  color: var(--pepito-muted, #5a5470);
+  color: var(--pd-muted, var(--pepito-muted, #5a5470));
   line-height: 1.7;
 }
 .pepito-help-role-grid {
@@ -2443,10 +2448,11 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 }
 .pepito-help-card,
 .pepito-help-section {
-  background: var(--pepito-card, #fff);
-  border: 1px solid color-mix(in srgb, var(--pepito-base, #5c4d91) 12%, transparent);
+  background: var(--pd-surface, var(--pepito-card, var(--pepito-white)));
+  border: 1px solid var(--pd-border, color-mix(in srgb, var(--pepito-base, #5c4d91) 12%, transparent));
   border-radius: 1rem;
   padding: 1rem 1.1rem 1.05rem;
+  color: var(--pd-ink, var(--pepito-ink, var(--pepito-dark)));
 }
 .pepito-help-section {
   margin-bottom: 0.85rem;
@@ -2470,16 +2476,18 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 .pepito-help-dl dd {
   margin: 0;
   line-height: 1.7;
-  color: var(--pepito-ink, #2b2440);
+  color: var(--pd-ink, var(--pepito-ink, var(--pepito-dark)));
 }
 .pepito-help-topic-list {
   display: grid;
   gap: 0.5rem;
 }
 .pepito-help-topic {
-  border: 1px solid color-mix(in srgb, var(--pepito-base, #5c4d91) 12%, transparent);
+  background: var(--pd-surface-2, var(--pd-surface, var(--pepito-white)));
+  border: 1px solid var(--pd-border, color-mix(in srgb, var(--pepito-base, #5c4d91) 12%, transparent));
   border-radius: 0.75rem;
   overflow: hidden;
+  color: var(--pd-ink, var(--pepito-ink, var(--pepito-dark)));
 }
 .pepito-help-topic-q {
   width: 100%;
@@ -2495,6 +2503,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   font-weight: 700;
   text-align: start;
   cursor: pointer;
+  color: var(--pd-ink, var(--pepito-dark));
 }
 .pepito-help-topic.is-open .pepito-help-topic-q svg {
   transform: rotate(180deg);

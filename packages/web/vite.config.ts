@@ -12,13 +12,21 @@ function deferNonCriticalCss(): Plugin {
     transformIndexHtml: {
       order: 'post',
       handler(html) {
-        return html.replace(
+        const next = html.replace(
           /<link([^>]*rel="stylesheet"[^>]*href="(\/assets\/[^"]+\.css)"[^>]*)>/g,
           (full, attrs: string, href: string) => {
             if (/\smedia=/.test(attrs)) return full;
             return `<link${attrs} media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="${href}"></noscript>`;
           }
         );
+        if (next.includes('pd-defer-css-fallback')) return next;
+        if (!next.includes('onload="this.media=\'all\'"')) return next;
+        /* Cached print stylesheets can skip onload on some WebKit builds — swap
+         * media=all as soon as the sheet exists, with a short idle fallback.
+         * Does not make CSS render-blocking. */
+        const fallback =
+          '<script id="pd-defer-css-fallback">(function(){function arm(){var n=document.querySelectorAll(\'link[rel="stylesheet"][media="print"]\');for(var i=0;i<n.length;i++){(function(l){function go(){l.media="all"}if(l.sheet)go();else l.addEventListener("load",go);setTimeout(go,1500)})(n[i])}}if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",arm);else arm()})();</script>';
+        return next.replace('</head>', `${fallback}</head>`);
       },
     },
   };
@@ -93,7 +101,7 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         // New cache namespace so stuck clients drop the old 1.5s-poll bundle.
         // Bump when guest marketing routes change — v14 left #213's shell unclaimed.
-        cacheId: 'petdate-web-v20-agentic',
+        cacheId: 'petdate-web-v21-faq-dark',
         // Precache only the app shell — not hundreds of prerendered SEO HTML files.
         globPatterns: ['index.html', 'offline.html', '**/*.{js,css,ico,svg,woff2}'],
         navigateFallbackDenylist: [/^\/api\//],
