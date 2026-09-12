@@ -52,7 +52,8 @@ assert.doesNotMatch(
 );
 assert.match(app, /<LegacyAdoptionHashRedirect/, 'App mounts /#pets → /adoption redirect');
 assert.match(route, /VetConsultLandingPage/, 'logged-out vet-consult uses marketing landing');
-assert.match(route, /<Layout>/, 'logged-in vet-consult keeps app shell');
+assert.match(route, /VetConsultAppRoute/, 'logged-in vet-consult keeps app shell (lazy Layout)');
+assert.doesNotMatch(route, /import \{ Layout \}/, 'guest vet route must not statically import Layout');
 assert.match(route, /hasRole/, 'app shell requires a role — guests and incomplete sessions stay on landing');
 assert.match(landing, /LandingChrome/, 'vet landing uses marketing chrome');
 assert.match(landing, /loginPath\('\/vet-consult'\)/, 'vet landing login returns to consult');

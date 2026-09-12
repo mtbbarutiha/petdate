@@ -731,6 +731,18 @@ function setNoscript(html: string, inner: string): string {
   );
 }
 
+const LCP_HERO_MARK = 'data-pd-lcp="hero"';
+const LCP_HERO_HREF = '/pepito/uploads/1-hero.jpg';
+
+function setHomeLcpPreload(html: string, pathname: string): string {
+  const p = normalizePath(pathname);
+  const existing = new RegExp(`\\s*<link[^>]*${LCP_HERO_MARK}[^>]*>`, 'i');
+  let out = html.replace(existing, '');
+  if (p !== '/') return out;
+  const tag = `    <link rel="preload" as="image" href="${LCP_HERO_HREF}" fetchpriority="high" ${LCP_HERO_MARK} />\n`;
+  return out.replace('</head>', `${tag}  </head>`);
+}
+
 /** Inject per-route title/description/canonical/og/twitter/JSON-LD/noscript into the SPA shell. */
 export function applySeoToHtml(html: string, pathname: string, opts: PageSeoOpts = {}): string {
   const seo = pageSeoForPath(pathname, opts);
@@ -755,6 +767,7 @@ export function applySeoToHtml(html: string, pathname: string, opts: PageSeoOpts
   }
   out = setJsonLd(out, seo.jsonLd);
   out = setNoscript(out, seo.noscriptHtml);
+  out = setHomeLcpPreload(out, pathname);
   return out;
 }
 

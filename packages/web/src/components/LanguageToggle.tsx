@@ -24,9 +24,7 @@ export function LanguageToggle({ className = '', compact = false }: LanguageTogg
       title={aria}
       data-lang-active={lang}
     >
-      <span className="pd-lang-toggle-label" aria-hidden>
-        {label}
-      </span>
+      <span className="pd-lang-toggle-label">{label}</span>
     </button>
   );
 }

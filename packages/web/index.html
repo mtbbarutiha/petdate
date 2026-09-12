@@ -10,26 +10,42 @@
       (function (w, d, s, l, i) {
         w[l] = w[l] || [];
         w[l].push({ 'gtm.start': new Date().getTime(), event: 'gtm.js' });
-        var f = d.getElementsByTagName(s)[0],
-          j = d.createElement(s),
-          dl = l != 'dataLayer' ? '&l=' + l : '';
-        j.async = true;
-        j.src = 'https://www.googletagmanager.com/gtm.js?id=' + i + dl;
-        f.parentNode.insertBefore(j, f);
+        function inject() {
+          if (d.getElementById('petdate-gtm-src')) return;
+          var f = d.getElementsByTagName(s)[0],
+            j = d.createElement(s),
+            dl = l != 'dataLayer' ? '&l=' + l : '';
+          j.async = true;
+          j.id = 'petdate-gtm-src';
+          j.src = 'https://www.googletagmanager.com/gtm.js?id=' + i + dl;
+          f.parentNode.insertBefore(j, f);
+        }
+        /* Keep the official snippet + container id in initial HTML (Tag Assistant).
+           Delay gtm.js until load+idle so it does not compete with LCP / TBT. */
+        function schedule() {
+          var run = inject;
+          if (typeof w.requestIdleCallback === 'function') {
+            w.requestIdleCallback(run, { timeout: 3500 });
+          } else {
+            w.setTimeout(run, 2000);
+          }
+        }
+        if (d.readyState === 'complete') schedule();
+        else w.addEventListener('load', schedule);
       })(window, document, 'script', 'dataLayer', 'GTM-KQPJT9Q4');
     </script>
     <!-- End Google Tag Manager -->
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=overlays-content"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=overlays-content"
     />
-    <!-- deploy marker: registration-ux-role-btn-v1 + ui-audit-fix-v2 + chat composer-fixed-v8 + pd-chat-ui-v2 + pd-panels-ui-v3c + web-perf-v16-guest-vet + wallet-stars-v2 + my-pets-lead-v1 + wallet-folio-v1 + gtm-html-v1 + gtm-ta-debug-v1 + guest-vet-landing-v16 -->
+    <!-- deploy marker: registration-ux-role-btn-v1 + ui-audit-fix-v2 + chat composer-fixed-v8 + pd-chat-ui-v2 + pd-panels-ui-v3c + web-perf-v18-lighthouse + wallet-stars-v2 + my-pets-lead-v1 + wallet-folio-v1 + gtm-html-v1 + gtm-ta-debug-v1 + guest-vet-landing-v16 -->
     <meta name="pd-chat-shell" content="composer-fixed-v8" />
     <meta name="pd-chat-ui" content="pd-chat-ui-v2" />
     <meta name="pd-ui-audit" content="ui-audit-fix-v2" />
     <meta name="pd-registration-ux" content="registration-ux-role-btn-v1" />
     <meta name="pd-panels-ui" content="pd-panels-ui-v3c" />
-    <meta name="pd-web-perf" content="web-perf-v16-guest-vet" />
+    <meta name="pd-web-perf" content="web-perf-v18-lighthouse" />
     <meta name="pd-profile-pets" content="profile-about-pets-v2" />
     <meta name="pd-wallet-stars" content="wallet-stars-xtr-v1" />
     <meta name="pd-my-pets-lead" content="my-pets-lead-v1" />
@@ -55,6 +71,7 @@
     <!-- Install / Add to Home Screen label (iOS uses apple-mobile-web-app-title) -->
     <meta name="application-name" content="petdate" />
     <meta name="apple-mobile-web-app-title" content="petdate" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="theme-color" content="#5c4d91" />
     <meta name="color-scheme" content="light dark" />
@@ -137,21 +154,18 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <!-- Critical UI fonts only; admin loads Playfair via admin.css. Non-blocking stylesheet. -->
+    <!-- Critical UI fonts only; admin loads Playfair via admin.css.
+         No rel=preload as=style — that duplicate link is unused (media=print swap)
+         and Lighthouse flags it. Fewer weights = fewer render-blocking font files. -->
     <link
-      rel="preload"
-      as="style"
-      href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700;800&family=Vazirmatn:wght@400;500;600;700;800&display=swap"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700;800&family=Vazirmatn:wght@400;500;600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;600;700;800&family=Vazirmatn:wght@400;600;700;800&display=swap"
       rel="stylesheet"
       media="print"
       onload="this.media='all'"
     />
     <noscript>
       <link
-        href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700;800&family=Vazirmatn:wght@400;500;600;700;800&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;600;700;800&family=Vazirmatn:wght@400;600;700;800&display=swap"
         rel="stylesheet"
       />
     </noscript>

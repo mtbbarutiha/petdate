@@ -18,6 +18,7 @@ import {
   resolveGa4MeasurementId,
   setRuntimeGa4MeasurementId,
   pushDataLayer,
+  scheduleAfterLoadIdle,
 } from './siteAnalytics.ts';
 
 assert.equal(DEFAULT_GTM_ID, 'GTM-KQPJT9Q4');
@@ -135,8 +136,11 @@ assert.equal(click.click_url, 'https://example.com/x');
 assert.equal(click.click_id, 'cta-1');
 assert.equal(click.outbound, true);
 
-// pushDataLayer no-ops off-window / without throwing
+// pushDataLayer / idle scheduler no-op off-window / without throwing
 pushDataLayer('login', { method: 'otp' });
 pushDataLayer({ event: 'sign_up', method: 'otp' });
+scheduleAfterLoadIdle(() => {
+  throw new Error('scheduleAfterLoadIdle must not run off-window');
+});
 
 console.log('siteAnalytics.selftest: OK');

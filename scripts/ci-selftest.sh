@@ -218,6 +218,9 @@ npx tsx "$ROOT/packages/web/src/data/shopGallery.selftest.ts"
 echo "==> selftest: web GTM dataLayer / link helpers"
 npx tsx "$ROOT/packages/web/src/lib/siteAnalytics.selftest.ts"
 
+echo "==> selftest: web Lighthouse perf + agentic guards"
+npx tsx "$ROOT/packages/web/src/lib/webPerf.selftest.ts"
+
 echo "==> selftest: web Tag Assistant query-param helpers"
 npx tsx "$ROOT/packages/web/src/lib/tagAssistantParams.selftest.ts"
 

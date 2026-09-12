@@ -20,7 +20,7 @@ export function NavUserCluster({
   if (!isLoggedIn && !showCart && !showOrders) return null;
 
   return (
-    <div className="pepito-nav-user-cluster" aria-label="حساب و خرید">
+    <div className="pepito-nav-user-cluster" role="group" aria-label="حساب و خرید">
       {isLoggedIn ? (
         <>
           <ProfileMenu />

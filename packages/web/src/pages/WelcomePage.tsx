@@ -25,7 +25,7 @@ import { useAuthStore } from '../hooks/useAuthStore';
 import { loginPath } from '../lib/authRedirect';
 import { resolvePublicMediaUrl } from '../lib/api';
 import { formatAdminFaDate } from '../admin/jalaliDate';
-import { fetchMagazineFeatured, type MagazineCard } from './MagazinePage';
+import { fetchMagazineFeatured, type MagazineCard } from '../lib/magazineApi';
 
 const P = '/pepito/uploads';
 
@@ -456,7 +456,7 @@ export function WelcomePage() {
       <header className={`pepito-nav${scrolled ? ' is-scrolled' : ''}${isLoggedIn ? ' pepito-nav--app' : ''}`}>
         {/* Logo first so dir=rtl places it at inline-start (right). */}
         <Link to="/" className="pepito-nav-logo" aria-label={BRAND.displayName}>
-          <img src="/pepito/img/logo.png" alt={BRAND.displayName} />
+          <img src="/pepito/img/logo.png" alt={BRAND.displayName} width={780} height={228} decoding="async" />
         </Link>
         <nav className="pepito-nav-links" aria-label={t('nav.sections')}>
           <a href="#services">{t('nav.services')}</a>
@@ -477,26 +477,34 @@ export function WelcomePage() {
 
       <section
         className="pepito-hero"
+        role="region"
         aria-roledescription="carousel"
         aria-label={t('landing.heroAria')}
       >
         <div className="pepito-hero-slides">
-          {HERO_SLIDES.map((s, i) => (
+          {HERO_SLIDES.map((s, i) => {
+            const nearby = i === slide || i === (slide + 1) % HERO_SLIDES.length;
+            return (
             <div
               key={s.role}
               className={`pepito-hero-slide${i === slide ? ' is-active' : ''}`}
               aria-hidden={i !== slide}
             >
+              {nearby ? (
               <img
                 className="pepito-hero-media"
                 src={s.img}
-                alt={t(s.titleKey)}
+                alt={i === slide ? t(s.titleKey) : ''}
+                width={1600}
+                height={900}
                 decoding={i === 0 ? 'sync' : 'async'}
                 loading={i === 0 ? 'eager' : 'lazy'}
                 fetchPriority={i === 0 ? 'high' : 'auto'}
               />
+              ) : null}
             </div>
-          ))}
+            );
+          })}
         </div>
         <div className="pepito-hero-wash" aria-hidden />
         <div className="pepito-hero-inner" key={current.role}>
@@ -546,7 +554,7 @@ export function WelcomePage() {
           </div>
         </div>
         {/* Pepito `.slider-fade .owl-nav` — circular angle arrows, hover-reveal, hide ≤991px */}
-        <div className="pepito-hero-nav" aria-label={t('landing.slideNav')}>
+        <div className="pepito-hero-nav" role="group" aria-label={t('landing.slideNav')}>
           <button
             type="button"
             className="pepito-hero-arrow pepito-hero-arrow--prev"
@@ -565,16 +573,15 @@ export function WelcomePage() {
             <ChevronLeft size={16} strokeWidth={1.75} aria-hidden />
           </button>
         </div>
-        <div className="pepito-hero-dots" role="tablist" aria-label={t('landing.slideTabs')}>
+        <div className="pepito-hero-dots" role="group" aria-label={t('landing.slideTabs')}>
           {HERO_SLIDES.map((s, i) => (
             <button
               key={s.role}
               type="button"
-              role="tab"
-              aria-selected={i === slide}
               className={`pepito-hero-dot${i === slide ? ' is-active' : ''}`}
               onClick={() => goToSlide(i)}
               aria-label={t(s.kickerKey)}
+              aria-current={i === slide ? 'true' : undefined}
             />
           ))}
         </div>
@@ -585,7 +592,7 @@ export function WelcomePage() {
         <div className="pepito-about-media">
           <div className="pepito-about-item">
             <div className="pepito-about-photo">
-              <img src={`${P}/about.jpg`} alt={t('landing.aboutImgAlt')} loading="lazy" />
+              <img src={`${P}/about.jpg`} alt={t('landing.aboutImgAlt')} loading="lazy" width={1483} height={1200} decoding="async" />
             </div>
             {/* Pepito `.note.vert-move` floating quote on the about photo */}
             <aside className="pepito-about-note pepito-vert-move" aria-label={t('landing.aboutQuoteAria')}>
@@ -675,16 +682,15 @@ export function WelcomePage() {
             ))}
           </div>
         </div>
-        <div className="pepito-services-dots" role="tablist" aria-label={t('landing.servicesDots')}>
+        <div className="pepito-services-dots" role="group" aria-label={t('landing.servicesDots')}>
           {SERVICES.map((s, i) => (
             <button
               key={s.titleKey}
               type="button"
-              role="tab"
-              aria-selected={i === svcIndex}
               className={`pepito-services-dot${i === svcIndex ? ' is-active' : ''}`}
               onClick={() => setSvcIndex(i)}
               aria-label={t(s.titleKey)}
+              aria-current={i === svcIndex ? 'true' : undefined}
             />
           ))}
         </div>
@@ -706,7 +712,7 @@ export function WelcomePage() {
             return (
             <article key={p.nameKey} className="pepito-adoption-card">
               <div className="pepito-adoption-media">
-                <img src={p.img} alt={name} loading="lazy" />
+                <img src={p.img} alt={name} loading="lazy" width={600} height={700} decoding="async" />
                 <div className="pepito-adoption-shade" aria-hidden />
               </div>
               <div className="pepito-adoption-front">
@@ -773,7 +779,7 @@ export function WelcomePage() {
             <article key={r.handleKey} className="pepito-review">
               <div className="pepito-review-img">
                 <div className="pepito-review-img-frame">
-                  <img src={r.img} alt={t('landing.reviewAlt', { handle })} loading="lazy" />
+                  <img src={r.img} alt={t('landing.reviewAlt', { handle })} loading="lazy" width={900} height={600} decoding="async" />
                 </div>
               </div>
               <div className="pepito-review-body">
@@ -817,13 +823,13 @@ export function WelcomePage() {
             <article key={p.nameKey} className="pepito-shop-item">
               <Link to={p.to} className="pepito-shop-wrap">
                 <div className="pepito-shop-img">
-                  <img src={p.img} alt={name} loading="lazy" />
+                  <img src={p.img} alt={name} loading="lazy" width={690} height={676} decoding="async" />
                 </div>
                 <div className="pepito-shop-price" aria-hidden>
-                  <h4>
+                  <p className="pepito-shop-price-line">
                     <span>{t(p.badgeKey)}</span>
                     <span className="pepito-shop-amount">{t(p.priceKey)}</span>
-                  </h4>
+                  </p>
                 </div>
               </Link>
               <div className="pepito-shop-text">
@@ -920,7 +926,7 @@ export function WelcomePage() {
                 <article key={n.id} className="pepito-news-card">
                   <div className="pepito-news-img">
                     <Link to={to}>
-                      <img src={img} alt={n.title} loading="lazy" />
+                      <img src={img} alt={n.title} loading="lazy" width={1600} height={900} decoding="async" />
                     </Link>
                     {n.category ? <span className="pepito-news-cat">{n.category}</span> : null}
                   </div>
@@ -931,8 +937,8 @@ export function WelcomePage() {
                     <p>{n.excerpt}</p>
                     <div className="pepito-news-author">
                       <div>
-                        <h5>{formatAdminFaDate(n.publishAt)}</h5>
-                        <h5>
+                        <p className="pepito-news-meta">{formatAdminFaDate(n.publishAt)}</p>
+                        <p className="pepito-news-meta">
                           {n.author ? (
                             <>
                               {t('landing.byAuthor')} <span className="pepito-news-author-name">{n.author}</span>
@@ -940,7 +946,7 @@ export function WelcomePage() {
                           ) : (
                             <Link to="/magazine">{t('landing.newsMore')}</Link>
                           )}
-                        </h5>
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -949,16 +955,15 @@ export function WelcomePage() {
             })}
           </div>
         </div>
-        <div className="pepito-news-dots" role="tablist" aria-label={t('landing.newsPages')}>
+        <div className="pepito-news-dots" role="group" aria-label={t('landing.newsPages')}>
           {Array.from({ length: newsPages }, (_, i) => (
             <button
               key={i}
               type="button"
-              role="tab"
-              aria-selected={i === newsIndex}
               className={`pepito-news-dot${i === newsIndex ? ' is-active' : ''}`}
               onClick={() => goNews(i)}
               aria-label={t('landing.pageN', { n: i + 1 })}
+              aria-current={i === newsIndex ? 'true' : undefined}
             />
           ))}
         </div>

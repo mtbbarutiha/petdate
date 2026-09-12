@@ -98,4 +98,12 @@ assert.match(
   '/pets/*.jpg stock photos still served as static files'
 );
 
+assert.match(conf, /location = \/llms\.txt/, 'dedicated /llms.txt location (not catch-all no-store)');
+assert.match(
+  conf,
+  /location = \/llms\.txt \{[\s\S]*?Cache-Control "public, max-age=86400"/,
+  'llms.txt is publicly cacheable'
+);
+assert.match(conf, /max-age=2592000/, 'static brand/pepito/media images cache ≥ 30 days');
+
 console.log('wcdnNginx.selftest: ok');
