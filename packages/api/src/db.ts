@@ -1327,6 +1327,17 @@ function migrateSchema() {
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     )
   `);
+  /** Shared web ↔ bot shop cart (source of truth for logged-in / telegram-linked users). */
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS shop_carts (
+      user_id INTEGER NOT NULL,
+      product_id TEXT NOT NULL,
+      qty INTEGER NOT NULL DEFAULT 1,
+      updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+      PRIMARY KEY (user_id, product_id)
+    )
+  `);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_shop_carts_user ON shop_carts (user_id)`);
   db.exec(`
     CREATE TABLE IF NOT EXISTS admin_announcements (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -3118,6 +3129,11 @@ export const dbService = {
 
       // 4) Sessions + social graph + OTP / attach tokens
       this.deleteWebSessionsForUser(userId);
+      try {
+        db.prepare('DELETE FROM shop_carts WHERE user_id = ?').run(userId);
+      } catch {
+        /* older schemas */
+      }
       db.prepare('DELETE FROM phone_otps WHERE user_id = ?').run(userId);
       try {
         db.prepare('DELETE FROM web_otps WHERE user_id = ?').run(userId);

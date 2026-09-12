@@ -1802,6 +1802,110 @@ export async function checkoutShopWithCoins(
   return postShopCheckout<ShopCoinCheckoutResult>('/api/shop/checkout/coins', token, payload);
 }
 
+export type ShopCartApiLine = {
+  productId: string;
+  qty: number;
+  title?: string;
+  slug?: string;
+  priceToman?: number;
+  image?: string;
+  inStock?: boolean;
+};
+
+export type ShopCartApiResponse = {
+  ok: true;
+  lines: ShopCartApiLine[];
+  itemCount: number;
+  syncRule?: 'merge-then-persist';
+  merged?: boolean;
+};
+
+async function shopCartRequest(
+  path: string,
+  token: string,
+  init?: RequestInit
+): Promise<ShopCartApiResponse> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    ...init,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+      ...(init?.headers ?? {}),
+    },
+  });
+  const body = await res.text();
+  let json: (ShopCartApiResponse & { error?: string; ok?: boolean }) | null = null;
+  try {
+    json = JSON.parse(body) as ShopCartApiResponse & { error?: string; ok?: boolean };
+  } catch {
+    throw new Error(body || `خطای ${res.status}`);
+  }
+  if (!json || json.ok !== true) {
+    throw new Error(json?.error || body || `خطای ${res.status}`);
+  }
+  return json;
+}
+
+export async function fetchShopCart(token: string): Promise<ShopCartApiResponse> {
+  return shopCartRequest('/api/shop/cart', token);
+}
+
+/** Merge guest localStorage lines into server cart (merge-then-persist). */
+export async function mergeShopCart(
+  token: string,
+  items: ShopCoinCheckoutItem[]
+): Promise<ShopCartApiResponse> {
+  return shopCartRequest('/api/shop/cart/merge', token, {
+    method: 'POST',
+    body: JSON.stringify({ items }),
+  });
+}
+
+export async function replaceShopCart(
+  token: string,
+  items: ShopCoinCheckoutItem[]
+): Promise<ShopCartApiResponse> {
+  return shopCartRequest('/api/shop/cart', token, {
+    method: 'PUT',
+    body: JSON.stringify({ items }),
+  });
+}
+
+export async function addShopCartItem(
+  token: string,
+  productId: string,
+  qty = 1
+): Promise<ShopCartApiResponse> {
+  return shopCartRequest('/api/shop/cart/items', token, {
+    method: 'POST',
+    body: JSON.stringify({ productId, qty }),
+  });
+}
+
+export async function setShopCartItemQty(
+  token: string,
+  productId: string,
+  qty: number
+): Promise<ShopCartApiResponse> {
+  return shopCartRequest(`/api/shop/cart/items/${encodeURIComponent(productId)}`, token, {
+    method: 'PATCH',
+    body: JSON.stringify({ qty }),
+  });
+}
+
+export async function removeShopCartItem(
+  token: string,
+  productId: string
+): Promise<ShopCartApiResponse> {
+  return shopCartRequest(`/api/shop/cart/items/${encodeURIComponent(productId)}`, token, {
+    method: 'DELETE',
+  });
+}
+
+export async function clearShopCartApi(token: string): Promise<ShopCartApiResponse> {
+  return shopCartRequest('/api/shop/cart', token, { method: 'DELETE' });
+}
+
 /** فاکتور Telegram Stars (XTR → ربات) */
 export async function checkoutShopWithStars(
   token: string,
