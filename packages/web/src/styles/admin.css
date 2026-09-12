@@ -4183,7 +4183,32 @@ body:has(.admin-app) {
 
 /* —— باشگاه مشتریان · پیامک و پترن‌ها —— */
 .admin-app .crm-sms-header { align-items: flex-start; gap: 12px; }
-.admin-app .crm-sms-panel-status { margin: 6px 0 0; font-size: 12.5px; color: var(--admin-muted); }
+.admin-app .crm-sms-panel-meta {
+  margin: 8px 0 0;
+  display: grid;
+  gap: 4px;
+}
+.admin-app .crm-sms-panel-status { margin: 0; font-size: 12.5px; color: var(--admin-muted); }
+.admin-app .crm-sms-panel-status--warn { color: #b45309; }
+.admin-app .crm-sms-balance {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 1.05rem;
+  color: var(--admin-text, #1a1228);
+}
+.admin-app .crm-sms-balance-label { font-weight: 600; }
+.admin-app .crm-sms-balance-value {
+  font-variant-numeric: tabular-nums;
+  font-size: 1.35rem;
+  letter-spacing: 0.01em;
+}
+.admin-app .crm-sms-balance-unit {
+  font-size: 0.92rem;
+  color: var(--admin-muted);
+}
 .admin-app .crm-sms-notice {
   margin: 0 0 12px; padding: 10px 12px; border-radius: 10px;
   background: var(--admin-promo-mint, #e8f8f2); color: #0f7a60; border: 1px solid #b7e6d5;

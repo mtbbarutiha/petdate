@@ -6,7 +6,12 @@ import { adminFetch, formatNumFa } from '../../api';
 import { appConfirm } from '../../../components/AppDialog';
 import { tr } from '../../../i18n';
 
-type SmsPanel = { configured: boolean; balance?: number | null; error?: string };
+type SmsPanel = {
+  configured: boolean;
+  balance?: number | null;
+  currency?: 'rial' | string;
+  error?: string;
+};
 
 type PatternForm = {
   id?: number;
@@ -243,17 +248,26 @@ export function AdminCrmSmsPage() {
           <h1>{tr('پیامک و پترن‌ها')}</h1>
           <p>{tr('پترن‌های ثابت و پویا — ارسال دستی یا خودکار روی مشتریان Pet Date')}</p>
           {panel ? (
-            <p className="crm-sms-panel-status">
-              {panel.configured ? (
-                <>
-                  {tr('پنل پیامک متصل')}
-                  {panel.balance != null ? <> {tr('· موجودی')} {formatNumFa(panel.balance)}</> : null}
-                  {panel.error ? <> · {panel.error}</> : null}
-                </>
-              ) : (
-                tr('پنل پیامک پیکربندی نشده')
-              )}
-            </p>
+            panel.configured ? (
+              <div className="crm-sms-panel-meta">
+                <p className="crm-sms-panel-status">{tr('پنل پیامک متصل')}</p>
+                {panel.balance != null ? (
+                  <p className="crm-sms-balance" aria-live="polite">
+                    <span className="crm-sms-balance-label">{tr('موجودی')}:</span>{' '}
+                    <strong className="crm-sms-balance-value" dir="ltr">
+                      {formatNumFa(panel.balance)}
+                    </strong>{' '}
+                    <span className="crm-sms-balance-unit">{tr('ریال')}</span>
+                  </p>
+                ) : panel.error ? (
+                  <p className="crm-sms-panel-status crm-sms-panel-status--warn">{panel.error}</p>
+                ) : (
+                  <p className="crm-sms-panel-status">{tr('در حال خواندن موجودی…')}</p>
+                )}
+              </div>
+            ) : (
+              <p className="crm-sms-panel-status">{tr('پنل پیامک پیکربندی نشده')}</p>
+            )
           ) : null}
         </div>
         {canAdmin ? (
