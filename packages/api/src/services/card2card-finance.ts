@@ -8,6 +8,7 @@ import { ensureFinanceOsSchema, importFinanceOsTransactions } from '../finance-o
 import { infra } from '../config/infra';
 import { telegramBotApiUrl, telegramFetch } from './telegram-http';
 import { usableTelegramId } from './telegram-id';
+import { pushAdminHeaderNotification } from '../admin-notifications';
 
 function paymentCardLast4(): string {
   const n = String(process.env.PAYMENT_CARD_NUMBER || '').replace(/\D/g, '');
@@ -118,6 +119,20 @@ export async function notifyAdminsPendingCardReceipt(order: {
     .split(/[,;\s]+/)
     .map((s) => s.trim())
     .filter(Boolean);
+  try {
+    pushAdminHeaderNotification({
+      title: `رسید کارت‌به‌کارت #${order.id}`,
+      body: `${order.userName || 'کاربر'} · ${order.coins} سکه — صف تأیید مالی`,
+      kind: 'warn',
+      href: '/admin/payments',
+      module: 'finance',
+      permission: 'finance.read',
+      sourceKey: `payment-receipt:${order.id}`,
+    });
+  } catch (err) {
+    console.warn('header notif pending receipt skipped:', (err as Error).message);
+  }
+
   if (!infra.telegram.botToken || !admins.length) {
     if (!admins.length) {
       console.warn('No TELEGRAM_ADMIN_IDS — pending payment #%s not notified', order.id);

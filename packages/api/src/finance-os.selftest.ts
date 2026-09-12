@@ -109,6 +109,9 @@ async function main() {
   assert(typeof counts.queue === 'number', 'nav queue');
   assert(typeof counts.suspicious === 'number', 'nav suspicious');
   assert(typeof counts.pendingAllocation === 'number', 'nav pending');
+  assert(typeof counts.payments === 'number', 'nav payments');
+  assert(typeof counts.transactions === 'number', 'nav transactions');
+  assert(counts.transactions === counts.queue + counts.suspicious, 'transactions = queue+suspicious');
 
   // Simulate partial #155 scrub failure (desc column renamed → mid-pass abort).
   const { getDb } = await import('./db');

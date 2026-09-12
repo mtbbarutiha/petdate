@@ -396,6 +396,11 @@ export const adminPlatform = {
              )
            )`
       ),
+      /** Shop fulfillment queue — paid/pending, not yet shipped/done/cancelled */
+      shopOrders: q(
+        `SELECT COUNT(*) as c FROM shop_orders
+         WHERE status IN ('pending','paid')`
+      ),
     };
   },
 

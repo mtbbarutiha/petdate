@@ -262,3 +262,13 @@ export interface FinanceOsAllocationBundle {
   businesses: FinanceOsBusiness[];
   pendingAllocationCount: number;
 }
+
+/** @deprecated Prefer FinanceNavCounts from admin-nav — kept for Finance OS callers. */
+export type FinanceOsNavCounts = {
+  queue: number;
+  suspicious: number;
+  pendingAllocation: number;
+  payments?: number;
+  transactions?: number;
+};
+

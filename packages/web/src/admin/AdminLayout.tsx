@@ -6,7 +6,7 @@ import { ChevronDown,
   Store, Target, Ticket, TrendingUp, UserPlus, UserRound, Users, Wallet, X, ClipboardCheck, BarChart3, Coins, Tags,
   Route, Inbox, HandCoins, Bot, MessageSquare, Star, HeartHandshake, ArrowLeftRight,
 } from 'lucide-react';
-import type { PlatformNavCounts, SalesNavCounts } from '@petdate/shared';
+import type { CrmNavCounts, FinanceNavCounts, PlatformNavCounts, SalesNavCounts } from '@petdate/shared';
 import { ADMIN_PANEL_ROLE_LABELS } from '@petdate/shared';
 import { AdminWordmark } from './AdminWordmark';
 import { AdminHeaderNotifications } from './AdminHeaderNotifications';
@@ -21,6 +21,8 @@ import '../styles/admin.css';
 
 type SalesBadgeKey = keyof SalesNavCounts;
 type PlatformBadgeKey = keyof PlatformNavCounts;
+type FinanceBadgeKey = keyof FinanceNavCounts;
+type CrmBadgeKey = keyof CrmNavCounts;
 type NavItem = {
   to: string;
   icon: typeof LayoutDashboard;
@@ -28,6 +30,8 @@ type NavItem = {
   perm?: string;
   salesBadgeKey?: SalesBadgeKey;
   platformBadgeKey?: PlatformBadgeKey;
+  financeBadgeKey?: FinanceBadgeKey;
+  crmBadgeKey?: CrmBadgeKey;
 };
 type NavGroup = { titleKey: string; items: NavItem[] };
 
@@ -89,12 +93,30 @@ const NAV_GROUPS: NavGroup[] = [
   ]},
   { titleKey: 'admin.club', items: [
     { to: '/admin/crm', icon: LayoutDashboard, labelKey: 'admin.myDesk', perm: 'crm.read' },
-    { to: '/admin/crm/ticketing', icon: Ticket, labelKey: 'admin.ticketing', perm: 'crm.read' },
-    { to: '/admin/crm/inbox', icon: Inbox, labelKey: 'admin.inbox', perm: 'crm.read' },
+    {
+      to: '/admin/crm/ticketing',
+      icon: Ticket,
+      labelKey: 'admin.ticketing',
+      perm: 'crm.read',
+      crmBadgeKey: 'tickets',
+    },
+    {
+      to: '/admin/crm/inbox',
+      icon: Inbox,
+      labelKey: 'admin.inbox',
+      perm: 'crm.read',
+      crmBadgeKey: 'unassigned',
+    },
     { to: '/admin/crm/customers', icon: HeartHandshake, labelKey: 'admin.customers360', perm: 'crm.read' },
     { to: '/admin/crm/experience', icon: Star, labelKey: 'admin.cx', perm: 'crm.read' },
     { to: '/admin/crm/calls', icon: Headset, labelKey: 'admin.calls', perm: 'crm.read' },
-    { to: '/admin/crm/cases', icon: ClipboardList, labelKey: 'admin.cases', perm: 'crm.read' },
+    {
+      to: '/admin/crm/cases',
+      icon: ClipboardList,
+      labelKey: 'admin.cases',
+      perm: 'crm.read',
+      crmBadgeKey: 'followups',
+    },
     { to: '/admin/crm/sms', icon: MessageSquare, labelKey: 'admin.sms', perm: 'crm.read' },
     { to: '/admin/crm/qa', icon: ClipboardCheck, labelKey: 'admin.qa', perm: 'crm.read' },
     { to: '/admin/crm/reports', icon: BarChart3, labelKey: 'admin.clubReports', perm: 'crm.read' },
@@ -107,11 +129,24 @@ const NAV_GROUPS: NavGroup[] = [
       icon: Wallet,
       labelKey: 'admin.depositQueue',
       perm: 'finance.read',
+      financeBadgeKey: 'payments',
       platformBadgeKey: 'payments',
     },
     { to: '/admin/finance/accounts', icon: Landmark, labelKey: 'admin.accounts', perm: 'finance.read' },
-    { to: '/admin/finance/transactions', icon: ArrowLeftRight, labelKey: 'admin.transactions', perm: 'finance.read' },
-    { to: '/admin/finance/allocation', icon: Building2, labelKey: 'admin.allocation', perm: 'finance.read' },
+    {
+      to: '/admin/finance/transactions',
+      icon: ArrowLeftRight,
+      labelKey: 'admin.transactions',
+      perm: 'finance.read',
+      financeBadgeKey: 'transactions',
+    },
+    {
+      to: '/admin/finance/allocation',
+      icon: Building2,
+      labelKey: 'admin.allocation',
+      perm: 'finance.read',
+      financeBadgeKey: 'pendingAllocation',
+    },
     { to: '/admin/finance/pnl', icon: PieChart, labelKey: 'admin.pnl', perm: 'finance.read' },
     { to: '/admin/finance/sales', icon: LineChart, labelKey: 'admin.salesChart', perm: 'finance.read' },
     { to: '/admin/finance/orders', icon: ShoppingBag, labelKey: 'admin.orderRevenue', perm: 'finance.read' },
@@ -121,13 +156,12 @@ const NAV_GROUPS: NavGroup[] = [
   { titleKey: 'admin.store', items: [
     { to: '/admin/shop/products', icon: Package, labelKey: 'admin.products', perm: 'shop.read' },
     { to: '/admin/shop/categories', icon: Store, labelKey: 'admin.categories', perm: 'shop.read' },
-    { to: '/admin/shop/orders', icon: ShoppingBag, labelKey: 'admin.orders', perm: 'shop.read' },
     {
-      to: '/admin/payments',
-      icon: Wallet,
-      labelKey: 'admin.payments',
+      to: '/admin/shop/orders',
+      icon: ShoppingBag,
+      labelKey: 'admin.orders',
       perm: 'shop.read',
-      platformBadgeKey: 'payments',
+      platformBadgeKey: 'shopOrders',
     },
   ]},
   { titleKey: 'admin.contentSystem', items: [
@@ -156,8 +190,18 @@ function visibleGroups(): NavGroup[] {
 function itemBadge(
   item: NavItem,
   salesCounts: SalesNavCounts | null,
-  platformCounts: PlatformNavCounts | null
+  platformCounts: PlatformNavCounts | null,
+  financeCounts: FinanceNavCounts | null,
+  crmCounts: CrmNavCounts | null
 ): number {
+  if (item.financeBadgeKey && financeCounts) {
+    const n = Number(financeCounts[item.financeBadgeKey] || 0);
+    if (Number.isFinite(n) && n > 0) return n;
+  }
+  if (item.crmBadgeKey && crmCounts) {
+    const n = Number(crmCounts[item.crmBadgeKey] || 0);
+    return Number.isFinite(n) ? n : 0;
+  }
   if (item.salesBadgeKey && salesCounts) {
     const n = Number(salesCounts[item.salesBadgeKey] || 0);
     return Number.isFinite(n) ? n : 0;
@@ -177,6 +221,8 @@ function AdminLayoutInner() {
   const [collapsed, setCollapsed] = useState(false);
   const [salesCounts, setSalesCounts] = useState<SalesNavCounts | null>(null);
   const [platformCounts, setPlatformCounts] = useState<PlatformNavCounts | null>(null);
+  const [financeCounts, setFinanceCounts] = useState<FinanceNavCounts | null>(null);
+  const [crmCounts, setCrmCounts] = useState<CrmNavCounts | null>(null);
   const [avatarUrl, setAvatarUrl] = useState(() => getAdminAvatarUrl());
   const [avatarFailed, setAvatarFailed] = useState(false);
   const groups = useMemo(() => visibleGroups(), []);
@@ -244,12 +290,32 @@ function AdminLayoutInner() {
     } else {
       setSalesCounts(null);
     }
-    if (adminCan('platform.read') || adminCan('platform.write') || adminCan('admin.full')) {
+    if (
+      adminCan('platform.read') ||
+      adminCan('platform.write') ||
+      adminCan('finance.read') ||
+      adminCan('shop.read') ||
+      adminCan('admin.full')
+    ) {
       void adminFetch<PlatformNavCounts>('/api/admin/platform/nav-counts', { cache: 'no-store' as RequestCache })
         .then(setPlatformCounts)
         .catch(() => setPlatformCounts(null));
     } else {
       setPlatformCounts(null);
+    }
+    if (adminCan('finance.read') || adminCan('admin.full')) {
+      void adminFetch<FinanceNavCounts>('/api/admin/finance-os/nav-counts', { cache: 'no-store' as RequestCache })
+        .then(setFinanceCounts)
+        .catch(() => setFinanceCounts(null));
+    } else {
+      setFinanceCounts(null);
+    }
+    if (adminCan('crm.read') || adminCan('admin.full')) {
+      void adminFetch<CrmNavCounts>('/api/admin/crm/nav-counts', { cache: 'no-store' as RequestCache })
+        .then(setCrmCounts)
+        .catch(() => setCrmCounts(null));
+    } else {
+      setCrmCounts(null);
     }
   }, []);
   useEffect(() => {
@@ -306,7 +372,7 @@ function AdminLayoutInner() {
             {groups.map((group) => {
               const isOpen = Boolean(openGroups[group.titleKey]);
               const groupBadge = group.items.reduce(
-                (sum, item) => sum + itemBadge(item, salesCounts, platformCounts),
+                (sum, item) => sum + itemBadge(item, salesCounts, platformCounts, financeCounts, crmCounts),
                 0
               );
               return (
@@ -328,10 +394,10 @@ function AdminLayoutInner() {
                   </button>
                   <div className="admin-nav-group-items" hidden={!isOpen && !collapsed}>
                       {group.items.map((item) => {
-                        const badge = itemBadge(item, salesCounts, platformCounts);
+                        const badge = itemBadge(item, salesCounts, platformCounts, financeCounts, crmCounts);
                         return (
                           <NavLink
-                            key={item.to}
+                            key={`${item.to}:${item.labelKey}`}
                             to={item.to}
                             end={item.to === '/admin/hr' || item.to === '/admin/sales' || item.to === '/admin/crm' || item.to === '/admin/dashboard' || item.to === '/admin/finance'}
                             onClick={() => setMobileOpen(false)}

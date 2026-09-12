@@ -188,8 +188,14 @@ adminRouter.get('/platform/nav-counts', (req, res) => {
     res.status(401).json({ error: 'دسترسی ادمین مجاز نیست' });
     return;
   }
-  if (!actorHasPermission(actor, 'platform.read') && !actorHasPermission(actor, 'admin.full')
-    && !actorHasPermission(actor, 'platform.write')) {
+  // platform / finance / shop operators all need queue badges for their nav sections.
+  if (
+    !actorHasPermission(actor, 'platform.read') &&
+    !actorHasPermission(actor, 'platform.write') &&
+    !actorHasPermission(actor, 'finance.read') &&
+    !actorHasPermission(actor, 'shop.read') &&
+    !actorHasPermission(actor, 'admin.full')
+  ) {
     res.status(403).json({ error: 'سطح دسترسی کافی نیست' });
     return;
   }

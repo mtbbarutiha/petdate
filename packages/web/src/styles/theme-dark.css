@@ -2264,3 +2264,18 @@ html[data-theme='dark'] .pepito-pet-profile-tags .tag:not(.green):not(.blue) {
   border-color: var(--pd-border);
   color: var(--pd-ink);
 }
+
+/* Admin sidebar pending badges — visible on dark navy */
+html[data-theme='dark'] .admin-app .admin-nav-count {
+  background: rgba(94, 234, 212, 0.18);
+  color: #5eead4;
+}
+html[data-theme='dark'] .admin-app .admin-nav-item.active .admin-nav-count {
+  background: rgba(94, 234, 212, 0.28);
+  color: #99f6e4;
+}
+html[data-theme='dark'] .admin-app .admin-nav-group-title .admin-nav-count {
+  background: rgba(94, 234, 212, 0.16);
+  color: #5eead4;
+}
+

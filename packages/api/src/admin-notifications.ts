@@ -1,12 +1,14 @@
 /**
  * Admin header notifications — additive `admin_notifications` table +
- * live aggregation from HR cockpit, open sales tickets, and mail unread.
+ * live aggregation from HR cockpit, open sales/CRM tickets, finance deposit
+ * queue, platform moderation queues, and mail unread.
  * Never wipes existing data; seed is idempotent via source_key.
  */
 import { getDb } from './db';
 import { actorHasPermission, type AdminAuthActor } from './hr-service';
 import * as hrMod from './hr-modules';
 import type { AdminHeaderNotification, AdminNotificationKind } from '@petdate/shared';
+import { CRM_TICKET_OPEN_STATUSES } from '@petdate/shared';
 
 function db() {
   return getDb();
@@ -86,6 +88,24 @@ const SEED_ROWS: Array<{
     href: '/admin/dashboard',
     module: 'platform',
     permission: null,
+  },
+  {
+    sourceKey: 'seed:finance-deposits',
+    title: 'صف تأیید واریز',
+    body: 'رسیدهای کارت‌به‌کارت منتظر تأیید در پنل مالی.',
+    kind: 'warn',
+    href: '/admin/payments',
+    module: 'finance',
+    permission: 'finance.read',
+  },
+  {
+    sourceKey: 'seed:crm-tickets',
+    title: 'تیکتینگ باشگاه مشتریان',
+    body: 'تیکت‌های باز باشگاه مشتریان را در صف تیکتینگ ببینید.',
+    kind: 'info',
+    href: '/admin/crm/ticketing',
+    module: 'crm',
+    permission: 'crm.read',
   },
 ];
 
@@ -243,6 +263,160 @@ function listSalesLive(actor: AdminAuthActor): AdminHeaderNotification[] {
   }
 }
 
+
+function listPaymentsLive(actor: AdminAuthActor): AdminHeaderNotification[] {
+  if (!canSee(actor, 'finance.read') && !canSee(actor, 'shop.read') && !canSee(actor, 'platform.read')) {
+    return [];
+  }
+  if (isDismissed(actor, 'live:payments-queue')) return [];
+  try {
+    const pending = Number(
+      (
+        db()
+          .prepare(
+            `SELECT COUNT(*) as c FROM payment_orders
+             WHERE method = 'card'
+               AND (
+                 status = 'pending'
+                 OR (
+                   status = 'awaiting_receipt'
+                   AND receipt_file_id IS NOT NULL
+                   AND TRIM(receipt_file_id) != ''
+                 )
+               )`
+          )
+          .get() as { c: number } | undefined
+      )?.c ?? 0
+    );
+    if (pending <= 0) return [];
+    return [
+      {
+        id: 'live:payments-queue',
+        title: `${pending} واریز منتظر تأیید`,
+        body: 'رسید کارت‌به‌کارت در صف تأیید مالی (مالی → صف تأیید واریز).',
+        kind: 'warn',
+        href: '/admin/payments',
+        module: 'finance',
+        date: new Date().toISOString(),
+        read: false,
+        canMarkRead: true,
+      },
+    ];
+  } catch {
+    return [];
+  }
+}
+
+function listCrmLive(actor: AdminAuthActor): AdminHeaderNotification[] {
+  if (!canSee(actor, 'crm.read')) return [];
+  if (isDismissed(actor, 'live:crm-open')) return [];
+  try {
+    const openStatuses = CRM_TICKET_OPEN_STATUSES.map(() => '?').join(',');
+    const open = Number(
+      (
+        db()
+          .prepare(`SELECT COUNT(*) as c FROM crm_tickets WHERE status IN (${openStatuses})`)
+          .get(...CRM_TICKET_OPEN_STATUSES) as { c: number } | undefined
+      )?.c ?? 0
+    );
+    if (open <= 0) return [];
+    return [
+      {
+        id: 'live:crm-open',
+        title: `${open} تیکت باز باشگاه`,
+        body: 'تیکت‌های باز باشگاه مشتریان در صف تیکتینگ.',
+        kind: 'warn',
+        href: '/admin/crm/ticketing',
+        module: 'crm',
+        date: new Date().toISOString(),
+        read: false,
+        canMarkRead: true,
+      },
+    ];
+  } catch {
+    return [];
+  }
+}
+
+function listPlatformLive(actor: AdminAuthActor): AdminHeaderNotification[] {
+  if (!canSee(actor, 'platform.read') && !canSee(actor, 'platform.write')) return [];
+  if (isDismissed(actor, 'live:platform-queues')) return [];
+  try {
+    const verification = Number(
+      (
+        db()
+          .prepare(
+            `SELECT COUNT(*) as c FROM users
+             WHERE verification_status = 'pending' AND COALESCE(is_active, 1) = 1`
+          )
+          .get() as { c: number } | undefined
+      )?.c ?? 0
+    );
+    const photos = Number(
+      (
+        db()
+          .prepare(
+            `SELECT COUNT(*) as c FROM pets
+             WHERE COALESCE(photo_moderation_status, 'approved') = 'pending'`
+          )
+          .get() as { c: number } | undefined
+      )?.c ?? 0
+    );
+    const total = verification + photos;
+    if (total <= 0) return [];
+    return [
+      {
+        id: 'live:platform-queues',
+        title: `${total} مورد در صف پلتفرم`,
+        body: [
+          verification ? `${verification} احراز هویت` : null,
+          photos ? `${photos} عکس پت` : null,
+        ]
+          .filter(Boolean)
+          .join(' · '),
+        kind: 'info',
+        href: verification ? '/admin/verification' : '/admin/marketplace-moderation',
+        module: 'platform',
+        date: new Date().toISOString(),
+        read: false,
+        canMarkRead: true,
+      },
+    ];
+  } catch {
+    return [];
+  }
+}
+
+function listShopOrdersLive(actor: AdminAuthActor): AdminHeaderNotification[] {
+  if (!canSee(actor, 'shop.read')) return [];
+  if (isDismissed(actor, 'live:shop-orders')) return [];
+  try {
+    const pending = Number(
+      (
+        db()
+          .prepare(`SELECT COUNT(*) as c FROM shop_orders WHERE status IN ('pending','paid')`)
+          .get() as { c: number } | undefined
+      )?.c ?? 0
+    );
+    if (pending <= 0) return [];
+    return [
+      {
+        id: 'live:shop-orders',
+        title: `${pending} سفارش فروشگاه`,
+        body: 'سفارش‌های در انتظار آماده‌سازی یا ارسال.',
+        kind: 'info',
+        href: '/admin/shop/orders',
+        module: 'shop',
+        date: new Date().toISOString(),
+        read: false,
+        canMarkRead: true,
+      },
+    ];
+  } catch {
+    return [];
+  }
+}
+
 function listMailLive(actor: AdminAuthActor): Promise<AdminHeaderNotification[]> {
   if (!canSee(actor, 'platform.read')) return Promise.resolve([]);
   if (isDismissed(actor, 'live:mail-unread')) return Promise.resolve([]);
@@ -286,6 +460,10 @@ export async function listAdminHeaderNotifications(actor: AdminAuthActor): Promi
     ...listDbNotifications(actor),
     ...listHrLive(actor),
     ...listSalesLive(actor),
+    ...listPaymentsLive(actor),
+    ...listCrmLive(actor),
+    ...listPlatformLive(actor),
+    ...listShopOrdersLive(actor),
     ...mailItems,
   ]
     .sort(sortByDateDesc)
@@ -374,5 +552,9 @@ export function markAllAdminHeaderNotificationsRead(actor: AdminAuthActor): { ok
   }
   dismiss(actor, 'live:sales-open');
   dismiss(actor, 'live:mail-unread');
+  dismiss(actor, 'live:payments-queue');
+  dismiss(actor, 'live:crm-open');
+  dismiss(actor, 'live:platform-queues');
+  dismiss(actor, 'live:shop-orders');
   return { ok: true };
 }
