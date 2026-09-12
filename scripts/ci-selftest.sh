@@ -79,6 +79,9 @@ npx tsx "$ROOT/packages/web/src/lib/authRedirect.selftest.ts"
 echo "==> selftest: web playmate fee ConfirmModal (no window.confirm)"
 npx tsx "$ROOT/packages/web/src/components/playmateFeeConfirm.selftest.ts"
 
+echo "==> selftest: web silent-chat mute ConfirmModal + desktop header layout"
+npx tsx "$ROOT/packages/web/src/components/silentChatConfirm.selftest.ts"
+
 echo "==> selftest: web dark-mode theme tokens + toggle wiring"
 npx tsx "$ROOT/packages/web/src/lib/theme.selftest.ts"
 

@@ -356,6 +356,18 @@ export const en: Dict = {
     findCtaLogin: 'Log in to find a playmate',
     findCtaAddPet: 'Add a pet',
     findCtaPickPet: 'Which pet?',
+    silentOnLabel: 'Silent is on — tap to receive chat requests again',
+    silentOffLabel: 'Mute chat requests',
+    silentEnableTitle: 'Mute chat requests',
+    silentEnableBody:
+      'While silent is on, you will no longer receive playmate chat requests. Others cannot send you a request until you turn silent off.',
+    silentEnableConfirm: 'Turn silent on',
+    silentDisableTitle: 'Turn silent off',
+    silentDisableBody:
+      'Turning silent off means you will receive playmate chat requests again.',
+    silentDisableConfirm: 'Turn silent off',
+    silentSaved: 'Saved',
+    silentError: 'Could not update silent mode',
     needLogin: 'Log in to see conversations.',
     active: 'Active chat',
     busyWithPet: 'With pet',

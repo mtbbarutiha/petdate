@@ -65,6 +65,8 @@ export function FindPlaymatePanel({
   const [findResult, setFindResult] = useState<FindPlaymateResult | null>(null);
   const [statusLine, setStatusLine] = useState<string | null>(null);
   const [silentBusy, setSilentBusy] = useState(false);
+  /** Explain mute before toggling silent-chat (not a bare toggle). */
+  const [silentConfirmOpen, setSilentConfirmOpen] = useState(false);
   /** Pet awaiting fee confirmation in custom modal (not the browser confirm dialog). */
   const [feeConfirmPet, setFeeConfirmPet] = useState<PetProfile | null>(null);
 
@@ -184,22 +186,52 @@ export function FindPlaymatePanel({
   }
 
   const silentOn = Boolean(authUser?.silentChatRequests);
-  const silentLabel = silentOn ? 'سایلنت خاموش (روشن است)' : 'سایلنت درخواست چت';
+  const silentLabel = silentOn ? t('chats.silentOnLabel') : t('chats.silentOffLabel');
 
-  async function toggleSilent() {
+  function openSilentConfirm() {
+    if (!myUserId || silentBusy) return;
+    setSilentConfirmOpen(true);
+  }
+
+  function dismissSilentConfirm() {
+    if (silentBusy) return;
+    setSilentConfirmOpen(false);
+  }
+
+  async function confirmSilentToggle() {
     if (!myUserId || silentBusy) return;
     setSilentBusy(true);
     try {
       await setSilentChatRequests(myUserId, !silentOn);
       await refreshMe();
-      toastSuccess('ذخیره شد');
+      setSilentConfirmOpen(false);
+      toastSuccess(t('chats.silentSaved'));
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'تغییر سایلنت ناموفق بود';
+      const msg = err instanceof Error ? err.message : t('chats.silentError');
       toastError(msg);
     } finally {
       setSilentBusy(false);
     }
   }
+
+  const silentConfirmModal = (
+    <ConfirmModal
+      open={silentConfirmOpen}
+      title={silentOn ? t('chats.silentDisableTitle') : t('chats.silentEnableTitle')}
+      confirmLabel={silentOn ? t('chats.silentDisableConfirm') : t('chats.silentEnableConfirm')}
+      cancelLabel={t('common.cancel')}
+      busy={silentBusy}
+      testId="silent-chat-confirm"
+      onCancel={dismissSilentConfirm}
+      onConfirm={() => {
+        void confirmSilentToggle();
+      }}
+    >
+      <p className="pepito-lead-modal__lead">
+        {silentOn ? t('chats.silentDisableBody') : t('chats.silentEnableBody')}
+      </p>
+    </ConfirmModal>
+  );
 
   if (!isPetOwner) {
     if (active === 'trainer') {
@@ -249,11 +281,12 @@ export function FindPlaymatePanel({
           type="button"
           className={`find-playmate-mute-btn${silentOn ? ' is-on' : ''}`}
           data-testid="silent-chat-header"
-          onClick={() => void toggleSilent()}
+          onClick={openSilentConfirm}
           disabled={silentBusy}
           aria-label={silentLabel}
           title={silentLabel}
           aria-pressed={silentOn}
+          aria-haspopup="dialog"
         >
           {silentOn ? <Bell size={18} aria-hidden /> : <BellOff size={18} aria-hidden />}
         </button>
@@ -261,6 +294,8 @@ export function FindPlaymatePanel({
     return (
       <>
         <div className="find-playmate-header">
+          {/* Mute first so the compact icon sits nearer the brand; CTA stays at the outer edge */}
+          {muteBtn}
           {needsLogin ? (
             <Link to="/auth/login" className="find-playmate-header-btn">
               <PawIcon size={18} />
@@ -299,10 +334,10 @@ export function FindPlaymatePanel({
               <span>{ctaLabel}</span>
             </button>
           )}
-          {muteBtn}
           {findError ? <span className="find-playmate-header-err">{findError}</span> : null}
         </div>
         {feeConfirmModal}
+        {silentConfirmModal}
       </>
     );
   }
@@ -403,6 +438,7 @@ export function FindPlaymatePanel({
       ) : null}
     </div>
     {feeConfirmModal}
-    </>
+    {silentConfirmModal}
+  </>
   );
 }
