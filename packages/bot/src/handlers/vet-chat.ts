@@ -205,7 +205,7 @@ export function vetChatReplyKeyboard(
 function providerChatLabel(kind: ConsultServiceKind): string {
   if (kind === 'trainer') return 'مربی';
   if (kind === 'sitter') return 'پرستار پت';
-  if (kind === 'seeker_advice') return 'مشاور خرید';
+  if (kind === 'seeker_advice') return 'مشورت با صاحبین';
   return 'دامپزشک';
 }
 

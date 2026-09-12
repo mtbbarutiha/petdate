@@ -66,6 +66,7 @@ import {
   QUICK_VET_COST,
   SEEKER_ADVICE_COST,
   SEEKER_OWNER_SHARE,
+  SEEKER_ADVICE_EARLY_REFUND_MS,
   SITTER_CONNECT_COST,
   SITTER_PROVIDER_SHARE,
   SYSTEM_FEE_REASON,
@@ -2312,8 +2313,8 @@ export function consultFeeSplit(kind: ConsultServiceKind): {
         providerShare: SEEKER_OWNER_SHARE,
         systemFee: SEEKER_ADVICE_COST - SEEKER_OWNER_SHARE,
         systemReason: SYSTEM_FEE_REASON.seekerAdvice,
-        debitReason: 'مشورت خرید پت',
-        payoutReason: 'درآمد مشورت خرید پت',
+        debitReason: 'مشورت با صاحبین',
+        payoutReason: 'درآمد مشورت با صاحبین',
         payoutRefType: 'seeker_advice_payout',
       };
     default:
@@ -3563,7 +3564,7 @@ export const dbService = {
       });
   },
 
-  /** صاحبان پت که مشورت خرید از دنبال‌کننده را پذیرفته‌اند */
+  /** صاحبان پت که مشورت با صاحبین را پذیرفته‌اند */
   listOwnersAcceptingSeekerAdvice(): User[] {
     const rows = db
       .prepare(
@@ -6028,6 +6029,106 @@ export const dbService = {
       paid: true,
       amount: providerAmount,
       alreadyPaid: false,
+      consult: this.getVetConsultation(consultId),
+    };
+  },
+
+  /**
+   * مشورت با صاحبین: اگر چت زیر ۱ ثانیه بعد از قبول قطع شود،
+   * ۶ سکه به بیمار برمی‌گردد و سهم صاحب (در صورت واریز) پس گرفته می‌شود.
+   */
+  refundEarlySeekerAdviceIfEligible(consultId: number): {
+    refunded: boolean;
+    amount: number;
+    reason?: string;
+    consult: VetConsultation | null;
+  } {
+    const consult = this.getVetConsultation(consultId);
+    if (!consult) {
+      return { refunded: false, amount: 0, reason: 'missing', consult: null };
+    }
+    if ((consult.serviceKind ?? 'vet') !== 'seeker_advice') {
+      return { refunded: false, amount: 0, reason: 'not_seeker_advice', consult };
+    }
+
+    const anchorRaw = consult.vetPaidAt || consult.createdAt;
+    const rawTs = String(anchorRaw || '').trim();
+    const anchorMs = Date.parse(
+      /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}:\d{2}/.test(rawTs) &&
+        !/[zZ]|[+-]\d{2}:?\d{2}$/.test(rawTs)
+        ? rawTs.replace(' ', 'T') + 'Z'
+        : rawTs
+    );
+    if (!Number.isFinite(anchorMs)) {
+      return { refunded: false, amount: 0, reason: 'bad_timestamp', consult };
+    }
+    const elapsed = Date.now() - anchorMs;
+    if (elapsed >= SEEKER_ADVICE_EARLY_REFUND_MS) {
+      return { refunded: false, amount: 0, reason: 'too_late', consult };
+    }
+
+    const split = consultFeeSplit('seeker_advice');
+    const fee = Math.max(
+      0,
+      Math.floor(
+        Number(
+          consult.feeCoins != null && consult.feeCoins > 0 ? consult.feeCoins : split.cost
+        )
+      )
+    );
+    if (fee <= 0) {
+      return { refunded: false, amount: 0, reason: 'zero_fee', consult };
+    }
+
+    const already = db
+      .prepare(
+        `SELECT id FROM wallet_ledger
+         WHERE ref_type = 'seeker_advice_early_refund' AND ref_id = ?
+         LIMIT 1`
+      )
+      .get(String(consultId)) as { id: number } | undefined;
+    if (already) {
+      return { refunded: false, amount: fee, reason: 'already_refunded', consult };
+    }
+
+    const providerAmountClaw = Math.max(
+      0,
+      Math.floor(
+        Number(
+          consult.providerShareCoins != null && consult.providerShareCoins > 0
+            ? consult.providerShareCoins
+            : split.providerShare
+        )
+      )
+    );
+
+    if (consult.vetPaidAt && providerAmountClaw > 0) {
+      const clawed = this.debitCoins(consult.vetUserId, providerAmountClaw, {
+        reason: 'بازگشت درآمد مشورت با صاحبین (قطع سریع)',
+        refType: 'seeker_advice_payout_clawback',
+        refId: consultId,
+      });
+      if (!clawed) {
+        console.warn(
+          'seeker_advice early refund: provider clawback failed',
+          consult.vetUserId,
+          providerAmountClaw
+        );
+      }
+      db.prepare(
+        `UPDATE vet_consultations SET vet_paid_at = NULL WHERE id = ?`
+      ).run(consultId);
+    }
+
+    this.creditCoins(consult.patientUserId, fee, undefined, {
+      reason: 'بازگشت سکه مشورت با صاحبین (قطع زیر ۱ ثانیه)',
+      refType: 'seeker_advice_early_refund',
+      refId: consultId,
+    });
+
+    return {
+      refunded: true,
+      amount: fee,
       consult: this.getVetConsultation(consultId),
     };
   },

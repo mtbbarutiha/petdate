@@ -100,11 +100,26 @@ export function RoleSelectPage() {
       bannerImage="/pepito/uploads/1.jpg"
     >
       <div className="role-select">
-        <p className="pepito-auth-kicker">شروع</p>
+        <p className="pepito-auth-kicker">شروع · مرحله ۱ از ۳</p>
         <h1>نقش‌هات رو انتخاب کن</h1>
         <p className="auth-lead">
           یک یا چند نقش انتخاب کن، بعد «{ROLE_CONFIRM_LABEL}» رو بزن · {BRAND.taglineFa}
         </p>
+
+        <ol className="wizard-step-rail" aria-label="مراحل ثبت‌نام">
+          <li className="is-current">
+            <span>نقش</span>
+          </li>
+          <li>
+            <span>پروفایل</span>
+          </li>
+          <li>
+            <span>آماده</span>
+          </li>
+        </ol>
+        <div className="wizard-progress" aria-hidden>
+          <span style={{ width: '33%' }} />
+        </div>
 
         <div className="role-grid" role="group" aria-label="انتخاب نقش">
           {USER_ROLES.map((role) => {

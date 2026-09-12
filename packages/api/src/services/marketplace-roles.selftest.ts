@@ -24,7 +24,7 @@ async function main() {
   assert(sitterSplit.cost === 20 && sitterSplit.providerShare === 10, 'sitter 20/10');
 
   const seekerSplit = consultFeeSplit('seeker_advice');
-  assert(seekerSplit.cost === 10 && seekerSplit.providerShare === 5, 'seeker 10/5');
+  assert(seekerSplit.cost === 6 && seekerSplit.providerShare === 3, 'seeker 6/3');
 
   const tgPatient = `selftest_mkt_patient_${Date.now()}`;
   const tgTrainer = `selftest_mkt_trainer_${Date.now()}`;

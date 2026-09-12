@@ -21,6 +21,7 @@ const STATUS_FA: Record<string, string> = {
 const KIND_FA: Record<string, string> = {
   vet: 'دامپزشک',
   trainer: 'مربی',
+  seeker_advice: 'مشورت با صاحبین',
   ai: 'پاشا',
   ai_trainer: 'پاشا',
   ai_vet: 'پاشا',

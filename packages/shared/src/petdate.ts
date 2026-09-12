@@ -397,7 +397,7 @@ export const CONSULT_SERVICE_KIND_LABELS: Record<ConsultServiceKind, string> = {
   vet: 'مشاوره دامپزشک',
   trainer: 'مشاوره مربی',
   sitter: 'ارتباط پرستار پت',
-  seeker_advice: 'مشورت خرید پت',
+  seeker_advice: 'مشورت با صاحبین',
 };
 
 /** وضعیت تأیید عکس عمومی (پت / آواتار) */

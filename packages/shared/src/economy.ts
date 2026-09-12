@@ -22,10 +22,16 @@ export const TRAINER_CONSULT_COST = 50;
 export const TRAINER_PROVIDER_SHARE = 25;
 export const TRAINER_SYSTEM_FEE = TRAINER_CONSULT_COST - TRAINER_PROVIDER_SHARE;
 
-/** مشورت خرید از صاحب پت (دنبال‌کننده پت) */
-export const SEEKER_ADVICE_COST = 10;
-export const SEEKER_OWNER_SHARE = 5;
+/**
+ * مشورت با صاحبین (نقش بدون پت / بدون نقش صاحب)
+ * هزینه کل ۶ سکه: ۳ صاحب + ۳ پلتفرم.
+ * اگر چت زیر ۱ ثانیه قطع شود، هر ۶ سکه به بیمار برمی‌گردد.
+ */
+export const SEEKER_ADVICE_COST = 6;
+export const SEEKER_OWNER_SHARE = 3;
 export const SEEKER_SYSTEM_FEE = SEEKER_ADVICE_COST - SEEKER_OWNER_SHARE;
+/** قطع زیر این مدت → بازگشت کامل هزینه مشورت با صاحبین */
+export const SEEKER_ADVICE_EARLY_REFUND_MS = 1000;
 
 /** اتصال پرستار پت */
 export const SITTER_CONNECT_COST = 20;
@@ -430,7 +436,7 @@ export function walletLedgerLabelFa(reason: string): string {
     return 'کارمزد پلتفرم (پرستار پت)';
   }
   if (r === SYSTEM_FEE_REASON.seekerAdvice || r.includes('system_fee:seeker')) {
-    return 'کارمزد پلتفرم (مشورت خرید)';
+    return 'کارمزد پلتفرم (مشورت با صاحبین)';
   }
   if (r.startsWith('system_fee:')) return 'کارمزد پلتفرم';
   if (
@@ -453,8 +459,15 @@ export function walletLedgerLabelFa(reason: string): string {
   if (r.includes('درآمد پرستار') || r === 'sitter_connect_payout') {
     return 'درآمد پرستار پت';
   }
-  if (r.includes('درآمد مشورت خرید') || r === 'seeker_advice_payout') {
-    return 'درآمد مشورت خرید پت';
+  if (
+    r.includes('درآمد مشورت خرید') ||
+    r.includes('درآمد مشورت با صاحبین') ||
+    r === 'seeker_advice_payout'
+  ) {
+    return 'درآمد مشورت با صاحبین';
+  }
+  if (r.includes('بازگشت سکه مشورت') || r === 'seeker_advice_early_refund') {
+    return 'بازگشت سکه مشورت با صاحبین';
   }
   return r;
 }

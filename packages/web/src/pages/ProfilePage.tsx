@@ -52,6 +52,7 @@ import {
   fetchProfileCard,
   listUserBlocks,
   listUserContacts,
+  patchWebAcceptSeekerAdvice,
   patchWebProfile,
   resolvePublicMediaUrl,
   submitWebFaceVerification,
@@ -95,6 +96,7 @@ export function ProfilePage() {
   const [verifyBusy, setVerifyBusy] = useState(false);
   const [verifyError, setVerifyError] = useState('');
   const verifyFileRef = useRef<HTMLInputElement>(null);
+  const [adviceBusy, setAdviceBusy] = useState(false);
 
   const [name, setName] = useState('');
   const [age, setAge] = useState('');
@@ -873,7 +875,7 @@ export function ProfilePage() {
           {mainRole === 'pet_owner' ? (
             <section className="pepito-profile-block pepito-profile-consult" aria-label="خدمات برای صاحب پت">
               <div className="pepito-profile-consult-copy">
-<h2>پزشک و مربی</h2>
+                <h2>پزشک و مربی</h2>
                 <p>درخواست به آنلاین‌ها — هزینه از موجودی سکه کسر می‌شود.</p>
               </div>
               <div className="pepito-profile-consult-actions">
@@ -893,6 +895,50 @@ export function ProfilePage() {
                   <GraduationCap size={18} aria-hidden />
                   پیدا کردن مربی
                 </Link>
+              </div>
+              <div className="pepito-profile-owner-advice">
+                <div className="pepito-profile-owner-advice__copy">
+                  <h3>مشورت با صاحبین</h3>
+                  <p>
+                    اگر روشن باشد، افراد بدون پت می‌توانند با ۶ سکه از تو درباره نگهداری و هزینه
+                    مشورت بگیرند.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  className={`pepito-btn${display.acceptSeekerAdvice ? ' button-1' : ' pepito-btn--ghost'}`}
+                  disabled={adviceBusy || !token}
+                  data-testid="owner-accept-seeker-advice"
+                  aria-pressed={Boolean(display.acceptSeekerAdvice)}
+                  onClick={() => {
+                    void (async () => {
+                      if (!token) return;
+                      setAdviceBusy(true);
+                      try {
+                        const next = !display.acceptSeekerAdvice;
+                        await patchWebAcceptSeekerAdvice(token, next);
+                        await refreshMe();
+                        toastSuccess(
+                          next
+                            ? 'پذیرش مشورت با صاحبین روشن شد'
+                            : 'پذیرش مشورت با صاحبین خاموش شد'
+                        );
+                      } catch (err) {
+                        toastError(
+                          err instanceof Error ? err.message : 'تغییر تنظیم ناموفق بود'
+                        );
+                      } finally {
+                        setAdviceBusy(false);
+                      }
+                    })();
+                  }}
+                >
+                  {adviceBusy
+                    ? '…'
+                    : display.acceptSeekerAdvice
+                      ? 'پذیرش مشورت — روشن'
+                      : 'پذیرش مشورت — خاموش'}
+                </button>
               </div>
             </section>
           ) : null}

@@ -437,7 +437,7 @@ consultationsRouter.post('/quick-connect', async (req, res) => {
         ? 'فعلاً دامپزشک آنلاینی (ربات یا وب) برای اتصال پیدا نشد. کمی بعد دوباره امتحان کن.'
         : serviceKind === 'trainer'
           ? 'فعلاً مربی آنلاینی برای اتصال پیدا نشد.'
-          : 'فعلاً صاحب پتی برای مشورت خرید آنلاین نیست.';
+          : 'فعلاً صاحب پتی برای مشورت با صاحبین آنلاین نیست.';
     res.status(409).json({
       error: emptyMsg,
       reason: 'no_online_providers',
@@ -483,7 +483,7 @@ consultationsRouter.post('/quick-connect', async (req, res) => {
         : 'اتصال سریع آنلاین'
       : serviceKind === 'trainer'
         ? 'درخواست مشاوره مربی'
-        : 'درخواست مشورت خرید پت';
+        : 'درخواست مشورت با صاحبین';
 
   for (const provider of providers) {
     try {
@@ -551,7 +551,7 @@ consultationsRouter.post('/quick-connect', async (req, res) => {
         ? 'درخواستت برای پزشک‌های آنلاین (ربات و وب) ارسال شد.'
         : serviceKind === 'trainer'
           ? 'درخواستت برای مربی‌های آنلاین ارسال شد.'
-          : 'درخواست مشورت خرید برای صاحبان پت ارسال شد.',
+          : 'درخواست مشورت با صاحبین برای صاحبان پت ارسال شد.',
       `هدف‌ها: ${sent}`,
       notifiedTelegram > 0 ? `اعلان تلگرام: ${notifiedTelegram}` : null,
       `سکه کسر شده: ${cost}`,
@@ -1204,6 +1204,8 @@ consultationsRouter.post('/:id/end-chat', async (req, res) => {
   }
 
   const wasSecure = Boolean(gate.consult.chatSecure);
+  // مشورت با صاحبین: قطع زیر ۱ ثانیه → بازگشت ۶ سکه (قبل از پاک‌کردن چت)
+  const earlyRefund = dbService.refundEarlySeekerAdviceIfEligible(id);
   purgeVetConsultUploads(id);
   const updated = dbService.endVetConsultChat(id);
   const bothTelegramIds = consultPeerTelegramIds(gate.consult);
@@ -1229,7 +1231,15 @@ consultationsRouter.post('/:id/end-chat', async (req, res) => {
     wasSecure,
   });
   const ended = updated ?? gate.consult;
-  res.json({ ok: true, consultation: decorateAiConsultDisplay(ended), wasSecure });
+  const patientAfter = dbService.getUserById(gate.consult.patientUserId);
+  res.json({
+    ok: true,
+    consultation: decorateAiConsultDisplay(ended),
+    wasSecure,
+    refunded: earlyRefund.refunded,
+    refundAmount: earlyRefund.refunded ? earlyRefund.amount : 0,
+    coins: patientAfter?.coins ?? undefined,
+  });
 });
 
 consultationsRouter.patch('/:id/chat-secure', async (req, res) => {

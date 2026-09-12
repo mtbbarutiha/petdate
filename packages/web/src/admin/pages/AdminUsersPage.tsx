@@ -741,6 +741,10 @@ export function AdminUsersPage() {
                     </label>
                   ))}
                 </div>
+                <p className="admin-muted" style={{ marginTop: 8 }}>
+                  مشورت با صاحبین:{' '}
+                  {editing?.acceptSeekerAdvice ? 'پذیرش روشن' : 'پذیرش خاموش'}
+                </p>
               </div>
               <div className="form-group">
                 <label className="form-label">سکه</label>
