@@ -46,6 +46,7 @@ export function LandingMobileDock() {
   const roles = normalizeRoles(user?.roles, user?.role);
   const activeRole = primaryRole(roles, user?.role);
   const photo = resolvePublicAvatarUrl(user?.avatarUrl, {
+    gender: user?.gender,
     verificationPhotoFileId: user?.verificationPhotoFileId,
   });
   const initial = (user?.name?.trim()?.[0] || 'P').toUpperCase();

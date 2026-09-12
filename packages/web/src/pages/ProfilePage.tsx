@@ -280,6 +280,7 @@ export function ProfilePage() {
   const locationLabel = [display.city, display.province, display.country].filter(Boolean).join('، ') || '—';
   const avatarSrc = resolvePublicAvatarUrl(display.avatarUrl, {
     verificationPhotoFileId: display.verificationPhotoFileId,
+    gender: display.gender,
   });
   const genderPlain =
     display.gender === 'male' ? 'آقا' : display.gender === 'female' ? 'خانم' : null;

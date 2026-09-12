@@ -433,7 +433,7 @@ export function AdminUsersPage() {
                   </td>
                   <td>
                     <AdminEntityCell
-                      thumb={<AdminThumb src={u.avatarUrl} label={displayName} kind="user" alt={displayName} size={32} />}
+                      thumb={<AdminThumb src={u.avatarUrl} gender={u.gender} label={displayName} kind="user" alt={displayName} size={32} />}
                       title={<strong>{displayName}</strong>}
                       subtitle={
                         metaParts.length ? (

@@ -17,7 +17,13 @@ import type {
   VetConsultation,
   VetConsultStatus,
 } from '@petdate/shared';
-import { isNonImageAvatarRef, profileAvatarUrl } from '@petdate/shared';
+import {
+  isGenderDefaultAvatarPath,
+  isNonImageAvatarRef,
+  resolveProfileDisplayAvatarUrl,
+  type PhotoModerationStatus,
+  type UserGender,
+} from '@petdate/shared';
 import { parseApiJsonBody } from './apiErrorMessage';
 
 /** Empty = same-origin (Vite proxies /api → API). Override with VITE_API_URL if needed. */
@@ -72,17 +78,27 @@ export function resolvePublicMediaUrl(
 }
 
 /**
- * Avatar <img src>: approved/still profile photo only.
- * Face-verify videos and other non-image clips resolve to empty (placeholder).
+ * Avatar <img src>: uploaded still photo, else gender default, else empty
+ * (initials fallback). Face-verify videos never resolve as photos.
  */
 export function resolvePublicAvatarUrl(
   url?: string | null,
-  opts?: { verificationPhotoFileId?: string | null }
+  opts?: {
+    verificationPhotoFileId?: string | null;
+    gender?: UserGender | string | null;
+    moderationStatus?: PhotoModerationStatus | null;
+    publicFacing?: boolean;
+  }
 ): string {
-  const usable = profileAvatarUrl(url, {
+  const usable = resolveProfileDisplayAvatarUrl(url, {
+    gender: opts?.gender,
     verificationPhotoFileId: opts?.verificationPhotoFileId,
+    moderationStatus: opts?.moderationStatus,
+    publicFacing: opts?.publicFacing,
   });
   if (!usable || isNonImageAvatarRef(usable)) return '';
+  // Bundled web static files — do not prefix VITE_API_URL.
+  if (isGenderDefaultAvatarPath(usable) && usable.startsWith('/')) return usable;
   return resolvePublicMediaUrl(usable);
 }
 

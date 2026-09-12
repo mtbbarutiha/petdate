@@ -1157,6 +1157,9 @@ export function ChatPage() {
         setPeerOwnerAvatar(
           resolvePublicAvatarUrl(user.avatarUrl, {
             verificationPhotoFileId: user.verificationPhotoFileId,
+            gender: user.gender,
+            moderationStatus: user.avatarModerationStatus,
+            publicFacing: true,
           })
         );
         setPeerOwnerMeta({

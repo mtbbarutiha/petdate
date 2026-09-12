@@ -5,7 +5,7 @@
  * Run: npx tsx packages/bot/src/urls.selftest.ts
  */
 import assert from 'node:assert/strict';
-import { resolveTelegramPhotoUrl } from './urls';
+import { resolveTelegramPhotoUrl, resolveTelegramUserAvatarUrl } from './urls';
 
 function main(): void {
   const prev = {
@@ -40,6 +40,30 @@ function main(): void {
   assert.equal(resolveTelegramPhotoUrl(null), null);
   assert.equal(resolveTelegramPhotoUrl(''), null);
   assert.equal(resolveTelegramPhotoUrl('   '), null);
+
+  assert.equal(
+    resolveTelegramUserAvatarUrl({ gender: 'female' }),
+    'https://petdate.ir/images/defaults/avatar-female.jpg',
+    'female default is an absolute Telegram photo URL'
+  );
+  assert.equal(
+    resolveTelegramUserAvatarUrl({ gender: 'male' }),
+    'https://petdate.ir/images/defaults/avatar-male.jpg',
+    'male default is an absolute Telegram photo URL'
+  );
+  assert.equal(
+    resolveTelegramUserAvatarUrl({}),
+    null,
+    'unknown gender keeps empty fallback'
+  );
+  assert.equal(
+    resolveTelegramUserAvatarUrl(
+      { avatarUrl: '/api/auth/avatar/1/x.jpg', gender: 'female', avatarModerationStatus: 'pending' },
+      { publicFacing: true }
+    ),
+    'https://petdate.ir/images/defaults/avatar-female.jpg',
+    'pending upload is replaced by gender default for peers'
+  );
 
   // Restore
   for (const [k, v] of Object.entries(prev)) {

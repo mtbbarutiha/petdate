@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
-import { resolvePublicMediaUrl } from '../lib/api';
+import type { UserGender } from '@petdate/shared';
+import { resolvePublicAvatarUrl, resolvePublicMediaUrl } from '../lib/api';
 
 type Kind = 'user' | 'pet';
 
@@ -19,6 +20,7 @@ export function AdminThumb({
   src,
   alt,
   label,
+  gender,
   petId,
   kind = 'user',
   size = 40,
@@ -27,12 +29,17 @@ export function AdminThumb({
   alt?: string;
   /** Used for initials placeholder when no photo (users only) */
   label?: string | null;
+  /** When set and photo is missing, show the shared gender default (users only). */
+  gender?: UserGender | string | null;
   petId?: number | null;
   kind?: Kind;
   size?: number;
 }) {
   const [failed, setFailed] = useState(false);
-  const resolved = resolvePublicMediaUrl(src, petId != null ? { petId } : undefined);
+  const resolved =
+    kind === 'user'
+      ? resolvePublicAvatarUrl(src, { gender })
+      : resolvePublicMediaUrl(src, petId != null ? { petId } : undefined);
   const showImg = Boolean(resolved) && !failed;
 
   if (showImg) {

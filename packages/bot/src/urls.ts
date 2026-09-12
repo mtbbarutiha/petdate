@@ -1,3 +1,5 @@
+import type { PhotoModerationStatus, UserGender } from '@petdate/shared';
+import { resolveProfileDisplayAvatarUrl } from '@petdate/shared';
 import { config } from './config';
 
 /** Public HTTPS URL for Telegram inline buttons (falls back to WEB_URL). */
@@ -67,6 +69,25 @@ export function resolveTelegramPhotoUrl(
   const origin = publicFetchOrigin();
   if (!origin) return null;
   return `${origin}${raw.startsWith('/') ? raw : `/${raw}`}`;
+}
+
+/** Own or peer profile photo for sendPhoto — uploaded still, else gender default. */
+export function resolveTelegramUserAvatarUrl(
+  user: {
+    avatarUrl?: string | null;
+    gender?: UserGender | string | null;
+    verificationPhotoFileId?: string | null;
+    avatarModerationStatus?: PhotoModerationStatus | null;
+  },
+  opts?: { publicFacing?: boolean }
+): string | null {
+  const display = resolveProfileDisplayAvatarUrl(user.avatarUrl, {
+    gender: user.gender,
+    verificationPhotoFileId: user.verificationPhotoFileId,
+    moderationStatus: user.avatarModerationStatus,
+    publicFacing: opts?.publicFacing,
+  });
+  return resolveTelegramPhotoUrl(display);
 }
 
 export function webLinkHint(): string {

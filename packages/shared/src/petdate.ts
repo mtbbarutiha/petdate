@@ -757,12 +757,16 @@ export interface VetConsultation {
   patientName?: string;
   patientCity?: string;
   patientAvatarUrl?: string;
+  /** جنسیت متقاضی — برای عکس پیش‌فرض وقتی آپلودی نیست */
+  patientGender?: UserGender;
   /** شناسه عمومی پایدار متقاضی (PD-U…) — برای کارت درخواست صاحب پت */
   patientPublicId?: string;
   /** بیو عمومی متقاضی (اسنیپت در کارت درخواست) */
   patientBio?: string;
   vetName?: string;
   vetAvatarUrl?: string;
+  /** جنسیت پزشک/مربی/صاحب — برای عکس پیش‌فرض وقتی آپلودی نیست */
+  vetGender?: UserGender;
   petName?: string;
   petSpecies?: string;
   petBreed?: string;
