@@ -3,8 +3,6 @@
  * Tokens mirror packages/web/src/styles/pepito.css; no mock data chrome.
  */
 
-@import url('https://fonts.googleapis.com/css2?family=Urbanist:wght@500;600;700;800&family=Vazirmatn:wght@400;500;600;700&display=swap');
-
 /* Isolate the admin canvas from public-site body padding / 100vw overflow.
    Off-canvas drawer uses translateX — without this, the hidden panel
    expands the document and forces horizontal page scroll. */
@@ -32,9 +30,9 @@ body:has(.admin-app) {
   --admin-sidebar-width: 264px;
   --admin-danger: #c62828;
   --admin-radius: 14px;
-  --admin-font: 'Vazirmatn', 'Urbanist', system-ui, sans-serif;
-  --admin-display: 'Urbanist', 'Vazirmatn', system-ui, sans-serif;
-  --admin-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --admin-font: var(--font-sans, 'Vazirmatn', 'Vazirmatn Fallback', Tahoma, system-ui, sans-serif);
+  --admin-display: var(--admin-font);
+  --admin-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --admin-promo-yellow: #fff4e5;
   --admin-promo-purple: #ebe7f8;
   --admin-promo-blue: #e6f6fe;
@@ -2474,7 +2472,7 @@ body:has(.admin-app) {
   border-radius: 8px;
   max-height: 220px;
   overflow: auto;
-  font-family: Tahoma, sans-serif;
+  font-family: var(--admin-font);
   font-size: 14px;
   line-height: 1.7;
 }

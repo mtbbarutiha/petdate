@@ -103,6 +103,11 @@ try {
   assert(html.includes('data:image/png;base64,'), 'HTML must embed mother logo');
   assert(!html.includes('width="96" height="96"'), 'must not force square logo box');
   assert(html.includes('class="logo"'), 'logo class present');
+  assert(
+    html.includes('/fonts/Vazirmatn-Variable.woff2'),
+    'Rx HTML self-hosts Vazirmatn (no Google Fonts)'
+  );
+  assert(!html.includes('fonts.googleapis.com'), 'Rx HTML must not load Google Fonts');
 
   const outDir = path.join(__dirname, '..', '..', 'data', 'selftest');
   fs.mkdirSync(outDir, { recursive: true });

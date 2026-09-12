@@ -1,4 +1,11 @@
-/* Fonts load from index.html (Vazirmatn + Urbanist) — avoid a second blocking @import. */
+/* Self-hosted Vazirmatn (SIL OFL) — same face as index.html critical CSS. */
+@font-face {
+  font-family: 'Vazirmatn';
+  src: url('/fonts/Vazirmatn-Variable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
 
 .pd-route-fallback {
   min-height: 30vh;
@@ -13,7 +20,7 @@
   gap: 1rem;
   padding: 2rem;
   text-align: center;
-  font-family: var(--font-body, Vazirmatn, system-ui, sans-serif);
+  font-family: var(--font-sans, Vazirmatn, Tahoma, system-ui, sans-serif);
   color: #0f172a;
   background: #eef7fc;
 }
@@ -30,8 +37,9 @@
   --brand-600: #4a96c0;
   --brand-700: #3d7fa8;
   --brand-800: #326889;
-  --font-display: 'Urbanist', 'Urbanist Fallback', 'Vazirmatn', 'Vazirmatn Fallback', system-ui, sans-serif;
-  --font-body: 'Vazirmatn', system-ui, sans-serif;
+  --font-sans: 'Vazirmatn', 'Vazirmatn Fallback', Tahoma, system-ui, sans-serif;
+  --font-display: var(--font-sans);
+  --font-body: var(--font-sans);
 
   /* Neutrals */
   --slate-50: #f8fafc;
@@ -3604,7 +3612,7 @@ body:has(.admin-app) .toast-host {
   margin: 0 0 8px;
   font-size: 1.55rem;
   color: #19063d;
-  font-family: var(--font-display, 'Urbanist', 'Vazirmatn', system-ui, sans-serif);
+  font-family: var(--font-display);
 }
 .auth-lead {
   margin: 0 0 18px;
@@ -3882,7 +3890,7 @@ body:has(.admin-app) .toast-host {
   margin: 4px 0 0;
   font-size: 1.35rem;
   color: #19063d;
-  font-family: var(--font-display, 'Urbanist', 'Vazirmatn', system-ui, sans-serif);
+  font-family: var(--font-display);
 }
 .tg-profile-gate p {
   margin: 0;
@@ -4731,7 +4739,7 @@ body:has(.admin-app) .toast-host {
   overflow-x: clip;
   border: 0;
   border-radius: 0;
-  font-family: var(--font-body, 'Vazirmatn', system-ui, sans-serif);
+  font-family: var(--font-body);
 }
 
 .tg-chat--shell {
@@ -4805,7 +4813,7 @@ body:has(.admin-app) .toast-host {
 
 .tg-chat-list-head h1 {
   margin: 2px 0 0;
-  font-family: var(--font-display, 'Urbanist', 'Vazirmatn', system-ui, sans-serif);
+  font-family: var(--font-display);
   font-size: 1.2rem;
   font-weight: 800;
   color: var(--tg-ink);
@@ -4904,7 +4912,7 @@ body:has(.admin-app) .toast-host {
 .tg-chat-list-empty h2,
 .tg-thread-empty h2 {
   margin: 0;
-  font-family: var(--font-display, 'Urbanist', 'Vazirmatn', system-ui, sans-serif);
+  font-family: var(--font-display);
   font-size: 1rem;
 }
 
