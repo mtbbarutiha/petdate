@@ -119,9 +119,14 @@ import {
 } from './role-menus';
 import {
   handlePetShop,
+  handleShopAddToCart,
   handleShopBackCategories,
   handleShopBuy,
   handleShopBuyStars,
+  handleShopCart,
+  handleShopCartCheckout,
+  handleShopCartQty,
+  handleShopCartRemove,
   handleShopCategory,
   handleShopCheckoutText,
   handleShopFeatured,
@@ -782,6 +787,8 @@ export function registerHandlers(bot: Bot): void {
   bot.callbackQuery(/^vet:/, (ctx) => handleComingSoon(ctx, 'مشاوره دامپزشک'));
   bot.callbackQuery('shop:home', (ctx) => handleShopHome(ctx));
   bot.callbackQuery('shop:orders', (ctx) => handleShopOrders(ctx));
+  bot.callbackQuery('shop:cart', (ctx) => handleShopCart(ctx));
+  bot.callbackQuery('shop:cartcheckout', (ctx) => handleShopCartCheckout(ctx));
   bot.callbackQuery('shop:featured', (ctx) => handleShopFeatured(ctx));
   bot.callbackQuery('shop:backcat', (ctx) => handleShopBackCategories(ctx));
   bot.callbackQuery('shop:noop', (ctx) => handleShopNoop(ctx));
@@ -793,6 +800,13 @@ export function registerHandlers(bot: Bot): void {
     handleShopPage(ctx, ctx.match![1]!, Number(ctx.match![2]))
   );
   bot.callbackQuery(/^shop:v:(.+)$/, (ctx) => handleShopView(ctx, ctx.match![1]!));
+  bot.callbackQuery(/^shop:add:([^:]+):(\d+)$/, (ctx) =>
+    handleShopAddToCart(ctx, ctx.match![1]!, Number(ctx.match![2]))
+  );
+  bot.callbackQuery(/^shop:cartqty:([^:]+):(\d+)$/, (ctx) =>
+    handleShopCartQty(ctx, ctx.match![1]!, Number(ctx.match![2]))
+  );
+  bot.callbackQuery(/^shop:cartrm:(.+)$/, (ctx) => handleShopCartRemove(ctx, ctx.match![1]!));
   bot.callbackQuery(/^shop:buy:([^:]+):(\d+)$/, (ctx) =>
     handleShopBuy(ctx, ctx.match![1]!, Number(ctx.match![2]))
   );
