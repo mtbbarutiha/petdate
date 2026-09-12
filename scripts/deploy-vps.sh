@@ -281,6 +281,23 @@ if [[ "\$SCOPE" == "all" || "\$SCOPE" == "api" || "\$SCOPE" == "bot" ]]; then
 fi
 
 if [[ "\$SCOPE" == "all" || "\$SCOPE" == "web" ]]; then
+  # Backup live nginx site confs so a bad tree can be rolled back if nginx -t fails.
+  # (bash set -e does NOT abort on failure inside \`cmd && cmd\` — #303/#304 shipped with
+  # duplicate location = /api/auth/avatar, nginx -t failed, deploy still reported success.)
+  NGINX_BAK_DIR="/tmp/petdate-nginx-bak-\$\$"
+  mkdir -p "\$NGINX_BAK_DIR"
+  for f in petdate ws.petdate.ir pdf.petdate.ir; do
+    if [[ -f "/etc/nginx/sites-available/\$f" ]]; then
+      sudo cp "/etc/nginx/sites-available/\$f" "\$NGINX_BAK_DIR/\$f"
+    fi
+  done
+  restore_nginx_bak() {
+    for f in petdate ws.petdate.ir pdf.petdate.ir; do
+      if [[ -f "\$NGINX_BAK_DIR/\$f" ]]; then
+        sudo cp "\$NGINX_BAK_DIR/\$f" "/etc/nginx/sites-available/\$f"
+      fi
+    done
+  }
   if [[ -f infra/nginx/petdate.conf ]]; then
     sudo cp infra/nginx/petdate.conf /etc/nginx/sites-available/petdate
     sudo ln -sfn /etc/nginx/sites-available/petdate /etc/nginx/sites-enabled/petdate
@@ -295,7 +312,14 @@ if [[ "\$SCOPE" == "all" || "\$SCOPE" == "web" ]]; then
     sudo ln -sfn /etc/nginx/sites-available/pdf.petdate.ir /etc/nginx/sites-enabled/pdf.petdate.ir
   fi
   if [[ -f infra/nginx/petdate.conf ]]; then
-    sudo nginx -t && sudo systemctl reload nginx
+    if ! sudo nginx -t; then
+      echo "ERROR: nginx -t failed after copying infra/nginx — restoring previous site confs" >&2
+      restore_nginx_bak
+      sudo nginx -t || true
+      rm -rf "\$NGINX_BAK_DIR"
+      exit 1
+    fi
+    sudo systemctl reload nginx
   elif [[ "\$SCOPE" == "all" ]]; then
     sudo tee /etc/nginx/sites-available/petdate >/dev/null <<'NGINX'
 server {
@@ -333,9 +357,34 @@ NGINX
     sudo sed -i "s|\\\$REMOTE_DIR|$REMOTE_DIR|g; s|$REMOTE_DIR|$REMOTE_DIR|g" /etc/nginx/sites-available/petdate || true
     sudo ln -sfn /etc/nginx/sites-available/petdate /etc/nginx/sites-enabled/petdate
     sudo rm -f /etc/nginx/sites-enabled/default
-    sudo nginx -t
+    if ! sudo nginx -t; then
+      echo "ERROR: nginx -t failed for fallback site conf — restoring previous" >&2
+      restore_nginx_bak
+      sudo nginx -t || true
+      rm -rf "\$NGINX_BAK_DIR"
+      exit 1
+    fi
     sudo systemctl reload nginx
   fi
+  rm -rf "\$NGINX_BAK_DIR"
+fi
+
+# Wait for API after PM2 reload so deploy doesn't finish while listeners are down (502 window).
+if [[ "\$SCOPE" == "all" || "\$SCOPE" == "api" || "\$SCOPE" == "shared" ]]; then
+  echo "==> Post-deploy: wait for /api/health"
+  ok=0
+  for i in 1 2 3 4 5 6 7 8 9 10; do
+    if curl -fsS -m 3 http://127.0.0.1:3001/api/health >/dev/null 2>&1; then
+      ok=1
+      break
+    fi
+    sleep 1
+  done
+  if [[ "\$ok" != "1" ]]; then
+    echo "ERROR: petdate-api /api/health not ready after deploy" >&2
+    exit 1
+  fi
+  echo "OK: api health"
 fi
 
 # Post-deploy sanity: markers that agents have wiped before
