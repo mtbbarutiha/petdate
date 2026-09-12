@@ -40,5 +40,7 @@ assert(pickLargestProfilePhotoFileId({ total_count: 0, photos: [] }) === null, '
 
 clearTelegramProfileSyncCooldowns();
 assert(typeof clearTelegramProfileSyncCooldowns === 'function', 'cooldown clear exported');
+// Cooldown map must stay clear after helper (guards hot-path 504 storms).
+clearTelegramProfileSyncCooldowns();
 
 console.log('telegram-profile-sync.selftest: ok');
