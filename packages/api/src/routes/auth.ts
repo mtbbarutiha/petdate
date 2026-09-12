@@ -764,6 +764,108 @@ authRouter.get('/avatar/:userId/:filename', (req, res) => {
 });
 
 /**
+ * Web face verification — any role.
+ * Accepts multipart `file` (selfie) or JSON `{ photoUrl }` (e.g. current avatar).
+ * Admin approve later grants FACE_VERIFY_REWARD (100) coins once.
+ */
+authRouter.post('/verification', (req, res) => {
+  const session = getUserFromBearer(req.header('authorization') ?? undefined);
+  if (!session) {
+    res.status(401).json({ error: 'وارد نشده‌اید' });
+    return;
+  }
+
+  const contentType = String(req.header('content-type') || '').toLowerCase();
+  const isMultipart = contentType.includes('multipart/form-data');
+
+  const finish = (photoRef: string) => {
+    const result = dbService.submitVerification(session.user.id, photoRef);
+    if (!result.ok) {
+      const status =
+        result.reason === 'missing'
+          ? 404
+          : result.reason === 'already_verified'
+            ? 409
+            : 400;
+      res.status(status).json({
+        ok: false,
+        reason: result.reason,
+        error:
+          result.reason === 'already_verified'
+            ? 'قبلاً احراز شده‌ای'
+            : result.reason === 'no_photo'
+              ? 'عکس احراز لازم است'
+              : 'کاربر پیدا نشد',
+      });
+      return;
+    }
+    res.json({ ok: true, user: dbService.enrichUserProfileCard(result.user) });
+  };
+
+  if (!isMultipart) {
+    const photoUrl = String(
+      (req.body as { photoUrl?: string; photoFileId?: string })?.photoUrl ??
+        (req.body as { photoFileId?: string })?.photoFileId ??
+        session.user.avatarUrl ??
+        ''
+    ).trim();
+    finish(photoUrl);
+    return;
+  }
+
+  avatarUpload.single('file')(req, res, (uploadErr) => {
+    void (async () => {
+      if (uploadErr) {
+        const tooLarge =
+          uploadErr instanceof multer.MulterError && uploadErr.code === 'LIMIT_FILE_SIZE';
+        res.status(tooLarge ? 413 : 400).json({
+          error: tooLarge
+            ? 'حجم عکس بیش از حد مجاز است (حداکثر ۸ مگابایت)'
+            : 'آپلود عکس احراز ناموفق بود',
+        });
+        return;
+      }
+      const file = req.file;
+      if (!file?.buffer?.length) {
+        const photoUrl = String((req.body as { photoUrl?: string })?.photoUrl ?? '').trim();
+        if (photoUrl) {
+          finish(photoUrl);
+          return;
+        }
+        res.status(400).json({ error: 'فایل سلفی الزامی است' });
+        return;
+      }
+      try {
+        const saved = await saveUserAvatar({
+          userId: session.user.id,
+          originalName: file.originalname || 'verify.jpg',
+          mimeType: file.mimetype,
+          buffer: file.buffer,
+        });
+        finish(saved.urlPath);
+      } catch (err) {
+        const code = err instanceof Error ? err.message : '';
+        if (code === 'FILE_TOO_LARGE') {
+          res.status(413).json({ error: 'حجم عکس بیش از حد مجاز است (حداکثر ۸ مگابایت)' });
+          return;
+        }
+        if (code === 'INVALID_MIME' || code === 'INVALID_IMAGE') {
+          res.status(400).json({
+            error:
+              code === 'INVALID_IMAGE'
+                ? 'فایل عکس قابل پردازش نیست. یک سلفی دیگر انتخاب کن'
+                : 'فقط عکس مجاز است (JPG، PNG، WebP، HEIC، GIF)',
+          });
+          return;
+        }
+        console.warn('web face verification upload failed:', (err as Error).message);
+        res.status(500).json({ error: 'ذخیره عکس احراز ناموفق بود' });
+      }
+    })();
+  });
+});
+
+/**
  * آپلود مدرک مربی / پرستار از وب (multipart field: `file`, body/query: kind).
  * بعد از آپلود وضعیت pending می‌شود تا ادمین تأیید کند.
  */

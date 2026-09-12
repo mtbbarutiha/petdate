@@ -25,6 +25,21 @@ www `:80` stays HTTP 200 for Flexible origin pulls. `http://www.petdate.ir/` is 
 
 If apex is later moved behind Flexible SSL without those headers, switch to a CDN “Always HTTPS” rule and remove the origin apex redirect.
 
+## Profile avatar upload (`POST /api/auth/avatar`)
+
+Origin nginx used a prefix `location ^~ /api/auth/avatar/` for immutable file GETs.
+That made bare `POST /api/auth/avatar` (no trailing slash) **301 → `/api/auth/avatar/`**.
+Browsers then rewrite the redirected request to **GET** and drop the multipart body —
+the SPA shows a generic upload / «API error».
+
+Fix: keep an exact `location = /api/auth/avatar` that proxies the upload, and leave
+`location ^~ /api/auth/avatar/` for stored files only (`/api/auth/avatar/{userId}/{file}`).
+
+| Request | Before | After |
+|---------|--------|-------|
+| `POST /api/auth/avatar` (multipart) | nginx **301** HTML | proxied to Express (401 without auth, 201 on success) |
+| `GET /api/auth/avatar/9/uuid.jpg` | 200 JPEG | unchanged |
+
 ## www API 4xx bodies (JSON vs WCDN HTML)
 
 Origin always returns JSON for `/api/*` errors (`Content-Type: application/json`, `X-Content-Type-Options: nosniff`, `X-PetDate-API: 1`).

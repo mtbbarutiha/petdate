@@ -324,22 +324,31 @@ export async function uploadPetPhoto(
   try {
     res = await fetch(`${API_BASE}/api/pets/photos/upload`, {
       method: 'POST',
+      headers: storedAuthHeaders(),
       body: form,
+      redirect: 'manual',
     });
   } catch {
     throw new Error('اتصال به سرور برقرار نشد. مطمئن شو API روشن است.');
   }
-  if (!res.ok) {
-    const body = await res.text();
-    try {
-      const json = JSON.parse(body) as { error?: string; message?: string };
-      throw new Error(json.error || json.message || body || `خطای ${res.status}`);
-    } catch (err) {
-      if (err instanceof Error && !err.message.startsWith('{') && err.message !== body) throw err;
-      throw new Error(body || `خطای ${res.status}`);
-    }
+  if (res.status >= 300 && res.status < 400) {
+    throw new Error('آپلود عکس ناموفق بود (مسیر سرور تغییر کرد). دوباره تلاش کن.');
   }
-  return res.json();
+  const body = await res.text();
+  const parsed = parseApiJsonBody<{
+    ok?: true;
+    url: string;
+    storageKey: string;
+    mimeType?: string;
+  }>(res.status, body);
+  if (!parsed.ok) throw new Error(parsed.message);
+  if (!parsed.data?.url) throw new Error('پاسخ آپلود ناقص بود');
+  return {
+    ok: true,
+    url: parsed.data.url,
+    storageKey: parsed.data.storageKey,
+    mimeType: parsed.data.mimeType,
+  };
 }
 
 export async function listPlaydateRequests(filters?: {
@@ -933,21 +942,65 @@ export async function uploadUserAvatar(
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` },
       body: form,
+      redirect: 'manual',
     });
   } catch {
     throw new Error('اتصال به سرور برقرار نشد. مطمئن شو API روشن است.');
   }
-  if (!res.ok) {
-    const body = await res.text();
-    try {
-      const json = JSON.parse(body) as { error?: string; message?: string };
-      throw new Error(json.error || json.message || body || `خطای ${res.status}`);
-    } catch (err) {
-      if (err instanceof Error && !err.message.startsWith('{') && err.message !== body) throw err;
-      throw new Error(body || `خطای ${res.status}`);
-    }
+  if (res.status >= 300 && res.status < 400) {
+    throw new Error('آپلود عکس ناموفق بود (مسیر سرور تغییر کرد). دوباره تلاش کن.');
   }
-  return res.json();
+  const body = await res.text();
+  const parsed = parseApiJsonBody<{
+    ok?: true;
+    url: string;
+    storageKey: string;
+    mimeType?: string;
+    user: User;
+  }>(res.status, body);
+  if (!parsed.ok) throw new Error(parsed.message);
+  if (!parsed.data?.url || !parsed.data.user) throw new Error('پاسخ آپلود ناقص بود');
+  return {
+    ok: true,
+    url: parsed.data.url,
+    storageKey: parsed.data.storageKey,
+    mimeType: parsed.data.mimeType,
+    user: parsed.data.user,
+  };
+}
+
+/** Submit face verification from web (selfie upload or existing avatar URL). */
+export async function submitWebFaceVerification(
+  token: string,
+  opts: { file?: File; photoUrl?: string }
+): Promise<{ ok: true; user: User }> {
+  if (opts.file) {
+    const form = new FormData();
+    form.append('file', opts.file);
+    let res: Response;
+    try {
+      res = await fetch(`${API_BASE}/api/auth/verification`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: form,
+        redirect: 'manual',
+      });
+    } catch {
+      throw new Error('اتصال به سرور برقرار نشد. مطمئن شو API روشن است.');
+    }
+    if (res.status >= 300 && res.status < 400) {
+      throw new Error('ارسال احراز ناموفق بود. دوباره تلاش کن.');
+    }
+    const body = await res.text();
+    const parsed = parseApiJsonBody<{ ok: true; user: User }>(res.status, body);
+    if (!parsed.ok) throw new Error(parsed.message);
+    return parsed.data;
+  }
+  return request<{ ok: true; user: User }>('/api/auth/verification', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ photoUrl: opts.photoUrl }),
+  });
 }
 
 export async function patchWebRoles(token: string, roles: UserRole[], primary?: UserRole) {

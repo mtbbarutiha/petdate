@@ -94,6 +94,7 @@ export const ADMIN_MENU = {
   vetQueue: '📄 صف مدارک دامپزشک',
   trainerQueue: '🎓 صف مدارک مربی',
   photoQueue: '🖼 صف عکس پت',
+  avatarQueue: '👤 صف عکس کاربر',
   vetList: '🩺 مدیریت پزشک‌ها',
   stats: '📊 وضعیت صف‌ها',
   pendingPayments: '💳 پرداخت‌های در انتظار',
@@ -895,6 +896,8 @@ export function adminPanelKeyboard(): Keyboard {
     .row()
     .text(m.photoQueue)
     .primary()
+    .text(m.avatarQueue)
+    .primary()
     .row()
     .text(m.vetList)
     .primary()
@@ -966,6 +969,19 @@ export function adminPetPhotoKeyboard(petId: number): InlineKeyboard {
     .text('⏭ بعدی', 'petphoto:admin:next')
     .primary()
     .text('📋 صف', 'petphoto:admin:queue')
+    .primary();
+}
+
+export function adminUserAvatarKeyboard(userId: number): InlineKeyboard {
+  return new InlineKeyboard()
+    .text('✅ تأیید عکس', `useravatar:approve:${userId}`)
+    .success()
+    .text('❌ رد', `useravatar:reject:${userId}`)
+    .danger()
+    .row()
+    .text('⏭ بعدی', 'useravatar:admin:next')
+    .primary()
+    .text('📋 صف', 'useravatar:admin:queue')
     .primary();
 }
 

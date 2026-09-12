@@ -308,6 +308,20 @@ export async function setPetPhotoModeration(
   });
 }
 
+export async function listPendingUserAvatars(): Promise<User[]> {
+  return request('/api/users/user-avatars/pending');
+}
+
+export async function setUserAvatarModeration(
+  userId: number,
+  status: 'approved' | 'rejected'
+): Promise<{ ok: true; user: User }> {
+  return request(`/api/users/${userId}/avatar-moderation`, {
+    method: 'POST',
+    body: JSON.stringify({ status }),
+  });
+}
+
 export async function setProviderOnline(
   telegramId: string,
   kind: 'trainer' | 'sitter',

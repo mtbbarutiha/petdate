@@ -230,6 +230,8 @@ import {
   handleAdminPasswordText,
   handleAdminPetPhotoAction,
   handleAdminPetPhotoQueue,
+  handleAdminUserAvatarAction,
+  handleAdminUserAvatarQueue,
   handleAdminProviderCredentialAction,
   handleAdminProviderCredentialQueue,
   handleAdminVetCredentialApprove,
@@ -634,6 +636,20 @@ export function registerHandlers(bot: Bot): void {
   });
   bot.callbackQuery(/^petphoto:reject:(\d+)$/, async (ctx) => {
     await handleAdminPetPhotoAction(ctx, Number(ctx.match![1]), false);
+  });
+  bot.callbackQuery('useravatar:admin:queue', async (ctx) => {
+    await ctx.answerCallbackQuery().catch(() => undefined);
+    await handleAdminUserAvatarQueue(ctx);
+  });
+  bot.callbackQuery('useravatar:admin:next', async (ctx) => {
+    await ctx.answerCallbackQuery().catch(() => undefined);
+    await handleAdminUserAvatarQueue(ctx);
+  });
+  bot.callbackQuery(/^useravatar:approve:(\d+)$/, async (ctx) => {
+    await handleAdminUserAvatarAction(ctx, Number(ctx.match![1]), true);
+  });
+  bot.callbackQuery(/^useravatar:reject:(\d+)$/, async (ctx) => {
+    await handleAdminUserAvatarAction(ctx, Number(ctx.match![1]), false);
   });
 
   bot.callbackQuery(/^admin:vet:list:(\d+)$/, async (ctx) => {

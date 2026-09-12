@@ -1,32 +1,25 @@
 import { useCallback, useEffect, useState } from 'react';
 import { BadgeCheck, RefreshCw } from 'lucide-react';
 import type { User } from '@petdate/shared';
-import { VERIFIED_BADGE, userPublicIdOf } from '@petdate/shared';
-
-const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ?? '';
+import { FACE_VERIFY_REWARD, VERIFIED_BADGE, formatFaInt, userPublicIdOf } from '@petdate/shared';
+import { API_BASE, adminFetch } from '../api';
 
 async function fetchPending(): Promise<User[]> {
-  const res = await fetch(`${API_BASE}/api/users/verification/pending`);
-  if (!res.ok) throw new Error(`API ${res.status}`);
-  return res.json();
+  return adminFetch<User[]>('/api/users/verification/pending');
 }
 
 async function approve(id: number): Promise<void> {
-  const res = await fetch(`${API_BASE}/api/users/${id}/verification/approve`, {
+  await adminFetch(`/api/users/${id}/verification/approve`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: '{}',
+    body: JSON.stringify({ rewardCoins: FACE_VERIFY_REWARD }),
   });
-  if (!res.ok) throw new Error(`API ${res.status}`);
 }
 
 async function reject(id: number, note?: string): Promise<void> {
-  const res = await fetch(`${API_BASE}/api/users/${id}/verification/reject`, {
+  await adminFetch(`/api/users/${id}/verification/reject`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(note ? { note } : {}),
   });
-  if (!res.ok) throw new Error(`API ${res.status}`);
 }
 
 export function AdminVerificationPage() {
@@ -84,7 +77,10 @@ export function AdminVerificationPage() {
             <BadgeCheck size={22} style={{ verticalAlign: 'middle', marginLeft: 8 }} />
             احراز هویت
           </h1>
-          <p>صف بررسی عکس پروفایل مالکین — {VERIFIED_BADGE}</p>
+          <p>
+            صف بررسی سلفی احراز — پس از تأیید، {VERIFIED_BADGE} و{' '}
+            {formatFaInt(FACE_VERIFY_REWARD)} سکه جایزه
+          </p>
         </div>
         <button type="button" className="admin-btn" onClick={() => void load()} disabled={loading}>
           <RefreshCw size={16} />
@@ -145,7 +141,7 @@ export function AdminVerificationPage() {
                 disabled={busyId === user.id}
                 onClick={() => void onApprove(user.id)}
               >
-                ✅ تأیید
+                ✅ تأیید (+{formatFaInt(FACE_VERIFY_REWARD)} سکه)
               </button>
               <button
                 type="button"

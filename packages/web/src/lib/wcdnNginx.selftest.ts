@@ -15,7 +15,22 @@ assert.match(conf, /\$apex_http_redirect/, 'apex HTTP→HTTPS flag exists');
 assert.match(conf, /\$http_x_forwarded_proto = https/, 'skips Flexible pulls with proto https');
 assert.match(conf, /\$http_wcdn_edge/, 'skips WCDN-Edge origin pulls');
 assert.match(conf, /X-PetDate-API/, 'API responses marked for CDN passthrough');
+assert.match(
+  conf,
+  /location = \/api\/auth\/avatar \{/,
+  'exact /api/auth/avatar upload location (no trailing-slash 301)'
+);
+assert.match(
+  conf,
+  /location \^~ \/api\/auth\/avatar\//,
+  'stored avatar files still served under /api/auth/avatar/'
+);
 assert.match(doc, /نمایش خطای سرور مقصد/, 'documents ParsPack origin-error passthrough');
+assert.match(
+  doc,
+  /trailing-slash|\/api\/auth\/avatar/,
+  'documents avatar upload trailing-slash trap'
+);
 assert.match(doc, /Flexible SSL/, 'documents Flexible SSL constraint');
 assert.match(doc, /http:\/\/petdate\.ir/, 'documents apex HTTP check');
 assert.match(doc, /apiErrorMessage/, 'documents SPA HTML→Persian error mapping');
