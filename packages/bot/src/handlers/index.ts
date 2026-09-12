@@ -80,6 +80,7 @@ import {
   showProfileEditMenu,
   showPublicUserById,
   startProfileSectionEdit,
+  startProfileGapFill,
   startProfileWizard,
   startVetCredentialUpload,
 } from './profile';
@@ -490,7 +491,7 @@ export function registerHandlers(bot: Bot): void {
   });
   bot.callbackQuery('profile:edit:all', async (ctx) => {
     await ctx.answerCallbackQuery();
-    await startProfileWizard(ctx);
+    await startProfileGapFill(ctx);
   });
   bot.callbackQuery('profile:edit:name', async (ctx) => {
     await ctx.answerCallbackQuery();

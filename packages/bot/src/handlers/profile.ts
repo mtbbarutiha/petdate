@@ -1,10 +1,11 @@
 import type { Context } from 'grammy';
-import type { BotStep, ProfileDraft, User, UserGender } from '@petdate/shared';
+import type { BotStep, ProfileCardUser, ProfileDraft, User, UserGender } from '@petdate/shared';
 import {
   COUNTRY_IRAN,
   FACE_VERIFY_REWARD,
   IRAN_PROVINCES,
   PROFILE_INTEREST_OPTIONS,
+  PROFILE_WIZARD_STEP_LABELS_FA,
   USER_AGE_CUSTOM_LABEL,
   USER_AGE_MAX,
   USER_AGE_MIN,
@@ -13,8 +14,11 @@ import {
   VET_CREDENTIAL_STATUS_LABELS,
   formatPeerOwnerProfileHtml,
   formatProfileCardHtml,
+  isOptionalProfileWizardStep,
   isPhotoApproved,
   isProfileComplete,
+  missingProfileWizardSteps,
+  nextMissingProfileWizardStep,
   pendingPhotoApprovalMessage,
   pendingPhotoSubjects,
   normalizeRoles,
@@ -78,6 +82,77 @@ const PROFILE_BACK: Partial<Record<BotStep, BotStep>> = {
 
 function stepTitle(n: number): string {
   return `مرحله ${n} از ${PROFILE_TOTAL}`;
+}
+
+function draftFromUser(user: User): ProfileDraft {
+  return {
+    name: user.name,
+    age: user.age,
+    gender: user.gender,
+    country: user.country,
+    province: user.province,
+    city: user.city,
+    phone: user.phone,
+    bio: user.bio,
+    avatarFileId: user.avatarUrl,
+    interests: user.interests ?? [],
+  };
+}
+
+function draftAsCardUser(draft: ProfileDraft): ProfileCardUser {
+  return {
+    id: 0,
+    name: draft.name,
+    age: draft.age,
+    gender: draft.gender,
+    country: draft.country,
+    province: draft.province,
+    city: draft.city,
+    phone: draft.phone,
+    bio: draft.bio,
+    avatarUrl: draft.avatarFileId,
+    interests: draft.interests,
+  };
+}
+
+function clearGapSessionPatch() {
+  return {
+    profileGapFill: false,
+    profileGapSkipped: undefined,
+    profileGapHistory: undefined,
+  };
+}
+
+function gapHeading(step: keyof typeof PROFILE_WIZARD_STEP_LABELS_FA): string {
+  return `📋 <b>${PROFILE_WIZARD_STEP_LABELS_FA[step]}</b>`;
+}
+
+/** بعد از پر کردن / رد کردن یک مرحله در مسیر gap-fill، برو مرحلهٔ خالی بعدی */
+async function continueGapFill(
+  ctx: Context,
+  telegramId: string,
+  draft: ProfileDraft,
+  justFinished?: BotStep,
+  extraSkip: BotStep[] = []
+): Promise<void> {
+  const session = await getSession(telegramId);
+  const skip = [...(session?.profileGapSkipped ?? []), ...extraSkip];
+  const history = justFinished
+    ? [...(session?.profileGapHistory ?? []), justFinished]
+    : [...(session?.profileGapHistory ?? [])];
+  const next = nextMissingProfileWizardStep(draftAsCardUser(draft), { skip });
+  if (!next) {
+    await finishProfileWizard(ctx, telegramId, draft);
+    return;
+  }
+  await upsertSession(telegramId, {
+    step: next,
+    draftProfile: draft,
+    profileGapFill: true,
+    profileGapSkipped: skip,
+    profileGapHistory: history,
+  });
+  await promptProfileStep(ctx, next, draft, false, true);
 }
 
 function escapeHtml(value: string): string {
@@ -216,6 +291,7 @@ async function cancelWizard(ctx: Context, telegramId: string): Promise<void> {
     draftProfile: undefined,
     profileSectionEdit: false,
     breedPage: undefined,
+    ...clearGapSessionPatch(),
   });
   await ctx.reply('انصراف دادی. هر وقت خواستی از منو «پروفایل خودم» دوباره شروع کن.', {
     reply_markup: menuKeyboardFor(ctx, user),
@@ -242,6 +318,7 @@ async function skipProfileWizardLater(ctx: Context, telegramId: string): Promise
     draftProfile: undefined,
     profileSectionEdit: false,
     breedPage: undefined,
+    ...clearGapSessionPatch(),
   });
   await ctx.reply(
     'باشه، پروفایل رو فعلاً رد کردی.\nهر وقت خواستی از منو «👤 پروفایل خودم» تکمیلش کن.',
@@ -269,7 +346,7 @@ export async function showProfileEditMenu(ctx: Context): Promise<void> {
       '✏️ <b>ویرایش پروفایل</b>',
       '',
       'کدام بخش رو می‌خوای تغییر بدی؟',
-      incomplete ? '\n⚠️ پروفایلت هنوز کامل نیست — می‌تونی «تکمیل همه» رو بزنی.' : '',
+      incomplete ? '\n⚠️ پروفایلت هنوز کامل نیست — «تکمیل بخش‌های خالی» فقط همان‌ها را می‌پرسد.' : '',
     ]
       .filter(Boolean)
       .join('\n'),
@@ -331,9 +408,8 @@ export async function handleProfile(ctx: Context): Promise<void> {
       ctx,
       cardUser,
       pets.length,
-      `${card}\n\n⚠️ <b>پروفایلت هنوز کامل نیست.</b>\nهر بخش رو جداگانه ویرایش کن یا «تکمیل همه» رو بزن 👇`
+      `${card}\n\n⚠️ <b>پروفایلت هنوز کامل نیست.</b>\n«تکمیل پروفایل» فقط بخش‌های خالی رو جداگانه می‌پرسه — نه ثبت‌نام دوباره.`
     );
-    await showProfileEditMenu(ctx);
     return;
   }
 
@@ -357,21 +433,70 @@ export async function startProfileWizard(ctx: Context): Promise<void> {
     role: user.role,
     step: 'profile_name',
     profileSectionEdit: false,
-    draftProfile: {
-      name: user.name,
-      age: user.age,
-      gender: user.gender,
-      country: user.country,
-      province: user.province,
-      city: user.city,
-      phone: user.phone,
-      bio: user.bio,
-      avatarFileId: user.avatarUrl,
-      interests: user.interests ?? [],
-    },
+    draftProfile: draftFromUser(user),
+    ...clearGapSessionPatch(),
   });
 
   await askProfileName(ctx, user.name);
+}
+
+/**
+ * CTA «تکمیل پروفایل» — فقط فیلدهای خالی، هر کدام یک مرحلهٔ جدا.
+ * ویزارد ثبت‌نام از اول راه‌اندازی نمی‌شود و دادهٔ پرشده پاک/دوباره پرسیده نمی‌شود.
+ */
+export async function startProfileGapFill(ctx: Context): Promise<void> {
+  const from = ctx.from;
+  if (!from) return;
+
+  const telegramId = String(from.id);
+  const user = await getCtxUser(ctx);
+  if (!user) {
+    await ctx.reply('اول /start بزن.');
+    return;
+  }
+
+  const draft = draftFromUser(user);
+  const missing = missingProfileWizardSteps(draftAsCardUser(draft));
+  if (!missing.length) {
+    await upsertSession(telegramId, {
+      step: 'ready',
+      draftProfile: undefined,
+      profileSectionEdit: false,
+      ...clearGapSessionPatch(),
+    });
+    await ctx.reply(
+      [
+        '✅ <b>پروفایلت کامله</b> — چیزی برای تکمیل نمونده.',
+        'از «ویرایش پروفایل» می‌تونی هر بخش رو جداگانه عوض کنی.',
+      ].join('\n'),
+      { parse_mode: 'HTML', reply_markup: menuKeyboardFor(ctx, user) }
+    );
+    return;
+  }
+
+  const labels = missing.map((s) => PROFILE_WIZARD_STEP_LABELS_FA[s]).join(' · ');
+  await upsertSession(telegramId, {
+    userId: user.id,
+    role: user.role,
+    step: missing[0],
+    profileSectionEdit: false,
+    draftProfile: draft,
+    profileGapFill: true,
+    profileGapSkipped: [],
+    profileGapHistory: [],
+  });
+
+  await ctx.reply(
+    [
+      '📋 <b>تکمیل پروفایل</b>',
+      '',
+      'فقط بخش‌هایی که وارد نکردی رو جداگانه می‌پرسیم — بقیه اطلاعاتت دست نمی‌خوره.',
+      '',
+      `باقی‌مانده: ${labels}`,
+    ].join('\n'),
+    { parse_mode: 'HTML' }
+  );
+  await promptProfileStep(ctx, missing[0]!, draft, false, true);
 }
 
 type ProfileEditField =
@@ -398,18 +523,7 @@ export async function startProfileSectionEdit(
     return;
   }
 
-  const draft: ProfileDraft = {
-    name: user.name,
-    age: user.age,
-    gender: user.gender,
-    country: user.country,
-    province: user.province,
-    city: user.city,
-    phone: user.phone,
-    bio: user.bio,
-    avatarFileId: user.avatarUrl,
-    interests: user.interests ?? [],
-  };
+  const draft: ProfileDraft = draftFromUser(user);
 
   const stepByField: Record<ProfileEditField, BotStep> = {
     name: 'profile_name',
@@ -429,6 +543,7 @@ export async function startProfileSectionEdit(
     step,
     profileSectionEdit: true,
     draftProfile: draft,
+    ...clearGapSessionPatch(),
   });
 
   await promptProfileStep(ctx, step, draft, true);
@@ -454,6 +569,7 @@ async function finishSectionField(
       step: 'profile_edit_menu',
       draftProfile: undefined,
       profileSectionEdit: false,
+      ...clearGapSessionPatch(),
     });
     await ctx.reply(`✅ ${successMsg}`);
     if (user.awardedRewards?.length) {
@@ -569,15 +685,22 @@ export async function handleVetCredentialText(ctx: Context, text: string): Promi
   return true;
 }
 
-async function askProfileName(ctx: Context, currentName?: string, section = false): Promise<void> {
+async function askProfileName(
+  ctx: Context,
+  currentName?: string,
+  section = false,
+  gap = false
+): Promise<void> {
   const lines = [
     section
       ? '✏️ <b>ویرایش نام</b>'
-      : `✨ <b>تکمیل پروفایل</b> (${stepTitle(1)})`,
+      : gap
+        ? gapHeading('profile_name')
+        : `✨ <b>تکمیل پروفایل</b> (${stepTitle(1)})`,
     '',
     'نام نمایشی‌ات رو بنویس:',
   ];
-  if (currentName) {
+  if (currentName && !gap) {
     lines.push(`<i>الان: ${escapeHtml(currentName)}</i>`);
     lines.push('یا «✓ همین نام» رو بزن.');
   }
@@ -589,118 +712,133 @@ async function askProfileName(ctx: Context, currentName?: string, section = fals
     parse_mode: 'HTML',
     reply_markup: textStepKeyboard({
       ...profileNavOpts({ noBack: true, skipLater: !section }),
-      keepName: currentName,
+      keepName: currentName && !gap ? currentName : undefined,
     }),
   });
 }
 
-async function askProfileAge(ctx: Context, section = false): Promise<void> {
+async function askProfileAge(ctx: Context, section = false, gap = false): Promise<void> {
+  const title = section
+    ? '🎂 <b>ویرایش سن</b>'
+    : gap
+      ? gapHeading('profile_age')
+      : `🎂 <b>${stepTitle(2)}</b>`;
   await ctx.reply(
-    section
-      ? [
-          '🎂 <b>ویرایش سن</b>',
-          '',
-          'سنت چند سالِ؟',
-          'از دکمه‌ها یکی را بزن، یا «✏️ سن دیگر» و بعد عدد بنویس.',
-        ].join('\n')
-      : [
-          `🎂 <b>${stepTitle(2)}</b>`,
-          '',
-          'سنت چند سالِ؟',
-          'از دکمه‌ها یکی را بزن، یا «✏️ سن دیگر» و بعد عدد بنویس (مثلاً ۲۷).',
-        ].join('\n'),
+    [
+      title,
+      '',
+      'سنت چند سالِ؟',
+      section
+        ? 'از دکمه‌ها یکی را بزن، یا «✏️ سن دیگر» و بعد عدد بنویس.'
+        : 'از دکمه‌ها یکی را بزن، یا «✏️ سن دیگر» و بعد عدد بنویس (مثلاً ۲۷).',
+    ].join('\n'),
     { parse_mode: 'HTML', reply_markup: ageChipKeyboard(PROFILE_AGE_CHIPS) }
   );
 }
 
-async function askProfileGender(ctx: Context, section = false): Promise<void> {
-  await ctx.reply(
-    section
-      ? '⚧ <b>ویرایش جنسیت</b>\n\nجنسیتت رو از منو انتخاب کن:'
-      : `⚧ <b>${stepTitle(3)}</b>\n\nجنسیتت رو از منو انتخاب کن:`,
-    {
-      parse_mode: 'HTML',
-      reply_markup: genderReplyKeyboard(),
-    }
-  );
+async function askProfileGender(ctx: Context, section = false, gap = false): Promise<void> {
+  const title = section
+    ? '⚧ <b>ویرایش جنسیت</b>'
+    : gap
+      ? gapHeading('profile_gender')
+      : `⚧ <b>${stepTitle(3)}</b>`;
+  await ctx.reply(`${title}\n\nجنسیتت رو از منو انتخاب کن:`, {
+    parse_mode: 'HTML',
+    reply_markup: genderReplyKeyboard(),
+  });
 }
 
-async function askProfileCountry(ctx: Context, section = false): Promise<void> {
-  await ctx.reply(
-    section
-      ? '🌍 <b>ویرایش موقعیت</b>\n\nکشورت رو انتخاب کن:'
-      : `🌍 <b>${stepTitle(4)}</b>\n\nکشورت رو انتخاب کن:`,
-    {
-      parse_mode: 'HTML',
-      reply_markup: countryReplyKeyboard(),
-    }
-  );
+async function askProfileCountry(ctx: Context, section = false, gap = false): Promise<void> {
+  const title = section
+    ? '🌍 <b>ویرایش موقعیت</b>'
+    : gap
+      ? gapHeading('profile_country')
+      : `🌍 <b>${stepTitle(4)}</b>`;
+  await ctx.reply(`${title}\n\nکشورت رو انتخاب کن:`, {
+    parse_mode: 'HTML',
+    reply_markup: countryReplyKeyboard(),
+  });
 }
 
-async function askProfileProvince(ctx: Context, section = false): Promise<void> {
-  await ctx.reply(
-    section
-      ? '🗺 <b>ویرایش موقعیت</b>\n\nاستانت رو انتخاب کن:'
-      : `🗺 <b>${stepTitle(5)}</b>\n\nاستانت رو انتخاب کن:`,
-    {
-      parse_mode: 'HTML',
-      reply_markup: provinceReplyKeyboard(),
-    }
-  );
+async function askProfileProvince(ctx: Context, section = false, gap = false): Promise<void> {
+  const title = section
+    ? '🗺 <b>ویرایش موقعیت</b>'
+    : gap
+      ? gapHeading('profile_province')
+      : `🗺 <b>${stepTitle(5)}</b>`;
+  await ctx.reply(`${title}\n\nاستانت رو انتخاب کن:`, {
+    parse_mode: 'HTML',
+    reply_markup: provinceReplyKeyboard(),
+  });
 }
 
-async function askProfileCity(ctx: Context, province?: string, section = false): Promise<void> {
-  await ctx.reply(
-    section
-      ? '🏙 <b>ویرایش موقعیت</b>\n\nشهرت رو انتخاب کن یا «شهر دیگر» بزن:'
-      : `🏙 <b>${stepTitle(6)}</b>\n\nشهرت رو انتخاب کن یا «شهر دیگر» بزن:`,
-    {
-      parse_mode: 'HTML',
-      reply_markup: cityReplyKeyboard({ province, skipLater: !section }),
-    }
-  );
+async function askProfileCity(
+  ctx: Context,
+  province?: string,
+  section = false,
+  gap = false
+): Promise<void> {
+  const title = section
+    ? '🏙 <b>ویرایش موقعیت</b>'
+    : gap
+      ? gapHeading('profile_city')
+      : `🏙 <b>${stepTitle(6)}</b>`;
+  await ctx.reply(`${title}\n\nشهرت رو انتخاب کن یا «شهر دیگر» بزن:`, {
+    parse_mode: 'HTML',
+    reply_markup: cityReplyKeyboard({ province, skipLater: !section }),
+  });
 }
 
-async function askProfilePhone(ctx: Context, section = false): Promise<void> {
-  await ctx.reply(
-    section
-      ? '📱 <b>ویرایش موبایل</b>\n\nشماره موبایلت رو بفرست یا دکمه اشتراک‌گذاری رو بزن:'
-      : `📱 <b>${stepTitle(7)}</b>\n\nشماره موبایلت رو بفرست یا دکمه اشتراک‌گذاری رو بزن:`,
-    { parse_mode: 'HTML', reply_markup: phoneWizardKeyboard() }
-  );
+async function askProfilePhone(ctx: Context, section = false, gap = false): Promise<void> {
+  const title = section
+    ? '📱 <b>ویرایش موبایل</b>'
+    : gap
+      ? gapHeading('profile_phone')
+      : `📱 <b>${stepTitle(7)}</b>`;
+  await ctx.reply(`${title}\n\nشماره موبایلت رو بفرست یا دکمه اشتراک‌گذاری رو بزن:`, {
+    parse_mode: 'HTML',
+    reply_markup: phoneWizardKeyboard(),
+  });
 }
 
-async function askProfilePhoto(ctx: Context, section = false): Promise<void> {
-  await ctx.reply(
-    section
-      ? '🖼 <b>ویرایش عکس</b>\n\nیک عکس پروفایل بفرست:'
-      : `🖼 <b>${stepTitle(8)}</b>\n\nیک عکس پروفایل بفرست:`,
-    {
-      parse_mode: 'HTML',
-      reply_markup: textStepKeyboard(profileNavOpts({ skip: true })),
-    }
-  );
+async function askProfilePhoto(ctx: Context, section = false, gap = false): Promise<void> {
+  const title = section
+    ? '🖼 <b>ویرایش عکس</b>'
+    : gap
+      ? gapHeading('profile_photo')
+      : `🖼 <b>${stepTitle(8)}</b>`;
+  await ctx.reply(`${title}\n\nیک عکس پروفایل بفرست:`, {
+    parse_mode: 'HTML',
+    reply_markup: textStepKeyboard(profileNavOpts({ skip: true })),
+  });
 }
 
-async function askProfileBio(ctx: Context, section = false): Promise<void> {
-  await ctx.reply(
-    section
-      ? '💬 <b>ویرایش بیو</b>\n\nچند خط درباره خودت بنویس:\n<i>علاقه‌ها، پت‌ها، محله...</i>'
-      : `💬 <b>${stepTitle(9)}</b>\n\nچند خط درباره خودت بنویس:\n<i>علاقه‌ها، پت‌ها، محله...</i>`,
-    { parse_mode: 'HTML', reply_markup: textStepKeyboard(profileNavOpts({ skip: true })) }
-  );
+async function askProfileBio(ctx: Context, section = false, gap = false): Promise<void> {
+  const title = section
+    ? '💬 <b>ویرایش بیو</b>'
+    : gap
+      ? gapHeading('profile_bio')
+      : `💬 <b>${stepTitle(9)}</b>`;
+  await ctx.reply(`${title}\n\nچند خط درباره خودت بنویس:\n<i>علاقه‌ها، پت‌ها، محله...</i>`, {
+    parse_mode: 'HTML',
+    reply_markup: textStepKeyboard(profileNavOpts({ skip: true })),
+  });
 }
 
 async function askProfileInterests(
   ctx: Context,
   selected: string[] = [],
-  section = false
+  section = false,
+  gap = false
 ): Promise<void> {
   const picked = selected.length ? `\nانتخاب‌شده: ${escapeHtml(selected.join(' · '))}` : '';
+  const title = section
+    ? '💚 <b>ویرایش علایق</b>'
+    : gap
+      ? gapHeading('profile_interests')
+      : `💚 <b>${stepTitle(10)}</b>`;
   await ctx.reply(
-    section
-      ? `💚 <b>ویرایش علایق</b>\n\nعلایقت رو از منو انتخاب کن (چندتا اوکیه)، بعد «ثبت علایق» بزن:${picked}`
-      : `💚 <b>${stepTitle(10)}</b>\n\nعلایقت رو از منو انتخاب کن (چندتا اوکیه)، بعد «ثبت علایق» بزن:${picked}`,
+    `${title}\n\nعلایقت رو از منو انتخاب کن (چندتا اوکیه)، بعد «ثبت علایق» بزن:${picked}`,
     { parse_mode: 'HTML', reply_markup: interestsReplyKeyboard(selected) }
   );
 }
@@ -709,38 +847,51 @@ async function promptProfileStep(
   ctx: Context,
   step: BotStep,
   draft: ProfileDraft,
-  section = false
+  section = false,
+  gap = false
 ): Promise<void> {
   switch (step) {
     case 'profile_name':
-      await askProfileName(ctx, draft.name, section);
+      await askProfileName(ctx, draft.name, section, gap);
       return;
     case 'profile_age':
-      await askProfileAge(ctx, section);
+      await askProfileAge(ctx, section, gap);
       return;
     case 'profile_gender':
-      await askProfileGender(ctx, section);
+      await askProfileGender(ctx, section, gap);
       return;
     case 'profile_country':
-      await askProfileCountry(ctx, section);
+      await askProfileCountry(ctx, section, gap);
       return;
     case 'profile_province':
-      await askProfileProvince(ctx, section);
+      await askProfileProvince(ctx, section, gap);
       return;
     case 'profile_city':
-      await askProfileCity(ctx, draft.province, section);
+      if (draft.country && draft.country !== COUNTRY_IRAN) {
+        const title = section
+          ? '🏙 <b>ویرایش موقعیت</b>'
+          : gap
+            ? gapHeading('profile_city')
+            : `🏙 <b>${stepTitle(6)}</b>`;
+        await ctx.reply(`${title}\n\nشهرت رو بنویس:`, {
+          parse_mode: 'HTML',
+          reply_markup: textStepKeyboard(profileNavOpts({ skipLater: !section })),
+        });
+        return;
+      }
+      await askProfileCity(ctx, draft.province, section, gap);
       return;
     case 'profile_phone':
-      await askProfilePhone(ctx, section);
+      await askProfilePhone(ctx, section, gap);
       return;
     case 'profile_photo':
-      await askProfilePhoto(ctx, section);
+      await askProfilePhoto(ctx, section, gap);
       return;
     case 'profile_bio':
-      await askProfileBio(ctx, section);
+      await askProfileBio(ctx, section, gap);
       return;
     case 'profile_interests':
-      await askProfileInterests(ctx, draft.interests ?? [], section);
+      await askProfileInterests(ctx, draft.interests ?? [], section, gap);
       return;
     default:
       return;
@@ -768,6 +919,7 @@ export async function handleProfileWizardText(ctx: Context, text: string): Promi
 
   const draft: ProfileDraft = { ...session.draftProfile };
   const section = Boolean(session.profileSectionEdit);
+  const gap = Boolean(session.profileGapFill);
 
   if (text === WIZARD_NAV.skipLater) {
     await skipProfileWizardLater(ctx, telegramId);
@@ -780,6 +932,23 @@ export async function handleProfileWizardText(ctx: Context, text: string): Promi
   }
 
   if (text === WIZARD_NAV.back) {
+    if (gap) {
+      const history = [...(session.profileGapHistory ?? [])];
+      const prev = history.pop();
+      if (!prev) {
+        await cancelWizard(ctx, telegramId);
+        return true;
+      }
+      await upsertSession(telegramId, {
+        step: prev,
+        draftProfile: draft,
+        profileGapFill: true,
+        profileGapHistory: history,
+      });
+      await ctx.reply('برگشتیم یک مرحله ↩️');
+      await promptProfileStep(ctx, prev, draft, false, true);
+      return true;
+    }
     let prev = PROFILE_BACK[session.step];
     if (session.step === 'profile_city' && !draft.province) {
       prev = 'profile_country';
@@ -797,6 +966,14 @@ export async function handleProfileWizardText(ctx: Context, text: string): Promi
   if (text === WIZARD_NAV.skip) {
     if (section) {
       await cancelWizard(ctx, telegramId);
+      return true;
+    }
+    if (gap) {
+      if (isOptionalProfileWizardStep(session.step)) {
+        await continueGapFill(ctx, telegramId, draft, undefined, [session.step]);
+        return true;
+      }
+      await skipProfileWizardLater(ctx, telegramId);
       return true;
     }
     if (session.step === 'profile_phone') {
@@ -842,6 +1019,10 @@ export async function handleProfileWizardText(ctx: Context, text: string): Promi
       await finishSectionField(ctx, telegramId, { name }, 'نام به‌روز شد.');
       return true;
     }
+    if (gap) {
+      await continueGapFill(ctx, telegramId, draft, 'profile_name');
+      return true;
+    }
     await upsertSession(telegramId, { step: 'profile_age', draftProfile: draft });
     await askProfileAge(ctx);
     return true;
@@ -873,6 +1054,10 @@ export async function handleProfileWizardText(ctx: Context, text: string): Promi
       await finishSectionField(ctx, telegramId, { age }, 'سن به‌روز شد.');
       return true;
     }
+    if (gap) {
+      await continueGapFill(ctx, telegramId, draft, 'profile_age');
+      return true;
+    }
     await upsertSession(telegramId, { step: 'profile_gender', draftProfile: draft });
     await askProfileGender(ctx);
     return true;
@@ -887,6 +1072,10 @@ export async function handleProfileWizardText(ctx: Context, text: string): Promi
     draft.gender = gender;
     if (section) {
       await finishSectionField(ctx, telegramId, { gender }, 'جنسیت به‌روز شد.');
+      return true;
+    }
+    if (gap) {
+      await continueGapFill(ctx, telegramId, draft, 'profile_gender');
       return true;
     }
     await upsertSession(telegramId, { step: 'profile_country', draftProfile: draft });
@@ -915,7 +1104,15 @@ export async function handleProfileWizardText(ctx: Context, text: string): Promi
       return true;
     }
     draft.country = country;
-    draft.province = undefined;
+    if (!gap) {
+      draft.province = undefined;
+    } else if (country !== COUNTRY_IRAN) {
+      draft.province = undefined;
+    }
+    if (gap) {
+      await continueGapFill(ctx, telegramId, draft, 'profile_country');
+      return true;
+    }
     if (country === COUNTRY_IRAN) {
       await upsertSession(telegramId, { step: 'profile_province', draftProfile: draft });
       await askProfileProvince(ctx, section);
@@ -943,7 +1140,13 @@ export async function handleProfileWizardText(ctx: Context, text: string): Promi
       return true;
     }
     draft.province = province;
-    draft.city = undefined;
+    if (!gap) {
+      draft.city = undefined;
+    }
+    if (gap) {
+      await continueGapFill(ctx, telegramId, draft, 'profile_province');
+      return true;
+    }
     await upsertSession(telegramId, { step: 'profile_city', draftProfile: draft });
     await askProfileCity(ctx, province, section);
     return true;
@@ -973,6 +1176,10 @@ export async function handleProfileWizardText(ctx: Context, text: string): Promi
       );
       return true;
     }
+    if (gap) {
+      await continueGapFill(ctx, telegramId, draft, 'profile_city');
+      return true;
+    }
     await upsertSession(telegramId, { step: 'profile_phone', draftProfile: draft });
     await askProfilePhone(ctx);
     return true;
@@ -989,6 +1196,10 @@ export async function handleProfileWizardText(ctx: Context, text: string): Promi
     draft.phone = toEnglishDigits(phone);
     if (section) {
       await finishSectionField(ctx, telegramId, { phone: draft.phone }, 'موبایل به‌روز شد.');
+      return true;
+    }
+    if (gap) {
+      await continueGapFill(ctx, telegramId, draft, 'profile_phone');
       return true;
     }
     await upsertSession(telegramId, { step: 'profile_photo', draftProfile: draft });
@@ -1009,6 +1220,10 @@ export async function handleProfileWizardText(ctx: Context, text: string): Promi
       await finishSectionField(ctx, telegramId, { bio: draft.bio }, 'بیو به‌روز شد.');
       return true;
     }
+    if (gap) {
+      await continueGapFill(ctx, telegramId, draft, 'profile_bio');
+      return true;
+    }
     await upsertSession(telegramId, { step: 'profile_interests', draftProfile: draft });
     await askProfileInterests(ctx, draft.interests ?? []);
     return true;
@@ -1023,6 +1238,10 @@ export async function handleProfileWizardText(ctx: Context, text: string): Promi
           { interests: draft.interests ?? [] },
           'علایق به‌روز شد.'
         );
+        return true;
+      }
+      if (gap) {
+        await continueGapFill(ctx, telegramId, draft, 'profile_interests');
         return true;
       }
       await finishProfileWizard(ctx, telegramId, draft);
@@ -1043,7 +1262,7 @@ export async function handleProfileWizardText(ctx: Context, text: string): Promi
     else current.add(option);
     draft.interests = [...current];
     await upsertSession(telegramId, { draftProfile: draft });
-    await askProfileInterests(ctx, draft.interests, section);
+    await askProfileInterests(ctx, draft.interests, section, gap);
     return true;
   }
 
@@ -1076,6 +1295,10 @@ export async function handleProfileGender(ctx: Context, gender: UserGender): Pro
     await finishSectionField(ctx, telegramId, { gender }, 'جنسیت به‌روز شد.');
     return;
   }
+  if (session.profileGapFill) {
+    await continueGapFill(ctx, telegramId, draft, 'profile_gender');
+    return;
+  }
   await upsertSession(telegramId, { step: 'profile_country', draftProfile: draft });
   await askProfileCountry(ctx);
 }
@@ -1095,6 +1318,10 @@ export async function handleProfileContact(ctx: Context): Promise<boolean> {
   };
   if (session.profileSectionEdit) {
     await finishSectionField(ctx, telegramId, { phone: contact.phone_number }, 'موبایل به‌روز شد.');
+    return true;
+  }
+  if (session.profileGapFill) {
+    await continueGapFill(ctx, telegramId, draft, 'profile_phone');
     return true;
   }
   await upsertSession(telegramId, { step: 'profile_photo', draftProfile: draft });
@@ -1120,6 +1347,10 @@ export async function handleProfilePhoto(ctx: Context): Promise<boolean> {
     await finishSectionField(ctx, telegramId, { avatarUrl: best.file_id }, 'عکس پروفایل به‌روز شد.');
     return true;
   }
+  if (session.profileGapFill) {
+    await continueGapFill(ctx, telegramId, draft, 'profile_photo');
+    return true;
+  }
   await upsertSession(telegramId, { step: 'profile_bio', draftProfile: draft });
   await askProfileBio(ctx);
   return true;
@@ -1142,6 +1373,13 @@ export async function handleProfileSkip(
     return;
   }
   const draft: ProfileDraft = { ...session.draftProfile };
+  const skipStep: BotStep =
+    field === 'phone' ? 'profile_phone' : field === 'photo' ? 'profile_photo' : 'profile_bio';
+
+  if (session.profileGapFill) {
+    await continueGapFill(ctx, telegramId, draft, undefined, [skipStep]);
+    return;
+  }
 
   if (field === 'phone') {
     await upsertSession(telegramId, { step: 'profile_photo', draftProfile: draft });
@@ -1394,17 +1632,32 @@ async function finishProfileWizard(
   telegramId: string,
   draft: ProfileDraft
 ): Promise<void> {
+  const session = await getSession(telegramId);
+  const gap = Boolean(session?.profileGapFill);
+  const stillMissing = nextMissingProfileWizardStep(draftAsCardUser(draft), {
+    skip: session?.profileGapSkipped,
+  });
+
   if (!draft.name || !draft.age || !draft.gender || !draft.country || !draft.city) {
-    await ctx.reply('اطلاعات ناقصه. دوباره از «پروفایل خودم» شروع کن یا مراحل رو کامل کن.');
-    await upsertSession(telegramId, { step: 'profile_name', draftProfile: draft });
-    await askProfileName(ctx, draft.name);
+    const next = stillMissing ?? 'profile_name';
+    await ctx.reply('اطلاعات لازم هنوز ناقصه. فقط همان بخش خالی رو کامل کن.');
+    await upsertSession(telegramId, {
+      step: next,
+      draftProfile: draft,
+      profileGapFill: gap || undefined,
+    });
+    await promptProfileStep(ctx, next, draft, false, gap);
     return;
   }
 
   if (draft.country === COUNTRY_IRAN && !draft.province) {
     await ctx.reply('برای ایران باید استان رو هم انتخاب کنی.');
-    await upsertSession(telegramId, { step: 'profile_province', draftProfile: draft });
-    await askProfileProvince(ctx);
+    await upsertSession(telegramId, {
+      step: 'profile_province',
+      draftProfile: draft,
+      profileGapFill: gap || undefined,
+    });
+    await askProfileProvince(ctx, false, gap);
     return;
   }
 
@@ -1423,7 +1676,12 @@ async function finishProfileWizard(
       onboarding: 'profile_complete',
     });
 
-    await upsertSession(telegramId, { step: 'ready', draftProfile: undefined, profileSectionEdit: false });
+    await upsertSession(telegramId, {
+      step: 'ready',
+      draftProfile: undefined,
+      profileSectionEdit: false,
+      ...clearGapSessionPatch(),
+    });
 
     if (user.awardedRewards?.length) {
       const msg = formatCoinAwardMessage(user.awardedRewards);
@@ -1431,7 +1689,10 @@ async function finishProfileWizard(
     }
 
     const pets = await listPets({ ownerId: user.id });
-    const text = `✅ پروفایلت کامل شد!\n\n${formatProfileCard(
+    const doneLine = gap
+      ? '✅ بخش‌های خالی پروفایل ذخیره شد.'
+      : '✅ پروفایلت کامل شد!';
+    const text = `${doneLine}\n\n${formatProfileCard(
       user,
       pets.length,
       pets.map((p) => p.name)

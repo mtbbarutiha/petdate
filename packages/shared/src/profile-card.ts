@@ -3,6 +3,7 @@
  * با فیلدهای دامنهٔ پت‌دیت (همبازی، دامپزشک، کیف پول).
  */
 import { FACE_VERIFY_REWARD, PROFILE_REWARD_SECTIONS, type ProfileRewardSection } from './economy';
+import { COUNTRY_IRAN } from './locations';
 import {
   USER_GENDER_LABELS,
   USER_ROLE_LABELS,
@@ -73,7 +74,7 @@ function hasLocation(u: ProfileCardUser): boolean {
   const country = (u.country ?? '').trim();
   const city = (u.city ?? '').trim();
   if (!country || !city) return false;
-  if (country === 'ایران' && !(u.province ?? '').trim()) return false;
+  if (country === COUNTRY_IRAN && !(u.province ?? '').trim()) return false;
   return true;
 }
 
@@ -135,6 +136,91 @@ export function computeProfileCompletion(user: ProfileCardUser): ProfileCompleti
 /** گیت «پروفایل کامل» — نام/سن/جنسیت/موقعیت */
 export function isProfileComplete(user: ProfileCardUser): boolean {
   return PROFILE_REQUIRED_FIELDS.every((f) => isProfileSectionFilled(f, user));
+}
+
+/**
+ * مراحل جداگانهٔ ویزارد بات برای تکمیل پروفایل.
+ * موقعیت به کشور / استان / شهر شکسته می‌شود تا فقط زیر‌فیلد خالی پرسیده شود.
+ */
+export const PROFILE_WIZARD_STEPS = [
+  'profile_name',
+  'profile_age',
+  'profile_gender',
+  'profile_country',
+  'profile_province',
+  'profile_city',
+  'profile_phone',
+  'profile_photo',
+  'profile_bio',
+  'profile_interests',
+] as const;
+
+export type ProfileWizardStep = (typeof PROFILE_WIZARD_STEPS)[number];
+
+export const PROFILE_WIZARD_STEP_LABELS_FA: Record<ProfileWizardStep, string> = {
+  profile_name: 'نام',
+  profile_age: 'سن',
+  profile_gender: 'جنسیت',
+  profile_country: 'کشور',
+  profile_province: 'استان',
+  profile_city: 'شهر',
+  profile_phone: 'موبایل',
+  profile_photo: 'عکس',
+  profile_bio: 'بیو',
+  profile_interests: 'علایق',
+};
+
+export const PROFILE_OPTIONAL_WIZARD_STEPS = [
+  'profile_phone',
+  'profile_photo',
+  'profile_bio',
+  'profile_interests',
+] as const satisfies readonly ProfileWizardStep[];
+
+export function isOptionalProfileWizardStep(step: string): boolean {
+  return (PROFILE_OPTIONAL_WIZARD_STEPS as readonly string[]).includes(step);
+}
+
+/**
+ * فقط مراحل خالی — فیلد پرشده هرگز برنمی‌گردد.
+ * برای CTA «تکمیل پروفایل» (نه ثبت‌نام اول).
+ */
+export function missingProfileWizardSteps(
+  user: ProfileCardUser,
+  opts?: { skip?: readonly string[] }
+): ProfileWizardStep[] {
+  const skip = new Set(opts?.skip ?? []);
+  const out: ProfileWizardStep[] = [];
+  const push = (step: ProfileWizardStep) => {
+    if (!skip.has(step)) out.push(step);
+  };
+
+  if (!isProfileSectionFilled('name', user)) push('profile_name');
+  if (!isProfileSectionFilled('age', user)) push('profile_age');
+  if (!isProfileSectionFilled('gender', user)) push('profile_gender');
+
+  if (!isProfileSectionFilled('location', user)) {
+    const country = (user.country ?? '').trim();
+    const province = (user.province ?? '').trim();
+    const city = (user.city ?? '').trim();
+    if (!country) push('profile_country');
+    else if (country === COUNTRY_IRAN && !province) push('profile_province');
+    if (!city) push('profile_city');
+  }
+
+  if (!isProfileSectionFilled('phone', user)) push('profile_phone');
+  if (!isProfileSectionFilled('photo', user)) push('profile_photo');
+  if (!isProfileSectionFilled('bio', user)) push('profile_bio');
+  if (!isProfileSectionFilled('interests', user)) push('profile_interests');
+
+  return out;
+}
+
+export function nextMissingProfileWizardStep(
+  user: ProfileCardUser,
+  opts?: { skip?: readonly string[] }
+): ProfileWizardStep | null {
+  return missingProfileWizardSteps(user, opts)[0] ?? null;
 }
 
 /** شناسهٔ دستور تلگرام (قابل‌ضربه): /u00014 — فقط deep-link بات، نه نمایش «آیدی» */

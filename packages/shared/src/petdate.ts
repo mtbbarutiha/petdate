@@ -875,6 +875,15 @@ export interface BotSession {
    */
   profileSectionEdit?: boolean;
   /**
+   * تکمیل جاهای خالی پروفایل (نه ویزارد ثبت‌نام از اول).
+   * فقط مراحل missingProfileWizardSteps پرسیده می‌شوند.
+   */
+  profileGapFill?: boolean;
+  /** مراحل ردشده در gap-fill تا دوباره پرسیده نشوند */
+  profileGapSkipped?: BotStep[];
+  /** مراحل طی‌شده در این نشست gap-fill برای دکمه برگشت */
+  profileGapHistory?: BotStep[];
+  /**
    * ویرایش تک‌فیلدی پروفایل پت (از پت‌های من).
    * بعد از ذخیره به کارت پروفایل پت برمی‌گردیم.
    */
