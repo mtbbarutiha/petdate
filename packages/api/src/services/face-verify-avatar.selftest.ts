@@ -7,13 +7,11 @@ export {};
 process.env.DATABASE_URL = '';
 process.env.DATABASE_PATH = `/tmp/petdate-selftest-face-verify-avatar-${process.pid}.db`;
 
-function assert(cond: unknown, msg: string): asserts cond {
-  if (!cond) throw new Error(msg);
-}
-
 async function main() {
+  const assert = await import('node:assert/strict');
   const { readFileSync } = await import('node:fs');
-  const { join } = await import('node:path');
+  const { dirname, join } = await import('node:path');
+  const { fileURLToPath } = await import('node:url');
   const { profileAvatarUrl, publicFacingAvatarUrl } = await import('@petdate/shared');
   const { dbService, getDb } = await import('../db');
   getDb();
@@ -34,24 +32,26 @@ async function main() {
   dbService.setAvatarModerationStatus(user.id, 'approved');
 
   const before = dbService.getUserById(user.id)!;
-  assert(before.avatarUrl === photo, 'approved profile photo stored');
+  assert.equal(before.avatarUrl, photo, 'approved profile photo stored');
 
   const submitted = dbService.submitVerification(user.id, videoId);
-  assert(submitted.ok, 'verification submitted');
+  assert.ok(submitted.ok, 'verification submitted');
   if (!submitted.ok) return;
-  assert(submitted.user.verificationStatus === 'pending', 'pending after submit');
-  assert(submitted.user.verificationPhotoFileId === videoId, 'verify clip stored for admin');
+  assert.equal(submitted.user.verificationStatus, 'pending', 'pending after submit');
+  assert.equal(submitted.user.verificationPhotoFileId, videoId, 'verify clip stored for admin');
   const rawRow = getDb()
     .prepare('SELECT avatar_url, verification_photo_file_id FROM users WHERE id = ?')
     .get(user.id) as { avatar_url: string; verification_photo_file_id: string };
-  assert(rawRow.avatar_url === photo, 'db avatar_url unchanged after verify submit');
-  assert(rawRow.verification_photo_file_id === videoId, 'db stores verify clip separately');
-  assert(
-    submitted.user.avatarUrl === photo,
+  assert.equal(rawRow.avatar_url, photo, 'db avatar_url unchanged after verify submit');
+  assert.equal(rawRow.verification_photo_file_id, videoId, 'db stores verify clip separately');
+  assert.equal(
+    submitted.user.avatarUrl,
+    photo,
     'profile avatar stays the approved photo after verify submit'
   );
-  assert(
-    submitted.user.avatarUrl !== videoId,
+  assert.notEqual(
+    submitted.user.avatarUrl,
+    videoId,
     'verify video file_id must not become avatar_url'
   );
 
@@ -60,9 +60,10 @@ async function main() {
     submitted.user.avatarModerationStatus,
     submitted.user.verificationPhotoFileId
   );
-  assert(peer === photo, 'peer/chat avatar is the profile photo');
-  assert(
-    profileAvatarUrl(videoId, { verificationPhotoFileId: videoId }) === undefined,
+  assert.equal(peer, photo, 'peer/chat avatar is the profile photo');
+  assert.equal(
+    profileAvatarUrl(videoId, { verificationPhotoFileId: videoId }),
+    undefined,
     'resolver rejects verify video even if a stale row copied it'
   );
 
@@ -79,10 +80,10 @@ async function main() {
   });
   dbService.setAvatarModerationStatus(reuse.id, 'approved');
   const reused = dbService.submitVerification(reuse.id, photo);
-  assert(reused.ok, 'reuse submit ok');
+  assert.ok(reused.ok, 'reuse submit ok');
   if (reused.ok) {
-    assert(reused.user.avatarUrl === photo, 'reuse existing avatar keeps photo');
-    assert(reused.user.verificationPhotoFileId === photo, 'verify ref may equal avatar');
+    assert.equal(reused.user.avatarUrl, photo, 'reuse existing avatar keeps photo');
+    assert.equal(reused.user.verificationPhotoFileId, photo, 'verify ref may equal avatar');
   }
 
   // Stale row: avatar_url already overwritten with a verify video — mapUser hides it.
@@ -99,17 +100,17 @@ async function main() {
     )
     .run(videoId, videoId, stale.id);
   const mapped = dbService.getUserById(stale.id)!;
-  assert(
-    mapped.avatarUrl !== videoId,
-    'mapUser must not expose verify video as avatar'
-  );
-  assert(
+  assert.notEqual(mapped.avatarUrl, videoId, 'mapUser must not expose verify video as avatar');
+  assert.ok(
     !mapped.avatarUrl || !mapped.avatarUrl.includes('BAAC'),
     'stale video avatar stripped for chat/profile'
   );
-  assert(mapped.verificationPhotoFileId === videoId, 'admin still has verify clip');
+  assert.equal(mapped.verificationPhotoFileId, videoId, 'admin still has verify clip');
 
-  const dbSrc = readFileSync(join(process.cwd(), 'src/db.ts'), 'utf8');
+  const dbSrc = readFileSync(
+    join(dirname(fileURLToPath(import.meta.url)), '..', 'db.ts'),
+    'utf8'
+  );
   assert.match(
     dbSrc,
     /Face-verify media stays on verification_photo_file_id/,

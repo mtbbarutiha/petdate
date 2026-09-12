@@ -54,14 +54,14 @@ export function resolveTelegramPhotoUrl(
 ): string | null {
   const raw = String(imageUrl ?? '').trim();
   if (!raw) return null;
+  // Video / video-note / voice clips must never be sent as profile photos.
+  if (/^(BAAC|DQAC|AwAC|CQAC|CgAC)/i.test(raw)) return null;
+  if (/\.(mp4|webm|mov|m4v)(?:$|[?#])/i.test(raw)) return null;
   if (/^https?:\/\//i.test(raw)) {
     return isTelegramInlineUrl(raw) ? raw : null;
   }
   // Telegram file_id (opaque token stored by bot uploads).
-  // Video / video-note / voice clips must never be sent as profile photos.
   if (!raw.startsWith('/')) {
-    if (/^(BAAC|DQAC|AwAC|CQAC|CgAC)/i.test(raw)) return null;
-    if (/\.(mp4|webm|mov|m4v)(?:$|[?#])/i.test(raw)) return null;
     return raw;
   }
   const origin = publicFetchOrigin();
