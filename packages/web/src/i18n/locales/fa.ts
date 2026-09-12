@@ -350,6 +350,18 @@ export const fa: Dict = {
     findCtaLogin: 'ورود برای پیدا کردن همبازی',
     findCtaAddPet: 'ثبت پت',
     findCtaPickPet: 'کدوم پتت؟',
+    silentOnLabel: 'سایلنت روشن است — برای دریافت دوباره درخواست بزن',
+    silentOffLabel: 'سایلنت درخواست چت',
+    silentEnableTitle: 'سایلنت درخواست چت',
+    silentEnableBody:
+      'با فعال کردن سایلنت، دیگر درخواست چت همبازی برات نمیاد و کسی نمی‌تونه برات درخواست بفرسته تا وقتی سایلنت را خاموش کنی.',
+    silentEnableConfirm: 'فعال کردن سایلنت',
+    silentDisableTitle: 'خاموش کردن سایلنت',
+    silentDisableBody:
+      'با خاموش کردن سایلنت، دوباره درخواست چت همبازی برات میاد.',
+    silentDisableConfirm: 'خاموش کردن سایلنت',
+    silentSaved: 'ذخیره شد',
+    silentError: 'تغییر سایلنت ناموفق بود',
     needLogin: 'برای دیدن گفتگوها وارد حساب شو.',
     active: 'گفتگوی فعال',
     busyWithPet: 'در حال پت',
