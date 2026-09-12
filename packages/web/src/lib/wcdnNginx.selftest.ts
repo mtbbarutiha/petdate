@@ -10,6 +10,7 @@ import { fileURLToPath } from 'node:url';
 const root = join(dirname(fileURLToPath(import.meta.url)), '../../../..');
 const conf = readFileSync(join(root, 'infra/nginx/petdate.conf'), 'utf8');
 const doc = readFileSync(join(root, 'docs/infra/wcdn.md'), 'utf8');
+const deploy = readFileSync(join(root, 'scripts/deploy-vps.sh'), 'utf8');
 
 const httpBlock = conf.slice(0, conf.indexOf('listen 443'));
 const sslBlock = conf.slice(conf.indexOf('listen 443'));
@@ -68,6 +69,11 @@ assert.match(
 );
 assert.match(conf, /shop-product-redirects\.map/, 'product id→slug map included');
 assert.match(conf, /\$shop_product_redirect/, 'product id redirects wired');
+assert.match(
+  deploy,
+  /map \\\$uri \\\$shop_product_redirect/,
+  'deploy fallback map escapes $uri (unquoted SSH heredoc + set -u)'
+);
 
 // /pets/:id SPA deep links (medical tab) must not hard-404 under the stock-photo prefix.
 assert.match(conf, /location \^~ \/pets\//, '/pets/ location exists');

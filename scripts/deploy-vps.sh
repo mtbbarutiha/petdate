@@ -301,7 +301,7 @@ if [[ "\$SCOPE" == "all" || "\$SCOPE" == "web" ]]; then
   if [[ -f infra/nginx/shop-product-redirects.map ]]; then
     sudo cp infra/nginx/shop-product-redirects.map /etc/nginx/petdate-shop-product-redirects.map
   elif [[ ! -f /etc/nginx/petdate-shop-product-redirects.map ]]; then
-    printf '%s\n' 'map $uri $shop_product_redirect { default ""; }' | sudo tee /etc/nginx/petdate-shop-product-redirects.map >/dev/null
+    printf '%s\n' 'map \$uri \$shop_product_redirect { default ""; }' | sudo tee /etc/nginx/petdate-shop-product-redirects.map >/dev/null
   fi
   if [[ -f infra/nginx/petdate.conf ]]; then
     sudo cp infra/nginx/petdate.conf /etc/nginx/sites-available/petdate
