@@ -15,6 +15,7 @@ import {
   verificationSubmitKeyboard,
 } from '../keyboards';
 import { getSession, upsertSession } from '../session';
+import { resolveTelegramPhotoUrl } from '../urls';
 function escapeHtml(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
@@ -200,27 +201,63 @@ async function sendAdminVerificationItem(
 ): Promise<void> {
   const caption = formatAdminCard(user);
   const kb = adminVerificationKeyboard(user.id);
-  const photo = user.verificationPhotoFileId || user.avatarUrl;
-  if (photo) {
-    try {
-      await ctx.replyWithPhoto(photo, {
-        caption,
-        parse_mode: 'HTML',
-        reply_markup: kb,
-      });
-      return;
-    } catch {
-      /* maybe video file_id */
-    }
-    try {
-      await ctx.replyWithVideo(photo, {
-        caption,
-        parse_mode: 'HTML',
-        reply_markup: kb,
-      });
-      return;
-    } catch {
-      /* fall through */
+  const raw = user.verificationPhotoFileId || user.avatarUrl;
+  if (raw) {
+    const media = resolveTelegramPhotoUrl(raw) || raw;
+    const isPathOrUrl = /^https?:\/\//i.test(String(raw)) || String(raw).startsWith('/');
+
+    if (!isPathOrUrl) {
+      // Telegram file_id — try photo, then video, then video_note (circle)
+      try {
+        await ctx.replyWithPhoto(media, {
+          caption,
+          parse_mode: 'HTML',
+          reply_markup: kb,
+        });
+        return;
+      } catch {
+        /* maybe video file_id */
+      }
+      try {
+        await ctx.replyWithVideo(media, {
+          caption,
+          parse_mode: 'HTML',
+          reply_markup: kb,
+        });
+        return;
+      } catch {
+        /* maybe video_note */
+      }
+      try {
+        // video_note has no caption — send note then card + actions
+        await ctx.replyWithVideoNote(media);
+        await ctx.reply(caption, { parse_mode: 'HTML', reply_markup: kb });
+        return;
+      } catch {
+        /* fall through */
+      }
+    } else if (media && /^https?:\/\//i.test(media)) {
+      // Web-stored selfie/video URL Telegram can fetch
+      try {
+        await ctx.replyWithPhoto(media, {
+          caption,
+          parse_mode: 'HTML',
+          reply_markup: kb,
+        });
+        return;
+      } catch {
+        /* maybe video URL */
+      }
+      try {
+        await ctx.replyWithVideo(media, {
+          caption,
+          parse_mode: 'HTML',
+          reply_markup: kb,
+        });
+        return;
+      } catch {
+        /* fall through */
+      }
     }
   }
   await ctx.reply(`${caption}\n\n⚠️ فایل در دسترس نیست.`, {
