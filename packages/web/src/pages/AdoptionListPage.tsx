@@ -6,6 +6,7 @@ import { SiteFooter } from '../components/SiteFooter';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { LanguageToggle } from '../components/LanguageToggle';
 import { useI18n } from '../i18n';
+import { usePlatformConfig } from '../hooks/usePlatformConfig';
 import { AdoptionPurchaseCta } from '../components/AdoptionPurchaseCta';
 import { ADOPTION_PETS } from '../data/adoptionPets';
 import { loginPath } from '../lib/authRedirect';
@@ -20,6 +21,7 @@ function PawIcon({ size = 16 }: { size?: number }) {
 
 export function AdoptionListPage() {
   const { t, dir } = useI18n();
+  const platform = usePlatformConfig();
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -48,8 +50,9 @@ export function AdoptionListPage() {
         <nav className="pepito-nav-links" aria-label={t('nav.sections')}>
           <Link to="/#services">{t('nav.services')}</Link>
           <Link to="/adoption">{t('nav.adoption')}</Link>
-          <Link to="/shop">{t('nav.petShop')}</Link>
-          <Link to="/vet-consult">{t('nav.vet')}</Link>
+          <Link to="/games" data-testid="nav-games">{t('nav.games')}</Link>
+          {platform.shopEnabled ? <Link to="/shop">{t('nav.petShop')}</Link> : null}
+          {platform.vetConsultEnabled ? <Link to="/vet-consult">{t('nav.vet')}</Link> : null}
           <Link to="/faq" className="pepito-nav-faq">{t('nav.faq')}</Link>
         </nav>
         <div className="pepito-nav-actions">

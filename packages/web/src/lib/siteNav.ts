@@ -9,6 +9,7 @@ import {
   GraduationCap,
   UserRound,
   Wallet,
+  Gamepad2,
 } from 'lucide-react';
 import type { PublicPlatformConfig, User, UserRole } from '@petdate/shared';
 import { primaryRole } from '@petdate/shared';
@@ -38,8 +39,7 @@ const SHOP_AUTH: SiteNavItem = {
 
 /**
  * Owner/guest playmate hub — lives in /chats (find + inbox), not a separate page.
- * Legacy `/api/games` (scheduled section games) has no web/bot UI; do not add a
- * «بازی‌ها» nav item — owners use this «هم بازی» entry (and bot «پیدا کردن همبازی»).
+ * Distinct from «بازی‌ها» (/games) — scheduled group games via /api/games.
  */
 const PLAYMATE_CHATS: SiteNavItem = {
   key: 'playmate',
@@ -47,6 +47,15 @@ const PLAYMATE_CHATS: SiteNavItem = {
   to: '/chats',
   icon: HeartHandshake,
   match: (p) => p === '/chats' || p.startsWith('/chats/') || p.startsWith('/vet-chats'),
+};
+
+/** Scheduled group games (football, board, …) — public list + join/create. */
+const GAMES: SiteNavItem = {
+  key: 'games',
+  label: 'بازی‌ها',
+  to: '/games',
+  icon: Gamepad2,
+  match: (p) => p === '/games' || p.startsWith('/games/'),
 };
 
 const MY_PETS: SiteNavItem = {
@@ -115,6 +124,7 @@ const LOGIN: SiteNavItem = {
  */
 export const SITE_NAV_GUEST: SiteNavItem[] = [
   SHOP,
+  GAMES,
   { ...PLAYMATE_CHATS, gate: true },
   { ...MY_PETS, gate: true },
   LOGIN,
@@ -122,10 +132,11 @@ export const SITE_NAV_GUEST: SiteNavItem[] = [
 
 /**
  * Logged-in owner set (legacy default). Prefer `siteNavMobileForUser`.
- * Owner: شاپ / هم بازی / پت‌های من / کیف پول / پروفایل
+ * Owner: شاپ / بازی‌ها / هم بازی / پت‌های من / کیف پول / پروفایل
  */
 export const SITE_NAV_AUTH: SiteNavItem[] = [
   SHOP_AUTH,
+  GAMES,
   PLAYMATE_CHATS,
   MY_PETS,
   WALLET,
@@ -150,17 +161,16 @@ export function siteNavMobileForRole(role?: UserRole | null): SiteNavItem[] {
   switch (role) {
     case 'vet':
       // دامپزشک: بدون همبازی — پنل پزشک + گفتگو
-      return [SHOP_AUTH, VET_PANEL, CHATS, WALLET, PROFILE];
+      return [SHOP_AUTH, GAMES, VET_PANEL, CHATS, PROFILE];
     case 'trainer':
-      return [SHOP_AUTH, TRAINER_PANEL, CHATS, WALLET, PROFILE];
+      return [SHOP_AUTH, GAMES, TRAINER_PANEL, CHATS, PROFILE];
     case 'pet_owner':
-      // صاحب پت: هم بازی + پت‌های من کنار هم (= /chats و /my-pets)
-      return [SHOP_AUTH, PLAYMATE_CHATS, MY_PETS, WALLET, PROFILE];
+      // صاحب پت: بازی‌ها + هم بازی + پت‌های من
+      return [SHOP_AUTH, GAMES, PLAYMATE_CHATS, MY_PETS, PROFILE];
     case 'no_pet':
-      // بدون همبازی — گفتگو + پت‌های من
-      return [SHOP_AUTH, CHATS, MY_PETS, WALLET, PROFILE];
+      return [SHOP_AUTH, GAMES, CHATS, MY_PETS, PROFILE];
     default:
-      return [SHOP_AUTH, CHATS, MY_PETS, WALLET, PROFILE];
+      return [SHOP_AUTH, GAMES, CHATS, MY_PETS, PROFILE];
   }
 }
 

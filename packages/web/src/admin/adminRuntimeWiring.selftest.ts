@@ -46,6 +46,16 @@ const chrome = read(join(webRoot, 'components/LandingChrome.tsx'));
 assert.match(chrome, /PlatformBanners/, 'landing shows platform banners');
 assert.match(chrome, /platform\.shopEnabled/, 'landing hides shop when flag off');
 assert.match(chrome, /platform\.vetConsultEnabled/, 'landing hides vet when flag off');
+assert.match(chrome, /data-testid="nav-games"/, 'landing keeps games nav from main');
+
+const welcome = read(join(webRoot, 'pages/WelcomePage.tsx'));
+assert.match(welcome, /PlatformBanners/, 'homepage shows platform banners');
+
+const footer = read(join(webRoot, 'components/SiteFooter.tsx'));
+assert.match(footer, /usePlatformConfig/, 'footer honors platform flags');
+
+const appLayout = read(join(webRoot, 'components/Layout.tsx'));
+assert.match(appLayout, /shopEnabled/, 'app rail hides shop when flag off');
 
 const siteNav = read(join(webRoot, 'lib/siteNav.ts'));
 assert.match(siteNav, /filterNavByPlatformConfig/, 'nav filter helper');

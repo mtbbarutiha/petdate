@@ -45,6 +45,9 @@ const MagazineArticlePage = lazy(() =>
 const AdoptionListPage = lazy(() =>
   import('./pages/AdoptionListPage').then((m) => ({ default: m.AdoptionListPage })),
 );
+const GamesPage = lazy(() =>
+  import('./pages/GamesPage').then((m) => ({ default: m.GamesPage })),
+);
 const AdoptionDetailPage = lazy(() =>
   import('./pages/AdoptionDetailPage').then((m) => ({ default: m.AdoptionDetailPage })),
 );
@@ -166,6 +169,9 @@ const AdminConsultsPage = lazy(() =>
 );
 const AdminPlaydatesPage = lazy(() =>
   import('./admin/pages/AdminPlaydatesPage').then((m) => ({ default: m.AdminPlaydatesPage })),
+);
+const AdminGamesPage = lazy(() =>
+  import('./admin/pages/AdminGamesPage').then((m) => ({ default: m.AdminGamesPage })),
 );
 const AdminShopProductsPage = lazy(() =>
   import('./admin/pages/AdminShopProductsPage').then((m) => ({ default: m.AdminShopProductsPage })),
@@ -364,6 +370,7 @@ export default function App() {
             <Route path="news" element={<Navigate to="/magazine" replace />} />
             <Route path="adoption" element={<AdoptionListPage />} />
             <Route path="adoption/:slug" element={<AdoptionDetailPage />} />
+            <Route path="games" element={<GamesPage />} />
             <Route path="pet/:slugOrId" element={<PublicPetPage />} />
             <Route path="vet-consult" element={<VetConsultRoute />} />
             <Route path="team-chat/:agentSlug" element={<TeamChatStartPage />} />
@@ -413,6 +420,7 @@ export default function App() {
                 <Route path="pets/new" element={<AdminPetFormPage />} />
                 <Route path="pets/:id/edit" element={<AdminPetFormPage />} />
                 <Route path="playdates" element={<AdminPlaydatesPage />} />
+                <Route path="games" element={<AdminGamesPage />} />
                 <Route path="matches" element={<Navigate to="/admin/playdates" replace />} />
                 <Route path="consults" element={<AdminConsultsPage />} />
                 <Route path="verification" element={<AdminVerificationPage />} />

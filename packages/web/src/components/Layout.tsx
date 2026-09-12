@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
   GraduationCap,
+  Gamepad2,
   Home,
   LayoutDashboard,
   MessagesSquare,
@@ -16,6 +17,7 @@ import type { LucideIcon } from 'lucide-react';
 import { primaryRole, type UserRole } from '@petdate/shared';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { useI18n } from '../i18n';
+import { usePlatformConfig } from '../hooks/usePlatformConfig';
 import { LandingChrome } from './LandingChrome';
 import { LiveIncomingRequests } from './LiveIncomingRequests';
 import { ProfileManageNav } from './ProfileManageNav';
@@ -27,6 +29,7 @@ type NavDef = { to: string; icon: LucideIcon; labelKey: string };
 const OWNER_NAV: NavDef[] = [
   { to: '/', icon: Home, labelKey: 'common.home' },
   { to: '/home', icon: LayoutDashboard, labelKey: 'nav.panel' },
+  { to: '/games', icon: Gamepad2, labelKey: 'nav.games' },
   { to: '/chats', icon: HeartHandshake, labelKey: 'nav.playmate' },
   { to: '/my-pets', icon: PawPrint, labelKey: 'nav.my_pets' },
   { to: '/vet-consult', icon: Stethoscope, labelKey: 'nav.quickConsult' },
@@ -38,6 +41,7 @@ const OWNER_NAV: NavDef[] = [
 const VET_NAV: NavDef[] = [
   { to: '/', icon: Home, labelKey: 'common.home' },
   { to: '/vet-consult', icon: Stethoscope, labelKey: 'nav.vet_panel' },
+  { to: '/games', icon: Gamepad2, labelKey: 'nav.games' },
   { to: '/chats', icon: MessagesSquare, labelKey: 'nav.conversations' },
   { to: '/profile', icon: UserRound, labelKey: 'nav.profile' },
   { to: '/support', icon: LifeBuoy, labelKey: 'nav.support' },
@@ -47,6 +51,7 @@ const VET_NAV: NavDef[] = [
 const TRAINER_NAV: NavDef[] = [
   { to: '/', icon: Home, labelKey: 'common.home' },
   { to: '/trainer-consult', icon: GraduationCap, labelKey: 'nav.trainer_panel' },
+  { to: '/games', icon: Gamepad2, labelKey: 'nav.games' },
   { to: '/chats', icon: MessagesSquare, labelKey: 'nav.conversations' },
   { to: '/profile', icon: UserRound, labelKey: 'nav.profile' },
   { to: '/support', icon: LifeBuoy, labelKey: 'nav.support' },
@@ -57,6 +62,7 @@ const DEFAULT_NAV: NavDef[] = [
   { to: '/', icon: Home, labelKey: 'common.home' },
   { to: '/support', icon: LifeBuoy, labelKey: 'nav.support' },
   { to: '/home', icon: LayoutDashboard, labelKey: 'nav.panel' },
+  { to: '/games', icon: Gamepad2, labelKey: 'nav.games' },
   { to: '/chats', icon: MessagesSquare, labelKey: 'nav.conversations' },
   { to: '/profile', icon: UserRound, labelKey: 'nav.profile' },
   { to: '/shop', icon: ShoppingBag, labelKey: 'nav.petShop' },
@@ -73,8 +79,16 @@ export function Layout({ children }: { children?: ReactNode }) {
   const { pathname } = useLocation();
   const { user } = useAuthStore();
   const { t } = useI18n();
+  const platform = usePlatformConfig();
   const active = primaryRole(user?.roles, user?.role);
-  const navItems = navForRole(active);
+  const navItems = navForRole(active).filter((item) => {
+    if (item.to === '/shop' && !platform.shopEnabled) return false;
+    if (item.to.startsWith('/vet-consult') && !platform.vetConsultEnabled) return false;
+    if (item.to === '/chats' && item.labelKey === 'nav.playmate' && !platform.playdatesEnabled) {
+      return false;
+    }
+    return true;
+  });
   const isChat =
     pathname === '/chats' ||
     pathname.startsWith('/chats/') ||

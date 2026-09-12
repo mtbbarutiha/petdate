@@ -5,6 +5,7 @@ import { BRAND, SITE } from '@petdate/shared';
 import { subscribeNewsletter } from '../lib/api';
 import { trackGenerateLead } from '../lib/siteAnalytics';
 import { useI18n } from '../i18n';
+import { usePlatformConfig } from '../hooks/usePlatformConfig';
 
 const CONTACT_EMAIL = SITE.email;
 const NEWSLETTER_FROM = SITE.newsletterEmail;
@@ -40,6 +41,7 @@ function FooterLink({
  */
 export function SiteFooter() {
   const { t, dir } = useI18n();
+  const platform = usePlatformConfig();
   const [email, setEmail] = useState('');
   const [note, setNote] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -51,6 +53,7 @@ export function SiteFooter() {
     { to: '/#about', label: t('nav.about') },
     { to: '/#services', label: t('nav.services') },
     { to: '/adoption', label: t('nav.adoption') },
+    { to: '/games', label: t('nav.games') },
     { to: '/shop', label: t('nav.petShop') },
     { to: '/chats', label: t('footer.playmate') },
     { to: '/#news', label: t('nav.news') },
@@ -62,6 +65,7 @@ export function SiteFooter() {
 
   const quickLinks: { to: string; label: string; className?: string }[] = [
     { to: '/chats', label: t('footer.playmate') },
+    { to: '/games', label: t('nav.games') },
     { to: '/shop', label: t('footer.petdateShop') },
     { to: '/shop/c/dog-food', label: t('footer.dogFood') },
     { to: '/shop/c/cat-food', label: t('footer.catFood') },
@@ -70,6 +74,15 @@ export function SiteFooter() {
     { to: '/faq', label: t('footer.faqFull'), className: 'pepito-nav-faq' },
     { to: '/auth/login', label: t('common.loginRegister') },
   ];
+
+  const visible = (to: string) => {
+    if ((to === '/shop' || to.startsWith('/shop/')) && !platform.shopEnabled) return false;
+    if (to.startsWith('/vet-consult') && !platform.vetConsultEnabled) return false;
+    if (to === '/chats' && !platform.playdatesEnabled) return false;
+    return true;
+  };
+  const visibleBottom = bottomLinks.filter((item) => visible(item.to));
+  const visibleQuick = quickLinks.filter((item) => visible(item.to));
 
   async function onSubscribe(e: FormEvent) {
     e.preventDefault();
@@ -147,7 +160,7 @@ export function SiteFooter() {
             <div className="pepito-footer-col">
               <h3 className="pepito-footer-heading">{t('footer.quickAccess')}</h3>
               <ul className="pepito-footer-quick-list">
-                {quickLinks.map((item) => (
+                {visibleQuick.map((item) => (
                   <li key={item.to}>
                     <FooterLink to={item.to} className={item.className}>
                       {item.label}
@@ -197,7 +210,7 @@ export function SiteFooter() {
         <div className="pepito-footer-inner pepito-footer-bottom-row">
           <nav className="pepito-footer-bottom-links" aria-label={t('footer.siteLinks')}>
             <ul>
-              {bottomLinks.map((item) => (
+              {visibleBottom.map((item) => (
                 <li key={`${item.to}-${item.label}`}>
                   <FooterLink to={item.to} className={item.className}>
                     {item.label}
