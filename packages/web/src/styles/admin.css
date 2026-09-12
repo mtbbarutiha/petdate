@@ -334,6 +334,9 @@
   .admin-app .admin-topbar-user {
     padding: 3px;
   }
+  .admin-app .admin-topbar-wordmark .admin-wordmark-logo {
+    max-width: 92px;
+  }
 }
 
 .admin-app .admin-icon-btn {
@@ -352,32 +355,46 @@
 .admin-app .admin-icon-btn--mobile { display: none; }
 .admin-app .admin-icon-btn--desktop { display: none; }
 
-/* Single hamburger/close — sibling of the drawer so it is never trapped
-   under .admin-topbar (z-index 20) or the overlay sidebar (z-index 40). */
-.admin-nav-toggle {
-  position: fixed;
-  top: 12px;
-  inset-inline-start: 12px;
-  z-index: 60;
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  border: 1px solid var(--admin-border);
-  background: var(--admin-surface);
-  color: var(--admin-ink);
+/* Hamburger/close lives in the topbar row (next to Admin Console), not
+   as a fixed slab on the sidebar/header seam. */
+.admin-app .admin-nav-toggle {
+  position: relative;
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--admin-border) 85%, transparent);
+  background: color-mix(in srgb, var(--admin-ink) 5%, var(--admin-surface));
+  color: var(--admin-muted);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.16);
+  box-shadow: none;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
-.admin-nav-toggle.is-open {
-  background: var(--admin-ink);
-  color: #fff;
-  border-color: var(--admin-ink);
+.admin-app .admin-nav-toggle:hover,
+.admin-app .admin-nav-toggle:focus-visible {
+  background: color-mix(in srgb, var(--admin-ink) 9%, var(--admin-surface));
+  color: var(--admin-ink);
+  border-color: var(--admin-border);
 }
-.admin-app .admin-topbar {
-  padding-inline-start: 68px;
+.admin-app .admin-nav-toggle.is-open {
+  background: color-mix(in srgb, var(--admin-ink) 8%, var(--admin-surface));
+  color: var(--admin-ink);
+  border-color: var(--admin-border);
+}
+.admin-app .admin-topbar-wordmark {
+  flex-shrink: 0;
+}
+.admin-app .admin-topbar-wordmark .admin-wordmark-collapsed-mark {
+  display: none;
+}
+.admin-app .admin-topbar-wordmark .admin-wordmark-logo {
+  display: block;
+}
+.admin-app .admin-topbar-wordmark .admin-wordmark-copy {
+  display: flex;
 }
 
 /* Desktop close must hide the whole panel — not just labels (old --collapsed). */
@@ -391,9 +408,6 @@
     overflow: hidden !important;
     visibility: hidden;
     pointer-events: none;
-  }
-  .admin-app--nav-open .admin-nav-toggle {
-    inset-inline-start: calc(264px + 10px);
   }
 }
 
@@ -1695,10 +1709,10 @@
     visibility: visible;
     pointer-events: auto;
   }
-  .admin-app--nav-open .admin-nav-toggle,
-  .admin-app--nav-closed .admin-nav-toggle {
-    inset-inline-start: 12px;
-    z-index: 60;
+  /* Header stays above the overlay drawer so the in-topbar toggle
+     remains clickable (drawer 40, backdrop 35). */
+  .admin-app .admin-topbar {
+    z-index: 50;
   }
 }
 

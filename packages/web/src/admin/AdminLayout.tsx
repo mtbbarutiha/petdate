@@ -380,16 +380,6 @@ function AdminLayoutInner() {
 
   return (
     <div className={`admin-app${navOpen ? ' admin-app--nav-open' : ' admin-app--nav-closed'}`}>
-      <button
-        type="button"
-        className={`admin-nav-toggle${navOpen ? ' is-open' : ''}`}
-        onClick={() => setNavOpen((v) => !v)}
-        aria-label={navOpen ? t('admin.closeMenu') : t('admin.menu')}
-        aria-expanded={navOpen}
-        aria-controls="admin-mobile-nav"
-      >
-        {navOpen ? <X size={22} strokeWidth={2.4} /> : <Menu size={22} strokeWidth={2.4} />}
-      </button>
       <div className="admin-shell">
         <aside
           id="admin-mobile-nav"
@@ -459,6 +449,17 @@ function AdminLayoutInner() {
         <div className="admin-main">
           <header className="admin-topbar">
             <div className="admin-topbar-start">
+              <button
+                type="button"
+                className={`admin-nav-toggle${navOpen ? ' is-open' : ''}`}
+                onClick={() => setNavOpen((v) => !v)}
+                aria-label={navOpen ? t('admin.closeMenu') : t('admin.menu')}
+                aria-expanded={navOpen}
+                aria-controls="admin-mobile-nav"
+              >
+                {navOpen ? <X size={18} strokeWidth={2} /> : <Menu size={18} strokeWidth={2} />}
+              </button>
+              <AdminWordmark className="admin-topbar-wordmark" />
               <div>
                 <p className="admin-topbar-eyebrow">Pet Date · {t('admin.peyvand')}</p>
                 <h1 className="admin-topbar-title">{t(pageTitleKey)}</h1>
