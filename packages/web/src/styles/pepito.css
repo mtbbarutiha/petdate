@@ -292,7 +292,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 :root {
   --pepito-nav-h: 74px;
   /* Compact band — 100svh over-reserve (#369) made the first section feel empty-tall. */
-  --pepito-hero-h: calc(93svh - var(--pepito-nav-h));
+  --pepito-hero-h: calc(88svh - var(--pepito-nav-h));
 }
 .pepito-nav {
   position: fixed;
@@ -320,7 +320,9 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   */
   :root {
     --pepito-nav-h: 64px;
-    --pepito-hero-h: calc(85svh - var(--pepito-nav-h));
+    /* Fill the viewport under the in-flow nav so the next (pink/soft) section
+       cannot peek into the fixed dock band. */
+    --pepito-hero-h: calc(100svh - var(--pepito-nav-h));
   }
   .pepito-nav {
     position: relative;
@@ -444,8 +446,8 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   display: grid;
   align-items: center;
   overflow: hidden;
-  /* Keep transparent: an opaque fill hid #pd-boot-lcp (outside #root) after #378. */
-  background: transparent;
+  /* Preloaded playmate WebP lives on the hero box so LCP-split stacking cannot hide it. */
+  background: #14161e url('/media/lcp/hero-playmate-800.webp') center top / cover no-repeat;
   color: #fff;
   touch-action: pan-y;
 }
@@ -454,6 +456,10 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   .pepito-flow-banner,
   .pd-shop-hero {
     margin-top: var(--pepito-nav-h);
+  }
+  /* Critical CSS dock pad is mobile-only — do not leave a 76px dark strip on desktop. */
+  .pepito-landing--with-dock {
+    padding-bottom: 0;
   }
 }
 .pepito-hero-slides {
@@ -791,6 +797,8 @@ body > #pd-boot-lcp.is-parked,
   column-gap: 8.333%;
   row-gap: 1.5rem;
   align-items: center;
+  /* Distinct from hero/#root charcoal so desktop does not open a second dark void. */
+  background: var(--pepito-white);
 }
 .pepito-about-copy {
   min-width: 0;

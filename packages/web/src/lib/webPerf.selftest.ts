@@ -46,11 +46,30 @@ assert.match(indexHtml, /font-display:swap/, 'self-hosted face uses font-display
 assert.doesNotMatch(indexHtml, /fonts\.googleapis\.com|fonts\.gstatic\.com/, 'no Google Fonts on the public shell');
 assert.doesNotMatch(indexHtml, /Urbanist/, 'Urbanist is not a competing UI face');
 assert.match(indexHtml, /pepito-hero-inner/, 'critical CSS reserves hero-inner (CLS)');
-assert.match(indexHtml, /85svh - var\(--pepito-nav-h\)/, 'critical hero uses compact 85svh (matches hydrated CSS)');
+assert.match(
+  indexHtml,
+  /--pepito-hero-h:calc\(100svh - var\(--pepito-nav-h\)\)/,
+  'critical mobile hero fills the viewport under the nav (no pink peek under the dock)'
+);
+assert.match(
+  indexHtml,
+  /88svh - var\(--pepito-nav-h\)/,
+  'critical desktop hero uses compact 88svh (not a 93svh dark void)'
+);
+assert.match(
+  indexHtml,
+  /\.pepito-hero\{[^}]*hero-playmate-800\.webp/,
+  'critical hero paints the preloaded playmate WebP on the box itself'
+);
+assert.match(
+  indexHtml,
+  /@media \(min-width:860px\)\{[\s\S]*?\.pepito-landing--with-dock\{padding-bottom:0\}/,
+  'critical CSS drops dock clearance on desktop'
+);
 assert.doesNotMatch(
   indexHtml,
   /\.pepito-hero\{min-height:calc\(100svh/,
-  'critical CSS must not over-reserve a full-viewport hero'
+  'critical CSS must not over-reserve a raw 100svh hero min-height'
 );
 assert.match(indexHtml, /pepito-hero-dot\{width:44px/, 'critical CSS reserves 44px hero dots');
 assert.match(indexHtml, /rel="preload"[\s\S]*hero-playmate-800\.webp/, 'LCP image is preload-discovered from HTML');
@@ -63,7 +82,7 @@ assert.doesNotMatch(
   /rel="preload"\s+as="style"/,
   'do not preload a stylesheet (unused-preload warning)'
 );
-assert.match(indexHtml, /web-perf-v28-hero-photo/, 'deploy marker bumped so SW/HTML cache misses');
+assert.match(indexHtml, /web-perf-v29-hero-dock/, 'deploy marker bumped so SW/HTML cache misses');
 assert.match(indexHtml, /id="pd-boot-lcp"/, 'LCP img lives outside #root so React cannot replace it');
 assert.match(indexHtml, /id="pd-boot-lcp"[\s\S]*decoding="sync"/, 'LCP img decodes sync so main-thread JS cannot stall paint');
 assert.match(indexHtml, /data-pd-lcp="hero"/, 'static preload is marked so SEO inject does not duplicate it');
@@ -124,11 +143,6 @@ assert.match(
   /body>#pd-boot-lcp\{position:absolute;[^}]*z-index:1/,
   'critical CSS keeps the HTML LCP in document flow above #root fill'
 );
-assert.doesNotMatch(
-  indexHtml,
-  /\.pepito-hero\{[^}]*background:#14161e/,
-  'critical hero fill must stay transparent so the boot LCP can show before JS'
-);
 assert.match(below, /magazineApi/, 'magazine fetch stays on the below-fold chunk');
 assert.match(below, /svcIndex === 0/, 'service carousel skips sync layout on mount');
 assert.match(below, /ResizeObserver/, 'carousel step is measured off the React commit path');
@@ -169,15 +183,28 @@ assert.match(robots, /Allow: \/llms\.txt/, 'robots.txt advertises llms.txt');
 const pepitoCss = readFileSync(join(webSrc, 'styles/pepito.css'), 'utf8');
 assert.match(pepitoCss, /body > #pd-boot-lcp \{[\s\S]*?position:\s*absolute/, 'hydrated boot LCP is absolute, not viewport-fixed');
 assert.match(pepitoCss, /body > #pd-boot-lcp \{[\s\S]*?z-index:\s*1/, 'hydrated boot LCP paints above landing fill');
-assert.match(pepitoCss, /\.pepito-hero \{[\s\S]*?background:\s*transparent/, 'hydrated hero does not paint over the photo');
+assert.match(
+  pepitoCss,
+  /\.pepito-hero \{[\s\S]*?hero-playmate-800\.webp/,
+  'hydrated hero paints the playmate WebP on the box'
+);
 assert.match(pepitoCss, /--pepito-btn-1-bg:\s*#5c4d91/, 'button-1 fill stays AA vs white');
 assert.match(pepitoCss, /--pepito-btn-3-bg:\s*#a24a86/, 'button-3 fill is darkened pink for AA');
-assert.match(pepitoCss, /85svh - var\(--pepito-nav-h\)/, 'hydrated mobile hero matches critical 85svh');
-assert.match(pepitoCss, /93svh - var\(--pepito-nav-h\)/, 'desktop hero stays the compact 93svh band');
-assert.doesNotMatch(
+assert.match(
   pepitoCss,
-  /--pepito-hero-h:\s*calc\(100svh/,
-  'hydrated --pepito-hero-h must not over-reserve 100svh'
+  /--pepito-hero-h:\s*calc\(100svh - var\(--pepito-nav-h\)\)/,
+  'hydrated mobile hero fills the viewport under the nav'
+);
+assert.match(pepitoCss, /88svh - var\(--pepito-nav-h\)/, 'desktop hero stays the compact 88svh band');
+assert.match(
+  pepitoCss,
+  /@media \(min-width: 860px\) \{[\s\S]*?\.pepito-landing--with-dock \{[\s\S]*?padding-bottom:\s*0/,
+  'desktop landing drops dock clearance'
+);
+assert.match(
+  pepitoCss,
+  /\.pepito-about \{[\s\S]*?background:\s*var\(--pepito-white\)/,
+  'about section is a distinct surface under the hero'
 );
 assert.match(pepitoCss, /\.pepito-hero-dot \{\s*width: 44px/, 'hero dots are 44px targets (no overlapping ::before)');
 assert.doesNotMatch(welcome, /animation:\s*pepito-rise/, 'hero-inner no longer uses pepito-rise');
