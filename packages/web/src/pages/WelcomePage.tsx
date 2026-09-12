@@ -110,16 +110,17 @@ export function WelcomePage() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  /* Park the HTML LCP <img> when leaving slide 0. Do not move it — adopt
-     triggers a second contentful paint and Lighthouse attributes render delay. */
+  /* Park the HTML LCP <img> once React owns the in-hero photo. Do not move it —
+     adopt triggers a second contentful paint. Leaving it unparked + outside
+     #root (fixed, z-index 0) painted a black empty hero after #378. */
   useEffect(() => {
     const img = document.getElementById('pd-boot-lcp');
     if (!img) return;
-    img.classList.toggle('is-parked', slide !== 0);
+    img.classList.add('is-parked');
     return () => {
       img.classList.add('is-parked');
     };
-  }, [slide]);
+  }, []);
 
   /* Keep lucide / WelcomeBelowFold / magazine off the LCP critical path.
      Load only after the slot is near the viewport or the user scrolls. */
@@ -181,18 +182,18 @@ export function WelcomePage() {
               className={`pepito-hero-slide${i === slide ? ' is-active' : ''}`}
               aria-hidden={i !== slide}
             >
-              {/* Slide 0 uses #pd-boot-lcp (outside #root). Do not mint a second LCP <img>. */}
-              {i === slide && i !== 0 ? (
+              {i === slide ? (
                 <picture>
                   <source type="image/webp" srcSet={s.srcSet || s.webp} sizes="100vw" />
                   <img
                     className="pepito-hero-media"
-                    src={s.fallback}
+                    src={i === 0 ? s.webp : s.fallback}
                     alt={t(s.titleKey)}
                     width={1600}
                     height={900}
-                    decoding="async"
+                    decoding={i === 0 ? 'sync' : 'async'}
                     loading="eager"
+                    fetchPriority={i === 0 ? 'high' : 'low'}
                   />
                 </picture>
               ) : null}

@@ -14,9 +14,11 @@ const root = join(webSrc, '..');
 const sw = readFileSync(join(webSrc, 'lib/swRegister.ts'), 'utf8');
 const vite = readFileSync(join(root, 'vite.config.ts'), 'utf8');
 
-assert.match(sw, /petdate-sw-20260912-short-cards-v27/, 'swRegister bust generation is v27');
-assert.match(sw, /petdate-web-v27-short-cards/, 'swRegister active cacheId is v27');
-assert.match(vite, /cacheId:\s*'petdate-web-v27-short-cards'/, 'vite PWA cacheId is v27');
+assert.match(sw, /petdate-sw-20260912-hero-photo-v28/, 'swRegister bust generation is v28');
+assert.match(sw, /petdate-web-v28-hero-photo/, 'swRegister active cacheId is v28');
+assert.match(vite, /cacheId:\s*'petdate-web-v28-hero-photo'/, 'vite PWA cacheId is v28');
+assert.doesNotMatch(sw, /petdate-web-v27-short-cards/, 'old v27-short-cards cacheId is retired');
+assert.doesNotMatch(sw, /petdate-sw-20260912-short-cards-v27/, 'old v27-short-cards bust key is retired');
 assert.doesNotMatch(sw, /petdate-web-v26-css-restore/, 'old v26-css-restore cacheId is retired');
 assert.doesNotMatch(sw, /petdate-sw-20260912-css-restore-v26/, 'old v26-css-restore bust key is retired');
 assert.doesNotMatch(sw, /petdate-web-v25-short-cards/, 'old v25-short-cards cacheId is retired');
