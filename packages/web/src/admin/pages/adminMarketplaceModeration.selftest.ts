@@ -24,7 +24,10 @@ assert.match(page, /vet-credential/, 'vet credential approve/reject API preserve
 assert.match(page, /provider-credential/, 'trainer credential approve/reject API preserved');
 assert.match(page, /admin-btn--primary/, 'approve uses admin-btn--primary (not broken primary)');
 assert.match(page, /admin-btn--danger/, 'reject uses admin-btn--danger with larger tap target');
-assert.match(page, /صف عکس پت خالی است/, 'clear empty state for pet photos');
+assert.match(page, /pet-photos\/pending\?limit=100/, 'pet photo queue is paginated');
+assert.match(page, /user-avatars\/pending\?limit=100/, 'avatar queue is paginated');
+assert.match(page, /includeArchive/, 'archive credentials load lazily (not on every queue refresh)');
+assert.match(page, /vet-credentials\/pending\?limit=100/, 'vet pending queue is paginated');
 assert.doesNotMatch(page, /admin-list/, 'must not use narrow admin-list stack');
 assert.doesNotMatch(page, /className=\{[^}]*admin-btn primary/, 'must not use broken admin-btn primary');
 assert.doesNotMatch(page, /className="admin-btn primary"/, 'must not use broken admin-btn primary literal');

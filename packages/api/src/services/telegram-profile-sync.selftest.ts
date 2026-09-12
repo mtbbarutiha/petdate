@@ -3,6 +3,7 @@
  * Run: npx tsx packages/api/src/services/telegram-profile-sync.selftest.ts
  */
 import {
+  clearTelegramProfileSyncCooldowns,
   combineTelegramNames,
   isPlaceholderUserName,
   pickLargestProfilePhotoFileId,
@@ -36,5 +37,10 @@ const fileId = pickLargestProfilePhotoFileId({
 assert(fileId === 'big', 'pick largest photo');
 assert(pickLargestProfilePhotoFileId(null) === null, 'null photos');
 assert(pickLargestProfilePhotoFileId({ total_count: 0, photos: [] }) === null, 'empty photos');
+
+clearTelegramProfileSyncCooldowns();
+assert(typeof clearTelegramProfileSyncCooldowns === 'function', 'cooldown clear exported');
+// Cooldown map must stay clear after helper (guards hot-path 504 storms).
+clearTelegramProfileSyncCooldowns();
 
 console.log('telegram-profile-sync.selftest: ok');

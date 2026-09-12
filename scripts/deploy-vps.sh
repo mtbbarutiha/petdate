@@ -369,11 +369,11 @@ NGINX
   rm -rf "\$NGINX_BAK_DIR"
 fi
 
-# Wait for API after PM2 reload so deploy doesn't finish while listeners are down (502 window).
+# Wait for API after PM2 reload so deploy doesn't finish while listeners are down (502/504 window).
 if [[ "\$SCOPE" == "all" || "\$SCOPE" == "api" || "\$SCOPE" == "shared" ]]; then
   echo "==> Post-deploy: wait for /api/health"
   ok=0
-  for i in 1 2 3 4 5 6 7 8 9 10; do
+  for i in \$(seq 1 30); do
     if curl -fsS -m 3 http://127.0.0.1:3001/api/health >/dev/null 2>&1; then
       ok=1
       break
@@ -385,6 +385,13 @@ if [[ "\$SCOPE" == "all" || "\$SCOPE" == "api" || "\$SCOPE" == "shared" ]]; then
     exit 1
   fi
   echo "OK: api health"
+  # Also verify nginx can reach the API (what WCDN / IR users hit).
+  if curl -fsS -m 5 -H 'Host: petdate.ir' http://127.0.0.1/api/health >/dev/null 2>&1 \\
+    || curl -fsk -m 5 -H 'Host: petdate.ir' https://127.0.0.1/api/health >/dev/null 2>&1; then
+    echo "OK: nginx → api health"
+  else
+    echo "WARNING: nginx proxy /api/health not ready (direct :3001 is up)" >&2
+  fi
 fi
 
 # Post-deploy sanity: markers that agents have wiped before

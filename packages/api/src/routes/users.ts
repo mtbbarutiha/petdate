@@ -887,13 +887,15 @@ usersRouter.post('/:id/verification/reject', (req, res) => {
 });
 
 /** صف مدارک دامپزشک در انتظار بررسی */
-usersRouter.get('/vet-credentials/pending', (_req, res) => {
-  res.json(dbService.listPendingVetCredentials());
+usersRouter.get('/vet-credentials/pending', (req, res) => {
+  const limit = Number(req.query.limit);
+  res.json(dbService.listPendingVetCredentials(Number.isFinite(limit) ? limit : 100));
 });
 
 /** آرشیو مدارک دامپزشک تأییدشده */
-usersRouter.get('/vet-credentials/verified', (_req, res) => {
-  res.json(dbService.listVerifiedVetCredentials());
+usersRouter.get('/vet-credentials/verified', (req, res) => {
+  const limit = Number(req.query.limit);
+  res.json(dbService.listVerifiedVetCredentials(Number.isFinite(limit) ? limit : 100));
 });
 
 /** آپلود مدرک دامپزشک */
@@ -942,7 +944,10 @@ usersRouter.get('/provider-credentials/pending', (req, res) => {
     res.status(400).json({ error: 'kind باید trainer یا sitter باشد' });
     return;
   }
-  res.json(dbService.listPendingProviderCredentials(kind));
+  const limit = Number(req.query.limit);
+  res.json(
+    dbService.listPendingProviderCredentials(kind, Number.isFinite(limit) ? limit : 100)
+  );
 });
 
 /** آرشیو مدارک مربی / پرستار تأییدشده */
@@ -953,7 +958,10 @@ usersRouter.get('/provider-credentials/verified', (req, res) => {
     res.status(400).json({ error: 'kind باید trainer یا sitter باشد' });
     return;
   }
-  res.json(dbService.listVerifiedProviderCredentials(kind));
+  const limit = Number(req.query.limit);
+  res.json(
+    dbService.listVerifiedProviderCredentials(kind, Number.isFinite(limit) ? limit : 100)
+  );
 });
 
 usersRouter.post('/telegram/:telegramId/provider-credential', (req, res) => {
@@ -1019,8 +1027,9 @@ usersRouter.post('/:id/provider-credential/reject', (req, res) => {
 });
 
 /** صف تأیید عکس پت */
-usersRouter.get('/pet-photos/pending', (_req, res) => {
-  res.json(dbService.listPendingPetPhotos());
+usersRouter.get('/pet-photos/pending', (req, res) => {
+  const limit = Number(req.query.limit);
+  res.json(dbService.listPendingPetPhotos(Number.isFinite(limit) ? limit : 100));
 });
 
 usersRouter.post('/pets/:id/photo-moderation', (req, res) => {
@@ -1039,8 +1048,9 @@ usersRouter.post('/pets/:id/photo-moderation', (req, res) => {
 });
 
 /** صف تأیید عکس پروفایل کاربران */
-usersRouter.get('/user-avatars/pending', (_req, res) => {
-  res.json(dbService.listPendingUserAvatars());
+usersRouter.get('/user-avatars/pending', (req, res) => {
+  const limit = Number(req.query.limit);
+  res.json(dbService.listPendingUserAvatars(Number.isFinite(limit) ? limit : 100));
 });
 
 usersRouter.post('/:id/avatar-moderation', (req, res) => {

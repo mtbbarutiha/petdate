@@ -3179,20 +3179,23 @@ export const dbService = {
     ).map(mapUser);
   },
 
-  listPendingVetCredentials(): User[] {
+  listPendingVetCredentials(limit = 100): User[] {
+    const lim = Math.min(Math.max(1, Math.floor(Number(limit) || 100)), 200);
     return (
       db
         .prepare(
           `SELECT * FROM users
            WHERE vet_credential_status = 'pending'
-           ORDER BY id ASC`
+           ORDER BY id ASC
+           LIMIT ?`
         )
-        .all() as Record<string, unknown>[]
+        .all(lim) as Record<string, unknown>[]
     ).map(mapUser);
   },
 
   /** آرشیو مدارک دامپزشک تأییدشده (فایل مدرک حفظ می‌شود). */
-  listVerifiedVetCredentials(): User[] {
+  listVerifiedVetCredentials(limit = 100): User[] {
+    const lim = Math.min(Math.max(1, Math.floor(Number(limit) || 100)), 200);
     return (
       db
         .prepare(
@@ -3200,9 +3203,10 @@ export const dbService = {
            WHERE vet_credential_status = 'verified'
              AND vet_credential_file_id IS NOT NULL
              AND TRIM(vet_credential_file_id) != ''
-           ORDER BY id DESC`
+           ORDER BY id DESC
+           LIMIT ?`
         )
-        .all() as Record<string, unknown>[]
+        .all(lim) as Record<string, unknown>[]
     ).map(mapUser);
   },
 
@@ -3242,26 +3246,29 @@ export const dbService = {
     return this.getUserById(userId);
   },
 
-  listPendingProviderCredentials(kind: 'trainer' | 'sitter'): User[] {
+  listPendingProviderCredentials(kind: 'trainer' | 'sitter', limit = 100): User[] {
     const col =
       kind === 'trainer' ? 'trainer_credential_status' : 'sitter_credential_status';
+    const lim = Math.min(Math.max(1, Math.floor(Number(limit) || 100)), 200);
     return (
       db
         .prepare(
           `SELECT * FROM users
            WHERE ${col} = 'pending'
-           ORDER BY id ASC`
+           ORDER BY id ASC
+           LIMIT ?`
         )
-        .all() as Record<string, unknown>[]
+        .all(lim) as Record<string, unknown>[]
     ).map(mapUser);
   },
 
   /** آرشیو مدارک مربی / پرستار تأییدشده. */
-  listVerifiedProviderCredentials(kind: 'trainer' | 'sitter'): User[] {
+  listVerifiedProviderCredentials(kind: 'trainer' | 'sitter', limit = 100): User[] {
     const statusCol =
       kind === 'trainer' ? 'trainer_credential_status' : 'sitter_credential_status';
     const fileCol =
       kind === 'trainer' ? 'trainer_credential_file_id' : 'sitter_credential_file_id';
+    const lim = Math.min(Math.max(1, Math.floor(Number(limit) || 100)), 200);
     return (
       db
         .prepare(
@@ -3269,9 +3276,10 @@ export const dbService = {
            WHERE ${statusCol} = 'verified'
              AND ${fileCol} IS NOT NULL
              AND TRIM(${fileCol}) != ''
-           ORDER BY id DESC`
+           ORDER BY id DESC
+           LIMIT ?`
         )
-        .all() as Record<string, unknown>[]
+        .all(lim) as Record<string, unknown>[]
     ).map(mapUser);
   },
 
@@ -3348,7 +3356,8 @@ export const dbService = {
     return this.getUserById(userId);
   },
 
-  listPendingPetPhotos(): PetProfile[] {
+  listPendingPetPhotos(limit = 100): PetProfile[] {
+    const lim = Math.min(Math.max(1, Math.floor(Number(limit) || 100)), 200);
     return (
       db
         .prepare(
@@ -3359,9 +3368,10 @@ export const dbService = {
            FROM pets
            LEFT JOIN users ON users.id = pets.owner_id
            WHERE COALESCE(pets.photo_moderation_status, 'approved') = 'pending'
-           ORDER BY pets.id ASC`
+           ORDER BY pets.id ASC
+           LIMIT ?`
         )
-        .all() as Record<string, unknown>[]
+        .all(lim) as Record<string, unknown>[]
     ).map(mapPet);
   },
 
@@ -3377,7 +3387,8 @@ export const dbService = {
     return this.getPet(petId);
   },
 
-  listPendingUserAvatars(): User[] {
+  listPendingUserAvatars(limit = 100): User[] {
+    const lim = Math.min(Math.max(1, Math.floor(Number(limit) || 100)), 200);
     return (
       db
         .prepare(
@@ -3385,9 +3396,10 @@ export const dbService = {
            WHERE COALESCE(avatar_moderation_status, 'approved') = 'pending'
              AND avatar_url IS NOT NULL
              AND TRIM(avatar_url) != ''
-           ORDER BY id ASC`
+           ORDER BY id ASC
+           LIMIT ?`
         )
-        .all() as Record<string, unknown>[]
+        .all(lim) as Record<string, unknown>[]
     ).map(mapUser);
   },
 

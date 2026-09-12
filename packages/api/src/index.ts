@@ -227,6 +227,15 @@ attachChatWebSocket(server);
 
 server.listen(PORT, () => {
   console.log(`🐾 petdate API روی پورت ${PORT} اجرا شد (WebSocket: /api/ws/chat)`);
+  // Tell PM2 the listener is up (ecosystem wait_ready) so deploys don't mark
+  // the process online before :3001 accepts connections (502/504 window).
+  if (typeof process.send === 'function') {
+    try {
+      process.send('ready');
+    } catch {
+      /* ignore when not under PM2 */
+    }
+  }
   try {
     const agents = ensureAllTeamAgents();
     console.log(`👥 team agents ready: ${agents.map((a) => a.name).join(' · ')}`);
