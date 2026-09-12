@@ -45,8 +45,26 @@ export function usePlatformConfig(): PublicPlatformConfig {
 
   useEffect(() => {
     listeners.add(setConfig);
-    void fetchPublicPlatformConfig().then(setConfig);
+    let cancelled = false;
+    let fired = false;
+    const start = () => {
+      if (fired || cancelled) return;
+      fired = true;
+      void fetchPublicPlatformConfig().then((cfg) => {
+        if (!cancelled) setConfig(cfg);
+      });
+    };
+    const timer = window.setTimeout(start, 8000);
+    const onInput = () => start();
+    window.addEventListener('pointerdown', onInput, { once: true, passive: true });
+    window.addEventListener('keydown', onInput, { once: true });
+    window.addEventListener('touchstart', onInput, { once: true, passive: true });
     return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+      window.removeEventListener('pointerdown', onInput);
+      window.removeEventListener('keydown', onInput);
+      window.removeEventListener('touchstart', onInput);
       listeners.delete(setConfig);
     };
   }, []);

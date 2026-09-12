@@ -110,6 +110,17 @@ export function WelcomePage() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  /* Park the HTML LCP <img> when leaving slide 0. Do not move it — adopt
+     triggers a second contentful paint and Lighthouse attributes render delay. */
+  useEffect(() => {
+    const img = document.getElementById('pd-boot-lcp');
+    if (!img) return;
+    img.classList.toggle('is-parked', slide !== 0);
+    return () => {
+      img.classList.add('is-parked');
+    };
+  }, [slide]);
+
   /* Keep lucide / WelcomeBelowFold / magazine off the LCP critical path.
      Load only after the slot is near the viewport or the user scrolls. */
   useEffect(() => {
@@ -125,17 +136,18 @@ export function WelcomePage() {
       (entries) => {
         if (entries.some((entry) => entry.isIntersecting)) load();
       },
-      { root: null, rootMargin: '-24px 0px', threshold: 0 },
+      { root: null, rootMargin: '0px', threshold: 0.01 },
     );
     io.observe(slot);
-    window.addEventListener('scroll', load, { once: true, passive: true });
+    /* No scroll listener — Lighthouse / mobile chrome emit scroll on load. */
     window.addEventListener('pointerdown', load, { once: true, passive: true });
     window.addEventListener('keydown', load, { once: true });
+    window.addEventListener('touchstart', load, { once: true, passive: true });
     return () => {
       io.disconnect();
-      window.removeEventListener('scroll', load);
       window.removeEventListener('pointerdown', load);
       window.removeEventListener('keydown', load);
+      window.removeEventListener('touchstart', load);
     };
   }, []);
 
@@ -169,7 +181,8 @@ export function WelcomePage() {
               className={`pepito-hero-slide${i === slide ? ' is-active' : ''}`}
               aria-hidden={i !== slide}
             >
-              {i === slide ? (
+              {/* Slide 0 uses #pd-boot-lcp (outside #root). Do not mint a second LCP <img>. */}
+              {i === slide && i !== 0 ? (
                 <picture>
                   <source type="image/webp" srcSet={s.srcSet || s.webp} sizes="100vw" />
                   <img
@@ -178,9 +191,8 @@ export function WelcomePage() {
                     alt={t(s.titleKey)}
                     width={1600}
                     height={900}
-                    decoding={i === 0 ? 'sync' : 'async'}
+                    decoding="async"
                     loading="eager"
-                    fetchPriority={i === 0 ? 'high' : 'auto'}
                   />
                 </picture>
               ) : null}

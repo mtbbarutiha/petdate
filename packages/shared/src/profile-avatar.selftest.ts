@@ -12,6 +12,8 @@ import {
   defaultAvatarUrlForGender,
   isGenderDefaultAvatarPath,
   isNonImageAvatarRef,
+  isStoredCustomProfilePhoto,
+  isUserProfilePhotoReplacement,
   profileAvatarUrl,
   publicFacingAvatarUrl,
   resolveProfileDisplayAvatarUrl,
@@ -79,6 +81,12 @@ assert(
   'absolute male default still detected'
 );
 assert(!isGenderDefaultAvatarPath(PHOTO), 'uploaded photo is not a default');
+assert(isStoredCustomProfilePhoto(PHOTO), 'uploaded still is a custom photo');
+assert(!isStoredCustomProfilePhoto(DEFAULT_AVATAR_FEMALE_PATH), 'gender default is not custom');
+assert(!isStoredCustomProfilePhoto(VIDEO_FILE), 'verify video is not a custom still');
+assert(!isUserProfilePhotoReplacement(undefined, PHOTO), 'first upload is not a replacement');
+assert(isUserProfilePhotoReplacement(PHOTO, '/api/auth/avatar/42/new.jpg'), 'new file is a replacement');
+assert(!isUserProfilePhotoReplacement(PHOTO, PHOTO), 'same url is not a replacement');
 
 assert(
   resolveProfileDisplayAvatarUrl(PHOTO, { gender: 'female' }) === PHOTO,

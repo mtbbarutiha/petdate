@@ -5,7 +5,8 @@ import fs from 'fs';
 import path from 'path';
 import { applySeoToHtml, normalizePath } from './src/lib/pageSeo';
 
-/** Defer hashed CSS so first paint is the inline critical block (FCP / Speed Index). */
+/** Defer hashed CSS so first paint is the inline critical block (FCP).
+ *  The sheet still applies on load — waiting for click/8s shipped an unstyled site. */
 function deferNonCriticalCss(): Plugin {
   return {
     name: 'petdate-defer-css',
@@ -106,7 +107,7 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         // New cache namespace so stuck clients drop the old 1.5s-poll bundle.
         // Bump when guest marketing routes change — v14 left #213's shell unclaimed.
-        cacheId: 'petdate-web-v25-short-cards',
+        cacheId: 'petdate-web-v27-short-cards',
         // Precache only the app shell — not hundreds of prerendered SEO HTML files.
         globPatterns: ['index.html', 'offline.html', '**/*.{js,css,ico,svg,woff2}'],
         navigateFallbackDenylist: [/^\/api\//],
@@ -199,7 +200,10 @@ export default defineConfig({
         // The module still loads via its static import — we just skip the hint.
         void filename;
         return deps.filter(
-          (dep) => !dep.includes('vendor-lucide') && !dep.includes('siteAnalytics'),
+          (dep) =>
+            !dep.includes('vendor-lucide') &&
+            !dep.includes('vendor-tiptap') &&
+            !dep.includes('siteAnalytics'),
         );
       },
     },
@@ -207,11 +211,20 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            if (id.includes('react-dom') || id.includes('/react/') || id.includes('react-router')) {
-              return 'vendor-react';
+            // Must run before the /react/ matcher — @tiptap/react used to land in
+            // vendor-react and download ~120 KiB of unused ProseMirror on landing.
+            if (id.includes('@tiptap') || id.includes('prosemirror')) {
+              return 'vendor-tiptap';
             }
             if (id.includes('lucide-react')) {
               return 'vendor-lucide';
+            }
+            if (
+              id.includes('node_modules/react-dom') ||
+              id.includes('node_modules/react/') ||
+              id.includes('node_modules/react-router')
+            ) {
+              return 'vendor-react';
             }
           }
           // Do not force /src/admin into a shared chunk — that made Vite

@@ -5,6 +5,7 @@
 import { BRAND } from './brand';
 import {
   FACE_VERIFY_REWARD,
+  PROFILE_PHOTO_CHANGE_COST,
   PLAYDATE_REQUEST_COST,
   QUICK_VET_COST,
   REFERRAL_BONUS_COINS,
@@ -97,6 +98,7 @@ const FA_SEEKER_SHARE = toPersianDigits(SEEKER_OWNER_SHARE);
 const FA_REFERRAL = toPersianDigits(REFERRAL_BONUS_COINS);
 const FA_SIGNUP = toPersianDigits(SIGNUP_BONUS);
 const FA_FACE = toPersianDigits(FACE_VERIFY_REWARD);
+const FA_PHOTO_CHANGE = toPersianDigits(PROFILE_PHOTO_CHANGE_COST);
 
 export const HELP_ROLE_INTROS: Record<
   HelpAudience,
@@ -463,8 +465,8 @@ export const HELP_TOPICS: HelpTopic[] = [
       en: 'Bot: Face verify, then send a selfie or short video. Site: Profile → Verify. Status: pending / verified / rejected.',
     },
     tips: {
-      fa: 'عکس باید با چهره خودت یکی باشد. رد شدن معمولاً با توضیح در همان بخش است.',
-      en: 'The photo must match your face. A rejection usually includes a note in the same panel.',
+      fa: `عکس باید با چهره خودت یکی باشد. رد شدن معمولاً با توضیح در همان بخش است. تعویض عکس پروفایل ${FA_PHOTO_CHANGE} سکه است و احراز چهره را لغو می‌کند.`,
+      en: `The photo must match your face. A rejection usually includes a note in the same panel. Changing your profile photo costs ${PROFILE_PHOTO_CHANGE_COST} coins and clears face verification.`,
     },
     botLabel: 'احراز چهره',
     sitePath: '/profile?panel=verify',
@@ -979,8 +981,8 @@ export const HELP_FAQ: HelpFaqItem[] = [
       en: 'What are face and phone verification for?',
     },
     a: {
-      fa: `احراز چهره با سلفی و تأیید ادمین است (جایزه ${FA_FACE} سکه). احراز موبایل با پیامک است و برای دامپزشک اجباری است.`,
-      en: `Face verify is a selfie reviewed by admin (${FACE_VERIFY_REWARD} coin bonus). Phone verify uses SMS and is required for vets.`,
+      fa: `احراز چهره با سلفی و تأیید ادمین است (جایزه ${FA_FACE} سکه). تعویض عکس پروفایل ${FA_PHOTO_CHANGE} سکه است و احراز را لغو می‌کند. احراز موبایل با پیامک است و برای دامپزشک اجباری است.`,
+      en: `Face verify is a selfie reviewed by admin (${FACE_VERIFY_REWARD} coin bonus). Changing your profile photo costs ${PROFILE_PHOTO_CHANGE_COST} coins and clears face verification. Phone verify uses SMS and is required for vets.`,
     },
   },
   {

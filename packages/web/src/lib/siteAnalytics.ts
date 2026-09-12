@@ -766,7 +766,9 @@ export function scheduleAfterLoadIdle(fn: () => void, timeoutMs = 10000): void {
     fn();
   };
   const arm = () => {
-    for (const ev of ['pointerdown', 'keydown', 'touchstart', 'scroll'] as const) {
+    /* Do not listen for scroll — Lighthouse and some mobile browsers emit it
+       during load and would put GTM / Clarity back on the critical path. */
+    for (const ev of ['pointerdown', 'keydown', 'touchstart'] as const) {
       window.addEventListener(ev, run, { once: true, passive: true });
     }
     window.setTimeout(run, timeoutMs);

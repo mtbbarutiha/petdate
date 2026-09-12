@@ -130,9 +130,10 @@ assert.match(
 
 assert.doesNotMatch(
   desktopNav,
-  /<item\.icon/,
-  'desktop header is text-only like خدمات — dock glyphs must not leak'
+  /item\.icon/,
+  'desktop header is text-only (#380) — dock glyph token must not leak'
 );
+assert.match(desktopNav, /pepito-nav-section-link/, 'desktop shortcuts share the خدمات text class');
 assert.match(desktopNav, /t\(`nav\.\$\{item\.key\}`\)/, 'desktop header renders nav label text');
 
 const ownerRail = layout.slice(layout.indexOf('const OWNER_NAV'), layout.indexOf('const VET_NAV'));

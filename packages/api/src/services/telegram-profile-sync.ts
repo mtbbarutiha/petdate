@@ -9,7 +9,7 @@ try {
   /* ignore on older Node */
 }
 import { infra } from '../config/infra';
-import { dbService } from '../db';
+import { dbService, type UserProfilePatch } from '../db';
 import { MAX_USER_AVATAR_BYTES, saveUserAvatar } from './user-avatar-store';
 import { telegramFetch, telegramBotApiUrl, telegramFileApiUrl } from './telegram-http';
 
@@ -301,7 +301,7 @@ export async function syncUserProfileFromTelegram(
     return user;
   }
 
-  const patch: Parameters<typeof dbService.updateUserProfile>[1] = {};
+  const patch: UserProfilePatch = {};
   const tgName = combineTelegramNames(profile.firstName, profile.lastName);
 
   if (tgName && isPlaceholderUserName(user.name)) {

@@ -3,6 +3,7 @@ import type { BotStep, ProfileCardUser, ProfileDraft, User, UserGender } from '@
 import {
   COUNTRY_IRAN,
   FACE_VERIFY_REWARD,
+  PROFILE_PHOTO_CHANGE_COST,
   IRAN_PROVINCES,
   PROFILE_INTEREST_OPTIONS,
   PROFILE_WIZARD_STEP_LABELS_FA,
@@ -574,7 +575,24 @@ async function finishSectionField(
     await showProfileEditMenu(ctx);
   } catch (err) {
     console.error('finishSectionField failed:', err);
+    const raw = err instanceof Error ? err.message : '';
+    if (raw.includes('insufficient_coins') || raw.includes('تعویض عکس')) {
+      const parsed = parseApiErrorBody(raw);
+      await ctx.reply(parsed || `برای تعویض عکس حداقل ${PROFILE_PHOTO_CHANGE_COST} سکه لازم داری.`);
+      return;
+    }
     await ctx.reply('ذخیره نشد. دوباره تلاش کن.');
+  }
+}
+
+function parseApiErrorBody(raw: string): string | null {
+  const jsonStart = raw.indexOf('{');
+  if (jsonStart < 0) return null;
+  try {
+    const body = JSON.parse(raw.slice(jsonStart)) as { error?: string };
+    return body.error?.trim() || null;
+  } catch {
+    return null;
   }
 }
 
@@ -802,7 +820,10 @@ async function askProfilePhoto(ctx: Context, section = false, gap = false): Prom
     : gap
       ? gapHeading('profile_photo')
       : `🖼 <b>${stepTitle(8)}</b>`;
-  await ctx.reply(`${title}\n\nیک عکس پروفایل بفرست:`, {
+  const costHint = section
+    ? `\n\n⚠️ تعویض عکس <b>${PROFILE_PHOTO_CHANGE_COST}</b> سکه است و احراز چهره لغو می‌شود.`
+    : '';
+  await ctx.reply(`${title}\n\nیک عکس پروفایل بفرست:${costHint}`, {
     parse_mode: 'HTML',
     reply_markup: textStepKeyboard(profileNavOpts({ skip: true })),
   });
