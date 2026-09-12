@@ -20,6 +20,11 @@ assert.match(
   /location = \/api\/auth\/avatar \{/,
   'exact /api/auth/avatar upload location (no trailing-slash 301)'
 );
+{
+  const exactCount = (conf.match(/location = \/api\/auth\/avatar \{/g) || []).length;
+  assert.equal(exactCount, 2, `exact avatar upload location once per server (got ${exactCount})`);
+}
+
 assert.match(
   conf,
   /location \^~ \/api\/auth\/avatar\//,
