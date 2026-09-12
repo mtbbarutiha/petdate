@@ -9,13 +9,20 @@
 
 import type { ReactElement } from 'react';
 import { formatNumFa } from './api';
+import {
+  ADMIN_CHART_HBARS_MIN,
+  ADMIN_CHART_HBARS_ROW,
+  ADMIN_CHART_MAX_H,
+  adminChartHBarsHeight,
+  truncateChartLabel,
+} from './adminChartLayout';
 
 export const ADMIN_RTL_HBARS_CLASS = 'admin-recharts-rtl-hbars';
 
-export const adminRtlHBarsMargin = { top: 8, right: 8, left: 20, bottom: 8 } as const;
+export const adminRtlHBarsMargin = { top: 8, right: 8, left: 16, bottom: 8 } as const;
 
 /** Extra left gutter so bar end-count labels stay visible on reversed value axis. */
-export const adminRtlHBarsMarginWithCounts = { top: 8, right: 8, left: 40, bottom: 8 } as const;
+export const adminRtlHBarsMarginWithCounts = { top: 8, right: 8, left: 36, bottom: 8 } as const;
 
 /** Value axis (counts) — reversed so bars grow toward the right-side labels. */
 export const adminRtlHBarsValueAxis = {
@@ -27,32 +34,65 @@ export const adminRtlHBarsValueAxis = {
   tickLine: false as const,
 };
 
-/** Category axis (Persian labels) — right lane with enough width for full names. */
+type CategoryTickProps = {
+  x?: number;
+  y?: number;
+  payload?: { value?: string };
+  maxChars?: number;
+};
+
+/** Truncated Persian category tick — full value in native tooltip. */
+export function AdminRtlCategoryTick(props: CategoryTickProps): ReactElement<SVGElement> {
+  const { x = 0, y = 0, payload, maxChars = 14 } = props;
+  const full = String(payload?.value ?? '');
+  const shown = truncateChartLabel(full, maxChars);
+  return (
+    <g transform={`translate(${x},${y})`}>
+      <title>{full}</title>
+      <text
+        x={8}
+        y={0}
+        dy={4}
+        textAnchor="start"
+        fill="var(--admin-ink)"
+        fontSize={11}
+      >
+        {shown}
+      </text>
+    </g>
+  ) as ReactElement<SVGElement>;
+}
+
+/** Category axis (Persian labels) — right lane, truncated ticks, compact width. */
 export const adminRtlHBarsCategoryAxis = {
   type: 'category' as const,
   orientation: 'right' as const,
-  width: 148,
+  width: 118,
   interval: 0 as const,
-  tick: { fontSize: 12, fill: 'var(--admin-ink)' },
+  tick: AdminRtlCategoryTick,
   axisLine: false as const,
   tickLine: false as const,
-  tickMargin: 10,
+  tickMargin: 8,
 };
 
 /** Wider right lane for LTR path strings (`/my-pets`, long routes). */
 export const adminRtlPathBarsCategoryAxis = {
   ...adminRtlHBarsCategoryAxis,
-  width: 168,
-  tickMargin: 12,
-  tick: { fontSize: 12, fill: 'var(--admin-ink)', direction: 'ltr' as const },
+  width: 148,
+  tickMargin: 10,
 };
 
 /** Bar radius when bars grow leftward toward right-side labels. */
 export const adminRtlHBarsRadius = [8, 0, 0, 8] as [number, number, number, number];
 
-/** Row height for path / category horizontal bars (avoids cramped RTL ticks). */
-export function adminRtlHBarsHeight(rowCount: number, rowPx = 36, minPx = 180): number {
-  return Math.max(minPx, Math.max(rowCount, 1) * rowPx);
+/** Row height for path / category horizontal bars — capped so cards stay in viewport. */
+export function adminRtlHBarsHeight(
+  rowCount: number,
+  rowPx = ADMIN_CHART_HBARS_ROW,
+  minPx = ADMIN_CHART_HBARS_MIN,
+  maxPx = ADMIN_CHART_MAX_H
+): number {
+  return adminChartHBarsHeight(rowCount, rowPx, minPx, maxPx);
 }
 
 type PathTickProps = {
@@ -67,17 +107,17 @@ export function AdminRtlPathTick(props: PathTickProps): ReactElement {
   const { x = 0, y = 0, payload, fullLabelByShort } = props;
   const short = String(payload?.value ?? '');
   const full = (fullLabelByShort && fullLabelByShort[short]) || short;
-  const shown = short.length > 26 ? `${short.slice(0, 25)}…` : short;
+  const shown = truncateChartLabel(short, 22);
   return (
     <g transform={`translate(${x},${y})`}>
       <title>{full}</title>
       <text
-        x={10}
+        x={8}
         y={0}
         dy={4}
         textAnchor="start"
         fill="var(--admin-ink)"
-        fontSize={12}
+        fontSize={11}
         direction="ltr"
         style={{ unicodeBidi: 'plaintext' }}
       >

@@ -90,7 +90,7 @@ export function AdminHrRecruitmentDashboardPage() {
             <h2>قیف مراحل جذب</h2>
             <span className="admin-muted">از متقاضی جدید تا استخدام</span>
           </div>
-          <div className="hr-dash-chart" style={{ minHeight: 260 }}>
+          <div className="hr-dash-chart admin-chart-box">
             {funnelPoints.length ? (
               <AdminFunnelChart points={funnelPoints} />
             ) : (

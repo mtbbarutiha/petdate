@@ -59,7 +59,7 @@ export function AdminFinanceProductsPage() {
           </section>
           <section className="admin-card">
             <div className="admin-card-head"><h2>دسته‌ها بر اساس درآمد</h2></div>
-            <div style={{ padding: 16 }}>
+            <div className="admin-chart-box" style={{ padding: 8 }}>
               <AdminBarChart
                 color="#5c4d91"
                 points={data.categories.slice(0, 8).map((c) => ({ label: c.label, value: c.revenue }))}
