@@ -21,6 +21,7 @@ import { myPetsActionKeyboard } from '../keyboards';
 import { effectiveWebUrl, isTelegramInlineUrl } from '../urls';
 import { getCtxUser, menuKeyboardFor, pushMainMenuKeyboard } from './helpers';
 import { replyIfFeatureOff } from '../runtime-config';
+import { replyWithOwnerProfile } from './owner-chat';
 import { startVetChat, enterAiConsultChatAsPatient } from './vet-chat';
 import { handleAddPetCommand } from './wizard';
 
@@ -608,4 +609,45 @@ export async function handleServices(ctx: Context): Promise<void> {
 
 export async function handleComingSoon(ctx: Context, feature: string): Promise<void> {
   await ctx.answerCallbackQuery({ text: `${feature} به‌زودی فعال می‌شه 🐾`, show_alert: true });
+}
+
+/**
+ * Incoming seeker_advice keyboard: show requester (patient) profile + photo.
+ * Same card path as playdate «مشاهده پروفایل صاحب پت».
+ */
+export async function handleVetConsultPatientProfile(
+  ctx: Context,
+  consultId: number
+): Promise<void> {
+  const provider = await getCtxUser(ctx);
+  if (!provider?.id) {
+    await ctx.answerCallbackQuery({ text: 'اول /start بزن', show_alert: true });
+    return;
+  }
+
+  const consult = await getVetConsultation(consultId).catch(() => null);
+  if (!consult) {
+    await ctx.answerCallbackQuery({ text: 'درخواست پیدا نشد', show_alert: true });
+    return;
+  }
+  if (consult.vetUserId !== provider.id) {
+    await ctx.answerCallbackQuery({ text: 'این درخواست مال تو نیست', show_alert: true });
+    return;
+  }
+
+  const patient = await getUserById(consult.patientUserId).catch(() => null);
+  if (!patient) {
+    await ctx.answerCallbackQuery({ text: 'پروفایل درخواست‌کننده پیدا نشد', show_alert: true });
+    return;
+  }
+
+  try {
+    await ctx.answerCallbackQuery();
+  } catch {
+    /* ignore */
+  }
+
+  await replyWithOwnerProfile(ctx, patient, {
+    heading: '👤 <b>پروفایل درخواست‌کننده</b>',
+  });
 }

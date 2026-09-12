@@ -77,6 +77,10 @@ export function LiveIncomingRequests() {
   const myUserId = user?.id;
   const canPlaymate = Boolean(myUserId && userHasRole(user, 'pet_owner'));
   const canVet = Boolean(myUserId && userHasRole(user, 'vet'));
+  /** Pet owners opting into مشورت با صاحبین receive seeker_advice as provider (vetUserId). */
+  const canConsultProvider = Boolean(
+    myUserId && (canVet || userHasRole(user, 'pet_owner') || userHasRole(user, 'trainer'))
+  );
   const seenRef = useRef<Set<string>>(new Set());
   const locationRef = useRef(location.pathname);
   locationRef.current = location.pathname;
@@ -95,7 +99,7 @@ export function LiveIncomingRequests() {
     seenRef.current = myUserId ? loadSeenKeys(myUserId) : new Set();
     setQueue([]);
     setError(null);
-  }, [myUserId, canPlaymate, canVet]);
+  }, [myUserId, canPlaymate, canVet, canConsultProvider]);
 
   const openOnConversation = useCallback(
     (item: IncomingItem) => {
@@ -143,14 +147,19 @@ export function LiveIncomingRequests() {
         }
       }
 
-      if (canVet) {
+      if (canConsultProvider) {
         const consults = await listVetConsultations({
           vetUserId: myUserId,
           status: 'requested',
         }).catch(() => [] as VetConsultation[]);
         for (const c of consults) {
           if (c.status !== 'requested' || c.vetUserId !== myUserId) continue;
-          const seekerAdvice = (c.serviceKind ?? 'vet') === 'seeker_advice';
+          const kind = c.serviceKind ?? 'vet';
+          // Vets see vet requests; owners see seeker_advice; trainers see trainer.
+          if (kind === 'vet' && !canVet) continue;
+          if (kind === 'trainer' && !userHasRole(user, 'trainer') && !canVet) continue;
+          if (kind === 'seeker_advice' && !userHasRole(user, 'pet_owner') && !canVet) continue;
+          const seekerAdvice = kind === 'seeker_advice';
           const who =
             c.patientName?.trim() ||
             (seekerAdvice
@@ -163,10 +172,11 @@ export function LiveIncomingRequests() {
             id: c.id,
             title: who,
             subtitle: seekerAdvice
-              ? 'یک نفر می‌خواد در مورد خرید و نگهداری پت راهنمایی بگیره.'
+              ? 'یک نفر می‌خواد باهات صحبت کنه و در مورد خرید و نگهداری پت راهنمایی می‌خواد.'
               : c.petName
                 ? `درخواست مشاوره دامپزشکی · ${c.petName}`
                 : 'درخواست مشاوره دامپزشکی تازه رسید.',
+            photo: seekerAdvice ? c.patientAvatarUrl : undefined,
             href: `/vet-chats/${c.id}`,
           });
         }
@@ -202,11 +212,11 @@ export function LiveIncomingRequests() {
     } catch {
       /* silent */
     }
-  }, [isLoggedIn, myUserId, canPlaymate, canVet, openOnConversation]);
+  }, [isLoggedIn, myUserId, canPlaymate, canVet, canConsultProvider, user, openOnConversation]);
 
   const { connected: wsConnected } = useChatSocket({
     token,
-    enabled: Boolean(isLoggedIn && token && myUserId && (canPlaymate || canVet)),
+    enabled: Boolean(isLoggedIn && token && myUserId && (canPlaymate || canConsultProvider)),
     onEvent: (event) => {
       if (event.type === 'inbox') {
         void poll();
@@ -217,7 +227,7 @@ export function LiveIncomingRequests() {
   // Always poll as a safety net — do not disable when WS reports connected.
   // runOnEnable so the first check is immediate (2‑minute request TTL).
   useLiveAjaxPoll(poll, {
-    enabled: Boolean(isLoggedIn && myUserId && (canPlaymate || canVet)),
+    enabled: Boolean(isLoggedIn && myUserId && (canPlaymate || canConsultProvider)),
     intervalMs: wsConnected ? WS_BACKUP_POLL_MS : OFFLINE_POLL_MS,
     runOnEnable: true,
   });
