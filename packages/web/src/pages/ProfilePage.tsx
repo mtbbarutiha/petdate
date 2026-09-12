@@ -267,10 +267,7 @@ export function ProfilePage() {
   // (e.g. multi-role users whose card lags roles briefly).
   const showPetsBlock = isPetOwner || myPets.length > 0 || petsLoading;
   const locationLabel = [display.city, display.province, display.country].filter(Boolean).join('، ') || '—';
-  const primaryPet = myPets[0] ? petProfileToUiPet(myPets[0]) : null;
-  const avatarSrc =
-    resolvePublicMediaUrl(display.avatarUrl) ||
-    (isPetOwner && primaryPet?.imageUrl ? resolvePublicMediaUrl(primaryPet.imageUrl) : '');
+  const avatarSrc = resolvePublicMediaUrl(display.avatarUrl);
   const genderPlain =
     display.gender === 'male' ? 'آقا' : display.gender === 'female' ? 'خانم' : null;
   const likes = display.likesCount ?? 0;

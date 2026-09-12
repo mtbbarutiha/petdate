@@ -749,6 +749,12 @@
   object-fit: cover;
   display: block;
 }
+.tg-chat-peer-avatar--initials {
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: #e8fff8;
+  background: color-mix(in srgb, var(--pepito-mint) 35%, rgba(255, 255, 255, 0.12));
+}
 
 .tg-icon-btn {
   width: 40px !important;
@@ -910,6 +916,7 @@
   color: var(--tg-ink, var(--pepito-dark, #19063d));
 }
 .tg-request-card-cover {
+  position: relative;
   display: grid;
   place-items: center;
   padding: 22px 16px 12px;
@@ -937,6 +944,36 @@
   display: block;
   object-fit: cover;
   object-position: center center;
+}
+.tg-request-card-owner {
+  position: absolute;
+  top: 12px;
+  inset-inline-start: 12px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--tg-surface, #fff) 88%, #dbe4ec);
+  border: 2.5px solid color-mix(in srgb, var(--tg-surface, #fff) 95%, transparent);
+  box-shadow:
+    0 6px 16px color-mix(in srgb, var(--pepito-dark, #19063d) 16%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--pepito-mint) 28%, transparent);
+  z-index: 2;
+}
+.tg-request-card-owner img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: center center;
+}
+.tg-request-card-owner--initials {
+  display: grid;
+  place-items: center;
+  font-size: 0.95rem;
+  font-weight: 800;
+  color: var(--pepito-dark, #19063d);
+  background: color-mix(in srgb, var(--pepito-mint) 18%, #fff);
 }
 .tg-request-card-cover.is-placeholder {
   background:

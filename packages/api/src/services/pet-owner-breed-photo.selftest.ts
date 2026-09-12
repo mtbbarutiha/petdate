@@ -38,6 +38,12 @@ async function main() {
 
   const searched = dbService.listBreeds('dog', 'هاسکی');
   assert(searched.length >= 1, 'breed search should find husky');
+  const searchedEn = dbService.listBreeds('dog', 'husky');
+  assert(searchedEn.length >= 1, 'breed search EN should find husky');
+  const searchedEnExact = dbService.findBreedByName('dog', 'Siberian Husky');
+  assert(!!searchedEnExact, 'findBreedByName should accept English');
+  const chi = dbService.listBreeds('dog', 'چیواوا');
+  assert(chi.length >= 1, 'ZWNJ-folded FA search should find Chihuahua');
 
   const { user } = dbService.findOrCreateUser({
     telegramId: `selftest_no_pet_${Date.now()}`,
