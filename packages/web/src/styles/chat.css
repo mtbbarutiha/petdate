@@ -777,12 +777,33 @@
   color: var(--tg-ink, var(--pepito-dark, #19063d));
 }
 .tg-request-card-cover {
-  height: 140px;
-  background-size: cover;
-  background-position: center;
-  background-color: color-mix(in srgb, var(--pepito-mint, #15cca0) 10%, #e8eef4);
   display: grid;
   place-items: center;
+  padding: 22px 16px 12px;
+  min-height: 156px;
+  background:
+    radial-gradient(circle at 30% 22%, color-mix(in srgb, var(--pepito-mint) 22%, transparent), transparent 58%),
+    radial-gradient(circle at 78% 72%, color-mix(in srgb, var(--pepito-sky) 14%, transparent), transparent 55%),
+    linear-gradient(145deg, color-mix(in srgb, var(--pepito-mint) 10%, #edf3f7), color-mix(in srgb, var(--pepito-sky) 8%, #e4ebf2));
+}
+.tg-request-card-photo {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: color-mix(in srgb, var(--tg-surface, #fff) 70%, #dbe4ec);
+  border: 3px solid color-mix(in srgb, var(--tg-surface, #fff) 92%, transparent);
+  box-shadow:
+    0 12px 28px color-mix(in srgb, var(--pepito-dark, #19063d) 14%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--pepito-mint) 18%, transparent);
+}
+.tg-request-card-photo img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  object-position: center center;
 }
 .tg-request-card-cover.is-placeholder {
   background:
@@ -793,9 +814,9 @@
 .tg-request-card-cover-mark {
   display: grid;
   place-items: center;
-  width: 64px;
-  height: 64px;
-  border-radius: 20px;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
   color: var(--pepito-mint, #15cca0);
   background: color-mix(in srgb, var(--tg-surface, #fff) 78%, var(--pepito-mint));
   box-shadow:

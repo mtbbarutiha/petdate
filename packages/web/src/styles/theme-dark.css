@@ -488,14 +488,19 @@ html[data-theme='dark'] .tg-request-card {
 html[data-theme='dark'] .tg-request-card-body {
   background: var(--tg-surface) !important;
 }
-html[data-theme='dark'] .tg-request-card-cover {
-  background-color: #242836;
-}
+html[data-theme='dark'] .tg-request-card-cover,
 html[data-theme='dark'] .tg-request-card-cover.is-placeholder {
   background:
     radial-gradient(circle at 30% 22%, rgba(45, 212, 176, 0.22), transparent 58%),
     radial-gradient(circle at 78% 72%, rgba(59, 184, 245, 0.16), transparent 55%),
     linear-gradient(145deg, #232736 0%, #1c2030 100%);
+}
+html[data-theme='dark'] .tg-request-card-photo {
+  background: #2a2f3d;
+  border-color: rgba(232, 230, 242, 0.14);
+  box-shadow:
+    0 12px 28px rgba(0, 0, 0, 0.36),
+    inset 0 0 0 1px rgba(45, 212, 176, 0.22);
 }
 html[data-theme='dark'] .tg-request-card-cover-mark {
   color: #9aedd8;
