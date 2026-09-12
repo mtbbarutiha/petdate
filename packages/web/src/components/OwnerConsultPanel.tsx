@@ -11,7 +11,6 @@ import { useAuthStore } from '../hooks/useAuthStore';
 import { useAppToast } from '../hooks/useAppToast';
 import { useUserStore } from '../hooks/useUserStore';
 import { quickVetConnect } from '../lib/api';
-import { authStore } from '../data/authStore';
 
 function formatCoins(n: number): string {
   return toPersianDigits(String(n));
@@ -40,18 +39,17 @@ export function OwnerConsultPanel({
   const [statusLine, setStatusLine] = useState<string | null>(null);
 
   const myUserId = authUser?.id ?? user.id;
-  const balance = authUser?.coins ?? user.coins ?? 0;
+  const balance = authUser?.coins ?? authUser?.wallet?.coins ?? 0;
   const cost = SEEKER_ADVICE_COST;
   const ownerShare = SEEKER_OWNER_SHARE;
 
   async function runConnect(confirmResend = false) {
     if (!myUserId || !isLoggedIn) {
-      toastError('خطا', 'اول وارد شو');
+      toastError('اول وارد شو');
       return;
     }
     if (balance < cost) {
       toastError(
-        'سکه کافی نیست',
         `برای مشورت با صاحبین حداقل ${formatCoins(cost)} سکه لازم داری. موجودی: ${formatCoins(balance)}`
       );
       return;
@@ -59,14 +57,14 @@ export function OwnerConsultPanel({
     setBusy(true);
     setStatusLine('در حال ارسال درخواست…');
     try {
-      const res = await quickVetConnect(myUserId, token ?? authStore.token, {
+      const res = await quickVetConnect(myUserId, token, {
         kind: 'seeker_advice',
         confirmResend,
         humanOnly: true,
       });
       await refreshMe().catch(() => undefined);
       setStatusLine(res.message || `درخواست ارسال شد · ${formatCoins(res.cost)} سکه`);
-      toastSuccess('درخواست ارسال شد', res.message);
+      toastSuccess(res.message || 'درخواست مشورت با صاحبین ارسال شد');
       onSent?.();
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'ارسال ناموفق بود';
@@ -76,7 +74,7 @@ export function OwnerConsultPanel({
         return;
       }
       setStatusLine(null);
-      toastError('مشورت با صاحبین', msg);
+      toastError(msg);
     } finally {
       setBusy(false);
     }
