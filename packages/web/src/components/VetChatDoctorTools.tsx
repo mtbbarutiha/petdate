@@ -901,7 +901,7 @@ function OwnerSheetBody({ consult }: { consult: VetConsultation }) {
     return (
       <div className="tg-vet-sheet-body">
         <p className="tg-vet-sheet-hint">
-          {error || 'پروفایل صاحب پت در دسترس نیست.'}
+          {error || ((consult.serviceKind ?? 'vet') === 'seeker_advice' ? 'پروفایل درخواست‌کننده در دسترس نیست.' : 'پروفایل صاحب پت در دسترس نیست.')}
           {consult.patientName ? ` · ${consult.patientName}` : ''}
         </p>
       </div>
