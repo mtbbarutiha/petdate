@@ -25,6 +25,9 @@ npx tsx "$ROOT/packages/shared/src/pet-slug.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/sanitize-roles.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/catalog-breed-search.selftest.ts"
 
+echo "==> selftest: web face-verify approve toast + profile copy"
+npx tsx "$ROOT/packages/web/src/components/faceVerifyRewardToast.selftest.ts"
+
 echo "==> selftest: web inbox title (no public id)"
 npx tsx "$ROOT/packages/web/src/lib/inboxTitle.selftest.ts"
 
@@ -204,6 +207,8 @@ run src/services/marketplace-roles.selftest.ts
 run src/services/pending-photo-placeholder.selftest.ts
 run src/services/seeker-advice-early-refund.selftest.ts
 run src/services/seeker-advice-owner-notify.selftest.ts
+run src/services/telegram-face-verify-notify.selftest.ts
+run src/face-verify-approve.selftest.ts
 run src/services/chat-upload-store.selftest.ts
 run src/services/chat-inbox-gift.selftest.ts
 run src/services/image-normalize.selftest.ts

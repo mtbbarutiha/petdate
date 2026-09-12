@@ -319,23 +319,7 @@ export async function handleAdminApprove(ctx: Context, userId: number): Promise<
     `✅ کاربر ${escapeHtml(user.name)} (#${user.id}) احراز شد.\n🎁 ${formatNum(FACE_VERIFY_REWARD)} سکه جایزه واریز شد.`,
     { parse_mode: 'HTML' }
   );
-
-  if (user.telegramId) {
-    try {
-      await ctx.api.sendMessage(
-        user.telegramId,
-        [
-          `${VERIFIED_BADGE}`,
-          '',
-          'تبریک! احراز چهره‌ات تأیید شد 🎉',
-          'بج «احراز شده» الان روی پروفایلت نمایش داده می‌شه.',
-          `🎁 ${formatNum(FACE_VERIFY_REWARD)} سکه به موجودی‌ات اضافه شد.`,
-        ].join('\n')
-      );
-    } catch (err) {
-      console.warn('notify approved user failed:', err);
-    }
-  }
+  // User DM is sent by the API approve route (same path as web admin) — do not double-notify.
 }
 
 export async function handleAdminRejectAsk(ctx: Context, userId: number): Promise<void> {
@@ -402,18 +386,5 @@ async function finalizeReject(ctx: Context, userId: number, note?: string): Prom
     `❌ کاربر ${escapeHtml(user.name)} (#${user.id}) رد شد.${note ? `\nدلیل: ${escapeHtml(note)}` : ''}`,
     { parse_mode: 'HTML' }
   );
-
-  if (user.telegramId) {
-    try {
-      const lines = [
-        '❌ درخواست احراز چهره‌ات رد شد.',
-        '',
-        note ? `دلیل: ${note}` : 'می‌تونی دوباره از پروفایل «🛡 احراز چهره» رو بزنی.',
-        note ? 'از پروفایل دوباره «🛡 احراز چهره» رو بزن و سلفی واضح‌تری بفرست.' : '',
-      ].filter(Boolean);
-      await ctx.api.sendMessage(user.telegramId, lines.join('\n'));
-    } catch (err) {
-      console.warn('notify rejected user failed:', err);
-    }
-  }
+  // User DM is sent by the API reject route (same path as web admin) — do not double-notify.
 }

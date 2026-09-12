@@ -47,6 +47,7 @@ import { formatAge } from '../data/mock';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { useAppToast } from '../hooks/useAppToast';
 import { useMyPets } from '../hooks/useMyPets';
+import { useI18n } from '../i18n';
 import {
   deleteUserAccountById,
   fetchProfileCard,
@@ -79,6 +80,7 @@ export function ProfilePage() {
   const panelParam = searchParams.get('panel');
   const { user, token, logout, isProfileComplete, saveProfile, refreshMe } = useAuthStore();
   const { toastSuccess, toastError } = useAppToast();
+  const { t, lang } = useI18n();
   const { pets: myPets, loading: petsLoading } = useMyPets();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -167,6 +169,7 @@ export function ProfilePage() {
     const displayUser = cardUser ?? user;
     const likesCount = displayUser.likesCount ?? 0;
     const verifyStatus = displayUser.verificationStatus ?? 'none';
+    const rewardLabel = lang === 'en' ? String(FACE_VERIFY_REWARD) : formatFaInt(FACE_VERIFY_REWARD);
     let cancelled = false;
 
     void (async () => {
@@ -198,10 +201,10 @@ export function ProfilePage() {
         setPanelLines([
           faceVerifyButtonLabel(verifyStatus),
           verifyStatus === 'verified'
-            ? 'پروفایلت احراز شده است.'
+            ? t('verify.profileVerified', { n: rewardLabel })
             : verifyStatus === 'pending'
-              ? 'درخواست احراز در صف بررسی است — به‌محض تأیید، ۱۰۰ سکه جایزه واریز می‌شود.'
-              : `جایزه تأیید ادمین: ${formatFaInt(FACE_VERIFY_REWARD)} سکه. سلفی واضح بفرست یا از عکس پروفایل فعلی استفاده کن.`,
+              ? t('verify.profilePending', { n: rewardLabel })
+              : t('verify.profileIntro', { n: rewardLabel }),
         ]);
         setVerifyError('');
         setPanelBusy(false);
@@ -257,7 +260,7 @@ export function ProfilePage() {
     return () => {
       cancelled = true;
     };
-  }, [user, editing, panelParam, cardUser, interactions]);
+  }, [user, editing, panelParam, cardUser, interactions, t, lang]);
 
   if (!user) return null;
 

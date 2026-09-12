@@ -367,6 +367,58 @@ export function faceVerifyIntroText(rewardCoins: number): string {
   ].join('\n');
 }
 
+/** پیام تأیید احراز چهره برای کاربر (تلگرام / وب) — جایزه واقعی را بگو. */
+export function faceVerifyApprovedNotifyText(
+  rewardCoins: number,
+  locale: 'fa' | 'en' = 'fa'
+): string {
+  const n = Math.max(0, Math.floor(Number(rewardCoins)) || 0);
+  if (locale === 'en') {
+    const reward = new Intl.NumberFormat('en-US').format(n);
+    return [
+      '✅ Verified',
+      '',
+      'Congratulations! Your face verification was approved 🎉',
+      'The verified badge is now on your profile.',
+      `🎁 ${reward} coins were added to your balance.`,
+    ].join('\n');
+  }
+  const reward = new Intl.NumberFormat('fa-IR').format(n);
+  return [
+    VERIFIED_BADGE,
+    '',
+    'تبریک! احراز چهره‌ات تأیید شد 🎉',
+    'بج «احراز شده» الان روی پروفایلت نمایش داده می‌شه.',
+    `🎁 ${reward} سکه به موجودی‌ات اضافه شد.`,
+  ].join('\n');
+}
+
+/** پیام رد احراز چهره برای کاربر. */
+export function faceVerifyRejectedNotifyText(
+  note?: string,
+  locale: 'fa' | 'en' = 'fa'
+): string {
+  const reason = String(note ?? '').trim();
+  if (locale === 'en') {
+    return [
+      '❌ Your face verification was declined.',
+      '',
+      reason ? `Reason: ${reason}` : 'You can submit again from Profile → Face verification.',
+      reason ? 'Send a clearer selfie from Profile → Face verification.' : '',
+    ]
+      .filter(Boolean)
+      .join('\n');
+  }
+  return [
+    '❌ درخواست احراز چهره‌ات رد شد.',
+    '',
+    reason ? `دلیل: ${reason}` : 'می‌تونی دوباره از پروفایل «🛡 احراز چهره» رو بزنی.',
+    reason ? 'از پروفایل دوباره «🛡 احراز چهره» رو بزن و سلفی واضح‌تری بفرست.' : '',
+  ]
+    .filter(Boolean)
+    .join('\n');
+}
+
 /** وضعیت مدرک دامپزشک / مربی / پرستار */
 export type VetCredentialStatus = 'none' | 'pending' | 'verified';
 export type ProviderCredentialStatus = VetCredentialStatus;

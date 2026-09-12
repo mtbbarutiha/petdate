@@ -4418,6 +4418,10 @@ export const dbService = {
            verification_note = NULL
          WHERE id = ?`
       ).run(userId);
+      // Same one-time 100-coin grant as queue approve (creditCoinsOnce / face_verify).
+      if (existing.verificationStatus !== 'verified') {
+        this.creditCoinsOnce(userId, FACE_VERIFY_REWARD, COIN_REASON.faceVerify);
+      }
     } else if (status === 'pending') {
       db.prepare(
         `UPDATE users SET

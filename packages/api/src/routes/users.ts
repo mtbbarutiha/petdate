@@ -19,6 +19,10 @@ import {
 } from '../services/shop-checkout';
 import { enqueueCard2CardFinanceOs } from '../services/card2card-finance';
 import {
+  notifyFaceVerifyApprovedTelegram,
+  notifyFaceVerifyRejectedTelegram,
+} from '../services/telegram-face-verify-notify';
+import {
   ensureWebAccessibleAvatar,
   isWebAvatarUrl,
   looksLikeTelegramFileId,
@@ -627,7 +631,12 @@ usersRouter.post('/:id/verification/approve', requireTrustedStaff, (req, res) =>
     return;
   }
   const awarded = user.awardedRewards?.find((a) => a.reason === 'face_verify')?.amount ?? 0;
-  res.json({ ok: true, user, rewardCoins: awarded || amount });
+  const rewardCoins = awarded || amount;
+  void notifyFaceVerifyApprovedTelegram({
+    toTelegramId: user.telegramId,
+    coins: rewardCoins,
+  });
+  res.json({ ok: true, user, rewardCoins });
 });
 
 /** دامپزشک‌های واجد شرایط اتصال سریع (نقش vet + آنلاین؛ ترجیح phoneVerified) */
@@ -987,6 +996,10 @@ usersRouter.post('/:id/verification/reject', requireTrustedStaff, (req, res) => 
     res.status(404).json({ error: 'درخواست احراز پیدا نشد یا در صف نیست' });
     return;
   }
+  void notifyFaceVerifyRejectedTelegram({
+    toTelegramId: user.telegramId,
+    note,
+  });
   res.json({ ok: true, user });
 });
 

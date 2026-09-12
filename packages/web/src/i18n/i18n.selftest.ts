@@ -43,6 +43,8 @@ assert.equal(tFa('common.home'), 'خانه');
 assert.equal(tEn('common.home'), 'Home');
 assert.equal(tFa('wallet.title'), 'کیف پول');
 assert.equal(tEn('wallet.title'), 'Wallet');
+assert.match(tFa('verify.approvedToast', { n: '۱۰۰' }), /۱۰۰ سکه دریافت کردی/);
+assert.match(tEn('verify.approvedToast', { n: '100' }), /you received 100 coins/);
 assert.equal(tFa('admin.users'), 'کاربران');
 assert.equal(tEn('admin.users'), 'Users');
 assert.equal(tEn('admin.signedInAs', { name: 'Ali' }), 'Signed in: Ali');

@@ -4,6 +4,7 @@ import os from 'os';
 import path from 'path';
 import type { UserGender, UserRole, VerificationStatus, WalletCurrency } from '@petdate/shared';
 import {
+  FACE_VERIFY_REWARD,
   SITE,
   USER_ROLES,
   VERIFICATION_STATUSES,
@@ -47,6 +48,7 @@ import {
   notifyCardPaymentRejectedTelegram,
   notifyCoinSellReviewedTelegram,
 } from '../services/card2card-finance';
+import { notifyFaceVerifyApprovedTelegram } from '../services/telegram-face-verify-notify';
 import {
   mimeFromPaymentReceiptKey,
   paymentReceiptStorageKeyFromUrl,
@@ -402,7 +404,14 @@ adminRouter.patch('/users/:id', (req, res) => {
   ) {
     const status = body.verificationStatus as VerificationStatus;
     if (status !== user.verificationStatus) {
+      const prevStatus = user.verificationStatus;
       user = dbService.setVerificationStatusAdmin(id, status) ?? user;
+      if (status === 'verified' && prevStatus !== 'verified') {
+        void notifyFaceVerifyApprovedTelegram({
+          toTelegramId: user.telegramId,
+          coins: FACE_VERIFY_REWARD,
+        });
+      }
     }
   }
 

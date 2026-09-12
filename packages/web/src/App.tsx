@@ -7,6 +7,7 @@ import { PersistTagAssistantParams } from './components/PersistTagAssistantParam
 import { RouteSeo } from './components/RouteSeo';
 import { ShopCartProvider } from './hooks/useShopCart';
 import { AppToastProvider } from './hooks/useAppToast';
+import { FaceVerifyRewardToast } from './components/FaceVerifyRewardToast';
 import { LandingMobileDock } from './components/LandingMobileDock';
 import { ScrollToTop } from './components/ScrollToTop';
 import { trackPageview } from './lib/siteAnalytics';
@@ -360,6 +361,7 @@ export default function App() {
   return (
     <AppGuards>
       <AppToastProvider>
+      <FaceVerifyRewardToast />
       <ShopCartProvider>
         <ScrollToTop />
         <LegacyAdoptionHashRedirect />

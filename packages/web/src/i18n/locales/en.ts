@@ -77,6 +77,12 @@ export const en: Dict = {
       "Your photo is awaiting admin approval. You can keep using PetDate with a default photo until then.",
     chipPending: "Awaiting admin approval",
   },
+  verify: {
+    approvedToast: 'Face verification approved — you received {n} coins',
+    profileVerified: 'Your profile is verified. {n} reward coins were added to your balance.',
+    profilePending: 'Your face verification is in the admin queue — after approval you get {n} coins.',
+    profileIntro: 'Admin approval reward: {n} coins. Send a clear selfie or use your current profile photo.',
+  },
   theme: {
     toLight: 'Light',
     toDark: 'Dark',
