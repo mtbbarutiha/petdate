@@ -16,6 +16,7 @@ const desktopNav = readFileSync(join(root, 'components/SiteDesktopNav.tsx'), 'ut
 const chatPaw = readFileSync(join(root, 'components/icons/ChatPawIcon.tsx'), 'utf8');
 
 assert.match(chatPaw, /ChatPawIcon/, 'custom chats/playmate icon exists');
+assert.doesNotMatch(chatPaw, /scale\(/, 'ChatPaw has no extra scale — same visual box as Lucide siblings');
 assert.match(nav, /ChatPawIcon/, 'dock chats use ChatPawIcon');
 
 const guestBlock = nav.slice(nav.indexOf('export const SITE_NAV_GUEST'), nav.indexOf('export const SITE_NAV_AUTH'));
