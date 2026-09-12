@@ -2,11 +2,14 @@ import { Router, type Request } from 'express';
 import { isInternalBot, requireTrustedStaff } from '../internal-auth';
 import type { OnboardingStatus, User, UserRole } from '@petdate/shared';
 import {
+  COIN_SELL_PRICE_TOMAN,
   FACE_VERIFY_REWARD,
+  MIN_SELL_COINS,
   ONBOARDING_STATUS_LABELS,
   USER_ROLES,
   toPeerPublicUser,
   userHasRole,
+  validateIranCard,
 } from '@petdate/shared';
 import { dbService } from '../db';
 import { rejectIfFlagOff } from '../runtime-settings';
@@ -1252,21 +1255,25 @@ usersRouter.post('/telegram/:telegramId/coins/sell', (req, res) => {
     return;
   }
   const coins = Number(req.body?.coins);
-  const cardNumber = String(req.body?.cardNumber ?? '');
-  const rateToman = req.body?.rateToman != null ? Number(req.body.rateToman) : 1000;
-  const minCoins = req.body?.minCoins != null ? Number(req.body.minCoins) : 50;
-
-  if (!cardNumber || cardNumber.length < 16) {
-    res.status(400).json({ error: 'شماره کارت نامعتبر', reason: 'card' });
+  const cardCheck = validateIranCard(String(req.body?.cardNumber ?? ''));
+  if (!cardCheck.ok) {
+    res.status(400).json({
+      error:
+        cardCheck.reason === 'luhn'
+          ? 'شماره کارت معتبر نیست (چک رقم).'
+          : 'شماره کارت ۱۶ رقمی بانکی ایران را درست وارد کنید.',
+      reason: 'card',
+    });
     return;
   }
 
   const result = dbService.submitCoinSell({
     userId: user.id,
     coins,
-    rateToman: Number.isFinite(rateToman) ? rateToman : 1000,
-    cardNumber,
-    minCoins: Number.isFinite(minCoins) ? minCoins : 50,
+    rateToman: COIN_SELL_PRICE_TOMAN,
+    cardNumber: cardCheck.card,
+    minCoins: MIN_SELL_COINS,
+    channel: 'bot',
   });
 
   if (!result.ok) {

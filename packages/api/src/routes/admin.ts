@@ -5,6 +5,7 @@ import path from 'path';
 import type { UserGender, UserRole, VerificationStatus, WalletCurrency } from '@petdate/shared';
 import {
   FACE_VERIFY_REWARD,
+  normalizeCoinSellAdminStatus,
   SITE,
   USER_ROLES,
   VERIFICATION_STATUSES,
@@ -854,11 +855,7 @@ adminRouter.post('/payments/:id/reject', (req, res) => {
 });
 
 adminRouter.get('/coin-sells', (req, res) => {
-  const statusRaw = typeof req.query.status === 'string' ? req.query.status : 'open';
-  const status =
-    statusRaw === 'paid' || statusRaw === 'rejected' || statusRaw === 'cancelled' || statusRaw === 'all'
-      ? statusRaw
-      : 'open';
+  const status = normalizeCoinSellAdminStatus(req.query.status);
   res.json({
     requests: dbService.listCoinSellRequestsAdmin({ status, limit: 150 }),
     openCount: dbService.countOpenCoinSellRequests(),

@@ -3,7 +3,7 @@
 export type AdminNotificationKind = 'info' | 'success' | 'warn' | 'bad';
 
 export type AdminHeaderNotification = {
-  /** Stable id: `db:12` | `hr:3` | `live:sales-open` | `live:mail-unread` | `live:payments-queue` */
+  /** Stable id: `db:12` | `hr:3` | `live:sales-open` | `live:mail-unread` | `live:payments-queue` | `live:coin-sells` */
   id: string;
   title: string;
   body: string;

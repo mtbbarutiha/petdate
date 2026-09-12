@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { CoinSellRequestAdmin, CoinSellRequestStatus } from '@petdate/shared';
-import { COIN_SELL_STATUS_LABELS_FA, formatCardGrouped } from '@petdate/shared';
+import {
+  COIN_SELL_CHANNEL_LABELS_FA,
+  COIN_SELL_STATUS_LABELS_FA,
+  formatCardGrouped,
+} from '@petdate/shared';
 import { adminFetch, formatNumFa, formatTomanFa } from '../api';
 import { formatAdminFaDateTime } from '../JalaliDateSelect';
 import { adminCan } from '../auth';
@@ -92,6 +96,7 @@ export function AdminCoinSellsPage() {
           <thead>
             <tr>
               <th>{tr('کاربر')}</th>
+              <th>{tr('منبع')}</th>
               <th>{tr('سکه')}</th>
               <th>{tr('مبلغ تومان')}</th>
               <th>{tr('شماره کارت')}</th>
@@ -109,6 +114,7 @@ export function AdminCoinSellsPage() {
                     {r.userPhone || r.userTelegramId || r.userPublicId || '—'}
                   </div>
                 </td>
+                <td>{tr(COIN_SELL_CHANNEL_LABELS_FA[r.channel] || r.channel || '—')}</td>
                 <td>{formatNumFa(r.coins)}</td>
                 <td>{formatTomanFa(r.amountToman)}</td>
                 <td dir="ltr">{formatCardGrouped(r.cardNumber) || r.cardMasked}</td>
@@ -142,7 +148,7 @@ export function AdminCoinSellsPage() {
             ))}
             {!items.length ? (
               <tr>
-                <td colSpan={7} className="admin-muted">
+                <td colSpan={8} className="admin-muted">
                   {tr('درخواستی نیست')}
                 </td>
               </tr>

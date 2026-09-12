@@ -81,7 +81,19 @@ assert.match(users, /paymentStarsEnabled/, 'bot stars payments honor flag');
 
 const admin = read(join(apiRoot, 'routes/admin.ts'));
 assert.match(admin, /\/coin-sells/, 'admin coin-sell routes');
+assert.match(admin, /normalizeCoinSellAdminStatus/, 'admin coin-sell accepts pending alias');
 assert.match(admin, /\/support\/threads/, 'admin support routes');
+
+const usersSell = users.split("usersRouter.post('/telegram/:telegramId/coins/sell'")[1] || '';
+assert.match(usersSell, /channel:\s*['"]bot['"]/, 'bot sell tagged bot');
+assert.match(usersSell, /validateIranCard/, 'bot sell shares site card validation');
+
+const notifs = read(join(apiRoot, 'admin-notifications.ts'));
+assert.match(notifs, /listCoinSellsLive/, 'اعلانات live-aggregates coin withdrawals');
+assert.match(notifs, /notifyCoinSellSubmitted/, 'submit pushes header notif');
+
+const header = read(join(webRoot, 'admin/AdminHeaderNotifications.tsx'));
+assert.match(header, /\/admin\/coin-sells/, 'header inbox links to coin-sell queue');
 
 const financeOs = read(join(apiRoot, 'routes/admin-finance-os.ts'));
 assert.match(financeOs, /requirePermission\('finance.write'\)/, 'finance OS writes use finance.write');

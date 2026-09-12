@@ -122,6 +122,9 @@ export function findCoinPackage(packageId: string): CoinPackage | undefined {
 
 export type CoinSellRequestStatus = 'open' | 'paid' | 'rejected' | 'cancelled';
 
+/** Same queue for web earn-withdraw and bot «فروش سکه». `open` is the pending payout state. */
+export type CoinSellChannel = 'web' | 'bot' | 'unknown';
+
 export type CoinSellRequestSummary = {
   id: number;
   coins: number;
@@ -130,6 +133,8 @@ export type CoinSellRequestSummary = {
   /** کارت ماسک‌شده برای نمایش امن */
   cardMasked: string;
   status: CoinSellRequestStatus;
+  /** web = سایت، bot = ربات؛ unknown = ردیف قدیمی قبل از ثبت کانال */
+  channel: CoinSellChannel;
   createdAt: string;
   reviewedAt?: string | null;
   adminNote?: string | null;
@@ -145,6 +150,22 @@ export type CoinSellRequestAdmin = CoinSellRequestSummary & {
   /** Full 16-digit card — admin-only, never returned on public earn APIs */
   cardNumber: string;
 };
+
+export function normalizeCoinSellChannel(raw: unknown): CoinSellChannel {
+  const v = String(raw || '').trim();
+  if (v === 'web' || v === 'bot') return v;
+  return 'unknown';
+}
+
+/** Admin/query alias: pending → open (canonical stored status). */
+export function normalizeCoinSellAdminStatus(
+  raw: unknown
+): CoinSellRequestStatus | 'all' {
+  const v = String(raw || 'open').trim();
+  if (v === 'pending') return 'open';
+  if (v === 'paid' || v === 'rejected' || v === 'cancelled' || v === 'all') return v;
+  return 'open';
+}
 
 export function sellAmountToman(coins: number, rate = COIN_SELL_PRICE_TOMAN): number {
   const c = Math.floor(Number(coins) || 0);
@@ -213,6 +234,12 @@ export const COIN_SELL_STATUS_LABELS_FA: Record<CoinSellRequestStatus, string> =
   paid: 'پرداخت شد',
   rejected: 'رد شد',
   cancelled: 'لغو شد',
+};
+
+export const COIN_SELL_CHANNEL_LABELS_FA: Record<CoinSellChannel, string> = {
+  web: 'وب',
+  bot: 'ربات',
+  unknown: '—',
 };
 
 /** تبدیل مبلغ تومان به سکه موردنیاز برای پرداخت فروشگاه (حداقل ۱ برای مبلغ مثبت) */
