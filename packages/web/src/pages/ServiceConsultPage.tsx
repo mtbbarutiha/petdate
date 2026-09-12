@@ -123,7 +123,10 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
   const coins = user?.coins ?? user?.wallet?.coins ?? 0;
   const botUrl = telegramBotDeepLink();
   const statusCopy = {
-    active: t('consultDesk.statusActive'),
+    active:
+      kind === 'trainer'
+        ? t('consultDesk.statusBusyWithPet')
+        : t('consultDesk.statusActive'),
     closed: t('consultDesk.statusClosed'),
     waiting: t('consultDesk.statusWaiting'),
     cancelled: t('consultDesk.statusCancelled'),

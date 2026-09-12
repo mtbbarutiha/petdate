@@ -2539,6 +2539,12 @@ function presenceFromLastSeen(
   return { userId, lastSeenAt: seen, online };
 }
 
+/** Synthetic team-agent telegram ids (لیلا / فرانک / …) — always treated online. */
+function isAiSyntheticTelegramId(id: string | null | undefined): boolean {
+  const t = String(id || '').trim();
+  return t === 'petdate_ai_assistant' || t.startsWith('petdate_ai_');
+}
+
 function mapSection(row: Record<string, unknown>): Section {
   const memberCount = db
     .prepare('SELECT COUNT(*) as c FROM users WHERE section_id = ?')
@@ -6257,9 +6263,21 @@ export const dbService = {
     online: boolean;
   } | null {
     const row = db
-      .prepare('SELECT id, last_seen_at FROM users WHERE id = ?')
-      .get(userId) as { id: number; last_seen_at: string | null } | undefined;
+      .prepare('SELECT id, last_seen_at, telegram_id FROM users WHERE id = ?')
+      .get(userId) as {
+      id: number;
+      last_seen_at: string | null;
+      telegram_id: string | null;
+    } | undefined;
     if (!row) return null;
+    // Team AI agents never heartbeat — always present for consult headers.
+    if (isAiSyntheticTelegramId(row.telegram_id)) {
+      return {
+        userId: row.id,
+        lastSeenAt: row.last_seen_at ?? new Date().toISOString(),
+        online: true,
+      };
+    }
     return presenceFromLastSeen(row.id, row.last_seen_at);
   },
 
@@ -6272,10 +6290,28 @@ export const dbService = {
     if (!unique.length) return [];
     const placeholders = unique.map(() => '?').join(',');
     const rows = db
-      .prepare(`SELECT id, last_seen_at FROM users WHERE id IN (${placeholders})`)
-      .all(...unique) as Array<{ id: number; last_seen_at: string | null }>;
+      .prepare(
+        `SELECT id, last_seen_at, telegram_id FROM users WHERE id IN (${placeholders})`
+      )
+      .all(...unique) as Array<{
+      id: number;
+      last_seen_at: string | null;
+      telegram_id: string | null;
+    }>;
     const byId = new Map(
-      rows.map((r) => [r.id, presenceFromLastSeen(r.id, r.last_seen_at)] as const)
+      rows.map((r) => {
+        if (isAiSyntheticTelegramId(r.telegram_id)) {
+          return [
+            r.id,
+            {
+              userId: r.id,
+              lastSeenAt: r.last_seen_at ?? new Date().toISOString(),
+              online: true,
+            },
+          ] as const;
+        }
+        return [r.id, presenceFromLastSeen(r.id, r.last_seen_at)] as const;
+      })
     );
     return unique.map(
       (id) => byId.get(id) ?? { userId: id, lastSeenAt: null, online: false }

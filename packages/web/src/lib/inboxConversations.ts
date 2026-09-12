@@ -205,12 +205,12 @@ export function vetToInbox(
           : 'مشاوره پایان یافته'
       : c.petName
         ? serviceKind === 'trainer'
-          ? `آموزش حضوری · ${c.petName}`
+          ? `آموزش آنلاین · ${c.petName}`
           : serviceKind === 'sitter'
             ? `پرستاری · ${c.petName}`
             : `مشاوره · ${c.petName}`
         : serviceKind === 'trainer'
-          ? 'هماهنگی آموزش حضوری'
+          ? 'آموزش آنلاین'
           : serviceKind === 'sitter'
             ? 'ارتباط پرستار پت'
             : 'مشاوره دامپزشک';
