@@ -99,6 +99,66 @@ export function enqueueCard2CardFinanceOs(input: {
   }
 }
 
+/**
+ * Notify Telegram admins that a card receipt is waiting in the finance panel.
+ * Used for web (and shop) uploads — bot path already notifies via Grammy Context.
+ */
+export async function notifyAdminsPendingCardReceipt(order: {
+  id: number;
+  userId: number;
+  packageId: string;
+  coins: number;
+  amountToman?: number;
+  userName?: string;
+  userUsername?: string;
+  userTelegramId?: string;
+  receiptFileId?: string;
+}): Promise<void> {
+  const admins = (process.env.TELEGRAM_ADMIN_IDS || '')
+    .split(/[,;\s]+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+  if (!infra.telegram.botToken || !admins.length) {
+    if (!admins.length) {
+      console.warn('No TELEGRAM_ADMIN_IDS — pending payment #%s not notified', order.id);
+    }
+    return;
+  }
+  const last4 = paymentCardLast4();
+  const text = [
+    '💳 رسید کارت‌به‌کارت — بررسی در پنل مالی',
+    '',
+    `سفارش: #${order.id}`,
+    `کاربر: ${order.userName || '—'} (#${order.userId})`,
+    order.userUsername ? `یوزرنیم: @${order.userUsername}` : null,
+    order.userTelegramId ? `تلگرام: ${order.userTelegramId}` : null,
+    `بسته: ${order.packageId} · ${toPersianDigits(order.coins)} سکه`,
+    `مبلغ: ${toPersianDigits(order.amountToman ?? 0)} تومان`,
+    last4 ? `کارت مقصد: …${last4}` : null,
+    '',
+    'ادمین → مالی → صف تأیید واریز',
+  ]
+    .filter((l) => l !== null)
+    .join('\n');
+
+  for (const adminId of admins) {
+    if (!usableTelegramId(adminId)) continue;
+    try {
+      const res = await telegramFetch(telegramBotApiUrl(infra.telegram.botToken, 'sendMessage'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id: adminId, text }),
+      });
+      const data = (await res.json()) as { ok?: boolean; description?: string };
+      if (!data.ok) {
+        console.warn('notify admin pending receipt failed:', adminId, data.description ?? res.status);
+      }
+    } catch (err) {
+      console.warn('notify admin pending receipt error:', adminId, (err as Error).message);
+    }
+  }
+}
+
 export async function notifyCardPaymentApprovedTelegram(opts: {
   toTelegramId?: string | null;
   coins?: number;

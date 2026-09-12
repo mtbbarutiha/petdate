@@ -442,6 +442,7 @@ export const fa: Dict = {
     clubSettings: 'تنظیمات باشگاه',
     finance: 'مالی',
     financeDashboard: 'داشبورد مالی',
+    depositQueue: 'صف تأیید واریز',
     accounts: 'حساب‌ها و داده‌های پایه',
     transactions: 'تراکنش‌ها و دفتر',
     allocation: 'تخصیص هزینه',

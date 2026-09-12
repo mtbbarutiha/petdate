@@ -493,6 +493,11 @@ authRouter.post('/wallet/payments/:id/receipt', (req, res) => {
         });
         return;
       }
+      void import('../services/card2card-finance')
+        .then(({ notifyAdminsPendingCardReceipt }) =>
+          notifyAdminsPendingCardReceipt(result.order)
+        )
+        .catch((err) => console.warn('wallet receipt admin notify skipped:', (err as Error).message));
       res.json({ ok: true, order: result.order });
     } catch (err) {
       const msg = (err as Error).message;

@@ -12,4 +12,9 @@ export interface PlatformNavCounts {
   verification: number;
   /** Pending credentials + photo/avatar moderation (مدارک و عکس queue) */
   docs: number;
+  /**
+   * Card-to-card deposits awaiting finance review:
+   * status=pending, or awaiting_receipt with a receipt already attached (stuck recovery).
+   */
+  payments: number;
 }

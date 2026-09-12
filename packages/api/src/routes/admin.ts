@@ -157,6 +157,17 @@ adminRouter.use((req, res, next) => {
     res.status(401).json({ error: 'دسترسی ادمین مجاز نیست' });
     return;
   }
+  // Card-to-card deposit approve/reject is a finance/shop action, not only platform.write.
+  if (
+    /^\/payments\/\d+\/(approve|reject)$/.test(req.path) &&
+    (actorHasPermission(actor, 'finance.write') ||
+      actorHasPermission(actor, 'shop.write') ||
+      actorHasPermission(actor, 'platform.write') ||
+      actorHasPermission(actor, 'admin.full'))
+  ) {
+    next();
+    return;
+  }
   if (actorHasPermission(actor, 'platform.write') || actorHasPermission(actor, 'admin.full')) {
     next();
     return;

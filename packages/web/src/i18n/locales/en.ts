@@ -442,6 +442,7 @@ export const en: Dict = {
     clubSettings: 'Club settings',
     finance: 'Finance',
     financeDashboard: 'Finance dashboard',
+    depositQueue: 'Deposit approval queue',
     accounts: 'Accounts & masters',
     transactions: 'Transactions & ledger',
     allocation: 'Cost allocation',

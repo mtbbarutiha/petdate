@@ -1338,6 +1338,27 @@ function migrateSchema() {
     db.exec('ALTER TABLE payment_orders ADD COLUMN transfer_ref TEXT');
   }
 
+  /**
+   * Safe re-queue: card orders that already have a receipt but stayed on
+   * awaiting_receipt (so they never appeared in the admin finance approval list).
+   * Additive only — never deletes or credits coins.
+   */
+  try {
+    db.prepare(
+      `UPDATE payment_orders
+       SET status = 'pending'
+       WHERE method = 'card'
+         AND status = 'awaiting_receipt'
+         AND receipt_file_id IS NOT NULL
+         AND TRIM(receipt_file_id) != ''`
+    ).run();
+  } catch (err) {
+    console.warn(
+      'payment receipt re-queue skipped/failed:',
+      err instanceof Error ? err.message : err
+    );
+  }
+
   db.exec(`
     CREATE TABLE IF NOT EXISTS wallet_ledger (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
