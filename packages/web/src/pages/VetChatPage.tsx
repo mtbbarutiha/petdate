@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import {
   VET_CONSULT_REQUEST_TTL_MS,
+  getTeamAgentByName,
   isPendingRequestExpired,
   userHasRole,
   type VetConsultChatMediaKind,
@@ -107,8 +108,8 @@ function providerInboxEmptyCopy(scope: InboxScope): { title: string; body: strin
   }
   if (scope === 'trainer') {
     return {
-      title: 'هماهنگی آموزش حضوری',
-      body: 'اینجا با صاحبان پت برای هماهنگی آموزش حضوری گفتگو می‌کنی — همبازی نیست.',
+      title: 'هماهنگی آموزش آنلاین',
+      body: 'اینجا با صاحبان پت برای هماهنگی آموزش آنلاین گفتگو می‌کنی — همبازی نیست.',
       cta: 'رفتن به پنل مربی',
     };
   }
@@ -121,7 +122,7 @@ function providerInboxEmptyCopy(scope: InboxScope): { title: string; body: strin
 
 function providerThreadEmptyTitle(scope: InboxScope): string {
   if (scope === 'vet') return 'مشاوره‌ای را شروع کن';
-  if (scope === 'trainer') return 'هماهنگی آموزش حضوری';
+  if (scope === 'trainer') return 'هماهنگی آموزش آنلاین';
   return 'هم بازی';
 }
 
@@ -315,8 +316,18 @@ export function VetChatPage() {
   const peerSub = useMemo(() => {
     if (!consult) return '';
     const pet = consult.petName?.trim();
+    const kind = consult.serviceKind ?? 'vet';
     if (isVetSide) {
+      if (kind === 'trainer') {
+        return pet ? `آموزش آنلاین · ${pet}` : 'آموزش آنلاین';
+      }
       return pet ? `پت بیمار · ${pet}` : 'درخواست مشاوره سریع';
+    }
+    if (kind === 'trainer') {
+      return pet ? `آموزش آنلاین · ${pet}` : 'آموزش آنلاین';
+    }
+    if (kind === 'sitter') {
+      return pet ? `پرستاری · ${pet}` : 'پرستار پت';
     }
     return pet ? `مشاوره برای ${pet}` : 'مشاوره دامپزشک';
   }, [consult, isVetSide]);
@@ -1200,17 +1211,34 @@ export function VetChatPage() {
       ? 'درخواست منقضی شده'
       : pending
         ? isVetSide
-          ? 'درخواست مشاوره جدید'
-          : 'در انتظار پذیرش دامپزشک'
+          ? consult?.serviceKind === 'trainer'
+            ? 'درخواست آموزش جدید'
+            : 'درخواست مشاوره جدید'
+          : consult?.serviceKind === 'trainer'
+            ? 'در انتظار پذیرش مربی'
+            : 'در انتظار پذیرش دامپزشک'
         : chatUnlocked
           ? secure
             ? 'چت امن فعال'
-            : 'چت مشاوره فعال'
+            : consult?.serviceKind === 'trainer'
+              ? 'در حال پت'
+              : 'چت مشاوره فعال'
           : consult?.status === 'completed'
             ? 'مشاوره پایان یافته'
             : consult
               ? `وضعیت: ${consult.status}`
               : '';
+
+  const peerIsTeamAgent =
+    Boolean(consult) &&
+    !isVetSide &&
+    Boolean(getTeamAgentByName(consult?.vetName));
+  /** Active consult or AI agent: never flash grey «آفلاین». */
+  const forcePeerOnline = Boolean(!ended && (chatUnlocked || peerIsTeamAgent));
+  const presenceOnlineLabel =
+    consult?.serviceKind === 'trainer' || peerIsTeamAgent
+      ? 'در حال پت'
+      : undefined;
 
   return (
     <div className={shellClass} dir="rtl">
@@ -1325,8 +1353,13 @@ export function VetChatPage() {
                             {formatTimeAgo(c.lastActivityAt || c.createdAt)}
                           </time>
                           {c.ongoing ? (
-                            <span className="tg-chat-list-badge is-ongoing" aria-label="گفتگوی فعال">
-                              فعال
+                            <span
+                              className="tg-chat-list-badge is-ongoing"
+                              aria-label={
+                                c.serviceKind === 'trainer' ? 'در حال پت' : 'گفتگوی فعال'
+                              }
+                            >
+                              {c.serviceKind === 'trainer' ? 'در حال پت' : 'فعال'}
                             </span>
                           ) : c.ended ? (
                             <span className="tg-chat-list-badge is-ended" aria-label="گفتگوی بسته شده">
@@ -1390,7 +1423,7 @@ export function VetChatPage() {
                 <h2>{providerThreadEmptyTitle(inboxScope)}</h2>
                 {inboxScope === 'trainer' ? (
                   <p>
-                    اینجا با صاحبان پت برای هماهنگی آموزش حضوری گفتگو می‌کنی — همبازی نیست.
+                    اینجا با صاحبان پت برای هماهنگی آموزش آنلاین گفتگو می‌کنی — همبازی نیست.
                   </p>
                 ) : null}
                 <Link
@@ -1454,7 +1487,11 @@ export function VetChatPage() {
                       {statusLabel}
                       {peerSub ? ` · ${peerSub}` : ''}
                     </small>
-                    <PresenceBadge presence={peerPresence} />
+                    <PresenceBadge
+                      presence={peerPresence}
+                      forceOnline={forcePeerOnline}
+                      onlineLabel={presenceOnlineLabel}
+                    />
                   </span>
                 </div>
 

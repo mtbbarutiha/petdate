@@ -312,9 +312,9 @@ function ConversationListPane({
                 <div className="tg-empty-mark" aria-hidden>
                   <SiteLogo className="tg-chat-empty-logo" height={40} />
                 </div>
-                <h2>هماهنگی آموزش حضوری</h2>
+                <h2>هماهنگی آموزش آنلاین</h2>
                 <p>
-                  اینجا فقط با صاحبان پت برای هماهنگی زمان و جزئیات آموزش حضوری گفتگو
+                  اینجا فقط با صاحبان پت برای هماهنگی زمان و جزئیات آموزش آنلاین گفتگو
                   می‌کنی — همبازی نیست.
                 </p>
                 <Link to="/trainer-consult" className="tg-chat-link-btn">
@@ -373,8 +373,17 @@ function ConversationListPane({
                         {formatTimeAgo(c.lastActivityAt || c.createdAt)}
                       </time>
                       {c.ongoing ? (
-                        <span className="tg-chat-list-badge is-ongoing" aria-label="گفتگوی فعال">
-                          فعال
+                        <span
+                          className="tg-chat-list-badge is-ongoing"
+                          aria-label={
+                            c.serviceKind === 'trainer'
+                              ? t('chats.busyWithPet')
+                              : t('chats.active')
+                          }
+                        >
+                          {c.serviceKind === 'trainer'
+                            ? t('chats.busyWithPet')
+                            : 'فعال'}
                         </span>
                       ) : c.ended ? (
                         <span className="tg-chat-list-badge is-ended" aria-label="گفتگوی بسته شده">
@@ -1610,7 +1619,7 @@ export function ChatPage() {
   if (!isProfileComplete) {
     const gateCopy =
       inboxScope === 'trainer'
-        ? 'برای دیدن گفتگوهای هماهنگی آموزش حضوری، اول ثبت‌نام را تمام کن (نام، سن، جنسیت و شهر).'
+        ? 'برای دیدن گفتگوهای هماهنگی آموزش آنلاین، اول ثبت‌نام را تمام کن (نام، سن، جنسیت و شهر).'
         : inboxScope === 'vet'
           ? 'برای دیدن گفتگوهای مشاوره دامپزشکی، اول ثبت‌نام را تمام کن (نام، سن، جنسیت و شهر).'
           : 'برای دیدن هم بازی و پیدا کردن همبازی، اول ثبت‌نام را تمام کن (نام، سن، جنسیت و شهر).';

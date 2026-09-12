@@ -154,7 +154,7 @@ export function FindPlaymatePanel({
       return (
         <div className={`find-playmate-panel${compact ? ' is-compact' : ''}`}>
           <p className="find-playmate-panel__hint">
-            اینجا با صاحبان پت برای هماهنگی آموزش حضوری گفتگو می‌کنی.
+            اینجا با صاحبان پت برای هماهنگی آموزش آنلاین گفتگو می‌کنی.
           </p>
           <Link to="/trainer-consult" className="pepito-btn button-1" style={{ marginTop: 12 }}>
             رفتن به پنل مربی
