@@ -13,10 +13,11 @@ run() {
 }
 
 # Shared pure selftests
-echo "==> selftest: shared peer-profile + user-command-id + pet/order-public-id + gtm-contract + sanitize-roles + breed-search + photo-moderation + profile-avatar"
+echo "==> selftest: shared peer-profile + user-command-id + pet/order-public-id + gtm-contract + sanitize-roles + breed-search + photo-moderation + profile-avatar + error-catalog"
 npx tsx "$ROOT/packages/shared/src/peer-profile.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/photo-moderation.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/profile-avatar.selftest.ts"
+npx tsx "$ROOT/packages/shared/src/error-catalog.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/user-command-id.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/pet-public-id.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/order-public-id.selftest.ts"
@@ -60,6 +61,9 @@ npx tsx "$ROOT/packages/web/src/admin/analyticsPathLabel.selftest.ts"
 
 echo "==> selftest: web admin error-log Persian messages"
 npx tsx "$ROOT/packages/web/src/admin/adminLogMessageFa.selftest.ts"
+
+echo "==> selftest: web admin error-log duplicate grouping"
+npx tsx "$ROOT/packages/web/src/admin/adminLogGroups.selftest.ts"
 
 echo "==> selftest: web admin monitoring tone mapping"
 npx tsx "$ROOT/packages/web/src/admin/AdminMonitoringPage.selftest.ts"

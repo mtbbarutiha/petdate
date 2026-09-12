@@ -3324,6 +3324,32 @@ html[data-theme='dark'] .admin-app .admin-log-msg {
   color: var(--admin-ink);
 }
 html[data-theme='dark'] .admin-app .admin-log-msg-detail {
+  color: color-mix(in srgb, var(--admin-muted) 80%, #fff);
+}
+html[data-theme='dark'] .admin-app .admin-log-row--warn:hover,
+html[data-theme='dark'] .admin-app .admin-log-row--error:hover,
+html[data-theme='dark'] .admin-app .admin-log-row--info:hover {
+  filter: none;
+}
+html[data-theme='dark'] .admin-app .admin-log-row--warn:hover {
+  background: color-mix(in srgb, #92400e 26%, var(--admin-surface));
+}
+html[data-theme='dark'] .admin-app .admin-log-row--info:hover {
+  background: color-mix(in srgb, #075985 24%, var(--admin-surface));
+}
+html[data-theme='dark'] .admin-app .admin-log-count {
+  background: var(--admin-chip-bg);
+  color: var(--admin-chip-label);
+}
+html[data-theme='dark'] .admin-app .admin-log-source {
+  background: var(--admin-chip-well);
+  color: var(--admin-chip-label);
+  border-color: var(--admin-border);
+}
+html[data-theme='dark'] .admin-app .admin-log-expand td {
+  background: color-mix(in srgb, #0b0e16 45%, var(--admin-surface));
+}
+html[data-theme='dark'] .admin-app .admin-log-path {
   color: var(--admin-muted);
 }
 html[data-theme='dark'] .admin-app .admin-badge--error {

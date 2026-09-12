@@ -3,7 +3,13 @@
  * Run: npx tsx packages/web/src/admin/adminLogMessageFa.selftest.ts
  */
 import assert from 'node:assert/strict';
-import { formatAdminLogMessageFa, parseHttpLogMessage } from './adminLogMessageFa.ts';
+import {
+  adminLogSecondary,
+  formatAdminLogMessage,
+  formatAdminLogMessageFa,
+  parseHttpLogMessage,
+  translateAppLogMessage,
+} from './adminLogMessageFa.ts';
 
 const http = parseHttpLogMessage('HTTP 500 GET /api/games/list');
 assert.ok(http);
@@ -63,5 +69,33 @@ assert.match(generic404.title, /یافت نشد|فروشگاه/);
 const alreadyFa = formatAdminLogMessageFa({ message: 'خطای داخلی سرور' });
 assert.equal(alreadyFa.title, 'خطای داخلی سرور');
 assert.equal(alreadyFa.detail, null);
+
+const avatarWarn = formatAdminLogMessageFa({
+  message: 'materialize telegram avatar failed: INVALID_IMAGE',
+});
+assert.match(avatarWarn.title, /آواتار|تلگرام|عکس/);
+assert.equal(avatarWarn.detail, 'materialize telegram avatar failed: INVALID_IMAGE');
+assert.doesNotMatch(avatarWarn.title, /materialize/i);
+
+const consult = formatAdminLogMessageFa({
+  message: 'HTTP 400 POST /api/consultations/quick-connect',
+  path: '/api/consultations/quick-connect',
+  method: 'POST',
+  statusCode: 400,
+});
+assert.match(consult.title, /مشاوره|نامعتبر/);
+
+const enAvatar = formatAdminLogMessage(
+  { message: 'materialize telegram avatar failed: INVALID_IMAGE' },
+  'en'
+);
+assert.match(enAvatar.title, /Telegram|avatar|image/i);
+assert.equal(enAvatar.detail, 'materialize telegram avatar failed: INVALID_IMAGE');
+
+const mapped = translateAppLogMessage({
+  message: 'materialize telegram avatar failed: INVALID_IMAGE',
+});
+const secondary = adminLogSecondary(mapped, mapped.titleFa);
+assert.equal(secondary, 'materialize telegram avatar failed: INVALID_IMAGE');
 
 console.log('adminLogMessageFa.selftest: ok');
