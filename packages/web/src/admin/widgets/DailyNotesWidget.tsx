@@ -11,6 +11,7 @@ import {
 } from '../jalaliDate';
 import { usePrefersReducedMotion } from '../motionCharts';
 import { tr } from '../../i18n';
+import { appConfirm } from '../../components/AppDialog';
 import { useDashboardSelectedDate } from './DashboardSelectedDate';
 import type { WidgetRenderContext } from './types';
 
@@ -107,7 +108,15 @@ export function DailyNotesWidget({ ctx }: { ctx?: WidgetRenderContext }) {
 
   const removeNote = async (id: number) => {
     if (saving) return;
-    if (typeof window !== 'undefined' && !window.confirm(tr('حذف این یادداشت؟'))) return;
+    if (
+      !(await appConfirm(tr('حذف این یادداشت؟'), {
+        danger: true,
+        variant: 'admin',
+        title: tr('حذف یادداشت'),
+      }))
+    ) {
+      return;
+    }
     setSaving(true);
     try {
       await adminFetch<{ ok: boolean }>(`/api/admin/daily-notes/${id}`, { method: 'DELETE' });
