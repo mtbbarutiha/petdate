@@ -2057,6 +2057,38 @@ html[data-theme='dark'] .pepito-app-rail-nav {
 html[data-theme='dark'] .pepito-app-rail-nav::-webkit-scrollbar-thumb {
   background: rgba(168, 154, 212, 0.35);
 }
+html[data-theme='dark'] .pepito-app-rail-group {
+  border-top-color: var(--pd-border);
+}
+html[data-theme='dark'] .pepito-app-rail-group-label {
+  color: var(--pepito-muted);
+}
+html[data-theme='dark'] .pepito-app-rail-link.is-warn {
+  color: #e0b36a;
+}
+html[data-theme='dark'] .pepito-app-rail-link.is-danger {
+  color: #e08a96;
+}
+html[data-theme='dark'] .pepito-app-rail-link.is-warn:hover,
+html[data-theme='dark'] .pepito-app-rail-link.is-warn.is-active {
+  background: rgba(217, 149, 58, 0.18);
+  color: #f0c585;
+}
+html[data-theme='dark'] .pepito-app-rail-link.is-danger:hover,
+html[data-theme='dark'] .pepito-app-rail-link.is-danger.is-active {
+  background: rgba(196, 70, 90, 0.2);
+  color: #f0a0ab;
+}
+html[data-theme='dark'] .pepito-nav-profile-manage {
+  border-top-color: var(--pd-border);
+  border-bottom-color: var(--pd-border);
+}
+html[data-theme='dark'] .pepito-nav-profile-item--warn {
+  color: #e0b36a;
+}
+html[data-theme='dark'] .pepito-nav-profile-item--danger {
+  color: #e08a96;
+}
 html[data-theme='dark'] .pepito-role-board-add-item {
   background: var(--pd-surface-2);
   border-color: var(--pd-border);

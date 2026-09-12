@@ -18,6 +18,7 @@ import { useAuthStore } from '../hooks/useAuthStore';
 import { useI18n } from '../i18n';
 import { LandingChrome } from './LandingChrome';
 import { LiveIncomingRequests } from './LiveIncomingRequests';
+import { ProfileManageNav } from './ProfileManageNav';
 import { RoleSwitchControl } from './RoleSwitchControl';
 
 type NavDef = { to: string; icon: LucideIcon; labelKey: string };
@@ -99,6 +100,7 @@ export function Layout({ children }: { children?: ReactNode }) {
                 <span>{t(item.labelKey)}</span>
               </NavLink>
             ))}
+            <ProfileManageNav variant="rail" />
             <RoleSwitchControl variant="rail" />
           </nav>
         </aside>

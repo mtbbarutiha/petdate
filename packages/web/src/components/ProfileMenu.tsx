@@ -4,6 +4,7 @@ import { LogOut, UserRound } from 'lucide-react';
 import { USER_ROLE_LABELS, normalizeRoles, primaryRole } from '@petdate/shared';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { resolvePublicMediaUrl } from '../lib/api';
+import { ProfileManageNav } from './ProfileManageNav';
 import { RoleSwitchControl } from './RoleSwitchControl';
 
 /**
@@ -98,6 +99,8 @@ export function ProfileMenu() {
             <UserRound size={16} strokeWidth={2} />
             <span>پروفایل</span>
           </Link>
+
+          <ProfileManageNav variant="menu" onNavigate={() => setOpen(false)} />
 
           <div className="pepito-nav-profile-role-slot">
             <RoleSwitchControl compact className="pepito-nav-profile-role-switch" />
