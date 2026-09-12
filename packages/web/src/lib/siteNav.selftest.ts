@@ -133,6 +133,7 @@ assert.doesNotMatch(
   /item\.icon/,
   'desktop header is text-only (#380) — dock glyph token must not leak'
 );
+assert.match(desktopNav, /pepito-nav-section-link/, 'desktop shortcuts share the خدمات text class');
 
 const ownerRail = layout.slice(layout.indexOf('const OWNER_NAV'), layout.indexOf('const VET_NAV'));
 const playmateIdx = ownerRail.indexOf("to: '/chats'");
