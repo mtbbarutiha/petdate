@@ -211,6 +211,49 @@ assert.match(
   'dark edit sections paint --pd-surface'
 );
 
+/* Chat profile tools + sheets (پروفایل پت / پروفایل صاحب پت) — no white strip / white field cards */
+const chatCss = readFileSync(join(root, 'src/styles/chat.css'), 'utf8');
+assert.match(darkCss, /\.tg-vet-tools\b/, 'vet/profile toolbar remapped for dark');
+assert.match(darkCss, /\.tg-vet-sheet\b/, 'vet/profile sheet remapped for dark');
+assert.match(darkCss, /\.tg-vet-pet-card dl > div/, 'pet/owner profile field cards remapped');
+assert.match(darkCss, /\.tg-vet-pet-card dt\b/, 'profile field labels remapped');
+assert.match(darkCss, /\.tg-vet-pet-card dd\b/, 'profile field values remapped');
+assert.match(darkCss, /\.tg-vet-sheet-close\b/, 'sheet close button remapped');
+assert.match(darkCss, /\.tg-info-card\b/, 'playmate info card remapped for dark');
+assert.match(chatCss, /\.tg-vet-tools[\s\S]{0,280}var\(--pd-surface-muted/, 'toolbar uses --pd-surface-muted');
+assert.match(chatCss, /\.tg-vet-sheet\s*\{[\s\S]{0,420}var\(--pd-surface/, 'sheet uses --pd-surface');
+assert.match(chatCss, /\.tg-vet-pet-card dl > div[\s\S]{0,180}var\(--pd-surface-2/, 'field cards use --pd-surface-2');
+assert.doesNotMatch(
+  chatCss,
+  /\.tg-vet-tools[\s\S]{0,220}rgba\(\s*247\s*,\s*249\s*,\s*252/,
+  'toolbar must not hardcode light rgba(247,249,252)',
+);
+assert.doesNotMatch(
+  chatCss,
+  /\.tg-vet-pet-card dl > div[\s\S]{0,160}#f7f8fb\b/,
+  'field cards must not hardcode #f7f8fb',
+);
+assert.doesNotMatch(
+  darkCss,
+  /html\[data-theme=['"]dark['"]\][\s\S]{0,80}\.tg-vet-tools[\s\S]{0,160}#(f7f9fc|f7f8fb|fff|ffffff)\b/i,
+  'dark profile toolbar must not keep light strip stops',
+);
+assert.doesNotMatch(
+  darkCss,
+  /html\[data-theme=['"]dark['"]\][\s\S]{0,80}\.tg-vet-pet-card dl > div[\s\S]{0,160}#(f7f8fb|faf9fc|fff|ffffff)\b/i,
+  'dark profile field cards must not keep white fills',
+);
+assert.match(
+  darkCss,
+  /html\[data-theme=['"]dark['"]\][\s\S]{0,80}\.tg-vet-pet-card dt[\s\S]{0,80}var\(--pd-muted\)/,
+  'dark field labels use muted-light --pd-muted',
+);
+assert.match(
+  darkCss,
+  /html\[data-theme=['"]dark['"]\][\s\S]{0,80}\.tg-vet-pet-card dd[\s\S]{0,80}var\(--pd-ink\)/,
+  'dark field values use high-contrast --pd-ink',
+);
+
 const toggle = readFileSync(join(root, 'src/components/ThemeToggle.tsx'), 'utf8');
 assert.match(toggle, /toggleTheme|setTheme/, 'ThemeToggle mutates theme');
 assert.match(toggle, /aria-label/, 'ThemeToggle accessible');
