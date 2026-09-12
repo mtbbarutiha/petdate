@@ -5,6 +5,7 @@ import path from 'path';
 import type { UserGender, UserRole, VerificationStatus, WalletCurrency } from '@petdate/shared';
 import {
   FACE_VERIFY_REWARD,
+  normalizeCoinSellAdminStatus,
   SITE,
   USER_ROLES,
   VERIFICATION_STATUSES,
@@ -85,11 +86,23 @@ import {
   markAdminHeaderNotificationRead,
   markAllAdminHeaderNotificationsRead,
 } from '../admin-notifications';
+import {
+  deleteAdminPref,
+  getAdminPref,
+  layoutPrefKey,
+  setAdminPref,
+} from '../admin-user-prefs';
 import { hrAdminRouter } from './admin-hr';
 import { salesAdminRouter } from './admin-sales';
 import { crmAdminRouter } from './admin-crm';
 import { financeOsAdminRouter } from './admin-finance-os';
 import { magazineAdminRouter } from './admin-magazine';
+import {
+  createAdminDailyNote,
+  deleteAdminDailyNote,
+  listAdminDailyNotes,
+  updateAdminDailyNote,
+} from '../admin-daily-notes';
 
 export const adminRouter = Router();
 const STARTED_AT = Date.now();
@@ -155,7 +168,10 @@ adminRouter.use((req, res, next) => {
     req.path.startsWith('/crm') ||
     req.path.startsWith('/finance-os') ||
     req.path.startsWith('/notifications') ||
-    req.path.startsWith('/support')
+    req.path.startsWith('/prefs') ||
+    req.path.startsWith('/widget-layouts') ||
+    req.path.startsWith('/support') ||
+    req.path.startsWith('/daily-notes')
   ) {
     next();
     return;
@@ -258,6 +274,100 @@ adminRouter.post('/notifications/:id/read', (req, res) => {
   res.json({ ok: true });
 });
 
+/** Per-admin UI prefs (widget layouts, daily notes). Any logged-in admin, own actor only. */
+adminRouter.get('/prefs/:key', (req, res) => {
+  const actor = req.adminActor;
+  if (!actor) {
+    res.status(401).json({ error: 'دسترسی ادمین مجاز نیست' });
+    return;
+  }
+  try {
+    const key = decodeURIComponent(String(req.params.key || ''));
+    res.json({ key, value: getAdminPref(actor, key) });
+  } catch (err) {
+    const status = Number((err as { status?: number }).status) || 400;
+    res.status(status).json({ error: (err as Error).message });
+  }
+});
+
+adminRouter.put('/prefs/:key', (req, res) => {
+  const actor = req.adminActor;
+  if (!actor) {
+    res.status(401).json({ error: 'دسترسی ادمین مجاز نیست' });
+    return;
+  }
+  try {
+    const key = decodeURIComponent(String(req.params.key || ''));
+    const value = req.body && typeof req.body === 'object' && 'value' in req.body ? req.body.value : req.body;
+    res.json({ key, value: setAdminPref(actor, key, value) });
+  } catch (err) {
+    const status = Number((err as { status?: number }).status) || 400;
+    res.status(status).json({ error: (err as Error).message });
+  }
+});
+
+adminRouter.delete('/prefs/:key', (req, res) => {
+  const actor = req.adminActor;
+  if (!actor) {
+    res.status(401).json({ error: 'دسترسی ادمین مجاز نیست' });
+    return;
+  }
+  try {
+    const key = decodeURIComponent(String(req.params.key || ''));
+    res.json({ ok: true, deleted: deleteAdminPref(actor, key) });
+  } catch (err) {
+    const status = Number((err as { status?: number }).status) || 400;
+    res.status(status).json({ error: (err as Error).message });
+  }
+});
+
+/** Convenience aliases for widget boards — same store as /prefs/widget-layout|:id */
+adminRouter.get('/widget-layouts/:dashboardId', (req, res) => {
+  const actor = req.adminActor;
+  if (!actor) {
+    res.status(401).json({ error: 'دسترسی ادمین مجاز نیست' });
+    return;
+  }
+  try {
+    const key = layoutPrefKey(String(req.params.dashboardId || ''));
+    res.json({ dashboardId: String(req.params.dashboardId || ''), value: getAdminPref(actor, key) });
+  } catch (err) {
+    const status = Number((err as { status?: number }).status) || 400;
+    res.status(status).json({ error: (err as Error).message });
+  }
+});
+
+adminRouter.put('/widget-layouts/:dashboardId', (req, res) => {
+  const actor = req.adminActor;
+  if (!actor) {
+    res.status(401).json({ error: 'دسترسی ادمین مجاز نیست' });
+    return;
+  }
+  try {
+    const key = layoutPrefKey(String(req.params.dashboardId || ''));
+    const value = req.body?.board && typeof req.body.board === 'object' ? req.body.board : req.body;
+    res.json({ dashboardId: String(req.params.dashboardId || ''), value: setAdminPref(actor, key, value) });
+  } catch (err) {
+    const status = Number((err as { status?: number }).status) || 400;
+    res.status(status).json({ error: (err as Error).message });
+  }
+});
+
+adminRouter.delete('/widget-layouts/:dashboardId', (req, res) => {
+  const actor = req.adminActor;
+  if (!actor) {
+    res.status(401).json({ error: 'دسترسی ادمین مجاز نیست' });
+    return;
+  }
+  try {
+    const key = layoutPrefKey(String(req.params.dashboardId || ''));
+    res.json({ ok: true, deleted: deleteAdminPref(actor, key) });
+  } catch (err) {
+    const status = Number((err as { status?: number }).status) || 400;
+    res.status(status).json({ error: (err as Error).message });
+  }
+});
+
 adminRouter.get('/dashboard', async (req, res) => {
   const actor = req.adminActor;
   if (!actor) {
@@ -294,6 +404,44 @@ adminRouter.get('/dashboard', async (req, res) => {
       error: 'بخشی از ماژول‌ها در دسترس نبود',
     });
   }
+});
+
+/** Shared daily notes for the main dashboard (any signed-in admin who can see the board). */
+adminRouter.get('/daily-notes', (req, res) => {
+  const date = typeof req.query.date === 'string' ? req.query.date : '';
+  res.json({ date, notes: listAdminDailyNotes(date) });
+});
+
+adminRouter.post('/daily-notes', (req, res) => {
+  const actor = req.adminActor;
+  const result = createAdminDailyNote({
+    date: typeof req.body?.date === 'string' ? req.body.date : '',
+    body: typeof req.body?.body === 'string' ? req.body.body : '',
+    createdBy: actor?.displayName || actor?.username || '',
+  });
+  if (!result.ok) {
+    res.status(400).json({ error: result.error });
+    return;
+  }
+  res.status(201).json({ note: result.note });
+});
+
+adminRouter.patch('/daily-notes/:id', (req, res) => {
+  const result = updateAdminDailyNote(Number(req.params.id), typeof req.body?.body === 'string' ? req.body.body : '');
+  if (!result.ok) {
+    res.status(result.error === 'یادداشت پیدا نشد' ? 404 : 400).json({ error: result.error });
+    return;
+  }
+  res.json({ note: result.note });
+});
+
+adminRouter.delete('/daily-notes/:id', (req, res) => {
+  const result = deleteAdminDailyNote(Number(req.params.id));
+  if (!result.ok) {
+    res.status(result.error === 'یادداشت پیدا نشد' ? 404 : 400).json({ error: result.error });
+    return;
+  }
+  res.json({ ok: true });
 });
 
 adminRouter.get('/dashboard/activity', (req, res) => {
@@ -854,11 +1002,7 @@ adminRouter.post('/payments/:id/reject', (req, res) => {
 });
 
 adminRouter.get('/coin-sells', (req, res) => {
-  const statusRaw = typeof req.query.status === 'string' ? req.query.status : 'open';
-  const status =
-    statusRaw === 'paid' || statusRaw === 'rejected' || statusRaw === 'cancelled' || statusRaw === 'all'
-      ? statusRaw
-      : 'open';
+  const status = normalizeCoinSellAdminStatus(req.query.status);
   res.json({
     requests: dbService.listCoinSellRequestsAdmin({ status, limit: 150 }),
     openCount: dbService.countOpenCoinSellRequests(),
@@ -975,6 +1119,13 @@ adminRouter.post('/support/threads/:userId/reply', (req, res) => {
   }
   const actorName = actor?.displayName || actor?.username || 'پشتیبانی';
   const msg = dbService.addSupportMessage(userId, 'assistant', `[${actorName}]\n${text}`);
+  void import('../services/ticket-user-notify')
+    .then(({ deliverSupportInboxReply }) =>
+      deliverSupportInboxReply({ userId, text: `[${actorName}]\n${text}` })
+    )
+    .catch((err) => {
+      console.warn('support inbox telegram delivery failed:', (err as Error).message);
+    });
   res.status(201).json({ ok: true, message: msg, messages: dbService.listSupportMessages(userId, 200) });
 });
 

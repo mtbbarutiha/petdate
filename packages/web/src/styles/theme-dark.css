@@ -246,6 +246,10 @@ html[data-theme='dark'] .admin-app {
   --admin-chip-bg: #2a2e3e;
   --admin-chip-well: #1e2230;
   --admin-chip-label: #c4bfd4;
+  --admin-msg-public-bg: color-mix(in srgb, var(--admin-sky) 18%, var(--admin-chip-well));
+  --admin-msg-public-border: color-mix(in srgb, var(--admin-sky) 38%, var(--admin-border));
+  --admin-msg-internal-bg: color-mix(in srgb, #d4a017 16%, var(--admin-chip-well));
+  --admin-msg-internal-border: color-mix(in srgb, #d4a017 34%, var(--admin-border));
 
   --primary: var(--admin-accent);
   --primary-soft: var(--admin-accent-soft);
@@ -1322,6 +1326,42 @@ html[data-theme='dark'] .admin-app .tk-msg--system {
   background: var(--admin-chip-well);
   color: var(--admin-chip-label);
 }
+html[data-theme='dark'] .admin-app .tk-msg,
+html[data-theme='dark'] .admin-app .tk-msg--public,
+html[data-theme='dark'] .admin-app .tk-msg--internal {
+  color: var(--admin-ink);
+}
+html[data-theme='dark'] .admin-app .tk-msg--public {
+  background: var(--admin-msg-public-bg);
+  border-color: var(--admin-msg-public-border);
+}
+html[data-theme='dark'] .admin-app .tk-msg--internal {
+  background: var(--admin-msg-internal-bg);
+  border-color: var(--admin-msg-internal-border);
+}
+html[data-theme='dark'] .admin-app .tk-msg-h {
+  color: var(--admin-chip-label);
+}
+html[data-theme='dark'] .admin-app .tk-composer textarea,
+html[data-theme='dark'] .admin-app .tk-field textarea {
+  background: var(--admin-chip-well);
+  color: var(--admin-ink);
+  border-color: var(--admin-border);
+}
+html[data-theme='dark'] .admin-app .tk-composer textarea::placeholder {
+  color: var(--admin-chip-label);
+  opacity: 1;
+}
+html[data-theme='dark'] .admin-app .tk-warn {
+  background: color-mix(in srgb, #d4a017 16%, var(--admin-chip-well));
+  border-color: color-mix(in srgb, #d4a017 36%, var(--admin-border));
+  color: var(--admin-ink);
+}
+html[data-theme='dark'] .admin-app .tk-kcard {
+  background: var(--admin-surface);
+  border-color: var(--admin-border);
+  color: var(--admin-ink);
+}
 html[data-theme='dark'] .admin-app .admin-pill--slate {
   border-color: var(--admin-border);
 }
@@ -1376,6 +1416,29 @@ html[data-theme='dark'] .admin-app .wdg-cal-mode {
 html[data-theme='dark'] .admin-app .wdg-cal-mode.is-on {
   background: var(--admin-surface);
   color: var(--admin-ink);
+}
+html[data-theme='dark'] .admin-app .wdg-notes-chip.is-today {
+  color: #9ff3dc;
+  background: rgba(21, 204, 160, 0.16);
+}
+html[data-theme='dark'] .admin-app .wdg-notes-item {
+  background: color-mix(in srgb, var(--admin-promo-mint) 55%, var(--admin-surface));
+}
+html[data-theme='dark'] .admin-app .wdg-notes-empty {
+  background: rgba(21, 204, 160, 0.08);
+}
+html[data-theme='dark'] .admin-app .wdg-notes-error {
+  color: #fecaca;
+  background: rgba(185, 28, 28, 0.28);
+}
+html[data-theme='dark'] .admin-app .wdg-notes-input {
+  background: #1a1e2b;
+}
+html[data-theme='dark'] .admin-app .wdg-persist[data-status='saved'] {
+  color: #5eead4;
+}
+html[data-theme='dark'] .admin-app .wdg-drag:hover {
+  background: #262a38;
 }
 
 /* 9) Email inbox list rows */
@@ -1915,6 +1978,9 @@ html[data-theme='dark'] .pepito-invite-card span {
 html[data-theme='dark'] .pepito-invite-card .pepito-eyebrow {
   color: var(--pepito-orange, #fd961e);
 }
+html[data-theme='dark'] .pepito-invite-stats {
+  color: var(--pepito-muted);
+}
 html[data-theme='dark'] .pepito-invite-link {
   background: color-mix(in srgb, var(--pepito-soft) 70%, transparent);
   border-color: var(--pd-border);
@@ -2386,6 +2452,10 @@ html[data-theme='dark'] .pepito-support-ticket-list li {
   background: #1e2230;
   border-color: var(--pd-border);
 }
+html[data-theme='dark'] .pepito-support-ticket-reply {
+  background: color-mix(in srgb, var(--admin-sky, #3bb8f5) 16%, #1e2230);
+  color: var(--pepito-dark);
+}
 html[data-theme='dark'] .pepito-support-ok {
   background: color-mix(in srgb, #16a34a 18%, transparent);
   color: #86efac;
@@ -2718,67 +2788,83 @@ html[data-theme='dark'] .pepito-pet-profile.is-medical-focus .pepito-pet-medical
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--pepito-mint) 35%, transparent), var(--pd-shadow);
 }
 
-/* Pet diary — keep lined-paper feel but readable on dark shells (owner + public) */
+/* Pet diary — lined notebook on a dark leather-like shell (owner + public) */
 html[data-theme='dark'] #pet-diary.pepito-pet-diary,
 html[data-theme='dark'] .pepito-pet-diary {
   --pet-diary-ink: #efe6d8;
   --pet-diary-paper: #2a2433;
   --pet-diary-line: rgba(239, 230, 216, 0.16);
+  --pet-diary-rule: #e08b7a;
+  --pet-diary-gold: #e0c078;
 }
-html[data-theme='dark'] #pet-diary.pepito-pet-diary::after,
-html[data-theme='dark'] .pepito-pet-diary::after {
+html[data-theme='dark'] #pet-diary .pepito-pet-diary-book,
+html[data-theme='dark'] .pepito-pet-diary-book {
+  box-shadow:
+    inset 0 0 0 1px rgba(239, 230, 216, 0.1),
+    0 18px 40px rgba(0, 0, 0, 0.35);
+}
+html[data-theme='dark'] #pet-diary .pepito-pet-diary-book::after,
+html[data-theme='dark'] .pepito-pet-diary-book::after {
   background:
-    radial-gradient(120% 90% at 0% 0%, rgba(253, 150, 30, 0.14), transparent 50%),
-    linear-gradient(160deg, rgba(42, 36, 51, 0.96), rgba(28, 24, 36, 0.98));
+    radial-gradient(80% 40% at 50% 0%, rgba(253, 150, 30, 0.12), transparent 60%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.18), transparent 22%);
 }
-html[data-theme='dark'] #pet-diary .pepito-pet-diary-paper,
-html[data-theme='dark'] .pepito-pet-diary-paper,
-html[data-theme='dark'] #pet-diary .pepito-pet-diary-head h2,
-html[data-theme='dark'] .pepito-pet-diary-head h2,
+html[data-theme='dark'] #pet-diary .pepito-pet-diary-cover h2,
+html[data-theme='dark'] .pepito-pet-diary-cover h2,
 html[data-theme='dark'] #pet-diary .pepito-pet-diary-entry p,
-html[data-theme='dark'] .pepito-pet-diary-entry p {
+html[data-theme='dark'] .pepito-pet-diary-entry p,
+html[data-theme='dark'] #pet-diary .pepito-pet-diary-form textarea,
+html[data-theme='dark'] .pepito-pet-diary-form textarea,
+html[data-theme='dark'] #pet-diary .pepito-pet-diary-back,
+html[data-theme='dark'] .pepito-pet-diary-back {
   color: var(--pet-diary-ink);
 }
-html[data-theme='dark'] #pet-diary .pepito-pet-diary-head p,
-html[data-theme='dark'] .pepito-pet-diary-head p,
+html[data-theme='dark'] #pet-diary .pepito-pet-diary-kicker,
+html[data-theme='dark'] .pepito-pet-diary-kicker,
+html[data-theme='dark'] #pet-diary .pepito-pet-diary-lead,
+html[data-theme='dark'] .pepito-pet-diary-lead,
 html[data-theme='dark'] #pet-diary .pepito-pet-diary-empty,
 html[data-theme='dark'] .pepito-pet-diary-empty,
 html[data-theme='dark'] #pet-diary .pepito-pet-diary-entry time,
 html[data-theme='dark'] .pepito-pet-diary-entry time {
-  color: color-mix(in srgb, var(--pet-diary-ink) 72%, transparent);
+  color: color-mix(in srgb, var(--pet-diary-ink) 78%, transparent);
 }
-html[data-theme='dark'] #pet-diary .pepito-pet-diary-head svg,
-html[data-theme='dark'] .pepito-pet-diary-head svg {
-  color: #fd961e;
-  stroke: currentColor;
+html[data-theme='dark'] #pet-diary .pepito-pet-diary-portrait img,
+html[data-theme='dark'] .pepito-pet-diary-portrait img {
+  border-color: var(--pet-diary-paper);
 }
-html[data-theme='dark'] #pet-diary .pepito-pet-diary-form textarea,
-html[data-theme='dark'] .pepito-pet-diary-form textarea {
-  background-color: rgba(18, 15, 26, 0.72);
-  color: var(--pet-diary-ink);
-  border-color: var(--pet-diary-line);
-  background-image: repeating-linear-gradient(
-    transparent,
-    transparent 1.55rem,
-    var(--pet-diary-line) 1.55rem,
-    var(--pet-diary-line) calc(1.55rem + 1px)
-  );
+html[data-theme='dark'] #pet-diary .pepito-pet-diary-cover,
+html[data-theme='dark'] .pepito-pet-diary-cover {
+  background: color-mix(in srgb, var(--pet-diary-paper) 88%, #000 12%);
+  box-shadow: inset 0 0 0 1px rgba(239, 230, 216, 0.08);
 }
 html[data-theme='dark'] #pet-diary .pepito-pet-diary-form textarea:focus,
 html[data-theme='dark'] .pepito-pet-diary-form textarea:focus {
-  outline-color: rgba(253, 150, 30, 0.45);
+  outline-color: rgba(253, 150, 30, 0.5);
 }
-html[data-theme='dark'] #pet-diary .pepito-pet-diary-entry,
-html[data-theme='dark'] .pepito-pet-diary-entry {
-  background: rgba(18, 15, 26, 0.55);
-  border-color: var(--pet-diary-line);
+html[data-theme='dark'] #pet-diary .pepito-pet-diary-submit.pepito-btn,
+html[data-theme='dark'] .pepito-pet-diary-submit.pepito-btn {
+  background: #c4a24a;
+  color: #2a1f12 !important;
+  box-shadow: 0 2px 0 #8a6a28;
+}
+html[data-theme='dark'] #pet-diary .pepito-pet-diary-submit.pepito-btn:hover,
+html[data-theme='dark'] .pepito-pet-diary-submit.pepito-btn:hover {
+  background: #e0c078;
+  color: #1c140c !important;
+}
+html[data-theme='dark'] #pet-diary .pepito-pet-diary-entry + .pepito-pet-diary-entry,
+html[data-theme='dark'] .pepito-pet-diary-entry + .pepito-pet-diary-entry {
+  border-top-color: color-mix(in srgb, var(--pet-diary-ink) 22%, transparent);
 }
 html[data-theme='dark'] #pet-diary .pepito-pet-diary-delete,
 html[data-theme='dark'] .pepito-pet-diary-delete {
   color: color-mix(in srgb, var(--pet-diary-ink) 55%, transparent);
 }
 html[data-theme='dark'] #pet-diary .pepito-pet-diary-delete:hover,
-html[data-theme='dark'] .pepito-pet-diary-delete:hover {
+html[data-theme='dark'] #pet-diary .pepito-pet-diary-delete:hover,
+html[data-theme='dark'] #pet-diary .pepito-pet-diary-delete:focus-visible,
+html[data-theme='dark'] .pepito-pet-diary-delete:focus-visible {
   color: #ff8a7a;
   background: rgba(255, 138, 122, 0.12);
 }

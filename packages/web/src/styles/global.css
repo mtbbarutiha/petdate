@@ -5893,6 +5893,15 @@ a.tg-chat-playmate-cta.pepito-btn {
   color: #64748b;
   font-size: 0.85rem;
 }
+.pepito-support-ticket-reply {
+  margin: 6px 0 0;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: var(--pd-surface-2, #eef7fd);
+  color: var(--pd-ink, #19063d);
+  font-size: 0.9rem;
+  white-space: pre-wrap;
+}
 .pepito-support-alt {
   margin-top: 8px;
   color: #64748b;

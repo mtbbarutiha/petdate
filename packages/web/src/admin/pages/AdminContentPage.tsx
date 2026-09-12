@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Plus } from 'lucide-react';
 import { adminFetch, formatNumFa } from '../api';
 import { AdminModal } from '../AdminModal';
+import { appConfirm } from '../../components/AppDialog';
 import { tr } from '../../i18n';
 
 type Ann = {
@@ -65,7 +66,7 @@ export function AdminContentPage() {
   };
 
   const remove = async (id: number) => {
-    if (!confirm(tr('حذف اعلان؟'))) return;
+    if (!(await appConfirm(tr('حذف اعلان؟'), { danger: true, variant: 'admin' }))) return;
     try {
       await adminFetch(`/api/admin/content/announcements/${id}`, { method: 'DELETE' });
       await load();

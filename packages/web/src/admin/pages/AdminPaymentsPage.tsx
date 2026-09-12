@@ -18,6 +18,7 @@ import {
 import { formatAdminFaDateTime } from '../JalaliDateSelect';
 import { AdminIdChip } from '../AdminIds';
 import { AdminEntityCell, AdminThumb } from '../AdminThumb';
+import { appPrompt } from '../../components/AppDialog';
 import { tr } from '../../i18n';
 
 /** Default: finance approval queue (pending + stuck receipt rows). */
@@ -240,12 +241,13 @@ export function AdminPaymentsPage() {
   };
 
   const reject = async (id: number) => {
-    const note = prompt('دلیل رد (اختیاری)') || undefined;
+    const note = await appPrompt(tr('دلیل رد (اختیاری)'), { optional: true, variant: 'admin' });
+    if (note === null) return;
     setBusyId(id);
     try {
       await adminFetch(`/api/admin/payments/${id}/reject`, {
         method: 'POST',
-        body: JSON.stringify({ note }),
+        body: JSON.stringify({ note: note.trim() || undefined }),
       });
       await load();
     } catch (err) {

@@ -1,5 +1,12 @@
 import type { WidgetCatalogItem, WidgetLayoutItem } from './types';
 
+/**
+ * Stable platform-board widget ids (layout slots).
+ * Per-user resize / reorder persists these ids — do not rename.
+ */
+export const DUAL_CALENDAR_WIDGET_ID = 'dualCalendar' as const;
+export const DAILY_NOTES_WIDGET_ID = 'dailyNotes' as const;
+
 export const PLATFORM_WIDGET_CATALOG: WidgetCatalogItem[] = [
   { id: 'moduleMix', title: 'ترکیب بار ماژول‌ها', group: 'گزارش تجمیعی', drill: 'category', defaultW: 1, defaultH: 1 },
   { id: 'volume14d', title: 'حجم تعامل ۱۴ روز اخیر', group: 'گزارش تجمیعی', drill: 'time', defaultW: 2, defaultH: 1 },
@@ -12,10 +19,19 @@ export const PLATFORM_WIDGET_CATALOG: WidgetCatalogItem[] = [
   { id: 'salesDailyRevenue', title: 'درآمد روزانهٔ فروش CRM', group: 'فروش CRM', drill: 'time', defaultW: 2, defaultH: 1 },
   { id: 'salesDailyCalls', title: 'تماس‌های فروش (۱۴ روز)', group: 'فروش CRM', drill: 'time', defaultW: 2, defaultH: 1 },
   {
-    id: 'dualCalendar',
+    id: DUAL_CALENDAR_WIDGET_ID,
     title: 'تقویم شمسی / میلادی',
     group: 'ابزارها',
     description: 'تقویم دوگانه با جابه‌جایی شمسی و میلادی',
+    drill: 'none',
+    defaultW: 2,
+    defaultH: 2,
+  },
+  {
+    id: DAILY_NOTES_WIDGET_ID,
+    title: 'یادداشت‌های روزانه',
+    group: 'ابزارها',
+    description: 'یادداشت‌های کوتاه برای روز انتخاب‌شده در تقویم',
     drill: 'none',
     defaultW: 2,
     defaultH: 2,

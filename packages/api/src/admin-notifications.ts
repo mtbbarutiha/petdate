@@ -1,7 +1,7 @@
 /**
  * Admin header notifications — additive `admin_notifications` table +
  * live aggregation from HR cockpit, open sales/CRM tickets, finance deposit
- * queue, platform moderation queues, and mail unread.
+ * queue, open coin-sell / earn withdrawals, platform moderation queues, and mail unread.
  * Never wipes existing data; seed is idempotent via source_key.
  */
 import { getDb } from './db';
@@ -182,6 +182,13 @@ function dismiss(actor: AdminAuthActor, notifKey: string): void {
        VALUES (?, ?)`
     )
     .run(actorKey(actor), notifKey);
+}
+
+/** Re-show a live aggregate after a new event (ticket created, etc.). */
+export function undismissLiveKey(notifKey: string): void {
+  const key = String(notifKey || '').trim();
+  if (!key.startsWith('live:')) return;
+  db().prepare('DELETE FROM admin_notification_dismissals WHERE notif_key = ?').run(key);
 }
 
 function mapDbRow(row: Record<string, unknown>): AdminHeaderNotification {
@@ -387,6 +394,38 @@ function listPlatformLive(actor: AdminAuthActor): AdminHeaderNotification[] {
   }
 }
 
+function listCoinSellsLive(actor: AdminAuthActor): AdminHeaderNotification[] {
+  if (!canSee(actor, 'finance.read') && !canSee(actor, 'platform.read')) {
+    return [];
+  }
+  if (isDismissed(actor, 'live:coin-sells')) return [];
+  try {
+    const row = db()
+      .prepare(
+        `SELECT COUNT(*) as c, MAX(created_at) as last_at
+         FROM coin_sell_requests WHERE status = 'open'`
+      )
+      .get() as { c: number; last_at?: string | null } | undefined;
+    const open = Number(row?.c ?? 0);
+    if (open <= 0) return [];
+    return [
+      {
+        id: 'live:coin-sells',
+        title: `${open} درخواست برداشت سکه`,
+        body: 'فروش سکه وب و ربات در صف واریز (مالی → صف فروش سکه).',
+        kind: 'warn',
+        href: '/admin/coin-sells',
+        module: 'finance',
+        date: String(row?.last_at || new Date().toISOString()),
+        read: false,
+        canMarkRead: true,
+      },
+    ];
+  } catch {
+    return [];
+  }
+}
+
 function listShopOrdersLive(actor: AdminAuthActor): AdminHeaderNotification[] {
   if (!canSee(actor, 'shop.read')) return [];
   if (isDismissed(actor, 'live:shop-orders')) return [];
@@ -455,12 +494,14 @@ export async function listAdminHeaderNotifications(actor: AdminAuthActor): Promi
   unreadCount: number;
 }> {
   ensureAdminNotificationsSchema();
+  syncOpenCoinSellNotifications();
   const mailItems = await listMailLive(actor);
   const items = [
     ...listDbNotifications(actor),
     ...listHrLive(actor),
     ...listSalesLive(actor),
     ...listPaymentsLive(actor),
+    ...listCoinSellsLive(actor),
     ...listCrmLive(actor),
     ...listPlatformLive(actor),
     ...listShopOrdersLive(actor),
@@ -553,8 +594,71 @@ export function markAllAdminHeaderNotificationsRead(actor: AdminAuthActor): { ok
   dismiss(actor, 'live:sales-open');
   dismiss(actor, 'live:mail-unread');
   dismiss(actor, 'live:payments-queue');
+  dismiss(actor, 'live:coin-sells');
   dismiss(actor, 'live:crm-open');
   dismiss(actor, 'live:platform-queues');
   dismiss(actor, 'live:shop-orders');
   return { ok: true };
+}
+
+export function notifyCoinSellSubmitted(input: {
+  requestId: number;
+  userName?: string | null;
+  coins: number;
+  amountToman: number;
+  channel?: string | null;
+}): void {
+  const id = Math.floor(Number(input.requestId));
+  if (!Number.isFinite(id) || id <= 0) return;
+  const via =
+    input.channel === 'bot' ? 'ربات' : input.channel === 'web' ? 'وب' : '';
+  pushAdminHeaderNotification({
+    title: 'درخواست برداشت سکه',
+    body: [
+      input.userName || 'کاربر',
+      `${Math.floor(Number(input.coins) || 0)} سکه`,
+      `${Math.floor(Number(input.amountToman) || 0)} تومان`,
+      via || null,
+    ]
+      .filter(Boolean)
+      .join(' · '),
+    kind: 'warn',
+    href: '/admin/coin-sells',
+    module: 'finance',
+    permission: 'finance.read',
+    sourceKey: `coin-sell:${id}`,
+  });
+}
+
+/** Backfill header inbox for open withdrawals (bot/site) that predate this wiring. */
+export function syncOpenCoinSellNotifications(): void {
+  try {
+    const rows = db()
+      .prepare(
+        `SELECT r.id, r.coins, r.amount_toman, r.channel, u.name AS user_name
+         FROM coin_sell_requests r
+         JOIN users u ON u.id = r.user_id
+         WHERE r.status = 'open'
+         ORDER BY r.id DESC
+         LIMIT 80`
+      )
+      .all() as Array<{
+      id: number;
+      coins: number;
+      amount_toman: number;
+      channel?: string | null;
+      user_name?: string | null;
+    }>;
+    for (const row of rows) {
+      notifyCoinSellSubmitted({
+        requestId: Number(row.id),
+        userName: row.user_name,
+        coins: Number(row.coins),
+        amountToman: Number(row.amount_toman),
+        channel: row.channel,
+      });
+    }
+  } catch {
+    /* table may not exist in very early tests */
+  }
 }

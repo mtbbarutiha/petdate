@@ -27,8 +27,8 @@ assert.doesNotMatch(
 );
 assert.match(
   profilePage,
-  /resolvePublicMediaUrl\(display\.avatarUrl\)/,
-  'profile avatar uses user avatar only'
+  /resolvePublicAvatarUrl\(display\.avatarUrl/,
+  'profile avatar uses user avatar only (never face-verify video)'
 );
 
 assert.match(chatPage, /tg-request-card-owner/, 'request card shows owner thumb');

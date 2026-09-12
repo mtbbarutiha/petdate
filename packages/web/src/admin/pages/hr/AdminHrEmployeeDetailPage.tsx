@@ -24,6 +24,7 @@ import {
 import { adminFetch, formatNumFa } from '../../api';
 import { adminCan } from '../../auth';
 import { AdminModal } from '../../AdminModal';
+import { appPrompt } from '../../../components/AppDialog';
 import { AdminIdChip } from '../../AdminIds';
 import { AdminThumb } from '../../AdminThumb';
 import { JalaliDateSelect, formatAdminFaDate, formatJalaliSlash, parseJalaliSlash } from '../../JalaliDateSelect';
@@ -921,10 +922,15 @@ export function AdminHrEmployeeDetailPage() {
                               type="button"
                               className="admin-btn admin-btn--ghost"
                               onClick={() => {
-                                const result =
-                                  window.prompt('نتیجه تیکت', r.result || 'انجام شد') || '';
-                                if (!result.trim()) return;
-                                void ticketAct(`/api/admin/hr/requests/${r.id}/resolve`, { result });
+                                void (async () => {
+                                  const result = await appPrompt(tr('نتیجه تیکت'), {
+                                    defaultValue: r.result || 'انجام شد',
+                                    optional: false,
+                                    variant: 'admin',
+                                  });
+                                  if (!result?.trim()) return;
+                                  void ticketAct(`/api/admin/hr/requests/${r.id}/resolve`, { result: result.trim() });
+                                })();
                               }}
                             >
                               {tr('ثبت نتیجه')}

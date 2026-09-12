@@ -140,3 +140,52 @@ export function addItem(board: WidgetBoardState, catalogItem: WidgetCatalogItem)
 export function resetBoard(catalog: WidgetCatalogItem[]): WidgetBoardState {
   return defaultBoard(catalog);
 }
+
+export function layoutPrefKey(dashboardId: string): string {
+  const id = String(dashboardId || '')
+    .replace(/[^\w.-]/g, '_')
+    .slice(0, 48);
+  return `widget-layout:${id || 'board'}`;
+}
+
+export function parseRemoteBoard(raw: unknown): WidgetBoardState | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const obj = raw as Partial<WidgetBoardState>;
+  if (obj.version !== 1 || !Array.isArray(obj.items)) return null;
+  return obj as WidgetBoardState;
+}
+
+export function isDefaultBoard(board: WidgetBoardState, catalog: WidgetCatalogItem[]): boolean {
+  const def = defaultBoard(catalog);
+  if (board.removed.length) return false;
+  if (board.items.length !== def.items.length) return false;
+  return board.items.every((it, i) => {
+    const d = def.items[i];
+    return Boolean(d && it.id === d.id && it.w === d.w && it.h === d.h);
+  });
+}
+
+export function resolveHydratedBoard(
+  local: WidgetBoardState,
+  remoteRaw: unknown,
+  catalog: WidgetCatalogItem[],
+): { board: WidgetBoardState; uploadLocal: boolean; source: 'remote' | 'local' | 'default' } {
+  const parsed = parseRemoteBoard(remoteRaw);
+  if (parsed) {
+    return { board: normalizeBoard(parsed, catalog), uploadLocal: false, source: 'remote' };
+  }
+  const localNorm = normalizeBoard(local, catalog);
+  if (!isDefaultBoard(localNorm, catalog)) {
+    return { board: localNorm, uploadLocal: true, source: 'local' };
+  }
+  return { board: localNorm, uploadLocal: false, source: 'default' };
+}
+
+export function clearBoard(dashboardId: string, userKey: string): void {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    localStorage.removeItem(storageKeyFor(dashboardId, userKey));
+  } catch {
+    /* ignore */
+  }
+}

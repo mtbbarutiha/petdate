@@ -7,6 +7,7 @@ import { PersistTagAssistantParams } from './components/PersistTagAssistantParam
 import { RouteSeo } from './components/RouteSeo';
 import { ShopCartProvider } from './hooks/useShopCart';
 import { AppToastProvider } from './hooks/useAppToast';
+import { AppDialogHost } from './components/AppDialog';
 import { FaceVerifyRewardToast } from './components/FaceVerifyRewardToast';
 import { LandingMobileDock } from './components/LandingMobileDock';
 import { ScrollToTop } from './components/ScrollToTop';
@@ -14,6 +15,7 @@ import { trackPageview } from './lib/siteAnalytics';
 import { withTagAssistantParams } from './lib/tagAssistantParams';
 import { WelcomePage } from './pages/WelcomePage';
 import { VetConsultRoute } from './pages/VetConsultRoute';
+import { ReferralCapture } from './components/ReferralCapture';
 
 function SiteAnalyticsListener() {
   const location = useLocation();
@@ -37,6 +39,9 @@ const TelegramLinkPage = lazy(() =>
   import('./pages/auth/TelegramLinkPage').then((m) => ({ default: m.TelegramLinkPage })),
 );
 const FaqPage = lazy(() => import('./pages/FaqPage').then((m) => ({ default: m.FaqPage })));
+const InvitePage = lazy(() =>
+  import('./pages/InvitePage').then((m) => ({ default: m.InvitePage })),
+);
 const MagazinePage = lazy(() =>
   import('./pages/MagazinePage').then((m) => ({ default: m.MagazinePage })),
 );
@@ -361,11 +366,13 @@ export default function App() {
   return (
     <AppGuards>
       <AppToastProvider>
+      <AppDialogHost />
       <FaceVerifyRewardToast />
       <ShopCartProvider>
         <ScrollToTop />
         <LegacyAdoptionHashRedirect />
         <PersistTagAssistantParams />
+        <ReferralCapture />
         <SiteAnalyticsListener />
         <RouteSeo />
         <Suspense fallback={<RouteFallback />}>
@@ -373,6 +380,7 @@ export default function App() {
             <Route index element={<WelcomePage />} />
             <Route path="welcome" element={<WelcomePage />} />
             <Route path="faq" element={<FaqPage />} />
+            <Route path="invite" element={<InvitePage />} />
             <Route path="magazine" element={<MagazinePage />} />
             <Route path="magazine/:slug" element={<MagazineArticlePage />} />
             <Route path="news" element={<Navigate to="/magazine" replace />} />

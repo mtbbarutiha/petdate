@@ -6,6 +6,7 @@ export * from './rx-suggestions';
 export * from './profile-card';
 export * from './peer-profile';
 export * from './photo-moderation';
+export * from './profile-avatar';
 export * from './pet-slug';
 export * from './hr';
 export * from './admin-notifications';
@@ -215,6 +216,8 @@ export interface User {
   signupBonusClaimed?: boolean;
   /** شناسه کاربری که این کاربر را دعوت کرده (لینک ref_) */
   referredBy?: number | null;
+  /** تعداد دعوت‌شدگان تأییدشده (لیست ادمین / کارت دعوت) */
+  invitedCount?: number;
   /** کلیدهای بخش پروفایل که جایزه‌شان گرفته شده */
   profileRewards?: string[];
   /** جایزه‌هایی که همین پاسخ API تازه واریز کرده (ephemeral) */

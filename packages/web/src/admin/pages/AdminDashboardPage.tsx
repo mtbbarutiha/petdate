@@ -29,6 +29,10 @@ import {
   CategoryDonutWidget,
   CategoryFunnelWidget,
   CalendarWidget,
+  DailyNotesWidget,
+  DashboardSelectedDateProvider,
+  DAILY_NOTES_WIDGET_ID,
+  DUAL_CALENDAR_WIDGET_ID,
   PLATFORM_WIDGET_CATALOG,
   TimeBarWidget,
   TimeLineWidget,
@@ -487,7 +491,8 @@ export function AdminDashboardPage() {
   ].filter(Boolean) as string[];
 
   const renderPlatformWidget = (id: string, ctx: WidgetRenderContext) => {
-    if (id === 'dualCalendar') return <CalendarWidget ctx={ctx} />;
+    if (id === DUAL_CALENDAR_WIDGET_ID) return <CalendarWidget ctx={ctx} />;
+    if (id === DAILY_NOTES_WIDGET_ID) return <DailyNotesWidget ctx={ctx} />;
     if (!series) return <WidgetEmpty />;
     switch (id) {
       case 'moduleMix':
@@ -764,14 +769,14 @@ export function AdminDashboardPage() {
             </AdminModuleGrid>
           ) : null}
 
-          {series ? (
+          <DashboardSelectedDateProvider>
             <WidgetDashboard
               dashboardId="platform"
               catalog={PLATFORM_WIDGET_CATALOG}
               title={tr("گزارش تجمیعی · ویجت‌ها")}
               renderWidget={renderPlatformWidget}
             />
-          ) : null}
+          </DashboardSelectedDateProvider>
 
           <p className="admin-section-label">{tr('آخرین فعالیت‌ها')}</p>
           <div className="admin-dash-grid">

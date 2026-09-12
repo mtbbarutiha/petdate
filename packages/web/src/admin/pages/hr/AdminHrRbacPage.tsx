@@ -12,6 +12,7 @@ import {
 import { adminFetch, formatNumFa } from '../../api';
 import { adminCan, getAdminRole } from '../../auth';
 import { AdminModal } from '../../AdminModal';
+import { appConfirm } from '../../../components/AppDialog';
 import { tr } from '../../../i18n';
 
 type RoleForm = {
@@ -119,7 +120,7 @@ export function AdminHrRbacPage() {
       setError(tr('نقش سیستم را نمی‌توان حذف کرد'));
       return;
     }
-    if (!confirm(`${tr('حذف یا غیرفعال‌سازی نقش «')}${role.nameFa}${tr('»؟')}`)) return;
+    if (!(await appConfirm(`${tr('حذف یا غیرفعال‌سازی نقش «')}${role.nameFa}${tr('»؟')}`, { danger: true, variant: 'admin' }))) return;
     setBusy(true);
     try {
       await adminFetch(`/api/admin/hr/rbac/roles/${role.id}`, { method: 'DELETE' });
@@ -170,7 +171,7 @@ export function AdminHrRbacPage() {
 
   const removeAccount = async (account: AdminAccount) => {
     if (!canMutate) return;
-    if (!confirm(`${tr('حذف حساب «')}${account.username}${tr('»؟')}`)) return;
+    if (!(await appConfirm(`${tr('حذف حساب «')}${account.username}${tr('»؟')}`, { danger: true, variant: 'admin' }))) return;
     setBusy(true);
     try {
       await adminFetch(`/api/admin/hr/rbac/accounts/${account.id}`, { method: 'DELETE' });

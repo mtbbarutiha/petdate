@@ -77,6 +77,9 @@ import {
   PROFILE_SECTION_REWARD,
   REFERRAL_BONUS_COINS,
   SIGNUP_BONUS,
+  inviteReferralCode,
+  inviteTelegramLink,
+  inviteWebLink,
   USER_PRESENCE_ONLINE_MS,
   USER_ROLES,
   sanitizeRoleList,
@@ -86,9 +89,14 @@ import {
   vetVisitFeeCoins,
   walletFromUserFields,
   walletLedgerLabelFa,
+  profileAvatarUrl,
+  publicFacingAvatarUrl,
+  isNonImageAvatarRef,
+  type CoinSellChannel,
   type CoinSellRequestAdmin,
   type CoinSellRequestStatus,
   type CoinSellRequestSummary,
+  normalizeCoinSellChannel,
   type PetMedicalField,
   type WalletCurrency,
   type WalletLedgerDirection,
@@ -661,6 +669,7 @@ function migrateSchema() {
       amount_toman INTEGER NOT NULL,
       card_number TEXT NOT NULL,
       status TEXT NOT NULL DEFAULT 'open',
+      channel TEXT NOT NULL DEFAULT 'unknown',
       admin_note TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       reviewed_at TEXT,
@@ -1360,6 +1369,13 @@ function migrateSchema() {
     db.exec('ALTER TABLE shop_orders ADD COLUMN public_id TEXT');
   }
 
+  const coinSellCols = (
+    db.prepare(`PRAGMA table_info(coin_sell_requests)`).all() as Array<{ name: string }>
+  ).map((c) => c.name);
+  if (!coinSellCols.includes('channel')) {
+    db.exec(`ALTER TABLE coin_sell_requests ADD COLUMN channel TEXT NOT NULL DEFAULT 'unknown'`);
+  }
+
   const paymentOrderCols = (
     db.prepare(`PRAGMA table_info(payment_orders)`).all() as Array<{ name: string }>
   ).map((c) => c.name);
@@ -1463,6 +1479,26 @@ function migrateSchema() {
     console.warn('Admin notifications schema ensure skipped/failed:', (err as Error).message);
   }
 
+  // Admin dashboard daily notes — CREATE IF NOT EXISTS; never wipe
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { ensureAdminDailyNotesSchema } =
+      require('./admin-daily-notes') as typeof import('./admin-daily-notes');
+    ensureAdminDailyNotesSchema();
+  } catch (err) {
+    console.warn('Admin daily notes schema ensure skipped/failed:', (err as Error).message);
+  }
+
+  // Per-admin UI prefs (widget layouts) — CREATE IF NOT EXISTS; never wipe
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { ensureAdminUserPrefsSchema } =
+      require('./admin-user-prefs') as typeof import('./admin-user-prefs');
+    ensureAdminUserPrefsSchema();
+  } catch (err) {
+    console.warn('Admin user prefs schema ensure skipped/failed:', (err as Error).message);
+  }
+
   // Platform settings — modular dropdowns + module goals (additive; never wipe)
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -1492,6 +1528,13 @@ function migrateSchema() {
     console.warn('CRM demo seed skipped/failed:', (err as Error).message);
   }
 
+  // Drop face-verify videos that were historically copied onto avatar_url.
+  try {
+    clearFaceVerifyMediaFromAvatars();
+  } catch (err) {
+    console.warn('face-verify avatar cleanup skipped/failed:', (err as Error).message);
+  }
+
   // Magazine / news CMS (additive; never wipe). Primary boot also calls bootMagazineCms
   // from getDb() so a mid-migrate throw cannot skip seeding forever.
   try {
@@ -1501,6 +1544,33 @@ function migrateSchema() {
     ensureMagazineSchema();
   } catch (err) {
     console.warn('Magazine schema ensure skipped/failed:', (err as Error).message);
+  }
+}
+
+/**
+ * Historical bug: submitVerification copied the face-verify selfie/video onto
+ * users.avatar_url. Clear those non-image refs so chat/profile can show the
+ * real photo (or placeholder) and Telegram sync can restore a still image.
+ */
+function clearFaceVerifyMediaFromAvatars(): void {
+  const rows = db
+    .prepare(
+      `SELECT id, avatar_url FROM users
+       WHERE avatar_url IS NOT NULL AND TRIM(avatar_url) != ''`
+    )
+    .all() as { id: number; avatar_url: string }[];
+  if (!rows.length) return;
+  const upd = db.prepare(
+    `UPDATE users SET avatar_url = NULL, avatar_custom = 0 WHERE id = ?`
+  );
+  let cleared = 0;
+  for (const row of rows) {
+    if (!isNonImageAvatarRef(row.avatar_url)) continue;
+    upd.run(row.id);
+    cleared += 1;
+  }
+  if (cleared) {
+    console.info(`cleared ${cleared} face-verify/video profile avatars`);
   }
 }
 
@@ -2197,7 +2267,9 @@ function mapUser(row: Record<string, unknown>): User {
     phoneVerifiedAt: (row.phone_verified_at as string | undefined) ?? undefined,
     bio: row.bio as string | undefined,
     interests: parseInterests(row.interests),
-    avatarUrl: row.avatar_url as string | undefined,
+    avatarUrl: profileAvatarUrl(row.avatar_url as string | undefined, {
+      verificationPhotoFileId: (row.verification_photo_file_id as string | undefined) ?? undefined,
+    }),
     avatarCustom: row.avatar_custom == null ? false : Boolean(row.avatar_custom),
     avatarModerationStatus: parsePhotoModerationStatus(row.avatar_moderation_status),
     coins: row.coins != null ? Number(row.coins) : 0,
@@ -2394,14 +2466,10 @@ function mapPet(row: Record<string, unknown>): PetProfile {
     ownerCity: (row.owner_city as string | undefined) ?? undefined,
     ownerName: (row.owner_name as string | undefined) ?? undefined,
     ownerVerified: row.owner_verified != null ? Boolean(row.owner_verified) : undefined,
-    ownerAvatarUrl: (() => {
-      const raw = (row.owner_avatar_url as string | undefined) ?? undefined;
-      if (!raw?.trim()) return undefined;
-      const status = parsePhotoModerationStatus(
-        row.owner_avatar_moderation_status ?? 'approved'
-      );
-      return status === 'approved' ? raw : undefined;
-    })(),
+    ownerAvatarUrl: publicFacingAvatarUrl(
+      (row.owner_avatar_url as string | undefined) ?? undefined,
+      parsePhotoModerationStatus(row.owner_avatar_moderation_status ?? 'approved')
+    ),
     ownerLastSeenAt:
       (row.owner_location_updated_at as string | undefined) ||
       (row.owner_last_seen_at as string | undefined) ||
@@ -2530,7 +2598,7 @@ function mapPaymentOrder(row: Record<string, unknown>): PaymentOrder {
         ? String(row.user_telegram_id).trim()
         : undefined,
     userUsername: (row.user_username as string | undefined) ?? undefined,
-    userAvatarUrl: (row.user_avatar_url as string | undefined) ?? undefined,
+    userAvatarUrl: profileAvatarUrl(row.user_avatar_url as string | undefined),
   };
 }
 
@@ -2577,7 +2645,7 @@ function mapVetConsultation(row: Record<string, unknown>): VetConsultation {
       (row.created_at as string | undefined),
     patientName: (row.patient_name as string | undefined) ?? undefined,
     patientCity: (row.patient_city as string | undefined) ?? undefined,
-    patientAvatarUrl: (row.patient_avatar_url as string | undefined) ?? undefined,
+    patientAvatarUrl: profileAvatarUrl(row.patient_avatar_url as string | undefined),
     patientPublicId: userPublicIdOf({
       id: row.patient_user_id as number,
       publicId: (row.patient_public_id as string | undefined) ?? undefined,
@@ -2587,7 +2655,7 @@ function mapVetConsultation(row: Record<string, unknown>): VetConsultation {
       return bio || undefined;
     })(),
     vetName: (row.vet_name as string | undefined) ?? undefined,
-    vetAvatarUrl: (row.vet_avatar_url as string | undefined) ?? undefined,
+    vetAvatarUrl: profileAvatarUrl(row.vet_avatar_url as string | undefined),
     petName: (row.pet_name as string | undefined) ?? undefined,
     petSpecies: (row.pet_species as string | undefined) ?? undefined,
     petBreed: (row.pet_breed as string | undefined) ?? undefined,
@@ -2675,6 +2743,7 @@ function mapCoinSellRequestSummary(row: Record<string, unknown>): CoinSellReques
     amountToman: Number(row.amount_toman),
     cardMasked: maskCardNumber(String(row.card_number ?? '')),
     status,
+    channel: normalizeCoinSellChannel(row.channel),
     createdAt: String(row.created_at),
     reviewedAt: (row.reviewed_at as string | null | undefined) ?? null,
     adminNote: (row.admin_note as string | null | undefined) ?? null,
@@ -3469,10 +3538,9 @@ export const dbService = {
          verified_at = NULL
        WHERE id = ?`
     ).run(photo, userId);
-    // Keep avatar in sync when submitting profile photo for review
-    if (!existing.avatarUrl || existing.avatarUrl !== photo) {
-      db.prepare('UPDATE users SET avatar_url = ? WHERE id = ?').run(photo, userId);
-    }
+    // Face-verify media stays on verification_photo_file_id (admin review only).
+    // Never copy the selfie/video onto avatar_url — chat/profile use the
+    // approved profile photo (or the pending-photo placeholder).
     return { ok: true, user: this.getUserById(userId)! };
   },
 
@@ -4365,6 +4433,64 @@ export const dbService = {
       };
     });
     return tx();
+  },
+
+  countInvitesByReferrerIds(referrerIds: number[]): Map<number, number> {
+    const ids = [...new Set(referrerIds.filter((id) => Number.isFinite(id) && id > 0))];
+    const map = new Map<number, number>();
+    if (!ids.length) return map;
+    const placeholders = ids.map(() => '?').join(',');
+    const rows = db
+      .prepare(
+        `SELECT referred_by AS id, COUNT(*) AS c
+         FROM users
+         WHERE referred_by IN (${placeholders})
+         GROUP BY referred_by`
+      )
+      .all(...ids) as Array<{ id: number; c: number }>;
+    for (const row of rows) {
+      map.set(Number(row.id), Number(row.c) || 0);
+    }
+    return map;
+  },
+
+  getReferralStats(userId: number): {
+    userId: number;
+    code: string;
+    webLink: string;
+    telegramLink: string;
+    bonusCoins: number;
+    invitedCount: number;
+    coinsEarned: number;
+    referredBy: number | null;
+  } | null {
+    const user = this.getUserById(userId);
+    if (!user) return null;
+    const invitedCount = Number(
+      (
+        db.prepare('SELECT COUNT(*) AS c FROM users WHERE referred_by = ?').get(userId) as {
+          c: number;
+        }
+      )?.c || 0
+    );
+    const ledger = db
+      .prepare(
+        `SELECT COALESCE(SUM(amount), 0) AS s
+         FROM coin_ledger
+         WHERE user_id = ? AND reason LIKE 'referral:%'`
+      )
+      .get(userId) as { s: number } | undefined;
+    const coinsEarned = Number(ledger?.s || 0);
+    return {
+      userId,
+      code: inviteReferralCode(userId),
+      webLink: inviteWebLink(userId),
+      telegramLink: inviteTelegramLink(userId),
+      bonusCoins: REFERRAL_BONUS_COINS,
+      invitedCount,
+      coinsEarned,
+      referredBy: user.referredBy ?? null,
+    };
   },
 
   /** جایزه بخش‌هایی که تازه از خالی → پر شده‌اند */
@@ -6568,6 +6694,8 @@ export const dbService = {
     rateToman: number;
     cardNumber: string;
     minCoins: number;
+    /** web = سایت /earn/withdraw ؛ bot = ربات فروش سکه */
+    channel?: CoinSellChannel;
   }):
     | { ok: true; requestId: number; amountToman: number; rateToman: number; user: User }
     | { ok: false; reason: 'min' | 'balance' | 'pending' | 'missing' } {
@@ -6588,13 +6716,14 @@ export const dbService = {
         )
         .run(coins, input.userId, coins);
       if (debited.changes !== 1) throw new Error('BALANCE');
+      const channel = normalizeCoinSellChannel(input.channel);
       const result = db
         .prepare(
           `INSERT INTO coin_sell_requests (
-            user_id, coins, rate_toman, amount_toman, card_number, status
-          ) VALUES (?, ?, ?, ?, ?, 'open')`
+            user_id, coins, rate_toman, amount_toman, card_number, status, channel
+          ) VALUES (?, ?, ?, ?, ?, 'open', ?)`
         )
-        .run(input.userId, coins, input.rateToman, amountToman, input.cardNumber);
+        .run(input.userId, coins, input.rateToman, amountToman, input.cardNumber, channel);
       const requestId = Number(result.lastInsertRowid);
       this.appendWalletLedger({
         userId: input.userId,
@@ -6610,12 +6739,27 @@ export const dbService = {
 
     try {
       const requestId = tx();
+      const saved = this.getUserById(input.userId)!;
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { notifyCoinSellSubmitted } =
+          require('./admin-notifications') as typeof import('./admin-notifications');
+        notifyCoinSellSubmitted({
+          requestId,
+          userName: saved.name,
+          coins,
+          amountToman,
+          channel: normalizeCoinSellChannel(input.channel),
+        });
+      } catch (err) {
+        console.warn('coin sell header notif skipped:', (err as Error).message);
+      }
       return {
         ok: true,
         requestId,
         amountToman,
         rateToman: input.rateToman,
-        user: this.getUserById(input.userId)!,
+        user: saved,
       };
     } catch (err) {
       if (err instanceof Error && err.message === 'BALANCE') {

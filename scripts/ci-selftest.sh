@@ -13,14 +13,16 @@ run() {
 }
 
 # Shared pure selftests
-echo "==> selftest: shared peer-profile + user-command-id + pet/order-public-id + gtm-contract + sanitize-roles + breed-search + photo-moderation"
+echo "==> selftest: shared peer-profile + user-command-id + pet/order-public-id + gtm-contract + sanitize-roles + breed-search + photo-moderation + profile-avatar"
 npx tsx "$ROOT/packages/shared/src/peer-profile.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/photo-moderation.selftest.ts"
+npx tsx "$ROOT/packages/shared/src/profile-avatar.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/user-command-id.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/pet-public-id.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/order-public-id.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/entity-public-id.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/gtm-contract.selftest.ts"
+npx tsx "$ROOT/packages/shared/src/referral.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/pet-slug.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/sanitize-roles.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/catalog-breed-search.selftest.ts"
@@ -114,6 +116,10 @@ npx tsx "$ROOT/packages/web/src/lib/sitemap.selftest.ts"
 echo "==> selftest: web public marketing routes (vet-consult / adoption / magazine)"
 npx tsx "$ROOT/packages/web/src/lib/publicRoutes.selftest.ts"
 
+echo "==> selftest: web invite referral persist + card wiring"
+npx tsx "$ROOT/packages/web/src/lib/referral.selftest.ts"
+npx tsx "$ROOT/packages/web/src/components/inviteFriends.selftest.ts"
+
 echo "==> selftest: web mobile dock keeps wallet + chats (Games not a replacement)"
 npx tsx "$ROOT/packages/web/src/lib/siteNav.selftest.ts"
 
@@ -122,6 +128,9 @@ npx tsx "$ROOT/packages/web/src/lib/swCache.selftest.ts"
 
 echo "==> selftest: web authRedirect next=/vet-consult"
 npx tsx "$ROOT/packages/web/src/lib/authRedirect.selftest.ts"
+
+echo "==> selftest: web shared AppDialog (no native prompt/confirm/alert)"
+npx tsx "$ROOT/packages/web/src/components/appDialog.selftest.ts"
 
 echo "==> selftest: web playmate fee ConfirmModal (no window.confirm)"
 npx tsx "$ROOT/packages/web/src/components/playmateFeeConfirm.selftest.ts"
@@ -208,6 +217,7 @@ run src/services/nearby-cards.selftest.ts
 run src/services/vet-online.selftest.ts
 run src/services/marketplace-roles.selftest.ts
 run src/services/pending-photo-placeholder.selftest.ts
+run src/services/face-verify-avatar.selftest.ts
 run src/services/seeker-advice-early-refund.selftest.ts
 run src/services/seeker-advice-owner-notify.selftest.ts
 run src/services/telegram-face-verify-notify.selftest.ts
@@ -248,7 +258,11 @@ run src/hr-sales-demo-seed.selftest.ts
 run src/crm.selftest.ts
 run src/crm-ticketing.selftest.ts
 run src/support-tickets.selftest.ts
+run src/services/ticket-user-notify.selftest.ts
 run src/admin-notifications.selftest.ts
+run src/coin-sell-notifications.selftest.ts
+run src/admin-daily-notes.selftest.ts
+run src/admin-user-prefs.selftest.ts
 run src/admin-platform-nav.selftest.ts
 run src/admin-users-geo.selftest.ts
 run src/admin-users-list-pets.selftest.ts
@@ -272,5 +286,6 @@ run src/routes/users-staff-auth.selftest.ts
 run src/routes/consultations-quick-connect-auth.selftest.ts
 run src/services/playdate-fee.selftest.ts
 run src/site-analytics.selftest.ts
+run src/referral.selftest.ts
 
 echo "ci-selftest: all passed"

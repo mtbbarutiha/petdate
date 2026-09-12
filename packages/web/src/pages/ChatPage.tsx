@@ -73,6 +73,7 @@ import {
   setPlaydateChatSecure,
   updatePlaydateStatus,
   uploadPlaydateChatFile,
+  resolvePublicAvatarUrl,
   resolvePublicMediaUrl,
 } from '../lib/api';
 import type { PlaydateChatMediaKind, PlaydateChatMessage } from '@petdate/shared';
@@ -1140,7 +1141,11 @@ export function ChatPage() {
         const displayName = (user.name && String(user.name).trim()) || null;
         setPeerOwnerLabel(label);
         setPeerOwnerDisplayName(displayName);
-        setPeerOwnerAvatar(resolvePublicMediaUrl(user.avatarUrl));
+        setPeerOwnerAvatar(
+          resolvePublicAvatarUrl(user.avatarUrl, {
+            verificationPhotoFileId: user.verificationPhotoFileId,
+          })
+        );
         setPeerOwnerMeta({
           city: user.city || undefined,
           province: user.province || undefined,

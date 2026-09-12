@@ -33,6 +33,9 @@ assert.match(financeBlock, /admin\.depositQueue/, 'deposit queue label under م�
 assert.match(financeBlock, /\/admin\/coin-sells/, 'coin-sell queue under مالی');
 assert.match(financeBlock, /financeBadgeKey:\s*['"]coinSells['"]/, 'coin-sell badge under مالی');
 
+const header = readFileSync(join(webRoot, 'admin/AdminHeaderNotifications.tsx'), 'utf8');
+assert.match(header, /\/admin\/coin-sells/, 'اعلانات footer includes coin-sell queue');
+
 assert.match(sharedNav, /shopOrders:\s*number/, 'PlatformNavCounts.shopOrders');
 assert.match(sharedNav, /export interface FinanceNavCounts/, 'FinanceNavCounts exported');
 assert.match(sharedNav, /export interface CrmNavCounts/, 'CrmNavCounts exported');

@@ -37,6 +37,7 @@ import {
   type User,
   type UserGender,
 } from '@petdate/shared';
+import { appConfirm } from '../components/AppDialog';
 import { AgePicker } from '../components/AgePicker';
 import { InviteFriendsCard } from '../components/InviteFriendsCard';
 import { PetAvatar } from '../components/PetAvatar';
@@ -55,7 +56,7 @@ import {
   listUserContacts,
   patchWebAcceptSeekerAdvice,
   patchWebProfile,
-  resolvePublicMediaUrl,
+  resolvePublicAvatarUrl,
   submitWebFaceVerification,
 } from '../lib/api';
 import { petProfileToUiPet } from '../lib/playdateMap';
@@ -278,7 +279,9 @@ export function ProfilePage() {
   // (e.g. multi-role users whose card lags roles briefly).
   const showPetsBlock = isPetOwner || myPets.length > 0 || petsLoading;
   const locationLabel = [display.city, display.province, display.country].filter(Boolean).join('، ') || '—';
-  const avatarSrc = resolvePublicMediaUrl(display.avatarUrl);
+  const avatarSrc = resolvePublicAvatarUrl(display.avatarUrl, {
+    verificationPhotoFileId: display.verificationPhotoFileId,
+  });
   const genderPlain =
     display.gender === 'male' ? 'آقا' : display.gender === 'female' ? 'خانم' : null;
   const likes = display.likesCount ?? 0;
@@ -432,7 +435,7 @@ export function ProfilePage() {
     }
   }
   async function deleteAccount() {
-    if (!window.confirm('مطمئنی حساب حذف شود؟ این کار برگشت‌پذیر نیست.')) return;
+    if (!(await appConfirm('مطمئنی حساب حذف شود؟ این کار برگشت‌پذیر نیست.', { danger: true }))) return;
     setBusy(true);
     try {
       await deleteUserAccountById(userId);

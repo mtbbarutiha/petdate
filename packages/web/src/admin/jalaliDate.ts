@@ -260,4 +260,10 @@ export function formatAdminFaDateTime(raw?: string | Date | null): string {
   }
 }
 
+/** Local calendar date as `YYYY-MM-DD` (no UTC shift). */
+export function localDateToIso(d: Date = new Date()): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
 

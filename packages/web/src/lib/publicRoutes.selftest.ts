@@ -20,6 +20,9 @@ const hashRedirect = readFileSync(join(webSrc, 'components/LegacyAdoptionHashRed
 const dock = readFileSync(join(webSrc, 'components/LandingMobileDock.tsx'), 'utf8');
 const nav = readFileSync(join(webSrc, 'lib/siteNav.ts'), 'utf8');
 
+assert.match(guard, /PUBLIC_EXACT[\s\S]*\/invite/, 'AuthGuard treats /invite as public');
+assert.match(app, /path="invite"\s+element=\{<InvitePage/, 'App registers /invite landing');
+assert.match(app, /<ReferralCapture/, 'invite ref is captured on every route');
 assert.match(guard, /PUBLIC_EXACT[\s\S]*\/vet-consult/, 'AuthGuard treats /vet-consult as public');
 assert.match(guard, /PUBLIC_PREFIXES[\s\S]*\/magazine/, 'AuthGuard treats /magazine as public');
 assert.match(guard, /\/adoption/, 'AuthGuard treats /adoption as public');

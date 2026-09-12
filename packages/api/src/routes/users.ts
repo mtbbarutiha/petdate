@@ -2,13 +2,17 @@ import { Router, type Request } from 'express';
 import { isInternalBot, requireTrustedStaff } from '../internal-auth';
 import type { OnboardingStatus, User, UserRole } from '@petdate/shared';
 import {
+  COIN_SELL_PRICE_TOMAN,
   FACE_VERIFY_REWARD,
+  MIN_SELL_COINS,
   ONBOARDING_STATUS_LABELS,
   USER_ROLES,
   toPeerPublicUser,
   userHasRole,
+  validateIranCard,
 } from '@petdate/shared';
 import { dbService } from '../db';
+import { getReferralStats, parseReferredByInput, tryGrantReferralOnSignup } from '../services/referral-grant';
 import { rejectIfFlagOff } from '../runtime-settings';
 import { sendPhoneOtp, verifyPhoneOtp } from '../services/phone-otp';
 import { sendVetEnabledSms } from '../services/vet-status-sms';
@@ -102,10 +106,7 @@ usersRouter.post('/register', async (req, res) => {
     res.status(400).json({ error: 'نام الزامی است' });
     return;
   }
-  const referredBy =
-    rawReferredBy != null && Number.isFinite(Number(rawReferredBy))
-      ? Math.floor(Number(rawReferredBy))
-      : null;
+  const referredBy = parseReferredByInput(rawReferredBy);
   const { user, created } = dbService.findOrCreateUser({ telegramId, name, username });
   // Pull Telegram profile photo (or materialize file_id) so bot/web profile views have a face.
   let synced = await withEnsuredAvatar(user);
@@ -127,29 +128,12 @@ usersRouter.post('/register', async (req, res) => {
     synced = bonus.user;
     awards.push(bonus.award);
   }
-  let referralAward: { referrerId: number; amount: number } | undefined;
-  if (referredBy != null && referredBy > 0) {
-    const referral = dbService.applyReferralBonus(synced.id, referredBy);
-    if (referral.awarded && referral.award) {
-      referralAward = { referrerId: referredBy, amount: referral.award.amount };
-      // اطلاع به معرف در پس‌زمینه
-      void (async () => {
-        try {
-          const { notifyReferralBonusTelegram } = await import('../services/telegram-referral-notify');
-          const referrer = referral.referrer;
-          if (referrer?.telegramId) {
-            await notifyReferralBonusTelegram({
-              toTelegramId: referrer.telegramId,
-              amount: referral.award!.amount,
-              invitedName: synced.name,
-            });
-          }
-        } catch (err) {
-          console.warn('referral notify failed:', (err as Error).message);
-        }
-      })();
-    }
-  }
+  const granted = tryGrantReferralOnSignup({
+    invitedUserId: synced.id,
+    referredBy,
+    created,
+  });
+  const referralAward = granted.referralAward;
   if (awards.length || referralAward) {
     res.json({
       ...synced,
@@ -169,6 +153,25 @@ usersRouter.get('/telegram/:telegramId', async (req, res) => {
   }
   const ensured = await withEnsuredAvatar(user);
   res.json(dbService.enrichUserProfileCard(ensured));
+});
+
+/** Bot invite card — same stats as GET /api/auth/referral */
+usersRouter.get('/telegram/:telegramId/referral', (req, res) => {
+  if (!isTrustedBotRequest(req)) {
+    res.status(403).json({ error: 'forbidden' });
+    return;
+  }
+  const user = dbService.getUserByTelegramId(req.params.telegramId);
+  if (!user) {
+    res.status(404).json({ error: 'کاربر پیدا نشد' });
+    return;
+  }
+  const stats = getReferralStats(user.id);
+  if (!stats) {
+    res.status(404).json({ error: 'کاربر پیدا نشد' });
+    return;
+  }
+  res.json(stats);
 });
 
 /** Touch last_seen for Telegram bot activity (marks user online). */
@@ -609,12 +612,11 @@ usersRouter.post('/telegram/:telegramId/verification', async (req, res) => {
     });
     return;
   }
-  if (looksLikeTelegramFileId(photoFileId)) {
-    try {
-      await ensureWebAccessibleAvatar(user.id);
-    } catch (err) {
-      console.warn('verification avatar materialize failed:', (err as Error).message);
-    }
+  // Materialize the existing profile photo if needed — never the verify clip.
+  try {
+    await ensureWebAccessibleAvatar(user.id);
+  } catch (err) {
+    console.warn('verification avatar materialize failed:', (err as Error).message);
   }
   res.json({ ok: true, user: dbService.getUserById(user.id) ?? result.user });
 });
@@ -1252,21 +1254,25 @@ usersRouter.post('/telegram/:telegramId/coins/sell', (req, res) => {
     return;
   }
   const coins = Number(req.body?.coins);
-  const cardNumber = String(req.body?.cardNumber ?? '');
-  const rateToman = req.body?.rateToman != null ? Number(req.body.rateToman) : 1000;
-  const minCoins = req.body?.minCoins != null ? Number(req.body.minCoins) : 50;
-
-  if (!cardNumber || cardNumber.length < 16) {
-    res.status(400).json({ error: 'شماره کارت نامعتبر', reason: 'card' });
+  const cardCheck = validateIranCard(String(req.body?.cardNumber ?? ''));
+  if (!cardCheck.ok) {
+    res.status(400).json({
+      error:
+        cardCheck.reason === 'luhn'
+          ? 'شماره کارت معتبر نیست (چک رقم).'
+          : 'شماره کارت ۱۶ رقمی بانکی ایران را درست وارد کنید.',
+      reason: 'card',
+    });
     return;
   }
 
   const result = dbService.submitCoinSell({
     userId: user.id,
     coins,
-    rateToman: Number.isFinite(rateToman) ? rateToman : 1000,
-    cardNumber,
-    minCoins: Number.isFinite(minCoins) ? minCoins : 50,
+    rateToman: COIN_SELL_PRICE_TOMAN,
+    cardNumber: cardCheck.card,
+    minCoins: MIN_SELL_COINS,
+    channel: 'bot',
   });
 
   if (!result.ok) {

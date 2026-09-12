@@ -39,6 +39,7 @@ import {
   type VetConsultChatMessage,
   type VetConsultation,
 } from '@petdate/shared';
+import { appAlert } from '../components/AppDialog';
 import { SiteLogo } from '../components/SiteLogo';
 import { InboxPeerAvatar } from '../components/InboxPeerAvatar';
 import { PetAvatar } from '../components/PetAvatar';
@@ -77,7 +78,7 @@ import {
   listVetConsultations,
   postVetConsultChatMessage,
   rejectVetConsultation,
-  resolvePublicMediaUrl,
+  resolvePublicAvatarUrl,
   setVetConsultChatSecure,
   uploadVetConsultChatFile,
   vetConsultChatMediaUrl,
@@ -354,7 +355,7 @@ export function VetChatPage() {
   }, [consult]);
   const seekerAvatarSrc = useMemo(() => {
     if (!isSeekerAdvice || !isVetSide) return null;
-    return resolvePublicMediaUrl(peerAvatarUrl || consult?.patientAvatarUrl) || null;
+    return resolvePublicAvatarUrl(peerAvatarUrl || consult?.patientAvatarUrl) || null;
   }, [isSeekerAdvice, isVetSide, peerAvatarUrl, consult?.patientAvatarUrl]);
 
   const peerSub = useMemo(() => {
@@ -2257,7 +2258,7 @@ export function VetChatPage() {
               !result.sms.sent &&
               !noPhone
             ) {
-              window.alert(smsLine);
+              void appAlert(smsLine);
             } else if (noPhone && result.chatDeliveryNote) {
               // Non-blocking: chat already carries the PDF
               console.info('[rx]', result.chatDeliveryNote);

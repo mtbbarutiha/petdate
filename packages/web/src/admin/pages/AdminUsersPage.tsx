@@ -419,7 +419,13 @@ export function AdminUsersPage() {
               const demo = adminUserDemographics(u);
               const place = [u.city, u.province].filter(Boolean).join(tr('، '));
               const displayName = String(u.name || '').trim() || '—';
-              const metaParts = [demo, place || null].filter(Boolean);
+              const inviteBits = [
+                u.invitedCount != null && u.invitedCount > 0
+                  ? `${tr('دعوت')}: ${formatNumFa(u.invitedCount)}`
+                  : null,
+                u.referredBy != null ? `${tr('معرف')} #${u.referredBy}` : null,
+              ].filter(Boolean);
+              const metaParts = [...inviteBits, demo, place || null].filter(Boolean);
               return (
                 <tr key={u.id}>
                   <td>

@@ -3,6 +3,7 @@ import { BadgeCheck, RefreshCw } from 'lucide-react';
 import type { User } from '@petdate/shared';
 import { FACE_VERIFY_REWARD, VERIFIED_BADGE, formatFaInt, userPublicIdOf } from '@petdate/shared';
 import { API_BASE, adminFetch, getAdminPassword, getAdminUsername } from '../api';
+import { appPrompt } from '../../components/AppDialog';
 import { tr } from '../../i18n';
 
 async function fetchPending(): Promise<User[]> {
@@ -199,7 +200,8 @@ export function AdminVerificationPage() {
   };
 
   const onReject = async (id: number) => {
-    const note = window.prompt('علت ❌ رد (اختیاری):') ?? undefined;
+    const note = await appPrompt(tr('علت ❌ رد (اختیاری):'), { optional: true, variant: 'admin' });
+    if (note === null) return;
     setBusyId(id);
     try {
       await reject(id, note?.trim() || undefined);

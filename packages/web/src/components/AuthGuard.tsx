@@ -6,7 +6,7 @@ import { useAuthStore } from '../hooks/useAuthStore';
 import { TelegramSync } from './OnboardingGuard';
 import { dashboardPathForUser } from '@petdate/shared';
 
-const PUBLIC_EXACT = new Set(['/', '/welcome', '/faq', '/vet-consult', '/magazine', '/news']);
+const PUBLIC_EXACT = new Set(['/', '/welcome', '/faq', '/vet-consult', '/magazine', '/news', '/invite']);
 const PUBLIC_PREFIXES = [
   '/auth',
   '/admin',

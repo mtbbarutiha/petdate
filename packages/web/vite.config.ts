@@ -7,7 +7,7 @@ import path from 'path';
 /** Serve local seed HTML in `vite` only — never copied into production dist. */
 function serveDevSeedHtml(): Plugin {
   const seedsDir = path.resolve(__dirname, 'dev-seeds');
-  const names = new Set(['/dev-seed.html', '/panels-seed.html']);
+  const names = new Set(['/dev-seed.html', '/panels-seed.html', '/diary-book-preview.html']);
   return {
     name: 'petdate-dev-seeds',
     configureServer(server) {

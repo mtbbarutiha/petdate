@@ -32,6 +32,7 @@ async function main() {
     channel: 'web',
   });
   assert(ticket.id > 0, 'ticket id');
+  assert(ticket.uuid && ticket.uuid.includes('-'), 'ticket uuid assigned');
   assert(ticket.title === 'OTP نیومد', 'title');
   assert(ticket.channel === 'web', 'channel web');
   assert(ticket.type === 'پشتیبانی', 'type');
