@@ -3,7 +3,6 @@ import dns from 'dns';
 import http from 'http';
 import express from 'express';
 import cors from 'cors';
-import type { GameType } from '@petdate/shared';
 import { dbService, getDb, getResolvedDatabasePath, getStorageDriver } from './db';
 import {
   hasElasticsearchConfig,
@@ -20,6 +19,7 @@ import {
 } from './routes/consultations';
 import path from 'path';
 import { gamesRouter } from './routes/games';
+import { parsePositiveIntId } from './routes/parse-positive-int-id';
 import { petsRouter } from './routes/pets';
 import { mediaRouter } from './routes/media';
 import { playdatesRouter } from './routes/playdates';
@@ -179,8 +179,8 @@ app.use('/api/magazine', magazineRouter);
 app.use('/api/admin', adminRouter);
 
 app.get('/api/games-for-section/:sectionId', (req, res) => {
-  const sectionId = Number(req.params.sectionId);
-  if (Number.isNaN(sectionId)) {
+  const sectionId = parsePositiveIntId(req.params.sectionId);
+  if (sectionId == null) {
     res.status(400).json({ error: 'شناسه سکشن نامعتبر است' });
     return;
   }
@@ -190,12 +190,20 @@ app.get('/api/games-for-section/:sectionId', (req, res) => {
     return;
   }
   const games = dbService.listGames({ sectionId, status: 'open' });
-  res.json({ section, games });
+  res.json({ section, games: Array.isArray(games) ? games : [] });
 });
 
 app.get('/api/my-section-games', (req, res) => {
   const telegramId = req.query.telegramId as string | undefined;
-  const userId = req.query.userId ? Number(req.query.userId) : undefined;
+  const userIdRaw = req.query.userId;
+  const userId =
+    userIdRaw != null && String(userIdRaw).trim() !== ''
+      ? parsePositiveIntId(userIdRaw)
+      : undefined;
+  if (userIdRaw != null && String(userIdRaw).trim() !== '' && userId == null) {
+    res.status(400).json({ error: 'شناسه کاربر نامعتبر است' });
+    return;
+  }
 
   let user = telegramId ? dbService.getUserByTelegramId(telegramId) : null;
   if (!user && userId) user = dbService.getUserById(userId);
@@ -209,9 +217,13 @@ app.get('/api/my-section-games', (req, res) => {
     return;
   }
 
-  const section = dbService.getSection(user.sectionId)!;
+  const section = dbService.getSection(user.sectionId);
+  if (!section) {
+    res.status(404).json({ error: 'سکشن پیدا نشد', user });
+    return;
+  }
   const games = dbService.listGames({ sectionId: user.sectionId, status: 'open' });
-  res.json({ user, section, games });
+  res.json({ user, section, games: Array.isArray(games) ? games : [] });
 });
 
 // Never return Express default HTML "Cannot GET" for unknown API paths —

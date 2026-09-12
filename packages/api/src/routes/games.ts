@@ -20,7 +20,7 @@ function listGamesHandler(req: Request, res: Response): void {
   const status = req.query.status as GameStatus | undefined;
   const gameType = req.query.gameType as GameType | undefined;
   const games = dbService.listGames({ sectionId, status, gameType });
-  res.json(games);
+  res.json(Array.isArray(games) ? games : []);
 }
 
 // /list must be registered before /:id — otherwise "list" becomes NaN and

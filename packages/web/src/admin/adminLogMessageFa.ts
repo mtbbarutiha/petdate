@@ -92,13 +92,17 @@ function httpPathFa(status: number, method: string, path: string): string {
 
   if (pl.includes('/games') && (pl.endsWith('/list') || pl.includes('/games/list'))) {
     if (status >= 500) {
-      return 'خطای سرور در فهرست بازی‌ها — شناسه یا پارامتر نامعتبر';
+      return 'خطای سرور در فهرست بازی‌ها — شناسه یا پارامتر نامعتبر (API قدیمی؛ رابط کاربر: هم بازی → /chats)';
     }
     return `${statusFa} در فهرست بازی‌ها`;
   }
 
   if (pl.includes('/games/') && status >= 500) {
     return 'خطای سرور در جزئیات بازی — شناسه باید عدد معتبر باشد';
+  }
+
+  if (pl.includes('/sections/') && pl.includes('/games') && status >= 500) {
+    return 'خطای سرور در بازی‌های سکشن — شناسه سکشن نامعتبر';
   }
 
   if (pl.includes('/avatar') && status === 401) {
