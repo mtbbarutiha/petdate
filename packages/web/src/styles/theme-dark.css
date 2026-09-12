@@ -2315,6 +2315,39 @@ html[data-theme='dark'] .pepito-my-pets-card {
   box-shadow: var(--pd-shadow);
 }
 
+/* Profile «پت‌های من» compact cards — readable on dark surfaces */
+html[data-theme='dark'] .pepito-profile-pet-card,
+html[data-theme='dark'] .pepito-profile-pet-empty {
+  background: var(--pepito-white);
+  border-color: var(--pd-border);
+  box-shadow: var(--pd-shadow);
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-profile-pet-card:hover {
+  border-color: var(--pd-border-strong, rgba(255, 255, 255, 0.18));
+  box-shadow: var(--pd-shadow);
+}
+html[data-theme='dark'] .pepito-profile-pet-card-body strong,
+html[data-theme='dark'] .pepito-profile-pet-empty strong {
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-profile-pet-card-body > span,
+html[data-theme='dark'] .pepito-profile-pet-empty span,
+html[data-theme='dark'] .pepito-profile-pet-id {
+  color: var(--pepito-muted);
+}
+html[data-theme='dark'] .pepito-profile-pet-card.is-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--pd-skeleton-pets-from),
+    var(--pd-skeleton-pets-via),
+    var(--pd-skeleton-pets-from)
+  );
+  background-size: 200% 100%;
+  border-color: var(--pd-border);
+  box-shadow: none;
+}
+
 /*
  * Pet profile — medical record (#pet-medical / پرونده پزشکی) + wishlist
  * Root cause: shell used hardcoded #faf9fc while dark remaps --pepito-dark → light
