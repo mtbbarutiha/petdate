@@ -29,7 +29,7 @@ import {
   sqliteFileCheck,
   type ServiceCheck,
 } from '../admin-monitoring';
-import { dbService, getResolvedDatabasePath, getStorageDriver } from '../db';
+import { dbService, getResolvedDatabasePath, getStorageDriver, type UserProfilePatch } from '../db';
 import { isCandooConfigured } from '../services/candoo';
 import { adminPlatform } from '../admin-platform';
 import { adminFinance } from '../admin-finance';
@@ -500,7 +500,7 @@ adminRouter.patch('/users/:id', (req, res) => {
   if (!user) { res.status(404).json({ error: 'کاربر پیدا نشد' }); return; }
   const body = req.body || {};
 
-  const profilePatch: Parameters<typeof dbService.updateUserProfile>[1] = {};
+  const profilePatch: UserProfilePatch = {};
   if (typeof body.name === 'string') {
     const name = body.name.trim();
     if (name) profilePatch.name = name;

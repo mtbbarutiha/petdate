@@ -13,7 +13,7 @@ import {
   userHasRole,
   validateIranCard,
 } from '@petdate/shared';
-import { dbService } from '../db';
+import { dbService, type UserProfilePatch } from '../db';
 import { getRuntimeFlags, rejectIfFlagOff } from '../runtime-settings';
 import {
   completeTelegramAttach,
@@ -23,6 +23,7 @@ import {
   exchangeTelegramWebLink,
   pollTelegramLoginPending,
 } from '../services/telegram-web-link';
+import { insufficientProfilePhotoChangePayload } from '../services/profile-photo-change';
 import {
   MAX_USER_AVATAR_BYTES,
   mimeFromUserAvatarKey,
@@ -692,7 +693,7 @@ authRouter.patch('/profile', (req, res) => {
   }
 
   const body = req.body ?? {};
-  const patch: Parameters<typeof dbService.updateUserProfile>[1] = {};
+  const patch: UserProfilePatch = {};
   if (body.name != null) patch.name = String(body.name).trim();
   if (body.age != null && Number.isFinite(Number(body.age))) patch.age = Number(body.age);
   if (body.gender === 'male' || body.gender === 'female') {
@@ -716,12 +717,24 @@ authRouter.patch('/profile', (req, res) => {
     patch.silentChatRequests = body.silentChatRequests;
   }
 
-  const updated = dbService.updateUserProfile(session.user.id, patch);
-  if (!updated) {
+  const result = dbService.commitUserProfileChange(session.user.id, patch);
+  if (!result.ok) {
+    if (result.reason === 'insufficient_coins') {
+      res.status(402).json({
+        ok: false,
+        ...insufficientProfilePhotoChangePayload(result.balance ?? 0),
+      });
+      return;
+    }
     res.status(404).json({ error: 'کاربر پیدا نشد' });
     return;
   }
-  res.json({ ok: true, user: dbService.enrichUserProfileCard(updated) });
+  res.json({
+    ok: true,
+    charged: result.charged,
+    verificationReset: result.verificationReset,
+    user: dbService.enrichUserProfileCard(result.user),
+  });
 });
 
 /** Upload profile avatar (multipart field: `file`). Auth required. Sets user.avatarUrl. */
@@ -758,11 +771,18 @@ authRouter.post('/avatar', (req, res) => {
           mimeType: file.mimetype,
           buffer: file.buffer,
         });
-        const updated = dbService.updateUserProfile(session.user.id, {
+        const result = dbService.commitUserProfileChange(session.user.id, {
           avatarUrl: saved.urlPath,
           avatarCustom: true,
         });
-        if (!updated) {
+        if (!result.ok) {
+          if (result.reason === 'insufficient_coins') {
+            res.status(402).json({
+              ok: false,
+              ...insufficientProfilePhotoChangePayload(result.balance ?? 0),
+            });
+            return;
+          }
           res.status(404).json({ error: 'کاربر پیدا نشد' });
           return;
         }
@@ -771,7 +791,9 @@ authRouter.post('/avatar', (req, res) => {
           url: saved.urlPath,
           storageKey: saved.storageKey,
           mimeType: saved.mimeType,
-          user: updated,
+          charged: result.charged,
+          verificationReset: result.verificationReset,
+          user: result.user,
         });
       } catch (err) {
         const code = err instanceof Error ? err.message : '';
