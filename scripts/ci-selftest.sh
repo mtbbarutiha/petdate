@@ -64,6 +64,10 @@ npx tsx "$ROOT/packages/web/src/admin/adminDeleteUser.selftest.ts"
 echo "==> selftest: admin users table compact layout"
 npx tsx "$ROOT/packages/web/src/admin/adminUsersTableCompact.selftest.ts"
 
+# Guard: admin shop order expand panel is clean RTL (not raw JSON dump)
+echo "==> selftest: admin shop order detail panel"
+npx tsx "$ROOT/packages/web/src/admin/adminShopOrderDetail.selftest.ts"
+
 echo "==> selftest: web admin widget dashboard (layout + drill)"
 npx tsx "$ROOT/packages/web/src/admin/widgets/widgetDashboard.selftest.ts"
 
