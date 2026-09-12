@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, PawPrint, Pencil, Plus, Stethoscope } from 'lucide-react';
+import { ArrowRight, BookOpen, PawPrint, Pencil, Plus, Stethoscope } from 'lucide-react';
 import { BRAND, petPublicIdOf } from '@petdate/shared';
 import { PetAvatar } from '../components/PetAvatar';
 import { useAuthStore } from '../hooks/useAuthStore';
@@ -138,6 +138,14 @@ export function MyPetsPage() {
                   >
                     <Pencil size={14} aria-hidden />
                     {t('pets.editShort')}
+                  </Link>
+                  <Link
+                    to={`/pets/${pet.id}#pet-diary`}
+                    className="pepito-my-pets-action pepito-my-pets-action--diary"
+                    aria-label={t('pets.diaryOf', { name: pet.name })}
+                  >
+                    <BookOpen size={14} aria-hidden />
+                    {t('pets.diaryShort')}
                   </Link>
                   <Link
                     to={`/pets/${pet.id}#pet-medical`}

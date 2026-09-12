@@ -1,14 +1,22 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, type CSSProperties, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   ArrowRight,
+  BookOpen,
   FileText,
   Heart,
   Pencil,
   Share2,
   Stethoscope,
+  Trash2,
 } from 'lucide-react';
-import type { PetMedicalEntry, PetMedicalRecord, PetProfile, Prescription } from '@petdate/shared';
+import type {
+  PetDiaryEntry,
+  PetMedicalEntry,
+  PetMedicalRecord,
+  PetProfile,
+  Prescription,
+} from '@petdate/shared';
 import {
   PET_MEDICAL_FIELD_LABELS,
   petPublicIdOf,
@@ -23,8 +31,11 @@ import { useAuthStore } from '../hooks/useAuthStore';
 import { useAppToast } from '../hooks/useAppToast';
 import {
   addPetWishlistTarget,
+  createPetDiaryEntry,
+  deletePetDiaryEntry,
   getPet,
   getPetMedical,
+  listPetDiary,
   listPetPrescriptions,
   listPetWishlist,
   listPets,
@@ -62,6 +73,9 @@ export function PetDetailPage() {
   const [medicalError, setMedicalError] = useState('');
   const [wishlist, setWishlist] = useState<PetProfile[]>([]);
   const [wishBusy, setWishBusy] = useState(false);
+  const [diary, setDiary] = useState<PetDiaryEntry[]>([]);
+  const [diaryBody, setDiaryBody] = useState('');
+  const [diaryBusy, setDiaryBusy] = useState(false);
 
   const myUserId = authUser?.id;
   const isMyPet = Boolean(
@@ -71,6 +85,7 @@ export function PetDetailPage() {
   // poisoned `?tab=medical` 404 responses from before the nginx SPA fallback.
   const tabMedical =
     searchParams.get('tab') === 'medical' || location.hash === '#pet-medical';
+  const tabDiary = location.hash === '#pet-diary';
 
   const ui = useMemo(() => (pet ? petProfileToUiPet(pet) : null), [pet]);
 
@@ -93,6 +108,15 @@ export function PetDetailPage() {
       setLoading(false);
     }
   }, [petId]);
+
+  const loadDiary = useCallback(async (petKey: string | number) => {
+    try {
+      const data = await listPetDiary(petKey);
+      setDiary(data.entries || []);
+    } catch {
+      setDiary([]);
+    }
+  }, []);
 
   useEffect(() => {
     void loadPet();
@@ -154,12 +178,28 @@ export function PetDetailPage() {
   }, [pet, myUserId, isMyPet, tabMedical]);
 
   useEffect(() => {
+    if (!pet || !isMyPet) {
+      setDiary([]);
+      return;
+    }
+    void loadDiary(pet.slug || pet.id);
+  }, [pet, isMyPet, loadDiary]);
+
+  useEffect(() => {
     if (!tabMedical || loading || !pet) return;
     const t = window.setTimeout(() => {
       document.getElementById('pet-medical')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 80);
     return () => window.clearTimeout(t);
   }, [tabMedical, loading, pet, isMyPet, medicalError]);
+
+  useEffect(() => {
+    if (!tabDiary || loading || !pet || !isMyPet) return;
+    const t = window.setTimeout(() => {
+      document.getElementById('pet-diary')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
+    return () => window.clearTimeout(t);
+  }, [tabDiary, loading, pet, isMyPet]);
 
   useEffect(() => {
     if (!pet || !isMyPet) {
@@ -239,6 +279,41 @@ export function PetDetailPage() {
     toastInfo(message);
   }
 
+  async function onSubmitDiary(e: FormEvent) {
+    e.preventDefault();
+    if (!pet || !myUserId || !isMyPet) return;
+    const body = diaryBody.trim();
+    if (!body) {
+      toastError('متن خاطره را بنویس');
+      return;
+    }
+    setDiaryBusy(true);
+    try {
+      const entry = await createPetDiaryEntry(pet.slug || pet.id, body, myUserId);
+      setDiary((rows) => [entry, ...rows]);
+      setDiaryBody('');
+      toastSuccess('خاطره ثبت شد');
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : 'ثبت خاطره ناموفق بود');
+    } finally {
+      setDiaryBusy(false);
+    }
+  }
+
+  async function onDeleteDiary(entryId: number) {
+    if (!pet || !myUserId || !isMyPet) return;
+    setDiaryBusy(true);
+    try {
+      await deletePetDiaryEntry(pet.slug || pet.id, entryId, myUserId);
+      setDiary((rows) => rows.filter((r) => r.id !== entryId));
+      toastSuccess('خاطره حذف شد');
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : 'حذف ناموفق بود');
+    } finally {
+      setDiaryBusy(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="pepito-pet-profile">
@@ -262,11 +337,20 @@ export function PetDetailPage() {
   const traits = Array.isArray((pet.personality as { traits?: string[] })?.traits)
     ? (pet.personality as { traits: string[] }).traits
     : [];
+  const photo = ui.imageUrl || EMPTY_STATE_PHOTO;
+  const diaryTitle = `دفتر خاطرات ${pet.name}`;
 
   return (
-    <div className={`pepito-pet-profile${tabMedical ? ' is-medical-focus' : ''}`}>
+    <div
+      className={`pepito-pet-profile${tabMedical ? ' is-medical-focus' : ''}${tabDiary ? ' is-diary-focus' : ''}`}
+      style={
+        {
+          ['--pet-diary-photo' as string]: `url(${JSON.stringify(photo)})`,
+        } as CSSProperties
+      }
+    >
       <div className="pepito-pet-profile-hero">
-        <img src={ui.imageUrl || EMPTY_STATE_PHOTO} alt={pet.name} onError={(e) => {
+        <img src={photo} alt={pet.name} onError={(e) => {
           const img = e.currentTarget;
           if (img.src !== EMPTY_STATE_PHOTO) img.src = EMPTY_STATE_PHOTO;
         }} />
@@ -336,6 +420,10 @@ export function PetDetailPage() {
               <Pencil size={16} aria-hidden />
               ویرایش پروفایل پت
             </Link>
+            <a href="#pet-diary" className="pepito-btn button-2">
+              <BookOpen size={16} aria-hidden />
+              دفتر خاطرات
+            </a>
             <a href="#pet-medical" className="pepito-btn button-1">
               <Stethoscope size={16} aria-hidden />
               پرونده پزشکی
@@ -394,6 +482,70 @@ export function PetDetailPage() {
             <p className="pepito-pet-medical-muted" role="alert">
               {medicalError}
             </p>
+          </section>
+        ) : null}
+
+        {isMyPet ? (
+          <section id="pet-diary" className="pepito-pet-diary" aria-label={diaryTitle}>
+            <div className="pepito-pet-diary-paper">
+              <header className="pepito-pet-diary-head">
+                <BookOpen size={22} aria-hidden />
+                <div>
+                  <h2>{diaryTitle}</h2>
+                  <p>لحظه‌های کوچک، به قلم صاحب پت — در صفحه عمومی پت هم خوانده می‌شود.</p>
+                </div>
+              </header>
+
+              <form className="pepito-pet-diary-form" onSubmit={(e) => void onSubmitDiary(e)}>
+                <label htmlFor="owner-pet-diary-body" className="sr-only">
+                  نوشتن خاطره
+                </label>
+                <textarea
+                  id="owner-pet-diary-body"
+                  rows={4}
+                  maxLength={4000}
+                  placeholder={`امروز ${pet.name} چه کرد؟`}
+                  value={diaryBody}
+                  onChange={(e) => setDiaryBody(e.target.value)}
+                  disabled={diaryBusy}
+                />
+                <button
+                  type="submit"
+                  className="pepito-btn button-1"
+                  disabled={diaryBusy || !diaryBody.trim()}
+                >
+                  ثبت خاطره
+                </button>
+              </form>
+
+              {diary.length === 0 ? (
+                <p className="pepito-pet-diary-empty">
+                  هنوز خاطره‌ای نیست — اولین صفحه را بنویس.
+                </p>
+              ) : (
+                <ul className="pepito-pet-diary-list">
+                  {diary.map((entry) => (
+                    <li key={entry.id} className="pepito-pet-diary-entry">
+                      <header>
+                        <time>
+                          {toPersianDigits(entry.createdAt.slice(0, 16).replace('T', ' '))}
+                        </time>
+                        <button
+                          type="button"
+                          className="pepito-pet-diary-delete"
+                          aria-label="حذف خاطره"
+                          disabled={diaryBusy}
+                          onClick={() => void onDeleteDiary(entry.id)}
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </header>
+                      <p>{entry.body}</p>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </section>
         ) : null}
 
