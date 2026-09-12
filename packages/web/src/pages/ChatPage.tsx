@@ -557,6 +557,7 @@ export function ChatPage() {
   const [peerOwnerLabel, setPeerOwnerLabel] = useState<string | null>(null);
   const [peerOwnerDisplayName, setPeerOwnerDisplayName] = useState<string | null>(null);
   const [peerOwnerAvatar, setPeerOwnerAvatar] = useState<string>('');
+  const [peerPhotoBroken, setPeerPhotoBroken] = useState(false);
   const [peerOwnerMeta, setPeerOwnerMeta] = useState<{
     city?: string;
     province?: string;
@@ -1153,6 +1154,13 @@ export function ChatPage() {
   }, [ended]);
 
   const peerPet = match?.fromPet;
+  /** Counterpart pet photo — resolved for API/Telegram paths; empty → paw placeholder. */
+  const peerPhotoUrl = peerPet
+    ? resolvePublicMediaUrl(peerPet.imageUrl, { petId: peerPet.id }) ||
+      peerPet.imageUrl?.trim() ||
+      ''
+    : '';
+  const showPeerPhoto = Boolean(peerPhotoUrl) && !peerPhotoBroken;
   const peerOwnerId = peerPet?.ownerId;
   const peerOwnerPublicId =
     peerOwnerLabel ||
@@ -1167,6 +1175,10 @@ export function ChatPage() {
       ? peerPet.ownerName
       : null) ||
     'صاحب پت';
+
+  useEffect(() => {
+    setPeerPhotoBroken(false);
+  }, [match?.id, peerPhotoUrl]);
 
   async function copyPeerPublicId() {
     const id = peerOwnerPublicId;
@@ -1861,17 +1873,21 @@ export function ChatPage() {
                   >
                     <div
                       className={`tg-request-card-cover${
-                        peerPet.imageUrl?.trim() ? '' : ' is-placeholder'
+                        showPeerPhoto ? '' : ' is-placeholder'
                       }`}
-                      style={
-                        peerPet.imageUrl?.trim()
-                          ? { backgroundImage: `url(${peerPet.imageUrl.trim()})` }
-                          : undefined
-                      }
-                      aria-hidden
                     >
-                      {peerPet.imageUrl?.trim() ? null : (
-                        <span className="tg-request-card-cover-mark">
+                      {showPeerPhoto ? (
+                        <div className="tg-request-card-photo">
+                          <img
+                            src={peerPhotoUrl}
+                            alt={peerPet.name}
+                            loading="lazy"
+                            decoding="async"
+                            onError={() => setPeerPhotoBroken(true)}
+                          />
+                        </div>
+                      ) : (
+                        <span className="tg-request-card-cover-mark" aria-hidden>
                           <PawPrint size={40} strokeWidth={1.75} />
                         </span>
                       )}
