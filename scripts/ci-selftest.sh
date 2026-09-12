@@ -78,6 +78,9 @@ npx tsx "$ROOT/packages/web/src/admin/adminMagazineRoute.selftest.ts"
 echo "==> selftest: admin mobile hamburger / drawer (RTL)"
 npx tsx "$ROOT/packages/web/src/admin/adminMobileNav.selftest.ts"
 
+echo "==> selftest: admin responsive shell (phone / tablet / laptop / wide)"
+npx tsx "$ROOT/packages/web/src/admin/adminResponsive.selftest.ts"
+
 echo "==> selftest: admin route-transition loading (no stale tab flash)"
 npx tsx "$ROOT/packages/web/src/admin/adminRouteLoading.selftest.ts"
 

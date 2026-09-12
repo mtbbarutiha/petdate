@@ -118,7 +118,6 @@ function WidgetTile({
     <article
       ref={tileRef as React.RefObject<HTMLElement>}
       className={className}
-      style={{ gridColumn: `span ${item.w}` }}
       data-widget-id={item.id}
     >
       <header className="wdg-tile-head">
