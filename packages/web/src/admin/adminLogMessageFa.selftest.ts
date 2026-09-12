@@ -83,7 +83,8 @@ const consult = formatAdminLogMessageFa({
   method: 'POST',
   statusCode: 400,
 });
-assert.match(consult.title, /مشاوره|نامعتبر/);
+assert.match(consult.title, /درخواست نامعتبر/);
+assert.match(consult.title, /مشاوره/);
 
 const enAvatar = formatAdminLogMessage(
   { message: 'materialize telegram avatar failed: INVALID_IMAGE' },

@@ -482,17 +482,8 @@ export function translateAppLogMessage(input: AppLogTranslateInput): TranslatedA
     return withDetail(nanCopy.fa + ctx, nanCopy.en + ctx, message, code);
   }
 
-  const pattern = LOG_PATTERN_COPY.find((row) => row.test(lower));
-  if (pattern) {
-    const titleFa = joinTitle([pattern.copy.fa, codeCopy?.fa]);
-    const titleEn = joinTitle([pattern.copy.en, codeCopy?.en]);
-    return withDetail(titleFa, titleEn, message, code);
-  }
-
-  if (codeCopy && !fromHttpLine) {
-    return withDetail(codeCopy.fa, codeCopy.en, message, code);
-  }
-
+  // HTTP access-log lines get status + area titles; do not let path words
+  // (quick-connect, timeout, …) match generic console-warn patterns first.
   if (fromHttpLine || (status != null && path && method)) {
     const s = status ?? fromHttpLine!.status;
     const m = method ?? fromHttpLine!.method;
@@ -501,6 +492,17 @@ export function translateAppLogMessage(input: AppLogTranslateInput): TranslatedA
     const titleFa = joinTitle([titles.fa, codeCopy?.fa]);
     const titleEn = joinTitle([titles.en, codeCopy?.en]);
     return withDetail(titleFa, titleEn, message, code);
+  }
+
+  const pattern = LOG_PATTERN_COPY.find((row) => row.test(lower));
+  if (pattern) {
+    const titleFa = joinTitle([pattern.copy.fa, codeCopy?.fa]);
+    const titleEn = joinTitle([pattern.copy.en, codeCopy?.en]);
+    return withDetail(titleFa, titleEn, message, code);
+  }
+
+  if (codeCopy) {
+    return withDetail(codeCopy.fa, codeCopy.en, message, code);
   }
 
   if (isPersian(message)) {

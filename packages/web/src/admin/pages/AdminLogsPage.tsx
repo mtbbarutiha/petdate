@@ -276,15 +276,20 @@ export function AdminLogsPage() {
                       <td className="admin-log-msg" title={secondary || primary}>
                         <span className="admin-log-msg-fa" lang={lang === 'en' ? 'en' : 'fa'} dir={lang === 'en' ? 'ltr' : 'rtl'}>
                           {primary}
+                          {group.count > 1 ? (
+                            <span className="admin-log-count admin-log-count--inline">
+                              {tr('{n} مورد مشابه', { n: group.count })}
+                            </span>
+                          ) : null}
                         </span>
                         {secondary ? (
-                          <span className="admin-log-msg-detail" dir="ltr" lang="en">
+                          <bdi className="admin-log-msg-detail" dir="ltr" lang="en">
                             {secondary}
-                          </span>
+                          </bdi>
                         ) : null}
                       </td>
                       <td className="admin-mono admin-log-path">
-                        <span dir="ltr">{pathText}</span>
+                        <bdi dir="ltr">{pathText}</bdi>
                       </td>
                     </tr>
                     {isOpen && showTech ? (
@@ -313,8 +318,8 @@ export function AdminLogsPage() {
                                 {copiedId === row.id ? tr('کپی شد') : tr('کپی متن اصلی')}
                               </button>
                             </div>
-                            <pre className="admin-stack admin-log-raw" dir="ltr">
-                              {row.message}
+                            <pre className="admin-stack admin-log-raw" dir="ltr" lang="en">
+                              <bdi dir="ltr">{row.message}</bdi>
                             </pre>
                             {row.stack ? <pre className="admin-stack">{row.stack}</pre> : null}
                             <div className="admin-log-expand-hint">

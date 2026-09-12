@@ -838,23 +838,28 @@
   white-space: normal;
   font-weight: 650;
   line-height: 1.45;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+.admin-app .admin-log-count--inline {
+  margin-inline-start: 8px;
+  vertical-align: middle;
 }
 .admin-app .admin-log-msg-detail {
   display: block;
   margin-top: 4px;
-  font-size: 0.75rem;
-  line-height: 1.4;
+  font-size: 0.8rem;
+  line-height: 1.45;
   color: var(--admin-muted);
   font-family: var(--admin-mono);
   direction: ltr;
   unicode-bidi: isolate;
-  text-align: left;
+  text-align: start;
   overflow: visible;
   text-overflow: unset;
   white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  word-break: break-word;
+  overflow-wrap: break-word;
+  word-break: normal;
 }
 .admin-app .admin-log-path {
   font-size: 0.75rem;

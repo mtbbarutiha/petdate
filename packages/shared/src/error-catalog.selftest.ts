@@ -40,8 +40,10 @@ const consult = translateAppLogMessage({
   method: 'POST',
   statusCode: 400,
 });
-assert.match(consult.titleFa, /نامعتبر|مشاوره/);
-assert.match(consult.titleEn, /Invalid|Consult|quick-connect/i);
+assert.match(consult.titleFa, /درخواست نامعتبر/);
+assert.match(consult.titleFa, /مشاوره/);
+assert.match(consult.titleEn, /Invalid request/i);
+assert.doesNotMatch(consult.titleFa, /اتصال سریع مشاوره ناموفق/);
 assert.equal(consult.detail, 'HTTP 400 POST /api/consultations/quick-connect');
 
 const alreadyFa = translateAppLogMessage({ message: 'خطای داخلی سرور' });
