@@ -19,7 +19,7 @@ type ManageLink = {
   to: string;
   icon: LucideIcon;
   label: string;
-  tone?: 'warn' | 'danger';
+  tone?: 'warn' | 'danger' | 'finance';
   match: (pathname: string, search: string) => boolean;
 };
 
@@ -43,14 +43,6 @@ function manageLinks(
         pathname === '/profile' && new URLSearchParams(search).get('edit') === '1',
     },
     {
-      key: 'verify',
-      to: '/profile?panel=verify',
-      icon: ShieldCheck,
-      label: faceVerifyButtonLabel(verifyStatus),
-      match: (pathname, search) =>
-        pathname === '/profile' && new URLSearchParams(search).get('panel') === 'verify',
-    },
-    {
       key: 'interactions',
       to: '/profile?panel=interactions',
       icon: Eye,
@@ -63,7 +55,17 @@ function manageLinks(
       to: '/wallet/earn',
       icon: Banknote,
       label: labels.earn,
+      tone: 'finance',
       match: (pathname) => pathname === '/wallet/earn' || pathname.startsWith('/wallet/earn/'),
+    },
+    {
+      key: 'verify',
+      to: '/profile?panel=verify',
+      icon: ShieldCheck,
+      label: faceVerifyButtonLabel(verifyStatus),
+      tone: 'warn',
+      match: (pathname, search) =>
+        pathname === '/profile' && new URLSearchParams(search).get('panel') === 'verify',
     },
     {
       key: 'blocked',
@@ -119,7 +121,7 @@ export function ProfileManageNav({
       : variant === 'sheet'
         ? `pepito-dock-manage-nav${className ? ` ${className}` : ''}`
         : `pepito-nav-profile-manage${className ? ` ${className}` : ''}`;
-  const linkClass = (active: boolean, tone?: 'warn' | 'danger') => {
+  const linkClass = (active: boolean, tone?: 'warn' | 'danger' | 'finance') => {
     if (variant === 'rail') {
       return `pepito-app-rail-link${active ? ' is-active' : ''}${tone ? ` is-${tone}` : ''}`;
     }
@@ -128,7 +130,7 @@ export function ProfileManageNav({
     }
     return `pepito-nav-profile-item${tone === 'danger' ? ' pepito-nav-profile-item--danger' : ''}${
       tone === 'warn' ? ' pepito-nav-profile-item--warn' : ''
-    }`;
+    }${tone === 'finance' ? ' pepito-nav-profile-item--finance' : ''}`;
   };
   const labelClass =
     variant === 'rail'

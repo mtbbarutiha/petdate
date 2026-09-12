@@ -13,11 +13,15 @@ const dock = readFileSync(join(root, 'components/LandingMobileDock.tsx'), 'utf8'
 const layout = readFileSync(join(root, 'components/Layout.tsx'), 'utf8');
 
 const guestBlock = nav.slice(nav.indexOf('export const SITE_NAV_GUEST'), nav.indexOf('export const SITE_NAV_AUTH'));
-assert.match(guestBlock, /SHOP,/);
 assert.match(guestBlock, /PLAYMATE_CHATS/);
+assert.match(guestBlock, /SHOP,/);
 assert.match(guestBlock, /MY_PETS/);
 assert.match(guestBlock, /LOGIN/);
 assert.doesNotMatch(guestBlock, /\bGAMES\b/, 'guest mobile dock must not include Games');
+assert.ok(
+  guestBlock.indexOf('PLAYMATE_CHATS') < guestBlock.indexOf('SHOP,'),
+  'guest dock: هم بازی before شاپ'
+);
 
 const authBlock = nav.slice(nav.indexOf('export const SITE_NAV_AUTH'), nav.indexOf('function withGamesAfterShop'));
 assert.match(authBlock, /PLAYMATE_CHATS/);
@@ -28,29 +32,30 @@ assert.doesNotMatch(authBlock, /\bGAMES\b/, 'auth mobile default must not includ
 const mobileFn = nav.slice(nav.indexOf('export function siteNavMobileForRole'), nav.indexOf('export function siteNavDesktopForRole'));
 assert.match(
   mobileFn,
-  /case 'pet_owner':[\s\S]*return \[SHOP_AUTH, PLAYMATE_CHATS, MY_PETS, WALLET, PROFILE\]/,
-  'owner dock: شاپ / هم بازی / پت‌های من / کیف پول / پروفایل'
+  /case 'pet_owner':[\s\S]*return \[PLAYMATE_CHATS, MY_PETS, SHOP_AUTH, WALLET, PROFILE\]/,
+  'owner dock: هم بازی / پت‌های من / شاپ / کیف پول / پروفایل'
 );
 assert.match(
   mobileFn,
-  /case 'no_pet':[\s\S]*return \[SHOP_AUTH, CHATS, MY_PETS, WALLET, PROFILE\]/,
-  'no_pet dock: شاپ / گفتگو / پت‌های من / کیف پول / پروفایل'
+  /case 'no_pet':[\s\S]*return \[CHATS, MY_PETS, SHOP_AUTH, WALLET, PROFILE\]/,
+  'no_pet dock: گفتگو / پت‌های من / شاپ / کیف پول / پروفایل'
 );
 assert.match(
   mobileFn,
-  /case 'vet':[\s\S]*return \[SHOP_AUTH, VET_PANEL, CHATS, WALLET, PROFILE\]/,
-  'vet dock keeps گفتگو + کیف پول'
+  /case 'vet':[\s\S]*return \[VET_PANEL, CHATS, SHOP_AUTH, WALLET, PROFILE\]/,
+  'vet dock: پنل → گفتگو → شاپ → کیف پول'
 );
 assert.match(
   mobileFn,
-  /case 'trainer':[\s\S]*return \[SHOP_AUTH, TRAINER_PANEL, CHATS, WALLET, PROFILE\]/,
-  'trainer dock keeps گفتگو + کیف پول'
+  /case 'trainer':[\s\S]*return \[TRAINER_PANEL, CHATS, SHOP_AUTH, WALLET, PROFILE\]/,
+  'trainer dock: پنل → گفتگو → شاپ → کیف پول'
 );
 assert.match(
   mobileFn,
-  /default:[\s\S]*return \[SHOP_AUTH, CHATS, MY_PETS, WALLET, PROFILE\]/,
+  /default:[\s\S]*return \[CHATS, MY_PETS, SHOP_AUTH, WALLET, PROFILE\]/,
   'default dock keeps گفتگو + کیف پول'
 );
+assert.match(mobileFn, /tone: 'finance'|WALLET/, 'wallet stays in every role dock');
 assert.doesNotMatch(mobileFn, /\bGAMES\b/, 'mobile dock builder must not insert Games');
 
 assert.match(nav, /function withGamesAfterShop/, 'Games is appended after شاپ for desktop only');

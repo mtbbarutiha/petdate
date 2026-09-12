@@ -43,30 +43,30 @@ const VET_NAV: NavDef[] = [
   { to: '/', icon: Home, labelKey: 'common.home' },
   { to: '/vet-consult', icon: Stethoscope, labelKey: 'nav.vet_panel' },
   { to: '/chats', icon: MessagesSquare, labelKey: 'nav.conversations' },
+  { to: '/shop', icon: ShoppingBag, labelKey: 'nav.petShop' },
   { to: '/games', icon: Gamepad2, labelKey: 'nav.games' },
   { to: '/profile', icon: UserRound, labelKey: 'nav.profile' },
   { to: '/support', icon: LifeBuoy, labelKey: 'nav.support' },
-  { to: '/shop', icon: ShoppingBag, labelKey: 'nav.petShop' },
 ];
 
 const TRAINER_NAV: NavDef[] = [
   { to: '/', icon: Home, labelKey: 'common.home' },
   { to: '/trainer-consult', icon: GraduationCap, labelKey: 'nav.trainer_panel' },
   { to: '/chats', icon: MessagesSquare, labelKey: 'nav.conversations' },
+  { to: '/shop', icon: ShoppingBag, labelKey: 'nav.petShop' },
   { to: '/games', icon: Gamepad2, labelKey: 'nav.games' },
   { to: '/profile', icon: UserRound, labelKey: 'nav.profile' },
   { to: '/support', icon: LifeBuoy, labelKey: 'nav.support' },
-  { to: '/shop', icon: ShoppingBag, labelKey: 'nav.petShop' },
 ];
 
 const DEFAULT_NAV: NavDef[] = [
   { to: '/', icon: Home, labelKey: 'common.home' },
-  { to: '/support', icon: LifeBuoy, labelKey: 'nav.support' },
   { to: '/home', icon: LayoutDashboard, labelKey: 'nav.panel' },
   { to: '/chats', icon: MessagesSquare, labelKey: 'nav.conversations' },
+  { to: '/shop', icon: ShoppingBag, labelKey: 'nav.petShop' },
   { to: '/games', icon: Gamepad2, labelKey: 'nav.games' },
   { to: '/profile', icon: UserRound, labelKey: 'nav.profile' },
-  { to: '/shop', icon: ShoppingBag, labelKey: 'nav.petShop' },
+  { to: '/support', icon: LifeBuoy, labelKey: 'nav.support' },
 ];
 
 function navForRole(role?: UserRole): NavDef[] {

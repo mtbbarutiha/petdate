@@ -416,19 +416,6 @@ export function AdminDashboardPage() {
   const moduleCards = m
     ? [
         {
-          key: 'hr',
-          title: tr('پیوند · منابع انسانی'),
-          to: links?.hr || '/admin/hr',
-          icon: Building2,
-          tone: 'mint',
-          items: [
-            { label: tr('پرسنل'), value: formatNumFa(m.hr.personnel) },
-            { label: tr('درخواست باز'), value: formatNumFa(m.hr.openRequests) },
-            { label: tr('کارتابل'), value: formatNumFa(m.hr.cockpitTasks) },
-            { label: tr('آنبوردینگ'), value: formatNumFa(m.hr.openOnboarding) },
-          ],
-        },
-        {
           key: 'sales',
           title: tr('فروش · CRM'),
           to: links?.sales || '/admin/sales',
@@ -455,6 +442,19 @@ export function AdminDashboardPage() {
               label: 'CSAT',
               value: m.crm.avgCsat != null ? formatNumFa(m.crm.avgCsat) : '—',
             },
+          ],
+        },
+        {
+          key: 'hr',
+          title: tr('پیوند · منابع انسانی'),
+          to: links?.hr || '/admin/hr',
+          icon: Building2,
+          tone: 'mint',
+          items: [
+            { label: tr('پرسنل'), value: formatNumFa(m.hr.personnel) },
+            { label: tr('درخواست باز'), value: formatNumFa(m.hr.openRequests) },
+            { label: tr('کارتابل'), value: formatNumFa(m.hr.cockpitTasks) },
+            { label: tr('آنبوردینگ'), value: formatNumFa(m.hr.openOnboarding) },
           ],
         },
         {

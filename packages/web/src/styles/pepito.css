@@ -191,6 +191,15 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 .btn-ghost:hover {
   background: rgba(255, 255, 255, 0.3) !important;
 }
+.pepito-btn.pepito-btn--danger {
+  background: color-mix(in srgb, var(--danger, #ef4444) 12%, #fff) !important;
+  color: var(--danger, #b42318) !important;
+  border: 1.5px solid color-mix(in srgb, var(--danger, #ef4444) 38%, #fff) !important;
+  box-shadow: none;
+}
+.pepito-btn.pepito-btn--danger:hover {
+  background: color-mix(in srgb, var(--danger, #ef4444) 20%, #fff) !important;
+}
 .pepito-btn--lg,
 .landing-btn--primary {
   padding: 14px 40px;
@@ -3286,6 +3295,9 @@ button.chip.is-on {
 .pepito-app-rail-link.is-danger {
   color: #a33a4a;
 }
+.pepito-app-rail-link.is-finance {
+  color: var(--pepito-orange);
+}
 .pepito-app-rail-link.is-warn:hover,
 .pepito-app-rail-link.is-warn.is-active {
   background: rgba(217, 149, 58, 0.14);
@@ -3295,6 +3307,11 @@ button.chip.is-on {
 .pepito-app-rail-link.is-danger.is-active {
   background: rgba(196, 70, 90, 0.12);
   color: #922838;
+}
+.pepito-app-rail-link.is-finance:hover,
+.pepito-app-rail-link.is-finance.is-active {
+  background: rgba(253, 150, 30, 0.14);
+  color: #9a5b14;
 }
 .pepito-nav-profile-manage {
   margin: 0.35rem 0;
@@ -3317,6 +3334,9 @@ button.chip.is-on {
 }
 .pepito-nav-profile-item--danger {
   color: #a33a4a;
+}
+.pepito-nav-profile-item--finance {
+  color: var(--pepito-orange);
 }
 .pepito-app-rail-logout {
   display: inline-flex;
@@ -10981,6 +11001,10 @@ a.pepito-btn.pepito-human-consult-cta:hover {
     color: #fff;
   }
 
+  .pepito-landing-mobile-dock-link--finance:not(.is-active) {
+    color: #ffd89a;
+  }
+
   .pepito-landing-mobile-dock-link--profile {
     user-select: none;
     -webkit-user-select: none;
@@ -11220,6 +11244,13 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   .pepito-dock-manage-link.is-danger:hover,
   .pepito-dock-manage-link.is-danger.is-active {
     background: rgba(196, 70, 90, 0.24);
+  }
+  .pepito-dock-manage-link.is-finance {
+    color: #ffd89a;
+  }
+  .pepito-dock-manage-link.is-finance:hover,
+  .pepito-dock-manage-link.is-finance.is-active {
+    background: rgba(253, 150, 30, 0.22);
   }
 
   .pepito-dock-role-toast {

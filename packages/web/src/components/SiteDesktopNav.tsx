@@ -7,8 +7,8 @@ import { usePlatformConfig } from '../hooks/usePlatformConfig';
 
 /**
  * Desktop primary actions (≥860px) — follow active primary role.
- * Owner: شاپ / هم بازی (پت‌های من is in LandingChrome app nav)
- * Vet: شاپ / پنل پزشک / گفتگو
+ * Owner: هم بازی / شاپ / بازی‌ها (پت‌های من is in LandingChrome app nav)
+ * Vet: پنل پزشک / گفتگو / شاپ / بازی‌ها
  * Wallet chip + circular profile avatar live in NavUserCluster.
  */
 export function SiteDesktopNav() {

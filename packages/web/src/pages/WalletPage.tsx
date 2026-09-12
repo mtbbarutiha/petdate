@@ -535,7 +535,7 @@ export function WalletPage() {
                   <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden onChange={(e) => void onUploadReceipt(e.target.files?.[0] ?? null)} />
                   <div className="pepito-wallet-tg-actions" style={{ marginTop: 8 }}>
                     <button type="button" className="pepito-btn button-1" disabled={uploadBusy || buyBusy} onClick={() => fileRef.current?.click()}>{uploadBusy ? 'در حال ارسال…' : 'آپلود عکس رسید'}</button>
-                    <button type="button" className="pepito-btn button-2" disabled={uploadBusy || buyBusy} onClick={() => void onCancelActiveOrder()}>لغو سفارش</button>
+                    <button type="button" className="pepito-btn pepito-btn--danger" disabled={uploadBusy || buyBusy} onClick={() => void onCancelActiveOrder()}>لغو سفارش</button>
                   </div>
                 </>
               ) : (<p className="pepito-wallet-tg-meta">{t('wallet.receiptPending')}</p>)}

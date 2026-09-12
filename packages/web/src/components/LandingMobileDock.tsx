@@ -204,7 +204,7 @@ export function LandingMobileDock() {
             <Link
               key={item.key}
               to={href}
-              className={`pepito-landing-mobile-dock-link${active ? ' is-active' : ''}`}
+              className={`pepito-landing-mobile-dock-link${active ? ' is-active' : ''}${item.tone ? ` pepito-landing-mobile-dock-link--${item.tone}` : ''}`}
               aria-label={t(`nav.${item.key}`)}
               aria-current={active ? 'page' : undefined}
             >

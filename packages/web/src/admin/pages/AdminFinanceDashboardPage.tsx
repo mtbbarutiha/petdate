@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  ArrowDownRight, ArrowUpRight, Download, LineChart, PieChart,
+  ArrowDownRight, ArrowUpRight, Download, HandCoins, LineChart, PieChart,
   ShoppingBag, TrendingUp, Wallet,
 } from 'lucide-react';
 import { adminDownload, adminFetch, formatNumFa, formatTomanFa } from '../api';
@@ -203,29 +203,32 @@ export function AdminFinanceDashboardPage() {
 
       <p className="admin-section-label" style={{ marginTop: 20 }}>{tr('ماژول‌های Finance OS')}</p>
       <div className="admin-finance-links">
-        <Link to="/admin/finance/accounts" className="admin-card admin-finance-link">
-          <TrendingUp size={20} /><div><strong>{tr('حساب‌ها و داده‌های پایه')}</strong><span>{tr('بانک · اسنپ‌پی · طبقه‌بندی · افراد')}</span></div>
+        <Link to="/admin/payments" className="admin-card admin-finance-link admin-finance-link--queue">
+          <Wallet size={20} /><div><strong>{tr('صف تأیید واریز')}</strong><span>{tr('رسید کارت‌به‌کارت سکه و شاپ')}</span></div>
         </Link>
-        <Link to="/admin/finance/transactions" className="admin-card admin-finance-link">
+        <Link to="/admin/coin-sells" className="admin-card admin-finance-link admin-finance-link--queue">
+          <HandCoins size={20} /><div><strong>{tr('صف فروش سکه')}</strong><span>{tr('برداشت / تسویه در انتظار')}</span></div>
+        </Link>
+        <Link to="/admin/finance/transactions" className="admin-card admin-finance-link admin-finance-link--queue">
           <LineChart size={20} /><div><strong>{tr('تراکنش‌ها و دفتر')}</strong><span>{tr('ایمپورت · صف · مشکوک · Ledger')}</span></div>
+        </Link>
+        <Link to="/admin/finance/wallet" className="admin-card admin-finance-link admin-finance-link--queue">
+          <Wallet size={20} /><div><strong>{tr('دفتر کیف پول')}</strong><span>{tr('تومان · سکه · Stars · TON')}</span></div>
         </Link>
         <Link to="/admin/finance/allocation" className="admin-card admin-finance-link">
           <PieChart size={20} /><div><strong>{tr('تخصیص هزینه')}</strong><span>{tr('دفاتر · تجهیزات · فاکتور هلدینگ')}</span></div>
         </Link>
-        <Link to="/admin/finance/pnl" className="admin-card admin-finance-link">
-          <PieChart size={20} /><div><strong>{tr('سود و زیان')}</strong><span>{tr('درآمد در برابر هزینه و حاشیه سود')}</span></div>
-        </Link>
-        <Link to="/admin/finance/sales" className="admin-card admin-finance-link">
-          <LineChart size={20} /><div><strong>{tr('نمودارهای فروش')}</strong><span>{tr('روزانه / ماهانه · دسته · پرداخت')}</span></div>
+        <Link to="/admin/finance/accounts" className="admin-card admin-finance-link">
+          <TrendingUp size={20} /><div><strong>{tr('حساب‌ها و داده‌های پایه')}</strong><span>{tr('بانک · اسنپ‌پی · طبقه‌بندی · افراد')}</span></div>
         </Link>
         <Link to="/admin/finance/orders" className="admin-card admin-finance-link">
           <ShoppingBag size={20} /><div><strong>{tr('درآمد سفارش‌ها')}</strong><span>{tr('لیست و جمع وضعیت‌ها')}</span></div>
         </Link>
-        <Link to="/admin/finance/wallet" className="admin-card admin-finance-link">
-          <Wallet size={20} /><div><strong>{tr('دفتر کیف پول')}</strong><span>{tr('تومان · سکه · Stars · TON')}</span></div>
+        <Link to="/admin/finance/sales" className="admin-card admin-finance-link">
+          <LineChart size={20} /><div><strong>{tr('نمودارهای فروش')}</strong><span>{tr('روزانه / ماهانه · دسته · پرداخت')}</span></div>
         </Link>
-        <Link to="/admin/payments" className="admin-card admin-finance-link">
-          <Wallet size={20} /><div><strong>{tr('صف تأیید واریز')}</strong><span>{tr('رسید کارت‌به‌کارت سکه و شاپ')}</span></div>
+        <Link to="/admin/finance/pnl" className="admin-card admin-finance-link">
+          <PieChart size={20} /><div><strong>{tr('سود و زیان')}</strong><span>{tr('درآمد در برابر هزینه و حاشیه سود')}</span></div>
         </Link>
         <Link to="/admin/finance/products" className="admin-card admin-finance-link">
           <TrendingUp size={20} /><div><strong>{tr('محصولات برتر')}</strong><span>{tr('رتبه‌بندی درآمد')}</span></div>
