@@ -364,6 +364,15 @@ export const SIGNUP_BONUS = 20;
 export const PROFILE_SECTION_REWARD = 5;
 /** جایزه تأیید احراز هویت تصویری توسط ادمین */
 export const FACE_VERIFY_REWARD = 100;
+
+/**
+ * هزینه تعویض عکس پروفایل (بعد از اولین عکس).
+ * عکس اول رایگان است؛ تعویض بعدی این مبلغ را کم می‌کند و احراز چهره را لغو می‌کند.
+ */
+export const PROFILE_PHOTO_CHANGE_COST = 100;
+
+/** دلیل لجر کیف‌پول برای کسر تعویض عکس */
+export const PROFILE_PHOTO_CHANGE_FEE_REASON = 'هزینه تعویض عکس پروفایل';
 /** جایزه دعوت دوست (به معرف، به‌ازای هر ثبت‌نام جدید از لینک دعوت) */
 export const REFERRAL_BONUS_COINS = 30;
 
@@ -460,6 +469,13 @@ export function walletLedgerLabelFa(reason: string): string {
   if (!r) return 'تراکنش کیف پول';
   if (r === COIN_REASON.signup || r === 'signup') return 'جایزه ثبت‌نام';
   if (r === COIN_REASON.faceVerify || r === 'face_verify') return 'جایزه احراز هویت';
+  if (
+    r === PROFILE_PHOTO_CHANGE_FEE_REASON ||
+    r === 'profile_photo_change' ||
+    r.includes('تعویض عکس')
+  ) {
+    return PROFILE_PHOTO_CHANGE_FEE_REASON;
+  }
   if (r === COIN_REASON.daily || r === 'daily') return 'سکه روزانه';
   if (r.startsWith('referral:')) return 'جایزه دعوت دوستان';
   if (r.startsWith('profile:')) {

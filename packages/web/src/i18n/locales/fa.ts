@@ -85,6 +85,12 @@ export const fa: Dict = {
     faceVerified: 'احراز چهره شده',
     facePending: 'در انتظار احراز',
     faceCta: 'احراز چهره (+{n})',
+    photoChangeTitle: 'تعویض عکس پروفایل',
+    photoChangeLead:
+      'با تأیید، {n} سکه از موجودی‌ات کم می‌شود و از حالت احراز چهره خارج می‌شوی. برای احراز دوباره باید سلفی جدید بفرستی.',
+    photoChangeNeedCoins: 'برای تعویض عکس حداقل {n} سکه لازم داری. موجودی: {balance}',
+    photoChangeCost: 'هزینه تعویض',
+    photoChangeBalance: 'موجودی فعلی',
   },
   theme: {
     toLight: 'روشن',

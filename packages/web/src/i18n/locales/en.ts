@@ -85,6 +85,12 @@ export const en: Dict = {
     faceVerified: 'Face verified',
     facePending: 'Verification pending',
     faceCta: 'Face verify (+{n})',
+    photoChangeTitle: 'Change profile photo',
+    photoChangeLead:
+      'Confirming deducts {n} coins and removes face verification. You will need a new selfie to verify again.',
+    photoChangeNeedCoins: 'Changing your photo needs at least {n} coins. Balance: {balance}',
+    photoChangeCost: 'Change fee',
+    photoChangeBalance: 'Current balance',
   },
   theme: {
     toLight: 'Light',

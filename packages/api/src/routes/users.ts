@@ -26,6 +26,7 @@ import {
   notifyFaceVerifyApprovedTelegram,
   notifyFaceVerifyRejectedTelegram,
 } from '../services/telegram-face-verify-notify';
+import { insufficientProfilePhotoChangePayload } from '../services/profile-photo-change';
 import {
   ensureWebAccessibleAvatar,
   isWebAvatarUrl,
@@ -88,6 +89,30 @@ async function resolveAvatarUrlPatch(
     return path ?? raw;
   }
   return raw;
+}
+
+type UserProfileWritePatch = Parameters<(typeof dbService)['updateUserProfile']>[1];
+
+async function commitProfileWrite(
+  existing: User,
+  rawAvatar: unknown,
+  patch: UserProfileWritePatch
+) {
+  const rawIn = rawAvatar != null ? String(rawAvatar).trim() : '';
+  const existingRaw = String(existing.avatarUrl ?? '').trim();
+  const sameAvatarRef = Boolean(rawIn && rawIn === existingRaw);
+  const avatarUrl = await resolveAvatarUrlPatch(existing.id, rawAvatar);
+  const next: UserProfileWritePatch = { ...patch, avatarUrl };
+  if (sameAvatarRef) {
+    const user = dbService.updateUserProfile(existing.id, {
+      ...next,
+      avatarModerationStatus: existing.avatarModerationStatus,
+    });
+    return user
+      ? ({ ok: true as const, user, charged: 0, verificationReset: false })
+      : ({ ok: false as const, reason: 'missing' as const });
+  }
+  return dbService.commitUserProfileChange(existing.id, next);
 }
 
 async function withEnsuredAvatar(user: User): Promise<User> {
@@ -386,8 +411,7 @@ usersRouter.patch('/telegram/:telegramId/profile', async (req, res) => {
     return;
   }
   const rawAvatar = patch.avatarUrl;
-  const avatarUrl = await resolveAvatarUrlPatch(existing.id, rawAvatar);
-  const user = dbService.updateUserProfileByTelegramId(req.params.telegramId, {
+  const result = await commitProfileWrite(existing, rawAvatar, {
     name: patch.name,
     age: patch.age != null ? Number(patch.age) : undefined,
     gender: patch.gender,
@@ -397,8 +421,6 @@ usersRouter.patch('/telegram/:telegramId/profile', async (req, res) => {
     phone: patch.phone,
     bio: patch.bio,
     interests: Array.isArray(patch.interests) ? patch.interests.map(String) : undefined,
-    avatarUrl,
-    // Bot/wizard photo upload → treat as custom so Telegram sync won't overwrite it
     avatarCustom:
       rawAvatar != null && looksLikeTelegramFileId(rawAvatar)
         ? true
@@ -409,11 +431,18 @@ usersRouter.patch('/telegram/:telegramId/profile', async (req, res) => {
     silentChatRequests:
       typeof patch.silentChatRequests === 'boolean' ? patch.silentChatRequests : undefined,
   });
-  if (!user) {
+  if (!result.ok) {
+    if (result.reason === 'insufficient_coins') {
+      res.status(402).json({
+        ok: false,
+        ...insufficientProfilePhotoChangePayload(result.balance ?? 0),
+      });
+      return;
+    }
     res.status(404).json({ error: 'کاربر پیدا نشد' });
     return;
   }
-  res.json(dbService.enrichUserProfileCard(user));
+  res.json(dbService.enrichUserProfileCard(result.user));
 });
 
 usersRouter.patch('/telegram/:telegramId/active', (req, res) => {
@@ -444,8 +473,7 @@ usersRouter.patch('/:id/profile', async (req, res) => {
     return;
   }
   const rawAvatar = patch.avatarUrl;
-  const avatarUrl = await resolveAvatarUrlPatch(userId, rawAvatar);
-  const user = dbService.updateUserProfile(userId, {
+  const result = await commitProfileWrite(existing, rawAvatar, {
     name: patch.name,
     age: patch.age != null ? Number(patch.age) : undefined,
     gender: patch.gender,
@@ -455,7 +483,6 @@ usersRouter.patch('/:id/profile', async (req, res) => {
     phone: patch.phone,
     bio: patch.bio,
     interests: Array.isArray(patch.interests) ? patch.interests.map(String) : undefined,
-    avatarUrl,
     avatarCustom:
       rawAvatar != null && looksLikeTelegramFileId(rawAvatar) ? true : undefined,
     coins: patch.coins != null ? Number(patch.coins) : undefined,
@@ -464,11 +491,18 @@ usersRouter.patch('/:id/profile', async (req, res) => {
     silentChatRequests:
       typeof patch.silentChatRequests === 'boolean' ? patch.silentChatRequests : undefined,
   });
-  if (!user) {
+  if (!result.ok) {
+    if (result.reason === 'insufficient_coins') {
+      res.status(402).json({
+        ok: false,
+        ...insufficientProfilePhotoChangePayload(result.balance ?? 0),
+      });
+      return;
+    }
     res.status(404).json({ error: 'کاربر پیدا نشد' });
     return;
   }
-  res.json(dbService.enrichUserProfileCard(user));
+  res.json(dbService.enrichUserProfileCard(result.user));
 });
 
 usersRouter.patch('/:id/section', (req, res) => {

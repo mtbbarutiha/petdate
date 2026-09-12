@@ -35,6 +35,9 @@ npx tsx "$ROOT/packages/shared/src/auto-messages.selftest.ts"
 echo "==> selftest: web face-verify approve toast + profile copy"
 npx tsx "$ROOT/packages/web/src/components/faceVerifyRewardToast.selftest.ts"
 
+echo "==> selftest: web profile photo change confirm + 100-coin fee"
+npx tsx "$ROOT/packages/web/src/components/profilePhotoChange.selftest.ts"
+
 echo "==> selftest: web inbox title (no public id)"
 npx tsx "$ROOT/packages/web/src/lib/inboxTitle.selftest.ts"
 
@@ -263,6 +266,7 @@ run src/services/seeker-advice-early-refund.selftest.ts
 run src/services/seeker-advice-owner-notify.selftest.ts
 run src/services/telegram-face-verify-notify.selftest.ts
 run src/face-verify-approve.selftest.ts
+run src/profile-photo-change.selftest.ts
 run src/services/chat-upload-store.selftest.ts
 run src/services/chat-inbox-gift.selftest.ts
 run src/services/image-normalize.selftest.ts

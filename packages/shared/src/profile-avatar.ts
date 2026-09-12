@@ -84,6 +84,26 @@ export function defaultAvatarUrlForGender(
   return undefined;
 }
 
+/** True when the user has a stored still photo (not empty / gender default / video). */
+export function isStoredCustomProfilePhoto(url?: string | null): boolean {
+  const raw = String(url ?? '').trim();
+  if (!raw) return false;
+  if (isGenderDefaultAvatarPath(raw)) return false;
+  if (isNonImageAvatarRef(raw)) return false;
+  return true;
+}
+
+/** Replacing an existing custom photo (not first upload, not rematerialize of empty). */
+export function isUserProfilePhotoReplacement(
+  previousUrl?: string | null,
+  nextUrl?: string | null
+): boolean {
+  if (!isStoredCustomProfilePhoto(previousUrl)) return false;
+  const next = String(nextUrl ?? '').trim();
+  if (!next || isGenderDefaultAvatarPath(next)) return false;
+  return next !== String(previousUrl ?? '').trim();
+}
+
 export function isGenderDefaultAvatarPath(url?: string | null): boolean {
   const raw = String(url ?? '').trim();
   if (!raw) return false;

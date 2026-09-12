@@ -44,6 +44,8 @@ import type {
 import {
   COIN_REASON,
   FACE_VERIFY_REWARD,
+  PROFILE_PHOTO_CHANGE_COST,
+  PROFILE_PHOTO_CHANGE_FEE_REASON,
   isPendingRequestExpired,
   makePetPublicId,
   slugifyPetName,
@@ -94,6 +96,7 @@ import {
   profileAvatarUrl,
   resolveProfileDisplayAvatarUrl,
   isNonImageAvatarRef,
+  isUserProfilePhotoReplacement,
   type CoinSellChannel,
   type CoinSellRequestAdmin,
   type CoinSellRequestStatus,
@@ -3052,6 +3055,82 @@ export const dbService = {
     const user = this.getUserByTelegramId(telegramId);
     if (!user) return null;
     return this.updateUserProfile(user.id, patch);
+  },
+
+  /** Clear pending/verified face-verify so the user must submit again. */
+  resetFaceVerification(userId: number): void {
+    db.prepare(
+      `UPDATE users SET
+         verification_status = 'none',
+         verification_photo_file_id = NULL,
+         verification_note = NULL,
+         verified_at = NULL
+       WHERE id = ?`
+    ).run(userId);
+  },
+
+  /**
+   * User-initiated profile write. Replacing an existing custom photo
+   * deducts PROFILE_PHOTO_CHANGE_COST and leaves face-verify state.
+   * Storage rematerialize must keep using updateUserProfile + explicit
+   * avatarModerationStatus so it does not go through this path.
+   */
+  commitUserProfileChange(
+    userId: number,
+    patch: Parameters<(typeof dbService)['updateUserProfile']>[1]
+  ):
+    | { ok: true; user: User; charged: number; verificationReset: boolean }
+    | {
+        ok: false;
+        reason: 'missing' | 'insufficient_coins';
+        balance?: number;
+        cost?: number;
+      } {
+    const existing = this.getUserById(userId);
+    if (!existing) return { ok: false, reason: 'missing' };
+
+    const nextAvatar =
+      patch.avatarUrl !== undefined ? String(patch.avatarUrl ?? '').trim() : undefined;
+    const isReplacement =
+      nextAvatar !== undefined &&
+      isUserProfilePhotoReplacement(existing.avatarUrl, nextAvatar);
+
+    if (!isReplacement) {
+      const user = this.updateUserProfile(userId, patch);
+      if (!user) return { ok: false, reason: 'missing' };
+      return { ok: true, user, charged: 0, verificationReset: false };
+    }
+
+    const cost = PROFILE_PHOTO_CHANGE_COST;
+    const balance = Math.max(0, Math.floor(Number(existing.coins) || 0));
+    if (balance < cost) {
+      return { ok: false, reason: 'insufficient_coins', balance, cost };
+    }
+
+    return db.transaction(() => {
+      const debited = this.debitCoins(userId, cost, {
+        reason: PROFILE_PHOTO_CHANGE_FEE_REASON,
+        refType: 'profile_photo_change',
+        refId: userId,
+      });
+      if (!debited) {
+        return {
+          ok: false as const,
+          reason: 'insufficient_coins' as const,
+          balance: Math.max(0, Math.floor(Number(this.getUserById(userId)?.coins) || 0)),
+          cost,
+        };
+      }
+      this.resetFaceVerification(userId);
+      const user = this.updateUserProfile(userId, patch);
+      if (!user) return { ok: false as const, reason: 'missing' as const };
+      return {
+        ok: true as const,
+        user,
+        charged: cost,
+        verificationReset: true,
+      };
+    })();
   },
 
   setUserActiveByTelegramId(telegramId: string, isActive: boolean): User | null {
