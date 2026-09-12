@@ -33,7 +33,23 @@ assert.match(
 
 assert.match(chatPage, /tg-request-card-owner/, 'request card shows owner thumb');
 assert.match(chatCss, /\.tg-request-card-owner\b/, 'owner thumb CSS present');
-assert.match(chatCss, /inset-inline-start:\s*12px/, 'owner thumb top-start corner');
+assert.match(chatCss, /\.tg-request-card-photo\s*\{[\s\S]*?inset:\s*0/, 'pet photo is full-bleed cover');
+assert.match(
+  chatCss,
+  /\.tg-request-card-photo\s*\{[\s\S]*?border-radius:\s*0/,
+  'pet photo is rectangular cover (not circle)'
+);
+assert.match(
+  chatCss,
+  /\.tg-request-card-cover\s*\{[\s\S]*?height:\s*clamp\(200px/,
+  'cover has Telegram-like generous height'
+);
+assert.match(
+  chatCss,
+  /\.tg-request-card-owner\s*\{[\s\S]*?bottom:\s*12px/,
+  'owner thumb overlays bottom-start of cover (Telegram style)'
+);
+assert.match(chatCss, /inset-inline-start:\s*12px/, 'owner thumb start-edge overlay');
 assert.match(
   chatPage,
   /tg-chat-peer-avatar--initials/,
