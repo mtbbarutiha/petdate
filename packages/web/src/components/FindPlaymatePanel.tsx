@@ -10,7 +10,6 @@ import {
 } from '@petdate/shared';
 import { ConfirmModal } from './ConfirmModal';
 import { PlaymateRequestsPanel } from './PlaymateRequestsPanel';
-import { EMPTY_STATE_PHOTO } from '../data/petImages';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { useAppToast } from '../hooks/useAppToast';
 import { useUserStore } from '../hooks/useUserStore';
@@ -387,12 +386,15 @@ export function FindPlaymatePanel({
                     disabled={sending}
                     onClick={() => requestFindForPet(pet)}
                   >
-                    <img src={ui.imageUrl || EMPTY_STATE_PHOTO} alt="" />
+                    <img src={ui.imageUrl || '/brand/photo-placeholder.svg'} alt="" />
                     <span>
                       <strong>{pet.name}</strong>
                       <small>
                         {[pet.breed, pet.city || pet.ownerCity].filter(Boolean).join(' · ')}
                       </small>
+                      {(pet.photoModerationStatus ?? 'approved') === 'pending' && pet.imageUrl ? (
+                        <small>{t('moderation.chipPending')}</small>
+                      ) : null}
                     </span>
                   </button>
                 );

@@ -5,7 +5,7 @@
 import fs from 'fs';
 import path from 'path';
 import sharp from 'sharp';
-import type { PetProfile } from '@petdate/shared';
+import { isPhotoApproved, type PetProfile } from '@petdate/shared';
 import {
   mimeFromPetPhotoKey,
   resolvePetPhotoPath,
@@ -285,7 +285,10 @@ export async function renderNearbyListCard(opts: {
     });
 
     const thumbBuf = await squareThumb(
-      await loadImageBuffer(pet.imageUrl, defaultPetPhotoUrl(pet)),
+      await loadImageBuffer(
+        isPhotoApproved(pet.photoModerationStatus) ? pet.imageUrl : undefined,
+        defaultPetPhotoUrl(pet)
+      ),
       THUMB,
       (pet.id * 47) % 360
     );
@@ -350,7 +353,10 @@ export async function renderPetProfileCard(opts: {
   const pet = opts.pet;
   const corner = opts.corner ?? 'tl';
   const petBuf = await squareThumb(
-    await loadImageBuffer(pet.imageUrl, defaultPetPhotoUrl(pet)),
+    await loadImageBuffer(
+      isPhotoApproved(pet.photoModerationStatus) ? pet.imageUrl : undefined,
+      defaultPetPhotoUrl(pet)
+    ),
     PROFILE_SIZE,
     (pet.id * 47) % 360
   );

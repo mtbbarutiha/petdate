@@ -28,6 +28,7 @@ import { PublicIdBadge } from '../components/PublicIdBadge';
 import { formatAge } from '../data/mock';
 import { EMPTY_STATE_PHOTO } from '../data/petImages';
 import { useAuthStore } from '../hooks/useAuthStore';
+import { useI18n } from '../i18n';
 import { useAppToast } from '../hooks/useAppToast';
 import {
   addPetWishlistTarget,
@@ -56,6 +57,7 @@ export function PetDetailPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user: authUser, isLoggedIn } = useAuthStore();
+  const { t } = useI18n();
   const { toastSuccess, toastError, toastInfo } = useAppToast();
   const petId = Number(id);
 
@@ -337,7 +339,9 @@ export function PetDetailPage() {
   const traits = Array.isArray((pet.personality as { traits?: string[] })?.traits)
     ? (pet.personality as { traits: string[] }).traits
     : [];
-  const photo = ui.imageUrl || EMPTY_STATE_PHOTO;
+  const photoPending =
+    isMyPet && (pet.photoModerationStatus ?? 'approved') === 'pending' && Boolean(pet.imageUrl);
+  const photo = ui.imageUrl || '/brand/photo-placeholder.svg';
   const diaryTitle = `دفتر خاطرات ${pet.name}`;
 
   return (
@@ -349,6 +353,11 @@ export function PetDetailPage() {
         } as CSSProperties
       }
     >
+      {photoPending ? (
+        <div className="pepito-photo-pending" role="status" data-testid="photo-pending-banner">
+          <p>{t('moderation.bannerPet')}</p>
+        </div>
+      ) : null}
       <div className="pepito-pet-profile-hero">
         <img src={photo} alt={pet.name} onError={(e) => {
           const img = e.currentTarget;

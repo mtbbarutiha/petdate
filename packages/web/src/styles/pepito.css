@@ -14238,3 +14238,28 @@ a.pepito-btn.pepito-human-consult-cta:hover {
     justify-content: center;
   }
 }
+
+.pepito-photo-pending {
+  margin: 0 0 12px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: color-mix(in srgb, #fd961e 16%, #fff8ee);
+  border: 1px solid color-mix(in srgb, #fd961e 35%, transparent);
+  color: #6b3f00;
+}
+.pepito-photo-pending p {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.65;
+}
+.pepito-photo-pending--compact {
+  margin-bottom: 8px;
+  padding: 8px 12px;
+}
+.pepito-my-pets-card-pending {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #b45309;
+}

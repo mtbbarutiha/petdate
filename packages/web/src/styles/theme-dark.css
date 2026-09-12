@@ -3092,3 +3092,12 @@ html[data-theme='dark'] .pepito-games-meta li,
 html[data-theme='dark'] .pepito-games-item-note {
   color: var(--text-secondary, #94a3b8);
 }
+
+html[data-theme='dark'] .pepito-photo-pending {
+  background: color-mix(in srgb, #fd961e 18%, #1e293b);
+  border-color: color-mix(in srgb, #fd961e 40%, #334155);
+  color: #fde68a;
+}
+html[data-theme='dark'] .pepito-my-pets-card-pending {
+  color: #fbbf24;
+}

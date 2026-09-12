@@ -20,7 +20,7 @@ import {
   readLocalPetPhoto,
 } from '../services/telegram-media';
 import { getUserFromBearer } from '../services/web-otp';
-import type { PetProfile } from '@petdate/shared';
+import { isPhotoApproved, sanitizePetPhotosForViewer, type PetProfile } from '@petdate/shared';
 
 export const petsRouter = Router();
 
@@ -43,15 +43,29 @@ function isInternalBot(req: { header: (name: string) => string | undefined }): b
   return tokensEqual(expected, got);
 }
 
-/** Hide unapproved pet/owner photos from non-owners. */
+/** Hide unapproved pet photos from non-owners; keep the pet identity. */
 function sanitizePetForViewer(pet: PetProfile, viewerId?: number): PetProfile {
-  const isOwner = viewerId != null && viewerId === pet.ownerId;
-  if (isOwner) return pet;
-  const out = { ...pet };
-  if ((pet.photoModerationStatus ?? 'approved') !== 'approved') {
-    out.imageUrl = undefined;
-  }
-  return out;
+  return sanitizePetPhotosForViewer(pet, viewerId);
+}
+
+/** Branded SVG placeholder — used when a real photo is awaiting admin approval. */
+export const PHOTO_PLACEHOLDER_SVG = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-label="PetDate">
+  <rect width="160" height="160" rx="28" fill="#e8e4dc"/>
+  <ellipse cx="56" cy="56" rx="18" ry="22" fill="#5c4d91"/>
+  <ellipse cx="104" cy="56" rx="18" ry="22" fill="#5c4d91"/>
+  <ellipse cx="40" cy="90" rx="14" ry="16" fill="#5c4d91"/>
+  <ellipse cx="120" cy="90" rx="14" ry="16" fill="#5c4d91"/>
+  <circle cx="80" cy="98" r="28" fill="#5c4d91"/>
+</svg>`;
+
+function sendPhotoPlaceholder(res: {
+  setHeader: (n: string, v: string) => void;
+  send: (b: Buffer) => void;
+}): void {
+  res.setHeader('Content-Type', 'image/svg+xml; charset=utf-8');
+  res.setHeader('Cache-Control', 'public, max-age=3600');
+  res.send(Buffer.from(PHOTO_PLACEHOLDER_SVG, 'utf8'));
 }
 
 /**
@@ -258,7 +272,7 @@ petsRouter.get('/', (req, res) => {
     breed,
     breeds,
     sort,
-    // Public discovery hides pending/rejected photos; owners always see their pets.
+    // Discovery includes pending-photo pets; presentPet swaps in a placeholder.
     publicOnly: ownerId == null || ownerId !== viewerId,
   });
   res.json(pets.map((pet) => presentPet(pet, viewerId, { privileged })));
@@ -315,7 +329,9 @@ petsRouter.get('/nearby/list-card', async (req, res) => {
       limit: 80,
       radiusKm: Number.isFinite(radiusKm) ? radiusKm : 5,
     });
-    const slice = all.slice(page * pageSize, page * pageSize + pageSize);
+    const slice = all
+      .map((pet) => sanitizePetForViewer(pet, viewerUserId(req)))
+      .slice(page * pageSize, page * pageSize + pageSize);
     const buf = await renderNearbyListCard({
       pets: slice,
       radiusKm: Number.isFinite(radiusKm) ? radiusKm : 5,
@@ -355,6 +371,8 @@ petsRouter.get('/:id/profile-card', async (req, res) => {
       res.status(404).json({ error: 'پت پیدا نشد' });
       return;
     }
+    const viewerId = viewerUserId(req);
+    const visible = sanitizePetForViewer(pet, viewerId);
     const viewerLat = req.query.viewerLat != null ? Number(req.query.viewerLat) : undefined;
     const viewerLng = req.query.viewerLng != null ? Number(req.query.viewerLng) : undefined;
     let distanceKm = pet.distanceKm;
@@ -372,15 +390,17 @@ petsRouter.get('/:id/profile-card', async (req, res) => {
     }
     // Materialize Telegram file_id → /api/auth/avatar/... so sharp can load the face.
     // Does not expose phone / telegramId on the image or response.
-    let ownerAvatarUrl = pet.ownerAvatarUrl;
+    let ownerAvatarUrl = visible.ownerAvatarUrl;
     try {
       const ensured = await ensureWebAccessibleAvatar(pet.ownerId);
-      if (ensured?.avatarUrl) ownerAvatarUrl = ensured.avatarUrl;
+      if (ensured?.avatarUrl && isPhotoApproved(ensured.avatarModerationStatus)) {
+        ownerAvatarUrl = ensured.avatarUrl;
+      }
     } catch (err) {
       console.warn('profile-card owner avatar ensure failed:', (err as Error).message);
     }
     const buf = await renderPetProfileCard({
-      pet: { ...pet, distanceKm, ownerAvatarUrl },
+      pet: { ...visible, distanceKm, ownerAvatarUrl },
       corner: 'tl',
     });
     res.setHeader('Content-Type', 'image/jpeg');
@@ -393,11 +413,11 @@ petsRouter.get('/:id/profile-card', async (req, res) => {
 });
 
 
-/**
- * Stream pet photo for web <img>.
- * Local `/api/pets/photos/...` is served from disk; Telegram file_id is
- * materialized into pet-photos (best effort) or proxied once.
- */
+/** Default avatar while a pet/owner photo is awaiting admin approval. */
+petsRouter.get('/placeholder', (_req, res) => {
+  sendPhotoPlaceholder(res);
+});
+
 petsRouter.get('/:id/image', async (req, res) => {
   const petId = Number(req.params.id);
   if (!Number.isFinite(petId) || petId <= 0) {
@@ -425,7 +445,7 @@ petsRouter.get('/:id/image', async (req, res) => {
     String(row.photo_moderation_status ?? 'approved') !== 'approved' &&
     viewerId !== row.owner_id
   ) {
-    res.status(403).json({ error: 'عکس هنوز تأیید نشده است' });
+    sendPhotoPlaceholder(res);
     return;
   }
 

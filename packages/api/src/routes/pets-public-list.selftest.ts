@@ -19,6 +19,8 @@ assert.match(
   'unauth ownerId filter is 401'
 );
 assert.match(src, /pets\.map\(\(pet\) => presentPet/, 'GET / maps through presenter');
+assert.match(src, /sanitizePetPhotosForViewer/, 'pending photos stripped via shared helper');
+assert.match(src, /sendPhotoPlaceholder/, 'unapproved image route serves placeholder');
 const listStart = src.indexOf("petsRouter.get('/',");
 const nearbyStart = src.indexOf("petsRouter.get('/nearby'");
 assert.ok(listStart >= 0 && nearbyStart > listStart, 'GET / is declared before /nearby');

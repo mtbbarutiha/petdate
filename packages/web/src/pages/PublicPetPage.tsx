@@ -31,12 +31,14 @@ import { sendPlaymateRequestNow } from '../lib/playmateActions';
 import { petPublicUrl, shareOrCopyUrl } from '../lib/share';
 import { loginPath } from '../lib/authRedirect';
 import { LandingChrome } from '../components/LandingChrome';
+import { useI18n } from '../i18n';
 import { PET_GENDER_LABELS, PET_SIZE_LABELS, PET_TYPE_LABELS } from '../types';
 
 export function PublicPetPage() {
   const { slugOrId } = useParams<{ slugOrId: string }>();
   const navigate = useNavigate();
   const { user: authUser, isLoggedIn } = useAuthStore();
+  const { t } = useI18n();
   const { toastSuccess, toastError, toastInfo } = useAppToast();
 
   const [pet, setPet] = useState<PetProfile | null>(null);
@@ -208,7 +210,9 @@ export function PublicPetPage() {
     }
   }
 
-  const photo = ui?.imageUrl || EMPTY_STATE_PHOTO;
+  const photoPending =
+    isMyPet && (pet?.photoModerationStatus ?? 'approved') === 'pending' && Boolean(pet?.imageUrl);
+  const photo = ui?.imageUrl || '/brand/photo-placeholder.svg';
   const diaryTitle = pet ? `دفتر خاطرات ${pet.name}` : 'دفتر خاطرات';
   const genderLabel =
     pet?.gender && PET_GENDER_LABELS[pet.gender] ? PET_GENDER_LABELS[pet.gender] : null;
@@ -242,6 +246,11 @@ export function PublicPetPage() {
           </div>
         ) : (
           <>
+            {photoPending ? (
+              <div className="pepito-photo-pending" role="status" data-testid="photo-pending-banner">
+                <p>{t('moderation.bannerPet')}</p>
+              </div>
+            ) : null}
             <header className="pepito-public-pet-hero">
               <img
                 src={photo}

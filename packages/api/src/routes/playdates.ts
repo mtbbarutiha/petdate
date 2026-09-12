@@ -7,6 +7,7 @@ import {
   PET_SPECIES_LABELS,
   PLAYDATE_REQUEST_COST,
   rankPlaymateMatches,
+  sanitizePetPhotosForViewer,
   userPublicIdOf,
 } from '@petdate/shared';
 import { infra } from '../config/infra';
@@ -104,12 +105,17 @@ function peerTelegramIds(playdate: NonNullable<ReturnType<typeof dbService.getPl
 }
 
 
-function enrichPlaydate(req: ReturnType<typeof dbService.getPlaydateRequest>) {
+function enrichPlaydate(
+  req: ReturnType<typeof dbService.getPlaydateRequest>,
+  viewerId?: number
+) {
   if (!req) return null;
+  const fromPet = dbService.getPet(req.fromPetId);
+  const toPet = dbService.getPet(req.toPetId);
   return {
     ...req,
-    fromPet: dbService.getPet(req.fromPetId) ?? undefined,
-    toPet: dbService.getPet(req.toPetId) ?? undefined,
+    fromPet: fromPet ? sanitizePetPhotosForViewer(fromPet, viewerId) : undefined,
+    toPet: toPet ? sanitizePetPhotosForViewer(toPet, viewerId) : undefined,
   };
 }
 
@@ -266,7 +272,7 @@ playdatesRouter.get('/', (req, res) => {
       }
       return true;
     })
-    .map((r) => enrichPlaydate(r)!);
+    .map((r) => enrichPlaydate(r, userId)!);
   res.json(requests);
 });
 
@@ -659,7 +665,7 @@ playdatesRouter.post('/:id/end-chat', async (req, res) => {
     ),
     { chatEnded: true, chatSecure: false, wasSecure },
   );
-  res.json({ ok: true, playdate: enrichPlaydate(updated), wasSecure });
+  res.json({ ok: true, playdate: enrichPlaydate(updated, userId), wasSecure });
 });
 
 playdatesRouter.patch('/:id/chat-secure', async (req, res) => {
@@ -696,7 +702,7 @@ playdatesRouter.patch('/:id/chat-secure', async (req, res) => {
     notifyPlaymateThread(playdateId, [gate.playdate.fromUserId, gate.playdate.toUserId].filter(
     (id): id is number => Number.isFinite(id as number) && (id as number) > 0,
   ), { chatSecure: secure });
-  res.json(enrichPlaydate(updated));
+  res.json(enrichPlaydate(updated, userId));
 });
 
 
@@ -931,8 +937,8 @@ playdatesRouter.get('/:id', (req, res) => {
     return;
   }
 
-  const request = enrichPlaydate(dbService.getPlaydateRequest(playdateId));
-  if (!request) {
+  const rawRequest = dbService.getPlaydateRequest(playdateId);
+  if (!rawRequest) {
     res.status(404).json({ error: 'درخواست پیدا نشد' });
     return;
   }
@@ -941,6 +947,11 @@ playdatesRouter.get('/:id', (req, res) => {
   const viewer = viewerFromBearer(req);
   if (!bot && !viewer) {
     res.status(401).json({ error: 'وارد نشده‌اید' });
+    return;
+  }
+  const request = enrichPlaydate(rawRequest, viewer?.id);
+  if (!request) {
+    res.status(404).json({ error: 'درخواست پیدا نشد' });
     return;
   }
   if (viewer && !bot && !dbService.isPlaydateParticipant(request, viewer.id)) {
@@ -1057,7 +1068,7 @@ playdatesRouter.post('/find', async (req, res) => {
         fromUserId,
         toUserId: toUid,
       });
-      const enriched = enrichPlaydate(request)!;
+      const enriched = enrichPlaydate(request, fromUserId)!;
       created.push(enriched);
       const recipientUserId =
         enriched.toUserId ?? enriched.toPet?.ownerId ?? toUid ?? undefined;
@@ -1162,7 +1173,7 @@ playdatesRouter.post('/', async (req, res) => {
       .listPlaydateRequests({ userId: fromUid, status: 'pending' })
       .find((r) => r.fromPetId === Number(fromPetId) && r.toPetId === Number(toPetId));
     res.status(200).json({
-      ...enrichPlaydate(existing ?? null),
+      ...enrichPlaydate(existing ?? null, fromUid),
       telegramNotified: false,
       alreadyPending: true,
       cost: 0,
@@ -1173,7 +1184,7 @@ playdatesRouter.post('/', async (req, res) => {
   if (toUid && dbService.hasPendingPlaydateBetweenUsers(fromUid, toUid)) {
     const existing = dbService.findPendingPlaydateBetweenUsers(fromUid, toUid);
     res.status(200).json({
-      ...enrichPlaydate(existing),
+      ...enrichPlaydate(existing, fromUid),
       telegramNotified: false,
       alreadyPending: true,
       cost: 0,
@@ -1226,7 +1237,7 @@ playdatesRouter.post('/', async (req, res) => {
     return;
   }
 
-  const enriched = enrichPlaydate(request)!;
+  const enriched = enrichPlaydate(request, fromUid)!;
   const recipientUserId =
     enriched.toUserId ?? enriched.toPet?.ownerId ?? toUid ?? undefined;
   void notifyNewPlaydateTelegram(enriched).catch((err) => {
@@ -1316,7 +1327,7 @@ playdatesRouter.patch('/:id', async (req, res) => {
     return;
   }
 
-  const updated = enrichPlaydate(dbService.updatePlaydateStatus(id, status));
+  const updated = enrichPlaydate(dbService.updatePlaydateStatus(id, status), actorUserId);
   if (!updated) {
     res.status(404).json({ error: 'درخواست پیدا نشد' });
     return;

@@ -4,6 +4,7 @@ import {
   PET_SIZE_LABELS,
   PLAYDATE_STATUS_LABELS,
   formatPetAge,
+  isPhotoPendingApproval,
   petPublicIdOf,
   userPublicIdOf,
 } from '@petdate/shared';
@@ -18,7 +19,11 @@ export function speciesLabel(species: string): string {
   return SPECIES_LABELS[species] ?? species;
 }
 
-export function formatPet(pet: PetProfile, detailed = false): string {
+export function formatPet(
+  pet: PetProfile,
+  detailed = false,
+  opts?: { forOwner?: boolean }
+): string {
   const lines = [
     `🐾 <b>${escapeHtml(pet.name)}</b>`,
     `شناسه پت: <code>${escapeHtml(petPublicIdOf(pet))}</code>`,
@@ -54,6 +59,13 @@ export function formatPet(pet: PetProfile, detailed = false): string {
     if (diseases) lines.push(`🏥 ${escapeHtml(diseases)}`);
     if (pet.bio) lines.push(`💬 ${escapeHtml(pet.bio)}`);
     lines.push(pet.lookingForPlaymate ? '🔍 دنبال همبازی' : '⏸️ فعلاً همبازی نمی‌خواد');
+    if (
+      opts?.forOwner &&
+      isPhotoPendingApproval(pet.photoModerationStatus) &&
+      pet.imageUrl
+    ) {
+      lines.push('🖼 عکس پت در انتظار تأیید ادمین است — تا آن زمان عکس پیش‌فرض نشان داده می‌شود.');
+    }
   }
   return lines.filter(Boolean).join('\n');
 }

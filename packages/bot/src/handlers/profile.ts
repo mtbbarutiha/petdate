@@ -13,7 +13,10 @@ import {
   VET_CREDENTIAL_STATUS_LABELS,
   formatPeerOwnerProfileHtml,
   formatProfileCardHtml,
+  isPhotoApproved,
   isProfileComplete,
+  pendingPhotoApprovalMessage,
+  pendingPhotoSubjects,
   normalizeRoles,
   parseUserAge,
   parseUserIdFromCommand,
@@ -110,7 +113,9 @@ export async function showPublicUserById(ctx: Context, userId: number): Promise<
     user,
     pets.map((p) => `${p.name} · ${petPublicIdOf(p)}`)
   );
-  const photo = resolveTelegramPhotoUrl(user.avatarUrl);
+  const photo = isPhotoApproved(user.avatarModerationStatus)
+    ? resolveTelegramPhotoUrl(user.avatarUrl)
+    : undefined;
   if (photo) {
     try {
       await ctx.replyWithPhoto(photo, { caption: text, parse_mode: 'HTML' });
@@ -295,7 +300,23 @@ export async function handleProfile(ctx: Context): Promise<void> {
 
   const pets = await listPets({ ownerId: cardUser.id });
   const petNames = pets.map((p) => `${p.name} · ${petPublicIdOf(p)}`);
-  const card = formatProfileCard(cardUser, pets.length, petNames);
+  const pendingNote = pendingPhotoApprovalMessage(
+    pendingPhotoSubjects({
+      hasAvatar: Boolean(cardUser.avatarUrl?.trim()),
+      avatarStatus: cardUser.avatarModerationStatus,
+      petStatuses: pets.map((p) => ({
+        hasPhoto: Boolean(p.imageUrl?.trim()),
+        status: p.photoModerationStatus,
+      })),
+    }),
+    'fa'
+  );
+  const card = [
+    formatProfileCard(cardUser, pets.length, petNames),
+    pendingNote ? `\n⚠️ <b>${pendingNote}</b>` : '',
+  ]
+    .filter(Boolean)
+    .join('\n');
 
   if (!isProfileComplete(cardUser)) {
     // اگر onboarding اشتباه کامل علامت خورده، اصلاح کن

@@ -13,8 +13,9 @@ run() {
 }
 
 # Shared pure selftests
-echo "==> selftest: shared peer-profile + user-command-id + pet/order-public-id + gtm-contract + sanitize-roles + breed-search"
+echo "==> selftest: shared peer-profile + user-command-id + pet/order-public-id + gtm-contract + sanitize-roles + breed-search + photo-moderation"
 npx tsx "$ROOT/packages/shared/src/peer-profile.selftest.ts"
+npx tsx "$ROOT/packages/shared/src/photo-moderation.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/user-command-id.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/pet-public-id.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/order-public-id.selftest.ts"
@@ -126,6 +127,9 @@ npx tsx "$ROOT/packages/web/src/components/ownerConsult.selftest.ts"
 echo "==> selftest: web owner panel pet diary (دفتر خاطرات)"
 npx tsx "$ROOT/packages/web/src/pages/ownerPetDiary.selftest.ts"
 
+echo "==> selftest: web pending-photo banner + unlock"
+npx tsx "$ROOT/packages/web/src/components/photoPendingBanner.selftest.ts"
+
 echo "==> selftest: web dark-mode theme tokens + toggle wiring"
 npx tsx "$ROOT/packages/web/src/lib/theme.selftest.ts"
 
@@ -186,6 +190,7 @@ run src/services/telegram-playdate-notify.selftest.ts
 run src/services/nearby-cards.selftest.ts
 run src/services/vet-online.selftest.ts
 run src/services/marketplace-roles.selftest.ts
+run src/services/pending-photo-placeholder.selftest.ts
 run src/services/seeker-advice-early-refund.selftest.ts
 run src/services/chat-upload-store.selftest.ts
 run src/services/chat-inbox-gift.selftest.ts

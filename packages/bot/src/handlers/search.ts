@@ -7,6 +7,7 @@ import {
   USER_GENDER_LABELS,
   formatPeerLastSeenFa,
   formatPetAge,
+  isPhotoApproved,
   petPublicIdOf,
   userPublicIdOf,
 } from '@petdate/shared';
@@ -804,7 +805,9 @@ export async function handleSearchPetView(ctx: Context, petId: number): Promise<
     }
   }
 
-  const photo = resolveTelegramPhotoUrl(pet.imageUrl) || defaultSearchPetPhoto(pet);
+  const photo = isPhotoApproved(pet.photoModerationStatus)
+    ? resolveTelegramPhotoUrl(pet.imageUrl) || defaultSearchPetPhoto(pet)
+    : defaultSearchPetPhoto(pet);
   try {
     await ctx.replyWithPhoto(photo, {
       caption: text.slice(0, 1024),

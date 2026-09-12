@@ -768,10 +768,13 @@ export function ProfilePage() {
                     }`}
                     title="وضعیت تأیید عکس پروفایل"
                   >
-                    عکس:{' '}
-                    {PHOTO_MODERATION_STATUS_LABELS[
-                      display.avatarModerationStatus ?? 'approved'
-                    ]}
+                    {(display.avatarModerationStatus ?? 'approved') === 'pending'
+                      ? 'عکس خودت در انتظار تأیید ادمین'
+                      : `عکس: ${
+                          PHOTO_MODERATION_STATUS_LABELS[
+                            display.avatarModerationStatus ?? 'approved'
+                          ]
+                        }`}
                   </span>
                 ) : null}
               </div>
@@ -845,11 +848,11 @@ export function ProfilePage() {
                                         : ' is-ok'
                                   }`}
                                 >
-                                  {
-                                    PHOTO_MODERATION_STATUS_LABELS[
-                                      pet.photoModerationStatus ?? 'approved'
-                                    ]
-                                  }
+                                  {(pet.photoModerationStatus ?? 'approved') === 'pending'
+                                    ? 'عکس پت در انتظار تأیید ادمین'
+                                    : PHOTO_MODERATION_STATUS_LABELS[
+                                        pet.photoModerationStatus ?? 'approved'
+                                      ]}
                                 </span>
                               ) : null}
                               <span className="pepito-profile-pet-id" dir="ltr">

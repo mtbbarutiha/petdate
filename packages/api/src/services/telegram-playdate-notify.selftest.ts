@@ -161,6 +161,21 @@ async function main() {
   assert.equal(empty.kind, 'ref');
   if (empty.kind === 'ref') assert.match(empty.value, /^https:\/\//);
 
+  const pending = resolvePlaydateNotifyPhoto(
+    pet({
+      id: 4,
+      name: 'PendingRex',
+      species: 'dog',
+      imageUrl: '/api/pets/photos/38/1b686ee8-1327-4e30-b8e1-287ea5f16d29.jpg',
+      photoModerationStatus: 'pending',
+    })
+  );
+  assert.equal(pending.kind, 'ref');
+  if (pending.kind === 'ref') {
+    assert.match(pending.value, /^https:\/\//);
+    assert.doesNotMatch(pending.value, /1b686ee8/);
+  }
+
   // Composite: blue pet + red owner → owner circle top-left
   const { getDb } = await import('../db');
   getDb();

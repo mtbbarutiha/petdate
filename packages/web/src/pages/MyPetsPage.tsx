@@ -117,6 +117,9 @@ export function MyPetsPage() {
                       <small>
                         {[pet.breed, pet.city || pet.ownerCity].filter(Boolean).join(' · ') || '—'}
                       </small>
+                      {(pet.photoModerationStatus ?? 'approved') === 'pending' && pet.imageUrl ? (
+                        <span className="pepito-my-pets-card-pending">{t('moderation.chipPending')}</span>
+                      ) : null}
                       <span className="pepito-my-pets-card-id" dir="ltr">
                         {t('pets.petId', { id: petPublicIdOf(pet) })}
                       </span>

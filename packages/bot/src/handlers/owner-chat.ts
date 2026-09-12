@@ -3,6 +3,7 @@ import type { Context } from 'grammy';
 import type { BotSession, User } from '@petdate/shared';
 import {
   formatPeerOwnerProfileHtml,
+  isPhotoApproved,
   userPublicIdOf,
 } from '@petdate/shared';
 import {
@@ -142,7 +143,9 @@ export async function replyWithOwnerProfile(
 ): Promise<void> {
   const card = formatPeerOwnerCard(user, opts?.heading);
   const protect = protectOpts(Boolean(opts?.protectContent));
-  const photo = resolveTelegramPhotoUrl(user.avatarUrl);
+  const photo = isPhotoApproved(user.avatarModerationStatus)
+    ? resolveTelegramPhotoUrl(user.avatarUrl)
+    : undefined;
   if (photo) {
     try {
       await ctx.replyWithPhoto(photo, {
@@ -385,7 +388,9 @@ async function handleShowPeerPetProfile(ctx: Context): Promise<boolean> {
 
   const text = `🐾 <b>پروفایل پت طرف مقابل</b>\n\n${formatPet(pet, true)}`;
   const secure = !!session.ownerChatSecure;
-  const photo = resolveTelegramPhotoUrl(pet.imageUrl);
+  const photo = isPhotoApproved(pet.photoModerationStatus)
+    ? resolveTelegramPhotoUrl(pet.imageUrl)
+    : undefined;
   if (photo) {
     try {
       await ctx.replyWithPhoto(photo, {

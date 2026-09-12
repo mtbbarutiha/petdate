@@ -68,6 +68,15 @@ export const en: Dict = {
     cardOff: 'Card-to-card payment is temporarily disabled.',
     starsOff: 'Stars payment is temporarily disabled.',
   },
+  moderation: {
+    bannerBoth:
+      "Your pet photo and your own photo are awaiting admin approval. You can keep using PetDate with a default photo until then.",
+    bannerPet:
+      "Your pet photo is awaiting admin approval. You can keep using PetDate with a default photo until then.",
+    bannerOwner:
+      "Your photo is awaiting admin approval. You can keep using PetDate with a default photo until then.",
+    chipPending: "Awaiting admin approval",
+  },
   theme: {
     toLight: 'Light',
     toDark: 'Dark',
