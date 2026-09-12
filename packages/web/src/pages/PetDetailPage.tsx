@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type CSSProperties, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   ArrowRight,
@@ -8,8 +8,8 @@ import {
   Pencil,
   Share2,
   Stethoscope,
-  Trash2,
 } from 'lucide-react';
+import { PetDiaryBook } from '../components/PetDiaryBook';
 import type {
   PetDiaryEntry,
   PetMedicalEntry,
@@ -342,16 +342,9 @@ export function PetDetailPage() {
   const photoPending =
     isMyPet && (pet.photoModerationStatus ?? 'approved') === 'pending' && Boolean(pet.imageUrl);
   const photo = ui.imageUrl || '/brand/photo-placeholder.svg';
-  const diaryTitle = `دفتر خاطرات ${pet.name}`;
-
   return (
     <div
       className={`pepito-pet-profile${tabMedical ? ' is-medical-focus' : ''}${tabDiary ? ' is-diary-focus' : ''}`}
-      style={
-        {
-          ['--pet-diary-photo' as string]: `url(${JSON.stringify(photo)})`,
-        } as CSSProperties
-      }
     >
       {photoPending ? (
         <div className="pepito-photo-pending" role="status" data-testid="photo-pending-banner">
@@ -495,67 +488,20 @@ export function PetDetailPage() {
         ) : null}
 
         {isMyPet ? (
-          <section id="pet-diary" className="pepito-pet-diary" aria-label={diaryTitle}>
-            <div className="pepito-pet-diary-paper">
-              <header className="pepito-pet-diary-head">
-                <BookOpen size={22} aria-hidden />
-                <div>
-                  <h2>{diaryTitle}</h2>
-                  <p>لحظه‌های کوچک، به قلم صاحب پت — در صفحه عمومی پت هم خوانده می‌شود.</p>
-                </div>
-              </header>
-
-              <form className="pepito-pet-diary-form" onSubmit={(e) => void onSubmitDiary(e)}>
-                <label htmlFor="owner-pet-diary-body" className="sr-only">
-                  نوشتن خاطره
-                </label>
-                <textarea
-                  id="owner-pet-diary-body"
-                  rows={4}
-                  maxLength={4000}
-                  placeholder={`امروز ${pet.name} چه کرد؟`}
-                  value={diaryBody}
-                  onChange={(e) => setDiaryBody(e.target.value)}
-                  disabled={diaryBusy}
-                />
-                <button
-                  type="submit"
-                  className="pepito-btn button-1"
-                  disabled={diaryBusy || !diaryBody.trim()}
-                >
-                  ثبت خاطره
-                </button>
-              </form>
-
-              {diary.length === 0 ? (
-                <p className="pepito-pet-diary-empty">
-                  هنوز خاطره‌ای نیست — اولین صفحه را بنویس.
-                </p>
-              ) : (
-                <ul className="pepito-pet-diary-list">
-                  {diary.map((entry) => (
-                    <li key={entry.id} className="pepito-pet-diary-entry">
-                      <header>
-                        <time>
-                          {toPersianDigits(entry.createdAt.slice(0, 16).replace('T', ' '))}
-                        </time>
-                        <button
-                          type="button"
-                          className="pepito-pet-diary-delete"
-                          aria-label="حذف خاطره"
-                          disabled={diaryBusy}
-                          onClick={() => void onDeleteDiary(entry.id)}
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </header>
-                      <p>{entry.body}</p>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          </section>
+          <PetDiaryBook
+            id="pet-diary"
+            petName={pet.name}
+            photo={photo}
+            entries={diary}
+            canWrite
+            body={diaryBody}
+            busy={diaryBusy}
+            textareaId="owner-pet-diary-body"
+            backHref={tabDiary ? `/pets/${pet.id}` : undefined}
+            onBodyChange={setDiaryBody}
+            onSubmit={onSubmitDiary}
+            onDelete={onDeleteDiary}
+          />
         ) : null}
 
         {isMyPet ? (
