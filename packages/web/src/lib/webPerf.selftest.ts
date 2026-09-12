@@ -35,14 +35,23 @@ assert.match(indexHtml, /pd-critical-first-paint/, 'inline critical CSS kills th
 assert.match(indexHtml, /setTimeout\(run, 10000\)/, 'GTM waits for interaction or 10s — not first idle');
 assert.doesNotMatch(indexHtml, /requestIdleCallback/, 'GTM must not use requestIdleCallback (fires on first idle)');
 assert.match(indexHtml, /Vazirmatn Fallback/, 'critical CSS ships font fallback metrics (CLS)');
+assert.match(indexHtml, /Vazirmatn-Variable\.woff2/, 'critical CSS self-hosts Vazirmatn woff2');
+assert.match(indexHtml, /font-display:swap/, 'self-hosted face uses font-display:swap');
+assert.doesNotMatch(indexHtml, /fonts\.googleapis\.com|fonts\.gstatic\.com/, 'no Google Fonts on the public shell');
+assert.doesNotMatch(indexHtml, /Urbanist/, 'Urbanist is not a competing UI face');
 assert.match(indexHtml, /pepito-hero-inner/, 'critical CSS reserves hero-inner (CLS)');
 assert.match(indexHtml, /100svh - var\(--pepito-nav-h\)/, 'critical hero height matches hydrated CSS');
 assert.doesNotMatch(
   indexHtml,
   /rel="preload"\s+as="style"/,
-  'do not preload the Google Fonts CSS (unused-preload warning)'
+  'do not preload a stylesheet (unused-preload warning)'
 );
-assert.match(indexHtml, /web-perf-v22-cls-agentic/, 'deploy marker bumped so SW/HTML cache misses');
+assert.match(
+  indexHtml,
+  /rel="preload"[^>]+href="\/fonts\/Vazirmatn-Variable\.woff2"[^>]+as="font"/,
+  'preload the same-origin UI font'
+);
+assert.match(indexHtml, /web-perf-v23-vazirmatn/, 'deploy marker bumped so SW/HTML cache misses');
 assert.match(indexHtml, /\.pepito-faq-item,\s*\.pepito-help-card/, 'critical CSS covers FAQ/help cards');
 assert.match(indexHtml, /html\.theme-light \.pepito-faq-item/, 'critical CSS has light FAQ overrides');
 

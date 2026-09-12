@@ -230,10 +230,14 @@ export function renderPrescriptionHtml(input: PrescriptionHtmlInput): string {
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>نسخه دارویی — ${escapeHtml(input.petName)} | ${RX_BRAND_EN}</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;600;700&display=swap" rel="stylesheet" />
   <style>
+    @font-face {
+      font-family: 'Vazirmatn';
+      src: url('${publicWebOrigin()}/fonts/Vazirmatn-Variable.woff2') format('woff2');
+      font-weight: 100 900;
+      font-style: normal;
+      font-display: swap;
+    }
     :root {
       --brand: #5ba8d2;
       --brand-soft: #e8f4fa;
@@ -247,7 +251,7 @@ export function renderPrescriptionHtml(input: PrescriptionHtmlInput): string {
     body {
       margin: 0;
       min-height: 100vh;
-      font-family: "Vazirmatn", system-ui, sans-serif;
+      font-family: "Vazirmatn", Tahoma, system-ui, sans-serif;
       background:
         radial-gradient(1200px 500px at 100% 0%, #d8eef8 0%, transparent 55%),
         radial-gradient(900px 420px at 0% 100%, #f3e8ef 0%, transparent 50%),

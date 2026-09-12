@@ -203,7 +203,7 @@ html[data-theme='dark'] .landing-brand-mark {
   border: 1px solid color-mix(in srgb, var(--pepito-lilac) 80%, transparent);
   background: color-mix(in srgb, var(--pepito-white) 88%, transparent);
   color: var(--pepito-dark);
-  font-family: var(--font-display, 'Urbanist', 'Vazirmatn', system-ui, sans-serif);
+  font-family: var(--font-display);
   font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0.04em;

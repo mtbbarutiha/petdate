@@ -29,8 +29,9 @@
   --brand-600: #4a3d78;
   --brand-700: #3a2f62;
   --brand-800: #2a2148;
-  --font-display: 'Urbanist', 'Urbanist Fallback', 'Vazirmatn', 'Vazirmatn Fallback', system-ui, sans-serif;
-  --font-body: 'Vazirmatn', 'Vazirmatn Fallback', 'Urbanist', 'Urbanist Fallback', system-ui, sans-serif;
+  --font-sans: 'Vazirmatn', 'Vazirmatn Fallback', Tahoma, system-ui, sans-serif;
+  --font-display: var(--font-sans);
+  --font-body: var(--font-sans);
   /* Solid pill fills — kept AA vs white in both themes (do not reuse light accent tokens). */
   --pepito-btn-1-bg: #5c4d91;
   --pepito-btn-1-fg: #ffffff;
@@ -12887,7 +12888,7 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   background: var(--pepito-base, #5c4d91) !important;
   box-shadow: none !important;
   color: #fff !important;
-  font-family: var(--font-display, 'Urbanist', 'Vazirmatn', system-ui, sans-serif);
+  font-family: var(--font-display);
   font-size: 0.8rem;
   font-weight: 800;
   padding: 0.45rem 0.75rem !important;
@@ -14199,7 +14200,7 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   --pet-diary-line: rgba(58, 50, 40, 0.16);
   --pet-diary-rule: #c45c4a;
   --pet-diary-gold: #c4a24a;
-  --pet-diary-hand: 'Gandom', 'Vazirmatn', 'Urbanist', cursive;
+  --pet-diary-hand: 'Gandom', 'Vazirmatn', cursive;
   margin-top: 1.35rem;
   position: relative;
   isolation: isolate;

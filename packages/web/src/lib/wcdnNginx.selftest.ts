@@ -106,5 +106,14 @@ assert.match(
 );
 assert.match(conf, /location = \/\.well-known\/llms\.txt/, 'well-known/llms.txt is not the SPA HTML shell');
 assert.match(conf, /max-age=2592000/, 'static brand/pepito/media images cache ≥ 30 days');
+{
+  const fontsCount = (conf.match(/location \^~ \/fonts\//g) || []).length;
+  assert.equal(fontsCount, 2, `self-hosted /fonts/ once per server (got ${fontsCount})`);
+}
+assert.match(
+  conf,
+  /location \^~ \/fonts\/ \{[\s\S]*?Cache-Control "public, max-age=2592000"/,
+  '/fonts/ is publicly cacheable like brand/pepito'
+);
 
 console.log('wcdnNginx.selftest: ok');
