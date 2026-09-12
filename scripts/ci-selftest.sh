@@ -42,6 +42,9 @@ npx tsx "$ROOT/packages/web/src/admin/adminWordmark.selftest.ts"
 echo "==> selftest: web admin analytics path labels"
 npx tsx "$ROOT/packages/web/src/admin/analyticsPathLabel.selftest.ts"
 
+echo "==> selftest: web admin error-log Persian messages"
+npx tsx "$ROOT/packages/web/src/admin/adminLogMessageFa.selftest.ts"
+
 echo "==> selftest: web admin monitoring tone mapping"
 npx tsx "$ROOT/packages/web/src/admin/AdminMonitoringPage.selftest.ts"
 
@@ -142,6 +145,7 @@ npx tsx "$ROOT/packages/web/src/components/chatGiftVoice.selftest.ts"
 # Pure / memory-path tests first
 run src/services/web-chat-cta-once.selftest.ts
 run src/services/app-logger.selftest.ts
+run src/routes/games.selftest.ts
 run src/services/otp-sms-copy.selftest.ts
 run src/services/otp-email-html.selftest.ts
 run src/services/prescription-sms.selftest.ts

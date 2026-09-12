@@ -2898,3 +2898,57 @@ html[data-theme='dark'] .admin-app .admin-btn.admin-btn--danger {
   color: #fca5a5;
   border-color: color-mix(in srgb, var(--admin-danger) 35%, var(--admin-border));
 }
+
+/* ── Error logs («لاگ خطاها»): readable rows in dark mode ── */
+html[data-theme='dark'] .admin-app .admin-log-row--error {
+  background: color-mix(in srgb, #7f1d1d 28%, var(--admin-surface));
+  color: var(--admin-ink);
+}
+html[data-theme='dark'] .admin-app .admin-log-row--error:hover {
+  background: color-mix(in srgb, #7f1d1d 38%, var(--admin-surface));
+}
+html[data-theme='dark'] .admin-app .admin-log-row--warn {
+  background: color-mix(in srgb, #92400e 18%, var(--admin-surface));
+  color: var(--admin-ink);
+}
+html[data-theme='dark'] .admin-app .admin-log-row--info {
+  background: color-mix(in srgb, #075985 16%, var(--admin-surface));
+  color: var(--admin-ink);
+}
+html[data-theme='dark'] .admin-app .admin-log-row td {
+  color: inherit;
+  border-bottom-color: var(--admin-border);
+}
+html[data-theme='dark'] .admin-app .admin-log-msg {
+  color: var(--admin-ink);
+}
+html[data-theme='dark'] .admin-app .admin-log-msg-detail {
+  color: var(--admin-muted);
+}
+html[data-theme='dark'] .admin-app .admin-badge--error {
+  background: #3f1d1d;
+  color: #fecaca;
+}
+html[data-theme='dark'] .admin-app .admin-badge--warn {
+  background: #3b2a14;
+  color: #fdba74;
+}
+html[data-theme='dark'] .admin-app .admin-badge--info {
+  background: #0c2a3a;
+  color: #7dd3fc;
+}
+html[data-theme='dark'] .admin-app .admin-table th {
+  color: color-mix(in srgb, var(--admin-muted) 70%, #fff);
+  background: color-mix(in srgb, var(--admin-bg) 55%, var(--admin-surface));
+}
+html[data-theme='dark'] .admin-app .admin-card {
+  background: var(--admin-surface);
+  border-color: var(--admin-border);
+  color: var(--admin-ink);
+  box-shadow: none;
+}
+html[data-theme='dark'] .admin-app .admin-stack {
+  background: #0b0e16;
+  color: #e2e8f0;
+  border: 1px solid var(--admin-border);
+}
