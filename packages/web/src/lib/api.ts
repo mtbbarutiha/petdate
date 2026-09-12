@@ -493,6 +493,55 @@ export async function clearPlaydateChatMessages(
   });
 }
 
+export async function sendPlaydateGift(
+  playdateId: number,
+  userId: number,
+  amount: number
+): Promise<{
+  ok: true;
+  message: PlaydateChatMessage;
+  amount: number;
+  senderCoins: number;
+  recipientCoins: number;
+}> {
+  return request(`/api/playdate-requests/${playdateId}/gift`, {
+    method: 'POST',
+    body: JSON.stringify({ userId, amount }),
+    headers: storedAuthHeaders(),
+  });
+}
+
+export async function dismissPlaydateInbox(
+  playdateId: number,
+  userId: number
+): Promise<{ ok: true }> {
+  return request(`/api/playdate-requests/${playdateId}/inbox?userId=${userId}`, {
+    method: 'DELETE',
+    headers: storedAuthHeaders(),
+  });
+}
+
+export async function dismissVetInbox(
+  consultId: number,
+  userId: number
+): Promise<{ ok: true }> {
+  return request(`/api/consultations/${consultId}/inbox?userId=${userId}`, {
+    method: 'DELETE',
+    headers: storedAuthHeaders(),
+  });
+}
+
+export async function addUserBlock(
+  userId: number,
+  blockedUserId: number
+): Promise<{ ok: true; created: boolean }> {
+  return request(`/api/users/${userId}/blocks`, {
+    method: 'POST',
+    body: JSON.stringify({ blockedUserId }),
+    headers: storedAuthHeaders(),
+  });
+}
+
 
 export async function addUserContact(
   userId: number,

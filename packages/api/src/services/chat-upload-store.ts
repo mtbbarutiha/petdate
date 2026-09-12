@@ -285,6 +285,8 @@ export async function normalizeChatUploadFile(opts: {
   }
 
   if (isVoiceUploadCandidate(mime, originalName)) {
+    // Keep browser-native formats (webm/m4a) for cross-device HTML5 playback.
+    // Telegram sendVoice converts to OGG/Opus at fan-out time — do not rewrite storage here.
     if (isOggOpusVoice(mime, originalName, opts.buffer)) {
       const base = originalName.replace(/\.[^.]+$/, '') || 'voice';
       return {
@@ -295,20 +297,54 @@ export async function normalizeChatUploadFile(opts: {
           : `${base}.ogg`,
       };
     }
-    try {
-      return await convertVoiceBufferToOggOpus({
-        buffer: opts.buffer,
-        originalName,
-      });
-    } catch (err) {
-      if (err instanceof Error && err.message === 'FILE_TOO_LARGE') throw err;
-      // Keep original so upload still works; Telegram notify may fall back to sendAudio.
-      console.warn('chat voice → ogg/opus convert failed:', (err as Error).message);
-      return { buffer: opts.buffer, mimeType: mime, originalName };
+    let outMime = mime.startsWith('audio/') ? mime.split(';')[0]!.trim() : mime;
+    if (!outMime || outMime === 'application/octet-stream') {
+      if (nameLower.endsWith('.webm')) outMime = 'audio/webm';
+      else if (nameLower.endsWith('.m4a') || nameLower.endsWith('.mp4')) outMime = 'audio/mp4';
+      else outMime = 'audio/webm';
     }
+    return {
+      buffer: opts.buffer,
+      mimeType: outMime,
+      originalName,
+    };
   }
 
   return { buffer: opts.buffer, mimeType: mime, originalName };
+}
+
+/** Infer a browser-safe Content-Type from bytes when DB mime is missing/wrong. */
+export function sniffChatMediaContentType(
+  buffer: Buffer,
+  mimeType?: string | null,
+  fileName?: string | null
+): string {
+  const declared = String(mimeType || '')
+    .toLowerCase()
+    .split(';')[0]!
+    .trim();
+  const name = String(fileName || '').toLowerCase();
+  if (sniffOggContainer(buffer)) return 'audio/ogg';
+  if (buffer.length >= 4 && buffer[0] === 0x1a && buffer[1] === 0x45 && buffer[2] === 0xdf && buffer[3] === 0xa3) {
+    if (declared.startsWith('video/') || /\.(mp4|mov|m4v)$/i.test(name)) return declared || 'video/webm';
+    return 'audio/webm';
+  }
+  if (buffer.length >= 12 && buffer.toString('ascii', 4, 8) === 'ftyp') {
+    if (declared.startsWith('video/') || name.endsWith('.mp4') || name.endsWith('.m4v')) {
+      return 'video/mp4';
+    }
+    return 'audio/mp4';
+  }
+  if (declared && declared !== 'application/octet-stream') return declared;
+  if (name.endsWith('.ogg') || name.endsWith('.opus')) return 'audio/ogg';
+  if (name.endsWith('.webm')) return 'audio/webm';
+  if (name.endsWith('.m4a')) return 'audio/mp4';
+  if (name.endsWith('.mp3')) return 'audio/mpeg';
+  if (name.endsWith('.jpg') || name.endsWith('.jpeg')) return 'image/jpeg';
+  if (name.endsWith('.png')) return 'image/png';
+  if (name.endsWith('.webp')) return 'image/webp';
+  if (name.endsWith('.mp4')) return 'video/mp4';
+  return declared || 'application/octet-stream';
 }
 
 export { MAX_UPLOAD_BYTES };

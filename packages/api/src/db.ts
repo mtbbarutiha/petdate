@@ -853,6 +853,20 @@ function migrateSchema() {
   `);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_user_blocks_user ON user_blocks (user_id);`);
 
+  /** Per-user inbox dismissals — hide a conversation from my list without wiping peer history. */
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS inbox_dismissals (
+      user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      kind TEXT NOT NULL,
+      entity_id INTEGER NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      PRIMARY KEY (user_id, kind, entity_id)
+    )
+  `);
+  db.exec(
+    `CREATE INDEX IF NOT EXISTS idx_inbox_dismissals_user ON inbox_dismissals (user_id, created_at DESC)`
+  );
+
   const userCols2 = db.prepare('PRAGMA table_info(users)').all() as { name: string }[];
   const userNames2 = new Set(userCols2.map((c) => c.name));
   if (!userNames2.has('email')) db.exec('ALTER TABLE users ADD COLUMN email TEXT');
@@ -2430,9 +2444,22 @@ function mediaPlaceholder(kind: PlaydateChatMessage['mediaKind']): string {
       return '[فایل]';
     case 'sticker':
       return '[استیکر]';
+    case 'gift':
+      return '[هدیه]';
     default:
       return '[رسانه]';
   }
+}
+
+/** Soft-deleted anonymized shell or deactivated account — must not appear in chat lists. */
+export function isDeletedOrInactiveUser(user: {
+  isActive?: boolean | null;
+  name?: string | null;
+} | null | undefined): boolean {
+  if (!user) return true;
+  if (user.isActive === false) return true;
+  const name = String(user.name || '').trim();
+  return name.startsWith('[حذف‌شده');
 }
 
 function mapPlaydateChatMessage(row: Record<string, unknown>): PlaydateChatMessage {
@@ -5214,7 +5241,10 @@ export const dbService = {
   }): PlaydateChatMessage {
     const text = (data.text ?? '').trim();
     const hasMedia = Boolean(
-      data.mediaKind && (data.telegramFileId || data.storageKey)
+      data.mediaKind &&
+        (data.telegramFileId ||
+          data.storageKey ||
+          data.mediaKind === 'gift')
     );
     if (!text && !hasMedia) throw new Error('EMPTY_TEXT');
     if (text.length > 4000) throw new Error('TEXT_TOO_LONG');
@@ -5629,6 +5659,13 @@ export const dbService = {
     if (filters.serviceKind) {
       sql += " AND COALESCE(vc.service_kind, 'vet') = ?";
       params.push(filters.serviceKind);
+    }
+    // Soft-deleted / deactivated peers must never appear in chat inboxes.
+    if (!filters.all) {
+      sql += ` AND COALESCE(patient.is_active, 1) = 1
+               AND COALESCE(vet.is_active, 1) = 1
+               AND COALESCE(patient.name, '') NOT LIKE '[حذف‌شده%'
+               AND COALESCE(vet.name, '') NOT LIKE '[حذف‌شده%'`;
     }
     sql += ` ORDER BY COALESCE(
       (SELECT MAX(m.created_at) FROM vet_consult_chat_messages m WHERE m.consult_id = vc.id),
@@ -7456,6 +7493,86 @@ export const dbService = {
       )
       .get(userId, otherUserId, otherUserId, userId) as { ok: number } | undefined;
     return Boolean(row);
+  },
+
+  dismissInboxItem(
+    userId: number,
+    kind: 'playmate' | 'vet',
+    entityId: number
+  ): boolean {
+    if (!Number.isFinite(userId) || !Number.isFinite(entityId) || entityId <= 0) {
+      return false;
+    }
+    if (kind !== 'playmate' && kind !== 'vet') return false;
+    db.prepare(
+      `INSERT INTO inbox_dismissals (user_id, kind, entity_id)
+       VALUES (?, ?, ?)
+       ON CONFLICT(user_id, kind, entity_id) DO NOTHING`
+    ).run(userId, kind, entityId);
+    return true;
+  },
+
+  isInboxDismissed(
+    userId: number,
+    kind: 'playmate' | 'vet',
+    entityId: number
+  ): boolean {
+    const row = db
+      .prepare(
+        `SELECT 1 AS ok FROM inbox_dismissals
+         WHERE user_id = ? AND kind = ? AND entity_id = ?
+         LIMIT 1`
+      )
+      .get(userId, kind, entityId) as { ok: number } | undefined;
+    return Boolean(row);
+  },
+
+  listInboxDismissals(
+    userId: number,
+    kind?: 'playmate' | 'vet'
+  ): Array<{ kind: string; entityId: number }> {
+    if (kind) {
+      return (
+        db
+          .prepare(
+            `SELECT kind, entity_id FROM inbox_dismissals
+             WHERE user_id = ? AND kind = ?`
+          )
+          .all(userId, kind) as Array<{ kind: string; entity_id: number }>
+      ).map((r) => ({ kind: r.kind, entityId: r.entity_id }));
+    }
+    return (
+      db
+        .prepare(
+          `SELECT kind, entity_id FROM inbox_dismissals WHERE user_id = ?`
+        )
+        .all(userId) as Array<{ kind: string; entity_id: number }>
+    ).map((r) => ({ kind: r.kind, entityId: r.entity_id }));
+  },
+
+  clearInboxDismissal(
+    userId: number,
+    kind: 'playmate' | 'vet',
+    entityId: number
+  ): boolean {
+    const result = db
+      .prepare(
+        `DELETE FROM inbox_dismissals
+         WHERE user_id = ? AND kind = ? AND entity_id = ?`
+      )
+      .run(userId, kind, entityId);
+    return result.changes > 0;
+  },
+
+  /** True when the counterpart of a playdate is soft-deleted / inactive. */
+  isPlaydatePeerDeleted(req: PlaydateRequest, viewerUserId: number): boolean {
+    const iAmFrom = req.fromUserId === viewerUserId;
+    const peerUserId = iAmFrom
+      ? req.toUserId ?? this.getPet(req.toPetId)?.ownerId
+      : req.fromUserId;
+    if (!peerUserId) return true;
+    const peer = this.getUserById(peerUserId);
+    return isDeletedOrInactiveUser(peer);
   },
 
   getUserByPhone(phone: string): User | null {

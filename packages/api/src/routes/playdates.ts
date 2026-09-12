@@ -10,7 +10,7 @@ import {
   userPublicIdOf,
 } from '@petdate/shared';
 import { infra } from '../config/infra';
-import { dbService } from '../db';
+import { dbService, isDeletedOrInactiveUser } from '../db';
 import { getUserFromBearer } from '../services/web-otp';
 import {
   chargePlaydateFee,
@@ -34,6 +34,7 @@ import {
   purgeChatUploadFolder,
   resolveStoragePath,
   saveChatUpload,
+  sniffChatMediaContentType,
 } from '../services/chat-upload-store';
 import { startOwnerChatFromApi } from '../services/telegram-owner-chat-start';
 import { clearBotOwnerChatSessions } from '../services/bot-owner-chat-session';
@@ -238,11 +239,31 @@ playdatesRouter.get('/', (req, res) => {
   }
 
   dbService.expireStalePlaydateRequests();
+  const dismissals =
+    Number.isFinite(userId) && userId!
+      ? new Set(
+          dbService
+            .listInboxDismissals(userId!, 'playmate')
+            .map((d) => d.entityId)
+        )
+      : null;
   const requests = dbService
     .listPlaydateRequests({
       userId: Number.isFinite(userId) ? userId : undefined,
       petId: Number.isFinite(petId) ? petId : undefined,
       status,
+    })
+    .filter((r) => {
+      if (dismissals?.has(r.id)) return false;
+      if (Number.isFinite(userId) && userId) {
+        if (dbService.isPlaydatePeerDeleted(r, userId)) return false;
+      } else {
+        const from = dbService.getUserById(r.fromUserId);
+        const toId = r.toUserId ?? dbService.getPet(r.toPetId)?.ownerId;
+        const to = toId ? dbService.getUserById(toId) : null;
+        if (isDeletedOrInactiveUser(from) || isDeletedOrInactiveUser(to)) return false;
+      }
+      return true;
     })
     .map((r) => enrichPlaydate(r)!);
   res.json(requests);
@@ -364,6 +385,9 @@ playdatesRouter.post('/:id/messages', async (req, res) => {
     const participants = [playdate.fromUserId, playdate.toUserId].filter(
       (id): id is number => Number.isFinite(id as number) && (id as number) > 0,
     );
+    for (const uid of participants) {
+      dbService.clearInboxDismissal(uid, 'playmate', playdateId);
+    }
     // WS first — web dual-online peers must not wait on Telegram latency/failures.
     notifyPlaymateMessage(playdateId, message, participants);
     if (!skipTelegram) {
@@ -533,8 +557,10 @@ playdatesRouter.get('/:id/messages/:messageId/file', async (req, res) => {
       res.status(404).json({ error: 'فایل پیدا نشد' });
       return;
     }
-    const contentType = message.mimeType || 'application/octet-stream';
+    const buf = fs.readFileSync(abs);
+    const contentType = sniffChatMediaContentType(buf, message.mimeType, message.fileName);
     res.setHeader('Content-Type', contentType);
+    res.setHeader('Accept-Ranges', 'bytes');
     res.setHeader('Cache-Control', 'private, max-age=300');
     if (message.fileName) {
       res.setHeader(
@@ -542,7 +568,7 @@ playdatesRouter.get('/:id/messages/:messageId/file', async (req, res) => {
         `inline; filename*=UTF-8''${encodeURIComponent(message.fileName)}`
       );
     }
-    res.send(fs.readFileSync(abs));
+    res.send(buf);
     return;
   }
 
@@ -671,6 +697,147 @@ playdatesRouter.patch('/:id/chat-secure', async (req, res) => {
   ), { chatSecure: secure });
   res.json(enrichPlaydate(updated));
 });
+
+
+/**
+ * Gift coins from sender balance to playmate peer — creates a gift chat bubble.
+ */
+playdatesRouter.post('/:id/gift', async (req, res) => {
+  const playdateId = Number(req.params.id);
+  const session = getUserFromBearer(req.header('authorization') ?? undefined);
+  const userId =
+    session?.user?.id ??
+    (req.body?.userId != null ? Number(req.body.userId) : undefined);
+  const amount = Math.floor(Number(req.body?.amount));
+  if (!Number.isFinite(playdateId) || !userId || !Number.isFinite(userId)) {
+    res.status(400).json({ error: 'شناسه درخواست و userId الزامی هستند' });
+    return;
+  }
+  if (!Number.isFinite(amount) || amount < 1 || amount > 10_000) {
+    res.status(400).json({ error: 'مبلغ هدیه باید بین ۱ تا ۱۰۰۰۰ سکه باشد' });
+    return;
+  }
+
+  const gate = requireParticipant(playdateId, userId);
+  if (gate.error === 'not_found') {
+    res.status(404).json({ error: 'درخواست پیدا نشد' });
+    return;
+  }
+  if (gate.error === 'forbidden') {
+    res.status(403).json({ error: 'دسترسی به این چت مجاز نیست' });
+    return;
+  }
+  if (gate.playdate.status !== 'accepted' || gate.playdate.chatEnded) {
+    res.status(409).json({ error: 'هدیه فقط در چت فعال همبازی مجاز است' });
+    return;
+  }
+  if (dbService.isPlaydatePeerDeleted(gate.playdate, userId)) {
+    res.status(410).json({ error: 'طرف مقابل دیگر در دسترس نیست' });
+    return;
+  }
+
+  const peerUserId =
+    gate.playdate.fromUserId === userId
+      ? gate.playdate.toUserId ?? dbService.getPet(gate.playdate.toPetId)?.ownerId
+      : gate.playdate.fromUserId;
+  if (!peerUserId || peerUserId === userId) {
+    res.status(400).json({ error: 'گیرنده هدیه پیدا نشد' });
+    return;
+  }
+  if (dbService.isUserBlocked(userId, peerUserId)) {
+    res.status(403).json({ error: 'امکان ارسال هدیه به کاربر مسدود وجود ندارد' });
+    return;
+  }
+
+  const debited = dbService.debitCoins(userId, amount, {
+    reason: 'chat_gift',
+    refType: 'playdate_gift',
+    refId: playdateId,
+  });
+  if (!debited) {
+    const bal = dbService.getUserById(userId)?.coins ?? 0;
+    res.status(402).json({
+      error: `موجودی سکه کافی نیست. نیاز: ${amount.toLocaleString('fa-IR')} — موجودی: ${bal.toLocaleString('fa-IR')}`,
+      need: amount,
+      balance: bal,
+    });
+    return;
+  }
+
+  const credited = dbService.creditCoins(peerUserId, amount, undefined, {
+    reason: 'chat_gift_received',
+    refType: 'playdate_gift',
+    refId: playdateId,
+  });
+  if (!credited) {
+    dbService.creditCoins(userId, amount, undefined, {
+      reason: 'chat_gift_refund',
+      refType: 'playdate_gift',
+      refId: playdateId,
+    });
+    res.status(500).json({ error: 'واریز هدیه به گیرنده ناموفق بود' });
+    return;
+  }
+
+  const giftText = `🎁 هدیه ${amount.toLocaleString('fa-IR')} سکه`;
+  const message = dbService.createPlaydateChatMessage({
+    playdateId,
+    senderUserId: userId,
+    text: giftText,
+    mediaKind: 'gift',
+    mimeType: 'application/x-petdate-gift',
+    fileName: String(amount),
+  });
+
+  dbService.clearInboxDismissal(userId, 'playmate', playdateId);
+  dbService.clearInboxDismissal(peerUserId, 'playmate', playdateId);
+
+  const participants = [gate.playdate.fromUserId, gate.playdate.toUserId].filter(
+    (id): id is number => Number.isFinite(id as number) && (id as number) > 0
+  );
+  notifyPlaymateMessage(playdateId, message, participants);
+  fanOutPlaydateChatTelegram({
+    playdate: gate.playdate,
+    senderUserId: userId,
+    text: message.text,
+    mediaKind: 'gift',
+  });
+
+  res.status(201).json({
+    ok: true,
+    message,
+    amount,
+    senderCoins: debited.coins,
+    recipientCoins: credited.coins,
+  });
+});
+
+/** Hide this playmate conversation from my inbox (does not wipe peer history). */
+playdatesRouter.delete('/:id/inbox', (req, res) => {
+  const playdateId = Number(req.params.id);
+  const session = getUserFromBearer(req.header('authorization') ?? undefined);
+  const userId =
+    session?.user?.id ??
+    (req.query.userId != null ? Number(req.query.userId) : undefined) ??
+    (req.body?.userId != null ? Number(req.body.userId) : undefined);
+  if (!Number.isFinite(playdateId) || !userId || !Number.isFinite(userId)) {
+    res.status(400).json({ error: 'شناسه درخواست و userId الزامی هستند' });
+    return;
+  }
+  const gate = requireParticipant(playdateId, userId);
+  if (gate.error === 'not_found') {
+    res.status(404).json({ error: 'درخواست پیدا نشد' });
+    return;
+  }
+  if (gate.error === 'forbidden') {
+    res.status(403).json({ error: 'دسترسی مجاز نیست' });
+    return;
+  }
+  dbService.dismissInboxItem(userId, 'playmate', playdateId);
+  notifyInbox([userId], { kind: 'playmate', reason: 'dismiss', id: playdateId });
+  res.json({ ok: true });
+});
+
 
 playdatesRouter.delete('/:id/messages', async (req, res) => {
   const playdateId = Number(req.params.id);

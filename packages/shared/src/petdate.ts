@@ -635,7 +635,8 @@ export type PlaydateChatMediaKind =
   | 'document'
   | 'voice'
   | 'audio'
-  | 'sticker';
+  | 'sticker'
+  | 'gift';
 
 /** پیام چت همبازی (وب ↔ تلگرام) */
 export interface PlaydateChatMessage {

@@ -84,9 +84,9 @@ async function runFfmpegVoiceConvertIfAvailable() {
       mimeType: 'audio/webm',
       originalName: 'voice-1710000000.webm',
     });
-    assert.equal(normalized.mimeType, 'audio/ogg');
-    assert.match(normalized.originalName, /^voice-1710000000\.ogg$/i);
-    assert.ok(sniffOggContainer(normalized.buffer));
+    assert.equal(normalized.mimeType, 'audio/webm');
+    assert.match(normalized.originalName, /^voice-1710000000\.webm$/i);
+    assert.ok(!sniffOggContainer(normalized.buffer));
 
     const passthrough = await normalizeChatUploadFile({
       buffer: converted.buffer,
@@ -96,7 +96,7 @@ async function runFfmpegVoiceConvertIfAvailable() {
     assert.equal(passthrough.mimeType, 'audio/ogg');
     assert.equal(passthrough.originalName, 'voice-ready.ogg');
 
-    console.log('chat-upload-store voice→ogg convert selftest ok');
+    console.log('chat-upload-store voice keep-webm + telegram-ogg convert selftest ok');
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
   }

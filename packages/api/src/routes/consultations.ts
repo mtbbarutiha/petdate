@@ -48,6 +48,7 @@ import {
   purgeChatUploadFolder,
   resolveStoragePath,
   saveChatUpload,
+  sniffChatMediaContentType,
 } from '../services/chat-upload-store';
 import { getUserFromBearer } from '../services/web-otp';
 import {
@@ -164,16 +165,29 @@ consultationsRouter.get('/', (req, res) => {
   }
 
   dbService.expireStaleVetConsultRequests();
-  const consultations = dbService.listVetConsultations({
-    vetUserId:
-      vetUserId != null && !Number.isNaN(vetUserId) ? vetUserId : undefined,
-    patientUserId:
-      patientUserId != null && !Number.isNaN(patientUserId)
+  const viewerId =
+    vetUserId != null && !Number.isNaN(vetUserId)
+      ? vetUserId
+      : patientUserId != null && !Number.isNaN(patientUserId)
         ? patientUserId
-        : undefined,
-    status,
-    serviceKind,
-  });
+        : undefined;
+  const dismissed = viewerId
+    ? new Set(
+        dbService.listInboxDismissals(viewerId, 'vet').map((d) => d.entityId)
+      )
+    : null;
+  const consultations = dbService
+    .listVetConsultations({
+      vetUserId:
+        vetUserId != null && !Number.isNaN(vetUserId) ? vetUserId : undefined,
+      patientUserId:
+        patientUserId != null && !Number.isNaN(patientUserId)
+          ? patientUserId
+          : undefined,
+      status,
+      serviceKind,
+    })
+    .filter((c) => !dismissed?.has(c.id));
   res.json(consultations.map(decorateAiConsultDisplay));
 });
 
@@ -1080,8 +1094,10 @@ consultationsRouter.get('/:id/messages/:messageId/media', async (req, res) => {
       res.status(404).json({ error: 'فایل پیدا نشد' });
       return;
     }
-    const contentType = message.mimeType || 'application/octet-stream';
+    const buf = fs.readFileSync(abs);
+    const contentType = sniffChatMediaContentType(buf, message.mimeType, message.fileName);
     res.setHeader('Content-Type', contentType);
+    res.setHeader('Accept-Ranges', 'bytes');
     res.setHeader('Cache-Control', 'private, max-age=300');
     if (message.fileName) {
       res.setHeader(
@@ -1089,7 +1105,7 @@ consultationsRouter.get('/:id/messages/:messageId/media', async (req, res) => {
         `inline; filename*=UTF-8''${encodeURIComponent(message.fileName)}`
       );
     }
-    res.send(fs.readFileSync(abs));
+    res.send(buf);
     return;
   }
 
@@ -1129,6 +1145,34 @@ consultationsRouter.get('/:id/messages/:messageId/media', async (req, res) => {
     res.status(502).json({ error: 'پروکسی فایل ناموفق بود' });
   }
 });
+
+
+/** Hide this consult from my inbox (does not wipe peer history). */
+consultationsRouter.delete('/:id/inbox', (req, res) => {
+  const id = Number(req.params.id);
+  const session = getUserFromBearer(req.header('authorization') ?? undefined);
+  const userId =
+    session?.user?.id ??
+    (req.query.userId != null ? Number(req.query.userId) : undefined) ??
+    (req.body?.userId != null ? Number(req.body.userId) : undefined);
+  if (!userId || !Number.isFinite(userId) || !Number.isFinite(id) || id <= 0) {
+    res.status(400).json({ error: 'شناسه مشاوره و userId الزامی هستند' });
+    return;
+  }
+  const gate = requireConsultParticipant(id, userId);
+  if (gate.error === 'not_found') {
+    res.status(404).json({ error: 'مشاوره پیدا نشد' });
+    return;
+  }
+  if (gate.error === 'forbidden') {
+    res.status(403).json({ error: 'دسترسی مجاز نیست' });
+    return;
+  }
+  dbService.dismissInboxItem(userId, 'vet', id);
+  notifyInbox([userId], { kind: 'vet', reason: 'dismiss', id });
+  res.json({ ok: true });
+});
+
 
 consultationsRouter.post('/:id/end-chat', async (req, res) => {
   const id = Number(req.params.id);

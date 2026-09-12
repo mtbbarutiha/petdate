@@ -17,11 +17,13 @@ import {
   Loader2,
   Lock,
   LockOpen,
+  Ban,
   MoreVertical,
   Paperclip,
   PhoneOff,
   RefreshCw,
   Send,
+  Trash2,
   Smile,
   UserPlus,
   X,
@@ -40,6 +42,7 @@ import { InboxPeerAvatar } from '../components/InboxPeerAvatar';
 import { PetAvatar } from '../components/PetAvatar';
 import { PresenceBadge } from '../components/PresenceBadge';
 import { ChatMediaCaptureProvider, ChatMediaCaptureTriggers } from '../components/ChatMediaCapture';
+import { ChatVoicePlayer } from '../components/ChatVoicePlayer';
 import { EmojiPicker } from '../components/EmojiPicker';
 import {
   CHAT_FILE_ACCEPT,
@@ -63,6 +66,8 @@ import {
   acceptVetConsultation,
   addUserContact,
   clearVetConsultChatMessages,
+  dismissVetInbox,
+  addUserBlock,
   endVetConsultChat,
   getVetConsultation,
   listVetConsultChatMessages,
@@ -233,6 +238,7 @@ export function VetChatPage() {
   const navigate = useNavigate();
   const desktop = useIsDesktop();
   const { user, token, isLoggedIn } = useAuthStore();
+  const myUserId = user?.id;
   const inboxScope = inboxScopeForUser(user);
   const hasThread = Number.isFinite(consultId) && consultId > 0;
   const showList = desktop || !hasThread;
@@ -255,6 +261,8 @@ export function VetChatPage() {
   const [needsSecureWipe, setNeedsSecureWipe] = useState(false);
   const [contactAdded, setContactAdded] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [blocking, setBlocking] = useState(false);
+  const [dismissing, setDismissing] = useState(false);
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [pendingPreview, setPendingPreview] = useState<string | null>(null);
@@ -1082,6 +1090,41 @@ export function VetChatPage() {
     }
   }
 
+
+  async function blockPeer() {
+    if (!myUserId || !consult || blocking) return;
+    const blockedUserId = isVetSide ? consult.patientUserId : consult.vetUserId;
+    if (!blockedUserId || blockedUserId === myUserId) {
+      setActionError('کاربر طرف مقابل پیدا نشد');
+      return;
+    }
+    setBlocking(true);
+    setMenuOpen(false);
+    try {
+      await addUserBlock(myUserId, blockedUserId);
+      await dismissVetInbox(consult.id, myUserId);
+      navigate(inboxScope === 'trainer' ? '/trainer-chats' : inboxScope === 'vet' ? '/vet-chats' : '/chats', { replace: true });
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'مسدود کردن ناموفق بود');
+    } finally {
+      setBlocking(false);
+    }
+  }
+
+  async function removeFromInbox() {
+    if (!myUserId || !consult || dismissing) return;
+    setDismissing(true);
+    setMenuOpen(false);
+    try {
+      await dismissVetInbox(consult.id, myUserId);
+      navigate(inboxScope === 'trainer' ? '/trainer-chats' : inboxScope === 'vet' ? '/vet-chats' : '/chats', { replace: true });
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'حذف از فهرست ناموفق بود');
+    } finally {
+      setDismissing(false);
+    }
+  }
+
   function renderMedia(msg: UiMsg) {
     const hasFile = Boolean(msg.telegramFileId || msg.storageKey);
     if (!msg.mediaKind || !hasFile || !user?.id || !consult) return null;
@@ -1146,13 +1189,11 @@ export function VetChatPage() {
     }
     if (msg.mediaKind === 'voice' || msg.mediaKind === 'audio') {
       return (
-        <audio
-          className="tg-media-audio"
+        <ChatVoicePlayer
           src={src}
-          controls
-          preload="metadata"
-          onError={markBroken}
-          {...guardSave}
+          mimeType={msg.mimeType}
+          secure={secure}
+          onBroken={markBroken}
         />
       );
     }
@@ -1603,6 +1644,25 @@ export function VetChatPage() {
                         >
                           <UserPlus size={16} />
                           {contactAdded ? 'مخاطب اضافه شد' : 'افزودن مخاطب'}
+                        </button>
+                        <button
+                          type="button"
+                          role="menuitem"
+                          onClick={() => void removeFromInbox()}
+                          disabled={dismissing}
+                        >
+                          <Trash2 size={16} />
+                          {dismissing ? 'در حال حذف…' : 'حذف از فهرست گفتگوها'}
+                        </button>
+                        <button
+                          type="button"
+                          role="menuitem"
+                          className="is-danger"
+                          onClick={() => void blockPeer()}
+                          disabled={blocking}
+                        >
+                          <Ban size={16} />
+                          {blocking ? 'در حال مسدود…' : 'مسدود کردن'}
                         </button>
                         <button
                           type="button"
