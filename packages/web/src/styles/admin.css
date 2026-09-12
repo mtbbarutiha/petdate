@@ -5373,15 +5373,23 @@ body:has(.admin-app) {
 }
 .admin-app .wdg-resize {
   position: absolute;
-  inset-inline-start: 0;
+  /* Physical left in RTL (FA), physical right in LTR (EN). */
+  inset-inline-end: 0;
+  inset-inline-start: auto;
   bottom: 0;
   width: 22px;
   height: 22px;
-  cursor: nesw-resize;
+  cursor: nwse-resize;
   touch-action: none;
   background:
-    linear-gradient(135deg, transparent 55%, var(--admin-border) 55%) no-repeat bottom left / 12px 12px;
+    linear-gradient(225deg, transparent 55%, var(--admin-border) 55%) no-repeat bottom right / 12px 12px;
   opacity: 0.7;
+}
+[dir='rtl'] .admin-app .wdg-resize,
+.admin-app[dir='rtl'] .wdg-resize {
+  cursor: nesw-resize;
+  background:
+    linear-gradient(135deg, transparent 55%, var(--admin-border) 55%) no-repeat bottom left / 12px 12px;
 }
 .admin-app .wdg-tile:hover .wdg-resize,
 .admin-app .wdg-tile:focus-within .wdg-resize { opacity: 1; }

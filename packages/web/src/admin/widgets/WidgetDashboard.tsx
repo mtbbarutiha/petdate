@@ -15,6 +15,7 @@ import type {
   WidgetRowSpan,
 } from './types';
 import { chartHeightForRow, donutSizeForRow } from './drill';
+import { resizeOutwardDx } from './layoutStorage';
 import { useWidgetLayout } from './useWidgetLayout';
 import { tr } from '../../i18n';
 
@@ -90,7 +91,8 @@ function WidgetTile({
     if (!board) return;
     const boardW = board.clientWidth || 1;
     const colW = boardW / 4;
-    const dx = resizing.current.startX - e.clientX;
+    const rtl = getComputedStyle(tileRef.current).direction === 'rtl';
+    const dx = resizeOutwardDx(resizing.current.startX, e.clientX, rtl);
     const dy = e.clientY - resizing.current.startY;
     const nextW = clampCol(Math.round(resizing.current.w + dx / colW));
     const nextH = clampRow(Math.round(resizing.current.h + dy / 160));

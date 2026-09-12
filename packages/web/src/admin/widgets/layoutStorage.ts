@@ -100,6 +100,15 @@ export function reorderItems(items: WidgetLayoutItem[], fromId: string, toId: st
   return sorted.map((it, i) => ({ ...it, order: i }));
 }
 
+/**
+ * Horizontal resize delta toward the free edge of the grip.
+ * RTL (FA): grip is bottom-left — drag left to grow.
+ * LTR (EN): grip is bottom-right — drag right to grow.
+ */
+export function resizeOutwardDx(startX: number, clientX: number, rtl: boolean): number {
+  return rtl ? startX - clientX : clientX - startX;
+}
+
 export function resizeItem(
   items: WidgetLayoutItem[],
   id: string,

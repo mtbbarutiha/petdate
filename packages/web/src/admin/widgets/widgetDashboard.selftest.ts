@@ -23,6 +23,7 @@ import {
   parseRemoteBoard,
   resolveHydratedBoard,
   reorderItems,
+  resizeOutwardDx,
   storageKeyFor,
 } from './layoutStorage.ts';
 import { readFileSync } from 'node:fs';
@@ -192,6 +193,11 @@ assert.ok(withCal.items.some((i) => i.id === DAILY_NOTES_WIDGET_ID));
 const iso = localDateToIso(new Date(2026, 8, 12, 23, 30, 0));
 assert.equal(iso, '2026-09-12', 'local ISO ignores UTC shift');
 
+assert.equal(resizeOutwardDx(100, 80, true), 20, 'RTL: drag left grows');
+assert.equal(resizeOutwardDx(100, 120, true), -20, 'RTL: drag right shrinks');
+assert.equal(resizeOutwardDx(100, 120, false), 20, 'LTR: drag right grows');
+assert.equal(resizeOutwardDx(100, 80, false), -20, 'LTR: drag left shrinks');
+
 const here = dirname(fileURLToPath(import.meta.url));
 const dashPage = readFileSync(join(here, '../pages/AdminDashboardPage.tsx'), 'utf8');
 assert.match(dashPage, /DailyNotesWidget/, 'dashboard renders daily notes widget');
@@ -244,6 +250,8 @@ assert.doesNotMatch(
   'widget span is CSS-class driven so breakpoints can reflow resized tiles'
 );
 assert.match(wdgSrc, /wdg-tile--w\$\{item\.w\}/, 'tile width class still follows persisted w');
+assert.match(wdgSrc, /resizeOutwardDx/, 'tile resize uses direction-aware dx');
+assert.match(wdgSrc, /getComputedStyle\(tileRef\.current\)\.direction === 'rtl'/, 'resize reads tile writing mode');
 
 const css = readFileSync(join(here, '../../styles/admin.css'), 'utf8');
 assert.match(
@@ -265,6 +273,25 @@ assert.match(
   css,
   /\.admin-app\s+\.wdg-tile\s*\{[^}]*overflow:\s*hidden/s,
   'resized tiles clip to their grid area'
+);
+
+const resizeBlock = css.match(/\.admin-app \.wdg-resize \{[\s\S]*?\n\}/);
+assert.ok(resizeBlock, 'wdg-resize rule exists');
+assert.match(resizeBlock[0], /inset-inline-end:\s*0/, 'grip uses inline-end (left in RTL, right in LTR)');
+assert.doesNotMatch(
+  resizeBlock[0],
+  /inset-inline-start:\s*0/,
+  'grip is not pinned to inline-start (that is physical right in FA)'
+);
+assert.match(
+  css,
+  /\[dir=['"]rtl['"]\]\s+\.admin-app\s+\.wdg-resize[\s\S]*?bottom left/,
+  'RTL grip triangle is mirrored to the physical bottom-left corner'
+);
+assert.match(
+  css,
+  /\[dir=['"]rtl['"]\]\s+\.admin-app\s+\.wdg-resize[\s\S]*?nesw-resize/,
+  'RTL grip cursor matches the bottom-left diagonal'
 );
 
 console.log('widgetDashboard.selftest: ok');
