@@ -63,7 +63,7 @@ assert.doesNotMatch(
   /rel="preload"\s+as="style"/,
   'do not preload a stylesheet (unused-preload warning)'
 );
-assert.match(indexHtml, /web-perf-v25-lh-pass/, 'deploy marker bumped so SW/HTML cache misses');
+assert.match(indexHtml, /web-perf-v26-css-restore/, 'deploy marker bumped so SW/HTML cache misses');
 assert.match(indexHtml, /id="pd-boot-lcp"/, 'LCP img lives outside #root so React cannot replace it');
 assert.match(indexHtml, /id="pd-boot-lcp"[\s\S]*decoding="sync"/, 'LCP img decodes sync so main-thread JS cannot stall paint');
 assert.match(indexHtml, /data-pd-lcp="hero"/, 'static preload is marked so SEO inject does not duplicate it');
@@ -86,8 +86,9 @@ assert.match(vite, /vendor-tiptap/, '@tiptap/react must not share vendor-react')
 assert.match(vite, /@tiptap/, 'tiptap matcher runs before /react/');
 assert.match(vite, /resolveDependencies/, 'lucide is not modulepreloaded');
 assert.match(vite, /petdate-defer-css/, 'hashed CSS is deferred off first paint');
-assert.match(vite, /pd-defer-css-fallback/, 'deferred CSS injects after input');
-assert.match(vite, /setTimeout\(inject,\s*8000\)/, 'hashed CSS waits for input or 8s');
+assert.match(vite, /pd-defer-css-fallback/, 'deferred CSS has a load fallback');
+assert.match(vite, /onload="this.media='all'"/, 'hashed CSS applies as soon as it loads');
+assert.doesNotMatch(vite, /setTimeout\(inject,\s*8000\)/, 'must not wait 8s before painting CSS');
 
 assert.doesNotMatch(main, /styles\/chat\.css/, 'chat.css is not on the landing CSS graph');
 assert.match(analytics, /scheduleAfterLoadIdle/, 'third-party tags wait for load+idle');

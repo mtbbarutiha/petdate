@@ -14,9 +14,11 @@ const root = join(webSrc, '..');
 const sw = readFileSync(join(webSrc, 'lib/swRegister.ts'), 'utf8');
 const vite = readFileSync(join(root, 'vite.config.ts'), 'utf8');
 
-assert.match(sw, /petdate-sw-20260912-lh-pass-v25/, 'swRegister bust generation is v25');
-assert.match(sw, /petdate-web-v25-lh-pass/, 'swRegister active cacheId is v25');
-assert.match(vite, /cacheId:\s*'petdate-web-v25-lh-pass'/, 'vite PWA cacheId is v25');
+assert.match(sw, /petdate-sw-20260912-css-restore-v26/, 'swRegister bust generation is v26');
+assert.match(sw, /petdate-web-v26-css-restore/, 'swRegister active cacheId is v26');
+assert.match(vite, /cacheId:\s*'petdate-web-v26-css-restore'/, 'vite PWA cacheId is v26');
+assert.doesNotMatch(sw, /petdate-web-v25-lh-pass/, 'old v25-lh-pass cacheId is retired');
+assert.doesNotMatch(sw, /petdate-sw-20260912-lh-pass-v25/, 'old v25-lh-pass bust key is retired');
 assert.doesNotMatch(sw, /petdate-web-v24-lh-pass/, 'old v24-lh-pass cacheId is retired');
 assert.doesNotMatch(sw, /petdate-sw-20260912-lh-pass-v24/, 'old v24-lh-pass bust key is retired');
 assert.doesNotMatch(sw, /petdate-web-v24-vazirmatn/, 'old v24-vazirmatn cacheId is retired');
