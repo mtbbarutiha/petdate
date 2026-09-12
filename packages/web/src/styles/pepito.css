@@ -3614,6 +3614,21 @@ button.chip.is-on {
     width: auto !important;
     max-width: none !important;
   }
+  /* Own-profile stats sit under the hero — bleed together, radius on the strip. */
+  .pepito-app-shell .pepito-profile-head .pepito-profile-hero,
+  .pepito-profile-head .pepito-profile-hero,
+  .pepito-app-shell .pepito-profile-head .pepito-profile-hero--passport,
+  .pepito-profile-head .pepito-profile-hero--passport {
+    border-radius: 0 !important;
+    margin-inline: calc(-1 * var(--pepito-container-pad)) !important;
+  }
+  .pepito-app-shell .pepito-profile-head .pepito-profile-stats--strip,
+  .pepito-profile-head .pepito-profile-stats--strip {
+    margin-inline: calc(-1 * var(--pepito-container-pad));
+    width: auto;
+    max-width: none;
+    border-radius: 0 0 22px 22px;
+  }
   .pepito-app-shell .pepito-profile-top,
   .pepito-profile-top {
     margin-inline: calc(-1 * var(--pepito-container-pad));
@@ -3806,6 +3821,19 @@ button.chip.is-on {
 .pepito-profile--passport {
   max-width: 1080px;
   gap: 1.5rem;
+}
+.pepito-profile-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.pepito-profile--passport .pepito-profile-head .pepito-profile-hero--passport {
+  border-end-start-radius: 0;
+  border-end-end-radius: 0;
+}
+.pepito-profile-head .pepito-profile-stats--strip {
+  border-radius: 0 0 28px 28px;
+  overflow: hidden;
 }
 .pepito-profile--passport .pepito-profile-hero--passport {
   min-height: clamp(300px, 46vh, 460px);
@@ -5017,7 +5045,7 @@ button.chip.is-on {
   font-weight: 600;
 }
 
-/* Stats strip — compact metrics under identity */
+/* Stats strip — compact metrics under own-profile identity */
 .pepito-profile-stats {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

@@ -41,6 +41,7 @@ import { AgePicker } from '../components/AgePicker';
 import { InviteFriendsCard } from '../components/InviteFriendsCard';
 import { PetAvatar } from '../components/PetAvatar';
 import { ProfileAvatarEditor } from '../components/ProfileAvatarEditor';
+import { ProfileStatsStrip } from '../components/ProfileStatsStrip';
 import { PublicIdBadge } from '../components/PublicIdBadge';
 import { RoleSwitchControl } from '../components/RoleSwitchControl';
 import { formatAge } from '../data/mock';
@@ -605,52 +606,65 @@ export function ProfilePage() {
 
   return (
     <div className="pepito-profile pepito-profile--passport">
-      <section
-        className="pepito-profile-hero pepito-profile-hero--passport"
-        style={{ backgroundImage: `url(${HERO_IMG})` }}
-        aria-label="پروفایل"
-      >
-        <div className="pepito-profile-hero-wash" aria-hidden />
-        <div className="pepito-profile-hero-texture" aria-hidden />
-        <div className="pepito-profile-hero-inner">
-          <div className="pepito-profile-hero-toolbar">
-            <p className="pepito-profile-brand">
-              <PawPrint size={18} strokeWidth={2.25} aria-hidden />
-              <span>{BRAND.displayName}</span>
-            </p>
-            <div className="pepito-profile-hero-cta">
-              <button type="button" className="pepito-profile-hero-edit" onClick={openEdit}>
-                <Pencil size={16} strokeWidth={2.25} aria-hidden />
-                ویرایش
-              </button>
-              {needsWizard ? (
-                <Link to="/onboarding/profile" className="pepito-profile-hero-complete">
-                  تکمیل
-                </Link>
-              ) : null}
+      <div className="pepito-profile-head">
+        <section
+          className="pepito-profile-hero pepito-profile-hero--passport"
+          style={{ backgroundImage: `url(${HERO_IMG})` }}
+          aria-label="پروفایل"
+        >
+          <div className="pepito-profile-hero-wash" aria-hidden />
+          <div className="pepito-profile-hero-texture" aria-hidden />
+          <div className="pepito-profile-hero-inner">
+            <div className="pepito-profile-hero-toolbar">
+              <p className="pepito-profile-brand">
+                <PawPrint size={18} strokeWidth={2.25} aria-hidden />
+                <span>{BRAND.displayName}</span>
+              </p>
+              <div className="pepito-profile-hero-cta">
+                <button type="button" className="pepito-profile-hero-edit" onClick={openEdit}>
+                  <Pencil size={16} strokeWidth={2.25} aria-hidden />
+                  ویرایش
+                </button>
+                {needsWizard ? (
+                  <Link to="/onboarding/profile" className="pepito-profile-hero-complete">
+                    تکمیل
+                  </Link>
+                ) : null}
+              </div>
             </div>
-          </div>
 
-          <div className="pepito-profile-identity">
-            <ProfileAvatarEditor imageUrl={avatarSrc} name={display.name} size="xl" />
-            <div className="pepito-profile-identity-text">
-              <h1>
-                <span className="pepito-profile-name-emoji" aria-hidden>
-                  {profileGenderEmoji(display.gender)}
-                </span>
-                {display.name || 'پروفایل من'}
-              </h1>
-              <p className="pepito-profile-support">{supportLine}</p>
-              {roleLabel ? (
-                <p className="pepito-profile-role-line">
-                  <PawPrint size={14} aria-hidden />
-                  {roleLabel}
-                </p>
-              ) : null}
+            <div className="pepito-profile-identity">
+              <ProfileAvatarEditor imageUrl={avatarSrc} name={display.name} size="xl" />
+              <div className="pepito-profile-identity-text">
+                <h1>
+                  <span className="pepito-profile-name-emoji" aria-hidden>
+                    {profileGenderEmoji(display.gender)}
+                  </span>
+                  {display.name || 'پروفایل من'}
+                </h1>
+                <p className="pepito-profile-support">{supportLine}</p>
+                {roleLabel ? (
+                  <p className="pepito-profile-role-line">
+                    <PawPrint size={14} aria-hidden />
+                    {roleLabel}
+                  </p>
+                ) : null}
+              </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+        <ProfileStatsStrip
+          isOwnProfile
+          likes={likes}
+          views={views}
+          coins={coins}
+          contactsCount={contactsCount}
+          walletAriaLabel={cardLines.walletViews}
+          onOpenLikes={openLikes}
+          onOpenViews={openInteractions}
+          onOpenContacts={() => void openContacts()}
+        />
+      </div>
 
       {display.isActive === false ? (
         <p className="pepito-profile-inactive-banner" role="status">
@@ -658,7 +672,7 @@ export function ProfilePage() {
         </p>
       ) : null}
 
-      <section className="pepito-profile-pulse" aria-label="وضعیت و آمار">
+      <section className="pepito-profile-pulse" aria-label="وضعیت پروفایل">
         <div className="pepito-profile-completion" aria-label={cardLines.completion}>
           <div className="pepito-profile-completion-top">
             <span>تکمیل پروفایل</span>
@@ -667,29 +681,6 @@ export function ProfilePage() {
           <span className="pepito-profile-completion-bar pepito-profile-completion-bar--soft" aria-hidden>
             <span style={{ width: `${completion.percent}%` }} />
           </span>
-        </div>
-        <div className="pepito-profile-stats pepito-profile-stats--type" role="list">
-          <button type="button" className="pepito-profile-stat" onClick={openLikes} role="listitem">
-            <strong>{formatFaInt(likes)}</strong>
-            <span>لایک</span>
-          </button>
-          <button type="button" className="pepito-profile-stat" onClick={openInteractions} role="listitem">
-            <strong>{formatFaInt(views)}</strong>
-            <span>بازدید</span>
-          </button>
-          <Link to="/wallet" className="pepito-profile-stat" aria-label={cardLines.walletViews} role="listitem">
-            <strong>{formatFaInt(coins)}</strong>
-            <span>سکه</span>
-          </Link>
-          <button
-            type="button"
-            className="pepito-profile-stat"
-            onClick={() => void openContacts()}
-            role="listitem"
-          >
-            <strong>{contactsCount > 0 ? formatFaInt(contactsCount) : '−'}</strong>
-            <span>مخاطب</span>
-          </button>
         </div>
       </section>
 
