@@ -12075,7 +12075,7 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   gap: 0.45rem;
   flex-shrink: 0;
   position: relative;
-  max-width: min(64vw, 18rem);
+  max-width: min(72vw, 22rem);
 }
 .find-playmate-header-btn {
   appearance: none;
@@ -12098,6 +12098,41 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   white-space: nowrap;
   border-radius: 999px !important;
   transition: background-color 0.2s ease, transform 0.2s ease;
+}
+.find-playmate-mute-btn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  padding: 0;
+  border: 1px solid rgba(92, 77, 145, 0.22);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--pepito-base, #5c4d91);
+  cursor: pointer;
+  line-height: 0;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+.find-playmate-mute-btn:hover:not(:disabled) {
+  background: rgba(92, 77, 145, 0.08);
+  border-color: rgba(92, 77, 145, 0.36);
+  transform: translateY(-1px);
+}
+.find-playmate-mute-btn.is-on {
+  background: rgba(92, 77, 145, 0.12);
+  border-color: rgba(92, 77, 145, 0.4);
+  color: var(--pepito-base, #5c4d91);
+}
+.find-playmate-mute-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.find-playmate-mute-btn svg {
+  display: block;
 }
 .find-playmate-header-btn .find-playmate-paw,
 .find-playmate-header-btn .pepito-btn-icon {
@@ -12185,9 +12220,10 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   .find-playmate-header {
     flex: 0 1 auto;
     align-self: center;
-    max-width: min(48vw, 11.5rem);
+    max-width: min(58vw, 14rem);
     width: auto;
     min-width: 0;
+    gap: 0.3rem;
   }
   .find-playmate-header-btn {
     width: auto;
@@ -12196,6 +12232,15 @@ a.pepito-btn.pepito-human-consult-cta:hover {
     padding: 0.4rem 0.65rem !important;
     min-height: 34px !important;
     gap: 0.28rem;
+  }
+  .find-playmate-mute-btn {
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+  }
+  .find-playmate-mute-btn svg {
+    width: 16px;
+    height: 16px;
   }
   .find-playmate-header-btn > span {
     overflow: hidden;

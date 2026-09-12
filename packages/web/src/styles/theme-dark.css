@@ -652,6 +652,19 @@ html[data-theme='dark'] .tg-wipe-btn {
 html[data-theme='dark'] .find-playmate-header-btn--cta {
   box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35) !important;
 }
+html[data-theme='dark'] .find-playmate-mute-btn {
+  background: color-mix(in srgb, var(--tg-surface, #1e1e24) 88%, transparent);
+  border-color: rgba(255, 255, 255, 0.14);
+  color: var(--pepito-base, #b8a9e8);
+}
+html[data-theme='dark'] .find-playmate-mute-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--pepito-base, #5c4d91) 28%, transparent);
+  border-color: rgba(184, 169, 232, 0.45);
+}
+html[data-theme='dark'] .find-playmate-mute-btn.is-on {
+  background: color-mix(in srgb, var(--pepito-base, #5c4d91) 36%, transparent);
+  border-color: rgba(184, 169, 232, 0.55);
+}
 
 /* —— Site surface hotspots that stay readable in dark —— */
 html[data-theme='dark'] .pepito-nav {
