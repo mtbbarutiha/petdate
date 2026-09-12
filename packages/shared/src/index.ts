@@ -226,6 +226,11 @@ export interface User {
   contactsCount?: number;
   /** تعداد بلاک‌شده‌ها (غنی‌سازی در پاسخ پروفایل) */
   blockedCount?: number;
+  /**
+   * Admin users list: real pets linked via pets.owner_id.
+   * Empty array when the owner has none — never invented.
+   */
+  pets?: Array<{ id: number; name: string; species?: string }>;
   /** احراز هویت پروفایل مالک (سبک دوردوریا) */
   verificationStatus?: VerificationStatus;
   verificationPhotoFileId?: string;
