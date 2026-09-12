@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { AppGuards } from './components/AuthGuard';
 import { Layout } from './components/Layout';
+import { LegacyAdoptionHashRedirect } from './components/LegacyAdoptionHashRedirect';
 import { PersistTagAssistantParams } from './components/PersistTagAssistantParams';
 import { RouteSeo } from './components/RouteSeo';
 import { ShopCartProvider } from './hooks/useShopCart';
@@ -11,6 +12,7 @@ import { ScrollToTop } from './components/ScrollToTop';
 import { trackPageview } from './lib/siteAnalytics';
 import { withTagAssistantParams } from './lib/tagAssistantParams';
 import { WelcomePage } from './pages/WelcomePage';
+import { VetConsultRoute } from './pages/VetConsultRoute';
 
 function SiteAnalyticsListener() {
   const location = useLocation();
@@ -104,9 +106,6 @@ const SupportChatPage = lazy(() =>
 );
 const EarningsPage = lazy(() =>
   import('./pages/EarningsPage').then((m) => ({ default: m.EarningsPage })),
-);
-const VetConsultRoute = lazy(() =>
-  import('./pages/VetConsultRoute').then((m) => ({ default: m.VetConsultRoute })),
 );
 const TrainerConsultPage = lazy(() =>
   import('./pages/ServiceConsultPage').then((m) => ({ default: m.TrainerConsultPage })),
@@ -345,6 +344,7 @@ export default function App() {
       <AppToastProvider>
       <ShopCartProvider>
         <ScrollToTop />
+        <LegacyAdoptionHashRedirect />
         <PersistTagAssistantParams />
         <SiteAnalyticsListener />
         <RouteSeo />

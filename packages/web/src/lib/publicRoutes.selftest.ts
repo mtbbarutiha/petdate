@@ -13,6 +13,10 @@ const app = readFileSync(join(webSrc, 'App.tsx'), 'utf8');
 const welcome = readFileSync(join(webSrc, 'pages/WelcomePage.tsx'), 'utf8');
 const landing = readFileSync(join(webSrc, 'pages/VetConsultLandingPage.tsx'), 'utf8');
 const route = readFileSync(join(webSrc, 'pages/VetConsultRoute.tsx'), 'utf8');
+const footer = readFileSync(join(webSrc, 'components/SiteFooter.tsx'), 'utf8');
+const faq = readFileSync(join(webSrc, 'pages/FaqPage.tsx'), 'utf8');
+const chrome = readFileSync(join(webSrc, 'components/LandingChrome.tsx'), 'utf8');
+const hashRedirect = readFileSync(join(webSrc, 'components/LegacyAdoptionHashRedirect.tsx'), 'utf8');
 
 assert.match(guard, /PUBLIC_EXACT[\s\S]*\/vet-consult/, 'AuthGuard treats /vet-consult as public');
 assert.match(guard, /PUBLIC_PREFIXES[\s\S]*\/magazine/, 'AuthGuard treats /magazine as public');
@@ -25,6 +29,7 @@ assert.doesNotMatch(
   /element=\{<Layout[\s\S]*path="pet\/:slugOrId"/,
   'public /pet/:slug is not nested under the Layout route'
 );
+assert.match(app, /import \{ VetConsultRoute \}/, 'guest vet landing is in the main bundle (not a lazy chunk)');
 assert.match(
   app,
   /path="vet-consult"\s+element=\{<VetConsultRoute/,
@@ -32,16 +37,42 @@ assert.match(
 );
 assert.doesNotMatch(
   app,
+  /const VetConsultRoute = lazy/,
+  'VetConsultRoute is not a lazy import that can 404 behind an old SW'
+);
+assert.doesNotMatch(
+  app,
   /element=\{<Layout[\s\S]*path="vet-consult"/,
   'guest /vet-consult is not nested under the Layout route'
 );
+assert.match(app, /<LegacyAdoptionHashRedirect/, 'App mounts /#pets → /adoption redirect');
 assert.match(route, /VetConsultLandingPage/, 'logged-out vet-consult uses marketing landing');
 assert.match(route, /<Layout>/, 'logged-in vet-consult keeps app shell');
+assert.match(route, /hasRole/, 'app shell requires a role — guests and incomplete sessions stay on landing');
 assert.match(landing, /LandingChrome/, 'vet landing uses marketing chrome');
 assert.match(landing, /loginPath\('\/vet-consult'\)/, 'vet landing login returns to consult');
 assert.doesNotMatch(landing, /pepito-app-rail/, 'vet landing has no app sidebar');
-assert.match(welcome, /<Link to="\/adoption">\{t\('nav\.adoption'\)\}<\/Link>/, 'homepage پذیرش CTA goes to /adoption');
+assert.match(
+  welcome,
+  /<Link to="\/adoption"[^>]*>\{t\('nav\.adoption'\)\}<\/Link>/,
+  'homepage پذیرش CTA goes to /adoption'
+);
+assert.match(welcome, /data-testid="nav-adoption"/, 'homepage پذیرش is testable');
 assert.doesNotMatch(welcome, /href="#pets">پذیرش/, 'homepage پذیرش no longer uses #pets');
+assert.doesNotMatch(welcome, /id="pets"/, 'homepage adoption section is not id=pets');
+assert.match(
+  chrome,
+  /<Link to="\/adoption"[^>]*>\{t\('nav\.adoption'\)\}<\/Link>/,
+  'LandingChrome پذیرش goes to /adoption'
+);
+assert.match(chrome, /data-testid="nav-adoption"/, 'LandingChrome پذیرش is testable');
+assert.match(footer, /to: '\/adoption',\s*label: t\('nav\.adoption'\)/, 'footer پذیرش goes to /adoption');
+assert.match(footer, /to: '\/adoption',\s*label: t\('footer\.adoptPet'\)/, 'footer پذیرش پت goes to /adoption');
+assert.doesNotMatch(footer, /\/#pets/, 'footer has no leftover /#pets links');
+assert.match(faq, /<Link to="\/adoption"/, 'FAQ پذیرش CTA goes to /adoption');
+assert.doesNotMatch(faq, /\/#pets/, 'FAQ has no leftover /#pets links');
+assert.match(hashRedirect, /location\.hash !== '#pets'/, 'legacy hash redirect watches #pets');
+assert.match(hashRedirect, /pathname: '\/adoption'/, 'legacy hash redirect navigates to /adoption');
 
 // Marketing hero: fixed role order همبازی → دامپزشک → مربی → بدون پت, then پذیرش
 const playmateIdx = welcome.indexOf("role: 'playmate'");

@@ -65,7 +65,7 @@ export function AdoptionListPage() {
         </div>
       </header>
 
-      <section className="pepito-section pepito-adoption" id="pets">
+      <section className="pepito-section pepito-adoption" id="adoption">
         <div className="pepito-section-head pepito-section-head--center">
           <p className="pepito-eyebrow">
             <span className="pepito-eyebrow-icon" aria-hidden>

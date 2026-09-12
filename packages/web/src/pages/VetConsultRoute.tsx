@@ -1,18 +1,28 @@
+import { lazy, Suspense } from 'react';
 import { Layout } from '../components/Layout';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { VetConsultLandingPage } from './VetConsultLandingPage';
-import { VetConsultPage } from './VetConsultPage';
+
+const VetConsultPage = lazy(() =>
+  import('./VetConsultPage').then((m) => ({ default: m.VetConsultPage })),
+);
 
 /**
- * Guests get a marketing landing (no app sidebar, no consult API calls).
- * Signed-in users keep the existing consult / vet-inbox flow inside the app shell.
+ * Guest / incomplete sessions always get the marketing landing (no app rail).
+ * This file is imported eagerly from App so the guest shell cannot 404 as a
+ * lazy chunk when an older service worker still controls the tab.
+ *
+ * Signed-in users with a role keep the consult UI inside Layout.
  */
 export function VetConsultRoute() {
-  const { isLoggedIn } = useAuthStore();
-  if (!isLoggedIn) return <VetConsultLandingPage />;
+  const { isLoggedIn, user, hasRole } = useAuthStore();
+  const showAppShell = Boolean(isLoggedIn && user?.id && hasRole);
+  if (!showAppShell) return <VetConsultLandingPage />;
   return (
     <Layout>
-      <VetConsultPage />
+      <Suspense fallback={<div className="pd-route-fallback" aria-hidden="true" />}>
+        <VetConsultPage />
+      </Suspense>
     </Layout>
   );
 }
