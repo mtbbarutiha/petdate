@@ -4345,12 +4345,23 @@ button.chip.is-on {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
 }
 .pepito-profile--edit .pepito-avatar-editor-ring {
-  border-color: rgba(92, 77, 145, 0.28);
-  background: var(--pepito-lilac);
-  box-shadow: 0 10px 24px rgba(25, 6, 61, 0.12);
+  border-color: var(--pd-border-strong);
+  background: var(--pd-surface-2);
+  box-shadow: var(--pd-shadow);
 }
 .pepito-profile--edit .pepito-avatar-editor-initial {
   color: var(--pepito-base);
+}
+.pepito-profile--edit .pepito-avatar-editor-cam {
+  border-color: var(--pd-surface);
+  background: var(--pepito-base);
+  color: #fff;
+  box-shadow: 0 6px 14px color-mix(in srgb, var(--pepito-base) 35%, transparent);
+}
+.pepito-profile--edit .pepito-avatar-editor-cam:hover:not(:disabled) {
+  /* Do not use --pepito-dark (remaps to light ink in dark mode) */
+  background: color-mix(in srgb, var(--pepito-base) 72%, #19063d);
+  color: #fff;
 }
 .pepito-profile--edit .pepito-avatar-editor-error {
   color: #b42318;
@@ -5141,11 +5152,13 @@ div.pepito-profile-stat:active {
   border: 1.5px solid rgba(92, 77, 145, 0.28) !important;
 }
 
-/* Edit mode */
+/* Edit mode — --pd-* so dark theme remaps (no orphan white cards / navy labels) */
 .pepito-profile--edit {
   gap: 1.35rem;
   max-width: 720px;
-  padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+  /* Room for sticky save bar so age chips / last fields are not clipped */
+  padding-bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+  color: var(--pd-ink);
 }
 .pepito-profile-edit-head {
   display: flex;
@@ -5154,16 +5167,23 @@ div.pepito-profile-stat:active {
   gap: 1rem;
   animation: pepito-flow-rise 0.45s ease both;
 }
+.pepito-profile-edit-head .pepito-eyebrow {
+  margin: 0;
+  color: var(--pepito-pink);
+  font-weight: 800;
+  font-size: 0.92rem;
+}
 .pepito-profile-edit-head h1 {
   margin: 0.15rem 0 0.35rem;
   font-family: var(--font-display);
   font-size: clamp(1.35rem, 2.8vw, 1.75rem);
-  color: var(--pepito-dark);
+  color: var(--pd-ink);
 }
 .pepito-profile-edit-head > div > p:last-child {
   margin: 0;
-  color: var(--pepito-muted);
+  color: var(--pd-muted);
   font-size: 0.95rem;
+  line-height: 1.5;
 }
 .pepito-profile-icon-btn {
   display: grid;
@@ -5171,15 +5191,16 @@ div.pepito-profile-stat:active {
   width: 44px;
   height: 44px;
   border-radius: 14px;
-  border: 1px solid rgba(92, 77, 145, 0.14);
-  background: rgba(255, 255, 255, 0.85);
-  color: var(--pepito-dark);
+  border: 1px solid var(--pd-border);
+  background: var(--pd-surface);
+  color: var(--pd-ink);
   cursor: pointer;
   flex-shrink: 0;
+  box-shadow: var(--pd-shadow);
 }
 .pepito-profile-icon-btn:hover {
-  background: var(--pepito-white);
-  border-color: rgba(92, 77, 145, 0.28);
+  background: var(--pd-surface-2);
+  border-color: var(--pd-border-strong);
 }
 .pepito-profile-edit-form {
   animation: pepito-flow-rise 0.5s ease 0.06s both;
@@ -5190,9 +5211,10 @@ div.pepito-profile-stat:active {
 .pepito-profile-edit-section {
   padding: 1.15rem 1.1rem 1.25rem;
   border-radius: 22px;
-  background: rgba(255, 255, 255, 0.82);
-  border: 1px solid rgba(92, 77, 145, 0.1);
-  box-shadow: 0 8px 22px rgba(25, 6, 61, 0.04);
+  background: var(--pd-surface);
+  border: 1px solid var(--pd-border);
+  box-shadow: var(--pd-shadow);
+  color: var(--pd-ink);
 }
 .pepito-profile-edit-section--photo {
   text-align: center;
@@ -5211,8 +5233,9 @@ div.pepito-profile-stat:active {
   height: 1.85rem;
   flex-shrink: 0;
   border-radius: 50%;
-  background: var(--pepito-lilac);
+  background: color-mix(in srgb, var(--pepito-base) 16%, var(--pd-surface-2));
   color: var(--pepito-base);
+  border: 1px solid color-mix(in srgb, var(--pepito-base) 28%, var(--pd-border));
   font-family: var(--font-display);
   font-size: 0.88rem;
   font-weight: 800;
@@ -5220,7 +5243,7 @@ div.pepito-profile-stat:active {
 .pepito-profile-edit-section-desc {
   margin: 0.15rem 0 0;
   font-size: 0.86rem;
-  color: var(--pepito-muted);
+  color: var(--pd-muted);
   line-height: 1.45;
 }
 .pepito-profile-edit-avatar-block {
@@ -5233,14 +5256,15 @@ div.pepito-profile-stat:active {
 .pepito-profile-edit-avatar-hint {
   margin: 0;
   font-size: 0.86rem;
-  color: var(--pepito-muted);
+  color: var(--pd-muted);
+  line-height: 1.45;
 }
 .pepito-profile-edit-section-title {
   margin: 0;
   font-family: var(--font-display);
   font-size: 1.05rem;
   font-weight: 800;
-  color: var(--pepito-dark);
+  color: var(--pd-ink);
 }
 .pepito-profile-edit-grid {
   display: grid;
@@ -5256,10 +5280,11 @@ div.pepito-profile-stat:active {
 .pepito-field--full {
   grid-column: 1 / -1;
 }
-.pepito-field > span {
+.pepito-field > span,
+.pepito-field-label {
   font-size: 0.86rem;
   font-weight: 700;
-  color: #4a3d78;
+  color: var(--pd-ink);
 }
 .pepito-field input,
 .pepito-field select,
@@ -5268,13 +5293,20 @@ div.pepito-profile-stat:active {
 .pepito-wizard-form select,
 .pepito-wizard-form textarea {
   width: 100%;
-  border: 1px solid rgba(92, 77, 145, 0.2);
+  border: 1px solid var(--pd-border-strong);
   border-radius: 16px;
   padding: 12px 14px;
-  background: var(--pepito-white);
+  background: var(--pd-surface-muted);
   font: inherit;
-  color: var(--pepito-dark);
+  color: var(--pd-ink);
   box-sizing: border-box;
+}
+.pepito-field input::placeholder,
+.pepito-field textarea::placeholder,
+.pepito-wizard-form input::placeholder,
+.pepito-wizard-form textarea::placeholder {
+  color: var(--pd-muted);
+  opacity: 1;
 }
 .pepito-field input:focus,
 .pepito-field select:focus,
@@ -5284,12 +5316,17 @@ div.pepito-profile-stat:active {
 .pepito-wizard-form textarea:focus {
   outline: none;
   border-color: var(--pepito-base);
-  box-shadow: 0 0 0 3px rgba(92, 77, 145, 0.12);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--pepito-base) 18%, transparent);
+  background: var(--pd-surface);
 }
 .pepito-field textarea {
   resize: vertical;
   min-height: 110px;
   line-height: 1.6;
+}
+.pepito-field select option {
+  background: var(--pd-surface);
+  color: var(--pd-ink);
 }
 .pepito-choice-row,
 .pepito-choice-wrap {
@@ -5304,9 +5341,9 @@ div.pepito-profile-stat:active {
   min-height: 44px;
   padding: 0.55rem 1.1rem;
   border-radius: 999px;
-  border: 1.5px solid rgba(92, 77, 145, 0.22);
-  background: var(--pepito-white);
-  color: var(--pepito-dark);
+  border: 1.5px solid var(--pd-border-strong);
+  background: var(--pd-surface-muted);
+  color: var(--pd-ink);
   font: inherit;
   font-weight: 700;
   font-family: var(--font-display);
@@ -5319,7 +5356,7 @@ div.pepito-profile-stat:active {
   font-size: 0.88rem;
 }
 .pepito-choice:hover {
-  border-color: rgba(92, 77, 145, 0.4);
+  border-color: color-mix(in srgb, var(--pepito-base) 45%, var(--pd-border));
   transform: translateY(-1px);
 }
 .pepito-choice.is-on {
@@ -5337,21 +5374,27 @@ div.pepito-profile-stat:active {
   display: flex;
   flex-wrap: wrap;
   gap: 0.65rem;
-  margin-top: 0.25rem;
-  padding: 1rem 0 0.25rem;
+  margin-top: 0.35rem;
+  /* Short fade so sticky bar does not wash over age chips above */
+  padding: 0.85rem 0 calc(0.35rem + env(safe-area-inset-bottom, 0px));
   position: sticky;
   bottom: 0;
-  background: linear-gradient(180deg, rgba(244, 244, 247, 0) 0%, var(--pepito-soft) 28%, var(--pepito-soft) 100%);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--pepito-soft) 0%, transparent) 0%,
+    var(--pepito-soft) 22%,
+    var(--pepito-soft) 100%
+  );
   z-index: 5;
 }
 .pepito-profile-edit-actions .pepito-btn--ghost {
   background: transparent !important;
   color: var(--pepito-base) !important;
-  border: 1.5px solid rgba(92, 77, 145, 0.28) !important;
+  border: 1.5px solid var(--pd-border-strong) !important;
 }
 .pepito-profile-edit-actions .pepito-btn--ghost:hover {
-  background: var(--pepito-lilac) !important;
-  color: var(--pepito-dark) !important;
+  background: color-mix(in srgb, var(--pepito-base) 12%, var(--pd-surface)) !important;
+  color: var(--pd-ink) !important;
 }
 
 @media (max-width: 640px) {
@@ -5392,7 +5435,7 @@ div.pepito-profile-stat:active {
   .pepito-profile-edit-actions {
     flex-direction: column;
     margin-inline: -0.25rem;
-    padding: 0.85rem 0.25rem calc(0.65rem + env(safe-area-inset-bottom, 0px));
+    padding: 0.75rem 0.25rem calc(0.55rem + env(safe-area-inset-bottom, 0px));
     bottom: var(--pepito-mobile-dock-clearance);
   }
   .pepito-profile-edit-actions .pepito-btn {
@@ -5400,12 +5443,16 @@ div.pepito-profile-stat:active {
     min-height: 48px;
   }
   .pepito-profile--edit {
-    /* Sticky edit bar (~64px) sits above dock clearance */
-    padding-bottom: calc(64px + var(--pepito-mobile-dock-clearance));
+    /* Sticky edit bar + dock — keep age chips / last section clear of gradient */
+    padding-bottom: calc(96px + var(--pepito-mobile-dock-clearance));
   }
   .pepito-profile-edit-section {
-    padding: 1rem 0.9rem 1.1rem;
+    padding: 1rem 0.9rem 1.15rem;
     border-radius: 18px;
+  }
+  .pepito-profile-edit-section .age-picker {
+    /* Extra clearance inside sticky-overlap zone on short phones */
+    padding-bottom: 0.15rem;
   }
   .pepito-choice {
     min-height: 46px;

@@ -2441,3 +2441,127 @@ html[data-theme='dark'] .admin-app .admin-nav-group-title .admin-nav-count {
   color: #5eead4;
 }
 
+/*
+ * Edit profile (ویرایش پروفایل) + shared edit sections (pet edit)
+ * Root cause: section cards used hardcoded rgba(255,255,255,.82) while
+ * --pepito-dark remapped to light ink → near-invisible titles; inputs used
+ * remapped --pepito-white (dark tiles) inside light cards. Sticky save bar
+ * used a light #f4f4f7 fade that fogged age chips in dark mode.
+ */
+html[data-theme='dark'] .pepito-profile--edit {
+  color: var(--pd-ink);
+}
+html[data-theme='dark'] .pepito-profile-edit-head h1,
+html[data-theme='dark'] .pepito-profile-edit-section-title {
+  color: var(--pd-ink);
+}
+html[data-theme='dark'] .pepito-profile-edit-head > div > p:last-child,
+html[data-theme='dark'] .pepito-profile-edit-section-desc,
+html[data-theme='dark'] .pepito-profile-edit-avatar-hint {
+  color: var(--pd-muted);
+}
+html[data-theme='dark'] .pepito-profile-edit-section {
+  background: var(--pd-surface) !important;
+  border-color: var(--pd-border);
+  color: var(--pd-ink);
+  box-shadow: var(--pd-shadow);
+}
+html[data-theme='dark'] .pepito-profile-edit-step {
+  background: color-mix(in srgb, var(--pepito-base) 18%, var(--pd-surface-2));
+  border-color: color-mix(in srgb, var(--pepito-base) 32%, var(--pd-border));
+  color: var(--pepito-base);
+}
+html[data-theme='dark'] .pepito-profile-icon-btn {
+  background: var(--pd-surface-2);
+  border-color: var(--pd-border);
+  color: var(--pd-ink);
+  box-shadow: var(--pd-shadow);
+}
+html[data-theme='dark'] .pepito-profile-icon-btn:hover {
+  background: color-mix(in srgb, var(--pepito-base) 12%, var(--pd-surface-2));
+  border-color: var(--pd-border-strong);
+}
+html[data-theme='dark'] .pepito-field > span,
+html[data-theme='dark'] .pepito-field-label {
+  color: var(--pd-ink);
+}
+html[data-theme='dark'] .pepito-field input,
+html[data-theme='dark'] .pepito-field select,
+html[data-theme='dark'] .pepito-field textarea,
+html[data-theme='dark'] .pepito-wizard-form input,
+html[data-theme='dark'] .pepito-wizard-form select,
+html[data-theme='dark'] .pepito-wizard-form textarea {
+  background: var(--pd-surface-muted);
+  border-color: var(--pd-border-strong);
+  color: var(--pd-ink);
+}
+html[data-theme='dark'] .pepito-field input:focus,
+html[data-theme='dark'] .pepito-field select:focus,
+html[data-theme='dark'] .pepito-field textarea:focus,
+html[data-theme='dark'] .pepito-wizard-form input:focus,
+html[data-theme='dark'] .pepito-wizard-form select:focus,
+html[data-theme='dark'] .pepito-wizard-form textarea:focus {
+  background: var(--pd-surface-2);
+  border-color: var(--pepito-base);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--pepito-base) 22%, transparent);
+}
+html[data-theme='dark'] .pepito-field select option {
+  background: #242836;
+  color: var(--pd-ink);
+}
+html[data-theme='dark'] .pepito-profile--edit .pepito-avatar-editor-ring {
+  border-color: var(--pd-border-strong);
+  background: var(--pd-surface-2);
+  box-shadow: var(--pd-shadow);
+}
+html[data-theme='dark'] .pepito-profile--edit .pepito-avatar-editor-initial {
+  color: var(--pepito-base);
+}
+html[data-theme='dark'] .pepito-profile--edit .pepito-avatar-editor-cam {
+  border-color: var(--pd-surface);
+  background: var(--pepito-base);
+  color: #1a1d27;
+}
+html[data-theme='dark'] .pepito-profile--edit .pepito-avatar-editor-cam:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--pepito-base) 78%, #fff);
+  color: #1a1d27;
+}
+html[data-theme='dark'] .pepito-profile--edit .pepito-avatar-editor-error {
+  color: #f07178;
+}
+html[data-theme='dark'] .pepito-profile-edit-actions {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--pepito-soft) 0%, transparent) 0%,
+    var(--pepito-soft) 22%,
+    var(--pepito-soft) 100%
+  );
+}
+html[data-theme='dark'] .pepito-profile-edit-actions .pepito-btn--ghost {
+  background: transparent !important;
+  color: var(--pepito-base) !important;
+  border-color: var(--pd-border-strong) !important;
+}
+html[data-theme='dark'] .pepito-profile-edit-actions .pepito-btn--ghost:hover {
+  background: color-mix(in srgb, var(--pepito-base) 14%, var(--pd-surface-2)) !important;
+  color: var(--pd-ink) !important;
+}
+html[data-theme='dark'] .pepito-profile-error {
+  color: #f07178;
+}
+
+/* Age picker on edit cards: nest on muted surface for clear hierarchy */
+html[data-theme='dark'] .pepito-profile-edit-section .age-picker__input,
+html[data-theme='dark'] .pepito-profile-edit-section .age-picker__bump {
+  background: var(--pd-surface-muted);
+  border-color: var(--pd-border-strong);
+}
+html[data-theme='dark'] .pepito-profile-edit-section .age-picker__input {
+  color: var(--pd-ink);
+}
+html[data-theme='dark'] .pepito-profile-edit-section .chip {
+  background: var(--pd-surface-muted);
+  border-color: var(--pd-border-strong);
+  color: var(--pd-ink);
+}
+
