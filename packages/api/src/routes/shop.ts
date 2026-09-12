@@ -14,6 +14,16 @@ import {
   quoteShopCoins,
   quoteShopStars,
 } from '../services/shop-checkout';
+import {
+  addShopCartLine,
+  clearShopCart,
+  mergeAndPersistShopCart,
+  normalizeCartLines,
+  publicCartPayload,
+  removeShopCartLine,
+  replaceShopCart,
+  setShopCartLine,
+} from '../services/shop-cart';
 import { adminPlatform } from '../admin-platform';
 import { dbService } from '../db';
 import { rejectIfFlagOff } from '../runtime-settings';
@@ -58,6 +68,15 @@ function requireSession(
     return null;
   }
   return session;
+}
+
+/** After a successful checkout (paid or invoice prepared), drop the shared cart. */
+function clearCartAfterCheckout(userId: number) {
+  try {
+    clearShopCart(userId);
+  } catch (err) {
+    console.warn('shop cart clear after checkout skipped:', (err as Error).message);
+  }
 }
 
 function parseBool(raw: unknown): boolean | undefined {
@@ -264,6 +283,7 @@ shopRouter.post('/checkout/coins', (req, res) => {
     return;
   }
 
+  clearCartAfterCheckout(session.user.id);
   const user = dbService.getUserById(session.user.id);
   res.status(201).json({
     ok: true,
@@ -302,6 +322,7 @@ shopRouter.post('/checkout/stars', (req, res) => {
     return;
   }
 
+  clearCartAfterCheckout(session.user.id);
   res.status(201).json({
     ok: true,
     paymentOrderId: result.paymentOrderId,
@@ -342,6 +363,7 @@ shopRouter.post('/checkout/wallet-stars', (req, res) => {
     return;
   }
 
+  clearCartAfterCheckout(session.user.id);
   const user = dbService.getUserById(session.user.id);
   res.status(201).json({
     ok: true,
@@ -403,6 +425,7 @@ shopRouter.post('/checkout/toman', (req, res) => {
     return;
   }
 
+  clearCartAfterCheckout(session.user.id);
   const user = dbService.getUserById(session.user.id);
   res.status(201).json({
     ok: true,
@@ -441,6 +464,7 @@ shopRouter.post('/checkout/card', (req, res) => {
     return;
   }
 
+  clearCartAfterCheckout(session.user.id);
   res.status(201).json({
     ok: true,
     paymentOrderId: result.paymentOrderId,
@@ -587,6 +611,7 @@ shopRouter.post('/checkout/toman-telegram', (req, res) => {
     res.status(result.reason === 'user_missing' ? 404 : 400).json(result);
     return;
   }
+  clearCartAfterCheckout(user.id);
   const fresh = dbService.getUserById(user.id);
   res.status(201).json({
     ok: true,
@@ -629,6 +654,7 @@ shopRouter.post('/checkout/card-telegram', (req, res) => {
     res.status(result.reason === 'user_missing' ? 404 : 400).json(result);
     return;
   }
+  clearCartAfterCheckout(user.id);
   res.status(201).json({
     ok: true,
     paymentOrderId: result.paymentOrderId,
@@ -676,6 +702,7 @@ shopRouter.post('/checkout/coins-telegram', (req, res) => {
     return;
   }
 
+  clearCartAfterCheckout(user.id);
   const fresh = dbService.getUserById(user.id);
   res.status(201).json({
     ok: true,
@@ -724,6 +751,7 @@ shopRouter.post('/checkout/stars-telegram', (req, res) => {
     return;
   }
 
+  clearCartAfterCheckout(user.id);
   res.status(201).json({
     ok: true,
     paymentOrderId: result.paymentOrderId,
@@ -772,6 +800,7 @@ shopRouter.post('/checkout/wallet-stars-telegram', (req, res) => {
     return;
   }
 
+  clearCartAfterCheckout(user.id);
   const fresh = dbService.getUserById(user.id);
   res.status(201).json({
     ok: true,
@@ -811,6 +840,192 @@ const ORDER_STATUS_FA: Record<string, string> = {
   completed: 'تکمیل‌شده',
   cancelled: 'لغوشده',
 };
+
+function resolveTelegramUser(telegramIdRaw: unknown) {
+  const telegramId = String(telegramIdRaw ?? '').trim();
+  if (!telegramId) return { error: 'telegramId الزامی است.' as const, user: null };
+  const user = dbService.getUserByTelegramId(telegramId);
+  if (!user) return { error: 'کاربر پیدا نشد. اول /start بزن.' as const, user: null };
+  return { error: null, user };
+}
+
+/** سبد خرید مشترک وب — منبع حقیقت برای کاربر لاگین‌شده */
+shopRouter.get('/cart', (req, res) => {
+  const session = requireSession(req, res, 'برای دیدن سبد وارد حساب شوید.');
+  if (!session) return;
+  res.json(publicCartPayload(session.user.id));
+});
+
+/** ادغام سبد مهمان (localStorage) با سبد سرور — merge-then-persist */
+shopRouter.post('/cart/merge', (req, res) => {
+  const session = requireSession(req, res, 'برای همسان‌سازی سبد وارد حساب شوید.');
+  if (!session) return;
+  const guest = normalizeCartLines(req.body?.items ?? req.body?.lines);
+  const result = mergeAndPersistShopCart(session.user.id, guest);
+  res.json({
+    ...publicCartPayload(session.user.id),
+    merged: result.merged,
+  });
+});
+
+/** جایگزینی کامل سبد (پس از ادغام کلاینت یا ویرایش دسته‌ای) */
+shopRouter.put('/cart', (req, res) => {
+  const session = requireSession(req, res, 'برای ذخیره سبد وارد حساب شوید.');
+  if (!session) return;
+  const lines = normalizeCartLines(req.body?.items ?? req.body?.lines);
+  replaceShopCart(session.user.id, lines);
+  res.json(publicCartPayload(session.user.id));
+});
+
+shopRouter.post('/cart/items', (req, res) => {
+  const session = requireSession(req, res, 'برای افزودن به سبد وارد حساب شوید.');
+  if (!session) return;
+  const productId = String(req.body?.productId ?? '').trim();
+  const qty = Number(req.body?.qty ?? 1);
+  const result = addShopCartLine(session.user.id, productId, qty);
+  if (!result.ok) {
+    res.status(result.reason === 'missing' ? 404 : 400).json(result);
+    return;
+  }
+  res.json(publicCartPayload(session.user.id));
+});
+
+shopRouter.patch('/cart/items/:productId', (req, res) => {
+  const session = requireSession(req, res, 'برای ویرایش سبد وارد حساب شوید.');
+  if (!session) return;
+  const qty = Number(req.body?.qty ?? 0);
+  const result = setShopCartLine(session.user.id, req.params.productId, qty);
+  if (!result.ok) {
+    res.status(result.reason === 'missing' ? 404 : 400).json(result);
+    return;
+  }
+  res.json(publicCartPayload(session.user.id));
+});
+
+shopRouter.delete('/cart/items/:productId', (req, res) => {
+  const session = requireSession(req, res, 'برای حذف از سبد وارد حساب شوید.');
+  if (!session) return;
+  removeShopCartLine(session.user.id, req.params.productId);
+  res.json(publicCartPayload(session.user.id));
+});
+
+shopRouter.delete('/cart', (req, res) => {
+  const session = requireSession(req, res, 'برای خالی کردن سبد وارد حساب شوید.');
+  if (!session) return;
+  clearShopCart(session.user.id);
+  res.json(publicCartPayload(session.user.id));
+});
+
+/** سبد تلگرام — همان جدول shop_carts کاربر لینک‌شده */
+shopRouter.get('/cart-telegram', (req, res) => {
+  const { error, user } = resolveTelegramUser(req.query.telegramId);
+  if (!user) {
+    res.status(error === 'telegramId الزامی است.' ? 400 : 404).json({
+      ok: false,
+      reason: error === 'telegramId الزامی است.' ? 'bad_user' : 'user_missing',
+      error,
+    });
+    return;
+  }
+  res.json(publicCartPayload(user.id));
+});
+
+shopRouter.post('/cart-telegram/merge', (req, res) => {
+  const { error, user } = resolveTelegramUser(req.body?.telegramId);
+  if (!user) {
+    res.status(error === 'telegramId الزامی است.' ? 400 : 404).json({
+      ok: false,
+      reason: error === 'telegramId الزامی است.' ? 'bad_user' : 'user_missing',
+      error,
+    });
+    return;
+  }
+  const guest = normalizeCartLines(req.body?.items ?? req.body?.lines);
+  const result = mergeAndPersistShopCart(user.id, guest);
+  res.json({ ...publicCartPayload(user.id), merged: result.merged });
+});
+
+shopRouter.put('/cart-telegram', (req, res) => {
+  const { error, user } = resolveTelegramUser(req.body?.telegramId);
+  if (!user) {
+    res.status(error === 'telegramId الزامی است.' ? 400 : 404).json({
+      ok: false,
+      reason: error === 'telegramId الزامی است.' ? 'bad_user' : 'user_missing',
+      error,
+    });
+    return;
+  }
+  replaceShopCart(user.id, normalizeCartLines(req.body?.items ?? req.body?.lines));
+  res.json(publicCartPayload(user.id));
+});
+
+shopRouter.post('/cart-telegram/items', (req, res) => {
+  const { error, user } = resolveTelegramUser(req.body?.telegramId);
+  if (!user) {
+    res.status(error === 'telegramId الزامی است.' ? 400 : 404).json({
+      ok: false,
+      reason: error === 'telegramId الزامی است.' ? 'bad_user' : 'user_missing',
+      error,
+    });
+    return;
+  }
+  const result = addShopCartLine(user.id, String(req.body?.productId ?? ''), Number(req.body?.qty ?? 1));
+  if (!result.ok) {
+    res.status(result.reason === 'missing' ? 404 : 400).json(result);
+    return;
+  }
+  res.json(publicCartPayload(user.id));
+});
+
+shopRouter.patch('/cart-telegram/items', (req, res) => {
+  const { error, user } = resolveTelegramUser(req.body?.telegramId);
+  if (!user) {
+    res.status(error === 'telegramId الزامی است.' ? 400 : 404).json({
+      ok: false,
+      reason: error === 'telegramId الزامی است.' ? 'bad_user' : 'user_missing',
+      error,
+    });
+    return;
+  }
+  const result = setShopCartLine(
+    user.id,
+    String(req.body?.productId ?? ''),
+    Number(req.body?.qty ?? 0)
+  );
+  if (!result.ok) {
+    res.status(result.reason === 'missing' ? 404 : 400).json(result);
+    return;
+  }
+  res.json(publicCartPayload(user.id));
+});
+
+shopRouter.delete('/cart-telegram/items', (req, res) => {
+  const { error, user } = resolveTelegramUser(req.body?.telegramId ?? req.query.telegramId);
+  if (!user) {
+    res.status(error === 'telegramId الزامی است.' ? 400 : 404).json({
+      ok: false,
+      reason: error === 'telegramId الزامی است.' ? 'bad_user' : 'user_missing',
+      error,
+    });
+    return;
+  }
+  removeShopCartLine(user.id, String(req.body?.productId ?? req.query.productId ?? ''));
+  res.json(publicCartPayload(user.id));
+});
+
+shopRouter.delete('/cart-telegram', (req, res) => {
+  const { error, user } = resolveTelegramUser(req.body?.telegramId ?? req.query.telegramId);
+  if (!user) {
+    res.status(error === 'telegramId الزامی است.' ? 400 : 404).json({
+      ok: false,
+      reason: error === 'telegramId الزامی است.' ? 'bad_user' : 'user_missing',
+      error,
+    });
+    return;
+  }
+  clearShopCart(user.id);
+  res.json(publicCartPayload(user.id));
+});
 
 shopRouter.get('/my-orders', (req, res) => {
   const session = requireSession(req, res, 'برای دیدن سفارش‌ها وارد حساب شوید.');

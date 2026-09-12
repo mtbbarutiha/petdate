@@ -922,16 +922,19 @@ export interface BotSession {
   prescriptionPetId?: number;
   /** پیش‌نویس متن نسخه (پیشنهاد دارو / دستی) قبل از تأیید صدور */
   prescriptionDraft?: string;
-  /** پت‌شاپ — سبد موقت ربات (هم‌تراز کاتالوگ وب/DB) */
+  /** پت‌شاپ — سبد موقت ربات (legacy; live cart is API shop_carts) */
   shopCart?: Array<{ productId: string; qty: number }>;
   /** پت‌شاپ — فیلتر مرور */
   shopPetType?: 'dog' | 'cat' | 'bird' | 'all';
   shopCategorySlug?: string;
   shopPage?: number;
-  /** پت‌شاپ — پیش‌نویس چک‌اوت */
+  /** پت‌شاپ — پیش‌نویس چک‌اوت (تک‌قلم یا کل سبد) */
   shopCheckout?: {
-    productId: string;
-    qty: number;
+    /** تک‌قلم (خرید سریع) — اگر items باشد نادیده گرفته می‌شود */
+    productId?: string;
+    qty?: number;
+    /** چندقلم از سبد مشترک وب/ربات */
+    items?: Array<{ productId: string; qty: number }>;
     /**
      * coins=سکه پنل · wallet_stars=ستاره پنل · telegram_stars/stars=فاکتور XTR تلگرام
      * toman=کیف‌پول تومان · card=کارت‌به‌کارت (رسید → تأیید ادمین)

@@ -1845,6 +1845,68 @@ export async function fetchMyShopOrdersTelegram(telegramId: string): Promise<{
   );
 }
 
+export type BotShopCartLine = {
+  productId: string;
+  qty: number;
+  title?: string;
+  slug?: string;
+  priceToman?: number;
+  image?: string;
+  inStock?: boolean;
+};
+
+export type BotShopCartResponse = {
+  ok: true;
+  lines: BotShopCartLine[];
+  itemCount: number;
+  syncRule?: string;
+  merged?: boolean;
+};
+
+export async function fetchShopCartTelegram(telegramId: string): Promise<BotShopCartResponse> {
+  return request(
+    `/api/shop/cart-telegram?telegramId=${encodeURIComponent(telegramId)}`
+  );
+}
+
+export async function addShopCartItemTelegram(
+  telegramId: string,
+  productId: string,
+  qty = 1
+): Promise<BotShopCartResponse> {
+  return request('/api/shop/cart-telegram/items', {
+    method: 'POST',
+    body: JSON.stringify({ telegramId, productId, qty }),
+  });
+}
+
+export async function setShopCartItemTelegram(
+  telegramId: string,
+  productId: string,
+  qty: number
+): Promise<BotShopCartResponse> {
+  return request('/api/shop/cart-telegram/items', {
+    method: 'PATCH',
+    body: JSON.stringify({ telegramId, productId, qty }),
+  });
+}
+
+export async function removeShopCartItemTelegram(
+  telegramId: string,
+  productId: string
+): Promise<BotShopCartResponse> {
+  return request('/api/shop/cart-telegram/items', {
+    method: 'DELETE',
+    body: JSON.stringify({ telegramId, productId }),
+  });
+}
+
+export async function clearShopCartTelegram(telegramId: string): Promise<BotShopCartResponse> {
+  return request('/api/shop/cart-telegram', {
+    method: 'DELETE',
+    body: JSON.stringify({ telegramId }),
+  });
+}
 
 export async function postSupportMessageAsTelegram(
   telegramId: string,

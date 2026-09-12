@@ -221,6 +221,12 @@ npx tsx "$ROOT/packages/api/src/routes/admin-games.selftest.ts"
 echo "==> selftest: shop product gallery assets"
 npx tsx "$ROOT/packages/web/src/data/shopGallery.selftest.ts"
 
+echo "==> selftest: web shop cart sync (badge + merge-then-persist)"
+npx tsx "$ROOT/packages/web/src/hooks/useShopCart.selftest.ts"
+
+echo "==> selftest: bot shop cart shared API"
+npx tsx "$ROOT/packages/bot/src/handlers/shop-cart.selftest.ts"
+
 echo "==> selftest: web GTM dataLayer / link helpers"
 npx tsx "$ROOT/packages/web/src/lib/siteAnalytics.selftest.ts"
 
@@ -317,6 +323,8 @@ run src/magazine.selftest.ts
 run src/magazine-editorial-seed.selftest.ts
 run src/routes/games-list.selftest.ts
 run src/routes/pets-id-guard.selftest.ts
+run src/routes/shop-cart.selftest.ts
+run src/services/shop-cart.selftest.ts
 run src/routes/pets-slug-diary.selftest.ts
 run src/routes/pets-public-list.selftest.ts
 run src/routes/playdates-auth.selftest.ts
