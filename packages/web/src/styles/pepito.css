@@ -10973,6 +10973,72 @@ a.pepito-btn.pepito-human-consult-cta:hover {
     font-size: 0.88rem;
   }
 
+  /* Profile «مدیریت» sheet — mobile equivalent of desktop rail group */
+  .pepito-dock-manage-sheet {
+    max-height: min(78dvh, 560px);
+  }
+  .pepito-dock-manage-profile {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.75rem;
+    width: 100%;
+    margin: 0 0 0.55rem;
+    padding: 0.85rem 0.9rem;
+    min-height: 48px;
+    box-sizing: border-box;
+    text-decoration: none;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    font-weight: 800;
+    font-size: 0.92rem;
+  }
+  .pepito-dock-manage-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+  .pepito-dock-manage-nav nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+  .pepito-dock-manage-link {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    min-height: 48px;
+    padding: 0.85rem 0.9rem;
+    box-sizing: border-box;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #fff;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 0.9rem;
+    line-height: 1.35;
+  }
+  .pepito-dock-manage-link:hover,
+  .pepito-dock-manage-link.is-active {
+    background: rgba(255, 255, 255, 0.14);
+  }
+  .pepito-dock-manage-link.is-warn {
+    color: #f0c585;
+  }
+  .pepito-dock-manage-link.is-danger {
+    color: #f0a0ab;
+  }
+  .pepito-dock-manage-link.is-warn:hover,
+  .pepito-dock-manage-link.is-warn.is-active {
+    background: rgba(217, 149, 58, 0.22);
+  }
+  .pepito-dock-manage-link.is-danger:hover,
+  .pepito-dock-manage-link.is-danger.is-active {
+    background: rgba(196, 70, 90, 0.24);
+  }
+
   .pepito-dock-role-toast {
     position: fixed;
     left: 50%;

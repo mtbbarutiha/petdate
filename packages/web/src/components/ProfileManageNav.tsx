@@ -12,7 +12,7 @@ import { faceVerifyButtonLabel, type VerificationStatus } from '@petdate/shared'
 import { useAuthStore } from '../hooks/useAuthStore';
 import { useI18n } from '../i18n';
 
-export type ProfileManageVariant = 'rail' | 'menu';
+export type ProfileManageVariant = 'rail' | 'menu' | 'sheet';
 
 type ManageLink = {
   key: string;
@@ -94,7 +94,7 @@ export interface ProfileManageNavProps {
 }
 
 /**
- * Profile «مدیریت» destinations — rail sidebar + compact avatar menu.
+ * Profile «مدیریت» destinations — desktop rail, avatar menu, and mobile dock sheet.
  * Silent-chat lives as an icon beside playmate (not re-listed here).
  */
 export function ProfileManageNav({
@@ -116,21 +116,31 @@ export function ProfileManageNav({
   const rootClass =
     variant === 'rail'
       ? `pepito-app-rail-group${className ? ` ${className}` : ''}`
-      : `pepito-nav-profile-manage${className ? ` ${className}` : ''}`;
+      : variant === 'sheet'
+        ? `pepito-dock-manage-nav${className ? ` ${className}` : ''}`
+        : `pepito-nav-profile-manage${className ? ` ${className}` : ''}`;
   const linkClass = (active: boolean, tone?: 'warn' | 'danger') => {
     if (variant === 'rail') {
       return `pepito-app-rail-link${active ? ' is-active' : ''}${tone ? ` is-${tone}` : ''}`;
+    }
+    if (variant === 'sheet') {
+      return `pepito-dock-manage-link${active ? ' is-active' : ''}${tone ? ` is-${tone}` : ''}`;
     }
     return `pepito-nav-profile-item${tone === 'danger' ? ' pepito-nav-profile-item--danger' : ''}${
       tone === 'warn' ? ' pepito-nav-profile-item--warn' : ''
     }`;
   };
+  const labelClass =
+    variant === 'rail'
+      ? 'pepito-app-rail-group-label'
+      : variant === 'sheet'
+        ? 'pepito-dock-manage-label'
+        : 'pepito-nav-profile-manage-label';
+  const iconSize = variant === 'rail' ? 18 : variant === 'sheet' ? 20 : 16;
 
   return (
     <div className={rootClass} data-testid="profile-manage-nav">
-      <p className={variant === 'rail' ? 'pepito-app-rail-group-label' : 'pepito-nav-profile-manage-label'}>
-        {t('nav.manage')}
-      </p>
+      {variant === 'sheet' ? null : <p className={labelClass}>{t('nav.manage')}</p>}
       <nav aria-label={t('nav.manage')}>
         {items.map((item) => {
           const active = item.match(pathname, search);
@@ -142,7 +152,7 @@ export function ProfileManageNav({
               aria-current={active ? 'page' : undefined}
               onClick={() => onNavigate?.()}
             >
-              <item.icon size={variant === 'rail' ? 18 : 16} strokeWidth={2} aria-hidden />
+              <item.icon size={iconSize} strokeWidth={2} aria-hidden />
               <span>{item.label}</span>
             </NavLink>
           );
