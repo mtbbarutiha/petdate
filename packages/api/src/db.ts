@@ -4444,6 +4444,7 @@ export const dbService = {
   },
 
   getSection(id: number): Section | null {
+    if (!Number.isFinite(id) || !Number.isInteger(id) || id <= 0) return null;
     const row = db.prepare('SELECT * FROM sections WHERE id = ?').get(id) as Record<string, unknown> | undefined;
     return row ? mapSection(row) : null;
   },
@@ -4464,9 +4465,17 @@ export const dbService = {
     `;
     const params: unknown[] = [];
 
-    if (filters?.sectionId) {
+    // Never bind NaN/non-positive sectionId (Postgres bigint «invalid input syntax»).
+    const sectionId =
+      filters?.sectionId != null &&
+      Number.isFinite(filters.sectionId) &&
+      Number.isInteger(filters.sectionId) &&
+      filters.sectionId > 0
+        ? filters.sectionId
+        : undefined;
+    if (sectionId != null) {
       sql += ' AND g.section_id = ?';
-      params.push(filters.sectionId);
+      params.push(sectionId);
     }
     if (filters?.status) {
       sql += ' AND g.status = ?';

@@ -18,6 +18,7 @@ const gamesList = formatAdminLogMessageFa({
   statusCode: 500,
 });
 assert.match(gamesList.title, /فهرست بازی|بازی/);
+assert.match(gamesList.title, /\/chats|هم بازی/);
 assert.equal(gamesList.detail, 'HTTP 500 GET /api/games/list');
 
 const gamesAbc = formatAdminLogMessageFa({

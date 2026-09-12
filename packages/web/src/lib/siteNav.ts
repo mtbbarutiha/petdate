@@ -36,7 +36,11 @@ const SHOP_AUTH: SiteNavItem = {
   match: (p) => p === '/shop' || p.startsWith('/shop/'),
 };
 
-/** Owner/guest playmate hub — lives in /chats (find + inbox), not a separate page. */
+/**
+ * Owner/guest playmate hub — lives in /chats (find + inbox), not a separate page.
+ * Legacy `/api/games` (scheduled section games) has no web/bot UI; do not add a
+ * «بازی‌ها» nav item — owners use this «هم بازی» entry (and bot «پیدا کردن همبازی»).
+ */
 const PLAYMATE_CHATS: SiteNavItem = {
   key: 'playmate',
   label: 'هم بازی',
