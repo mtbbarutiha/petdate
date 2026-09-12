@@ -500,18 +500,19 @@ html[data-theme='dark'] .tg-request-card-cover.is-placeholder {
     radial-gradient(circle at 78% 72%, rgba(59, 184, 245, 0.16), transparent 55%),
     linear-gradient(145deg, #232736 0%, #1c2030 100%);
 }
+html[data-theme='dark'] .tg-request-card-cover:not(.is-placeholder)::after {
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.55), transparent 88%);
+}
 html[data-theme='dark'] .tg-request-card-photo {
-  background: #2a2f3d;
-  border-color: rgba(232, 230, 242, 0.14);
-  box-shadow:
-    0 12px 28px rgba(0, 0, 0, 0.36),
-    inset 0 0 0 1px rgba(45, 212, 176, 0.22);
+  background: #1a1e2a;
+  border: none;
+  box-shadow: none;
 }
 html[data-theme='dark'] .tg-request-card-owner {
   background: #2a2f3d;
-  border-color: rgba(232, 230, 242, 0.18);
+  border-color: rgba(232, 230, 242, 0.22);
   box-shadow:
-    0 6px 16px rgba(0, 0, 0, 0.4),
+    0 6px 16px rgba(0, 0, 0, 0.45),
     inset 0 0 0 1px rgba(45, 212, 176, 0.28);
 }
 html[data-theme='dark'] .tg-request-card-owner--initials {

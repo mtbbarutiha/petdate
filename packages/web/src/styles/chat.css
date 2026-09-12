@@ -901,10 +901,10 @@
   to { opacity: 1; transform: none; }
 }
 
-/* ── Request card ────────────────────────────────────────────────── */
+/* ── Request card (Telegram-style full-bleed pet cover) ──────────── */
 .tg-request-card {
   margin: 10px 12px 18px !important;
-  border-radius: 20px !important;
+  border-radius: 18px !important;
   overflow: hidden;
   background: var(--tg-surface, var(--tg-in, #fff));
   border: 1px solid color-mix(in srgb, var(--pepito-dark, #19063d) 8%, transparent) !important;
@@ -917,26 +917,42 @@
 }
 .tg-request-card-cover {
   position: relative;
-  display: grid;
-  place-items: center;
-  padding: 22px 16px 12px;
-  min-height: 156px;
+  display: block;
+  padding: 0;
+  height: clamp(200px, 48vw, 260px);
+  min-height: 200px;
+  overflow: hidden;
   background:
     radial-gradient(circle at 30% 22%, color-mix(in srgb, var(--pepito-mint) 22%, transparent), transparent 58%),
     radial-gradient(circle at 78% 72%, color-mix(in srgb, var(--pepito-sky) 14%, transparent), transparent 55%),
     linear-gradient(145deg, color-mix(in srgb, var(--pepito-mint) 10%, #edf3f7), color-mix(in srgb, var(--pepito-sky) 8%, #e4ebf2));
 }
+/* Soft bottom scrim so owner thumb / edge stay readable over bright photos */
+.tg-request-card-cover:not(.is-placeholder)::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 42%;
+  background: linear-gradient(
+    to top,
+    color-mix(in srgb, var(--pepito-dark, #19063d) 42%, transparent),
+    transparent 88%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
 .tg-request-card-photo {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 0;
   overflow: hidden;
   flex-shrink: 0;
-  background: color-mix(in srgb, var(--tg-surface, #fff) 70%, #dbe4ec);
-  border: 3px solid color-mix(in srgb, var(--tg-surface, #fff) 92%, transparent);
-  box-shadow:
-    0 12px 28px color-mix(in srgb, var(--pepito-dark, #19063d) 14%, transparent),
-    inset 0 0 0 1px color-mix(in srgb, var(--pepito-mint) 18%, transparent);
+  background: color-mix(in srgb, var(--tg-surface, #fff) 40%, #c5d0da);
+  border: none;
+  box-shadow: none;
 }
 .tg-request-card-photo img {
   width: 100%;
@@ -947,16 +963,17 @@
 }
 .tg-request-card-owner {
   position: absolute;
-  top: 12px;
+  top: auto;
+  bottom: 12px;
   inset-inline-start: 12px;
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   overflow: hidden;
   background: color-mix(in srgb, var(--tg-surface, #fff) 88%, #dbe4ec);
-  border: 2.5px solid color-mix(in srgb, var(--tg-surface, #fff) 95%, transparent);
+  border: 2.5px solid color-mix(in srgb, var(--tg-surface, #fff) 96%, transparent);
   box-shadow:
-    0 6px 16px color-mix(in srgb, var(--pepito-dark, #19063d) 16%, transparent),
+    0 6px 16px color-mix(in srgb, var(--pepito-dark, #19063d) 22%, transparent),
     inset 0 0 0 1px color-mix(in srgb, var(--pepito-mint) 28%, transparent);
   z-index: 2;
 }
@@ -976,6 +993,8 @@
   background: color-mix(in srgb, var(--pepito-mint) 18%, #fff);
 }
 .tg-request-card-cover.is-placeholder {
+  display: grid;
+  place-items: center;
   background:
     radial-gradient(circle at 30% 22%, color-mix(in srgb, var(--pepito-mint) 26%, transparent), transparent 58%),
     radial-gradient(circle at 78% 72%, color-mix(in srgb, var(--pepito-sky) 18%, transparent), transparent 55%),
@@ -984,14 +1003,15 @@
 .tg-request-card-cover-mark {
   display: grid;
   place-items: center;
-  width: 88px;
-  height: 88px;
+  width: 96px;
+  height: 96px;
   border-radius: 50%;
   color: var(--pepito-mint, #15cca0);
   background: color-mix(in srgb, var(--tg-surface, #fff) 78%, var(--pepito-mint));
   box-shadow:
     0 10px 22px color-mix(in srgb, var(--pepito-dark, #19063d) 10%, transparent),
     inset 0 0 0 1px color-mix(in srgb, var(--pepito-mint) 22%, transparent);
+  z-index: 0;
 }
 .tg-request-card-body {
   padding: 14px 16px 16px;

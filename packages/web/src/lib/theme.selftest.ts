@@ -50,6 +50,11 @@ assert.match(darkCss, /\.tg-thread-empty/, 'chat empty pane remapped');
 assert.match(darkCss, /\.tg-request-card\b/, 'playmate request card remapped');
 assert.match(darkCss, /\.tg-request-card-photo\b/, 'playmate request counterpart photo remapped');
 assert.match(darkCss, /\.tg-request-card-owner\b/, 'playmate request owner thumb remapped');
+assert.match(
+  darkCss,
+  /\.tg-request-card-cover:not\(\.is-placeholder\)::after/,
+  'dark request cover scrim remapped for full-bleed photo'
+);
 assert.match(darkCss, /\.tg-ended-bar\b/, 'end-of-chat wipe bar remapped');
 assert.match(darkCss, /\.tg-chat-wallpaper/, 'chat message wallpaper remapped for dark');
 assert.match(darkCss, /--tg-wall-a:\s*#171a24/, 'chat wall token remapped off light #eef2f6');
