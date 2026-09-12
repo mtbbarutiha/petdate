@@ -12590,17 +12590,22 @@ a.pepito-btn.pepito-human-consult-cta:hover {
     background: transparent !important;
     border: 0 !important;
     box-shadow: none !important;
-    padding: 0.55rem 0.5rem !important;
+    padding: 0.35rem 0 !important;
     align-items: center;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
   }
   .tg-chat-list-empty .find-playmate-panel__head {
     display: none !important;
   }
   .tg-chat-list-empty .find-playmate-one {
-    width: fit-content;
+    width: min(100%, fit-content);
     max-width: 100%;
     margin-inline: auto;
     align-items: center;
+    overflow-x: clip;
+    box-sizing: border-box;
   }
   .tg-chat-list-empty .find-playmate-one .pepito-btn,
   .tg-chat-list-empty .find-playmate-one__btn {
@@ -12617,10 +12622,61 @@ a.pepito-btn.pepito-human-consult-cta:hover {
     padding: 0.35rem 0.7rem !important;
     min-height: 36px !important;
     border-radius: 999px !important;
+    white-space: normal;
+    text-align: center;
+  }
+  .tg-chat-list-empty .find-playmate-one__fee {
+    font-size: 0.72rem !important;
+    line-height: 1.45 !important;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+  .tg-chat-list-body {
+    overflow-x: clip;
   }
   .pepito-pet-profile-hero {
     margin-inline: calc(-1 * var(--pepito-container-pad));
     width: auto;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Narrow phones: mute + CTA must stay on one row clear of logo */
+  .find-playmate-header {
+    max-width: min(64vw, 11.5rem);
+    gap: 0.22rem;
+  }
+  .find-playmate-header-btn {
+    font-size: 0.64rem;
+    padding: 0.3rem 0.48rem !important;
+    min-height: 32px !important;
+    gap: 0.2rem;
+  }
+  .find-playmate-mute-btn {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+  }
+  .find-playmate-mute-btn svg {
+    width: 15px;
+    height: 15px;
+  }
+  .find-playmate-header-btn .find-playmate-paw svg,
+  .find-playmate-header-btn .pepito-btn-icon svg {
+    width: 12px;
+    height: 12px;
+  }
+  .tg-chat-list-head:has(.find-playmate-header) .tg-chat-list-logo.site-logo,
+  .tg-chat-list-head:has(.find-playmate-header) .tg-chat-list-logo {
+    max-width: min(96px, 30vw);
+    height: 26px;
+  }
+  .tg-chat-list-empty .find-playmate-one__btn,
+  .tg-chat-list-empty .find-playmate-one .pepito-btn {
+    font-size: 0.74rem !important;
+    padding: 0.32rem 0.62rem !important;
+    min-height: 34px !important;
   }
 }
 

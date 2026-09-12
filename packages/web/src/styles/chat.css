@@ -503,6 +503,7 @@
   max-width: 100%;
   margin-inline: auto;
   box-sizing: border-box;
+  overflow-x: clip;
 }
 .tg-thread-empty__cta-wrap .find-playmate-one:has(.find-playmate-one__pick),
 .tg-thread-empty .find-playmate-one:has(.find-playmate-one__pick),
@@ -515,6 +516,124 @@
   max-width: 100%;
   align-self: center;
   justify-content: center;
+}
+
+/* Mobile / tablet empty pane — readable, no horizontal scroll, CTA above fold */
+@media (max-width: 768px) {
+  .tg-chat-list-empty,
+  .tg-thread-empty,
+  .tg-thread-empty--pepito,
+  .tg-thread-empty--hub,
+  .tg-chat-list-empty--hub {
+    /* Top-align so tall fee+CTA isn't clipped by vertical centering */
+    align-content: start !important;
+    justify-items: center !important;
+    text-align: center !important;
+    min-height: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-inline: 0 !important;
+    padding: 16px 14px calc(20px + env(safe-area-inset-bottom, 0px)) !important;
+    gap: 8px !important;
+    overflow-x: clip !important;
+    box-sizing: border-box !important;
+  }
+  .tg-chat-list-empty h2,
+  .tg-thread-empty h2 {
+    font-size: 0.95rem !important;
+    max-width: 100%;
+    padding-inline: 4px;
+    box-sizing: border-box;
+  }
+  .tg-chat-list-empty p,
+  .tg-thread-empty p {
+    font-size: 0.76rem !important;
+    line-height: 1.5 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    padding-inline: 4px;
+    text-align: center !important;
+  }
+  .tg-empty-visual {
+    width: 72px;
+    height: 72px;
+  }
+  .tg-empty-visual__paw {
+    width: 36px;
+    height: 36px;
+  }
+  .tg-empty-visual__paw svg {
+    width: 24px;
+    height: 24px;
+  }
+  .tg-thread-empty__cta-wrap {
+    width: 100%;
+    max-width: 100%;
+    padding-inline: 0;
+    margin-top: 6px;
+  }
+  .tg-thread-empty__cta-wrap .find-playmate-one,
+  .tg-thread-empty .find-playmate-one,
+  .tg-chat-list-empty .find-playmate-one {
+    width: min(100%, fit-content);
+    max-width: 100%;
+    padding: 10px 12px;
+    --find-playmate-pad: 12px;
+  }
+  .tg-thread-empty .find-playmate-one__fee,
+  .tg-chat-list-empty .find-playmate-one__fee,
+  .find-playmate-panel .find-playmate-one__fee {
+    /* Keep divider edge-to-edge of card without spilling past viewport */
+    margin-inline: calc(-1 * var(--find-playmate-pad, 12px));
+    padding-inline: var(--find-playmate-pad, 12px);
+    font-size: 0.72rem !important;
+    line-height: 1.45 !important;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    max-width: none !important;
+  }
+  .tg-thread-empty__cta-wrap .find-playmate-one__btn,
+  .tg-chat-list-empty .find-playmate-one__btn {
+    white-space: normal;
+    text-align: center;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .tg-chat-list-empty,
+  .tg-thread-empty,
+  .tg-thread-empty--pepito,
+  .tg-thread-empty--hub,
+  .tg-chat-list-empty--hub {
+    padding: 12px 12px calc(18px + env(safe-area-inset-bottom, 0px)) !important;
+    gap: 6px !important;
+  }
+  .tg-chat-list-empty h2,
+  .tg-thread-empty h2 {
+    font-size: 0.9rem !important;
+  }
+  .tg-chat-list-empty p,
+  .tg-thread-empty p {
+    font-size: 0.72rem !important;
+  }
+  .tg-empty-visual {
+    width: 64px;
+    height: 64px;
+  }
+  .tg-thread-empty__cta-wrap .find-playmate-one,
+  .tg-thread-empty .find-playmate-one,
+  .tg-chat-list-empty .find-playmate-one {
+    padding: 9px 10px;
+    --find-playmate-pad: 10px;
+    border-radius: 12px;
+  }
+  .tg-thread-empty .find-playmate-one__fee,
+  .tg-chat-list-empty .find-playmate-one__fee {
+    font-size: 0.68rem !important;
+    padding-bottom: 0.35rem;
+  }
 }
 .tg-thread-empty__cta {
   margin-top: 4px;
@@ -1368,6 +1487,18 @@ html.tg-chat-open body {
 .tg-chat-list-empty--hub p {
   text-align: start;
 }
+@media (max-width: 768px) {
+  /* Owner empty inbox uses hub class but should stay centered + padded on phones */
+  .tg-chat-list-empty--hub {
+    align-items: center;
+    justify-items: center;
+    text-align: center;
+    padding: 16px 14px calc(20px + env(safe-area-inset-bottom, 0px));
+  }
+  .tg-chat-list-empty--hub p {
+    text-align: center;
+  }
+}
 .find-playmate-panel {
   display: flex;
   flex-direction: column;
@@ -1401,6 +1532,7 @@ html.tg-chat-open body {
   max-width: 100%;
   margin-inline: auto;
   box-sizing: border-box;
+  overflow-x: clip;
 }
 .find-playmate-one__pick {
   align-self: stretch;

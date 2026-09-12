@@ -4229,6 +4229,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   background: var(--surface);
   box-shadow: 0 6px 18px rgba(40, 30, 70, 0.1);
   box-sizing: border-box;
+  overflow-x: clip;
 }
 
 /* Pet picker needs a usable width; fee+CTA card stays hug-content above */
@@ -4276,6 +4277,9 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   width: auto;
   align-self: stretch;
   box-sizing: border-box;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .find-playmate-one__status {
