@@ -17,6 +17,7 @@ import type {
   VetConsultation,
   VetConsultStatus,
 } from '@petdate/shared';
+import { isNonImageAvatarRef, profileAvatarUrl } from '@petdate/shared';
 import { parseApiJsonBody } from './apiErrorMessage';
 
 /** Empty = same-origin (Vite proxies /api → API). Override with VITE_API_URL if needed. */
@@ -68,6 +69,21 @@ export function resolvePublicMediaUrl(
     return `${API_BASE}/api/media/telegram/${encodeURIComponent(raw)}`;
   }
   return '';
+}
+
+/**
+ * Avatar <img src>: approved/still profile photo only.
+ * Face-verify videos and other non-image clips resolve to empty (placeholder).
+ */
+export function resolvePublicAvatarUrl(
+  url?: string | null,
+  opts?: { verificationPhotoFileId?: string | null }
+): string {
+  const usable = profileAvatarUrl(url, {
+    verificationPhotoFileId: opts?.verificationPhotoFileId,
+  });
+  if (!usable || isNonImageAvatarRef(usable)) return '';
+  return resolvePublicMediaUrl(usable);
 }
 
 export async function subscribeNewsletter(email: string, source = 'footer') {

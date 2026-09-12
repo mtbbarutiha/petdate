@@ -78,7 +78,7 @@ import {
   listVetConsultations,
   postVetConsultChatMessage,
   rejectVetConsultation,
-  resolvePublicMediaUrl,
+  resolvePublicAvatarUrl,
   setVetConsultChatSecure,
   uploadVetConsultChatFile,
   vetConsultChatMediaUrl,
@@ -355,7 +355,7 @@ export function VetChatPage() {
   }, [consult]);
   const seekerAvatarSrc = useMemo(() => {
     if (!isSeekerAdvice || !isVetSide) return null;
-    return resolvePublicMediaUrl(peerAvatarUrl || consult?.patientAvatarUrl) || null;
+    return resolvePublicAvatarUrl(peerAvatarUrl || consult?.patientAvatarUrl) || null;
   }, [isSeekerAdvice, isVetSide, peerAvatarUrl, consult?.patientAvatarUrl]);
 
   const peerSub = useMemo(() => {

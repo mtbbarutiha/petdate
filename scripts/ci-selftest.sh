@@ -13,9 +13,10 @@ run() {
 }
 
 # Shared pure selftests
-echo "==> selftest: shared peer-profile + user-command-id + pet/order-public-id + gtm-contract + sanitize-roles + breed-search + photo-moderation"
+echo "==> selftest: shared peer-profile + user-command-id + pet/order-public-id + gtm-contract + sanitize-roles + breed-search + photo-moderation + profile-avatar"
 npx tsx "$ROOT/packages/shared/src/peer-profile.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/photo-moderation.selftest.ts"
+npx tsx "$ROOT/packages/shared/src/profile-avatar.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/user-command-id.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/pet-public-id.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/order-public-id.selftest.ts"
@@ -216,6 +217,7 @@ run src/services/nearby-cards.selftest.ts
 run src/services/vet-online.selftest.ts
 run src/services/marketplace-roles.selftest.ts
 run src/services/pending-photo-placeholder.selftest.ts
+run src/services/face-verify-avatar.selftest.ts
 run src/services/seeker-advice-early-refund.selftest.ts
 run src/services/seeker-advice-owner-notify.selftest.ts
 run src/services/telegram-face-verify-notify.selftest.ts

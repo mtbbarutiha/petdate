@@ -612,12 +612,11 @@ usersRouter.post('/telegram/:telegramId/verification', async (req, res) => {
     });
     return;
   }
-  if (looksLikeTelegramFileId(photoFileId)) {
-    try {
-      await ensureWebAccessibleAvatar(user.id);
-    } catch (err) {
-      console.warn('verification avatar materialize failed:', (err as Error).message);
-    }
+  // Materialize the existing profile photo if needed — never the verify clip.
+  try {
+    await ensureWebAccessibleAvatar(user.id);
+  } catch (err) {
+    console.warn('verification avatar materialize failed:', (err as Error).message);
   }
   res.json({ ok: true, user: dbService.getUserById(user.id) ?? result.user });
 });
