@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Stethoscope } from 'lucide-react';
+import type { UserGender } from '@petdate/shared';
 import { resolvePublicAvatarUrl } from '../lib/api';
 
 function initialsOf(label?: string | null): string {
@@ -19,14 +20,16 @@ function initialsOf(label?: string | null): string {
 export function InboxPeerAvatar({
   avatarUrl,
   name,
+  gender,
   size = 42,
 }: {
   avatarUrl?: string | null;
   name?: string | null;
+  gender?: UserGender | string | null;
   size?: number;
 }) {
   const [failed, setFailed] = useState(false);
-  const resolved = resolvePublicAvatarUrl(avatarUrl);
+  const resolved = resolvePublicAvatarUrl(avatarUrl, { gender });
   const showImg = Boolean(resolved) && !failed;
   const initials = initialsOf(name);
 

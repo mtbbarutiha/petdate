@@ -1,5 +1,9 @@
 import type { VetConsultation } from '@petdate/shared';
-import { getTeamAgentByName, profileAvatarUrl } from '@petdate/shared';
+import {
+  getTeamAgentByName,
+  profileAvatarUrl,
+  resolveProfileDisplayAvatarUrl,
+} from '@petdate/shared';
 
 /** Prefer API still-photo avatar; for team agents fall back to TEAM_AGENTS photo by name. */
 export function resolveConsultPeerAvatarUrl(
@@ -10,7 +14,8 @@ export function resolveConsultPeerAvatarUrl(
     const fromApi = profileAvatarUrl(c.vetAvatarUrl);
     if (fromApi) return fromApi;
     const team = getTeamAgentByName(c.vetName);
-    return team?.avatarUrl;
+    if (team?.avatarUrl) return team.avatarUrl;
+    return resolveProfileDisplayAvatarUrl(undefined, { gender: c.vetGender });
   }
-  return profileAvatarUrl(c.patientAvatarUrl);
+  return resolveProfileDisplayAvatarUrl(c.patientAvatarUrl, { gender: c.patientGender });
 }

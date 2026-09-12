@@ -5,7 +5,7 @@
 import fs from 'fs';
 import path from 'path';
 import sharp from 'sharp';
-import { isPhotoApproved, type PetProfile } from '@petdate/shared';
+import { isGenderDefaultAvatarPath, isPhotoApproved, type PetProfile } from '@petdate/shared';
 import {
   mimeFromPetPhotoKey,
   resolvePetPhotoPath,
@@ -119,6 +119,20 @@ function userAvatarStorageKeyFromUrl(url: string): string | null {
   return m?.[1] ?? null;
 }
 
+function resolveGenderDefaultAvatarFile(url: string): string | null {
+  if (!isGenderDefaultAvatarPath(url)) return null;
+  const file = url.includes('avatar-female') ? 'avatar-female.jpg' : 'avatar-male.jpg';
+  const candidates = [
+    path.join(__dirname, '../../../web/public/images/defaults', file),
+    path.join(process.cwd(), '../web/public/images/defaults', file),
+    path.join(process.cwd(), 'packages/web/public/images/defaults', file),
+  ];
+  for (const p of candidates) {
+    if (fs.existsSync(p)) return p;
+  }
+  return null;
+}
+
 function defaultPetPhotoUrl(pet: { species?: string; id: number }): string {
   const dogs = [
     'https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&w=400&q=80',
@@ -173,6 +187,14 @@ export async function loadImageBuffer(
         } catch {
           /* fall through */
         }
+      }
+    }
+    const genderDefaultAbs = resolveGenderDefaultAvatarFile(raw);
+    if (genderDefaultAbs) {
+      try {
+        return fs.readFileSync(genderDefaultAbs);
+      } catch {
+        /* fall through */
       }
     }
     if (/^https?:\/\//i.test(raw)) {

@@ -49,6 +49,7 @@ export function ProfileMenu() {
   const initial = (user.name?.trim()?.[0] || 'پ').toUpperCase();
   const photo = resolvePublicAvatarUrl(user.avatarUrl, {
     verificationPhotoFileId: user.verificationPhotoFileId,
+    gender: user.gender,
   });
 
   async function onLogout() {

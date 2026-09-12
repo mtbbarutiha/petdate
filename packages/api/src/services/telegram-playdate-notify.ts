@@ -191,7 +191,9 @@ export async function buildPlaydateNotifyCompositePhoto(
   try {
     if (pet.ownerId) {
       const ensured = await ensureWebAccessibleAvatar(pet.ownerId);
-      if (ensured?.avatarUrl) ownerAvatarUrl = ensured.avatarUrl;
+      if (ensured?.avatarUrl && isPhotoApproved(ensured.avatarModerationStatus)) {
+        ownerAvatarUrl = ensured.avatarUrl;
+      }
     }
   } catch (err) {
     console.warn(

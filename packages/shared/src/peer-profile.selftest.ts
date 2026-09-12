@@ -2,6 +2,7 @@
  * Selftest: peer public DTO never leaks Telegram id / @username / phone.
  * Run: npx tsx packages/shared/src/peer-profile.selftest.ts
  */
+import { DEFAULT_AVATAR_FEMALE_PATH } from './profile-avatar';
 import {
   buildPeerOwnerSummaryLines,
   formatPeerOwnerProfileHtml,
@@ -53,14 +54,27 @@ const videoPeer = toPeerPublicUser({
   verificationPhotoFileId: 'BAACAgQAAxkBAAITestVideoFileIdToken1234567890',
   avatarModerationStatus: 'approved',
 });
-assert(!videoPeer.avatarUrl, 'peer DTO drops face-verify video avatar');
+assert(
+  videoPeer.avatarUrl === DEFAULT_AVATAR_FEMALE_PATH,
+  'peer DTO replaces face-verify video with gender default'
+);
 
 const pendingPeer = toPeerPublicUser({
   ...raw,
   avatarUrl: '/api/auth/avatar/42/new.jpg',
   avatarModerationStatus: 'pending',
 });
-assert(!pendingPeer.avatarUrl, 'pending profile photo still hidden from peers');
+assert(
+  pendingPeer.avatarUrl === DEFAULT_AVATAR_FEMALE_PATH,
+  'pending profile photo hidden; female default shown to peers'
+);
+
+const noGenderPeer = toPeerPublicUser({
+  ...raw,
+  gender: undefined,
+  avatarUrl: undefined,
+});
+assert(!noGenderPeer.avatarUrl, 'unknown gender keeps existing empty/initials fallback');
 assert(!('telegramId' in peer), 'no telegramId key');
 assert(!('username' in peer), 'no username key');
 assert(!('phone' in peer), 'no phone key');

@@ -2,10 +2,19 @@
  * Selftest: avatars never resolve to face-verify video / non-image clips.
  * Run: npx tsx packages/shared/src/profile-avatar.selftest.ts
  */
+import { createHash } from 'node:crypto';
+import { existsSync, readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
+  DEFAULT_AVATAR_FEMALE_PATH,
+  DEFAULT_AVATAR_MALE_PATH,
+  defaultAvatarUrlForGender,
+  isGenderDefaultAvatarPath,
   isNonImageAvatarRef,
   profileAvatarUrl,
   publicFacingAvatarUrl,
+  resolveProfileDisplayAvatarUrl,
 } from './profile-avatar';
 
 function assert(cond: unknown, msg: string): asserts cond {
@@ -56,5 +65,83 @@ assert(
   publicFacingAvatarUrl(VIDEO_PATH, 'pending', VIDEO_PATH) === undefined,
   'pending verify clip is not a public avatar'
 );
+
+assert(
+  defaultAvatarUrlForGender('female') === DEFAULT_AVATAR_FEMALE_PATH,
+  'female default path'
+);
+assert(defaultAvatarUrlForGender('male') === DEFAULT_AVATAR_MALE_PATH, 'male default path');
+assert(defaultAvatarUrlForGender(undefined) === undefined, 'unknown gender has no custom photo');
+assert(defaultAvatarUrlForGender('other') === undefined, 'unrecognized gender stays initials');
+assert(isGenderDefaultAvatarPath(DEFAULT_AVATAR_FEMALE_PATH), 'female path is a default');
+assert(
+  isGenderDefaultAvatarPath(`https://petdate.ir${DEFAULT_AVATAR_MALE_PATH}`),
+  'absolute male default still detected'
+);
+assert(!isGenderDefaultAvatarPath(PHOTO), 'uploaded photo is not a default');
+
+assert(
+  resolveProfileDisplayAvatarUrl(PHOTO, { gender: 'female' }) === PHOTO,
+  'own uploaded photo beats gender default'
+);
+assert(
+  resolveProfileDisplayAvatarUrl(undefined, { gender: 'female' }) === DEFAULT_AVATAR_FEMALE_PATH,
+  'missing photo + female → woman+dog default'
+);
+assert(
+  resolveProfileDisplayAvatarUrl('', { gender: 'male' }) === DEFAULT_AVATAR_MALE_PATH,
+  'empty photo + male → man+dog default'
+);
+assert(
+  resolveProfileDisplayAvatarUrl(undefined, { gender: undefined }) === undefined,
+  'missing photo + unknown gender keeps initials fallback'
+);
+assert(
+  resolveProfileDisplayAvatarUrl(PHOTO, {
+    gender: 'female',
+    moderationStatus: 'pending',
+    publicFacing: true,
+  }) === DEFAULT_AVATAR_FEMALE_PATH,
+  'peer view of pending upload uses gender default'
+);
+assert(
+  resolveProfileDisplayAvatarUrl(VIDEO_FILE, {
+    gender: 'male',
+    verificationPhotoFileId: VIDEO_FILE,
+    publicFacing: true,
+  }) === DEFAULT_AVATAR_MALE_PATH,
+  'verify video is not shown; male default is'
+);
+assert(
+  resolveProfileDisplayAvatarUrl(DEFAULT_AVATAR_FEMALE_PATH) === DEFAULT_AVATAR_FEMALE_PATH,
+  'already-resolved female default is kept when gender is omitted'
+);
+
+const defaultsDir = join(
+  dirname(fileURLToPath(import.meta.url)),
+  '../../web/public/images/defaults'
+);
+const EXPECTED_DEFAULT_AVATARS = {
+  'avatar-female.jpg': {
+    bytes: 32057,
+    sha256: '6fb4fda45e6c2561a762f39cd48adef7cd0e7918d7dc352d3bbb5b17e6e64619',
+  },
+  'avatar-male.jpg': {
+    bytes: 37247,
+    sha256: '787161e895afaafa98a869c6632b74d2fb5cfd7ae572285142b012eab8058f4f',
+  },
+} as const;
+
+for (const file of ['avatar-female.jpg', 'avatar-male.jpg'] as const) {
+  const abs = join(defaultsDir, file);
+  assert(existsSync(abs), `${file} committed under web/public/images/defaults`);
+  const buf = readFileSync(abs);
+  const expected = EXPECTED_DEFAULT_AVATARS[file];
+  assert(buf.length === expected.bytes, `${file} must be exactly ${expected.bytes} bytes`);
+  assert(buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff, `${file} is a JPEG`);
+  assert(!/made with ai/i.test(buf.toString('latin1')), `${file} has no Made with AI watermark`);
+  const sha = createHash('sha256').update(buf).digest('hex');
+  assert(sha === expected.sha256, `${file} sha256 must be ${expected.sha256}`);
+}
 
 console.log('profile-avatar.selftest: ok');

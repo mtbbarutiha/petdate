@@ -2,9 +2,14 @@
  * Profile / chat avatar URL selection.
  * Face-verify videos and other non-image clips must never be used as avatars.
  * Pending profile photos still go through photo-moderation placeholders.
+ * Missing / unapproved photos fall back to gender defaults when sex is known.
  */
-import type { PhotoModerationStatus } from './petdate';
+import type { PhotoModerationStatus, UserGender } from './petdate';
 import { publicFacingPhotoUrl } from './photo-moderation';
+
+/** Public static defaults — `packages/web/public/images/defaults/`. */
+export const DEFAULT_AVATAR_FEMALE_PATH = '/images/defaults/avatar-female.jpg';
+export const DEFAULT_AVATAR_MALE_PATH = '/images/defaults/avatar-male.jpg';
 
 /** Telegram Bot API prefixes that are never a still profile photo. */
 const TELEGRAM_NON_PHOTO_PREFIX = /^(BAAC|DQAC|AwAC|CQAC|CgAC)/i;
@@ -60,4 +65,58 @@ export function publicFacingAvatarUrl(
   verificationPhotoFileId?: string | null
 ): string | undefined {
   return publicFacingPhotoUrl(profileAvatarUrl(url, { verificationPhotoFileId }), status);
+}
+
+export function parseUserGenderValue(value?: unknown): UserGender | undefined {
+  const raw = String(value ?? '').trim().toLowerCase();
+  if (raw === 'female') return 'female';
+  if (raw === 'male') return 'male';
+  return undefined;
+}
+
+/** Gender stock photo when the user has no usable uploaded still. */
+export function defaultAvatarUrlForGender(
+  gender?: UserGender | string | null
+): string | undefined {
+  const parsed = parseUserGenderValue(gender);
+  if (parsed === 'female') return DEFAULT_AVATAR_FEMALE_PATH;
+  if (parsed === 'male') return DEFAULT_AVATAR_MALE_PATH;
+  return undefined;
+}
+
+export function isGenderDefaultAvatarPath(url?: string | null): boolean {
+  const raw = String(url ?? '').trim();
+  if (!raw) return false;
+  try {
+    const path = raw.startsWith('http://') || raw.startsWith('https://')
+      ? new URL(raw).pathname
+      : raw.split('?')[0] ?? raw;
+    return path === DEFAULT_AVATAR_FEMALE_PATH || path === DEFAULT_AVATAR_MALE_PATH;
+  } catch {
+    return raw.includes(DEFAULT_AVATAR_FEMALE_PATH) || raw.includes(DEFAULT_AVATAR_MALE_PATH);
+  }
+}
+
+export type ResolveProfileDisplayAvatarOpts = {
+  gender?: UserGender | string | null;
+  verificationPhotoFileId?: string | null;
+  moderationStatus?: PhotoModerationStatus | null;
+  /** Hide pending/rejected uploads (peer / public payloads). */
+  publicFacing?: boolean;
+};
+
+/**
+ * Display URL: uploaded still photo, else female/male default, else undefined
+ * (callers keep the existing initials / empty fallback).
+ * Does not invent a third custom photo when gender is missing.
+ */
+export function resolveProfileDisplayAvatarUrl(
+  url?: string | null,
+  opts?: ResolveProfileDisplayAvatarOpts
+): string | undefined {
+  const photo = opts?.publicFacing
+    ? publicFacingAvatarUrl(url, opts.moderationStatus, opts.verificationPhotoFileId)
+    : profileAvatarUrl(url, { verificationPhotoFileId: opts?.verificationPhotoFileId });
+  if (photo && !isGenderDefaultAvatarPath(photo)) return photo;
+  return defaultAvatarUrlForGender(opts?.gender) ?? photo;
 }

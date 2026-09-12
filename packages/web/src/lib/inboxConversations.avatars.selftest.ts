@@ -63,6 +63,18 @@ const patient = resolveConsultPeerAvatarUrl(
 );
 assert.equal(patient, '/api/auth/avatar/20/p.jpg');
 
+const patientDefault = resolveConsultPeerAvatarUrl(
+  baseConsult({ patientGender: 'female' }),
+  'as_vet',
+);
+assert.equal(patientDefault, '/images/defaults/avatar-female.jpg');
+
+const vetDefault = resolveConsultPeerAvatarUrl(
+  baseConsult({ vetName: 'صاحب ناشناس', vetGender: 'male' }),
+  'as_patient',
+);
+assert.equal(vetDefault, '/images/defaults/avatar-male.jpg');
+
 const verifyVideo = resolveConsultPeerAvatarUrl(
   baseConsult({
     vetName: 'لیلا کیانی',

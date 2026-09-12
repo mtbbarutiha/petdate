@@ -14,7 +14,7 @@ import {
   type VerificationStatus,
 } from './petdate';
 import { profileGenderEmoji, profileVerifyStatusLabel } from './profile-card';
-import { publicFacingAvatarUrl } from './profile-avatar';
+import { resolveProfileDisplayAvatarUrl } from './profile-avatar';
 
 /** Minimal shape accepted from API User / mapUser rows */
 export type PeerProfileSource = {
@@ -132,11 +132,12 @@ export function toPeerPublicUser(user: PeerProfileSource): PeerPublicUser {
   if (user.interests && user.interests.length > 0) {
     out.interests = user.interests.map(String).filter((s) => s.trim());
   }
-  const avatar = publicFacingAvatarUrl(
-    user.avatarUrl,
-    user.avatarModerationStatus,
-    user.verificationPhotoFileId
-  );
+  const avatar = resolveProfileDisplayAvatarUrl(user.avatarUrl, {
+    gender: user.gender,
+    verificationPhotoFileId: user.verificationPhotoFileId,
+    moderationStatus: user.avatarModerationStatus,
+    publicFacing: true,
+  });
   if (avatar) out.avatarUrl = avatar;
   if (user.role) out.role = user.role;
   const roles = normalizeRoles(user.roles, user.role);
