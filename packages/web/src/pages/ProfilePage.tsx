@@ -652,8 +652,8 @@ export function ProfilePage() {
                 </Link>
               </header>
               {petsLoading ? (
-                <div className="pepito-profile-pet-rail pepito-profile-pet-rail--muted" aria-busy="true">
-                  <span>…</span>
+                <div className="pepito-profile-pet-cards pepito-profile-pet-cards--muted" aria-busy="true">
+                  <div className="pepito-profile-pet-card is-skeleton" aria-hidden />
                 </div>
               ) : myPets.length === 0 ? (
                 <Link to="/add-pet" className="pepito-profile-pet-empty">
@@ -665,23 +665,25 @@ export function ProfilePage() {
                   <ChevronLeft size={18} strokeWidth={2.25} aria-hidden />
                 </Link>
               ) : (
-                <ul className="pepito-profile-pet-rail">
+                <ul className="pepito-profile-pet-cards">
                   {myPets.map((pet) => {
                     const ui = petProfileToUiPet(pet);
                     const petIdLabel = petPublicIdOf(pet);
                     return (
                       <li key={pet.id}>
-                        <Link to={`/pets/${pet.id}`} className="pepito-profile-pet-tile">
-                          <PetAvatar type={ui.type} size="lg" imageUrl={ui.imageUrl} name={pet.name} />
-                          <strong>{pet.name}</strong>
-                          <span>
-                            {[PET_TYPE_LABELS[ui.type] || pet.species, formatAge(ui)]
-                              .filter(Boolean)
-                              .join(' · ')}
-                          </span>
-                          <span className="pepito-profile-pet-id" dir="ltr">
-                            {petIdLabel}
-                          </span>
+                        <Link to={`/pets/${pet.id}`} className="pepito-profile-pet-card">
+                          <PetAvatar type={ui.type} size="md" imageUrl={ui.imageUrl} name={pet.name} />
+                          <div className="pepito-profile-pet-card-body">
+                            <strong>{pet.name}</strong>
+                            <span>
+                              {[PET_TYPE_LABELS[ui.type] || pet.species, formatAge(ui)]
+                                .filter(Boolean)
+                                .join(' · ')}
+                            </span>
+                            <span className="pepito-profile-pet-id" dir="ltr">
+                              {petIdLabel}
+                            </span>
+                          </div>
                         </Link>
                       </li>
                     );
