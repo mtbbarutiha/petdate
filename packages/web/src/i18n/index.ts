@@ -18,4 +18,4 @@ export { I18nProvider, useI18n, useI18nOptional } from './I18nProvider';
 export { fa as faDict } from './locales/fa';
 export { en as enDict } from './locales/en';
 export { ADMIN_FA_EN } from './locales/adminFaEn';
-export { tr, trLabel, uiLang, hasAdminEn } from './tr';
+export { tr, trLabel, uiLang, hasAdminEn, setUiLangOverride } from './tr';

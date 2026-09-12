@@ -186,6 +186,9 @@ npx tsx "$ROOT/packages/web/src/i18n/enChrome.selftest.ts"
 echo "==> selftest: admin English i18n coverage (FA→EN map + keys)"
 npx tsx "$ROOT/packages/web/src/i18n/adminEn.selftest.ts"
 
+echo "==> selftest: admin FA/EN chrome parity (analytics + catalog)"
+npx tsx "$ROOT/packages/web/src/i18n/adminFa.selftest.ts"
+
 echo "==> selftest: nginx apex HTTPS + WCDN docs"
 npx tsx "$ROOT/packages/web/src/lib/wcdnNginx.selftest.ts"
 

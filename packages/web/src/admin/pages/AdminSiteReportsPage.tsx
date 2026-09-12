@@ -33,6 +33,19 @@ import {
   useRechartsMotion,
 } from '../motionCharts';
 import { tr } from '../../i18n';
+import {
+  adminDeviceLabel,
+  analyticsHealthNote,
+  catalogDescription,
+  catalogWhere,
+  checklistDetail,
+  checklistTitle,
+  clarityStatusNote,
+  ga4StatusNote,
+  ga4TmNote,
+  gtmStatusLabel,
+  gtmStatusNote,
+} from '../adminAnalyticsCopy';
 
 type Bucket = { label: string; value: number };
 type SessionRow = {
@@ -83,10 +96,10 @@ type TagManagerReport = {
   gtm: Integration & { htmlSnippetDetected: boolean; statusLabelFa: string };
   ga4: { measurementId: string | null; configured: boolean; note: string };
   catalog: {
-    variables: Array<{ name: string; kind: string; descriptionFa: string; whereFired: string }>;
-    triggers: Array<{ name: string; kind: string; descriptionFa: string; whereFired: string }>;
+    variables: Array<{ name: string; kind: string; descriptionFa: string; descriptionEn?: string; whereFired: string }>;
+    triggers: Array<{ name: string; kind: string; descriptionFa: string; descriptionEn?: string; whereFired: string }>;
   };
-  checklist: Array<{ id: string; titleFa: string; type: string; detailFa: string; requiresGa4?: boolean }>;
+  checklist: Array<{ id: string; titleFa: string; titleEn?: string; type: string; detailFa: string; requiresGa4?: boolean }>;
   metrics: {
     pageviews: number; customEvents: number; uniqueSessions: number;
     eventsByType: Bucket[]; topPages: Bucket[]; devices: Bucket[];
@@ -137,11 +150,8 @@ function buildPreviewUrl(input: {
   return u.toString();
 }
 
-function deviceFa(d: string): string {
-  if (d === 'desktop' || d === 'دسکتاپ') return 'دسکتاپ';
-  if (d === 'mobile' || d === 'موبایل') return 'موبایل';
-  if (d === 'tablet' || d === 'تبلت') return 'تبلت';
-  return d;
+function deviceLabel(d: string): string {
+  return adminDeviceLabel(d);
 }
 
 function Tip({ active, payload, label }: { active?: boolean; payload?: Array<{ value?: number }>; label?: string }) {
@@ -211,7 +221,7 @@ export function AdminSiteReportsPage() {
       setTm(tagManager);
       setGa4Draft(report.ga4.measurementId || '');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'بارگذاری آنالیتیکس ناموفق بود');
+      setError(err instanceof Error ? err.message : tr('بارگذاری آنالیتیکس ناموفق بود'));
     } finally { setLoading(false); }
   }, [period]);
 
@@ -221,7 +231,7 @@ export function AdminSiteReportsPage() {
     if (!canWrite) return;
     const trimmed = ga4Draft.trim();
     if (trimmed && !/^G-[A-Z0-9]{6,20}$/i.test(trimmed)) {
-      setGa4SaveMsg('شناسه باید شبیه G-XXXXXXXX باشد');
+      setGa4SaveMsg(tr('شناسه باید شبیه G-XXXXXXXX باشد'));
       return;
     }
     try {
@@ -229,10 +239,10 @@ export function AdminSiteReportsPage() {
         method: 'PUT',
         body: JSON.stringify({ settings: { ga4MeasurementId: trimmed.toUpperCase() } }),
       });
-      setGa4SaveMsg('ذخیره شد');
+      setGa4SaveMsg(tr('ذخیره شد'));
       await load();
     } catch (err) {
-      setGa4SaveMsg(err instanceof Error ? err.message : 'ذخیره ناموفق');
+      setGa4SaveMsg(err instanceof Error ? err.message : tr('ذخیره ناموفق'));
     }
     window.setTimeout(() => setGa4SaveMsg(null), 2500);
   }, [canWrite, ga4Draft, load]);
@@ -241,12 +251,12 @@ export function AdminSiteReportsPage() {
     try {
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(id);
-        setGtmCopyMsg('شناسه کپی شد');
+        setGtmCopyMsg(tr('شناسه کپی شد'));
       } else {
-        setGtmCopyMsg('کپی پشتیبانی نمی‌شود');
+        setGtmCopyMsg(tr('کپی پشتیبانی نمی‌شود'));
       }
     } catch {
-      setGtmCopyMsg('کپی ناموفق بود');
+      setGtmCopyMsg(tr('کپی ناموفق بود'));
     }
     window.setTimeout(() => setGtmCopyMsg(null), 2200);
   }, []);
@@ -266,10 +276,10 @@ export function AdminSiteReportsPage() {
           utmTerm: utmForm.utmTerm || null,
         }),
       });
-      setUtmMsg('کمپین ذخیره شد');
+      setUtmMsg(tr('کمپین ذخیره شد'));
       await load();
     } catch (err) {
-      setUtmMsg(err instanceof Error ? err.message : 'ذخیره ناموفق');
+      setUtmMsg(err instanceof Error ? err.message : tr('ذخیره ناموفق'));
     }
     window.setTimeout(() => setUtmMsg(null), 2500);
   }, [canWrite, utmForm, load]);
@@ -309,23 +319,33 @@ export function AdminSiteReportsPage() {
   const savedUtms = data?.savedUtmCampaigns || [];
 
   const gtmSteps = useMemo(() => {
-    const mid = data?.ga4.measurementId || 'از تنظیمات پلتفرم / Measurement ID';
+    const mid = data?.ga4.measurementId || tr('از تنظیمات پلتفرم / Measurement ID');
     return [
       {
         title: tr('۱) Variables در GTM'),
-        body: `در tagmanager.google.com کانتینر GTM-KQPJT9Q4 را باز کنید. Variables → New → Data Layer Variable برای: page_path, page_title, page_location, page_type, user_id, user_status, utm_source, utm_medium, utm_campaign, click_url, click_text. سپس Constant با نام GA4 Measurement ID و مقدار ${mid}.`,
+        body: tr(
+          'در tagmanager.google.com کانتینر GTM-KQPJT9Q4 را باز کنید. Variables → New → Data Layer Variable برای: page_path, page_title, page_location, page_type, user_id, user_status, utm_source, utm_medium, utm_campaign, click_url, click_text. سپس Constant با نام GA4 Measurement ID و مقدار {id}.',
+          { id: mid },
+        ),
       },
       {
         title: tr('۲) Triggers'),
-        body: 'Triggers → New → Custom Event برای هر کدام: page_view، link_click، outbound_click، login، sign_up، generate_lead، view_item، add_to_cart، begin_checkout، purchase، scroll. (سایت SPA خودش این eventها را به dataLayer می‌فرستد.)',
+        body: tr(
+          'Triggers → New → Custom Event برای هر کدام: page_view، link_click، outbound_click، login، sign_up، generate_lead، view_item، add_to_cart، begin_checkout، purchase، scroll. (سایت SPA خودش این eventها را به dataLayer می‌فرستد.)',
+        ),
       },
       {
         title: tr('۳) Tags'),
-        body: `Tag: Google Analytics → GA4 Configuration با Measurement ID = ${mid} و Send page view = False. سپس GA4 Event tags با Event Name = page_view / {{Event}} و Triggerهای بالا. Tag: Conversion Linker با Trigger All Pages.`,
+        body: tr(
+          'Tag: Google Analytics → GA4 Configuration با Measurement ID = {id} و Send page view = False. سپس GA4 Event tags با Event Name = page_view / {{Event}} و Triggerهای بالا. Tag: Conversion Linker با Trigger All Pages.',
+          { id: mid },
+        ),
       },
       {
         title: tr('۴) UTM و تست'),
-        body: 'از تب UTM لینک بسازید → در تب ناشناس باز کنید → در آنالیتیکس نشست و UTM را ببینید. Tag Assistant را روی petdate.ir وصل کنید و event page_view را تأیید کنید.',
+        body: tr(
+          'از تب UTM لینک بسازید → در تب ناشناس باز کنید → در آنالیتیکس نشست و UTM را ببینید. Tag Assistant را روی petdate.ir وصل کنید و event page_view را تأیید کنید.',
+        ),
       },
     ];
   }, [data?.ga4.measurementId]);
@@ -401,14 +421,14 @@ export function AdminSiteReportsPage() {
             <StatusCard
               title="Google Analytics (GA4)"
               status={data.ga4.configured}
-              note={data.ga4.note}
+              note={ga4StatusNote(data.ga4)}
               href={data.ga4.dashboardUrl}
-              hrefLabel="باز کردن Google Analytics"
+              hrefLabel={tr('باز کردن Google Analytics')}
               extra={(
                 <div style={{ marginTop: 10 }}>
                   {data.ga4.measurementId ? (
-                    <p className="admin-muted">Measurement ID: <code dir="ltr">{data.ga4.measurementId}</code>
-                      {data.ga4.source ? ` · منبع: ${data.ga4.source === 'settings' ? 'تنظیمات' : 'env'}` : null}
+                    <p className="admin-muted">{tr('شناسه Measurement ID:')} <code dir="ltr">{data.ga4.measurementId}</code>
+                      {data.ga4.source ? ` · ${tr('منبع:')} ${data.ga4.source === 'settings' ? tr('تنظیمات') : 'env'}` : null}
                     </p>
                   ) : null}
                   {canWrite ? (
@@ -433,14 +453,14 @@ export function AdminSiteReportsPage() {
             <StatusCard
               title="Google Tag Manager"
               status={data.gtm.configured}
-              note={data.gtm.note}
+              note={gtmStatusNote(data.gtm)}
               href={data.gtm.dashboardUrl}
-              hrefLabel="باز کردن Tag Manager"
+              hrefLabel={tr('باز کردن Tag Manager')}
               extra={(
                 <div style={{ marginTop: 6 }}>
                   {data.gtm.containerId ? (
                     <p className="admin-muted">
-                      Container: <code dir="ltr">{data.gtm.containerId}</code>
+                      {tr('کانتینر:')} <code dir="ltr">{data.gtm.containerId}</code>
                       <button type="button" className="admin-btn" style={{ marginInlineStart: 8 }}
                         onClick={() => void copyGtmId(data.gtm.containerId!)}>{tr('کپی')}</button>
                       {gtmCopyMsg ? <span className="admin-muted" style={{ marginInlineStart: 8 }}>{gtmCopyMsg}</span> : null}
@@ -449,7 +469,7 @@ export function AdminSiteReportsPage() {
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 8 }}>
                     {data.gtm.tagAssistantUrl ? (
                       <a className="admin-btn" href={data.gtm.tagAssistantUrl} target="_blank" rel="noreferrer">
-                        <ExternalLink size={16} /> Tag Assistant
+                        <ExternalLink size={16} /> {tr('Tag Assistant')}
                       </a>
                     ) : null}
                     <Link to="/admin/tag-manager" className="admin-btn">
@@ -462,9 +482,9 @@ export function AdminSiteReportsPage() {
             <StatusCard
               title="Microsoft Clarity"
               status={data.clarity.configured}
-              note={data.clarity.note}
+              note={clarityStatusNote(data.clarity.configured)}
               href={data.clarity.dashboardUrl}
-              hrefLabel="باز کردن Clarity"
+              hrefLabel={tr('باز کردن Clarity')}
             />
           </div>
 
@@ -478,7 +498,7 @@ export function AdminSiteReportsPage() {
                     <XAxis dataKey="labelShort" {...adminChartXAxisProps} />
                     <YAxis {...adminChartYAxisProps} />
                     <Tooltip content={<Tip />} />
-                    <Bar dataKey="value" name="بازدید" fill={MOTION_PALETTE.purple} radius={[6, 6, 0, 0]} {...motion} />
+                    <Bar dataKey="value" name={tr('بازدید')} fill={MOTION_PALETTE.purple} radius={[6, 6, 0, 0]} {...motion} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -492,7 +512,7 @@ export function AdminSiteReportsPage() {
                     <XAxis dataKey="labelShort" {...adminChartXAxisProps} />
                     <YAxis {...adminChartYAxisProps} />
                     <Tooltip content={<Tip />} />
-                    <Bar dataKey="value" name="نشست" fill={MOTION_PALETTE.teal} radius={[6, 6, 0, 0]} {...motion} />
+                    <Bar dataKey="value" name={tr('نشست')} fill={MOTION_PALETTE.teal} radius={[6, 6, 0, 0]} {...motion} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -573,15 +593,15 @@ export function AdminSiteReportsPage() {
                   )) : <li>{tr('داده‌ای نیست')}</li>}
                 </ul>
                 <ul className="crm-report-reason-legend">
-                  <li style={{ fontWeight: 600 }}>UTM Source</li>
+                  <li style={{ fontWeight: 600 }}>{tr('UTM Source')}</li>
                   {data.utmSources.length ? data.utmSources.map((c, i) => (
                     <li key={tr(c.label)}><i style={{ background: PIE_COLORS[(i + 1) % PIE_COLORS.length] }} /><span dir="ltr">{tr(c.label)}</span><span>{formatNumFa(c.value)}</span></li>
                   )) : <li>{tr('کمپینی ثبت نشده — از تب UTM لینک بسازید')}</li>}
                   {(data.utmMediums || []).slice(0, 5).map((c, i) => (
-                    <li key={`m-${c.label}`}><i style={{ background: PIE_COLORS[(i + 3) % PIE_COLORS.length] }} />medium <span dir="ltr">{tr(c.label)}</span><span>{formatNumFa(c.value)}</span></li>
+                    <li key={`m-${c.label}`}><i style={{ background: PIE_COLORS[(i + 3) % PIE_COLORS.length] }} />{tr('medium')} <span dir="ltr">{tr(c.label)}</span><span>{formatNumFa(c.value)}</span></li>
                   ))}
                   {(data.utmCampaigns || []).slice(0, 5).map((c, i) => (
-                    <li key={`c-${c.label}`}><i style={{ background: PIE_COLORS[(i + 4) % PIE_COLORS.length] }} />campaign <span dir="ltr">{tr(c.label)}</span><span>{formatNumFa(c.value)}</span></li>
+                    <li key={`c-${c.label}`}><i style={{ background: PIE_COLORS[(i + 4) % PIE_COLORS.length] }} />{tr('campaign')} <span dir="ltr">{tr(c.label)}</span><span>{formatNumFa(c.value)}</span></li>
                   ))}
                 </ul>
               </div>
@@ -607,10 +627,10 @@ export function AdminSiteReportsPage() {
                       <td dir="ltr">{formatAnalyticsPathLabel(s.landingPath || '/')}</td>
                       <td dir="ltr">{formatAnalyticsPathLabel(s.exitPath || '/')}</td>
                       <td dir="ltr">
-                        {s.referrerHost || '(direct)'}
+                        {s.referrerHost || tr('(direct)')}
                         {s.utmCampaign ? <span className="admin-muted"> · {s.utmCampaign}</span> : null}
                       </td>
-                      <td>{deviceFa(s.device)}</td>
+                      <td>{deviceLabel(s.device)}</td>
                       <td>{s.country || tr('نامشخص')}</td>
                     </tr>
                   )) : (
@@ -658,7 +678,7 @@ export function AdminSiteReportsPage() {
                         <td dir="ltr">{e.eventType}</td>
                         <td dir="ltr">{e.eventName || '—'}</td>
                         <td dir="ltr">{e.path}</td>
-                        <td>{deviceFa(e.device)}</td>
+                        <td>{deviceLabel(e.device)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -685,7 +705,7 @@ export function AdminSiteReportsPage() {
                 ['utmTerm', 'utm_term'],
               ] as const).map(([key, label]) => (
                 <label key={key} style={{ display: 'grid', gap: 4 }}>
-                  <span className="admin-muted">{label}</span>
+                  <span className="admin-muted">{tr(label)}</span>
                   <input
                     className="form-input"
                     dir="ltr"
@@ -712,7 +732,7 @@ export function AdminSiteReportsPage() {
             <div className="admin-table-wrap">
               <table className="admin-table">
                 <thead>
-                  <tr><th>source</th><th>medium</th><th>campaign</th><th>{tr('نشست')}</th><th>{tr('بازدید')}</th></tr>
+                  <tr><th>{tr('source')}</th><th>{tr('medium')}</th><th>{tr('campaign')}</th><th>{tr('نشست')}</th><th>{tr('بازدید')}</th></tr>
                 </thead>
                 <tbody>
                   {utmPerf.length ? utmPerf.map((u) => (
@@ -793,8 +813,8 @@ export function AdminSiteReportsPage() {
             <ul className="crm-report-reason-legend" style={{ marginTop: 16 }}>
               {tm.checklist.map((item) => (
                 <li key={item.id}>
-                  <strong>{item.titleFa}</strong>
-                  <span className="admin-muted" style={{ display: 'block' }}>{item.detailFa}</span>
+                  <strong>{checklistTitle(item)}</strong>
+                  <span className="admin-muted" style={{ display: 'block' }}>{checklistDetail(item)}</span>
                 </li>
               ))}
             </ul>
@@ -807,35 +827,35 @@ export function AdminSiteReportsPage() {
           {tm ? (
             <>
               <div className="crm-report-charts" style={{ marginBottom: 16 }}>
-                <StatusCard title="GTM" status={tm.gtm.configured} note={`${tm.gtm.statusLabelFa} — ${tm.gtm.note}`} href={tm.gtm.dashboardUrl} hrefLabel="Tag Manager" />
-                <StatusCard title={tr("GA4 در GTM")} status={tm.ga4.configured} note={tm.ga4.note} href={tm.ga4.configured ? 'https://analytics.google.com/' : null} />
-                <StatusCard title={tr("سلامت beacon")} status={tm.health.eventsLast24h > 0} note={tm.health.note} />
+                <StatusCard title="GTM" status={tm.gtm.configured} note={`${gtmStatusLabel(tm.gtm.configured)} — ${gtmStatusNote(tm.gtm)}`} href={tm.gtm.dashboardUrl} hrefLabel={tr('Tag Manager')} />
+                <StatusCard title={tr("GA4 در GTM")} status={tm.ga4.configured} note={ga4TmNote(tm.ga4)} href={tm.ga4.configured ? 'https://analytics.google.com/' : null} />
+                <StatusCard title={tr("سلامت beacon")} status={tm.health.eventsLast24h > 0} note={analyticsHealthNote(tm.health.lastEventAt, tm.health.eventsLast24h)} />
               </div>
               <section className="admin-card" style={{ marginBottom: 16 }}>
                 <div className="admin-card-head"><h2><Tags size={16} /> {tr('چک‌لیست پیکربندی GTM UI')}</h2></div>
                 <ul className="crm-report-reason-legend">
                   {tm.checklist.map((item) => (
                     <li key={item.id}>
-                      <strong>{item.titleFa}</strong>
-                      <span className="admin-muted" style={{ display: 'block' }}>{item.detailFa}</span>
+                      <strong>{checklistTitle(item)}</strong>
+                      <span className="admin-muted" style={{ display: 'block' }}>{checklistDetail(item)}</span>
                     </li>
                   ))}
                 </ul>
               </section>
               <div className="crm-report-charts">
                 <article className="admin-card">
-                  <div className="admin-card-head"><h2>Variables (dataLayer)</h2></div>
+                  <div className="admin-card-head"><h2>{tr('Variables (dataLayer)')}</h2></div>
                   <ul className="crm-report-reason-legend">
                     {tm.catalog.variables.map((v) => (
-                      <li key={v.name}><code dir="ltr">{v.name}</code> — {v.descriptionFa}</li>
+                      <li key={v.name}><code dir="ltr">{v.name}</code> — {catalogDescription(v)} · {catalogWhere(v.whereFired)}</li>
                     ))}
                   </ul>
                 </article>
                 <article className="admin-card">
-                  <div className="admin-card-head"><h2>Triggers / Custom Events</h2></div>
+                  <div className="admin-card-head"><h2>{tr('Triggers / Custom Events')}</h2></div>
                   <ul className="crm-report-reason-legend">
                     {tm.catalog.triggers.map((v) => (
-                      <li key={v.name}><code dir="ltr">{v.name}</code> — {v.descriptionFa}</li>
+                      <li key={v.name}><code dir="ltr">{v.name}</code> — {catalogDescription(v)} · {catalogWhere(v.whereFired)}</li>
                     ))}
                   </ul>
                 </article>
@@ -851,12 +871,12 @@ export function AdminSiteReportsPage() {
         <StatusCard
           title="Microsoft Clarity"
           status={data.clarity.configured}
-          note={data.clarity.note}
+          note={clarityStatusNote(data.clarity.configured)}
           href={data.clarity.dashboardUrl}
-          hrefLabel="باز کردن داشبورد Clarity"
+          hrefLabel={tr('باز کردن داشبورد Clarity')}
           extra={data.clarity.projectId ? (
             <p className="admin-muted" style={{ marginTop: 8 }}>
-              Project ID: <code dir="ltr">{data.clarity.projectId}</code>
+              {tr('شناسه پروژه:')} <code dir="ltr">{data.clarity.projectId}</code>
             </p>
           ) : null}
         />

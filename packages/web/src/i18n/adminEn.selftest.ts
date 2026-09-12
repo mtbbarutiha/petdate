@@ -111,6 +111,9 @@ const chromeMustUseI18n = [
   'pages/AdminUsersPage.tsx',
   'pages/AdminMarketplaceModerationPage.tsx',
   'pages/AdminPaymentsPage.tsx',
+  'pages/AdminSiteReportsPage.tsx',
+  'pages/AdminTagManagerPage.tsx',
+  'pages/AdminDashboardPage.tsx',
 ];
 for (const rel of chromeMustUseI18n) {
   const text = readFileSync(join(adminRoot, rel), 'utf8');

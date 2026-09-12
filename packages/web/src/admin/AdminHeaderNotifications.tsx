@@ -36,7 +36,7 @@ export function AdminHeaderNotifications() {
       setUnread(Number(data.unreadCount) || 0);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'خطا در بارگذاری اعلان‌ها');
+      setError(err instanceof Error ? err.message : tr('خطا در بارگذاری اعلان‌ها'));
     } finally {
       setLoading(false);
     }
@@ -72,7 +72,7 @@ export function AdminHeaderNotifications() {
       });
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'خطا');
+      setError(err instanceof Error ? err.message : tr('خطا'));
     }
   };
 
@@ -81,7 +81,7 @@ export function AdminHeaderNotifications() {
       await adminFetch('/api/admin/notifications/read-all', { method: 'POST', body: '{}' });
       await load();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'خطا');
+      setError(err instanceof Error ? err.message : tr('خطا'));
     }
   };
 

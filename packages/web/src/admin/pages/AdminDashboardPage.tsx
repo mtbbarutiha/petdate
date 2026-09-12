@@ -470,7 +470,7 @@ export function AdminDashboardPage() {
           items: [
             { label: tr('خوانده‌نشده'), value: formatNumFa(m.mail.unread) },
             { label: tr('کل پیام'), value: formatNumFa(m.mail.total) },
-            { label: tr('وضعیت'), value: m.mail.configured ? 'فعال' : 'خاموش' },
+            { label: tr('وضعیت'), value: m.mail.configured ? tr('فعال') : tr('خاموش') },
             { label: tr('آدرس'), value: m.mail.address || '—' },
           ],
         },

@@ -27,6 +27,18 @@ import {
   useRechartsMotion,
 } from '../motionCharts';
 import { tr } from '../../i18n';
+import {
+  adminDeviceLabel,
+  analyticsHealthNote,
+  catalogDescription,
+  catalogWhere,
+  checklistDetail,
+  checklistTitle,
+  clarityStatusNote,
+  ga4TmNote,
+  gtmStatusLabel,
+  gtmStatusNote,
+} from '../adminAnalyticsCopy';
 
 type Bucket = { label: string; value: number };
 type CatalogRow = {
@@ -95,11 +107,8 @@ function Tip({ active, payload, label }: { active?: boolean; payload?: Array<{ v
   return <MotionChartTooltip active={active} payload={payload} label={label} />;
 }
 
-function deviceFa(d: string): string {
-  if (d === 'desktop' || d === 'دسکتاپ') return 'دسکتاپ';
-  if (d === 'mobile' || d === 'موبایل') return 'موبایل';
-  if (d === 'tablet' || d === 'تبلت') return 'تبلت';
-  return d;
+function deviceLabel(d: string): string {
+  return adminDeviceLabel(d);
 }
 
 export function AdminTagManagerPage() {
@@ -117,7 +126,7 @@ export function AdminTagManagerPage() {
     try {
       setData(await adminFetch<Report>(`/api/admin/site-analytics/tag-manager?days=${period}`));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'بارگذاری گزارش Tag Manager ناموفق بود');
+      setError(err instanceof Error ? err.message : tr('بارگذاری گزارش Tag Manager ناموفق بود'));
     } finally {
       setLoading(false);
     }
@@ -131,12 +140,12 @@ export function AdminTagManagerPage() {
     try {
       if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(text);
-        setCopyMsg('کپی شد');
+        setCopyMsg(tr('کپی شد'));
       } else {
-        setCopyMsg('کپی پشتیبانی نمی‌شود');
+        setCopyMsg(tr('کپی پشتیبانی نمی‌شود'));
       }
     } catch {
-      setCopyMsg('کپی ناموفق بود');
+      setCopyMsg(tr('کپی ناموفق بود'));
     }
     window.setTimeout(() => setCopyMsg(null), 2000);
   }, []);
@@ -187,12 +196,12 @@ export function AdminTagManagerPage() {
             <article className="admin-stat admin-stat--violet">
               <div className="admin-stat-icon"><Tags size={18} /></div>
               <div className="admin-stat-value" dir="ltr">{data.gtm.containerId || '—'}</div>
-              <div className="admin-stat-label">Container ID</div>
+              <div className="admin-stat-label">{tr('شناسه کانتینر')}</div>
             </article>
             <article className="admin-stat admin-stat--mint">
               <div className="admin-stat-icon"><Radar size={18} /></div>
               <div className="admin-stat-value">{data.gtm.configured ? tr('فعال') : tr('خاموش')}</div>
-              <div className="admin-stat-label">{data.gtm.statusLabelFa}</div>
+              <div className="admin-stat-label">{gtmStatusLabel(data.gtm.configured)}</div>
             </article>
             <article className="admin-stat admin-stat--orange">
               <div className="admin-stat-icon"><Activity size={18} /></div>
@@ -216,13 +225,13 @@ export function AdminTagManagerPage() {
               <div className="admin-card-head">
                 <h2>Google Tag Manager</h2>
                 <span className={`admin-status ${data.gtm.configured ? 'admin-status--accepted' : 'admin-status--pending'}`}>
-                  {data.gtm.configured ? 'detected' : 'missing'}
+                  {data.gtm.configured ? tr('فعال') : tr('پیکربندی نشده')}
                 </span>
               </div>
-              <p className="admin-muted">{data.gtm.note}</p>
+              <p className="admin-muted">{gtmStatusNote(data.gtm)}</p>
               {data.gtm.containerId ? (
                 <p className="admin-muted" style={{ marginTop: 8 }}>
-                  Container:{' '}
+                  {tr('کانتینر:')}{' '}
                   <code dir="ltr" style={{ userSelect: 'all' }}>{data.gtm.containerId}</code>
                   {copyMsg ? <span className="admin-muted" style={{ marginInlineStart: 8 }}>{copyMsg}</span> : null}
                 </p>
@@ -235,12 +244,12 @@ export function AdminTagManagerPage() {
                 ) : null}
                 {data.gtm.dashboardUrl ? (
                   <a className="admin-btn admin-btn--primary" href={data.gtm.dashboardUrl} target="_blank" rel="noreferrer">
-                    <ExternalLink size={16} /> Tag Manager
+                    <ExternalLink size={16} /> {tr('Tag Manager')}
                   </a>
                 ) : null}
                 {data.gtm.tagAssistantUrl ? (
                   <a className="admin-btn" href={data.gtm.tagAssistantUrl} target="_blank" rel="noreferrer">
-                    <ExternalLink size={16} /> Tag Assistant
+                    <ExternalLink size={16} /> {tr('Tag Assistant')}
                   </a>
                 ) : null}
               </div>
@@ -253,22 +262,22 @@ export function AdminTagManagerPage() {
                   {data.clarity.configured ? tr('Clarity فعال') : tr('Clarity خاموش')}
                 </span>
               </div>
-              <p className="admin-muted">{data.clarity.note}</p>
+              <p className="admin-muted">{clarityStatusNote(data.clarity.configured)}</p>
               {data.clarity.dashboardUrl ? (
                 <a className="admin-btn admin-btn--primary" href={data.clarity.dashboardUrl} target="_blank" rel="noreferrer" style={{ marginTop: 8 }}>
                   <ExternalLink size={16} /> {tr('داشبورد Clarity')}
                 </a>
               ) : null}
-              <p className="admin-muted" style={{ marginTop: 12 }}>{data.ga4.note}</p>
+              <p className="admin-muted" style={{ marginTop: 12 }}>{ga4TmNote(data.ga4)}</p>
               {data.ga4.measurementId ? (
                 <p className="admin-muted">
-                  Measurement ID: <code dir="ltr">{data.ga4.measurementId}</code>
+                  {tr('شناسه Measurement ID:')} <code dir="ltr">{data.ga4.measurementId}</code>
                 </p>
               ) : (
                 <p className="admin-muted" dir="ltr">PLACEHOLDER_G-XXXXXXXX</p>
               )}
               <p className="admin-muted" style={{ fontSize: '0.75rem', marginTop: 10 }}>
-                {tr('سلامت:')} {data.health.note}
+                {tr('سلامت:')} {analyticsHealthNote(data.health.lastEventAt, data.health.eventsLast24h)}
                 {data.health.lastEventAt ? `${tr(' · آخرین: ')}${formatAdminFaDateTime(data.health.lastEventAt)}` : null}
               </p>
             </section>
@@ -290,7 +299,7 @@ export function AdminTagManagerPage() {
                 className={`admin-btn${tab === id ? ' admin-btn--primary' : ''}`}
                 onClick={() => setTab(id)}
               >
-                {label}
+                {tr(label)}
               </button>
             ))}
           </div>
@@ -359,7 +368,7 @@ export function AdminTagManagerPage() {
                           <td>{formatAdminFaDateTime(e.createdAt)}</td>
                           <td dir="ltr">{e.eventName || e.eventType}</td>
                           <td dir="ltr">{formatAnalyticsPathLabel(e.path)}</td>
-                          <td>{deviceFa(e.device)}</td>
+                          <td>{deviceLabel(e.device)}</td>
                           <td dir="ltr" style={{ fontSize: '0.75rem' }}>{e.sessionId.slice(0, 12)}…</td>
                         </tr>
                       )) : (
@@ -384,7 +393,7 @@ export function AdminTagManagerPage() {
           {tab === 'catalog' ? (
             <>
               <section className="admin-card">
-                <div className="admin-card-head"><h2>Variables (dataLayer keys)</h2></div>
+                  <div className="admin-card-head"><h2>{tr('Variables (dataLayer keys)')}</h2></div>
                 <div className="admin-table-wrap">
                   <table className="admin-table">
                     <thead>
@@ -398,8 +407,8 @@ export function AdminTagManagerPage() {
                       {data.catalog.variables.map((v) => (
                         <tr key={v.name}>
                           <td dir="ltr"><code>{v.name}</code></td>
-                          <td>{v.descriptionFa}</td>
-                          <td className="admin-muted">{v.whereFired}</td>
+                          <td>{catalogDescription(v)}</td>
+                          <td className="admin-muted">{catalogWhere(v.whereFired)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -412,7 +421,7 @@ export function AdminTagManagerPage() {
                   <table className="admin-table">
                     <thead>
                       <tr>
-                        <th>event</th>
+                        <th>{tr('event')}</th>
                         <th>{tr('توضیح')}</th>
                         <th>{tr('محل شلیک')}</th>
                       </tr>
@@ -421,8 +430,8 @@ export function AdminTagManagerPage() {
                       {data.catalog.triggers.map((t) => (
                         <tr key={t.name}>
                           <td dir="ltr"><code>{t.name}</code></td>
-                          <td>{t.descriptionFa}</td>
-                          <td className="admin-muted">{t.whereFired}</td>
+                          <td>{catalogDescription(t)}</td>
+                          <td className="admin-muted">{catalogWhere(t.whereFired)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -455,9 +464,9 @@ export function AdminTagManagerPage() {
                     {data.checklist.map((c) => (
                       <tr key={c.id}>
                         <td>{c.type}</td>
-                        <td>{c.titleFa}</td>
+                        <td>{checklistTitle(c)}</td>
                         <td className="admin-muted">
-                          {c.detailFa}
+                          {checklistDetail(c)}
                           {c.requiresGa4 && !data.ga4.configured ? (
                             <span> · <code dir="ltr">PLACEHOLDER_G-XXXXXXXX</code></span>
                           ) : null}

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import type { AdminKpiItem } from './types';
+import { tr } from '../../i18n';
 
 type CardProps = AdminKpiItem & { className?: string };
 
@@ -22,8 +23,8 @@ export function AdminKpiCard({
       ) : null}
       <div className="admin-dash-kpi-body">
         <div className="admin-dash-kpi-value">{value}</div>
-        <div className="admin-dash-kpi-label">{label}</div>
-        {hint ? <div className="admin-dash-kpi-hint">{hint}</div> : null}
+        <div className="admin-dash-kpi-label">{tr(label)}</div>
+        {hint ? <div className="admin-dash-kpi-hint">{typeof hint === 'string' ? tr(hint) : hint}</div> : null}
       </div>
     </>
   );
@@ -64,7 +65,7 @@ export function AdminKpiStrip({ items, ariaLabel = 'شاخص‌ها', dense }: S
     <div
       className={`admin-dash-kpi-strip${dense ? ' admin-dash-kpi-strip--dense' : ''}`}
       role="list"
-      aria-label={ariaLabel}
+      aria-label={tr(ariaLabel)}
     >
       {items.map((item) => (
         <AdminKpiCard key={item.key || String(item.label)} {...item} />

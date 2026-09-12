@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { capAdminChartHeight } from '../adminChartLayout';
+import { tr } from '../../i18n';
 
 type Props = {
   title: string;
@@ -25,10 +26,10 @@ export function AdminChartCard({
   title,
   subtitle,
   href,
-  hrefLabel = 'جزئیات',
+  hrefLabel,
   children,
   empty,
-  emptyHint = 'داده‌ای برای نمودار نیست',
+  emptyHint,
   height,
   className,
   rtlHBars,
@@ -38,12 +39,12 @@ export function AdminChartCard({
     <article className={`admin-card admin-dash-chart${className ? ` ${className}` : ''}`}>
       <div className="admin-card-head admin-dash-chart-head">
         <div>
-          <h2>{title}</h2>
+          <h2>{tr(title)}</h2>
           {subtitle ? <span className="admin-muted">{subtitle}</span> : null}
         </div>
         {href ? (
           <Link to={href} className="admin-dash-chart-link">
-            {hrefLabel}
+            {tr(hrefLabel || 'جزئیات')}
           </Link>
         ) : null}
       </div>
@@ -65,7 +66,7 @@ export function AdminChartCard({
         }
       >
         {showEmpty ? (
-          <p className="admin-dash-chart-empty">{emptyHint}</p>
+          <p className="admin-dash-chart-empty">{tr(emptyHint || 'داده‌ای برای نمودار نیست')}</p>
         ) : (
           children
         )}

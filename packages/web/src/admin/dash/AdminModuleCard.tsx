@@ -15,8 +15,8 @@ export function AdminModuleCard({
     <Link to={to} className={`admin-dash-module admin-dash-module--${tone}`}>
       <div className="admin-dash-module-head">
         {Icon ? <Icon size={18} aria-hidden /> : null}
-        <strong>{title}</strong>
-        <span>{openLabel}</span>
+        <strong>{tr(title)}</strong>
+        <span>{tr(openLabel)}</span>
       </div>
       <div className="admin-dash-module-body">
         {items.map((it) => (
@@ -38,7 +38,7 @@ type GridProps = {
 export function AdminModuleGrid({ children, label }: GridProps) {
   return (
     <>
-      {label ? <p className="admin-section-label">{label}</p> : null}
+      {label ? <p className="admin-section-label">{tr(label)}</p> : null}
       <div className="admin-dash-module-grid">{children}</div>
     </>
   );

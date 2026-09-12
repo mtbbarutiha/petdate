@@ -289,7 +289,7 @@ export function AdminMarketplaceModerationPage() {
   const busy = busyId != null;
 
   return (
-    <div className="admin-page admin-page--wide admin-mod-page" dir="rtl">
+    <div className="admin-page admin-page--wide admin-mod-page">
       <header className="admin-header">
         <div>
           <h1>{tr('تأیید مدارک و عکس‌ها')}</h1>

@@ -37,7 +37,7 @@ export function AdminDashPage({
     <div className={`admin-page admin-page--exec admin-dash-page${className ? ` ${className}` : ''}`}>
       <header className="admin-header admin-dash-header">
         <div className="admin-dash-header-copy">
-          <h1>{title}</h1>
+          <h1>{tr(title)}</h1>
           {subtitle ? (
             <p>
               {live ? <span className="admin-live-pulse">{tr('زنده')}</span> : null}
@@ -51,7 +51,7 @@ export function AdminDashPage({
           {onRefresh ? (
             <button type="button" className="admin-btn admin-btn--ghost" onClick={onRefresh}>
               <RefreshCw size={16} aria-hidden />
-              {refreshLabel}
+              {tr(refreshLabel)}
             </button>
           ) : null}
         </div>

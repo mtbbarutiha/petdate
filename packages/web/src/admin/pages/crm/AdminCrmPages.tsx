@@ -83,7 +83,7 @@ export function AdminCrmInboxPage() {
                       {tr('تخصیص به من')}
                     </button>
                   ) : null}
-                  {r.kind === 'interaction' ? <Link to={`/admin/crm/calls?wrap=${r.id}`}>Wrap-up</Link> : null}
+                  {r.kind === 'interaction' ? <Link to={`/admin/crm/calls?wrap=${r.id}`}>{tr('جمع‌بندی')}</Link> : null}
                   {r.kind === 'ticket' ? <Link to={`/admin/crm/ticketing?view=detail&id=${r.id}`}>{tr('تیکتینگ')}</Link> : null}
                 </td>
               </tr>
@@ -329,7 +329,7 @@ export function AdminCrmCallsPage() {
               <td>{i.agentName}</td>
               <td>{formatNumFa(i.talkMinutes)}</td>
               <td>{i.wrapDone ? '✓' : tr('ناتمام')}</td>
-              <td>{!i.wrapDone && canWrite ? <button type="button" className="admin-btn admin-btn--ghost" onClick={() => setActiveWrap(i.id)}>Wrap-up</button> : null}</td>
+              <td>{!i.wrapDone && canWrite ? <button type="button" className="admin-btn admin-btn--ghost" onClick={() => setActiveWrap(i.id)}>{tr('جمع‌بندی')}</button> : null}</td>
             </tr>
           ))}
         </tbody>

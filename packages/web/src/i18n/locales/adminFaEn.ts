@@ -2258,4 +2258,120 @@ export const ADMIN_FA_EN: Record<string, string> = {
   "کپی متن اصلی": "Copy original",
   "برای بستن ردیف دوباره کلیک کنید": "Click the row again to collapse",
   "خارجی": "External",
+  "جمع‌بندی": "Wrap-up",
+  "شناسه کانتینر": "Container ID",
+  "شناسه Measurement ID:": "Measurement ID:",
+  "کانتینر:": "Container:",
+  "شناسه پروژه:": "Project ID:",
+  "پیکربندی‌شده / snippet در HTML": "Configured / snippet in HTML",
+  "شناسه GA4 ({id}) از {source} — gtag روی صفحات عمومی و dataLayer برای GTM فعال است.":
+    "GA4 ID ({id}) from {source} — gtag is active on public pages and dataLayer is ready for GTM.",
+  "شناسه اندازه‌گیری GA4 هنوز تنظیم نشده. در «آنالیتیکس» یا تنظیمات پلتفرم فیلد Measurement ID را ذخیره کنید، یا VITE_GA4_MEASUREMENT_ID را در env بگذارید. تا آن زمان گزارش‌های زیر از آنالیتیکس اول‌شخص petdate است.":
+    "GA4 Measurement ID is not set yet. Save it on Analytics or in platform settings, or set VITE_GA4_MEASUREMENT_ID. Until then the reports below come from first-party petdate analytics.",
+  "کانتینر GTM ({id}) در HTML اولیه نصب است (Tag Assistant). روی مسیرهای عمومی: dataLayer قبل از gtm.js، رویداد page_view در هر تغییر مسیر SPA، و رویدادهای auth/ecommerce/لید — تگ‌های داخل کانتینر را در Tag Manager وصل کنید (نه /admin).":
+    "GTM container ({id}) is installed in the initial HTML (Tag Assistant). On public routes: dataLayer before gtm.js, page_view on every SPA navigation, plus auth/ecommerce/lead events — wire tags inside the container in Tag Manager (not /admin).",
+  "شناسهٔ GTM نامعتبر است. مقدار VITE_GTM_ID را به صورت GTM-XXXX تنظیم کنید.":
+    "The GTM id is invalid. Set VITE_GTM_ID as GTM-XXXX.",
+  "پروژه Clarity پیکربندی شده — برای session replay و heatmap به داشبورد Clarity بروید.":
+    "Clarity project is configured — open the Clarity dashboard for session replay and heatmaps.",
+  "شناسهٔ داده‌شده (UUID ایجنت) توسط Clarity به‌عنوان project id رد شد؛ گزارش‌های زیر از آنالیتیکس اول‌شخص petdate است. برای Clarity یک Project ID معتبر را در VITE_CLARITY_PROJECT_ID ست کنید.":
+    "The given id (agent UUID) was rejected by Clarity as a project id; the reports below come from first-party petdate analytics. Set a valid Project ID in VITE_CLARITY_PROJECT_ID.",
+  "آخرین رویداد اول‌شخص: {at} — جمع ۲۴ساعت: {n}": "Last first-party event: {at} — last 24h total: {n}",
+  "هنوز رویدادی در site_analytics ثبت نشده؛ پس از ترافیک عمومی اینجا پر می‌شود.":
+    "No site_analytics events yet; this fills after public traffic.",
+  "شناسه GA4 ({id}) از تنظیمات پلتفرم — در GTM به‌عنوان Measurement ID استفاده کنید.":
+    "GA4 ID ({id}) from platform settings — use it as the Measurement ID in GTM.",
+  "شناسه GA4 تنظیم نشده (VITE_GA4_MEASUREMENT_ID یا تنظیمات پلتفرم). در چک‌لیست از PLACEHOLDER_G-XXXXXXXX استفاده کنید — مقدار ساختگی وارد نکنید.":
+    "GA4 is not set (VITE_GA4_MEASUREMENT_ID or platform settings). Use PLACEHOLDER_G-XXXXXXXX in the checklist — do not invent an id.",
+  "در tagmanager.google.com کانتینر GTM-KQPJT9Q4 را باز کنید. Variables → New → Data Layer Variable برای: page_path, page_title, page_location, page_type, user_id, user_status, utm_source, utm_medium, utm_campaign, click_url, click_text. سپس Constant با نام GA4 Measurement ID و مقدار {id}.":
+    "Open container GTM-KQPJT9Q4 in tagmanager.google.com. Variables → New → Data Layer Variable for: page_path, page_title, page_location, page_type, user_id, user_status, utm_source, utm_medium, utm_campaign, click_url, click_text. Then a Constant named GA4 Measurement ID with value {id}.",
+  "Triggers → New → Custom Event برای هر کدام: page_view، link_click، outbound_click، login، sign_up، generate_lead، view_item، add_to_cart، begin_checkout، purchase، scroll. (سایت SPA خودش این eventها را به dataLayer می‌فرستد.)":
+    "Triggers → New → Custom Event for each of: page_view, link_click, outbound_click, login, sign_up, generate_lead, view_item, add_to_cart, begin_checkout, purchase, scroll. (The SPA already pushes these events to dataLayer.)",
+  "Tag: Google Analytics → GA4 Configuration با Measurement ID = {id} و Send page view = False. سپس GA4 Event tags با Event Name = page_view / {{Event}} و Triggerهای بالا. Tag: Conversion Linker با Trigger All Pages.":
+    "Tag: Google Analytics → GA4 Configuration with Measurement ID = {id} and Send page view = False. Then GA4 Event tags with Event Name = page_view / {{Event}} and the triggers above. Tag: Conversion Linker with Trigger All Pages.",
+  "از تب UTM لینک بسازید → در تب ناشناس باز کنید → در آنالیتیکس نشست و UTM را ببینید. Tag Assistant را روی petdate.ir وصل کنید و event page_view را تأیید کنید.":
+    "Build a link in the UTM tab → open it in a private window → confirm the session and UTM in analytics. Connect Tag Assistant on petdate.ir and verify the page_view event.",
+  "مسیر صفحه بدون query": "Pathname without query string",
+  "عنوان document.title": "document.title",
+  "URL کامل صفحه": "Full location.href",
+  "نوع صفحه (home/shop/auth/…)": "Inferred content group",
+  "شناسه داخلی کاربر لاگین (بدون سکرت)": "Internal logged-in user id (no secrets)",
+  "guest یا logged_in": "guest | logged_in",
+  "متن لینک کلیک‌شده": "Clicked link inner text",
+  "URL لینک کلیک‌شده": "Clicked href",
+  "id یا data-gtm-id عنصر": "Element id / data-gtm-id",
+  "outbound | cta | download | telegram | contact": "Link classification",
+  "اولین utm_source لندینگ (persist در session)": "First-touch utm_source",
+  "utm_medium اول‌لمس": "First-touch utm_medium",
+  "utm_campaign اول‌لمس": "First-touch utm_campaign",
+  "utm_content اختیاری": "Optional utm_content",
+  "utm_term اختیاری": "Optional utm_term",
+  "شناسه فرم": "Form id attribute",
+  "نام فرم": "Form name / label",
+  "واحد پول (IRR)": "ISO-ish currency code (IRR)",
+  "مبلغ به تومان": "Numeric value in toman",
+  "آرایه اقلام GA4-style": "GA4-style items[]",
+  "شناسه سفارش": "Order / payment id",
+  "شناسه اندازه‌گیری GA4 از env (اختیاری)": "Optional VITE_GA4_MEASUREMENT_ID",
+  "هر page_view": "Every page_view",
+  "page_view و رویدادهای auth وقتی لاگین است": "page_view and auth events when logged in",
+  "link_click / outbound_click / file_download": "link_click / outbound_click / file_download",
+  "link_click وقتی موجود باشد": "link_click when present",
+  "هر page_view پس از لندینگ UTM": "Every page_view after a UTM landing",
+  "page_view وقتی موجود": "page_view when present",
+  "لندینگ با gclid": "Landing with gclid",
+  "لندینگ با fbclid": "Landing with fbclid",
+  "view_item / add_to_cart / begin_checkout / purchase": "view_item / add_to_cart / begin_checkout / purchase",
+  "اولین init وقتی env ست باشد": "First init when env is set",
+  "بازدید هر مسیر SPA + اولین لود": "SPA route change + first load",
+  "کلیک لینک‌های مهم (CTA / خروجی / تلگرام / دانلود / تماس)":
+    "Tracked CTA / outbound / telegram / download / contact clicks",
+  "زیرمجموعهٔ لینک‌های خروجی دامنه": "External-domain link clicks",
+  "دانلود فایل (pdf/zip/…)": "File download links",
+  "ثبت‌نام موفق (کاربر تازه‌ساخته)": "Successful new-user OTP / session",
+  "ورود موفق کاربر عمومی": "Successful public login",
+  "لید فرم (خبرنامه و مشابه)": "Lead form success",
+  "مشاهده صفحه محصول شاپ": "Shop product detail view",
+  "افزودن به سبد": "Add to cart",
+  "شروع پرداخت سبد": "Checkout submit start",
+  "پرداخت موفق سفارش": "Successful paid order",
+  "اسکرول عمق ۷۵٪ (یک‌بار در هر صفحه)": "75% scroll depth once per path",
+  "SiteAnalyticsListener (همه مسیرهای غیر /admin)": "SiteAnalyticsListener (all non-/admin routes)",
+  "document click capture روی <a>": "document click capture on <a>",
+  "همراه link_click وقتی outbound=true": "With link_click when outbound=true",
+  "لینک‌های فایل یا attribute download": "File links or download attribute",
+  "OtpPage / TelegramLink پس از auth": "OtpPage / TelegramLink after auth",
+  "SiteFooter newsletter": "SiteFooter newsletter",
+  "useShopCart.add / addAnimated": "useShopCart.add / addAnimated",
+  "ShopCartPage قبل از API پرداخت": "ShopCartPage before payment API",
+  "ShopCartPage پس از checkout موفق": "ShopCartPage after successful checkout",
+  "listener سبک روی مسیرهای عمومی": "Lightweight listener on public routes",
+  "نوع Data Layer Variable، نام صفحه page_path": "Data Layer Variable type, name page_path",
+  "Data Layer Variable → page_title": "Data Layer Variable → page_title",
+  "Data Layer Variable → user_status": "Data Layer Variable → user_status",
+  "برای User-ID در GA4 (بدون PII)": "For User-ID in GA4 (no PII)",
+  "Measurement ID را از پنل آنالیتیکس (تنظیمات پلتفرم) یا dataLayer کلید ga4_measurement_id بخوانید. اگر خالی است Constant با PLACEHOLDER بسازید — شناسه ساختگی وارد نکنید.":
+    "Read Measurement ID from Analytics (platform settings) or the ga4_measurement_id dataLayer key. If empty, create a Constant with PLACEHOLDER — do not invent an id.",
+  "برای هر کدام Data Layer Variable بسازید: utm_source, utm_medium, utm_campaign, utm_content, utm_term, gclid, fbclid":
+    "Create a Data Layer Variable for each of: utm_source, utm_medium, utm_campaign, utm_content, utm_term, gclid, fbclid",
+  "Custom Event برابر page_view (جایگزین History Change برای SPA)":
+    "Custom Event equals page_view (replaces History Change for the SPA)",
+  "Custom Event = link_click": "Custom Event = link_click",
+  "دو تریگر جدا یا یک RegEx برای login|sign_up": "Two separate triggers or one RegEx for login|sign_up",
+  "چهار Custom Event جدا برای قیف فروشگاه": "Four separate Custom Events for the shop funnel",
+  "خبرنامه فوتر و فرم‌های لید": "Footer newsletter and lead forms",
+  "Measurement ID از Variable بالا. Send a page view event → False (صفحه را با تگ Event زیر بفرستید). Trigger: All Pages یا Initialization اختیاری.":
+    "Measurement ID from the variable above. Send a page view event → False (send the page with the Event tag below). Trigger: All Pages or optional Initialization.",
+  "Event Name = page_view؛ پارامترها: page_path, page_title, page_location, page_type, user_status. Trigger: CE page_view.":
+    "Event Name = page_view; params: page_path, page_title, page_location, page_type, user_status. Trigger: CE page_view.",
+  "برای login, sign_up, generate_lead, link_click, purchase و … Event Name = {{Event}} یا نام ثابت؛ پارامترها از DL Variables.":
+    "For login, sign_up, generate_lead, link_click, purchase, … Event Name = {{Event}} or a fixed name; params from DL Variables.",
+  "Trigger: All Pages — برای لینک تبدیل Google Ads در آینده":
+    "Trigger: All Pages — for future Google Ads conversion linking",
+  "سایت روی /admin رویداد dataLayer و beacon اول‌شخص نمی‌فرستد. Exception Trigger در GTM برای Page Path شامل /admin پیشنهاد می‌شود.":
+    "The site does not push dataLayer events or the first-party beacon on /admin. An Exception Trigger for Page Path containing /admin is recommended.",
+  "تگ‌های داخل کانتینر Google فقط از UI (یا OAuth GTM API) ساخته می‌شوند؛ این چک‌لیست راهنمای دستی است.":
+    "Tags inside the Google container are created only from the UI (or OAuth GTM API); this checklist is a manual guide.",
+  "یادداشت: مسیر /admin": "Note: /admin path",
+  "یادداشت: بدون GTM API": "Note: no GTM API",
 };
