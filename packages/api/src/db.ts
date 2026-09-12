@@ -86,9 +86,11 @@ import {
   vetVisitFeeCoins,
   walletFromUserFields,
   walletLedgerLabelFa,
+  type CoinSellChannel,
   type CoinSellRequestAdmin,
   type CoinSellRequestStatus,
   type CoinSellRequestSummary,
+  normalizeCoinSellChannel,
   type PetMedicalField,
   type WalletCurrency,
   type WalletLedgerDirection,
@@ -661,6 +663,7 @@ function migrateSchema() {
       amount_toman INTEGER NOT NULL,
       card_number TEXT NOT NULL,
       status TEXT NOT NULL DEFAULT 'open',
+      channel TEXT NOT NULL DEFAULT 'unknown',
       admin_note TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       reviewed_at TEXT,
@@ -1358,6 +1361,13 @@ function migrateSchema() {
   }
   if (!shopOrderCols.includes('public_id')) {
     db.exec('ALTER TABLE shop_orders ADD COLUMN public_id TEXT');
+  }
+
+  const coinSellCols = (
+    db.prepare(`PRAGMA table_info(coin_sell_requests)`).all() as Array<{ name: string }>
+  ).map((c) => c.name);
+  if (!coinSellCols.includes('channel')) {
+    db.exec(`ALTER TABLE coin_sell_requests ADD COLUMN channel TEXT NOT NULL DEFAULT 'unknown'`);
   }
 
   const paymentOrderCols = (
@@ -2675,6 +2685,7 @@ function mapCoinSellRequestSummary(row: Record<string, unknown>): CoinSellReques
     amountToman: Number(row.amount_toman),
     cardMasked: maskCardNumber(String(row.card_number ?? '')),
     status,
+    channel: normalizeCoinSellChannel(row.channel),
     createdAt: String(row.created_at),
     reviewedAt: (row.reviewed_at as string | null | undefined) ?? null,
     adminNote: (row.admin_note as string | null | undefined) ?? null,
@@ -6568,6 +6579,8 @@ export const dbService = {
     rateToman: number;
     cardNumber: string;
     minCoins: number;
+    /** web = سایت /earn/withdraw ؛ bot = ربات فروش سکه */
+    channel?: CoinSellChannel;
   }):
     | { ok: true; requestId: number; amountToman: number; rateToman: number; user: User }
     | { ok: false; reason: 'min' | 'balance' | 'pending' | 'missing' } {
@@ -6588,13 +6601,14 @@ export const dbService = {
         )
         .run(coins, input.userId, coins);
       if (debited.changes !== 1) throw new Error('BALANCE');
+      const channel = normalizeCoinSellChannel(input.channel);
       const result = db
         .prepare(
           `INSERT INTO coin_sell_requests (
-            user_id, coins, rate_toman, amount_toman, card_number, status
-          ) VALUES (?, ?, ?, ?, ?, 'open')`
+            user_id, coins, rate_toman, amount_toman, card_number, status, channel
+          ) VALUES (?, ?, ?, ?, ?, 'open', ?)`
         )
-        .run(input.userId, coins, input.rateToman, amountToman, input.cardNumber);
+        .run(input.userId, coins, input.rateToman, amountToman, input.cardNumber, channel);
       const requestId = Number(result.lastInsertRowid);
       this.appendWalletLedger({
         userId: input.userId,
@@ -6610,12 +6624,27 @@ export const dbService = {
 
     try {
       const requestId = tx();
+      const saved = this.getUserById(input.userId)!;
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { notifyCoinSellSubmitted } =
+          require('./admin-notifications') as typeof import('./admin-notifications');
+        notifyCoinSellSubmitted({
+          requestId,
+          userName: saved.name,
+          coins,
+          amountToman,
+          channel: normalizeCoinSellChannel(input.channel),
+        });
+      } catch (err) {
+        console.warn('coin sell header notif skipped:', (err as Error).message);
+      }
       return {
         ok: true,
         requestId,
         amountToman,
         rateToman: input.rateToman,
-        user: this.getUserById(input.userId)!,
+        user: saved,
       };
     } catch (err) {
       if (err instanceof Error && err.message === 'BALANCE') {

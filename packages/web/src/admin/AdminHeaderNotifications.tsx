@@ -168,6 +168,9 @@ export function AdminHeaderNotifications() {
             <Link to="/admin/payments" onClick={() => setOpen(false)}>
               {tr('صف تأیید واریز')}
             </Link>
+            <Link to="/admin/coin-sells" onClick={() => setOpen(false)}>
+              {tr('صف فروش سکه')}
+            </Link>
             <Link to="/admin/hr/cockpit" onClick={() => setOpen(false)}>
               {tr('کارتابل HR')}
             </Link>

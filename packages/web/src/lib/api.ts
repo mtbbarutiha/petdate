@@ -917,6 +917,7 @@ export type EarnRequestSummary = {
   amountToman: number;
   cardMasked: string;
   status: 'open' | 'paid' | 'rejected' | 'cancelled';
+  channel?: 'web' | 'bot' | 'unknown';
   createdAt: string;
   reviewedAt?: string | null;
   adminNote?: string | null;

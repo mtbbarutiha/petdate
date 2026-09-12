@@ -602,6 +602,7 @@ authRouter.post('/earn/withdraw', (req, res) => {
     rateToman: COIN_SELL_PRICE_TOMAN,
     cardNumber: cardCheck.card,
     minCoins: MIN_SELL_COINS,
+    channel: 'web',
   });
 
   if (!result.ok) {
