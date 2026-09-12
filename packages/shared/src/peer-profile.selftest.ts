@@ -45,6 +45,22 @@ assert(peer.age === 28, 'keeps age');
 assert(peer.city === 'تهران', 'keeps city');
 assert(peer.interests?.length === 2, 'keeps interests');
 assert(peer.verificationStatus === 'verified', 'keeps verification');
+assert(peer.avatarUrl === '/api/auth/avatar/42/x.jpg', 'keeps approved still photo');
+
+const videoPeer = toPeerPublicUser({
+  ...raw,
+  avatarUrl: 'BAACAgQAAxkBAAITestVideoFileIdToken1234567890',
+  verificationPhotoFileId: 'BAACAgQAAxkBAAITestVideoFileIdToken1234567890',
+  avatarModerationStatus: 'approved',
+});
+assert(!videoPeer.avatarUrl, 'peer DTO drops face-verify video avatar');
+
+const pendingPeer = toPeerPublicUser({
+  ...raw,
+  avatarUrl: '/api/auth/avatar/42/new.jpg',
+  avatarModerationStatus: 'pending',
+});
+assert(!pendingPeer.avatarUrl, 'pending profile photo still hidden from peers');
 assert(!('telegramId' in peer), 'no telegramId key');
 assert(!('username' in peer), 'no username key');
 assert(!('phone' in peer), 'no phone key');

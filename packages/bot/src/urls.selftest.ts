@@ -26,6 +26,17 @@ function main(): void {
   const fileId = resolveTelegramPhotoUrl('AgACAgQAAxkBAAI');
   assert.equal(fileId, 'AgACAgQAAxkBAAI');
 
+  assert.equal(
+    resolveTelegramPhotoUrl('BAACAgQAAxkBAAITestVideoFileIdToken1234567890'),
+    null,
+    'face-verify video file_id is not a profile photo'
+  );
+  assert.equal(
+    resolveTelegramPhotoUrl('/api/auth/avatar/1/verify.mp4'),
+    null,
+    'mp4 avatar path is not sent as a photo'
+  );
+
   assert.equal(resolveTelegramPhotoUrl(null), null);
   assert.equal(resolveTelegramPhotoUrl(''), null);
   assert.equal(resolveTelegramPhotoUrl('   '), null);

@@ -56,7 +56,7 @@ import {
   listUserContacts,
   patchWebAcceptSeekerAdvice,
   patchWebProfile,
-  resolvePublicMediaUrl,
+  resolvePublicAvatarUrl,
   submitWebFaceVerification,
 } from '../lib/api';
 import { petProfileToUiPet } from '../lib/playdateMap';
@@ -279,7 +279,9 @@ export function ProfilePage() {
   // (e.g. multi-role users whose card lags roles briefly).
   const showPetsBlock = isPetOwner || myPets.length > 0 || petsLoading;
   const locationLabel = [display.city, display.province, display.country].filter(Boolean).join('، ') || '—';
-  const avatarSrc = resolvePublicMediaUrl(display.avatarUrl);
+  const avatarSrc = resolvePublicAvatarUrl(display.avatarUrl, {
+    verificationPhotoFileId: display.verificationPhotoFileId,
+  });
   const genderPlain =
     display.gender === 'male' ? 'آقا' : display.gender === 'female' ? 'خانم' : null;
   const likes = display.likesCount ?? 0;

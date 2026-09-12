@@ -1,6 +1,6 @@
 import dns from 'dns';
 import path from 'path';
-import type { User } from '@petdate/shared';
+import { isNonImageAvatarRef, type User } from '@petdate/shared';
 
 // Prefer IPv4 — some VPS hosts time out on Telegram's IPv6 routes.
 try {
@@ -189,6 +189,7 @@ export async function materializeTelegramFileIdAsAvatar(
 ): Promise<string | null> {
   const id = String(fileId ?? '').trim();
   if (!id || !Number.isFinite(userId) || userId <= 0) return null;
+  if (isNonImageAvatarRef(id)) return null;
   const downloaded = await downloadTelegramFile(id);
   if (!downloaded) return null;
   try {
@@ -248,9 +249,10 @@ export async function ensureWebAccessibleAvatar(userId: number): Promise<User | 
   if (!user) return null;
 
   const raw = String(user.avatarUrl ?? '').trim();
-  if (isWebAvatarUrl(raw)) return user;
+  // Face-verify videos / non-image clips are not profile photos.
+  if (raw && !isNonImageAvatarRef(raw) && isWebAvatarUrl(raw)) return user;
 
-  if (looksLikeTelegramFileId(raw)) {
+  if (raw && !isNonImageAvatarRef(raw) && looksLikeTelegramFileId(raw)) {
     const urlPath = await materializeTelegramFileIdAsAvatar(userId, raw);
     if (urlPath) {
       const updated = dbService.updateUserProfile(userId, {

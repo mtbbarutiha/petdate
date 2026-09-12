@@ -63,4 +63,16 @@ const patient = resolveConsultPeerAvatarUrl(
 );
 assert.equal(patient, '/api/auth/avatar/20/p.jpg');
 
+const verifyVideo = resolveConsultPeerAvatarUrl(
+  baseConsult({
+    vetName: 'لیلا کیانی',
+    vetAvatarUrl: 'BAACAgQAAxkBAAITestVideoFileIdToken1234567890',
+  }),
+  'as_patient',
+);
+assert.ok(
+  verifyVideo?.includes('leila-kiani'),
+  `face-verify video must not be the consult avatar: ${verifyVideo}`
+);
+
 console.log('inboxConversations.avatars.selftest: ok');

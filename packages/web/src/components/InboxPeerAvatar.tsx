@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Stethoscope } from 'lucide-react';
-import { resolvePublicMediaUrl } from '../lib/api';
+import { resolvePublicAvatarUrl } from '../lib/api';
 
 function initialsOf(label?: string | null): string {
   const t = String(label ?? '').trim();
@@ -26,7 +26,7 @@ export function InboxPeerAvatar({
   size?: number;
 }) {
   const [failed, setFailed] = useState(false);
-  const resolved = resolvePublicMediaUrl(avatarUrl);
+  const resolved = resolvePublicAvatarUrl(avatarUrl);
   const showImg = Boolean(resolved) && !failed;
   const initials = initialsOf(name);
 

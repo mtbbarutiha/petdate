@@ -9,7 +9,7 @@ import {
 } from '@petdate/shared';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { useI18n } from '../i18n';
-import { resolvePublicMediaUrl } from '../lib/api';
+import { resolvePublicAvatarUrl } from '../lib/api';
 import { loginPath } from '../lib/authRedirect';
 import { filterNavByPlatformConfig, SITE_NAV_GUEST, siteNavMobileForUser, type SiteNavItem } from '../lib/siteNav';
 import { usePlatformConfig } from '../hooks/usePlatformConfig';
@@ -44,7 +44,9 @@ export function LandingMobileDock() {
   );
   const roles = normalizeRoles(user?.roles, user?.role);
   const activeRole = primaryRole(roles, user?.role);
-  const photo = resolvePublicMediaUrl(user?.avatarUrl);
+  const photo = resolvePublicAvatarUrl(user?.avatarUrl, {
+    verificationPhotoFileId: user?.verificationPhotoFileId,
+  });
   const initial = (user?.name?.trim()?.[0] || 'P').toUpperCase();
 
   const hideDock =
