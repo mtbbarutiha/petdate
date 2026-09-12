@@ -12046,6 +12046,11 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   border-color: rgba(21, 204, 160, 0.35);
   background: rgba(21, 204, 160, 0.08);
 }
+.pepito-my-pets-action--diary {
+  color: #8a5a12;
+  border-color: rgba(253, 150, 30, 0.4);
+  background: rgba(253, 150, 30, 0.1);
+}
 .pepito-my-pets-chip {
   position: absolute;
   top: 0.75rem;
@@ -13648,9 +13653,6 @@ a.pepito-btn.pepito-human-consult-cta:hover {
 }
 
 .pepito-public-pet {
-  --pet-diary-ink: #3a3228;
-  --pet-diary-paper: #f7f1e6;
-  --pet-diary-line: rgba(58, 50, 40, 0.12);
   min-height: 70vh;
 }
 
@@ -13792,14 +13794,21 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   font-size: 0.9rem;
 }
 
-/* Diary — soft tiled pet photo watermark + lined paper feel */
+/* Diary — soft tiled pet photo watermark + lined paper feel (public + owner panel) */
 .pepito-pet-diary {
+  --pet-diary-ink: #3a3228;
+  --pet-diary-paper: #f7f1e6;
+  --pet-diary-line: rgba(58, 50, 40, 0.12);
   margin-top: 1.35rem;
   position: relative;
   border-radius: 22px;
   overflow: hidden;
   isolation: isolate;
   animation: pepito-fade-up 0.7s ease 0.08s both;
+}
+
+.pepito-pet-profile.is-diary-focus #pet-diary.pepito-pet-diary {
+  box-shadow: 0 0 0 2px rgba(253, 150, 30, 0.35), 0 12px 40px rgba(25, 6, 61, 0.08);
 }
 
 .pepito-pet-diary::before {

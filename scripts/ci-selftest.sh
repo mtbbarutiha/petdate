@@ -120,6 +120,9 @@ npx tsx "$ROOT/packages/web/src/components/breedPhotoSplit.selftest.ts"
 echo "==> selftest: web owner consult (مشورت با صاحبین) CTA + reg dark CSS"
 npx tsx "$ROOT/packages/web/src/components/ownerConsult.selftest.ts"
 
+echo "==> selftest: web owner panel pet diary (دفتر خاطرات)"
+npx tsx "$ROOT/packages/web/src/pages/ownerPetDiary.selftest.ts"
+
 echo "==> selftest: web dark-mode theme tokens + toggle wiring"
 npx tsx "$ROOT/packages/web/src/lib/theme.selftest.ts"
 
