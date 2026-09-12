@@ -1902,6 +1902,9 @@ html[data-theme='dark'] .pepito-invite-card span {
 html[data-theme='dark'] .pepito-invite-card .pepito-eyebrow {
   color: var(--pepito-orange, #fd961e);
 }
+html[data-theme='dark'] .pepito-invite-stats {
+  color: var(--pepito-muted);
+}
 html[data-theme='dark'] .pepito-invite-link {
   background: color-mix(in srgb, var(--pepito-soft) 70%, transparent);
   border-color: var(--pd-border);

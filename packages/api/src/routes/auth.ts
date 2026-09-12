@@ -47,6 +47,11 @@ import {
   verifyWebOtp,
   type WebOtpChannel,
 } from '../services/web-otp';
+import {
+  getReferralStats,
+  parseReferredByInput,
+  tryClaimReferralForRecentUser,
+} from '../services/referral-grant';
 
 export const authRouter = Router();
 
@@ -101,6 +106,7 @@ authRouter.post('/telegram/exchange', async (req, res) => {
     telegramId: String(req.body?.telegramId ?? req.body?.tg ?? ''),
     exp: req.body?.exp,
     sig: String(req.body?.sig ?? ''),
+    referredBy: req.body?.referredBy,
   });
   if (!result.ok) {
     const status = result.reason === 'expired' ? 410 : 400;
@@ -166,6 +172,7 @@ authRouter.post('/telegram/login-complete', async (req, res) => {
     telegramId: String(req.body?.telegramId ?? req.body?.tg ?? ''),
     username: req.body?.username != null ? String(req.body.username) : undefined,
     name: req.body?.name != null ? String(req.body.name) : undefined,
+    referredBy: req.body?.referredBy,
   });
   if (!result.ok) {
     const status =
@@ -260,12 +267,51 @@ authRouter.post('/otp/verify', otpVerifyLimit, (req, res) => {
     return;
   }
 
-  const result = verifyWebOtp(channel, target, code);
+  const result = verifyWebOtp(channel, target, code, req.body?.referredBy);
   if (!result.ok) {
     res.status(400).json(result);
     return;
   }
   res.json({ ok: true, token: result.token, user: result.user });
+});
+
+/** لینک/آمار دعوت دوستان برای کاربر واردشده */
+authRouter.get('/referral', (req, res) => {
+  const session = getUserFromBearer(req.header('authorization') ?? undefined);
+  if (!session) {
+    res.status(401).json({ error: 'وارد نشده‌اید' });
+    return;
+  }
+  const stats = getReferralStats(session.user.id);
+  if (!stats) {
+    res.status(404).json({ error: 'کاربر پیدا نشد' });
+    return;
+  }
+  res.json({ ok: true, ...stats });
+});
+
+/**
+ * Safety net after web login: attribute invite if this account is brand-new.
+ * Existing users cannot attach a later ref (too_old / already).
+ */
+authRouter.post('/referral/claim', (req, res) => {
+  const session = getUserFromBearer(req.header('authorization') ?? undefined);
+  if (!session) {
+    res.status(401).json({ error: 'وارد نشده‌اید' });
+    return;
+  }
+  const referredBy = parseReferredByInput(req.body?.referredBy ?? req.body?.ref);
+  const result = tryClaimReferralForRecentUser({
+    userId: session.user.id,
+    referredBy,
+  });
+  res.json({
+    ok: true,
+    awarded: result.awarded,
+    reason: result.reason ?? null,
+    referralAward: result.referralAward,
+    user: result.user,
+  });
 });
 
 authRouter.get('/me', (req, res) => {

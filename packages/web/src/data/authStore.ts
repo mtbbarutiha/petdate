@@ -9,11 +9,13 @@ import {
   patchWebRoles,
   patchWebVetOnline,
   patchWebVisitFee,
+  claimReferral,
   requestWebOtp,
   uploadUserAvatar,
   verifyWebOtp,
   type WebOtpChannel,
 } from '../lib/api';
+import { clearStoredReferralRef, readStoredReferralRef } from '../lib/referral';
 import { userStore } from './userStore';
 
 const STORAGE_KEY = 'petdate_web_auth_v1';
@@ -141,17 +143,39 @@ class AuthStore {
     const result = await verifyWebOtp(
       this.data.pendingChannel,
       this.data.pendingTarget,
-      code
+      code,
+      readStoredReferralRef()
     );
     this.data = { token: result.token, user: result.user };
     this.persist();
-    return result.user;
+    await this.claimStoredReferral();
+    return this.data.user ?? result.user;
   }
 
   /** Apply a session from bot-signed Telegram exchange (same users row). */
   acceptSession(token: string, user: User) {
     this.data = { token, user };
     this.persist();
+    void this.claimStoredReferral();
+  }
+
+  /** Attribute invite after web signup/login if the account is brand-new. */
+  async claimStoredReferral() {
+    const ref = readStoredReferralRef();
+    const token = this.data.token;
+    if (ref == null || !token) return;
+    try {
+      const res = await claimReferral(token, ref);
+      if (res.user && this.data.token === token) {
+        this.data = { ...this.data, user: res.user };
+        this.persist();
+      }
+      if (res.awarded || res.reason === 'already' || res.reason === 'too_old' || res.reason === 'self') {
+        clearStoredReferralRef();
+      }
+    } catch {
+      /* non-fatal — OTP/register path may already have credited */
+    }
   }
 
   async refreshMe() {

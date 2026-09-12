@@ -77,6 +77,9 @@ import {
   PROFILE_SECTION_REWARD,
   REFERRAL_BONUS_COINS,
   SIGNUP_BONUS,
+  inviteReferralCode,
+  inviteTelegramLink,
+  inviteWebLink,
   USER_PRESENCE_ONLINE_MS,
   USER_ROLES,
   sanitizeRoleList,
@@ -4376,6 +4379,64 @@ export const dbService = {
       };
     });
     return tx();
+  },
+
+  countInvitesByReferrerIds(referrerIds: number[]): Map<number, number> {
+    const ids = [...new Set(referrerIds.filter((id) => Number.isFinite(id) && id > 0))];
+    const map = new Map<number, number>();
+    if (!ids.length) return map;
+    const placeholders = ids.map(() => '?').join(',');
+    const rows = db
+      .prepare(
+        `SELECT referred_by AS id, COUNT(*) AS c
+         FROM users
+         WHERE referred_by IN (${placeholders})
+         GROUP BY referred_by`
+      )
+      .all(...ids) as Array<{ id: number; c: number }>;
+    for (const row of rows) {
+      map.set(Number(row.id), Number(row.c) || 0);
+    }
+    return map;
+  },
+
+  getReferralStats(userId: number): {
+    userId: number;
+    code: string;
+    webLink: string;
+    telegramLink: string;
+    bonusCoins: number;
+    invitedCount: number;
+    coinsEarned: number;
+    referredBy: number | null;
+  } | null {
+    const user = this.getUserById(userId);
+    if (!user) return null;
+    const invitedCount = Number(
+      (
+        db.prepare('SELECT COUNT(*) AS c FROM users WHERE referred_by = ?').get(userId) as {
+          c: number;
+        }
+      )?.c || 0
+    );
+    const ledger = db
+      .prepare(
+        `SELECT COALESCE(SUM(amount), 0) AS s
+         FROM coin_ledger
+         WHERE user_id = ? AND reason LIKE 'referral:%'`
+      )
+      .get(userId) as { s: number } | undefined;
+    const coinsEarned = Number(ledger?.s || 0);
+    return {
+      userId,
+      code: inviteReferralCode(userId),
+      webLink: inviteWebLink(userId),
+      telegramLink: inviteTelegramLink(userId),
+      bonusCoins: REFERRAL_BONUS_COINS,
+      invitedCount,
+      coinsEarned,
+      referredBy: user.referredBy ?? null,
+    };
   },
 
   /** جایزه بخش‌هایی که تازه از خالی → پر شده‌اند */

@@ -50,6 +50,27 @@ export async function registerTelegramUser(data: {
   );
 }
 
+export type BotReferralStats = {
+  userId: number;
+  code: string;
+  webLink: string;
+  telegramLink: string;
+  bonusCoins: number;
+  invitedCount: number;
+  coinsEarned: number;
+  referredBy: number | null;
+};
+
+export async function getTelegramReferralStats(telegramId: string): Promise<BotReferralStats | null> {
+  try {
+    return await request<BotReferralStats>(
+      `/api/users/telegram/${encodeURIComponent(telegramId)}/referral`
+    );
+  } catch {
+    return null;
+  }
+}
+
 /** Mark Telegram user online (bot activity heartbeat). */
 export async function touchTelegramPresence(telegramId: string): Promise<void> {
   try {

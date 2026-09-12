@@ -21,6 +21,7 @@ npx tsx "$ROOT/packages/shared/src/pet-public-id.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/order-public-id.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/entity-public-id.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/gtm-contract.selftest.ts"
+npx tsx "$ROOT/packages/shared/src/referral.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/pet-slug.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/sanitize-roles.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/catalog-breed-search.selftest.ts"
@@ -113,6 +114,10 @@ npx tsx "$ROOT/packages/web/src/lib/sitemap.selftest.ts"
 
 echo "==> selftest: web public marketing routes (vet-consult / adoption / magazine)"
 npx tsx "$ROOT/packages/web/src/lib/publicRoutes.selftest.ts"
+
+echo "==> selftest: web invite referral persist + card wiring"
+npx tsx "$ROOT/packages/web/src/lib/referral.selftest.ts"
+npx tsx "$ROOT/packages/web/src/components/inviteFriends.selftest.ts"
 
 echo "==> selftest: web mobile dock keeps wallet + chats (Games not a replacement)"
 npx tsx "$ROOT/packages/web/src/lib/siteNav.selftest.ts"
@@ -272,5 +277,6 @@ run src/routes/users-staff-auth.selftest.ts
 run src/routes/consultations-quick-connect-auth.selftest.ts
 run src/services/playdate-fee.selftest.ts
 run src/site-analytics.selftest.ts
+run src/referral.selftest.ts
 
 echo "ci-selftest: all passed"

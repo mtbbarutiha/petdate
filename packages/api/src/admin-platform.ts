@@ -492,11 +492,13 @@ export const adminPlatform = {
       .map((r) => dbService.getUserById(r.id))
       .filter((u): u is User => Boolean(u));
     const petsByOwner = batchPetsByOwnerIds(users.map((u) => u.id));
+    const inviteCounts = dbService.countInvitesByReferrerIds(users.map((u) => u.id));
     return {
       total,
       users: users.map((u) => ({
         ...u,
         pets: petsByOwner.get(u.id) || [],
+        invitedCount: inviteCounts.get(u.id) || 0,
       })),
     };
   },

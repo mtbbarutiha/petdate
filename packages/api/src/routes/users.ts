@@ -12,6 +12,7 @@ import {
   validateIranCard,
 } from '@petdate/shared';
 import { dbService } from '../db';
+import { getReferralStats, parseReferredByInput, tryGrantReferralOnSignup } from '../services/referral-grant';
 import { rejectIfFlagOff } from '../runtime-settings';
 import { sendPhoneOtp, verifyPhoneOtp } from '../services/phone-otp';
 import { sendVetEnabledSms } from '../services/vet-status-sms';
@@ -105,10 +106,7 @@ usersRouter.post('/register', async (req, res) => {
     res.status(400).json({ error: 'نام الزامی است' });
     return;
   }
-  const referredBy =
-    rawReferredBy != null && Number.isFinite(Number(rawReferredBy))
-      ? Math.floor(Number(rawReferredBy))
-      : null;
+  const referredBy = parseReferredByInput(rawReferredBy);
   const { user, created } = dbService.findOrCreateUser({ telegramId, name, username });
   // Pull Telegram profile photo (or materialize file_id) so bot/web profile views have a face.
   let synced = await withEnsuredAvatar(user);
@@ -130,29 +128,12 @@ usersRouter.post('/register', async (req, res) => {
     synced = bonus.user;
     awards.push(bonus.award);
   }
-  let referralAward: { referrerId: number; amount: number } | undefined;
-  if (referredBy != null && referredBy > 0) {
-    const referral = dbService.applyReferralBonus(synced.id, referredBy);
-    if (referral.awarded && referral.award) {
-      referralAward = { referrerId: referredBy, amount: referral.award.amount };
-      // اطلاع به معرف در پس‌زمینه
-      void (async () => {
-        try {
-          const { notifyReferralBonusTelegram } = await import('../services/telegram-referral-notify');
-          const referrer = referral.referrer;
-          if (referrer?.telegramId) {
-            await notifyReferralBonusTelegram({
-              toTelegramId: referrer.telegramId,
-              amount: referral.award!.amount,
-              invitedName: synced.name,
-            });
-          }
-        } catch (err) {
-          console.warn('referral notify failed:', (err as Error).message);
-        }
-      })();
-    }
-  }
+  const granted = tryGrantReferralOnSignup({
+    invitedUserId: synced.id,
+    referredBy,
+    created,
+  });
+  const referralAward = granted.referralAward;
   if (awards.length || referralAward) {
     res.json({
       ...synced,
@@ -172,6 +153,25 @@ usersRouter.get('/telegram/:telegramId', async (req, res) => {
   }
   const ensured = await withEnsuredAvatar(user);
   res.json(dbService.enrichUserProfileCard(ensured));
+});
+
+/** Bot invite card — same stats as GET /api/auth/referral */
+usersRouter.get('/telegram/:telegramId/referral', (req, res) => {
+  if (!isTrustedBotRequest(req)) {
+    res.status(403).json({ error: 'forbidden' });
+    return;
+  }
+  const user = dbService.getUserByTelegramId(req.params.telegramId);
+  if (!user) {
+    res.status(404).json({ error: 'کاربر پیدا نشد' });
+    return;
+  }
+  const stats = getReferralStats(user.id);
+  if (!stats) {
+    res.status(404).json({ error: 'کاربر پیدا نشد' });
+    return;
+  }
+  res.json(stats);
 });
 
 /** Touch last_seen for Telegram bot activity (marks user online). */

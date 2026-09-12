@@ -2,6 +2,7 @@ import { createHmac, randomBytes, timingSafeEqual } from 'crypto';
 import { dbService } from '../db';
 import { infra } from '../config/infra';
 import { syncUserProfileFromTelegram } from './telegram-profile-sync';
+import { parseReferredByInput, tryGrantReferralOnSignup } from './referral-grant';
 
 const SESSION_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 /** Bot→web login links expire quickly so shared URLs die. */
@@ -62,6 +63,7 @@ export async function exchangeTelegramWebLink(input: {
   telegramId: string;
   exp: string | number;
   sig: string;
+  referredBy?: unknown;
 }): Promise<
   | { ok: true; token: string; user: NonNullable<ReturnType<typeof dbService.getUserById>> }
   | { ok: false; reason: string; error: string }
@@ -96,12 +98,14 @@ export async function exchangeTelegramWebLink(input: {
   }
 
   let user = dbService.getUserByTelegramId(telegramId);
+  let created = false;
   if (!user) {
-    const created = dbService.findOrCreateUser({
+    const inserted = dbService.findOrCreateUser({
       telegramId,
       name: 'کاربر تلگرام',
     });
-    user = created.user;
+    user = inserted.user;
+    created = inserted.created;
   }
 
   try {
@@ -109,6 +113,15 @@ export async function exchangeTelegramWebLink(input: {
     if (synced) user = synced;
   } catch (err) {
     console.warn('telegram profile sync on exchange failed:', (err as Error).message);
+  }
+
+  if (created) {
+    tryGrantReferralOnSignup({
+      invitedUserId: user.id,
+      referredBy: parseReferredByInput(input.referredBy),
+      created: true,
+    });
+    user = dbService.getUserById(user.id) ?? user;
   }
 
   const sessionToken = randomBytes(32).toString('hex');
@@ -238,6 +251,7 @@ export async function completeTelegramLoginPending(input: {
   telegramId: string;
   username?: string;
   name?: string;
+  referredBy?: unknown;
 }): Promise<
   | {
       ok: true;
@@ -284,6 +298,7 @@ export async function completeTelegramLoginPending(input: {
   }
 
   let user = dbService.getUserByTelegramId(telegramId);
+  let createdNew = false;
   if (!user) {
     const created = dbService.findOrCreateUser({
       telegramId,
@@ -291,6 +306,7 @@ export async function completeTelegramLoginPending(input: {
       username: input.username,
     });
     user = created.user;
+    createdNew = created.created;
   } else if (input.name || input.username) {
     dbService.linkTelegramIdentity(user.id, telegramId, {
       username: input.username,
@@ -304,6 +320,15 @@ export async function completeTelegramLoginPending(input: {
     if (synced) user = synced;
   } catch (err) {
     console.warn('telegram profile sync on pending login failed:', (err as Error).message);
+  }
+
+  if (createdNew) {
+    tryGrantReferralOnSignup({
+      invitedUserId: user.id,
+      referredBy: parseReferredByInput(input.referredBy),
+      created: true,
+    });
+    user = dbService.getUserById(user.id) ?? user;
   }
 
   const sessionToken = randomBytes(32).toString('hex');
