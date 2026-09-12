@@ -4,6 +4,20 @@
   min-height: 30vh;
 }
 
+.pd-app-error {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 2rem;
+  text-align: center;
+  font-family: var(--font-body, Vazirmatn, system-ui, sans-serif);
+  color: #0f172a;
+  background: #eef7fc;
+}
+
 :root {
   /* Brand — sky blue from welcome hero (#5ba8d2) */
   --brand-hero: #5ba8d2;

@@ -62,7 +62,7 @@ export function LandingChrome({
   footer = true,
 }: LandingChromeProps) {
   const [scrolled, setScrolled] = useState(false);
-  const { isLoggedIn, user } = useAuthStore();
+  const { user } = useAuthStore();
   const { t, dir } = useI18n();
   const userPrimary = primaryRole(user?.roles, user?.role);
   const resolvedBannerTitle = bannerTitle ?? BRAND.displayName;
@@ -96,7 +96,7 @@ export function LandingChrome({
     <div className={`pepito-landing pepito-flow-page${className ? ` ${className}` : ''}`} dir={dir}>
       <header
         className={`pepito-nav${scrolled ? ' is-scrolled' : ''}${
-          appNav || isLoggedIn ? ' pepito-nav--app' : ' pepito-nav--tools'
+          appNav ? ' pepito-nav--app' : ' pepito-nav--tools'
         }`}
       >
         {/* Logo first in DOM so dir=rtl places it at inline-start (right). */}

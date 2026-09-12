@@ -13,15 +13,19 @@ import type {
 } from '@petdate/shared';
 import { config } from './config';
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+function botHeaders(extra?: HeadersInit): HeadersInit {
   const botToken = config.telegramBotToken?.trim();
+  return {
+    'Content-Type': 'application/json',
+    ...(botToken ? { 'X-PetDate-Bot-Token': botToken } : {}),
+    ...extra,
+  };
+}
+
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${config.apiUrl}${path}`, {
     ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      ...(botToken ? { 'X-PetDate-Bot-Token': botToken } : {}),
-      ...init?.headers,
-    },
+    headers: botHeaders(init?.headers),
   });
   if (!res.ok) {
     const body = await res.text();
@@ -795,7 +799,7 @@ export async function quickVetConnect(
 ): Promise<QuickVetConnectResult | QuickVetConnectFailure> {
   const res = await fetch(`${config.apiUrl}/api/consultations/quick-connect`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: botHeaders(),
     body: JSON.stringify({
       patientUserId,
       confirmResend: Boolean(opts?.confirmResend),
@@ -1001,7 +1005,7 @@ export async function sendPhoneOtp(
     `${config.apiUrl}/api/users/telegram/${encodeURIComponent(telegramId)}/phone/send-otp`,
     {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: botHeaders(),
       body: JSON.stringify({ phone }),
     }
   );
@@ -1037,7 +1041,7 @@ export async function verifyPhoneOtp(
     `${config.apiUrl}/api/users/telegram/${encodeURIComponent(telegramId)}/phone/verify-otp`,
     {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: botHeaders(),
       body: JSON.stringify({ phone, code }),
     }
   );
@@ -1097,7 +1101,7 @@ export async function claimDailyCoins(
     `${config.apiUrl}/api/users/telegram/${encodeURIComponent(telegramId)}/coins/daily`,
     {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: botHeaders(),
       body: JSON.stringify({ amount }),
     }
   );
@@ -1136,7 +1140,7 @@ export async function submitCoinSell(
     `${config.apiUrl}/api/users/telegram/${encodeURIComponent(telegramId)}/coins/sell`,
     {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: botHeaders(),
       body: JSON.stringify(data),
     }
   );
@@ -1197,7 +1201,7 @@ export async function createPaymentOrder(
     `${config.apiUrl}/api/users/telegram/${encodeURIComponent(telegramId)}/payments`,
     {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: botHeaders(),
       body: JSON.stringify(data),
     }
   );
@@ -1235,7 +1239,7 @@ export async function cancelCardPayment(
 ): Promise<{ ok: true; order: PaymentOrder } | { ok: false; reason: string }> {
   const res = await fetch(`${config.apiUrl}/api/users/payments/${orderId}/cancel`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: botHeaders(),
     body: JSON.stringify({ telegramId }),
   });
   const body = (await res.json()) as {
@@ -1256,7 +1260,7 @@ export async function attachPaymentReceipt(
 ): Promise<{ ok: true; order: PaymentOrder } | { ok: false; reason: string }> {
   const res = await fetch(`${config.apiUrl}/api/users/payments/${orderId}/receipt`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: botHeaders(),
     body: JSON.stringify({ receiptFileId }),
   });
   const body = (await res.json()) as {
@@ -1280,7 +1284,7 @@ export async function approveCardPayment(
 > {
   const res = await fetch(`${config.apiUrl}/api/users/payments/${orderId}/approve`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: botHeaders(),
     body: JSON.stringify({ note }),
   });
   const body = (await res.json()) as {
@@ -1310,7 +1314,7 @@ export async function rejectCardPayment(
 ): Promise<{ ok: true; order: PaymentOrder; user: User | null } | { ok: false; reason: string }> {
   const res = await fetch(`${config.apiUrl}/api/users/payments/${orderId}/reject`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: botHeaders(),
     body: JSON.stringify({ note }),
   });
   const body = (await res.json()) as {
@@ -1345,7 +1349,7 @@ export async function completeStarsPayment(
 > {
   const res = await fetch(`${config.apiUrl}/api/users/payments/${orderId}/stars/complete`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: botHeaders(),
     body: JSON.stringify({ telegramPaymentChargeId }),
   });
   const body = (await res.json()) as {
@@ -1552,7 +1556,7 @@ export async function addUserContact(
 ): Promise<{ ok: true; created: boolean }> {
   const res = await fetch(`${config.apiUrl}/api/users/${userId}/contacts`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: botHeaders(),
     body: JSON.stringify({ contactUserId }),
   });
   if (!res.ok) {

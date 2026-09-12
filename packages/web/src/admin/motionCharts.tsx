@@ -117,7 +117,11 @@ export function MotionChartTooltip({
           : formatNumFa(Number.isFinite(n) ? n : 0);
         return (
           <div key={i} className="admin-motion-callout-row" style={{ color: p.color || 'var(--admin-ink)' }}>
-            {p.name ? <span className="admin-motion-callout-name">{p.name}</span> : null}
+            {p.name ? (
+              <span className="admin-motion-callout-name" title={p.name}>
+                {p.name.length > 22 ? `${p.name.slice(0, 21)}…` : p.name}
+              </span>
+            ) : null}
             <strong>{text}</strong>
           </div>
         );

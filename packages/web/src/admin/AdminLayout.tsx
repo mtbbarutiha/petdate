@@ -1,5 +1,6 @@
-import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { AdminRouteOutlet } from './AdminRouteOutlet';
 import { ChevronDown,
   Activity, Bell, Briefcase, Building2, ClipboardList, FileText, Headset, Landmark, LayoutDashboard, LineChart, LogOut, Mail, Menu, Newspaper, Package,
   PawPrint, PieChart, ScrollText, Settings, Shield, ShieldCheck, ShoppingBag, Stethoscope,
@@ -43,40 +44,16 @@ function adminInitials(label?: string | null): string {
   return t.slice(0, 2);
 }
 
+/**
+ * Ops priority (top → bottom): overview/analytics → sales/shop → CRM/users
+ * → finance → HR → content/system. Do not invent new section titles.
+ */
 const NAV_GROUPS: NavGroup[] = [
-  { titleKey: 'admin.overview', items: [{ to: '/admin/dashboard', icon: LayoutDashboard, labelKey: 'admin.platformDashboard' }] },
-  { titleKey: 'admin.ats', items: [
-    { to: '/admin/hr/recruitment', icon: LayoutDashboard, labelKey: 'admin.atsDashboard', perm: 'ats.read' },
-    { to: '/admin/hr/ats', icon: Briefcase, labelKey: 'admin.atsJobs', perm: 'ats.read' },
-    { to: '/admin/hr/onboarding', icon: UserPlus, labelKey: 'admin.onboarding', perm: 'ats.read' },
-  ]},
-  { titleKey: 'admin.hr', items: [
-    { to: '/admin/hr', icon: LayoutDashboard, labelKey: 'admin.hrDashboard', perm: 'hr.read' },
-    { to: '/admin/hr/employees', icon: UserRound, labelKey: 'admin.hrEmployees', perm: 'hr.read' },
-    { to: '/admin/hr/requests', icon: ClipboardCheck, labelKey: 'admin.hrTickets', perm: 'hr.read' },
-    { to: '/admin/hr/service', icon: HandCoins, labelKey: 'admin.hrService', perm: 'hr.read' },
-    { to: '/admin/hr/reports', icon: BarChart3, labelKey: 'admin.hrReports', perm: 'hr.read' },
-    { to: '/admin/hr/cost', icon: Coins, labelKey: 'admin.hrCost', perm: 'hr.read' },
-    { to: '/admin/hr/compensation', icon: TrendingUp, labelKey: 'admin.hrComp', perm: 'hr.read' },
-    { to: '/admin/hr/career', icon: Route, labelKey: 'admin.hrCareer', perm: 'hr.read' },
-    { to: '/admin/hr/cockpit', icon: Inbox, labelKey: 'admin.hrCockpit', perm: 'hr.read' },
-    { to: '/admin/hr/contracts', icon: FileText, labelKey: 'admin.hrContracts', perm: 'hr.read' },
-  ]},
-  { titleKey: 'admin.assistant', items: [
-    { to: '/admin/hr/armita', icon: Bot, labelKey: 'admin.armita', perm: 'hr.read' },
-  ]},
-  { titleKey: 'admin.config', items: [
-    { to: '/admin/hr/settings', icon: Settings, labelKey: 'admin.hrSettings', perm: 'hr.read' },
-    { to: '/admin/hr/rbac', icon: Shield, labelKey: 'admin.rbac', perm: 'admin.full' },
-  ]},
-  { titleKey: 'admin.platform', items: [
-    { to: '/admin/users', icon: Users, labelKey: 'admin.users', perm: 'platform.read', platformBadgeKey: 'users' },
-    { to: '/admin/pets', icon: PawPrint, labelKey: 'admin.pets', perm: 'platform.read', platformBadgeKey: 'pets' },
-    { to: '/admin/playdates', icon: ClipboardList, labelKey: 'admin.playdates', perm: 'platform.read', platformBadgeKey: 'playdates' },
-    { to: '/admin/consults', icon: Stethoscope, labelKey: 'admin.consults', perm: 'platform.read', platformBadgeKey: 'consults' },
-    { to: '/admin/verification', icon: ShieldCheck, labelKey: 'admin.verification', perm: 'platform.write', platformBadgeKey: 'verification' },
-    { to: '/admin/marketplace-moderation', icon: ClipboardList, labelKey: 'admin.docsPhotos', perm: 'platform.write', platformBadgeKey: 'docs' },
-  ]},
+  { titleKey: 'admin.overview', items: [
+    { to: '/admin/dashboard', icon: LayoutDashboard, labelKey: 'admin.platformDashboard' },
+    { to: '/admin/analytics', icon: BarChart3, labelKey: 'admin.analytics', perm: 'platform.read' },
+    { to: '/admin/tag-manager', icon: Tags, labelKey: 'admin.tagManager', perm: 'platform.read' },
+  ] },
   { titleKey: 'admin.sales', items: [
     { to: '/admin/sales', icon: Inbox, labelKey: 'admin.myInbox', perm: 'sales.read' },
     { to: '/admin/sales/leads', icon: Users, labelKey: 'admin.leads', perm: 'sales.read', salesBadgeKey: 'leads' },
@@ -90,6 +67,17 @@ const NAV_GROUPS: NavGroup[] = [
     { to: '/admin/sales/pipeline', icon: Target, labelKey: 'admin.pipeline', perm: 'sales.read' },
     { to: '/admin/sales/deals', icon: ShoppingBag, labelKey: 'admin.deals', perm: 'sales.read' },
     { to: '/admin/sales/products', icon: Package, labelKey: 'admin.productsPricing', perm: 'sales.read' },
+  ]},
+  { titleKey: 'admin.store', items: [
+    { to: '/admin/shop/products', icon: Package, labelKey: 'admin.products', perm: 'shop.read' },
+    { to: '/admin/shop/categories', icon: Store, labelKey: 'admin.categories', perm: 'shop.read' },
+    {
+      to: '/admin/shop/orders',
+      icon: ShoppingBag,
+      labelKey: 'admin.orders',
+      perm: 'shop.read',
+      platformBadgeKey: 'shopOrders',
+    },
   ]},
   { titleKey: 'admin.club', items: [
     { to: '/admin/crm', icon: LayoutDashboard, labelKey: 'admin.myDesk', perm: 'crm.read' },
@@ -122,6 +110,14 @@ const NAV_GROUPS: NavGroup[] = [
     { to: '/admin/crm/reports', icon: BarChart3, labelKey: 'admin.clubReports', perm: 'crm.read' },
     { to: '/admin/crm/settings', icon: Settings, labelKey: 'admin.clubSettings', perm: 'crm.read' },
   ]},
+  { titleKey: 'admin.platform', items: [
+    { to: '/admin/users', icon: Users, labelKey: 'admin.users', perm: 'platform.read', platformBadgeKey: 'users' },
+    { to: '/admin/pets', icon: PawPrint, labelKey: 'admin.pets', perm: 'platform.read', platformBadgeKey: 'pets' },
+    { to: '/admin/playdates', icon: ClipboardList, labelKey: 'admin.playdates', perm: 'platform.read', platformBadgeKey: 'playdates' },
+    { to: '/admin/consults', icon: Stethoscope, labelKey: 'admin.consults', perm: 'platform.read', platformBadgeKey: 'consults' },
+    { to: '/admin/verification', icon: ShieldCheck, labelKey: 'admin.verification', perm: 'platform.write', platformBadgeKey: 'verification' },
+    { to: '/admin/marketplace-moderation', icon: ClipboardList, labelKey: 'admin.docsPhotos', perm: 'platform.write', platformBadgeKey: 'docs' },
+  ]},
   { titleKey: 'admin.finance', items: [
     { to: '/admin/finance', icon: TrendingUp, labelKey: 'admin.financeDashboard', perm: 'finance.read' },
     {
@@ -153,23 +149,34 @@ const NAV_GROUPS: NavGroup[] = [
     { to: '/admin/finance/wallet', icon: Wallet, labelKey: 'admin.wallet', perm: 'finance.read' },
     { to: '/admin/finance/products', icon: Package, labelKey: 'admin.topProducts', perm: 'finance.read' },
   ]},
-  { titleKey: 'admin.store', items: [
-    { to: '/admin/shop/products', icon: Package, labelKey: 'admin.products', perm: 'shop.read' },
-    { to: '/admin/shop/categories', icon: Store, labelKey: 'admin.categories', perm: 'shop.read' },
-    {
-      to: '/admin/shop/orders',
-      icon: ShoppingBag,
-      labelKey: 'admin.orders',
-      perm: 'shop.read',
-      platformBadgeKey: 'shopOrders',
-    },
+  { titleKey: 'admin.ats', items: [
+    { to: '/admin/hr/recruitment', icon: LayoutDashboard, labelKey: 'admin.atsDashboard', perm: 'ats.read' },
+    { to: '/admin/hr/ats', icon: Briefcase, labelKey: 'admin.atsJobs', perm: 'ats.read' },
+    { to: '/admin/hr/onboarding', icon: UserPlus, labelKey: 'admin.onboarding', perm: 'ats.read' },
+  ]},
+  { titleKey: 'admin.hr', items: [
+    { to: '/admin/hr', icon: LayoutDashboard, labelKey: 'admin.hrDashboard', perm: 'hr.read' },
+    { to: '/admin/hr/employees', icon: UserRound, labelKey: 'admin.hrEmployees', perm: 'hr.read' },
+    { to: '/admin/hr/requests', icon: ClipboardCheck, labelKey: 'admin.hrTickets', perm: 'hr.read' },
+    { to: '/admin/hr/service', icon: HandCoins, labelKey: 'admin.hrService', perm: 'hr.read' },
+    { to: '/admin/hr/reports', icon: BarChart3, labelKey: 'admin.hrReports', perm: 'hr.read' },
+    { to: '/admin/hr/cost', icon: Coins, labelKey: 'admin.hrCost', perm: 'hr.read' },
+    { to: '/admin/hr/compensation', icon: TrendingUp, labelKey: 'admin.hrComp', perm: 'hr.read' },
+    { to: '/admin/hr/career', icon: Route, labelKey: 'admin.hrCareer', perm: 'hr.read' },
+    { to: '/admin/hr/cockpit', icon: Inbox, labelKey: 'admin.hrCockpit', perm: 'hr.read' },
+    { to: '/admin/hr/contracts', icon: FileText, labelKey: 'admin.hrContracts', perm: 'hr.read' },
+  ]},
+  { titleKey: 'admin.assistant', items: [
+    { to: '/admin/hr/armita', icon: Bot, labelKey: 'admin.armita', perm: 'hr.read' },
+  ]},
+  { titleKey: 'admin.config', items: [
+    { to: '/admin/hr/settings', icon: Settings, labelKey: 'admin.hrSettings', perm: 'hr.read' },
+    { to: '/admin/hr/rbac', icon: Shield, labelKey: 'admin.rbac', perm: 'admin.full' },
   ]},
   { titleKey: 'admin.contentSystem', items: [
     { to: '/admin/magazine', icon: Newspaper, labelKey: 'admin.magazineNews', perm: 'platform.write' },
     { to: '/admin/content', icon: Bell, labelKey: 'admin.noticesContent', perm: 'platform.write' },
     { to: '/admin/mail', icon: Mail, labelKey: 'admin.mailSmtp', perm: 'platform.read' },
-    { to: '/admin/analytics', icon: BarChart3, labelKey: 'admin.analytics', perm: 'platform.read' },
-    { to: '/admin/tag-manager', icon: Tags, labelKey: 'admin.tagManager', perm: 'platform.read' },
     { to: '/admin/monitoring', icon: Activity, labelKey: 'admin.monitoring', perm: 'platform.read' },
     { to: '/admin/logs', icon: ScrollText, labelKey: 'admin.errorLogs', perm: 'platform.read' },
     { to: '/admin/settings', icon: Settings, labelKey: 'admin.platformSettings', perm: 'platform.write' },
@@ -179,6 +186,12 @@ const NAV_GROUPS: NavGroup[] = [
 const TITLE_KEY_MAP: Record<string, string> = Object.fromEntries(
   NAV_GROUPS.flatMap((g) => g.items.map((i) => [i.to, i.labelKey]))
 );
+
+const ADMIN_NAV_MQ = '(max-width: 960px)';
+
+function readIsMobileNav(): boolean {
+  return typeof window !== 'undefined' && window.matchMedia(ADMIN_NAV_MQ).matches;
+}
 
 function visibleGroups(): NavGroup[] {
   return NAV_GROUPS.map((g) => ({
@@ -217,8 +230,8 @@ function AdminLayoutInner() {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useI18n();
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
+  const [isMobileNav, setIsMobileNav] = useState(readIsMobileNav);
+  const [navOpen, setNavOpen] = useState(() => !readIsMobileNav());
   const [salesCounts, setSalesCounts] = useState<SalesNavCounts | null>(null);
   const [platformCounts, setPlatformCounts] = useState<PlatformNavCounts | null>(null);
   const [financeCounts, setFinanceCounts] = useState<FinanceNavCounts | null>(null);
@@ -324,15 +337,26 @@ function AdminLayoutInner() {
     return () => window.clearInterval(t);
   }, [refreshNavCounts, location.pathname]);
 
-  /* Close mobile drawer on navigation (deep links / back). */
   useEffect(() => {
-    setMobileOpen(false);
-  }, [location.pathname]);
+    const mq = window.matchMedia(ADMIN_NAV_MQ);
+    const sync = () => {
+      const mobile = mq.matches;
+      setIsMobileNav(mobile);
+      setNavOpen(!mobile);
+    };
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, []);
+
+  /* Close overlay drawer on navigation (deep links / back). Desktop stays open. */
+  useEffect(() => {
+    if (isMobileNav) setNavOpen(false);
+  }, [location.pathname, isMobileNav]);
 
   useEffect(() => {
-    if (!mobileOpen) return;
+    if (!navOpen || !isMobileNav) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setMobileOpen(false);
+      if (e.key === 'Escape') setNavOpen(false);
     };
     window.addEventListener('keydown', onKey);
     const prevOverflow = document.body.style.overflow;
@@ -341,7 +365,7 @@ function AdminLayoutInner() {
       window.removeEventListener('keydown', onKey);
       document.body.style.overflow = prevOverflow;
     };
-  }, [mobileOpen]);
+  }, [navOpen, isMobileNav]);
 
   const pageTitleKey = useMemo(() => {
     const hit = Object.keys(TITLE_KEY_MAP).sort((a, b) => b.length - a.length).find((k) => location.pathname.startsWith(k));
@@ -355,11 +379,22 @@ function AdminLayoutInner() {
   const showAvatarImg = Boolean(resolvedAvatar) && !avatarFailed;
 
   return (
-    <div className={`admin-app${collapsed ? ' admin-app--collapsed' : ''}${mobileOpen ? ' admin-app--nav-open' : ''}`}>
+    <div className={`admin-app${navOpen ? ' admin-app--nav-open' : ' admin-app--nav-closed'}`}>
+      <button
+        type="button"
+        className={`admin-nav-toggle${navOpen ? ' is-open' : ''}`}
+        onClick={() => setNavOpen((v) => !v)}
+        aria-label={navOpen ? t('admin.closeMenu') : t('admin.menu')}
+        aria-expanded={navOpen}
+        aria-controls="admin-mobile-nav"
+      >
+        {navOpen ? <X size={22} strokeWidth={2.4} /> : <Menu size={22} strokeWidth={2.4} />}
+      </button>
       <div className="admin-shell">
         <aside
           id="admin-mobile-nav"
-          className={`admin-sidebar${mobileOpen ? ' is-open' : ''}`}
+          className={`admin-sidebar${navOpen ? ' is-open' : ''}`}
+          aria-hidden={!navOpen}
         >
           <div className="admin-brand">
             <AdminWordmark />
@@ -391,7 +426,7 @@ function AdminLayoutInner() {
                       <ChevronDown size={14} className={`admin-nav-chevron${isOpen ? ' is-open' : ''}`} aria-hidden />
                     </span>
                   </button>
-                  <div className="admin-nav-group-items" hidden={!isOpen && !collapsed}>
+                  <div className="admin-nav-group-items" hidden={!isOpen}>
                       {group.items.map((item) => {
                         const badge = itemBadge(item, salesCounts, platformCounts, financeCounts, crmCounts);
                         return (
@@ -399,7 +434,7 @@ function AdminLayoutInner() {
                             key={`${item.to}:${item.labelKey}`}
                             to={item.to}
                             end={item.to === '/admin/hr' || item.to === '/admin/sales' || item.to === '/admin/crm' || item.to === '/admin/dashboard' || item.to === '/admin/finance'}
-                            onClick={() => setMobileOpen(false)}
+                            onClick={() => { if (isMobileNav) setNavOpen(false); }}
                             className={({ isActive }) => `admin-nav-item${isActive ? ' active' : ''}`}
                           >
                             <item.icon size={18} strokeWidth={2} />
@@ -420,23 +455,10 @@ function AdminLayoutInner() {
             </button>
           </div>
         </aside>
-        {mobileOpen ? <button type="button" className="admin-backdrop" aria-label={t('admin.closeMenu')} onClick={() => setMobileOpen(false)} /> : null}
+        {navOpen && isMobileNav ? <button type="button" className="admin-backdrop" aria-label={t('admin.closeMenu')} onClick={() => setNavOpen(false)} /> : null}
         <div className="admin-main">
           <header className="admin-topbar">
             <div className="admin-topbar-start">
-              <button
-                type="button"
-                className="admin-icon-btn admin-icon-btn--mobile"
-                onClick={() => setMobileOpen((v) => !v)}
-                aria-label={t('admin.menu')}
-                aria-expanded={mobileOpen}
-                aria-controls="admin-mobile-nav"
-              >
-                {mobileOpen ? <X size={18} /> : <Menu size={18} />}
-              </button>
-              <button type="button" className="admin-icon-btn admin-icon-btn--desktop" onClick={() => setCollapsed((v) => !v)} aria-label={t('admin.collapseSidebar')}>
-                <Menu size={18} />
-              </button>
               <div>
                 <p className="admin-topbar-eyebrow">Pet Date · {t('admin.peyvand')}</p>
                 <h1 className="admin-topbar-title">{t(pageTitleKey)}</h1>
@@ -467,7 +489,7 @@ function AdminLayoutInner() {
               <span className="admin-topbar-user-name">{roleLabel}</span>
             </div>
           </header>
-          <Outlet />
+          <AdminRouteOutlet />
         </div>
       </div>
     </div>

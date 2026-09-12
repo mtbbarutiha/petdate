@@ -85,9 +85,17 @@ CREATE TABLE playdate_requests (
   id BIGSERIAL PRIMARY KEY,
   from_pet_id BIGINT NOT NULL REFERENCES pets(id) ON DELETE CASCADE,
   to_pet_id BIGINT NOT NULL REFERENCES pets(id) ON DELETE CASCADE,
+  from_user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  to_user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   status TEXT NOT NULL DEFAULT 'pending',
   message TEXT,
+  scheduled_at TIMESTAMPTZ,
+  location TEXT,
+  chat_secure BOOLEAN NOT NULL DEFAULT FALSE,
+  chat_ended BOOLEAN NOT NULL DEFAULT FALSE,
+  public_id TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE (from_pet_id, to_pet_id)
 );
 

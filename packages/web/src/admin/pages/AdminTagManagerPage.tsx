@@ -301,8 +301,8 @@ export function AdminTagManagerPage() {
                 <article className="admin-card crm-report-chart-box">
                   <div className="admin-card-head"><h2>{tr('رویدادها بر اساس نوع')}</h2></div>
                   <div
-                    className={ADMIN_RTL_HBARS_CLASS}
-                    style={{ width: '100%', height: Math.max(180, Math.max(eventBars.length, 1) * 28), direction: 'ltr' }}
+                    className={`${ADMIN_RTL_HBARS_CLASS} admin-chart-box`}
+                    style={{ width: '100%', height: adminRtlHBarsHeight(eventBars.length), direction: 'ltr' }}
                   >
                     <ResponsiveContainer>
                       <BarChart data={eventBars} layout="vertical" margin={adminRtlHBarsMargin}>
@@ -319,8 +319,8 @@ export function AdminTagManagerPage() {
                 <article className="admin-card crm-report-chart-box">
                   <div className="admin-card-head"><h2>{tr('صفحات پربازدید')}</h2></div>
                   <div
-                    className={ADMIN_RTL_HBARS_CLASS}
-                    style={{ width: '100%', height: adminRtlHBarsHeight(pageBars.length, 38), direction: 'ltr' }}
+                    className={`${ADMIN_RTL_HBARS_CLASS} admin-chart-box`}
+                    style={{ width: '100%', height: adminRtlHBarsHeight(pageBars.length), direction: 'ltr' }}
                   >
                     <ResponsiveContainer>
                       <BarChart data={pageBars} layout="vertical" margin={adminRtlHBarsMarginWithCounts}>

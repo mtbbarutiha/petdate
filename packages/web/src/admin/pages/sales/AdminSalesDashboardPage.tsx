@@ -18,7 +18,14 @@ import { Briefcase, Phone, Target, Wallet } from 'lucide-react';
 import { adminFetch, formatNumFa } from '../../api';
 import { adminCan } from '../../auth';
 import {
+  adminChartPlotMargin,
+  adminChartTickFormatter,
+  adminChartXAxisProps,
+  adminChartYAxisProps,
+} from '../../adminChartLayout';
+import {
   adminRtlHBarsCategoryAxis,
+  adminRtlHBarsHeight,
   adminRtlHBarsMargin,
   adminRtlHBarsRadius,
   adminRtlHBarsValueAxis,
@@ -216,10 +223,10 @@ export function AdminSalesDashboardPage() {
         <AdminChartCard
           title={tr("قیف مراحل فروش")}
           empty={!stageChart.length}
-          height={Math.max(240, 36 * Math.max(stageChart.length, 4))}
+          height={adminRtlHBarsHeight(stageChart.length, 32, 180)}
           rtlHBars
         >
-          <ResponsiveContainer width="100%" height={Math.max(240, 36 * Math.max(stageChart.length, 4))}>
+          <ResponsiveContainer width="100%" height={adminRtlHBarsHeight(stageChart.length, 32, 180)}>
             <BarChart layout="vertical" data={stageChart} margin={{ ...adminRtlHBarsMargin }}>
               <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--admin-border)" />
               <XAxis {...adminRtlHBarsValueAxis} />
@@ -236,10 +243,10 @@ export function AdminSalesDashboardPage() {
 
         <AdminChartCard title={tr("روند درآمد روزانه")} empty={!revenueTrend.length} height={240}>
           <ResponsiveContainer width="100%" height={240}>
-            <AreaChart data={revenueTrend} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+            <AreaChart data={revenueTrend} margin={adminChartPlotMargin}>
               <MotionAreaGradientDefs id="salesRevArea" color={MOTION_PALETTE.purple} mid={MOTION_PALETTE.mint} />
-              <XAxis dataKey="label" tick={{ fontSize: 11, fill: 'var(--admin-muted)' }} axisLine={false} tickLine={false} />
-              <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: 'var(--admin-muted)' }} axisLine={false} tickLine={false} width={40} />
+              <XAxis dataKey="label" {...adminChartXAxisProps} tickFormatter={adminChartTickFormatter} />
+              <YAxis {...adminChartYAxisProps} />
               <Tooltip content={<MotionChartTooltip />} />
               <Area
                 type="monotone"
@@ -256,10 +263,10 @@ export function AdminSalesDashboardPage() {
 
         <AdminChartCard title={tr("روند تماس‌های روزانه")} empty={!callsTrend.length} height={220}>
           <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={callsTrend} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+            <BarChart data={callsTrend} margin={adminChartPlotMargin}>
               <MotionBarGradientDefs id="salesCallsBar" from={MOTION_PALETTE.mint} to={MOTION_PALETTE.blue} />
-              <XAxis dataKey="label" tick={{ fontSize: 11, fill: 'var(--admin-muted)' }} axisLine={false} tickLine={false} />
-              <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: 'var(--admin-muted)' }} axisLine={false} tickLine={false} width={28} />
+              <XAxis dataKey="label" {...adminChartXAxisProps} tickFormatter={adminChartTickFormatter} />
+              <YAxis {...adminChartYAxisProps} width={28} />
               <Tooltip content={<MotionChartTooltip />} />
               <Bar dataKey="value" radius={[8, 8, 4, 4]} fill="url(#salesCallsBar)" maxBarSize={28} {...motion} />
             </BarChart>
@@ -269,10 +276,10 @@ export function AdminSalesDashboardPage() {
         <AdminChartCard
           title={tr("فروش بر اساس منبع")}
           empty={!bySource.length}
-          height={Math.max(200, 36 * Math.max(bySource.length, 3))}
+          height={adminRtlHBarsHeight(bySource.length)}
           rtlHBars
         >
-          <ResponsiveContainer width="100%" height={Math.max(200, 36 * Math.max(bySource.length, 3))}>
+          <ResponsiveContainer width="100%" height={adminRtlHBarsHeight(bySource.length)}>
             <BarChart layout="vertical" data={bySource} margin={{ ...adminRtlHBarsMargin }}>
               <MotionBarGradientDefs id="salesSrcBar" from={MOTION_PALETTE.coral} to={MOTION_PALETTE.pink} />
               <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--admin-border)" />

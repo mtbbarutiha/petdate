@@ -105,7 +105,7 @@ export function AdminFinancePnLPage() {
             </section>
             <section className="admin-card">
               <div className="admin-card-head"><h2>{tr('مقایسه درآمد و هزینه')}</h2></div>
-              <div style={{ padding: 16 }}>
+              <div className="admin-chart-box" style={{ padding: 8 }}>
                 <AdminBarChart
                   color="#5c4d91"
                   points={[

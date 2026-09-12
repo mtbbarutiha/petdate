@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { useMemo } from 'react';
+import { capAdminChartHeight } from '../adminChartLayout';
 import {
   AdminBarChart,
   AdminDonutChart,
@@ -261,7 +262,7 @@ export function CategoryFunnelWidget({
       ) : drill.view.length ? (
         <AdminFunnelChart
           points={drill.view}
-          height={Math.max(ctx.chartHeight, drill.view.length * 36 + 8)}
+          height={capAdminChartHeight(Math.max(ctx.chartHeight, drill.view.length * 36 + 8))}
           onSliceClick={(p) => {
             if (!drill.selected) drill.select(p.label);
             onSliceClick?.(p);

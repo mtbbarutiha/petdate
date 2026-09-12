@@ -22,6 +22,12 @@ import {
   type JalaliDateValue,
 } from '../../JalaliDateSelect';
 import {
+  adminChartPlotMargin,
+  adminChartTickFormatter,
+  adminChartXAxisProps,
+  adminChartYAxisProps,
+} from '../../adminChartLayout';
+import {
   AdminProgressRing,
   MotionChartTooltip,
   useRechartsMotion,
@@ -385,9 +391,9 @@ export function AdminCrmReportsPage() {
               <div className="admin-card-head"><h2>{tr('سن صف تیکت‌های باز')}</h2></div>
               <div className="crm-report-chart-box" style={{ height: 260 }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={ageBars} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
-                    <XAxis dataKey="label" tick={{ fontSize: 11, fill: 'var(--admin-muted)' }} axisLine={false} tickLine={false} />
-                    <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: 'var(--admin-muted)' }} axisLine={false} tickLine={false} width={28} />
+                  <BarChart data={ageBars} margin={adminChartPlotMargin}>
+                    <XAxis dataKey="label" {...adminChartXAxisProps} tickFormatter={adminChartTickFormatter} />
+                    <YAxis {...adminChartYAxisProps} width={28} />
                     <Tooltip content={<ChartTip />} cursor={{ fill: 'rgba(92,77,145,0.06)' }} />
                     <Bar dataKey="value" radius={[8, 8, 0, 0]} maxBarSize={36} {...motion}>
                       {ageBars.map((b) => <Cell key={b.key} fill={b.color || '#3b82f6'} />)}

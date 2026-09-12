@@ -68,7 +68,7 @@ export function AdminFinanceWalletPage() {
           <div className="admin-dash-grid">
             <section className="admin-card">
               <div className="admin-card-head"><h2>{tr('اعتبار در برابر بدهکار')}</h2></div>
-              <div style={{ padding: 16 }}>
+              <div className="admin-chart-box admin-chart-box--donut" style={{ padding: 8 }}>
                 <AdminDonutChart
                   slices={currencies.map((c, i) => ({
                     label: LABELS[c] || c,

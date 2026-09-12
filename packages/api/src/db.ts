@@ -1131,6 +1131,21 @@ function migrateSchema() {
   if (!pdNames.has('public_id')) {
     db.exec('ALTER TABLE playdate_requests ADD COLUMN public_id TEXT');
   }
+  if (!pdNames.has('from_user_id')) {
+    db.exec('ALTER TABLE playdate_requests ADD COLUMN from_user_id INTEGER');
+  }
+  if (!pdNames.has('to_user_id')) {
+    db.exec('ALTER TABLE playdate_requests ADD COLUMN to_user_id INTEGER');
+  }
+  if (!pdNames.has('scheduled_at')) {
+    db.exec('ALTER TABLE playdate_requests ADD COLUMN scheduled_at TEXT');
+  }
+  if (!pdNames.has('location')) {
+    db.exec('ALTER TABLE playdate_requests ADD COLUMN location TEXT');
+  }
+  if (!pdNames.has('updated_at')) {
+    db.exec("ALTER TABLE playdate_requests ADD COLUMN updated_at TEXT");
+  }
 
   const chatCols = db.prepare('PRAGMA table_info(playdate_chat_messages)').all() as { name: string }[];
   const chatNames = new Set(chatCols.map((c) => c.name));
@@ -4467,6 +4482,7 @@ export const dbService = {
   },
 
   getGame(id: number): Game | null {
+    if (!Number.isFinite(id) || !Number.isInteger(id) || id <= 0) return null;
     const row = db.prepare('SELECT * FROM games WHERE id = ?').get(id) as Record<string, unknown> | undefined;
     return row ? mapGame(row) : null;
   },
@@ -4521,6 +4537,7 @@ export const dbService = {
   },
 
   getGamePlayers(gameId: number): GamePlayer[] {
+    if (!Number.isFinite(gameId) || gameId <= 0) return [];
     const rows = db
       .prepare(
         `SELECT gp.*, u.name as user_name FROM game_players gp
@@ -6063,6 +6080,33 @@ export const dbService = {
       return { refunded: false, amount: 0, reason: 'not_seeker_advice', consult };
     }
 
+    const split = consultFeeSplit('seeker_advice');
+    const fee = Math.max(
+      0,
+      Math.floor(
+        Number(
+          consult.feeCoins != null && consult.feeCoins > 0 ? consult.feeCoins : split.cost
+        )
+      )
+    );
+    if (fee <= 0) {
+      return { refunded: false, amount: 0, reason: 'zero_fee', consult };
+    }
+
+    // Already-refunded must win over the 1s window. SQLite datetime('now') is
+    // second-precision, so a second call ~200ms later can look "too late"
+    // even though the first refund already posted (CI flake on #313 deploy).
+    const already = db
+      .prepare(
+        `SELECT id FROM wallet_ledger
+         WHERE ref_type = 'seeker_advice_early_refund' AND ref_id = ?
+         LIMIT 1`
+      )
+      .get(String(consultId)) as { id: number } | undefined;
+    if (already) {
+      return { refunded: false, amount: fee, reason: 'already_refunded', consult };
+    }
+
     const anchorRaw = consult.vetPaidAt || consult.createdAt;
     const rawTs = String(anchorRaw || '').trim();
     const anchorMs = Date.parse(
@@ -6077,30 +6121,6 @@ export const dbService = {
     const elapsed = Date.now() - anchorMs;
     if (elapsed >= SEEKER_ADVICE_EARLY_REFUND_MS) {
       return { refunded: false, amount: 0, reason: 'too_late', consult };
-    }
-
-    const split = consultFeeSplit('seeker_advice');
-    const fee = Math.max(
-      0,
-      Math.floor(
-        Number(
-          consult.feeCoins != null && consult.feeCoins > 0 ? consult.feeCoins : split.cost
-        )
-      )
-    );
-    if (fee <= 0) {
-      return { refunded: false, amount: 0, reason: 'zero_fee', consult };
-    }
-
-    const already = db
-      .prepare(
-        `SELECT id FROM wallet_ledger
-         WHERE ref_type = 'seeker_advice_early_refund' AND ref_id = ?
-         LIMIT 1`
-      )
-      .get(String(consultId)) as { id: number } | undefined;
-    if (already) {
-      return { refunded: false, amount: fee, reason: 'already_refunded', consult };
     }
 
     const providerAmountClaw = Math.max(

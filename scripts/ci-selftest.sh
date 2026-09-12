@@ -42,6 +42,9 @@ npx tsx "$ROOT/packages/web/src/admin/adminWordmark.selftest.ts"
 echo "==> selftest: web admin analytics path labels"
 npx tsx "$ROOT/packages/web/src/admin/analyticsPathLabel.selftest.ts"
 
+echo "==> selftest: web admin error-log Persian messages"
+npx tsx "$ROOT/packages/web/src/admin/adminLogMessageFa.selftest.ts"
+
 echo "==> selftest: web admin monitoring tone mapping"
 npx tsx "$ROOT/packages/web/src/admin/AdminMonitoringPage.selftest.ts"
 
@@ -53,6 +56,12 @@ npx tsx "$ROOT/packages/web/src/admin/adminMagazineRoute.selftest.ts"
 
 echo "==> selftest: admin mobile hamburger / drawer (RTL)"
 npx tsx "$ROOT/packages/web/src/admin/adminMobileNav.selftest.ts"
+
+echo "==> selftest: admin route-transition loading (no stale tab flash)"
+npx tsx "$ROOT/packages/web/src/admin/adminRouteLoading.selftest.ts"
+
+echo "==> selftest: admin sidebar ops-priority order"
+npx tsx "$ROOT/packages/web/src/admin/adminNavOrder.selftest.ts"
 
 echo "==> selftest: admin finance payments under مالی + nav notifs"
 npx tsx "$ROOT/packages/web/src/admin/adminFinanceNavNotifs.selftest.ts"
@@ -74,6 +83,9 @@ npx tsx "$ROOT/packages/web/src/admin/adminUsersTableCompact.selftest.ts"
 # Guard: admin shop order expand panel is clean RTL (not raw JSON dump)
 echo "==> selftest: admin shop order detail panel"
 npx tsx "$ROOT/packages/web/src/admin/adminShopOrderDetail.selftest.ts"
+
+echo "==> selftest: web admin chart layout (size + grid + labels)"
+npx tsx "$ROOT/packages/web/src/admin/adminChartLayout.selftest.ts"
 
 echo "==> selftest: web admin widget dashboard (layout + drill)"
 npx tsx "$ROOT/packages/web/src/admin/widgets/widgetDashboard.selftest.ts"
@@ -129,6 +141,9 @@ npx tsx "$ROOT/packages/web/src/lib/wcdnNginx.selftest.ts"
 echo "==> selftest: web API error message (WCDN HTML → Persian)"
 npx tsx "$ROOT/packages/web/src/lib/apiErrorMessage.selftest.ts"
 
+echo "==> selftest: web listGames never blanks SPA"
+npx tsx "$ROOT/packages/web/src/lib/listGames.selftest.ts"
+
 echo "==> selftest: shop product gallery assets"
 npx tsx "$ROOT/packages/web/src/data/shopGallery.selftest.ts"
 
@@ -145,6 +160,7 @@ npx tsx "$ROOT/packages/web/src/components/chatGiftVoice.selftest.ts"
 # Pure / memory-path tests first
 run src/services/web-chat-cta-once.selftest.ts
 run src/services/app-logger.selftest.ts
+run src/routes/games.selftest.ts
 run src/services/otp-sms-copy.selftest.ts
 run src/services/otp-email-html.selftest.ts
 run src/services/prescription-sms.selftest.ts
@@ -174,6 +190,7 @@ echo "==> selftest: bot sticky + telegram-http + quick-connect-parse + nearby-ra
 npx tsx "$ROOT/packages/bot/src/sticky-reply-keyboard.selftest.ts"
 npx tsx "$ROOT/packages/bot/src/telegram-http.selftest.ts"
 npx tsx "$ROOT/packages/bot/src/quick-connect-parse.selftest.ts"
+npx tsx "$ROOT/packages/bot/src/api-client-bot-headers.selftest.ts"
 npx tsx "$ROOT/packages/bot/src/urls.selftest.ts"
 npx tsx "$ROOT/packages/bot/src/handlers/nearby-radius.selftest.ts"
 npx tsx "$ROOT/packages/bot/src/handlers/nearby-inline-list.selftest.ts"
@@ -203,10 +220,13 @@ run src/admin-finance-dashboard.selftest.ts
 run src/platform-settings.selftest.ts
 run src/magazine.selftest.ts
 run src/magazine-editorial-seed.selftest.ts
+run src/routes/games-list.selftest.ts
 run src/routes/pets-id-guard.selftest.ts
 run src/routes/pets-slug-diary.selftest.ts
 run src/routes/pets-public-list.selftest.ts
 run src/routes/playdates-auth.selftest.ts
+run src/routes/users-staff-auth.selftest.ts
+run src/routes/consultations-quick-connect-auth.selftest.ts
 run src/services/playdate-fee.selftest.ts
 run src/site-analytics.selftest.ts
 

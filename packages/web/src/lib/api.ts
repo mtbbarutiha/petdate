@@ -1,4 +1,7 @@
 import type {
+  Game,
+  GameStatus,
+  GameType,
   OnboardingStatus,
   PetMedicalEntry,
   PetMedicalRecord,
@@ -188,6 +191,42 @@ export async function setUserOnboarding(
     method: 'PATCH',
     body: JSON.stringify({ onboarding }),
   });
+}
+
+function asGameList(data: unknown): Game[] {
+  if (Array.isArray(data)) return data as Game[];
+  if (data && typeof data === 'object' && Array.isArray((data as { games?: unknown }).games)) {
+    return (data as { games: Game[] }).games;
+  }
+  return [];
+}
+
+/**
+ * List games. Never throws — a 500/HTML/WCDN body must not blank the SPA.
+ * Prefers `/api/games/list` (legacy clients) and falls back to `/api/games`.
+ */
+export async function listGames(filters?: {
+  sectionId?: number;
+  status?: GameStatus;
+  gameType?: GameType;
+}): Promise<Game[]> {
+  const params = new URLSearchParams();
+  if (filters?.sectionId != null && Number.isFinite(filters.sectionId)) {
+    params.set('sectionId', String(filters.sectionId));
+  }
+  if (filters?.status) params.set('status', filters.status);
+  if (filters?.gameType) params.set('gameType', filters.gameType);
+  const qs = params.toString();
+  const suffix = qs ? `?${qs}` : '';
+  try {
+    return asGameList(await request<unknown>(`/api/games/list${suffix}`));
+  } catch {
+    try {
+      return asGameList(await request<unknown>(`/api/games${suffix}`));
+    } catch {
+      return [];
+    }
+  }
 }
 
 export async function listPets(filters?: {

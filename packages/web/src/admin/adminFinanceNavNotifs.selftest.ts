@@ -23,11 +23,11 @@ assert.match(layout, /platformBadgeKey:\s*['"]shopOrders['"]/, 'shop orders badg
 assert.match(layout, /\/api\/admin\/finance-os\/nav-counts/, 'polls finance-os nav-counts');
 assert.match(layout, /\/api\/admin\/crm\/nav-counts/, 'polls crm nav-counts');
 
-const storeBlock = layout.split("titleKey: 'admin.store'")[1]?.split("titleKey: 'admin.contentSystem'")[0] || '';
+const storeBlock = layout.split("titleKey: 'admin.store'")[1]?.split(/titleKey: 'admin\.[^']+'/)[0] || '';
 assert.ok(storeBlock, 'store nav group present');
 assert.doesNotMatch(storeBlock, /\/admin\/payments/, 'payments removed from فروشگاه nav');
 
-const financeBlock = layout.split("titleKey: 'admin.finance'")[1]?.split("titleKey: 'admin.store'")[0] || '';
+const financeBlock = layout.split("titleKey: 'admin.finance'")[1]?.split(/titleKey: 'admin\.[^']+'/)[0] || '';
 assert.match(financeBlock, /\/admin\/payments/, 'payments under مالی');
 assert.match(financeBlock, /admin\.depositQueue/, 'deposit queue label under مالی');
 

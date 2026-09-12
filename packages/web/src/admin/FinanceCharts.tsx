@@ -4,6 +4,12 @@
  */
 import { useId, useMemo, useState, type CSSProperties } from 'react';
 import {
+  ADMIN_CHART_DONUT_SIZE,
+  ADMIN_CHART_PLOT_H,
+  ADMIN_CHART_VIEWBOX_W,
+  truncateChartLabel,
+} from './adminChartLayout';
+import {
   AdminProgressRing,
   MOTION_DUR_MS,
   MOTION_PALETTE,
@@ -34,8 +40,9 @@ function Callout({
   visible: boolean;
 }) {
   if (!visible) return null;
-  const w = 48;
-  const h = 28;
+  const text = formatNumFa(value);
+  const w = Math.min(104, Math.max(52, 16 + text.length * 7));
+  const h = 26;
   return (
     <g className="admin-motion-svg-callout" style={{ pointerEvents: 'none' }}>
       <rect
@@ -43,7 +50,7 @@ function Callout({
         y={y - h - 10}
         width={w}
         height={h}
-        rx={14}
+        rx={13}
         className="admin-motion-svg-callout-bg"
       />
       <polygon
@@ -51,7 +58,7 @@ function Callout({
         className="admin-motion-svg-callout-bg"
       />
       <text x={x} y={y - 16} textAnchor="middle" className="admin-motion-svg-callout-text">
-        {formatNumFa(value)}
+        {text}
       </text>
     </g>
   );
@@ -59,7 +66,7 @@ function Callout({
 
 export function AdminBarChart({
   points,
-  height = 140,
+  height = ADMIN_CHART_PLOT_H,
   color = MOTION_PALETTE.purple,
   onSliceClick,
   interactive,
@@ -79,13 +86,20 @@ export function AdminBarChart({
   }
   const clickable = Boolean(onSliceClick) && interactive !== false;
   const max = maxOf(points);
-  const barW = Math.max(14, Math.min(36, Math.floor(560 / Math.max(points.length, 1)) - 6));
-  const gap = 10;
-  const labelH = 48;
-  const width = Math.max(280, points.length * (barW + gap) + 24);
+  const n = Math.max(points.length, 1);
+  const width = ADMIN_CHART_VIEWBOX_W;
+  const slot = width / n;
+  const barW = Math.max(10, Math.min(28, slot - 8));
+  const labelH = 36;
+  const labelEvery = n > 10 ? Math.ceil(n / 8) : 1;
   return (
     <div className="admin-chart-scroll">
-      <svg viewBox={`0 0 ${width} ${height + labelH}`} className="admin-chart-svg admin-chart-svg--compact" role="img">
+      <svg
+        viewBox={`0 0 ${width} ${height + labelH}`}
+        preserveAspectRatio="xMidYMid meet"
+        className="admin-chart-svg admin-chart-svg--compact"
+        role="img"
+      >
         <defs>
           <linearGradient id={`bar-${uid}`} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={color} stopOpacity={0.98} />
@@ -94,7 +108,7 @@ export function AdminBarChart({
         </defs>
         {points.map((p, i) => {
           const h = Math.round((p.value / max) * height);
-          const x = 12 + i * (barW + gap);
+          const x = i * slot + (slot - barW) / 2;
           const y = height - h + 8;
           const delay = reduced ? 0 : i * 45;
           return (
@@ -137,19 +151,23 @@ export function AdminBarChart({
                   opacity={hover === null || hover === i ? 0.95 : 0.45}
                 />
               </g>
-              <title>{`${p.label}: ${formatNumFa(p.value)}`}</title>
-              <text
-                x={x + barW / 2}
-                y={height + 22}
-                textAnchor="middle"
-                className="admin-chart-axis"
-                transform={`rotate(-28 ${x + barW / 2} ${height + 22})`}
-              >
-                {p.label.length > 14 ? `${p.label.slice(0, 12)}…` : p.label}
-              </text>
-              <text x={x + barW / 2} y={y - 4} textAnchor="middle" className="admin-chart-val">
-                {formatNumFa(p.value)}
-              </text>
+              <title>{`${tr(p.label)}: ${formatNumFa(p.value)}`}</title>
+              {i % labelEvery === 0 ? (
+                <text
+                  x={x + barW / 2}
+                  y={height + 22}
+                  textAnchor="middle"
+                  className="admin-chart-axis"
+                  transform={`rotate(-24 ${x + barW / 2} ${height + 22})`}
+                >
+                  {truncateChartLabel(tr(p.label), n > 8 ? 8 : 12)}
+                </text>
+              ) : null}
+              {n <= 12 || hover === i ? (
+                <text x={x + barW / 2} y={y - 4} textAnchor="middle" className="admin-chart-val">
+                  {formatNumFa(p.value)}
+                </text>
+              ) : null}
               <Callout x={x + barW / 2} y={y} value={p.value} visible={hover === i} />
             </g>
           );
@@ -185,13 +203,18 @@ export function AdminFunnelChart({
     return <p className="admin-muted">{tr('داده‌ای برای نمودار نیست')}</p>;
   }
   const max = maxOf(points);
-  const rowH = 44;
+  const rowH = 36;
   const padX = 12;
-  const width = 640;
-  const h = height ?? points.length * rowH + 16;
+  const width = ADMIN_CHART_VIEWBOX_W;
+  const h = height ?? points.length * rowH + 12;
   return (
     <div className="admin-chart-scroll admin-funnel-wrap">
-      <svg viewBox={`0 0 ${width} ${h}`} className="admin-chart-svg admin-chart-svg--lg" role="img">
+      <svg
+        viewBox={`0 0 ${width} ${h}`}
+        preserveAspectRatio="xMidYMid meet"
+        className="admin-chart-svg admin-chart-svg--funnel"
+        role="img"
+      >
         {points.map((p, i) => {
           const ratio = p.value / max;
           const barW = Math.max(80, Math.round((width - padX * 2) * (0.42 + ratio * 0.58)));
@@ -218,7 +241,7 @@ export function AdminFunnelChart({
               />
               <title>{`${p.label}: ${formatNumFa(p.value)}`}</title>
               <text x={width / 2} y={y + 22} textAnchor="middle" className="admin-funnel-label">
-                {tr(p.label)} — {formatNumFa(p.value)}
+                {truncateChartLabel(tr(p.label), 22)} — {formatNumFa(p.value)}
               </text>
             </g>
           );
@@ -239,7 +262,7 @@ export function AdminFunnelChart({
 
 export function AdminLineChart({
   points,
-  height = 140,
+  height = ADMIN_CHART_PLOT_H,
   color = MOTION_PALETTE.purple,
   onPointClick,
   interactive,
@@ -256,7 +279,7 @@ export function AdminLineChart({
   const geometry = useMemo(() => {
     if (!points.length) return null;
     const max = maxOf(points);
-    const width = 640;
+    const width = ADMIN_CHART_VIEWBOX_W;
     const padX = 14;
     const padY = 14;
     const step = points.length > 1 ? (width - padX * 2) / (points.length - 1) : 0;
@@ -288,7 +311,12 @@ export function AdminLineChart({
 
   return (
     <div className="admin-chart-scroll">
-      <svg viewBox={`0 0 ${width} ${height + 28}`} className="admin-chart-svg admin-chart-svg--compact" role="img">
+      <svg
+        viewBox={`0 0 ${width} ${height + 28}`}
+        preserveAspectRatio="xMidYMid meet"
+        className="admin-chart-svg admin-chart-svg--compact"
+        role="img"
+      >
         <defs>
           <linearGradient id={`area-${uid}`} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={color} stopOpacity={0.38} />
@@ -401,7 +429,7 @@ function MotionLinePath({
 /** Multi-series smooth line chart with floating callouts. */
 export function AdminMultiLineChart({
   series,
-  height = 140,
+  height = ADMIN_CHART_PLOT_H,
   onPointClick,
   interactive,
 }: {
@@ -419,7 +447,7 @@ export function AdminMultiLineChart({
     const allValues = active.flatMap((s) => s.points.map((p) => p.value));
     const max = Math.max(1, ...allValues);
     const len = Math.max(...active.map((s) => s.points.length));
-    const width = 640;
+    const width = ADMIN_CHART_VIEWBOX_W;
     const padX = 14;
     const padY = 14;
     const step = len > 1 ? (width - padX * 2) / (len - 1) : 0;
@@ -443,7 +471,12 @@ export function AdminMultiLineChart({
 
   return (
     <div className="admin-chart-scroll">
-      <svg viewBox={`0 0 ${width} ${height + 36}`} className="admin-chart-svg admin-chart-svg--compact" role="img">
+      <svg
+        viewBox={`0 0 ${width} ${height + 36}`}
+        preserveAspectRatio="xMidYMid meet"
+        className="admin-chart-svg admin-chart-svg--compact"
+        role="img"
+      >
         <defs>
           {built.map((s) => (
             <linearGradient key={`g-${s.key}`} id={`ml-${s.key}`} x1="0" y1="0" x2="0" y2="1">
@@ -512,7 +545,9 @@ export function AdminMultiLineChart({
         {built.map((s) => (
           <li key={s.key}>
             <span style={{ background: s.color }} />
-            {tr(s.label)}
+            <span className="admin-chart-legend-label" title={tr(s.label)}>
+              {truncateChartLabel(tr(s.label), 18)}
+            </span>
           </li>
         ))}
       </ul>
@@ -522,7 +557,7 @@ export function AdminMultiLineChart({
 
 export function AdminDonutChart({
   slices,
-  size = 140,
+  size = ADMIN_CHART_DONUT_SIZE,
   onSliceClick,
 }: {
   slices: Array<{ label: string; value: number; color: string }>;
@@ -537,7 +572,13 @@ export function AdminDonutChart({
   const hasData = slices.some((s) => s.value > 0);
   return (
     <div className="admin-donut-wrap">
-      <svg width={size} height={size} viewBox="0 0 160 160" className="admin-chart-svg admin-chart-svg--lg">
+      <svg
+        width={size}
+        height={size}
+        viewBox="0 0 160 160"
+        preserveAspectRatio="xMidYMid meet"
+        className="admin-chart-svg admin-chart-svg--donut"
+      >
         <g transform="translate(80,80) rotate(-90)">
           {!hasData ? (
             <circle r={r} cx={0} cy={0} fill="transparent" stroke={MOTION_PALETTE.track} strokeWidth={20} />
@@ -597,7 +638,9 @@ export function AdminDonutChart({
             title={`${s.label}: ${formatNumFa(s.value)}`}
           >
             <span style={{ background: s.color }} />
-            {tr(s.label)}
+            <span className="admin-chart-legend-label" title={tr(s.label)}>
+              {truncateChartLabel(tr(s.label), 18)}
+            </span>
             <strong>{formatNumFa(s.value)}</strong>
           </li>
         ))}

@@ -16,6 +16,7 @@ import { Briefcase, Clock, UserCheck, UserX, Users, Wallet } from 'lucide-react'
 import { adminFetch, formatNumFa } from '../../api';
 import {
   adminRtlHBarsCategoryAxis,
+  adminRtlHBarsHeight,
   adminRtlHBarsMargin,
   adminRtlHBarsRadius,
   adminRtlHBarsValueAxis,
@@ -116,10 +117,7 @@ export function AdminHrDashboardPage() {
     [statusData],
   );
 
-  const chartRowHeight = Math.max(
-    220,
-    40 * Math.max(deptData.length, costDeptData.length, 3),
-  );
+  const chartRowHeight = adminRtlHBarsHeight(Math.max(deptData.length, costDeptData.length, 3), 32);
 
   const kpiItems: AdminKpiItem[] = k
     ? [
@@ -248,10 +246,10 @@ export function AdminHrDashboardPage() {
           title={tr("توزیع مکانی")}
           empty={!locData.length}
           emptyHint="موقعیتی ثبت نشده"
-          height={Math.max(200, 36 * Math.max(locData.length, 3))}
+          height={adminRtlHBarsHeight(locData.length)}
           rtlHBars
         >
-          <ResponsiveContainer width="100%" height={Math.max(200, 36 * Math.max(locData.length, 3))}>
+          <ResponsiveContainer width="100%" height={adminRtlHBarsHeight(locData.length)}>
             <BarChart layout="vertical" data={locData} margin={{ ...adminRtlHBarsMargin }}>
               <MotionBarGradientDefs id="hrLocBar" from={MOTION_PALETTE.purple} to={MOTION_PALETTE.blue} />
               <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--admin-border)" />
