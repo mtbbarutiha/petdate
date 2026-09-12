@@ -58,6 +58,11 @@
    * Use ONE clearance on content — never stack body + layout + main + footer.
    */
   --pepito-mobile-dock-clearance: calc(76px + env(safe-area-inset-bottom, 0px));
+
+  --toast-success: var(--pepito-mint);
+  --toast-success-soft: #e7faf4;
+  --toast-info: var(--pepito-base);
+  --toast-info-soft: #efeaf8;
 }
 
 /* Shared Pepito content shell (nav / sections / footer / CTA) */

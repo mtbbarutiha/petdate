@@ -12,6 +12,7 @@ import { useI18n } from '../i18n';
 import { resolvePublicAvatarUrl } from '../lib/api';
 import { loginPath } from '../lib/authRedirect';
 import { filterNavByPlatformConfig, SITE_NAV_GUEST, siteNavMobileForUser, type SiteNavItem } from '../lib/siteNav';
+import { useAppToast } from '../hooks/useAppToast';
 import { usePlatformConfig } from '../hooks/usePlatformConfig';
 import { ProfileManageNav } from './ProfileManageNav';
 
@@ -30,7 +31,7 @@ export function LandingMobileDock() {
   const [roleOpen, setRoleOpen] = useState(false);
   const [manageOpen, setManageOpen] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
+  const { toastSuccess, toastError } = useAppToast();
   const rolePanelId = useId();
   const managePanelId = useId();
   const longPressTimer = useRef<number | null>(null);
@@ -58,12 +59,6 @@ export function LandingMobileDock() {
     pathname.startsWith('/vet-chats') ||
     pathname === '/vet-consult' ||
     pathname.startsWith('/vet-consult/');
-
-  useEffect(() => {
-    if (!toast) return;
-    const t = window.setTimeout(() => setToast(null), 2200);
-    return () => window.clearTimeout(t);
-  }, [toast]);
 
   useEffect(() => {
     if (!roleOpen && !manageOpen) return;
@@ -122,7 +117,7 @@ export function LandingMobileDock() {
     if (busy || !user) return;
     if (activeRole === role) {
       setRoleOpen(false);
-      setToast(t('roles.activeToast', { role: roleLabel(role) }));
+      toastSuccess(t('roles.activeToast', { role: roleLabel(role) }));
       navigate(dashboardPathForRole(role));
       return;
     }
@@ -131,10 +126,10 @@ export function LandingMobileDock() {
       const updated = await setPrimaryRole(role);
       const next = primaryRole(updated.roles, updated.role) ?? role;
       setRoleOpen(false);
-      setToast(t('roles.activeToast', { role: roleLabel(next) }));
+      toastSuccess(t('roles.activeToast', { role: roleLabel(next) }));
       navigate(dashboardPathForRole(next));
     } catch (err) {
-      setToast(err instanceof Error ? err.message : t('roles.switchFailed'));
+      toastError(err instanceof Error ? err.message : t('roles.switchFailed'));
     } finally {
       setBusy(false);
     }
@@ -296,12 +291,6 @@ export function LandingMobileDock() {
               {t('roles.goProfile')}
             </Link>
           </div>
-        </div>
-      ) : null}
-
-      {toast ? (
-        <div className="pepito-dock-role-toast" role="status">
-          {toast}
         </div>
       ) : null}
     </>
