@@ -97,6 +97,16 @@ assert.match(
   /\.admin-app\s+\.admin-donut-legend\s+li[\s\S]*?width:\s*max-content/,
   'legend rows shrink-wrap so space-between cannot strand the count'
 );
+assert.match(
+  css,
+  /\.admin-app\s+\.admin-donut-legend\s+li\s*>\s*span:first-child\s*\{[^}]*width:\s*10px/s,
+  'donut swatch rule targets only the first span, not the label'
+);
+assert.match(
+  css,
+  /\.admin-app\s+\.admin-donut-legend\s+\.admin-chart-legend-label\s*\{[^}]*width:\s*auto/s,
+  'donut legend labels are not clipped to the 10px swatch box'
+);
 
 const legendCountBlocks = [
   [/\.admin-app\s+\.admin-donut-legend\s+strong[\s\S]*?\{[^}]+\}/g, 'admin-donut-legend count'],

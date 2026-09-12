@@ -2121,11 +2121,16 @@ body:has(.admin-app) {
   gap: 8px;
   font-size: 0.85rem;
 }
-.admin-app .admin-donut-legend li span {
+.admin-app .admin-donut-legend li > span:first-child {
   width: 10px;
   height: 10px;
   border-radius: 999px;
   flex-shrink: 0;
+}
+.admin-app .admin-donut-legend .admin-chart-legend-label {
+  width: auto;
+  height: auto;
+  border-radius: 0;
 }
 .admin-app .admin-donut-legend strong {
   font-family: var(--admin-mono);
