@@ -152,6 +152,9 @@ npx tsx "$ROOT/packages/web/src/lib/swCache.selftest.ts"
 echo "==> selftest: web authRedirect next=/vet-consult"
 npx tsx "$ROOT/packages/web/src/lib/authRedirect.selftest.ts"
 
+echo "==> selftest: web shared AppToast card (success/error/warning/info)"
+npx tsx "$ROOT/packages/web/src/hooks/useAppToast.selftest.ts"
+
 echo "==> selftest: web shared AppDialog (no native prompt/confirm/alert)"
 npx tsx "$ROOT/packages/web/src/components/appDialog.selftest.ts"
 

@@ -4757,9 +4757,16 @@ body:has(.admin-app) {
 /* —— Ticketing module (prototype parity, Pepito light RTL) —— */
 .admin-app .tk-module { position: relative; }
 .admin-app .tk-toast {
-  position: fixed; top: 16px; left: 16px; z-index: 80;
-  background: var(--admin-mint, #15cca0); color: #fff; border-radius: 10px;
-  padding: 10px 14px; box-shadow: 0 10px 28px rgba(15,23,42,.12); font-size: 13px;
+  position: fixed; top: 16px; inset-inline-start: 16px; z-index: 80;
+  max-width: min(92vw, var(--toast-max, 420px));
+  background: var(--toast-bg, var(--admin-surface, #fff));
+  color: var(--toast-ink, var(--admin-ink, #1e1b2e));
+  border: 1px solid color-mix(in srgb, var(--toast-success, #15cca0) 28%, var(--admin-border, #e4e2f3));
+  border-radius: var(--toast-radius, 16px);
+  padding: 12px 14px;
+  box-shadow: var(--toast-shadow, 0 10px 28px rgba(15,23,42,.12));
+  font-size: 13px;
+  font-weight: 700;
 }
 .admin-app .tk-shell { display: flex; gap: 16px; align-items: flex-start; }
 .admin-app .tk-side {
@@ -6174,12 +6181,14 @@ body:has(.admin-app) {
   top: 8px;
   z-index: 20;
   margin-bottom: 12px;
-  padding: 10px 14px;
-  border-radius: 10px;
-  background: #e8faf3;
-  border: 1px solid #b7ebd9;
-  color: #0f9f7a;
+  padding: 12px 14px;
+  border-radius: var(--toast-radius, 16px);
+  background: var(--toast-success-soft, #e8faf3);
+  border: 1px solid color-mix(in srgb, var(--toast-success, #15cca0) 32%, transparent);
+  color: var(--toast-success, #0f9f7a);
   font-size: 13px;
+  font-weight: 700;
+  box-shadow: var(--shadow-sm, 0 2px 8px rgba(15, 23, 42, 0.06));
 }
 .admin-app .crm-settings-mono {
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
