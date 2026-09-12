@@ -2711,6 +2711,18 @@ html[data-theme='dark'] .pepito-my-pets-card {
   box-shadow: var(--pd-shadow);
 }
 
+/* Own-profile stats strip under the hero */
+html[data-theme='dark'] .pepito-profile-stats--strip {
+  background: var(--pepito-white);
+  border-top-color: var(--pd-border);
+}
+html[data-theme='dark'] .pepito-profile-stats--strip .pepito-profile-stat + .pepito-profile-stat::before {
+  background: var(--pd-border);
+}
+html[data-theme='dark'] .pepito-profile-stats--strip .pepito-profile-stat:hover {
+  background: color-mix(in srgb, var(--pepito-base) 10%, transparent);
+}
+
 /* Profile about + pets panels — dark surfaces */
 html[data-theme='dark'] .pepito-profile-about-panel,
 html[data-theme='dark'] .pepito-profile-pets-panel {

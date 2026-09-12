@@ -291,6 +291,8 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 /* Fixed bar sits ABOVE the hero (not over the photo). */
 :root {
   --pepito-nav-h: 74px;
+  /* Compact band — 100svh over-reserve (#369) made the first section feel empty-tall. */
+  --pepito-hero-h: calc(93svh - var(--pepito-nav-h));
 }
 .pepito-nav {
   position: fixed;
@@ -318,6 +320,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   */
   :root {
     --pepito-nav-h: 64px;
+    --pepito-hero-h: calc(85svh - var(--pepito-nav-h));
   }
   .pepito-nav {
     position: relative;
@@ -341,8 +344,6 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
     margin-top: 0;
   }
   .pepito-hero {
-    /* Match critical CSS — 85vh here used to shrink the hero after hydrate (CLS). */
-    --pepito-hero-h: calc(100svh - var(--pepito-nav-h));
     min-height: var(--pepito-hero-h);
   }
   .pepito-app-layout {
@@ -426,7 +427,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   width: 100%;
   /* Fixed-nav offset only when nav is fixed — see @media (min-width: 860px) below */
   margin-top: 0;
-  min-height: calc(93vh - var(--pepito-nav-h));
+  min-height: var(--pepito-hero-h);
   display: grid;
   align-items: center;
   overflow: hidden;
@@ -730,7 +731,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 
 @media screen and (max-width: 720px) {
   .pepito-hero {
-    min-height: calc(100svh - var(--pepito-nav-h));
+    min-height: var(--pepito-hero-h);
   }
   .pepito-hero .pepito-kicker {
     font-size: 13px;
@@ -3615,6 +3616,21 @@ button.chip.is-on {
     width: auto !important;
     max-width: none !important;
   }
+  /* Own-profile stats sit under the hero — bleed together, radius on the strip. */
+  .pepito-app-shell .pepito-profile-head .pepito-profile-hero,
+  .pepito-profile-head .pepito-profile-hero,
+  .pepito-app-shell .pepito-profile-head .pepito-profile-hero--passport,
+  .pepito-profile-head .pepito-profile-hero--passport {
+    border-radius: 0 !important;
+    margin-inline: calc(-1 * var(--pepito-container-pad)) !important;
+  }
+  .pepito-app-shell .pepito-profile-head .pepito-profile-stats--strip,
+  .pepito-profile-head .pepito-profile-stats--strip {
+    margin-inline: calc(-1 * var(--pepito-container-pad));
+    width: auto;
+    max-width: none;
+    border-radius: 0 0 22px 22px;
+  }
   .pepito-app-shell .pepito-profile-top,
   .pepito-profile-top {
     margin-inline: calc(-1 * var(--pepito-container-pad));
@@ -3807,6 +3823,19 @@ button.chip.is-on {
 .pepito-profile--passport {
   max-width: 1080px;
   gap: 1.5rem;
+}
+.pepito-profile-head {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.pepito-profile--passport .pepito-profile-head .pepito-profile-hero--passport {
+  border-end-start-radius: 0;
+  border-end-end-radius: 0;
+}
+.pepito-profile-head .pepito-profile-stats--strip {
+  border-radius: 0 0 28px 28px;
+  overflow: hidden;
 }
 .pepito-profile--passport .pepito-profile-hero--passport {
   min-height: clamp(300px, 46vh, 460px);
@@ -5018,7 +5047,7 @@ button.chip.is-on {
   font-weight: 600;
 }
 
-/* Stats strip — compact metrics under identity */
+/* Stats strip — compact metrics under own-profile identity */
 .pepito-profile-stats {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -10314,7 +10343,7 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   }
   .pepito-hero {
     /* Prefer svh only — dvh changes with mobile URL chrome and causes jump */
-    min-height: calc(100svh - var(--pepito-nav-h));
+    min-height: var(--pepito-hero-h);
   }
   .pepito-hero-inner {
     padding-block: calc(env(safe-area-inset-top, 0px) + 1.35rem) 2.25rem;
@@ -11171,6 +11200,7 @@ a.pepito-btn.pepito-human-consult-cta:hover {
     height: 58px;
     padding: 0.35rem 0.55rem;
     overflow: hidden;
+    --pepito-dock-icon-size: 24px;
     background:
       linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.08)),
       rgba(32, 32, 34, 0.42);
@@ -11223,14 +11253,8 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   .pepito-landing-mobile-dock-link svg {
     display: block;
     flex-shrink: 0;
-  }
-
-  /* Center گفتگو / هم‌بازی — slightly larger glyph inside the same 44px slot (no elevated circle) */
-  .pepito-landing-mobile-dock-link--chats svg {
-    width: 28px;
-    height: 28px;
-    max-width: 100%;
-    max-height: 100%;
+    width: var(--pepito-dock-icon-size);
+    height: var(--pepito-dock-icon-size);
   }
 
   .pepito-landing-mobile-dock-link.is-active {
@@ -11249,8 +11273,8 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   }
 
   .pepito-landing-mobile-dock-avatar {
-    width: 28px;
-    height: 28px;
+    width: var(--pepito-dock-icon-size);
+    height: var(--pepito-dock-icon-size);
     border-radius: 999px;
     object-fit: cover;
     display: block;

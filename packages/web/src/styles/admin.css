@@ -700,8 +700,7 @@ body:has(.admin-app) {
   margin-bottom: 6px;
 }
 
-.admin-app .form-input,
-.admin-app .admin-input-icon .form-input {
+.admin-app .form-input {
   width: 100%;
   border: 1px solid var(--admin-border);
   border-radius: 8px;
@@ -717,8 +716,18 @@ body:has(.admin-app) {
   box-shadow: 0 0 0 3px rgba(92, 77, 145, 0.22);
 }
 
+/* Icon gutter must survive the admin .form-input padding reset (RTL login overlap). */
+.admin-app .admin-input-icon .form-input {
+  padding-block: 11px;
+  padding-inline-start: 12px;
+  padding-inline-end: var(--admin-input-icon-gutter, 2.5rem);
+}
+
 .admin-app .admin-input-icon svg {
+  inset-inline-end: var(--admin-input-icon-inset, 14px);
+  inset-inline-start: auto;
   color: var(--admin-muted);
+  pointer-events: none;
 }
 
 /* Gallery inside admin pet form */

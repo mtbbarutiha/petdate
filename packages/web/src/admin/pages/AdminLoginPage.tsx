@@ -48,7 +48,7 @@ export function AdminLoginPage() {
         <div className="form-group">
           <label className="form-label">{t('admin.loginUserLabel')}</label>
           <div className="admin-input-icon">
-            <User size={16} />
+            <User size={16} aria-hidden="true" />
             <input
               className="form-input"
               type="text"
@@ -65,7 +65,7 @@ export function AdminLoginPage() {
         <div className="form-group">
           <label className="form-label">{t('admin.loginPassLabel')}</label>
           <div className="admin-input-icon">
-            <Lock size={16} />
+            <Lock size={16} aria-hidden="true" />
             <input
               className="form-input"
               type="password"

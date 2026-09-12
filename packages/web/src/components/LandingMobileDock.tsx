@@ -17,6 +17,10 @@ import { usePlatformConfig } from '../hooks/usePlatformConfig';
 import { ProfileManageNav } from './ProfileManageNav';
 
 const LONG_PRESS_MS = 480;
+/** One glyph box for every dock item (home/shop/chats/wallet/profile/…). */
+const DOCK_ICON_PX = 24;
+const DOCK_ICON_STROKE = 2;
+const DOCK_ICON_STROKE_ACTIVE = 2.25;
 
 /**
  * Instagram-style mobile bottom dock.
@@ -147,8 +151,8 @@ export function LandingMobileDock() {
         <img
           src={photo}
           alt=""
-          width={40}
-          height={40}
+          width={DOCK_ICON_PX}
+          height={DOCK_ICON_PX}
           className={`pepito-landing-mobile-dock-avatar${active ? ' is-active' : ''}`}
           draggable={false}
         />
@@ -157,16 +161,14 @@ export function LandingMobileDock() {
           className={`pepito-landing-mobile-dock-avatar pepito-landing-mobile-dock-avatar--fallback${active ? ' is-active' : ''}`}
           aria-hidden
         >
-          {initial || <UserRound size={16} strokeWidth={2.25} />}
+          {initial || <UserRound size={16} strokeWidth={DOCK_ICON_STROKE_ACTIVE} />}
         </span>
       );
     }
-    // Center گفتگو/هم‌بازی: slightly larger than siblings, still inside the same 44px slot.
-    const chats = isCenterChats(item);
     return (
       <item.icon
-        size={chats ? 28 : 24}
-        strokeWidth={active ? (chats ? 2.2 : 2.35) : chats ? 1.95 : 1.85}
+        size={DOCK_ICON_PX}
+        strokeWidth={active ? DOCK_ICON_STROKE_ACTIVE : DOCK_ICON_STROKE}
         aria-hidden
       />
     );
