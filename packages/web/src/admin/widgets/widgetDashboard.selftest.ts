@@ -25,7 +25,11 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { WidgetCatalogItem } from './types.ts';
-import { PLATFORM_WIDGET_CATALOG } from './catalogs.ts';
+import {
+  DAILY_NOTES_WIDGET_ID,
+  DUAL_CALENDAR_WIDGET_ID,
+  PLATFORM_WIDGET_CATALOG,
+} from './catalogs.ts';
 import { localDateToIso } from '../jalaliDate.ts';
 
 const days = [
@@ -152,20 +156,22 @@ assert.deepEqual(
 assert.ok(storageKeyFor('platform', 'admin@x').includes('platform'));
 assert.ok(storageKeyFor('platform', 'admin@x').includes('admin'));
 
-assert.ok(PLATFORM_WIDGET_CATALOG.some((c) => c.id === 'dualCalendar'));
-const cal = PLATFORM_WIDGET_CATALOG.find((c) => c.id === 'dualCalendar')!;
+assert.equal(DUAL_CALENDAR_WIDGET_ID, 'dualCalendar');
+assert.equal(DAILY_NOTES_WIDGET_ID, 'dailyNotes');
+assert.ok(PLATFORM_WIDGET_CATALOG.some((c) => c.id === DUAL_CALENDAR_WIDGET_ID));
+const cal = PLATFORM_WIDGET_CATALOG.find((c) => c.id === DUAL_CALENDAR_WIDGET_ID)!;
 assert.equal(cal.drill, 'none');
 assert.equal(cal.defaultW, 2);
 assert.equal(cal.defaultH, 2);
 
-const notes = PLATFORM_WIDGET_CATALOG.find((c) => c.id === 'dailyNotes');
-assert.ok(notes, 'dailyNotes catalog entry');
+const notes = PLATFORM_WIDGET_CATALOG.find((c) => c.id === DAILY_NOTES_WIDGET_ID);
+assert.ok(notes, 'dailyNotes catalog entry / layout slot');
 assert.equal(notes!.drill, 'none');
 assert.equal(notes!.defaultW, 2);
 assert.equal(notes!.defaultH, 2);
 assert.equal(notes!.group, 'ابزارها');
-const calIdx = PLATFORM_WIDGET_CATALOG.findIndex((c) => c.id === 'dualCalendar');
-const notesIdx = PLATFORM_WIDGET_CATALOG.findIndex((c) => c.id === 'dailyNotes');
+const calIdx = PLATFORM_WIDGET_CATALOG.findIndex((c) => c.id === DUAL_CALENDAR_WIDGET_ID);
+const notesIdx = PLATFORM_WIDGET_CATALOG.findIndex((c) => c.id === DAILY_NOTES_WIDGET_ID);
 assert.equal(notesIdx, calIdx + 1, 'daily notes sit immediately after calendar');
 
 const withCal = normalizeBoard(
@@ -176,8 +182,8 @@ const withCal = normalizeBoard(
   },
   PLATFORM_WIDGET_CATALOG
 );
-assert.ok(withCal.items.some((i) => i.id === 'dualCalendar'));
-assert.ok(withCal.items.some((i) => i.id === 'dailyNotes'));
+assert.ok(withCal.items.some((i) => i.id === DUAL_CALENDAR_WIDGET_ID));
+assert.ok(withCal.items.some((i) => i.id === DAILY_NOTES_WIDGET_ID));
 
 const iso = localDateToIso(new Date(2026, 8, 12, 23, 30, 0));
 assert.equal(iso, '2026-09-12', 'local ISO ignores UTC shift');
@@ -186,7 +192,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const dashPage = readFileSync(join(here, '../pages/AdminDashboardPage.tsx'), 'utf8');
 assert.match(dashPage, /DailyNotesWidget/, 'dashboard renders daily notes widget');
 assert.match(dashPage, /DashboardSelectedDateProvider/, 'calendar date shared with notes');
-assert.match(dashPage, /id === 'dailyNotes'/, 'notes id wired in renderer');
+assert.match(dashPage, /DAILY_NOTES_WIDGET_ID/, 'notes id wired in renderer');
 assert.doesNotMatch(
   dashPage,
   /series \?\s*\n\s*<WidgetDashboard/,

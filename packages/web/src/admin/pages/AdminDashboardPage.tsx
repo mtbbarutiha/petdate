@@ -31,6 +31,8 @@ import {
   CalendarWidget,
   DailyNotesWidget,
   DashboardSelectedDateProvider,
+  DAILY_NOTES_WIDGET_ID,
+  DUAL_CALENDAR_WIDGET_ID,
   PLATFORM_WIDGET_CATALOG,
   TimeBarWidget,
   TimeLineWidget,
@@ -489,8 +491,8 @@ export function AdminDashboardPage() {
   ].filter(Boolean) as string[];
 
   const renderPlatformWidget = (id: string, ctx: WidgetRenderContext) => {
-    if (id === 'dualCalendar') return <CalendarWidget ctx={ctx} />;
-    if (id === 'dailyNotes') return <DailyNotesWidget ctx={ctx} />;
+    if (id === DUAL_CALENDAR_WIDGET_ID) return <CalendarWidget ctx={ctx} />;
+    if (id === DAILY_NOTES_WIDGET_ID) return <DailyNotesWidget ctx={ctx} />;
     if (!series) return <WidgetEmpty />;
     switch (id) {
       case 'moduleMix':

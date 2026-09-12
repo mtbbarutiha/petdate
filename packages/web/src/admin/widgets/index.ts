@@ -43,6 +43,8 @@ export {
   FINANCE_WIDGET_CATALOG,
   FINANCE_SALES_WIDGET_CATALOG,
   defaultBoardItems,
+  DAILY_NOTES_WIDGET_ID,
+  DUAL_CALENDAR_WIDGET_ID,
 } from './catalogs';
 export { WidgetDashboard } from './WidgetDashboard';
 export {
