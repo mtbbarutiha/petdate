@@ -2319,7 +2319,9 @@ html[data-theme='dark'] .pepito-profile-facts--rows > div {
   border-bottom-color: var(--pd-border);
 }
 
-/* Support AI chat — white chrome + grey bubbles while input went dark */
+/* Support hub / ticket / AI chat — dark surfaces */
+html[data-theme='dark'] .pepito-support-hub,
+html[data-theme='dark'] .pepito-support-ticket,
 html[data-theme='dark'] .pepito-support-chat {
   color: var(--pepito-dark);
 }
@@ -2327,11 +2329,39 @@ html[data-theme='dark'] .pepito-support-head h1 {
   color: var(--pepito-dark);
 }
 html[data-theme='dark'] .pepito-support-head p,
-html[data-theme='dark'] .pepito-support-gate {
+html[data-theme='dark'] .pepito-support-gate,
+html[data-theme='dark'] .pepito-support-alt,
+html[data-theme='dark'] .pepito-support-choice-body span,
+html[data-theme='dark'] .pepito-support-ticket-list li span {
   color: var(--pepito-muted);
 }
 html[data-theme='dark'] .pepito-support-head .tg-icon-btn {
   color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-support-choice {
+  background: color-mix(in srgb, var(--pepito-soft) 90%, transparent);
+  border-color: var(--pd-border);
+}
+html[data-theme='dark'] .pepito-support-choice:hover {
+  border-color: color-mix(in srgb, var(--pepito-primary, #a78bfa) 50%, transparent);
+}
+html[data-theme='dark'] .pepito-support-choice-icon {
+  background: color-mix(in srgb, var(--pepito-primary, #a78bfa) 18%, transparent);
+  color: #c4b5fd;
+}
+html[data-theme='dark'] .pepito-support-ticket-form input,
+html[data-theme='dark'] .pepito-support-ticket-form textarea {
+  background: #1e2230;
+  border-color: var(--pd-border);
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-support-ticket-list li {
+  background: #1e2230;
+  border-color: var(--pd-border);
+}
+html[data-theme='dark'] .pepito-support-ok {
+  background: color-mix(in srgb, #16a34a 18%, transparent);
+  color: #86efac;
 }
 html[data-theme='dark'] .pepito-support-bubble.is-assistant {
   background: #2a2f3d;

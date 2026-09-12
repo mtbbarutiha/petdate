@@ -1860,6 +1860,20 @@ export async function getSupportMessagesAsTelegram(
 ): Promise<{
   messages: Array<{ id: number; role: 'user' | 'assistant'; text: string; createdAt: string }>;
   welcome: string | null;
+  agentName?: string;
 }> {
   return request(`/api/support/telegram/${encodeURIComponent(telegramId)}/messages`);
+}
+
+export async function createSupportTicketAsTelegram(
+  telegramId: string,
+  body: { title: string; description?: string; category?: string }
+): Promise<{
+  ok: true;
+  ticket: { id: number; publicId: string; title: string; status: string };
+}> {
+  return request(`/api/support/telegram/${encodeURIComponent(telegramId)}/tickets`, {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
 }

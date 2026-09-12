@@ -849,6 +849,8 @@ export interface BotSession {
   ownerChatSecure?: boolean;
   /** یک‌بار پیشنهاد لینک چت وب در جلسه همبازی (جلوگیری از تکرار) */
   ownerChatWebHintSent?: boolean;
+  /** موضوع تیکت پشتیبانی در ویزارد ربات */
+  supportTicketTitle?: string;
   /** ثبت مورد در پرونده پزشکی (پت انتخاب‌شده) */
   medicalNotePetId?: number;
   /** نوشتن نسخه — پت انتخاب‌شده */
@@ -1043,6 +1045,8 @@ export type BotStep =
   | 'shop_checkout_phone'
   | 'shop_checkout_address'
   | 'support_chat'
+  | 'support_ticket_title'
+  | 'support_ticket_body'
   | 'ready';
 
 export interface PetDraft {

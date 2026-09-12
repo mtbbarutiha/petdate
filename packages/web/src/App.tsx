@@ -104,8 +104,14 @@ const ProfilePage = lazy(() =>
   import('./pages/ProfilePage').then((m) => ({ default: m.ProfilePage })),
 );
 const WalletPage = lazy(() => import('./pages/WalletPage').then((m) => ({ default: m.WalletPage })));
+const SupportHubPage = lazy(() =>
+  import('./pages/SupportHubPage').then((m) => ({ default: m.SupportHubPage }))
+);
 const SupportChatPage = lazy(() =>
   import('./pages/SupportChatPage').then((m) => ({ default: m.SupportChatPage }))
+);
+const SupportTicketPage = lazy(() =>
+  import('./pages/SupportTicketPage').then((m) => ({ default: m.SupportTicketPage }))
 );
 const EarningsPage = lazy(() =>
   import('./pages/EarningsPage').then((m) => ({ default: m.EarningsPage })),
@@ -401,7 +407,9 @@ export default function App() {
               <Route path="chats/:matchId" element={<ChatPage />} />
               <Route path="profile" element={<ProfilePage />} />
               <Route path="wallet" element={<WalletPage />} />
-              <Route path="support" element={<SupportChatPage />} />
+              <Route path="support" element={<SupportHubPage />} />
+              <Route path="support/ticket" element={<SupportTicketPage />} />
+              <Route path="support/chat" element={<SupportChatPage />} />
               <Route path="wallet/earn" element={<EarningsPage />} />
               <Route path="earn" element={<RedirectWithTagAssistant to="/wallet/earn" />} />
               <Route path="trainer-consult" element={<TrainerConsultPage />} />

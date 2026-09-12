@@ -1,6 +1,10 @@
 import { Router } from 'express';
 import { dbService } from '../db';
-import { generateAiConsultAdvice } from '../services/ai-consult';
+import {
+  createUserSupportTicket,
+  listTicketsForPlatformUser,
+} from '../crm-service';
+import { generateAiConsultAdvice, AI_ASSISTANT_DISPLAY_NAME } from '../services/ai-consult';
 import {
   STT_UNAVAILABLE_FA,
   isSpeechToTextConfigured,
@@ -11,8 +15,37 @@ import { getUserFromBearer } from '../services/web-otp';
 
 export const supportRouter = Router();
 
+/** Canonical support AI agent (لیلا کیانی) — same persona as /api/support chat. */
+export const SUPPORT_AGENT_NAME = AI_ASSISTANT_DISPLAY_NAME;
+
 function requireUser(req: { header: (n: string) => string | undefined }) {
   return getUserFromBearer(req.header('authorization') ?? undefined)?.user ?? null;
+}
+
+function publicTicket(t: {
+  id: number;
+  publicId: string;
+  title: string;
+  description: string;
+  status: string;
+  priority: string;
+  category: string;
+  channel: string;
+  createdAt: string;
+  updatedAt: string;
+}) {
+  return {
+    id: t.id,
+    publicId: t.publicId,
+    title: t.title,
+    description: t.description,
+    status: t.status,
+    priority: t.priority,
+    category: t.category,
+    channel: t.channel,
+    createdAt: t.createdAt,
+    updatedAt: t.updatedAt,
+  };
 }
 
 async function replySupportTurn(opts: {
@@ -28,6 +61,7 @@ async function replySupportTurn(opts: {
   const generated = await generateAiConsultAdvice({
     kind: 'support',
     patientName: opts.userName,
+    agentName: SUPPORT_AGENT_NAME,
     userMessage: opts.text,
     history: history.slice(0, -1),
   });
@@ -48,9 +82,44 @@ supportRouter.get('/messages', (req, res) => {
     messages,
     welcome:
       messages.length === 0
-        ? '👋 من پشتیبانی هوشمند پت‌دیت هستم. درباره ورود، پت، همبازی، مربی، دامپزشک، شاپ یا سکه بپرس.'
+        ? `👋 من ${SUPPORT_AGENT_NAME} هستم، پشتیبانی هوشمند پت‌دیت. درباره ورود، پت، همبازی، مربی، دامپزشک، شاپ یا سکه بپرس.`
         : null,
+    agentName: SUPPORT_AGENT_NAME,
   });
+});
+
+/** لیست تیکت‌های کاربر (ماژول تیکتینگ CRM) */
+supportRouter.get('/tickets', (req, res) => {
+  const user = requireUser(req);
+  if (!user) {
+    res.status(401).json({ error: 'وارد نشده‌اید' });
+    return;
+  }
+  const tickets = listTicketsForPlatformUser(user.id).map(publicTicket);
+  res.json({ ok: true, tickets });
+});
+
+/** ثبت تیکت پشتیبانی توسط کاربر وب */
+supportRouter.post('/tickets', (req, res) => {
+  const user = requireUser(req);
+  if (!user) {
+    res.status(401).json({ error: 'وارد نشده‌اید' });
+    return;
+  }
+  try {
+    const ticket = createUserSupportTicket(user, {
+      title: String(req.body?.title ?? req.body?.subject ?? ''),
+      description: String(req.body?.description ?? req.body?.body ?? ''),
+      category: String(req.body?.category ?? ''),
+      channel: 'web',
+    });
+    res.status(201).json({ ok: true, ticket: publicTicket(ticket) });
+  } catch (err) {
+    const status = (err as Error & { status?: number }).status || 500;
+    res.status(status).json({
+      error: err instanceof Error ? err.message : 'ثبت تیکت ناموفق بود',
+    });
+  }
 });
 
 /** ارسال پیام به پشتیبانی هوشمند */
@@ -116,9 +185,49 @@ supportRouter.get('/telegram/:telegramId/messages', (req, res) => {
     messages,
     welcome:
       messages.length === 0
-        ? '👋 من پشتیبانی هوشمند پت‌دیت هستم. درباره ورود، پت، همبازی، مربی، دامپزشک، شاپ یا سکه بپرس.'
+        ? `👋 من ${SUPPORT_AGENT_NAME} هستم، پشتیبانی هوشمند پت‌دیت. درباره ورود، پت، همبازی، مربی، دامپزشک، شاپ یا سکه بپرس.`
         : null,
+    agentName: SUPPORT_AGENT_NAME,
   });
+});
+
+supportRouter.get('/telegram/:telegramId/tickets', (req, res) => {
+  if (!isTrustedBot(req as never)) {
+    res.status(401).json({ error: 'unauthorized' });
+    return;
+  }
+  const user = dbService.getUserByTelegramId(req.params.telegramId);
+  if (!user) {
+    res.status(404).json({ error: 'کاربر پیدا نشد' });
+    return;
+  }
+  res.json({ ok: true, tickets: listTicketsForPlatformUser(user.id).map(publicTicket) });
+});
+
+supportRouter.post('/telegram/:telegramId/tickets', (req, res) => {
+  if (!isTrustedBot(req as never)) {
+    res.status(401).json({ error: 'unauthorized' });
+    return;
+  }
+  const user = dbService.getUserByTelegramId(req.params.telegramId);
+  if (!user) {
+    res.status(404).json({ error: 'کاربر پیدا نشد' });
+    return;
+  }
+  try {
+    const ticket = createUserSupportTicket(user, {
+      title: String(req.body?.title ?? req.body?.subject ?? ''),
+      description: String(req.body?.description ?? req.body?.body ?? ''),
+      category: String(req.body?.category ?? ''),
+      channel: 'telegram',
+    });
+    res.status(201).json({ ok: true, ticket: publicTicket(ticket) });
+  } catch (err) {
+    const status = (err as Error & { status?: number }).status || 500;
+    res.status(status).json({
+      error: err instanceof Error ? err.message : 'ثبت تیکت ناموفق بود',
+    });
+  }
 });
 
 supportRouter.post('/telegram/:telegramId/messages', async (req, res) => {

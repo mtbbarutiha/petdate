@@ -3135,3 +3135,157 @@ export function runSlaWatcher(actor?: AdminAuthActor): { breached: number } {
   }
   return { breached: open.length };
 }
+
+/** System actor for end-user / bot portal ticket creation (audit trail). */
+export function portalTicketActor(displayName = 'پورتال کاربر'): AdminAuthActor {
+  return {
+    kind: 'env_support',
+    role: 'support',
+    permissions: ['crm.write', 'support.write'],
+    displayName,
+    username: 'user_portal',
+  };
+}
+
+/**
+ * Resolve or create a CRM customer for a platform user (web/bot ticket form).
+ * Prefer existing platform_user_id link, then mobile match, else create.
+ */
+export function findOrCreateCustomerForPlatformUser(
+  user: {
+    id: number;
+    name?: string | null;
+    phone?: string | null;
+    telegramId?: string | null;
+  },
+  actor: AdminAuthActor,
+  source = 'پورتال کاربر'
+): CrmCustomer {
+  ensureCrmSchema();
+  const existingByUser = db()
+    .prepare('SELECT * FROM crm_customers WHERE platform_user_id = ? ORDER BY id DESC LIMIT 1')
+    .get(user.id) as Record<string, unknown> | undefined;
+  if (existingByUser) return mapCustomer(existingByUser);
+
+  const phone = normalizeMobile(String(user.phone || ''));
+  if (phone && phone.length >= 10) {
+    const customer = findOrCreateCustomerByMobile(
+      {
+        mobile: phone,
+        first: String(user.name || '').trim().split(/\s+/)[0] || 'کاربر',
+        last: String(user.name || '').trim().split(/\s+/).slice(1).join(' '),
+        source,
+      },
+      actor
+    );
+    if (customer.platformUserId !== user.id) {
+      db()
+        .prepare(
+          `UPDATE crm_customers SET platform_user_id = ?, updated_at = ? WHERE id = ? AND (platform_user_id IS NULL OR platform_user_id = 0)`
+        )
+        .run(user.id, nowIso(), customer.id);
+      return getCustomer(customer.id) ?? customer;
+    }
+    return customer;
+  }
+
+  // No verified phone — stable synthetic mobile from platform user id (digits only).
+  const synthetic = `09${String(1_000_000_000 + (user.id % 1_000_000_000)).slice(-9)}`;
+  const bySynthetic = db()
+    .prepare('SELECT * FROM crm_customers WHERE mobile = ?')
+    .get(synthetic) as Record<string, unknown> | undefined;
+  if (bySynthetic) {
+    const c = mapCustomer(bySynthetic);
+    if (c.platformUserId !== user.id) {
+      db()
+        .prepare(`UPDATE crm_customers SET platform_user_id = ?, updated_at = ? WHERE id = ?`)
+        .run(user.id, nowIso(), c.id);
+    }
+    return getCustomer(c.id) ?? c;
+  }
+
+  const first = String(user.name || '').trim().split(/\s+/)[0] || 'کاربر';
+  const last = String(user.name || '').trim().split(/\s+/).slice(1).join(' ');
+  const info = db()
+    .prepare(
+      `INSERT INTO crm_customers (
+        first_name, last_name, mobile, product, level, status, sales_owner, source,
+        platform_user_id, sales_customer_id, created_at, updated_at
+      ) VALUES (?, ?, ?, '', 'عادی', 'فعال', '', ?, ?, NULL, ?, ?)`
+    )
+    .run(first, last, synthetic, source, user.id, nowIso(), nowIso());
+  const id = Number(info.lastInsertRowid);
+  const customer = getCustomer(id)!;
+  audit({
+    userId: actorId(actor),
+    category: 'customer',
+    entity: 'crm_customers',
+    recordUuid: customer.publicId,
+    action: 'create',
+    next: { mobile: synthetic, first, last, platformUserId: user.id },
+  });
+  return customer;
+}
+
+export function listTicketsForPlatformUser(platformUserId: number, limit = 30): CrmTicket[] {
+  ensureCrmSchema();
+  const lim = Math.min(100, Math.max(1, limit));
+  const rows = db()
+    .prepare(
+      `${TICKET_SELECT}
+       WHERE c.platform_user_id = ?
+       ORDER BY t.created_at DESC LIMIT ?`
+    )
+    .all(platformUserId, lim) as Array<Record<string, unknown>>;
+  return rows.map(enrichTicket);
+}
+
+/** End-user / bot: create a support ticket in the CRM ticketing module. */
+export function createUserSupportTicket(
+  user: {
+    id: number;
+    name?: string | null;
+    phone?: string | null;
+    telegramId?: string | null;
+  },
+  input: {
+    title: string;
+    description?: string;
+    category?: string;
+    channel?: string;
+  }
+): CrmTicket {
+  const actor = portalTicketActor(user.name?.trim() || 'کاربر');
+  const customer = findOrCreateCustomerForPlatformUser(user, actor);
+  const title = String(input.title || '').trim();
+  if (!title) {
+    const err = new Error('موضوع تیکت الزامی است') as Error & { status?: number };
+    err.status = 400;
+    throw err;
+  }
+  if (title.length > 200) {
+    const err = new Error('موضوع تیکت خیلی طولانی است') as Error & { status?: number };
+    err.status = 400;
+    throw err;
+  }
+  const description = String(input.description || '').trim();
+  if (description.length > 4000) {
+    const err = new Error('شرح تیکت خیلی طولانی است') as Error & { status?: number };
+    err.status = 400;
+    throw err;
+  }
+  const channel = String(input.channel || 'portal').trim() || 'portal';
+  return createTicket(
+    {
+      customerId: customer.id,
+      title,
+      description,
+      type: 'پشتیبانی',
+      category: String(input.category || 'پلتفرم').trim() || 'پلتفرم',
+      priority: 'متوسط',
+      channel,
+      queueId: 'q_support',
+    },
+    actor
+  );
+}

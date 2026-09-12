@@ -72,6 +72,7 @@ npx tsx "$ROOT/packages/web/src/admin/adminFinanceNavNotifs.selftest.ts"
 
 echo "==> selftest: admin runtime flags / coin-sell / support wiring"
 npx tsx "$ROOT/packages/web/src/admin/adminRuntimeWiring.selftest.ts"
+npx tsx "$ROOT/packages/web/src/pages/supportSplit.selftest.ts"
 
 echo "==> selftest: admin deposit receipt preview in details/attachments"
 npx tsx "$ROOT/packages/web/src/admin/pages/adminPaymentReceipt.selftest.ts"
@@ -217,6 +218,7 @@ npx tsx "$ROOT/packages/bot/src/sticky-reply-keyboard.selftest.ts"
 npx tsx "$ROOT/packages/bot/src/telegram-http.selftest.ts"
 npx tsx "$ROOT/packages/bot/src/quick-connect-parse.selftest.ts"
 npx tsx "$ROOT/packages/bot/src/api-client-bot-headers.selftest.ts"
+npx tsx "$ROOT/packages/bot/src/handlers/supportSplit.selftest.ts"
 npx tsx "$ROOT/packages/bot/src/urls.selftest.ts"
 npx tsx "$ROOT/packages/bot/src/handlers/nearby-radius.selftest.ts"
 npx tsx "$ROOT/packages/bot/src/handlers/nearby-inline-list.selftest.ts"
@@ -233,6 +235,7 @@ run src/pet-purchase-leads.selftest.ts
 run src/hr-sales-demo-seed.selftest.ts
 run src/crm.selftest.ts
 run src/crm-ticketing.selftest.ts
+run src/support-tickets.selftest.ts
 run src/admin-notifications.selftest.ts
 run src/admin-platform-nav.selftest.ts
 run src/admin-users-geo.selftest.ts

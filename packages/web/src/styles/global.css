@@ -5777,7 +5777,9 @@ a.tg-chat-playmate-cta.pepito-btn {
 
 
 
-/* —— Support AI chat —— */
+/* —— Support hub / ticket / AI chat —— */
+.pepito-support-hub,
+.pepito-support-ticket,
 .pepito-support-chat {
   max-width: 720px;
   margin: 0 auto;
@@ -5786,6 +5788,115 @@ a.tg-chat-playmate-cta.pepito-btn {
   flex-direction: column;
   gap: 12px;
   min-height: 70vh;
+}
+.pepito-support-chooser {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+}
+.pepito-support-choice {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 16px 18px;
+  border-radius: 16px;
+  border: 1px solid color-mix(in srgb, var(--pepito-muted, #94a3b8) 35%, transparent);
+  background: color-mix(in srgb, var(--pepito-soft, #f8fafc) 88%, #fff);
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.18s ease, transform 0.18s ease, background 0.18s ease;
+}
+.pepito-support-choice:hover {
+  border-color: color-mix(in srgb, var(--pepito-primary, #7c3aed) 45%, transparent);
+  transform: translateY(-1px);
+}
+.pepito-support-choice-icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--pepito-primary, #7c3aed) 14%, transparent);
+  color: var(--pepito-primary, #6d28d9);
+  flex-shrink: 0;
+}
+.pepito-support-choice-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.pepito-support-choice-body strong {
+  font-size: 1.05rem;
+}
+.pepito-support-choice-body span {
+  color: #64748b;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+.pepito-support-ticket-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.pepito-support-ticket-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.92rem;
+}
+.pepito-support-ticket-form input,
+.pepito-support-ticket-form textarea {
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font: inherit;
+  background: #fff;
+}
+.pepito-support-ticket-form textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+.pepito-support-ok {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: color-mix(in srgb, #16a34a 12%, transparent);
+  color: #166534;
+}
+.pepito-support-ticket-list {
+  margin-top: 8px;
+}
+.pepito-support-ticket-list h2 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+.pepito-support-ticket-list ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.pepito-support-ticket-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+}
+.pepito-support-ticket-list li span {
+  color: #64748b;
+  font-size: 0.85rem;
+}
+.pepito-support-alt {
+  margin-top: 8px;
+  color: #64748b;
+  font-size: 0.9rem;
 }
 .pepito-support-head {
   display: flex;
