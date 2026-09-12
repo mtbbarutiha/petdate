@@ -45,5 +45,3 @@ export function shopSectionLinks(): SiteHeaderLink[] {
     { key: 'bird', labelKey: 'shop.bird', to: '/shop/c/bird-food' },
   ];
 }
-
-export const INLINE_SECTION_COUNT = 2;

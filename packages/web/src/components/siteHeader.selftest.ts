@@ -1,5 +1,6 @@
 /**
- * Desktop header hierarchy: brand | primary text links | overflow | utilities.
+ * Desktop header hierarchy: brand | all primary text links inline | utilities.
+ * No «بیشتر» overflow — section extras render directly in the nav row.
  * Games/shop must not appear as both marketing text and SiteDesktopNav shortcuts.
  * Role shortcuts share the خدمات plain-text treatment (no outlined icon pills).
  * Run: npx tsx packages/web/src/components/siteHeader.selftest.ts
@@ -12,7 +13,6 @@ import { landingSectionLinks, welcomeSectionLinks, shopSectionLinks } from './si
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const header = readFileSync(join(root, 'components/SiteHeader.tsx'), 'utf8');
-const overflow = readFileSync(join(root, 'components/SiteNavOverflow.tsx'), 'utf8');
 const desktopNav = readFileSync(join(root, 'components/SiteDesktopNav.tsx'), 'utf8');
 const chrome = readFileSync(join(root, 'components/LandingChrome.tsx'), 'utf8');
 const welcome = readFileSync(join(root, 'pages/WelcomePage.tsx'), 'utf8');
@@ -26,7 +26,12 @@ assert.match(header, /LanguageToggle/, 'utilities include language');
 assert.match(header, /ThemeToggle/, 'utilities include theme');
 assert.match(header, /NavUserCluster/, 'utilities include cart/wallet/profile');
 assert.match(header, /LazySiteDesktopNav/, 'primary includes role shortcuts');
-assert.match(header, /SiteNavOverflow/, 'secondary links go through overflow');
+assert.doesNotMatch(header, /SiteNavOverflow/, 'header no longer mounts overflow More menu');
+assert.match(
+  header,
+  /sectionLinks\.map/,
+  'all section extras render inline (not sliced into overflow)'
+);
 assert.doesNotMatch(
   header,
   /nav\.games|nav\.petShop/,
@@ -40,7 +45,7 @@ assert.match(welcome, /SiteHeader/, 'Welcome uses shared header');
 assert.match(welcome, /welcomeSectionLinks/, 'Welcome uses hash extras without games/shop');
 assert.match(welcome, /deferDesktopNav/, 'Welcome still defers desktop shortcuts for landing TBT');
 assert.match(shop, /SiteHeader/, 'ShopChrome uses shared header');
-assert.match(shop, /shopSectionLinks/, 'shop extras stay in overflow, not a second shortcut row');
+assert.match(shop, /shopSectionLinks/, 'shop extras use shared section links');
 
 const landingKeys = landingSectionLinks({ vetConsultEnabled: true }).map((l) => l.key);
 const welcomeKeys = welcomeSectionLinks().map((l) => l.key);
@@ -57,20 +62,19 @@ assert.ok(
 assert.match(desktopNav, /data-testid=\{`nav-\$\{item\.key\}`\}/, 'shortcuts keep nav-games test id');
 assert.match(desktopNav, /pepito-nav-section-link/, 'role shortcuts share خدمات text class');
 assert.doesNotMatch(desktopNav, /<item\.icon/, 'role shortcuts are text-only (no icon pills)');
-assert.match(overflow, /nav\.more/, 'overflow uses i18n more label');
 
 assert.match(css, /\.pepito-nav-primary/, 'primary group styled');
-assert.match(css, /\.pepito-nav-overflow/, 'overflow styled');
 assert.match(
   css,
-  /\.pepito-nav-links\.pepito-nav-section-inline[\s\S]{0,80}display:\s*none/,
-  'mid-width hides inline extras (overflow instead of cramming)'
+  /\.pepito-nav-links\.pepito-nav-section-inline[\s\S]{0,120}display:\s*flex/,
+  'desktop shows all section extras inline'
 );
-assert.match(
+assert.doesNotMatch(
   css,
   /@media \(min-width: 1440px\)[\s\S]{0,200}\.pepito-nav-links\.pepito-nav-section-inline[\s\S]{0,80}display:\s*flex/,
-  'wide desktop can show two extras inline'
+  'inline extras are not gated behind 1440px anymore'
 );
+assert.doesNotMatch(css, /\.pepito-nav-overflow-btn/, 'More overflow button styles removed');
 assert.match(css, /isolation:\s*isolate/, 'header isolates stacking so lang/theme cannot ghost');
 assert.match(
   css,
@@ -88,11 +92,6 @@ assert.match(
   css,
   /\.pepito-site-desktop-nav-link[\s\S]{0,280}background:\s*none/,
   'role shortcuts have no pill fill'
-);
-assert.match(
-  css,
-  /\.pepito-nav-overflow-btn[\s\S]{0,220}background:\s*none/,
-  'More control matches the text system (no filled third style)'
 );
 assert.doesNotMatch(
   css,

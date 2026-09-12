@@ -11896,10 +11896,6 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   display: none;
 }
 
-.pepito-nav-overflow {
-  display: none;
-}
-
 @media (min-width: 860px) {
   .pepito-nav,
   .pepito-nav--app,
@@ -11936,9 +11932,12 @@ a.pepito-btn.pepito-human-consult-cta:hover {
     margin-inline-start: 0;
   }
 
-  /* Secondary text links only on wide desktops; mid widths use overflow. */
+  /* All section extras stay in the row — no «بیشتر» overflow menu. */
   .pepito-nav-links.pepito-nav-section-inline {
-    display: none;
+    display: flex;
+    gap: 0.95rem;
+    margin-inline-start: 0;
+    flex-wrap: nowrap;
   }
 
   .pepito-nav-actions {
@@ -12026,111 +12025,13 @@ a.pepito-btn.pepito-human-consult-cta:hover {
     border-radius: 50%;
   }
 
-  .pepito-nav-overflow {
-    display: block;
-    position: relative;
-    flex: 0 0 auto;
-    z-index: 8;
-  }
-
-  .pepito-nav-overflow-btn {
-    appearance: none;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.2rem;
-    height: auto;
-    min-height: 0;
-    padding: 0.15rem 0;
-    border: 0;
-    border-radius: 0;
-    background: none;
-    color: var(--pepito-dark);
-    font-family: inherit;
-    font-weight: 600;
-    font-size: 0.95rem;
-    line-height: 1.2;
-    cursor: pointer;
-    white-space: nowrap;
-  }
-
-  .pepito-nav-overflow-btn:hover,
-  .pepito-nav-overflow-btn[aria-expanded='true'] {
-    background: none;
-    border: 0;
-    color: var(--pepito-base);
-  }
-
-  .pepito-nav-overflow-btn:focus-visible {
-    outline: 2px solid rgba(92, 77, 145, 0.45);
-    outline-offset: 2px;
-  }
-
-  .pepito-nav-overflow-menu {
-    position: absolute;
-    top: calc(100% + 0.45rem);
-    inset-inline-start: 0;
-    min-width: 11.5rem;
-    padding: 0.45rem;
-    border-radius: 16px;
-    background: var(--pepito-white);
-    border: 1px solid rgba(92, 77, 145, 0.12);
-    box-shadow: 0 18px 44px rgba(25, 6, 61, 0.16);
-    z-index: 80;
-    display: flex;
-    flex-direction: column;
-    gap: 0.15rem;
-  }
-
-  .pepito-nav-overflow-item {
-    display: block;
-    padding: 0.6rem 0.75rem;
-    border-radius: 12px;
-    font-size: 0.9rem;
-  }
-
-  .pepito-nav-overflow-item:hover {
-    background: rgba(92, 77, 145, 0.08);
-  }
-
-  .pepito-nav-overflow-item.is-active {
-    font-weight: 700;
-    box-shadow: none;
-    background: rgba(92, 77, 145, 0.08);
-  }
 }
 
-@media (min-width: 1440px) {
-  .pepito-nav-links.pepito-nav-section-inline {
-    display: flex;
-    gap: 0.95rem;
-    margin-inline-start: 0;
-  }
-
-  .pepito-nav-overflow-item--inline-dup {
-    display: none;
-  }
-
-  .pepito-nav-overflow--wide-redundant {
-    display: none;
-  }
-}
-
-/* Narrow desktop: keep unified text links; More collapses to the ⋯ glyph. */
+/* Narrow desktop: slightly tighter type so all inline extras still fit. */
 @media (min-width: 860px) and (max-width: 1099px) {
   .pepito-site-desktop-nav-link,
   .pepito-nav-section-inline .pepito-nav-section-link {
     font-size: 0.9rem;
-  }
-
-  .pepito-nav-overflow-btn-label {
-    display: none;
-  }
-
-  .pepito-nav-overflow-btn {
-    width: auto;
-    min-width: 1.25rem;
-    padding: 0.15rem 0;
   }
 
   .pepito-nav-wallet-btn {

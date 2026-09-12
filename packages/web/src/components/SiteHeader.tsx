@@ -7,13 +7,10 @@ import { NavUserCluster } from './NavUserCluster';
 import { SiteHeaderLinkView } from './SiteHeaderLinkView';
 import { ThemeToggle } from './ThemeToggle';
 import { IconPaw } from './icons/ChromeIcons';
-import { INLINE_SECTION_COUNT, type SiteHeaderLink } from './siteHeaderLinks';
+import { type SiteHeaderLink } from './siteHeaderLinks';
 
 const LazySiteDesktopNav = lazy(() =>
   import('./SiteDesktopNav').then((m) => ({ default: m.SiteDesktopNav })),
-);
-const SiteNavOverflow = lazy(() =>
-  import('./SiteNavOverflow').then((m) => ({ default: m.SiteNavOverflow })),
 );
 
 function PawIcon({ size = 14 }: { size?: number }) {
@@ -47,8 +44,9 @@ export type SiteHeaderProps = {
 };
 
 /**
- * Shared site header: brand | primary text links + overflow | utilities.
+ * Shared site header: brand | primary text links (all inline) | utilities.
  * Role shortcuts (هم بازی / شاپ / بازی‌ها) share the خدمات text treatment.
+ * No «بیشتر» overflow — section extras render directly in the nav row.
  */
 export function SiteHeader({
   scrolled = false,
@@ -82,7 +80,6 @@ export function SiteHeader({
     return () => mq.removeEventListener('change', sync);
   }, [deferDesktopNav]);
 
-  const inlineLinks = sectionLinks.slice(0, INLINE_SECTION_COUNT);
   const headerClass = `pepito-nav${scrolled ? ' is-scrolled' : ''}${className ? ` ${className}` : ''}`;
 
   return (
@@ -106,16 +103,13 @@ export function SiteHeader({
               <LazySiteDesktopNav />
             </Suspense>
           ) : null}
-          {inlineLinks.length > 0 ? (
+          {sectionLinks.length > 0 ? (
             <nav className="pepito-nav-links pepito-nav-section-inline" aria-label={t('nav.sections')}>
-              {inlineLinks.map((link) => (
+              {sectionLinks.map((link) => (
                 <SiteHeaderLinkView key={link.key} link={link} />
               ))}
             </nav>
           ) : null}
-          <Suspense fallback={null}>
-            <SiteNavOverflow links={sectionLinks} />
-          </Suspense>
         </div>
       ) : null}
 
