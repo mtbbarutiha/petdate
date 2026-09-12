@@ -1131,6 +1131,21 @@ function migrateSchema() {
   if (!pdNames.has('public_id')) {
     db.exec('ALTER TABLE playdate_requests ADD COLUMN public_id TEXT');
   }
+  if (!pdNames.has('from_user_id')) {
+    db.exec('ALTER TABLE playdate_requests ADD COLUMN from_user_id INTEGER');
+  }
+  if (!pdNames.has('to_user_id')) {
+    db.exec('ALTER TABLE playdate_requests ADD COLUMN to_user_id INTEGER');
+  }
+  if (!pdNames.has('scheduled_at')) {
+    db.exec('ALTER TABLE playdate_requests ADD COLUMN scheduled_at TEXT');
+  }
+  if (!pdNames.has('location')) {
+    db.exec('ALTER TABLE playdate_requests ADD COLUMN location TEXT');
+  }
+  if (!pdNames.has('updated_at')) {
+    db.exec("ALTER TABLE playdate_requests ADD COLUMN updated_at TEXT");
+  }
 
   const chatCols = db.prepare('PRAGMA table_info(playdate_chat_messages)').all() as { name: string }[];
   const chatNames = new Set(chatCols.map((c) => c.name));

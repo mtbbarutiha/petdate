@@ -171,6 +171,7 @@ echo "==> selftest: bot sticky + telegram-http + quick-connect-parse + nearby-ra
 npx tsx "$ROOT/packages/bot/src/sticky-reply-keyboard.selftest.ts"
 npx tsx "$ROOT/packages/bot/src/telegram-http.selftest.ts"
 npx tsx "$ROOT/packages/bot/src/quick-connect-parse.selftest.ts"
+npx tsx "$ROOT/packages/bot/src/api-client-bot-headers.selftest.ts"
 npx tsx "$ROOT/packages/bot/src/urls.selftest.ts"
 npx tsx "$ROOT/packages/bot/src/handlers/nearby-radius.selftest.ts"
 npx tsx "$ROOT/packages/bot/src/handlers/nearby-inline-list.selftest.ts"
@@ -204,6 +205,8 @@ run src/routes/pets-id-guard.selftest.ts
 run src/routes/pets-slug-diary.selftest.ts
 run src/routes/pets-public-list.selftest.ts
 run src/routes/playdates-auth.selftest.ts
+run src/routes/users-staff-auth.selftest.ts
+run src/routes/consultations-quick-connect-auth.selftest.ts
 run src/services/playdate-fee.selftest.ts
 run src/site-analytics.selftest.ts
 
