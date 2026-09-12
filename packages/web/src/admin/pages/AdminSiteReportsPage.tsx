@@ -11,6 +11,11 @@ import { adminCan } from '../auth';
 import { formatAdminFaDateTime } from '../JalaliDateSelect';
 import { formatAnalyticsPathLabel, mapPathBars } from '../analyticsPathLabel';
 import {
+  adminChartPlotMargin,
+  adminChartXAxisProps,
+  adminChartYAxisProps,
+} from '../adminChartLayout';
+import {
   ADMIN_RTL_HBARS_CLASS,
   AdminRtlBarCountLabel,
   AdminRtlPathTick,
@@ -465,12 +470,12 @@ export function AdminSiteReportsPage() {
           <div className="crm-report-charts">
             <article className="admin-card crm-report-chart-box">
               <div className="admin-card-head"><h2>ترافیک روزانه</h2></div>
-              <div style={{ width: '100%', height: 240 }}>
+              <div className="admin-chart-box" style={{ height: 220 }}>
                 <ResponsiveContainer>
-                  <BarChart data={trafficChart}>
+                  <BarChart data={trafficChart} margin={adminChartPlotMargin}>
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--admin-border)" />
-                    <XAxis dataKey="labelShort" tick={{ fontSize: 11 }} />
-                    <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+                    <XAxis dataKey="labelShort" {...adminChartXAxisProps} />
+                    <YAxis {...adminChartYAxisProps} />
                     <Tooltip content={<Tip />} />
                     <Bar dataKey="value" name="بازدید" fill={MOTION_PALETTE.purple} radius={[6, 6, 0, 0]} {...motion} />
                   </BarChart>
@@ -479,12 +484,12 @@ export function AdminSiteReportsPage() {
             </article>
             <article className="admin-card crm-report-chart-box">
               <div className="admin-card-head"><h2>نشست روزانه</h2></div>
-              <div style={{ width: '100%', height: 240 }}>
+              <div className="admin-chart-box" style={{ height: 220 }}>
                 <ResponsiveContainer>
-                  <BarChart data={sessionsChart}>
+                  <BarChart data={sessionsChart} margin={adminChartPlotMargin}>
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--admin-border)" />
-                    <XAxis dataKey="labelShort" tick={{ fontSize: 11 }} />
-                    <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+                    <XAxis dataKey="labelShort" {...adminChartXAxisProps} />
+                    <YAxis {...adminChartYAxisProps} />
                     <Tooltip content={<Tip />} />
                     <Bar dataKey="value" name="نشست" fill={MOTION_PALETTE.teal} radius={[6, 6, 0, 0]} {...motion} />
                   </BarChart>
@@ -496,7 +501,7 @@ export function AdminSiteReportsPage() {
           <div className="crm-report-charts">
             <article className="admin-card crm-report-chart-box">
               <div className="admin-card-head"><h2>توزیع دستگاه</h2></div>
-              <div style={{ width: '100%', height: 240 }}>
+              <div className="admin-chart-box admin-chart-box--donut" style={{ height: 200 }}>
                 <ResponsiveContainer>
                   <PieChart>
                     <Pie data={data.devices} dataKey="value" nameKey="label" innerRadius={48} outerRadius={78} paddingAngle={2} {...motion}>
@@ -515,8 +520,8 @@ export function AdminSiteReportsPage() {
             <article className="admin-card crm-report-chart-box">
               <div className="admin-card-head"><h2>صفحات پربازدید</h2></div>
               <div
-                className={ADMIN_RTL_HBARS_CLASS}
-                style={{ width: '100%', height: adminRtlHBarsHeight(pageBars.length, 38), direction: 'ltr' }}
+                className={`${ADMIN_RTL_HBARS_CLASS} admin-chart-box`}
+                style={{ width: '100%', height: adminRtlHBarsHeight(pageBars.length), direction: 'ltr' }}
               >
                 <ResponsiveContainer>
                   <BarChart data={pageBars} layout="vertical" margin={adminRtlHBarsMarginWithCounts}>
@@ -539,7 +544,7 @@ export function AdminSiteReportsPage() {
           <div className="crm-report-charts">
             <article className="admin-card crm-report-chart-box">
               <div className="admin-card-head"><h2>ارجاع‌دهنده‌ها</h2></div>
-              <div className={ADMIN_RTL_HBARS_CLASS} style={{ width: '100%', height: Math.max(180, Math.max(refBars.length, 1) * 32), direction: 'ltr' }}>
+              <div className={`${ADMIN_RTL_HBARS_CLASS} admin-chart-box`} style={{ width: '100%', height: adminRtlHBarsHeight(refBars.length), direction: 'ltr' }}>
                 <ResponsiveContainer>
                   <BarChart data={refBars} layout="vertical" margin={adminRtlHBarsMargin}>
                     <XAxis {...adminRtlHBarsValueAxis} />
@@ -625,7 +630,7 @@ export function AdminSiteReportsPage() {
           <article className="admin-card crm-report-chart-box">
             <div className="admin-card-head"><h2>تفکیک رویدادها</h2></div>
             <p className="admin-muted">رویدادهای dataLayer / اول‌شخص (page_view، link_click، login، …)</p>
-            <div className={ADMIN_RTL_HBARS_CLASS} style={{ width: '100%', height: Math.max(220, Math.max(eventBars.length, 1) * 28), direction: 'ltr' }}>
+            <div className={`${ADMIN_RTL_HBARS_CLASS} admin-chart-box`} style={{ width: '100%', height: adminRtlHBarsHeight(eventBars.length), direction: 'ltr' }}>
               <ResponsiveContainer>
                 <BarChart data={eventBars} layout="vertical" margin={adminRtlHBarsMargin}>
                   <XAxis {...adminRtlHBarsValueAxis} />

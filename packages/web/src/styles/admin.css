@@ -31,6 +31,7 @@
   --admin-sky: #0ba5f2;
   --admin-mint: #15cca0;
   --admin-pink: #db89ca;
+  --admin-chart-max-h: 280px;
 
   --primary: var(--admin-accent);
   --primary-soft: var(--admin-accent-soft);
@@ -1711,16 +1712,46 @@
 .admin-app .admin-chart-scroll {
   overflow-x: auto;
   max-width: 100%;
+  max-height: var(--admin-chart-max-h, 280px);
 }
 .admin-app .admin-chart-svg {
   width: 100%;
-  min-width: 280px;
+  max-width: 100%;
+  min-width: 0;
   height: auto;
+  max-height: 220px;
   display: block;
 }
+.admin-app .admin-chart-svg--lg {
+  max-height: 260px;
+}
+.admin-app .admin-chart-svg--funnel {
+  max-height: none;
+}
+.admin-app .admin-chart-svg--donut {
+  width: auto;
+  max-width: 160px;
+  max-height: 160px;
+  min-width: 0;
+  margin-inline: auto;
+}
 .admin-app .admin-chart-axis {
-  font-size: 9px;
+  font-size: 11px;
   fill: var(--pd-chart-tick, #64748b);
+}
+.admin-app .admin-chart-box {
+  width: 100%;
+  min-width: 0;
+  max-height: var(--admin-chart-max-h, 280px);
+}
+.admin-app .admin-chart-box--donut {
+  max-height: 200px;
+}
+.admin-app .admin-chart-legend-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .admin-app .admin-donut-wrap {
   display: flex;
@@ -1859,13 +1890,14 @@
 }
 .admin-app .admin-dash-charts {
   display: grid;
-  grid-template-columns: 1.4fr 1fr;
+  grid-template-columns: 1fr;
   gap: 14px;
   margin-bottom: 14px;
+  align-items: stretch;
 }
-@media (max-width: 960px) {
+@media (min-width: 768px) {
   .admin-app .admin-dash-charts {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1.4fr 1fr;
   }
 }
 .admin-app .admin-live-pulse {
@@ -2989,11 +3021,19 @@ body:has(.admin-app) {
 }
 .crm-weak-points--ok { background: var(--admin-promo-mint); color: #0f7a60; }
 .crm-charts-row {
-  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--admin-gap, 14px); margin-top: 14px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--admin-gap, 14px);
+  margin-top: 14px;
+  align-items: stretch;
 }
-@media (max-width: 1100px) { .crm-charts-row { grid-template-columns: 1fr; } }
-.crm-chart-box { width: 100%; min-height: 220px; }
+@media (min-width: 768px) {
+  .crm-charts-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 1100px) {
+  .crm-charts-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+.crm-chart-box { width: 100%; min-height: 160px; max-height: var(--admin-chart-max-h, 280px); }
 .crm-chart-tooltip {
   background: var(--admin-surface); border: 1px solid var(--admin-border); border-radius: 10px;
   padding: 8px 10px; font-size: 12px; box-shadow: 0 8px 24px rgba(25, 6, 61, 0.08);
@@ -3124,9 +3164,15 @@ body:has(.admin-app) {
 
 .admin-app .admin-report-grid {
   display: grid;
-  grid-template-columns: 1.35fr 1fr;
+  grid-template-columns: 1fr;
   gap: 14px;
   margin-bottom: 14px;
+  align-items: stretch;
+}
+@media (min-width: 768px) {
+  .admin-app .admin-report-grid {
+    grid-template-columns: 1.35fr 1fr;
+  }
 }
 
 .admin-app .admin-report-grid--hero {
@@ -3156,6 +3202,8 @@ body:has(.admin-app) {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  max-width: 160px;
+  min-width: 0;
 }
 
 .admin-app .admin-chart-legend span {
@@ -3398,13 +3446,14 @@ body:has(.admin-app) {
 .admin-app .hr-dash-main-row,
 .admin-app .hr-dash-secondary-row {
   display: grid;
-  grid-template-columns: 1.35fr 1fr;
+  grid-template-columns: 1fr;
   gap: 14px;
   margin-bottom: 14px;
+  align-items: stretch;
 }
-@media (max-width: 1100px) {
+@media (min-width: 768px) {
   .admin-app .hr-dash-main-row,
-  .admin-app .hr-dash-secondary-row { grid-template-columns: 1fr; }
+  .admin-app .hr-dash-secondary-row { grid-template-columns: 1.35fr 1fr; }
 }
 .admin-app .hr-dash-panel {
   padding: 16px 18px;
@@ -3421,7 +3470,7 @@ body:has(.admin-app) {
   margin: 0;
   font-size: 1rem;
 }
-.admin-app .hr-dash-chart { width: 100%; min-height: 180px; }
+.admin-app .hr-dash-chart { width: 100%; min-height: 160px; max-height: var(--admin-chart-max-h, 280px); }
 /* Shared LTR island for Recharts horizontal category bars under dir=rtl. */
 .admin-app .admin-recharts-rtl-hbars {
   direction: ltr;
@@ -3630,13 +3679,22 @@ body:has(.admin-app) {
 }
 .admin-app .crm-report-charts {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 14px;
+  margin-bottom: 14px;
+  align-items: stretch;
 }
-@media (max-width: 1100px) {
-  .admin-app .crm-report-charts { grid-template-columns: 1fr; }
+@media (min-width: 768px) {
+  .admin-app .crm-report-charts {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
-.admin-app .crm-report-chart-box { min-height: 220px; }
+@media (min-width: 1100px) {
+  .admin-app .crm-report-charts:has(> :nth-child(3)) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.admin-app .crm-report-chart-box { min-height: 160px; }
 .admin-app .crm-report-reason-legend {
   list-style: none;
   margin: 8px 0 0;
@@ -4202,14 +4260,14 @@ body:has(.admin-app) {
 @media (max-width: 900px) {
   .admin-app .hr-report-donut-row { grid-template-columns: 1fr; }
 }
-.admin-app .hr-report-donut-card { min-height: 280px; }
+.admin-app .hr-report-donut-card { min-height: 0; }
 .admin-app .hr-report-donut-body {
   display: grid; grid-template-columns: 1.1fr 1fr; gap: 12px; align-items: center;
 }
 @media (max-width: 640px) {
   .admin-app .hr-report-donut-body { grid-template-columns: 1fr; }
 }
-.admin-app .hr-report-donut-chart { position: relative; width: 100%; height: 220px; }
+.admin-app .hr-report-donut-chart { position: relative; width: 100%; height: 180px; max-height: 180px; }
 .admin-app .hr-report-donut-center {
   position: absolute; inset: 0; display: grid; place-content: center; text-align: center; pointer-events: none;
 }
@@ -4367,12 +4425,13 @@ body:has(.admin-app) {
 .admin-app .admin-chart-svg--compact {
   min-height: 0;
   width: 100%;
+  max-width: 100%;
 }
 .admin-app .admin-card--chart-lg .admin-chart-panel {
   min-height: 0;
 }
 .admin-app .admin-chart-val {
-  font-size: 9px;
+  font-size: 10px;
   fill: var(--admin-muted);
 }
 .admin-app .admin-chart-hit:hover {
@@ -4382,6 +4441,8 @@ body:has(.admin-app) {
 .admin-app .admin-funnel-wrap {
   display: grid;
   gap: 10px;
+  max-height: var(--admin-chart-max-h, 280px);
+  overflow-y: auto;
 }
 .admin-app .admin-funnel-label {
   fill: #fff;
@@ -4994,7 +5055,19 @@ body:has(.admin-app) {
 }
 .admin-app .wdg-empty { padding: 16px 4px; }
 .admin-app .wdg-tile .admin-chart-svg--lg,
-.admin-app .wdg-tile .admin-chart-svg--compact { min-height: 0; width: 100%; }
+.admin-app .wdg-tile .admin-chart-svg--compact {
+  min-height: 0;
+  width: 100%;
+  max-height: 180px;
+}
+.admin-app .wdg-tile--h2 .admin-chart-svg--lg,
+.admin-app .wdg-tile--h2 .admin-chart-svg--compact { max-height: 200px; }
+.admin-app .wdg-tile--h3 .admin-chart-svg--lg,
+.admin-app .wdg-tile--h3 .admin-chart-svg--compact { max-height: 240px; }
+.admin-app .wdg-tile .admin-chart-svg--donut {
+  max-width: 140px;
+  max-height: 140px;
+}
 .admin-app .wdg-tile .admin-chart-panel { min-height: 0; padding: 0; }
 .admin-app .wdg-tile .admin-donut-wrap { gap: 8px; }
 .admin-app .wdg-tile .admin-donut-legend { font-size: 0.72rem; }
@@ -5803,25 +5876,32 @@ body:has(.admin-app) {
   display: grid;
   gap: 14px;
   margin-bottom: 16px;
+  align-items: stretch;
 }
 
-.admin-app .admin-dash-chart-grid--2 {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
+.admin-app .admin-dash-chart-grid--2,
 .admin-app .admin-dash-chart-grid--3 {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: 1fr;
 }
 
-@media (max-width: 960px) {
+@media (min-width: 768px) {
   .admin-app .admin-dash-chart-grid--2,
   .admin-app .admin-dash-chart-grid--3 {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1100px) {
+  .admin-app .admin-dash-chart-grid--3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
 .admin-app .admin-dash-chart {
+  display: flex;
+  flex-direction: column;
   min-width: 0;
+  height: 100%;
   overflow: visible;
 }
 
@@ -5847,8 +5927,10 @@ body:has(.admin-app) {
 }
 
 .admin-app .admin-dash-chart-body {
+  flex: 1 1 auto;
   min-width: 0;
-  min-height: 160px;
+  min-height: 140px;
+  max-height: var(--admin-chart-max-h, 280px);
 }
 
 .admin-app .admin-dash-chart-body--empty {
@@ -5970,7 +6052,8 @@ body:has(.admin-app) {
   box-shadow: 0 8px 22px rgba(28, 25, 45, 0.22);
   font-size: 0.82rem;
   animation: admin-motion-callout-pop 0.22s ease-out both;
-  max-width: 200px;
+  max-width: min(240px, 72vw);
+  overflow-wrap: anywhere;
 }
 .admin-app .admin-motion-callout-label {
   font-size: 0.72rem;
@@ -5986,6 +6069,11 @@ body:has(.admin-app) {
 .admin-app .admin-motion-callout-name {
   opacity: 0.8;
   font-size: 0.75rem;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 140px;
 }
 
 .admin-app .admin-motion-ring {
@@ -6059,6 +6147,20 @@ body:has(.admin-app) {
 .admin-app .recharts-area-dot,
 .admin-app .recharts-line-dot {
   filter: drop-shadow(0 0 3px rgba(21, 204, 160, 0.35));
+}
+.admin-app .recharts-responsive-container {
+  max-height: var(--admin-chart-max-h, 280px);
+}
+.admin-app .recharts-cartesian-axis-tick text {
+  font-size: 11px;
+  font-family: var(--admin-font);
+}
+.admin-app .recharts-legend-item-text {
+  font-size: 12px;
+}
+.admin-app .recharts-tooltip-wrapper {
+  z-index: 20;
+  max-width: min(240px, 80vw);
 }
 
 @media (prefers-reduced-motion: reduce) {

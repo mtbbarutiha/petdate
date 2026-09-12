@@ -26,7 +26,14 @@ import {
   type AdminKpiItem,
 } from '../../dash';
 import {
+  adminChartPlotMargin,
+  adminChartTickFormatter,
+  adminChartXAxisProps,
+  adminChartYAxisProps,
+} from '../../adminChartLayout';
+import {
   adminRtlHBarsCategoryAxis,
+  adminRtlHBarsHeight,
   adminRtlHBarsMargin,
   adminRtlHBarsRadius,
   adminRtlHBarsValueAxis,
@@ -257,10 +264,10 @@ export function AdminCrmDashboardPage() {
       <AdminChartGrid cols={3}>
         <AdminChartCard title="توزیع کانال‌ها" empty={!data.channelDistribution.length} height={220}>
           <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={data.channelDistribution} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+            <BarChart data={data.channelDistribution} margin={adminChartPlotMargin}>
               <MotionBarGradientDefs id="crmChanBar" from={MOTION_PALETTE.purple} to={MOTION_PALETTE.mint} />
-              <XAxis dataKey="label" tick={{ fontSize: 11, fill: 'var(--admin-muted)' }} axisLine={false} tickLine={false} />
-              <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: 'var(--admin-muted)' }} axisLine={false} tickLine={false} width={28} />
+              <XAxis dataKey="label" {...adminChartXAxisProps} tickFormatter={adminChartTickFormatter} />
+              <YAxis {...adminChartYAxisProps} width={28} />
               <Tooltip content={<MotionChartTooltip />} />
               <Bar dataKey="value" radius={[8, 8, 4, 4]} fill="url(#crmChanBar)" maxBarSize={36} {...motion} />
             </BarChart>
@@ -269,10 +276,10 @@ export function AdminCrmDashboardPage() {
 
         <AdminChartCard title="حجم تعامل ۷ روز اخیر" empty={!data.dailyInteractions.length} height={220}>
           <ResponsiveContainer width="100%" height={220}>
-            <AreaChart data={data.dailyInteractions} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
+            <AreaChart data={data.dailyInteractions} margin={adminChartPlotMargin}>
               <MotionAreaGradientDefs id="crmArea" color={MOTION_PALETTE.mint} mid={MOTION_PALETTE.blue} />
-              <XAxis dataKey="label" tick={{ fontSize: 11, fill: 'var(--admin-muted)' }} axisLine={false} tickLine={false} />
-              <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: 'var(--admin-muted)' }} axisLine={false} tickLine={false} width={28} />
+              <XAxis dataKey="label" {...adminChartXAxisProps} tickFormatter={adminChartTickFormatter} />
+              <YAxis {...adminChartYAxisProps} width={28} />
               <Tooltip content={<MotionChartTooltip />} />
               <Area
                 type="monotone"
@@ -328,10 +335,10 @@ export function AdminCrmDashboardPage() {
         <AdminChartCard
           title="وضعیت SLA تیکت‌ها"
           empty={!slaBars.length}
-          height={Math.max(200, 40 * Math.max(slaBars.length, 3))}
+          height={adminRtlHBarsHeight(slaBars.length)}
           rtlHBars
         >
-          <ResponsiveContainer width="100%" height={Math.max(200, 40 * Math.max(slaBars.length, 3))}>
+          <ResponsiveContainer width="100%" height={adminRtlHBarsHeight(slaBars.length)}>
             <BarChart layout="vertical" data={slaBars} margin={{ ...adminRtlHBarsMargin }}>
               <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--admin-border)" />
               <XAxis {...adminRtlHBarsValueAxis} />
@@ -352,10 +359,10 @@ export function AdminCrmDashboardPage() {
         <AdminChartCard
           title="دلایل تعامل / کانال"
           empty={!reasonBars.length}
-          height={Math.max(220, 36 * Math.max(reasonBars.length, 3))}
+          height={adminRtlHBarsHeight(reasonBars.length)}
           rtlHBars
         >
-          <ResponsiveContainer width="100%" height={Math.max(220, 36 * Math.max(reasonBars.length, 3))}>
+          <ResponsiveContainer width="100%" height={adminRtlHBarsHeight(reasonBars.length)}>
             <BarChart layout="vertical" data={reasonBars} margin={{ ...adminRtlHBarsMargin }}>
               <MotionBarGradientDefs id="crmReasonBar" from={MOTION_PALETTE.mint} to={MOTION_PALETTE.blue} />
               <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="var(--admin-border)" />

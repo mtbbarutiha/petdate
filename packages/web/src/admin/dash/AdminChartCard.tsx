@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
+import { capAdminChartHeight } from '../adminChartLayout';
 
 type Props = {
   title: string;
@@ -55,7 +56,13 @@ export function AdminChartCard({
           .filter(Boolean)
           .join(' ')}
         dir={rtlHBars ? 'ltr' : undefined}
-        style={height != null ? { minHeight: height } : undefined}
+        style={
+          !showEmpty && height != null
+            ? {
+                height: typeof height === 'number' ? capAdminChartHeight(height) : height,
+              }
+            : undefined
+        }
       >
         {showEmpty ? (
           <p className="admin-dash-chart-empty">{emptyHint}</p>
