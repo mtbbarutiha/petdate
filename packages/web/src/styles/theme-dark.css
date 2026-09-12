@@ -3037,3 +3037,19 @@ html[data-theme='dark'] .admin-app .admin-stack {
   color: #e2e8f0;
   border: 1px solid var(--admin-border);
 }
+
+/* Games page */
+html[data-theme='dark'] .pepito-games-form {
+  background: color-mix(in srgb, var(--surface, #1e293b) 90%, #14b8a6 10%);
+  border-color: color-mix(in srgb, var(--border, #334155) 90%, transparent);
+}
+html[data-theme='dark'] .pepito-games-item {
+  background: var(--surface, #1e293b);
+  border-color: var(--border, #334155);
+}
+html[data-theme='dark'] .pepito-games-lead,
+html[data-theme='dark'] .pepito-games-type,
+html[data-theme='dark'] .pepito-games-meta li,
+html[data-theme='dark'] .pepito-games-item-note {
+  color: var(--text-secondary, #94a3b8);
+}

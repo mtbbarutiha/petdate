@@ -129,6 +129,13 @@ function metaForPath(pathname: string, role?: ReturnType<typeof primaryRole>, la
       canonicalPath: '/adoption',
     };
   }
+  if (p === '/games') {
+    return {
+      title: SEO.titleTemplate(t('games.title')),
+      description: t('games.lead'),
+      canonicalPath: '/games',
+    };
+  }
   if (p.startsWith('/adoption/')) {
     const slug = p.slice('/adoption/'.length);
     const pet = getAdoptionPet(slug);

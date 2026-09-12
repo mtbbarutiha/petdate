@@ -5,7 +5,7 @@ import { ChevronDown,
   Activity, Bell, Briefcase, Building2, ClipboardList, FileText, Headset, Landmark, LayoutDashboard, LineChart, LogOut, Mail, Menu, Newspaper, Package,
   PawPrint, PieChart, ScrollText, Settings, Shield, ShieldCheck, ShoppingBag, Stethoscope,
   Store, Target, Ticket, TrendingUp, UserPlus, UserRound, Users, Wallet, X, ClipboardCheck, BarChart3, Coins, Tags,
-  Route, Inbox, HandCoins, Bot, MessageSquare, Star, HeartHandshake, ArrowLeftRight,
+  Route, Inbox, HandCoins, Bot, MessageSquare, Star, HeartHandshake, ArrowLeftRight, Gamepad2,
 } from 'lucide-react';
 import type { CrmNavCounts, FinanceNavCounts, PlatformNavCounts, SalesNavCounts } from '@petdate/shared';
 import { ADMIN_PANEL_ROLE_LABELS } from '@petdate/shared';
@@ -114,6 +114,7 @@ const NAV_GROUPS: NavGroup[] = [
     { to: '/admin/users', icon: Users, labelKey: 'admin.users', perm: 'platform.read', platformBadgeKey: 'users' },
     { to: '/admin/pets', icon: PawPrint, labelKey: 'admin.pets', perm: 'platform.read', platformBadgeKey: 'pets' },
     { to: '/admin/playdates', icon: ClipboardList, labelKey: 'admin.playdates', perm: 'platform.read', platformBadgeKey: 'playdates' },
+    { to: '/admin/games', icon: Gamepad2, labelKey: 'admin.games', perm: 'platform.read', platformBadgeKey: 'games' },
     { to: '/admin/consults', icon: Stethoscope, labelKey: 'admin.consults', perm: 'platform.read', platformBadgeKey: 'consults' },
     { to: '/admin/verification', icon: ShieldCheck, labelKey: 'admin.verification', perm: 'platform.write', platformBadgeKey: 'verification' },
     { to: '/admin/marketplace-moderation', icon: ClipboardList, labelKey: 'admin.docsPhotos', perm: 'platform.write', platformBadgeKey: 'docs' },

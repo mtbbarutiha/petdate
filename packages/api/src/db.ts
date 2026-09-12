@@ -4444,7 +4444,6 @@ export const dbService = {
   },
 
   getSection(id: number): Section | null {
-    if (!Number.isFinite(id) || !Number.isInteger(id) || id <= 0) return null;
     const row = db.prepare('SELECT * FROM sections WHERE id = ?').get(id) as Record<string, unknown> | undefined;
     return row ? mapSection(row) : null;
   },
@@ -4465,17 +4464,9 @@ export const dbService = {
     `;
     const params: unknown[] = [];
 
-    // Never bind NaN/non-positive sectionId (Postgres bigint «invalid input syntax»).
-    const sectionId =
-      filters?.sectionId != null &&
-      Number.isFinite(filters.sectionId) &&
-      Number.isInteger(filters.sectionId) &&
-      filters.sectionId > 0
-        ? filters.sectionId
-        : undefined;
-    if (sectionId != null) {
+    if (filters?.sectionId) {
       sql += ' AND g.section_id = ?';
-      params.push(sectionId);
+      params.push(filters.sectionId);
     }
     if (filters?.status) {
       sql += ' AND g.status = ?';
@@ -4562,6 +4553,15 @@ export const dbService = {
       userName: row.user_name as string,
       joinedAt: row.joined_at as string,
     }));
+  },
+
+  updateGameStatus(id: number, status: GameStatus): Game | null {
+    if (!Number.isFinite(id) || !Number.isInteger(id) || id <= 0) return null;
+    if (!['open', 'full', 'cancelled', 'completed'].includes(status)) return null;
+    const existing = this.getGame(id);
+    if (!existing) return null;
+    db.prepare('UPDATE games SET status = ? WHERE id = ?').run(status, id);
+    return this.getGame(id);
   },
 
   listPets(filters?: {

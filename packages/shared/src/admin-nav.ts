@@ -19,6 +19,8 @@ export interface PlatformNavCounts {
   payments: number;
   /** Shop orders awaiting fulfillment (pending / paid, not shipped/completed/cancelled). */
   shopOrders: number;
+  /** Scheduled games currently open for join. */
+  games: number;
 }
 
 /** Live sidebar badge counts for Finance OS + deposit approval queues. */

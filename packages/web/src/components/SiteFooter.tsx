@@ -51,6 +51,7 @@ export function SiteFooter() {
     { to: '/#about', label: t('nav.about') },
     { to: '/#services', label: t('nav.services') },
     { to: '/adoption', label: t('nav.adoption') },
+    { to: '/games', label: t('nav.games') },
     { to: '/shop', label: t('nav.petShop') },
     { to: '/chats', label: t('footer.playmate') },
     { to: '/#news', label: t('nav.news') },
@@ -62,6 +63,7 @@ export function SiteFooter() {
 
   const quickLinks: { to: string; label: string; className?: string }[] = [
     { to: '/chats', label: t('footer.playmate') },
+    { to: '/games', label: t('nav.games') },
     { to: '/shop', label: t('footer.petdateShop') },
     { to: '/shop/c/dog-food', label: t('footer.dogFood') },
     { to: '/shop/c/cat-food', label: t('footer.catFood') },

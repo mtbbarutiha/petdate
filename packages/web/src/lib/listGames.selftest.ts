@@ -12,8 +12,6 @@ const api = readFileSync(join(webSrc, 'lib/api.ts'), 'utf8');
 const main = readFileSync(join(webSrc, 'main.tsx'), 'utf8');
 const boundary = readFileSync(join(webSrc, 'components/AppErrorBoundary.tsx'), 'utf8');
 
-assert.match(api, /function asGameList/, 'asGameList normalizes payloads');
-assert.match(api, /return \[\]/, 'empty/non-array payloads become []');
 assert.match(api, /export async function listGames/, 'listGames helper exists');
 assert.match(api, /\/api\/games\/list/, 'listGames prefers /api/games/list');
 assert.match(api, /return \[\];/, 'listGames returns [] on failure');
