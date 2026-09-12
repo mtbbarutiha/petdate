@@ -56,6 +56,20 @@ assert.doesNotMatch(
   /html\[data-theme=['"]dark['"]\][\s\S]{0,120}\.tg-chat-wallpaper[\s\S]{0,280}#(eef3f7|e7eef4|eef2f6|ecf2f6|f7f8fb)\b/i,
   'dark wallpaper must not keep light canvas stops'
 );
+assert.match(darkCss, /\.tg-status-strip\b/, 'consult active status strip remapped for dark');
+assert.match(darkCss, /\.pepito-vet-chat \.tg-status-strip\.is-wait/, 'consult wait strip remapped for dark');
+assert.match(darkCss, /\.tg-composer\b/, 'chat composer dock remapped for dark');
+assert.match(darkCss, /\.tg-composer textarea/, 'chat composer input remapped for dark');
+assert.doesNotMatch(
+  darkCss,
+  /html\[data-theme=['"]dark['"]\][\s\S]{0,80}\.tg-composer[\s\S]{0,120}#(f7f9fc|f7f8fb|fff|ffffff)\b/i,
+  'dark composer must not keep light strip stops'
+);
+assert.doesNotMatch(
+  darkCss,
+  /html\[data-theme=['"]dark['"]\][\s\S]{0,80}\.tg-status-strip[\s\S]{0,160}#(eef9ff|e8fff7|e6fbf4|eef8ff)\b/i,
+  'dark status strip must not keep light cyan stops'
+);
 assert.match(darkCss, /\.tg-chat-link-btn--outline/, 'outline secondary chat CTA remapped');
 assert.doesNotMatch(darkCss, /--pepito-soft:\s*#000\b/, 'avoid pure black bg');
 assert.doesNotMatch(darkCss, /box-shadow:\s*0 0 \d+px .{0,40}(purple|#[89a-fA-F][0-9a-fA-F]{5})/, 'no neon glow shadows');
