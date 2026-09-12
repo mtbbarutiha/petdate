@@ -5,7 +5,7 @@
   --pepito-base: #5c4d91;
   --pepito-dark: #19063d;
   /* Darker than #757086 so muted copy meets 4.5:1 on --pepito-soft / white. */
-  --pepito-muted: #5a5470;
+  --pepito-muted: #4a4460;
   --pepito-pink: #db89ca;
   --pepito-soft: #f4f4f7;
   --pepito-lilac: #e4e2f3;
@@ -511,7 +511,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 .pepito-hero-dot::before {
   content: '';
   position: absolute;
-  inset: -16px;
+  inset: -18px;
 }
 .pepito-hero-dot.is-active {
   background: var(--pepito-white);

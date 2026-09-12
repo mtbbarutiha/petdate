@@ -117,7 +117,13 @@ export function SiteFooter() {
           <div className="pepito-footer-grid">
             <div className="pepito-footer-col pepito-footer-brand">
               <Link to="/" className="pepito-footer-logo" aria-label={BRAND.displayName}>
-                <img src="/pepito/img/logo-light.png" alt={BRAND.displayName} />
+                <img
+                  src="/media/lcp/logo-light-390.webp"
+                  alt={BRAND.displayName}
+                  width={390}
+                  height={114}
+                  decoding="async"
+                />
               </Link>
               <p className="pepito-footer-lead">{brandLead}</p>
               <ul className="pepito-footer-social" aria-label={t('footer.social')}>

@@ -95,7 +95,7 @@ const shell = `<!DOCTYPE html><html><head>
 
 const homeHtml = applySeoToHtml(shell, '/');
 assert.match(homeHtml, /data-pd-lcp="hero"/, 'homepage HTML preloads the LCP hero');
-assert.match(homeHtml, /\/pepito\/uploads\/1-hero\.jpg/, 'LCP preload points at 1-hero.jpg');
+assert.match(homeHtml, /\/media\/lcp\/hero-playmate-800\.webp/, 'LCP preload points at the mobile WebP hero');
 
 const faqHtml = applySeoToHtml(shell, '/faq');
 const shopHtml = applySeoToHtml(shell, '/shop');

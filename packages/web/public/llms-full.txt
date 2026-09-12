@@ -1,49 +1,51 @@
-# پت‌دیت (PetDate) — full summary for AI assistants
+# PetDate
+
+> Full machine summary of PetDate (پت‌دیت), the Persian pet playmate, pet shop, adoption, and online vet-consult platform.
+
+PetDate helps pet owners in Iran find playmates, shop, adopt, and request online veterinary consultation. Web and Telegram share one account. Primary language is Persian (fa) with an RTL interface.
 
 ## Identity
 
-- **Name (FA):** پت‌دیت
-- **Name (EN):** PetDate / petdate / PET DATE
-- **Canonical site:** [https://petdate.ir/](https://petdate.ir/)
-- **Also:** [https://www.petdate.ir/](https://www.petdate.ir/) (same product)
-- **Email:** [hello@petdate.ir](mailto:hello@petdate.ir)
-- **Telegram bot:** [https://t.me/Petdatebot](https://t.me/Petdatebot) (@Petdatebot)
-- **Tagline FA:** همبازی برای پت‌ات
-- **Tagline EN:** PLAY • MEET • FRIENDS
-
-## One-sentence pitch
-
-پت‌دیت پلتفرم فارسی برای پیدا کردن همبازی پت، خرید از پت‌شاپ، پذیرش پت، و مشاوره دامپزشک است؛ وب و ربات تلگرام روی یک حساب مشترک کار می‌کنند.
+- Persian name: پت‌دیت
+- English name: PetDate
+- Tagline FA: همبازی برای پت‌ات
+- Tagline EN: PLAY • MEET • FRIENDS
+- [Home](https://petdate.ir/): canonical site
+- [WWW host](https://www.petdate.ir/): redirects to the apex host
+- [Email](mailto:hello@petdate.ir): hello at petdate.ir
+- [Telegram bot](https://t.me/Petdatebot): Petdatebot
+- [Compact machine summary](https://petdate.ir/llms.txt): short llms.txt
+- [XML sitemap](https://petdate.ir/sitemap.xml): crawl map
 
 ## Product surfaces
 
-1. **Landing** ([`/`](https://petdate.ir/)) — معرفی برند، خدمات، پذیرش، اخبار، FAQ کوتاه، CTA ورود / پنل همبازی
-2. **FAQ** ([`/faq`](https://petdate.ir/faq)) — ده پرسش پرتکرار درباره محصول
-3. **Shop** ([`/shop`](https://petdate.ir/shop), `/shop/c/:category`, `/shop/product/:id`) — پت‌شاپ عمومی؛ نهایی‌کردن سفارش نیاز به ورود دارد
-4. **هم بازی** ([`/chats`](https://petdate.ir/chats)) — پیدا کردن همبازی و مدیریت گفتگوها (نیاز به ورود)
-5. **Vet consult** ([`/vet-consult`](https://petdate.ir/vet-consult)) — درخواست مشاوره دامپزشک آنلاین
-6. **Adoption detail** ([`/adoption/:slug`](https://petdate.ir/adoption/missy)) — جزئیات پت نیازمند خانه
-7. **Auth** ([`/auth/login`](https://petdate.ir/auth/login), `/auth/otp`) — ورود با پیامک OTP
-8. **App shell** (`/home`, `/matches`, `/chats/:id`, `/profile`, `/add-pet`) — پنل کاربر پس از ورود
-9. **Admin** (`/admin/*`) — پنل مدیریت داخلی (نباید ایندکس شود)
+- [Home](https://petdate.ir/): brand, services, adoption, news, short FAQ
+- [FAQ](https://petdate.ir/faq): frequently asked questions
+- [Pet shop](https://petdate.ir/shop): public catalog; checkout requires login
+- [Playmate hub](https://petdate.ir/chats): find a playmate (login required)
+- [Vet consult](https://petdate.ir/vet-consult): online veterinary consultation
+- [Adoption](https://petdate.ir/adoption): adoption listings
+- [Missy example](https://petdate.ir/adoption/missy): sample adoption listing
+- [Magazine](https://petdate.ir/magazine): articles
+- [OTP login](https://petdate.ir/auth/login): sign in
+- [Pet games](https://petdate.ir/games): casual games
 
 ## Accurate claims
 
-- Social / dating-style **playmate matching** for pets (همبازی)
-- Shared web + Telegram account and data
-- Pet shop with multi-currency wallet support
+- Social playmate matching for pets (همبازی)
+- Shared web and Telegram account and data
+- Pet shop with wallet checkout
 - Adoption listings
 - Online vet consultation with verified vets
 
 ## Avoid inaccurate claims
 
-- Not a physical clinic directory / clinic booking marketplace (clinic feature removed)
+- Not a physical clinic directory or clinic-booking marketplace
 - Not claiming medical diagnosis guarantees
 - Not claiming nationwide physical stores
 
 ## Technical hints for crawlers
 
-- SPA (Vite/React); `index.html` carries primary meta + Organization/WebSite JSON-LD
-- `robots.txt` allows major search and AI bots; disallows `/admin`, `/api/`, chats, onboarding
-- [sitemap.xml](https://petdate.ir/sitemap.xml) lists key public routes
-- Prefer absolute URLs under https://petdate.ir/
+- SPA (Vite/React); homepage HTML carries Organization/WebSite JSON-LD
+- robots.txt allows major search and AI bots; disallows admin, API, chats, and onboarding
+- Prefer labeled markdown links such as [Home](https://petdate.ir/)

@@ -8,7 +8,8 @@ import './styles/global.css';
 import './styles/pepito.css';
 import './styles/theme-dark.css';
 import { initTheme } from './lib/theme';
-import { I18nProvider, initLang, useI18n } from './i18n';
+import { I18nProvider, useI18n } from './i18n/I18nProvider';
+import { initLang } from './i18n/lang';
 
 initTheme();
 initLang();

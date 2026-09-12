@@ -1,7 +1,6 @@
 import { lazy, Suspense, useEffect } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { AppGuards } from './components/AuthGuard';
-import { Layout } from './components/Layout';
 import { LegacyAdoptionHashRedirect } from './components/LegacyAdoptionHashRedirect';
 import { PersistTagAssistantParams } from './components/PersistTagAssistantParams';
 import { RouteSeo } from './components/RouteSeo';
@@ -9,13 +8,17 @@ import { ShopCartProvider } from './hooks/useShopCart';
 import { AppToastProvider } from './hooks/useAppToast';
 import { AppDialogHost } from './components/AppDialog';
 import { FaceVerifyRewardToast } from './components/FaceVerifyRewardToast';
-import { LandingMobileDock } from './components/LandingMobileDock';
 import { ScrollToTop } from './components/ScrollToTop';
 import { trackPageview } from './lib/siteAnalytics';
 import { withTagAssistantParams } from './lib/tagAssistantParams';
 import { WelcomePage } from './pages/WelcomePage';
 import { VetConsultRoute } from './pages/VetConsultRoute';
 import { ReferralCapture } from './components/ReferralCapture';
+
+const Layout = lazy(() => import('./components/Layout').then((m) => ({ default: m.Layout })));
+const LandingMobileDock = lazy(() =>
+  import('./components/LandingMobileDock').then((m) => ({ default: m.LandingMobileDock })),
+);
 
 function SiteAnalyticsListener() {
   const location = useLocation();
@@ -528,7 +531,9 @@ export default function App() {
             <Route path="*" element={<RedirectWithTagAssistant to="/" />} />
           </Routes>
         </Suspense>
-        <LandingMobileDock />
+        <Suspense fallback={null}>
+          <LandingMobileDock />
+        </Suspense>
       </ShopCartProvider>
       </AppToastProvider>
     </AppGuards>

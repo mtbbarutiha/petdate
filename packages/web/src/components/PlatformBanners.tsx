@@ -1,5 +1,5 @@
 import { announcementsForPlacement, type AnnouncementPlacement } from '@petdate/shared';
-import { useI18n } from '../i18n';
+import { useI18n } from '../i18n/I18nProvider';
 import { usePlatformConfig } from '../hooks/usePlatformConfig';
 
 export function PlatformBanners({

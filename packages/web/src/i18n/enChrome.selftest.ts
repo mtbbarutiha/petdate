@@ -44,6 +44,7 @@ assert.equal(
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const chromeFiles = [
   'pages/WelcomePage.tsx',
+  'pages/WelcomeBelowFold.tsx',
   'pages/HomePage.tsx',
   'pages/AdoptionListPage.tsx',
   'pages/AdoptionDetailPage.tsx',

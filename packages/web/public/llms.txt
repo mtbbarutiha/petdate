@@ -1,44 +1,19 @@
-# پت‌دیت (PetDate)
+# PetDate
 
-> پت‌دیت پلتفرم فارسی پیدا کردن همبازی برای پت، پت‌شاپ، پذیرش پت و مشاوره دامپزشک است — روی وب و ربات تلگرام با یک حساب مشترک.
+> PetDate (پت‌دیت) is the Persian pet playmate, pet shop, adoption, and online vet-consult platform. Web and Telegram share one account.
 
-- Website: [https://petdate.ir/](https://petdate.ir/)
-- Contact: [hello@petdate.ir](mailto:hello@petdate.ir)
-- Telegram bot: [https://t.me/Petdatebot](https://t.me/Petdatebot)
+PetDate helps pet owners in Iran find playmates (همبازی) for dogs and cats, browse the pet shop (پت‌شاپ), discover pets available for adoption (پذیرش), and request online veterinary consultation (مشاوره دامپزشک). Primary language is Persian (fa) with an RTL interface. Playmate chat and checkout require login. Veterinary support is online consultation, not a clinic directory.
 
-## What PetDate is
+## Pages
 
-PetDate (پت‌دیت) helps pet owners in Iran:
-- Find playmates (همبازی) for dogs and cats
-- Browse and buy from the pet shop (پت‌شاپ)
-- Discover pets available for adoption (پذیرش)
-- Request online veterinary consultation (مشاوره دامپزشک)
-
-Web and Telegram share the same account (OTP login by mobile number).
-
-## Key URLs
-
-- [Home / landing](https://petdate.ir/)
-- [FAQ](https://petdate.ir/faq)
-- [Pet shop](https://petdate.ir/shop)
-- [Vet consult](https://petdate.ir/vet-consult)
-- [Adoption examples](https://petdate.ir/adoption/missy)
-- [Login](https://petdate.ir/auth/login)
-- [Sitemap](https://petdate.ir/sitemap.xml)
-- [Full AI summary](https://petdate.ir/llms-full.txt)
-
-Playmate panel (`/chats`) requires login — not a primary crawl target.
-
-## Brand
-
-- Persian name: پت‌دیت
-- English: PetDate / petdate / PET DATE
-- Tagline (FA): همبازی برای پت‌ات
-- Tagline (EN): PLAY • MEET • FRIENDS
-- Domain: petdate.ir
-
-## Notes for crawlers
-
-- Primary language: Persian (fa), RTL UI
-- Public pages: landing, FAQ, shop (browse). Playmate panel, chat, and checkout require login.
-- Do not describe PetDate as a clinic directory; clinic listings were removed. Veterinary support is online consultation, not a clinic marketplace.
+- [Home](https://petdate.ir/): landing page
+- [FAQ](https://petdate.ir/faq): frequently asked questions
+- [Pet shop](https://petdate.ir/shop): public catalog
+- [Vet consult](https://petdate.ir/vet-consult): online veterinary consultation
+- [Adoption](https://petdate.ir/adoption): adoption listings
+- [Magazine](https://petdate.ir/magazine): articles
+- [OTP login](https://petdate.ir/auth/login): sign in
+- [XML sitemap](https://petdate.ir/sitemap.xml): crawl map
+- [Full AI summary](https://petdate.ir/llms-full.txt): longer machine summary
+- [Email](mailto:hello@petdate.ir): hello at petdate.ir
+- [Telegram bot](https://t.me/Petdatebot): Petdatebot

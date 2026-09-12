@@ -755,22 +755,31 @@ let scrollMarkedPath: string | null = null;
  * Run after window load + idle so third-party tags do not steal LCP/TBT.
  * Safe no-op off-window (selftests).
  */
-export function scheduleAfterLoadIdle(fn: () => void, timeoutMs = 3500): void {
+export function scheduleAfterLoadIdle(fn: () => void, timeoutMs = 8000): void {
   if (typeof window === 'undefined' || typeof document === 'undefined') return;
+  let fired = false;
   const run = () => {
+    if (fired) return;
+    fired = true;
+    fn();
+  };
+  const arm = () => {
+    for (const ev of ['pointerdown', 'keydown', 'touchstart', 'scroll'] as const) {
+      window.addEventListener(ev, run, { once: true, passive: true });
+    }
     const ric = (
       window as Window & {
         requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
       }
     ).requestIdleCallback;
     if (typeof ric === 'function') {
-      ric(fn, { timeout: timeoutMs });
+      ric(run, { timeout: timeoutMs });
     } else {
-      window.setTimeout(fn, Math.min(2000, timeoutMs));
+      window.setTimeout(run, timeoutMs);
     }
   };
-  if (document.readyState === 'complete') run();
-  else window.addEventListener('load', run, { once: true });
+  if (document.readyState === 'complete') arm();
+  else window.addEventListener('load', arm, { once: true });
 }
 
 function clarityAlreadyPresent(): boolean {
