@@ -5,7 +5,7 @@ import type { PlaydateChatMediaKind } from '@petdate/shared';
 import { dbService } from '../db';
 import { telegramFetch, telegramBotApiUrl, telegramFileApiUrl } from './telegram-http';
 import { usableTelegramId } from './telegram-id';
-import { resolveStoragePath } from './chat-upload-store';
+import { resolveStoragePath, convertVoiceBufferToOggOpus, sniffOggContainer } from './chat-upload-store';
 
 type TelegramSendResult = { ok: boolean; messageId?: number };
 
@@ -195,16 +195,36 @@ export async function notifyPlaydateChatTelegram(opts: {
         contentType: contentType || 'video/mp4',
       });
     } else if (kind === 'voice' || kind === 'audio') {
-      // sendVoice needs OGG/Opus (API normalizes voice uploads). Non-OGG → sendAudio.
+      let voiceBuf = buffer;
+      let voiceName = filename;
+      let voiceType = contentType;
+      if (kind === 'voice' && !sniffOggContainer(buffer) && !/audio\/(ogg|opus)/i.test(contentType)) {
+        try {
+          const converted = await convertVoiceBufferToOggOpus({
+            buffer,
+            originalName: filename,
+          });
+          voiceBuf = converted.buffer;
+          voiceName = converted.originalName;
+          voiceType = converted.mimeType;
+        } catch (err) {
+          console.warn(
+            'telegram voice→ogg convert failed, falling back to sendAudio:',
+            (err as Error).message
+          );
+        }
+      }
       const isOggOpus =
-        /audio\/(ogg|opus)/i.test(contentType) || /\.(ogg|opus)$/i.test(filename);
+        sniffOggContainer(voiceBuf) ||
+        /audio\/(ogg|opus)/i.test(voiceType) ||
+        /\.(ogg|opus)$/i.test(voiceName);
       const useVoice = kind === 'voice' && isOggOpus;
       const method = useVoice ? 'sendVoice' : 'sendAudio';
       const field = useVoice ? 'voice' : 'audio';
       result = await telegramSendMultipart(method, fields, field, {
-        buffer,
-        filename,
-        contentType: contentType || (useVoice ? 'audio/ogg' : 'audio/webm'),
+        buffer: voiceBuf,
+        filename: voiceName,
+        contentType: voiceType || (useVoice ? 'audio/ogg' : 'audio/webm'),
       });
     } else {
       result = await telegramSendMultipart('sendDocument', fields, 'document', {
@@ -474,16 +494,36 @@ export async function notifyVetChatTelegram(opts: {
         contentType: contentType || 'video/mp4',
       });
     } else if (kind === 'voice' || kind === 'audio') {
-      // sendVoice needs OGG/Opus (API normalizes voice uploads). Non-OGG → sendAudio.
+      let voiceBuf = buffer;
+      let voiceName = filename;
+      let voiceType = contentType;
+      if (kind === 'voice' && !sniffOggContainer(buffer) && !/audio\/(ogg|opus)/i.test(contentType)) {
+        try {
+          const converted = await convertVoiceBufferToOggOpus({
+            buffer,
+            originalName: filename,
+          });
+          voiceBuf = converted.buffer;
+          voiceName = converted.originalName;
+          voiceType = converted.mimeType;
+        } catch (err) {
+          console.warn(
+            'telegram voice→ogg convert failed, falling back to sendAudio:',
+            (err as Error).message
+          );
+        }
+      }
       const isOggOpus =
-        /audio\/(ogg|opus)/i.test(contentType) || /\.(ogg|opus)$/i.test(filename);
+        sniffOggContainer(voiceBuf) ||
+        /audio\/(ogg|opus)/i.test(voiceType) ||
+        /\.(ogg|opus)$/i.test(voiceName);
       const useVoice = kind === 'voice' && isOggOpus;
       const method = useVoice ? 'sendVoice' : 'sendAudio';
       const field = useVoice ? 'voice' : 'audio';
       result = await telegramSendMultipart(method, fields, field, {
-        buffer,
-        filename,
-        contentType: contentType || (useVoice ? 'audio/ogg' : 'audio/webm'),
+        buffer: voiceBuf,
+        filename: voiceName,
+        contentType: voiceType || (useVoice ? 'audio/ogg' : 'audio/webm'),
       });
     } else {
       result = await telegramSendMultipart('sendDocument', fields, 'document', {

@@ -441,6 +441,12 @@ export function walletLedgerLabelFa(reason: string): string {
   ) {
     return PLAYDATE_FEE_REASON;
   }
+  if (r === 'chat_gift' || r === 'gift' || r.includes('هدیه چت') || r.includes('هدیه همبازی')) {
+    return 'هدیه همبازی';
+  }
+  if (r === 'chat_gift_received' || r.includes('دریافت هدیه')) {
+    return 'دریافت هدیه همبازی';
+  }
   if (r.includes('درآمد مشاوره مربی') || r === 'trainer_consult_payout') {
     return 'درآمد مشاوره مربی';
   }
