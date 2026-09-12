@@ -8,9 +8,9 @@ import {
   Trash2,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { faceVerifyButtonLabel, type VerificationStatus } from '@petdate/shared';
+import type { VerificationStatus } from '@petdate/shared';
 import { useAuthStore } from '../hooks/useAuthStore';
-import { useI18n } from '../i18n';
+import { faceVerifyChromeLabel, useI18n } from '../i18n';
 
 export type ProfileManageVariant = 'rail' | 'menu' | 'sheet';
 
@@ -24,9 +24,10 @@ type ManageLink = {
 };
 
 function manageLinks(
-  verifyStatus: VerificationStatus | null | undefined,
+  _verifyStatus: VerificationStatus | null | undefined,
   labels: {
     edit: string;
+    verify: string;
     interactions: string;
     earn: string;
     blocked: string;
@@ -62,7 +63,7 @@ function manageLinks(
       key: 'verify',
       to: '/profile?panel=verify',
       icon: ShieldCheck,
-      label: faceVerifyButtonLabel(verifyStatus),
+      label: labels.verify,
       tone: 'warn',
       match: (pathname, search) =>
         pathname === '/profile' && new URLSearchParams(search).get('panel') === 'verify',
@@ -106,9 +107,10 @@ export function ProfileManageNav({
 }: ProfileManageNavProps) {
   const { pathname, search } = useLocation();
   const { user } = useAuthStore();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const items = manageLinks(user?.verificationStatus, {
     edit: t('nav.manageEdit'),
+    verify: faceVerifyChromeLabel(t, lang, user?.verificationStatus),
     interactions: t('nav.manageInteractions'),
     earn: t('nav.manageEarn'),
     blocked: t('nav.manageBlocked'),

@@ -9,8 +9,6 @@ import {
   UserRound,
 } from 'lucide-react';
 import {
-  GAME_STATUS_LABELS,
-  GAME_TYPE_LABELS,
   formatPersianDateTime,
   type Game,
   type GameStatus,
@@ -20,11 +18,19 @@ import { LandingChrome } from '../components/LandingChrome';
 import { PageHelpLink } from '../components/PageHelpLink';
 import { useAppToast } from '../hooks/useAppToast';
 import { useAuthStore } from '../hooks/useAuthStore';
-import { useI18n } from '../i18n';
+import { gameStatusKey, gameTypeKey, useI18n } from '../i18n';
 import { createGame, joinGame, listGames } from '../lib/api';
 import { loginPath } from '../lib/authRedirect';
 
-const GAME_TYPES = Object.keys(GAME_TYPE_LABELS) as GameType[];
+const GAME_TYPES: GameType[] = [
+  'football',
+  'volleyball',
+  'basketball',
+  'futsal',
+  'tennis',
+  'board',
+  'other',
+];
 
 function toLocalInputValue(isoOrSql: string): string {
   const d = new Date(isoOrSql.includes('T') ? isoOrSql : isoOrSql.replace(' ', 'T'));
@@ -40,7 +46,7 @@ function fromLocalInputValue(local: string): string {
 }
 
 export function GamesPage() {
-  const { t, dir, lang } = useI18n();
+  const { t, dir } = useI18n();
   const { isLoggedIn, user } = useAuthStore();
   const { toastSuccess, toastError } = useAppToast();
   const [games, setGames] = useState<Game[]>([]);
@@ -75,13 +81,12 @@ export function GamesPage() {
   }, [load]);
 
   const typeLabel = useMemo(
-    () => (gt: GameType) => (lang === 'en' ? gt : GAME_TYPE_LABELS[gt] || gt),
-    [lang]
+    () => (gt: GameType) => t(gameTypeKey(gt)),
+    [t]
   );
   const statusLabel = useMemo(
-    () => (st: GameStatus) =>
-      lang === 'en' ? st : GAME_STATUS_LABELS[st] || st,
-    [lang]
+    () => (st: GameStatus) => t(gameStatusKey(st)),
+    [t]
   );
 
   const onJoin = async (game: Game) => {

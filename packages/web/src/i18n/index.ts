@@ -19,3 +19,10 @@ export { fa as faDict } from './locales/fa';
 export { en as enDict } from './locales/en';
 export { ADMIN_FA_EN } from './locales/adminFaEn';
 export { tr, trLabel, uiLang, hasAdminEn, setUiLangOverride } from './tr';
+export {
+  localeNum,
+  faceVerifyChromeLabel,
+  credentialChromeLabel,
+  gameStatusKey,
+  gameTypeKey,
+} from './chrome';

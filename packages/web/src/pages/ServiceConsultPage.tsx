@@ -3,21 +3,18 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Check, Circle, Clock, GraduationCap, MessageCircle, X } from 'lucide-react';
 import {
   TRAINER_CONSULT_COST,
-  VET_CREDENTIAL_STATUS_LABELS,
   formatPersianDateTime,
   isPrimaryRole,
-  toPersianDigits,
   type PetProfile,
   type User,
   type VetConsultation,
-  type VetCredentialStatus,
 } from '@petdate/shared';
 import { AiConsultCtaButton } from '../components/AiConsultCtaButton';
 import { PageHelpLink } from '../components/PageHelpLink';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { useAppToast } from '../hooks/useAppToast';
 import { useLiveAjaxPoll } from '../hooks/useLiveAjaxPoll';
-import { useI18n } from '../i18n';
+import { credentialChromeLabel, localeNum, useI18n, type TranslateFn } from '../i18n';
 import {
   acceptVetConsultation,
   listOnlineProviders,
@@ -37,46 +34,14 @@ const COST: Record<Kind, number> = {
   trainer: TRAINER_CONSULT_COST,
 };
 
-const COPY: Record<
-  Kind,
-  {
-    title: string;
-    role: 'trainer';
-    patientCta: string;
-    providerHint: string;
-    noProviders: string;
-    needPet: string;
-    disclaimer?: string;
-  }
-> = {
-  trainer: {
-    title: 'پنل مربی',
-    role: 'trainer',
-    patientCta: 'درخواست مربی',
-    providerHint: 'آنلاین شو تا درخواست‌های مشاوره مربی را بگیری.',
-    noProviders: 'فعلاً مربی آنلاینی برای اتصال پیدا نشد.',
-    needPet: 'برای درخواست مربی، اول باید حداقل یک پت ثبت کنی.',
-  },
-};
-
-function formatCoins(n: number): string {
-  return toPersianDigits(String(n));
-}
-
-function credentialLabel(status?: VetCredentialStatus | null): string {
-  const key: VetCredentialStatus =
-    status && status in VET_CREDENTIAL_STATUS_LABELS ? status : 'none';
-  return VET_CREDENTIAL_STATUS_LABELS[key];
-}
-
-function patientLabel(c: VetConsultation): string {
-  const name = c.patientName?.trim() || `کاربر #${c.patientUserId}`;
+function patientLabel(c: VetConsultation, t: TranslateFn): string {
+  const name = c.patientName?.trim() || t('consultDesk.userFallback', { id: c.patientUserId });
   const pet = c.petName?.trim();
   return pet ? `${name} · ${pet}` : name;
 }
 
-function providerPeerLabel(c: VetConsultation): string {
-  const name = c.vetName?.trim() || `کاربر #${c.vetUserId}`;
+function providerPeerLabel(c: VetConsultation, t: TranslateFn): string {
+  const name = c.vetName?.trim() || t('consultDesk.userFallback', { id: c.vetUserId });
   const pet = c.petName?.trim();
   return pet ? `${name} · ${pet}` : name;
 }
@@ -111,13 +76,13 @@ function errMessage(err: unknown, fallback: string): string {
 
 export function ServiceConsultPage({ kind }: { kind: Kind }) {
   const navigate = useNavigate();
-  const { t } = useI18n();
+  const { t, lang, dir } = useI18n();
   const { user, token, isLoggedIn, refreshMe } = useAuthStore();
   const { toastError, toastSuccess, toastInfo } = useAppToast();
-  const meta = COPY[kind];
   const cost = COST[kind];
+  const coinsLabel = (n: number) => localeNum(lang, n);
   /** فقط نقش فعال ارائه‌دهنده — نه داشتن نقش فرعی (صاحب‌پت چندنقشی نباید پنل مدرک ببیند). */
-  const isProvider = isPrimaryRole(user, meta.role);
+  const isProvider = isPrimaryRole(user, 'trainer');
   const credStatus = user?.trainerCredentialStatus;
   const online = Boolean(user?.trainerOnline);
   const verified = credStatus === 'verified';
@@ -233,12 +198,12 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
   useEffect(() => subscribeIncomingRefresh(() => void loadLists()), [loadLists]);
 
   async function onToggleOnline(next: boolean) {
-    if (!token) { flashError('اول وارد حساب شو.'); return; }
+    if (!token) { flashError(t('consultDesk.loginFirst')); return; }
     if (next && !verified) {
       flashError(
         credStatus === 'pending'
-          ? 'مدرک هنوز تأیید نشده؛ بعد از تأیید ادمین آنلاین شو.'
-          : 'اول مدرک را همین‌جا یا در ربات آپلود کن تا پنل فعال شود.'
+          ? t('consultDesk.credNotVerifiedShort')
+          : t('consultDesk.credNeedUpload')
       );
       return;
     }
@@ -246,33 +211,33 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
     try {
       await patchWebProviderOnline(token, kind, next);
       await refreshMe();
-      toastSuccess(next ? 'آنلاین شدی.' : 'آفلاین شدی.');
+      toastSuccess(next ? t('consultDesk.onlineOk') : t('consultDesk.offlineOk'));
     } catch (err) {
-      flashError(errMessage(err, 'تغییر وضعیت ناموفق بود'));
+      flashError(errMessage(err, t('consultDesk.statusChangeFail')));
     } finally { setOnlineBusy(false); }
   }
 
   async function onUploadCredential(file: File | null | undefined) {
-    if (!token) { flashError('اول وارد حساب شو.'); return; }
+    if (!token) { flashError(t('consultDesk.loginFirst')); return; }
     if (!file) return;
     setUploadBusy(true); setError(null); setStatusMsg(null);
     try {
       await uploadProviderCredential(token, kind, file);
       await refreshMe();
-      flashSuccess('مدرک ارسال شد و در صف تأیید ادمین است. بعد از تأیید می‌توانی آنلاین شوی.');
+      flashSuccess(t('consultDesk.credSent'));
     } catch (err) {
-      flashError(errMessage(err, 'آپلود مدرک ناموفق بود'));
+      flashError(errMessage(err, t('consultDesk.credUploadFail')));
     } finally { setUploadBusy(false); }
   }
 
   function validatePatient(opts?: { humanOnly?: boolean }): string | null {
-    if (!user?.id || !token) return 'اول وارد حساب شو.';
-    if (!pets.length) return meta.needPet;
+    if (!user?.id || !token) return t('consultDesk.loginFirst');
+    if (!pets.length) return t('consultDesk.needPetTrainer');
     const others = onlineProviders.filter((p) => p.id !== user.id);
     if (opts?.humanOnly) {
-      if (!others.length) return meta.noProviders;
+      if (!others.length) return t('consultDesk.noProvidersTrainer');
       if (coins < cost) {
-        return `حداقل ${formatCoins(cost)} سکه لازم است. موجودی: ${formatCoins(coins)}`;
+        return t('consultDesk.needCoins', { cost: coinsLabel(cost), coins: coinsLabel(coins) });
       }
       return null;
     }
@@ -284,7 +249,7 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
     mode: 'ai' | 'human',
     confirmResend = false
   ) {
-    if (!user?.id || !token) { flashError('اول وارد حساب شو.'); return; }
+    if (!user?.id || !token) { flashError(t('consultDesk.loginFirst')); return; }
     const gate = validatePatient({ humanOnly: mode === 'human' });
     if (gate) { flashError(gate); setConfirmPay(false); return; }
     setBusy(true);
@@ -307,7 +272,7 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
             /میخوای مجدد/.test(err.message));
         if (needsConfirm && !confirmResend) {
           setNeedsResendConfirm(true); setConfirmPay(true);
-          flashError('درخواست قبلی منقضی شده. برای ارسال مجدد دوباره تأیید کن.');
+          flashError(t('consultDesk.resendConfirm'));
           return;
         }
         throw err;
@@ -330,7 +295,7 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
         navigate(`/vet-chats/${res.consultations[0].id}`);
       }
     } catch (err) {
-      flashError(errMessage(err, 'ارسال درخواست ناموفق بود'));
+      flashError(errMessage(err, t('consultDesk.sendFail')));
     } finally {
       setBusy(false);
       setBusyMode(null);
@@ -354,7 +319,7 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
     }
     if (!confirmPay) {
       setConfirmPay(true);
-      toastInfo(`با تأیید، ${formatCoins(cost)} سکه کسر می‌شود. دوباره بزن تا ارسال شود.`);
+      toastInfo(t('consultDesk.payHint', { cost: coinsLabel(cost) }));
       return;
     }
     await sendRequest('human', needsResendConfirm);
@@ -368,7 +333,7 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
       await loadLists();
       navigate(`/vet-chats/${id}`);
     } catch (err) {
-      flashError(errMessage(err, 'قبول درخواست ناموفق بود'));
+      flashError(errMessage(err, t('consultDesk.acceptFail')));
     } finally { setActingId(null); }
   }
 
@@ -378,24 +343,23 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
     try {
       await rejectVetConsultation(id, token);
       await loadLists();
-      toastSuccess('درخواست رد شد.');
+      toastSuccess(t('consultDesk.rejectOk'));
     } catch (err) {
-      flashError(errMessage(err, 'رد درخواست ناموفق بود'));
+      flashError(errMessage(err, t('consultDesk.rejectFail')));
     } finally { setActingId(null); }
   }
 
   const onlineCount = onlineProviders.filter((p) => p.id !== user?.id).length;
 
   return (
-    <div className="pepito-vet-consult" dir="rtl">
+    <div className="pepito-vet-consult" dir={dir}>
       <header className="pepito-vet-consult-head">
-        <h1>{isProvider ? meta.title : meta.patientCta}</h1>
+        <h1>{isProvider ? t('consultDesk.titleTrainer') : t('consultDesk.patientCtaTrainer')}</h1>
         <p>
           {isProvider
-            ? meta.providerHint
-            : t('consultDesk.trainerLead', { cost: formatCoins(cost) })}
+            ? t('consultDesk.leadTrainer')
+            : t('consultDesk.trainerLead', { cost: coinsLabel(cost) })}
         </p>
-        {meta.disclaimer && !isProvider ? <p className="muted">{meta.disclaimer}</p> : null}
         <PageHelpLink section="consults" />
       </header>
 
@@ -413,20 +377,20 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
       {isProvider ? (
         <section className="pepito-vet-online-card">
           <p>
-            وضعیت مدرک: <strong>{credentialLabel(credStatus)}</strong>
+            {t('consultDesk.credStatus', { status: credentialChromeLabel(t, credStatus) })}
           </p>
           {!verified ? (
             <div className="pepito-provider-cred-upload">
               <p>
-                برای فعال‌شدن پنل، مدرک را آپلود کن و منتظر تأیید ادمین بمان
-                {credStatus === 'pending' ? ' — مدرکت در صف بررسی است.' : '.'}
+                {t('consultDesk.credUploadHint')}
+                {credStatus === 'pending' ? ` ${t('consultDesk.credQueued')}` : ''}
               </p>
               <label className="pepito-btn button-1 pepito-provider-cred-label">
                 {uploadBusy
-                  ? 'در حال آپلود…'
+                  ? t('consultDesk.credUploading')
                   : credStatus === 'pending'
-                    ? 'ارسال مجدد مدرک'
-                    : 'آپلود مدرک'}
+                    ? t('consultDesk.credReupload')
+                    : t('consultDesk.credUpload')}
                 <input
                   type="file"
                   accept="image/*,application/pdf"
@@ -441,11 +405,11 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
                 />
               </label>
               <p className="muted">
-                یا از{' '}
+                {t('consultDesk.credBotHintBefore')}{' '}
                 <a href={botUrl} target="_blank" rel="noreferrer">
-                  ربات تلگرام
-                </a>{' '}
-                هم می‌توانی بفرستی.
+                  {t('consultDesk.telegramBot')}
+                </a>
+                {t('consultDesk.credBotHintAfter')}
               </p>
             </div>
           ) : null}
@@ -457,7 +421,7 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
               data-testid={`${kind}-online-toggle-on`}
               onClick={() => void onToggleOnline(true)}
             >
-              <Circle size={14} /> آنلاین
+              <Circle size={14} /> {t('consultDesk.online')}
             </button>
             <button
               type="button"
@@ -466,7 +430,7 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
               data-testid={`${kind}-online-toggle-off`}
               onClick={() => void onToggleOnline(false)}
             >
-              آفلاین
+              {t('consultDesk.offline')}
             </button>
           </div>
         </section>
@@ -477,13 +441,13 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
           <p className="pepito-vet-consult-hint" data-testid={`${kind}-online-count`}>
             {isLoggedIn
               ? onlineCount > 0
-                ? `${toPersianDigits(String(onlineCount))} نفر آنلاین آماده پذیرش`
-                : meta.noProviders
-              : 'برای ارسال درخواست وارد حساب شو.'}
+                ? t('consultDesk.onlineCount', { n: coinsLabel(onlineCount) })
+                : t('consultDesk.noProvidersTrainer')
+              : t('consultDesk.loginToRequest')}
           </p>
           {!isLoggedIn ? (
             <Link to="/auth/login" className="pepito-btn button-1">
-              ورود
+              {t('common.login')}
             </Link>
           ) : (
             <div className="pepito-consult-cta-stack">
@@ -498,8 +462,7 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
               />
               {confirmPay && onlineCount > 0 ? (
                 <p className="pepito-vet-consult-hint" role="status">
-                  تأیید نهایی: {formatCoins(cost)} سکه از موجودی کسر می‌شود
-                  {meta.disclaimer ? ` — ${meta.disclaimer}` : ''}.
+                  {t('consultDesk.confirmDeduct', { cost: coinsLabel(cost) })}
                 </p>
               ) : null}
               <button
@@ -515,7 +478,7 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
                 {busy && busyMode === 'human'
                   ? t('consultDesk.sending')
                   : confirmPay && onlineCount > 0
-                    ? t('consultDesk.confirmPay', { cost: formatCoins(cost) })
+                    ? t('consultDesk.confirmPay', { cost: coinsLabel(cost) })
                     : t('consultDesk.realTrainer')}
               </button>
               {confirmPay && onlineCount > 0 ? (
@@ -525,17 +488,17 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
                   disabled={busy}
                   onClick={() => setConfirmPay(false)}
                 >
-                  انصراف
+                  {t('common.cancel')}
                 </button>
               ) : null}
               {!pets.length ? (
                 <Link to="/add-pet" className="pepito-btn pepito-human-consult-cta">
-                  ثبت پت
+                  {t('consultDesk.addPet')}
                 </Link>
               ) : null}
               {coins < cost ? (
                 <Link to="/wallet" className="pepito-btn pepito-human-consult-cta">
-                  شارژ سکه
+                  {t('consultDesk.topUp')}
                 </Link>
               ) : null}
             </div>
@@ -547,31 +510,31 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
         <div className="pepito-vet-inbox-stack">
           <section
             className="pepito-vet-inbox-panel pepito-vet-inbox-panel--incoming"
-            aria-label="درخواست‌های ورودی"
+            aria-label={t('consultDesk.incomingAria')}
             data-testid={`${kind}-incoming-inbox`}
           >
             <header className="pepito-vet-inbox-head">
               <div>
-                <p className="pepito-eyebrow">ورودی</p>
-                <h2>درخواست‌های جدید</h2>
+                <p className="pepito-eyebrow">{t('consultDesk.incomingEyebrow')}</p>
+                <h2>{t('consultDesk.incomingTitle')}</h2>
               </div>
               {incoming.length > 0 ? (
-                <span className="pepito-vet-inbox-count" aria-label="تعداد درخواست">
-                  {toPersianDigits(String(incoming.length))}
+                <span className="pepito-vet-inbox-count" aria-label={t('consultDesk.incomingCountAria')}>
+                  {coinsLabel(incoming.length)}
                 </span>
               ) : null}
             </header>
             {incoming.length === 0 ? (
-              <p className="pepito-vet-consult-hint">فعلاً درخواست جدیدی نیست.</p>
+              <p className="pepito-vet-consult-hint">{t('consultDesk.incomingEmpty')}</p>
             ) : (
               <ul className="pepito-vet-consult-incoming-list">
                 {incoming.map((c) => (
                   <li key={c.id} data-testid={`${kind}-incoming-${c.id}`}>
                     <div className="pepito-vet-row-info">
-                      <strong>{patientLabel(c)}</strong>
+                      <strong>{patientLabel(c, t)}</strong>
                       <span className="pepito-vet-status">
                         <Clock size={12} aria-hidden />
-                        در انتظار پاسخ
+                        {t('consultDesk.statusWaiting')}
                       </span>
                       {c.createdAt ? (
                         <small>{formatPersianDateTime(c.createdAt)}</small>
@@ -586,7 +549,7 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
                         data-testid={`${kind}-accept-${c.id}`}
                       >
                         <Check size={16} aria-hidden />
-                        قبول و چت
+                        {t('consultDesk.acceptChat')}
                       </button>
                       <button
                         type="button"
@@ -595,7 +558,7 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
                         onClick={() => void onReject(c.id)}
                       >
                         <X size={16} aria-hidden />
-                        رد
+                        {t('common.reject')}
                       </button>
                     </div>
                   </li>
@@ -606,17 +569,17 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
 
           <section
             className="pepito-vet-inbox-panel"
-            aria-label="گفتگوهای اخیر"
+            aria-label={t('consultDesk.recentAria')}
             data-testid={`${kind}-recent-chats`}
           >
             <header className="pepito-vet-inbox-head">
               <div>
-                <p className="pepito-eyebrow">گفتگو</p>
-                <h2>گفتگوهای اخیر</h2>
+                <p className="pepito-eyebrow">{t('consultDesk.chatEyebrow')}</p>
+                <h2>{t('consultDesk.recentTitle')}</h2>
               </div>
             </header>
             {recent.length === 0 ? (
-              <p className="pepito-vet-consult-hint">هنوز گفتگویی ثبت نشده.</p>
+              <p className="pepito-vet-consult-hint">{t('consultDesk.recentEmpty')}</p>
             ) : (
               <ul className="pepito-vet-consult-incoming-list">
                 {recent.map((c) => {
@@ -626,7 +589,7 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
                   return (
                     <li key={c.id} data-testid={`${kind}-recent-${c.id}`}>
                       <div className="pepito-vet-row-info">
-                        <strong>{patientLabel(c)}</strong>
+                        <strong>{patientLabel(c, t)}</strong>
                         <span
                           className={`pepito-vet-status${
                             st.tone === 'active'
@@ -657,10 +620,10 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
                             data-testid={`${kind}-open-chat-${c.id}`}
                           >
                             <MessageCircle size={16} aria-hidden />
-                            {st.tone === 'active' ? 'ورود به چت' : 'مشاهده گفتگو'}
+                            {st.tone === 'active' ? t('consultDesk.openChat') : t('consultDesk.viewChat')}
                           </Link>
                         ) : (
-                          <span className="pepito-vet-consult-hint">چت باز نیست</span>
+                          <span className="pepito-vet-consult-hint">{t('consultDesk.chatClosedHint')}</span>
                         )}
                       </div>
                     </li>
@@ -673,17 +636,17 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
       ) : (
         <section
           className="pepito-vet-inbox-panel"
-          aria-label="درخواست‌های من"
+          aria-label={t('consultDesk.myRequestsAria')}
           data-testid={`${kind}-my-requests`}
         >
           <header className="pepito-vet-inbox-head">
             <div>
-              <p className="pepito-eyebrow">درخواست‌ها</p>
-              <h2>درخواست‌های من</h2>
+              <p className="pepito-eyebrow">{t('consultDesk.myRequestsEyebrow')}</p>
+              <h2>{t('consultDesk.myRequestsTitle')}</h2>
             </div>
           </header>
           {recent.length === 0 ? (
-            <p className="pepito-vet-consult-hint">هنوز درخواستی نفرستاده‌ای.</p>
+            <p className="pepito-vet-consult-hint">{t('consultDesk.myRequestsEmpty')}</p>
           ) : (
             <ul className="pepito-vet-consult-incoming-list">
               {recent.map((c) => {
@@ -693,7 +656,7 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
                 return (
                   <li key={c.id}>
                     <div className="pepito-vet-row-info">
-                      <strong>{providerPeerLabel(c)}</strong>
+                      <strong>{providerPeerLabel(c, t)}</strong>
                       <span
                         className={`pepito-vet-status${
                           st.tone === 'active'
@@ -723,7 +686,7 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
                           }`}
                         >
                           <MessageCircle size={16} aria-hidden />
-                          {st.tone === 'active' ? 'ورود به چت' : 'مشاهده گفتگو'}
+                          {st.tone === 'active' ? t('consultDesk.openChat') : t('consultDesk.viewChat')}
                         </Link>
                       ) : (
                         <span className="pepito-vet-consult-hint">{st.text}</span>
