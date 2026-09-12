@@ -1,4 +1,9 @@
-import { PLAYDATE_STATUS_LABELS, type PetProfile, type PlaydateRequest } from '@petdate/shared';
+import {
+  PLAYDATE_STATUS_LABELS,
+  shouldNotifyRequesterOnReject,
+  type PetProfile,
+  type PlaydateRequest,
+} from '@petdate/shared';
 import { resolvePublicMediaUrl } from './api';
 import type { MatchRequest, MatchStatus, Pet, PetType } from '../types';
 import { PET_TYPE_EMOJI } from '../types';
@@ -88,5 +93,15 @@ export function playdateToMatchRequest(req: PlaydateRequest, myUserId: number): 
     chatSecure: Boolean(req.chatSecure),
     chatEnded: Boolean(req.chatEnded),
     expired: req.status === 'expired',
+    fanoutRecipientCount: req.fanoutRecipientCount,
   };
+}
+
+/** Requester must not see per-recipient reject copy on a multi-target send. */
+export function shouldShowOutgoingRejectToRequester(match: {
+  direction?: 'incoming' | 'outgoing';
+  fanoutRecipientCount?: number;
+}): boolean {
+  if (match.direction === 'incoming') return true;
+  return shouldNotifyRequesterOnReject(match.fanoutRecipientCount ?? 1);
 }

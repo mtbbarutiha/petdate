@@ -573,30 +573,7 @@ export async function handleVetConsultDecision(
     await ctx.reply(statusLine);
   }
 
-  try {
-    const patient = await getUserById(updated.patientUserId);
-    if (patient?.telegramId) {
-      const kind = updated.serviceKind ?? 'vet';
-      const rejectLines =
-        kind === 'seeker_advice'
-          ? [
-              'صاحب پت این درخواست راهنمایی را نپذیرفت.',
-              'می‌تونی دوباره از «مشورت با صاحبین» درخواست بدی.',
-            ]
-          : kind === 'trainer'
-            ? [
-                'مربی این درخواست را نپذیرفت.',
-                'می‌تونی دوباره از منوی مربی درخواست بدی.',
-              ]
-            : [
-                'دامپزشک این درخواست را نپذیرفت.',
-                'می‌تونی دوباره از «ارتباط سریع با پزشک» درخواست بدی.',
-              ];
-      await ctx.api.sendMessage(patient.telegramId, rejectLines.join('\n'));
-    }
-  } catch (err) {
-    console.warn('notify patient of consult decision failed:', err);
-  }
+  // Patient reject DM is owned by the API — skipped for multi-recipient fan-out.
 }
 
 export async function handleServices(ctx: Context): Promise<void> {

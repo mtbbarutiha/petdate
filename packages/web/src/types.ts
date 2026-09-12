@@ -56,6 +56,8 @@ export interface MatchRequest {
   chatEnded?: boolean;
   /** درخواست منقضی‌شده (بیش از ۲ دقیقه بدون پاسخ) */
   expired?: boolean;
+  /** Recipients in the same find/broadcast wave; >1 hides requester reject copy. */
+  fanoutRecipientCount?: number;
 }
 
 export interface OwnerProfile {

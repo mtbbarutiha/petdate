@@ -565,17 +565,7 @@ export async function handlePlaydateAction(
   const requester = await getUserById(updated.fromUserId);
 
   if (action === 'reject') {
-    if (requester?.telegramId) {
-      try {
-        await ctx.api.sendMessage(
-          requester.telegramId,
-          ['❌ درخواست همبازی رد شد.', '', formatPlaydate(updated)].join('\n'),
-          { parse_mode: 'Markdown' }
-        );
-      } catch {
-        /* ignore */
-      }
-    }
+    // Requester reject DM is owned by the API — skipped for multi-recipient fan-out.
     return;
   }
 

@@ -114,7 +114,8 @@ export function notifyVetMessage(threadId: number, message: unknown, participant
 export function notifyPlaymateThread(
   threadId: number,
   participantIds: number[],
-  patch: Record<string, unknown>
+  patch: Record<string, unknown>,
+  opts?: { inboxUserIds?: Array<number | null | undefined> }
 ) {
   broadcast(roomPlaymate(threadId), {
     type: 'thread',
@@ -122,13 +123,18 @@ export function notifyPlaymateThread(
     threadId,
     patch,
   });
-  notifyInbox(participantIds, { kind: 'playmate', reason: 'thread', id: threadId });
+  notifyInbox(opts?.inboxUserIds ?? participantIds, {
+    kind: 'playmate',
+    reason: 'thread',
+    id: threadId,
+  });
 }
 
 export function notifyVetThread(
   threadId: number,
   participantIds: number[],
-  patch: Record<string, unknown>
+  patch: Record<string, unknown>,
+  opts?: { inboxUserIds?: Array<number | null | undefined> }
 ) {
   broadcast(roomVet(threadId), {
     type: 'thread',
@@ -136,7 +142,11 @@ export function notifyVetThread(
     threadId,
     patch,
   });
-  notifyInbox(participantIds, { kind: 'vet', reason: 'thread', id: threadId });
+  notifyInbox(opts?.inboxUserIds ?? participantIds, {
+    kind: 'vet',
+    reason: 'thread',
+    id: threadId,
+  });
 }
 
 export function notifyPresence(userId: number, online: boolean, lastSeenAt?: string | null) {

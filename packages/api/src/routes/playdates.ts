@@ -20,6 +20,10 @@ import {
 } from '../services/playdate-fee';
 import { notifyPlaydateRequestTelegram } from '../services/telegram-playdate-notify';
 import {
+  maybeNotifyPlaydateRequesterRejected,
+  planPlaydateRejectNotify,
+} from '../services/fanout-reject-notify';
+import {
   notifyPlaydateChatEndedTelegram,
   notifyPlaydateChatSecureTelegram,
   notifyPlaydateChatTelegram,
@@ -959,7 +963,10 @@ playdatesRouter.get('/:id', (req, res) => {
     return;
   }
 
-  res.json(request);
+  res.json({
+    ...request,
+    fanoutRecipientCount: dbService.countPlaydateFanoutRecipients(rawRequest),
+  });
 });
 
 const MAX_AUTO_PLAYMATE_REQUESTS = 30;
@@ -1339,18 +1346,30 @@ playdatesRouter.patch('/:id', async (req, res) => {
     ownerChatStarted = await openOwnerChatOnAccept(updated, previous.status);
   }
 
-  notifyInbox([updated.toUserId, updated.fromUserId], {
+  const participants = [updated.fromUserId, updated.toUserId].filter(
+    (id): id is number => Number.isFinite(id as number) && (id as number) > 0,
+  );
+  const rejectPlan =
+    status === 'rejected' ? planPlaydateRejectNotify(updated) : null;
+  const inboxUserIds = rejectPlan ? rejectPlan.inboxUserIds : participants;
+
+  notifyInbox(inboxUserIds, {
     kind: 'playmate',
     reason: 'status',
     id: updated.id,
   });
-  notifyPlaymateThread(
-    updated.id,
-    [updated.fromUserId, updated.toUserId].filter(
-      (id): id is number => Number.isFinite(id as number) && (id as number) > 0,
-    ),
-    { status: updated.status },
-  );
+  notifyPlaymateThread(updated.id, participants, { status: updated.status }, {
+    inboxUserIds,
+  });
 
-  res.json({ ...updated, ownerChatStarted });
+  if (status === 'rejected' && rejectPlan?.notifyRequester) {
+    maybeNotifyPlaydateRequesterRejected(updated);
+  }
+
+  res.json({
+    ...updated,
+    ownerChatStarted,
+    fanoutRecipientCount: rejectPlan?.recipientCount,
+    notifyRequesterOnReject: rejectPlan?.notifyRequester,
+  });
 });

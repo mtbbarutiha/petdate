@@ -73,6 +73,7 @@ import {
   TRAINER_CONSULT_COST,
   TRAINER_PROVIDER_SHARE,
   PLAYDATE_REQUEST_TTL_MS,
+  countFanoutSiblingsByCreatedAt,
   PROFILE_REWARD_SECTIONS,
   PROFILE_SECTION_REWARD,
   REFERRAL_BONUS_COINS,
@@ -5380,6 +5381,51 @@ export const dbService = {
   updatePlaydateStatus(id: number, status: PlaydateStatus): PlaydateRequest | null {
     db.prepare("UPDATE playdate_requests SET status = ?, updated_at = datetime('now') WHERE id = ?").run(status, id);
     return this.getPlaydateRequest(id);
+  },
+
+  /**
+   * How many playdate rows share this request's find/direct wave
+   * (same sender + source pet, created within the fan-out window).
+   */
+  countPlaydateFanoutRecipients(req: Pick<PlaydateRequest, 'fromUserId' | 'fromPetId' | 'createdAt'>): number {
+    const rows = db
+      .prepare(
+        `SELECT created_at FROM playdate_requests
+         WHERE from_user_id = ? AND from_pet_id = ?`
+      )
+      .all(req.fromUserId, req.fromPetId) as { created_at: string }[];
+    return Math.max(
+      1,
+      countFanoutSiblingsByCreatedAt(
+        req.createdAt,
+        rows.map((r) => r.created_at)
+      )
+    );
+  },
+
+  /**
+   * How many consult rows share this quick-connect / direct wave
+   * (same patient + service kind, created within the fan-out window).
+   */
+  countConsultFanoutRecipients(
+    consult: Pick<VetConsultation, 'patientUserId' | 'createdAt'> & {
+      serviceKind?: ConsultServiceKind | string | null;
+    }
+  ): number {
+    const kind = consult.serviceKind ?? 'vet';
+    const rows = db
+      .prepare(
+        `SELECT created_at FROM vet_consultations
+         WHERE patient_user_id = ? AND COALESCE(service_kind, 'vet') = ?`
+      )
+      .all(consult.patientUserId, kind) as { created_at: string }[];
+    return Math.max(
+      1,
+      countFanoutSiblingsByCreatedAt(
+        consult.createdAt,
+        rows.map((r) => r.created_at)
+      )
+    );
   },
 
   isPlaydateParticipant(req: PlaydateRequest, userId: number): boolean {

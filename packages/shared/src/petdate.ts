@@ -676,6 +676,8 @@ export interface PlaydateRequest {
   updatedAt: string;
   fromPet?: PetProfile;
   toPet?: PetProfile;
+  /** Recipients in the same find/broadcast wave; >1 hides requester reject notify. */
+  fanoutRecipientCount?: number;
 }
 
 /** نوع رسانهٔ پیام چت همبازی (از تلگرام یا وب) */
@@ -765,6 +767,8 @@ export interface VetConsultation {
   petSpecies?: string;
   petBreed?: string;
   petImageUrl?: string;
+  /** Recipients in the same quick-connect wave; >1 hides requester reject notify. */
+  fanoutRecipientCount?: number;
 }
 
 /** نوع رسانهٔ پیام چت مشاوره (همان مجموعهٔ همبازی) */
