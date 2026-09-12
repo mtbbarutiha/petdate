@@ -1,23 +1,25 @@
 import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { PawPrint } from 'lucide-react';
 import { BRAND } from '@petdate/shared';
 import { useI18n } from '../i18n';
 import { LanguageToggle } from './LanguageToggle';
 import { NavUserCluster } from './NavUserCluster';
 import { SiteHeaderLinkView } from './SiteHeaderLinkView';
-import { SiteNavOverflow } from './SiteNavOverflow';
 import { ThemeToggle } from './ThemeToggle';
+import { IconPaw } from './icons/ChromeIcons';
 import { INLINE_SECTION_COUNT, type SiteHeaderLink } from './siteHeaderLinks';
 
 const LazySiteDesktopNav = lazy(() =>
   import('./SiteDesktopNav').then((m) => ({ default: m.SiteDesktopNav })),
 );
+const SiteNavOverflow = lazy(() =>
+  import('./SiteNavOverflow').then((m) => ({ default: m.SiteNavOverflow })),
+);
 
 function PawIcon({ size = 14 }: { size?: number }) {
   return (
     <span className="pepito-btn-icon" aria-hidden>
-      <PawPrint size={size} />
+      <IconPaw size={size} />
     </span>
   );
 }
@@ -38,6 +40,8 @@ export type SiteHeaderProps = {
   ctaTo?: string;
   extras?: ReactNode;
   logoSrc?: string;
+  logoSrcSet?: string;
+  logoSizes?: string;
   logoWidth?: number;
   logoHeight?: number;
 };
@@ -61,6 +65,8 @@ export function SiteHeader({
   ctaTo,
   extras,
   logoSrc = '/pepito/img/logo.png',
+  logoSrcSet,
+  logoSizes,
   logoWidth,
   logoHeight,
 }: SiteHeaderProps) {
@@ -85,27 +91,33 @@ export function SiteHeader({
         <img
           src={logoSrc}
           alt={BRAND.displayName}
+          {...(logoSrcSet ? { srcSet: logoSrcSet } : {})}
+          {...(logoSizes ? { sizes: logoSizes } : {})}
           {...(logoWidth ? { width: logoWidth } : {})}
           {...(logoHeight ? { height: logoHeight } : {})}
           decoding="async"
         />
       </Link>
 
-      <div className="pepito-nav-primary">
-        {showDesktopNav && wideEnoughForNav ? (
+      {wideEnoughForNav ? (
+        <div className="pepito-nav-primary">
+          {showDesktopNav ? (
+            <Suspense fallback={null}>
+              <LazySiteDesktopNav />
+            </Suspense>
+          ) : null}
+          {inlineLinks.length > 0 ? (
+            <nav className="pepito-nav-links pepito-nav-section-inline" aria-label={t('nav.sections')}>
+              {inlineLinks.map((link) => (
+                <SiteHeaderLinkView key={link.key} link={link} />
+              ))}
+            </nav>
+          ) : null}
           <Suspense fallback={null}>
-            <LazySiteDesktopNav />
+            <SiteNavOverflow links={sectionLinks} />
           </Suspense>
-        ) : null}
-        {inlineLinks.length > 0 ? (
-          <nav className="pepito-nav-links pepito-nav-section-inline" aria-label={t('nav.sections')}>
-            {inlineLinks.map((link) => (
-              <SiteHeaderLinkView key={link.key} link={link} />
-            ))}
-          </nav>
-        ) : null}
-        <SiteNavOverflow links={sectionLinks} />
-      </div>
+        </div>
+      ) : null}
 
       <div className="pepito-nav-actions">
         <NavUserCluster showCart={showCart} showOrders={showOrders} />

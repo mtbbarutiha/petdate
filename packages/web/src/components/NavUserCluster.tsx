@@ -1,9 +1,11 @@
+import { lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
-import { Package, ShoppingCart } from 'lucide-react';
-import { ProfileMenu } from './ProfileMenu';
-import { WalletChip } from './WalletChip';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { useShopCart } from '../hooks/useShopCart';
+import { IconCart, IconPackage } from './icons/ChromeIcons';
+
+const ProfileMenu = lazy(() => import('./ProfileMenu').then((m) => ({ default: m.ProfileMenu })));
+const WalletChip = lazy(() => import('./WalletChip').then((m) => ({ default: m.WalletChip })));
 
 /**
  * Top-bar account tools pinned to physical CSS left (LTR cluster):
@@ -22,10 +24,10 @@ export function NavUserCluster({
   return (
     <div className="pepito-nav-user-cluster" role="group" aria-label="حساب و خرید">
       {isLoggedIn ? (
-        <>
+        <Suspense fallback={null}>
           <ProfileMenu />
           <WalletChip />
-        </>
+        </Suspense>
       ) : null}
       {showOrders ? (
         <Link
@@ -34,7 +36,7 @@ export function NavUserCluster({
           aria-label="سفارش‌های من"
           title="سفارش‌های من"
         >
-          <Package size={18} strokeWidth={2.2} aria-hidden />
+          <IconPackage />
         </Link>
       ) : null}
       {showCart ? (
@@ -44,7 +46,7 @@ export function NavUserCluster({
           data-shop-cart-target
           aria-label={itemCount > 0 ? `سبد خرید (${itemCount})` : 'سبد خرید'}
         >
-          <ShoppingCart size={18} strokeWidth={2.2} aria-hidden />
+          <IconCart />
           {itemCount > 0 ? (
             <span className="pepito-nav-cart-count">{itemCount.toLocaleString('fa-IR')}</span>
           ) : null}

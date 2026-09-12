@@ -34,6 +34,11 @@ assert.doesNotMatch(
 assert.match(indexHtml, /pd-critical-first-paint/, 'inline critical CSS kills the white filmstrip');
 assert.match(indexHtml, /setTimeout\(run, 10000\)/, 'GTM waits for interaction or 10s — not first idle');
 assert.doesNotMatch(indexHtml, /requestIdleCallback/, 'GTM must not use requestIdleCallback (fires on first idle)');
+assert.doesNotMatch(
+  indexHtml,
+  /\['pointerdown', 'keydown', 'touchstart', 'scroll'\]/,
+  'GTM must not arm on scroll (Lighthouse emits scroll during load)'
+);
 assert.match(indexHtml, /Vazirmatn Fallback/, 'critical CSS ships font fallback metrics (CLS)');
 assert.match(indexHtml, /pepito-hero-inner/, 'critical CSS reserves hero-inner (CLS)');
 assert.match(indexHtml, /85svh - var\(--pepito-nav-h\)/, 'critical hero uses compact 85svh (matches hydrated CSS)');
@@ -42,41 +47,56 @@ assert.doesNotMatch(
   /\.pepito-hero\{min-height:calc\(100svh/,
   'critical CSS must not over-reserve a full-viewport hero'
 );
+assert.match(indexHtml, /pepito-hero-dot\{width:44px/, 'critical CSS reserves 44px hero dots');
+assert.match(indexHtml, /rel="preload"[\s\S]*hero-playmate-800\.webp/, 'LCP image is preload-discovered from HTML');
+assert.match(indexHtml, /id="root">[\s\S]*pepito-hero-media/, 'static hero shell is in #root for FCP');
+assert.match(indexHtml, /rel="alternate" type="text\/plain" href="https:\/\/petdate\.ir\/llms\.txt"/, 'HTML advertises llms.txt');
+assert.doesNotMatch(indexHtml, /rel="preconnect" href="https:\/\/fonts/, 'no unused gstatic/googleapis preconnect');
 assert.doesNotMatch(
   indexHtml,
   /rel="preload"\s+as="style"/,
   'do not preload the Google Fonts CSS (unused-preload warning)'
 );
-assert.match(indexHtml, /web-perf-v23-hero-compact/, 'deploy marker bumped so SW/HTML cache misses');
+assert.match(indexHtml, /web-perf-v24-lh-pass/, 'deploy marker bumped so SW/HTML cache misses');
 assert.match(indexHtml, /\.pepito-faq-item,\s*\.pepito-help-card/, 'critical CSS covers FAQ/help cards');
 assert.match(indexHtml, /html\.theme-light \.pepito-faq-item/, 'critical CSS has light FAQ overrides');
 
 assert.match(vite, /sourcemap:\s*true/, 'production source maps for large first-party JS');
 assert.match(vite, /vendor-lucide/, 'lucide stays in its own chunk');
+assert.match(vite, /vendor-tiptap/, '@tiptap/react must not share vendor-react');
+assert.match(vite, /@tiptap/, 'tiptap matcher runs before /react/');
 assert.match(vite, /resolveDependencies/, 'lucide is not modulepreloaded');
 assert.match(vite, /petdate-defer-css/, 'hashed CSS is deferred off first paint');
-assert.match(vite, /pd-defer-css-fallback/, 'deferred CSS has a cached-sheet media=all fallback');
+assert.match(vite, /pd-defer-css-fallback/, 'deferred CSS injects after input');
+assert.match(vite, /setTimeout\(inject,\s*8000\)/, 'hashed CSS waits for input or 8s');
 
 assert.doesNotMatch(main, /styles\/chat\.css/, 'chat.css is not on the landing CSS graph');
 assert.match(analytics, /scheduleAfterLoadIdle/, 'third-party tags wait for load+idle');
 assert.match(analytics, /timeoutMs = 10000/, 'Clarity/GA4 wait for input or 10s (not first idle)');
 assert.doesNotMatch(analytics, /requestIdleCallback/, 'analytics must not use requestIdleCallback');
+assert.match(analytics, /Do not listen for scroll/, 'analytics idle arm skips scroll');
 assert.match(analytics, /s\.onerror/, 'Clarity 400/blocked must not retry');
 assert.match(appTsx, /import\('\.\/lib\/siteAnalytics'\)/, 'analytics chunk is dynamically imported');
+assert.match(appTsx, /useAfterFirstInput/, 'analytics import waits for input or 10s');
+assert.match(appTsx, /DeferredLandingDock/, 'mobile dock is not on the first-paint graph');
 assert.doesNotMatch(appTsx, /import \{[^}]*trackPageview/, 'index chunk must not statically import trackPageview');
+assert.doesNotMatch(appTsx, /import \{ LoginPage \}/, 'login is lazy so lucide stays off landing');
 
 assert.match(welcome, /role="region"/, 'hero carousel has an explicit role (aria-roledescription)');
 assert.doesNotMatch(welcome, /role="tablist"|role="tab"/, 'landing dots are not invalid tabs');
 assert.match(welcome, /width=\{1600\}/, 'hero img has intrinsic dimensions (CLS)');
 assert.match(welcome, /hero-playmate-800\.webp/, 'mobile LCP is the 800w WebP');
 assert.match(welcome, /WelcomeBelowFold/, 'below-fold is code-split off the TBT path');
-assert.match(welcome, /showBelowFold/, 'below-fold waits for intersection/scroll (lucide off critical path)');
+assert.match(welcome, /showBelowFold/, 'below-fold waits for intersection/input (lucide off critical path)');
+assert.doesNotMatch(welcome, /addEventListener\('scroll', load/, 'below-fold must not arm on scroll');
 assert.doesNotMatch(welcome, /key=\{current\.role\}/, 'hero-inner must not remount per slide (CLS)');
 assert.doesNotMatch(welcome, /from 'lucide-react'/, 'hero path does not parse lucide-react');
 assert.doesNotMatch(welcome, /magazineApi/, 'welcome critical path does not fetch magazine');
+assert.match(welcome, /logo-160\.webp/, 'mobile logo is the 160w asset');
 assert.match(below, /magazineApi/, 'magazine fetch stays on the below-fold chunk');
 assert.match(below, /svcIndex === 0/, 'service carousel skips sync layout on mount');
 assert.match(below, /ResizeObserver/, 'carousel step is measured off the React commit path');
+assert.doesNotMatch(below, /getComputedStyle/, 'carousel must not force-reflow via getComputedStyle');
 assert.match(below, /role="img"/, 'review stars have a role so aria-label is allowed');
 assert.match(below, /pepito-news-nav" role="group"/, 'news nav is not a generic labeled div');
 
@@ -105,6 +125,7 @@ assert.match(
   'llms.txt stays cacheable so the 2s agentic fetch (#17082) can complete'
 );
 assert.match(nginx, /location = \/\.well-known\/llms\.txt/, 'well-known/llms.txt aliases the same file');
+assert.match(nginx, /location \^~ \/media\/lcp\//, 'LCP media has its own long-cache location');
 assert.match(llms, /Roles/, 'llms.txt documents product roles for agents');
 assert.match(llms, /پت‌دیت/, 'llms.txt includes Persian product name');
 assert.match(robots, /Allow: \/llms\.txt/, 'robots.txt advertises llms.txt');
@@ -119,6 +140,16 @@ assert.doesNotMatch(
   /--pepito-hero-h:\s*calc\(100svh/,
   'hydrated --pepito-hero-h must not over-reserve 100svh'
 );
+assert.match(pepitoCss, /\.pepito-hero-dot \{\s*width: 44px/, 'hero dots are 44px targets (no overlapping ::before)');
 assert.doesNotMatch(welcome, /animation:\s*pepito-rise/, 'hero-inner no longer uses pepito-rise');
+
+const header = readFileSync(join(webSrc, 'components/SiteHeader.tsx'), 'utf8');
+const themeToggle = readFileSync(join(webSrc, 'components/ThemeToggle.tsx'), 'utf8');
+const navCluster = readFileSync(join(webSrc, 'components/NavUserCluster.tsx'), 'utf8');
+const toast = readFileSync(join(webSrc, 'hooks/useAppToast.tsx'), 'utf8');
+assert.doesNotMatch(header, /from 'lucide-react'/, 'SiteHeader must not parse lucide');
+assert.doesNotMatch(themeToggle, /from 'lucide-react'/, 'ThemeToggle must not parse lucide');
+assert.doesNotMatch(navCluster, /from 'lucide-react'/, 'guest nav cluster must not parse lucide');
+assert.doesNotMatch(toast, /from 'lucide-react'/, 'toast host must not pull lucide onto landing');
 
 console.log('webPerf.selftest: ok');

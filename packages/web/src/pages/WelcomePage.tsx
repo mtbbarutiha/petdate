@@ -125,17 +125,18 @@ export function WelcomePage() {
       (entries) => {
         if (entries.some((entry) => entry.isIntersecting)) load();
       },
-      { root: null, rootMargin: '-24px 0px', threshold: 0 },
+      { root: null, rootMargin: '0px', threshold: 0.01 },
     );
     io.observe(slot);
-    window.addEventListener('scroll', load, { once: true, passive: true });
+    /* No scroll listener — Lighthouse / mobile chrome emit scroll on load. */
     window.addEventListener('pointerdown', load, { once: true, passive: true });
     window.addEventListener('keydown', load, { once: true });
+    window.addEventListener('touchstart', load, { once: true, passive: true });
     return () => {
       io.disconnect();
-      window.removeEventListener('scroll', load);
       window.removeEventListener('pointerdown', load);
       window.removeEventListener('keydown', load);
+      window.removeEventListener('touchstart', load);
     };
   }, []);
 
@@ -149,9 +150,11 @@ export function WelcomePage() {
         sectionLinks={welcomeSectionLinks()}
         showCart
         deferDesktopNav
-        logoSrc="/media/lcp/logo-390.webp"
-        logoWidth={390}
-        logoHeight={114}
+        logoSrc="/media/lcp/logo-160.webp"
+        logoSrcSet="/media/lcp/logo-160.webp 160w, /media/lcp/logo-390.webp 390w"
+        logoSizes="144px"
+        logoWidth={160}
+        logoHeight={47}
       />
 
       <PlatformBanners placement="landing" />

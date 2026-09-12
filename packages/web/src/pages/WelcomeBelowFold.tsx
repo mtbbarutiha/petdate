@@ -185,12 +185,10 @@ export function WelcomeBelowFold() {
     const measure = () => {
       const card = track.querySelector<HTMLElement>('.pepito-service-card');
       if (!card) return;
-      const styles = getComputedStyle(track);
-      const gap = parseFloat(styles.columnGap || styles.gap) || 21.6;
-      svcStepRef.current = card.offsetWidth + gap;
+      svcStepRef.current = card.offsetWidth + 21.6;
     };
     const ro = new ResizeObserver(() => {
-      measure();
+      requestAnimationFrame(measure);
     });
     ro.observe(track);
     return () => ro.disconnect();
@@ -210,7 +208,7 @@ export function WelcomeBelowFold() {
     const track = svcTrackRef.current;
     const step = svcStepRef.current;
     if (!track || step <= 0) return;
-    const rtl = getComputedStyle(track).direction === 'rtl';
+    const rtl = (track.closest('[dir]')?.getAttribute('dir') || document.documentElement.dir) === 'rtl';
     const target = rtl ? -svcIndex * step : svcIndex * step;
     const current = track.scrollLeft;
     if (Math.abs(current - target) < 2) return;
@@ -233,7 +231,7 @@ export function WelcomeBelowFold() {
       if (svcProgrammaticScrollRef.current) return;
       const step = svcStepRef.current;
       if (step <= 0) return;
-      const rtl = getComputedStyle(track).direction === 'rtl';
+      const rtl = (track.closest('[dir]')?.getAttribute('dir') || document.documentElement.dir) === 'rtl';
       const raw = rtl ? -track.scrollLeft : track.scrollLeft;
       const idx = Math.max(0, Math.min(SERVICES.length - 1, Math.round(raw / step)));
       setSvcIndex((prev) => (prev === idx ? prev : idx));
@@ -293,7 +291,7 @@ export function WelcomeBelowFold() {
       newsStepRef.current = card.offsetWidth + 20;
     };
     const ro = new ResizeObserver(() => {
-      measure();
+      requestAnimationFrame(measure);
     });
     ro.observe(track);
     return () => ro.disconnect();
@@ -304,7 +302,7 @@ export function WelcomeBelowFold() {
     const track = newsTrackRef.current;
     const step = newsStepRef.current;
     if (!track || step <= 0) return;
-    const rtl = getComputedStyle(track).direction === 'rtl';
+    const rtl = (track.closest('[dir]')?.getAttribute('dir') || document.documentElement.dir) === 'rtl';
     const narrow = window.matchMedia('(max-width: 720px)').matches;
     track.scrollTo({
       left: rtl ? -newsIndex * step : newsIndex * step,

@@ -19,7 +19,6 @@ import {
   setShopCartItemQty,
   type ShopCartApiLine,
 } from '../lib/api';
-import { trackAddToCart } from '../lib/siteAnalytics';
 import { useAuthStore } from './useAuthStore';
 
 /** Guest / offline draft. When logged in, localStorage mirrors the server cart. */
@@ -331,12 +330,14 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
       }
       const product = getProduct(productId);
       if (product) {
-        trackAddToCart({
-          itemId: product.id,
-          itemName: product.title,
-          price: product.priceToman,
-          quantity: n,
-          category: product.categorySlug,
+        void import('../lib/siteAnalytics').then((m) => {
+          m.trackAddToCart({
+            itemId: product.id,
+            itemName: product.title,
+            price: product.priceToman,
+            quantity: n,
+            category: product.categorySlug,
+          });
         });
       }
     },

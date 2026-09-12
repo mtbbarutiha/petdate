@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { Moon, Sun } from 'lucide-react';
 import {
   getDocumentTheme,
   initTheme,
@@ -7,6 +6,7 @@ import {
   type ThemeMode,
 } from '../lib/theme';
 import { useI18n } from '../i18n/I18nProvider';
+import { IconMoon, IconSun } from './icons/ChromeIcons';
 
 type ThemeToggleProps = {
   className?: string;
@@ -46,9 +46,9 @@ export function ThemeToggle({ className = '', compact = false }: ThemeToggleProp
       data-theme-active={mode}
     >
       {mode === 'dark' ? (
-        <Sun size={compact ? 16 : 18} strokeWidth={2.2} aria-hidden />
+        <IconSun size={compact ? 16 : 18} />
       ) : (
-        <Moon size={compact ? 16 : 18} strokeWidth={2.2} aria-hidden />
+        <IconMoon size={compact ? 16 : 18} />
       )}
     </button>
   );

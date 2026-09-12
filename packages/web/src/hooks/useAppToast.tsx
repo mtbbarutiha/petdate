@@ -10,9 +10,9 @@ import {
   type ReactNode,
 } from 'react';
 import { createPortal } from 'react-dom';
-import { AlertCircle, Check, Info, TriangleAlert, X } from 'lucide-react';
 import { useI18nOptional } from '../i18n';
 import { splitToastCopy } from '../lib/toastCopy';
+import { IconAlertCircle, IconCheck, IconInfo, IconTriangleAlert, IconX } from '../components/icons/ChromeIcons';
 
 export { splitToastCopy };
 
@@ -66,10 +66,10 @@ function defaultDuration(tone: AppToastTone, override?: number): number {
 }
 
 function ToastIcon({ tone }: { tone: AppToastTone }) {
-  if (tone === 'success') return <Check size={18} strokeWidth={2.6} aria-hidden />;
-  if (tone === 'error') return <AlertCircle size={18} strokeWidth={2.2} aria-hidden />;
-  if (tone === 'warning') return <TriangleAlert size={18} strokeWidth={2.2} aria-hidden />;
-  return <Info size={18} strokeWidth={2.2} aria-hidden />;
+  if (tone === 'success') return <IconCheck />;
+  if (tone === 'error') return <IconAlertCircle />;
+  if (tone === 'warning') return <IconTriangleAlert />;
+  return <IconInfo />;
 }
 
 function AppToastCard({
@@ -115,7 +115,7 @@ function AppToastCard({
         </button>
       ) : null}
       <button type="button" className="toast__close" aria-label={closeLabel} onClick={onDismiss}>
-        <X size={15} strokeWidth={2.3} aria-hidden />
+        <IconX />
       </button>
       {ttl > 0 ? <span className="toast__ttl" aria-hidden /> : null}
     </div>
