@@ -4,23 +4,13 @@ import { Check, ChevronDown, Plus, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import type { UserRole } from '@petdate/shared';
 import {
-  MY_ROLES_LABEL,
-  ROLE_ADD_LABEL,
-  ROLE_CONFIRM_LABEL,
-  USER_ROLE_LABELS,
   USER_ROLES,
   dashboardPathForRole,
   normalizeRoles,
   primaryRole,
 } from '@petdate/shared';
 import { useAuthStore } from '../hooks/useAuthStore';
-
-const ROLE_DESCRIPTIONS: Record<UserRole, string> = {
-  pet_owner: 'پت داری و دنبال همبازی برایش هستی',
-  vet: 'دامپزشک هستی و می‌خوای مشاوره بدی',
-  no_pet: 'فعلاً پت نداری ولی علاقه‌مند به دنیای پت‌ها هستی',
-  trainer: 'مربی یا آموزش‌دهنده حیوانات هستی',
-};
+import { useI18n } from '../i18n';
 
 type Mode = 'closed' | 'switch' | 'add';
 
@@ -44,7 +34,10 @@ export function RoleSwitchControl({
   variant = 'nav',
 }: RoleSwitchControlProps) {
   const navigate = useNavigate();
+  const { t } = useI18n();
   const { user, isLoggedIn, setPrimaryRole, saveRoles } = useAuthStore();
+  const roleName = (role: UserRole) => t(`roles.${role}`);
+  const roleDesc = (role: UserRole) => t(`roles.desc_${role}`);
   const [mode, setMode] = useState<Mode>(variant === 'profile' ? 'switch' : 'closed');
   const [draft, setDraft] = useState<UserRole[]>([]);
   const [busy, setBusy] = useState(false);
@@ -115,7 +108,7 @@ export function RoleSwitchControl({
   const handleSwitch = async (role: UserRole) => {
     if (busy) return;
     if (active === role) {
-      setToast(`نقش فعال: ${USER_ROLE_LABELS[role]}`);
+      setToast(t('roles.activeToast', { role: roleName(role) }));
       if (!staysOpen) setMode('closed');
       goToRoleDashboard(role);
       return;
@@ -125,9 +118,9 @@ export function RoleSwitchControl({
     try {
       const updated = await setPrimaryRole(role);
       const next = primaryRole(updated.roles, updated.role);
-      afterRoleChange(next, `نقش فعال: ${USER_ROLE_LABELS[next ?? role]}`);
+      afterRoleChange(next, t('roles.activeToast', { role: roleName(next ?? role) }));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'تعویض نقش ناموفق بود');
+      setError(err instanceof Error ? err.message : t('roles.switchFailed'));
     } finally {
       setBusy(false);
     }
@@ -142,7 +135,7 @@ export function RoleSwitchControl({
 
   const handleSaveRoles = async () => {
     if (!draft.length) {
-      setError('حداقل یک نقش انتخاب کن');
+      setError(t('roles.needOneRole'));
       return;
     }
     setBusy(true);
@@ -154,9 +147,9 @@ export function RoleSwitchControl({
           : primaryRole(draft);
       const updated = await saveRoles(draft, keep);
       const next = primaryRole(updated.roles, updated.role);
-      afterRoleChange(next, 'نقش‌ها به‌روز شد');
+      afterRoleChange(next, t('roles.rolesUpdated'));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'ثبت نقش‌ها ناموفق بود');
+      setError(err instanceof Error ? err.message : t('roles.saveFailed'));
     } finally {
       setBusy(false);
     }
@@ -206,7 +199,7 @@ export function RoleSwitchControl({
     return (
       <>
         <p className={leadClass}>
-          نقش‌های فعلی را نگه دار یا نقش جدید اضافه کن، بعد ثبت کن.
+          {t('roles.addLead')}
         </p>
         <div className={gridClass}>
           {USER_ROLES.map((role) => {
@@ -225,8 +218,8 @@ export function RoleSwitchControl({
                     {on ? <Check size={14} strokeWidth={2.5} /> : null}
                   </span>
                 ) : null}
-                <span className={labelClass}>{USER_ROLE_LABELS[role]}</span>
-                <span className={descClass}>{ROLE_DESCRIPTIONS[role]}</span>
+                <span className={labelClass}>{roleName(role)}</span>
+                <span className={descClass}>{roleDesc(role)}</span>
               </button>
             );
           })}
@@ -240,19 +233,19 @@ export function RoleSwitchControl({
     return (
       <div className={`pepito-role-board${className ? ` ${className}` : ''}`} ref={rootRef}>
         <div className="pepito-role-board-active">
-          <span className="pepito-role-board-active-label">نقش فعال</span>
+          <span className="pepito-role-board-active-label">{t('roles.activeRole')}</span>
           <strong className="pepito-role-board-active-value">
-            {active ? USER_ROLE_LABELS[active] : 'انتخاب نشده'}
+            {active ? roleName(active) : t('roles.noneSelected')}
           </strong>
           {active ? (
-            <p className="pepito-role-board-active-desc">{ROLE_DESCRIPTIONS[active]}</p>
+            <p className="pepito-role-board-active-desc">{roleDesc(active)}</p>
           ) : (
-            <p className="pepito-role-board-active-desc">اول یک نقش اضافه کن تا بتوانی سوییچ کنی.</p>
+            <p className="pepito-role-board-active-desc">{t('roles.addFirst')}</p>
           )}
         </div>
 
         {mode === 'add' ? (
-          <div className="pepito-role-board-add" aria-label={ROLE_ADD_LABEL}>
+          <div className="pepito-role-board-add" aria-label={t('roles.addRole')}>
             {renderAddBody('board')}
             <div className="pepito-role-board-footer">
               <button
@@ -264,7 +257,7 @@ export function RoleSwitchControl({
                   setMode('switch');
                 }}
               >
-                بازگشت
+                {t('common.back')}
               </button>
               <button
                 type="button"
@@ -272,16 +265,16 @@ export function RoleSwitchControl({
                 disabled={busy || draft.length === 0}
                 onClick={() => void handleSaveRoles()}
               >
-                {busy ? 'در حال ثبت…' : ROLE_CONFIRM_LABEL}
+                {busy ? t('roles.saving') : t('roles.confirmRoles')}
               </button>
             </div>
             {error ? <p className="pepito-role-switch-error">{error}</p> : null}
           </div>
         ) : (
           <>
-            <ul className="pepito-role-board-list" aria-label={MY_ROLES_LABEL}>
+            <ul className="pepito-role-board-list" aria-label={t('roles.myRoles')}>
               {roles.length === 0 ? (
-                <li className="pepito-role-board-empty">نقشی ثبت نشده — اول نقش اضافه کن.</li>
+                <li className="pepito-role-board-empty">{t('roles.emptyRoles')}</li>
               ) : (
                 roles.map((role) => {
                   const isActive = role === active;
@@ -295,15 +288,15 @@ export function RoleSwitchControl({
                         aria-current={isActive ? 'true' : undefined}
                       >
                         <span className="pepito-role-board-item-text">
-                          <span className="pepito-role-board-item-label">{USER_ROLE_LABELS[role]}</span>
-                          <span className="pepito-role-board-item-desc">{ROLE_DESCRIPTIONS[role]}</span>
+                          <span className="pepito-role-board-item-label">{roleName(role)}</span>
+                          <span className="pepito-role-board-item-desc">{roleDesc(role)}</span>
                         </span>
                         {isActive ? (
-                          <span className="pepito-role-board-badge">فعال</span>
+                          <span className="pepito-role-board-badge">{t('roles.activeBadge')}</span>
                         ) : (
                           <span className="pepito-role-board-switch-hint">
                             <RefreshCw size={14} strokeWidth={2.25} aria-hidden />
-                            انتخاب
+                            {t('roles.select')}
                           </span>
                         )}
                       </button>
@@ -319,7 +312,7 @@ export function RoleSwitchControl({
               onClick={openAdd}
             >
               <Plus size={16} strokeWidth={2.5} aria-hidden />
-              {ROLE_ADD_LABEL}
+              {t('roles.addRole')}
             </button>
             {error ? <p className="pepito-role-switch-error">{error}</p> : null}
           </>
@@ -345,13 +338,13 @@ export function RoleSwitchControl({
           aria-expanded={open}
           aria-controls={panelId}
           onClick={openSwitch}
-          title={MY_ROLES_LABEL}
+          title={t('roles.myRoles')}
         >
           <span className="pepito-role-rail-trigger-text">
             <span className="pepito-role-rail-trigger-label">
-              {active ? USER_ROLE_LABELS[active] : MY_ROLES_LABEL}
+              {active ? roleName(active) : t('roles.myRoles')}
             </span>
-            <span className="pepito-role-rail-trigger-hint">تغییر نقش</span>
+            <span className="pepito-role-rail-trigger-hint">{t('roles.switchTitle')}</span>
           </span>
           <ChevronDown
             className="pepito-role-rail-chevron"
@@ -366,16 +359,16 @@ export function RoleSwitchControl({
             id={panelId}
             className={`pepito-role-rail-card${mode === 'add' ? ' is-add' : ''}`}
             role="dialog"
-            aria-label={MY_ROLES_LABEL}
+            aria-label={t('roles.myRoles')}
           >
             <div className="pepito-role-rail-head">
-              <p className="pepito-role-rail-title">{MY_ROLES_LABEL}</p>
+              <p className="pepito-role-rail-title">{t('roles.myRoles')}</p>
               {active ? (
                 <p className="pepito-role-rail-active">
-                  نقش فعال: <strong>{USER_ROLE_LABELS[active]}</strong>
+                  {t('roles.activeRoleNamed', { role: roleName(active) })}
                 </p>
               ) : (
-                <p className="pepito-role-rail-active">هنوز نقشی نداری</p>
+                <p className="pepito-role-rail-active">{t('roles.noRoleYet')}</p>
               )}
             </div>
 
@@ -383,7 +376,7 @@ export function RoleSwitchControl({
               <>
                 <ul className="pepito-role-rail-list">
                   {roles.length === 0 ? (
-                    <li className="pepito-role-rail-empty">نقشی ثبت نشده — اول نقش اضافه کن.</li>
+                    <li className="pepito-role-rail-empty">{t('roles.emptyRoles')}</li>
                   ) : (
                     roles.map((role) => {
                       const isActive = role === active;
@@ -397,15 +390,15 @@ export function RoleSwitchControl({
                             aria-current={isActive ? 'true' : undefined}
                           >
                             <span className="pepito-role-rail-item-label">
-                              {USER_ROLE_LABELS[role]}
+                              {roleName(role)}
                             </span>
                             {isActive ? (
                               <span className="pepito-role-rail-badge">
                                 <Check size={12} strokeWidth={2.5} aria-hidden />
-                                فعال
+                                {t('roles.activeBadge')}
                               </span>
                             ) : (
-                              <span className="pepito-role-rail-pick">انتخاب</span>
+                              <span className="pepito-role-rail-pick">{t('roles.select')}</span>
                             )}
                           </button>
                         </li>
@@ -420,7 +413,7 @@ export function RoleSwitchControl({
                   onClick={openAdd}
                 >
                   <Plus size={14} strokeWidth={2.5} aria-hidden />
-                  {ROLE_ADD_LABEL}
+                  {t('roles.addRole')}
                 </button>
               </>
             ) : (
@@ -436,7 +429,7 @@ export function RoleSwitchControl({
                       setMode('switch');
                     }}
                   >
-                    بازگشت
+                    {t('common.back')}
                   </button>
                   <button
                     type="button"
@@ -444,7 +437,7 @@ export function RoleSwitchControl({
                     disabled={busy || draft.length === 0}
                     onClick={() => void handleSaveRoles()}
                   >
-                    {busy ? 'در حال ثبت…' : ROLE_CONFIRM_LABEL}
+                    {busy ? t('roles.saving') : t('roles.confirmRoles')}
                   </button>
                 </div>
               </>
@@ -463,10 +456,10 @@ export function RoleSwitchControl({
   const triggerClass = `pepito-nav-login pepito-nav-login--btn pepito-role-switch-trigger${className ? ` ${className}` : ''}`;
 
   const triggerLabel = compact
-    ? 'نقش'
+    ? t('roles.shortRole')
     : active
-      ? USER_ROLE_LABELS[active]
-      : MY_ROLES_LABEL;
+      ? roleName(active)
+      : t('roles.myRoles');
 
   return (
     <div className="pepito-role-switch" ref={rootRef}>
@@ -477,11 +470,11 @@ export function RoleSwitchControl({
         aria-expanded={mode !== 'closed'}
         aria-controls={panelId}
         onClick={openSwitch}
-        title={MY_ROLES_LABEL}
+        title={t('roles.myRoles')}
       >
         <span className="pepito-role-switch-trigger-label">{triggerLabel}</span>
         <span className="pepito-role-switch-trigger-hint" aria-hidden>
-          تغییر نقش
+          {t('roles.switchTitle')}
         </span>
       </button>
 
@@ -490,16 +483,16 @@ export function RoleSwitchControl({
           id={panelId}
           className={`pepito-role-switch-panel${mode === 'add' ? ' is-add' : ''}`}
           role="dialog"
-          aria-label={MY_ROLES_LABEL}
+          aria-label={t('roles.myRoles')}
         >
           <div className="pepito-role-switch-panel-head">
-            <p className="pepito-role-switch-panel-title">{MY_ROLES_LABEL}</p>
+            <p className="pepito-role-switch-panel-title">{t('roles.myRoles')}</p>
             {active ? (
               <p className="pepito-role-switch-panel-active">
-                نقش فعال: <strong>{USER_ROLE_LABELS[active]}</strong>
+                {t('roles.activeRoleNamed', { role: roleName(active) })}
               </p>
             ) : (
-              <p className="pepito-role-switch-panel-active">هنوز نقشی نداری</p>
+              <p className="pepito-role-switch-panel-active">{t('roles.noRoleYet')}</p>
             )}
           </div>
 
@@ -507,7 +500,7 @@ export function RoleSwitchControl({
             <>
               <ul className="pepito-role-switch-list">
                 {roles.length === 0 ? (
-                  <li className="pepito-role-switch-empty">نقشی ثبت نشده — اول نقش اضافه کن.</li>
+                  <li className="pepito-role-switch-empty">{t('roles.emptyRoles')}</li>
                 ) : (
                   roles.map((role) => {
                     const isActive = role === active;
@@ -520,12 +513,12 @@ export function RoleSwitchControl({
                           onClick={() => void handleSwitch(role)}
                         >
                           <span className="pepito-role-switch-item-label">
-                            {USER_ROLE_LABELS[role]}
+                            {roleName(role)}
                           </span>
                           {isActive ? (
                             <span className="pepito-role-switch-badge">
                               <Check size={12} strokeWidth={2.5} aria-hidden />
-                              فعال
+                              {t('roles.activeBadge')}
                             </span>
                           ) : null}
                         </button>
@@ -541,7 +534,7 @@ export function RoleSwitchControl({
                   disabled={busy}
                   onClick={openAdd}
                 >
-                  {ROLE_ADD_LABEL}
+                  {t('roles.addRole')}
                 </button>
               </div>
             </>
@@ -558,7 +551,7 @@ export function RoleSwitchControl({
                     setMode('switch');
                   }}
                 >
-                  بازگشت
+                  {t('common.back')}
                 </button>
                 <button
                   type="button"
@@ -566,7 +559,7 @@ export function RoleSwitchControl({
                   disabled={busy || draft.length === 0}
                   onClick={() => void handleSaveRoles()}
                 >
-                  {busy ? 'در حال ثبت…' : ROLE_CONFIRM_LABEL}
+                  {busy ? t('roles.saving') : t('roles.confirmRoles')}
                 </button>
               </div>
             </>

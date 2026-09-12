@@ -421,14 +421,14 @@ function ConversationListPane({
                         >
                           {c.serviceKind === 'trainer'
                             ? t('chats.busyWithPet')
-                            : 'فعال'}
+                            : t('chats.activeShort')}
                         </span>
                       ) : c.ended ? (
-                        <span className="tg-chat-list-badge is-ended" aria-label="گفتگوی بسته شده">
-                          بسته شده
+                        <span className="tg-chat-list-badge is-ended" aria-label={t('chats.closedAria')}>
+                          {t('chats.closed')}
                         </span>
                       ) : c.pending ? (
-                        <span className="tg-chat-list-badge is-pending" aria-label="در انتظار">
+                        <span className="tg-chat-list-badge is-pending" aria-label={t('chats.pendingAria')}>
                           !
                         </span>
                       ) : null}
@@ -437,8 +437,8 @@ function ConversationListPane({
                   <button
                     type="button"
                     className="tg-icon-btn tg-chat-list-dismiss"
-                    aria-label="حذف از فهرست"
-                    title="حذف از فهرست گفتگوها"
+                    aria-label={t('chats.dismissFromList')}
+                    title={t('chats.dismissTitle')}
                     aria-haspopup="dialog"
                     onClick={(e) => {
                       e.stopPropagation();

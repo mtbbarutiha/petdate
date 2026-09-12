@@ -2,11 +2,13 @@ import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, LifeBuoy, Send } from 'lucide-react';
 import { useAuthStore } from '../hooks/useAuthStore';
+import { useI18n } from '../i18n';
 import { fetchSupportMessages, sendSupportMessage, type SupportChatMessage } from '../lib/api';
 import { AI_ASSISTANT_DISPLAY_NAME } from './supportAgent';
 
 export function SupportChatPage() {
   const { token, isLoggedIn } = useAuthStore();
+  const { t, dir } = useI18n();
   const [messages, setMessages] = useState<SupportChatMessage[]>([]);
   const [welcome, setWelcome] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
@@ -22,7 +24,7 @@ export function SupportChatPage() {
       setMessages(res.messages);
       setWelcome(res.welcome);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'بارگذاری ناموفق');
+      setError(err instanceof Error ? err.message : t('support.loadFail'));
     }
   }, [token]);
 
@@ -53,7 +55,7 @@ export function SupportChatPage() {
       const res = await sendSupportMessage(token, text);
       setMessages(res.messages);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'ارسال ناموفق بود');
+      setError(err instanceof Error ? err.message : t('support.sendFail'));
       await load();
     } finally {
       setBusy(false);
@@ -62,41 +64,39 @@ export function SupportChatPage() {
 
   if (!isLoggedIn || !token) {
     return (
-      <div className="pepito-support-chat" dir="rtl">
+      <div className="pepito-support-chat" dir={dir}>
         <header className="pepito-support-head">
-          <Link to="/support" className="tg-icon-btn" aria-label="بازگشت">
+          <Link to="/support" className="tg-icon-btn" aria-label={t('support.back')}>
             <ArrowRight size={18} />
           </Link>
           <div>
             <h1>
               <LifeBuoy size={22} style={{ verticalAlign: 'middle', marginLeft: 8 }} />
-              صحبت با بات پشتیبانی
+              {t('support.chatCta')}
             </h1>
-            <p>{AI_ASSISTANT_DISPLAY_NAME} راهنمایی‌ات می‌کند.</p>
+            <p>{t('support.chatPageLead', { name: AI_ASSISTANT_DISPLAY_NAME })}</p>
           </div>
         </header>
         <p className="pepito-support-gate">
-          برای گفتگو با پشتیبانی اول{' '}
-          <Link to="/auth/login">وارد حساب</Link> شو.
+          {t('support.chatLoginLead')}{' '}
+          <Link to="/auth/login">{t('common.login')}</Link>
         </p>
       </div>
     );
   }
 
   return (
-    <div className="pepito-support-chat" dir="rtl">
+    <div className="pepito-support-chat" dir={dir}>
       <header className="pepito-support-head">
-        <Link to="/support" className="tg-icon-btn" aria-label="بازگشت به پشتیبانی">
+        <Link to="/support" className="tg-icon-btn" aria-label={t('support.backSupport')}>
           <ArrowRight size={18} />
         </Link>
         <div>
           <h1>
             <LifeBuoy size={22} style={{ verticalAlign: 'middle', marginLeft: 8 }} />
-            صحبت با بات پشتیبانی
+            {t('support.chatCta')}
           </h1>
-          <p>
-            {AI_ASSISTANT_DISPLAY_NAME} — ورود، پت، همبازی، مربی، دامپزشک، شاپ و سکه
-          </p>
+          <p>{t('support.chatPageLead', { name: AI_ASSISTANT_DISPLAY_NAME })}</p>
         </div>
       </header>
 
@@ -122,7 +122,7 @@ export function SupportChatPage() {
         ))}
         {busy ? (
           <div className="pepito-support-bubble is-assistant is-typing">
-            <p>در حال نوشتن…</p>
+            <p>{t('support.typing')}</p>
           </div>
         ) : null}
         <div ref={bottomRef} />
@@ -133,14 +133,14 @@ export function SupportChatPage() {
           type="text"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          placeholder="سؤالت را بنویس…"
+          placeholder={t('support.messagePh')}
           disabled={busy}
           maxLength={4000}
-          aria-label="پیام پشتیبانی"
+          aria-label={t('support.messageAria')}
         />
         <button type="submit" className="pepito-btn button-1" disabled={busy || !draft.trim()}>
           <Send size={16} />
-          ارسال
+          {t('common.send')}
         </button>
       </form>
     </div>

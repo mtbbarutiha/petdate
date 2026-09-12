@@ -22,7 +22,6 @@ import {
   buildProfileCardLines,
   citiesForProvince,
   computeProfileCompletion,
-  faceVerifyButtonLabel,
   formatFaInt,
   normalizeRoles,
   parseUserAge,
@@ -48,7 +47,7 @@ import { formatAge } from '../data/mock';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { useAppToast } from '../hooks/useAppToast';
 import { useMyPets } from '../hooks/useMyPets';
-import { useI18n } from '../i18n';
+import { faceVerifyChromeLabel, localeNum, useI18n } from '../i18n';
 import {
   deleteUserAccountById,
   fetchProfileCard,
@@ -181,26 +180,26 @@ export function ProfilePage() {
       }
       if (kind === 'likes') {
         setPanelLines([
-          `تعداد لایک دریافتی: ${formatFaInt(likesCount)}`,
-          'لایک‌ها از بازدید و تعامل دیگران روی پروفایل/پت جمع می‌شود.',
+          t('profile.likesCount', { n: localeNum(lang, likesCount) }),
+          t('profile.likesHint'),
         ]);
         setPanelBusy(false);
         return;
       }
       if (kind === 'interactions') {
         setPanelLines([
-          `❤️ لایک: ${formatFaInt(interactions?.likes ?? likesCount)}`,
-          `👁️ بازدید: ${formatFaInt(interactions?.views ?? displayUser.profileViews ?? 0)}`,
-          `🐾 درخواست همبازی: ${formatFaInt(interactions?.playdatesTotal ?? 0)}`,
-          `⏳ در انتظار: ${formatFaInt(interactions?.playdatesPending ?? 0)}`,
-          `✅ پذیرفته: ${formatFaInt(interactions?.playdatesAccepted ?? 0)}`,
+          t('profile.interactLikes', { n: localeNum(lang, interactions?.likes ?? likesCount) }),
+          t('profile.interactViews', { n: localeNum(lang, interactions?.views ?? displayUser.profileViews ?? 0) }),
+          t('profile.interactPlaydates', { n: localeNum(lang, interactions?.playdatesTotal ?? 0) }),
+          t('profile.interactPending', { n: localeNum(lang, interactions?.playdatesPending ?? 0) }),
+          t('profile.interactAccepted', { n: localeNum(lang, interactions?.playdatesAccepted ?? 0) }),
         ]);
         setPanelBusy(false);
         return;
       }
       if (kind === 'verify') {
         setPanelLines([
-          faceVerifyButtonLabel(verifyStatus),
+          faceVerifyChromeLabel(t, lang, verifyStatus),
           verifyStatus === 'verified'
             ? t('verify.profileVerified', { n: rewardLabel })
             : verifyStatus === 'pending'
@@ -221,14 +220,14 @@ export function ProfilePage() {
             list.length
               ? list.map(
                   (b, i) =>
-                    `${formatFaInt(i + 1)}. ${b.blockedName || 'بدون نام'}${
+                    `${localeNum(lang, i + 1)}. ${b.blockedName || t('profile.unnamed')}${
                       b.blockedUsername ? ` @${b.blockedUsername}` : ''
                     }`
                 )
-              : ['لیست بلاک خالی است.']
+              : [t('profile.emptyBlocked')]
           );
         } catch {
-          if (!cancelled) setPanelLines(['لیست بلاک در دسترس نیست.']);
+          if (!cancelled) setPanelLines([t('profile.blockedUnavailable')]);
         } finally {
           if (!cancelled) setPanelBusy(false);
         }
@@ -244,14 +243,14 @@ export function ProfilePage() {
             list.length
               ? list.map(
                   (c, i) =>
-                    `${formatFaInt(i + 1)}. ${c.contactName || 'بدون نام'}${
+                    `${localeNum(lang, i + 1)}. ${c.contactName || t('profile.unnamed')}${
                       c.contactUsername ? ` @${c.contactUsername}` : ''
                     }`
                 )
-              : ['هنوز مخاطبی نداری. از چت همبازی می‌تونی اضافه کنی.']
+              : [t('profile.emptyContacts')]
           );
         } catch {
-          if (!cancelled) setPanelLines(['لیست مخاطبین در دسترس نیست.']);
+          if (!cancelled) setPanelLines([t('profile.contactsUnavailable')]);
         } finally {
           if (!cancelled) setPanelBusy(false);
         }
@@ -394,7 +393,7 @@ export function ProfilePage() {
       await refreshMe();
       toastSuccess('درخواست احراز ثبت شد — در صف بررسی ادمین است');
       setPanelLines([
-        faceVerifyButtonLabel(res.user.verificationStatus ?? 'pending'),
+        faceVerifyChromeLabel(t, lang, res.user.verificationStatus ?? 'pending'),
         'درخواست احراز در صف بررسی است — به‌محض تأیید، ۱۰۰ سکه جایزه واریز می‌شود.',
       ]);
     } catch (err) {
@@ -587,12 +586,12 @@ export function ProfilePage() {
   }
 
   const panelTitle =
-    panel === 'contacts' ? 'مخاطبین'
-      : panel === 'likes' ? 'لایک‌ها'
-        : panel === 'interactions' ? 'تعاملات'
-          : panel === 'blocked' ? 'بلاک‌شده‌ها'
-            : panel === 'account' ? 'حذف / غیرفعال‌سازی'
-              : panel === 'verify' ? 'احراز چهره' : '';
+    panel === 'contacts' ? t('profile.panelContacts')
+      : panel === 'likes' ? t('profile.panelLikes')
+        : panel === 'interactions' ? t('profile.panelInteractions')
+          : panel === 'blocked' ? t('profile.panelBlocked')
+            : panel === 'account' ? t('profile.panelAccount')
+              : panel === 'verify' ? t('profile.panelVerify') : '';
 
   const supportLine =
     metaBits.length && locationLabel !== '—'
@@ -601,7 +600,7 @@ export function ProfilePage() {
         ? metaBits.join('، ')
         : locationLabel !== '—'
           ? locationLabel
-          : 'پروفایلت را کامل کن تا بهتر پیدا شوی.';
+          : t('profile.completeHint');
 
   return (
     <div className="pepito-profile pepito-profile--passport">

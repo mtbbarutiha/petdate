@@ -1,26 +1,28 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight, Bot, LifeBuoy, Ticket } from 'lucide-react';
 import { PageHelpLink } from '../components/PageHelpLink';
+import { useI18n } from '../i18n';
 import { AI_ASSISTANT_DISPLAY_NAME } from './supportAgent';
 
 /**
- * پشتیبانی entry — two clear CTAs:
- * 1) ثبت تیکت (CRM ticketing)
- * 2) صحبت با بات پشتیبانی (لیلا کیانی / kind: support)
+ * Support entry — two clear CTAs:
+ * 1) ticket (CRM ticketing)
+ * 2) support-bot chat (Leila / kind: support)
  */
 export function SupportHubPage() {
+  const { t, dir } = useI18n();
   return (
-    <div className="pepito-support-hub" dir="rtl">
+    <div className="pepito-support-hub" dir={dir}>
       <header className="pepito-support-head">
-        <Link to="/home" className="tg-icon-btn" aria-label="بازگشت">
+        <Link to="/home" className="tg-icon-btn" aria-label={t('support.back')}>
           <ArrowRight size={18} />
         </Link>
         <div>
           <h1>
             <LifeBuoy size={22} style={{ verticalAlign: 'middle', marginLeft: 8 }} />
-            پشتیبانی
+            {t('support.title')}
           </h1>
-          <p>تیکت انسانی یا گفتگو با بات پشتیبانی — یکی را انتخاب کن</p>
+          <p>{t('support.lead')}</p>
           <PageHelpLink section="support" />
         </div>
       </header>
@@ -31,8 +33,8 @@ export function SupportHubPage() {
             <Ticket size={28} />
           </span>
           <span className="pepito-support-choice-body">
-            <strong>ثبت تیکت</strong>
-            <span>درخواستت را برای تیم پشتیبانی ثبت کن تا پیگیری شود</span>
+            <strong>{t('support.ticketCta')}</strong>
+            <span>{t('support.ticketLead')}</span>
           </span>
         </Link>
 
@@ -41,10 +43,8 @@ export function SupportHubPage() {
             <Bot size={28} />
           </span>
           <span className="pepito-support-choice-body">
-            <strong>صحبت با بات پشتیبانی</strong>
-            <span>
-              گفتگو با {AI_ASSISTANT_DISPLAY_NAME} — راهنمای فوری ورود، پت، شاپ و سکه
-            </span>
+            <strong>{t('support.chatCta')}</strong>
+            <span>{t('support.chatLead', { name: AI_ASSISTANT_DISPLAY_NAME })}</span>
           </span>
         </Link>
       </div>

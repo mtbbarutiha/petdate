@@ -14,10 +14,8 @@ import {
   MAX_VET_VISIT_FEE_COINS,
   MIN_VET_VISIT_FEE_COINS,
   QUICK_VET_COST,
-  VET_CREDENTIAL_STATUS_LABELS,
   formatPersianDateTime,
   isPrimaryRole,
-  toPersianDigits,
   userHasRole,
   vetVisitFeeCoins,
   type PetProfile,
@@ -31,7 +29,7 @@ import { PageHelpLink } from '../components/PageHelpLink';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { useAppToast } from '../hooks/useAppToast';
 import { useLiveAjaxPoll } from '../hooks/useLiveAjaxPoll';
-import { useI18n } from '../i18n';
+import { credentialChromeLabel, localeNum, useI18n, type TranslateFn } from '../i18n';
 import {
   acceptVetConsultation,
   listOnlineVets,
@@ -47,18 +45,13 @@ type Phase = 'ready' | 'sending' | 'waiting' | 'connected';
 
 const VISIT_FEE_PRESETS = [1, 5, 10, 20, 50, 100] as const;
 
-function formatCoins(n: number): string {
-  return toPersianDigits(String(n));
+function formatCoins(lang: 'fa' | 'en', value: number): string {
+  return localeNum(lang, value);
 }
 
 function quickConnectCostForVets(vets: User[]): number {
   if (!vets.length) return QUICK_VET_COST;
   return Math.max(QUICK_VET_COST, ...vets.map((v) => vetVisitFeeCoins(v)));
-}
-
-function credentialLabel(status?: VetCredentialStatus | null): string {
-  const key: VetCredentialStatus = status && status in VET_CREDENTIAL_STATUS_LABELS ? status : 'none';
-  return VET_CREDENTIAL_STATUS_LABELS[key];
 }
 
 function PawIcon({ size = 16 }: { size?: number }) {
@@ -69,8 +62,8 @@ function PawIcon({ size = 16 }: { size?: number }) {
   );
 }
 
-function patientLabel(c: VetConsultation): string {
-  const name = c.patientName?.trim() || `بیمار #${c.patientUserId}`;
+function patientLabel(c: VetConsultation, t: TranslateFn): string {
+  const name = c.patientName?.trim() || t('consultDesk.patientFallback', { id: c.patientUserId });
   const pet = c.petName?.trim();
   return pet ? `${name} · ${pet}` : name;
 }
@@ -86,22 +79,26 @@ function VetVisitFeeCard({
   needsLogin: boolean;
   onSave: (fee: number) => void | Promise<void>;
 }) {
+  const { t, lang } = useI18n();
   const [custom, setCustom] = useState('');
   const locked = busy || needsLogin;
+  const n = (v: number) => formatCoins(lang, v);
 
   return (
-    <section className="pepito-vet-fee-panel" aria-label="مبلغ ویزیت">
+    <section className="pepito-vet-fee-panel" aria-label={t('consultDesk.visitFeeAria')}>
       <div className="pepito-vet-fee-head">
-        <h2>مبلغ ویزیت</h2>
+        <h2>{t('consultDesk.visitFeeTitle')}</h2>
         <p>
-          مبلغ فعلی: <strong>{formatCoins(currentFee)} سکه</strong>
+          {t('consultDesk.visitFeeCurrent', { n: n(currentFee) })}
         </p>
         <p className="pepito-vet-fee-hint">
-          این مبلغ هنگام درخواست مشاوره سریع از بیمار کسر می‌شود ({formatCoins(MIN_VET_VISIT_FEE_COINS)} تا{' '}
-          {formatCoins(MAX_VET_VISIT_FEE_COINS)} سکه).
+          {t('consultDesk.visitFeeHint', {
+            min: n(MIN_VET_VISIT_FEE_COINS),
+            max: n(MAX_VET_VISIT_FEE_COINS),
+          })}
         </p>
       </div>
-      <div className="pepito-vet-fee-presets" role="group" aria-label="مبالغ آماده">
+      <div className="pepito-vet-fee-presets" role="group" aria-label={t('consultDesk.visitFeePresets')}>
         {VISIT_FEE_PRESETS.map((fee) => (
           <button
             key={fee}
@@ -111,7 +108,7 @@ function VetVisitFeeCard({
             onClick={() => void onSave(fee)}
           >
             {fee === currentFee ? '✓ ' : ''}
-            {formatCoins(fee)} سکه
+            {t('consultDesk.coins', { n: n(fee) })}
           </button>
         ))}
       </div>
@@ -125,7 +122,7 @@ function VetVisitFeeCard({
           setCustom('');
         }}
       >
-        <label htmlFor="vet-visit-fee-custom">مبلغ دلخواه</label>
+        <label htmlFor="vet-visit-fee-custom">{t('consultDesk.visitFeeCustom')}</label>
         <div className="pepito-vet-fee-custom-row">
           <input
             id="vet-visit-fee-custom"
@@ -133,13 +130,13 @@ function VetVisitFeeCard({
             min={MIN_VET_VISIT_FEE_COINS}
             max={MAX_VET_VISIT_FEE_COINS}
             inputMode="numeric"
-            placeholder="مثلاً ۱۵"
+            placeholder={t('consultDesk.visitFeePlaceholder')}
             value={custom}
             disabled={locked}
             onChange={(e) => setCustom(e.target.value)}
           />
           <button type="submit" className="pepito-btn button-1" disabled={locked || !custom.trim()}>
-            ذخیره
+            {t('common.save')}
           </button>
         </div>
       </form>
@@ -156,16 +153,20 @@ function OnlineVetsList({
   loading: boolean;
   connectCost: number;
 }) {
+  const { t, lang } = useI18n();
   return (
-    <section className="pepito-vet-online-list" aria-label="پزشک‌های آنلاین">
+    <section className="pepito-vet-online-list" aria-label={t('consultDesk.onlineVetsAria')}>
       <div className="pepito-vet-online-list-head">
-        <h2>پزشک‌های آنلاین</h2>
+        <h2>{t('consultDesk.onlineVetsTitle')}</h2>
         <p>
           {loading
-            ? 'در حال دریافت لیست…'
+            ? t('consultDesk.onlineVetsLoading')
             : vets.length
-              ? `${formatCoins(vets.length)} پزشک آماده پذیرش — هزینه اتصال: ${formatCoins(connectCost)} سکه`
-              : 'دامپزشک انسانی آنلاین نیست — لیلا کیانی آماده پاسخ است.'}
+              ? t('consultDesk.onlineVetsReady', {
+                  n: formatCoins(lang, vets.length),
+                  cost: formatCoins(lang, connectCost),
+                })
+              : t('consultDesk.noProvidersHuman')}
         </p>
       </div>
       {!loading && vets.length ? (
@@ -179,7 +180,7 @@ function OnlineVetsList({
                   <strong>{vet.name}</strong>
                   {city ? <span className="pepito-vet-online-list-city">{city}</span> : null}
                 </div>
-                <span className="pepito-vet-online-list-fee">{formatCoins(fee)} سکه</span>
+                <span className="pepito-vet-online-list-fee">{t('consultDesk.coins', { n: formatCoins(lang, fee) })}</span>
               </li>
             );
           })}
@@ -204,7 +205,8 @@ function VetOnlineCard({
   credentialStatus?: VetCredentialStatus | null;
   onSetOnline: (online: boolean) => void;
 }) {
-  const cred = credentialLabel(credentialStatus);
+  const { t } = useI18n();
+  const cred = credentialChromeLabel(t, credentialStatus);
   const verified = credentialStatus === 'verified';
   // Only block interaction while a request is in flight or when logged out.
   // Never leave the control permanently inert — busy is cleared by a timeout too.
@@ -212,7 +214,7 @@ function VetOnlineCard({
   return (
     <section
       className={`pepito-vet-online-card${vetOnline ? ' is-online' : ' is-offline'}`}
-      aria-label="وضعیت آنلاین"
+      aria-label={t('consultDesk.onlineStateAria')}
       aria-busy={onlineBusy || undefined}
     >
       <div className="pepito-vet-online-card-main">
@@ -221,27 +223,27 @@ function VetOnlineCard({
             <span className="pepito-vet-online-pulse-core" />
           </span>
           <div className="pepito-vet-online-text">
-            <p className="pepito-vet-online-kicker">{dualRole ? 'نقش دامپزشک' : 'وضعیت پذیرش'}</p>
+            <p className="pepito-vet-online-kicker">{dualRole ? t('consultDesk.roleVet') : t('consultDesk.acceptingState')}</p>
             <strong>
-              <span className="pepito-vet-online-state">{vetOnline ? 'آنلاین' : 'آفلاین'}</span>
+              <span className="pepito-vet-online-state">{vetOnline ? t('consultDesk.online') : t('consultDesk.offline')}</span>
               <span className="pepito-vet-online-sep"> · </span>
-              {vetOnline ? 'آماده پذیرش' : 'خارج از پذیرش'}
+              {vetOnline ? t('consultDesk.readyToAccept') : t('consultDesk.awayAccept')}
             </strong>
             <span className="pepito-vet-online-hint">
               {vetOnline
                 ? dualRole
-                  ? 'درخواست‌های بیمار همین‌جا می‌رسند.'
-                  : 'در فهرست پزشکان آماده قرار داری.'
+                  ? t('consultDesk.hintOnlineDual')
+                  : t('consultDesk.hintOnlineSolo')
                 : dualRole
-                  ? 'آنلاین شو تا درخواست‌های جدید برسند.'
-                  : 'درخواست جدیدی نمی‌رسد؛ موارد در انتظار همین‌جا می‌مانند.'}
+                  ? t('consultDesk.hintOfflineDual')
+                  : t('consultDesk.hintOfflineSolo')}
             </span>
           </div>
         </div>
         <div
           className="pepito-vet-online-seg"
           role="group"
-          aria-label="تغییر وضعیت پذیرش"
+          aria-label={t('consultDesk.toggleAcceptAria')}
         >
           <button
             type="button"
@@ -252,9 +254,9 @@ function VetOnlineCard({
               dualRole ? 'vet-online-toggle-dual-on' : 'vet-online-toggle-on'
             }
             aria-pressed={vetOnline}
-            aria-label="آنلاین شو"
+            aria-label={t('consultDesk.goOnline')}
           >
-            {onlineBusy && !vetOnline ? '…' : 'آنلاین'}
+            {onlineBusy && !vetOnline ? '…' : t('consultDesk.online')}
           </button>
           <button
             type="button"
@@ -265,22 +267,22 @@ function VetOnlineCard({
               dualRole ? 'vet-online-toggle-dual-off' : 'vet-online-toggle-off'
             }
             aria-pressed={!vetOnline}
-            aria-label="آفلاین شو"
+            aria-label={t('consultDesk.goOffline')}
           >
-            {onlineBusy && vetOnline ? '…' : 'آفلاین'}
+            {onlineBusy && vetOnline ? '…' : t('consultDesk.offline')}
           </button>
         </div>
       </div>
       <div className="pepito-vet-panel-meta">
         <p className="pepito-vet-panel-caps-line">
-          در چت فعال: <strong>نسخه</strong>، پرونده، مورد بالینی و بستن چت
+          {t('consultDesk.chatTools')}
         </p>
         <p className={`pepito-vet-cred-pill${verified ? ' is-ok' : ' is-warn'}`}>
           {cred}
           {!verified ? (
             <>
               {' · '}
-              <Link to="/profile">آپلود مدرک</Link>
+              <Link to="/profile">{t('consultDesk.credUpload')}</Link>
             </>
           ) : null}
         </p>
@@ -302,35 +304,36 @@ function VetInboxSection({
   onAccept: (id: number) => void;
   onReject: (id: number) => void;
 }) {
+  const { t, lang } = useI18n();
   return (
     <div className="pepito-vet-inbox-stack">
       <section
         className="pepito-vet-inbox-panel pepito-vet-inbox-panel--incoming"
-        aria-label="درخواست‌های ورودی پزشک"
+        aria-label={t('consultDesk.incomingVetAria')}
         data-testid="vet-incoming-inbox"
       >
         <header className="pepito-vet-inbox-head">
           <div>
-            <p className="pepito-eyebrow">ورودی</p>
-            <h2>درخواست‌های جدید</h2>
+            <p className="pepito-eyebrow">{t('consultDesk.incomingEyebrow')}</p>
+            <h2>{t('consultDesk.incomingTitle')}</h2>
           </div>
           {incoming.length > 0 ? (
-            <span className="pepito-vet-inbox-count" aria-label="تعداد درخواست">
-              {toPersianDigits(String(incoming.length))}
+            <span className="pepito-vet-inbox-count" aria-label={t('consultDesk.incomingCountAria')}>
+              {localeNum(lang, incoming.length)}
             </span>
           ) : null}
         </header>
         {incoming.length === 0 ? (
-          <p className="pepito-vet-consult-hint">فعلاً درخواست جدیدی نیست.</p>
+          <p className="pepito-vet-consult-hint">{t('consultDesk.incomingEmpty')}</p>
         ) : (
           <ul className="pepito-vet-consult-incoming-list">
             {incoming.map((c) => (
               <li key={c.id} data-testid={`vet-incoming-${c.id}`}>
                 <div className="pepito-vet-row-info">
-                  <strong>{patientLabel(c)}</strong>
+                  <strong>{patientLabel(c, t)}</strong>
                   <span className="pepito-vet-status">
                     <Clock size={12} aria-hidden />
-                    در انتظار پاسخ
+                    {t('consultDesk.statusWaiting')}
                   </span>
                   {c.createdAt ? <small>{formatPersianDateTime(c.createdAt)}</small> : null}
                 </div>
@@ -343,7 +346,7 @@ function VetInboxSection({
                     data-testid={`vet-accept-${c.id}`}
                   >
                     <Check size={16} aria-hidden />
-                    قبول و چت
+                    {t('consultDesk.acceptChat')}
                   </button>
                   <Link
                     to={`/vet-chats/${c.id}`}
@@ -351,7 +354,7 @@ function VetInboxSection({
                     data-testid={`vet-open-chat-${c.id}`}
                   >
                     <MessageCircle size={16} aria-hidden />
-                    مشاهده
+                    {t('consultDesk.view')}
                   </Link>
                   <button
                     type="button"
@@ -360,7 +363,7 @@ function VetInboxSection({
                     onClick={() => onReject(c.id)}
                   >
                     <X size={16} aria-hidden />
-                    رد
+                    {t('common.reject')}
                   </button>
                 </div>
               </li>
@@ -371,17 +374,17 @@ function VetInboxSection({
 
       <section
         className="pepito-vet-inbox-panel"
-        aria-label="آخرین بیمارها"
+        aria-label={t('consultDesk.recentPatientsAria')}
         data-testid="vet-recent-patients"
       >
         <header className="pepito-vet-inbox-head">
           <div>
-            <p className="pepito-eyebrow">بیماران</p>
-            <h2>آخرین بیمارها</h2>
+            <p className="pepito-eyebrow">{t('consultDesk.patientsEyebrow')}</p>
+            <h2>{t('consultDesk.recentPatients')}</h2>
           </div>
         </header>
         {recent.length === 0 ? (
-          <p className="pepito-vet-consult-hint">هنوز بیماری ثبت نشده.</p>
+          <p className="pepito-vet-consult-hint">{t('consultDesk.recentPatientsEmpty')}</p>
         ) : (
           <ul className="pepito-vet-consult-incoming-list">
             {recent.map((c) => {
@@ -389,7 +392,7 @@ function VetInboxSection({
               return (
               <li key={c.id}>
                 <div className="pepito-vet-row-info">
-                  <strong>{patientLabel(c)}</strong>
+                  <strong>{patientLabel(c, t)}</strong>
                   <span
                     className={`pepito-vet-status${
                       isActive ? ' is-active' : ' is-done'
@@ -398,10 +401,10 @@ function VetInboxSection({
                     {isActive ? (
                       <>
                         <Circle size={10} fill="currentColor" aria-hidden />
-                        مشاوره فعال
+                        {t('consultDesk.statusConsultActive')}
                       </>
                     ) : (
-                      'بسته شده'
+                      t('consultDesk.statusClosed')
                     )}
                   </span>
                   {c.createdAt ? <small>{formatPersianDateTime(c.createdAt)}</small> : null}
@@ -415,7 +418,7 @@ function VetInboxSection({
                     }
                   >
                     <MessageCircle size={16} aria-hidden />
-                    {isActive ? 'ورود به چت' : 'مشاهده گفتگو'}
+                    {isActive ? t('consultDesk.openChat') : t('consultDesk.viewChat')}
                   </Link>
                 </div>
               </li>
@@ -430,7 +433,8 @@ function VetInboxSection({
 
 export function VetConsultPage() {
   const navigate = useNavigate();
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  const n = (v: number) => formatCoins(lang, v);
   const { user, token, isLoggedIn, refreshMe, setVetOnline, setVisitFee } = useAuthStore();
   const { toastError, toastSuccess } = useAppToast();
 
@@ -643,17 +647,17 @@ export function VetConsultPage() {
   const lead = useMemo(() => {
     if (isVetDashboard) {
       return vetOnline
-        ? 'آنلاین هستی و آماده پذیرش بیمار — درخواست‌های جدید همین‌جا می‌آیند.'
-        : 'برای دریافت درخواست جدید آنلاین شو؛ درخواست‌های در انتظار و بیمارهای فعال همین‌جا می‌مانند.';
+        ? t('consultDesk.leadVetOnline')
+        : t('consultDesk.leadVetOffline');
     }
-    if (needsLogin) return 'برای ارتباط سریع با پزشک وارد حساب شو.';
-    if (needsPet) return 'برای درخواست ارتباط با پزشک، اول باید حداقل یک پت ثبت کنی.';
+    if (needsLogin) return t('consultDesk.leadVetLogin');
+    if (needsPet) return t('consultDesk.needPetVet');
     if (noOnlineVets) return t('consultDesk.doctorLeadAi');
     if (lowCoins) {
-      return `برای اتصال سریع حداقل ${formatCoins(connectCost)} سکه لازم داری. موجودی: ${formatCoins(coins)} — از ربات «سکه» بگیر.`;
+      return t('consultDesk.lowCoins', { cost: n(connectCost), coins: n(coins) });
     }
     return t('consultDesk.doctorLeadReady');
-  }, [isVetDashboard, vetOnline, needsLogin, needsPet, noOnlineVets, lowCoins, coins, connectCost, t]);
+  }, [isVetDashboard, vetOnline, needsLogin, needsPet, noOnlineVets, lowCoins, coins, connectCost, t, lang]);
 
   async function onSetVetOnline(nextOnline: boolean) {
     if (!token) { const msg = 'اول وارد حساب شو.'; setError(msg); toastError(msg); return; }
@@ -722,16 +726,16 @@ export function VetConsultPage() {
         setError(msg); toastError(msg); return;
       }
       if (coins < connectCost) {
-        const msg = `برای اتصال سریع حداقل ${formatCoins(connectCost)} سکه لازم داری.
-موجودی: ${formatCoins(coins)} — از ربات «سکه» بگیر.`;
+        const msg = `برای اتصال سریع حداقل ${n(connectCost)} سکه لازم داری.
+موجودی: ${n(coins)} — از ربات «سکه» بگیر.`;
         setError(msg);
         toastError(msg);
         return;
       }
       const payOk = await appConfirm(
         [
-          `هزینه این درخواست: ${formatCoins(connectCost)} سکه`,
-          `موجودی فعلی: ${formatCoins(coins)} سکه`,
+          `هزینه این درخواست: ${n(connectCost)} سکه`,
+          `موجودی فعلی: ${n(coins)} سکه`,
           `پزشک‌های هدف: ${patientOnlineVets.length}`,
           '',
           'با تأیید، سکه از موجودی‌ات کسر می‌شود و درخواست برای پزشک‌های آنلاین ارسال می‌شود.',
@@ -794,9 +798,9 @@ export function VetConsultPage() {
       }
       const lines = [
         'درخواستت برای پزشک‌های آنلاین ربات و وب ارسال شد.',
-        `پزشک‌های هدف: ${formatCoins(result.sent)}`,
-        `سکه کسر شده: ${formatCoins(result.cost)}`,
-        `موجودی باقی‌مانده: ${formatCoins(result.coins)}`,
+        `پزشک‌های هدف: ${n(result.sent)}`,
+        `سکه کسر شده: ${n(result.cost)}`,
+        `موجودی باقی‌مانده: ${n(result.coins)}`,
         'در انتظار پذیرش دامپزشک — تا قبول پزشک چت باز نمی‌شود.',
       ];
       setStatusLines(lines); setPhase('waiting'); setBusyMode(null); toastSuccess(lines[0]!);
@@ -842,7 +846,7 @@ export function VetConsultPage() {
           </span>
           {BRAND.displayNameFa || BRAND.displayName}
         </p>
-        <h1>{isVetDashboard ? 'پنل دامپزشک' : 'ارتباط سریع با پزشک'}</h1>
+        <h1>{isVetDashboard ? t('consultDesk.titleVet') : t('consultDesk.titleVetPatient')}</h1>
         <p className="pepito-vet-lead">{lead}</p>
         <PageHelpLink section="consults" className="pepito-page-help-link--hero" />
       </div>
@@ -920,25 +924,25 @@ export function VetConsultPage() {
         connectCost={connectCost}
       />
 
-      <section className="pepito-vet-connect-panel" aria-label="ارتباط سریع با پزشک">
+      <section className="pepito-vet-connect-panel" aria-label={t('consultDesk.quickConnectAria')}>
         <div className="pepito-vet-consult-cost" role="status">
           <span className="pepito-vet-cost-mark" aria-hidden>
             <Stethoscope size={20} strokeWidth={2} />
           </span>
           <div>
-            <strong>هزینه اتصال فوری</strong>
+            <strong>{t('consultDesk.connectCostTitle')}</strong>
             <span>
               {onlineVetsLoading
-                ? 'در حال محاسبه…'
+                ? t('consultDesk.connecting')
                 : noOnlineVets
                   ? t('consultDesk.aiLeilaFree')
-                  : `${formatCoins(connectCost)} سکه — قبل از ارسال کسر می‌شود`}
+                  : t('consultDesk.deductBeforeSend', { cost: n(connectCost) })}
             </span>
           </div>
           {!needsLogin ? (
             <small>
-              موجودی: {formatCoins(coins)} سکه
-              {lowCoins ? ' — برای ادامه سکه کم داری' : ''}
+              {t('consultDesk.balanceLine', { n: n(coins) })}
+              {lowCoins ? t('consultDesk.lowCoinsHint') : ''}
             </small>
           ) : null}
         </div>
@@ -946,18 +950,18 @@ export function VetConsultPage() {
         {needsLogin ? (
           <Link to="/auth/login" className="pepito-btn button-1">
             <PawIcon />
-            ورود برای ارتباط با پزشک
+            {t('consultDesk.loginForVet')}
           </Link>
         ) : needsPet ? (
           <>
             <p className="pepito-vet-consult-hint">
-              هنوز پتی ثبت نکردی.
+              {t('consultDesk.noPetYet')}
               <br />
-              برای درخواست ارتباط با پزشک، اول باید حداقل یک پت ثبت کنی.
+              {t('consultDesk.needPetVet')}
             </p>
             <Link to="/add-pet" className="pepito-btn button-1">
               <PawIcon />
-              ثبت پت
+              {t('consultDesk.addPet')}
             </Link>
           </>
         ) : (
@@ -988,12 +992,12 @@ export function VetConsultPage() {
                 <Stethoscope size={16} strokeWidth={2.25} />
               </span>
               {phase === 'sending' && busyMode === 'human'
-                ? 'در حال کسر سکه و ارسال…'
+                ? t('consultDesk.sendingDeduct')
                 : patientOnlineVets.length === 0
                   ? t('consultDesk.realDoctor')
                   : phase === 'waiting' || phase === 'connected'
-                    ? 'ارسال دوباره درخواست'
-                    : `تأیید پرداخت (${formatCoins(connectCost)} سکه) و اتصال`}
+                    ? t('consultDesk.sendAgain')
+                    : t('consultDesk.confirmConnect', { cost: n(connectCost) })}
             </button>
           </div>
         )}
@@ -1005,7 +1009,7 @@ export function VetConsultPage() {
             target="_blank"
             rel="noreferrer"
           >
-            خرید سکه در ربات تلگرام
+            {t('consultDesk.buyCoinsBot')}
           </a>
         ) : null}
 
@@ -1030,30 +1034,23 @@ export function VetConsultPage() {
             data-testid="vet-consult-waiting"
           >
             <p className="pepito-vet-consult-wait-title">
-              ⏳ در انتظار پذیرش دامپزشک
+              {t('consultDesk.waitingVetTitle')}
             </p>
-            <p>
-              درخواست برای{' '}
-              <strong>{formatCoins(sentCount || requestedIds.length)}</strong> پزشک آنلاین (ربات و
-              وب) ارسال شد.
-            </p>
-            <p>
-              تا وقتی یکی از دامپزشک‌ها قبول نکند، چت باز نمی‌شود. بعد از قبول، همین‌جا وارد چت وب
-              می‌شوی.
-            </p>
+            <p>{t('consultDesk.waitingVetSent', { n: n(sentCount || requestedIds.length) })}</p>
+            <p>{t('consultDesk.waitingVetBody')}</p>
           </div>
         ) : null}
 
         {phase === 'connected' && activeConsult ? (
           <div className="pepito-vet-consult-connected" role="status">
             <p>
-              دامپزشک{' '}
-              <strong>{activeConsult.vetName?.trim() || `#${activeConsult.vetUserId}`}</strong>{' '}
-              درخواست را قبول کرد.
+              {t('consultDesk.vetAccepted', {
+                name: activeConsult.vetName?.trim() || `#${activeConsult.vetUserId}`,
+              })}
             </p>
             <Link className="pepito-btn button-1" to={`/vet-chats/${activeConsult.id}`}>
               <PawIcon />
-              ورود به چت وب با پزشک
+              {t('consultDesk.openVetChat')}
             </Link>
           </div>
         ) : null}
