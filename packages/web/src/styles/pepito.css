@@ -3075,14 +3075,14 @@ button.chip.is-on {
 }
 .pepito-auth-flow .role-card {
   text-align: right;
-  padding: 14px 16px;
+  padding: 16px 16px;
   background: linear-gradient(165deg, var(--pepito-white), #f7f4fc);
   border: 1.5px solid rgba(92, 77, 145, 0.16);
   border-radius: 16px;
   box-shadow: 0 6px 18px rgba(25, 6, 61, 0.04);
   transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
   cursor: pointer;
-  min-height: 72px;
+  min-height: 76px;
 }
 .pepito-auth-flow .role-card:active {
   transform: scale(0.99);
@@ -13963,4 +13963,85 @@ a.pepito-btn.pepito-human-consult-cta:hover {
     opacity: 1;
     transform: none;
   }
+}
+
+/* —— Owner consult (مشورت با صاحبین) —— */
+.owner-consult-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.55rem;
+  padding: 1rem 0.25rem 0.5rem;
+  text-align: center;
+}
+.owner-consult-panel--compact {
+  padding: 0.35rem 0;
+  gap: 0.4rem;
+}
+.owner-consult-panel__visual {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.25rem;
+  height: 3.25rem;
+  margin-inline: auto;
+  border-radius: 18px;
+  color: var(--pepito-base, #5c4d91);
+  background: color-mix(in srgb, var(--pepito-base, #5c4d91) 12%, transparent);
+}
+.owner-consult-panel__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  color: var(--pepito-dark, #19063d);
+}
+.owner-consult-panel__lead,
+.owner-consult-panel__fee,
+.owner-consult-panel__balance,
+.owner-consult-panel__hint,
+.owner-consult-panel__status {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--pepito-muted, #757086);
+}
+.owner-consult-panel__fee strong,
+.owner-consult-panel__balance strong {
+  color: var(--pepito-dark, #19063d);
+  font-weight: 800;
+}
+.owner-consult-panel__fee-split {
+  font-size: 0.8rem;
+}
+.owner-consult-panel__cta {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 0.35rem;
+}
+.owner-consult-panel__hint--warn {
+  color: #b42318;
+  font-weight: 600;
+}
+.pepito-profile-owner-advice {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid color-mix(in srgb, var(--pepito-base, #5c4d91) 16%, transparent);
+  text-align: right;
+}
+.pepito-profile-owner-advice__copy h3 {
+  margin: 0 0 0.25rem;
+  font-size: 1rem;
+  color: var(--pepito-dark, #19063d);
+}
+.pepito-profile-owner-advice__copy p {
+  margin: 0;
+  font-size: 0.86rem;
+  line-height: 1.45;
+  color: var(--pepito-muted, #757086);
+}
+.pepito-profile-owner-advice .pepito-btn {
+  min-height: 44px;
+  justify-self: stretch;
 }

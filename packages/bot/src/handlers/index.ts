@@ -1082,8 +1082,10 @@ async function handleTextMessage(ctx: Context): Promise<void> {
       return handleReadyToAdoptToggle(ctx, true);
     case s.readyAdoptOff:
       return handleReadyToAdoptToggle(ctx, false);
+    case n.ownerConsult:
     case n.buyConsult:
-      return handleBuyPetConsult(ctx);
+    case s.requestOwnerAdvice:
+      return handleRequestSeekerAdvice(ctx);
     case v.goOnline:
     case '🟢 آنلاین هستم و آماده پذیرش بیمار': {
       if (!(await ensureVetPhoneVerified(ctx))) return;
@@ -1229,8 +1231,6 @@ async function handleTextMessage(ctx: Context): Promise<void> {
       return handleToggleSeekerAdvice(ctx, false);
     case m.seekerAdviceOff:
       return handleToggleSeekerAdvice(ctx, true);
-    case s.requestOwnerAdvice:
-      return handleRequestSeekerAdvice(ctx);
     case TRAINER_MENU.goOnline:
       return handleProviderOnlineToggle(ctx, 'trainer', true);
     case TRAINER_MENU.goOffline:

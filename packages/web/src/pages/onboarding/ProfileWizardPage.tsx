@@ -201,7 +201,7 @@ export function ProfileWizardPage() {
       backLabel="بازگشت به خانه"
       backTo="/home"
     >
-      <p className="pepito-auth-kicker">پروفایل</p>
+      <p className="pepito-auth-kicker">پروفایل · مرحله ۲ از ۳</p>
       <h1>{meta.title}</h1>
       <p className="auth-lead">
         {meta.lead} · مرحله {visibleIdx + 1} از {visibleSteps.length}

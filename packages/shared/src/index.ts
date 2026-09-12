@@ -252,7 +252,7 @@ export interface User {
   sitterCredentialStatus?: VetCredentialStatus;
   sitterOnline?: boolean;
   sitterEnabled?: boolean;
-  /** صاحب پت: پذیرش مشورت خرید از دنبال‌کننده بدون پت */
+  /** صاحب پت: پذیرش مشورت با صاحبین از کاربران بدون پت */
   acceptSeekerAdvice?: boolean;
   /** آخرین عرض جغرافیایی اشتراک‌گذاری‌شده (ربات — پت‌های نزدیک) */
   lat?: number;

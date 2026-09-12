@@ -65,8 +65,8 @@ export const PET_OWNER_MENU = {
   menu: MAIN_MENU_BTN,
   quickVet: '⚡ مشاوره سریع پزشک',
   requestTrainer: '🎓 درخواست مربی',
-  seekerAdviceOn: '💬 پذیرش مشورت خرید — روشن',
-  seekerAdviceOff: '💬 پذیرش مشورت خرید — خاموش',
+  seekerAdviceOn: '💬 پذیرش مشورت با صاحبین — روشن',
+  seekerAdviceOff: '💬 پذیرش مشورت با صاحبین — خاموش',
   shop: '🛒 پت‌شاپ',
   /** @deprecated حذف از منو — نگه‌داری برای کیبوردهای قدیمی تلگرام */
   chat: '💬 چت',
@@ -134,6 +134,9 @@ export const SEARCH_MENU_CALLBACKS = {
 
 /** منوی نقش «بدون پت» */
 export const NO_PET_MENU = {
+  /** مشورت با صاحبین (۶ سکه) — جایگزین همبازی برای نقش بدون پت */
+  ownerConsult: '💬 مشورت با صاحبین',
+  /** برچسب قدیمی کیبورد کش‌شده — همان مشورت با صاحبین */
   buyConsult: '🛒 به دنبال مشاوره برای خرید',
   profile: '👤 پروفایل',
   verify: '🛡 احراز چهره',
@@ -153,7 +156,7 @@ export const NO_PET_MENU = {
 /** @deprecated نقش «دنبال پت» حذف شد — فقط برای کیبورد کش‌شده تلگرام */
 export const PET_SEEKER_MENU = {
   petsAndPlaymates: '🐾 پت‌ها و همبازی',
-  requestOwnerAdvice: '💬 مشورت خرید از صاحب پت',
+  requestOwnerAdvice: '💬 مشورت با صاحبین',
   readyAdoptOn: '💚 آماده پذیرش پت هستم',
   readyAdoptOff: '⏸ فعلاً آماده پذیرش نیستم',
   profile: '👤 پروفایل',
@@ -837,7 +840,7 @@ export function petSeekerMenuKeyboard(
 export function noPetMenuKeyboard(telegramId?: string | number | null): Keyboard {
   const m = NO_PET_MENU;
   const kb = new Keyboard()
-    .text(m.buyConsult)
+    .text(m.ownerConsult)
     .success()
     .row()
     .text(m.profile)

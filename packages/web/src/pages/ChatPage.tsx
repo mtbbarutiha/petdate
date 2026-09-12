@@ -36,6 +36,10 @@ import { ChatVoicePlayer } from '../components/ChatVoicePlayer';
 import { ChatGiftBubble, PlaymateChatToolbar, PlaymateGiftSheet } from '../components/PlaymateGift';
 import { EmojiPicker } from '../components/EmojiPicker';
 import { FindPlaymatePanel } from '../components/FindPlaymatePanel';
+import {
+  OwnerConsultPanel,
+  shouldShowOwnerConsultCta,
+} from '../components/OwnerConsultPanel';
 import { InboxPeerAvatar } from '../components/InboxPeerAvatar';
 import { PetAvatar } from '../components/PetAvatar';
 import { PresenceBadge } from '../components/PresenceBadge';
@@ -244,6 +248,7 @@ function ConversationListPane({
   scope,
   activeKey,
   busyKey,
+  ownerConsult,
   onSelect,
   onRefresh,
   onAccept,
@@ -257,6 +262,8 @@ function ConversationListPane({
   scope: InboxScope;
   activeKey?: string;
   busyKey?: string | null;
+  /** نقش بدون پت: مشورت با صاحبین به‌جای پیدا کردن همبازی */
+  ownerConsult?: boolean;
   onSelect: (item: InboxConversation) => void;
   onRefresh: () => void;
   onAccept: (item: InboxConversation) => void;
@@ -267,6 +274,7 @@ function ConversationListPane({
   const { t } = useI18n();
   const isPlaymateHub = scope === 'owner';
   const panelPath = providerHomePath(scope);
+  const HubCta = ownerConsult ? OwnerConsultPanel : FindPlaymatePanel;
   return (
     <aside className="tg-chat-list" aria-label={t('chats.listAria')}>
       <header className="tg-chat-list-head">
@@ -281,7 +289,7 @@ function ConversationListPane({
           <SiteLogo className="tg-chat-list-logo" height={34} />
           <h1>{inboxListTitle(scope, t)}</h1>
         </div>
-        {isPlaymateHub ? <FindPlaymatePanel variant="header" onSent={onRefresh} /> : null}
+        {isPlaymateHub ? <HubCta variant="header" onSent={onRefresh} /> : null}
         {!isPlaymateHub ? (
           <button
             type="button"
@@ -332,6 +340,15 @@ function ConversationListPane({
                 <Link to="/trainer-consult" className="tg-chat-link-btn">
                   رفتن به پنل مربی
                 </Link>
+              </>
+            ) : ownerConsult ? (
+              <>
+                <ChatEmptyVisual />
+                <h2>مشورت با صاحبین</h2>
+                <p>هنوز گفتگویی نداری — از صاحبین باتجربه درباره نگهداری و هزینه بپرس.</p>
+                <div className="tg-thread-empty__cta-wrap">
+                  <OwnerConsultPanel compact onSent={onRefresh} />
+                </div>
               </>
             ) : (
               <>
@@ -495,10 +512,12 @@ function ChatEmptyVisual() {
 function ThreadEmptyState({
   scope,
   desktop,
+  ownerConsult,
   onFindSent,
 }: {
   scope: InboxScope;
   desktop?: boolean;
+  ownerConsult?: boolean;
   onFindSent?: () => void;
 }) {
   const { t } = useI18n();
@@ -523,6 +542,25 @@ function ThreadEmptyState({
         <Link to="/trainer-consult" className="pepito-btn button-1 tg-thread-empty__cta">
           {t('nav.trainer_panel')}
         </Link>
+      </div>
+    );
+  }
+  if (ownerConsult) {
+    if (desktop) {
+      return (
+        <div className="tg-thread-empty tg-thread-empty--pepito">
+          <ChatEmptyVisual />
+          <h2>مشورت با صاحبین</h2>
+          <p>یک گفتگو را از فهرست انتخاب کن یا مشورت جدید شروع کن.</p>
+          <div className="tg-thread-empty__cta-wrap">
+            <OwnerConsultPanel compact onSent={onFindSent} />
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div className="tg-thread-empty tg-thread-empty--hub">
+        <OwnerConsultPanel onSent={onFindSent} />
       </div>
     );
   }
@@ -555,6 +593,7 @@ export function ChatPage() {
   const { user: authUser, token, isProfileComplete, refreshMe, applyUser } = useAuthStore();
   const myUserId = authUser?.id;
   const inboxScope = inboxScopeForUser(authUser);
+  const ownerConsult = shouldShowOwnerConsultCta(authUser);
   const selectedId = Number(matchId);
   const hasThread = Number.isFinite(selectedId) && selectedId > 0;
 
@@ -1790,6 +1829,7 @@ export function ChatPage() {
           scope={inboxScope}
           activeKey={hasThread ? `playmate:${selectedId}` : undefined}
           busyKey={listActionKey}
+          ownerConsult={ownerConsult}
           onSelect={onSelectConversation}
           onRefresh={() => void reloadConversations()}
           onAccept={(item) => void onAcceptFromList(item)}
@@ -1809,6 +1849,7 @@ export function ChatPage() {
               <ThreadEmptyState
                 scope={inboxScope}
                 desktop={desktop}
+                ownerConsult={ownerConsult}
                 onFindSent={() => void reloadConversations({ soft: true })}
               />
             </div>

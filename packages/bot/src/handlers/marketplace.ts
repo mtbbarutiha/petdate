@@ -2,6 +2,7 @@ import type { Context } from 'grammy';
 import type { User, VetConsultation } from '@petdate/shared';
 import {
   SEEKER_ADVICE_COST,
+  SEEKER_OWNER_SHARE,
   TRAINER_CONSULT_COST,
   userHasRole,
 } from '@petdate/shared';
@@ -284,11 +285,17 @@ export async function handleRequestTrainer(ctx: Context): Promise<void> {
 
 export async function handleRequestSeekerAdvice(ctx: Context): Promise<void> {
   await ctx.reply(
-    `💬 مشورت خرید از صاحب پت\nهزینه: ${SEEKER_ADVICE_COST} سکه (۵ صاحب + ۵ پلتفرم). بدون اتصال پزشک.`,
+    [
+      '💬 مشورت با صاحبین',
+      `هزینه: ${SEEKER_ADVICE_COST} سکه (${SEEKER_OWNER_SHARE} صاحب + ${SEEKER_ADVICE_COST - SEEKER_OWNER_SHARE} پلتفرم).`,
+      'موضوع‌ها: داشتن پت، نگهداری، هزینه‌ها.',
+      'اگر گفتگو زیر ۱ ثانیه قطع شود، سکه‌ات برمی‌گردد.',
+    ].join('\n'),
     { reply_markup: menuKeyboardFor(ctx, await getCtxUser(ctx)) }
   );
   await runQuickConnect(ctx, 'seeker_advice', SEEKER_ADVICE_COST);
 }
+
 
 export async function handleToggleSeekerAdvice(ctx: Context, accept: boolean): Promise<void> {
   const from = ctx.from;
@@ -308,8 +315,8 @@ export async function handleToggleSeekerAdvice(ctx: Context, accept: boolean): P
     const updated = await setAcceptSeekerAdvice(String(from.id), accept);
     await ctx.reply(
       accept
-        ? '✅ از این به بعد اشخاص بدون پت می‌توانند برای مشورت خرید با تو چت کنند و سکه بگیری.'
-        : '⏸ پذیرش مشورت خرید خاموش شد.',
+        ? '✅ از این به بعد اشخاص بدون پت می‌توانند برای مشورت با صاحبین با تو چت کنند و سکه بگیری.'
+        : '⏸ پذیرش مشورت با صاحبین خاموش شد.',
       { reply_markup: menuKeyboardFor(ctx, updated) }
     );
   } catch (err) {
