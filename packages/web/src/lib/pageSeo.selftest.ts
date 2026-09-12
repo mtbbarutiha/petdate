@@ -93,10 +93,15 @@ const shell = `<!DOCTYPE html><html><head>
 <noscript id="pd-seo-noscript"><link href="https://fonts.googleapis.com/css2?family=Vazirmatn" rel="stylesheet" /></noscript>
 </body></html>`;
 
+const homeHtml = applySeoToHtml(shell, '/');
+assert.match(homeHtml, /data-pd-lcp="hero"/, 'homepage HTML preloads the LCP hero');
+assert.match(homeHtml, /\/pepito\/uploads\/1-hero\.jpg/, 'LCP preload points at 1-hero.jpg');
+
 const faqHtml = applySeoToHtml(shell, '/faq');
 const shopHtml = applySeoToHtml(shell, '/shop');
 assert.match(faqHtml, /<title[^>]*>راهنما/);
 assert.match(shopHtml, /<title[^>]*>پت‌شاپ/);
+assert.doesNotMatch(faqHtml, /data-pd-lcp="hero"/, 'non-home routes must not preload homepage hero');
 assert.ok(!faqHtml.includes('href="https://petdate.ir/"'), 'faq canonical is not homepage');
 assert.match(faqHtml, /href="https:\/\/petdate\.ir\/faq"/);
 assert.match(shopHtml, /href="https:\/\/petdate\.ir\/shop"/);

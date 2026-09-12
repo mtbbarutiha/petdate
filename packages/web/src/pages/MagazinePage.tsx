@@ -3,54 +3,16 @@ import { Link } from 'react-router-dom';
 import { LandingChrome } from '../components/LandingChrome';
 import { resolvePublicMediaUrl } from '../lib/api';
 import { formatAdminFaDate } from '../admin/jalaliDate';
-import { useI18n, createTranslator, faDict, enDict, readStoredLang } from '../i18n';
+import { useI18n } from '../i18n';
+import {
+  fetchMagazineList,
+  type MagazineCard,
+} from '../lib/magazineApi';
 
-export type MagazineCard = {
-  id: number;
-  title: string;
-  slug: string;
-  excerpt: string;
-  coverImage: string;
-  category: string;
-  author: string;
-  publishAt: string;
-  featured?: boolean;
-};
+export type { MagazineCard } from '../lib/magazineApi';
+export { fetchMagazineFeatured, fetchMagazineList } from '../lib/magazineApi';
 
-const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ?? '';
 const PAGE_SIZE = 3;
-
-function magT(key: string) {
-  const lang = readStoredLang() ?? 'fa';
-  return createTranslator(lang === 'en' ? enDict : faDict, faDict)(key);
-}
-
-export async function fetchMagazineList(opts?: {
-  q?: string;
-  limit?: number;
-  offset?: number;
-}): Promise<{ articles: MagazineCard[]; total: number }> {
-  const params = new URLSearchParams();
-  if (opts?.q) params.set('q', opts.q);
-  params.set('limit', String(opts?.limit ?? 24));
-  if (opts?.offset != null) params.set('offset', String(opts.offset));
-  const res = await fetch(`${API_BASE}/api/magazine?${params}`, { cache: 'no-store' });
-  if (!res.ok) throw new Error(magT('magazine.loadFail'));
-  const data = (await res.json()) as { articles: MagazineCard[]; total?: number };
-  return {
-    articles: data.articles || [],
-    total: typeof data.total === 'number' ? data.total : (data.articles || []).length,
-  };
-}
-
-export async function fetchMagazineFeatured(limit = 6): Promise<MagazineCard[]> {
-  const res = await fetch(`${API_BASE}/api/magazine/featured?limit=${limit}`, {
-    cache: 'no-store',
-  });
-  if (!res.ok) throw new Error(magT('magazine.newsLoadFail'));
-  const data = (await res.json()) as { articles: MagazineCard[] };
-  return data.articles || [];
-}
 
 export function MagazineCardView({ article }: { article: MagazineCard }) {
   const { t } = useI18n();
@@ -70,8 +32,8 @@ export function MagazineCardView({ article }: { article: MagazineCard }) {
         <p>{article.excerpt}</p>
         <div className="pepito-news-author">
           <div>
-            <h5>{formatAdminFaDate(article.publishAt)}</h5>
-            <h5>
+            <p className="pepito-news-meta">{formatAdminFaDate(article.publishAt)}</p>
+            <p className="pepito-news-meta">
               {article.author ? (
                 <>
                   {t('magazine.byAuthor')} <span className="pepito-news-author-name">{article.author}</span>
@@ -79,7 +41,7 @@ export function MagazineCardView({ article }: { article: MagazineCard }) {
               ) : (
                 t('magazine.brand')
               )}
-            </h5>
+            </p>
           </div>
         </div>
       </div>
@@ -189,16 +151,15 @@ export function MagazinePage() {
               ))}
             </div>
             {pageCount > 1 ? (
-              <div className="pepito-news-dots" role="tablist" aria-label={t('magazine.pages')}>
+              <div className="pepito-news-dots" role="group" aria-label={t('magazine.pages')}>
                 {Array.from({ length: pageCount }, (_, i) => (
                   <button
                     key={i}
                     type="button"
-                    role="tab"
-                    aria-selected={i === page}
                     className={`pepito-news-dot${i === page ? ' is-active' : ''}`}
                     onClick={() => setPage(i)}
                     aria-label={t('magazine.pageN', { n: i + 1 })}
+                    aria-current={i === page ? 'true' : undefined}
                   />
                 ))}
               </div>

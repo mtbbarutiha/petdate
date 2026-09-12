@@ -73,7 +73,7 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         // New cache namespace so stuck clients drop the old 1.5s-poll bundle.
         // Bump when guest marketing routes change — v14 left #213's shell unclaimed.
-        cacheId: 'petdate-web-v17-seo',
+        cacheId: 'petdate-web-v18-lighthouse',
         // Precache only the app shell — not hundreds of prerendered SEO HTML files.
         globPatterns: ['index.html', 'offline.html', '**/*.{js,css,ico,svg,woff2}'],
         navigateFallbackDenylist: [/^\/api\//],
@@ -154,6 +154,18 @@ export default defineConfig({
   build: {
     target: 'es2020',
     cssCodeSplit: true,
+    // Hidden source maps for large first-party bundles (Lighthouse Best Practices).
+    // Files stay in dist as *.js.map; nginx already serves /assets/ with long cache.
+    sourcemap: true,
+    modulePreload: {
+      resolveDependencies(filename, deps) {
+        // vendor-lucide is in the landing graph, but Chrome + the SW treat the
+        // modulepreload as a "cross-world" unused preload (console + wasted bytes).
+        // The module still loads via its static import — we just skip the hint.
+        void filename;
+        return deps.filter((dep) => !dep.includes('vendor-lucide'));
+      },
+    },
     rollupOptions: {
       output: {
         manualChunks(id) {

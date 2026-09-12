@@ -4,7 +4,8 @@
 :root {
   --pepito-base: #5c4d91;
   --pepito-dark: #19063d;
-  --pepito-muted: #757086;
+  /* Darker than #757086 so muted copy meets 4.5:1 on --pepito-soft / white. */
+  --pepito-muted: #5a5470;
   --pepito-pink: #db89ca;
   --pepito-soft: #f4f4f7;
   --pepito-lilac: #e4e2f3;
@@ -504,13 +505,13 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   padding: 0;
   cursor: pointer;
   transition: background 0.25s ease, border-color 0.25s ease;
-  /* Expand tap target without changing visual size */
+  /* 44×44 tap target (Lighthouse / agentic) without changing the visual dot */
   position: relative;
 }
 .pepito-hero-dot::before {
   content: '';
   position: absolute;
-  inset: -10px;
+  inset: -16px;
 }
 .pepito-hero-dot.is-active {
   background: var(--pepito-white);
@@ -1236,6 +1237,12 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   padding: 0;
   cursor: pointer;
   transition: background 0.25s ease, transform 0.25s ease;
+  position: relative;
+}
+.pepito-services-dot::before {
+  content: '';
+  position: absolute;
+  inset: -18px;
 }
 .pepito-services-dot.is-active {
   background: var(--pepito-base);
@@ -1915,7 +1922,8 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   opacity: 1;
   transform: translate(-50%, -50%) translateX(0);
 }
-.pepito-shop-price h4 {
+.pepito-shop-price h4,
+.pepito-shop-price-line {
   margin: 0;
   font-size: 24px;
   font-weight: 600;
@@ -1923,7 +1931,8 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   font-family: var(--font-display);
   line-height: 1.15;
 }
-.pepito-shop-price h4 span {
+.pepito-shop-price h4 span,
+.pepito-shop-price-line span {
   display: block;
   font-size: 16px;
   color: var(--pepito-pink);
@@ -2063,7 +2072,8 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   height: 25px;
   overflow: hidden;
 }
-.pepito-news-author h5 {
+.pepito-news-author h5,
+.pepito-news-author .pepito-news-meta {
   position: absolute;
   inset-inline-start: 0;
   margin: 0;
@@ -2073,15 +2083,18 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   font-weight: 400;
   color: var(--pepito-dark);
 }
-.pepito-news-author h5:nth-of-type(2) {
+.pepito-news-author h5:nth-of-type(2),
+.pepito-news-author .pepito-news-meta:nth-of-type(2) {
   opacity: 0;
   transform: translateY(150%);
 }
-.pepito-news-card:hover .pepito-news-author h5:first-of-type {
+.pepito-news-card:hover .pepito-news-author h5:first-of-type,
+.pepito-news-card:hover .pepito-news-author .pepito-news-meta:first-of-type {
   transform: translateY(150%);
   opacity: 0;
 }
-.pepito-news-card:hover .pepito-news-author h5:nth-of-type(2) {
+.pepito-news-card:hover .pepito-news-author h5:nth-of-type(2),
+.pepito-news-card:hover .pepito-news-author .pepito-news-meta:nth-of-type(2) {
   opacity: 1;
   transform: translateY(0);
 }
@@ -2141,6 +2154,12 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   background: var(--pepito-lilac);
   cursor: pointer;
   transition: background 0.2s ease, transform 0.2s ease;
+  position: relative;
+}
+.pepito-news-dot::before {
+  content: '';
+  position: absolute;
+  inset: -17px;
 }
 .pepito-news-dot.is-active {
   background: var(--pepito-base);

@@ -751,29 +751,65 @@ let ga4VarPushed = false;
 let lastGtmPagePath: string | null = null;
 let scrollMarkedPath: string | null = null;
 
+/**
+ * Run after window load + idle so third-party tags do not steal LCP/TBT.
+ * Safe no-op off-window (selftests).
+ */
+export function scheduleAfterLoadIdle(fn: () => void, timeoutMs = 3500): void {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return;
+  const run = () => {
+    const ric = (
+      window as Window & {
+        requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+      }
+    ).requestIdleCallback;
+    if (typeof ric === 'function') {
+      ric(fn, { timeout: timeoutMs });
+    } else {
+      window.setTimeout(fn, Math.min(2000, timeoutMs));
+    }
+  };
+  if (document.readyState === 'complete') run();
+  else window.addEventListener('load', run, { once: true });
+}
+
+function clarityAlreadyPresent(): boolean {
+  if (typeof document === 'undefined') return false;
+  if (document.getElementById('petdate-clarity')) return true;
+  return Boolean(document.querySelector('script[src*="clarity.ms/tag/"]'));
+}
+
 function maybeInitClarity(): void {
   if (clarityBooted || typeof window === 'undefined' || typeof document === 'undefined') return;
   const projectId = resolveClarityProjectId();
   if (!projectId) return;
-  clarityBooted = true;
-  try {
-    const w = window as Window & { clarity?: ((...args: unknown[]) => void) & { q?: unknown[] } };
-    w.clarity =
-      w.clarity ||
-      function (...args: unknown[]) {
-        (w.clarity as { q?: unknown[] }).q = (w.clarity as { q?: unknown[] }).q || [];
-        (w.clarity as { q: unknown[] }).q.push(args);
-      };
-    const s = document.createElement('script');
-    s.type = 'text/javascript';
-    s.async = true;
-    s.src = `https://www.clarity.ms/tag/${projectId}`;
-    s.id = 'petdate-clarity';
-    const first = document.getElementsByTagName('script')[0];
-    first?.parentNode?.insertBefore(s, first);
-  } catch {
-    /* ignore */
+  if (clarityAlreadyPresent()) {
+    clarityBooted = true;
+    return;
   }
+  clarityBooted = true;
+  scheduleAfterLoadIdle(() => {
+    if (clarityAlreadyPresent()) return;
+    try {
+      const w = window as Window & { clarity?: ((...args: unknown[]) => void) & { q?: unknown[] } };
+      w.clarity =
+        w.clarity ||
+        function (...args: unknown[]) {
+          (w.clarity as { q?: unknown[] }).q = (w.clarity as { q?: unknown[] }).q || [];
+          (w.clarity as { q: unknown[] }).q.push(args);
+        };
+      const s = document.createElement('script');
+      s.type = 'text/javascript';
+      s.async = true;
+      s.src = `https://www.clarity.ms/tag/${projectId}`;
+      s.id = 'petdate-clarity';
+      // A 400/blocked tag must not retry — that was the console spam on petdate.ir.
+      s.onerror = () => undefined;
+      document.body ? document.body.appendChild(s) : document.documentElement.appendChild(s);
+    } catch {
+      /* ignore */
+    }
+  });
 }
 
 function pushGtmVirtualPageview(pathname: string): void {
@@ -970,13 +1006,17 @@ export function trackPageview(pathname?: string): void {
   const path = pathname ?? window.location.pathname;
   if (path.startsWith('/admin')) return;
 
-  void ensureRuntimeAnalyticsConfig();
-  maybeInitClarity();
-  maybeInitGtm();
-  maybeInitGa4();
-  maybeInitHeartbeat();
+  maybeInitLinkTracking();
   pushGtmVirtualPageview(path);
   sendGtagPageView(path);
+
+  scheduleAfterLoadIdle(() => {
+    void ensureRuntimeAnalyticsConfig();
+    maybeInitClarity();
+    maybeInitGtm();
+    maybeInitGa4();
+    maybeInitHeartbeat();
+  });
 
   beaconCollect({
     eventType: 'pageview',

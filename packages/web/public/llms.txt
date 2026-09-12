@@ -2,9 +2,9 @@
 
 > پت‌دیت پلتفرم فارسی پیدا کردن همبازی برای پت، پت‌شاپ، پذیرش پت و مشاوره دامپزشک است — روی وب و ربات تلگرام با یک حساب مشترک.
 
-Website: https://petdate.ir/
-Contact: hello@petdate.ir
-Telegram bot: https://t.me/Petdatebot
+- Website: [https://petdate.ir/](https://petdate.ir/)
+- Contact: [hello@petdate.ir](mailto:hello@petdate.ir)
+- Telegram bot: [https://t.me/Petdatebot](https://t.me/Petdatebot)
 
 ## What PetDate is
 
@@ -18,15 +18,16 @@ Web and Telegram share the same account (OTP login by mobile number).
 
 ## Key URLs
 
-- Home / landing: https://petdate.ir/
-- FAQ: https://petdate.ir/faq
-- Pet shop: https://petdate.ir/shop
-- Vet consult: https://petdate.ir/vet-consult
-- Adoption examples: https://petdate.ir/adoption/missy
-- Login: https://petdate.ir/auth/login
-- Sitemap: https://petdate.ir/sitemap.xml
-- Full AI summary: https://petdate.ir/llms-full.txt
-- Playmate panel (/chats) requires login — not a primary crawl target
+- [Home / landing](https://petdate.ir/)
+- [FAQ](https://petdate.ir/faq)
+- [Pet shop](https://petdate.ir/shop)
+- [Vet consult](https://petdate.ir/vet-consult)
+- [Adoption examples](https://petdate.ir/adoption/missy)
+- [Login](https://petdate.ir/auth/login)
+- [Sitemap](https://petdate.ir/sitemap.xml)
+- [Full AI summary](https://petdate.ir/llms-full.txt)
+
+Playmate panel (`/chats`) requires login — not a primary crawl target.
 
 ## Brand
 
