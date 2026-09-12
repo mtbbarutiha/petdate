@@ -360,7 +360,8 @@
   .admin-app .admin-topbar-eyebrow {
     display: none;
   }
-  .admin-app .admin-topbar-chip {
+  .admin-app .admin-topbar-chip,
+  .admin-app .admin-live-pulse.admin-topbar-chip {
     display: none;
   }
 }

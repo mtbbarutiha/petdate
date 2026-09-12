@@ -62,6 +62,11 @@ assert.match(
 );
 assert.match(
   css,
+  /@media \(max-width:\s*640px\)[\s\S]*?admin-live-pulse\.admin-topbar-chip[\s\S]*?display:\s*none/,
+  'narrow topbar hides the live chip (overrides later inline-flex)'
+);
+assert.match(
+  css,
   /@media \(min-width:\s*961px\)[\s\S]*?admin-app--nav-closed \.admin-sidebar[\s\S]*?display:\s*none/,
   'desktop close hides the whole sidebar panel'
 );
