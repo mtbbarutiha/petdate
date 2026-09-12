@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import { Link, NavLink } from 'react-router-dom';
 import { PawPrint } from 'lucide-react';
 import { BRAND } from '@petdate/shared';
+import { PageHelpLink } from '../PageHelpLink';
 import { useAuthStore } from '../../hooks/useAuthStore';
 import { useShopCatalogSync } from '../../hooks/useShopCatalogSync';
 import { useI18n } from '../../i18n';
@@ -92,6 +93,7 @@ export function ShopChrome({
             </p>
             <h1>{title}</h1>
             {lead ? <p>{lead}</p> : null}
+            <PageHelpLink section="shop" className="pepito-page-help-link--hero" />
           </div>
         </section>
       ) : null}

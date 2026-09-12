@@ -10,6 +10,7 @@ import {
 } from '@petdate/shared';
 import { LandingChrome } from '../components/LandingChrome';
 import { InviteFriendsCard } from '../components/InviteFriendsCard';
+import { PageHelpLink } from '../components/PageHelpLink';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { loginPath } from '../lib/authRedirect';
 import { persistReferralRef, readStoredReferralRef } from '../lib/referral';
@@ -42,6 +43,7 @@ export function InvitePage() {
         bannerLead={`با هر ثبت‌نام جدید از لینک تو، ${rewardFa} سکه می‌گیری.`}
       >
         <div className="pepito-container pepito-invite-page" data-testid="invite-page-owner">
+          <PageHelpLink section="invite" />
           <InviteFriendsCard variant="card" />
         </div>
       </LandingChrome>
@@ -72,6 +74,7 @@ export function InvitePage() {
           ) : (
             <p className="pepito-invite-page-muted">لینک دعوت ناقص است — از دوستت لینک تازه بگیر.</p>
           )}
+          <PageHelpLink section="invite" />
         </header>
         <div className="pepito-invite-page-actions">
           <Link

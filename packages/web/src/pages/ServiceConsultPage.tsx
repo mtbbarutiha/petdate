@@ -13,6 +13,7 @@ import {
   type VetCredentialStatus,
 } from '@petdate/shared';
 import { AiConsultCtaButton } from '../components/AiConsultCtaButton';
+import { PageHelpLink } from '../components/PageHelpLink';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { useAppToast } from '../hooks/useAppToast';
 import { useLiveAjaxPoll } from '../hooks/useLiveAjaxPoll';
@@ -395,6 +396,7 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
             : t('consultDesk.trainerLead', { cost: formatCoins(cost) })}
         </p>
         {meta.disclaimer && !isProvider ? <p className="muted">{meta.disclaimer}</p> : null}
+        <PageHelpLink section="consults" />
       </header>
 
       {error ? (

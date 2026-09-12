@@ -758,12 +758,12 @@ export const HELP_TOPICS: HelpTopic[] = [
     surfaces: ['bot', 'web'],
     title: { fa: 'پشتیبانی', en: 'Support' },
     what: {
-      fa: 'چت پشتیبانی پت‌دیت برای ورود، پت، همبازی، مربی، دامپزشک، شاپ و سکه.',
-      en: 'PetDate support chat for login, pets, playmates, trainer, vet, shop, and coins.',
+      fa: 'پشتیبانی پت‌دیت برای ورود، پت، همبازی، مربی، دامپزشک، شاپ و سکه. در سایت تیکت انسانی یا گفتگو با بات پشتیبانی داری؛ در ربات همان دکمهٔ پشتیبانی.',
+      en: 'PetDate support for login, pets, playmates, trainer, vet, shop, and coins. On the site you can open a human ticket or chat with the support bot; in Telegram use Support.',
     },
     how: {
-      fa: 'ربات: «پشتیبانی». سایت: پشتیبانی. سؤال را کوتاه بنویس.',
-      en: 'Bot: Support. Site: Support. Keep the question short.',
+      fa: 'ربات: «پشتیبانی». سایت: پشتیبانی — تیکت ثبت کن یا با بات پشتیبانی حرف بزن. سؤال را کوتاه بنویس.',
+      en: 'Bot: Support. Site: Support — file a ticket or chat with the support bot. Keep the question short.',
     },
     tips: {
       fa: 'برای مشکل OTP شماره را با پیش‌شماره درست دوباره امتحان کن؛ اگر ادامه داشت همین‌جا پیام بگذار.',

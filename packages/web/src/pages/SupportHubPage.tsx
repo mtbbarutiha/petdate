@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight, Bot, LifeBuoy, Ticket } from 'lucide-react';
+import { PageHelpLink } from '../components/PageHelpLink';
 import { AI_ASSISTANT_DISPLAY_NAME } from './supportAgent';
 
 /**
@@ -20,6 +21,7 @@ export function SupportHubPage() {
             پشتیبانی
           </h1>
           <p>تیکت انسانی یا گفتگو با بات پشتیبانی — یکی را انتخاب کن</p>
+          <PageHelpLink section="support" />
         </div>
       </header>
 
