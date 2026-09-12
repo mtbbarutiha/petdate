@@ -41,6 +41,10 @@ assert.doesNotMatch(
   'GTM must not arm on scroll (Lighthouse emits scroll during load)'
 );
 assert.match(indexHtml, /Vazirmatn Fallback/, 'critical CSS ships font fallback metrics (CLS)');
+assert.match(indexHtml, /Vazirmatn-Variable\.woff2/, 'critical CSS self-hosts Vazirmatn woff2');
+assert.match(indexHtml, /font-display:swap/, 'self-hosted face uses font-display:swap');
+assert.doesNotMatch(indexHtml, /fonts\.googleapis\.com|fonts\.gstatic\.com/, 'no Google Fonts on the public shell');
+assert.doesNotMatch(indexHtml, /Urbanist/, 'Urbanist is not a competing UI face');
 assert.match(indexHtml, /pepito-hero-inner/, 'critical CSS reserves hero-inner (CLS)');
 assert.match(indexHtml, /85svh - var\(--pepito-nav-h\)/, 'critical hero uses compact 85svh (matches hydrated CSS)');
 assert.doesNotMatch(
@@ -57,14 +61,22 @@ assert.doesNotMatch(indexHtml, /rel="preconnect" href="https:\/\/fonts/, 'no unu
 assert.doesNotMatch(
   indexHtml,
   /rel="preload"\s+as="style"/,
-  'do not preload the Google Fonts CSS (unused-preload warning)'
+  'do not preload a stylesheet (unused-preload warning)'
 );
-assert.match(indexHtml, /web-perf-v24-lh-pass/, 'deploy marker bumped so SW/HTML cache misses');
+assert.match(indexHtml, /web-perf-v25-lh-pass/, 'deploy marker bumped so SW/HTML cache misses');
 assert.match(indexHtml, /id="pd-boot-lcp"/, 'LCP img lives outside #root so React cannot replace it');
 assert.match(indexHtml, /id="pd-boot-lcp"[\s\S]*decoding="sync"/, 'LCP img decodes sync so main-thread JS cannot stall paint');
 assert.match(indexHtml, /data-pd-lcp="hero"/, 'static preload is marked so SEO inject does not duplicate it');
-const heroPreloads = indexHtml.match(/rel="preload"[\s\S]*?hero-playmate-800\.webp/g) || [];
-assert.equal(heroPreloads.length, 1, 'index.html ships exactly one LCP preload');
+assert.equal(
+  (indexHtml.match(/data-pd-lcp="hero"/g) || []).length,
+  1,
+  'index.html ships exactly one marked LCP preload'
+);
+assert.match(
+  indexHtml,
+  /rel="preload"[^>]+href="\/fonts\/Vazirmatn-Variable\.woff2"[^>]+as="font"/,
+  'preload the same-origin UI font'
+);
 assert.match(indexHtml, /\.pepito-faq-item,\s*\.pepito-help-card/, 'critical CSS covers FAQ/help cards');
 assert.match(indexHtml, /html\.theme-light \.pepito-faq-item/, 'critical CSS has light FAQ overrides');
 

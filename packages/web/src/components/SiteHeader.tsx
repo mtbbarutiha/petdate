@@ -47,8 +47,8 @@ export type SiteHeaderProps = {
 };
 
 /**
- * Shared site header: brand | primary pills + overflow | utilities.
- * Marketing text links no longer sit beside duplicate شاپ / بازی‌ها pills.
+ * Shared site header: brand | primary text links + overflow | utilities.
+ * Role shortcuts (هم بازی / شاپ / بازی‌ها) share the خدمات text treatment.
  */
 export function SiteHeader({
   scrolled = false,

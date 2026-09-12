@@ -7,6 +7,7 @@ import { usePlatformConfig } from '../hooks/usePlatformConfig';
 
 /**
  * Desktop primary actions (≥860px) — follow active primary role.
+ * Visual: same plain text as خدمات / پذیرش (no outlined icon pills).
  * Owner: هم بازی / شاپ / بازی‌ها (پت‌های من is in LandingChrome app nav)
  * Vet: پنل پزشک / گفتگو / شاپ / بازی‌ها
  * Wallet chip + circular profile avatar live in NavUserCluster.
@@ -43,12 +44,11 @@ export function SiteDesktopNav() {
             key={item.key}
             to={href}
             data-testid={`nav-${item.key}`}
-            className={`pepito-site-desktop-nav-link${active ? ' is-active' : ''}`}
+            className={`pepito-nav-section-link pepito-site-desktop-nav-link${active ? ' is-active' : ''}`}
             aria-current={active ? 'page' : undefined}
             dir={dir}
           >
-            <item.icon size={16} strokeWidth={2.25} aria-hidden />
-            <span>{t(`nav.${item.key}`)}</span>
+            {t(`nav.${item.key}`)}
           </Link>
         );
       })}
