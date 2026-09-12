@@ -349,7 +349,52 @@
 }
 
 .admin-app .admin-icon-btn--mobile { display: none; }
-.admin-app .admin-icon-btn--desktop { display: inline-flex; }
+.admin-app .admin-icon-btn--desktop { display: none; }
+
+/* Single hamburger/close — sibling of the drawer so it is never trapped
+   under .admin-topbar (z-index 20) or the overlay sidebar (z-index 40). */
+.admin-nav-toggle {
+  position: fixed;
+  top: 12px;
+  inset-inline-start: 12px;
+  z-index: 60;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid var(--admin-border);
+  background: var(--admin-surface);
+  color: var(--admin-ink);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.16);
+}
+.admin-nav-toggle.is-open {
+  background: var(--admin-ink);
+  color: #fff;
+  border-color: var(--admin-ink);
+}
+.admin-app .admin-topbar {
+  padding-inline-start: 68px;
+}
+
+/* Desktop close must hide the whole panel — not just labels (old --collapsed). */
+@media (min-width: 961px) {
+  .admin-app--nav-closed .admin-sidebar {
+    display: none !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    overflow: hidden !important;
+    visibility: hidden;
+    pointer-events: none;
+  }
+  .admin-app--nav-open .admin-nav-toggle {
+    inset-inline-start: calc(264px + 10px);
+  }
+}
 
 .admin-app--collapsed .admin-sidebar { width: 84px; }
 .admin-app--collapsed .admin-nav-group-title,
@@ -1529,11 +1574,12 @@
   .admin-app .admin-form-grid {
     grid-template-columns: 1fr;
   }
-  .admin-app .admin-icon-btn--mobile { display: inline-flex; }
+  .admin-app .admin-icon-btn--mobile { display: none; }
   .admin-app .admin-icon-btn--desktop { display: none; }
   /* Off-canvas drawer from inline-start (right in FA/RTL, left in EN/LTR).
      translateX is physical: hide LTR left drawer with -X, RTL right drawer with +X. */
-  .admin-app .admin-sidebar {
+  .admin-app .admin-sidebar,
+  .admin-app--nav-closed .admin-sidebar {
     position: fixed;
     inset-block: 0;
     inset-inline-start: 0;
@@ -1543,25 +1589,27 @@
     height: 100dvh;
     max-height: 100dvh;
     overflow: hidden;
-    display: flex;
+    display: flex !important;
     flex-direction: column;
     transform: translateX(-110%);
     visibility: hidden;
     pointer-events: none;
     transition: transform 0.2s ease, visibility 0.2s ease;
   }
-  [dir='rtl'] .admin-app .admin-sidebar {
+  [dir='rtl'] .admin-app .admin-sidebar,
+  [dir='rtl'] .admin-app--nav-closed .admin-sidebar {
     transform: translateX(110%);
   }
-  .admin-app .admin-sidebar.is-open {
+  .admin-app .admin-sidebar.is-open,
+  .admin-app--nav-open .admin-sidebar {
     transform: translateX(0) !important;
     visibility: visible;
     pointer-events: auto;
   }
-  /* Hamburger sits on the same edge as the drawer — keep it above sidebar + backdrop. */
-  .admin-app--nav-open .admin-icon-btn--mobile {
-    position: relative;
-    z-index: 50;
+  .admin-app--nav-open .admin-nav-toggle,
+  .admin-app--nav-closed .admin-nav-toggle {
+    inset-inline-start: 12px;
+    z-index: 60;
   }
 }
 
