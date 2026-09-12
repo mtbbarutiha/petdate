@@ -120,11 +120,10 @@ const LOGIN: SiteNavItem = {
 
 /**
  * Guest mobile dock — cart stays in the top-left cluster only (avoid duplicate
- * سبد in header + dock). Desktop guest nav uses the same set.
+ * سبد in header + dock). Games lives on desktop/landing/footer, not this 4-slot bar.
  */
 export const SITE_NAV_GUEST: SiteNavItem[] = [
   SHOP,
-  GAMES,
   { ...PLAYMATE_CHATS, gate: true },
   { ...MY_PETS, gate: true },
   LOGIN,
@@ -132,52 +131,68 @@ export const SITE_NAV_GUEST: SiteNavItem[] = [
 
 /**
  * Logged-in owner set (legacy default). Prefer `siteNavMobileForUser`.
- * Owner: شاپ / بازی‌ها / هم بازی / پت‌های من / کیف پول / پروفایل
+ * Owner dock: شاپ / هم بازی / پت‌های من / کیف پول / پروفایل
+ * Games must not replace کیف پول or گفتگو/هم بازی (#325 regression).
  */
 export const SITE_NAV_AUTH: SiteNavItem[] = [
   SHOP_AUTH,
-  GAMES,
   PLAYMATE_CHATS,
   MY_PETS,
   WALLET,
   PROFILE,
 ];
 
+/** Insert Games after شاپ so it never occupies the chats or wallet slot. */
+function withGamesAfterShop(items: SiteNavItem[]): SiteNavItem[] {
+  if (items.some((item) => item.key === 'games')) return items;
+  const shopIdx = items.findIndex((item) => item.key === 'shop');
+  if (shopIdx >= 0) {
+    return [...items.slice(0, shopIdx + 1), GAMES, ...items.slice(shopIdx + 1)];
+  }
+  return [GAMES, ...items];
+}
+
 /**
  * Desktop header shortcuts — avoid duplicating left-cluster tools.
  * Guest: cart lives in NavUserCluster; Auth: wallet chip + circular avatar cover wallet/profile.
  * my_pets stays mobile-dock only (desktop app nav already links پت‌های من).
+ * Games is a desktop/secondary destination — not a mobile-dock replacement.
  */
-export const SITE_NAV_DESKTOP_GUEST: SiteNavItem[] = SITE_NAV_GUEST.filter(
-  (item) => item.key !== 'my_pets',
+export const SITE_NAV_DESKTOP_GUEST: SiteNavItem[] = withGamesAfterShop(
+  SITE_NAV_GUEST.filter((item) => item.key !== 'my_pets'),
 );
 
-export const SITE_NAV_DESKTOP_AUTH: SiteNavItem[] = SITE_NAV_AUTH.filter(
-  (item) => item.key !== 'wallet' && item.key !== 'profile' && item.key !== 'my_pets',
+export const SITE_NAV_DESKTOP_AUTH: SiteNavItem[] = withGamesAfterShop(
+  SITE_NAV_AUTH.filter(
+    (item) => item.key !== 'wallet' && item.key !== 'profile' && item.key !== 'my_pets',
+  ),
 );
 
 /** Mobile dock items for the active primary role. */
 export function siteNavMobileForRole(role?: UserRole | null): SiteNavItem[] {
   switch (role) {
     case 'vet':
-      // دامپزشک: بدون همبازی — پنل پزشک + گفتگو
-      return [SHOP_AUTH, GAMES, VET_PANEL, CHATS, PROFILE];
+      // دامپزشک: بدون همبازی — پنل پزشک + گفتگو + کیف پول
+      return [SHOP_AUTH, VET_PANEL, CHATS, WALLET, PROFILE];
     case 'trainer':
-      return [SHOP_AUTH, GAMES, TRAINER_PANEL, CHATS, PROFILE];
+      return [SHOP_AUTH, TRAINER_PANEL, CHATS, WALLET, PROFILE];
     case 'pet_owner':
-      // صاحب پت: بازی‌ها + هم بازی + پت‌های من
-      return [SHOP_AUTH, GAMES, PLAYMATE_CHATS, MY_PETS, PROFILE];
+      // صاحب پت: هم بازی + پت‌های من کنار هم (= /chats و /my-pets)، کیف پول در اسلات چهارم
+      return [SHOP_AUTH, PLAYMATE_CHATS, MY_PETS, WALLET, PROFILE];
     case 'no_pet':
-      return [SHOP_AUTH, GAMES, CHATS, MY_PETS, PROFILE];
+      // بدون همبازی — گفتگو + پت‌های من + کیف پول
+      return [SHOP_AUTH, CHATS, MY_PETS, WALLET, PROFILE];
     default:
-      return [SHOP_AUTH, GAMES, CHATS, MY_PETS, PROFILE];
+      return [SHOP_AUTH, CHATS, MY_PETS, WALLET, PROFILE];
   }
 }
 
 /** Desktop header items (no wallet/profile/my_pets — cluster + chrome cover those). */
 export function siteNavDesktopForRole(role?: UserRole | null): SiteNavItem[] {
-  return siteNavMobileForRole(role).filter(
-    (item) => item.key !== 'wallet' && item.key !== 'profile' && item.key !== 'my_pets',
+  return withGamesAfterShop(
+    siteNavMobileForRole(role).filter(
+      (item) => item.key !== 'wallet' && item.key !== 'profile' && item.key !== 'my_pets',
+    ),
   );
 }
 
