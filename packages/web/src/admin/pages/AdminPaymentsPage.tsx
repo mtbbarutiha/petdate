@@ -15,7 +15,6 @@ import {
   getAdminPassword,
   getAdminUsername,
 } from '../api';
-import { resolvePublicMediaUrl } from '../../lib/api';
 import { formatAdminFaDateTime } from '../JalaliDateSelect';
 import { AdminIdChip } from '../AdminIds';
 import { AdminEntityCell, AdminThumb } from '../AdminThumb';
@@ -102,52 +101,102 @@ function canDecide(o: PaymentOrder): boolean {
   return o.method === 'card' && o.status === 'pending';
 }
 
-function AdminPaymentReceiptImg({ order }: { order: PaymentOrder }) {
-  const [src, setSrc] = useState('');
+type ReceiptLoadState =
+  | { status: 'loading' }
+  | { status: 'image'; url: string }
+  | { status: 'pdf'; url: string }
+  | { status: 'error'; message: string };
+
+/**
+ * Load deposit receipt via authenticated admin endpoint (Bearer/header auth).
+ * Same blob-URL pattern as wallet #270 — works for web disk + bot Telegram receipts.
+ */
+function AdminPaymentReceiptAttachment({ order }: { order: PaymentOrder }) {
+  const [state, setState] = useState<ReceiptLoadState>({ status: 'loading' });
+
   useEffect(() => {
-    let revoked = '';
+    let objectUrl = '';
     let cancelled = false;
     const raw = String(order.receiptUrl || order.receiptFileId || '').trim();
-    if (!raw) return;
-    if (raw.startsWith('/api/payments/receipts/')) {
-      void (async () => {
-        try {
-          const res = await fetch(`${API_BASE}/api/admin/payments/${order.id}/receipt`, {
-            headers: receiptHeaders(),
-          });
-          if (!res.ok) return;
-          const blob = await res.blob();
-          if (cancelled) return;
-          revoked = URL.createObjectURL(blob);
-          setSrc(revoked);
-        } catch {
-          /* ignore */
-        }
-      })();
-    } else {
-      setSrc(resolvePublicMediaUrl(raw));
+    if (!raw) {
+      setState({ status: 'error', message: 'رسیدی ثبت نشده' });
+      return;
     }
+
+    void (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/admin/payments/${order.id}/receipt`, {
+          headers: receiptHeaders(),
+        });
+        if (!res.ok) {
+          let message = `خطا در دریافت رسید (${res.status})`;
+          try {
+            const j = (await res.json()) as { error?: string };
+            if (j.error) message = j.error;
+          } catch {
+            /* ignore */
+          }
+          if (!cancelled) setState({ status: 'error', message });
+          return;
+        }
+        const blob = await res.blob();
+        if (cancelled) return;
+        objectUrl = URL.createObjectURL(blob);
+        if (cancelled) {
+          URL.revokeObjectURL(objectUrl);
+          objectUrl = '';
+          return;
+        }
+        const mime = (blob.type || res.headers.get('content-type') || '').toLowerCase();
+        if (mime.includes('pdf') || /\.pdf(\?|$)/i.test(raw)) {
+          setState({ status: 'pdf', url: objectUrl });
+        } else {
+          setState({ status: 'image', url: objectUrl });
+        }
+      } catch {
+        if (!cancelled) setState({ status: 'error', message: 'دریافت رسید ناموفق بود' });
+      }
+    })();
+
     return () => {
       cancelled = true;
-      if (revoked) URL.revokeObjectURL(revoked);
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
   }, [order.id, order.receiptFileId, order.receiptUrl]);
 
-  if (!src) return null;
+  if (state.status === 'loading') {
+    return <p className="admin-payment-receipt-status">در حال بارگذاری رسید…</p>;
+  }
+  if (state.status === 'error') {
+    return <p className="admin-payment-receipt-status admin-payment-receipt-status--error">{state.message}</p>;
+  }
+  if (state.status === 'pdf') {
+    return (
+      <div className="admin-payment-receipt">
+        <a
+          className="admin-btn ghost"
+          href={state.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          download={`${paymentPublicIdOf(order)}.pdf`}
+        >
+          دانلود رسید PDF
+        </a>
+        <a className="admin-payment-receipt-link" href={state.url} target="_blank" rel="noopener noreferrer">
+          باز کردن در تب جدید
+        </a>
+      </div>
+    );
+  }
   return (
-    <a href={src} target="_blank" rel="noopener noreferrer">
-      <img
-        src={src}
-        alt="رسید"
-        style={{
-          width: 160,
-          maxHeight: 200,
-          objectFit: 'cover',
-          borderRadius: 8,
-          border: '1px solid var(--admin-border, #e5e7eb)',
-        }}
-      />
-    </a>
+    <div className="admin-payment-receipt">
+      <a href={state.url} target="_blank" rel="noopener noreferrer" className="admin-payment-receipt-preview">
+        <img src={state.url} alt="رسید پرداخت ارسالی کاربر" />
+      </a>
+      <a className="admin-payment-receipt-link" href={state.url} target="_blank" rel="noopener noreferrer">
+        بزرگ‌نمایی / تب جدید
+      </a>
+    </div>
   );
 }
 
@@ -314,7 +363,13 @@ export function AdminPaymentsPage() {
                           </span>
                         ) : null}
                         {hasReceipt ? (
-                          <span className="admin-muted">رسید دارد</span>
+                          <button
+                            type="button"
+                            className="admin-btn ghost admin-payment-receipt-chip"
+                            onClick={() => setOpenId(open ? null : o.id)}
+                          >
+                            {open ? 'بستن رسید' : 'مشاهده رسید'}
+                          </button>
                         ) : null}
                       </div>
                     </td>
@@ -367,29 +422,31 @@ export function AdminPaymentsPage() {
                     </td>
                   </tr>
                   {open ? (
-                    <tr>
+                    <tr className="admin-payment-detail-row">
                       <td colSpan={8}>
-                        <div
-                          className="admin-muted"
-                          style={{
-                            whiteSpace: 'pre-wrap',
-                            padding: '0.5rem 0',
-                            display: 'grid',
-                            gap: 12,
-                            gridTemplateColumns: hasReceipt ? '160px 1fr' : '1fr',
-                          }}
-                        >
-                          {hasReceipt ? <AdminPaymentReceiptImg order={o} /> : null}
-                          <div>
-                            {o.telegramPaymentChargeId
-                              ? `charge: ${o.telegramPaymentChargeId}\n`
-                              : ''}
-                            {o.transferRef ? `پیگیری واریز: ${o.transferRef}\n` : ''}
-                            {o.reviewedAt
-                              ? `reviewed: ${formatAdminFaDateTime(o.reviewedAt)}\n`
-                              : ''}
-                            {o.adminNote || 'بدون یادداشت'}
-                          </div>
+                        <div className="admin-payment-detail">
+                          <section className="admin-payment-detail-meta">
+                            <h3>جزئیات واریز</h3>
+                            <div className="admin-payment-detail-meta-body">
+                              {o.telegramPaymentChargeId
+                                ? `charge: ${o.telegramPaymentChargeId}\n`
+                                : ''}
+                              {o.transferRef ? `پیگیری واریز: ${o.transferRef}\n` : ''}
+                              {o.reviewedAt
+                                ? `reviewed: ${formatAdminFaDateTime(o.reviewedAt)}\n`
+                                : ''}
+                              {paymentSourceLabel(o) ? `منبع رسید: ${paymentSourceLabel(o)}\n` : ''}
+                              {o.adminNote || 'بدون یادداشت'}
+                            </div>
+                          </section>
+                          <section className="admin-payment-detail-attach">
+                            <h3>پیوست — رسید ارسالی کاربر</h3>
+                            {hasReceipt ? (
+                              <AdminPaymentReceiptAttachment order={o} />
+                            ) : (
+                              <p className="admin-payment-receipt-status">رسیدی آپلود نشده است.</p>
+                            )}
+                          </section>
                         </div>
                       </td>
                     </tr>

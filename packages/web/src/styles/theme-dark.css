@@ -2824,3 +2824,31 @@ html[data-theme='dark'] .owner-consult-panel__hint--warn {
 html[data-theme='dark'] .pepito-profile-owner-advice {
   border-top-color: var(--pd-border);
 }
+
+/* Admin finance deposit receipt — readable in dark mode */
+html[data-theme='dark'] .admin-app .admin-payment-detail-row > td {
+  background: color-mix(in srgb, var(--admin-accent-soft) 70%, var(--admin-surface));
+}
+html[data-theme='dark'] .admin-app .admin-payment-detail h3 {
+  color: var(--admin-ink);
+}
+html[data-theme='dark'] .admin-app .admin-payment-detail-meta-body {
+  color: var(--admin-muted);
+}
+html[data-theme='dark'] .admin-app .admin-payment-receipt-preview {
+  border-color: var(--admin-border);
+  background: var(--admin-surface);
+}
+html[data-theme='dark'] .admin-app .admin-payment-receipt-preview img {
+  background: #12151f;
+}
+html[data-theme='dark'] .admin-app .admin-payment-receipt-link {
+  color: var(--admin-accent-hover);
+}
+html[data-theme='dark'] .admin-app .admin-payment-receipt-status {
+  color: var(--admin-muted);
+}
+html[data-theme='dark'] .admin-app .admin-payment-receipt-chip {
+  color: var(--admin-ink);
+  border-color: var(--admin-border);
+}
