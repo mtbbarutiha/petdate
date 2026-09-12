@@ -30,9 +30,9 @@ type NavDef = { to: string; icon: LucideIcon; labelKey: string };
 const OWNER_NAV: NavDef[] = [
   { to: '/', icon: Home, labelKey: 'common.home' },
   { to: '/home', icon: LayoutDashboard, labelKey: 'nav.panel' },
-  { to: '/games', icon: Gamepad2, labelKey: 'nav.games' },
   { to: '/chats', icon: HeartHandshake, labelKey: 'nav.playmate' },
   { to: '/my-pets', icon: PawPrint, labelKey: 'nav.my_pets' },
+  { to: '/games', icon: Gamepad2, labelKey: 'nav.games' },
   { to: '/vet-consult', icon: Stethoscope, labelKey: 'nav.quickConsult' },
   { to: '/trainer-consult', icon: GraduationCap, labelKey: 'nav.findTrainer' },
   { to: '/shop', icon: ShoppingBag, labelKey: 'nav.petShop' },
@@ -42,8 +42,8 @@ const OWNER_NAV: NavDef[] = [
 const VET_NAV: NavDef[] = [
   { to: '/', icon: Home, labelKey: 'common.home' },
   { to: '/vet-consult', icon: Stethoscope, labelKey: 'nav.vet_panel' },
-  { to: '/games', icon: Gamepad2, labelKey: 'nav.games' },
   { to: '/chats', icon: MessagesSquare, labelKey: 'nav.conversations' },
+  { to: '/games', icon: Gamepad2, labelKey: 'nav.games' },
   { to: '/profile', icon: UserRound, labelKey: 'nav.profile' },
   { to: '/support', icon: LifeBuoy, labelKey: 'nav.support' },
   { to: '/shop', icon: ShoppingBag, labelKey: 'nav.petShop' },
@@ -52,8 +52,8 @@ const VET_NAV: NavDef[] = [
 const TRAINER_NAV: NavDef[] = [
   { to: '/', icon: Home, labelKey: 'common.home' },
   { to: '/trainer-consult', icon: GraduationCap, labelKey: 'nav.trainer_panel' },
-  { to: '/games', icon: Gamepad2, labelKey: 'nav.games' },
   { to: '/chats', icon: MessagesSquare, labelKey: 'nav.conversations' },
+  { to: '/games', icon: Gamepad2, labelKey: 'nav.games' },
   { to: '/profile', icon: UserRound, labelKey: 'nav.profile' },
   { to: '/support', icon: LifeBuoy, labelKey: 'nav.support' },
   { to: '/shop', icon: ShoppingBag, labelKey: 'nav.petShop' },
@@ -63,8 +63,8 @@ const DEFAULT_NAV: NavDef[] = [
   { to: '/', icon: Home, labelKey: 'common.home' },
   { to: '/support', icon: LifeBuoy, labelKey: 'nav.support' },
   { to: '/home', icon: LayoutDashboard, labelKey: 'nav.panel' },
-  { to: '/games', icon: Gamepad2, labelKey: 'nav.games' },
   { to: '/chats', icon: MessagesSquare, labelKey: 'nav.conversations' },
+  { to: '/games', icon: Gamepad2, labelKey: 'nav.games' },
   { to: '/profile', icon: UserRound, labelKey: 'nav.profile' },
   { to: '/shop', icon: ShoppingBag, labelKey: 'nav.petShop' },
 ];

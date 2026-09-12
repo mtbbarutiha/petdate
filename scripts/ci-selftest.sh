@@ -114,6 +114,9 @@ npx tsx "$ROOT/packages/web/src/lib/sitemap.selftest.ts"
 echo "==> selftest: web public marketing routes (vet-consult / adoption / magazine)"
 npx tsx "$ROOT/packages/web/src/lib/publicRoutes.selftest.ts"
 
+echo "==> selftest: web mobile dock keeps wallet + chats (Games not a replacement)"
+npx tsx "$ROOT/packages/web/src/lib/siteNav.selftest.ts"
+
 echo "==> selftest: web SW cache generation (guest vet landing bust)"
 npx tsx "$ROOT/packages/web/src/lib/swCache.selftest.ts"
 
