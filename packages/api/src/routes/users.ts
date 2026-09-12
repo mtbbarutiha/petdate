@@ -11,7 +11,7 @@ import {
   userHasRole,
   validateIranCard,
 } from '@petdate/shared';
-import { dbService } from '../db';
+import { dbService, type UserProfilePatch } from '../db';
 import { getReferralStats, parseReferredByInput, tryGrantReferralOnSignup } from '../services/referral-grant';
 import { rejectIfFlagOff } from '../runtime-settings';
 import { sendPhoneOtp, verifyPhoneOtp } from '../services/phone-otp';
@@ -91,18 +91,16 @@ async function resolveAvatarUrlPatch(
   return raw;
 }
 
-type UserProfileWritePatch = Parameters<(typeof dbService)['updateUserProfile']>[1];
-
 async function commitProfileWrite(
   existing: User,
   rawAvatar: unknown,
-  patch: UserProfileWritePatch
+  patch: UserProfilePatch
 ) {
   const rawIn = rawAvatar != null ? String(rawAvatar).trim() : '';
   const existingRaw = String(existing.avatarUrl ?? '').trim();
   const sameAvatarRef = Boolean(rawIn && rawIn === existingRaw);
   const avatarUrl = await resolveAvatarUrlPatch(existing.id, rawAvatar);
-  const next: UserProfileWritePatch = { ...patch, avatarUrl };
+  const next: UserProfilePatch = { ...patch, avatarUrl };
   if (sameAvatarRef) {
     const user = dbService.updateUserProfile(existing.id, {
       ...next,

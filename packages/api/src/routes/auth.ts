@@ -13,7 +13,7 @@ import {
   userHasRole,
   validateIranCard,
 } from '@petdate/shared';
-import { dbService } from '../db';
+import { dbService, type UserProfilePatch } from '../db';
 import { getRuntimeFlags, rejectIfFlagOff } from '../runtime-settings';
 import {
   completeTelegramAttach,
@@ -693,7 +693,7 @@ authRouter.patch('/profile', (req, res) => {
   }
 
   const body = req.body ?? {};
-  const patch: Parameters<typeof dbService.updateUserProfile>[1] = {};
+  const patch: UserProfilePatch = {};
   if (body.name != null) patch.name = String(body.name).trim();
   if (body.age != null && Number.isFinite(Number(body.age))) patch.age = Number(body.age);
   if (body.gender === 'male' || body.gender === 'female') {

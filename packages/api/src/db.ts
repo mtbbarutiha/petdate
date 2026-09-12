@@ -2777,6 +2777,27 @@ function mapCoinSellRequestSummary(row: Record<string, unknown>): CoinSellReques
   };
 }
 
+export type UserProfilePatch = Partial<{
+  name: string;
+  username: string;
+  age: number;
+  gender: UserGender;
+  country: string;
+  city: string;
+  province: string;
+  phone: string;
+  email: string;
+  bio: string;
+  interests: string[];
+  avatarUrl: string;
+  avatarCustom: boolean;
+  avatarModerationStatus: PhotoModerationStatus;
+  coins: number;
+  onboarding: OnboardingStatus;
+  isActive: boolean;
+  silentChatRequests: boolean;
+}>;
+
 export const dbService = {
   findOrCreateUser(data: {
     telegramId?: string;
@@ -2937,26 +2958,7 @@ export const dbService = {
 
   updateUserProfile(
     userId: number,
-    patch: Partial<{
-      name: string;
-      username: string;
-      age: number;
-      gender: UserGender;
-      country: string;
-      city: string;
-      province: string;
-      phone: string;
-      email: string;
-      bio: string;
-      interests: string[];
-      avatarUrl: string;
-      avatarCustom: boolean;
-      avatarModerationStatus: PhotoModerationStatus;
-      coins: number;
-      onboarding: OnboardingStatus;
-      isActive: boolean;
-      silentChatRequests: boolean;
-    }>
+    patch: UserProfilePatch
   ): User | null {
     const existing = this.getUserById(userId);
     if (!existing) return null;
@@ -3032,25 +3034,7 @@ export const dbService = {
 
   updateUserProfileByTelegramId(
     telegramId: string,
-    patch: Partial<{
-      name: string;
-      username: string;
-      age: number;
-      gender: UserGender;
-      country: string;
-      city: string;
-      province: string;
-      phone: string;
-      bio: string;
-      interests: string[];
-      avatarUrl: string;
-      avatarCustom: boolean;
-      avatarModerationStatus: PhotoModerationStatus;
-      coins: number;
-      onboarding: OnboardingStatus;
-      isActive: boolean;
-      silentChatRequests: boolean;
-    }>
+    patch: UserProfilePatch
   ): User | null {
     const user = this.getUserByTelegramId(telegramId);
     if (!user) return null;
@@ -3077,7 +3061,7 @@ export const dbService = {
    */
   commitUserProfileChange(
     userId: number,
-    patch: Parameters<(typeof dbService)['updateUserProfile']>[1]
+    patch: UserProfilePatch
   ):
     | { ok: true; user: User; charged: number; verificationReset: boolean }
     | {
