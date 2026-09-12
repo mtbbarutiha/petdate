@@ -30,7 +30,7 @@ assert.doesNotMatch(
   'verification merged into وضعیت column'
 );
 assert.match(page, /admin-row-actions--icon/, 'row actions are icon-only');
-assert.match(page, /title="حذف کاربر"/, 'delete keeps accessible title for soft-delete guard');
+assert.match(page, /title=\{tr\(["']حذف کاربر["']\)\}/, 'delete keeps accessible title for soft-delete guard');
 assert.match(page, /compact/, 'wallet cell requested in compact mode');
 assert.match(page, /onOpenCredit/, 'credit opens from wallet click (no separate اعتبار column/btn)');
 

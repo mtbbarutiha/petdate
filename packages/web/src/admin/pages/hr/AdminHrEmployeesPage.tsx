@@ -8,6 +8,7 @@ import { formatAdminFaDate } from '../../JalaliDateSelect';
 import { adminCan } from '../../auth';
 import { AdminEntityCell, AdminThumb } from '../../AdminThumb';
 import { EmployeeCreateModal } from './EmployeeCreateModal';
+import { tr } from '../../../i18n';
 
 function formatHrDate(raw?: string | null): string {
   return formatAdminFaDate(raw);
@@ -118,7 +119,7 @@ export function AdminHrEmployeesPage() {
   const removeEmployee = async (emp: HrEmployee) => {
     if (!canWrite) return;
     const name = `${emp.firstName} ${emp.lastName}`.trim() || emp.personnelCode;
-    if (!confirm(`حذف پرونده «${name}»؟ این کار برگشت‌پذیر نیست.`)) return;
+    if (!confirm(`${tr('حذف پرونده «')}${name}${tr('»؟ این کار برگشت‌پذیر نیست.')}`)) return;
     setBusyId(emp.id);
     try {
       await adminFetch(`/api/admin/hr/employees/${emp.id}`, { method: 'DELETE' });
@@ -134,10 +135,10 @@ export function AdminHrEmployeesPage() {
     <div className="admin-page admin-hr-personnel">
       <header className="admin-header">
         <div>
-          <h1>اطلاعات پرسنلی</h1>
+          <h1>{tr('اطلاعات پرسنلی')}</h1>
           <p>
-            پرونده کامل هر همکار — هویتی، شغلی، قرارداد، جبران خدمت، مسیر شغلی، مزایا، تیکت‌های منابع انسانی،
-            دسترسی، فعالیت
+            {tr(`پرونده کامل هر همکار — هویتی، شغلی، قرارداد، جبران خدمت، مسیر شغلی، مزایا، تیکت‌های منابع انسانی،
+            دسترسی، فعالیت`)}
           </p>
         </div>
         {canWrite ? (
@@ -146,10 +147,10 @@ export function AdminHrEmployeesPage() {
             className="admin-btn admin-btn--primary"
             onClick={() => setCreateOpen(true)}
           >
-            <Plus size={16} /> افزودن همکار
+            <Plus size={16} /> {tr('افزودن همکار')}
           </button>
         ) : (
-          <span className="admin-topbar-chip">فقط خواندن</span>
+          <span className="admin-topbar-chip">{tr('فقط خواندن')}</span>
         )}
       </header>
 
@@ -158,8 +159,8 @@ export function AdminHrEmployeesPage() {
       <section className="admin-card admin-hr-personnel-card">
         <div className="admin-card-head admin-hr-personnel-card-head">
           <div>
-            <h2>لیست اطلاعات پرسنلی</h2>
-            <p className="admin-muted admin-hr-personnel-sum">مجموع {formatNumFa(total)} نفر</p>
+            <h2>{tr('لیست اطلاعات پرسنلی')}</h2>
+            <p className="admin-muted admin-hr-personnel-sum">{tr('مجموع')} {formatNumFa(total)} {tr('نفر')}</p>
           </div>
         </div>
 
@@ -167,19 +168,19 @@ export function AdminHrEmployeesPage() {
           <div className="admin-search">
             <Search size={16} />
             <input
-              placeholder="جستجوی نام یا کد پرسنلی..."
+              placeholder={tr("جستجوی نام یا کد پرسنلی...")}
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              aria-label="جستجوی نام یا کد پرسنلی"
+              aria-label={tr("جستجوی نام یا کد پرسنلی")}
             />
           </div>
           <select
             className="admin-select"
             value={accessStatus}
             onChange={(e) => setAccessStatus(e.target.value)}
-            aria-label="وضعیت دسترسی"
+            aria-label={tr("وضعیت دسترسی")}
           >
-            <option value="">وضعیت دسترسی: همه</option>
+            <option value="">{tr('وضعیت دسترسی: همه')}</option>
             {HR_ACCESS_STATUSES.map((s) => (
               <option key={s} value={s}>
                 {s}
@@ -190,9 +191,9 @@ export function AdminHrEmployeesPage() {
             className="admin-select"
             value={department}
             onChange={(e) => setDepartment(e.target.value)}
-            aria-label="بیزنس لاین"
+            aria-label={tr("بیزنس لاین")}
           >
-            <option value="">بیزنس لاین: همه</option>
+            <option value="">{tr('بیزنس لاین: همه')}</option>
             {departmentOptions.map((d) => (
               <option key={d} value={d}>
                 {d}
@@ -203,9 +204,9 @@ export function AdminHrEmployeesPage() {
             className="admin-select"
             value={jobTitle}
             onChange={(e) => setJobTitle(e.target.value)}
-            aria-label="شغل"
+            aria-label={tr("شغل")}
           >
-            <option value="">شغل: همه</option>
+            <option value="">{tr('شغل: همه')}</option>
             {jobOptions.map((j) => (
               <option key={j} value={j}>
                 {j}
@@ -216,9 +217,9 @@ export function AdminHrEmployeesPage() {
             className="admin-select"
             value={contractStatus}
             onChange={(e) => setContractStatus(e.target.value)}
-            aria-label="وضعیت همکاری"
+            aria-label={tr("وضعیت همکاری")}
           >
-            <option value="">وضعیت همکاری: همه</option>
+            <option value="">{tr('وضعیت همکاری: همه')}</option>
             {HR_CONTRACT_STATUSES.map((s) => (
               <option key={s} value={s}>
                 {s}
@@ -231,7 +232,7 @@ export function AdminHrEmployeesPage() {
               className="admin-btn admin-btn--ghost admin-hr-personnel-clear"
               onClick={clearFilters}
             >
-              <X size={14} /> پاک کردن فیلترها
+              <X size={14} /> {tr('پاک کردن فیلترها')}
             </button>
           ) : null}
         </div>
@@ -240,23 +241,23 @@ export function AdminHrEmployeesPage() {
           <table className="admin-table admin-table--dense admin-hr-personnel-table">
             <thead>
               <tr>
-                <th>وضعیت دسترسی</th>
-                <th>کد پرسنلی</th>
-                <th>نام و نام خانوادگی</th>
-                <th>بیزنس لاین</th>
-                <th>شغل</th>
-                <th>شروع همکاری</th>
-                <th>پایان قرارداد</th>
-                <th>وضعیت همکاری</th>
-                <th>تاریخ تولد</th>
-                <th>عملیات</th>
+                <th>{tr('وضعیت دسترسی')}</th>
+                <th>{tr('کد پرسنلی')}</th>
+                <th>{tr('نام و نام خانوادگی')}</th>
+                <th>{tr('بیزنس لاین')}</th>
+                <th>{tr('شغل')}</th>
+                <th>{tr('شروع همکاری')}</th>
+                <th>{tr('پایان قرارداد')}</th>
+                <th>{tr('وضعیت همکاری')}</th>
+                <th>{tr('تاریخ تولد')}</th>
+                <th>{tr('عملیات')}</th>
               </tr>
             </thead>
             <tbody>
               {employees.length === 0 ? (
                 <tr>
                   <td colSpan={10} className="admin-empty">
-                    هنوز همکاری ثبت نشده
+                    {tr('هنوز همکاری ثبت نشده')}
                   </td>
                 </tr>
               ) : (
@@ -312,7 +313,7 @@ export function AdminHrEmployeesPage() {
                             className="admin-btn admin-btn--ghost"
                             onClick={() => navigate(`/admin/hr/employees/${e.id}`)}
                           >
-                            ویرایش
+                            {tr('ویرایش')}
                           </button>
                           {canWrite ? (
                             <button
@@ -321,7 +322,7 @@ export function AdminHrEmployeesPage() {
                               disabled={busyId === e.id}
                               onClick={() => void removeEmployee(e)}
                             >
-                              حذف
+                              {tr('حذف')}
                             </button>
                           ) : null}
                         </div>

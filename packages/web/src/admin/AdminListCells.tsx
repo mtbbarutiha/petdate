@@ -6,6 +6,7 @@ import {
   type WalletCurrency,
 } from '@petdate/shared';
 import { formatNumFa } from './api';
+import { tr } from '../i18n';
 
 /** Compact labeled wallet balances — avoids cramped C:/T:/★/₮ vertical soup. */
 export function AdminWalletCell({
@@ -26,10 +27,10 @@ export function AdminWalletCell({
   onOpenCredit?: () => void;
 }) {
   const rows: { key: WalletCurrency; value: number; short: string }[] = [
-    { key: 'coins', value: Number(coins) || 0, short: 'سکه' },
-    { key: 'toman', value: Number(toman) || 0, short: 'تومان' },
-    { key: 'stars', value: Number(stars) || 0, short: 'ستاره' },
-    { key: 'ton', value: Number(ton) || 0, short: 'تون' },
+    { key: 'coins', value: Number(coins) || 0, short: tr('سکه') },
+    { key: 'toman', value: Number(toman) || 0, short: tr('تومان') },
+    { key: 'stars', value: Number(stars) || 0, short: tr('ستاره') },
+    { key: 'ton', value: Number(ton) || 0, short: tr('تون') },
   ];
   const className = [
     'admin-wallet-grid',
@@ -42,9 +43,9 @@ export function AdminWalletCell({
     <div
       key={r.key}
       className={`admin-wallet-chip${r.value ? '' : ' admin-wallet-chip--zero'}`}
-      title={WALLET_CURRENCY_LABELS_FA[r.key]}
+      title={tr(WALLET_CURRENCY_LABELS_FA[r.key])}
     >
-      <span className="admin-wallet-chip-label">{r.short}</span>
+      <span className="admin-wallet-chip-label">{tr(r.short)}</span>
       <span className="admin-wallet-chip-value admin-mono" dir="ltr">
         {formatNumFa(r.value)}
       </span>
@@ -57,7 +58,7 @@ export function AdminWalletCell({
         type="button"
         className={className}
         dir="rtl"
-        title="موجودی کیف پول — برای شارژ کلیک کنید"
+        title={tr("موجودی کیف پول — برای شارژ کلیک کنید")}
         onClick={onOpenCredit}
       >
         {chips}
@@ -66,7 +67,7 @@ export function AdminWalletCell({
   }
 
   return (
-    <div className={className} dir="rtl" title="موجودی کیف پول">
+    <div className={className} dir="rtl" title={tr("موجودی کیف پول")}>
       {chips}
     </div>
   );
@@ -75,7 +76,7 @@ export function AdminWalletCell({
 export function adminVerifyLabel(status?: VerificationStatus | string | null): string {
   if (!status) return '—';
   if (status in VERIFICATION_STATUS_LABELS) {
-    return VERIFICATION_STATUS_LABELS[status as VerificationStatus];
+    return tr(VERIFICATION_STATUS_LABELS[status as VerificationStatus]);
   }
   return String(status);
 }
@@ -90,8 +91,8 @@ export function adminVerifyClass(status?: VerificationStatus | string | null): s
 /** Gender · age one-liner for user rows. */
 export function adminUserDemographics(u: Pick<User, 'gender' | 'age'>): string | null {
   const parts = [
-    u.gender === 'male' ? 'مرد' : u.gender === 'female' ? 'زن' : null,
-    u.age != null ? `${u.age}س` : null,
+    u.gender === 'male' ? tr('مرد') : u.gender === 'female' ? tr('زن') : null,
+    u.age != null ? tr('{n}س', { n: u.age }) : null,
   ].filter(Boolean);
   return parts.length ? parts.join(' · ') : null;
 }
@@ -133,7 +134,7 @@ export function AdminContactCell({
           {p}
         </span>
       ) : (
-        <span className="admin-muted">بدون موبایل</span>
+        <span className="admin-muted">{tr('بدون موبایل')}</span>
       )}
       {e ? (
         <span className="admin-muted admin-ellipsis" dir="ltr" title={e}>

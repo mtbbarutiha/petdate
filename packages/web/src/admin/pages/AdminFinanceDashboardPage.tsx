@@ -16,6 +16,7 @@ import {
   type WidgetRenderContext,
 } from '../widgets';
 import { AdminDashPage, AdminKpiStrip, type AdminKpiItem } from '../dash';
+import { tr } from '../../i18n';
 
 type ChartPoint = { label: string; value: number };
 type ChartSlice = { label: string; value: number; currency?: string };
@@ -71,14 +72,14 @@ export function AdminFinanceDashboardPage() {
   const k = data?.kpis;
   const charts = data?.charts;
   const kpiItems: AdminKpiItem[] = k ? [
-    { key: 'rev', label: 'درآمد', value: formatTomanFa(k.revenue), icon: TrendingUp, tone: 'mint', wide: true },
-    { key: 'exp', label: 'هزینه', value: formatTomanFa(k.expense), icon: ArrowDownRight, tone: 'orange' },
-    { key: 'net', label: 'سود خالص', value: formatTomanFa(k.netProfit), icon: ArrowUpRight, tone: 'violet' },
-    { key: 'orders', label: 'سفارش‌ها', value: formatNumFa(k.orders), icon: ShoppingBag, tone: 'sky' },
-    { key: 'aov', label: 'میانگین سفارش (AOV)', value: formatTomanFa(k.aov), icon: Wallet, tone: 'slate' },
+    { key: 'rev', label: tr('درآمد'), value: formatTomanFa(k.revenue), icon: TrendingUp, tone: 'mint', wide: true },
+    { key: 'exp', label: tr('هزینه'), value: formatTomanFa(k.expense), icon: ArrowDownRight, tone: 'orange' },
+    { key: 'net', label: tr('سود خالص'), value: formatTomanFa(k.netProfit), icon: ArrowUpRight, tone: 'violet' },
+    { key: 'orders', label: tr('سفارش‌ها'), value: formatNumFa(k.orders), icon: ShoppingBag, tone: 'sky' },
+    { key: 'aov', label: tr('میانگین سفارش (AOV)'), value: formatTomanFa(k.aov), icon: Wallet, tone: 'slate' },
     {
       key: 'growth',
-      label: 'نرخ رشد',
+      label: tr('نرخ رشد'),
       value: `${formatNumFa(k.growthRate)}٪`,
       icon: LineChart,
       tone: k.growthRate >= 0 ? 'mint' : 'orange',
@@ -89,9 +90,9 @@ export function AdminFinanceDashboardPage() {
     ? charts.pnlCompare
     : k
       ? [
-          { label: 'درآمد', value: k.revenue },
-          { label: 'هزینه', value: k.expense },
-          { label: 'سود', value: Math.max(0, k.netProfit) },
+          { label: tr('درآمد'), value: k.revenue },
+          { label: tr('هزینه'), value: k.expense },
+          { label: tr('سود'), value: Math.max(0, k.netProfit) },
         ]
       : [];
 
@@ -111,7 +112,7 @@ export function AdminFinanceDashboardPage() {
   };
 
   const renderFinanceWidget = (id: string, ctx: WidgetRenderContext) => {
-    if (loading && !charts && !k) return <p className="admin-dash-chart-empty">در حال بارگذاری نمودار…</p>;
+    if (loading && !charts && !k) return <p className="admin-dash-chart-empty">{tr('در حال بارگذاری نمودار…')}</p>;
     switch (id) {
       case 'salesTrend':
         return salesTrend.length ? (
@@ -154,7 +155,7 @@ export function AdminFinanceDashboardPage() {
 
   return (
     <AdminDashPage
-      title="داشبورد مالی"
+      title={tr("داشبورد مالی")}
       subtitle="آنالیتیکس پلتفرم · Finance OS (حساب‌ها، تراکنش‌ها، تخصیص هزینه)"
       onRefresh={() => void load()}
       error={error}
@@ -162,10 +163,10 @@ export function AdminFinanceDashboardPage() {
         <>
           <PeriodFilter value={period} onChange={setPeriod} />
           <button type="button" className="admin-btn admin-btn--ghost" onClick={() => exportCsv('pnl')}>
-            <Download size={16} /> خروجی P&L
+            <Download size={16} /> {tr('خروجی P&L')}
           </button>
           <button type="button" className="admin-btn admin-btn--ghost" onClick={() => exportCsv('sales')}>
-            <Download size={16} /> خروجی فروش
+            <Download size={16} /> {tr('خروجی فروش')}
           </button>
         </>
       }
@@ -173,61 +174,61 @@ export function AdminFinanceDashboardPage() {
       {kpiItems.length ? (
         <AdminKpiStrip items={kpiItems} ariaLabel="شاخص‌های مالی" />
       ) : loading ? (
-        <p className="admin-muted" style={{ padding: 8 }}>در حال بارگذاری شاخص‌ها…</p>
+        <p className="admin-muted" style={{ padding: 8 }}>{tr('در حال بارگذاری شاخص‌ها…')}</p>
       ) : null}
 
       <WidgetDashboard
         dashboardId="finance"
         catalog={FINANCE_WIDGET_CATALOG}
-        title="نمودارهای اصلی · ویجت‌ها"
+        title={tr("نمودارهای اصلی · ویجت‌ها")}
         renderWidget={renderFinanceWidget}
       />
 
       {data ? (
         <section className="admin-card" style={{ marginTop: 16, padding: 16 }}>
           <div className="admin-card-head">
-            <h2>جزئیات درآمد / هزینه</h2>
-            <span className="admin-muted">حاشیه {formatNumFa(data.kpis.marginPct)}٪</span>
+            <h2>{tr('جزئیات درآمد / هزینه')}</h2>
+            <span className="admin-muted">{tr('حاشیه')} {formatNumFa(data.kpis.marginPct)}{tr('٪')}</span>
           </div>
           <ul className="admin-kv">
-            <li><span>فروشگاه</span><strong>{formatTomanFa(data.breakdown.shopRevenue)}</strong></li>
-            <li><span>شارژ کیف پول</span><strong>{formatTomanFa(data.breakdown.paymentTopups)}</strong></li>
-            <li><span>مشاوره دامپزشک</span><strong>{formatTomanFa(data.breakdown.vetFees)}</strong></li>
-            <li><span>همبازی</span><strong>{formatTomanFa(data.breakdown.playdateFees)}</strong></li>
+            <li><span>{tr('فروشگاه')}</span><strong>{formatTomanFa(data.breakdown.shopRevenue)}</strong></li>
+            <li><span>{tr('شارژ کیف پول')}</span><strong>{formatTomanFa(data.breakdown.paymentTopups)}</strong></li>
+            <li><span>{tr('مشاوره دامپزشک')}</span><strong>{formatTomanFa(data.breakdown.vetFees)}</strong></li>
+            <li><span>{tr('همبازی')}</span><strong>{formatTomanFa(data.breakdown.playdateFees)}</strong></li>
             <li><span>COGS</span><strong>{formatTomanFa(data.breakdown.cogs)}</strong></li>
-            <li><span>هزینه عملیاتی</span><strong>{formatTomanFa(data.breakdown.operatingExpense)}</strong></li>
+            <li><span>{tr('هزینه عملیاتی')}</span><strong>{formatTomanFa(data.breakdown.operatingExpense)}</strong></li>
           </ul>
         </section>
       ) : null}
 
-      <p className="admin-section-label" style={{ marginTop: 20 }}>ماژول‌های Finance OS</p>
+      <p className="admin-section-label" style={{ marginTop: 20 }}>{tr('ماژول‌های Finance OS')}</p>
       <div className="admin-finance-links">
         <Link to="/admin/finance/accounts" className="admin-card admin-finance-link">
-          <TrendingUp size={20} /><div><strong>حساب‌ها و داده‌های پایه</strong><span>بانک · اسنپ‌پی · طبقه‌بندی · افراد</span></div>
+          <TrendingUp size={20} /><div><strong>{tr('حساب‌ها و داده‌های پایه')}</strong><span>{tr('بانک · اسنپ‌پی · طبقه‌بندی · افراد')}</span></div>
         </Link>
         <Link to="/admin/finance/transactions" className="admin-card admin-finance-link">
-          <LineChart size={20} /><div><strong>تراکنش‌ها و دفتر</strong><span>ایمپورت · صف · مشکوک · Ledger</span></div>
+          <LineChart size={20} /><div><strong>{tr('تراکنش‌ها و دفتر')}</strong><span>{tr('ایمپورت · صف · مشکوک · Ledger')}</span></div>
         </Link>
         <Link to="/admin/finance/allocation" className="admin-card admin-finance-link">
-          <PieChart size={20} /><div><strong>تخصیص هزینه</strong><span>دفاتر · تجهیزات · فاکتور هلدینگ</span></div>
+          <PieChart size={20} /><div><strong>{tr('تخصیص هزینه')}</strong><span>{tr('دفاتر · تجهیزات · فاکتور هلدینگ')}</span></div>
         </Link>
         <Link to="/admin/finance/pnl" className="admin-card admin-finance-link">
-          <PieChart size={20} /><div><strong>سود و زیان</strong><span>درآمد در برابر هزینه و حاشیه سود</span></div>
+          <PieChart size={20} /><div><strong>{tr('سود و زیان')}</strong><span>{tr('درآمد در برابر هزینه و حاشیه سود')}</span></div>
         </Link>
         <Link to="/admin/finance/sales" className="admin-card admin-finance-link">
-          <LineChart size={20} /><div><strong>نمودارهای فروش</strong><span>روزانه / ماهانه · دسته · پرداخت</span></div>
+          <LineChart size={20} /><div><strong>{tr('نمودارهای فروش')}</strong><span>{tr('روزانه / ماهانه · دسته · پرداخت')}</span></div>
         </Link>
         <Link to="/admin/finance/orders" className="admin-card admin-finance-link">
-          <ShoppingBag size={20} /><div><strong>درآمد سفارش‌ها</strong><span>لیست و جمع وضعیت‌ها</span></div>
+          <ShoppingBag size={20} /><div><strong>{tr('درآمد سفارش‌ها')}</strong><span>{tr('لیست و جمع وضعیت‌ها')}</span></div>
         </Link>
         <Link to="/admin/finance/wallet" className="admin-card admin-finance-link">
-          <Wallet size={20} /><div><strong>دفتر کیف پول</strong><span>تومان · سکه · Stars · TON</span></div>
+          <Wallet size={20} /><div><strong>{tr('دفتر کیف پول')}</strong><span>{tr('تومان · سکه · Stars · TON')}</span></div>
         </Link>
         <Link to="/admin/payments" className="admin-card admin-finance-link">
-          <Wallet size={20} /><div><strong>صف تأیید واریز</strong><span>رسید کارت‌به‌کارت سکه و شاپ</span></div>
+          <Wallet size={20} /><div><strong>{tr('صف تأیید واریز')}</strong><span>{tr('رسید کارت‌به‌کارت سکه و شاپ')}</span></div>
         </Link>
         <Link to="/admin/finance/products" className="admin-card admin-finance-link">
-          <TrendingUp size={20} /><div><strong>محصولات برتر</strong><span>رتبه‌بندی درآمد</span></div>
+          <TrendingUp size={20} /><div><strong>{tr('محصولات برتر')}</strong><span>{tr('رتبه‌بندی درآمد')}</span></div>
         </Link>
       </div>
     </AdminDashPage>

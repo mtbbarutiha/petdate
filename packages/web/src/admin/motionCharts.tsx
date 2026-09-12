@@ -19,6 +19,7 @@ import {
   smoothAreaPath,
   smoothLinePath,
 } from './motionChartMath';
+import { tr } from '../i18n';
 
 export {
   MOTION_DUR_MS,
@@ -112,7 +113,7 @@ export function MotionChartTooltip({
       {payload.map((p, i) => {
         const n = Number(p.value ?? 0);
         const text = money
-          ? `${formatNumFa(Math.round(n))} ریال`
+          ? `${formatNumFa(Math.round(n))}${tr(' ریال')}`
           : formatNumFa(Number.isFinite(n) ? n : 0);
         return (
           <div key={i} className="admin-motion-callout-row" style={{ color: p.color || 'var(--admin-ink)' }}>
@@ -238,7 +239,7 @@ export function AdminProgressRing({
         />
         <text x="44" y="42" textAnchor="middle" className="admin-motion-ring-num">
           {formatNumFa(Math.round(display))}
-          {showPct ? '٪' : ''}
+          {showPct ? tr('٪') : ''}
         </text>
         {label ? (
           <text x="44" y="56" textAnchor="middle" className="admin-motion-ring-sub">

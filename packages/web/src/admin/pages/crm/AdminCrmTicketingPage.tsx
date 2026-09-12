@@ -33,6 +33,7 @@ import { AdminModal } from '../../AdminModal';
 import { adminCan } from '../../auth';
 import { adminFetch, formatNumFa } from '../../api';
 import { formatAdminFaDateTime } from '../../JalaliDateSelect';
+import { tr } from '../../../i18n';
 
 type View = 'dash' | 'tickets' | 'queue' | 'followups' | 'escalations' | 'reports' | 'settings' | 'detail';
 type ModalKind =
@@ -192,8 +193,8 @@ export function AdminCrmTicketingPage() {
       <div className="tk-shell">
         <aside className="tk-side">
           <div className="tk-brand">
-            <b>ماژول تیکتینگ</b>
-            <span>امور مشتریان · Pet Date</span>
+            <b>{tr('ماژول تیکتینگ')}</b>
+            <span>{tr('امور مشتریان · Pet Date')}</span>
           </div>
           {NAV.map((n) => (
             <button
@@ -208,13 +209,13 @@ export function AdminCrmTicketingPage() {
           ))}
           {canWrite ? (
             <button type="button" className="admin-btn admin-btn--primary tk-new" onClick={() => setModal({ type: 'newticket' })}>
-              + تیکت جدید
+              {tr('+ تیکت جدید')}
             </button>
           ) : null}
         </aside>
 
         <main className="tk-main">
-          {!data ? <p className="admin-muted">در حال بارگذاری…</p> : null}
+          {!data ? <p className="admin-muted">{tr('در حال بارگذاری…')}</p> : null}
 
           {data && view === 'dash' ? (
             <Dash stats={data.stats} tickets={tickets} openTk={openTk} agents={agents} />
@@ -370,26 +371,26 @@ function Dash({
     <>
       <header className="admin-header">
         <div>
-          <h1>داشبورد تیکتینگ</h1>
-          <p>وضعیت لحظه‌ای درخواست‌ها، SLA و بار کاری تیم</p>
+          <h1>{tr('داشبورد تیکتینگ')}</h1>
+          <p>{tr('وضعیت لحظه‌ای درخواست‌ها، SLA و بار کاری تیم')}</p>
         </div>
       </header>
       <div className="admin-stats tk-kpis">
-        <Kpi label="تیکت باز" value={formatNumFa(stats.open)} tone="sky" />
-        <Kpi label="جدید امروز" value={formatNumFa(stats.newToday)} tone="mint" />
-        <Kpi label="حل‌شده امروز" value={formatNumFa(stats.resolvedToday)} tone="mint" />
-        <Kpi label="در معرض ریسک SLA" value={formatNumFa(stats.atRisk)} tone="amber" />
-        <Kpi label="نقض SLA" value={formatNumFa(stats.breached)} tone="rose" />
-        <Kpi label="تخصیص‌نیافته" value={formatNumFa(stats.unassigned)} tone="violet" />
+        <Kpi label={tr("تیکت باز")} value={formatNumFa(stats.open)} tone="sky" />
+        <Kpi label={tr("جدید امروز")} value={formatNumFa(stats.newToday)} tone="mint" />
+        <Kpi label={tr("حل‌شده امروز")} value={formatNumFa(stats.resolvedToday)} tone="mint" />
+        <Kpi label={tr("در معرض ریسک SLA")} value={formatNumFa(stats.atRisk)} tone="amber" />
+        <Kpi label={tr("نقض SLA")} value={formatNumFa(stats.breached)} tone="rose" />
+        <Kpi label={tr("تخصیص‌نیافته")} value={formatNumFa(stats.unassigned)} tone="violet" />
       </div>
       <div className="tk-split">
         <div className="admin-card">
-          <b>پایبندی به SLA</b>
+          <b>{tr('پایبندی به SLA')}</b>
           <div className="tk-sla-big" style={{ color: stats.slaPct >= 90 ? '#0f9f7a' : stats.slaPct >= 70 ? '#c47a00' : '#c62828' }}>
-            {formatNumFa(stats.slaPct)}٪
+            {formatNumFa(stats.slaPct)}{tr('٪')}
           </div>
           <div className="tk-bar"><i style={{ width: `${stats.slaPct}%` }} /></div>
-          <b className="tk-subhead">بار کاری کارشناسان</b>
+          <b className="tk-subhead">{tr('بار کاری کارشناسان')}</b>
           {agentLoad.map((a) => (
             <div key={a.name} className="tk-hbar">
               <span>{a.name}</span>
@@ -399,16 +400,16 @@ function Dash({
           ))}
         </div>
         <div className="admin-card">
-          <b>باز به تفکیک اولویت</b>
+          <b>{tr('باز به تفکیک اولویت')}</b>
           <ul className="tk-legend">
             {byPrio.map((d) => (
-              <li key={d.label}><Tag tone={prioTone(d.label)}>{d.label}</Tag><strong>{formatNumFa(d.value)}</strong></li>
+              <li key={tr(d.label)}><Tag tone={prioTone(d.label)}>{tr(d.label)}</Tag><strong>{formatNumFa(d.value)}</strong></li>
             ))}
           </ul>
-          <b className="tk-subhead">به تفکیک نوع</b>
+          <b className="tk-subhead">{tr('به تفکیک نوع')}</b>
           <ul className="tk-legend">
             {byType.filter((d) => d.value).slice(0, 8).map((d) => (
-              <li key={d.label}><span>{d.label}</span><strong>{formatNumFa(d.value)}</strong></li>
+              <li key={tr(d.label)}><span>{tr(d.label)}</span><strong>{formatNumFa(d.value)}</strong></li>
             ))}
           </ul>
         </div>
@@ -454,30 +455,30 @@ function TicketList({
     <>
       <header className="admin-header">
         <div>
-          <h1>تیکت‌ها</h1>
-          <p>{formatNumFa(rows.length)} تیکت</p>
+          <h1>{tr('تیکت‌ها')}</h1>
+          <p>{formatNumFa(rows.length)} {tr('تیکت')}</p>
         </div>
         {canWrite ? (
-          <button type="button" className="admin-btn admin-btn--primary" onClick={onNew}>+ تیکت جدید</button>
+          <button type="button" className="admin-btn admin-btn--primary" onClick={onNew}>{tr('+ تیکت جدید')}</button>
         ) : null}
       </header>
       <div className="admin-card tk-filters">
-        <label>جستجو<input value={q} onChange={(e) => setQ(e.target.value)} placeholder="شناسه، موضوع، مشتری…" /></label>
-        <label>وضعیت
+        <label>{tr('جستجو')}<input value={q} onChange={(e) => setQ(e.target.value)} placeholder={tr("شناسه، موضوع، مشتری…")} /></label>
+        <label>{tr('وضعیت')}
           <select value={fs} onChange={(e) => setFs(e.target.value)}>
-            <option value="all">همه</option>
+            <option value="all">{tr('همه')}</option>
             {CRM_TICKET_STATUSES.map((s) => <option key={s}>{s}</option>)}
           </select>
         </label>
-        <label>اولویت
+        <label>{tr('اولویت')}
           <select value={fp} onChange={(e) => setFp(e.target.value)}>
-            <option value="all">همه</option>
+            <option value="all">{tr('همه')}</option>
             {CRM_PRIORITIES.map((p) => <option key={p}>{p}</option>)}
           </select>
         </label>
-        <label>مالک
+        <label>{tr('مالک')}
           <select value={fo} onChange={(e) => setFo(e.target.value)}>
-            <option value="all">همه</option>
+            <option value="all">{tr('همه')}</option>
             {agents.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
           </select>
         </label>
@@ -486,7 +487,7 @@ function TicketList({
         <table className="admin-table">
           <thead>
             <tr>
-              <th>شناسه</th><th>موضوع</th><th>مشتری</th><th>نوع</th><th>وضعیت</th><th>اولویت</th><th>مالک</th><th>SLA</th><th>ایجاد</th>
+              <th>{tr('شناسه')}</th><th>{tr('موضوع')}</th><th>{tr('مشتری')}</th><th>{tr('نوع')}</th><th>{tr('وضعیت')}</th><th>{tr('اولویت')}</th><th>{tr('مالک')}</th><th>SLA</th><th>{tr('ایجاد')}</th>
             </tr>
           </thead>
           <tbody>
@@ -494,9 +495,9 @@ function TicketList({
               <tr key={t.id} className="tk-row" onClick={() => onOpen(t.id)} style={{ borderRight: `3px solid ${t.borderColor || '#ddd'}` }}>
                 <td className="tk-mono">{t.publicId}</td>
                 <td>
-                  {t.title}
-                  {t.reopenedCount > 0 ? <Tag tone="error">بازگشایی×{formatNumFa(t.reopenedCount)}</Tag> : null}
-                  {t.nextAction?.includes('[orphan]') ? <Tag tone="error">مشتری یتیم</Tag> : null}
+                  {tr(t.title)}
+                  {t.reopenedCount > 0 ? <Tag tone="error">{tr('بازگشایی×')}{formatNumFa(t.reopenedCount)}</Tag> : null}
+                  {t.nextAction?.includes('[orphan]') ? <Tag tone="error">{tr('مشتری یتیم')}</Tag> : null}
                 </td>
                 <td>
                   {t.customerId ? (
@@ -508,12 +509,12 @@ function TicketList({
                 <td className="admin-muted">{t.type}</td>
                 <td><Tag tone={statusTone(t.status)}>{t.status}</Tag></td>
                 <td><Tag tone={prioTone(t.priority)}>{t.priority}</Tag></td>
-                <td>{t.agentId ? uName(t.agentId) : <span className="admin-muted">تخصیص‌نیافته</span>}</td>
+                <td>{t.agentId ? uName(t.agentId) : <span className="admin-muted">{tr('تخصیص‌نیافته')}</span>}</td>
                 <td><Tag tone={t.slaState === 'breached' ? 'error' : t.slaState === 'at_risk' ? 'warn' : t.slaState === 'ok' ? 'ok' : 'muted'}>{t.slaLabel || t.slaState}</Tag></td>
                 <td className="admin-muted">{faDate(t.createdAt)}</td>
               </tr>
             ))}
-            {!rows.length ? <tr><td colSpan={9} className="admin-muted">موردی یافت نشد</td></tr> : null}
+            {!rows.length ? <tr><td colSpan={9} className="admin-muted">{tr('موردی یافت نشد')}</td></tr> : null}
           </tbody>
         </table>
       </div>
@@ -545,7 +546,7 @@ function TeamQueue({
   return (
     <>
       <header className="admin-header">
-        <div><h1>صف تیم</h1><p>نمای عملیاتی — بار کاری، تخصیص‌نیافته‌ها و ریسک SLA</p></div>
+        <div><h1>{tr('صف تیم')}</h1><p>{tr('نمای عملیاتی — بار کاری، تخصیص‌نیافته‌ها و ریسک SLA')}</p></div>
       </header>
       <div className="tk-kanban">
         {cols.map((c) => {
@@ -559,17 +560,17 @@ function TeamQueue({
                     <span className="tk-mono">{t.publicId}</span>
                     <Tag tone={prioTone(t.priority)}>{t.priority}</Tag>
                   </div>
-                  <div>{t.title}</div>
+                  <div>{tr(t.title)}</div>
                   <div className="tk-kcard-bot">
-                    <span className="admin-muted">{t.agentId ? uName(t.agentId) : 'بدون مالک'}</span>
+                    <span className="admin-muted">{t.agentId ? uName(t.agentId) : tr('بدون مالک')}</span>
                     <Tag tone={t.slaState === 'breached' ? 'error' : t.slaState === 'at_risk' ? 'warn' : 'ok'}>{t.slaLabel || 'SLA'}</Tag>
                   </div>
                   {canWrite && !t.agentId ? (
-                    <button type="button" className="admin-btn admin-btn--primary admin-btn--sm" onClick={(e) => { e.stopPropagation(); onAssign(t.id); }}>تخصیص سریع</button>
+                    <button type="button" className="admin-btn admin-btn--primary admin-btn--sm" onClick={(e) => { e.stopPropagation(); onAssign(t.id); }}>{tr('تخصیص سریع')}</button>
                   ) : null}
                 </div>
               ))}
-              {!items.length ? <div className="admin-muted tk-empty">خالی</div> : null}
+              {!items.length ? <div className="admin-muted tk-empty">{tr('خالی')}</div> : null}
             </div>
           );
         })}
@@ -606,7 +607,7 @@ function FollowupsView({
   };
   return (
     <>
-      <header className="admin-header"><div><h1>پیگیری‌ها</h1><p>اقدامات بعدی زمان‌بندی‌شده روی تیکت‌ها</p></div></header>
+      <header className="admin-header"><div><h1>{tr('پیگیری‌ها')}</h1><p>{tr('اقدامات بعدی زمان‌بندی‌شده روی تیکت‌ها')}</p></div></header>
       <div className="tk-tabs">
         {([['overdue', 'عقب‌افتاده'], ['today', 'امروز'], ['week', 'این هفته'], ['done', 'انجام‌شده']] as const).map(([k, fa]) => (
           <button key={k} type="button" className={`admin-btn admin-btn--sm${tab === k ? ' admin-btn--primary' : ''}`} onClick={() => setTab(k)}>
@@ -616,7 +617,7 @@ function FollowupsView({
       </div>
       <div className="admin-table-wrap">
         <table className="admin-table">
-          <thead><tr><th>تیکت</th><th>موضوع</th><th>نوع</th><th>شرح</th><th>مالک</th><th>زمان</th><th></th></tr></thead>
+          <thead><tr><th>{tr('تیکت')}</th><th>{tr('موضوع')}</th><th>{tr('نوع')}</th><th>{tr('شرح')}</th><th>{tr('مالک')}</th><th>{tr('زمان')}</th><th></th></tr></thead>
           <tbody>
             {groups[tab].map((f) => {
               const t = tickets.find((x) => x.id === f.ticketId);
@@ -625,20 +626,20 @@ function FollowupsView({
                   <td className="tk-mono tk-link" onClick={() => f.ticketId && onOpen(f.ticketId)}>{t?.publicId || '—'}</td>
                   <td>{t?.title || f.customerName || '—'}</td>
                   <td>{f.kind}</td>
-                  <td className="admin-muted">{f.description}</td>
+                  <td className="admin-muted">{tr(f.description)}</td>
                   <td>{f.ownerName || uName(f.ownerId)}</td>
                   <td className="admin-muted">{faDate(f.dueAt)}</td>
                   <td>
                     {f.status === 'باز' && canWrite ? (
-                      <button type="button" className="admin-btn admin-btn--sm" onClick={() => onComplete(f.id)}>تکمیل</button>
+                      <button type="button" className="admin-btn admin-btn--sm" onClick={() => onComplete(f.id)}>{tr('تکمیل')}</button>
                     ) : (
-                      <Tag tone="ok">{f.result || 'انجام‌شده'}</Tag>
+                      <Tag tone="ok">{f.result || tr('انجام‌شده')}</Tag>
                     )}
                   </td>
                 </tr>
               );
             })}
-            {!groups[tab].length ? <tr><td colSpan={7} className="admin-muted">موردی نیست</td></tr> : null}
+            {!groups[tab].length ? <tr><td colSpan={7} className="admin-muted">{tr('موردی نیست')}</td></tr> : null}
           </tbody>
         </table>
       </div>
@@ -662,11 +663,11 @@ function EscalationsView({
   return (
     <>
       <header className="admin-header">
-        <div><h1>ارجاعات بین‌واحدی</h1><p>درخواست‌های مالی و فروش — نتیجه به تیکت اصلی بازمی‌گردد</p></div>
+        <div><h1>{tr('ارجاعات بین‌واحدی')}</h1><p>{tr('درخواست‌های مالی و فروش — نتیجه به تیکت اصلی بازمی‌گردد')}</p></div>
       </header>
       <div className="admin-table-wrap">
         <table className="admin-table">
-          <thead><tr><th>تیکت</th><th>واحد مقصد</th><th>اقدام</th><th>اولویت</th><th>مبلغ</th><th>وضعیت</th><th>تاریخ</th><th></th></tr></thead>
+          <thead><tr><th>{tr('تیکت')}</th><th>{tr('واحد مقصد')}</th><th>{tr('اقدام')}</th><th>{tr('اولویت')}</th><th>{tr('مبلغ')}</th><th>{tr('وضعیت')}</th><th>{tr('تاریخ')}</th><th></th></tr></thead>
           <tbody>
             {referrals.map((e) => {
               const t = tickets.find((x) => x.id === e.ticketId);
@@ -676,18 +677,18 @@ function EscalationsView({
                   <td><Tag tone="info">{e.targetTeam}</Tag></td>
                   <td>{e.requestedAction}</td>
                   <td><Tag tone={prioTone(e.priority)}>{e.priority}</Tag></td>
-                  <td>{e.amount ? `${formatNumFa(e.amount)} ریال` : '—'}</td>
+                  <td>{e.amount ? `${formatNumFa(e.amount)}${tr(' ریال')}` : '—'}</td>
                   <td><Tag tone={e.status === 'تایید' || e.status === 'انجام‌شده' ? 'ok' : e.status === 'باز' ? 'info' : 'warn'}>{e.status}</Tag></td>
                   <td className="admin-muted">{faDate(e.createdAt)}</td>
                   <td>
                     {canWrite && e.status === 'باز' ? (
-                      <button type="button" className="admin-btn admin-btn--sm" onClick={() => onRespond(e.id)}>پاسخ</button>
+                      <button type="button" className="admin-btn admin-btn--sm" onClick={() => onRespond(e.id)}>{tr('پاسخ')}</button>
                     ) : null}
                   </td>
                 </tr>
               );
             })}
-            {!referrals.length ? <tr><td colSpan={8} className="admin-muted">ارجاعی نیست</td></tr> : null}
+            {!referrals.length ? <tr><td colSpan={8} className="admin-muted">{tr('ارجاعی نیست')}</td></tr> : null}
           </tbody>
         </table>
       </div>
@@ -743,35 +744,35 @@ function ReportsView({ tickets, agents }: { tickets: CrmTicket[]; agents: CrmTic
 
   return (
     <>
-      <header className="admin-header"><div><h1>گزارش‌ها</h1><p>شاخص‌های اصلی عملکرد تیکتینگ</p></div></header>
+      <header className="admin-header"><div><h1>{tr('گزارش‌ها')}</h1><p>{tr('شاخص‌های اصلی عملکرد تیکتینگ')}</p></div></header>
       <div className="admin-stats">
-        <Kpi label="میانگین پاسخ اول" value={`${formatNumFa(avgFirst)} دقیقه`} tone="sky" />
-        <Kpi label="میانگین زمان حل" value={`${avgResolve} ساعت`} tone="mint" />
-        <Kpi label="نرخ بازگشایی" value={`${formatNumFa(reopenRate)}٪`} tone="rose" />
-        <Kpi label="نرخ ارجاع سطح بالاتر" value={`${formatNumFa(escRate)}٪`} tone="amber" />
+        <Kpi label={tr("میانگین پاسخ اول")} value={`${formatNumFa(avgFirst)} دقیقه`} tone="sky" />
+        <Kpi label={tr("میانگین زمان حل")} value={`${avgResolve} ساعت`} tone="mint" />
+        <Kpi label={tr("نرخ بازگشایی")} value={`${formatNumFa(reopenRate)}٪`} tone="rose" />
+        <Kpi label={tr("نرخ ارجاع سطح بالاتر")} value={`${formatNumFa(escRate)}٪`} tone="amber" />
       </div>
       <div className="tk-split">
         <div className="admin-card">
-          <b>قدمت تیکت‌های باز</b>
+          <b>{tr('قدمت تیکت‌های باز')}</b>
           {aging.map((a) => (
-            <div key={a.label} className="tk-hbar">
-              <span>{a.label}</span>
+            <div key={tr(a.label)} className="tk-hbar">
+              <span>{tr(a.label)}</span>
               <span className="tk-bar"><i style={{ width: `${(a.value / maxAge) * 100}%` }} /></span>
               <em>{formatNumFa(a.value)}</em>
             </div>
           ))}
         </div>
         <div className="admin-card">
-          <b>عملکرد کارشناسان</b>
+          <b>{tr('عملکرد کارشناسان')}</b>
           <table className="admin-table">
-            <thead><tr><th>کارشناس</th><th>مجموع</th><th>حل‌شده</th><th>SLA</th></tr></thead>
+            <thead><tr><th>{tr('کارشناس')}</th><th>{tr('مجموع')}</th><th>{tr('حل‌شده')}</th><th>SLA</th></tr></thead>
             <tbody>
               {agentPerf.map((a) => (
                 <tr key={a.u.id}>
                   <td>{a.u.name}</td>
                   <td>{formatNumFa(a.total)}</td>
                   <td>{formatNumFa(a.resolved)}</td>
-                  <td><Tag tone={a.sla >= 90 ? 'ok' : a.sla >= 70 ? 'warn' : 'error'}>{formatNumFa(a.sla)}٪</Tag></td>
+                  <td><Tag tone={a.sla >= 90 ? 'ok' : a.sla >= 70 ? 'warn' : 'error'}>{formatNumFa(a.sla)}{tr('٪')}</Tag></td>
                 </tr>
               ))}
             </tbody>
@@ -796,8 +797,8 @@ function SettingsView({
     <>
       <header className="admin-header">
         <div>
-          <h1>تنظیمات تیکتینگ</h1>
-          <p>SLA · صف‌ها · دسته‌بندی · کارشناسان · لاگ{canAdmin ? '' : ' (فقط مشاهده)'}</p>
+          <h1>{tr('تنظیمات تیکتینگ')}</h1>
+          <p>{tr('SLA · صف‌ها · دسته‌بندی · کارشناسان · لاگ')}{canAdmin ? '' : tr(' (فقط مشاهده)')}</p>
         </div>
       </header>
       <div className="tk-tabs">
@@ -813,7 +814,7 @@ function SettingsView({
       </div>
       {tab === 'sla' ? (
         <div className="admin-table-wrap"><table className="admin-table">
-          <thead><tr><th>اولویت</th><th>پاسخ اول (دقیقه)</th><th>حل (ساعت)</th></tr></thead>
+          <thead><tr><th>{tr('اولویت')}</th><th>{tr('پاسخ اول (دقیقه)')}</th><th>{tr('حل (ساعت)')}</th></tr></thead>
           <tbody>
             {CRM_PRIORITIES.map((p) => (
               <tr key={p}>
@@ -827,7 +828,7 @@ function SettingsView({
       ) : null}
       {tab === 'queues' ? (
         <div className="admin-table-wrap"><table className="admin-table">
-          <thead><tr><th>صف</th><th>تیم مسئول</th></tr></thead>
+          <thead><tr><th>{tr('صف')}</th><th>{tr('تیم مسئول')}</th></tr></thead>
           <tbody>{CRM_TICKET_QUEUES.map((q) => <tr key={q.id}><td>{q.name}</td><td className="admin-muted">{q.team}</td></tr>)}</tbody>
         </table></div>
       ) : null}
@@ -836,25 +837,25 @@ function SettingsView({
           {Object.entries(CRM_TICKET_TAXONOMY).map(([type, cats]) => (
             <div key={type} className="tk-tax-row">
               <b>{type}</b>
-              <span className="admin-muted">{Object.entries(cats).map(([c, subs]) => `${c} (${subs.join('، ')})`).join(' · ')}</span>
+              <span className="admin-muted">{Object.entries(cats).map(([c, subs]) => `${c} (${subs.join(tr('، '))})`).join(' · ')}</span>
             </div>
           ))}
         </div>
       ) : null}
       {tab === 'agents' ? (
         <div className="admin-table-wrap"><table className="admin-table">
-          <thead><tr><th>نام</th><th>تیم</th><th>نقش</th><th>شناسه</th></tr></thead>
+          <thead><tr><th>{tr('نام')}</th><th>{tr('تیم')}</th><th>{tr('نقش')}</th><th>{tr('شناسه')}</th></tr></thead>
           <tbody>
             {agents.map((a) => (
               <tr key={a.id}><td>{a.name}</td><td>{a.team}</td><td>{a.role}</td><td className="tk-mono">{a.id}</td></tr>
             ))}
-            {!agents.length ? <tr><td colSpan={4} className="admin-muted">کارشناسی ثبت نشده — از منابع انسانی اضافه کنید</td></tr> : null}
+            {!agents.length ? <tr><td colSpan={4} className="admin-muted">{tr('کارشناسی ثبت نشده — از منابع انسانی اضافه کنید')}</td></tr> : null}
           </tbody>
         </table></div>
       ) : null}
       {tab === 'audit' ? (
         <div className="admin-table-wrap"><table className="admin-table">
-          <thead><tr><th>زمان</th><th>کاربر</th><th>موضوع</th><th>مرجع</th><th>اقدام</th></tr></thead>
+          <thead><tr><th>{tr('زمان')}</th><th>{tr('کاربر')}</th><th>{tr('موضوع')}</th><th>{tr('مرجع')}</th><th>{tr('اقدام')}</th></tr></thead>
           <tbody>
             {audit.map((a) => (
               <tr key={a.id}>
@@ -914,7 +915,7 @@ function DetailView({
   const cust = detail.customer;
   return (
     <>
-      <button type="button" className="admin-btn admin-btn--ghost admin-btn--sm" onClick={onBack}>→ بازگشت به لیست</button>
+      <button type="button" className="admin-btn admin-btn--ghost admin-btn--sm" onClick={onBack}>{tr('→ بازگشت به لیست')}</button>
       <header className="admin-header tk-detail-head">
         <div>
           <div className="tk-detail-meta">
@@ -923,54 +924,54 @@ function DetailView({
             <Tag tone={prioTone(t.priority)}>{t.priority}</Tag>
             <Tag tone="muted">{t.severity}</Tag>
           </div>
-          <h1>{t.title}</h1>
+          <h1>{tr(t.title)}</h1>
           <p>
             {t.type} · {t.category} · {t.subCategory} ·{' '}
-            {CRM_TICKET_CHANNELS[t.channel as keyof typeof CRM_TICKET_CHANNELS] || t.channel} · مالک:{' '}
-            {t.agentId ? uName(t.agentId) : 'تخصیص‌نیافته'}
+            {CRM_TICKET_CHANNELS[t.channel as keyof typeof CRM_TICKET_CHANNELS] || t.channel} {tr('· مالک:')}{' '}
+            {t.agentId ? uName(t.agentId) : tr('تخصیص‌نیافته')}
           </p>
         </div>
         <div className="tk-detail-sla">
           <Tag tone={t.slaState === 'breached' ? 'error' : t.slaState === 'at_risk' ? 'warn' : 'ok'}>{t.slaLabel}</Tag>
-          <div className="admin-muted">مهلت پاسخ اول: {faDate(t.firstResponseDueAt)}</div>
+          <div className="admin-muted">{tr('مهلت پاسخ اول:')} {faDate(t.firstResponseDueAt)}</div>
         </div>
       </header>
 
       {detail.orphanCustomer ? (
-        <div className="tk-warn">هشدار رابطه: مشتری مرتبط یافت نشد (ارجاع یتیم). تیکت حفظ شده است.</div>
+        <div className="tk-warn">{tr('هشدار رابطه: مشتری مرتبط یافت نشد (ارجاع یتیم). تیکت حفظ شده است.')}</div>
       ) : null}
 
       {canWrite ? (
         <div className="tk-actions">
-          <button type="button" className="admin-btn admin-btn--sm" onClick={() => setModal({ type: 'assign', ticketId: t.id })}>تخصیص/تغییر مالک</button>
-          <button type="button" className="admin-btn admin-btn--sm" onClick={() => setModal({ type: 'transfer', ticketId: t.id })}>ارجاع بین‌تیمی</button>
-          <button type="button" className="admin-btn admin-btn--sm" onClick={() => setModal({ type: 'status', ticketId: t.id })}>تغییر وضعیت</button>
-          <button type="button" className="admin-btn admin-btn--sm" onClick={() => setModal({ type: 'priority', ticketId: t.id })}>تغییر اولویت</button>
-          <button type="button" className="admin-btn admin-btn--sm" onClick={() => setModal({ type: 'escalate', ticketId: t.id, module: 'finance' })}>ارجاع به مالی</button>
-          <button type="button" className="admin-btn admin-btn--sm" onClick={() => setModal({ type: 'escalate', ticketId: t.id, module: 'sales' })}>ارجاع به فروش</button>
-          <button type="button" className="admin-btn admin-btn--sm" onClick={() => setModal({ type: 'followup', ticketId: t.id })}>ایجاد پیگیری</button>
-          {!['حل‌شده', 'بسته‌شده'].includes(t.status) ? (
-            <button type="button" className="admin-btn admin-btn--primary admin-btn--sm" onClick={() => setModal({ type: 'resolve', ticketId: t.id })}>حل تیکت</button>
+          <button type="button" className="admin-btn admin-btn--sm" onClick={() => setModal({ type: 'assign', ticketId: t.id })}>{tr('تخصیص/تغییر مالک')}</button>
+          <button type="button" className="admin-btn admin-btn--sm" onClick={() => setModal({ type: 'transfer', ticketId: t.id })}>{tr('ارجاع بین‌تیمی')}</button>
+          <button type="button" className="admin-btn admin-btn--sm" onClick={() => setModal({ type: 'status', ticketId: t.id })}>{tr('تغییر وضعیت')}</button>
+          <button type="button" className="admin-btn admin-btn--sm" onClick={() => setModal({ type: 'priority', ticketId: t.id })}>{tr('تغییر اولویت')}</button>
+          <button type="button" className="admin-btn admin-btn--sm" onClick={() => setModal({ type: 'escalate', ticketId: t.id, module: 'finance' })}>{tr('ارجاع به مالی')}</button>
+          <button type="button" className="admin-btn admin-btn--sm" onClick={() => setModal({ type: 'escalate', ticketId: t.id, module: 'sales' })}>{tr('ارجاع به فروش')}</button>
+          <button type="button" className="admin-btn admin-btn--sm" onClick={() => setModal({ type: 'followup', ticketId: t.id })}>{tr('ایجاد پیگیری')}</button>
+          {![tr('حل‌شده'), tr('بسته‌شده')].includes(t.status) ? (
+            <button type="button" className="admin-btn admin-btn--primary admin-btn--sm" onClick={() => setModal({ type: 'resolve', ticketId: t.id })}>{tr('حل تیکت')}</button>
           ) : null}
           {t.status === 'حل‌شده' ? (
-            <button type="button" className="admin-btn admin-btn--sm" onClick={onCloseTicket}>بستن تیکت</button>
+            <button type="button" className="admin-btn admin-btn--sm" onClick={onCloseTicket}>{tr('بستن تیکت')}</button>
           ) : null}
-          {['حل‌شده', 'بسته‌شده'].includes(t.status) ? (
-            <button type="button" className="admin-btn admin-btn--sm" onClick={() => setModal({ type: 'reopen', ticketId: t.id })}>بازگشایی</button>
+          {[tr('حل‌شده'), tr('بسته‌شده')].includes(t.status) ? (
+            <button type="button" className="admin-btn admin-btn--sm" onClick={() => setModal({ type: 'reopen', ticketId: t.id })}>{tr('بازگشایی')}</button>
           ) : null}
-          <button type="button" className="admin-btn admin-btn--ghost admin-btn--sm" onClick={() => onMacro('refund')}>ماکرو: بازگشت وجه</button>
-          <button type="button" className="admin-btn admin-btn--ghost admin-btn--sm" onClick={() => onMacro('vip')}>ماکرو: VIP</button>
+          <button type="button" className="admin-btn admin-btn--ghost admin-btn--sm" onClick={() => onMacro('refund')}>{tr('ماکرو: بازگشت وجه')}</button>
+          <button type="button" className="admin-btn admin-btn--ghost admin-btn--sm" onClick={() => onMacro('vip')}>{tr('ماکرو: VIP')}</button>
         </div>
       ) : null}
 
       <div className="tk-split">
         <div>
           <div className="admin-card">
-            <b>شرح درخواست</b>
-            <p className="tk-body">{t.description || '—'}</p>
+            <b>{tr('شرح درخواست')}</b>
+            <p className="tk-body">{tr(t.description || '—')}</p>
           </div>
           <div className="admin-card">
-            <b>تایم‌لاین گفتگو</b>
+            <b>{tr('تایم‌لاین گفتگو')}</b>
             <div className="tk-timeline">
               {detail.activities.map((ev) => (
                 <div
@@ -979,29 +980,29 @@ function DetailView({
                 >
                   <div className="tk-msg-h">
                     <span>
-                      {ev.userName || uName(ev.userId) || 'سیستم'} ·{' '}
+                      {ev.userName || uName(ev.userId) || tr('سیستم')} ·{' '}
                       {ev.kind === 'public_reply'
-                        ? 'پاسخ عمومی'
+                        ? tr('پاسخ عمومی')
                         : ev.kind === 'internal_note'
-                          ? 'یادداشت داخلی'
+                          ? tr('یادداشت داخلی')
                           : eventLabel(ev.kind)}
                     </span>
                     <span>{faDate(ev.at)}</span>
                   </div>
-                  <div>{ev.text}</div>
+                  <div>{tr(ev.text)}</div>
                 </div>
               ))}
-              {!detail.activities.length ? <p className="admin-muted">رویدادی نیست</p> : null}
+              {!detail.activities.length ? <p className="admin-muted">{tr('رویدادی نیست')}</p> : null}
             </div>
             {canWrite ? (
               <div className="tk-composer">
                 <div className="tk-tabs">
-                  <button type="button" className={`admin-btn admin-btn--sm${noteVis === 'public' ? ' admin-btn--primary' : ''}`} onClick={() => setNoteVis('public')}>پاسخ عمومی</button>
-                  <button type="button" className={`admin-btn admin-btn--sm${noteVis === 'internal' ? ' admin-btn--primary' : ''}`} onClick={() => setNoteVis('internal')}>یادداشت داخلی</button>
+                  <button type="button" className={`admin-btn admin-btn--sm${noteVis === 'public' ? ' admin-btn--primary' : ''}`} onClick={() => setNoteVis('public')}>{tr('پاسخ عمومی')}</button>
+                  <button type="button" className={`admin-btn admin-btn--sm${noteVis === 'internal' ? ' admin-btn--primary' : ''}`} onClick={() => setNoteVis('internal')}>{tr('یادداشت داخلی')}</button>
                 </div>
-                <textarea rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder={noteVis === 'public' ? 'پاسخ برای مشتری…' : 'یادداشت داخلی…'} />
+                <textarea rows={3} value={note} onChange={(e) => setNote(e.target.value)} placeholder={noteVis === 'public' ? tr('پاسخ برای مشتری…') : tr('یادداشت داخلی…')} />
                 <button type="button" className="admin-btn admin-btn--primary admin-btn--sm" disabled={!note.trim()} onClick={onSendNote}>
-                  {noteVis === 'public' ? 'ارسال پاسخ' : 'ثبت یادداشت'}
+                  {noteVis === 'public' ? tr('ارسال پاسخ') : tr('ثبت یادداشت')}
                 </button>
               </div>
             ) : null}
@@ -1010,7 +1011,7 @@ function DetailView({
 
         <div>
           <div className="admin-card">
-            <b>مشتری ۳۶۰</b>
+            <b>{tr('مشتری ۳۶۰')}</b>
             {cust ? (
               <div className="tk-body">
                 <div>
@@ -1018,20 +1019,20 @@ function DetailView({
                   <Tag tone="muted">{cust.level}</Tag>
                 </div>
                 <div className="admin-muted">{cust.mobile} · {cust.email || '—'}</div>
-                <Link to={`/admin/crm/customers/${cust.id}`}>مشاهده پروفایل</Link>
+                <Link to={`/admin/crm/customers/${cust.id}`}>{tr('مشاهده پروفایل')}</Link>
                 {cust.platformUserId ? (
-                  <div><Link to={`/admin/users?q=${cust.platformUserId}`}>کاربر پلتفرم #{cust.platformUserId}</Link></div>
+                  <div><Link to={`/admin/users?q=${cust.platformUserId}`}>{tr('کاربر پلتفرم #')}{cust.platformUserId}</Link></div>
                 ) : null}
                 {cust.salesCustomerId ? (
-                  <div><Link to={`/admin/sales/customers/${cust.salesCustomerId}`}>مشتری فروش</Link></div>
+                  <div><Link to={`/admin/sales/customers/${cust.salesCustomerId}`}>{tr('مشتری فروش')}</Link></div>
                 ) : null}
                 <hr />
-                <b>فروش</b>
-                <div className="admin-muted">محصول: {cust.product || '—'} · فروشنده: {cust.salesOwner || '—'} · سفارش‌ها: {formatNumFa(detail.orders.length)}</div>
+                <b>{tr('فروش')}</b>
+                <div className="admin-muted">{tr('محصول:')} {cust.product || '—'} {tr('· فروشنده:')} {cust.salesOwner || '—'} {tr('· سفارش‌ها:')} {formatNumFa(detail.orders.length)}</div>
                 {canAdmin ? (
                   <>
                     <hr />
-                    <b>مالی</b>
+                    <b>{tr('مالی')}</b>
                     <div className="admin-muted">
                       {Object.entries(cust.financeSnapshot || {}).map(([k, v]) => `${k}: ${String(v)}`).join(' · ') || '—'}
                     </div>
@@ -1039,22 +1040,22 @@ function DetailView({
                 ) : null}
               </div>
             ) : (
-              <p className="admin-muted">مشتری یافت نشد</p>
+              <p className="admin-muted">{tr('مشتری یافت نشد')}</p>
             )}
           </div>
           <div className="admin-card">
-            <b>ویژگی‌های تیکت</b>
+            <b>{tr('ویژگی‌های تیکت')}</b>
             <div className="admin-muted tk-body">
-              صف: {crmQueueOf(t.queueId)?.name || t.queueId}<br />
-              تیم: {t.teamId || '—'}<br />
-              برچسب‌ها: {(t.tags || []).join('، ') || '—'}<br />
-              بازگشایی: {formatNumFa(t.reopenedCount)} بار
-              {t.pendingReason ? <><br />دلیل تعلیق: {t.pendingReason}</> : null}
+              {tr('صف:')} {crmQueueOf(t.queueId)?.name || t.queueId}<br />
+              {tr('تیم:')} {t.teamId || '—'}<br />
+              {tr('برچسب‌ها:')} {(t.tags || []).join(tr('، ')) || '—'}<br />
+              {tr('بازگشایی:')} {formatNumFa(t.reopenedCount)} {tr('بار')}
+              {t.pendingReason ? <><br />{tr('دلیل تعلیق:')} {t.pendingReason}</> : null}
             </div>
           </div>
           {detail.referrals.length ? (
             <div className="admin-card">
-              <b>ارجاعات این تیکت</b>
+              <b>{tr('ارجاعات این تیکت')}</b>
               {detail.referrals.map((e) => (
                 <div key={e.id} className="tk-mini">
                   <Tag tone={e.status === 'تایید' ? 'ok' : 'warn'}>{e.targetTeam} · {e.status}</Tag>
@@ -1065,10 +1066,10 @@ function DetailView({
           ) : null}
           {detail.relatedTickets.length ? (
             <div className="admin-card">
-              <b>سایر تیکت‌های این مشتری</b>
+              <b>{tr('سایر تیکت‌های این مشتری')}</b>
               {detail.relatedTickets.map((r) => (
                 <div key={r.id} className="tk-mini">
-                  <span className="tk-mono">{r.publicId}</span> — {r.title}{' '}
+                  <span className="tk-mono">{r.publicId}</span> — {tr(r.title)}{' '}
                   <Tag tone={statusTone(r.status)}>{r.status}</Tag>
                 </div>
               ))}
@@ -1131,7 +1132,7 @@ function TicketingModals({
 
   return (
     <AdminModal open title={titleMap[modal.type]} onClose={close} size="lg" busy={busy}>
-      {t ? <p className="admin-muted">{t.publicId} — {t.title}</p> : null}
+      {t ? <p className="admin-muted">{t.publicId} — {tr(t.title)}</p> : null}
 
       {modal.type === 'newticket' ? (
         <NewTicketForm
@@ -1154,9 +1155,9 @@ function TicketingModals({
 
       {modal.type === 'assign' && t ? (
         <>
-          <label className="tk-field">کارشناس
+          <label className="tk-field">{tr('کارشناس')}
             <select value={f.owner || ''} onChange={(e) => setF({ ...f, owner: e.target.value })}>
-              <option value="">انتخاب کنید</option>
+              <option value="">{tr('انتخاب کنید')}</option>
               {agents.map((a) => <option key={a.id} value={a.id}>{a.name} — {a.team}</option>)}
             </select>
           </label>
@@ -1177,19 +1178,19 @@ function TicketingModals({
                 }),
               }).then(() => onDone('تیکت تخصیص یافت')).finally(() => setBusy(false));
             }}
-          >تخصیص</button>
+          >{tr('تخصیص')}</button>
         </>
       ) : null}
 
       {modal.type === 'transfer' && t ? (
         <>
-          <label className="tk-field">صف مقصد
+          <label className="tk-field">{tr('صف مقصد')}
             <select value={f.queue || ''} onChange={(e) => setF({ ...f, queue: e.target.value })}>
-              <option value="">انتخاب کنید</option>
+              <option value="">{tr('انتخاب کنید')}</option>
               {CRM_TICKET_QUEUES.map((q) => <option key={q.id} value={q.id}>{q.name} — {q.team}</option>)}
             </select>
           </label>
-          <p className="admin-muted">ارجاع بین‌تیمی تاریخچه و شناسه تیکت را حفظ می‌کند.</p>
+          <p className="admin-muted">{tr('ارجاع بین‌تیمی تاریخچه و شناسه تیکت را حفظ می‌کند.')}</p>
           <button
             type="button"
             className="admin-btn admin-btn--primary"
@@ -1201,22 +1202,22 @@ function TicketingModals({
                 body: JSON.stringify({ queueId: f.queue, status: 'در حال بررسی' }),
               }).then(() => onDone('تیکت ارجاع شد')).finally(() => setBusy(false));
             }}
-          >ارجاع</button>
+          >{tr('ارجاع')}</button>
         </>
       ) : null}
 
       {modal.type === 'status' && t ? (
         <>
-          <label className="tk-field">وضعیت جدید
+          <label className="tk-field">{tr('وضعیت جدید')}
             <select value={f.status || ''} onChange={(e) => setF({ ...f, status: e.target.value })}>
-              <option value="">انتخاب کنید</option>
+              <option value="">{tr('انتخاب کنید')}</option>
               {CRM_TICKET_STATUSES.map((s) => <option key={s}>{s}</option>)}
             </select>
           </label>
-          {['در انتظار مشتری', 'در انتظار داخلی'].includes(f.status) ? (
-            <label className="tk-field">دلیل تعلیق
+          {[tr('در انتظار مشتری'), tr('در انتظار داخلی')].includes(f.status) ? (
+            <label className="tk-field">{tr('دلیل تعلیق')}
               <select value={f.reason || ''} onChange={(e) => setF({ ...f, reason: e.target.value })}>
-                <option value="">انتخاب کنید</option>
+                <option value="">{tr('انتخاب کنید')}</option>
                 {CRM_PENDING_REASONS.map((r) => <option key={r}>{r}</option>)}
               </select>
             </label>
@@ -1232,18 +1233,18 @@ function TicketingModals({
                 body: JSON.stringify({ status: f.status, pendingReason: f.reason || null }),
               }).then(() => onDone('وضعیت به‌روزرسانی شد')).finally(() => setBusy(false));
             }}
-          >ثبت وضعیت</button>
+          >{tr('ثبت وضعیت')}</button>
         </>
       ) : null}
 
       {modal.type === 'priority' && t ? (
         <>
-          <label className="tk-field">اولویت جدید
+          <label className="tk-field">{tr('اولویت جدید')}
             <select value={f.priority || t.priority} onChange={(e) => setF({ ...f, priority: e.target.value })}>
               {CRM_PRIORITIES.map((p) => <option key={p}>{p}</option>)}
             </select>
           </label>
-          <p className="admin-muted">تغییر اولویت مهلت SLA را بازمحاسبه می‌کند.</p>
+          <p className="admin-muted">{tr('تغییر اولویت مهلت SLA را بازمحاسبه می‌کند.')}</p>
           <button
             type="button"
             className="admin-btn admin-btn--primary"
@@ -1255,16 +1256,16 @@ function TicketingModals({
                 body: JSON.stringify({ priority: f.priority || t.priority }),
               }).then(() => onDone('اولویت به‌روزرسانی شد')).finally(() => setBusy(false));
             }}
-          >ثبت اولویت</button>
+          >{tr('ثبت اولویت')}</button>
         </>
       ) : null}
 
       {modal.type === 'escalate' && t ? (
         <>
-          <label className="tk-field">دلیل<input value={f.reason || ''} onChange={(e) => setF({ ...f, reason: e.target.value })} /></label>
-          <label className="tk-field">اقدام درخواستی<textarea rows={2} value={f.action || ''} onChange={(e) => setF({ ...f, action: e.target.value })} /></label>
+          <label className="tk-field">{tr('دلیل')}<input value={f.reason || ''} onChange={(e) => setF({ ...f, reason: e.target.value })} /></label>
+          <label className="tk-field">{tr('اقدام درخواستی')}<textarea rows={2} value={f.action || ''} onChange={(e) => setF({ ...f, action: e.target.value })} /></label>
           {modal.module === 'finance' ? (
-            <label className="tk-field">مبلغ (ریال، اختیاری)<input type="number" value={f.amount || ''} onChange={(e) => setF({ ...f, amount: e.target.value })} /></label>
+            <label className="tk-field">{tr('مبلغ (ریال، اختیاری)')}<input type="number" value={f.amount || ''} onChange={(e) => setF({ ...f, amount: e.target.value })} /></label>
           ) : null}
           <button
             type="button"
@@ -1283,18 +1284,18 @@ function TicketingModals({
                 }),
               }).then(() => onDone('ارجاع ارسال شد')).finally(() => setBusy(false));
             }}
-          >ارسال ارجاع</button>
+          >{tr('ارسال ارجاع')}</button>
         </>
       ) : null}
 
       {modal.type === 'respond_esc' ? (
         <>
-          <label className="tk-field">پاسخ<textarea rows={3} value={f.response || ''} onChange={(e) => setF({ ...f, response: e.target.value })} /></label>
-          <label className="tk-field">وضعیت
+          <label className="tk-field">{tr('پاسخ')}<textarea rows={3} value={f.response || ''} onChange={(e) => setF({ ...f, response: e.target.value })} /></label>
+          <label className="tk-field">{tr('وضعیت')}
             <select value={f.status || 'تایید'} onChange={(e) => setF({ ...f, status: e.target.value })}>
-              <option>تایید</option>
-              <option>رد شد</option>
-              <option>پاسخ داده‌شده</option>
+              <option>{tr('تایید')}</option>
+              <option>{tr('رد شد')}</option>
+              <option>{tr('پاسخ داده‌شده')}</option>
             </select>
           </label>
           <button
@@ -1313,19 +1314,19 @@ function TicketingModals({
                 }),
               }).then(() => onDone(`پاسخ ثبت شد${esc?.ticketId ? '' : ''}`)).finally(() => setBusy(false));
             }}
-          >ثبت پاسخ</button>
+          >{tr('ثبت پاسخ')}</button>
         </>
       ) : null}
 
       {modal.type === 'followup' && t ? (
         <>
-          <label className="tk-field">نوع اقدام
+          <label className="tk-field">{tr('نوع اقدام')}
             <select value={f.type || 'تماس'} onChange={(e) => setF({ ...f, type: e.target.value })}>
-              <option>تماس</option><option>پیامک</option><option>ایمیل</option><option>داخلی</option>
+              <option>{tr('تماس')}</option><option>{tr('پیامک')}</option><option>{tr('ایمیل')}</option><option>{tr('داخلی')}</option>
             </select>
           </label>
-          <label className="tk-field">ساعت دیگر<input type="number" value={f.inH || '24'} onChange={(e) => setF({ ...f, inH: e.target.value })} /></label>
-          <label className="tk-field">شرح<textarea rows={2} value={f.desc || ''} onChange={(e) => setF({ ...f, desc: e.target.value })} /></label>
+          <label className="tk-field">{tr('ساعت دیگر')}<input type="number" value={f.inH || '24'} onChange={(e) => setF({ ...f, inH: e.target.value })} /></label>
+          <label className="tk-field">{tr('شرح')}<textarea rows={2} value={f.desc || ''} onChange={(e) => setF({ ...f, desc: e.target.value })} /></label>
           <button
             type="button"
             className="admin-btn admin-btn--primary"
@@ -1345,25 +1346,25 @@ function TicketingModals({
                 }),
               }).then(() => onDone('پیگیری زمان‌بندی شد')).finally(() => setBusy(false));
             }}
-          >ایجاد پیگیری</button>
+          >{tr('ایجاد پیگیری')}</button>
         </>
       ) : null}
 
       {modal.type === 'resolve' && t ? (
         <>
-          <label className="tk-field">کد راه‌حل
+          <label className="tk-field">{tr('کد راه‌حل')}
             <select value={f.code || ''} onChange={(e) => setF({ ...f, code: e.target.value })}>
-              <option value="">انتخاب کنید</option>
+              <option value="">{tr('انتخاب کنید')}</option>
               {CRM_RESOLUTION_CODES.map((c) => <option key={c}>{c}</option>)}
             </select>
           </label>
-          <label className="tk-field">علت ریشه‌ای
+          <label className="tk-field">{tr('علت ریشه‌ای')}
             <select value={f.rootCause || ''} onChange={(e) => setF({ ...f, rootCause: e.target.value })}>
-              <option value="">انتخاب کنید</option>
+              <option value="">{tr('انتخاب کنید')}</option>
               {CRM_ROOT_CAUSES.map((c) => <option key={c}>{c}</option>)}
             </select>
           </label>
-          <label className="tk-field">خلاصه راه‌حل<textarea rows={3} value={f.summary || ''} onChange={(e) => setF({ ...f, summary: e.target.value })} /></label>
+          <label className="tk-field">{tr('خلاصه راه‌حل')}<textarea rows={3} value={f.summary || ''} onChange={(e) => setF({ ...f, summary: e.target.value })} /></label>
           <button
             type="button"
             className="admin-btn admin-btn--primary"
@@ -1383,15 +1384,15 @@ function TicketingModals({
                 }),
               }).then(() => onDone('تیکت حل شد')).finally(() => setBusy(false));
             }}
-          >ثبت به‌عنوان حل‌شده</button>
+          >{tr('ثبت به‌عنوان حل‌شده')}</button>
         </>
       ) : null}
 
       {modal.type === 'reopen' && t ? (
         <>
-          <label className="tk-field">دلیل بازگشایی
+          <label className="tk-field">{tr('دلیل بازگشایی')}
             <select value={f.reason || ''} onChange={(e) => setF({ ...f, reason: e.target.value })}>
-              <option value="">انتخاب کنید</option>
+              <option value="">{tr('انتخاب کنید')}</option>
               {CRM_REOPEN_REASONS.map((r) => <option key={r}>{r}</option>)}
             </select>
           </label>
@@ -1410,12 +1411,12 @@ function TicketingModals({
                 }),
               }).then(() => onDone('تیکت بازگشایی شد')).finally(() => setBusy(false));
             }}
-          >بازگشایی تیکت</button>
+          >{tr('بازگشایی تیکت')}</button>
         </>
       ) : null}
 
       <div style={{ marginTop: 12 }}>
-        <button type="button" className="admin-btn admin-btn--ghost admin-btn--sm" onClick={close} disabled={busy}>انصراف</button>
+        <button type="button" className="admin-btn admin-btn--ghost admin-btn--sm" onClick={close} disabled={busy}>{tr('انصراف')}</button>
       </div>
     </AdminModal>
   );
@@ -1454,8 +1455,8 @@ function NewTicketForm({
 
   return (
     <>
-      <label className="tk-field">جستجوی مشتری
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="موبایل یا نام…" />
+      <label className="tk-field">{tr('جستجوی مشتری')}
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder={tr("موبایل یا نام…")} />
       </label>
       {matches.length && !f.customerId ? (
         <div className="tk-matches">
@@ -1474,46 +1475,46 @@ function NewTicketForm({
           ))}
         </div>
       ) : null}
-      {f.customerId ? <Tag tone="ok">مشتری انتخاب شد</Tag> : null}
-      <label className="tk-field">موضوع<input value={f.subject} onChange={(e) => setF({ ...f, subject: e.target.value })} /></label>
-      <label className="tk-field">شرح<textarea rows={2} value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} /></label>
+      {f.customerId ? <Tag tone="ok">{tr('مشتری انتخاب شد')}</Tag> : null}
+      <label className="tk-field">{tr('موضوع')}<input value={f.subject} onChange={(e) => setF({ ...f, subject: e.target.value })} /></label>
+      <label className="tk-field">{tr('شرح')}<textarea rows={2} value={tr(f.description)} onChange={(e) => setF({ ...f, description: e.target.value })} /></label>
       <div className="tk-f3">
-        <label className="tk-field">نوع
+        <label className="tk-field">{tr('نوع')}
           <select value={f.ticketType} onChange={(e) => setF({ ...f, ticketType: e.target.value, category: '', subcategory: '' })}>
             {CRM_TICKET_TYPES.map((tp) => <option key={tp}>{tp}</option>)}
           </select>
         </label>
-        <label className="tk-field">دسته
+        <label className="tk-field">{tr('دسته')}
           <select value={f.category} onChange={(e) => setF({ ...f, category: e.target.value, subcategory: '' })}>
-            <option value="">انتخاب</option>
+            <option value="">{tr('انتخاب')}</option>
             {cats.map((c) => <option key={c}>{c}</option>)}
           </select>
         </label>
-        <label className="tk-field">زیردسته
+        <label className="tk-field">{tr('زیردسته')}
           <select value={f.subcategory} onChange={(e) => setF({ ...f, subcategory: e.target.value })}>
-            <option value="">انتخاب</option>
+            <option value="">{tr('انتخاب')}</option>
             {subs.map((s) => <option key={s}>{s}</option>)}
           </select>
         </label>
       </div>
       <div className="tk-f3">
-        <label className="tk-field">اولویت
+        <label className="tk-field">{tr('اولویت')}
           <select value={f.priority} onChange={(e) => setF({ ...f, priority: e.target.value })}>
             {CRM_PRIORITIES.map((p) => <option key={p}>{p}</option>)}
           </select>
         </label>
-        <label className="tk-field">شدت
+        <label className="tk-field">{tr('شدت')}
           <select value={f.severity} onChange={(e) => setF({ ...f, severity: e.target.value })}>
             {CRM_TICKET_SEVERITIES.map((s) => <option key={s}>{s}</option>)}
           </select>
         </label>
-        <label className="tk-field">کانال
+        <label className="tk-field">{tr('کانال')}
           <select value={f.channel} onChange={(e) => setF({ ...f, channel: e.target.value })}>
             {Object.entries(CRM_TICKET_CHANNELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </select>
         </label>
       </div>
-      <label className="tk-field">صف اولیه
+      <label className="tk-field">{tr('صف اولیه')}
         <select value={f.queueId} onChange={(e) => setF({ ...f, queueId: e.target.value })}>
           {CRM_TICKET_QUEUES.map((q) => <option key={q.id} value={q.id}>{q.name}</option>)}
         </select>
@@ -1536,7 +1537,7 @@ function NewTicketForm({
             queueId: f.queueId,
           })
         }
-      >ایجاد تیکت</button>
+      >{tr('ایجاد تیکت')}</button>
     </>
   );
 }

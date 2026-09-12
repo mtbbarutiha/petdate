@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Check, FileText, ImageOff, RefreshCw, X } from 'lucide-react';
 import { API_BASE, adminFetch } from '../api';
 import { petPublicIdOf, userPublicIdOf, type User } from '@petdate/shared';
+import { tr } from '../../i18n';
 
 type PetRow = {
   id: number;
@@ -76,7 +77,7 @@ function ModThumb({
         href={href}
         target="_blank"
         rel="noreferrer"
-        title="مشاهده PDF"
+        title={tr("مشاهده PDF")}
       >
         <FileText size={28} aria-hidden />
         <span>PDF</span>
@@ -98,7 +99,7 @@ function ModThumb({
       href={href ?? src}
       target="_blank"
       rel="noreferrer"
-      title="باز کردن تمام‌صفحه"
+      title={tr("باز کردن تمام‌صفحه")}
     >
       <img
         className="admin-mod-card__thumb"
@@ -115,7 +116,7 @@ function ModThumb({
         }}
       />
       <span className="admin-mod-card__thumb-fallback" hidden>
-        بارگذاری ناموفق — لینک مستقیم
+        {tr('بارگذاری ناموفق — لینک مستقیم')}
       </span>
     </a>
   );
@@ -150,7 +151,7 @@ function ModActions({
         onClick={onReject}
       >
         <X size={16} aria-hidden />
-        رد
+        {tr('رد')}
       </button>
     </div>
   );
@@ -291,10 +292,10 @@ export function AdminMarketplaceModerationPage() {
     <div className="admin-page admin-page--wide admin-mod-page" dir="rtl">
       <header className="admin-header">
         <div>
-          <h1>تأیید مدارک و عکس‌ها</h1>
+          <h1>{tr('تأیید مدارک و عکس‌ها')}</h1>
           <p>
-            صف تأیید مدرک دامپزشک / مربی و عکس پت و کاربر — مدارک تأییدشده در آرشیو
-            می‌مانند. عکس‌ها تا تأیید ادمین عمومی نیستند.
+            {tr(`صف تأیید مدرک دامپزشک / مربی و عکس پت و کاربر — مدارک تأییدشده در آرشیو
+            می‌مانند. عکس‌ها تا تأیید ادمین عمومی نیستند.`)}
           </p>
         </div>
         <button
@@ -304,14 +305,14 @@ export function AdminMarketplaceModerationPage() {
           disabled={loading || busy}
         >
           <RefreshCw size={16} aria-hidden />
-          بروزرسانی
+          {tr('بروزرسانی')}
         </button>
       </header>
 
       {error ? <p className="admin-error">{error}</p> : null}
 
-      <div className="admin-mod-toolbar" role="toolbar" aria-label="حالت صف">
-        <div className="admin-tabs admin-mod-mode-tabs" role="tablist" aria-label="صف یا آرشیو">
+      <div className="admin-mod-toolbar" role="toolbar" aria-label={tr("حالت صف")}>
+        <div className="admin-tabs admin-mod-mode-tabs" role="tablist" aria-label={tr("صف یا آرشیو")}>
           {(
             [
               ['queue', 'صف بررسی'],
@@ -334,7 +335,7 @@ export function AdminMarketplaceModerationPage() {
           ))}
         </div>
 
-        <div className="admin-tabs admin-mod-filter-tabs" role="tablist" aria-label="نوع مدرک">
+        <div className="admin-tabs admin-mod-filter-tabs" role="tablist" aria-label={tr("نوع مدرک")}>
           {(
             [
               ['vet', 'دامپزشک', tabCounts.vet],
@@ -363,10 +364,10 @@ export function AdminMarketplaceModerationPage() {
       </div>
 
       {loading ? (
-        <ModEmpty>در حال بارگذاری…</ModEmpty>
+        <ModEmpty>{tr('در حال بارگذاری…')}</ModEmpty>
       ) : tab === 'photos' ? (
         photos.length === 0 ? (
-          <ModEmpty>صف عکس پت خالی است.</ModEmpty>
+          <ModEmpty>{tr('صف عکس پت خالی است.')}</ModEmpty>
         ) : (
           <div className="admin-mod-grid" data-testid="admin-mod-photo-grid">
             {photos.map((p) => {
@@ -382,9 +383,9 @@ export function AdminMarketplaceModerationPage() {
                         <code dir="ltr">{idLabel}</code>
                       </p>
                       {p.ownerName ? (
-                        <p className="admin-mod-card__sub">صاحب: {p.ownerName}</p>
+                        <p className="admin-mod-card__sub">{tr('صاحب:')} {p.ownerName}</p>
                       ) : (
-                        <p className="admin-mod-card__sub admin-muted">صاحب نامشخص</p>
+                        <p className="admin-mod-card__sub admin-muted">{tr('صاحب نامشخص')}</p>
                       )}
                     </div>
                     <ModActions
@@ -401,7 +402,7 @@ export function AdminMarketplaceModerationPage() {
         )
       ) : tab === 'avatars' ? (
         avatars.length === 0 ? (
-          <ModEmpty>صف عکس کاربر خالی است.</ModEmpty>
+          <ModEmpty>{tr('صف عکس کاربر خالی است.')}</ModEmpty>
         ) : (
           <div className="admin-mod-grid" data-testid="admin-mod-avatar-grid">
             {avatars.map((u) => {
@@ -416,7 +417,7 @@ export function AdminMarketplaceModerationPage() {
                         <code dir="ltr">{userPublicIdOf(u)}</code>
                       </p>
                       <p className="admin-mod-card__sub">
-                        {u.telegramId ? `TG ${u.telegramId}` : 'بدون تلگرام'}
+                        {u.telegramId ? `TG ${u.telegramId}` : tr('بدون تلگرام')}
                       </p>
                     </div>
                     <ModActions
@@ -432,7 +433,7 @@ export function AdminMarketplaceModerationPage() {
           </div>
         )
       ) : list.length === 0 ? (
-        <ModEmpty>{isArchive ? 'آرشیو خالی است.' : 'صف خالی است.'}</ModEmpty>
+        <ModEmpty>{isArchive ? tr('آرشیو خالی است.') : tr('صف خالی است.')}</ModEmpty>
       ) : (
         <div className="admin-mod-grid" data-testid="admin-mod-credential-grid">
           {list.map((u) => {
@@ -441,23 +442,23 @@ export function AdminMarketplaceModerationPage() {
             const pdf = isPdfRef(fileRef);
             return (
               <article key={u.id} className="admin-mod-card admin-mod-card--credential">
-                <ModThumb src={pdf ? null : src} alt={`مدرک ${u.name}`} href={src} pdf={pdf} />
+                <ModThumb src={pdf ? null : src} alt={`${tr('مدرک ')}${u.name}`} href={src} pdf={pdf} />
                 <div className="admin-mod-card__body">
                   <div className="admin-mod-card__meta">
                     <div className="admin-mod-card__title-row">
                       <h3 className="admin-mod-card__title">{u.name}</h3>
                       {isArchive ? (
-                        <span className="admin-mod-badge admin-mod-badge--ok">تأیید شده</span>
+                        <span className="admin-mod-badge admin-mod-badge--ok">{tr('تأیید شده')}</span>
                       ) : null}
                     </div>
                     <p className="admin-mod-card__id">
                       <code dir="ltr">{userPublicIdOf(u)}</code>
                     </p>
                     <p className="admin-mod-card__sub">
-                      {u.telegramId ? `TG ${u.telegramId}` : 'بدون تلگرام'}
+                      {u.telegramId ? `TG ${u.telegramId}` : tr('بدون تلگرام')}
                     </p>
                     {!src ? (
-                      <p className="admin-mod-card__warn">فایل مدرک در دسترس نیست.</p>
+                      <p className="admin-mod-card__warn">{tr('فایل مدرک در دسترس نیست.')}</p>
                     ) : null}
                   </div>
                   {!isArchive ? (
@@ -477,7 +478,7 @@ export function AdminMarketplaceModerationPage() {
                       target="_blank"
                       rel="noreferrer"
                     >
-                      مشاهده مدرک
+                      {tr('مشاهده مدرک')}
                     </a>
                   ) : null}
                 </div>

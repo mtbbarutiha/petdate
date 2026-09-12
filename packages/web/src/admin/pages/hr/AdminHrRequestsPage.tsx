@@ -6,6 +6,7 @@ import { formatAdminFaDate } from '../../JalaliDateSelect';
 import { adminCan } from '../../auth';
 import { AdminModal } from '../../AdminModal';
 import { AdminEntityCell, AdminThumb } from '../../AdminThumb';
+import { tr } from '../../../i18n';
 
 type Balance = {
   employeeId: number;
@@ -20,7 +21,7 @@ function ticketRange(r: HrRequest): string {
   if (r.fromDate || r.toDate) {
     return `${formatAdminFaDate(r.fromDate) || '—'} ← ${formatAdminFaDate(r.toDate) || '—'}`;
   }
-  if (r.days) return `${formatNumFa(r.days)} روز`;
+  if (r.days) return `${formatNumFa(r.days)}${tr(' روز')}`;
   return formatAdminFaDate(r.createdAt);
 }
 
@@ -93,8 +94,8 @@ export function AdminHrRequestsPage() {
     <div className="admin-page">
       <header className="admin-header">
         <div>
-          <h1>تیکت‌های منابع انسانی</h1>
-          <p>گردش‌کار خطی · مانده مرخصی سالانه ۲۶ روز</p>
+          <h1>{tr('تیکت‌های منابع انسانی')}</h1>
+          <p>{tr('گردش‌کار خطی · مانده مرخصی سالانه ۲۶ روز')}</p>
         </div>
         {canWrite ? (
           <button
@@ -109,7 +110,7 @@ export function AdminHrRequestsPage() {
               setOpen(true);
             }}
           >
-            + تیکت
+            {tr('+ تیکت')}
           </button>
         ) : null}
       </header>
@@ -118,19 +119,19 @@ export function AdminHrRequestsPage() {
         <table className="admin-table">
           <thead>
             <tr>
-              <th>همکار</th>
-              <th>نوع</th>
-              <th>بازه / تاریخ</th>
-              <th>وضعیت</th>
-              <th>نتیجه</th>
-              <th>عملیات</th>
+              <th>{tr('همکار')}</th>
+              <th>{tr('نوع')}</th>
+              <th>{tr('بازه / تاریخ')}</th>
+              <th>{tr('وضعیت')}</th>
+              <th>{tr('نتیجه')}</th>
+              <th>{tr('عملیات')}</th>
             </tr>
           </thead>
           <tbody>
             {requests.length === 0 ? (
               <tr>
                 <td colSpan={6} className="admin-empty">
-                  تیکتی نیست
+                  {tr('تیکتی نیست')}
                 </td>
               </tr>
             ) : (
@@ -156,16 +157,16 @@ export function AdminHrRequestsPage() {
                           className="admin-btn admin-btn--ghost"
                           onClick={() => void act(`/api/admin/hr/requests/${r.id}/advance`)}
                         >
-                          مرحله بعد
+                          {tr('مرحله بعد')}
                         </button>
                       ) : null}{' '}
-                      {canWrite && ['ثبت‌شده', 'بررسی مدیر', 'بررسی HR'].includes(r.status) ? (
+                      {canWrite && [tr('ثبت‌شده'), tr('بررسی مدیر'), tr('بررسی HR')].includes(r.status) ? (
                         <button
                           type="button"
                           className="admin-btn admin-btn--ghost"
                           onClick={() => void act(`/api/admin/hr/requests/${r.id}/reject`)}
                         >
-                          رد
+                          {tr('رد')}
                         </button>
                       ) : null}{' '}
                       {canWrite && r.status !== 'تایید شده' && r.status !== 'رد شده' && r.status !== 'لغو شده' ? (
@@ -178,7 +179,7 @@ export function AdminHrRequestsPage() {
                             void act(`/api/admin/hr/requests/${r.id}/resolve`, { result });
                           }}
                         >
-                          ثبت نتیجه
+                          {tr('ثبت نتیجه')}
                         </button>
                       ) : null}
                     </td>
@@ -190,16 +191,16 @@ export function AdminHrRequestsPage() {
         </table>
       </div>
       <section className="admin-card" style={{ marginTop: 16, padding: 16 }}>
-        <h2 style={{ marginTop: 0, fontSize: '1rem' }}>مانده مرخصی</h2>
+        <h2 style={{ marginTop: 0, fontSize: '1rem' }}>{tr('مانده مرخصی')}</h2>
         <div className="admin-table-wrap">
           <table className="admin-table">
             <thead>
               <tr>
-                <th>کد</th>
-                <th>نام</th>
-                <th>سقف</th>
-                <th>مصرف</th>
-                <th>مانده</th>
+                <th>{tr('کد')}</th>
+                <th>{tr('نام')}</th>
+                <th>{tr('سقف')}</th>
+                <th>{tr('مصرف')}</th>
+                <th>{tr('مانده')}</th>
               </tr>
             </thead>
             <tbody>
@@ -227,7 +228,7 @@ export function AdminHrRequestsPage() {
 
       <AdminModal
         open={open}
-        title="تیکت جدید"
+        title={tr("تیکت جدید")}
         onClose={() => setOpen(false)}
         as="form"
         onSubmit={(e) => void create(e)}
@@ -235,7 +236,7 @@ export function AdminHrRequestsPage() {
         footer={
           <>
             <button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>
-              ذخیره
+              {tr('ذخیره')}
             </button>
             <button
               type="button"
@@ -243,13 +244,13 @@ export function AdminHrRequestsPage() {
               disabled={busy}
               onClick={() => setOpen(false)}
             >
-              انصراف
+              {tr('انصراف')}
             </button>
           </>
         }
       >
         <label>
-          <span className="form-label">همکار</span>
+          <span className="form-label">{tr('همکار')}</span>
           <select
             className="form-input"
             required
@@ -264,7 +265,7 @@ export function AdminHrRequestsPage() {
           </select>
         </label>
         <label>
-          <span className="form-label">نوع</span>
+          <span className="form-label">{tr('نوع')}</span>
           <select
             className="form-input"
             value={form.type}
@@ -278,7 +279,7 @@ export function AdminHrRequestsPage() {
           </select>
         </label>
         <label>
-          <span className="form-label">تعداد روز</span>
+          <span className="form-label">{tr('تعداد روز')}</span>
           <input
             className="form-input"
             dir="ltr"

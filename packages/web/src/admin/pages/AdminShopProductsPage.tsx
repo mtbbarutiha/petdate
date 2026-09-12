@@ -4,6 +4,7 @@ import { Plus, RefreshCw, Search, Trash2 } from 'lucide-react';
 import { SHOP_CATEGORIES, SHOP_PRODUCTS } from '../../data/shopCatalog';
 import { adminFetch, formatNumFa, formatTomanFa } from '../api';
 import { AdminShopProductFormModal } from './AdminShopProductFormPage';
+import { tr } from '../../i18n';
 
 type Product = {
   id: string; slug: string; title: string; brandId: string; categorySlug: string;
@@ -37,7 +38,7 @@ export function AdminShopProductsPage() {
   useEffect(() => { void load(); }, [load]);
 
   const syncCatalog = async () => {
-    if (!confirm('کاتالوگ وب روی دیتابیس بازنویسی شود؟')) return;
+    if (!confirm(tr('کاتالوگ وب روی دیتابیس بازنویسی شود؟'))) return;
     setBusy(true); setMsg(null);
     try {
       const result = await adminFetch<{ products: number; categories: number }>('/api/admin/shop/catalog/sync', {
@@ -47,14 +48,14 @@ export function AdminShopProductsPage() {
           categories: SHOP_CATEGORIES,
         }),
       });
-      setMsg(`همگام‌سازی: ${formatNumFa(result.products)} محصول، ${formatNumFa(result.categories)} دسته`);
+      setMsg(`${tr('همگام‌سازی: ')}${formatNumFa(result.products)}${tr(' محصول، ')}${formatNumFa(result.categories)}${tr(' دسته')}`);
       await load();
     } catch (err) { setError(err instanceof Error ? err.message : 'خطا'); }
     finally { setBusy(false); }
   };
 
   const remove = async (id: string) => {
-    if (!confirm('حذف محصول؟')) return;
+    if (!confirm(tr('حذف محصول؟'))) return;
     try { await adminFetch(`/api/admin/shop/products/${id}`, { method: 'DELETE' }); await load(); }
     catch (err) { setError(err instanceof Error ? err.message : 'خطا'); }
   };
@@ -62,41 +63,41 @@ export function AdminShopProductsPage() {
   return (
     <div className="admin-page">
       <header className="admin-header">
-        <div><h1>محصولات فروشگاه</h1><p>{formatNumFa(products.length)} مورد — هم‌تراز کاتالوگ شاپ</p></div>
+        <div><h1>{tr('محصولات فروشگاه')}</h1><p>{formatNumFa(products.length)} {tr('مورد — هم‌تراز کاتالوگ شاپ')}</p></div>
         <div className="admin-header-actions">
           <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => void syncCatalog()}>
-            <RefreshCw size={16} /> سینک از کاتالوگ وب
+            <RefreshCw size={16} /> {tr('سینک از کاتالوگ وب')}
           </button>
           <button type="button" className="admin-btn admin-btn--primary" onClick={openNew}>
-            <Plus size={16} /> محصول جدید
+            <Plus size={16} /> {tr('محصول جدید')}
           </button>
         </div>
       </header>
       <div className="admin-toolbar">
-        <div className="admin-search"><Search size={16} /><input placeholder="جستجو…" value={q} onChange={(e) => setQ(e.target.value)} /></div>
-        <button type="button" className="admin-btn" onClick={() => void load()}>جستجو</button>
+        <div className="admin-search"><Search size={16} /><input placeholder={tr("جستجو…")} value={q} onChange={(e) => setQ(e.target.value)} /></div>
+        <button type="button" className="admin-btn" onClick={() => void load()}>{tr('جستجو')}</button>
       </div>
       {error ? <p className="admin-error">{error}</p> : null}
       {msg ? <p className="admin-success">{msg}</p> : null}
-      {!products.length ? <section className="admin-card admin-empty-hint"><p>محصولی در DB نیست — «سینک از کاتالوگ وب» را بزنید.</p></section> : null}
+      {!products.length ? <section className="admin-card admin-empty-hint"><p>{tr('محصولی در DB نیست — «سینک از کاتالوگ وب» را بزنید.')}</p></section> : null}
       <div className="admin-table-wrap admin-card"><table className="admin-table">
-        <thead><tr><th>عکس</th><th>عنوان</th><th>دسته</th><th>قیمت</th><th>موجودی</th><th></th></tr></thead>
+        <thead><tr><th>{tr('عکس')}</th><th>{tr('عنوان')}</th><th>{tr('دسته')}</th><th>{tr('قیمت')}</th><th>{tr('موجودی')}</th><th></th></tr></thead>
         <tbody>
           {products.map((prod) => (
             <tr key={prod.id}>
               <td>{prod.image ? <img src={prod.image} alt="" className="admin-thumb" /> : '—'}</td>
               <td>
                 <button type="button" className="admin-btn admin-btn--ghost" style={{ paddingInline: 0 }} onClick={() => openEdit(prod.id)}>
-                  <strong>{prod.title}</strong>
+                  <strong>{tr(prod.title)}</strong>
                 </button>
                 <div className="admin-mono">{prod.slug}</div>
               </td>
               <td>{prod.categorySlug}</td>
               <td>{formatTomanFa(prod.priceToman)}</td>
-              <td>{prod.inStock ? <span className="admin-badge admin-badge--info">{formatNumFa(prod.stockQty)}</span> : <span className="admin-badge admin-badge--error">ناموجود</span>}</td>
+              <td>{prod.inStock ? <span className="admin-badge admin-badge--info">{formatNumFa(prod.stockQty)}</span> : <span className="admin-badge admin-badge--error">{tr('ناموجود')}</span>}</td>
               <td>
                 <div className="admin-row-actions">
-                  <button type="button" className="admin-btn admin-btn--ghost" onClick={() => openEdit(prod.id)}>ویرایش</button>
+                  <button type="button" className="admin-btn admin-btn--ghost" onClick={() => openEdit(prod.id)}>{tr('ویرایش')}</button>
                   <button type="button" className="admin-btn admin-btn--danger" onClick={() => void remove(prod.id)}><Trash2 size={14} /></button>
                 </div>
               </td>

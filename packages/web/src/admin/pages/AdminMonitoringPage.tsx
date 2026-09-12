@@ -14,6 +14,7 @@ import {
 import { adminFetch } from '../api';
 import { formatAdminFaDateTime } from '../JalaliDateSelect';
 import { checkTone, type CheckTone } from '../monitoringTone';
+import { tr } from '../../i18n';
 
 type CheckStatus = 'up' | 'down' | 'warn' | 'not_configured';
 type Check = {
@@ -102,9 +103,9 @@ function formatUptime(sec: number): string {
   const d = Math.floor(sec / 86400);
   const h = Math.floor((sec % 86400) / 3600);
   const m = Math.floor((sec % 3600) / 60);
-  if (d > 0) return `${d}ر ${h}س ${m}د`;
-  if (h > 0) return `${h}س ${m}د`;
-  return `${m}د ${sec % 60}ث`;
+  if (d > 0) return `${d}${tr('ر ')}${h}${tr('س ')}${m}${tr('د')}`;
+  if (h > 0) return `${h}${tr('س ')}${m}${tr('د')}`;
+  return `${m}${tr('د ')}${sec % 60}${tr('ث')}`;
 }
 
 function formatGeneratedAt(iso: string): string {
@@ -166,20 +167,20 @@ export function AdminMonitoringPage() {
     <div className="admin-page">
       <header className="admin-header">
         <div>
-          <h1>مانیتورینگ</h1>
+          <h1>{tr('مانیتورینگ')}</h1>
           <p>
-            وضعیت زنده روی دامنه اصلی
-            {data?.publicDomain ? ` (${data.publicDomain})` : ''} — هر ۱۰ ثانیه
+            {tr('وضعیت زنده روی دامنه اصلی')}
+            {data?.publicDomain ? ` (${data.publicDomain})` : ''} {tr('— هر ۱۰ ثانیه')}
           </p>
         </div>
         <button type="button" className="admin-btn" onClick={() => void load()}>
           <RefreshCw size={16} />
-          بروزرسانی
+          {tr('بروزرسانی')}
         </button>
       </header>
 
       {error ? <p className="admin-error">{error}</p> : null}
-      {loading && !data ? <p className="admin-muted">در حال بارگذاری…</p> : null}
+      {loading && !data ? <p className="admin-muted">{tr('در حال بارگذاری…')}</p> : null}
 
       {data ? (
         <>
@@ -194,10 +195,10 @@ export function AdminMonitoringPage() {
             <div>
               <strong>
                 {!data.ok
-                  ? 'مشکل در سرویس‌های حیاتی'
+                  ? tr('مشکل در سرویس‌های حیاتی')
                   : data.degraded || (data.warnings && data.warnings.length > 0)
-                    ? 'سیستم با هشدار کار می‌کند'
-                    : 'سیستم سالم است'}
+                    ? tr('سیستم با هشدار کار می‌کند')
+                    : tr('سیستم سالم است')}
               </strong>
               <span>
                 {data.publicWebUrl || data.publicDomain || data.hostname}
@@ -216,7 +217,7 @@ export function AdminMonitoringPage() {
               </div>
               <div>
                 <div className="admin-stat-value">{data.memory.rssMb} MB</div>
-                <div className="admin-stat-label">RAM فرآیند API</div>
+                <div className="admin-stat-label">{tr('RAM فرآیند API')}</div>
               </div>
             </div>
             <div className="admin-stat admin-stat--blue">
@@ -236,7 +237,7 @@ export function AdminMonitoringPage() {
                 <div className="admin-stat-value">
                   {data.memory.systemFreeMb} / {data.memory.systemTotalMb} MB
                 </div>
-                <div className="admin-stat-label">RAM آزاد سیستم</div>
+                <div className="admin-stat-label">{tr('RAM آزاد سیستم')}</div>
               </div>
             </div>
             <div className="admin-stat admin-stat--orange">
@@ -245,14 +246,14 @@ export function AdminMonitoringPage() {
               </div>
               <div>
                 <div className="admin-stat-value">{data.logs.errors24h}</div>
-                <div className="admin-stat-label">خطای ۲۴ ساعت</div>
+                <div className="admin-stat-label">{tr('خطای ۲۴ ساعت')}</div>
               </div>
             </div>
           </div>
 
           <section className="admin-card">
             <div className="admin-card-head">
-              <h2>سرویس‌ها</h2>
+              <h2>{tr('سرویس‌ها')}</h2>
               <span className="admin-muted">{formatGeneratedAt(data.generatedAt)}</span>
             </div>
             <div className="admin-checks">
@@ -262,17 +263,17 @@ export function AdminMonitoringPage() {
                   <div key={key} className={`admin-check is-${tone}`} data-status={check.status || tone}>
                     <CheckIcon tone={tone} />
                     <div>
-                      <strong>{CHECK_LABELS[key] || key}</strong>
+                      <strong>{tr(CHECK_LABELS[key] || key)}</strong>
                       <span>
                         {check.detail ||
                           (check.freeGb != null
-                            ? `${check.freeGb} / ${check.totalGb} GB آزاد`
+                            ? `${check.freeGb} / ${check.totalGb}${tr(' GB آزاد')}`
                             : tone === 'ok'
                               ? 'OK'
                               : tone === 'warn'
-                                ? 'هشدار'
+                                ? tr('هشدار')
                                 : tone === 'idle'
-                                  ? 'پیکربندی نشده'
+                                  ? tr('پیکربندی نشده')
                                   : 'DOWN')}
                       </span>
                     </div>
@@ -285,32 +286,32 @@ export function AdminMonitoringPage() {
           <section className="admin-card">
             <div className="admin-card-head">
               <h2>
-                <Database size={18} /> آمار دیتابیس
+                <Database size={18} /> {tr('آمار دیتابیس')}
               </h2>
             </div>
             <div className="admin-stats">
               <div className="admin-stat admin-stat--slate">
                 <div>
                   <div className="admin-stat-value">{data.counts.users}</div>
-                  <div className="admin-stat-label">کاربران</div>
+                  <div className="admin-stat-label">{tr('کاربران')}</div>
                 </div>
               </div>
               <div className="admin-stat admin-stat--blue">
                 <div>
                   <div className="admin-stat-value">{data.counts.pets}</div>
-                  <div className="admin-stat-label">پت‌ها</div>
+                  <div className="admin-stat-label">{tr('پت‌ها')}</div>
                 </div>
               </div>
               <div className="admin-stat admin-stat--green">
                 <div>
                   <div className="admin-stat-value">{data.counts.playdatesAccepted}</div>
-                  <div className="admin-stat-label">همبازی قبول‌شده</div>
+                  <div className="admin-stat-label">{tr('همبازی قبول‌شده')}</div>
                 </div>
               </div>
               <div className="admin-stat admin-stat--orange">
                 <div>
                   <div className="admin-stat-value">{data.counts.chatMessages}</div>
-                  <div className="admin-stat-label">پیام چت</div>
+                  <div className="admin-stat-label">{tr('پیام چت')}</div>
                 </div>
               </div>
             </div>

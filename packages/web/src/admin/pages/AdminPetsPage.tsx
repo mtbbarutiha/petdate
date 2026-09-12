@@ -18,6 +18,7 @@ import {
   type JalaliDateValue,
 } from '../JalaliDateSelect';
 import { AdminPetFormModal } from './AdminPetFormPage';
+import { tr } from '../../i18n';
 
 /** Admin users list focused on this owner (PD-U… preferred). */
 function adminOwnerUsersHref(owner: {
@@ -153,64 +154,64 @@ export function AdminPetsPage() {
     <div className="admin-page">
       <header className="admin-header">
         <div>
-          <h1>مدیریت پت‌ها</h1>
-          <p>{formatNumFa(total)} پت · جدول pets</p>
+          <h1>{tr('مدیریت پت‌ها')}</h1>
+          <p>{formatNumFa(total)} {tr('پت · جدول pets')}</p>
         </div>
         <button
           type="button"
           className="admin-btn admin-btn--primary"
           onClick={() => navigate('/admin/pets?new=1')}
         >
-          <Plus size={16} /> پت جدید
+          <Plus size={16} /> {tr('پت جدید')}
         </button>
       </header>
 
-      <div className="admin-toolbar admin-toolbar--filters" role="search" aria-label="فیلتر پت‌ها">
+      <div className="admin-toolbar admin-toolbar--filters" role="search" aria-label={tr("فیلتر پت‌ها")}>
         <div className="admin-filter-primary">
           <div className="admin-search">
             <Search size={16} />
             <input
-              placeholder="نام، آیدی PD-P، نژاد، شهر…"
+              placeholder={tr("نام، آیدی PD-P، نژاد، شهر…")}
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              aria-label="جستجوی پت"
+              aria-label={tr("جستجوی پت")}
             />
           </div>
           <select
             className="admin-select"
             value={species}
             onChange={(e) => setSpecies(e.target.value)}
-            aria-label="گونه"
+            aria-label={tr("گونه")}
           >
-            <option value="">همه گونه‌ها</option>
-            <option value="dog">سگ</option>
-            <option value="cat">گربه</option>
-            <option value="bird">پرنده</option>
+            <option value="">{tr('همه گونه‌ها')}</option>
+            <option value="dog">{tr('سگ')}</option>
+            <option value="cat">{tr('گربه')}</option>
+            <option value="bird">{tr('پرنده')}</option>
           </select>
           <input
             className="admin-input"
-            placeholder="نام مالک"
+            placeholder={tr("نام مالک")}
             value={ownerName}
             onChange={(e) => setOwnerName(e.target.value)}
-            aria-label="نام مالک"
+            aria-label={tr("نام مالک")}
           />
           <input
             className="admin-input"
-            placeholder="موبایل مالک"
+            placeholder={tr("موبایل مالک")}
             value={ownerPhone}
             onChange={(e) => setOwnerPhone(e.target.value)}
             dir="ltr"
-            aria-label="موبایل مالک"
+            aria-label={tr("موبایل مالک")}
           />
           <button type="button" className="admin-btn" onClick={() => void load()}>
-            جستجو
+            {tr('جستجو')}
           </button>
         </div>
-        <div className="admin-filter-dates" role="group" aria-label="بازه آخرین رویداد">
-          <span className="admin-filter-dates-label">آخرین رویداد</span>
+        <div className="admin-filter-dates" role="group" aria-label={tr("بازه آخرین رویداد")}>
+          <span className="admin-filter-dates-label">{tr('آخرین رویداد')}</span>
           <div className="admin-date-range">
-            <JalaliDateSelect label="از" value={eventFrom} onChange={setEventFrom} />
-            <JalaliDateSelect label="تا" value={eventTo} onChange={setEventTo} />
+            <JalaliDateSelect label={tr("از")} value={eventFrom} onChange={setEventFrom} />
+            <JalaliDateSelect label={tr("تا")} value={eventTo} onChange={setEventTo} />
           </div>
         </div>
       </div>
@@ -221,14 +222,14 @@ export function AdminPetsPage() {
         <table className="admin-table admin-table--dense">
           <thead>
             <tr>
-              <th>آیدی پت</th>
-              <th>نام</th>
-              <th>گونه / نژاد</th>
-              <th>سن / جنسیت</th>
-              <th>مالک</th>
-              <th>آخرین رویداد</th>
-              <th>خرید ۶ ماه اخیر</th>
-              <th>شهر</th>
+              <th>{tr('آیدی پت')}</th>
+              <th>{tr('نام')}</th>
+              <th>{tr('گونه / نژاد')}</th>
+              <th>{tr('سن / جنسیت')}</th>
+              <th>{tr('مالک')}</th>
+              <th>{tr('آخرین رویداد')}</th>
+              <th>{tr('خرید ۶ ماه اخیر')}</th>
+              <th>{tr('شهر')}</th>
               <th></th>
             </tr>
           </thead>
@@ -237,7 +238,7 @@ export function AdminPetsPage() {
               const publicId = petPublicIdOf(pet);
               const speciesLabel = PET_SPECIES_LABELS[pet.species] || pet.species;
               const meta = [
-                pet.ageMonths != null ? `${Math.round(pet.ageMonths / 12)}س` : null,
+                pet.ageMonths != null ? `${Math.round(pet.ageMonths / 12)}${tr('س')}` : null,
                 genderFa(pet.gender),
               ]
                 .filter(Boolean)
@@ -282,7 +283,7 @@ export function AdminPetsPage() {
                       }
                       subtitle={
                         pet.vipOwner ? (
-                          <span className="admin-badge admin-badge--mint">مشتری ویژه</span>
+                          <span className="admin-badge admin-badge--mint">{tr('مشتری ویژه')}</span>
                         ) : undefined
                       }
                     />
@@ -297,7 +298,7 @@ export function AdminPetsPage() {
                   <td>
                     <div className="admin-cell-compact">
                       {ownerHref ? (
-                        <Link to={ownerHref} className="admin-link" title="مشاهده کاربر مالک">
+                        <Link to={ownerHref} className="admin-link" title={tr("مشاهده کاربر مالک")}>
                           <strong>{pet.ownerName || '—'}</strong>
                         </Link>
                       ) : (
@@ -307,7 +308,7 @@ export function AdminPetsPage() {
                         {pet.ownerPhone || '—'}
                       </span>
                       {ownerHref && ownerCode ? (
-                        <Link to={ownerHref} className="admin-link" title="مشاهده کاربر مالک">
+                        <Link to={ownerHref} className="admin-link" title={tr("مشاهده کاربر مالک")}>
                           <code className="admin-mono admin-id-public" dir="ltr">
                             {ownerCode}
                           </code>
@@ -322,7 +323,7 @@ export function AdminPetsPage() {
                   <td>
                     {pet.lastEvent ? (
                       <div className="admin-cell-compact">
-                        <span>{pet.lastEvent.label}</span>
+                        <span>{tr(pet.lastEvent.label)}</span>
                         <span className="admin-muted">{formatAdminFaDate(pet.lastEvent.at)}</span>
                       </div>
                     ) : (
@@ -337,10 +338,10 @@ export function AdminPetsPage() {
                     <button
                       type="button"
                       className="admin-btn"
-                      title="ویرایش"
+                      title={tr("ویرایش")}
                       onClick={() => navigate(`/admin/pets?edit=${pet.id}`)}
                     >
-                      <Pencil size={14} /> ویرایش
+                      <Pencil size={14} /> {tr('ویرایش')}
                     </button>
                   </td>
                 </tr>
@@ -349,7 +350,7 @@ export function AdminPetsPage() {
             {!pets.length ? (
               <tr>
                 <td colSpan={9} className="admin-muted">
-                  پتی یافت نشد
+                  {tr('پتی یافت نشد')}
                 </td>
               </tr>
             ) : null}
@@ -366,19 +367,19 @@ export function AdminPetsPage() {
 
       <AdminModal
         open={Boolean(dossier)}
-        title={dossier ? `پرونده ${dossier.pet.name}` : 'پرونده پت'}
+        title={dossier ? `${tr('پرونده ')}${dossier.pet.name}` : tr('پرونده پت')}
         onClose={() => setDossier(null)}
         size="lg"
         footer={
           <button type="button" className="admin-btn" onClick={() => setDossier(null)}>
-            بستن
+            {tr('بستن')}
           </button>
         }
       >
         {dossier ? (
           <div className="admin-dossier" style={{ display: 'grid', gap: 16 }}>
             <section>
-              <h3 style={{ margin: '0 0 8px', fontSize: '1rem' }}>مالک</h3>
+              <h3 style={{ margin: '0 0 8px', fontSize: '1rem' }}>{tr('مالک')}</h3>
               <p style={{ margin: 0 }}>
                 {(() => {
                   const ownerHref = adminOwnerUsersHref(dossier.owner);
@@ -387,7 +388,7 @@ export function AdminPetsPage() {
                   return (
                     <>
                       {ownerHref ? (
-                        <Link to={ownerHref} className="admin-link" title="مشاهده کاربر مالک">
+                        <Link to={ownerHref} className="admin-link" title={tr("مشاهده کاربر مالک")}>
                           {name}
                         </Link>
                       ) : (
@@ -395,7 +396,7 @@ export function AdminPetsPage() {
                       )}{' '}
                       · <span dir="ltr">{dossier.owner.phone || '—'}</span> ·{' '}
                       {ownerHref && code ? (
-                        <Link to={ownerHref} className="admin-link" title="مشاهده کاربر مالک">
+                        <Link to={ownerHref} className="admin-link" title={tr("مشاهده کاربر مالک")}>
                           <code dir="ltr">{code}</code>
                         </Link>
                       ) : (
@@ -407,31 +408,31 @@ export function AdminPetsPage() {
                 {dossier.vipOwner ? (
                   <>
                     {' '}
-                    <span className="admin-badge admin-badge--mint">مشتری ویژه</span>
+                    <span className="admin-badge admin-badge--mint">{tr('مشتری ویژه')}</span>
                   </>
                 ) : null}
               </p>
               <p className="admin-muted" style={{ margin: '4px 0 0' }}>
-                خرید ۶ ماه اخیر: {formatTomanFa(dossier.spendToman6m)}
+                {tr('خرید ۶ ماه اخیر:')} {formatTomanFa(dossier.spendToman6m)}
               </p>
             </section>
 
             <section>
-              <h3 style={{ margin: '0 0 8px', fontSize: '1rem' }}>پرونده پزشکی</h3>
+              <h3 style={{ margin: '0 0 8px', fontSize: '1rem' }}>{tr('پرونده پزشکی')}</h3>
               <ul className="admin-log-list">
-                <li>یادداشت: {dossier.medicalRecord.notes || '—'}</li>
-                <li>واکسن: {dossier.medicalRecord.vaccinations || '—'}</li>
-                <li>آلرژی: {dossier.medicalRecord.allergies || '—'}</li>
-                <li>مزمن: {dossier.medicalRecord.chronicConditions || '—'}</li>
-                <li>داروها: {dossier.medicalRecord.medications || '—'}</li>
-                <li>آخرین چکاپ: {dossier.medicalRecord.lastCheckup || '—'}</li>
+                <li>{tr('یادداشت:')} {dossier.medicalRecord.notes || '—'}</li>
+                <li>{tr('واکسن:')} {dossier.medicalRecord.vaccinations || '—'}</li>
+                <li>{tr('آلرژی:')} {dossier.medicalRecord.allergies || '—'}</li>
+                <li>{tr('مزمن:')} {dossier.medicalRecord.chronicConditions || '—'}</li>
+                <li>{tr('داروها:')} {dossier.medicalRecord.medications || '—'}</li>
+                <li>{tr('آخرین چکاپ:')} {dossier.medicalRecord.lastCheckup || '—'}</li>
               </ul>
               {dossier.medicalEntries.length ? (
                 <ul className="admin-log-list">
                   {dossier.medicalEntries.map((e) => (
                     <li key={e.id}>
                       <b>{e.authorName || '—'}</b> · {formatAdminFaDate(e.createdAt)}
-                      <div>{e.text}</div>
+                      <div>{tr(e.text)}</div>
                     </li>
                   ))}
                 </ul>
@@ -439,7 +440,7 @@ export function AdminPetsPage() {
             </section>
 
             <section>
-              <h3 style={{ margin: '0 0 8px', fontSize: '1rem' }}>خریدها / سفارش‌ها</h3>
+              <h3 style={{ margin: '0 0 8px', fontSize: '1rem' }}>{tr('خریدها / سفارش‌ها')}</h3>
               <ul className="admin-log-list">
                 {dossier.shopOrders.map((o) => (
                   <li key={o.id}>
@@ -448,13 +449,13 @@ export function AdminPetsPage() {
                   </li>
                 ))}
                 {!dossier.shopOrders.length ? (
-                  <li className="admin-muted">سفارشی نیست</li>
+                  <li className="admin-muted">{tr('سفارشی نیست')}</li>
                 ) : null}
               </ul>
             </section>
 
             <section>
-              <h3 style={{ margin: '0 0 8px', fontSize: '1rem' }}>خدمات / مشاوره‌ها</h3>
+              <h3 style={{ margin: '0 0 8px', fontSize: '1rem' }}>{tr('خدمات / مشاوره‌ها')}</h3>
               <ul className="admin-log-list">
                 {dossier.consults.map((c) => (
                   <li key={c.id}>
@@ -464,7 +465,7 @@ export function AdminPetsPage() {
                   </li>
                 ))}
                 {!dossier.consults.length ? (
-                  <li className="admin-muted">خدماتی نیست</li>
+                  <li className="admin-muted">{tr('خدماتی نیست')}</li>
                 ) : null}
               </ul>
             </section>

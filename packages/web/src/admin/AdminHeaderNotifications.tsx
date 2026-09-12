@@ -4,6 +4,7 @@ import { Bell, CheckCheck } from 'lucide-react';
 import type { AdminHeaderNotification, AdminNotificationsPayload } from '@petdate/shared';
 import { adminFetch, formatNumFa } from './api';
 import { formatAdminFaDateTime } from './JalaliDateSelect';
+import { tr } from '../i18n';
 
 const POLL_MS = 45_000;
 
@@ -106,7 +107,7 @@ export function AdminHeaderNotifications() {
       <button
         type="button"
         className="admin-icon-btn admin-notif-bell"
-        aria-label="اعلان‌ها"
+        aria-label={tr("اعلان‌ها")}
         aria-expanded={open}
         aria-haspopup="true"
         onClick={() => {
@@ -118,25 +119,25 @@ export function AdminHeaderNotifications() {
         {badge ? <span className="admin-notif-badge">{badge}</span> : null}
       </button>
       {open ? (
-        <div className="admin-notif-panel" role="dialog" aria-label="اعلان‌های ادمین">
+        <div className="admin-notif-panel" role="dialog" aria-label={tr("اعلان‌های ادمین")}>
           <div className="admin-notif-panel-head">
             <div>
-              <strong>اعلان‌ها</strong>
+              <strong>{tr('اعلان‌ها')}</strong>
               <span className="admin-muted">
-                {unread > 0 ? `${formatNumFa(unread)} خوانده‌نشده` : 'همه خوانده شده'}
+                {unread > 0 ? `${formatNumFa(unread)}${tr(' خوانده‌نشده')}` : tr('همه خوانده شده')}
               </span>
             </div>
             {unread > 0 ? (
               <button type="button" className="admin-btn admin-btn--ghost admin-notif-mark-all" onClick={() => void markAll()}>
-                <CheckCheck size={14} /> همه خوانده شد
+                <CheckCheck size={14} /> {tr('همه خوانده شد')}
               </button>
             ) : null}
           </div>
           <div className="admin-notif-list">
-            {loading && items.length === 0 ? <p className="admin-muted admin-notif-empty">در حال بارگذاری…</p> : null}
+            {loading && items.length === 0 ? <p className="admin-muted admin-notif-empty">{tr('در حال بارگذاری…')}</p> : null}
             {error ? <p className="admin-notif-error">{error}</p> : null}
             {!loading && !error && items.length === 0 ? (
-              <p className="admin-muted admin-notif-empty">اعلانی نیست</p>
+              <p className="admin-muted admin-notif-empty">{tr('اعلانی نیست')}</p>
             ) : null}
             {items.map((item) => (
               <div
@@ -144,7 +145,7 @@ export function AdminHeaderNotifications() {
                 className={`admin-notif-item${item.read ? ' is-read' : ''}${kindClass(item.kind) ? ` ${kindClass(item.kind)}` : ''}`}
               >
                 <button type="button" className="admin-notif-item-main" onClick={() => void openItem(item)}>
-                  <span className="admin-notif-item-title">{item.title}</span>
+                  <span className="admin-notif-item-title">{tr(item.title)}</span>
                   {item.body ? <span className="admin-notif-item-body">{item.body}</span> : null}
                   <span className="admin-notif-item-meta">
                     <span>{formatWhen(item.date)}</span>
@@ -157,7 +158,7 @@ export function AdminHeaderNotifications() {
                     className="admin-btn admin-btn--ghost admin-notif-read-btn"
                     onClick={() => void markOne(item.id)}
                   >
-                    خواندم
+                    {tr('خواندم')}
                   </button>
                 ) : null}
               </div>
@@ -165,22 +166,22 @@ export function AdminHeaderNotifications() {
           </div>
           <div className="admin-notif-panel-foot">
             <Link to="/admin/payments" onClick={() => setOpen(false)}>
-              صف تأیید واریز
+              {tr('صف تأیید واریز')}
             </Link>
             <Link to="/admin/hr/cockpit" onClick={() => setOpen(false)}>
-              کارتابل HR
+              {tr('کارتابل HR')}
             </Link>
             <Link to="/admin/sales/tickets" onClick={() => setOpen(false)}>
-              تیکت فروش
+              {tr('تیکت فروش')}
             </Link>
             <Link to="/admin/crm/ticketing" onClick={() => setOpen(false)}>
-              تیکتینگ
+              {tr('تیکتینگ')}
             </Link>
             <Link to="/admin/mail" onClick={() => setOpen(false)}>
-              ایمیل
+              {tr('ایمیل')}
             </Link>
             <Link to="/admin/content" onClick={() => setOpen(false)}>
-              محتوا
+              {tr('محتوا')}
             </Link>
           </div>
         </div>

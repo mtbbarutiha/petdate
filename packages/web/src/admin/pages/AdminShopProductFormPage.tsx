@@ -3,6 +3,7 @@ import { Navigate, useParams } from 'react-router-dom';
 import { SHOP_BRANDS, SHOP_CATEGORIES } from '../../data/shopCatalog';
 import { adminFetch } from '../api';
 import { AdminModal } from '../AdminModal';
+import { tr } from '../../i18n';
 
 type FormState = {
   id: string;
@@ -194,7 +195,7 @@ export function AdminShopProductFormModal({ open, productId, onClose, onSaved }:
     try {
       params = JSON.parse(form.params || '{}') as Record<string, string>;
     } catch {
-      setError('params باید JSON باشد');
+      setError(tr('params باید JSON باشد'));
       setBusy(false);
       return;
     }
@@ -281,7 +282,7 @@ export function AdminShopProductFormModal({ open, productId, onClose, onSaved }:
   return (
     <AdminModal
       open={open}
-      title={isNew ? 'محصول جدید' : 'ویرایش محصول'}
+      title={isNew ? tr('محصول جدید') : tr('ویرایش محصول')}
       onClose={onClose}
       size="xl"
       as="form"
@@ -290,29 +291,29 @@ export function AdminShopProductFormModal({ open, productId, onClose, onSaved }:
       footer={
         <>
           <label className="admin-check-inline">
-            <input type="checkbox" checked={form.inStock} onChange={(e) => set({ inStock: e.target.checked })} /> موجود
+            <input type="checkbox" checked={form.inStock} onChange={(e) => set({ inStock: e.target.checked })} /> {tr('موجود')}
           </label>
           <label className="admin-check-inline">
-            <input type="checkbox" checked={form.featured} onChange={(e) => set({ featured: e.target.checked })} /> ویژه
+            <input type="checkbox" checked={form.featured} onChange={(e) => set({ featured: e.target.checked })} /> {tr('ویژه')}
           </label>
           <button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>
             {busy ? '…' : 'ذخیره'}
           </button>
           <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={onClose}>
-            انصراف
+            {tr('انصراف')}
           </button>
         </>
       }
     >
       {error ? <p className="admin-error">{error}</p> : null}
-      <p className="admin-muted" style={{ marginTop: 0 }}>فیلدهای صفحه محصول + کاتالوگ شاپ</p>
+      <p className="admin-muted" style={{ marginTop: 0 }}>{tr('فیلدهای صفحه محصول + کاتالوگ شاپ')}</p>
         <div className="admin-form-grid">
           <label>
-            <span className="form-label">عنوان</span>
-            <input className="form-input" required value={form.title} onChange={(e) => set({ title: e.target.value })} />
+            <span className="form-label">{tr('عنوان')}</span>
+            <input className="form-input" required value={tr(form.title)} onChange={(e) => set({ title: e.target.value })} />
           </label>
           <label>
-            <span className="form-label">عنوان انگلیسی</span>
+            <span className="form-label">{tr('عنوان انگلیسی')}</span>
             <input
               className="form-input"
               dir="ltr"
@@ -322,11 +323,11 @@ export function AdminShopProductFormModal({ open, productId, onClose, onSaved }:
             />
           </label>
           <label>
-            <span className="form-label">اسلاگ</span>
+            <span className="form-label">{tr('اسلاگ')}</span>
             <input className="form-input" required value={form.slug} onChange={(e) => set({ slug: e.target.value })} />
           </label>
           <label>
-            <span className="form-label">کد کالا (SKU)</span>
+            <span className="form-label">{tr('کد کالا (SKU)')}</span>
             <input
               className="form-input"
               dir="ltr"
@@ -336,7 +337,7 @@ export function AdminShopProductFormModal({ open, productId, onClose, onSaved }:
             />
           </label>
           <label>
-            <span className="form-label">برند</span>
+            <span className="form-label">{tr('برند')}</span>
             <select className="admin-select" value={form.brandId} onChange={(e) => set({ brandId: e.target.value })}>
               {SHOP_BRANDS.map((b) => (
                 <option key={b.id} value={b.id}>
@@ -346,7 +347,7 @@ export function AdminShopProductFormModal({ open, productId, onClose, onSaved }:
             </select>
           </label>
           <label>
-            <span className="form-label">دسته</span>
+            <span className="form-label">{tr('دسته')}</span>
             <select
               className="admin-select"
               value={form.categorySlug}
@@ -360,11 +361,11 @@ export function AdminShopProductFormModal({ open, productId, onClose, onSaved }:
             </select>
           </label>
           <label>
-            <span className="form-label">نوع پت</span>
+            <span className="form-label">{tr('نوع پت')}</span>
             <input className="form-input" value={form.petTypes} onChange={(e) => set({ petTypes: e.target.value })} />
           </label>
           <label>
-            <span className="form-label">قیمت تومان</span>
+            <span className="form-label">{tr('قیمت تومان')}</span>
             <input
               className="form-input"
               type="number"
@@ -373,27 +374,27 @@ export function AdminShopProductFormModal({ open, productId, onClose, onSaved }:
             />
           </label>
           <label>
-            <span className="form-label">قیمت قبل تخفیف</span>
+            <span className="form-label">{tr('قیمت قبل تخفیف')}</span>
             <input
               className="form-input"
               type="number"
               value={form.compareAtToman}
               onChange={(e) => set({ compareAtToman: e.target.value })}
-              placeholder="اختیاری"
+              placeholder={tr("اختیاری")}
             />
           </label>
           <label>
-            <span className="form-label">بهای تمام‌شده (COGS)</span>
+            <span className="form-label">{tr('بهای تمام‌شده (COGS)')}</span>
             <input
               className="form-input"
               type="number"
               value={form.costToman}
               onChange={(e) => set({ costToman: e.target.value })}
-              placeholder="اختیاری"
+              placeholder={tr("اختیاری")}
             />
           </label>
           <label>
-            <span className="form-label">موجودی</span>
+            <span className="form-label">{tr('موجودی')}</span>
             <input
               className="form-input"
               type="number"
@@ -402,7 +403,7 @@ export function AdminShopProductFormModal({ open, productId, onClose, onSaved }:
             />
           </label>
           <label>
-            <span className="form-label">نشان</span>
+            <span className="form-label">{tr('نشان')}</span>
             <select className="admin-select" value={form.badge} onChange={(e) => set({ badge: e.target.value })}>
               <option value="">—</option>
               <option value="hot">hot</option>
@@ -412,7 +413,7 @@ export function AdminShopProductFormModal({ open, productId, onClose, onSaved }:
             </select>
           </label>
           <label>
-            <span className="form-label">فروشنده</span>
+            <span className="form-label">{tr('فروشنده')}</span>
             <input
               className="form-input"
               value={form.sellerName}
@@ -420,7 +421,7 @@ export function AdminShopProductFormModal({ open, productId, onClose, onSaved }:
             />
           </label>
           <label>
-            <span className="form-label">رضایت فروشنده (٪)</span>
+            <span className="form-label">{tr('رضایت فروشنده (٪)')}</span>
             <input
               className="form-input"
               type="number"
@@ -431,7 +432,7 @@ export function AdminShopProductFormModal({ open, productId, onClose, onSaved }:
             />
           </label>
           <label>
-            <span className="form-label">گارانتی / اصالت</span>
+            <span className="form-label">{tr('گارانتی / اصالت')}</span>
             <input
               className="form-input"
               value={form.warranty}
@@ -439,7 +440,7 @@ export function AdminShopProductFormModal({ open, productId, onClose, onSaved }:
             />
           </label>
           <label>
-            <span className="form-label">توضیح ارسال</span>
+            <span className="form-label">{tr('توضیح ارسال')}</span>
             <input
               className="form-input"
               value={form.shippingNote}
@@ -447,7 +448,7 @@ export function AdminShopProductFormModal({ open, productId, onClose, onSaved }:
             />
           </label>
           <label>
-            <span className="form-label">شرایط مرجوعی</span>
+            <span className="form-label">{tr('شرایط مرجوعی')}</span>
             <input
               className="form-input"
               value={form.returnPolicy}
@@ -455,7 +456,7 @@ export function AdminShopProductFormModal({ open, productId, onClose, onSaved }:
             />
           </label>
           <label>
-            <span className="form-label">امتیاز (۰–۵)</span>
+            <span className="form-label">{tr('امتیاز (۰–۵)')}</span>
             <input
               className="form-input"
               type="number"
@@ -467,7 +468,7 @@ export function AdminShopProductFormModal({ open, productId, onClose, onSaved }:
             />
           </label>
           <label>
-            <span className="form-label">تعداد دیدگاه</span>
+            <span className="form-label">{tr('تعداد دیدگاه')}</span>
             <input
               className="form-input"
               type="number"
@@ -476,11 +477,11 @@ export function AdminShopProductFormModal({ open, productId, onClose, onSaved }:
             />
           </label>
           <label className="admin-form-span">
-            <span className="form-label">تصویر اصلی</span>
+            <span className="form-label">{tr('تصویر اصلی')}</span>
             <input className="form-input" value={form.image} onChange={(e) => set({ image: e.target.value })} />
           </label>
           <label className="admin-form-span">
-            <span className="form-label">گالری تصاویر (هر خط یک URL)</span>
+            <span className="form-label">{tr('گالری تصاویر (هر خط یک URL)')}</span>
             <textarea
               className="form-input admin-mono"
               rows={3}
@@ -491,38 +492,38 @@ export function AdminShopProductFormModal({ open, productId, onClose, onSaved }:
             />
           </label>
           <label className="admin-form-span">
-            <span className="form-label">نکات برجسته (هر خط یک مورد)</span>
+            <span className="form-label">{tr('نکات برجسته (هر خط یک مورد)')}</span>
             <textarea
               className="form-input"
               rows={3}
               value={form.highlights}
               onChange={(e) => set({ highlights: e.target.value })}
-              placeholder={'ارسال سریع\nبسته‌بندی بهداشتی'}
+              placeholder={tr('ارسال سریع\nبسته‌بندی بهداشتی')}
             />
           </label>
           <label className="admin-form-span">
-            <span className="form-label">رنگ‌ها (هر خط: نام|کدhex)</span>
+            <span className="form-label">{tr('رنگ‌ها (هر خط: نام|کدhex)')}</span>
             <textarea
               className="form-input admin-mono"
               rows={2}
               dir="ltr"
               value={form.colors}
               onChange={(e) => set({ colors: e.target.value })}
-              placeholder={'آبی|#3b82f6\nسبز|#10b981'}
+              placeholder={tr('آبی|#3b82f6\nسبز|#10b981')}
             />
           </label>
           <label className="admin-form-span">
-            <span className="form-label">سایز / وزن (هر خط یک مورد)</span>
+            <span className="form-label">{tr('سایز / وزن (هر خط یک مورد)')}</span>
             <textarea
               className="form-input"
               rows={2}
               value={form.sizes}
               onChange={(e) => set({ sizes: e.target.value })}
-              placeholder={'۴ کیلوگرم\n۱۰ کیلوگرم'}
+              placeholder={tr('۴ کیلوگرم\n۱۰ کیلوگرم')}
             />
           </label>
           <label className="admin-form-span">
-            <span className="form-label">نقاط قوت دیدگاه‌ها</span>
+            <span className="form-label">{tr('نقاط قوت دیدگاه‌ها')}</span>
             <textarea
               className="form-input"
               rows={2}
@@ -531,7 +532,7 @@ export function AdminShopProductFormModal({ open, productId, onClose, onSaved }:
             />
           </label>
           <label className="admin-form-span">
-            <span className="form-label">نقاط ضعف دیدگاه‌ها</span>
+            <span className="form-label">{tr('نقاط ضعف دیدگاه‌ها')}</span>
             <textarea
               className="form-input"
               rows={2}
@@ -540,16 +541,16 @@ export function AdminShopProductFormModal({ open, productId, onClose, onSaved }:
             />
           </label>
           <label className="admin-form-span">
-            <span className="form-label">توضیح</span>
+            <span className="form-label">{tr('توضیح')}</span>
             <textarea
               className="form-input"
               rows={3}
-              value={form.description}
+              value={tr(form.description)}
               onChange={(e) => set({ description: e.target.value })}
             />
           </label>
           <label className="admin-form-span">
-            <span className="form-label">params JSON (جدول مشخصات)</span>
+            <span className="form-label">{tr('params JSON (جدول مشخصات)')}</span>
             <textarea
               className="form-input admin-mono"
               rows={3}

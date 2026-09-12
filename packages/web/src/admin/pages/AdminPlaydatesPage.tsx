@@ -4,6 +4,7 @@ import { adminFetch, formatNumFa } from '../api';
 import { formatAdminFaDateTime } from '../JalaliDateSelect';
 import { AdminIdChip } from '../AdminIds';
 import { AdminEntityCell, AdminThumb } from '../AdminThumb';
+import { tr } from '../../i18n';
 
 const STATUS_FA: Record<string, string> = {
   pending: 'در انتظار',
@@ -30,7 +31,7 @@ function PetCell({ pet, petId }: { pet?: PetProfile; petId: number }) {
           petId={id}
           kind="pet"
           label={pet?.name}
-          alt={pet?.name || 'پت'}
+          alt={pet?.name || tr('پت')}
         />
       }
       title={<strong>{pet?.name || '—'}</strong>}
@@ -61,25 +62,25 @@ export function AdminPlaydatesPage() {
     <div className="admin-page">
       <header className="admin-header">
         <div>
-          <h1>درخواست‌های همبازی</h1>
-          <p>{formatNumFa(items.length)} مورد</p>
+          <h1>{tr('درخواست‌های همبازی')}</h1>
+          <p>{formatNumFa(items.length)} {tr('مورد')}</p>
         </div>
         <select className="admin-select" value={status} onChange={(e) => setStatus(e.target.value)}>
-          <option value="">همه</option><option value="pending">در انتظار</option><option value="accepted">پذیرفته</option>
-          <option value="rejected">رد شده</option><option value="cancelled">لغو</option><option value="expired">منقضی</option>
+          <option value="">{tr('همه')}</option><option value="pending">{tr('در انتظار')}</option><option value="accepted">{tr('پذیرفته')}</option>
+          <option value="rejected">{tr('رد شده')}</option><option value="cancelled">{tr('لغو')}</option><option value="expired">{tr('منقضی')}</option>
         </select>
       </header>
       {error ? <p className="admin-error">{error}</p> : null}
       <div className="admin-table-wrap admin-card"><table className="admin-table admin-table--dense">
         <thead>
           <tr>
-            <th>آیدی</th>
-            <th>از پت</th>
-            <th>به پت</th>
-            <th>کاربران</th>
-            <th>پیام</th>
-            <th>وضعیت</th>
-            <th>زمان</th>
+            <th>{tr('آیدی')}</th>
+            <th>{tr('از پت')}</th>
+            <th>{tr('به پت')}</th>
+            <th>{tr('کاربران')}</th>
+            <th>{tr('پیام')}</th>
+            <th>{tr('وضعیت')}</th>
+            <th>{tr('زمان')}</th>
             <th></th>
           </tr>
         </thead>
@@ -94,7 +95,7 @@ export function AdminPlaydatesPage() {
               <td>
                 <div className="admin-party-pair">
                   <div className="admin-party-pair-row">
-                    <span className="admin-party-pair-label">از</span>
+                    <span className="admin-party-pair-label">{tr('از')}</span>
                     <AdminThumb src={m.fromUserAvatarUrl} label={m.fromUserName} kind="user" size={28} />
                     <code className="admin-mono admin-id-public" dir="ltr">
                       {userPublicIdOf({ id: m.fromUserId })}
@@ -102,7 +103,7 @@ export function AdminPlaydatesPage() {
                   </div>
                   {m.toUserId != null ? (
                     <div className="admin-party-pair-row">
-                      <span className="admin-party-pair-label">به</span>
+                      <span className="admin-party-pair-label">{tr('به')}</span>
                       <AdminThumb src={m.toUserAvatarUrl} label={m.toUserName} kind="user" size={28} />
                       <code className="admin-mono admin-id-public" dir="ltr">
                         {userPublicIdOf({ id: m.toUserId })}
@@ -111,24 +112,24 @@ export function AdminPlaydatesPage() {
                   ) : null}
                 </div>
               </td>
-              <td>{m.message || '—'}</td>
+              <td>{tr(m.message || '—')}</td>
               <td><span className={`admin-status admin-status--${m.status}`}>{STATUS_FA[m.status] || m.status}</span></td>
               <td className="admin-cell-nowrap">{formatAdminFaDateTime(m.createdAt)}</td>
               <td>
                 <div className="admin-row-actions">
                   {m.status === 'pending' ? (
                     <>
-                      <button type="button" className="admin-btn admin-btn--primary" onClick={() => void setItemStatus(m.id, 'accepted')}>قبول</button>
-                      <button type="button" className="admin-btn admin-btn--danger" onClick={() => void setItemStatus(m.id, 'rejected')}>رد</button>
+                      <button type="button" className="admin-btn admin-btn--primary" onClick={() => void setItemStatus(m.id, 'accepted')}>{tr('قبول')}</button>
+                      <button type="button" className="admin-btn admin-btn--danger" onClick={() => void setItemStatus(m.id, 'rejected')}>{tr('رد')}</button>
                     </>
                   ) : (
-                    <button type="button" className="admin-btn admin-btn--ghost" onClick={() => void setItemStatus(m.id, 'cancelled')}>لغو</button>
+                    <button type="button" className="admin-btn admin-btn--ghost" onClick={() => void setItemStatus(m.id, 'cancelled')}>{tr('لغو')}</button>
                   )}
                 </div>
               </td>
             </tr>
           ))}
-          {!items.length ? <tr><td colSpan={8} className="admin-muted">درخواستی نیست</td></tr> : null}
+          {!items.length ? <tr><td colSpan={8} className="admin-muted">{tr('درخواستی نیست')}</td></tr> : null}
         </tbody>
       </table></div>
     </div>

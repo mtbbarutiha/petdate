@@ -11,6 +11,7 @@ import {
   timeDrillView,
 } from './drill';
 import type { ChartPoint, TimeGrain } from './types';
+import { tr } from '../../i18n';
 
 type TimeDrillState = {
   grain: TimeGrain;
@@ -55,19 +56,19 @@ export function DrillToolbar({
     const up = canUp ?? (canDrillUp(grain) || focusStack.length > 0);
     const down = canDown ?? canDrillDown(grain, baseGrain);
     return (
-      <div className="wdg-drill" role="group" aria-label="دریل نمودار">
-        <span className="wdg-drill-grain" title="دانهٔ زمانی فعلی">
-          {GRAIN_LABEL[grain]}
+      <div className="wdg-drill" role="group" aria-label={tr("دریل نمودار")}>
+        <span className="wdg-drill-grain" title={tr("دانهٔ زمانی فعلی")}>
+          {tr(GRAIN_LABEL[grain])}
         </span>
-        <nav className="wdg-drill-crumbs" aria-label="مسیر دریل">
+        <nav className="wdg-drill-crumbs" aria-label={tr("مسیر دریل")}>
           <button
             type="button"
             className={`wdg-drill-crumb${focusStack.length === 0 ? ' is-active' : ''}`}
             onClick={() => onCrumbClick?.(-1)}
             disabled={focusStack.length === 0}
-            title="بازگشت به نمای کلی"
+            title={tr("بازگشت به نمای کلی")}
           >
-            همه
+            {tr('همه')}
           </button>
           {focusStack.map((key, i) => (
             <span key={`${key}-${i}`} className="wdg-drill-crumb-wrap">
@@ -91,35 +92,35 @@ export function DrillToolbar({
           className="wdg-drill-btn"
           disabled={!up}
           onClick={onDrillUp}
-          title="بازگشت به سطح قبلی (دریل‌آپ)"
+          title={tr("بازگشت به سطح قبلی (دریل‌آپ)")}
         >
-          دریل‌آپ
+          {tr('دریل‌آپ')}
         </button>
         <button
           type="button"
           className="wdg-drill-btn"
           disabled={!down}
           onClick={onDrillDown}
-          title="یک سطح جزئی‌تر بدون فیلتر برش"
+          title={tr("یک سطح جزئی‌تر بدون فیلتر برش")}
         >
-          دریل‌دان
+          {tr('دریل‌دان')}
         </button>
-        {down ? <span className="wdg-drill-hint">کلیک روی نقطه = دریل‌دان همان بازه</span> : null}
+        {down ? <span className="wdg-drill-hint">{tr('کلیک روی نقطه = دریل‌دان همان بازه')}</span> : null}
       </div>
     );
   }
 
   if (mode === 'category') {
     return (
-      <div className="wdg-drill" role="group" aria-label="دریل دسته">
-        <nav className="wdg-drill-crumbs" aria-label="مسیر دریل">
+      <div className="wdg-drill" role="group" aria-label={tr("دریل دسته")}>
+        <nav className="wdg-drill-crumbs" aria-label={tr("مسیر دریل")}>
           <button
             type="button"
             className={`wdg-drill-crumb${!selectedCategory ? ' is-active' : ''}`}
             onClick={onClearCategory}
             disabled={!selectedCategory}
           >
-            همه
+            {tr('همه')}
           </button>
           {selectedCategory ? (
             <span className="wdg-drill-crumb-wrap">
@@ -131,11 +132,11 @@ export function DrillToolbar({
           ) : null}
         </nav>
         {selectedCategory ? (
-          <button type="button" className="wdg-drill-btn" onClick={onClearCategory} title="بازگشت به همه دسته‌ها">
-            دریل‌آپ
+          <button type="button" className="wdg-drill-btn" onClick={onClearCategory} title={tr("بازگشت به همه دسته‌ها")}>
+            {tr('دریل‌آپ')}
           </button>
         ) : (
-          <span className="wdg-drill-hint">کلیک روی برش = دریل‌دان</span>
+          <span className="wdg-drill-hint">{tr('کلیک روی برش = دریل‌دان')}</span>
         )}
       </div>
     );
@@ -264,7 +265,7 @@ export function CategoryDrillDetail({
   if (!detail) return null;
   return (
     <div className="wdg-drill-detail">
-      <strong>{detail.label}</strong>
+      <strong>{tr(detail.label)}</strong>
       <span>{detail.value.toLocaleString('fa-IR')}</span>
       {extra}
     </div>

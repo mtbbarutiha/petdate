@@ -19,6 +19,8 @@ import {
   usePathDraw,
   usePrefersReducedMotion,
 } from './motionCharts';
+import { formatNumFa } from './api';
+import { tr } from '../i18n';
 
 type Point = { label: string; value: number };
 
@@ -38,7 +40,7 @@ function Callout({
   visible: boolean;
 }) {
   if (!visible) return null;
-  const text = value.toLocaleString('fa-IR');
+  const text = formatNumFa(value);
   const w = Math.min(104, Math.max(52, 16 + text.length * 7));
   const h = 26;
   return (
@@ -80,7 +82,7 @@ export function AdminBarChart({
   const uid = useId().replace(/:/g, '');
   const [hover, setHover] = useState<number | null>(null);
   if (!points.length) {
-    return <p className="admin-muted">داده‌ای برای نمودار نیست</p>;
+    return <p className="admin-muted">{tr('داده‌ای برای نمودار نیست')}</p>;
   }
   const clickable = Boolean(onSliceClick) && interactive !== false;
   const max = maxOf(points);
@@ -149,7 +151,7 @@ export function AdminBarChart({
                   opacity={hover === null || hover === i ? 0.95 : 0.45}
                 />
               </g>
-              <title>{`${p.label}: ${p.value.toLocaleString('fa-IR')}`}</title>
+              <title>{`${tr(p.label)}: ${formatNumFa(p.value)}`}</title>
               {i % labelEvery === 0 ? (
                 <text
                   x={x + barW / 2}
@@ -158,12 +160,12 @@ export function AdminBarChart({
                   className="admin-chart-axis"
                   transform={`rotate(-24 ${x + barW / 2} ${height + 22})`}
                 >
-                  {truncateChartLabel(p.label, n > 8 ? 8 : 12)}
+                  {truncateChartLabel(tr(p.label), n > 8 ? 8 : 12)}
                 </text>
               ) : null}
               {n <= 12 || hover === i ? (
                 <text x={x + barW / 2} y={y - 4} textAnchor="middle" className="admin-chart-val">
-                  {p.value.toLocaleString('fa-IR')}
+                  {formatNumFa(p.value)}
                 </text>
               ) : null}
               <Callout x={x + barW / 2} y={y} value={p.value} visible={hover === i} />
@@ -198,7 +200,7 @@ export function AdminFunnelChart({
 }) {
   const reduced = usePrefersReducedMotion();
   if (!points.length) {
-    return <p className="admin-muted">داده‌ای برای نمودار نیست</p>;
+    return <p className="admin-muted">{tr('داده‌ای برای نمودار نیست')}</p>;
   }
   const max = maxOf(points);
   const rowH = 36;
@@ -237,9 +239,9 @@ export function AdminFunnelChart({
                 className={reduced ? undefined : 'admin-motion-funnel-row'}
                 style={reduced ? undefined : { animationDelay: `${i * 60}ms` }}
               />
-              <title>{`${p.label}: ${p.value.toLocaleString('fa-IR')}`}</title>
+              <title>{`${p.label}: ${formatNumFa(p.value)}`}</title>
               <text x={width / 2} y={y + 22} textAnchor="middle" className="admin-funnel-label">
-                {truncateChartLabel(p.label, 22)} — {p.value.toLocaleString('fa-IR')}
+                {truncateChartLabel(tr(p.label), 22)} — {formatNumFa(p.value)}
               </text>
             </g>
           );
@@ -247,10 +249,10 @@ export function AdminFunnelChart({
       </svg>
       <ul className="admin-funnel-legend" aria-hidden>
         {points.map((p, i) => (
-          <li key={p.label}>
+          <li key={tr(p.label)}>
             <span style={{ background: colors[i % colors.length] }} />
-            {p.label}
-            <strong>{p.value.toLocaleString('fa-IR')}</strong>
+            {tr(p.label)}
+            <strong>{formatNumFa(p.value)}</strong>
           </li>
         ))}
       </ul>
@@ -301,7 +303,7 @@ export function AdminLineChart({
   );
 
   if (!geometry) {
-    return <p className="admin-muted">داده‌ای برای نمودار نیست</p>;
+    return <p className="admin-muted">{tr('داده‌ای برای نمودار نیست')}</p>;
   }
   const clickable = Boolean(onPointClick) && interactive !== false;
   const { width, step, coords, line, area } = geometry;
@@ -355,7 +357,7 @@ export function AdminLineChart({
                 onMouseEnter={() => setHover(i)}
                 onMouseLeave={() => setHover(null)}
               >
-                <title>{`${c.label}: ${c.value.toLocaleString('fa-IR')}`}</title>
+                <title>{`${c.label}: ${formatNumFa(c.value)}`}</title>
               </rect>
             ))
           : coords.map((c, i) => (
@@ -380,7 +382,7 @@ export function AdminLineChart({
               className={reduced ? undefined : 'admin-motion-dot-pop'}
               style={reduced ? undefined : { animationDelay: `${200 + i * 40}ms` }}
             />
-            <title>{`${c.label}: ${c.value.toLocaleString('fa-IR')}`}</title>
+            <title>{`${c.label}: ${formatNumFa(c.value)}`}</title>
           </g>
         ))}
         {hover != null && coords[hover] ? (
@@ -462,7 +464,7 @@ export function AdminMultiLineChart({
   }, [series, height]);
 
   if (!layout) {
-    return <p className="admin-muted">داده‌ای برای نمودار نیست</p>;
+    return <p className="admin-muted">{tr('داده‌ای برای نمودار نیست')}</p>;
   }
   const clickable = Boolean(onPointClick) && interactive !== false;
   const { width, step, xLabels, built } = layout;
@@ -526,7 +528,7 @@ export function AdminMultiLineChart({
                 fill={s.color}
                 style={{ pointerEvents: 'none' }}
               >
-                <title>{`${s.label} · ${c.label}: ${c.value.toLocaleString('fa-IR')}`}</title>
+                <title>{`${s.label} · ${c.label}: ${formatNumFa(c.value)}`}</title>
               </circle>
             ))}
           </g>
@@ -543,8 +545,8 @@ export function AdminMultiLineChart({
         {built.map((s) => (
           <li key={s.key}>
             <span style={{ background: s.color }} />
-            <span className="admin-chart-legend-label" title={s.label}>
-              {truncateChartLabel(s.label, 18)}
+            <span className="admin-chart-legend-label" title={tr(s.label)}>
+              {truncateChartLabel(tr(s.label), 18)}
             </span>
           </li>
         ))}
@@ -585,7 +587,7 @@ export function AdminDonutChart({
               const len = (s.value / total) * c;
               const el = (
                 <circle
-                  key={s.label}
+                  key={tr(s.label)}
                   r={r}
                   cx={0}
                   cy={0}
@@ -611,7 +613,7 @@ export function AdminDonutChart({
                   }
                   onClick={() => onSliceClick?.(s)}
                 >
-                  <title>{`${s.label}: ${s.value.toLocaleString('fa-IR')} (${Math.round((s.value / total) * 100)}٪)`}</title>
+                  <title>{`${s.label}: ${formatNumFa(s.value)} (${Math.round((s.value / total) * 100)}${tr('٪)')}`}</title>
                 </circle>
               );
               offset += len;
@@ -620,26 +622,26 @@ export function AdminDonutChart({
           )}
         </g>
         <text x="80" y="76" textAnchor="middle" className="admin-donut-center">
-          {(hasData ? total : 0).toLocaleString('fa-IR')}
+          {formatNumFa(hasData ? total : 0)}
         </text>
         <text x="80" y="94" textAnchor="middle" className="admin-donut-sub">
-          جمع
+          {tr('جمع')}
         </text>
       </svg>
       <ul className="admin-donut-legend">
         {slices.map((s) => (
           <li
-            key={s.label}
+            key={tr(s.label)}
             className={onSliceClick ? 'admin-chart-hit' : undefined}
             onClick={() => onSliceClick?.(s)}
             style={onSliceClick ? { cursor: 'pointer' } : undefined}
-            title={`${s.label}: ${s.value.toLocaleString('fa-IR')}`}
+            title={`${s.label}: ${formatNumFa(s.value)}`}
           >
             <span style={{ background: s.color }} />
-            <span className="admin-chart-legend-label" title={s.label}>
-              {truncateChartLabel(s.label, 18)}
+            <span className="admin-chart-legend-label" title={tr(s.label)}>
+              {truncateChartLabel(tr(s.label), 18)}
             </span>
-            <strong>{s.value.toLocaleString('fa-IR')}</strong>
+            <strong>{formatNumFa(s.value)}</strong>
           </li>
         ))}
       </ul>
@@ -666,7 +668,7 @@ export function PeriodFilter({
   onChange: (v: FinancePeriod) => void;
 }) {
   return (
-    <div className="admin-period-filter" role="group" aria-label="بازه زمانی">
+    <div className="admin-period-filter" role="group" aria-label={tr("بازه زمانی")}>
       {PERIOD_OPTIONS.map((o) => (
         <button
           key={o.value}
@@ -674,7 +676,7 @@ export function PeriodFilter({
           className={`admin-period-btn${value === o.value ? ' is-active' : ''}`}
           onClick={() => onChange(o.value)}
         >
-          {o.label}
+          {tr(o.label)}
         </button>
       ))}
     </div>

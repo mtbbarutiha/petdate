@@ -16,6 +16,7 @@ import { AdminModal } from '../../AdminModal';
 import { AdminEntityCell, AdminThumb } from '../../AdminThumb';
 import { usePlatformDropdownOptions } from '../../usePlatformDropdownOptions';
 import { useSalesCallSimOptional } from './SalesCallSim';
+import { tr } from '../../../i18n';
 
 function ItemsPage({ kind }: { kind: SalesItemKind }) {
   const navigate = useNavigate();
@@ -76,7 +77,7 @@ function ItemsPage({ kind }: { kind: SalesItemKind }) {
   return (
     <div className="admin-page">
       <header className="admin-header">
-        <div><h1>{title}</h1><p>{formatNumFa(total)} مورد · Pet Date</p></div>
+        <div><h1>{title}</h1><p>{formatNumFa(total)} {tr('مورد · Pet Date')}</p></div>
         {canWrite ? (
           <button
             type="button"
@@ -92,40 +93,40 @@ function ItemsPage({ kind }: { kind: SalesItemKind }) {
               setOpen(true);
             }}
           >
-            + جدید
+            {tr('+ جدید')}
           </button>
         ) : null}
       </header>
       {error ? <p className="admin-error">{error}</p> : null}
       <div className="admin-toolbar">
-        <input className="admin-input" placeholder="جستجو…" value={q} onChange={(e) => setQ(e.target.value)} />
+        <input className="admin-input" placeholder={tr("جستجو…")} value={q} onChange={(e) => setQ(e.target.value)} />
         <select className="admin-select" value={stage} onChange={(e) => setStage(e.target.value)}>
-          <option value="">همه مراحل</option>
+          <option value="">{tr('همه مراحل')}</option>
           {SALES_STAGES.map((s, i) => <option key={s} value={String(i)}>{s}</option>)}
-          <option value="lost">ازدست‌رفته</option>
+          <option value="lost">{tr('ازدست‌رفته')}</option>
         </select>
-        <label className="admin-check"><input type="checkbox" checked={unassignedOnly} onChange={(e) => setUnassignedOnly(e.target.checked)} /> فقط بدون تخصیص</label>
+        <label className="admin-check"><input type="checkbox" checked={unassignedOnly} onChange={(e) => setUnassignedOnly(e.target.checked)} /> {tr('فقط بدون تخصیص')}</label>
       </div>
       <div className="admin-table-wrap"><table className="admin-table">
-        <thead><tr><th>نام</th><th>محصول</th><th>منبع</th><th>امتیاز</th><th>مرحله</th><th>پرداخت</th><th>کارشناس</th></tr></thead>
+        <thead><tr><th>{tr('نام')}</th><th>{tr('محصول')}</th><th>{tr('منبع')}</th><th>{tr('امتیاز')}</th><th>{tr('مرحله')}</th><th>{tr('پرداخت')}</th><th>{tr('کارشناس')}</th></tr></thead>
         <tbody>{items.map((i) => (
           <tr key={i.id}>
             <td><Link to={`/admin/sales/${kind === 'lead' ? 'leads' : 'upgrades'}/${i.id}`}>{i.publicId}</Link><div>{i.first} {i.last}</div><div className="admin-muted">{i.mobile}</div></td>
-            <td>{i.product}<div className="admin-muted">{formatNumFa(i.value)} ت</div></td>
+            <td>{i.product}<div className="admin-muted">{formatNumFa(i.value)} {tr('ت')}</div></td>
             <td>{i.source}</td><td>{formatNumFa(i.score)}</td><td>{salesStageLabel(i.stage)}</td><td>{i.payStatus}</td>
             <td>{i.ownerName ? (
               <AdminEntityCell
                 thumb={<AdminThumb src={i.ownerAvatarUrl} label={i.ownerName} kind="user" size={28} />}
                 title={i.ownerName}
               />
-            ) : (canWrite ? <button type="button" className="admin-btn admin-btn--ghost" onClick={() => void adminFetch(`/api/admin/sales/items/${i.id}/claim`, { method: 'POST', body: '{}' }).then(load)}>برداشتن</button> : '—')}</td>
+            ) : (canWrite ? <button type="button" className="admin-btn admin-btn--ghost" onClick={() => void adminFetch(`/api/admin/sales/items/${i.id}/claim`, { method: 'POST', body: '{}' }).then(load)}>{tr('برداشتن')}</button> : '—')}</td>
           </tr>
-        ))}{!items.length ? <tr><td colSpan={7}>خالی</td></tr> : null}</tbody>
+        ))}{!items.length ? <tr><td colSpan={7}>{tr('خالی')}</td></tr> : null}</tbody>
       </table></div>
 
       <AdminModal
         open={open}
-        title={kind === 'lead' ? 'لید جدید' : 'آپگرید جدید'}
+        title={kind === 'lead' ? tr('لید جدید') : tr('آپگرید جدید')}
         onClose={() => !busy && setOpen(false)}
         size="sm"
         as="form"
@@ -133,25 +134,25 @@ function ItemsPage({ kind }: { kind: SalesItemKind }) {
         busy={busy}
         footer={
           <>
-            <button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>ایجاد</button>
-            <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setOpen(false)}>انصراف</button>
+            <button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>{tr('ایجاد')}</button>
+            <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setOpen(false)}>{tr('انصراف')}</button>
           </>
         }
       >
         <label>
-          <span className="form-label">نام</span>
+          <span className="form-label">{tr('نام')}</span>
           <input className="form-input" required value={form.first} onChange={(e) => setForm({ ...form, first: e.target.value })} />
         </label>
         <label>
-          <span className="form-label">نام خانوادگی</span>
+          <span className="form-label">{tr('نام خانوادگی')}</span>
           <input className="form-input" value={form.last} onChange={(e) => setForm({ ...form, last: e.target.value })} />
         </label>
         <label>
-          <span className="form-label">موبایل</span>
+          <span className="form-label">{tr('موبایل')}</span>
           <input className="form-input" dir="ltr" required value={form.mobile} onChange={(e) => setForm({ ...form, mobile: e.target.value })} />
         </label>
         <label>
-          <span className="form-label">محصول</span>
+          <span className="form-label">{tr('محصول')}</span>
           <select className="admin-select" value={form.product} onChange={(e) => setForm({ ...form, product: e.target.value })}>
             <option value="">—</option>
             {products.map((pr) => <option key={pr.id} value={pr.name}>{pr.name}</option>)}
@@ -159,7 +160,7 @@ function ItemsPage({ kind }: { kind: SalesItemKind }) {
         </label>
         {kind === 'lead' ? (
           <label>
-            <span className="form-label">منبع</span>
+            <span className="form-label">{tr('منبع')}</span>
             <select className="admin-select" value={form.source} onChange={(e) => setForm({ ...form, source: e.target.value })}>
               {leadSources.map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
@@ -230,44 +231,44 @@ function ItemDetail({ kind }: { kind: SalesItemKind }) {
   return (
     <div className="admin-page">
       <header className="admin-header">
-        <div><p className="admin-topbar-eyebrow"><Link to={base}>← بازگشت</Link></p>
+        <div><p className="admin-topbar-eyebrow"><Link to={base}>{tr('← بازگشت')}</Link></p>
           <h1>{item.first} {item.last} · {item.publicId}</h1>
-          <p>{item.mobile} · {item.product} · {formatNumFa(item.value)} ت · {salesStageLabel(item.stage)}</p></div>
+          <p>{item.mobile} · {item.product} · {formatNumFa(item.value)} {tr('ت ·')} {salesStageLabel(item.stage)}</p></div>
         <span className="admin-topbar-chip">{item.payStatus}</span>
       </header>
       {error ? <p className="admin-error">{error}</p> : null}
       {canWrite ? (
         <div className="admin-toolbar" style={{ flexWrap: 'wrap', gap: 8 }}>
-          <button type="button" className="admin-btn" onClick={() => { setCallForm({ result: callResults[0] || SALES_CALL_RESULTS[0], summary: '' }); setModal('call'); }}>تماس</button>
-          <button type="button" className="admin-btn" onClick={() => { setOfferDiscount('0'); setModal('offer'); }}>پیشنهاد</button>
-          <button type="button" className="admin-btn" onClick={() => void act(`/api/admin/sales/items/${item.id}/advance`)}>پیشرفت</button>
-          <button type="button" className="admin-btn" onClick={() => void act(`/api/admin/sales/items/${item.id}/payment-link`)}>لینک پرداخت</button>
-          {lastPayment?.status === 'لینک ارسال‌شده' ? <button type="button" className="admin-btn" onClick={() => void act(`/api/admin/sales/payments/${lastPayment.id}/finance-inquiry`)}>استعلام مالی</button> : null}
+          <button type="button" className="admin-btn" onClick={() => { setCallForm({ result: callResults[0] || SALES_CALL_RESULTS[0], summary: '' }); setModal('call'); }}>{tr('تماس')}</button>
+          <button type="button" className="admin-btn" onClick={() => { setOfferDiscount('0'); setModal('offer'); }}>{tr('پیشنهاد')}</button>
+          <button type="button" className="admin-btn" onClick={() => void act(`/api/admin/sales/items/${item.id}/advance`)}>{tr('پیشرفت')}</button>
+          <button type="button" className="admin-btn" onClick={() => void act(`/api/admin/sales/items/${item.id}/payment-link`)}>{tr('لینک پرداخت')}</button>
+          {lastPayment?.status === 'لینک ارسال‌شده' ? <button type="button" className="admin-btn" onClick={() => void act(`/api/admin/sales/payments/${lastPayment.id}/finance-inquiry`)}>{tr('استعلام مالی')}</button> : null}
           {canAdmin && lastPayment?.status === 'در حال بررسی مالی' ? (
             <>
-              <button type="button" className="admin-btn admin-btn--primary" onClick={() => void act(`/api/admin/sales/payments/${lastPayment.id}/finance-decide`, { approve: true })}>تایید مالی</button>
-              <button type="button" className="admin-btn" onClick={() => void act(`/api/admin/sales/payments/${lastPayment.id}/finance-decide`, { approve: false })}>رد مالی</button>
+              <button type="button" className="admin-btn admin-btn--primary" onClick={() => void act(`/api/admin/sales/payments/${lastPayment.id}/finance-decide`, { approve: true })}>{tr('تایید مالی')}</button>
+              <button type="button" className="admin-btn" onClick={() => void act(`/api/admin/sales/payments/${lastPayment.id}/finance-decide`, { approve: false })}>{tr('رد مالی')}</button>
             </>
           ) : null}
-          <button type="button" className="admin-btn" onClick={() => { setLostReason(lostReasons[0] || SALES_LOST_REASONS[0]); setModal('lost'); }}>ازدست‌رفته</button>
+          <button type="button" className="admin-btn" onClick={() => { setLostReason(lostReasons[0] || SALES_LOST_REASONS[0]); setModal('lost'); }}>{tr('ازدست‌رفته')}</button>
           {SALES_MESSAGE_CHANNELS.slice(0, 2).map((ch) => (
             <button key={ch} type="button" className="admin-btn admin-btn--ghost" onClick={() => void act(`/api/admin/sales/items/${item.id}/messages`, { channel: ch, text: `پیام ${ch}` })}>{ch}</button>
           ))}
         </div>
       ) : null}
       <section className="admin-card" style={{ marginTop: 12 }}>
-        <div className="admin-card-head"><h2>تاریخچه</h2></div>
-        <ul>{data.activities.map((a) => <li key={a.id}>{formatAdminFaDateTime(a.at)} — {a.text}</li>)}</ul>
-        <div className="admin-card-head"><h2>پیشنهاد / پرداخت</h2></div>
+        <div className="admin-card-head"><h2>{tr('تاریخچه')}</h2></div>
+        <ul>{data.activities.map((a) => <li key={a.id}>{formatAdminFaDateTime(a.at)} — {tr(a.text)}</li>)}</ul>
+        <div className="admin-card-head"><h2>{tr('پیشنهاد / پرداخت')}</h2></div>
         {data.offers.map((o) => <div key={o.id}>{o.product} · {formatNumFa(o.final)} · {o.discount}% · {o.approvalStatus}
           {canAdmin && o.approvalStatus === 'در انتظار تایید' ? (
-            <><button type="button" className="admin-btn admin-btn--ghost" onClick={() => void act(`/api/admin/sales/offers/${o.id}/decide`, { approve: true })}>تایید</button>
-            <button type="button" className="admin-btn admin-btn--ghost" onClick={() => void act(`/api/admin/sales/offers/${o.id}/decide`, { approve: false })}>رد</button></>
+            <><button type="button" className="admin-btn admin-btn--ghost" onClick={() => void act(`/api/admin/sales/offers/${o.id}/decide`, { approve: true })}>{tr('تایید')}</button>
+            <button type="button" className="admin-btn admin-btn--ghost" onClick={() => void act(`/api/admin/sales/offers/${o.id}/decide`, { approve: false })}>{tr('رد')}</button></>
           ) : null}</div>)}
         {data.payments.map((p) => <div key={p.id}>{formatNumFa(p.amount)} · {p.type} · {p.status}</div>)}
       </section>
 
-      <AdminModal open={modal === 'call'} title="ثبت تماس" onClose={() => !busy && setModal(null)} size="sm" as="form" busy={busy}
+      <AdminModal open={modal === 'call'} title={tr("ثبت تماس")} onClose={() => !busy && setModal(null)} size="sm" as="form" busy={busy}
         onSubmit={(e) => {
           e.preventDefault();
           if (!callForm.summary.trim()) return;
@@ -275,39 +276,39 @@ function ItemDetail({ kind }: { kind: SalesItemKind }) {
           void act(`/api/admin/sales/items/${item.id}/calls`, { result: callForm.result, summary: callForm.summary, talk: 5, advance: true })
             .then(() => setModal(null)).finally(() => setBusy(false));
         }}
-        footer={<><button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>ثبت</button>
-          <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setModal(null)}>انصراف</button></>}>
-        <label><span className="form-label">نتیجه</span>
+        footer={<><button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>{tr('ثبت')}</button>
+          <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setModal(null)}>{tr('انصراف')}</button></>}>
+        <label><span className="form-label">{tr('نتیجه')}</span>
           <select className="admin-select" value={callForm.result} onChange={(e) => setCallForm({ ...callForm, result: e.target.value })}>
             {callResults.map((r) => <option key={r} value={r}>{r}</option>)}
           </select></label>
-        <label><span className="form-label">خلاصه</span>
+        <label><span className="form-label">{tr('خلاصه')}</span>
           <textarea className="form-input" required rows={3} value={callForm.summary} onChange={(e) => setCallForm({ ...callForm, summary: e.target.value })} /></label>
       </AdminModal>
 
-      <AdminModal open={modal === 'offer'} title="پیشنهاد تخفیف" onClose={() => !busy && setModal(null)} size="sm" as="form" busy={busy}
+      <AdminModal open={modal === 'offer'} title={tr("پیشنهاد تخفیف")} onClose={() => !busy && setModal(null)} size="sm" as="form" busy={busy}
         onSubmit={(e) => {
           e.preventDefault();
           setBusy(true);
           void act(`/api/admin/sales/items/${item.id}/offers`, { discount: Number(offerDiscount) || 0 })
             .then(() => setModal(null)).finally(() => setBusy(false));
         }}
-        footer={<><button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>ثبت</button>
-          <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setModal(null)}>انصراف</button></>}>
-        <label><span className="form-label">تخفیف ٪</span>
+        footer={<><button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>{tr('ثبت')}</button>
+          <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setModal(null)}>{tr('انصراف')}</button></>}>
+        <label><span className="form-label">{tr('تخفیف ٪')}</span>
           <input className="form-input" type="number" value={offerDiscount} onChange={(e) => setOfferDiscount(e.target.value)} /></label>
       </AdminModal>
 
-      <AdminModal open={modal === 'lost'} title="علامت ازدست‌رفته" onClose={() => !busy && setModal(null)} size="sm" as="form" busy={busy}
+      <AdminModal open={modal === 'lost'} title={tr("علامت ازدست‌رفته")} onClose={() => !busy && setModal(null)} size="sm" as="form" busy={busy}
         onSubmit={(e) => {
           e.preventDefault();
           setBusy(true);
           void act(`/api/admin/sales/items/${item.id}/lost`, { reason: lostReason })
             .then(() => setModal(null)).finally(() => setBusy(false));
         }}
-        footer={<><button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>ثبت</button>
-          <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setModal(null)}>انصراف</button></>}>
-        <label><span className="form-label">دلیل</span>
+        footer={<><button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>{tr('ثبت')}</button>
+          <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setModal(null)}>{tr('انصراف')}</button></>}>
+        <label><span className="form-label">{tr('دلیل')}</span>
           <select className="admin-select" value={lostReason} onChange={(e) => setLostReason(e.target.value)}>
             {lostReasons.map((r) => <option key={r} value={r}>{r}</option>)}
           </select></label>
@@ -405,18 +406,18 @@ export function AdminSalesPipelinePage() {
     <div className="admin-page sales-pipe-page">
       <header className="admin-header">
         <div>
-          <h1>پایپ‌لاین</h1>
-          <p>قیف فروش Pet Date</p>
+          <h1>{tr('پایپ‌لاین')}</h1>
+          <p>{tr('قیف فروش Pet Date')}</p>
         </div>
         <div className="sales-pipe-summary" aria-live="polite">
-          <span className="admin-topbar-chip">{formatNumFa(totalDeals)} معامله</span>
-          <span className="admin-topbar-chip">{formatNumFa(totalValue)} ت</span>
+          <span className="admin-topbar-chip">{formatNumFa(totalDeals)} {tr('معامله')}</span>
+          <span className="admin-topbar-chip">{formatNumFa(totalValue)} {tr('ت')}</span>
         </div>
       </header>
       {error ? <p className="admin-error">{error}</p> : null}
-      {loading && !stages.length ? <p className="admin-muted">در حال بارگذاری…</p> : null}
+      {loading && !stages.length ? <p className="admin-muted">{tr('در حال بارگذاری…')}</p> : null}
 
-      <div className="sales-pipe-board" role="list" aria-label="مراحل قیف فروش">
+      <div className="sales-pipe-board" role="list" aria-label={tr("مراحل قیف فروش")}>
         {stages.map((s) => {
           const tone = salesPipeTone(s.stage);
           return (
@@ -436,10 +437,10 @@ export function AdminSalesPipelinePage() {
             >
               <header className="sales-pipe-col-head">
                 <div className="sales-pipe-col-title">
-                  <h2>{s.label}</h2>
+                  <h2>{tr(s.label)}</h2>
                   <span className="sales-pipe-count">{formatNumFa(s.items.length)}</span>
                 </div>
-                <p className="sales-pipe-col-value">{formatNumFa(s.value)} تومان</p>
+                <p className="sales-pipe-col-value">{formatNumFa(s.value)} {tr('تومان')}</p>
               </header>
 
               <div className="sales-pipe-col-body">
@@ -461,19 +462,19 @@ export function AdminSalesPipelinePage() {
                       <div className="sales-pipe-card-top">
                         <strong className="sales-pipe-card-name">{i.first} {i.last}</strong>
                         <span className={`sales-pipe-kind sales-pipe-kind--${i.kind}`}>
-                          {i.kind === 'lead' ? 'لید' : 'آپگرید'}
+                          {i.kind === 'lead' ? tr('لید') : tr('آپگرید')}
                         </span>
                       </div>
                       <div className="sales-pipe-card-product">{i.product || '—'}</div>
                       <div className="sales-pipe-card-bot">
-                        <span className="sales-pipe-card-value">{formatNumFa(i.value)} ت</span>
+                        <span className="sales-pipe-card-value">{formatNumFa(i.value)} {tr('ت')}</span>
                         {i.ownerName ? (
                           <span className="sales-pipe-card-owner" title={i.ownerName}>
                             <AdminThumb src={i.ownerAvatarUrl} label={i.ownerName} kind="user" size={22} />
                             <span>{i.ownerName}</span>
                           </span>
                         ) : (
-                          <span className="admin-muted">بدون کارشناس</span>
+                          <span className="admin-muted">{tr('بدون کارشناس')}</span>
                         )}
                       </div>
                       <div className="sales-pipe-card-meta">
@@ -484,7 +485,7 @@ export function AdminSalesPipelinePage() {
                   ))
                 ) : (
                   <div className="sales-pipe-empty">
-                    <p>معامله‌ای در این مرحله نیست</p>
+                    <p>{tr('معامله‌ای در این مرحله نیست')}</p>
                   </div>
                 )}
               </div>
@@ -495,7 +496,7 @@ export function AdminSalesPipelinePage() {
 
       <AdminModal
         open={!!selected}
-        title={selected ? `${selected.first} ${selected.last}` : 'معامله'}
+        title={selected ? `${selected.first} ${selected.last}` : tr('معامله')}
         onClose={() => !busy && setSelected(null)}
         size="md"
         busy={busy}
@@ -504,14 +505,14 @@ export function AdminSalesPipelinePage() {
             <>
               {canWrite && canAdvanceSelected ? (
                 <button type="button" className="admin-btn admin-btn--primary" disabled={busy} onClick={() => void advanceSelected()}>
-                  پیشرفت مرحله
+                  {tr('پیشرفت مرحله')}
                 </button>
               ) : null}
               <Link className="admin-btn" to={detailPath(selected)} onClick={() => setSelected(null)}>
-                صفحه جزئیات
+                {tr('صفحه جزئیات')}
               </Link>
               <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setSelected(null)}>
-                بستن
+                {tr('بستن')}
               </button>
             </>
           ) : null
@@ -521,39 +522,39 @@ export function AdminSalesPipelinePage() {
           <div className="sales-pipe-detail">
             <div className="sales-pipe-detail-grid">
               <div>
-                <span className="form-label">کد</span>
+                <span className="form-label">{tr('کد')}</span>
                 <div>{selected.publicId}</div>
               </div>
               <div>
-                <span className="form-label">نوع</span>
-                <div>{selected.kind === 'lead' ? 'لید' : 'آپگرید'}</div>
+                <span className="form-label">{tr('نوع')}</span>
+                <div>{selected.kind === 'lead' ? tr('لید') : tr('آپگرید')}</div>
               </div>
               <div>
-                <span className="form-label">موبایل</span>
+                <span className="form-label">{tr('موبایل')}</span>
                 <div dir="ltr">{selected.mobile}</div>
               </div>
               <div>
-                <span className="form-label">مرحله</span>
+                <span className="form-label">{tr('مرحله')}</span>
                 <div>{salesStageLabel(selected.stage)}</div>
               </div>
               <div>
-                <span className="form-label">محصول</span>
+                <span className="form-label">{tr('محصول')}</span>
                 <div>{selected.product || '—'}</div>
               </div>
               <div>
-                <span className="form-label">مبلغ</span>
-                <div>{formatNumFa(selected.value)} تومان</div>
+                <span className="form-label">{tr('مبلغ')}</span>
+                <div>{formatNumFa(selected.value)} {tr('تومان')}</div>
               </div>
               <div>
-                <span className="form-label">منبع</span>
+                <span className="form-label">{tr('منبع')}</span>
                 <div>{selected.source || '—'}</div>
               </div>
               <div>
-                <span className="form-label">پرداخت</span>
+                <span className="form-label">{tr('پرداخت')}</span>
                 <div>{selected.payStatus}</div>
               </div>
               <div>
-                <span className="form-label">کارشناس</span>
+                <span className="form-label">{tr('کارشناس')}</span>
                 <div>
                   {selected.ownerName ? (
                     <AdminEntityCell
@@ -564,13 +565,13 @@ export function AdminSalesPipelinePage() {
                 </div>
               </div>
               <div>
-                <span className="form-label">آخرین فعالیت</span>
+                <span className="form-label">{tr('آخرین فعالیت')}</span>
                 <div>{formatAdminFaDateTime(selected.lastActivity)}</div>
               </div>
             </div>
             {canWrite ? (
               <p className="sales-pipe-hint admin-muted">
-                برای جابه‌جایی سریع، کارت را روی مرحلهٔ بعدی بکشید (فقط یک مرحله جلو).
+                {tr('برای جابه‌جایی سریع، کارت را روی مرحلهٔ بعدی بکشید (فقط یک مرحله جلو).')}
               </p>
             ) : null}
           </div>
@@ -585,10 +586,10 @@ export function AdminSalesDealsPage() {
   useEffect(() => { void adminFetch<{ items: SalesItem[] }>('/api/admin/sales/items?stage=7&limit=100').then((d) => setItems(d.items)).catch(() => undefined); }, []);
   return (
     <div className="admin-page">
-      <header className="admin-header"><div><h1>معاملات برنده</h1><p>پس از تایید مالی</p></div></header>
-      <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>کد</th><th>نام</th><th>محصول</th><th>مبلغ</th><th>کارشناس</th></tr></thead>
+      <header className="admin-header"><div><h1>{tr('معاملات برنده')}</h1><p>{tr('پس از تایید مالی')}</p></div></header>
+      <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>{tr('کد')}</th><th>{tr('نام')}</th><th>{tr('محصول')}</th><th>{tr('مبلغ')}</th><th>{tr('کارشناس')}</th></tr></thead>
         <tbody>{items.map((i) => <tr key={i.id}><td><Link to={`/admin/sales/${i.kind === 'lead' ? 'leads' : 'upgrades'}/${i.id}`}>{i.publicId}</Link></td><td>{i.first} {i.last}</td><td>{i.product}</td><td>{formatNumFa(i.value)}</td><td>{i.ownerName ? <AdminEntityCell thumb={<AdminThumb src={i.ownerAvatarUrl} label={i.ownerName} kind="user" size={28} />} title={i.ownerName} /> : '—'}</td></tr>)}
-          {!items.length ? <tr><td colSpan={5}>خالی</td></tr> : null}</tbody></table></div>
+          {!items.length ? <tr><td colSpan={5}>{tr('خالی')}</td></tr> : null}</tbody></table></div>
     </div>
   );
 }
@@ -602,17 +603,17 @@ export function AdminSalesCustomersPage() {
   }, [q]);
   return (
     <div className="admin-page">
-      <header className="admin-header"><div><h1>مشتریان</h1><p>Customer 360 سبک</p></div></header>
-      <input className="admin-input" placeholder="جستجو…" value={q} onChange={(e) => setQ(e.target.value)} />
+      <header className="admin-header"><div><h1>{tr('مشتریان')}</h1><p>{tr('Customer 360 سبک')}</p></div></header>
+      <input className="admin-input" placeholder={tr("جستجو…")} value={q} onChange={(e) => setQ(e.target.value)} />
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(240px,1fr))', gap: 12, marginTop: 12 }}>
         {customers.map((c) => (
           <Link key={c.id} to={`/admin/sales/customers/${c.id}`} className="admin-card" style={{ textDecoration: 'none', color: 'inherit' }}>
             <strong>{c.first} {c.last}</strong><div className="admin-muted">{c.publicId} · {c.mobile}</div>
             <div>{c.level} · LTV {formatNumFa(c.orderSum || 0)}</div>
-            {c.csat ? <div>رضایت: {formatNumFa(c.csat)}/۵</div> : null}
+            {c.csat ? <div>{tr('رضایت:')} {formatNumFa(c.csat)}{tr('/۵')}</div> : null}
           </Link>
         ))}
-        {!customers.length ? <p>مشتری‌ای نیست — بعد از تایید مالی ساخته می‌شود.</p> : null}
+        {!customers.length ? <p>{tr('مشتری‌ای نیست — بعد از تایید مالی ساخته می‌شود.')}</p> : null}
       </div>
     </div>
   );
@@ -630,18 +631,18 @@ export function AdminSalesCustomerDetailPage() {
   const c = data.customer;
   return (
     <div className="admin-page">
-      <header className="admin-header"><div><p className="admin-topbar-eyebrow"><Link to="/admin/sales/customers">← مشتریان</Link></p>
+      <header className="admin-header"><div><p className="admin-topbar-eyebrow"><Link to="/admin/sales/customers">{tr('← مشتریان')}</Link></p>
         <h1>{c.first} {c.last}</h1><p>{c.publicId} · {c.mobile} · {c.level}</p></div></header>
       <div className="admin-stats">
         <div className="admin-stat"><div className="admin-stat-value">{formatNumFa(c.orderSum || 0)}</div><div className="admin-stat-label">LTV</div></div>
-        <div className="admin-stat"><div className="admin-stat-value">{formatNumFa(c.orderCount || 0)}</div><div className="admin-stat-label">سفارش</div></div>
-        <div className="admin-stat"><div className="admin-stat-value">{formatNumFa(c.daysSinceLastPurchase ?? 0)}</div><div className="admin-stat-label">روز از آخرین خرید</div></div>
+        <div className="admin-stat"><div className="admin-stat-value">{formatNumFa(c.orderCount || 0)}</div><div className="admin-stat-label">{tr('سفارش')}</div></div>
+        <div className="admin-stat"><div className="admin-stat-value">{formatNumFa(c.daysSinceLastPurchase ?? 0)}</div><div className="admin-stat-label">{tr('روز از آخرین خرید')}</div></div>
         <div className="admin-stat"><div className="admin-stat-value">{formatNumFa(c.csat || 0)}</div><div className="admin-stat-label">CSAT</div></div>
       </div>
-      <section className="admin-card" style={{ marginTop: 12 }}><div className="admin-card-head"><h2>سفارش‌ها</h2></div>
+      <section className="admin-card" style={{ marginTop: 12 }}><div className="admin-card-head"><h2>{tr('سفارش‌ها')}</h2></div>
         {data.orders.map((o) => <div key={o.id}>{o.product} · {formatNumFa(o.amount)} · {formatAdminFaDate(o.at)}</div>)}
       </section>
-      <section className="admin-card" style={{ marginTop: 12 }}><div className="admin-card-head"><h2>آپگریدها</h2></div>
+      <section className="admin-card" style={{ marginTop: 12 }}><div className="admin-card-head"><h2>{tr('آپگریدها')}</h2></div>
         {data.upgrades.map((u) => <div key={u.id}><Link to={`/admin/sales/upgrades/${u.id}`}>{u.publicId}</Link> · {salesStageLabel(u.stage)}</div>)}
       </section>
     </div>
@@ -670,16 +671,16 @@ export function AdminSalesProductsPage() {
   };
   return (
     <div className="admin-page">
-      <header className="admin-header"><div><h1>محصولات و قیمت</h1><p>کاتالوگ فروش Pet Date</p></div>
-        {canAdmin ? <button type="button" className="admin-btn admin-btn--primary" onClick={() => { setForm({ name: '', price: '0' }); setOpen(true); }}>+ محصول</button> : null}
+      <header className="admin-header"><div><h1>{tr('محصولات و قیمت')}</h1><p>{tr('کاتالوگ فروش Pet Date')}</p></div>
+        {canAdmin ? <button type="button" className="admin-btn admin-btn--primary" onClick={() => { setForm({ name: '', price: '0' }); setOpen(true); }}>{tr('+ محصول')}</button> : null}
       </header>
-      <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>نام</th><th>قیمت</th><th>وضعیت</th></tr></thead>
-        <tbody>{products.map((p) => <tr key={p.id}><td>{p.name}</td><td>{formatNumFa(p.price)}</td><td>{p.active ? 'فعال' : 'غیرفعال'}</td></tr>)}</tbody></table></div>
-      <AdminModal open={open} title="محصول فروش جدید" onClose={() => !busy && setOpen(false)} size="sm" as="form" onSubmit={(e) => void submit(e)} busy={busy}
-        footer={<><button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>ذخیره</button>
-          <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setOpen(false)}>انصراف</button></>}>
-        <label><span className="form-label">نام</span><input className="form-input" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></label>
-        <label><span className="form-label">قیمت تومان</span><input className="form-input" type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} /></label>
+      <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>{tr('نام')}</th><th>{tr('قیمت')}</th><th>{tr('وضعیت')}</th></tr></thead>
+        <tbody>{products.map((p) => <tr key={p.id}><td>{p.name}</td><td>{formatNumFa(p.price)}</td><td>{p.active ? tr('فعال') : tr('غیرفعال')}</td></tr>)}</tbody></table></div>
+      <AdminModal open={open} title={tr("محصول فروش جدید")} onClose={() => !busy && setOpen(false)} size="sm" as="form" onSubmit={(e) => void submit(e)} busy={busy}
+        footer={<><button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>{tr('ذخیره')}</button>
+          <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setOpen(false)}>{tr('انصراف')}</button></>}>
+        <label><span className="form-label">{tr('نام')}</span><input className="form-input" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} /></label>
+        <label><span className="form-label">{tr('قیمت تومان')}</span><input className="form-input" type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} /></label>
       </AdminModal>
     </div>
   );
@@ -734,25 +735,25 @@ export function AdminSalesTicketsPage() {
   return (
     <div className="admin-page admin-page--wide">
       <header className="admin-header">
-        <div><h1>تیکت‌های فروش</h1><p>استعلام مالی، پشتیبانی فنی و تحویل · Pet Date</p></div>
+        <div><h1>{tr('تیکت‌های فروش')}</h1><p>{tr('استعلام مالی، پشتیبانی فنی و تحویل · Pet Date')}</p></div>
         {canWrite ? (
-          <button type="button" className="admin-btn admin-btn--primary" onClick={() => setOpen(true)}>+ تیکت</button>
+          <button type="button" className="admin-btn admin-btn--primary" onClick={() => setOpen(true)}>{tr('+ تیکت')}</button>
         ) : null}
       </header>
       <div className="admin-tabs">
-        <button type="button" className={`admin-tab${cat === 'all' ? ' is-on' : ''}`} onClick={() => setCat('all')}>همه</button>
+        <button type="button" className={`admin-tab${cat === 'all' ? ' is-on' : ''}`} onClick={() => setCat('all')}>{tr('همه')}</button>
         {SALES_TICKET_CATEGORIES.map((c) => (
           <button key={c} type="button" className={`admin-tab${cat === c ? ' is-on' : ''}`} onClick={() => setCat(c)}>{c}</button>
         ))}
       </div>
       <div className="admin-table-wrap">
         <table className="admin-table">
-          <thead><tr><th>کد</th><th>عنوان</th><th>مرتبط</th><th>واحد</th><th>دسته</th><th>اولویت</th><th>وضعیت</th><th>SLA</th><th></th></tr></thead>
+          <thead><tr><th>{tr('کد')}</th><th>{tr('عنوان')}</th><th>{tr('مرتبط')}</th><th>{tr('واحد')}</th><th>{tr('دسته')}</th><th>{tr('اولویت')}</th><th>{tr('وضعیت')}</th><th>SLA</th><th></th></tr></thead>
           <tbody>
             {tickets.map((t) => (
               <tr key={t.id}>
                 <td>{t.publicId}</td>
-                <td>{t.title}<div className="admin-muted">{t.desc || ''}</div></td>
+                <td>{tr(t.title)}<div className="admin-muted">{t.desc || ''}</div></td>
                 <td>
                   {t.refId ? (
                     <Link to={`/admin/sales/${t.refKind === 'upgrade' ? 'upgrades' : 'leads'}/${t.refId}`}>
@@ -770,11 +771,11 @@ export function AdminSalesTicketsPage() {
                 <td style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                   {canAdmin && t.cat === 'استعلام مالی' && t.status === 'جدید' && t.paymentId ? (
                     <>
-                      <button type="button" className="admin-btn admin-btn--primary" onClick={() => void adminFetch(`/api/admin/sales/payments/${t.paymentId}/finance-decide`, { method: 'POST', body: JSON.stringify({ approve: true }) }).then(load)}>تایید مالی</button>
-                      <button type="button" className="admin-btn" onClick={() => void adminFetch(`/api/admin/sales/payments/${t.paymentId}/finance-decide`, { method: 'POST', body: JSON.stringify({ approve: false }) }).then(load)}>رد</button>
+                      <button type="button" className="admin-btn admin-btn--primary" onClick={() => void adminFetch(`/api/admin/sales/payments/${t.paymentId}/finance-decide`, { method: 'POST', body: JSON.stringify({ approve: true }) }).then(load)}>{tr('تایید مالی')}</button>
+                      <button type="button" className="admin-btn" onClick={() => void adminFetch(`/api/admin/sales/payments/${t.paymentId}/finance-decide`, { method: 'POST', body: JSON.stringify({ approve: false }) }).then(load)}>{tr('رد')}</button>
                     </>
                   ) : null}
-                  {canWrite && !['بسته‌شده', 'حل‌شده'].includes(t.status) ? (
+                  {canWrite && ![tr('بسته‌شده'), tr('حل‌شده')].includes(t.status) ? (
                     <select
                       className="admin-select"
                       value={t.status}
@@ -787,14 +788,14 @@ export function AdminSalesTicketsPage() {
                 </td>
               </tr>
             ))}
-            {!tickets.length ? <tr><td colSpan={9}>خالی</td></tr> : null}
+            {!tickets.length ? <tr><td colSpan={9}>{tr('خالی')}</td></tr> : null}
           </tbody>
         </table>
       </div>
 
       <AdminModal
         open={open}
-        title="تیکت جدید"
+        title={tr("تیکت جدید")}
         onClose={() => !busy && setOpen(false)}
         size="sm"
         as="form"
@@ -802,26 +803,26 @@ export function AdminSalesTicketsPage() {
         busy={busy}
         footer={(
           <>
-            <button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>ایجاد</button>
-            <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setOpen(false)}>انصراف</button>
+            <button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>{tr('ایجاد')}</button>
+            <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setOpen(false)}>{tr('انصراف')}</button>
           </>
         )}
       >
-        <label><span className="form-label">عنوان</span>
-          <input className="form-input" required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} /></label>
-        <label><span className="form-label">دسته</span>
+        <label><span className="form-label">{tr('عنوان')}</span>
+          <input className="form-input" required value={tr(form.title)} onChange={(e) => setForm({ ...form, title: e.target.value })} /></label>
+        <label><span className="form-label">{tr('دسته')}</span>
           <select className="admin-select" value={form.cat} onChange={(e) => setForm({ ...form, cat: e.target.value })}>
             {SALES_TICKET_CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
           </select></label>
-        <label><span className="form-label">واحد</span>
+        <label><span className="form-label">{tr('واحد')}</span>
           <select className="admin-select" value={form.dept} onChange={(e) => setForm({ ...form, dept: e.target.value })}>
             {SALES_TICKET_DEPTS.map((d) => <option key={d} value={d}>{d}</option>)}
           </select></label>
-        <label><span className="form-label">اولویت</span>
+        <label><span className="form-label">{tr('اولویت')}</span>
           <select className="admin-select" value={form.priority} onChange={(e) => setForm({ ...form, priority: e.target.value })}>
             {SALES_PRIORITIES.map((p) => <option key={p} value={p}>{p}</option>)}
           </select></label>
-        <label><span className="form-label">شرح</span>
+        <label><span className="form-label">{tr('شرح')}</span>
           <textarea className="form-input" rows={3} value={form.desc} onChange={(e) => setForm({ ...form, desc: e.target.value })} /></label>
       </AdminModal>
     </div>
@@ -855,7 +856,7 @@ export function AdminSalesCallsPage() {
   return (
     <div className="admin-page admin-page--wide">
       <header className="admin-header">
-        <div><h1>مرکز تماس و ارزیابی</h1><p>شنود، QA و شبیه‌سازی تماس ورودی · Pet Date</p></div>
+        <div><h1>{tr('مرکز تماس و ارزیابی')}</h1><p>{tr('شنود، QA و شبیه‌سازی تماس ورودی · Pet Date')}</p></div>
         {canWrite && sim ? (
           <button
             type="button"
@@ -863,35 +864,35 @@ export function AdminSalesCallsPage() {
             disabled={Boolean(sim.call)}
             onClick={() => void sim.simulateIncoming()}
           >
-            شبیه‌سازی تماس ورودی
+            {tr('شبیه‌سازی تماس ورودی')}
           </button>
         ) : null}
       </header>
       <div className="admin-stats">
-        <div className="admin-stat"><div className="admin-stat-value">{formatNumFa(out.length)}</div><div className="admin-stat-label">خروجی (فیلتر)</div></div>
-        <div className="admin-stat"><div className="admin-stat-value">{formatNumFa(inn.length)}</div><div className="admin-stat-label">ورودی</div></div>
-        <div className="admin-stat"><div className="admin-stat-value">{formatNumFa(calls.reduce((s, c) => s + c.talk, 0))}</div><div className="admin-stat-label">دقایق</div></div>
-        <div className="admin-stat admin-stat--mint"><div className="admin-stat-value">{formatNumFa(pending)}</div><div className="admin-stat-label">در انتظار QA</div></div>
-        <div className="admin-stat"><div className="admin-stat-value">{formatNumFa(avgQa)}</div><div className="admin-stat-label">میانگین QA</div></div>
+        <div className="admin-stat"><div className="admin-stat-value">{formatNumFa(out.length)}</div><div className="admin-stat-label">{tr('خروجی (فیلتر)')}</div></div>
+        <div className="admin-stat"><div className="admin-stat-value">{formatNumFa(inn.length)}</div><div className="admin-stat-label">{tr('ورودی')}</div></div>
+        <div className="admin-stat"><div className="admin-stat-value">{formatNumFa(calls.reduce((s, c) => s + c.talk, 0))}</div><div className="admin-stat-label">{tr('دقایق')}</div></div>
+        <div className="admin-stat admin-stat--mint"><div className="admin-stat-value">{formatNumFa(pending)}</div><div className="admin-stat-label">{tr('در انتظار QA')}</div></div>
+        <div className="admin-stat"><div className="admin-stat-value">{formatNumFa(avgQa)}</div><div className="admin-stat-label">{tr('میانگین QA')}</div></div>
       </div>
       <div className="admin-toolbar" style={{ marginTop: 12 }}>
         <select className="admin-select" value={dir} onChange={(e) => setDir(e.target.value as typeof dir)}>
-          <option value="all">همه جهت‌ها</option>
-          <option value="call_out">خروجی</option>
-          <option value="call_in">ورودی</option>
+          <option value="all">{tr('همه جهت‌ها')}</option>
+          <option value="call_out">{tr('خروجی')}</option>
+          <option value="call_in">{tr('ورودی')}</option>
         </select>
         <label className="admin-check">
           <input type="checkbox" checked={qaOnly} onChange={(e) => setQaOnly(e.target.checked)} />
-          فقط ارزیابی‌نشده
+          {tr('فقط ارزیابی‌نشده')}
         </label>
       </div>
       <div className="admin-table-wrap" style={{ marginTop: 12 }}>
         <table className="admin-table">
-          <thead><tr><th>نوع</th><th>کارشناس</th><th>نتیجه</th><th>مدت</th><th>زمان</th><th>QA</th><th></th></tr></thead>
+          <thead><tr><th>{tr('نوع')}</th><th>{tr('کارشناس')}</th><th>{tr('نتیجه')}</th><th>{tr('مدت')}</th><th>{tr('زمان')}</th><th>QA</th><th></th></tr></thead>
           <tbody>
             {calls.map((c) => (
               <tr key={c.id}>
-                <td>{c.dir === 'call_out' ? 'خروجی' : 'ورودی'}</td>
+                <td>{c.dir === 'call_out' ? tr('خروجی') : tr('ورودی')}</td>
                 <td>{c.agentName}</td>
                 <td>{c.result}</td>
                 <td>{formatNumFa(c.talk)}</td>
@@ -899,19 +900,19 @@ export function AdminSalesCallsPage() {
                 <td>{c.qaStatus}{c.qaScore != null ? ` (${formatNumFa(c.qaScore)})` : ''}</td>
                 <td>
                   {c.qaStatus !== 'ارزیابی شد' && canWrite ? (
-                    <button type="button" className="admin-btn admin-btn--ghost" onClick={() => { setScore('80'); setScoreOpen(c.id); }}>ارزیابی</button>
+                    <button type="button" className="admin-btn admin-btn--ghost" onClick={() => { setScore('80'); setScoreOpen(c.id); }}>{tr('ارزیابی')}</button>
                   ) : null}
-                  <Link to={`/admin/sales/${c.refKind === 'upgrade' ? 'upgrades' : 'leads'}/${c.refId}`} style={{ marginInlineStart: 8 }}>پرونده</Link>
+                  <Link to={`/admin/sales/${c.refKind === 'upgrade' ? 'upgrades' : 'leads'}/${c.refId}`} style={{ marginInlineStart: 8 }}>{tr('پرونده')}</Link>
                 </td>
               </tr>
             ))}
-            {!calls.length ? <tr><td colSpan={7}>خالی</td></tr> : null}
+            {!calls.length ? <tr><td colSpan={7}>{tr('خالی')}</td></tr> : null}
           </tbody>
         </table>
       </div>
       <AdminModal
         open={scoreOpen != null}
-        title="امتیاز QA"
+        title={tr("امتیاز QA")}
         onClose={() => !busy && setScoreOpen(null)}
         size="sm"
         as="form"
@@ -925,16 +926,16 @@ export function AdminSalesCallsPage() {
         }}
         footer={(
           <>
-            <button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>ذخیره</button>
-            <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setScoreOpen(null)}>انصراف</button>
+            <button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>{tr('ذخیره')}</button>
+            <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setScoreOpen(null)}>{tr('انصراف')}</button>
           </>
         )}
       >
         <label>
-          <span className="form-label">امتیاز ۰–۱۰۰</span>
+          <span className="form-label">{tr('امتیاز ۰–۱۰۰')}</span>
           <input className="form-input" type="number" min={0} max={100} value={score} onChange={(e) => setScore(e.target.value)} />
         </label>
-        <p className="admin-muted">نتایج تماس استاندارد: {SALES_CALL_RESULTS.slice(0, 4).join('، ')}…</p>
+        <p className="admin-muted">{tr('نتایج تماس استاندارد:')} {SALES_CALL_RESULTS.slice(0, 4).join(tr('، '))}…</p>
       </AdminModal>
     </div>
   );
@@ -946,22 +947,22 @@ export function AdminSalesReportsPage() {
   if (!r) return <div className="admin-page"><p>…</p></div>;
   return (
     <div className="admin-page admin-page--wide">
-      <header className="admin-header"><div><h1>گزارشات</h1><p>Pet Date · بدون تفکیک بیزنس‌لاین</p></div></header>
+      <header className="admin-header"><div><h1>{tr('گزارشات')}</h1><p>{tr('Pet Date · بدون تفکیک بیزنس‌لاین')}</p></div></header>
       <div className="admin-stats">
         <div className="admin-stat"><div className="admin-stat-value">{formatNumFa(r.aov)}</div><div className="admin-stat-label">AOV</div></div>
-        <div className="admin-stat"><div className="admin-stat-value">{formatNumFa(r.revenue)}</div><div className="admin-stat-label">درآمد</div></div>
-        <div className="admin-stat"><div className="admin-stat-value">{formatNumFa(r.salesCount)}</div><div className="admin-stat-label">فروش</div></div>
-        <div className="admin-stat"><div className="admin-stat-value">{formatNumFa(r.callsCount)}</div><div className="admin-stat-label">تماس ({formatNumFa(r.callMinutes)} د)</div></div>
+        <div className="admin-stat"><div className="admin-stat-value">{formatNumFa(r.revenue)}</div><div className="admin-stat-label">{tr('درآمد')}</div></div>
+        <div className="admin-stat"><div className="admin-stat-value">{formatNumFa(r.salesCount)}</div><div className="admin-stat-label">{tr('فروش')}</div></div>
+        <div className="admin-stat"><div className="admin-stat-value">{formatNumFa(r.callsCount)}</div><div className="admin-stat-label">{tr('تماس (')}{formatNumFa(r.callMinutes)} {tr('د)')}</div></div>
       </div>
-      <section className="admin-card" style={{ marginTop: 12 }}><div className="admin-card-head"><h2>بر اساس کارشناس</h2></div>
-        <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>کارشناس</th><th>تماس</th><th>فروش</th><th>درآمد</th></tr></thead>
+      <section className="admin-card" style={{ marginTop: 12 }}><div className="admin-card-head"><h2>{tr('بر اساس کارشناس')}</h2></div>
+        <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>{tr('کارشناس')}</th><th>{tr('تماس')}</th><th>{tr('فروش')}</th><th>{tr('درآمد')}</th></tr></thead>
           <tbody>{r.byAgent.map((a) => <tr key={a.agentId}><td>{a.agentName}</td><td>{formatNumFa(a.calls)}</td><td>{formatNumFa(a.sales)}</td><td>{formatNumFa(a.revenue)}</td></tr>)}</tbody></table></div>
       </section>
-      <section className="admin-card" style={{ marginTop: 12 }}><div className="admin-card-head"><h2>بر اساس منبع</h2></div>
+      <section className="admin-card" style={{ marginTop: 12 }}><div className="admin-card-head"><h2>{tr('بر اساس منبع')}</h2></div>
         {r.bySource.map((s) => <div key={s.source}>{s.source}: {formatNumFa(s.value)}</div>)}
       </section>
-      <section className="admin-card" style={{ marginTop: 12 }}><div className="admin-card-head"><h2>روند ۱۴ روزه درآمد</h2></div>
-        <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>روز</th><th>درآمد</th><th>تماس</th></tr></thead>
+      <section className="admin-card" style={{ marginTop: 12 }}><div className="admin-card-head"><h2>{tr('روند ۱۴ روزه درآمد')}</h2></div>
+        <div className="admin-table-wrap"><table className="admin-table"><thead><tr><th>{tr('روز')}</th><th>{tr('درآمد')}</th><th>{tr('تماس')}</th></tr></thead>
           <tbody>
             {r.dailyRevenue.map((d, i) => (
               <tr key={d.day}><td>{d.day}</td><td>{formatNumFa(d.value)}</td><td>{formatNumFa(r.dailyCalls[i]?.count || 0)}</td></tr>
@@ -1034,7 +1035,7 @@ export function AdminSalesSettingsPage() {
   return (
     <div className="admin-page admin-page--wide">
       <header className="admin-header">
-        <div><h1>تنظیمات</h1><p>عملکرد، اهداف، پترن پیام و پیکربندی · خط محصول Pet Date</p></div>
+        <div><h1>{tr('تنظیمات')}</h1><p>{tr('عملکرد، اهداف، پترن پیام و پیکربندی · خط محصول Pet Date')}</p></div>
       </header>
       <div className="admin-tabs">
         {tabs.filter((t) => t.show !== false).map((t) => (
@@ -1044,22 +1045,22 @@ export function AdminSalesSettingsPage() {
 
       {tab === 'perf' ? (
         <div className="admin-stats">
-          <div className="admin-stat admin-stat--mint"><div className="admin-stat-value">{formatNumFa(dash?.callsToday || 0)}</div><div className="admin-stat-label">تماس امروز</div></div>
-          <div className="admin-stat"><div className="admin-stat-value">{formatNumFa(dash?.salesTodayCount || 0)}</div><div className="admin-stat-label">فروش امروز</div></div>
+          <div className="admin-stat admin-stat--mint"><div className="admin-stat-value">{formatNumFa(dash?.callsToday || 0)}</div><div className="admin-stat-label">{tr('تماس امروز')}</div></div>
+          <div className="admin-stat"><div className="admin-stat-value">{formatNumFa(dash?.salesTodayCount || 0)}</div><div className="admin-stat-label">{tr('فروش امروز')}</div></div>
           <div className="admin-stat"><div className="admin-stat-value">{formatNumFa(dash?.aov || 0)}</div><div className="admin-stat-label">AOV</div></div>
-          <div className="admin-stat"><div className="admin-stat-value">{formatNumFa(dash?.overdueFollowups || 0)}</div><div className="admin-stat-label">پیگیری معوق</div></div>
+          <div className="admin-stat"><div className="admin-stat-value">{formatNumFa(dash?.overdueFollowups || 0)}</div><div className="admin-stat-label">{tr('پیگیری معوق')}</div></div>
         </div>
       ) : null}
 
       {tab === 'goals' ? (
         <section className="admin-card">
           <div className="admin-card-head">
-            <h2>اهداف فعال</h2>
-            {canAdmin ? <button type="button" className="admin-btn admin-btn--primary" onClick={() => setGoalOpen(true)}>+ هدف</button> : null}
+            <h2>{tr('اهداف فعال')}</h2>
+            {canAdmin ? <button type="button" className="admin-btn admin-btn--primary" onClick={() => setGoalOpen(true)}>{tr('+ هدف')}</button> : null}
           </div>
           <div className="admin-table-wrap">
             <table className="admin-table">
-              <thead><tr><th>نام</th><th>تیم</th><th>بازه</th><th>معیارها</th><th>وضعیت</th></tr></thead>
+              <thead><tr><th>{tr('نام')}</th><th>{tr('تیم')}</th><th>{tr('بازه')}</th><th>{tr('معیارها')}</th><th>{tr('وضعیت')}</th></tr></thead>
               <tbody>
                 {goals.map((g) => (
                   <tr key={g.id}>
@@ -1067,10 +1068,10 @@ export function AdminSalesSettingsPage() {
                     <td>{g.team}</td>
                     <td>{g.periodFrom || '—'} → {g.periodTo || '—'}</td>
                     <td className="admin-muted">{JSON.stringify(g.metrics)}</td>
-                    <td>{g.active ? 'فعال' : 'غیرفعال'}</td>
+                    <td>{g.active ? tr('فعال') : tr('غیرفعال')}</td>
                   </tr>
                 ))}
-                {!goals.length ? <tr><td colSpan={5}>هدفی تعریف نشده</td></tr> : null}
+                {!goals.length ? <tr><td colSpan={5}>{tr('هدفی تعریف نشده')}</td></tr> : null}
               </tbody>
             </table>
           </div>
@@ -1080,17 +1081,17 @@ export function AdminSalesSettingsPage() {
       {tab === 'patterns' ? (
         <section className="admin-card">
           <div className="admin-card-head">
-            <h2>پترن‌های پیامکی</h2>
-            {canAdmin ? <button type="button" className="admin-btn admin-btn--primary" onClick={() => { setPatternForm({ channel: SALES_MESSAGE_CHANNELS[0], name: '', text: '' }); setPatternOpen(true); }}>+ پترن</button> : null}
+            <h2>{tr('پترن‌های پیامکی')}</h2>
+            {canAdmin ? <button type="button" className="admin-btn admin-btn--primary" onClick={() => { setPatternForm({ channel: SALES_MESSAGE_CHANNELS[0], name: '', text: '' }); setPatternOpen(true); }}>{tr('+ پترن')}</button> : null}
           </div>
           <div className="admin-table-wrap">
             <table className="admin-table">
-              <thead><tr><th>کانال</th><th>نام</th><th>متن</th><th>وضعیت</th></tr></thead>
+              <thead><tr><th>{tr('کانال')}</th><th>{tr('نام')}</th><th>{tr('متن')}</th><th>{tr('وضعیت')}</th></tr></thead>
               <tbody>
                 {patterns.map((p) => (
-                  <tr key={p.id}><td>{p.channel}</td><td>{p.name}</td><td>{p.text}</td><td>{p.active ? 'فعال' : 'غیرفعال'}</td></tr>
+                  <tr key={p.id}><td>{p.channel}</td><td>{p.name}</td><td>{tr(p.text)}</td><td>{p.active ? tr('فعال') : tr('غیرفعال')}</td></tr>
                 ))}
-                {!patterns.length ? <tr><td colSpan={4}>خالی</td></tr> : null}
+                {!patterns.length ? <tr><td colSpan={4}>{tr('خالی')}</td></tr> : null}
               </tbody>
             </table>
           </div>
@@ -1100,7 +1101,7 @@ export function AdminSalesSettingsPage() {
       {tab === 'admin' ? (
         <>
           <section className="admin-card">
-            <div className="admin-card-head"><h2>منابع لید</h2></div>
+            <div className="admin-card-head"><h2>{tr('منابع لید')}</h2></div>
             <p>{settings.leadSources.join(' · ')}</p>
             {canAdmin ? (
               <button type="button" className="admin-btn" onClick={() => {
@@ -1109,55 +1110,55 @@ export function AdminSalesSettingsPage() {
                 setOpen(true);
               }}
               >
-                ویرایش پیکربندی
+                {tr('ویرایش پیکربندی')}
               </button>
             ) : null}
           </section>
           <section className="admin-card" style={{ marginTop: 12 }}>
-            <div className="admin-card-head"><h2>دلایل ازدست‌رفتن</h2></div>
+            <div className="admin-card-head"><h2>{tr('دلایل ازدست‌رفتن')}</h2></div>
             <p>{settings.lostReasons.join(' · ')}</p>
           </section>
           <section className="admin-card" style={{ marginTop: 12 }}>
-            <div className="admin-card-head"><h2>سقف تخفیف نقش‌ها</h2></div>
-            {Object.entries(settings.discountLimits).map(([k, v]) => <div key={k}>{k}: {formatNumFa(v)}٪</div>)}
+            <div className="admin-card-head"><h2>{tr('سقف تخفیف نقش‌ها')}</h2></div>
+            {Object.entries(settings.discountLimits).map(([k, v]) => <div key={k}>{k}: {formatNumFa(v)}{tr('٪')}</div>)}
           </section>
           <p className="admin-muted" style={{ marginTop: 12 }}>
-            پیش‌فرض‌های سیستم: {SALES_LEAD_SOURCES.length} منبع · {SALES_LOST_REASONS.length} دلیل
+            {tr('پیش‌فرض‌های سیستم:')} {SALES_LEAD_SOURCES.length} {tr('منبع ·')} {SALES_LOST_REASONS.length} {tr('دلیل')}
             {' · '}
-            <Link to="/admin/settings">ویرایش ماژولار در تنظیمات پلتفرم</Link>
+            <Link to="/admin/settings">{tr('ویرایش ماژولار در تنظیمات پلتفرم')}</Link>
           </p>
         </>
       ) : null}
 
-      <AdminModal open={open} title="ویرایش پیکربندی" onClose={() => !busy && setOpen(false)} size="sm" as="form" onSubmit={(e) => void saveSettings(e)} busy={busy}
-        footer={<><button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>ذخیره</button>
-          <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setOpen(false)}>انصراف</button></>}>
-        <label><span className="form-label">منابع (با ویرگول)</span>
+      <AdminModal open={open} title={tr("ویرایش پیکربندی")} onClose={() => !busy && setOpen(false)} size="sm" as="form" onSubmit={(e) => void saveSettings(e)} busy={busy}
+        footer={<><button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>{tr('ذخیره')}</button>
+          <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setOpen(false)}>{tr('انصراف')}</button></>}>
+        <label><span className="form-label">{tr('منابع (با ویرگول)')}</span>
           <textarea className="form-input" rows={3} value={sourcesRaw} onChange={(e) => setSourcesRaw(e.target.value)} /></label>
-        <label><span className="form-label">دلایل ازدست‌رفتن (با ویرگول)</span>
+        <label><span className="form-label">{tr('دلایل ازدست‌رفتن (با ویرگول)')}</span>
           <textarea className="form-input" rows={3} value={lostRaw} onChange={(e) => setLostRaw(e.target.value)} /></label>
       </AdminModal>
 
-      <AdminModal open={patternOpen} title="پترن جدید" onClose={() => !busy && setPatternOpen(false)} size="sm" as="form" busy={busy}
+      <AdminModal open={patternOpen} title={tr("پترن جدید")} onClose={() => !busy && setPatternOpen(false)} size="sm" as="form" busy={busy}
         onSubmit={(e) => {
           e.preventDefault();
           setBusy(true);
           void adminFetch('/api/admin/sales/patterns', { method: 'POST', body: JSON.stringify(patternForm) })
             .then(() => { setPatternOpen(false); load(); }).finally(() => setBusy(false));
         }}
-        footer={<><button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>ذخیره</button>
-          <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setPatternOpen(false)}>انصراف</button></>}>
-        <label><span className="form-label">کانال</span>
+        footer={<><button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>{tr('ذخیره')}</button>
+          <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setPatternOpen(false)}>{tr('انصراف')}</button></>}>
+        <label><span className="form-label">{tr('کانال')}</span>
           <select className="admin-select" value={patternForm.channel} onChange={(e) => setPatternForm({ ...patternForm, channel: e.target.value })}>
             {SALES_MESSAGE_CHANNELS.map((c) => <option key={c} value={c}>{c}</option>)}
           </select></label>
-        <label><span className="form-label">نام</span>
+        <label><span className="form-label">{tr('نام')}</span>
           <input className="form-input" required value={patternForm.name} onChange={(e) => setPatternForm({ ...patternForm, name: e.target.value })} /></label>
-        <label><span className="form-label">متن</span>
-          <textarea className="form-input" rows={3} required value={patternForm.text} onChange={(e) => setPatternForm({ ...patternForm, text: e.target.value })} /></label>
+        <label><span className="form-label">{tr('متن')}</span>
+          <textarea className="form-input" rows={3} required value={tr(patternForm.text)} onChange={(e) => setPatternForm({ ...patternForm, text: e.target.value })} /></label>
       </AdminModal>
 
-      <AdminModal open={goalOpen} title="هدف جدید" onClose={() => !busy && setGoalOpen(false)} size="sm" as="form" busy={busy}
+      <AdminModal open={goalOpen} title={tr("هدف جدید")} onClose={() => !busy && setGoalOpen(false)} size="sm" as="form" busy={busy}
         onSubmit={(e) => {
           e.preventDefault();
           setBusy(true);
@@ -1174,17 +1175,17 @@ export function AdminSalesSettingsPage() {
             }),
           }).then(() => { setGoalOpen(false); load(); }).finally(() => setBusy(false));
         }}
-        footer={<><button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>ذخیره</button>
-          <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setGoalOpen(false)}>انصراف</button></>}>
-        <label><span className="form-label">نام</span>
+        footer={<><button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>{tr('ذخیره')}</button>
+          <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setGoalOpen(false)}>{tr('انصراف')}</button></>}>
+        <label><span className="form-label">{tr('نام')}</span>
           <input className="form-input" required value={goalForm.name} onChange={(e) => setGoalForm({ ...goalForm, name: e.target.value })} /></label>
-        <label><span className="form-label">تیم</span>
+        <label><span className="form-label">{tr('تیم')}</span>
           <input className="form-input" value={goalForm.team} onChange={(e) => setGoalForm({ ...goalForm, team: e.target.value })} /></label>
-        <label><span className="form-label">هدف درآمد</span>
+        <label><span className="form-label">{tr('هدف درآمد')}</span>
           <input className="form-input" type="number" value={goalForm.revenue} onChange={(e) => setGoalForm({ ...goalForm, revenue: e.target.value })} /></label>
-        <label><span className="form-label">تعداد فروش</span>
+        <label><span className="form-label">{tr('تعداد فروش')}</span>
           <input className="form-input" type="number" value={goalForm.salesCount} onChange={(e) => setGoalForm({ ...goalForm, salesCount: e.target.value })} /></label>
-        <label><span className="form-label">تعداد تماس</span>
+        <label><span className="form-label">{tr('تعداد تماس')}</span>
           <input className="form-input" type="number" value={goalForm.calls} onChange={(e) => setGoalForm({ ...goalForm, calls: e.target.value })} /></label>
       </AdminModal>
     </div>

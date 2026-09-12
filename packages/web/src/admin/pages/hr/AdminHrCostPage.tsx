@@ -12,6 +12,7 @@ import {
   JALALI_MONTHS,
 } from '../../JalaliDateSelect';
 import { formatHrMoney } from './HrUi';
+import { tr } from '../../../i18n';
 
 type CostRow = {
   employee: {
@@ -143,36 +144,36 @@ export function AdminHrCostPage() {
     <div className="admin-page">
       <header className="admin-header hr-reports-header hr-cost-header">
         <div>
-          <h1>تخصیص هزینه نیروی کار</h1>
-          <p>بدون تسهیم بیزنس‌لاین — قرارداد + مزایا + ورودی ماه</p>
+          <h1>{tr('تخصیص هزینه نیروی کار')}</h1>
+          <p>{tr('بدون تسهیم بیزنس‌لاین — قرارداد + مزایا + ورودی ماه')}</p>
           <p className="hr-cost-org-total">
-            جمع سازمانی{colleagueName.trim() ? ' (فیلتر)' : ''}:{' '}
+            {tr('جمع سازمانی')}{colleagueName.trim() ? tr(' (فیلتر)') : ''}:{' '}
             <strong>{formatHrMoney(displayOrgTotal)}</strong>
           </p>
         </div>
-        <div className="hr-reports-filters hr-cost-filters" role="group" aria-label="فیلتر تخصیص هزینه">
+        <div className="hr-reports-filters hr-cost-filters" role="group" aria-label={tr("فیلتر تخصیص هزینه")}>
           <label className="hr-reports-filter">
-            <span>ماه جلالی</span>
+            <span>{tr('ماه جلالی')}</span>
             <select
               className="admin-select"
               value={jalaliMonth}
               onChange={(e) => setJalaliMonth(Number(e.target.value))}
-              aria-label="ماه جلالی"
+              aria-label={tr("ماه جلالی")}
             >
               {JALALI_MONTHS.map((m) => (
                 <option key={m.v} value={m.v}>
-                  {m.label}
+                  {tr(m.label)}
                 </option>
               ))}
             </select>
           </label>
           <label className="hr-reports-filter">
-            <span>سال جلالی</span>
+            <span>{tr('سال جلالی')}</span>
             <select
               className="admin-select"
               value={jalaliYear}
               onChange={(e) => setJalaliYear(Number(e.target.value))}
-              aria-label="سال جلالی"
+              aria-label={tr("سال جلالی")}
             >
               {yearOptions.map((y) => (
                 <option key={y} value={y}>
@@ -182,14 +183,14 @@ export function AdminHrCostPage() {
             </select>
           </label>
           <label className="hr-reports-filter hr-cost-colleague-filter">
-            <span>نام همکار</span>
+            <span>{tr('نام همکار')}</span>
             <div className="admin-search">
               <Search size={16} aria-hidden />
               <input
-                placeholder="نام همکار"
+                placeholder={tr("نام همکار")}
                 value={colleagueName}
                 onChange={(e) => setColleagueName(e.target.value)}
-                aria-label="جستجوی نام همکار"
+                aria-label={tr("جستجوی نام همکار")}
               />
             </div>
           </label>
@@ -208,7 +209,7 @@ export function AdminHrCostPage() {
                 setOpen(true);
               }}
             >
-              + ورودی ماه
+              {tr('+ ورودی ماه')}
             </button>
           ) : null}
         </div>
@@ -217,13 +218,13 @@ export function AdminHrCostPage() {
 
       {deptTotals.length ? (
         <section className="admin-card" style={{ padding: 16, marginBottom: 16 }}>
-          <h2 style={{ marginTop: 0, fontSize: '1rem' }}>جمع هزینه به تفکیک دپارتمان</h2>
+          <h2 style={{ marginTop: 0, fontSize: '1rem' }}>{tr('جمع هزینه به تفکیک دپارتمان')}</h2>
           <div className="admin-table-wrap">
             <table className="admin-table admin-table--dense">
               <thead>
                 <tr>
-                  <th>دپارتمان</th>
-                  <th>جمع</th>
+                  <th>{tr('دپارتمان')}</th>
+                  <th>{tr('جمع')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -245,13 +246,13 @@ export function AdminHrCostPage() {
         <table className="admin-table">
           <thead>
             <tr>
-              <th>همکار</th>
-              <th>دپارتمان</th>
-              <th>حقوق</th>
-              <th>بیمه</th>
-              <th>مالیات</th>
-              <th>کمیسیون</th>
-              <th>جمع</th>
+              <th>{tr('همکار')}</th>
+              <th>{tr('دپارتمان')}</th>
+              <th>{tr('حقوق')}</th>
+              <th>{tr('بیمه')}</th>
+              <th>{tr('مالیات')}</th>
+              <th>{tr('کمیسیون')}</th>
+              <th>{tr('جمع')}</th>
             </tr>
           </thead>
           <tbody>
@@ -287,7 +288,7 @@ export function AdminHrCostPage() {
             {!filteredCosts.length ? (
               <tr>
                 <td colSpan={7} className="admin-muted">
-                  ردیفی یافت نشد
+                  {tr('ردیفی یافت نشد')}
                 </td>
               </tr>
             ) : null}
@@ -297,7 +298,7 @@ export function AdminHrCostPage() {
 
       <AdminModal
         open={open}
-        title="ورودی هزینه ماه"
+        title={tr("ورودی هزینه ماه")}
         onClose={() => setOpen(false)}
         as="form"
         onSubmit={(e) => void upsert(e)}
@@ -305,7 +306,7 @@ export function AdminHrCostPage() {
         footer={
           <>
             <button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>
-              ذخیره
+              {tr('ذخیره')}
             </button>
             <button
               type="button"
@@ -313,13 +314,13 @@ export function AdminHrCostPage() {
               disabled={busy}
               onClick={() => setOpen(false)}
             >
-              انصراف
+              {tr('انصراف')}
             </button>
           </>
         }
       >
         <label>
-          <span className="form-label">همکار</span>
+          <span className="form-label">{tr('همکار')}</span>
           <select
             className="form-input"
             value={form.employeeId}
@@ -333,7 +334,7 @@ export function AdminHrCostPage() {
           </select>
         </label>
         <label>
-          <span className="form-label">بیمه</span>
+          <span className="form-label">{tr('بیمه')}</span>
           <input
             className="form-input"
             dir="ltr"
@@ -342,7 +343,7 @@ export function AdminHrCostPage() {
           />
         </label>
         <label>
-          <span className="form-label">مالیات</span>
+          <span className="form-label">{tr('مالیات')}</span>
           <input
             className="form-input"
             dir="ltr"
@@ -351,7 +352,7 @@ export function AdminHrCostPage() {
           />
         </label>
         <label>
-          <span className="form-label">پاداش</span>
+          <span className="form-label">{tr('پاداش')}</span>
           <input
             className="form-input"
             dir="ltr"
@@ -360,7 +361,7 @@ export function AdminHrCostPage() {
           />
         </label>
         <label>
-          <span className="form-label">فروش</span>
+          <span className="form-label">{tr('فروش')}</span>
           <input
             className="form-input"
             dir="ltr"

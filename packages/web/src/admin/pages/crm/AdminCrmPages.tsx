@@ -15,6 +15,7 @@ import { CRM_CHANNEL_LABELS, CRM_OUTCOMES, CRM_PRIORITIES, CRM_REASON_TREE, CRM_
 import { adminCan } from '../../auth';
 import { adminFetch, formatNumFa } from '../../api';
 import { formatAdminFaDate, formatAdminFaDateTime } from '../../JalaliDateSelect';
+import { tr } from '../../../i18n';
 
 function Err({ error }: { error: string | null }) {
   if (!error) return null;
@@ -44,34 +45,34 @@ export function AdminCrmInboxPage() {
   return (
     <div className="admin-page">
       <header className="admin-header">
-        <div><h1>اینباکس یکپارچه</h1><p>تیکت · پیگیری · Wrap-up · وظیفه</p></div>
+        <div><h1>{tr('اینباکس یکپارچه')}</h1><p>{tr('تیکت · پیگیری · Wrap-up · وظیفه')}</p></div>
       </header>
       <Err error={error} />
       <div className="admin-filters" style={{ display: 'grid', gap: 8, gridTemplateColumns: 'repeat(auto-fit,minmax(140px,1fr))', marginBottom: 12 }}>
-        <input className="form-input" placeholder="جستجو" value={q} onChange={(e) => setQ(e.target.value)} />
+        <input className="form-input" placeholder={tr("جستجو")} value={q} onChange={(e) => setQ(e.target.value)} />
         <select className="form-input" value={kind} onChange={(e) => setKind(e.target.value)}>
-          <option value="">همه انواع</option>
-          <option value="ticket">تیکت</option>
-          <option value="followup">پیگیری</option>
-          <option value="interaction">تعامل</option>
-          <option value="task">وظیفه</option>
+          <option value="">{tr('همه انواع')}</option>
+          <option value="ticket">{tr('تیکت')}</option>
+          <option value="followup">{tr('پیگیری')}</option>
+          <option value="interaction">{tr('تعامل')}</option>
+          <option value="task">{tr('وظیفه')}</option>
         </select>
         <select className="form-input" value={sla} onChange={(e) => setSla(e.target.value)}>
-          <option value="">همه SLA</option>
-          <option value="breached">نقض</option>
-          <option value="at_risk">در معرض</option>
-          <option value="ok">سالم</option>
+          <option value="">{tr('همه SLA')}</option>
+          <option value="breached">{tr('نقض')}</option>
+          <option value="at_risk">{tr('در معرض')}</option>
+          <option value="ok">{tr('سالم')}</option>
         </select>
-        <button type="button" className="admin-btn" onClick={load}>اعمال</button>
+        <button type="button" className="admin-btn" onClick={load}>{tr('اعمال')}</button>
       </div>
       <div className="admin-table-wrap">
         <table className="admin-table">
-          <thead><tr><th>شناسه</th><th>عنوان</th><th>مشتری</th><th>کارشناس</th><th>اولویت</th><th>وضعیت</th><th></th></tr></thead>
+          <thead><tr><th>{tr('شناسه')}</th><th>{tr('عنوان')}</th><th>{tr('مشتری')}</th><th>{tr('کارشناس')}</th><th>{tr('اولویت')}</th><th>{tr('وضعیت')}</th><th></th></tr></thead>
           <tbody>
             {rows.map((r) => (
               <tr key={`${r.kind}-${r.id}`} style={{ borderRight: `3px solid ${r.borderColor}` }}>
                 <td className="admin-muted">{r.publicId}<div>{r.kind}</div></td>
-                <td>{r.title}</td>
+                <td>{tr(r.title)}</td>
                 <td>{r.customerName}</td>
                 <td>{r.agentName}</td>
                 <td>{r.priority}</td>
@@ -79,15 +80,15 @@ export function AdminCrmInboxPage() {
                 <td>
                   {canWrite ? (
                     <button type="button" className="admin-btn admin-btn--ghost" onClick={() => void adminFetch(`/api/admin/crm/inbox/${r.kind}/${r.id}/assign-me`, { method: 'POST', body: '{}' }).then(load)}>
-                      تخصیص به من
+                      {tr('تخصیص به من')}
                     </button>
                   ) : null}
                   {r.kind === 'interaction' ? <Link to={`/admin/crm/calls?wrap=${r.id}`}>Wrap-up</Link> : null}
-                  {r.kind === 'ticket' ? <Link to={`/admin/crm/ticketing?view=detail&id=${r.id}`}>تیکتینگ</Link> : null}
+                  {r.kind === 'ticket' ? <Link to={`/admin/crm/ticketing?view=detail&id=${r.id}`}>{tr('تیکتینگ')}</Link> : null}
                 </td>
               </tr>
             ))}
-            {!rows.length ? <tr><td colSpan={7}>ردیفی نیست</td></tr> : null}
+            {!rows.length ? <tr><td colSpan={7}>{tr('ردیفی نیست')}</td></tr> : null}
           </tbody>
         </table>
       </div>
@@ -121,16 +122,16 @@ export function AdminCrmCustomersPage() {
 
   return (
     <div className="admin-page">
-      <header className="admin-header"><div><h1>مشتریان</h1><p>پرونده ۳۶۰ و اتصال به فروش/پلتفرم</p></div></header>
+      <header className="admin-header"><div><h1>{tr('مشتریان')}</h1><p>{tr('پرونده ۳۶۰ و اتصال به فروش/پلتفرم')}</p></div></header>
       <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
-        <input className="form-input" placeholder="جستجو" value={q} onChange={(e) => setQ(e.target.value)} />
-        <button type="button" className="admin-btn" onClick={load}>جستجو</button>
+        <input className="form-input" placeholder={tr("جستجو")} value={q} onChange={(e) => setQ(e.target.value)} />
+        <button type="button" className="admin-btn" onClick={load}>{tr('جستجو')}</button>
       </div>
       {canWrite ? (
         <form onSubmit={(e) => void create(e)} style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
           <input className="form-input" dir="ltr" placeholder="09…" value={mobile} onChange={(e) => setMobile(e.target.value)} required />
-          <input className="form-input" placeholder="نام" value={first} onChange={(e) => setFirst(e.target.value)} />
-          <button type="submit" className="admin-btn admin-btn--primary">افزودن / یافتن</button>
+          <input className="form-input" placeholder={tr("نام")} value={first} onChange={(e) => setFirst(e.target.value)} />
+          <button type="submit" className="admin-btn admin-btn--primary">{tr('افزودن / یافتن')}</button>
         </form>
       ) : null}
       <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fill,minmax(240px,1fr))' }}>
@@ -139,7 +140,7 @@ export function AdminCrmCustomersPage() {
             <strong>{c.first} {c.last}</strong>
             <div className="admin-muted" dir="ltr">{c.mobile}</div>
             <div>{c.level} · {c.product || '—'}</div>
-            <div className="admin-muted">{c.publicId}{c.salesCustomerId ? ' · از فروش' : ''}{c.platformUserId ? ' · کاربر پلتفرم' : ''}</div>
+            <div className="admin-muted">{c.publicId}{c.salesCustomerId ? tr(' · از فروش') : ''}{c.platformUserId ? tr(' · کاربر پلتفرم') : ''}</div>
           </Link>
         ))}
       </div>
@@ -177,32 +178,32 @@ export function AdminCrmCustomerDetailPage() {
   }, [id]);
 
   if (error) return <div className="admin-page"><Err error={error} /></div>;
-  if (!data) return <div className="admin-page"><p>در حال بارگذاری…</p></div>;
+  if (!data) return <div className="admin-page"><p>{tr('در حال بارگذاری…')}</p></div>;
   const c = data.customer;
   return (
     <div className="admin-page">
       <header className="admin-header">
         <div>
-          <p className="admin-topbar-eyebrow"><Link to="/admin/crm/customers">← مشتریان</Link></p>
+          <p className="admin-topbar-eyebrow"><Link to="/admin/crm/customers">{tr('← مشتریان')}</Link></p>
           <h1>{c.first} {c.last}</h1>
-          <p dir="ltr">{c.mobile} · {c.publicId} · سطح {c.level}</p>
+          <p dir="ltr">{c.mobile} · {c.publicId} {tr('· سطح')} {c.level}</p>
         </div>
       </header>
       <div className="admin-stats">
-        <div className="admin-stat"><div className="admin-stat-value">{formatNumFa(data.orders.length)}</div><div className="admin-stat-label">سفارش</div></div>
+        <div className="admin-stat"><div className="admin-stat-value">{formatNumFa(data.orders.length)}</div><div className="admin-stat-label">{tr('سفارش')}</div></div>
         <div className="admin-stat"><div className="admin-stat-value">{c.csat != null ? formatNumFa(c.csat) : '—'}</div><div className="admin-stat-label">CSAT</div></div>
-        <div className="admin-stat"><div className="admin-stat-value">{formatNumFa(data.tickets.length)}</div><div className="admin-stat-label">تیکت</div></div>
+        <div className="admin-stat"><div className="admin-stat-value">{formatNumFa(data.tickets.length)}</div><div className="admin-stat-label">{tr('تیکت')}</div></div>
       </div>
-      <section className="admin-card" style={{ marginTop: 12 }}><div className="admin-card-head"><h2>سفارشات</h2></div>
-        {data.orders.map((o) => <div key={o.id}>{o.product} · {formatNumFa(o.amount)} ت · {formatAdminFaDate(o.orderedAt)}</div>)}
-        {!data.orders.length ? <p>سفارشی نیست</p> : null}
+      <section className="admin-card" style={{ marginTop: 12 }}><div className="admin-card-head"><h2>{tr('سفارشات')}</h2></div>
+        {data.orders.map((o) => <div key={o.id}>{o.product} · {formatNumFa(o.amount)} {tr('ت ·')} {formatAdminFaDate(o.orderedAt)}</div>)}
+        {!data.orders.length ? <p>{tr('سفارشی نیست')}</p> : null}
       </section>
-      <section className="admin-card" style={{ marginTop: 12 }}><div className="admin-card-head"><h2>تیکت‌ها</h2></div>
-        {data.tickets.map((t) => <div key={t.id}>{t.publicId} · {t.title} · {t.status}</div>)}
+      <section className="admin-card" style={{ marginTop: 12 }}><div className="admin-card-head"><h2>{tr('تیکت‌ها')}</h2></div>
+        {data.tickets.map((t) => <div key={t.id}>{t.publicId} · {tr(t.title)} · {t.status}</div>)}
       </section>
-      <section className="admin-card" style={{ marginTop: 12 }}><div className="admin-card-head"><h2>تعاملات</h2></div>
+      <section className="admin-card" style={{ marginTop: 12 }}><div className="admin-card-head"><h2>{tr('تعاملات')}</h2></div>
         {data.interactions.slice(0, 10).map((i) => (
-          <div key={i.id}>{i.publicId} · {CRM_CHANNEL_LABELS[i.channel] || i.channel} · {i.wrapDone ? 'Wrap ✓' : 'ناتمام'} · {i.summary || '—'}</div>
+          <div key={i.id}>{i.publicId} · {tr(CRM_CHANNEL_LABELS[i.channel] || i.channel)} · {i.wrapDone ? 'Wrap ✓' : tr('ناتمام')} · {i.summary || '—'}</div>
         ))}
       </section>
     </div>
@@ -239,10 +240,10 @@ export function AdminCrmExperiencePage() {
 
   return (
     <div className="admin-page">
-      <header className="admin-header"><div><h1>تجربه مشتری</h1><p>نظرسنجی پنج‌پرسشی و CSAT</p></div></header>
+      <header className="admin-header"><div><h1>{tr('تجربه مشتری')}</h1><p>{tr('نظرسنجی پنج‌پرسشی و CSAT')}</p></div></header>
       {canWrite ? (
         <form className="admin-card" onSubmit={(e) => void submit(e)} style={{ marginBottom: 16, display: 'grid', gap: 8 }}>
-          <label><span className="form-label">مشتری</span>
+          <label><span className="form-label">{tr('مشتری')}</span>
             <select className="form-input" value={form.customerId} onChange={(e) => setForm({ ...form, customerId: e.target.value })}>
               {customers.map((c) => <option key={c.id} value={c.id}>{c.first} {c.last} · {c.mobile}</option>)}
             </select>
@@ -254,12 +255,12 @@ export function AdminCrmExperiencePage() {
               </label>
             ))}
           </div>
-          <input className="form-input" placeholder="یادداشت" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
-          <button type="submit" className="admin-btn admin-btn--primary">ثبت نظرسنجی</button>
+          <input className="form-input" placeholder={tr("یادداشت")} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
+          <button type="submit" className="admin-btn admin-btn--primary">{tr('ثبت نظرسنجی')}</button>
         </form>
       ) : null}
       <div className="admin-table-wrap"><table className="admin-table">
-        <thead><tr><th>شناسه</th><th>مشتری</th><th>امتیاز</th><th>تاریخ</th></tr></thead>
+        <thead><tr><th>{tr('شناسه')}</th><th>{tr('مشتری')}</th><th>{tr('امتیاز')}</th><th>{tr('تاریخ')}</th></tr></thead>
         <tbody>{surveys.map((s) => (
           <tr key={s.id}><td>{s.publicId}</td><td>{s.customerName || s.customerId}</td><td>{formatNumFa(s.rating)}</td><td>{formatAdminFaDate(s.createdAt)}</td></tr>
         ))}</tbody>
@@ -305,29 +306,29 @@ export function AdminCrmCallsPage() {
   return (
     <div className="admin-page">
       <header className="admin-header">
-        <div><h1>مرکز تماس</h1><p>آرشیو VoIP و شبیه‌سازی ورودی</p></div>
+        <div><h1>{tr('مرکز تماس')}</h1><p>{tr('آرشیو VoIP و شبیه‌سازی ورودی')}</p></div>
         {canWrite ? (
           <button type="button" className="admin-btn admin-btn--primary" onClick={() => void adminFetch('/api/admin/crm/calls/simulate-inbound', {
             method: 'POST', body: JSON.stringify({ mobile: mobile.length > 4 ? mobile : `0912${String(Date.now()).slice(-7)}` }),
-          }).then(load)}>شبیه‌سازی تماس ورودی</button>
+          }).then(load)}>{tr('شبیه‌سازی تماس ورودی')}</button>
         ) : null}
       </header>
       {canWrite ? (
         <div style={{ marginBottom: 12 }}>
-          <input className="form-input" dir="ltr" style={{ maxWidth: 200 }} value={mobile} onChange={(e) => setMobile(e.target.value)} placeholder="موبایل" />
+          <input className="form-input" dir="ltr" style={{ maxWidth: 200 }} value={mobile} onChange={(e) => setMobile(e.target.value)} placeholder={tr("موبایل")} />
         </div>
       ) : null}
       <div className="admin-table-wrap"><table className="admin-table">
-        <thead><tr><th>شناسه</th><th>کانال</th><th>مشتری</th><th>کارشناس</th><th>دقیقه</th><th>Wrap</th><th></th></tr></thead>
+        <thead><tr><th>{tr('شناسه')}</th><th>{tr('کانال')}</th><th>{tr('مشتری')}</th><th>{tr('کارشناس')}</th><th>{tr('دقیقه')}</th><th>Wrap</th><th></th></tr></thead>
         <tbody>
           {interactions.map((i) => (
             <tr key={i.id}>
               <td>{i.publicId}</td>
-              <td>{CRM_CHANNEL_LABELS[i.channel] || i.channel}</td>
+              <td>{tr(CRM_CHANNEL_LABELS[i.channel] || i.channel)}</td>
               <td>{i.customerName || '—'}<div className="admin-muted" dir="ltr">{i.customerMobile}</div></td>
               <td>{i.agentName}</td>
               <td>{formatNumFa(i.talkMinutes)}</td>
-              <td>{i.wrapDone ? '✓' : 'ناتمام'}</td>
+              <td>{i.wrapDone ? '✓' : tr('ناتمام')}</td>
               <td>{!i.wrapDone && canWrite ? <button type="button" className="admin-btn admin-btn--ghost" onClick={() => setActiveWrap(i.id)}>Wrap-up</button> : null}</td>
             </tr>
           ))}
@@ -341,42 +342,42 @@ export function AdminCrmCallsPage() {
             body: JSON.stringify(wrapForm),
           }).then(() => { setActiveWrap(null); load(); });
         }}>
-          <h2>ثبت Wrap-up #{activeWrap}</h2>
-          <label><span className="form-label">دلیل</span>
+          <h2>{tr('ثبت Wrap-up #')}{activeWrap}</h2>
+          <label><span className="form-label">{tr('دلیل')}</span>
             <select className="form-input" value={wrapForm.reason} onChange={(e) => setWrapForm({ ...wrapForm, reason: e.target.value, subReason: Object.keys(reasonTree[e.target.value] || {})[0] || '' })}>
               {reasons.map((r) => <option key={r} value={r}>{r}</option>)}
             </select>
           </label>
-          <label><span className="form-label">زیردلیل</span>
+          <label><span className="form-label">{tr('زیردلیل')}</span>
             <select className="form-input" value={wrapForm.subReason} onChange={(e) => setWrapForm({ ...wrapForm, subReason: e.target.value })}>
               {subReasons.map((r) => <option key={r} value={r}>{r}</option>)}
             </select>
           </label>
-          <label><span className="form-label">نتیجه</span>
+          <label><span className="form-label">{tr('نتیجه')}</span>
             <select className="form-input" value={wrapForm.outcome} onChange={(e) => setWrapForm({ ...wrapForm, outcome: e.target.value })}>
               {CRM_OUTCOMES.map((o) => <option key={o} value={o}>{o}</option>)}
             </select>
           </label>
-          <label><span className="form-label">خلاصه (≥۴ کاراکتر)</span>
+          <label><span className="form-label">{tr('خلاصه (≥۴ کاراکتر)')}</span>
             <textarea className="form-input" value={wrapForm.summary} onChange={(e) => setWrapForm({ ...wrapForm, summary: e.target.value })} rows={3} />
           </label>
           {(wrapForm.outcome === 'ارجاع به مالی' || wrapForm.outcome === 'ارجاع به فروش') ? (
-            <label><span className="form-label">اقدام درخواستی</span>
+            <label><span className="form-label">{tr('اقدام درخواستی')}</span>
               <input className="form-input" value={wrapForm.requestedAction} onChange={(e) => setWrapForm({ ...wrapForm, requestedAction: e.target.value })} />
             </label>
           ) : null}
           <label style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <input type="checkbox" checked={wrapForm.createTicket} onChange={(e) => setWrapForm({ ...wrapForm, createTicket: e.target.checked })} />
-            ایجاد تیکت
+            {tr('ایجاد تیکت')}
           </label>
-          <label><span className="form-label">اولویت</span>
+          <label><span className="form-label">{tr('اولویت')}</span>
             <select className="form-input" value={wrapForm.priority} onChange={(e) => setWrapForm({ ...wrapForm, priority: e.target.value })}>
               {CRM_PRIORITIES.map((p) => <option key={p} value={p}>{p}</option>)}
             </select>
           </label>
           <div style={{ display: 'flex', gap: 8 }}>
-            <button type="submit" className="admin-btn admin-btn--primary">ثبت</button>
-            <button type="button" className="admin-btn" onClick={() => setActiveWrap(null)}>انصراف</button>
+            <button type="submit" className="admin-btn admin-btn--primary">{tr('ثبت')}</button>
+            <button type="button" className="admin-btn" onClick={() => setActiveWrap(null)}>{tr('انصراف')}</button>
           </div>
         </form>
       ) : null}
@@ -414,31 +415,31 @@ export function AdminCrmCasesPage() {
   return (
     <div className="admin-page">
       <header className="admin-header">
-        <div><h1>هاب پرونده‌ها</h1><p>تیکت · پیگیری · شکایت · ارجاع</p></div>
-        <Link to="/admin/crm/ticketing" className="admin-btn admin-btn--primary">باز کردن ماژول تیکتینگ</Link>
+        <div><h1>{tr('هاب پرونده‌ها')}</h1><p>{tr('تیکت · پیگیری · شکایت · ارجاع')}</p></div>
+        <Link to="/admin/crm/ticketing" className="admin-btn admin-btn--primary">{tr('باز کردن ماژول تیکتینگ')}</Link>
       </header>
       <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
         {[
-          ['tickets', 'تیکت‌ها'],
-          ['follow', 'پیگیری‌ها'],
-          ['complaints', 'شکایات'],
-          ['referrals', 'ارجاعات'],
+          ['tickets', tr('تیکت‌ها')],
+          ['follow', tr('پیگیری‌ها')],
+          ['complaints', tr('شکایات')],
+          ['referrals', tr('ارجاعات')],
         ].map(([k, label]) => (
           <button key={k} type="button" className={`admin-btn${tab === k ? ' admin-btn--primary' : ''}`} onClick={() => setTab(k)}>{label}</button>
         ))}
       </div>
       {tab === 'tickets' ? (
         <div className="admin-table-wrap"><table className="admin-table">
-          <thead><tr><th>شناسه</th><th>عنوان</th><th>مشتری</th><th>اولویت</th><th>وضعیت</th><th>SLA</th><th></th></tr></thead>
+          <thead><tr><th>{tr('شناسه')}</th><th>{tr('عنوان')}</th><th>{tr('مشتری')}</th><th>{tr('اولویت')}</th><th>{tr('وضعیت')}</th><th>SLA</th><th></th></tr></thead>
           <tbody>{tickets.map((t) => (
             <tr key={t.id} style={{ borderRight: `3px solid ${t.borderColor || '#ddd'}` }}>
-              <td>{t.publicId}</td><td>{t.title}</td><td>{t.customerName}</td><td>{t.priority}</td><td>{t.status}</td><td>{t.slaState}</td>
+              <td>{t.publicId}</td><td>{tr(t.title)}</td><td>{t.customerName}</td><td>{t.priority}</td><td>{t.status}</td><td>{t.slaState}</td>
               <td>
-                <Link to={`/admin/crm/ticketing?view=detail&id=${t.id}`} className="admin-btn admin-btn--ghost">جزئیات</Link>
+                <Link to={`/admin/crm/ticketing?view=detail&id=${t.id}`} className="admin-btn admin-btn--ghost">{tr('جزئیات')}</Link>
                 {canWrite && t.status !== 'حل‌شده' ? (
                 <button type="button" className="admin-btn admin-btn--ghost" onClick={() => void adminFetch(`/api/admin/crm/tickets/${t.id}`, {
                   method: 'PATCH', body: JSON.stringify({ status: 'حل‌شده', resolutionCode: 'DONE', resolutionNote: 'از پنل' }),
-                }).then(load)}>حل</button>
+                }).then(load)}>{tr('حل')}</button>
               ) : null}</td>
             </tr>
           ))}</tbody>
@@ -446,14 +447,14 @@ export function AdminCrmCasesPage() {
       ) : null}
       {tab === 'follow' ? (
         <div className="admin-table-wrap"><table className="admin-table">
-          <thead><tr><th>شناسه</th><th>شرح</th><th>سررسید</th><th>وضعیت</th><th></th></tr></thead>
+          <thead><tr><th>{tr('شناسه')}</th><th>{tr('شرح')}</th><th>{tr('سررسید')}</th><th>{tr('وضعیت')}</th><th></th></tr></thead>
           <tbody>{followups.map((f) => (
             <tr key={f.id}>
-              <td>{f.publicId}</td><td>{f.description}</td><td>{formatAdminFaDateTime(f.dueAt)}</td><td>{f.status}</td>
+              <td>{f.publicId}</td><td>{tr(f.description)}</td><td>{formatAdminFaDateTime(f.dueAt)}</td><td>{f.status}</td>
               <td>{canWrite && f.status === 'باز' ? (
                 <button type="button" className="admin-btn admin-btn--ghost" onClick={() => void adminFetch(`/api/admin/crm/followups/${f.id}/complete`, {
                   method: 'POST', body: JSON.stringify({ result: 'انجام شد' }),
-                }).then(load)}>تکمیل</button>
+                }).then(load)}>{tr('تکمیل')}</button>
               ) : null}</td>
             </tr>
           ))}</tbody>
@@ -461,7 +462,7 @@ export function AdminCrmCasesPage() {
       ) : null}
       {tab === 'complaints' ? (
         <div className="admin-table-wrap"><table className="admin-table">
-          <thead><tr><th>شناسه</th><th>دسته</th><th>مشتری</th><th>شدت</th><th>وضعیت</th></tr></thead>
+          <thead><tr><th>{tr('شناسه')}</th><th>{tr('دسته')}</th><th>{tr('مشتری')}</th><th>{tr('شدت')}</th><th>{tr('وضعیت')}</th></tr></thead>
           <tbody>{complaints.map((c) => (
             <tr key={c.id}><td>{c.publicId}</td><td>{c.category}/{c.subCategory}</td><td>{c.customerName}</td><td>{c.severity}</td><td>{c.status}</td></tr>
           ))}</tbody>
@@ -469,14 +470,14 @@ export function AdminCrmCasesPage() {
       ) : null}
       {tab === 'referrals' ? (
         <div className="admin-table-wrap"><table className="admin-table">
-          <thead><tr><th>شناسه</th><th>نوع</th><th>اقدام</th><th>وضعیت</th><th></th></tr></thead>
+          <thead><tr><th>{tr('شناسه')}</th><th>{tr('نوع')}</th><th>{tr('اقدام')}</th><th>{tr('وضعیت')}</th><th></th></tr></thead>
           <tbody>{referrals.map((r) => (
             <tr key={r.id}>
               <td>{r.publicId}</td><td>{r.type}</td><td>{r.requestedAction}</td><td>{r.status}</td>
               <td>{canWrite && r.status === 'باز' ? (
                 <>
-                  <button type="button" className="admin-btn admin-btn--ghost" onClick={() => void adminFetch(`/api/admin/crm/referrals/${r.id}/respond`, { method: 'POST', body: JSON.stringify({ approve: true }) }).then(load)}>تایید</button>
-                  <button type="button" className="admin-btn admin-btn--ghost" onClick={() => void adminFetch(`/api/admin/crm/referrals/${r.id}/respond`, { method: 'POST', body: JSON.stringify({ approve: false, response: 'رد' }) }).then(load)}>رد</button>
+                  <button type="button" className="admin-btn admin-btn--ghost" onClick={() => void adminFetch(`/api/admin/crm/referrals/${r.id}/respond`, { method: 'POST', body: JSON.stringify({ approve: true }) }).then(load)}>{tr('تایید')}</button>
+                  <button type="button" className="admin-btn admin-btn--ghost" onClick={() => void adminFetch(`/api/admin/crm/referrals/${r.id}/respond`, { method: 'POST', body: JSON.stringify({ approve: false, response: 'رد' }) }).then(load)}>{tr('رد')}</button>
                 </>
               ) : null}</td>
             </tr>
@@ -504,7 +505,7 @@ export function AdminCrmQaPage() {
 
   return (
     <div className="admin-page">
-      <header className="admin-header"><div><h1>کنترل کیفیت</h1><p>اسکورکارت و کوچینگ</p></div></header>
+      <header className="admin-header"><div><h1>{tr('کنترل کیفیت')}</h1><p>{tr('اسکورکارت و کوچینگ')}</p></div></header>
       {canAdmin && pending.length ? (
         <form className="admin-card" style={{ marginBottom: 16, display: 'grid', gap: 8 }} onSubmit={(e) => {
           e.preventDefault();
@@ -521,19 +522,19 @@ export function AdminCrmQaPage() {
             }),
           }).then(load);
         }}>
-          <h2>ارزیابی جدید</h2>
+          <h2>{tr('ارزیابی جدید')}</h2>
           <select className="form-input" value={form.interactionId} onChange={(e) => setForm({ ...form, interactionId: e.target.value })}>
             {pending.map((i) => <option key={i.id} value={i.id}>{i.publicId} · {i.agentName}</option>)}
           </select>
-          <label><input type="checkbox" checked={form.coaching} onChange={(e) => setForm({ ...form, coaching: e.target.checked })} /> کوچینگ</label>
-          <label><input type="checkbox" checked={form.critical} onChange={(e) => setForm({ ...form, critical: e.target.checked })} /> خطای بحرانی</label>
-          <button type="submit" className="admin-btn admin-btn--primary">ثبت ارزیابی</button>
+          <label><input type="checkbox" checked={form.coaching} onChange={(e) => setForm({ ...form, coaching: e.target.checked })} /> {tr('کوچینگ')}</label>
+          <label><input type="checkbox" checked={form.critical} onChange={(e) => setForm({ ...form, critical: e.target.checked })} /> {tr('خطای بحرانی')}</label>
+          <button type="submit" className="admin-btn admin-btn--primary">{tr('ثبت ارزیابی')}</button>
         </form>
       ) : null}
       <div className="admin-table-wrap"><table className="admin-table">
-        <thead><tr><th>شناسه</th><th>عامل</th><th>امتیاز</th><th>وضعیت</th><th>بحرانی</th></tr></thead>
+        <thead><tr><th>{tr('شناسه')}</th><th>{tr('عامل')}</th><th>{tr('امتیاز')}</th><th>{tr('وضعیت')}</th><th>{tr('بحرانی')}</th></tr></thead>
         <tbody>{reviews.map((r) => (
-          <tr key={r.id}><td>{r.publicId}</td><td>{r.agentId}</td><td>{formatNumFa(r.total)}</td><td>{r.status}</td><td>{r.critical.join('، ') || '—'}</td></tr>
+          <tr key={r.id}><td>{r.publicId}</td><td>{r.agentId}</td><td>{formatNumFa(r.total)}</td><td>{r.status}</td><td>{r.critical.join(tr('، ')) || '—'}</td></tr>
         ))}</tbody>
       </table></div>
     </div>

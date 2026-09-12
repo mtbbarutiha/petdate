@@ -19,6 +19,7 @@ import {
   jalaliPartsToGregorianIso,
   type JalaliDateValue,
 } from '../../JalaliDateSelect';
+import { tr } from '../../../i18n';
 
 type StatusFilter = '' | 'approved' | 'open';
 type ProgressFilter = '' | 'zero' | 'partial' | 'complete';
@@ -196,10 +197,10 @@ export function AdminHrOnboardingPage() {
     <div className="admin-page">
       <header className="admin-header">
         <div>
-          <h1>شروع به کار (Onboarding)</h1>
+          <h1>{tr('شروع به کار (Onboarding)')}</h1>
           <p>
-            چک‌لیست ورود — تحویل دسترسی‌ها، تجهیزات، زمانبندی آموزش و مدارک — با استخدام از ATS هم ساخته
-            می‌شود
+            {tr(`چک‌لیست ورود — تحویل دسترسی‌ها، تجهیزات، زمانبندی آموزش و مدارک — با استخدام از ATS هم ساخته
+            می‌شود`)}
           </p>
         </div>
       </header>
@@ -209,34 +210,34 @@ export function AdminHrOnboardingPage() {
         <div
           className="admin-toolbar admin-toolbar--filters"
           role="search"
-          aria-label="فیلتر شروع به کار"
+          aria-label={tr("فیلتر شروع به کار")}
           style={{ marginBottom: 12, flexWrap: 'wrap', gap: 8 }}
         >
           <div className="admin-search">
             <input
-              placeholder="جستجوی نام یا شغل..."
+              placeholder={tr("جستجوی نام یا شغل...")}
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              aria-label="جستجوی نام یا شغل"
+              aria-label={tr("جستجوی نام یا شغل")}
             />
           </div>
           <select
             className="admin-select"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as StatusFilter)}
-            aria-label="وضعیت"
+            aria-label={tr("وضعیت")}
           >
-            <option value="">وضعیت: همه</option>
-            <option value="approved">فرد تایید شده</option>
-            <option value="open">شروع به کار</option>
+            <option value="">{tr('وضعیت: همه')}</option>
+            <option value="approved">{tr('فرد تایید شده')}</option>
+            <option value="open">{tr('شروع به کار')}</option>
           </select>
           <select
             className="admin-select"
             value={jobFilter}
             onChange={(e) => setJobFilter(e.target.value)}
-            aria-label="شغل"
+            aria-label={tr("شغل")}
           >
-            <option value="">شغل: همه</option>
+            <option value="">{tr('شغل: همه')}</option>
             {jobOptions.map((j) => (
               <option key={j} value={j}>
                 {j}
@@ -247,24 +248,24 @@ export function AdminHrOnboardingPage() {
             className="admin-select"
             value={progressFilter}
             onChange={(e) => setProgressFilter(e.target.value as ProgressFilter)}
-            aria-label="پیشرفت"
+            aria-label={tr("پیشرفت")}
           >
-            <option value="">پیشرفت: همه</option>
-            <option value="zero">۰٪</option>
-            <option value="partial">در حال انجام</option>
-            <option value="complete">تکمیل‌شده (۱۰۰٪)</option>
+            <option value="">{tr('پیشرفت: همه')}</option>
+            <option value="zero">{tr('۰٪')}</option>
+            <option value="partial">{tr('در حال انجام')}</option>
+            <option value="complete">{tr('تکمیل‌شده (۱۰۰٪)')}</option>
           </select>
           <select
             className="admin-select"
             value={checklistFilter}
             onChange={(e) => setChecklistFilter(e.target.value as ChecklistFilter)}
-            aria-label="آیتم شاخص فرم"
+            aria-label={tr("آیتم شاخص فرم")}
           >
-            <option value="">آیتم شاخص: همه</option>
-            <option value="access">تحویل دسترسی‌ها ناقص</option>
-            <option value="training">زمانبندی آموزش ناقص</option>
-            <option value="documents">مدارک دریافت‌شده ناقص</option>
-            <option value="equipment">تجهیزات ناقص</option>
+            <option value="">{tr('آیتم شاخص: همه')}</option>
+            <option value="access">{tr('تحویل دسترسی‌ها ناقص')}</option>
+            <option value="training">{tr('زمانبندی آموزش ناقص')}</option>
+            <option value="documents">{tr('مدارک دریافت‌شده ناقص')}</option>
+            <option value="equipment">{tr('تجهیزات ناقص')}</option>
           </select>
           <JalaliDateRange
             from={dateFrom}
@@ -276,7 +277,7 @@ export function AdminHrOnboardingPage() {
           />
           {hasFilters ? (
             <button type="button" className="admin-btn admin-btn--ghost" onClick={clearFilters}>
-              پاک کردن فیلترها
+              {tr('پاک کردن فیلترها')}
             </button>
           ) : null}
         </div>
@@ -284,11 +285,11 @@ export function AdminHrOnboardingPage() {
         <table className="admin-table admin-table--dense">
           <thead>
             <tr>
-              <th>نام</th>
-              <th>شغل</th>
-              <th>شروع</th>
-              <th>پیشرفت</th>
-              <th>وضعیت</th>
+              <th>{tr('نام')}</th>
+              <th>{tr('شغل')}</th>
+              <th>{tr('شروع')}</th>
+              <th>{tr('پیشرفت')}</th>
+              <th>{tr('وضعیت')}</th>
             </tr>
           </thead>
           <tbody>
@@ -296,8 +297,8 @@ export function AdminHrOnboardingPage() {
               <tr>
                 <td colSpan={5} className="admin-empty">
                   {records.length === 0
-                    ? 'هنوز فرآیندی نیست — از ATS متقاضی را استخدام‌شده کنید'
-                    : 'موردی با این فیلترها پیدا نشد'}
+                    ? tr('هنوز فرآیندی نیست — از ATS متقاضی را استخدام‌شده کنید')
+                    : tr('موردی با این فیلترها پیدا نشد')}
                 </td>
               </tr>
             ) : (
@@ -336,7 +337,7 @@ export function AdminHrOnboardingPage() {
                             }}
                           />
                         </div>
-                        <span className="admin-mono">{formatNumFa(pct)}٪</span>
+                        <span className="admin-mono">{formatNumFa(pct)}{tr('٪')}</span>
                       </div>
                     </td>
                     <td>
@@ -356,17 +357,17 @@ export function AdminHrOnboardingPage() {
 
       <AdminModal
         open={selected != null}
-        title={selected ? selected.name : 'جزئیات شروع به کار'}
+        title={selected ? selected.name : tr('جزئیات شروع به کار')}
         onClose={() => setSelectedId(null)}
         size="xl"
       >
         {selected ? (
           <div className="admin-onboarding-modal">
             <p className="admin-muted" style={{ marginTop: 0 }}>
-              {selected.jobTitle || 'بدون شغل'} · شروع:{' '}
-              {formatAdminFaDate(selected.startDate)} · مدت:{' '}
-              {formatNumFa(selected.durationDays)} روز · پیشرفت:{' '}
-              {formatNumFa(onboardingProgressPct(selected))}٪ · {statusLabel(selected)}
+              {selected.jobTitle || tr('بدون شغل')} {tr('· شروع:')}{' '}
+              {formatAdminFaDate(selected.startDate)} {tr('· مدت:')}{' '}
+              {formatNumFa(selected.durationDays)} {tr('روز · پیشرفت:')}{' '}
+              {formatNumFa(onboardingProgressPct(selected))}{tr('٪ ·')} {statusLabel(selected)}
             </p>
             <div
               style={{
@@ -377,7 +378,7 @@ export function AdminHrOnboardingPage() {
             >
               <section>
                 <h3 className="admin-subsection-title" style={{ marginTop: 0 }}>
-                  وظایف
+                  {tr('وظایف')}
                 </h3>
                 <ul className="admin-log-list">
                   {selected.tasks.map((t) => (
@@ -389,7 +390,7 @@ export function AdminHrOnboardingPage() {
                           disabled={!canWrite}
                           onChange={() => toggleTask(selected, t.id)}
                         />
-                        <span>{t.label}</span>
+                        <span>{tr(t.label)}</span>
                       </label>
                     </li>
                   ))}
@@ -397,7 +398,7 @@ export function AdminHrOnboardingPage() {
               </section>
               <section>
                 <h3 className="admin-subsection-title" style={{ marginTop: 0 }}>
-                  تحویل دسترسی‌ها
+                  {tr('تحویل دسترسی‌ها')}
                 </h3>
                 <ul className="admin-log-list">
                   {(selected.accessItems || []).map((t) => (
@@ -409,7 +410,7 @@ export function AdminHrOnboardingPage() {
                           disabled={!canWrite}
                           onChange={() => toggleAccess(selected, t.id)}
                         />
-                        <span>{t.label}</span>
+                        <span>{tr(t.label)}</span>
                       </label>
                     </li>
                   ))}
@@ -417,7 +418,7 @@ export function AdminHrOnboardingPage() {
               </section>
               <section>
                 <h3 className="admin-subsection-title" style={{ marginTop: 0 }}>
-                  چک‌لیست تجهیزات
+                  {tr('چک‌لیست تجهیزات')}
                 </h3>
                 <ul className="admin-log-list">
                   {(selected.equipmentItems || []).map((t) => (
@@ -429,7 +430,7 @@ export function AdminHrOnboardingPage() {
                           disabled={!canWrite}
                           onChange={() => toggleEquipment(selected, t.id)}
                         />
-                        <span style={{ minWidth: 100 }}>{t.label}</span>
+                        <span style={{ minWidth: 100 }}>{tr(t.label)}</span>
                       </label>
                       <label
                         style={{
@@ -441,7 +442,7 @@ export function AdminHrOnboardingPage() {
                         }}
                       >
                         <span className="form-label" style={{ margin: 0, whiteSpace: 'nowrap' }}>
-                          شماره اموال
+                          {tr('شماره اموال')}
                         </span>
                         <input
                           className="form-input"
@@ -460,7 +461,7 @@ export function AdminHrOnboardingPage() {
               </section>
               <section>
                 <h3 className="admin-subsection-title" style={{ marginTop: 0 }}>
-                  زمانبندی آموزش
+                  {tr('زمانبندی آموزش')}
                 </h3>
                 <ul className="admin-log-list">
                   {(selected.trainingItems || []).map((t) => (
@@ -472,11 +473,11 @@ export function AdminHrOnboardingPage() {
                           disabled={!canWrite}
                           onChange={() => toggleTraining(selected, t.id)}
                         />
-                        <span>{t.label}</span>
+                        <span>{tr(t.label)}</span>
                       </label>
                       <div style={{ marginTop: 6, marginInlineStart: 24 }}>
                         <JalaliDateSelect
-                          label="زمان آموزش"
+                          label={tr("زمان آموزش")}
                           value={gregorianIsoToJalaliParts(t.scheduledDate || null)}
                           onChange={(parts) => setTrainingDate(selected, t.id, parts)}
                           disabled={!canWrite}
@@ -490,7 +491,7 @@ export function AdminHrOnboardingPage() {
               </section>
               <section>
                 <h3 className="admin-subsection-title" style={{ marginTop: 0 }}>
-                  مدارک دریافت‌شده
+                  {tr('مدارک دریافت‌شده')}
                 </h3>
                 <ul className="admin-log-list">
                   {(selected.documentItems || []).map((t) => (
@@ -502,7 +503,7 @@ export function AdminHrOnboardingPage() {
                           disabled={!canWrite}
                           onChange={() => toggleDocument(selected, t.id)}
                         />
-                        <span>{t.label}</span>
+                        <span>{tr(t.label)}</span>
                       </label>
                     </li>
                   ))}

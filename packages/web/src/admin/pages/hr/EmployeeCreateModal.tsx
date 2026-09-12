@@ -22,6 +22,7 @@ import { adminFetch } from '../../api';
 import { AdminModal } from '../../AdminModal';
 import { AdminThumb } from '../../AdminThumb';
 import { JalaliDateSelect, formatJalaliSlash, parseJalaliSlash } from '../../JalaliDateSelect';
+import { tr } from '../../../i18n';
 
 const TABS = [
   { id: 'identity', label: 'هویتی - تحصیلی' },
@@ -272,17 +273,17 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
     e.preventDefault();
     if (!draft.firstName.trim() || !draft.lastName.trim()) {
       setTab('identity');
-      setError('نام و نام خانوادگی الزامی است');
+      setError(tr('نام و نام خانوادگی الزامی است'));
       return;
     }
     if (draft.contractStart.trim() && !draft.contractEnd.trim()) {
       setTab('renew');
-      setError('تاریخ پایان قرارداد الزامی است');
+      setError(tr('تاریخ پایان قرارداد الزامی است'));
       return;
     }
     if (draft.username && !/^[a-z0-9._-]{2,64}$/.test(draft.username)) {
       setTab('access');
-      setError('نام کاربری فقط حروف لاتین کوچک، عدد و ._- (۲ تا ۶۴ کاراکتر)');
+      setError(tr('نام کاربری فقط حروف لاتین کوچک، عدد و ._- (۲ تا ۶۴ کاراکتر)'));
       return;
     }
     setBusy(true);
@@ -367,7 +368,7 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
   return (
     <AdminModal
       open={open}
-      title="افزودن همکار جدید"
+      title={tr("افزودن همکار جدید")}
       onClose={onClose}
       size="xl"
       as="form"
@@ -380,7 +381,7 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
             {busy ? '…' : 'ذخیره پرونده'}
           </button>
           <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={onClose}>
-            انصراف
+            {tr('انصراف')}
           </button>
         </>
       }
@@ -397,7 +398,7 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
             className={`admin-tab${tab === t.id ? ' is-on' : ''}`}
             onClick={() => setTab(t.id)}
           >
-            {t.label}
+            {tr(t.label)}
           </button>
         ))}
       </div>
@@ -407,23 +408,23 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
           <div className="admin-span-2" style={{ display: 'flex', gap: 14, alignItems: 'center' }}>
             <AdminThumb
               src={avatarFile ? URL.createObjectURL(avatarFile) : draft.avatarUrl || null}
-              label={`${draft.firstName} ${draft.lastName}`.trim() || 'همکار'}
+              label={`${draft.firstName} ${draft.lastName}`.trim() || tr('همکار')}
               kind="user"
               size={56}
             />
             <div style={{ flex: 1, display: 'grid', gap: 8 }}>
               <label>
-                <span className="form-label">آدرس عکس (URL)</span>
+                <span className="form-label">{tr('آدرس عکس (URL)')}</span>
                 <input
                   className="form-input"
                   dir="ltr"
-                  placeholder="https://… یا /pepito/uploads/…"
+                  placeholder={tr("https://… یا /pepito/uploads/…")}
                   value={draft.avatarUrl}
                   onChange={(e) => patch('avatarUrl', e.target.value)}
                 />
               </label>
               <label>
-                <span className="form-label">آپلود عکس</span>
+                <span className="form-label">{tr('آپلود عکس')}</span>
                 <input
                   className="form-input"
                   type="file"
@@ -434,23 +435,23 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
             </div>
           </div>
           <label>
-            <span className="form-label">نام *</span>
+            <span className="form-label">{tr('نام *')}</span>
             <input className="form-input" required value={draft.firstName} onChange={(e) => patch('firstName', e.target.value)} />
           </label>
           <label>
-            <span className="form-label">نام خانوادگی *</span>
+            <span className="form-label">{tr('نام خانوادگی *')}</span>
             <input className="form-input" required value={draft.lastName} onChange={(e) => patch('lastName', e.target.value)} />
           </label>
           <label>
-            <span className="form-label">جنسیت</span>
+            <span className="form-label">{tr('جنسیت')}</span>
             <select className="form-input" value={draft.gender} onChange={(e) => setGender(e.target.value)}>
-              <option value="">— انتخاب کنید —</option>
-              <option value="آقا">آقا</option>
-              <option value="خانم">خانم</option>
+              <option value="">{tr('— انتخاب کنید —')}</option>
+              <option value="آقا">{tr('آقا')}</option>
+              <option value="خانم">{tr('خانم')}</option>
             </select>
           </label>
           <div>
-            <span className="form-label">تاریخ تولد</span>
+            <span className="form-label">{tr('تاریخ تولد')}</span>
             <JalaliDateSelect
               value={parseJalaliSlash(draft.birthDate)}
               yearsBack={80}
@@ -459,38 +460,38 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
             />
           </div>
           <label>
-            <span className="form-label">شماره شناسنامه</span>
+            <span className="form-label">{tr('شماره شناسنامه')}</span>
             <input className="form-input" value={draft.birthCertNo} onChange={(e) => patch('birthCertNo', e.target.value)} />
           </label>
           <label>
-            <span className="form-label">کد ملی</span>
+            <span className="form-label">{tr('کد ملی')}</span>
             <input className="form-input" value={draft.nationalId} onChange={(e) => patch('nationalId', e.target.value)} />
           </label>
           <label>
-            <span className="form-label">نام پدر</span>
+            <span className="form-label">{tr('نام پدر')}</span>
             <input className="form-input" value={draft.fatherName} onChange={(e) => patch('fatherName', e.target.value)} />
           </label>
           <label>
-            <span className="form-label">وضعیت تأهل</span>
+            <span className="form-label">{tr('وضعیت تأهل')}</span>
             <select className="form-input" value={draft.maritalStatus} onChange={(e) => patch('maritalStatus', e.target.value)}>
               <option value="">—</option>
-              <option value="مجرد">مجرد</option>
-              <option value="متأهل">متأهل</option>
+              <option value="مجرد">{tr('مجرد')}</option>
+              <option value="متأهل">{tr('متأهل')}</option>
             </select>
           </label>
           <label>
-            <span className="form-label">تعداد فرزند</span>
+            <span className="form-label">{tr('تعداد فرزند')}</span>
             <input className="form-input" value={draft.childrenCount} onChange={(e) => patch('childrenCount', e.target.value)} />
           </label>
           {draft.gender === 'آقا' ? (
             <label>
-              <span className="form-label">وضعیت نظام وظیفه</span>
+              <span className="form-label">{tr('وضعیت نظام وظیفه')}</span>
               <select
                 className="form-input"
                 value={draft.militaryStatus}
                 onChange={(e) => patch('militaryStatus', e.target.value)}
               >
-                <option value="">— انتخاب کنید —</option>
+                <option value="">{tr('— انتخاب کنید —')}</option>
                 {HR_MILITARY_STATUSES.map((s) => (
                   <option key={s} value={s}>
                     {s}
@@ -500,9 +501,9 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
             </label>
           ) : null}
           <label>
-            <span className="form-label">استان</span>
+            <span className="form-label">{tr('استان')}</span>
             <select className="form-input" value={draft.province} onChange={(e) => setProvince(e.target.value)}>
-              <option value="">— انتخاب کنید —</option>
+              <option value="">{tr('— انتخاب کنید —')}</option>
               {IRAN_PROVINCES.map((p) => (
                 <option key={p} value={p}>
                   {p}
@@ -511,14 +512,14 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
             </select>
           </label>
           <label>
-            <span className="form-label">شهر</span>
+            <span className="form-label">{tr('شهر')}</span>
             <select
               className="form-input"
               value={draft.city}
               disabled={!draft.province}
               onChange={(e) => patch('city', e.target.value)}
             >
-              <option value="">— انتخاب کنید —</option>
+              <option value="">{tr('— انتخاب کنید —')}</option>
               {cityOptions.map((c) => (
                 <option key={c} value={c}>
                   {c}
@@ -527,17 +528,17 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
             </select>
           </label>
           <label className="admin-span-2">
-            <span className="form-label">آدرس</span>
+            <span className="form-label">{tr('آدرس')}</span>
             <input className="form-input" value={draft.address} onChange={(e) => patch('address', e.target.value)} />
           </label>
           <label>
-            <span className="form-label">مدرک تحصیلی</span>
+            <span className="form-label">{tr('مدرک تحصیلی')}</span>
             <select
               className="form-input"
               value={draft.educationLevel}
               onChange={(e) => patch('educationLevel', e.target.value)}
             >
-              <option value="">— انتخاب کنید —</option>
+              <option value="">{tr('— انتخاب کنید —')}</option>
               {HR_EDUCATION_LEVELS.map((l) => (
                 <option key={l} value={l}>
                   {l}
@@ -546,13 +547,13 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
             </select>
           </label>
           <label>
-            <span className="form-label">رشته تحصیلی</span>
+            <span className="form-label">{tr('رشته تحصیلی')}</span>
             <select
               className="form-input"
               value={draft.fieldOfStudy}
               onChange={(e) => patch('fieldOfStudy', e.target.value)}
             >
-              <option value="">— انتخاب کنید —</option>
+              <option value="">{tr('— انتخاب کنید —')}</option>
               {HR_FIELDS_OF_STUDY.map((f) => (
                 <option key={f} value={f}>
                   {f}
@@ -570,9 +571,9 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
       {tab === 'job' ? (
         <div className="admin-form-grid">
           <label>
-            <span className="form-label">شغل</span>
+            <span className="form-label">{tr('شغل')}</span>
             <select className="form-input" value={draft.jobTitle} onChange={(e) => patch('jobTitle', e.target.value)}>
-              <option value="">— انتخاب کنید —</option>
+              <option value="">{tr('— انتخاب کنید —')}</option>
               {jobOptions.map((j) => (
                 <option key={j} value={j}>
                   {j}
@@ -581,9 +582,9 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
             </select>
           </label>
           <label>
-            <span className="form-label">بخش</span>
+            <span className="form-label">{tr('بخش')}</span>
             <select className="form-input" value={draft.department} onChange={(e) => patch('department', e.target.value)}>
-              <option value="">— انتخاب کنید —</option>
+              <option value="">{tr('— انتخاب کنید —')}</option>
               {deptOptions.map((d) => (
                 <option key={d} value={d}>
                   {d}
@@ -592,7 +593,7 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
             </select>
           </label>
           <label>
-            <span className="form-label">محل حضور</span>
+            <span className="form-label">{tr('محل حضور')}</span>
             <select className="form-input" value={draft.location} onChange={(e) => patch('location', e.target.value)}>
               {HR_LOCATIONS.map((l) => (
                 <option key={l} value={l}>
@@ -602,13 +603,13 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
             </select>
           </label>
           <label>
-            <span className="form-label">مدیر مربوطه (سمت شغلی)</span>
+            <span className="form-label">{tr('مدیر مربوطه (سمت شغلی)')}</span>
             <select
               className="form-input"
               value={draft.reportingManagerTitle}
               onChange={(e) => setManagerTitle(e.target.value)}
             >
-              <option value="">— انتخاب کنید —</option>
+              <option value="">{tr('— انتخاب کنید —')}</option>
               {jobOptions.map((j) => (
                 <option key={j} value={j}>
                   {j}
@@ -617,13 +618,13 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
             </select>
           </label>
           <label>
-            <span className="form-label">نام مدیر / سرپرست</span>
+            <span className="form-label">{tr('نام مدیر / سرپرست')}</span>
             <select
               className="form-input"
               value={draft.reportingManagerPersonId}
               onChange={(e) => setManagerPerson(e.target.value)}
             >
-              <option value="">— انتخاب کنید —</option>
+              <option value="">{tr('— انتخاب کنید —')}</option>
               {peers.map((p) => (
                 <option key={p.id} value={String(p.id)}>
                   {p.firstName} {p.lastName}
@@ -634,12 +635,12 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
           </label>
           {selectedManager ? (
             <p className="admin-muted admin-span-2">
-              مدیر انتخاب‌شده: {selectedManager.firstName} {selectedManager.lastName}
+              {tr('مدیر انتخاب‌شده:')} {selectedManager.firstName} {selectedManager.lastName}
               {selectedManager.jobTitle ? ` (${selectedManager.jobTitle})` : ''}
             </p>
           ) : null}
           <label>
-            <span className="form-label">نحوه همکاری</span>
+            <span className="form-label">{tr('نحوه همکاری')}</span>
             <select
               className="form-input"
               value={draft.cooperationType}
@@ -653,11 +654,11 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
             </select>
           </label>
           <label>
-            <span className="form-label">داخلی</span>
+            <span className="form-label">{tr('داخلی')}</span>
             <input className="form-input" value={draft.extension} onChange={(e) => patch('extension', e.target.value)} />
           </label>
           <div className="admin-span-2 admin-benefit-block">
-            <h4 className="admin-subsection-title">مزایا</h4>
+            <h4 className="admin-subsection-title">{tr('مزایا')}</h4>
             <div className="admin-check-grid">
               {BENEFIT_LABELS.map(({ key, label }) => (
                 <label key={key} className="admin-check-inline">
@@ -671,7 +672,7 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
               ))}
             </div>
             <p className="admin-muted admin-hint">
-              در صورت عدم انتخاب هر مزیت، آن آیتم در محاسبات هزینه نیروی انسانی لحاظ نمی‌شود.
+              {tr('در صورت عدم انتخاب هر مزیت، آن آیتم در محاسبات هزینه نیروی انسانی لحاظ نمی‌شود.')}
             </p>
           </div>
         </div>
@@ -680,7 +681,7 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
       {tab === 'contract' ? (
         <div className="admin-form-grid">
           <label>
-            <span className="form-label">وضعیت قرارداد</span>
+            <span className="form-label">{tr('وضعیت قرارداد')}</span>
             <select
               className="form-input"
               value={draft.contractStatus}
@@ -694,7 +695,7 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
             </select>
           </label>
           <label>
-            <span className="form-label">نحوه همکاری</span>
+            <span className="form-label">{tr('نحوه همکاری')}</span>
             <select
               className="form-input"
               value={draft.cooperationType}
@@ -707,14 +708,14 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
               ))}
             </select>
           </label>
-          <p className="admin-muted admin-span-2">برای ثبت اولین قرارداد، تب «ایجاد / تمدید قرارداد» را پر کنید.</p>
+          <p className="admin-muted admin-span-2">{tr('برای ثبت اولین قرارداد، تب «ایجاد / تمدید قرارداد» را پر کنید.')}</p>
         </div>
       ) : null}
 
       {tab === 'renew' ? (
         <div className="admin-form-grid">
           <div>
-            <span className="form-label">تاریخ شروع *</span>
+            <span className="form-label">{tr('تاریخ شروع *')}</span>
             <JalaliDateSelect
               value={parseJalaliSlash(draft.contractStart)}
               yearsBack={15}
@@ -723,7 +724,7 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
             />
           </div>
           <div>
-            <span className="form-label">تاریخ پایان *</span>
+            <span className="form-label">{tr('تاریخ پایان *')}</span>
             <JalaliDateSelect
               value={parseJalaliSlash(draft.contractEnd)}
               yearsBack={15}
@@ -732,19 +733,19 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
             />
           </div>
           <label>
-            <span className="form-label">حقوق ماهانه (تومان)</span>
+            <span className="form-label">{tr('حقوق ماهانه (تومان)')}</span>
             <input className="form-input" dir="ltr" value={draft.salary} onChange={(e) => patch('salary', e.target.value)} />
           </label>
           <label>
-            <span className="form-label">شماره بیمه</span>
+            <span className="form-label">{tr('شماره بیمه')}</span>
             <input className="form-input" value={draft.insuranceNo} onChange={(e) => patch('insuranceNo', e.target.value)} />
           </label>
           <label>
-            <span className="form-label">بانک</span>
+            <span className="form-label">{tr('بانک')}</span>
             <input className="form-input" value={draft.bankName} onChange={(e) => patch('bankName', e.target.value)} />
           </label>
           <label>
-            <span className="form-label">شماره حساب</span>
+            <span className="form-label">{tr('شماره حساب')}</span>
             <input
               className="form-input"
               dir="ltr"
@@ -753,13 +754,13 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
             />
           </label>
           <label className="admin-span-2">
-            <span className="form-label">شبا</span>
+            <span className="form-label">{tr('شبا')}</span>
             <input className="form-input" dir="ltr" value={draft.sheba} onChange={(e) => patch('sheba', e.target.value)} />
           </label>
           {draft.contractStart || draft.contractEnd ? (
             <p className="admin-muted admin-span-2">
-              پیش‌نمایش در تاریخچه: شروع قرارداد {draft.contractStart || '—'}
-              {draft.contractEnd ? ` · پایان قرارداد ${draft.contractEnd}` : ''}
+              {tr('پیش‌نمایش در تاریخچه: شروع قرارداد')} {draft.contractStart || '—'}
+              {draft.contractEnd ? `${tr(' · پایان قرارداد ')}${draft.contractEnd}` : ''}
             </p>
           ) : null}
         </div>
@@ -768,13 +769,13 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
       {tab === 'comp' ? (
         <div className="admin-form-grid">
           <label>
-            <span className="form-label">مدل درآمدی</span>
+            <span className="form-label">{tr('مدل درآمدی')}</span>
             <select
               className="form-input"
               value={draft.incomeModelId}
               onChange={(e) => patch('incomeModelId', e.target.value)}
             >
-              <option value="">— انتخاب کنید —</option>
+              <option value="">{tr('— انتخاب کنید —')}</option>
               {models.map((m) => (
                 <option key={m.id} value={String(m.id)}>
                   {m.name}
@@ -782,20 +783,20 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
               ))}
             </select>
           </label>
-          <p className="admin-muted admin-span-2">مدل‌های درآمدی از بخش جبران خدمت مدیریت می‌شوند.</p>
+          <p className="admin-muted admin-span-2">{tr('مدل‌های درآمدی از بخش جبران خدمت مدیریت می‌شوند.')}</p>
         </div>
       ) : null}
 
       {tab === 'career' ? (
         <div className="admin-form-grid">
           <label>
-            <span className="form-label">لایه مسیر شغلی</span>
+            <span className="form-label">{tr('لایه مسیر شغلی')}</span>
             <select
               className="form-input"
               value={draft.careerLayerId}
               onChange={(e) => patch('careerLayerId', e.target.value)}
             >
-              <option value="">— انتخاب کنید —</option>
+              <option value="">{tr('— انتخاب کنید —')}</option>
               {layers.map((l) => (
                 <option key={l.id} value={String(l.id)}>
                   {l.name}
@@ -808,7 +809,7 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
 
       {tab === 'benefits' ? (
         <div className="admin-benefit-block" style={{ borderTop: 'none', paddingTop: 0 }}>
-          <h4 className="admin-subsection-title">مزایا</h4>
+          <h4 className="admin-subsection-title">{tr('مزایا')}</h4>
           <div className="admin-check-grid">
             {BENEFIT_LABELS.map(({ key, label }) => (
               <label key={key} className="admin-check-inline">
@@ -822,7 +823,7 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
             ))}
           </div>
           <p className="admin-muted admin-hint">
-            در صورت عدم انتخاب هر مزیت، آن آیتم در محاسبات هزینه نیروی انسانی لحاظ نمی‌شود.
+            {tr('در صورت عدم انتخاب هر مزیت، آن آیتم در محاسبات هزینه نیروی انسانی لحاظ نمی‌شود.')}
           </p>
         </div>
       ) : null}
@@ -830,22 +831,22 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
       {tab === 'requests' ? (
         <div>
           <p className="admin-muted">
-            پس از ذخیره پرونده، تیکت‌های منابع انسانی این همکار در همین تب قابل مشاهده و اقدام است.
+            {tr('پس از ذخیره پرونده، تیکت‌های منابع انسانی این همکار در همین تب قابل مشاهده و اقدام است.')}
           </p>
           <div className="admin-table-wrap" style={{ marginTop: 12 }}>
             <table className="admin-table admin-table--dense">
               <thead>
                 <tr>
-                  <th>نوع</th>
-                  <th>بازه / تاریخ</th>
-                  <th>وضعیت</th>
-                  <th>نتیجه / اکشن</th>
+                  <th>{tr('نوع')}</th>
+                  <th>{tr('بازه / تاریخ')}</th>
+                  <th>{tr('وضعیت')}</th>
+                  <th>{tr('نتیجه / اکشن')}</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
                   <td colSpan={4} className="admin-empty">
-                    هنوز تیکتی ثبت نشده — پس از ایجاد پرونده نمونه و درخواست‌های جدید اینجا می‌آید.
+                    {tr('هنوز تیکتی ثبت نشده — پس از ایجاد پرونده نمونه و درخواست‌های جدید اینجا می‌آید.')}
                   </td>
                 </tr>
               </tbody>
@@ -857,7 +858,7 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
       {tab === 'access' ? (
         <div className="admin-form-grid">
           <label>
-            <span className="form-label">وضعیت دسترسی</span>
+            <span className="form-label">{tr('وضعیت دسترسی')}</span>
             <select
               className="form-input"
               value={draft.accessStatus}
@@ -871,7 +872,7 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
             </select>
           </label>
           <label>
-            <span className="form-label">نام کاربری</span>
+            <span className="form-label">{tr('نام کاربری')}</span>
             <input
               className="form-input"
               dir="ltr"
@@ -882,7 +883,7 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
             />
           </label>
           <label>
-            <span className="form-label">ایمیل سازمانی</span>
+            <span className="form-label">{tr('ایمیل سازمانی')}</span>
             <input
               className="form-input"
               dir="ltr"
@@ -894,7 +895,7 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
             />
           </label>
           <label>
-            <span className="form-label">موبایل (پیامک اطلاعات ورود)</span>
+            <span className="form-label">{tr('موبایل (پیامک اطلاعات ورود)')}</span>
             <input
               className="form-input"
               dir="ltr"
@@ -904,7 +905,7 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
             />
           </label>
           <div className="admin-span-2">
-            <span className="form-label">رمز عبور (برای راهنمایی همکار توسط HR)</span>
+            <span className="form-label">{tr('رمز عبور (برای راهنمایی همکار توسط HR)')}</span>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <input className="form-input" dir="ltr" readOnly value={draft.password} style={{ flex: 1 }} />
               <button
@@ -912,11 +913,11 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
                 className="admin-btn"
                 onClick={() => patch('password', genReadablePassword())}
               >
-                تولید مجدد
+                {tr('تولید مجدد')}
               </button>
             </div>
             <p className="admin-muted admin-hint">
-              این رمز پس از ذخیره در پرونده همکار نگه داشته می‌شود تا HR بتواند آن را به همکار اعلام کند؛ در صورت تنظیم موبایل، پیامک نیز ارسال می‌شود.
+              {tr('این رمز پس از ذخیره در پرونده همکار نگه داشته می‌شود تا HR بتواند آن را به همکار اعلام کند؛ در صورت تنظیم موبایل، پیامک نیز ارسال می‌شود.')}
             </p>
           </div>
         </div>
@@ -924,22 +925,22 @@ export function EmployeeCreateModal({ open, onClose, onCreated }: Props) {
 
       {tab === 'history' ? (
         <div>
-          <p className="admin-muted">تاریخچه کامل پس از ایجاد پرونده فعال می‌شود.</p>
+          <p className="admin-muted">{tr('تاریخچه کامل پس از ایجاد پرونده فعال می‌شود.')}</p>
           {draft.contractStart || draft.contractEnd ? (
             <ul className="admin-log-list">
               {draft.contractStart ? (
                 <li>
-                  <b>شروع قرارداد</b>: {draft.contractStart} <span className="admin-muted">(در انتظار ذخیره)</span>
+                  <b>{tr('شروع قرارداد')}</b>: {draft.contractStart} <span className="admin-muted">{tr('(در انتظار ذخیره)')}</span>
                 </li>
               ) : null}
               {draft.contractEnd ? (
                 <li>
-                  <b>پایان قرارداد</b>: {draft.contractEnd} <span className="admin-muted">(در انتظار ذخیره)</span>
+                  <b>{tr('پایان قرارداد')}</b>: {draft.contractEnd} <span className="admin-muted">{tr('(در انتظار ذخیره)')}</span>
                 </li>
               ) : null}
             </ul>
           ) : (
-            <p className="admin-muted">هنوز قرارداد پیش‌نویس نشده است.</p>
+            <p className="admin-muted">{tr('هنوز قرارداد پیش‌نویس نشده است.')}</p>
           )}
         </div>
       ) : null}

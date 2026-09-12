@@ -28,7 +28,7 @@ import {
 } from '../AdminListCells';
 import { AdminEntityCell, AdminThumb } from '../AdminThumb';
 import { AdminModal } from '../AdminModal';
-import { useI18n } from '../../i18n';
+import { tr, useI18n } from '../../i18n';
 
 /** Soft-deleted anonymized shell left for finance FK history. */
 function isDeletedUserShell(user: User): boolean {
@@ -36,9 +36,9 @@ function isDeletedUserShell(user: User): boolean {
 }
 
 function userStatusLabel(user: User): string {
-  if (isDeletedUserShell(user)) return 'حذف‌شده';
-  if (user.isActive === false) return 'مسدود';
-  return 'فعال';
+  if (isDeletedUserShell(user)) return tr('حذف‌شده');
+  if (user.isActive === false) return tr('مسدود');
+  return tr('فعال');
 }
 
 type UsersView = 'list' | 'heatmap';
@@ -143,7 +143,7 @@ export function AdminUsersPage() {
       setGeoKnown(data.provinceKnownCount || 0);
       setGeoError(null);
     } catch (err) {
-      setGeoError(err instanceof Error ? err.message : 'خطا در نقشه کاربران');
+      setGeoError(err instanceof Error ? err.message : tr('خطا در نقشه کاربران'));
     }
   }, [status]);
 
@@ -157,7 +157,7 @@ export function AdminUsersPage() {
       qs.set('limit', '100');
       const data = await adminFetch<{ total: number; users: User[] }>(`/api/admin/users?${qs}`);
       setUsers(data.users); setTotal(data.total); setError(null);
-    } catch (err) { setError(err instanceof Error ? err.message : 'خطا'); }
+    } catch (err) { setError(err instanceof Error ? err.message : tr('خطا')); }
   }, [q, role, status]);
   useEffect(() => { void load(); }, [load]);
   useEffect(() => {
@@ -195,17 +195,17 @@ export function AdminUsersPage() {
     e.preventDefault();
     if (!editing || !editForm) return;
     if (!editForm.name.trim()) {
-      setEditError('نام الزامی است');
+      setEditError(tr('نام الزامی است'));
       return;
     }
     if (!editForm.roles.length) {
-      setEditError('حداقل یک نقش لازم است');
+      setEditError(tr('حداقل یک نقش لازم است'));
       return;
     }
     const ageTrim = editForm.age.trim();
     const ageNum = ageTrim === '' ? undefined : Number(ageTrim);
     if (ageTrim !== '' && (!Number.isFinite(ageNum) || (ageNum as number) < 0)) {
-      setEditError('سن نامعتبر است');
+      setEditError(tr('سن نامعتبر است'));
       return;
     }
     const wallet = {
@@ -216,7 +216,7 @@ export function AdminUsersPage() {
     };
     for (const [key, val] of Object.entries(wallet)) {
       if (!Number.isFinite(val) || val < 0) {
-        setEditError(`موجودی ${key} نامعتبر است`);
+        setEditError(tr('موجودی {key} نامعتبر است', { key }));
         return;
       }
     }
@@ -252,7 +252,7 @@ export function AdminUsersPage() {
       await load();
       await loadGeo();
     } catch (err) {
-      setEditError(err instanceof Error ? err.message : 'خطا در ذخیره');
+      setEditError(err instanceof Error ? err.message : tr('خطا در ذخیره'));
     } finally {
       setEditBusy(false);
     }
@@ -263,7 +263,7 @@ export function AdminUsersPage() {
     try {
       await adminFetch(`/api/admin/users/${user.id}`, { method: 'PATCH', body: JSON.stringify({ isActive: user.isActive === false }) });
       await load();
-    } catch (err) { setError(err instanceof Error ? err.message : 'خطا'); }
+    } catch (err) { setError(err instanceof Error ? err.message : tr('خطا')); }
     finally { setBusyId(null); }
   };
 
@@ -272,19 +272,19 @@ export function AdminUsersPage() {
     try {
       await adminFetch(`/api/admin/users/${user.id}`, { method: 'PATCH', body: JSON.stringify({ role: next }) });
       await load();
-    } catch (err) { setError(err instanceof Error ? err.message : 'خطا'); }
+    } catch (err) { setError(err instanceof Error ? err.message : tr('خطا')); }
     finally { setBusyId(null); }
   };
 
   const submitCredit = async () => {
     if (!credit) return;
     const amount = Number(credit.amount);
-    if (!Number.isFinite(amount) || amount === 0) { setError('مبلغ نامعتبر'); return; }
+    if (!Number.isFinite(amount) || amount === 0) { setError(tr('مبلغ نامعتبر')); return; }
     setBusyId(credit.userId);
     try {
       await adminFetch('/api/admin/wallet/credit', { method: 'POST', body: JSON.stringify({ userId: credit.userId, currency: credit.currency, amount }) });
       setCredit(null); await load();
-    } catch (err) { setError(err instanceof Error ? err.message : 'خطا'); }
+    } catch (err) { setError(err instanceof Error ? err.message : tr('خطا')); }
     finally { setBusyId(null); }
   };
 
@@ -302,7 +302,7 @@ export function AdminUsersPage() {
       await load();
       await loadGeo();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'حذف کاربر ناموفق بود');
+      setError(err instanceof Error ? err.message : tr('حذف کاربر ناموفق بود'));
     } finally {
       setDeleteBusy(false);
       setBusyId(null);
@@ -314,7 +314,7 @@ export function AdminUsersPage() {
       <header className="admin-header">
         <div>
           <h1>{t('admin.usersTitle')}</h1>
-          <p>{formatNumFa(total)} کاربر · فیلدهای مهم مدیریتی از جدول users</p>
+          <p>{formatNumFa(total)} {tr('کاربر · فیلدهای مهم مدیریتی از جدول users')}</p>
         </div>
       </header>
 
@@ -347,7 +347,7 @@ export function AdminUsersPage() {
             <div className="admin-search"><Search size={16} /><input placeholder={t('admin.usersSearchPh')} value={q} onChange={(e) => setQ(e.target.value)} /></div>
             <select className="admin-select" value={role} onChange={(e) => setRole(e.target.value)}>
               <option value="">{t('admin.usersAllRoles')}</option>
-              {USER_ROLES.map((r) => <option key={r} value={r}>{USER_ROLE_LABELS[r]}</option>)}
+              {USER_ROLES.map((r) => <option key={r} value={r}>{tr(USER_ROLE_LABELS[r])}</option>)}
             </select>
           </>
         ) : null}
@@ -357,9 +357,9 @@ export function AdminUsersPage() {
           onChange={(e) => setStatus(e.target.value as 'active' | 'inactive' | 'all')}
           aria-label={t('admin.usersAccountStatus')}
         >
-          <option value="active">فقط فعال</option>
+          <option value="active">{tr('فقط فعال')}</option>
           <option value="inactive">{t('admin.usersInactive')}</option>
-          <option value="all">همه</option>
+          <option value="all">{tr('همه')}</option>
         </select>
         <button
           type="button"
@@ -369,7 +369,7 @@ export function AdminUsersPage() {
             else void loadGeo();
           }}
         >
-          اعمال
+          {tr('اعمال')}
         </button>
       </div>
       {error ? <p className="admin-error">{error}</p> : null}
@@ -380,10 +380,10 @@ export function AdminUsersPage() {
           <div>
             <h2>{t('admin.usersHeatmapTitle')}</h2>
             <p className="admin-muted">
-              استان‌هایی با کاربر بیشتر تیره‌تر نمایش داده می‌شوند
+              {tr('استان‌هایی با کاربر بیشتر تیره‌تر نمایش داده می‌شوند')}
               {geoTotal
                 ? ` · کاربر فعال ${formatNumFa(geoTotal)} · با استان مشخص ${formatNumFa(geoKnown)}${
-                    geoUnknown > 0 ? ` · بدون استان ${formatNumFa(geoUnknown)}` : ''
+                    geoUnknown > 0 ? `${tr(' · بدون استان ')}${formatNumFa(geoUnknown)}` : ''
                   }`
                 : ''}
             </p>
@@ -415,7 +415,7 @@ export function AdminUsersPage() {
               const publicId = userPublicIdOf(u);
               const roles = activeRolesOf(u);
               const demo = adminUserDemographics(u);
-              const place = [u.city, u.province].filter(Boolean).join('، ');
+              const place = [u.city, u.province].filter(Boolean).join(tr('، '));
               const tgHandle = u.username ? `@${u.username}` : null;
               const tgId =
                 u.telegramId != null && String(u.telegramId).trim()
@@ -458,7 +458,7 @@ export function AdminUsersPage() {
                             .filter((r) => r !== u.role)
                             .map((r) => (
                               <span key={r} className="admin-badge">
-                                {USER_ROLE_LABELS[r] || r}
+                                {tr(USER_ROLE_LABELS[r] || r)}
                               </span>
                             ))}
                         </div>
@@ -472,7 +472,7 @@ export function AdminUsersPage() {
                       >
                         {USER_ROLES.map((r) => (
                           <option key={r} value={r}>
-                            {USER_ROLE_LABELS[r]}
+                            {tr(USER_ROLE_LABELS[r])}
                           </option>
                         ))}
                       </select>
@@ -527,8 +527,8 @@ export function AdminUsersPage() {
                             u.isActive === false ? 'admin-icon-btn--ok' : 'admin-icon-btn--danger'
                           }`}
                           disabled={busyId === u.id}
-                          title={u.isActive === false ? 'رفع مسدودی' : 'مسدود'}
-                          aria-label={u.isActive === false ? 'رفع مسدودی' : 'مسدود'}
+                          title={u.isActive === false ? tr('رفع مسدودی') : tr('مسدود')}
+                          aria-label={u.isActive === false ? tr('رفع مسدودی') : tr('مسدود')}
                           onClick={() => void toggleBan(u)}
                         >
                           {u.isActive === false ? <ShieldCheck size={14} /> : <Ban size={14} />}
@@ -547,14 +547,14 @@ export function AdminUsersPage() {
                         </button>
                       ) : null}
                       {isDeletedUserShell(u) ? (
-                        <span className="admin-muted">پوسته ناشناس</span>
+                        <span className="admin-muted">{tr('پوسته ناشناس')}</span>
                       ) : null}
                     </div>
                   </td>
                 </tr>
               );
             })}
-            {!users.length ? <tr><td colSpan={7} className="admin-muted">کاربری یافت نشد</td></tr> : null}
+            {!users.length ? <tr><td colSpan={7} className="admin-muted">{tr('کاربری یافت نشد')}</td></tr> : null}
           </tbody>
         </table>
       </div>
@@ -562,7 +562,7 @@ export function AdminUsersPage() {
 
       <AdminModal
         open={Boolean(editing && editForm)}
-        title={editing ? `ویرایش ${editing.name || userPublicIdOf(editing)}` : 'ویرایش کاربر'}
+        title={editing ? `${tr('ویرایش ')}${editing.name || userPublicIdOf(editing)}` : tr('ویرایش کاربر')}
         onClose={closeEdit}
         size="xl"
         as="form"
@@ -571,10 +571,10 @@ export function AdminUsersPage() {
         footer={
           <>
             <button type="submit" className="admin-btn admin-btn--primary" disabled={editBusy}>
-              ذخیره تغییرات
+              {tr('ذخیره تغییرات')}
             </button>
             <button type="button" className="admin-btn admin-btn--ghost" disabled={editBusy} onClick={closeEdit}>
-              انصراف
+              {tr('انصراف')}
             </button>
           </>
         }
@@ -589,7 +589,7 @@ export function AdminUsersPage() {
 
             <div className="admin-form-grid">
               <div className="form-group">
-                <label className="form-label">نام *</label>
+                <label className="form-label">{tr('نام *')}</label>
                 <input
                   className="form-input"
                   required
@@ -598,7 +598,7 @@ export function AdminUsersPage() {
                 />
               </div>
               <div className="form-group">
-                <label className="form-label">تلگرام (یوزرنیم)</label>
+                <label className="form-label">{tr('تلگرام (یوزرنیم)')}</label>
                 <input
                   className="form-input"
                   dir="ltr"
@@ -608,7 +608,7 @@ export function AdminUsersPage() {
                 />
               </div>
               <div className="form-group">
-                <label className="form-label">موبایل</label>
+                <label className="form-label">{tr('موبایل')}</label>
                 <input
                   className="form-input"
                   dir="ltr"
@@ -617,7 +617,7 @@ export function AdminUsersPage() {
                 />
               </div>
               <div className="form-group">
-                <label className="form-label">ایمیل</label>
+                <label className="form-label">{tr('ایمیل')}</label>
                 <input
                   className="form-input"
                   dir="ltr"
@@ -627,7 +627,7 @@ export function AdminUsersPage() {
                 />
               </div>
               <div className="form-group">
-                <label className="form-label">شهر</label>
+                <label className="form-label">{tr('شهر')}</label>
                 <input
                   className="form-input"
                   value={editForm.city}
@@ -635,7 +635,7 @@ export function AdminUsersPage() {
                 />
               </div>
               <div className="form-group">
-                <label className="form-label">استان</label>
+                <label className="form-label">{tr('استان')}</label>
                 <input
                   className="form-input"
                   value={editForm.province}
@@ -643,7 +643,7 @@ export function AdminUsersPage() {
                 />
               </div>
               <div className="form-group">
-                <label className="form-label">کشور</label>
+                <label className="form-label">{tr('کشور')}</label>
                 <input
                   className="form-input"
                   value={editForm.country}
@@ -651,7 +651,7 @@ export function AdminUsersPage() {
                 />
               </div>
               <div className="form-group">
-                <label className="form-label">سن</label>
+                <label className="form-label">{tr('سن')}</label>
                 <input
                   className="form-input"
                   type="number"
@@ -662,7 +662,7 @@ export function AdminUsersPage() {
                 />
               </div>
               <div className="form-group">
-                <label className="form-label">جنسیت</label>
+                <label className="form-label">{tr('جنسیت')}</label>
                 <select
                   className="form-select"
                   value={editForm.gender}
@@ -671,12 +671,12 @@ export function AdminUsersPage() {
                   }
                 >
                   <option value="">—</option>
-                  <option value="female">زن</option>
-                  <option value="male">مرد</option>
+                  <option value="female">{tr('زن')}</option>
+                  <option value="male">{tr('مرد')}</option>
                 </select>
               </div>
               <div className="form-group">
-                <label className="form-label">احراز هویت</label>
+                <label className="form-label">{tr('احراز هویت')}</label>
                 <select
                   className="form-select"
                   value={editForm.verificationStatus}
@@ -689,13 +689,13 @@ export function AdminUsersPage() {
                 >
                   {VERIFICATION_STATUSES.map((s) => (
                     <option key={s} value={s}>
-                      {VERIFICATION_STATUS_LABELS[s]}
+                      {tr(VERIFICATION_STATUS_LABELS[s])}
                     </option>
                   ))}
                 </select>
               </div>
               <div className="form-group">
-                <label className="form-label">وضعیت حساب</label>
+                <label className="form-label">{tr('وضعیت حساب')}</label>
                 <select
                   className="form-select"
                   value={editForm.isActive ? 'active' : 'blocked'}
@@ -703,12 +703,12 @@ export function AdminUsersPage() {
                     setEditForm({ ...editForm, isActive: e.target.value === 'active' })
                   }
                 >
-                  <option value="active">فعال</option>
-                  <option value="blocked">مسدود</option>
+                  <option value="active">{tr('فعال')}</option>
+                  <option value="blocked">{tr('مسدود')}</option>
                 </select>
               </div>
               <div className="form-group">
-                <label className="form-label">نقش اصلی</label>
+                <label className="form-label">{tr('نقش اصلی')}</label>
                 <select
                   className="form-select"
                   value={editForm.role}
@@ -722,13 +722,13 @@ export function AdminUsersPage() {
                 >
                   {editForm.roles.map((r) => (
                     <option key={r} value={r}>
-                      {USER_ROLE_LABELS[r]}
+                      {tr(USER_ROLE_LABELS[r])}
                     </option>
                   ))}
                 </select>
               </div>
               <div className="form-group admin-form-full">
-                <span className="form-label">نقش‌ها</span>
+                <span className="form-label">{tr('نقش‌ها')}</span>
                 <div className="admin-check-grid" style={{ marginTop: 6 }}>
                   {USER_ROLES.map((r) => (
                     <label key={r} className="admin-check-inline">
@@ -737,17 +737,17 @@ export function AdminUsersPage() {
                         checked={editForm.roles.includes(r)}
                         onChange={() => toggleEditRole(r)}
                       />
-                      {USER_ROLE_LABELS[r]}
+                      {tr(USER_ROLE_LABELS[r])}
                     </label>
                   ))}
                 </div>
                 <p className="admin-muted" style={{ marginTop: 8 }}>
-                  مشورت با صاحبین:{' '}
-                  {editing?.acceptSeekerAdvice ? 'پذیرش روشن' : 'پذیرش خاموش'}
+                  {tr('مشورت با صاحبین:')}{' '}
+                  {editing?.acceptSeekerAdvice ? tr('پذیرش روشن') : tr('پذیرش خاموش')}
                 </p>
               </div>
               <div className="form-group">
-                <label className="form-label">سکه</label>
+                <label className="form-label">{tr('سکه')}</label>
                 <input
                   className="form-input"
                   type="number"
@@ -758,7 +758,7 @@ export function AdminUsersPage() {
                 />
               </div>
               <div className="form-group">
-                <label className="form-label">تومان</label>
+                <label className="form-label">{tr('تومان')}</label>
                 <input
                   className="form-input"
                   type="number"
@@ -769,7 +769,7 @@ export function AdminUsersPage() {
                 />
               </div>
               <div className="form-group">
-                <label className="form-label">ستاره</label>
+                <label className="form-label">{tr('ستاره')}</label>
                 <input
                   className="form-input"
                   type="number"
@@ -780,7 +780,7 @@ export function AdminUsersPage() {
                 />
               </div>
               <div className="form-group">
-                <label className="form-label">تون</label>
+                <label className="form-label">{tr('تون')}</label>
                 <input
                   className="form-input"
                   type="number"
@@ -791,7 +791,7 @@ export function AdminUsersPage() {
                 />
               </div>
               <div className="form-group admin-form-full">
-                <label className="form-label">بیو</label>
+                <label className="form-label">{tr('بیو')}</label>
                 <textarea
                   className="form-textarea"
                   rows={3}
@@ -806,7 +806,7 @@ export function AdminUsersPage() {
 
       <AdminModal
         open={Boolean(deleting)}
-        title="حذف کاربر"
+        title={tr("حذف کاربر")}
         onClose={() => {
           if (deleteBusy) return;
           setDeleting(null);
@@ -821,7 +821,7 @@ export function AdminUsersPage() {
               disabled={deleteBusy}
               onClick={() => void confirmDeleteUser()}
             >
-              تأیید حذف
+              {tr('تأیید حذف')}
             </button>
             <button
               type="button"
@@ -829,7 +829,7 @@ export function AdminUsersPage() {
               disabled={deleteBusy}
               onClick={() => setDeleting(null)}
             >
-              انصراف
+              {tr('انصراف')}
             </button>
           </>
         }
@@ -837,15 +837,15 @@ export function AdminUsersPage() {
         {deleting ? (
           <>
             <p style={{ marginTop: 0 }}>
-              آیا از حذف کاربر «{deleting.name || userPublicIdOf(deleting)}» مطمئن هستید؟
+              {tr('آیا از حذف کاربر «')}{deleting.name || userPublicIdOf(deleting)}{tr('» مطمئن هستید؟')}
             </p>
             <p className="admin-muted" dir="ltr">
               {userPublicIdOf(deleting)}
               {deleting.telegramId ? ` · tg:${deleting.telegramId}` : ''}
             </p>
             <p className="admin-error" role="alert">
-              هشدار: حساب غیرفعال و ناشناس می‌شود، ورود مسدود می‌گردد، پت‌ها و نشست‌ها پاک می‌شوند،
-              اما تاریخچه مالی/کیف‌پول برای گزارش‌ها حفظ می‌ماند. این کار برگشت‌پذیر نیست.
+              {tr(`هشدار: حساب غیرفعال و ناشناس می‌شود، ورود مسدود می‌گردد، پت‌ها و نشست‌ها پاک می‌شوند،
+              اما تاریخچه مالی/کیف‌پول برای گزارش‌ها حفظ می‌ماند. این کار برگشت‌پذیر نیست.`)}
             </p>
           </>
         ) : null}
@@ -853,13 +853,13 @@ export function AdminUsersPage() {
 
       <AdminModal
         open={Boolean(credit)}
-        title="واریز / برداشت کیف پول"
+        title={tr("واریز / برداشت کیف پول")}
         onClose={() => setCredit(null)}
         size="sm"
         footer={
           <>
-            <button type="button" className="admin-btn admin-btn--primary" onClick={() => void submitCredit()}>اعمال</button>
-            <button type="button" className="admin-btn admin-btn--ghost" onClick={() => setCredit(null)}>انصراف</button>
+            <button type="button" className="admin-btn admin-btn--primary" onClick={() => void submitCredit()}>{tr('اعمال')}</button>
+            <button type="button" className="admin-btn admin-btn--ghost" onClick={() => setCredit(null)}>{tr('انصراف')}</button>
           </>
         }
       >
@@ -869,13 +869,13 @@ export function AdminUsersPage() {
               {userPublicIdOf({ id: credit.userId })}
             </p>
             <label>
-              <span className="form-label">ارز</span>
+              <span className="form-label">{tr('ارز')}</span>
               <select className="admin-select" value={credit.currency} onChange={(e) => setCredit({ ...credit, currency: e.target.value })}>
-                <option value="toman">تومان</option><option value="coins">سکه</option><option value="stars">Stars</option><option value="ton">TON</option>
+                <option value="toman">{tr('تومان')}</option><option value="coins">{tr('سکه')}</option><option value="stars">Stars</option><option value="ton">TON</option>
               </select>
             </label>
             <label>
-              <span className="form-label">مبلغ</span>
+              <span className="form-label">{tr('مبلغ')}</span>
               <input className="form-input" value={credit.amount} onChange={(e) => setCredit({ ...credit, amount: e.target.value })} />
             </label>
           </>

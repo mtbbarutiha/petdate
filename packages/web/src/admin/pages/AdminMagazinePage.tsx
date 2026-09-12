@@ -4,6 +4,7 @@ import { ExternalLink, Newspaper, Plus, Search, Trash2 } from 'lucide-react';
 import { adminFetch, formatNumFa } from '../api';
 import { formatAdminFaDate } from '../JalaliDateSelect';
 import { resolvePublicMediaUrl } from '../../lib/api';
+import { tr } from '../../i18n';
 
 type Article = {
   id: number;
@@ -61,7 +62,7 @@ export function AdminMagazinePage() {
   }, [searchParams]);
 
   const remove = async (id: number) => {
-    if (!confirm('حذف مقاله؟ (نرم‌حذف)')) return;
+    if (!confirm(tr('حذف مقاله؟ (نرم‌حذف)'))) return;
     setBusy(true);
     try {
       await adminFetch(`/api/admin/magazine/${id}`, { method: 'DELETE' });
@@ -109,9 +110,9 @@ export function AdminMagazinePage() {
         <div>
           <h1>
             <Newspaper size={22} style={{ verticalAlign: 'middle', marginInlineEnd: 8 }} />
-            مجله و اخبار
+            {tr('مجله و اخبار')}
           </h1>
-          <p>{formatNumFa(total)} مطلب — ایجاد، ویرایش و انتشار محتوای مجله</p>
+          <p>{formatNumFa(total)} {tr('مطلب — ایجاد، ویرایش و انتشار محتوای مجله')}</p>
         </div>
         <div className="admin-header-actions">
           <button
@@ -119,7 +120,7 @@ export function AdminMagazinePage() {
             className="admin-btn admin-btn--primary"
             onClick={() => navigate('/admin/magazine/new')}
           >
-            <Plus size={16} /> مطلب جدید
+            <Plus size={16} /> {tr('مطلب جدید')}
           </button>
         </div>
       </header>
@@ -128,7 +129,7 @@ export function AdminMagazinePage() {
         <div className="admin-search">
           <Search size={16} />
           <input
-            placeholder="جستجو عنوان / اسلاگ / دسته…"
+            placeholder={tr("جستجو عنوان / اسلاگ / دسته…")}
             value={q}
             onChange={(e) => setQ(e.target.value)}
           />
@@ -139,13 +140,13 @@ export function AdminMagazinePage() {
           value={status}
           onChange={(e) => setStatus(e.target.value as typeof status)}
         >
-          <option value="all">همه وضعیت‌ها</option>
-          <option value="draft">پیش‌نویس</option>
-          <option value="published">منتشر شده</option>
-          <option value="scheduled">زمان‌بندی</option>
+          <option value="all">{tr('همه وضعیت‌ها')}</option>
+          <option value="draft">{tr('پیش‌نویس')}</option>
+          <option value="published">{tr('منتشر شده')}</option>
+          <option value="scheduled">{tr('زمان‌بندی')}</option>
         </select>
         <button type="button" className="admin-btn" onClick={() => void load()}>
-          اعمال
+          {tr('اعمال')}
         </button>
       </div>
 
@@ -155,20 +156,20 @@ export function AdminMagazinePage() {
         <table className="admin-table">
           <thead>
             <tr>
-              <th>کاور</th>
-              <th>عنوان</th>
-              <th>وضعیت</th>
-              <th>دسته</th>
-              <th>انتشار</th>
-              <th>ویژه</th>
-              <th>عملیات</th>
+              <th>{tr('کاور')}</th>
+              <th>{tr('عنوان')}</th>
+              <th>{tr('وضعیت')}</th>
+              <th>{tr('دسته')}</th>
+              <th>{tr('انتشار')}</th>
+              <th>{tr('ویژه')}</th>
+              <th>{tr('عملیات')}</th>
             </tr>
           </thead>
           <tbody>
             {articles.length === 0 ? (
               <tr>
                 <td colSpan={7} className="admin-muted">
-                  مطلبی نیست — اولین مقاله را بسازید.
+                  {tr('مطلبی نیست — اولین مقاله را بسازید.')}
                 </td>
               </tr>
             ) : (
@@ -185,7 +186,7 @@ export function AdminMagazinePage() {
                     </td>
                     <td>
                       <Link to={`/admin/magazine/${a.id}`} className="admin-link">
-                        {a.title}
+                        {tr(a.title)}
                       </Link>
                       <div className="admin-muted" dir="ltr" style={{ fontSize: 12 }}>
                         /magazine/{a.slug}
@@ -195,7 +196,7 @@ export function AdminMagazinePage() {
                       <span
                         className={`admin-pill admin-pill--${a.status === 'published' ? 'mint' : a.status === 'scheduled' ? 'sky' : 'slate'}`}
                       >
-                        {STATUS_LABEL[a.status]}
+                        {tr(STATUS_LABEL[a.status])}
                       </span>
                     </td>
                     <td>{a.category || '—'}</td>
@@ -208,7 +209,7 @@ export function AdminMagazinePage() {
                           className="admin-btn admin-btn--ghost"
                           onClick={() => navigate(`/admin/magazine/${a.id}`)}
                         >
-                          ویرایش
+                          {tr('ویرایش')}
                         </button>
                         {a.status === 'published' ? (
                           <button
@@ -217,7 +218,7 @@ export function AdminMagazinePage() {
                             disabled={busy}
                             onClick={() => void unpublish(a.id)}
                           >
-                            لغو انتشار
+                            {tr('لغو انتشار')}
                           </button>
                         ) : (
                           <button
@@ -226,7 +227,7 @@ export function AdminMagazinePage() {
                             disabled={busy}
                             onClick={() => void publish(a.id)}
                           >
-                            انتشار
+                            {tr('انتشار')}
                           </button>
                         )}
                         {a.status === 'published' ? (
@@ -236,7 +237,7 @@ export function AdminMagazinePage() {
                             target="_blank"
                             rel="noreferrer"
                           >
-                            <ExternalLink size={14} /> پیش‌نمایش
+                            <ExternalLink size={14} /> {tr('پیش‌نمایش')}
                           </a>
                         ) : null}
                         <button

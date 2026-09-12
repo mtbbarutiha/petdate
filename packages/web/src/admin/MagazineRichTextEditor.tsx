@@ -17,6 +17,7 @@ import {
   Undo2,
 } from 'lucide-react';
 import { adminFetch } from './api';
+import { tr } from '../i18n';
 
 type Props = {
   value: string;
@@ -107,13 +108,13 @@ export function MagazineRichTextEditor({
 
   return (
     <div className={`mag-editor${disabled ? ' is-disabled' : ''}`}>
-      <div className="mag-editor-toolbar" role="toolbar" aria-label="ویرایشگر متن">
+      <div className="mag-editor-toolbar" role="toolbar" aria-label={tr("ویرایشگر متن")}>
         <button
           type="button"
           className={editor.isActive('bold') ? 'is-on' : ''}
           disabled={disabled}
           onClick={() => editor.chain().focus().toggleBold().run()}
-          title="پررنگ"
+          title={tr("پررنگ")}
         >
           <Bold size={15} />
         </button>
@@ -122,7 +123,7 @@ export function MagazineRichTextEditor({
           className={editor.isActive('italic') ? 'is-on' : ''}
           disabled={disabled}
           onClick={() => editor.chain().focus().toggleItalic().run()}
-          title="کج"
+          title={tr("کج")}
         >
           <Italic size={15} />
         </button>
@@ -131,7 +132,7 @@ export function MagazineRichTextEditor({
           className={editor.isActive('heading', { level: 2 }) ? 'is-on' : ''}
           disabled={disabled}
           onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-          title="عنوان"
+          title={tr("عنوان")}
         >
           <Heading2 size={15} />
         </button>
@@ -140,7 +141,7 @@ export function MagazineRichTextEditor({
           className={editor.isActive('bulletList') ? 'is-on' : ''}
           disabled={disabled}
           onClick={() => editor.chain().focus().toggleBulletList().run()}
-          title="فهرست"
+          title={tr("فهرست")}
         >
           <List size={15} />
         </button>
@@ -149,7 +150,7 @@ export function MagazineRichTextEditor({
           className={editor.isActive('orderedList') ? 'is-on' : ''}
           disabled={disabled}
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
-          title="فهرست شماره‌دار"
+          title={tr("فهرست شماره‌دار")}
         >
           <ListOrdered size={15} />
         </button>
@@ -158,14 +159,14 @@ export function MagazineRichTextEditor({
           className={editor.isActive('blockquote') ? 'is-on' : ''}
           disabled={disabled}
           onClick={() => editor.chain().focus().toggleBlockquote().run()}
-          title="نقل‌قول"
+          title={tr("نقل‌قول")}
         >
           <Quote size={15} />
         </button>
-        <button type="button" disabled={disabled} onClick={() => void setLink()} title="لینک">
+        <button type="button" disabled={disabled} onClick={() => void setLink()} title={tr("لینک")}>
           <Link2 size={15} />
         </button>
-        <button type="button" disabled={disabled} onClick={() => void uploadImage()} title="درج تصویر">
+        <button type="button" disabled={disabled} onClick={() => void uploadImage()} title={tr("درج تصویر")}>
           <ImagePlus size={15} />
         </button>
         <span className="mag-editor-sep" aria-hidden />
@@ -173,7 +174,7 @@ export function MagazineRichTextEditor({
           type="button"
           disabled={disabled || !editor.can().undo()}
           onClick={() => editor.chain().focus().undo().run()}
-          title="بازگردانی"
+          title={tr("بازگردانی")}
         >
           <Undo2 size={15} />
         </button>
@@ -181,7 +182,7 @@ export function MagazineRichTextEditor({
           type="button"
           disabled={disabled || !editor.can().redo()}
           onClick={() => editor.chain().focus().redo().run()}
-          title="جلو"
+          title={tr("جلو")}
         >
           <Redo2 size={15} />
         </button>

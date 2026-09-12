@@ -3,6 +3,7 @@ import { usePetStore } from '../../hooks/usePetStore';
 import { MATCH_STATUS_LABELS } from '../../types';
 import { AdminEntityCell, AdminThumb } from '../AdminThumb';
 import { formatAdminFaDate } from '../JalaliDateSelect';
+import { tr } from '../../i18n';
 
 export function AdminMatchesPage() {
   const { matches, updateMatchStatus, deleteMatch } = usePetStore();
@@ -11,8 +12,8 @@ export function AdminMatchesPage() {
     <div className="admin-page">
       <header className="admin-header">
         <div>
-          <h1>درخواست‌های همبازی</h1>
-          <p>{matches.length} درخواست</p>
+          <h1>{tr('درخواست‌های همبازی')}</h1>
+          <p>{matches.length} {tr('درخواست')}</p>
         </div>
       </header>
 
@@ -20,11 +21,11 @@ export function AdminMatchesPage() {
         <table className="admin-table">
           <thead>
             <tr>
-              <th>از</th>
-              <th>پیام</th>
-              <th>وضعیت</th>
-              <th>زمان</th>
-              <th>عملیات</th>
+              <th>{tr('از')}</th>
+              <th>{tr('پیام')}</th>
+              <th>{tr('وضعیت')}</th>
+              <th>{tr('زمان')}</th>
+              <th>{tr('عملیات')}</th>
             </tr>
           </thead>
           <tbody>
@@ -45,10 +46,10 @@ export function AdminMatchesPage() {
                     subtitle={m.fromPet.breed}
                   />
                 </td>
-                <td>{m.message || '—'}</td>
+                <td>{tr(m.message || '—')}</td>
                 <td>
                   <span className={`admin-status admin-status--${m.status}`}>
-                    {MATCH_STATUS_LABELS[m.status]}
+                    {tr(MATCH_STATUS_LABELS[m.status])}
                   </span>
                 </td>
                 <td>{formatAdminFaDate(m.createdAt)}</td>
@@ -60,7 +61,7 @@ export function AdminMatchesPage() {
                           type="button"
                           className="admin-btn admin-btn--success"
                           onClick={() => updateMatchStatus(m.id, 'accepted')}
-                          title="✅ قبول"
+                          title={tr("✅ قبول")}
                         >
                           <Check size={14} />
                         </button>
@@ -68,7 +69,7 @@ export function AdminMatchesPage() {
                           type="button"
                           className="admin-btn admin-btn--danger"
                           onClick={() => updateMatchStatus(m.id, 'rejected')}
-                          title="❌ رد"
+                          title={tr("❌ رد")}
                         >
                           <X size={14} />
                         </button>
@@ -78,7 +79,7 @@ export function AdminMatchesPage() {
                       type="button"
                       className="admin-btn admin-btn--danger"
                       onClick={() => deleteMatch(m.id)}
-                      title="🗑 حذف"
+                      title={tr("🗑 حذف")}
                     >
                       <Trash2 size={14} />
                     </button>

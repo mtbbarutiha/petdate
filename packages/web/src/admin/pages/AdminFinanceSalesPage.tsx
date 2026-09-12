@@ -11,6 +11,7 @@ import {
   WidgetEmpty,
   type WidgetRenderContext,
 } from '../widgets';
+import { tr } from '../../i18n';
 
 type Sales = {
   period: FinancePeriod;
@@ -79,8 +80,8 @@ export function AdminFinanceSalesPage() {
     <div className="admin-page">
       <header className="admin-header">
         <div>
-          <h1>نمودارهای فروش</h1>
-          <p>لایو از سفارش‌ها و payment_orders · روزانه / ماهانه / دسته / پرداخت</p>
+          <h1>{tr('نمودارهای فروش')}</h1>
+          <p>{tr('لایو از سفارش‌ها و payment_orders · روزانه / ماهانه / دسته / پرداخت')}</p>
         </div>
         <div className="admin-header-actions">
           <PeriodFilter value={period} onChange={setPeriod} />
@@ -109,7 +110,7 @@ export function AdminFinanceSalesPage() {
             <div className="admin-stat admin-stat--violet">
               <div>
                 <div className="admin-stat-value">{formatTomanFa(data.totalRevenue)}</div>
-                <div className="admin-stat-label">جمع فروش پرداخت‌شده</div>
+                <div className="admin-stat-label">{tr('جمع فروش پرداخت‌شده')}</div>
               </div>
             </div>
           </div>
@@ -117,7 +118,7 @@ export function AdminFinanceSalesPage() {
           <WidgetDashboard
             dashboardId="finance-sales"
             catalog={FINANCE_SALES_WIDGET_CATALOG}
-            title={period === 'year' ? 'فروش ماهانه · ویجت‌ها' : 'فروش روزانه · ویجت‌ها'}
+            title={period === 'year' ? tr('فروش ماهانه · ویجت‌ها') : tr('فروش روزانه · ویجت‌ها')}
             renderWidget={renderSalesWidget}
           />
         </>

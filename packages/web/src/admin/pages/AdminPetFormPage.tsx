@@ -5,6 +5,7 @@ import type { PetGender, PetSize, PetType } from '../../types';
 import { PET_SIZE_LABELS, PET_TYPE_EMOJI, PET_TYPE_LABELS } from '../../types';
 import { adminFetch } from '../api';
 import { AdminModal } from '../AdminModal';
+import { tr } from '../../i18n';
 
 const TYPES = Object.keys(PET_TYPE_LABELS) as PetType[];
 const SIZES = Object.keys(PET_SIZE_LABELS) as PetSize[];
@@ -220,12 +221,12 @@ export function AdminPetFormModal({ open, editId, onClose, onSaved }: PetFormMod
     return (
       <AdminModal
         open={open}
-        title="پت پیدا نشد"
+        title={tr("پت پیدا نشد")}
         onClose={onClose}
         size="sm"
         footer={
           <button type="button" className="admin-btn" onClick={onClose}>
-            بستن
+            {tr('بستن')}
           </button>
         }
       >
@@ -237,7 +238,7 @@ export function AdminPetFormModal({ open, editId, onClose, onSaved }: PetFormMod
   return (
     <AdminModal
       open={open}
-      title={isEdit ? `ویرایش ${form.name || ''}` : 'پت جدید'}
+      title={isEdit ? `${tr('ویرایش ')}${form.name || ''}` : tr('پت جدید')}
       onClose={onClose}
       size="lg"
       as="form"
@@ -249,7 +250,7 @@ export function AdminPetFormModal({ open, editId, onClose, onSaved }: PetFormMod
             {isEdit ? 'ذخیره تغییرات' : 'ثبت پت'}
           </button>
           <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={onClose}>
-            انصراف
+            {tr('انصراف')}
           </button>
         </>
       }
@@ -257,13 +258,13 @@ export function AdminPetFormModal({ open, editId, onClose, onSaved }: PetFormMod
       {saveError ? <p className="admin-error">{saveError}</p> : null}
 
       <div className="admin-form-preview" style={{ textAlign: 'center' }}>
-        <img src={form.imageUrl} alt={form.name || 'پت'} style={{ maxWidth: 160, borderRadius: 12 }} />
-        <p className="admin-muted">پیش‌نمایش عکس</p>
+        <img src={form.imageUrl} alt={form.name || tr('پت')} style={{ maxWidth: 160, borderRadius: 12 }} />
+        <p className="admin-muted">{tr('پیش‌نمایش عکس')}</p>
       </div>
 
       {gallery.length > 0 && (
         <div className="admin-gallery">
-          <label className="form-label">انتخاب عکس {PET_TYPE_LABELS[form.type]}</label>
+          <label className="form-label">{tr('انتخاب عکس')} {tr(PET_TYPE_LABELS[form.type])}</label>
           <div className="admin-gallery-grid">
             {gallery.map((photoId) => (
               <button
@@ -281,7 +282,7 @@ export function AdminPetFormModal({ open, editId, onClose, onSaved }: PetFormMod
 
       <div className="admin-form-grid">
         <div className="form-group">
-          <label className="form-label">نام *</label>
+          <label className="form-label">{tr('نام *')}</label>
           <input
             className="form-input"
             required
@@ -290,7 +291,7 @@ export function AdminPetFormModal({ open, editId, onClose, onSaved }: PetFormMod
           />
         </div>
         <div className="form-group">
-          <label className="form-label">نوع</label>
+          <label className="form-label">{tr('نوع')}</label>
           <select
             className="form-select"
             value={form.type}
@@ -298,13 +299,13 @@ export function AdminPetFormModal({ open, editId, onClose, onSaved }: PetFormMod
           >
             {TYPES.map((t) => (
               <option key={t} value={t}>
-                {PET_TYPE_LABELS[t]}
+                {tr(PET_TYPE_LABELS[t])}
               </option>
             ))}
           </select>
         </div>
         <div className="form-group">
-          <label className="form-label">نژاد *</label>
+          <label className="form-label">{tr('نژاد *')}</label>
           <input
             className="form-input"
             required
@@ -314,24 +315,24 @@ export function AdminPetFormModal({ open, editId, onClose, onSaved }: PetFormMod
         </div>
         {!isEdit ? (
           <div className="form-group">
-            <label className="form-label">شناسه مالک (ownerId) *</label>
+            <label className="form-label">{tr('شناسه مالک (ownerId) *')}</label>
             <input
               className="form-input"
               required
               dir="ltr"
               value={form.ownerId}
               onChange={(e) => update('ownerId', e.target.value)}
-              placeholder="مثلاً 12"
+              placeholder={tr("مثلاً 12")}
             />
           </div>
         ) : (
           <div className="form-group">
-            <label className="form-label">مالک</label>
+            <label className="form-label">{tr('مالک')}</label>
             <input className="form-input" disabled value={form.ownerName || form.ownerId} />
           </div>
         )}
         <div className="form-group">
-          <label className="form-label">شهر</label>
+          <label className="form-label">{tr('شهر')}</label>
           <input
             className="form-input"
             value={form.city}
@@ -339,7 +340,7 @@ export function AdminPetFormModal({ open, editId, onClose, onSaved }: PetFormMod
           />
         </div>
         <div className="form-group">
-          <label className="form-label">محله</label>
+          <label className="form-label">{tr('محله')}</label>
           <input
             className="form-input"
             value={form.neighborhood}
@@ -347,7 +348,7 @@ export function AdminPetFormModal({ open, editId, onClose, onSaved }: PetFormMod
           />
         </div>
         <div className="form-group">
-          <label className="form-label">سن</label>
+          <label className="form-label">{tr('سن')}</label>
           <input
             type="number"
             min={1}
@@ -357,29 +358,29 @@ export function AdminPetFormModal({ open, editId, onClose, onSaved }: PetFormMod
           />
         </div>
         <div className="form-group">
-          <label className="form-label">واحد سن</label>
+          <label className="form-label">{tr('واحد سن')}</label>
           <select
             className="form-select"
             value={form.ageUnit}
             onChange={(e) => update('ageUnit', e.target.value)}
           >
-            <option value="year">سال</option>
-            <option value="month">ماه</option>
+            <option value="year">{tr('سال')}</option>
+            <option value="month">{tr('ماه')}</option>
           </select>
         </div>
         <div className="form-group">
-          <label className="form-label">جنسیت</label>
+          <label className="form-label">{tr('جنسیت')}</label>
           <select
             className="form-select"
             value={form.gender}
             onChange={(e) => update('gender', e.target.value)}
           >
-            <option value="male">نر</option>
-            <option value="female">ماده</option>
+            <option value="male">{tr('نر')}</option>
+            <option value="female">{tr('ماده')}</option>
           </select>
         </div>
         <div className="form-group">
-          <label className="form-label">سایز</label>
+          <label className="form-label">{tr('سایز')}</label>
           <select
             className="form-select"
             value={form.size}
@@ -387,13 +388,13 @@ export function AdminPetFormModal({ open, editId, onClose, onSaved }: PetFormMod
           >
             {SIZES.map((s) => (
               <option key={s} value={s}>
-                {PET_SIZE_LABELS[s]}
+                {tr(PET_SIZE_LABELS[s])}
               </option>
             ))}
           </select>
         </div>
         <div className="form-group admin-form-full">
-          <label className="form-label">درباره</label>
+          <label className="form-label">{tr('درباره')}</label>
           <textarea
             className="form-textarea"
             value={form.bio}
@@ -401,7 +402,7 @@ export function AdminPetFormModal({ open, editId, onClose, onSaved }: PetFormMod
           />
         </div>
         <div className="form-group admin-form-full">
-          <label className="form-label">لینک عکس (دلخواه)</label>
+          <label className="form-label">{tr('لینک عکس (دلخواه)')}</label>
           <input
             className="form-input"
             value={form.imageUrl}

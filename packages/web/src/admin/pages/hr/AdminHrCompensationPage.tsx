@@ -5,6 +5,7 @@ import { adminFetch, formatNumFa } from '../../api';
 import { adminCan } from '../../auth';
 import { AdminModal } from '../../AdminModal';
 import { HrKpiGrid } from './HrUi';
+import { tr } from '../../../i18n';
 
 export function AdminHrCompensationPage() {
   const [models, setModels] = useState<HrIncomeModel[]>([]);
@@ -57,19 +58,19 @@ export function AdminHrCompensationPage() {
   return (
     <div className="admin-page">
       <header className="admin-header">
-        <div><h1>جبران خدمت (مدل درآمدی)</h1><p>درصد متغیر جایگزین کمیسیون قرارداد می‌شود</p></div>
-        {canWrite ? <button type="button" className="admin-btn" onClick={() => setOpen(true)}>+ مدل جدید</button> : null}
+        <div><h1>{tr('جبران خدمت (مدل درآمدی)')}</h1><p>{tr('درصد متغیر جایگزین کمیسیون قرارداد می‌شود')}</p></div>
+        {canWrite ? <button type="button" className="admin-btn" onClick={() => setOpen(true)}>{tr('+ مدل جدید')}</button> : null}
       </header>
       {error ? <p className="admin-error">{error}</p> : null}
       <HrKpiGrid items={[{ label: 'مدل‌ها', value: models.length, tone: 'mint' }]} />
       <div className="admin-table-wrap">
         <table className="admin-table">
-          <thead><tr><th>نام</th><th>نوع</th><th>ثابت</th><th>درصد</th><th></th></tr></thead>
+          <thead><tr><th>{tr('نام')}</th><th>{tr('نوع')}</th><th>{tr('ثابت')}</th><th>{tr('درصد')}</th><th></th></tr></thead>
           <tbody>
             {models.map((m) => (
               <tr key={m.id}>
-                <td>{m.name}</td><td>{m.type}</td><td>{formatNumFa(m.variableAmount)}</td><td>{formatNumFa(m.variablePercent)}٪</td>
-                <td>{canWrite ? <button type="button" className="admin-btn admin-btn--ghost" onClick={() => void adminFetch(`/api/admin/hr/settings/income-models/${m.id}`, { method: 'DELETE' }).then(load)}>حذف</button> : null}</td>
+                <td>{m.name}</td><td>{m.type}</td><td>{formatNumFa(m.variableAmount)}</td><td>{formatNumFa(m.variablePercent)}{tr('٪')}</td>
+                <td>{canWrite ? <button type="button" className="admin-btn admin-btn--ghost" onClick={() => void adminFetch(`/api/admin/hr/settings/income-models/${m.id}`, { method: 'DELETE' }).then(load)}>{tr('حذف')}</button> : null}</td>
               </tr>
             ))}
           </tbody>
@@ -78,36 +79,36 @@ export function AdminHrCompensationPage() {
 
       <AdminModal
         open={open}
-        title="مدل درآمدی جدید"
+        title={tr("مدل درآمدی جدید")}
         onClose={() => setOpen(false)}
         as="form"
         onSubmit={(e) => void add(e)}
         busy={busy}
         footer={
           <>
-            <button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>ذخیره</button>
-            <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setOpen(false)}>انصراف</button>
+            <button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>{tr('ذخیره')}</button>
+            <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setOpen(false)}>{tr('انصراف')}</button>
           </>
         }
       >
         <label>
-          <span className="form-label">نام مدل</span>
+          <span className="form-label">{tr('نام مدل')}</span>
           <input className="form-input" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
         </label>
         <label>
-          <span className="form-label">نوع</span>
+          <span className="form-label">{tr('نوع')}</span>
           <select className="form-input" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
             {HR_INCOME_MODEL_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
           </select>
         </label>
         {showFixedAmount ? (
           <label>
-            <span className="form-label">مبلغ ثابت</span>
+            <span className="form-label">{tr('مبلغ ثابت')}</span>
             <input className="form-input" dir="ltr" value={form.variableAmount} onChange={(e) => setForm({ ...form, variableAmount: e.target.value })} />
           </label>
         ) : null}
         <label>
-          <span className="form-label">درصد متغیر</span>
+          <span className="form-label">{tr('درصد متغیر')}</span>
           <input className="form-input" dir="ltr" value={form.variablePercent} onChange={(e) => setForm({ ...form, variablePercent: e.target.value })} />
         </label>
       </AdminModal>

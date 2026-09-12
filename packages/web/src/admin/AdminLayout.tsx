@@ -17,7 +17,7 @@ import { resolvePublicMediaUrl } from '../lib/api';
 import { SalesCallSimProvider } from './pages/sales/SalesCallSim';
 import { ThemeToggle } from '../components/ThemeToggle';
 import { LanguageToggle } from '../components/LanguageToggle';
-import { useI18n } from '../i18n';
+import { tr, useI18n } from '../i18n';
 import '../styles/admin.css';
 
 type SalesBadgeKey = keyof SalesNavCounts;
@@ -38,7 +38,7 @@ type NavGroup = { titleKey: string; items: NavItem[] };
 
 function adminInitials(label?: string | null): string {
   const t = String(label ?? '').trim();
-  if (!t) return '؟';
+  if (!t) return '?';
   const parts = t.split(/\s+/).filter(Boolean);
   if (parts.length >= 2) return `${parts[0]![0] ?? ''}${parts[1]![0] ?? ''}`.slice(0, 2);
   return t.slice(0, 2);
@@ -374,8 +374,7 @@ function AdminLayoutInner() {
   const role = getAdminRole();
   const roleLabel =
     getAdminDisplayName() ||
-    ADMIN_PANEL_ROLE_LABELS[role] ||
-    (role === 'admin' ? t('admin.manager') : role);
+    tr(ADMIN_PANEL_ROLE_LABELS[role] || (role === 'admin' ? t('admin.manager') : role || ''));
   const resolvedAvatar = resolvePublicMediaUrl(avatarUrl);
   const showAvatarImg = Boolean(resolvedAvatar) && !avatarFailed;
 

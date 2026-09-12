@@ -12,6 +12,7 @@ import {
 import { adminFetch, formatNumFa } from '../../api';
 import { adminCan, getAdminRole } from '../../auth';
 import { AdminModal } from '../../AdminModal';
+import { tr } from '../../../i18n';
 
 type RoleForm = {
   id?: number;
@@ -115,10 +116,10 @@ export function AdminHrRbacPage() {
   const removeRole = async (role: AdminRoleDef) => {
     if (!canMutate) return;
     if ((ADMIN_SYSTEM_ROLE_KEYS as readonly string[]).includes(role.key)) {
-      setError('نقش سیستم را نمی‌توان حذف کرد');
+      setError(tr('نقش سیستم را نمی‌توان حذف کرد'));
       return;
     }
-    if (!confirm(`حذف یا غیرفعال‌سازی نقش «${role.nameFa}»؟`)) return;
+    if (!confirm(`${tr('حذف یا غیرفعال‌سازی نقش «')}${role.nameFa}${tr('»؟')}`)) return;
     setBusy(true);
     try {
       await adminFetch(`/api/admin/hr/rbac/roles/${role.id}`, { method: 'DELETE' });
@@ -169,7 +170,7 @@ export function AdminHrRbacPage() {
 
   const removeAccount = async (account: AdminAccount) => {
     if (!canMutate) return;
-    if (!confirm(`حذف حساب «${account.username}»؟`)) return;
+    if (!confirm(`${tr('حذف حساب «')}${account.username}${tr('»؟')}`)) return;
     setBusy(true);
     try {
       await adminFetch(`/api/admin/hr/rbac/accounts/${account.id}`, { method: 'DELETE' });
@@ -202,22 +203,22 @@ export function AdminHrRbacPage() {
       (m) => m.view === p || m.edit === p || m.create === p
     );
     if (!mod) return known;
-    if (mod.view === p) return `${mod.labelFa} · دیدن`;
-    if (mod.edit === p) return `${mod.labelFa} · ویرایش`;
-    return `${mod.labelFa} · ایجاد`;
+    if (mod.view === p) return `${mod.labelFa}${tr(' · دیدن')}`;
+    if (mod.edit === p) return `${mod.labelFa}${tr(' · ویرایش')}`;
+    return `${mod.labelFa}${tr(' · ایجاد')}`;
   };
 
   return (
     <div className="admin-page">
       <header className="admin-header">
         <div>
-          <h1>نقش‌ها و دسترسی</h1>
+          <h1>{tr('نقش‌ها و دسترسی')}</h1>
           <p>
-            نقش فعلی شما:{' '}
+            {tr('نقش فعلی شما:')}{' '}
             <b>
-              {ADMIN_PANEL_ROLE_LABELS[currentRole] || currentRole}
+              {tr(ADMIN_PANEL_ROLE_LABELS[currentRole] || currentRole)}
             </b>{' '}
-            · تعریف سطح دسترسی و حساب‌های پنل از همین صفحه
+            {tr('· تعریف سطح دسترسی و حساب‌های پنل از همین صفحه')}
           </p>
         </div>
         {canMutate ? (
@@ -227,7 +228,7 @@ export function AdminHrRbacPage() {
               className="admin-btn admin-btn--primary"
               onClick={() => setRoleForm(emptyRole())}
             >
-              نقش جدید
+              {tr('نقش جدید')}
             </button>
             <button
               type="button"
@@ -236,7 +237,7 @@ export function AdminHrRbacPage() {
                 setAccountForm(emptyAccount(activeRoles[0]?.key || 'support'))
               }
             >
-              حساب پنل جدید
+              {tr('حساب پنل جدید')}
             </button>
           </div>
         ) : null}
@@ -245,17 +246,17 @@ export function AdminHrRbacPage() {
 
       <section className="admin-card" style={{ padding: 16, marginBottom: 16 }}>
         <h2 style={{ marginTop: 0, fontSize: '1rem' }}>
-          نقش‌های پنل ({formatNumFa(roles.length)})
+          {tr('نقش‌های پنل (')}{formatNumFa(roles.length)})
         </h2>
         <div className="admin-table-wrap">
           <table className="admin-table admin-table--dense">
             <thead>
               <tr>
-                <th>کلید</th>
-                <th>نام</th>
-                <th>شرح</th>
-                <th>مجوزها</th>
-                <th>وضعیت</th>
+                <th>{tr('کلید')}</th>
+                <th>{tr('نام')}</th>
+                <th>{tr('شرح')}</th>
+                <th>{tr('مجوزها')}</th>
+                <th>{tr('وضعیت')}</th>
                 {canMutate ? <th></th> : null}
               </tr>
             </thead>
@@ -267,11 +268,11 @@ export function AdminHrRbacPage() {
                     <b>{r.nameFa}</b>
                     {r.key === 'support' ? (
                       <span className="admin-pill admin-pill--mint" style={{ marginInlineStart: 8 }}>
-                        پشتیبانی
+                        {tr('پشتیبانی')}
                       </span>
                     ) : null}
                   </td>
-                  <td>{r.description || '—'}</td>
+                  <td>{tr(r.description || '—')}</td>
                   <td>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
                       {r.permissions.length ? (
@@ -285,7 +286,7 @@ export function AdminHrRbacPage() {
                       )}
                     </div>
                   </td>
-                  <td>{r.isActive ? 'فعال' : 'غیرفعال'}</td>
+                  <td>{r.isActive ? tr('فعال') : tr('غیرفعال')}</td>
                   {canMutate ? (
                     <td>
                       <div className="admin-row-actions">
@@ -306,7 +307,7 @@ export function AdminHrRbacPage() {
                             })
                           }
                         >
-                          ویرایش
+                          {tr('ویرایش')}
                         </button>
                         {!(ADMIN_SYSTEM_ROLE_KEYS as readonly string[]).includes(r.key) ? (
                           <button
@@ -315,7 +316,7 @@ export function AdminHrRbacPage() {
                             disabled={busy}
                             onClick={() => void removeRole(r)}
                           >
-                            حذف
+                            {tr('حذف')}
                           </button>
                         ) : null}
                       </div>
@@ -326,7 +327,7 @@ export function AdminHrRbacPage() {
               {!roles.length ? (
                 <tr>
                   <td colSpan={canMutate ? 6 : 5} className="admin-muted">
-                    نقشی ثبت نشده
+                    {tr('نقشی ثبت نشده')}
                   </td>
                 </tr>
               ) : null}
@@ -334,29 +335,29 @@ export function AdminHrRbacPage() {
           </table>
         </div>
         <p className="admin-muted" style={{ marginTop: 12 }}>
-          bootstrap مدیر کامل همچنان با <code>ADMIN_PASSWORD</code> کار می‌کند.
-          <code>ADMIN_SUPPORT_PASSWORD</code> فقط برای seed اختیاری حساب پشتیبانی است — بقیهٔ
-          حساب‌ها را از همین صفحه بسازید.
+          {tr('bootstrap مدیر کامل همچنان با')} <code>ADMIN_PASSWORD</code> {tr('کار می‌کند.')}
+          <code>ADMIN_SUPPORT_PASSWORD</code> {tr(`فقط برای seed اختیاری حساب پشتیبانی است — بقیهٔ
+          حساب‌ها را از همین صفحه بسازید.`)}
         </p>
       </section>
 
       <section className="admin-card" style={{ padding: 16 }}>
         <h2 style={{ marginTop: 0, fontSize: '1rem' }}>
-          حساب‌های پنل ({formatNumFa(accounts.length)})
+          {tr('حساب‌های پنل (')}{formatNumFa(accounts.length)})
         </h2>
         {accounts.length === 0 ? (
           <p className="admin-muted">
-            هنوز حسابی در دیتابیس نیست. برای افزودن کاربر پشتیبانی / HR روی «حساب پنل جدید» بزنید.
+            {tr('هنوز حسابی در دیتابیس نیست. برای افزودن کاربر پشتیبانی / HR روی «حساب پنل جدید» بزنید.')}
           </p>
         ) : (
           <div className="admin-table-wrap">
             <table className="admin-table admin-table--dense">
               <thead>
                 <tr>
-                  <th>کاربری</th>
-                  <th>نام نمایشی</th>
-                  <th>نقش</th>
-                  <th>فعال</th>
+                  <th>{tr('کاربری')}</th>
+                  <th>{tr('نام نمایشی')}</th>
+                  <th>{tr('نقش')}</th>
+                  <th>{tr('فعال')}</th>
                   {canMutate ? <th></th> : null}
                 </tr>
               </thead>
@@ -366,11 +367,13 @@ export function AdminHrRbacPage() {
                     <td className="admin-mono">{a.username}</td>
                     <td>{a.displayName}</td>
                     <td>
-                      {ADMIN_PANEL_ROLE_LABELS[a.roleKey] ||
-                        roles.find((r) => r.key === a.roleKey)?.nameFa ||
-                        a.roleKey}
+                      {tr(
+                        ADMIN_PANEL_ROLE_LABELS[a.roleKey] ||
+                          roles.find((r) => r.key === a.roleKey)?.nameFa ||
+                          a.roleKey,
+                      )}
                     </td>
-                    <td>{a.isActive ? 'بله' : 'خیر'}</td>
+                    <td>{a.isActive ? tr('بله') : tr('خیر')}</td>
                     {canMutate ? (
                       <td>
                         <div className="admin-row-actions">
@@ -389,7 +392,7 @@ export function AdminHrRbacPage() {
                               })
                             }
                           >
-                            ویرایش
+                            {tr('ویرایش')}
                           </button>
                           <button
                             type="button"
@@ -397,7 +400,7 @@ export function AdminHrRbacPage() {
                             disabled={busy}
                             onClick={() => void removeAccount(a)}
                           >
-                            حذف
+                            {tr('حذف')}
                           </button>
                         </div>
                       </td>
@@ -413,7 +416,7 @@ export function AdminHrRbacPage() {
       {roleForm ? (
         <AdminModal
           open
-          title={roleForm.id ? 'ویرایش نقش' : 'نقش جدید'}
+          title={roleForm.id ? tr('ویرایش نقش') : tr('نقش جدید')}
           onClose={() => !busy && setRoleForm(null)}
           size="full"
           as="form"
@@ -421,30 +424,30 @@ export function AdminHrRbacPage() {
           busy={busy}
           footer={
             <>
-              <button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>ذخیره</button>
-              <button type="button" className="admin-btn admin-btn--ghost" onClick={() => setRoleForm(null)}>انصراف</button>
+              <button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>{tr('ذخیره')}</button>
+              <button type="button" className="admin-btn admin-btn--ghost" onClick={() => setRoleForm(null)}>{tr('انصراف')}</button>
             </>
           }
         >
             {!roleForm.id ? (
               <label>
-                <span className="form-label">کلید (لاتین)</span>
+                <span className="form-label">{tr('کلید (لاتین)')}</span>
                 <input
                   className="form-input"
                   required
                   dir="ltr"
-                  placeholder="مثلاً content_ops"
+                  placeholder={tr("مثلاً content_ops")}
                   value={roleForm.key}
                   onChange={(e) => setRoleForm({ ...roleForm, key: e.target.value })}
                 />
               </label>
             ) : (
               <p className="admin-muted">
-                کلید: <code className="admin-mono">{roleForm.key}</code>
+                {tr('کلید:')} <code className="admin-mono">{roleForm.key}</code>
               </p>
             )}
             <label>
-              <span className="form-label">نام فارسی</span>
+              <span className="form-label">{tr('نام فارسی')}</span>
               <input
                 className="form-input"
                 required
@@ -453,15 +456,15 @@ export function AdminHrRbacPage() {
               />
             </label>
             <label>
-              <span className="form-label">شرح</span>
+              <span className="form-label">{tr('شرح')}</span>
               <input
                 className="form-input"
-                value={roleForm.description}
+                value={tr(roleForm.description)}
                 onChange={(e) => setRoleForm({ ...roleForm, description: e.target.value })}
               />
             </label>
             <fieldset style={{ border: 'none', padding: 0, margin: '12px 0' }}>
-              <legend className="form-label">مجوزها</legend>
+              <legend className="form-label">{tr('مجوزها')}</legend>
               <label className="admin-perm-master">
                 <input
                   type="checkbox"
@@ -469,7 +472,7 @@ export function AdminHrRbacPage() {
                   onChange={() => togglePerm('admin.full')}
                 />
                 <span>
-                  {ADMIN_PERMISSION_LABELS['admin.full']}
+                  {tr(ADMIN_PERMISSION_LABELS['admin.full'])}
                   <span className="admin-muted" style={{ marginInlineStart: 6 }} dir="ltr">
                     admin.full
                   </span>
@@ -479,10 +482,10 @@ export function AdminHrRbacPage() {
                 <table className="admin-perm-matrix">
                   <thead>
                     <tr>
-                      <th scope="col">ماژول</th>
+                      <th scope="col">{tr('ماژول')}</th>
                       {ADMIN_PERMISSION_ACTIONS.map((action) => (
                         <th key={action} scope="col">
-                          {ADMIN_PERMISSION_ACTION_LABELS[action]}
+                          {tr(ADMIN_PERMISSION_ACTION_LABELS[action])}
                         </th>
                       ))}
                     </tr>
@@ -517,8 +520,8 @@ export function AdminHrRbacPage() {
                 </table>
               </div>
               <p className="admin-hint admin-muted">
-                ستون‌ها: دیدن = خواندن، ویرایش = نوشتن، ایجاد = ساختن یا مدیریت سطح بالا
-                (برای فروش و امور مشتریان همان کلید <code dir="ltr">*.admin</code>).
+                {tr(`ستون‌ها: دیدن = خواندن، ویرایش = نوشتن، ایجاد = ساختن یا مدیریت سطح بالا
+                (برای فروش و امور مشتریان همان کلید`)} <code dir="ltr">*.admin</code>).
               </p>
             </fieldset>
             {roleForm.id &&
@@ -529,7 +532,7 @@ export function AdminHrRbacPage() {
                   checked={roleForm.isActive}
                   onChange={(e) => setRoleForm({ ...roleForm, isActive: e.target.checked })}
                 />
-                <span>فعال</span>
+                <span>{tr('فعال')}</span>
               </label>
             ) : null}
         </AdminModal>
@@ -538,7 +541,7 @@ export function AdminHrRbacPage() {
       {accountForm ? (
         <AdminModal
           open
-          title={accountForm.id ? 'ویرایش حساب پنل' : 'حساب پنل جدید'}
+          title={accountForm.id ? tr('ویرایش حساب پنل') : tr('حساب پنل جدید')}
           onClose={() => !busy && setAccountForm(null)}
           size="md"
           as="form"
@@ -546,18 +549,18 @@ export function AdminHrRbacPage() {
           busy={busy}
           footer={
             <>
-              <button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>ذخیره</button>
-              <button type="button" className="admin-btn admin-btn--ghost" onClick={() => setAccountForm(null)}>انصراف</button>
+              <button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>{tr('ذخیره')}</button>
+              <button type="button" className="admin-btn admin-btn--ghost" onClick={() => setAccountForm(null)}>{tr('انصراف')}</button>
             </>
           }
         >
             {accountForm.id ? (
               <p className="admin-muted">
-                کاربری: <code className="admin-mono">{accountForm.username}</code>
+                {tr('کاربری:')} <code className="admin-mono">{accountForm.username}</code>
               </p>
             ) : (
               <label>
-                <span className="form-label">نام کاربری</span>
+                <span className="form-label">{tr('نام کاربری')}</span>
                 <input
                   className="form-input"
                   required
@@ -569,7 +572,7 @@ export function AdminHrRbacPage() {
               </label>
             )}
             <label>
-              <span className="form-label">نام نمایشی</span>
+              <span className="form-label">{tr('نام نمایشی')}</span>
               <input
                 className="form-input"
                 value={accountForm.displayName}
@@ -578,7 +581,7 @@ export function AdminHrRbacPage() {
             </label>
             <label>
               <span className="form-label">
-                رمز عبور{accountForm.id ? ' (خالی = بدون تغییر)' : ''}
+                {tr('رمز عبور')}{accountForm.id ? tr(' (خالی = بدون تغییر)') : ''}
               </span>
               <input
                 className="form-input"
@@ -591,7 +594,7 @@ export function AdminHrRbacPage() {
               />
             </label>
             <label>
-              <span className="form-label">نقش</span>
+              <span className="form-label">{tr('نقش')}</span>
               <select
                 className="admin-select"
                 value={accountForm.roleKey}
@@ -615,7 +618,7 @@ export function AdminHrRbacPage() {
                 checked={accountForm.isActive}
                 onChange={(e) => setAccountForm({ ...accountForm, isActive: e.target.checked })}
               />
-              <span>فعال</span>
+              <span>{tr('فعال')}</span>
             </label>
         </AdminModal>
       ) : null}

@@ -3,6 +3,7 @@ import { BadgeCheck, RefreshCw } from 'lucide-react';
 import type { User } from '@petdate/shared';
 import { FACE_VERIFY_REWARD, VERIFIED_BADGE, formatFaInt, userPublicIdOf } from '@petdate/shared';
 import { API_BASE, adminFetch } from '../api';
+import { tr } from '../../i18n';
 
 async function fetchPending(): Promise<User[]> {
   return adminFetch<User[]>('/api/users/verification/pending');
@@ -75,25 +76,25 @@ export function AdminVerificationPage() {
         <div>
           <h1>
             <BadgeCheck size={22} style={{ verticalAlign: 'middle', marginLeft: 8 }} />
-            احراز هویت
+            {tr('احراز هویت')}
           </h1>
           <p>
-            صف بررسی سلفی احراز — پس از تأیید، {VERIFIED_BADGE} و{' '}
-            {formatFaInt(FACE_VERIFY_REWARD)} سکه جایزه
+            {tr('صف بررسی سلفی احراز — پس از تأیید،')} {VERIFIED_BADGE} {tr('و')}{' '}
+            {formatFaInt(FACE_VERIFY_REWARD)} {tr('سکه جایزه')}
           </p>
         </div>
         <button type="button" className="admin-btn" onClick={() => void load()} disabled={loading}>
           <RefreshCw size={16} />
-          🔄 بروزرسانی
+          {tr('🔄 بروزرسانی')}
         </button>
       </header>
 
       {error && <p className="muted" style={{ color: '#b91c1c' }}>{error}</p>}
-      {loading && <p className="muted">در حال بارگذاری…</p>}
+      {loading && <p className="muted">{tr('در حال بارگذاری…')}</p>}
 
       {!loading && items.length === 0 && (
         <div className="admin-card">
-          <p className="muted">صف احراز خالی است.</p>
+          <p className="muted">{tr('صف احراز خالی است.')}</p>
         </div>
       )}
 
@@ -121,7 +122,7 @@ export function AdminVerificationPage() {
                   <a href={src} target="_blank" rel="noreferrer">
                     <img
                       src={src}
-                      alt={`احراز ${user.name}`}
+                      alt={`${tr('احراز ')}${user.name}`}
                       style={{
                         maxWidth: 220,
                         maxHeight: 280,
@@ -141,7 +142,7 @@ export function AdminVerificationPage() {
                 disabled={busyId === user.id}
                 onClick={() => void onApprove(user.id)}
               >
-                ✅ تأیید (+{formatFaInt(FACE_VERIFY_REWARD)} سکه)
+                {tr('✅ تأیید (+')}{formatFaInt(FACE_VERIFY_REWARD)} {tr('سکه)')}
               </button>
               <button
                 type="button"
@@ -149,7 +150,7 @@ export function AdminVerificationPage() {
                 disabled={busyId === user.id}
                 onClick={() => void onReject(user.id)}
               >
-                ❌ رد
+                {tr('❌ رد')}
               </button>
             </div>
           </article>

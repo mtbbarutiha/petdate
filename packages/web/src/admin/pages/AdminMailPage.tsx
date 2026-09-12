@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Inbox, Mail, PenLine, RefreshCw, Reply, Send } from 'lucide-react';
 import { adminFetch, formatNumFa } from '../api';
 import { formatAdminFaDateTime } from '../JalaliDateSelect';
+import { tr } from '../../i18n';
 
 type SmtpConfig = {
   configured: boolean;
@@ -245,10 +246,10 @@ export function AdminMailPage() {
       <header className="admin-header">
         <div>
           <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Mail size={20} /> ایمیل / SMTP
+            <Mail size={20} /> {tr('ایمیل / SMTP')}
           </h2>
           <p className="admin-muted" style={{ margin: '6px 0 0' }}>
-            صندوق ورودی، نوشتن/پاسخ، پیکربندی SMTP و وضعیت OTP
+            {tr('صندوق ورودی، نوشتن/پاسخ، پیکربندی SMTP و وضعیت OTP')}
           </p>
         </div>
         <button
@@ -260,7 +261,7 @@ export function AdminMailPage() {
           }}
           disabled={loading || inboxLoading}
         >
-          <RefreshCw size={16} /> بروزرسانی
+          <RefreshCw size={16} /> {tr('بروزرسانی')}
         </button>
       </header>
 
@@ -268,39 +269,39 @@ export function AdminMailPage() {
 
       <div className="admin-stats admin-stats--dense">
         <div className={`admin-stat admin-stat--${smtp?.configured ? 'mint' : 'orange'}`}>
-          <div className="admin-stat-value">{smtp?.configured ? 'فعال' : 'خاموش'}</div>
+          <div className="admin-stat-value">{smtp?.configured ? tr('فعال') : tr('خاموش')}</div>
           <div className="admin-stat-label">SMTP</div>
         </div>
         <div className={`admin-stat admin-stat--${inbox?.configured ? 'sky' : 'slate'}`}>
           <div className="admin-stat-value">{formatNumFa(inbox?.unread ?? 0)}</div>
-          <div className="admin-stat-label">خوانده‌نشده</div>
+          <div className="admin-stat-label">{tr('خوانده‌نشده')}</div>
         </div>
         <div className={`admin-stat admin-stat--${otpMailer?.linked ? 'mint' : 'orange'}`}>
-          <div className="admin-stat-value">{otpMailer?.linked ? 'وصل' : 'قطع'}</div>
-          <div className="admin-stat-label">OTP ایمیل</div>
+          <div className="admin-stat-value">{otpMailer?.linked ? tr('وصل') : tr('قطع')}</div>
+          <div className="admin-stat-label">{tr('OTP ایمیل')}</div>
         </div>
         <div className="admin-stat admin-stat--violet">
           <div className="admin-stat-value">{formatNumFa(data?.stats.ok24h ?? 0)}</div>
-          <div className="admin-stat-label">موفق ۲۴س</div>
+          <div className="admin-stat-label">{tr('موفق ۲۴س')}</div>
         </div>
         <div className="admin-stat admin-stat--orange">
           <div className="admin-stat-value">{formatNumFa(data?.stats.fail24h ?? 0)}</div>
-          <div className="admin-stat-label">ناموفق ۲۴س</div>
+          <div className="admin-stat-label">{tr('ناموفق ۲۴س')}</div>
         </div>
       </div>
 
       <section className="admin-card" style={{ marginTop: 16 }}>
         <div className="admin-card-head">
           <h2 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Inbox size={18} /> صندوق ورودی
+            <Inbox size={18} /> {tr('صندوق ورودی')}
             <span className="admin-muted" style={{ fontWeight: 400, fontSize: 13 }}>
-              {inbox?.address || 'info@petdate.ir'} — {formatNumFa(inboxItems.length)} پیام
+              {inbox?.address || 'info@petdate.ir'} — {formatNumFa(inboxItems.length)} {tr('پیام')}
             </span>
           </h2>
         </div>
         {inboxError ? <p className="admin-error">{inboxError}</p> : null}
         <div className="admin-mail-inbox">
-          <div className="admin-mail-list" role="list" aria-label="لیست پیام‌ها">
+          <div className="admin-mail-list" role="list" aria-label={tr("لیست پیام‌ها")}>
             {inboxItems.map((row) => {
               const fromLabel = row.fromName
                 ? `${row.fromName} <${row.from}>`
@@ -333,7 +334,7 @@ export function AdminMailPage() {
                       </span>
                     </span>
                     <span className="admin-mail-item-subject" title={row.subject || undefined}>
-                      {row.subject || '(بدون موضوع)'}
+                      {row.subject || tr('(بدون موضوع)')}
                     </span>
                     <span className="admin-mail-item-preview admin-muted" title={row.preview || undefined}>
                       {row.preview || '—'}
@@ -344,7 +345,7 @@ export function AdminMailPage() {
             })}
             {!inboxItems.length ? (
               <p className="admin-mail-list-empty admin-muted">
-                {inboxLoading ? 'در حال بارگذاری…' : 'پیامی در صندوق نیست'}
+                {inboxLoading ? tr('در حال بارگذاری…') : tr('پیامی در صندوق نیست')}
               </p>
             ) : null}
           </div>
@@ -354,33 +355,33 @@ export function AdminMailPage() {
               <>
                 <ul className="admin-kv">
                   <li>
-                    <span>از</span>
+                    <span>{tr('از')}</span>
                     <strong className="admin-mono" dir="ltr">
                       {selected.fromName ? `${selected.fromName} <${selected.from}>` : selected.from}
                     </strong>
                   </li>
                   <li>
-                    <span>موضوع</span>
+                    <span>{tr('موضوع')}</span>
                     <strong>{selected.subject}</strong>
                   </li>
                   <li>
-                    <span>زمان</span>
+                    <span>{tr('زمان')}</span>
                     <strong className="admin-mono">{selected.date || '—'}</strong>
                   </li>
                 </ul>
                 <pre className="admin-mail-body">
-                  {selected.text || '(بدون متن ساده — ممکن است فقط HTML باشد)'}
+                  {selected.text || tr('(بدون متن ساده — ممکن است فقط HTML باشد)')}
                 </pre>
                 <div className="form-group" style={{ marginTop: 12 }}>
                   <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <Reply size={14} /> پاسخ به {selected.from}
+                    <Reply size={14} /> {tr('پاسخ به')} {selected.from}
                   </label>
                   <textarea
                     className="form-textarea"
                     rows={5}
                     value={replyBody}
                     onChange={(e) => setReplyBody(e.target.value)}
-                    placeholder="متن پاسخ را بنویسید…"
+                    placeholder={tr("متن پاسخ را بنویسید…")}
                   />
                 </div>
                 <button
@@ -389,7 +390,7 @@ export function AdminMailPage() {
                   disabled={replyBusy || !replyBody.trim() || !smtp?.configured}
                   onClick={() => void sendReply()}
                 >
-                  <Send size={16} /> {replyBusy ? 'در حال ارسال…' : 'ارسال پاسخ'}
+                  <Send size={16} /> {replyBusy ? tr('در حال ارسال…') : tr('ارسال پاسخ')}
                 </button>
                 {replyMsg ? (
                   <p className={replyOk ? 'admin-muted' : 'admin-error'} style={{ marginTop: 12 }}>
@@ -399,7 +400,7 @@ export function AdminMailPage() {
               </>
             ) : (
               <p className="admin-mail-empty admin-muted">
-                یک پیام از لیست پیام‌ها انتخاب کنید تا بخوانید و پاسخ دهید.
+                {tr('یک پیام از لیست پیام‌ها انتخاب کنید تا بخوانید و پاسخ دهید.')}
               </p>
             )}
           </div>
@@ -408,49 +409,49 @@ export function AdminMailPage() {
 
       <div className="admin-dash-grid" style={{ marginTop: 16 }}>
         <section className="admin-card">
-          <div className="admin-card-head"><h2>پیکربندی SMTP</h2></div>
+          <div className="admin-card-head"><h2>{tr('پیکربندی SMTP')}</h2></div>
           {smtp ? (
             <ul className="admin-kv">
               <li><span>Host</span><strong className="admin-mono">{smtp.host || '—'}</strong></li>
               <li><span>Port</span><strong className="admin-mono">{smtp.port}</strong></li>
               <li><span>From</span><strong className="admin-mono">{smtp.fromName} &lt;{smtp.from}&gt;</strong></li>
               <li><span>Inbox</span><strong className="admin-mono">{inbox?.address || 'info@petdate.ir'}</strong></li>
-              <li><span>User</span><strong className="admin-mono">{smtp.user || 'بدون auth'}</strong></li>
-              <li><span>Auth</span><strong>{smtp.authConfigured ? 'بله (رمز مخفی)' : 'خیر'}</strong></li>
+              <li><span>User</span><strong className="admin-mono">{smtp.user || tr('بدون auth')}</strong></li>
+              <li><span>Auth</span><strong>{smtp.authConfigured ? tr('بله (رمز مخفی)') : tr('خیر')}</strong></li>
               <li><span>Reachability</span><strong>{data?.smtpReachable.detail}</strong></li>
             </ul>
           ) : (
-            <p className="admin-muted">{loading ? '…' : 'داده‌ای نیست'}</p>
+            <p className="admin-muted">{loading ? '…' : tr('داده‌ای نیست')}</p>
           )}
         </section>
 
         <section className="admin-card">
-          <div className="admin-card-head"><h2>وضعیت OTP ایمیل</h2></div>
+          <div className="admin-card-head"><h2>{tr('وضعیت OTP ایمیل')}</h2></div>
           <ul className="admin-kv">
             <li>
-              <span>اتصال به SMTP</span>
-              <strong>{otpMailer?.linked ? 'بله — همان میلر' : 'خیر'}</strong>
+              <span>{tr('اتصال به SMTP')}</span>
+              <strong>{otpMailer?.linked ? tr('بله — همان میلر') : tr('خیر')}</strong>
             </li>
             <li>
               <span>purpose</span>
               <strong className="admin-mono">{otpMailer?.purpose || 'login_otp'}</strong>
             </li>
             <li>
-              <span>OTP موفق ۲۴س</span>
+              <span>{tr('OTP موفق ۲۴س')}</span>
               <strong>{formatNumFa(otpMailer?.ok24h ?? data?.stats.otpOk24h ?? 0)}</strong>
             </li>
             <li>
-              <span>OTP ناموفق ۲۴س</span>
+              <span>{tr('OTP ناموفق ۲۴س')}</span>
               <strong>{formatNumFa(otpMailer?.fail24h ?? data?.stats.otpFail24h ?? 0)}</strong>
             </li>
             <li>
-              <span>OTP فعال</span>
+              <span>{tr('OTP فعال')}</span>
               <strong>{formatNumFa(otpMailer?.pendingCount ?? data?.pendingEmailOtps.length ?? 0)}</strong>
             </li>
           </ul>
           <p className="admin-muted" style={{ marginTop: 12 }}>
             {otpMailer?.detail ||
-              'ورود وب با کانال ایمیل از همین SMTP می‌رود. کد در لاگ سرور چاپ نمی‌شود.'}
+              tr('ورود وب با کانال ایمیل از همین SMTP می‌رود. کد در لاگ سرور چاپ نمی‌شود.')}
           </p>
         </section>
       </div>
@@ -459,11 +460,11 @@ export function AdminMailPage() {
         <section className="admin-card">
           <div className="admin-card-head">
             <h2 style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <PenLine size={18} /> نوشتن و ارسال ایمیل
+              <PenLine size={18} /> {tr('نوشتن و ارسال ایمیل')}
             </h2>
           </div>
           <div className="form-group">
-            <label className="form-label">فرستنده</label>
+            <label className="form-label">{tr('فرستنده')}</label>
             <select
               className="form-input"
               value={composeFrom}
@@ -472,20 +473,20 @@ export function AdminMailPage() {
               }
             >
               <option value="default">
-                پیش‌فرض SMTP ({smtp?.from || 'no-reply@petdate.ir'})
+                {tr('پیش‌فرض SMTP (')}{smtp?.from || 'no-reply@petdate.ir'})
               </option>
               <option value="newsletter">
-                خبرنامه ({data?.newsletter?.from || 'news@petdate.ir'})
+                {tr('خبرنامه (')}{data?.newsletter?.from || 'news@petdate.ir'})
               </option>
             </select>
             {data?.newsletter ? (
               <p className="admin-muted" style={{ marginTop: 6 }}>
-                اعضای خبرنامه: {formatNumFa(data.newsletter.subscribers)} · Reply-To → info@
+                {tr('اعضای خبرنامه:')} {formatNumFa(data.newsletter.subscribers)} · Reply-To → info@
               </p>
             ) : null}
           </div>
           <div className="form-group">
-            <label className="form-label">گیرنده</label>
+            <label className="form-label">{tr('گیرنده')}</label>
             <input
               className="form-input"
               type="email"
@@ -496,24 +497,24 @@ export function AdminMailPage() {
             />
           </div>
           <div className="form-group">
-            <label className="form-label">موضوع</label>
+            <label className="form-label">{tr('موضوع')}</label>
             <input
               className="form-input"
               type="text"
               value={composeSubject}
               onChange={(e) => setComposeSubject(e.target.value)}
               maxLength={200}
-              placeholder="موضوع ایمیل"
+              placeholder={tr("موضوع ایمیل")}
             />
           </div>
           <div className="form-group">
-            <label className="form-label">متن</label>
+            <label className="form-label">{tr('متن')}</label>
             <textarea
               className="form-textarea"
               rows={8}
               value={composeBody}
               onChange={(e) => setComposeBody(e.target.value)}
-              placeholder="متن ایمیل را بنویسید…"
+              placeholder={tr("متن ایمیل را بنویسید…")}
             />
           </div>
           <button
@@ -522,7 +523,7 @@ export function AdminMailPage() {
             disabled={composeBusy || !composeReady}
             onClick={() => void sendCompose()}
           >
-            <Send size={16} /> {composeBusy ? 'در حال ارسال…' : 'ارسال ایمیل'}
+            <Send size={16} /> {composeBusy ? tr('در حال ارسال…') : tr('ارسال ایمیل')}
           </button>
           {composeMsg ? (
             <p className={composeOk ? 'admin-muted' : 'admin-error'} style={{ marginTop: 12 }}>
@@ -532,9 +533,9 @@ export function AdminMailPage() {
         </section>
 
         <section className="admin-card">
-          <div className="admin-card-head"><h2>ارسال تست سریع</h2></div>
+          <div className="admin-card-head"><h2>{tr('ارسال تست سریع')}</h2></div>
           <div className="form-group">
-            <label className="form-label">آدرس گیرنده</label>
+            <label className="form-label">{tr('آدرس گیرنده')}</label>
             <input
               className="form-input"
               type="email"
@@ -550,7 +551,7 @@ export function AdminMailPage() {
             disabled={testBusy || !testTo.trim() || !smtp?.configured}
             onClick={() => void sendTest()}
           >
-            <Send size={16} /> {testBusy ? 'در حال ارسال…' : 'ارسال ایمیل تست'}
+            <Send size={16} /> {testBusy ? tr('در حال ارسال…') : tr('ارسال ایمیل تست')}
           </button>
           {testMsg ? (
             <p className={testOk ? 'admin-muted' : 'admin-error'} style={{ marginTop: 12 }}>
@@ -558,23 +559,23 @@ export function AdminMailPage() {
             </p>
           ) : null}
           <p className="admin-muted" style={{ marginTop: 12 }}>
-            تست فقط وضعیت SMTP را چک می‌کند. برای پیام دلخواه از «نوشتن و ارسال ایمیل» استفاده کنید.
+            {tr('تست فقط وضعیت SMTP را چک می‌کند. برای پیام دلخواه از «نوشتن و ارسال ایمیل» استفاده کنید.')}
           </p>
         </section>
       </div>
 
       <section className="admin-card" style={{ marginTop: 16 }}>
-        <div className="admin-card-head"><h2>تلاش‌های اخیر ارسال</h2></div>
+        <div className="admin-card-head"><h2>{tr('تلاش‌های اخیر ارسال')}</h2></div>
         <div className="admin-table-wrap">
           <table className="admin-table">
             <thead>
               <tr>
-                <th>زمان</th>
-                <th>به</th>
-                <th>موضوع</th>
-                <th>نوع</th>
-                <th>وضعیت</th>
-                <th>خطا</th>
+                <th>{tr('زمان')}</th>
+                <th>{tr('به')}</th>
+                <th>{tr('موضوع')}</th>
+                <th>{tr('نوع')}</th>
+                <th>{tr('وضعیت')}</th>
+                <th>{tr('خطا')}</th>
               </tr>
             </thead>
             <tbody>
@@ -586,14 +587,14 @@ export function AdminMailPage() {
                   <td><span className="admin-badge">{row.purpose || '—'}</span></td>
                   <td>
                     <span className={`admin-status admin-status--${row.ok ? 'accepted' : 'rejected'}`}>
-                      {row.ok ? 'موفق' : 'ناموفق'}
+                      {row.ok ? tr('موفق') : tr('ناموفق')}
                     </span>
                   </td>
                   <td className="admin-muted">{row.error || '—'}</td>
                 </tr>
               ))}
               {!data?.recentSends?.length ? (
-                <tr><td colSpan={6} className="admin-muted">هنوز لاگی ثبت نشده — بعد از OTP یا ارسال اینجا می‌آید</td></tr>
+                <tr><td colSpan={6} className="admin-muted">{tr('هنوز لاگی ثبت نشده — بعد از OTP یا ارسال اینجا می‌آید')}</td></tr>
               ) : null}
             </tbody>
           </table>
@@ -601,15 +602,15 @@ export function AdminMailPage() {
       </section>
 
       <section className="admin-card" style={{ marginTop: 16 }}>
-        <div className="admin-card-head"><h2>OTP ایمیل فعال (بدون کد)</h2></div>
+        <div className="admin-card-head"><h2>{tr('OTP ایمیل فعال (بدون کد)')}</h2></div>
         <div className="admin-table-wrap">
           <table className="admin-table">
             <thead>
               <tr>
-                <th>هدف</th>
-                <th>ساخته</th>
-                <th>انقضا</th>
-                <th>تلاش</th>
+                <th>{tr('هدف')}</th>
+                <th>{tr('ساخته')}</th>
+                <th>{tr('انقضا')}</th>
+                <th>{tr('تلاش')}</th>
               </tr>
             </thead>
             <tbody>
@@ -622,7 +623,7 @@ export function AdminMailPage() {
                 </tr>
               ))}
               {!data?.pendingEmailOtps?.length ? (
-                <tr><td colSpan={4} className="admin-muted">OTP فعالی نیست</td></tr>
+                <tr><td colSpan={4} className="admin-muted">{tr('OTP فعالی نیست')}</td></tr>
               ) : null}
             </tbody>
           </table>

@@ -149,7 +149,11 @@ export function categoryDrillDetail(
 
 export function formatFocusLabel(key: string): string {
   const week = key.match(/^(\d{4})-W(\d{2})$/);
-  if (week) return `هفته ${Number(week[2]).toLocaleString('fa-IR')} · ${week[1]}`;
+  if (week) {
+    const en = typeof document !== 'undefined' && document.documentElement.getAttribute('lang') === 'en';
+    const n = Number(week[2]).toLocaleString(en ? 'en-US' : 'fa-IR');
+    return en ? `Week ${n} · ${week[1]}` : `هفته ${n} · ${week[1]}`;
+  }
   const day = key.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (day) return key;
   const month = key.match(/^(\d{4})-(\d{2})$/);

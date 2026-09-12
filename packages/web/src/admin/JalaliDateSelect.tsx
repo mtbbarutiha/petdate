@@ -5,6 +5,7 @@ import {
   formatJalaliNumFa,
   type JalaliDateValue,
 } from './jalaliDate';
+import { tr } from '../i18n';
 
 export * from './jalaliDate';
 
@@ -75,15 +76,15 @@ export function JalaliDateSelect({
   return (
     <label className={`admin-jalali-date ${className}`.trim()}>
       {label ? <span className="admin-jalali-date-label">{label}</span> : null}
-      <div className="admin-jalali-date-row" dir="rtl">
+      <div className="admin-jalali-date-row" dir={typeof document !== 'undefined' && document.documentElement.getAttribute('lang') === 'en' ? 'ltr' : 'rtl'}>
         <select
           className="admin-select admin-jalali-date-day"
-          aria-label={label ? `${label} — روز` : 'روز'}
+          aria-label={label ? `${label}${tr(' — روز')}` : tr('روز')}
           disabled={disabled}
           value={day || ''}
           onChange={(e) => setPart('day', e.target.value)}
         >
-          {allowEmpty ? <option value="">روز</option> : null}
+          {allowEmpty ? <option value="">{tr('روز')}</option> : null}
           {Array.from({ length: maxDay }, (_, i) => i + 1).map((d) => (
             <option key={d} value={d}>
               {formatJalaliNumFa(d)}
@@ -92,26 +93,26 @@ export function JalaliDateSelect({
         </select>
         <select
           className="admin-select admin-jalali-date-month"
-          aria-label={label ? `${label} — ماه` : 'ماه'}
+          aria-label={label ? `${label}${tr(' — ماه')}` : tr('ماه')}
           disabled={disabled}
           value={month || ''}
           onChange={(e) => setPart('month', e.target.value)}
         >
-          {allowEmpty ? <option value="">ماه</option> : null}
+          {allowEmpty ? <option value="">{tr('ماه')}</option> : null}
           {JALALI_MONTHS.map((m) => (
             <option key={m.v} value={m.v}>
-              {m.label}
+              {tr(m.label)}
             </option>
           ))}
         </select>
         <select
           className="admin-select admin-jalali-date-year"
-          aria-label={label ? `${label} — سال` : 'سال'}
+          aria-label={label ? `${label}${tr(' — سال')}` : tr('سال')}
           disabled={disabled}
           value={year || ''}
           onChange={(e) => setPart('year', e.target.value)}
         >
-          {allowEmpty ? <option value="">سال</option> : null}
+          {allowEmpty ? <option value="">{tr('سال')}</option> : null}
           {years.map((y) => (
             <option key={y} value={y}>
               {formatJalaliNumFa(y)}
@@ -148,7 +149,7 @@ export function JalaliDateRange({
   yearsForward?: number;
 }) {
   return (
-    <div className={`admin-date-range ${className}`.trim()} role="group" aria-label="بازه تاریخ شمسی">
+    <div className={`admin-date-range ${className}`.trim()} role="group" aria-label={tr("بازه تاریخ شمسی")}>
       <JalaliDateSelect
         label={fromLabel}
         value={from}
