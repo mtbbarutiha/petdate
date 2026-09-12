@@ -17,6 +17,7 @@ import {
   completeTelegramPendingLogin,
 } from '../api-client';
 import { formatCoinAwardMessage, REFERRAL_BONUS_COINS } from '../economy';
+import { fetchPublicPlatformConfig } from '../runtime-config';
 import { sendWelcomeLogo } from '../branding';
 import { roleWelcomeHint } from '../format';
 import {
@@ -453,6 +454,15 @@ export async function sendWelcomeBack(ctx: Context, user: User, name: string): P
         ? 'از منوی زیر لیست بیماران و مشاوره‌هات رو ببین.'
         : 'از منوی زیر استفاده کن.';
 
+  const runtime = await fetchPublicPlatformConfig();
+  const botNotes = runtime.announcements.filter((a) => a.placement === 'bot' || a.placement === 'app');
+  const extra: string[] = [];
+  if (runtime.maintenanceMode) {
+    extra.push('🛠 سایت/ربات در حالت تعمیرات است — بعضی خدمات ممکن است موقتاً قطع باشد.');
+  }
+  for (const note of botNotes) {
+    extra.push(`📢 ${note.title}${note.body ? `\n${note.body}` : ''}`);
+  }
   const caption = [
     `سلام ${name}! 👋`,
     '',
@@ -461,7 +471,10 @@ export async function sendWelcomeBack(ctx: Context, user: User, name: string): P
     `نقش‌ها: ${roleLabels(user)}`,
     '',
     `${intro}${webLinkHint()}`,
-  ].join('\n');
+    extra.length ? `\n${extra.join('\n\n')}` : '',
+  ]
+    .filter(Boolean)
+    .join('\n');
 
   if (!profileDone) {
     // اول کیبورد اصلی با «📋 منو» را بفرست تا کیبورد قدیمی تلگرام عوض شود،

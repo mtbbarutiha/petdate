@@ -135,6 +135,17 @@ export type CoinSellRequestSummary = {
   adminNote?: string | null;
 };
 
+/** Admin payout queue — includes full card so finance can transfer Toman. */
+export type CoinSellRequestAdmin = CoinSellRequestSummary & {
+  userId: number;
+  userName: string;
+  userPhone?: string | null;
+  userTelegramId?: string | null;
+  userPublicId?: string | null;
+  /** Full 16-digit card — admin-only, never returned on public earn APIs */
+  cardNumber: string;
+};
+
 export function sellAmountToman(coins: number, rate = COIN_SELL_PRICE_TOMAN): number {
   const c = Math.floor(Number(coins) || 0);
   const r = Math.floor(Number(rate) || COIN_SELL_PRICE_TOMAN);

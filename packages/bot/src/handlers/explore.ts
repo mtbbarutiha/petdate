@@ -11,6 +11,7 @@ import {
 } from '../keyboards';
 import { upsertSession } from '../session';
 import { getCtxUser, menuKeyboardFor, pushMainMenuKeyboard } from './helpers';
+import { replyIfFeatureOff } from '../runtime-config';
 
 function escapeHtml(value: string): string {
   return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -84,6 +85,7 @@ async function editOrReply(
 
 /** ورود از منو: فقط لیست پت‌های خود کاربر */
 export async function handleFindPlaymate(ctx: Context): Promise<void> {
+  if (await replyIfFeatureOff(ctx, 'playdatesEnabled')) return;
   console.log('find-playmate: menu pressed by', ctx.from?.id);
   await handleExplorePickPet(ctx);
 }

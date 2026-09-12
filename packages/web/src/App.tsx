@@ -192,6 +192,12 @@ const AdminShopOrdersPage = lazy(() =>
 const AdminPaymentsPage = lazy(() =>
   import('./admin/pages/AdminPaymentsPage').then((m) => ({ default: m.AdminPaymentsPage })),
 );
+const AdminCoinSellsPage = lazy(() =>
+  import('./admin/pages/AdminCoinSellsPage').then((m) => ({ default: m.AdminCoinSellsPage })),
+);
+const AdminSupportInboxPage = lazy(() =>
+  import('./admin/pages/AdminSupportInboxPage').then((m) => ({ default: m.AdminSupportInboxPage })),
+);
 const AdminContentPage = lazy(() =>
   import('./admin/pages/AdminContentPage').then((m) => ({ default: m.AdminContentPage })),
 );
@@ -425,6 +431,8 @@ export default function App() {
                 <Route path="shop/categories" element={<AdminShopCategoriesPage />} />
                 <Route path="shop/orders" element={<AdminShopOrdersPage />} />
                 <Route path="payments" element={<AdminPaymentsPage />} />
+                <Route path="coin-sells" element={<AdminCoinSellsPage />} />
+                <Route path="support" element={<AdminSupportInboxPage />} />
                 <Route path="finance" element={<AdminFinanceDashboardPage />} />
                 <Route path="finance/pnl" element={<AdminFinancePnLPage />} />
                 <Route path="finance/sales" element={<AdminFinanceSalesPage />} />

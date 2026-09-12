@@ -14,6 +14,7 @@ import {
 } from '../../data/shopCatalog';
 import { ShopChrome } from '../../components/shop/ShopChrome';
 import { ShopProductCard } from '../../components/shop/ShopProductCard';
+import { usePlatformConfig } from '../../hooks/usePlatformConfig';
 
 /** Digikala-style solid circle colors (Pepito-friendly palette) */
 const DK_CAT_COLORS = [
@@ -63,10 +64,21 @@ const JOURNEY = [
 ] as const;
 
 export function ShopHomePage() {
-  const { lang } = useI18n();
+  const { lang, t } = useI18n();
+  const platform = usePlatformConfig();
   const [petType, setPetType] = useState<ShopPetType>('all');
   const featured = useMemo(() => getFeaturedProducts(), []);
   const cats = useMemo(() => categoriesForPet(petType), [petType]);
+
+  if (!platform.shopEnabled) {
+    return (
+      <ShopChrome bannerTitle="پت دیت شاپ" bannerLead={t('platform.shopOff')}>
+        <div className="pepito-container pd-shop-home">
+          <p className="pd-platform-banner">{t('platform.shopOff')}</p>
+        </div>
+      </ShopChrome>
+    );
+  }
 
   return (
     <ShopChrome

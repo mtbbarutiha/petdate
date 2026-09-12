@@ -1,6 +1,7 @@
 import type { Context, NextFunction } from 'grammy';
 import { InlineKeyboard } from 'grammy';
 import { config } from './config';
+import { fetchPublicPlatformConfig } from './runtime-config';
 
 export type RequiredChannel = {
   username: string;
@@ -193,6 +194,8 @@ export async function ensureForceJoined(ctx: Context): Promise<boolean> {
 export async function forceJoinMiddleware(ctx: Context, next: NextFunction): Promise<void> {
   try {
     if (!ctx.from) return next();
+    const runtime = await fetchPublicPlatformConfig();
+    if (!runtime.botForceJoin) return next();
     if (!requiredChannels().length) return next();
     if (isForceJoinBypass(ctx)) return next();
 

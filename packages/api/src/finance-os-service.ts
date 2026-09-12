@@ -1642,6 +1642,7 @@ export function getFinanceOsNavCounts(): {
   pendingAllocation: number;
   payments: number;
   transactions: number;
+  coinSells: number;
 } {
   ensureFinanceOsSchema();
   const queue = (
@@ -1676,11 +1677,17 @@ export function getFinanceOsNavCounts(): {
       )
       .get() as { c: number }
   ).c;
+  const coinSells = (
+    db()
+      .prepare(`SELECT COUNT(*) AS c FROM coin_sell_requests WHERE status = 'open'`)
+      .get() as { c: number }
+  ).c;
   return {
     queue,
     suspicious,
     pendingAllocation,
     payments,
     transactions: queue + suspicious,
+    coinSells,
   };
 }

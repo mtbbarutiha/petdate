@@ -3067,6 +3067,15 @@ html[data-theme='dark'] .admin-app .admin-stack {
   color: #e2e8f0;
   border: 1px solid var(--admin-border);
 }
+html[data-theme='dark'] .pd-platform-banner {
+  background: color-mix(in srgb, #5c4d91 28%, #12141c);
+  color: #f1eef8;
+  border-color: rgba(228, 226, 243, 0.18);
+}
+html[data-theme='dark'] .pd-platform-banner--maintenance {
+  background: color-mix(in srgb, #fd961e 22%, #1a1410);
+  border-color: rgba(253, 150, 30, 0.4);
+}
 
 /* Games page */
 html[data-theme='dark'] .pepito-games-form {

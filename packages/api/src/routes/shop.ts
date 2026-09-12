@@ -16,12 +16,29 @@ import {
 } from '../services/shop-checkout';
 import { adminPlatform } from '../admin-platform';
 import { dbService } from '../db';
+import { rejectIfFlagOff } from '../runtime-settings';
 import {
   MAX_PAYMENT_RECEIPT_BYTES,
   savePaymentReceipt,
 } from '../services/payment-receipt-store';
 
 export const shopRouter = Router();
+
+shopRouter.use((req, res, next) => {
+  if (rejectIfFlagOff(res, 'shopEnabled')) return;
+  if (req.method !== 'GET') {
+    if (/\/checkout\/card/.test(req.path) && rejectIfFlagOff(res, 'paymentCardEnabled')) return;
+    if (
+      /\/checkout\/(stars|wallet-stars|stars-telegram|wallet-stars-telegram)|\/quote-stars/.test(
+        req.path
+      ) &&
+      rejectIfFlagOff(res, 'paymentStarsEnabled')
+    ) {
+      return;
+    }
+  }
+  next();
+});
 
 const shopReceiptUpload = multer({
   storage: multer.memoryStorage(),

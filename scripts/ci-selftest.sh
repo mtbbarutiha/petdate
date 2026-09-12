@@ -66,6 +66,9 @@ npx tsx "$ROOT/packages/web/src/admin/adminNavOrder.selftest.ts"
 echo "==> selftest: admin finance payments under مالی + nav notifs"
 npx tsx "$ROOT/packages/web/src/admin/adminFinanceNavNotifs.selftest.ts"
 
+echo "==> selftest: admin runtime flags / coin-sell / support wiring"
+npx tsx "$ROOT/packages/web/src/admin/adminRuntimeWiring.selftest.ts"
+
 echo "==> selftest: admin deposit receipt preview in details/attachments"
 npx tsx "$ROOT/packages/web/src/admin/pages/adminPaymentReceipt.selftest.ts"
 
@@ -229,6 +232,7 @@ run src/finance-os.selftest.ts
 run src/services/card2card-wallet.selftest.ts
 run src/admin-finance-dashboard.selftest.ts
 run src/platform-settings.selftest.ts
+run src/runtime-settings.selftest.ts
 run src/magazine.selftest.ts
 run src/magazine-editorial-seed.selftest.ts
 run src/routes/games-list.selftest.ts

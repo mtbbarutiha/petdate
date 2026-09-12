@@ -79,7 +79,10 @@ export function AdminContentPage() {
       <header className="admin-header">
         <div>
           <h1>{tr('محتوا و اعلان‌ها')}</h1>
-          <p>{tr('اسنیپت‌های لندینگ / بنر —')} {formatNumFa(items.length)} {tr('مورد')}</p>
+          <p>
+            {tr('اعلان‌های فعال روی لندینگ، شاپ، اپ و ربات نمایش داده می‌شوند —')}{' '}
+            {formatNumFa(items.length)} {tr('مورد')}
+          </p>
         </div>
         <button
           type="button"

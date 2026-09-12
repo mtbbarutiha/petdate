@@ -52,6 +52,7 @@ import {
 } from '../services/chat-upload-store';
 import { isInternalBot } from '../internal-auth';
 import { getUserFromBearer } from '../services/web-otp';
+import { rejectIfFlagOff } from '../runtime-settings';
 import {
   notifyInbox,
   notifyVetMessage,
@@ -303,6 +304,8 @@ consultationsRouter.post('/quick-connect', async (req, res) => {
   )
     ? (kindRaw as ConsultServiceKind)
     : 'vet';
+
+  if (serviceKind === 'vet' && rejectIfFlagOff(res, 'vetConsultEnabled')) return;
 
   if (serviceKind === 'sitter') {
     res.status(410).json({
@@ -583,6 +586,7 @@ consultationsRouter.get('/:id', (req, res) => {
 });
 
 consultationsRouter.post('/', (req, res) => {
+  if (rejectIfFlagOff(res, 'vetConsultEnabled')) return;
   const { vetUserId, patientUserId, petId, status, notes } = req.body ?? {};
 
   if (!vetUserId || !patientUserId) {

@@ -20,6 +20,7 @@ import { QUICK_VET_COST, REFERRAL_BONUS_COINS, formatNum } from '../economy';
 import { myPetsActionKeyboard } from '../keyboards';
 import { effectiveWebUrl, isTelegramInlineUrl } from '../urls';
 import { getCtxUser, menuKeyboardFor, pushMainMenuKeyboard } from './helpers';
+import { replyIfFeatureOff } from '../runtime-config';
 import { startVetChat, enterAiConsultChatAsPatient } from './vet-chat';
 import { handleAddPetCommand } from './wizard';
 
@@ -212,6 +213,7 @@ export async function handleInviteFriends(ctx: Context): Promise<void> {
 }
 
 export async function handleQuickVet(ctx: Context): Promise<void> {
+  if (await replyIfFeatureOff(ctx, 'vetConsultEnabled')) return;
   const user = await getCtxUser(ctx);
   if (!user) {
     await ctx.reply('اول /start بزن.');

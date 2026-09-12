@@ -14,6 +14,7 @@ import {
   validateIranCard,
 } from '@petdate/shared';
 import { dbService } from '../db';
+import { getRuntimeFlags, rejectIfFlagOff } from '../runtime-settings';
 import {
   completeTelegramAttach,
   completeTelegramLoginPending,
@@ -359,6 +360,8 @@ authRouter.get('/wallet/buy-coins', (req, res) => {
       holder: card.cardHolder,
     },
     openOrders: open,
+    paymentCardEnabled: getRuntimeFlags().paymentCardEnabled,
+    paymentStarsEnabled: getRuntimeFlags().paymentStarsEnabled,
     message:
       'مبلغ را کارت‌به‌کارت واریز کن، عکس رسید را همین‌جا بفرست؛ بعد از تأیید ادمین سکه به کیف پول مشترک واریز می‌شود.',
   });
@@ -370,6 +373,7 @@ authRouter.post('/wallet/buy-coins/card', (req, res) => {
     res.status(401).json({ error: 'وارد نشده‌اید' });
     return;
   }
+  if (rejectIfFlagOff(res, 'paymentCardEnabled')) return;
   const packageId = String(req.body?.packageId ?? '').trim();
   const pkg = findCoinPackage(packageId);
   if (!pkg) {

@@ -17,6 +17,7 @@ import type { LucideIcon } from 'lucide-react';
 import { primaryRole, type UserRole } from '@petdate/shared';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { useI18n } from '../i18n';
+import { usePlatformConfig } from '../hooks/usePlatformConfig';
 import { LandingChrome } from './LandingChrome';
 import { LiveIncomingRequests } from './LiveIncomingRequests';
 import { ProfileManageNav } from './ProfileManageNav';
@@ -78,8 +79,16 @@ export function Layout({ children }: { children?: ReactNode }) {
   const { pathname } = useLocation();
   const { user } = useAuthStore();
   const { t } = useI18n();
+  const platform = usePlatformConfig();
   const active = primaryRole(user?.roles, user?.role);
-  const navItems = navForRole(active);
+  const navItems = navForRole(active).filter((item) => {
+    if (item.to === '/shop' && !platform.shopEnabled) return false;
+    if (item.to.startsWith('/vet-consult') && !platform.vetConsultEnabled) return false;
+    if (item.to === '/chats' && item.labelKey === 'nav.playmate' && !platform.playdatesEnabled) {
+      return false;
+    }
+    return true;
+  });
   const isChat =
     pathname === '/chats' ||
     pathname.startsWith('/chats/') ||

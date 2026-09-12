@@ -14,6 +14,8 @@ import {
 import { loginPath } from '../../lib/authRedirect';
 import { trackBeginCheckout, trackPurchase } from '../../lib/siteAnalytics';
 import { ShopChrome } from '../../components/shop/ShopChrome';
+import { usePlatformConfig } from '../../hooks/usePlatformConfig';
+import { useI18n } from '../../i18n';
 
 type PayMethod = 'coins' | 'wallet_stars' | 'telegram_stars' | 'toman' | 'card';
 
@@ -22,6 +24,8 @@ export function ShopCartPage() {
   const { lines, itemCount, totalToman, totalCoins, totalStars, setQty, remove, clear, rememberPaidOrder } =
     useShopCart();
   const { isLoggedIn, token, user, refreshMe } = useAuthStore();
+  const platform = usePlatformConfig();
+  const { t } = useI18n();
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
@@ -350,6 +354,7 @@ export function ShopCartPage() {
                         </small>
                       </span>
                     </label>
+                    {platform.paymentStarsEnabled ? (
                     <label className={`pd-shop-pay-option${payMethod === 'wallet_stars' ? ' is-active' : ''}`}>
                       <input
                         type="radio"
@@ -366,6 +371,7 @@ export function ShopCartPage() {
                         </small>
                       </span>
                     </label>
+                    ) : null}
                     <label className={`pd-shop-pay-option${payMethod === 'toman' ? ' is-active' : ''}`}>
                       <input
                         type="radio"
@@ -382,6 +388,7 @@ export function ShopCartPage() {
                         </small>
                       </span>
                     </label>
+                    {platform.paymentCardEnabled ? (
                     <label className={`pd-shop-pay-option${payMethod === 'card' ? ' is-active' : ''}`}>
                       <input
                         type="radio"
@@ -395,6 +402,8 @@ export function ShopCartPage() {
                         <small>واریز ریالی و ارسال رسید در ربات</small>
                       </span>
                     </label>
+                    ) : null}
+                    {platform.paymentStarsEnabled ? (
                     <label
                       className={`pd-shop-pay-option${payMethod === 'telegram_stars' ? ' is-active' : ''}`}
                     >
@@ -413,6 +422,10 @@ export function ShopCartPage() {
                         </small>
                       </span>
                     </label>
+                    ) : null}
+                    {!platform.paymentCardEnabled ? (
+                      <p className="admin-muted">{t('platform.cardOff')}</p>
+                    ) : null}
                   </fieldset>
 
                   <label>

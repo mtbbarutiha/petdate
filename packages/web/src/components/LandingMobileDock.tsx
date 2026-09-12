@@ -11,7 +11,8 @@ import { useAuthStore } from '../hooks/useAuthStore';
 import { useI18n } from '../i18n';
 import { resolvePublicMediaUrl } from '../lib/api';
 import { loginPath } from '../lib/authRedirect';
-import { SITE_NAV_GUEST, siteNavMobileForUser, type SiteNavItem } from '../lib/siteNav';
+import { filterNavByPlatformConfig, SITE_NAV_GUEST, siteNavMobileForUser, type SiteNavItem } from '../lib/siteNav';
+import { usePlatformConfig } from '../hooks/usePlatformConfig';
 import { ProfileManageNav } from './ProfileManageNav';
 
 const LONG_PRESS_MS = 480;
@@ -36,7 +37,11 @@ export function LandingMobileDock() {
   const longPressFired = useRef(false);
   const sheetRef = useRef<HTMLDivElement>(null);
 
-  const items = isLoggedIn ? siteNavMobileForUser(user) : SITE_NAV_GUEST;
+  const platform = usePlatformConfig();
+  const items = filterNavByPlatformConfig(
+    isLoggedIn ? siteNavMobileForUser(user) : SITE_NAV_GUEST,
+    platform
+  );
   const roles = normalizeRoles(user?.roles, user?.role);
   const activeRole = primaryRole(roles, user?.role);
   const photo = resolvePublicMediaUrl(user?.avatarUrl);

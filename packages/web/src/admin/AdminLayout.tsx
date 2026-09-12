@@ -129,6 +129,13 @@ const NAV_GROUPS: NavGroup[] = [
       financeBadgeKey: 'payments',
       platformBadgeKey: 'payments',
     },
+    {
+      to: '/admin/coin-sells',
+      icon: HandCoins,
+      labelKey: 'admin.coinSellQueue',
+      perm: 'finance.read',
+      financeBadgeKey: 'coinSells',
+    },
     { to: '/admin/finance/accounts', icon: Landmark, labelKey: 'admin.accounts', perm: 'finance.read' },
     {
       to: '/admin/finance/transactions',
@@ -177,6 +184,7 @@ const NAV_GROUPS: NavGroup[] = [
   { titleKey: 'admin.contentSystem', items: [
     { to: '/admin/magazine', icon: Newspaper, labelKey: 'admin.magazineNews', perm: 'platform.write' },
     { to: '/admin/content', icon: Bell, labelKey: 'admin.noticesContent', perm: 'platform.write' },
+    { to: '/admin/support', icon: Headset, labelKey: 'admin.supportInbox', perm: 'support.inbox' },
     { to: '/admin/mail', icon: Mail, labelKey: 'admin.mailSmtp', perm: 'platform.read' },
     { to: '/admin/monitoring', icon: Activity, labelKey: 'admin.monitoring', perm: 'platform.read' },
     { to: '/admin/logs', icon: ScrollText, labelKey: 'admin.errorLogs', perm: 'platform.read' },

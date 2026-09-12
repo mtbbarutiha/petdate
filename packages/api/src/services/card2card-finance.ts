@@ -221,6 +221,42 @@ export async function notifyCardPaymentApprovedTelegram(opts: {
   }
 }
 
+export async function notifyCoinSellReviewedTelegram(opts: {
+  toTelegramId?: string | null;
+  action: 'paid' | 'rejected';
+  coins: number;
+  amountToman: number;
+  note?: string;
+}): Promise<boolean> {
+  const tg = opts.toTelegramId ? String(opts.toTelegramId).trim() : '';
+  if (!infra.telegram.botToken || !usableTelegramId(tg)) return false;
+  const text =
+    opts.action === 'paid'
+      ? [
+          '✅ درخواست فروش سکه تأیید و واریز شد.',
+          `${toPersianDigits(opts.coins)} سکه → ${toPersianDigits(opts.amountToman)} تومان به کارتت واریز شد.`,
+        ].join('\n')
+      : [
+          '❌ درخواست فروش سکه رد شد.',
+          `${toPersianDigits(opts.coins)} سکه به موجودی‌ات برگشت.`,
+          opts.note?.trim() ? `دلیل: ${opts.note.trim()}` : '',
+        ]
+          .filter(Boolean)
+          .join('\n');
+  try {
+    const res = await telegramFetch(telegramBotApiUrl(infra.telegram.botToken, 'sendMessage'), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: tg, text }),
+    });
+    const data = (await res.json()) as { ok?: boolean };
+    return Boolean(data.ok);
+  } catch (err) {
+    console.warn('coin sell review notify error:', (err as Error).message);
+    return false;
+  }
+}
+
 export async function notifyCardPaymentRejectedTelegram(opts: {
   toTelegramId?: string | null;
   note?: string;

@@ -9,6 +9,7 @@ import {
   userHasRole,
 } from '@petdate/shared';
 import { dbService } from '../db';
+import { rejectIfFlagOff } from '../runtime-settings';
 import { sendPhoneOtp, verifyPhoneOtp } from '../services/phone-otp';
 import { sendVetEnabledSms } from '../services/vet-status-sms';
 import {
@@ -1199,6 +1200,8 @@ usersRouter.post('/telegram/:telegramId/payments', (req, res) => {
     res.status(400).json({ error: 'روش پرداخت نامعتبر', reason: 'method' });
     return;
   }
+  if (method === 'card' && rejectIfFlagOff(res, 'paymentCardEnabled')) return;
+  if (method === 'stars' && rejectIfFlagOff(res, 'paymentStarsEnabled')) return;
 
   // Same open-order guard as web wallet: orphan bot awaiting_receipt must not
   // spawn duplicates that block /wallet card top-ups.

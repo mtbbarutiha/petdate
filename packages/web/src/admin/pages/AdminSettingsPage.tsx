@@ -17,13 +17,13 @@ import { adminCan } from '../auth';
 import { tr } from '../../i18n';
 
 const FLAGS: { key: string; label: string; hint: string }[] = [
-  { key: 'shopEnabled', label: 'فروشگاه', hint: 'فعال بودن مسیر /shop' },
-  { key: 'playdatesEnabled', label: 'همبازی', hint: 'درخواست‌های playdate' },
-  { key: 'vetConsultEnabled', label: 'مشاوره دامپزشک', hint: 'صف ارتباط با پزشک' },
-  { key: 'botForceJoin', label: 'اجبار عضویت کانال', hint: 'force-join ربات' },
-  { key: 'paymentCardEnabled', label: 'پرداخت کارت', hint: 'placeholder درگاه کارت' },
-  { key: 'paymentStarsEnabled', label: 'پرداخت Stars', hint: 'Telegram Stars' },
-  { key: 'maintenanceMode', label: 'حالت تعمیرات', hint: 'بنر نگهداری (placeholder)' },
+  { key: 'shopEnabled', label: 'فروشگاه', hint: 'مسیر /shop و شاپ ربات' },
+  { key: 'playdatesEnabled', label: 'همبازی', hint: 'درخواست همبازی وب و ربات' },
+  { key: 'vetConsultEnabled', label: 'مشاوره دامپزشک', hint: 'مشاوره دامپزشک وب و ربات' },
+  { key: 'botForceJoin', label: 'اجبار عضویت کانال', hint: 'force-join ربات از تنظیمات ادمین' },
+  { key: 'paymentCardEnabled', label: 'پرداخت کارت', hint: 'کارت‌به‌کارت کیف پول و شاپ (وب + ربات)' },
+  { key: 'paymentStarsEnabled', label: 'پرداخت Stars', hint: 'Telegram Stars کیف پول و شاپ (وب + ربات)' },
+  { key: 'maintenanceMode', label: 'حالت تعمیرات', hint: 'بنر نگهداری روی سایت و ربات' },
 ];
 
 const FINANCE_NUMS: { key: string; label: string; hint: string }[] = [

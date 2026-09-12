@@ -43,6 +43,7 @@ import {
   notifyPlaymateMessage,
   notifyPlaymateThread,
 } from '../ws/chatHub';
+import { rejectIfFlagOff } from '../runtime-settings';
 
 const VALID_STATUSES: PlaydateStatus[] = [
   'pending',
@@ -957,6 +958,7 @@ const MAX_AUTO_PLAYMATE_REQUESTS = 30;
  * اگر مچ جدیدی نباشد، سکه‌ای کسر نمی‌شود.
  */
 playdatesRouter.post('/find', async (req, res) => {
+  if (rejectIfFlagOff(res, 'playdatesEnabled')) return;
   const fromPetId = Number(req.body?.fromPetId);
   const fromUserId = Number(req.body?.fromUserId);
   if (!Number.isFinite(fromPetId) || !Number.isFinite(fromUserId)) {
@@ -1135,6 +1137,7 @@ playdatesRouter.post('/find', async (req, res) => {
 });
 
 playdatesRouter.post('/', async (req, res) => {
+  if (rejectIfFlagOff(res, 'playdatesEnabled')) return;
   const { fromPetId, toPetId, fromUserId, toUserId, message, scheduledAt, location } = req.body;
 
   if (!fromPetId || !toPetId || !fromUserId) {
