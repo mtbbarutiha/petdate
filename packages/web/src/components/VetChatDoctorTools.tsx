@@ -188,7 +188,7 @@ export function VetChatDoctorSheets({
               : open === 'note'
                 ? 'ثبت در پرونده'
                 : open === 'owner'
-                  ? 'پروفایل صاحب پت'
+                  ? ((consult.serviceKind ?? 'vet') === 'seeker_advice' ? 'پروفایل درخواست‌کننده' : 'پروفایل صاحب پت')
                   : 'پروفایل پت'
         }
         onClick={(e) => e.stopPropagation()}
@@ -202,7 +202,7 @@ export function VetChatDoctorSheets({
                 : open === 'note'
                   ? '📝 ثبت در پرونده'
                   : open === 'owner'
-                    ? '👤 پروفایل صاحب پت'
+                    ? ((consult.serviceKind ?? 'vet') === 'seeker_advice' ? '👤 پروفایل درخواست‌کننده' : '👤 پروفایل صاحب پت')
                     : '🐾 پروفایل پت'}
           </h2>
           <button type="button" className="tg-vet-sheet-close" onClick={onClose} aria-label="بستن">
@@ -901,7 +901,7 @@ function OwnerSheetBody({ consult }: { consult: VetConsultation }) {
     return (
       <div className="tg-vet-sheet-body">
         <p className="tg-vet-sheet-hint">
-          {error || 'پروفایل صاحب پت در دسترس نیست.'}
+          {error || ((consult.serviceKind ?? 'vet') === 'seeker_advice' ? 'پروفایل درخواست‌کننده در دسترس نیست.' : 'پروفایل صاحب پت در دسترس نیست.')}
           {consult.patientName ? ` · ${consult.patientName}` : ''}
         </p>
       </div>
@@ -916,7 +916,7 @@ function OwnerSheetBody({ consult }: { consult: VetConsultation }) {
   return (
     <div className="tg-vet-sheet-body">
       <div className="tg-vet-pet-card">
-        <h3>{owner.name?.trim() || consult.patientName || 'صاحب پت'}</h3>
+        <h3>{owner.name?.trim() || consult.patientName || ((consult.serviceKind ?? 'vet') === 'seeker_advice' ? 'درخواست‌کننده' : 'صاحب پت')}</h3>
         <dl>
           <div>
             <dt>آیدی</dt>

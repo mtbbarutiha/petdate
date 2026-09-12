@@ -703,6 +703,10 @@ export interface VetConsultation {
   patientName?: string;
   patientCity?: string;
   patientAvatarUrl?: string;
+  /** شناسه عمومی پایدار متقاضی (PD-U…) — برای کارت درخواست صاحب پت */
+  patientPublicId?: string;
+  /** بیو عمومی متقاضی (اسنیپت در کارت درخواست) */
+  patientBio?: string;
   vetName?: string;
   vetAvatarUrl?: string;
   petName?: string;

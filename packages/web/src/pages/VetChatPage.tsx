@@ -26,6 +26,7 @@ import {
   Trash2,
   Smile,
   UserPlus,
+  UserRound,
   X,
 } from 'lucide-react';
 import {
@@ -33,6 +34,7 @@ import {
   getTeamAgentByName,
   isPendingRequestExpired,
   userHasRole,
+  userPublicIdOf,
   type VetConsultChatMediaKind,
   type VetConsultChatMessage,
   type VetConsultation,
@@ -41,6 +43,7 @@ import { SiteLogo } from '../components/SiteLogo';
 import { InboxPeerAvatar } from '../components/InboxPeerAvatar';
 import { PetAvatar } from '../components/PetAvatar';
 import { PresenceBadge } from '../components/PresenceBadge';
+import { PublicIdBadge } from '../components/PublicIdBadge';
 import { ChatMediaCaptureProvider, ChatMediaCaptureTriggers } from '../components/ChatMediaCapture';
 import { ChatVoicePlayer } from '../components/ChatVoicePlayer';
 import { EmojiPicker } from '../components/EmojiPicker';
@@ -74,6 +77,7 @@ import {
   listVetConsultations,
   postVetConsultChatMessage,
   rejectVetConsultation,
+  resolvePublicMediaUrl,
   setVetConsultChatSecure,
   uploadVetConsultChatFile,
   vetConsultChatMediaUrl,
@@ -334,6 +338,24 @@ export function VetChatPage() {
     if (!consult) return undefined;
     return resolveConsultPeerAvatarUrl(consult, isVetSide ? 'as_vet' : 'as_patient');
   }, [consult, isVetSide]);
+
+  const isSeekerAdvice = (consult?.serviceKind ?? 'vet') === 'seeker_advice';
+  const seekerPublicId = useMemo(() => {
+    if (!consult || !isSeekerAdvice) return null;
+    return (
+      consult.patientPublicId?.trim() ||
+      userPublicIdOf({ id: consult.patientUserId })
+    );
+  }, [consult, isSeekerAdvice]);
+  const seekerBioSnippet = useMemo(() => {
+    const bio = consult?.patientBio?.trim();
+    if (!bio) return null;
+    return bio.length > 140 ? `${bio.slice(0, 139)}…` : bio;
+  }, [consult]);
+  const seekerAvatarSrc = useMemo(() => {
+    if (!isSeekerAdvice || !isVetSide) return null;
+    return resolvePublicMediaUrl(peerAvatarUrl || consult?.patientAvatarUrl) || null;
+  }, [isSeekerAdvice, isVetSide, peerAvatarUrl, consult?.patientAvatarUrl]);
 
   const peerSub = useMemo(() => {
     if (!consult) return '';
@@ -1755,47 +1777,110 @@ export function VetChatPage() {
                     className={`tg-request-card${
                       isVetSide ? ' is-incoming' : ' is-outgoing'
                     }${pending ? ' is-pending' : ''}${expired ? ' is-rejected' : ''}`}
-                    aria-label="کارت درخواست مشاوره"
+                    aria-label={
+                      isSeekerAdvice ? 'کارت درخواست راهنمایی' : 'کارت درخواست مشاوره'
+                    }
+                    data-testid={
+                      isSeekerAdvice ? 'seeker-advice-request-card' : 'vet-request-card'
+                    }
                   >
+                    {isSeekerAdvice && isVetSide ? (
+                      <div
+                        className={`tg-request-card-cover${
+                          seekerAvatarSrc ? '' : ' is-placeholder'
+                        }`}
+                      >
+                        {seekerAvatarSrc ? (
+                          <div className="tg-request-card-photo">
+                            <img
+                              src={seekerAvatarSrc}
+                              alt={peerName}
+                              loading="lazy"
+                              decoding="async"
+                            />
+                          </div>
+                        ) : (
+                          <span className="tg-request-card-cover-mark" aria-hidden>
+                            <UserRound size={40} strokeWidth={1.75} />
+                          </span>
+                        )}
+                        <span
+                          className={`tg-request-card-owner${
+                            seekerAvatarSrc ? '' : ' tg-request-card-owner--initials'
+                          }`}
+                          title={peerName}
+                        >
+                          {seekerAvatarSrc ? (
+                            <img src={seekerAvatarSrc} alt="" loading="lazy" decoding="async" />
+                          ) : (
+                            (peerName || '؟').trim().slice(0, 1)
+                          )}
+                        </span>
+                      </div>
+                    ) : null}
                     <div className="tg-request-card-body">
                       <p className="tg-request-card-kicker">
                         {expired
                           ? 'درخواست منقضی شد'
                           : incomingPending
-                            ? consult.serviceKind === 'seeker_advice'
+                            ? isSeekerAdvice
                               ? 'درخواست راهنمایی جدید'
                               : 'درخواست مشاوره جدید'
                             : pending
-                              ? consult.serviceKind === 'seeker_advice'
+                              ? isSeekerAdvice
                                 ? 'درخواست راهنمایی ارسال شد'
                                 : 'درخواست مشاوره ارسال شد'
                               : ended
-                                ? consult.serviceKind === 'seeker_advice'
+                                ? isSeekerAdvice
                                   ? 'چت راهنمایی پایان یافت'
                                   : 'چت مشاوره پایان یافت'
                                 : active
-                                  ? consult.serviceKind === 'seeker_advice'
+                                  ? isSeekerAdvice
                                     ? 'راهنمایی فعال'
                                     : 'مشاوره فعال'
-                                  : consult.serviceKind === 'seeker_advice'
+                                  : isSeekerAdvice
                                     ? 'درخواست راهنمایی'
                                     : 'درخواست مشاوره'}
                       </p>
                       <h3>
                         {peerName}
-                        {consult.petName?.trim() ? ` · ${consult.petName.trim()}` : ''}
+                        {!isSeekerAdvice && consult.petName?.trim()
+                          ? ` · ${consult.petName.trim()}`
+                          : ''}
                       </h3>
+                      {isSeekerAdvice && isVetSide ? (
+                        <p className="tg-request-card-msg">
+                          یک نفر می‌خواد باهات صحبت کنه و در مورد خرید و نگهداری پت راهنمایی
+                          می‌خواد؛ بابت این راهنمایی{' '}
+                          {consult.providerShareCoins != null
+                            ? consult.providerShareCoins
+                            : 3}{' '}
+                          سکه دریافت می‌کنی.
+                        </p>
+                      ) : null}
                       <ul className="tg-request-card-meta">
                         <li>
                           #{consult.id} · {statusLabel}
                         </li>
-                        {consult.petSpecies || consult.petBreed ? (
+                        {!isSeekerAdvice && (consult.petSpecies || consult.petBreed) ? (
                           <li>
                             {[consult.petSpecies, consult.petBreed].filter(Boolean).join(' · ')}
                           </li>
                         ) : null}
                         {consult.patientCity ? <li>📍 {consult.patientCity}</li> : null}
+                        {isSeekerAdvice && seekerPublicId ? (
+                          <li className="tg-request-card-ids">
+                            <PublicIdBadge
+                              label="شناسه کاربر:"
+                              value={seekerPublicId}
+                              size="sm"
+                            />
+                          </li>
+                        ) : null}
                       </ul>
+                      {isSeekerAdvice && isVetSide && seekerBioSnippet ? (
+                        <p className="tg-request-card-msg">«{seekerBioSnippet}»</p>
+                      ) : null}
                       {incomingPending ? (
                         <div className="tg-request-card-actions">
                           <button
@@ -1818,10 +1903,24 @@ export function VetChatPage() {
                             <X size={16} strokeWidth={2.5} />
                             رد
                           </button>
+                          {isSeekerAdvice ? (
+                            <button
+                              type="button"
+                              className="tg-request-profile"
+                              disabled={acting}
+                              onClick={() => setDoctorPanel('owner')}
+                              data-testid="seeker-advice-open-profile"
+                            >
+                              <UserRound size={16} strokeWidth={2.2} />
+                              مشاهده پروفایل
+                            </button>
+                          ) : null}
                         </div>
                       ) : pending ? (
                         <p className="tg-request-card-wait" role="status">
-                          در انتظار پذیرش دامپزشک.
+                          {isSeekerAdvice
+                            ? 'در انتظار پذیرش صاحب پت.'
+                            : 'در انتظار پذیرش دامپزشک.'}
                           {' · '}
                           <RequestCountdown
                             createdAt={consult.createdAt}
@@ -1834,7 +1933,10 @@ export function VetChatPage() {
                           {!isVetSide ? (
                             <>
                               {' '}
-                              <Link to="/vet-consult" className="tg-chat-link-btn">
+                              <Link
+                                to={isSeekerAdvice ? '/chats' : '/vet-consult'}
+                                className="tg-chat-link-btn"
+                              >
                                 درخواست مجدد
                               </Link>
                             </>
@@ -2118,7 +2220,7 @@ export function VetChatPage() {
         </section>
       ) : null}
 
-      {showProviderSheets && consult && user && chatUnlocked ? (
+      {showProviderSheets && consult && user && (chatUnlocked || Boolean(doctorPanel)) ? (
         <VetChatDoctorSheets
           open={doctorPanel}
           onClose={() => setDoctorPanel(null)}

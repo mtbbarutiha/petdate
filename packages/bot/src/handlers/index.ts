@@ -107,6 +107,7 @@ import {
   handleQuickVetReconnect,
   handleServices,
   handleVetConsultDecision,
+  handleVetConsultPatientProfile,
 } from './services';
 import {
   handleBuyPetConsult,
@@ -705,6 +706,9 @@ export function registerHandlers(bot: Bot): void {
   );
   bot.callbackQuery(/^vet:consult:reject:(\d+)$/, (ctx) =>
     handleVetConsultDecision(ctx, Number(ctx.match![1]), 'reject')
+  );
+  bot.callbackQuery(/^vet:consult:patient:(\d+)$/, (ctx) =>
+    handleVetConsultPatientProfile(ctx, Number(ctx.match![1]))
   );
   bot.callbackQuery(/^vet:fee:(\d+)$/, (ctx) =>
     handleVetVisitFeePick(ctx, Number(ctx.match![1]))
