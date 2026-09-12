@@ -1,3 +1,4 @@
+import { uploadErrorCopy } from '@petdate/shared';
 import sharp from 'sharp';
 
 /** Shared image sniff + JPEG normalize for profile/pet uploads. */
@@ -126,16 +127,5 @@ export async function normalizeProfileImage(opts: {
 }
 
 export function persianUploadError(code: string): string {
-  switch (code) {
-    case 'FILE_TOO_LARGE':
-      return 'حجم عکس بیش از حد مجاز است (حداکثر ۸ مگابایت)';
-    case 'INVALID_MIME':
-      return 'فقط عکس مجاز است (JPG، PNG، WebP، HEIC، GIF)';
-    case 'INVALID_IMAGE':
-      return 'فایل عکس قابل پردازش نیست. یک عکس دیگر انتخاب کن';
-    case 'INVALID_STORAGE_KEY':
-      return 'ذخیره عکس ناموفق بود';
-    default:
-      return 'ذخیره عکس ناموفق بود';
-  }
+  return uploadErrorCopy(code, 'fa');
 }

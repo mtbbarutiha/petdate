@@ -2249,4 +2249,11 @@ export const ADMIN_FA_EN: Record<string, string> = {
   "force-join ربات از تنظیمات ادمین": "Bot force-join from admin settings",
   "دعوت": "Invites",
   "معرف": "Referrer",
+  "گروه‌بندی تکرارها": "Group repeats",
+  "{n} مورد مشابه": "{n} similar",
+  "از {from} تا {to}": "From {from} to {to}",
+  "متن فنی": "Technical text",
+  "کپی متن اصلی": "Copy original",
+  "برای بستن ردیف دوباره کلیک کنید": "Click the row again to collapse",
+  "خارجی": "External",
 };

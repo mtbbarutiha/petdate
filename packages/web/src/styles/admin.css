@@ -773,29 +773,146 @@
 .admin-app .admin-badge--info { background: #e0f2fe; color: #0369a1; }
 .admin-app .admin-log-row { cursor: pointer; }
 .admin-app .admin-log-row--error { background: #fff8f8; color: var(--admin-ink); }
-.admin-app .admin-log-row--warn { background: transparent; color: var(--admin-ink); }
+.admin-app .admin-log-row--warn { background: color-mix(in srgb, #c2410c 8%, var(--admin-surface)); color: var(--admin-ink); }
+.admin-app .admin-log-row--info { background: color-mix(in srgb, #0369a1 8%, var(--admin-surface)); color: var(--admin-ink); }
+.admin-app .admin-log-row:hover { filter: brightness(0.985); }
+.admin-app .admin-log-row.is-open { box-shadow: inset 2px 0 0 var(--admin-accent); }
+.admin-app .admin-table--logs {
+  min-width: 880px;
+  table-layout: fixed;
+}
+.admin-app .admin-table--logs th:nth-child(1),
+.admin-app .admin-table--logs td:nth-child(1) { width: 9.25rem; }
+.admin-app .admin-table--logs th:nth-child(2),
+.admin-app .admin-table--logs td:nth-child(2) { width: 5.75rem; }
+.admin-app .admin-table--logs th:nth-child(3),
+.admin-app .admin-table--logs td:nth-child(3) { width: 5.5rem; }
+.admin-app .admin-table--logs th:nth-child(5),
+.admin-app .admin-table--logs td:nth-child(5) { width: 13.5rem; }
+.admin-app .admin-table--logs th,
+.admin-app .admin-table--logs td {
+  vertical-align: top;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+.admin-app .admin-log-when {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+.admin-app .admin-log-count {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 650;
+  background: var(--admin-chip-bg, #f1f5f9);
+  color: var(--admin-chip-label, var(--admin-muted));
+  white-space: nowrap;
+}
+.admin-app .admin-badge--level {
+  text-transform: none;
+  letter-spacing: 0;
+}
+.admin-app .admin-log-source {
+  display: inline-flex;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--admin-chip-well, #f8fafc);
+  color: var(--admin-ink);
+  border: 1px solid var(--admin-border);
+}
 .admin-app .admin-log-msg {
-  max-width: 420px;
+  max-width: none;
+  min-width: 0;
   color: inherit;
 }
 .admin-app .admin-log-msg-fa {
   display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-weight: 600;
+  overflow: visible;
+  text-overflow: unset;
+  white-space: normal;
+  font-weight: 650;
+  line-height: 1.45;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+.admin-app .admin-log-count--inline {
+  margin-inline-start: 8px;
+  vertical-align: middle;
 }
 .admin-app .admin-log-msg-detail {
   display: block;
-  margin-top: 2px;
-  font-size: 0.78rem;
+  margin-top: 4px;
+  font-size: 0.8rem;
+  line-height: 1.45;
   color: var(--admin-muted);
   font-family: var(--admin-mono);
   direction: ltr;
-  text-align: left;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  unicode-bidi: isolate;
+  text-align: start;
+  overflow: visible;
+  text-overflow: unset;
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+.admin-app .admin-log-path {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  color: var(--admin-muted);
+}
+.admin-app .admin-log-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: var(--admin-ink);
   white-space: nowrap;
+}
+.admin-app .admin-log-expand td {
+  background: color-mix(in srgb, var(--admin-bg) 55%, var(--admin-surface));
+}
+.admin-app .admin-log-expand-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 0 8px;
+}
+.admin-app .admin-log-expand-meta,
+.admin-app .admin-log-expand-hint {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--admin-muted);
+}
+.admin-app .admin-log-expand-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.admin-app .admin-log-raw-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.78rem;
+  font-weight: 650;
+  color: var(--admin-ink);
+}
+.admin-app .admin-log-copy {
+  padding: 4px 8px;
+  font-size: 0.75rem;
+}
+.admin-app .admin-log-raw {
+  max-height: 140px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 .admin-app .admin-stack {
   margin: 0;
