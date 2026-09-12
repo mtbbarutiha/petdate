@@ -466,15 +466,16 @@ html[data-theme='dark'] .tg-empty-visual__paw {
  * Thread message canvas (ended playmate chat + active threads).
  * chat.css hardcodes light #eef3f7 wallpaper with !important — remap so the
  * request card sits on a dark full-bleed surface matching header / wipe bar.
+ * Dot grid → very faint dog paw prints (decorative only; keep wall color).
  */
 html[data-theme='dark'] .tg-chat-wallpaper,
 html[data-theme='dark'] .tg-thread-scroll.tg-chat-wallpaper {
   background:
     radial-gradient(900px 320px at 100% -10%, rgba(59, 184, 245, 0.08), transparent 55%),
     radial-gradient(700px 280px at -10% 110%, rgba(45, 212, 176, 0.07), transparent 50%),
-    radial-gradient(rgba(232, 230, 242, 0.045) 1px, transparent 1px),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Cg fill='%23e8e6f2' opacity='0.045' transform='translate(22 26) rotate(-16)'%3E%3Ccircle cx='-5.4' cy='-6.2' r='2.35'/%3E%3Ccircle cx='-1.7' cy='-8.6' r='2.55'/%3E%3Ccircle cx='1.7' cy='-8.6' r='2.55'/%3E%3Ccircle cx='5.4' cy='-6.2' r='2.35'/%3E%3Cellipse cx='0' cy='1.8' rx='7' ry='6'/%3E%3C/g%3E%3Cg fill='%23e8e6f2' opacity='0.032' transform='translate(62 62) rotate(20) scale(-1 1)'%3E%3Ccircle cx='-5.4' cy='-6.2' r='2.35'/%3E%3Ccircle cx='-1.7' cy='-8.6' r='2.55'/%3E%3Ccircle cx='1.7' cy='-8.6' r='2.55'/%3E%3Ccircle cx='5.4' cy='-6.2' r='2.35'/%3E%3Cellipse cx='0' cy='1.8' rx='7' ry='6'/%3E%3C/g%3E%3C/svg%3E"),
     linear-gradient(180deg, #171a24 0%, #1a1e2a 100%) !important;
-  background-size: auto, auto, 16px 16px, auto !important;
+  background-size: auto, auto, 80px 80px, auto !important;
 }
 
 /* Playmate request card + end-of-chat wipe bar (theme-coherent) */

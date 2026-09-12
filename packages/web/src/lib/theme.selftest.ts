@@ -56,6 +56,16 @@ assert.doesNotMatch(
   /html\[data-theme=['"]dark['"]\][\s\S]{0,120}\.tg-chat-wallpaper[\s\S]{0,280}#(eef3f7|e7eef4|eef2f6|ecf2f6|f7f8fb)\b/i,
   'dark wallpaper must not keep light canvas stops'
 );
+assert.match(
+  darkCss,
+  /html\[data-theme=['"]dark['"]\][\s\S]{0,160}\.tg-chat-wallpaper[\s\S]{0,900}data:image\/svg\+xml/,
+  'dark chat wallpaper uses SVG paw-print tile'
+);
+assert.doesNotMatch(
+  darkCss,
+  /html\[data-theme=['"]dark['"]\][\s\S]{0,160}\.tg-chat-wallpaper[\s\S]{0,900}radial-gradient\([^)]*1px,\s*transparent\s*1px\)/,
+  'dark chat wallpaper must not keep 1px dot grid'
+);
 assert.match(darkCss, /\.tg-status-strip\b/, 'consult active status strip remapped for dark');
 assert.match(darkCss, /\.pepito-vet-chat \.tg-status-strip\.is-wait/, 'consult wait strip remapped for dark');
 assert.match(darkCss, /\.tg-composer\b/, 'chat composer dock remapped for dark');
