@@ -60,6 +60,9 @@ npx tsx "$ROOT/packages/web/src/admin/adminFinanceNavNotifs.selftest.ts"
 echo "==> selftest: admin deposit receipt preview in details/attachments"
 npx tsx "$ROOT/packages/web/src/admin/pages/adminPaymentReceipt.selftest.ts"
 
+echo "==> selftest: admin docs/photo moderation review grid UX"
+npx tsx "$ROOT/packages/web/src/admin/pages/adminMarketplaceModeration.selftest.ts"
+
 # Guard: admin soft-delete user (حذف کاربر) wired in UI + API
 echo "==> selftest: admin delete user route + UI"
 npx tsx "$ROOT/packages/web/src/admin/adminDeleteUser.selftest.ts"
