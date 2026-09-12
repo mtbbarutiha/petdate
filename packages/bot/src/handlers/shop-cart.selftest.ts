@@ -1,14 +1,17 @@
 /**
  * Guard: bot shop uses shared server cart APIs.
  * Run: npx tsx src/handlers/shop-cart.selftest.ts
+ * (CI may invoke this with cwd=packages/api — resolve paths from this file.)
  */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const shop = readFileSync(join(process.cwd(), 'src/handlers/shop.ts'), 'utf8');
-const index = readFileSync(join(process.cwd(), 'src/handlers/index.ts'), 'utf8');
-const api = readFileSync(join(process.cwd(), 'src/api-client.ts'), 'utf8');
+const here = dirname(fileURLToPath(import.meta.url));
+const shop = readFileSync(join(here, 'shop.ts'), 'utf8');
+const index = readFileSync(join(here, 'index.ts'), 'utf8');
+const api = readFileSync(join(here, '../api-client.ts'), 'utf8');
 
 assert.match(shop, /handleShopAddToCart/, 'add to cart handler');
 assert.match(shop, /handleShopCart/, 'cart view handler');
