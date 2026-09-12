@@ -4,6 +4,7 @@ import { WALLET_CURRENCY_LABELS_FA, WALLET_CURRENCY_SYMBOLS } from '@petdate/sha
 import {
   approveCardPayment,
   attachPaymentReceipt,
+  cancelCardPayment,
   claimDailyCoins,
   fetchWalletTransactions,
   completeStarsPayment,
@@ -219,6 +220,33 @@ async function startCardPayment(ctx: Context, pkg: CoinPackage): Promise<void> {
     method: 'card',
   });
   if (!created.ok) {
+    if (created.reason === 'open_order' && created.order) {
+      await upsertSession(String(ctx.from.id), {
+        step: 'payment_receipt',
+        paymentPendingOrderId: created.order.id,
+      });
+      await ctx.answerCallbackQuery({ text: 'سفارش باز داری — همان را ادامه بده' });
+      const text = [
+        cardPaymentInstructionsText(pkg),
+        '',
+        `⚠️ سفارش باز #${created.order.id} — عکس رسید را بفرست یا لغو کن.`,
+      ].join('\n');
+      try {
+        await ctx.editMessageText(text, {
+          parse_mode: 'HTML',
+          reply_markup: paymentReceiptCancelKeyboard(),
+        });
+      } catch {
+        await ctx.reply(text, {
+          parse_mode: 'HTML',
+          reply_markup: paymentReceiptCancelKeyboard(),
+        });
+      }
+      await ctx.reply('برای ثبت فیش، دکمه زیر را بزن یا مستقیم عکس رسید را بفرست 👇', {
+        reply_markup: paymentReceiptReplyKeyboard(),
+      });
+      return;
+    }
     await ctx.answerCallbackQuery({ text: 'ثبت سفارش ناموفق', show_alert: true });
     return;
   }
@@ -323,6 +351,14 @@ async function startStarsPayment(ctx: Context, pkg: CoinPackage): Promise<void> 
 
 export async function handleCoinsPayCancel(ctx: Context): Promise<void> {
   if (ctx.from) {
+    const session = await getSession(String(ctx.from.id));
+    const orderId = session?.paymentPendingOrderId;
+    if (orderId) {
+      const cancelled = await cancelCardPayment(orderId, String(ctx.from.id));
+      if (!cancelled.ok && cancelled.reason !== 'bad_status' && cancelled.reason !== 'missing') {
+        console.warn('cancel card payment failed:', orderId, cancelled.reason);
+      }
+    }
     await upsertSession(String(ctx.from.id), {
       step: 'ready',
       paymentPendingOrderId: undefined,

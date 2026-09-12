@@ -24,6 +24,7 @@ import {
   fetchWalletTransactions,
   resolvePublicMediaUrl,
   startTelegramAttach,
+  cancelWalletPayment,
   uploadWalletPaymentReceipt,
   type CoinPackageDto,
   type WalletPaymentOrderDto,
@@ -318,6 +319,23 @@ export function WalletPage() {
     }
   }
 
+  async function onCancelActiveOrder() {
+    if (!token || !activeOrder || activeOrder.status !== 'awaiting_receipt') return;
+    setBuyBusy(true);
+    try {
+      await cancelWalletPayment(token, activeOrder.id);
+      setActiveOrder(null);
+      setTransferRef('');
+      toastInfo('سفارش لغو شد — می‌توانی بستهٔ جدید انتخاب کنی.');
+      await loadBuyCoins();
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : 'لغو ناموفق بود');
+      await loadBuyCoins();
+    } finally {
+      setBuyBusy(false);
+    }
+  }
+
   return (
     <div className="pepito-wallet-page pepito-wallet-page--folio">
       <header className="pepito-wallet-hero">
@@ -508,7 +526,10 @@ export function WalletPage() {
                     <input value={transferRef} onChange={(e) => setTransferRef(e.target.value)} placeholder="کد پیگیری بانک" dir="ltr" />
                   </label>
                   <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden onChange={(e) => void onUploadReceipt(e.target.files?.[0] ?? null)} />
-                  <button type="button" className="pepito-btn button-1" disabled={uploadBusy} onClick={() => fileRef.current?.click()}>{uploadBusy ? 'در حال ارسال…' : 'آپلود عکس رسید'}</button>
+                  <div className="pepito-wallet-tg-actions" style={{ marginTop: 8 }}>
+                    <button type="button" className="pepito-btn button-1" disabled={uploadBusy || buyBusy} onClick={() => fileRef.current?.click()}>{uploadBusy ? 'در حال ارسال…' : 'آپلود عکس رسید'}</button>
+                    <button type="button" className="pepito-btn button-2" disabled={uploadBusy || buyBusy} onClick={() => void onCancelActiveOrder()}>لغو سفارش</button>
+                  </div>
                 </>
               ) : (<p className="pepito-wallet-tg-meta">{t('wallet.receiptPending')}</p>)}
               {activeOrder.receiptUrl && token ? (

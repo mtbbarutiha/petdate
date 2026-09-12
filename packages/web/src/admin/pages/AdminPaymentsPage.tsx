@@ -53,6 +53,14 @@ function packageLabel(o: PaymentOrder): string {
   return pkg;
 }
 
+/** Bot uploads Telegram file_id; web/shop store `/api/payments/receipts/...`. */
+function paymentSourceLabel(o: PaymentOrder): string | null {
+  const raw = String(o.receiptUrl || o.receiptFileId || '').trim();
+  if (!raw) return null;
+  if (raw.startsWith('/api/payments/receipts/')) return 'وب';
+  return 'ربات';
+}
+
 function amountLabel(o: PaymentOrder): string {
   const parts: string[] = [];
   if (o.amountToman != null) parts.push(formatTomanFa(o.amountToman));
@@ -289,6 +297,9 @@ export function AdminPaymentsPage() {
                     <td>
                       <div className="admin-cell-compact">
                         <span>{packageLabel(o)}</span>
+                        {paymentSourceLabel(o) ? (
+                          <span className="admin-muted">منبع: {paymentSourceLabel(o)}</span>
+                        ) : null}
                         {shopMeta?.titleHint ? (
                           <span className="admin-muted">{shopMeta.titleHint}</span>
                         ) : null}

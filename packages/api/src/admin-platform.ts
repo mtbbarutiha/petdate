@@ -454,18 +454,7 @@ export const adminPlatform = {
   listPaymentOrdersAdmin(filters?: { status?: string; limit?: number }): PaymentOrder[] {
     const d = db();
     // Idempotent: flip stuck receipt+awaiting_receipt → pending so finance queue + approve work.
-    try {
-      d.prepare(
-        `UPDATE payment_orders
-         SET status = 'pending'
-         WHERE method = 'card'
-           AND status = 'awaiting_receipt'
-           AND receipt_file_id IS NOT NULL
-           AND TRIM(receipt_file_id) != ''`
-      ).run();
-    } catch {
-      /* ignore — column/table may be mid-migrate */
-    }
+    dbService.requeueStuckCardReceipts();
     let sql = `SELECT id FROM payment_orders WHERE 1=1`;
     const params: unknown[] = [];
     const status = typeof filters?.status === 'string' ? filters.status.trim() : '';

@@ -1192,6 +1192,21 @@ usersRouter.post('/telegram/:telegramId/payments', (req, res) => {
     return;
   }
 
+  // Same open-order guard as web wallet: orphan bot awaiting_receipt must not
+  // spawn duplicates that block /wallet card top-ups.
+  if (method === 'card' && !isWalletStarsTopUp && !packageId.startsWith('shop')) {
+    const open = dbService.findOpenCoinCardOrder(user.id);
+    if (open) {
+      res.status(409).json({
+        ok: false,
+        reason: 'open_order',
+        error: 'یک درخواست کارت‌به‌کارت باز داری — همان را تکمیل کن یا لغو کن.',
+        order: open,
+      });
+      return;
+    }
+  }
+
   const status = method === 'card' ? 'awaiting_receipt' : 'awaiting_stars';
   const order = dbService.createPaymentOrder({
     userId: user.id,
@@ -1226,6 +1241,39 @@ usersRouter.post('/payments/:id/receipt', (req, res) => {
   if (!result.ok) {
     const status =
       result.reason === 'missing' ? 404 : result.reason === 'no_file' ? 400 : 409;
+    res.status(status).json({ ok: false, reason: result.reason });
+    return;
+  }
+  // Header bell for admin panel; Telegram photo+buttons already sent by bot.
+  void import('../services/card2card-finance')
+    .then(({ notifyAdminsPendingCardReceipt }) =>
+      notifyAdminsPendingCardReceipt(result.order, { notifyTelegram: false })
+    )
+    .catch((err) => console.warn('bot receipt admin header notify skipped:', (err as Error).message));
+  res.json({ ok: true, order: result.order });
+});
+
+/** لغو سفارش کارت در حالت منتظر رسید (همگام با لغو در ربات / وب) */
+usersRouter.post('/payments/:id/cancel', (req, res) => {
+  const id = Number(req.params.id);
+  const userId =
+    req.body?.userId != null && Number.isFinite(Number(req.body.userId))
+      ? Number(req.body.userId)
+      : undefined;
+  const telegramId =
+    typeof req.body?.telegramId === 'string' ? req.body.telegramId.trim() : '';
+  let ownerId = userId;
+  if (ownerId == null && telegramId) {
+    ownerId = dbService.getUserByTelegramId(telegramId)?.id;
+  }
+  if (ownerId == null) {
+    res.status(400).json({ ok: false, reason: 'user', error: 'شناسه کاربر لازم است' });
+    return;
+  }
+  const result = dbService.cancelAwaitingCardPayment(id, { userId: ownerId });
+  if (!result.ok) {
+    const status =
+      result.reason === 'missing' ? 404 : result.reason === 'forbidden' ? 403 : 409;
     res.status(status).json({ ok: false, reason: result.reason });
     return;
   }

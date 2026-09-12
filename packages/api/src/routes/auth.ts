@@ -337,7 +337,11 @@ authRouter.get('/wallet/buy-coins', (req, res) => {
   const card = paymentCardPublicInfo();
   const open = dbService
     .listUserPaymentOrders(session.user.id, { limit: 10, method: 'card' })
-    .filter((o) => o.status === 'awaiting_receipt' || o.status === 'pending');
+    .filter((o) => {
+      if (o.status !== 'awaiting_receipt' && o.status !== 'pending') return false;
+      const pkg = String(o.packageId || '');
+      return !pkg.startsWith('shop') && !pkg.startsWith('wstars:');
+    });
   res.json({
     ok: true,
     packages: COIN_PACKAGES.map((p) => ({
@@ -372,14 +376,7 @@ authRouter.post('/wallet/buy-coins/card', (req, res) => {
     res.status(400).json({ ok: false, error: 'بسته نامعتبر', reason: 'package' });
     return;
   }
-  const open = dbService
-    .listUserPaymentOrders(session.user.id, { limit: 5, method: 'card' })
-    .find(
-      (o) =>
-        (o.status === 'awaiting_receipt' || o.status === 'pending') &&
-        !String(o.packageId).startsWith('shop') &&
-        !String(o.packageId).startsWith('wstars:')
-    );
+  const open = dbService.findOpenCoinCardOrder(session.user.id);
   if (open) {
     const card = paymentCardPublicInfo();
     res.status(409).json({
@@ -513,6 +510,32 @@ authRouter.post('/wallet/payments/:id/receipt', (req, res) => {
       res.status(500).json({ ok: false, error: 'خطا در ذخیره رسید.' });
     }
   });
+});
+
+/** لغو سفارش کارت منتظر رسید از کیف پول وب (همگام با ربات). */
+authRouter.post('/wallet/payments/:id/cancel', (req, res) => {
+  const session = getUserFromBearer(req.header('authorization') ?? undefined);
+  if (!session) {
+    res.status(401).json({ error: 'وارد نشده‌اید' });
+    return;
+  }
+  const result = dbService.cancelAwaitingCardPayment(Number(req.params.id), {
+    userId: session.user.id,
+  });
+  if (!result.ok) {
+    const status =
+      result.reason === 'missing' ? 404 : result.reason === 'forbidden' ? 403 : 409;
+    res.status(status).json({
+      ok: false,
+      reason: result.reason,
+      error:
+        result.reason === 'bad_status'
+          ? 'این سفارش دیگر قابل لغو نیست (در صف تأیید است یا قبلاً بررسی شده).'
+          : 'لغو ناموفق بود.',
+    });
+    return;
+  }
+  res.json({ ok: true, order: result.order });
 });
 
 /**

@@ -1175,7 +1175,10 @@ export async function createPaymentOrder(
     amountStars?: number;
     method: 'card' | 'stars';
   }
-): Promise<{ ok: true; order: PaymentOrder } | { ok: false; reason: string }> {
+): Promise<
+  | { ok: true; order: PaymentOrder }
+  | { ok: false; reason: string; order?: PaymentOrder }
+> {
   const res = await fetch(
     `${config.apiUrl}/api/users/telegram/${encodeURIComponent(telegramId)}/payments`,
     {
@@ -1191,7 +1194,11 @@ export async function createPaymentOrder(
     error?: string;
   };
   if (!res.ok || !body.ok || !body.order) {
-    return { ok: false, reason: body.reason ?? body.error ?? 'error' };
+    return {
+      ok: false,
+      reason: body.reason ?? body.error ?? 'error',
+      order: body.order,
+    };
   }
   return { ok: true, order: body.order };
 }
@@ -1206,6 +1213,27 @@ export async function getPaymentOrder(orderId: number): Promise<PaymentOrder | n
 
 export async function listPendingCardPayments(): Promise<PaymentOrder[]> {
   return request<PaymentOrder[]>('/api/users/payments/pending/card');
+}
+
+export async function cancelCardPayment(
+  orderId: number,
+  telegramId: string
+): Promise<{ ok: true; order: PaymentOrder } | { ok: false; reason: string }> {
+  const res = await fetch(`${config.apiUrl}/api/users/payments/${orderId}/cancel`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ telegramId }),
+  });
+  const body = (await res.json()) as {
+    ok?: boolean;
+    order?: PaymentOrder;
+    reason?: string;
+    error?: string;
+  };
+  if (!res.ok || !body.ok || !body.order) {
+    return { ok: false, reason: body.reason ?? body.error ?? 'error' };
+  }
+  return { ok: true, order: body.order };
 }
 
 export async function attachPaymentReceipt(
