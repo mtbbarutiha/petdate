@@ -10,6 +10,7 @@ import { AppDialogHost } from './components/AppDialog';
 import { FaceVerifyRewardToast } from './components/FaceVerifyRewardToast';
 import { ScrollToTop } from './components/ScrollToTop';
 import { withTagAssistantParams } from './lib/tagAssistantParams';
+import { isHomePath, parkBootLcp } from './lib/parkBootLcp';
 import { WelcomePage } from './pages/WelcomePage';
 import { VetConsultRoute } from './pages/VetConsultRoute';
 import { ReferralCapture } from './components/ReferralCapture';
@@ -71,6 +72,15 @@ function DeferredLandingDock() {
       <LandingMobileDock />
     </Suspense>
   );
+}
+
+/** Park the out-of-root homepage LCP on every non-home route (WelcomePage parks `/`). */
+function ParkBootLcpOnNonHome() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    if (!isHomePath(pathname)) parkBootLcp();
+  }, [pathname]);
+  return null;
 }
 
 /** Alias / catch-all redirects must keep Tag Assistant debug query params. */
@@ -574,6 +584,7 @@ export default function App() {
             <Route path="*" element={<RedirectWithTagAssistant to="/" />} />
           </Routes>
         </Suspense>
+        <ParkBootLcpOnNonHome />
         <DeferredLandingDock />
       </ShopCartProvider>
       </AppToastProvider>

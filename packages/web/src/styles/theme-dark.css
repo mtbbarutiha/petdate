@@ -982,6 +982,26 @@ html[data-theme='dark'] .pepito-news-card {
   background: var(--pepito-white);
   border: 1px solid var(--pd-border);
 }
+html[data-theme='dark'] .pepito-magazine-page,
+html[data-theme='dark'] .pepito-magazine-article {
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-magazine-search input {
+  background: var(--pd-surface-2);
+  color: var(--pepito-dark);
+  border-color: var(--pd-border);
+}
+html[data-theme='dark'] .pepito-magazine-search input::placeholder {
+  color: var(--pepito-muted);
+}
+html[data-theme='dark'] .pepito-magazine-body,
+html[data-theme='dark'] .pepito-magazine-article-head h1 {
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-magazine-lead,
+html[data-theme='dark'] .pepito-magazine-meta {
+  color: var(--pepito-muted);
+}
 
 /* Utility chips keep a fill hover; primary shortcuts stay text-only */
 html[data-theme='dark'] .pepito-nav-wallet-btn:hover {

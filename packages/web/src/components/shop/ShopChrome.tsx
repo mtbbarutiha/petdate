@@ -45,7 +45,7 @@ export function ShopChrome({
   }, []);
 
   return (
-    <div className="pepito-landing pepito-flow-page pd-shop-page" dir={dir}>
+    <div className="pepito-landing pepito-landing--with-dock pepito-flow-page pd-shop-page" dir={dir}>
       <SiteHeader
         scrolled={scrolled}
         className={isLoggedIn ? 'pepito-nav--app' : ''}
