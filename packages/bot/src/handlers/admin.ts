@@ -6,11 +6,13 @@ import {
   listPendingCardPayments,
   listPendingPetPhotos,
   listPendingProviderCredentials,
+  listPendingUserAvatars,
   listPendingVerifications,
   listPendingVetCredentials,
   rejectProviderCredential,
   rejectVetCredential,
   setPetPhotoModeration,
+  setUserAvatarModeration,
   setVetEnabled,
   type PaymentOrder,
 } from '../api-client';
@@ -29,6 +31,7 @@ import {
   adminPaymentKeyboard,
   adminPetPhotoKeyboard,
   adminProviderCredentialKeyboard,
+  adminUserAvatarKeyboard,
   adminVetCredentialKeyboard,
   adminVetListKeyboard,
   adminVetToggleKeyboard,
@@ -38,6 +41,7 @@ import { getCtxUser, menuKeyboardFor, pushMainMenuKeyboard } from './helpers';
 import { handleAdminVerifyQueue } from './verification';
 import type { User } from '@petdate/shared';
 import { userPublicIdOf } from '@petdate/shared';
+import { resolveTelegramPhotoUrl } from '../urls';
 
 const ADMIN_VET_LIST_PAGE_SIZE = 10;
 
@@ -107,6 +111,7 @@ export async function handleAdminStats(ctx: Context): Promise<void> {
   let vet = 0;
   let trainer = 0;
   let photos = 0;
+  let avatars = 0;
   let payments = 0;
   try {
     face = (await listPendingVerifications()).length;
@@ -129,6 +134,11 @@ export async function handleAdminStats(ctx: Context): Promise<void> {
     console.error('admin stats photo queue failed:', err);
   }
   try {
+    avatars = (await listPendingUserAvatars()).length;
+  } catch (err) {
+    console.error('admin stats avatar queue failed:', err);
+  }
+  try {
     payments = (await listPendingCardPayments()).length;
   } catch (err) {
     console.error('admin stats payment queue failed:', err);
@@ -141,6 +151,7 @@ export async function handleAdminStats(ctx: Context): Promise<void> {
       `📄 مدارک دامپزشک: <b>${vet}</b>`,
       `🎓 مدارک مربی: <b>${trainer}</b>`,
       `🖼 عکس پت: <b>${photos}</b>`,
+      `👤 عکس کاربر: <b>${avatars}</b>`,
       `💳 پرداخت‌های در انتظار: <b>${payments}</b>`,
     ].join('\n'),
     { parse_mode: 'HTML', reply_markup: adminPanelKeyboard() }
@@ -571,6 +582,9 @@ export async function handleAdminMenuText(ctx: Context, text: string): Promise<b
     case m.photoQueue:
       await handleAdminPetPhotoQueue(ctx);
       return true;
+    case m.avatarQueue:
+      await handleAdminUserAvatarQueue(ctx);
+      return true;
     case m.vetList:
       await handleAdminVetList(ctx);
       return true;
@@ -705,8 +719,9 @@ export async function handleAdminPetPhotoQueue(ctx: Context): Promise<void> {
     .join('\n');
   const kb = adminPetPhotoKeyboard(pet.id);
   if (pet.imageUrl) {
+    const ref = resolveTelegramPhotoUrl(pet.imageUrl) || pet.imageUrl;
     try {
-      await ctx.replyWithPhoto(pet.imageUrl, {
+      await ctx.replyWithPhoto(ref, {
         caption,
         parse_mode: 'HTML',
         reply_markup: kb,
@@ -736,4 +751,69 @@ export async function handleAdminPetPhotoAction(
     await ctx.reply('عملیات ناموفق بود.');
   }
   await handleAdminPetPhotoQueue(ctx);
+}
+
+export async function handleAdminUserAvatarQueue(ctx: Context): Promise<void> {
+  if (!(await requireAdminAuth(ctx))) return;
+  let pending: Awaited<ReturnType<typeof listPendingUserAvatars>>;
+  try {
+    pending = await listPendingUserAvatars();
+  } catch (err) {
+    console.error('listPendingUserAvatars failed:', err);
+    await ctx.reply('خطا در دریافت صف عکس کاربر.', { reply_markup: adminPanelKeyboard() });
+    return;
+  }
+  if (!pending.length) {
+    await ctx.reply('📭 صف عکس کاربر خالی است.', { reply_markup: adminPanelKeyboard() });
+    return;
+  }
+  await ctx.reply(`👤 ${pending.length} عکس کاربر در صف تأیید:`, {
+    reply_markup: adminPanelKeyboard(),
+  });
+  const user = pending[0]!;
+  const caption = [
+    '👤 <b>عکس پروفایل در انتظار تأیید</b>',
+    '',
+    `<b>نام:</b> ${escapeHtml(user.name)}`,
+    user.username ? `<b>یوزرنیم:</b> @${escapeHtml(user.username)}` : null,
+    `<b>آیدی:</b> <code>${user.id}</code>`,
+    user.city ? `<b>شهر:</b> ${escapeHtml(user.city)}` : null,
+  ]
+    .filter(Boolean)
+    .join('\n');
+  const kb = adminUserAvatarKeyboard(user.id);
+  const photo = user.avatarUrl;
+  if (photo) {
+    const ref = resolveTelegramPhotoUrl(photo) || photo;
+    try {
+      await ctx.replyWithPhoto(ref, {
+        caption,
+        parse_mode: 'HTML',
+        reply_markup: kb,
+      });
+      return;
+    } catch {
+      /* fall through */
+    }
+  }
+  await ctx.reply(`${caption}\n\n⚠️ عکس در دسترس نیست.`, {
+    parse_mode: 'HTML',
+    reply_markup: kb,
+  });
+}
+
+export async function handleAdminUserAvatarAction(
+  ctx: Context,
+  userId: number,
+  approve: boolean
+): Promise<void> {
+  if (!(await requireAdminAuth(ctx))) return;
+  try {
+    await setUserAvatarModeration(userId, approve ? 'approved' : 'rejected');
+    await ctx.reply(approve ? '✅ عکس کاربر تأیید شد.' : '❌ عکس کاربر رد شد.');
+  } catch (err) {
+    console.error('user avatar moderation failed:', err);
+    await ctx.reply('عملیات ناموفق بود.');
+  }
+  await handleAdminUserAvatarQueue(ctx);
 }

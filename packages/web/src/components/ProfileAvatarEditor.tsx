@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Camera, Loader2 } from 'lucide-react';
 import { useAuthStore } from '../hooks/useAuthStore';
+import { looksLikeHtmlBody } from '../lib/apiErrorMessage';
 
 interface ProfileAvatarEditorProps {
   imageUrl: string;
@@ -28,6 +29,7 @@ export function ProfileAvatarEditor({
   const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
+  const [uploadedPending, setUploadedPending] = useState(false);
   const blobUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -60,6 +62,7 @@ export function ProfileAvatarEditor({
       const result = await uploadAvatar(file);
       onUploaded?.(result.url);
       setPreview(null);
+      setUploadedPending(true);
       if (blobUrlRef.current) {
         URL.revokeObjectURL(blobUrlRef.current);
         blobUrlRef.current = null;
@@ -67,7 +70,7 @@ export function ProfileAvatarEditor({
     } catch (err) {
       const raw = err instanceof Error ? err.message : 'آپلود ناموفق بود';
       const friendly =
-        raw.trim().startsWith('{') || raw.trim().startsWith('[')
+        raw.trim().startsWith('{') || raw.trim().startsWith('[') || looksLikeHtmlBody(raw)
           ? 'آپلود عکس ناموفق بود. یک عکس دیگر با فرمت JPG یا PNG امتحان کن.'
           : raw;
       setError(friendly);
@@ -134,6 +137,10 @@ export function ProfileAvatarEditor({
       {error ? (
         <p className="pepito-avatar-editor-error" role="alert">
           {error}
+        </p>
+      ) : uploadedPending ? (
+        <p className="pepito-avatar-editor-hint" role="status">
+          پیش‌نمایش برای خودت فعال است — تا تأیید ادمین عمومی نیست.
         </p>
       ) : null}
     </div>

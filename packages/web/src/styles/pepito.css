@@ -4729,6 +4729,24 @@ button.chip.is-on {
   border-color: rgba(253, 150, 30, 0.22);
   color: #9a5a00;
 }
+.pepito-profile-badge.is-danger {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.22);
+  color: #b91c1c;
+}
+.pepito-profile-pet-mod {
+  display: inline-block;
+  width: fit-content;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.1rem 0.4rem;
+  border-radius: 6px;
+}
+.pepito-profile-pet-mod.is-pending { background: rgba(253, 150, 30, 0.14); color: #9a5a00; }
+.pepito-profile-pet-mod.is-rejected { background: rgba(239, 68, 68, 0.12); color: #b91c1c; }
+.pepito-profile-pet-mod.is-ok { background: rgba(21, 204, 160, 0.12); color: #0b7a5e; }
+.pepito-profile-verify-actions { display: flex; flex-wrap: wrap; gap: 0.55rem; margin-top: 0.75rem; }
+.pepito-profile-verify-panel .pepito-profile-error { margin-top: 0.65rem; }
 .pepito-profile-bio {
   margin: 0 0 0.85rem;
   font-size: 1.05rem;

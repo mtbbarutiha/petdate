@@ -121,13 +121,23 @@ petsRouter.post('/photos/upload', (req, res) => {
         return;
       }
 
+      const session = getUserFromBearer(req.header('authorization') ?? undefined);
+      if (!session) {
+        res.status(401).json({ error: 'وارد نشده‌اید' });
+        return;
+      }
+
       const ownerId = Number(
-        (req.body as { ownerId?: string })?.ownerId ?? req.query.ownerId
+        (req.body as { ownerId?: string })?.ownerId ?? req.query.ownerId ?? session.user.id
       );
       const file = req.file;
 
       if (!Number.isFinite(ownerId) || ownerId <= 0) {
         res.status(400).json({ error: 'ownerId الزامی است' });
+        return;
+      }
+      if (ownerId !== session.user.id && !isInternalBot(req)) {
+        res.status(403).json({ error: 'فقط صاحب حساب می‌تواند عکس آپلود کند' });
         return;
       }
       if (!file?.buffer?.length) {

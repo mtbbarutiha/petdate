@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ChevronLeft,
@@ -15,6 +15,7 @@ import {
   FACE_VERIFY_REWARD,
   IRAN_PROVINCES,
   ONBOARDING_STATUS_LABELS,
+  PHOTO_MODERATION_STATUS_LABELS,
   PROFILE_INTEREST_OPTIONS,
   USER_GENDER_LABELS,
   USER_ROLE_LABELS,
@@ -53,6 +54,7 @@ import {
   listUserContacts,
   patchWebProfile,
   resolvePublicMediaUrl,
+  submitWebFaceVerification,
 } from '../lib/api';
 import { petProfileToUiPet } from '../lib/playdateMap';
 import { PET_TYPE_LABELS } from '../types';
@@ -90,6 +92,9 @@ export function ProfilePage() {
   const [panel, setPanel] = useState<PanelKind>(null);
   const [panelLines, setPanelLines] = useState<string[]>([]);
   const [panelBusy, setPanelBusy] = useState(false);
+  const [verifyBusy, setVerifyBusy] = useState(false);
+  const [verifyError, setVerifyError] = useState('');
+  const verifyFileRef = useRef<HTMLInputElement>(null);
 
   const [name, setName] = useState('');
   const [age, setAge] = useState('');
@@ -193,9 +198,10 @@ export function ProfilePage() {
           verifyStatus === 'verified'
             ? 'پروفایلت احراز شده است.'
             : verifyStatus === 'pending'
-              ? 'درخواست احراز در صف بررسی است.'
-              : `جایزه تأیید: ${formatFaInt(FACE_VERIFY_REWARD)} سکه — از ربات «احراز چهره» بزن.`,
+              ? 'درخواست احراز در صف بررسی است — به‌محض تأیید، ۱۰۰ سکه جایزه واریز می‌شود.'
+              : `جایزه تأیید ادمین: ${formatFaInt(FACE_VERIFY_REWARD)} سکه. سلفی واضح بفرست یا از عکس پروفایل فعلی استفاده کن.`,
         ]);
+        setVerifyError('');
         setPanelBusy(false);
         return;
       }
@@ -363,6 +369,34 @@ export function ProfilePage() {
   }
   function openInteractions() {
     openPanelParam('interactions');
+  }
+  async function submitFaceVerify(opts: { file?: File; useAvatar?: boolean }) {
+    if (!token) {
+      toastError('وارد نشده‌اید');
+      return;
+    }
+    setVerifyBusy(true);
+    setVerifyError('');
+    try {
+      const res = await submitWebFaceVerification(token, {
+        file: opts.file,
+        photoUrl: opts.useAvatar ? display.avatarUrl : undefined,
+      });
+      setCardUser(res.user);
+      await refreshMe();
+      toastSuccess('درخواست احراز ثبت شد — در صف بررسی ادمین است');
+      setPanelLines([
+        faceVerifyButtonLabel(res.user.verificationStatus ?? 'pending'),
+        'درخواست احراز در صف بررسی است — به‌محض تأیید، ۱۰۰ سکه جایزه واریز می‌شود.',
+      ]);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'ارسال احراز ناموفق بود';
+      setVerifyError(msg);
+      toastError(msg);
+    } finally {
+      setVerifyBusy(false);
+      if (verifyFileRef.current) verifyFileRef.current.value = '';
+    }
   }
   async function deactivateAccount() {
     if (!token) return;
@@ -721,6 +755,23 @@ export function ProfilePage() {
                 >
                   {profileVerifyStatusLabel(verifyStatus)}
                 </span>
+                {display.avatarUrl ? (
+                  <span
+                    className={`pepito-profile-badge${
+                      (display.avatarModerationStatus ?? 'approved') === 'approved'
+                        ? ' is-ok'
+                        : (display.avatarModerationStatus ?? 'approved') === 'pending'
+                          ? ' is-warn'
+                          : ' is-danger'
+                    }`}
+                    title="وضعیت تأیید عکس پروفایل"
+                  >
+                    عکس:{' '}
+                    {PHOTO_MODERATION_STATUS_LABELS[
+                      display.avatarModerationStatus ?? 'approved'
+                    ]}
+                  </span>
+                ) : null}
               </div>
 
               <div className="pepito-profile-about-foot">
@@ -782,6 +833,23 @@ export function ProfilePage() {
                                   .filter(Boolean)
                                   .join(' · ')}
                               </span>
+                              {pet.imageUrl ? (
+                                <span
+                                  className={`pepito-profile-pet-mod${
+                                    (pet.photoModerationStatus ?? 'approved') === 'pending'
+                                      ? ' is-pending'
+                                      : (pet.photoModerationStatus ?? 'approved') === 'rejected'
+                                        ? ' is-rejected'
+                                        : ' is-ok'
+                                  }`}
+                                >
+                                  {
+                                    PHOTO_MODERATION_STATUS_LABELS[
+                                      pet.photoModerationStatus ?? 'approved'
+                                    ]
+                                  }
+                                </span>
+                              ) : null}
                               <span className="pepito-profile-pet-id" dir="ltr">
                                 {petIdLabel}
                               </span>
@@ -876,6 +944,52 @@ export function ProfilePage() {
                   >
                     حذف حساب
                   </button>
+                </div>
+              ) : panel === 'verify' ? (
+                <div className="pepito-profile-verify-panel">
+                  <ul className="pepito-profile-panel-list">
+                    {panelLines.map((line) => (
+                      <li key={line}>{line}</li>
+                    ))}
+                  </ul>
+                  {verifyStatus !== 'verified' && verifyStatus !== 'pending' ? (
+                    <div className="pepito-profile-verify-actions">
+                      <input
+                        ref={verifyFileRef}
+                        type="file"
+                        accept="image/*,image/heic,image/heif,.heic,.heif"
+                        capture="user"
+                        className="pepito-avatar-file-input"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) void submitFaceVerify({ file });
+                        }}
+                      />
+                      <button
+                        type="button"
+                        className="pepito-btn button-1"
+                        disabled={verifyBusy}
+                        onClick={() => verifyFileRef.current?.click()}
+                      >
+                        {verifyBusy ? 'در حال ارسال…' : 'ارسال سلفی احراز'}
+                      </button>
+                      {display.avatarUrl ? (
+                        <button
+                          type="button"
+                          className="pepito-btn pepito-btn--ghost"
+                          disabled={verifyBusy}
+                          onClick={() => void submitFaceVerify({ useAvatar: true })}
+                        >
+                          استفاده از عکس پروفایل
+                        </button>
+                      ) : null}
+                    </div>
+                  ) : null}
+                  {verifyError ? (
+                    <p className="pepito-profile-error" role="alert">
+                      {verifyError}
+                    </p>
+                  ) : null}
                 </div>
               ) : (
                 <ul className="pepito-profile-panel-list">

@@ -27,6 +27,7 @@ export function PetPhotoUpload({
   const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
+  const [pendingHint, setPendingHint] = useState(false);
   const blobUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -66,6 +67,7 @@ export function PetPhotoUpload({
         URL.revokeObjectURL(blobUrlRef.current);
         blobUrlRef.current = null;
       }
+      setPendingHint(true);
     } catch (err) {
       const raw = err instanceof Error ? err.message : 'آپلود ناموفق بود';
       const friendly =
@@ -162,6 +164,11 @@ export function PetPhotoUpload({
       {!ownerId && (
         <p className="pet-photo-hint">برای ذخیره عکس باید وارد حساب شده باشی.</p>
       )}
+      {pendingHint && !error ? (
+        <p className="pet-photo-hint" role="status">
+          پیش‌نمایش برای خودت فعال است — تا تأیید ادمین، عکس عمومی نمایش داده نمی‌شود.
+        </p>
+      ) : null}
       {error && (
         <p className="pet-photo-error" role="alert">
           {error}
