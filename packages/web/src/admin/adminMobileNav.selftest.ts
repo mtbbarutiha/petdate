@@ -57,6 +57,11 @@ assert.doesNotMatch(css, /inset-inline-start:\s*calc\(264px/, 'toggle is not par
 assert.doesNotMatch(css, /admin-topbar-wordmark/, 'no leftover topbar wordmark chrome');
 assert.match(
   css,
+  /@media \(max-width:\s*640px\)[\s\S]*?admin-topbar-eyebrow[\s\S]*?display:\s*none/,
+  'narrow RTL topbar hides the eyebrow so the reopen hamburger stays on-screen'
+);
+assert.match(
+  css,
   /@media \(min-width:\s*961px\)[\s\S]*?admin-app--nav-closed \.admin-sidebar[\s\S]*?display:\s*none/,
   'desktop close hides the whole sidebar panel'
 );

@@ -266,6 +266,7 @@
   align-items: center;
   gap: 12px;
   min-width: 0;
+  flex-shrink: 0;
 }
 
 .admin-app .admin-breadcrumb {
@@ -354,6 +355,13 @@
   }
   .admin-app .admin-topbar-user {
     padding: 3px;
+  }
+  /* Keep the reopen hamburger on-screen in RTL: drop wide chrome. */
+  .admin-app .admin-topbar-eyebrow {
+    display: none;
+  }
+  .admin-app .admin-topbar-chip {
+    display: none;
   }
 }
 
