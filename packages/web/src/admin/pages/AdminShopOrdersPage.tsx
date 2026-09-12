@@ -62,6 +62,42 @@ function itemsSummary(items: OrderItem[]): string {
     .join(' · ');
 }
 
+function itemUnitPrice(it: OrderItem): string {
+  if (it.priceToman != null && Number.isFinite(Number(it.priceToman))) {
+    return formatTomanFa(Number(it.priceToman));
+  }
+  if (it.stars != null && Number(it.stars) > 0) {
+    return `⭐ ${formatNumFa(Number(it.stars))}`;
+  }
+  if (it.coins != null && Number(it.coins) > 0) {
+    return `🪙 ${formatNumFa(Number(it.coins))}`;
+  }
+  return '—';
+}
+
+function OrderItemsList({ items }: { items: OrderItem[] }) {
+  if (!Array.isArray(items) || items.length === 0) {
+    return <p className="admin-muted">بدون آیتم</p>;
+  }
+  return (
+    <ul className="admin-order-detail__items">
+      {items.map((it, idx) => {
+        const title = it.title || it.productId || 'کالا';
+        const qty = Math.max(1, Number(it.qty) || 1);
+        return (
+          <li key={`${it.productId || title}-${idx}`} className="admin-order-detail__item">
+            <span className="admin-order-detail__item-title">{title}</span>
+            <span className="admin-order-detail__item-qty" dir="ltr">
+              ×{formatNumFa(qty)}
+            </span>
+            <span className="admin-order-detail__item-price">{itemUnitPrice(it)}</span>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 export function AdminShopOrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [status, setStatus] = useState('');
@@ -200,15 +236,33 @@ export function AdminShopOrdersPage() {
                     </td>
                   </tr>
                   {open ? (
-                    <tr>
+                    <tr className="admin-order-detail-row">
                       <td colSpan={8}>
-                        <div className="admin-muted" style={{ whiteSpace: 'pre-wrap', textAlign: 'start', padding: 8 }}>
-                          <div dir="ltr" style={{ marginBottom: 8 }}>
-                            <code className="admin-mono admin-id-public">{publicId}</code>
-                          </div>
-                          {o.note || 'بدون یادداشت / آدرس'}
-                          {'\n\n'}
-                          آیتم‌ها: {JSON.stringify(o.items, null, 2)}
+                        <div className="admin-order-detail" dir="rtl">
+                          <section className="admin-order-detail__block">
+                            <h3 className="admin-order-detail__label">آدرس / یادداشت</h3>
+                            <p className="admin-order-detail__address">
+                              {o.note?.trim() ? o.note : 'بدون یادداشت / آدرس'}
+                            </p>
+                            {(o.customerName || o.customerPhone) && (
+                              <p className="admin-order-detail__meta">
+                                {o.customerName ? <span>{o.customerName}</span> : null}
+                                {o.customerPhone ? (
+                                  <span className="admin-mono" dir="ltr">
+                                    {o.customerPhone}
+                                  </span>
+                                ) : null}
+                              </p>
+                            )}
+                          </section>
+                          <section className="admin-order-detail__block">
+                            <h3 className="admin-order-detail__label">آیتم‌ها</h3>
+                            <OrderItemsList items={o.items} />
+                            <details className="admin-order-detail__raw">
+                              <summary>JSON خام</summary>
+                              <pre dir="ltr">{JSON.stringify(o.items, null, 2)}</pre>
+                            </details>
+                          </section>
                         </div>
                       </td>
                     </tr>
