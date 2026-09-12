@@ -10,6 +10,50 @@ function db() {
   return getDb();
 }
 
+export type AdminUserPetSummary = {
+  id: number;
+  name: string;
+  species?: string;
+};
+
+/** Real pets for a page of users — names from pets table only, never invented. */
+export function batchPetsByOwnerIds(
+  ownerIds: number[]
+): Map<number, AdminUserPetSummary[]> {
+  const map = new Map<number, AdminUserPetSummary[]>();
+  const ids = [...new Set(ownerIds.filter((id) => Number.isFinite(id) && id > 0))];
+  for (const id of ids) map.set(id, []);
+  if (!ids.length) return map;
+  const placeholders = ids.map(() => '?').join(',');
+  const rows = db()
+    .prepare(
+      `SELECT id, owner_id, name, species
+       FROM pets
+       WHERE owner_id IN (${placeholders})
+       ORDER BY updated_at DESC, id DESC`
+    )
+    .all(...ids) as Array<{
+    id: number;
+    owner_id: number;
+    name: string | null;
+    species: string | null;
+  }>;
+  for (const row of rows) {
+    const name = String(row.name || '').trim();
+    if (!name) continue;
+    const ownerId = Number(row.owner_id);
+    const list = map.get(ownerId) || [];
+    const species = String(row.species || '').trim();
+    list.push({
+      id: Number(row.id),
+      name,
+      ...(species ? { species } : {}),
+    });
+    map.set(ownerId, list);
+  }
+  return map;
+}
+
 export type UsersGeoProvinceRow = { name: string; count: number };
 
 export type UsersGeoDistribution = {
@@ -421,8 +465,12 @@ export const adminPlatform = {
         name LIKE ? OR IFNULL(username,'') LIKE ? OR IFNULL(phone,'') LIKE ?
         OR IFNULL(telegram_id,'') LIKE ? OR CAST(id AS TEXT) = ?
         OR IFNULL(public_id,'') LIKE ? OR upper(IFNULL(public_id,'')) = upper(?)
+        OR EXISTS (
+          SELECT 1 FROM pets p
+          WHERE p.owner_id = users.id AND IFNULL(p.name,'') LIKE ?
+        )
       )`;
-      params.push(like, like, like, like, qTrim, like, qTrim);
+      params.push(like, like, like, like, qTrim, like, qTrim, like);
     }
     if (filters?.role) {
       where += ` AND (role = ? OR roles LIKE ?)`;
@@ -441,7 +489,14 @@ export const adminPlatform = {
     const users = rows
       .map((r) => dbService.getUserById(r.id))
       .filter((u): u is User => Boolean(u));
-    return { total, users };
+    const petsByOwner = batchPetsByOwnerIds(users.map((u) => u.id));
+    return {
+      total,
+      users: users.map((u) => ({
+        ...u,
+        pets: petsByOwner.get(u.id) || [],
+      })),
+    };
   },
 
   setUserActive(userId: number, isActive: boolean): User | null {

@@ -1,4 +1,5 @@
 import {
+  PET_SPECIES_LABELS,
   VERIFICATION_STATUS_LABELS,
   WALLET_CURRENCY_LABELS_FA,
   type User,
@@ -7,6 +8,46 @@ import {
 } from '@petdate/shared';
 import { formatNumFa } from './api';
 import { tr } from '../i18n';
+
+export type AdminUserPet = { id: number; name: string; species?: string };
+
+const ADMIN_PETS_PREVIEW = 3;
+
+/** Linked pet names from the API — empty → em-dash, never invented names. */
+export function AdminPetsCell({ pets }: { pets?: AdminUserPet[] | null }) {
+  const list = (pets || [])
+    .map((p) => ({
+      id: p.id,
+      name: String(p.name || '').trim(),
+      species: p.species,
+    }))
+    .filter((p) => p.name);
+  if (!list.length) return <span className="admin-muted">—</span>;
+  const shown = list.slice(0, ADMIN_PETS_PREVIEW);
+  const extra = list.length - shown.length;
+  return (
+    <div className="admin-pets-cell">
+      {shown.map((p) => {
+        const speciesLabel =
+          p.species && PET_SPECIES_LABELS[p.species] ? PET_SPECIES_LABELS[p.species] : null;
+        return (
+          <span
+            key={p.id}
+            className="admin-pet-chip"
+            title={speciesLabel ? `${p.name} · ${speciesLabel}` : p.name}
+          >
+            {p.name}
+          </span>
+        );
+      })}
+      {extra > 0 ? (
+        <span className="admin-muted admin-pet-chip-more" title={list.map((p) => p.name).join('، ')}>
+          +{extra}
+        </span>
+      ) : null}
+    </div>
+  );
+}
 
 /** Compact labeled wallet balances — avoids cramped C:/T:/★/₮ vertical soup. */
 export function AdminWalletCell({
@@ -21,7 +62,7 @@ export function AdminWalletCell({
   toman?: number | null;
   stars?: number | null;
   ton?: number | null;
-  /** 2×2 chip grid for dense tables (less horizontal scroll). */
+  /** Stacked label/value chips for dense tables (no overflow). */
   compact?: boolean;
   /** Optional: open «اعتبار» modal instead of a separate action button. */
   onOpenCredit?: () => void;
@@ -116,26 +157,43 @@ export function AdminTelegramCell({
   );
 }
 
-/** Phone + email on two tight lines (skip empty). */
+/** Phone / Telegram / email — consistent em-dash when nothing is on file. */
 export function AdminContactCell({
   phone,
   email,
+  username,
+  telegramId,
 }: {
   phone?: string | null;
   email?: string | null;
+  username?: string | null;
+  telegramId?: string | number | null;
 }) {
   const p = phone?.trim() || null;
   const e = email?.trim() || null;
-  if (!p && !e) return <span className="admin-muted">—</span>;
+  const handle = username?.trim() ? `@${username.trim().replace(/^@+/, '')}` : null;
+  const tgId =
+    telegramId != null && String(telegramId).trim() ? String(telegramId).trim() : null;
+  if (!p && !e && !handle && !tgId) return <span className="admin-muted">—</span>;
   return (
-    <div className="admin-cell-compact">
+    <div
+      className="admin-cell-compact"
+      title={tgId ? `Telegram ID: ${tgId}` : undefined}
+    >
       {p ? (
         <span className="admin-mono" dir="ltr">
           {p}
         </span>
-      ) : (
-        <span className="admin-muted">{tr('بدون موبایل')}</span>
-      )}
+      ) : null}
+      {handle ? (
+        <span className="admin-mono" dir="ltr">
+          {handle}
+        </span>
+      ) : tgId && !p ? (
+        <span className="admin-muted admin-mono" dir="ltr">
+          tg:{tgId}
+        </span>
+      ) : null}
       {e ? (
         <span className="admin-muted admin-ellipsis" dir="ltr" title={e}>
           {e}
