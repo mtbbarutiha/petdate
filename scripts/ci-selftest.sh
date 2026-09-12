@@ -90,6 +90,9 @@ npx tsx "$ROOT/packages/web/src/components/playmateFeeConfirm.selftest.ts"
 echo "==> selftest: web silent-chat mute ConfirmModal + desktop header layout"
 npx tsx "$ROOT/packages/web/src/components/silentChatConfirm.selftest.ts"
 
+echo "==> selftest: web chat inbox dismiss ConfirmModal + same-row trash"
+npx tsx "$ROOT/packages/web/src/components/chatDismissConfirm.selftest.ts"
+
 echo "==> selftest: web find-playmate empty mobile layout"
 npx tsx "$ROOT/packages/web/src/components/playmateEmptyMobile.selftest.ts"
 
