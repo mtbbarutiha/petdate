@@ -12058,11 +12058,15 @@ a.pepito-btn.pepito-human-consult-cta:hover {
 
 
 
-/* Empty-pane / panel primary find CTA — compact but still tappable */
+/* Empty-pane / panel primary find CTA — hug content, still tappable */
 .tg-thread-empty__cta-wrap .pepito-btn,
-.tg-chat-list-empty .pepito-btn.button-1 {
-  min-height: 40px !important;
-  width: 100%;
+.tg-thread-empty__cta-wrap .find-playmate-one__btn,
+.tg-chat-list-empty .pepito-btn.button-1,
+.tg-chat-list-empty .find-playmate-one__btn {
+  min-height: 36px !important;
+  width: auto !important;
+  max-width: 100%;
+  align-self: center;
   justify-content: center;
 }
 .find-playmate-header {
@@ -12138,15 +12142,20 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   background: transparent;
 }
 .find-playmate-one__btn {
-  gap: 0.4rem;
-  min-height: 40px;
-  font-size: 0.9rem !important;
-  padding: 0.55rem 1.1rem !important;
+  display: inline-flex;
+  width: auto;
+  max-width: 100%;
+  align-self: center;
+  gap: 0.3rem;
+  min-height: 36px;
+  font-size: 0.8rem !important;
+  padding: 0.35rem 0.75rem !important;
+  white-space: nowrap;
 }
 .find-playmate-one__btn .find-playmate-paw svg,
 .find-playmate-one__btn .pepito-btn-icon svg {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
 }
 
 @media (max-width: 859px) {
@@ -12213,7 +12222,7 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   .tg-chat-list-hub-cta {
     display: none !important;
   }
-  /* Empty inbox: compact find CTA, full-width lavender pill + paw */
+  /* Empty inbox: smallest reasonable find CTA — hug label, centered under fee */
   .tg-chat-list-empty .find-playmate-panel {
     background: transparent !important;
     border: 0 !important;
@@ -12223,17 +12232,23 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   .tg-chat-list-empty .find-playmate-panel__head {
     display: none !important;
   }
+  .tg-chat-list-empty .find-playmate-one {
+    align-items: center;
+  }
   .tg-chat-list-empty .find-playmate-one .pepito-btn,
   .tg-chat-list-empty .find-playmate-one__btn {
-    width: 100% !important;
+    width: auto !important;
+    max-width: 100%;
+    align-self: center;
+    display: inline-flex !important;
     background: var(--pepito-base, #5c4d91) !important;
     border: 0 !important;
     box-shadow: none !important;
     color: #fff !important;
-    font-size: 0.88rem !important;
+    font-size: 0.78rem !important;
     font-weight: 800 !important;
-    padding: 0.5rem 1rem !important;
-    min-height: 40px !important;
+    padding: 0.35rem 0.7rem !important;
+    min-height: 36px !important;
     border-radius: 999px !important;
   }
   .pepito-pet-profile-hero {

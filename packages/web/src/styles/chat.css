@@ -495,8 +495,11 @@
   margin-inline: 0;
   box-sizing: border-box;
 }
-.tg-thread-empty__cta-wrap .pepito-btn {
-  width: 100%;
+.tg-thread-empty__cta-wrap .pepito-btn,
+.tg-thread-empty__cta-wrap .find-playmate-one__btn {
+  width: auto;
+  max-width: 100%;
+  align-self: center;
   justify-content: center;
 }
 .tg-thread-empty__cta {
@@ -1357,7 +1360,12 @@ html.tg-chat-open body {
 .find-playmate-panel .find-playmate-one {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 0.45rem;
+}
+.find-playmate-one__pick {
+  align-self: stretch;
+  width: 100%;
 }
 .find-playmate-panel .find-playmate-one__fee,
 .find-playmate-panel__fee {
