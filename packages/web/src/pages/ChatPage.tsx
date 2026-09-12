@@ -322,7 +322,14 @@ function ConversationListPane({
                 </Link>
               </>
             ) : (
-              <FindPlaymatePanel compact onSent={onRefresh} />
+              <>
+                <ChatEmptyVisual />
+                <h2>{t('chats.emptyTitle')}</h2>
+                <p>{t('chats.pickLead')}</p>
+                <div className="tg-thread-empty__cta-wrap">
+                  <FindPlaymatePanel compact showRequests={false} onSent={onRefresh} />
+                </div>
+              </>
             )}
           </div>
         ) : (
