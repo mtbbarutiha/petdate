@@ -189,31 +189,3 @@ export function clearBoard(dashboardId: string, userKey: string): void {
     /* ignore */
   }
 }
-
-export type DailyNotesState = { version: 1; notes: Record<string, string> };
-
-export function emptyDailyNotes(): DailyNotesState {
-  return { version: 1, notes: {} };
-}
-
-export function normalizeDailyNotes(raw: unknown): DailyNotesState {
-  const notes: Record<string, string> = {};
-  if (raw && typeof raw === 'object' && (raw as DailyNotesState).version === 1) {
-    const src = (raw as DailyNotesState).notes;
-    if (src && typeof src === 'object') {
-      for (const [k, v] of Object.entries(src)) {
-        if (!/^\d{4}-\d{2}-\d{2}$/.test(k) || typeof v !== 'string') continue;
-        notes[k] = v.slice(0, 8000);
-      }
-    }
-  }
-  return { version: 1, notes };
-}
-
-export function setDailyNote(state: DailyNotesState, isoDate: string, text: string): DailyNotesState {
-  const notes = { ...state.notes };
-  const trimmed = text.slice(0, 8000);
-  if (!trimmed.trim()) delete notes[isoDate];
-  else notes[isoDate] = trimmed;
-  return { version: 1, notes };
-}

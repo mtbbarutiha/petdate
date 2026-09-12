@@ -30,12 +30,10 @@ export {
   addItem,
   clearBoard,
   defaultBoard,
-  emptyDailyNotes,
   isDefaultBoard,
   layoutPrefKey,
   loadBoard,
   normalizeBoard,
-  normalizeDailyNotes,
   parseRemoteBoard,
   removeItem,
   reorderItems,
@@ -43,7 +41,6 @@ export {
   resolveHydratedBoard,
   resizeItem,
   saveBoard,
-  setDailyNote,
   storageKeyFor,
 } from './layoutStorage';
 export {
