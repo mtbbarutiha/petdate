@@ -2128,9 +2128,41 @@ body:has(.admin-app) {
   flex-shrink: 0;
 }
 .admin-app .admin-donut-legend strong {
-  margin-inline-start: auto;
   font-family: var(--admin-mono);
   font-size: 0.8rem;
+}
+/*
+ * Pack donut / KPI legend rows: color · label · count as one unit.
+ * margin-inline-start:auto or justify-content:space-between on a stretched
+ * row parks the count on the far inline-end (physical left in RTL) — the
+ * «وضعیت تیکت‌ها» screenshot bug. justify-content:start + width:max-content
+ * keep the trio at inline-start (right in RTL, left in LTR).
+ */
+.admin-app .admin-donut-legend,
+.admin-app .crm-donut-legend,
+.admin-app .hr-dash-legend,
+.admin-app .crm-report-reason-legend,
+.admin-app .tk-legend {
+  justify-items: start;
+}
+.admin-app .admin-donut-legend li,
+.admin-app .crm-donut-legend li,
+.admin-app .hr-dash-legend li,
+.admin-app .crm-report-reason-legend li,
+.admin-app .tk-legend li {
+  display: flex;
+  align-items: center;
+  justify-content: start;
+  width: max-content;
+  max-width: 100%;
+}
+.admin-app .admin-donut-legend strong,
+.admin-app .crm-donut-legend span,
+.admin-app .hr-dash-legend span,
+.admin-app .crm-report-reason-legend span,
+.admin-app .tk-legend strong {
+  margin-inline-start: 0;
+  flex: 0 0 auto;
 }
 .admin-app .admin-badge--ok {
   background: #d8f8ef;
@@ -3392,8 +3424,8 @@ body:has(.admin-app) {
 .crm-donut-center span { font-size: 11px; color: var(--admin-muted); }
 .crm-donut-legend { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .crm-donut-legend li { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--admin-ink); }
-.crm-donut-legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
-.crm-donut-legend span { margin-inline-start: auto; color: var(--admin-muted); font-variant-numeric: tabular-nums; }
+.crm-donut-legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; flex-shrink: 0; }
+.crm-donut-legend span { color: var(--admin-muted); font-variant-numeric: tabular-nums; }
 .crm-bottom-row {
   display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(260px, 0.9fr);
   gap: var(--admin-gap, 14px); margin-top: 14px;
@@ -3892,7 +3924,6 @@ body:has(.admin-app) {
   display: inline-block;
 }
 .admin-app .hr-dash-legend span {
-  margin-inline-start: auto;
   color: var(--admin-muted);
   font-variant-numeric: tabular-nums;
 }
@@ -4061,7 +4092,7 @@ body:has(.admin-app) {
   border-radius: 999px;
   display: inline-block;
 }
-.admin-app .crm-report-reason-legend span { margin-inline-start: auto; color: var(--admin-muted); }
+.admin-app .crm-report-reason-legend span { color: var(--admin-muted); }
 .admin-app .crm-report-kpi-rings {
   display: flex;
   flex-wrap: wrap;
@@ -4750,7 +4781,7 @@ body:has(.admin-app) {
 }
 .admin-app .tk-hbar em { font-style: normal; color: var(--admin-ink); text-align: left; }
 .admin-app .tk-legend { list-style: none; margin: 10px 0 0; padding: 0; display: grid; gap: 8px; }
-.admin-app .tk-legend li { display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
+.admin-app .tk-legend li { display: flex; align-items: center; gap: 8px; font-size: 13px; }
 .admin-app .tk-tag {
   display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 999px;
   font-size: 11px; border: 1px solid; white-space: nowrap; margin-inline-start: 4px;
