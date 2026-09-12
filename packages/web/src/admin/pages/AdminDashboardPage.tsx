@@ -932,24 +932,28 @@ export function AdminDashboardPage() {
                           />
                         </td>
                         <td>
-                          <AdminEntityCell
-                            thumb={
-                              <AdminThumb
-                                src={c.petImageUrl}
-                                petId={c.petId ?? undefined}
-                                kind="pet"
-                                label={c.petName}
-                              />
-                            }
-                            title={c.petName || '—'}
-                            subtitle={
-                              c.petId != null ? (
-                                <code className="admin-mono admin-id-public" dir="ltr">
-                                  {petPublicIdOf({ id: c.petId })}
-                                </code>
-                              ) : null
-                            }
-                          />
+                          {c.petImageUrl?.trim() || c.petId != null ? (
+                            <AdminEntityCell
+                              thumb={
+                                <AdminThumb
+                                  src={c.petImageUrl}
+                                  petId={c.petId ?? undefined}
+                                  kind="pet"
+                                  label={c.petName}
+                                />
+                              }
+                              title={c.petName || '—'}
+                              subtitle={
+                                c.petId != null ? (
+                                  <code className="admin-mono admin-id-public" dir="ltr">
+                                    {petPublicIdOf({ id: c.petId })}
+                                  </code>
+                                ) : null
+                              }
+                            />
+                          ) : (
+                            <span className="admin-muted">—</span>
+                          )}
                         </td>
                         <td>
                           <span className="admin-badge">{c.status}</span>

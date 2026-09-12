@@ -40,6 +40,9 @@ npx tsx "$ROOT/packages/web/src/admin/JalaliDateSelect.selftest.ts"
 echo "==> selftest: admin wordmark uses لوگو مادر (not PD initials)"
 npx tsx "$ROOT/packages/web/src/admin/adminWordmark.selftest.ts"
 
+echo "==> selftest: admin thumb never invents stock pet photo"
+npx tsx "$ROOT/packages/web/src/admin/AdminThumb.selftest.ts"
+
 echo "==> selftest: web admin analytics path labels"
 npx tsx "$ROOT/packages/web/src/admin/analyticsPathLabel.selftest.ts"
 

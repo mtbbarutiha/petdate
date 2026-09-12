@@ -115,25 +115,29 @@ export function AdminConsultsPage() {
                 />
               </td>
               <td>
-                <AdminEntityCell
-                  thumb={
-                    <AdminThumb
-                      src={c.petImageUrl}
-                      petId={c.petId}
-                      kind="pet"
-                      label={c.petName}
-                      alt={c.petName || tr('پت')}
-                    />
-                  }
-                  title={c.petName || '—'}
-                  subtitle={
-                    c.petId != null ? (
-                      <code className="admin-mono admin-id-public" dir="ltr">
-                        {petPublicIdOf({ id: c.petId })}
-                      </code>
-                    ) : null
-                  }
-                />
+                {c.petImageUrl?.trim() || c.petId != null ? (
+                  <AdminEntityCell
+                    thumb={
+                      <AdminThumb
+                        src={c.petImageUrl}
+                        petId={c.petId}
+                        kind="pet"
+                        label={c.petName}
+                        alt={c.petName || tr('پت')}
+                      />
+                    }
+                    title={c.petName || '—'}
+                    subtitle={
+                      c.petId != null ? (
+                        <code className="admin-mono admin-id-public" dir="ltr">
+                          {petPublicIdOf({ id: c.petId })}
+                        </code>
+                      ) : null
+                    }
+                  />
+                ) : (
+                  <span className="admin-muted">—</span>
+                )}
               </td>
               <td>
                 <span className="admin-badge">
