@@ -2,18 +2,34 @@
 
 > PetDate (پت‌دیت) is the Persian pet playmate, pet shop, adoption, and online vet-consult platform. Web and Telegram share one account.
 
-PetDate helps pet owners in Iran find playmates (همبازی) for dogs and cats, browse the pet shop (پت‌شاپ), discover pets available for adoption (پذیرش), and request online veterinary consultation (مشاوره دامپزشک). Primary language is Persian (fa) with an RTL interface. Playmate chat and checkout require login. Veterinary support is online consultation, not a clinic directory.
+پت‌دیت پلتفرم فارسی همبازی پت، پت‌شاپ، پذیرش حیوان خانگی و مشاوره دامپزشک آنلاین است. زبان اصلی فارسی (fa) با رابط راست‌به‌چپ است. English UI is available. Veterinary support is online consultation, not a clinic directory or diagnosis guarantee.
 
-## Pages
+## Product
 
-- [Home](https://petdate.ir/): landing page
-- [FAQ](https://petdate.ir/faq): frequently asked questions
-- [Pet shop](https://petdate.ir/shop): public catalog
+- [Home](https://petdate.ir/): landing — playmate, vet, trainer, no-pet, and adoption
+- [FAQ and help](https://petdate.ir/faq): frequently asked questions (`/help` is the same page)
+- [Pet shop](https://petdate.ir/shop): public catalog; checkout needs login
+- [Adoption](https://petdate.ir/adoption): pets available for پذیرش
 - [Vet consult](https://petdate.ir/vet-consult): online veterinary consultation
-- [Adoption](https://petdate.ir/adoption): adoption listings
-- [Magazine](https://petdate.ir/magazine): articles
-- [OTP login](https://petdate.ir/auth/login): sign in
-- [XML sitemap](https://petdate.ir/sitemap.xml): crawl map
+- [Magazine](https://petdate.ir/magazine): care articles
+- [Pet games](https://petdate.ir/games): casual games
+- [OTP login](https://petdate.ir/auth/login): sign in (web and Telegram share one account)
+
+## Roles
+
+- Pet owner (صاحب پت): find a playmate (همبازی) for a dog or cat
+- Veterinarian (دامپزشک): online consult desk, not a physical clinic listing
+- Trainer (مربی): training consult
+- No-pet (بدون پت): browse and complete a role later
+- Adopter: browse [adoption listings](https://petdate.ir/adoption)
+
+Playmate chat, wallet checkout, and most app surfaces require login. Public marketing routes above do not.
+
+## Discovery
+
 - [Full AI summary](https://petdate.ir/llms-full.txt): longer machine summary
+- [Well-known copy](https://petdate.ir/.well-known/llms.txt): same short summary
+- [XML sitemap](https://petdate.ir/sitemap.xml): crawl map
+- [Robots](https://petdate.ir/robots.txt): public vs private paths
 - [Email](mailto:hello@petdate.ir): hello at petdate.ir
 - [Telegram bot](https://t.me/Petdatebot): Petdatebot

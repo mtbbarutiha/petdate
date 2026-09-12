@@ -104,6 +104,7 @@ assert.match(
   /location = \/llms\.txt \{[\s\S]*?Cache-Control "public, max-age=86400"/,
   'llms.txt is publicly cacheable'
 );
+assert.match(conf, /location = \/\.well-known\/llms\.txt/, 'well-known/llms.txt is not the SPA HTML shell');
 assert.match(conf, /max-age=2592000/, 'static brand/pepito/media images cache ≥ 30 days');
 
 console.log('wcdnNginx.selftest: ok');

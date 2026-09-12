@@ -106,7 +106,7 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         // New cache namespace so stuck clients drop the old 1.5s-poll bundle.
         // Bump when guest marketing routes change — v14 left #213's shell unclaimed.
-        cacheId: 'petdate-web-v21-faq-dark',
+        cacheId: 'petdate-web-v22-cls-agentic',
         // Precache only the app shell — not hundreds of prerendered SEO HTML files.
         globPatterns: ['index.html', 'offline.html', '**/*.{js,css,ico,svg,woff2}'],
         navigateFallbackDenylist: [/^\/api\//],
@@ -196,7 +196,9 @@ export default defineConfig({
         // modulepreload as a "cross-world" unused preload (console + wasted bytes).
         // The module still loads via its static import — we just skip the hint.
         void filename;
-        return deps.filter((dep) => !dep.includes('vendor-lucide'));
+        return deps.filter(
+          (dep) => !dep.includes('vendor-lucide') && !dep.includes('siteAnalytics'),
+        );
       },
     },
     rollupOptions: {

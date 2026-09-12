@@ -9,7 +9,6 @@ import { AppToastProvider } from './hooks/useAppToast';
 import { AppDialogHost } from './components/AppDialog';
 import { FaceVerifyRewardToast } from './components/FaceVerifyRewardToast';
 import { ScrollToTop } from './components/ScrollToTop';
-import { trackPageview } from './lib/siteAnalytics';
 import { withTagAssistantParams } from './lib/tagAssistantParams';
 import { WelcomePage } from './pages/WelcomePage';
 import { VetConsultRoute } from './pages/VetConsultRoute';
@@ -23,8 +22,15 @@ const LandingMobileDock = lazy(() =>
 function SiteAnalyticsListener() {
   const location = useLocation();
   useEffect(() => {
-    // Include search so UTM landing + SPA query changes still push GTM page_view.
-    trackPageview(`${location.pathname}${location.search}`);
+    // Dynamic import keeps /api/analytics/config + GTM helpers out of index.js.
+    const path = `${location.pathname}${location.search}`;
+    let cancelled = false;
+    void import('./lib/siteAnalytics').then((m) => {
+      if (!cancelled) m.trackPageview(path);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [location.pathname, location.search]);
   return null;
 }

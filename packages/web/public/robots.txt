@@ -77,4 +77,10 @@ Allow: /
 User-agent: Bingbot
 Allow: /
 
+# Machine-readable summaries for AI agents (Lighthouse Agentic / llms.txt)
+Allow: /llms.txt
+Allow: /llms-full.txt
+Allow: /.well-known/llms.txt
+
 Sitemap: https://petdate.ir/sitemap.xml
+# LLMs-Txt: https://petdate.ir/llms.txt
