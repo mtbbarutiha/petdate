@@ -204,7 +204,7 @@ export async function notifyPlaydateChatTelegram(opts: {
             buffer,
             originalName: filename,
           });
-          voiceBuf = converted.buffer;
+          voiceBuf = Buffer.from(converted.buffer);
           voiceName = converted.originalName;
           voiceType = converted.mimeType;
         } catch (err) {
@@ -503,7 +503,7 @@ export async function notifyVetChatTelegram(opts: {
             buffer,
             originalName: filename,
           });
-          voiceBuf = converted.buffer;
+          voiceBuf = Buffer.from(converted.buffer);
           voiceName = converted.originalName;
           voiceType = converted.mimeType;
         } catch (err) {

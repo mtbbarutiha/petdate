@@ -11,6 +11,7 @@ const hook = fs.readFileSync(path.join(root, 'hooks/useChatViewportHeight.ts'), 
 const css = fs.readFileSync(path.join(root, 'styles/chat.css'), 'utf8');
 
 assert.match(chatPage, /PlaymateChatToolbar/, 'gift toolbar in playmate chat');
+assert.match(chatPage, /onClick=\{\(\) => void blockPeer\(\)\}/, 'block menu wires blockPeer');
 assert.match(chatPage, /مسدود کردن/, 'block from chat menu');
 assert.match(chatPage, /حذف از فهرست گفتگوها/, 'dismiss conversation');
 assert.match(chatPage, /ChatVoicePlayer/, 'voice player in playmate chat');

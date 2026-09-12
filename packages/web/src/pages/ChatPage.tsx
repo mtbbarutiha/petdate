@@ -1964,6 +1964,25 @@ export function ChatPage() {
                         <button
                           type="button"
                           role="menuitem"
+                          onClick={() => void removeFromInbox()}
+                          disabled={dismissing}
+                        >
+                          <Trash2 size={16} />
+                          {dismissing ? 'در حال حذف…' : 'حذف از فهرست گفتگوها'}
+                        </button>
+                        <button
+                          type="button"
+                          role="menuitem"
+                          className="is-danger"
+                          onClick={() => void blockPeer()}
+                          disabled={blocking}
+                        >
+                          <Ban size={16} />
+                          {blocking ? 'در حال مسدود…' : 'مسدود کردن'}
+                        </button>
+                        <button
+                          type="button"
+                          role="menuitem"
                           className="is-danger"
                           onClick={() => void endChat()}
                           disabled={ending}
