@@ -290,6 +290,8 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 /* Fixed bar sits ABOVE the hero (not over the photo). */
 :root {
   --pepito-nav-h: 74px;
+  /* Compact band — 100svh over-reserve (#369) made the first section feel empty-tall. */
+  --pepito-hero-h: calc(93svh - var(--pepito-nav-h));
 }
 .pepito-nav {
   position: fixed;
@@ -317,6 +319,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   */
   :root {
     --pepito-nav-h: 64px;
+    --pepito-hero-h: calc(85svh - var(--pepito-nav-h));
   }
   .pepito-nav {
     position: relative;
@@ -340,8 +343,6 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
     margin-top: 0;
   }
   .pepito-hero {
-    /* Match critical CSS — 85vh here used to shrink the hero after hydrate (CLS). */
-    --pepito-hero-h: calc(100svh - var(--pepito-nav-h));
     min-height: var(--pepito-hero-h);
   }
   .pepito-app-layout {
@@ -425,7 +426,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   width: 100%;
   /* Fixed-nav offset only when nav is fixed — see @media (min-width: 860px) below */
   margin-top: 0;
-  min-height: calc(93vh - var(--pepito-nav-h));
+  min-height: var(--pepito-hero-h);
   display: grid;
   align-items: center;
   overflow: hidden;
@@ -729,7 +730,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 
 @media screen and (max-width: 720px) {
   .pepito-hero {
-    min-height: calc(100svh - var(--pepito-nav-h));
+    min-height: var(--pepito-hero-h);
   }
   .pepito-hero .pepito-kicker {
     font-size: 13px;
@@ -10341,7 +10342,7 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   }
   .pepito-hero {
     /* Prefer svh only — dvh changes with mobile URL chrome and causes jump */
-    min-height: calc(100svh - var(--pepito-nav-h));
+    min-height: var(--pepito-hero-h);
   }
   .pepito-hero-inner {
     padding-block: calc(env(safe-area-inset-top, 0px) + 1.35rem) 2.25rem;
