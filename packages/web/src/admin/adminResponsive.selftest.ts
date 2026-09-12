@@ -79,6 +79,11 @@ assert.match(
 );
 assert.match(
   css,
+  /@media \(max-width:\s*400px\)[\s\S]*?admin-topbar[\s\S]*?grid-template-columns:\s*minmax\(0, 1fr\) auto auto/,
+  '360px topbar keeps title, toggles, and avatar on one row'
+);
+assert.match(
+  css,
   /\.admin-app\s+\.admin-header\s*\{[^}]*flex-wrap:\s*wrap/s,
   'page headers wrap actions under the title'
 );
