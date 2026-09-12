@@ -491,7 +491,6 @@ function AdminLayoutInner() {
               <LanguageToggle compact className="admin-lang-toggle" />
               <ThemeToggle compact className="admin-theme-toggle" />
               <AdminHeaderNotifications />
-              <span className="admin-topbar-chip admin-topbar-chip--mint admin-live-pulse">live DB</span>
             </div>
             {/* Far visual-left of RTL topbar (last flex child) — outside end cluster so it cannot clip */}
             <div className="admin-topbar-user" title={roleLabel} aria-label={t('admin.signedInAs', { name: roleLabel })}>

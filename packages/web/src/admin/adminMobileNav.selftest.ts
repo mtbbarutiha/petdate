@@ -62,8 +62,13 @@ assert.match(
 );
 assert.match(
   css,
-  /@media \(max-width:\s*640px\)[\s\S]*?admin-live-pulse\.admin-topbar-chip[\s\S]*?display:\s*none/,
-  'narrow topbar hides the live chip (overrides later inline-flex)'
+  /@media \(max-width:\s*640px\)[\s\S]*?admin-topbar-chip[\s\S]*?display:\s*none/,
+  'narrow topbar hides topbar chips to keep controls on-screen'
+);
+assert.doesNotMatch(
+  layout,
+  /live DB/,
+  'admin topbar no longer shows the live DB status chip'
 );
 assert.match(
   css,
