@@ -6519,6 +6519,78 @@ export const dbService = {
     ).map(mapPaymentOrder);
   },
 
+  /**
+   * Flip card rows that already have a receipt but stayed on awaiting_receipt
+   * into pending so finance approve/reject and review_queue stay consistent.
+   * Idempotent; never credits coins.
+   */
+  requeueStuckCardReceipts(): number {
+    try {
+      const result = db
+        .prepare(
+          `UPDATE payment_orders
+           SET status = 'pending'
+           WHERE method = 'card'
+             AND status = 'awaiting_receipt'
+             AND receipt_file_id IS NOT NULL
+             AND TRIM(receipt_file_id) != ''`
+        )
+        .run();
+      return Number(result.changes ?? 0);
+    } catch {
+      return 0;
+    }
+  },
+
+  /** Open coin card-to-card orders (excludes shop / wallet-stars top-ups). */
+  findOpenCoinCardOrder(userId: number): PaymentOrder | null {
+    const rows = this.listUserPaymentOrders(userId, { limit: 20, method: 'card' });
+    return (
+      rows.find((o) => {
+        if (o.status !== 'awaiting_receipt' && o.status !== 'pending') return false;
+        const pkg = String(o.packageId || '');
+        if (pkg.startsWith('shop') || pkg.startsWith('wstars:')) return false;
+        return true;
+      }) ?? null
+    );
+  },
+
+  /**
+   * User/bot cancel of a card order still waiting for a receipt (no review yet).
+   * Does not cancel pending/approved/rejected — those need admin action.
+   */
+  cancelAwaitingCardPayment(
+    orderId: number,
+    opts?: { userId?: number }
+  ):
+    | { ok: true; order: PaymentOrder }
+    | { ok: false; reason: 'missing' | 'bad_status' | 'forbidden' } {
+    const existing = this.getPaymentOrder(orderId);
+    if (!existing) return { ok: false, reason: 'missing' };
+    if (opts?.userId != null && existing.userId !== opts.userId) {
+      return { ok: false, reason: 'forbidden' };
+    }
+    if (existing.method !== 'card' || existing.status !== 'awaiting_receipt') {
+      return { ok: false, reason: 'bad_status' };
+    }
+    // If a receipt is already attached, treat as review queue — do not user-cancel.
+    if (existing.receiptFileId && String(existing.receiptFileId).trim()) {
+      this.requeueStuckCardReceipts();
+      return { ok: false, reason: 'bad_status' };
+    }
+    const updated = db
+      .prepare(
+        `UPDATE payment_orders
+         SET status = 'cancelled',
+             reviewed_at = datetime('now')
+         WHERE id = ? AND status = 'awaiting_receipt'
+           AND (receipt_file_id IS NULL OR TRIM(receipt_file_id) = '')`
+      )
+      .run(orderId);
+    if (updated.changes !== 1) return { ok: false, reason: 'bad_status' };
+    return { ok: true, order: this.getPaymentOrder(orderId)! };
+  },
+
   attachPaymentReceipt(
     orderId: number,
     receiptFileId: string,
@@ -6550,6 +6622,8 @@ export const dbService = {
   ):
     | { ok: true; order: PaymentOrder; user: User }
     | { ok: false; reason: 'missing' | 'bad_status' } {
+    // Stuck receipt rows must become pending before the pending-only gate.
+    this.requeueStuckCardReceipts();
     const existing = this.getPaymentOrder(orderId);
     if (!existing) return { ok: false, reason: 'missing' };
     if (existing.method !== 'card' || existing.status !== 'pending') {
@@ -6602,6 +6676,7 @@ export const dbService = {
   ):
     | { ok: true; order: PaymentOrder; user: User | null }
     | { ok: false; reason: 'missing' | 'bad_status' } {
+    this.requeueStuckCardReceipts();
     const existing = this.getPaymentOrder(orderId);
     if (!existing) return { ok: false, reason: 'missing' };
     if (existing.method !== 'card' || existing.status !== 'pending') {

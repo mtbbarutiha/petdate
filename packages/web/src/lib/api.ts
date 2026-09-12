@@ -746,6 +746,13 @@ export async function uploadWalletPaymentReceipt(token: string, orderId: number,
   return json.order;
 }
 
+export async function cancelWalletPayment(token: string, orderId: number) {
+  return request<{ ok: true; order: WalletPaymentOrderDto }>(
+    `/api/auth/wallet/payments/${orderId}/cancel`,
+    { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: JSON.stringify({}) }
+  );
+}
+
 /**
  * Payment receipt paths (`/api/payments/receipts/...`) require Bearer auth.
  * `<img src>` cannot send Authorization, so load bytes with fetch and return a blob: URL.

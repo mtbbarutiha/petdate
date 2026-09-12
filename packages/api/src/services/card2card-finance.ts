@@ -104,17 +104,24 @@ export function enqueueCard2CardFinanceOs(input: {
  * Notify Telegram admins that a card receipt is waiting in the finance panel.
  * Used for web (and shop) uploads — bot path already notifies via Grammy Context.
  */
-export async function notifyAdminsPendingCardReceipt(order: {
-  id: number;
-  userId: number;
-  packageId: string;
-  coins: number;
-  amountToman?: number;
-  userName?: string;
-  userUsername?: string;
-  userTelegramId?: string;
-  receiptFileId?: string;
-}): Promise<void> {
+export async function notifyAdminsPendingCardReceipt(
+  order: {
+    id: number;
+    userId: number;
+    packageId: string;
+    coins: number;
+    amountToman?: number;
+    userName?: string;
+    userUsername?: string;
+    userTelegramId?: string;
+    receiptFileId?: string;
+  },
+  opts?: {
+    /** Bot path already sends Telegram photo+approve buttons — skip duplicate text. */
+    notifyTelegram?: boolean;
+  }
+): Promise<void> {
+  const notifyTelegram = opts?.notifyTelegram !== false;
   const admins = (process.env.TELEGRAM_ADMIN_IDS || '')
     .split(/[,;\s]+/)
     .map((s) => s.trim())
@@ -132,6 +139,8 @@ export async function notifyAdminsPendingCardReceipt(order: {
   } catch (err) {
     console.warn('header notif pending receipt skipped:', (err as Error).message);
   }
+
+  if (!notifyTelegram) return;
 
   if (!infra.telegram.botToken || !admins.length) {
     if (!admins.length) {
