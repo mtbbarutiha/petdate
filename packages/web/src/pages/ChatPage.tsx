@@ -34,6 +34,7 @@ import { SiteLogo } from '../components/SiteLogo';
 import { ChatMediaCaptureProvider, ChatMediaCaptureTriggers } from '../components/ChatMediaCapture';
 import { ChatVoicePlayer } from '../components/ChatVoicePlayer';
 import { ChatGiftBubble, PlaymateChatToolbar, PlaymateGiftSheet } from '../components/PlaymateGift';
+import { ConfirmModal } from '../components/ConfirmModal';
 import { EmojiPicker } from '../components/EmojiPicker';
 import { FindPlaymatePanel } from '../components/FindPlaymatePanel';
 import {
@@ -437,6 +438,7 @@ function ConversationListPane({
                     className="tg-icon-btn tg-chat-list-dismiss"
                     aria-label="حذف از فهرست"
                     title="حذف از فهرست گفتگوها"
+                    aria-haspopup="dialog"
                     onClick={(e) => {
                       e.stopPropagation();
                       onDismiss(c);
@@ -626,6 +628,12 @@ export function ChatPage() {
   const [giftError, setGiftError] = useState<string | null>(null);
   const [blocking, setBlocking] = useState(false);
   const [dismissing, setDismissing] = useState(false);
+  /** Pending inbox dismiss — ConfirmModal must confirm before API call */
+  const [dismissConfirm, setDismissConfirm] = useState<
+    | { source: 'list'; item: InboxConversation }
+    | { source: 'thread' }
+    | null
+  >(null);
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [pendingPreview, setPendingPreview] = useState<string | null>(null);
@@ -1607,7 +1615,9 @@ export function ChatPage() {
 
 
   async function dismissInboxRow(item: InboxConversation) {
-    if (!myUserId) return;
+    if (!myUserId || dismissing) return;
+    setDismissing(true);
+    setListError(null);
     try {
       if (item.kind === 'playmate') {
         await dismissPlaydateInbox(item.id, myUserId);
@@ -1618,8 +1628,11 @@ export function ChatPage() {
       if (hasThread && item.kind === 'playmate' && item.id === selectedId) {
         navigate('/chats', { replace: true });
       }
+      setDismissConfirm(null);
     } catch (err) {
       setListError(err instanceof Error ? err.message : 'حذف از فهرست ناموفق بود');
+    } finally {
+      setDismissing(false);
     }
   }
 
@@ -1673,14 +1686,39 @@ export function ChatPage() {
     if (!myUserId || !match || dismissing) return;
     setDismissing(true);
     setMenuOpen(false);
+    setActionError(null);
     try {
       await dismissPlaydateInbox(match.id, myUserId);
+      setDismissConfirm(null);
       navigate('/chats', { replace: true });
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'حذف از فهرست ناموفق بود');
     } finally {
       setDismissing(false);
     }
+  }
+
+  function requestDismissFromList(item: InboxConversation) {
+    setDismissConfirm({ source: 'list', item });
+  }
+
+  function requestDismissFromThread() {
+    setMenuOpen(false);
+    setDismissConfirm({ source: 'thread' });
+  }
+
+  function cancelDismissConfirm() {
+    if (dismissing) return;
+    setDismissConfirm(null);
+  }
+
+  function confirmDismissPending() {
+    if (!dismissConfirm || dismissing) return;
+    if (dismissConfirm.source === 'list') {
+      void dismissInboxRow(dismissConfirm.item);
+      return;
+    }
+    void removeFromInbox();
   }
 
   function renderMedia(msg: ChatMsg) {
@@ -1821,6 +1859,21 @@ export function ChatPage() {
         onSend={sendGift}
       />
 
+      <ConfirmModal
+        open={Boolean(dismissConfirm)}
+        title="حذف از فهرست گفتگوها"
+        confirmLabel="تأیید"
+        cancelLabel="انصراف"
+        busy={dismissing}
+        testId="chat-dismiss-confirm"
+        onCancel={cancelDismissConfirm}
+        onConfirm={confirmDismissPending}
+      >
+        <p className="pepito-lead-modal__lead">
+          می‌خواهید این گفتگو از فهرست چت‌ها حذف شود؟ تاریخچه طرف مقابل پاک نمی‌شود.
+        </p>
+      </ConfirmModal>
+
       {showList ? (
         <ConversationListPane
           conversations={conversations}
@@ -1834,7 +1887,7 @@ export function ChatPage() {
           onRefresh={() => void reloadConversations()}
           onAccept={(item) => void onAcceptFromList(item)}
           onReject={(item) => void onRejectFromList(item)}
-          onDismiss={(item) => void dismissInboxRow(item)}
+          onDismiss={requestDismissFromList}
           onViewOwner={onViewOwnerFromList}
         />
       ) : null}
@@ -2005,7 +2058,8 @@ export function ChatPage() {
                         <button
                           type="button"
                           role="menuitem"
-                          onClick={() => void removeFromInbox()}
+                          aria-haspopup="dialog"
+                          onClick={requestDismissFromThread}
                           disabled={dismissing}
                         >
                           <Trash2 size={16} />
