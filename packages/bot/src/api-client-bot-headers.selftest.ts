@@ -4,9 +4,10 @@
  */
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const src = readFileSync(join(process.cwd(), 'src/api-client.ts'), 'utf8');
+const src = readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'api-client.ts'), 'utf8');
 
 assert.match(src, /function botHeaders/, 'botHeaders helper exists');
 assert.match(src, /X-PetDate-Bot-Token/, 'bot token header is set');
