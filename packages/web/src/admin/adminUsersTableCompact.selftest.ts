@@ -38,7 +38,11 @@ assert.match(page, /onOpenCredit/, 'credit opens from wallet click (no separate 
 assert.match(page, /username=\{u\.username\}/, 'contact cell gets telegram handle');
 assert.match(cells, /admin-contact-line/, 'contact lines ellipsis instead of clipping LTR handles');
 
-assert.match(css, /\.admin-table--users\s*\{[^}]*min-width:\s*0/s, 'users table drops global 960px min-width');
+assert.match(
+  css,
+  /\.admin-table--users\s*\{[^}]*min-width:\s*1080px/s,
+  'users table keeps a readable min-width and scrolls instead of crushing names'
+);
 assert.match(css, /admin-wallet-grid--compact/, 'compact wallet grid CSS present');
 assert.match(
   css,

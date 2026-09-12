@@ -1144,7 +1144,7 @@
   overflow-x: auto;
 }
 .admin-app .admin-table--users {
-  min-width: 0;
+  min-width: 1080px;
   width: 100%;
   table-layout: fixed;
 }
@@ -1152,14 +1152,17 @@
 .admin-app .admin-table--users td {
   vertical-align: top;
 }
+.admin-app .admin-table--users th {
+  white-space: nowrap;
+}
 .admin-app .admin-table--users th:nth-child(1),
 .admin-app .admin-table--users td:nth-child(1) { width: 7rem; }
 .admin-app .admin-table--users th:nth-child(2),
-.admin-app .admin-table--users td:nth-child(2) { width: auto; }
+.admin-app .admin-table--users td:nth-child(2) { width: 16rem; }
 .admin-app .admin-table--users th:nth-child(3),
 .admin-app .admin-table--users td:nth-child(3) { width: 8rem; }
 .admin-app .admin-table--users th:nth-child(4),
-.admin-app .admin-table--users td:nth-child(4) { width: 8.5rem; }
+.admin-app .admin-table--users td:nth-child(4) { width: 9rem; }
 .admin-app .admin-table--users th:nth-child(5),
 .admin-app .admin-table--users td:nth-child(5) { width: 8.5rem; }
 .admin-app .admin-table--users th:nth-child(6),
@@ -1224,7 +1227,7 @@
 }
 @media (max-width: 1100px) {
   .admin-app .admin-table--users {
-    min-width: 920px;
+    min-width: 1080px;
   }
 }
 .admin-app .admin-badge--warn {
