@@ -150,16 +150,23 @@ export function LiveIncomingRequests() {
         }).catch(() => [] as VetConsultation[]);
         for (const c of consults) {
           if (c.status !== 'requested' || c.vetUserId !== myUserId) continue;
+          const seekerAdvice = (c.serviceKind ?? 'vet') === 'seeker_advice';
           const who =
             c.patientName?.trim() ||
-            (c.petName ? `بیمار · ${c.petName}` : `بیمار #${c.patientUserId}`);
+            (seekerAdvice
+              ? `متقاضی راهنمایی #${c.patientUserId}`
+              : c.petName
+                ? `بیمار · ${c.petName}`
+                : `بیمار #${c.patientUserId}`);
           items.push({
             kind: 'vet',
             id: c.id,
             title: who,
-            subtitle: c.petName
-              ? `درخواست مشاوره دامپزشکی · ${c.petName}`
-              : 'درخواست مشاوره دامپزشکی تازه رسید.',
+            subtitle: seekerAdvice
+              ? 'یک نفر می‌خواد در مورد خرید و نگهداری پت راهنمایی بگیره.'
+              : c.petName
+                ? `درخواست مشاوره دامپزشکی · ${c.petName}`
+                : 'درخواست مشاوره دامپزشکی تازه رسید.',
             href: `/vet-chats/${c.id}`,
           });
         }

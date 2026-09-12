@@ -135,6 +135,7 @@ function inboxKindBadgeLabel(c: InboxConversation): string {
   if (c.kind === 'playmate') return 'همبازی';
   if (c.serviceKind === 'trainer') return 'آموزش';
   if (c.serviceKind === 'sitter') return 'پرستار';
+  if (c.serviceKind === 'seeker_advice') return 'راهنمایی';
   return 'مشاوره';
 }
 
@@ -310,10 +311,23 @@ export function VetChatPage() {
 
   const peerName = useMemo(() => {
     if (!consult) return 'طرف مقابل';
+    const kind = consult.serviceKind ?? 'vet';
     if (isVetSide) {
-      return consult.patientName?.trim() || `بیمار #${consult.patientUserId}`;
+      return (
+        consult.patientName?.trim() ||
+        (kind === 'seeker_advice'
+          ? `متقاضی راهنمایی #${consult.patientUserId}`
+          : `بیمار #${consult.patientUserId}`)
+      );
     }
-    return consult.vetName?.trim() || `پزشک #${consult.vetUserId}`;
+    return (
+      consult.vetName?.trim() ||
+      (kind === 'seeker_advice'
+        ? `صاحب پت #${consult.vetUserId}`
+        : kind === 'trainer'
+          ? `مربی #${consult.vetUserId}`
+          : `پزشک #${consult.vetUserId}`)
+    );
   }, [consult, isVetSide]);
 
   const peerAvatarUrl = useMemo(() => {
@@ -329,6 +343,9 @@ export function VetChatPage() {
       if (kind === 'trainer') {
         return pet ? `آموزش آنلاین · ${pet}` : 'آموزش آنلاین';
       }
+      if (kind === 'seeker_advice') {
+        return 'راهنمایی خرید و نگهداری پت';
+      }
       return pet ? `پت بیمار · ${pet}` : 'درخواست مشاوره سریع';
     }
     if (kind === 'trainer') {
@@ -336,6 +353,9 @@ export function VetChatPage() {
     }
     if (kind === 'sitter') {
       return pet ? `پرستاری · ${pet}` : 'پرستار پت';
+    }
+    if (kind === 'seeker_advice') {
+      return 'راهنمایی خرید و نگهداری پت';
     }
     return pet ? `مشاوره برای ${pet}` : 'مشاوره دامپزشک';
   }, [consult, isVetSide]);
@@ -1254,16 +1274,22 @@ export function VetChatPage() {
         ? isVetSide
           ? consult?.serviceKind === 'trainer'
             ? 'درخواست آموزش جدید'
-            : 'درخواست مشاوره جدید'
+            : consult?.serviceKind === 'seeker_advice'
+              ? 'درخواست راهنمایی جدید'
+              : 'درخواست مشاوره جدید'
           : consult?.serviceKind === 'trainer'
             ? 'در انتظار پذیرش مربی'
-            : 'در انتظار پذیرش دامپزشک'
+            : consult?.serviceKind === 'seeker_advice'
+              ? 'در انتظار پذیرش صاحب پت'
+              : 'در انتظار پذیرش دامپزشک'
         : chatUnlocked
           ? secure
             ? 'چت امن فعال'
             : consult?.serviceKind === 'trainer'
               ? 'در حال پت'
-              : 'چت مشاوره فعال'
+              : consult?.serviceKind === 'seeker_advice'
+                ? 'چت راهنمایی فعال'
+                : 'چت مشاوره فعال'
           : consult?.status === 'completed'
             ? 'مشاوره پایان یافته'
             : consult
@@ -1686,8 +1712,12 @@ export function VetChatPage() {
               ) : pending ? (
                 <div className={`tg-status-strip${isVetSide ? '' : ' is-wait'}`} role="status">
                   {isVetSide
-                    ? 'درخواست مشاوره در انتظار پاسخ شماست'
-                    : 'در انتظار پذیرش دامپزشک — تا قبول پزشک چت باز نمی‌شود'}
+                    ? consult?.serviceKind === 'seeker_advice'
+                      ? 'درخواست راهنمایی در انتظار پاسخ شماست'
+                      : 'درخواست مشاوره در انتظار پاسخ شماست'
+                    : consult?.serviceKind === 'seeker_advice'
+                      ? 'در انتظار پذیرش صاحب پت — تا قبول، چت باز نمی‌شود'
+                      : 'در انتظار پذیرش دامپزشک — تا قبول پزشک چت باز نمی‌شود'}
                   {' · '}
                   <RequestCountdown
                     createdAt={consult.createdAt}
@@ -1700,7 +1730,13 @@ export function VetChatPage() {
                 </div>
               ) : chatUnlocked ? (
                 <div className="tg-status-strip tg-status-strip--with-action" role="status">
-                  <span>چت مشاوره دامپزشک فعال است</span>
+                  <span>
+                    {consult?.serviceKind === 'seeker_advice'
+                      ? 'چت راهنمایی خرید و نگهداری پت فعال است'
+                      : consult?.serviceKind === 'trainer'
+                        ? 'چت آموزش فعال است'
+                        : 'چت مشاوره دامپزشک فعال است'}
+                  </span>
                   <button
                     type="button"
                     className="tg-end-chat-chip"
@@ -1726,14 +1762,24 @@ export function VetChatPage() {
                         {expired
                           ? 'درخواست منقضی شد'
                           : incomingPending
-                            ? 'درخواست مشاوره جدید'
+                            ? consult.serviceKind === 'seeker_advice'
+                              ? 'درخواست راهنمایی جدید'
+                              : 'درخواست مشاوره جدید'
                             : pending
-                              ? 'درخواست مشاوره ارسال شد'
+                              ? consult.serviceKind === 'seeker_advice'
+                                ? 'درخواست راهنمایی ارسال شد'
+                                : 'درخواست مشاوره ارسال شد'
                               : ended
-                                ? 'چت مشاوره پایان یافت'
+                                ? consult.serviceKind === 'seeker_advice'
+                                  ? 'چت راهنمایی پایان یافت'
+                                  : 'چت مشاوره پایان یافت'
                                 : active
-                                  ? 'مشاوره فعال'
-                                  : 'درخواست مشاوره'}
+                                  ? consult.serviceKind === 'seeker_advice'
+                                    ? 'راهنمایی فعال'
+                                    : 'مشاوره فعال'
+                                  : consult.serviceKind === 'seeker_advice'
+                                    ? 'درخواست راهنمایی'
+                                    : 'درخواست مشاوره'}
                       </p>
                       <h3>
                         {peerName}

@@ -512,6 +512,9 @@ consultationsRouter.post('/quick-connect', async (req, res) => {
           vetTelegramId: provider.telegramId,
           patient,
           visitFeeCoins: feeCoins,
+          providerShareCoins:
+            serviceKind === 'vet' ? feeCoins : split.providerShare,
+          serviceKind,
         });
         if (ok) notifiedTelegram += 1;
       }
