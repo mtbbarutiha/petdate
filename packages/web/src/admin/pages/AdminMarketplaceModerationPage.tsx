@@ -169,34 +169,39 @@ export function AdminMarketplaceModerationPage() {
   const [busyId, setBusyId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (includeArchive = mode === 'archive') => {
     setError(null);
     setLoading(true);
     try {
-      const [pv, pt, av, at, p, ua] = await Promise.all([
-        adminFetch<User[]>('/api/users/vet-credentials/pending'),
-        adminFetch<User[]>('/api/users/provider-credentials/pending?kind=trainer'),
-        adminFetch<User[]>('/api/users/vet-credentials/verified'),
-        adminFetch<User[]>('/api/users/provider-credentials/verified?kind=trainer'),
-        adminFetch<PetRow[]>('/api/users/pet-photos/pending'),
-        adminFetch<User[]>('/api/users/user-avatars/pending'),
+      const queue = await Promise.all([
+        adminFetch<User[]>('/api/users/vet-credentials/pending?limit=100'),
+        adminFetch<User[]>('/api/users/provider-credentials/pending?kind=trainer&limit=100'),
+        adminFetch<PetRow[]>('/api/users/pet-photos/pending?limit=100'),
+        adminFetch<User[]>('/api/users/user-avatars/pending?limit=100'),
       ]);
-      setPendingVets(pv);
-      setPendingTrainers(pt);
-      setArchiveVets(av);
-      setArchiveTrainers(at);
-      setPhotos(p);
-      setAvatars(ua);
+      setPendingVets(queue[0]);
+      setPendingTrainers(queue[1]);
+      setPhotos(queue[2]);
+      setAvatars(queue[3]);
+
+      if (includeArchive) {
+        const [av, at] = await Promise.all([
+          adminFetch<User[]>('/api/users/vet-credentials/verified?limit=100'),
+          adminFetch<User[]>('/api/users/provider-credentials/verified?kind=trainer&limit=100'),
+        ]);
+        setArchiveVets(av);
+        setArchiveTrainers(at);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'بارگذاری ناموفق');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [mode]);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    void load(mode === 'archive');
+  }, [load, mode]);
 
   async function actVet(id: number, approve: boolean) {
     setBusyId(`vet-${id}`);

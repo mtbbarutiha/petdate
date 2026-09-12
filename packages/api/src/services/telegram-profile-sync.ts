@@ -210,6 +210,39 @@ export async function materializeTelegramFileIdAsAvatar(
  * - file_id → download + /api/auth/avatar/...
  * - empty → sync Telegram profile photo (unless avatarCustom)
  */
+/** Skip repeated Bot API profile pulls when Telegram has no photo / is unreachable. */
+const PROFILE_SYNC_COOLDOWN_MS = Math.max(
+  60_000,
+  Number(process.env.TELEGRAM_PROFILE_SYNC_COOLDOWN_MS ?? 30 * 60_1000)
+);
+const profileSyncCooldownUntil = new Map<number, number>();
+
+/** Test helper — clears in-memory sync cooldowns. */
+export function clearTelegramProfileSyncCooldowns(): void {
+  profileSyncCooldownUntil.clear();
+}
+
+function isProfileSyncCoolingDown(userId: number): boolean {
+  const until = profileSyncCooldownUntil.get(userId);
+  if (until == null) return false;
+  if (Date.now() >= until) {
+    profileSyncCooldownUntil.delete(userId);
+    return false;
+  }
+  return true;
+}
+
+function markProfileSyncCooldown(userId: number): void {
+  profileSyncCooldownUntil.set(userId, Date.now() + PROFILE_SYNC_COOLDOWN_MS);
+  // Bound map size for long-lived API processes
+  if (profileSyncCooldownUntil.size > 5000) {
+    const now = Date.now();
+    for (const [id, exp] of profileSyncCooldownUntil) {
+      if (exp <= now) profileSyncCooldownUntil.delete(id);
+    }
+  }
+}
+
 export async function ensureWebAccessibleAvatar(userId: number): Promise<User | null> {
   let user = dbService.getUserById(userId);
   if (!user) return null;
@@ -233,6 +266,9 @@ export async function ensureWebAccessibleAvatar(userId: number): Promise<User | 
 
   const tg = String(user.telegramId ?? '').trim();
   if (tg && !user.avatarCustom) {
+    if (isProfileSyncCoolingDown(userId)) {
+      return user;
+    }
     const synced = await syncUserProfileFromTelegram(userId, tg);
     if (synced) return synced;
   }
@@ -251,8 +287,17 @@ export async function syncUserProfileFromTelegram(
   let user = dbService.getUserById(userId);
   if (!user) return null;
 
+  if (isProfileSyncCoolingDown(userId)) {
+    return user;
+  }
+
   const profile = await fetchTelegramPublicProfile(telegramId);
-  if (!profile) return user;
+  if (!profile) {
+    // Bot API unreachable / failed — back off so hot paths (profile-card) cannot
+    // pile up 12s×N Telegram connect timeouts and trip WCDN/nginx 504s.
+    markProfileSyncCooldown(userId);
+    return user;
+  }
 
   const patch: Parameters<typeof dbService.updateUserProfile>[1] = {};
   const tgName = combineTelegramNames(profile.firstName, profile.lastName);
@@ -283,16 +328,19 @@ export async function syncUserProfileFromTelegram(
     }
   } else if (!profile.photoFileId) {
     console.warn(`telegram profile sync: no photo for tg=${telegramId} user=${userId}`);
+    markProfileSyncCooldown(userId);
   } else {
     const urlPath = await materializeTelegramFileIdAsAvatar(userId, profile.photoFileId);
     if (!urlPath) {
       console.warn(`telegram profile sync: download failed tg=${telegramId} user=${userId}`);
+      markProfileSyncCooldown(userId);
     } else {
       patch.avatarUrl = urlPath;
       patch.avatarCustom = false;
       // Fresh Telegram profile photo → wait for admin approval before public display
       delete patch.avatarModerationStatus;
       console.info(`telegram profile sync: avatar saved user=${userId} path=${urlPath}`);
+      profileSyncCooldownUntil.delete(userId);
     }
   }
 
