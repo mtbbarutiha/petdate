@@ -4,7 +4,7 @@ import { useAuthStore } from '../hooks/useAuthStore';
 import { useI18n } from '../i18n';
 
 /**
- * Desktop header wallet entry — same nav-chip family as SiteDesktopNav + cart.
+ * Desktop header wallet entry — same nav-chip family as cart (utilities cluster).
  * `dir="rtl"` keeps icon at inline-start (leading) to match sibling chips.
  * Balances live on the Wallet page (header chip no longer shows amounts).
  * Hidden on mobile via CSS; bottom dock covers wallet there.
