@@ -2,6 +2,7 @@
  * Selftest: avatars never resolve to face-verify video / non-image clips.
  * Run: npx tsx packages/shared/src/profile-avatar.selftest.ts
  */
+import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -120,13 +121,27 @@ const defaultsDir = join(
   dirname(fileURLToPath(import.meta.url)),
   '../../web/public/images/defaults'
 );
+const EXPECTED_DEFAULT_AVATARS = {
+  'avatar-female.jpg': {
+    bytes: 32057,
+    sha256: '6fb4fda45e6c2561a762f39cd48adef7cd0e7918d7dc352d3bbb5b17e6e64619',
+  },
+  'avatar-male.jpg': {
+    bytes: 37247,
+    sha256: '787161e895afaafa98a869c6632b74d2fb5cfd7ae572285142b012eab8058f4f',
+  },
+} as const;
+
 for (const file of ['avatar-female.jpg', 'avatar-male.jpg'] as const) {
   const abs = join(defaultsDir, file);
   assert(existsSync(abs), `${file} committed under web/public/images/defaults`);
   const buf = readFileSync(abs);
-  assert(buf.length > 20_000, `${file} has real image bytes`);
+  const expected = EXPECTED_DEFAULT_AVATARS[file];
+  assert(buf.length === expected.bytes, `${file} must be exactly ${expected.bytes} bytes`);
   assert(buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff, `${file} is a JPEG`);
   assert(!/made with ai/i.test(buf.toString('latin1')), `${file} has no Made with AI watermark`);
+  const sha = createHash('sha256').update(buf).digest('hex');
+  assert(sha === expected.sha256, `${file} sha256 must be ${expected.sha256}`);
 }
 
 console.log('profile-avatar.selftest: ok');
