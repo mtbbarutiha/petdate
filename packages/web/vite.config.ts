@@ -5,27 +5,28 @@ import fs from 'fs';
 import path from 'path';
 import { applySeoToHtml, normalizePath } from './src/lib/pageSeo';
 
-/** Defer hashed CSS so first paint is the inline critical block (FCP / Speed Index). */
+/** Defer hashed CSS so first paint is the inline critical block (FCP / unused-CSS). */
 function deferNonCriticalCss(): Plugin {
   return {
     name: 'petdate-defer-css',
     transformIndexHtml: {
       order: 'post',
       handler(html) {
+        const hrefs: string[] = [];
         const next = html.replace(
           /<link([^>]*rel="stylesheet"[^>]*href="(\/assets\/[^"]+\.css)"[^>]*)>/g,
           (full, attrs: string, href: string) => {
-            if (/\smedia=/.test(attrs)) return full;
-            return `<link${attrs} media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="${href}"></noscript>`;
+            if (/\smedia=/.test(attrs) && !/media=["']print["']/.test(attrs)) return full;
+            hrefs.push(href);
+            return `<noscript><link rel="stylesheet" href="${href}"></noscript>`;
           }
         );
-        if (next.includes('pd-defer-css-fallback')) return next;
-        if (!next.includes('onload="this.media=\'all\'"')) return next;
-        /* Cached print stylesheets can skip onload on some WebKit builds — swap
-         * media=all as soon as the sheet exists, with a short idle fallback.
-         * Does not make CSS render-blocking. */
+        if (!hrefs.length || next.includes('pd-defer-css-fallback')) return next;
+        /* Do not put hashed CSS in the initial HTML — even media=print still
+         * downloads ~85 KiB and lands on unused-CSS. Inject after input or 8s. */
+        const list = JSON.stringify(hrefs);
         const fallback =
-          '<script id="pd-defer-css-fallback">(function(){function arm(){var n=document.querySelectorAll(\'link[rel="stylesheet"][media="print"]\');for(var i=0;i<n.length;i++){(function(l){function go(){l.media="all"}if(l.sheet)go();else l.addEventListener("load",go);setTimeout(go,1500)})(n[i])}}if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",arm);else arm()})();</script>';
+          `<script id="pd-defer-css-fallback">(function(){var hrefs=${list};var done=false;function inject(){if(done)return;done=true;hrefs.forEach(function(h){if(document.querySelector('link[href="'+h+'"][rel="stylesheet"]:not([media="print"])'))return;var l=document.createElement('link');l.rel='stylesheet';l.href=h;document.head.appendChild(l)})}function arm(){['pointerdown','keydown','touchstart'].forEach(function(ev){window.addEventListener(ev,inject,{once:true,passive:true})});setTimeout(inject,8000)}if(document.readyState==='complete')arm();else window.addEventListener('load',arm)})();</script>`;
         return next.replace('</head>', `${fallback}</head>`);
       },
     },
@@ -106,7 +107,7 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         // New cache namespace so stuck clients drop the old 1.5s-poll bundle.
         // Bump when guest marketing routes change — v14 left #213's shell unclaimed.
-        cacheId: 'petdate-web-v24-vazirmatn',
+        cacheId: 'petdate-web-v25-lh-pass',
         // Precache only the app shell — not hundreds of prerendered SEO HTML files.
         globPatterns: ['index.html', 'offline.html', '**/*.{js,css,ico,svg,woff2}'],
         navigateFallbackDenylist: [/^\/api\//],
@@ -199,7 +200,10 @@ export default defineConfig({
         // The module still loads via its static import — we just skip the hint.
         void filename;
         return deps.filter(
-          (dep) => !dep.includes('vendor-lucide') && !dep.includes('siteAnalytics'),
+          (dep) =>
+            !dep.includes('vendor-lucide') &&
+            !dep.includes('vendor-tiptap') &&
+            !dep.includes('siteAnalytics'),
         );
       },
     },
@@ -207,11 +211,20 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            if (id.includes('react-dom') || id.includes('/react/') || id.includes('react-router')) {
-              return 'vendor-react';
+            // Must run before the /react/ matcher — @tiptap/react used to land in
+            // vendor-react and download ~120 KiB of unused ProseMirror on landing.
+            if (id.includes('@tiptap') || id.includes('prosemirror')) {
+              return 'vendor-tiptap';
             }
             if (id.includes('lucide-react')) {
               return 'vendor-lucide';
+            }
+            if (
+              id.includes('node_modules/react-dom') ||
+              id.includes('node_modules/react/') ||
+              id.includes('node_modules/react-router')
+            ) {
+              return 'vendor-react';
             }
           }
           // Do not force /src/admin into a shared chunk — that made Vite

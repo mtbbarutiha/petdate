@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { AppGuards } from './components/AuthGuard';
 import { LegacyAdoptionHashRedirect } from './components/LegacyAdoptionHashRedirect';
@@ -19,20 +19,58 @@ const LandingMobileDock = lazy(() =>
   import('./components/LandingMobileDock').then((m) => ({ default: m.LandingMobileDock })),
 );
 
+/** First input or 10s — keeps /api/analytics/collect + GTM helpers off LCP. */
+function useAfterFirstInput(timeoutMs = 10000): boolean {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    let done = false;
+    const run = () => {
+      if (done) return;
+      done = true;
+      setReady(true);
+    };
+    const timer = window.setTimeout(run, timeoutMs);
+    for (const ev of ['pointerdown', 'keydown', 'touchstart'] as const) {
+      window.addEventListener(ev, run, { once: true, passive: true });
+    }
+    return () => {
+      window.clearTimeout(timer);
+      for (const ev of ['pointerdown', 'keydown', 'touchstart'] as const) {
+        window.removeEventListener(ev, run);
+      }
+    };
+  }, [timeoutMs]);
+  return ready;
+}
+
 function SiteAnalyticsListener() {
   const location = useLocation();
+  const ready = useAfterFirstInput(10000);
+  const path = `${location.pathname}${location.search}`;
+  const pathRef = useRef(path);
+  pathRef.current = path;
+
   useEffect(() => {
-    // Dynamic import keeps /api/analytics/config + GTM helpers out of index.js.
-    const path = `${location.pathname}${location.search}`;
+    if (!ready) return;
     let cancelled = false;
     void import('./lib/siteAnalytics').then((m) => {
-      if (!cancelled) m.trackPageview(path);
+      if (!cancelled) m.trackPageview(pathRef.current);
     });
     return () => {
       cancelled = true;
     };
-  }, [location.pathname, location.search]);
+  }, [ready, location.pathname, location.search]);
   return null;
+}
+
+function DeferredLandingDock() {
+  const ready = useAfterFirstInput(4000);
+  if (!ready) return null;
+  return (
+    <Suspense fallback={null}>
+      <LandingMobileDock />
+    </Suspense>
+  );
 }
 
 /** Alias / catch-all redirects must keep Tag Assistant debug query params. */
@@ -40,9 +78,8 @@ function RedirectWithTagAssistant({ to }: { to: string }) {
   return <Navigate to={withTagAssistantParams(to)} replace />;
 }
 
-import { LoginPage } from './pages/auth/LoginPage';
-
-/* Heavy / rarely-first routes — keep welcome + login in the main chunk. */
+/* Heavy / rarely-first routes — welcome stays in the main chunk. */
+const LoginPage = lazy(() => import('./pages/auth/LoginPage').then((m) => ({ default: m.LoginPage })));
 const OtpPage = lazy(() => import('./pages/auth/OtpPage').then((m) => ({ default: m.OtpPage })));
 const TelegramLinkPage = lazy(() =>
   import('./pages/auth/TelegramLinkPage').then((m) => ({ default: m.TelegramLinkPage })),
@@ -537,9 +574,7 @@ export default function App() {
             <Route path="*" element={<RedirectWithTagAssistant to="/" />} />
           </Routes>
         </Suspense>
-        <Suspense fallback={null}>
-          <LandingMobileDock />
-        </Suspense>
+        <DeferredLandingDock />
       </ShopCartProvider>
       </AppToastProvider>
     </AppGuards>

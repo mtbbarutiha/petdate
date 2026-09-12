@@ -11,6 +11,7 @@
 - [Pet shop](https://petdate.ir/shop): public catalog; checkout needs login
 - [Adoption](https://petdate.ir/adoption): pets available for پذیرش
 - [Vet consult](https://petdate.ir/vet-consult): online veterinary consultation
+- [Trainer consult](https://petdate.ir/trainer-consult): training consult (login for chat)
 - [Magazine](https://petdate.ir/magazine): care articles
 - [Pet games](https://petdate.ir/games): casual games
 - [OTP login](https://petdate.ir/auth/login): sign in (web and Telegram share one account)

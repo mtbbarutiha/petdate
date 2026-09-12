@@ -130,8 +130,8 @@ assert.match(
 
 assert.doesNotMatch(
   desktopNav,
-  /<item\.icon/,
-  'desktop header is text-only like خدمات — dock glyph token must not leak'
+  /item\.icon/,
+  'desktop header is text-only (#380) — dock glyph token must not leak'
 );
 assert.match(desktopNav, /pepito-nav-section-link/, 'desktop shortcuts share the خدمات text class');
 

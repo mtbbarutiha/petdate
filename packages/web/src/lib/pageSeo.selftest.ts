@@ -99,6 +99,27 @@ const shell = `<!DOCTYPE html><html><head>
 const homeHtml = applySeoToHtml(shell, '/');
 assert.match(homeHtml, /data-pd-lcp="hero"/, 'homepage HTML preloads the LCP hero');
 assert.match(homeHtml, /\/media\/lcp\/hero-playmate-800\.webp/, 'LCP preload points at the mobile WebP hero');
+assert.match(
+  homeHtml,
+  /data-pd-lcp="hero"[\s\S]*<title/,
+  'LCP preload is early in <head>, not after module scripts'
+);
+assert.equal(
+  (homeHtml.match(/hero-playmate-800\.webp/g) || []).length,
+  2,
+  'SEO inject adds one preload href + one imagesrcset entry'
+);
+
+const dupShell = shell.replace(
+  '</head>',
+  `<link rel="preload" as="image" href="/media/lcp/hero-playmate-800.webp" imagesrcset="/media/lcp/hero-playmate-800.webp 800w" />\n</head>`
+);
+const deduped = applySeoToHtml(dupShell, '/');
+assert.equal(
+  (deduped.match(/rel="preload"[^>]*hero-playmate-800\.webp/g) || []).length,
+  1,
+  'SEO inject collapses a static index.html preload + injected tag into one'
+);
 
 const faqHtml = applySeoToHtml(shell, '/faq');
 const shopHtml = applySeoToHtml(shell, '/shop');
