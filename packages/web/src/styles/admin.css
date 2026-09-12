@@ -5785,15 +5785,16 @@ body:has(.admin-app) {
 }
 
 /* ── KPI strip ── */
+/* Wider min tracks so toman amounts (e.g. ۶۷۷,۰۷۷ تومان) fit without ellipsis. */
 .admin-app .admin-dash-kpi-strip {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(148px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 210px), 1fr));
   gap: 10px;
   margin-bottom: 16px;
 }
 
 .admin-app .admin-dash-kpi-strip--dense {
-  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr));
   gap: 8px;
 }
 
@@ -5841,17 +5842,19 @@ body:has(.admin-app) {
   font-size: 1.12rem;
   font-weight: 750;
   letter-spacing: -0.02em;
-  line-height: 1.2;
+  line-height: 1.25;
   color: var(--admin-ink);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  /* Full amount + unit — never truncate with … */
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .admin-app .admin-dash-kpi-label {
   font-size: 0.72rem;
   font-weight: 600;
   color: var(--admin-chip-label);
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 
 .admin-app .admin-dash-kpi-hint {
