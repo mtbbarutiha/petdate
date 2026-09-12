@@ -128,11 +128,12 @@ assert.match(
   'mobile dock clips content so icons cannot overflow the pill'
 );
 
-assert.match(
+assert.doesNotMatch(
   desktopNav,
-  /<item\.icon size=\{16\} strokeWidth=\{2\.25\}/,
-  'desktop header icons stay 16px — dock glyph token must not leak'
+  /<item\.icon/,
+  'desktop header is text-only like خدمات — dock glyph token must not leak'
 );
+assert.match(desktopNav, /pepito-nav-section-link/, 'desktop shortcuts share the خدمات text class');
 
 const ownerRail = layout.slice(layout.indexOf('const OWNER_NAV'), layout.indexOf('const VET_NAV'));
 const playmateIdx = ownerRail.indexOf("to: '/chats'");
