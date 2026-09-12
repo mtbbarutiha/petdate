@@ -6753,3 +6753,105 @@ body:has(.admin-app) {
     min-width: 0;
   }
 }
+
+/* ── Admin route transitions (sidebar tab switch) ── */
+
+.admin-app .admin-outlet {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-app .admin-outlet-page {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-app .admin-outlet-page.is-pending {
+  visibility: hidden;
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.admin-app .admin-route-loading {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding-block: 48px;
+  padding-inline: 24px;
+  min-height: min(52vh, 420px);
+  box-sizing: border-box;
+}
+
+.admin-app .admin-route-loading--overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  min-height: 100%;
+  background: color-mix(in srgb, var(--admin-bg) 88%, transparent);
+}
+
+.admin-app .admin-route-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--admin-border);
+  border-block-start-color: var(--admin-accent);
+  border-radius: 50%;
+  animation: admin-route-spin 0.7s linear infinite;
+}
+
+.admin-app .admin-route-loading-label {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--admin-muted);
+}
+
+.admin-app .admin-route-skeleton {
+  width: min(100%, 560px);
+  display: grid;
+  gap: 10px;
+}
+
+.admin-app .admin-route-skeleton-bar {
+  height: 12px;
+  border-radius: 8px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--admin-border) 85%, var(--admin-surface)),
+    color-mix(in srgb, var(--admin-accent-soft) 75%, var(--admin-surface)),
+    color-mix(in srgb, var(--admin-border) 85%, var(--admin-surface))
+  );
+  background-size: 200% 100%;
+  animation: admin-route-shimmer 1.25s ease-in-out infinite;
+}
+
+.admin-app .admin-route-skeleton-bar--lg { width: 100%; height: 18px; }
+.admin-app .admin-route-skeleton-bar--md { width: 72%; }
+.admin-app .admin-route-skeleton-bar--sm { width: 48%; }
+
+@keyframes admin-route-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes admin-route-shimmer {
+  0% { background-position: 100% 0; }
+  100% { background-position: -100% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-app .admin-route-spinner,
+  .admin-app .admin-route-skeleton-bar {
+    animation: none;
+  }
+}

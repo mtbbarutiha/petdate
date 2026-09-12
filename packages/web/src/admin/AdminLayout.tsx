@@ -1,5 +1,6 @@
-import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { AdminRouteOutlet } from './AdminRouteOutlet';
 import { ChevronDown,
   Activity, Bell, Briefcase, Building2, ClipboardList, FileText, Headset, Landmark, LayoutDashboard, LineChart, LogOut, Mail, Menu, Newspaper, Package,
   PawPrint, PieChart, ScrollText, Settings, Shield, ShieldCheck, ShoppingBag, Stethoscope,
@@ -489,7 +490,7 @@ function AdminLayoutInner() {
               <span className="admin-topbar-user-name">{roleLabel}</span>
             </div>
           </header>
-          <Outlet />
+          <AdminRouteOutlet />
         </div>
       </div>
     </div>

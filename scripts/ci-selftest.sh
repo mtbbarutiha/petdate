@@ -57,6 +57,9 @@ npx tsx "$ROOT/packages/web/src/admin/adminMagazineRoute.selftest.ts"
 echo "==> selftest: admin mobile hamburger / drawer (RTL)"
 npx tsx "$ROOT/packages/web/src/admin/adminMobileNav.selftest.ts"
 
+echo "==> selftest: admin route-transition loading (no stale tab flash)"
+npx tsx "$ROOT/packages/web/src/admin/adminRouteLoading.selftest.ts"
+
 echo "==> selftest: admin sidebar ops-priority order"
 npx tsx "$ROOT/packages/web/src/admin/adminNavOrder.selftest.ts"
 
