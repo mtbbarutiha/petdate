@@ -388,7 +388,19 @@ function AdminLayoutInner() {
           aria-hidden={!navOpen}
         >
           <div className="admin-brand">
-            <AdminWordmark />
+            <div className="admin-brand-row">
+              <AdminWordmark />
+              <button
+                type="button"
+                className={`admin-nav-toggle${navOpen ? ' is-open' : ''}`}
+                onClick={() => setNavOpen((v) => !v)}
+                aria-label={navOpen ? t('admin.closeMenu') : t('admin.menu')}
+                aria-expanded={navOpen}
+                aria-controls="admin-mobile-nav"
+              >
+                {navOpen ? <X size={18} strokeWidth={2} /> : <Menu size={18} strokeWidth={2} />}
+              </button>
+            </div>
             <div className="admin-brand-sub" style={{ fontSize: 12, opacity: 0.75, marginTop: 4 }}>
               {t('admin.brandSub')}
             </div>
@@ -450,17 +462,18 @@ function AdminLayoutInner() {
         <div className="admin-main">
           <header className="admin-topbar">
             <div className="admin-topbar-start">
-              <button
-                type="button"
-                className={`admin-nav-toggle${navOpen ? ' is-open' : ''}`}
-                onClick={() => setNavOpen((v) => !v)}
-                aria-label={navOpen ? t('admin.closeMenu') : t('admin.menu')}
-                aria-expanded={navOpen}
-                aria-controls="admin-mobile-nav"
-              >
-                {navOpen ? <X size={18} strokeWidth={2} /> : <Menu size={18} strokeWidth={2} />}
-              </button>
-              <AdminWordmark className="admin-topbar-wordmark" />
+              {!navOpen ? (
+                <button
+                  type="button"
+                  className="admin-nav-toggle admin-nav-toggle--reopen"
+                  onClick={() => setNavOpen(true)}
+                  aria-label={t('admin.menu')}
+                  aria-expanded={false}
+                  aria-controls="admin-mobile-nav"
+                >
+                  <Menu size={18} strokeWidth={2} />
+                </button>
+              ) : null}
               <div>
                 <p className="admin-topbar-eyebrow">Pet Date · {t('admin.peyvand')}</p>
                 <h1 className="admin-topbar-title">{t(pageTitleKey)}</h1>

@@ -1,7 +1,8 @@
 /**
  * Guard: admin hamburger fully closes the panel (not just labels),
- * lives in the top header next to Admin Console (not a fixed seam slab),
- * and the mobile drawer stays usable. Menu ↔ X state is obvious.
+ * close control lives in the sidebar brand row (not a topbar logo strip),
+ * reopen is a muted topbar icon when the panel is hidden, and the mobile
+ * drawer stays usable. Menu ↔ X state is obvious.
  * Run: npx tsx packages/web/src/admin/adminMobileNav.selftest.ts
  */
 import assert from 'node:assert/strict';
@@ -17,7 +18,9 @@ const dark = readFileSync(join(webRoot, 'styles/theme-dark.css'), 'utf8');
 assert.match(layout, /navOpen/, 'AdminLayout tracks navOpen');
 assert.match(layout, /setNavOpen\(\(v\) => !v\)/, 'hamburger toggles navOpen');
 assert.match(layout, /admin-nav-toggle/, 'hamburger/close toggle present');
-assert.match(layout, /admin-topbar-wordmark/, 'wordmark sits in the header next to the toggle');
+assert.match(layout, /admin-brand-row/, 'sidebar has a standard brand header row');
+assert.match(layout, /admin-nav-toggle--reopen/, 'closed state reopen lives in the topbar');
+assert.doesNotMatch(layout, /admin-topbar-wordmark/, 'no second wordmark strip in the page header');
 assert.match(layout, /admin-backdrop/, 'backdrop dismiss present');
 assert.match(layout, /aria-expanded=\{navOpen\}/, 'toggle exposes aria-expanded');
 assert.match(layout, /admin-app--nav-open/, 'open state class on shell');
@@ -30,17 +33,20 @@ assert.match(layout, /<Menu /, 'closed state shows hamburger');
 assert.doesNotMatch(layout, /admin-icon-btn--mobile/, 'legacy topbar-only mobile button is gone');
 assert.doesNotMatch(layout, /setCollapsed/, 'icon-rail collapse is no longer the close action');
 
+const brandRowIdx = layout.indexOf('admin-brand-row');
 const toggleIdx = layout.indexOf('admin-nav-toggle');
 const topbarIdx = layout.indexOf('className="admin-topbar"');
-const wordmarkIdx = layout.indexOf('admin-topbar-wordmark');
-assert.ok(topbarIdx >= 0 && toggleIdx > topbarIdx, 'toggle is inside the top header, not a shell sibling');
-assert.ok(wordmarkIdx > toggleIdx, 'Admin Console wordmark follows the toggle in the header');
+const reopenIdx = layout.indexOf('admin-nav-toggle--reopen');
+assert.ok(brandRowIdx >= 0 && toggleIdx > brandRowIdx && toggleIdx < topbarIdx, 'close toggle is inside the sidebar brand row');
+assert.ok(reopenIdx > topbarIdx, 'reopen hamburger is in the page topbar, only when nav is closed');
+assert.match(layout, /!navOpen \? \(/, 'topbar reopen renders only while the sidebar is hidden');
 
 assert.match(css, /\.admin-app\s+\.admin-nav-toggle\s*\{/, 'toggle styles exist');
+assert.match(css, /\.admin-app\s+\.admin-brand-row\s*\{/, 'sidebar brand row is a flex header');
 assert.match(
   css,
   /\.admin-app\s+\.admin-nav-toggle\s*\{[^}]*position:\s*relative/,
-  'toggle stays in header flow (not position:fixed)'
+  'toggle stays in document flow (not position:fixed)'
 );
 assert.doesNotMatch(
   css,
@@ -48,11 +54,7 @@ assert.doesNotMatch(
   'toggle is not a fixed slab on the sidebar seam'
 );
 assert.doesNotMatch(css, /inset-inline-start:\s*calc\(264px/, 'toggle is not parked on the sidebar border');
-assert.match(
-  css,
-  /@media \(max-width:\s*960px\)[\s\S]*?\.admin-app\s+\.admin-topbar\s*\{[\s\S]*?z-index:\s*50/,
-  'mobile header stacks above drawer (40) and backdrop (35)'
-);
+assert.doesNotMatch(css, /admin-topbar-wordmark/, 'no leftover topbar wordmark chrome');
 assert.match(
   css,
   /@media \(min-width:\s*961px\)[\s\S]*?admin-app--nav-closed \.admin-sidebar[\s\S]*?display:\s*none/,
