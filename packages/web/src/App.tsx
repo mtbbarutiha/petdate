@@ -380,6 +380,7 @@ export default function App() {
             <Route index element={<WelcomePage />} />
             <Route path="welcome" element={<WelcomePage />} />
             <Route path="faq" element={<FaqPage />} />
+            <Route path="help" element={<FaqPage />} />
             <Route path="invite" element={<InvitePage />} />
             <Route path="magazine" element={<MagazinePage />} />
             <Route path="magazine/:slug" element={<MagazineArticlePage />} />

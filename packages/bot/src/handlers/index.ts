@@ -86,6 +86,7 @@ import {
 import {
   handleCancel,
   handleHelp,
+  handleHelpTopic,
   handleMenu,
   handleMyRoles,
   handleMyRolesAdd,
@@ -306,6 +307,8 @@ export function registerHandlers(bot: Bot): void {
   bot.command('start', handleStart);
   bot.command('menu', handleMenu);
   bot.command('help', handleHelp);
+  bot.callbackQuery(/^help:t:([a-z0-9]+)$/, (ctx) => handleHelpTopic(ctx, ctx.match![1]!));
+  bot.callbackQuery('help:home', handleHelp);
 
   // Tappable public ids: /u00042 (hyphen-free; Telegram bot_command charset)
   bot.hears(/^\/u_?\d{1,10}(?:@\w+)?(?:\s|$)/i, (ctx) => handleUserCommandId(ctx));

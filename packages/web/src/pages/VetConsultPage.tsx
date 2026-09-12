@@ -27,6 +27,7 @@ import {
 } from '@petdate/shared';
 import { appConfirm } from '../components/AppDialog';
 import { AiConsultCtaButton } from '../components/AiConsultCtaButton';
+import { PageHelpLink } from '../components/PageHelpLink';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { useAppToast } from '../hooks/useAppToast';
 import { useLiveAjaxPoll } from '../hooks/useLiveAjaxPoll';
@@ -843,6 +844,7 @@ export function VetConsultPage() {
         </p>
         <h1>{isVetDashboard ? 'پنل دامپزشک' : 'ارتباط سریع با پزشک'}</h1>
         <p className="pepito-vet-lead">{lead}</p>
+        <PageHelpLink section="consults" className="pepito-page-help-link--hero" />
       </div>
     </header>
   );

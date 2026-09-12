@@ -12,6 +12,7 @@ import {
   type WalletCurrency,
 } from '@petdate/shared';
 import { InviteFriendsCard } from '../components/InviteFriendsCard';
+import { PageHelpLink } from '../components/PageHelpLink';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { useAppToast } from '../hooks/useAppToast';
 import { useI18n } from '../i18n';
@@ -351,6 +352,7 @@ export function WalletPage() {
           </p>
           <h1>{t('wallet.title')}</h1>
           <p className="pepito-wallet-lead">{t('wallet.lead')}</p>
+          <PageHelpLink section="wallet" className="pepito-page-help-link--hero" />
         </div>
       </header>
 

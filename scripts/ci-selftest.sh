@@ -28,6 +28,7 @@ npx tsx "$ROOT/packages/shared/src/fanout-reject.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/pet-slug.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/sanitize-roles.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/catalog-breed-search.selftest.ts"
+npx tsx "$ROOT/packages/shared/src/help.selftest.ts"
 
 echo "==> selftest: web face-verify approve toast + profile copy"
 npx tsx "$ROOT/packages/web/src/components/faceVerifyRewardToast.selftest.ts"
@@ -254,6 +255,7 @@ npx tsx "$ROOT/packages/bot/src/handlers/nearby-inline-list.selftest.ts"
 npx tsx "$ROOT/packages/bot/src/handlers/pet-search-menu.selftest.ts"
 npx tsx "$ROOT/packages/bot/src/handlers/invite-friends.selftest.ts"
 npx tsx "$ROOT/packages/bot/src/roleMenuOrder.selftest.ts"
+npx tsx "$ROOT/packages/bot/src/handlers/help.selftest.ts"
 
 # SQLite cascade (uses temp/local DB via API helpers — not production path)
 run src/services/user-delete-cascade.selftest.ts

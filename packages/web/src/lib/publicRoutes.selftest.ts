@@ -139,6 +139,20 @@ assert.match(welcome, /id="faq"/, 'welcome FAQ section kept for desktop');
 assert.match(welcome, /pepito-faq-section/, 'welcome FAQ marked for mobile hide');
 assert.match(welcome, /pepito-nav-faq/, 'welcome FAQ nav marked for mobile hide');
 assert.match(app, /path="faq"\s+element=\{<FaqPage/, 'App keeps /faq route for deep links');
+assert.match(app, /path="help"\s+element=\{<FaqPage/, 'App aliases /help to the same help/FAQ page');
+assert.match(guard, /PUBLIC_EXACT[\s\S]*\/help/, 'AuthGuard treats /help as public');
+assert.match(faq, /siteHelpSections|siteRoleGuides/, 'FAQ page renders shared help sections');
+assert.match(faq, /<Link to="\/games"/, 'help page links to games');
+const shopChrome = readFileSync(join(webSrc, 'components/shop/ShopChrome.tsx'), 'utf8');
+const invitePage = readFileSync(join(webSrc, 'pages/InvitePage.tsx'), 'utf8');
+const supportHub = readFileSync(join(webSrc, 'pages/SupportHubPage.tsx'), 'utf8');
+const vetConsult = readFileSync(join(webSrc, 'pages/VetConsultPage.tsx'), 'utf8');
+const trainerConsult = readFileSync(join(webSrc, 'pages/ServiceConsultPage.tsx'), 'utf8');
+assert.match(shopChrome, /PageHelpLink section="shop"/, 'shop chrome links to shop help');
+assert.match(invitePage, /PageHelpLink section="invite"/, 'invite page links to invite help');
+assert.match(supportHub, /PageHelpLink section="support"/, 'support hub links to support help');
+assert.match(vetConsult, /PageHelpLink section="consults"/, 'vet consult links to consults help');
+assert.match(trainerConsult, /PageHelpLink section="consults"/, 'trainer consult links to consults help');
 const pepitoCss = readFileSync(join(webSrc, 'styles/pepito.css'), 'utf8');
 assert.match(
   pepitoCss,

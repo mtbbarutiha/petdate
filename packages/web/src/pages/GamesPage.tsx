@@ -17,6 +17,7 @@ import {
   type GameType,
 } from '@petdate/shared';
 import { LandingChrome } from '../components/LandingChrome';
+import { PageHelpLink } from '../components/PageHelpLink';
 import { useAppToast } from '../hooks/useAppToast';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { useI18n } from '../i18n';
@@ -154,6 +155,7 @@ export function GamesPage() {
           </p>
           <h1>{t('games.title')}</h1>
           <p className="pepito-games-lead">{t('games.lead')}</p>
+          <PageHelpLink section="games" />
         </div>
 
         <div className="pepito-games-toolbar">

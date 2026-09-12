@@ -17,7 +17,7 @@ import {
   completeWebTelegramLink,
   completeTelegramPendingLogin,
 } from '../api-client';
-import { formatCoinAwardMessage, REFERRAL_BONUS_COINS } from '../economy';
+import { formatCoinAwardMessage } from '../economy';
 import { fetchPublicPlatformConfig } from '../runtime-config';
 import { sendWelcomeLogo } from '../branding';
 import { roleWelcomeHint } from '../format';
@@ -816,82 +816,7 @@ export async function handleMyRolesAdd(ctx: Context): Promise<void> {
   );
 }
 
-export async function handleHelp(ctx: Context): Promise<void> {
-  const user = await getCtxUser(ctx);
-  const active = primaryRole(user?.roles, user?.role);
-  const isOwner = active === 'pet_owner';
-  const isVet = active === 'vet';
-  const isNoPet = active === 'no_pet';
-  const inviteLine = `🎁 **دعوت دوستان** — ${new Intl.NumberFormat('fa-IR').format(REFERRAL_BONUS_COINS)} سکه جایزه`;
-
-  const lines = isOwner
-    ? [
-        `🐾 **${BRAND.name}** — راهنمای صاحب پت`,
-        `_${BRAND.taglineEn}_`,
-        '',
-        '🔍 **پیدا کردن همبازی** — درخواست به هم‌گروه‌ها',
-        '📍 **پت‌های نزدیک** — بر اساس شهر/استان',
-        '🔎 **جستجوی پت** — هم‌استان، هم‌نژاد، همه، جدید، محبوب',
-        '🐾 **پت‌های من** — مدیریت و ثبت پت',
-        '👤 **پروفایل** — اطلاعات + احراز',
-        '⚡ **مشاوره سریع پزشک** — درخواست فوری',
-        '💵 **کسب درآمد** — فروش سکه',
-        inviteLine,
-        '🪙 **سکه** · 🛒 **پت‌شاپ** · 🎁 **دعوت** · 🛟 **پشتیبانی** · ❓ **راهنما**',
-        '',
-        '📋 **منو** — بازگشت به منوی اصلی',
-        '/start — بازگشت به منو',
-        '/menu — نمایش منو',
-        '/cancel — لغو عملیات جاری',
-      ]
-    : isVet
-      ? [
-          `🐾 **${BRAND.name}** — راهنمای دامپزشک`,
-          `_${BRAND.taglineEn}_`,
-          '',
-          '🟢 **آنلاین — آماده پذیرش** / 🔴 **آفلاین**',
-          '🩺 **بیماران اخیر** — ۵ بیمار آخر',
-          '💰 **تعرفه ویزیت** — تنظیم به سکه',
-          '👤 **پروفایل** — اطلاعات + احراز',
-          inviteLine,
-          '🪙 **سکه** · 🛒 **پت‌شاپ** · 🎁 **دعوت** · 🛟 **پشتیبانی** · ❓ **راهنما**',
-          '',
-          '/start — شروع یا بازگشت به منو',
-          '/menu — نمایش منو',
-          '/help — راهنما',
-          '/cancel — لغو عملیات جاری',
-        ]
-      : isNoPet
-          ? [
-              `🐾 **${BRAND.name}** — راهنمای بدون پت`,
-              `_${BRAND.taglineEn}_`,
-              '',
-              '🛒 **به دنبال مشاوره برای خرید** — مشاوره دامپزشک برای انتخاب پت',
-              '👤 **پروفایل** — اطلاعات + احراز',
-              inviteLine,
-              '🪙 **سکه** · 🛒 **پت‌شاپ** · 🎁 **دعوت** · 🛟 **پشتیبانی** · ❓ **راهنما**',
-              '',
-              '/menu — نمایش منو',
-              '/help — راهنما',
-              '/cancel — لغو عملیات جاری',
-            ]
-          : [
-              `🐾 **${BRAND.name}** — ${BRAND.taglineFa}`,
-              `_${BRAND.taglineEn}_`,
-              '',
-              inviteLine,
-              '🪙 **سکه** · 🛒 **پت‌شاپ** · 🎁 **دعوت** · 🛟 **پشتیبانی** · ❓ **راهنما**',
-              '',
-              '/start — شروع یا بازگشت',
-              '/menu — نمایش منو',
-              '/help — راهنما',
-            ];
-
-  await ctx.reply(lines.join('\n'), {
-    parse_mode: 'Markdown',
-    reply_markup: menuKeyboardFor(ctx, user),
-  });
-}
+export { handleHelp, handleHelpTopic } from './help';
 
 export async function handleCancel(ctx: Context): Promise<void> {
   const from = ctx.from;
