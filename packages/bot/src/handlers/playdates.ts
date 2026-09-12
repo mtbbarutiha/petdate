@@ -1,7 +1,7 @@
 import type { Api, Context } from 'grammy';
 import { InputFile } from 'grammy';
 import type { PetProfile } from '@petdate/shared';
-import { isPendingRequestExpired, PLAYDATE_REQUEST_TTL_MS } from '@petdate/shared';
+import { isPendingRequestExpired, isPhotoApproved, PLAYDATE_REQUEST_TTL_MS } from '@petdate/shared';
 import {
   createPlaydate,
   deletePet,
@@ -42,11 +42,21 @@ export function defaultPetPhoto(pet: { species?: string; id: number }): string {
   return pool[pet.id % pool.length]!;
 }
 
-function petPhotoForTelegram(pet: {
-  species?: string;
-  id: number;
-  imageUrl?: string | null;
-}): string {
+function petPhotoForTelegram(
+  pet: {
+    species?: string;
+    id: number;
+    imageUrl?: string | null;
+    photoModerationStatus?: string | null;
+  },
+  opts?: { allowPending?: boolean }
+): string {
+  if (
+    !opts?.allowPending &&
+    !isPhotoApproved(pet.photoModerationStatus as 'pending' | 'approved' | 'rejected' | null)
+  ) {
+    return defaultPetPhoto(pet);
+  }
   return resolveTelegramPhotoUrl(pet.imageUrl) || defaultPetPhoto(pet);
 }
 
@@ -165,9 +175,9 @@ export async function handleMyPetView(ctx: Context, petId: number): Promise<void
   } catch {
     /* called from text/edit flows without callback */
   }
-  const text = `🐾 <b>پروفایل پت</b>\n\n${formatPet(pet, true)}`;
+  const text = `🐾 <b>پروفایل پت</b>\n\n${formatPet(pet, true, { forOwner: true })}`;
   const kb = myPetProfileKeyboard(pet.id);
-  const photo = petPhotoForTelegram(pet);
+  const photo = petPhotoForTelegram(pet, { allowPending: true });
 
   try {
     await ctx.replyWithPhoto(photo, {

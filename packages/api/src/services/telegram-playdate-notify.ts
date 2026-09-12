@@ -5,6 +5,7 @@ import {
   PET_SIZE_LABELS,
   PET_SPECIES_LABELS,
   formatPetAge,
+  isPhotoApproved,
   petPublicIdOf,
   userPublicIdOf,
   type PetProfile,
@@ -138,6 +139,9 @@ function safePhotoRef(pet: PetProfile, candidate: string): ResolvedNotifyPhoto {
  * the local file; otherwise absolutize with a public HTTPS origin.
  */
 export function resolvePlaydateNotifyPhoto(pet: PetProfile): ResolvedNotifyPhoto {
+  if (!isPhotoApproved(pet.photoModerationStatus)) {
+    return { kind: 'ref', value: defaultPetPhoto(pet) };
+  }
   const raw = String(pet.imageUrl ?? '').trim();
   if (!raw) return { kind: 'ref', value: defaultPetPhoto(pet) };
 

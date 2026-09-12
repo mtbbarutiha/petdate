@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160" role="img" aria-label="PetDate">
+  <rect width="160" height="160" rx="28" fill="#e8e4dc"/>
+  <ellipse cx="56" cy="56" rx="18" ry="22" fill="#5c4d91"/>
+  <ellipse cx="104" cy="56" rx="18" ry="22" fill="#5c4d91"/>
+  <ellipse cx="40" cy="90" rx="14" ry="16" fill="#5c4d91"/>
+  <ellipse cx="120" cy="90" rx="14" ry="16" fill="#5c4d91"/>
+  <circle cx="80" cy="98" r="28" fill="#5c4d91"/>
+</svg>

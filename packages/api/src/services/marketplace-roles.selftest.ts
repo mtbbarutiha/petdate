@@ -109,7 +109,7 @@ async function main() {
   });
   assert(pet.photoModerationStatus === 'pending', 'new photo pending');
   const publicList = dbService.listPets({ publicOnly: true });
-  assert(!publicList.some((p) => p.id === pet.id), 'pending hidden from public');
+  assert(publicList.some((p) => p.id === pet.id), 'pending pet stays in discovery');
   dbService.setPetPhotoModerationStatus(pet.id, 'approved');
   const public2 = dbService.listPets({ publicOnly: true });
   assert(public2.some((p) => p.id === pet.id), 'approved visible');

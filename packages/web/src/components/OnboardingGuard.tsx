@@ -1,6 +1,5 @@
 import { useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { userHasRole } from '@petdate/shared';
 import { useUserStore } from '../hooks/useUserStore';
 
 const PUBLIC_PATHS = ['/welcome', '/onboarding'];
@@ -20,18 +19,8 @@ export function OnboardingGuard({ children }: { children: React.ReactNode }) {
     return <Navigate to="/onboarding/role" replace />;
   }
 
-  if (
-    userHasRole(user, 'pet_owner') &&
-    user.onboarding === 'profile_incomplete' &&
-    !location.pathname.startsWith('/onboarding') &&
-    !location.pathname.startsWith('/add-pet') &&
-    !location.pathname.startsWith('/my-pets') &&
-    !location.pathname.startsWith('/pets/') &&
-    !location.pathname.startsWith('/pet/') &&
-    !location.pathname.startsWith('/profile')
-  ) {
-    return <Navigate to="/onboarding/pet" replace />;
-  }
+  // Incomplete pet registration / pending photos must not lock matching,
+  // chat, shop, or the owner panel. Role is the only hard gate here.
 
   return <>{children}</>;
 }

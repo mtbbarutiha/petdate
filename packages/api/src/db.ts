@@ -4586,7 +4586,11 @@ export const dbService = {
     excludeOwnerId?: number;
     /** newest = جدیدترین؛ popular = لایک صاحب؛ پیش‌فرض updated */
     sort?: 'newest' | 'popular' | 'updated';
-    /** وقتی true فقط عکس‌های تأییدشده (لیست عمومی) */
+    /**
+     * Public discovery list (unauthenticated / other owners).
+     * Pending photos stay on the row so presenters can swap in a placeholder;
+     * do not hide the pet identity from matching.
+     */
     publicOnly?: boolean;
   }): PetProfile[] {
     let sql = `
@@ -4608,9 +4612,9 @@ export const dbService = {
       sql += ' AND pets.owner_id != ?';
       params.push(filters.excludeOwnerId);
     }
-    if (filters?.publicOnly) {
-      sql += " AND COALESCE(pets.photo_moderation_status, 'approved') = 'approved'";
-    }
+    // publicOnly used to hide pending-photo pets entirely. Identity-only
+    // features (matching, nearby, shop cards) keep the pet and strip the
+    // real photo in presentPet / sanitizePetPhotosForViewer.
     if (filters?.lookingForPlaymate !== undefined) {
       sql += ' AND pets.looking_for_playmate = ?';
       params.push(filters.lookingForPlaymate ? 1 : 0);
@@ -4683,8 +4687,7 @@ export const dbService = {
       INNER JOIN users ON users.id = pets.owner_id
       WHERE users.lat IS NOT NULL
         AND users.lng IS NOT NULL
-        AND COALESCE(users.is_active, 1) = 1
-        AND COALESCE(pets.photo_moderation_status, 'approved') = 'approved'`;
+        AND COALESCE(users.is_active, 1) = 1`;
     const params: unknown[] = [];
     if (opts.excludeOwnerId) {
       sql += ' AND pets.owner_id != ?';

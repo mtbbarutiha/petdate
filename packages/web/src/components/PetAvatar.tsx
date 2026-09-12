@@ -17,6 +17,9 @@ const SIZE_CLASS = {
   xl: 'pet-avatar--xl',
 };
 
+/** Branded default while a real photo is missing or awaiting admin approval. */
+export const PHOTO_PLACEHOLDER_SRC = '/brand/photo-placeholder.svg';
+
 /** Neutral SVG data-URI — never swap in another animal stock photo on error. */
 const NEUTRAL_FALLBACK =
   'data:image/svg+xml,' +
@@ -34,7 +37,7 @@ export function PetAvatar({
 }: PetAvatarProps) {
   const sizeClass = SIZE_CLASS[size];
   const variantClass = variant === 'cover' ? 'pet-avatar--cover' : '';
-  const src = imageUrl?.trim() || DEFAULT_IMAGES[type] || NEUTRAL_FALLBACK;
+  const src = imageUrl?.trim() || DEFAULT_IMAGES[type] || PHOTO_PLACEHOLDER_SRC;
 
   return (
     <div className={`pet-avatar pet-avatar--photo ${sizeClass} ${variantClass} ${className}`}>

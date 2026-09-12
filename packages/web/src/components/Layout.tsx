@@ -20,6 +20,7 @@ import { useI18n } from '../i18n';
 import { usePlatformConfig } from '../hooks/usePlatformConfig';
 import { LandingChrome } from './LandingChrome';
 import { LiveIncomingRequests } from './LiveIncomingRequests';
+import { PhotoPendingBanner } from './PhotoPendingBanner';
 import { ProfileManageNav } from './ProfileManageNav';
 import { RoleSwitchControl } from './RoleSwitchControl';
 
@@ -120,6 +121,7 @@ export function Layout({ children }: { children?: ReactNode }) {
         </aside>
 
         <main className="pepito-app-main">
+          {active === 'pet_owner' ? <PhotoPendingBanner /> : null}
           {children ?? <Outlet />}
           <LiveIncomingRequests />
         </main>
