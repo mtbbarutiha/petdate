@@ -67,6 +67,11 @@ assert.match(
   /location ~ \^\/\(\?:faq\|help\|shop/,
   'public marketing HTML is cacheable'
 );
+assert.match(
+  conf,
+  /location ~ \^\/\(\?:faq\|help\|shop[\s\S]*?try_files \$uri \$uri\/index\.html \/index\.html;/,
+  'public routes serve prerendered index.html without directory-slash 301'
+);
 assert.match(conf, /shop-product-redirects\.map/, 'product id→slug map included');
 assert.match(conf, /\$shop_product_redirect/, 'product id redirects wired');
 assert.match(
