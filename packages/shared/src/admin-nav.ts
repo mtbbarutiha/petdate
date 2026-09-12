@@ -17,4 +17,30 @@ export interface PlatformNavCounts {
    * status=pending, or awaiting_receipt with a receipt already attached (stuck recovery).
    */
   payments: number;
+  /** Shop orders awaiting fulfillment (pending / paid, not shipped/completed/cancelled). */
+  shopOrders: number;
+}
+
+/** Live sidebar badge counts for Finance OS + deposit approval queues. */
+export interface FinanceNavCounts {
+  /** Card-to-card deposits awaiting finance approve/reject (same query as PlatformNavCounts.payments). */
+  payments: number;
+  /** Unclassified imported ledger rows */
+  queue: number;
+  /** Flagged suspicious transactions */
+  suspicious: number;
+  /** queue + suspicious — badge on تراکنش‌ها */
+  transactions: number;
+  /** Shared expenses not yet allocated to businesses */
+  pendingAllocation: number;
+}
+
+/** Live sidebar badge counts for باشگاه مشتریان / CRM. */
+export interface CrmNavCounts {
+  /** Open CRM tickets (SLA clock running) */
+  tickets: number;
+  /** Unassigned open tickets (inbox pressure) */
+  unassigned: number;
+  /** Open follow-ups */
+  followups: number;
 }

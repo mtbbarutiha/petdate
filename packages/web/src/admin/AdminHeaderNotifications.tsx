@@ -164,6 +164,9 @@ export function AdminHeaderNotifications() {
             ))}
           </div>
           <div className="admin-notif-panel-foot">
+            <Link to="/admin/payments" onClick={() => setOpen(false)}>
+              صف تأیید واریز
+            </Link>
             <Link to="/admin/hr/cockpit" onClick={() => setOpen(false)}>
               کارتابل HR
             </Link>
