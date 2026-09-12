@@ -36,13 +36,18 @@ assert.match(indexHtml, /setTimeout\(run, 10000\)/, 'GTM waits for interaction o
 assert.doesNotMatch(indexHtml, /requestIdleCallback/, 'GTM must not use requestIdleCallback (fires on first idle)');
 assert.match(indexHtml, /Vazirmatn Fallback/, 'critical CSS ships font fallback metrics (CLS)');
 assert.match(indexHtml, /pepito-hero-inner/, 'critical CSS reserves hero-inner (CLS)');
-assert.match(indexHtml, /100svh - var\(--pepito-nav-h\)/, 'critical hero height matches hydrated CSS');
+assert.match(indexHtml, /85svh - var\(--pepito-nav-h\)/, 'critical hero uses compact 85svh (matches hydrated CSS)');
+assert.doesNotMatch(
+  indexHtml,
+  /\.pepito-hero\{min-height:calc\(100svh/,
+  'critical CSS must not over-reserve a full-viewport hero'
+);
 assert.doesNotMatch(
   indexHtml,
   /rel="preload"\s+as="style"/,
   'do not preload the Google Fonts CSS (unused-preload warning)'
 );
-assert.match(indexHtml, /web-perf-v22-cls-agentic/, 'deploy marker bumped so SW/HTML cache misses');
+assert.match(indexHtml, /web-perf-v23-hero-compact/, 'deploy marker bumped so SW/HTML cache misses');
 assert.match(indexHtml, /\.pepito-faq-item,\s*\.pepito-help-card/, 'critical CSS covers FAQ/help cards');
 assert.match(indexHtml, /html\.theme-light \.pepito-faq-item/, 'critical CSS has light FAQ overrides');
 
@@ -107,6 +112,13 @@ assert.match(robots, /Allow: \/llms\.txt/, 'robots.txt advertises llms.txt');
 const pepitoCss = readFileSync(join(webSrc, 'styles/pepito.css'), 'utf8');
 assert.match(pepitoCss, /--pepito-btn-1-bg:\s*#5c4d91/, 'button-1 fill stays AA vs white');
 assert.match(pepitoCss, /--pepito-btn-3-bg:\s*#a24a86/, 'button-3 fill is darkened pink for AA');
+assert.match(pepitoCss, /85svh - var\(--pepito-nav-h\)/, 'hydrated mobile hero matches critical 85svh');
+assert.match(pepitoCss, /93svh - var\(--pepito-nav-h\)/, 'desktop hero stays the compact 93svh band');
+assert.doesNotMatch(
+  pepitoCss,
+  /--pepito-hero-h:\s*calc\(100svh/,
+  'hydrated --pepito-hero-h must not over-reserve 100svh'
+);
 assert.doesNotMatch(welcome, /animation:\s*pepito-rise/, 'hero-inner no longer uses pepito-rise');
 
 console.log('webPerf.selftest: ok');
