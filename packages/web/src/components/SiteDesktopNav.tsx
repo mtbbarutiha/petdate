@@ -2,7 +2,8 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { useI18n } from '../i18n';
 import { loginPath } from '../lib/authRedirect';
-import { SITE_NAV_DESKTOP_GUEST, siteNavDesktopForUser } from '../lib/siteNav';
+import { filterNavByPlatformConfig, SITE_NAV_DESKTOP_GUEST, siteNavDesktopForUser } from '../lib/siteNav';
+import { usePlatformConfig } from '../hooks/usePlatformConfig';
 
 /**
  * Desktop primary actions (≥860px) — follow active primary role.
@@ -14,6 +15,7 @@ export function SiteDesktopNav() {
   const { pathname } = useLocation();
   const { isLoggedIn, user } = useAuthStore();
   const { t, dir } = useI18n();
+  const platform = usePlatformConfig();
 
   if (
     pathname.startsWith('/admin') ||
@@ -26,7 +28,10 @@ export function SiteDesktopNav() {
     return null;
   }
 
-  const items = isLoggedIn ? siteNavDesktopForUser(user) : SITE_NAV_DESKTOP_GUEST;
+  const items = filterNavByPlatformConfig(
+    isLoggedIn ? siteNavDesktopForUser(user) : SITE_NAV_DESKTOP_GUEST,
+    platform
+  );
 
   return (
     <nav className="pepito-site-desktop-nav" aria-label={t('nav.shortcuts')}>

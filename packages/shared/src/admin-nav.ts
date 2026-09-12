@@ -33,6 +33,8 @@ export interface FinanceNavCounts {
   transactions: number;
   /** Shared expenses not yet allocated to businesses */
   pendingAllocation: number;
+  /** Open coin-sell / earn withdrawal requests awaiting payout */
+  coinSells: number;
 }
 
 /** Live sidebar badge counts for باشگاه مشتریان / CRM. */

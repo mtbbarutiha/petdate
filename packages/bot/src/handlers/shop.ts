@@ -27,6 +27,7 @@ import { paymentCardInfo } from '../economy';
 import { getSession, upsertSession } from '../session';
 import { effectiveWebUrl, isTelegramInlineUrl } from '../urls';
 import { getCtxUser, menuKeyboardFor, pushMainMenuKeyboard } from './helpers';
+import { replyIfFeatureOff } from '../runtime-config';
 
 const PAGE_SIZE = 6;
 type ShopPayMethod = 'coins' | 'wallet_stars' | 'telegram_stars' | 'toman' | 'card';
@@ -205,6 +206,7 @@ function payMethodLine(method: ShopPayMethod, coins: number, stars: number, toma
 }
 
 export async function handlePetShop(ctx: Context): Promise<void> {
+  if (await replyIfFeatureOff(ctx, 'shopEnabled')) return;
   const user = await getCtxUser(ctx);
   const balance = user?.coins ?? user?.wallet?.coins ?? 0;
   const starsBalance = user?.wallet?.stars ?? user?.walletStars ?? 0;
@@ -587,6 +589,13 @@ export async function handleShopSetPayMethod(
     return;
   }
   const method = normalizeShopPayMethod(methodRaw);
+  if (method === 'card' && (await replyIfFeatureOff(ctx, 'paymentCardEnabled'))) return;
+  if (
+    (method === 'telegram_stars' || method === 'wallet_stars') &&
+    (await replyIfFeatureOff(ctx, 'paymentStarsEnabled'))
+  ) {
+    return;
+  }
   const next = { ...draft, method, qty };
   await patchSession(user.telegramId, { shopCheckout: next, step: 'ready' });
   const product = (await fetchShopProduct(productId))?.product;

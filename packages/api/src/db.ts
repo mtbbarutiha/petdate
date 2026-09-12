@@ -86,6 +86,7 @@ import {
   vetVisitFeeCoins,
   walletFromUserFields,
   walletLedgerLabelFa,
+  type CoinSellRequestAdmin,
   type CoinSellRequestStatus,
   type CoinSellRequestSummary,
   type PetMedicalField,
@@ -6588,6 +6589,154 @@ export const dbService = {
       }
       throw err;
     }
+  },
+
+  listCoinSellRequestsAdmin(filters?: {
+    status?: CoinSellRequestStatus | 'all';
+    limit?: number;
+  }): CoinSellRequestAdmin[] {
+    const lim = Math.min(200, Math.max(1, Math.floor(filters?.limit ?? 100) || 100));
+    const status = filters?.status && filters.status !== 'all' ? filters.status : '';
+    const rows = (
+      status
+        ? db
+            .prepare(
+              `SELECT r.*, u.name AS user_name, u.phone AS user_phone, u.telegram_id AS user_telegram_id,
+                      u.public_id AS user_public_id
+               FROM coin_sell_requests r
+               JOIN users u ON u.id = r.user_id
+               WHERE r.status = ?
+               ORDER BY r.created_at DESC, r.id DESC
+               LIMIT ?`
+            )
+            .all(status, lim)
+        : db
+            .prepare(
+              `SELECT r.*, u.name AS user_name, u.phone AS user_phone, u.telegram_id AS user_telegram_id,
+                      u.public_id AS user_public_id
+               FROM coin_sell_requests r
+               JOIN users u ON u.id = r.user_id
+               ORDER BY CASE r.status WHEN 'open' THEN 0 ELSE 1 END, r.created_at DESC, r.id DESC
+               LIMIT ?`
+            )
+            .all(lim)
+    ) as Record<string, unknown>[];
+    return rows.map((row) => ({
+      ...mapCoinSellRequestSummary(row),
+      userId: Number(row.user_id),
+      userName: String(row.user_name || ''),
+      userPhone: row.user_phone != null ? String(row.user_phone) : null,
+      userTelegramId: row.user_telegram_id != null ? String(row.user_telegram_id) : null,
+      userPublicId: userPublicIdOf({
+        id: Number(row.user_id),
+        publicId: row.user_public_id as string | undefined,
+      }),
+      cardNumber: String(row.card_number || ''),
+    }));
+  },
+
+  countOpenCoinSellRequests(): number {
+    return Number(
+      (db.prepare(`SELECT COUNT(*) as c FROM coin_sell_requests WHERE status = 'open'`).get() as {
+        c: number;
+      })?.c ?? 0
+    );
+  },
+
+  reviewCoinSellRequest(
+    id: number,
+    input: { action: 'paid' | 'rejected'; note?: string }
+  ):
+    | { ok: true; request: CoinSellRequestAdmin; refundedCoins?: number }
+    | { ok: false; reason: 'missing' | 'bad_status' } {
+    const row = db
+      .prepare(
+        `SELECT r.*, u.name AS user_name, u.phone AS user_phone, u.telegram_id AS user_telegram_id,
+                u.public_id AS user_public_id
+         FROM coin_sell_requests r
+         JOIN users u ON u.id = r.user_id
+         WHERE r.id = ?`
+      )
+      .get(id) as Record<string, unknown> | undefined;
+    if (!row) return { ok: false, reason: 'missing' };
+    const current = String(row.status || '');
+    if (current !== 'open') return { ok: false, reason: 'bad_status' };
+
+    const note = typeof input.note === 'string' ? input.note.trim() : '';
+    const coins = Number(row.coins);
+    const userId = Number(row.user_id);
+    const tx = db.transaction(() => {
+      if (input.action === 'rejected' && Number.isFinite(coins) && coins > 0) {
+        db.prepare(`UPDATE users SET coins = COALESCE(coins, 0) + ? WHERE id = ?`).run(coins, userId);
+        this.appendWalletLedger({
+          userId,
+          currency: 'coins',
+          amount: coins,
+          direction: 'credit',
+          reason: 'رد فروش سکه — بازگشت موجودی',
+          refType: 'coin_sell',
+          refId: id,
+        });
+      }
+      db.prepare(
+        `UPDATE coin_sell_requests
+         SET status = ?, admin_note = ?, reviewed_at = datetime('now')
+         WHERE id = ? AND status = 'open'`
+      ).run(input.action === 'paid' ? 'paid' : 'rejected', note || null, id);
+    });
+    tx();
+
+    const updated = this.listCoinSellRequestsAdmin({ limit: 200 }).find((r) => r.id === id);
+    if (!updated) return { ok: false, reason: 'missing' };
+    return {
+      ok: true,
+      request: updated,
+      refundedCoins: input.action === 'rejected' ? coins : undefined,
+    };
+  },
+
+  listSupportThreadsAdmin(limit = 80): Array<{
+    userId: number;
+    userName: string;
+    userPhone?: string | null;
+    userTelegramId?: string | null;
+    userPublicId?: string | null;
+    threadId: number;
+    updatedAt: string;
+    lastRole: string;
+    lastText: string;
+    messageCount: number;
+  }> {
+    const lim = Math.min(200, Math.max(1, Math.floor(limit) || 80));
+    const rows = db
+      .prepare(
+        `SELECT t.id AS thread_id, t.user_id, t.updated_at,
+                u.name AS user_name, u.phone AS user_phone, u.telegram_id AS user_telegram_id,
+                u.public_id AS user_public_id,
+                (SELECT COUNT(*) FROM support_messages m WHERE m.thread_id = t.id) AS message_count,
+                (SELECT m.role FROM support_messages m WHERE m.thread_id = t.id ORDER BY m.id DESC LIMIT 1) AS last_role,
+                (SELECT m.text FROM support_messages m WHERE m.thread_id = t.id ORDER BY m.id DESC LIMIT 1) AS last_text
+         FROM support_threads t
+         JOIN users u ON u.id = t.user_id
+         ORDER BY t.updated_at DESC, t.id DESC
+         LIMIT ?`
+      )
+      .all(lim) as Record<string, unknown>[];
+    return rows.map((r) => ({
+      userId: Number(r.user_id),
+      userName: String(r.user_name || ''),
+      userPhone: r.user_phone != null ? String(r.user_phone) : null,
+      userTelegramId: r.user_telegram_id != null ? String(r.user_telegram_id) : null,
+      userPublicId: userPublicIdOf({
+        id: Number(r.user_id),
+        publicId: r.user_public_id as string | undefined,
+      }),
+      threadId: Number(r.thread_id),
+      updatedAt: String(r.updated_at || ''),
+      lastRole: String(r.last_role || ''),
+      lastText: String(r.last_text || ''),
+      messageCount: Number(r.message_count || 0),
+    }));
   },
 
   createPaymentOrder(input: {

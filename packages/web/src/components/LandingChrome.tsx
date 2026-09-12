@@ -1,5 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { Link, NavLink } from 'react-router-dom';
+import { Link, NavLink, useLocation } from 'react-router-dom';
 import { PawPrint } from 'lucide-react';
 import { BRAND, primaryRole } from '@petdate/shared';
 import { useAuthStore } from '../hooks/useAuthStore';
@@ -9,6 +9,8 @@ import { NavUserCluster } from './NavUserCluster';
 import { SiteDesktopNav } from './SiteDesktopNav';
 import { ThemeToggle } from './ThemeToggle';
 import { LanguageToggle } from './LanguageToggle';
+import { PlatformBanners } from './PlatformBanners';
+import { usePlatformConfig } from '../hooks/usePlatformConfig';
 
 const BANNER_IMG = '/pepito/uploads/3.jpg';
 
@@ -64,6 +66,9 @@ export function LandingChrome({
   const [scrolled, setScrolled] = useState(false);
   const { user } = useAuthStore();
   const { t, dir } = useI18n();
+  const platform = usePlatformConfig();
+  const { pathname } = useLocation();
+  const bannerPlacement = pathname.startsWith('/shop') ? 'shop' : appNav ? 'app' : 'landing';
   const userPrimary = primaryRole(user?.roles, user?.role);
   const resolvedBannerTitle = bannerTitle ?? BRAND.displayName;
   const resolvedBannerLead = bannerLead ?? (dir === 'rtl' ? BRAND.taglineFa : BRAND.taglineEn);
@@ -109,7 +114,7 @@ export function LandingChrome({
             <NavLink to="/" end>
               {t('common.home')}
             </NavLink>
-            {userPrimary === 'vet' ? (
+            {userPrimary === 'vet' && platform.vetConsultEnabled ? (
               <NavLink to="/vet-consult">{t('nav.vet_panel')}</NavLink>
             ) : (
               <NavLink to="/my-pets">{t('nav.my_pets')}</NavLink>
@@ -119,8 +124,8 @@ export function LandingChrome({
           <nav className="pepito-nav-links" aria-label={t('nav.sections')}>
             <Link to="/#services">{t('nav.services')}</Link>
             <Link to="/adoption" data-testid="nav-adoption">{t('nav.adoption')}</Link>
-            <Link to="/shop">{t('nav.petShop')}</Link>
-            <Link to="/vet-consult">{t('nav.vet')}</Link>
+            {platform.shopEnabled ? <Link to="/shop">{t('nav.petShop')}</Link> : null}
+            {platform.vetConsultEnabled ? <Link to="/vet-consult">{t('nav.vet')}</Link> : null}
             <Link to="/faq" className="pepito-nav-faq">{t('nav.faq')}</Link>
           </nav>
         )}
@@ -169,6 +174,8 @@ export function LandingChrome({
           </div>
         </section>
       )}
+
+      <PlatformBanners placement={bannerPlacement} />
 
       {children}
 

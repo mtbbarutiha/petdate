@@ -44,7 +44,7 @@ financeOsAdminRouter.get('/accounts', (_req, res) => {
   }
 });
 
-financeOsAdminRouter.post('/accounts', requirePermission('platform.write'), (req, res) => {
+financeOsAdminRouter.post('/accounts', requirePermission('finance.write'), (req, res) => {
   try {
     res.json(createFinanceOsAccount(req.body || {}));
   } catch (err) {
@@ -52,7 +52,7 @@ financeOsAdminRouter.post('/accounts', requirePermission('platform.write'), (req
   }
 });
 
-financeOsAdminRouter.patch('/accounts/:id', requirePermission('platform.write'), (req, res) => {
+financeOsAdminRouter.patch('/accounts/:id', requirePermission('finance.write'), (req, res) => {
   try {
     const id = Number(req.params.id);
     if (!Number.isFinite(id)) {
@@ -65,7 +65,7 @@ financeOsAdminRouter.patch('/accounts/:id', requirePermission('platform.write'),
   }
 });
 
-financeOsAdminRouter.put('/dims', requirePermission('platform.write'), (req, res) => {
+financeOsAdminRouter.put('/dims', requirePermission('finance.write'), (req, res) => {
   try {
     const kind = req.body?.kind === 'expense' ? 'expense' : 'income';
     const key = String(req.body?.key || '');
@@ -76,7 +76,7 @@ financeOsAdminRouter.put('/dims', requirePermission('platform.write'), (req, res
   }
 });
 
-financeOsAdminRouter.post('/people', requirePermission('platform.write'), (req, res) => {
+financeOsAdminRouter.post('/people', requirePermission('finance.write'), (req, res) => {
   try {
     res.json(createFinanceOsPerson(req.body || {}));
   } catch (err) {
@@ -99,7 +99,7 @@ financeOsAdminRouter.get('/transactions', (req, res) => {
   }
 });
 
-financeOsAdminRouter.post('/transactions/import', requirePermission('platform.write'), (req, res) => {
+financeOsAdminRouter.post('/transactions/import', requirePermission('finance.write'), (req, res) => {
   try {
     res.json(importFinanceOsTransactions(req.body || {}));
   } catch (err) {
@@ -107,7 +107,7 @@ financeOsAdminRouter.post('/transactions/import', requirePermission('platform.wr
   }
 });
 
-financeOsAdminRouter.patch('/transactions/:id/classify', requirePermission('platform.write'), (req, res) => {
+financeOsAdminRouter.patch('/transactions/:id/classify', requirePermission('finance.write'), (req, res) => {
   try {
     const id = Number(req.params.id);
     if (!Number.isFinite(id)) {
@@ -120,7 +120,7 @@ financeOsAdminRouter.patch('/transactions/:id/classify', requirePermission('plat
   }
 });
 
-financeOsAdminRouter.post('/transactions/:id/suspicious', requirePermission('platform.write'), (req, res) => {
+financeOsAdminRouter.post('/transactions/:id/suspicious', requirePermission('finance.write'), (req, res) => {
   try {
     const id = Number(req.params.id);
     const action = req.body?.action;
@@ -143,7 +143,7 @@ financeOsAdminRouter.get('/allocation', (_req, res) => {
   }
 });
 
-financeOsAdminRouter.post('/allocation/expenses/:id/allocate', requirePermission('platform.write'), (req, res) => {
+financeOsAdminRouter.post('/allocation/expenses/:id/allocate', requirePermission('finance.write'), (req, res) => {
   try {
     const id = Number(req.params.id);
     if (!Number.isFinite(id)) {
@@ -156,7 +156,7 @@ financeOsAdminRouter.post('/allocation/expenses/:id/allocate', requirePermission
   }
 });
 
-financeOsAdminRouter.post('/allocation/invoices', requirePermission('platform.write'), (req, res) => {
+financeOsAdminRouter.post('/allocation/invoices', requirePermission('finance.write'), (req, res) => {
   try {
     res.json(issueFinanceOsInvoice(req.body || {}));
   } catch (err) {
@@ -164,7 +164,7 @@ financeOsAdminRouter.post('/allocation/invoices', requirePermission('platform.wr
   }
 });
 
-financeOsAdminRouter.patch('/allocation/bank-balance', requirePermission('platform.write'), (req, res) => {
+financeOsAdminRouter.patch('/allocation/bank-balance', requirePermission('finance.write'), (req, res) => {
   try {
     res.json(updateFinanceOsBankBalance(Number(req.body?.bankBalance)));
   } catch (err) {
@@ -172,7 +172,7 @@ financeOsAdminRouter.patch('/allocation/bank-balance', requirePermission('platfo
   }
 });
 
-financeOsAdminRouter.post('/allocation/commitments/:id/done', requirePermission('platform.write'), (req, res) => {
+financeOsAdminRouter.post('/allocation/commitments/:id/done', requirePermission('finance.write'), (req, res) => {
   try {
     const id = Number(req.params.id);
     if (!Number.isFinite(id)) {

@@ -342,6 +342,7 @@ export const GAME_STATUS_LABELS: Record<GameStatus, string> = {
   completed: 'برگزار شده',
 };
 export * from './admin-nav';
+export * from './runtime-settings';
 export * from './sales'
 export * from './crm';
 export * from './platform-settings';

@@ -10,7 +10,7 @@ import {
   UserRound,
   Wallet,
 } from 'lucide-react';
-import type { User, UserRole } from '@petdate/shared';
+import type { PublicPlatformConfig, User, UserRole } from '@petdate/shared';
 import { primaryRole } from '@petdate/shared';
 
 export type SiteNavItem = {
@@ -177,4 +177,17 @@ export function siteNavMobileForUser(user?: User | null): SiteNavItem[] {
 
 export function siteNavDesktopForUser(user?: User | null): SiteNavItem[] {
   return siteNavDesktopForRole(primaryRole(user?.roles, user?.role));
+}
+
+export function filterNavByPlatformConfig(
+  items: SiteNavItem[],
+  cfg: PublicPlatformConfig | null | undefined
+): SiteNavItem[] {
+  if (!cfg) return items;
+  return items.filter((item) => {
+    if (item.key === 'shop' && !cfg.shopEnabled) return false;
+    if (item.key === 'playmate' && !cfg.playdatesEnabled) return false;
+    if (item.key === 'vet_panel' && !cfg.vetConsultEnabled) return false;
+    return true;
+  });
 }

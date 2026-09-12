@@ -111,6 +111,7 @@ async function main() {
   assert(typeof counts.pendingAllocation === 'number', 'nav pending');
   assert(typeof counts.payments === 'number', 'nav payments');
   assert(typeof counts.transactions === 'number', 'nav transactions');
+  assert(typeof counts.coinSells === 'number', 'nav coin sells');
   assert(counts.transactions === counts.queue + counts.suspicious, 'transactions = queue+suspicious');
 
   // Simulate partial #155 scrub failure (desc column renamed → mid-pass abort).

@@ -15,6 +15,7 @@ import { InviteFriendsCard } from '../components/InviteFriendsCard';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { useAppToast } from '../hooks/useAppToast';
 import { useI18n } from '../i18n';
+import { usePlatformConfig } from '../hooks/usePlatformConfig';
 import {
   createCoinCardPayment,
   fetchAuthedPaymentReceiptObjectUrl,
@@ -141,6 +142,7 @@ function WalletPaymentReceiptImg({
  */
 export function WalletPage() {
   const { t } = useI18n();
+  const platform = usePlatformConfig();
   const { user, token, refreshMe } = useAuthStore();
   const { toastError, toastInfo, toastSuccess } = useAppToast();
   const [wallet, setWallet] = useState<WalletBalances | null>(null);
@@ -419,6 +421,7 @@ export function WalletPage() {
         </p>
       )}
 
+      {platform.paymentStarsEnabled ? (
       <section className="pepito-wallet-tg" aria-labelledby="wallet-tg-title">
         <div className="pepito-wallet-tg-head">
           <span className="pepito-wallet-tg-mark" aria-hidden>
@@ -506,7 +509,11 @@ export function WalletPage() {
           </p>
         </div>
       </section>
+      ) : (
+        <p className="pd-platform-banner">{t('platform.starsOff')}</p>
+      )}
 
+      {platform.paymentCardEnabled ? (
       <section className="pepito-wallet-tg pepito-wallet-buy" aria-labelledby="wallet-buy-title">
         <div className="pepito-wallet-tg-head">
           <span className="pepito-wallet-tg-mark" aria-hidden><Receipt size={18} /></span>
@@ -562,6 +569,9 @@ export function WalletPage() {
           ) : null}
         </div>
       </section>
+      ) : (
+        <p className="pd-platform-banner">{t('platform.cardOff')}</p>
+      )}
 
       <section className="pepito-wallet-tx" aria-labelledby="wallet-tx-title">
         <div className="pepito-wallet-tx-head">

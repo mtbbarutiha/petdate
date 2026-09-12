@@ -3,6 +3,8 @@ import { PawPrint, Stethoscope } from 'lucide-react';
 import { BRAND, SITE } from '@petdate/shared';
 import { LandingChrome } from '../components/LandingChrome';
 import { loginPath } from '../lib/authRedirect';
+import { usePlatformConfig } from '../hooks/usePlatformConfig';
+import { useI18n } from '../i18n';
 
 const HIGHLIGHTS = [
   {
@@ -29,14 +31,20 @@ function PawIcon({ size = 16 }: { size?: number }) {
 
 /** Public marketing landing for /vet-consult — no app rail, no consult APIs. */
 export function VetConsultLandingPage() {
+  const platform = usePlatformConfig();
+  const { t } = useI18n();
   return (
     <LandingChrome
       bannerTitle="دامپزشک آنلاین"
-      bannerLead="نقش دامپزشک در پت‌دیت — مشاوره فوری برای پت شما، بدون اپ جدا، روی همان حساب."
+      bannerLead={
+        platform.vetConsultEnabled
+          ? 'نقش دامپزشک در پت‌دیت — مشاوره فوری برای پت شما، بدون اپ جدا، روی همان حساب.'
+          : t('platform.vetOff')
+      }
       actionLabel="خانه"
       actionTo="/"
-      ctaLabel="مشاوره دامپزشک"
-      ctaTo={loginPath('/vet-consult')}
+      ctaLabel={platform.vetConsultEnabled ? 'مشاوره دامپزشک' : undefined}
+      ctaTo={platform.vetConsultEnabled ? loginPath('/vet-consult') : undefined}
       className="pepito-vet-landing-page"
     >
       <section className="pepito-section pepito-vet-landing" data-testid="vet-consult-landing">

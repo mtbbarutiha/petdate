@@ -14054,3 +14054,31 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   min-height: 44px;
   justify-self: stretch;
 }
+
+.pd-platform-banners {
+  display: grid;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem 0;
+  max-width: 72rem;
+  margin: 0 auto;
+}
+.pd-platform-banner {
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  background: var(--pepito-lilac, #e4e2f3);
+  color: var(--pepito-dark, #19063d);
+  border: 1px solid rgba(92, 77, 145, 0.18);
+}
+.pd-platform-banner strong {
+  display: block;
+  margin-bottom: 0.2rem;
+}
+.pd-platform-banner p {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+.pd-platform-banner--maintenance {
+  background: #fff4e5;
+  border-color: rgba(253, 150, 30, 0.45);
+}

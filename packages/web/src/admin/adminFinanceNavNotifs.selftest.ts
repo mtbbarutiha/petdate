@@ -30,6 +30,8 @@ assert.doesNotMatch(storeBlock, /\/admin\/payments/, 'payments removed from فر
 const financeBlock = layout.split("titleKey: 'admin.finance'")[1]?.split(/titleKey: 'admin\.[^']+'/)[0] || '';
 assert.match(financeBlock, /\/admin\/payments/, 'payments under مالی');
 assert.match(financeBlock, /admin\.depositQueue/, 'deposit queue label under مالی');
+assert.match(financeBlock, /\/admin\/coin-sells/, 'coin-sell queue under مالی');
+assert.match(financeBlock, /financeBadgeKey:\s*['"]coinSells['"]/, 'coin-sell badge under مالی');
 
 assert.match(sharedNav, /shopOrders:\s*number/, 'PlatformNavCounts.shopOrders');
 assert.match(sharedNav, /export interface FinanceNavCounts/, 'FinanceNavCounts exported');

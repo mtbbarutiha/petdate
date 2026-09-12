@@ -45,6 +45,7 @@ import {
   enqueueCard2CardFinanceOs,
   notifyCardPaymentApprovedTelegram,
   notifyCardPaymentRejectedTelegram,
+  notifyCoinSellReviewedTelegram,
 } from '../services/card2card-finance';
 import {
   mimeFromPaymentReceiptKey,
@@ -151,7 +152,8 @@ adminRouter.use((req, res, next) => {
     req.path.startsWith('/sales') ||
     req.path.startsWith('/crm') ||
     req.path.startsWith('/finance-os') ||
-    req.path.startsWith('/notifications')
+    req.path.startsWith('/notifications') ||
+    req.path.startsWith('/support')
   ) {
     next();
     return;
@@ -166,6 +168,15 @@ adminRouter.use((req, res, next) => {
     /^\/payments\/\d+\/(approve|reject)$/.test(req.path) &&
     (actorHasPermission(actor, 'finance.write') ||
       actorHasPermission(actor, 'shop.write') ||
+      actorHasPermission(actor, 'platform.write') ||
+      actorHasPermission(actor, 'admin.full'))
+  ) {
+    next();
+    return;
+  }
+  if (
+    /^\/coin-sells\/\d+\/(paid|reject)$/.test(req.path) &&
+    (actorHasPermission(actor, 'finance.write') ||
       actorHasPermission(actor, 'platform.write') ||
       actorHasPermission(actor, 'admin.full'))
   ) {
@@ -779,6 +790,131 @@ adminRouter.post('/payments/:id/reject', (req, res) => {
     note,
   });
   res.json(result);
+});
+
+adminRouter.get('/coin-sells', (req, res) => {
+  const statusRaw = typeof req.query.status === 'string' ? req.query.status : 'open';
+  const status =
+    statusRaw === 'paid' || statusRaw === 'rejected' || statusRaw === 'cancelled' || statusRaw === 'all'
+      ? statusRaw
+      : 'open';
+  res.json({
+    requests: dbService.listCoinSellRequestsAdmin({ status, limit: 150 }),
+    openCount: dbService.countOpenCoinSellRequests(),
+  });
+});
+
+adminRouter.post('/coin-sells/:id/paid', (req, res) => {
+  const id = Number(req.params.id);
+  const note = typeof req.body?.note === 'string' ? req.body.note : undefined;
+  const result = dbService.reviewCoinSellRequest(id, { action: 'paid', note });
+  if (!result.ok) {
+    res.status(result.reason === 'missing' ? 404 : 400).json({
+      error: result.reason === 'missing' ? 'درخواست پیدا نشد' : 'این درخواست دیگر باز نیست',
+    });
+    return;
+  }
+  void notifyCoinSellReviewedTelegram({
+    toTelegramId: result.request.userTelegramId,
+    action: 'paid',
+    coins: result.request.coins,
+    amountToman: result.request.amountToman,
+    note,
+  });
+  res.json({ ok: true, request: result.request });
+});
+
+adminRouter.post('/coin-sells/:id/reject', (req, res) => {
+  const id = Number(req.params.id);
+  const note = typeof req.body?.note === 'string' ? req.body.note : undefined;
+  const result = dbService.reviewCoinSellRequest(id, { action: 'rejected', note });
+  if (!result.ok) {
+    res.status(result.reason === 'missing' ? 404 : 400).json({
+      error: result.reason === 'missing' ? 'درخواست پیدا نشد' : 'این درخواست دیگر باز نیست',
+    });
+    return;
+  }
+  void notifyCoinSellReviewedTelegram({
+    toTelegramId: result.request.userTelegramId,
+    action: 'rejected',
+    coins: result.request.coins,
+    amountToman: result.request.amountToman,
+    note,
+  });
+  res.json({ ok: true, request: result.request, refundedCoins: result.refundedCoins });
+});
+
+adminRouter.get('/support/threads', (req, res) => {
+  const actor = req.adminActor;
+  if (
+    actor &&
+    !actorHasPermission(actor, 'support.inbox') &&
+    !actorHasPermission(actor, 'support.write') &&
+    !actorHasPermission(actor, 'crm.read') &&
+    !actorHasPermission(actor, 'platform.read') &&
+    !actorHasPermission(actor, 'admin.full')
+  ) {
+    res.status(403).json({ error: 'دسترسی پشتیبانی مجاز نیست' });
+    return;
+  }
+  res.json({ threads: dbService.listSupportThreadsAdmin(120) });
+});
+
+adminRouter.get('/support/threads/:userId', (req, res) => {
+  const actor = req.adminActor;
+  if (
+    actor &&
+    !actorHasPermission(actor, 'support.inbox') &&
+    !actorHasPermission(actor, 'support.write') &&
+    !actorHasPermission(actor, 'crm.read') &&
+    !actorHasPermission(actor, 'platform.read') &&
+    !actorHasPermission(actor, 'admin.full')
+  ) {
+    res.status(403).json({ error: 'دسترسی پشتیبانی مجاز نیست' });
+    return;
+  }
+  const userId = Number(req.params.userId);
+  if (!Number.isFinite(userId)) {
+    res.status(400).json({ error: 'شناسه نامعتبر' });
+    return;
+  }
+  const user = dbService.getUserById(userId);
+  if (!user) {
+    res.status(404).json({ error: 'کاربر پیدا نشد' });
+    return;
+  }
+  res.json({
+    user: { id: user.id, name: user.name, phone: user.phone, telegramId: user.telegramId },
+    messages: dbService.listSupportMessages(userId, 200),
+  });
+});
+
+adminRouter.post('/support/threads/:userId/reply', (req, res) => {
+  const actor = req.adminActor;
+  if (
+    actor &&
+    !actorHasPermission(actor, 'support.write') &&
+    !actorHasPermission(actor, 'crm.write') &&
+    !actorHasPermission(actor, 'platform.write') &&
+    !actorHasPermission(actor, 'admin.full')
+  ) {
+    res.status(403).json({ error: 'ارسال پاسخ پشتیبانی مجاز نیست' });
+    return;
+  }
+  const userId = Number(req.params.userId);
+  const text = String(req.body?.text ?? '').trim();
+  if (!Number.isFinite(userId) || !text) {
+    res.status(400).json({ error: 'متن پاسخ الزامی است' });
+    return;
+  }
+  const user = dbService.getUserById(userId);
+  if (!user) {
+    res.status(404).json({ error: 'کاربر پیدا نشد' });
+    return;
+  }
+  const actorName = actor?.displayName || actor?.username || 'پشتیبانی';
+  const msg = dbService.addSupportMessage(userId, 'assistant', `[${actorName}]\n${text}`);
+  res.status(201).json({ ok: true, message: msg, messages: dbService.listSupportMessages(userId, 200) });
 });
 
 adminRouter.get('/shop/products', (req, res) => {

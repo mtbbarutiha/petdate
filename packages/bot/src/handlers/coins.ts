@@ -49,6 +49,7 @@ import {
 import { getSession, upsertSession } from '../session';
 import { telegramWebLoginUrl } from '../telegram-web-link';
 import { getCtxUser, menuKeyboardFor, pushMainMenuKeyboard } from './helpers';
+import { replyIfFeatureOff } from '../runtime-config';
 
 export const SEND_RECEIPT_BTN = '📤 ارسال فیش';
 export const CANCEL_PAYMENT_BTN = '↩️ انصراف از پرداخت';
@@ -198,6 +199,8 @@ export async function handleCoinsPay(
     await ctx.answerCallbackQuery({ text: 'بسته پیدا نشد', show_alert: true });
     return;
   }
+  if (method === 'card' && (await replyIfFeatureOff(ctx, 'paymentCardEnabled'))) return;
+  if (method === 'stars' && (await replyIfFeatureOff(ctx, 'paymentStarsEnabled'))) return;
   if (method === 'card') {
     await startCardPayment(ctx, pkg);
     return;

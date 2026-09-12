@@ -35,6 +35,7 @@ import { petPurchaseLeadsRouter } from './routes/pet-purchase-leads';
 import { supportRouter } from './routes/support';
 import { analyticsRouter } from './routes/analytics';
 import { magazineRouter } from './routes/magazine';
+import { platformRouter } from './routes/platform';
 import {
   expressErrorHandler,
   installConsoleErrorBridge,
@@ -176,6 +177,7 @@ app.use('/api/pet-purchase-leads', petPurchaseLeadsRouter);
 app.use('/api/support', supportRouter);
 app.use('/api/analytics', analyticsRouter);
 app.use('/api/magazine', magazineRouter);
+app.use('/api/platform', platformRouter);
 app.use('/api/admin', adminRouter);
 
 app.get('/api/games-for-section/:sectionId', (req, res) => {
