@@ -510,7 +510,7 @@ export const fa: Dict = {
     cx: 'تجربه مشتری',
     calls: 'تماس‌ها',
     cases: 'پرونده‌ها',
-    sms: 'پیامک',
+    sms: 'پیام‌های خودکار',
     qa: 'کنترل کیفیت',
     clubReports: 'گزارش‌ها',
     clubSettings: 'تنظیمات باشگاه',

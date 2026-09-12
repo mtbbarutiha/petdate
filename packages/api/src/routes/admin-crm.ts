@@ -34,6 +34,7 @@ import {
   listReferrals,
   deleteSmsPattern,
   listSmsPatterns,
+  resetSmsPatternToCatalog,
   listSurveys,
   listTasks,
   listTicketActivities,
@@ -52,6 +53,7 @@ import {
   wrapUpInteraction,
 } from '../crm-service';
 import { candooBalance, isCandooConfigured, sanitizeCandooPublicError } from '../services/candoo';
+import { listAutoMessageChannelStatus } from '../services/auto-message-channels';
 
 export const crmAdminRouter = Router();
 
@@ -403,12 +405,20 @@ crmAdminRouter.get('/sms', async (_req, res) => {
       );
     }
   }
-  res.json({ patterns: listSmsPatterns(), panel });
+  res.json({ patterns: listSmsPatterns(), panel, channels: listAutoMessageChannelStatus() });
 });
 
 crmAdminRouter.post('/sms/patterns', requirePermission('crm.admin'), (req, res) => {
   try {
     res.json({ pattern: upsertSmsPattern(req.body || {}) });
+  } catch (err) {
+    sendErr(res, err);
+  }
+});
+
+crmAdminRouter.post('/sms/patterns/:id/reset', requirePermission('crm.admin'), (req, res) => {
+  try {
+    res.json({ pattern: resetSmsPatternToCatalog(Number(req.params.id)) });
   } catch (err) {
     sendErr(res, err);
   }

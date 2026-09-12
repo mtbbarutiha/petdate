@@ -99,6 +99,8 @@ export async function deliverTicketPublicReply(opts: {
   agentName?: string;
   platformUserId?: number | null;
   customerMobile?: string | null;
+  /** When true, only write the web support inbox (Telegram is sent via auto-message channels). */
+  skipTelegram?: boolean;
 }): Promise<TicketReplyDelivery> {
   const text = formatTicketReplyForUser(opts);
   const user = resolvePlatformUser({
@@ -118,7 +120,7 @@ export async function deliverTicketPublicReply(opts: {
   }
 
   let telegram = false;
-  if (user.telegramId) {
+  if (!opts.skipTelegram && user.telegramId) {
     telegram = await sendUserTelegramText(user.telegramId, text);
   }
 

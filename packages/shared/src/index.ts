@@ -353,6 +353,7 @@ export * from './admin-nav';
 export * from './runtime-settings';
 export * from './sales'
 export * from './crm';
+export * from './auto-messages';
 export * from './platform-settings';
 export * from './finance-os';
 export * from './pet-purchase-leads';
