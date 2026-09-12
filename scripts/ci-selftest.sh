@@ -29,6 +29,7 @@ npx tsx "$ROOT/packages/shared/src/pet-slug.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/sanitize-roles.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/catalog-breed-search.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/help.selftest.ts"
+npx tsx "$ROOT/packages/shared/src/auto-messages.selftest.ts"
 
 echo "==> selftest: web face-verify approve toast + profile copy"
 npx tsx "$ROOT/packages/web/src/components/faceVerifyRewardToast.selftest.ts"
@@ -272,6 +273,7 @@ run src/sales-crm.selftest.ts
 run src/pet-purchase-leads.selftest.ts
 run src/hr-sales-demo-seed.selftest.ts
 run src/crm.selftest.ts
+run src/auto-messages.selftest.ts
 run src/crm-ticketing.selftest.ts
 run src/support-tickets.selftest.ts
 run src/services/ticket-user-notify.selftest.ts

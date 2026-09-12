@@ -789,14 +789,21 @@ export const adminPlatform = {
     } catch (err) {
       console.warn('shop_orders public_id assign skipped/failed:', (err as Error).message);
     }
-    return this.getShopOrder(newId)!;
+    const order = this.getShopOrder(newId)!;
+    if (order.status === 'paid') queuePaidShopOrderAutoMessage(order);
+    return order;
   },
 
   updateShopOrderStatus(id: number, status: string): ShopOrderRow | null {
+    const prev = this.getShopOrder(id);
     db()
       .prepare(`UPDATE shop_orders SET status = ?, updated_at = datetime('now') WHERE id = ?`)
       .run(status, id);
-    return this.getShopOrder(id);
+    const next = this.getShopOrder(id);
+    if (prev && prev.status !== 'paid' && next?.status === 'paid') {
+      queuePaidShopOrderAutoMessage(next);
+    }
+    return next;
   },
 
   listAnnouncements(): AnnouncementRow[] {
@@ -872,6 +879,34 @@ export const adminPlatform = {
     return this.getSettings();
   },
 };
+
+function firstShopItemTitle(items: unknown[]): string {
+  const first = Array.isArray(items) ? items[0] : null;
+  if (first && typeof first === 'object') {
+    const rec = first as { title?: unknown; name?: unknown };
+    const title = String(rec.title || rec.name || '').trim();
+    if (title) return title;
+  }
+  return 'Pet Date';
+}
+
+function queuePaidShopOrderAutoMessage(order: ShopOrderRow): void {
+  queueMicrotask(() => {
+    void import('./crm-service')
+      .then((crm) =>
+        crm.notifyPurchaseAutoMessage({
+          userId: order.userId,
+          customerPhone: order.customerPhone,
+          customerName: order.customerName,
+          product: firstShopItemTitle(order.items),
+          amount: order.totalToman,
+        })
+      )
+      .catch((err) => {
+        console.warn('purchase auto-message skipped:', (err as Error).message);
+      });
+  });
+}
 
 // silence unused import if tree-shaken oddly
 void (null as unknown as UserRole);

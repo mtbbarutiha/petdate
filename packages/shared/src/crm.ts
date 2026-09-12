@@ -3,6 +3,8 @@
  * Single-tenant Pet Date; no business-line switching.
  */
 
+import type { AutoMessageChannel } from './auto-messages';
+
 export const CRM_PRIORITIES = ['بحرانی', 'بالا', 'متوسط', 'پایین'] as const;
 export type CrmPriority = (typeof CRM_PRIORITIES)[number];
 
@@ -171,7 +173,7 @@ export const CRM_SMS_TRIGGERS = [
 ] as const;
 
 export const CRM_SMS_TRIGGER_LABELS: Record<(typeof CRM_SMS_TRIGGERS)[number], string> = {
-  after_purchase: 'یک روز پس از خرید',
+  after_purchase: 'پس از خرید',
   ticket_created: 'هنگام ثبت تیکت',
   ticket_resolved: 'پس از حل تیکت',
   ticket_reply: 'پس از پاسخ عمومی پشتیبان',
@@ -493,12 +495,18 @@ export interface CrmTask {
 export interface CrmSmsPattern {
   id: number;
   publicId: string;
+  /** Stable catalog key for system defaults; null for custom templates. */
+  catalogKey?: string | null;
   name: string;
   type: 'static' | 'dynamic' | string;
   text: string;
   trigger: string;
   auto: boolean;
   active: boolean;
+  /** Selected delivery channels. Sending skips unselected / unready channels. */
+  channels: AutoMessageChannel[];
+  /** True when this row is a system catalog default (cannot delete; can reset). */
+  system?: boolean;
 }
 
 export interface CrmKpiModel {

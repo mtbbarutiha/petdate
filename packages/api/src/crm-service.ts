@@ -3,6 +3,8 @@
  */
 import { randomUUID } from 'crypto';
 import {
+  AUTO_MESSAGE_CATALOG,
+  AUTO_MESSAGE_LEGACY_SEED_NAMES,
   CRM_CHANNEL_LABELS,
   CRM_CRITICAL_ERRORS,
   CRM_REASON_TREE,
@@ -11,6 +13,7 @@ import {
   CRM_SURVEY_QUESTIONS,
   CRM_TICKET_OPEN_STATUSES,
   CRM_TICKET_QUEUES,
+  autoMessageCatalogByKey,
   crmFirstResponseDueIso,
   crmInboxBorderColor,
   crmKpiAchievement,
@@ -21,9 +24,11 @@ import {
   crmSlaLabel,
   crmSlaState,
   crmSurveyRating,
-  formatIranMobileDisplay,
   makeCrmUuid,
+  normalizeAutoMessageChannels,
   normalizeIranMobile,
+  parseAutoMessageChannels,
+  type AutoMessageChannel,
   type CrmChannel,
   type CrmComplaint,
   type CrmCustomer,
@@ -48,10 +53,15 @@ import {
   type CrmTicketingOverview,
   type CrmNavCounts,
 } from '@petdate/shared';
-import { getDb } from './db';
+import { dbService, getDb } from './db';
 import type { AdminAuthActor } from './hr-service';
 import { actorHasPermission, listEmployees } from './hr-service';
-import { candooSendWithSrcFallback, isCandooConfigured } from './services/candoo';
+import { isCandooConfigured } from './services/candoo';
+import {
+  deliverSelectedChannels,
+  smsDeliveryFromChannels,
+  type AutoMessageChannelDelivery,
+} from './services/auto-message-channels';
 
 function db() {
   return getDb();
@@ -122,6 +132,8 @@ function deliverPublicReplyToUser(ticket: CrmTicket, replyText: string, agentNam
         agentName,
         platformUserId: customer?.platformUserId ?? null,
         customerMobile: customer?.mobile || ticket.customerMobile || null,
+        // Telegram/SMS go through automatic-message channel routing.
+        skipTelegram: true,
       })
     )
     .catch((err) => {
@@ -389,6 +401,7 @@ export function ensureCrmSchema(): void {
     CREATE INDEX IF NOT EXISTS idx_crm_followups_due ON crm_followups(status, due_at);
   `);
   migrateCrmTicketColumns();
+  migrateSmsPatternColumns();
   seedCrmDefaults();
 }
 
@@ -437,6 +450,81 @@ function migrateCrmTicketColumns(): void {
   `);
 }
 
+/** Additive columns for automatic-message channels + catalog keys. */
+function migrateSmsPatternColumns(): void {
+  const d = db();
+  let cols = new Set<string>();
+  try {
+    cols = new Set(
+      (d.prepare(`PRAGMA table_info(crm_sms_patterns)`).all() as Array<{ name: string }>).map((c) => c.name)
+    );
+  } catch {
+    return;
+  }
+  if (!cols.size) return;
+  if (!cols.has('channels_json')) {
+    d.exec(`ALTER TABLE crm_sms_patterns ADD COLUMN channels_json TEXT NOT NULL DEFAULT '["sms"]'`);
+  }
+  if (!cols.has('catalog_key')) {
+    d.exec(`ALTER TABLE crm_sms_patterns ADD COLUMN catalog_key TEXT`);
+  }
+}
+
+function ensureAutoMessageCatalog(): void {
+  migrateSmsPatternColumns();
+  const d = db();
+  const byKey = d.prepare(`SELECT * FROM crm_sms_patterns WHERE catalog_key = ?`);
+  const byTrigger = d.prepare(
+    `SELECT * FROM crm_sms_patterns WHERE trigger_key = ? AND (catalog_key IS NULL OR catalog_key = '') ORDER BY id LIMIT 1`
+  );
+  const setKey = d.prepare(`UPDATE crm_sms_patterns SET catalog_key = ? WHERE id = ?`);
+  const setName = d.prepare(`UPDATE crm_sms_patterns SET name = ? WHERE id = ?`);
+  const insert = d.prepare(
+    `INSERT INTO crm_sms_patterns (name, type, text, trigger_key, auto, active, channels_json, catalog_key)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+  );
+  for (const entry of AUTO_MESSAGE_CATALOG) {
+    const existing = byKey.get(entry.key) as Record<string, unknown> | undefined;
+    if (existing) continue;
+    const legacy = byTrigger.get(entry.trigger) as Record<string, unknown> | undefined;
+    if (legacy) {
+      setKey.run(entry.key, Number(legacy.id));
+      const oldName = String(legacy.name || '');
+      if (oldName === AUTO_MESSAGE_LEGACY_SEED_NAMES[entry.key] || oldName === entry.name) {
+        if (oldName !== entry.name) setName.run(entry.name, Number(legacy.id));
+      }
+      continue;
+    }
+    insert.run(
+      entry.name,
+      entry.type,
+      entry.text,
+      entry.trigger,
+      entry.auto ? 1 : 0,
+      entry.active ? 1 : 0,
+      JSON.stringify(entry.channels),
+      entry.key
+    );
+  }
+}
+
+function mapSmsPattern(r: Record<string, unknown>): CrmSmsPattern {
+  const catalogKey = r.catalog_key != null && String(r.catalog_key).trim() ? String(r.catalog_key) : null;
+  return {
+    id: Number(r.id),
+    publicId: makeCrmUuid('PT', Number(r.id)),
+    catalogKey,
+    name: String(r.name),
+    type: String(r.type),
+    text: String(r.text),
+    trigger: String(r.trigger_key),
+    auto: Boolean(r.auto),
+    active: Boolean(r.active),
+    channels: parseAutoMessageChannels(r.channels_json),
+    system: Boolean(catalogKey),
+  };
+}
+
 function seedCrmDefaults(): void {
   const d = db();
   const setIfMissing = (key: string, value: unknown) => {
@@ -453,70 +541,7 @@ function seedCrmDefaults(): void {
   setIfMissing('criticalErrors', CRM_CRITICAL_ERRORS);
   setIfMissing('surveyQuestions', CRM_SURVEY_QUESTIONS);
 
-  const patternCount = Number(
-    (d.prepare('SELECT COUNT(*) as c FROM crm_sms_patterns').get() as { c: number })?.c ?? 0
-  );
-  if (patternCount === 0) {
-    const ins = d.prepare(
-      `INSERT INTO crm_sms_patterns (name, type, text, trigger_key, auto, active) VALUES (?, ?, ?, ?, ?, 1)`
-    );
-    ins.run(
-      'تشکر پس از خرید',
-      'dynamic',
-      '{name} عزیز، از خرید {product} در Pet Date سپاسگزاریم. امیدواریم تجربهٔ خوبی داشته باشید.',
-      'after_purchase',
-      1
-    );
-    ins.run(
-      'ثبت تیکت',
-      'dynamic',
-      '{name} عزیز، تیکت {ticket} ثبت شد و در صف رسیدگی است.',
-      'ticket_created',
-      1
-    );
-    ins.run(
-      'اعلام حل مشکل',
-      'dynamic',
-      '{name} عزیز، تیکت {ticket} حل شد. از همراهی شما ممنونیم.',
-      'ticket_resolved',
-      1
-    );
-    ins.run(
-      'پاسخ تیکت',
-      'dynamic',
-      '{name} عزیز، پاسخ تیکت {ticket}: {reply}',
-      'ticket_reply',
-      1
-    );
-    ins.run(
-      'دعوت به نظرسنجی',
-      'dynamic',
-      '{name} عزیز، لطفاً تجربه تماس با {agent} را امتیاز دهید.',
-      'survey_done',
-      0
-    );
-    ins.run(
-      'پیگیری نقض SLA',
-      'dynamic',
-      'تیکت {ticket} از زمان SLA عبور کرد — اقدام فوری لازم است.',
-      'sla_breach',
-      1
-    );
-  }
-  const hasTicketReply = d
-    .prepare(`SELECT 1 AS ok FROM crm_sms_patterns WHERE trigger_key = 'ticket_reply' LIMIT 1`)
-    .get() as { ok?: number } | undefined;
-  if (!hasTicketReply) {
-    d.prepare(
-      `INSERT INTO crm_sms_patterns (name, type, text, trigger_key, auto, active) VALUES (?, ?, ?, ?, ?, 1)`
-    ).run(
-      'پاسخ تیکت',
-      'dynamic',
-      '{name} عزیز، پاسخ تیکت {ticket}: {reply}',
-      'ticket_reply',
-      1
-    );
-  }
+  ensureAutoMessageCatalog();
 
   const kpiCount = Number(
     (d.prepare('SELECT COUNT(*) as c FROM crm_kpi_models').get() as { c: number })?.c ?? 0
@@ -2430,17 +2455,9 @@ export function listTasks(opts?: { assigneeId?: string; status?: string; limit?:
 
 export function listSmsPatterns(): CrmSmsPattern[] {
   ensureCrmSchema();
+  ensureAutoMessageCatalog();
   const rows = db().prepare('SELECT * FROM crm_sms_patterns ORDER BY id').all() as Array<Record<string, unknown>>;
-  return rows.map((r) => ({
-    id: Number(r.id),
-    publicId: makeCrmUuid('PT', Number(r.id)),
-    name: String(r.name),
-    type: String(r.type),
-    text: String(r.text),
-    trigger: String(r.trigger_key),
-    auto: Boolean(r.auto),
-    active: Boolean(r.active),
-  }));
+  return rows.map(mapSmsPattern);
 }
 
 export function upsertSmsPattern(input: {
@@ -2451,15 +2468,22 @@ export function upsertSmsPattern(input: {
   trigger?: string;
   auto?: boolean;
   active?: boolean;
+  channels?: AutoMessageChannel[] | string[];
 }): CrmSmsPattern {
   ensureCrmSchema();
   const name = String(input.name || '').trim();
   const text = String(input.text || '').trim();
-  if (!name || !text) throw new Error('نام و متن پترن الزامی است');
+  if (!name || !text) throw new Error('نام و متن پیام الزامی است');
+  const channels = normalizeAutoMessageChannels(input.channels);
+  const channelsJson = JSON.stringify(channels);
   if (input.id) {
+    const existing = db()
+      .prepare('SELECT catalog_key FROM crm_sms_patterns WHERE id = ?')
+      .get(input.id) as { catalog_key?: string } | undefined;
+    if (!existing) throw Object.assign(new Error('پیام خودکار یافت نشد'), { status: 404 });
     db()
       .prepare(
-        `UPDATE crm_sms_patterns SET name = ?, type = ?, text = ?, trigger_key = ?, auto = ?, active = ? WHERE id = ?`
+        `UPDATE crm_sms_patterns SET name = ?, type = ?, text = ?, trigger_key = ?, auto = ?, active = ?, channels_json = ? WHERE id = ?`
       )
       .run(
         name,
@@ -2468,12 +2492,14 @@ export function upsertSmsPattern(input: {
         String(input.trigger || 'manual'),
         input.auto ? 1 : 0,
         input.active === false ? 0 : 1,
+        channelsJson,
         input.id
       );
   } else {
     const info = db()
       .prepare(
-        `INSERT INTO crm_sms_patterns (name, type, text, trigger_key, auto, active) VALUES (?, ?, ?, ?, ?, ?)`
+        `INSERT INTO crm_sms_patterns (name, type, text, trigger_key, auto, active, channels_json, catalog_key)
+         VALUES (?, ?, ?, ?, ?, ?, ?, NULL)`
       )
       .run(
         name,
@@ -2481,17 +2507,52 @@ export function upsertSmsPattern(input: {
         text,
         String(input.trigger || 'manual'),
         input.auto ? 1 : 0,
-        input.active === false ? 0 : 1
+        input.active === false ? 0 : 1,
+        channelsJson
       );
     input.id = Number(info.lastInsertRowid);
   }
   return listSmsPatterns().find((p) => p.id === input.id)!;
 }
 
+export function resetSmsPatternToCatalog(id: number): CrmSmsPattern {
+  ensureCrmSchema();
+  const row = db()
+    .prepare('SELECT * FROM crm_sms_patterns WHERE id = ?')
+    .get(id) as Record<string, unknown> | undefined;
+  if (!row) throw Object.assign(new Error('پیام خودکار یافت نشد'), { status: 404 });
+  const key = String(row.catalog_key || '').trim();
+  const entry = key ? autoMessageCatalogByKey(key) : undefined;
+  if (!entry) throw Object.assign(new Error('این پیام پیش‌فرض سیستم نیست'), { status: 400 });
+  db()
+    .prepare(
+      `UPDATE crm_sms_patterns SET name = ?, type = ?, text = ?, trigger_key = ?, auto = ?, channels_json = ? WHERE id = ?`
+    )
+    .run(
+      entry.name,
+      entry.type,
+      entry.text,
+      entry.trigger,
+      entry.auto ? 1 : 0,
+      JSON.stringify(entry.channels),
+      id
+    );
+  return listSmsPatterns().find((p) => p.id === id)!;
+}
+
 export function deleteSmsPattern(id: number): void {
   ensureCrmSchema();
+  const row = db()
+    .prepare('SELECT catalog_key FROM crm_sms_patterns WHERE id = ?')
+    .get(id) as { catalog_key?: string } | undefined;
+  if (!row) throw Object.assign(new Error('پیام خودکار یافت نشد'), { status: 404 });
+  if (row.catalog_key && String(row.catalog_key).trim()) {
+    throw Object.assign(new Error('پیام‌های پیش‌فرض سیستم را نمی‌توان حذف کرد؛ غیرفعال کنید یا به پیش‌فرض برگردانید'), {
+      status: 400,
+    });
+  }
   const info = db().prepare('DELETE FROM crm_sms_patterns WHERE id = ?').run(id);
-  if (!info.changes) throw Object.assign(new Error('پترن یافت نشد'), { status: 404 });
+  if (!info.changes) throw Object.assign(new Error('پیام خودکار یافت نشد'), { status: 404 });
 }
 
 export function renderSmsPattern(
@@ -2527,17 +2588,25 @@ export async function sendSmsPattern(
   customerId: number,
   actor: AdminAuthActor,
   extra?: { ticketPublicId?: string; requirePanel?: boolean; replyText?: string }
-): Promise<{ text: string; interactionId: number; delivery: CrmSmsDelivery }> {
+): Promise<{
+  text: string;
+  interactionId: number;
+  delivery: CrmSmsDelivery;
+  channels: AutoMessageChannelDelivery[];
+}> {
   ensureCrmSchema();
   const pattern = listSmsPatterns().find((p) => p.id === patternId);
-  if (!pattern) throw new Error('پترن یافت نشد');
+  if (!pattern) throw new Error('پیام خودکار یافت نشد');
   if (!pattern.active && extra?.requirePanel) {
-    throw new Error('این پترن غیرفعال است');
+    throw new Error('این پیام غیرفعال است');
   }
   const customer = getCustomer(customerId);
   if (!customer) throw new Error('مشتری یافت نشد');
 
-  if (extra?.requirePanel) {
+  const selected = pattern.channels.length ? pattern.channels : (['sms'] as AutoMessageChannel[]);
+  const wantsSms = selected.includes('sms');
+
+  if (extra?.requirePanel && wantsSms) {
     if (!isCandooConfigured()) {
       throw Object.assign(new Error('سرویس پیامک پیکربندی نشده'), { status: 503 });
     }
@@ -2555,52 +2624,36 @@ export async function sendSmsPattern(
     agentName: actorLabel(actor),
     replyText: extra?.replyText,
   });
+
+  const channelResults = await deliverSelectedChannels(selected, {
+    text,
+    customer: { mobile: customer.mobile, platformUserId: customer.platformUserId },
+  });
+  const anySent = channelResults.some((r) => r.sent);
+  const delivery = smsDeliveryFromChannels(channelResults);
+
+  if (extra?.requirePanel && !anySent) {
+    const reason = channelResults.find((r) => r.reason)?.reason || 'ارسال انجام نشد';
+    throw Object.assign(new Error(reason), { status: 502 });
+  }
+
+  const logChannel = channelResults.find((r) => r.sent)?.channel || selected[0] || 'sms';
+  const summary = [
+    text,
+    channelResults.map((r) => `${r.channel}:${r.sent ? 'ارسال شد' : r.reason || 'رد شد'}`).join(' · '),
+  ]
+    .filter(Boolean)
+    .join('\n');
   const info = db()
     .prepare(
       `INSERT INTO crm_interactions (
         customer_id, channel, direction, agent_id, agent_name, started_at, ended_at,
         reason, outcome, summary, wrap_done
-      ) VALUES (?, 'sms', 'out', ?, ?, ?, ?, 'پیامک', 'پاسخ داده‌شده', ?, 1)`
+      ) VALUES (?, ?, 'out', ?, ?, ?, ?, 'پیام خودکار', 'پاسخ داده‌شده', ?, 1)`
     )
-    .run(customerId, actorId(actor), actorLabel(actor), nowIso(), nowIso(), text);
+    .run(customerId, logChannel, actorId(actor), actorLabel(actor), nowIso(), nowIso(), summary);
 
-  let delivery: CrmSmsDelivery;
-  if (!isCandooConfigured()) {
-    delivery = { sent: false, skipped: true, reason: 'سرویس پیامک پیکربندی نشده' };
-  } else if (!customer.mobile) {
-    delivery = { sent: false, skipped: true, reason: 'شماره موبایل ثبت نشده' };
-  } else {
-    const recipient = normalizeIranMobile(customer.mobile);
-    if (!recipient) {
-      delivery = { sent: false, skipped: true, reason: 'شماره موبایل نامعتبر است' };
-    } else {
-      try {
-        const sent = await candooSendWithSrcFallback({
-          recipient,
-          body: text,
-          customerId: customer.platformUserId ?? undefined,
-          type: 0,
-        });
-        if (sent.ok) {
-          delivery = { sent: true, phone: formatIranMobileDisplay(recipient) };
-        } else {
-          delivery = { sent: false, skipped: true, reason: sent.error || 'ارسال پیامک ناموفق بود' };
-          if (extra?.requirePanel) {
-            throw Object.assign(new Error(delivery.reason), { status: 502 });
-          }
-        }
-      } catch (err) {
-        if (extra?.requirePanel && (err as Error & { status?: number }).status) throw err;
-        console.error('CRM SMS send failed:', err);
-        delivery = { sent: false, skipped: true, reason: 'خطا در ارسال پیامک' };
-        if (extra?.requirePanel) {
-          throw Object.assign(new Error(delivery.reason), { status: 502 });
-        }
-      }
-    }
-  }
-
-  return { text, interactionId: Number(info.lastInsertRowid), delivery };
+  return { text, interactionId: Number(info.lastInsertRowid), delivery, channels: channelResults };
 }
 
 export async function sendSmsPatternBulk(
@@ -2610,19 +2663,43 @@ export async function sendSmsPatternBulk(
 ): Promise<{
   ok: number;
   failed: number;
-  results: Array<{ customerId: number; ok: boolean; error?: string; text?: string }>;
+  results: Array<{
+    customerId: number;
+    ok: boolean;
+    error?: string;
+    text?: string;
+    channels?: AutoMessageChannelDelivery[];
+  }>;
 }> {
   const ids = [...new Set(customerIds.map(Number).filter((n) => Number.isFinite(n) && n > 0))];
   if (!ids.length) throw new Error('حداقل یک مشتری انتخاب کنید');
   if (ids.length > 100) throw new Error('حداکثر ۱۰۰ گیرنده در هر ارسال');
-  const results: Array<{ customerId: number; ok: boolean; error?: string; text?: string }> = [];
+  const results: Array<{
+    customerId: number;
+    ok: boolean;
+    error?: string;
+    text?: string;
+    channels?: AutoMessageChannelDelivery[];
+  }> = [];
   let ok = 0;
   let failed = 0;
   for (const customerId of ids) {
     try {
       const sent = await sendSmsPattern(patternId, customerId, actor, { requirePanel: true });
-      results.push({ customerId, ok: true, text: sent.text });
-      ok += 1;
+      const delivered = sent.channels.some((c) => c.sent);
+      if (delivered) {
+        results.push({ customerId, ok: true, text: sent.text, channels: sent.channels });
+        ok += 1;
+      } else {
+        failed += 1;
+        results.push({
+          customerId,
+          ok: false,
+          error: sent.channels.find((c) => c.reason)?.reason || 'ارسال انجام نشد',
+          text: sent.text,
+          channels: sent.channels,
+        });
+      }
     } catch (err) {
       failed += 1;
       results.push({
@@ -2647,9 +2724,83 @@ function dispatchSmsEvent(
       ticketPublicId: ctx.ticketPublicId,
       replyText: ctx.replyText,
     }).catch((err) => {
-      console.error('CRM auto SMS failed:', p.id, err);
+      console.error('CRM auto message failed:', p.id, err);
     });
   }
+}
+
+/** Public alias — automatic messages are no longer SMS-only. */
+export function dispatchAutoMessage(
+  event: string,
+  ctx: { customerId: number; ticketPublicId?: string; replyText?: string },
+  actor: AdminAuthActor
+): void {
+  dispatchSmsEvent(event, ctx, actor);
+}
+
+function systemAutoMessageActor(): AdminAuthActor {
+  return {
+    kind: 'env_admin',
+    role: 'admin',
+    permissions: ['admin.full'],
+    displayName: 'سیستم',
+    username: 'system',
+  };
+}
+
+/** Fire `after_purchase` automatic messages when a shop order is paid. */
+export function notifyPurchaseAutoMessage(input: {
+  userId?: number | null;
+  customerPhone?: string | null;
+  customerName?: string | null;
+  product?: string | null;
+  amount?: number | null;
+}): void {
+  const actor = systemAutoMessageActor();
+  let customer: CrmCustomer | null = null;
+  const userId = Number(input.userId);
+  if (Number.isFinite(userId) && userId > 0) {
+    try {
+      const user = dbService.getUserById(userId);
+      if (user) customer = findOrCreateCustomerForPlatformUser(user, actor, 'فروشگاه');
+    } catch (err) {
+      console.warn('purchase auto-message user lookup failed:', (err as Error).message);
+    }
+  }
+  if (!customer && input.customerPhone) {
+    try {
+      const parts = String(input.customerName || '').trim().split(/\s+/);
+      customer = findOrCreateCustomerByMobile(
+        {
+          mobile: String(input.customerPhone),
+          first: parts[0] || 'مشتری',
+          last: parts.slice(1).join(' '),
+          product: String(input.product || '').trim(),
+          source: 'فروشگاه',
+        },
+        actor
+      );
+    } catch (err) {
+      console.warn('purchase auto-message mobile lookup failed:', (err as Error).message);
+    }
+  }
+  if (!customer) return;
+
+  const product = String(input.product || '').trim();
+  if (product && !String(customer.product || '').trim()) {
+    db()
+      .prepare(`UPDATE crm_customers SET product = ?, updated_at = ? WHERE id = ?`)
+      .run(product, nowIso(), customer.id);
+  }
+  try {
+    db()
+      .prepare(`INSERT INTO crm_orders (customer_id, product, amount, ordered_at) VALUES (?, ?, ?, ?)`)
+      .run(customer.id, product || customer.product || 'Pet Date', Number(input.amount) || 0, nowIso());
+  } catch (err) {
+    console.warn('crm_orders insert skipped:', (err as Error).message);
+  }
+
+  dispatchSmsEvent('after_purchase', { customerId: customer.id }, actor);
 }
 
 export function listKpiModels(): CrmKpiModel[] {

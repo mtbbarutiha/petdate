@@ -132,9 +132,13 @@ async function main() {
   );
   assert(survey.rating === 4, `survey mean got ${survey.rating}`);
 
-  // SMS pattern render (+ panel optional; without Candoo delivery is skipped)
+  // Automatic-message catalog + render (+ panel optional; without Candoo delivery is skipped)
   const patterns = crm.listSmsPatterns();
-  assert(patterns.length >= 1, 'patterns');
+  assert(patterns.length >= 6, 'catalog defaults listed');
+  assert(
+    patterns.some((p) => p.catalogKey === 'after_purchase' && p.channels.includes('sms')),
+    'after_purchase default'
+  );
   const rendered = crm.renderSmsPattern(patterns[0].text, {
     customer,
     ticketPublicId: 'TK-TEST',
@@ -144,6 +148,7 @@ async function main() {
   const sent = await crm.sendSmsPattern(patterns[0].id, customer.id, admin!, { ticketPublicId: 'TK-TEST' });
   assert(sent.text.includes('آوا') || sent.text.includes('مشتری'), 'sms send returns text');
   assert(sent.delivery != null, 'sms delivery status');
+  assert(Array.isArray(sent.channels) && sent.channels.length >= 1, 'channel routing results');
 
   // agent without reports_team (crm.admin) cannot see others
   const agentActor = {

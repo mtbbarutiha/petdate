@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
-import type { CrmCustomer, CrmSmsPattern } from '@petdate/shared';
-import { CRM_SMS_TRIGGERS, CRM_SMS_TRIGGER_LABELS } from '@petdate/shared';
+import type { AutoMessageChannel, CrmCustomer, CrmSmsPattern } from '@petdate/shared';
+import {
+  AUTO_MESSAGE_CHANNELS,
+  AUTO_MESSAGE_CHANNEL_LABELS,
+  CRM_SMS_TRIGGERS,
+  CRM_SMS_TRIGGER_LABELS,
+} from '@petdate/shared';
 import { adminCan } from '../../auth';
 import { adminFetch, formatNumFa } from '../../api';
 import { appConfirm } from '../../../components/AppDialog';
@@ -12,6 +17,7 @@ type SmsPanel = {
   currency?: 'rial' | string;
   error?: string;
 };
+type ChannelStatus = { id: string; label: string; ready: boolean; reason?: string };
 
 type PatternForm = {
   id?: number;
@@ -21,6 +27,7 @@ type PatternForm = {
   trigger: string;
   auto: boolean;
   active: boolean;
+  channels: AutoMessageChannel[];
 };
 
 const EMPTY_FORM: PatternForm = {
@@ -30,6 +37,7 @@ const EMPTY_FORM: PatternForm = {
   trigger: 'manual',
   auto: false,
   active: true,
+  channels: ['sms'],
 };
 
 function triggerLabel(key: string): string {
@@ -42,21 +50,31 @@ function renderPreview(text: string, customer: CrmCustomer | undefined, agentNam
   const product = customer?.product || 'Pet Date';
   const ticket = 'TK-۱۲۳۴';
   const agent = agentName || 'کارشناس';
+  const reply = 'پاسخ نمونه';
   return text
     .replace(/\{name\}/gi, name)
     .replace(/\{product\}/gi, product)
     .replace(/\{ticket\}/gi, ticket)
     .replace(/\{agent\}/gi, agent)
+    .replace(/\{reply\}/gi, reply)
     .replace(/\{نام\}/g, name)
     .replace(/\{محصول\}/g, product)
     .replace(/\{شناسه\}/g, ticket)
-    .replace(/\{کارشناس\}/g, agent);
+    .replace(/\{کارشناس\}/g, agent)
+    .replace(/\{پاسخ\}/g, reply);
+}
+
+function toggleChannel(current: AutoMessageChannel[], id: AutoMessageChannel): AutoMessageChannel[] {
+  const has = current.includes(id);
+  const next = has ? current.filter((c) => c !== id) : [...current, id];
+  return next.length ? next : current;
 }
 
 export function AdminCrmSmsPage() {
   const [patterns, setPatterns] = useState<CrmSmsPattern[]>([]);
   const [customers, setCustomers] = useState<CrmCustomer[]>([]);
   const [panel, setPanel] = useState<SmsPanel | null>(null);
+  const [channelStatus, setChannelStatus] = useState<ChannelStatus[]>([]);
   const [selectedPatternId, setSelectedPatternId] = useState<number | null>(null);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [q, setQ] = useState('');
@@ -72,17 +90,20 @@ export function AdminCrmSmsPage() {
   const canWrite = adminCan('crm.write');
 
   const load = useCallback(() => {
-    void adminFetch<{ patterns: CrmSmsPattern[]; panel?: SmsPanel }>('/api/admin/crm/sms')
+    void adminFetch<{ patterns: CrmSmsPattern[]; panel?: SmsPanel; channels?: ChannelStatus[] }>(
+      '/api/admin/crm/sms'
+    )
       .then((d) => {
         setPatterns(d.patterns);
         setPanel(d.panel || null);
+        setChannelStatus(d.channels || []);
         setError(null);
         setSelectedPatternId((prev) => {
           if (prev && d.patterns.some((p) => p.id === prev)) return prev;
           return d.patterns[0]?.id ?? null;
         });
       })
-      .catch((e) => setError(e instanceof Error ? e.message : 'خطا در بارگذاری پترن‌ها'));
+      .catch((e) => setError(e instanceof Error ? e.message : 'خطا در بارگذاری پیام‌های خودکار'));
 
     void adminFetch<{ customers: CrmCustomer[] }>('/api/admin/crm/customers?limit=200')
       .then((d) => setCustomers(d.customers))
@@ -130,6 +151,12 @@ export function AdminCrmSmsPage() {
     ? renderPreview(selectedPattern.text, previewCustomer, 'کارشناس پشتیبانی')
     : '';
 
+  const selectedReady = useMemo(() => {
+    if (!selectedPattern) return false;
+    const selected = selectedPattern.channels?.length ? selectedPattern.channels : ['sms'];
+    return selected.some((id) => channelStatus.find((c) => c.id === id)?.ready);
+  }, [selectedPattern, channelStatus]);
+
   function openNew() {
     setForm(EMPTY_FORM);
     setEditorOpen(true);
@@ -144,6 +171,7 @@ export function AdminCrmSmsPage() {
       trigger: p.trigger || 'manual',
       auto: p.auto,
       active: p.active,
+      channels: p.channels?.length ? p.channels : ['sms'],
     });
     setEditorOpen(true);
   }
@@ -160,7 +188,7 @@ export function AdminCrmSmsPage() {
       });
       setEditorOpen(false);
       setForm(EMPTY_FORM);
-      setNotice(form.id ? 'پترن ذخیره شد' : 'پترن جدید ساخته شد');
+      setNotice(form.id ? 'پیام خودکار ذخیره شد' : 'پیام خودکار جدید ساخته شد');
       load();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'ذخیره ناموفق');
@@ -183,6 +211,7 @@ export function AdminCrmSmsPage() {
           trigger: p.trigger,
           auto: p.auto,
           active: !p.active,
+          channels: p.channels,
         }),
       });
       load();
@@ -193,9 +222,27 @@ export function AdminCrmSmsPage() {
     }
   }
 
+  async function resetPattern(p: CrmSmsPattern) {
+    if (!canAdmin) return;
+    if (!(await appConfirm(`${tr('متن «')}${p.name}${tr('» به پیش‌فرض سیستم برگردد؟')}`, { variant: 'admin' }))) {
+      return;
+    }
+    setBusy(true);
+    try {
+      await adminFetch(`/api/admin/crm/sms/patterns/${p.id}/reset`, { method: 'POST' });
+      setNotice('به پیش‌فرض سیستم برگشت');
+      load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'بازنشانی ناموفق');
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function removePattern(p: CrmSmsPattern) {
     if (!canAdmin) return;
-    if (!(await appConfirm(`${tr('پترن «')}${p.name}${tr('» حذف شود؟')}`, { danger: true, variant: 'admin' }))) return;
+    if (p.system || p.catalogKey) return;
+    if (!(await appConfirm(`${tr('پیام «')}${p.name}${tr('» حذف شود؟')}`, { danger: true, variant: 'admin' }))) return;
     setBusy(true);
     try {
       await adminFetch(`/api/admin/crm/sms/patterns/${p.id}`, { method: 'DELETE' });
@@ -245,8 +292,20 @@ export function AdminCrmSmsPage() {
     <div className="admin-page crm-sms-page">
       <header className="admin-header crm-sms-header">
         <div>
-          <h1>{tr('پیامک و پترن‌ها')}</h1>
-          <p>{tr('پترن‌های ثابت و پویا — ارسال دستی یا خودکار روی مشتریان Pet Date')}</p>
+          <h1>{tr('پیام‌های خودکار')}</h1>
+          <p>{tr('پیام‌های سیستمی پت‌دیت — پیامک، تلگرام، واتساپ و کانال‌های دیگر. قالب‌های پیش‌فرض قابل ویرایش‌اند.')}</p>
+          <div className="crm-sms-channel-status" aria-label={tr('وضعیت کانال‌ها')}>
+            {channelStatus.map((ch) => (
+              <span
+                key={ch.id}
+                className={`crm-sms-badge ${ch.ready ? 'is-channel-on' : 'is-channel-off'}`}
+                title={ch.reason || undefined}
+              >
+                {tr(ch.label)}
+                {ch.ready ? '' : ` — ${tr(ch.reason || 'آماده نیست')}`}
+              </span>
+            ))}
+          </div>
           {panel ? (
             panel.configured ? (
               <div className="crm-sms-panel-meta">
@@ -272,7 +331,7 @@ export function AdminCrmSmsPage() {
         </div>
         {canAdmin ? (
           <button type="button" className="admin-btn admin-btn--primary" onClick={openNew} disabled={busy}>
-            {tr('پترن جدید')}
+            {tr('پیام جدید')}
           </button>
         ) : null}
       </header>
@@ -281,14 +340,15 @@ export function AdminCrmSmsPage() {
       {notice ? <p className="crm-sms-notice">{notice}</p> : null}
 
       <div className="crm-sms-layout">
-        <section className="admin-card crm-sms-patterns" aria-label={tr("فهرست پترن‌ها")}>
+        <section className="admin-card crm-sms-patterns" aria-label={tr('فهرست پیام‌های خودکار')}>
           <div className="admin-card-head">
-            <h2>{tr('پترن‌ها')}</h2>
+            <h2>{tr('پیام‌های خودکار')}</h2>
             <span className="admin-muted">{formatNumFa(patterns.length)} {tr('قالب')}</span>
           </div>
           <div className="crm-sms-pattern-list">
             {patterns.map((p) => {
               const active = selectedPatternId === p.id;
+              const channels = p.channels?.length ? p.channels : (['sms'] as AutoMessageChannel[]);
               return (
                 <article
                   key={p.id}
@@ -298,6 +358,9 @@ export function AdminCrmSmsPage() {
                   <div className="crm-sms-pattern-top">
                     <h3>{p.name}</h3>
                     <div className="crm-sms-badges">
+                      {p.system || p.catalogKey ? (
+                        <span className="crm-sms-badge is-system">{tr('پیش‌فرض سیستم')}</span>
+                      ) : null}
                       <span className={`crm-sms-badge ${p.type === 'static' ? 'is-static' : 'is-dynamic'}`}>
                         {p.type === 'static' ? tr('ثابت') : tr('پویا')}
                       </span>
@@ -309,6 +372,20 @@ export function AdminCrmSmsPage() {
                   </div>
                   <p className="crm-sms-trigger">{triggerLabel(p.trigger)}</p>
                   <p className="crm-sms-template">{tr(p.text)}</p>
+                  <div className="crm-sms-badges crm-sms-channel-badges">
+                    {channels.map((ch) => {
+                      const st = channelStatus.find((c) => c.id === ch);
+                      return (
+                        <span
+                          key={ch}
+                          className={`crm-sms-badge is-channel is-channel-${ch}${st && !st.ready ? ' is-unready' : ''}`}
+                          title={st?.reason}
+                        >
+                          {tr(AUTO_MESSAGE_CHANNEL_LABELS[ch] || ch)}
+                        </span>
+                      );
+                    })}
+                  </div>
                   {canAdmin ? (
                     <div className="crm-sms-pattern-actions" onClick={(ev) => ev.stopPropagation()}>
                       <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => openEdit(p)}>
@@ -317,32 +394,38 @@ export function AdminCrmSmsPage() {
                       <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => void toggleActive(p)}>
                         {p.active ? tr('غیرفعال') : tr('فعال')}
                       </button>
-                      <button type="button" className="admin-btn admin-btn--danger" disabled={busy} onClick={() => void removePattern(p)}>
-                        {tr('حذف')}
-                      </button>
+                      {p.system || p.catalogKey ? (
+                        <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => void resetPattern(p)}>
+                          {tr('بازنشانی')}
+                        </button>
+                      ) : (
+                        <button type="button" className="admin-btn admin-btn--danger" disabled={busy} onClick={() => void removePattern(p)}>
+                          {tr('حذف')}
+                        </button>
+                      )}
                     </div>
                   ) : null}
                 </article>
               );
             })}
-            {!patterns.length ? <p className="admin-muted">{tr('هنوز پترنی ثبت نشده است.')}</p> : null}
+            {!patterns.length ? <p className="admin-muted">{tr('هنوز پیام خودکاری ثبت نشده است.')}</p> : null}
           </div>
         </section>
 
-        <section className="admin-card crm-sms-send" aria-label={tr("ارسال گروهی")}>
+        <section className="admin-card crm-sms-send" aria-label={tr('ارسال گروهی')}>
           <div className="admin-card-head">
             <h2>{tr('ارسال گروهی')}</h2>
             <span className="admin-muted">Pet Date</span>
           </div>
 
           <label className="crm-sms-field">
-            <span>{tr('پترن')}</span>
+            <span>{tr('پیام')}</span>
             <select
               className="form-input"
               value={selectedPatternId ?? ''}
               onChange={(e) => setSelectedPatternId(e.target.value ? Number(e.target.value) : null)}
             >
-              <option value="">{tr('انتخاب پترن')}</option>
+              <option value="">{tr('انتخاب پیام')}</option>
               {patterns.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name}
@@ -353,7 +436,7 @@ export function AdminCrmSmsPage() {
           </label>
 
           <div className="crm-sms-filters">
-            <input className="form-input" placeholder={tr("نام یا موبایل")} value={q} onChange={(e) => setQ(e.target.value)} />
+            <input className="form-input" placeholder={tr('نام یا موبایل')} value={q} onChange={(e) => setQ(e.target.value)} />
             <select className="form-input" value={product} onChange={(e) => setProduct(e.target.value)}>
               <option value="">{tr('همه محصولات')}</option>
               {productOptions.map((p) => (
@@ -381,7 +464,7 @@ export function AdminCrmSmsPage() {
             </div>
           ) : (
             <div className="crm-sms-preview is-empty">
-              <p className="admin-muted">{tr('برای پیش‌نمایش یک پترن و مشتری انتخاب کنید.')}</p>
+              <p className="admin-muted">{tr('برای پیش‌نمایش یک پیام و مشتری انتخاب کنید.')}</p>
             </div>
           )}
 
@@ -393,9 +476,9 @@ export function AdminCrmSmsPage() {
               <button
                 type="button"
                 className="admin-btn admin-btn--primary"
-                disabled={busy || !selectedPatternId || !selectedIds.length || !panel?.configured}
+                disabled={busy || !selectedPatternId || !selectedIds.length || !selectedReady}
                 onClick={() => void sendSelected()}
-                title={!panel?.configured ? tr('پنل پیامک پیکربندی نشده') : undefined}
+                title={!selectedReady ? tr('هیچ کانال آماده‌ای برای این پیام انتخاب نشده') : undefined}
               >
                 {tr('ارسال به انتخاب‌شده‌ها')}
               </button>
@@ -452,26 +535,53 @@ export function AdminCrmSmsPage() {
         <div className="crm-sms-modal-backdrop" role="presentation" onClick={() => !busy && setEditorOpen(false)}>
           <form className="admin-card crm-sms-modal" onClick={(e) => e.stopPropagation()} onSubmit={(e) => void savePattern(e)}>
             <div className="admin-card-head">
-              <h2>{form.id ? tr('ویرایش پترن') : tr('پترن جدید')}</h2>
+              <h2>{form.id ? tr('ویرایش پیام خودکار') : tr('پیام خودکار جدید')}</h2>
             </div>
             <label className="crm-sms-field">
               <span>{tr('نام')}</span>
               <input className="form-input" required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
             </label>
             <label className="crm-sms-field">
-              <span>{tr('متن پیامک')}</span>
+              <span>{tr('متن پیام')}</span>
               <textarea
                 className="form-input"
                 rows={4}
                 required
-                value={tr(form.text)}
+                value={form.text}
                 onChange={(e) => setForm({ ...form, text: e.target.value })}
-                placeholder={tr("{name} عزیز، از خرید {product} سپاسگزاریم. تیکت {ticket} — کارشناس {agent}")}
+                placeholder={tr('{name} عزیز، از خرید {product} سپاسگزاریم. تیکت {ticket} — کارشناس {agent}')}
               />
             </label>
             <p className="admin-muted crm-sms-vars">
-              {tr('متغیرها:')} {'{name}'} · {'{product}'} · {'{ticket}'} · {'{agent}'}
+              {tr('متغیرها:')} {'{نام}'} · {'{محصول}'} · {'{شناسه}'} · {'{کارشناس}'} · {'{پاسخ}'}
+              {' · '}
+              {'{name}'} · {'{product}'} · {'{ticket}'} · {'{agent}'} · {'{reply}'}
             </p>
+            <fieldset className="crm-sms-channels">
+              <legend>{tr('کانال‌های ارسال')}</legend>
+              {AUTO_MESSAGE_CHANNELS.map((ch) => {
+                const st = channelStatus.find((c) => c.id === ch);
+                const checked = form.channels.includes(ch);
+                return (
+                  <label key={ch} className="crm-sms-check">
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => setForm({ ...form, channels: toggleChannel(form.channels, ch) })}
+                    />
+                    <span>
+                      {tr(AUTO_MESSAGE_CHANNEL_LABELS[ch])}
+                      {st && !st.ready ? (
+                        <span className="admin-muted"> — {tr(st.reason || 'آماده نیست')}</span>
+                      ) : null}
+                    </span>
+                  </label>
+                );
+              })}
+              <p className="admin-muted crm-sms-vars">
+                {tr('کانال انتخاب‌شده فقط وقتی ارسال می‌شود که متصل باشد. واتساپ فعلاً ارسال واقعی ندارد.')}
+              </p>
+            </fieldset>
             <div className="crm-sms-form-row">
               <label className="crm-sms-field">
                 <span>{tr('نوع')}</span>
@@ -481,7 +591,7 @@ export function AdminCrmSmsPage() {
                 </select>
               </label>
               <label className="crm-sms-field">
-                <span>{tr('تریگر')}</span>
+                <span>{tr('زمان ارسال')}</span>
                 <select
                   className="form-input"
                   value={form.trigger}
@@ -505,7 +615,7 @@ export function AdminCrmSmsPage() {
                 disabled={form.trigger === 'manual'}
                 onChange={(e) => setForm({ ...form, auto: e.target.checked })}
               />
-              {tr('ارسال خودکار هنگام تریگر')}
+              {tr('ارسال خودکار هنگام رویداد')}
             </label>
             <label className="crm-sms-check">
               <input type="checkbox" checked={form.active} onChange={(e) => setForm({ ...form, active: e.target.checked })} />

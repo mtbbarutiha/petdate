@@ -510,7 +510,7 @@ export const en: Dict = {
     cx: 'Customer experience',
     calls: 'Calls',
     cases: 'Cases',
-    sms: 'SMS',
+    sms: 'Automatic messages',
     qa: 'Quality control',
     clubReports: 'Reports',
     clubSettings: 'Club settings',
