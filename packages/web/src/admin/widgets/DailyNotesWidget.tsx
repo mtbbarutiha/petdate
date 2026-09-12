@@ -10,6 +10,7 @@ import {
   localDateToIso,
 } from '../jalaliDate';
 import { usePrefersReducedMotion } from '../motionCharts';
+import { appConfirm } from '../../components/AppDialog';
 import { tr } from '../../i18n';
 import { useDashboardSelectedDate } from './DashboardSelectedDate';
 import type { WidgetRenderContext } from './types';
@@ -107,7 +108,7 @@ export function DailyNotesWidget({ ctx }: { ctx?: WidgetRenderContext }) {
 
   const removeNote = async (id: number) => {
     if (saving) return;
-    if (typeof window !== 'undefined' && !window.confirm(tr('حذف این یادداشت؟'))) return;
+    if (!(await appConfirm(tr('حذف این یادداشت؟'), { danger: true, variant: 'admin' }))) return;
     setSaving(true);
     try {
       await adminFetch<{ ok: boolean }>(`/api/admin/daily-notes/${id}`, { method: 'DELETE' });
