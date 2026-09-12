@@ -8,6 +8,7 @@ import { SiteHeaderLinkView } from './SiteHeaderLinkView';
  * Desktop overflow for secondary marketing/shop links.
  * First INLINE_SECTION_COUNT items stay in the inline row on wide screens;
  * this menu always holds the rest, and the duplicates at ≥1440 via CSS.
+ * Trigger is a compact text control (same weight/color as خدمات), not a pill.
  */
 export function SiteNavOverflow({ links }: { links: SiteHeaderLink[] }) {
   const { t } = useI18n();

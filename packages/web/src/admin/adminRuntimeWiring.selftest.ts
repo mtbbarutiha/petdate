@@ -48,8 +48,8 @@ assert.match(chrome, /landingSectionLinks\(platform\)/, 'landing extras honor pl
 const headerLinks = read(join(webRoot, 'components/siteHeaderLinks.ts'));
 assert.match(headerLinks, /vetConsultEnabled/, 'landing hides vet when flag off');
 const desktopNav = read(join(webRoot, 'components/SiteDesktopNav.tsx'));
-assert.match(desktopNav, /filterNavByPlatformConfig/, 'desktop pills hide shop when flag off');
-assert.match(desktopNav, /data-testid=\{`nav-\$\{item\.key\}`\}/, 'landing keeps games nav from pills');
+assert.match(desktopNav, /filterNavByPlatformConfig/, 'desktop shortcuts hide shop when flag off');
+assert.match(desktopNav, /data-testid=\{`nav-\$\{item\.key\}`\}/, 'landing keeps games nav from shortcuts');
 
 const welcome = read(join(webRoot, 'pages/WelcomePage.tsx'));
 assert.match(welcome, /PlatformBanners/, 'homepage shows platform banners');

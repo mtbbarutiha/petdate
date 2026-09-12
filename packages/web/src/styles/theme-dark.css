@@ -869,12 +869,13 @@ html[data-theme='dark'] .pepito-nav.is-scrolled {
   box-shadow: var(--pd-shadow);
 }
 html[data-theme='dark'] .pepito-nav-overflow-btn {
-  background: color-mix(in srgb, var(--pepito-white) 88%, transparent);
-  border-color: color-mix(in srgb, var(--pepito-lilac) 55%, transparent);
+  background: none;
+  border: 0;
   color: var(--pepito-dark);
 }
-html[data-theme='dark'] .pepito-nav-overflow-btn:hover {
-  background: var(--pepito-white);
+html[data-theme='dark'] .pepito-nav-overflow-btn:hover,
+html[data-theme='dark'] .pepito-nav-overflow-btn[aria-expanded='true'] {
+  background: none;
   color: var(--pepito-base);
 }
 html[data-theme='dark'] .pepito-nav-overflow-menu {
@@ -982,10 +983,14 @@ html[data-theme='dark'] .pepito-news-card {
   border: 1px solid var(--pd-border);
 }
 
-/* Nav chips: tokenized fill already; ensure hover/active stay readable */
-html[data-theme='dark'] .pepito-nav-wallet-btn:hover,
-html[data-theme='dark'] .pepito-site-desktop-nav-link:hover {
+/* Utility chips keep a fill hover; primary shortcuts stay text-only */
+html[data-theme='dark'] .pepito-nav-wallet-btn:hover {
   background: var(--pepito-lilac);
+  color: var(--pepito-base);
+}
+html[data-theme='dark'] .pepito-site-desktop-nav-link:hover,
+html[data-theme='dark'] .pepito-nav-section-link:hover {
+  background: none;
   color: var(--pepito-base);
 }
 html[data-theme='dark'] .pepito-nav-wallet-btn svg {

@@ -1,6 +1,7 @@
 /**
- * Desktop header hierarchy: brand | primary pills | overflow | utilities.
- * Games/shop must not appear as both marketing text and SiteDesktopNav pills.
+ * Desktop header hierarchy: brand | primary text links | overflow | utilities.
+ * Games/shop must not appear as both marketing text and SiteDesktopNav shortcuts.
+ * Role shortcuts share the خدمات plain-text treatment (no outlined icon pills).
  * Run: npx tsx packages/web/src/components/siteHeader.selftest.ts
  */
 import assert from 'node:assert/strict';
@@ -24,7 +25,7 @@ assert.match(header, /pepito-nav-actions/, 'header has utilities group');
 assert.match(header, /LanguageToggle/, 'utilities include language');
 assert.match(header, /ThemeToggle/, 'utilities include theme');
 assert.match(header, /NavUserCluster/, 'utilities include cart/wallet/profile');
-assert.match(header, /LazySiteDesktopNav/, 'primary includes role pills');
+assert.match(header, /LazySiteDesktopNav/, 'primary includes role shortcuts');
 assert.match(header, /SiteNavOverflow/, 'secondary links go through overflow');
 assert.doesNotMatch(
   header,
@@ -37,9 +38,9 @@ assert.match(chrome, /landingSectionLinks/, 'LandingChrome uses marketing extras
 assert.match(chrome, /appNav \? \[\] : landingSectionLinks/, 'app shell drops marketing extras');
 assert.match(welcome, /SiteHeader/, 'Welcome uses shared header');
 assert.match(welcome, /welcomeSectionLinks/, 'Welcome uses hash extras without games/shop');
-assert.match(welcome, /deferDesktopNav/, 'Welcome still defers pills for landing TBT');
+assert.match(welcome, /deferDesktopNav/, 'Welcome still defers desktop shortcuts for landing TBT');
 assert.match(shop, /SiteHeader/, 'ShopChrome uses shared header');
-assert.match(shop, /shopSectionLinks/, 'shop extras stay in overflow, not a second pill row');
+assert.match(shop, /shopSectionLinks/, 'shop extras stay in overflow, not a second shortcut row');
 
 const landingKeys = landingSectionLinks({ vetConsultEnabled: true }).map((l) => l.key);
 const welcomeKeys = welcomeSectionLinks().map((l) => l.key);
@@ -53,7 +54,9 @@ assert.ok(
   'پذیرش stays testable'
 );
 
-assert.match(desktopNav, /data-testid=\{`nav-\$\{item\.key\}`\}/, 'pills keep nav-games test id');
+assert.match(desktopNav, /data-testid=\{`nav-\$\{item\.key\}`\}/, 'shortcuts keep nav-games test id');
+assert.match(desktopNav, /pepito-nav-section-link/, 'role shortcuts share خدمات text class');
+assert.doesNotMatch(desktopNav, /<item\.icon/, 'role shortcuts are text-only (no icon pills)');
 assert.match(overflow, /nav\.more/, 'overflow uses i18n more label');
 
 assert.match(css, /\.pepito-nav-primary/, 'primary group styled');
@@ -75,7 +78,27 @@ assert.match(
   'utilities keep a stable physical order'
 );
 
-assert.match(nav, /withGamesAfterShop/, 'desktop pills still append Games after شاپ (#344)');
+assert.match(nav, /withGamesAfterShop/, 'desktop shortcuts still append Games after شاپ (#344)');
+assert.match(
+  css,
+  /\.pepito-site-desktop-nav-link[\s\S]{0,220}font-weight:\s*600/,
+  'role shortcuts use the same 600 weight as خدمات'
+);
+assert.match(
+  css,
+  /\.pepito-site-desktop-nav-link[\s\S]{0,280}background:\s*none/,
+  'role shortcuts have no pill fill'
+);
+assert.match(
+  css,
+  /\.pepito-nav-overflow-btn[\s\S]{0,220}background:\s*none/,
+  'More control matches the text system (no filled third style)'
+);
+assert.doesNotMatch(
+  css,
+  /@media \(min-width: 860px\) and \(max-width: 959px\)[\s\S]{0,180}\.pepito-site-desktop-nav-link span/,
+  'narrow desktop no longer hides labels for icon-only pills'
+);
 assert.doesNotMatch(
   nav.slice(nav.indexOf('export function siteNavMobileForRole'), nav.indexOf('export function siteNavDesktopForRole')),
   /\bGAMES\b/,
