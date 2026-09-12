@@ -4,11 +4,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "prebuild": "node ../../scripts/generate-sitemap.mjs",
+    "prebuild": "npx tsx ../../scripts/generate-sitemap.ts",
+    "postbuild": "npx tsx ../../scripts/prerender-seo-html.ts",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
-    "sitemap": "node ../../scripts/generate-sitemap.mjs"
+    "sitemap": "npx tsx ../../scripts/generate-sitemap.ts"
   },
   "dependencies": {
     "@tiptap/extension-image": "^3.31.3",

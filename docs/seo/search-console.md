@@ -25,7 +25,7 @@ Sitemap تولید و روی سایت در دسترس است:
      در Search Console روی **Verify** بزنید.
    - یا DNS TXT / فایل HTML روی سرور.
 4. **Sitemaps** → ارسال `https://petdate.ir/sitemap.xml`.
-5. (پیشنهاد) در nginx یک **۳۰۱** از `www` به apex (یا برعکس) تا با canonicalهای فعلی (`https://petdate.ir/...`) هم‌خوان شود.
+5. HTTPS `www` → apex روی origin پیاده شده؛ در پنل CDN هم host-redirect بگذارید تا بازدید Flexible به `https://petdate.ir` برسد.
 
 ## اگر بعداً API خواستید
 

@@ -3,6 +3,22 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import fs from 'fs';
 import path from 'path';
+import { applySeoToHtml, normalizePath } from './src/lib/pageSeo';
+
+/** Inject per-route meta into the SPA shell (dev/preview + the built home HTML). */
+function petdateSeoHtml(): Plugin {
+  return {
+    name: 'petdate-seo-html',
+    transformIndexHtml: {
+      order: 'post',
+      handler(html, ctx) {
+        const raw = (ctx.originalUrl || ctx.path || '/').split('?')[0];
+        const route = raw.replace(/\/?index\.html$/, '') || '/';
+        return applySeoToHtml(html, normalizePath(route));
+      },
+    },
+  };
+}
 
 /** Serve local seed HTML in `vite` only — never copied into production dist. */
 function serveDevSeedHtml(): Plugin {
@@ -38,6 +54,7 @@ export default defineConfig({
   },
   plugins: [
     serveDevSeedHtml(),
+    petdateSeoHtml(),
     react(),
     VitePWA({
       // prompt — autoUpdate+skipWaiting was full-reloading open tabs (e.g. /chats)
@@ -56,9 +73,9 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         // New cache namespace so stuck clients drop the old 1.5s-poll bundle.
         // Bump when guest marketing routes change — v14 left #213's shell unclaimed.
-        cacheId: 'petdate-web-v16-guest-vet',
-        // Precache only shell assets — do not pull multi-MB media into SW install.
-        globPatterns: ['**/*.{js,css,html,ico,svg,woff2}'],
+        cacheId: 'petdate-web-v17-seo',
+        // Precache only the app shell — not hundreds of prerendered SEO HTML files.
+        globPatterns: ['index.html', 'offline.html', '**/*.{js,css,ico,svg,woff2}'],
         navigateFallbackDenylist: [/^\/api\//],
       },
       includeAssets: [

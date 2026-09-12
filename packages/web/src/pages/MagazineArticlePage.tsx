@@ -73,9 +73,37 @@ export function MagazineArticlePage() {
     setMeta('description', desc);
     setMeta('og:title', title, true);
     setMeta('og:description', desc, true);
+    setMeta('og:type', 'article', true);
     if (article.coverImage) {
       setMeta('og:image', resolvePublicMediaUrl(article.coverImage) || article.coverImage, true);
     }
+    const ldId = 'petdate-article-jsonld';
+    let ld = document.getElementById(ldId) as HTMLScriptElement | null;
+    if (!ld) {
+      ld = document.createElement('script');
+      ld.id = ldId;
+      ld.type = 'application/ld+json';
+      document.head.appendChild(ld);
+    }
+    const origin = 'https://petdate.ir';
+    const url = `${origin}/magazine/${article.slug}`;
+    ld.textContent = JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'Article',
+      headline: title,
+      description: desc,
+      url,
+      inLanguage: 'fa-IR',
+      author: { '@type': 'Organization', name: 'پت‌دیت' },
+      publisher: { '@id': `${origin}/#organization` },
+      mainEntityOfPage: url,
+      image: article.coverImage
+        ? resolvePublicMediaUrl(article.coverImage) || article.coverImage
+        : `${origin}/brand/petdate-banner.jpg`,
+    });
+    return () => {
+      document.getElementById(ldId)?.remove();
+    };
   }, [article]);
 
   const cover = article

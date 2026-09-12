@@ -21,7 +21,7 @@
     "infra:down": "docker compose down",
     "infra:logs": "docker compose logs -f",
     "infra:elasticsearch": "bash ./scripts/ensure-elasticsearch.sh",
-    "sitemap": "node ./scripts/generate-sitemap.mjs"
+    "sitemap": "npx tsx ./scripts/generate-sitemap.ts"
   },
   "workspaces": [
     "packages/*"

@@ -86,6 +86,10 @@ export function ShopProductPage() {
     return <Navigate to="/shop" replace />;
   }
 
+  if (id && product.slug && id !== product.slug) {
+    return <Navigate to={`/shop/product/${product.slug}`} replace />;
+  }
+
   const colors = product.colors ?? [];
   const sizes = product.sizes ?? [];
   const highlights = product.highlights?.length
