@@ -81,20 +81,25 @@ assert.match(dock, /SITE_NAV_GUEST/, 'guest dock uses SITE_NAV_GUEST');
 assert.match(
   dock,
   /pepito-landing-mobile-dock-link--chats/,
-  'center chats/playmate dock slot has prominent --chats class'
+  'center chats/playmate dock slot has --chats class'
 );
-assert.match(dock, /size=\{chats \? 32 : 24\}/, 'center ChatPaw icon is ~1.35× sibling icons');
+assert.match(dock, /size=\{chats \? 28 : 24\}/, 'center ChatPaw icon is slightly larger than siblings');
 
 const pepitoCss = readFileSync(join(root, 'styles/pepito.css'), 'utf8');
-assert.match(
+assert.doesNotMatch(
   pepitoCss,
-  /\.pepito-landing-mobile-dock-link--chats[\s\S]*translateY\(-7px\)/,
-  'center chats control is elevated above the dock pill'
+  /\.pepito-landing-mobile-dock-link--chats\s*\{[^}]*(?:border-radius:\s*999px|translateY|box-shadow)/,
+  'center chats slot has no elevated circular ring/backdrop'
 );
 assert.match(
   pepitoCss,
-  /\.pepito-landing-mobile-dock-link--chats svg[\s\S]*width:\s*32px/,
-  'center chats SVG sized 32px in CSS'
+  /\.pepito-landing-mobile-dock-link--chats svg[\s\S]*?width:\s*28px/,
+  'center chats SVG sized 28px in CSS (fits 44px slot)'
+);
+assert.match(
+  pepitoCss,
+  /\.pepito-landing-mobile-dock\s*\{[^}]*overflow:\s*hidden/,
+  'mobile dock clips content so center icon cannot overflow the pill'
 );
 
 const ownerRail = layout.slice(layout.indexOf('const OWNER_NAV'), layout.indexOf('const VET_NAV'));

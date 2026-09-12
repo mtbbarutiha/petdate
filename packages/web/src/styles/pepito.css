@@ -11169,8 +11169,7 @@ a.pepito-btn.pepito-human-consult-cta:hover {
     gap: 0.15rem;
     height: 58px;
     padding: 0.35rem 0.55rem;
-    /* Center chats control elevates slightly above the pill */
-    overflow: visible;
+    overflow: hidden;
     background:
       linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.08)),
       rgba(32, 32, 34, 0.42);
@@ -11225,39 +11224,17 @@ a.pepito-btn.pepito-human-consult-cta:hover {
     flex-shrink: 0;
   }
 
-  /* Center گفتگو / هم‌بازی — larger icon + elevated hit target (siblings stay 24px / 44px) */
-  .pepito-landing-mobile-dock-link--chats {
-    position: relative;
-    z-index: 1;
-    flex: 1.08 1 0;
-    min-width: 50px;
-    min-height: 50px;
-    height: 50px;
-    max-width: 56px;
-    margin-block: -4px;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.18);
-    transform: translateY(-7px);
-    box-shadow:
-      0 6px 16px rgba(0, 0, 0, 0.22),
-      0 1px 0 rgba(255, 255, 255, 0.35) inset;
-  }
-
+  /* Center گفتگو / هم‌بازی — slightly larger glyph inside the same 44px slot (no elevated circle) */
   .pepito-landing-mobile-dock-link--chats svg {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
+    max-width: 100%;
+    max-height: 100%;
   }
 
   .pepito-landing-mobile-dock-link.is-active {
     background: rgba(255, 255, 255, 0.28);
     color: #fff;
-  }
-
-  .pepito-landing-mobile-dock-link--chats.is-active {
-    background: rgba(255, 255, 255, 0.36);
-    box-shadow:
-      0 8px 18px rgba(0, 0, 0, 0.26),
-      0 1px 0 rgba(255, 255, 255, 0.42) inset;
   }
 
   .pepito-landing-mobile-dock-link--finance:not(.is-active) {

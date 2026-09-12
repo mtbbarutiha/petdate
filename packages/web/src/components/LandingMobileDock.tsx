@@ -160,11 +160,11 @@ export function LandingMobileDock() {
         </span>
       );
     }
-    // Center گفتگو/هم‌بازی: ~1.35× siblings so ChatPaw reads as the primary dock action.
+    // Center گفتگو/هم‌بازی: slightly larger than siblings, still inside the same 44px slot.
     const chats = isCenterChats(item);
     return (
       <item.icon
-        size={chats ? 32 : 24}
+        size={chats ? 28 : 24}
         strokeWidth={active ? (chats ? 2.2 : 2.35) : chats ? 1.95 : 1.85}
         aria-hidden
       />
