@@ -110,6 +110,24 @@ export function WelcomePage() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  /* Adopt the HTML LCP <img> into slide 0 — same element, no render-delay LCP. */
+  useEffect(() => {
+    const img = document.getElementById('pd-boot-lcp');
+    const host = document.getElementById('pd-boot-lcp-host');
+    if (!img) return;
+    if (slide === 0 && host) {
+      img.classList.remove('is-parked');
+      if (img.parentElement !== host) host.appendChild(img);
+    } else {
+      img.classList.add('is-parked');
+      if (img.parentElement !== document.body) document.body.appendChild(img);
+    }
+    return () => {
+      img.classList.add('is-parked');
+      if (img.parentElement !== document.body) document.body.appendChild(img);
+    };
+  }, [slide]);
+
   /* Keep lucide / WelcomeBelowFold / magazine off the LCP critical path.
      Load only after the slot is near the viewport or the user scrolls. */
   useEffect(() => {
@@ -151,8 +169,6 @@ export function WelcomePage() {
         showCart
         deferDesktopNav
         logoSrc="/media/lcp/logo-160.webp"
-        logoSrcSet="/media/lcp/logo-160.webp 160w, /media/lcp/logo-390.webp 390w"
-        logoSizes="144px"
         logoWidth={160}
         logoHeight={47}
       />
@@ -169,10 +185,12 @@ export function WelcomePage() {
           {HERO_SLIDES.map((s, i) => (
             <div
               key={s.role}
+              id={i === 0 ? 'pd-boot-lcp-host' : undefined}
               className={`pepito-hero-slide${i === slide ? ' is-active' : ''}`}
               aria-hidden={i !== slide}
             >
-              {i === slide ? (
+              {/* Slide 0 reuses #pd-boot-lcp (outside #root) so React does not mint a new LCP node. */}
+              {i === slide && i !== 0 ? (
                 <picture>
                   <source type="image/webp" srcSet={s.srcSet || s.webp} sizes="100vw" />
                   <img
@@ -181,9 +199,8 @@ export function WelcomePage() {
                     alt={t(s.titleKey)}
                     width={1600}
                     height={900}
-                    decoding={i === 0 ? 'sync' : 'async'}
+                    decoding="async"
                     loading="eager"
-                    fetchPriority={i === 0 ? 'high' : 'auto'}
                   />
                 </picture>
               ) : null}

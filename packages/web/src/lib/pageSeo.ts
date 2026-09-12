@@ -742,8 +742,8 @@ const LCP_HERO_SRCSET =
 
 function setHomeLcpPreload(html: string, pathname: string): string {
   const p = normalizePath(pathname);
-  const existing = new RegExp(`\\s*<link[^>]*${LCP_HERO_MARK}[^>]*>`, 'i');
-  let out = html.replace(existing, '');
+  /* Strip every homepage-hero preload (marked or the static index.html copy). */
+  let out = html.replace(/\s*<link[^>]*hero-playmate-800\.webp[^>]*>/gi, '');
   if (p !== '/') return out;
   const tag = `    <link rel="preload" as="image" type="image/webp" href="${LCP_HERO_HREF}" imagesrcset="${LCP_HERO_SRCSET}" imagesizes="100vw" fetchpriority="high" ${LCP_HERO_MARK} />\n`;
   return out.replace('</head>', `${tag}  </head>`);

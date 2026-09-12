@@ -17,6 +17,7 @@ const main = readFileSync(join(webSrc, 'main.tsx'), 'utf8');
 const analytics = readFileSync(join(webSrc, 'lib/siteAnalytics.ts'), 'utf8');
 const appTsx = readFileSync(join(webSrc, 'App.tsx'), 'utf8');
 const welcome = readFileSync(join(webSrc, 'pages/WelcomePage.tsx'), 'utf8');
+const vetRoute = readFileSync(join(webSrc, 'pages/VetConsultRoute.tsx'), 'utf8');
 const below = readFileSync(join(webSrc, 'pages/WelcomeBelowFold.tsx'), 'utf8');
 const llms = readFileSync(join(webRoot, 'public/llms.txt'), 'utf8');
 const llmsFull = readFileSync(join(webRoot, 'public/llms-full.txt'), 'utf8');
@@ -49,7 +50,8 @@ assert.doesNotMatch(
 );
 assert.match(indexHtml, /pepito-hero-dot\{width:44px/, 'critical CSS reserves 44px hero dots');
 assert.match(indexHtml, /rel="preload"[\s\S]*hero-playmate-800\.webp/, 'LCP image is preload-discovered from HTML');
-assert.match(indexHtml, /id="root">[\s\S]*pepito-hero-media/, 'static hero shell is in #root for FCP');
+assert.match(indexHtml, /id="root">[\s\S]*pepito-hero-inner/, 'static hero copy shell is in #root for FCP');
+assert.match(indexHtml, /id="pd-boot-lcp"[\s\S]*id="root"/, 'LCP img precedes #root so React cannot replace it');
 assert.match(indexHtml, /rel="alternate" type="text\/plain" href="https:\/\/petdate\.ir\/llms\.txt"/, 'HTML advertises llms.txt');
 assert.doesNotMatch(indexHtml, /rel="preconnect" href="https:\/\/fonts/, 'no unused gstatic/googleapis preconnect');
 assert.doesNotMatch(
@@ -58,6 +60,10 @@ assert.doesNotMatch(
   'do not preload the Google Fonts CSS (unused-preload warning)'
 );
 assert.match(indexHtml, /web-perf-v24-lh-pass/, 'deploy marker bumped so SW/HTML cache misses');
+assert.match(indexHtml, /id="pd-boot-lcp"/, 'LCP img lives outside #root so React cannot replace it');
+assert.match(indexHtml, /data-pd-lcp="hero"/, 'static preload is marked so SEO inject does not duplicate it');
+const heroPreloads = indexHtml.match(/rel="preload"[\s\S]*?hero-playmate-800\.webp/g) || [];
+assert.equal(heroPreloads.length, 1, 'index.html ships exactly one LCP preload');
 assert.match(indexHtml, /\.pepito-faq-item,\s*\.pepito-help-card/, 'critical CSS covers FAQ/help cards');
 assert.match(indexHtml, /html\.theme-light \.pepito-faq-item/, 'critical CSS has light FAQ overrides');
 
@@ -81,6 +87,7 @@ assert.match(appTsx, /useAfterFirstInput/, 'analytics import waits for input or 
 assert.match(appTsx, /DeferredLandingDock/, 'mobile dock is not on the first-paint graph');
 assert.doesNotMatch(appTsx, /import \{[^}]*trackPageview/, 'index chunk must not statically import trackPageview');
 assert.doesNotMatch(appTsx, /import \{ LoginPage \}/, 'login is lazy so lucide stays off landing');
+assert.match(vetRoute, /const VetConsultLandingPage = lazy/, 'vet landing is lazy so lucide leaves /');
 
 assert.match(welcome, /role="region"/, 'hero carousel has an explicit role (aria-roledescription)');
 assert.doesNotMatch(welcome, /role="tablist"|role="tab"/, 'landing dots are not invalid tabs');
@@ -93,6 +100,9 @@ assert.doesNotMatch(welcome, /key=\{current\.role\}/, 'hero-inner must not remou
 assert.doesNotMatch(welcome, /from 'lucide-react'/, 'hero path does not parse lucide-react');
 assert.doesNotMatch(welcome, /magazineApi/, 'welcome critical path does not fetch magazine');
 assert.match(welcome, /logo-160\.webp/, 'mobile logo is the 160w asset');
+assert.doesNotMatch(welcome, /logo-390\.webp/, 'landing does not fetch the 390w logo on first paint');
+assert.match(welcome, /pd-boot-lcp-host/, 'slide 0 adopts the HTML LCP img');
+assert.match(welcome, /i !== 0/, 'slide 0 does not mint a second LCP <img>');
 assert.match(below, /magazineApi/, 'magazine fetch stays on the below-fold chunk');
 assert.match(below, /svcIndex === 0/, 'service carousel skips sync layout on mount');
 assert.match(below, /ResizeObserver/, 'carousel step is measured off the React commit path');

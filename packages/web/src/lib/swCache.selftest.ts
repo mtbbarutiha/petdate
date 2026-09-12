@@ -19,6 +19,8 @@ assert.match(sw, /petdate-web-v24-lh-pass/, 'swRegister active cacheId is v24');
 assert.match(vite, /cacheId:\s*'petdate-web-v24-lh-pass'/, 'vite PWA cacheId is v24');
 assert.doesNotMatch(sw, /petdate-web-v23-hero-compact/, 'old v23-hero-compact cacheId is retired');
 assert.doesNotMatch(sw, /petdate-sw-20260912-hero-compact-v23/, 'old v23-hero-compact bust key is retired');
+assert.doesNotMatch(sw, /petdate-web-v23-lh-pass/, 'old v23 cacheId is retired');
+assert.doesNotMatch(sw, /petdate-sw-20260912-lh-pass-v23/, 'old v23 bust key is retired');
 assert.doesNotMatch(sw, /petdate-web-v22-cls-agentic/, 'old v22 cacheId is retired');
 assert.doesNotMatch(sw, /petdate-sw-20260912-cls-agentic-v22/, 'old v22 bust key is retired');
 assert.doesNotMatch(sw, /petdate-web-v21-faq-dark/, 'old v21 cacheId is retired');

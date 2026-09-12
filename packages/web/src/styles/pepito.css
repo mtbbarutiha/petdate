@@ -502,6 +502,21 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   transform: scale(1.04);
   animation: pepito-ken 14s ease-in-out infinite alternate;
 }
+/* HTML LCP node lives outside #root until Welcome adopts it into slide 0. */
+body > #pd-boot-lcp {
+  position: fixed;
+  top: var(--pepito-nav-h);
+  left: 0;
+  width: 100%;
+  height: calc(100svh - var(--pepito-nav-h));
+  z-index: 0;
+  pointer-events: none;
+  margin: 0;
+}
+body > #pd-boot-lcp.is-parked,
+#pd-boot-lcp.is-parked {
+  display: none;
+}
 .pepito-hero-slide.is-active .pepito-hero-media {
   animation: pepito-ken 14s ease-in-out infinite alternate;
 }

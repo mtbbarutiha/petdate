@@ -56,6 +56,16 @@ assert.doesNotMatch(
 );
 assert.match(app, /<LegacyAdoptionHashRedirect/, 'App mounts /#pets → /adoption redirect');
 assert.match(route, /VetConsultLandingPage/, 'logged-out vet-consult uses marketing landing');
+assert.match(
+  route,
+  /const VetConsultLandingPage = lazy/,
+  'vet marketing landing is lazy so lucide stays off the homepage graph'
+);
+assert.doesNotMatch(
+  route,
+  /import \{ VetConsultLandingPage \}/,
+  'VetConsultLandingPage must not be a static import (lucide + footer)'
+);
 assert.match(route, /VetConsultAppRoute/, 'logged-in vet-consult keeps app shell (lazy Layout)');
 assert.doesNotMatch(route, /import \{ Layout \}/, 'guest vet route must not statically import Layout');
 assert.match(route, /hasRole/, 'app shell requires a role — guests and incomplete sessions stay on landing');

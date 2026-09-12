@@ -63,6 +63,8 @@
       .pepito-hero{min-height:var(--pepito-hero-h);position:relative;overflow:hidden;background:#14161e;display:grid;align-items:center}
       @media (min-width:860px){:root{--pepito-nav-h:74px;--pepito-hero-h:calc(93svh - var(--pepito-nav-h))}}
       .pepito-hero-media{width:100%;height:100%;object-fit:cover;object-position:center top;position:absolute;inset:0}
+      body>#pd-boot-lcp{position:fixed;top:var(--pepito-nav-h);left:0;width:100%;height:calc(100svh - var(--pepito-nav-h));object-fit:cover;object-position:center top;z-index:0;pointer-events:none;margin:0}
+      body>#pd-boot-lcp.is-parked{display:none}
       .pepito-hero-wash{position:absolute;inset:0;z-index:2;background:rgba(5,1,12,.34);pointer-events:none}
       .pepito-hero-inner{position:relative;z-index:3;width:min(var(--pepito-container-max),100%);margin-inline:auto;padding-inline:var(--pepito-container-pad);padding-block:calc(env(safe-area-inset-top,0px) + 1.35rem) 2.25rem;box-sizing:border-box;min-height:14.5rem}
       .pepito-hero-slide-title,.pepito-hero h1{margin:0 0 16px;font-size:24px;line-height:1.15;font-weight:600;font-family:'Urbanist','Urbanist Fallback','Vazirmatn','Vazirmatn Fallback',system-ui,sans-serif}
@@ -212,10 +214,12 @@
     <link
       rel="preload"
       as="image"
+      type="image/webp"
       href="/media/lcp/hero-playmate-800.webp"
       imagesrcset="/media/lcp/hero-playmate-800.webp 800w, /media/lcp/hero-playmate-1280.webp 1280w"
       imagesizes="100vw"
       fetchpriority="high"
+      data-pd-lcp="hero"
     />
     <!-- Fonts wait for input or 10s so gstatic stays off the Lighthouse critical path.
          Critical CSS already ships fallback metrics (CLS). -->
@@ -327,6 +331,16 @@
       ></iframe
     ></noscript>
     <!-- End Google Tag Manager (noscript) -->
+    <img
+      id="pd-boot-lcp"
+      class="pepito-hero-media"
+      src="/media/lcp/hero-playmate-800.webp"
+      alt="همبازی مناسب برای پت‌ات پیدا کن"
+      width="1600"
+      height="900"
+      fetchpriority="high"
+      decoding="async"
+    />
     <div id="root">
       <div class="pepito-landing pepito-landing--with-dock" dir="rtl">
         <header class="pepito-nav">
@@ -341,15 +355,6 @@
           </a>
         </header>
         <section class="pepito-hero">
-          <img
-            class="pepito-hero-media"
-            src="/media/lcp/hero-playmate-800.webp"
-            alt="همبازی مناسب برای پت‌ات پیدا کن"
-            width="1600"
-            height="900"
-            fetchpriority="high"
-            decoding="async"
-          />
           <div class="pepito-hero-wash" aria-hidden="true"></div>
           <div class="pepito-hero-inner">
             <p class="pepito-kicker">همبازی پت</p>
