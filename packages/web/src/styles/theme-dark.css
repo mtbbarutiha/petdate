@@ -868,24 +868,6 @@ html[data-theme='dark'] .pepito-nav.is-scrolled {
   background: color-mix(in srgb, var(--pepito-white) 96%, transparent);
   box-shadow: var(--pd-shadow);
 }
-html[data-theme='dark'] .pepito-nav-overflow-btn {
-  background: none;
-  border: 0;
-  color: var(--pepito-dark);
-}
-html[data-theme='dark'] .pepito-nav-overflow-btn:hover,
-html[data-theme='dark'] .pepito-nav-overflow-btn[aria-expanded='true'] {
-  background: none;
-  color: var(--pepito-base);
-}
-html[data-theme='dark'] .pepito-nav-overflow-menu {
-  background: var(--pepito-white);
-  border-color: var(--pd-border, rgba(184, 169, 232, 0.2));
-  box-shadow: var(--pd-shadow);
-}
-html[data-theme='dark'] .pepito-nav-overflow-item:hover {
-  background: color-mix(in srgb, var(--pepito-lilac) 28%, transparent);
-}
 
 html[data-theme='dark'] .pepito-section--lilac {
   background: linear-gradient(180deg, var(--pepito-white), var(--pepito-lilac));
