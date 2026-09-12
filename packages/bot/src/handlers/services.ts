@@ -555,13 +555,23 @@ export async function handleVetConsultDecision(
   try {
     const patient = await getUserById(updated.patientUserId);
     if (patient?.telegramId) {
-      await ctx.api.sendMessage(
-        patient.telegramId,
-        [
-          'دامپزشک این درخواست را نپذیرفت.',
-          'می‌تونی دوباره از «ارتباط سریع با پزشک» درخواست بدی.',
-        ].join('\n')
-      );
+      const kind = updated.serviceKind ?? 'vet';
+      const rejectLines =
+        kind === 'seeker_advice'
+          ? [
+              'صاحب پت این درخواست راهنمایی را نپذیرفت.',
+              'می‌تونی دوباره از «مشورت با صاحبین» درخواست بدی.',
+            ]
+          : kind === 'trainer'
+            ? [
+                'مربی این درخواست را نپذیرفت.',
+                'می‌تونی دوباره از منوی مربی درخواست بدی.',
+              ]
+            : [
+                'دامپزشک این درخواست را نپذیرفت.',
+                'می‌تونی دوباره از «ارتباط سریع با پزشک» درخواست بدی.',
+              ];
+      await ctx.api.sendMessage(patient.telegramId, rejectLines.join('\n'));
     }
   } catch (err) {
     console.warn('notify patient of consult decision failed:', err);

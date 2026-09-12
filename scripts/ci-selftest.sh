@@ -187,6 +187,7 @@ run src/services/nearby-cards.selftest.ts
 run src/services/vet-online.selftest.ts
 run src/services/marketplace-roles.selftest.ts
 run src/services/seeker-advice-early-refund.selftest.ts
+run src/services/seeker-advice-owner-notify.selftest.ts
 run src/services/chat-upload-store.selftest.ts
 run src/services/chat-inbox-gift.selftest.ts
 run src/services/image-normalize.selftest.ts

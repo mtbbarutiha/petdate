@@ -175,15 +175,19 @@ export function vetToInbox(
   const peerTitle =
     mode === 'as_vet'
       ? c.patientName?.trim() ||
-        (c.petName
-          ? `صاحب پت · ${c.petName}`
-          : `صاحب پت #${c.patientUserId}`)
+        (serviceKind === 'seeker_advice'
+          ? `متقاضی راهنمایی #${c.patientUserId}`
+          : c.petName
+            ? `صاحب پت · ${c.petName}`
+            : `صاحب پت #${c.patientUserId}`)
       : c.vetName?.trim() ||
         (serviceKind === 'trainer'
           ? `مربی #${c.vetUserId}`
           : serviceKind === 'sitter'
             ? `پرستار #${c.vetUserId}`
-            : `پزشک #${c.vetUserId}`);
+            : serviceKind === 'seeker_advice'
+              ? `صاحب پت #${c.vetUserId}`
+              : `پزشک #${c.vetUserId}`);
 
   const preview = pending
     ? mode === 'as_vet'
@@ -191,18 +195,24 @@ export function vetToInbox(
         ? 'درخواست هماهنگی آموزش'
         : serviceKind === 'sitter'
           ? 'درخواست پرستار پت'
-          : 'درخواست مشاوره جدید'
+          : serviceKind === 'seeker_advice'
+            ? 'یک نفر راهنمایی خرید و نگهداری پت می‌خواد'
+            : 'درخواست مشاوره جدید'
       : serviceKind === 'trainer'
         ? 'در انتظار پذیرش مربی'
         : serviceKind === 'sitter'
           ? 'در انتظار پذیرش پرستار'
-          : 'در انتظار پذیرش دامپزشک'
+          : serviceKind === 'seeker_advice'
+            ? 'در انتظار پذیرش صاحب پت'
+            : 'در انتظار پذیرش دامپزشک'
     : ended
       ? serviceKind === 'trainer'
         ? 'هماهنگی پایان یافته'
         : serviceKind === 'sitter'
           ? 'ارتباط پایان یافته'
-          : 'مشاوره پایان یافته'
+          : serviceKind === 'seeker_advice'
+            ? 'راهنمایی پایان یافته'
+            : 'مشاوره پایان یافته'
       : c.petName
         ? serviceKind === 'trainer'
           ? `آموزش آنلاین · ${c.petName}`
@@ -213,13 +223,15 @@ export function vetToInbox(
           ? 'آموزش آنلاین'
           : serviceKind === 'sitter'
             ? 'ارتباط پرستار پت'
-            : 'مشاوره دامپزشک';
+            : serviceKind === 'seeker_advice'
+              ? 'راهنمایی خرید و نگهداری پت'
+              : 'مشاوره دامپزشک';
 
   const patientPanel =
     serviceKind === 'trainer'
       ? '/trainer-consult'
-      : serviceKind === 'sitter'
-        ? '/home'
+      : serviceKind === 'sitter' || serviceKind === 'seeker_advice'
+        ? '/chats'
         : '/vet-consult';
 
   return {
