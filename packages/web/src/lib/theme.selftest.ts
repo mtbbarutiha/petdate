@@ -230,4 +230,67 @@ assert.match(adminLayout, /ThemeToggle/, 'admin topbar exposes toggle');
 const adminLogin = readFileSync(join(root, 'src/admin/pages/AdminLoginPage.tsx'), 'utf8');
 assert.match(adminLogin, /ThemeToggle/, 'admin login exposes toggle');
 
+/* Chip / metric wells — frozen white fills + remapped pale ink = unreadable dark pills */
+const adminCss = readFileSync(join(root, 'src/styles/admin.css'), 'utf8');
+assert.match(adminCss, /--admin-chip-bg:/, 'admin chip fill token present');
+assert.match(adminCss, /--admin-chip-well:/, 'admin chip well token present');
+assert.match(adminCss, /--admin-chip-label:/, 'admin chip label token present');
+assert.match(
+  darkCss,
+  /html\[data-theme=['"]dark['"]\][\s\S]{0,80}\.admin-app[\s\S]{0,900}--admin-chip-bg:/,
+  'dark remaps --admin-chip-bg',
+);
+assert.match(
+  darkCss,
+  /html\[data-theme=['"]dark['"]\][\s\S]{0,80}\.admin-app[\s\S]{0,900}--admin-chip-well:/,
+  'dark remaps --admin-chip-well',
+);
+assert.match(
+  darkCss,
+  /html\[data-theme=['"]dark['"]\][\s\S]{0,80}\.admin-app[\s\S]{0,900}--admin-chip-label:/,
+  'dark remaps --admin-chip-label',
+);
+assert.doesNotMatch(
+  darkCss,
+  /html\[data-theme=['"]dark['"]\][\s\S]{0,80}\.admin-app[\s\S]{0,900}--admin-chip-bg:\s*(#f[0-9a-fA-F]{5}|rgba\(\s*255)/,
+  'dark --admin-chip-bg must not stay a light wash',
+);
+assert.match(darkCss, /--pd-chip-bg:\s*var\(--pd-surface-2\)/, 'public chip token remapped');
+assert.match(pepitoCss, /\.pepito-home-action[\s\S]{0,280}var\(--pd-chip-bg/, 'home action uses --pd-chip-bg');
+assert.match(pepitoCss, /\.pd-shop-cart-link[\s\S]{0,280}var\(--pd-chip-bg/, 'shop cart chip uses --pd-chip-bg');
+
+const chipTokenSelectors: Array<{ name: string; re: RegExp }> = [
+  { name: '.sales-commission-side div', re: /\.sales-commission-side div\s*\{[^}]*var\(--admin-chip-bg\)/ },
+  { name: '.crm-report-counters / .crm-report-stat-tile', re: /\.crm-report-stat-tile[\s\S]{0,220}var\(--admin-chip-bg\)/ },
+  { name: '.admin-stat-icon', re: /\.admin-stat--slate \.admin-stat-icon[\s\S]{0,80}var\(--admin-chip-bg\)/ },
+  { name: '.admin-dash-kpi-icon', re: /\.admin-dash-kpi-icon[\s\S]{0,200}var\(--admin-chip-bg\)/ },
+  { name: '.tk-tag--muted', re: /\.tk-tag--muted[\s\S]{0,160}var\(--admin-chip-(well|bg)\)/ },
+  { name: '.wdg-catalog', re: /\.wdg-catalog\s*\{[\s\S]{0,220}var\(--admin-chip-well\)/ },
+  { name: '.wdg-drill-detail', re: /\.wdg-drill-detail\s*\{[\s\S]{0,280}var\(--admin-chip-well\)/ },
+  { name: '.admin-widget-picker-group li', re: /\.admin-widget-picker-group li\s*\{[\s\S]{0,280}var\(--admin-chip-well\)/ },
+  { name: '.sales-pipe-col', re: /\.sales-pipe-col\s*\{[\s\S]{0,400}var\(--admin-chip-well\)/ },
+  { name: '.admin-pill--slate', re: /\.admin-pill--slate\s*\{[\s\S]{0,160}var\(--admin-chip-well\)/ },
+];
+for (const { name, re } of chipTokenSelectors) {
+  assert.match(adminCss, re, `${name} uses chip theme tokens`);
+}
+
+assert.match(darkCss, /\.sales-commission-side div/, 'dark remaps sales commission chips');
+assert.doesNotMatch(
+  adminCss,
+  /\.sales-commission-side div\s*\{[^}]*rgba\(\s*255\s*,\s*255\s*,\s*255/,
+  'commission chips must not hardcode white wash',
+);
+
+const leftoverLightFills = [
+  ...adminCss.matchAll(
+    /\.(sales-commission-side|crm-report-counters|crm-report-stat-tile|admin-stat-icon|admin-dash-kpi-icon|tk-tag--muted|wdg-catalog|wdg-drill-detail|admin-chip|admin-pill--slate)[^{]*\{[^}]*background:\s*(rgba\(\s*255\s*,\s*255\s*,\s*255|#f7f8fb|#fafbfc|#f4f6f8)/gi,
+  ),
+];
+assert.equal(
+  leftoverLightFills.length,
+  0,
+  `known chip/stat selectors must not hardcode light fills: ${leftoverLightFills.map((m) => m[0].slice(0, 80)).join(' | ')}`,
+);
+
 console.log('theme.selftest: ok');

@@ -3523,7 +3523,7 @@ button.chip.is-on {
   border-radius: 18px;
   text-decoration: none;
   color: inherit;
-  background: rgba(255, 255, 255, 0.72);
+  background: var(--pd-chip-bg, rgba(255, 255, 255, 0.72));
   border: 1px solid rgba(92, 77, 145, 0.1);
   transition: transform 0.25s ease, border-color 0.25s ease, background 0.25s ease;
   animation: pepito-flow-rise 0.55s ease both;
@@ -8006,7 +8006,7 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   height: 42px;
   border-radius: 50%;
   color: var(--pepito-dark);
-  background: rgba(255, 255, 255, 0.72);
+  background: var(--pd-chip-bg, rgba(255, 255, 255, 0.72));
   border: 1px solid rgba(92, 77, 145, 0.14);
   text-decoration: none;
   transition: background 0.2s ease, color 0.2s ease;

@@ -32,6 +32,10 @@
   --admin-mint: #15cca0;
   --admin-pink: #db89ca;
   --admin-chart-max-h: 280px;
+  /* Nested metric/chip wells — remapped in dark so muted labels stay readable */
+  --admin-chip-bg: rgba(255, 255, 255, 0.78);
+  --admin-chip-well: #f7f8fb;
+  --admin-chip-label: var(--admin-muted);
 
   --primary: var(--admin-accent);
   --primary-soft: var(--admin-accent-soft);
@@ -846,7 +850,7 @@
 }
 .admin-app .admin-stat-label {
   font-size: 0.78rem;
-  color: var(--admin-muted);
+  color: var(--admin-chip-label);
 }
 .admin-app .admin-stat--violet { background: var(--admin-promo-purple); }
 .admin-app .admin-stat--mint { background: var(--admin-promo-mint); }
@@ -858,7 +862,7 @@
 .admin-app .admin-stat--orange .admin-stat-icon,
 .admin-app .admin-stat--sky .admin-stat-icon,
 .admin-app .admin-stat--slate .admin-stat-icon {
-  background: rgba(255,255,255,0.75);
+  background: var(--admin-chip-bg);
   color: var(--admin-accent);
 }
 
@@ -2050,7 +2054,7 @@
   overflow-y: auto;
   overscroll-behavior: contain;
   border-inline-end: 1px solid var(--admin-border);
-  background: #fafbfc;
+  background: var(--admin-chip-well);
 }
 
 .admin-app .admin-mail-item {
@@ -3344,8 +3348,8 @@ body:has(.admin-app) {
   height: 1.4rem;
   padding: 0 6px;
   border-radius: 999px;
-  background: #eceff1;
-  color: #455a64;
+  background: var(--admin-chip-well);
+  color: var(--admin-chip-label);
   font-size: 11px;
   font-weight: 700;
   display: inline-flex;
@@ -3416,14 +3420,19 @@ body:has(.admin-app) {
   gap: 10px;
 }
 .admin-app .sales-commission-side div {
-  background: rgba(255,255,255,0.7);
+  background: var(--admin-chip-bg);
   border: 1px solid var(--admin-border);
   border-radius: 12px;
   padding: 10px 12px;
   display: grid;
   gap: 4px;
+  color: var(--admin-ink);
 }
-.admin-app .sales-commission-side b { font-size: 1.1rem; }
+.admin-app .sales-commission-side span,
+.admin-app .sales-commission-side .admin-muted {
+  color: var(--admin-chip-label);
+}
+.admin-app .sales-commission-side b { font-size: 1.1rem; color: var(--admin-ink); }
 .admin-app .sales-danger { color: #c62828; }
 .admin-app .sales-next-actions {
   display: grid;
@@ -3843,9 +3852,9 @@ body:has(.admin-app) {
   padding: 10px 12px;
   display: grid;
   gap: 4px;
-  background: rgba(255,255,255,0.8);
+  background: var(--admin-chip-bg);
 }
-.admin-app .crm-report-counters span { font-size: 11px; color: var(--admin-muted); }
+.admin-app .crm-report-counters span { font-size: 11px; color: var(--admin-chip-label); }
 .admin-app .crm-report-counters b { font-size: 1.1rem; }
 .admin-app .crm-report-mini-progress {
   display: grid;
@@ -4034,7 +4043,7 @@ body:has(.admin-app) {
 .admin-app .crm-sms-badges { display: flex; flex-wrap: wrap; gap: 6px; }
 .admin-app .crm-sms-badge {
   display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 999px;
-  font-size: 11px; font-weight: 600; border: 1px solid var(--admin-border); background: #f4f6f8; color: var(--admin-ink);
+  font-size: 11px; font-weight: 600; border: 1px solid var(--admin-border); background: var(--admin-chip-well); color: var(--admin-ink);
 }
 .admin-app .crm-sms-badge.is-dynamic { background: #e8f5ff; color: #1565c0; border-color: #bbdefb; }
 .admin-app .crm-sms-badge.is-static { background: #f3e8ff; color: #6a1b9a; border-color: #e1bee7; }
@@ -4057,7 +4066,7 @@ body:has(.admin-app) {
 }
 .admin-app .crm-sms-preview strong { display: block; margin-bottom: 6px; font-size: 13px; }
 .admin-app .crm-sms-preview p { margin: 0; font-size: 13.5px; line-height: 1.55; white-space: pre-wrap; }
-.admin-app .crm-sms-preview.is-empty { background: #fafbfc; }
+.admin-app .crm-sms-preview.is-empty { background: var(--admin-chip-well); }
 .admin-app .crm-sms-send-bar { display: flex; flex-wrap: wrap; gap: 8px; justify-content: space-between; margin-bottom: 10px; }
 .admin-app .crm-sms-product-pill {
   display: inline-flex; padding: 3px 8px; border-radius: 999px; font-size: 11px; font-weight: 600;
@@ -4253,7 +4262,7 @@ body:has(.admin-app) {
 }
 .admin-app .iran-heat-rank-unknown {
   border-color: #d5dde8;
-  background: #f7f9fb;
+  background: var(--admin-chip-well);
   color: var(--admin-muted, #64748b);
 }
 .admin-app .iran-heat-rank-unknown .iran-heat-rank-row {
@@ -4409,14 +4418,14 @@ body:has(.admin-app) {
   border: 1px solid transparent; background: transparent; border-radius: 10px;
   padding: 8px 10px; color: var(--admin-muted); cursor: pointer; font: inherit; font-size: 13px;
 }
-.admin-app .tk-nav:hover { background: #f6f7fb; color: var(--admin-ink); }
+.admin-app .tk-nav:hover { background: var(--admin-chip-well); color: var(--admin-ink); }
 .admin-app .tk-nav.is-on {
   background: #f0faf7; color: var(--admin-ink); border-color: #cdeee4;
   box-shadow: inset -3px 0 0 var(--admin-mint, #15cca0);
 }
 .admin-app .tk-cnt {
-  margin-inline-start: auto; background: #eef1f6; border-radius: 999px;
-  padding: 1px 7px; font-size: 11px; color: var(--admin-muted);
+  margin-inline-start: auto; background: var(--admin-chip-well); border-radius: 999px;
+  padding: 1px 7px; font-size: 11px; color: var(--admin-chip-label);
 }
 .admin-app .tk-cnt.is-hot { background: #fee2e2; color: #b91c1c; }
 .admin-app .tk-new { width: 100%; justify-content: center; margin-top: 10px; }
@@ -4446,7 +4455,7 @@ body:has(.admin-app) {
 .admin-app .tk-tag--warn { color: #c47a00; border-color: #f3d9a6; background: #fff7e8; }
 .admin-app .tk-tag--error { color: #c62828; border-color: #f3c0c0; background: #fdecec; }
 .admin-app .tk-tag--info { color: #0369a1; border-color: #b6daf3; background: #eaf5fd; }
-.admin-app .tk-tag--muted { color: var(--admin-muted); border-color: var(--admin-border); background: #f7f8fb; }
+.admin-app .tk-tag--muted { color: var(--admin-chip-label); border-color: var(--admin-border); background: var(--admin-chip-well); }
 .admin-app .tk-filters {
   display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 12px;
 }
@@ -4465,7 +4474,7 @@ body:has(.admin-app) {
   display: grid; grid-template-columns: repeat(6, minmax(180px, 1fr)); gap: 10px; overflow-x: auto;
 }
 .admin-app .tk-kcol {
-  background: #f7f8fb; border: 1px solid var(--admin-border); border-radius: 12px; padding: 9px; min-height: 140px;
+  background: var(--admin-chip-well); border: 1px solid var(--admin-border); border-radius: 12px; padding: 9px; min-height: 140px;
 }
 .admin-app .tk-kcol h4 {
   font-size: 11.5px; color: var(--admin-muted); margin: 2px 4px 8px; display: flex; justify-content: space-between;
@@ -4493,7 +4502,7 @@ body:has(.admin-app) {
 }
 .admin-app .tk-msg--public { background: #eef7fd; border-color: #c5e2f5; }
 .admin-app .tk-msg--internal { background: #fff8eb; border-color: #f0d9a8; }
-.admin-app .tk-msg--system { background: #f7f8fb; }
+.admin-app .tk-msg--system { background: var(--admin-chip-well); }
 .admin-app .tk-msg-h {
   display: flex; justify-content: space-between; gap: 8px; margin-bottom: 4px;
   font-size: 11px; color: var(--admin-muted);
@@ -4509,7 +4518,7 @@ body:has(.admin-app) {
 .admin-app .tk-tax-row b { display: block; font-size: 13px; }
 .admin-app .tk-matches { display: grid; gap: 6px; margin-bottom: 10px; }
 .admin-app .tk-opt {
-  border: 1px solid var(--admin-border); background: #f7f8fb; border-radius: 9px; padding: 8px 10px;
+  border: 1px solid var(--admin-border); background: var(--admin-chip-well); border-radius: 9px; padding: 8px 10px;
   text-align: right; cursor: pointer; font: inherit; font-size: 12.5px;
 }
 .admin-app .tk-opt:hover { border-color: #15cca0; background: #e8faf3; }
@@ -4853,7 +4862,7 @@ body:has(.admin-app) {
   padding: 8px 10px;
   border: 1px solid var(--admin-border);
   border-radius: 9px;
-  background: #f7f8fb;
+  background: var(--admin-chip-well);
 }
 .admin-app .admin-widget-picker-group li strong {
   display: block;
@@ -4916,7 +4925,7 @@ body:has(.admin-app) {
   padding: 10px;
   border: 1px solid var(--admin-border);
   border-radius: 12px;
-  background: #f7f8fb;
+  background: var(--admin-chip-well);
 }
 .admin-app .wdg-catalog-item {
   display: grid;
@@ -5152,7 +5161,7 @@ body:has(.admin-app) {
   font-size: 12px;
   padding: 6px 8px;
   border-radius: 8px;
-  background: #f7f8fb;
+  background: var(--admin-chip-well);
   border: 1px solid var(--admin-border);
 }
 .admin-app .wdg-empty { padding: 16px 4px; }
@@ -5280,7 +5289,7 @@ body:has(.admin-app) {
   border-color: color-mix(in srgb, var(--admin-mint) 45%, var(--admin-border));
 }
 .admin-app .wdg-cal-day.is-out {
-  background: #f7f8fb;
+  background: var(--admin-chip-well);
   opacity: 0.55;
 }
 .admin-app .wdg-cal-day.is-today {
@@ -5397,7 +5406,7 @@ body:has(.admin-app) {
   scroll-snap-align: start;
   display: flex;
   flex-direction: column;
-  background: #f7f8fb;
+  background: var(--admin-chip-well);
   border: 1px solid var(--admin-border);
   border-radius: 14px;
   min-height: min(62vh, 640px);
@@ -5410,7 +5419,7 @@ body:has(.admin-app) {
   top: 0;
   z-index: 2;
   padding: 12px 12px 10px;
-  background: linear-gradient(180deg, #fff 0%, #f7f8fb 100%);
+  background: linear-gradient(180deg, var(--admin-surface) 0%, var(--admin-chip-well) 100%);
   border-bottom: 1px solid var(--admin-border);
   border-block-start: 3px solid var(--admin-accent);
 }
@@ -5571,7 +5580,7 @@ body:has(.admin-app) {
   padding: 28px 12px;
   border: 1px dashed #d5d2e6;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.55);
+  background: var(--admin-chip-bg);
   min-height: 96px;
 }
 .admin-app .sales-pipe-empty p {
@@ -5649,7 +5658,7 @@ body:has(.admin-app) {
 .admin-app .crm-reason-node--l1 {
   border: 1px solid var(--admin-border);
   border-radius: 12px;
-  background: #fbfcfe;
+  background: var(--admin-chip-well);
   padding: 8px 10px;
 }
 .admin-app .crm-reason-node--l2 {
@@ -5723,7 +5732,7 @@ body:has(.admin-app) {
   justify-content: space-between;
   padding: 8px 10px;
   border-radius: 10px;
-  background: #f7f8fb;
+  background: var(--admin-chip-well);
   border: 1px solid var(--admin-border);
   font-size: 13px;
 }
@@ -5811,7 +5820,7 @@ body:has(.admin-app) {
   display: grid;
   place-items: center;
   flex-shrink: 0;
-  background: rgba(255, 255, 255, 0.72);
+  background: var(--admin-chip-bg);
   color: var(--admin-accent);
 }
 
@@ -5836,7 +5845,7 @@ body:has(.admin-app) {
 .admin-app .admin-dash-kpi-label {
   font-size: 0.72rem;
   font-weight: 600;
-  color: var(--admin-muted);
+  color: var(--admin-chip-label);
 }
 
 .admin-app .admin-dash-kpi-hint {
@@ -6224,7 +6233,7 @@ body:has(.admin-app) {
 .admin-app .admin-motion-hprog-track {
   height: 10px;
   border-radius: 999px;
-  background: #eef2f7;
+  background: var(--admin-chip-well);
   overflow: hidden;
 }
 .admin-app .admin-motion-hprog-fill {
@@ -6354,9 +6363,9 @@ body:has(.admin-app) {
   color: #1d5bbf;
 }
 .admin-app .admin-pill--slate {
-  background: #f2f4f7;
-  border-color: #d0d5dd;
-  color: #475467;
+  background: var(--admin-chip-well);
+  border-color: var(--admin-border);
+  color: var(--admin-chip-label);
 }
 
 /* ── Pet-purchase request detail modal ── */

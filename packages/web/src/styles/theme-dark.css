@@ -9,6 +9,7 @@
   --pd-surface: var(--pepito-white, #ffffff);
   --pd-surface-2: #faf9fc;
   --pd-surface-muted: #f1f0f6;
+  --pd-chip-bg: rgba(255, 255, 255, 0.78);
   --pd-border: var(--pepito-lilac, #e4e2f3);
   --pd-border-strong: #d4d0e8;
   --pd-ink: var(--pepito-dark, #19063d);
@@ -87,6 +88,7 @@ html[data-theme='dark'] {
   --pd-surface: var(--pepito-white);
   --pd-surface-2: #2c3040;
   --pd-surface-muted: #1e2130;
+  --pd-chip-bg: var(--pd-surface-2);
   --pd-border: #3a3f55;
   --pd-border-strong: #4a5066;
   --pd-ink: var(--pepito-dark);
@@ -241,6 +243,9 @@ html[data-theme='dark'] .admin-app {
   --admin-sky: #3bb8f5;
   --admin-mint: #2dd4b0;
   --admin-pink: #e5a8d8;
+  --admin-chip-bg: #2a2e3e;
+  --admin-chip-well: #1e2230;
+  --admin-chip-label: #c4bfd4;
 
   --primary: var(--admin-accent);
   --primary-soft: var(--admin-accent-soft);
@@ -876,7 +881,7 @@ html[data-theme='dark'] .admin-app .admin-dash-kpi-value {
 
 html[data-theme='dark'] .admin-app .admin-dash-kpi-label,
 html[data-theme='dark'] .admin-app .admin-dash-kpi-hint {
-  color: var(--admin-muted);
+  color: var(--admin-chip-label);
 }
 
 html[data-theme='dark'] .admin-app .admin-dash-kpi--slate .admin-dash-kpi-icon {
@@ -1061,8 +1066,8 @@ html[data-theme='dark'] .admin-app .tk-nav.is-on {
   box-shadow: inset -3px 0 0 var(--admin-mint);
 }
 html[data-theme='dark'] .admin-app .tk-cnt {
-  background: #343849;
-  color: #c4bfd4;
+  background: var(--admin-chip-well);
+  color: var(--admin-chip-label);
 }
 html[data-theme='dark'] .admin-app .tk-cnt.is-hot {
   background: #4a2030;
@@ -1109,15 +1114,18 @@ html[data-theme='dark'] .admin-app .admin-card.tk-filters {
   border-color: var(--admin-border);
 }
 
-/* 6) CRM report counter / KPI tiles */
+/* 6) CRM report counter / KPI tiles + sales commission side chips */
 html[data-theme='dark'] .admin-app .crm-report-counters div,
-html[data-theme='dark'] .admin-app .crm-report-stat-tile {
-  background: var(--admin-surface);
+html[data-theme='dark'] .admin-app .crm-report-stat-tile,
+html[data-theme='dark'] .admin-app .sales-commission-side div {
+  background: var(--admin-chip-bg);
   border-color: var(--admin-border);
   color: var(--admin-ink);
 }
-html[data-theme='dark'] .admin-app .crm-report-counters span {
-  color: #c4bfd4;
+html[data-theme='dark'] .admin-app .crm-report-counters span,
+html[data-theme='dark'] .admin-app .sales-commission-side span,
+html[data-theme='dark'] .admin-app .sales-commission-side .admin-muted {
+  color: var(--admin-chip-label);
 }
 html[data-theme='dark'] .admin-app .crm-report-counters b {
   color: var(--admin-ink);
@@ -1139,7 +1147,26 @@ html[data-theme='dark'] .admin-app .admin-stat-value {
   color: var(--admin-ink);
 }
 html[data-theme='dark'] .admin-app .admin-stat-label {
-  color: #c4bfd4;
+  color: var(--admin-chip-label);
+}
+
+/* Neutral chip / well leftovers — inherit --admin-chip-* tokens */
+html[data-theme='dark'] .admin-app .admin-widget-picker-group li,
+html[data-theme='dark'] .admin-app .wdg-catalog,
+html[data-theme='dark'] .admin-app .wdg-drill-detail,
+html[data-theme='dark'] .admin-app .crm-reason-deleted-list li,
+html[data-theme='dark'] .admin-app .wdg-cal-day.is-out,
+html[data-theme='dark'] .admin-app .crm-sms-badge:not([class*='is-']),
+html[data-theme='dark'] .admin-app .crm-sms-preview.is-empty,
+html[data-theme='dark'] .admin-app .admin-pill--slate,
+html[data-theme='dark'] .admin-app .admin-motion-hprog-track,
+html[data-theme='dark'] .admin-app .tk-tag--muted,
+html[data-theme='dark'] .admin-app .tk-msg--system {
+  background: var(--admin-chip-well);
+  color: var(--admin-chip-label);
+}
+html[data-theme='dark'] .admin-app .admin-pill--slate {
+  border-color: var(--admin-border);
 }
 
 /* 7) CRM reason/taxonomy white panels */
@@ -1282,8 +1309,9 @@ html[data-theme='dark'] .admin-app .iran-heat-tooltip-meter {
 }
 
 /* 11 + 15) Site header circular chips — dark fill + light icons */
-html[data-theme='dark'] .pepito-nav-cart-link {
-  background: color-mix(in srgb, var(--pepito-white) 92%, transparent);
+html[data-theme='dark'] .pepito-nav-cart-link,
+html[data-theme='dark'] .pd-shop-cart-link {
+  background: var(--pd-chip-bg);
   border-color: color-mix(in srgb, var(--pepito-base) 32%, transparent);
   color: var(--pepito-dark);
 }
@@ -1689,7 +1717,7 @@ html[data-theme='dark'] .pepito-app-shell:has(.pepito-support-chat) {
 
 /* Home hub — action cards used rgba(255,255,255,…) */
 html[data-theme='dark'] .pepito-home-action {
-  background: color-mix(in srgb, var(--pepito-white) 88%, transparent);
+  background: var(--pd-chip-bg);
   border-color: var(--pd-border);
   box-shadow: var(--pd-shadow);
 }
