@@ -48,8 +48,8 @@ assert.doesNotMatch(indexHtml, /Urbanist/, 'Urbanist is not a competing UI face'
 assert.match(indexHtml, /pepito-hero-inner/, 'critical CSS reserves hero-inner (CLS)');
 assert.match(
   indexHtml,
-  /100svh - var\(--pepito-nav-h\) - var\(--pepito-dock-clearance\)/,
-  'critical mobile hero ends at the dock (no peek under the pill)'
+  /--pepito-hero-h:calc\(100svh - var\(--pepito-nav-h\)\)/,
+  'critical mobile hero fills the viewport under the nav (no pink peek under the dock)'
 );
 assert.match(
   indexHtml,
@@ -192,15 +192,10 @@ assert.match(pepitoCss, /--pepito-btn-1-bg:\s*#5c4d91/, 'button-1 fill stays AA 
 assert.match(pepitoCss, /--pepito-btn-3-bg:\s*#a24a86/, 'button-3 fill is darkened pink for AA');
 assert.match(
   pepitoCss,
-  /100svh - var\(--pepito-nav-h\) - var\(--pepito-mobile-dock-clearance\)/,
-  'hydrated mobile hero ends at the dock clearance'
+  /--pepito-hero-h:\s*calc\(100svh - var\(--pepito-nav-h\)\)/,
+  'hydrated mobile hero fills the viewport under the nav'
 );
 assert.match(pepitoCss, /88svh - var\(--pepito-nav-h\)/, 'desktop hero stays the compact 88svh band');
-assert.doesNotMatch(
-  pepitoCss,
-  /--pepito-hero-h:\s*calc\(100svh\s*-\s*var\(--pepito-nav-h\)\)/,
-  'mobile hero must subtract dock clearance, not only nav'
-);
 assert.match(
   pepitoCss,
   /@media \(min-width: 860px\) \{[\s\S]*?\.pepito-landing--with-dock \{[\s\S]*?padding-bottom:\s*0/,

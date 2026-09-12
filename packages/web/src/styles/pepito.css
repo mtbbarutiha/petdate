@@ -320,7 +320,9 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   */
   :root {
     --pepito-nav-h: 64px;
-    --pepito-hero-h: calc(100svh - var(--pepito-nav-h) - var(--pepito-mobile-dock-clearance));
+    /* Fill the viewport under the in-flow nav so the next (pink/soft) section
+       cannot peek into the fixed dock band. */
+    --pepito-hero-h: calc(100svh - var(--pepito-nav-h));
   }
   .pepito-nav {
     position: relative;
