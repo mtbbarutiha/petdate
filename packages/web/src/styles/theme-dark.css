@@ -2347,26 +2347,91 @@ html[data-theme='dark'] .pepito-my-pets-card {
   box-shadow: var(--pd-shadow);
 }
 
-/* Profile «پت‌های من» compact cards — readable on dark surfaces */
-html[data-theme='dark'] .pepito-profile-pet-card,
-html[data-theme='dark'] .pepito-profile-pet-empty {
-  background: var(--pepito-white);
+/* Profile about + pets panels — dark surfaces */
+html[data-theme='dark'] .pepito-profile-about-panel,
+html[data-theme='dark'] .pepito-profile-pets-panel {
+  background:
+    linear-gradient(165deg, color-mix(in srgb, var(--pepito-base) 10%, transparent) 0%, transparent 48%),
+    var(--pepito-white);
   border-color: var(--pd-border);
   box-shadow: var(--pd-shadow);
+}
+html[data-theme='dark'] .pepito-profile-about-meta,
+html[data-theme='dark'] .pepito-profile-status-row,
+html[data-theme='dark'] .pepito-profile-about-foot {
+  border-top-color: var(--pd-border);
+}
+html[data-theme='dark'] .pepito-profile-about-meta > div {
+  border-bottom-color: var(--pd-border);
+}
+html[data-theme='dark'] .pepito-profile-about-meta dt {
+  color: var(--pepito-muted);
+}
+html[data-theme='dark'] .pepito-profile-about-meta dd {
   color: var(--pepito-dark);
 }
-html[data-theme='dark'] .pepito-profile-pet-card:hover {
+html[data-theme='dark'] .pepito-profile-status-row {
+  background: color-mix(in srgb, var(--pd-surface-2) 70%, transparent);
+}
+html[data-theme='dark'] .pepito-profile-tags li {
+  background: color-mix(in srgb, var(--pepito-base) 12%, transparent);
+  border-color: var(--pd-border);
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-profile-badge.is-ok {
+  background: rgba(21, 204, 160, 0.16);
+  border-color: rgba(21, 204, 160, 0.28);
+  color: #5ee0c0;
+}
+html[data-theme='dark'] .pepito-profile-badge.is-warn {
+  background: rgba(253, 150, 30, 0.16);
+  border-color: rgba(253, 150, 30, 0.28);
+  color: #ffc078;
+}
+
+/* Profile «پت‌های من» compact cards — readable on dark surfaces */
+html[data-theme='dark'] .pepito-profile-pet-card {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--pepito-base) 14%, transparent) 0%, transparent 42%),
+    var(--pd-surface-2);
+  border-color: var(--pd-border);
+  box-shadow: none;
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-profile-pet-empty {
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--pepito-base) 10%, transparent), transparent 55%),
+    var(--pd-surface-2);
+  border-color: var(--pd-border-strong);
+  box-shadow: none;
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-profile-pet-card:hover,
+html[data-theme='dark'] .pepito-profile-pet-empty:hover {
   border-color: var(--pd-border-strong, rgba(255, 255, 255, 0.18));
   box-shadow: var(--pd-shadow);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--pepito-base) 18%, transparent) 0%, transparent 45%),
+    var(--pepito-white);
+}
+html[data-theme='dark'] .pepito-profile-pet-card-media {
+  background: var(--pepito-white);
+  box-shadow: 0 0 0 2px var(--pd-border);
 }
 html[data-theme='dark'] .pepito-profile-pet-card-body strong,
 html[data-theme='dark'] .pepito-profile-pet-empty strong {
   color: var(--pepito-dark);
 }
 html[data-theme='dark'] .pepito-profile-pet-card-body > span,
-html[data-theme='dark'] .pepito-profile-pet-empty span,
-html[data-theme='dark'] .pepito-profile-pet-id {
+html[data-theme='dark'] .pepito-profile-pet-empty span {
   color: var(--pepito-muted);
+}
+html[data-theme='dark'] .pepito-profile-pet-card .pepito-profile-pet-id {
+  background: color-mix(in srgb, var(--pepito-base) 18%, transparent);
+  color: var(--pepito-base);
+}
+html[data-theme='dark'] .pepito-profile-pet-card-chevron {
+  color: var(--pepito-base);
 }
 html[data-theme='dark'] .pepito-profile-pet-card.is-skeleton {
   background: linear-gradient(
