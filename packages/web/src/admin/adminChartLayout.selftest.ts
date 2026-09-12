@@ -85,4 +85,58 @@ for (const [name, src] of [
 assert.match(reports, /admin-chart-box/, 'analytics report charts use compact box class');
 assert.match(ci, /adminChartLayout\.selftest\.ts/, 'CI runs admin chart layout selftest');
 
+/* RTL donut / KPI legend: color · label · count stay one unit (no stranded counts). */
+assert.match(crm, /crm-donut-legend/, 'CRM ticket-status widget uses shared donut legend class');
+assert.match(
+  css,
+  /\.admin-app\s+\.admin-donut-legend\s+li[\s\S]*?justify-content:\s*start/,
+  'shared donut legend packs to logical inline-start'
+);
+assert.match(
+  css,
+  /\.admin-app\s+\.admin-donut-legend\s+li[\s\S]*?width:\s*max-content/,
+  'legend rows shrink-wrap so space-between cannot strand the count'
+);
+assert.match(
+  css,
+  /\.admin-app\s+\.admin-donut-legend\s+li\s*>\s*span:first-child\s*\{[^}]*width:\s*10px/s,
+  'donut swatch rule targets only the first span, not the label'
+);
+assert.match(
+  css,
+  /\.admin-app\s+\.admin-donut-legend\s+\.admin-chart-legend-label\s*\{[^}]*width:\s*auto/s,
+  'donut legend labels are not clipped to the 10px swatch box'
+);
+
+const legendCountBlocks = [
+  [/\.admin-app\s+\.admin-donut-legend\s+strong[\s\S]*?\{[^}]+\}/g, 'admin-donut-legend count'],
+  [/\.crm-donut-legend\s+span[\s\S]*?\{[^}]+\}/g, 'crm-donut-legend count'],
+  [/\.admin-app\s+\.hr-dash-legend\s+span[\s\S]*?\{[^}]+\}/g, 'hr-dash-legend count'],
+  [/\.admin-app\s+\.crm-report-reason-legend\s+span[\s\S]*?\{[^}]+\}/g, 'crm-report-reason-legend count'],
+  [/\.admin-app\s+\.tk-legend\s+strong[\s\S]*?\{[^}]+\}/g, 'tk-legend count'],
+] as const;
+
+for (const [re, name] of legendCountBlocks) {
+  const blocks = css.match(re);
+  assert.ok(blocks && blocks.length > 0, `${name} rule present`);
+  for (const block of blocks) {
+    assert.doesNotMatch(
+      block,
+      /margin-inline-start\s*:\s*auto/,
+      `${name} must not park the count on the far inline-end (RTL left)`
+    );
+  }
+}
+
+assert.doesNotMatch(
+  css,
+  /\.admin-app\s+\.tk-legend\s+li\s*\{[^}]*justify-content\s*:\s*space-between/,
+  'tk-legend rows must not space-between (same RTL stranding bug)'
+);
+assert.doesNotMatch(
+  css,
+  /\.crm-donut-legend\s+span\s*\{[^}]*margin-inline-start\s*:\s*auto/,
+  'CRM ticket-status counts stay next to their labels'
+);
+
 console.log('adminChartLayout.selftest: ok');
