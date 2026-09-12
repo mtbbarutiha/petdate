@@ -137,6 +137,9 @@ export function LandingMobileDock() {
 
   if (hideDock) return null;
 
+  const isCenterChats = (item: SiteNavItem) =>
+    item.key === 'chats' || item.key === 'playmate';
+
   const renderIcon = (item: SiteNavItem, active: boolean) => {
     if (item.key === 'profile' && isLoggedIn) {
       return photo ? (
@@ -157,7 +160,15 @@ export function LandingMobileDock() {
         </span>
       );
     }
-    return <item.icon size={24} strokeWidth={active ? 2.35 : 1.85} aria-hidden />;
+    // Center گفتگو/هم‌بازی: ~1.35× siblings so ChatPaw reads as the primary dock action.
+    const chats = isCenterChats(item);
+    return (
+      <item.icon
+        size={chats ? 32 : 24}
+        strokeWidth={active ? (chats ? 2.2 : 2.35) : chats ? 1.95 : 1.85}
+        aria-hidden
+      />
+    );
   };
 
   const onProfilePointerDown = (e: MouseEvent | TouchEvent) => {
@@ -199,11 +210,12 @@ export function LandingMobileDock() {
             );
           }
 
+          const chatsCenter = isCenterChats(item);
           return (
             <Link
               key={item.key}
               to={href}
-              className={`pepito-landing-mobile-dock-link${active ? ' is-active' : ''}${item.tone ? ` pepito-landing-mobile-dock-link--${item.tone}` : ''}`}
+              className={`pepito-landing-mobile-dock-link${chatsCenter ? ' pepito-landing-mobile-dock-link--chats' : ''}${active ? ' is-active' : ''}${item.tone ? ` pepito-landing-mobile-dock-link--${item.tone}` : ''}`}
               aria-label={t(`nav.${item.key}`)}
               aria-current={active ? 'page' : undefined}
             >
