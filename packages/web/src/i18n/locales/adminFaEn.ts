@@ -2179,6 +2179,8 @@ export const ADMIN_FA_EN: Record<string, string> = {
   "پیگیری:": "Follow-up:",
   "چک‌لیست ورود — تحویل دسترسی‌ها، تجهیزات، زمانبندی آموزش و مدارک — با استخدام از ATS هم ساخته\n            می‌شود": "Onboarding checklist — access, equipment, training schedule, and documents — also created\n            from an ATS hire",
   "کاربر · فیلدهای مهم مدیریتی از جدول users": "User · key admin fields from the users table",
+  "کاربر · فیلدهای مهم مدیریتی از جدول users به‌همراه نام پت":
+    "User · key admin fields from the users table plus pet names",
   "کاربر پلتفرم #": "Platform user #",
   "کیف‌پول Stars · ": "Stars wallet · ",
   "گزارش یکپارچهٔ پلتفرم · پیوند · فروش · باشگاه مشتریان · ایمیل": "Unified platform report · Peyvand · Sales · CRM · Email",

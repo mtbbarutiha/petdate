@@ -334,6 +334,9 @@
   .admin-app .admin-topbar-user {
     padding: 3px;
   }
+  .admin-app .admin-topbar-wordmark .admin-wordmark-logo {
+    max-width: 92px;
+  }
 }
 
 .admin-app .admin-icon-btn {
@@ -352,32 +355,46 @@
 .admin-app .admin-icon-btn--mobile { display: none; }
 .admin-app .admin-icon-btn--desktop { display: none; }
 
-/* Single hamburger/close — sibling of the drawer so it is never trapped
-   under .admin-topbar (z-index 20) or the overlay sidebar (z-index 40). */
-.admin-nav-toggle {
-  position: fixed;
-  top: 12px;
-  inset-inline-start: 12px;
-  z-index: 60;
-  width: 44px;
-  height: 44px;
-  border-radius: 12px;
-  border: 1px solid var(--admin-border);
-  background: var(--admin-surface);
-  color: var(--admin-ink);
+/* Hamburger/close lives in the topbar row (next to Admin Console), not
+   as a fixed slab on the sidebar/header seam. */
+.admin-app .admin-nav-toggle {
+  position: relative;
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--admin-border) 85%, transparent);
+  background: color-mix(in srgb, var(--admin-ink) 5%, var(--admin-surface));
+  color: var(--admin-muted);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  box-shadow: 0 4px 18px rgba(15, 23, 42, 0.16);
+  box-shadow: none;
+  transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 }
-.admin-nav-toggle.is-open {
-  background: var(--admin-ink);
-  color: #fff;
-  border-color: var(--admin-ink);
+.admin-app .admin-nav-toggle:hover,
+.admin-app .admin-nav-toggle:focus-visible {
+  background: color-mix(in srgb, var(--admin-ink) 9%, var(--admin-surface));
+  color: var(--admin-ink);
+  border-color: var(--admin-border);
 }
-.admin-app .admin-topbar {
-  padding-inline-start: 68px;
+.admin-app .admin-nav-toggle.is-open {
+  background: color-mix(in srgb, var(--admin-ink) 8%, var(--admin-surface));
+  color: var(--admin-ink);
+  border-color: var(--admin-border);
+}
+.admin-app .admin-topbar-wordmark {
+  flex-shrink: 0;
+}
+.admin-app .admin-topbar-wordmark .admin-wordmark-collapsed-mark {
+  display: none;
+}
+.admin-app .admin-topbar-wordmark .admin-wordmark-logo {
+  display: block;
+}
+.admin-app .admin-topbar-wordmark .admin-wordmark-copy {
+  display: flex;
 }
 
 /* Desktop close must hide the whole panel — not just labels (old --collapsed). */
@@ -391,9 +408,6 @@
     overflow: hidden !important;
     visibility: hidden;
     pointer-events: none;
-  }
-  .admin-app--nav-open .admin-nav-toggle {
-    inset-inline-start: calc(264px + 10px);
   }
 }
 
@@ -949,6 +963,7 @@
  */
 .admin-app .admin-table td > .admin-cell-compact,
 .admin-app .admin-table td > .admin-id-chip,
+.admin-app .admin-table td > .admin-pets-cell,
 .admin-app .admin-table td > .admin-party-pair {
   display: inline-flex;
   flex-direction: column;
@@ -1010,20 +1025,32 @@
   max-width: 280px;
 }
 .admin-app .admin-wallet-grid--compact {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  width: 108px;
-  max-width: 108px;
-  gap: 3px;
+  display: flex;
+  flex-direction: column;
+  grid-template-columns: none;
+  width: 100%;
+  max-width: 100%;
+  gap: 2px;
 }
 .admin-app .admin-wallet-grid--compact .admin-wallet-chip {
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
   min-width: 0;
-  padding: 2px 4px;
+  padding: 2px 6px;
 }
 .admin-app .admin-wallet-grid--compact .admin-wallet-chip-label {
-  font-size: 0.58rem;
+  font-size: 0.62rem;
+  flex-shrink: 0;
 }
 .admin-app .admin-wallet-grid--compact .admin-wallet-chip-value {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .admin-app button.admin-wallet-grid--action {
   appearance: none;
@@ -1084,10 +1111,10 @@
 .admin-app .admin-user-role-cell {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: stretch;
   gap: 4px;
   min-width: 0;
-  max-width: 148px;
+  max-width: 100%;
 }
 .admin-app .admin-user-role-cell .admin-select--compact {
   max-width: 100%;
@@ -1097,13 +1124,13 @@
   gap: 4px;
 }
 .admin-app .admin-user-row-meta {
-  display: block;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   font-size: 0.72rem;
-  line-height: 1.3;
-  max-width: 220px;
+  line-height: 1.35;
+  max-width: 100%;
   overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 .admin-app .admin-row-actions--icon {
   flex-wrap: nowrap;
@@ -1131,24 +1158,36 @@
   overflow-x: auto;
 }
 .admin-app .admin-table--users {
-  min-width: 0;
+  min-width: 1080px;
   width: 100%;
   table-layout: fixed;
 }
+.admin-app .admin-table--users th,
+.admin-app .admin-table--users td {
+  vertical-align: top;
+}
+.admin-app .admin-table--users th {
+  white-space: nowrap;
+}
 .admin-app .admin-table--users th:nth-child(1),
-.admin-app .admin-table--users td:nth-child(1) { width: 7.5rem; }
+.admin-app .admin-table--users td:nth-child(1) { width: 7rem; }
 .admin-app .admin-table--users th:nth-child(2),
-.admin-app .admin-table--users td:nth-child(2) { width: auto; }
+.admin-app .admin-table--users td:nth-child(2) { width: 16rem; }
 .admin-app .admin-table--users th:nth-child(3),
-.admin-app .admin-table--users td:nth-child(3) { width: 8.5rem; }
+.admin-app .admin-table--users td:nth-child(3) { width: 8rem; }
 .admin-app .admin-table--users th:nth-child(4),
 .admin-app .admin-table--users td:nth-child(4) { width: 9rem; }
 .admin-app .admin-table--users th:nth-child(5),
-.admin-app .admin-table--users td:nth-child(5) { width: 7.5rem; }
+.admin-app .admin-table--users td:nth-child(5) { width: 8.5rem; }
 .admin-app .admin-table--users th:nth-child(6),
-.admin-app .admin-table--users td:nth-child(6) { width: 6.5rem; }
+.admin-app .admin-table--users td:nth-child(6) { width: 7.5rem; }
 .admin-app .admin-table--users th:nth-child(7),
-.admin-app .admin-table--users td:nth-child(7) { width: 7rem; }
+.admin-app .admin-table--users td:nth-child(7) { width: 6.5rem; }
+.admin-app .admin-table--users th:nth-child(8),
+.admin-app .admin-table--users td:nth-child(8) { width: 6.5rem; }
+.admin-app .admin-table--users .admin-entity-cell {
+  align-items: flex-start;
+}
 .admin-app .admin-table--users .admin-entity-cell-title {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1157,8 +1196,53 @@
 }
 .admin-app .admin-table--users td > .admin-cell-compact,
 .admin-app .admin-table--users td > .admin-wallet-grid,
-.admin-app .admin-table--users td > button.admin-wallet-grid {
+.admin-app .admin-table--users td > button.admin-wallet-grid,
+.admin-app .admin-table--users td > .admin-pets-cell {
   max-width: 100%;
+  min-width: 0;
+}
+.admin-app .admin-table--users td > .admin-cell-compact {
+  width: 100%;
+}
+.admin-app .admin-contact-line {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.admin-app .admin-pets-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  min-width: 0;
+  max-width: 100%;
+}
+.admin-app .admin-pet-chip {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--admin-accent) 12%, var(--admin-bg));
+  border: 1px solid color-mix(in srgb, var(--admin-accent) 28%, var(--admin-border));
+  color: var(--admin-ink);
+  font-size: 0.75rem;
+  font-weight: 650;
+  line-height: 1.3;
+}
+.admin-app .admin-pet-chip-more {
+  font-size: 0.7rem;
+  padding-inline: 4px;
+}
+@media (max-width: 1100px) {
+  .admin-app .admin-table--users {
+    min-width: 1080px;
+  }
 }
 .admin-app .admin-badge--warn {
   background: #fff7ed;
@@ -1625,10 +1709,10 @@
     visibility: visible;
     pointer-events: auto;
   }
-  .admin-app--nav-open .admin-nav-toggle,
-  .admin-app--nav-closed .admin-nav-toggle {
-    inset-inline-start: 12px;
-    z-index: 60;
+  /* Header stays above the overlay drawer so the in-topbar toggle
+     remains clickable (drawer 40, backdrop 35). */
+  .admin-app .admin-topbar {
+    z-index: 50;
   }
 }
 

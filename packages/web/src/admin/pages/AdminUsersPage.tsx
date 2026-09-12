@@ -21,6 +21,7 @@ import { adminCan } from '../auth';
 import { AdminIdChip } from '../AdminIds';
 import {
   AdminContactCell,
+  AdminPetsCell,
   AdminWalletCell,
   adminUserDemographics,
   adminVerifyClass,
@@ -314,7 +315,7 @@ export function AdminUsersPage() {
       <header className="admin-header">
         <div>
           <h1>{t('admin.usersTitle')}</h1>
-          <p>{formatNumFa(total)} {tr('کاربر · فیلدهای مهم مدیریتی از جدول users')}</p>
+          <p>{formatNumFa(total)} {tr('کاربر · فیلدهای مهم مدیریتی از جدول users به‌همراه نام پت')}</p>
         </div>
       </header>
 
@@ -403,6 +404,7 @@ export function AdminUsersPage() {
             <tr>
               <th>{t('admin.colId')}</th>
               <th>{t('admin.colUser')}</th>
+              <th>{t('admin.colPets')}</th>
               <th>{t('admin.colContact')}</th>
               <th>{t('admin.colRole')}</th>
               <th>{t('admin.colWallet')}</th>
@@ -416,16 +418,8 @@ export function AdminUsersPage() {
               const roles = activeRolesOf(u);
               const demo = adminUserDemographics(u);
               const place = [u.city, u.province].filter(Boolean).join(tr('، '));
-              const tgHandle = u.username ? `@${u.username}` : null;
-              const tgId =
-                u.telegramId != null && String(u.telegramId).trim()
-                  ? String(u.telegramId)
-                  : null;
-              const metaParts = [
-                demo,
-                tgHandle || (tgId ? `tg:${tgId}` : null),
-                place || null,
-              ].filter(Boolean);
+              const displayName = String(u.name || '').trim() || '—';
+              const metaParts = [demo, place || null].filter(Boolean);
               return (
                 <tr key={u.id}>
                   <td>
@@ -433,22 +427,29 @@ export function AdminUsersPage() {
                   </td>
                   <td>
                     <AdminEntityCell
-                      thumb={<AdminThumb src={u.avatarUrl} label={u.name} kind="user" alt={u.name} size={32} />}
-                      title={<strong>{u.name}</strong>}
+                      thumb={<AdminThumb src={u.avatarUrl} label={displayName} kind="user" alt={displayName} size={32} />}
+                      title={<strong>{displayName}</strong>}
                       subtitle={
                         metaParts.length ? (
-                          <span
-                            className="admin-user-row-meta"
-                            title={tgId && tgHandle ? `Telegram ID: ${tgId}` : undefined}
-                          >
+                          <span className="admin-user-row-meta" title={metaParts.join(' · ')}>
                             {metaParts.join(' · ')}
                           </span>
-                        ) : null
+                        ) : (
+                          <span className="admin-muted">—</span>
+                        )
                       }
                     />
                   </td>
                   <td>
-                    <AdminContactCell phone={u.phone} email={u.email} />
+                    <AdminPetsCell pets={u.pets} />
+                  </td>
+                  <td>
+                    <AdminContactCell
+                      phone={u.phone}
+                      email={u.email}
+                      username={u.username}
+                      telegramId={u.telegramId}
+                    />
                   </td>
                   <td>
                     <div className="admin-user-role-cell">
@@ -554,7 +555,7 @@ export function AdminUsersPage() {
                 </tr>
               );
             })}
-            {!users.length ? <tr><td colSpan={7} className="admin-muted">{tr('کاربری یافت نشد')}</td></tr> : null}
+            {!users.length ? <tr><td colSpan={8} className="admin-muted">{tr('کاربری یافت نشد')}</td></tr> : null}
           </tbody>
         </table>
       </div>

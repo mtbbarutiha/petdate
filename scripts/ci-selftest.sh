@@ -147,6 +147,12 @@ npx tsx "$ROOT/packages/web/src/lib/apiErrorMessage.selftest.ts"
 echo "==> selftest: web listGames never blanks SPA"
 npx tsx "$ROOT/packages/web/src/lib/listGames.selftest.ts"
 
+echo "==> selftest: admin games route + badge"
+npx tsx "$ROOT/packages/web/src/admin/adminGamesRoute.selftest.ts"
+
+echo "==> selftest: api admin games moderation"
+npx tsx "$ROOT/packages/api/src/routes/admin-games.selftest.ts"
+
 echo "==> selftest: shop product gallery assets"
 npx tsx "$ROOT/packages/web/src/data/shopGallery.selftest.ts"
 
@@ -164,6 +170,7 @@ npx tsx "$ROOT/packages/web/src/components/chatGiftVoice.selftest.ts"
 run src/services/web-chat-cta-once.selftest.ts
 run src/services/app-logger.selftest.ts
 run src/routes/games.selftest.ts
+run src/routes/sections-games.selftest.ts
 run src/services/otp-sms-copy.selftest.ts
 run src/services/otp-email-html.selftest.ts
 run src/services/prescription-sms.selftest.ts
@@ -213,6 +220,7 @@ run src/crm-ticketing.selftest.ts
 run src/admin-notifications.selftest.ts
 run src/admin-platform-nav.selftest.ts
 run src/admin-users-geo.selftest.ts
+run src/admin-users-list-pets.selftest.ts
 run src/admin-monitoring.selftest.ts
 run src/admin-aggregate-dashboard.selftest.ts
 run src/admin-dashboard-activity.selftest.ts
