@@ -57,6 +57,9 @@ npx tsx "$ROOT/packages/web/src/admin/adminMagazineRoute.selftest.ts"
 echo "==> selftest: admin mobile hamburger / drawer (RTL)"
 npx tsx "$ROOT/packages/web/src/admin/adminMobileNav.selftest.ts"
 
+echo "==> selftest: admin sidebar ops-priority order"
+npx tsx "$ROOT/packages/web/src/admin/adminNavOrder.selftest.ts"
+
 echo "==> selftest: admin finance payments under مالی + nav notifs"
 npx tsx "$ROOT/packages/web/src/admin/adminFinanceNavNotifs.selftest.ts"
 
@@ -129,6 +132,9 @@ npx tsx "$ROOT/packages/web/src/lib/wcdnNginx.selftest.ts"
 echo "==> selftest: web API error message (WCDN HTML → Persian)"
 npx tsx "$ROOT/packages/web/src/lib/apiErrorMessage.selftest.ts"
 
+echo "==> selftest: web listGames never blanks SPA"
+npx tsx "$ROOT/packages/web/src/lib/listGames.selftest.ts"
+
 echo "==> selftest: shop product gallery assets"
 npx tsx "$ROOT/packages/web/src/data/shopGallery.selftest.ts"
 
@@ -175,6 +181,7 @@ echo "==> selftest: bot sticky + telegram-http + quick-connect-parse + nearby-ra
 npx tsx "$ROOT/packages/bot/src/sticky-reply-keyboard.selftest.ts"
 npx tsx "$ROOT/packages/bot/src/telegram-http.selftest.ts"
 npx tsx "$ROOT/packages/bot/src/quick-connect-parse.selftest.ts"
+npx tsx "$ROOT/packages/bot/src/api-client-bot-headers.selftest.ts"
 npx tsx "$ROOT/packages/bot/src/urls.selftest.ts"
 npx tsx "$ROOT/packages/bot/src/handlers/nearby-radius.selftest.ts"
 npx tsx "$ROOT/packages/bot/src/handlers/nearby-inline-list.selftest.ts"
@@ -204,10 +211,13 @@ run src/admin-finance-dashboard.selftest.ts
 run src/platform-settings.selftest.ts
 run src/magazine.selftest.ts
 run src/magazine-editorial-seed.selftest.ts
+run src/routes/games-list.selftest.ts
 run src/routes/pets-id-guard.selftest.ts
 run src/routes/pets-slug-diary.selftest.ts
 run src/routes/pets-public-list.selftest.ts
 run src/routes/playdates-auth.selftest.ts
+run src/routes/users-staff-auth.selftest.ts
+run src/routes/consultations-quick-connect-auth.selftest.ts
 run src/services/playdate-fee.selftest.ts
 run src/site-analytics.selftest.ts
 

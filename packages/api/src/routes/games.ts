@@ -23,8 +23,9 @@ function listGamesHandler(req: Request, res: Response): void {
   res.json(games);
 }
 
+// /list must be registered before /:id — otherwise "list" becomes NaN and
+// Postgres `WHERE id = $1` throws (live 500 «خطای داخلی سرور»).
 gamesRouter.get('/', listGamesHandler);
-/** Alias used by some clients / scanners — must be before `/:id`. */
 gamesRouter.get('/list', listGamesHandler);
 
 gamesRouter.get('/:id', (req, res) => {
