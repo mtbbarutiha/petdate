@@ -184,6 +184,13 @@ function dismiss(actor: AdminAuthActor, notifKey: string): void {
     .run(actorKey(actor), notifKey);
 }
 
+/** Re-show a live aggregate after a new event (ticket created, etc.). */
+export function undismissLiveKey(notifKey: string): void {
+  const key = String(notifKey || '').trim();
+  if (!key.startsWith('live:')) return;
+  db().prepare('DELETE FROM admin_notification_dismissals WHERE notif_key = ?').run(key);
+}
+
 function mapDbRow(row: Record<string, unknown>): AdminHeaderNotification {
   const kind = String(row.kind || 'info') as AdminNotificationKind;
   return {

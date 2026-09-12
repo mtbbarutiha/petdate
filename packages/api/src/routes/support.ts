@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { dbService } from '../db';
 import {
   createUserSupportTicket,
+  getTicketByRef,
+  listPublicTicketActivities,
   listTicketsForPlatformUser,
 } from '../crm-service';
 import { generateAiConsultAdvice, AI_ASSISTANT_DISPLAY_NAME } from '../services/ai-consult';
@@ -22,21 +24,29 @@ function requireUser(req: { header: (n: string) => string | undefined }) {
   return getUserFromBearer(req.header('authorization') ?? undefined)?.user ?? null;
 }
 
-function publicTicket(t: {
-  id: number;
-  publicId: string;
-  title: string;
-  description: string;
-  status: string;
-  priority: string;
-  category: string;
-  channel: string;
-  createdAt: string;
-  updatedAt: string;
-}) {
+function publicTicket(
+  t: {
+    id: number;
+    publicId: string;
+    uuid?: string;
+    title: string;
+    description: string;
+    status: string;
+    priority: string;
+    category: string;
+    channel: string;
+    createdAt: string;
+    updatedAt: string;
+  },
+  extras?: {
+    lastPublicReply?: string | null;
+    replies?: Array<{ id: number; text: string; at: string; agentName?: string }>;
+  }
+) {
   return {
     id: t.id,
     publicId: t.publicId,
+    uuid: t.uuid || '',
     title: t.title,
     description: t.description,
     status: t.status,
@@ -45,6 +55,8 @@ function publicTicket(t: {
     channel: t.channel,
     createdAt: t.createdAt,
     updatedAt: t.updatedAt,
+    lastPublicReply: extras?.lastPublicReply ?? null,
+    replies: extras?.replies,
   };
 }
 
@@ -95,8 +107,44 @@ supportRouter.get('/tickets', (req, res) => {
     res.status(401).json({ error: 'وارد نشده‌اید' });
     return;
   }
-  const tickets = listTicketsForPlatformUser(user.id).map(publicTicket);
+  const tickets = listTicketsForPlatformUser(user.id).map((t) => {
+    const publicActs = listPublicTicketActivities(t.id);
+    const last = publicActs[publicActs.length - 1];
+    return publicTicket(t, { lastPublicReply: last?.text || null });
+  });
   res.json({ ok: true, tickets });
+});
+
+/** جزئیات + پاسخ‌های عمومی یک تیکت (id / uuid) */
+supportRouter.get('/tickets/:ref', (req, res) => {
+  const user = requireUser(req);
+  if (!user) {
+    res.status(401).json({ error: 'وارد نشده‌اید' });
+    return;
+  }
+  const ticket = getTicketByRef(String(req.params.ref || ''));
+  if (!ticket) {
+    res.status(404).json({ error: 'تیکت پیدا نشد' });
+    return;
+  }
+  const owned = listTicketsForPlatformUser(user.id).some((t) => t.id === ticket.id);
+  if (!owned) {
+    res.status(404).json({ error: 'تیکت پیدا نشد' });
+    return;
+  }
+  const replies = listPublicTicketActivities(ticket.id).map((a) => ({
+    id: a.id,
+    text: a.text,
+    at: a.at,
+    agentName: a.userName,
+  }));
+  res.json({
+    ok: true,
+    ticket: publicTicket(ticket, {
+      lastPublicReply: replies[replies.length - 1]?.text || null,
+      replies,
+    }),
+  });
 });
 
 /** ثبت تیکت پشتیبانی توسط کاربر وب */
@@ -201,7 +249,14 @@ supportRouter.get('/telegram/:telegramId/tickets', (req, res) => {
     res.status(404).json({ error: 'کاربر پیدا نشد' });
     return;
   }
-  res.json({ ok: true, tickets: listTicketsForPlatformUser(user.id).map(publicTicket) });
+  res.json({
+    ok: true,
+    tickets: listTicketsForPlatformUser(user.id).map((t) => {
+      const publicActs = listPublicTicketActivities(t.id);
+      const last = publicActs[publicActs.length - 1];
+      return publicTicket(t, { lastPublicReply: last?.text || null });
+    }),
+  });
 });
 
 supportRouter.post('/telegram/:telegramId/tickets', (req, res) => {

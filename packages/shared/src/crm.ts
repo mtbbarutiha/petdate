@@ -167,13 +167,14 @@ export const CRM_QA_STATUSES = ['در صف', 'ارزیابی‌شده', 'نیا�
 export const CRM_TASK_STATUSES = ['باز', 'انجام‌شده', 'لغو'] as const;
 
 export const CRM_SMS_TRIGGERS = [
-  'after_purchase', 'ticket_created', 'ticket_resolved', 'survey_done', 'sla_breach', 'manual',
+  'after_purchase', 'ticket_created', 'ticket_resolved', 'ticket_reply', 'survey_done', 'sla_breach', 'manual',
 ] as const;
 
 export const CRM_SMS_TRIGGER_LABELS: Record<(typeof CRM_SMS_TRIGGERS)[number], string> = {
   after_purchase: 'یک روز پس از خرید',
   ticket_created: 'هنگام ثبت تیکت',
   ticket_resolved: 'پس از حل تیکت',
+  ticket_reply: 'پس از پاسخ عمومی پشتیبان',
   survey_done: 'پس از نظرسنجی / توسط کارشناس',
   sla_breach: 'هنگام عبور از زمان SLA',
   manual: 'ارسال دستی توسط کارشناس',
@@ -294,6 +295,8 @@ export interface CrmInteraction {
 export interface CrmTicket {
   id: number;
   publicId: string;
+  /** Stable RFC UUID — used to address a ticket from web/bot/admin refs. */
+  uuid: string;
   customerId: number;
   customerName?: string;
   customerMobile?: string;

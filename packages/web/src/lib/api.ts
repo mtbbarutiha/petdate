@@ -2029,6 +2029,7 @@ export async function sendSupportMessage(
 export type SupportTicketSummary = {
   id: number;
   publicId: string;
+  uuid?: string;
   title: string;
   description: string;
   status: string;
@@ -2037,12 +2038,23 @@ export type SupportTicketSummary = {
   channel: string;
   createdAt: string;
   updatedAt: string;
+  lastPublicReply?: string | null;
+  replies?: Array<{ id: number; text: string; at: string; agentName?: string }>;
 };
 
 export async function fetchSupportTickets(
   token: string
 ): Promise<{ ok: true; tickets: SupportTicketSummary[] }> {
   return request('/api/support/tickets', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function fetchSupportTicket(
+  token: string,
+  ref: string
+): Promise<{ ok: true; ticket: SupportTicketSummary }> {
+  return request(`/api/support/tickets/${encodeURIComponent(ref)}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
 }

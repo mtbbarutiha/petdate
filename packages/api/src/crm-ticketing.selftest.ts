@@ -87,6 +87,21 @@ async function main() {
   assert(acts.length >= 2, 'timeline activities');
   assert(acts.some((a) => a.kind === 'created' || a.kind === 'escalation' || a.kind === 'assigned'), 'kinds');
 
+  const publicReply = crm.patchTicket(
+    ticket.id,
+    {
+      activityText: 'پاسخ تست برای مشتری',
+      activityKind: 'public_reply',
+      activityVisibility: 'public',
+    },
+    admin!
+  );
+  assert(publicReply.id === ticket.id, 'public reply patch');
+  assert(
+    crm.listPublicTicketActivities(ticket.id).some((a) => a.text.includes('پاسخ تست')),
+    'public activities include reply'
+  );
+
   const repaired = crm.repairOrphanTicketRelations();
   assert(repaired.orphanTickets === 0, 'no orphans after clean create');
 

@@ -60,6 +60,22 @@ async function main() {
     'sales seed hidden from support'
   );
 
+  const crm = await import('./crm-service');
+  crm.ensureCrmSchema();
+  const customer = crm.findOrCreateCustomerByMobile(
+    { mobile: '09120001100', first: 'اعلان', last: 'تیکت' },
+    adminActor
+  );
+  const ticket = crm.createTicket(
+    { customerId: customer.id, title: 'تیکت اعلان تست', description: 'بدنه' },
+    adminActor
+  );
+  const withTicket = await listAdminHeaderNotifications(adminActor);
+  assert(
+    withTicket.items.some((i) => i.href === `/admin/crm/ticketing?view=detail&id=${ticket.id}`),
+    'new CRM ticket pushed to header اعلانات'
+  );
+
   hrMod.pushNotification('اعلان تست هدر', 'info');
   const withHr = await listAdminHeaderNotifications(adminActor);
   assert(

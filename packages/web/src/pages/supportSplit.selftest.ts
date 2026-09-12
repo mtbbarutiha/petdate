@@ -23,6 +23,7 @@ assert.match(hub, /صحبت با بات پشتیبانی/, 'hub agent CTA');
 assert.match(hub, /\/support\/ticket/, 'hub links ticket');
 assert.match(hub, /\/support\/chat/, 'hub links chat');
 assert.match(ticket, /createSupportTicket/, 'ticket page posts ticket');
+assert.match(ticket, /lastPublicReply/, 'ticket list shows public reply');
 assert.match(chat, /لیلا کیانی|AI_ASSISTANT_DISPLAY_NAME/, 'chat uses support agent name');
 assert.match(agent, /لیلا کیانی/, 'canonical agent name');
 

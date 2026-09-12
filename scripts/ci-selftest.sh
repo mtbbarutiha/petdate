@@ -257,6 +257,7 @@ run src/hr-sales-demo-seed.selftest.ts
 run src/crm.selftest.ts
 run src/crm-ticketing.selftest.ts
 run src/support-tickets.selftest.ts
+run src/services/ticket-user-notify.selftest.ts
 run src/admin-notifications.selftest.ts
 run src/coin-sell-notifications.selftest.ts
 run src/admin-daily-notes.selftest.ts

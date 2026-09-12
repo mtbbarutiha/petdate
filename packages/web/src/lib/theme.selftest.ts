@@ -96,6 +96,15 @@ assert.match(darkCss, /\.admin-app input::placeholder/, 'admin placeholders rema
 assert.match(darkCss, /\.sales-pipe-col\b/, 'sales kanban columns remapped');
 assert.match(darkCss, /\.admin-notif-panel-head/, 'notif panel head remapped');
 assert.match(darkCss, /\.tk-nav\.is-on/, 'ticketing active nav remapped');
+assert.match(darkCss, /\.tk-msg--public/, 'ticket public bubble remapped');
+assert.match(darkCss, /\.tk-msg--internal/, 'ticket internal bubble remapped');
+assert.match(darkCss, /--admin-msg-public-bg:/, 'ticket public bubble token remapped');
+assert.match(darkCss, /--admin-msg-internal-bg:/, 'ticket internal bubble token remapped');
+assert.doesNotMatch(
+  darkCss,
+  /html\[data-theme=['"]dark['"]\][\s\S]{0,80}\.admin-app[\s\S]{0,400}--admin-msg-internal-bg:\s*#(fff8eb|fff7e8|fff8f0)/i,
+  'dark internal ticket bubble must not stay cream #fff8eb'
+);
 assert.match(darkCss, /\.crm-report-filters/, 'crm filter bar remapped');
 assert.match(darkCss, /\.crm-report-counters div/, 'crm counter tiles remapped');
 assert.match(darkCss, /\.crm-reason-node--l1/, 'crm taxonomy panels remapped');
@@ -283,6 +292,8 @@ assert.match(adminLogin, /ThemeToggle/, 'admin login exposes toggle');
 
 /* Chip / metric wells — frozen white fills + remapped pale ink = unreadable dark pills */
 const adminCss = readFileSync(join(root, 'src/styles/admin.css'), 'utf8');
+assert.match(adminCss, /\.tk-msg--public[\s\S]{0,80}var\(--admin-msg-public-bg\)/, 'public bubble uses token');
+assert.match(adminCss, /\.tk-msg--internal[\s\S]{0,80}var\(--admin-msg-internal-bg\)/, 'internal bubble uses token');
 assert.match(adminCss, /--admin-chip-bg:/, 'admin chip fill token present');
 assert.match(adminCss, /--admin-chip-well:/, 'admin chip well token present');
 assert.match(adminCss, /--admin-chip-label:/, 'admin chip label token present');

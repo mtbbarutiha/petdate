@@ -28,6 +28,8 @@ export function SupportChatPage() {
 
   useEffect(() => {
     void load();
+    const t = window.setInterval(() => void load(), 20_000);
+    return () => window.clearInterval(t);
   }, [load]);
 
   useEffect(() => {
