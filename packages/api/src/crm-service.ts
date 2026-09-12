@@ -1,6 +1,7 @@
 /**
  * باشگاه مشتریان / امور مشتریان — persistence & workflows (additive, never wipe).
  */
+import { randomUUID } from 'crypto';
 import {
   CRM_CHANNEL_LABELS,
   CRM_CRITICAL_ERRORS,
@@ -75,6 +76,57 @@ function actorId(actor: AdminAuthActor): string {
 }
 function actorLabel(actor: AdminAuthActor): string {
   return actor.displayName || actor.username || actor.role || 'admin';
+}
+
+function normalizeTicketUuid(raw: string | null | undefined): string | null {
+  const t = String(raw || '').trim();
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(t)) {
+    return null;
+  }
+  return t.toLowerCase();
+}
+
+function notifyCrmTicketAdmin(input: {
+  title: string;
+  body: string;
+  ticketId: number;
+  sourceKey: string;
+  kind?: 'info' | 'success' | 'warn' | 'bad';
+}): void {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const notif = require('./admin-notifications') as typeof import('./admin-notifications');
+    notif.pushAdminHeaderNotification({
+      title: input.title,
+      body: input.body,
+      kind: input.kind || 'info',
+      href: `/admin/crm/ticketing?view=detail&id=${input.ticketId}`,
+      module: 'crm',
+      permission: 'crm.read',
+      sourceKey: input.sourceKey,
+    });
+    notif.undismissLiveKey?.('live:crm-open');
+  } catch (err) {
+    console.warn('crm ticket header notif skipped:', (err as Error).message);
+  }
+}
+
+function deliverPublicReplyToUser(ticket: CrmTicket, replyText: string, agentName?: string): void {
+  const customer = ticket.customerId ? getCustomer(ticket.customerId) : null;
+  void import('./services/ticket-user-notify')
+    .then(({ deliverTicketPublicReply }) =>
+      deliverTicketPublicReply({
+        ticketPublicId: ticket.publicId,
+        ticketTitle: ticket.title,
+        replyText,
+        agentName,
+        platformUserId: customer?.platformUserId ?? null,
+        customerMobile: customer?.mobile || ticket.customerMobile || null,
+      })
+    )
+    .catch((err) => {
+      console.warn('ticket public reply delivery failed:', (err as Error).message);
+    });
 }
 export function isCrmAdmin(actor: AdminAuthActor): boolean {
   return actorHasPermission(actor, 'crm.admin') || actorHasPermission(actor, 'admin.full');
@@ -355,6 +407,18 @@ function migrateCrmTicketColumns(): void {
   addTicket('tags_json', `tags_json TEXT NOT NULL DEFAULT '[]'`);
   addTicket('pending_reason', `pending_reason TEXT`);
   addTicket('first_response_due_at', `first_response_due_at TEXT`);
+  addTicket('uuid', `uuid TEXT`);
+  d.exec(`
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_crm_tickets_uuid
+      ON crm_tickets(uuid) WHERE uuid IS NOT NULL AND uuid != ''
+  `);
+  const missingUuid = d
+    .prepare(`SELECT id FROM crm_tickets WHERE uuid IS NULL OR TRIM(uuid) = ''`)
+    .all() as Array<{ id: number }>;
+  const setUuid = d.prepare(`UPDATE crm_tickets SET uuid = ? WHERE id = ?`);
+  for (const row of missingUuid) {
+    setUuid.run(randomUUID(), row.id);
+  }
 
   const actCols = new Set(
     (d.prepare(`PRAGMA table_info(crm_ticket_activities)`).all() as Array<{ name: string }>).map((c) => c.name)
@@ -418,6 +482,13 @@ function seedCrmDefaults(): void {
       1
     );
     ins.run(
+      'پاسخ تیکت',
+      'dynamic',
+      '{name} عزیز، پاسخ تیکت {ticket}: {reply}',
+      'ticket_reply',
+      1
+    );
+    ins.run(
       'دعوت به نظرسنجی',
       'dynamic',
       '{name} عزیز، لطفاً تجربه تماس با {agent} را امتیاز دهید.',
@@ -429,6 +500,20 @@ function seedCrmDefaults(): void {
       'dynamic',
       'تیکت {ticket} از زمان SLA عبور کرد — اقدام فوری لازم است.',
       'sla_breach',
+      1
+    );
+  }
+  const hasTicketReply = d
+    .prepare(`SELECT 1 AS ok FROM crm_sms_patterns WHERE trigger_key = 'ticket_reply' LIMIT 1`)
+    .get() as { ok?: number } | undefined;
+  if (!hasTicketReply) {
+    d.prepare(
+      `INSERT INTO crm_sms_patterns (name, type, text, trigger_key, auto, active) VALUES (?, ?, ?, ?, ?, 1)`
+    ).run(
+      'پاسخ تیکت',
+      'dynamic',
+      '{name} عزیز، پاسخ تیکت {ticket}: {reply}',
+      'ticket_reply',
       1
     );
   }
@@ -575,6 +660,7 @@ function enrichTicket(row: Record<string, unknown>): CrmTicket {
   return {
     id,
     publicId: makeCrmUuid('TK', id),
+    uuid: String(row.uuid || ''),
     customerId: Number.isFinite(customerId) ? customerId : 0,
     customerName: row.customer_name != null ? String(row.customer_name) : undefined,
     customerMobile: row.customer_mobile != null ? String(row.customer_mobile) : undefined,
@@ -1120,6 +1206,7 @@ export function createTicket(
     agentName?: string | null;
     supervisorId?: string;
     nextAction?: string;
+    uuid?: string | null;
   },
   actor: AdminAuthActor
 ): CrmTicket {
@@ -1143,14 +1230,15 @@ export function createTicket(
   const queueId = String(input.queueId || 'q_support');
   const queue = crmQueueOf(queueId);
   const teamId = input.teamId != null ? input.teamId : queue?.team || null;
+  const ticketUuid = normalizeTicketUuid(input.uuid) || randomUUID();
   const info = db()
     .prepare(
       `INSERT INTO crm_tickets (
         customer_id, interaction_id, title, description, type, category, sub_category,
         priority, severity, status, agent_id, agent_name, supervisor_id, sla_due,
         next_action, channel, queue_id, team_id, tags_json, first_response_due_at,
-        created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        created_at, updated_at, uuid
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     )
     .run(
       customerId,
@@ -1174,7 +1262,8 @@ export function createTicket(
       JSON.stringify(Array.isArray(input.tags) ? input.tags : []),
       firstDue,
       createdAt,
-      createdAt
+      createdAt,
+      ticketUuid
     );
   const ticket = getTicket(Number(info.lastInsertRowid))!;
   addTicketActivity(ticket.id, {
@@ -1185,11 +1274,18 @@ export function createTicket(
     text: `تیکت از طریق کانال ایجاد شد`,
   });
   dispatchSmsEvent('ticket_created', { customerId, ticketPublicId: ticket.publicId }, actor);
+  notifyCrmTicketAdmin({
+    title: `تیکت جدید ${ticket.publicId}`,
+    body: ticket.title,
+    ticketId: ticket.id,
+    sourceKey: `crm-ticket:${ticket.id}:created`,
+    kind: 'warn',
+  });
   audit({
     userId: actorId(actor),
     category: 'ticket',
     entity: 'crm_tickets',
-    recordUuid: ticket.publicId,
+    recordUuid: ticket.uuid || ticket.publicId,
     action: 'create',
   });
   return getTicket(ticket.id)!;
@@ -1206,6 +1302,42 @@ export function getTicket(id: number): CrmTicket | null {
     .prepare(`${TICKET_SELECT} WHERE t.id = ?`)
     .get(id) as Record<string, unknown> | undefined;
   return row ? enrichTicket(row) : null;
+}
+
+export function getTicketByUuid(uuid: string): CrmTicket | null {
+  ensureCrmSchema();
+  const key = normalizeTicketUuid(uuid);
+  if (!key) return null;
+  const row = db()
+    .prepare(`${TICKET_SELECT} WHERE lower(t.uuid) = ?`)
+    .get(key) as Record<string, unknown> | undefined;
+  return row ? enrichTicket(row) : null;
+}
+
+/** Resolve numeric id, RFC UUID, or derived TK- public id. */
+export function getTicketByRef(ref: string): CrmTicket | null {
+  const raw = String(ref || '').trim();
+  if (!raw) return null;
+  if (/^\d+$/.test(raw)) return getTicket(Number(raw));
+  const byUuid = getTicketByUuid(raw);
+  if (byUuid) return byUuid;
+  const want = raw.toUpperCase();
+  if (want.startsWith('TK-')) {
+    const rows = db()
+      .prepare(`${TICKET_SELECT} ORDER BY t.id DESC LIMIT 400`)
+      .all() as Array<Record<string, unknown>>;
+    for (const row of rows) {
+      const t = enrichTicket(row);
+      if (t.publicId.toUpperCase() === want) return t;
+    }
+  }
+  return null;
+}
+
+export function listPublicTicketActivities(ticketId: number): CrmTicketActivity[] {
+  return listTicketActivities(ticketId).filter(
+    (a) => a.visibility === 'public' || a.kind === 'public_reply'
+  );
 }
 
 export function listTickets(opts?: {
@@ -1474,6 +1606,29 @@ export function patchTicket(
   }
 
   const updated = getTicket(id)!;
+  const isPublicReply =
+    Boolean(input.activityText) &&
+    (input.activityVisibility === 'public' || input.activityKind === 'public_reply');
+  if (isPublicReply) {
+    deliverPublicReplyToUser(updated, String(input.activityText), actorLabel(actor));
+    dispatchSmsEvent(
+      'ticket_reply',
+      {
+        customerId: ticket.customerId,
+        ticketPublicId: updated.publicId,
+        replyText: String(input.activityText),
+      },
+      actor
+    );
+  } else if (input.status != null && input.status !== ticket.status) {
+    notifyCrmTicketAdmin({
+      title: `وضعیت تیکت ${updated.publicId}`,
+      body: `${ticket.status} → ${status}`,
+      ticketId: updated.id,
+      sourceKey: `crm-ticket:${updated.id}:status:${status}:${updated.updatedAt}`,
+      kind: status === 'بازگشایی‌شده' ? 'warn' : 'info',
+    });
+  }
   if (status === 'حل‌شده' && ticket.status !== 'حل‌شده') {
     dispatchSmsEvent('ticket_resolved', { customerId: ticket.customerId, ticketPublicId: updated.publicId }, actor);
   }
@@ -2341,7 +2496,7 @@ export function deleteSmsPattern(id: number): void {
 
 export function renderSmsPattern(
   text: string,
-  ctx: { customer?: CrmCustomer; ticketPublicId?: string; agentName?: string }
+  ctx: { customer?: CrmCustomer; ticketPublicId?: string; agentName?: string; replyText?: string }
 ): string {
   const c = ctx.customer;
   const fullName = c ? `${c.first || ''} ${c.last || ''}`.trim() : '';
@@ -2349,15 +2504,18 @@ export function renderSmsPattern(
   const product = c?.product || 'Pet Date';
   const ticket = ctx.ticketPublicId || '';
   const agent = ctx.agentName || '';
+  const reply = String(ctx.replyText || '').trim().slice(0, 240);
   return text
     .replace(/\{name\}/gi, name)
     .replace(/\{product\}/gi, product)
     .replace(/\{ticket\}/gi, ticket)
     .replace(/\{agent\}/gi, agent)
+    .replace(/\{reply\}/gi, reply)
     .replace(/\{نام\}/g, name)
     .replace(/\{محصول\}/g, product)
     .replace(/\{شناسه\}/g, ticket)
-    .replace(/\{کارشناس\}/g, agent);
+    .replace(/\{کارشناس\}/g, agent)
+    .replace(/\{پاسخ\}/g, reply);
 }
 
 export type CrmSmsDelivery =
@@ -2368,7 +2526,7 @@ export async function sendSmsPattern(
   patternId: number,
   customerId: number,
   actor: AdminAuthActor,
-  extra?: { ticketPublicId?: string; requirePanel?: boolean }
+  extra?: { ticketPublicId?: string; requirePanel?: boolean; replyText?: string }
 ): Promise<{ text: string; interactionId: number; delivery: CrmSmsDelivery }> {
   ensureCrmSchema();
   const pattern = listSmsPatterns().find((p) => p.id === patternId);
@@ -2395,6 +2553,7 @@ export async function sendSmsPattern(
     customer,
     ticketPublicId: extra?.ticketPublicId,
     agentName: actorLabel(actor),
+    replyText: extra?.replyText,
   });
   const info = db()
     .prepare(
@@ -2478,13 +2637,16 @@ export async function sendSmsPatternBulk(
 
 function dispatchSmsEvent(
   event: string,
-  ctx: { customerId: number; ticketPublicId?: string },
+  ctx: { customerId: number; ticketPublicId?: string; replyText?: string },
   actor: AdminAuthActor
 ): void {
   ensureCrmSchema();
   const patterns = listSmsPatterns().filter((p) => p.trigger === event && p.auto && p.active);
   for (const p of patterns) {
-    void sendSmsPattern(p.id, ctx.customerId, actor, { ticketPublicId: ctx.ticketPublicId }).catch((err) => {
+    void sendSmsPattern(p.id, ctx.customerId, actor, {
+      ticketPublicId: ctx.ticketPublicId,
+      replyText: ctx.replyText,
+    }).catch((err) => {
       console.error('CRM auto SMS failed:', p.id, err);
     });
   }
@@ -3253,6 +3415,7 @@ export function createUserSupportTicket(
     description?: string;
     category?: string;
     channel?: string;
+    uuid?: string | null;
   }
 ): CrmTicket {
   const actor = portalTicketActor(user.name?.trim() || 'کاربر');
@@ -3285,6 +3448,7 @@ export function createUserSupportTicket(
       priority: 'متوسط',
       channel,
       queueId: 'q_support',
+      uuid: input.uuid,
     },
     actor
   );

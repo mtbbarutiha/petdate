@@ -246,6 +246,10 @@ html[data-theme='dark'] .admin-app {
   --admin-chip-bg: #2a2e3e;
   --admin-chip-well: #1e2230;
   --admin-chip-label: #c4bfd4;
+  --admin-msg-public-bg: color-mix(in srgb, var(--admin-sky) 18%, var(--admin-chip-well));
+  --admin-msg-public-border: color-mix(in srgb, var(--admin-sky) 38%, var(--admin-border));
+  --admin-msg-internal-bg: color-mix(in srgb, #d4a017 16%, var(--admin-chip-well));
+  --admin-msg-internal-border: color-mix(in srgb, #d4a017 34%, var(--admin-border));
 
   --primary: var(--admin-accent);
   --primary-soft: var(--admin-accent-soft);
@@ -1308,6 +1312,42 @@ html[data-theme='dark'] .admin-app .tk-tag--muted,
 html[data-theme='dark'] .admin-app .tk-msg--system {
   background: var(--admin-chip-well);
   color: var(--admin-chip-label);
+}
+html[data-theme='dark'] .admin-app .tk-msg,
+html[data-theme='dark'] .admin-app .tk-msg--public,
+html[data-theme='dark'] .admin-app .tk-msg--internal {
+  color: var(--admin-ink);
+}
+html[data-theme='dark'] .admin-app .tk-msg--public {
+  background: var(--admin-msg-public-bg);
+  border-color: var(--admin-msg-public-border);
+}
+html[data-theme='dark'] .admin-app .tk-msg--internal {
+  background: var(--admin-msg-internal-bg);
+  border-color: var(--admin-msg-internal-border);
+}
+html[data-theme='dark'] .admin-app .tk-msg-h {
+  color: var(--admin-chip-label);
+}
+html[data-theme='dark'] .admin-app .tk-composer textarea,
+html[data-theme='dark'] .admin-app .tk-field textarea {
+  background: var(--admin-chip-well);
+  color: var(--admin-ink);
+  border-color: var(--admin-border);
+}
+html[data-theme='dark'] .admin-app .tk-composer textarea::placeholder {
+  color: var(--admin-chip-label);
+  opacity: 1;
+}
+html[data-theme='dark'] .admin-app .tk-warn {
+  background: color-mix(in srgb, #d4a017 16%, var(--admin-chip-well));
+  border-color: color-mix(in srgb, #d4a017 36%, var(--admin-border));
+  color: var(--admin-ink);
+}
+html[data-theme='dark'] .admin-app .tk-kcard {
+  background: var(--admin-surface);
+  border-color: var(--admin-border);
+  color: var(--admin-ink);
 }
 html[data-theme='dark'] .admin-app .admin-pill--slate {
   border-color: var(--admin-border);
@@ -2379,6 +2419,10 @@ html[data-theme='dark'] .pepito-support-ticket-form textarea {
 html[data-theme='dark'] .pepito-support-ticket-list li {
   background: #1e2230;
   border-color: var(--pd-border);
+}
+html[data-theme='dark'] .pepito-support-ticket-reply {
+  background: color-mix(in srgb, var(--admin-sky, #3bb8f5) 16%, #1e2230);
+  color: var(--pepito-dark);
 }
 html[data-theme='dark'] .pepito-support-ok {
   background: color-mix(in srgb, #16a34a 18%, transparent);

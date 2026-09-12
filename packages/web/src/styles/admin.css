@@ -36,6 +36,10 @@
   --admin-chip-bg: rgba(255, 255, 255, 0.78);
   --admin-chip-well: #f7f8fb;
   --admin-chip-label: var(--admin-muted);
+  --admin-msg-public-bg: #eef7fd;
+  --admin-msg-public-border: #c5e2f5;
+  --admin-msg-internal-bg: #fff8eb;
+  --admin-msg-internal-border: #f0d9a8;
 
   --primary: var(--admin-accent);
   --primary-soft: var(--admin-accent-soft);
@@ -4522,10 +4526,11 @@ body:has(.admin-app) {
 .admin-app .tk-timeline { margin-top: 10px; }
 .admin-app .tk-msg {
   border: 1px solid var(--admin-border); border-radius: 11px; padding: 10px 12px; margin-bottom: 8px; font-size: 13px;
+  color: var(--admin-ink);
 }
-.admin-app .tk-msg--public { background: #eef7fd; border-color: #c5e2f5; }
-.admin-app .tk-msg--internal { background: #fff8eb; border-color: #f0d9a8; }
-.admin-app .tk-msg--system { background: var(--admin-chip-well); }
+.admin-app .tk-msg--public { background: var(--admin-msg-public-bg); border-color: var(--admin-msg-public-border); }
+.admin-app .tk-msg--internal { background: var(--admin-msg-internal-bg); border-color: var(--admin-msg-internal-border); }
+.admin-app .tk-msg--system { background: var(--admin-chip-well); color: var(--admin-ink); }
 .admin-app .tk-msg-h {
   display: flex; justify-content: space-between; gap: 8px; margin-bottom: 4px;
   font-size: 11px; color: var(--admin-muted);

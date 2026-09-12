@@ -30,6 +30,8 @@ export function SupportTicketPage() {
 
   useEffect(() => {
     void load();
+    const t = window.setInterval(() => void load(), 20_000);
+    return () => window.clearInterval(t);
   }, [load]);
 
   async function onSubmit(e: FormEvent) {
@@ -139,11 +141,14 @@ export function SupportTicketPage() {
           <h2>تیکت‌های اخیر</h2>
           <ul>
             {tickets.map((t) => (
-              <li key={t.id}>
+              <li key={t.uuid || t.id}>
                 <strong>{t.title}</strong>
                 <span>
                   {t.status} · {toPersianDigits(t.publicId || String(t.id))}
                 </span>
+                {t.lastPublicReply ? (
+                  <p className="pepito-support-ticket-reply">{t.lastPublicReply}</p>
+                ) : null}
               </li>
             ))}
           </ul>

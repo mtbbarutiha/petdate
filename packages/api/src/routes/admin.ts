@@ -1017,6 +1017,13 @@ adminRouter.post('/support/threads/:userId/reply', (req, res) => {
   }
   const actorName = actor?.displayName || actor?.username || 'پشتیبانی';
   const msg = dbService.addSupportMessage(userId, 'assistant', `[${actorName}]\n${text}`);
+  void import('../services/ticket-user-notify')
+    .then(({ deliverSupportInboxReply }) =>
+      deliverSupportInboxReply({ userId, text: `[${actorName}]\n${text}` })
+    )
+    .catch((err) => {
+      console.warn('support inbox telegram delivery failed:', (err as Error).message);
+    });
   res.status(201).json({ ok: true, message: msg, messages: dbService.listSupportMessages(userId, 200) });
 });
 
