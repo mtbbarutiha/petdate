@@ -21,7 +21,7 @@ export function MagazineCardView({ article }: { article: MagazineCard }) {
     <article className="pepito-news-card">
       <div className="pepito-news-img">
         <Link to={`/magazine/${article.slug}`}>
-          <img src={img} alt={article.title} loading="lazy" />
+          <img src={img} alt={article.title} loading="lazy" width={1600} height={800} decoding="async" />
         </Link>
         {article.category ? <span className="pepito-news-cat">{article.category}</span> : null}
       </div>

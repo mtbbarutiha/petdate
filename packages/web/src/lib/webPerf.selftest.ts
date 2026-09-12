@@ -82,7 +82,7 @@ assert.doesNotMatch(
   /rel="preload"\s+as="style"/,
   'do not preload a stylesheet (unused-preload warning)'
 );
-assert.match(indexHtml, /web-perf-v29-hero-dock/, 'deploy marker bumped so SW/HTML cache misses');
+assert.match(indexHtml, /web-perf-v30-news-short/, 'deploy marker bumped so SW/HTML cache misses');
 assert.match(indexHtml, /id="pd-boot-lcp"/, 'LCP img lives outside #root so React cannot replace it');
 assert.match(indexHtml, /id="pd-boot-lcp"[\s\S]*decoding="sync"/, 'LCP img decodes sync so main-thread JS cannot stall paint');
 assert.match(indexHtml, /data-pd-lcp="hero"/, 'static preload is marked so SEO inject does not duplicate it');
@@ -222,6 +222,14 @@ const memberImgBlock = pepitoCss.match(/\.pepito-member img \{[^}]+\}/)?.[0] || 
 assert.match(memberImgBlock, /object-fit:\s*cover/, 'team imgs cover the short frame');
 assert.doesNotMatch(memberImgBlock, /aspect-ratio:\s*600/, 'team imgs must not keep the 6:7 poster crop');
 assert.match(below, /width=\{600\} height=\{600\}/, 'below-fold photo attrs match 1:1 reserve');
+const newsImgBlock = pepitoCss.match(/\.pepito-news-img \{[^}]+\}/)?.[0] || '';
+assert.match(newsImgBlock, /aspect-ratio:\s*2\s*\/\s*1/, 'news/magazine covers use short 2:1 crop');
+assert.doesNotMatch(newsImgBlock, /max-height/, 'news frames stay full-width (no thumb cap)');
+const newsCoverBlock = pepitoCss.match(/\.pepito-news-img img \{[^}]+\}/)?.[0] || '';
+assert.match(newsCoverBlock, /object-fit:\s*cover/, 'news imgs cover the short frame');
+assert.match(newsCoverBlock, /height:\s*100%/, 'news imgs fill the frame (HTML height attr cannot win)');
+assert.doesNotMatch(newsCoverBlock, /aspect-ratio:\s*900/, 'news imgs must not keep the 3:2 / height=900 portrait box');
+assert.match(below, /width=\{1600\} height=\{800\}/, 'news cover attrs match 2:1 reserve');
 
 const header = readFileSync(join(webSrc, 'components/SiteHeader.tsx'), 'utf8');
 const themeToggle = readFileSync(join(webSrc, 'components/ThemeToggle.tsx'), 'utf8');

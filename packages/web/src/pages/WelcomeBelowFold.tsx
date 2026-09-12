@@ -652,7 +652,7 @@ export function WelcomeBelowFold() {
                 <article key={n.id} className="pepito-news-card">
                   <div className="pepito-news-img">
                     <Link to={to}>
-                      <img src={img} alt={n.title} loading="lazy" width={1600} height={900} decoding="async" />
+                      <img src={img} alt={n.title} loading="lazy" width={1600} height={800} decoding="async" />
                     </Link>
                     {n.category ? <span className="pepito-news-cat">{n.category}</span> : null}
                   </div>
