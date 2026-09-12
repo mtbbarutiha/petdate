@@ -445,6 +445,8 @@ export const adminPlatform = {
         `SELECT COUNT(*) as c FROM shop_orders
          WHERE status IN ('pending','paid')`
       ),
+      /** Open scheduled games (joinable) */
+      games: q(`SELECT COUNT(*) as c FROM games WHERE status = 'open'`),
     };
   },
 

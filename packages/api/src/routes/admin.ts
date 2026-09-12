@@ -623,6 +623,58 @@ adminRouter.patch('/playdates/:id/status', (req, res) => {
   res.json(updated);
 });
 
+adminRouter.get('/games', (req, res) => {
+  const status = typeof req.query.status === 'string' && req.query.status.trim()
+    ? (req.query.status as 'open' | 'full' | 'cancelled' | 'completed')
+    : undefined;
+  const gameType = typeof req.query.gameType === 'string' && req.query.gameType.trim()
+    ? (req.query.gameType as import('@petdate/shared').GameType)
+    : undefined;
+  if (status && !['open', 'full', 'cancelled', 'completed'].includes(status)) {
+    res.status(400).json({ error: 'وضعیت نامعتبر' });
+    return;
+  }
+  const games = dbService.listGames({ status, gameType });
+  res.json({ total: games.length, games });
+});
+
+adminRouter.get('/games/:id', (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id) || !Number.isInteger(id) || id <= 0) {
+    res.status(400).json({ error: 'شناسه بازی نامعتبر است' });
+    return;
+  }
+  const game = dbService.getGame(id);
+  if (!game) {
+    res.status(404).json({ error: 'بازی پیدا نشد' });
+    return;
+  }
+  const players = dbService.getGamePlayers(game.id);
+  res.json({ ...game, players });
+});
+
+adminRouter.patch('/games/:id/status', (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isFinite(id) || !Number.isInteger(id) || id <= 0) {
+    res.status(400).json({ error: 'شناسه بازی نامعتبر است' });
+    return;
+  }
+  const status = String(req.body?.status || '');
+  if (!['open', 'full', 'cancelled', 'completed'].includes(status)) {
+    res.status(400).json({ error: 'وضعیت نامعتبر' });
+    return;
+  }
+  const updated = dbService.updateGameStatus(
+    id,
+    status as 'open' | 'full' | 'cancelled' | 'completed'
+  );
+  if (!updated) {
+    res.status(404).json({ error: 'بازی پیدا نشد' });
+    return;
+  }
+  res.json(updated);
+});
+
 adminRouter.get('/consultations', (req, res) => {
   const status = typeof req.query.status === 'string' ? req.query.status : undefined;
   const items = dbService

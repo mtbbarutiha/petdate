@@ -229,6 +229,42 @@ export async function listGames(filters?: {
   }
 }
 
+export async function getGame(
+  id: number
+): Promise<(Game & { players?: import('@petdate/shared').GamePlayer[] }) | null> {
+  if (!Number.isFinite(id) || id <= 0) return null;
+  try {
+    return await request(`/api/games/${id}`);
+  } catch {
+    return null;
+  }
+}
+
+export async function createGame(input: {
+  title: string;
+  gameType: GameType;
+  hostUserId: number;
+  location: string;
+  scheduledAt: string;
+  maxPlayers?: number;
+  description?: string;
+  sectionId?: number;
+}): Promise<Game> {
+  return request<Game>('/api/games', {
+    method: 'POST',
+    headers: storedAuthHeaders(),
+    body: JSON.stringify(input),
+  });
+}
+
+export async function joinGame(gameId: number, userId: number): Promise<Game> {
+  return request<Game>(`/api/games/${gameId}/join`, {
+    method: 'POST',
+    headers: storedAuthHeaders(),
+    body: JSON.stringify({ userId }),
+  });
+}
+
 export async function listPets(filters?: {
   ownerId?: number;
   lookingForPlaymate?: boolean;

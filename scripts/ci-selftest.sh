@@ -147,6 +147,12 @@ npx tsx "$ROOT/packages/web/src/lib/apiErrorMessage.selftest.ts"
 echo "==> selftest: web listGames never blanks SPA"
 npx tsx "$ROOT/packages/web/src/lib/listGames.selftest.ts"
 
+echo "==> selftest: admin games route + badge"
+npx tsx "$ROOT/packages/web/src/admin/adminGamesRoute.selftest.ts"
+
+echo "==> selftest: api admin games moderation"
+npx tsx "$ROOT/packages/api/src/routes/admin-games.selftest.ts"
+
 echo "==> selftest: shop product gallery assets"
 npx tsx "$ROOT/packages/web/src/data/shopGallery.selftest.ts"
 

@@ -4564,6 +4564,15 @@ export const dbService = {
     }));
   },
 
+  updateGameStatus(id: number, status: GameStatus): Game | null {
+    if (!Number.isFinite(id) || !Number.isInteger(id) || id <= 0) return null;
+    if (!['open', 'full', 'cancelled', 'completed'].includes(status)) return null;
+    const existing = this.getGame(id);
+    if (!existing) return null;
+    db.prepare('UPDATE games SET status = ? WHERE id = ?').run(status, id);
+    return this.getGame(id);
+  },
+
   listPets(filters?: {
     ownerId?: number;
     lookingForPlaymate?: boolean;

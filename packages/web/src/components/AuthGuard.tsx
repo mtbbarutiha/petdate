@@ -11,6 +11,7 @@ const PUBLIC_PREFIXES = [
   '/auth',
   '/admin',
   '/adoption',
+  '/games',
   '/shop',
   '/magazine',
   '/vet-consult',
