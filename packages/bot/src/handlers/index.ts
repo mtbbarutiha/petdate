@@ -97,7 +97,7 @@ import {
   getCtxUser,
 } from './start';
 import { menuKeyboardFor } from './helpers';
-import { handleSupportChat, handleSupportChatText, handleSupportChatVoice } from './support';
+import { handleSupportChat, handleSupportChatText, handleSupportChatVoice, handleSupportMenu, handleSupportTicketStart } from './support';
 import {
   handleComingSoon,
   handleChatsEntry,
@@ -681,6 +681,15 @@ export function registerHandlers(bot: Bot): void {
     await handlePhoneVerifyStart(ctx);
   });
 
+  bot.callbackQuery('support:ticket', async (ctx) => {
+    await ctx.answerCallbackQuery({ text: 'ثبت تیکت' }).catch(() => undefined);
+    await handleSupportTicketStart(ctx);
+  });
+  bot.callbackQuery('support:agent', async (ctx) => {
+    await ctx.answerCallbackQuery({ text: 'بات پشتیبانی' }).catch(() => undefined);
+    await handleSupportChat(ctx);
+  });
+
   bot.callbackQuery(/^medical:/, (ctx) => handleComingSoon(ctx, 'پزشکی'));
   bot.callbackQuery('vet:connect', (ctx) => handleQuickVetConnect(ctx));
   bot.callbackQuery('vet:connect:resend', (ctx) =>
@@ -962,7 +971,11 @@ async function handleTextMessage(ctx: Context): Promise<void> {
   // پشتیبانی هوشمند — قبل از رله‌های چت تا پیام‌های بعدی گم نشوند
   if (ctx.from) {
     const supportSession = await getSession(String(ctx.from.id));
-    if (supportSession?.step === 'support_chat') {
+    if (
+      supportSession?.step === 'support_chat' ||
+      supportSession?.step === 'support_ticket_title' ||
+      supportSession?.step === 'support_ticket_body'
+    ) {
       if (await handleSupportChatText(ctx, text)) return;
     }
   }
@@ -1216,7 +1229,7 @@ async function handleTextMessage(ctx: Context): Promise<void> {
     case v.help:
       return handleHelp(ctx);
     case m.support:
-      return handleSupportChat(ctx);
+      return handleSupportMenu(ctx);
     case m.myRoles:
     case d.myRoles:
     case n.myRoles:

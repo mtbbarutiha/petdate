@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, LifeBuoy, Send } from 'lucide-react';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { fetchSupportMessages, sendSupportMessage, type SupportChatMessage } from '../lib/api';
+import { AI_ASSISTANT_DISPLAY_NAME } from './supportAgent';
 
 export function SupportChatPage() {
   const { token, isLoggedIn } = useAuthStore();
@@ -41,7 +42,6 @@ export function SupportChatPage() {
     setBusy(true);
     setError(null);
     setWelcome(null);
-    // Optimistic user bubble
     const tempId = -Date.now();
     setMessages((prev) => [
       ...prev,
@@ -62,15 +62,15 @@ export function SupportChatPage() {
     return (
       <div className="pepito-support-chat" dir="rtl">
         <header className="pepito-support-head">
-          <Link to="/home" className="tg-icon-btn" aria-label="بازگشت">
+          <Link to="/support" className="tg-icon-btn" aria-label="بازگشت">
             <ArrowRight size={18} />
           </Link>
           <div>
             <h1>
               <LifeBuoy size={22} style={{ verticalAlign: 'middle', marginLeft: 8 }} />
-              چت با پشتیبانی
+              صحبت با بات پشتیبانی
             </h1>
-            <p>لیلا کیانی راهنمایی‌ات می‌کند.</p>
+            <p>{AI_ASSISTANT_DISPLAY_NAME} راهنمایی‌ات می‌کند.</p>
           </div>
         </header>
         <p className="pepito-support-gate">
@@ -84,15 +84,17 @@ export function SupportChatPage() {
   return (
     <div className="pepito-support-chat" dir="rtl">
       <header className="pepito-support-head">
-        <Link to="/home" className="tg-icon-btn" aria-label="بازگشت">
+        <Link to="/support" className="tg-icon-btn" aria-label="بازگشت به پشتیبانی">
           <ArrowRight size={18} />
         </Link>
         <div>
           <h1>
             <LifeBuoy size={22} style={{ verticalAlign: 'middle', marginLeft: 8 }} />
-            چت با پشتیبانی
+            صحبت با بات پشتیبانی
           </h1>
-          <p>لیلا کیانی — ورود، پت، همبازی، مربی، دامپزشک، شاپ و سکه</p>
+          <p>
+            {AI_ASSISTANT_DISPLAY_NAME} — ورود، پت، همبازی، مربی، دامپزشک، شاپ و سکه
+          </p>
         </div>
       </header>
 

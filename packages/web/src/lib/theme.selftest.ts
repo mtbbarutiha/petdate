@@ -130,6 +130,9 @@ assert.match(pepitoCss, /\.pepito-invite-card\s*\{[\s\S]*?padding:\s*0\.65rem/, 
 assert.match(darkCss, /\.pepito-role-switch-item\b/, 'role switch pills remapped');
 assert.match(darkCss, /\.pepito-support-bubble\.is-assistant/, 'support chat bubbles remapped');
 assert.match(darkCss, /\.pepito-support-composer input/, 'support composer remapped');
+assert.match(darkCss, /\.pepito-support-hub/, 'support hub remapped');
+assert.match(darkCss, /\.pepito-support-choice/, 'support chooser remapped');
+assert.match(darkCss, /\.pepito-support-ticket-form input/, 'support ticket form remapped');
 assert.match(darkCss, /\.pepito-vet-inbox-panel--incoming/, 'vet inbox panels remapped');
 
 /* Skeleton placeholders — no leftover light/white shimmer bars in dark */

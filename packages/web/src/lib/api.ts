@@ -1972,3 +1972,35 @@ export async function sendSupportMessage(
     body: JSON.stringify({ text }),
   });
 }
+
+export type SupportTicketSummary = {
+  id: number;
+  publicId: string;
+  title: string;
+  description: string;
+  status: string;
+  priority: string;
+  category: string;
+  channel: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export async function fetchSupportTickets(
+  token: string
+): Promise<{ ok: true; tickets: SupportTicketSummary[] }> {
+  return request('/api/support/tickets', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+export async function createSupportTicket(
+  token: string,
+  body: { title: string; description?: string; category?: string }
+): Promise<{ ok: true; ticket: SupportTicketSummary }> {
+  return request('/api/support/tickets', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify(body),
+  });
+}
