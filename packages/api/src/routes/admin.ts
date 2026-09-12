@@ -86,6 +86,12 @@ import {
   markAdminHeaderNotificationRead,
   markAllAdminHeaderNotificationsRead,
 } from '../admin-notifications';
+import {
+  deleteAdminPref,
+  getAdminPref,
+  layoutPrefKey,
+  setAdminPref,
+} from '../admin-user-prefs';
 import { hrAdminRouter } from './admin-hr';
 import { salesAdminRouter } from './admin-sales';
 import { crmAdminRouter } from './admin-crm';
@@ -162,6 +168,8 @@ adminRouter.use((req, res, next) => {
     req.path.startsWith('/crm') ||
     req.path.startsWith('/finance-os') ||
     req.path.startsWith('/notifications') ||
+    req.path.startsWith('/prefs') ||
+    req.path.startsWith('/widget-layouts') ||
     req.path.startsWith('/support') ||
     req.path.startsWith('/daily-notes')
   ) {
@@ -264,6 +272,100 @@ adminRouter.post('/notifications/:id/read', (req, res) => {
     return;
   }
   res.json({ ok: true });
+});
+
+/** Per-admin UI prefs (widget layouts, daily notes). Any logged-in admin, own actor only. */
+adminRouter.get('/prefs/:key', (req, res) => {
+  const actor = req.adminActor;
+  if (!actor) {
+    res.status(401).json({ error: 'دسترسی ادمین مجاز نیست' });
+    return;
+  }
+  try {
+    const key = decodeURIComponent(String(req.params.key || ''));
+    res.json({ key, value: getAdminPref(actor, key) });
+  } catch (err) {
+    const status = Number((err as { status?: number }).status) || 400;
+    res.status(status).json({ error: (err as Error).message });
+  }
+});
+
+adminRouter.put('/prefs/:key', (req, res) => {
+  const actor = req.adminActor;
+  if (!actor) {
+    res.status(401).json({ error: 'دسترسی ادمین مجاز نیست' });
+    return;
+  }
+  try {
+    const key = decodeURIComponent(String(req.params.key || ''));
+    const value = req.body && typeof req.body === 'object' && 'value' in req.body ? req.body.value : req.body;
+    res.json({ key, value: setAdminPref(actor, key, value) });
+  } catch (err) {
+    const status = Number((err as { status?: number }).status) || 400;
+    res.status(status).json({ error: (err as Error).message });
+  }
+});
+
+adminRouter.delete('/prefs/:key', (req, res) => {
+  const actor = req.adminActor;
+  if (!actor) {
+    res.status(401).json({ error: 'دسترسی ادمین مجاز نیست' });
+    return;
+  }
+  try {
+    const key = decodeURIComponent(String(req.params.key || ''));
+    res.json({ ok: true, deleted: deleteAdminPref(actor, key) });
+  } catch (err) {
+    const status = Number((err as { status?: number }).status) || 400;
+    res.status(status).json({ error: (err as Error).message });
+  }
+});
+
+/** Convenience aliases for widget boards — same store as /prefs/widget-layout|:id */
+adminRouter.get('/widget-layouts/:dashboardId', (req, res) => {
+  const actor = req.adminActor;
+  if (!actor) {
+    res.status(401).json({ error: 'دسترسی ادمین مجاز نیست' });
+    return;
+  }
+  try {
+    const key = layoutPrefKey(String(req.params.dashboardId || ''));
+    res.json({ dashboardId: String(req.params.dashboardId || ''), value: getAdminPref(actor, key) });
+  } catch (err) {
+    const status = Number((err as { status?: number }).status) || 400;
+    res.status(status).json({ error: (err as Error).message });
+  }
+});
+
+adminRouter.put('/widget-layouts/:dashboardId', (req, res) => {
+  const actor = req.adminActor;
+  if (!actor) {
+    res.status(401).json({ error: 'دسترسی ادمین مجاز نیست' });
+    return;
+  }
+  try {
+    const key = layoutPrefKey(String(req.params.dashboardId || ''));
+    const value = req.body?.board && typeof req.body.board === 'object' ? req.body.board : req.body;
+    res.json({ dashboardId: String(req.params.dashboardId || ''), value: setAdminPref(actor, key, value) });
+  } catch (err) {
+    const status = Number((err as { status?: number }).status) || 400;
+    res.status(status).json({ error: (err as Error).message });
+  }
+});
+
+adminRouter.delete('/widget-layouts/:dashboardId', (req, res) => {
+  const actor = req.adminActor;
+  if (!actor) {
+    res.status(401).json({ error: 'دسترسی ادمین مجاز نیست' });
+    return;
+  }
+  try {
+    const key = layoutPrefKey(String(req.params.dashboardId || ''));
+    res.json({ ok: true, deleted: deleteAdminPref(actor, key) });
+  } catch (err) {
+    const status = Number((err as { status?: number }).status) || 400;
+    res.status(status).json({ error: (err as Error).message });
+  }
 });
 
 adminRouter.get('/dashboard', async (req, res) => {

@@ -261,6 +261,7 @@ run src/services/ticket-user-notify.selftest.ts
 run src/admin-notifications.selftest.ts
 run src/coin-sell-notifications.selftest.ts
 run src/admin-daily-notes.selftest.ts
+run src/admin-user-prefs.selftest.ts
 run src/admin-platform-nav.selftest.ts
 run src/admin-users-geo.selftest.ts
 run src/admin-users-list-pets.selftest.ts

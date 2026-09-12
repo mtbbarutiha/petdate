@@ -17,7 +17,11 @@ import {
   timeDrillView,
 } from './drill.ts';
 import {
+  isDefaultBoard,
+  layoutPrefKey,
   normalizeBoard,
+  parseRemoteBoard,
+  resolveHydratedBoard,
   reorderItems,
   storageKeyFor,
 } from './layoutStorage.ts';
@@ -202,5 +206,35 @@ assert.doesNotMatch(
 const calSrc = readFileSync(join(here, 'CalendarWidget.tsx'), 'utf8');
 assert.match(calSrc, /setSelectedIso/, 'calendar publishes selected day');
 assert.match(calSrc, /localDateToIso/, 'calendar uses local ISO dates');
+
+assert.equal(layoutPrefKey('platform'), 'widget-layout:platform');
+assert.equal(parseRemoteBoard(null), null);
+assert.equal(parseRemoteBoard({ version: 2, items: [] }), null);
+assert.ok(parseRemoteBoard({ version: 1, items: [] }));
+
+const def = normalizeBoard({ version: 1, removed: [], items: [] }, catalog);
+assert.equal(isDefaultBoard(def, catalog), true);
+assert.equal(isDefaultBoard({ version: 1, removed: ['b'], items: def.items }, catalog), false);
+
+const remoteWin = resolveHydratedBoard(
+  { version: 1, removed: [], items: [{ id: 'a', w: 1, h: 1, order: 0 }] },
+  { version: 1, removed: [], items: [{ id: 'c', w: 2, h: 2, order: 0 }] },
+  catalog,
+);
+assert.equal(remoteWin.source, 'remote');
+assert.equal(remoteWin.board.items[0]?.id, 'c');
+assert.equal(remoteWin.uploadLocal, false);
+
+const migrateLocal = resolveHydratedBoard(
+  { version: 1, removed: ['b'], items: [{ id: 'a', w: 3, h: 2, order: 0 }] },
+  null,
+  catalog,
+);
+assert.equal(migrateLocal.source, 'local');
+assert.equal(migrateLocal.uploadLocal, true);
+
+const keepDefault = resolveHydratedBoard(def, null, catalog);
+assert.equal(keepDefault.source, 'default');
+assert.equal(keepDefault.uploadLocal, false);
 
 console.log('widgetDashboard.selftest: ok');

@@ -5083,14 +5083,32 @@ body:has(.admin-app) {
   position: absolute;
   inset-inline-start: 0;
   bottom: 0;
-  width: 14px;
-  height: 14px;
+  width: 22px;
+  height: 22px;
   cursor: nesw-resize;
+  touch-action: none;
   background:
-    linear-gradient(135deg, transparent 50%, var(--admin-border) 50%) no-repeat bottom left / 10px 10px;
-  opacity: 0.55;
+    linear-gradient(135deg, transparent 55%, var(--admin-border) 55%) no-repeat bottom left / 12px 12px;
+  opacity: 0.7;
 }
-.admin-app .wdg-tile:hover .wdg-resize { opacity: 1; }
+.admin-app .wdg-tile:hover .wdg-resize,
+.admin-app .wdg-tile:focus-within .wdg-resize { opacity: 1; }
+@media (pointer: coarse) {
+  .admin-app .wdg-resize {
+    width: 28px;
+    height: 28px;
+    opacity: 1;
+  }
+}
+.admin-app .wdg-persist {
+  font-size: 11px;
+  color: var(--admin-muted);
+  max-width: 16rem;
+  line-height: 1.35;
+}
+.admin-app .wdg-persist[data-status='saving'] { color: var(--admin-ink); }
+.admin-app .wdg-persist[data-status='saved'] { color: #0f9a78; }
+.admin-app .wdg-persist[data-status='error'] { color: #c77810; }
 .admin-app .wdg-chart { display: grid; gap: 6px; }
 .admin-app .wdg-chart-empty {
   margin: 8px 0 0;

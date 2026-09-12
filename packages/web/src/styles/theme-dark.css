@@ -1421,6 +1421,12 @@ html[data-theme='dark'] .admin-app .wdg-notes-error {
 html[data-theme='dark'] .admin-app .wdg-notes-input {
   background: #1a1e2b;
 }
+html[data-theme='dark'] .admin-app .wdg-persist[data-status='saved'] {
+  color: #5eead4;
+}
+html[data-theme='dark'] .admin-app .wdg-drag:hover {
+  background: #262a38;
+}
 
 /* 9) Email inbox list rows */
 html[data-theme='dark'] .admin-app .admin-mail-list {

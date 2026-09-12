@@ -171,7 +171,10 @@ export function WidgetDashboard({
   renderWidget,
   toolbarExtra,
 }: Props) {
-  const { visible, availableToAdd, reorder, resize, remove, add, reset } = useWidgetLayout(dashboardId, catalog);
+  const { visible, availableToAdd, reorder, resize, remove, add, reset, persistStatus } = useWidgetLayout(
+    dashboardId,
+    catalog,
+  );
   const [catalogOpen, setCatalogOpen] = useState(false);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
@@ -271,10 +274,21 @@ export function WidgetDashboard({
           <p className="admin-section-label" style={{ margin: 0 }}>
             {title}
           </p>
-          <span className="wdg-toolbar-hint">{tr('دستگیره ⋮⋮ یا عنوان · تغییر اندازه گوشه · دریل‌دان / دریل‌آپ')}</span>
+          <span className="wdg-toolbar-hint">
+            {tr('دستگیره ⋮⋮ یا عنوان · تغییر اندازه گوشه · چیدمان برای حساب شما ذخیره می‌شود')}
+          </span>
         </div>
         <div className="wdg-toolbar-end">
           {toolbarExtra}
+          <span className="wdg-persist" data-status={persistStatus} title={tr('همگام با حساب ادمین')}>
+            {persistStatus === 'saving'
+              ? tr('در حال ذخیره…')
+              : persistStatus === 'error'
+                ? tr('چیدمان روی سرور ذخیره نشد — روی همین دستگاه مانده')
+                : persistStatus === 'saved'
+                  ? tr('ذخیره شد')
+                  : tr('همگام با حساب ادمین')}
+          </span>
           <button type="button" className="admin-btn admin-btn--ghost wdg-toolbar-btn" onClick={() => setCatalogOpen((v) => !v)}>
             <Plus size={14} /> {tr('افزودن ویجت')}
           </button>

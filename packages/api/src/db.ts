@@ -1489,6 +1489,16 @@ function migrateSchema() {
     console.warn('Admin daily notes schema ensure skipped/failed:', (err as Error).message);
   }
 
+  // Per-admin UI prefs (widget layouts) — CREATE IF NOT EXISTS; never wipe
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { ensureAdminUserPrefsSchema } =
+      require('./admin-user-prefs') as typeof import('./admin-user-prefs');
+    ensureAdminUserPrefsSchema();
+  } catch (err) {
+    console.warn('Admin user prefs schema ensure skipped/failed:', (err as Error).message);
+  }
+
   // Platform settings — modular dropdowns + module goals (additive; never wipe)
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
