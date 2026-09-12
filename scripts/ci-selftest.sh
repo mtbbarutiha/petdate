@@ -122,6 +122,7 @@ npx tsx "$ROOT/packages/web/src/lib/tagAssistantParams.selftest.ts"
 
 echo "==> selftest: web chat media recorder helpers"
 npx tsx "$ROOT/packages/web/src/lib/chatMediaRecorder.selftest.ts"
+npx tsx "$ROOT/packages/web/src/components/chatGiftVoice.selftest.ts"
 
 # Pure / memory-path tests first
 run src/services/web-chat-cta-once.selftest.ts
@@ -139,6 +140,7 @@ run src/services/nearby-cards.selftest.ts
 run src/services/vet-online.selftest.ts
 run src/services/marketplace-roles.selftest.ts
 run src/services/chat-upload-store.selftest.ts
+run src/services/chat-inbox-gift.selftest.ts
 run src/services/image-normalize.selftest.ts
 run src/services/pet-owner-breed-photo.selftest.ts
 run src/services/pasha-user-tone.selftest.ts

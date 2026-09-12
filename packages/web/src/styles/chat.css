@@ -1,5 +1,5 @@
 /* PetDate chat UI redesign — mint/sky/dark pepito polish
- * Marker: pd-chat-ui=v2 · shell: composer-fixed-v8 (do not break) */
+ * Marker: pd-chat-ui=v2 · shell: composer-fixed-v9 (do not break) */
 
 .tg-chat--shell {
   --tg-ink: var(--pepito-dark, #19063d);
@@ -1269,23 +1269,23 @@ html.tg-chat-open body {
   }
 
   /*
-   * Mobile chat shell — composer-fixed-v8.
+   * Mobile chat shell — composer-fixed-v9.
    * Foot stays bottom:0 and lifts with translateY(-inset). Inset is hard-capped
    * so a bad visualViewport reading can never park the composer at the TOP.
    */
   .tg-chat {
-    --tg-shell: composer-fixed-v8;
+    --tg-shell: composer-fixed-v9;
     position: fixed !important;
-    inset: 0 !important;
-    top: 0 !important;
+    inset: auto !important;
+    top: var(--tg-vv-top, 0px) !important;
     left: 0 !important;
     right: 0 !important;
-    bottom: 0 !important;
+    bottom: auto !important;
     width: 100% !important;
     max-width: 100% !important;
     min-width: 0 !important;
-    height: auto !important;
-    max-height: none !important;
+    height: var(--tg-vv-height, 100dvh) !important;
+    max-height: var(--tg-vv-height, 100dvh) !important;
     min-height: 0 !important;
     padding-bottom: 0 !important;
     margin: 0 !important;
@@ -1310,7 +1310,8 @@ html.tg-chat-open body {
 
   .tg-chat .tg-thread {
     display: grid !important;
-    /* Foot is position:fixed — keep a reserved row via --tg-foot-h so scroll doesn't sit under it */
+    position: relative !important;
+    /* Foot is absolute inside vv shell — reserve row via --tg-foot-h */
     grid-template-rows: auto minmax(0, 1fr) var(--tg-foot-h, 64px) !important;
     grid-template-areas:
       'thread-top'
@@ -1341,8 +1342,8 @@ html.tg-chat-open body {
     overflow-x: hidden !important;
     overflow-y: auto !important;
     overscroll-behavior: contain;
-    /* Extra room when keyboard is open so last bubbles clear the lifted foot */
-    padding-bottom: var(--tg-kb-inset, 0px) !important;
+    /* Foot is absolute inside vv-sized shell; small breathing room only */
+    padding-bottom: 8px !important;
     z-index: 1 !important;
   }
 
@@ -1385,14 +1386,14 @@ html.tg-chat-open body {
 
   .tg-chat .tg-thread-foot {
     grid-area: thread-foot !important;
-    position: fixed !important;
+    position: absolute !important;
     left: 0 !important;
     right: 0 !important;
     bottom: 0 !important;
     width: 100% !important;
     z-index: 46 !important;
-    /* Lift with transform so a huge inset cannot invert layout via bottom: */
-    transform: translate3d(0, calc(-1 * var(--tg-kb-inset, 0px)), 0) !important;
+    /* Shell sized to visualViewport — foot stays at bottom of visible band. */
+    transform: none !important;
     background: rgba(247, 249, 252, 0.98);
     max-height: min(42dvh, var(--tg-foot-max, 42dvh)) !important;
     overflow-x: hidden !important;
@@ -2333,3 +2334,129 @@ html.tg-chat-open body {
   max-height: 120px;
   border-radius: 10px;
 }
+
+
+/* Voice + gift bubbles */
+.tg-voice-player {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: min(100%, 220px);
+  max-width: 280px;
+  padding: 6px 8px 6px 6px;
+  margin: 2px 0;
+}
+.tg-voice-player audio { display: none; }
+.tg-voice-play {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #1a8cff;
+  color: #fff;
+  cursor: pointer;
+}
+.tg-voice-play:disabled { opacity: 0.55; cursor: default; }
+.tg-voice-body { flex: 1 1 auto; min-width: 0; display: grid; gap: 4px; }
+.tg-voice-wave {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 28px;
+  cursor: pointer;
+}
+.tg-voice-bar {
+  width: 3px;
+  border-radius: 2px;
+  background: rgba(26, 140, 255, 0.35);
+  min-height: 20%;
+}
+.tg-voice-bar.is-lit { background: #1a8cff; }
+.tg-voice-time {
+  font-size: 11px;
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+}
+.tg-voice-player.is-broken {
+  opacity: 0.7;
+  font-size: 12px;
+}
+
+.tg-vet-tool-btn--gift {
+  background: linear-gradient(135deg, #ffe8a3, #ffd36a);
+  color: #5a3d00;
+  border-color: #f0c44a;
+}
+.tg-vet-tool-btn--secure.is-on {
+  background: #e8f1ff;
+  color: #0b5fff;
+}
+.tg-gift-sheet-body { padding: 12px 16px 20px; display: grid; gap: 14px; }
+.tg-gift-sheet-lead { margin: 0; line-height: 1.6; }
+.tg-gift-presets { display: flex; flex-wrap: wrap; gap: 8px; }
+.tg-gift-preset {
+  border: 1px solid #d7deea;
+  background: #fff;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.tg-gift-preset.is-active {
+  border-color: #1a8cff;
+  background: #e8f4ff;
+  color: #0b5fff;
+}
+.tg-gift-custom { display: grid; gap: 6px; font-size: 13px; }
+.tg-gift-custom input {
+  border: 1px solid #d7deea;
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 16px;
+}
+.tg-gift-send {
+  border: 0;
+  border-radius: 14px;
+  padding: 12px 16px;
+  background: #1a8cff;
+  color: #fff;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+}
+.tg-gift-send:disabled { opacity: 0.55; cursor: default; }
+
+.tg-gift-bubble {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 14px 18px;
+  border-radius: 18px;
+  background: linear-gradient(160deg, #fff6d6, #ffe39a 55%, #ffd36a);
+  color: #5a3d00;
+  min-width: 140px;
+  animation: tg-gift-pop 520ms cubic-bezier(0.2, 0.9, 0.2, 1.2);
+}
+.tg-gift-bubble-ico {
+  font-size: 28px;
+  line-height: 1;
+  animation: tg-gift-bounce 1.2s ease-in-out infinite;
+}
+.tg-gift-bubble-text { font-size: 12px; opacity: 0.85; }
+.tg-gift-bubble-amt { font-size: 16px; font-weight: 800; }
+@keyframes tg-gift-pop {
+  from { transform: scale(0.72); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+@keyframes tg-gift-bounce {
+  0%, 100% { transform: translateY(0) rotate(-6deg); }
+  50% { transform: translateY(-4px) rotate(6deg); }
+}
+.tg-spin { animation: tg-spin 0.8s linear infinite; }
+@keyframes tg-spin { to { transform: rotate(360deg); } }

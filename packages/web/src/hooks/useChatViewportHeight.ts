@@ -1,16 +1,11 @@
 import { useEffect } from 'react';
 
 /**
- * Mobile chat keyboard — composer-fixed-v8.
+ * Mobile chat keyboard — composer-fixed-v9 (WhatsApp-style).
  *
- * Failure mode we keep hitting: a huge `--tg-kb-inset` parks
- * `bottom: inset` near the TOP of the screen (composer above a white void).
- *
- * v8 rules:
- * - Foot stays `position:fixed; bottom:0` and lifts only via translateY(-inset)
- * - Inset hard-capped to 48% of layout height (never enters top half)
- * - Reject garbage visualViewport heights; no peak-lock of bad values
- * - Same hook for playmate + vet chat
+ * Pin the entire `.tg-chat` shell to `visualViewport` (top + height) so the
+ * composer stays above the soft keyboard on Android WebView / Telegram Mini App.
+ * Foot stays at the bottom of that visible band (no translateY inset gymnastics).
  */
 export function useChatViewportHeight(active: boolean) {
   useEffect(() => {
@@ -20,7 +15,6 @@ export function useChatViewportHeight(active: boolean) {
     const body = document.body;
     let raf = 0;
     let ro: ResizeObserver | null = null;
-    let lastGoodInset = 0;
     const timers: number[] = [];
 
     const prevBody = {
@@ -40,17 +34,7 @@ export function useChatViewportHeight(active: boolean) {
     body.style.width = '100%';
     body.style.overflow = 'hidden';
     root.classList.add('tg-chat-open');
-    root.dataset.tgShell = 'composer-fixed-v8';
-    root.style.removeProperty('--tg-vv-top');
-    root.style.removeProperty('--tg-vv-height');
-
-    const composerFocused = () => {
-      const el = document.activeElement;
-      return (
-        el instanceof HTMLElement &&
-        Boolean(el.closest('.tg-chat .tg-composer, .tg-chat textarea'))
-      );
-    };
+    root.dataset.tgShell = 'composer-fixed-v9';
 
     const measureFoot = () => {
       const foot = document.querySelector('.tg-chat .tg-thread-foot') as HTMLElement | null;
@@ -67,37 +51,19 @@ export function useChatViewportHeight(active: boolean) {
       raf = requestAnimationFrame(() => {
         const vv = window.visualViewport;
         const layoutH = Math.max(window.innerHeight || 0, root.clientHeight || 0, 1);
-        const hardCap = Math.floor(layoutH * 0.48);
         const vvH = vv?.height ?? layoutH;
         const offsetTop = vv?.offsetTop ?? 0;
+        const vvSane = vvH >= Math.min(180, layoutH * 0.35);
 
-        let inset = 0;
-        const vvSane = vvH >= Math.min(200, layoutH * 0.4);
-        if (vvSane) {
-          inset = Math.max(0, Math.round(layoutH - vvH - offsetTop));
-          if (inset < 80) inset = 0;
-          inset = Math.min(inset, hardCap);
-          if (inset >= 80) lastGoodInset = inset;
-        } else if (composerFocused() && lastGoodInset >= 80 && lastGoodInset <= hardCap) {
-          inset = lastGoodInset;
-        }
+        const top = vvSane ? Math.max(0, Math.round(offsetTop)) : 0;
+        const height = vvSane ? Math.max(180, Math.round(vvH)) : layoutH;
+        const inset = vvSane ? Math.max(0, Math.round(layoutH - vvH - offsetTop)) : 0;
 
-        if (!composerFocused() && inset < 80) {
-          lastGoodInset = 0;
-          inset = 0;
-        }
-
-        // Absolute floor: foot top must stay in the lower 52% of the screen.
-        const footH = Number.parseInt(root.style.getPropertyValue('--tg-foot-h') || '64', 10) || 64;
-        const maxInsetForFloor = Math.max(0, layoutH - footH - Math.floor(layoutH * 0.52));
-        inset = Math.min(inset, hardCap, maxInsetForFloor);
-
-        const visibleBand = Math.max(140, Math.round((vvSane ? vvH : layoutH - inset) - 64));
-        root.style.setProperty('--tg-kb-inset', `${inset}px`);
-        root.style.setProperty('--tg-foot-max', `${visibleBand}px`);
-        root.style.removeProperty('--tg-vv-top');
-        root.style.removeProperty('--tg-vv-height');
-        root.classList.toggle('tg-kb-open', inset > 80);
+        root.style.setProperty('--tg-vv-top', `${top}px`);
+        root.style.setProperty('--tg-vv-height', `${height}px`);
+        root.style.setProperty('--tg-kb-inset', '0px');
+        root.style.setProperty('--tg-foot-max', `${Math.max(140, height - 64)}px`);
+        root.classList.toggle('tg-kb-open', inset > 80 && document.activeElement instanceof HTMLElement && Boolean(document.activeElement.closest('.tg-chat .tg-composer, .tg-chat textarea')));
         measureFoot();
       });
     };
@@ -114,7 +80,6 @@ export function useChatViewportHeight(active: boolean) {
     const onFocusOut = (ev: FocusEvent) => {
       const t = ev.target;
       if (!(t instanceof HTMLElement) || !t.closest('.tg-chat')) return;
-      lastGoodInset = 0;
       timers.push(window.setTimeout(apply, 120));
       timers.push(window.setTimeout(apply, 360));
     };

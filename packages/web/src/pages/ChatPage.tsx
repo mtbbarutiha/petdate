@@ -11,6 +11,7 @@ import {
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   ArrowRight,
+  Ban,
   Check,
   CheckCheck,
   ImageOff,
@@ -24,12 +25,15 @@ import {
   RefreshCw,
   Send,
   Smile,
+  Trash2,
   UserPlus,
   UserRound,
   X,
 } from 'lucide-react';
 import { SiteLogo } from '../components/SiteLogo';
 import { ChatMediaCaptureProvider, ChatMediaCaptureTriggers } from '../components/ChatMediaCapture';
+import { ChatVoicePlayer } from '../components/ChatVoicePlayer';
+import { ChatGiftBubble, PlaymateChatToolbar, PlaymateGiftSheet } from '../components/PlaymateGift';
 import { EmojiPicker } from '../components/EmojiPicker';
 import { FindPlaymatePanel } from '../components/FindPlaymatePanel';
 import { InboxPeerAvatar } from '../components/InboxPeerAvatar';
@@ -51,6 +55,10 @@ import { usePeerPresence, usePresenceHeartbeat } from '../hooks/usePresence';
 import {
   addUserContact,
   clearPlaydateChatMessages,
+  sendPlaydateGift,
+  dismissPlaydateInbox,
+  dismissVetInbox,
+  addUserBlock,
   endPlaydateChat,
   getPlaydateRequest,
   getUserById,
@@ -179,6 +187,8 @@ function mediaLabel(kind?: PlaydateChatMediaKind | null) {
       return 'فایل';
     case 'sticker':
       return 'استیکر';
+    case 'gift':
+      return 'هدیه';
     default:
       return 'رسانه';
   }
@@ -239,6 +249,7 @@ function ConversationListPane({
   onAccept,
   onReject,
   onViewOwner,
+  onDismiss,
 }: {
   conversations: InboxConversation[];
   loading: boolean;
@@ -251,6 +262,7 @@ function ConversationListPane({
   onAccept: (item: InboxConversation) => void;
   onReject: (item: InboxConversation) => void;
   onViewOwner: (item: InboxConversation) => void;
+  onDismiss: (item: InboxConversation) => void;
 }) {
   const { t } = useI18n();
   const isPlaymateHub = scope === 'owner';
@@ -403,7 +415,20 @@ function ConversationListPane({
                       ) : null}
                     </span>
                   </button>
+                  <button
+                    type="button"
+                    className="tg-icon-btn tg-chat-list-dismiss"
+                    aria-label="حذف از فهرست"
+                    title="حذف از فهرست گفتگوها"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDismiss(c);
+                    }}
+                  >
+                    <Trash2 size={16} />
+                  </button>
                   {c.canDecide ? (
+
                     <div className="tg-chat-list-actions">
                       <button
                         type="button"
@@ -527,7 +552,7 @@ export function ChatPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const desktop = useIsDesktop();
   const { t } = useI18n();
-  const { user: authUser, token, isProfileComplete } = useAuthStore();
+  const { user: authUser, token, isProfileComplete, refreshMe, applyUser } = useAuthStore();
   const myUserId = authUser?.id;
   const inboxScope = inboxScopeForUser(authUser);
   const selectedId = Number(matchId);
@@ -557,6 +582,11 @@ export function ChatPage() {
   const [wiping, setWiping] = useState(false);
   const [infoCard, setInfoCard] = useState<InfoCard>('none');
   const [menuOpen, setMenuOpen] = useState(false);
+  const [giftOpen, setGiftOpen] = useState(false);
+  const [giftBusy, setGiftBusy] = useState(false);
+  const [giftError, setGiftError] = useState<string | null>(null);
+  const [blocking, setBlocking] = useState(false);
+  const [dismissing, setDismissing] = useState(false);
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [pendingPreview, setPendingPreview] = useState<string | null>(null);
@@ -1535,9 +1565,93 @@ export function ChatPage() {
     }
   }
 
+
+
+  async function dismissInboxRow(item: InboxConversation) {
+    if (!myUserId) return;
+    try {
+      if (item.kind === 'playmate') {
+        await dismissPlaydateInbox(item.id, myUserId);
+      } else {
+        await dismissVetInbox(item.id, myUserId);
+      }
+      setConversations((prev) => prev.filter((c) => c.key !== item.key));
+      if (hasThread && item.kind === 'playmate' && item.id === selectedId) {
+        navigate('/chats', { replace: true });
+      }
+    } catch (err) {
+      setListError(err instanceof Error ? err.message : 'حذف از فهرست ناموفق بود');
+    }
+  }
+
+  async function sendGift(amount: number) {
+    if (!myUserId || !match || giftBusy) return;
+    setGiftBusy(true);
+    setGiftError(null);
+    try {
+      const result = await sendPlaydateGift(match.id, myUserId, amount);
+      const ui = toUiMessage(result.message, myUserId);
+      setMessages((prev) => (prev.some((m) => m.id === ui.id) ? prev : [...prev, ui]));
+      lastMsgIdRef.current = Math.max(lastMsgIdRef.current, ui.numericId);
+      if (authUser) {
+        applyUser({ ...authUser, coins: result.senderCoins });
+      } else {
+        void refreshMe();
+      }
+      setGiftOpen(false);
+    } catch (err) {
+      setGiftError(err instanceof Error ? err.message : 'ارسال هدیه ناموفق بود');
+    } finally {
+      setGiftBusy(false);
+    }
+  }
+
+  async function blockPeer() {
+    if (!myUserId || !match || blocking) return;
+    // playdateToMatchRequest maps peer pet into fromPet
+    const blockedUserId = match.fromPet.ownerId;
+    if (!blockedUserId || blockedUserId === myUserId) {
+      setActionError('کاربر طرف مقابل پیدا نشد');
+      return;
+    }
+    setBlocking(true);
+    setMenuOpen(false);
+    setActionError(null);
+    try {
+      await addUserBlock(myUserId, blockedUserId);
+      setActionError(null);
+      // Also hide from inbox after block
+      await dismissPlaydateInbox(match.id, myUserId);
+      navigate('/chats', { replace: true });
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'مسدود کردن ناموفق بود');
+    } finally {
+      setBlocking(false);
+    }
+  }
+
+  async function removeFromInbox() {
+    if (!myUserId || !match || dismissing) return;
+    setDismissing(true);
+    setMenuOpen(false);
+    try {
+      await dismissPlaydateInbox(match.id, myUserId);
+      navigate('/chats', { replace: true });
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'حذف از فهرست ناموفق بود');
+    } finally {
+      setDismissing(false);
+    }
+  }
+
   function renderMedia(msg: ChatMsg) {
-    const hasFile = Boolean(msg.telegramFileId || msg.storageKey);
+    const isGift = msg.mediaKind === 'gift';
+    const hasFile = Boolean(msg.telegramFileId || msg.storageKey || isGift);
     if (!msg.mediaKind || !hasFile || !myUserId || !match) return null;
+    if (isGift) {
+      const amt = Number(msg.fileName) || 0;
+      return <ChatGiftBubble amount={amt || 0} mine={msg.from === 'me'} />;
+    }
     if (brokenMedia[msg.id]) {
       return (
         <div className="tg-media-broken" role="img" aria-label={mediaLabel(msg.mediaKind)}>
@@ -1595,13 +1709,11 @@ export function ChatPage() {
     }
     if (msg.mediaKind === 'voice' || msg.mediaKind === 'audio') {
       return (
-        <audio
-          className="tg-media-audio"
+        <ChatVoicePlayer
           src={src}
-          controls
-          preload="metadata"
-          onError={markBroken}
-          {...guardSave}
+          mimeType={msg.mimeType}
+          secure={secure}
+          onBroken={markBroken}
         />
       );
     }
@@ -1661,6 +1773,15 @@ export function ChatPage() {
 
   return (
     <div className={shellClass} dir="rtl">
+      <PlaymateGiftSheet
+        open={giftOpen}
+        onClose={() => setGiftOpen(false)}
+        balance={Number(authUser?.coins ?? 0)}
+        busy={giftBusy}
+        error={giftError}
+        onSend={sendGift}
+      />
+
       {showList ? (
         <ConversationListPane
           conversations={conversations}
@@ -1673,6 +1794,7 @@ export function ChatPage() {
           onRefresh={() => void reloadConversations()}
           onAccept={(item) => void onAcceptFromList(item)}
           onReject={(item) => void onRejectFromList(item)}
+          onDismiss={(item) => void dismissInboxRow(item)}
           onViewOwner={onViewOwnerFromList}
         />
       ) : null}
@@ -2214,6 +2336,16 @@ export function ChatPage() {
                 </div>
               ) : chatUnlocked ? (
                 <>
+                  <PlaymateChatToolbar
+                    disabled={sending || ending || giftBusy}
+                    secure={secure}
+                    showSecure
+                    onToggleSecure={() => void toggleSecure()}
+                    onOpenGift={() => {
+                      setGiftError(null);
+                      setGiftOpen(true);
+                    }}
+                  />
                   {pendingFile ? (
                     <div className="tg-attach-preview">
                       {pendingPreview ? (
