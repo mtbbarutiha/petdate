@@ -60,9 +60,15 @@
       }
       .toast-preview-gallery {
         max-width: 44rem;
-        margin: 0 auto;
+        margin: 5.5rem auto 0;
         display: grid;
         gap: 0.85rem;
+      }
+      @media (max-width: 859px) {
+        .toast-preview-gallery {
+          margin-top: 0;
+          margin-bottom: 5.5rem;
+        }
       }
       .toast-preview-gallery .toast {
         width: min(100%, var(--toast-max, 420px));

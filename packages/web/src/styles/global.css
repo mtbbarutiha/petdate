@@ -65,12 +65,12 @@
   /* Shared toast / snackbar */
   --toast-max: 420px;
   --toast-z: 420;
-  --toast-radius: 18px;
+  --toast-radius: 16px;
   --toast-bg: var(--surface-raised, #ffffff);
   --toast-ink: var(--text, #0f172a);
   --toast-muted: var(--text-secondary, #64748b);
-  --toast-border: color-mix(in srgb, var(--border, #e2e8f0) 88%, transparent);
-  --toast-shadow: var(--shadow-lg), 0 1px 0 rgba(255, 255, 255, 0.4) inset;
+  --toast-border: color-mix(in srgb, var(--border, #e2e8f0) 92%, transparent);
+  --toast-shadow: 0 14px 36px rgba(25, 6, 61, 0.12), 0 2px 8px rgba(25, 6, 61, 0.06);
   --toast-success: #0c9f75;
   --toast-success-soft: #e8faf3;
   --toast-error: #dc3b4a;
@@ -1768,8 +1768,8 @@ body:has(.admin-app) .toast-host {
   width: min(100%, var(--toast-max, 420px));
   margin-inline: auto;
   overflow: hidden;
-  padding: 13px 12px 13px 14px;
-  border-radius: var(--toast-radius, 18px);
+  padding: 14px 12px 14px 14px;
+  border-radius: var(--toast-radius, 16px);
   background: var(--toast-bg);
   color: var(--toast-ink);
   border: 1px solid var(--toast-border);
@@ -1780,17 +1780,28 @@ body:has(.admin-app) .toast-host {
   text-align: start;
 }
 
+.toast::before {
+  content: '';
+  position: absolute;
+  inset-block: 10px;
+  inset-inline-start: 0;
+  width: 3px;
+  border-radius: 999px;
+  background: var(--toast-info);
+}
+
 .toast__icon {
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
-  margin-top: 1px;
+  width: 40px;
+  height: 40px;
+  margin-top: 0;
   border-radius: 999px;
   background: var(--toast-info-soft);
   color: var(--toast-info);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, currentColor 18%, transparent);
 }
 
 .toast__copy {
@@ -1805,9 +1816,9 @@ body:has(.admin-app) .toast-host {
 .toast__title,
 .toast__msg {
   margin: 0;
-  font-size: 0.9rem;
+  font-size: 0.94rem;
   font-weight: 800;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
   color: var(--toast-ink);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -1815,7 +1826,7 @@ body:has(.admin-app) .toast-host {
 
 .toast__body {
   margin: 0;
-  font-size: 0.78rem;
+  font-size: 0.8rem;
   font-weight: 600;
   line-height: 1.5;
   color: var(--toast-muted);
@@ -1881,7 +1892,10 @@ body:has(.admin-app) .toast-host {
 
 .toast--success {
   border-color: color-mix(in srgb, var(--toast-success) 28%, var(--toast-border));
-  box-shadow: var(--toast-shadow), 0 0 0 1px color-mix(in srgb, var(--toast-success) 10%, transparent);
+}
+
+.toast--success::before {
+  background: var(--toast-success);
 }
 
 .toast--success .toast__icon {
@@ -1902,6 +1916,10 @@ body:has(.admin-app) .toast-host {
   border-color: color-mix(in srgb, var(--toast-error) 30%, var(--toast-border));
 }
 
+.toast--error::before {
+  background: var(--toast-error);
+}
+
 .toast--error .toast__icon {
   background: var(--toast-error-soft);
   color: var(--toast-error);
@@ -1918,6 +1936,10 @@ body:has(.admin-app) .toast-host {
 
 .toast--warning {
   border-color: color-mix(in srgb, var(--toast-warning) 32%, var(--toast-border));
+}
+
+.toast--warning::before {
+  background: var(--toast-warning);
 }
 
 .toast--warning .toast__icon {
