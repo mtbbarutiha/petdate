@@ -470,7 +470,7 @@ export function WelcomeBelowFold() {
           {TEAM.map((m) => (
             <article key={m.slug} className="pepito-member">
               <div className="pepito-member-photo">
-                <img src={m.img} alt={t('landing.teamAlt', { name: t(m.nameKey), role: t(m.roleKey) })} loading="lazy" width={600} height={700} decoding="async" />
+                <img src={m.img} alt={t('landing.teamAlt', { name: t(m.nameKey), role: t(m.roleKey) })} loading="lazy" width={600} height={600} decoding="async" />
               </div>
               <div className="pepito-member-info">
                 <h3>{t(m.nameKey)}</h3>
@@ -505,7 +505,7 @@ export function WelcomeBelowFold() {
             <article key={r.handleKey} className="pepito-review">
               <div className="pepito-review-img">
                 <div className="pepito-review-img-frame">
-                  <img src={r.img} alt={t('landing.reviewAlt', { handle })} loading="lazy" width={900} height={600} decoding="async" />
+                  <img src={r.img} alt={t('landing.reviewAlt', { handle })} loading="lazy" width={600} height={600} decoding="async" />
                 </div>
               </div>
               <div className="pepito-review-body">

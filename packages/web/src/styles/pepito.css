@@ -1735,6 +1735,10 @@ body > #pd-boot-lcp.is-parked,
   position: relative;
   overflow: hidden;
   border-radius: 20px;
+  /* Full-width 1:1 — shorter than 6:7 posters, without shrinking into a thumb. */
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: var(--pepito-lilac);
   transition: transform 700ms cubic-bezier(0.17, 0.67, 0, 1.01);
 }
 .pepito-member:hover .pepito-member-photo {
@@ -1742,10 +1746,10 @@ body > #pd-boot-lcp.is-parked,
 }
 .pepito-member img {
   width: 100%;
-  height: auto;
-  aspect-ratio: 600 / 700;
+  height: 100%;
   border-radius: 20px;
   object-fit: cover;
+  object-position: center 22%;
   display: block;
   margin: 0;
   border: 0;
@@ -1754,7 +1758,7 @@ body > #pd-boot-lcp.is-parked,
 }
 /* Pepito `.team .item .info` */
 .pepito-member-info {
-  padding: 30px 15px;
+  padding: 14px 10px 4px;
 }
 .pepito-member h3 {
   margin: 0 0 5px;
@@ -1809,17 +1813,17 @@ body > #pd-boot-lcp.is-parked,
 }
 .pepito-review {
   margin: 0;
-  margin-top: 30px;
-  padding: 0 15px;
+  margin-top: 12px;
+  padding: 0 10px 8px;
   border-radius: 20px;
   background: var(--pepito-white);
   box-shadow: 0 2px 18px 0 rgba(92, 77, 145, 0.03);
   overflow: visible;
 }
 .pepito-review-img {
-  margin-top: -30px;
+  margin-top: -12px;
   text-align: center;
-  transform: rotate(5deg);
+  transform: rotate(3deg);
   transition: opacity 500ms ease, visibility 500ms ease, transform 500ms ease;
 }
 .pepito-review:hover .pepito-review-img {
@@ -1829,20 +1833,24 @@ body > #pd-boot-lcp.is-parked,
   border-radius: 20px;
   overflow: hidden;
   box-shadow: 26px 26px 68px -16px rgba(92, 77, 145, 0.01);
+  /* Full-width 1:1 crop — far shorter than 1:3 portraits, still a real photo card. */
+  width: 100%;
+  aspect-ratio: 1 / 1;
 }
 .pepito-review-img img {
   display: block;
   width: 100%;
-  aspect-ratio: 900 / 600;
+  height: 100%;
   object-fit: cover;
+  object-position: center 22%;
 }
 .pepito-review-body {
-  padding: 20px 15px 30px;
+  padding: 12px 8px 10px;
   text-align: start;
 }
 .pepito-review-body h3 {
-  margin: 0 0 10px;
-  font-size: 21px;
+  margin: 0 0 6px;
+  font-size: 18px;
   font-weight: 500;
   line-height: 1.25;
   color: var(--pepito-dark);
@@ -1852,7 +1860,7 @@ body > #pd-boot-lcp.is-parked,
   display: flex;
   gap: 0;
   letter-spacing: -2px;
-  margin-bottom: 15px;
+  margin-bottom: 8px;
   color: #fd961e;
   font-size: 16px;
   line-height: 1;
@@ -1862,8 +1870,8 @@ body > #pd-boot-lcp.is-parked,
   flex-shrink: 0;
 }
 .pepito-review-body p {
-  margin: 0 0 15px;
-  font-size: 18px;
+  margin: 0;
+  font-size: 15px;
   font-weight: 400;
   line-height: 1.5;
   color: var(--pepito-muted);
@@ -3049,16 +3057,21 @@ body > #pd-boot-lcp.is-parked,
   }
 
   .pepito-review {
-    margin-top: 30px;
+    margin-top: 12px;
   }
 
   /* Reserve photo box before decode — reduces landing CLS / jump. */
   .pepito-member-photo {
-    aspect-ratio: 600 / 700;
+    width: 100%;
+    aspect-ratio: 1 / 1;
     background: var(--pepito-lilac);
   }
   .pepito-member-photo img {
     height: 100%;
+  }
+  .pepito-review-img-frame {
+    width: 100%;
+    aspect-ratio: 1 / 1;
   }
 
   .pepito-services-track {

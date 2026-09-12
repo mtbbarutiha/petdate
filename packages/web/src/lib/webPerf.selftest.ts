@@ -63,7 +63,7 @@ assert.doesNotMatch(
   /rel="preload"\s+as="style"/,
   'do not preload a stylesheet (unused-preload warning)'
 );
-assert.match(indexHtml, /web-perf-v26-css-restore/, 'deploy marker bumped so SW/HTML cache misses');
+assert.match(indexHtml, /web-perf-v27-short-cards/, 'deploy marker bumped so SW/HTML cache misses');
 assert.match(indexHtml, /id="pd-boot-lcp"/, 'LCP img lives outside #root so React cannot replace it');
 assert.match(indexHtml, /id="pd-boot-lcp"[\s\S]*decoding="sync"/, 'LCP img decodes sync so main-thread JS cannot stall paint');
 assert.match(indexHtml, /data-pd-lcp="hero"/, 'static preload is marked so SEO inject does not duplicate it');
@@ -166,6 +166,20 @@ assert.doesNotMatch(
 );
 assert.match(pepitoCss, /\.pepito-hero-dot \{\s*width: 44px/, 'hero dots are 44px targets (no overlapping ::before)');
 assert.doesNotMatch(welcome, /animation:\s*pepito-rise/, 'hero-inner no longer uses pepito-rise');
+
+const reviewFrameBlock = pepitoCss.match(/\.pepito-review-img-frame \{[^}]+\}/)?.[0] || '';
+assert.match(reviewFrameBlock, /aspect-ratio:\s*1\s*\/\s*1/, 'review photos use short 1:1 crop');
+assert.doesNotMatch(reviewFrameBlock, /max-height/, 'review frames stay full-width (no thumb cap)');
+const memberPhotoBlock = pepitoCss.match(/\.pepito-member-photo \{[^}]+\}/)?.[0] || '';
+assert.match(memberPhotoBlock, /aspect-ratio:\s*1\s*\/\s*1/, 'team photos use short 1:1 crop');
+assert.doesNotMatch(memberPhotoBlock, /max-height/, 'team frames stay full-width (no thumb cap)');
+const reviewImgBlock = pepitoCss.match(/\.pepito-review-img img \{[^}]+\}/)?.[0] || '';
+assert.match(reviewImgBlock, /object-fit:\s*cover/, 'review imgs cover the short frame');
+assert.doesNotMatch(reviewImgBlock, /aspect-ratio:\s*900/, 'review imgs must not keep the 3:2 box');
+const memberImgBlock = pepitoCss.match(/\.pepito-member img \{[^}]+\}/)?.[0] || '';
+assert.match(memberImgBlock, /object-fit:\s*cover/, 'team imgs cover the short frame');
+assert.doesNotMatch(memberImgBlock, /aspect-ratio:\s*600/, 'team imgs must not keep the 6:7 poster crop');
+assert.match(below, /width=\{600\} height=\{600\}/, 'below-fold photo attrs match 1:1 reserve');
 
 const header = readFileSync(join(webSrc, 'components/SiteHeader.tsx'), 'utf8');
 const themeToggle = readFileSync(join(webSrc, 'components/ThemeToggle.tsx'), 'utf8');
