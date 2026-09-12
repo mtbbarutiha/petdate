@@ -11,6 +11,7 @@ import {
   WidgetEmpty,
   type WidgetRenderContext,
 } from '../widgets';
+import { appAlert } from '../../components/AppDialog';
 import { tr } from '../../i18n';
 
 type Sales = {
@@ -93,7 +94,7 @@ export function AdminFinanceSalesPage() {
                 `/api/admin/finance/export?kind=sales&period=${period}`,
                 `petdate-sales-${period}.csv`
               ).catch((err) => {
-                alert(err instanceof Error ? err.message : 'خروجی ناموفق بود');
+                void appAlert(err instanceof Error ? err.message : 'خروجی ناموفق بود', { variant: 'admin' });
               });
             }}
           >

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Plus } from 'lucide-react';
 import { adminFetch, formatNumFa } from '../api';
 import { AdminModal } from '../AdminModal';
+import { appConfirm } from '../../components/AppDialog';
 import { tr } from '../../i18n';
 
 type Cat = { slug: string; labelFa: string; petType: string; description: string; emoji: string; sortOrder: number };
@@ -31,7 +32,7 @@ export function AdminShopCategoriesPage() {
     finally { setBusy(false); }
   };
   const remove = async (slug: string) => {
-    if (!confirm(`${tr('حذف ')}${slug}${tr('؟')}`)) return;
+    if (!(await appConfirm(`${tr('حذف ')}${slug}${tr('؟')}`, { danger: true, variant: 'admin' }))) return;
     try { await adminFetch(`/api/admin/shop/categories/${encodeURIComponent(slug)}`, { method: 'DELETE' }); await load(); }
     catch (err) { setError(err instanceof Error ? err.message : 'خطا'); }
   };

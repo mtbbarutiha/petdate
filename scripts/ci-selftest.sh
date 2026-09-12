@@ -128,6 +128,9 @@ npx tsx "$ROOT/packages/web/src/lib/swCache.selftest.ts"
 echo "==> selftest: web authRedirect next=/vet-consult"
 npx tsx "$ROOT/packages/web/src/lib/authRedirect.selftest.ts"
 
+echo "==> selftest: web shared AppDialog (no native prompt/confirm/alert)"
+npx tsx "$ROOT/packages/web/src/components/appDialog.selftest.ts"
+
 echo "==> selftest: web playmate fee ConfirmModal (no window.confirm)"
 npx tsx "$ROOT/packages/web/src/components/playmateFeeConfirm.selftest.ts"
 

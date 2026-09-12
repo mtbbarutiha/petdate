@@ -16,6 +16,7 @@ import {
   type WidgetRenderContext,
 } from '../widgets';
 import { AdminDashPage, AdminKpiStrip, type AdminKpiItem } from '../dash';
+import { appAlert } from '../../components/AppDialog';
 import { tr } from '../../i18n';
 
 type ChartPoint = { label: string; value: number };
@@ -107,7 +108,7 @@ export function AdminFinanceDashboardPage() {
       `petdate-${kind}-${period}.csv`
     ).catch((err) => {
       console.error(err);
-      alert(err instanceof Error ? err.message : 'خروجی ناموفق بود');
+      void appAlert(err instanceof Error ? err.message : 'خروجی ناموفق بود', { variant: 'admin' });
     });
   };
 

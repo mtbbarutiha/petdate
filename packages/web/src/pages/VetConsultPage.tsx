@@ -25,6 +25,7 @@ import {
   type VetConsultation,
   type VetCredentialStatus,
 } from '@petdate/shared';
+import { appConfirm } from '../components/AppDialog';
 import { AiConsultCtaButton } from '../components/AiConsultCtaButton';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { useAppToast } from '../hooks/useAppToast';
@@ -726,7 +727,7 @@ export function VetConsultPage() {
         toastError(msg);
         return;
       }
-      const payOk = window.confirm(
+      const payOk = await appConfirm(
         [
           `هزینه این درخواست: ${formatCoins(connectCost)} سکه`,
           `موجودی فعلی: ${formatCoins(coins)} سکه`,
@@ -759,7 +760,7 @@ export function VetConsultPage() {
           ((err as Error & { requiresResendConfirm?: boolean }).requiresResendConfirm ||
             /میخوای مجدد/.test(err.message));
         if (needsConfirm) {
-          const ok = window.confirm('میخوای مجدد درخواست بدی به اون شخص؟');
+          const ok = await appConfirm('میخوای مجدد درخواست بدی به اون شخص؟');
           if (!ok) { setPhase('ready'); setBusyMode(null); return; }
           result = await quickVetConnect(user.id, token, {
             confirmResend: true,

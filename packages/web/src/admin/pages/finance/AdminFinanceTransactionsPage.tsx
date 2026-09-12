@@ -12,6 +12,7 @@ import {
   formatSignedMoney,
   useFinanceEditMode,
 } from './FinanceOsUi';
+import { appAlert } from '../../../components/AppDialog';
 import { tr } from '../../../i18n';
 
 type Tab = 'import' | 'queue' | 'suspicious' | 'ledger';
@@ -137,7 +138,7 @@ export function AdminFinanceTransactionsPage() {
           rows: rowsParsed,
         }),
       });
-      alert(`${formatNumFa(res.imported)}${tr(' ردیف به صف دسته‌بندی اضافه شد')}`);
+      await appAlert(`${formatNumFa(res.imported)}${tr(' ردیف به صف دسته‌بندی اضافه شد')}`, { variant: 'admin' });
       setTab('queue');
       await load();
     } catch (err) {

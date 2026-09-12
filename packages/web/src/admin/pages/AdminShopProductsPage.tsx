@@ -4,6 +4,7 @@ import { Plus, RefreshCw, Search, Trash2 } from 'lucide-react';
 import { SHOP_CATEGORIES, SHOP_PRODUCTS } from '../../data/shopCatalog';
 import { adminFetch, formatNumFa, formatTomanFa } from '../api';
 import { AdminShopProductFormModal } from './AdminShopProductFormPage';
+import { appConfirm } from '../../components/AppDialog';
 import { tr } from '../../i18n';
 
 type Product = {
@@ -38,7 +39,7 @@ export function AdminShopProductsPage() {
   useEffect(() => { void load(); }, [load]);
 
   const syncCatalog = async () => {
-    if (!confirm(tr('کاتالوگ وب روی دیتابیس بازنویسی شود؟'))) return;
+    if (!(await appConfirm(tr('کاتالوگ وب روی دیتابیس بازنویسی شود؟'), { variant: 'admin' }))) return;
     setBusy(true); setMsg(null);
     try {
       const result = await adminFetch<{ products: number; categories: number }>('/api/admin/shop/catalog/sync', {
@@ -55,7 +56,7 @@ export function AdminShopProductsPage() {
   };
 
   const remove = async (id: string) => {
-    if (!confirm(tr('حذف محصول؟'))) return;
+    if (!(await appConfirm(tr('حذف محصول؟'), { danger: true, variant: 'admin' }))) return;
     try { await adminFetch(`/api/admin/shop/products/${id}`, { method: 'DELETE' }); await load(); }
     catch (err) { setError(err instanceof Error ? err.message : 'خطا'); }
   };

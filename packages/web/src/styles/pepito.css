@@ -1514,6 +1514,39 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 .pepito-lead-modal__field input:disabled {
   opacity: 0.7;
 }
+.pepito-lead-modal__field textarea {
+  border: 1px solid var(--pd-border-strong);
+  border-radius: 12px;
+  padding: 0.7rem 0.85rem;
+  font-size: 1rem;
+  font-family: inherit;
+  background: var(--pd-surface-2);
+  color: var(--pd-ink);
+  color-scheme: inherit;
+  min-height: 88px;
+  resize: vertical;
+}
+.pepito-lead-modal__field textarea::placeholder {
+  color: var(--pd-muted);
+  opacity: 1;
+}
+.pepito-lead-modal__field textarea:focus {
+  outline: 2px solid color-mix(in srgb, var(--pepito-base) 45%, transparent);
+  outline-offset: 1px;
+  background: var(--pd-surface);
+  border-color: var(--pepito-base);
+}
+.app-dialog-overlay.pepito-lead-modal-overlay {
+  z-index: 2000;
+}
+.app-dialog-message {
+  white-space: pre-wrap;
+}
+.app-dialog-btn--danger {
+  background: var(--danger, #b42318) !important;
+  border-color: transparent !important;
+  color: #fff !important;
+}
 .pepito-lead-modal__error {
   margin: 0;
   color: var(--danger, #b42318);

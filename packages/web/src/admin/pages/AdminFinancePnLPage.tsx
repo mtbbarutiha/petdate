@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Download } from 'lucide-react';
 import { adminDownload, adminFetch, formatNumFa, formatTomanFa } from '../api';
 import { AdminBarChart, PeriodFilter, type FinancePeriod } from '../FinanceCharts';
+import { appAlert } from '../../components/AppDialog';
 import { tr } from '../../i18n';
 
 type PnL = {
@@ -49,7 +50,7 @@ export function AdminFinancePnLPage() {
                 `/api/admin/finance/export?kind=pnl&period=${period}`,
                 `petdate-pnl-${period}.csv`
               ).catch((err) => {
-                alert(err instanceof Error ? err.message : 'خروجی ناموفق بود');
+                void appAlert(err instanceof Error ? err.message : 'خروجی ناموفق بود', { variant: 'admin' });
               });
             }}
           >

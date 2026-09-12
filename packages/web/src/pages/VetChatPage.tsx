@@ -39,6 +39,7 @@ import {
   type VetConsultChatMessage,
   type VetConsultation,
 } from '@petdate/shared';
+import { appAlert } from '../components/AppDialog';
 import { SiteLogo } from '../components/SiteLogo';
 import { InboxPeerAvatar } from '../components/InboxPeerAvatar';
 import { PetAvatar } from '../components/PetAvatar';
@@ -2257,7 +2258,7 @@ export function VetChatPage() {
               !result.sms.sent &&
               !noPhone
             ) {
-              window.alert(smsLine);
+              void appAlert(smsLine);
             } else if (noPhone && result.chatDeliveryNote) {
               // Non-blocking: chat already carries the PDF
               console.info('[rx]', result.chatDeliveryNote);
