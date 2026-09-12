@@ -36,12 +36,15 @@ assert.doesNotMatch(
   /rel="preload"\s+as="style"/,
   'do not preload the Google Fonts CSS (unused-preload warning)'
 );
-assert.match(indexHtml, /web-perf-v20-agentic/, 'deploy marker bumped so SW/HTML cache misses');
+assert.match(indexHtml, /web-perf-v21-faq-dark/, 'deploy marker bumped so SW/HTML cache misses');
+assert.match(indexHtml, /\.pepito-faq-item,\s*\.pepito-help-card/, 'critical CSS covers FAQ/help cards');
+assert.match(indexHtml, /html\.theme-light \.pepito-faq-item/, 'critical CSS has light FAQ overrides');
 
 assert.match(vite, /sourcemap:\s*true/, 'production source maps for large first-party JS');
 assert.match(vite, /vendor-lucide/, 'lucide stays in its own chunk');
 assert.match(vite, /resolveDependencies/, 'lucide is not modulepreloaded');
 assert.match(vite, /petdate-defer-css/, 'hashed CSS is deferred off first paint');
+assert.match(vite, /pd-defer-css-fallback/, 'deferred CSS has a cached-sheet media=all fallback');
 
 assert.doesNotMatch(main, /styles\/chat\.css/, 'chat.css is not on the landing CSS graph');
 assert.match(analytics, /scheduleAfterLoadIdle/, 'third-party tags wait for load+idle');
