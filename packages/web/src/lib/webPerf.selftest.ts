@@ -25,9 +25,9 @@ assert.match(indexHtml, /apple-mobile-web-app-capable/, 'legacy iOS meta kept be
 const viewportMeta = indexHtml.match(/<meta[\s\S]*?name="viewport"[\s\S]*?>/)?.[0] || '';
 assert.match(viewportMeta, /width=device-width/, 'viewport meta exists');
 assert.doesNotMatch(
-  viewportMeta,
+  indexHtml,
   /user-scalable|maximum-scale/,
-  'viewport meta must not lock pinch-zoom (Lighthouse a11y weight 10)'
+  'served index must not mention zoom locks anywhere (meta or scripts)'
 );
 assert.match(indexHtml, /pd-critical-first-paint/, 'inline critical CSS kills the white filmstrip');
 assert.match(indexHtml, /timeout: 8000/, 'GTM waits for interaction or long idle (TBT 30%)');
@@ -36,7 +36,7 @@ assert.doesNotMatch(
   /rel="preload"\s+as="style"/,
   'do not preload the Google Fonts CSS (unused-preload warning)'
 );
-assert.match(indexHtml, /web-perf-v19-mobile/, 'deploy marker bumped so SW/HTML cache misses');
+assert.match(indexHtml, /web-perf-v20-agentic/, 'deploy marker bumped so SW/HTML cache misses');
 
 assert.match(vite, /sourcemap:\s*true/, 'production source maps for large first-party JS');
 assert.match(vite, /vendor-lucide/, 'lucide stays in its own chunk');
@@ -69,6 +69,8 @@ function assertLighthouseLlmsTxt(content: string, label: string) {
   assert.ok(!isTooShort, `${label} fails Lighthouse isTooShort (length < 50)`);
   const stripped = content.replace(/\[[^\]]*\]\([^)]+\)/g, '');
   assert.doesNotMatch(stripped, /https?:\/\//, `${label} still has a bare URL outside markdown links`);
+  assert.doesNotMatch(content, /\[https?:\/\//, `${label} must not use a URL as markdown link text`);
+  assert.doesNotMatch(content, /Website:\s*https?:\/\//, `${label} must not use Website: plus a bare URL`);
 }
 
 assertLighthouseLlmsTxt(llms, 'llms.txt');

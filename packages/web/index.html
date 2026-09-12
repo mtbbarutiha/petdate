@@ -56,13 +56,13 @@
       .pepito-hero-media{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
       .pd-sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
     </style>
-    <!-- deploy marker: registration-ux-role-btn-v1 + ui-audit-fix-v2 + chat composer-fixed-v8 + pd-chat-ui-v2 + pd-panels-ui-v3c + web-perf-v19-mobile + wallet-stars-v2 + my-pets-lead-v1 + wallet-folio-v1 + gtm-html-v1 + gtm-ta-debug-v1 + guest-vet-landing-v16 -->
+    <!-- deploy marker: registration-ux-role-btn-v1 + ui-audit-fix-v2 + chat composer-fixed-v8 + pd-chat-ui-v2 + pd-panels-ui-v3c + web-perf-v20-agentic + wallet-stars-v2 + my-pets-lead-v1 + wallet-folio-v1 + gtm-html-v1 + gtm-ta-debug-v1 + guest-vet-landing-v16 -->
     <meta name="pd-chat-shell" content="composer-fixed-v8" />
     <meta name="pd-chat-ui" content="pd-chat-ui-v2" />
     <meta name="pd-ui-audit" content="ui-audit-fix-v2" />
     <meta name="pd-registration-ux" content="registration-ux-role-btn-v1" />
     <meta name="pd-panels-ui" content="pd-panels-ui-v3c" />
-    <meta name="pd-web-perf" content="web-perf-v19-mobile" />
+    <meta name="pd-web-perf" content="web-perf-v20-agentic" />
     <meta name="pd-profile-pets" content="profile-about-pets-v2" />
     <meta name="pd-wallet-stars" content="wallet-stars-xtr-v1" />
     <meta name="pd-my-pets-lead" content="my-pets-lead-v1" />
@@ -127,14 +127,6 @@
           var lang = langStored === 'en' || langStored === 'fa' ? langStored : 'fa';
           root.setAttribute('lang', lang);
           root.setAttribute('dir', lang === 'en' ? 'ltr' : 'rtl');
-          /* Weight-10 a11y: strip zoom locks if GTM/SW injects a second viewport. */
-          var metas = document.querySelectorAll('meta[name="viewport"]');
-          for (var vi = 0; vi < metas.length; vi++) {
-            var vc = metas[vi].getAttribute('content') || '';
-            if (/user-scalable\s*=\s*no/i.test(vc) || /maximum-scale\s*=\s*([0-4](\.\d+)?)\b/i.test(vc)) {
-              metas[vi].setAttribute('content', 'width=device-width, initial-scale=1, viewport-fit=cover');
-            }
-          }
         } catch (e) {}
       })();
     </script>

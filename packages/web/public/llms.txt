@@ -1,24 +1,19 @@
-# PetDate — پت‌دیت
+# PetDate
 
-PetDate (پت‌دیت) is the Persian pet playmate, pet shop, adoption, and online vet-consult platform. Web and Telegram share one account.
+> PetDate (پت‌دیت) is the Persian pet playmate, pet shop, adoption, and online vet-consult platform. Web and Telegram share one account.
 
-- Home: [PetDate](https://petdate.ir/)
-- FAQ: [PetDate FAQ](https://petdate.ir/faq)
-- Pet shop: [PetDate shop](https://petdate.ir/shop)
-- Vet consult: [online veterinary consultation](https://petdate.ir/vet-consult)
-- Adoption: [adoption listings](https://petdate.ir/adoption)
-- Magazine: [PetDate magazine](https://petdate.ir/magazine)
-- Login: [OTP login](https://petdate.ir/auth/login)
-- Sitemap: [XML sitemap](https://petdate.ir/sitemap.xml)
-- Full AI summary: [llms-full.txt](https://petdate.ir/llms-full.txt)
-- Contact: [hello@petdate.ir](mailto:hello@petdate.ir)
-- Telegram bot: [Petdatebot](https://t.me/Petdatebot)
+PetDate helps pet owners in Iran find playmates (همبازی) for dogs and cats, browse the pet shop (پت‌شاپ), discover pets available for adoption (پذیرش), and request online veterinary consultation (مشاوره دامپزشک). Primary language is Persian (fa) with an RTL interface. Playmate chat and checkout require login. Veterinary support is online consultation, not a clinic directory.
 
-## What the product does
+## Pages
 
-- Find playmates (همبازی) for dogs and cats
-- Browse and buy from the pet shop (پت‌شاپ)
-- Discover pets available for adoption (پذیرش)
-- Request online veterinary consultation (مشاوره دامپزشک)
-
-Primary language is Persian (fa), RTL UI. Playmate chat and checkout require login. Veterinary support is online consultation, not a clinic directory.
+- [Home](https://petdate.ir/): landing page
+- [FAQ](https://petdate.ir/faq): frequently asked questions
+- [Pet shop](https://petdate.ir/shop): public catalog
+- [Vet consult](https://petdate.ir/vet-consult): online veterinary consultation
+- [Adoption](https://petdate.ir/adoption): adoption listings
+- [Magazine](https://petdate.ir/magazine): articles
+- [OTP login](https://petdate.ir/auth/login): sign in
+- [XML sitemap](https://petdate.ir/sitemap.xml): crawl map
+- [Full AI summary](https://petdate.ir/llms-full.txt): longer machine summary
+- [Email](mailto:hello@petdate.ir): hello at petdate.ir
+- [Telegram bot](https://t.me/Petdatebot): Petdatebot

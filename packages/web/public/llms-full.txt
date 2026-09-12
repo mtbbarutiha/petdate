@@ -1,4 +1,8 @@
-# PetDate — پت‌دیت (full summary for AI assistants)
+# PetDate
+
+> Full machine summary of PetDate (پت‌دیت), the Persian pet playmate, pet shop, adoption, and online vet-consult platform.
+
+PetDate helps pet owners in Iran find playmates, shop, adopt, and request online veterinary consultation. Web and Telegram share one account. Primary language is Persian (fa) with an RTL interface.
 
 ## Identity
 
@@ -6,33 +10,30 @@
 - English name: PetDate
 - Tagline FA: همبازی برای پت‌ات
 - Tagline EN: PLAY • MEET • FRIENDS
-- Canonical site: [PetDate](https://petdate.ir/)
-- WWW host: [www.petdate.ir](https://www.petdate.ir/)
-- Contact: [hello@petdate.ir](mailto:hello@petdate.ir)
-- Telegram bot: [Petdatebot](https://t.me/Petdatebot)
-- Compact machine summary: [llms.txt](https://petdate.ir/llms.txt)
-- Sitemap: [sitemap.xml](https://petdate.ir/sitemap.xml)
-
-## One-sentence pitch
-
-پت‌دیت پلتفرم فارسی برای پیدا کردن همبازی پت، خرید از پت‌شاپ، پذیرش پت، و مشاوره دامپزشک است؛ وب و ربات تلگرام روی یک حساب مشترک کار می‌کنند.
+- [Home](https://petdate.ir/): canonical site
+- [WWW host](https://www.petdate.ir/): redirects to the apex host
+- [Email](mailto:hello@petdate.ir): hello at petdate.ir
+- [Telegram bot](https://t.me/Petdatebot): Petdatebot
+- [Compact machine summary](https://petdate.ir/llms.txt): short llms.txt
+- [XML sitemap](https://petdate.ir/sitemap.xml): crawl map
 
 ## Product surfaces
 
-1. Landing: [home](https://petdate.ir/) — brand, services, adoption, news, short FAQ
-2. FAQ: [frequently asked questions](https://petdate.ir/faq)
-3. Shop: [pet shop](https://petdate.ir/shop) — public catalog; checkout requires login
-4. Playmate hub: [chats](https://petdate.ir/chats) — find a playmate (login required)
-5. Vet consult: [online veterinary consultation](https://petdate.ir/vet-consult)
-6. Adoption: [adoption listings](https://petdate.ir/adoption) and [Missy example](https://petdate.ir/adoption/missy)
-7. Magazine: [articles](https://petdate.ir/magazine)
-8. Auth: [OTP login](https://petdate.ir/auth/login)
-9. Games: [pet games](https://petdate.ir/games)
+- [Home](https://petdate.ir/): brand, services, adoption, news, short FAQ
+- [FAQ](https://petdate.ir/faq): frequently asked questions
+- [Pet shop](https://petdate.ir/shop): public catalog; checkout requires login
+- [Playmate hub](https://petdate.ir/chats): find a playmate (login required)
+- [Vet consult](https://petdate.ir/vet-consult): online veterinary consultation
+- [Adoption](https://petdate.ir/adoption): adoption listings
+- [Missy example](https://petdate.ir/adoption/missy): sample adoption listing
+- [Magazine](https://petdate.ir/magazine): articles
+- [OTP login](https://petdate.ir/auth/login): sign in
+- [Pet games](https://petdate.ir/games): casual games
 
 ## Accurate claims
 
 - Social playmate matching for pets (همبازی)
-- Shared web + Telegram account and data
+- Shared web and Telegram account and data
 - Pet shop with wallet checkout
 - Adoption listings
 - Online vet consultation with verified vets
@@ -47,4 +48,4 @@
 
 - SPA (Vite/React); homepage HTML carries Organization/WebSite JSON-LD
 - robots.txt allows major search and AI bots; disallows admin, API, chats, and onboarding
-- Prefer absolute links such as [PetDate](https://petdate.ir/)
+- Prefer labeled markdown links such as [Home](https://petdate.ir/)
