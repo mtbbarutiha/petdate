@@ -184,6 +184,32 @@ assert.match(
   'dark earn inputs use elevated --pd-surface-2'
 );
 
+/* Edit profile (ویرایش پروفایل) — no orphan white section cards / light sticky fog */
+assert.match(darkCss, /\.pepito-profile-edit-section\b/, 'edit profile sections remapped for dark');
+assert.match(darkCss, /\.pepito-profile-edit-section-title\b/, 'edit section titles remapped for dark');
+assert.match(darkCss, /\.pepito-profile-edit-actions\b/, 'edit sticky save bar remapped for dark');
+assert.match(pepitoCss, /\.pepito-profile-edit-section\s*\{[\s\S]*?var\(--pd-surface\)/, 'edit sections use --pd-surface');
+assert.doesNotMatch(
+  pepitoCss,
+  /\.pepito-profile-edit-section\s*\{[^}]*rgba\(255,\s*255,\s*255/,
+  'edit sections must not hardcode white rgba cards'
+);
+assert.doesNotMatch(
+  pepitoCss,
+  /\.pepito-field\s*>\s*span\s*\{[^}]*#4a3d78/,
+  'edit field labels must not hardcode navy #4a3d78'
+);
+assert.doesNotMatch(
+  pepitoCss,
+  /\.pepito-profile-edit-actions\s*\{[^}]*rgba\(244,\s*244,\s*247/,
+  'edit sticky bar must not hardcode light #f4f4f7 fade'
+);
+assert.match(
+  darkCss,
+  /html\[data-theme=['"]dark['"]\][\s\S]{0,80}\.pepito-profile-edit-section[\s\S]{0,160}var\(--pd-surface\)/,
+  'dark edit sections paint --pd-surface'
+);
+
 const toggle = readFileSync(join(root, 'src/components/ThemeToggle.tsx'), 'utf8');
 assert.match(toggle, /toggleTheme|setTheme/, 'ThemeToggle mutates theme');
 assert.match(toggle, /aria-label/, 'ThemeToggle accessible');
