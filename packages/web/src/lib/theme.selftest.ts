@@ -161,6 +161,29 @@ assert.match(
   'dark medical shell paints --pd-surface (not leftover light canvas)'
 );
 
+/* Earn / withdraw («کسب درآمد») — cream/white cards must not survive dark */
+assert.match(darkCss, /\.pepito-earn-hero\b/, 'earn hero remapped for dark');
+assert.match(darkCss, /\.pepito-earn-balance-main\b/, 'earn balance card remapped');
+assert.match(darkCss, /\.pepito-earn-meta\b/, 'earn rates meta remapped');
+assert.match(darkCss, /\.pepito-earn-how\b/, 'earn process steps remapped');
+assert.match(darkCss, /\.pepito-earn-form-wrap\b/, 'earn withdraw form remapped');
+assert.match(darkCss, /\.pepito-earn-field input/, 'earn inputs remapped for dark');
+assert.doesNotMatch(
+  darkCss,
+  /html\[data-theme=['"]dark['"]\][\s\S]{0,80}\.pepito-earn-(hero|balance-main|meta|how|form-wrap|history-item)[\s\S]{0,220}#(fff8f0|fff7ee|fff7ed|fafafa|f5f5f5|ffffff)\b/i,
+  'dark earn surfaces must not keep cream/white hardcodes'
+);
+assert.match(
+  darkCss,
+  /html\[data-theme=['"]dark['"]\][\s\S]{0,80}\.pepito-earn-balance-main[\s\S]{0,280}var\(--pd-surface/,
+  'dark earn balance paints --pd-surface tokens'
+);
+assert.match(
+  darkCss,
+  /html\[data-theme=['"]dark['"]\][\s\S]{0,80}\.pepito-earn-field input[\s\S]{0,120}var\(--pd-surface-2\)/,
+  'dark earn inputs use elevated --pd-surface-2'
+);
+
 const toggle = readFileSync(join(root, 'src/components/ThemeToggle.tsx'), 'utf8');
 assert.match(toggle, /toggleTheme|setTheme/, 'ThemeToggle mutates theme');
 assert.match(toggle, /aria-label/, 'ThemeToggle accessible');

@@ -1401,6 +1401,150 @@ html[data-theme='dark'] .pepito-wallet-buy-active .pepito-wallet-tg-meta {
   color: var(--pepito-muted);
 }
 
+/*
+ * Earn / withdraw («کسب درآمد») — pepito.css hardcodes cream/white cards
+ * (#fff8f0, rgba(255,255,255,…), #fafafa) while --pepito-dark remaps to light
+ * ink → near-invisible text on gray/yellow tiles. Elevate to --pd-* surfaces.
+ */
+html[data-theme='dark'] .pepito-earn-hero {
+  background:
+    radial-gradient(ellipse 70% 80% at 12% 0%, rgba(255, 176, 74, 0.16), transparent 55%),
+    radial-gradient(ellipse 50% 55% at 100% 30%, rgba(45, 212, 176, 0.1), transparent 50%),
+    linear-gradient(165deg, #1e2230 0%, #242836 55%, #1a1d27 100%);
+}
+html[data-theme='dark'] .pepito-earn-hero-wash {
+  background: linear-gradient(180deg, transparent 35%, rgba(26, 29, 39, 0.55));
+}
+html[data-theme='dark'] .pepito-earn-hero h1 {
+  color: var(--pd-ink);
+}
+html[data-theme='dark'] .pepito-earn-lead,
+html[data-theme='dark'] .pepito-earn-kicker,
+html[data-theme='dark'] .pepito-earn-status {
+  color: var(--pd-muted);
+}
+html[data-theme='dark'] .pepito-earn-status--warn {
+  color: #f0b429;
+}
+html[data-theme='dark'] .pepito-earn-balance-main {
+  background:
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--pepito-orange) 14%, var(--pd-surface-2)) 0%,
+      var(--pd-surface) 100%
+    );
+  border-color: color-mix(in srgb, var(--pepito-orange) 32%, var(--pd-border));
+  color: var(--pd-ink);
+  box-shadow: var(--pd-shadow);
+}
+html[data-theme='dark'] .pepito-earn-balance-label,
+html[data-theme='dark'] .pepito-earn-balance-note {
+  color: var(--pd-muted);
+}
+html[data-theme='dark'] .pepito-earn-balance-val {
+  color: var(--pd-ink);
+}
+html[data-theme='dark'] .pepito-earn-meta {
+  background: var(--pd-surface-2);
+  border-color: var(--pd-border);
+  color: var(--pd-ink);
+  box-shadow: var(--pd-shadow);
+}
+html[data-theme='dark'] .pepito-earn-meta strong {
+  color: var(--pd-muted);
+}
+html[data-theme='dark'] .pepito-earn-meta span {
+  color: var(--pd-ink);
+}
+html[data-theme='dark'] .pepito-earn-how,
+html[data-theme='dark'] .pepito-earn-form-wrap,
+html[data-theme='dark'] .pepito-earn-history {
+  background: var(--pd-surface);
+  border-color: var(--pd-border);
+  color: var(--pd-ink);
+  box-shadow: var(--pd-shadow);
+}
+html[data-theme='dark'] .pepito-earn-how h2,
+html[data-theme='dark'] .pepito-earn-form-wrap h2,
+html[data-theme='dark'] .pepito-earn-history h2,
+html[data-theme='dark'] .pepito-earn-pending h2 {
+  color: var(--pd-ink);
+}
+html[data-theme='dark'] .pepito-earn-how ol {
+  color: var(--pd-muted);
+}
+html[data-theme='dark'] .pepito-earn-pending {
+  background: color-mix(in srgb, var(--pepito-orange) 14%, var(--pd-surface-2));
+  border-color: color-mix(in srgb, var(--pepito-orange) 38%, var(--pd-border));
+  color: #f5d9a0;
+}
+html[data-theme='dark'] .pepito-earn-pending h2 {
+  color: #ffe4b5;
+}
+html[data-theme='dark'] .pepito-earn-field span {
+  color: var(--pd-ink);
+}
+html[data-theme='dark'] .pepito-earn-field input {
+  background: var(--pd-surface-2);
+  border-color: var(--pd-border);
+  color: var(--pd-ink);
+  caret-color: var(--pepito-orange);
+}
+html[data-theme='dark'] .pepito-earn-field input::placeholder {
+  color: var(--pd-muted);
+  opacity: 1;
+}
+html[data-theme='dark'] .pepito-earn-field input:focus {
+  outline-color: color-mix(in srgb, var(--pepito-orange) 55%, transparent);
+  background: #2a2f3d;
+}
+html[data-theme='dark'] .pepito-earn-field input:disabled {
+  background: var(--pd-surface-muted);
+  opacity: 0.75;
+  color: var(--pd-muted);
+}
+html[data-theme='dark'] .pepito-earn-preview,
+html[data-theme='dark'] .pepito-earn-field-hint {
+  color: var(--pd-muted);
+}
+html[data-theme='dark'] .pepito-earn-preview strong {
+  color: var(--pd-ink);
+}
+html[data-theme='dark'] .pepito-earn-preview-warn {
+  color: #f0b429;
+}
+html[data-theme='dark'] .pepito-earn-form-error {
+  background: color-mix(in srgb, var(--danger, #f07178) 16%, var(--pd-surface-2));
+  border: 1px solid color-mix(in srgb, var(--danger, #f07178) 35%, var(--pd-border));
+  color: #f8a0a5;
+}
+html[data-theme='dark'] .pepito-earn-form-ok {
+  background: color-mix(in srgb, var(--pepito-mint) 14%, var(--pd-surface-2));
+  border: 1px solid color-mix(in srgb, var(--pepito-mint) 35%, var(--pd-border));
+  color: #7ee0c5;
+}
+html[data-theme='dark'] .pepito-earn-history-item {
+  background: var(--pd-surface-2);
+  border-color: var(--pd-border);
+  color: var(--pd-ink);
+}
+html[data-theme='dark'] .pepito-earn-history-item--open {
+  background: color-mix(in srgb, var(--pepito-orange) 12%, var(--pd-surface-2));
+  border-color: color-mix(in srgb, var(--pepito-orange) 32%, var(--pd-border));
+}
+html[data-theme='dark'] .pepito-earn-history-item--paid {
+  background: color-mix(in srgb, var(--pepito-mint) 12%, var(--pd-surface-2));
+  border-color: color-mix(in srgb, var(--pepito-mint) 32%, var(--pd-border));
+}
+html[data-theme='dark'] .pepito-earn-history-item p,
+html[data-theme='dark'] .pepito-earn-history-top strong {
+  color: var(--pd-ink);
+}
+html[data-theme='dark'] .pepito-earn-history-status,
+html[data-theme='dark'] .pepito-earn-history-meta {
+  color: var(--pd-muted) !important;
+}
+
 /* 13) My pets mobile hero */
 html[data-theme='dark'] .pepito-my-pets-hero {
   background:
