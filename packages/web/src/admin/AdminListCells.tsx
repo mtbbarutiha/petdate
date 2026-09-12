@@ -181,16 +181,16 @@ export function AdminContactCell({
       title={tgId ? `Telegram ID: ${tgId}` : undefined}
     >
       {p ? (
-        <span className="admin-mono" dir="ltr">
+        <span className="admin-mono admin-contact-line" dir="ltr" title={p}>
           {p}
         </span>
       ) : null}
       {handle ? (
-        <span className="admin-mono" dir="ltr">
+        <span className="admin-mono admin-contact-line" dir="ltr" title={handle}>
           {handle}
         </span>
       ) : tgId && !p ? (
-        <span className="admin-muted admin-mono" dir="ltr">
+        <span className="admin-muted admin-mono admin-contact-line" dir="ltr" title={`tg:${tgId}`}>
           tg:{tgId}
         </span>
       ) : null}

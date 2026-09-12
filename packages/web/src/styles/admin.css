@@ -1182,6 +1182,18 @@
 .admin-app .admin-table--users td > button.admin-wallet-grid,
 .admin-app .admin-table--users td > .admin-pets-cell {
   max-width: 100%;
+  min-width: 0;
+}
+.admin-app .admin-table--users td > .admin-cell-compact {
+  width: 100%;
+}
+.admin-app .admin-contact-line {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .admin-app .admin-pets-cell {
   display: flex;
