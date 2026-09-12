@@ -525,6 +525,7 @@ export const ADMIN_FA_EN: Record<string, string> = {
   "پیام‌های سیستمی پت‌دیت — پیامک، تلگرام، واتساپ و کانال‌های دیگر. قالب‌های پیش‌فرض قابل ویرایش‌اند.":
     "PetDate system messages — SMS, Telegram, WhatsApp, and other channels. Default templates are editable.",
   "پیام خودکار": "Automatic message",
+  "پیام جدید": "New message",
   "پیام خودکار جدید": "New automatic message",
   "پیام خودکار جدید ساخته شد": "New automatic message created",
   "پیام خودکار ذخیره شد": "Automatic message saved",
