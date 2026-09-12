@@ -42,6 +42,7 @@ export function SiteDesktopNav() {
           <Link
             key={item.key}
             to={href}
+            data-testid={`nav-${item.key}`}
             className={`pepito-site-desktop-nav-link${active ? ' is-active' : ''}`}
             aria-current={active ? 'page' : undefined}
             dir={dir}

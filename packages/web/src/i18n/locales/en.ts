@@ -102,6 +102,7 @@ export const en: Dict = {
   },
   nav: {
     sections: 'Sections',
+    more: 'More',
     mainMenu: 'Main menu',
     shortcuts: 'Primary shortcuts',
     services: 'Services',

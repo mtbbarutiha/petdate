@@ -59,6 +59,8 @@ const chromeFiles = [
   'components/AdoptionPurchaseCta.tsx',
   'components/SiteFooter.tsx',
   'components/LandingChrome.tsx',
+  'components/SiteHeader.tsx',
+  'components/SiteNavOverflow.tsx',
   'admin/AdminLayout.tsx',
   'admin/pages/AdminLoginPage.tsx',
   'main.tsx',

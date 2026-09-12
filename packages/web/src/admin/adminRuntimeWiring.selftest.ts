@@ -44,9 +44,12 @@ assert.match(hook, /\/api\/platform\/config/, 'site fetches public config');
 
 const chrome = read(join(webRoot, 'components/LandingChrome.tsx'));
 assert.match(chrome, /PlatformBanners/, 'landing shows platform banners');
-assert.match(chrome, /platform\.shopEnabled/, 'landing hides shop when flag off');
-assert.match(chrome, /platform\.vetConsultEnabled/, 'landing hides vet when flag off');
-assert.match(chrome, /data-testid="nav-games"/, 'landing keeps games nav from main');
+assert.match(chrome, /landingSectionLinks\(platform\)/, 'landing extras honor platform flags');
+const headerLinks = read(join(webRoot, 'components/siteHeaderLinks.ts'));
+assert.match(headerLinks, /vetConsultEnabled/, 'landing hides vet when flag off');
+const desktopNav = read(join(webRoot, 'components/SiteDesktopNav.tsx'));
+assert.match(desktopNav, /filterNavByPlatformConfig/, 'desktop pills hide shop when flag off');
+assert.match(desktopNav, /data-testid=\{`nav-\$\{item\.key\}`\}/, 'landing keeps games nav from pills');
 
 const welcome = read(join(webRoot, 'pages/WelcomePage.tsx'));
 assert.match(welcome, /PlatformBanners/, 'homepage shows platform banners');
