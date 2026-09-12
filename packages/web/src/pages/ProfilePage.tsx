@@ -285,6 +285,8 @@ export function ProfilePage() {
       ? display.interests.join(' · ')
       : 'هنوز انتخاب نشده';
   const publicId = userDisplayPublicId(display);
+  const hasAboutMeta =
+    Boolean(ageLabel) || Boolean(genderPlain) || locationLabel !== '—' || Boolean(display.phone);
   const roleLabel = mainRole ? USER_ROLE_LABELS[mainRole] : null;
   const metaBits = [
     ageLabel ? `${ageLabel} ساله` : null,
@@ -657,39 +659,64 @@ export function ProfilePage() {
           <section className="pepito-profile-block pepito-profile-about" aria-label="درباره">
             <header className="pepito-profile-section-head">
               <h2>درباره من</h2>
-              <p>بیو، علایق و شناسه قابل کپی</p>
+              <p>بیو، مشخصات و شناسه قابل کپی</p>
             </header>
-            {display.bio ? (
-              <p className="pepito-profile-bio">{display.bio}</p>
-            ) : (
-              <p className="pepito-profile-bio pepito-profile-bio--empty">
-                هنوز بیویی ننوشتی — از ویرایش اضافه کن.
-              </p>
-            )}
-            {display.interests && display.interests.length > 0 ? (
-              <ul className="pepito-profile-tags">
-                {display.interests.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
-            ) : (
-              <p className="pepito-profile-bio pepito-profile-bio--empty">علایق: {interestsLabel}</p>
-            )}
-            <ul className="pepito-profile-chips" aria-label="شناسنامه">
-              {ageLabel ? <li>{ageLabel} ساله</li> : null}
-              {genderPlain ? <li>{genderPlain}</li> : null}
-              {locationLabel !== '—' ? (
-                <li>
-                  <MapPin size={13} aria-hidden />
-                  {locationLabel}
-                </li>
+            <div className="pepito-profile-about-panel">
+              <div className="pepito-profile-about-lead">
+                {display.bio ? (
+                  <p className="pepito-profile-bio">{display.bio}</p>
+                ) : (
+                  <p className="pepito-profile-bio pepito-profile-bio--empty">
+                    هنوز بیویی ننوشتی — از ویرایش اضافه کن.
+                  </p>
+                )}
+                {display.interests && display.interests.length > 0 ? (
+                  <ul className="pepito-profile-tags" aria-label="علایق">
+                    {display.interests.map((item) => (
+                      <li key={item}>{item}</li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="pepito-profile-bio pepito-profile-bio--empty">علایق: {interestsLabel}</p>
+                )}
+              </div>
+
+              {hasAboutMeta ? (
+                <dl className="pepito-profile-about-meta" aria-label="شناسنامه">
+                  {ageLabel ? (
+                    <div>
+                      <dt>سن</dt>
+                      <dd>{ageLabel} ساله</dd>
+                    </div>
+                  ) : null}
+                  {genderPlain ? (
+                    <div>
+                      <dt>جنسیت</dt>
+                      <dd>{genderPlain}</dd>
+                    </div>
+                  ) : null}
+                  {locationLabel !== '—' ? (
+                    <div>
+                      <dt>موقعیت</dt>
+                      <dd>
+                        <MapPin size={14} aria-hidden />
+                        {locationLabel}
+                      </dd>
+                    </div>
+                  ) : null}
+                  {display.phone ? (
+                    <div>
+                      <dt>تلفن</dt>
+                      <dd dir="ltr">{display.phone}</dd>
+                    </div>
+                  ) : null}
+                </dl>
               ) : null}
-              <li>
+
+              <div className="pepito-profile-status-row" aria-label="وضعیت">
                 <span className={`pepito-profile-badge${needsWizard ? ' is-warn' : ' is-ok'}`}>
                   {onboardingLabel}
                 </span>
-              </li>
-              <li>
                 <span
                   className={`pepito-profile-badge${
                     verifyStatus === 'verified' ? ' is-ok' : verifyStatus === 'pending' ? ' is-warn' : ''
@@ -697,18 +724,16 @@ export function ProfilePage() {
                 >
                   {profileVerifyStatusLabel(verifyStatus)}
                 </span>
-              </li>
-              {display.phone ? (
-                <li dir="ltr">{display.phone}</li>
-              ) : null}
-              <li>
+              </div>
+
+              <div className="pepito-profile-about-foot">
                 <PublicIdBadge
                   label="شناسه کاربر/صاحب پت:"
                   value={publicId}
                   className="pepito-profile-id-row"
                 />
-              </li>
-            </ul>
+              </div>
+            </div>
           </section>
 
           {showPetsBlock ? (
@@ -728,45 +753,55 @@ export function ProfilePage() {
                   همه پت‌ها
                 </Link>
               </header>
-              {petsLoading ? (
-                <div className="pepito-profile-pet-cards pepito-profile-pet-cards--muted" aria-busy="true">
-                  <div className="pepito-profile-pet-card is-skeleton" aria-hidden />
-                </div>
-              ) : myPets.length === 0 ? (
-                <Link to="/add-pet" className="pepito-profile-pet-empty">
-                  <PetAvatar type="dog" size="md" name="پت" />
-                  <div>
-                    <strong>اولین پت را اضافه کن</strong>
-                    <span>پروفایل، ویرایش و پرونده پزشکی</span>
+              <div className="pepito-profile-pets-panel">
+                {petsLoading ? (
+                  <div className="pepito-profile-pet-cards pepito-profile-pet-cards--muted" aria-busy="true">
+                    <div className="pepito-profile-pet-card is-skeleton" aria-hidden />
                   </div>
-                  <ChevronLeft size={18} strokeWidth={2.25} aria-hidden />
-                </Link>
-              ) : (
-                <ul className="pepito-profile-pet-cards">
-                  {myPets.map((pet) => {
-                    const ui = petProfileToUiPet(pet);
-                    const petIdLabel = petPublicIdOf(pet);
-                    return (
-                      <li key={pet.id}>
-                        <Link to={`/pets/${pet.id}`} className="pepito-profile-pet-card">
-                          <PetAvatar type={ui.type} size="md" imageUrl={ui.imageUrl} name={pet.name} />
-                          <div className="pepito-profile-pet-card-body">
-                            <strong>{pet.name}</strong>
-                            <span>
-                              {[PET_TYPE_LABELS[ui.type] || pet.species, formatAge(ui)]
-                                .filter(Boolean)
-                                .join(' · ')}
+                ) : myPets.length === 0 ? (
+                  <Link to="/add-pet" className="pepito-profile-pet-empty">
+                    <PetAvatar type="dog" size="md" name="پت" />
+                    <div>
+                      <strong>اولین پت را اضافه کن</strong>
+                      <span>پروفایل، ویرایش و پرونده پزشکی</span>
+                    </div>
+                    <ChevronLeft size={18} strokeWidth={2.25} aria-hidden />
+                  </Link>
+                ) : (
+                  <ul className="pepito-profile-pet-cards">
+                    {myPets.map((pet) => {
+                      const ui = petProfileToUiPet(pet);
+                      const petIdLabel = petPublicIdOf(pet);
+                      return (
+                        <li key={pet.id}>
+                          <Link to={`/pets/${pet.id}`} className="pepito-profile-pet-card">
+                            <span className="pepito-profile-pet-card-media" aria-hidden>
+                              <PetAvatar type={ui.type} size="md" imageUrl={ui.imageUrl} name={pet.name} />
                             </span>
-                            <span className="pepito-profile-pet-id" dir="ltr">
-                              {petIdLabel}
-                            </span>
-                          </div>
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
+                            <div className="pepito-profile-pet-card-body">
+                              <strong>{pet.name}</strong>
+                              <span>
+                                {[PET_TYPE_LABELS[ui.type] || pet.species, formatAge(ui)]
+                                  .filter(Boolean)
+                                  .join(' · ')}
+                              </span>
+                              <span className="pepito-profile-pet-id" dir="ltr">
+                                {petIdLabel}
+                              </span>
+                            </div>
+                            <ChevronLeft
+                              className="pepito-profile-pet-card-chevron"
+                              size={18}
+                              strokeWidth={2.25}
+                              aria-hidden
+                            />
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </div>
             </section>
           ) : null}
 
