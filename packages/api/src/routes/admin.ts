@@ -51,6 +51,10 @@ import {
   paymentReceiptStorageKeyFromUrl,
   resolvePaymentReceiptPath,
 } from '../services/payment-receipt-store';
+import {
+  fetchTelegramFileBytes,
+  looksLikeTelegramFileId,
+} from '../services/telegram-media';
 import fs from 'fs';
 import { telegramFetch, telegramBotApiUrl } from '../services/telegram-http';
 import {
@@ -643,7 +647,11 @@ adminRouter.get('/payments', (req, res) => {
   res.json({ orders: adminPlatform.listPaymentOrdersAdmin({ status, limit: 150 }) });
 });
 
-adminRouter.get('/payments/:id/receipt', (req, res) => {
+/**
+ * Serve deposit receipt bytes for admin UI (web disk path or Telegram file_id).
+ * Always streams bytes (no 302) so the panel can blob-fetch with x-admin-* headers.
+ */
+adminRouter.get('/payments/:id/receipt', async (req, res) => {
   const id = Number(req.params.id);
   const order = dbService.getPaymentOrder(id);
   if (!order) {
@@ -655,19 +663,62 @@ adminRouter.get('/payments/:id/receipt', (req, res) => {
     res.status(404).json({ error: 'رسیدی ثبت نشده' });
     return;
   }
-  if (raw.startsWith('/api/payments/receipts/')) {
-    const key = paymentReceiptStorageKeyFromUrl(raw);
+
+  // Web / shop uploads — accept relative or absolute URLs containing the API path.
+  const webMatch = raw.match(/\/api\/payments\/receipts\/(\d+\/[\w.~-]+)/);
+  if (webMatch?.[1] || raw.startsWith('/api/payments/receipts/')) {
+    const pathOnly = webMatch
+      ? `/api/payments/receipts/${webMatch[1]}`
+      : (raw.split('?')[0] ?? raw);
+    const key = paymentReceiptStorageKeyFromUrl(pathOnly);
     const abs = key ? resolvePaymentReceiptPath(key) : null;
     if (!key || !abs || !fs.existsSync(abs)) {
       res.status(404).json({ error: 'فایل پیدا نشد' });
       return;
     }
-    res.setHeader('Content-Type', mimeFromPaymentReceiptKey(key));
+    const ext = path.extname(key).toLowerCase();
+    const contentType =
+      ext === '.pdf' ? 'application/pdf' : mimeFromPaymentReceiptKey(key);
+    res.setHeader('Content-Type', contentType);
     res.setHeader('Cache-Control', 'private, max-age=300');
     fs.createReadStream(abs).pipe(res);
     return;
   }
-  res.redirect(302, `/api/media/telegram/${encodeURIComponent(raw)}`);
+
+  // Bot uploads: Telegram file_id (or already-mapped /api/media/telegram/… URL)
+  let fileId = raw;
+  const mediaMatch = raw.match(/\/api\/media\/telegram\/([^/?#]+)/);
+  if (mediaMatch?.[1]) {
+    try {
+      fileId = decodeURIComponent(mediaMatch[1]);
+    } catch {
+      fileId = mediaMatch[1];
+    }
+  }
+  if (!looksLikeTelegramFileId(fileId)) {
+    res.status(404).json({ error: 'رسید نامعتبر است' });
+    return;
+  }
+  try {
+    const bytes = await fetchTelegramFileBytes(fileId);
+    if (!bytes) {
+      res.status(404).json({ error: 'فایل تلگرام پیدا نشد' });
+      return;
+    }
+    let contentType = bytes.contentType || 'image/jpeg';
+    if (!contentType.startsWith('image/') && contentType !== 'application/pdf') {
+      if (bytes.buffer[0] === 0xff && bytes.buffer[1] === 0xd8) contentType = 'image/jpeg';
+      else if (bytes.buffer[0] === 0x89 && bytes.buffer[1] === 0x50) contentType = 'image/png';
+      else if (bytes.buffer[0] === 0x25 && bytes.buffer[1] === 0x50) contentType = 'application/pdf';
+      else contentType = 'image/jpeg';
+    }
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Cache-Control', 'private, max-age=300');
+    res.send(bytes.buffer);
+  } catch (err) {
+    console.warn('admin payment receipt telegram proxy failed:', (err as Error).message);
+    res.status(502).json({ error: 'دریافت رسید از تلگرام ناموفق بود' });
+  }
 });
 
 adminRouter.post('/payments/:id/approve', (req, res) => {
