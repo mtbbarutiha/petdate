@@ -4467,6 +4467,7 @@ export const dbService = {
   },
 
   getGame(id: number): Game | null {
+    if (!Number.isFinite(id) || id <= 0) return null;
     const row = db.prepare('SELECT * FROM games WHERE id = ?').get(id) as Record<string, unknown> | undefined;
     return row ? mapGame(row) : null;
   },
@@ -4521,6 +4522,7 @@ export const dbService = {
   },
 
   getGamePlayers(gameId: number): GamePlayer[] {
+    if (!Number.isFinite(gameId) || gameId <= 0) return [];
     const rows = db
       .prepare(
         `SELECT gp.*, u.name as user_name FROM game_players gp

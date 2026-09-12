@@ -126,6 +126,9 @@ npx tsx "$ROOT/packages/web/src/lib/wcdnNginx.selftest.ts"
 echo "==> selftest: web API error message (WCDN HTML → Persian)"
 npx tsx "$ROOT/packages/web/src/lib/apiErrorMessage.selftest.ts"
 
+echo "==> selftest: web listGames never blanks SPA"
+npx tsx "$ROOT/packages/web/src/lib/listGames.selftest.ts"
+
 echo "==> selftest: shop product gallery assets"
 npx tsx "$ROOT/packages/web/src/data/shopGallery.selftest.ts"
 
@@ -200,6 +203,7 @@ run src/admin-finance-dashboard.selftest.ts
 run src/platform-settings.selftest.ts
 run src/magazine.selftest.ts
 run src/magazine-editorial-seed.selftest.ts
+run src/routes/games-list.selftest.ts
 run src/routes/pets-id-guard.selftest.ts
 run src/routes/pets-slug-diary.selftest.ts
 run src/routes/pets-public-list.selftest.ts
