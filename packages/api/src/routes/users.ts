@@ -25,6 +25,15 @@ import {
   materializeTelegramFileIdAsAvatar,
   syncUserProfileFromTelegram,
 } from '../services/telegram-profile-sync';
+import {
+  fetchTelegramFileBytes,
+  sniffTelegramMediaContentType,
+} from '../services/telegram-media';
+import {
+  mimeFromUserAvatarKey,
+  resolveUserAvatarPath,
+} from '../services/user-avatar-store';
+import fs from 'fs';
 
 export const usersRouter = Router();
 
@@ -468,6 +477,102 @@ usersRouter.patch('/:id/section', (req, res) => {
 /** صف احراز هویت در انتظار بررسی ادمین */
 usersRouter.get('/verification/pending', requireTrustedStaff, (_req, res) => {
   res.json(dbService.listPendingVerifications());
+});
+
+/**
+ * Serve face-verify media for admin review (photo or short video).
+ * Authenticated like payment receipts — `<img>`/`<video>` src cannot send admin headers,
+ * so the admin UI fetches bytes and uses a blob: URL.
+ */
+usersRouter.get('/:id/verification/media', requireTrustedStaff, async (req, res) => {
+  const user = dbService.getUserById(Number(req.params.id));
+  if (!user) {
+    res.status(404).json({ error: 'کاربر پیدا نشد' });
+    return;
+  }
+  const raw = String(user.verificationPhotoFileId || user.avatarUrl || '').trim();
+  if (!raw) {
+    res.status(404).json({ error: 'فایل احراز ثبت نشده' });
+    return;
+  }
+
+  // Web selfie stored under user-avatars
+  const avatarMatch = raw.match(/\/api\/auth\/avatar\/(\d+\/[\w.~-]+)/);
+  if (avatarMatch?.[1] || raw.startsWith('/api/auth/avatar/')) {
+    const key = avatarMatch?.[1]
+      ? avatarMatch[1]
+      : (raw.split('?')[0] ?? raw).replace(/^\/api\/auth\/avatar\//, '');
+    const abs = resolveUserAvatarPath(key);
+    if (!abs || !fs.existsSync(abs)) {
+      res.status(404).json({ error: 'فایل پیدا نشد' });
+      return;
+    }
+    const buf = fs.readFileSync(abs);
+    const contentType = sniffTelegramMediaContentType(
+      buf,
+      mimeFromUserAvatarKey(key),
+      key
+    );
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Cache-Control', 'private, max-age=300');
+    res.send(buf);
+    return;
+  }
+
+  // Already-proxied telegram URL or raw file_id
+  let fileId = raw;
+  const mediaMatch = raw.match(/\/api\/media\/telegram\/([^/?#]+)/);
+  if (mediaMatch?.[1]) {
+    try {
+      fileId = decodeURIComponent(mediaMatch[1]);
+    } catch {
+      fileId = mediaMatch[1];
+    }
+  }
+  if (looksLikeTelegramFileId(fileId)) {
+    try {
+      const bytes = await fetchTelegramFileBytes(fileId);
+      if (!bytes) {
+        res.status(404).json({ error: 'فایل تلگرام پیدا نشد' });
+        return;
+      }
+      const contentType = sniffTelegramMediaContentType(
+        bytes.buffer,
+        bytes.contentType,
+        fileId
+      );
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Cache-Control', 'private, max-age=300');
+      res.send(bytes.buffer);
+    } catch (err) {
+      console.warn('admin verification media telegram proxy failed:', (err as Error).message);
+      res.status(502).json({ error: 'دریافت فایل احراز از تلگرام ناموفق بود' });
+    }
+    return;
+  }
+
+  // Absolute http(s) — proxy bytes (do not 302; blob fetch + auth headers break on redirect)
+  if (/^https?:\/\//i.test(raw)) {
+    try {
+      const upstream = await fetch(raw);
+      if (!upstream.ok) {
+        res.status(404).json({ error: 'فایل احراز پیدا نشد' });
+        return;
+      }
+      const buffer = Buffer.from(await upstream.arrayBuffer());
+      const declared = upstream.headers.get('content-type');
+      const contentType = sniffTelegramMediaContentType(buffer, declared, raw);
+      res.setHeader('Content-Type', contentType);
+      res.setHeader('Cache-Control', 'private, max-age=300');
+      res.send(buffer);
+    } catch (err) {
+      console.warn('admin verification media http proxy failed:', (err as Error).message);
+      res.status(502).json({ error: 'دریافت فایل احراز ناموفق بود' });
+    }
+    return;
+  }
+
+  res.status(404).json({ error: 'فایل احراز نامعتبر است' });
 });
 
 /** ارسال درخواست احراز هویت (عکس پروفایل / سلفی) */

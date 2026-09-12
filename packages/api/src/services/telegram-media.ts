@@ -45,7 +45,82 @@ function mimeFromPath(filePath: string): string {
   if (ext === '.png') return 'image/png';
   if (ext === '.webp') return 'image/webp';
   if (ext === '.gif') return 'image/gif';
+  if (ext === '.mp4' || ext === '.m4v') return 'video/mp4';
+  if (ext === '.webm') return 'video/webm';
+  if (ext === '.mov') return 'video/quicktime';
+  if (ext === '.heic' || ext === '.heif') return 'image/heic';
   return 'image/jpeg';
+}
+
+/**
+ * Infer browser-safe Content-Type for Telegram-proxied bytes.
+ * KYC / face-verify may be a selfie photo OR a short video (mp4/webm/mov).
+ * Do not force non-image payloads to image/jpeg — that breaks `<video>` playback.
+ */
+export function sniffTelegramMediaContentType(
+  buffer: Buffer,
+  declared?: string | null,
+  filePath?: string | null
+): string {
+  const declaredMime = String(declared || '')
+    .toLowerCase()
+    .split(';')[0]!
+    .trim();
+  const name = String(filePath || '').toLowerCase();
+
+  if (buffer.length >= 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) {
+    return 'image/jpeg';
+  }
+  if (
+    buffer.length >= 8 &&
+    buffer[0] === 0x89 &&
+    buffer[1] === 0x50 &&
+    buffer[2] === 0x4e &&
+    buffer[3] === 0x47
+  ) {
+    return 'image/png';
+  }
+  if (
+    buffer.length >= 12 &&
+    buffer.toString('ascii', 0, 4) === 'RIFF' &&
+    buffer.toString('ascii', 8, 12) === 'WEBP'
+  ) {
+    return 'image/webp';
+  }
+  if (buffer.length >= 6 && buffer.toString('ascii', 0, 3) === 'GIF') {
+    return 'image/gif';
+  }
+  // EBML — WebM / Matroska (Telegram video + video_note often land here or as mp4)
+  if (
+    buffer.length >= 4 &&
+    buffer[0] === 0x1a &&
+    buffer[1] === 0x45 &&
+    buffer[2] === 0xdf &&
+    buffer[3] === 0xa3
+  ) {
+    return 'video/webm';
+  }
+  // ISO BMFF — mp4 / mov / heic
+  if (buffer.length >= 12 && buffer.toString('ascii', 4, 8) === 'ftyp') {
+    const brand = buffer.toString('ascii', 8, 12).toLowerCase();
+    if (brand.startsWith('heic') || brand.startsWith('heif') || brand.startsWith('mif1')) {
+      return 'image/heic';
+    }
+    if (brand.includes('qt') || name.endsWith('.mov')) return 'video/quicktime';
+    return 'video/mp4';
+  }
+
+  if (declaredMime.startsWith('video/') || declaredMime.startsWith('image/')) {
+    return declaredMime;
+  }
+  if (/\.(mp4|m4v)(\?|$)/i.test(name)) return 'video/mp4';
+  if (/\.webm(\?|$)/i.test(name)) return 'video/webm';
+  if (/\.mov(\?|$)/i.test(name)) return 'video/quicktime';
+  if (/\.(jpe?g|png|gif|webp|heic|heif)(\?|$)/i.test(name)) return mimeFromPath(name);
+
+  return declaredMime && declaredMime !== 'application/octet-stream'
+    ? declaredMime
+    : 'application/octet-stream';
 }
 
 /**
@@ -92,8 +167,9 @@ export async function fetchTelegramFileBytes(fileId: string): Promise<{
     const upstream = await fetch(file.downloadUrl);
     if (!upstream.ok) return null;
     const buffer = Buffer.from(await upstream.arrayBuffer());
-    const contentType =
+    const declared =
       upstream.headers.get('content-type') || mimeFromPath(file.filePath);
+    const contentType = sniffTelegramMediaContentType(buffer, declared, file.filePath);
     return { buffer, contentType };
   } catch (err) {
     console.warn('fetch telegram file bytes failed:', (err as Error).message);

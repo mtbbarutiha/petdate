@@ -2,12 +2,13 @@ import { Router } from 'express';
 import {
   fetchTelegramFileBytes,
   looksLikeTelegramFileId,
+  sniffTelegramMediaContentType,
 } from '../services/telegram-media';
 
 export const mediaRouter = Router();
 
 /**
- * Proxy a Telegram Bot API file_id as image bytes (avatars / generic).
+ * Proxy a Telegram Bot API file_id as media bytes (avatars / KYC selfie or video).
  * Prefer materializing pet photos via GET /api/pets/:id/image when a pet id exists.
  */
 mediaRouter.get('/telegram/:fileId', async (req, res) => {
@@ -23,14 +24,11 @@ mediaRouter.get('/telegram/:fileId', async (req, res) => {
     return;
   }
 
-  let contentType = bytes.contentType || 'image/jpeg';
-  if (!contentType.startsWith('image/')) {
-    // Telegram sometimes returns application/octet-stream
-    if (bytes.buffer[0] === 0xff && bytes.buffer[1] === 0xd8) contentType = 'image/jpeg';
-    else if (bytes.buffer[0] === 0x89 && bytes.buffer[1] === 0x50) contentType = 'image/png';
-    else if (bytes.buffer[0] === 0x52 && bytes.buffer[1] === 0x49) contentType = 'image/webp';
-    else contentType = 'image/jpeg';
-  }
+  const contentType = sniffTelegramMediaContentType(
+    bytes.buffer,
+    bytes.contentType,
+    fileId
+  );
 
   res.setHeader('Content-Type', contentType);
   res.setHeader('Cache-Control', 'public, max-age=86400');

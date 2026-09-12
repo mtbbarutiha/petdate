@@ -76,6 +76,10 @@ npx tsx "$ROOT/packages/web/src/admin/adminRuntimeWiring.selftest.ts"
 echo "==> selftest: admin deposit receipt preview in details/attachments"
 npx tsx "$ROOT/packages/web/src/admin/pages/adminPaymentReceipt.selftest.ts"
 
+echo "==> selftest: admin KYC verification video (not bare img) + media mime sniff"
+npx tsx "$ROOT/packages/web/src/admin/pages/adminVerificationMedia.selftest.ts"
+npx tsx "$ROOT/packages/api/src/services/telegram-media.selftest.ts"
+
 echo "==> selftest: admin docs/photo moderation review grid UX"
 npx tsx "$ROOT/packages/web/src/admin/pages/adminMarketplaceModeration.selftest.ts"
 
