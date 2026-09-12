@@ -9,6 +9,8 @@ import {
   CANDOO_SEND_TIMEOUT_MS,
   isCandooSendAccepted,
   isCandooSrcRejection,
+  parseCandooBalanceBody,
+  sanitizeCandooPublicError,
 } from './candoo';
 
 function assert(cond: unknown, msg: string): void {
@@ -74,6 +76,21 @@ assert(
 assert(
   CANDOO_SEND_TIMEOUT_MS >= CANDOO_BALANCE_TIMEOUT_MS && CANDOO_SEND_TIMEOUT_MS <= 30_000,
   'send timeout must be finite and >= balance timeout'
+);
+
+assert(parseCandooBalanceBody('8728500') === 8728500, 'plain balance');
+assert(parseCandooBalanceBody(' 1000.5 ') === 1000.5, 'decimal balance');
+assert(parseCandooBalanceBody('"42"') === 42, 'json string number');
+assert(parseCandooBalanceBody('{"balance":991}') === 991, 'json balance field');
+assert(parseCandooBalanceBody('{"credit":12}') === 12, 'json credit field');
+assert(parseCandooBalanceBody('not-a-balance') == null, 'reject garbage');
+assert(
+  !sanitizeCandooPublicError('fail Candoo_ABCDEFGHIJKLMNOPQRSTUVWXYZ').includes('Candoo_ABCDEF'),
+  'sanitize candoo-like tokens'
+);
+assert(
+  sanitizeCandooPublicError('کلید API نامعتبر (401)') === 'کلید API نامعتبر (401)',
+  'keep safe errors'
 );
 
 console.log('candoo.selftest: OK');

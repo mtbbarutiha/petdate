@@ -51,7 +51,7 @@ import {
   upsertSmsPattern,
   wrapUpInteraction,
 } from '../crm-service';
-import { candooBalance, isCandooConfigured } from '../services/candoo';
+import { candooBalance, isCandooConfigured, sanitizeCandooPublicError } from '../services/candoo';
 
 export const crmAdminRouter = Router();
 
@@ -380,19 +380,27 @@ crmAdminRouter.post('/referrals/:id/respond', requirePermission('crm.write'), (r
 });
 
 crmAdminRouter.get('/sms', async (_req, res) => {
-  const panel: { configured: boolean; balance?: number | null; error?: string } = {
+  const panel: {
+    configured: boolean;
+    balance?: number | null;
+    currency?: 'rial';
+    error?: string;
+  } = {
     configured: isCandooConfigured(),
   };
   if (panel.configured) {
     try {
       const bal = await candooBalance();
-      if (bal.ok) {
-        panel.balance = bal.balance ?? null;
+      if (bal.ok && bal.balance != null && Number.isFinite(bal.balance)) {
+        panel.balance = bal.balance;
+        panel.currency = 'rial';
       } else {
-        panel.error = bal.error || 'خواندن موجودی ناموفق';
+        panel.error = sanitizeCandooPublicError(bal.error || 'خواندن موجودی ناموفق');
       }
     } catch (err) {
-      panel.error = err instanceof Error ? err.message : 'خطا در پنل پیامک';
+      panel.error = sanitizeCandooPublicError(
+        err instanceof Error ? err.message : 'خطا در پنل پیامک'
+      );
     }
   }
   res.json({ patterns: listSmsPatterns(), panel });

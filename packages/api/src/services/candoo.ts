@@ -1,9 +1,9 @@
 /**
  * Candoo SMS REST client (api.candoosms.com v3.0.1)
  *
- * Auth: header `x-api-key`
+ * Auth: header `x-api-key` (docs also mention `key-api-x`; send/balance work with x-api-key)
  * Send: POST /api/v3.0.1/send  body = JSON array of messages
- * Balance: GET /api/v3.0.1/balance
+ * Balance: POST /api/v3.0.1/balance (GET returns HTTP 500 on the live API; body unused)
  * OTP messages should use type=1 (رمز یکبار مصرف)
  */
 
@@ -316,6 +316,54 @@ export async function candooSendOtp(opts: {
   });
 }
 
+/** Strip API keys / opaque tokens from provider messages before returning to admin UI. */
+export function sanitizeCandooPublicError(message: string): string {
+  let out = String(message || '').trim() || 'خطای سرویس پیامک';
+  const key = apiKey();
+  if (key && out.includes(key)) {
+    out = out.split(key).join('[redacted]');
+  }
+  // Defensive: never echo Candoo_* style secrets if a provider ever embeds them.
+  out = out.replace(/\bCandoo_[A-Za-z0-9_-]{8,}\b/g, '[redacted]');
+  out = out.replace(/\bx-api-key\s*[:=]\s*\S+/gi, 'x-api-key=[redacted]');
+  return out;
+}
+
+/**
+ * Parse Candoo balance body: plain number, quoted number, or JSON `{ balance|credit|amount }`.
+ * Returns null when the body is not a finite credit value.
+ */
+export function parseCandooBalanceBody(text: string): number | null {
+  const trimmed = String(text ?? '').trim();
+  if (!trimmed) return null;
+
+  const asNum = Number(trimmed);
+  if (Number.isFinite(asNum)) return asNum;
+
+  try {
+    const parsed = JSON.parse(trimmed) as unknown;
+    if (typeof parsed === 'number' && Number.isFinite(parsed)) return parsed;
+    if (typeof parsed === 'string') {
+      const n = Number(parsed.trim());
+      return Number.isFinite(n) ? n : null;
+    }
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      const row = parsed as Record<string, unknown>;
+      for (const key of ['balance', 'credit', 'amount', 'value', 'rial', 'ریال']) {
+        const v = row[key];
+        if (typeof v === 'number' && Number.isFinite(v)) return v;
+        if (typeof v === 'string') {
+          const n = Number(v.trim());
+          if (Number.isFinite(n)) return n;
+        }
+      }
+    }
+  } catch {
+    /* not JSON */
+  }
+  return null;
+}
+
 /** بررسی اعتبار / موجودی — بدون ارسال SMS */
 export async function candooBalance(): Promise<{
   ok: boolean;
@@ -330,11 +378,16 @@ export async function candooBalance(): Promise<{
   }
   const url = `${apiBase()}/api/v3.0.1/balance`;
   try {
+    // Live Candoo returns HTTP 500 for GET /balance; POST (empty JSON) returns the credit number.
     const res = await candooFetch(
       url,
       {
-        method: 'GET',
-        headers: { 'x-api-key': key },
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': key,
+        },
+        body: '{}',
       },
       CANDOO_BALANCE_TIMEOUT_MS
     );
@@ -343,26 +396,40 @@ export async function candooBalance(): Promise<{
       return {
         ok: false,
         status: res.status,
-        error: res.status === 401 ? 'کلید API نامعتبر (401)' : `Candoo HTTP ${res.status}`,
-        raw: text,
+        error: sanitizeCandooPublicError(
+          res.status === 401
+            ? 'کلید API نامعتبر (401)'
+            : res.status >= 500
+              ? 'سرویس موجودی پیامک موقتاً در دسترس نیست'
+              : `Candoo HTTP ${res.status}`
+        ),
+        // Never return raw body to callers that might log/echo it — keep internal only.
+        raw: undefined,
       };
     }
-    const balance = Number(text.trim());
+    const balance = parseCandooBalanceBody(text);
+    if (balance == null) {
+      return {
+        ok: false,
+        status: res.status,
+        error: sanitizeCandooPublicError('پاسخ موجودی پیامک نامعتبر بود'),
+      };
+    }
     return {
       ok: true,
       status: res.status,
-      balance: Number.isFinite(balance) ? balance : undefined,
-      raw: text,
+      balance,
     };
   } catch (err) {
+    const networkMsg = isAbortError(err)
+      ? `Candoo timeout (${CANDOO_BALANCE_TIMEOUT_MS}ms)`
+      : err instanceof Error
+        ? err.message
+        : 'خطای شبکه Candoo';
     return {
       ok: false,
       status: 0,
-      error: isAbortError(err)
-        ? `Candoo timeout (${CANDOO_BALANCE_TIMEOUT_MS}ms)`
-        : err instanceof Error
-          ? err.message
-          : 'خطای شبکه Candoo',
+      error: sanitizeCandooPublicError(networkMsg),
     };
   }
 }
