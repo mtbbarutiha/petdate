@@ -1,4 +1,5 @@
 import { Router, type Request } from 'express';
+import { isInternalBot, requireTrustedStaff } from '../internal-auth';
 import type { OnboardingStatus, User, UserRole } from '@petdate/shared';
 import {
   FACE_VERIFY_REWARD,
@@ -35,10 +36,7 @@ function isUserRole(value: unknown): value is UserRole {
  * Header must match TELEGRAM_BOT_TOKEN. Public/web callers get peer DTO.
  */
 function isTrustedBotRequest(req: Request): boolean {
-  const token = String(process.env.TELEGRAM_BOT_TOKEN || '').trim();
-  if (!token) return false;
-  const header = String(req.headers['x-petdate-bot-token'] || '').trim();
-  return header.length > 0 && header === token;
+  return isInternalBot(req);
 }
 
 /** Attach lastSeenAt when present for peer captions */
@@ -467,7 +465,7 @@ usersRouter.patch('/:id/section', (req, res) => {
 });
 
 /** صف احراز هویت در انتظار بررسی ادمین */
-usersRouter.get('/verification/pending', (_req, res) => {
+usersRouter.get('/verification/pending', requireTrustedStaff, (_req, res) => {
   res.json(dbService.listPendingVerifications());
 });
 
@@ -511,7 +509,7 @@ usersRouter.post('/telegram/:telegramId/verification', async (req, res) => {
   res.json({ ok: true, user: dbService.getUserById(user.id) ?? result.user });
 });
 
-usersRouter.post('/:id/verification/approve', (req, res) => {
+usersRouter.post('/:id/verification/approve', requireTrustedStaff, (req, res) => {
   const reward =
     req.body?.rewardCoins != null
       ? Number(req.body.rewardCoins)
@@ -773,7 +771,7 @@ usersRouter.post('/telegram/:telegramId/coins/debit', (req, res) => {
   res.json(updated);
 });
 
-usersRouter.post('/telegram/:telegramId/coins/credit', (req, res) => {
+usersRouter.post('/telegram/:telegramId/coins/credit', requireTrustedStaff, (req, res) => {
   const user = dbService.getUserByTelegramId(req.params.telegramId);
   if (!user) {
     res.status(404).json({ error: 'کاربر پیدا نشد' });
@@ -876,7 +874,7 @@ usersRouter.post('/telegram/:telegramId/phone/verify-otp', (req, res) => {
   res.json({ ok: true, user: result.user });
 });
 
-usersRouter.post('/:id/verification/reject', (req, res) => {
+usersRouter.post('/:id/verification/reject', requireTrustedStaff, (req, res) => {
   const note = req.body?.note != null ? String(req.body.note) : undefined;
   const user = dbService.rejectVerification(Number(req.params.id), note);
   if (!user) {
@@ -887,7 +885,7 @@ usersRouter.post('/:id/verification/reject', (req, res) => {
 });
 
 /** صف مدارک دامپزشک در انتظار بررسی */
-usersRouter.get('/vet-credentials/pending', (req, res) => {
+usersRouter.get('/vet-credentials/pending', requireTrustedStaff, (req, res) => {
   const limit = Number(req.query.limit);
   res.json(dbService.listPendingVetCredentials(Number.isFinite(limit) ? limit : 100));
 });
@@ -918,7 +916,7 @@ usersRouter.post('/telegram/:telegramId/vet-credential', (req, res) => {
   res.json({ ok: true, user: result.user });
 });
 
-usersRouter.post('/:id/vet-credential/approve', (req, res) => {
+usersRouter.post('/:id/vet-credential/approve', requireTrustedStaff, (req, res) => {
   const user = dbService.approveVetCredential(Number(req.params.id));
   if (!user) {
     res.status(404).json({ error: 'مدرک در صف نیست' });
@@ -927,7 +925,7 @@ usersRouter.post('/:id/vet-credential/approve', (req, res) => {
   res.json({ ok: true, user });
 });
 
-usersRouter.post('/:id/vet-credential/reject', (req, res) => {
+usersRouter.post('/:id/vet-credential/reject', requireTrustedStaff, (req, res) => {
   const user = dbService.rejectVetCredential(Number(req.params.id));
   if (!user) {
     res.status(404).json({ error: 'مدرک در صف نیست' });
@@ -937,7 +935,7 @@ usersRouter.post('/:id/vet-credential/reject', (req, res) => {
 });
 
 /** صف مدارک مربی / پرستار */
-usersRouter.get('/provider-credentials/pending', (req, res) => {
+usersRouter.get('/provider-credentials/pending', requireTrustedStaff, (req, res) => {
   const kindRaw = String(req.query.kind ?? '').trim();
   const kind = kindRaw === 'sitter' ? 'sitter' : kindRaw === 'trainer' ? 'trainer' : null;
   if (!kind) {
@@ -996,7 +994,7 @@ usersRouter.post('/telegram/:telegramId/provider-credential', (req, res) => {
   res.json({ ok: true, user: result.user });
 });
 
-usersRouter.post('/:id/provider-credential/approve', (req, res) => {
+usersRouter.post('/:id/provider-credential/approve', requireTrustedStaff, (req, res) => {
   const kindRaw = String(req.body?.kind ?? req.query.kind ?? '').trim();
   const kind = kindRaw === 'sitter' ? 'sitter' : kindRaw === 'trainer' ? 'trainer' : null;
   if (!kind) {
@@ -1011,7 +1009,7 @@ usersRouter.post('/:id/provider-credential/approve', (req, res) => {
   res.json({ ok: true, user });
 });
 
-usersRouter.post('/:id/provider-credential/reject', (req, res) => {
+usersRouter.post('/:id/provider-credential/reject', requireTrustedStaff, (req, res) => {
   const kindRaw = String(req.body?.kind ?? req.query.kind ?? '').trim();
   const kind = kindRaw === 'sitter' ? 'sitter' : kindRaw === 'trainer' ? 'trainer' : null;
   if (!kind) {
@@ -1027,12 +1025,12 @@ usersRouter.post('/:id/provider-credential/reject', (req, res) => {
 });
 
 /** صف تأیید عکس پت */
-usersRouter.get('/pet-photos/pending', (req, res) => {
+usersRouter.get('/pet-photos/pending', requireTrustedStaff, (req, res) => {
   const limit = Number(req.query.limit);
   res.json(dbService.listPendingPetPhotos(Number.isFinite(limit) ? limit : 100));
 });
 
-usersRouter.post('/pets/:id/photo-moderation', (req, res) => {
+usersRouter.post('/pets/:id/photo-moderation', requireTrustedStaff, (req, res) => {
   const petId = Number(req.params.id);
   const statusRaw = String(req.body?.status ?? '').trim();
   if (statusRaw !== 'approved' && statusRaw !== 'rejected') {
@@ -1048,12 +1046,12 @@ usersRouter.post('/pets/:id/photo-moderation', (req, res) => {
 });
 
 /** صف تأیید عکس پروفایل کاربران */
-usersRouter.get('/user-avatars/pending', (req, res) => {
+usersRouter.get('/user-avatars/pending', requireTrustedStaff, (req, res) => {
   const limit = Number(req.query.limit);
   res.json(dbService.listPendingUserAvatars(Number.isFinite(limit) ? limit : 100));
 });
 
-usersRouter.post('/:id/avatar-moderation', (req, res) => {
+usersRouter.post('/:id/avatar-moderation', requireTrustedStaff, (req, res) => {
   const userId = Number(req.params.id);
   const statusRaw = String(req.body?.status ?? '').trim();
   if (statusRaw !== 'approved' && statusRaw !== 'rejected') {
@@ -1230,7 +1228,7 @@ usersRouter.post('/telegram/:telegramId/payments', (req, res) => {
   res.status(201).json({ ok: true, order });
 });
 
-usersRouter.get('/payments/pending/card', (_req, res) => {
+usersRouter.get('/payments/pending/card', requireTrustedStaff, (_req, res) => {
   res.json(dbService.listPendingCardPayments());
 });
 
@@ -1290,7 +1288,7 @@ usersRouter.post('/payments/:id/cancel', (req, res) => {
   res.json({ ok: true, order: result.order });
 });
 
-usersRouter.post('/payments/:id/approve', (req, res) => {
+usersRouter.post('/payments/:id/approve', requireTrustedStaff, (req, res) => {
   const note = req.body?.note != null ? String(req.body.note) : undefined;
   const id = Number(req.params.id);
   const existing = dbService.getPaymentOrder(id);
@@ -1338,7 +1336,7 @@ usersRouter.post('/payments/:id/approve', (req, res) => {
   res.json({ ok: true, order: result.order, user: result.user });
 });
 
-usersRouter.post('/payments/:id/reject', (req, res) => {
+usersRouter.post('/payments/:id/reject', requireTrustedStaff, (req, res) => {
   const note = req.body?.note != null ? String(req.body.note) : undefined;
   const result = dbService.rejectCardPayment(Number(req.params.id), note);
   if (!result.ok) {
@@ -1513,7 +1511,7 @@ usersRouter.patch('/:id/silent-chat', (req, res) => {
   res.json(dbService.enrichUserProfileCard(user));
 });
 
-usersRouter.delete('/:id', (req, res) => {
+usersRouter.delete('/:id', requireTrustedStaff, (req, res) => {
   const userId = Number(req.params.id);
   const ok = dbService.deleteUserById(userId);
   if (!ok) {

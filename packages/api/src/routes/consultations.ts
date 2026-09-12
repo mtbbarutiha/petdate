@@ -50,6 +50,7 @@ import {
   saveChatUpload,
   sniffChatMediaContentType,
 } from '../services/chat-upload-store';
+import { isInternalBot } from '../internal-auth';
 import { getUserFromBearer } from '../services/web-otp';
 import {
   notifyInbox,
@@ -282,9 +283,14 @@ consultationsRouter.post('/team-agent', async (req, res) => {
  */
 consultationsRouter.post('/quick-connect', async (req, res) => {
   const session = getUserFromBearer(req.header('authorization') ?? undefined);
+  const bot = isInternalBot(req);
   const bodyPatientId =
     req.body?.patientUserId != null ? Number(req.body.patientUserId) : undefined;
-  const patientUserId = session?.user?.id ?? bodyPatientId;
+  if (!session?.user?.id && !bot) {
+    res.status(401).json({ error: 'وارد نشده‌اید', reason: 'auth' });
+    return;
+  }
+  const patientUserId = session?.user?.id ?? (bot ? bodyPatientId : undefined);
   /** When true, skip the «resend after expiry» confirm gate (client already confirmed). */
   const confirmResend = Boolean(req.body?.confirmResend);
   /** Always start free AI consult (لیلا کیانی) — skip human provider matching. */

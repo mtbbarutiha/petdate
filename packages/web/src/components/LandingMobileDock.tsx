@@ -48,7 +48,9 @@ export function LandingMobileDock() {
     pathname.startsWith('/onboarding') ||
     pathname === '/chats' ||
     pathname.startsWith('/chats/') ||
-    pathname.startsWith('/vet-chats');
+    pathname.startsWith('/vet-chats') ||
+    pathname === '/vet-consult' ||
+    pathname.startsWith('/vet-consult/');
 
   useEffect(() => {
     if (!toast) return;

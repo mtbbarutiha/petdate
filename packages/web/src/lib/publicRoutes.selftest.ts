@@ -17,6 +17,7 @@ const footer = readFileSync(join(webSrc, 'components/SiteFooter.tsx'), 'utf8');
 const faq = readFileSync(join(webSrc, 'pages/FaqPage.tsx'), 'utf8');
 const chrome = readFileSync(join(webSrc, 'components/LandingChrome.tsx'), 'utf8');
 const hashRedirect = readFileSync(join(webSrc, 'components/LegacyAdoptionHashRedirect.tsx'), 'utf8');
+const dock = readFileSync(join(webSrc, 'components/LandingMobileDock.tsx'), 'utf8');
 
 assert.match(guard, /PUBLIC_EXACT[\s\S]*\/vet-consult/, 'AuthGuard treats /vet-consult as public');
 assert.match(guard, /PUBLIC_PREFIXES[\s\S]*\/magazine/, 'AuthGuard treats /magazine as public');
@@ -73,6 +74,9 @@ assert.match(faq, /<Link to="\/adoption"/, 'FAQ پذیرش CTA goes to /adoption
 assert.doesNotMatch(faq, /\/#pets/, 'FAQ has no leftover /#pets links');
 assert.match(hashRedirect, /location\.hash !== '#pets'/, 'legacy hash redirect watches #pets');
 assert.match(hashRedirect, /pathname: '\/adoption'/, 'legacy hash redirect navigates to /adoption');
+assert.match(dock, /pathname === '\/vet-consult'/, 'mobile dock hidden on guest vet landing');
+assert.match(chrome, /appNav \? ' pepito-nav--app'/, 'LandingChrome app header only when appNav');
+assert.doesNotMatch(chrome, /appNav \|\| isLoggedIn/, 'logged-in guests keep marketing chrome on landing');
 
 // Marketing hero: fixed role order همبازی → دامپزشک → مربی → بدون پت, then پذیرش
 const playmateIdx = welcome.indexOf("role: 'playmate'");
