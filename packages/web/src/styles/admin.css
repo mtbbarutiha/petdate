@@ -29,6 +29,7 @@ body:has(.admin-app) {
   --admin-active-border: #15cca0;
   --admin-sidebar: rgba(255, 255, 255, 0.92);
   --admin-sidebar-text: #757086;
+  --admin-sidebar-width: 264px;
   --admin-danger: #c62828;
   --admin-radius: 14px;
   --admin-font: 'Vazirmatn', 'Urbanist', system-ui, sans-serif;
@@ -152,7 +153,7 @@ body:has(.admin-app) {
 }
 
 .admin-app .admin-sidebar {
-  width: 256px;
+  width: var(--admin-sidebar-width);
   flex-shrink: 0;
   background: var(--admin-sidebar);
   color: var(--admin-ink);
@@ -160,15 +161,24 @@ body:has(.admin-app) {
   flex-direction: column;
   flex-wrap: nowrap;
   padding: 12px 10px 16px;
-  position: sticky;
+  /* Fixed (not sticky): html/body/admin-app overflow-x clip from #353
+     makes sticky a no-op, so the rail stretched with the page and left
+     empty chrome under خروج. Nav scrolls; foot stays pinned. */
+  position: fixed;
+  inset-block: 0;
+  inset-inline-start: 0;
+  inset-inline-end: auto;
   top: 0;
   height: 100dvh;
+  max-height: 100dvh;
+  overflow: hidden;
   border-inline-end: 1px solid var(--admin-border);
   box-shadow: 1px 0 0 rgba(0,0,0,0.02);
   z-index: 25;
 }
 
 .admin-app .admin-brand {
+  flex-shrink: 0;
   padding: 10px 8px 16px;
   border-bottom: 1px solid var(--admin-border);
   margin-bottom: 10px;
@@ -196,8 +206,11 @@ body:has(.admin-app) {
   flex-direction: column;
   flex-wrap: nowrap;
   gap: 2px;
-  flex: 1;
-  overflow: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding-inline: 4px;
 }
 
@@ -260,7 +273,7 @@ body:has(.admin-app) {
   flex-direction: column;
   border-top: 1px solid var(--admin-border);
   padding-top: 12px;
-  margin-top: 8px;
+  margin-top: auto;
   flex-shrink: 0;
 }
 
@@ -486,6 +499,9 @@ body:has(.admin-app) {
 
 /* Desktop close must hide the whole panel — not just labels (old --collapsed). */
 @media (min-width: 961px) {
+  .admin-app--nav-open .admin-shell {
+    padding-inline-start: var(--admin-sidebar-width);
+  }
   .admin-app--nav-closed .admin-sidebar {
     display: none !important;
     width: 0 !important;
@@ -498,7 +514,8 @@ body:has(.admin-app) {
   }
 }
 
-.admin-app--collapsed .admin-sidebar { width: 84px; }
+.admin-app--collapsed { --admin-sidebar-width: 84px; }
+.admin-app--collapsed .admin-sidebar { width: var(--admin-sidebar-width); }
 .admin-app--collapsed .admin-nav-group-title,
 .admin-app--collapsed .admin-wordmark-copy,
 .admin-app--collapsed .admin-wordmark-logo,
@@ -3076,7 +3093,7 @@ body:has(.admin-app) {
 
 /* Sidebar readability (light Pepito, not navy CRM) */
 .admin-app .admin-sidebar {
-  width: 264px;
+  width: var(--admin-sidebar-width);
   background: var(--admin-sidebar);
 }
 
