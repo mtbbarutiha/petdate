@@ -116,6 +116,26 @@ assert.doesNotMatch(
   'dark skeleton must not keep light gray / white stops'
 );
 
+/* Pet medical record (#pet-medical) — orphan #faf9fc shell must not survive dark */
+assert.match(darkCss, /#pet-medical\.pepito-pet-medical/, 'medical shell uses #pet-medical id override');
+assert.match(darkCss, /\.pepito-pet-medical-card\b/, 'medical info tiles remapped');
+assert.match(darkCss, /\.pepito-pet-wishlist\b/, 'pet wishlist remapped');
+assert.doesNotMatch(
+  pepitoCss,
+  /\.pepito-pet-medical\s*\{[^}]*#faf9fc/,
+  'medical shell must not hardcode #faf9fc (use --pd-surface-2)'
+);
+assert.doesNotMatch(
+  pepitoCss,
+  /\.pepito-pet-wishlist-grid li\s*\{[^}]*#faf9fc/,
+  'wishlist tiles must not hardcode #faf9fc'
+);
+assert.match(
+  darkCss,
+  /html\[data-theme=['"]dark['"]\][\s\S]{0,80}#pet-medical\.pepito-pet-medical[\s\S]{0,220}var\(--pd-surface\)/,
+  'dark medical shell paints --pd-surface (not leftover light canvas)'
+);
+
 const toggle = readFileSync(join(root, 'src/components/ThemeToggle.tsx'), 'utf8');
 assert.match(toggle, /toggleTheme|setTheme/, 'ThemeToggle mutates theme');
 assert.match(toggle, /aria-label/, 'ThemeToggle accessible');

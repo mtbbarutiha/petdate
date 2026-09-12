@@ -11865,33 +11865,39 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   font-weight: 700;
   font-size: 0.88rem;
 }
-.pepito-pet-medical {
+/* Pet medical + wishlist — --pd-* so dark theme remaps cleanly (no orphan #faf9fc) */
+.pepito-pet-medical,
+#pet-medical.pepito-pet-medical {
   margin-top: 0.35rem;
   padding: 1.05rem;
   border-radius: 20px;
-  border: 1px solid rgba(92, 77, 145, 0.1);
+  border: 1px solid var(--pd-border);
   background:
     radial-gradient(120% 80% at 100% 0%, rgba(21, 204, 160, 0.08), transparent 55%),
-    #faf9fc;
+    var(--pd-surface-2);
+  color: var(--pd-ink);
   display: grid;
   gap: 0.85rem;
 }
-.pepito-pet-profile.is-medical-focus .pepito-pet-medical {
+.pepito-pet-profile.is-medical-focus .pepito-pet-medical,
+.pepito-pet-profile.is-medical-focus #pet-medical.pepito-pet-medical {
   box-shadow: 0 0 0 2px rgba(21, 204, 160, 0.25);
 }
 .pepito-pet-medical-head {
   display: flex;
   gap: 0.65rem;
   align-items: flex-start;
+  color: var(--pd-ink);
 }
 .pepito-pet-medical-head h2 {
   margin: 0;
   font-size: 1.05rem;
   font-family: var(--font-display);
+  color: var(--pd-ink);
 }
 .pepito-pet-medical-head p {
   margin: 0.2rem 0 0;
-  color: var(--pepito-muted);
+  color: var(--pd-muted);
   font-size: 0.86rem;
 }
 .pepito-pet-medical-cards {
@@ -11902,8 +11908,9 @@ a.pepito-btn.pepito-human-consult-cta:hover {
 .pepito-pet-medical-card {
   padding: 0.7rem 0.75rem;
   border-radius: 14px;
-  background: var(--pepito-white);
-  border: 1px solid rgba(92, 77, 145, 0.08);
+  background: var(--pd-surface);
+  border: 1px solid var(--pd-border);
+  color: var(--pd-ink);
 }
 .pepito-pet-medical-card h3 {
   margin: 0 0 0.35rem;
@@ -11914,12 +11921,12 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   margin: 0;
   font-size: 0.88rem;
   line-height: 1.45;
-  color: var(--pepito-dark);
+  color: var(--pd-ink);
 }
 .pepito-pet-medical-meta {
   margin: 0;
   font-size: 0.8rem;
-  color: var(--pepito-muted);
+  color: var(--pd-muted);
 }
 .pepito-pet-medical-entries h3,
 .pepito-pet-medical-rx h3 {
@@ -11928,6 +11935,7 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
+  color: var(--pd-ink);
 }
 .pepito-pet-medical-entries ul,
 .pepito-pet-medical-rx ul {
@@ -11941,8 +11949,9 @@ a.pepito-btn.pepito-human-consult-cta:hover {
 .pepito-pet-medical-rx-card {
   padding: 0.75rem 0.8rem;
   border-radius: 14px;
-  background: var(--pepito-white);
-  border: 1px solid rgba(92, 77, 145, 0.08);
+  background: var(--pd-surface);
+  border: 1px solid var(--pd-border);
+  color: var(--pd-ink);
 }
 .pepito-pet-medical-entry header {
   display: flex;
@@ -11951,10 +11960,11 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   gap: 0.5rem;
   margin-bottom: 0.35rem;
   font-size: 0.8rem;
+  color: var(--pd-muted);
 }
 .pepito-pet-medical-muted {
   margin: 0;
-  color: var(--pepito-muted);
+  color: var(--pd-muted);
   font-size: 0.88rem;
 }
 .pepito-pet-medical-rx-links {
@@ -11965,18 +11975,20 @@ a.pepito-btn.pepito-human-consult-cta:hover {
 .pepito-pet-wishlist {
   padding: 1rem;
   border-radius: 18px;
-  border: 1px solid rgba(92, 77, 145, 0.1);
-  background: var(--pepito-white);
+  border: 1px solid var(--pd-border);
+  background: var(--pd-surface);
+  color: var(--pd-ink);
   display: grid;
   gap: 0.65rem;
 }
 .pepito-pet-wishlist header h2 {
   margin: 0;
   font-size: 1.05rem;
+  color: var(--pd-ink);
 }
 .pepito-pet-wishlist header p {
   margin: 0.2rem 0 0;
-  color: var(--pepito-muted);
+  color: var(--pd-muted);
   font-size: 0.86rem;
 }
 .pepito-pet-wishlist-grid {
@@ -11992,8 +12004,9 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   gap: 0.5rem;
   padding: 0.55rem 0.7rem;
   border-radius: 12px;
-  background: #faf9fc;
-  border: 1px solid rgba(92, 77, 145, 0.08);
+  background: var(--pd-surface-2);
+  border: 1px solid var(--pd-border);
+  color: var(--pd-ink);
 }
 
 @media (min-width: 860px) {
