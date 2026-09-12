@@ -47,7 +47,7 @@ async function main() {
   seedAdminNotificationsIfEmpty(); // idempotent
 
   const first = await listAdminHeaderNotifications(adminActor);
-  assert(first.items.length >= 4, 'seeded header notifications present');
+  assert(first.items.length >= 6, 'seeded header notifications present');
   assert(first.unreadCount >= 1, 'unread count > 0');
 
   const support = await listAdminHeaderNotifications(supportActor);

@@ -1640,6 +1640,8 @@ export function getFinanceOsNavCounts(): {
   queue: number;
   suspicious: number;
   pendingAllocation: number;
+  payments: number;
+  transactions: number;
 } {
   ensureFinanceOsSchema();
   const queue = (
@@ -1657,5 +1659,28 @@ export function getFinanceOsNavCounts(): {
       c: number;
     }
   ).c;
-  return { queue, suspicious, pendingAllocation };
+  /** Same deposit queue as platform payments badge — finance sidebar primary home. */
+  const payments = (
+    db()
+      .prepare(
+        `SELECT COUNT(*) AS c FROM payment_orders
+         WHERE method = 'card'
+           AND (
+             status = 'pending'
+             OR (
+               status = 'awaiting_receipt'
+               AND receipt_file_id IS NOT NULL
+               AND TRIM(receipt_file_id) != ''
+             )
+           )`
+      )
+      .get() as { c: number }
+  ).c;
+  return {
+    queue,
+    suspicious,
+    pendingAllocation,
+    payments,
+    transactions: queue + suspicious,
+  };
 }

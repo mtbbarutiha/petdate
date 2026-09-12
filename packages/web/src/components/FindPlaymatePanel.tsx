@@ -8,6 +8,7 @@ import {
   toPersianDigits,
   type PetProfile,
 } from '@petdate/shared';
+import { ConfirmModal } from './ConfirmModal';
 import { PlaymateRequestsPanel } from './PlaymateRequestsPanel';
 import { EMPTY_STATE_PHOTO } from '../data/petImages';
 import { useAuthStore } from '../hooks/useAuthStore';
@@ -64,6 +65,8 @@ export function FindPlaymatePanel({
   const [findResult, setFindResult] = useState<FindPlaymateResult | null>(null);
   const [statusLine, setStatusLine] = useState<string | null>(null);
   const [silentBusy, setSilentBusy] = useState(false);
+  /** Pet awaiting fee confirmation in custom modal (not the browser confirm dialog). */
+  const [feeConfirmPet, setFeeConfirmPet] = useState<PetProfile | null>(null);
 
   const myUserId = authUser?.id ?? user.id;
   const active =
@@ -92,19 +95,8 @@ export function FindPlaymatePanel({
 
   const coins = authUser?.coins ?? authUser?.wallet?.coins ?? 0;
 
-  function confirmFindFee(): boolean {
-    if (typeof window === 'undefined') return true;
-    return window.confirm(
-      [
-        `هزینه درخواست: ${formatCoins(PLAYDATE_REQUEST_COST)} سکه`,
-        `موجودی فعلی: ${formatCoins(coins)} سکه`,
-        '',
-        'با تأیید، سکه از موجودی‌ات کسر می‌شود و درخواست همبازی برای هم‌گروه‌ها ارسال می‌شود.',
-      ].join('\n')
-    );
-  }
-
-  async function runFindForPet(pet: PetProfile) {
+  /** Validate balance then open confirm modal (does not send yet). */
+  function requestFindForPet(pet: PetProfile) {
     if (!myUserId) {
       const msg = 'برای ارسال درخواست همبازی وارد حساب شو.';
       setFindError(msg); toastError(msg); return;
@@ -113,8 +105,18 @@ export function FindPlaymatePanel({
       const msg = `برای درخواست همبازی حداقل ${formatCoins(PLAYDATE_REQUEST_COST)} سکه لازم داری. موجودی: ${formatCoins(coins)}`;
       setFindError(msg); toastError(msg); return;
     }
-    if (!confirmFindFee()) return;
+    setFindError(null);
+    setFeeConfirmPet(pet);
+  }
 
+  function dismissFeeConfirm() {
+    if (findPhase === 'sending') return;
+    setFeeConfirmPet(null);
+  }
+
+  async function executeFindForPet(pet: PetProfile) {
+    if (!myUserId) return;
+    setFeeConfirmPet(null);
     setFindPhase('sending'); setFindError(null); setFindResult(null); setStatusLine(null);
     try {
       const result = await findAndSendPlaymates(pet, myUserId);
@@ -136,13 +138,44 @@ export function FindPlaymatePanel({
     }
   }
 
+  const feeConfirmModal = (
+    <ConfirmModal
+      open={!!feeConfirmPet}
+      title="تأیید درخواست همبازی"
+      confirmLabel={t('common.confirm')}
+      cancelLabel={t('common.cancel')}
+      busy={findPhase === 'sending'}
+      testId="playmate-fee-confirm"
+      onCancel={dismissFeeConfirm}
+      onConfirm={() => {
+        const pet = feeConfirmPet;
+        if (!pet) return;
+        void executeFindForPet(pet);
+      }}
+    >
+      <dl className="pepito-confirm-modal__stats">
+        <div className="pepito-confirm-modal__row pepito-confirm-modal__row--fee">
+          <dt>هزینه درخواست</dt>
+          <dd>{formatCoins(PLAYDATE_REQUEST_COST)} سکه</dd>
+        </div>
+        <div className="pepito-confirm-modal__row">
+          <dt>موجودی فعلی</dt>
+          <dd>{formatCoins(coins)} سکه</dd>
+        </div>
+      </dl>
+      <p className="pepito-lead-modal__lead">
+        با تأیید، سکه از موجودی‌ات کسر می‌شود و درخواست همبازی برای هم‌گروه‌ها ارسال می‌شود.
+      </p>
+    </ConfirmModal>
+  );
+
   async function onPrimaryClick() {
     setFindError(null);
     if (!isLoggedIn || !myUserId) return;
     if (petsLoading) return;
     if (myPets.length === 0) return;
     if (myPets.length === 1) {
-      await runFindForPet(myPets[0]!);
+      requestFindForPet(myPets[0]!);
       return;
     }
     setFindPhase('pick');
@@ -226,52 +259,56 @@ export function FindPlaymatePanel({
         </button>
       ) : null;
     return (
-      <div className="find-playmate-header">
-        {needsLogin ? (
-          <Link to="/auth/login" className="find-playmate-header-btn">
-            <PawIcon size={18} />
-            <span>{t('common.login')}</span>
-          </Link>
-        ) : needsPet ? (
-          <Link to="/add-pet" className="find-playmate-header-btn">
-            <PawIcon size={18} />
-            <span>{t('chats.findCtaAddPet')}</span>
-          </Link>
-        ) : showPetPick ? (
-          <div className="find-playmate-header-pick" role="menu">
-            {myPets.map((pet) => (
-              <button
-                key={pet.id}
-                type="button"
-                className="find-playmate-header-btn"
-                disabled={sending}
-                onClick={() => void runFindForPet(pet)}
-              >
-                <PawIcon size={16} />
-                <span>{pet.name}</span>
-              </button>
-            ))}
-          </div>
-        ) : (
-          <button
-            type="button"
-            className="find-playmate-header-btn"
-            data-testid="find-playmate-header"
-            disabled={sending || petsLoading}
-            onClick={() => void onPrimaryClick()}
-            aria-label={t('chats.findCta')}
-          >
-            <PawIcon size={18} />
-            <span>{ctaLabel}</span>
-          </button>
-        )}
-        {muteBtn}
-        {findError ? <span className="find-playmate-header-err">{findError}</span> : null}
-      </div>
+      <>
+        <div className="find-playmate-header">
+          {needsLogin ? (
+            <Link to="/auth/login" className="find-playmate-header-btn">
+              <PawIcon size={18} />
+              <span>{t('common.login')}</span>
+            </Link>
+          ) : needsPet ? (
+            <Link to="/add-pet" className="find-playmate-header-btn">
+              <PawIcon size={18} />
+              <span>{t('chats.findCtaAddPet')}</span>
+            </Link>
+          ) : showPetPick ? (
+            <div className="find-playmate-header-pick" role="menu">
+              {myPets.map((pet) => (
+                <button
+                  key={pet.id}
+                  type="button"
+                  className="find-playmate-header-btn"
+                  disabled={sending}
+                  onClick={() => requestFindForPet(pet)}
+                >
+                  <PawIcon size={16} />
+                  <span>{pet.name}</span>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="find-playmate-header-btn"
+              data-testid="find-playmate-header"
+              disabled={sending || petsLoading}
+              onClick={() => void onPrimaryClick()}
+              aria-label={t('chats.findCta')}
+            >
+              <PawIcon size={18} />
+              <span>{ctaLabel}</span>
+            </button>
+          )}
+          {muteBtn}
+          {findError ? <span className="find-playmate-header-err">{findError}</span> : null}
+        </div>
+        {feeConfirmModal}
+      </>
     );
   }
 
   return (
+    <>
     <div className={`find-playmate-panel${compact ? ' is-compact' : ''}`}>
       {!compact ? (
         <header className="find-playmate-panel__head">
@@ -313,7 +350,7 @@ export function FindPlaymatePanel({
                     type="button"
                     className="find-playmate-pet-btn"
                     disabled={sending}
-                    onClick={() => void runFindForPet(pet)}
+                    onClick={() => requestFindForPet(pet)}
                   >
                     <img src={ui.imageUrl || EMPTY_STATE_PHOTO} alt="" />
                     <span>
@@ -365,5 +402,7 @@ export function FindPlaymatePanel({
         </section>
       ) : null}
     </div>
+    {feeConfirmModal}
+    </>
   );
 }

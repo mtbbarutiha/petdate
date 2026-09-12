@@ -24,6 +24,7 @@ async function main() {
   assert(typeof before.verification === 'number', 'verification count');
   assert(typeof before.docs === 'number', 'docs count');
   assert(typeof before.payments === 'number', 'payments count');
+  assert(typeof before.shopOrders === 'number', 'shopOrders count');
 
   const { user: owner } = dbService.findOrCreateUser({
     telegramId: `nav-badge-${process.pid}-${Date.now()}`,

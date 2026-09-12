@@ -1538,6 +1538,39 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   font-size: 16px;
 }
 
+/* Confirm fee summary (playmate / coin charge) */
+.pepito-confirm-modal__stats {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+  padding: 0.85rem 1rem;
+  border-radius: 14px;
+  background: var(--pd-surface-2);
+  border: 1px solid var(--pd-border);
+}
+.pepito-confirm-modal__stats dt,
+.pepito-confirm-modal__stats dd {
+  margin: 0;
+}
+.pepito-confirm-modal__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.95rem;
+}
+.pepito-confirm-modal__row dt {
+  color: var(--pd-muted);
+}
+.pepito-confirm-modal__row dd {
+  font-weight: 700;
+  color: var(--pd-ink);
+  font-variant-numeric: tabular-nums;
+}
+.pepito-confirm-modal__row--fee dd {
+  color: var(--pepito-base);
+}
+
 /* legacy call-band kept for other uses */
 .pepito-call-band {
   margin-top: 2.25rem;
@@ -12058,15 +12091,11 @@ a.pepito-btn.pepito-human-consult-cta:hover {
 
 
 
-/* Empty-pane / panel primary find CTA — hug content, still tappable */
+/* Empty-pane / panel primary find CTA — compact but still tappable */
 .tg-thread-empty__cta-wrap .pepito-btn,
-.tg-thread-empty__cta-wrap .find-playmate-one__btn,
-.tg-chat-list-empty .pepito-btn.button-1,
-.tg-chat-list-empty .find-playmate-one__btn {
-  min-height: 36px !important;
-  width: auto !important;
-  max-width: 100%;
-  align-self: center;
+.tg-chat-list-empty .pepito-btn.button-1 {
+  min-height: 40px !important;
+  width: 100%;
   justify-content: center;
 }
 .find-playmate-header {
@@ -12177,20 +12206,15 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   background: transparent;
 }
 .find-playmate-one__btn {
-  display: inline-flex;
-  width: auto;
-  max-width: 100%;
-  align-self: center;
-  gap: 0.3rem;
-  min-height: 36px;
-  font-size: 0.8rem !important;
-  padding: 0.35rem 0.75rem !important;
-  white-space: nowrap;
+  gap: 0.4rem;
+  min-height: 40px;
+  font-size: 0.9rem !important;
+  padding: 0.55rem 1.1rem !important;
 }
 .find-playmate-one__btn .find-playmate-paw svg,
 .find-playmate-one__btn .pepito-btn-icon svg {
-  width: 14px;
-  height: 14px;
+  width: 16px;
+  height: 16px;
 }
 
 @media (max-width: 859px) {
@@ -12267,7 +12291,7 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   .tg-chat-list-hub-cta {
     display: none !important;
   }
-  /* Empty inbox: smallest reasonable find CTA — hug label, centered under fee */
+  /* Empty inbox: compact find CTA, full-width lavender pill + paw */
   .tg-chat-list-empty .find-playmate-panel {
     background: transparent !important;
     border: 0 !important;
@@ -12277,23 +12301,17 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   .tg-chat-list-empty .find-playmate-panel__head {
     display: none !important;
   }
-  .tg-chat-list-empty .find-playmate-one {
-    align-items: center;
-  }
   .tg-chat-list-empty .find-playmate-one .pepito-btn,
   .tg-chat-list-empty .find-playmate-one__btn {
-    width: auto !important;
-    max-width: 100%;
-    align-self: center;
-    display: inline-flex !important;
+    width: 100% !important;
     background: var(--pepito-base, #5c4d91) !important;
     border: 0 !important;
     box-shadow: none !important;
     color: #fff !important;
-    font-size: 0.78rem !important;
+    font-size: 0.88rem !important;
     font-weight: 800 !important;
-    padding: 0.35rem 0.7rem !important;
-    min-height: 36px !important;
+    padding: 0.5rem 1rem !important;
+    min-height: 40px !important;
     border-radius: 999px !important;
   }
   .pepito-pet-profile-hero {

@@ -48,6 +48,7 @@ assert.match(darkCss, /\.tg-chat-list-kind\b/, 'chat kind pills remapped for dar
 assert.match(darkCss, /\.tg-chat-list-badge\.is-ended/, 'chat ended badge remapped');
 assert.match(darkCss, /\.tg-thread-empty/, 'chat empty pane remapped');
 assert.match(darkCss, /\.tg-request-card\b/, 'playmate request card remapped');
+assert.match(darkCss, /\.tg-request-card-photo\b/, 'playmate request counterpart photo remapped');
 assert.match(darkCss, /\.tg-ended-bar\b/, 'end-of-chat wipe bar remapped');
 assert.match(darkCss, /\.tg-chat-wallpaper/, 'chat message wallpaper remapped for dark');
 assert.match(darkCss, /--tg-wall-a:\s*#171a24/, 'chat wall token remapped off light #eef2f6');

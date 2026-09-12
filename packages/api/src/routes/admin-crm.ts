@@ -15,6 +15,7 @@ import {
   escalateTicket,
   findOrCreateCustomerByMobile,
   getCrmDashboard,
+  getCrmNavCounts,
   getCrmReportSummary,
   getCrmSettings,
   getCustomerDetail,
@@ -65,6 +66,14 @@ function sendErr(res: import('express').Response, err: unknown, fallback = 400) 
   const e = err as Error & { status?: number };
   res.status(e.status || fallback).json({ error: e.message || 'خطا' });
 }
+
+crmAdminRouter.get('/nav-counts', (_req, res) => {
+  try {
+    res.json(getCrmNavCounts());
+  } catch (err) {
+    sendErr(res, err, 500);
+  }
+});
 
 crmAdminRouter.get('/dashboard', (req, res) => {
   try {

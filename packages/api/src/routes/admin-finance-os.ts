@@ -23,7 +23,8 @@ import {
 
 export const financeOsAdminRouter = Router();
 
-financeOsAdminRouter.use(requirePermission('platform.read'));
+/** Finance OS + deposit queue badges — finance.read (platform.read satisfies via fallback). */
+financeOsAdminRouter.use(requirePermission('finance.read'));
 
 financeOsAdminRouter.get('/nav-counts', (_req, res) => {
   try {

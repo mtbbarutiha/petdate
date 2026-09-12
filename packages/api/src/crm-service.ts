@@ -45,6 +45,7 @@ import {
   type CrmTicketActivity,
   type CrmTicketingAgent,
   type CrmTicketingOverview,
+  type CrmNavCounts,
 } from '@petdate/shared';
 import { getDb } from './db';
 import type { AdminAuthActor } from './hr-service';
@@ -1549,6 +1550,39 @@ export function listTicketingAgents(): CrmTicketingAgent[] {
     }
   }
   return [...agents.values()].sort((a, b) => a.name.localeCompare(b.name, 'fa'));
+}
+
+/** Sidebar open/pending counts for باشگاه مشتریان nav (SQL aggregates — no N+1 list). */
+export function getCrmNavCounts(): CrmNavCounts {
+  ensureCrmSchema();
+  const d = db();
+  const openStatuses = CRM_TICKET_OPEN_STATUSES.map(() => '?').join(',');
+  const tickets = Number(
+    (
+      d
+        .prepare(`SELECT COUNT(*) as c FROM crm_tickets WHERE status IN (${openStatuses})`)
+        .get(...CRM_TICKET_OPEN_STATUSES) as { c: number } | undefined
+    )?.c ?? 0
+  );
+  const unassigned = Number(
+    (
+      d
+        .prepare(
+          `SELECT COUNT(*) as c FROM crm_tickets
+           WHERE status IN (${openStatuses})
+             AND (agent_id IS NULL OR TRIM(COALESCE(agent_id, '')) = '')`
+        )
+        .get(...CRM_TICKET_OPEN_STATUSES) as { c: number } | undefined
+    )?.c ?? 0
+  );
+  const followups = Number(
+    (
+      d.prepare(`SELECT COUNT(*) as c FROM crm_followups WHERE status = 'باز'`).get() as
+        | { c: number }
+        | undefined
+    )?.c ?? 0
+  );
+  return { tickets, unassigned, followups };
 }
 
 export function getTicketingOverview(actor?: AdminAuthActor): CrmTicketingOverview {
