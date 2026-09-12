@@ -756,6 +756,32 @@ function setHomeLcpPreload(html: string, pathname: string): string {
   return out.replace('<head>', `<head>\n${tag}`);
 }
 
+/**
+ * Non-home prerender shells share index.html's out-of-root LCP <img>. Park it in
+ * the HTML so first paint on /shop, /faq, etc. is not a full-viewport dog photo.
+ */
+function parkBootLcpOnNonHome(html: string, pathname: string): string {
+  if (normalizePath(pathname) === '/') return html;
+  let out = html;
+  if (/\bid="pd-boot-lcp"[^>]*\bis-parked\b/.test(out)) return out;
+  if (/id="pd-boot-lcp"[^>]*class="[^"]*"/.test(out)) {
+    out = out.replace(
+      /(id="pd-boot-lcp"[^>]*class=")([^"]*)(")/,
+      (_m, a: string, cls: string, b: string) =>
+        `${a}${cls.includes('is-parked') ? cls : `${cls} is-parked`.trim()}${b}`,
+    );
+  } else {
+    out = out.replace(/id="pd-boot-lcp"/, 'id="pd-boot-lcp" class="pepito-hero-media is-parked"');
+  }
+  /* Drop the homepage hero shell inside #root — React replaces it, but first paint
+     otherwise flashes landing copy on every prerendered route. */
+  out = out.replace(
+    /<section class="pepito-hero">[\s\S]*?<\/section>/,
+    '<div class="pd-boot-shell-placeholder" hidden aria-hidden="true"></div>',
+  );
+  return out;
+}
+
 /** Inject per-route title/description/canonical/og/twitter/JSON-LD/noscript into the SPA shell. */
 export function applySeoToHtml(html: string, pathname: string, opts: PageSeoOpts = {}): string {
   const seo = pageSeoForPath(pathname, opts);
@@ -781,6 +807,7 @@ export function applySeoToHtml(html: string, pathname: string, opts: PageSeoOpts
   out = setJsonLd(out, seo.jsonLd);
   out = setNoscript(out, seo.noscriptHtml);
   out = setHomeLcpPreload(out, pathname);
+  out = parkBootLcpOnNonHome(out, pathname);
   return out;
 }
 

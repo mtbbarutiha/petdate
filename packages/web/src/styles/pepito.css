@@ -11803,7 +11803,8 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   .pd-shop-page .pd-shop-main,
   .pd-shop-main {
     padding-inline: 0.85rem !important;
-    padding-block: 1.1rem 5.5rem !important;
+    /* Dock sits ~68px tall + 10px inset; keep last product rows clear of the glass pill. */
+    padding-block: 1.1rem calc(var(--pepito-mobile-dock-clearance) + 1.25rem) !important;
     overflow-x: clip;
   }
   .pd-shop-journey {

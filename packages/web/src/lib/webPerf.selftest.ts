@@ -133,8 +133,10 @@ assert.doesNotMatch(welcome, /key=\{current\.role\}/, 'hero-inner must not remou
 assert.doesNotMatch(welcome, /from 'lucide-react'/, 'hero path does not parse lucide-react');
 assert.doesNotMatch(welcome, /magazineApi/, 'welcome critical path does not fetch magazine');
 assert.match(welcome, /logo-390\.webp/, 'nav logo is 390w so 2x density passes');
-assert.match(welcome, /pd-boot-lcp/, 'HTML LCP img is parked after hydrate');
-assert.match(welcome, /classList\.add\('is-parked'\)/, 'boot LCP is parked so it cannot cover/hide the hero');
+assert.match(welcome, /pd-boot-lcp|parkBootLcp/, 'HTML LCP img is parked after hydrate');
+assert.match(welcome, /parkBootLcp\(\)/, 'boot LCP is parked so it cannot cover/hide the hero');
+assert.match(indexHtml, /id="pd-park-boot-lcp"/, 'deep-link boot script parks LCP before React');
+assert.match(appTsx, /ParkBootLcpOnNonHome/, 'non-home routes park boot LCP from App');
 assert.match(welcome, /i === slide \?/, 'every active slide including 0 renders an in-hero photo');
 assert.doesNotMatch(welcome, /i !== 0/, 'slide 0 must mint an in-hero <img> (out-of-root LCP painted a black band)');
 assert.doesNotMatch(welcome, /appendChild\(img\)/, 'must not move the LCP node (causes render delay)');

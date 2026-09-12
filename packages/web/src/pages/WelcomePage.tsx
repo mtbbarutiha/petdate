@@ -5,6 +5,7 @@ import { welcomeSectionLinks } from '../components/siteHeaderLinks';
 import { PlatformBanners } from '../components/PlatformBanners';
 import { useI18n } from '../i18n/I18nProvider';
 import { useAuthStore } from '../hooks/useAuthStore';
+import { parkBootLcp } from '../lib/parkBootLcp';
 import { GatedLink, PawIcon } from './landingGatedLink';
 
 const WelcomeBelowFold = lazy(() =>
@@ -112,13 +113,12 @@ export function WelcomePage() {
 
   /* Park the HTML LCP <img> once React owns the in-hero photo. Do not move it —
      adopt triggers a second contentful paint. Leaving it unparked + outside
-     #root (fixed, z-index 0) painted a black empty hero after #378. */
+     #root (fixed, z-index 0) painted a black empty hero after #378.
+     Non-home routes park via ParkBootLcpOnNonHome + index.html boot script. */
   useEffect(() => {
-    const img = document.getElementById('pd-boot-lcp');
-    if (!img) return;
-    img.classList.add('is-parked');
+    parkBootLcp();
     return () => {
-      img.classList.add('is-parked');
+      parkBootLcp();
     };
   }, []);
 

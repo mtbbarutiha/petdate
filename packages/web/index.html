@@ -316,6 +316,18 @@
       fetchpriority="high"
       decoding="sync"
     />
+    <!-- Park homepage LCP on deep links before React — otherwise /shop,/faq,… show a ghost hero. -->
+    <script id="pd-park-boot-lcp">
+      (function () {
+        try {
+          var p = location.pathname || '/';
+          if (p !== '/' && p !== '') {
+            var img = document.getElementById('pd-boot-lcp');
+            if (img) img.classList.add('is-parked');
+          }
+        } catch (e) {}
+      })();
+    </script>
     <div id="root">
       <div class="pepito-landing pepito-landing--with-dock" dir="rtl">
         <header class="pepito-nav">

@@ -133,6 +133,33 @@ assert.match(faqHtml, /FAQPage/);
 assert.doesNotMatch(faqHtml, /fonts\.googleapis\.com\/css2\?family=Vazirmatn/, 'noscript is real text, not only a font link');
 assert.match(faqHtml, /<h1>/);
 
+/* Boot LCP must be parked on non-home prerender shells (ghost hero regression). */
+const bootShell = `<!doctype html><html><head><title data-pd-seo="title">x</title>
+<meta name="description" data-pd-seo="description" content="d" />
+<meta name="robots" data-pd-seo="robots" content="index" />
+<link rel="canonical" data-pd-seo="canonical" href="https://petdate.ir/" />
+<link rel="alternate" hreflang="fa" data-pd-seo="hreflang-fa" href="https://petdate.ir/" />
+<link rel="alternate" hreflang="x-default" data-pd-seo="hreflang-default" href="https://petdate.ir/" />
+<meta property="og:url" data-pd-seo="og:url" content="https://petdate.ir/" />
+<meta property="og:title" data-pd-seo="og:title" content="x" />
+<meta property="og:description" data-pd-seo="og:description" content="d" />
+<meta property="og:type" data-pd-seo="og:type" content="website" />
+<meta name="twitter:title" data-pd-seo="twitter:title" content="x" />
+<meta name="twitter:description" data-pd-seo="twitter:description" content="d" />
+<script type="application/ld+json" data-pd-seo="jsonld">{}</script>
+</head><body>
+<img id="pd-boot-lcp" class="pepito-hero-media" src="/media/lcp/hero-playmate-800.webp" alt="" />
+<div id="root"><div class="pepito-landing"><section class="pepito-hero"><h1>home</h1></section></div></div>
+<noscript id="pd-seo-noscript">old</noscript>
+</body></html>`;
+const bootHome = applySeoToHtml(bootShell, '/');
+const bootShop = applySeoToHtml(bootShell, '/shop');
+assert.doesNotMatch(bootHome, /is-parked/, 'homepage keeps boot LCP visible for first paint');
+assert.match(bootHome, /<section class="pepito-hero">/, 'homepage keeps hero shell');
+assert.match(bootShop, /id="pd-boot-lcp"[^>]*class="[^"]*\bis-parked\b/, 'shop prerender parks boot LCP');
+assert.match(bootShop, /pd-boot-shell-placeholder/, 'shop prerender drops homepage hero shell');
+assert.doesNotMatch(bootShop, /<section class="pepito-hero">/, 'shop prerender has no landing hero section');
+
 const productHtml = applySeoToHtml(shell, `/shop/product/${product.id}`);
 assert.match(productHtml, /"@type":"Product"/);
 assert.match(productHtml, new RegExp(product.slug));
