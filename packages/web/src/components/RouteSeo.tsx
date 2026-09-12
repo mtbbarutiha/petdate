@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { primaryRole, SEO, SITE } from '@petdate/shared';
 import { useAuthStore } from '../hooks/useAuthStore';
-import { useI18n } from '../i18n';
+import { useI18n } from '../i18n/I18nProvider';
 import { canonicalUrl, pageSeoForPath } from '../lib/pageSeo';
 
 function upsertMeta(attr: 'name' | 'property', key: string, content: string) {

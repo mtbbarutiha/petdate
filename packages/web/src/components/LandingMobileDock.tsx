@@ -148,6 +148,8 @@ export function LandingMobileDock() {
         <img
           src={photo}
           alt=""
+          width={40}
+          height={40}
           className={`pepito-landing-mobile-dock-avatar${active ? ' is-active' : ''}`}
           draggable={false}
         />

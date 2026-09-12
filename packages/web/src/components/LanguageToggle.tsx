@@ -1,4 +1,4 @@
-import { useI18n } from '../i18n';
+import { useI18n } from '../i18n/I18nProvider';
 
 type LanguageToggleProps = {
   className?: string;

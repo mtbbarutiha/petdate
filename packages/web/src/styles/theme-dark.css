@@ -34,7 +34,7 @@ html[data-theme='dark'] {
   /* Pepito brand remap — soft charcoal / navy, not pure black */
   --pepito-base: #a89ad4;
   --pepito-dark: #e8e6f2;
-  --pepito-muted: #c4bfd4;
+  --pepito-muted: #d8d4e6;
   --pepito-pink: #e5a8d8;
   --pepito-soft: #1a1d27;
   --pepito-lilac: #2c3040;
@@ -126,9 +126,9 @@ html[data-theme='dark'] .landing-brand-mark {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  min-height: 40px;
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
   padding: 0;
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--pepito-lilac) 80%, transparent);
@@ -171,9 +171,9 @@ html[data-theme='dark'] .landing-brand-mark {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 40px;
-  min-height: 40px;
-  min-width: 40px;
+  height: 44px;
+  min-height: 44px;
+  min-width: 44px;
   padding: 0 0.7rem;
   border-radius: 999px;
   border: 1px solid color-mix(in srgb, var(--pepito-lilac) 80%, transparent);

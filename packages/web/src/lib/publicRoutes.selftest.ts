@@ -10,7 +10,9 @@ import { fileURLToPath } from 'node:url';
 const webSrc = join(dirname(fileURLToPath(import.meta.url)), '..');
 const guard = readFileSync(join(webSrc, 'components/AuthGuard.tsx'), 'utf8');
 const app = readFileSync(join(webSrc, 'App.tsx'), 'utf8');
-const welcome = readFileSync(join(webSrc, 'pages/WelcomePage.tsx'), 'utf8');
+const welcome =
+  readFileSync(join(webSrc, 'pages/WelcomePage.tsx'), 'utf8') +
+  readFileSync(join(webSrc, 'pages/WelcomeBelowFold.tsx'), 'utf8');
 const landing = readFileSync(join(webSrc, 'pages/VetConsultLandingPage.tsx'), 'utf8');
 const route = readFileSync(join(webSrc, 'pages/VetConsultRoute.tsx'), 'utf8');
 const footer = readFileSync(join(webSrc, 'components/SiteFooter.tsx'), 'utf8');

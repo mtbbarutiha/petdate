@@ -732,14 +732,16 @@ function setNoscript(html: string, inner: string): string {
 }
 
 const LCP_HERO_MARK = 'data-pd-lcp="hero"';
-const LCP_HERO_HREF = '/pepito/uploads/1-hero.jpg';
+const LCP_HERO_HREF = '/media/lcp/hero-playmate-800.webp';
+const LCP_HERO_SRCSET =
+  '/media/lcp/hero-playmate-800.webp 800w, /media/lcp/hero-playmate-1280.webp 1280w';
 
 function setHomeLcpPreload(html: string, pathname: string): string {
   const p = normalizePath(pathname);
   const existing = new RegExp(`\\s*<link[^>]*${LCP_HERO_MARK}[^>]*>`, 'i');
   let out = html.replace(existing, '');
   if (p !== '/') return out;
-  const tag = `    <link rel="preload" as="image" href="${LCP_HERO_HREF}" fetchpriority="high" ${LCP_HERO_MARK} />\n`;
+  const tag = `    <link rel="preload" as="image" type="image/webp" href="${LCP_HERO_HREF}" imagesrcset="${LCP_HERO_SRCSET}" imagesizes="100vw" fetchpriority="high" ${LCP_HERO_MARK} />\n`;
   return out.replace('</head>', `${tag}  </head>`);
 }
 

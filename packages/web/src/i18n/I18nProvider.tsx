@@ -15,12 +15,11 @@ import {
   setLang as persistLang,
   LANG_STORAGE_KEY,
 } from './lang';
-import type { Lang, TranslateFn } from './types';
+import type { Dict, Lang, TranslateFn } from './types';
 import { createTranslator } from './lookup';
 import { fa } from './locales/fa';
-import { en } from './locales/en';
 
-const DICTS = { fa, en } as const;
+/** English dict is lazy so the guest homepage (default FA) does not parse it on TBT. */
 
 type I18nValue = {
   lang: Lang;
@@ -36,6 +35,18 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>(() =>
     typeof document !== 'undefined' ? initLang() : 'fa'
   );
+  const [en, setEn] = useState<Dict | null>(null);
+
+  useEffect(() => {
+    if (lang !== 'en') return;
+    let cancelled = false;
+    void import('./locales/en').then((m) => {
+      if (!cancelled) setEn(m.en);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [lang]);
 
   useEffect(() => {
     applyLang(lang);
@@ -57,7 +68,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     setLangState((cur) => persistLang(cur === 'fa' ? 'en' : 'fa'));
   }, []);
 
-  const t = useMemo(() => createTranslator(DICTS[lang], fa), [lang]);
+  const t = useMemo(() => createTranslator(lang === 'en' && en ? en : fa, fa), [lang, en]);
 
   const value = useMemo<I18nValue>(
     () => ({

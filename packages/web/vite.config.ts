@@ -5,6 +5,25 @@ import fs from 'fs';
 import path from 'path';
 import { applySeoToHtml, normalizePath } from './src/lib/pageSeo';
 
+/** Defer hashed CSS so first paint is the inline critical block (FCP / Speed Index). */
+function deferNonCriticalCss(): Plugin {
+  return {
+    name: 'petdate-defer-css',
+    transformIndexHtml: {
+      order: 'post',
+      handler(html) {
+        return html.replace(
+          /<link([^>]*rel="stylesheet"[^>]*href="(\/assets\/[^"]+\.css)"[^>]*)>/g,
+          (full, attrs: string, href: string) => {
+            if (/\smedia=/.test(attrs)) return full;
+            return `<link${attrs} media="print" onload="this.media='all'"><noscript><link rel="stylesheet" href="${href}"></noscript>`;
+          }
+        );
+      },
+    },
+  };
+}
+
 /** Inject per-route meta into the SPA shell (dev/preview + the built home HTML). */
 function petdateSeoHtml(): Plugin {
   return {
@@ -54,6 +73,7 @@ export default defineConfig({
   },
   plugins: [
     serveDevSeedHtml(),
+    deferNonCriticalCss(),
     petdateSeoHtml(),
     react(),
     VitePWA({
@@ -73,7 +93,7 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         // New cache namespace so stuck clients drop the old 1.5s-poll bundle.
         // Bump when guest marketing routes change — v14 left #213's shell unclaimed.
-        cacheId: 'petdate-web-v18-lighthouse',
+        cacheId: 'petdate-web-v19-mobile',
         // Precache only the app shell — not hundreds of prerendered SEO HTML files.
         globPatterns: ['index.html', 'offline.html', '**/*.{js,css,ico,svg,woff2}'],
         navigateFallbackDenylist: [/^\/api\//],
