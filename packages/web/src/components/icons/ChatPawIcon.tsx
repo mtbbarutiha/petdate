@@ -38,9 +38,8 @@ export const ChatPawIcon = forwardRef<SVGSVGElement, Omit<LucideProps, 'ref'> & 
         aria-hidden
         {...rest}
       >
-        {/* Rounded chat bubble with tail */}
+        {/* Paths stay inside the Lucide 24×24 box — no extra scale (dock sizes must match). */}
         <path d="M5.25 4.6A2.85 2.85 0 0 1 8.1 1.75h7.8a2.85 2.85 0 0 1 2.85 2.85v6.3a2.85 2.85 0 0 1-2.85 2.85h-3.55L8.2 17.8v-3.2H8.1A2.85 2.85 0 0 1 5.25 11.75z" />
-        {/* Paw pads — filled for clarity at dock size */}
         <circle cx="9.55" cy="6.85" r="1.05" fill={color} stroke="none" />
         <circle cx="12" cy="5.85" r="1.15" fill={color} stroke="none" />
         <circle cx="14.45" cy="6.85" r="1.05" fill={color} stroke="none" />
