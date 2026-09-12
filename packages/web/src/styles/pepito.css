@@ -2100,12 +2100,23 @@ body > #pd-boot-lcp.is-parked,
   position: relative;
   overflow: hidden;
   border-radius: 20px 20px 0 0;
+  /* Full-width 2:1 — featured vet covers (02/06/04) were ~900px tall
+     because HTML height=900 won over an img-only 3:2 aspect-ratio. */
+  width: 100%;
+  aspect-ratio: 2 / 1;
+  background: var(--pepito-lilac);
+}
+.pepito-news-img a {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 .pepito-news-img img {
   display: block;
   width: 100%;
-  aspect-ratio: 900 / 600;
+  height: 100%;
   object-fit: cover;
+  object-position: center 32%;
 }
 .pepito-news-cat {
   position: absolute;
