@@ -1710,9 +1710,9 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   position: relative;
   overflow: hidden;
   border-radius: 20px;
-  /* Short 4:5 crop + cap so 4-col desktop does not become poster-tall. */
-  aspect-ratio: 4 / 5;
-  max-height: 11.25rem;
+  /* Full-width 1:1 — shorter than 6:7 posters, without shrinking into a thumb. */
+  width: 100%;
+  aspect-ratio: 1 / 1;
   background: var(--pepito-lilac);
   transition: transform 700ms cubic-bezier(0.17, 0.67, 0, 1.01);
 }
@@ -1808,9 +1808,9 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   border-radius: 20px;
   overflow: hidden;
   box-shadow: 26px 26px 68px -16px rgba(92, 77, 145, 0.01);
-  /* 4:5 instead of ultra-tall intrinsic crops; max-height keeps 4-col cards short. */
-  aspect-ratio: 4 / 5;
-  max-height: 11.25rem;
+  /* Full-width 1:1 crop — far shorter than 1:3 portraits, still a real photo card. */
+  width: 100%;
+  aspect-ratio: 1 / 1;
 }
 .pepito-review-img img {
   display: block;
@@ -3037,15 +3037,16 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 
   /* Reserve photo box before decode — reduces landing CLS / jump. */
   .pepito-member-photo {
-    aspect-ratio: 4 / 5;
-    max-height: 10.5rem;
+    width: 100%;
+    aspect-ratio: 1 / 1;
     background: var(--pepito-lilac);
   }
   .pepito-member-photo img {
     height: 100%;
   }
   .pepito-review-img-frame {
-    max-height: 10.5rem;
+    width: 100%;
+    aspect-ratio: 1 / 1;
   }
 
   .pepito-services-track {

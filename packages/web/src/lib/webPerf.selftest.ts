@@ -130,16 +130,18 @@ assert.doesNotMatch(
 );
 assert.doesNotMatch(welcome, /animation:\s*pepito-rise/, 'hero-inner no longer uses pepito-rise');
 
-assert.match(pepitoCss, /\.pepito-review-img-frame \{[\s\S]*?aspect-ratio:\s*4\s*\/\s*5/, 'review photos use short 4:5 crop');
-assert.match(pepitoCss, /\.pepito-review-img-frame \{[\s\S]*?max-height:\s*11\.25rem/, 'review photo frame is height-capped');
-assert.match(pepitoCss, /\.pepito-member-photo \{[\s\S]*?aspect-ratio:\s*4\s*\/\s*5/, 'team photos use short 4:5 crop');
-assert.match(pepitoCss, /\.pepito-member-photo \{[\s\S]*?max-height:\s*11\.25rem/, 'team photo frame is height-capped');
+const reviewFrameBlock = pepitoCss.match(/\.pepito-review-img-frame \{[^}]+\}/)?.[0] || '';
+assert.match(reviewFrameBlock, /aspect-ratio:\s*1\s*\/\s*1/, 'review photos use short 1:1 crop');
+assert.doesNotMatch(reviewFrameBlock, /max-height/, 'review frames stay full-width (no thumb cap)');
+const memberPhotoBlock = pepitoCss.match(/\.pepito-member-photo \{[^}]+\}/)?.[0] || '';
+assert.match(memberPhotoBlock, /aspect-ratio:\s*1\s*\/\s*1/, 'team photos use short 1:1 crop');
+assert.doesNotMatch(memberPhotoBlock, /max-height/, 'team frames stay full-width (no thumb cap)');
 const reviewImgBlock = pepitoCss.match(/\.pepito-review-img img \{[^}]+\}/)?.[0] || '';
 assert.match(reviewImgBlock, /object-fit:\s*cover/, 'review imgs cover the short frame');
 assert.doesNotMatch(reviewImgBlock, /aspect-ratio:\s*900/, 'review imgs must not keep the 3:2 box');
 const memberImgBlock = pepitoCss.match(/\.pepito-member img \{[^}]+\}/)?.[0] || '';
 assert.match(memberImgBlock, /object-fit:\s*cover/, 'team imgs cover the short frame');
 assert.doesNotMatch(memberImgBlock, /aspect-ratio:\s*600/, 'team imgs must not keep the 6:7 poster crop');
-assert.match(below, /width=\{400\} height=\{500\}/, 'below-fold photo attrs match 4:5 reserve');
+assert.match(below, /width=\{600\} height=\{600\}/, 'below-fold photo attrs match 1:1 reserve');
 
 console.log('webPerf.selftest: ok');
