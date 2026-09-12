@@ -4217,8 +4217,10 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 
 .find-playmate-one {
   --find-playmate-pad: 12px;
-  margin: 0 16px 14px;
-  padding: var(--find-playmate-pad);
+  width: fit-content;
+  max-width: 100%;
+  margin: 0 auto 14px;
+  padding: var(--find-playmate-pad) 14px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -4226,6 +4228,12 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   border-radius: 14px;
   background: var(--surface);
   box-shadow: 0 6px 18px rgba(40, 30, 70, 0.1);
+  box-sizing: border-box;
+}
+
+/* Pet picker needs a usable width; fee+CTA card stays hug-content above */
+.find-playmate-one:has(.find-playmate-one__pick) {
+  width: min(100%, 22rem);
 }
 
 .find-playmate-one .cta-btn {
