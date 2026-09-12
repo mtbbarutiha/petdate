@@ -99,6 +99,11 @@ const shell = `<!DOCTYPE html><html><head>
 const homeHtml = applySeoToHtml(shell, '/');
 assert.match(homeHtml, /data-pd-lcp="hero"/, 'homepage HTML preloads the LCP hero');
 assert.match(homeHtml, /\/media\/lcp\/hero-playmate-800\.webp/, 'LCP preload points at the mobile WebP hero');
+assert.match(
+  homeHtml,
+  /data-pd-lcp="hero"[\s\S]*<title/,
+  'LCP preload is early in <head>, not after module scripts'
+);
 assert.equal(
   (homeHtml.match(/hero-playmate-800\.webp/g) || []).length,
   2,

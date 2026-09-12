@@ -746,7 +746,14 @@ function setHomeLcpPreload(html: string, pathname: string): string {
   let out = html.replace(/\s*<link[^>]*hero-playmate-800\.webp[^>]*>/gi, '');
   if (p !== '/') return out;
   const tag = `    <link rel="preload" as="image" type="image/webp" href="${LCP_HERO_HREF}" imagesrcset="${LCP_HERO_SRCSET}" imagesizes="100vw" fetchpriority="high" ${LCP_HERO_MARK} />\n`;
-  return out.replace('</head>', `${tag}  </head>`);
+  /* Early in <head>, not after Vite module scripts (those land just before </head>). */
+  if (out.includes('id="pd-critical-first-paint"')) {
+    return out.replace(
+      /<style id="pd-critical-first-paint">/,
+      `${tag}    <style id="pd-critical-first-paint">`,
+    );
+  }
+  return out.replace('<head>', `<head>\n${tag}`);
 }
 
 /** Inject per-route title/description/canonical/og/twitter/JSON-LD/noscript into the SPA shell. */

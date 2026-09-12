@@ -61,6 +61,7 @@ assert.doesNotMatch(
 );
 assert.match(indexHtml, /web-perf-v24-lh-pass/, 'deploy marker bumped so SW/HTML cache misses');
 assert.match(indexHtml, /id="pd-boot-lcp"/, 'LCP img lives outside #root so React cannot replace it');
+assert.match(indexHtml, /id="pd-boot-lcp"[\s\S]*decoding="sync"/, 'LCP img decodes sync so main-thread JS cannot stall paint');
 assert.match(indexHtml, /data-pd-lcp="hero"/, 'static preload is marked so SEO inject does not duplicate it');
 const heroPreloads = indexHtml.match(/rel="preload"[\s\S]*?hero-playmate-800\.webp/g) || [];
 assert.equal(heroPreloads.length, 1, 'index.html ships exactly one LCP preload');
@@ -99,10 +100,10 @@ assert.doesNotMatch(welcome, /addEventListener\('scroll', load/, 'below-fold mus
 assert.doesNotMatch(welcome, /key=\{current\.role\}/, 'hero-inner must not remount per slide (CLS)');
 assert.doesNotMatch(welcome, /from 'lucide-react'/, 'hero path does not parse lucide-react');
 assert.doesNotMatch(welcome, /magazineApi/, 'welcome critical path does not fetch magazine');
-assert.match(welcome, /logo-160\.webp/, 'mobile logo is the 160w asset');
-assert.doesNotMatch(welcome, /logo-390\.webp/, 'landing does not fetch the 390w logo on first paint');
-assert.match(welcome, /pd-boot-lcp-host/, 'slide 0 adopts the HTML LCP img');
+assert.match(welcome, /logo-390\.webp/, 'nav logo is 390w so 2x density passes');
+assert.match(welcome, /pd-boot-lcp/, 'slide 0 parks the HTML LCP img instead of replacing it');
 assert.match(welcome, /i !== 0/, 'slide 0 does not mint a second LCP <img>');
+assert.doesNotMatch(welcome, /appendChild\(img\)/, 'must not move the LCP node (causes render delay)');
 assert.match(below, /magazineApi/, 'magazine fetch stays on the below-fold chunk');
 assert.match(below, /svcIndex === 0/, 'service carousel skips sync layout on mount');
 assert.match(below, /ResizeObserver/, 'carousel step is measured off the React commit path');
