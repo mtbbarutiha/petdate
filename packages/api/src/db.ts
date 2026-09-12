@@ -56,6 +56,8 @@ import {
   PET_BREEDS_SEED,
   PET_MEDICAL_FIELD_LABELS,
   PET_SPECIES,
+  breedMatchesQuery,
+  normalizeBreedQuery,
   petPublicIdOf,
   orderPublicIdOf,
   consultPublicIdOf,
@@ -4884,31 +4886,29 @@ export const dbService = {
   listBreeds(speciesCode?: string, query?: string): PetBreed[] {
     let sql = 'SELECT id, species_code, name_fa, name_en, sort_order FROM pet_breeds';
     const params: unknown[] = [];
-    const clauses: string[] = [];
     if (speciesCode) {
-      clauses.push('species_code = ?');
+      sql += ' WHERE species_code = ?';
       params.push(speciesCode);
     }
-    const q = String(query ?? '').trim().toLowerCase();
-    if (q) {
-      clauses.push('(LOWER(name_fa) LIKE ? OR LOWER(COALESCE(name_en, \'\')) LIKE ?)');
-      params.push(`%${q}%`, `%${q}%`);
-    }
-    if (clauses.length) sql += ` WHERE ${clauses.join(' AND ')}`;
     sql += ' ORDER BY sort_order ASC, name_fa ASC';
     const rows = db.prepare(sql).all(...params) as Record<string, unknown>[];
-    return rows.map((row) => ({
+    const mapped = rows.map((row) => ({
       id: row.id as number,
       speciesCode: row.species_code as PetBreed['speciesCode'],
       nameFa: row.name_fa as string,
       nameEn: (row.name_en as string | null) ?? undefined,
       sortOrder: row.sort_order != null ? Number(row.sort_order) : undefined,
     }));
+    const q = String(query ?? '').trim();
+    if (!q) return mapped;
+    // JS filter so FA/EN + ZWNJ/Arabic-fold match (SQL LOWER/LIKE misses these).
+    return mapped.filter((b) => breedMatchesQuery(b, q));
   },
 
   findBreedByName(speciesCode: string, nameFa: string): PetBreed | null {
     const name = String(nameFa ?? '').trim();
     if (!name) return null;
+    const needle = normalizeBreedQuery(name);
     const row = db
       .prepare(
         `SELECT id, species_code, name_fa, name_en, sort_order FROM pet_breeds
@@ -4916,14 +4916,21 @@ export const dbService = {
          LIMIT 1`
       )
       .get(speciesCode, name) as Record<string, unknown> | undefined;
-    if (!row) return null;
-    return {
-      id: row.id as number,
-      speciesCode: row.species_code as PetBreed['speciesCode'],
-      nameFa: row.name_fa as string,
-      nameEn: (row.name_en as string | null) ?? undefined,
-      sortOrder: row.sort_order != null ? Number(row.sort_order) : undefined,
-    };
+    if (row) {
+      return {
+        id: row.id as number,
+        speciesCode: row.species_code as PetBreed['speciesCode'],
+        nameFa: row.name_fa as string,
+        nameEn: (row.name_en as string | null) ?? undefined,
+        sortOrder: row.sort_order != null ? Number(row.sort_order) : undefined,
+      };
+    }
+    // Also accept English (or ZWNJ-folded FA) exact match from the species catalog.
+    const candidates = this.listBreeds(speciesCode);
+    const hit =
+      candidates.find((b) => normalizeBreedQuery(b.nameFa) === needle) ||
+      candidates.find((b) => b.nameEn && normalizeBreedQuery(b.nameEn) === needle);
+    return hit ?? null;
   },
 
   /**

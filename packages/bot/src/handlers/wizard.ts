@@ -8,7 +8,9 @@ import {
   PET_GENDER_LABELS,
   PET_SIZE_LABELS,
   PET_SPECIES_LABELS,
+  breedMatchesQuery,
   formatPetAge,
+  normalizeBreedQuery,
   parsePetAgeInput,
   userHasRole,
 } from '@petdate/shared';
@@ -638,7 +640,12 @@ async function handleBreedText(
     return true;
   }
 
-  const matched = breeds.find((b) => b.nameFa === text.trim());
+  const typed = text.trim();
+  const needle = normalizeBreedQuery(typed);
+  const matched =
+    breeds.find((b) => b.nameFa === typed) ||
+    breeds.find((b) => normalizeBreedQuery(b.nameFa) === needle) ||
+    breeds.find((b) => b.nameEn && normalizeBreedQuery(b.nameEn) === needle);
   if (matched) {
     draft.breed = matched.nameFa;
     await upsertSession(telegramId, { step: 'pet_gender', draftPet: draft });
@@ -646,10 +653,11 @@ async function handleBreedText(
     return true;
   }
 
-  // Search / filter — never accept free-text breeds
-  const q = text.trim();
-  if (q.length >= 1) {
-    const filtered = await listBreeds(species, q);
+  // Search / filter — never accept free-text breeds (FA or EN)
+  if (typed.length >= 1) {
+    const filtered = (await listBreeds(species, typed)).filter((b) =>
+      breedMatchesQuery(b, typed)
+    );
     if (filtered.length === 1) {
       draft.breed = filtered[0]!.nameFa;
       await upsertSession(telegramId, { step: 'pet_gender', draftPet: draft, breedPage: 0 });
@@ -657,7 +665,7 @@ async function handleBreedText(
       return true;
     }
     await upsertSession(telegramId, { breedPage: 0 });
-    await askBreed(ctx, species, 0, q);
+    await askBreed(ctx, species, 0, typed);
     return true;
   }
 

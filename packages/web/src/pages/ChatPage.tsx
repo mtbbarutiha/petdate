@@ -1734,12 +1734,9 @@ export function ChatPage() {
                       <img src={peerOwnerAvatar} alt="" />
                     </span>
                   ) : (
-                    <PetAvatar
-                      type={peerPet.type}
-                      size="sm"
-                      imageUrl={peerPet.imageUrl}
-                      name={peerPet.name}
-                    />
+                    <span className="tg-chat-peer-avatar tg-chat-peer-avatar--initials" aria-hidden>
+                      {(peerOwnerName || '؟').trim().slice(0, 1)}
+                    </span>
                   )}
                   <span>
                     <strong
@@ -1896,6 +1893,22 @@ export function ChatPage() {
                       ) : (
                         <span className="tg-request-card-cover-mark" aria-hidden>
                           <PawPrint size={40} strokeWidth={1.75} />
+                        </span>
+                      )}
+                      {peerOwnerAvatar ? (
+                        <span
+                          className="tg-request-card-owner"
+                          title={peerOwnerName || 'صاحب پت'}
+                        >
+                          <img src={peerOwnerAvatar} alt="" loading="lazy" decoding="async" />
+                        </span>
+                      ) : (
+                        <span
+                          className="tg-request-card-owner tg-request-card-owner--initials"
+                          title={peerOwnerName || 'صاحب پت'}
+                          aria-hidden
+                        >
+                          {(peerOwnerName || '؟').trim().slice(0, 1)}
                         </span>
                       )}
                     </div>

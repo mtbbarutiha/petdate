@@ -1362,6 +1362,88 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 
 .form-textarea { resize: vertical; min-height: 88px; }
 
+.breed-picker {
+  position: relative;
+}
+.breed-picker-selected {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--brand-50, #eef8ff) 80%, var(--surface, #fff));
+  border: 1px solid var(--border-light, var(--border));
+}
+.breed-picker-selected-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text);
+}
+.breed-picker-selected-en {
+  font-weight: 500;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+}
+.breed-picker-clear {
+  flex-shrink: 0;
+  border: 0;
+  background: transparent;
+  color: var(--brand-600, #0ba5f2);
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 4px 6px;
+}
+.breed-picker-suggestions {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 6px;
+  position: absolute;
+  z-index: 30;
+  inset-inline: 0;
+  max-height: min(280px, 46vh);
+  overflow: auto;
+  background: var(--surface, #fff);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--pepito-dark, #19063d) 12%, transparent);
+}
+.breed-picker-option {
+  width: 100%;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  text-align: start;
+  border: 0;
+  background: transparent;
+  padding: 10px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.breed-picker-option.is-active,
+.breed-picker-option:hover {
+  background: color-mix(in srgb, var(--pepito-mint, #15cca0) 14%, transparent);
+}
+.breed-picker-option.is-selected {
+  outline: 1px solid color-mix(in srgb, var(--pepito-mint, #15cca0) 45%, transparent);
+}
+.breed-picker-option-en {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+.breed-picker-empty {
+  padding: 12px;
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
 .form-grid-2 {
   display: grid;
   grid-template-columns: 1fr 1fr;

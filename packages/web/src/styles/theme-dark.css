@@ -502,6 +502,17 @@ html[data-theme='dark'] .tg-request-card-photo {
     0 12px 28px rgba(0, 0, 0, 0.36),
     inset 0 0 0 1px rgba(45, 212, 176, 0.22);
 }
+html[data-theme='dark'] .tg-request-card-owner {
+  background: #2a2f3d;
+  border-color: rgba(232, 230, 242, 0.18);
+  box-shadow:
+    0 6px 16px rgba(0, 0, 0, 0.4),
+    inset 0 0 0 1px rgba(45, 212, 176, 0.28);
+}
+html[data-theme='dark'] .tg-request-card-owner--initials {
+  color: #e8fff8;
+  background: color-mix(in srgb, var(--pepito-mint) 28%, #2a2f3d);
+}
 html[data-theme='dark'] .tg-request-card-cover-mark {
   color: #9aedd8;
   background: color-mix(in srgb, var(--tg-surface) 82%, var(--pepito-mint));

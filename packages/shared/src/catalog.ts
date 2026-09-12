@@ -215,6 +215,33 @@ export const PET_SPECIES_LABELS: Record<string, string> = Object.fromEntries(
   PET_SPECIES.map((s) => [s.code, `${s.emoji} ${s.labelFa}`])
 );
 
+/**
+ * Normalize breed search text so English and Persian queries match the catalog.
+ * Strips ZWNJ/bidi marks, folds Arabic ي/ك → Persian ی/ک, lowercases Latin.
+ */
+export function normalizeBreedQuery(raw: string): string {
+  return String(raw ?? '')
+    .normalize('NFKC')
+    .replace(/[\u200c\u200d\u200e\u200f\ufeff]/g, '')
+    .replace(/\u064a/g, '\u06cc') // ي → ی
+    .replace(/\u0643/g, '\u06a9') // ك → ک
+    .toLowerCase()
+    .trim();
+}
+
+/** True when breed FA or EN contains the query (after normalizeBreedQuery). */
+export function breedMatchesQuery(
+  breed: Pick<PetBreed, 'nameFa' | 'nameEn'> | { nameFa: string; nameEn?: string },
+  query: string
+): boolean {
+  const q = normalizeBreedQuery(query);
+  if (!q) return true;
+  if (normalizeBreedQuery(breed.nameFa).includes(q)) return true;
+  if (breed.nameEn && normalizeBreedQuery(breed.nameEn).includes(q)) return true;
+  return false;
+}
+
+
 export const PET_GENDER_LABELS: Record<'male' | 'female', string> = {
   male: '♂ نر',
   female: '♀ ماده',

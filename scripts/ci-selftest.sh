@@ -13,7 +13,7 @@ run() {
 }
 
 # Shared pure selftests
-echo "==> selftest: shared peer-profile + user-command-id + pet/order-public-id + gtm-contract + sanitize-roles"
+echo "==> selftest: shared peer-profile + user-command-id + pet/order-public-id + gtm-contract + sanitize-roles + breed-search"
 npx tsx "$ROOT/packages/shared/src/peer-profile.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/user-command-id.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/pet-public-id.selftest.ts"
@@ -22,6 +22,7 @@ npx tsx "$ROOT/packages/shared/src/entity-public-id.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/gtm-contract.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/pet-slug.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/sanitize-roles.selftest.ts"
+npx tsx "$ROOT/packages/shared/src/catalog-breed-search.selftest.ts"
 
 echo "==> selftest: web inbox title (no public id)"
 npx tsx "$ROOT/packages/web/src/lib/inboxTitle.selftest.ts"
@@ -88,6 +89,9 @@ npx tsx "$ROOT/packages/web/src/components/silentChatConfirm.selftest.ts"
 
 echo "==> selftest: web find-playmate empty mobile layout"
 npx tsx "$ROOT/packages/web/src/components/playmateEmptyMobile.selftest.ts"
+
+echo "==> selftest: web breed FA/EN autocomplete + pet/user photo split"
+npx tsx "$ROOT/packages/web/src/components/breedPhotoSplit.selftest.ts"
 
 echo "==> selftest: web dark-mode theme tokens + toggle wiring"
 npx tsx "$ROOT/packages/web/src/lib/theme.selftest.ts"
