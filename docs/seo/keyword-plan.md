@@ -66,5 +66,5 @@
 
 1. ثبت ملک در Google Search Console و ارسال `sitemap.xml` (جزئیات: `search-console.md`).
 2. ۳ تا ۵ مقاله کوتاه فارسی روی خوشه‌های دم‌بلند با لینک به `/shop` و `/vet-consult`.
-3. یکنواخت‌سازی دامنه canonical: `petdate.ir` در برابر `www` (الان هر دو ۲۰۰ می‌دهند — بهتر است یکی ۳۰۱ شود).
+3. دامنه canonical: `https://petdate.ir` — origin روی HTTPS، `www` را به apex ۳۰۱ می‌کند؛ در پنل CDN هم همین host-redirect را بگذارید.
 4. پس از ایندکس، ردیابی impressions برای خوشه‌های بالا و تقویت صفحات ضعیف.

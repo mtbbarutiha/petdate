@@ -76,8 +76,21 @@ Mobile owners opening «پرونده پزشکی» from My Pets use `/pets/:id#pe
 
 Docs: [تنظیمات دیگر CDN پارس‌پک](https://docs.parspack.com/cdn/other-settings/).
 
+## Host canonical (`www` → `petdate.ir`)
+
+Preferred public host is **`https://petdate.ir`** (canonical, schema, sitemap).
+
+| Request | Origin behaviour |
+|---------|------------------|
+| `http://www.petdate.ir/*` | **200** — Flexible origin pull (do not 301) |
+| `https://www.petdate.ir/sitemap.xml` / `robots.txt` | **200** — crawlable on both hosts |
+| `https://www.petdate.ir/*` (HTML) | **301** → `https://petdate.ir$uri` |
+| `https://petdate.ir/*` | served on apex |
+
+Set the same **www → apex** host-redirect in the ParsPack CDN panel so Flexible visitors (browser HTTPS → CDN → origin HTTP) also land on apex. Origin HTTPS 301 covers direct-to-origin www.
+
 ## What origin will not do
 
 - Do not remap API 4xx → HTTP 200 `{ ok:false }` just to dodge WCDN error pages.
 - Do not force HTTPS on www `:80` (Flexible SSL).
-- Do not 301 www → apex on origin (do that in the CDN panel if desired).
+- Do not 301 HTTP www → apex on origin (that is the Flexible pull).

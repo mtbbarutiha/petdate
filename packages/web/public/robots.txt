@@ -5,6 +5,8 @@
 User-agent: *
 Allow: /
 Allow: /faq
+Allow: /help
+Allow: /games
 Allow: /shop
 Allow: /shop/c/
 Allow: /shop/product/

@@ -122,6 +122,9 @@ npx tsx "$ROOT/packages/web/src/admin/widgets/widgetDashboard.selftest.ts"
 echo "==> selftest: web sitemap public routes"
 npx tsx "$ROOT/packages/web/src/lib/sitemap.selftest.ts"
 
+echo "==> selftest: web page SEO / canonical helpers"
+npx tsx "$ROOT/packages/web/src/lib/pageSeo.selftest.ts"
+
 echo "==> selftest: web public marketing routes (vet-consult / adoption / magazine)"
 npx tsx "$ROOT/packages/web/src/lib/publicRoutes.selftest.ts"
 
