@@ -40,6 +40,7 @@ export {
   resetBoard,
   resolveHydratedBoard,
   resizeItem,
+  resizeOutwardDx,
   saveBoard,
   storageKeyFor,
 } from './layoutStorage';
