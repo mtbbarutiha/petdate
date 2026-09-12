@@ -20,6 +20,15 @@ export const PLATFORM_WIDGET_CATALOG: WidgetCatalogItem[] = [
     defaultW: 2,
     defaultH: 2,
   },
+  {
+    id: 'dailyNotes',
+    title: 'یادداشت‌های روزانه',
+    group: 'ابزارها',
+    description: 'یادداشت‌های کوتاه برای روز انتخاب‌شده در تقویم',
+    drill: 'none',
+    defaultW: 2,
+    defaultH: 2,
+  },
 ];
 
 export const FINANCE_WIDGET_CATALOG: WidgetCatalogItem[] = [

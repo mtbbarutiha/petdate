@@ -61,6 +61,11 @@ export {
   WidgetEmpty,
 } from './ChartWidgets';
 export { CalendarWidget } from './CalendarWidget';
+export { DailyNotesWidget } from './DailyNotesWidget';
+export {
+  DashboardSelectedDateProvider,
+  useDashboardSelectedDate,
+} from './DashboardSelectedDate';
 export { useWidgetLayout, useWidgetUserKey } from './useWidgetLayout';
 
 // Re-export motion primitives so all admin panels share one kit

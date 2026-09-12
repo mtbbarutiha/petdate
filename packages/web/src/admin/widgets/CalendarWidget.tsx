@@ -2,7 +2,7 @@
  * Dual Jalali / Gregorian calendar widget for admin dashboard boards.
  * Pepito light RTL — mint today, purple accent selection.
  */
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import {
   GREGORIAN_MONTHS_FA,
@@ -14,9 +14,11 @@ import {
   iranianWeekdayIndex,
   jalaliDaysInMonth,
   jalaliPartsToDate,
+  localDateToIso,
 } from '../jalaliDate';
 import { usePrefersReducedMotion } from '../motionCharts';
 import type { WidgetRenderContext } from './types';
+import { useDashboardSelectedDate } from './DashboardSelectedDate';
 import { tr } from '../../i18n';
 
 export type CalendarMode = 'jalali' | 'gregorian';
@@ -159,15 +161,16 @@ function fmtSecondaryDay(n: number, mode: CalendarMode): string {
 
 export function CalendarWidget({ ctx }: { ctx?: WidgetRenderContext }) {
   const reduced = usePrefersReducedMotion();
+  const { selectedIso, setSelectedIso } = useDashboardSelectedDate();
   const now = useMemo(() => new Date(), []);
   const todayJ = useMemo(() => currentJalaliParts(now), [now]);
+  const todayIso = useMemo(() => localDateToIso(now), [now]);
 
   const [mode, setMode] = useState<CalendarMode>('jalali');
   const [jy, setJy] = useState(todayJ.year);
   const [jm, setJm] = useState(todayJ.month);
   const [gy, setGy] = useState(now.getFullYear());
   const [gm, setGm] = useState(now.getMonth() + 1);
-  const [selectedKey, setSelectedKey] = useState<string | null>(null);
 
   const cells = useMemo(() => {
     if (mode === 'jalali') return buildJalaliGrid(jy, jm, now);
@@ -224,7 +227,7 @@ export function CalendarWidget({ ctx }: { ctx?: WidgetRenderContext }) {
     setJm(j.month);
     setGy(t.getFullYear());
     setGm(t.getMonth() + 1);
-    setSelectedKey(null);
+    setSelectedIso(null);
   };
 
   const switchMode = (next: CalendarMode) => {
@@ -245,10 +248,13 @@ export function CalendarWidget({ ctx }: { ctx?: WidgetRenderContext }) {
       setJm(j.month);
     }
     setMode(next);
-    setSelectedKey(null);
   };
 
   const compact = ctx ? ctx.w <= 1 || ctx.h <= 1 : false;
+
+  useEffect(() => {
+    return () => setSelectedIso(null);
+  }, [setSelectedIso]);
 
   return (
     <div
@@ -298,7 +304,9 @@ export function CalendarWidget({ ctx }: { ctx?: WidgetRenderContext }) {
 
       <div className="wdg-cal-grid" role="grid">
         {cells.map((c) => {
-          const on = selectedKey === c.key || (!selectedKey && c.isToday);
+          const iso = localDateToIso(c.date);
+          const picked = selectedIso === iso;
+          const on = picked || (!selectedIso && c.isToday);
           return (
             <button
               key={c.key}
@@ -308,11 +316,12 @@ export function CalendarWidget({ ctx }: { ctx?: WidgetRenderContext }) {
                 'wdg-cal-day',
                 c.isCurrentMonth ? '' : 'is-out',
                 c.isToday ? 'is-today' : '',
-                on && selectedKey === c.key ? 'is-selected' : '',
+                picked ? 'is-selected' : '',
               ]
                 .filter(Boolean)
                 .join(' ')}
-              onClick={() => setSelectedKey(c.key)}
+              aria-pressed={on}
+              onClick={() => setSelectedIso(iso === todayIso ? null : iso)}
             >
               <span className="wdg-cal-day-primary">{fmtPrimaryDay(c.primary, mode)}</span>
               <span className="wdg-cal-day-secondary">{fmtSecondaryDay(c.secondary, mode)}</span>

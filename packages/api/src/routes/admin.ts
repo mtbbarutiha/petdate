@@ -91,6 +91,12 @@ import { salesAdminRouter } from './admin-sales';
 import { crmAdminRouter } from './admin-crm';
 import { financeOsAdminRouter } from './admin-finance-os';
 import { magazineAdminRouter } from './admin-magazine';
+import {
+  createAdminDailyNote,
+  deleteAdminDailyNote,
+  listAdminDailyNotes,
+  updateAdminDailyNote,
+} from '../admin-daily-notes';
 
 export const adminRouter = Router();
 const STARTED_AT = Date.now();
@@ -156,7 +162,8 @@ adminRouter.use((req, res, next) => {
     req.path.startsWith('/crm') ||
     req.path.startsWith('/finance-os') ||
     req.path.startsWith('/notifications') ||
-    req.path.startsWith('/support')
+    req.path.startsWith('/support') ||
+    req.path.startsWith('/daily-notes')
   ) {
     next();
     return;
@@ -295,6 +302,44 @@ adminRouter.get('/dashboard', async (req, res) => {
       error: 'بخشی از ماژول‌ها در دسترس نبود',
     });
   }
+});
+
+/** Shared daily notes for the main dashboard (any signed-in admin who can see the board). */
+adminRouter.get('/daily-notes', (req, res) => {
+  const date = typeof req.query.date === 'string' ? req.query.date : '';
+  res.json({ date, notes: listAdminDailyNotes(date) });
+});
+
+adminRouter.post('/daily-notes', (req, res) => {
+  const actor = req.adminActor;
+  const result = createAdminDailyNote({
+    date: typeof req.body?.date === 'string' ? req.body.date : '',
+    body: typeof req.body?.body === 'string' ? req.body.body : '',
+    createdBy: actor?.displayName || actor?.username || '',
+  });
+  if (!result.ok) {
+    res.status(400).json({ error: result.error });
+    return;
+  }
+  res.status(201).json({ note: result.note });
+});
+
+adminRouter.patch('/daily-notes/:id', (req, res) => {
+  const result = updateAdminDailyNote(Number(req.params.id), typeof req.body?.body === 'string' ? req.body.body : '');
+  if (!result.ok) {
+    res.status(result.error === 'یادداشت پیدا نشد' ? 404 : 400).json({ error: result.error });
+    return;
+  }
+  res.json({ note: result.note });
+});
+
+adminRouter.delete('/daily-notes/:id', (req, res) => {
+  const result = deleteAdminDailyNote(Number(req.params.id));
+  if (!result.ok) {
+    res.status(result.error === 'یادداشت پیدا نشد' ? 404 : 400).json({ error: result.error });
+    return;
+  }
+  res.json({ ok: true });
 });
 
 adminRouter.get('/dashboard/activity', (req, res) => {

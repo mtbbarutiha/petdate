@@ -1364,6 +1364,23 @@ html[data-theme='dark'] .admin-app .wdg-cal-mode.is-on {
   background: var(--admin-surface);
   color: var(--admin-ink);
 }
+html[data-theme='dark'] .admin-app .wdg-notes-chip.is-today {
+  color: #9ff3dc;
+  background: rgba(21, 204, 160, 0.16);
+}
+html[data-theme='dark'] .admin-app .wdg-notes-item {
+  background: color-mix(in srgb, var(--admin-promo-mint) 55%, var(--admin-surface));
+}
+html[data-theme='dark'] .admin-app .wdg-notes-empty {
+  background: rgba(21, 204, 160, 0.08);
+}
+html[data-theme='dark'] .admin-app .wdg-notes-error {
+  color: #fecaca;
+  background: rgba(185, 28, 28, 0.28);
+}
+html[data-theme='dark'] .admin-app .wdg-notes-input {
+  background: #1a1e2b;
+}
 
 /* 9) Email inbox list rows */
 html[data-theme='dark'] .admin-app .admin-mail-list {

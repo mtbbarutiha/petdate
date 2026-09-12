@@ -1473,6 +1473,16 @@ function migrateSchema() {
     console.warn('Admin notifications schema ensure skipped/failed:', (err as Error).message);
   }
 
+  // Admin dashboard daily notes — CREATE IF NOT EXISTS; never wipe
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { ensureAdminDailyNotesSchema } =
+      require('./admin-daily-notes') as typeof import('./admin-daily-notes');
+    ensureAdminDailyNotesSchema();
+  } catch (err) {
+    console.warn('Admin daily notes schema ensure skipped/failed:', (err as Error).message);
+  }
+
   // Platform settings — modular dropdowns + module goals (additive; never wipe)
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
