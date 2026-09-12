@@ -102,6 +102,7 @@ export const fa: Dict = {
   },
   nav: {
     sections: 'بخش‌ها',
+    more: 'بیشتر',
     mainMenu: 'منوی اصلی',
     shortcuts: 'میانبرهای اصلی',
     services: 'خدمات',

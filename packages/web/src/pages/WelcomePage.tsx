@@ -1,9 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { BRAND } from '@petdate/shared';
-import { NavUserCluster } from '../components/NavUserCluster';
-import { ThemeToggle } from '../components/ThemeToggle';
-import { LanguageToggle } from '../components/LanguageToggle';
+import { SiteHeader } from '../components/SiteHeader';
+import { welcomeSectionLinks } from '../components/siteHeaderLinks';
 import { PlatformBanners } from '../components/PlatformBanners';
 import { useI18n } from '../i18n/I18nProvider';
 import { useAuthStore } from '../hooks/useAuthStore';
@@ -11,9 +9,6 @@ import { GatedLink, PawIcon } from './landingGatedLink';
 
 const WelcomeBelowFold = lazy(() =>
   import('./WelcomeBelowFold').then((m) => ({ default: m.WelcomeBelowFold })),
-);
-const SiteDesktopNav = lazy(() =>
-  import('../components/SiteDesktopNav').then((m) => ({ default: m.SiteDesktopNav })),
 );
 
 type HeroRole = 'playmate' | 'vet' | 'trainer' | 'no_pet' | 'adoption';
@@ -100,7 +95,6 @@ export function WelcomePage() {
   const { isLoggedIn } = useAuthStore();
   const [scrolled, setScrolled] = useState(false);
   const [slide, setSlide] = useState(0);
-  const [showDesktopNav, setShowDesktopNav] = useState(false);
 
   const goToSlide = (index: number) => {
     const len = HERO_SLIDES.length;
@@ -114,46 +108,20 @@ export function WelcomePage() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  useEffect(() => {
-    const mq = window.matchMedia('(min-width: 860px)');
-    const sync = () => setShowDesktopNav(mq.matches);
-    sync();
-    mq.addEventListener('change', sync);
-    return () => mq.removeEventListener('change', sync);
-  }, []);
-
   const current = HERO_SLIDES[slide]!;
 
   return (
     <div className="pepito-landing pepito-landing--with-dock" dir={dir}>
-      <header className={`pepito-nav${scrolled ? ' is-scrolled' : ''}${isLoggedIn ? ' pepito-nav--app' : ''}`}>
-        <Link to="/" className="pepito-nav-logo" aria-label={BRAND.displayName}>
-          <img
-            src="/media/lcp/logo-390.webp"
-            alt={BRAND.displayName}
-            width={390}
-            height={114}
-            decoding="async"
-          />
-        </Link>
-        <nav className="pepito-nav-links" aria-label={t('nav.sections')}>
-          <a href="#services">{t('nav.services')}</a>
-          <Link to="/adoption" data-testid="nav-adoption">{t('nav.adoption')}</Link>
-          <Link to="/games" data-testid="nav-games">{t('nav.games')}</Link>
-          <a href="#news">{t('nav.news')}</a>
-          <a href="#faq" className="pepito-nav-faq">{t('nav.faq')}</a>
-        </nav>
-        <NavUserCluster showCart />
-        <div className="pepito-nav-actions">
-          <LanguageToggle />
-          <ThemeToggle />
-          {showDesktopNav ? (
-            <Suspense fallback={null}>
-              <SiteDesktopNav />
-            </Suspense>
-          ) : null}
-        </div>
-      </header>
+      <SiteHeader
+        scrolled={scrolled}
+        className={isLoggedIn ? 'pepito-nav--app' : ''}
+        sectionLinks={welcomeSectionLinks()}
+        showCart
+        deferDesktopNav
+        logoSrc="/media/lcp/logo-390.webp"
+        logoWidth={390}
+        logoHeight={114}
+      />
 
       <PlatformBanners placement="landing" />
 

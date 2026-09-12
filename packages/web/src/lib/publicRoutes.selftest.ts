@@ -18,6 +18,8 @@ const route = readFileSync(join(webSrc, 'pages/VetConsultRoute.tsx'), 'utf8');
 const footer = readFileSync(join(webSrc, 'components/SiteFooter.tsx'), 'utf8');
 const faq = readFileSync(join(webSrc, 'pages/FaqPage.tsx'), 'utf8');
 const chrome = readFileSync(join(webSrc, 'components/LandingChrome.tsx'), 'utf8');
+const headerLinks = readFileSync(join(webSrc, 'components/siteHeaderLinks.ts'), 'utf8');
+const siteHeader = readFileSync(join(webSrc, 'components/SiteHeader.tsx'), 'utf8');
 const hashRedirect = readFileSync(join(webSrc, 'components/LegacyAdoptionHashRedirect.tsx'), 'utf8');
 const dock = readFileSync(join(webSrc, 'components/LandingMobileDock.tsx'), 'utf8');
 const nav = readFileSync(join(webSrc, 'lib/siteNav.ts'), 'utf8');
@@ -60,20 +62,13 @@ assert.match(route, /hasRole/, 'app shell requires a role — guests and incompl
 assert.match(landing, /LandingChrome/, 'vet landing uses marketing chrome');
 assert.match(landing, /loginPath\('\/vet-consult'\)/, 'vet landing login returns to consult');
 assert.doesNotMatch(landing, /pepito-app-rail/, 'vet landing has no app sidebar');
-assert.match(
-  welcome,
-  /<Link to="\/adoption"[^>]*>\{t\('nav\.adoption'\)\}<\/Link>/,
-  'homepage پذیرش CTA goes to /adoption'
-);
-assert.match(welcome, /data-testid="nav-adoption"/, 'homepage پذیرش is testable');
+assert.match(welcome, /welcomeSectionLinks/, 'homepage header uses shared extras');
+assert.match(headerLinks, /to: '\/adoption'[\s\S]*testId: 'nav-adoption'/, 'homepage پذیرش goes to /adoption');
+assert.match(headerLinks, /testId: 'nav-adoption'/, 'homepage پذیرش is testable');
 assert.doesNotMatch(welcome, /href="#pets">پذیرش/, 'homepage پذیرش no longer uses #pets');
 assert.doesNotMatch(welcome, /id="pets"/, 'homepage adoption section is not id=pets');
-assert.match(
-  chrome,
-  /<Link to="\/adoption"[^>]*>\{t\('nav\.adoption'\)\}<\/Link>/,
-  'LandingChrome پذیرش goes to /adoption'
-);
-assert.match(chrome, /data-testid="nav-adoption"/, 'LandingChrome پذیرش is testable');
+assert.match(chrome, /landingSectionLinks/, 'LandingChrome پذیرش uses shared extras');
+assert.match(headerLinks, /key: 'adoption'[\s\S]*to: '\/adoption'/, 'LandingChrome پذیرش goes to /adoption');
 assert.match(footer, /to: '\/adoption',\s*label: t\('nav\.adoption'\)/, 'footer پذیرش goes to /adoption');
 assert.match(footer, /to: '\/adoption',\s*label: t\('footer\.adoptPet'\)/, 'footer پذیرش پت goes to /adoption');
 assert.doesNotMatch(footer, /\/#pets/, 'footer has no leftover /#pets links');
@@ -82,7 +77,8 @@ assert.doesNotMatch(faq, /\/#pets/, 'FAQ has no leftover /#pets links');
 assert.match(hashRedirect, /location\.hash !== '#pets'/, 'legacy hash redirect watches #pets');
 assert.match(hashRedirect, /pathname: '\/adoption'/, 'legacy hash redirect navigates to /adoption');
 assert.match(dock, /pathname === '\/vet-consult'/, 'mobile dock hidden on guest vet landing');
-assert.match(chrome, /appNav \? ' pepito-nav--app'/, 'LandingChrome app header only when appNav');
+assert.match(chrome, /appNav \? 'pepito-nav--app'/, 'LandingChrome app header only when appNav');
+assert.match(siteHeader, /LanguageToggle/, 'shared header keeps language toggle');
 assert.doesNotMatch(chrome, /appNav \|\| isLoggedIn/, 'logged-in guests keep marketing chrome on landing');
 
 // Marketing hero: fixed role order همبازی → دامپزشک → مربی → بدون پت, then پذیرش
@@ -140,7 +136,7 @@ assert.doesNotMatch(welcome, /href="#rely"/, 'nav trust anchor removed');
 // FAQ stays on desktop + /faq deep links; mobile hides landing FAQ section/nav CTAs
 assert.match(welcome, /id="faq"/, 'welcome FAQ section kept for desktop');
 assert.match(welcome, /pepito-faq-section/, 'welcome FAQ marked for mobile hide');
-assert.match(welcome, /pepito-nav-faq/, 'welcome FAQ nav marked for mobile hide');
+assert.match(headerLinks, /pepito-nav-faq/, 'welcome FAQ nav marked for mobile hide');
 assert.match(app, /path="faq"\s+element=\{<FaqPage/, 'App keeps /faq route for deep links');
 assert.match(app, /path="help"\s+element=\{<FaqPage/, 'App aliases /help to the same help/FAQ page');
 assert.match(guard, /PUBLIC_EXACT[\s\S]*\/help/, 'AuthGuard treats /help as public');

@@ -1,44 +1,19 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, Navigate, useParams } from 'react-router-dom';
 import { PawPrint } from 'lucide-react';
-import { BRAND } from '@petdate/shared';
 import { SiteFooter } from '../components/SiteFooter';
-import { ThemeToggle } from '../components/ThemeToggle';
-import { LanguageToggle } from '../components/LanguageToggle';
+import { SiteHeader } from '../components/SiteHeader';
+import { landingSectionLinks } from '../components/siteHeaderLinks';
 import { useI18n } from '../i18n';
+import { usePlatformConfig } from '../hooks/usePlatformConfig';
 import { AdoptionPurchaseCta, PetPurchaseLeadButton } from '../components/AdoptionPurchaseCta';
 import { ADOPTION_PETS, getAdoptionPet } from '../data/adoptionPets';
 import { loginPath } from '../lib/authRedirect';
-import { useAuthStore } from '../hooks/useAuthStore';
-
-function PawIcon({ size = 16 }: { size?: number }) {
-  return (
-    <span className="pepito-btn-icon" aria-hidden>
-      <PawPrint size={size} />
-    </span>
-  );
-}
-
-function GatedLink({
-  to,
-  className,
-  children,
-}: {
-  to: string;
-  className?: string;
-  children: ReactNode;
-}) {
-  const { isLoggedIn, hasRole, isProfileComplete } = useAuthStore();
-  const ready = isLoggedIn && hasRole && isProfileComplete;
-  return (
-    <Link to={ready ? to : loginPath(to)} className={className}>
-      {children}
-    </Link>
-  );
-}
+import { GatedLink, PawIcon } from './landingGatedLink';
 
 export function AdoptionDetailPage() {
   const { t, dir } = useI18n();
+  const platform = usePlatformConfig();
   const { slug } = useParams<{ slug: string }>();
   const pet = getAdoptionPet(slug);
   const [scrolled, setScrolled] = useState(false);
@@ -73,30 +48,15 @@ export function AdoptionDetailPage() {
 
   return (
     <div className="pepito-landing pepito-adoption-page" dir={dir}>
-      <header className={`pepito-nav${scrolled ? ' is-scrolled' : ''}`}>
-        <Link to="/" className="pepito-nav-logo" aria-label={BRAND.displayName}>
-          <img src="/pepito/img/logo.png" alt={BRAND.displayName} />
-        </Link>
-        <nav className="pepito-nav-links" aria-label={t('nav.sections')}>
-          <Link to="/#services">{t('nav.services')}</Link>
-          <Link to="/adoption">{t('nav.adoption')}</Link>
-          <Link to="/shop">{t('nav.petShop')}</Link>
-          <Link to="/#team">{t('nav.team')}</Link>
-          <Link to="/#reviews">{t('nav.reviews')}</Link>
-          <Link to="/#faq" className="pepito-nav-faq">{t('nav.faq')}</Link>
-        </nav>
-        <div className="pepito-nav-actions">
-          <LanguageToggle />
-          <ThemeToggle />
-          <Link to={loginPath('/home')} className="pepito-nav-login">
-            {t('common.login')}
-          </Link>
-          <GatedLink to="/chats" className="pepito-btn pepito-btn--nav">
-            <PawIcon size={14} />
-            {t('common.sendMessage')}
-          </GatedLink>
-        </div>
-      </header>
+      <SiteHeader
+        scrolled={scrolled}
+        sectionLinks={landingSectionLinks(platform)}
+        showCart
+        actionLabel={t('common.login')}
+        actionTo={loginPath('/home')}
+        ctaLabel={t('common.sendMessage')}
+        ctaTo={loginPath('/chats')}
+      />
 
       <section
         className="pepito-adopt-banner"

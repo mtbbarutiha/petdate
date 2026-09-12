@@ -1,17 +1,13 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { Link, NavLink } from 'react-router-dom';
 import { PawPrint } from 'lucide-react';
-import { BRAND } from '@petdate/shared';
 import { PageHelpLink } from '../PageHelpLink';
 import { useAuthStore } from '../../hooks/useAuthStore';
 import { useShopCatalogSync } from '../../hooks/useShopCatalogSync';
 import { useI18n } from '../../i18n';
-import { NavUserCluster } from '../NavUserCluster';
-import { SiteDesktopNav } from '../SiteDesktopNav';
+import { SiteHeader } from '../SiteHeader';
+import { shopSectionLinks } from '../siteHeaderLinks';
 import { SiteFooter } from '../SiteFooter';
 import { ShopAddToast } from './ShopAddToast';
-import { LanguageToggle } from '../LanguageToggle';
-import { ThemeToggle } from '../ThemeToggle';
 
 export function ShopChrome({
   children,
@@ -50,27 +46,13 @@ export function ShopChrome({
 
   return (
     <div className="pepito-landing pepito-flow-page pd-shop-page" dir={dir}>
-      <header className={`pepito-nav${scrolled ? ' is-scrolled' : ''}${isLoggedIn ? ' pepito-nav--app' : ''}`}>
-        <Link to="/" className="pepito-nav-logo" aria-label={BRAND.displayName}>
-          <img src="/pepito/img/logo.png" alt={BRAND.displayName} />
-        </Link>
-        <nav className="pepito-nav-links pepito-nav-links--app" aria-label={t('shop.brand')}>
-          <NavLink to="/shop" end>
-            {t('shop.store')}
-          </NavLink>
-          <NavLink to="/shop/orders">{t('shop.orders')}</NavLink>
-          <NavLink to="/shop/cart">{t('shop.cart')}</NavLink>
-          <NavLink to="/shop/c/dog-food">{t('shop.dog')}</NavLink>
-          <NavLink to="/shop/c/cat-food">{t('shop.cat')}</NavLink>
-          <NavLink to="/shop/c/bird-food">{t('shop.bird')}</NavLink>
-        </nav>
-        <NavUserCluster showCart showOrders />
-        <div className="pepito-nav-actions">
-          <LanguageToggle />
-          <ThemeToggle />
-          <SiteDesktopNav />
-        </div>
-      </header>
+      <SiteHeader
+        scrolled={scrolled}
+        className={isLoggedIn ? 'pepito-nav--app' : ''}
+        sectionLinks={shopSectionLinks()}
+        showCart
+        showOrders
+      />
 
       {!hideBanner ? (
         <section className="pd-shop-hero pd-shop-hero--full" aria-label={title}>

@@ -292,6 +292,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   border-bottom: 1px solid rgba(92, 77, 145, 0.08);
   box-shadow: 0 4px 18px rgba(25, 6, 61, 0.06);
   transition: box-shadow 0.25s ease;
+  isolation: isolate;
 }
 @media (max-width: 859px) {
   /*
@@ -367,18 +368,29 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   gap: 1.35rem;
   margin-inline-start: 1.25rem;
 }
-.pepito-nav-links a {
+.pepito-nav-links a,
+.pepito-nav-section-link {
   color: var(--pepito-dark);
   text-decoration: none;
   font-weight: 600;
   font-size: 0.95rem;
+  white-space: nowrap;
 }
-.pepito-nav-links a:hover { color: var(--pepito-base); }
+.pepito-nav-links a:hover,
+.pepito-nav-section-link:hover { color: var(--pepito-base); }
+.pepito-nav-primary {
+  display: none;
+}
 .pepito-nav-actions {
   margin-inline-start: auto;
   display: flex;
   align-items: center;
   gap: 0.65rem;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 6;
+  /* Stable physical order: avatar → wallet → cart → lang → theme */
+  direction: ltr;
 }
 .pepito-nav-login {
   color: var(--pepito-dark);
@@ -11741,12 +11753,15 @@ a.pepito-btn.pepito-human-consult-cta:hover {
 
 
 /* SITE_DESKTOP_NAV
-   Desktop overlap root cause: NavUserCluster was position:absolute on the
-   physical left while .pepito-nav-actions used margin-inline-start:auto
-   (also left in RTL) — SiteDesktopNav sat on top of avatar/wallet/cart.
-   Fix: keep cluster in flex flow on ≥860px; order logo → links → actions
-   → cluster so tools stay leftmost without absolute collisions. */
+   Hierarchy: brand | primary (role pills + overflow) | utilities.
+   Marketing شاپ/بازی‌ها text links are not rendered beside SiteDesktopNav.
+   Utilities (cluster + lang + theme) are in-flow at inline-end; LTR inside
+   the cluster keeps avatar → wallet → cart on the physical left. */
 .pepito-site-desktop-nav {
+  display: none;
+}
+
+.pepito-nav-overflow {
   display: none;
 }
 
@@ -11763,35 +11778,48 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   }
 
   .pepito-nav-logo {
-    order: 0;
     flex: 0 0 auto;
+  }
+
+  .pepito-nav-primary {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    flex: 1 1 auto;
+    min-width: 0;
+    margin-inline-start: 0.35rem;
+    position: relative;
+    z-index: 1;
   }
 
   .pepito-nav-links,
   .pepito-nav-links--app {
-    order: 1;
     display: flex;
     flex: 0 1 auto;
     min-width: 0;
     gap: 0.95rem;
-    margin-inline-start: 0.65rem;
+    margin-inline-start: 0;
+  }
+
+  /* Secondary text links only on wide desktops; mid widths use overflow. */
+  .pepito-nav-links.pepito-nav-section-inline {
+    display: none;
   }
 
   .pepito-nav-actions {
-    order: 2;
     margin-inline-start: auto !important;
     margin-inline-end: 0 !important;
     flex: 0 0 auto;
     gap: 0.4rem;
+    /* Physical left tools: avatar/wallet/cart then lang/theme */
+    direction: ltr;
   }
 
-  /* Physical left: avatar → wallet → cart (direction:ltr on cluster) */
   .pepito-nav-user-cluster {
     position: static !important;
     left: auto !important;
     top: auto !important;
     transform: none !important;
-    order: 3;
     flex: 0 0 auto;
     z-index: 6;
     margin: 0;
@@ -11878,24 +11906,104 @@ a.pepito-btn.pepito-human-consult-cta:hover {
     object-fit: cover;
     border-radius: 50%;
   }
+
+  .pepito-nav-overflow {
+    display: block;
+    position: relative;
+    flex: 0 0 auto;
+    z-index: 8;
+  }
+
+  .pepito-nav-overflow-btn {
+    --pepito-nav-chip-h: 40px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    height: var(--pepito-nav-chip-h);
+    min-height: var(--pepito-nav-chip-h);
+    padding: 0 0.7rem;
+    border-radius: 999px;
+    border: 1.5px solid color-mix(in srgb, var(--pepito-base) 22%, transparent);
+    background: color-mix(in srgb, var(--pepito-white) 88%, transparent);
+    color: var(--pepito-dark);
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 0.8rem;
+    line-height: 1;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+
+  .pepito-nav-overflow-btn:hover {
+    background: var(--pepito-lilac, #f3eefc);
+    border-color: rgba(92, 77, 145, 0.28);
+    color: var(--pepito-base);
+  }
+
+  .pepito-nav-overflow-btn:focus-visible {
+    outline: 2px solid rgba(92, 77, 145, 0.45);
+    outline-offset: 2px;
+  }
+
+  .pepito-nav-overflow-menu {
+    position: absolute;
+    top: calc(100% + 0.45rem);
+    inset-inline-start: 0;
+    min-width: 11.5rem;
+    padding: 0.45rem;
+    border-radius: 16px;
+    background: var(--pepito-white);
+    border: 1px solid rgba(92, 77, 145, 0.12);
+    box-shadow: 0 18px 44px rgba(25, 6, 61, 0.16);
+    z-index: 80;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  .pepito-nav-overflow-item {
+    display: block;
+    padding: 0.6rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.9rem;
+  }
+
+  .pepito-nav-overflow-item:hover {
+    background: rgba(92, 77, 145, 0.08);
+  }
 }
 
-/* Narrow desktop: hide lower-priority section links so primary CTAs +
-   left cluster never collide (860–1099). */
-@media (min-width: 860px) and (max-width: 1099px) {
-  .pepito-nav-links a:nth-child(n + 4),
-  .pepito-nav-links--app a:nth-child(n + 3) {
+@media (min-width: 1440px) {
+  .pepito-nav-links.pepito-nav-section-inline {
+    display: flex;
+    gap: 0.85rem;
+    margin-inline-start: 0.35rem;
+  }
+
+  .pepito-nav-overflow-item--inline-dup {
     display: none;
   }
 
-  .pepito-nav-links,
-  .pepito-nav-links--app {
-    gap: 0.75rem;
+  .pepito-nav-overflow--wide-redundant {
+    display: none;
   }
+}
 
+/* Narrow desktop: tighten chips; section text stays in overflow. */
+@media (min-width: 860px) and (max-width: 1099px) {
   .pepito-site-desktop-nav-link {
     padding: 0 0.6rem;
     font-size: 0.76rem;
+  }
+
+  .pepito-nav-overflow-btn-label {
+    display: none;
+  }
+
+  .pepito-nav-overflow-btn {
+    width: var(--pepito-nav-chip-h, 40px);
+    padding: 0;
   }
 
   .pepito-nav-wallet-btn {
@@ -11908,11 +12016,6 @@ a.pepito-btn.pepito-human-consult-cta:hover {
 }
 
 @media (min-width: 860px) and (max-width: 959px) {
-  .pepito-nav-links a:nth-child(n + 3),
-  .pepito-nav-links--app a:nth-child(n + 2) {
-    display: none;
-  }
-
   .pepito-site-desktop-nav-link span {
     display: none;
   }

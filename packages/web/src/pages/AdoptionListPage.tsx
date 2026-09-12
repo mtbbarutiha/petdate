@@ -1,23 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { PawPrint } from 'lucide-react';
-import { BRAND } from '@petdate/shared';
 import { SiteFooter } from '../components/SiteFooter';
-import { ThemeToggle } from '../components/ThemeToggle';
-import { LanguageToggle } from '../components/LanguageToggle';
+import { SiteHeader } from '../components/SiteHeader';
+import { landingSectionLinks } from '../components/siteHeaderLinks';
 import { useI18n } from '../i18n';
 import { usePlatformConfig } from '../hooks/usePlatformConfig';
 import { AdoptionPurchaseCta } from '../components/AdoptionPurchaseCta';
 import { ADOPTION_PETS } from '../data/adoptionPets';
 import { loginPath } from '../lib/authRedirect';
-
-function PawIcon({ size = 16 }: { size?: number }) {
-  return (
-    <span className="pepito-btn-icon" aria-hidden>
-      <PawPrint size={size} />
-    </span>
-  );
-}
 
 export function AdoptionListPage() {
   const { t, dir } = useI18n();
@@ -43,30 +33,15 @@ export function AdoptionListPage() {
 
   return (
     <div className="pepito-landing pepito-adoption-page" dir={dir}>
-      <header className={`pepito-nav${scrolled ? ' is-scrolled' : ''}`}>
-        <Link to="/" className="pepito-nav-logo" aria-label={BRAND.displayName}>
-          <img src="/pepito/img/logo.png" alt={BRAND.displayName} />
-        </Link>
-        <nav className="pepito-nav-links" aria-label={t('nav.sections')}>
-          <Link to="/#services">{t('nav.services')}</Link>
-          <Link to="/adoption">{t('nav.adoption')}</Link>
-          <Link to="/games" data-testid="nav-games">{t('nav.games')}</Link>
-          {platform.shopEnabled ? <Link to="/shop">{t('nav.petShop')}</Link> : null}
-          {platform.vetConsultEnabled ? <Link to="/vet-consult">{t('nav.vet')}</Link> : null}
-          <Link to="/faq" className="pepito-nav-faq">{t('nav.faq')}</Link>
-        </nav>
-        <div className="pepito-nav-actions">
-          <LanguageToggle />
-          <ThemeToggle />
-          <Link to={loginPath('/home')} className="pepito-nav-login">
-            {t('common.login')}
-          </Link>
-          <Link to={loginPath('/chats')} className="pepito-btn pepito-btn--nav">
-            <PawIcon size={14} />
-            {t('common.sendMessage')}
-          </Link>
-        </div>
-      </header>
+      <SiteHeader
+        scrolled={scrolled}
+        sectionLinks={landingSectionLinks(platform)}
+        showCart
+        actionLabel={t('common.login')}
+        actionTo={loginPath('/home')}
+        ctaLabel={t('common.sendMessage')}
+        ctaTo={loginPath('/chats')}
+      />
 
       <section className="pepito-section pepito-adoption" id="adoption">
         <div className="pepito-section-head pepito-section-head--center">

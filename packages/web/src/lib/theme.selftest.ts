@@ -279,10 +279,13 @@ assert.doesNotMatch(toggle, /pd-theme-toggle-label|theme\.toLight|theme\.toDark/
 assert.match(toggle, /Sun|Moon/, 'ThemeToggle renders sun/moon icon');
 
 const landing = readFileSync(join(root, 'src/components/LandingChrome.tsx'), 'utf8');
-assert.match(landing, /ThemeToggle/, 'landing chrome exposes toggle');
+assert.match(landing, /SiteHeader/, 'landing chrome uses shared header');
+
+const siteHeader = readFileSync(join(root, 'src/components/SiteHeader.tsx'), 'utf8');
+assert.match(siteHeader, /ThemeToggle/, 'shared header exposes toggle');
 
 const welcome = readFileSync(join(root, 'src/pages/WelcomePage.tsx'), 'utf8');
-assert.match(welcome, /ThemeToggle/, 'welcome header exposes toggle');
+assert.match(welcome, /SiteHeader/, 'welcome header uses shared chrome');
 
 const adminLayout = readFileSync(join(root, 'src/admin/AdminLayout.tsx'), 'utf8');
 assert.match(adminLayout, /ThemeToggle/, 'admin topbar exposes toggle');

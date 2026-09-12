@@ -84,11 +84,14 @@ assert.doesNotMatch(
 );
 
 const landing = readFileSync(join(root, 'src/components/LandingChrome.tsx'), 'utf8');
-assert.match(landing, /LanguageToggle/, 'landing chrome exposes language toggle');
+assert.match(landing, /SiteHeader/, 'landing chrome uses shared header');
 assert.match(landing, /useI18n/, 'landing chrome uses i18n');
 
+const siteHeader = readFileSync(join(root, 'src/components/SiteHeader.tsx'), 'utf8');
+assert.match(siteHeader, /LanguageToggle/, 'shared header exposes language toggle');
+
 const welcome = readFileSync(join(root, 'src/pages/WelcomePage.tsx'), 'utf8');
-assert.match(welcome, /LanguageToggle/, 'welcome header exposes language toggle');
+assert.match(welcome, /SiteHeader/, 'welcome header uses shared chrome');
 
 const adminLayout = readFileSync(join(root, 'src/admin/AdminLayout.tsx'), 'utf8');
 assert.match(adminLayout, /LanguageToggle/, 'admin topbar exposes language toggle');

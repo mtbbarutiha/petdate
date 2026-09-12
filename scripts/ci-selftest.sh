@@ -143,6 +143,9 @@ npx tsx "$ROOT/packages/web/src/components/inviteFriends.selftest.ts"
 echo "==> selftest: web mobile dock keeps wallet + chats (Games not a replacement)"
 npx tsx "$ROOT/packages/web/src/lib/siteNav.selftest.ts"
 
+echo "==> selftest: web desktop header grouping (no marketing+pill clash)"
+npx tsx "$ROOT/packages/web/src/components/siteHeader.selftest.ts"
+
 echo "==> selftest: web SW cache generation (guest vet landing bust)"
 npx tsx "$ROOT/packages/web/src/lib/swCache.selftest.ts"
 

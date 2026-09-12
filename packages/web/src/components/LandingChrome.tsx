@@ -1,26 +1,15 @@
 import { useEffect, useState, type ReactNode } from 'react';
-import { Link, NavLink, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { PawPrint } from 'lucide-react';
-import { BRAND, primaryRole } from '@petdate/shared';
-import { useAuthStore } from '../hooks/useAuthStore';
+import { BRAND } from '@petdate/shared';
 import { useI18n } from '../i18n';
 import { SiteFooter } from './SiteFooter';
-import { NavUserCluster } from './NavUserCluster';
-import { SiteDesktopNav } from './SiteDesktopNav';
-import { ThemeToggle } from './ThemeToggle';
-import { LanguageToggle } from './LanguageToggle';
+import { SiteHeader } from './SiteHeader';
+import { landingSectionLinks } from './siteHeaderLinks';
 import { PlatformBanners } from './PlatformBanners';
 import { usePlatformConfig } from '../hooks/usePlatformConfig';
 
 const BANNER_IMG = '/pepito/uploads/3.jpg';
-
-function PawIcon({ size = 14 }: { size?: number }) {
-  return (
-    <span className="pepito-btn-icon" aria-hidden>
-      <PawPrint size={size} />
-    </span>
-  );
-}
 
 export interface LandingChromeProps {
   children: ReactNode;
@@ -64,21 +53,17 @@ export function LandingChrome({
   footer = true,
 }: LandingChromeProps) {
   const [scrolled, setScrolled] = useState(false);
-  const { user } = useAuthStore();
-  const { t, dir } = useI18n();
+  const { dir } = useI18n();
   const platform = usePlatformConfig();
   const { pathname } = useLocation();
   const bannerPlacement = pathname.startsWith('/shop') ? 'shop' : appNav ? 'app' : 'landing';
-  const userPrimary = primaryRole(user?.roles, user?.role);
   const resolvedBannerTitle = bannerTitle ?? BRAND.displayName;
   const resolvedBannerLead = bannerLead ?? (dir === 'rtl' ? BRAND.taglineFa : BRAND.taglineEn);
-  // App shell uses ProfileMenu for logout — no default “back” action in the top bar.
-  const actionLabel =
-    actionLabelProp !== undefined
-      ? actionLabelProp
-      : appNav
-        ? ''
-        : t('common.home');
+  // Logo is home. Only show an explicit action when the caller passes one
+  // (auth back-link, magazine, vet landing CTA). Avoid a default خانه pill
+  // stacked on marketing links + SiteDesktopNav.
+  const actionLabel = actionLabelProp ?? '';
+  const sectionLinks = appNav ? [] : landingSectionLinks(platform);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -99,62 +84,17 @@ export function LandingChrome({
 
   return (
     <div className={`pepito-landing pepito-flow-page${className ? ` ${className}` : ''}`} dir={dir}>
-      <header
-        className={`pepito-nav${scrolled ? ' is-scrolled' : ''}${
-          appNav ? ' pepito-nav--app' : ' pepito-nav--tools'
-        }`}
-      >
-        {/* Logo first in DOM so dir=rtl places it at inline-start (right). */}
-        <Link to="/" className="pepito-nav-logo" aria-label={BRAND.displayName}>
-          <img src="/pepito/img/logo.png" alt={BRAND.displayName} />
-        </Link>
-
-        {appNav ? (
-          <nav className="pepito-nav-links pepito-nav-links--app" aria-label={t('nav.mainMenu')}>
-            <NavLink to="/" end>
-              {t('common.home')}
-            </NavLink>
-            {userPrimary === 'vet' && platform.vetConsultEnabled ? (
-              <NavLink to="/vet-consult">{t('nav.vet_panel')}</NavLink>
-            ) : (
-              <NavLink to="/my-pets">{t('nav.my_pets')}</NavLink>
-            )}
-          </nav>
-        ) : (
-          <nav className="pepito-nav-links" aria-label={t('nav.sections')}>
-            <Link to="/#services">{t('nav.services')}</Link>
-            <Link to="/adoption" data-testid="nav-adoption">{t('nav.adoption')}</Link>
-            <Link to="/games" data-testid="nav-games">{t('nav.games')}</Link>
-            {platform.shopEnabled ? <Link to="/shop">{t('nav.petShop')}</Link> : null}
-            {platform.vetConsultEnabled ? <Link to="/vet-consult">{t('nav.vet')}</Link> : null}
-            <Link to="/faq" className="pepito-nav-faq">{t('nav.faq')}</Link>
-          </nav>
-        )}
-
-        {/* Cluster before actions; mobile CSS parks both at inline-end (left). */}
-        <NavUserCluster showCart />
-
-        <div className="pepito-nav-actions">
-          <LanguageToggle />
-          <ThemeToggle />
-          <SiteDesktopNav />
-          {actionLabel && onAction ? (
-            <button type="button" className="pepito-nav-login pepito-nav-login--btn" onClick={onAction}>
-              {actionLabel}
-            </button>
-          ) : actionLabel && actionTo ? (
-            <Link to={actionTo} className="pepito-nav-login">
-              {actionLabel}
-            </Link>
-          ) : null}
-          {ctaLabel && ctaTo ? (
-            <Link to={ctaTo} className="pepito-btn pepito-btn--nav">
-              <PawIcon />
-              {ctaLabel}
-            </Link>
-          ) : null}
-        </div>
-      </header>
+      <SiteHeader
+        scrolled={scrolled}
+        className={appNav ? 'pepito-nav--app' : 'pepito-nav--tools'}
+        sectionLinks={sectionLinks}
+        showCart
+        actionLabel={actionLabel || undefined}
+        actionTo={actionTo}
+        onAction={onAction}
+        ctaLabel={ctaLabel}
+        ctaTo={ctaTo}
+      />
 
       {!hideBanner && (
         <section
