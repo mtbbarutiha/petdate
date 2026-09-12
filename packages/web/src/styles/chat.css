@@ -1691,12 +1691,42 @@ html.tg-chat-open body {
   }
 }
 
-/* Unified inbox: playmate + vet requests with accept/reject */
+/* Unified inbox: playmate + vet requests with accept/reject.
+ * Item + dismiss share one row; accept/reject actions wrap below (width 100%). */
 .tg-chat-list-row {
   display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2rem;
   padding-bottom: 0.25rem;
+}
+
+/* Override global.css width:100% so trash does not wrap under the chat item */
+.tg-chat-list-row > .tg-chat-list-item {
+  flex: 1 1 0;
+  min-width: 0;
+  width: auto !important;
+}
+
+.tg-chat-list-dismiss {
+  flex: 0 0 auto;
+  align-self: center;
+  z-index: 1;
+  color: var(--tg-muted, #64748b);
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.tg-chat-list-dismiss:hover,
+.tg-chat-list-dismiss:focus-visible {
+  color: #b91c1c;
+  background: rgba(185, 28, 28, 0.1) !important;
+}
+
+.tg-chat-list-row > .tg-chat-list-actions {
+  flex: 1 1 100%;
+  width: 100%;
 }
 
 /* ── Vet doctor tools — fit new language; do not alter kb/composer layout ── */
