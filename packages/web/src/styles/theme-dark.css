@@ -993,6 +993,19 @@ html[data-theme='dark'] .admin-app .admin-nav-item.active {
   background: linear-gradient(90deg, var(--admin-active-bg), var(--admin-surface));
 }
 
+html[data-theme='dark'] .admin-app .admin-nav-item--finance:not(.active) {
+  border-inline-start-color: var(--admin-orange);
+}
+html[data-theme='dark'] .admin-app .admin-nav-item--finance:not(.active):hover {
+  background: color-mix(in srgb, var(--admin-orange) 16%, var(--admin-surface));
+}
+html[data-theme='dark'] .admin-app .admin-nav-item--sensitive:not(.active) {
+  border-inline-start-color: var(--admin-sky);
+}
+html[data-theme='dark'] .admin-app .admin-nav-item--sensitive:not(.active):hover {
+  background: color-mix(in srgb, var(--admin-sky) 16%, var(--admin-surface));
+}
+
 html[data-theme='dark'] .admin-app .admin-table th {
   color: var(--admin-ink);
 }
@@ -2063,6 +2076,11 @@ html[data-theme='dark'] .pepito-vet-consult-incoming-list .pepito-vet-status.is-
   color: #e2e0ec;
   border-color: rgba(226, 224, 236, 0.22);
 }
+html[data-theme='dark'] .pepito-btn.pepito-btn--danger {
+  background: color-mix(in srgb, var(--danger, #f07178) 18%, var(--pd-surface-2, #252836)) !important;
+  color: #f0a0ab !important;
+  border: 1.5px solid color-mix(in srgb, var(--danger, #f07178) 40%, var(--pd-border, #3a3d4a)) !important;
+}
 html[data-theme='dark'] .pepito-btn.pepito-human-consult-cta,
 html[data-theme='dark'] a.pepito-btn.pepito-human-consult-cta {
   background: var(--pd-surface-2) !important;
@@ -2341,6 +2359,14 @@ html[data-theme='dark'] .pepito-app-rail-link.is-danger:hover,
 html[data-theme='dark'] .pepito-app-rail-link.is-danger.is-active {
   background: rgba(196, 70, 90, 0.2);
   color: #f0a0ab;
+}
+html[data-theme='dark'] .pepito-app-rail-link.is-finance {
+  color: #f0c585;
+}
+html[data-theme='dark'] .pepito-app-rail-link.is-finance:hover,
+html[data-theme='dark'] .pepito-app-rail-link.is-finance.is-active {
+  background: rgba(253, 150, 30, 0.18);
+  color: #ffd89a;
 }
 html[data-theme='dark'] .pepito-nav-profile-manage {
   border-top-color: var(--pd-border);

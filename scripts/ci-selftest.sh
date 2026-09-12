@@ -249,6 +249,7 @@ npx tsx "$ROOT/packages/bot/src/handlers/nearby-radius.selftest.ts"
 npx tsx "$ROOT/packages/bot/src/handlers/nearby-inline-list.selftest.ts"
 npx tsx "$ROOT/packages/bot/src/handlers/pet-search-menu.selftest.ts"
 npx tsx "$ROOT/packages/bot/src/handlers/invite-friends.selftest.ts"
+npx tsx "$ROOT/packages/bot/src/roleMenuOrder.selftest.ts"
 
 # SQLite cascade (uses temp/local DB via API helpers — not production path)
 run src/services/user-delete-cascade.selftest.ts

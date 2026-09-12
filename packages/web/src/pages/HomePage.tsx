@@ -219,15 +219,15 @@ export function HomePage() {
             </Link>
           ) : null}
           {isPetOwner ? (
-            <Link to="/my-pets" className="pepito-home-action">
-              <strong>{t('home.actPets')}</strong>
-              <span>{t('home.actPetsSub')}</span>
-            </Link>
-          ) : null}
-          {isPetOwner ? (
             <Link to="/chats" className="pepito-home-action" data-testid="home-action-playmate">
               <strong>{t('home.actPlaymate')}</strong>
               <span>{t('home.actPlaymateSub')}</span>
+            </Link>
+          ) : null}
+          {isPetOwner ? (
+            <Link to="/my-pets" className="pepito-home-action">
+              <strong>{t('home.actPets')}</strong>
+              <span>{t('home.actPetsSub')}</span>
             </Link>
           ) : null}
           {isPetOwner || isNoPet ? (

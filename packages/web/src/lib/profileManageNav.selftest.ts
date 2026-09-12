@@ -26,6 +26,12 @@ assert.match(manageNav, /\/profile\?panel=interactions/, 'interactions deep-link
 assert.match(manageNav, /\/wallet\/earn/, 'earn link');
 assert.match(manageNav, /\/profile\?panel=blocked/, 'blocked deep-link');
 assert.match(manageNav, /\/profile\?panel=account/, 'account deep-link');
+const earnAt = manageNav.indexOf("key: 'earn'");
+const verifyAt = manageNav.indexOf("key: 'verify'");
+const accountAt = manageNav.indexOf("key: 'account'");
+assert.ok(earnAt > 0 && verifyAt > earnAt && accountAt > verifyAt, 'manage: everyday → finance → verify → delete last');
+assert.match(manageNav, /tone: 'finance'/, 'earn uses finance tone');
+assert.match(manageNav, /tone: 'danger'/, 'account delete uses danger tone');
 assert.doesNotMatch(manageNav, /سایلنت|silent-chat|silentChat/, 'mute stays icon elsewhere');
 assert.doesNotMatch(profile, /pepito-profile-manage/, 'profile page removed manage stack');
 assert.match(profile, /panelParam|searchParams\.get\(['"]panel['"]\)/, 'profile panels open via ?panel=');

@@ -21,6 +21,8 @@ export type SiteNavItem = {
   icon: LucideIcon;
   /** Send guests through login when true */
   gate?: boolean;
+  /** Wallet / money destinations use the finance accent. */
+  tone?: 'finance';
   match?: (pathname: string) => boolean;
 };
 
@@ -83,6 +85,7 @@ const WALLET: SiteNavItem = {
   label: 'کیف پول',
   to: '/wallet',
   icon: Wallet,
+  tone: 'finance',
   match: (p) => p === '/wallet' || p.startsWith('/wallet/'),
 };
 
@@ -121,23 +124,24 @@ const LOGIN: SiteNavItem = {
 /**
  * Guest mobile dock — cart stays in the top-left cluster only (avoid duplicate
  * سبد in header + dock). Games lives on desktop/landing/footer, not this 4-slot bar.
+ * Order: primary (هم بازی) → browse (شاپ / پت) → ورود.
  */
 export const SITE_NAV_GUEST: SiteNavItem[] = [
-  SHOP,
   { ...PLAYMATE_CHATS, gate: true },
+  SHOP,
   { ...MY_PETS, gate: true },
   LOGIN,
 ];
 
 /**
  * Logged-in owner set (legacy default). Prefer `siteNavMobileForUser`.
- * Owner dock: شاپ / هم بازی / پت‌های من / کیف پول / پروفایل
+ * Owner dock: هم بازی / پت‌های من / شاپ / کیف پول / پروفایل
  * Games must not replace کیف پول or گفتگو/هم بازی (#325 regression).
  */
 export const SITE_NAV_AUTH: SiteNavItem[] = [
-  SHOP_AUTH,
   PLAYMATE_CHATS,
   MY_PETS,
+  SHOP_AUTH,
   WALLET,
   PROFILE,
 ];
@@ -172,18 +176,17 @@ export const SITE_NAV_DESKTOP_AUTH: SiteNavItem[] = withGamesAfterShop(
 export function siteNavMobileForRole(role?: UserRole | null): SiteNavItem[] {
   switch (role) {
     case 'vet':
-      // دامپزشک: بدون همبازی — پنل پزشک + گفتگو + کیف پول
-      return [SHOP_AUTH, VET_PANEL, CHATS, WALLET, PROFILE];
+      // دامپزشک: پنل (اصلی) → گفتگو → شاپ → کیف پول → پروفایل
+      return [VET_PANEL, CHATS, SHOP_AUTH, WALLET, PROFILE];
     case 'trainer':
-      return [SHOP_AUTH, TRAINER_PANEL, CHATS, WALLET, PROFILE];
+      return [TRAINER_PANEL, CHATS, SHOP_AUTH, WALLET, PROFILE];
     case 'pet_owner':
-      // صاحب پت: هم بازی + پت‌های من کنار هم (= /chats و /my-pets)، کیف پول در اسلات چهارم
-      return [SHOP_AUTH, PLAYMATE_CHATS, MY_PETS, WALLET, PROFILE];
+      // صاحب پت: هم بازی → پت‌های من → شاپ → کیف پول (مالی) → پروفایل
+      return [PLAYMATE_CHATS, MY_PETS, SHOP_AUTH, WALLET, PROFILE];
     case 'no_pet':
-      // بدون همبازی — گفتگو + پت‌های من + کیف پول
-      return [SHOP_AUTH, CHATS, MY_PETS, WALLET, PROFILE];
+      return [CHATS, MY_PETS, SHOP_AUTH, WALLET, PROFILE];
     default:
-      return [SHOP_AUTH, CHATS, MY_PETS, WALLET, PROFILE];
+      return [CHATS, MY_PETS, SHOP_AUTH, WALLET, PROFILE];
   }
 }
 

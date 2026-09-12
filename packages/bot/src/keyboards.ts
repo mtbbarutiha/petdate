@@ -698,21 +698,26 @@ function appendAccessRow(kb: Keyboard, telegramId?: string | number | null): Key
   return kb;
 }
 
-/** سکه / شاپ / دعوت / راهنما — مشترک همه نقش‌ها (بدون چت) */
-function appendCommonMenuRows(kb: Keyboard): Keyboard {
+/**
+ * مشترک همه نقش‌ها: مرور (شاپ/دعوت) → راهنما → مالی (سکه جدا از browse).
+ * extraFinance مثلاً «کسب درآمد» کنار سکه برای صاحب پت.
+ */
+function appendCommonMenuRows(kb: Keyboard, extraFinance?: string): Keyboard {
   const c = COMMON_MENU;
-  return kb
+  kb
     .row()
-    .text(c.coins)
-    .primary()
     .text(c.shop)
     .primary()
-    .row()
     .text(c.invite)
     .success()
+    .row()
     .text(c.support)
     .text(c.help)
-    .primary();
+    .primary()
+    .row()
+    .text(c.coins);
+  if (extraFinance) kb.text(extraFinance);
+  return kb;
 }
 
 export function vetMenuKeyboard(
@@ -728,11 +733,10 @@ export function vetMenuKeyboard(
     .row()
     .text(m.recentPatients)
     .primary()
-    .text(m.visitFee)
+    .text(m.profile)
     .primary()
     .row()
-    .text(m.profile)
-    .primary();
+    .text(m.visitFee);
   appendCommonMenuRows(kb);
   return appendAccessRow(kb.resized().persistent(), telegramId);
 }
@@ -762,12 +766,9 @@ export function petOwnerMenuKeyboard(
     .text(m.requestTrainer)
     .primary()
     .row()
-    .text(m.earn)
-    .primary()
-    .row()
     .text(acceptAdvice ? m.seekerAdviceOn : m.seekerAdviceOff)
     .primary();
-  appendCommonMenuRows(kb);
+  appendCommonMenuRows(kb, m.earn);
   return appendAccessRow(kb.resized().persistent(), telegramId);
 }
 
@@ -784,10 +785,10 @@ export function trainerMenuKeyboard(
     .row()
     .text(m.recentClients)
     .primary()
-    .text(m.uploadCredential)
+    .text(m.profile)
     .primary()
     .row()
-    .text(m.profile)
+    .text(m.uploadCredential)
     .primary();
   appendCommonMenuRows(kb);
   return appendAccessRow(kb.resized().persistent(), telegramId);
@@ -806,10 +807,10 @@ export function sitterMenuKeyboard(
     .row()
     .text(m.recentClients)
     .primary()
-    .text(m.uploadCredential)
+    .text(m.profile)
     .primary()
     .row()
-    .text(m.profile)
+    .text(m.uploadCredential)
     .primary();
   appendCommonMenuRows(kb);
   return appendAccessRow(kb.resized().persistent(), telegramId);
@@ -902,12 +903,12 @@ export function adminPanelKeyboard(): Keyboard {
     .text(m.avatarQueue)
     .primary()
     .row()
-    .text(m.vetList)
-    .primary()
+    .text(m.pendingPayments)
+    .danger()
     .row()
     .text(m.stats)
     .success()
-    .text(m.pendingPayments)
+    .text(m.vetList)
     .primary()
     .row()
     .text(m.back)
