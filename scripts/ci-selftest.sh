@@ -13,10 +13,11 @@ run() {
 }
 
 # Shared pure selftests
-echo "==> selftest: shared peer-profile + user-command-id + pet/order-public-id + gtm-contract + sanitize-roles + breed-search + photo-moderation + profile-avatar + error-catalog"
+echo "==> selftest: shared peer-profile + user-command-id + pet/order-public-id + gtm-contract + sanitize-roles + breed-search + photo-moderation + profile-avatar + profile-gap-fill + error-catalog"
 npx tsx "$ROOT/packages/shared/src/peer-profile.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/photo-moderation.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/profile-avatar.selftest.ts"
+npx tsx "$ROOT/packages/shared/src/profile-gap-fill.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/error-catalog.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/user-command-id.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/pet-public-id.selftest.ts"
@@ -256,7 +257,7 @@ run src/services/consult-idle-close.selftest.ts
 run src/db/pg-compat.selftest.ts
 
 # Bot guards (sticky keyboard + IPv4 Telegram HTTP) — no network / no DB
-echo "==> selftest: bot sticky + telegram-http + quick-connect-parse + nearby-radius + nearby-inline-list + pet-search-menu + invite-friends + urls"
+echo "==> selftest: bot sticky + telegram-http + quick-connect-parse + nearby-radius + nearby-inline-list + pet-search-menu + invite-friends + urls + profile-gap-fill"
 npx tsx "$ROOT/packages/bot/src/sticky-reply-keyboard.selftest.ts"
 npx tsx "$ROOT/packages/bot/src/telegram-http.selftest.ts"
 npx tsx "$ROOT/packages/bot/src/quick-connect-parse.selftest.ts"
@@ -269,6 +270,7 @@ npx tsx "$ROOT/packages/bot/src/handlers/pet-search-menu.selftest.ts"
 npx tsx "$ROOT/packages/bot/src/handlers/invite-friends.selftest.ts"
 npx tsx "$ROOT/packages/bot/src/roleMenuOrder.selftest.ts"
 npx tsx "$ROOT/packages/bot/src/handlers/help.selftest.ts"
+npx tsx "$ROOT/packages/bot/src/handlers/profile-gap-fill.selftest.ts"
 
 # SQLite cascade (uses temp/local DB via API helpers — not production path)
 run src/services/user-delete-cascade.selftest.ts

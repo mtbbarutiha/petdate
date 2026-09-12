@@ -1256,13 +1256,11 @@ export function profileActionsKeyboard(
     .text(contactsLabel, 'profile:contacts')
     .row();
 
-  if (complete) {
-    kb.text('📝 ویرایش پروفایل', 'profile:edit').primary();
-    kb.text('📋 تکمیل پروفایل', 'profile:edit:all').primary().row();
-  } else {
-    kb.text('📝 ویرایش پروفایل', 'profile:edit').primary();
-    kb.text('📋 تکمیل پروفایل', 'profile:edit').success().row();
-  }
+  kb.text('📝 ویرایش پروفایل', 'profile:edit').primary();
+  const completeCta = kb.text('📋 تکمیل پروفایل', 'profile:edit:all');
+  if (complete) completeCta.primary();
+  else completeCta.success();
+  kb.row();
 
   kb.text('🔄 تعاملات', 'profile:interactions').primary();
   if (verificationStatus === 'verified') {
@@ -1319,7 +1317,7 @@ export function profileEditSectionsKeyboard(opts?: {
     kb.text('📄 آپلود مدرک', 'profile:vet_credential').primary().row();
   }
   if (opts?.incomplete) {
-    kb.text('✨ تکمیل همه', 'profile:edit:all').success().row();
+    kb.text('✨ تکمیل بخش‌های خالی', 'profile:edit:all').success().row();
   }
   kb.text('↩️ بازگشت به پروفایل', 'profile:edit:back').primary();
   return kb;

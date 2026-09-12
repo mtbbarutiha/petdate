@@ -4,6 +4,7 @@ import {
   BRAND,
   ROLE_CONFIRM_LABEL,
   USER_ROLE_LABELS,
+  isProfileComplete,
   normalizeRoles,
   parseReferralRef,
   parseUserIdFromCommand,
@@ -35,7 +36,7 @@ import { parseWebLoginStartPayload, parseWebPendingLoginPayload } from '../teleg
 import { webLinkHint } from '../urls';
 import { displayName, getCtxUser, menuKeyboardFor } from './helpers';
 import { resumeOwnerChatOnStart } from './owner-chat';
-import { showPublicUserById, startProfileWizard } from './profile';
+import { showPublicUserById, startProfileGapFill, startProfileWizard } from './profile';
 
 export {
   displayName,
@@ -436,16 +437,9 @@ export async function sendWelcomeBack(ctx: Context, user: User, name: string): P
   const active = primaryRole(user.roles, user.role);
   const isOwner = active === 'pet_owner';
   const isVet = active === 'vet';
-  const profileDone = Boolean(
-    user.name &&
-      user.age &&
-      user.gender &&
-      user.country &&
-      user.city &&
-      (user.country !== 'ایران' || user.province)
-  );
+  const profileDone = isProfileComplete(user);
   const intro = !profileDone
-    ? 'پروفایلت هنوز کامل نیست — الان می‌تونی تکمیل کنی یا «⏭ فعلاً رد کن» بزنی.'
+    ? 'پروفایلت هنوز کامل نیست — فقط بخش‌های خالی رو جداگانه می‌پرسیم، یا «⏭ فعلاً رد کن» بزن.'
     : isOwner
       ? 'از منوی زیر می‌تونی همبازی پیدا کنی، پت‌هات رو مدیریت کنی و از خدمات استفاده کنی.'
       : isVet
@@ -478,7 +472,7 @@ export async function sendWelcomeBack(ctx: Context, user: User, name: string): P
     // اول کیبورد اصلی با «📋 منو» را بفرست تا کیبورد قدیمی تلگرام عوض شود،
     // بعد ویزارد پروفایل شروع می‌شود (ویزارد هم دکمه منو دارد).
     await ctx.reply(caption, { reply_markup: menuKeyboardFor(ctx, user) });
-    await startProfileWizard(ctx);
+    await startProfileGapFill(ctx);
     return;
   }
 
