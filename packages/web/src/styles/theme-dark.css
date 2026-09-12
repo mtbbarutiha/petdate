@@ -648,6 +648,149 @@ html[data-theme='dark'] .tg-emoji-picker-tabs {
   border-bottom-color: var(--tg-line);
 }
 
+/*
+ * Chat profile tools + sheets (پروفایل پت / پروفایل صاحب پت).
+ * Toolbar strip was hardcoded near-white; sheets portal to body so --tg-*
+ * from .tg-chat does not apply — prefer --pd-* surfaces + ink.
+ */
+html[data-theme='dark'] .tg-vet-tools,
+html[data-theme='dark'] .tg-vet-doctor-toolbar {
+  background: color-mix(in srgb, var(--pd-surface-muted) 96%, transparent) !important;
+  border-top-color: var(--pd-border) !important;
+}
+html[data-theme='dark'] .tg-vet-tool-btn {
+  background: var(--pd-surface-2);
+  border-color: var(--pd-border);
+  color: var(--pd-ink);
+}
+html[data-theme='dark'] .tg-vet-tool-btn:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--pepito-mint) 40%, var(--pd-border));
+  background: color-mix(in srgb, var(--pepito-mint) 12%, var(--pd-surface-2));
+}
+html[data-theme='dark'] .tg-vet-tool-btn--rx {
+  background: color-mix(in srgb, var(--pepito-mint) 16%, var(--pd-surface-2));
+  border-color: color-mix(in srgb, var(--pepito-mint) 36%, var(--pd-border));
+  color: #9aedd8;
+}
+html[data-theme='dark'] .tg-vet-sheet-overlay {
+  background: var(--pd-overlay);
+}
+html[data-theme='dark'] .tg-vet-sheet {
+  background: var(--pd-surface);
+  color: var(--pd-ink);
+  box-shadow: var(--pd-shadow);
+}
+html[data-theme='dark'] .tg-vet-sheet-head {
+  border-bottom-color: var(--pd-border);
+}
+html[data-theme='dark'] .tg-vet-sheet-head h2 {
+  color: var(--pd-ink);
+}
+html[data-theme='dark'] .tg-vet-sheet-close {
+  background: var(--pd-surface-2);
+  color: var(--pd-ink);
+}
+html[data-theme='dark'] .tg-vet-sheet-close:hover {
+  background: color-mix(in srgb, var(--pepito-mint) 14%, var(--pd-surface-2));
+  color: #9aedd8;
+}
+html[data-theme='dark'] .tg-vet-sheet-loading,
+html[data-theme='dark'] .tg-vet-sheet-hint {
+  color: var(--pd-muted);
+}
+html[data-theme='dark'] .tg-vet-sheet-kicker {
+  color: var(--pd-ink);
+}
+html[data-theme='dark'] .tg-vet-chip {
+  background: var(--pd-surface-2);
+  border-color: var(--pd-border);
+  color: var(--pd-ink);
+}
+html[data-theme='dark'] .tg-vet-chip small {
+  color: var(--pd-muted);
+}
+html[data-theme='dark'] .tg-vet-chip.is-active,
+html[data-theme='dark'] .tg-vet-chip--med:active {
+  background: color-mix(in srgb, var(--pepito-mint) 14%, var(--pd-surface-2));
+  border-color: color-mix(in srgb, var(--pepito-mint) 40%, var(--pd-border));
+}
+html[data-theme='dark'] .tg-vet-field > span {
+  color: var(--pd-ink);
+}
+html[data-theme='dark'] .tg-vet-field textarea {
+  background: var(--pd-surface-2);
+  border-color: var(--pd-border);
+  color: var(--pd-ink);
+}
+html[data-theme='dark'] .tg-vet-field textarea:focus {
+  background: var(--pd-surface-2);
+  border-color: color-mix(in srgb, var(--pepito-sky) 50%, var(--pd-border));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--pepito-sky) 22%, transparent);
+}
+html[data-theme='dark'] .tg-vet-sheet-actions {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--pd-surface) 0%, transparent),
+    var(--pd-surface) 28%
+  );
+}
+html[data-theme='dark'] .tg-vet-action-secondary {
+  background: var(--pd-surface-2);
+  color: var(--pd-ink);
+  border: 1px solid var(--pd-border);
+}
+html[data-theme='dark'] .tg-vet-medical h3,
+html[data-theme='dark'] .tg-vet-pet-card h3,
+html[data-theme='dark'] .tg-vet-entries h4 {
+  color: var(--pd-ink);
+}
+html[data-theme='dark'] .tg-vet-medical dl > div,
+html[data-theme='dark'] .tg-vet-pet-card dl > div {
+  background: var(--pd-surface-2);
+  border-color: var(--pd-border);
+}
+html[data-theme='dark'] .tg-vet-medical dt,
+html[data-theme='dark'] .tg-vet-pet-card dt {
+  color: var(--pd-muted);
+}
+html[data-theme='dark'] .tg-vet-medical dd,
+html[data-theme='dark'] .tg-vet-pet-card dd {
+  color: var(--pd-ink);
+}
+html[data-theme='dark'] .tg-vet-entries li {
+  background: var(--pd-surface-2);
+  border-color: var(--pd-border);
+  color: var(--pd-ink);
+}
+html[data-theme='dark'] .tg-vet-entries small {
+  color: var(--pd-muted);
+}
+html[data-theme='dark'] .tg-info-card {
+  background: var(--pd-surface);
+  color: var(--pd-ink);
+  border-color: var(--pd-border);
+  box-shadow: var(--pd-shadow);
+}
+html[data-theme='dark'] .tg-info-card h3,
+html[data-theme='dark'] .tg-info-owner-name,
+html[data-theme='dark'] .tg-info-card ul {
+  color: var(--pd-ink);
+}
+html[data-theme='dark'] .tg-info-close {
+  background: var(--pd-surface-2);
+  color: var(--pd-ink);
+}
+html[data-theme='dark'] .tg-info-owner-id-label,
+html[data-theme='dark'] .tg-info-bio {
+  color: var(--pd-muted);
+}
+html[data-theme='dark'] .tg-info-owner-cover {
+  background-color: var(--pd-surface-muted);
+}
+html[data-theme='dark'] .tg-info-owner-cover--empty {
+  color: var(--pd-muted);
+}
+
 html[data-theme='dark'] .tg-ended-bar {
   background: color-mix(in srgb, var(--tg-surface) 96%, transparent) !important;
   border-top-color: var(--tg-line) !important;

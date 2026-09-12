@@ -1739,8 +1739,8 @@ html.tg-chat-open body {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
-  background: rgba(247, 249, 252, 0.97);
-  border-top: 1px solid rgba(25, 6, 61, 0.06);
+  background: color-mix(in srgb, var(--pd-surface-muted, #f1f0f6) 97%, transparent);
+  border-top: 1px solid var(--pd-border, rgba(25, 6, 61, 0.06));
 }
 .tg-vet-tools::-webkit-scrollbar,
 .tg-vet-doctor-toolbar::-webkit-scrollbar {
@@ -1755,9 +1755,9 @@ html.tg-chat-open body {
   min-height: 40px;
   padding: 0.45rem 0.8rem;
   border-radius: 12px;
-  border: 1px solid rgba(25, 6, 61, 0.08);
-  background: var(--tg-in);
-  color: var(--pepito-dark, #19063d);
+  border: 1px solid var(--pd-border, rgba(25, 6, 61, 0.08));
+  background: var(--pd-surface, var(--tg-in, #ffffff));
+  color: var(--pd-ink, var(--pepito-dark, #19063d));
   font-size: 0.82rem;
   font-weight: 700;
   cursor: pointer;
@@ -1786,7 +1786,7 @@ html.tg-chat-open body {
   inset: 0;
   /* Above chat header/menu (~70), foot (~46), mobile dock (~120), modals (~200) */
   z-index: 400;
-  background: rgba(15, 23, 42, 0.5);
+  background: var(--pd-overlay, rgba(15, 23, 42, 0.5));
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -1803,9 +1803,11 @@ html.tg-chat-open body {
   max-height: min(92dvh, calc(100dvh - var(--tg-kb-inset, 0px) - 24px));
   display: flex;
   flex-direction: column;
-  background: var(--tg-in);
+  /* Portaled to body — use --pd-* (not .tg-chat-scoped --tg-in) */
+  background: var(--pd-surface, var(--tg-in, #ffffff));
+  color: var(--pd-ink, var(--pepito-dark, #19063d));
   border-radius: 22px 22px 0 0;
-  box-shadow: 0 -14px 44px rgba(25, 6, 61, 0.2);
+  box-shadow: var(--pd-shadow, 0 -14px 44px rgba(25, 6, 61, 0.2));
   overflow: hidden;
   position: relative;
   z-index: 1;
@@ -1817,21 +1819,22 @@ html.tg-chat-open body {
   justify-content: space-between;
   gap: 0.75rem;
   padding: 0.95rem 1rem 0.7rem;
-  border-bottom: 1px solid rgba(25, 6, 61, 0.07);
+  border-bottom: 1px solid var(--pd-border, rgba(25, 6, 61, 0.07));
   flex: 0 0 auto;
 }
 .tg-vet-sheet-head h2 {
   margin: 0;
   font-size: 1.05rem;
   font-weight: 800;
-  color: var(--pepito-dark, #19063d);
+  color: var(--pd-ink, var(--pepito-dark, #19063d));
 }
 .tg-vet-sheet-close {
   width: 40px;
   height: 40px;
   border: 0;
   border-radius: 12px;
-  background: rgba(25, 6, 61, 0.06);
+  background: var(--pd-surface-muted, rgba(25, 6, 61, 0.06));
+  color: var(--pd-ink, var(--pepito-dark, #19063d));
   display: grid;
   place-items: center;
   cursor: pointer;
@@ -1850,21 +1853,21 @@ html.tg-chat-open body {
   justify-content: center;
   gap: 0.5rem;
   min-height: 120px;
-  color: var(--pepito-muted, #6b6280);
+  color: var(--pd-muted, var(--pepito-muted, #6b6280));
 }
 .tg-vet-sheet-hint,
 .tg-vet-sheet-kicker {
   margin: 0;
   font-size: 0.88rem;
   line-height: 1.55;
-  color: var(--pepito-muted, #6b6280);
+  color: var(--pd-muted, var(--pepito-muted, #6b6280));
 }
 .tg-vet-sheet-kicker {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem;
-  color: var(--pepito-dark, #19063d);
+  color: var(--pd-ink, var(--pepito-dark, #19063d));
   font-weight: 700;
 }
 .tg-vet-sheet-error {
@@ -1898,9 +1901,9 @@ html.tg-chat-open body {
   min-height: 44px;
   padding: 0.65rem 0.75rem;
   border-radius: 12px;
-  border: 1px solid rgba(25, 6, 61, 0.08);
-  background: #f7f8fb;
-  color: var(--pepito-dark, #19063d);
+  border: 1px solid var(--pd-border, rgba(25, 6, 61, 0.08));
+  background: var(--pd-surface-2, #faf9fc);
+  color: var(--pd-ink, var(--pepito-dark, #19063d));
   font-weight: 700;
   font-size: 0.86rem;
   text-align: start;
@@ -1910,7 +1913,7 @@ html.tg-chat-open body {
 }
 .tg-vet-chip small {
   font-weight: 500;
-  color: var(--pepito-muted, #6b6280);
+  color: var(--pd-muted, var(--pepito-muted, #6b6280));
   font-size: 0.72rem;
 }
 .tg-vet-chip.is-active,
@@ -1935,25 +1938,25 @@ html.tg-chat-open body {
 .tg-vet-field > span {
   font-size: 0.82rem;
   font-weight: 700;
-  color: var(--pepito-dark, #19063d);
+  color: var(--pd-ink, var(--pepito-dark, #19063d));
 }
 .tg-vet-field textarea {
   width: 100%;
   min-height: 8.5rem;
   resize: vertical;
   border-radius: 14px;
-  border: 1px solid rgba(25, 6, 61, 0.1);
-  background: #f7f8fb;
+  border: 1px solid var(--pd-border, rgba(25, 6, 61, 0.1));
+  background: var(--pd-surface-2, #faf9fc);
   padding: 0.75rem 0.85rem;
   font: inherit;
   font-size: 16px; /* avoid iOS zoom */
   line-height: 1.5;
-  color: var(--pepito-dark, #19063d);
+  color: var(--pd-ink, var(--pepito-dark, #19063d));
 }
 .tg-vet-field textarea:focus {
   outline: none;
   border-color: rgba(11, 165, 242, 0.45);
-  background: var(--tg-in);
+  background: var(--pd-surface, var(--tg-in, #ffffff));
   box-shadow: 0 0 0 3px rgba(11, 165, 242, 0.14);
 }
 .tg-vet-sheet-actions {
@@ -1963,7 +1966,11 @@ html.tg-chat-open body {
   position: sticky;
   bottom: 0;
   padding-top: 0.35rem;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0), var(--tg-in) 28%);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--pd-surface, #fff) 0%, transparent),
+    var(--pd-surface, var(--tg-in, #ffffff)) 28%
+  );
 }
 .tg-vet-action-primary,
 .tg-vet-action-secondary {
@@ -1989,14 +1996,15 @@ html.tg-chat-open body {
   cursor: not-allowed;
 }
 .tg-vet-action-secondary {
-  background: rgba(25, 6, 61, 0.06);
-  color: var(--pepito-dark, #19063d);
+  background: var(--pd-surface-muted, rgba(25, 6, 61, 0.06));
+  color: var(--pd-ink, var(--pepito-dark, #19063d));
 }
 .tg-vet-medical h3,
 .tg-vet-pet-card h3,
 .tg-vet-entries h4 {
   margin: 0 0 0.35rem;
   font-size: 1rem;
+  color: var(--pd-ink, var(--pepito-dark, #19063d));
 }
 .tg-vet-medical dl,
 .tg-vet-pet-card dl {
@@ -2010,13 +2018,14 @@ html.tg-chat-open body {
   gap: 0.15rem;
   padding: 0.55rem 0.65rem;
   border-radius: 12px;
-  background: #f7f8fb;
+  background: var(--pd-surface-2, #faf9fc);
+  border: 1px solid var(--pd-border, transparent);
 }
 .tg-vet-medical dt,
 .tg-vet-pet-card dt {
   font-size: 0.72rem;
   font-weight: 700;
-  color: var(--pepito-muted, #6b6280);
+  color: var(--pd-muted, var(--pepito-muted, #6b6280));
 }
 .tg-vet-medical dd,
 .tg-vet-pet-card dd {
@@ -2024,6 +2033,7 @@ html.tg-chat-open body {
   font-size: 0.9rem;
   line-height: 1.45;
   white-space: pre-wrap;
+  color: var(--pd-ink, var(--pepito-dark, #19063d));
 }
 .tg-vet-entries ul {
   list-style: none;
@@ -2035,13 +2045,14 @@ html.tg-chat-open body {
 .tg-vet-entries li {
   padding: 0.65rem 0.75rem;
   border-radius: 12px;
-  border: 1px solid rgba(25, 6, 61, 0.07);
-  background: var(--tg-in);
+  border: 1px solid var(--pd-border, rgba(25, 6, 61, 0.07));
+  background: var(--pd-surface-2, var(--tg-in, #ffffff));
+  color: var(--pd-ink, var(--pepito-dark, #19063d));
 }
 .tg-vet-entries small {
   display: block;
   margin-bottom: 0.25rem;
-  color: var(--pepito-muted, #6b6280);
+  color: var(--pd-muted, var(--pepito-muted, #6b6280));
 }
 .tg-vet-entries p {
   margin: 0;
