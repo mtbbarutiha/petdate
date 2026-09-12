@@ -23,6 +23,7 @@ npx tsx "$ROOT/packages/shared/src/order-public-id.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/entity-public-id.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/gtm-contract.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/referral.selftest.ts"
+npx tsx "$ROOT/packages/shared/src/fanout-reject.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/pet-slug.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/sanitize-roles.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/catalog-breed-search.selftest.ts"
@@ -32,6 +33,9 @@ npx tsx "$ROOT/packages/web/src/components/faceVerifyRewardToast.selftest.ts"
 
 echo "==> selftest: web inbox title (no public id)"
 npx tsx "$ROOT/packages/web/src/lib/inboxTitle.selftest.ts"
+
+echo "==> selftest: web fan-out reject hidden from requester"
+npx tsx "$ROOT/packages/web/src/lib/playdateMap.fanoutReject.selftest.ts"
 
 echo "==> selftest: web inbox consult agent avatars"
 npx tsx "$ROOT/packages/web/src/lib/inboxConversations.avatars.selftest.ts"
@@ -284,6 +288,7 @@ run src/routes/playdates-auth.selftest.ts
 run src/routes/users-staff-auth.selftest.ts
 run src/routes/consultations-quick-connect-auth.selftest.ts
 run src/services/playdate-fee.selftest.ts
+run src/services/fanout-reject-notify.selftest.ts
 run src/site-analytics.selftest.ts
 run src/referral.selftest.ts
 

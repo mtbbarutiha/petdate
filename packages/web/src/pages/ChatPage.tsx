@@ -78,7 +78,7 @@ import {
 } from '../lib/api';
 import type { PlaydateChatMediaKind, PlaydateChatMessage } from '@petdate/shared';
 import { PLAYDATE_REQUEST_TTL_MS, USER_GENDER_LABELS, isPendingRequestExpired, makeUserPublicId, petPublicIdOf, userPublicIdOf } from '@petdate/shared';
-import { playdateToMatchRequest } from '../lib/playdateMap';
+import { playdateToMatchRequest, shouldShowOutgoingRejectToRequester } from '../lib/playdateMap';
 import { subscribeIncomingRefresh } from '../lib/liveIncoming';
 import {
   acceptInboxItem,
@@ -808,7 +808,11 @@ export function ChatPage() {
             } else if (req.status === 'expired') {
               setMessages([systemMessage('درخواست همبازی منقضی شد (مهلت ۲ دقیقه).')]);
             } else if (req.status === 'rejected') {
-              setMessages([systemMessage('درخواست همبازی رد شد.')]);
+              if (shouldShowOutgoingRejectToRequester(mapped)) {
+                setMessages([systemMessage('درخواست همبازی رد شد.')]);
+              } else {
+                navigate('/chats', { replace: true });
+              }
             }
           });
         }
@@ -956,9 +960,13 @@ export function ChatPage() {
     } else if (match.expired) {
       setMessages([systemMessage('این درخواست منقضی شده است (مهلت ۲ دقیقه).')]);
     } else if (match.status === 'rejected') {
-      setMessages([systemMessage('این درخواست رد شده است.')]);
+      if (shouldShowOutgoingRejectToRequester(match)) {
+        setMessages([systemMessage('این درخواست رد شده است.')]);
+      } else {
+        navigate('/chats', { replace: true });
+      }
     }
-  }, [match?.id, match?.status, ended]);
+  }, [match?.id, match?.status, ended, navigate]);
 
   // While pending, poll status so both sides unlock when accepted (bot parity).
   // Live socket already pushes thread/status — skip ajax while connected.
@@ -986,7 +994,11 @@ export function ChatPage() {
         } else if (req.status === 'expired') {
           setMessages([systemMessage('درخواست همبازی منقضی شد (مهلت ۲ دقیقه).')]);
         } else if (req.status === 'rejected') {
-          setMessages([systemMessage('درخواست همبازی رد شد.')]);
+          if (shouldShowOutgoingRejectToRequester(mapped)) {
+            setMessages([systemMessage('درخواست همبازی رد شد.')]);
+          } else {
+            navigate('/chats', { replace: true });
+          }
         }
       } catch {
         /* ignore */
@@ -999,7 +1011,7 @@ export function ChatPage() {
       cancelled = true;
       window.clearInterval(timer);
     };
-  }, [match?.id, match?.status, myUserId, softReloadConversations, wsConnected]);
+  }, [match?.id, match?.status, myUserId, softReloadConversations, wsConnected, navigate]);
 
   useEffect(() => {
     if (!match || !myUserId || ended || match.status !== 'accepted') return;

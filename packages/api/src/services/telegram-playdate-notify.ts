@@ -382,3 +382,17 @@ export async function notifyPlaydateRequestTelegram(opts: {
     reply_markup,
   });
 }
+
+/** Requester DM when a single-recipient playdate is rejected (never for fan-out). */
+export async function notifyPlaydateRejectedTelegram(opts: {
+  toTelegramId: string;
+  text: string;
+}): Promise<boolean> {
+  if (!infra.telegram.botToken || !opts.toTelegramId) return false;
+  const tgId = String(opts.toTelegramId).trim();
+  if (!tgId || /^(fake_|demo_)/i.test(tgId)) return false;
+  return telegramCall('sendMessage', {
+    chat_id: tgId,
+    text: opts.text,
+  });
+}

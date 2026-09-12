@@ -181,3 +181,17 @@ export async function notifyVetQuickConsultTelegram(opts: {
     reply_markup,
   });
 }
+
+/** Patient DM when a single-recipient consult is rejected (never for fan-out). */
+export async function notifyConsultRejectedTelegram(opts: {
+  toTelegramId: string;
+  text: string;
+}): Promise<boolean> {
+  const tgId = normalizeTelegramId(opts.toTelegramId);
+  if (!infra.telegram.botToken || !tgId) return false;
+  if (/^(fake_|demo_)/i.test(tgId)) return false;
+  return telegramCall('sendMessage', {
+    chat_id: tgId,
+    text: opts.text,
+  });
+}

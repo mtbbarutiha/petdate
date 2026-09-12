@@ -23,6 +23,10 @@ import {
   renderPrescriptionHtml,
 } from '../services/prescription-html';
 import { notifyVetQuickConsultTelegram } from '../services/telegram-vet-consult-notify';
+import {
+  maybeNotifyConsultRequesterRejected,
+  planConsultRejectNotify,
+} from '../services/fanout-reject-notify';
 import { startVetChatFromApi } from '../services/telegram-vet-chat-start';
 import { clearBotVetChatSessions } from '../services/bot-vet-chat-session';
 import { AI_TRAINER_DISPLAY_NAME } from '../services/ai-consult';
@@ -585,7 +589,10 @@ consultationsRouter.get('/:id', (req, res) => {
     res.status(404).json({ error: 'مشاوره پیدا نشد' });
     return;
   }
-  res.json(decorateAiConsultDisplay(consultation));
+  res.json({
+    ...decorateAiConsultDisplay(consultation),
+    fanoutRecipientCount: dbService.countConsultFanoutRecipients(consultation),
+  });
 });
 
 consultationsRouter.post('/', (req, res) => {
@@ -671,10 +678,21 @@ consultationsRouter.patch('/:id/status', async (req, res) => {
     }
   }
 
-  notifyVetThread(updated.id, [updated.vetUserId, updated.patientUserId], {
-    status: updated.status,
+  const participants = [updated.vetUserId, updated.patientUserId];
+  const becameCancelled =
+    status === 'cancelled' && previous?.status === 'requested';
+  const rejectPlan = becameCancelled ? planConsultRejectNotify(updated) : null;
+  notifyVetThread(updated.id, participants, { status: updated.status }, {
+    inboxUserIds: rejectPlan?.inboxUserIds ?? participants,
   });
-  res.json(updated);
+  if (becameCancelled && rejectPlan?.notifyRequester) {
+    maybeNotifyConsultRequesterRejected(updated);
+  }
+  res.json({
+    ...updated,
+    fanoutRecipientCount: rejectPlan?.recipientCount,
+    notifyRequesterOnReject: rejectPlan?.notifyRequester,
+  });
 });
 
 function requireConsultParticipant(consultId: number, userId: number) {
@@ -784,9 +802,22 @@ consultationsRouter.post('/:id/reject', (req, res) => {
   }
   const updated = dbService.updateVetConsultationStatus(id, 'cancelled');
   if (updated) {
-    notifyVetThread(updated.id, [updated.vetUserId, updated.patientUserId], {
-      status: 'cancelled',
+    const rejectPlan = planConsultRejectNotify(updated);
+    notifyVetThread(
+      updated.id,
+      [updated.vetUserId, updated.patientUserId],
+      { status: 'cancelled' },
+      { inboxUserIds: rejectPlan.inboxUserIds },
+    );
+    if (rejectPlan.notifyRequester) {
+      maybeNotifyConsultRequesterRejected(updated);
+    }
+    res.json({
+      ...updated,
+      fanoutRecipientCount: rejectPlan.recipientCount,
+      notifyRequesterOnReject: rejectPlan.notifyRequester,
     });
+    return;
   }
   res.json(updated);
 });
