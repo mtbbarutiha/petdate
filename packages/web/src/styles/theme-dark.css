@@ -897,16 +897,18 @@ html[data-theme='dark'] .admin-app .admin-dash-kpi--sky .admin-dash-kpi-icon {
   color: #7dd3fc;
 }
 
-html[data-theme='dark'] .admin-nav-toggle {
-  background: var(--admin-surface);
-  color: #f4f1ff;
-  border-color: #3a3f55;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
+html[data-theme='dark'] .admin-app .admin-nav-toggle {
+  background: color-mix(in srgb, #fff 6%, var(--admin-surface));
+  color: var(--admin-muted);
+  border-color: color-mix(in srgb, #fff 10%, var(--admin-border));
+  box-shadow: none;
 }
-html[data-theme='dark'] .admin-nav-toggle.is-open {
-  background: #f4f1ff;
-  color: #14151c;
-  border-color: #f4f1ff;
+html[data-theme='dark'] .admin-app .admin-nav-toggle:hover,
+html[data-theme='dark'] .admin-app .admin-nav-toggle:focus-visible,
+html[data-theme='dark'] .admin-app .admin-nav-toggle.is-open {
+  background: color-mix(in srgb, #fff 10%, var(--admin-surface));
+  color: var(--admin-ink);
+  border-color: var(--admin-border);
 }
 
 html[data-theme='dark'] .admin-app .admin-icon-btn--danger {
