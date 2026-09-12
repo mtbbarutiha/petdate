@@ -56,7 +56,7 @@ assert.match(
   /rel="preload"[^>]+href="\/fonts\/Vazirmatn-Variable\.woff2"[^>]+as="font"/,
   'preload the same-origin UI font'
 );
-assert.match(indexHtml, /web-perf-v24-vazirmatn/, 'deploy marker bumped so SW/HTML cache misses');
+assert.match(indexHtml, /web-perf-v25-short-cards/, 'deploy marker bumped so SW/HTML cache misses');
 assert.match(indexHtml, /\.pepito-faq-item,\s*\.pepito-help-card/, 'critical CSS covers FAQ/help cards');
 assert.match(indexHtml, /html\.theme-light \.pepito-faq-item/, 'critical CSS has light FAQ overrides');
 
@@ -129,5 +129,17 @@ assert.doesNotMatch(
   'hydrated --pepito-hero-h must not over-reserve 100svh'
 );
 assert.doesNotMatch(welcome, /animation:\s*pepito-rise/, 'hero-inner no longer uses pepito-rise');
+
+assert.match(pepitoCss, /\.pepito-review-img-frame \{[\s\S]*?aspect-ratio:\s*4\s*\/\s*5/, 'review photos use short 4:5 crop');
+assert.match(pepitoCss, /\.pepito-review-img-frame \{[\s\S]*?max-height:\s*11\.25rem/, 'review photo frame is height-capped');
+assert.match(pepitoCss, /\.pepito-member-photo \{[\s\S]*?aspect-ratio:\s*4\s*\/\s*5/, 'team photos use short 4:5 crop');
+assert.match(pepitoCss, /\.pepito-member-photo \{[\s\S]*?max-height:\s*11\.25rem/, 'team photo frame is height-capped');
+const reviewImgBlock = pepitoCss.match(/\.pepito-review-img img \{[^}]+\}/)?.[0] || '';
+assert.match(reviewImgBlock, /object-fit:\s*cover/, 'review imgs cover the short frame');
+assert.doesNotMatch(reviewImgBlock, /aspect-ratio:\s*900/, 'review imgs must not keep the 3:2 box');
+const memberImgBlock = pepitoCss.match(/\.pepito-member img \{[^}]+\}/)?.[0] || '';
+assert.match(memberImgBlock, /object-fit:\s*cover/, 'team imgs cover the short frame');
+assert.doesNotMatch(memberImgBlock, /aspect-ratio:\s*600/, 'team imgs must not keep the 6:7 poster crop');
+assert.match(below, /width=\{400\} height=\{500\}/, 'below-fold photo attrs match 4:5 reserve');
 
 console.log('webPerf.selftest: ok');
