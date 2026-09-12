@@ -13,6 +13,7 @@ export * from './admin-notifications';
 export * from './gtm-contract';
 export * from './team-agents';
 export * from './fanout-reject';
+export * from './help';
 
 import type {
   OnboardingStatus,

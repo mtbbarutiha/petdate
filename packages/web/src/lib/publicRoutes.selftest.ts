@@ -139,6 +139,10 @@ assert.match(welcome, /id="faq"/, 'welcome FAQ section kept for desktop');
 assert.match(welcome, /pepito-faq-section/, 'welcome FAQ marked for mobile hide');
 assert.match(welcome, /pepito-nav-faq/, 'welcome FAQ nav marked for mobile hide');
 assert.match(app, /path="faq"\s+element=\{<FaqPage/, 'App keeps /faq route for deep links');
+assert.match(app, /path="help"\s+element=\{<FaqPage/, 'App aliases /help to the same help/FAQ page');
+assert.match(guard, /PUBLIC_EXACT[\s\S]*\/help/, 'AuthGuard treats /help as public');
+assert.match(faq, /siteHelpSections|siteRoleGuides/, 'FAQ page renders shared help sections');
+assert.match(faq, /<Link to="\/games"/, 'help page links to games');
 const pepitoCss = readFileSync(join(webSrc, 'styles/pepito.css'), 'utf8');
 assert.match(
   pepitoCss,

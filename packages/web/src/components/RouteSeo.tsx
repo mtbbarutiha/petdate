@@ -29,11 +29,13 @@ function metaForPath(pathname: string, role?: ReturnType<typeof primaryRole>, la
       canonicalPath: '/',
     };
   }
-  if (p === '/faq') {
+  if (p === '/faq' || p === '/help') {
     return {
-      title: SEO.titleTemplate('سؤالات متداول پت‌دیت'),
+      title: SEO.titleTemplate(lang === 'en' ? 'Help & FAQ' : 'راهنما و سؤالات متداول پت‌دیت'),
       description:
-        'پاسخ پرسش‌های پرتکرار درباره همبازی پت، پت‌شاپ، پذیرش حیوان خانگی، مشاوره دامپزشک آنلاین و ورود با OTP در پت‌دیت.',
+        lang === 'en'
+          ? 'Help for every PetDate role and section — playmates, wallet, shop, verification, diary, consults, games — plus FAQ. Same copy as the Telegram bot.'
+          : 'راهنمای همه نقش‌ها و بخش‌های پت‌دیت — همبازی، کیف پول، شاپ، احراز، دفتر خاطرات، مشاوره، بازی‌ها — به‌علاوه سؤالات متداول. همان متن ربات تلگرام.',
       canonicalPath: '/faq',
     };
   }

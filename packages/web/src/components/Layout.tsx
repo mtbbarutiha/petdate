@@ -12,6 +12,7 @@ import {
   Stethoscope,
   UserRound,
   LifeBuoy,
+  CircleHelp,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { primaryRole, type UserRole } from '@petdate/shared';
@@ -37,6 +38,7 @@ const OWNER_NAV: NavDef[] = [
   { to: '/trainer-consult', icon: GraduationCap, labelKey: 'nav.findTrainer' },
   { to: '/shop', icon: ShoppingBag, labelKey: 'nav.petShop' },
   { to: '/support', icon: LifeBuoy, labelKey: 'nav.support' },
+  { to: '/faq', icon: CircleHelp, labelKey: 'nav.faq' },
 ];
 
 const VET_NAV: NavDef[] = [
@@ -47,6 +49,7 @@ const VET_NAV: NavDef[] = [
   { to: '/games', icon: Gamepad2, labelKey: 'nav.games' },
   { to: '/profile', icon: UserRound, labelKey: 'nav.profile' },
   { to: '/support', icon: LifeBuoy, labelKey: 'nav.support' },
+  { to: '/faq', icon: CircleHelp, labelKey: 'nav.faq' },
 ];
 
 const TRAINER_NAV: NavDef[] = [
@@ -57,6 +60,7 @@ const TRAINER_NAV: NavDef[] = [
   { to: '/games', icon: Gamepad2, labelKey: 'nav.games' },
   { to: '/profile', icon: UserRound, labelKey: 'nav.profile' },
   { to: '/support', icon: LifeBuoy, labelKey: 'nav.support' },
+  { to: '/faq', icon: CircleHelp, labelKey: 'nav.faq' },
 ];
 
 const DEFAULT_NAV: NavDef[] = [
@@ -67,6 +71,7 @@ const DEFAULT_NAV: NavDef[] = [
   { to: '/games', icon: Gamepad2, labelKey: 'nav.games' },
   { to: '/profile', icon: UserRound, labelKey: 'nav.profile' },
   { to: '/support', icon: LifeBuoy, labelKey: 'nav.support' },
+  { to: '/faq', icon: CircleHelp, labelKey: 'nav.faq' },
 ];
 
 function navForRole(role?: UserRole): NavDef[] {

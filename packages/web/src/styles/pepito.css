@@ -2375,6 +2375,140 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   flex: 0 0 auto;
 }
 
+.pepito-help-page {
+  max-width: 56rem;
+}
+.pepito-help-toc {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.45rem 0.55rem;
+  margin: 0 0 1.1rem;
+}
+.pepito-help-toc a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--pepito-base, #5c4d91) 10%, transparent);
+  color: var(--pepito-base, #5c4d91);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+.pepito-help-toc a:hover {
+  background: color-mix(in srgb, var(--pepito-base, #5c4d91) 18%, transparent);
+}
+.pepito-help-block {
+  margin-top: 2.25rem;
+  scroll-margin-top: 5.5rem;
+}
+.pepito-help-block h2,
+.pepito-help-section h3 {
+  margin: 0 0 0.45rem;
+}
+.pepito-help-block-lead {
+  margin: 0 0 1rem;
+  color: var(--pepito-muted, #5a5470);
+  line-height: 1.7;
+}
+.pepito-help-role-grid {
+  display: grid;
+  gap: 0.85rem;
+}
+@media (min-width: 760px) {
+  .pepito-help-role-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.pepito-help-card,
+.pepito-help-section {
+  background: var(--pepito-card, #fff);
+  border: 1px solid color-mix(in srgb, var(--pepito-base, #5c4d91) 12%, transparent);
+  border-radius: 1rem;
+  padding: 1rem 1.1rem 1.05rem;
+}
+.pepito-help-section {
+  margin-bottom: 0.85rem;
+  scroll-margin-top: 5.5rem;
+}
+.pepito-help-card h3 {
+  margin: 0 0 0.65rem;
+  font-size: 1.05rem;
+}
+.pepito-help-dl {
+  margin: 0;
+  display: grid;
+  gap: 0.7rem;
+}
+.pepito-help-dl dt {
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--pepito-base, #5c4d91);
+  margin-bottom: 0.15rem;
+}
+.pepito-help-dl dd {
+  margin: 0;
+  line-height: 1.7;
+  color: var(--pepito-ink, #2b2440);
+}
+.pepito-help-topic-list {
+  display: grid;
+  gap: 0.5rem;
+}
+.pepito-help-topic {
+  border: 1px solid color-mix(in srgb, var(--pepito-base, #5c4d91) 12%, transparent);
+  border-radius: 0.75rem;
+  overflow: hidden;
+}
+.pepito-help-topic-q {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: 44px;
+  padding: 0.65rem 0.85rem;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-weight: 700;
+  text-align: start;
+  cursor: pointer;
+}
+.pepito-help-topic.is-open .pepito-help-topic-q svg {
+  transform: rotate(180deg);
+}
+.pepito-help-topic-q svg {
+  transition: transform 0.2s ease;
+  flex: 0 0 auto;
+}
+.pepito-help-topic-body {
+  padding: 0 0.85rem 0.9rem;
+}
+.pepito-page-help-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.55rem;
+  color: var(--pepito-base, #5c4d91);
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+.pepito-page-help-link--hero {
+  color: inherit;
+  opacity: 0.92;
+}
+.pepito-faq-page-more {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.35rem;
+}
+
 .pepito-cta {
   padding-block: 1rem 3rem;
   padding-inline: var(--pepito-gutter-x);

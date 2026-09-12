@@ -1,6 +1,7 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, BookOpen, PawPrint, Pencil, Plus, Stethoscope } from 'lucide-react';
 import { BRAND, petPublicIdOf } from '@petdate/shared';
+import { PageHelpLink } from '../components/PageHelpLink';
 import { PetAvatar } from '../components/PetAvatar';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { useMyPets } from '../hooks/useMyPets';
@@ -62,6 +63,7 @@ export function MyPetsPage() {
           <p className="pepito-my-pets-lead">
             {t('pets.leadOwner')}
           </p>
+          <PageHelpLink section="pets" className="pepito-page-help-link--hero" />
           <Link to="/add-pet" className="pepito-btn button-1 pepito-my-pets-add">
             <Plus size={18} aria-hidden />
             {t('pets.addNew')}
