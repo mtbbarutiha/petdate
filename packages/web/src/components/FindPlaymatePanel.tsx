@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { PawPrint } from 'lucide-react';
+import { Bell, BellOff, PawPrint } from 'lucide-react';
 import {
   BRAND,
   PLAYDATE_REQUEST_COST,
@@ -15,7 +15,7 @@ import { useAuthStore } from '../hooks/useAuthStore';
 import { useAppToast } from '../hooks/useAppToast';
 import { useUserStore } from '../hooks/useUserStore';
 import { useI18n } from '../i18n';
-import { listPets } from '../lib/api';
+import { listPets, setSilentChatRequests } from '../lib/api';
 import { findAndSendPlaymates, type FindPlaymateResult } from '../lib/playmateActions';
 import { petProfileToUiPet } from '../lib/playdateMap';
 import { authStore } from '../data/authStore';
@@ -56,7 +56,7 @@ export function FindPlaymatePanel({
 }: FindPlaymatePanelProps) {
   const { t } = useI18n();
   const { user } = useUserStore();
-  const { user: authUser, isLoggedIn } = useAuthStore();
+  const { user: authUser, isLoggedIn, refreshMe } = useAuthStore();
   const { toastError, toastSuccess, toastInfo } = useAppToast();
   const [myPets, setMyPets] = useState<PetProfile[]>([]);
   const [petsLoading, setPetsLoading] = useState(false);
@@ -64,6 +64,7 @@ export function FindPlaymatePanel({
   const [findError, setFindError] = useState<string | null>(null);
   const [findResult, setFindResult] = useState<FindPlaymateResult | null>(null);
   const [statusLine, setStatusLine] = useState<string | null>(null);
+  const [silentBusy, setSilentBusy] = useState(false);
   /** Pet awaiting fee confirmation in custom modal (not the browser confirm dialog). */
   const [feeConfirmPet, setFeeConfirmPet] = useState<PetProfile | null>(null);
 
@@ -182,6 +183,24 @@ export function FindPlaymatePanel({
     setStatusLine(null);
   }
 
+  const silentOn = Boolean(authUser?.silentChatRequests);
+  const silentLabel = silentOn ? 'سایلنت خاموش (روشن است)' : 'سایلنت درخواست چت';
+
+  async function toggleSilent() {
+    if (!myUserId || silentBusy) return;
+    setSilentBusy(true);
+    try {
+      await setSilentChatRequests(myUserId, !silentOn);
+      await refreshMe();
+      toastSuccess('ذخیره شد');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'تغییر سایلنت ناموفق بود';
+      toastError(msg);
+    } finally {
+      setSilentBusy(false);
+    }
+  }
+
   if (!isPetOwner) {
     if (active === 'trainer') {
       return (
@@ -224,6 +243,21 @@ export function FindPlaymatePanel({
 
   if (variant === 'header') {
     if (!isPetOwner) return null;
+    const muteBtn =
+      !needsLogin && myUserId ? (
+        <button
+          type="button"
+          className={`find-playmate-mute-btn${silentOn ? ' is-on' : ''}`}
+          data-testid="silent-chat-header"
+          onClick={() => void toggleSilent()}
+          disabled={silentBusy}
+          aria-label={silentLabel}
+          title={silentLabel}
+          aria-pressed={silentOn}
+        >
+          {silentOn ? <Bell size={18} aria-hidden /> : <BellOff size={18} aria-hidden />}
+        </button>
+      ) : null;
     return (
       <>
         <div className="find-playmate-header">
@@ -265,6 +299,7 @@ export function FindPlaymatePanel({
               <span>{ctaLabel}</span>
             </button>
           )}
+          {muteBtn}
           {findError ? <span className="find-playmate-header-err">{findError}</span> : null}
         </div>
         {feeConfirmModal}

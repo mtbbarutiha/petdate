@@ -3,8 +3,6 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Ban,
   Banknote,
-  Bell,
-  BellOff,
   ChevronLeft,
   Eye,
   GraduationCap,
@@ -61,7 +59,6 @@ import {
   listUserContacts,
   patchWebProfile,
   resolvePublicMediaUrl,
-  setSilentChatRequests,
 } from '../lib/api';
 import { petProfileToUiPet } from '../lib/playdateMap';
 import { PET_TYPE_LABELS } from '../types';
@@ -168,7 +165,6 @@ export function ProfilePage() {
   const views = interactions?.views ?? display.profileViews ?? 0;
   const coins = display.coins ?? 0;
   const verifyStatus = display.verificationStatus ?? 'none';
-  const silentOn = Boolean(display.silentChatRequests);
   const ageLabel =
     display.age != null && Number(display.age) > 0 ? toPersianDigits(display.age) : null;
   const interestsLabel =
@@ -291,19 +287,6 @@ export function ProfilePage() {
           ? 'درخواست احراز در صف بررسی است.'
           : `جایزه تأیید: ${formatFaInt(FACE_VERIFY_REWARD)} سکه — از ربات «احراز چهره» بزن.`,
     ]);
-  }
-  async function toggleSilent() {
-    setBusy(true);
-    try {
-      const updated = await setSilentChatRequests(userId, !silentOn);
-      setCardUser(updated);
-      await refreshMe();
-      toastSuccess('ذخیره شد');
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'تغییر سایلنت ناموفق بود'; setError(msg); toastError(msg);
-    } finally {
-      setBusy(false);
-    }
   }
   async function deactivateAccount() {
     if (!token) return;
@@ -765,15 +748,6 @@ export function ProfilePage() {
                 <Banknote size={18} aria-hidden />
                 <span>کسب درآمد / برداشت</span>
               </Link>
-              <button
-                type="button"
-                className="pepito-profile-menu-item"
-                onClick={() => void toggleSilent()}
-                disabled={busy}
-              >
-                {silentOn ? <Bell size={18} aria-hidden /> : <BellOff size={18} aria-hidden />}
-                <span>{silentOn ? 'سایلنت خاموش (روشن است)' : 'سایلنت درخواست چت'}</span>
-              </button>
               <button
                 type="button"
                 className="pepito-profile-menu-item is-warn"
