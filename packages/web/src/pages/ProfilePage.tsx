@@ -1,19 +1,13 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
-  Ban,
-  Banknote,
   ChevronLeft,
-  Eye,
   GraduationCap,
   LogOut,
   MapPin,
   PawPrint,
   Pencil,
-  ShieldCheck,
   Stethoscope,
-  Trash2,
-  Users,
   X,
 } from 'lucide-react';
 import {
@@ -79,6 +73,7 @@ export function ProfilePage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const editing = searchParams.get('edit') === '1';
+  const panelParam = searchParams.get('panel');
   const { user, token, logout, isProfileComplete, saveProfile, refreshMe } = useAuthStore();
   const { toastSuccess, toastError } = useAppToast();
   const { pets: myPets, loading: petsLoading } = useMyPets();
@@ -138,6 +133,124 @@ export function ProfilePage() {
 
   const cities = useMemo(() => (province ? citiesForProvince(province) : []), [province]);
 
+  // Deep-link panels from sidebar / avatar menu (?panel=…)
+  useEffect(() => {
+    if (!user || editing) {
+      if (editing) {
+        setPanel(null);
+        setPanelLines([]);
+      }
+      return;
+    }
+    const allowed: Exclude<PanelKind, null>[] = [
+      'contacts',
+      'likes',
+      'interactions',
+      'blocked',
+      'account',
+      'verify',
+    ];
+    if (!panelParam || !(allowed as string[]).includes(panelParam)) {
+      setPanel(null);
+      setPanelLines([]);
+      return;
+    }
+    const kind = panelParam as Exclude<PanelKind, null>;
+    setPanel(kind);
+    const displayUser = cardUser ?? user;
+    const likesCount = displayUser.likesCount ?? 0;
+    const verifyStatus = displayUser.verificationStatus ?? 'none';
+    let cancelled = false;
+
+    void (async () => {
+      if (kind === 'account') {
+        setPanelLines([]);
+        setPanelBusy(false);
+        return;
+      }
+      if (kind === 'likes') {
+        setPanelLines([
+          `تعداد لایک دریافتی: ${formatFaInt(likesCount)}`,
+          'لایک‌ها از بازدید و تعامل دیگران روی پروفایل/پت جمع می‌شود.',
+        ]);
+        setPanelBusy(false);
+        return;
+      }
+      if (kind === 'interactions') {
+        setPanelLines([
+          `❤️ لایک: ${formatFaInt(interactions?.likes ?? likesCount)}`,
+          `👁️ بازدید: ${formatFaInt(interactions?.views ?? displayUser.profileViews ?? 0)}`,
+          `🐾 درخواست همبازی: ${formatFaInt(interactions?.playdatesTotal ?? 0)}`,
+          `⏳ در انتظار: ${formatFaInt(interactions?.playdatesPending ?? 0)}`,
+          `✅ پذیرفته: ${formatFaInt(interactions?.playdatesAccepted ?? 0)}`,
+        ]);
+        setPanelBusy(false);
+        return;
+      }
+      if (kind === 'verify') {
+        setPanelLines([
+          faceVerifyButtonLabel(verifyStatus),
+          verifyStatus === 'verified'
+            ? 'پروفایلت احراز شده است.'
+            : verifyStatus === 'pending'
+              ? 'درخواست احراز در صف بررسی است.'
+              : `جایزه تأیید: ${formatFaInt(FACE_VERIFY_REWARD)} سکه — از ربات «احراز چهره» بزن.`,
+        ]);
+        setPanelBusy(false);
+        return;
+      }
+      if (kind === 'blocked') {
+        setPanelBusy(true);
+        setPanelLines([]);
+        try {
+          const list = await listUserBlocks(user.id);
+          if (cancelled) return;
+          setPanelLines(
+            list.length
+              ? list.map(
+                  (b, i) =>
+                    `${formatFaInt(i + 1)}. ${b.blockedName || 'بدون نام'}${
+                      b.blockedUsername ? ` @${b.blockedUsername}` : ''
+                    }`
+                )
+              : ['لیست بلاک خالی است.']
+          );
+        } catch {
+          if (!cancelled) setPanelLines(['لیست بلاک در دسترس نیست.']);
+        } finally {
+          if (!cancelled) setPanelBusy(false);
+        }
+        return;
+      }
+      if (kind === 'contacts') {
+        setPanelBusy(true);
+        setPanelLines([]);
+        try {
+          const list = await listUserContacts(user.id);
+          if (cancelled) return;
+          setPanelLines(
+            list.length
+              ? list.map(
+                  (c, i) =>
+                    `${formatFaInt(i + 1)}. ${c.contactName || 'بدون نام'}${
+                      c.contactUsername ? ` @${c.contactUsername}` : ''
+                    }`
+                )
+              : ['هنوز مخاطبی نداری. از چت همبازی می‌تونی اضافه کنی.']
+          );
+        } catch {
+          if (!cancelled) setPanelLines(['لیست مخاطبین در دسترس نیست.']);
+        } finally {
+          if (!cancelled) setPanelBusy(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user, editing, panelParam, cardUser, interactions]);
+
   if (!user) return null;
 
   const userId = user.id;
@@ -181,10 +294,24 @@ export function ProfilePage() {
 
   function openEdit() {
     setSearchParams({ edit: '1' }, { replace: false });
+    setPanel(null);
+    setPanelLines([]);
   }
   function closeEdit() {
     setSearchParams({}, { replace: true });
     setError('');
+  }
+  function closePanel() {
+    setPanel(null);
+    setPanelLines([]);
+    if (searchParams.get('panel')) {
+      const next = new URLSearchParams(searchParams);
+      next.delete('panel');
+      setSearchParams(next, { replace: true });
+    }
+  }
+  function openPanelParam(kind: Exclude<PanelKind, null>) {
+    setSearchParams({ panel: kind }, { replace: false });
   }
   function toggleInterest(item: string) {
     setInterests((prev) =>
@@ -230,63 +357,13 @@ export function ProfilePage() {
   }
 
   async function openContacts() {
-    setPanel('contacts');
-    setPanelBusy(true);
-    setPanelLines([]);
-    try {
-      const list = await listUserContacts(userId);
-      setPanelLines(
-        list.length
-          ? list.map((c, i) => `${formatFaInt(i + 1)}. ${c.contactName || 'بدون نام'}${c.contactUsername ? ` @${c.contactUsername}` : ''}`)
-          : ['هنوز مخاطبی نداری. از چت همبازی می‌تونی اضافه کنی.']
-      );
-    } catch {
-      setPanelLines(['لیست مخاطبین در دسترس نیست.']);
-    } finally {
-      setPanelBusy(false);
-    }
-  }
-  async function openBlocked() {
-    setPanel('blocked');
-    setPanelBusy(true);
-    setPanelLines([]);
-    try {
-      const list = await listUserBlocks(userId);
-      setPanelLines(
-        list.length
-          ? list.map((b, i) => `${formatFaInt(i + 1)}. ${b.blockedName || 'بدون نام'}${b.blockedUsername ? ` @${b.blockedUsername}` : ''}`)
-          : ['لیست بلاک خالی است.']
-      );
-    } catch {
-      setPanelLines(['لیست بلاک در دسترس نیست.']);
-    } finally {
-      setPanelBusy(false);
-    }
+    openPanelParam('contacts');
   }
   function openLikes() {
-    setPanel('likes');
-    setPanelLines([`تعداد لایک دریافتی: ${formatFaInt(likes)}`, 'لایک‌ها از بازدید و تعامل دیگران روی پروفایل/پت جمع می‌شود.']);
+    openPanelParam('likes');
   }
   function openInteractions() {
-    setPanel('interactions');
-    setPanelLines([
-      `❤️ لایک: ${formatFaInt(interactions?.likes ?? likes)}`,
-      `👁️ بازدید: ${formatFaInt(interactions?.views ?? display.profileViews ?? 0)}`,
-      `🐾 درخواست همبازی: ${formatFaInt(interactions?.playdatesTotal ?? 0)}`,
-      `⏳ در انتظار: ${formatFaInt(interactions?.playdatesPending ?? 0)}`,
-      `✅ پذیرفته: ${formatFaInt(interactions?.playdatesAccepted ?? 0)}`,
-    ]);
-  }
-  function openVerify() {
-    setPanel('verify');
-    setPanelLines([
-      faceVerifyButtonLabel(verifyStatus),
-      verifyStatus === 'verified'
-        ? 'پروفایلت احراز شده است.'
-        : verifyStatus === 'pending'
-          ? 'درخواست احراز در صف بررسی است.'
-          : `جایزه تأیید: ${formatFaInt(FACE_VERIFY_REWARD)} سکه — از ربات «احراز چهره» بزن.`,
-    ]);
+    openPanelParam('interactions');
   }
   async function deactivateAccount() {
     if (!token) return;
@@ -294,7 +371,7 @@ export function ProfilePage() {
     try {
       await patchWebProfile(token, { isActive: false });
       await refreshMe();
-      setPanel(null);
+      closePanel();
       toastSuccess('حساب غیرفعال شد.');
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'غیرفعال‌سازی ناموفق بود'; setError(msg); toastError(msg);
@@ -308,7 +385,7 @@ export function ProfilePage() {
     try {
       await patchWebProfile(token, { isActive: true });
       await refreshMe();
-      setPanel(null);
+      closePanel();
       toastSuccess('حساب فعال شد.');
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'فعال‌سازی ناموفق بود'; setError(msg); toastError(msg);
@@ -722,53 +799,6 @@ export function ProfilePage() {
         </div>
 
         <aside className="pepito-profile-sidecol">
-          <section className="pepito-profile-block pepito-profile-manage" aria-label="اقدامات پروفایل">
-            <header className="pepito-profile-section-head">
-              <h2>مدیریت</h2>
-              <p>ویرایش، احراز و حریم خصوصی</p>
-            </header>
-            <nav className="pepito-profile-menu" aria-label="مدیریت پروفایل">
-              <button type="button" className="pepito-profile-menu-item is-primary" onClick={openEdit}>
-                <Pencil size={18} aria-hidden />
-                <span>ویرایش پروفایل</span>
-              </button>
-              {needsWizard ? (
-                <Link to="/onboarding/profile" className="pepito-profile-menu-item is-ok">
-                  <Users size={18} aria-hidden />
-                  <span>تکمیل پروفایل</span>
-                </Link>
-              ) : null}
-              <button type="button" className="pepito-profile-menu-item" onClick={openVerify}>
-                <ShieldCheck size={18} aria-hidden />
-                <span>{faceVerifyButtonLabel(verifyStatus)}</span>
-              </button>
-              <button type="button" className="pepito-profile-menu-item" onClick={openInteractions}>
-                <Eye size={18} aria-hidden />
-                <span>تعاملات</span>
-              </button>
-              <Link to="/wallet/earn" className="pepito-profile-menu-item">
-                <Banknote size={18} aria-hidden />
-                <span>کسب درآمد / برداشت</span>
-              </Link>
-              <button
-                type="button"
-                className="pepito-profile-menu-item is-warn"
-                onClick={() => void openBlocked()}
-              >
-                <Ban size={18} aria-hidden />
-                <span>بلاک‌شده‌ها</span>
-              </button>
-              <button
-                type="button"
-                className="pepito-profile-menu-item is-danger"
-                onClick={() => setPanel('account')}
-              >
-                <Trash2 size={18} aria-hidden />
-                <span>حذف / غیرفعال‌سازی حساب</span>
-              </button>
-            </nav>
-          </section>
-
           {panel ? (
             <section className="pepito-profile-block pepito-profile-panel" aria-label={panelTitle}>
               <header className="pepito-profile-panel-head">
@@ -778,7 +808,7 @@ export function ProfilePage() {
                 <button
                   type="button"
                   className="pepito-profile-icon-btn"
-                  onClick={() => setPanel(null)}
+                  onClick={closePanel}
                   aria-label="بستن"
                 >
                   <X size={18} />

@@ -101,6 +101,12 @@ export const en: Dict = {
     team: "Team",
     reviews: "Reviews",
     mobileShortcuts: "Mobile shortcuts",
+    manage: 'Manage',
+    manageEdit: 'Edit profile',
+    manageInteractions: 'Interactions',
+    manageEarn: 'Earn / withdraw',
+    manageBlocked: 'Blocked',
+    manageAccount: 'Delete / deactivate account',
   },
   landing: {
     heroAria: 'Role slides — playmate, vet, trainer, no pet, adoption',

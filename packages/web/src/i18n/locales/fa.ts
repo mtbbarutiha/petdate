@@ -101,6 +101,12 @@ export const fa: Dict = {
     team: "تیم",
     reviews: "نظرات",
     mobileShortcuts: "میانبرهای موبایل",
+    manage: 'مدیریت',
+    manageEdit: 'ویرایش پروفایل',
+    manageInteractions: 'تعاملات',
+    manageEarn: 'کسب درآمد / برداشت',
+    manageBlocked: 'بلاک‌شده‌ها',
+    manageAccount: 'حذف / غیرفعال‌سازی حساب',
   },
   landing: {
     heroAria: 'اسلایدر نقش‌ها — همبازی، دامپزشک، مربی، بدون پت، پذیرش',

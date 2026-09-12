@@ -3260,6 +3260,64 @@ button.chip.is-on {
   background: var(--pepito-lilac);
   color: var(--pepito-base);
 }
+.pepito-app-rail-group {
+  margin-top: 0.55rem;
+  padding-top: 0.65rem;
+  border-top: 1px solid rgba(92, 77, 145, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+.pepito-app-rail-group-label {
+  margin: 0 0 0.2rem;
+  padding: 0.2rem 0.75rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--pepito-muted);
+}
+.pepito-app-rail-group .pepito-app-rail-link {
+  font-size: 0.84rem;
+  padding: 0.55rem 0.7rem;
+}
+.pepito-app-rail-link.is-warn {
+  color: #9a5b14;
+}
+.pepito-app-rail-link.is-danger {
+  color: #a33a4a;
+}
+.pepito-app-rail-link.is-warn:hover,
+.pepito-app-rail-link.is-warn.is-active {
+  background: rgba(217, 149, 58, 0.14);
+  color: #8a4e0f;
+}
+.pepito-app-rail-link.is-danger:hover,
+.pepito-app-rail-link.is-danger.is-active {
+  background: rgba(196, 70, 90, 0.12);
+  color: #922838;
+}
+.pepito-nav-profile-manage {
+  margin: 0.35rem 0;
+  padding: 0.45rem 0 0.2rem;
+  border-top: 1px solid rgba(92, 77, 145, 0.1);
+  border-bottom: 1px solid rgba(92, 77, 145, 0.1);
+}
+.pepito-nav-profile-manage-label {
+  margin: 0 0.75rem 0.25rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--pepito-muted);
+}
+.pepito-nav-profile-manage nav {
+  display: flex;
+  flex-direction: column;
+}
+.pepito-nav-profile-item--warn {
+  color: #9a5b14;
+}
+.pepito-nav-profile-item--danger {
+  color: #a33a4a;
+}
 .pepito-app-rail-logout {
   display: inline-flex;
   align-items: center;

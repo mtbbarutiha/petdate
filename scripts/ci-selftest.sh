@@ -82,6 +82,9 @@ npx tsx "$ROOT/packages/web/src/components/playmateFeeConfirm.selftest.ts"
 echo "==> selftest: web dark-mode theme tokens + toggle wiring"
 npx tsx "$ROOT/packages/web/src/lib/theme.selftest.ts"
 
+echo "==> selftest: profile manage actions in rail / avatar menu"
+npx tsx "$ROOT/packages/web/src/lib/profileManageNav.selftest.ts"
+
 echo "==> selftest: web i18n FA/EN + default dark theme"
 npx tsx "$ROOT/packages/web/src/i18n/i18n.selftest.ts"
 
