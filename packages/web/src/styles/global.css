@@ -2679,18 +2679,24 @@ body:has(.admin-app) .toast-host {
 .admin-login-card > p { color: var(--text-secondary); margin-bottom: 24px; }
 
 .admin-input-icon {
+  --admin-input-icon-inset: 14px;
+  --admin-input-icon-gutter: 2.5rem; /* 16px icon + 14px inset + gap */
   position: relative;
 }
 
 .admin-input-icon svg {
   position: absolute;
-  right: 14px;
+  inset-inline-end: var(--admin-input-icon-inset);
+  inset-inline-start: auto;
   top: 50%;
   transform: translateY(-50%);
   color: var(--text-tertiary);
+  pointer-events: none;
 }
 
-.admin-input-icon .form-input { padding-right: 40px; }
+.admin-input-icon .form-input {
+  padding-inline-end: var(--admin-input-icon-gutter);
+}
 
 .admin-error { color: #dc2626; font-size: 0.85rem; margin-bottom: 12px; }
 .admin-login-hint { margin-top: 16px; font-size: 0.8rem; color: var(--text-tertiary); }
