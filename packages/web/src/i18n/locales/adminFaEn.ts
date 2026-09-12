@@ -2204,6 +2204,7 @@ export const ADMIN_FA_EN: Record<string, string> = {
   "استان با بیشترین کاربر: {name} ({count} نفر)": "Top user province: {name} ({count} people)",
   "موجودی {key} نامعتبر است": "Invalid {key} balance",
   "صف فروش سکه": "Coin sell queue",
+  "برداشت / تسویه در انتظار": "Pending withdrawal / payout",
   "درخواست‌های برداشت از وب و ربات — سکه هنگام ثبت کسر شده؛ رد = بازگشت سکه": "Web and bot withdrawal requests — coins are deducted on submit; reject refunds coins",
   "صف باز (در انتظار واریز)": "Open queue (awaiting payout)",
   "شماره کارت": "Card number",
