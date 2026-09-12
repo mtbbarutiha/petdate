@@ -8,6 +8,7 @@ import {
 import { adminFetch, formatNumFa, formatTomanFa } from '../api';
 import { formatAdminFaDateTime } from '../JalaliDateSelect';
 import { adminCan } from '../auth';
+import { appPrompt } from '../../components/AppDialog';
 import { tr } from '../../i18n';
 
 const STATUS_OPTIONS: { value: CoinSellRequestStatus | 'all'; label: string }[] = [
@@ -43,11 +44,11 @@ export function AdminCoinSellsPage() {
   }, [load]);
 
   const decide = async (id: number, action: 'paid' | 'reject') => {
-    const note =
-      action === 'reject'
-        ? window.prompt(tr('دلیل رد (اختیاری)')) ?? ''
-        : window.prompt(tr('یادداشت واریز (اختیاری)')) ?? '';
-    if (action === 'reject' && note === null) return;
+    const note = await appPrompt(
+      action === 'reject' ? tr('دلیل رد (اختیاری)') : tr('یادداشت واریز (اختیاری)'),
+      { optional: true, variant: 'admin' }
+    );
+    if (note === null) return;
     setBusyId(id);
     try {
       await adminFetch(`/api/admin/coin-sells/${id}/${action}`, {

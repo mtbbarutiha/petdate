@@ -4,6 +4,7 @@ import { ExternalLink, Newspaper, Plus, Search, Trash2 } from 'lucide-react';
 import { adminFetch, formatNumFa } from '../api';
 import { formatAdminFaDate } from '../JalaliDateSelect';
 import { resolvePublicMediaUrl } from '../../lib/api';
+import { appConfirm } from '../../components/AppDialog';
 import { tr } from '../../i18n';
 
 type Article = {
@@ -62,7 +63,7 @@ export function AdminMagazinePage() {
   }, [searchParams]);
 
   const remove = async (id: number) => {
-    if (!confirm(tr('حذف مقاله؟ (نرم‌حذف)'))) return;
+    if (!(await appConfirm(tr('حذف مقاله؟ (نرم‌حذف)'), { danger: true, variant: 'admin' }))) return;
     setBusy(true);
     try {
       await adminFetch(`/api/admin/magazine/${id}`, { method: 'DELETE' });

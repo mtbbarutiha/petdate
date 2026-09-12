@@ -12,6 +12,7 @@ import {
   type PlatformModuleGoals,
   type PlatformModuleKey,
 } from '@petdate/shared';
+import { appConfirm } from '../../components/AppDialog';
 import { adminFetch } from '../api';
 import { adminCan } from '../auth';
 import { tr } from '../../i18n';
@@ -200,7 +201,7 @@ export function AdminSettingsPage() {
 
   const softDelete = async (id: number) => {
     if (!canWrite) return;
-    if (!window.confirm(tr('حذف نرم؟ گزینه در گزارش‌های تاریخی باقی می‌ماند و فقط از انتخاب جدید مخفی می‌شود.'))) {
+    if (!(await appConfirm(tr('حذف نرم؟ گزینه در گزارش‌های تاریخی باقی می‌ماند و فقط از انتخاب جدید مخفی می‌شود.'), { danger: true, variant: 'admin' }))) {
       return;
     }
     setBusy(true);

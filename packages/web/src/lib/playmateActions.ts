@@ -1,4 +1,5 @@
 import { PET_SPECIES_LABELS, PLAYDATE_REQUEST_COST, type PetProfile } from '@petdate/shared';
+import { appConfirm } from '../components/AppDialog';
 import { createPlaydateRequest, findPlaymatesRequest } from './api';
 
 export type FindPlaymateResult = {
@@ -31,9 +32,7 @@ export async function sendPlaymateRequestNow(opts: {
       ((err as Error & { requiresResendConfirm?: boolean }).requiresResendConfirm ||
         /میخوای مجدد/.test(err.message));
     if (!opts.confirmResend && needsConfirm) {
-      const ok =
-        typeof window !== 'undefined' &&
-        window.confirm('میخوای مجدد درخواست بدی به اون شخص؟');
+      const ok = await appConfirm('میخوای مجدد درخواست بدی به اون شخص؟');
       if (!ok) throw err;
       return createPlaydateRequest({
         fromPetId: opts.fromPetId,

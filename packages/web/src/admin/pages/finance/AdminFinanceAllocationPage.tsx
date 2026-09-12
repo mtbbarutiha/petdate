@@ -6,6 +6,7 @@ import { formatAdminFaDate } from '../../JalaliDateSelect';
 import { adminCan } from '../../auth';
 import { AdminModal } from '../../AdminModal';
 import { FinanceEditToggle, FinanceTabs, formatMoney, useFinanceEditMode } from './FinanceOsUi';
+import { appAlert } from '../../../components/AppDialog';
 import { tr } from '../../../i18n';
 
 type Tab = 'offices' | 'people' | 'equipment' | 'allocation' | 'invoices' | 'bank';
@@ -94,7 +95,7 @@ export function AdminFinanceAllocationPage() {
         amount: s.amount,
       })));
     if (!lines.length) {
-      alert(tr('برای این بیزنس خط تخصیص‌یافته‌ای نیست'));
+      await appAlert(tr('برای این بیزنس خط تخصیص‌یافته‌ای نیست'), { variant: 'admin' });
       return;
     }
     setBusy(true);

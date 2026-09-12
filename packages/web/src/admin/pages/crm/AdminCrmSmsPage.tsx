@@ -3,6 +3,7 @@ import type { CrmCustomer, CrmSmsPattern } from '@petdate/shared';
 import { CRM_SMS_TRIGGERS, CRM_SMS_TRIGGER_LABELS } from '@petdate/shared';
 import { adminCan } from '../../auth';
 import { adminFetch, formatNumFa } from '../../api';
+import { appConfirm } from '../../../components/AppDialog';
 import { tr } from '../../../i18n';
 
 type SmsPanel = { configured: boolean; balance?: number | null; error?: string };
@@ -189,7 +190,7 @@ export function AdminCrmSmsPage() {
 
   async function removePattern(p: CrmSmsPattern) {
     if (!canAdmin) return;
-    if (!window.confirm(`${tr('پترن «')}${p.name}${tr('» حذف شود؟')}`)) return;
+    if (!(await appConfirm(`${tr('پترن «')}${p.name}${tr('» حذف شود؟')}`, { danger: true, variant: 'admin' }))) return;
     setBusy(true);
     try {
       await adminFetch(`/api/admin/crm/sms/patterns/${p.id}`, { method: 'DELETE' });

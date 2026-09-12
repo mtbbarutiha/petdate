@@ -8,6 +8,7 @@ import { formatAdminFaDate } from '../../JalaliDateSelect';
 import { adminCan } from '../../auth';
 import { AdminEntityCell, AdminThumb } from '../../AdminThumb';
 import { EmployeeCreateModal } from './EmployeeCreateModal';
+import { appConfirm } from '../../../components/AppDialog';
 import { tr } from '../../../i18n';
 
 function formatHrDate(raw?: string | null): string {
@@ -119,7 +120,7 @@ export function AdminHrEmployeesPage() {
   const removeEmployee = async (emp: HrEmployee) => {
     if (!canWrite) return;
     const name = `${emp.firstName} ${emp.lastName}`.trim() || emp.personnelCode;
-    if (!confirm(`${tr('حذف پرونده «')}${name}${tr('»؟ این کار برگشت‌پذیر نیست.')}`)) return;
+    if (!(await appConfirm(`${tr('حذف پرونده «')}${name}${tr('»؟ این کار برگشت‌پذیر نیست.')}`, { danger: true, variant: 'admin' }))) return;
     setBusyId(emp.id);
     try {
       await adminFetch(`/api/admin/hr/employees/${emp.id}`, { method: 'DELETE' });

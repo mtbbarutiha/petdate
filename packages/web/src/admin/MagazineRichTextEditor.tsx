@@ -17,6 +17,7 @@ import {
   Undo2,
 } from 'lucide-react';
 import { adminFetch } from './api';
+import { appAlert, appPrompt } from '../components/AppDialog';
 import { tr } from '../i18n';
 
 type Props = {
@@ -86,16 +87,21 @@ export function MagazineRichTextEditor({
           editor.chain().focus().setImage({ src: data.url, alt: file.name }).run();
         }
       } catch (err) {
-        window.alert(err instanceof Error ? err.message : 'آپلود ناموفق');
+        await appAlert(err instanceof Error ? err.message : 'آپلود ناموفق', { variant: 'admin' });
       }
     };
     input.click();
   }, [editor, disabled]);
 
-  const setLink = useCallback(() => {
+  const setLink = useCallback(async () => {
     if (!editor || disabled) return;
     const prev = editor.getAttributes('link').href as string | undefined;
-    const url = window.prompt('آدرس لینک', prev || 'https://');
+    const url = await appPrompt(tr('آدرس لینک'), {
+      defaultValue: prev || 'https://',
+      optional: true,
+      multiline: false,
+      variant: 'admin',
+    });
     if (url === null) return;
     if (!url.trim()) {
       editor.chain().focus().extendMarkRange('link').unsetLink().run();

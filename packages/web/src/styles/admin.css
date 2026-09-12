@@ -1406,6 +1406,24 @@
   margin-top: 16px;
   justify-content: flex-start;
 }
+.admin-app .admin-modal.app-dialog-overlay {
+  z-index: 2000;
+}
+.admin-app .app-dialog-message {
+  margin: 0;
+  white-space: pre-wrap;
+  line-height: 1.55;
+}
+.admin-app .app-dialog-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.admin-app .app-dialog-textarea {
+  width: 100%;
+  min-height: 88px;
+  resize: vertical;
+}
 .admin-app .admin-tabs--modal {
   gap: 6px;
   margin-bottom: 10px;

@@ -3,6 +3,7 @@ import { Activity, AlertTriangle, RefreshCw, Trash2 } from 'lucide-react';
 import { adminFetch } from '../api';
 import { formatAdminFaDateTime } from '../JalaliDateSelect';
 import { formatAdminLogMessageFa } from '../adminLogMessageFa';
+import { appConfirm } from '../../components/AppDialog';
 import { tr } from '../../i18n';
 
 type LogRow = {
@@ -68,7 +69,7 @@ export function AdminLogsPage() {
   }, [load]);
 
   async function clearOld() {
-    if (!window.confirm(tr('لاگ‌های قدیمی‌تر از ۷ روز پاک شوند؟'))) return;
+    if (!(await appConfirm(tr('لاگ‌های قدیمی‌تر از ۷ روز پاک شوند؟'), { danger: true, variant: 'admin' }))) return;
     try {
       await adminFetch('/api/admin/logs?olderThanDays=7', { method: 'DELETE' });
       silentRef.current = false;
@@ -79,7 +80,7 @@ export function AdminLogsPage() {
   }
 
   async function clearAll() {
-    if (!window.confirm(tr('همهٔ لاگ‌های ثبت‌شده پاک شوند؟ این عمل برگشت‌ناپذیر است.'))) return;
+    if (!(await appConfirm(tr('همهٔ لاگ‌های ثبت‌شده پاک شوند؟ این عمل برگشت‌ناپذیر است.'), { danger: true, variant: 'admin' }))) return;
     try {
       await adminFetch('/api/admin/logs', { method: 'DELETE' });
       silentRef.current = false;

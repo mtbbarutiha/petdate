@@ -37,6 +37,7 @@ import {
   type User,
   type UserGender,
 } from '@petdate/shared';
+import { appConfirm } from '../components/AppDialog';
 import { AgePicker } from '../components/AgePicker';
 import { InviteFriendsCard } from '../components/InviteFriendsCard';
 import { PetAvatar } from '../components/PetAvatar';
@@ -432,7 +433,7 @@ export function ProfilePage() {
     }
   }
   async function deleteAccount() {
-    if (!window.confirm('مطمئنی حساب حذف شود؟ این کار برگشت‌پذیر نیست.')) return;
+    if (!(await appConfirm('مطمئنی حساب حذف شود؟ این کار برگشت‌پذیر نیست.', { danger: true }))) return;
     setBusy(true);
     try {
       await deleteUserAccountById(userId);
