@@ -237,4 +237,34 @@ const keepDefault = resolveHydratedBoard(def, null, catalog);
 assert.equal(keepDefault.source, 'default');
 assert.equal(keepDefault.uploadLocal, false);
 
+const wdgSrc = readFileSync(join(here, 'WidgetDashboard.tsx'), 'utf8');
+assert.doesNotMatch(
+  wdgSrc,
+  /gridColumn:\s*`span/,
+  'widget span is CSS-class driven so breakpoints can reflow resized tiles'
+);
+assert.match(wdgSrc, /wdg-tile--w\$\{item\.w\}/, 'tile width class still follows persisted w');
+
+const css = readFileSync(join(here, '../../styles/admin.css'), 'utf8');
+assert.match(
+  css,
+  /\.admin-app\s+\.wdg-grid\s*\{[^}]*grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/s,
+  'widget board is 2 columns by default (phone landscape / tablet / laptop)'
+);
+assert.match(
+  css,
+  /@media \(min-width:\s*1400px\)\s*\{\s*\.admin-app \.wdg-grid \{[^}]*repeat\(4, minmax\(0, 1fr\)\)/,
+  'wide desktop keeps a 4-column widget board'
+);
+assert.match(
+  css,
+  /@media \(max-width:\s*720px\)[\s\S]*?\.wdg-grid\s*\{[^}]*grid-template-columns:\s*1fr/,
+  'narrow phones stack widgets to 1 column'
+);
+assert.match(
+  css,
+  /\.admin-app\s+\.wdg-tile\s*\{[^}]*overflow:\s*hidden/s,
+  'resized tiles clip to their grid area'
+);
+
 console.log('widgetDashboard.selftest: ok');

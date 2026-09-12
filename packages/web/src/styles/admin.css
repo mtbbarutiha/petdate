@@ -5,6 +5,17 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Urbanist:wght@500;600;700;800&family=Vazirmatn:wght@400;500;600;700&display=swap');
 
+/* Isolate the admin canvas from public-site body padding / 100vw overflow.
+   Off-canvas drawer uses translateX — without this, the hidden panel
+   expands the document and forces horizontal page scroll. */
+html:has(.admin-app),
+body:has(.admin-app) {
+  padding: 0 !important;
+  margin: 0 !important;
+  max-width: none !important;
+  overflow-x: hidden;
+}
+
 .admin-app {
   --admin-bg: #f4f4f7;
   --admin-surface: #ffffff;
@@ -68,6 +79,8 @@
   font-family: var(--admin-font);
   font-size: 14.5px;
   line-height: 1.5;
+  min-width: 0;
+  overflow-x: clip;
 }
 
 .admin-app h1,
@@ -127,16 +140,25 @@
 /* ── Shell ── */
 .admin-app .admin-shell {
   display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  align-items: stretch;
   min-height: 100dvh;
+  min-width: 0;
+  width: 100%;
+  max-width: none;
+  overflow: visible;
   background: var(--admin-bg);
 }
 
 .admin-app .admin-sidebar {
   width: 256px;
+  flex-shrink: 0;
   background: var(--admin-sidebar);
   color: var(--admin-ink);
   display: flex;
   flex-direction: column;
+  flex-wrap: nowrap;
   padding: 12px 10px 16px;
   position: sticky;
   top: 0;
@@ -172,6 +194,7 @@
 .admin-app .admin-nav {
   display: flex;
   flex-direction: column;
+  flex-wrap: nowrap;
   gap: 2px;
   flex: 1;
   overflow: auto;
@@ -233,9 +256,12 @@
 }
 
 .admin-app .admin-sidebar-foot {
+  display: flex;
+  flex-direction: column;
   border-top: 1px solid var(--admin-border);
   padding-top: 12px;
   margin-top: 8px;
+  flex-shrink: 0;
 }
 
 .admin-app .admin-logout {
@@ -263,14 +289,18 @@
 .admin-app .admin-main {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
   background: var(--admin-bg);
+  overflow-x: clip;
 }
 
 .admin-app .admin-topbar {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: flex-start;
-  gap: 12px;
+  gap: 8px 12px;
   padding: 12px 24px;
   border-bottom: 1px solid var(--admin-border);
   background: var(--admin-surface);
@@ -285,7 +315,11 @@
   align-items: center;
   gap: 12px;
   min-width: 0;
-  flex-shrink: 0;
+  flex: 1 1 10rem;
+}
+
+.admin-app .admin-topbar-start > div {
+  min-width: 0;
 }
 
 .admin-app .admin-breadcrumb {
@@ -301,6 +335,10 @@
   margin: 2px 0 0;
   font-size: 1.15rem;
   font-weight: 750;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
 }
 
 .admin-app .admin-topbar-end {
@@ -469,10 +507,12 @@
   padding: 24px 28px 40px;
   max-width: none;
   width: 100%;
+  min-width: 0;
 }
 
 .admin-app .admin-header {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
@@ -722,7 +762,7 @@
 }
 .admin-app .admin-checks {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
   gap: 10px;
 }
 .admin-app .admin-check {
@@ -818,6 +858,7 @@
 .admin-app .admin-muted { color: var(--admin-muted); }
 .admin-app .admin-card-head {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   gap: 12px;
@@ -847,12 +888,12 @@
 
 .admin-app .admin-stats {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr));
   gap: 12px;
   margin-bottom: 18px;
 }
 .admin-app .admin-stats--dense {
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr));
 }
 .admin-app .admin-stat {
   display: flex;
@@ -930,7 +971,7 @@
 }
 .admin-app .admin-search {
   flex: 1;
-  min-width: 200px;
+  min-width: min(100%, 200px);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -948,7 +989,10 @@
   background: transparent;
 }
 .admin-app .admin-table-wrap {
-  overflow: auto;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   direction: rtl;
   /* Keep last columns (احراز / وضعیت / عملیات) from clipping at the edge */
   padding-inline-end: 4px;
@@ -1188,6 +1232,8 @@
 }
 /* Users list: fit viewport without forcing a wide scroll rail */
 .admin-app .admin-table-wrap--users {
+  max-width: 100%;
+  min-width: 0;
   overflow-x: auto;
 }
 .admin-app .admin-table--users {
@@ -1359,13 +1405,15 @@
   display: grid;
   place-items: center;
   z-index: 50;
-  padding: 16px;
+  padding: max(12px, env(safe-area-inset-top, 0px)) 12px max(12px, env(safe-area-inset-bottom, 0px));
   overflow: auto;
 }
 .admin-app .admin-modal-card {
   width: min(420px, 100%);
+  max-width: 100%;
   max-height: min(92vh, 920px);
   overflow: auto;
+  box-sizing: border-box;
   background: var(--admin-surface);
   border-radius: 12px;
   padding: 20px;
@@ -1498,6 +1546,8 @@
   font-size: 0.78rem;
 }
 .admin-app .admin-perm-matrix-wrap {
+  max-width: 100%;
+  min-width: 0;
   overflow: auto;
   border: 1px solid var(--admin-border);
   border-radius: 10px;
@@ -1573,7 +1623,7 @@
 }
 .admin-app .admin-settings-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
   gap: 12px;
 }
 .admin-app .admin-setting-card {
@@ -1662,6 +1712,7 @@
 }
 .admin-app .admin-card-head {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
   gap: 12px;
@@ -1686,7 +1737,7 @@
 .admin-app .admin-health-banner.is-bad { background: #ffebee; color: #b71c1c; border-color: #ffcdd2; }
 .admin-app .admin-checks {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
   gap: 10px;
 }
 .admin-app .admin-check {
@@ -1825,7 +1876,7 @@
 }
 .admin-app .admin-finance-links {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
   gap: 12px;
   margin-top: 16px;
 }
@@ -2449,11 +2500,13 @@ body:has(.admin-app) {
 .admin-app .admin-page {
   flex: 1;
   width: 100%;
+  min-width: 0;
   max-width: none !important;
   margin: 0;
   padding-inline: clamp(16px, 2.2vw, 36px);
   padding-block: 20px 40px;
   box-sizing: border-box;
+  overflow-x: clip;
 }
 
 .admin-app .admin-topbar {
@@ -2468,7 +2521,7 @@ body:has(.admin-app) {
 }
 
 .admin-app .admin-form-grid {
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 260px), 1fr));
 }
 
 /* Spacing + type rhythm */
@@ -2503,11 +2556,11 @@ body:has(.admin-app) {
 .admin-app .admin-stats {
   gap: var(--admin-gap);
   margin-bottom: 16px;
-  grid-template-columns: repeat(auto-fill, minmax(168px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 168px), 1fr));
 }
 
 .admin-app .admin-stats--dense {
-  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 190px), 1fr));
 }
 
 @media (min-width: 1400px) {
@@ -2936,6 +2989,7 @@ body:has(.admin-app) {
     border-radius: 0 !important;
     box-shadow: none !important;
     min-height: 100dvh !important;
+    overflow: visible !important;
   }
 }
 
@@ -2978,6 +3032,7 @@ body:has(.admin-app) {
   top: calc(100% + 8px);
   inset-inline-end: 0;
   width: min(360px, calc(100vw - 24px));
+  max-width: min(360px, calc(100vw - 16px));
   max-height: min(70vh, 480px);
   display: flex;
   flex-direction: column;
@@ -4520,6 +4575,8 @@ body:has(.admin-app) {
 .admin-app .tk-row:hover td { background: #f7f9fc; }
 .admin-app .tk-kanban {
   display: grid; grid-template-columns: repeat(6, minmax(180px, 1fr)); gap: 10px; overflow-x: auto;
+  max-width: 100%;
+  min-width: 0;
 }
 .admin-app .tk-kcol {
   background: var(--admin-chip-well); border: 1px solid var(--admin-border); border-radius: 12px; padding: 9px; min-height: 140px;
@@ -4722,9 +4779,11 @@ body:has(.admin-app) {
 }
 .admin-app .admin-widget-board {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
   align-items: stretch;
+  width: 100%;
+  min-width: 0;
 }
 .admin-app .admin-widget-tile {
   min-width: 0;
@@ -4927,8 +4986,8 @@ body:has(.admin-app) {
 .admin-app .admin-widget-panel {
   min-height: 0;
 }
-@media (max-width: 1100px) {
-  .admin-app .admin-widget-board { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (min-width: 1400px) {
+  .admin-app .admin-widget-board { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 @media (max-width: 720px) {
   .admin-app .admin-widget-board { grid-template-columns: 1fr; }
@@ -4968,7 +5027,7 @@ body:has(.admin-app) {
 }
 .admin-app .wdg-catalog {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr));
   gap: 8px;
   margin-bottom: 12px;
   padding: 10px;
@@ -5000,15 +5059,23 @@ body:has(.admin-app) {
 }
 .admin-app .wdg-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
   align-items: stretch;
+  width: 100%;
+  min-width: 0;
 }
+.admin-app .wdg-tile--w1 { grid-column: span 1; }
+.admin-app .wdg-tile--w2,
+.admin-app .wdg-tile--w3,
+.admin-app .wdg-tile--w4 { grid-column: span 2; }
 .admin-app .wdg-tile {
   position: relative;
   display: flex;
   flex-direction: column;
   min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
   background: var(--admin-surface, #fff);
   border: 1px solid var(--admin-border);
   border-radius: 14px;
@@ -5081,6 +5148,9 @@ body:has(.admin-app) {
   flex: 1;
   padding: 6px 10px 14px;
   min-height: 0;
+  min-width: 0;
+  max-width: 100%;
+  overflow: auto;
   /* Chart / drill interactions stay in the body; drag is header-only */
   touch-action: manipulation;
 }
@@ -5541,14 +5611,20 @@ body:has(.admin-app) {
 .admin-app .wdg-notes--compact .wdg-notes-input { min-height: 40px; }
 .admin-app .wdg-notes--compact .wdg-notes-chip { display: none; }
 
-@media (max-width: 1100px) {
-  .admin-app .wdg-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .admin-app .wdg-tile--w3,
-  .admin-app .wdg-tile--w4 { grid-column: span 2 !important; }
+@media (min-width: 1400px) {
+  .admin-app .wdg-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .admin-app .wdg-tile--w1 { grid-column: span 1; }
+  .admin-app .wdg-tile--w2 { grid-column: span 2; }
+  .admin-app .wdg-tile--w3 { grid-column: span 3; }
+  .admin-app .wdg-tile--w4 { grid-column: span 4; }
 }
 @media (max-width: 720px) {
   .admin-app .wdg-grid { grid-template-columns: 1fr; }
-  .admin-app .wdg-tile { grid-column: span 1 !important; }
+  .admin-app .wdg-tile,
+  .admin-app .wdg-tile--w1,
+  .admin-app .wdg-tile--w2,
+  .admin-app .wdg-tile--w3,
+  .admin-app .wdg-tile--w4 { grid-column: 1 / -1; }
 }
 
 /* ── Sales pipeline board (Pepito RTL kanban) ── */

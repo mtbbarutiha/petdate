@@ -1849,7 +1849,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 
 /* ── Tablet (768px+) ── */
 @media (min-width: 768px) {
-  body {
+  body:not(:has(.admin-app)) {
     background: var(--slate-100);
     padding: 16px 0;
   }
@@ -1925,7 +1925,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 
 /* ── Desktop (1024px+) ── */
 @media (min-width: 1024px) {
-  body {
+  body:not(:has(.admin-app)) {
     padding: 20px;
     background: linear-gradient(135deg, var(--slate-100) 0%, var(--brand-50) 100%);
   }
@@ -2104,7 +2104,7 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
     overflow-x: visible;
   }
 
-  .admin-shell {
+  body:not(:has(.admin-app)) .admin-shell {
     max-width: var(--shell-max);
     margin: 0 auto;
     border-radius: var(--radius-xl);
@@ -2113,15 +2113,15 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
     min-height: calc(100dvh - 40px);
   }
 
-  .admin-sidebar {
+  body:not(:has(.admin-app)) .admin-sidebar {
     height: calc(100dvh - 40px);
   }
 
-  .admin-stats {
+  body:not(:has(.admin-app)) .admin-stats {
     grid-template-columns: repeat(4, 1fr);
   }
 
-  .admin-grid {
+  body:not(:has(.admin-app)) .admin-grid {
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   }
 }
@@ -2609,8 +2609,10 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
 .admin-user-pet small { display: block; color: var(--text-tertiary); }
 
 @media (max-width: 768px) {
-  .admin-shell { flex-direction: column; }
-  .admin-sidebar {
+  /* Legacy public-site admin chrome only. Live `.admin-app` uses the
+     off-canvas drawer in admin.css — flattening it here broke hamburger + overflow. */
+  body:not(:has(.admin-app)) .admin-shell { flex-direction: column; }
+  body:not(:has(.admin-app)) .admin-sidebar {
     width: 100%;
     height: auto;
     position: static;
@@ -2618,10 +2620,10 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
     flex-wrap: wrap;
     padding: 16px;
   }
-  .admin-nav { flex-direction: row; flex-wrap: wrap; }
-  .admin-sidebar-foot { display: none; }
-  .admin-page { padding: 20px 16px; }
-  .admin-form-grid { grid-template-columns: 1fr; }
+  body:not(:has(.admin-app)) .admin-nav { flex-direction: row; flex-wrap: wrap; }
+  body:not(:has(.admin-app)) .admin-sidebar-foot { display: none; }
+  body:not(:has(.admin-app)) .admin-page { padding: 20px 16px; }
+  body:not(:has(.admin-app)) .admin-form-grid { grid-template-columns: 1fr; }
 }
 
 /* ── Onboarding ── */
