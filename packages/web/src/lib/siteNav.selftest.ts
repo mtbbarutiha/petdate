@@ -12,6 +12,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const nav = readFileSync(join(root, 'lib/siteNav.ts'), 'utf8');
 const dock = readFileSync(join(root, 'components/LandingMobileDock.tsx'), 'utf8');
 const layout = readFileSync(join(root, 'components/Layout.tsx'), 'utf8');
+const desktopNav = readFileSync(join(root, 'components/SiteDesktopNav.tsx'), 'utf8');
 const chatPaw = readFileSync(join(root, 'components/icons/ChatPawIcon.tsx'), 'utf8');
 
 assert.match(chatPaw, /ChatPawIcon/, 'custom chats/playmate icon exists');
@@ -83,7 +84,11 @@ assert.match(
   /pepito-landing-mobile-dock-link--chats/,
   'center chats/playmate dock slot has --chats class'
 );
-assert.match(dock, /size=\{chats \? 28 : 24\}/, 'center ChatPaw icon is slightly larger than siblings');
+assert.match(dock, /const DOCK_ICON_PX = 24/, 'dock icons share a single 24px box');
+assert.match(dock, /size=\{DOCK_ICON_PX\}/, 'every dock glyph uses DOCK_ICON_PX (no per-item size)');
+assert.doesNotMatch(dock, /size=\{chats/, 'center chats is not a different icon size');
+assert.match(dock, /width=\{DOCK_ICON_PX\}/, 'profile avatar width matches dock icon box');
+assert.match(dock, /height=\{DOCK_ICON_PX\}/, 'profile avatar height matches dock icon box');
 
 const pepitoCss = readFileSync(join(root, 'styles/pepito.css'), 'utf8');
 assert.doesNotMatch(
@@ -91,15 +96,41 @@ assert.doesNotMatch(
   /\.pepito-landing-mobile-dock-link--chats\s*\{[^}]*(?:border-radius:\s*999px|translateY|box-shadow)/,
   'center chats slot has no elevated circular ring/backdrop'
 );
+assert.doesNotMatch(
+  pepitoCss,
+  /\.pepito-landing-mobile-dock-link--chats svg/,
+  'center chats SVG has no separate width/height override'
+);
 assert.match(
   pepitoCss,
-  /\.pepito-landing-mobile-dock-link--chats svg[\s\S]*?width:\s*28px/,
-  'center chats SVG sized 28px in CSS (fits 44px slot)'
+  /--pepito-dock-icon-size:\s*24px/,
+  'dock icon token is 24px for every item'
+);
+assert.match(
+  pepitoCss,
+  /\.pepito-landing-mobile-dock-link svg[\s\S]*?width:\s*var\(--pepito-dock-icon-size\)/,
+  'all dock SVGs use the shared icon token'
+);
+assert.match(
+  pepitoCss,
+  /\.pepito-landing-mobile-dock-avatar\s*\{[\s\S]*?width:\s*var\(--pepito-dock-icon-size\)/,
+  'profile avatar box matches dock icon token'
+);
+assert.match(
+  pepitoCss,
+  /\.pepito-landing-mobile-dock-link\s*\{[\s\S]*?min-height:\s*44px/,
+  'dock tap targets stay at least 44px'
 );
 assert.match(
   pepitoCss,
   /\.pepito-landing-mobile-dock\s*\{[^}]*overflow:\s*hidden/,
-  'mobile dock clips content so center icon cannot overflow the pill'
+  'mobile dock clips content so icons cannot overflow the pill'
+);
+
+assert.match(
+  desktopNav,
+  /<item\.icon size=\{16\} strokeWidth=\{2\.25\}/,
+  'desktop header icons stay 16px — dock glyph token must not leak'
 );
 
 const ownerRail = layout.slice(layout.indexOf('const OWNER_NAV'), layout.indexOf('const VET_NAV'));

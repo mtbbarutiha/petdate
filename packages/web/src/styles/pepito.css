@@ -11170,6 +11170,7 @@ a.pepito-btn.pepito-human-consult-cta:hover {
     height: 58px;
     padding: 0.35rem 0.55rem;
     overflow: hidden;
+    --pepito-dock-icon-size: 24px;
     background:
       linear-gradient(180deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.08)),
       rgba(32, 32, 34, 0.42);
@@ -11222,14 +11223,8 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   .pepito-landing-mobile-dock-link svg {
     display: block;
     flex-shrink: 0;
-  }
-
-  /* Center گفتگو / هم‌بازی — slightly larger glyph inside the same 44px slot (no elevated circle) */
-  .pepito-landing-mobile-dock-link--chats svg {
-    width: 28px;
-    height: 28px;
-    max-width: 100%;
-    max-height: 100%;
+    width: var(--pepito-dock-icon-size);
+    height: var(--pepito-dock-icon-size);
   }
 
   .pepito-landing-mobile-dock-link.is-active {
@@ -11248,8 +11243,8 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   }
 
   .pepito-landing-mobile-dock-avatar {
-    width: 28px;
-    height: 28px;
+    width: var(--pepito-dock-icon-size);
+    height: var(--pepito-dock-icon-size);
     border-radius: 999px;
     object-fit: cover;
     display: block;
