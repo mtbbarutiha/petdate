@@ -30,7 +30,7 @@
   --brand-600: #4a96c0;
   --brand-700: #3d7fa8;
   --brand-800: #326889;
-  --font-display: 'Urbanist', 'Vazirmatn', system-ui, sans-serif;
+  --font-display: 'Urbanist', 'Urbanist Fallback', 'Vazirmatn', 'Vazirmatn Fallback', system-ui, sans-serif;
   --font-body: 'Vazirmatn', system-ui, sans-serif;
 
   /* Neutrals */

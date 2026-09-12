@@ -2,7 +2,7 @@
 
 > Full machine summary of PetDate (پت‌دیت), the Persian pet playmate, pet shop, adoption, and online vet-consult platform.
 
-PetDate helps pet owners in Iran find playmates, shop, adopt, and request online veterinary consultation. Web and Telegram share one account. Primary language is Persian (fa) with an RTL interface.
+PetDate helps pet owners in Iran find playmates, shop, adopt, and request online veterinary consultation. Web and Telegram share one account. Primary language is Persian (fa) with an RTL interface. An English UI is available.
 
 ## Identity
 
@@ -10,25 +10,38 @@ PetDate helps pet owners in Iran find playmates, shop, adopt, and request online
 - English name: PetDate
 - Tagline FA: همبازی برای پت‌ات
 - Tagline EN: PLAY • MEET • FRIENDS
-- [Home](https://petdate.ir/): canonical site
+- [Home](https://petdate.ir/): canonical apex site
 - [WWW host](https://www.petdate.ir/): redirects to the apex host
 - [Email](mailto:hello@petdate.ir): hello at petdate.ir
 - [Telegram bot](https://t.me/Petdatebot): Petdatebot
 - [Compact machine summary](https://petdate.ir/llms.txt): short llms.txt
+- [Well-known copy](https://petdate.ir/.well-known/llms.txt): same short summary
 - [XML sitemap](https://petdate.ir/sitemap.xml): crawl map
+- [Robots](https://petdate.ir/robots.txt): crawler rules
 
 ## Product surfaces
 
 - [Home](https://petdate.ir/): brand, services, adoption, news, short FAQ
 - [FAQ](https://petdate.ir/faq): frequently asked questions
+- [Help alias](https://petdate.ir/help): same help/FAQ page
 - [Pet shop](https://petdate.ir/shop): public catalog; checkout requires login
 - [Playmate hub](https://petdate.ir/chats): find a playmate (login required)
 - [Vet consult](https://petdate.ir/vet-consult): online veterinary consultation
+- [Trainer consult](https://petdate.ir/trainer-consult): training consult (login for chat)
 - [Adoption](https://petdate.ir/adoption): adoption listings
 - [Missy example](https://petdate.ir/adoption/missy): sample adoption listing
 - [Magazine](https://petdate.ir/magazine): articles
 - [OTP login](https://petdate.ir/auth/login): sign in
 - [Pet games](https://petdate.ir/games): casual games
+
+## Roles
+
+- Pet owner / صاحب پت: register pets and request a همبازی
+- Veterinarian / دامپزشک: verified online consult, not in-person clinic booking
+- Trainer / مربی: training consult
+- No-pet / بدون پت: guest or incomplete profile; can browse public pages
+- Shopper: browse [the shop](https://petdate.ir/shop); pay after login
+- Adopter: browse [adoption](https://petdate.ir/adoption)
 
 ## Accurate claims
 
@@ -43,9 +56,11 @@ PetDate helps pet owners in Iran find playmates, shop, adopt, and request online
 - Not a physical clinic directory or clinic-booking marketplace
 - Not claiming medical diagnosis guarantees
 - Not claiming nationwide physical stores
+- Not a dating app for people — it is for pets and their humans
 
 ## Technical hints for crawlers
 
 - SPA (Vite/React); homepage HTML carries Organization/WebSite JSON-LD
 - robots.txt allows major search and AI bots; disallows admin, API, chats, and onboarding
 - Prefer labeled markdown links such as [Home](https://petdate.ir/)
+- Default theme is dark; a light theme toggle is available

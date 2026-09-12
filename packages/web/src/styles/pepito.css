@@ -29,8 +29,15 @@
   --brand-600: #4a3d78;
   --brand-700: #3a2f62;
   --brand-800: #2a2148;
-  --font-display: 'Urbanist', 'Vazirmatn', system-ui, sans-serif;
-  --font-body: 'Vazirmatn', 'Urbanist', system-ui, sans-serif;
+  --font-display: 'Urbanist', 'Urbanist Fallback', 'Vazirmatn', 'Vazirmatn Fallback', system-ui, sans-serif;
+  --font-body: 'Vazirmatn', 'Vazirmatn Fallback', 'Urbanist', 'Urbanist Fallback', system-ui, sans-serif;
+  /* Solid pill fills — kept AA vs white in both themes (do not reuse light accent tokens). */
+  --pepito-btn-1-bg: #5c4d91;
+  --pepito-btn-1-fg: #ffffff;
+  --pepito-btn-1-hover-bg: #4a3d78;
+  --pepito-btn-3-bg: #a24a86;
+  --pepito-btn-3-fg: #ffffff;
+  --pepito-btn-3-hover-fg: #19063d;
   --bg: var(--pepito-soft);
   --text: var(--pepito-dark);
   --text-secondary: var(--pepito-muted);
@@ -110,8 +117,8 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   padding: 12px 36px;
   border-radius: 50px;
   border: 0;
-  background: var(--pepito-base);
-  color: #fff !important;
+  background: var(--pepito-btn-1-bg, var(--pepito-base));
+  color: var(--pepito-btn-1-fg, #fff) !important;
   font-weight: 700;
   font-family: var(--font-display);
   font-size: 18px;
@@ -149,8 +156,8 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 .landing-nav-cta:hover,
 .btn-primary:hover,
 .cta-btn:hover {
-  background: var(--pepito-pink);
-  color: #fff !important;
+  background: var(--pepito-btn-1-hover-bg, var(--pepito-pink));
+  color: var(--pepito-btn-1-fg, #fff) !important;
   transform: translate3d(0, -6px, 0.01px);
   box-shadow: none;
 }
@@ -159,22 +166,22 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   transform: rotate(-30deg);
 }
 
-/* button-3 — pink → white on hover (Pepito Book now) */
+/* button-3 — deeper pink so white label stays WCAG AA (light + dark) */
 .button-3,
 .pepito-btn.button-3 {
-  background: var(--pepito-pink);
-  color: #fff !important;
+  background: var(--pepito-btn-3-bg);
+  color: var(--pepito-btn-3-fg) !important;
 }
 .button-3:hover,
 .pepito-btn.button-3:hover {
   background: var(--pepito-white);
-  color: var(--pepito-dark) !important;
+  color: var(--pepito-btn-3-hover-fg, var(--pepito-dark)) !important;
   transform: translate3d(0, -6px, 0.01px);
 }
 .button-3:hover .pepito-btn-icon,
 .pepito-btn.button-3:hover .pepito-btn-icon {
   transform: rotate(-30deg);
-  color: var(--pepito-dark);
+  color: var(--pepito-btn-3-hover-fg, var(--pepito-dark));
 }
 
 .pepito-btn--nav {
@@ -333,7 +340,8 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
     margin-top: 0;
   }
   .pepito-hero {
-    --pepito-hero-h: calc(85vh - var(--pepito-nav-h));
+    /* Match critical CSS — 85vh here used to shrink the hero after hydrate (CLS). */
+    --pepito-hero-h: calc(100svh - var(--pepito-nav-h));
     min-height: var(--pepito-hero-h);
   }
   .pepito-app-layout {
@@ -500,7 +508,8 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   padding-inline: var(--pepito-container-pad);
   padding-block: calc(env(safe-area-inset-top, 0px) + 5.5rem) 4rem;
   box-sizing: border-box;
-  animation: pepito-rise 0.75s ease both;
+  min-height: 16rem;
+  /* Opacity/transform only — never pepito-rise on first paint (CLS on hero-inner). */
 }
 /* `.col-lg-7` within container */
 .pepito-hero-copy {
@@ -720,7 +729,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 
 @media screen and (max-width: 720px) {
   .pepito-hero {
-    min-height: calc(85vh - var(--pepito-nav-h));
+    min-height: calc(100svh - var(--pepito-nav-h));
   }
   .pepito-hero .pepito-kicker {
     font-size: 13px;
@@ -10308,6 +10317,7 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   }
   .pepito-hero-inner {
     padding-block: calc(env(safe-area-inset-top, 0px) + 1.35rem) 2.25rem;
+    min-height: 14.5rem;
   }
   .pepito-hero-media,
   .pepito-hero-slide.is-active .pepito-hero-media {
@@ -10317,6 +10327,11 @@ a.pepito-btn.pepito-human-consult-cta:hover {
     object-fit: cover;
     object-position: center top;
   }
+}
+
+/* Below-fold landing slot — reserve a tiny box for IntersectionObserver. */
+.pepito-below-fold-slot {
+  min-height: 1px;
 }
 
 /* —— Landing mobile dock (4–5 actions) — hidden on desktop / app shell —— */

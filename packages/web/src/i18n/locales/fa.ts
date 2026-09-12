@@ -305,6 +305,7 @@ export const fa: Dict = {
     vetConsult: 'مشاوره دامپزشک',
     adoptPet: 'پذیرش پت',
     faqFull: 'راهنما و سؤالات متداول',
+    llms: 'خلاصه برای عامل‌های هوش مصنوعی',
   },
   auth: {
     bannerTitle: 'همراه پت‌های خاص شما',

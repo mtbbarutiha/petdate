@@ -645,6 +645,8 @@ export function listSitemapEntries(magazineSlugs: string[] = []): SitemapEntry[]
     { path: '/adoption', changefreq: 'weekly', priority: '0.8' },
     { path: '/games', changefreq: 'weekly', priority: '0.7' },
     { path: '/vet-consult', changefreq: 'weekly', priority: '0.85' },
+    { path: '/llms.txt', changefreq: 'weekly', priority: '0.4' },
+    { path: '/llms-full.txt', changefreq: 'weekly', priority: '0.3' },
   ];
   for (const cat of SHOP_CATEGORIES) {
     urls.push({ path: `/shop/c/${cat.slug}`, changefreq: 'weekly', priority: '0.75' });
@@ -671,7 +673,9 @@ export function listSitemapEntries(magazineSlugs: string[] = []): SitemapEntry[]
 }
 
 export function listPrerenderPaths(magazineSlugs: string[] = []): string[] {
-  return listSitemapEntries(magazineSlugs).map((u) => u.path);
+  return listSitemapEntries(magazineSlugs)
+    .map((u) => u.path)
+    .filter((p) => !/\.(txt|xml|json)$/i.test(p));
 }
 
 const ATTR_KEYS = [

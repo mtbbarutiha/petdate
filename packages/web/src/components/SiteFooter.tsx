@@ -223,6 +223,9 @@ export function SiteFooter() {
                   </FooterLink>
                 </li>
               ))}
+              <li>
+                <a href="/llms.txt">{t('footer.llms')}</a>
+              </li>
             </ul>
           </nav>
           <p className="pepito-footer-copy">

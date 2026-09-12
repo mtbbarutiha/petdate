@@ -27,6 +27,8 @@ assert(xml.includes('/magazine'), 'missing magazine');
 assert(xml.includes('/magazine/'), 'missing magazine articles');
 assert(xml.includes('https://petdate.ir/shop</loc>'), 'missing shop');
 assert(xml.includes('/vet-consult'), 'missing vet');
+assert(xml.includes('/llms.txt'), 'missing llms.txt for agentic discovery');
+assert(xml.includes('/llms-full.txt'), 'missing llms-full.txt');
 assert(xml.includes('https://petdate.ir/adoption</loc>'), 'missing adoption listing');
 assert(xml.includes('/adoption/'), 'missing adoption');
 assert(xml.includes('/shop/c/'), 'missing shop categories');

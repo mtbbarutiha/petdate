@@ -154,6 +154,8 @@ export function WelcomeBelowFold() {
   const svcTrackRef = useRef<HTMLDivElement>(null);
   /** Ignore programmatic autoplay scrolls so sync/pause does not fight snap (mobile jump). */
   const svcProgrammaticScrollRef = useRef(false);
+  const svcStepRef = useRef(0);
+  const newsStepRef = useRef(0);
   const [newsIndex, setNewsIndex] = useState(0);
   const newsTrackRef = useRef<HTMLDivElement>(null);
   const [newsItems, setNewsItems] = useState<MagazineCard[]>(() => newsFallback(t));
@@ -178,6 +180,23 @@ export function WelcomeBelowFold() {
   }, []);
 
   useEffect(() => {
+    const track = svcTrackRef.current;
+    if (!track) return;
+    const measure = () => {
+      const card = track.querySelector<HTMLElement>('.pepito-service-card');
+      if (!card) return;
+      const styles = getComputedStyle(track);
+      const gap = parseFloat(styles.columnGap || styles.gap) || 21.6;
+      svcStepRef.current = card.offsetWidth + gap;
+    };
+    const ro = new ResizeObserver(() => {
+      measure();
+    });
+    ro.observe(track);
+    return () => ro.disconnect();
+  }, []);
+
+  useEffect(() => {
     if (svcPaused) return;
     const id = window.setInterval(() => {
       setSvcIndex((i) => (i + 1) % SERVICES.length);
@@ -186,15 +205,12 @@ export function WelcomeBelowFold() {
   }, [svcPaused]);
 
   useEffect(() => {
+    /* Index 0 is the initial scroll position — skip the sync layout read on mount. */
+    if (svcIndex === 0) return;
     const track = svcTrackRef.current;
-    if (!track) return;
-    const card = track.querySelector<HTMLElement>('.pepito-service-card');
-    if (!card) return;
-    const styles = getComputedStyle(track);
-    const gap = parseFloat(styles.columnGap || styles.gap) || 21.6;
-    const step = card.getBoundingClientRect().width + gap;
-    if (step <= 0) return;
-    const rtl = styles.direction === 'rtl';
+    const step = svcStepRef.current;
+    if (!track || step <= 0) return;
+    const rtl = getComputedStyle(track).direction === 'rtl';
     const target = rtl ? -svcIndex * step : svcIndex * step;
     const current = track.scrollLeft;
     if (Math.abs(current - target) < 2) return;
@@ -215,13 +231,9 @@ export function WelcomeBelowFold() {
 
     const syncFromScroll = () => {
       if (svcProgrammaticScrollRef.current) return;
-      const card = track.querySelector<HTMLElement>('.pepito-service-card');
-      if (!card) return;
-      const styles = getComputedStyle(track);
-      const gap = parseFloat(styles.columnGap || styles.gap) || 21.6;
-      const step = card.getBoundingClientRect().width + gap;
+      const step = svcStepRef.current;
       if (step <= 0) return;
-      const rtl = styles.direction === 'rtl';
+      const rtl = getComputedStyle(track).direction === 'rtl';
       const raw = rtl ? -track.scrollLeft : track.scrollLeft;
       const idx = Math.max(0, Math.min(SERVICES.length - 1, Math.round(raw / step)));
       setSvcIndex((prev) => (prev === idx ? prev : idx));
@@ -275,10 +287,23 @@ export function WelcomeBelowFold() {
   useEffect(() => {
     const track = newsTrackRef.current;
     if (!track) return;
-    const card = track.querySelector<HTMLElement>('.pepito-news-card');
-    if (!card) return;
-    const gap = 20;
-    const step = card.getBoundingClientRect().width + gap;
+    const measure = () => {
+      const card = track.querySelector<HTMLElement>('.pepito-news-card');
+      if (!card) return;
+      newsStepRef.current = card.offsetWidth + 20;
+    };
+    const ro = new ResizeObserver(() => {
+      measure();
+    });
+    ro.observe(track);
+    return () => ro.disconnect();
+  }, [newsItems.length]);
+
+  useEffect(() => {
+    if (newsIndex === 0) return;
+    const track = newsTrackRef.current;
+    const step = newsStepRef.current;
+    if (!track || step <= 0) return;
     const rtl = getComputedStyle(track).direction === 'rtl';
     const narrow = window.matchMedia('(max-width: 720px)').matches;
     track.scrollTo({

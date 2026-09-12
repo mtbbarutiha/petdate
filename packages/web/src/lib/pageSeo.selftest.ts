@@ -9,6 +9,7 @@ import {
   applySeoToHtml,
   canonicalUrl,
   listProductIdRedirects,
+  listPrerenderPaths,
   listSitemapEntries,
   normalizePath,
   pageSeoForPath,
@@ -74,6 +75,8 @@ assert.ok(paths.includes(productCanonicalPath(product)));
 assert.ok(!paths.includes('/auth/login'), 'login omitted as low-value');
 assert.ok(!paths.some((p) => p === `/shop/product/${product.id}` && p !== productCanonicalPath(product)), 'no bare p123 product locs');
 assert.ok(paths.includes('/magazine/علائم-هشدار-سگ-و-گربه'));
+assert.ok(paths.includes('/llms.txt'), 'sitemap lists llms.txt');
+assert.ok(!listPrerenderPaths(['علائم-هشدار-سگ-و-گربه']).includes('/llms.txt'), 'do not prerender HTML over llms.txt');
 
 const shell = `<!DOCTYPE html><html><head>
 <title data-pd-seo="title">HOME TITLE</title>

@@ -752,10 +752,12 @@ let lastGtmPagePath: string | null = null;
 let scrollMarkedPath: string | null = null;
 
 /**
- * Run after window load + idle so third-party tags do not steal LCP/TBT.
+ * Run after first input or a long post-load delay so third-party tags stay
+ * off the Lighthouse critical path. The idle-callback API is intentionally
+ * avoided — its timeout is a max wait, so it fires on first idle.
  * Safe no-op off-window (selftests).
  */
-export function scheduleAfterLoadIdle(fn: () => void, timeoutMs = 8000): void {
+export function scheduleAfterLoadIdle(fn: () => void, timeoutMs = 10000): void {
   if (typeof window === 'undefined' || typeof document === 'undefined') return;
   let fired = false;
   const run = () => {
@@ -767,16 +769,7 @@ export function scheduleAfterLoadIdle(fn: () => void, timeoutMs = 8000): void {
     for (const ev of ['pointerdown', 'keydown', 'touchstart', 'scroll'] as const) {
       window.addEventListener(ev, run, { once: true, passive: true });
     }
-    const ric = (
-      window as Window & {
-        requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
-      }
-    ).requestIdleCallback;
-    if (typeof ric === 'function') {
-      ric(run, { timeout: timeoutMs });
-    } else {
-      window.setTimeout(run, timeoutMs);
-    }
+    window.setTimeout(run, timeoutMs);
   };
   if (document.readyState === 'complete') arm();
   else window.addEventListener('load', arm, { once: true });

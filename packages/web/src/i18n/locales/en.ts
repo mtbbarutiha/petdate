@@ -305,6 +305,7 @@ export const en: Dict = {
     vetConsult: 'Vet consult',
     adoptPet: 'Adopt a pet',
     faqFull: 'Help & FAQ',
+    llms: 'AI agent summary',
   },
   auth: {
     bannerTitle: 'For your special pets',

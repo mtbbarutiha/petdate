@@ -36,6 +36,13 @@ html[data-theme='dark'] {
   --pepito-dark: #e8e6f2;
   --pepito-muted: #d8d4e6;
   --pepito-pink: #e5a8d8;
+  /* Pills keep the same AA fills as light — lightened accents fail white-on-pink/lavender. */
+  --pepito-btn-1-bg: #5c4d91;
+  --pepito-btn-1-fg: #ffffff;
+  --pepito-btn-1-hover-bg: #4a3d78;
+  --pepito-btn-3-bg: #a24a86;
+  --pepito-btn-3-fg: #ffffff;
+  --pepito-btn-3-hover-fg: #f4f3f8;
   --pepito-soft: #1a1d27;
   --pepito-lilac: #2c3040;
   --pepito-orange: #ffb04a;

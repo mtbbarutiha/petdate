@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { SiteHeader } from '../components/SiteHeader';
 import { welcomeSectionLinks } from '../components/siteHeaderLinks';
@@ -95,6 +95,8 @@ export function WelcomePage() {
   const { isLoggedIn } = useAuthStore();
   const [scrolled, setScrolled] = useState(false);
   const [slide, setSlide] = useState(0);
+  const [showBelowFold, setShowBelowFold] = useState(false);
+  const belowFoldSlotRef = useRef<HTMLDivElement>(null);
 
   const goToSlide = (index: number) => {
     const len = HERO_SLIDES.length;
@@ -106,6 +108,35 @@ export function WelcomePage() {
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  /* Keep lucide / WelcomeBelowFold / magazine off the LCP critical path.
+     Load only after the slot is near the viewport or the user scrolls. */
+  useEffect(() => {
+    const slot = belowFoldSlotRef.current;
+    if (!slot) return;
+    let done = false;
+    const load = () => {
+      if (done) return;
+      done = true;
+      setShowBelowFold(true);
+    };
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) load();
+      },
+      { root: null, rootMargin: '-24px 0px', threshold: 0 },
+    );
+    io.observe(slot);
+    window.addEventListener('scroll', load, { once: true, passive: true });
+    window.addEventListener('pointerdown', load, { once: true, passive: true });
+    window.addEventListener('keydown', load, { once: true });
+    return () => {
+      io.disconnect();
+      window.removeEventListener('scroll', load);
+      window.removeEventListener('pointerdown', load);
+      window.removeEventListener('keydown', load);
+    };
   }, []);
 
   const current = HERO_SLIDES[slide]!;
@@ -157,7 +188,7 @@ export function WelcomePage() {
           ))}
         </div>
         <div className="pepito-hero-wash" aria-hidden />
-        <div className="pepito-hero-inner" key={current.role}>
+        <div className="pepito-hero-inner">
           <div className="pepito-hero-copy">
             <p className="pepito-kicker">
               <span className="pepito-kicker-dot">
@@ -231,9 +262,13 @@ export function WelcomePage() {
         </div>
       </section>
 
-      <Suspense fallback={<div className="pepito-below-fold-slot" aria-hidden />}>
-        <WelcomeBelowFold />
-      </Suspense>
+      <div ref={belowFoldSlotRef} className="pepito-below-fold-slot">
+        {showBelowFold ? (
+          <Suspense fallback={<div className="pepito-below-fold-slot" aria-hidden />}>
+            <WelcomeBelowFold />
+          </Suspense>
+        ) : null}
+      </div>
     </div>
   );
 }
