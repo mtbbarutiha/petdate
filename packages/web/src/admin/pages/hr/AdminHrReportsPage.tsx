@@ -4,6 +4,7 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 import { adminFetch, formatNumFa } from '../../api';
 import { formatJalaliNumFa } from '../../JalaliDateSelect';
 import { IranPersonnelHeatmap } from './IranPersonnelHeatmap';
+import { tr } from '../../../i18n';
 
 type ChartRow = { name: string; count: number };
 
@@ -79,8 +80,8 @@ function DonutTip({
     <div className="hr-chart-tooltip">
       <div className="hr-chart-tooltip-label">{row.name}</div>
       <strong>
-        {formatNumFa(Number(row.value || 0))} نفر
-        {pct != null ? ` · ${formatNumFa(pct)}٪` : ''}
+        {formatNumFa(Number(row.value || 0))} {tr('نفر')}
+        {pct != null ? ` · ${formatNumFa(pct)}${tr('٪')}` : ''}
       </strong>
     </div>
   );
@@ -123,7 +124,7 @@ function FrequencyDonut({ title, rows }: { title: string; rows: ChartRow[] }) {
             </ResponsiveContainer>
             <div className="hr-report-donut-center" aria-hidden>
               <strong>{formatNumFa(total)}</strong>
-              <span>نفر</span>
+              <span>{tr('نفر')}</span>
             </div>
           </div>
           <ul className="hr-report-donut-legend">
@@ -133,7 +134,7 @@ function FrequencyDonut({ title, rows }: { title: string; rows: ChartRow[] }) {
                 <div>
                   <b>{s.name}</b>
                   <span>
-                    {formatNumFa(s.pct)}٪ · {formatNumFa(s.count)} نفر
+                    {formatNumFa(s.pct)}{tr('٪ ·')} {formatNumFa(s.count)} {tr('نفر')}
                   </span>
                 </div>
               </li>
@@ -141,7 +142,7 @@ function FrequencyDonut({ title, rows }: { title: string; rows: ChartRow[] }) {
           </ul>
         </div>
       ) : (
-        <p className="admin-muted">داده‌ای برای نمایش نیست</p>
+        <p className="admin-muted">{tr('داده‌ای برای نمایش نیست')}</p>
       )}
     </article>
   );
@@ -191,18 +192,18 @@ export function AdminHrReportsPage() {
     <div className="admin-page hr-reports-page">
       <header className="admin-header hr-reports-header">
         <div>
-          <h1>گزارشات</h1>
-          <p>گزارش‌های پرسنلی و ارائه خدمات · فراوانی استخدام بر اساس استان</p>
+          <h1>{tr('گزارشات')}</h1>
+          <p>{tr('گزارش‌های پرسنلی و ارائه خدمات · فراوانی استخدام بر اساس استان')}</p>
         </div>
-        <div className="hr-reports-filters" role="group" aria-label="فیلتر گزارش">
+        <div className="hr-reports-filters" role="group" aria-label={tr("فیلتر گزارش")}>
           <label className="hr-reports-filter">
-            <span>دپارتمان‌ها</span>
+            <span>{tr('دپارتمان‌ها')}</span>
             <select
               className="admin-select"
               value={department}
               onChange={(e) => setDepartment(e.target.value)}
             >
-              <option value="">همه</option>
+              <option value="">{tr('همه')}</option>
               {(data?.departments || []).map((d) => (
                 <option key={d} value={d}>
                   {d}
@@ -211,7 +212,7 @@ export function AdminHrReportsPage() {
             </select>
           </label>
           <label className="hr-reports-filter">
-            <span>ماه جلالی</span>
+            <span>{tr('ماه جلالی')}</span>
             <select
               className="admin-select"
               value={jalaliMonth}
@@ -220,13 +221,13 @@ export function AdminHrReportsPage() {
             >
               {MONTH_OPTIONS.map((m) => (
                 <option key={m.v || 'all'} value={m.v}>
-                  {m.label}
+                  {tr(m.label)}
                 </option>
               ))}
             </select>
           </label>
           <label className="hr-reports-filter">
-            <span>سال جلالی</span>
+            <span>{tr('سال جلالی')}</span>
             <select
               className="admin-select"
               value={jalaliYear}
@@ -235,7 +236,7 @@ export function AdminHrReportsPage() {
                 if (!e.target.value) setJalaliMonth('');
               }}
             >
-              <option value="">همه سال‌ها</option>
+              <option value="">{tr('همه سال‌ها')}</option>
               {yearOptions.map((y) => (
                 <option key={y} value={String(y)}>
                   {formatJalaliNumFa(y)}
@@ -244,7 +245,7 @@ export function AdminHrReportsPage() {
             </select>
           </label>
           <Link to="/admin/hr" className="admin-btn admin-btn--ghost">
-            داشبورد
+            {tr('داشبورد')}
           </Link>
         </div>
       </header>
@@ -254,12 +255,12 @@ export function AdminHrReportsPage() {
       <article className="admin-card hr-report-heat-card">
         <div className="admin-card-head">
           <div>
-            <h2>نقشه حرارتی استخدام بر اساس استان</h2>
+            <h2>{tr('نقشه حرارتی استخدام بر اساس استان')}</h2>
             <p className="admin-muted">
-              استان‌هایی با استخدام بیشتر تیره‌تر نمایش داده می‌شوند
+              {tr('استان‌هایی با استخدام بیشتر تیره‌تر نمایش داده می‌شوند')}
               {data
                 ? ` · استخدام‌شده ${formatNumFa(hired)} نفر · با استان مشخص ${formatNumFa(knownProvince)}${
-                    unknownProvince > 0 ? ` · بدون استان ${formatNumFa(unknownProvince)}` : ''
+                    unknownProvince > 0 ? `${tr(' · بدون استان ')}${formatNumFa(unknownProvince)}` : ''
                   }`
                 : ''}
             </p>
@@ -271,19 +272,19 @@ export function AdminHrReportsPage() {
       {data?.ageStats ? (
         <div className="hr-dash-highlight-row" style={{ marginBottom: 16 }}>
           <article className="hr-dash-highlight">
-            <span className="hr-dash-highlight-label">حداقل سن</span>
+            <span className="hr-dash-highlight-label">{tr('حداقل سن')}</span>
             <strong className="hr-dash-highlight-value">
               {data.ageStats.min != null ? formatNumFa(data.ageStats.min) : '—'}
             </strong>
           </article>
           <article className="hr-dash-highlight">
-            <span className="hr-dash-highlight-label">حداکثر سن</span>
+            <span className="hr-dash-highlight-label">{tr('حداکثر سن')}</span>
             <strong className="hr-dash-highlight-value">
               {data.ageStats.max != null ? formatNumFa(data.ageStats.max) : '—'}
             </strong>
           </article>
           <article className="hr-dash-highlight">
-            <span className="hr-dash-highlight-label">میانگین سن</span>
+            <span className="hr-dash-highlight-label">{tr('میانگین سن')}</span>
             <strong className="hr-dash-highlight-value">
               {data.ageStats.avg != null ? formatNumFa(data.ageStats.avg) : '—'}
             </strong>
@@ -292,35 +293,35 @@ export function AdminHrReportsPage() {
       ) : null}
 
       <div className="hr-report-donut-row">
-        <FrequencyDonut title="فراوانی وضعیت تأهل" rows={byMarital} />
-        <FrequencyDonut title="فراوانی جنسیت" rows={byGender} />
+        <FrequencyDonut title={tr("فراوانی وضعیت تأهل")} rows={byMarital} />
+        <FrequencyDonut title={tr("فراوانی جنسیت")} rows={byGender} />
       </div>
 
       <div className="hr-report-donut-row" style={{ marginTop: 16 }}>
-        <FrequencyDonut title="فراوانی عنوان شغلی" rows={byJobTitle} />
+        <FrequencyDonut title={tr("فراوانی عنوان شغلی")} rows={byJobTitle} />
       </div>
 
       <article className="admin-card" style={{ marginTop: 16, padding: 16 }}>
         <div className="admin-card-head">
           <div>
-            <h2>آمار جاب برد</h2>
-            <p className="admin-muted">تعداد آگهی و تعداد بانک آگهی در هر جاب برد</p>
+            <h2>{tr('آمار جاب برد')}</h2>
+            <p className="admin-muted">{tr('تعداد آگهی و تعداد بانک آگهی در هر جاب برد')}</p>
           </div>
         </div>
         <div className="admin-table-wrap">
           <table className="admin-table admin-table--dense">
             <thead>
               <tr>
-                <th>جاب برد</th>
-                <th>تعداد آگهی</th>
-                <th>تعداد بانک آگهی</th>
+                <th>{tr('جاب برد')}</th>
+                <th>{tr('تعداد آگهی')}</th>
+                <th>{tr('تعداد بانک آگهی')}</th>
               </tr>
             </thead>
             <tbody>
               {(data?.byJobBoard || []).length === 0 ? (
                 <tr>
                   <td colSpan={3} className="admin-empty">
-                    داده‌ای نیست
+                    {tr('داده‌ای نیست')}
                   </td>
                 </tr>
               ) : (

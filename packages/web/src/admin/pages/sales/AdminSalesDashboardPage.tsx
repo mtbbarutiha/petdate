@@ -38,6 +38,7 @@ import {
   MotionChartTooltip,
   useRechartsMotion,
 } from '../../motionCharts';
+import { tr } from '../../../i18n';
 
 const STAGE_COLORS = ['#5c4d91', '#15cca0', '#3b82f6', '#fd961e', '#14b8a6', '#ec4899', '#8b5cf6', '#64748b'];
 
@@ -50,19 +51,19 @@ function ringColor(pct: number): string {
 function KpiRingCard({ ring }: { ring: SalesKpiRing }) {
   const color = ringColor(ring.pct);
   return (
-    <article className="sales-kpi-ring admin-dash-kpi admin-dash-kpi--slate" aria-label={ring.label}>
+    <article className="sales-kpi-ring admin-dash-kpi admin-dash-kpi--slate" aria-label={tr(ring.label)}>
       <AdminProgressRing
         value={ring.value}
         max={Math.max(1, ring.target)}
         size={88}
         color={color}
         showPct={false}
-        label={`از ${formatNumFa(ring.target)}`}
+        label={`${tr('از ')}${formatNumFa(ring.target)}`}
       />
       <div className="sales-kpi-ring-meta">
-        <strong>{ring.label}</strong>
+        <strong>{tr(ring.label)}</strong>
         <span>
-          {formatNumFa(Math.round(ring.pct))}٪ · {ring.unit}
+          {formatNumFa(Math.round(ring.pct))}{tr('٪ ·')} {tr(ring.unit)}
         </span>
       </div>
     </article>
@@ -134,54 +135,54 @@ export function AdminSalesDashboardPage() {
 
   const stripKpis: AdminKpiItem[] = data
     ? [
-        { key: 'leads', label: 'لید فعال', value: formatNumFa(data.activeLeads), icon: Target, tone: 'violet' },
-        { key: 'sales', label: 'فروش امروز', value: formatNumFa(data.salesTodayCount), icon: Briefcase, tone: 'mint' },
-        { key: 'calls', label: 'تماس امروز', value: formatNumFa(data.callsToday), icon: Phone, tone: 'sky' },
+        { key: 'leads', label: tr('لید فعال'), value: formatNumFa(data.activeLeads), icon: Target, tone: 'violet' },
+        { key: 'sales', label: tr('فروش امروز'), value: formatNumFa(data.salesTodayCount), icon: Briefcase, tone: 'mint' },
+        { key: 'calls', label: tr('تماس امروز'), value: formatNumFa(data.callsToday), icon: Phone, tone: 'sky' },
         {
           key: 'value',
-          label: 'مبلغ فروش امروز',
+          label: tr('مبلغ فروش امروز'),
           value: `${formatNumFa(data.salesTodayValue)} ت`,
           icon: Wallet,
           tone: 'orange',
           wide: true,
         },
-        { key: 'overdue', label: 'پیگیری سررسید', value: formatNumFa(data.overdueFollowups), icon: Target, tone: 'orange' },
-        { key: 'finance', label: 'در انتظار مالی', value: formatNumFa(data.pendingFinance), icon: Wallet, tone: 'slate' },
+        { key: 'overdue', label: tr('پیگیری سررسید'), value: formatNumFa(data.overdueFollowups), icon: Target, tone: 'orange' },
+        { key: 'finance', label: tr('در انتظار مالی'), value: formatNumFa(data.pendingFinance), icon: Wallet, tone: 'slate' },
       ]
     : [];
 
   if (error && !data) {
     return (
-      <AdminDashPage title="داشبورد فروش" error={error} onRefresh={load} />
+      <AdminDashPage title={tr("داشبورد فروش")} error={error} onRefresh={load} />
     );
   }
   if (!data) {
     return (
-      <AdminDashPage title="داشبورد فروش" subtitle="در حال بارگذاری…" />
+      <AdminDashPage title={tr("داشبورد فروش")} subtitle="در حال بارگذاری…" />
     );
   }
 
   return (
     <AdminDashPage
       className="sales-dash"
-      title={`سلام ${data.greetingName}`}
+      title={`${tr('سلام ')}${data.greetingName}`}
       subtitle="کارتابل من · خط محصول Pet Date"
       onRefresh={load}
       error={error}
       actions={
         <>
           <Link className="admin-btn admin-btn--ghost" to="/admin/sales/calls">
-            مرکز تماس
+            {tr('مرکز تماس')}
           </Link>
           <Link className="admin-btn admin-btn--primary" to="/admin/sales/leads">
-            لیدها
+            {tr('لیدها')}
           </Link>
         </>
       }
     >
       <AdminKpiStrip items={stripKpis} ariaLabel="شاخص‌های فروش" />
 
-      <section className="sales-kpi-rings" aria-label="حلقه‌های KPI">
+      <section className="sales-kpi-rings" aria-label={tr("حلقه‌های KPI")}>
         {(data.kpiRings || []).map((r) => (
           <KpiRingCard key={r.key} ring={r} />
         ))}
@@ -189,23 +190,23 @@ export function AdminSalesDashboardPage() {
 
       <article className="admin-card sales-commission-card">
         <div>
-          <span className="admin-muted">کمیسیون تخمینی امروز</span>
-          <strong className="sales-commission-value">{formatNumFa(data.estimatedCommission)} تومان</strong>
+          <span className="admin-muted">{tr('کمیسیون تخمینی امروز')}</span>
+          <strong className="sales-commission-value">{formatNumFa(data.estimatedCommission)} {tr('تومان')}</strong>
           <p className="admin-muted">
-            {formatNumFa(data.commissionRatePct)}٪ از {formatNumFa(data.salesTodayValue)} تومان فروش شخصی امروز
+            {formatNumFa(data.commissionRatePct)}{tr('٪ از')} {formatNumFa(data.salesTodayValue)} {tr('تومان فروش شخصی امروز')}
           </p>
         </div>
         <div className="sales-commission-side">
           <div>
-            <span className="admin-muted">لید فعال</span>
+            <span className="admin-muted">{tr('لید فعال')}</span>
             <b>{formatNumFa(data.activeLeads)}</b>
           </div>
           <div>
-            <span className="admin-muted">پیگیری سررسید</span>
+            <span className="admin-muted">{tr('پیگیری سررسید')}</span>
             <b className={data.overdueFollowups ? 'sales-danger' : undefined}>{formatNumFa(data.overdueFollowups)}</b>
           </div>
           <div>
-            <span className="admin-muted">در انتظار مالی</span>
+            <span className="admin-muted">{tr('در انتظار مالی')}</span>
             <b>{formatNumFa(data.pendingFinance)}</b>
           </div>
         </div>
@@ -213,7 +214,7 @@ export function AdminSalesDashboardPage() {
 
       <AdminChartGrid cols={2}>
         <AdminChartCard
-          title="قیف مراحل فروش"
+          title={tr("قیف مراحل فروش")}
           empty={!stageChart.length}
           height={Math.max(240, 36 * Math.max(stageChart.length, 4))}
           rtlHBars
@@ -233,7 +234,7 @@ export function AdminSalesDashboardPage() {
           </ResponsiveContainer>
         </AdminChartCard>
 
-        <AdminChartCard title="روند درآمد روزانه" empty={!revenueTrend.length} height={240}>
+        <AdminChartCard title={tr("روند درآمد روزانه")} empty={!revenueTrend.length} height={240}>
           <ResponsiveContainer width="100%" height={240}>
             <AreaChart data={revenueTrend} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
               <MotionAreaGradientDefs id="salesRevArea" color={MOTION_PALETTE.purple} mid={MOTION_PALETTE.mint} />
@@ -253,7 +254,7 @@ export function AdminSalesDashboardPage() {
           </ResponsiveContainer>
         </AdminChartCard>
 
-        <AdminChartCard title="روند تماس‌های روزانه" empty={!callsTrend.length} height={220}>
+        <AdminChartCard title={tr("روند تماس‌های روزانه")} empty={!callsTrend.length} height={220}>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={callsTrend} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
               <MotionBarGradientDefs id="salesCallsBar" from={MOTION_PALETTE.mint} to={MOTION_PALETTE.blue} />
@@ -266,7 +267,7 @@ export function AdminSalesDashboardPage() {
         </AdminChartCard>
 
         <AdminChartCard
-          title="فروش بر اساس منبع"
+          title={tr("فروش بر اساس منبع")}
           empty={!bySource.length}
           height={Math.max(200, 36 * Math.max(bySource.length, 3))}
           rtlHBars
@@ -286,13 +287,13 @@ export function AdminSalesDashboardPage() {
 
       <section className="admin-card" style={{ marginTop: 4 }}>
         <div className="admin-card-head">
-          <h2>اقدام بعدی پیشنهادی</h2>
-          <span className="admin-muted">{formatNumFa(data.nextActions.length)} لید</span>
+          <h2>{tr('اقدام بعدی پیشنهادی')}</h2>
+          <span className="admin-muted">{formatNumFa(data.nextActions.length)} {tr('لید')}</span>
         </div>
         <div className="sales-next-actions">
           {data.nextActions.map((i) => (
             <article key={i.id} className="sales-next-card">
-              <div className="sales-next-score">امتیاز {formatNumFa(i.score)}</div>
+              <div className="sales-next-score">{tr('امتیاز')} {formatNumFa(i.score)}</div>
               <strong>
                 {i.first} {i.last}
               </strong>
@@ -303,26 +304,26 @@ export function AdminSalesDashboardPage() {
               <div className="sales-next-actions-row">
                 <span className="admin-muted">{relativeFa(i.lastActivity)}</span>
                 <Link className="admin-btn admin-btn--primary admin-btn--sm" to={`/admin/sales/leads/${i.id}`}>
-                  تماس / باز
+                  {tr('تماس / باز')}
                 </Link>
               </div>
             </article>
           ))}
-          {!data.nextActions.length ? <p className="admin-dash-chart-empty">اقدام پیشنهادی نیست</p> : null}
+          {!data.nextActions.length ? <p className="admin-dash-chart-empty">{tr('اقدام پیشنهادی نیست')}</p> : null}
         </div>
       </section>
 
       <section className="admin-card" style={{ marginTop: 14 }}>
         <div className="admin-card-head">
-          <h2>فالوآپ‌های من</h2>
+          <h2>{tr('فالوآپ‌های من')}</h2>
         </div>
         <div className="admin-table-wrap">
           <table className="admin-table">
             <thead>
               <tr>
-                <th>مخاطب/شرح</th>
-                <th>نوع</th>
-                <th>سررسید</th>
+                <th>{tr('مخاطب/شرح')}</th>
+                <th>{tr('نوع')}</th>
+                <th>{tr('سررسید')}</th>
                 <th></th>
               </tr>
             </thead>
@@ -338,7 +339,7 @@ export function AdminSalesDashboardPage() {
                     <td>{f.type}</td>
                     <td>
                       <span className={overdue ? 'sales-badge sales-badge--danger' : 'sales-badge'}>
-                        {overdue ? `سررسید گذشته · ${relativeFa(f.at)}` : relativeFa(f.at)}
+                        {overdue ? `${tr('سررسید گذشته · ')}${relativeFa(f.at)}` : relativeFa(f.at)}
                       </span>
                     </td>
                     <td>
@@ -348,7 +349,7 @@ export function AdminSalesDashboardPage() {
                           className="admin-btn admin-btn--ghost admin-btn--sm"
                           onClick={() => void completeFollowup(f.id)}
                         >
-                          انجام شد
+                          {tr('انجام شد')}
                         </button>
                       ) : (
                         f.status
@@ -359,7 +360,7 @@ export function AdminSalesDashboardPage() {
               })}
               {!data.myFollowups.length ? (
                 <tr>
-                  <td colSpan={4}>خالی</td>
+                  <td colSpan={4}>{tr('خالی')}</td>
                 </tr>
               ) : null}
             </tbody>

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import type { AdminModuleCardProps } from './types';
+import { tr } from '../../i18n';
 
 export function AdminModuleCard({
   title,
@@ -21,7 +22,7 @@ export function AdminModuleCard({
         {items.map((it) => (
           <div key={String(it.label)}>
             <em>{it.value}</em>
-            <span>{it.label}</span>
+            <span>{tr(it.label)}</span>
           </div>
         ))}
       </div>

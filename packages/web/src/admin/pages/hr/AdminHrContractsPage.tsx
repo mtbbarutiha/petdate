@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import type { HrContract, HrEmployee } from '@petdate/shared';
 import { adminFetch, formatNumFa } from '../../api';
 import { AdminEntityCell, AdminThumb } from '../../AdminThumb';
+import { tr } from '../../../i18n';
 
 export function AdminHrContractsPage() {
   const [contracts, setContracts] = useState<HrContract[]>([]);
@@ -33,8 +34,8 @@ export function AdminHrContractsPage() {
     <div className="admin-page">
       <header className="admin-header">
         <div>
-          <h1>قراردادها</h1>
-          <p>{formatNumFa(contracts.length)} قرارداد · نسخه‌بندی بدون بازنویسی</p>
+          <h1>{tr('قراردادها')}</h1>
+          <p>{formatNumFa(contracts.length)} {tr('قرارداد · نسخه‌بندی بدون بازنویسی')}</p>
         </div>
       </header>
       {error ? <p className="admin-error">{error}</p> : null}
@@ -42,20 +43,20 @@ export function AdminHrContractsPage() {
         <table className="admin-table admin-table--dense">
           <thead>
             <tr>
-              <th>کد</th>
-              <th>همکار</th>
-              <th>شروع</th>
-              <th>پایان</th>
-              <th>حقوق</th>
-              <th>عیدی</th>
-              <th>سنوات</th>
+              <th>{tr('کد')}</th>
+              <th>{tr('همکار')}</th>
+              <th>{tr('شروع')}</th>
+              <th>{tr('پایان')}</th>
+              <th>{tr('حقوق')}</th>
+              <th>{tr('عیدی')}</th>
+              <th>{tr('سنوات')}</th>
             </tr>
           </thead>
           <tbody>
             {contracts.length === 0 ? (
               <tr>
                 <td colSpan={7} className="admin-empty">
-                  قراردادی ثبت نشده — از پرونده همکار اضافه کنید
+                  {tr('قراردادی ثبت نشده — از پرونده همکار اضافه کنید')}
                 </td>
               </tr>
             ) : (
@@ -76,7 +77,7 @@ export function AdminHrContractsPage() {
                       />
                     </td>
                     <td>{c.startDate || '—'}</td>
-                    <td>{c.endDate || 'باز'}</td>
+                    <td>{c.endDate || tr('باز')}</td>
                     <td>{formatNumFa(c.salary)}</td>
                     <td>{formatNumFa(c.eidi)}</td>
                     <td>{formatNumFa(c.sanavat)}</td>

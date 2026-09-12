@@ -14,6 +14,7 @@ import {
 } from '@petdate/shared';
 import { adminFetch } from '../api';
 import { adminCan } from '../auth';
+import { tr } from '../../i18n';
 
 const FLAGS: { key: string; label: string; hint: string }[] = [
   { key: 'shopEnabled', label: 'فروشگاه', hint: 'فعال بودن مسیر /shop' },
@@ -199,7 +200,7 @@ export function AdminSettingsPage() {
 
   const softDelete = async (id: number) => {
     if (!canWrite) return;
-    if (!window.confirm('حذف نرم؟ گزینه در گزارش‌های تاریخی باقی می‌ماند و فقط از انتخاب جدید مخفی می‌شود.')) {
+    if (!window.confirm(tr('حذف نرم؟ گزینه در گزارش‌های تاریخی باقی می‌ماند و فقط از انتخاب جدید مخفی می‌شود.'))) {
       return;
     }
     setBusy(true);
@@ -264,13 +265,13 @@ export function AdminSettingsPage() {
     <div className="admin-page admin-page--wide">
       <header className="admin-header">
         <div>
-          <h1>تنظیمات پلتفرم</h1>
-          <p>فلگ‌ها، دراپ‌داون‌های ماژولار و هدف‌گذاری — حذف نرم برای حفظ گزارش‌ها</p>
+          <h1>{tr('تنظیمات پلتفرم')}</h1>
+          <p>{tr('فلگ‌ها، دراپ‌داون‌های ماژولار و هدف‌گذاری — حذف نرم برای حفظ گزارش‌ها')}</p>
         </div>
       </header>
 
       {error ? <p className="admin-error">{error}</p> : null}
-      {saved ? <p className="admin-success">ذخیره شد</p> : null}
+      {saved ? <p className="admin-success">{tr('ذخیره شد')}</p> : null}
 
       <div className="admin-tabs">
         {(
@@ -299,7 +300,7 @@ export function AdminSettingsPage() {
           <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
             {canWrite ? (
               <button type="button" className="admin-btn admin-btn--primary" onClick={() => void saveFlags()}>
-                ذخیره فلگ‌ها
+                {tr('ذخیره فلگ‌ها')}
               </button>
             ) : null}
           </div>
@@ -307,8 +308,8 @@ export function AdminSettingsPage() {
             {FLAGS.map((f) => (
               <article key={f.key} className="admin-card admin-setting-card">
                 <div>
-                  <h3>{f.label}</h3>
-                  <p className="admin-muted">{f.hint}</p>
+                  <h3>{tr(f.label)}</h3>
+                  <p className="admin-muted">{tr(f.hint)}</p>
                   <code className="admin-mono">{f.key}</code>
                 </div>
                 <button
@@ -318,18 +319,18 @@ export function AdminSettingsPage() {
                   aria-pressed={settings[f.key] === '1'}
                   disabled={!canWrite}
                 >
-                  {settings[f.key] === '1' ? 'روشن' : 'خاموش'}
+                  {settings[f.key] === '1' ? tr('روشن') : tr('خاموش')}
                 </button>
               </article>
             ))}
           </div>
 
           <section className="admin-card" style={{ marginTop: 16, padding: 16 }}>
-            <h2 style={{ marginTop: 0, fontSize: '1rem' }}>پارامترهای مالی</h2>
+            <h2 style={{ marginTop: 0, fontSize: '1rem' }}>{tr('پارامترهای مالی')}</h2>
             <div className="admin-form-grid" style={{ marginTop: 12 }}>
               {FINANCE_NUMS.map((f) => (
                 <label key={f.key}>
-                  <span className="form-label">{f.label}</span>
+                  <span className="form-label">{tr(f.label)}</span>
                   <input
                     className="form-input"
                     type="number"
@@ -340,22 +341,22 @@ export function AdminSettingsPage() {
                       setSaved(false);
                     }}
                   />
-                  <small className="admin-muted">{f.hint}</small>
+                  <small className="admin-muted">{tr(f.hint)}</small>
                 </label>
               ))}
             </div>
           </section>
 
           <section className="admin-card" style={{ marginTop: 16, padding: 16 }}>
-            <h2 style={{ marginTop: 0, fontSize: '1rem' }}>آنالیتیکس / GA4</h2>
+            <h2 style={{ marginTop: 0, fontSize: '1rem' }}>{tr('آنالیتیکس / GA4')}</h2>
             <div className="admin-form-grid" style={{ marginTop: 12 }}>
               {ANALYTICS_TEXT.map((f) => (
                 <label key={f.key}>
-                  <span className="form-label">{f.label}</span>
+                  <span className="form-label">{tr(f.label)}</span>
                   <input
                     className="form-input"
                     dir="ltr"
-                    placeholder={f.placeholder}
+                    placeholder={tr(f.placeholder)}
                     value={settings[f.key] ?? ''}
                     disabled={!canWrite}
                     onChange={(e) => {
@@ -363,7 +364,7 @@ export function AdminSettingsPage() {
                       setSaved(false);
                     }}
                   />
-                  <small className="admin-muted">{f.hint}</small>
+                  <small className="admin-muted">{tr(f.hint)}</small>
                 </label>
               ))}
             </div>
@@ -373,9 +374,9 @@ export function AdminSettingsPage() {
 
       {tab === 'dropdowns' || tab === 'goals' ? (
         <section className="admin-card" style={{ marginBottom: 16, padding: 16 }}>
-          <h2 style={{ marginTop: 0, fontSize: '1rem' }}>انتخاب ماژول</h2>
+          <h2 style={{ marginTop: 0, fontSize: '1rem' }}>{tr('انتخاب ماژول')}</h2>
           <p className="admin-muted" style={{ marginBottom: 12 }}>
-            هر ماژول دراپ‌داون‌ها و هدف‌گذاری مخصوص خود را دارد.
+            {tr('هر ماژول دراپ‌داون‌ها و هدف‌گذاری مخصوص خود را دارد.')}
           </p>
           <div className="admin-tabs" style={{ flexWrap: 'wrap' }}>
             {(modules.length
@@ -393,7 +394,7 @@ export function AdminSettingsPage() {
                 className={`admin-tab${moduleKey === m.key ? ' is-on' : ''}`}
                 onClick={() => setModuleKey(m.key)}
               >
-                {m.label}
+                {tr(m.label)}
               </button>
             ))}
           </div>
@@ -404,7 +405,7 @@ export function AdminSettingsPage() {
         <>
           <section className="admin-card" style={{ padding: 16 }}>
             <div className="admin-card-head" style={{ marginBottom: 12 }}>
-              <h2 style={{ margin: 0, fontSize: '1rem' }}>فیلدهای دراپ‌داون · {moduleLabel}</h2>
+              <h2 style={{ margin: 0, fontSize: '1rem' }}>{tr('فیلدهای دراپ‌داون ·')} {moduleLabel}</h2>
             </div>
             <div className="admin-tabs admin-tabs--modal" style={{ flexWrap: 'wrap', marginBottom: 16 }}>
               {fields.map((f) => (
@@ -414,10 +415,10 @@ export function AdminSettingsPage() {
                   className={`admin-tab${fieldKey === f.fieldKey ? ' is-on' : ''}`}
                   onClick={() => setFieldKey(f.fieldKey)}
                 >
-                  {f.label}
+                  {tr(f.label)}
                 </button>
               ))}
-              {!fields.length ? <span className="admin-muted">فیلدی تعریف نشده</span> : null}
+              {!fields.length ? <span className="admin-muted">{tr('فیلدی تعریف نشده')}</span> : null}
             </div>
 
             {canWrite ? (
@@ -425,7 +426,7 @@ export function AdminSettingsPage() {
                 <input
                   className="form-input"
                   style={{ flex: '1 1 220px' }}
-                  placeholder="برچسب گزینه جدید…"
+                  placeholder={tr("برچسب گزینه جدید…")}
                   value={newLabel}
                   onChange={(e) => setNewLabel(e.target.value)}
                   disabled={busy || !fieldKey}
@@ -436,7 +437,7 @@ export function AdminSettingsPage() {
                   disabled={busy || !newLabel.trim() || !fieldKey}
                   onClick={() => void addOption()}
                 >
-                  افزودن
+                  {tr('افزودن')}
                 </button>
               </div>
             ) : null}
@@ -445,23 +446,23 @@ export function AdminSettingsPage() {
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th>برچسب</th>
-                    <th>مقدار</th>
-                    <th>ترتیب</th>
-                    <th>وضعیت</th>
-                    <th>عملیات</th>
+                    <th>{tr('برچسب')}</th>
+                    <th>{tr('مقدار')}</th>
+                    <th>{tr('ترتیب')}</th>
+                    <th>{tr('وضعیت')}</th>
+                    <th>{tr('عملیات')}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {activeOpts.map((o) => (
                     <tr key={o.id}>
-                      <td>{o.label}</td>
+                      <td>{tr(o.label)}</td>
                       <td>
                         <code className="admin-mono">{o.value}</code>
                       </td>
                       <td>{o.sortOrder}</td>
                       <td>
-                        <span className="admin-badge">فعال</span>
+                        <span className="admin-badge">{tr('فعال')}</span>
                       </td>
                       <td>
                         {canWrite ? (
@@ -471,7 +472,7 @@ export function AdminSettingsPage() {
                             disabled={busy}
                             onClick={() => void softDelete(o.id)}
                           >
-                            حذف نرم
+                            {tr('حذف نرم')}
                           </button>
                         ) : (
                           '—'
@@ -481,7 +482,7 @@ export function AdminSettingsPage() {
                   ))}
                   {!activeOpts.length ? (
                     <tr>
-                      <td colSpan={5}>گزینه فعالی نیست</td>
+                      <td colSpan={5}>{tr('گزینه فعالی نیست')}</td>
                     </tr>
                   ) : null}
                 </tbody>
@@ -490,24 +491,24 @@ export function AdminSettingsPage() {
 
             {inactiveOpts.length ? (
               <>
-                <h3 style={{ fontSize: '0.95rem', marginTop: 20 }}>غیرفعال (حفظ‌شده برای گزارش)</h3>
+                <h3 style={{ fontSize: '0.95rem', marginTop: 20 }}>{tr('غیرفعال (حفظ‌شده برای گزارش)')}</h3>
                 <p className="admin-muted">
-                  این مقادیر در انتخاب جدید دیده نمی‌شوند ولی در گزارش‌های تاریخی با برچسب درست نمایش داده می‌شوند.
+                  {tr('این مقادیر در انتخاب جدید دیده نمی‌شوند ولی در گزارش‌های تاریخی با برچسب درست نمایش داده می‌شوند.')}
                 </p>
                 <div className="admin-table-wrap">
                   <table className="admin-table">
                     <thead>
                       <tr>
-                        <th>برچسب</th>
-                        <th>مقدار</th>
-                        <th>حذف در</th>
-                        <th>عملیات</th>
+                        <th>{tr('برچسب')}</th>
+                        <th>{tr('مقدار')}</th>
+                        <th>{tr('حذف در')}</th>
+                        <th>{tr('عملیات')}</th>
                       </tr>
                     </thead>
                     <tbody>
                       {inactiveOpts.map((o) => (
                         <tr key={o.id}>
-                          <td>{o.label}</td>
+                          <td>{tr(o.label)}</td>
                           <td>
                             <code className="admin-mono">{o.value}</code>
                           </td>
@@ -520,7 +521,7 @@ export function AdminSettingsPage() {
                                 disabled={busy}
                                 onClick={() => void restore(o.id)}
                               >
-                                بازگردانی
+                                {tr('بازگردانی')}
                               </button>
                             ) : (
                               '—'
@@ -536,7 +537,7 @@ export function AdminSettingsPage() {
           </section>
 
           <section className="admin-card" style={{ marginTop: 16, padding: 16 }}>
-            <h2 style={{ marginTop: 0, fontSize: '1rem' }}>تاریخچه تغییرات</h2>
+            <h2 style={{ marginTop: 0, fontSize: '1rem' }}>{tr('تاریخچه تغییرات')}</h2>
             <ul className="admin-log-list">
               {audit.map((a) => (
                 <li key={a.id}>
@@ -546,7 +547,7 @@ export function AdminSettingsPage() {
                   </div>
                 </li>
               ))}
-              {!audit.length ? <li className="admin-muted">هنوز تغییری ثبت نشده</li> : null}
+              {!audit.length ? <li className="admin-muted">{tr('هنوز تغییری ثبت نشده')}</li> : null}
             </ul>
           </section>
         </>
@@ -555,7 +556,7 @@ export function AdminSettingsPage() {
       {tab === 'goals' ? (
         <section className="admin-card" style={{ padding: 16 }}>
           <div className="admin-card-head" style={{ marginBottom: 12 }}>
-            <h2 style={{ margin: 0, fontSize: '1rem' }}>هدف‌گذاری {moduleLabel}</h2>
+            <h2 style={{ margin: 0, fontSize: '1rem' }}>{tr('هدف‌گذاری')} {moduleLabel}</h2>
             {canWrite ? (
               <button
                 type="button"
@@ -563,18 +564,18 @@ export function AdminSettingsPage() {
                 disabled={busy}
                 onClick={() => void saveGoals()}
               >
-                ذخیره اهداف
+                {tr('ذخیره اهداف')}
               </button>
             ) : null}
           </div>
           <p className="admin-muted" style={{ marginBottom: 16 }}>
-            اهداف دوره‌ای برای این ماژول. مقایسه با عملکرد واقعی در نسخه‌های بعدی داشبورد اضافه می‌شود.
+            {tr('اهداف دوره‌ای برای این ماژول. مقایسه با عملکرد واقعی در نسخه‌های بعدی داشبورد اضافه می‌شود.')}
           </p>
           <div className="admin-form-grid">
             {(metrics.length ? metrics : getPlatformGoalMetrics(moduleKey)).map((m) => (
               <label key={m.key}>
                 <span className="form-label">
-                  {m.label}
+                  {tr(m.label)}
                   <span className="admin-muted"> · {PERIOD_FA[m.period] || m.period}
                     {m.unit ? ` · ${m.unit}` : ''}
                   </span>
@@ -596,7 +597,7 @@ export function AdminSettingsPage() {
           </div>
           {goals?.updatedAt ? (
             <p className="admin-muted" style={{ marginTop: 12 }}>
-              آخرین به‌روزرسانی: {goals.updatedAt}
+              {tr('آخرین به‌روزرسانی:')} {goals.updatedAt}
               {goals.updatedBy ? ` · ${goals.updatedBy}` : ''}
             </p>
           ) : null}

@@ -9,6 +9,7 @@ import { adminFetch, formatNumFa } from '../api';
 import { formatAdminFaDateTime } from '../JalaliDateSelect';
 import { AdminIdChip } from '../AdminIds';
 import { AdminEntityCell, AdminThumb } from '../AdminThumb';
+import { tr } from '../../i18n';
 
 const STATUSES = ['requested', 'active', 'completed', 'cancelled', 'expired'] as const;
 const STATUS_FA: Record<string, string> = {
@@ -49,11 +50,11 @@ export function AdminConsultsPage() {
     <div className="admin-page">
       <header className="admin-header">
         <div>
-          <h1>مشاوره دامپزشک</h1>
-          <p>{formatNumFa(items.length)} مشاوره</p>
+          <h1>{tr('مشاوره دامپزشک')}</h1>
+          <p>{formatNumFa(items.length)} {tr('مشاوره')}</p>
         </div>
         <select className="admin-select" value={status} onChange={(e) => setStatus(e.target.value)}>
-          <option value="">همه</option>
+          <option value="">{tr('همه')}</option>
           {STATUSES.map((s) => <option key={s} value={s}>{STATUS_FA[s] || s}</option>)}
         </select>
       </header>
@@ -61,14 +62,14 @@ export function AdminConsultsPage() {
       <div className="admin-table-wrap admin-card"><table className="admin-table admin-table--dense">
         <thead>
           <tr>
-            <th>آیدی</th>
-            <th>بیمار</th>
-            <th>پزشک / مربی</th>
-            <th>پت</th>
-            <th>نوع</th>
-            <th>وضعیت</th>
-            <th>زمان</th>
-            <th>تغییر</th>
+            <th>{tr('آیدی')}</th>
+            <th>{tr('بیمار')}</th>
+            <th>{tr('پزشک / مربی')}</th>
+            <th>{tr('پت')}</th>
+            <th>{tr('نوع')}</th>
+            <th>{tr('وضعیت')}</th>
+            <th>{tr('زمان')}</th>
+            <th>{tr('تغییر')}</th>
           </tr>
         </thead>
         <tbody>
@@ -84,7 +85,7 @@ export function AdminConsultsPage() {
                       src={c.patientAvatarUrl}
                       label={c.patientName}
                       kind="user"
-                      alt={c.patientName || 'بیمار'}
+                      alt={c.patientName || tr('بیمار')}
                     />
                   }
                   title={<strong>{c.patientName || '—'}</strong>}
@@ -102,7 +103,7 @@ export function AdminConsultsPage() {
                       src={c.vetAvatarUrl}
                       label={c.vetName}
                       kind="user"
-                      alt={c.vetName || 'پزشک'}
+                      alt={c.vetName || tr('پزشک')}
                     />
                   }
                   title={<strong>{c.vetName || '—'}</strong>}
@@ -121,7 +122,7 @@ export function AdminConsultsPage() {
                       petId={c.petId}
                       kind="pet"
                       label={c.petName}
-                      alt={c.petName || 'پت'}
+                      alt={c.petName || tr('پت')}
                     />
                   }
                   title={c.petName || '—'}
@@ -136,7 +137,7 @@ export function AdminConsultsPage() {
               </td>
               <td>
                 <span className="admin-badge">
-                  {KIND_FA[c.serviceKind || ''] || c.serviceKind || 'دامپزشک'}
+                  {KIND_FA[c.serviceKind || ''] || c.serviceKind || tr('دامپزشک')}
                 </span>
               </td>
               <td><span className="admin-badge">{STATUS_FA[c.status] || c.status}</span></td>
@@ -152,7 +153,7 @@ export function AdminConsultsPage() {
               </td>
             </tr>
           ))}
-          {!items.length ? <tr><td colSpan={8} className="admin-muted">مشاوره‌ای نیست</td></tr> : null}
+          {!items.length ? <tr><td colSpan={8} className="admin-muted">{tr('مشاوره‌ای نیست')}</td></tr> : null}
         </tbody>
       </table></div>
     </div>

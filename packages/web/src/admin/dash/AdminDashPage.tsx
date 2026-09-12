@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { RefreshCw } from 'lucide-react';
+import { tr } from '../../i18n';
 
 type Props = {
   title: string;
@@ -39,7 +40,7 @@ export function AdminDashPage({
           <h1>{title}</h1>
           {subtitle ? (
             <p>
-              {live ? <span className="admin-live-pulse">زنده</span> : null}
+              {live ? <span className="admin-live-pulse">{tr('زنده')}</span> : null}
               {live ? ' ' : null}
               {subtitle}
             </p>

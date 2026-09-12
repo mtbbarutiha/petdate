@@ -44,6 +44,7 @@ import {
   AdminModuleGrid,
   type AdminKpiItem,
 } from '../dash';
+import { tr } from '../../i18n';
 
 type ChartPoint = { label: string; value: number };
 type ChartSlice = { label: string; value: number; color: string };
@@ -208,7 +209,7 @@ function GaugeSemi({ pct, standing }: { pct: number; standing: string }) {
   const c = Math.PI * r;
   const filled = (clamped / 100) * c;
   return (
-    <div className="crm-gauge" aria-label={`تحقق ${pct} درصد`}>
+    <div className="crm-gauge" aria-label={`${tr('تحقق ')}${pct}${tr(' درصد')}`}>
       <svg viewBox="0 0 180 110" width="180" height="110">
         <path d="M 20 95 A 70 70 0 0 1 160 95" fill="none" stroke="var(--admin-border)" strokeWidth="14" strokeLinecap="round" />
         <path
@@ -220,14 +221,14 @@ function GaugeSemi({ pct, standing }: { pct: number; standing: string }) {
           strokeDasharray={`${filled} ${c}`}
         />
         <text x="90" y="78" textAnchor="middle" className="crm-gauge-value" fill={color}>
-          {formatNumFa(clamped)}٪
+          {formatNumFa(clamped)}{tr('٪')}
         </text>
         <text x="90" y="98" textAnchor="middle" className="crm-gauge-sub" fill="var(--admin-muted)">
-          سلامت کلی پلتفرم
+          {tr('سلامت کلی پلتفرم')}
         </text>
       </svg>
       <span className="crm-standing-pill" style={{ background: `${color}22`, color, borderColor: `${color}55` }}>
-        {standing}
+        {tr(standing)}
       </span>
     </div>
   );
@@ -257,11 +258,11 @@ function KpiRing({ kpi }: { kpi: DashKpi }) {
           {formatNumFa(kpi.value)}
         </text>
         <text x="36" y="48" textAnchor="middle" className="crm-kpi-ring-target" fill="var(--admin-muted)">
-          از {formatNumFa(kpi.target)}
+          {tr('از')} {formatNumFa(kpi.target)}
         </text>
       </svg>
-      <div className="crm-kpi-ring-label">{kpi.label}</div>
-      <div className="admin-muted" style={{ fontSize: 11 }}>{kpi.unit}</div>
+      <div className="crm-kpi-ring-label">{tr(kpi.label)}</div>
+      <div className="admin-muted" style={{ fontSize: 11 }}>{tr(kpi.unit)}</div>
     </div>
   );
 }
@@ -358,11 +359,11 @@ export function AdminDashboardPage() {
 
   const platformKpis: AdminKpiItem[] = s
     ? [
-        { key: 'users', label: 'کاربران', value: formatNumFa(s.users), icon: Users, tone: 'violet', to: links?.users || '/admin/users' },
-        { key: 'pets', label: 'پت‌ها', value: formatNumFa(s.pets), icon: PawPrint, tone: 'mint', to: links?.pets || '/admin/pets' },
+        { key: 'users', label: tr('کاربران'), value: formatNumFa(s.users), icon: Users, tone: 'violet', to: links?.users || '/admin/users' },
+        { key: 'pets', label: tr('پت‌ها'), value: formatNumFa(s.pets), icon: PawPrint, tone: 'mint', to: links?.pets || '/admin/pets' },
         {
           key: 'playdates',
-          label: 'همبازی (باز)',
+          label: tr('همبازی (باز)'),
           value: formatNumFa(s.playdatesPending),
           icon: HeartHandshake,
           tone: 'orange',
@@ -370,7 +371,7 @@ export function AdminDashboardPage() {
         },
         {
           key: 'consults',
-          label: 'مشاوره باز',
+          label: tr('مشاوره باز'),
           value: formatNumFa(s.vetConsultsOpen),
           icon: Stethoscope,
           tone: 'sky',
@@ -378,7 +379,7 @@ export function AdminDashboardPage() {
         },
         {
           key: 'shop',
-          label: 'سفارش فروشگاه',
+          label: tr('سفارش فروشگاه'),
           value: formatNumFa(s.shopOrders),
           icon: Package,
           tone: 'slate',
@@ -386,7 +387,7 @@ export function AdminDashboardPage() {
         },
         {
           key: 'revenue',
-          label: 'درآمد فروشگاه',
+          label: tr('درآمد فروشگاه'),
           value: formatTomanFa(s.shopRevenueToman),
           icon: Wallet,
           tone: 'mint',
@@ -395,7 +396,7 @@ export function AdminDashboardPage() {
         },
         {
           key: 'pending',
-          label: 'پرداخت در انتظار',
+          label: tr('پرداخت در انتظار'),
           value: formatNumFa(s.paymentOrdersPending),
           icon: Wallet,
           tone: 'orange',
@@ -403,7 +404,7 @@ export function AdminDashboardPage() {
         },
         {
           key: 'errors',
-          label: 'خطای ۲۴س',
+          label: tr('خطای ۲۴س'),
           value: formatNumFa(s.botRelated.errors24h),
           icon: Activity,
           tone: 'orange',
@@ -416,40 +417,40 @@ export function AdminDashboardPage() {
     ? [
         {
           key: 'hr',
-          title: 'پیوند · منابع انسانی',
+          title: tr('پیوند · منابع انسانی'),
           to: links?.hr || '/admin/hr',
           icon: Building2,
           tone: 'mint',
           items: [
-            { label: 'پرسنل', value: formatNumFa(m.hr.personnel) },
-            { label: 'درخواست باز', value: formatNumFa(m.hr.openRequests) },
-            { label: 'کارتابل', value: formatNumFa(m.hr.cockpitTasks) },
-            { label: 'آنبوردینگ', value: formatNumFa(m.hr.openOnboarding) },
+            { label: tr('پرسنل'), value: formatNumFa(m.hr.personnel) },
+            { label: tr('درخواست باز'), value: formatNumFa(m.hr.openRequests) },
+            { label: tr('کارتابل'), value: formatNumFa(m.hr.cockpitTasks) },
+            { label: tr('آنبوردینگ'), value: formatNumFa(m.hr.openOnboarding) },
           ],
         },
         {
           key: 'sales',
-          title: 'فروش · CRM',
+          title: tr('فروش · CRM'),
           to: links?.sales || '/admin/sales',
           icon: Briefcase,
           tone: 'orange',
           items: [
-            { label: 'لید فعال', value: formatNumFa(m.sales.activeLeads) },
-            { label: 'فروش امروز', value: formatNumFa(m.sales.salesTodayCount) },
-            { label: 'پیگیری سررسید', value: formatNumFa(m.sales.overdueFollowups) },
-            { label: 'در انتظار مالی', value: formatNumFa(m.sales.pendingFinance) },
+            { label: tr('لید فعال'), value: formatNumFa(m.sales.activeLeads) },
+            { label: tr('فروش امروز'), value: formatNumFa(m.sales.salesTodayCount) },
+            { label: tr('پیگیری سررسید'), value: formatNumFa(m.sales.overdueFollowups) },
+            { label: tr('در انتظار مالی'), value: formatNumFa(m.sales.pendingFinance) },
           ],
         },
         {
           key: 'crm',
-          title: 'باشگاه مشتریان · پشتیبانی',
+          title: tr('باشگاه مشتریان · پشتیبانی'),
           to: links?.crm || '/admin/crm',
           icon: Headphones,
           tone: 'sky',
           items: [
-            { label: 'تیکت باز', value: formatNumFa(m.crm.openTickets) },
-            { label: 'نقض SLA', value: formatNumFa(m.crm.breachedSla) },
-            { label: 'شکایت باز', value: formatNumFa(m.crm.openComplaints) },
+            { label: tr('تیکت باز'), value: formatNumFa(m.crm.openTickets) },
+            { label: tr('نقض SLA'), value: formatNumFa(m.crm.breachedSla) },
+            { label: tr('شکایت باز'), value: formatNumFa(m.crm.openComplaints) },
             {
               label: 'CSAT',
               value: m.crm.avgCsat != null ? formatNumFa(m.crm.avgCsat) : '—',
@@ -458,15 +459,15 @@ export function AdminDashboardPage() {
         },
         {
           key: 'mail',
-          title: 'صندوق ایمیل',
+          title: tr('صندوق ایمیل'),
           to: links?.mail || '/admin/mail',
           icon: Mail,
           tone: m.mail.configured ? 'violet' : 'slate',
           items: [
-            { label: 'خوانده‌نشده', value: formatNumFa(m.mail.unread) },
-            { label: 'کل پیام', value: formatNumFa(m.mail.total) },
-            { label: 'وضعیت', value: m.mail.configured ? 'فعال' : 'خاموش' },
-            { label: 'آدرس', value: m.mail.address || '—' },
+            { label: tr('خوانده‌نشده'), value: formatNumFa(m.mail.unread) },
+            { label: tr('کل پیام'), value: formatNumFa(m.mail.total) },
+            { label: tr('وضعیت'), value: m.mail.configured ? 'فعال' : 'خاموش' },
+            { label: tr('آدرس'), value: m.mail.address || '—' },
           ],
         },
       ]
@@ -570,11 +571,11 @@ export function AdminDashboardPage() {
 
   return (
     <AdminDashPage
-      title="داشبورد پلتفرم"
+      title={tr("داشبورد پلتفرم")}
       live
       subtitle={
         <>
-          گزارش یکپارچهٔ پلتفرم · پیوند · فروش · باشگاه مشتریان · ایمیل
+          {tr('گزارش یکپارچهٔ پلتفرم · پیوند · فروش · باشگاه مشتریان · ایمیل')}
           {data?.generatedAt ? ` · ${formatAdminFaDateTime(data.generatedAt)}` : ''}
         </>
       }
@@ -587,26 +588,26 @@ export function AdminDashboardPage() {
             className={`admin-tab${tab === 'overview' ? ' is-on' : ''}`}
             onClick={() => setTab('overview')}
           >
-            نمای کلی
+            {tr('نمای کلی')}
           </button>
           <button
             type="button"
             className={`admin-tab${tab === 'activity' ? ' is-on' : ''}`}
             onClick={() => setTab('activity')}
           >
-            فعالیت‌ها
+            {tr('فعالیت‌ها')}
           </button>
         </div>
       }
       filters={
         <section className="admin-card admin-dash-filters" style={{ padding: 14 }}>
           <div className="admin-card-head" style={{ marginBottom: 10 }}>
-            <h2 style={{ fontSize: '0.95rem', margin: 0 }}>فیلترها</h2>
+            <h2 style={{ fontSize: '0.95rem', margin: 0 }}>{tr('فیلترها')}</h2>
             <button type="button" className="admin-btn admin-btn--ghost" onClick={() => setFilters(emptyFilters)}>
-              پاک کردن
+              {tr('پاک کردن')}
             </button>
           </div>
-          <div className="hr-reports-filters" role="group" aria-label="فیلتر داشبورد">
+          <div className="hr-reports-filters" role="group" aria-label={tr("فیلتر داشبورد")}>
             <JalaliDateRange
               from={filters.from}
               to={filters.to}
@@ -616,26 +617,26 @@ export function AdminDashboardPage() {
               toLabel="تا تاریخ"
             />
             <label className="hr-reports-filter">
-              <span>تیم / دپارتمان</span>
+              <span>{tr('تیم / دپارتمان')}</span>
               <select
                 className="admin-select"
                 value={filters.team}
                 onChange={(e) => setFilters((f) => ({ ...f, team: e.target.value }))}
               >
-                <option value="">همه</option>
+                <option value="">{tr('همه')}</option>
                 {(data?.filterOptions?.teams || []).map((t) => (
                   <option key={t} value={t}>{t}</option>
                 ))}
               </select>
             </label>
             <label className="hr-reports-filter">
-              <span>فرد</span>
+              <span>{tr('فرد')}</span>
               <select
                 className="admin-select"
                 value={filters.personId}
                 onChange={(e) => setFilters((f) => ({ ...f, personId: e.target.value }))}
               >
-                <option value="">همه</option>
+                <option value="">{tr('همه')}</option>
                 {(data?.filterOptions?.people || []).map((p) => (
                   <option key={p.id} value={String(p.id)}>{p.name}</option>
                 ))}
@@ -648,7 +649,7 @@ export function AdminDashboardPage() {
                 <span key={c} className="admin-pill admin-pill--line">{c}</span>
               ))}
               <span className="admin-muted" style={{ fontSize: 12 }}>
-                کلیک روی برش نمودار، فیلتر را اعمال می‌کند
+                {tr('کلیک روی برش نمودار، فیلتر را اعمال می‌کند')}
               </span>
             </div>
           ) : null}
@@ -658,24 +659,24 @@ export function AdminDashboardPage() {
       {tab === 'activity' ? (
         <section className="admin-card">
           <div className="admin-card-head">
-            <h2>فعالیت‌های سیستم</h2>
-            <span className="admin-muted">{formatNumFa(activity.length)} ردیف</span>
+            <h2>{tr('فعالیت‌های سیستم')}</h2>
+            <span className="admin-muted">{formatNumFa(activity.length)} {tr('ردیف')}</span>
           </div>
           <div className="admin-table-wrap">
             <table className="admin-table admin-table--dense">
               <thead>
                 <tr>
-                  <th>زمان</th>
-                  <th>عامل</th>
-                  <th>اقدام</th>
-                  <th>مرجع</th>
-                  <th>منبع</th>
+                  <th>{tr('زمان')}</th>
+                  <th>{tr('عامل')}</th>
+                  <th>{tr('اقدام')}</th>
+                  <th>{tr('مرجع')}</th>
+                  <th>{tr('منبع')}</th>
                 </tr>
               </thead>
               <tbody>
                 {activity.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="admin-muted">فعالیتی نیست</td>
+                    <td colSpan={5} className="admin-muted">{tr('فعالیتی نیست')}</td>
                   </tr>
                 ) : (
                   activity.map((row) => (
@@ -707,8 +708,8 @@ export function AdminDashboardPage() {
           {healthKpis.length ? (
             <section className="admin-card crm-kpi-panel" style={{ marginBottom: 16 }}>
               <div className="admin-card-head">
-                <h2>وضعیت سلامت پلتفرم نسبت به شاخص‌ها</h2>
-                <span className="admin-muted">پنل پویا · مشابه باشگاه مشتریان</span>
+                <h2>{tr('وضعیت سلامت پلتفرم نسبت به شاخص‌ها')}</h2>
+                <span className="admin-muted">{tr('پنل پویا · مشابه باشگاه مشتریان')}</span>
               </div>
               <div className="crm-kpi-layout">
                 <GaugeSemi pct={overallPct} standing={overallStanding} />
@@ -719,41 +720,41 @@ export function AdminDashboardPage() {
                 </div>
                 <div className="crm-kpi-legend">
                   <div className="crm-legend-item" style={{ borderColor: '#15cca055', background: '#15cca014' }}>
-                    <strong style={{ color: '#0f9a78' }}>در مسیر درست</strong>
-                    <span>۹۰٪ و بالاتر</span>
+                    <strong style={{ color: '#0f9a78' }}>{tr('در مسیر درست')}</strong>
+                    <span>{tr('۹۰٪ و بالاتر')}</span>
                   </div>
                   <div className="crm-legend-item" style={{ borderColor: '#fd961e55', background: '#fd961e14' }}>
-                    <strong style={{ color: '#c77810' }}>نیازمند تلاش بیشتر</strong>
-                    <span>۷۰٪ تا ۹۰٪</span>
+                    <strong style={{ color: '#c77810' }}>{tr('نیازمند تلاش بیشتر')}</strong>
+                    <span>{tr('۷۰٪ تا ۹۰٪')}</span>
                   </div>
                   <div className="crm-legend-item" style={{ borderColor: '#c6282855', background: '#c6282814' }}>
-                    <strong style={{ color: '#c62828' }}>ضعیف</strong>
-                    <span>زیر ۷۰٪</span>
+                    <strong style={{ color: '#c62828' }}>{tr('ضعیف')}</strong>
+                    <span>{tr('زیر ۷۰٪')}</span>
                   </div>
                 </div>
               </div>
               {weakPoints.length ? (
                 <div className="crm-weak-points">
-                  <strong>نقاط ضعف:</strong>{' '}
+                  <strong>{tr('نقاط ضعف:')}</strong>{' '}
                   {weakPoints
-                    .map((k) => `${k.label}: ${formatNumFa(k.value)} از ${formatNumFa(k.target)} (${formatNumFa(k.pct)}٪)`)
+                    .map((k) => `${tr(k.label)}: ${formatNumFa(k.value)}${tr(' از ')}${formatNumFa(k.target)} (${formatNumFa(k.pct)}${tr('٪)')}`)
                     .join(' · ')}
                 </div>
               ) : (
-                <div className="crm-weak-points crm-weak-points--ok">همه شاخص‌های اصلی در مسیر مطلوب هستند.</div>
+                <div className="crm-weak-points crm-weak-points--ok">{tr('همه شاخص‌های اصلی در مسیر مطلوب هستند.')}</div>
               )}
             </section>
           ) : null}
 
-          <p className="admin-section-label">شاخص‌های زندهٔ پلتفرم</p>
+          <p className="admin-section-label">{tr('شاخص‌های زندهٔ پلتفرم')}</p>
           <AdminKpiStrip items={platformKpis} ariaLabel="شاخص‌های زنده پلتفرم" />
 
           {moduleCards.length ? (
-            <AdminModuleGrid label="ماژول‌های سازمانی · پشتیبانی / جذب / فروش">
+            <AdminModuleGrid label={tr("ماژول‌های سازمانی · پشتیبانی / جذب / فروش")}>
               {moduleCards.map((card) => (
                 <AdminModuleCard
                   key={card.key}
-                  title={card.title}
+                  title={tr(card.title)}
                   to={card.to}
                   icon={card.icon}
                   tone={card.tone as 'mint' | 'violet' | 'orange' | 'sky' | 'slate'}
@@ -767,27 +768,27 @@ export function AdminDashboardPage() {
             <WidgetDashboard
               dashboardId="platform"
               catalog={PLATFORM_WIDGET_CATALOG}
-              title="گزارش تجمیعی · ویجت‌ها"
+              title={tr("گزارش تجمیعی · ویجت‌ها")}
               renderWidget={renderPlatformWidget}
             />
           ) : null}
 
-          <p className="admin-section-label">آخرین فعالیت‌ها</p>
+          <p className="admin-section-label">{tr('آخرین فعالیت‌ها')}</p>
           <div className="admin-dash-grid">
             <section className="admin-card">
               <div className="admin-card-head">
-                <h2>آخرین پت‌ها</h2>
-                <Link to="/admin/pets">همه</Link>
+                <h2>{tr('آخرین پت‌ها')}</h2>
+                <Link to="/admin/pets">{tr('همه')}</Link>
               </div>
               <div className="admin-table-wrap">
                 <table className="admin-table">
                   <thead>
                     <tr>
-                      <th>آیدی</th>
-                      <th>نام</th>
-                      <th>گونه</th>
-                      <th>مالک</th>
-                      <th>شهر</th>
+                      <th>{tr('آیدی')}</th>
+                      <th>{tr('نام')}</th>
+                      <th>{tr('گونه')}</th>
+                      <th>{tr('مالک')}</th>
+                      <th>{tr('شهر')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -822,7 +823,7 @@ export function AdminDashboardPage() {
                     ))}
                     {!data?.recentPets?.length ? (
                       <tr>
-                        <td colSpan={5} className="admin-muted">موردی نیست</td>
+                        <td colSpan={5} className="admin-muted">{tr('موردی نیست')}</td>
                       </tr>
                     ) : null}
                   </tbody>
@@ -831,17 +832,17 @@ export function AdminDashboardPage() {
             </section>
             <section className="admin-card">
               <div className="admin-card-head">
-                <h2>سفارش فروشگاه</h2>
-                <Link to="/admin/shop/orders">همه</Link>
+                <h2>{tr('سفارش فروشگاه')}</h2>
+                <Link to="/admin/shop/orders">{tr('همه')}</Link>
               </div>
               <div className="admin-table-wrap">
                 <table className="admin-table">
                   <thead>
                     <tr>
-                      <th>آیدی سفارش</th>
-                      <th>کاربر</th>
-                      <th>مبلغ</th>
-                      <th>وضعیت</th>
+                      <th>{tr('آیدی سفارش')}</th>
+                      <th>{tr('کاربر')}</th>
+                      <th>{tr('مبلغ')}</th>
+                      <th>{tr('وضعیت')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -879,7 +880,7 @@ export function AdminDashboardPage() {
                     ))}
                     {!data?.recentShopOrders?.length ? (
                       <tr>
-                        <td colSpan={4} className="admin-muted">سفارشی نیست</td>
+                        <td colSpan={4} className="admin-muted">{tr('سفارشی نیست')}</td>
                       </tr>
                     ) : null}
                   </tbody>
@@ -888,18 +889,18 @@ export function AdminDashboardPage() {
             </section>
             <section className="admin-card">
               <div className="admin-card-head">
-                <h2>مشاوره دامپزشک</h2>
-                <Link to="/admin/consults">صف</Link>
+                <h2>{tr('مشاوره دامپزشک')}</h2>
+                <Link to="/admin/consults">{tr('صف')}</Link>
               </div>
               <div className="admin-table-wrap">
                 <table className="admin-table">
                   <thead>
                     <tr>
-                      <th>آیدی</th>
-                      <th>بیمار</th>
-                      <th>پزشک</th>
-                      <th>پت</th>
-                      <th>وضعیت</th>
+                      <th>{tr('آیدی')}</th>
+                      <th>{tr('بیمار')}</th>
+                      <th>{tr('پزشک')}</th>
+                      <th>{tr('پت')}</th>
+                      <th>{tr('وضعیت')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -957,7 +958,7 @@ export function AdminDashboardPage() {
                     ))}
                     {!data?.recentConsults?.length ? (
                       <tr>
-                        <td colSpan={5} className="admin-muted">موردی نیست</td>
+                        <td colSpan={5} className="admin-muted">{tr('موردی نیست')}</td>
                       </tr>
                     ) : null}
                   </tbody>
@@ -966,17 +967,17 @@ export function AdminDashboardPage() {
             </section>
             <section className="admin-card">
               <div className="admin-card-head">
-                <h2>کیف پول کل</h2>
-                <Link to="/admin/finance/wallet">کیف پول</Link>
+                <h2>{tr('کیف پول کل')}</h2>
+                <Link to="/admin/finance/wallet">{tr('کیف پول')}</Link>
               </div>
               {s ? (
                 <ul className="admin-kv">
                   <li>
-                    <span>سکه</span>
+                    <span>{tr('سکه')}</span>
                     <strong>{formatNumFa(s.walletTotals.coins)}</strong>
                   </li>
                   <li>
-                    <span>تومان</span>
+                    <span>{tr('تومان')}</span>
                     <strong>{formatNumFa(s.walletTotals.toman)}</strong>
                   </li>
                   <li>
@@ -989,7 +990,7 @@ export function AdminDashboardPage() {
                   </li>
                 </ul>
               ) : (
-                <p className="admin-dash-chart-empty">داده‌ای نیست</p>
+                <p className="admin-dash-chart-empty">{tr('داده‌ای نیست')}</p>
               )}
             </section>
           </div>

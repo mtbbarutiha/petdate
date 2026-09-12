@@ -3,6 +3,7 @@ import { orderPublicIdOf } from '@petdate/shared';
 import { adminFetch, formatNumFa, formatTomanFa } from '../api';
 import { formatAdminFaDateTime } from '../JalaliDateSelect';
 import { AdminIdChip } from '../AdminIds';
+import { tr } from '../../i18n';
 
 type OrdersRes = {
   orders: Array<{
@@ -44,11 +45,11 @@ export function AdminFinanceOrdersPage() {
     <div className="admin-page">
       <header className="admin-header">
         <div>
-          <h1>درآمد سفارش‌ها</h1>
-          <p>لیست سفارش‌های پت دیت شاپ و جمع وضعیت‌ها</p>
+          <h1>{tr('درآمد سفارش‌ها')}</h1>
+          <p>{tr('لیست سفارش‌های پت دیت شاپ و جمع وضعیت‌ها')}</p>
         </div>
         <select className="admin-select" value={status} onChange={(e) => setStatus(e.target.value)}>
-          <option value="">همه وضعیت‌ها</option>
+          <option value="">{tr('همه وضعیت‌ها')}</option>
           <option value="pending">pending</option>
           <option value="paid">paid</option>
           <option value="shipped">shipped</option>
@@ -65,7 +66,7 @@ export function AdminFinanceOrdersPage() {
             <div className="admin-stat admin-stat--mint">
               <div>
                 <div className="admin-stat-value">{formatTomanFa(data.paidRevenue)}</div>
-                <div className="admin-stat-label">درآمد پرداخت‌شده</div>
+                <div className="admin-stat-label">{tr('درآمد پرداخت‌شده')}</div>
               </div>
             </div>
             {data.statusTotals.map((s) => (
@@ -83,7 +84,7 @@ export function AdminFinanceOrdersPage() {
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th>آیدی سفارش</th><th>مشتری</th><th>مبلغ</th><th>پرداخت</th><th>وضعیت</th><th>تاریخ</th>
+                    <th>{tr('آیدی سفارش')}</th><th>{tr('مشتری')}</th><th>{tr('مبلغ')}</th><th>{tr('پرداخت')}</th><th>{tr('وضعیت')}</th><th>{tr('تاریخ')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -98,7 +99,7 @@ export function AdminFinanceOrdersPage() {
                     </tr>
                   ))}
                   {!data.orders.length ? (
-                    <tr><td colSpan={6} className="admin-muted">سفارشی نیست</td></tr>
+                    <tr><td colSpan={6} className="admin-muted">{tr('سفارشی نیست')}</td></tr>
                   ) : null}
                 </tbody>
               </table>

@@ -1,6 +1,8 @@
 import { useCallback, useId, useMemo, useRef, useState } from 'react';
 import { formatNumFa } from '../api';
 import { IRAN_MAP_VIEWBOX, IRAN_PROVINCE_PATHS, type IranProvincePath } from './iranProvincePaths';
+import { provinceDisplayName } from './provinceNamesEn';
+import { tr } from '../../i18n';
 
 export type IranHeatRow = { name: string; count: number };
 
@@ -137,37 +139,38 @@ export function IranProvinceHeatmap({
 
   const emphasize = (name: string) => hover?.prov.name === name || pinned === name;
 
+  const topName = top ? provinceDisplayName(top.name) : '';
   const topText = top
-    ? copy.topTemplate
-        .replace('{name}', top.name)
+    ? tr(copy.topTemplate)
+        .replace('{name}', topName)
         .replace('{count}', formatNumFa(top.count))
-    : copy.emptyTop;
+    : tr(copy.emptyTop);
 
   return (
     <div className="iran-heat-layout">
-      <aside className="iran-heat-legend-card" aria-label="رتبه‌بندی استان‌ها">
+      <aside className="iran-heat-legend-card" aria-label={tr("رتبه‌بندی استان‌ها")}>
         <p className={`iran-heat-top${top ? '' : ' admin-muted'}`}>
           {top ? (
             <>
-              {topText.split(top.name)[0]}
-              <strong>{top.name}</strong>
-              {topText.split(top.name)[1] || ''}
+              {topText.split(topName)[0]}
+              <strong>{topName}</strong>
+              {topText.split(topName)[1] || ''}
             </>
           ) : (
             topText
           )}
         </p>
         <div className="iran-heat-scale" aria-hidden>
-          <span className="iran-heat-scale-min">کم</span>
+          <span className="iran-heat-scale-min">{tr('کم')}</span>
           <span className="iran-heat-scale-swatch" />
-          <span className="iran-heat-scale-max">زیاد</span>
-          <span className="iran-heat-scale-caption">{copy.scaleLabel}</span>
+          <span className="iran-heat-scale-max">{tr('زیاد')}</span>
+          <span className="iran-heat-scale-caption">{tr(copy.scaleLabel)}</span>
         </div>
 
         {!hasData ? (
           <div className="iran-heat-empty" role="status">
             <span className="iran-heat-empty-icon" aria-hidden />
-            <p>هنوز پراکندگی استانی ثبت نشده است</p>
+            <p>{tr('هنوز پراکندگی استانی ثبت نشده است')}</p>
           </div>
         ) : (
           <ul className="iran-heat-rank">
@@ -206,7 +209,7 @@ export function IranProvinceHeatmap({
                         style={{ background: heatFill(r.count, max) }}
                         aria-hidden
                       />
-                      {r.name}
+                      {provinceDisplayName(r.name)}
                     </span>
                     <span className="iran-heat-rank-meta">
                       <strong>{formatNumFa(r.count)}</strong>
@@ -219,14 +222,14 @@ export function IranProvinceHeatmap({
               );
             })}
             {unknownCount > 0 ? (
-              <li className="iran-heat-rank-unknown" aria-label="بدون استان">
+              <li className="iran-heat-rank-unknown" aria-label={tr("بدون استان")}>
                 <span className="iran-heat-rank-row" role="presentation">
                   <span className="iran-heat-rank-name">
                     <i
                       className="iran-heat-rank-swatch iran-heat-rank-swatch--unknown"
                       aria-hidden
                     />
-                    بدون استان
+                    {tr('بدون استان')}
                   </span>
                   <span className="iran-heat-rank-meta">
                     <strong>{formatNumFa(unknownCount)}</strong>
@@ -250,8 +253,8 @@ export function IranProvinceHeatmap({
         )}
         {hasData ? (
           <p className="iran-heat-sum admin-muted">
-            جمع استان‌ها {formatNumFa(mappedTotal)}
-            {unknownCount > 0 ? ` + بدون استان ${formatNumFa(unknownCount)}` : ''}
+            {tr('جمع استان‌ها')} {formatNumFa(mappedTotal)}
+            {unknownCount > 0 ? `${tr(' + بدون استان ')}${formatNumFa(unknownCount)}` : ''}
           </p>
         ) : null}
       </aside>
@@ -260,7 +263,7 @@ export function IranProvinceHeatmap({
         ref={mapRef}
         className="iran-heat-map"
         role="img"
-        aria-label={copy.mapAria}
+        aria-label={tr(copy.mapAria)}
         onMouseLeave={clearTip}
       >
         <svg
@@ -347,7 +350,7 @@ export function IranProvinceHeatmap({
               const emph = emphasize(prov.name);
               if (!active && !emph && prov.area < 9000) return null;
               const [lx, ly] = prov.label;
-              const text = active || emph ? prov.name : prov.shortLabel;
+              const text = provinceDisplayName(prov.name, !(active || emph));
               const fill = labelFill(count, max, emph);
               const countPart = active ? ` — ${formatNumFa(count)}` : '';
               const label = `${text}${countPart}`;
@@ -412,27 +415,27 @@ export function IranProvinceHeatmap({
           >
             <div className="iran-heat-tooltip-name">
               <i style={{ background: heatFill(hover.count, max) }} aria-hidden />
-              {hover.prov.name}
+              {provinceDisplayName(hover.prov.name)}
             </div>
             <div className="iran-heat-tooltip-row">
-              <span>{copy.tipCountLabel}</span>
+              <span>{tr(copy.tipCountLabel)}</span>
               <strong>
                 {hover.count > 0
-                  ? `${formatNumFa(hover.count)} ${copy.unit}`
-                  : copy.tipEmpty}
+                  ? `${formatNumFa(hover.count)} ${tr(copy.unit)}`
+                  : tr(copy.tipEmpty)}
               </strong>
             </div>
             {hover.pct != null ? (
               <div className="iran-heat-tooltip-row">
-                <span>سهم از استان‌ها</span>
-                <strong>{formatNumFa(hover.pct)}٪</strong>
+                <span>{tr('سهم از استان‌ها')}</span>
+                <strong>{formatNumFa(hover.pct)}{tr('٪')}</strong>
               </div>
             ) : null}
             {hover.rank != null ? (
               <div className="iran-heat-tooltip-row">
-                <span>رتبه</span>
+                <span>{tr('رتبه')}</span>
                 <strong>
-                  {formatNumFa(hover.rank)} از {formatNumFa(ranked.length)}
+                  {formatNumFa(hover.rank)} {tr('از')} {formatNumFa(ranked.length)}
                 </strong>
               </div>
             ) : null}

@@ -13,6 +13,7 @@ import { SALES_CALL_RESULTS } from '@petdate/shared';
 import { adminFetch } from '../../api';
 import { adminCan } from '../../auth';
 import { AdminModal } from '../../AdminModal';
+import { tr } from '../../../i18n';
 
 type CallPhase = 'ringing' | 'active' | null;
 
@@ -117,7 +118,7 @@ export function SalesCallSimProvider({ children }: { children: ReactNode }) {
       {children}
 
       {call?.phase === 'ringing' ? (
-        <div className="admin-sales-call-overlay" role="dialog" aria-modal="true" aria-label="تماس ورودی">
+        <div className="admin-sales-call-overlay" role="dialog" aria-modal="true" aria-label={tr("تماس ورودی")}>
           <div className="admin-sales-call-popup admin-sales-call-popup--ringing">
             <div className="admin-sales-call-popup-pulse" aria-hidden>
               <span />
@@ -126,28 +127,28 @@ export function SalesCallSimProvider({ children }: { children: ReactNode }) {
                 <PhoneIncoming size={36} strokeWidth={2} />
               </div>
             </div>
-            <p className="admin-sales-call-popup-eyebrow">تماس ورودی</p>
+            <p className="admin-sales-call-popup-eyebrow">{tr('تماس ورودی')}</p>
             <h2 className="admin-sales-call-popup-phone" dir="ltr">
               {call.phone}
             </h2>
             {matched ? (
               <div className="admin-sales-call-popup-match">
-                <strong>{matchedName || 'لید شناسایی‌شده'}</strong>
+                <strong>{matchedName || tr('لید شناسایی‌شده')}</strong>
                 <span>
-                  امتیاز {matched.score} · {matched.kind === 'upgrade' ? 'آپگرید' : 'لید'} · Pet Date
+                  {tr('امتیاز')} {matched.score} · {matched.kind === 'upgrade' ? tr('آپگرید') : tr('لید')} · Pet Date
                 </span>
               </div>
             ) : (
-              <p className="admin-sales-call-popup-unknown">شماره در کارتابل پیدا نشد</p>
+              <p className="admin-sales-call-popup-unknown">{tr('شماره در کارتابل پیدا نشد')}</p>
             )}
             <div className="admin-sales-call-popup-actions">
               <button type="button" className="admin-sales-call-btn admin-sales-call-btn--reject" onClick={reject}>
                 <PhoneOff size={20} />
-                رد
+                {tr('رد')}
               </button>
               <button type="button" className="admin-sales-call-btn admin-sales-call-btn--answer" onClick={answer}>
                 <Phone size={20} />
-                پاسخ
+                {tr('پاسخ')}
               </button>
             </div>
           </div>
@@ -155,12 +156,12 @@ export function SalesCallSimProvider({ children }: { children: ReactNode }) {
       ) : null}
 
       {call?.phase === 'active' ? (
-        <div className="admin-sales-call-overlay" role="dialog" aria-modal="true" aria-label="تماس فعال">
+        <div className="admin-sales-call-overlay" role="dialog" aria-modal="true" aria-label={tr("تماس فعال")}>
           <div className="admin-sales-call-popup admin-sales-call-popup--active">
             <div className="admin-sales-call-popup-avatar admin-sales-call-popup-avatar--live" aria-hidden>
               <Phone size={32} strokeWidth={2} />
             </div>
-            <p className="admin-sales-call-popup-eyebrow">در حال مکالمه</p>
+            <p className="admin-sales-call-popup-eyebrow">{tr('در حال مکالمه')}</p>
             <h2 className="admin-sales-call-popup-phone" dir="ltr">
               {call.phone}
             </h2>
@@ -168,20 +169,20 @@ export function SalesCallSimProvider({ children }: { children: ReactNode }) {
               <div className="admin-sales-call-popup-match">
                 <strong>{matchedName}</strong>
                 <Link to={leadPath(matched)} className="admin-sales-call-popup-link">
-                  باز کردن پرونده
+                  {tr('باز کردن پرونده')}
                 </Link>
               </div>
             ) : (
-              <p className="admin-sales-call-popup-unknown">لید ناشناس · فقط ثبت نتیجه دستی</p>
+              <p className="admin-sales-call-popup-unknown">{tr('لید ناشناس · فقط ثبت نتیجه دستی')}</p>
             )}
             <div className="admin-sales-call-popup-actions">
               <button type="button" className="admin-sales-call-btn admin-sales-call-btn--reject" onClick={reject}>
                 <PhoneOff size={20} />
-                قطع
+                {tr('قطع')}
               </button>
               <button type="button" className="admin-sales-call-btn admin-sales-call-btn--answer" onClick={endCall}>
                 <Phone size={20} />
-                پایان و ثبت
+                {tr('پایان و ثبت')}
               </button>
             </div>
           </div>
@@ -190,7 +191,7 @@ export function SalesCallSimProvider({ children }: { children: ReactNode }) {
 
       <AdminModal
         open={wrapOpen}
-        title="ثبت نتیجه تماس ورودی"
+        title={tr("ثبت نتیجه تماس ورودی")}
         onClose={() => !busy && setWrapOpen(false)}
         size="sm"
         as="form"
@@ -202,16 +203,16 @@ export function SalesCallSimProvider({ children }: { children: ReactNode }) {
         footer={(
           <>
             <button type="submit" className="admin-btn admin-btn--primary" disabled={busy || !summary.trim()}>
-              ذخیره
+              {tr('ذخیره')}
             </button>
             <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setWrapOpen(false)}>
-              انصراف
+              {tr('انصراف')}
             </button>
           </>
         )}
       >
         <label>
-          <span className="form-label">نتیجه</span>
+          <span className="form-label">{tr('نتیجه')}</span>
           <select className="admin-select" value={result} onChange={(e) => setResult(e.target.value)}>
             {SALES_CALL_RESULTS.map((r) => (
               <option key={r} value={r}>
@@ -221,7 +222,7 @@ export function SalesCallSimProvider({ children }: { children: ReactNode }) {
           </select>
         </label>
         <label>
-          <span className="form-label">خلاصه</span>
+          <span className="form-label">{tr('خلاصه')}</span>
           <textarea
             className="form-input"
             rows={3}
@@ -231,7 +232,7 @@ export function SalesCallSimProvider({ children }: { children: ReactNode }) {
           />
         </label>
         {!call?.matchedItem ? (
-          <p className="admin-muted">لید متناظر یافت نشد — فقط پاپ‌آپ بسته می‌شود.</p>
+          <p className="admin-muted">{tr('لید متناظر یافت نشد — فقط پاپ‌آپ بسته می‌شود.')}</p>
         ) : null}
       </AdminModal>
     </Ctx.Provider>

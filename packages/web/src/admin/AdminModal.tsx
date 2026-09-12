@@ -6,6 +6,7 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react';
+import { tr } from '../i18n';
 
 export type AdminModalSize = 'sm' | 'md' | 'lg' | 'xl' | 'full';
 
@@ -106,7 +107,7 @@ export function AdminModal({
         <button
           type="button"
           className="admin-modal-close"
-          aria-label="بستن"
+          aria-label={tr("بستن")}
           disabled={busy}
           onClick={onClose}
         >

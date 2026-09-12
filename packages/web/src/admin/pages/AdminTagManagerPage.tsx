@@ -26,6 +26,7 @@ import {
   MotionChartTooltip,
   useRechartsMotion,
 } from '../motionCharts';
+import { tr } from '../../i18n';
 
 type Bucket = { label: string; value: number };
 type CatalogRow = {
@@ -152,12 +153,12 @@ export function AdminTagManagerPage() {
     <div className="admin-page site-reports-page">
       <header className="admin-header">
         <div>
-          <h1>گزارش Tag Manager</h1>
+          <h1>{tr('گزارش Tag Manager')}</h1>
           <p>
-            کاتالوگ Variables / Triggers / Events که سایت به dataLayer می‌فرستد + متریک‌های اول‌شخص — تگ‌های داخل کانتینر Google در UI ساخته می‌شوند.
+            {tr('کاتالوگ Variables / Triggers / Events که سایت به dataLayer می‌فرستد + متریک‌های اول‌شخص — تگ‌های داخل کانتینر Google در UI ساخته می‌شوند.')}
           </p>
         </div>
-        <div className="hr-reports-filters" role="group" aria-label="بازه گزارش">
+        <div className="hr-reports-filters" role="group" aria-label={tr("بازه گزارش")}>
           {PERIODS.map((p) => (
             <button
               key={p.days}
@@ -165,24 +166,24 @@ export function AdminTagManagerPage() {
               className={`admin-btn${period === p.days ? ' admin-btn--primary' : ''}`}
               onClick={() => setPeriod(p.days)}
             >
-              {p.label}
+              {tr(p.label)}
             </button>
           ))}
           <button type="button" className="admin-btn" onClick={() => void load()}>
-            <RefreshCw size={16} /> بروزرسانی
+            <RefreshCw size={16} /> {tr('بروزرسانی')}
           </button>
           <Link to="/admin/analytics?tab=tag-manager" className="admin-btn">
-            آنالیتیکس · Tag Manager
+            {tr('آنالیتیکس · Tag Manager')}
           </Link>
         </div>
       </header>
 
       {error ? <div className="admin-banner is-bad">{error}</div> : null}
-      {loading && !data ? <p className="admin-muted">در حال بارگذاری…</p> : null}
+      {loading && !data ? <p className="admin-muted">{tr('در حال بارگذاری…')}</p> : null}
 
       {data ? (
         <>
-          <section className="admin-stats admin-stats--dense" aria-label="وضعیت کانتینر">
+          <section className="admin-stats admin-stats--dense" aria-label={tr("وضعیت کانتینر")}>
             <article className="admin-stat admin-stat--violet">
               <div className="admin-stat-icon"><Tags size={18} /></div>
               <div className="admin-stat-value" dir="ltr">{data.gtm.containerId || '—'}</div>
@@ -190,23 +191,23 @@ export function AdminTagManagerPage() {
             </article>
             <article className="admin-stat admin-stat--mint">
               <div className="admin-stat-icon"><Radar size={18} /></div>
-              <div className="admin-stat-value">{data.gtm.configured ? 'فعال' : 'خاموش'}</div>
+              <div className="admin-stat-value">{data.gtm.configured ? tr('فعال') : tr('خاموش')}</div>
               <div className="admin-stat-label">{data.gtm.statusLabelFa}</div>
             </article>
             <article className="admin-stat admin-stat--orange">
               <div className="admin-stat-icon"><Activity size={18} /></div>
               <div className="admin-stat-value">{formatNumFa(data.metrics.pageviews)}</div>
-              <div className="admin-stat-label">page_view (اول‌شخص)</div>
+              <div className="admin-stat-label">{tr('page_view (اول‌شخص)')}</div>
             </article>
             <article className="admin-stat admin-stat--sky">
               <div className="admin-stat-icon"><Link2 size={18} /></div>
               <div className="admin-stat-value">{formatNumFa(data.metrics.customEvents)}</div>
-              <div className="admin-stat-label">رویداد سفارشی</div>
+              <div className="admin-stat-label">{tr('رویداد سفارشی')}</div>
             </article>
             <article className="admin-stat admin-stat--slate">
               <div className="admin-stat-icon"><Activity size={18} /></div>
               <div className="admin-stat-value">{formatNumFa(data.health.eventsLast24h)}</div>
-              <div className="admin-stat-label">رویداد ۲۴ساعت</div>
+              <div className="admin-stat-label">{tr('رویداد ۲۴ساعت')}</div>
             </article>
           </section>
 
@@ -229,7 +230,7 @@ export function AdminTagManagerPage() {
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 12 }}>
                 {data.gtm.containerId ? (
                   <button type="button" className="admin-btn" onClick={() => void copyText(data.gtm.containerId!)}>
-                    <Copy size={16} /> کپی ID
+                    <Copy size={16} /> {tr('کپی ID')}
                   </button>
                 ) : null}
                 {data.gtm.dashboardUrl ? (
@@ -245,17 +246,17 @@ export function AdminTagManagerPage() {
               </div>
             </section>
 
-            <section className="admin-card site-reports-clarity" aria-label="Clarity و GA4">
+            <section className="admin-card site-reports-clarity" aria-label={tr("Clarity و GA4")}>
               <div className="admin-card-head">
                 <h2>Clarity + GA4</h2>
                 <span className={`admin-status ${data.clarity.configured ? 'admin-status--accepted' : 'admin-status--pending'}`}>
-                  {data.clarity.configured ? 'Clarity فعال' : 'Clarity خاموش'}
+                  {data.clarity.configured ? tr('Clarity فعال') : tr('Clarity خاموش')}
                 </span>
               </div>
               <p className="admin-muted">{data.clarity.note}</p>
               {data.clarity.dashboardUrl ? (
                 <a className="admin-btn admin-btn--primary" href={data.clarity.dashboardUrl} target="_blank" rel="noreferrer" style={{ marginTop: 8 }}>
-                  <ExternalLink size={16} /> داشبورد Clarity
+                  <ExternalLink size={16} /> {tr('داشبورد Clarity')}
                 </a>
               ) : null}
               <p className="admin-muted" style={{ marginTop: 12 }}>{data.ga4.note}</p>
@@ -267,13 +268,13 @@ export function AdminTagManagerPage() {
                 <p className="admin-muted" dir="ltr">PLACEHOLDER_G-XXXXXXXX</p>
               )}
               <p className="admin-muted" style={{ fontSize: '0.75rem', marginTop: 10 }}>
-                سلامت: {data.health.note}
-                {data.health.lastEventAt ? ` · آخرین: ${formatAdminFaDateTime(data.health.lastEventAt)}` : null}
+                {tr('سلامت:')} {data.health.note}
+                {data.health.lastEventAt ? `${tr(' · آخرین: ')}${formatAdminFaDateTime(data.health.lastEventAt)}` : null}
               </p>
             </section>
           </div>
 
-          <div className="hr-reports-filters" role="tablist" aria-label="بخش‌های گزارش" style={{ marginBottom: 12 }}>
+          <div className="hr-reports-filters" role="tablist" aria-label={tr("بخش‌های گزارش")} style={{ marginBottom: 12 }}>
             {(
               [
                 ['metrics', 'متریک زنده'],
@@ -298,7 +299,7 @@ export function AdminTagManagerPage() {
             <>
               <div className="crm-report-charts">
                 <article className="admin-card crm-report-chart-box">
-                  <div className="admin-card-head"><h2>رویدادها بر اساس نوع</h2></div>
+                  <div className="admin-card-head"><h2>{tr('رویدادها بر اساس نوع')}</h2></div>
                   <div
                     className={ADMIN_RTL_HBARS_CLASS}
                     style={{ width: '100%', height: Math.max(180, Math.max(eventBars.length, 1) * 28), direction: 'ltr' }}
@@ -313,10 +314,10 @@ export function AdminTagManagerPage() {
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
-                  {!eventBars.length ? <p className="admin-muted">هنوز رویدادی ثبت نشده.</p> : null}
+                  {!eventBars.length ? <p className="admin-muted">{tr('هنوز رویدادی ثبت نشده.')}</p> : null}
                 </article>
                 <article className="admin-card crm-report-chart-box">
-                  <div className="admin-card-head"><h2>صفحات پربازدید</h2></div>
+                  <div className="admin-card-head"><h2>{tr('صفحات پربازدید')}</h2></div>
                   <div
                     className={ADMIN_RTL_HBARS_CLASS}
                     style={{ width: '100%', height: adminRtlHBarsHeight(pageBars.length, 38), direction: 'ltr' }}
@@ -340,16 +341,16 @@ export function AdminTagManagerPage() {
               </div>
 
               <section className="admin-card">
-                <div className="admin-card-head"><h2>تایم‌لاین رویدادهای اخیر</h2></div>
+                <div className="admin-card-head"><h2>{tr('تایم‌لاین رویدادهای اخیر')}</h2></div>
                 <div className="admin-table-wrap">
                   <table className="admin-table">
                     <thead>
                       <tr>
-                        <th>زمان</th>
-                        <th>رویداد</th>
-                        <th>مسیر</th>
-                        <th>دستگاه</th>
-                        <th>نشست</th>
+                        <th>{tr('زمان')}</th>
+                        <th>{tr('رویداد')}</th>
+                        <th>{tr('مسیر')}</th>
+                        <th>{tr('دستگاه')}</th>
+                        <th>{tr('نشست')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -362,16 +363,16 @@ export function AdminTagManagerPage() {
                           <td dir="ltr" style={{ fontSize: '0.75rem' }}>{e.sessionId.slice(0, 12)}…</td>
                         </tr>
                       )) : (
-                        <tr><td colSpan={5}>هنوز رویدادی نیست — پس از ترافیک عمومی اینجا پر می‌شود.</td></tr>
+                        <tr><td colSpan={5}>{tr('هنوز رویدادی نیست — پس از ترافیک عمومی اینجا پر می‌شود.')}</td></tr>
                       )}
                     </tbody>
                   </table>
                 </div>
                 <ul className="crm-report-reason-legend" style={{ marginTop: 12 }}>
                   {data.metrics.devices.map((d, i) => (
-                    <li key={d.label}>
+                    <li key={tr(d.label)}>
                       <i style={{ background: ['#5c4d91', '#15cca0', '#f59e0b'][i % 3] }} />
-                      {d.label}
+                      {tr(d.label)}
                       <span>{formatNumFa(d.value)}</span>
                     </li>
                   ))}
@@ -388,9 +389,9 @@ export function AdminTagManagerPage() {
                   <table className="admin-table">
                     <thead>
                       <tr>
-                        <th>نام</th>
-                        <th>توضیح</th>
-                        <th>کجا ست می‌شود</th>
+                        <th>{tr('نام')}</th>
+                        <th>{tr('توضیح')}</th>
+                        <th>{tr('کجا ست می‌شود')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -406,14 +407,14 @@ export function AdminTagManagerPage() {
                 </div>
               </section>
               <section className="admin-card" style={{ marginTop: 16 }}>
-                <div className="admin-card-head"><h2>Triggers / Events (سایت)</h2></div>
+                <div className="admin-card-head"><h2>{tr('Triggers / Events (سایت)')}</h2></div>
                 <div className="admin-table-wrap">
                   <table className="admin-table">
                     <thead>
                       <tr>
                         <th>event</th>
-                        <th>توضیح</th>
-                        <th>محل شلیک</th>
+                        <th>{tr('توضیح')}</th>
+                        <th>{tr('محل شلیک')}</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -433,21 +434,21 @@ export function AdminTagManagerPage() {
 
           {tab === 'checklist' ? (
             <section className="admin-card">
-              <div className="admin-card-head"><h2>چک‌لیست ساخت تگ در GTM UI</h2></div>
+              <div className="admin-card-head"><h2>{tr('چک‌لیست ساخت تگ در GTM UI')}</h2></div>
               <p className="admin-muted" style={{ marginBottom: 12 }}>
-                این موارد را داخل{' '}
+                {tr('این موارد را داخل')}{' '}
                 <a href={data.gtm.dashboardUrl || 'https://tagmanager.google.com/'} target="_blank" rel="noreferrer">
                   tagmanager.google.com
                 </a>{' '}
-                برای کانتینر <code dir="ltr">{data.gtm.containerId}</code> بسازید. Measurement ID ساختگی وارد نکنید.
+                {tr('برای کانتینر')} <code dir="ltr">{data.gtm.containerId}</code> {tr('بسازید. Measurement ID ساختگی وارد نکنید.')}
               </p>
               <div className="admin-table-wrap">
                 <table className="admin-table">
                   <thead>
                     <tr>
-                      <th>نوع</th>
-                      <th>عنوان</th>
-                      <th>جزئیات</th>
+                      <th>{tr('نوع')}</th>
+                      <th>{tr('عنوان')}</th>
+                      <th>{tr('جزئیات')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -467,7 +468,7 @@ export function AdminTagManagerPage() {
                 </table>
               </div>
               <p className="admin-muted" style={{ marginTop: 12, fontSize: '0.75rem' }}>
-                سند کامل: <code dir="ltr">docs/gtm-setup-checklist.md</code> · بروزرسانی گزارش:{' '}
+                {tr('سند کامل:')} <code dir="ltr">docs/gtm-setup-checklist.md</code> {tr('· بروزرسانی گزارش:')}{' '}
                 {formatAdminFaDateTime(data.generatedAt)}
               </p>
             </section>

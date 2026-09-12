@@ -1,19 +1,25 @@
+import { tr } from '../i18n';
 /**
  * Display helpers for admin analytics path buckets (صفحات پربازدید).
  * Mirrors API formatAnalyticsPathLabel so charts stay readable even if
  * older telemetry stored junk like `/profile|` or empty paths.
  */
 
-const EMPTY_LABEL = '(خالی)';
+function emptyPathLabel(): string {
+  if (typeof document !== 'undefined' && document.documentElement.getAttribute('lang') === 'en') {
+    return '(empty)';
+  }
+  return tr('(خالی)');
+}
 
 /** Normalize / clean a path for chart axis labels. */
 export function formatAnalyticsPathLabel(raw: unknown): string {
   const original = typeof raw === 'string' ? raw.trim() : raw == null ? '' : String(raw).trim();
   if (!original || original === 'undefined' || original === 'null' || original === '(null)' || original === 'نامشخص') {
-    return EMPTY_LABEL;
+    return emptyPathLabel();
   }
   if (/^[|\\/\s]+$/.test(original) && !/^\/+$/.test(original)) {
-    return EMPTY_LABEL;
+    return emptyPathLabel();
   }
   let s = original;
   try {
@@ -24,18 +30,18 @@ export function formatAnalyticsPathLabel(raw: unknown): string {
   s = s.replace(/[\u0000-\u001F\u007F\u200B-\u200D\uFEFF]/g, '').trim();
   const pathOnly = s.split('?')[0]?.split('#')[0] || '';
   let cleaned = pathOnly.replace(/[|\\]+$/g, '').replace(/\/{2,}/g, '/').trim();
-  if (!cleaned || cleaned === 'undefined' || cleaned === 'null') return EMPTY_LABEL;
-  if (/^[|\\]+$/.test(pathOnly.trim())) return EMPTY_LABEL;
+  if (!cleaned || cleaned === 'undefined' || cleaned === 'null') return emptyPathLabel();
+  if (/^[|\\]+$/.test(pathOnly.trim())) return emptyPathLabel();
   if (!cleaned.startsWith('/')) cleaned = `/${cleaned}`;
   if (cleaned.length > 1) cleaned = cleaned.replace(/\/+$/, '');
-  cleaned = cleaned.slice(0, 512) || EMPTY_LABEL;
-  if (cleaned === '/' && /^[|\\]+$/.test(original.replace(/\s/g, ''))) return EMPTY_LABEL;
+  cleaned = cleaned.slice(0, 512) || emptyPathLabel();
+  if (cleaned === '/' && /^[|\\]+$/.test(original.replace(/\s/g, ''))) return emptyPathLabel();
   return cleaned;
 }
 
 /** Shorten long paths for the Y-axis; keep full string for tooltip/`title`. */
 export function shortenAnalyticsPathLabel(label: string, maxChars = 28): string {
-  const s = String(label || '').trim() || EMPTY_LABEL;
+  const s = String(label || '').trim() || emptyPathLabel();
   if (s.length <= maxChars) return s;
   return `${s.slice(0, Math.max(1, maxChars - 1))}…`;
 }

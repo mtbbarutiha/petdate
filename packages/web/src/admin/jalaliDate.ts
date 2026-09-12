@@ -4,8 +4,15 @@
  * Persian digits without thousands grouping — for years, days, months in date UIs.
  * Do not use money formatters (`formatNumFa` from api) for Jalali years (avoids ۱,۴۰۵).
  */
+function uiLocale(): string {
+  if (typeof document !== 'undefined' && document.documentElement.getAttribute('lang') === 'en') {
+    return 'en-US';
+  }
+  return 'fa-IR';
+}
+
 export function formatJalaliNumFa(n: number): string {
-  return new Intl.NumberFormat('fa-IR', { useGrouping: false }).format(n);
+  return new Intl.NumberFormat(uiLocale(), { useGrouping: false }).format(n);
 }
 
 export const JALALI_MONTHS = [
@@ -212,9 +219,10 @@ function parseAdminDateInput(raw?: string | null): Date | null {
   return Number.isNaN(d.getTime()) ? null : d;
 }
 
-/** Display helper: Gregorian ISO / Date / Jalali slash → fa-IR Jalali date. */
+/** Display helper: Gregorian ISO / Date / Jalali slash → locale date. */
 export function formatAdminFaDate(raw?: string | Date | null): string {
   if (raw == null || raw === '') return '—';
+  const loc = uiLocale();
   if (typeof raw === 'string' && /^\d{4}\/\d{1,2}\/\d{1,2}$/.test(raw.trim())) {
     const p = parseJalaliSlash(raw.trim());
     if (!p) return raw.trim();
@@ -223,7 +231,7 @@ export function formatAdminFaDate(raw?: string | Date | null): string {
   const d = raw instanceof Date ? raw : parseAdminDateInput(raw);
   if (!d) return typeof raw === 'string' ? raw : '—';
   try {
-    return new Intl.DateTimeFormat('fa-IR', {
+    return new Intl.DateTimeFormat(loc === 'en-US' ? 'en-GB' : 'fa-IR', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
@@ -233,13 +241,14 @@ export function formatAdminFaDate(raw?: string | Date | null): string {
   }
 }
 
-/** Display helper with time (Tehran-friendly via fa-IR default). */
+/** Display helper with time (locale-aware). */
 export function formatAdminFaDateTime(raw?: string | Date | null): string {
   if (raw == null || raw === '') return '—';
   const d = raw instanceof Date ? raw : parseAdminDateInput(raw);
   if (!d) return typeof raw === 'string' ? raw : '—';
   try {
-    return new Intl.DateTimeFormat('fa-IR', {
+    const loc = uiLocale();
+    return new Intl.DateTimeFormat(loc === 'en-US' ? 'en-GB' : 'fa-IR', {
       year: 'numeric',
       month: 'short',
       day: 'numeric',

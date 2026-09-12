@@ -16,6 +16,7 @@ import type {
 } from './types';
 import { chartHeightForRow, donutSizeForRow } from './drill';
 import { useWidgetLayout } from './useWidgetLayout';
+import { tr } from '../../i18n';
 
 type Props = {
   dashboardId: string;
@@ -129,22 +130,22 @@ function WidgetTile({
           className="wdg-drag"
           role="button"
           tabIndex={0}
-          aria-label="جابجایی ویجت"
-          title="بگیرید و بکشید برای جابجایی"
+          aria-label={tr("جابجایی ویجت")}
+          title={tr("بگیرید و بکشید برای جابجایی")}
           onPointerDown={(e) => onReorderPointerDown(e, item.id)}
         >
           <GripVertical size={14} aria-hidden />
         </span>
         <div
           className="wdg-tile-titles wdg-tile-titles--drag"
-          title="بگیرید و بکشید برای جابجایی"
+          title={tr("بگیرید و بکشید برای جابجایی")}
           onPointerDown={(e) => onReorderPointerDown(e, item.id)}
         >
           {group ? <span className="wdg-tile-group">{group}</span> : null}
           <h3>{title}</h3>
         </div>
         <div className="wdg-tile-actions">
-          <button type="button" className="wdg-icon-btn" onClick={onRemove} aria-label="حذف ویجت" title="حذف از داشبورد">
+          <button type="button" className="wdg-icon-btn" onClick={onRemove} aria-label={tr("حذف ویجت")} title={tr("حذف از داشبورد")}>
             <X size={14} />
           </button>
         </div>
@@ -156,7 +157,7 @@ function WidgetTile({
         onPointerMove={onResizePointerMove}
         onPointerUp={onResizePointerUp}
         onPointerCancel={onResizePointerUp}
-        title="تغییر اندازه"
+        title={tr("تغییر اندازه")}
         aria-hidden
       />
     </article>
@@ -270,21 +271,21 @@ export function WidgetDashboard({
           <p className="admin-section-label" style={{ margin: 0 }}>
             {title}
           </p>
-          <span className="wdg-toolbar-hint">دستگیره ⋮⋮ یا عنوان · تغییر اندازه گوشه · دریل‌دان / دریل‌آپ</span>
+          <span className="wdg-toolbar-hint">{tr('دستگیره ⋮⋮ یا عنوان · تغییر اندازه گوشه · دریل‌دان / دریل‌آپ')}</span>
         </div>
         <div className="wdg-toolbar-end">
           {toolbarExtra}
           <button type="button" className="admin-btn admin-btn--ghost wdg-toolbar-btn" onClick={() => setCatalogOpen((v) => !v)}>
-            <Plus size={14} /> افزودن ویجت
+            <Plus size={14} /> {tr('افزودن ویجت')}
           </button>
-          <button type="button" className="admin-btn admin-btn--ghost wdg-toolbar-btn" onClick={reset} title="بازگردانی چیدمان پیش‌فرض">
-            <RotateCcw size={14} /> پیش‌فرض
+          <button type="button" className="admin-btn admin-btn--ghost wdg-toolbar-btn" onClick={reset} title={tr("بازگردانی چیدمان پیش‌فرض")}>
+            <RotateCcw size={14} /> {tr('پیش‌فرض')}
           </button>
         </div>
       </div>
 
       {catalogOpen ? (
-        <div className="wdg-catalog" role="dialog" aria-label="کاتالوگ ویجت">
+        <div className="wdg-catalog" role="dialog" aria-label={tr("کاتالوگ ویجت")}>
           {availableToAdd.length ? (
             availableToAdd.map((c) => (
               <button
@@ -296,13 +297,13 @@ export function WidgetDashboard({
                   setCatalogOpen(false);
                 }}
               >
-                <strong>{c.title}</strong>
-                <span>{c.group}</span>
-                {c.description ? <em>{c.description}</em> : null}
+                <strong>{tr(c.title)}</strong>
+                <span>{tr(c.group)}</span>
+                {c.description ? <em>{tr(c.description)}</em> : null}
               </button>
             ))
           ) : (
-            <p className="admin-muted">همهٔ ویجت‌ها روی داشبورد هستند</p>
+            <p className="admin-muted">{tr('همهٔ ویجت‌ها روی داشبورد هستند')}</p>
           )}
         </div>
       ) : null}
@@ -320,8 +321,8 @@ export function WidgetDashboard({
             <WidgetTile
               key={item.id}
               item={item}
-              title={meta?.title || item.id}
-              group={meta?.group}
+              title={tr(meta?.title || item.id)}
+              group={meta?.group ? tr(meta.group) : undefined}
               dragging={draggingId === item.id}
               dropTarget={overId === item.id}
               onRemove={() => remove(item.id)}
@@ -335,7 +336,7 @@ export function WidgetDashboard({
       </div>
 
       {!visible.length ? (
-        <p className="admin-muted wdg-empty">ویجتی نیست — از «افزودن ویجت» یک نمودار انتخاب کنید.</p>
+        <p className="admin-muted wdg-empty">{tr('ویجتی نیست — از «افزودن ویجت» یک نمودار انتخاب کنید.')}</p>
       ) : null}
     </section>
   );

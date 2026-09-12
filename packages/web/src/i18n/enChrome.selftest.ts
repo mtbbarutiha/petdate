@@ -54,6 +54,7 @@ const chromeFiles = [
   'components/SiteFooter.tsx',
   'components/LandingChrome.tsx',
   'admin/AdminLayout.tsx',
+  'admin/pages/AdminLoginPage.tsx',
   'main.tsx',
 ];
 

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { Plus } from 'lucide-react';
 import { adminFetch, formatNumFa } from '../api';
 import { AdminModal } from '../AdminModal';
+import { tr } from '../../i18n';
 
 type Ann = {
   id: number;
@@ -64,7 +65,7 @@ export function AdminContentPage() {
   };
 
   const remove = async (id: number) => {
-    if (!confirm('حذف اعلان؟')) return;
+    if (!confirm(tr('حذف اعلان؟'))) return;
     try {
       await adminFetch(`/api/admin/content/announcements/${id}`, { method: 'DELETE' });
       await load();
@@ -77,8 +78,8 @@ export function AdminContentPage() {
     <div className="admin-page">
       <header className="admin-header">
         <div>
-          <h1>محتوا و اعلان‌ها</h1>
-          <p>اسنیپت‌های لندینگ / بنر — {formatNumFa(items.length)} مورد</p>
+          <h1>{tr('محتوا و اعلان‌ها')}</h1>
+          <p>{tr('اسنیپت‌های لندینگ / بنر —')} {formatNumFa(items.length)} {tr('مورد')}</p>
         </div>
         <button
           type="button"
@@ -88,7 +89,7 @@ export function AdminContentPage() {
             setOpen(true);
           }}
         >
-          <Plus size={16} /> اعلان جدید
+          <Plus size={16} /> {tr('اعلان جدید')}
         </button>
       </header>
 
@@ -98,9 +99,9 @@ export function AdminContentPage() {
         <table className="admin-table">
           <thead>
             <tr>
-              <th>عنوان</th>
-              <th>جایگاه</th>
-              <th>وضعیت</th>
+              <th>{tr('عنوان')}</th>
+              <th>{tr('جایگاه')}</th>
+              <th>{tr('وضعیت')}</th>
               <th></th>
             </tr>
           </thead>
@@ -108,22 +109,22 @@ export function AdminContentPage() {
             {items.map((a) => (
               <tr key={a.id}>
                 <td>
-                  <strong>{a.title}</strong>
+                  <strong>{tr(a.title)}</strong>
                   <div className="admin-muted">{a.body.slice(0, 80)}</div>
                 </td>
                 <td>{a.placement}</td>
                 <td>
                   <span className={`admin-badge ${a.active ? 'admin-badge--info' : 'admin-badge--error'}`}>
-                    {a.active ? 'فعال' : 'خاموش'}
+                    {a.active ? tr('فعال') : tr('خاموش')}
                   </span>
                 </td>
                 <td>
                   <div className="admin-row-actions">
                     <button type="button" className="admin-btn admin-btn--ghost" onClick={() => void toggle(a)}>
-                      {a.active ? 'خاموش' : 'روشن'}
+                      {a.active ? tr('خاموش') : tr('روشن')}
                     </button>
                     <button type="button" className="admin-btn admin-btn--danger" onClick={() => void remove(a.id)}>
-                      حذف
+                      {tr('حذف')}
                     </button>
                   </div>
                 </td>
@@ -132,7 +133,7 @@ export function AdminContentPage() {
             {!items.length ? (
               <tr>
                 <td colSpan={4} className="admin-muted">
-                  اعلانی نیست
+                  {tr('اعلانی نیست')}
                 </td>
               </tr>
             ) : null}
@@ -142,7 +143,7 @@ export function AdminContentPage() {
 
       <AdminModal
         open={open}
-        title="اعلان جدید"
+        title={tr("اعلان جدید")}
         onClose={() => !busy && setOpen(false)}
         size="md"
         as="form"
@@ -151,25 +152,25 @@ export function AdminContentPage() {
         footer={
           <>
             <button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>
-              انتشار
+              {tr('انتشار')}
             </button>
             <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setOpen(false)}>
-              انصراف
+              {tr('انصراف')}
             </button>
           </>
         }
       >
         <label>
-          <span className="form-label">عنوان</span>
+          <span className="form-label">{tr('عنوان')}</span>
           <input
             className="form-input"
             required
-            value={form.title}
+            value={tr(form.title)}
             onChange={(e) => setForm({ ...form, title: e.target.value })}
           />
         </label>
         <label>
-          <span className="form-label">متن</span>
+          <span className="form-label">{tr('متن')}</span>
           <textarea
             className="form-input"
             rows={3}
@@ -178,16 +179,16 @@ export function AdminContentPage() {
           />
         </label>
         <label>
-          <span className="form-label">جایگاه</span>
+          <span className="form-label">{tr('جایگاه')}</span>
           <select
             className="admin-select"
             value={form.placement}
             onChange={(e) => setForm({ ...form, placement: e.target.value })}
           >
-            <option value="landing">لندینگ</option>
-            <option value="shop">فروشگاه</option>
-            <option value="app">اپ</option>
-            <option value="bot">ربات</option>
+            <option value="landing">{tr('لندینگ')}</option>
+            <option value="shop">{tr('فروشگاه')}</option>
+            <option value="app">{tr('اپ')}</option>
+            <option value="bot">{tr('ربات')}</option>
           </select>
         </label>
       </AdminModal>

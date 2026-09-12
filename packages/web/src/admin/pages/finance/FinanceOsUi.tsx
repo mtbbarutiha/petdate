@@ -1,6 +1,7 @@
 /** Shared Finance OS UI helpers — Pepito light RTL. */
 import { useState } from 'react';
 import { formatNumFa, formatTomanFa } from '../../api';
+import { tr } from '../../../i18n';
 
 export function formatMoney(n: number): string {
   return formatTomanFa(n);
@@ -25,9 +26,9 @@ export function FinanceEditToggle({
       type="button"
       className={`admin-btn ${editMode ? 'admin-btn--primary' : 'admin-btn--ghost'}`}
       onClick={() => onChange(!editMode)}
-      title={editMode ? 'خروج از حالت ویرایش' : 'ورود به حالت ویرایش'}
+      title={editMode ? tr('خروج از حالت ویرایش') : tr('ورود به حالت ویرایش')}
     >
-      {editMode ? 'حالت ویرایش' : 'حالت مشاهده'}
+      {editMode ? tr('حالت ویرایش') : tr('حالت مشاهده')}
     </button>
   );
 }
@@ -50,7 +51,7 @@ export function FinanceTabs<T extends string>({
           className={`admin-tab${value === t.id ? ' is-on' : ''}`}
           onClick={() => onChange(t.id)}
         >
-          {t.label}
+          {tr(t.label)}
           {typeof t.badge === 'number' && t.badge > 0 ? (
             <span className="admin-badge" style={{ marginInlineStart: 6 }}>
               {formatNumFa(t.badge)}

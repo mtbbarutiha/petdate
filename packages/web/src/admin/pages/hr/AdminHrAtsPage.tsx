@@ -21,6 +21,7 @@ import {
   jalaliPartsToGregorianIso,
   type JalaliDateValue,
 } from '../../JalaliDateSelect';
+import { tr } from '../../../i18n';
 
 type AtsMeta = {
   jobTitles: string[];
@@ -169,11 +170,11 @@ export function AdminHrAtsPage() {
     if (!canWrite || !openingForm.title.trim()) return;
     const postedAt = jalaliPartsToGregorianIso(openingPostedAt);
     if (!postedAt) {
-      setError('تاریخ درج آگهی الزامی است');
+      setError(tr('تاریخ درج آگهی الزامی است'));
       return;
     }
     if (!openingForm.jobBoard) {
-      setError('انتخاب جاب برد الزامی است');
+      setError(tr('انتخاب جاب برد الزامی است'));
       return;
     }
     setBusy(true);
@@ -286,7 +287,7 @@ export function AdminHrAtsPage() {
     if (!canWrite || !selected) return;
     const round = selected.followup.callRound;
     if (round >= 2 && !jalaliPartsToGregorianIso(draftCallDate)) {
-      setError(`تاریخ شمسی تماس ${formatNumFa(round)} الزامی است`);
+      setError(`${tr('تاریخ شمسی تماس ')}${formatNumFa(round)}${tr(' الزامی است')}`);
       return;
     }
     setBusy(true);
@@ -308,7 +309,7 @@ export function AdminHrAtsPage() {
       const calls = res.candidate.followup.calls;
       const recordedRound = calls[calls.length - 1]?.round ?? round;
       const wasConnected = draftOutcome === HR_CALL_CONNECTED;
-      setMsg(`نتیجه تماس ${formatNumFa(recordedRound)} ثبت شد`);
+      setMsg(`${tr('نتیجه تماس ')}${formatNumFa(recordedRound)}${tr(' ثبت شد')}`);
       setDraftOutcome(callOutcomes[0] || HR_CALL_OUTCOMES[0]);
       setDraftNote('');
       setDraftCallDate(null);
@@ -327,11 +328,11 @@ export function AdminHrAtsPage() {
     if (!canWrite || !selected) return;
     const interviewAt = jalaliPartsAndTimeToIso(interviewDate, interviewTime);
     if (!interviewAt) {
-      setError('تاریخ و ساعت مصاحبه الزامی است');
+      setError(tr('تاریخ و ساعت مصاحبه الزامی است'));
       return;
     }
     if (!interviewerId) {
-      setError('انتخاب مصاحبه‌گر از اطلاعات پرسنلی الزامی است');
+      setError(tr('انتخاب مصاحبه‌گر از اطلاعات پرسنلی الزامی است'));
       return;
     }
     setBusy(true);
@@ -349,7 +350,7 @@ export function AdminHrAtsPage() {
           }),
         }
       );
-      setMsg('مصاحبه زمان‌بندی شد · تسک برای مصاحبه‌گر در کارتابل · پیامک/ایمیل در صف');
+      setMsg(tr('مصاحبه زمان‌بندی شد · تسک برای مصاحبه‌گر در کارتابل · پیامک/ایمیل در صف'));
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'خطا');
@@ -362,7 +363,7 @@ export function AdminHrAtsPage() {
     if (!canWrite || !selected) return;
     const startIso = jalaliPartsToGregorianIso(startDate);
     if (decision === 'approve' && !startIso) {
-      setError('تاریخ شروع برای تایید الزامی است');
+      setError(tr('تاریخ شروع برای تایید الزامی است'));
       return;
     }
     setBusy(true);
@@ -416,9 +417,9 @@ export function AdminHrAtsPage() {
   const renderCallHistory = (c: HrCandidateCallLog) => (
     <div className="hr-ats-call-done" key={`${c.round}-${c.at}`}>
       <p>
-        تماس {formatNumFa(c.round)} · <b>{c.outcome}</b> · {formatAdminFaDateTime(c.at)}
+        {tr('تماس')} {formatNumFa(c.round)} · <b>{c.outcome}</b> · {formatAdminFaDateTime(c.at)}
       </p>
-      {c.note ? <p className="admin-muted">توضیحات: {c.note}</p> : null}
+      {c.note ? <p className="admin-muted">{tr('توضیحات:')} {c.note}</p> : null}
     </div>
   );
 
@@ -430,7 +431,7 @@ export function AdminHrAtsPage() {
       <div className="hr-ats-call-form">
         {round >= 2 ? (
           <JalaliDateSelect
-            label={`تاریخ تماس ${formatNumFa(round)} (شمسی)`}
+            label={`${tr('تاریخ تماس ')}${formatNumFa(round)}${tr(' (شمسی)')}`}
             value={draftCallDate}
             onChange={setDraftCallDate}
             allowEmpty
@@ -439,7 +440,7 @@ export function AdminHrAtsPage() {
           />
         ) : null}
         <label>
-          <span className="form-label">نتیجه تماس {formatNumFa(round)}</span>
+          <span className="form-label">{tr('نتیجه تماس')} {formatNumFa(round)}</span>
           <select
             className="admin-select"
             value={draftOutcome}
@@ -453,13 +454,13 @@ export function AdminHrAtsPage() {
           </select>
         </label>
         <label className="hr-ats-call-note">
-          <span className="form-label">توضیحات</span>
+          <span className="form-label">{tr('توضیحات')}</span>
           <textarea
             className="form-input"
             rows={3}
             value={draftNote}
             onChange={(e) => setDraftNote(e.target.value)}
-            placeholder="یادداشت تماس…"
+            placeholder={tr("یادداشت تماس…")}
           />
         </label>
         <div className="admin-toolbar">
@@ -469,11 +470,11 @@ export function AdminHrAtsPage() {
             disabled={busy || !canWrite}
             onClick={() => void recordCall()}
           >
-            ثبت نتیجه تماس {formatNumFa(round)}
-            {round === 1 ? ' (خودکار تاریخ)' : ''}
+            {tr('ثبت نتیجه تماس')} {formatNumFa(round)}
+            {round === 1 ? tr(' (خودکار تاریخ)') : ''}
           </button>
           {draftOutcome === HR_CALL_CONNECTED ? (
-            <span className="admin-muted">پس از ثبت → تب هماهنگی مصاحبه</span>
+            <span className="admin-muted">{tr('پس از ثبت → تب هماهنگی مصاحبه')}</span>
           ) : null}
         </div>
       </div>
@@ -483,7 +484,7 @@ export function AdminHrAtsPage() {
   const applicantPicker = (
     <div className="admin-toolbar" style={{ marginTop: 0 }}>
       <label>
-        <span className="form-label">انتخاب متقاضی</span>
+        <span className="form-label">{tr('انتخاب متقاضی')}</span>
         <select
           className="admin-select"
           value={selectedId ?? ''}
@@ -509,7 +510,7 @@ export function AdminHrAtsPage() {
         <span className={stagePillClass(selected.stage)}>{selected.stage}</span>
       </div>
       <p className="admin-muted">
-        تماس فعلی: {formatNumFa(selected.followup.callRound)} از ۳ ·{' '}
+        {tr('تماس فعلی:')} {formatNumFa(selected.followup.callRound)} {tr('از ۳ ·')}{' '}
         {selected.jobTitle || openingTitle(selected.jobOpeningId)} · {selected.jobBoard || '—'}
       </p>
     </>
@@ -519,15 +520,15 @@ export function AdminHrAtsPage() {
     <div className="admin-page">
       <header className="admin-header">
         <div>
-          <h1>استخدام و جذب (ATS)</h1>
+          <h1>{tr('استخدام و جذب (ATS)')}</h1>
           <p>
-            {formatNumFa(openings.length)} آگهی · {formatNumFa(candidates.length)} متقاضی
+            {formatNumFa(openings.length)} {tr('آگهی ·')} {formatNumFa(candidates.length)} {tr('متقاضی')}
           </p>
         </div>
         {canWrite ? (
           <div className="admin-toolbar" style={{ margin: 0 }}>
             <button type="button" className="admin-btn" onClick={openNewOpening}>
-              آگهی جدید
+              {tr('آگهی جدید')}
             </button>
             <button
               type="button"
@@ -540,11 +541,11 @@ export function AdminHrAtsPage() {
                 setCandidateModal(true);
               }}
             >
-              متقاضی جدید
+              {tr('متقاضی جدید')}
             </button>
           </div>
         ) : (
-          <span className="admin-topbar-chip">فقط خواندن</span>
+          <span className="admin-topbar-chip">{tr('فقط خواندن')}</span>
         )}
       </header>
 
@@ -558,40 +559,40 @@ export function AdminHrAtsPage() {
           className={`admin-tab${tab === 'list' ? ' is-on' : ''}`}
           onClick={() => setTab('list')}
         >
-          فهرست متقاضیان
+          {tr('فهرست متقاضیان')}
         </button>
         <button
           type="button"
           className={`admin-tab${tab === 'followup' ? ' is-on' : ''}`}
           onClick={() => setTab('followup')}
         >
-          پیگیری تماس
+          {tr('پیگیری تماس')}
         </button>
         <button
           type="button"
           className={`admin-tab${tab === 'interview' ? ' is-on' : ''}`}
           onClick={() => setTab('interview')}
         >
-          هماهنگی مصاحبه
+          {tr('هماهنگی مصاحبه')}
         </button>
       </div>
 
       {tab === 'list' ? (
         <>
           <section className="admin-card" style={{ padding: 16, marginBottom: 16 }}>
-            <h2 style={{ marginTop: 0, fontSize: '1rem' }}>موقعیت‌های شغلی</h2>
+            <h2 style={{ marginTop: 0, fontSize: '1rem' }}>{tr('موقعیت‌های شغلی')}</h2>
             <div className="admin-table-wrap">
               <table className="admin-table admin-table--dense">
                 <thead>
                   <tr>
-                    <th>عنوان</th>
-                    <th>دپارتمان</th>
-                    <th>جاب برد</th>
-                    <th>تاریخ درج</th>
-                    <th>هزینه درج</th>
-                    <th>رسید</th>
-                    <th>وضعیت</th>
-                    <th>ظرفیت</th>
+                    <th>{tr('عنوان')}</th>
+                    <th>{tr('دپارتمان')}</th>
+                    <th>{tr('جاب برد')}</th>
+                    <th>{tr('تاریخ درج')}</th>
+                    <th>{tr('هزینه درج')}</th>
+                    <th>{tr('رسید')}</th>
+                    <th>{tr('وضعیت')}</th>
+                    <th>{tr('ظرفیت')}</th>
                     <th />
                   </tr>
                 </thead>
@@ -599,13 +600,13 @@ export function AdminHrAtsPage() {
                   {openings.length === 0 ? (
                     <tr>
                       <td colSpan={9} className="admin-empty">
-                        آگهی‌ای نیست
+                        {tr('آگهی‌ای نیست')}
                       </td>
                     </tr>
                   ) : (
                     openings.map((o) => (
                       <tr key={o.id}>
-                        <td>{o.title}</td>
+                        <td>{tr(o.title)}</td>
                         <td>{o.department || '—'}</td>
                         <td>{o.jobBoard || '—'}</td>
                         <td>{formatAdminFaDate(o.postedAt || o.createdAt) || '—'}</td>
@@ -621,7 +622,7 @@ export function AdminHrAtsPage() {
                               {/\.(png|jpe?g|gif|webp)(\?|$)/i.test(o.paymentReceiptUrl) ? (
                                 <img
                                   src={o.paymentReceiptUrl}
-                                  alt="رسید پرداخت"
+                                  alt={tr("رسید پرداخت")}
                                   style={{
                                     width: 40,
                                     height: 40,
@@ -631,7 +632,7 @@ export function AdminHrAtsPage() {
                                   }}
                                 />
                               ) : (
-                                'مشاهده رسید'
+                                tr('مشاهده رسید')
                               )}
                             </a>
                           ) : (
@@ -649,7 +650,7 @@ export function AdminHrAtsPage() {
                               className="admin-btn admin-btn--ghost"
                               onClick={() => openEditOpening(o)}
                             >
-                              ویرایش
+                              {tr('ویرایش')}
                             </button>
                           ) : null}
                         </td>
@@ -663,7 +664,7 @@ export function AdminHrAtsPage() {
 
           <div className="admin-toolbar">
             <select className="admin-select" value={stage} onChange={(e) => setStage(e.target.value)}>
-              <option value="">همه وضعیت‌ها</option>
+              <option value="">{tr('همه وضعیت‌ها')}</option>
               {candidateStages.map((s) => (
                 <option key={s} value={s}>
                   {s}
@@ -671,7 +672,7 @@ export function AdminHrAtsPage() {
               ))}
             </select>
             <button type="button" className="admin-btn" onClick={() => void load()}>
-              اعمال
+              {tr('اعمال')}
             </button>
           </div>
 
@@ -679,11 +680,11 @@ export function AdminHrAtsPage() {
             <table className="admin-table admin-table--dense">
               <thead>
                 <tr>
-                  <th>نام</th>
-                  <th>موبایل</th>
-                  <th>موقعیت</th>
-                  <th>جاب برد</th>
-                  <th>وضعیت</th>
+                  <th>{tr('نام')}</th>
+                  <th>{tr('موبایل')}</th>
+                  <th>{tr('موقعیت')}</th>
+                  <th>{tr('جاب برد')}</th>
+                  <th>{tr('وضعیت')}</th>
                   <th />
                 </tr>
               </thead>
@@ -691,7 +692,7 @@ export function AdminHrAtsPage() {
                 {candidates.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="admin-empty">
-                      متقاضی‌ای نیست
+                      {tr('متقاضی‌ای نیست')}
                     </td>
                   </tr>
                 ) : (
@@ -729,7 +730,7 @@ export function AdminHrAtsPage() {
                             setTab('followup');
                           }}
                         >
-                          پیگیری
+                          {tr('پیگیری')}
                         </button>
                       </td>
                     </tr>
@@ -745,31 +746,31 @@ export function AdminHrAtsPage() {
         <section className="admin-card" style={{ padding: 16 }}>
           {applicantPicker}
           {!selected ? (
-            <p className="admin-muted">یک متقاضی را انتخاب کنید یا از «متقاضی جدید» شروع کنید.</p>
+            <p className="admin-muted">{tr('یک متقاضی را انتخاب کنید یا از «متقاضی جدید» شروع کنید.')}</p>
           ) : (
             <div className="hr-ats-followup">
               {selectedHead}
 
               <div className="hr-ats-call-stage">
-                <h3 style={{ fontSize: '0.95rem' }}>تماس ۱</h3>
+                <h3 style={{ fontSize: '0.95rem' }}>{tr('تماس ۱')}</h3>
                 {call1 ? renderCallHistory(call1) : renderActiveCallForm(1)}
                 {!call1 && currentRound === 1 && isHrCallNoContact(draftOutcome) ? (
                   <p className="admin-muted">
-                    با انتخاب یکی از سه حالت عدم ارتباط (نبود / عدم دسترسی / موکول به آینده) پس از ثبت،
-                    تماس ۲ و تاریخ شمسی باز می‌شود.
+                    {tr(`با انتخاب یکی از سه حالت عدم ارتباط (نبود / عدم دسترسی / موکول به آینده) پس از ثبت،
+                    تماس ۲ و تاریخ شمسی باز می‌شود.`)}
                   </p>
                 ) : null}
               </div>
 
               {showCall2 ? (
                 <div className="hr-ats-call-stage">
-                  <h3 style={{ fontSize: '0.95rem' }}>تماس ۲</h3>
+                  <h3 style={{ fontSize: '0.95rem' }}>{tr('تماس ۲')}</h3>
                   {call2 ? renderCallHistory(call2) : null}
                   {currentRound === 2 && !call2 ? renderActiveCallForm(2) : null}
                   {!call2 && currentRound === 1 && isHrCallNoContact(draftOutcome) ? (
                     <div className="hr-ats-call-preview">
                       <JalaliDateSelect
-                        label="تاریخ تماس ۲ (شمسی)"
+                        label={tr("تاریخ تماس ۲ (شمسی)")}
                         value={draftCallDate}
                         onChange={setDraftCallDate}
                         allowEmpty
@@ -778,7 +779,7 @@ export function AdminHrAtsPage() {
                         disabled
                       />
                       <p className="admin-muted">
-                        پس از ثبت تماس ۱ با یکی از سه حالت عدم ارتباط، این فیلدها فعال می‌شوند.
+                        {tr('پس از ثبت تماس ۱ با یکی از سه حالت عدم ارتباط، این فیلدها فعال می‌شوند.')}
                       </p>
                     </div>
                   ) : null}
@@ -787,13 +788,13 @@ export function AdminHrAtsPage() {
 
               {showCall3 ? (
                 <div className="hr-ats-call-stage">
-                  <h3 style={{ fontSize: '0.95rem' }}>تماس ۳</h3>
+                  <h3 style={{ fontSize: '0.95rem' }}>{tr('تماس ۳')}</h3>
                   {call3 ? renderCallHistory(call3) : null}
                   {currentRound === 3 && !call3 ? renderActiveCallForm(3) : null}
                   {!call3 && currentRound === 2 && isHrCallNoContact(draftOutcome) ? (
                     <div className="hr-ats-call-preview">
                       <JalaliDateSelect
-                        label="تاریخ تماس ۳ (شمسی)"
+                        label={tr("تاریخ تماس ۳ (شمسی)")}
                         value={null}
                         onChange={() => undefined}
                         allowEmpty
@@ -802,7 +803,7 @@ export function AdminHrAtsPage() {
                         disabled
                       />
                       <p className="admin-muted">
-                        پس از ثبت تماس ۲ با عدم ارتباط، فرم تماس ۳ فعال می‌شود.
+                        {tr('پس از ثبت تماس ۲ با عدم ارتباط، فرم تماس ۳ فعال می‌شود.')}
                       </p>
                     </div>
                   ) : null}
@@ -811,27 +812,27 @@ export function AdminHrAtsPage() {
 
               {!call1 && !selected.followup.calls?.length ? (
                 <p className="admin-muted" style={{ marginTop: 8 }}>
-                  هنوز تماسی ثبت نشده
+                  {tr('هنوز تماسی ثبت نشده')}
                 </p>
               ) : null}
 
               {selected.followup.calls.some((c) => c.outcome === HR_CALL_CONNECTED) ? (
                 <p className="admin-success" style={{ marginTop: 12 }}>
-                  متقاضی پاسخگو بود —{' '}
+                  {tr('متقاضی پاسخگو بود —')}{' '}
                   <button
                     type="button"
                     className="admin-btn admin-btn--ghost"
                     onClick={() => setTab('interview')}
                   >
-                    برو به هماهنگی مصاحبه
+                    {tr('برو به هماهنگی مصاحبه')}
                   </button>
                 </p>
               ) : null}
 
-              <h3 style={{ fontSize: '0.95rem' }}>تصمیم نهایی</h3>
+              <h3 style={{ fontSize: '0.95rem' }}>{tr('تصمیم نهایی')}</h3>
               <div className="admin-toolbar">
                 <JalaliDateSelect
-                  label="تاریخ شروع"
+                  label={tr("تاریخ شروع")}
                   value={startDate}
                   onChange={setStartDate}
                   allowEmpty
@@ -844,7 +845,7 @@ export function AdminHrAtsPage() {
                   disabled={busy || !canWrite}
                   onClick={() => void decide('approve')}
                 >
-                  تایید استخدام
+                  {tr('تایید استخدام')}
                 </button>
                 <button
                   type="button"
@@ -852,7 +853,7 @@ export function AdminHrAtsPage() {
                   disabled={busy || !canWrite}
                   onClick={() => void decide('reject')}
                 >
-                  رد متقاضی
+                  {tr('رد متقاضی')}
                 </button>
               </div>
             </div>
@@ -864,28 +865,28 @@ export function AdminHrAtsPage() {
         <section className="admin-card" style={{ padding: 16 }}>
           {applicantPicker}
           {!selected ? (
-            <p className="admin-muted">یک متقاضی را انتخاب کنید.</p>
+            <p className="admin-muted">{tr('یک متقاضی را انتخاب کنید.')}</p>
           ) : (
             <div className="hr-ats-followup">
               {selectedHead}
 
               {!selected.followup.calls.some((c) => c.outcome === HR_CALL_CONNECTED) ? (
                 <p className="admin-muted">
-                  هماهنگی مصاحبه پس از ثبت نتیجه «پاسخگو بود» در پیگیری تماس فعال می‌شود.
+                  {tr('هماهنگی مصاحبه پس از ثبت نتیجه «پاسخگو بود» در پیگیری تماس فعال می‌شود.')}
                 </p>
               ) : (
                 <>
-                  <h3 style={{ fontSize: '0.95rem' }}>زمان‌بندی و تخصیص مصاحبه</h3>
+                  <h3 style={{ fontSize: '0.95rem' }}>{tr('زمان‌بندی و تخصیص مصاحبه')}</h3>
                   <div className="admin-toolbar admin-ats-interview" style={{ flexWrap: 'wrap' }}>
                     <JalaliDateSelect
-                      label="تاریخ مصاحبه"
+                      label={tr("تاریخ مصاحبه")}
                       value={interviewDate}
                       onChange={setInterviewDate}
                       yearsBack={1}
                       yearsForward={1}
                     />
                     <label>
-                      <span className="form-label">ساعت</span>
+                      <span className="form-label">{tr('ساعت')}</span>
                       <input
                         type="time"
                         className="admin-select"
@@ -894,13 +895,13 @@ export function AdminHrAtsPage() {
                       />
                     </label>
                     <label>
-                      <span className="form-label">مصاحبه‌گر (اطلاعات پرسنلی)</span>
+                      <span className="form-label">{tr('مصاحبه‌گر (اطلاعات پرسنلی)')}</span>
                       <select
                         className="admin-select"
                         value={interviewerId}
                         onChange={(e) => setInterviewerId(e.target.value)}
                       >
-                        <option value="">انتخاب پرسنل</option>
+                        <option value="">{tr('انتخاب پرسنل')}</option>
                         {(meta?.interviewers || []).map((p) => (
                           <option key={p.id} value={String(p.id)}>
                             {p.name}
@@ -911,13 +912,13 @@ export function AdminHrAtsPage() {
                     </label>
                   </div>
                   <label className="hr-ats-call-note" style={{ display: 'block', marginTop: 12 }}>
-                    <span className="form-label">توضیحات مصاحبه‌گر</span>
+                    <span className="form-label">{tr('توضیحات مصاحبه‌گر')}</span>
                     <textarea
                       className="form-input"
                       rows={3}
                       value={interviewNote}
                       onChange={(e) => setInterviewNote(e.target.value)}
-                      placeholder="نکات هماهنگی، موضوع مصاحبه، محل…"
+                      placeholder={tr("نکات هماهنگی، موضوع مصاحبه، محل…")}
                     />
                   </label>
                   <div className="admin-toolbar" style={{ marginTop: 12 }}>
@@ -929,23 +930,23 @@ export function AdminHrAtsPage() {
                       }
                       onClick={() => void scheduleInterview()}
                     >
-                      ثبت مصاحبه + تسک پرسنل + پیامک/ایمیل
+                      {tr('ثبت مصاحبه + تسک پرسنل + پیامک/ایمیل')}
                     </button>
                   </div>
                   {selected.followup.interviewAt ? (
                     <div className="hr-ats-call-done" style={{ marginTop: 12 }}>
                       <p>
-                        مصاحبه ثبت‌شده:{' '}
+                        {tr('مصاحبه ثبت‌شده:')}{' '}
                         <b>{formatAdminFaDateTime(selected.followup.interviewAt)}</b>
                         {selected.followup.interviewerName
                           ? ` · ${selected.followup.interviewerName}`
                           : ''}
                       </p>
                       {selected.followup.interviewNote ? (
-                        <p className="admin-muted">توضیحات: {selected.followup.interviewNote}</p>
+                        <p className="admin-muted">{tr('توضیحات:')} {selected.followup.interviewNote}</p>
                       ) : null}
                       <p className="admin-muted">
-                        تسک در کارتابل فعالیت منابع انسانی برای مصاحبه‌گر ایجاد می‌شود.
+                        {tr('تسک در کارتابل فعالیت منابع انسانی برای مصاحبه‌گر ایجاد می‌شود.')}
                       </p>
                     </div>
                   ) : null}
@@ -958,7 +959,7 @@ export function AdminHrAtsPage() {
 
       <AdminModal
         open={openingModal}
-        title={editingOpeningId != null ? 'ویرایش آگهی' : 'آگهی جدید'}
+        title={editingOpeningId != null ? tr('ویرایش آگهی') : tr('آگهی جدید')}
         onClose={() => {
           setOpeningModal(false);
           setEditingOpeningId(null);
@@ -969,7 +970,7 @@ export function AdminHrAtsPage() {
         footer={
           <>
             <button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>
-              ذخیره
+              {tr('ذخیره')}
             </button>
             <button
               type="button"
@@ -980,38 +981,38 @@ export function AdminHrAtsPage() {
                 setEditingOpeningId(null);
               }}
             >
-              انصراف
+              {tr('انصراف')}
             </button>
           </>
         }
       >
         <label>
-          <span className="form-label">عنوان موقعیت شغلی</span>
+          <span className="form-label">{tr('عنوان موقعیت شغلی')}</span>
           <input
             className="form-input"
             required
-            value={openingForm.title}
+            value={tr(openingForm.title)}
             onChange={(e) => setOpeningForm({ ...openingForm, title: e.target.value })}
           />
         </label>
         <label>
-          <span className="form-label">دپارتمان</span>
+          <span className="form-label">{tr('دپارتمان')}</span>
           <input
             className="form-input"
             value={openingForm.department}
             onChange={(e) => setOpeningForm({ ...openingForm, department: e.target.value })}
-            placeholder="مثلاً فروش — نه جاب‌بورد"
+            placeholder={tr("مثلاً فروش — نه جاب‌بورد")}
           />
         </label>
         <label>
-          <span className="form-label">جاب برد</span>
+          <span className="form-label">{tr('جاب برد')}</span>
           <select
             className="form-input"
             required
             value={openingForm.jobBoard}
             onChange={(e) => setOpeningForm({ ...openingForm, jobBoard: e.target.value })}
           >
-            <option value="">انتخاب جاب برد</option>
+            <option value="">{tr('انتخاب جاب برد')}</option>
             {HR_JOB_BOARDS.map((b) => (
               <option key={b} value={b}>
                 {b}
@@ -1020,7 +1021,7 @@ export function AdminHrAtsPage() {
           </select>
         </label>
         <JalaliDateSelect
-          label="تاریخ درج آگهی"
+          label={tr("تاریخ درج آگهی")}
           value={openingPostedAt}
           onChange={setOpeningPostedAt}
           allowEmpty={false}
@@ -1028,13 +1029,13 @@ export function AdminHrAtsPage() {
           yearsForward={1}
         />
         <label>
-          <span className="form-label">هزینه درج آگهی (تومان)</span>
+          <span className="form-label">{tr('هزینه درج آگهی (تومان)')}</span>
           <input
             className="form-input"
             type="text"
             inputMode="numeric"
             dir="ltr"
-            placeholder="مثلاً 2500000"
+            placeholder={tr("مثلاً 2500000")}
             value={openingForm.postingCost}
             onChange={(e) =>
               setOpeningForm({
@@ -1050,7 +1051,7 @@ export function AdminHrAtsPage() {
           ) : null}
         </label>
         <label>
-          <span className="form-label">محل درج رسید پرداخت آگهی</span>
+          <span className="form-label">{tr('محل درج رسید پرداخت آگهی')}</span>
           <input
             className="form-input"
             type="file"
@@ -1069,7 +1070,7 @@ export function AdminHrAtsPage() {
               rel="noreferrer"
               style={{ display: 'inline-block', marginTop: 6 }}
             >
-              رسید فعلی
+              {tr('رسید فعلی')}
             </a>
           ) : null}
         </label>
@@ -1077,7 +1078,7 @@ export function AdminHrAtsPage() {
 
       <AdminModal
         open={candidateModal}
-        title="متقاضی جدید"
+        title={tr("متقاضی جدید")}
         onClose={() => setCandidateModal(false)}
         as="form"
         onSubmit={(e) => void addCandidate(e)}
@@ -1085,7 +1086,7 @@ export function AdminHrAtsPage() {
         footer={
           <>
             <button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>
-              ذخیره و پیگیری
+              {tr('ذخیره و پیگیری')}
             </button>
             <button
               type="button"
@@ -1093,13 +1094,13 @@ export function AdminHrAtsPage() {
               disabled={busy}
               onClick={() => setCandidateModal(false)}
             >
-              انصراف
+              {tr('انصراف')}
             </button>
           </>
         }
       >
         <label>
-          <span className="form-label">نام</span>
+          <span className="form-label">{tr('نام')}</span>
           <input
             className="form-input"
             required
@@ -1108,7 +1109,7 @@ export function AdminHrAtsPage() {
           />
         </label>
         <label>
-          <span className="form-label">نام خانوادگی</span>
+          <span className="form-label">{tr('نام خانوادگی')}</span>
           <input
             className="form-input"
             required
@@ -1117,7 +1118,7 @@ export function AdminHrAtsPage() {
           />
         </label>
         <label>
-          <span className="form-label">موبایل</span>
+          <span className="form-label">{tr('موبایل')}</span>
           <input
             className="form-input"
             dir="ltr"
@@ -1126,7 +1127,7 @@ export function AdminHrAtsPage() {
           />
         </label>
         <label>
-          <span className="form-label">ایمیل (Gmail)</span>
+          <span className="form-label">{tr('ایمیل (Gmail)')}</span>
           <input
             className="form-input"
             dir="ltr"
@@ -1136,7 +1137,7 @@ export function AdminHrAtsPage() {
           />
         </label>
         <label>
-          <span className="form-label">جاب برد</span>
+          <span className="form-label">{tr('جاب برد')}</span>
           <select
             className="form-input"
             value={candidateForm.jobBoard}
@@ -1151,7 +1152,7 @@ export function AdminHrAtsPage() {
           </select>
         </label>
         <label>
-          <span className="form-label">عنوان شغلی (پرسنلی)</span>
+          <span className="form-label">{tr('عنوان شغلی (پرسنلی)')}</span>
           <select
             className="form-input"
             value={candidateForm.jobTitle}
@@ -1166,7 +1167,7 @@ export function AdminHrAtsPage() {
           </select>
         </label>
         <label>
-          <span className="form-label">آگهی مرتبط</span>
+          <span className="form-label">{tr('آگهی مرتبط')}</span>
           <select
             className="form-input"
             value={candidateForm.jobOpeningId}
@@ -1175,7 +1176,7 @@ export function AdminHrAtsPage() {
             <option value="">—</option>
             {openings.map((o) => (
               <option key={o.id} value={String(o.id)}>
-                {o.title}
+                {tr(o.title)}
               </option>
             ))}
           </select>

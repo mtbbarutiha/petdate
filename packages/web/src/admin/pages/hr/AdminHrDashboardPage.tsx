@@ -28,6 +28,7 @@ import {
   useRechartsMotion,
 } from '../../motionCharts';
 import { HrLinkGrid, formatHrMoney } from './HrUi';
+import { tr } from '../../../i18n';
 
 type ChartRow = { name: string; count: number };
 type CostDeptRow = { name: string; total: number };
@@ -82,8 +83,8 @@ function HrMoneyTip({
 /** Compact axis ticks for large تومان amounts (میلیون). */
 function costAxisTick(v: number): string {
   if (!Number.isFinite(v) || v === 0) return '۰';
-  if (Math.abs(v) >= 1_000_000) return `${formatNumFa(Math.round(v / 1_000_000))}م`;
-  if (Math.abs(v) >= 1_000) return `${formatNumFa(Math.round(v / 1_000))}ه`;
+  if (Math.abs(v) >= 1_000_000) return `${formatNumFa(Math.round(v / 1_000_000))}${tr('م')}`;
+  if (Math.abs(v) >= 1_000) return `${formatNumFa(Math.round(v / 1_000))}${tr('ه')}`;
   return formatNumFa(v);
 }
 
@@ -122,12 +123,12 @@ export function AdminHrDashboardPage() {
 
   const kpiItems: AdminKpiItem[] = k
     ? [
-        { key: 'personnel', label: 'کل پرسنل', value: formatNumFa(k.personnel), icon: Users, tone: 'mint' },
-        { key: 'active', label: 'دسترسی فعال', value: formatNumFa(k.activeAccess), icon: UserCheck, tone: 'sky' },
-        { key: 'inactive', label: 'دسترسی غیرفعال', value: formatNumFa(k.inactiveAccess), icon: UserX, tone: 'orange' },
-        { key: 'cockpit', label: 'وظایف کارتابل', value: formatNumFa(k.cockpitTasks), icon: Briefcase, tone: 'violet' },
-        { key: 'requests', label: 'درخواست باز', value: formatNumFa(k.openRequests), icon: Briefcase, tone: 'orange' },
-        { key: 'onboard', label: 'آنبوردینگ', value: formatNumFa(k.openOnboarding), icon: Users, tone: 'sky' },
+        { key: 'personnel', label: tr('کل پرسنل'), value: formatNumFa(k.personnel), icon: Users, tone: 'mint' },
+        { key: 'active', label: tr('دسترسی فعال'), value: formatNumFa(k.activeAccess), icon: UserCheck, tone: 'sky' },
+        { key: 'inactive', label: tr('دسترسی غیرفعال'), value: formatNumFa(k.inactiveAccess), icon: UserX, tone: 'orange' },
+        { key: 'cockpit', label: tr('وظایف کارتابل'), value: formatNumFa(k.cockpitTasks), icon: Briefcase, tone: 'violet' },
+        { key: 'requests', label: tr('درخواست باز'), value: formatNumFa(k.openRequests), icon: Briefcase, tone: 'orange' },
+        { key: 'onboard', label: tr('آنبوردینگ'), value: formatNumFa(k.openOnboarding), icon: Users, tone: 'sky' },
         {
           key: 'hours',
           label: `ساعت فعالیت${monthLabel ? ` · ${monthLabel}` : ''}`,
@@ -149,17 +150,17 @@ export function AdminHrDashboardPage() {
   return (
     <AdminDashPage
       className="hr-dash"
-      title="داشبورد منابع انسانی"
+      title={tr("داشبورد منابع انسانی")}
       subtitle={`خلاصه اطلاعات کلیدی پیوند${monthLabel ? ` · ${monthLabel}` : ''}`}
       onRefresh={() => void load()}
       error={error}
       actions={
         <>
           <Link to="/admin/hr/recruitment" className="admin-btn admin-btn--ghost">
-            داشبورد جذب
+            {tr('داشبورد جذب')}
           </Link>
           <Link to="/admin/hr/reports" className="admin-btn admin-btn--ghost">
-            گزارشات
+            {tr('گزارشات')}
           </Link>
         </>
       }
@@ -168,7 +169,7 @@ export function AdminHrDashboardPage() {
 
       <AdminChartGrid cols={2}>
         <AdminChartCard
-          title="توزیع پرسنل بر اساس واحد سازمانی"
+          title={tr("توزیع پرسنل بر اساس واحد سازمانی")}
           subtitle="بر اساس دپارتمان"
           empty={!deptData.length}
           emptyHint="هنوز پرسنلی برای نمودار ثبت نشده"
@@ -192,7 +193,7 @@ export function AdminHrDashboardPage() {
         </AdminChartCard>
 
         <AdminChartCard
-          title="میزان هزینه در هر واحد"
+          title={tr("میزان هزینه در هر واحد")}
           subtitle={monthLabel || 'این ماه'}
           empty={!costDeptData.length}
           emptyHint="هزینه‌ای برای این ماه ثبت نشده"
@@ -217,7 +218,7 @@ export function AdminHrDashboardPage() {
       </AdminChartGrid>
 
       <AdminChartGrid cols={3}>
-        <AdminChartCard title="وضعیت قرارداد" empty={!statusPie.length}>
+        <AdminChartCard title={tr("وضعیت قرارداد")} empty={!statusPie.length}>
           <div className="hr-dash-donut-wrap">
             <div className="hr-dash-chart" style={{ height: 180 }}>
               <ResponsiveContainer width="100%" height="100%">
@@ -244,7 +245,7 @@ export function AdminHrDashboardPage() {
         </AdminChartCard>
 
         <AdminChartCard
-          title="توزیع مکانی"
+          title={tr("توزیع مکانی")}
           empty={!locData.length}
           emptyHint="موقعیتی ثبت نشده"
           height={Math.max(200, 36 * Math.max(locData.length, 3))}
@@ -262,7 +263,7 @@ export function AdminHrDashboardPage() {
           </ResponsiveContainer>
         </AdminChartCard>
 
-        <AdminChartCard title="کارتابل (پیش‌نمایش)" href="/admin/hr/cockpit" hrefLabel="کامل →" empty={!data?.cockpitPreview?.length} emptyHint="وظیفه‌ای نیست">
+        <AdminChartCard title={tr("کارتابل (پیش‌نمایش)")} href="/admin/hr/cockpit" hrefLabel="کامل →" empty={!data?.cockpitPreview?.length} emptyHint="وظیفه‌ای نیست">
           <ul className="admin-log-list">
             {(data?.cockpitPreview || []).map((t, i) => (
               <li key={i}>

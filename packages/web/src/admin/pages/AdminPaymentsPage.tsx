@@ -18,6 +18,7 @@ import {
 import { formatAdminFaDateTime } from '../JalaliDateSelect';
 import { AdminIdChip } from '../AdminIds';
 import { AdminEntityCell, AdminThumb } from '../AdminThumb';
+import { tr } from '../../i18n';
 
 /** Default: finance approval queue (pending + stuck receipt rows). */
 const REVIEW_QUEUE = 'review_queue';
@@ -35,20 +36,21 @@ const STATUS_OPTIONS: { value: string; label: string }[] = [
 ];
 
 function statusLabel(status: string): string {
-  return STATUS_OPTIONS.find((s) => s.value === status)?.label || status;
+  const label = STATUS_OPTIONS.find((s) => s.value === status)?.label || status;
+  return tr(label);
 }
 
 function packageLabel(o: PaymentOrder): string {
   const pkg = o.packageId || '—';
-  if (pkg === 'shopxtr') return 'پت شاپ · Stars تلگرام';
-  if (pkg === 'shopwallet') return 'پت شاپ · ستاره پنل';
-  if (pkg === 'shopcoins') return 'پت شاپ · سکه پنل';
-  if (pkg === 'shoptoman') return 'پت شاپ · ریال پنل';
-  if (pkg === 'shopcard') return 'پت شاپ · کارت‌به‌کارت';
-  if (pkg.startsWith('wstars:')) return `کیف‌پول Stars · ${pkg}`;
+  if (pkg === 'shopxtr') return tr('پت شاپ · Stars تلگرام');
+  if (pkg === 'shopwallet') return tr('پت شاپ · ستاره پنل');
+  if (pkg === 'shopcoins') return tr('پت شاپ · سکه پنل');
+  if (pkg === 'shoptoman') return tr('پت شاپ · ریال پنل');
+  if (pkg === 'shopcard') return tr('پت شاپ · کارت‌به‌کارت');
+  if (pkg.startsWith('wstars:')) return `${tr('کیف‌پول Stars · ')}${pkg}`;
   const coinPkg = findCoinPackage(pkg);
-  if (coinPkg) return `${coinPkg.label} · ${formatNumFa(coinPkg.coins)} سکه`;
-  if (o.coins > 0) return `${formatNumFa(o.coins)} سکه`;
+  if (coinPkg) return `${coinPkg.label} · ${formatNumFa(coinPkg.coins)}${tr(' سکه')}`;
+  if (o.coins > 0) return `${formatNumFa(o.coins)}${tr(' سکه')}`;
   return pkg;
 }
 
@@ -56,8 +58,8 @@ function packageLabel(o: PaymentOrder): string {
 function paymentSourceLabel(o: PaymentOrder): string | null {
   const raw = String(o.receiptUrl || o.receiptFileId || '').trim();
   if (!raw) return null;
-  if (raw.startsWith('/api/payments/receipts/')) return 'وب';
-  return 'ربات';
+  if (raw.startsWith('/api/payments/receipts/')) return tr('وب');
+  return tr('ربات');
 }
 
 function amountLabel(o: PaymentOrder): string {
@@ -119,7 +121,7 @@ function AdminPaymentReceiptAttachment({ order }: { order: PaymentOrder }) {
     let cancelled = false;
     const raw = String(order.receiptUrl || order.receiptFileId || '').trim();
     if (!raw) {
-      setState({ status: 'error', message: 'رسیدی ثبت نشده' });
+      setState({ status: 'error', message: tr('رسیدی ثبت نشده') });
       return;
     }
 
@@ -154,7 +156,7 @@ function AdminPaymentReceiptAttachment({ order }: { order: PaymentOrder }) {
           setState({ status: 'image', url: objectUrl });
         }
       } catch {
-        if (!cancelled) setState({ status: 'error', message: 'دریافت رسید ناموفق بود' });
+        if (!cancelled) setState({ status: 'error', message: tr('دریافت رسید ناموفق بود') });
       }
     })();
 
@@ -165,10 +167,10 @@ function AdminPaymentReceiptAttachment({ order }: { order: PaymentOrder }) {
   }, [order.id, order.receiptFileId, order.receiptUrl]);
 
   if (state.status === 'loading') {
-    return <p className="admin-payment-receipt-status">در حال بارگذاری رسید…</p>;
+    return <p className="admin-payment-receipt-status">{tr('در حال بارگذاری رسید…')}</p>;
   }
   if (state.status === 'error') {
-    return <p className="admin-payment-receipt-status admin-payment-receipt-status--error">{state.message}</p>;
+    return <p className="admin-payment-receipt-status admin-payment-receipt-status--error">{tr(state.message)}</p>;
   }
   if (state.status === 'pdf') {
     return (
@@ -180,10 +182,10 @@ function AdminPaymentReceiptAttachment({ order }: { order: PaymentOrder }) {
           rel="noopener noreferrer"
           download={`${paymentPublicIdOf(order)}.pdf`}
         >
-          دانلود رسید PDF
+          {tr('دانلود رسید PDF')}
         </a>
         <a className="admin-payment-receipt-link" href={state.url} target="_blank" rel="noopener noreferrer">
-          باز کردن در تب جدید
+          {tr('باز کردن در تب جدید')}
         </a>
       </div>
     );
@@ -191,10 +193,10 @@ function AdminPaymentReceiptAttachment({ order }: { order: PaymentOrder }) {
   return (
     <div className="admin-payment-receipt">
       <a href={state.url} target="_blank" rel="noopener noreferrer" className="admin-payment-receipt-preview">
-        <img src={state.url} alt="رسید پرداخت ارسالی کاربر" />
+        <img src={state.url} alt={tr("رسید پرداخت ارسالی کاربر")} />
       </a>
       <a className="admin-payment-receipt-link" href={state.url} target="_blank" rel="noopener noreferrer">
-        بزرگ‌نمایی / تب جدید
+        {tr('بزرگ‌نمایی / تب جدید')}
       </a>
     </div>
   );
@@ -257,10 +259,10 @@ export function AdminPaymentsPage() {
     <div className="admin-page">
       <header className="admin-header">
         <div>
-          <h1>صف تأیید واریز / کارت‌به‌کارت</h1>
+          <h1>{tr('صف تأیید واریز / کارت‌به‌کارت')}</h1>
           <p>
-            {formatNumFa(orders.length)} مورد — تأیید رسید شارژ سکه و شاپ در پنل مالی (هم‌تراز کیف
-            پول کاربر)
+            {formatNumFa(orders.length)} {tr(`مورد — تأیید رسید شارژ سکه و شاپ در پنل مالی (هم‌تراز کیف
+            پول کاربر)`)}
           </p>
         </div>
         <div
@@ -268,10 +270,10 @@ export function AdminPaymentsPage() {
           style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}
         >
           <Link to="/admin/finance" className="admin-btn ghost">
-            داشبورد مالی
+            {tr('داشبورد مالی')}
           </Link>
           <Link to="/admin/finance/wallet" className="admin-btn ghost">
-            لجر کیف پول
+            {tr('لجر کیف پول')}
           </Link>
           <Link to="/admin/finance/transactions" className="admin-btn ghost">
             Finance OS
@@ -279,7 +281,7 @@ export function AdminPaymentsPage() {
           <select className="admin-select" value={status} onChange={(e) => setStatus(e.target.value)}>
             {STATUS_OPTIONS.map((s) => (
               <option key={s.value || 'all'} value={s.value}>
-                {s.label}
+                {tr(s.label)}
               </option>
             ))}
           </select>
@@ -292,13 +294,13 @@ export function AdminPaymentsPage() {
         <table className="admin-table admin-table--dense">
           <thead>
             <tr>
-              <th>آیدی</th>
-              <th>کاربر</th>
-              <th>بسته / منبع</th>
-              <th>مبلغ</th>
-              <th>روش</th>
-              <th>وضعیت</th>
-              <th>زمان</th>
+              <th>{tr('آیدی')}</th>
+              <th>{tr('کاربر')}</th>
+              <th>{tr('بسته / منبع')}</th>
+              <th>{tr('مبلغ')}</th>
+              <th>{tr('روش')}</th>
+              <th>{tr('وضعیت')}</th>
+              <th>{tr('زمان')}</th>
               <th></th>
             </tr>
           </thead>
@@ -325,7 +327,7 @@ export function AdminPaymentsPage() {
                             src={o.userAvatarUrl}
                             label={o.userName}
                             kind="user"
-                            alt={o.userName || 'کاربر'}
+                            alt={o.userName || tr('کاربر')}
                           />
                         }
                         title={o.userName || '—'}
@@ -347,19 +349,19 @@ export function AdminPaymentsPage() {
                       <div className="admin-cell-compact">
                         <span>{packageLabel(o)}</span>
                         {paymentSourceLabel(o) ? (
-                          <span className="admin-muted">منبع: {paymentSourceLabel(o)}</span>
+                          <span className="admin-muted">{tr('منبع:')} {paymentSourceLabel(o)}</span>
                         ) : null}
                         {shopMeta?.titleHint ? (
                           <span className="admin-muted">{shopMeta.titleHint}</span>
                         ) : null}
                         {shopMeta?.shopOrderId != null ? (
                           <span className="admin-muted" dir="ltr">
-                            سفارش شاپ {makeOrderPublicId(shopMeta.shopOrderId)}
+                            {tr('سفارش شاپ')} {makeOrderPublicId(shopMeta.shopOrderId)}
                           </span>
                         ) : null}
                         {o.transferRef ? (
                           <span className="admin-muted" dir="ltr">
-                            پیگیری: {o.transferRef}
+                            {tr('پیگیری:')} {o.transferRef}
                           </span>
                         ) : null}
                         {hasReceipt ? (
@@ -368,7 +370,7 @@ export function AdminPaymentsPage() {
                             className="admin-btn ghost admin-payment-receipt-chip"
                             onClick={() => setOpenId(open ? null : o.id)}
                           >
-                            {open ? 'بستن رسید' : 'مشاهده رسید'}
+                            {open ? tr('بستن رسید') : tr('مشاهده رسید')}
                           </button>
                         ) : null}
                       </div>
@@ -378,11 +380,11 @@ export function AdminPaymentsPage() {
                       {o.method === 'stars'
                         ? '⭐ Stars'
                         : o.method === 'coins'
-                          ? '🪙 سکه'
+                          ? tr('🪙 سکه')
                           : o.method === 'toman'
-                            ? '﷼ ریال'
+                            ? tr('﷼ ریال')
                             : o.method === 'card'
-                              ? 'کارت'
+                              ? tr('کارت')
                               : o.method}
                     </td>
                     <td>
@@ -396,7 +398,7 @@ export function AdminPaymentsPage() {
                           className="admin-btn ghost"
                           onClick={() => setOpenId(open ? null : o.id)}
                         >
-                          {open ? 'بستن' : 'جزئیات'}
+                          {open ? tr('بستن') : tr('جزئیات')}
                         </button>
                         {canDecide(o) ? (
                           <>
@@ -406,7 +408,7 @@ export function AdminPaymentsPage() {
                               disabled={busyId === o.id}
                               onClick={() => void approve(o.id)}
                             >
-                              تأیید
+                              {tr('تأیید')}
                             </button>
                             <button
                               type="button"
@@ -414,7 +416,7 @@ export function AdminPaymentsPage() {
                               disabled={busyId === o.id}
                               onClick={() => void reject(o.id)}
                             >
-                              رد
+                              {tr('رد')}
                             </button>
                           </>
                         ) : null}
@@ -426,25 +428,25 @@ export function AdminPaymentsPage() {
                       <td colSpan={8}>
                         <div className="admin-payment-detail">
                           <section className="admin-payment-detail-meta">
-                            <h3>جزئیات واریز</h3>
+                            <h3>{tr('جزئیات واریز')}</h3>
                             <div className="admin-payment-detail-meta-body">
                               {o.telegramPaymentChargeId
                                 ? `charge: ${o.telegramPaymentChargeId}\n`
                                 : ''}
-                              {o.transferRef ? `پیگیری واریز: ${o.transferRef}\n` : ''}
+                              {o.transferRef ? `${tr('پیگیری واریز: ')}${o.transferRef}\n` : ''}
                               {o.reviewedAt
                                 ? `reviewed: ${formatAdminFaDateTime(o.reviewedAt)}\n`
                                 : ''}
-                              {paymentSourceLabel(o) ? `منبع رسید: ${paymentSourceLabel(o)}\n` : ''}
-                              {o.adminNote || 'بدون یادداشت'}
+                              {paymentSourceLabel(o) ? `${tr('منبع رسید: ')}${paymentSourceLabel(o)}\n` : ''}
+                              {o.adminNote || tr('بدون یادداشت')}
                             </div>
                           </section>
                           <section className="admin-payment-detail-attach">
-                            <h3>پیوست — رسید ارسالی کاربر</h3>
+                            <h3>{tr('پیوست — رسید ارسالی کاربر')}</h3>
                             {hasReceipt ? (
                               <AdminPaymentReceiptAttachment order={o} />
                             ) : (
-                              <p className="admin-payment-receipt-status">رسیدی آپلود نشده است.</p>
+                              <p className="admin-payment-receipt-status">{tr('رسیدی آپلود نشده است.')}</p>
                             )}
                           </section>
                         </div>
@@ -458,10 +460,10 @@ export function AdminPaymentsPage() {
               <tr>
                 <td colSpan={8} className="admin-muted">
                   {status === REVIEW_QUEUE
-                    ? 'صف تأیید خالی است — واریز منتظر تأییدی نیست.'
+                    ? tr('صف تأیید خالی است — واریز منتظر تأییدی نیست.')
                     : status
-                      ? `موردی با وضعیت «${statusLabel(status)}» نیست — فیلتر را روی «صف تأیید مالی» یا «همه» بگذارید.`
-                      : 'هنوز پرداختی ثبت نشده.'}
+                      ? `${tr('موردی با وضعیت «')}${statusLabel(status)}${tr('» نیست — فیلتر را روی «صف تأیید مالی» یا «همه» بگذارید.')}`
+                      : tr('هنوز پرداختی ثبت نشده.')}
                 </td>
               </tr>
             ) : null}

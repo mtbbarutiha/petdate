@@ -27,6 +27,7 @@ import { AdminModal } from '../../AdminModal';
 import { AdminIdChip } from '../../AdminIds';
 import { AdminThumb } from '../../AdminThumb';
 import { JalaliDateSelect, formatAdminFaDate, formatJalaliSlash, parseJalaliSlash } from '../../JalaliDateSelect';
+import { tr } from '../../../i18n';
 
 const TABS = [
   { id: 'identity', label: 'هویتی - تحصیلی' },
@@ -77,7 +78,7 @@ function ticketRange(r: HrRequest): string {
   if (r.fromDate || r.toDate) {
     return `${formatAdminFaDate(r.fromDate) || '—'} ← ${formatAdminFaDate(r.toDate) || '—'}`;
   }
-  if (r.days) return `${formatNumFa(r.days)} روز`;
+  if (r.days) return `${formatNumFa(r.days)}${tr(' روز')}`;
   return formatAdminFaDate(r.createdAt);
 }
 
@@ -205,7 +206,7 @@ export function AdminHrEmployeeDetailPage() {
     const startDate = contractForm.startDate.trim();
     const endDate = contractForm.endDate.trim();
     if (!startDate || !endDate) {
-      setError('تاریخ شروع و پایان قرارداد الزامی است');
+      setError(tr('تاریخ شروع و پایان قرارداد الزامی است'));
       return;
     }
     const salary = Number(String(contractForm.salary || '0').replace(/[^0-9]/g, '')) || 0;
@@ -266,10 +267,10 @@ export function AdminHrEmployeeDetailPage() {
   };
 
   if (!Number.isFinite(empId)) {
-    return <p className="admin-error">شناسه نامعتبر</p>;
+    return <p className="admin-error">{tr('شناسه نامعتبر')}</p>;
   }
   if (!employee && !error) {
-    return <p className="admin-muted">در حال بارگذاری…</p>;
+    return <p className="admin-muted">{tr('در حال بارگذاری…')}</p>;
   }
   if (!employee) {
     return <p className="admin-error">{error}</p>;
@@ -306,7 +307,7 @@ export function AdminHrEmployeeDetailPage() {
           <div>
             <p className="admin-muted">
               <Link to="/admin/hr/employees" className="admin-link">
-                ← همکاران
+                {tr('← همکاران')}
               </Link>
             </p>
             <h1>{fullName}</h1>
@@ -317,15 +318,15 @@ export function AdminHrEmployeeDetailPage() {
         </div>
         {canWrite ? (
           <button type="button" className="admin-btn admin-btn--primary" onClick={() => void save()}>
-            ذخیره پرونده
+            {tr('ذخیره پرونده')}
           </button>
         ) : (
-          <span className="admin-topbar-chip">فقط خواندن</span>
+          <span className="admin-topbar-chip">{tr('فقط خواندن')}</span>
         )}
       </header>
 
       {error ? <p className="admin-error">{error}</p> : null}
-      {saved ? <p className="admin-success">ذخیره شد</p> : null}
+      {saved ? <p className="admin-success">{tr('ذخیره شد')}</p> : null}
 
       <div className="admin-tabs">
         {TABS.map((t) => (
@@ -335,7 +336,7 @@ export function AdminHrEmployeeDetailPage() {
             className={`admin-tab${tab === t.id ? ' is-on' : ''}`}
             onClick={() => setTab(t.id)}
           >
-            {t.label}
+            {tr(t.label)}
           </button>
         ))}
       </div>
@@ -343,19 +344,19 @@ export function AdminHrEmployeeDetailPage() {
       {tab === 'identity' ? (
         <div className="admin-card admin-form-grid" style={{ padding: 16 }}>
           <label className="admin-span-2">
-            <span className="form-label">آدرس عکس (URL)</span>
+            <span className="form-label">{tr('آدرس عکس (URL)')}</span>
             <input
               className="form-input"
               dir="ltr"
               disabled={!canWrite}
-              placeholder="https://… یا /api/admin/hr/avatars/…"
+              placeholder={tr("https://… یا /api/admin/hr/avatars/…")}
               value={employee.avatarUrl || ''}
               onChange={(e) => patch('avatarUrl', e.target.value)}
             />
           </label>
           {canWrite ? (
             <label className="admin-span-2">
-              <span className="form-label">آپلود عکس</span>
+              <span className="form-label">{tr('آپلود عکس')}</span>
               <input
                 className="form-input"
                 type="file"
@@ -365,7 +366,7 @@ export function AdminHrEmployeeDetailPage() {
             </label>
           ) : null}
           <label>
-            <span className="form-label">نام</span>
+            <span className="form-label">{tr('نام')}</span>
             <input
               className="form-input"
               disabled={!canWrite}
@@ -374,7 +375,7 @@ export function AdminHrEmployeeDetailPage() {
             />
           </label>
           <label>
-            <span className="form-label">نام خانوادگی</span>
+            <span className="form-label">{tr('نام خانوادگی')}</span>
             <input
               className="form-input"
               disabled={!canWrite}
@@ -383,7 +384,7 @@ export function AdminHrEmployeeDetailPage() {
             />
           </label>
           <label>
-            <span className="form-label">جنسیت</span>
+            <span className="form-label">{tr('جنسیت')}</span>
             <select
               className="form-input"
               disabled={!canWrite}
@@ -395,12 +396,12 @@ export function AdminHrEmployeeDetailPage() {
               }}
             >
               <option value="">—</option>
-              <option value="آقا">آقا</option>
-              <option value="خانم">خانم</option>
+              <option value="آقا">{tr('آقا')}</option>
+              <option value="خانم">{tr('خانم')}</option>
             </select>
           </label>
           <div>
-            <span className="form-label">تاریخ تولد</span>
+            <span className="form-label">{tr('تاریخ تولد')}</span>
             <JalaliDateSelect
               value={parseJalaliSlash(employee.birthDate || '')}
               disabled={!canWrite}
@@ -410,7 +411,7 @@ export function AdminHrEmployeeDetailPage() {
             />
           </div>
           <label>
-            <span className="form-label">شماره شناسنامه</span>
+            <span className="form-label">{tr('شماره شناسنامه')}</span>
             <input
               className="form-input"
               disabled={!canWrite}
@@ -419,7 +420,7 @@ export function AdminHrEmployeeDetailPage() {
             />
           </label>
           <label>
-            <span className="form-label">کد ملی</span>
+            <span className="form-label">{tr('کد ملی')}</span>
             <input
               className="form-input"
               disabled={!canWrite}
@@ -428,7 +429,7 @@ export function AdminHrEmployeeDetailPage() {
             />
           </label>
           <label>
-            <span className="form-label">نام پدر</span>
+            <span className="form-label">{tr('نام پدر')}</span>
             <input
               className="form-input"
               disabled={!canWrite}
@@ -437,7 +438,7 @@ export function AdminHrEmployeeDetailPage() {
             />
           </label>
           <label>
-            <span className="form-label">وضعیت تأهل</span>
+            <span className="form-label">{tr('وضعیت تأهل')}</span>
             <select
               className="form-input"
               disabled={!canWrite}
@@ -445,12 +446,12 @@ export function AdminHrEmployeeDetailPage() {
               onChange={(e) => patch('maritalStatus', e.target.value)}
             >
               <option value="">—</option>
-              <option value="مجرد">مجرد</option>
-              <option value="متأهل">متأهل</option>
+              <option value="مجرد">{tr('مجرد')}</option>
+              <option value="متأهل">{tr('متأهل')}</option>
             </select>
           </label>
           <label>
-            <span className="form-label">تعداد فرزند</span>
+            <span className="form-label">{tr('تعداد فرزند')}</span>
             <input
               className="form-input"
               disabled={!canWrite}
@@ -460,7 +461,7 @@ export function AdminHrEmployeeDetailPage() {
           </label>
           {employee.gender === 'آقا' ? (
             <label>
-              <span className="form-label">وضعیت نظام وظیفه</span>
+              <span className="form-label">{tr('وضعیت نظام وظیفه')}</span>
               <select
                 className="form-input"
                 disabled={!canWrite}
@@ -477,7 +478,7 @@ export function AdminHrEmployeeDetailPage() {
             </label>
           ) : null}
           <label>
-            <span className="form-label">استان</span>
+            <span className="form-label">{tr('استان')}</span>
             <select
               className="form-input"
               disabled={!canWrite}
@@ -496,7 +497,7 @@ export function AdminHrEmployeeDetailPage() {
             </select>
           </label>
           <label>
-            <span className="form-label">شهر</span>
+            <span className="form-label">{tr('شهر')}</span>
             <select
               className="form-input"
               disabled={!canWrite || !employee.province}
@@ -512,7 +513,7 @@ export function AdminHrEmployeeDetailPage() {
             </select>
           </label>
           <label className="admin-span-2">
-            <span className="form-label">آدرس</span>
+            <span className="form-label">{tr('آدرس')}</span>
             <input
               className="form-input"
               disabled={!canWrite}
@@ -521,7 +522,7 @@ export function AdminHrEmployeeDetailPage() {
             />
           </label>
           <label>
-            <span className="form-label">مدرک تحصیلی</span>
+            <span className="form-label">{tr('مدرک تحصیلی')}</span>
             <select
               className="form-input"
               disabled={!canWrite}
@@ -537,7 +538,7 @@ export function AdminHrEmployeeDetailPage() {
             </select>
           </label>
           <label>
-            <span className="form-label">رشته تحصیلی</span>
+            <span className="form-label">{tr('رشته تحصیلی')}</span>
             <select
               className="form-input"
               disabled={!canWrite}
@@ -567,7 +568,7 @@ export function AdminHrEmployeeDetailPage() {
       {tab === 'job' ? (
         <div className="admin-card admin-form-grid" style={{ padding: 16 }}>
           <label>
-            <span className="form-label">شغل</span>
+            <span className="form-label">{tr('شغل')}</span>
             <select
               className="form-input"
               disabled={!canWrite}
@@ -583,7 +584,7 @@ export function AdminHrEmployeeDetailPage() {
             </select>
           </label>
           <label>
-            <span className="form-label">بخش</span>
+            <span className="form-label">{tr('بخش')}</span>
             <select
               className="form-input"
               disabled={!canWrite}
@@ -599,7 +600,7 @@ export function AdminHrEmployeeDetailPage() {
             </select>
           </label>
           <label>
-            <span className="form-label">محل حضور</span>
+            <span className="form-label">{tr('محل حضور')}</span>
             <select
               className="form-input"
               disabled={!canWrite}
@@ -615,7 +616,7 @@ export function AdminHrEmployeeDetailPage() {
             </select>
           </label>
           <label>
-            <span className="form-label">مدیر مربوطه (سمت شغلی)</span>
+            <span className="form-label">{tr('مدیر مربوطه (سمت شغلی)')}</span>
             <select
               className="form-input"
               disabled={!canWrite}
@@ -631,7 +632,7 @@ export function AdminHrEmployeeDetailPage() {
             </select>
           </label>
           <label>
-            <span className="form-label">نام مدیر / سرپرست</span>
+            <span className="form-label">{tr('نام مدیر / سرپرست')}</span>
             <select
               className="form-input"
               disabled={!canWrite}
@@ -649,12 +650,12 @@ export function AdminHrEmployeeDetailPage() {
           </label>
           {selectedManager ? (
             <p className="admin-muted admin-span-2">
-              مدیر انتخاب‌شده: {selectedManager.firstName} {selectedManager.lastName}
+              {tr('مدیر انتخاب‌شده:')} {selectedManager.firstName} {selectedManager.lastName}
               {selectedManager.jobTitle ? ` (${selectedManager.jobTitle})` : ''}
             </p>
           ) : null}
           <label>
-            <span className="form-label">نحوه همکاری</span>
+            <span className="form-label">{tr('نحوه همکاری')}</span>
             <select
               className="form-input"
               disabled={!canWrite}
@@ -669,7 +670,7 @@ export function AdminHrEmployeeDetailPage() {
             </select>
           </label>
           <label>
-            <span className="form-label">داخلی</span>
+            <span className="form-label">{tr('داخلی')}</span>
             <input
               className="form-input"
               disabled={!canWrite}
@@ -684,7 +685,7 @@ export function AdminHrEmployeeDetailPage() {
         <div className="admin-card" style={{ padding: 16 }}>
           <div className="admin-form-grid" style={{ marginBottom: 16 }}>
             <label>
-              <span className="form-label">وضعیت قرارداد</span>
+              <span className="form-label">{tr('وضعیت قرارداد')}</span>
               <select
                 className="form-input"
                 disabled={!canWrite}
@@ -699,7 +700,7 @@ export function AdminHrEmployeeDetailPage() {
               </select>
             </label>
             <label>
-              <span className="form-label">نحوه همکاری</span>
+              <span className="form-label">{tr('نحوه همکاری')}</span>
               <select
                 className="form-input"
                 disabled={!canWrite}
@@ -715,25 +716,25 @@ export function AdminHrEmployeeDetailPage() {
             </label>
           </div>
           <div className="admin-header" style={{ marginBottom: 12 }}>
-            <h2 style={{ margin: 0, fontSize: '1rem' }}>قراردادها</h2>
+            <h2 style={{ margin: 0, fontSize: '1rem' }}>{tr('قراردادها')}</h2>
           </div>
           <div className="admin-table-wrap">
             <table className="admin-table admin-table--dense">
               <thead>
                 <tr>
-                  <th>کد</th>
-                  <th>شروع</th>
-                  <th>پایان</th>
-                  <th>حقوق</th>
-                  <th>بیمه</th>
-                  <th>بانک</th>
+                  <th>{tr('کد')}</th>
+                  <th>{tr('شروع')}</th>
+                  <th>{tr('پایان')}</th>
+                  <th>{tr('حقوق')}</th>
+                  <th>{tr('بیمه')}</th>
+                  <th>{tr('بانک')}</th>
                 </tr>
               </thead>
               <tbody>
                 {(employee.contracts || []).length === 0 ? (
                   <tr>
                     <td colSpan={6} className="admin-empty">
-                      قراردادی نیست
+                      {tr('قراردادی نیست')}
                     </td>
                   </tr>
                 ) : (
@@ -741,7 +742,7 @@ export function AdminHrEmployeeDetailPage() {
                     <tr key={c.id}>
                       <td className="admin-mono">{c.contractCode}</td>
                       <td>{c.startDate || '—'}</td>
-                      <td>{c.endDate || 'باز'}</td>
+                      <td>{c.endDate || tr('باز')}</td>
                       <td>{formatNumFa(c.salary)}</td>
                       <td>{c.insuranceNo || '—'}</td>
                       <td>{c.bankName || '—'}</td>
@@ -757,7 +758,7 @@ export function AdminHrEmployeeDetailPage() {
       {tab === 'renew' ? (
         <div className="admin-card" style={{ padding: 16 }}>
           <div className="admin-header" style={{ marginBottom: 12 }}>
-            <h2 style={{ margin: 0, fontSize: '1rem' }}>ایجاد / تمدید قرارداد</h2>
+            <h2 style={{ margin: 0, fontSize: '1rem' }}>{tr('ایجاد / تمدید قرارداد')}</h2>
             {canWrite ? (
               <button
                 type="button"
@@ -775,23 +776,23 @@ export function AdminHrEmployeeDetailPage() {
                   setContractOpen(true);
                 }}
               >
-                تمدید / قرارداد جدید
+                {tr('تمدید / قرارداد جدید')}
               </button>
             ) : null}
           </div>
           <p className="admin-muted">
-            تاریخ شروع و پایان جلالی الزامی است. آخرین قرارداد در تب «قرارداد» و تاریخچه نمایش داده می‌شود.
+            {tr('تاریخ شروع و پایان جلالی الزامی است. آخرین قرارداد در تب «قرارداد» و تاریخچه نمایش داده می‌شود.')}
           </p>
           {(employee.contracts || []).length > 0 ? (
             <ul className="admin-log-list">
               {(employee.contracts || []).slice(0, 3).map((c) => (
                 <li key={c.id}>
-                  {c.contractCode}: شروع {c.startDate || '—'} · پایان {c.endDate || 'باز'}
+                  {c.contractCode}{tr(': شروع')} {c.startDate || '—'} {tr('· پایان')} {c.endDate || tr('باز')}
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="admin-muted">هنوز قراردادی ثبت نشده است.</p>
+            <p className="admin-muted">{tr('هنوز قراردادی ثبت نشده است.')}</p>
           )}
         </div>
       ) : null}
@@ -799,7 +800,7 @@ export function AdminHrEmployeeDetailPage() {
       {tab === 'comp' ? (
         <div className="admin-card admin-form-grid" style={{ padding: 16 }}>
           <label>
-            <span className="form-label">مدل درآمدی</span>
+            <span className="form-label">{tr('مدل درآمدی')}</span>
             <select
               className="form-input"
               disabled={!canWrite}
@@ -816,14 +817,14 @@ export function AdminHrEmployeeDetailPage() {
               ))}
             </select>
           </label>
-          <p className="admin-muted admin-span-2">مدل‌های درآمدی از بخش جبران خدمت مدیریت می‌شوند.</p>
+          <p className="admin-muted admin-span-2">{tr('مدل‌های درآمدی از بخش جبران خدمت مدیریت می‌شوند.')}</p>
         </div>
       ) : null}
 
       {tab === 'career' ? (
         <div className="admin-card admin-form-grid" style={{ padding: 16 }}>
           <label>
-            <span className="form-label">لایه مسیر شغلی</span>
+            <span className="form-label">{tr('لایه مسیر شغلی')}</span>
             <select
               className="form-input"
               disabled={!canWrite}
@@ -845,7 +846,7 @@ export function AdminHrEmployeeDetailPage() {
 
       {tab === 'benefits' ? (
         <div className="admin-card admin-benefit-block" style={{ padding: 16 }}>
-          <h4 className="admin-subsection-title">مزایا</h4>
+          <h4 className="admin-subsection-title">{tr('مزایا')}</h4>
           <div className="admin-check-grid">
             {BENEFIT_LABELS.map(({ key, label }) => (
               <label key={key} className="admin-check-inline">
@@ -860,29 +861,29 @@ export function AdminHrEmployeeDetailPage() {
             ))}
           </div>
           <p className="admin-muted admin-hint">
-            در صورت عدم انتخاب هر مزیت، آن آیتم در محاسبات هزینه نیروی انسانی لحاظ نمی‌شود.
+            {tr('در صورت عدم انتخاب هر مزیت، آن آیتم در محاسبات هزینه نیروی انسانی لحاظ نمی‌شود.')}
           </p>
         </div>
       ) : null}
 
       {tab === 'requests' ? (
         <div className="admin-card" style={{ padding: 16 }}>
-          <h2 style={{ marginTop: 0, fontSize: '1rem' }}>تیکت‌های منابع انسانی</h2>
+          <h2 style={{ marginTop: 0, fontSize: '1rem' }}>{tr('تیکت‌های منابع انسانی')}</h2>
           <div className="admin-table-wrap">
             <table className="admin-table admin-table--dense">
               <thead>
                 <tr>
-                  <th>نوع</th>
-                  <th>بازه / تاریخ</th>
-                  <th>وضعیت</th>
-                  <th>نتیجه / اکشن</th>
+                  <th>{tr('نوع')}</th>
+                  <th>{tr('بازه / تاریخ')}</th>
+                  <th>{tr('وضعیت')}</th>
+                  <th>{tr('نتیجه / اکشن')}</th>
                 </tr>
               </thead>
               <tbody>
                 {tickets.length === 0 ? (
                   <tr>
                     <td colSpan={4} className="admin-empty">
-                      تیکتی برای این همکار نیست
+                      {tr('تیکتی برای این همکار نیست')}
                     </td>
                   </tr>
                 ) : (
@@ -900,16 +901,16 @@ export function AdminHrEmployeeDetailPage() {
                               className="admin-btn admin-btn--ghost"
                               onClick={() => void ticketAct(`/api/admin/hr/requests/${r.id}/advance`)}
                             >
-                              مرحله بعد
+                              {tr('مرحله بعد')}
                             </button>
                           ) : null}
-                          {canWrite && ['ثبت‌شده', 'بررسی مدیر', 'بررسی HR'].includes(r.status) ? (
+                          {canWrite && [tr('ثبت‌شده'), tr('بررسی مدیر'), tr('بررسی HR')].includes(r.status) ? (
                             <button
                               type="button"
                               className="admin-btn admin-btn--ghost"
                               onClick={() => void ticketAct(`/api/admin/hr/requests/${r.id}/reject`)}
                             >
-                              رد
+                              {tr('رد')}
                             </button>
                           ) : null}
                           {canWrite &&
@@ -926,7 +927,7 @@ export function AdminHrEmployeeDetailPage() {
                                 void ticketAct(`/api/admin/hr/requests/${r.id}/resolve`, { result });
                               }}
                             >
-                              ثبت نتیجه
+                              {tr('ثبت نتیجه')}
                             </button>
                           ) : null}
                         </div>
@@ -943,7 +944,7 @@ export function AdminHrEmployeeDetailPage() {
       {tab === 'access' ? (
         <div className="admin-card admin-form-grid" style={{ padding: 16 }}>
           <label>
-            <span className="form-label">وضعیت دسترسی</span>
+            <span className="form-label">{tr('وضعیت دسترسی')}</span>
             <select
               className="form-input"
               disabled={
@@ -962,7 +963,7 @@ export function AdminHrEmployeeDetailPage() {
             </select>
           </label>
           <label>
-            <span className="form-label">نام کاربری</span>
+            <span className="form-label">{tr('نام کاربری')}</span>
             <input
               className="form-input"
               dir="ltr"
@@ -980,7 +981,7 @@ export function AdminHrEmployeeDetailPage() {
             />
           </label>
           <label>
-            <span className="form-label">ایمیل سازمانی</span>
+            <span className="form-label">{tr('ایمیل سازمانی')}</span>
             <input
               className="form-input"
               dir="ltr"
@@ -990,7 +991,7 @@ export function AdminHrEmployeeDetailPage() {
             />
           </label>
           <label>
-            <span className="form-label">موبایل</span>
+            <span className="form-label">{tr('موبایل')}</span>
             <input
               className="form-input"
               dir="ltr"
@@ -1000,7 +1001,7 @@ export function AdminHrEmployeeDetailPage() {
             />
           </label>
           <div className="admin-span-2">
-            <span className="form-label">رمز عبور (برای راهنمایی همکار توسط HR)</span>
+            <span className="form-label">{tr('رمز عبور (برای راهنمایی همکار توسط HR)')}</span>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <input
                 className="form-input"
@@ -1016,12 +1017,12 @@ export function AdminHrEmployeeDetailPage() {
                   disabled={pwdBusy}
                   onClick={() => void resetPassword()}
                 >
-                  {pwdBusy ? '…' : 'بازنشانی رمز'}
+                  {pwdBusy ? '…' : tr('بازنشانی رمز')}
                 </button>
               ) : null}
             </div>
             <p className="admin-muted admin-hint">
-              رمز فعلی برای راهنمایی ورود همکار نمایش داده می‌شود. بازنشانی، رمز جدید تولید می‌کند.
+              {tr('رمز فعلی برای راهنمایی ورود همکار نمایش داده می‌شود. بازنشانی، رمز جدید تولید می‌کند.')}
             </p>
           </div>
         </div>
@@ -1029,10 +1030,10 @@ export function AdminHrEmployeeDetailPage() {
 
       {tab === 'history' ? (
         <div className="admin-card" style={{ padding: 16 }}>
-          <h2 style={{ marginTop: 0, fontSize: '1rem' }}>تاریخچه تغییرات</h2>
+          <h2 style={{ marginTop: 0, fontSize: '1rem' }}>{tr('تاریخچه تغییرات')}</h2>
           <ul className="admin-log-list">
             {(employee.logs || []).length === 0 ? (
-              <li className="admin-muted">هنوز تغییری ثبت نشده</li>
+              <li className="admin-muted">{tr('هنوز تغییری ثبت نشده')}</li>
             ) : (
               (employee.logs || []).map((l) => (
                 <li key={l.id}>
@@ -1044,11 +1045,11 @@ export function AdminHrEmployeeDetailPage() {
           </ul>
           {(employee.contracts || []).length > 0 ? (
             <>
-              <h3 className="admin-subsection-title">قراردادها در تاریخچه</h3>
+              <h3 className="admin-subsection-title">{tr('قراردادها در تاریخچه')}</h3>
               <ul className="admin-log-list">
                 {(employee.contracts || []).map((c) => (
                   <li key={`c-${c.id}`}>
-                    شروع: {c.startDate || '—'} · پایان: {c.endDate || 'باز'} · {c.contractCode}
+                    {tr('شروع:')} {c.startDate || '—'} {tr('· پایان:')} {c.endDate || tr('باز')} · {c.contractCode}
                   </li>
                 ))}
               </ul>
@@ -1059,7 +1060,7 @@ export function AdminHrEmployeeDetailPage() {
 
       <AdminModal
         open={contractOpen}
-        title="قرارداد جدید"
+        title={tr("قرارداد جدید")}
         onClose={() => !contractBusy && setContractOpen(false)}
         size="sm"
         as="form"
@@ -1068,7 +1069,7 @@ export function AdminHrEmployeeDetailPage() {
         footer={
           <>
             <button type="submit" className="admin-btn admin-btn--primary" disabled={contractBusy}>
-              ذخیره
+              {tr('ذخیره')}
             </button>
             <button
               type="button"
@@ -1076,13 +1077,13 @@ export function AdminHrEmployeeDetailPage() {
               disabled={contractBusy}
               onClick={() => setContractOpen(false)}
             >
-              انصراف
+              {tr('انصراف')}
             </button>
           </>
         }
       >
         <div>
-          <span className="form-label">تاریخ شروع *</span>
+          <span className="form-label">{tr('تاریخ شروع *')}</span>
           <JalaliDateSelect
             value={parseJalaliSlash(contractForm.startDate)}
             yearsBack={15}
@@ -1091,7 +1092,7 @@ export function AdminHrEmployeeDetailPage() {
           />
         </div>
         <div>
-          <span className="form-label">تاریخ پایان *</span>
+          <span className="form-label">{tr('تاریخ پایان *')}</span>
           <JalaliDateSelect
             value={parseJalaliSlash(contractForm.endDate)}
             yearsBack={15}
@@ -1100,7 +1101,7 @@ export function AdminHrEmployeeDetailPage() {
           />
         </div>
         <label>
-          <span className="form-label">حقوق ماهانه (تومان)</span>
+          <span className="form-label">{tr('حقوق ماهانه (تومان)')}</span>
           <input
             className="form-input"
             type="number"
@@ -1109,7 +1110,7 @@ export function AdminHrEmployeeDetailPage() {
           />
         </label>
         <label>
-          <span className="form-label">شماره بیمه</span>
+          <span className="form-label">{tr('شماره بیمه')}</span>
           <input
             className="form-input"
             value={contractForm.insuranceNo}
@@ -1117,7 +1118,7 @@ export function AdminHrEmployeeDetailPage() {
           />
         </label>
         <label>
-          <span className="form-label">بانک</span>
+          <span className="form-label">{tr('بانک')}</span>
           <input
             className="form-input"
             value={contractForm.bankName}
@@ -1125,7 +1126,7 @@ export function AdminHrEmployeeDetailPage() {
           />
         </label>
         <label>
-          <span className="form-label">شماره حساب</span>
+          <span className="form-label">{tr('شماره حساب')}</span>
           <input
             className="form-input"
             dir="ltr"
@@ -1134,7 +1135,7 @@ export function AdminHrEmployeeDetailPage() {
           />
         </label>
         <label>
-          <span className="form-label">شبا</span>
+          <span className="form-label">{tr('شبا')}</span>
           <input
             className="form-input"
             dir="ltr"

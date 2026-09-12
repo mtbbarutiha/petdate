@@ -5,6 +5,7 @@ import { adminCan } from '../../auth';
 import { adminFetch, formatNumFa } from '../../api';
 import { AdminModal } from '../../AdminModal';
 import { formatAdminFaDateTime } from '../../JalaliDateSelect';
+import { tr } from '../../../i18n';
 
 type ReasonTree = Record<string, Record<string, string[]>>;
 type ScoreItem = CrmSettings['scorecard'][number];
@@ -177,7 +178,7 @@ export function AdminCrmSettingsPage() {
   if (!settings) {
     return (
       <div className="admin-page">
-        <p>در حال بارگذاری…</p>
+        <p>{tr('در حال بارگذاری…')}</p>
         {error ? <p className="admin-error">{error}</p> : null}
       </div>
     );
@@ -210,27 +211,27 @@ export function AdminCrmSettingsPage() {
     }
 
     if (!name) {
-      setError('نام الزامی است');
+      setError(tr('نام الزامی است'));
       return;
     }
 
     if (reasonModal.kind === 'add-l1') {
       if (tree[name]) {
-        setError('این دسته از قبل وجود دارد');
+        setError(tr('این دسته از قبل وجود دارد'));
         return;
       }
       tree[name] = {};
     } else if (reasonModal.kind === 'add-l2') {
       if (!tree[reasonModal.l1]) tree[reasonModal.l1] = {};
       if (tree[reasonModal.l1][name]) {
-        setError('این زیردسته از قبل وجود دارد');
+        setError(tr('این زیردسته از قبل وجود دارد'));
         return;
       }
       tree[reasonModal.l1][name] = [];
     } else if (reasonModal.kind === 'add-leaf') {
       const leaves = tree[reasonModal.l1]?.[reasonModal.l2] || [];
       if (leaves.includes(name)) {
-        setError('این برگ از قبل وجود دارد');
+        setError(tr('این برگ از قبل وجود دارد'));
         return;
       }
       if (!tree[reasonModal.l1]) tree[reasonModal.l1] = {};
@@ -241,7 +242,7 @@ export function AdminCrmSettingsPage() {
         return;
       }
       if (tree[name]) {
-        setError('نام تکراری است');
+        setError(tr('نام تکراری است'));
         return;
       }
       tree[name] = tree[reasonModal.l1] || {};
@@ -254,7 +255,7 @@ export function AdminCrmSettingsPage() {
         return;
       }
       if (block[name]) {
-        setError('نام تکراری است');
+        setError(tr('نام تکراری است'));
         return;
       }
       block[name] = block[reasonModal.l2] || [];
@@ -266,7 +267,7 @@ export function AdminCrmSettingsPage() {
         return;
       }
       if (leaves.includes(name)) {
-        setError('نام تکراری است');
+        setError(tr('نام تکراری است'));
         return;
       }
       tree[reasonModal.l1][reasonModal.l2] = leaves.map((x) => (x === reasonModal.leaf ? name : x));
@@ -295,14 +296,14 @@ export function AdminCrmSettingsPage() {
     const label = scoreModal.label.trim();
     const weight = Math.max(0, Math.round(Number(scoreModal.weight) || 0));
     if (!label) {
-      setError('عنوان الزامی است');
+      setError(tr('عنوان الزامی است'));
       return;
     }
 
     if (scoreModal.kind === 'add') {
       const key = scoreModal.key.trim().replace(/\s+/g, '_') || `q_${Date.now().toString(36)}`;
       if (scorecard.some((s) => s.key === key)) {
-        setError('کلید تکراری است');
+        setError(tr('کلید تکراری است'));
         return;
       }
       scorecard.push({ key, label, weight });
@@ -331,8 +332,8 @@ export function AdminCrmSettingsPage() {
     <div className="admin-page crm-settings-page">
       <header className="admin-header">
         <div>
-          <h1>تنظیمات امور مشتریان</h1>
-          <p>SLA · دلایل · اسکورکارت</p>
+          <h1>{tr('تنظیمات امور مشتریان')}</h1>
+          <p>{tr('SLA · دلایل · اسکورکارت')}</p>
         </div>
         {canAdmin ? (
           <button
@@ -345,7 +346,7 @@ export function AdminCrmSettingsPage() {
                 .catch((e) => setError(e instanceof Error ? e.message : 'خطا'))
             }
           >
-            اجرای ناظر SLA
+            {tr('اجرای ناظر SLA')}
           </button>
         ) : null}
       </header>
@@ -356,16 +357,16 @@ export function AdminCrmSettingsPage() {
       {/* ── SLA ── */}
       <section className="admin-card">
         <div className="admin-card-head">
-          <h2>سیاست SLA</h2>
-          <span className="admin-muted">پاسخ اول (دقیقه) · حل (ساعت)</span>
+          <h2>{tr('سیاست SLA')}</h2>
+          <span className="admin-muted">{tr('پاسخ اول (دقیقه) · حل (ساعت)')}</span>
         </div>
         <div className="admin-table-wrap">
           <table className="admin-table">
             <thead>
               <tr>
-                <th>اولویت</th>
-                <th>پاسخ اول</th>
-                <th>حل</th>
+                <th>{tr('اولویت')}</th>
+                <th>{tr('پاسخ اول')}</th>
+                <th>{tr('حل')}</th>
                 {canAdmin ? <th></th> : null}
               </tr>
             </thead>
@@ -377,8 +378,8 @@ export function AdminCrmSettingsPage() {
                     <td>
                       <span className={`tk-tag tk-tag--${PRIO_TONE[p] || 'muted'}`}>{p}</span>
                     </td>
-                    <td>{formatNumFa(first)} دقیقه</td>
-                    <td>{formatNumFa(resolve)} ساعت</td>
+                    <td>{formatNumFa(first)} {tr('دقیقه')}</td>
+                    <td>{formatNumFa(resolve)} {tr('ساعت')}</td>
                     {canAdmin ? (
                       <td>
                         <button
@@ -392,7 +393,7 @@ export function AdminCrmSettingsPage() {
                             })
                           }
                         >
-                          ویرایش
+                          {tr('ویرایش')}
                         </button>
                       </td>
                     ) : null}
@@ -407,20 +408,20 @@ export function AdminCrmSettingsPage() {
       {/* ── Reasons tree ── */}
       <section className="admin-card" style={{ marginTop: 12 }}>
         <div className="admin-card-head">
-          <h2>درخت دلایل</h2>
+          <h2>{tr('درخت دلایل')}</h2>
           {canAdmin ? (
             <button
               type="button"
               className="admin-btn admin-btn--sm admin-btn--primary"
               onClick={() => setReasonModal({ kind: 'add-l1', name: '' })}
             >
-              دسته جدید
+              {tr('دسته جدید')}
             </button>
           ) : null}
         </div>
         <div className="crm-reason-tree">
           {Object.keys(settings.reasonTree).length === 0 ? (
-            <p className="admin-muted">درختی تعریف نشده است.</p>
+            <p className="admin-muted">{tr('درختی تعریف نشده است.')}</p>
           ) : null}
           {Object.entries(settings.reasonTree).map(([l1, subs]) => (
             <div key={l1} className="crm-reason-node crm-reason-node--l1">
@@ -428,18 +429,18 @@ export function AdminCrmSettingsPage() {
                 <button type="button" className="crm-reason-toggle" onClick={() => toggle(l1)} aria-expanded={!!expanded[l1]}>
                   <span className="crm-reason-chevron">{expanded[l1] ? '▾' : '◂'}</span>
                   <strong>{l1}</strong>
-                  <span className="admin-muted">{formatNumFa(Object.keys(subs || {}).length)} زیردسته</span>
+                  <span className="admin-muted">{formatNumFa(Object.keys(subs || {}).length)} {tr('زیردسته')}</span>
                 </button>
                 {canAdmin ? (
                   <div className="crm-reason-actions">
                     <button type="button" className="admin-btn admin-btn--sm admin-btn--ghost" onClick={() => setReasonModal({ kind: 'add-l2', l1, name: '' })}>
-                      زیردسته
+                      {tr('زیردسته')}
                     </button>
                     <button type="button" className="admin-btn admin-btn--sm admin-btn--ghost" onClick={() => setReasonModal({ kind: 'rename-l1', l1, name: l1 })}>
-                      ویرایش
+                      {tr('ویرایش')}
                     </button>
                     <button type="button" className="admin-btn admin-btn--sm admin-btn--ghost" onClick={() => setReasonModal({ kind: 'delete', path: [l1], label: l1 })}>
-                      حذف
+                      {tr('حذف')}
                     </button>
                   </div>
                 ) : null}
@@ -453,18 +454,18 @@ export function AdminCrmSettingsPage() {
                           <button type="button" className="crm-reason-toggle" onClick={() => toggle(l2key)} aria-expanded={!!expanded[l2key]}>
                             <span className="crm-reason-chevron">{expanded[l2key] ? '▾' : '◂'}</span>
                             <span>{l2}</span>
-                            <span className="admin-muted">{formatNumFa((leaves || []).length)} مورد</span>
+                            <span className="admin-muted">{formatNumFa((leaves || []).length)} {tr('مورد')}</span>
                           </button>
                           {canAdmin ? (
                             <div className="crm-reason-actions">
                               <button type="button" className="admin-btn admin-btn--sm admin-btn--ghost" onClick={() => setReasonModal({ kind: 'add-leaf', l1, l2, name: '' })}>
-                                دلیل
+                                {tr('دلیل')}
                               </button>
                               <button type="button" className="admin-btn admin-btn--sm admin-btn--ghost" onClick={() => setReasonModal({ kind: 'rename-l2', l1, l2, name: l2 })}>
-                                ویرایش
+                                {tr('ویرایش')}
                               </button>
                               <button type="button" className="admin-btn admin-btn--sm admin-btn--ghost" onClick={() => setReasonModal({ kind: 'delete', path: [l1, l2], label: l2 })}>
-                                حذف
+                                {tr('حذف')}
                               </button>
                             </div>
                           ) : null}
@@ -481,20 +482,20 @@ export function AdminCrmSettingsPage() {
                                       className="admin-btn admin-btn--sm admin-btn--ghost"
                                       onClick={() => setReasonModal({ kind: 'rename-leaf', l1, l2, leaf, name: leaf })}
                                     >
-                                      ویرایش
+                                      {tr('ویرایش')}
                                     </button>
                                     <button
                                       type="button"
                                       className="admin-btn admin-btn--sm admin-btn--ghost"
                                       onClick={() => setReasonModal({ kind: 'delete', path: [l1, l2, leaf], label: leaf })}
                                     >
-                                      حذف
+                                      {tr('حذف')}
                                     </button>
                                   </div>
                                 ) : null}
                               </li>
                             ))}
-                            {!(leaves || []).length ? <li className="admin-muted">بدون برگ</li> : null}
+                            {!(leaves || []).length ? <li className="admin-muted">{tr('بدون برگ')}</li> : null}
                           </ul>
                         ) : null}
                       </div>
@@ -508,7 +509,7 @@ export function AdminCrmSettingsPage() {
         {(settings.deletedReasons || []).length ? (
           <div className="crm-reason-deleted">
             <button type="button" className="admin-btn admin-btn--sm admin-btn--ghost" onClick={() => setShowDeleted((v) => !v)}>
-              {showDeleted ? 'بستن' : 'نمایش'} حذف‌شده‌ها ({formatNumFa(settings.deletedReasons.length)})
+              {showDeleted ? tr('بستن') : tr('نمایش')} {tr('حذف‌شده‌ها (')}{formatNumFa(settings.deletedReasons.length)})
             </button>
             {showDeleted ? (
               <ul className="crm-reason-deleted-list">
@@ -518,7 +519,7 @@ export function AdminCrmSettingsPage() {
                     <span className="admin-muted">{formatAdminFaDateTime(d.deletedAt)}</span>
                     {canAdmin ? (
                       <button type="button" className="admin-btn admin-btn--sm" disabled={busy} onClick={() => void restoreNode(d)}>
-                        بازیابی
+                        {tr('بازیابی')}
                       </button>
                     ) : null}
                   </li>
@@ -532,10 +533,10 @@ export function AdminCrmSettingsPage() {
       {/* ── Scorecard ── */}
       <section className="admin-card" style={{ marginTop: 12 }}>
         <div className="admin-card-head">
-          <h2>اسکورکارت QA</h2>
+          <h2>{tr('اسکورکارت QA')}</h2>
           <span className={`admin-muted${weightSum !== 100 ? ' crm-settings-weight-warn' : ''}`}>
-            مجموع وزن: {formatNumFa(weightSum)}
-            {weightSum !== 100 ? ' (پیشنهادی ۱۰۰)' : ''}
+            {tr('مجموع وزن:')} {formatNumFa(weightSum)}
+            {weightSum !== 100 ? tr(' (پیشنهادی ۱۰۰)') : ''}
           </span>
           {canAdmin ? (
             <button
@@ -543,7 +544,7 @@ export function AdminCrmSettingsPage() {
               className="admin-btn admin-btn--sm admin-btn--primary"
               onClick={() => setScoreModal({ kind: 'add', key: '', label: '', weight: '10' })}
             >
-              معیار جدید
+              {tr('معیار جدید')}
             </button>
           ) : null}
         </div>
@@ -551,9 +552,9 @@ export function AdminCrmSettingsPage() {
           <table className="admin-table">
             <thead>
               <tr>
-                <th>کلید</th>
-                <th>عنوان</th>
-                <th>وزن</th>
+                <th>{tr('کلید')}</th>
+                <th>{tr('عنوان')}</th>
+                <th>{tr('وزن')}</th>
                 {canAdmin ? <th></th> : null}
               </tr>
             </thead>
@@ -563,7 +564,7 @@ export function AdminCrmSettingsPage() {
                   <td className="crm-settings-mono" dir="ltr">
                     {s.key}
                   </td>
-                  <td>{s.label}</td>
+                  <td>{tr(s.label)}</td>
                   <td>{formatNumFa(s.weight)}</td>
                   {canAdmin ? (
                     <td>
@@ -579,14 +580,14 @@ export function AdminCrmSettingsPage() {
                           })
                         }
                       >
-                        ویرایش
+                        {tr('ویرایش')}
                       </button>
                       <button
                         type="button"
                         className="admin-btn admin-btn--sm admin-btn--ghost"
                         onClick={() => setScoreModal({ kind: 'delete', item: s })}
                       >
-                        حذف
+                        {tr('حذف')}
                       </button>
                     </td>
                   ) : null}
@@ -600,7 +601,7 @@ export function AdminCrmSettingsPage() {
       {/* Modals */}
       <AdminModal
         open={!!slaModal}
-        title={slaModal ? `ویرایش SLA · ${slaModal.priority}` : ''}
+        title={slaModal ? `${tr('ویرایش SLA · ')}${slaModal.priority}` : ''}
         onClose={() => !busy && setSlaModal(null)}
         size="sm"
         as="form"
@@ -609,10 +610,10 @@ export function AdminCrmSettingsPage() {
         footer={
           <>
             <button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>
-              ذخیره
+              {tr('ذخیره')}
             </button>
             <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setSlaModal(null)}>
-              انصراف
+              {tr('انصراف')}
             </button>
           </>
         }
@@ -620,7 +621,7 @@ export function AdminCrmSettingsPage() {
         {slaModal ? (
           <>
             <label>
-              <span className="form-label">پاسخ اول (دقیقه)</span>
+              <span className="form-label">{tr('پاسخ اول (دقیقه)')}</span>
               <input
                 className="form-input"
                 type="number"
@@ -631,7 +632,7 @@ export function AdminCrmSettingsPage() {
               />
             </label>
             <label>
-              <span className="form-label">حل (ساعت)</span>
+              <span className="form-label">{tr('حل (ساعت)')}</span>
               <input
                 className="form-input"
                 type="number"
@@ -663,18 +664,18 @@ export function AdminCrmSettingsPage() {
               {reasonModal?.kind === 'delete' ? 'حذف نرم' : 'ذخیره'}
             </button>
             <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setReasonModal(null)}>
-              انصراف
+              {tr('انصراف')}
             </button>
           </>
         }
       >
         {reasonModal?.kind === 'delete' ? (
           <p>
-            «{reasonModal.label}» از درخت فعال حذف می‌شود اما برای یکپارچگی گزارش‌ها نگه داشته می‌شود و قابل بازیابی است.
+            «{tr(reasonModal.label)}{tr('» از درخت فعال حذف می‌شود اما برای یکپارچگی گزارش‌ها نگه داشته می‌شود و قابل بازیابی است.')}
           </p>
         ) : reasonModal ? (
           <label>
-            <span className="form-label">نام</span>
+            <span className="form-label">{tr('نام')}</span>
             <input
               className="form-input"
               required
@@ -693,11 +694,11 @@ export function AdminCrmSettingsPage() {
         open={!!scoreModal}
         title={
           scoreModal?.kind === 'add'
-            ? 'معیار جدید'
+            ? tr('معیار جدید')
             : scoreModal?.kind === 'delete'
-              ? 'حذف معیار'
+              ? tr('حذف معیار')
               : scoreModal
-                ? 'ویرایش معیار'
+                ? tr('ویرایش معیار')
                 : ''
         }
         onClose={() => !busy && setScoreModal(null)}
@@ -715,42 +716,42 @@ export function AdminCrmSettingsPage() {
               {scoreModal?.kind === 'delete' ? 'حذف' : 'ذخیره'}
             </button>
             <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setScoreModal(null)}>
-              انصراف
+              {tr('انصراف')}
             </button>
           </>
         }
       >
         {scoreModal?.kind === 'delete' ? (
-          <p>معیار «{scoreModal.item.label}» از اسکورکارت حذف شود؟</p>
+          <p>{tr('معیار «')}{tr(scoreModal.item.label)}{tr('» از اسکورکارت حذف شود؟')}</p>
         ) : scoreModal ? (
           <>
             {scoreModal.kind === 'add' ? (
               <label>
-                <span className="form-label">کلید (لاتین، اختیاری)</span>
+                <span className="form-label">{tr('کلید (لاتین، اختیاری)')}</span>
                 <input
                   className="form-input"
                   dir="ltr"
-                  placeholder="مثلاً greeting"
+                  placeholder={tr("مثلاً greeting")}
                   value={scoreModal.key}
                   onChange={(e) => setScoreModal({ ...scoreModal, key: e.target.value })}
                 />
               </label>
             ) : (
               <p className="admin-muted">
-                کلید: <span dir="ltr">{scoreModal.item.key}</span>
+                {tr('کلید:')} <span dir="ltr">{scoreModal.item.key}</span>
               </p>
             )}
             <label>
-              <span className="form-label">عنوان</span>
+              <span className="form-label">{tr('عنوان')}</span>
               <input
                 className="form-input"
                 required
-                value={scoreModal.label}
+                value={tr(scoreModal.label)}
                 onChange={(e) => setScoreModal({ ...scoreModal, label: e.target.value })}
               />
             </label>
             <label>
-              <span className="form-label">وزن</span>
+              <span className="form-label">{tr('وزن')}</span>
               <input
                 className="form-input"
                 type="number"

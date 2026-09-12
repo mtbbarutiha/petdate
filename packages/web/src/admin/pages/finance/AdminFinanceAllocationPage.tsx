@@ -6,6 +6,7 @@ import { formatAdminFaDate } from '../../JalaliDateSelect';
 import { adminCan } from '../../auth';
 import { AdminModal } from '../../AdminModal';
 import { FinanceEditToggle, FinanceTabs, formatMoney, useFinanceEditMode } from './FinanceOsUi';
+import { tr } from '../../../i18n';
 
 type Tab = 'offices' | 'people' | 'equipment' | 'allocation' | 'invoices' | 'bank';
 
@@ -93,7 +94,7 @@ export function AdminFinanceAllocationPage() {
         amount: s.amount,
       })));
     if (!lines.length) {
-      alert('برای این بیزنس خط تخصیص‌یافته‌ای نیست');
+      alert(tr('برای این بیزنس خط تخصیص‌یافته‌ای نیست'));
       return;
     }
     setBusy(true);
@@ -143,8 +144,8 @@ export function AdminFinanceAllocationPage() {
     <div className="admin-page">
       <header className="admin-header">
         <div>
-          <h1>تخصیص هزینه</h1>
-          <p>دفاتر · افراد · تجهیزات · تخصیص · فاکتورها · بانک</p>
+          <h1>{tr('تخصیص هزینه')}</h1>
+          <p>{tr('دفاتر · افراد · تجهیزات · تخصیص · فاکتورها · بانک')}</p>
         </div>
         <div className="admin-header-actions">
           <FinanceEditToggle editMode={editMode} onChange={setEditMode} />
@@ -158,26 +159,26 @@ export function AdminFinanceAllocationPage() {
           <div className="admin-stat-icon"><Building2 size={18} /></div>
           <div>
             <div className="admin-stat-value">{formatNumFa(data?.offices.length || 0)}</div>
-            <div className="admin-stat-label">دفاتر</div>
+            <div className="admin-stat-label">{tr('دفاتر')}</div>
           </div>
         </div>
         <div className="admin-stat admin-stat--violet">
           <div className="admin-stat-icon"><Users size={18} /></div>
           <div>
             <div className="admin-stat-value">{formatNumFa(data?.sbgPeople.length || 0)}</div>
-            <div className="admin-stat-label">افراد ستاد</div>
+            <div className="admin-stat-label">{tr('افراد ستاد')}</div>
           </div>
         </div>
         <div className="admin-stat admin-stat--orange">
           <div>
             <div className="admin-stat-value">{formatNumFa(data?.pendingAllocationCount || 0)}</div>
-            <div className="admin-stat-label">در انتظار تخصیص</div>
+            <div className="admin-stat-label">{tr('در انتظار تخصیص')}</div>
           </div>
         </div>
         <div className="admin-stat admin-stat--mint">
           <div>
             <div className="admin-stat-value">{formatMoney(data?.bankBalance || 0)}</div>
-            <div className="admin-stat-label">موجودی بانک هلدینگ</div>
+            <div className="admin-stat-label">{tr('موجودی بانک هلدینگ')}</div>
           </div>
         </div>
       </div>
@@ -195,7 +196,7 @@ export function AdminFinanceAllocationPage() {
         ]}
       />
 
-      {!data ? <p className="admin-muted">در حال بارگذاری…</p> : null}
+      {!data ? <p className="admin-muted">{tr('در حال بارگذاری…')}</p> : null}
 
       {data && tab === 'offices' ? (
         <div style={{ display: 'grid', gap: 16 }}>
@@ -203,29 +204,29 @@ export function AdminFinanceAllocationPage() {
             <section key={o.id} className="admin-card" style={{ padding: 16 }}>
               <div className="admin-card-head">
                 <h2>{o.name}</h2>
-                <span className="admin-muted">{o.address} · {formatNumFa(o.totalSqm)} م²</span>
+                <span className="admin-muted">{o.address} · {formatNumFa(o.totalSqm)} {tr('م²')}</span>
               </div>
               {o.areas.length ? (
                 <div className="admin-table-wrap">
                   <table className="admin-table admin-table--dense">
-                    <thead><tr><th>فضا</th><th>متراژ</th><th>اجاره ماهانه</th><th>بیزنس</th></tr></thead>
+                    <thead><tr><th>{tr('فضا')}</th><th>{tr('متراژ')}</th><th>{tr('اجاره ماهانه')}</th><th>{tr('بیزنس')}</th></tr></thead>
                     <tbody>
                       {o.areas.map((a) => (
                         <tr key={a.id}>
                           <td>{a.name}</td>
                           <td>{formatNumFa(a.sqm)}</td>
                           <td>{formatMoney(a.monthlyRent)}</td>
-                          <td>{a.assignedBusiness || 'مشترک'}</td>
+                          <td>{a.assignedBusiness || tr('مشترک')}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
-              ) : <p className="admin-muted">فضایی تعریف نشده</p>}
+              ) : <p className="admin-muted">{tr('فضایی تعریف نشده')}</p>}
               {o.spaceAllocations[0] ? (
                 <p className="admin-muted" style={{ marginTop: 8 }}>
-                  تخصیص متراژ {formatNumFa(o.spaceAllocations[0].jm)}/{formatYearFa(o.spaceAllocations[0].jy)}:{' '}
-                  {o.spaceAllocations[0].allocations.map((a) => `${a.business} ${formatNumFa(a.sqm)}م²`).join(' · ')}
+                  {tr('تخصیص متراژ')} {formatNumFa(o.spaceAllocations[0].jm)}/{formatYearFa(o.spaceAllocations[0].jy)}:{' '}
+                  {o.spaceAllocations[0].allocations.map((a) => `${a.business} ${formatNumFa(a.sqm)}${tr('م²')}`).join(' · ')}
                 </p>
               ) : null}
             </section>
@@ -236,7 +237,7 @@ export function AdminFinanceAllocationPage() {
       {data && tab === 'people' ? (
         <div className="admin-table-wrap admin-card">
           <table className="admin-table admin-table--dense">
-            <thead><tr><th>نام</th><th>سمت</th><th>دفتر</th><th>روش</th><th>تخصیص زمان (آخرین)</th></tr></thead>
+            <thead><tr><th>{tr('نام')}</th><th>{tr('سمت')}</th><th>{tr('دفتر')}</th><th>{tr('روش')}</th><th>{tr('تخصیص زمان (آخرین)')}</th></tr></thead>
             <tbody>
               {data.sbgPeople.map((p) => {
                 const last = p.timeAllocations[p.timeAllocations.length - 1];
@@ -245,10 +246,10 @@ export function AdminFinanceAllocationPage() {
                     <td>{p.name}</td>
                     <td>{p.role}</td>
                     <td>{p.office}</td>
-                    <td>{p.allocationMethod === 'auto' ? 'خودکار' : 'دستی'}</td>
+                    <td>{p.allocationMethod === 'auto' ? tr('خودکار') : tr('دستی')}</td>
                     <td>
                       {last
-                        ? last.allocations.map((a) => `${a.business} ${formatNumFa(a.percent)}٪`).join(' · ')
+                        ? last.allocations.map((a) => `${a.business} ${formatNumFa(a.percent)}${tr('٪')}`).join(' · ')
                         : '—'}
                     </td>
                   </tr>
@@ -264,8 +265,8 @@ export function AdminFinanceAllocationPage() {
           <table className="admin-table admin-table--dense">
             <thead>
               <tr>
-                <th>کد</th><th>نام</th><th>دسته</th><th>خرید</th><th>ارزش فعلی</th>
-                <th>نرخ ماهانه</th><th>بیزنس</th><th>فرد</th>
+                <th>{tr('کد')}</th><th>{tr('نام')}</th><th>{tr('دسته')}</th><th>{tr('خرید')}</th><th>{tr('ارزش فعلی')}</th>
+                <th>{tr('نرخ ماهانه')}</th><th>{tr('بیزنس')}</th><th>{tr('فرد')}</th>
               </tr>
             </thead>
             <tbody>
@@ -284,7 +285,7 @@ export function AdminFinanceAllocationPage() {
             </tbody>
           </table>
           <p className="admin-muted" style={{ padding: 12 }}>
-            <Cpu size={14} style={{ verticalAlign: 'middle' }} /> جمع ارزش فعلی:{' '}
+            <Cpu size={14} style={{ verticalAlign: 'middle' }} /> {tr('جمع ارزش فعلی:')}{' '}
             {formatMoney(data.equipment.reduce((s, e) => s + e.currentValue, 0))}
           </p>
         </div>
@@ -293,10 +294,10 @@ export function AdminFinanceAllocationPage() {
       {data && tab === 'allocation' ? (
         <div style={{ display: 'grid', gap: 16 }}>
           <section className="admin-card" style={{ padding: 16 }}>
-            <div className="admin-card-head"><h2>در انتظار تخصیص</h2></div>
+            <div className="admin-card-head"><h2>{tr('در انتظار تخصیص')}</h2></div>
             <div className="admin-table-wrap">
               <table className="admin-table admin-table--dense">
-                <thead><tr><th>تاریخ</th><th>شرح</th><th>دسته</th><th>مبلغ</th><th>فرد</th><th></th></tr></thead>
+                <thead><tr><th>{tr('تاریخ')}</th><th>{tr('شرح')}</th><th>{tr('دسته')}</th><th>{tr('مبلغ')}</th><th>{tr('فرد')}</th><th></th></tr></thead>
                 <tbody>
                   {pending.map((e) => (
                     <tr key={e.id}>
@@ -307,21 +308,21 @@ export function AdminFinanceAllocationPage() {
                       <td>{e.relatedPerson || '—'}</td>
                       <td>
                         {editMode ? (
-                          <button type="button" className="admin-btn admin-btn--primary" onClick={() => openAlloc(e)}>تخصیص</button>
+                          <button type="button" className="admin-btn admin-btn--primary" onClick={() => openAlloc(e)}>{tr('تخصیص')}</button>
                         ) : null}
                       </td>
                     </tr>
                   ))}
-                  {!pending.length ? <tr><td colSpan={6} className="admin-muted">همه تخصیص شده‌اند</td></tr> : null}
+                  {!pending.length ? <tr><td colSpan={6} className="admin-muted">{tr('همه تخصیص شده‌اند')}</td></tr> : null}
                 </tbody>
               </table>
             </div>
           </section>
           <section className="admin-card" style={{ padding: 16 }}>
-            <div className="admin-card-head"><h2>تخصیص‌یافته</h2></div>
+            <div className="admin-card-head"><h2>{tr('تخصیص‌یافته')}</h2></div>
             <div className="admin-table-wrap">
               <table className="admin-table admin-table--dense">
-                <thead><tr><th>شرح</th><th>مبلغ</th><th>تقسیم</th></tr></thead>
+                <thead><tr><th>{tr('شرح')}</th><th>{tr('مبلغ')}</th><th>{tr('تقسیم')}</th></tr></thead>
                 <tbody>
                   {allocated.map((e) => (
                     <tr key={e.id}>
@@ -341,7 +342,7 @@ export function AdminFinanceAllocationPage() {
               </select>
               {editMode ? (
                 <button type="button" className="admin-btn admin-btn--primary" disabled={busy} onClick={() => void issueInvoice()}>
-                  <FileText size={16} /> صدور فاکتور برای {invoiceBiz}
+                  <FileText size={16} /> {tr('صدور فاکتور برای')} {invoiceBiz}
                 </button>
               ) : null}
             </div>
@@ -352,7 +353,7 @@ export function AdminFinanceAllocationPage() {
       {data && tab === 'invoices' ? (
         <div className="admin-table-wrap admin-card">
           <table className="admin-table admin-table--dense">
-            <thead><tr><th>شماره</th><th>بیزنس</th><th>دوره</th><th>جمع</th><th>وضعیت</th><th>خطوط</th></tr></thead>
+            <thead><tr><th>{tr('شماره')}</th><th>{tr('بیزنس')}</th><th>{tr('دوره')}</th><th>{tr('جمع')}</th><th>{tr('وضعیت')}</th><th>{tr('خطوط')}</th></tr></thead>
             <tbody>
               {data.invoices.map((inv) => (
                 <tr key={inv.id}>
@@ -360,11 +361,11 @@ export function AdminFinanceAllocationPage() {
                   <td>{inv.business}</td>
                   <td>{formatNumFa(inv.jm)}/{formatYearFa(inv.jy)}</td>
                   <td>{formatMoney(inv.total)}</td>
-                  <td>{inv.status === 'issued' ? 'صادر شده' : inv.status === 'paid' ? 'پرداخت‌شده' : 'پیش‌نویس'}</td>
+                  <td>{inv.status === 'issued' ? tr('صادر شده') : inv.status === 'paid' ? tr('پرداخت‌شده') : tr('پیش‌نویس')}</td>
                   <td>{formatNumFa(inv.lines.length)}</td>
                 </tr>
               ))}
-              {!data.invoices.length ? <tr><td colSpan={6} className="admin-muted">فاکتوری نیست</td></tr> : null}
+              {!data.invoices.length ? <tr><td colSpan={6} className="admin-muted">{tr('فاکتوری نیست')}</td></tr> : null}
             </tbody>
           </table>
         </div>
@@ -373,7 +374,7 @@ export function AdminFinanceAllocationPage() {
       {data && tab === 'bank' ? (
         <div style={{ display: 'grid', gap: 16 }}>
           <section className="admin-card" style={{ padding: 16 }}>
-            <div className="admin-card-head"><h2>موجودی بانک / صندوق هلدینگ</h2></div>
+            <div className="admin-card-head"><h2>{tr('موجودی بانک / صندوق هلدینگ')}</h2></div>
             <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
               <input
                 className="form-input"
@@ -385,17 +386,17 @@ export function AdminFinanceAllocationPage() {
               />
               {editMode ? (
                 <button type="button" className="admin-btn admin-btn--primary" disabled={busy} onClick={() => void saveBank()}>
-                  ذخیره موجودی
+                  {tr('ذخیره موجودی')}
                 </button>
               ) : null}
-              <span className="admin-muted">نمایش: {formatMoney(data.bankBalance)}</span>
+              <span className="admin-muted">{tr('نمایش:')} {formatMoney(data.bankBalance)}</span>
             </div>
           </section>
           <section className="admin-card" style={{ padding: 16 }}>
-            <div className="admin-card-head"><h2>تعهدات</h2></div>
+            <div className="admin-card-head"><h2>{tr('تعهدات')}</h2></div>
             <div className="admin-table-wrap">
               <table className="admin-table admin-table--dense">
-                <thead><tr><th>شرح</th><th>دسته</th><th>مبلغ</th><th>سررسید</th><th>وضعیت</th><th></th></tr></thead>
+                <thead><tr><th>{tr('شرح')}</th><th>{tr('دسته')}</th><th>{tr('مبلغ')}</th><th>{tr('سررسید')}</th><th>{tr('وضعیت')}</th><th></th></tr></thead>
                 <tbody>
                   {data.commitments.map((c) => (
                     <tr key={c.id}>
@@ -403,11 +404,11 @@ export function AdminFinanceAllocationPage() {
                       <td>{c.category}</td>
                       <td>{formatMoney(c.amount)}</td>
                       <td dir="ltr">{c.dueDate}</td>
-                      <td>{c.status === 'done' ? 'انجام‌شده' : 'در انتظار'}</td>
+                      <td>{c.status === 'done' ? tr('انجام‌شده') : tr('در انتظار')}</td>
                       <td>
                         {editMode && c.status === 'pending' ? (
                           <button type="button" className="admin-btn" disabled={busy} onClick={() => void markDone(c.id)}>
-                            تسویه از موجودی
+                            {tr('تسویه از موجودی')}
                           </button>
                         ) : null}
                       </td>
@@ -420,21 +421,21 @@ export function AdminFinanceAllocationPage() {
         </div>
       ) : null}
 
-      <AdminModal open={!!allocTarget} onClose={() => setAllocTarget(null)} title="تخصیص هزینه به بیزنس‌لاین‌ها">
+      <AdminModal open={!!allocTarget} onClose={() => setAllocTarget(null)} title={tr("تخصیص هزینه به بیزنس‌لاین‌ها")}>
         {allocTarget ? (
           <div className="admin-form-grid">
             <ul className="admin-kv" style={{ gridColumn: '1 / -1' }}>
-              <li><span>شرح</span><strong>{allocTarget.desc}</strong></li>
-              <li><span>مبلغ</span><strong>{formatMoney(Math.abs(allocTarget.amount))}</strong></li>
-              <li><span>دسته</span><strong>{allocTarget.category}</strong></li>
+              <li><span>{tr('شرح')}</span><strong>{allocTarget.desc}</strong></li>
+              <li><span>{tr('مبلغ')}</span><strong>{formatMoney(Math.abs(allocTarget.amount))}</strong></li>
+              <li><span>{tr('دسته')}</span><strong>{allocTarget.category}</strong></li>
             </ul>
             <label style={{ gridColumn: '1 / -1' }}>
-              <span className="form-label">تقسیم (هر خط: بیزنس:مبلغ)</span>
+              <span className="form-label">{tr('تقسیم (هر خط: بیزنس:مبلغ)')}</span>
               <textarea className="form-input" rows={6} dir="rtl" value={splitText} onChange={(e) => setSplitText(e.target.value)} />
             </label>
             <div className="admin-header-actions">
-              <button type="button" className="admin-btn" onClick={() => setAllocTarget(null)}>انصراف</button>
-              <button type="button" className="admin-btn admin-btn--primary" disabled={busy} onClick={() => void submitAlloc()}>ثبت تخصیص</button>
+              <button type="button" className="admin-btn" onClick={() => setAllocTarget(null)}>{tr('انصراف')}</button>
+              <button type="button" className="admin-btn admin-btn--primary" disabled={busy} onClick={() => void submitAlloc()}>{tr('ثبت تخصیص')}</button>
             </div>
           </div>
         ) : null}

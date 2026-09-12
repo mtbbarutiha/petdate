@@ -26,6 +26,7 @@ import {
   MotionChartTooltip,
   useRechartsMotion,
 } from '../../motionCharts';
+import { tr } from '../../../i18n';
 
 type TabKey = 'team' | 'person' | 'quality' | 'changelog';
 type AuditRow = Record<string, unknown>;
@@ -43,7 +44,7 @@ function GaugeSemi({ pct, standing, label }: { pct: number; standing: string; la
   const c = Math.PI * r;
   const filled = (clamped / 100) * c;
   return (
-    <div className="crm-report-gauge" aria-label={`${label} ${clamped} درصد`}>
+    <div className="crm-report-gauge" aria-label={`${label} ${clamped}${tr(' درصد')}`}>
       <svg viewBox="0 0 180 110" width="180" height="110">
         <path d="M 20 95 A 70 70 0 0 1 160 95" fill="none" stroke="var(--admin-border)" strokeWidth="14" strokeLinecap="round" />
         <path
@@ -55,7 +56,7 @@ function GaugeSemi({ pct, standing, label }: { pct: number; standing: string; la
           strokeDasharray={`${filled} ${c}`}
         />
         <text x="90" y="78" textAnchor="middle" fill={color} style={{ fontSize: 22, fontWeight: 800 }}>
-          {formatNumFa(clamped)}٪
+          {formatNumFa(clamped)}{tr('٪')}
         </text>
         <text x="90" y="98" textAnchor="middle" fill="var(--admin-muted)" style={{ fontSize: 11 }}>
           {label}
@@ -75,9 +76,9 @@ function MiniRing({ kpi }: { kpi: CrmKpiRing }) {
         size={80}
         color={color}
         showPct={false}
-        label={kpi.unit}
+        label={tr(kpi.unit)}
       />
-      <strong>{kpi.label}</strong>
+      <strong>{tr(kpi.label)}</strong>
     </div>
   );
 }
@@ -88,13 +89,13 @@ function AgentCard({ agent }: { agent: CrmAgentReportRow }) {
     <article className="crm-report-agent-card" style={{ borderInlineStartColor: color }}>
       <div className="crm-report-agent-card-top">
         <strong>{agent.agentName}</strong>
-        <span style={{ color }}>{formatNumFa(agent.achievement)}٪</span>
+        <span style={{ color }}>{formatNumFa(agent.achievement)}{tr('٪')}</span>
       </div>
       <div className="crm-report-agent-bar">
         <i style={{ width: `${Math.min(100, agent.achievement)}%`, background: color }} />
       </div>
       <p className="admin-muted">
-        {formatNumFa(agent.inbound)} ورودی · {formatNumFa(agent.minutes)} دقیقه
+        {formatNumFa(agent.inbound)} {tr('ورودی ·')} {formatNumFa(agent.minutes)} {tr('دقیقه')}
       </p>
       <span className="crm-report-standing" style={{ background: `${color}18`, color }}>
         {agent.standing}
@@ -188,8 +189,8 @@ export function AdminCrmReportsPage() {
     <div className="admin-page admin-page--wide crm-report">
       <header className="admin-header">
         <div>
-          <h1>گزارشات باشگاه مشتریان</h1>
-          <p>گزارش تیم · کارت عملکرد · کیفیت · تاریخچه تغییرات · خط محصول Pet Date</p>
+          <h1>{tr('گزارشات باشگاه مشتریان')}</h1>
+          <p>{tr('گزارش تیم · کارت عملکرد · کیفیت · تاریخچه تغییرات · خط محصول Pet Date')}</p>
         </div>
         <button
           type="button"
@@ -197,11 +198,11 @@ export function AdminCrmReportsPage() {
           onClick={() => summary && exportAgentsCsv(summary.agents)}
           disabled={!summary?.agents?.length}
         >
-          خروجی CSV
+          {tr('خروجی CSV')}
         </button>
       </header>
 
-      <nav className="crm-report-tabs" aria-label="نوع گزارش">
+      <nav className="crm-report-tabs" aria-label={tr("نوع گزارش")}>
         {(
           [
             ['team', 'گزارش تیم'],
@@ -234,7 +235,7 @@ export function AdminCrmReportsPage() {
               setTo(currentJalaliParts());
             }}
           >
-            ۷ روز
+            {tr('۷ روز')}
           </button>
           <button
             type="button"
@@ -244,7 +245,7 @@ export function AdminCrmReportsPage() {
               setTo(currentJalaliParts());
             }}
           >
-            ۳۰ روز
+            {tr('۳۰ روز')}
           </button>
           <button
             type="button"
@@ -255,13 +256,13 @@ export function AdminCrmReportsPage() {
               setAgentId('');
             }}
           >
-            پاک‌کردن
+            {tr('پاک‌کردن')}
           </button>
         </div>
         <label>
-          کارشناسان
+          {tr('کارشناسان')}
           <select value={agentId} onChange={(e) => setAgentId(e.target.value)}>
-            <option value="">همه کارشناسان</option>
+            <option value="">{tr('همه کارشناسان')}</option>
             {agents.map((a) => (
               <option key={a.agentId} value={a.agentId}>{a.agentName}</option>
             ))}
@@ -270,14 +271,14 @@ export function AdminCrmReportsPage() {
       </div>
 
       {loading || !summary ? (
-        <p>در حال بارگذاری…</p>
+        <p>{tr('در حال بارگذاری…')}</p>
       ) : tab === 'changelog' ? (
         <section className="admin-card">
-          <div className="admin-card-head"><h2>تاریخچه تغییرات</h2></div>
+          <div className="admin-card-head"><h2>{tr('تاریخچه تغییرات')}</h2></div>
           <div className="admin-table-wrap">
             <table className="admin-table">
               <thead>
-                <tr><th>زمان</th><th>کاربر</th><th>دسته</th><th>اقدام</th><th>رکورد</th></tr>
+                <tr><th>{tr('زمان')}</th><th>{tr('کاربر')}</th><th>{tr('دسته')}</th><th>{tr('اقدام')}</th><th>{tr('رکورد')}</th></tr>
               </thead>
               <tbody>
                 {audit.map((row, idx) => (
@@ -289,7 +290,7 @@ export function AdminCrmReportsPage() {
                     <td>{String(row.record_uuid || row.entity || '—')}</td>
                   </tr>
                 ))}
-                {!audit.length ? <tr><td colSpan={5}>رویدادی ثبت نشده</td></tr> : null}
+                {!audit.length ? <tr><td colSpan={5}>{tr('رویدادی ثبت نشده')}</td></tr> : null}
               </tbody>
             </table>
           </div>
@@ -297,25 +298,25 @@ export function AdminCrmReportsPage() {
       ) : tab === 'quality' ? (
         <div className="crm-report-quality">
           <section className="admin-card">
-            <div className="admin-card-head"><h2>شاخص‌های کیفیت</h2></div>
+            <div className="admin-card-head"><h2>{tr('شاخص‌های کیفیت')}</h2></div>
             <div className="crm-report-kpi-rings">
               {summary.kpiRings.map((k) => <MiniRing key={k.key} kpi={k} />)}
               <div className="crm-report-stat-tile">
-                <span className="admin-muted">میانگین QA</span>
+                <span className="admin-muted">{tr('میانگین QA')}</span>
                 <strong>{summary.qaAvg != null ? formatNumFa(summary.qaAvg) : '—'}</strong>
               </div>
               <div className="crm-report-stat-tile">
-                <span className="admin-muted">شکایات بازه</span>
+                <span className="admin-muted">{tr('شکایات بازه')}</span>
                 <strong>{formatNumFa(summary.totals.complaints)}</strong>
               </div>
             </div>
           </section>
           <section className="admin-card">
-            <div className="admin-card-head"><h2>کیفیت به تفکیک کارشناس</h2></div>
+            <div className="admin-card-head"><h2>{tr('کیفیت به تفکیک کارشناس')}</h2></div>
             <div className="admin-table-wrap">
               <table className="admin-table">
                 <thead>
-                  <tr><th>کارشناس</th><th>QA</th><th>رضایت</th><th>FCR</th><th>SLA</th><th>وضعیت</th></tr>
+                  <tr><th>{tr('کارشناس')}</th><th>QA</th><th>{tr('رضایت')}</th><th>FCR</th><th>SLA</th><th>{tr('وضعیت')}</th></tr>
                 </thead>
                 <tbody>
                   {visibleAgents.map((a) => {
@@ -325,8 +326,8 @@ export function AdminCrmReportsPage() {
                         <td>{a.agentName}</td>
                         <td>{a.qaAvg != null ? formatNumFa(a.qaAvg) : '—'}</td>
                         <td>{a.csatAvg != null ? formatNumFa(a.csatAvg) : '—'}</td>
-                        <td>{formatNumFa(a.fcrPct)}٪</td>
-                        <td>{formatNumFa(a.slaPct)}٪</td>
+                        <td>{formatNumFa(a.fcrPct)}{tr('٪')}</td>
+                        <td>{formatNumFa(a.slaPct)}{tr('٪')}</td>
                         <td><span className="crm-report-standing" style={{ background: `${color}18`, color }}>{a.standing}</span></td>
                       </tr>
                     );
@@ -340,22 +341,22 @@ export function AdminCrmReportsPage() {
         <>
           <section className="crm-report-hero">
             <div className="admin-card crm-report-overall">
-              <GaugeSemi pct={summary.overallAchievement} standing={summary.overallStanding} label="تحقق کلی شاخص‌های تیم" />
+              <GaugeSemi pct={summary.overallAchievement} standing={summary.overallStanding} label={tr("تحقق کلی شاخص‌های تیم")} />
               <div className="crm-report-legend">
-                <div><strong style={{ color: '#0f9a78' }}>در مسیر درست</strong><span>۹۰٪ و بالاتر</span></div>
-                <div><strong style={{ color: '#c77810' }}>نیازمند تلاش بیشتر</strong><span>۷۰٪ تا ۹۰٪</span></div>
-                <div><strong style={{ color: '#c62828' }}>ضعیف</strong><span>زیر ۷۰٪</span></div>
+                <div><strong style={{ color: '#0f9a78' }}>{tr('در مسیر درست')}</strong><span>{tr('۹۰٪ و بالاتر')}</span></div>
+                <div><strong style={{ color: '#c77810' }}>{tr('نیازمند تلاش بیشتر')}</strong><span>{tr('۷۰٪ تا ۹۰٪')}</span></div>
+                <div><strong style={{ color: '#c62828' }}>{tr('ضعیف')}</strong><span>{tr('زیر ۷۰٪')}</span></div>
               </div>
             </div>
             <div className="crm-report-agent-strip">
               {visibleAgents.slice(0, 6).map((a) => <AgentCard key={a.agentId} agent={a} />)}
-              {!visibleAgents.length ? <p className="admin-muted">کارشناسی در این بازه نیست</p> : null}
+              {!visibleAgents.length ? <p className="admin-muted">{tr('کارشناسی در این بازه نیست')}</p> : null}
             </div>
           </section>
 
           <div className="crm-report-charts">
             <section className="admin-card">
-              <div className="admin-card-head"><h2>دلیل تماس‌ها</h2></div>
+              <div className="admin-card-head"><h2>{tr('دلیل تماس‌ها')}</h2></div>
               <div className="crm-report-chart-box">
                 {reasonPie.length ? (
                   <ResponsiveContainer width="100%" height={220}>
@@ -365,23 +366,23 @@ export function AdminCrmReportsPage() {
                       </Pie>
                       <Tooltip content={<ChartTip />} />
                       <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle" fill="var(--admin-ink)" style={{ fontSize: 13, fontWeight: 700 }}>
-                        {formatNumFa(summary.totals.interactions)} تعامل
+                        {formatNumFa(summary.totals.interactions)} {tr('تعامل')}
                       </text>
                     </PieChart>
                   </ResponsiveContainer>
                 ) : (
-                  <p className="admin-muted">دلیلی ثبت نشده</p>
+                  <p className="admin-muted">{tr('دلیلی ثبت نشده')}</p>
                 )}
                 <ul className="crm-report-reason-legend">
                   {reasonPie.map((r) => (
-                    <li key={r.key}><i style={{ background: r.color }} />{r.label}<span>{formatNumFa(r.value)}</span></li>
+                    <li key={r.key}><i style={{ background: r.color }} />{tr(r.label)}<span>{formatNumFa(r.value)}</span></li>
                   ))}
                 </ul>
               </div>
             </section>
 
             <section className="admin-card">
-              <div className="admin-card-head"><h2>سن صف تیکت‌های باز</h2></div>
+              <div className="admin-card-head"><h2>{tr('سن صف تیکت‌های باز')}</h2></div>
               <div className="crm-report-chart-box" style={{ height: 260 }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={ageBars} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
@@ -397,22 +398,22 @@ export function AdminCrmReportsPage() {
             </section>
 
             <section className="admin-card">
-              <div className="admin-card-head"><h2>شاخص‌های کلیدی</h2></div>
+              <div className="admin-card-head"><h2>{tr('شاخص‌های کلیدی')}</h2></div>
               <div className="crm-report-kpi-rings">
                 {summary.kpiRings.map((k) => <MiniRing key={k.key} kpi={k} />)}
               </div>
               <div className="crm-report-counters">
-                <div><span>تعامل</span><b>{formatNumFa(summary.totals.interactions)}</b></div>
-                <div><span>دقیقه</span><b>{formatNumFa(summary.totals.minutes)}</b></div>
-                <div><span>تیکت</span><b>{formatNumFa(summary.totals.tickets)}</b></div>
-                <div><span>شکایت</span><b>{formatNumFa(summary.totals.complaints)}</b></div>
+                <div><span>{tr('تعامل')}</span><b>{formatNumFa(summary.totals.interactions)}</b></div>
+                <div><span>{tr('دقیقه')}</span><b>{formatNumFa(summary.totals.minutes)}</b></div>
+                <div><span>{tr('تیکت')}</span><b>{formatNumFa(summary.totals.tickets)}</b></div>
+                <div><span>{tr('شکایت')}</span><b>{formatNumFa(summary.totals.complaints)}</b></div>
               </div>
             </section>
           </div>
 
           <section className="admin-card" style={{ marginTop: 14 }}>
             <div className="admin-card-head">
-              <h2>{tab === 'person' ? 'کارت گزارش فردی' : 'جزئیات عملکرد کارشناسان'}</h2>
+              <h2>{tab === 'person' ? tr('کارت گزارش فردی') : tr('جزئیات عملکرد کارشناسان')}</h2>
               <span className="admin-muted">
                 {formatJalaliSlash(from) || '…'} → {formatJalaliSlash(to) || '…'}
               </span>
@@ -421,8 +422,8 @@ export function AdminCrmReportsPage() {
               <table className="admin-table">
                 <thead>
                   <tr>
-                    <th>کارشناس</th><th>ورودی</th><th>خروجی</th><th>دقیقه</th><th>AHT</th><th>FCR</th><th>SLA</th>
-                    <th>حل‌شده</th><th>باز</th><th>کیفیت</th><th>رضایت</th><th>تحقق شاخص</th><th>وضعیت</th>
+                    <th>{tr('کارشناس')}</th><th>{tr('ورودی')}</th><th>{tr('خروجی')}</th><th>{tr('دقیقه')}</th><th>AHT</th><th>FCR</th><th>SLA</th>
+                    <th>{tr('حل‌شده')}</th><th>{tr('باز')}</th><th>{tr('کیفیت')}</th><th>{tr('رضایت')}</th><th>{tr('تحقق شاخص')}</th><th>{tr('وضعیت')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -435,15 +436,15 @@ export function AdminCrmReportsPage() {
                         <td>{formatNumFa(a.outbound)}</td>
                         <td>{formatNumFa(a.minutes)}</td>
                         <td>{formatNumFa(a.aht)}</td>
-                        <td>{formatNumFa(a.fcrPct)}٪</td>
-                        <td>{formatNumFa(a.slaPct)}٪</td>
+                        <td>{formatNumFa(a.fcrPct)}{tr('٪')}</td>
+                        <td>{formatNumFa(a.slaPct)}{tr('٪')}</td>
                         <td>{formatNumFa(a.ticketsResolved)}</td>
                         <td>{formatNumFa(a.ticketsOpen)}</td>
                         <td>{a.qaAvg != null ? formatNumFa(a.qaAvg) : '—'}</td>
                         <td>{a.csatAvg != null ? formatNumFa(a.csatAvg) : '—'}</td>
                         <td>
                           <div className="crm-report-mini-progress">
-                            <span>{formatNumFa(a.achievement)}٪</span>
+                            <span>{formatNumFa(a.achievement)}{tr('٪')}</span>
                             <i><b style={{ width: `${Math.min(100, a.achievement)}%`, background: color }} /></i>
                           </div>
                         </td>
@@ -451,7 +452,7 @@ export function AdminCrmReportsPage() {
                       </tr>
                     );
                   })}
-                  {!visibleAgents.length ? <tr><td colSpan={13}>داده‌ای نیست</td></tr> : null}
+                  {!visibleAgents.length ? <tr><td colSpan={13}>{tr('داده‌ای نیست')}</td></tr> : null}
                 </tbody>
               </table>
             </div>

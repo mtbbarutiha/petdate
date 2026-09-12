@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { adminFetch, formatNumFa } from '../../api';
+import { tr } from '../../../i18n';
 
 type CockpitTask = { type: string; label: string; employeeName?: string; detail: string; daysLeft?: number };
 
@@ -18,20 +19,20 @@ export function AdminHrCockpitPage() {
     <div className="admin-page">
       <header className="admin-header">
         <div>
-          <h1>کارتابل فعالیت</h1>
-          <p>وظایف جاری: تولد، تمدید قرارداد، دوره آزمایشی، درخواست‌ها و آنبوردینگ</p>
+          <h1>{tr('کارتابل فعالیت')}</h1>
+          <p>{tr('وظایف جاری: تولد، تمدید قرارداد، دوره آزمایشی، درخواست‌ها و آنبوردینگ')}</p>
         </div>
       </header>
       {error ? <p className="admin-error">{error}</p> : null}
       <div className="admin-table-wrap">
         <table className="admin-table">
-          <thead><tr><th>نوع</th><th>برچسب</th><th>همکار</th><th>جزئیات</th></tr></thead>
+          <thead><tr><th>{tr('نوع')}</th><th>{tr('برچسب')}</th><th>{tr('همکار')}</th><th>{tr('جزئیات')}</th></tr></thead>
           <tbody>
             {tasks.map((t, i) => (
-              <tr key={i}><td>{t.type}</td><td>{t.label}</td><td>{t.employeeName || '—'}</td><td>{t.detail}{t.daysLeft != null ? ` (${formatNumFa(t.daysLeft)} روز)` : ''}</td></tr>
+              <tr key={i}><td>{t.type}</td><td>{tr(t.label)}</td><td>{t.employeeName || '—'}</td><td>{t.detail}{t.daysLeft != null ? ` (${formatNumFa(t.daysLeft)}${tr(' روز)')}` : ''}</td></tr>
             ))}
             {!tasks.length ? (
-              <tr><td colSpan={4} className="admin-muted">وظیفه‌ای در کارتابل نیست</td></tr>
+              <tr><td colSpan={4} className="admin-muted">{tr('وظیفه‌ای در کارتابل نیست')}</td></tr>
             ) : null}
           </tbody>
         </table>

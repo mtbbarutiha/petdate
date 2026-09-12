@@ -40,6 +40,7 @@ import {
   usePrefersReducedMotion,
   useRechartsMotion,
 } from '../../motionCharts';
+import { tr } from '../../../i18n';
 
 const STANDING_COLOR: Record<string, string> = {
   'در مسیر درست': '#15cca0',
@@ -55,7 +56,7 @@ function GaugeSemi({ pct, standing }: { pct: number; standing: string }) {
   const c = Math.PI * r;
   const filled = (clamped / 100) * c;
   return (
-    <div className="crm-gauge" aria-label={`تحقق ${pct} درصد`}>
+    <div className="crm-gauge" aria-label={`${tr('تحقق ')}${pct}${tr(' درصد')}`}>
       <svg viewBox="0 0 180 110" width="180" height="110">
         <defs>
           <linearGradient id="crmGaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -89,10 +90,10 @@ function GaugeSemi({ pct, standing }: { pct: number; standing: string }) {
           }
         />
         <text x="90" y="78" textAnchor="middle" className="crm-gauge-value" fill={color}>
-          {formatNumFa(clamped)}٪
+          {formatNumFa(clamped)}{tr('٪')}
         </text>
         <text x="90" y="98" textAnchor="middle" className="crm-gauge-sub" fill="var(--admin-muted)">
-          تحقق کلی شاخص‌ها
+          {tr('تحقق کلی شاخص‌ها')}
         </text>
       </svg>
       <span className="crm-standing-pill" style={{ background: `${color}22`, color, borderColor: `${color}55` }}>
@@ -112,10 +113,10 @@ function KpiRing({ kpi }: { kpi: CrmKpiRing }) {
         size={88}
         color={color}
         showPct={false}
-        label={`از ${formatNumFa(kpi.target)}`}
+        label={`${tr('از ')}${formatNumFa(kpi.target)}`}
       />
-      <div className="crm-kpi-ring-label">{kpi.label}</div>
-      <div className="admin-muted" style={{ fontSize: 11 }}>{kpi.unit}</div>
+      <div className="crm-kpi-ring-label">{tr(kpi.label)}</div>
+      <div className="admin-muted" style={{ fontSize: 11 }}>{tr(kpi.unit)}</div>
     </div>
   );
 }
@@ -171,10 +172,10 @@ export function AdminCrmDashboardPage() {
 
   const stripKpis: AdminKpiItem[] = data
     ? [
-        { key: 'open', label: 'تیکت باز', value: formatNumFa(data.openTickets), icon: MessageSquare, tone: 'sky' },
-        { key: 'sla', label: 'نقض SLA', value: formatNumFa(data.breachedSla), icon: ShieldAlert, tone: 'orange' },
-        { key: 'risk', label: 'در معرض SLA', value: formatNumFa(data.atRiskSla), icon: AlertTriangle, tone: 'orange' },
-        { key: 'complaints', label: 'شکایت باز', value: formatNumFa(data.openComplaints), icon: Headphones, tone: 'violet' },
+        { key: 'open', label: tr('تیکت باز'), value: formatNumFa(data.openTickets), icon: MessageSquare, tone: 'sky' },
+        { key: 'sla', label: tr('نقض SLA'), value: formatNumFa(data.breachedSla), icon: ShieldAlert, tone: 'orange' },
+        { key: 'risk', label: tr('در معرض SLA'), value: formatNumFa(data.atRiskSla), icon: AlertTriangle, tone: 'orange' },
+        { key: 'complaints', label: tr('شکایت باز'), value: formatNumFa(data.openComplaints), icon: Headphones, tone: 'violet' },
         {
           key: 'csat',
           label: 'CSAT',
@@ -182,15 +183,15 @@ export function AdminCrmDashboardPage() {
           icon: Star,
           tone: 'mint',
         },
-        { key: 'calls', label: 'تماس امروز', value: formatNumFa(data.callsToday), icon: Headphones, tone: 'slate' },
+        { key: 'calls', label: tr('تماس امروز'), value: formatNumFa(data.callsToday), icon: Headphones, tone: 'slate' },
       ]
     : [];
 
   if (error && !data) {
-    return <AdminDashPage title="میز کار من" error={error} onRefresh={reload} />;
+    return <AdminDashPage title={tr("میز کار من")} error={error} onRefresh={reload} />;
   }
   if (!data) {
-    return <AdminDashPage title="میز کار من" subtitle="در حال بارگذاری…" />;
+    return <AdminDashPage title={tr("میز کار من")} subtitle="در حال بارگذاری…" />;
   }
 
   const completeFollowup = (id: number) => {
@@ -203,16 +204,16 @@ export function AdminCrmDashboardPage() {
   return (
     <AdminDashPage
       className="crm-workspace"
-      title="میز کار من"
+      title={tr("میز کار من")}
       live
       subtitle={`${data.dateLabel} · ${data.greetingName} · ${data.roleLabel}`}
       onRefresh={reload}
       error={error}
       actions={
         <>
-          <span className="crm-badge crm-badge--danger">{formatNumFa(data.breachedSla)} نقض SLA</span>
-          <span className="crm-badge">{formatNumFa(data.qaQueue)} در صف ارزیابی</span>
-          <Link className="admin-btn admin-btn--primary" to="/admin/crm/inbox">اینباکس</Link>
+          <span className="crm-badge crm-badge--danger">{formatNumFa(data.breachedSla)} {tr('نقض SLA')}</span>
+          <span className="crm-badge">{formatNumFa(data.qaQueue)} {tr('در صف ارزیابی')}</span>
+          <Link className="admin-btn admin-btn--primary" to="/admin/crm/inbox">{tr('اینباکس')}</Link>
         </>
       }
     >
@@ -220,8 +221,8 @@ export function AdminCrmDashboardPage() {
 
       <section className="admin-card crm-kpi-panel">
         <div className="admin-card-head">
-          <h2>وضعیت من نسبت به شاخص‌ها</h2>
-          <span className="admin-muted">۷ روز اخیر</span>
+          <h2>{tr('وضعیت من نسبت به شاخص‌ها')}</h2>
+          <span className="admin-muted">{tr('۷ روز اخیر')}</span>
         </div>
         <div className="crm-kpi-layout">
           <GaugeSemi pct={data.overallAchievement} standing={data.overallStanding} />
@@ -232,30 +233,30 @@ export function AdminCrmDashboardPage() {
           </div>
           <div className="crm-kpi-legend">
             <div className="crm-legend-item" style={{ borderColor: '#15cca055', background: '#15cca014' }}>
-              <strong style={{ color: '#0f9a78' }}>در مسیر درست</strong>
-              <span>۹۰٪ و بالاتر</span>
+              <strong style={{ color: '#0f9a78' }}>{tr('در مسیر درست')}</strong>
+              <span>{tr('۹۰٪ و بالاتر')}</span>
             </div>
             <div className="crm-legend-item" style={{ borderColor: '#fd961e55', background: '#fd961e14' }}>
-              <strong style={{ color: '#c77810' }}>نیازمند تلاش بیشتر</strong>
-              <span>۷۰٪ تا ۹۰٪</span>
+              <strong style={{ color: '#c77810' }}>{tr('نیازمند تلاش بیشتر')}</strong>
+              <span>{tr('۷۰٪ تا ۹۰٪')}</span>
             </div>
             <div className="crm-legend-item" style={{ borderColor: '#c6282855', background: '#c6282814' }}>
-              <strong style={{ color: '#c62828' }}>ضعیف</strong>
-              <span>زیر ۷۰٪</span>
+              <strong style={{ color: '#c62828' }}>{tr('ضعیف')}</strong>
+              <span>{tr('زیر ۷۰٪')}</span>
             </div>
           </div>
         </div>
         {data.weakPoints.length ? (
           <div className="crm-weak-points">
-            <strong>نقاط ضعف:</strong> {data.weakPoints.join(' · ')}
+            <strong>{tr('نقاط ضعف:')}</strong> {data.weakPoints.join(' · ')}
           </div>
         ) : (
-          <div className="crm-weak-points crm-weak-points--ok">همه شاخص‌ها در مسیر مطلوب هستند.</div>
+          <div className="crm-weak-points crm-weak-points--ok">{tr('همه شاخص‌ها در مسیر مطلوب هستند.')}</div>
         )}
       </section>
 
       <AdminChartGrid cols={3}>
-        <AdminChartCard title="توزیع کانال‌ها" empty={!data.channelDistribution.length} height={220}>
+        <AdminChartCard title={tr("توزیع کانال‌ها")} empty={!data.channelDistribution.length} height={220}>
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={data.channelDistribution} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
               <MotionBarGradientDefs id="crmChanBar" from={MOTION_PALETTE.purple} to={MOTION_PALETTE.mint} />
@@ -267,7 +268,7 @@ export function AdminCrmDashboardPage() {
           </ResponsiveContainer>
         </AdminChartCard>
 
-        <AdminChartCard title="حجم تعامل ۷ روز اخیر" empty={!data.dailyInteractions.length} height={220}>
+        <AdminChartCard title={tr("حجم تعامل ۷ روز اخیر")} empty={!data.dailyInteractions.length} height={220}>
           <ResponsiveContainer width="100%" height={220}>
             <AreaChart data={data.dailyInteractions} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
               <MotionAreaGradientDefs id="crmArea" color={MOTION_PALETTE.mint} mid={MOTION_PALETTE.blue} />
@@ -287,7 +288,7 @@ export function AdminCrmDashboardPage() {
           </ResponsiveContainer>
         </AdminChartCard>
 
-        <AdminChartCard title="وضعیت تیکت‌ها" empty={!ticketPie.length} height={200}>
+        <AdminChartCard title={tr("وضعیت تیکت‌ها")} empty={!ticketPie.length} height={200}>
           <div className="crm-donut-wrap">
             <ResponsiveContainer width="100%" height={180}>
               <PieChart>
@@ -309,13 +310,13 @@ export function AdminCrmDashboardPage() {
             </ResponsiveContainer>
             <div className="crm-donut-center">
               <strong>{formatNumFa(data.openTickets)}</strong>
-              <span>تیکت باز</span>
+              <span>{tr('تیکت باز')}</span>
             </div>
             <ul className="crm-donut-legend">
               {data.ticketStatus.map((s) => (
                 <li key={s.key}>
                   <i style={{ background: s.color || '#5c4d91' }} />
-                  {s.label}
+                  {tr(s.label)}
                   <span>{formatNumFa(s.value)}</span>
                 </li>
               ))}
@@ -326,7 +327,7 @@ export function AdminCrmDashboardPage() {
 
       <AdminChartGrid cols={2}>
         <AdminChartCard
-          title="وضعیت SLA تیکت‌ها"
+          title={tr("وضعیت SLA تیکت‌ها")}
           empty={!slaBars.length}
           height={Math.max(200, 40 * Math.max(slaBars.length, 3))}
           rtlHBars
@@ -350,7 +351,7 @@ export function AdminCrmDashboardPage() {
         </AdminChartCard>
 
         <AdminChartCard
-          title="دلایل تعامل / کانال"
+          title={tr("دلایل تعامل / کانال")}
           empty={!reasonBars.length}
           height={Math.max(220, 36 * Math.max(reasonBars.length, 3))}
           rtlHBars
@@ -370,17 +371,17 @@ export function AdminCrmDashboardPage() {
 
       <div className="crm-bottom-row">
         <section className="admin-card crm-bottom-main">
-          <div className="admin-card-head"><h2>تیکت‌های من</h2></div>
+          <div className="admin-card-head"><h2>{tr('تیکت‌های من')}</h2></div>
           <div className="admin-table-wrap">
             <table className="admin-table">
               <thead>
                 <tr>
-                  <th>شناسه</th>
-                  <th>عنوان</th>
-                  <th>مشتری</th>
-                  <th>اولویت</th>
-                  <th>وضعیت</th>
-                  <th>کارشناس</th>
+                  <th>{tr('شناسه')}</th>
+                  <th>{tr('عنوان')}</th>
+                  <th>{tr('مشتری')}</th>
+                  <th>{tr('اولویت')}</th>
+                  <th>{tr('وضعیت')}</th>
+                  <th>{tr('کارشناس')}</th>
                   <th>SLA</th>
                 </tr>
               </thead>
@@ -390,19 +391,19 @@ export function AdminCrmDashboardPage() {
                     <td className="admin-muted">
                       <Link to={`/admin/crm/ticketing?view=detail&id=${t.id}`}>{t.publicId}</Link>
                     </td>
-                    <td><Link to={`/admin/crm/ticketing?view=detail&id=${t.id}`}>{t.title}</Link></td>
+                    <td><Link to={`/admin/crm/ticketing?view=detail&id=${t.id}`}>{tr(t.title)}</Link></td>
                     <td>{t.customerName || '—'}</td>
                     <td><span className="crm-prio">{t.priority}</span></td>
                     <td>{t.status}</td>
                     <td>{t.agentName || '—'}</td>
                     <td>
                       <span className={`crm-sla crm-sla--${t.slaState || 'ok'}`}>
-                        {t.slaState === 'breached' ? 'نقض SLA' : t.slaState === 'at_risk' ? 'در معرض' : t.slaState === 'closed' ? 'بسته' : 'سالم'}
+                        {t.slaState === 'breached' ? tr('نقض SLA') : t.slaState === 'at_risk' ? tr('در معرض') : t.slaState === 'closed' ? tr('بسته') : tr('سالم')}
                       </span>
                     </td>
                   </tr>
                 ))}
-                {!data.myTickets.length ? <tr><td colSpan={7}>تیکت بازی نیست</td></tr> : null}
+                {!data.myTickets.length ? <tr><td colSpan={7}>{tr('تیکت بازی نیست')}</td></tr> : null}
               </tbody>
             </table>
           </div>
@@ -410,7 +411,7 @@ export function AdminCrmDashboardPage() {
 
         <div className="crm-bottom-side">
           <section className="admin-card">
-            <div className="admin-card-head"><h2>پیگیری‌های نزدیک</h2></div>
+            <div className="admin-card-head"><h2>{tr('پیگیری‌های نزدیک')}</h2></div>
             {data.upcomingFollowups.length ? (
               <ul className="crm-fu-list">
                 {data.upcomingFollowups.map((f) => {
@@ -418,13 +419,13 @@ export function AdminCrmDashboardPage() {
                   return (
                     <li key={f.id}>
                       <div>
-                        <strong>{f.description || f.kind}</strong>
+                        <strong>{tr(f.description || f.kind)}</strong>
                         <div className="admin-muted">{f.customerName || '—'} · {formatAdminFaDateTime(f.dueAt)}</div>
-                        {overdue ? <span className="crm-badge crm-badge--danger">عقب‌افتاده</span> : null}
+                        {overdue ? <span className="crm-badge crm-badge--danger">{tr('عقب‌افتاده')}</span> : null}
                       </div>
                       {f.status === 'باز' ? (
                         <button type="button" className="admin-btn admin-btn--ghost" onClick={() => completeFollowup(f.id)}>
-                          انجام شد
+                          {tr('انجام شد')}
                         </button>
                       ) : null}
                     </li>
@@ -432,25 +433,25 @@ export function AdminCrmDashboardPage() {
                 })}
               </ul>
             ) : (
-              <p className="admin-dash-chart-empty">پیگیری نزدیکی نیست</p>
+              <p className="admin-dash-chart-empty">{tr('پیگیری نزدیکی نیست')}</p>
             )}
           </section>
 
           <section className="admin-card">
-            <div className="admin-card-head"><h2>وظایف داخلی</h2></div>
+            <div className="admin-card-head"><h2>{tr('وظایف داخلی')}</h2></div>
             {data.myTasks.length ? (
               <ul className="crm-fu-list">
                 {data.myTasks.map((t) => (
                   <li key={t.id}>
                     <div>
-                      <strong>{t.title}</strong>
+                      <strong>{tr(t.title)}</strong>
                       <div className="admin-muted">{t.kind} · {formatAdminFaDate(t.dueAt)} · {t.priority}</div>
                     </div>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="admin-dash-chart-empty">وظیفه‌ای باز نیست</p>
+              <p className="admin-dash-chart-empty">{tr('وظیفه‌ای باز نیست')}</p>
             )}
           </section>
         </div>

@@ -17,6 +17,7 @@ import {
 } from '../jalaliDate';
 import { usePrefersReducedMotion } from '../motionCharts';
 import type { WidgetRenderContext } from './types';
+import { tr } from '../../i18n';
 
 export type CalendarMode = 'jalali' | 'gregorian';
 
@@ -255,7 +256,7 @@ export function CalendarWidget({ ctx }: { ctx?: WidgetRenderContext }) {
         reduced ? ' wdg-calendar--reduced' : ''
       }`}
     >
-      <div className="wdg-cal-modes" role="tablist" aria-label="نوع تقویم">
+      <div className="wdg-cal-modes" role="tablist" aria-label={tr("نوع تقویم")}>
         <button
           type="button"
           role="tab"
@@ -263,7 +264,7 @@ export function CalendarWidget({ ctx }: { ctx?: WidgetRenderContext }) {
           className={`wdg-cal-mode${mode === 'jalali' ? ' is-on' : ''}`}
           onClick={() => switchMode('jalali')}
         >
-          شمسی
+          {tr('شمسی')}
         </button>
         <button
           type="button"
@@ -272,19 +273,19 @@ export function CalendarWidget({ ctx }: { ctx?: WidgetRenderContext }) {
           className={`wdg-cal-mode${mode === 'gregorian' ? ' is-on' : ''}`}
           onClick={() => switchMode('gregorian')}
         >
-          میلادی
+          {tr('میلادی')}
         </button>
       </div>
 
       <div className="wdg-cal-nav">
-        <button type="button" className="wdg-cal-nav-btn" onClick={goNext} aria-label="ماه بعد">
+        <button type="button" className="wdg-cal-nav-btn" onClick={goNext} aria-label={tr("ماه بعد")}>
           <ChevronRight size={16} />
         </button>
         <div className="wdg-cal-title">
           <strong>{titlePrimary}</strong>
           <span>{titleSecondary}</span>
         </div>
-        <button type="button" className="wdg-cal-nav-btn" onClick={goPrev} aria-label="ماه قبل">
+        <button type="button" className="wdg-cal-nav-btn" onClick={goPrev} aria-label={tr("ماه قبل")}>
           <ChevronLeft size={16} />
         </button>
       </div>
@@ -322,10 +323,10 @@ export function CalendarWidget({ ctx }: { ctx?: WidgetRenderContext }) {
 
       <div className="wdg-cal-footer">
         <button type="button" className="wdg-cal-today-btn" onClick={goToday}>
-          امروز
+          {tr('امروز')}
         </button>
         <span className="wdg-cal-hint">
-          {mode === 'jalali' ? 'اصلی شمسی · فرعی میلادی' : 'اصلی میلادی · فرعی شمسی'}
+          {mode === 'jalali' ? tr('اصلی شمسی · فرعی میلادی') : tr('اصلی میلادی · فرعی شمسی')}
         </span>
       </div>
     </div>

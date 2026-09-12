@@ -5,6 +5,7 @@ import { adminFetch, formatNumFa, formatTomanFa } from '../api';
 import { formatAdminFaDateTime } from '../JalaliDateSelect';
 import { AdminIdChip } from '../AdminIds';
 import { AdminEntityCell, AdminThumb } from '../AdminThumb';
+import { tr } from '../../i18n';
 
 type OrderItem = {
   productId?: string;
@@ -44,9 +45,9 @@ const STATUS_FA: Record<string, string> = {
 function payLabel(o: Order): string {
   const cur = o.paymentCurrency || 'toman';
   const amt = o.paymentAmount ?? o.totalToman;
-  if (cur === 'stars_xtr') return `⭐ ${formatNumFa(amt)} Stars تلگرام`;
-  if (cur === 'stars') return `⭐ ${formatNumFa(amt)} ستاره کیف‌پول`;
-  if (cur === 'coins') return `🪙 ${formatNumFa(amt)} سکه`;
+  if (cur === 'stars_xtr') return `⭐ ${formatNumFa(amt)}${tr(' Stars تلگرام')}`;
+  if (cur === 'stars') return `⭐ ${formatNumFa(amt)}${tr(' ستاره کیف‌پول')}`;
+  if (cur === 'coins') return `🪙 ${formatNumFa(amt)}${tr(' سکه')}`;
   if (cur === 'ton') return `◆ ${formatNumFa(amt)} TON`;
   return formatTomanFa(amt);
 }
@@ -77,12 +78,12 @@ function itemUnitPrice(it: OrderItem): string {
 
 function OrderItemsList({ items }: { items: OrderItem[] }) {
   if (!Array.isArray(items) || items.length === 0) {
-    return <p className="admin-muted">بدون آیتم</p>;
+    return <p className="admin-muted">{tr('بدون آیتم')}</p>;
   }
   return (
     <ul className="admin-order-detail__items">
       {items.map((it, idx) => {
-        const title = it.title || it.productId || 'کالا';
+        const title = it.title || it.productId || tr('کالا');
         const qty = Math.max(1, Number(it.qty) || 1);
         return (
           <li key={`${it.productId || title}-${idx}`} className="admin-order-detail__item">
@@ -138,11 +139,11 @@ export function AdminShopOrdersPage() {
     <div className="admin-page">
       <header className="admin-header">
         <div>
-          <h1>سفارش‌های فروشگاه</h1>
-          <p>{formatNumFa(orders.length)} سفارش · جدول shop_orders</p>
+          <h1>{tr('سفارش‌های فروشگاه')}</h1>
+          <p>{formatNumFa(orders.length)} {tr('سفارش · جدول shop_orders')}</p>
         </div>
         <select className="admin-select" value={status} onChange={(e) => setStatus(e.target.value)}>
-          <option value="">همه</option>
+          <option value="">{tr('همه')}</option>
           {STATUSES.map((s) => (
             <option key={s} value={s}>
               {STATUS_FA[s] || s}
@@ -154,13 +155,13 @@ export function AdminShopOrdersPage() {
         <div className="admin-search">
           <Search size={16} />
           <input
-            placeholder="آیدی PD-O، نام مشتری، موبایل…"
+            placeholder={tr("آیدی PD-O، نام مشتری، موبایل…")}
             value={q}
             onChange={(e) => setQ(e.target.value)}
           />
         </div>
         <button type="button" className="admin-btn" onClick={() => void load()}>
-          جستجو
+          {tr('جستجو')}
         </button>
       </div>
       {error ? <p className="admin-error">{error}</p> : null}
@@ -168,13 +169,13 @@ export function AdminShopOrdersPage() {
         <table className="admin-table admin-table--dense">
           <thead>
             <tr>
-              <th>آیدی سفارش</th>
-              <th>کاربر / مشتری</th>
-              <th>پرداخت</th>
-              <th>مبلغ تومان</th>
-              <th>کالا</th>
-              <th>وضعیت</th>
-              <th>زمان</th>
+              <th>{tr('آیدی سفارش')}</th>
+              <th>{tr('کاربر / مشتری')}</th>
+              <th>{tr('پرداخت')}</th>
+              <th>{tr('مبلغ تومان')}</th>
+              <th>{tr('کالا')}</th>
+              <th>{tr('وضعیت')}</th>
+              <th>{tr('زمان')}</th>
               <th></th>
             </tr>
           </thead>
@@ -231,7 +232,7 @@ export function AdminShopOrdersPage() {
                     <td className="admin-cell-nowrap">{formatAdminFaDateTime(o.createdAt)}</td>
                     <td>
                       <button type="button" className="admin-btn ghost" onClick={() => setOpenId(open ? null : o.id)}>
-                        {open ? 'بستن' : 'جزئیات'}
+                        {open ? tr('بستن') : tr('جزئیات')}
                       </button>
                     </td>
                   </tr>
@@ -240,9 +241,9 @@ export function AdminShopOrdersPage() {
                       <td colSpan={8}>
                         <div className="admin-order-detail" dir="rtl">
                           <section className="admin-order-detail__block">
-                            <h3 className="admin-order-detail__label">آدرس / یادداشت</h3>
+                            <h3 className="admin-order-detail__label">{tr('آدرس / یادداشت')}</h3>
                             <p className="admin-order-detail__address">
-                              {o.note?.trim() ? o.note : 'بدون یادداشت / آدرس'}
+                              {o.note?.trim() ? o.note : tr('بدون یادداشت / آدرس')}
                             </p>
                             {(o.customerName || o.customerPhone) && (
                               <p className="admin-order-detail__meta">
@@ -256,10 +257,10 @@ export function AdminShopOrdersPage() {
                             )}
                           </section>
                           <section className="admin-order-detail__block">
-                            <h3 className="admin-order-detail__label">آیتم‌ها</h3>
+                            <h3 className="admin-order-detail__label">{tr('آیتم‌ها')}</h3>
                             <OrderItemsList items={o.items} />
                             <details className="admin-order-detail__raw">
-                              <summary>JSON خام</summary>
+                              <summary>{tr('JSON خام')}</summary>
                               <pre dir="ltr">{JSON.stringify(o.items, null, 2)}</pre>
                             </details>
                           </section>
@@ -273,7 +274,7 @@ export function AdminShopOrdersPage() {
             {!orders.length ? (
               <tr>
                 <td colSpan={8} className="admin-muted">
-                  سفارشی نیست
+                  {tr('سفارشی نیست')}
                 </td>
               </tr>
             ) : null}

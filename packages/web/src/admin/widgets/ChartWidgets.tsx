@@ -15,13 +15,14 @@ import {
   useTimeDrill,
 } from './DrillControls';
 import type { ChartPoint, WidgetRenderContext } from './types';
+import { tr } from '../../i18n';
 
 type MultiSeries = Array<{ key: string; label: string; color: string; points: ChartPoint[] }>;
 
 function ChartEmpty({ hint }: { hint?: string }) {
   return (
     <p className="admin-dash-chart-empty wdg-chart-empty">
-      {hint || 'داده‌ای برای این سطح دریل نیست'}
+      {hint || tr('داده‌ای برای این سطح دریل نیست')}
     </p>
   );
 }
@@ -275,5 +276,5 @@ export function CategoryFunnelWidget({
 }
 
 export function WidgetEmpty(): ReactNode {
-  return <p className="admin-dash-chart-empty">داده‌ای برای نمودار نیست</p>;
+  return <p className="admin-dash-chart-empty">{tr('داده‌ای برای نمودار نیست')}</p>;
 }

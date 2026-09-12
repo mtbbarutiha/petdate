@@ -82,15 +82,24 @@ export async function adminDownload(path: string, filename: string): Promise<voi
   URL.revokeObjectURL(url);
 }
 
+function uiLocale(): string {
+  if (typeof document !== 'undefined' && document.documentElement.getAttribute('lang') === 'en') {
+    return 'en-US';
+  }
+  return 'fa-IR';
+}
+
 export function formatTomanFa(n: number): string {
-  return new Intl.NumberFormat('fa-IR').format(Math.round(n)) + ' تومان';
+  const loc = uiLocale();
+  const num = new Intl.NumberFormat(loc).format(Math.round(n));
+  return loc === 'en-US' ? `${num} Toman` : `${num} تومان`;
 }
 
 export function formatNumFa(n: number): string {
-  return new Intl.NumberFormat('fa-IR').format(n);
+  return new Intl.NumberFormat(uiLocale()).format(n);
 }
 
-/** Persian digits without grouping — Jalali years / calendar parts (not money). */
+/** Digits without grouping — Jalali years / calendar parts (not money). */
 export function formatYearFa(n: number): string {
-  return new Intl.NumberFormat('fa-IR', { useGrouping: false }).format(n);
+  return new Intl.NumberFormat(uiLocale(), { useGrouping: false }).format(n);
 }

@@ -10,3 +10,4 @@ export {
   IRAN_PROVINCE_PATHS,
   type IranProvincePath,
 } from './iranProvincePaths';
+export { provinceDisplayName, IRAN_PROVINCE_NAME_EN } from './provinceNamesEn';

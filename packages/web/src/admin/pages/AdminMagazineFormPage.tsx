@@ -11,6 +11,7 @@ import {
 } from '../JalaliDateSelect';
 import { MagazineRichTextEditor } from '../MagazineRichTextEditor';
 import { resolvePublicMediaUrl } from '../../lib/api';
+import { tr } from '../../i18n';
 
 type FormState = {
   title: string;
@@ -76,7 +77,7 @@ export function AdminMagazineFormPage() {
       return;
     }
     if (!Number.isFinite(id)) {
-      setError('شناسه نامعتبر');
+      setError(tr('شناسه نامعتبر'));
       return;
     }
     try {
@@ -196,10 +197,10 @@ export function AdminMagazineFormPage() {
         <div>
           <p className="admin-muted">
             <Link to="/admin/magazine" className="admin-link">
-              ← مجله و اخبار
+              {tr('← مجله و اخبار')}
             </Link>
           </p>
-          <h1>{isNew ? 'مطلب جدید' : 'ویرایش مطلب'}</h1>
+          <h1>{isNew ? tr('مطلب جدید') : tr('ویرایش مطلب')}</h1>
         </div>
         <div className="admin-header-actions">
           {!isNew && form.status === 'published' && form.slug ? (
@@ -209,7 +210,7 @@ export function AdminMagazineFormPage() {
               target="_blank"
               rel="noreferrer"
             >
-              <ExternalLink size={16} /> پیش‌نمایش
+              <ExternalLink size={16} /> {tr('پیش‌نمایش')}
             </a>
           ) : null}
           <button
@@ -218,7 +219,7 @@ export function AdminMagazineFormPage() {
             disabled={busy}
             onClick={(e) => void save(e as unknown as FormEvent, false)}
           >
-            <Save size={16} /> ذخیره
+            <Save size={16} /> {tr('ذخیره')}
           </button>
           <button
             type="button"
@@ -226,20 +227,20 @@ export function AdminMagazineFormPage() {
             disabled={busy}
             onClick={(e) => void save(e as unknown as FormEvent, true)}
           >
-            ذخیره و انتشار
+            {tr('ذخیره و انتشار')}
           </button>
         </div>
       </header>
 
       {error ? <p className="admin-error">{error}</p> : null}
-      {saved ? <p className="admin-success">ذخیره شد</p> : null}
+      {saved ? <p className="admin-success">{tr('ذخیره شد')}</p> : null}
 
       <form className="admin-card admin-form-grid" style={{ padding: 16 }} onSubmit={(e) => void save(e)}>
         <label className="admin-span-2">
-          <span className="form-label">عنوان</span>
+          <span className="form-label">{tr('عنوان')}</span>
           <input
             className="form-input"
-            value={form.title}
+            value={tr(form.title)}
             onChange={(e) => {
               const title = e.target.value;
               set({
@@ -252,7 +253,7 @@ export function AdminMagazineFormPage() {
         </label>
 
         <label>
-          <span className="form-label">اسلاگ (URL)</span>
+          <span className="form-label">{tr('اسلاگ (URL)')}</span>
           <input
             className="form-input"
             dir="ltr"
@@ -266,62 +267,62 @@ export function AdminMagazineFormPage() {
         </label>
 
         <label>
-          <span className="form-label">وضعیت</span>
+          <span className="form-label">{tr('وضعیت')}</span>
           <select
             className="form-input"
             value={form.status}
             onChange={(e) => set({ status: e.target.value as FormState['status'] })}
           >
-            <option value="draft">پیش‌نویس</option>
-            <option value="published">منتشر شده</option>
-            <option value="scheduled">زمان‌بندی‌شده</option>
+            <option value="draft">{tr('پیش‌نویس')}</option>
+            <option value="published">{tr('منتشر شده')}</option>
+            <option value="scheduled">{tr('زمان‌بندی‌شده')}</option>
           </select>
         </label>
 
         <label>
-          <span className="form-label">دسته‌بندی</span>
+          <span className="form-label">{tr('دسته‌بندی')}</span>
           <input
             className="form-input"
             value={form.category}
             onChange={(e) => set({ category: e.target.value })}
-            placeholder="مثلاً مراقبت"
+            placeholder={tr("مثلاً مراقبت")}
           />
         </label>
 
         <label>
-          <span className="form-label">نویسنده</span>
+          <span className="form-label">{tr('نویسنده')}</span>
           <input
             className="form-input"
             value={form.author}
             onChange={(e) => set({ author: e.target.value })}
-            placeholder="اختیاری"
+            placeholder={tr("اختیاری")}
           />
         </label>
 
         <label className="admin-span-2">
-          <span className="form-label">برچسب‌ها (با ویرگول)</span>
+          <span className="form-label">{tr('برچسب‌ها (با ویرگول)')}</span>
           <input
             className="form-input"
             value={form.tags}
             onChange={(e) => set({ tags: e.target.value })}
-            placeholder="دندان، سلامت، پت"
+            placeholder={tr("دندان، سلامت، پت")}
           />
         </label>
 
         <label className="admin-span-2">
-          <span className="form-label">خلاصه کوتاه</span>
+          <span className="form-label">{tr('خلاصه کوتاه')}</span>
           <textarea
             className="form-input"
             rows={2}
             value={form.excerpt}
             onChange={(e) => set({ excerpt: e.target.value })}
-            placeholder="برای کارت‌های لیست و متا"
+            placeholder={tr("برای کارت‌های لیست و متا")}
           />
         </label>
 
         <div className="admin-span-2">
           <JalaliDateSelect
-            label="تاریخ انتشار (جلالی)"
+            label={tr("تاریخ انتشار (جلالی)")}
             value={publishJalali}
             onChange={setPublishJalali}
             yearsBack={5}
@@ -330,7 +331,7 @@ export function AdminMagazineFormPage() {
         </div>
 
         <label className="admin-span-2">
-          <span className="form-label">تصویر کاور</span>
+          <span className="form-label">{tr('تصویر کاور')}</span>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
             <input
               className="form-input"
@@ -338,10 +339,10 @@ export function AdminMagazineFormPage() {
               style={{ flex: 1, minWidth: 200 }}
               value={form.coverImage}
               onChange={(e) => set({ coverImage: e.target.value })}
-              placeholder="/pepito/uploads/… یا /api/magazine/images/…"
+              placeholder={tr("/pepito/uploads/… یا /api/magazine/images/…")}
             />
             <label className="admin-btn">
-              {uploadBusy ? 'در حال آپلود…' : 'آپلود'}
+              {uploadBusy ? tr('در حال آپلود…') : tr('آپلود')}
               <input
                 type="file"
                 accept="image/*"
@@ -361,22 +362,22 @@ export function AdminMagazineFormPage() {
         </label>
 
         <label>
-          <span className="form-label">عنوان SEO</span>
+          <span className="form-label">{tr('عنوان SEO')}</span>
           <input
             className="form-input"
             value={form.metaTitle}
             onChange={(e) => set({ metaTitle: e.target.value })}
-            placeholder="خالی = عنوان مطلب"
+            placeholder={tr("خالی = عنوان مطلب")}
           />
         </label>
 
         <label>
-          <span className="form-label">توضیح SEO</span>
+          <span className="form-label">{tr('توضیح SEO')}</span>
           <input
             className="form-input"
             value={form.metaDescription}
             onChange={(e) => set({ metaDescription: e.target.value })}
-            placeholder="خالی = خلاصه"
+            placeholder={tr("خالی = خلاصه")}
           />
         </label>
 
@@ -386,11 +387,11 @@ export function AdminMagazineFormPage() {
             checked={form.featured}
             onChange={(e) => set({ featured: e.target.checked })}
           />
-          ویژه برای کاروسل صفحه اصلی
+          {tr('ویژه برای کاروسل صفحه اصلی')}
         </label>
 
         <div className="admin-span-2">
-          <span className="form-label">متن کامل (ویرایشگر TipTap)</span>
+          <span className="form-label">{tr('متن کامل (ویرایشگر TipTap)')}</span>
           <MagazineRichTextEditor
             value={form.bodyHtml}
             onChange={(bodyHtml) => set({ bodyHtml })}

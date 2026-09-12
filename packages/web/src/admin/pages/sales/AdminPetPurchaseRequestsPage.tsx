@@ -6,6 +6,7 @@ import { adminFetch, formatNumFa } from '../../api';
 import { formatAdminFaDateTime } from '../../JalaliDateSelect';
 import { adminCan } from '../../auth';
 import { AdminModal } from '../../AdminModal';
+import { tr } from '../../../i18n';
 
 function statusBadgeClass(status: PetPurchaseLeadStatus): string {
   switch (status) {
@@ -121,19 +122,19 @@ export function AdminPetPurchaseRequestsPage() {
     <div className="admin-page">
       <header className="admin-header">
         <div>
-          <h1>درخواست‌های خرید پت</h1>
-          <p>{formatNumFa(total)} درخواست · ارجاع به تیم فروش</p>
+          <h1>{tr('درخواست‌های خرید پت')}</h1>
+          <p>{formatNumFa(total)} {tr('درخواست · ارجاع به تیم فروش')}</p>
         </div>
       </header>
       {error ? <p className="admin-error">{error}</p> : null}
       <div className="admin-toolbar">
         <input
-          placeholder="جستجو نام / موبایل"
+          placeholder={tr("جستجو نام / موبایل")}
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />
         <select value={status} onChange={(e) => setStatus(e.target.value)}>
-          <option value="">همه وضعیت‌ها</option>
+          <option value="">{tr('همه وضعیت‌ها')}</option>
           {PET_PURCHASE_LEAD_STATUSES.map((s) => (
             <option key={s} value={s}>
               {s}
@@ -141,20 +142,20 @@ export function AdminPetPurchaseRequestsPage() {
           ))}
         </select>
         <button type="button" className="admin-btn" onClick={() => void load()}>
-          بروزرسانی
+          {tr('بروزرسانی')}
         </button>
       </div>
       <div className="admin-table-wrap">
         <table className="admin-table">
           <thead>
             <tr>
-              <th>شناسه</th>
-              <th>نام</th>
-              <th>موبایل</th>
-              <th>وضعیت</th>
-              <th>مسئول</th>
-              <th>لید فروش</th>
-              <th>زمان</th>
+              <th>{tr('شناسه')}</th>
+              <th>{tr('نام')}</th>
+              <th>{tr('موبایل')}</th>
+              <th>{tr('وضعیت')}</th>
+              <th>{tr('مسئول')}</th>
+              <th>{tr('لید فروش')}</th>
+              <th>{tr('زمان')}</th>
               <th />
             </tr>
           </thead>
@@ -178,7 +179,7 @@ export function AdminPetPurchaseRequestsPage() {
                 <td>{formatAdminFaDateTime(i.createdAt)}</td>
                 <td>
                   <button type="button" className="admin-btn admin-btn--ghost" onClick={() => setSelected(i)}>
-                    جزئیات
+                    {tr('جزئیات')}
                   </button>
                 </td>
               </tr>
@@ -190,7 +191,7 @@ export function AdminPetPurchaseRequestsPage() {
       <AdminModal
         open={!!selected}
         onClose={() => setSelected(null)}
-        title={selected ? `درخواست ${selected.publicId}` : 'درخواست'}
+        title={selected ? `${tr('درخواست ')}${selected.publicId}` : tr('درخواست')}
         size="md"
         busy={busy}
       >
@@ -209,17 +210,17 @@ export function AdminPetPurchaseRequestsPage() {
             </header>
 
             <p className="pp-req-detail__meta admin-muted">
-              منبع: {selected.sourcePage || '—'} · ثبت: {formatAdminFaDateTime(selected.createdAt)}
+              {tr('منبع:')} {selected.sourcePage || '—'} {tr('· ثبت:')} {formatAdminFaDateTime(selected.createdAt)}
             </p>
 
             <div className="pp-req-detail__grid">
               <div>
-                <span className="form-label">وضعیت</span>
+                <span className="form-label">{tr('وضعیت')}</span>
                 <select
                   className="admin-select"
                   value={selected.status}
                   disabled={!canWrite || busy}
-                  aria-label="وضعیت"
+                  aria-label={tr("وضعیت")}
                   onChange={(e) => void patchStatus(selected.id, e.target.value as PetPurchaseLeadStatus)}
                 >
                   {PET_PURCHASE_LEAD_STATUSES.map((s) => (
@@ -230,16 +231,16 @@ export function AdminPetPurchaseRequestsPage() {
                 </select>
               </div>
               <div>
-                <span className="form-label">مسئول</span>
+                <span className="form-label">{tr('مسئول')}</span>
                 <div className="pp-req-detail__value">
-                  {selected.assigneeName || 'تخصیص‌نیافته'}
+                  {selected.assigneeName || tr('تخصیص‌نیافته')}
                 </div>
               </div>
               {selected.salesItemId ? (
                 <div className="pp-req-detail__span">
-                  <span className="form-label">لید CRM</span>
+                  <span className="form-label">{tr('لید CRM')}</span>
                   <div className="pp-req-detail__value">
-                    <Link to={`/admin/sales/leads/${selected.salesItemId}`}>مشاهده در فروش</Link>
+                    <Link to={`/admin/sales/leads/${selected.salesItemId}`}>{tr('مشاهده در فروش')}</Link>
                   </div>
                 </div>
               ) : null}
@@ -253,7 +254,7 @@ export function AdminPetPurchaseRequestsPage() {
                   disabled={busy}
                   onClick={() => void claim(selected.id)}
                 >
-                  برداشتن / پیگیری توسط من
+                  {tr('برداشتن / پیگیری توسط من')}
                 </button>
               </div>
             ) : null}
@@ -261,27 +262,27 @@ export function AdminPetPurchaseRequestsPage() {
             {canAssign ? (
               <section className="pp-req-detail__refer" aria-labelledby="pp-req-refer-title">
                 <h4 id="pp-req-refer-title" className="admin-subsection-title">
-                  ارجاع به تیم فروش
+                  {tr('ارجاع به تیم فروش')}
                 </h4>
                 <p className="admin-hint admin-muted">
-                  شناسه کارشناس فروش را وارد کنید تا درخواست به او منتقل شود.
+                  {tr('شناسه کارشناس فروش را وارد کنید تا درخواست به او منتقل شود.')}
                 </p>
                 <div className="pp-req-detail__refer-fields">
                   <label>
-                    <span className="form-label">شناسه کارشناس</span>
+                    <span className="form-label">{tr('شناسه کارشناس')}</span>
                     <input
                       className="form-input"
-                      placeholder="username یا کد پرسنلی"
+                      placeholder={tr("username یا کد پرسنلی")}
                       value={assignOwnerId}
                       onChange={(e) => setAssignOwnerId(e.target.value)}
                       autoComplete="off"
                     />
                   </label>
                   <label>
-                    <span className="form-label">نام نمایشی</span>
+                    <span className="form-label">{tr('نام نمایشی')}</span>
                     <input
                       className="form-input"
-                      placeholder="نام نمایشی کارشناس"
+                      placeholder={tr("نام نمایشی کارشناس")}
                       value={assignOwnerName}
                       onChange={(e) => setAssignOwnerName(e.target.value)}
                       autoComplete="off"
@@ -294,7 +295,7 @@ export function AdminPetPurchaseRequestsPage() {
                   disabled={busy || !assignOwnerId.trim()}
                   onClick={() => void assign(selected.id)}
                 >
-                  ارجاع به فروش
+                  {tr('ارجاع به فروش')}
                 </button>
               </section>
             ) : null}

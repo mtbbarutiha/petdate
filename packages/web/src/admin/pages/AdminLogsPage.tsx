@@ -2,6 +2,7 @@ import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { Activity, AlertTriangle, RefreshCw, Trash2 } from 'lucide-react';
 import { adminFetch } from '../api';
 import { formatAdminFaDateTime } from '../JalaliDateSelect';
+import { tr } from '../../i18n';
 
 type LogRow = {
   id: number;
@@ -66,7 +67,7 @@ export function AdminLogsPage() {
   }, [load]);
 
   async function clearOld() {
-    if (!window.confirm('لاگ‌های قدیمی‌تر از ۷ روز پاک شوند؟')) return;
+    if (!window.confirm(tr('لاگ‌های قدیمی‌تر از ۷ روز پاک شوند؟'))) return;
     try {
       await adminFetch('/api/admin/logs?olderThanDays=7', { method: 'DELETE' });
       silentRef.current = false;
@@ -77,7 +78,7 @@ export function AdminLogsPage() {
   }
 
   async function clearAll() {
-    if (!window.confirm('همهٔ لاگ‌های ثبت‌شده پاک شوند؟ این عمل برگشت‌ناپذیر است.')) return;
+    if (!window.confirm(tr('همهٔ لاگ‌های ثبت‌شده پاک شوند؟ این عمل برگشت‌ناپذیر است.'))) return;
     try {
       await adminFetch('/api/admin/logs', { method: 'DELETE' });
       silentRef.current = false;
@@ -91,11 +92,11 @@ export function AdminLogsPage() {
     <div className="admin-page">
       <header className="admin-header">
         <div>
-          <h1>لاگ خطاها</h1>
+          <h1>{tr('لاگ خطاها')}</h1>
           <p>
-            خطاها و هشدارهای API و ربات — زنده
-            {updatedAt ? ` · آخرین بروزرسانی ${updatedAt}` : ''}
-            {live ? ' · متصل' : ' · قطع'}
+            {tr('خطاها و هشدارهای API و ربات — زنده')}
+            {updatedAt ? `${tr(' · آخرین بروزرسانی ')}${updatedAt}` : ''}
+            {live ? tr(' · متصل') : tr(' · قطع')}
           </p>
         </div>
         <div className="admin-header-actions">
@@ -106,9 +107,9 @@ export function AdminLogsPage() {
               silentRef.current = false;
               setLevel(e.target.value);
             }}
-            aria-label="فیلتر سطح"
+            aria-label={tr("فیلتر سطح")}
           >
-            <option value="">همه سطوح</option>
+            <option value="">{tr('همه سطوح')}</option>
             <option value="error">error</option>
             <option value="warn">warn</option>
             <option value="info">info</option>
@@ -122,15 +123,15 @@ export function AdminLogsPage() {
             }}
           >
             <RefreshCw size={16} />
-            بروزرسانی
+            {tr('بروزرسانی')}
           </button>
           <button type="button" className="admin-btn admin-btn--danger" onClick={() => void clearOld()}>
             <Trash2 size={16} />
-            پاک‌سازی ۷روز
+            {tr('پاک‌سازی ۷روز')}
           </button>
           <button type="button" className="admin-btn admin-btn--danger" onClick={() => void clearAll()}>
             <Trash2 size={16} />
-            پاک کردن همه
+            {tr('پاک کردن همه')}
           </button>
         </div>
       </header>
@@ -143,7 +144,7 @@ export function AdminLogsPage() {
             </div>
             <div>
               <div className="admin-stat-value">{stats.total}</div>
-              <div className="admin-stat-label">کل لاگ‌ها</div>
+              <div className="admin-stat-label">{tr('کل لاگ‌ها')}</div>
             </div>
           </div>
           <div className="admin-stat admin-stat--orange">
@@ -152,7 +153,7 @@ export function AdminLogsPage() {
             </div>
             <div>
               <div className="admin-stat-value">{stats.errors24h}</div>
-              <div className="admin-stat-label">خطا ۲۴س</div>
+              <div className="admin-stat-label">{tr('خطا ۲۴س')}</div>
             </div>
           </div>
           <div className="admin-stat admin-stat--blue">
@@ -161,25 +162,25 @@ export function AdminLogsPage() {
             </div>
             <div>
               <div className="admin-stat-value">{stats.warns24h}</div>
-              <div className="admin-stat-label">هشدار ۲۴س</div>
+              <div className="admin-stat-label">{tr('هشدار ۲۴س')}</div>
             </div>
           </div>
         </div>
       ) : null}
 
       {error ? <p className="admin-error">{error}</p> : null}
-      {loading && !logs.length ? <p className="admin-muted">در حال بارگذاری…</p> : null}
+      {loading && !logs.length ? <p className="admin-muted">{tr('در حال بارگذاری…')}</p> : null}
 
       <section className="admin-card">
         <div className="admin-table-wrap">
           <table className="admin-table">
             <thead>
               <tr>
-                <th>زمان</th>
-                <th>سطح</th>
-                <th>منبع</th>
-                <th>پیام</th>
-                <th>مسیر</th>
+                <th>{tr('زمان')}</th>
+                <th>{tr('سطح')}</th>
+                <th>{tr('منبع')}</th>
+                <th>{tr('پیام')}</th>
+                <th>{tr('مسیر')}</th>
               </tr>
             </thead>
             <tbody>
@@ -194,7 +195,7 @@ export function AdminLogsPage() {
                       <span className={`admin-badge admin-badge--${row.level}`}>{row.level}</span>
                     </td>
                     <td>{row.source}</td>
-                    <td className="admin-log-msg">{row.message}</td>
+                    <td className="admin-log-msg">{tr(row.message)}</td>
                     <td className="admin-mono">
                       {row.method ? `${row.method} ` : ''}
                       {row.path || '—'}
@@ -213,7 +214,7 @@ export function AdminLogsPage() {
               {!logs.length && !loading ? (
                 <tr>
                   <td colSpan={5} className="admin-muted">
-                    لاگی ثبت نشده است.
+                    {tr('لاگی ثبت نشده است.')}
                   </td>
                 </tr>
               ) : null}

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { adminFetch, formatNumFa, formatTomanFa } from '../api';
 import { AdminBarChart, PeriodFilter, type FinancePeriod } from '../FinanceCharts';
+import { tr } from '../../i18n';
 
 type Top = {
   period: FinancePeriod;
@@ -28,8 +29,8 @@ export function AdminFinanceProductsPage() {
     <div className="admin-page">
       <header className="admin-header">
         <div>
-          <h1>محصولات و دسته‌های برتر</h1>
-          <p>رتبه‌بندی درآمد پت دیت شاپ</p>
+          <h1>{tr('محصولات و دسته‌های برتر')}</h1>
+          <p>{tr('رتبه‌بندی درآمد پت دیت شاپ')}</p>
         </div>
         <PeriodFilter value={period} onChange={setPeriod} />
       </header>
@@ -39,26 +40,26 @@ export function AdminFinanceProductsPage() {
       {data ? (
         <div className="admin-dash-grid">
           <section className="admin-card">
-            <div className="admin-card-head"><h2>برترین محصولات</h2></div>
+            <div className="admin-card-head"><h2>{tr('برترین محصولات')}</h2></div>
             <div className="admin-table-wrap">
               <table className="admin-table">
-                <thead><tr><th>محصول</th><th>دسته</th><th>تعداد</th><th>درآمد</th></tr></thead>
+                <thead><tr><th>{tr('محصول')}</th><th>{tr('دسته')}</th><th>{tr('تعداد')}</th><th>{tr('درآمد')}</th></tr></thead>
                 <tbody>
                   {data.products.map((p) => (
                     <tr key={p.productId}>
-                      <td>{p.title}</td>
+                      <td>{tr(p.title)}</td>
                       <td className="admin-muted">{p.categorySlug}</td>
                       <td>{formatNumFa(p.qty)}</td>
                       <td className="admin-mono">{formatTomanFa(p.revenue)}</td>
                     </tr>
                   ))}
-                  {!data.products.length ? <tr><td colSpan={4} className="admin-muted">فروشی نیست</td></tr> : null}
+                  {!data.products.length ? <tr><td colSpan={4} className="admin-muted">{tr('فروشی نیست')}</td></tr> : null}
                 </tbody>
               </table>
             </div>
           </section>
           <section className="admin-card">
-            <div className="admin-card-head"><h2>دسته‌ها بر اساس درآمد</h2></div>
+            <div className="admin-card-head"><h2>{tr('دسته‌ها بر اساس درآمد')}</h2></div>
             <div style={{ padding: 16 }}>
               <AdminBarChart
                 color="#5c4d91"
@@ -67,11 +68,11 @@ export function AdminFinanceProductsPage() {
             </div>
             <div className="admin-table-wrap">
               <table className="admin-table">
-                <thead><tr><th>دسته</th><th>تعداد</th><th>درآمد</th></tr></thead>
+                <thead><tr><th>{tr('دسته')}</th><th>{tr('تعداد')}</th><th>{tr('درآمد')}</th></tr></thead>
                 <tbody>
                   {data.categories.map((c) => (
                     <tr key={c.slug}>
-                      <td>{c.label}</td>
+                      <td>{tr(c.label)}</td>
                       <td>{formatNumFa(c.qty)}</td>
                       <td className="admin-mono">{formatTomanFa(c.revenue)}</td>
                     </tr>

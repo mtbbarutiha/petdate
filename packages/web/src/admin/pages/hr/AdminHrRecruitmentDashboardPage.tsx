@@ -4,6 +4,7 @@ import type { HrCandidate, HrJobOpening } from '@petdate/shared';
 import { adminFetch } from '../../api';
 import { AdminFunnelChart } from '../../FinanceCharts';
 import { HrKpiGrid, HrLinkGrid } from './HrUi';
+import { tr } from '../../../i18n';
 
 type ChartRow = { name: string; count: number };
 
@@ -56,12 +57,12 @@ export function AdminHrRecruitmentDashboardPage() {
     <div className="admin-page hr-dash">
       <header className="admin-header">
         <div>
-          <h1>داشبورد جذب و استخدام</h1>
-          <p>قیف متقاضیان، فرصت‌های باز و شروع به کار</p>
+          <h1>{tr('داشبورد جذب و استخدام')}</h1>
+          <p>{tr('قیف متقاضیان، فرصت‌های باز و شروع به کار')}</p>
         </div>
         <div className="admin-header-actions">
           <Link to="/admin/hr" className="admin-btn admin-btn--ghost">
-            داشبورد HR
+            {tr('داشبورد HR')}
           </Link>
           <Link to="/admin/hr/ats" className="admin-btn">
             ATS
@@ -87,21 +88,21 @@ export function AdminHrRecruitmentDashboardPage() {
       <div className="hr-dash-main-row" style={{ marginTop: 16 }}>
         <article className="admin-card hr-dash-panel">
           <div className="admin-card-head">
-            <h2>قیف مراحل جذب</h2>
-            <span className="admin-muted">از متقاضی جدید تا استخدام</span>
+            <h2>{tr('قیف مراحل جذب')}</h2>
+            <span className="admin-muted">{tr('از متقاضی جدید تا استخدام')}</span>
           </div>
           <div className="hr-dash-chart" style={{ minHeight: 260 }}>
             {funnelPoints.length ? (
               <AdminFunnelChart points={funnelPoints} />
             ) : (
-              <p className="admin-muted">متقاضی‌ای نیست</p>
+              <p className="admin-muted">{tr('متقاضی‌ای نیست')}</p>
             )}
           </div>
         </article>
 
         <article className="admin-card hr-dash-panel">
           <div className="admin-card-head">
-            <h2>آخرین متقاضیان</h2>
+            <h2>{tr('آخرین متقاضیان')}</h2>
           </div>
           <ul className="admin-log-list">
             {(data?.recentCandidates || []).map((c) => (
@@ -112,7 +113,7 @@ export function AdminHrRecruitmentDashboardPage() {
                 · <span className="admin-pill">{c.stage}</span>
               </li>
             ))}
-            {!data?.recentCandidates?.length ? <li className="admin-muted">موردی نیست</li> : null}
+            {!data?.recentCandidates?.length ? <li className="admin-muted">{tr('موردی نیست')}</li> : null}
           </ul>
         </article>
       </div>

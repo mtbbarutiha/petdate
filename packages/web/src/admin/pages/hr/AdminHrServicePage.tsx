@@ -4,6 +4,7 @@ import { adminFetch, formatNumFa } from '../../api';
 import { adminCan } from '../../auth';
 import { AdminModal } from '../../AdminModal';
 import { AdminEntityCell, AdminThumb } from '../../AdminThumb';
+import { tr } from '../../../i18n';
 
 export function AdminHrServicePage() {
   const now = useMemo(() => new Date(), []);
@@ -53,21 +54,21 @@ export function AdminHrServicePage() {
   return (
     <div className="admin-page">
       <header className="admin-header">
-        <div><h1>ارائه خدمات</h1><p>ثبت ساعت فعالیت — بدون بیزنس‌لاین</p></div>
+        <div><h1>{tr('ارائه خدمات')}</h1><p>{tr('ثبت ساعت فعالیت — بدون بیزنس‌لاین')}</p></div>
         <div className="admin-header-actions">
           <input type="number" className="admin-input" style={{ width: 90 }} value={year} onChange={(e) => setYear(Number(e.target.value))} />
           <input type="number" className="admin-input" style={{ width: 70 }} min={1} max={12} value={month} onChange={(e) => setMonth(Number(e.target.value))} />
           {canWrite ? <button type="button" className="admin-btn" onClick={() => {
             setForm({ employeeId: employees[0] ? String(employees[0].id) : '', hours: '8', note: '' });
             setOpen(true);
-          }}>+ ثبت ساعت</button> : null}
+          }}>{tr('+ ثبت ساعت')}</button> : null}
         </div>
       </header>
       {error ? <p className="admin-error">{error}</p> : null}
-      <p className="admin-muted">جمع ماه: {formatNumFa(Math.round(totalHours * 10) / 10)} ساعت</p>
+      <p className="admin-muted">{tr('جمع ماه:')} {formatNumFa(Math.round(totalHours * 10) / 10)} {tr('ساعت')}</p>
       <div className="admin-table-wrap">
         <table className="admin-table">
-          <thead><tr><th>همکار</th><th>روز</th><th>ساعت</th><th>یادداشت</th><th></th></tr></thead>
+          <thead><tr><th>{tr('همکار')}</th><th>{tr('روز')}</th><th>{tr('ساعت')}</th><th>{tr('یادداشت')}</th><th></th></tr></thead>
           <tbody>
             {entries.map((e) => {
               const emp = empOf(e.employeeId);
@@ -83,7 +84,7 @@ export function AdminHrServicePage() {
                   <td>{formatNumFa(e.day)}</td>
                   <td>{formatNumFa(e.hours)}:{formatNumFa(e.minutes)}</td>
                   <td>{e.note || '—'}</td>
-                  <td>{canWrite ? <button type="button" className="admin-btn admin-btn--ghost" onClick={() => void adminFetch(`/api/admin/hr/service/${e.id}`, { method: 'DELETE' }).then(load)}>حذف</button> : null}</td>
+                  <td>{canWrite ? <button type="button" className="admin-btn admin-btn--ghost" onClick={() => void adminFetch(`/api/admin/hr/service/${e.id}`, { method: 'DELETE' }).then(load)}>{tr('حذف')}</button> : null}</td>
                 </tr>
               );
             })}
@@ -91,20 +92,20 @@ export function AdminHrServicePage() {
         </table>
       </div>
 
-      <AdminModal open={open} title="ثبت ساعت" onClose={() => setOpen(false)} as="form" onSubmit={(e) => void add(e)} busy={busy}
-        footer={<><button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>ذخیره</button><button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setOpen(false)}>انصراف</button></>}>
+      <AdminModal open={open} title={tr("ثبت ساعت")} onClose={() => setOpen(false)} as="form" onSubmit={(e) => void add(e)} busy={busy}
+        footer={<><button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>{tr('ذخیره')}</button><button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setOpen(false)}>{tr('انصراف')}</button></>}>
         <label>
-          <span className="form-label">همکار</span>
+          <span className="form-label">{tr('همکار')}</span>
           <select className="form-input" value={form.employeeId} onChange={(e) => setForm({ ...form, employeeId: e.target.value })}>
             {employees.map((em) => <option key={em.id} value={String(em.id)}>{em.firstName} {em.lastName}</option>)}
           </select>
         </label>
         <label>
-          <span className="form-label">ساعت</span>
+          <span className="form-label">{tr('ساعت')}</span>
           <input className="form-input" dir="ltr" value={form.hours} onChange={(e) => setForm({ ...form, hours: e.target.value })} />
         </label>
         <label>
-          <span className="form-label">یادداشت</span>
+          <span className="form-label">{tr('یادداشت')}</span>
           <input className="form-input" value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} />
         </label>
       </AdminModal>

@@ -3,6 +3,7 @@ import type { HrBenefitDef, HrCareerLayer } from '@petdate/shared';
 import { adminFetch, formatNumFa } from '../../api';
 import { adminCan } from '../../auth';
 import { AdminModal } from '../../AdminModal';
+import { tr } from '../../../i18n';
 
 export function AdminHrCareerPage() {
   const [layers, setLayers] = useState<HrCareerLayer[]>([]);
@@ -64,12 +65,12 @@ export function AdminHrCareerPage() {
   return (
     <div className="admin-page">
       <header className="admin-header">
-        <div><h1>مسیر شغلی و مزایا</h1><p>لایه‌ها و موتور واجدشرایطی مزایا</p></div>
+        <div><h1>{tr('مسیر شغلی و مزایا')}</h1><p>{tr('لایه‌ها و موتور واجدشرایطی مزایا')}</p></div>
         <div className="admin-header-actions">
           {canWrite ? (
             <>
-              <button type="button" className="admin-btn admin-btn--ghost" onClick={() => setLayerOpen(true)}>+ لایه</button>
-              <button type="button" className="admin-btn" onClick={() => setBenefitOpen(true)}>+ مزیت</button>
+              <button type="button" className="admin-btn admin-btn--ghost" onClick={() => setLayerOpen(true)}>{tr('+ لایه')}</button>
+              <button type="button" className="admin-btn" onClick={() => setBenefitOpen(true)}>{tr('+ مزیت')}</button>
             </>
           ) : null}
         </div>
@@ -77,26 +78,26 @@ export function AdminHrCareerPage() {
       {error ? <p className="admin-error">{error}</p> : null}
       <div className="admin-settings-grid">
         <article className="admin-card" style={{ padding: 16 }}>
-          <h2 style={{ marginTop: 0, fontSize: '1rem' }}>لایه‌ها ({formatNumFa(layers.length)})</h2>
+          <h2 style={{ marginTop: 0, fontSize: '1rem' }}>{tr('لایه‌ها (')}{formatNumFa(layers.length)})</h2>
           <ul className="admin-log-list">{layers.map((l) => <li key={l.id}><b>{formatNumFa(l.sortOrder)}. {l.name}</b><div className="admin-muted">{l.unlocks}</div></li>)}</ul>
         </article>
         <article className="admin-card" style={{ padding: 16 }}>
-          <h2 style={{ marginTop: 0, fontSize: '1rem' }}>مزایا ({formatNumFa(benefits.length)})</h2>
-          <ul className="admin-log-list">{benefits.map((b) => <li key={b.id}><b>{b.title}</b> · {b.category || 'عمومی'}<div className="admin-muted">هزینه: {formatNumFa(b.cost)}</div></li>)}</ul>
+          <h2 style={{ marginTop: 0, fontSize: '1rem' }}>{tr('مزایا (')}{formatNumFa(benefits.length)})</h2>
+          <ul className="admin-log-list">{benefits.map((b) => <li key={b.id}><b>{tr(b.title)}</b> · {b.category || tr('عمومی')}<div className="admin-muted">{tr('هزینه:')} {formatNumFa(b.cost)}</div></li>)}</ul>
         </article>
       </div>
 
-      <AdminModal open={layerOpen} title="لایه جدید" onClose={() => setLayerOpen(false)} as="form" onSubmit={(e) => void saveLayer(e)} busy={busy}
-        footer={<><button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>ذخیره</button><button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setLayerOpen(false)}>انصراف</button></>}>
-        <label><span className="form-label">نام لایه</span><input className="form-input" required value={layerForm.name} onChange={(e) => setLayerForm({ ...layerForm, name: e.target.value })} /></label>
-        <label><span className="form-label">باز می‌شود</span><input className="form-input" value={layerForm.unlocks} onChange={(e) => setLayerForm({ ...layerForm, unlocks: e.target.value })} /></label>
+      <AdminModal open={layerOpen} title={tr("لایه جدید")} onClose={() => setLayerOpen(false)} as="form" onSubmit={(e) => void saveLayer(e)} busy={busy}
+        footer={<><button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>{tr('ذخیره')}</button><button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setLayerOpen(false)}>{tr('انصراف')}</button></>}>
+        <label><span className="form-label">{tr('نام لایه')}</span><input className="form-input" required value={layerForm.name} onChange={(e) => setLayerForm({ ...layerForm, name: e.target.value })} /></label>
+        <label><span className="form-label">{tr('باز می‌شود')}</span><input className="form-input" value={layerForm.unlocks} onChange={(e) => setLayerForm({ ...layerForm, unlocks: e.target.value })} /></label>
       </AdminModal>
 
-      <AdminModal open={benefitOpen} title="مزیت جدید" onClose={() => setBenefitOpen(false)} as="form" onSubmit={(e) => void saveBenefit(e)} busy={busy}
-        footer={<><button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>ذخیره</button><button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setBenefitOpen(false)}>انصراف</button></>}>
-        <label><span className="form-label">عنوان مزیت</span><input className="form-input" required value={benefitForm.title} onChange={(e) => setBenefitForm({ ...benefitForm, title: e.target.value })} /></label>
-        <label><span className="form-label">دسته</span><input className="form-input" value={benefitForm.category} onChange={(e) => setBenefitForm({ ...benefitForm, category: e.target.value })} /></label>
-        <label><span className="form-label">هزینه</span><input className="form-input" dir="ltr" value={benefitForm.cost} onChange={(e) => setBenefitForm({ ...benefitForm, cost: e.target.value })} /></label>
+      <AdminModal open={benefitOpen} title={tr("مزیت جدید")} onClose={() => setBenefitOpen(false)} as="form" onSubmit={(e) => void saveBenefit(e)} busy={busy}
+        footer={<><button type="submit" className="admin-btn admin-btn--primary" disabled={busy}>{tr('ذخیره')}</button><button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setBenefitOpen(false)}>{tr('انصراف')}</button></>}>
+        <label><span className="form-label">{tr('عنوان مزیت')}</span><input className="form-input" required value={tr(benefitForm.title)} onChange={(e) => setBenefitForm({ ...benefitForm, title: e.target.value })} /></label>
+        <label><span className="form-label">{tr('دسته')}</span><input className="form-input" value={benefitForm.category} onChange={(e) => setBenefitForm({ ...benefitForm, category: e.target.value })} /></label>
+        <label><span className="form-label">{tr('هزینه')}</span><input className="form-input" dir="ltr" value={benefitForm.cost} onChange={(e) => setBenefitForm({ ...benefitForm, cost: e.target.value })} /></label>
       </AdminModal>
     </div>
   );
