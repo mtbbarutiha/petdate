@@ -745,8 +745,8 @@ usersRouter.post('/telegram/:telegramId/visit-fee', (req, res) => {
   res.json(user);
 });
 
-usersRouter.post('/telegram/:telegramId/coins/debit', (req, res) => {
-  const user = dbService.getUserByTelegramId(req.params.telegramId);
+usersRouter.post('/telegram/:telegramId/coins/debit', requireTrustedStaff, (req, res) => {
+  const user = dbService.getUserByTelegramId(String(req.params.telegramId));
   if (!user) {
     res.status(404).json({ error: 'کاربر پیدا نشد' });
     return;
@@ -772,7 +772,7 @@ usersRouter.post('/telegram/:telegramId/coins/debit', (req, res) => {
 });
 
 usersRouter.post('/telegram/:telegramId/coins/credit', requireTrustedStaff, (req, res) => {
-  const user = dbService.getUserByTelegramId(req.params.telegramId);
+  const user = dbService.getUserByTelegramId(String(req.params.telegramId));
   if (!user) {
     res.status(404).json({ error: 'کاربر پیدا نشد' });
     return;

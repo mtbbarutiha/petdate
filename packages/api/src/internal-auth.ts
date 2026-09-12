@@ -1,5 +1,5 @@
 import { createHash, timingSafeEqual } from 'crypto';
-import type { NextFunction, Request, Response } from 'express';
+import type { Request, RequestHandler } from 'express';
 import { authenticateAdminRequest } from './admin-auth';
 import { infra } from './config/infra';
 
@@ -27,10 +27,10 @@ export function isInternalBot(req: {
 }
 
 /** Bot token or admin password — staff-only mutations (payments, moderation). */
-export function requireTrustedStaff(req: Request, res: Response, next: NextFunction): void {
+export const requireTrustedStaff: RequestHandler = (req, res, next) => {
   if (isInternalBot(req) || authenticateAdminRequest(req)) {
     next();
     return;
   }
   res.status(401).json({ error: 'وارد نشده‌اید' });
-}
+};

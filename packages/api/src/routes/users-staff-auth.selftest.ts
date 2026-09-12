@@ -34,6 +34,11 @@ assert.match(
   /coins\/credit',\s*requireTrustedStaff/,
   'coin credit is staff-only'
 );
+assert.match(
+  src,
+  /coins\/debit',\s*requireTrustedStaff/,
+  'coin debit is staff-only'
+);
 assert.match(src, /delete\('\/:id',\s*requireTrustedStaff/, 'user delete is staff-only');
 
 console.log('users-staff-auth.selftest: ok');
