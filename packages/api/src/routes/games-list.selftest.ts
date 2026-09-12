@@ -10,11 +10,13 @@ import { fileURLToPath } from 'node:url';
 const apiSrc = join(dirname(fileURLToPath(import.meta.url)), '..');
 const src = readFileSync(join(apiSrc, 'routes/games.ts'), 'utf8');
 const db = readFileSync(join(apiSrc, 'db.ts'), 'utf8');
+const parseSrc = readFileSync(join(apiSrc, 'routes/parse-positive-int-id.ts'), 'utf8');
 
 assert.match(src, /gamesRouter\.get\('\/list'/, 'GET /list is registered');
 assert.match(src, /gamesRouter\.get\('\/'/, 'GET / is registered');
 assert.match(src, /شناسه بازی نامعتبر است/, 'invalid game id returns 400 copy');
-assert.match(src, /Number\.isFinite\(id\)/, 'game id is finite-checked');
+assert.match(parseSrc, /Number\.isFinite\(n\)/, 'id parse finite-checks');
+assert.match(parseSrc, /Number\.isInteger\(n\)/, 'id parse requires integer');
 
 const listIdx = src.indexOf("gamesRouter.get('/list'");
 const idIdx = src.indexOf("gamesRouter.get('/:id'");
@@ -25,8 +27,8 @@ assert.ok(slashIdx >= 0 && slashIdx < idIdx, 'GET / is declared before /:id');
 
 assert.match(
   src,
-  /parseGameId\(req\.params\.id\)/,
-  '/:id and /:id/join use parseGameId (not Number() into SQL)'
+  /parsePositiveIntId\(req\.params\.id\)/,
+  '/:id and /:id/join use parsePositiveIntId (not Number() into SQL)'
 );
 assert.doesNotMatch(
   src,
@@ -36,7 +38,7 @@ assert.doesNotMatch(
 
 assert.match(
   db,
-  /getGame\(id: number\): Game \| null \{[\s\S]{0,80}Number\.isFinite\(id\)/,
+  /getGame\(id: number\): Game \| null \{[\s\S]{0,120}Number\.isFinite\(id\)/,
   'getGame rejects NaN/non-positive ids before SQL'
 );
 

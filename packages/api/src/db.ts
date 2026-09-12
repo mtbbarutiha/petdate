@@ -4482,7 +4482,7 @@ export const dbService = {
   },
 
   getGame(id: number): Game | null {
-    if (!Number.isFinite(id) || id <= 0) return null;
+    if (!Number.isFinite(id) || !Number.isInteger(id) || id <= 0) return null;
     const row = db.prepare('SELECT * FROM games WHERE id = ?').get(id) as Record<string, unknown> | undefined;
     return row ? mapGame(row) : null;
   },

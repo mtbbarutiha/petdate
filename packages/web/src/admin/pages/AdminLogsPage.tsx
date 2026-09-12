@@ -2,6 +2,7 @@ import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { Activity, AlertTriangle, RefreshCw, Trash2 } from 'lucide-react';
 import { adminFetch } from '../api';
 import { formatAdminFaDateTime } from '../JalaliDateSelect';
+import { formatAdminLogMessageFa } from '../adminLogMessageFa';
 
 type LogRow = {
   id: number;
@@ -183,33 +184,48 @@ export function AdminLogsPage() {
               </tr>
             </thead>
             <tbody>
-              {logs.map((row) => (
-                <Fragment key={row.id}>
-                  <tr
-                    className={`admin-log-row admin-log-row--${row.level}`}
-                    onClick={() => setExpanded(expanded === row.id ? null : row.id)}
-                  >
-                    <td className="admin-cell-nowrap">{formatAdminFaDateTime(row.createdAt)}</td>
-                    <td>
-                      <span className={`admin-badge admin-badge--${row.level}`}>{row.level}</span>
-                    </td>
-                    <td>{row.source}</td>
-                    <td className="admin-log-msg">{row.message}</td>
-                    <td className="admin-mono">
-                      {row.method ? `${row.method} ` : ''}
-                      {row.path || '—'}
-                      {row.statusCode ? ` · ${row.statusCode}` : ''}
-                    </td>
-                  </tr>
-                  {expanded === row.id && row.stack ? (
-                    <tr>
-                      <td colSpan={5}>
-                        <pre className="admin-stack">{row.stack}</pre>
+              {logs.map((row) => {
+                const fa = formatAdminLogMessageFa(row);
+                const isOpen = expanded === row.id;
+                const showTech = Boolean(fa.detail || row.stack);
+                return (
+                  <Fragment key={row.id}>
+                    <tr
+                      className={`admin-log-row admin-log-row--${row.level}`}
+                      onClick={() => setExpanded(isOpen ? null : row.id)}
+                    >
+                      <td className="admin-cell-nowrap">{formatAdminFaDateTime(row.createdAt)}</td>
+                      <td>
+                        <span className={`admin-badge admin-badge--${row.level}`}>{row.level}</span>
+                      </td>
+                      <td>{row.source}</td>
+                      <td className="admin-log-msg" title={fa.detail || fa.title}>
+                        <span className="admin-log-msg-fa">{fa.title}</span>
+                        {fa.detail && !isOpen ? (
+                          <span className="admin-log-msg-detail">{fa.detail}</span>
+                        ) : null}
+                      </td>
+                      <td className="admin-mono">
+                        {row.method ? `${row.method} ` : ''}
+                        {row.path || '—'}
+                        {row.statusCode ? ` · ${row.statusCode}` : ''}
                       </td>
                     </tr>
-                  ) : null}
-                </Fragment>
-              ))}
+                    {isOpen && showTech ? (
+                      <tr>
+                        <td colSpan={5}>
+                          {fa.detail ? (
+                            <p className="admin-log-msg-detail" style={{ whiteSpace: 'normal', marginBottom: 8 }}>
+                              {fa.detail}
+                            </p>
+                          ) : null}
+                          {row.stack ? <pre className="admin-stack">{row.stack}</pre> : null}
+                        </td>
+                      </tr>
+                    ) : null}
+                  </Fragment>
+                );
+              })}
               {!logs.length && !loading ? (
                 <tr>
                   <td colSpan={5} className="admin-muted">
