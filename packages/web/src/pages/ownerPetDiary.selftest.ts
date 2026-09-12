@@ -58,6 +58,7 @@ assert.match(css, /\.pepito-pet-diary\s*\{[\s\S]*--pet-diary-ink/, 'diary CSS va
 assert.match(css, /--pet-diary-hand/, 'handwriting font stack');
 assert.match(css, /font-family:\s*'Gandom'/, 'Gandom handwriting face');
 assert.match(css, /\.pepito-pet-diary-portrait/, 'cover portrait style');
+assert.match(css, /\.pepito-pet-diary-submit[\s\S]*#6d3b32/, 'compose button is ink, not the form pill');
 assert.match(css, /\.pepito-pet-diary-entry \+ \.pepito-pet-diary-entry/, 'continuous entries not cards');
 assert.match(css, /\.pepito-my-pets-action--diary/, 'MyPets diary action style');
 assert.match(

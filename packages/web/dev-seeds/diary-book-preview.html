@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="fa" dir="rtl" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>دفتر خاطرات — پیش‌نمایش</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700;800&family=Vazirmatn:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <script type="module">
+      import '/src/styles/pepito.css';
+      import '/src/styles/theme-dark.css';
+    </script>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        background: #1c1824;
+        padding: 0.75rem;
+      }
+      html[data-theme='light'] body {
+        background: #f4f4f7;
+      }
+      .preview-tools {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin: 0 auto 0.75rem;
+        max-width: 40rem;
+      }
+      .preview-tools button {
+        min-height: 40px;
+        padding: 0.4rem 0.9rem;
+        border-radius: 999px;
+        border: 1px solid rgba(239, 230, 216, 0.25);
+        background: #2a2433;
+        color: #efe6d8;
+        cursor: pointer;
+      }
+      html[data-theme='light'] .preview-tools button {
+        background: #fff;
+        color: #3a3228;
+        border-color: rgba(58, 50, 40, 0.15);
+      }
+      .preview-shell {
+        max-width: 40rem;
+        margin: 0 auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="preview-tools">
+      <button type="button" id="toggle-theme">روشن / تیره</button>
+      <button type="button" id="toggle-lang">FA / EN</button>
+    </div>
+    <div class="preview-shell pepito-pet-profile is-diary-focus">
+      <section id="pet-diary" class="pepito-pet-diary" aria-label="دفتر خاطرات تدی">
+        <div class="pepito-pet-diary-book">
+          <div class="pepito-pet-diary-pagebar">
+            <a class="pepito-pet-diary-back" href="#profile" id="back-link">بازگشت به پروفایل</a>
+          </div>
+          <header class="pepito-pet-diary-cover">
+            <div class="pepito-pet-diary-portrait">
+              <img
+                src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'%3E%3Crect fill='%23d9c4a3' width='200' height='200'/%3E%3Ccircle cx='100' cy='78' r='36' fill='%236b4a2b'/%3E%3Cellipse cx='70' cy='62' rx='18' ry='22' fill='%236b4a2b'/%3E%3Cellipse cx='130' cy='62' rx='18' ry='22' fill='%236b4a2b'/%3E%3Ccircle cx='88' cy='74' r='5' fill='%23efe6d8'/%3E%3Ccircle cx='112' cy='74' r='5' fill='%23efe6d8'/%3E%3Cellipse cx='100' cy='150' rx='52' ry='38' fill='%23825c36'/%3E%3C/svg%3E"
+                alt="تدی"
+              />
+            </div>
+            <p class="pepito-pet-diary-kicker" data-i18n="kicker">دفتر خاطرات</p>
+            <h2 data-i18n="title">دفتر خاطرات تدی</h2>
+            <p class="pepito-pet-diary-lead" data-i18n="lead">
+              لحظه‌های کوچک، به قلم صاحب پت — در صفحه عمومی پت هم خوانده می‌شود.
+            </p>
+          </header>
+          <form class="pepito-pet-diary-form" id="diary-form">
+            <label class="sr-only" for="owner-pet-diary-body">نوشتن خاطره</label>
+            <textarea
+              id="owner-pet-diary-body"
+              rows="4"
+              maxlength="4000"
+              placeholder="امروز تدی چه کرد؟"
+            ></textarea>
+            <button type="submit" class="pepito-btn button-1 pepito-pet-diary-submit" disabled>
+              ثبت خاطره
+            </button>
+          </form>
+          <ol class="pepito-pet-diary-list" id="diary-list"></ol>
+        </div>
+      </section>
+    </div>
+    <script>
+      const copy = {
+        fa: {
+          kicker: 'دفتر خاطرات',
+          title: 'دفتر خاطرات تدی',
+          lead: 'لحظه‌های کوچک، به قلم صاحب پت — در صفحه عمومی پت هم خوانده می‌شود.',
+          placeholder: 'امروز تدی چه کرد؟',
+          submit: 'ثبت خاطره',
+          del: 'حذف خاطره',
+          back: 'بازگشت به پروفایل',
+          dir: 'rtl',
+          lang: 'fa',
+        },
+        en: {
+          kicker: 'Pet diary',
+          title: 'Diary of Teddy',
+          lead: "Small moments, in the owner's hand — also on the public pet page.",
+          placeholder: 'What did Teddy do today?',
+          submit: 'Save memory',
+          del: 'Delete memory',
+          back: 'Back to profile',
+          dir: 'ltr',
+          lang: 'en',
+        },
+      };
+      let lang = 'fa';
+      const seed = [
+        { when: 'شنبه ۲۱ شهریور ۱۴۰۵', body: 'امروز تدی تو پارک دوید و بعدش کنار حوض خوابید.' },
+        { when: 'جمعه ۲۰ شهریور ۱۴۰۵', body: 'یک توپ جدید گرفت و تا شب ول‌کن نبود.' },
+        { when: 'پنجشنبه ۱۹ شهریور ۱۴۰۵', body: 'با مهمان‌ها مهربون بود؛ فقط یک‌بار پارس کرد.' },
+      ];
+      const list = document.getElementById('diary-list');
+      const form = document.getElementById('diary-form');
+      const ta = document.getElementById('owner-pet-diary-body');
+      const submit = form.querySelector('button[type="submit"]');
+
+      function row(entry) {
+        const li = document.createElement('li');
+        li.className = 'pepito-pet-diary-entry';
+        li.innerHTML =
+          '<header><time></time><button type="button" class="pepito-pet-diary-delete"></button></header><p></p>';
+        li.querySelector('time').textContent = entry.when;
+        li.querySelector('p').textContent = entry.body;
+        const btn = li.querySelector('button');
+        btn.setAttribute('aria-label', copy[lang].del);
+        btn.innerHTML =
+          '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>';
+        btn.addEventListener('click', () => li.remove());
+        return li;
+      }
+
+      function renderList() {
+        list.innerHTML = '';
+        seed.forEach((e) => list.appendChild(row(e)));
+      }
+
+      function applyLang() {
+        const c = copy[lang];
+        document.documentElement.lang = c.lang;
+        document.documentElement.dir = c.dir;
+        document.querySelector('[data-i18n="kicker"]').textContent = c.kicker;
+        document.querySelector('[data-i18n="title"]').textContent = c.title;
+        document.querySelector('[data-i18n="lead"]').textContent = c.lead;
+        ta.placeholder = c.placeholder;
+        submit.textContent = c.submit;
+        document.getElementById('back-link').textContent = c.back;
+        document.querySelectorAll('.pepito-pet-diary-delete').forEach((b) => {
+          b.setAttribute('aria-label', c.del);
+        });
+      }
+
+      ta.addEventListener('input', () => {
+        submit.disabled = !ta.value.trim();
+      });
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const body = ta.value.trim();
+        if (!body) return;
+        list.prepend(
+          row({
+            when: lang === 'en' ? 'Saturday, 12 September 2026' : 'شنبه ۲۱ شهریور ۱۴۰۵',
+            body,
+          })
+        );
+        ta.value = '';
+        submit.disabled = true;
+      });
+      document.getElementById('toggle-theme').addEventListener('click', () => {
+        const html = document.documentElement;
+        html.setAttribute(
+          'data-theme',
+          html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'
+        );
+      });
+      document.getElementById('toggle-lang').addEventListener('click', () => {
+        lang = lang === 'fa' ? 'en' : 'fa';
+        applyLang();
+      });
+      renderList();
+      applyLang();
+    </script>
+  </body>
+</html>

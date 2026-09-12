@@ -2737,9 +2737,25 @@ html[data-theme='dark'] #pet-diary .pepito-pet-diary-portrait img,
 html[data-theme='dark'] .pepito-pet-diary-portrait img {
   border-color: var(--pet-diary-paper);
 }
+html[data-theme='dark'] #pet-diary .pepito-pet-diary-cover,
+html[data-theme='dark'] .pepito-pet-diary-cover {
+  background: color-mix(in srgb, var(--pet-diary-paper) 88%, #000 12%);
+  box-shadow: inset 0 0 0 1px rgba(239, 230, 216, 0.08);
+}
 html[data-theme='dark'] #pet-diary .pepito-pet-diary-form textarea:focus,
 html[data-theme='dark'] .pepito-pet-diary-form textarea:focus {
   outline-color: rgba(253, 150, 30, 0.5);
+}
+html[data-theme='dark'] #pet-diary .pepito-pet-diary-submit.pepito-btn,
+html[data-theme='dark'] .pepito-pet-diary-submit.pepito-btn {
+  background: #c4a24a;
+  color: #2a1f12 !important;
+  box-shadow: 0 2px 0 #8a6a28;
+}
+html[data-theme='dark'] #pet-diary .pepito-pet-diary-submit.pepito-btn:hover,
+html[data-theme='dark'] .pepito-pet-diary-submit.pepito-btn:hover {
+  background: #e0c078;
+  color: #1c140c !important;
 }
 html[data-theme='dark'] #pet-diary .pepito-pet-diary-entry + .pepito-pet-diary-entry,
 html[data-theme='dark'] .pepito-pet-diary-entry + .pepito-pet-diary-entry {
