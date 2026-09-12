@@ -24,7 +24,7 @@ import { getSession, upsertSession } from '../session';
 import { getCtxUser, menuKeyboardFor, pushReplyKeyboardToChat } from './helpers';
 import { formatPet } from '../format';
 import { MAIN_MENU_ALIASES, MAIN_MENU_BTN, MENU_LABELS, mainMenuKeyboard } from '../keyboards';
-import { effectiveWebUrl, isTelegramInlineUrl, resolveTelegramPhotoUrl } from '../urls';
+import { effectiveWebUrl, isTelegramInlineUrl, resolveTelegramPhotoUrl, resolveTelegramUserAvatarUrl } from '../urls';
 import { claimWebChatCtaOnce } from '../web-chat-cta-once';
 
 export const OWNER_CHAT_BTNS = {
@@ -143,9 +143,7 @@ export async function replyWithOwnerProfile(
 ): Promise<void> {
   const card = formatPeerOwnerCard(user, opts?.heading);
   const protect = protectOpts(Boolean(opts?.protectContent));
-  const photo = isPhotoApproved(user.avatarModerationStatus)
-    ? resolveTelegramPhotoUrl(user.avatarUrl)
-    : undefined;
+  const photo = resolveTelegramUserAvatarUrl(user, { publicFacing: true });
   if (photo) {
     try {
       await ctx.replyWithPhoto(photo, {

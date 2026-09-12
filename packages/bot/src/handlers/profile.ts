@@ -15,7 +15,6 @@ import {
   formatPeerOwnerProfileHtml,
   formatProfileCardHtml,
   isOptionalProfileWizardStep,
-  isPhotoApproved,
   isProfileComplete,
   missingProfileWizardSteps,
   nextMissingProfileWizardStep,
@@ -62,7 +61,7 @@ import {
   provinceReplyKeyboard,
   textStepKeyboard,
 } from '../keyboards';
-import { resolveTelegramPhotoUrl } from '../urls';
+import { resolveTelegramUserAvatarUrl } from '../urls';
 import { getSession, upsertSession } from '../session';
 import { getCtxUser, menuKeyboardFor, pushMainMenuKeyboard } from './helpers';
 
@@ -188,9 +187,7 @@ export async function showPublicUserById(ctx: Context, userId: number): Promise<
     user,
     pets.map((p) => `${p.name} · ${petPublicIdOf(p)}`)
   );
-  const photo = isPhotoApproved(user.avatarModerationStatus)
-    ? resolveTelegramPhotoUrl(user.avatarUrl)
-    : undefined;
+  const photo = resolveTelegramUserAvatarUrl(user, { publicFacing: true });
   if (photo) {
     try {
       await ctx.replyWithPhoto(photo, { caption: text, parse_mode: 'HTML' });
@@ -253,19 +250,17 @@ async function sendOwnProfileCard(
       faceReward: FACE_VERIFY_REWARD,
     }
   );
-  if (user.avatarUrl) {
-    const photo = resolveTelegramPhotoUrl(user.avatarUrl);
-    if (photo) {
-      try {
-        await ctx.replyWithPhoto(photo, {
-          caption,
-          parse_mode: 'HTML',
-          reply_markup: kb,
-        });
-        return;
-      } catch {
-        /* fall through */
-      }
+  const photo = resolveTelegramUserAvatarUrl(user);
+  if (photo) {
+    try {
+      await ctx.replyWithPhoto(photo, {
+        caption,
+        parse_mode: 'HTML',
+        reply_markup: kb,
+      });
+      return;
+    } catch {
+      /* fall through */
     }
   }
   await ctx.reply(caption, { parse_mode: 'HTML', reply_markup: kb });

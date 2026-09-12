@@ -90,8 +90,9 @@ import {
   vetVisitFeeCoins,
   walletFromUserFields,
   walletLedgerLabelFa,
+  parseUserGenderValue,
   profileAvatarUrl,
-  publicFacingAvatarUrl,
+  resolveProfileDisplayAvatarUrl,
   isNonImageAvatarRef,
   type CoinSellChannel,
   type CoinSellRequestAdmin,
@@ -2467,9 +2468,15 @@ function mapPet(row: Record<string, unknown>): PetProfile {
     ownerCity: (row.owner_city as string | undefined) ?? undefined,
     ownerName: (row.owner_name as string | undefined) ?? undefined,
     ownerVerified: row.owner_verified != null ? Boolean(row.owner_verified) : undefined,
-    ownerAvatarUrl: publicFacingAvatarUrl(
+    ownerAvatarUrl: resolveProfileDisplayAvatarUrl(
       (row.owner_avatar_url as string | undefined) ?? undefined,
-      parsePhotoModerationStatus(row.owner_avatar_moderation_status ?? 'approved')
+      {
+        gender: parseUserGenderValue(row.owner_gender),
+        moderationStatus: parsePhotoModerationStatus(
+          row.owner_avatar_moderation_status ?? 'approved'
+        ),
+        publicFacing: true,
+      }
     ),
     ownerLastSeenAt:
       (row.owner_location_updated_at as string | undefined) ||
@@ -2646,7 +2653,11 @@ function mapVetConsultation(row: Record<string, unknown>): VetConsultation {
       (row.created_at as string | undefined),
     patientName: (row.patient_name as string | undefined) ?? undefined,
     patientCity: (row.patient_city as string | undefined) ?? undefined,
-    patientAvatarUrl: profileAvatarUrl(row.patient_avatar_url as string | undefined),
+    patientAvatarUrl: resolveProfileDisplayAvatarUrl(
+      row.patient_avatar_url as string | undefined,
+      { gender: parseUserGenderValue(row.patient_gender) }
+    ),
+    patientGender: parseUserGenderValue(row.patient_gender),
     patientPublicId: userPublicIdOf({
       id: row.patient_user_id as number,
       publicId: (row.patient_public_id as string | undefined) ?? undefined,
@@ -2657,6 +2668,7 @@ function mapVetConsultation(row: Record<string, unknown>): VetConsultation {
     })(),
     vetName: (row.vet_name as string | undefined) ?? undefined,
     vetAvatarUrl: profileAvatarUrl(row.vet_avatar_url as string | undefined),
+    vetGender: parseUserGenderValue(row.vet_gender),
     petName: (row.pet_name as string | undefined) ?? undefined,
     petSpecies: (row.pet_species as string | undefined) ?? undefined,
     petBreed: (row.pet_breed as string | undefined) ?? undefined,
@@ -4737,6 +4749,9 @@ export const dbService = {
              users.province AS owner_province,
              users.city AS owner_city,
              users.name AS owner_name,
+             users.avatar_url AS owner_avatar_url,
+             users.avatar_moderation_status AS owner_avatar_moderation_status,
+             users.gender AS owner_gender,
              users.likes_count AS owner_likes_count,
              CASE WHEN users.verification_status = 'verified' THEN 1 ELSE 0 END AS owner_verified
       FROM pets
@@ -4817,6 +4832,7 @@ export const dbService = {
              users.name AS owner_name,
              users.avatar_url AS owner_avatar_url,
              users.avatar_moderation_status AS owner_avatar_moderation_status,
+             users.gender AS owner_gender,
              users.lat AS owner_lat,
              users.lng AS owner_lng,
              users.location_updated_at AS owner_location_updated_at,
@@ -4878,6 +4894,7 @@ export const dbService = {
                 users.name AS owner_name,
                 users.avatar_url AS owner_avatar_url,
                 users.avatar_moderation_status AS owner_avatar_moderation_status,
+                users.gender AS owner_gender,
                 users.location_updated_at AS owner_location_updated_at,
                 users.last_seen_at AS owner_last_seen_at,
                 CASE WHEN users.verification_status = 'verified' THEN 1 ELSE 0 END AS owner_verified
@@ -4900,6 +4917,7 @@ export const dbService = {
                 users.name AS owner_name,
                 users.avatar_url AS owner_avatar_url,
                 users.avatar_moderation_status AS owner_avatar_moderation_status,
+                users.gender AS owner_gender,
                 users.location_updated_at AS owner_location_updated_at,
                 users.last_seen_at AS owner_last_seen_at,
                 CASE WHEN users.verification_status = 'verified' THEN 1 ELSE 0 END AS owner_verified
@@ -5867,10 +5885,12 @@ export const dbService = {
              patient.name AS patient_name,
              patient.city AS patient_city,
              patient.avatar_url AS patient_avatar_url,
+             patient.gender AS patient_gender,
              patient.public_id AS patient_public_id,
              patient.bio AS patient_bio,
              vet.name AS vet_name,
              vet.avatar_url AS vet_avatar_url,
+             vet.gender AS vet_gender,
              pets.name AS pet_name,
              pets.species AS pet_species,
              pets.breed AS pet_breed,
@@ -5983,10 +6003,12 @@ export const dbService = {
                 pu.name AS patient_name,
                 pu.city AS patient_city,
                 pu.avatar_url AS patient_avatar_url,
+                pu.gender AS patient_gender,
                 pu.public_id AS patient_public_id,
                 pu.bio AS patient_bio,
                 vu.name AS vet_name,
                 vu.avatar_url AS vet_avatar_url,
+                vu.gender AS vet_gender,
                 p.name AS pet_name,
                 p.species AS pet_species,
                 p.breed AS pet_breed,
@@ -6018,10 +6040,12 @@ export const dbService = {
                 pu.name AS patient_name,
                 pu.city AS patient_city,
                 pu.avatar_url AS patient_avatar_url,
+                pu.gender AS patient_gender,
                 pu.public_id AS patient_public_id,
                 pu.bio AS patient_bio,
                 vu.name AS vet_name,
                 vu.avatar_url AS vet_avatar_url,
+                vu.gender AS vet_gender,
                 p.name AS pet_name,
                 p.species AS pet_species,
                 p.breed AS pet_breed,
@@ -6086,10 +6110,12 @@ export const dbService = {
                 pu.name AS patient_name,
                 pu.city AS patient_city,
                 pu.avatar_url AS patient_avatar_url,
+                pu.gender AS patient_gender,
                 pu.public_id AS patient_public_id,
                 pu.bio AS patient_bio,
                 vu.name AS vet_name,
                 vu.avatar_url AS vet_avatar_url,
+                vu.gender AS vet_gender,
                 p.name AS pet_name,
                 p.species AS pet_species,
                 p.breed AS pet_breed,
@@ -6118,10 +6144,12 @@ export const dbService = {
                 pu.name AS patient_name,
                 pu.city AS patient_city,
                 pu.avatar_url AS patient_avatar_url,
+                pu.gender AS patient_gender,
                 pu.public_id AS patient_public_id,
                 pu.bio AS patient_bio,
                 vu.name AS vet_name,
                 vu.avatar_url AS vet_avatar_url,
+                vu.gender AS vet_gender,
                 p.name AS pet_name,
                 p.species AS pet_species,
                 p.breed AS pet_breed,
