@@ -502,13 +502,13 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   transform: scale(1.04);
   animation: pepito-ken 14s ease-in-out infinite alternate;
 }
-/* HTML LCP node lives outside #root until Welcome adopts it into slide 0. */
+/* HTML LCP node lives outside #root; height matches the compact #377 hero band. */
 body > #pd-boot-lcp {
   position: fixed;
   top: var(--pepito-nav-h);
   left: 0;
   width: 100%;
-  height: calc(100svh - var(--pepito-nav-h));
+  height: var(--pepito-hero-h);
   z-index: 0;
   pointer-events: none;
   margin: 0;

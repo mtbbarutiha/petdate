@@ -63,7 +63,7 @@
       .pepito-hero{min-height:var(--pepito-hero-h);position:relative;overflow:hidden;background:#14161e;display:grid;align-items:center}
       @media (min-width:860px){:root{--pepito-nav-h:74px;--pepito-hero-h:calc(93svh - var(--pepito-nav-h))}}
       .pepito-hero-media{width:100%;height:100%;object-fit:cover;object-position:center top;position:absolute;inset:0}
-      body>#pd-boot-lcp{position:fixed;top:var(--pepito-nav-h);left:0;width:100%;height:calc(100svh - var(--pepito-nav-h));object-fit:cover;object-position:center top;z-index:0;pointer-events:none;margin:0}
+      body>#pd-boot-lcp{position:fixed;top:var(--pepito-nav-h);left:0;width:100%;height:var(--pepito-hero-h);object-fit:cover;object-position:center top;z-index:0;pointer-events:none;margin:0}
       body>#pd-boot-lcp.is-parked{display:none}
       .pepito-hero-wash{position:absolute;inset:0;z-index:2;background:rgba(5,1,12,.34);pointer-events:none}
       .pepito-hero-inner{position:relative;z-index:3;width:min(var(--pepito-container-max),100%);margin-inline:auto;padding-inline:var(--pepito-container-pad);padding-block:calc(env(safe-area-inset-top,0px) + 1.35rem) 2.25rem;box-sizing:border-box;min-height:14.5rem}
