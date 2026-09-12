@@ -83,7 +83,10 @@ async function main() {
   assert(afterPatient === before, 'patient restored');
 
   const again = dbService.refundEarlySeekerAdviceIfEligible(consult.id);
-  assert(again.refunded === false && again.reason === 'already_refunded', 'idempotent');
+  assert(
+    again.refunded === false && again.reason === 'already_refunded',
+    `idempotent (got refunded=${String(again.refunded)} reason=${String(again.reason)})`
+  );
 
   const consult2 = dbService.createVetConsultation({
     vetUserId: owner.id,
