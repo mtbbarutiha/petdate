@@ -142,6 +142,7 @@ run src/services/speech-to-text.selftest.ts
 run src/services/ai-consult.selftest.ts
 run src/services/team-agents.selftest.ts
 run src/services/consult-idle-close.selftest.ts
+run src/db/pg-compat.selftest.ts
 
 # Bot guards (sticky keyboard + IPv4 Telegram HTTP) — no network / no DB
 echo "==> selftest: bot sticky + telegram-http + quick-connect-parse + nearby-radius + nearby-inline-list + pet-search-menu + invite-friends + urls"

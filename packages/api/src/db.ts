@@ -6133,21 +6133,23 @@ export const dbService = {
   ): number[] {
     const idleSec = Math.max(1, Math.round(idleMs / 1000));
     const lim = Math.min(Math.max(limit, 1), 200);
+    // Compare TEXT timestamps lexicographically (SQLite datetime + PG TO_CHAR).
+    // Do not wrap COALESCE in datetime() — pg-compat only rewrote datetime(col)
+    // historically, and bare datetime(...) crashes Postgres:
+    // "function datetime(text) does not exist" (spammed idle-close sweep logs).
     const rows = db
       .prepare(
         `SELECT vc.id AS id
          FROM vet_consultations vc
          WHERE vc.status = 'active'
            AND COALESCE(vc.chat_ended, 0) = 0
-           AND datetime(
-             COALESCE(
-               vc.patient_last_activity_at,
-               (SELECT MAX(m.created_at)
-                FROM vet_consult_chat_messages m
-                WHERE m.consult_id = vc.id
-                  AND m.sender_user_id = vc.patient_user_id),
-               vc.created_at
-             )
+           AND COALESCE(
+             vc.patient_last_activity_at,
+             (SELECT MAX(m.created_at)
+              FROM vet_consult_chat_messages m
+              WHERE m.consult_id = vc.id
+                AND m.sender_user_id = vc.patient_user_id),
+             vc.created_at
            ) <= datetime('now', ?)
          ORDER BY vc.id ASC
          LIMIT ?`
