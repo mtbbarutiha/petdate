@@ -9,6 +9,7 @@ import {
   buildLoginOtpEmailText,
 } from './otp-email-html';
 import { formatLoginOtpSms } from './otp-sms-copy';
+import { parseReferredByInput, tryGrantReferralOnSignup } from './referral-grant';
 
 const OTP_TTL_MS = OTP_EMAIL_EXPIRES_MINUTES * 60 * 1000;
 const MAX_ATTEMPTS = 5;
@@ -163,7 +164,8 @@ export async function requestWebOtp(
 export function verifyWebOtp(
   channel: WebOtpChannel,
   targetRaw: string,
-  codeRaw: string
+  codeRaw: string,
+  referredByRaw?: unknown
 ):
   | { ok: true; token: string; user: NonNullable<ReturnType<typeof dbService.getUserById>> }
   | { ok: false; reason: string; error: string; attemptsLeft?: number } {
@@ -207,6 +209,9 @@ export function verifyWebOtp(
 
   dbService.deleteWebOtp(channel, target);
 
+  const existed =
+    channel === 'phone' ? dbService.getUserByPhone(target) : dbService.getUserByEmail(target);
+
   let user =
     channel === 'phone'
       ? dbService.findOrCreateWebUser({ phone: target })
@@ -216,6 +221,15 @@ export function verifyWebOtp(
     user = dbService.markPhoneVerified(user.id, target) ?? user;
   } else {
     user = dbService.markEmailVerified(user.id, target) ?? user;
+  }
+
+  if (!existed) {
+    tryGrantReferralOnSignup({
+      invitedUserId: user.id,
+      referredBy: parseReferredByInput(referredByRaw),
+      created: true,
+    });
+    user = dbService.getUserById(user.id) ?? user;
   }
 
   const token = randomBytes(32).toString('hex');

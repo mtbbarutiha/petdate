@@ -5,7 +5,7 @@
  * Run: npx tsx packages/bot/src/handlers/invite-friends.selftest.ts
  */
 import assert from 'node:assert/strict';
-import { inviteTelegramLink, REFERRAL_BONUS_COINS } from '@petdate/shared';
+import { inviteTelegramLink, inviteWebLink, REFERRAL_BONUS_COINS } from '@petdate/shared';
 import { COMMON_MENU, PET_OWNER_MENU, coinsShopKeyboard } from '../keyboards';
 import { buildInviteFriendsHtml } from './services';
 
@@ -20,8 +20,14 @@ function main(): void {
   assert.equal(invite.link, inviteTelegramLink(38));
   assert.ok(invite.text.includes('<code>'), 'link must be wrapped in <code> for HTML');
   assert.ok(invite.text.includes(invite.link), 'message must include invite deep link');
+  assert.equal(invite.webLink, inviteWebLink(38));
+  assert.ok(invite.text.includes(invite.webLink), 'message must include web /invite link');
   assert.ok(!/\*\*/.test(invite.text), 'must not use legacy Markdown **bold**');
   assert.ok(invite.shareUrl.includes('t.me/share'), 'share URL required');
+
+  const withStats = buildInviteFriendsHtml(38, { invitedCount: 2, coinsEarned: 60 });
+  assert.ok(withStats.text.includes('۲') || withStats.text.includes('2'), 'stats invited count');
+  assert.ok(withStats.text.includes('۶۰') || withStats.text.includes('60'), 'stats coins earned');
 
   // Simulate the production failure: Markdown + raw ref_ URL
   const brokenMarkdown = [

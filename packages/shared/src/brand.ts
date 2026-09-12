@@ -46,20 +46,78 @@ export const BRAND = {
   newsletterEmail: SITE.newsletterEmail,
 } as const;
 
+/** کد دعوت پایدار — همان شناسه کاربر (`ref_<id>`)؛ محصول جداگانه‌ای نیست. */
+export function inviteReferralCode(userId: number | string): string {
+  const id = Math.floor(Number(userId) || 0);
+  return `ref_${id > 0 ? id : 0}`;
+}
+
+/** مسیر لندینگ وب دعوت (`/invite?ref=<id>`) */
+export function inviteWebPath(userId: number | string): string {
+  const id = Math.floor(Number(userId) || 0);
+  return `/invite?ref=${id > 0 ? id : 0}`;
+}
+
+/** لینک دعوت وب (ثبت‌نام سایت یا ربات از همین صفحه) */
+export function inviteWebLink(userId: number | string): string {
+  return `${SITE.origin}${inviteWebPath(userId)}`;
+}
+
 /** لینک دعوت تلگرام برای کاربر (deep link /start=ref_<id>) */
 export function inviteTelegramLink(userId: number | string): string {
   const id = Math.floor(Number(userId) || 0);
-  return `https://t.me/${SITE.telegramBotUsername}?start=ref_${id > 0 ? id : 0}`;
+  return `https://t.me/${SITE.telegramBotUsername}?start=${inviteReferralCode(id)}`;
 }
 
-/** متن اشتراک‌گذاری دعوت */
+/**
+ * Parse invite payload from query/start/code.
+ * Accepts `38`, `ref_38`, `?ref=38`, `/invite?ref=38`, full site/t.me URLs.
+ */
+export function parseReferralRef(raw: unknown): number | null {
+  if (raw == null) return null;
+  const s = String(raw).trim();
+  if (!s) return null;
+
+  if (/^\d+$/.test(s)) {
+    const id = Number(s);
+    return Number.isFinite(id) && id > 0 ? Math.floor(id) : null;
+  }
+
+  const code = /^ref_(\d+)$/i.exec(s);
+  if (code) {
+    const id = Number(code[1]);
+    return Number.isFinite(id) && id > 0 ? Math.floor(id) : null;
+  }
+
+  const start = /(?:[?&]start=|\/start(?:\s+|=))(ref_\d+)/i.exec(s);
+  if (start) return parseReferralRef(start[1]);
+
+  const qRef = /[?&]ref=(\d+)/i.exec(s);
+  if (qRef) return parseReferralRef(qRef[1]);
+
+  return null;
+}
+
+/** متن اشتراک‌گذاری دعوت (لینک تلگرام — سازگار با ربات) */
 export function inviteShareText(userId: number | string): string {
   const link = inviteTelegramLink(userId);
   return `بیا تو petdate همبازی برای پتت پیدا کن! 🐾\n${BRAND.taglineEn}\n${link}`;
 }
 
-/** لینک t.me/share برای دکمه اشتراک */
+/** متن اشتراک لینک وب دعوت */
+export function inviteWebShareText(userId: number | string): string {
+  const link = inviteWebLink(userId);
+  return `بیا تو petdate همبازی برای پتت پیدا کن! 🐾\n${BRAND.taglineEn}\n${link}`;
+}
+
+/** لینک t.me/share برای دکمه اشتراک ربات */
 export function inviteTelegramShareUrl(userId: number | string): string {
   const link = inviteTelegramLink(userId);
   return `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(inviteShareText(userId))}`;
+}
+
+/** لینک t.me/share برای لینک وب دعوت */
+export function inviteWebShareUrl(userId: number | string): string {
+  const link = inviteWebLink(userId);
+  return `https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent(inviteWebShareText(userId))}`;
 }

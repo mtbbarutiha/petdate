@@ -13525,6 +13525,13 @@ a.pepito-btn.pepito-human-consult-cta:hover {
     linear-gradient(160deg, rgba(255, 255, 255, 0.92), rgba(255, 246, 236, 0.9));
   border-color: rgba(253, 150, 30, 0.2);
 }
+.pepito-invite-stats {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.4;
+  color: var(--pepito-dark);
+  opacity: 0.88;
+}
 .pepito-invite-link {
   margin: 0;
   padding: 0.38rem 0.55rem;
@@ -13535,6 +13542,31 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   line-height: 1.35;
   word-break: break-all;
   color: var(--pepito-dark);
+}
+.pepito-invite-page {
+  padding: 1.25rem 0 2.5rem;
+}
+.pepito-invite-page-head h2 {
+  margin: 0.25rem 0 0.45rem;
+  font-size: clamp(1.15rem, 2.4vw, 1.45rem);
+}
+.pepito-invite-page-head p {
+  margin: 0 0 0.65rem;
+  line-height: 1.55;
+}
+.pepito-invite-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+.pepito-invite-page-muted {
+  color: var(--pepito-muted, #6b7280);
+}
+.pepito-invite-page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
 }
 .pepito-invite-actions {
   display: flex;

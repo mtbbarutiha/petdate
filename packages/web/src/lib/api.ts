@@ -729,11 +729,47 @@ export async function requestWebOtp(channel: WebOtpChannel, target: string) {
 export async function verifyWebOtp(
   channel: WebOtpChannel,
   target: string,
-  code: string
+  code: string,
+  referredBy?: number | null
 ) {
   return request<{ ok: true; token: string; user: User }>('/api/auth/otp/verify', {
     method: 'POST',
-    body: JSON.stringify({ channel, target, code }),
+    body: JSON.stringify({
+      channel,
+      target,
+      code,
+      ...(referredBy != null ? { referredBy } : {}),
+    }),
+  });
+}
+
+export type ReferralStats = {
+  ok: true;
+  userId: number;
+  code: string;
+  webLink: string;
+  telegramLink: string;
+  bonusCoins: number;
+  invitedCount: number;
+  coinsEarned: number;
+  referredBy: number | null;
+};
+
+export async function fetchReferralStats(token: string) {
+  return coalescedAuthGet<ReferralStats>('/api/auth/referral', token);
+}
+
+export async function claimReferral(token: string, referredBy: number) {
+  return request<{
+    ok: true;
+    awarded: boolean;
+    reason: string | null;
+    referralAward?: { referrerId: number; amount: number };
+    user: User | null;
+  }>('/api/auth/referral/claim', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ referredBy }),
   });
 }
 

@@ -4,11 +4,13 @@ import type { User } from '@petdate/shared';
 import {
   inviteTelegramLink,
   inviteTelegramShareUrl,
+  inviteWebLink,
   isPendingRequestExpired,
   VET_CONSULT_REQUEST_TTL_MS,
   vetVisitFeeCoins,
 } from '@petdate/shared';
 import {
+  getTelegramReferralStats,
   getUserById,
   getVetConsultation,
   listOnlineVets,
@@ -152,29 +154,44 @@ export async function handleChatsEntry(ctx: Context): Promise<void> {
  * متن دعوت دوستان — HTML (نه Markdown legacy).
  * لینک `ref_<id>` زیرخط دارد؛ Markdown تلگرام `_` را italic می‌گیرد و sendMessage 400 می‌دهد.
  */
-export function buildInviteFriendsHtml(userId: number): {
+export function buildInviteFriendsHtml(
+  userId: number,
+  stats?: { invitedCount?: number; coinsEarned?: number } | null
+): {
   text: string;
   parse_mode: 'HTML';
   shareUrl: string;
   link: string;
+  webLink: string;
 } {
   const link = inviteTelegramLink(userId);
+  const webLink = inviteWebLink(userId);
   const rewardFa = escapeHtml(formatNum(REFERRAL_BONUS_COINS));
+  const invited = Math.max(0, Math.floor(Number(stats?.invitedCount) || 0));
+  const earned = Math.max(0, Math.floor(Number(stats?.coinsEarned) || 0));
+  const statsLine =
+    invited > 0
+      ? `تا الان <b>${escapeHtml(formatNum(invited))}</b> دوست ثبت‌نام کردن · <b>${escapeHtml(formatNum(earned))}</b> سکه گرفتی.`
+      : `به ازای هر دوست که ثبت‌نام کنه، <b>${rewardFa} سکه</b> هدیه می‌گیری.`;
   const text = [
     '🎁 <b>دعوت دوستان</b>',
     '',
     'دوستات رو به petdate دعوت کن و سکه بگیر!',
     '',
-    'لینک دعوت تو:',
+    'لینک ربات:',
     `<code>${escapeHtml(link)}</code>`,
     '',
-    `به ازای هر دوست که ثبت‌نام کنه، <b>${rewardFa} سکه</b> هدیه می‌گیری.`,
+    'لینک سایت:',
+    `<code>${escapeHtml(webLink)}</code>`,
+    '',
+    statsLine,
   ].join('\n');
   return {
     text,
     parse_mode: 'HTML',
     shareUrl: inviteTelegramShareUrl(userId),
     link,
+    webLink,
   };
 }
 
@@ -185,7 +202,10 @@ export async function handleInviteFriends(ctx: Context): Promise<void> {
     return;
   }
 
-  const invite = buildInviteFriendsHtml(user.id);
+  const stats = user.telegramId
+    ? await getTelegramReferralStats(String(user.telegramId)).catch(() => null)
+    : null;
+  const invite = buildInviteFriendsHtml(user.id, stats);
   const kb = new InlineKeyboard().url('📤 اشتراک‌گذاری لینک', invite.shareUrl);
 
   try {

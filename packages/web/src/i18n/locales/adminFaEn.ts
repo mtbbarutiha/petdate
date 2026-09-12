@@ -2226,4 +2226,6 @@ export const ADMIN_FA_EN: Record<string, string> = {
   "درخواست همبازی وب و ربات": "Web and bot playdate requests",
   "مشاوره دامپزشک وب و ربات": "Web and bot vet consult",
   "force-join ربات از تنظیمات ادمین": "Bot force-join from admin settings",
+  "دعوت": "Invites",
+  "معرف": "Referrer",
 };

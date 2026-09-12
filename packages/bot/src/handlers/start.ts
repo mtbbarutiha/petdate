@@ -5,6 +5,7 @@ import {
   ROLE_CONFIRM_LABEL,
   USER_ROLE_LABELS,
   normalizeRoles,
+  parseReferralRef,
   parseUserIdFromCommand,
   primaryRole,
 } from '@petdate/shared';
@@ -57,12 +58,9 @@ function startPayload(ctx: Context): string {
   return parts.slice(1).join(' ').trim();
 }
 
-/** لینک دعوت: /start ref_<userId> */
+/** لینک دعوت: /start ref_<userId> — همان پارسر وب */
 function parseReferralPayload(payload: string): number | null {
-  const m = /^ref_(\d+)$/i.exec(payload.trim());
-  if (!m) return null;
-  const id = Number(m[1]);
-  return Number.isFinite(id) && id > 0 ? Math.floor(id) : null;
+  return parseReferralRef(payload);
 }
 
 async function tryHandleWebLinkAttach(ctx: Context, payload: string): Promise<boolean> {
