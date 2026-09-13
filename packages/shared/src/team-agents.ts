@@ -30,6 +30,13 @@ export type TeamAgentDef = {
   grokBotKey: string;
 };
 
+/** Query on /agents/*.jpg so browsers drop pepito lookalikes + the YS/yalda-v1 files. */
+export const TEAM_AGENT_AVATAR_CACHE_BUST = 'persona-v2';
+
+function agentAvatar(slug: string): string {
+  return `/agents/${slug}.jpg?v=${TEAM_AGENT_AVATAR_CACHE_BUST}`;
+}
+
 /** Visual L→R on RTL landing ≈ reverse of this DOM order. */
 export const TEAM_AGENTS: readonly TeamAgentDef[] = [
   {
@@ -39,8 +46,8 @@ export const TEAM_AGENTS: readonly TeamAgentDef[] = [
     name: 'فرانک احمدی',
     role: 'مربی',
     kind: 'trainer',
-    avatarUrl: '/agents/faranak-ahmadi.jpg',
-    cardImage: '/agents/faranak-ahmadi.jpg',
+    avatarUrl: agentAvatar('faranak-ahmadi'),
+    cardImage: agentAvatar('faranak-ahmadi'),
     grokBotKey: 'faranak_ahmadi',
   },
   {
@@ -49,8 +56,8 @@ export const TEAM_AGENTS: readonly TeamAgentDef[] = [
     name: 'لیلا کیانی',
     role: 'مربی',
     kind: 'trainer',
-    avatarUrl: '/agents/leila-kiani.jpg',
-    cardImage: '/agents/leila-kiani.jpg',
+    avatarUrl: agentAvatar('leila-kiani'),
+    cardImage: agentAvatar('leila-kiani'),
     grokBotKey: 'leila_kiani',
   },
   {
@@ -59,8 +66,8 @@ export const TEAM_AGENTS: readonly TeamAgentDef[] = [
     name: 'دکتر ساناز غفاری',
     role: 'دامپزشک',
     kind: 'vet',
-    avatarUrl: '/agents/sanaz-ghaffari.jpg',
-    cardImage: '/agents/sanaz-ghaffari.jpg',
+    avatarUrl: agentAvatar('sanaz-ghaffari'),
+    cardImage: agentAvatar('sanaz-ghaffari'),
     grokBotKey: 'sanaz_ghaffari',
   },
   {
@@ -70,8 +77,8 @@ export const TEAM_AGENTS: readonly TeamAgentDef[] = [
     name: 'دکتر سارا نوری',
     role: 'دامپزشک',
     kind: 'vet',
-    avatarUrl: '/agents/sara-noori.jpg',
-    cardImage: '/agents/sara-noori.jpg',
+    avatarUrl: agentAvatar('sara-noori'),
+    cardImage: agentAvatar('sara-noori'),
     grokBotKey: 'sara_noori',
   },
   {
@@ -80,8 +87,8 @@ export const TEAM_AGENTS: readonly TeamAgentDef[] = [
     name: 'یلدا شعبانی',
     role: 'پشتیبانی',
     kind: 'support',
-    avatarUrl: '/agents/yalda-shabani.jpg?v=yalda-v1',
-    cardImage: '/agents/yalda-shabani.jpg?v=yalda-v1',
+    avatarUrl: agentAvatar('yalda-shabani'),
+    cardImage: agentAvatar('yalda-shabani'),
     grokBotKey: 'yalda_shabani',
   },
 ] as const;
