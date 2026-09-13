@@ -63,7 +63,23 @@ for (const [slug, expect] of Object.entries(AVATAR_SHA256)) {
   assert.ok(!/made with ai/i.test(bytes.toString('latin1')), `${slug} has no Made with AI watermark`);
 }
 
-/** Ops-only staff portraits — HR/admin roster, not landing cards. */
+/** Ops-only staff portraits — HR/admin roster, not landing cards. Designer finals are 720×720. */
+function jpegSofSize(bytes: Buffer): { w: number; h: number } | null {
+  let i = 2;
+  while (i < bytes.length - 8 && bytes[i] === 0xff) {
+    const marker = bytes[i + 1];
+    if (marker === 0xc0 || marker === 0xc1 || marker === 0xc2) {
+      return { h: bytes.readUInt16BE(i + 5), w: bytes.readUInt16BE(i + 7) };
+    }
+    if (marker === 0xd8 || marker === 0xd9) {
+      i += 2;
+      continue;
+    }
+    i += 2 + bytes.readUInt16BE(i + 2);
+  }
+  return null;
+}
+
 const OPS_AVATARS = ['staff-designer', 'staff-social', 'staff-shop', 'staff-content'] as const;
 for (const slug of OPS_AVATARS) {
   const abs = join(webRoot, 'public/agents', `${slug}.jpg`);
@@ -71,6 +87,10 @@ for (const slug of OPS_AVATARS) {
   const bytes = readFileSync(abs);
   assert.equal(bytes[0], 0xff, `${slug} is JPEG SOI`);
   assert.equal(bytes[1], 0xd8, `${slug} is JPEG SOI`);
+  const dim = jpegSofSize(bytes);
+  assert.ok(dim, `${slug} has SOF dimensions`);
+  assert.equal(dim!.w, 720, `${slug} width 720`);
+  assert.equal(dim!.h, 720, `${slug} height 720`);
   assert.ok(bytes.length > 40_000, `${slug}.jpg should be a real headshot`);
   assert.ok(!/made with ai/i.test(bytes.toString('latin1')), `${slug} has no Made with AI watermark`);
 }
