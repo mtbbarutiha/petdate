@@ -37,6 +37,26 @@ assert.equal(staffAgentsForTeamSlug('faranak-ahmadi')?.roleKey, 'trainer');
 assert.equal(staffAgentsForTeamSlug('leila-kiani')?.roleKey, 'finance');
 assert.equal(staffAgentsForTeamSlug('sara-noori')?.displayName, 'سارا نوری');
 
+const OPS_AVATARS: Record<string, string> = {
+  'staff.designer': '/agents/staff-designer.jpg',
+  'staff.social': '/agents/staff-social.jpg',
+  'staff.shop': '/agents/staff-shop.jpg',
+  'staff.content': '/agents/staff-content.jpg',
+};
+for (const agent of STAFF_AGENTS) {
+  assert.ok(agent.avatarUrl, `${agent.username} avatarUrl`);
+  assert.match(agent.avatarUrl, /^\/agents\/[a-z0-9-]+\.jpg$/, `${agent.username} site avatar path`);
+  assert.ok(agent.displayName, `${agent.username} displayName`);
+  assert.ok(agent.firstName && agent.lastName, `${agent.username} first/last`);
+  assert.ok(agent.personnelCode.startsWith('STAFF-'), `${agent.username} personnel code`);
+  assert.ok(agent.jobTitle && agent.department && agent.orgEmail, `${agent.username} job fields`);
+}
+for (const [username, url] of Object.entries(OPS_AVATARS)) {
+  const row = STAFF_AGENTS.find((a) => a.username === username);
+  assert.equal(row?.avatarUrl, url, `${username} ops avatar`);
+  assert.equal(row?.teamAgentSlug, undefined, `${username} is ops-only`);
+}
+
 assert.ok(STAFF_ROLE_PERMISSIONS.veterinarian.includes('content.write'));
 assert.ok(!STAFF_ROLE_PERMISSIONS.veterinarian.includes('admin.full'));
 assert.ok(!STAFF_ROLE_PERMISSIONS.veterinarian.includes('finance.write'));

@@ -113,7 +113,8 @@ export type StaffAgentDef = {
   department: string;
   /** TEAM_AGENTS slug when this login is a public chat persona */
   teamAgentSlug?: string;
-  avatarUrl?: string;
+  /** Public static portrait under packages/web/public/agents */
+  avatarUrl: string;
 };
 
 /**
@@ -196,6 +197,7 @@ export const STAFF_AGENTS: readonly StaffAgentDef[] = [
     personnelCode: 'STAFF-DESIGNER',
     jobTitle: 'گرافیست',
     department: 'رسانه',
+    avatarUrl: '/agents/staff-designer.jpg',
   },
   {
     username: 'staff.social',
@@ -207,6 +209,7 @@ export const STAFF_AGENTS: readonly StaffAgentDef[] = [
     personnelCode: 'STAFF-SOCIAL',
     jobTitle: 'سوشال',
     department: 'بازاریابی',
+    avatarUrl: '/agents/staff-social.jpg',
   },
   {
     username: 'staff.shop',
@@ -218,6 +221,7 @@ export const STAFF_AGENTS: readonly StaffAgentDef[] = [
     personnelCode: 'STAFF-SHOP',
     jobTitle: 'مدیر تامین فروشگاه',
     department: 'فروشگاه',
+    avatarUrl: '/agents/staff-shop.jpg',
   },
   {
     username: 'staff.content',
@@ -229,6 +233,7 @@ export const STAFF_AGENTS: readonly StaffAgentDef[] = [
     personnelCode: 'STAFF-CONTENT',
     jobTitle: 'تولید محتوا',
     department: 'محتوا',
+    avatarUrl: '/agents/staff-content.jpg',
   },
 ];
 

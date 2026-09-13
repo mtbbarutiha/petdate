@@ -1803,13 +1803,16 @@ export function listAdminAccounts(opts?: { includeInactive?: boolean }): AdminAc
 }
 
 function mapAdminAccount(r: Record<string, unknown>): AdminAccount {
+  const username = String(r.username);
+  const displayName = String(r.display_name || '');
   return {
     id: Number(r.id),
-    username: String(r.username),
+    username,
     roleKey: String(r.role_key),
-    displayName: String(r.display_name || ''),
+    displayName,
     isActive: Number(r.is_active) === 1,
     createdAt: String(r.created_at || ''),
+    avatarUrl: avatarUrlForAdminActor({ username, displayName }),
   };
 }
 

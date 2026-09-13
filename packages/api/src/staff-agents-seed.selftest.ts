@@ -20,10 +20,13 @@ async function main() {
   const {
     actorHasPermission,
     ensureHrSchema,
+    getEmployee,
     listAdminAccounts,
     listAdminRoles,
+    listEmployees,
     resolveAdminActor,
   } = await import('./hr-service');
+  const { getDb } = await import('./db');
   const { TEAM_AGENTS, STAFF_AGENTS, staffAgentsForTeamSlug } = await import('@petdate/shared');
   const { ensureAllTeamAgents, ensureTeamAgentBySlug } = await import('./services/team-agents');
 
@@ -45,13 +48,48 @@ async function main() {
   }
 
   const accounts = listAdminAccounts({ includeInactive: true });
+  const { employees } = listEmployees({ limit: 500 });
   for (const agent of STAFF_AGENTS) {
     const row = accounts.find((a) => a.username === agent.username);
     assert(row, `account ${agent.username} missing`);
     assert(row!.roleKey === agent.roleKey, `${agent.username} role ${row!.roleKey}`);
     assert(row!.displayName === agent.displayName, `${agent.username} display name`);
     assert(row!.isActive, `${agent.username} active`);
+    assert(row!.avatarUrl === agent.avatarUrl, `${agent.username} account avatar`);
+
+    const emp = employees.find((e) => e.personnelCode === agent.personnelCode);
+    assert(emp, `HR employee ${agent.personnelCode} missing`);
+    assert(emp!.username === agent.username, `${agent.username} HR username`);
+    assert(emp!.firstName === agent.firstName, `${agent.username} first`);
+    assert(emp!.lastName === agent.lastName, `${agent.username} last`);
+    assert(emp!.jobTitle === agent.jobTitle, `${agent.username} job`);
+    assert(emp!.department === agent.department, `${agent.username} department`);
+    assert(emp!.orgEmail === agent.orgEmail, `${agent.username} org email`);
+    assert(emp!.avatarUrl === agent.avatarUrl, `${agent.username} HR avatar`);
+    assert(!String(emp!.nationalId || '').trim(), `${agent.username} must not invent national id`);
+    assert(!String(emp!.mobile || '').trim(), `${agent.username} must not invent phone`);
+    assert(emp!.incomeModelId == null, `${agent.username} must not invent salary model`);
   }
+
+  const designerEmp = employees.find((e) => e.personnelCode === 'STAFF-DESIGNER')!;
+  getDb()
+    .prepare(`UPDATE hr_employees SET avatar_url = '', first_name = '' WHERE id = ?`)
+    .run(designerEmp.id);
+  getDb()
+    .prepare(`UPDATE admin_accounts SET display_name = 'old-label' WHERE username = 'staff.designer'`)
+    .run();
+  ensureHrSchema();
+  const designerAfter = getEmployee(designerEmp.id)!;
+  assert(designerAfter.avatarUrl === '/agents/staff-designer.jpg', 're-seed fills ops avatar');
+  assert(designerAfter.firstName === 'گرافیست', 're-seed fills first name');
+  assert(designerAfter.username === 'staff.designer', 're-seed keeps username');
+  assert(!String(designerAfter.nationalId || '').trim(), 're-seed still no national id');
+  assert(!String(designerAfter.mobile || '').trim(), 're-seed still no phone');
+  const designerAcct = listAdminAccounts({ includeInactive: true }).find(
+    (a) => a.username === 'staff.designer'
+  );
+  assert(designerAcct?.displayName === 'گرافیست', 're-seed restores display name');
+  assert(designerAcct?.roleKey === 'designer', 're-seed keeps role');
 
   const sanaz = resolveAdminActor({ username: 'sanaz', password: 'staff-temp-12' });
   assert(sanaz?.role === 'support', 'sanaz login is support not vet');

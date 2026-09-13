@@ -12,7 +12,10 @@ import { getDb } from './db';
 import {
   createAdminAccount,
   createEmployee,
+  getEmployee,
   getEmployeePlainPassword,
+  updateAdminAccount,
+  updateEmployee,
 } from './hr-service';
 
 function db() {
@@ -61,9 +64,44 @@ function findAccountId(username: string): number | undefined {
   return row?.id;
 }
 
+/** Roster fields from StaffAgentDef — never national ID, phone, or pay. */
+function syncEmployeeRosterFields(id: number, agent: StaffAgentDef): void {
+  const emp = getEmployee(id);
+  if (!emp) return;
+  const currentAvatar = String(emp.avatarUrl || '').trim();
+  const customUpload = Boolean(currentAvatar) && !currentAvatar.startsWith('/agents/');
+  const nextAvatar = customUpload ? currentAvatar : agent.avatarUrl;
+  const needs =
+    emp.firstName !== agent.firstName ||
+    emp.lastName !== agent.lastName ||
+    emp.personnelCode !== agent.personnelCode ||
+    emp.jobTitle !== agent.jobTitle ||
+    emp.department !== agent.department ||
+    emp.orgEmail !== agent.orgEmail ||
+    currentAvatar !== nextAvatar;
+  if (!needs) return;
+  try {
+    updateEmployee(id, {
+      firstName: agent.firstName,
+      lastName: agent.lastName,
+      personnelCode: agent.personnelCode,
+      username: agent.username,
+      orgEmail: agent.orgEmail,
+      jobTitle: agent.jobTitle,
+      department: agent.department,
+      avatarUrl: nextAvatar,
+    });
+  } catch {
+    /* unique-code race / lock — next boot retries */
+  }
+}
+
 function ensureEmployee(agent: StaffAgentDef, password: string | undefined): number | undefined {
   const existing = findEmployeeId(agent);
-  if (existing) return existing;
+  if (existing) {
+    syncEmployeeRosterFields(existing, agent);
+    return existing;
+  }
   try {
     const emp = createEmployee({
       firstName: agent.firstName,
@@ -77,17 +115,28 @@ function ensureEmployee(agent: StaffAgentDef, password: string | undefined): num
       cooperationType: 'تمام وقت',
       contractStatus: 'در حال همکاری',
       accessStatus: 'فعال',
-      avatarUrl: agent.avatarUrl || '',
+      avatarUrl: agent.avatarUrl,
       password,
     });
     return emp.id;
   } catch {
-    return findEmployeeId(agent);
+    const raced = findEmployeeId(agent);
+    if (raced) syncEmployeeRosterFields(raced, agent);
+    return raced;
   }
 }
 
 function ensureAccount(agent: StaffAgentDef, password: string): void {
-  if (findAccountId(agent.username)) return;
+  const existing = findAccountId(agent.username);
+  if (existing) {
+    try {
+      updateAdminAccount(existing, { displayName: agent.displayName });
+    } catch {
+      /* role/account edge — non-fatal */
+    }
+    return;
+  }
+  if (password.length < 6) return;
   try {
     createAdminAccount({
       username: agent.username,
@@ -115,8 +164,6 @@ export function seedStaffAgentRoster(): void {
       envPassword ||
       (empId ? getEmployeePlainPassword(empId) : '') ||
       '';
-    if (password.length >= 6) {
-      ensureAccount(agent, password);
-    }
+    ensureAccount(agent, password);
   }
 }

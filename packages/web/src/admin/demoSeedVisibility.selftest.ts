@@ -27,6 +27,8 @@ assert.match(crm, /DemoSeedToggle/, 'CRM customers use toggle');
 assert.match(service, /DemoSeedToggle/, 'timesheet uses toggle');
 assert.match(sales, /DemoSeedToggle/, 'sales list uses toggle');
 assert.match(rbac, /DemoSeedToggle/, 'RBAC accounts use toggle');
+assert.match(rbac, /AdminThumb/, 'RBAC accounts show personnel photos');
+assert.match(rbac, /a\.avatarUrl/, 'RBAC account rows read avatarUrl');
 assert.match(rbac, /<b>\{r\.nameFa\}<\/b>/, 'role name stays as text');
 assert.doesNotMatch(
   rbac,
