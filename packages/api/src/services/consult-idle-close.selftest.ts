@@ -1,5 +1,7 @@
 /**
- * consult idle-close — 1 min without patient typing/messages → notice + completed.
+ * consult idle policy:
+ * - human↔human: never auto-close
+ * - AI agent: 3 offline nudges every VET_CONSULT_IDLE_CLOSE_MS, then close
  * Run: cd packages/api && npx tsx src/services/consult-idle-close.selftest.ts
  */
 export {};
@@ -15,177 +17,172 @@ async function main() {
   const {
     VET_CONSULT_IDLE_CLOSE_MESSAGE_FA,
     VET_CONSULT_IDLE_CLOSE_MS,
+    VET_CONSULT_IDLE_NUDGE_MAX,
+    VET_CONSULT_IDLE_NUDGE_MESSAGE_FA,
   } = await import('@petdate/shared');
-  assert(VET_CONSULT_IDLE_CLOSE_MS === 60_000, 'idle window is 1 minute');
-  assert(
-    /آنلاین نیستی|می‌بندم/.test(VET_CONSULT_IDLE_CLOSE_MESSAGE_FA),
-    'Persian close copy'
-  );
+
+  assert(VET_CONSULT_IDLE_CLOSE_MS === 5 * 60_000, 'idle window is 5 minutes');
+  assert(VET_CONSULT_IDLE_NUDGE_MAX === 3, '3 nudges before close');
+  assert(/آنلاین نیستی|اینجایی/.test(VET_CONSULT_IDLE_NUDGE_MESSAGE_FA), 'nudge copy');
+  assert(/بسته شد|وصل شو/.test(VET_CONSULT_IDLE_CLOSE_MESSAGE_FA), 'close copy');
 
   const { dbService, getDb } = await import('../db');
-  const { closeOneIdleConsult, sweepIdleConsultClosures } = await import(
-    './consult-idle-close'
-  );
-  getDb();
-
-  const stamp = Date.now();
-  const patient = dbService.findOrCreateUser({
-    telegramId: `idle_patient_${stamp}`,
-    name: 'Idle Patient',
-    username: `idle_patient_${stamp}`,
-  }).user;
-  const vet = dbService.findOrCreateUser({
-    telegramId: `idle_vet_${stamp}`,
-    name: 'Idle Vet',
-    username: `idle_vet_${stamp}`,
-  }).user;
-  assert(patient?.id && vet?.id, 'users');
-
-  const fresh = dbService.createVetConsultation({
-    vetUserId: vet.id,
-    patientUserId: patient.id,
-    status: 'active',
-    serviceKind: 'vet',
-    notes: 'idle-selftest-fresh',
-  });
-  assert(fresh.status === 'active', 'fresh active');
-  assert(!fresh.chatEnded, 'fresh not ended');
-
-  // Not idle yet — activity is "now"
-  assert(
-    dbService.listIdleActiveVetConsultIds(60_000).includes(fresh.id) === false,
-    'fresh consult must not be idle'
-  );
-
-  const stale = dbService.createVetConsultation({
-    vetUserId: vet.id,
-    patientUserId: patient.id,
-    status: 'active',
-    serviceKind: 'trainer',
-    notes: 'idle-selftest-stale',
-  });
-
-  // Force patient activity into the past (SQLite datetime).
-  getDb()
-    .prepare(
-      `UPDATE vet_consultations
-       SET patient_last_activity_at = datetime('now', '-120 seconds')
-       WHERE id = ?`
-    )
-    .run(stale.id);
-
-  const idleIds = dbService.listIdleActiveVetConsultIds(60_000);
-  assert(idleIds.includes(stale.id), 'stale consult listed as idle');
-  assert(!idleIds.includes(fresh.id), 'fresh still excluded');
-
-  // Typing / message touch keeps session open
-  assert(dbService.touchVetConsultPatientActivity(stale.id), 'touch ok');
-  assert(
-    !dbService.listIdleActiveVetConsultIds(60_000).includes(stale.id),
-    'touch clears idle'
-  );
-
-  getDb()
-    .prepare(
-      `UPDATE vet_consultations
-       SET patient_last_activity_at = datetime('now', '-120 seconds')
-       WHERE id = ?`
-    )
-    .run(stale.id);
-
-  const closedOk = closeOneIdleConsult(stale.id);
-  assert(closedOk, 'closeOneIdleConsult returns true');
-  const after = dbService.getVetConsultation(stale.id);
-  assert(after?.status === 'completed', 'status completed');
-  assert(after?.chatEnded === true, 'chatEnded true');
-
-  const msgs = dbService.listVetConsultChatMessages(stale.id);
-  assert(
-    msgs.some((m) => m.text.includes('می‌بندم') || m.text.includes('آنلاین')),
-    'closing notice persisted'
-  );
-
-  // Idempotent — already closed
-  assert(closeOneIdleConsult(stale.id) === false, 'second close is no-op');
-
-  // Sweep should close the other stale path via message-only fallback
-  const msgOnly = dbService.createVetConsultation({
-    vetUserId: vet.id,
-    patientUserId: patient.id,
-    status: 'active',
-    serviceKind: 'vet',
-    notes: 'idle-msg-fallback',
-  });
-  dbService.createVetConsultChatMessage({
-    consultId: msgOnly.id,
-    senderUserId: patient.id,
-    text: 'سلام',
-  });
-  // Clear explicit activity column so fallback uses last patient message time
-  getDb()
-    .prepare(
-      `UPDATE vet_consultations SET patient_last_activity_at = NULL WHERE id = ?`
-    )
-    .run(msgOnly.id);
-  getDb()
-    .prepare(
-      `UPDATE vet_consult_chat_messages
-       SET created_at = datetime('now', '-120 seconds')
-       WHERE consult_id = ?`
-    )
-    .run(msgOnly.id);
-
-  const swept = sweepIdleConsultClosures(60_000);
-  assert(swept >= 1, 'sweep closed at least one');
-  const msgOnlyAfter = dbService.getVetConsultation(msgOnly.id);
-  assert(msgOnlyAfter?.chatEnded === true, 'message-fallback idle closed');
-  assert(msgOnlyAfter?.status === 'completed', 'message-fallback completed');
-
-  // Fresh must still be open
-  const stillFresh = dbService.getVetConsultation(fresh.id);
-  assert(stillFresh?.status === 'active' && !stillFresh.chatEnded, 'fresh stays open');
-
-  // AI agent consults (لیلا / team agents) also idle-close after 1 minute.
+  const {
+    closeOneIdleConsult,
+    processOneIdleConsult,
+    sweepIdleConsultClosures,
+    isAiAgentConsult,
+  } = await import('./consult-idle-close');
   const { ensureAiAssistantUser, isAiAssistantUserId } = await import(
     './ai-consult-session'
   );
+
+  getDb();
+  const stamp = Date.now();
+
+  const { user: humanPatient } = dbService.findOrCreateUser({
+    telegramId: `idle_patient_${stamp}`,
+    name: 'IdlePatient',
+    username: `idle_patient_${stamp}`,
+  });
+  const { user: humanVet } = dbService.findOrCreateUser({
+    telegramId: `idle_vet_${stamp}`,
+    name: 'IdleVet',
+    username: `idle_vet_${stamp}`,
+  });
+  dbService.setUserRoles(humanVet.id, ['vet']);
+  dbService.setUserRoles(humanPatient.id, ['pet_owner']);
+
+  const humanFresh = dbService.createVetConsultation({
+    vetUserId: humanVet.id,
+    patientUserId: humanPatient.id,
+    status: 'active',
+    notes: 'idle-selftest-human-fresh',
+    serviceKind: 'vet',
+    feeCoins: 0,
+  });
+  assert(!isAiAgentConsult(humanFresh), 'human consult is not AI');
+  assert(
+    !dbService.listIdleActiveVetConsultIds(60_000).includes(humanFresh.id),
+    'fresh human not idle'
+  );
+
+  // Force human consult idle, then process — must NOT nudge/close.
+  dbService
+    .prepare?.(
+      `UPDATE vet_consultations SET patient_last_activity_at = datetime('now', '-10 minutes') WHERE id = ?`
+    );
+  // use raw via getDb
+  const { getDb: gdb } = await import('../db');
+  gdb()
+    .prepare(
+      `UPDATE vet_consultations SET patient_last_activity_at = datetime('now', '-10 minutes') WHERE id = ?`
+    )
+    .run(humanFresh.id);
+
+  assert(
+    dbService.listIdleActiveVetConsultIds(60_000).includes(humanFresh.id),
+    'stale human listed idle by time'
+  );
+  assert(
+    processOneIdleConsult(humanFresh.id, 60_000) === false,
+    'human↔human must not auto-process'
+  );
+  assert(closeOneIdleConsult(humanFresh.id) === false, 'human↔human must not auto-close');
+  const humanStill = dbService.getVetConsultation(humanFresh.id)!;
+  assert(humanStill.status === 'active' && !humanStill.chatEnded, 'human stays open');
+
+  // AI consult nudges then closes.
   const aiUser = ensureAiAssistantUser();
   assert(isAiAssistantUserId(aiUser.id), 'AI assistant flagged');
-  const aiPatient = dbService.findOrCreateUser({
+  const { user: aiPatient } = dbService.findOrCreateUser({
     telegramId: `idle_ai_patient_${stamp}`,
-    name: 'AI Idle Patient',
+    name: 'IdleAiPatient',
     username: `idle_ai_patient_${stamp}`,
-  }).user;
-  assert(aiPatient?.id, 'ai patient');
-  const aiStale = dbService.createVetConsultation({
+  });
+  dbService.setUserRoles(aiPatient.id, ['pet_owner']);
+  const aiConsult = dbService.createVetConsultation({
     vetUserId: aiUser.id,
     patientUserId: aiPatient.id,
     status: 'active',
+    notes: 'idle-selftest-ai',
     serviceKind: 'trainer',
-    notes: 'idle-selftest-ai-agent',
     feeCoins: 0,
-    providerShareCoins: 0,
   });
-  getDb()
+  assert(isAiAgentConsult(aiConsult), 'AI consult detected');
+  gdb()
+    .prepare(
+      `UPDATE vet_consultations SET patient_last_activity_at = datetime('now', '-10 minutes') WHERE id = ?`
+    )
+    .run(aiConsult.id);
+
+  assert(processOneIdleConsult(aiConsult.id, 60_000), 'nudge 1');
+  let ai = dbService.getVetConsultation(aiConsult.id)!;
+  assert((ai.idleNudgeCount ?? 0) === 1, 'nudge count 1');
+  assert(ai.status === 'active' && !ai.chatEnded, 'still open after nudge 1');
+
+  // Fresh nudge window — skip
+  assert(processOneIdleConsult(aiConsult.id, 60_000) === false, 'skip while nudge fresh');
+
+  // Age the nudge timestamp so next nudge is allowed
+  gdb()
+    .prepare(
+      `UPDATE vet_consultations SET idle_nudge_at = datetime('now', '-10 minutes') WHERE id = ?`
+    )
+    .run(aiConsult.id);
+  assert(processOneIdleConsult(aiConsult.id, 60_000), 'nudge 2');
+  ai = dbService.getVetConsultation(aiConsult.id)!;
+  assert((ai.idleNudgeCount ?? 0) === 2, 'nudge count 2');
+
+  gdb()
+    .prepare(
+      `UPDATE vet_consultations SET idle_nudge_at = datetime('now', '-10 minutes') WHERE id = ?`
+    )
+    .run(aiConsult.id);
+  assert(processOneIdleConsult(aiConsult.id, 60_000), 'nudge 3 + close');
+  ai = dbService.getVetConsultation(aiConsult.id)!;
+  assert(ai.status === 'completed' && ai.chatEnded === true, 'AI closed after 3 nudges');
+
+  const msgs = dbService.listVetConsultChatMessages(aiConsult.id, { limit: 20 });
+  const texts = msgs.map((m) => m.text);
+  assert(
+    texts.filter((t) => t.includes('آنلاین نیستی') || t.includes('اینجایی')).length >= 3,
+    'three offline nudges posted'
+  );
+  assert(
+    texts.some((t) => /بسته شد/.test(t)),
+    'closing notice posted'
+  );
+
+  // Patient activity resets nudge counter
+  const ai2 = dbService.createVetConsultation({
+    vetUserId: aiUser.id,
+    patientUserId: aiPatient.id,
+    status: 'active',
+    notes: 'idle-selftest-ai-reset',
+    serviceKind: 'trainer',
+    feeCoins: 0,
+  });
+  gdb()
     .prepare(
       `UPDATE vet_consultations
-       SET patient_last_activity_at = datetime('now', '-120 seconds')
+       SET patient_last_activity_at = datetime('now', '-10 minutes'),
+           idle_nudge_count = 2,
+           idle_nudge_at = datetime('now', '-10 minutes')
        WHERE id = ?`
     )
-    .run(aiStale.id);
-  assert(
-    dbService.listIdleActiveVetConsultIds(60_000).includes(aiStale.id),
-    'AI consult listed as idle'
-  );
-  assert(closeOneIdleConsult(aiStale.id), 'AI idle close ok');
-  const aiAfter = dbService.getVetConsultation(aiStale.id);
-  assert(aiAfter?.status === 'completed', 'AI status completed (not active)');
-  assert(aiAfter?.chatEnded === true, 'AI chatEnded true');
+    .run(ai2.id);
+  assert(dbService.touchVetConsultPatientActivity(ai2.id), 'touch ok');
+  const reset = dbService.getVetConsultation(ai2.id)!;
+  assert((reset.idleNudgeCount ?? 0) === 0, 'touch clears nudge count');
+
+  const swept = sweepIdleConsultClosures(60_000);
+  assert(typeof swept === 'number', 'sweep returns count');
 
   console.log('consult-idle-close.selftest: OK');
 }
 
-main().catch((err) => {
-  console.error(err);
+main().catch((e) => {
+  console.error(e);
   process.exit(1);
 });

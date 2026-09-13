@@ -719,14 +719,21 @@ export type VetConsultStatus =
 export const VET_CONSULT_REQUEST_TTL_MS = PLAYDATE_REQUEST_TTL_MS;
 
 /**
- * Active consult chats auto-close after this long without patient typing / messages.
- * Server-side sweep uses the same window (not client-only timers).
+ * Idle window for AI (robot) consults between offline nudges.
+ * Human↔human chats never auto-close.
  */
-export const VET_CONSULT_IDLE_CLOSE_MS = 60_000;
+export const VET_CONSULT_IDLE_CLOSE_MS = 5 * 60_000;
 
-/** System line posted when an idle consult is closed. */
+/** How many «آنلاین نیستی» nudges before the AI chat is closed. */
+export const VET_CONSULT_IDLE_NUDGE_MAX = 3;
+
+/** Soft nudge while the patient is idle in an AI consult. */
+export const VET_CONSULT_IDLE_NUDGE_MESSAGE_FA =
+  'به‌نظر می‌رسه آنلاین نیستی — هنوز اینجایی؟';
+
+/** Final line when an idle AI consult is closed after nudges. */
 export const VET_CONSULT_IDLE_CLOSE_MESSAGE_FA =
-  'اگر آنلاین نیستی، چت را می‌بندم.';
+  'چون پاسخی ندادید، این گفتگو بسته شد. هر وقت برگشتی دوباره وصل شو.';
 
 /** رکورد مشاوره — برای لیست بیماران دامپزشک */
 export interface VetConsultation {
@@ -750,6 +757,10 @@ export interface VetConsultation {
   chatSecure?: boolean;
   /** چت از طرف یکی از کاربران قطع شده */
   chatEnded?: boolean;
+  /** AI idle nudge count (human↔human never nudged/closed) */
+  idleNudgeCount?: number;
+  /** When the last idle nudge was sent */
+  idleNudgeAt?: string;
   createdAt: string;
   /** آخرین پیام یا ایجاد — برای مرتب‌سازی inbox */
   lastActivityAt?: string;

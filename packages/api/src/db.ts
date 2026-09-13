@@ -1211,6 +1211,12 @@ function migrateSchema() {
   if (!vcNames.has('patient_last_activity_at')) {
     db.exec('ALTER TABLE vet_consultations ADD COLUMN patient_last_activity_at TEXT');
   }
+  if (!vcNames.has('idle_nudge_count')) {
+    db.exec('ALTER TABLE vet_consultations ADD COLUMN idle_nudge_count INTEGER NOT NULL DEFAULT 0');
+  }
+  if (!vcNames.has('idle_nudge_at')) {
+    db.exec('ALTER TABLE vet_consultations ADD COLUMN idle_nudge_at TEXT');
+  }
 
   const vchatCols = db
     .prepare('PRAGMA table_info(vet_consult_chat_messages)')
@@ -2663,6 +2669,11 @@ function mapVetConsultation(row: Record<string, unknown>): VetConsultation {
     vetPaidAt: (row.vet_paid_at as string | undefined) ?? undefined,
     chatSecure: Boolean(row.chat_secure),
     chatEnded: Boolean(row.chat_ended),
+    idleNudgeCount:
+      row.idle_nudge_count != null && Number.isFinite(Number(row.idle_nudge_count))
+        ? Math.max(0, Math.floor(Number(row.idle_nudge_count)))
+        : 0,
+    idleNudgeAt: (row.idle_nudge_at as string | undefined) ?? undefined,
     createdAt: row.created_at as string,
     lastActivityAt:
       (row.last_activity_at as string | undefined) ??
@@ -6637,13 +6648,31 @@ export const dbService = {
     const result = db
       .prepare(
         `UPDATE vet_consultations
-         SET patient_last_activity_at = datetime('now')
+         SET patient_last_activity_at = datetime('now'),
+             idle_nudge_count = 0,
+             idle_nudge_at = NULL
          WHERE id = ?
            AND status = 'active'
            AND COALESCE(chat_ended, 0) = 0`
       )
       .run(id);
     return result.changes > 0;
+  },
+
+  /** Record an AI idle nudge (1..N). Returns updated consult or null. */
+  bumpVetConsultIdleNudge(id: number): VetConsultation | null {
+    const result = db
+      .prepare(
+        `UPDATE vet_consultations
+         SET idle_nudge_count = COALESCE(idle_nudge_count, 0) + 1,
+             idle_nudge_at = datetime('now')
+         WHERE id = ?
+           AND status = 'active'
+           AND COALESCE(chat_ended, 0) = 0`
+      )
+      .run(id);
+    if (result.changes === 0) return this.getVetConsultation(id);
+    return this.getVetConsultation(id);
   },
 
   /**
