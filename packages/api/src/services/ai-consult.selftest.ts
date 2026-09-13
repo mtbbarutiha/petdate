@@ -8,6 +8,12 @@ process.env.DATABASE_URL = '';
 process.env.DATABASE_PATH = `/tmp/petdate-selftest-ai-consult-${process.pid}.db`;
 delete process.env.AI_CONSULT_API_KEY;
 delete process.env.OPENAI_API_KEY;
+delete process.env.XAI_API_KEY;
+delete process.env.GROQ_API_KEY;
+delete process.env.OPENROUTER_API_KEY;
+delete process.env.AI_CONSULT_FALLBACK_API_KEY;
+// Deterministic offline selftests — do not hit keyless Pollinations over the network.
+process.env.AI_CONSULT_DISABLE_POLLINATIONS = '1';
 
 function assert(cond: unknown, msg: string): asserts cond {
   if (!cond) throw new Error(msg);
@@ -27,7 +33,13 @@ async function main() {
     trainerQuestionUnknownOffline,
     buildAiConsultSystemPrompt,
     buildLlmUserContent,
+    resetAiConsultProviderHealth,
+    isAiConsultLive,
+    isAiConsultConfigured,
+    aiConsultProviderLabel,
+    listAiConsultProviders,
   } = await import('./ai-consult');
+  resetAiConsultProviderHealth();
   const {
     startAiFallbackConsult,
     isAiAssistantUserId,
@@ -514,14 +526,12 @@ async function main() {
   assert(leashTip.text.length > 280, 'leash offline advice is detailed');
 
   const { trainerShouldGoOnline } = await import('./ai-consult');
-  const prevDisablePollinations = process.env.AI_CONSULT_DISABLE_POLLINATIONS;
+  resetAiConsultProviderHealth();
   process.env.AI_CONSULT_DISABLE_POLLINATIONS = '1';
   assert(
     !trainerShouldGoOnline({ kind: 'trainer', userMessage: 'چطور بشین یاد بگیره؟' }),
     'without API key (and Pollinations disabled), known topic does not force online'
   );
-  if (prevDisablePollinations === undefined) delete process.env.AI_CONSULT_DISABLE_POLLINATIONS;
-  else process.env.AI_CONSULT_DISABLE_POLLINATIONS = prevDisablePollinations;
   assert(
     trainerQuestionUnknownOffline({
       kind: 'trainer',
@@ -530,6 +540,7 @@ async function main() {
     'out-of-domain gibberish is unknown offline'
   );
   process.env.AI_CONSULT_API_KEY = 'test-key-not-used';
+  assert(isAiConsultLive(), 'fresh key counts as live until billing failure');
   assert(
     trainerShouldGoOnline({
       kind: 'trainer',
@@ -543,6 +554,7 @@ async function main() {
   );
   delete process.env.AI_CONSULT_API_KEY;
   delete process.env.OPENAI_API_KEY;
+  resetAiConsultProviderHealth();
 
   {
     const { offlineUnknownBestEffortReply } = await import('./ai-consult');
@@ -561,6 +573,7 @@ async function main() {
     assert(/فاصله|جایزه|آفرین|تشویق/.test(noKey.text), 'unknown without key still coaches');
 
     process.env.AI_CONSULT_API_KEY = 'test-key-not-used';
+    resetAiConsultProviderHealth();
     const failedOnline = await generateAiConsultAdvice({
       kind: 'trainer',
       userMessage: unknownQ,
@@ -571,6 +584,7 @@ async function main() {
     assert(/فاصله|جایزه|آفرین|تشویق/.test(failedOnline.text), 'failed online still coaches');
     delete process.env.AI_CONSULT_API_KEY;
     delete process.env.OPENAI_API_KEY;
+    resetAiConsultProviderHealth();
 
     const copy = offlineUnknownBestEffortReply({ kind: 'trainer', petName: 'Teddy', userMessage: unknownQ });
     assert(/Teddy/.test(copy), 'best-effort uses pet name');
@@ -786,6 +800,86 @@ async function main() {
   assert(recent[3]!.text === 'reply 24', 'newest message in window');
 
   dbService.deleteUserByTelegramId(tg);
+
+  // Provider fallback: xAI 403 → Groq succeeds; llmLive honest after dead xAI.
+  {
+    const { trainerShouldGoOnline: shouldOnline } = await import('./ai-consult');
+    resetAiConsultProviderHealth();
+    process.env.AI_CONSULT_DISABLE_POLLINATIONS = '1';
+    process.env.XAI_API_KEY = 'xai-test-dead-key';
+    process.env.XAI_MODEL = 'grok-test';
+    assert(isAiConsultConfigured(), 'xai alone is configured');
+    assert(isAiConsultLive(), 'xai starts live until first billing failure');
+    assert(aiConsultProviderLabel() === 'xai', 'label xai');
+
+    const origFetch = globalThis.fetch;
+    let groqHits = 0;
+    globalThis.fetch = (async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes('api.x.ai')) {
+        return new Response(
+          JSON.stringify({
+            code: 'permission-denied',
+            error: 'Your newly created team does not have any credits or licenses yet.',
+          }),
+          { status: 403, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      if (url.includes('api.groq.com')) {
+        groqHits += 1;
+        return new Response(
+          JSON.stringify({
+            choices: [
+              {
+                message: {
+                  content: 'باشه برای دست بده از شکل‌دهی پنجه شروع کن — آفرین و جایزه فوری.',
+                },
+              },
+            ],
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        );
+      }
+      return new Response('unexpected', { status: 500 });
+    }) as typeof fetch;
+
+    try {
+      const onlyXai = await generateAiConsultAdvice({
+        kind: 'trainer',
+        userMessage: 'دست بده چطوری یادش بدم',
+        petName: 'رکس',
+      });
+      assert(onlyXai.source === 'offline', 'dead xAI alone falls back to offline KB');
+      assert(/دست|پنجه|تشویق|آفرین|جایزه/.test(onlyXai.text), 'offline paw coaching after xAI 403');
+      assert(!isAiConsultLive(), 'llmLive false after xAI billing 403');
+      assert(
+        !shouldOnline({ kind: 'trainer', userMessage: 'دست بده چطوری یادش بدم' }),
+        'do not keep hammering dead xAI',
+      );
+
+      process.env.GROQ_API_KEY = 'gsk-test-fallback';
+      assert(listAiConsultProviders().some((p) => p.id === 'groq'), 'groq listed');
+      assert(isAiConsultLive(), 'groq restores live');
+      assert(aiConsultProviderLabel() === 'groq', 'live label prefers usable groq over dead xai');
+
+      const viaGroq = await generateAiConsultAdvice({
+        kind: 'trainer',
+        userMessage: 'دست بده چطوری یادش بدم',
+        petName: 'رکس',
+      });
+      assert(viaGroq.source === 'llm', 'groq fallback yields live llm');
+      assert(/دست|پنجه|آفرین/.test(viaGroq.text), 'groq reply content');
+      assert(groqHits >= 1, 'groq endpoint called');
+    } finally {
+      globalThis.fetch = origFetch;
+      delete process.env.XAI_API_KEY;
+      delete process.env.XAI_MODEL;
+      delete process.env.GROQ_API_KEY;
+      process.env.AI_CONSULT_DISABLE_POLLINATIONS = '1';
+      resetAiConsultProviderHealth();
+    }
+  }
+
   console.log('ai-consult.selftest: ok');
 }
 
