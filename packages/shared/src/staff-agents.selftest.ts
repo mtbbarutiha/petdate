@@ -17,8 +17,8 @@ import {
   staffAgentsForTeamSlug,
 } from './index';
 
-assert.equal(STAFF_ROLE_KEYS.length, 7);
-assert.equal(STAFF_ROLE_DEFS.length, 7);
+assert.equal(STAFF_ROLE_KEYS.length, 8);
+assert.equal(STAFF_ROLE_DEFS.length, 8);
 assert.equal(STAFF_AGENTS.length, 9);
 assert.equal(STAFF_AGENTS.filter((a) => a.teamAgentSlug).length, 5);
 assert.equal(TEAM_AGENTS.length, 5);
@@ -31,8 +31,10 @@ for (const agent of TEAM_AGENTS) {
 }
 
 assert.equal(staffAgentsForTeamSlug('sanaz-ghaffari')?.username, 'sanaz');
+assert.equal(staffAgentsForTeamSlug('sanaz-ghaffari')?.roleKey, 'support');
 assert.equal(staffAgentsForTeamSlug('yalda-shabani')?.roleKey, 'support');
 assert.equal(staffAgentsForTeamSlug('faranak-ahmadi')?.roleKey, 'trainer');
+assert.equal(staffAgentsForTeamSlug('leila-kiani')?.roleKey, 'finance');
 
 assert.ok(STAFF_ROLE_PERMISSIONS.veterinarian.includes('content.write'));
 assert.ok(!STAFF_ROLE_PERMISSIONS.veterinarian.includes('admin.full'));

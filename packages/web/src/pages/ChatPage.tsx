@@ -235,6 +235,8 @@ function inboxKindBadge(c: InboxConversation, t: (k: string) => string): string 
   if (c.kind === 'playmate') return t('chats.badgePlaymate');
   if (c.serviceKind === 'trainer') return 'آموزش';
   if (c.serviceKind === 'sitter') return 'پرستار';
+  if (c.serviceKind === 'finance') return 'مالی';
+  if (c.serviceKind === 'support') return 'پشتیبانی';
   return 'مشاوره';
 }
 

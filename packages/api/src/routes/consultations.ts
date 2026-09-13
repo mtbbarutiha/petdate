@@ -238,7 +238,7 @@ consultationsRouter.post('/team-agent', async (req, res) => {
     res.status(400).json({ error: 'ایجنت پیدا نشد', reason: 'unknown_agent' });
     return;
   }
-  if (def.kind === 'support') {
+  if (def.slug === 'yalda-shabani') {
     res.status(400).json({
       error: 'برای پشتیبانی از /support/chat استفاده کنید',
       reason: 'use_support_chat',

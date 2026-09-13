@@ -19,6 +19,7 @@ assert.match(bust, /staff-roles-agents-v1/, 'cache-bust marker present');
 assert.match(bust, /petdate-web-v45-staff-roles/, 'SW cache id documented');
 
 assert.match(hr, /veterinarian:\s*'دامپزشک'/);
+assert.match(hr, /finance:\s*'مدیر مالی'/);
 assert.match(hr, /designer:\s*'گرافیست'/);
 assert.match(hr, /shop_procurement:\s*'مدیر تامین فروشگاه'/);
 assert.match(hr, /content_editor:\s*'تولید محتوا'/);

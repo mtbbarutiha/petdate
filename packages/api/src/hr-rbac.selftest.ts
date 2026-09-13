@@ -34,6 +34,7 @@ async function main() {
   assert(seeded.some((r) => r.key === 'admin'), 'admin role seeded');
   assert(seeded.some((r) => r.key === 'support'), 'support role seeded');
   assert(seeded.some((r) => r.key === 'veterinarian'), 'veterinarian role seeded');
+  assert(seeded.some((r) => r.key === 'finance'), 'finance role seeded');
   assert(seeded.some((r) => r.key === 'shop_procurement'), 'shop_procurement role seeded');
   assert(seeded.some((r) => r.key === 'content_editor'), 'content_editor role seeded');
 

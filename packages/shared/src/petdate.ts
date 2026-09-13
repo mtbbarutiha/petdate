@@ -436,8 +436,9 @@ export const VET_CREDENTIAL_STATUS_LABELS: Record<VetCredentialStatus, string> =
 };
 
 /** نوع سرویس مشاوره روی جدول vet_consultations */
-export type ConsultServiceKind = 'vet' | 'trainer' | 'sitter' | 'seeker_advice';
+export type ConsultServiceKind = 'vet' | 'trainer' | 'sitter' | 'seeker_advice' | 'finance' | 'support';
 
+/** Paid human marketplace kinds — finance/support are free AI team-chat only. */
 export const CONSULT_SERVICE_KINDS: ConsultServiceKind[] = [
   'vet',
   'trainer',
@@ -445,11 +446,20 @@ export const CONSULT_SERVICE_KINDS: ConsultServiceKind[] = [
   'seeker_advice',
 ];
 
+export const AI_CONSULT_SERVICE_KINDS: ConsultServiceKind[] = [
+  'vet',
+  'trainer',
+  'finance',
+  'support',
+];
+
 export const CONSULT_SERVICE_KIND_LABELS: Record<ConsultServiceKind, string> = {
   vet: 'مشاوره دامپزشک',
   trainer: 'مشاوره مربی',
   sitter: 'ارتباط پرستار پت',
   seeker_advice: 'مشورت با صاحبین',
+  finance: 'مشاوره مالی',
+  support: 'پشتیبانی',
 };
 
 /** وضعیت تأیید عکس عمومی (پت / آواتار) */

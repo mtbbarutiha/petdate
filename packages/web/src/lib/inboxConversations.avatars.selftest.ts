@@ -19,7 +19,7 @@ function baseConsult(over: Partial<VetConsultation> = {}): VetConsultation {
 }
 
 const leila = resolveConsultPeerAvatarUrl(
-  baseConsult({ vetName: 'لیلا کیانی', serviceKind: 'trainer' }),
+  baseConsult({ vetName: 'لیلا کیانی', serviceKind: 'finance' }),
   'as_patient',
 );
 assert.ok(leila?.includes('leila-kiani'), `leila avatar: ${leila}`);
@@ -31,7 +31,7 @@ const faranak = resolveConsultPeerAvatarUrl(
 assert.ok(faranak?.includes('faranak-ahmadi'), `faranak avatar: ${faranak}`);
 
 const sanaz = resolveConsultPeerAvatarUrl(
-  baseConsult({ vetName: 'دکتر ساناز غفاری', serviceKind: 'vet' }),
+  baseConsult({ vetName: 'ساناز غفاری', serviceKind: 'support' }),
   'as_patient',
 );
 assert.ok(sanaz?.includes('sanaz-ghaffari'), `sanaz avatar: ${sanaz}`);
