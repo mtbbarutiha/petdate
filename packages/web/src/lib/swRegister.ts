@@ -13,7 +13,7 @@ const BUST_GENERATION = 'petdate-sw-20260913-persona-roles-v47';
 const BUST_KEY = `pd_sw_bust_${BUST_GENERATION}`;
 const RELOAD_KEY = `pd_sw_reload_${BUST_GENERATION}`;
 /** Current Workbox cacheId from vite.config — never wipe this generation. */
-const ACTIVE_CACHE_ID = 'petdate-web-v47-persona-roles';
+const ACTIVE_CACHE_ID = 'petdate-web-v48-team-personas-four';
 
 function markBusted() {
   try {

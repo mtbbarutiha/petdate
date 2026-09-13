@@ -243,7 +243,7 @@ async function runQuickConnect(
     const title =
       kind === 'trainer'
         ? '🎓 فرانک احمدی — مربی آنلاین پت‌دیت'
-        : '🩺 دکتر سارا نوری';
+        : '🩺 سارا نوری';
     await ctx.reply(
       [title, result.message, result.advice ? '\n' + result.advice.slice(0, 3500) : '']
         .filter(Boolean)

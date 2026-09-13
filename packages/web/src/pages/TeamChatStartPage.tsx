@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
-import { SUPPORT_TEAM_AGENT_SLUG, getTeamAgentBySlug, teamAgentChatPath } from '@petdate/shared';
+import { getTeamAgentBySlug, teamAgentChatPath } from '@petdate/shared';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { startTeamAgentChat } from '../lib/api';
 import { loginPath } from '../lib/authRedirect';
@@ -19,7 +19,7 @@ export function TeamChatStartPage() {
   const next = teamAgentChatPath(agentSlug);
 
   useEffect(() => {
-    if (!agent || agent.slug === SUPPORT_TEAM_AGENT_SLUG || !ready || !user?.id || !token) return;
+    if (!agent || agent.kind === 'support' || !ready || !user?.id || !token) return;
     let cancelled = false;
     (async () => {
       try {
@@ -46,7 +46,7 @@ export function TeamChatStartPage() {
   if (canonicalSlug && canonicalSlug !== String(agentSlug || '').trim().toLowerCase()) {
     return <Navigate to={teamAgentChatPath(canonicalSlug)} replace />;
   }
-  if (agent.slug === SUPPORT_TEAM_AGENT_SLUG) {
+  if (agent.kind === 'support') {
     return <Navigate to="/support/chat" replace />;
   }
   if (!isLoggedIn || !hasRole || !isProfileComplete) {

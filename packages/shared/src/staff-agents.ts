@@ -118,7 +118,7 @@ export type StaffAgentDef = {
 
 /**
  * One panel account per Grok/ops agent.
- * Five named rows stay 1:1 with TEAM_AGENTS; four ops-only rows have no landing card.
+ * Four named rows stay 1:1 with TEAM_AGENTS; yalda + four ops-only rows have no landing card.
  */
 export const STAFF_AGENTS: readonly StaffAgentDef[] = [
   {
@@ -138,7 +138,7 @@ export const STAFF_AGENTS: readonly StaffAgentDef[] = [
     username: 'sara',
     orgEmail: 'sara@petdate.ir',
     roleKey: 'veterinarian',
-    displayName: 'دکتر سارا نوری',
+    displayName: 'سارا نوری',
     firstName: 'سارا',
     lastName: 'نوری',
     personnelCode: 'STAFF-SARA',
@@ -155,9 +155,9 @@ export const STAFF_AGENTS: readonly StaffAgentDef[] = [
     firstName: 'یلدا',
     lastName: 'شعبانی',
     personnelCode: 'STAFF-YALDA',
-    jobTitle: 'پشتیبانی',
+    jobTitle: 'پشتیبانی (داخلی)',
     department: 'پشتیبانی',
-    teamAgentSlug: 'yalda-shabani',
+    // Ops-only — public support face is ساناز; no separate TEAM_AGENTS row.
     avatarUrl: '/agents/yalda-shabani.jpg',
   },
   {

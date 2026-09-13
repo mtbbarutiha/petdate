@@ -83,12 +83,12 @@ const AI_TELEGRAM_ID = 'petdate_ai_assistant';
  */
 /** Default trainer face — فرانک replaces legacy «پاشا یزدانی». */
 export const AI_TRAINER_DISPLAY_NAME = 'فرانک احمدی';
-/** Support AI face — یلدا شعبانی (hub). Sanaz is the team-chat support face. */
-export const AI_SUPPORT_DISPLAY_NAME = 'یلدا شعبانی';
+/** Support AI face — ساناز غفاری (replaces یلدا). */
+export const AI_SUPPORT_DISPLAY_NAME = 'ساناز غفاری';
 /** Default finance AI face — لیلا کیانی. */
 export const AI_FINANCE_DISPLAY_NAME = 'لیلا کیانی';
-/** Default vet AI face when no human vet is online — only Sara. */
-export const AI_VET_DISPLAY_NAME = 'دکتر سارا نوری';
+/** Default vet AI face when no human vet is online — only سارا. */
+export const AI_VET_DISPLAY_NAME = 'سارا نوری';
 /** Alias — default AI fallback persona (trainer domain). */
 export const AI_ASSISTANT_DISPLAY_NAME = AI_TRAINER_DISPLAY_NAME;
 

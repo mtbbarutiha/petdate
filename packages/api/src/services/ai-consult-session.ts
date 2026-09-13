@@ -211,13 +211,13 @@ export async function startTeamAgentConsult(opts: {
 } | null> {
   const def = getTeamAgentBySlug(opts.agentSlug);
   if (!def) return null;
-  // Yalda stays on /support/chat; Sanaz (also support) uses team-chat.
-  if (def.slug === 'yalda-shabani') return null;
+  // Support (ساناز) uses /support/chat, not team-agent consult threads.
+  if (def.kind === 'support') return null;
   const user = ensureTeamAgentBySlug(def.slug);
   if (!user) return null;
   // Kind comes from the persona map (slug), not telegram-id resolve.
   const kind = def.kind;
-  if (kind !== 'vet' && kind !== 'trainer' && kind !== 'support' && kind !== 'finance') return null;
+  if (kind !== 'vet' && kind !== 'trainer' && kind !== 'finance') return null;
   const session = await startAiFallbackConsult({
     patient: opts.patient,
     serviceKind: kind,

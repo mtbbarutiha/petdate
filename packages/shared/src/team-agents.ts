@@ -1,26 +1,24 @@
 /**
- * Site team chat personas → domain AI agents (trainer | finance | support | vet).
+ * Site team chat personas → exactly 4 public faces / domain AI agents.
  *
- * Authoritative public map (Mohammad, 2026-09-13):
- *   trainer → فرانک احمدی          /team-chat/faranak-ahmadi
- *   finance → لیلا کیانی           /team-chat/leila-kiani
- *   support → ساناز غفاری          /team-chat/sanaz-ghaffari
- *             یلدا شعبانی          /support/chat  (same support engine as Sanaz)
- *   vet     → دکتر سارا نوری       /team-chat/sara-noori  (only doctor)
+ * Authoritative public map:
+ *   trainer → فرانک احمدی     /team-chat/faranak-ahmadi
+ *   finance → لیلا کیانی     /team-chat/leila-kiani
+ *   support → ساناز غفاری     /support/chat
+ *   vet     → سارا نوری       /team-chat/sara-noori  (only doctor)
  *
- * Grok Bot (گراک بات) engine ids are baked in so `/api/consultations/team-agents`
- * always exposes the live agent. Env `GROK_BOT_*_ID` can still override.
+ * یلدا شعبانی is not public — old URLs alias to ساناز.
+ * Grok Bot engine ids are baked in; env `GROK_BOT_*_ID` can still override.
  */
 
 export type TeamAgentKind = 'vet' | 'trainer' | 'support' | 'finance';
 
-/** Live Grok Bot agent ids — one per public persona (Yalda shares Sanaz support). */
+/** Live Grok Bot agent ids — one per public persona. */
 export const TEAM_AGENT_GROK_ENGINE_IDS = {
   'faranak-ahmadi': 'b6e496b5-0b15-4c9b-852d-644d3f5e411a',
   'leila-kiani': '2410554d-9496-4a60-9b15-4248dcc6e725',
   'sanaz-ghaffari': '18a4d76a-1900-49dc-964c-27d23abb31e9',
   'sara-noori': '0140b645-f844-45c1-b6d8-3f06514529de',
-  'yalda-shabani': '18a4d76a-1900-49dc-964c-27d23abb31e9',
 } as const;
 
 export type TeamAgentSlug = keyof typeof TEAM_AGENT_GROK_ENGINE_IDS;
@@ -45,13 +43,13 @@ export type TeamAgentDef = {
 };
 
 /** Query on /agents/*.jpg so browsers drop pepito lookalikes + the YS/yalda-v1 files. */
-export const TEAM_AGENT_AVATAR_CACHE_BUST = 'persona-v2';
+export const TEAM_AGENT_AVATAR_CACHE_BUST = 'persona-v3';
 
 function agentAvatar(slug: string): string {
   return `/agents/${slug}.jpg?v=${TEAM_AGENT_AVATAR_CACHE_BUST}`;
 }
 
-/** Homepage `#team` cards — four public faces (Yalda stays on /support/chat). */
+/** Homepage `#team` cards — the four public faces. */
 export const LANDING_TEAM_AGENT_SLUGS: readonly TeamAgentSlug[] = [
   'faranak-ahmadi',
   'leila-kiani',
@@ -102,7 +100,7 @@ export const TEAM_AGENTS: readonly TeamAgentDef[] = [
     slug: 'sara-noori',
     // Keep telegram id so the existing DB synthetic user is patched, not recreated.
     telegramId: 'petdate_ai_sara_nozi',
-    name: 'دکتر سارا نوری',
+    name: 'سارا نوری',
     role: 'دامپزشک',
     kind: 'vet',
     avatarUrl: agentAvatar('sara-noori'),
@@ -110,18 +108,6 @@ export const TEAM_AGENTS: readonly TeamAgentDef[] = [
     grokBotKey: 'sara_noori',
     grokBotId: TEAM_AGENT_GROK_ENGINE_IDS['sara-noori'],
     staffUsername: 'sara',
-  },
-  {
-    slug: 'yalda-shabani',
-    telegramId: 'petdate_ai_yalda_shabani',
-    name: 'یلدا شعبانی',
-    role: 'پشتیبانی',
-    kind: 'support',
-    avatarUrl: agentAvatar('yalda-shabani'),
-    cardImage: agentAvatar('yalda-shabani'),
-    grokBotKey: 'yalda_shabani',
-    grokBotId: TEAM_AGENT_GROK_ENGINE_IDS['yalda-shabani'],
-    staffUsername: 'yalda',
   },
 ] as const;
 
@@ -131,6 +117,8 @@ const TEAM_AGENT_SLUG_ALIASES: Record<string, string> = {
   'sara-nozi': 'sara-noori',
   'pasha-yazdani': 'faranak-ahmadi',
   pasha: 'faranak-ahmadi',
+  /** یلدا replaced by ساناز as sole public support face. */
+  'yalda-shabani': 'sanaz-ghaffari',
 };
 
 /**
@@ -161,8 +149,8 @@ const TEAM_AGENT_NAME_ALIASES: Record<string, string> = {
   'سارا نوری': 'sara-noori',
   'دکتر سارا نوزی': 'sara-noori',
   'سارا نوزی': 'sara-noori',
-  'یلدا شعبانی': 'yalda-shabani',
-  یلدا: 'yalda-shabani',
+  'یلدا شعبانی': 'sanaz-ghaffari',
+  یلدا: 'sanaz-ghaffari',
   'دستیار هوشمند پت‌دیت': 'faranak-ahmadi',
   'دستیار هوشمند پت': 'faranak-ahmadi',
   'دستیار هوشمند': 'faranak-ahmadi',
@@ -171,10 +159,11 @@ const TEAM_AGENT_NAME_ALIASES: Record<string, string> = {
 /** Default trainer / AI fallback face — فرانک replaces پاشا. */
 export const DEFAULT_TEAM_AGENT_SLUG: TeamAgentSlug = 'faranak-ahmadi';
 
-export const SUPPORT_TEAM_AGENT_SLUG: TeamAgentSlug = 'yalda-shabani';
+/** Support AI face — ساناز غفاری (replaces یلدا). */
+export const SUPPORT_TEAM_AGENT_SLUG: TeamAgentSlug = 'sanaz-ghaffari';
 
-/** Team-chat support face (Sanaz). Yalda stays on /support/chat. */
-export const TEAM_CHAT_SUPPORT_AGENT_SLUG: TeamAgentSlug = 'sanaz-ghaffari';
+/** @deprecated alias — same as SUPPORT_TEAM_AGENT_SLUG */
+export const TEAM_CHAT_SUPPORT_AGENT_SLUG: TeamAgentSlug = SUPPORT_TEAM_AGENT_SLUG;
 
 /** Default vet AI face when no human vet is online — only Sara. */
 export const DEFAULT_VET_TEAM_AGENT_SLUG: TeamAgentSlug = 'sara-noori';
@@ -210,6 +199,7 @@ export function getTeamAgentByGrokBotKey(key: string | null | undefined): TeamAg
   const raw = String(key || '').trim().toLowerCase();
   if (!raw) return null;
   const normalized = raw.replace(/-/g, '_');
+  if (normalized === 'yalda_shabani') return getTeamAgentBySlug('sanaz-ghaffari');
   return TEAM_AGENTS.find((a) => a.grokBotKey === normalized) ?? getTeamAgentBySlug(raw.replace(/_/g, '-'));
 }
 
@@ -241,10 +231,10 @@ export function landingTeamAgents(): TeamAgentDef[] {
   return LANDING_TEAM_AGENT_SLUGS.map((slug) => getTeamAgentBySlug(slug)!);
 }
 
-/** Yalda stays on the support hub; Sanaz (also support) uses team-chat. */
+/** Support personas use the support hub; others use /team-chat/:slug. */
 export function teamAgentChatPath(slug: string): string {
   const def = getTeamAgentBySlug(slug);
-  if (def?.slug === SUPPORT_TEAM_AGENT_SLUG) return '/support/chat';
+  if (def?.kind === 'support') return '/support/chat';
   const canonical = def?.slug || slug;
   return `/team-chat/${encodeURIComponent(canonical)}`;
 }

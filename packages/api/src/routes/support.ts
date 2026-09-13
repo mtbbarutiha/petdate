@@ -17,7 +17,7 @@ import { getUserFromBearer } from '../services/web-otp';
 
 export const supportRouter = Router();
 
-/** Canonical support AI agent — یلدا شعبانی. */
+/** Canonical support AI agent — ساناز غفاری. */
 export const SUPPORT_AGENT_NAME = AI_SUPPORT_DISPLAY_NAME;
 
 function requireUser(req: { header: (n: string) => string | undefined }) {

@@ -240,7 +240,7 @@ export const en: Dict = {
     team1: "Faranak Ahmadi",
     team2: "Leila Kiani",
     team3: "Sanaz Ghaffari",
-    team4: "Dr. Sara Noori",
+    team4: "Sara Noori",
     team5: "Yalda Shabani",
     faq1q: "Are the web and bot accounts the same?",
     faq1a: "Yes. Sign in with the same mobile; pets, requests, chats, orders, and wallet stay on one shared database.",
