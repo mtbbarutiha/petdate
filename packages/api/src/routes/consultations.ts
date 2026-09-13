@@ -5,9 +5,7 @@ import {
   CONSULT_SERVICE_KINDS,
   DEFAULT_VET_TEAM_AGENT_SLUG,
   QUICK_VET_COST,
-  TEAM_AGENTS,
   getTeamAgentBySlug,
-  teamAgentChatPath,
   vetVisitFeeCoins,
   type ConsultServiceKind,
   type VetConsultStatus,
@@ -32,6 +30,7 @@ import {
 import { startVetChatFromApi } from '../services/telegram-vet-chat-start';
 import { clearBotVetChatSessions } from '../services/bot-vet-chat-session';
 import { AI_TRAINER_DISPLAY_NAME, AI_VET_DISPLAY_NAME } from '../services/ai-consult';
+import { grokBotBridgeSummary } from '../services/grok-bot-bridge';
 import {
   decorateAiConsultDisplay,
   startAiFallbackConsult,
@@ -218,15 +217,12 @@ consultationsRouter.get('/previous-vets', (req, res) => {
 
 
 consultationsRouter.get('/team-agents', (_req, res) => {
+  const bridge = grokBotBridgeSummary();
   res.json({
-    agents: TEAM_AGENTS.map((a) => ({
-      slug: a.slug,
-      name: a.name,
-      role: a.role,
-      kind: a.kind,
-      avatarUrl: a.avatarUrl,
-      chatPath: teamAgentChatPath(a.slug),
-    })),
+    /** Same 5 personas as Grok Bot (گراک بات) roster — not a parallel system. */
+    source: bridge.source,
+    linkedGrokBots: bridge.linkedCount,
+    agents: bridge.agents,
   });
 });
 

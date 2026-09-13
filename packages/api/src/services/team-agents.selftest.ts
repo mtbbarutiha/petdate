@@ -115,6 +115,10 @@ async function main() {
   assert.ok(yalda.avatarUrl?.includes('yalda-shabani'));
   assert.equal(getTeamAgentBySlug('yalda-shabani')?.kind, 'support');
   assert.equal(TEAM_AGENTS.filter((a) => a.kind === 'support').length, 1);
+  assert.ok(TEAM_AGENTS.every((a) => a.grokBotKey));
+  const { getTeamAgentByGrokBotKey } = await import('@petdate/shared');
+  assert.equal(getTeamAgentByGrokBotKey('faranak_ahmadi')?.slug, 'faranak-ahmadi');
+  assert.equal(getTeamAgentByGrokBotKey('yalda-shabani')?.kind, 'support');
 
   const supportAttempt = await startTeamAgentConsult({ patient, agentSlug: 'yalda-shabani' });
   assert.equal(supportAttempt, null);

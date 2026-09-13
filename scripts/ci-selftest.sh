@@ -346,6 +346,7 @@ run src/services/pasha-user-tone.selftest.ts
 run src/services/speech-to-text.selftest.ts
 run src/services/ai-consult.selftest.ts
 run src/services/team-agents.selftest.ts
+run src/services/grok-bot-bridge.selftest.ts
 run src/services/consult-idle-close.selftest.ts
 run src/db/pg-compat.selftest.ts
 
