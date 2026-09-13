@@ -20,10 +20,17 @@ assert.doesNotMatch(
   /آیتم‌ها:\s*\{JSON\.stringify/,
   'does not dump raw JSON inline as RTL text under آیتم‌ها'
 );
-assert.match(page, /<pre dir="ltr">/, 'raw JSON only inside LTR pre fallback');
-assert.match(page, /admin-order-detail__raw/, 'power-user raw JSON is behind details');
+assert.match(page, /adminWantsRawJson/, 'raw JSON gated behind developer localStorage flag');
+assert.match(page, /showRawJson/, 'raw JSON only rendered when showRawJson is true');
+assert.match(
+  page,
+  /\{showRawJson \? \([\s\S]*admin-order-detail__raw[\s\S]*\) : null\}/,
+  'JSON خام details is not always mounted for normal admins'
+);
 assert.match(page, /setOpenId\(open \? null : o\.id\)/, 'close / details toggle still wired');
 assert.match(page, /patch\(o\.id, e\.target\.value\)/, 'status dropdown still patches order');
+assert.match(page, /admin-order-detail__item-title/, 'human-readable item title class');
+assert.match(page, /itemUnitPrice|itemLineTotal/, 'item prices rendered for humans');
 
 assert.match(css, /\.admin-order-detail\s*\{/, 'order detail panel CSS present');
 assert.match(

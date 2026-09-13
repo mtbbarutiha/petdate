@@ -7188,11 +7188,22 @@ body:has(.admin-app) {
   font-size: 0.9rem;
 }
 
+.admin-app .admin-order-detail__item-main {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
 .admin-app .admin-order-detail__item-title {
   min-width: 0;
   overflow-wrap: anywhere;
   font-weight: 600;
   color: var(--admin-ink);
+}
+
+.admin-app .admin-order-detail__item-sku {
+  font-size: 0.75rem;
+  font-family: var(--admin-mono);
 }
 
 .admin-app .admin-order-detail__item-qty {
@@ -7205,6 +7216,14 @@ body:has(.admin-app) {
   font-weight: 650;
   white-space: nowrap;
   color: var(--admin-ink);
+  display: grid;
+  justify-items: end;
+  gap: 2px;
+}
+
+.admin-app .admin-order-detail__item-unit {
+  font-size: 0.75rem;
+  font-weight: 500;
 }
 
 .admin-app .admin-order-detail__raw {
@@ -7249,9 +7268,9 @@ body:has(.admin-app) {
       'price price';
   }
 
-  .admin-app .admin-order-detail__item-title { grid-area: title; }
+  .admin-app .admin-order-detail__item-main { grid-area: title; }
   .admin-app .admin-order-detail__item-qty { grid-area: qty; }
-  .admin-app .admin-order-detail__item-price { grid-area: price; justify-self: start; }
+  .admin-app .admin-order-detail__item-price { grid-area: price; justify-self: start; justify-items: start; }
 }
 
 /* —— Finance deposit receipt (admin payments detail / attachments) —— */
