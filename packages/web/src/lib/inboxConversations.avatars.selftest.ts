@@ -37,7 +37,7 @@ const sanaz = resolveConsultPeerAvatarUrl(
 assert.ok(sanaz?.includes('sanaz-ghaffari'), `sanaz avatar: ${sanaz}`);
 
 const sara = resolveConsultPeerAvatarUrl(
-  baseConsult({ vetName: 'دکتر سارا نوری', serviceKind: 'vet' }),
+  baseConsult({ vetName: 'سارا نوری', serviceKind: 'vet' }),
   'as_patient',
 );
 assert.ok(sara?.includes('sara-noori'), `sara avatar: ${sara}`);

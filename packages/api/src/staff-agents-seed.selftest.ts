@@ -94,17 +94,17 @@ async function main() {
     'new env password must not replace existing hash'
   );
 
-  assert(TEAM_AGENTS.length === 5, 'five public personas');
+  assert(TEAM_AGENTS.length === 4, 'four public personas');
   const users = ensureAllTeamAgents();
-  assert(users.length === 5, 'five team-agent users');
+  assert(users.length === 4, 'four team-agent users');
   const sanazUser = ensureTeamAgentBySlug('sanaz-ghaffari')!;
   assert(sanazUser.telegramId === 'petdate_ai_sanaz_ghaffari', 'sanaz telegram id unchanged');
   assert(sanazUser.name === 'ساناز غفاری', 'sanaz display name');
   assert(sanazUser.username === 'agent_sanaz_ghaffari', 'sanaz chat username');
-  const yaldaUser = ensureTeamAgentBySlug('yalda-shabani')!;
-  assert(yaldaUser.telegramId === 'petdate_ai_yalda_shabani', 'yalda telegram id unchanged');
-  assert(staffAgentsForTeamSlug('yalda-shabani')?.username === 'yalda', 'yalda staff username');
-  assert(yaldaUser.username !== 'yalda', 'panel login must not replace agent_* chat username');
+  const yaldaAlias = ensureTeamAgentBySlug('yalda-shabani')!;
+  assert(yaldaAlias.id === sanazUser.id, 'yalda slug aliases to Sanaz synthetic user');
+  assert(staffAgentsForTeamSlug('yalda-shabani') == null, 'yalda is ops-only staff');
+  assert(yaldaAlias.username !== 'yalda', 'panel login must not replace agent_* chat username');
 
   console.log('staff-agents-seed.selftest: OK');
 }

@@ -32,7 +32,8 @@ assert.match(layout, /perm:\s*'support\.inbox'/, 'support inbox stays gated');
 assert.match(staff, /username:\s*'sanaz'/);
 assert.match(staff, /username:\s*'yalda'/);
 assert.match(staff, /username:\s*'staff\.shop'/);
-assert.match(staff, /teamAgentSlug:\s*'yalda-shabani'/);
+assert.match(staff, /teamAgentSlug:\s*'sanaz-ghaffari'/);
+assert.doesNotMatch(staff, /teamAgentSlug:\s*'yalda-shabani'/);
 
 assert.match(i18n, /"گرافیست":\s*"Graphic designer"/);
 assert.match(i18n, /"سوشال":\s*"Social"/);
