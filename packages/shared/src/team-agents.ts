@@ -8,7 +8,8 @@
  *   vet     → سارا نوری       /team-chat/sara-noori  (only doctor)
  *
  * یلدا شعبانی is not public — old URLs alias to ساناز.
- * Grok Bot engine ids are baked in; env `GROK_BOT_*_ID` can still override.
+ * Grok Bot engine ids are baked in (`grokBotId` === `grokBot.id`).
+ * `GROK_BOT_*_ID` remaps are ignored so leftover VPS env cannot swap personas.
  */
 
 export type TeamAgentKind = 'vet' | 'trainer' | 'support' | 'finance';
@@ -33,7 +34,7 @@ export type TeamAgentDef = {
   cardImage: string;
   /**
    * Stable Grok Bot (گراک بات) roster key — same identity as the off-site Bot.
-   * Env link: GROK_BOT_<KEY>_ID / GROK_BOT_<KEY>_URL (KEY = upper snake of this).
+   * Env link: GROK_BOT_<KEY>_URL (KEY = upper snake of this). ID remaps ignored.
    */
   grokBotKey: string;
   /** Canonical live Grok Bot agent id. */

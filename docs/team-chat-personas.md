@@ -15,4 +15,4 @@
 
 ## EN
 
-Public `TEAM_AGENTS` length is 4. `GET /api/consultations/team-agents` exposes those four with baked Grok ids. Support hub and landing support CTA use ساناز غفاری.
+Public `TEAM_AGENTS` length is 4. `GET /api/consultations/team-agents` exposes those four with baked Grok ids (`grokBot.id` always equals `grokBotId`). Support hub and landing support CTA use ساناز غفاری.

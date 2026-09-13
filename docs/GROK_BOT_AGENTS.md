@@ -14,11 +14,11 @@ Exactly **four** public personas — same roster as Grok Bot, not a parallel cha
 Code: `packages/shared/src/team-agents.ts` + `packages/api/src/services/grok-bot-bridge.ts`.  
 Public list: `GET /api/consultations/team-agents` (4 agents; `grokBot.id` + `linked`).
 
-Ids are baked into `TEAM_AGENTS.grokBotId`. Optional VPS override:
+Ids are baked into `TEAM_AGENTS.grokBotId`. Public `grokBot.id` always equals `grokBotId` (stale `GROK_BOT_*_ID` remaps are ignored). Optional URL on `/opt/petdate/.env`:
 
 ```bash
-GROK_BOT_FARANAK_AHMADI_ID=…
-GROK_BOT_AGENT_MAP={"faranak_ahmadi":{"id":"…"},"leila_kiani":{"id":"…"}}
+GROK_BOT_FARANAK_AHMADI_URL=https://x.ai/…
+GROK_BOT_AGENT_MAP={"sanaz_ghaffari":{"url":"…"}}
 XAI_API_KEY=xai-…   # live answers via ai-consult (not offline stubs)
 ```
 
