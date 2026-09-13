@@ -67,10 +67,11 @@
     calc((100% - var(--pepito-container-max)) / 2 + var(--pepito-container-pad))
   );
   /*
-   * Floating mobile dock: height 58px + bottom 10px + ~8px gap above glass pill.
+   * Floating mobile dock: height 58px + bottom 10px + ~28px gap above the glass pill
+   * so last cards / FAQ CTAs / shop chips are not covered (audit 2026-09-12).
    * Use ONE clearance on content — never stack body + layout + main + footer.
    */
-  --pepito-mobile-dock-clearance: calc(76px + env(safe-area-inset-bottom, 0px));
+  --pepito-mobile-dock-clearance: calc(96px + env(safe-area-inset-bottom, 0px));
 
   --toast-success: var(--pepito-mint);
   --toast-success-soft: #e7faf4;
@@ -457,7 +458,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   .pd-shop-hero {
     margin-top: var(--pepito-nav-h);
   }
-  /* Critical CSS dock pad is mobile-only — do not leave a 76px dark strip on desktop. */
+  /* Critical CSS dock pad is mobile-only — do not leave a dark strip on desktop. */
   .pepito-landing--with-dock {
     padding-bottom: 0;
   }
@@ -10325,7 +10326,7 @@ a.pepito-btn.pepito-human-consult-cta:hover {
     display: none;
   }
   .pd-shop-page .pd-shop-main {
-    padding-block: 1.25rem 2.75rem;
+    padding-block: 1.25rem calc(var(--pepito-mobile-dock-clearance) + 1.25rem);
   }
   .pd-shop-home,
   .pd-shop-listing,
@@ -11860,6 +11861,10 @@ a.pepito-btn.pepito-human-consult-cta:hover {
 /* Global mobile dock clearance — ONE place only (landing OR main), never body.
    Footer is already hidden on ≤859px; stacking body+main+footer caused a huge empty band. */
 @media (max-width: 859px) {
+  html:has(.pepito-landing--with-dock),
+  html:has(.pepito-landing-mobile-dock) {
+    scroll-padding-bottom: var(--pepito-mobile-dock-clearance);
+  }
   body:has(.pepito-landing--with-dock),
   body:has(.pepito-landing-mobile-dock) {
     padding-bottom: 0;
@@ -11871,6 +11876,10 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   }
   .pepito-landing--with-dock {
     padding-bottom: var(--pepito-mobile-dock-clearance);
+  }
+  /* Mid-fold sections: last cards/dots must clear the pill before the next fold. */
+  .pepito-landing--with-dock .pepito-section {
+    padding-bottom: calc(var(--pepito-section-y-mobile) + var(--pepito-mobile-dock-clearance));
   }
   /* Chat hides the dock — no clearance band */
   body:has(.tg-chat),

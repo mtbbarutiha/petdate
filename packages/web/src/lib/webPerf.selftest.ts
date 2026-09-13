@@ -82,7 +82,12 @@ assert.doesNotMatch(
   /rel="preload"\s+as="style"/,
   'do not preload a stylesheet (unused-preload warning)'
 );
-assert.match(indexHtml, /web-perf-v30-news-short/, 'deploy marker bumped so SW/HTML cache misses');
+assert.match(indexHtml, /web-perf-v31-dock-clear/, 'deploy marker bumped so SW/HTML cache misses');
+assert.match(
+  indexHtml,
+  /--pepito-dock-clearance:calc\(96px \+ env\(safe-area-inset-bottom,0px\)\)/,
+  'critical CSS dock clearance clears the 58+10 pill plus a gap'
+);
 assert.match(indexHtml, /id="pd-boot-lcp"/, 'LCP img lives outside #root so React cannot replace it');
 assert.match(indexHtml, /id="pd-boot-lcp"[\s\S]*decoding="sync"/, 'LCP img decodes sync so main-thread JS cannot stall paint');
 assert.match(indexHtml, /data-pd-lcp="hero"/, 'static preload is marked so SEO inject does not duplicate it');
@@ -198,6 +203,11 @@ assert.match(
   'hydrated mobile hero fills the viewport under the nav'
 );
 assert.match(pepitoCss, /88svh - var\(--pepito-nav-h\)/, 'desktop hero stays the compact 88svh band');
+assert.match(
+  pepitoCss,
+  /--pepito-mobile-dock-clearance:\s*calc\(96px \+ env\(safe-area-inset-bottom, 0px\)\)/,
+  'hydrated dock clearance matches critical CSS (pill + gap)'
+);
 assert.match(
   pepitoCss,
   /@media \(min-width: 860px\) \{[\s\S]*?\.pepito-landing--with-dock \{[\s\S]*?padding-bottom:\s*0/,

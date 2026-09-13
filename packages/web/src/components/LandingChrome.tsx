@@ -64,6 +64,10 @@ export function LandingChrome({
   // stacked on marketing links + SiteDesktopNav.
   const actionLabel = actionLabelProp ?? '';
   const sectionLinks = appNav ? [] : landingSectionLinks(platform);
+  // Public marketing (FAQ/help, shop-adjacent, magazine, games, vet, invite).
+  // App shell already pads `.pepito-app-main`; auth hides the dock.
+  const withDock =
+    !appNav && !/\bpepito-auth-flow\b/.test(className);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -83,7 +87,10 @@ export function LandingChrome({
   }, []);
 
   return (
-    <div className={`pepito-landing pepito-flow-page${className ? ` ${className}` : ''}`} dir={dir}>
+    <div
+      className={`pepito-landing pepito-flow-page${withDock ? ' pepito-landing--with-dock' : ''}${className ? ` ${className}` : ''}`}
+      dir={dir}
+    >
       <SiteHeader
         scrolled={scrolled}
         className={appNav ? 'pepito-nav--app' : 'pepito-nav--tools'}
