@@ -21,6 +21,7 @@ import {
 import { getDb } from './db';
 import type { AdminAuthActor } from './hr-service';
 import { ADMIN_ROLE_PERMISSIONS } from '@petdate/shared';
+import { allowDemoSeeds } from './demo-seeds-guard';
 
 const SEED_MOBILE = '09120006001';
 
@@ -87,6 +88,9 @@ function seedAlreadyDone(): boolean {
 export function seedCrmDemoIfNeeded(): void {
   ensureCrmSchema();
   ensureCrmRolePermissionBackfill();
+  if (!allowDemoSeeds()) {
+    return;
+  }
   if (!seedAlreadyDone()) {
     seedCrmDemoCore();
   }

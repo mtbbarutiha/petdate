@@ -67,7 +67,7 @@ Package: `packages/bot` (grammY + ioredis)
 | Heavy UI | Deep link to web (`/profile`, `/explore`, `/add-pet`) |
 
 **Dev:** long polling (leave `BOT_WEBHOOK_URL` empty).  
-**Prod:** set `BOT_WEBHOOK_URL` + `BOT_WEBHOOK_SECRET` for webhook mode.
+**Prod:** keep `BOT_WEBHOOK_URL` **empty** (polling) until a real webhook HTTP listener exists. Do **not** set `BOT_WEBHOOK_URL` / `BOT_WEBHOOK_SECRET` in production yet.
 
 Commands: `/start`, `/explore`, `/help`
 
@@ -98,7 +98,7 @@ Commands: `/start`, `/explore`, `/help`
 See `.env.example`. Key groups:
 
 - **App:** `WEB_URL`, `API_URL`
-- **Bot:** `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME`, `BOT_WEBHOOK_URL`
+- **Bot:** `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME` — leave `BOT_WEBHOOK_URL` empty in prod (polling)
 - **DB:** `DATABASE_URL` (Postgres), `DATABASE_PATH` (SQLite fallback)
 - **Redis:** `REDIS_URL`
 - **S3:** `S3_*`

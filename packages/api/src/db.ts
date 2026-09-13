@@ -1525,7 +1525,8 @@ function migrateSchema() {
     console.warn('Platform settings schema ensure skipped/failed:', (err as Error).message);
   }
 
-  // HR↔Sales interconnected demo (idempotent; never wipe / never duplicate)
+  // HR↔Sales interconnected demo (idempotent; never wipe / never duplicate).
+  // Production skips demo rows unless ALLOW_DEMO_SEEDS=1 — schema/migrate still ran above.
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { seedHrSalesDemoIfNeeded } =
@@ -1535,7 +1536,8 @@ function migrateSchema() {
     console.warn('HR↔Sales demo seed skipped/failed:', (err as Error).message);
   }
 
-  // CRM / باشگاه مشتریان demo (idempotent; never wipe)
+  // CRM / باشگاه مشتریان demo (idempotent; never wipe).
+  // Same production gate as HR (ALLOW_DEMO_SEEDS=1). Magazine seeds are separate.
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { seedCrmDemoIfNeeded } = require('./crm-demo-seed') as typeof import('./crm-demo-seed');

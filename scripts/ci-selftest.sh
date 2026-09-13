@@ -4,6 +4,37 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+
+echo "==> scripts: bash -n + verify-prod-env (no secret leak)"
+bash -n "$ROOT/scripts/backup-postgres.sh"
+bash -n "$ROOT/scripts/verify-prod-env.sh"
+bash -n "$ROOT/scripts/monitor-health.sh"
+bash -n "$ROOT/scripts/deploy-vps.sh"
+tmpenv="$(mktemp)"
+trap 'rm -f "$tmpenv"' EXIT
+cat >"$tmpenv" <<'ENV'
+ADMIN_PASSWORD=not-the-default
+ADMIN_SEED_PASSWORD=unique-seed
+BOT_WEBHOOK_URL=
+DATABASE_URL=postgresql://example
+REDIS_URL=redis://localhost
+TELEGRAM_BOT_TOKEN=example-token
+SMTP_HOST=127.0.0.1
+SMTP_FROM=no-reply@petdate.ir
+CANDOO_API_KEY=example-key
+CANDOO_SRC_NUMBERS=989999176033
+S3_ENDPOINT=http://localhost:9000
+S3_ACCESS_KEY=example-access
+S3_SECRET_KEY=example-secret
+ENV
+verify_out="$("$ROOT/scripts/verify-prod-env.sh" "$tmpenv")"
+printf '%s\n' "$verify_out"
+echo "$verify_out" | grep -q 'verify-prod-env: OK='
+if echo "$verify_out" | grep -Eq 'not-the-default|unique-seed|example-token|example-key|example-secret|postgresql://'; then
+  echo "ci-selftest FAIL: verify-prod-env leaked a value" >&2
+  exit 1
+fi
+
 cd "$ROOT/packages/api"
 
 run() {
@@ -311,6 +342,8 @@ run src/hr-modules.selftest.ts
 run src/sales-crm.selftest.ts
 run src/pet-purchase-leads.selftest.ts
 run src/hr-sales-demo-seed.selftest.ts
+run src/demo-seeds-guard.selftest.ts
+run src/health-ready.selftest.ts
 run src/crm.selftest.ts
 run src/auto-messages.selftest.ts
 run src/crm-ticketing.selftest.ts
