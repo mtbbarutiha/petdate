@@ -82,6 +82,21 @@ async function main() {
   assert.ok(related.every((a) => a.slug !== 'مراقبت-از-دندان-پت'), 'related excludes self');
   assert.ok(related.length >= 1, 'related returns peers');
 
+  gdb().exec('DELETE FROM magazine_articles');
+  for (let i = 0; i < 5; i++) {
+    mag.createMagazineArticle({
+      title: `مقاله کاروسل ${i + 1}`,
+      excerpt: 'x',
+      bodyHtml: '<p>x</p>',
+      status: 'published',
+      featured: i < 3,
+    });
+  }
+  const filled = mag.listFeaturedMagazineArticles(6);
+  assert.equal(filled.length, 5, 'featured carousel fills with recent after 3 featured');
+  assert.ok(filled.slice(0, 3).every((a) => a.featured), 'featured first');
+  assert.ok(filled.slice(3).every((a) => !a.featured), 'recent fill after featured');
+
   console.log('magazine.selftest: ok');
 }
 

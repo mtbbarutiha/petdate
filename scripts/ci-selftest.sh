@@ -302,6 +302,9 @@ npx tsx "$ROOT/packages/web/src/lib/fonts.selftest.ts"
 echo "==> selftest: web Lighthouse perf + agentic guards"
 npx tsx "$ROOT/packages/web/src/lib/webPerf.selftest.ts"
 
+echo "==> selftest: web homepage news carousel arrows (RTL)"
+npx tsx "$ROOT/packages/web/src/lib/newsCarousel.selftest.ts"
+
 echo "==> selftest: web Tag Assistant query-param helpers"
 npx tsx "$ROOT/packages/web/src/lib/tagAssistantParams.selftest.ts"
 
