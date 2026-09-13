@@ -68,3 +68,17 @@ export const adminChartPlotMargin = {
 export function adminChartTickFormatter(value: unknown): string {
   return truncateChartLabel(value, 10);
 }
+
+/**
+ * Shared Recharts <Pie> props — no paddingAngle gaps, no default white stroke
+ * (Recharts Cell stroke is #fff, which punches holes in dark-mode donuts).
+ */
+export const ADMIN_RECHARTS_PIE = {
+  paddingAngle: 0,
+  stroke: 'none',
+} as const;
+
+export const ADMIN_RECHARTS_PIE_CELL = {
+  stroke: 'none',
+  strokeWidth: 0,
+} as const;

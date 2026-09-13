@@ -181,6 +181,9 @@ npx tsx "$ROOT/packages/web/src/admin/adminShopOrderDetail.selftest.ts"
 echo "==> selftest: web admin chart layout (size + grid + labels)"
 npx tsx "$ROOT/packages/web/src/admin/adminChartLayout.selftest.ts"
 
+echo "==> selftest: web admin donut / motion chart math"
+npx tsx "$ROOT/packages/web/src/admin/motionChartMath.selftest.ts"
+
 echo "==> selftest: web admin widget dashboard (layout + drill)"
 npx tsx "$ROOT/packages/web/src/admin/widgets/widgetDashboard.selftest.ts"
 

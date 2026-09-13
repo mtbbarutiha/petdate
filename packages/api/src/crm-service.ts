@@ -3092,11 +3092,12 @@ export function getCrmDashboard(actor: AdminAuthActor): CrmDashboard {
     dailyInteractions.push({ key, label, value: count });
   }
 
-  const inProgress = openTickets.filter((t) => ['در حال بررسی', 'تخصیص‌یافته', 'در انتظار مشتری', 'بازگشایی‌شده'].includes(t.status)).length;
+  // Exclusive partition for the ticket-status donut. SLA breach is a flag on
+  // open tickets (already in in_progress / unassigned) — it has its own SLA chart.
+  const assignedOpen = openTickets.filter((t) => Boolean(t.agentId)).length;
   const ticketStatus = [
-    { key: 'in_progress', label: 'در حال بررسی', value: inProgress, color: '#0ba5f2' },
+    { key: 'in_progress', label: 'در حال بررسی', value: assignedOpen, color: '#0ba5f2' },
     { key: 'unassigned', label: 'تخصیص‌نیافته', value: unassigned, color: '#5c4d91' },
-    { key: 'breached', label: 'نقض SLA', value: breachedSla, color: '#c62828' },
     { key: 'resolved', label: 'حل‌شده (۷روز)', value: resolvedWeek, color: '#15cca0' },
   ];
 

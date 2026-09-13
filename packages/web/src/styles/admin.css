@@ -2145,20 +2145,44 @@ body:has(.admin-app) {
   gap: 8px;
   font-size: 0.85rem;
 }
-.admin-app .admin-donut-legend li > span:first-child {
+.admin-app .admin-donut-legend li > span:first-child,
+.admin-app .admin-donut-legend-swatch {
   width: 10px;
   height: 10px;
   border-radius: 999px;
   flex-shrink: 0;
 }
-.admin-app .admin-donut-legend .admin-chart-legend-label {
+.admin-app .admin-donut-legend .admin-chart-legend-label,
+.admin-app .admin-donut-legend-label {
   width: auto;
   height: auto;
   border-radius: 0;
 }
-.admin-app .admin-donut-legend strong {
+.admin-app .admin-donut-legend strong,
+.admin-app .admin-donut-legend-count {
   font-family: var(--admin-mono);
   font-size: 0.8rem;
+}
+/*
+ * Isolate label+count as one bidi unit. Mixed FA/Latin/digits (e.g. «نقض SLA»,
+ * «حل‌شده (۷روز)») otherwise split the count to the far physical left.
+ */
+.admin-app .admin-donut-legend-pair {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  unicode-bidi: isolate;
+}
+.admin-app .admin-donut-legend-label {
+  unicode-bidi: isolate;
+  overflow-wrap: anywhere;
+}
+.admin-app .admin-donut-legend-count {
+  unicode-bidi: isolate;
+  direction: ltr;
+  font-variant-numeric: tabular-nums;
+  flex: 0 0 auto;
 }
 /*
  * Pack donut / KPI legend rows: color · label · count as one unit.
@@ -2171,6 +2195,7 @@ body:has(.admin-app) {
 .admin-app .crm-donut-legend,
 .admin-app .hr-dash-legend,
 .admin-app .crm-report-reason-legend,
+.admin-app .hr-report-donut-legend,
 .admin-app .tk-legend {
   justify-items: start;
 }
@@ -2178,12 +2203,15 @@ body:has(.admin-app) {
 .admin-app .crm-donut-legend li,
 .admin-app .hr-dash-legend li,
 .admin-app .crm-report-reason-legend li,
+.admin-app .hr-report-donut-legend li,
 .admin-app .tk-legend li {
   display: flex;
+  flex-direction: row;
   align-items: center;
   justify-content: start;
   width: max-content;
   max-width: 100%;
+  gap: 8px;
 }
 .admin-app .admin-donut-legend strong,
 .admin-app .crm-donut-legend span,
@@ -2192,6 +2220,12 @@ body:has(.admin-app) {
 .admin-app .tk-legend strong {
   margin-inline-start: 0;
   flex: 0 0 auto;
+}
+/* Kill Recharts' default #fff sector stroke on every admin pie/donut. */
+.admin-app .recharts-pie .recharts-sector,
+.admin-app .recharts-pie-sector {
+  stroke: none !important;
+  stroke-width: 0 !important;
 }
 .admin-app .admin-badge--ok {
   background: #d8f8ef;
@@ -4780,8 +4814,8 @@ body:has(.admin-app) {
 .admin-app .hr-report-donut-legend i {
   width: 10px; height: 10px; border-radius: 999px; margin-top: 5px; flex-shrink: 0;
 }
-.admin-app .hr-report-donut-legend b { display: block; color: var(--admin-ink, #1e1b2e); }
-.admin-app .hr-report-donut-legend span { color: var(--admin-muted); font-size: 12px; }
+.admin-app .hr-report-donut-legend b { display: block; color: var(--admin-ink, #1e1b2e); unicode-bidi: isolate; }
+.admin-app .hr-report-donut-legend span { color: var(--admin-muted); font-size: 12px; unicode-bidi: isolate; }
 .admin-app .hr-chart-tooltip {
   background: var(--admin-surface); border: 1px solid var(--admin-border); border-radius: 10px;
   padding: 8px 10px; box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);

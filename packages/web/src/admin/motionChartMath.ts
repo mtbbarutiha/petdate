@@ -70,3 +70,54 @@ export const MOTION_DUR_MS = {
   ring: 1000,
   gauge: 1100,
 } as const;
+
+/** Coerce chart values — NaN / Infinity / negative never reach SVG dasharrays. */
+export function finiteNonNeg(n: unknown): number {
+  const v = typeof n === 'number' ? n : Number(n);
+  if (!Number.isFinite(v) || v < 0) return 0;
+  return v;
+}
+
+export function donutSliceTotal(slices: Array<{ value?: unknown }>): number {
+  return slices.reduce((sum, s) => sum + finiteNonNeg(s.value), 0);
+}
+
+export type BuiltDonutSlice = {
+  key: string;
+  label: string;
+  value: number;
+  color: string;
+  /** 0–1 share of the ring; slices always sum to 1 when the list is non-empty. */
+  portion: number;
+  /** Degrees from 12 o'clock (SVG -90). */
+  startDeg: number;
+  sweepDeg: number;
+};
+
+/**
+ * Exclusive donut geometry: drop zero/NaN slices, never emit NaN angles.
+ * Callers must pass a partition (no overlapping categories) or proportions lie.
+ */
+export function buildDonutSlices(
+  slices: Array<{ label?: string; value?: unknown; color?: string; key?: string }>,
+  fallbackColor = MOTION_PALETTE.purple
+): BuiltDonutSlice[] {
+  const cleaned = slices
+    .map((s, i) => ({
+      key: String(s.key || s.label || i),
+      label: String(s.label ?? ''),
+      value: finiteNonNeg(s.value),
+      color: s.color || fallbackColor,
+    }))
+    .filter((s) => s.value > 0);
+  const total = cleaned.reduce((sum, s) => sum + s.value, 0);
+  if (total <= 0) return [];
+  let cursor = -90;
+  return cleaned.map((s) => {
+    const portion = s.value / total;
+    const sweepDeg = portion * 360;
+    const startDeg = cursor;
+    cursor += sweepDeg;
+    return { ...s, portion, startDeg, sweepDeg };
+  });
+}

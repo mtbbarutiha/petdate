@@ -11,10 +11,13 @@ import { adminCan } from '../auth';
 import { formatAdminFaDateTime } from '../JalaliDateSelect';
 import { formatAnalyticsPathLabel, mapPathBars } from '../analyticsPathLabel';
 import {
+  ADMIN_RECHARTS_PIE,
+  ADMIN_RECHARTS_PIE_CELL,
   adminChartPlotMargin,
   adminChartXAxisProps,
   adminChartYAxisProps,
 } from '../adminChartLayout';
+import { AdminDonutLegend } from '../FinanceCharts';
 import {
   ADMIN_RTL_HBARS_CLASS,
   AdminRtlBarCountLabel,
@@ -525,18 +528,32 @@ export function AdminSiteReportsPage() {
               <div className="admin-chart-box admin-chart-box--donut" style={{ height: 200 }}>
                 <ResponsiveContainer>
                   <PieChart>
-                    <Pie data={data.devices} dataKey="value" nameKey="label" innerRadius={48} outerRadius={78} paddingAngle={2} {...motion}>
-                      {data.devices.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                    <Pie
+                      data={data.devices}
+                      dataKey="value"
+                      nameKey="label"
+                      innerRadius={48}
+                      outerRadius={78}
+                      {...ADMIN_RECHARTS_PIE}
+                      {...motion}
+                    >
+                      {data.devices.map((_, i) => (
+                        <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} {...ADMIN_RECHARTS_PIE_CELL} />
+                      ))}
                     </Pie>
                     <Tooltip content={<Tip />} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
-              <ul className="crm-report-reason-legend">
-                {data.devices.map((d, i) => (
-                  <li key={tr(d.label)}><i style={{ background: PIE_COLORS[i % PIE_COLORS.length] }} />{tr(d.label)}<span>{formatNumFa(d.value)}</span></li>
-                ))}
-              </ul>
+              <AdminDonutLegend
+                className="crm-report-reason-legend"
+                items={data.devices.map((d, i) => ({
+                  key: d.label,
+                  label: d.label,
+                  value: d.value,
+                  color: PIE_COLORS[i % PIE_COLORS.length]!,
+                }))}
+              />
             </article>
             <article className="admin-card crm-report-chart-box">
               <div className="admin-card-head"><h2>{tr('صفحات پربازدید')}</h2></div>

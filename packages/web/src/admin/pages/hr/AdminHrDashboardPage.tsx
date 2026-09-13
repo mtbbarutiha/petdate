@@ -21,7 +21,9 @@ import {
   adminRtlHBarsRadius,
   adminRtlHBarsValueAxis,
 } from '../../rechartsRtlHBars';
+import { ADMIN_RECHARTS_PIE, ADMIN_RECHARTS_PIE_CELL } from '../../adminChartLayout';
 import { AdminChartCard, AdminChartGrid, AdminDashPage, AdminKpiStrip, type AdminKpiItem } from '../../dash';
+import { AdminDonutLegend } from '../../FinanceCharts';
 import {
   MOTION_PALETTE,
   MotionBarGradientDefs,
@@ -221,24 +223,32 @@ export function AdminHrDashboardPage() {
             <div className="hr-dash-chart" style={{ height: 180 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={statusPie} dataKey="count" nameKey="name" innerRadius={48} outerRadius={72} paddingAngle={2} {...motion}>
+                  <Pie
+                    data={statusPie}
+                    dataKey="count"
+                    nameKey="name"
+                    innerRadius={48}
+                    outerRadius={72}
+                    {...ADMIN_RECHARTS_PIE}
+                    {...motion}
+                  >
                     {statusPie.map((s) => (
-                      <Cell key={s.name} fill={s.color} />
+                      <Cell key={s.name} fill={s.color} {...ADMIN_RECHARTS_PIE_CELL} />
                     ))}
                   </Pie>
                   <Tooltip content={<MotionChartTooltip />} />
                 </PieChart>
               </ResponsiveContainer>
             </div>
-            <ul className="hr-dash-legend">
-              {statusPie.map((s) => (
-                <li key={s.name}>
-                  <i style={{ background: s.color }} />
-                  {s.name}
-                  <span>{formatNumFa(s.count)}</span>
-                </li>
-              ))}
-            </ul>
+            <AdminDonutLegend
+              className="hr-dash-legend"
+              items={statusPie.map((s) => ({
+                key: s.name,
+                label: s.name,
+                value: s.count,
+                color: s.color,
+              }))}
+            />
           </div>
         </AdminChartCard>
 

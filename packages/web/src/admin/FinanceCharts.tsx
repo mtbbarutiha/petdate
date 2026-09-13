@@ -13,6 +13,9 @@ import {
   AdminProgressRing,
   MOTION_DUR_MS,
   MOTION_PALETTE,
+  buildDonutSlices,
+  donutSliceTotal,
+  finiteNonNeg,
   hexToRgba,
   smoothAreaPath,
   smoothLinePath,
@@ -555,21 +558,68 @@ export function AdminMultiLineChart({
   );
 }
 
+export type AdminDonutLegendItem = { key?: string; label: string; value: number; color: string };
+
+/**
+ * RTL-safe donut / pie legend: swatch · label · count stay one isolated unit.
+ * Never put the count in a stretched row with margin-inline-start:auto — that
+ * parks it on the far inline-end (physical left in RTL).
+ */
+export function AdminDonutLegend({
+  items,
+  className,
+  onItemClick,
+}: {
+  items: AdminDonutLegendItem[];
+  className?: string;
+  onItemClick?: (item: AdminDonutLegendItem) => void;
+}) {
+  return (
+    <ul className={['admin-donut-legend', className].filter(Boolean).join(' ')}>
+      {items.map((s, i) => (
+        <li
+          key={s.key || `${s.label}-${i}`}
+          className={onItemClick ? 'admin-chart-hit' : undefined}
+          onClick={() => onItemClick?.(s)}
+          style={onItemClick ? { cursor: 'pointer' } : undefined}
+          title={`${s.label}: ${formatNumFa(s.value)}`}
+        >
+          <span className="admin-donut-legend-swatch" style={{ background: s.color }} />
+          <span className="admin-donut-legend-pair">
+            <span className="admin-chart-legend-label admin-donut-legend-label" title={tr(s.label)}>
+              {truncateChartLabel(tr(s.label), 18)}
+            </span>
+            <strong className="admin-donut-legend-count">{formatNumFa(s.value)}</strong>
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 export function AdminDonutChart({
   slices,
   size = ADMIN_CHART_DONUT_SIZE,
   onSliceClick,
+  centerLabel,
+  centerValue,
 }: {
-  slices: Array<{ label: string; value: number; color: string }>;
+  slices: Array<{ label: string; value: number; color: string; key?: string }>;
   size?: number;
   onSliceClick?: (slice: { label: string; value: number; color: string }) => void;
+  /** Defaults to «جمع». CRM ticket-status uses «تیکت» so the center matches the exclusive slices. */
+  centerLabel?: string;
+  /** Defaults to the exclusive (finite, non-negative) slice total. */
+  centerValue?: number;
 }) {
   const reduced = usePrefersReducedMotion();
-  const total = slices.reduce((a, s) => a + s.value, 0) || 1;
+  const built = buildDonutSlices(slices);
+  const total = donutSliceTotal(slices);
   const r = 62;
   const c = 2 * Math.PI * r;
   let offset = 0;
-  const hasData = slices.some((s) => s.value > 0);
+  const hasData = built.length > 0;
+  const displayTotal = centerValue != null ? finiteNonNeg(centerValue) : total;
   return (
     <div className="admin-donut-wrap">
       <svg
@@ -583,11 +633,11 @@ export function AdminDonutChart({
           {!hasData ? (
             <circle r={r} cx={0} cy={0} fill="transparent" stroke={MOTION_PALETTE.track} strokeWidth={20} />
           ) : (
-            slices.map((s, i) => {
-              const len = (s.value / total) * c;
+            built.map((s, i) => {
+              const len = s.portion * c;
               const el = (
                 <circle
-                  key={tr(s.label)}
+                  key={s.key}
                   r={r}
                   cx={0}
                   cy={0}
@@ -613,7 +663,7 @@ export function AdminDonutChart({
                   }
                   onClick={() => onSliceClick?.(s)}
                 >
-                  <title>{`${s.label}: ${formatNumFa(s.value)} (${Math.round((s.value / total) * 100)}${tr('٪)')}`}</title>
+                  <title>{`${s.label}: ${formatNumFa(s.value)} (${Math.round(s.portion * 100)}${tr('٪)')}`}</title>
                 </circle>
               );
               offset += len;
@@ -622,29 +672,13 @@ export function AdminDonutChart({
           )}
         </g>
         <text x="80" y="76" textAnchor="middle" className="admin-donut-center">
-          {formatNumFa(hasData ? total : 0)}
+          {formatNumFa(displayTotal)}
         </text>
         <text x="80" y="94" textAnchor="middle" className="admin-donut-sub">
-          {tr('جمع')}
+          {tr(centerLabel || 'جمع')}
         </text>
       </svg>
-      <ul className="admin-donut-legend">
-        {slices.map((s) => (
-          <li
-            key={tr(s.label)}
-            className={onSliceClick ? 'admin-chart-hit' : undefined}
-            onClick={() => onSliceClick?.(s)}
-            style={onSliceClick ? { cursor: 'pointer' } : undefined}
-            title={`${s.label}: ${formatNumFa(s.value)}`}
-          >
-            <span style={{ background: s.color }} />
-            <span className="admin-chart-legend-label" title={tr(s.label)}>
-              {truncateChartLabel(tr(s.label), 18)}
-            </span>
-            <strong>{formatNumFa(s.value)}</strong>
-          </li>
-        ))}
-      </ul>
+      <AdminDonutLegend items={slices} onItemClick={onSliceClick} />
     </div>
   );
 }

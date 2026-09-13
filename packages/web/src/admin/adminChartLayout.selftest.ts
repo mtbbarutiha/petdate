@@ -10,6 +10,8 @@ import {
   ADMIN_CHART_MAX_H,
   ADMIN_CHART_STANDARD_H,
   ADMIN_CHART_VIEWBOX_W,
+  ADMIN_RECHARTS_PIE,
+  ADMIN_RECHARTS_PIE_CELL,
   adminChartHBarsHeight,
   adminChartTickFormatter,
   capAdminChartHeight,
@@ -84,9 +86,12 @@ for (const [name, src] of [
 
 assert.match(reports, /admin-chart-box/, 'analytics report charts use compact box class');
 assert.match(ci, /adminChartLayout\.selftest\.ts/, 'CI runs admin chart layout selftest');
+assert.match(ci, /motionChartMath\.selftest\.ts/, 'CI runs donut / motion chart math selftest');
 
 /* RTL donut / KPI legend: color · label · count stay one unit (no stranded counts). */
-assert.match(crm, /crm-donut-legend/, 'CRM ticket-status widget uses shared donut legend class');
+assert.match(crm, /AdminDonutChart/, 'CRM ticket-status widget uses shared donut');
+assert.match(crm, /centerLabel=\{tr\('تیکت'\)\}/, 'ticket-status center matches exclusive slice total, not only open');
+assert.doesNotMatch(crm, /paddingAngle=\{2\}/, 'CRM ticket-status does not use gapped Recharts pie');
 assert.match(
   css,
   /\.admin-app\s+\.admin-donut-legend\s+li[\s\S]*?justify-content:\s*start/,
@@ -99,14 +104,42 @@ assert.match(
 );
 assert.match(
   css,
-  /\.admin-app\s+\.admin-donut-legend\s+li\s*>\s*span:first-child\s*\{[^}]*width:\s*10px/s,
+  /\.admin-app\s+\.admin-donut-legend\s+li\s*>\s*span:first-child[\s\S]*?width:\s*10px/,
   'donut swatch rule targets only the first span, not the label'
 );
 assert.match(
   css,
-  /\.admin-app\s+\.admin-donut-legend\s+\.admin-chart-legend-label\s*\{[^}]*width:\s*auto/s,
+  /\.admin-app\s+\.admin-donut-legend\s+\.admin-chart-legend-label[\s\S]*?width:\s*auto/,
   'donut legend labels are not clipped to the 10px swatch box'
 );
+assert.match(
+  css,
+  /\.admin-donut-legend-pair[\s\S]*?unicode-bidi:\s*isolate/,
+  'legend label+count are a bidi isolate so RTL digits stay with the label'
+);
+assert.match(
+  css,
+  /\.recharts-pie[\s\S]*?stroke:\s*none/,
+  'CSS kills Recharts pie sector stroke on all admin donuts'
+);
+assert.match(finance, /buildDonutSlices/, 'shared SVG donut uses exclusive slice math');
+assert.match(finance, /AdminDonutLegend/, 'shared SVG donut uses the RTL legend');
+assert.equal(ADMIN_RECHARTS_PIE.paddingAngle, 0);
+assert.equal(ADMIN_RECHARTS_PIE.stroke, 'none');
+assert.equal(ADMIN_RECHARTS_PIE_CELL.stroke, 'none');
+
+const crmReports = readFileSync(join(webRoot, 'src/admin/pages/crm/AdminCrmReportsPage.tsx'), 'utf8');
+const hrReports = readFileSync(join(webRoot, 'src/admin/pages/hr/AdminHrReportsPage.tsx'), 'utf8');
+for (const [name, src] of [
+  ['hr dashboard', hr],
+  ['crm reports', crmReports],
+  ['site reports', reports],
+  ['hr reports', hrReports],
+] as const) {
+  assert.match(src, /ADMIN_RECHARTS_PIE/, `${name} pies use shared stroke-safe props`);
+  assert.doesNotMatch(src, /paddingAngle=\{2\}/, `${name} must not open pie gaps`);
+  assert.doesNotMatch(src, /stroke="#fff"/, `${name} must not use white pie stroke`);
+}
 
 const legendCountBlocks = [
   [/\.admin-app\s+\.admin-donut-legend\s+strong[\s\S]*?\{[^}]+\}/g, 'admin-donut-legend count'],

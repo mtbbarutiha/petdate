@@ -28,6 +28,9 @@ export {
   hexToRgba,
   smoothAreaPath,
   smoothLinePath,
+  finiteNonNeg,
+  donutSliceTotal,
+  buildDonutSlices,
 } from './motionChartMath';
 
 export function usePrefersReducedMotion(): boolean {
