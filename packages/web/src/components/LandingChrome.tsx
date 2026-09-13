@@ -60,8 +60,9 @@ export function LandingChrome({
   const resolvedBannerTitle = bannerTitle ?? BRAND.displayName;
   const resolvedBannerLead = bannerLead ?? (dir === 'rtl' ? BRAND.taglineFa : BRAND.taglineEn);
   // Logo is home. Only show an explicit action when the caller passes one
-  // (auth back-link, magazine, vet landing CTA). Avoid a default خانه pill
-  // stacked on marketing links + SiteDesktopNav.
+  // (auth back-link, magazine). Do not pass login — NavUserCluster already
+  // has pepito-nav-login-icon. Avoid a default خانه pill stacked on
+  // marketing links + SiteDesktopNav.
   const actionLabel = actionLabelProp ?? '';
   const sectionLinks = appNav ? [] : landingSectionLinks(platform);
   // Public marketing (FAQ/help, shop-adjacent, magazine, games, vet, invite).

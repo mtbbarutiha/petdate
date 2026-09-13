@@ -71,7 +71,20 @@ assert.doesNotMatch(route, /import \{ Layout \}/, 'guest vet route must not stat
 assert.match(route, /hasRole/, 'app shell requires a role — guests and incomplete sessions stay on landing');
 assert.match(landing, /LandingChrome/, 'vet landing uses marketing chrome');
 assert.match(landing, /loginPath\('\/vet-consult'\)/, 'vet landing login returns to consult');
+assert.doesNotMatch(landing, /actionLabel=["']خانه["']/, 'vet landing header has no text خانه (logo is home)');
 assert.doesNotMatch(landing, /pepito-app-rail/, 'vet landing has no app sidebar');
+const adoptionList = readFileSync(join(webSrc, 'pages/AdoptionListPage.tsx'), 'utf8');
+const adoptionDetail = readFileSync(join(webSrc, 'pages/AdoptionDetailPage.tsx'), 'utf8');
+assert.doesNotMatch(
+  adoptionList,
+  /actionLabel=\{t\('common\.login'\)\}/,
+  'adoption list header has no text ورود (cluster icon only)',
+);
+assert.doesNotMatch(
+  adoptionDetail,
+  /actionLabel=\{t\('common\.login'\)\}/,
+  'adoption detail header has no text ورود (cluster icon only)',
+);
 assert.match(welcome, /welcomeSectionLinks/, 'homepage header uses shared extras');
 assert.match(headerLinks, /to: '\/adoption'[\s\S]*testId: 'nav-adoption'/, 'homepage پذیرش goes to /adoption');
 assert.match(headerLinks, /testId: 'nav-adoption'/, 'homepage پذیرش is testable');
