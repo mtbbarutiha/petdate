@@ -298,7 +298,13 @@ async function main() {
     userMessage: 'چطور تیکت ثبت کنم؟',
   });
   assert(/تیکت/.test(supportTicket), 'support ticket howto mentions تیکت');
-  assert(/ثبت|پیگیری|\/support/.test(supportTicket), 'support ticket howto has path');
+  assert(/\/support\/ticket|ثبت تیکت/.test(supportTicket), 'support ticket howto has ticket path');
+  const supportFlows = offlineAiAdvice({
+    kind: 'support',
+    patientName: 'مینا',
+    userMessage: 'کل فرآیندهای سایت چیه؟',
+  });
+  assert(/\/support|\/pets|\/shop|\/wallet|\/chats/.test(supportFlows), 'support site map paths');
 
   const tg = `selftest_ai_patient_${Date.now()}`;
   const { user: patient } = dbService.findOrCreateUser({

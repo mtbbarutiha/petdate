@@ -72,26 +72,33 @@ async function replySupportTurn(opts: {
     content: m.text,
   }));
 
-  const wantsTicket = /تیکت|ticket|پیگیری|شکایت|گزارش\s*مشکل|ثبت\s*کن|مشکل\s*دارم|کار\s*نمیکنه|کار\s*نمی‌کنه|escalat|follow\s*up/i.test(
-    opts.text
-  );
+  const textRaw = opts.text.trim();
+  // «چطور تیکت ثبت کنم» = آموزش؛ هنوز ثبت نکن مگر قصد ثبت واضح باشد.
+  const askingTicketHowto =
+    /(چطور|چجوری|چگونه|how\s*(do|to)|راهنما)/i.test(textRaw) &&
+    /(تیکت|ticket)/i.test(textRaw);
+  const wantsTicket =
+    !askingTicketHowto &&
+    /(ثبت\s*تیکت|تیکت\s*ثبت|باز\s*کن\s*تیکت|تیکت\s*باز|ticket|پیگیری\s*کن|شکایت|گزارش\s*مشکل|مشکل\s*دارم|کار\s*نمیکنه|کار\s*نمی‌کنه|escalat|follow\s*up)/i.test(
+      textRaw
+    );
   let ticketNote = '';
   if (wantsTicket) {
     try {
       const ticket = createUserSupportTicket(
         { id: opts.userId, name: opts.userName, phone: opts.phone },
         {
-          title: opts.text.trim().slice(0, 80) || 'پیگیری پشتیبانی',
-          description: opts.text.trim(),
+          title: textRaw.slice(0, 80) || 'پیگیری پشتیبانی',
+          description: textRaw,
           category: 'support_chat',
           channel: 'web_chat',
         }
       );
-      ticketNote = `\n\n✅ تیکت ${ticket.publicId} برات ثبت کردم. تیم پیگیری می‌کنه؛ وضعیت را همین‌جا یا از بخش تیکت‌ها ببین.`;
+      ticketNote = `\n\n✅ تیکت ${ticket.publicId} برات ثبت کردم. تیم پیگیری می‌کنه؛ وضعیت را از /support/ticket ببین.`;
     } catch (err) {
       console.warn('support chat auto-ticket failed:', (err as Error).message);
       ticketNote =
-        '\n\nمی‌تونم برات تیکت ثبت کنم؛ اگر نشد از منوی پشتیبانی «ثبت تیکت» را بزن یا بگو دوباره تلاش کنم.';
+        '\n\nمی‌تونم برات تیکت ثبت کنم؛ اگر نشد برو /support/ticket یا بگو دوباره تلاش کنم.';
     }
   }
 
