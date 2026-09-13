@@ -31,16 +31,28 @@ const faranak = resolveConsultPeerAvatarUrl(
 assert.ok(faranak?.includes('faranak-ahmadi'), `faranak avatar: ${faranak}`);
 
 const sanaz = resolveConsultPeerAvatarUrl(
-  baseConsult({ vetName: 'دکتر ساناز غفاری', serviceKind: 'vet' }),
+  baseConsult({ vetName: 'ساناز غفاری', serviceKind: 'trainer' }),
   'as_patient',
 );
 assert.ok(sanaz?.includes('sanaz-ghaffari'), `sanaz avatar: ${sanaz}`);
 
 const sara = resolveConsultPeerAvatarUrl(
-  baseConsult({ vetName: 'دکتر سارا نوری', serviceKind: 'vet' }),
+  baseConsult({ vetName: 'سارا نوری', serviceKind: 'vet' }),
   'as_patient',
 );
 assert.ok(sara?.includes('sara-noori'), `sara avatar: ${sara}`);
+
+const saraLegacy = resolveConsultPeerAvatarUrl(
+  baseConsult({ vetName: 'دکتر سارا نوری', serviceKind: 'vet' }),
+  'as_patient',
+);
+assert.ok(saraLegacy?.includes('sara-noori'), `legacy دکتر سارا: ${saraLegacy}`);
+
+const leilaFinance = resolveConsultPeerAvatarUrl(
+  baseConsult({ vetName: 'لیلا کیانی', serviceKind: 'finance' }),
+  'as_patient',
+);
+assert.ok(leilaFinance?.includes('leila-kiani'), `leila finance avatar: ${leilaFinance}`);
 
 const apiWins = resolveConsultPeerAvatarUrl(
   baseConsult({

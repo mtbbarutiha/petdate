@@ -219,7 +219,7 @@ consultationsRouter.get('/previous-vets', (req, res) => {
 consultationsRouter.get('/team-agents', (_req, res) => {
   const bridge = grokBotBridgeSummary();
   res.json({
-    /** Same 5 personas as Grok Bot (گراک بات) roster — not a parallel system. */
+    /** Same 4 personas as Grok Bot (گراک بات) roster — not a parallel system. */
     source: bridge.source,
     linkedGrokBots: bridge.linkedCount,
     agents: bridge.agents,

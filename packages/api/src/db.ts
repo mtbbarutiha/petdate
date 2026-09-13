@@ -2381,7 +2381,8 @@ function parseConsultServiceKind(value: unknown): ConsultServiceKind {
     value === 'trainer' ||
     value === 'sitter' ||
     value === 'seeker_advice' ||
-    value === 'vet'
+    value === 'vet' ||
+    value === 'finance'
   ) {
     return value;
   }
@@ -2428,6 +2429,16 @@ export function consultFeeSplit(kind: ConsultServiceKind): {
         debitReason: 'مشورت با صاحبین',
         payoutReason: 'درآمد مشورت با صاحبین',
         payoutRefType: 'seeker_advice_payout',
+      };
+    case 'finance':
+      return {
+        cost: 0,
+        providerShare: 0,
+        systemFee: 0,
+        systemReason: '',
+        debitReason: 'مشاوره مدیر مالی',
+        payoutReason: 'درآمد مشاوره مالی',
+        payoutRefType: 'finance_consult_payout',
       };
     default:
       return {

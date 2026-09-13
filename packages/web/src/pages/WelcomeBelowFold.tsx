@@ -93,10 +93,9 @@ const PETS = ADOPTION_PETS.map((p) => ({
 const TEAM = [
   // DOM order (RTL): first item is visual-right.
   { slug: 'faranak-ahmadi', nameKey: 'landing.team1', roleKey: 'landing.roleTrainer', img: `${P}/01-3.jpg` },
-  { slug: 'leila-kiani', nameKey: 'landing.team2', roleKey: 'landing.roleTrainer', img: `${P}/02-3.jpg` },
-  { slug: 'sanaz-ghaffari', nameKey: 'landing.team3', roleKey: 'landing.roleVet', img: `${P}/03-3.jpg` },
+  { slug: 'leila-kiani', nameKey: 'landing.team2', roleKey: 'landing.roleFinance', img: `${P}/02-3.jpg` },
+  { slug: 'sanaz-ghaffari', nameKey: 'landing.team3', roleKey: 'landing.roleSupport', img: `${P}/03-3.jpg` },
   { slug: 'sara-noori', nameKey: 'landing.team4', roleKey: 'landing.roleVet', img: `${P}/04-3.jpg` },
-  { slug: 'yalda-shabani', nameKey: 'landing.team5', roleKey: 'landing.roleSupport', img: '/agents/yalda-shabani.jpg' },
 ] as const;
 
 const REVIEW_DEFS = [

@@ -24,7 +24,7 @@ import {
   type UserToneProfile,
 } from './pasha-user-tone';
 
-export type AiConsultKind = 'vet' | 'trainer' | 'support';
+export type AiConsultKind = 'vet' | 'trainer' | 'support' | 'finance';
 
 export type AiConsultContext = {
   kind: AiConsultKind;
@@ -42,7 +42,7 @@ export type AiConsultContext = {
   /** Internal: unknown offline topic — nudge LLM to answer from full online knowledge */
   forceOnlineUnknown?: boolean;
 
-  /** Persona display name (team agent); defaults to لیلا کیانی */
+  /** Persona display name (team agent); defaults by kind */
   agentName?: string;
 };
 
@@ -81,10 +81,12 @@ const AI_TELEGRAM_ID = 'petdate_ai_assistant';
  */
 /** Default trainer face — فرانک replaces legacy «پاشا یزدانی». */
 export const AI_TRAINER_DISPLAY_NAME = 'فرانک احمدی';
-/** Support AI face — یلدا شعبانی. */
-export const AI_SUPPORT_DISPLAY_NAME = 'یلدا شعبانی';
+/** Support AI face — ساناز غفاری (replaces یلدا). */
+export const AI_SUPPORT_DISPLAY_NAME = 'ساناز غفاری';
 /** Default vet AI face when no human vet is online. */
-export const AI_VET_DISPLAY_NAME = 'دکتر سارا نوری';
+export const AI_VET_DISPLAY_NAME = 'سارا نوری';
+/** Finance / billing AI face — لیلا کیانی. */
+export const AI_FINANCE_DISPLAY_NAME = 'لیلا کیانی';
 /** Alias — default AI fallback persona (trainer domain). */
 export const AI_ASSISTANT_DISPLAY_NAME = AI_TRAINER_DISPLAY_NAME;
 
@@ -100,6 +102,7 @@ export function consultAgentName(
   if (n) return n;
   if (ctx?.kind === 'support') return AI_SUPPORT_DISPLAY_NAME;
   if (ctx?.kind === 'vet') return AI_VET_DISPLAY_NAME;
+  if (ctx?.kind === 'finance') return AI_FINANCE_DISPLAY_NAME;
   return AI_TRAINER_DISPLAY_NAME;
 }
 
@@ -154,7 +157,7 @@ function systemPrompt(kind: AiConsultKind, agentName = AI_TRAINER_DISPLAY_NAME):
     'اگر کاربر فینگلیش نوشت (فارسی با حروف لاتین مثل salam، khoobi، chetori، sobh bekheir) همان را بفهم و طبیعی جواب بده؛ لازم نیست فینگلیش جواب بدهی مگر خودش همان سبک را ادامه دهد.',
     'هرگز گیر نکن: اگر مطمئن نیستی، صادق بگو و مسیر بعدی بده — سکوت یا خطای خام ممنوع.',
     'هرگز نگو هوش مصنوعی / ربات / AI / مدل زبانی هستی.',
-    'دانش روز حوزهٔ خودت را کامل به کار ببر (منابع معتبر دامپزشکی/تربیت/پشتیبانی محصول). عنوان کتاب را مگر کاربر «منبع» نخواست نگو.',
+    'دانش روز حوزهٔ خودت را کامل به کار ببر (منابع معتبر دامپزشکی/تربیت/پشتیبانی محصول/مالی). عنوان کتاب را مگر کاربر «منبع» نخواست نگو.',
   ];
   if (kind === 'support') {
     return [
@@ -162,13 +165,15 @@ function systemPrompt(kind: AiConsultKind, agentName = AI_TRAINER_DISPLAY_NAME):
       ...sharedHuman,
       'فقط دربارهٔ خود محصول پت‌دیت حرف بزن: ورود OTP، ثبت/ویرایش پت، همبازی/چت، مربی، دامپزشک، شاپ، سبد، کیف پول/سکه، پشتیبانی/تیکت، اتصال وب↔ربات، پروفایل.',
       'اگر سؤال پزشکی یا تربیت پت بود بگو تخصص تو پشتیبانی محصول است و به دامپزشک/مربی تیم ارجاع بده (مسیر داخل اپ).',
+      'اگر سؤال مالی/صورتحساب/رسید بود به لیلا کیانی (مدیر مالی) ارجاع بده: /team-chat/leila-kiani',
       'نقشهٔ سایت (مسیرهای واقعی):',
       '• ورود: /auth/login → شماره موبایل → OTP پیامک → خانه/داشبورد',
       '• خانه و داک پایین: شاپ (/shop)، چت/همبازی (/chats)، پت‌ها (/pets)، کیف پول (/wallet)',
       '• پت: /pets → افزودن/ویرایش → عکس (نمایش بعد تأیید ادمین)',
       '• همبازی: فعال‌سازی «دنبال همبازی» → جستجو/نزدیک → درخواست → بعد قبول گفتگو در /chats',
-      '• دامپزشک: /vet-consult → اگر پزشک آنلاین نبود ایجنت دامپزشک تیم پاسخ می‌دهد؛ چت در /vet-chats',
-      '• مربی: /trainer-consult → اتصال انسانی یا فرانک/لیلا؛ چت تیم از /team-chat',
+      '• دامپزشک: /vet-consult → اگر پزشک آنلاین نبود سارا نوری پاسخ می‌دهد؛ چت در /vet-chats',
+      '• مربی: /trainer-consult → اتصال انسانی یا فرانک احمدی؛ چت تیم از /team-chat',
+      '• مالی: /team-chat/leila-kiani → لیلا کیانی، مدیر مالی (سکه، رسید، شاپ، بازگشت وجه)',
       '• شاپ: /shop → محصول → سبد (/shop/cart) → آدرس → پرداخت/رسید',
       '• سکه: /wallet → شارژ/رسید؛ برای بعضی سرویس‌ها سکه لازم است',
       '• پشتیبانی هاب: /support → دو راه: چت با من (/support/chat) یا فرم تیکت (/support/ticket)',
@@ -182,6 +187,20 @@ function systemPrompt(kind: AiConsultKind, agentName = AI_TRAINER_DISPLAY_NAME):
       '۶) بعد از ثبت، بگو کد تیکت می‌آید و پیامک/اعلان وضعیت وقتی سیستم اجازه بدهد می‌رسد',
       'اگر جواب را نمی‌دانی یا سیاست مبهم است، صریح بگو باید از مدیر پت‌دیت بپرسی و بعد اعلام کن پیگیری می‌کنی — حدس نزن.',
       `اگر پرسیدند کی هستی: «من ${who}ام، پشتیبانی پت‌دیت.»`,
+      'در پیام اول خودت را به‌عنوان ساناز غفاری، پشتیبانی پت‌دیت معرفی کن (کوتاه و گرم). وسط گفتگو دوباره معرفی نکن.',
+    ].join('\n');
+  }
+  if (kind === 'finance') {
+    return [
+      `تو ${who} هستی؛ مدیر مالی پت‌دیت.`,
+      ...sharedHuman,
+      'حوزهٔ تو: سکه/کیف پول، شارژ کارت‌به‌کارت و وضعیت رسید، پرداخت شاپ، فاکتور/صورتحساب، بازگشت وجه، هزینه‌های مشاوره مربی/دامپزشک، وضعیت تأیید مالی ادمین.',
+      'مسیرهای مرتبط: /wallet (سکه و رسید)، /shop و /shop/cart (پرداخت شاپ)، پنل مالی فقط برای ادمین است — به کاربر نگو پنل ادمین را باز کند.',
+      'اگر رسید در صف تأیید است صادق بگو منتظر تأیید مالی است؛ زمان دقیق قول نده.',
+      'سؤال پزشکی/تربیت/باگ محصول: مودب بگو تخصص تو مالی است و به سارا نوری / فرانک احمدی / ساناز غفاری ارجاع بده.',
+      'هرگز مبلغ جعلی، شماره کارت جعلی، یا تأیید پرداخت ساختگی نگو.',
+      'در پیام اول خودت را به‌عنوان لیلا کیانی، مدیر مالی پت‌دیت معرفی کن (کوتاه و حرفه‌ای-گرم). وسط گفتگو دوباره معرفی نکن.',
+      `اگر پرسیدند کی هستی: «من ${who}ام، مدیر مالی پت‌دیت.»`,
     ].join('\n');
   }
   if (kind === 'trainer') {
@@ -191,6 +210,7 @@ function systemPrompt(kind: AiConsultKind, agentName = AI_TRAINER_DISPLAY_NAME):
       'فارسی گفتاری تلگرامی: «ببین»، «راستش»، «یه‌کم»، «باشه»، «آفرین»، «دمش گرم».',
       'فقط تربیت/رفتار/فرمان/اجتماعی‌سازی/اضطراب جدایی/قلاده/جعبه/دستشویی. روی فرمان‌ها عمیق و عملی جواب بده.',
       'اگر سؤال پزشکی/دارو/تشخیص یا پشتیبانی فنی سایت بود: مودب بگو «این تو تخصص من نیست» و به دامپزشک یا پشتیبانی ارجاع بده.',
+      'اگر سؤال مالی/سکه/رسید بود به لیلا کیانی (مدیر مالی) ارجاع بده.',
       'تنبیه بدنی/خفه/شوک/آلفا رول ممنوع. توله≠بالغ؛ گربه≠سگ.',
       'پزشکی: نگران شو و بفرست دامپزشک؛ دارو نده.',
       who.includes('فرانک')
@@ -205,6 +225,7 @@ function systemPrompt(kind: AiConsultKind, agentName = AI_TRAINER_DISPLAY_NAME):
     'فقط مراقبت، تغذیه، پیشگیری، علائم هشدار و زمان مراجعه. تشخیص قطعی و نسخه دارو نده.',
     'در فارسی از DOG/CAT استفاده نکن؛ بگو سگ یا گربه.',
     'اگر سؤال تربیت/فرمان یا پشتیبانی فنی سایت بود: بگو تو تخصص تو نیست و به مربی یا پشتیبانی ارجاع بده.',
+    'در پیام اول خودت را به‌عنوان سارا نوری، دامپزشک پت‌دیت معرفی کن (کوتاه و گرم). وسط گفتگو دوباره معرفی نکن.',
     `اگر پرسیدند کی هستی بگو ${who} هستی. جایگزین دامپزشک حضوری نیستی؛ علائم خطرناک → مراجعه فوری.`,
   ].join('\n');
 }
@@ -221,14 +242,18 @@ function buildUserPrompt(ctx: AiConsultContext): string {
       ? 'کاربر از پشتیبانی پت‌دیت کمک می‌خواهد.'
       : ctx.kind === 'trainer'
         ? 'کاربر برای آموزش/رفتار پت راهنمایی می‌خواهد.'
-        : 'دامپزشک آنلاین نیست. لطفاً راهنمایی عمومی بده.';
+        : ctx.kind === 'finance'
+          ? 'کاربر دربارهٔ سکه، پرداخت، رسید یا مسائل مالی پت‌دیت سؤال دارد.'
+          : 'دامپزشک آنلاین نیست. لطفاً راهنمایی عمومی بده.';
   const ask =
     ctx.userMessage?.trim() ||
     (ctx.kind === 'support'
       ? 'سلام؛ چطور می‌توانم کمکت کنم؟'
       : ctx.kind === 'trainer'
         ? 'پیام افتتاحیه بنویس: گرم سلام کن، حال صاحب و پت را بپرس، به عکس/پروفایل اشاره کن؛ هنوز برنامهٔ آموزشی کامل نریز. این دستورالعمل را بلند نگو و نگو «اول احوال‌پرسی بعد آموزش» — فقط انجام بده.'
-        : 'برای مراقبت کلی از پت چه نکات مهمی داری؟');
+        : ctx.kind === 'finance'
+          ? 'پیام افتتاحیه بنویس: خودت را به‌عنوان لیلا کیانی مدیر مالی معرفی کن؛ بپرس درباره سکه، رسید، شاپ یا بازگشت وجه کمک می‌خواهد.'
+          : 'برای مراقبت کلی از پت چه نکات مهمی داری؟');
   return [intro, bits.length ? bits.join(' · ') : null, '', ask].filter(Boolean).join('\n');
 }
 
@@ -1257,7 +1282,7 @@ export function offlineAiAdvice(ctx: AiConsultContext): string {
     if (topic) {
       const lines = hasHistory
         ? [`دربارهٔ «${q}»:`, ``, topic]
-        : [`👋 من پشتیبانی هوشمند پت‌دیت هستم.`, ``, topic];
+        : [`👋 من ${consultAgentName(ctx)} هستم، پشتیبانی پت‌دیت.`, ``, topic];
       lines.push(``, `سؤال بعدی‌ات را بپرس — همین‌جا ادامه می‌دهیم.`);
       return lines.join('\n');
     }
@@ -1270,7 +1295,7 @@ export function offlineAiAdvice(ctx: AiConsultContext): string {
       ].join('\n');
     }
     return [
-      `👋 من پشتیبانی هوشمند پت‌دیت هستم.`,
+      `👋 من ${consultAgentName(ctx)} هستم، پشتیبانی پت‌دیت.`,
       ``,
       q
         ? `دربارهٔ «${q}» — یکی از این‌ها را امتحان کن یا جزئیات بیشتر بفرست:`
@@ -1280,10 +1305,25 @@ export function offlineAiAdvice(ctx: AiConsultContext): string {
       `• ثبت پت از «پت‌های من» یا ربات`,
       `• همبازی از پنل صاحب پت / گفتگوها`,
       `• مربی و دامپزشک از پنل‌های مربوط؛ برای مربی اگر کسی آزاد نباشد فرانک احمدی آنلاین جواب می‌دهد`,
-      `• سکه از منوی کیف پول / ربات`,
+      `• سکه از منوی کیف پول / ربات — برای جزئیات مالی با لیلا کیانی حرف بزن`,
       ``,
       `سؤال بعدی‌ات را بپرس — گفتگو ادامه دارد.`,
     ].join('\n');
+  }
+  if (ctx.kind === 'finance') {
+    const q = ctx.userMessage?.trim() ?? '';
+    if (q && isGreetingMessage(q)) return buildGreetingReply(ctx);
+    if (!q) return buildGreetingReply(ctx);
+    // Honest offline note — real finance answers need the online Grok/xAI path.
+    return [
+      `سلام، من ${consultAgentName(ctx)} هستم، مدیر مالی پت‌دیت.`,
+      ``,
+      `الان اتصال آنلاین مشاور مالی برقرار نیست؛ جزئیات دقیق رسید/سکه را همین‌جا نمی‌توانم قطعی تأیید کنم.`,
+      `مسیرهای سریع: /wallet برای سکه و رسید · /shop برای سفارش · اگر باگ دیدی با ساناز غفاری در /support/chat.`,
+      q ? `سؤالت («${q}») را نگه دار — به‌محض آنلاین شدن مشاور مالی همان را ادامه می‌دهیم.` : '',
+    ]
+      .filter(Boolean)
+      .join('\n');
   }
   if (ctx.kind === 'trainer') {
     const withTone = (text: string) =>
@@ -1325,6 +1365,7 @@ export function offlineAiAdvice(ctx: AiConsultContext): string {
       petBreed: ctx.petBreed,
       petImageUrl: ctx.petImageUrl,
       petAgeMonths: ctx.petAgeMonths,
+      agentName: consultAgentName(ctx),
     });
     if (q) {
       return withTone(
@@ -1388,7 +1429,7 @@ async function callOpenAiCompatible(ctx: AiConsultContext): Promise<string | nul
   for (const h of ctx.history ?? []) {
     messages.push({ role: h.role, content: h.content });
   }
-  if (ctx.kind === 'support' || ctx.kind === 'trainer') {
+  if (ctx.kind === 'support' || ctx.kind === 'trainer' || ctx.kind === 'finance') {
     const userText = ctx.userMessage?.trim() || 'سلام';
     const ctxBits = petContextBits(ctx);
     // Always attach pet context for trainer so multi-turn stays age/breed-aware.
@@ -1405,7 +1446,9 @@ async function callOpenAiCompatible(ctx: AiConsultContext): Promise<string | nul
         : ctx.kind === 'trainer'
           ? '\n\n(یادآوری: سؤال کاربر را تکرار نکن؛ مستقیم جواب بده. «نسخه» و متای «برای اینکه درست/دقیق راهنمایی کنم باید بدونم…» ممنوع؛ گفتگو را ادامه بده؛ سن/خونه-بیرون را اگر قبلاً پرسیدی یا جواب داده دوباره نپرس.)' +
             onlineUnknownHint
-          : onlineUnknownHint;
+          : ctx.kind === 'finance'
+            ? '\n\n(یادآوری: فقط حوزه مالی/سکه/رسید/شاپ؛ قطعی درباره وضعیت پرداخت حدس نزن؛ مسیر /wallet و /shop را دقیق بگو.)'
+            : onlineUnknownHint;
     messages.push({ role: 'user', content: `${prefix}${userText}${followHint}` });
   } else {
     messages.push({ role: 'user', content: buildUserPrompt(ctx) });
@@ -1491,7 +1534,7 @@ export function isGreetingMessage(message: string): boolean {
     /^(سلام\s+)?(خوبی|خوبی؟|حالت چطوره|حالت چطوره؟|چطوری|چطوری؟|چه خبرا|چه خبر|چخبر|خوبین|خوبید)([\sی]?؟?)?$/.test(
       normalized
     ) ||
-    /^(سلام|درود|hi|hello|hey)([\s،]+(خوبی|حالت چطوره|چطوری|پاشا|مربی|فرانک|یلدا|دکتر))?$/.test(
+    /^(سلام|درود|hi|hello|hey)([\s،]+(خوبی|حالت چطوره|چطوری|پاشا|مربی|فرانک|ساناز|لیلا|سارا|یلدا|دکتر))?$/.test(
       normalized
     )
   ) {
@@ -1541,6 +1584,21 @@ export function buildGreetingReply(ctx: AiConsultContext): string {
     );
   }
 
+  if (ctx.kind === 'finance') {
+    if (hasHistory) {
+      return withTone(
+        [`سلام ${owner}! خوبی؟ من اینجام 👋`, `بگو درباره سکه، رسید، شاپ یا بازگشت وجه کمکت کنم؟`].join('\n')
+      );
+    }
+    return withTone(
+      [
+        `سلام ${owner} 👋 من ${who}ام، مدیر مالی پت‌دیت.`,
+        ``,
+        `خودت خوبی؟ بگو روی سکه، شارژ/رسید، پرداخت شاپ یا بازگشت وجه گیر کردی تا راهنمایی‌ت کنم.`,
+      ].join('\n')
+    );
+  }
+
   if (ctx.kind === 'vet') {
     if (hasHistory) {
       return withTone(
@@ -1549,7 +1607,7 @@ export function buildGreetingReply(ctx: AiConsultContext): string {
     }
     return withTone(
       [
-        `سلام ${owner} 👋 من ${who}ام.`,
+        `سلام ${owner} 👋 من ${who}ام، دامپزشک پت‌دیت.`,
         ``,
         `خودت خوبی؟ ${pet} حالش چطوره — سرحاله یا چیزی نگران‌ت کرده؟`,
         `هر چی دیدی بگو (از کی شروع شده، غذا/آب، استفراغ، بی‌حالی…) تا راهنمایی عمومی بدم؛ اگر خطرناک بود می‌گم سریع حضوری برید.`,
@@ -1574,6 +1632,7 @@ export function buildGreetingReply(ctx: AiConsultContext): string {
       petImageUrl: ctx.petImageUrl,
       petAgeMonths: ctx.petAgeMonths,
       userTone: ctx.userTone,
+      agentName: who,
     })
   );
 }

@@ -70,8 +70,8 @@ export function decorateAiConsultDisplay(consult: VetConsultation): VetConsultat
   return { ...consult, vetName, vetAvatarUrl };
 }
 
-function toAiKind(kind: ConsultServiceKind): 'vet' | 'trainer' | null {
-  if (kind === 'vet' || kind === 'trainer') return kind;
+function toAiKind(kind: ConsultServiceKind): 'vet' | 'trainer' | 'finance' | null {
+  if (kind === 'vet' || kind === 'trainer' || kind === 'finance') return kind;
   return null;
 }
 
@@ -149,9 +149,9 @@ export async function startAiFallbackConsult(opts: {
       ...petFields,
     });
     source = 'offline';
-  } else if (!userMessage && aiKind === 'vet') {
+  } else if (!userMessage && (aiKind === 'vet' || aiKind === 'finance')) {
     adviceText = buildGreetingReply({
-      kind: 'vet',
+      kind: aiKind,
       patientName: opts.patient.name,
       agentName: displayName,
       ...petFields,
@@ -170,18 +170,24 @@ export async function startAiFallbackConsult(opts: {
   }
 
   dbService.closeActiveAiConsultsForPatient(opts.patient.id, aiKind, ai.id, null);
+  const notesLabel =
+    aiKind === 'trainer'
+      ? `مشاوره آنلاین با ${displayName}`
+      : aiKind === 'finance'
+        ? `مشاوره مالی با ${displayName}`
+        : `مشاوره با ${displayName}`;
   const consult = dbService.createVetConsultation({
     vetUserId: ai.id,
     patientUserId: opts.patient.id,
     petId: pet?.id,
     status: 'active',
-    notes: aiKind === 'trainer' ? `مشاوره آنلاین با ${displayName}` : `مشاوره با ${displayName}`,
+    notes: notesLabel,
     feeCoins: 0,
     serviceKind: aiKind,
     providerShareCoins: 0,
   });
   const messageText =
-    aiKind === 'trainer' || !userMessage
+    aiKind === 'trainer' || aiKind === 'finance' || !userMessage
       ? adviceText
       : `چت با ${displayName} شروع شد.
 

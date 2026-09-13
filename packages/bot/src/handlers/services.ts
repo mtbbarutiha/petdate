@@ -260,9 +260,9 @@ export async function handleQuickVet(ctx: Context): Promise<void> {
     if (result.ok && result.aiFallback) {
       await ctx.reply(
         [
-          '🩺 <b>دکتر سارا نوری</b>',
+          '🩺 <b>سارا نوری</b>',
           '',
-          'دامپزشک انسانی آنلاین نبود — چت رایگان با دکتر سارا نوری شروع شد.',
+          'دامپزشک انسانی آنلاین نبود — چت رایگان با سارا نوری شروع شد.',
           '',
           result.message,
           result.advice ? '\n' + result.advice.slice(0, 3500) : '',
@@ -290,7 +290,7 @@ export async function handleQuickVet(ctx: Context): Promise<void> {
       [
         '⚡ <b>مشاوره سریع با پزشک</b>',
         '',
-        result.ok === false ? result.error : 'الان دامپزشک آنلاین نیست و دکتر سارا نوری هم در دسترس نبود.',
+        result.ok === false ? result.error : 'الان دامپزشک آنلاین نیست و سارا نوری هم در دسترس نبود.',
         '',
         `موجودی تو: <b>${formatNum(balance)}</b> سکه`,
       ].join('\n'),
@@ -429,12 +429,12 @@ export async function handleQuickVetConnect(
   }
 
   await ctx.answerCallbackQuery({
-    text: result.aiFallback ? 'دکتر سارا نوری شروع شد' : 'درخواست ارسال شد',
+    text: result.aiFallback ? 'سارا نوری شروع شد' : 'درخواست ارسال شد',
   });
   if (result.aiFallback) {
     await ctx.reply(
       [
-        '🩺 <b>دکتر سارا نوری</b>',
+        '🩺 <b>سارا نوری</b>',
         '',
         result.message,
         result.advice ? '\n' + result.advice.slice(0, 3500) : '',

@@ -1,15 +1,19 @@
 /**
  * Bridge: Grok Bot (گراک بات / «گراگ بات») roster ↔ petdate TEAM_AGENTS.
  *
- * Mohammad’s five Grok Bot teammates map 1:1 onto site personas.
+ * Four public personas: trainer / finance / support / vet.
  * Optional env links (share id / URL) mark a persona as externally connected
- * without creating a parallel chat system — consult still goes through ai-consult.
+ * without creating a parallel chat system — consult still goes through ai-consult
+ * (xAI/Grok model + domain system prompt when bot id missing, e.g. finance).
  *
- * Per-agent:
- *   GROK_BOT_FARANAK_AHMADI_ID=…
- *   GROK_BOT_FARANAK_AHMADI_URL=https://x.ai/…
+ * Known VPS domain IDs (remap by role):
+ *   GROK_BOT_FARANAK_AHMADI_ID=b6e496b5-0b15-4c9b-852d-644d3f5e411a  (trainer)
+ *   GROK_BOT_SARA_NOORI_ID=0140b645-f844-45c1-b6d8-3f06514529de      (vet)
+ *   GROK_BOT_SANAZ_GHAFFARI_ID=18a4d76a-1900-49dc-964c-27d23abb31e9  (support)
+ *   GROK_BOT_LEILA_KIANI_ID=…  (finance — provide when available)
+ *
  * Or JSON map:
- *   GROK_BOT_AGENT_MAP={"faranak_ahmadi":{"id":"…","url":"…"},…}
+ *   GROK_BOT_AGENT_MAP={"faranak_ahmadi":{"id":"…"},"sara_noori":{"id":"…"},…}
  */
 import {
   TEAM_AGENTS,

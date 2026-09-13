@@ -16,7 +16,7 @@ assert.match(support, /support:ticket/, 'ticket callback');
 assert.match(support, /support:agent/, 'agent callback');
 assert.match(support, /ثبت تیکت/, 'ticket label');
 assert.match(support, /صحبت با بات پشتیبانی/, 'agent label');
-assert.match(support, /یلدا شعبانی/, 'agent name');
+assert.match(support, /ساناز غفاری/, 'agent name');
 assert.match(support, /support_ticket_title/, 'ticket title step');
 assert.match(support, /createSupportTicketAsTelegram/, 'ticket API');
 assert.match(index, /handleSupportMenu/, 'index wires menu');

@@ -25,7 +25,7 @@ assert.match(hub, /\/support\/ticket/, 'hub links ticket');
 assert.match(hub, /\/support\/chat/, 'hub links chat');
 assert.match(ticket, /createSupportTicket/, 'ticket page posts ticket');
 assert.match(ticket, /lastPublicReply/, 'ticket list shows public reply');
-assert.match(chat, /یلدا شعبانی|AI_ASSISTANT_DISPLAY_NAME/, 'chat uses support agent name');
-assert.match(agent, /یلدا شعبانی/, 'canonical agent name');
+assert.match(chat, /ساناز غفاری|AI_ASSISTANT_DISPLAY_NAME/, 'chat uses support agent name');
+assert.match(agent, /ساناز غفاری/, 'canonical agent name');
 
 console.log('supportSplit.selftest: ok');

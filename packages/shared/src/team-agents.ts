@@ -1,19 +1,21 @@
 /**
- * Site team chat personas → 3 domain AI agents (vet | trainer | support).
+ * Site team chat personas → 4 public faces / 4 domain AI agents.
  *
  * Domain engines (prompts / knowledge):
- *   trainer → فرانک احمدی، لیلا کیانی
- *   vet     → دکتر ساناز غفاری، دکتر سارا نوری
- *   support → یلدا شعبانی
+ *   trainer  → فرانک احمدی
+ *   finance  → لیلا کیانی (مدیر مالی)
+ *   support  → ساناز غفاری
+ *   vet      → سارا نوری  (only public vet — no second doctor)
  *
- * These five faces are the same roster Mohammad built in Grok Bot (گراک بات /
- * «گراگ بات»). `grokBotKey` is the stable bridge id for optional external links.
+ * Same roster as Grok Bot (گراک بات). `grokBotKey` bridges optional external
+ * bot ids (GROK_BOT_<KEY>_ID / URL). Finance may run on xAI via system prompt
+ * when GROK_BOT_LEILA_KIANI_ID is not yet provisioned.
  *
- * Default trainer face is فرانک احمدی (replaces legacy «پاشا یزدانی»).
- * لیلا remains a separate trainer persona (same domain engine).
+ * Legacy: یلدا شعبانی redirects to ساناز (support). Old Sanaz-as-vet / Leila-as-trainer
+ * URLs still resolve via aliases.
  */
 
-export type TeamAgentKind = 'vet' | 'trainer' | 'support';
+export type TeamAgentKind = 'vet' | 'trainer' | 'support' | 'finance';
 
 export type TeamAgentDef = {
   slug: string;
@@ -47,8 +49,8 @@ export const TEAM_AGENTS: readonly TeamAgentDef[] = [
     slug: 'leila-kiani',
     telegramId: 'petdate_ai_assistant',
     name: 'لیلا کیانی',
-    role: 'مربی',
-    kind: 'trainer',
+    role: 'مدیر مالی',
+    kind: 'finance',
     avatarUrl: '/agents/leila-kiani.jpg',
     cardImage: '/pepito/uploads/02-3.jpg',
     grokBotKey: 'leila_kiani',
@@ -56,9 +58,9 @@ export const TEAM_AGENTS: readonly TeamAgentDef[] = [
   {
     slug: 'sanaz-ghaffari',
     telegramId: 'petdate_ai_sanaz_ghaffari',
-    name: 'دکتر ساناز غفاری',
-    role: 'دامپزشک',
-    kind: 'vet',
+    name: 'ساناز غفاری',
+    role: 'پشتیبانی',
+    kind: 'support',
     avatarUrl: '/agents/sanaz-ghaffari.jpg',
     cardImage: '/pepito/uploads/03-3.jpg',
     grokBotKey: 'sanaz_ghaffari',
@@ -67,36 +69,29 @@ export const TEAM_AGENTS: readonly TeamAgentDef[] = [
     slug: 'sara-noori',
     // Keep telegram id so the existing DB synthetic user is patched, not recreated.
     telegramId: 'petdate_ai_sara_nozi',
-    name: 'دکتر سارا نوری',
+    name: 'سارا نوری',
     role: 'دامپزشک',
     kind: 'vet',
     avatarUrl: '/agents/sara-noori.jpg',
     cardImage: '/pepito/uploads/04-3.jpg',
     grokBotKey: 'sara_noori',
   },
-  {
-    slug: 'yalda-shabani',
-    telegramId: 'petdate_ai_yalda_shabani',
-    name: 'یلدا شعبانی',
-    role: 'پشتیبانی',
-    kind: 'support',
-    avatarUrl: '/agents/yalda-shabani.jpg',
-    cardImage: '/agents/yalda-shabani.jpg',
-    grokBotKey: 'yalda_shabani',
-  },
 ] as const;
 
-/** Old public URLs still resolve after renames. */
+/** Old public URLs still resolve after renames / role moves. */
 const TEAM_AGENT_SLUG_ALIASES: Record<string, string> = {
   'layla-ahmadi': 'faranak-ahmadi',
   'sara-nozi': 'sara-noori',
   'pasha-yazdani': 'faranak-ahmadi',
   pasha: 'faranak-ahmadi',
+  /** یلدا replaced by ساناز as support. */
+  'yalda-shabani': 'sanaz-ghaffari',
 };
 
 /**
  * Legacy display names → current TEAM_AGENTS slug.
- * «پاشا یزدانی» now maps to فرانک (مربی پیش‌فرض)، not لیلا.
+ * «پاشا یزدانی» → فرانک (مربی پیش‌فرض).
+ * یلدا → ساناز (پشتیبانی).
  */
 const TEAM_AGENT_NAME_ALIASES: Record<string, string> = {
   'پاشا یزدانی': 'faranak-ahmadi',
@@ -112,8 +107,8 @@ const TEAM_AGENT_NAME_ALIASES: Record<string, string> = {
   'سارا نوری': 'sara-noori',
   'دکتر سارا نوزی': 'sara-noori',
   'سارا نوزی': 'sara-noori',
-  'یلدا شعبانی': 'yalda-shabani',
-  یلدا: 'yalda-shabani',
+  'یلدا شعبانی': 'sanaz-ghaffari',
+  یلدا: 'sanaz-ghaffari',
   'دستیار هوشمند پت‌دیت': 'faranak-ahmadi',
   'دستیار هوشمند پت': 'faranak-ahmadi',
   'دستیار هوشمند': 'faranak-ahmadi',
@@ -122,10 +117,14 @@ const TEAM_AGENT_NAME_ALIASES: Record<string, string> = {
 /** Default trainer / AI fallback face — فرانک replaces پاشا. */
 export const DEFAULT_TEAM_AGENT_SLUG = 'faranak-ahmadi';
 
-export const SUPPORT_TEAM_AGENT_SLUG = 'yalda-shabani';
+/** Support AI face — ساناز غفاری (replaces یلدا). */
+export const SUPPORT_TEAM_AGENT_SLUG = 'sanaz-ghaffari';
 
-/** Default vet AI face when no human vet is online. */
+/** Default vet AI face when no human vet is online — only سارا. */
 export const DEFAULT_VET_TEAM_AGENT_SLUG = 'sara-noori';
+
+/** Finance / billing AI face — لیلا کیانی. */
+export const FINANCE_TEAM_AGENT_SLUG = 'leila-kiani';
 
 export function getTeamAgentBySlug(slug: string | null | undefined): TeamAgentDef | null {
   const key = String(slug || '').trim().toLowerCase();
@@ -145,6 +144,8 @@ export function getTeamAgentByGrokBotKey(key: string | null | undefined): TeamAg
   const raw = String(key || '').trim().toLowerCase();
   if (!raw) return null;
   const normalized = raw.replace(/-/g, '_');
+  // Legacy yalda_shabani → sanaz support persona.
+  if (normalized === 'yalda_shabani') return getTeamAgentBySlug('sanaz-ghaffari');
   return TEAM_AGENTS.find((a) => a.grokBotKey === normalized) ?? getTeamAgentBySlug(raw.replace(/_/g, '-'));
 }
 
