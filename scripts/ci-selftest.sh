@@ -137,6 +137,9 @@ npx tsx "$ROOT/packages/web/src/admin/adminResponsive.selftest.ts"
 echo "==> selftest: admin sidebar fixed to viewport (no empty chrome under logout)"
 npx tsx "$ROOT/packages/web/src/admin/adminSidebarSticky.selftest.ts"
 
+echo "==> selftest: sales inbound-call simulator docks via body portal"
+npx tsx "$ROOT/packages/web/src/admin/pages/sales/salesCallSim.selftest.ts"
+
 echo "==> selftest: admin route-transition loading (no stale tab flash)"
 npx tsx "$ROOT/packages/web/src/admin/adminRouteLoading.selftest.ts"
 

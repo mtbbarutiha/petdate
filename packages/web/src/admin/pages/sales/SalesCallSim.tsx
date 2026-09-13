@@ -6,6 +6,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useNavigate } from 'react-router-dom';
 import { Phone, PhoneIncoming, PhoneOff } from 'lucide-react';
 import type { SalesSimulateIncoming } from '@petdate/shared';
@@ -46,6 +47,105 @@ export function useSalesCallSimOptional(): SalesCallSimApi | null {
 function leadPath(item: NonNullable<CallState['matchedItem']>): string {
   const kind = item.kind === 'upgrade' ? 'upgrades' : 'leads';
   return `/admin/sales/${kind}/${item.id}`;
+}
+
+/**
+ * Incoming-call chrome must leave the React tree of `.admin-app`.
+ * That shell uses overflow-x:clip + 100dvh; a sibling/in-flow overlay
+ * is unstyled (CSS is `.admin-app .admin-sales-call-*`) and stretches
+ * the page under the fixed sidebar. Portal to document.body; host uses
+ * display:contents so we inherit admin tokens without a second canvas.
+ */
+function SalesCallOverlayHost({ children }: { children: ReactNode }) {
+  if (typeof document === 'undefined') return null;
+  return createPortal(
+    <div className="admin-app admin-sales-call-host" style={{ display: 'contents' }}>
+      {children}
+    </div>,
+    document.body
+  );
+}
+
+function SalesCallDock({
+  call,
+  onAnswer,
+  onReject,
+  onEnd,
+}: {
+  call: CallState;
+  onAnswer: () => void;
+  onReject: () => void;
+  onEnd: () => void;
+}) {
+  const matched = call.matchedItem;
+  const matchedName = matched ? `${matched.first} ${matched.last}`.trim() : '';
+  const ringing = call.phase === 'ringing';
+
+  return (
+    <div
+      className={`admin-sales-call-dock admin-sales-call-dock--${call.phase ?? 'idle'}`}
+      role="dialog"
+      aria-modal="false"
+      aria-live="polite"
+      aria-label={ringing ? tr('تماس ورودی') : tr('تماس فعال')}
+      data-testid="admin-sales-call-dock"
+    >
+      {ringing ? (
+        <div className="admin-sales-call-popup-pulse" aria-hidden>
+          <span />
+          <span />
+          <div className="admin-sales-call-popup-avatar">
+            <PhoneIncoming size={36} strokeWidth={2} />
+          </div>
+        </div>
+      ) : (
+        <div className="admin-sales-call-popup-avatar admin-sales-call-popup-avatar--live" aria-hidden>
+          <Phone size={32} strokeWidth={2} />
+        </div>
+      )}
+      <p className="admin-sales-call-popup-eyebrow">
+        {ringing ? tr('تماس ورودی') : tr('در حال مکالمه')}
+      </p>
+      <h2 className="admin-sales-call-popup-phone" dir="ltr">
+        {call.phone}
+      </h2>
+      {matched ? (
+        <div className="admin-sales-call-popup-match">
+          <strong>{matchedName || tr('لید شناسایی‌شده')}</strong>
+          {ringing ? (
+            <span>
+              {tr('امتیاز')} {matched.score} · {matched.kind === 'upgrade' ? tr('آپگرید') : tr('لید')} · Pet Date
+            </span>
+          ) : (
+            <Link to={leadPath(matched)} className="admin-sales-call-popup-link">
+              {tr('باز کردن پرونده')}
+            </Link>
+          )}
+        </div>
+      ) : (
+        <p className="admin-sales-call-popup-unknown">
+          {ringing ? tr('شماره در کارتابل پیدا نشد') : tr('لید ناشناس · فقط ثبت نتیجه دستی')}
+        </p>
+      )}
+      <div className="admin-sales-call-popup-actions">
+        <button type="button" className="admin-sales-call-btn admin-sales-call-btn--reject" onClick={onReject}>
+          <PhoneOff size={20} />
+          {ringing ? tr('رد') : tr('قطع')}
+        </button>
+        {ringing ? (
+          <button type="button" className="admin-sales-call-btn admin-sales-call-btn--answer" onClick={onAnswer}>
+            <Phone size={20} />
+            {tr('پاسخ')}
+          </button>
+        ) : (
+          <button type="button" className="admin-sales-call-btn admin-sales-call-btn--answer" onClick={onEnd}>
+            <Phone size={20} />
+            {tr('پایان و ثبت')}
+          </button>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export function SalesCallSimProvider({ children }: { children: ReactNode }) {
@@ -110,131 +210,65 @@ export function SalesCallSimProvider({ children }: { children: ReactNode }) {
     [call, simulateIncoming, answer, reject, endCall]
   );
 
-  const matched = call?.matchedItem;
-  const matchedName = matched ? `${matched.first} ${matched.last}`.trim() : '';
+  const showDock = Boolean(call?.phase) && !wrapOpen;
+  const showLayer = showDock || wrapOpen;
 
   return (
     <Ctx.Provider value={api}>
       {children}
-
-      {call?.phase === 'ringing' ? (
-        <div className="admin-sales-call-overlay" role="dialog" aria-modal="true" aria-label={tr("تماس ورودی")}>
-          <div className="admin-sales-call-popup admin-sales-call-popup--ringing">
-            <div className="admin-sales-call-popup-pulse" aria-hidden>
-              <span />
-              <span />
-              <div className="admin-sales-call-popup-avatar">
-                <PhoneIncoming size={36} strokeWidth={2} />
-              </div>
-            </div>
-            <p className="admin-sales-call-popup-eyebrow">{tr('تماس ورودی')}</p>
-            <h2 className="admin-sales-call-popup-phone" dir="ltr">
-              {call.phone}
-            </h2>
-            {matched ? (
-              <div className="admin-sales-call-popup-match">
-                <strong>{matchedName || tr('لید شناسایی‌شده')}</strong>
-                <span>
-                  {tr('امتیاز')} {matched.score} · {matched.kind === 'upgrade' ? tr('آپگرید') : tr('لید')} · Pet Date
-                </span>
-              </div>
-            ) : (
-              <p className="admin-sales-call-popup-unknown">{tr('شماره در کارتابل پیدا نشد')}</p>
+      {showLayer ? (
+        <SalesCallOverlayHost>
+          {showDock && call ? (
+            <SalesCallDock call={call} onAnswer={answer} onReject={reject} onEnd={endCall} />
+          ) : null}
+          <AdminModal
+            open={wrapOpen}
+            title={tr('ثبت نتیجه تماس ورودی')}
+            onClose={() => !busy && setWrapOpen(false)}
+            size="sm"
+            as="form"
+            busy={busy}
+            onSubmit={(e) => {
+              e.preventDefault();
+              void finishWrap();
+            }}
+            footer={(
+              <>
+                <button type="submit" className="admin-btn admin-btn--primary" disabled={busy || !summary.trim()}>
+                  {tr('ذخیره')}
+                </button>
+                <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setWrapOpen(false)}>
+                  {tr('انصراف')}
+                </button>
+              </>
             )}
-            <div className="admin-sales-call-popup-actions">
-              <button type="button" className="admin-sales-call-btn admin-sales-call-btn--reject" onClick={reject}>
-                <PhoneOff size={20} />
-                {tr('رد')}
-              </button>
-              <button type="button" className="admin-sales-call-btn admin-sales-call-btn--answer" onClick={answer}>
-                <Phone size={20} />
-                {tr('پاسخ')}
-              </button>
-            </div>
-          </div>
-        </div>
+          >
+            <label>
+              <span className="form-label">{tr('نتیجه')}</span>
+              <select className="admin-select" value={result} onChange={(e) => setResult(e.target.value)}>
+                {SALES_CALL_RESULTS.map((r) => (
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span className="form-label">{tr('خلاصه')}</span>
+              <textarea
+                className="form-input"
+                rows={3}
+                required
+                value={summary}
+                onChange={(e) => setSummary(e.target.value)}
+              />
+            </label>
+            {!call?.matchedItem ? (
+              <p className="admin-muted">{tr('لید متناظر یافت نشد — فقط پاپ‌آپ بسته می‌شود.')}</p>
+            ) : null}
+          </AdminModal>
+        </SalesCallOverlayHost>
       ) : null}
-
-      {call?.phase === 'active' ? (
-        <div className="admin-sales-call-overlay" role="dialog" aria-modal="true" aria-label={tr("تماس فعال")}>
-          <div className="admin-sales-call-popup admin-sales-call-popup--active">
-            <div className="admin-sales-call-popup-avatar admin-sales-call-popup-avatar--live" aria-hidden>
-              <Phone size={32} strokeWidth={2} />
-            </div>
-            <p className="admin-sales-call-popup-eyebrow">{tr('در حال مکالمه')}</p>
-            <h2 className="admin-sales-call-popup-phone" dir="ltr">
-              {call.phone}
-            </h2>
-            {matched ? (
-              <div className="admin-sales-call-popup-match">
-                <strong>{matchedName}</strong>
-                <Link to={leadPath(matched)} className="admin-sales-call-popup-link">
-                  {tr('باز کردن پرونده')}
-                </Link>
-              </div>
-            ) : (
-              <p className="admin-sales-call-popup-unknown">{tr('لید ناشناس · فقط ثبت نتیجه دستی')}</p>
-            )}
-            <div className="admin-sales-call-popup-actions">
-              <button type="button" className="admin-sales-call-btn admin-sales-call-btn--reject" onClick={reject}>
-                <PhoneOff size={20} />
-                {tr('قطع')}
-              </button>
-              <button type="button" className="admin-sales-call-btn admin-sales-call-btn--answer" onClick={endCall}>
-                <Phone size={20} />
-                {tr('پایان و ثبت')}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      <AdminModal
-        open={wrapOpen}
-        title={tr("ثبت نتیجه تماس ورودی")}
-        onClose={() => !busy && setWrapOpen(false)}
-        size="sm"
-        as="form"
-        busy={busy}
-        onSubmit={(e) => {
-          e.preventDefault();
-          void finishWrap();
-        }}
-        footer={(
-          <>
-            <button type="submit" className="admin-btn admin-btn--primary" disabled={busy || !summary.trim()}>
-              {tr('ذخیره')}
-            </button>
-            <button type="button" className="admin-btn admin-btn--ghost" disabled={busy} onClick={() => setWrapOpen(false)}>
-              {tr('انصراف')}
-            </button>
-          </>
-        )}
-      >
-        <label>
-          <span className="form-label">{tr('نتیجه')}</span>
-          <select className="admin-select" value={result} onChange={(e) => setResult(e.target.value)}>
-            {SALES_CALL_RESULTS.map((r) => (
-              <option key={r} value={r}>
-                {r}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label>
-          <span className="form-label">{tr('خلاصه')}</span>
-          <textarea
-            className="form-input"
-            rows={3}
-            required
-            value={summary}
-            onChange={(e) => setSummary(e.target.value)}
-          />
-        </label>
-        {!call?.matchedItem ? (
-          <p className="admin-muted">{tr('لید متناظر یافت نشد — فقط پاپ‌آپ بسته می‌شود.')}</p>
-        ) : null}
-      </AdminModal>
     </Ctx.Provider>
   );
 }
