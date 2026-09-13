@@ -245,10 +245,47 @@ esac
 
 mkdir -p packages/api/data
 
-if [[ "\$SCOPE" == "all" && -x ./scripts/backup-sqlite.sh ]]; then
-  sudo mkdir -p /var/backups/petdate
-  sudo chmod 700 /var/backups/petdate
-  (sudo crontab -l 2>/dev/null | grep -v backup-sqlite || true; echo "15 2 * * * $REMOTE_DIR/scripts/backup-sqlite.sh >> /var/log/petdate-backup.log 2>&1") | sudo crontab - || true
+if [[ "\$SCOPE" == "all" ]]; then
+  sudo mkdir -p /var/backups/petdate /var/backups/petdate/postgres
+  sudo chmod 700 /var/backups/petdate /var/backups/petdate/postgres
+  {
+    sudo crontab -l 2>/dev/null | grep -v backup-sqlite | grep -v backup-postgres | grep -v monitor-health || true
+    echo "15 2 * * * $REMOTE_DIR/scripts/backup-sqlite.sh >> /var/log/petdate-backup.log 2>&1"
+    echo "15 3 * * * $REMOTE_DIR/scripts/backup-postgres.sh >> /var/log/petdate-pg-backup.log 2>&1"
+    echo "*/5 * * * * $REMOTE_DIR/scripts/monitor-health.sh >> /var/log/petdate-health.log 2>&1"
+  } | sudo crontab - || true
+  echo "OK: cron backup-sqlite (02:15) backup-postgres (03:15) monitor-health (*/5)"
+
+  # Idempotent logrotate for PM2 + /var/log/petdate-*.log (also try pm2-logrotate).
+  sudo tee /etc/logrotate.d/petdate >/dev/null <<'LR'
+/var/log/petdate-*.log {
+  daily
+  rotate 14
+  compress
+  missingok
+  notifempty
+  copytruncate
+}
+LR
+  PM2_LOG_GLOB="\$HOME/.pm2/logs/*.log"
+  sudo tee /etc/logrotate.d/petdate-pm2 >/dev/null <<LR
+\$PM2_LOG_GLOB {
+  daily
+  rotate 7
+  compress
+  missingok
+  notifempty
+  copytruncate
+}
+LR
+  echo "OK: logrotate /etc/logrotate.d/petdate{,-pm2}"
+  if [[ -d "\$HOME/.pm2/modules/pm2-logrotate" ]] || pm2 ls 2>/dev/null | grep -qi logrotate; then
+    echo "OK: pm2-logrotate already installed"
+  else
+    timeout 90 pm2 install pm2-logrotate >/tmp/pm2-logrotate-install.txt 2>&1 \
+      && echo "OK: pm2-logrotate installed" \
+      || echo "WARNING: pm2-logrotate install failed — logrotate snippet remains" >&2
+  fi
 fi
 
 if [[ ! -f ecosystem.config.cjs ]]; then
@@ -374,24 +411,35 @@ NGINX
   rm -rf "\$NGINX_BAK_DIR"
 fi
 
-# Wait for API after PM2 reload so deploy doesn't finish while listeners are down (502/504 window).
+# Wait for API after PM2 reload. Prefer /api/health/ready (Postgres + Redis).
+# Fall back to /api/health only when ready is missing (404) during rollout.
+# GET /api/health stays cheap liveness for PM2; ready is the deploy gate.
 if [[ "\$SCOPE" == "all" || "\$SCOPE" == "api" || "\$SCOPE" == "shared" ]]; then
-  echo "==> Post-deploy: wait for /api/health"
+  echo "==> Post-deploy: wait for /api/health/ready (fallback /api/health)"
   ok=0
-  for i in \$(seq 1 30); do
-    if curl -fsS -m 3 http://127.0.0.1:3001/api/health >/dev/null 2>&1; then
+  used="none"
+  for i in \$(seq 1 40); do
+    ready_code="\$(curl -sS -o /dev/null -w '%{http_code}' -m 3 http://127.0.0.1:3001/api/health/ready || echo 000)"
+    if [[ "\$ready_code" =~ ^2 ]]; then
       ok=1
+      used="ready"
+      break
+    fi
+    if [[ "\$ready_code" == "404" ]] && curl -fsS -m 3 http://127.0.0.1:3001/api/health >/dev/null 2>&1; then
+      ok=1
+      used="liveness-fallback"
       break
     fi
     sleep 1
   done
   if [[ "\$ok" != "1" ]]; then
-    echo "ERROR: petdate-api /api/health not ready after deploy" >&2
+    echo "ERROR: petdate-api /api/health/ready not ready after deploy (last=\${ready_code:-none})" >&2
     exit 1
   fi
-  echo "OK: api health"
-  # Also verify nginx can reach the API (what WCDN / IR users hit).
-  if curl -fsS -m 5 -H 'Host: petdate.ir' http://127.0.0.1/api/health >/dev/null 2>&1 \\
+  echo "OK: api \$used"
+  if curl -fsS -m 5 -H 'Host: petdate.ir' http://127.0.0.1/api/health/ready >/dev/null 2>&1 \\
+    || curl -fsk -m 5 -H 'Host: petdate.ir' https://127.0.0.1/api/health/ready >/dev/null 2>&1 \\
+    || curl -fsS -m 5 -H 'Host: petdate.ir' http://127.0.0.1/api/health >/dev/null 2>&1 \\
     || curl -fsk -m 5 -H 'Host: petdate.ir' https://127.0.0.1/api/health >/dev/null 2>&1; then
     echo "OK: nginx → api health"
   else
@@ -437,9 +485,29 @@ if [[ "\$SCOPE" == "all" || "\$SCOPE" == "bot" || "\$SCOPE" == "api" ]]; then
   fi
 fi
 
+# Immediate Postgres dump after a full deploy — best-effort; do not fail the ship.
+if [[ "\$SCOPE" == "all" && -x ./scripts/backup-postgres.sh ]]; then
+  echo "==> Immediate Postgres backup (best-effort)"
+  if sudo env PETDATE_ROOT='$REMOTE_DIR' ./scripts/backup-postgres.sh >> /var/log/petdate-pg-backup.log 2>&1; then
+    echo "OK: postgres dump written"
+  else
+    echo "WARNING: Postgres backup failed (deploy continues) — see /var/log/petdate-pg-backup.log" >&2
+  fi
+fi
+
+if [[ -x ./scripts/verify-prod-env.sh ]]; then
+  echo "==> verify-prod-env (never prints secret values)"
+  if ./scripts/verify-prod-env.sh .env; then
+    echo "OK: verify-prod-env"
+  else
+    echo "WARNING: verify-prod-env reported MISSING or DEFAULT-RISK (deploy continues)" >&2
+  fi
+fi
+
 echo ""
 echo "Deploy done (scope=\$SCOPE)."
 echo "Web:   http://SERVER_IP/"
 echo "API:   http://SERVER_IP/api/health"
+echo "Ready: http://SERVER_IP/api/health/ready"
 echo "Edit $REMOTE_DIR/.env then: pm2 restart petdate-api petdate-bot"
 EOF

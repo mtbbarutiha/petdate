@@ -114,8 +114,15 @@ app.use(
   })
 );
 
+// Liveness only — cheap for PM2 / CDN. Data-plane checks live on /api/health/ready.
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true, service: 'petdate-api' });
+});
+
+app.get('/api/health/ready', async (_req, res) => {
+  const { checkReadiness } = await import('./health-ready');
+  const result = await checkReadiness();
+  res.status(result.ok ? 200 : 503).json(result);
 });
 
 app.get('/api/health/candoo', async (_req, res) => {

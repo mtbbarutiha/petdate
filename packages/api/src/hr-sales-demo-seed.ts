@@ -23,6 +23,7 @@ import {
 import { listSalesProducts } from './sales-service';
 import { getDb } from './db';
 import { ADMIN_ROLE_PERMISSIONS } from '@petdate/shared';
+import { allowDemoSeeds } from './demo-seeds-guard';
 
 const SEED_MARKER = 'SEED-HR-01';
 
@@ -182,10 +183,14 @@ function seedAlreadyDone(): boolean {
 
 /**
  * Additive HR↔Sales demo graph. Safe on every boot — skips when SEED-HR-01 exists.
+ * Production skips the demo graph unless ALLOW_DEMO_SEEDS=1 (permission backfill still runs).
  */
 export function seedHrSalesDemoIfNeeded(): void {
   // Caller must ensure HR + Sales schemas first (migrateSchema / selftest).
   ensureSystemRolePermissionBackfill();
+  if (!allowDemoSeeds()) {
+    return;
+  }
   // Always backfill missing SEED avatars (even if full seed already ran).
   ensureSeedEmployeeAvatars();
 

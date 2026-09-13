@@ -126,4 +126,9 @@ See [`docs/infra/wcdn.md`](./infra/wcdn.md): apex HTTP→HTTPS on origin (skip W
 - Voice notes for AI chats (پاشا / support): same key enables Whisper STT (`AI_CONSULT_STT_MODEL`, default `whisper-1`). Without a key, users get a polite “please type” Persian fallback.
 - Web: `/opt/petdate/packages/web/dist` (nginx root)
 - API/Bot: `/opt/petdate/packages/{api,bot}/dist` + `pm2 restart petdate-api petdate-bot`
-- DB: `/opt/petdate/packages/api/data/petdate.db` via `DATABASE_PATH` in `ecosystem.config.cjs`
+- DB: production SoT is Postgres (`DATABASE_URL` → compose service `postgres` / `petdate-postgres`). SQLite path in `ecosystem.config.cjs` is fallback only.
+- Health: `GET /api/health` is cheap liveness (PM2). `GET /api/health/ready` pings Postgres + Redis (if configured) with short timeouts. `deploy-vps.sh` waits on **ready** and falls back to `/api/health` only if ready is 404 during rollout.
+- Backups: daily SQLite `02:15` → `/var/log/petdate-backup.log`; daily Postgres `03:15` → `/var/log/petdate-pg-backup.log` (14-day retention under `/var/backups/petdate/postgres`). Full deploy also takes one best-effort dump immediately.
+- Monitor: `scripts/monitor-health.sh` every 5 min → `/var/log/petdate-health.log`. Logrotate: `/etc/logrotate.d/petdate` (+ pm2-logrotate when install succeeds).
+- Env check: `scripts/verify-prod-env.sh` prints only OK/MISSING/DEFAULT-RISK (never values). Run at end of deploy.
+- **Bot webhook:** keep `BOT_WEBHOOK_URL` empty in production (polling) until a real webhook HTTP listener exists.

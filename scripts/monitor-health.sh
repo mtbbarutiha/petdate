@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Lightweight PetDate health monitor for the VPS (API + web + bot + disk).
+# Lightweight PetDate health monitor for the VPS (API + web + pm2 + disk).
+# Prefers /api/health/ready (Postgres + Redis). Falls back to /api/health
+# only when ready is missing (404) during rollout.
 # Usage: ./scripts/monitor-health.sh
 # Cron example (every 5 min):
 #   */5 * * * * /opt/petdate/scripts/monitor-health.sh >> /var/log/petdate-health.log 2>&1
@@ -7,7 +9,8 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-API_URL="${PETDATE_HEALTH_API:-http://127.0.0.1:3001/api/health}"
+API_READY_URL="${PETDATE_HEALTH_READY:-http://127.0.0.1:3001/api/health/ready}"
+API_LIVE_URL="${PETDATE_HEALTH_API:-http://127.0.0.1:3001/api/health}"
 WEB_URL="${PETDATE_HEALTH_WEB:-http://127.0.0.1/}"
 STAMP="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 FAIL=0
@@ -26,7 +29,18 @@ check_http() {
   fi
 }
 
-check_http "api" "$API_URL"
+ready_code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 8 "$API_READY_URL" || echo 000)"
+if [[ "$ready_code" =~ ^2 ]]; then
+  echo "  OK  api-ready ($ready_code) $API_READY_URL"
+elif [[ "$ready_code" == "404" ]]; then
+  echo "  WARN api-ready missing (404) — falling back to liveness"
+  check_http "api-live" "$API_LIVE_URL"
+else
+  echo "  BAD api-ready ($ready_code) $API_READY_URL"
+  FAIL=1
+  check_http "api-live" "$API_LIVE_URL"
+fi
+
 check_http "web" "$WEB_URL"
 
 if command -v pm2 >/dev/null 2>&1; then
@@ -53,10 +67,12 @@ elif [[ -n "$DISK" ]]; then
   echo "  OK  disk ${DISK}% used"
 fi
 
-if [[ -f /opt/petdate/packages/api/data/petdate.db ]]; then
+if command -v docker >/dev/null 2>&1 && docker ps --format '{{.Names}}' 2>/dev/null | grep -qx petdate-postgres; then
+  echo "  OK  docker petdate-postgres"
+elif [[ -f /opt/petdate/packages/api/data/petdate.db ]]; then
   echo "  OK  sqlite present"
 else
-  echo "  WARN sqlite file not at default path"
+  echo "  WARN neither petdate-postgres container nor default sqlite file"
 fi
 
 if [[ "$FAIL" -ne 0 ]]; then
