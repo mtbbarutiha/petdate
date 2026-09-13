@@ -27,10 +27,37 @@ const SLUGS = [
   'cat-food-royal-canin-persian-adult-400g',
 ] as const;
 
+function jpegSofSize(bytes: Buffer): { w: number; h: number } {
+  let i = 2;
+  while (i < bytes.length - 8) {
+    if (bytes[i] !== 0xff) {
+      i += 1;
+      continue;
+    }
+    const marker = bytes[i + 1];
+    if (marker === 0xc0 || marker === 0xc1 || marker === 0xc2) {
+      return { h: bytes.readUInt16BE(i + 5), w: bytes.readUInt16BE(i + 7) };
+    }
+    if (marker === 0xd8 || marker === 0xd9) {
+      i += 2;
+      continue;
+    }
+    const len = bytes.readUInt16BE(i + 2);
+    i += 2 + len;
+  }
+  throw new Error('JPEG SOF not found');
+}
+
 const IMAGES = [
   'royal-canin-mini-adult-2kg.jpg',
+  'royal-canin-mini-adult-2kg-2.jpg',
+  'royal-canin-mini-adult-2kg-3.jpg',
   'royal-canin-xsmall-puppy-1.5kg.jpg',
+  'royal-canin-xsmall-puppy-1.5kg-2.jpg',
+  'royal-canin-xsmall-puppy-1.5kg-3.jpg',
   'royal-canin-persian-adult-400g.jpg',
+  'royal-canin-persian-adult-400g-2.jpg',
+  'royal-canin-persian-adult-400g-3.jpg',
 ] as const;
 
 async function main() {
@@ -85,6 +112,7 @@ async function main() {
     assert.equal(row.price_toman, expectedPrice[row.slug], `${row.slug} price`);
     assert.equal(row.cost_toman, row.price_toman, `${row.slug} margin 0`);
     assert.match(row.image, /^\/pepito\/uploads\/royal-canin-/);
+    assert.match(row.image, /\?v=gallery-v1$/, `${row.slug} image is cache-busted gallery-v1`);
     assert.equal(row.badge, 'new');
     assert.equal(Number(row.featured), 1);
     assert.equal(Number(row.in_stock), 1);
@@ -102,13 +130,28 @@ async function main() {
 
   const bust = readFileSync(join(repoRoot, 'tmp/cache-bust-royal-canin-pilot-3sku-v1'), 'utf8');
   assert.match(bust, /royal-canin-pilot-3sku-v1/, 'cache-bust marker present');
-  const whiteBust = readFileSync(join(repoRoot, 'tmp/cache-bust-royal-canin-mini-adult-white-v1'), 'utf8');
-  assert.match(whiteBust, /royal-canin-mini-adult-white-v1/, 'white packshot cache-bust marker present');
+  const galleryBust = readFileSync(join(repoRoot, 'tmp/cache-bust-royal-canin-gallery-v1'), 'utf8');
+  assert.match(galleryBust, /royal-canin-gallery-v1/, '3-angle gallery cache-bust marker present');
 
   const p221 = rows.find((r) => r.slug === SLUGS[0]);
   assert.ok(p221, 'p221 row');
-  assert.match(p221!.image, /royal-canin-mini-adult-2kg\.jpg\?v=white-v1$/, 'p221 image is cache-busted white-v1');
+  assert.match(p221!.image, /royal-canin-mini-adult-2kg\.jpg\?v=gallery-v1$/, 'p221 image is cache-busted gallery-v1');
   assert.doesNotMatch(p221!.image, /purple|5c4d91|بنفش/i, 'p221 must not be a purple cutout');
+  assert.match(
+    catalog,
+    /royal-canin-mini-adult-2kg\.jpg\?v=gallery-v1[\s\S]{0,180}royal-canin-mini-adult-2kg-2\.jpg\?v=gallery-v1[\s\S]{0,120}royal-canin-mini-adult-2kg-3\.jpg\?v=gallery-v1/,
+    'p221 catalog images[] is 3-angle gallery-v1'
+  );
+  assert.match(
+    catalog,
+    /royal-canin-xsmall-puppy-1\.5kg\.jpg\?v=gallery-v1[\s\S]{0,180}royal-canin-xsmall-puppy-1\.5kg-2\.jpg\?v=gallery-v1[\s\S]{0,120}royal-canin-xsmall-puppy-1\.5kg-3\.jpg\?v=gallery-v1/,
+    'p222 catalog images[] is 3-angle gallery-v1'
+  );
+  assert.match(
+    catalog,
+    /royal-canin-persian-adult-400g\.jpg\?v=gallery-v1[\s\S]{0,180}royal-canin-persian-adult-400g-2\.jpg\?v=gallery-v1[\s\S]{0,120}royal-canin-persian-adult-400g-3\.jpg\?v=gallery-v1/,
+    'p223 catalog images[] is 3-angle gallery-v1'
+  );
   assert.equal(seed.ROYAL_CANIN_PILOT_PRODUCTS.length, 3, 'no extra purple test SKU');
   assert.ok(
     !seed.ROYAL_CANIN_PILOT_SLUGS.some((s) => /purple|bg-purple/i.test(s)),
@@ -149,6 +192,9 @@ async function main() {
     assert.ok(bytes.length > 20_000, `${name} is not an empty placeholder`);
     assert.equal(bytes[0], 0xff, `${name} starts with JPEG SOI`);
     assert.equal(bytes[1], 0xd8, `${name} is JPEG`);
+    const dim = jpegSofSize(bytes);
+    assert.equal(dim.w, 1200, `${name} width 1200`);
+    assert.equal(dim.h, 1200, `${name} height 1200`);
   }
 
   console.log('shop-pilot-products.selftest: ok', SLUGS.join(','));
