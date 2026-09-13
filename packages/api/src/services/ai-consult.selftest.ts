@@ -331,6 +331,18 @@ async function main() {
   assert(/مدیر پت‌دیت/.test(yaldaPrompt), 'support escalates to owner');
   assert(/\/team-chat\/faranak-ahmadi/.test(yaldaPrompt), 'support ood points to trainer');
   assert(/\/support\/ticket/.test(yaldaPrompt), 'support prompt keeps existing ticket path');
+  const leilaPrompt = buildAiConsultSystemPrompt('trainer', 'لیلا کیانی');
+  const saraPrompt = buildAiConsultSystemPrompt('vet', 'دکتر سارا نوری');
+  for (const [label, prompt] of [
+    ['faranak', faranakPrompt],
+    ['leila', leilaPrompt],
+    ['sanaz', sanazPrompt],
+    ['sara', saraPrompt],
+    ['yalda', yaldaPrompt],
+  ] as const) {
+    assert(/قالب ثابت/.test(prompt), `${label} prompt forbids fixed reply template`);
+    assert(/چت انسانی/.test(prompt), `${label} prompt requires human chat not a script`);
+  }
 
   const vision = buildLlmUserContent({
     kind: 'vet',
