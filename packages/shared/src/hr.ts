@@ -738,6 +738,8 @@ export type AdminAccount = {
   displayName: string;
   isActive: boolean;
   createdAt: string;
+  /** HR employee portrait when the panel login matches a personnel row */
+  avatarUrl?: string;
 };
 
 /** Linear request workflow (prototype REQUEST_FLOW) */

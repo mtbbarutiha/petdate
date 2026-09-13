@@ -11,6 +11,7 @@ import {
 } from '@petdate/shared';
 import { adminFetch, formatNumFa } from '../../api';
 import { adminCan, getAdminRole } from '../../auth';
+import { AdminEntityCell, AdminThumb } from '../../AdminThumb';
 import { AdminModal } from '../../AdminModal';
 import { appConfirm } from '../../../components/AppDialog';
 import { DemoSeedBadge, DemoSeedToggle, filterDemoSeedRows, useShowDemoSeeds } from '../../DemoSeedVisibility';
@@ -377,7 +378,20 @@ export function AdminHrRbacPage() {
                     <td className="admin-mono">
                       {a.username} <DemoSeedBadge row={a} />
                     </td>
-                    <td>{a.displayName}</td>
+                    <td>
+                      <AdminEntityCell
+                        thumb={
+                          <AdminThumb
+                            src={a.avatarUrl}
+                            label={a.displayName || a.username}
+                            kind="user"
+                            alt={a.displayName || a.username}
+                            size={32}
+                          />
+                        }
+                        title={a.displayName}
+                      />
+                    </td>
                     <td>
                       {tr(
                         ADMIN_PANEL_ROLE_LABELS[a.roleKey] ||

@@ -63,8 +63,24 @@ for (const [slug, expect] of Object.entries(AVATAR_SHA256)) {
   assert.ok(!/made with ai/i.test(bytes.toString('latin1')), `${slug} has no Made with AI watermark`);
 }
 
+/** Ops-only staff portraits — HR/admin roster, not landing cards. */
+const OPS_AVATARS = ['staff-designer', 'staff-social', 'staff-shop', 'staff-content'] as const;
+for (const slug of OPS_AVATARS) {
+  const abs = join(webRoot, 'public/agents', `${slug}.jpg`);
+  assert.ok(existsSync(abs), `missing ops avatar public/agents/${slug}.jpg`);
+  const bytes = readFileSync(abs);
+  assert.equal(bytes[0], 0xff, `${slug} is JPEG SOI`);
+  assert.equal(bytes[1], 0xd8, `${slug} is JPEG SOI`);
+  assert.ok(bytes.length > 40_000, `${slug}.jpg should be a real headshot`);
+  assert.ok(!/made with ai/i.test(bytes.toString('latin1')), `${slug} has no Made with AI watermark`);
+}
+
 const yaldaReadme = readFileSync(join(webRoot, 'public/agents/README.md'), 'utf8');
 assert.match(yaldaReadme, /yalda-shabani\.jpg/, 'Yalda avatar path documented');
+assert.match(yaldaReadme, /staff-designer\.jpg/, 'ops designer portrait documented');
+assert.match(yaldaReadme, /staff-social\.jpg/, 'ops social portrait documented');
+assert.match(yaldaReadme, /staff-shop\.jpg/, 'ops shop portrait documented');
+assert.match(yaldaReadme, /staff-content\.jpg/, 'ops content portrait documented');
 assert.match(yaldaReadme, /persona-v2/, 'README documents v2 cache-bust');
 assert.doesNotMatch(yaldaReadme, /Placeholder/, 'Yalda is no longer marked as a placeholder');
 assert.doesNotMatch(yaldaReadme, /pepito\/uploads/, 'README no longer claims pepito lookalike portraits');
