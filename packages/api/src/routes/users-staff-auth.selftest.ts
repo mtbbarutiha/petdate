@@ -40,5 +40,11 @@ assert.match(
   'coin debit is staff-only'
 );
 assert.match(src, /delete\('\/:id',\s*requireTrustedStaff/, 'user delete is staff-only');
+assert.match(src, /parsePositiveIntId\(req\.params\.id\)/, 'user id routes reject NaN');
+assert.match(src, /شناسه کاربر نامعتبر است/, 'bad user id returns 400 copy');
+assert.match(src, /usersRouter\.get\('\/:id'/, 'GET /:id alias exists (bot 404)');
+const aliasIdx = src.lastIndexOf("usersRouter.get('/:id'");
+const vetsIdx = src.indexOf("usersRouter.get('/vets'");
+assert.ok(vetsIdx >= 0 && aliasIdx > vetsIdx, 'GET /:id is after /vets so it cannot steal that path');
 
 console.log('users-staff-auth.selftest: ok');

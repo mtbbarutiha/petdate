@@ -30,6 +30,7 @@ import {
   type HrIncomeModel,
   type HrJobOpening,
   type HrRequest,
+  resolveEnvAdminPassword,
 } from '@petdate/shared';
 import { getDb } from './db';
 
@@ -2004,7 +2005,7 @@ export function resolveAdminActor(opts: {
   const password = (opts.password || '').trim();
   if (!password) return null;
 
-  const adminPwd = (process.env.ADMIN_PASSWORD || 'petdate').trim() || 'petdate';
+  const adminPwd = resolveEnvAdminPassword() || '';
   const supportPwd = (process.env.ADMIN_SUPPORT_PASSWORD || '').trim();
 
   // Username+password against accounts table.

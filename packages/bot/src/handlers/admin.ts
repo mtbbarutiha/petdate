@@ -171,8 +171,10 @@ function formatPendingPaymentCard(order: PaymentOrder): string {
       : null,
     `<b>بسته:</b> ${escapeHtml(order.packageId)} · ${formatNum(order.coins)} سکه`,
     `<b>مبلغ:</b> ${formatToman(order.amountToman ?? 0)}`,
-    `<b>کارت مقصد:</b> <code>${card.number}</code>`,
-    `<b>به‌نام:</b> ${escapeHtml(card.holder)}`,
+    card
+      ? `<b>کارت مقصد:</b> <code>${card.number}</code>`
+      : '<b>کارت مقصد:</b> پیکربندی نشده',
+    card ? `<b>به‌نام:</b> ${escapeHtml(card.holder)}` : null,
   ]
     .filter((l) => l !== null)
     .join('\n');

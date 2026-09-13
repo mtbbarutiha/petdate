@@ -9,8 +9,8 @@ import { join } from 'node:path';
 const src = readFileSync(join(process.cwd(), 'src/routes/consultations.ts'), 'utf8');
 
 assert.match(src, /isInternalBot/, 'consultations uses bot-token helper');
-const start = src.indexOf("consultationsRouter.post('/quick-connect'");
-assert.ok(start >= 0, 'quick-connect route exists');
+const start = src.indexOf("consultationsRouter.post(['/quick-connect', '/quick-connection']");
+assert.ok(start >= 0, 'quick-connect route exists (plus /quick-connection alias)');
 const slice = src.slice(start, start + 1800);
 assert.match(slice, /status\(401\)/, 'quick-connect rejects guests');
 assert.match(slice, /session\?\.user\?\.id \?\? \(bot \? bodyPatientId/, 'body patient id only for bot');

@@ -2731,16 +2731,27 @@ function mapSection(row: Record<string, unknown>): Section {
   };
 }
 
+/** Never bind NaN/Infinity into Postgres bigint (live 500 «invalid input syntax»). */
+function asPositiveIntId(value: unknown): number | null {
+  if (value == null || value === '') return null;
+  const n = typeof value === 'number' ? value : Number(String(value).trim());
+  if (!Number.isFinite(n) || !Number.isInteger(n) || n <= 0) return null;
+  return n;
+}
+
 function mapGame(row: Record<string, unknown>): Game {
-  const players = db
-    .prepare('SELECT COUNT(*) as c FROM game_players WHERE game_id = ?')
-    .get(row.id) as { c: number };
-  const section = row.section_id
-    ? (db.prepare('SELECT name FROM sections WHERE id = ?').get(row.section_id) as { name: string } | undefined)
+  const gameId = asPositiveIntId(row.id);
+  const players = gameId
+    ? (db.prepare('SELECT COUNT(*) as c FROM game_players WHERE game_id = ?').get(gameId) as { c: number })
+    : { c: 0 };
+  const sectionId = asPositiveIntId(row.section_id);
+  const section = sectionId
+    ? (db.prepare('SELECT name FROM sections WHERE id = ?').get(sectionId) as { name: string } | undefined)
     : undefined;
-  const host = db
-    .prepare('SELECT name FROM users WHERE id = ?')
-    .get(row.host_user_id) as { name: string } | undefined;
+  const hostId = asPositiveIntId(row.host_user_id);
+  const host = hostId
+    ? (db.prepare('SELECT name FROM users WHERE id = ?').get(hostId) as { name: string } | undefined)
+    : undefined;
   return {
     id: row.id as number,
     title: row.title as string,
@@ -2846,7 +2857,9 @@ export const dbService = {
   },
 
   getUserById(id: number): User | null {
-    const row = db.prepare('SELECT * FROM users WHERE id = ?').get(id) as Record<string, unknown> | undefined;
+    const safeId = asPositiveIntId(id);
+    if (safeId == null) return null;
+    const row = db.prepare('SELECT * FROM users WHERE id = ?').get(safeId) as Record<string, unknown> | undefined;
     return row ? mapUser(row) : null;
   },
 
@@ -4967,6 +4980,8 @@ export const dbService = {
   },
 
   getPet(id: number): PetProfile | null {
+    const safeId = asPositiveIntId(id);
+    if (safeId == null) return null;
     const row = db
       .prepare(
         `SELECT pets.*,
@@ -4983,7 +4998,7 @@ export const dbService = {
          LEFT JOIN users ON users.id = pets.owner_id
          WHERE pets.id = ?`
       )
-      .get(id) as Record<string, unknown> | undefined;
+      .get(safeId) as Record<string, unknown> | undefined;
     return row ? mapPet(row) : null;
   },
 
@@ -5439,7 +5454,9 @@ export const dbService = {
   },
 
   getPlaydateRequest(id: number): PlaydateRequest | null {
-    const row = db.prepare('SELECT * FROM playdate_requests WHERE id = ?').get(id) as Record<string, unknown> | undefined;
+    const safeId = asPositiveIntId(id);
+    if (safeId == null) return null;
+    const row = db.prepare('SELECT * FROM playdate_requests WHERE id = ?').get(safeId) as Record<string, unknown> | undefined;
     return this.ensurePlaydateNotStale(row ? mapPlaydate(row) : null);
   },
 
@@ -7118,6 +7135,8 @@ export const dbService = {
   },
 
   getPaymentOrder(id: number): PaymentOrder | null {
+    const safeId = asPositiveIntId(id);
+    if (safeId == null) return null;
     const row = db
       .prepare(
         `SELECT po.*,
@@ -7129,7 +7148,7 @@ export const dbService = {
          LEFT JOIN users u ON u.id = po.user_id
          WHERE po.id = ?`
       )
-      .get(id) as Record<string, unknown> | undefined;
+      .get(safeId) as Record<string, unknown> | undefined;
     return row ? mapPaymentOrder(row) : null;
   },
 

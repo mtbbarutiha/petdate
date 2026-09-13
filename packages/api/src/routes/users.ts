@@ -12,6 +12,7 @@ import {
   validateIranCard,
 } from '@petdate/shared';
 import { dbService, type UserProfilePatch } from '../db';
+import { parsePositiveIntId } from './parse-positive-int-id';
 import { getReferralStats, parseReferredByInput, tryGrantReferralOnSignup } from '../services/referral-grant';
 import { rejectIfFlagOff } from '../runtime-settings';
 import { sendPhoneOtp, verifyPhoneOtp } from '../services/phone-otp';
@@ -245,7 +246,12 @@ usersRouter.post('/telegram/:telegramId/business-connection', (req, res) => {
 });
 
 usersRouter.get('/id/:id', async (req, res) => {
-  const user = dbService.getUserById(Number(req.params.id));
+  const userId = parsePositiveIntId(req.params.id);
+  if (userId == null) {
+    res.status(400).json({ error: 'شناسه کاربر نامعتبر است' });
+    return;
+  }
+  const user = dbService.getUserById(userId);
   if (!user) {
     res.status(404).json({ error: 'کاربر پیدا نشد' });
     return;
@@ -256,7 +262,11 @@ usersRouter.get('/id/:id', async (req, res) => {
 
 /** خلاصه کارت پروفایل + آمار تعاملات */
 usersRouter.get('/:id/profile-card', async (req, res) => {
-  const userId = Number(req.params.id);
+  const userId = parsePositiveIntId(req.params.id);
+  if (userId == null) {
+    res.status(400).json({ error: 'شناسه کاربر نامعتبر است' });
+    return;
+  }
   const user = dbService.getUserById(userId);
   if (!user) {
     res.status(404).json({ error: 'کاربر پیدا نشد' });
@@ -1392,7 +1402,12 @@ usersRouter.get('/payments/pending/card', requireTrustedStaff, (_req, res) => {
 });
 
 usersRouter.get('/payments/:id', (req, res) => {
-  const order = dbService.getPaymentOrder(Number(req.params.id));
+  const orderId = parsePositiveIntId(req.params.id);
+  if (orderId == null) {
+    res.status(400).json({ error: 'شناسه سفارش نامعتبر است' });
+    return;
+  }
+  const order = dbService.getPaymentOrder(orderId);
   if (!order) {
     res.status(404).json({ error: 'سفارش پیدا نشد' });
     return;
@@ -1714,4 +1729,20 @@ usersRouter.get('/:id/presence', (req, res) => {
     return;
   }
   res.json(presence);
+});
+
+/** REST alias — stale bot/web clients hit GET /api/users/:id (not /id/:id) and 404. */
+usersRouter.get('/:id', async (req, res) => {
+  const userId = parsePositiveIntId(req.params.id);
+  if (userId == null) {
+    res.status(400).json({ error: 'شناسه کاربر نامعتبر است' });
+    return;
+  }
+  const user = dbService.getUserById(userId);
+  if (!user) {
+    res.status(404).json({ error: 'کاربر پیدا نشد' });
+    return;
+  }
+  const ensured = await withEnsuredAvatar(user);
+  res.json(serializePeerOrFull(req, ensured));
 });

@@ -7,7 +7,7 @@ import { tomanToShopCoins, tomanToShopStars, type PaymentOrder } from '@petdate/
 import { getDb, dbService } from '../db';
 import { adminPlatform, type ShopOrderRow } from '../admin-platform';
 import { lookupShopPrice } from './shop-price-index';
-import { paymentCardFromEnv, paymentCardPublicInfo } from './payment-card';
+import { paymentCardError, paymentCardFromEnv, paymentCardPublicInfo } from './payment-card';
 
 /** payment_orders.package_id for shop checkout via Telegram Stars (XTR → bot) */
 export const SHOP_XTR_PACKAGE_ID = 'shopxtr';
@@ -107,7 +107,8 @@ export type ShopCheckoutFail = {
     | 'payment_missing'
     | 'bad_status'
     | 'bad_meta'
-    | 'already';
+    | 'already'
+    | 'card_not_configured';
   error: string;
   balance?: number;
   cost?: number;
@@ -1061,6 +1062,15 @@ export function prepareShopCardCheckout(
     receiptToken,
   };
 
+  const card = paymentCardFromEnv();
+  if (!card) {
+    return {
+      ok: false,
+      reason: 'card_not_configured',
+      error: paymentCardError(),
+    };
+  }
+
   const payment = dbService.createPaymentOrder({
     userId: input.userId,
     packageId: SHOP_CARD_PACKAGE_ID,
@@ -1071,8 +1081,6 @@ export function prepareShopCardCheckout(
     status: 'awaiting_receipt',
     adminNote: encodeShopCardMeta(meta),
   });
-
-  const card = paymentCardFromEnv();
   return {
     ok: true,
     paymentOrderId: payment.id,

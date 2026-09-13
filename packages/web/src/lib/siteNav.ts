@@ -238,6 +238,20 @@ export function siteNavDesktopForUser(user?: User | null): SiteNavItem[] {
   return siteNavDesktopForRole(primaryRole(user?.roles, user?.role));
 }
 
+/** Routes where the Instagram-style mobile dock is hidden. */
+export function isMobileDockHidden(pathname: string): boolean {
+  return (
+    pathname.startsWith('/admin') ||
+    pathname.startsWith('/auth') ||
+    pathname.startsWith('/onboarding') ||
+    pathname === '/chats' ||
+    pathname.startsWith('/chats/') ||
+    pathname.startsWith('/vet-chats') ||
+    pathname === '/vet-consult' ||
+    pathname.startsWith('/vet-consult/')
+  );
+}
+
 export function filterNavByPlatformConfig(
   items: SiteNavItem[],
   cfg: PublicPlatformConfig | null | undefined

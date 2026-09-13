@@ -1,22 +1,37 @@
-import { formatCardGrouped, maskCardNumber } from '@petdate/shared';
+import {
+  paymentCardPublicFields,
+  resolvePaymentCardFromEnv,
+  type PaymentCardOk,
+} from '@petdate/shared';
 
-export function paymentCardFromEnv(): { number: string; holder: string } {
-  const number = String(process.env.PAYMENT_CARD_NUMBER || '62198611052407631').replace(/\s+/g, '');
-  const holder = String(process.env.PAYMENT_CARD_HOLDER || 'محمد تقی باروتیها');
-  return { number, holder };
+export function paymentCardFromEnv(): PaymentCardOk | null {
+  const resolved = resolvePaymentCardFromEnv();
+  return resolved.ok ? resolved : null;
+}
+
+export function paymentCardError(): string {
+  const resolved = resolvePaymentCardFromEnv();
+  return resolved.ok ? '' : resolved.error;
 }
 
 export function paymentCardPublicInfo(): {
+  configured: boolean;
   cardNumber: string;
   cardMasked: string;
   cardGrouped: string;
   cardHolder: string;
+  error?: string;
 } {
   const card = paymentCardFromEnv();
-  return {
-    cardNumber: card.number,
-    cardMasked: maskCardNumber(card.number),
-    cardGrouped: formatCardGrouped(card.number),
-    cardHolder: card.holder,
-  };
+  if (!card) {
+    return {
+      configured: false,
+      cardNumber: '',
+      cardMasked: '',
+      cardGrouped: '',
+      cardHolder: '',
+      error: paymentCardError(),
+    };
+  }
+  return { configured: true, ...paymentCardPublicFields(card) };
 }

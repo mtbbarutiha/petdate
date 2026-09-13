@@ -25,6 +25,7 @@ import {
   normalizeCardNumber as sharedNormalizeCardNumber,
   validateIranCard as sharedValidateIranCard,
   formatCardGrouped as sharedFormatCardGrouped,
+  resolvePaymentCardFromEnv,
   type CoinPackage as SharedCoinPackage,
 } from '@petdate/shared';
 
@@ -136,18 +137,27 @@ export const normalizeCardNumber = sharedNormalizeCardNumber;
 export const validateIranCard = sharedValidateIranCard;
 export const formatCardGrouped = sharedFormatCardGrouped;
 
-/** جزئیات کارت واریز خرید سکه (از env با fallback) */
-export function paymentCardInfo(): { number: string; holder: string; display: string } {
-  const number = (
-    process.env.PAYMENT_CARD_NUMBER ||
-    '62198611052407631'
-  ).replace(/\s+/g, '');
-  const holder = process.env.PAYMENT_CARD_HOLDER || 'محمد تقی باروتیها';
-  return { number, holder, display: formatCardGrouped(number) };
+/** جزئیات کارت واریز خرید سکه — fail closed when env is missing / placeholder */
+export function paymentCardInfo(): { number: string; holder: string; display: string } | null {
+  const resolved = resolvePaymentCardFromEnv();
+  if (!resolved.ok) return null;
+  return {
+    number: resolved.number,
+    holder: resolved.holder,
+    display: sharedFormatCardGrouped(resolved.number),
+  };
+}
+
+export function cardPaymentUnconfiguredText(): string {
+  return [
+    '💳 پرداخت کارت‌به‌کارت فعلاً در دسترس نیست.',
+    'شماره کارت واریز روی سرور تنظیم نشده. از پرداخت ستاره استفاده کن یا بعداً دوباره تلاش کن.',
+  ].join('\n');
 }
 
 export function cardPaymentInstructionsText(p: CoinPackage): string {
   const card = paymentCardInfo();
+  if (!card) return cardPaymentUnconfiguredText();
   return [
     '💳 <b>پرداخت کارت‌به‌کارت</b>',
     '',

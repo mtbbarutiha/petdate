@@ -11,7 +11,13 @@ import { useAuthStore } from '../hooks/useAuthStore';
 import { useI18n } from '../i18n';
 import { resolvePublicAvatarUrl } from '../lib/api';
 import { loginPath } from '../lib/authRedirect';
-import { filterNavByPlatformConfig, SITE_NAV_GUEST, siteNavMobileForUser, type SiteNavItem } from '../lib/siteNav';
+import {
+  filterNavByPlatformConfig,
+  isMobileDockHidden,
+  SITE_NAV_GUEST,
+  siteNavMobileForUser,
+  type SiteNavItem,
+} from '../lib/siteNav';
 import { useAppToast } from '../hooks/useAppToast';
 import { usePlatformConfig } from '../hooks/usePlatformConfig';
 import { ProfileManageNav } from './ProfileManageNav';
@@ -55,15 +61,7 @@ export function LandingMobileDock() {
   });
   const initial = (user?.name?.trim()?.[0] || 'P').toUpperCase();
 
-  const hideDock =
-    pathname.startsWith('/admin') ||
-    pathname.startsWith('/auth') ||
-    pathname.startsWith('/onboarding') ||
-    pathname === '/chats' ||
-    pathname.startsWith('/chats/') ||
-    pathname.startsWith('/vet-chats') ||
-    pathname === '/vet-consult' ||
-    pathname.startsWith('/vet-consult/');
+  const hideDock = isMobileDockHidden(pathname);
 
   useEffect(() => {
     if (!roleOpen && !manageOpen) return;

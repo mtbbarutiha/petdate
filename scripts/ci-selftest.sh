@@ -10,6 +10,12 @@ bash -n "$ROOT/scripts/backup-postgres.sh"
 bash -n "$ROOT/scripts/verify-prod-env.sh"
 bash -n "$ROOT/scripts/monitor-health.sh"
 bash -n "$ROOT/scripts/deploy-vps.sh"
+bash -n "$ROOT/infra/mail/ensure-mail-le-cert.sh"
+bash -n "$ROOT/infra/mail/setup-mail.sh"
+grep -q 'ensure-mail-le-cert.sh' "$ROOT/scripts/deploy-vps.sh" || {
+  echo "ci-selftest FAIL: deploy-vps.sh must call ensure-mail-le-cert.sh" >&2
+  exit 1
+}
 tmpenv="$(mktemp)"
 trap 'rm -f "$tmpenv"' EXIT
 cat >"$tmpenv" <<'ENV'
@@ -26,6 +32,8 @@ CANDOO_SRC_NUMBERS=989999176033
 S3_ENDPOINT=http://localhost:9000
 S3_ACCESS_KEY=example-access
 S3_SECRET_KEY=example-secret
+PAYMENT_CARD_NUMBER=4242424242424242
+PAYMENT_CARD_HOLDER=PetDate
 ENV
 verify_out="$("$ROOT/scripts/verify-prod-env.sh" "$tmpenv")"
 printf '%s\n' "$verify_out"
@@ -44,7 +52,7 @@ run() {
 }
 
 # Shared pure selftests
-echo "==> selftest: shared peer-profile + user-command-id + pet/order-public-id + gtm-contract + sanitize-roles + breed-search + photo-moderation + profile-avatar + profile-gap-fill + error-catalog"
+echo "==> selftest: shared payment-card + admin-password + peer-profile + ids"
 npx tsx "$ROOT/packages/shared/src/peer-profile.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/photo-moderation.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/profile-avatar.selftest.ts"
@@ -62,6 +70,8 @@ npx tsx "$ROOT/packages/shared/src/sanitize-roles.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/catalog-breed-search.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/help.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/auto-messages.selftest.ts"
+npx tsx "$ROOT/packages/shared/src/payment-card.selftest.ts"
+npx tsx "$ROOT/packages/shared/src/admin-password.selftest.ts"
 
 echo "==> selftest: web face-verify approve toast + profile copy"
 npx tsx "$ROOT/packages/web/src/components/faceVerifyRewardToast.selftest.ts"
@@ -333,6 +343,7 @@ npx tsx "$ROOT/packages/bot/src/handlers/invite-friends.selftest.ts"
 npx tsx "$ROOT/packages/bot/src/roleMenuOrder.selftest.ts"
 npx tsx "$ROOT/packages/bot/src/handlers/help.selftest.ts"
 npx tsx "$ROOT/packages/bot/src/handlers/profile-gap-fill.selftest.ts"
+npx tsx "$ROOT/packages/bot/src/bot-update-mode.selftest.ts"
 
 # SQLite cascade (uses temp/local DB via API helpers — not production path)
 run src/services/user-delete-cascade.selftest.ts
@@ -344,6 +355,7 @@ run src/pet-purchase-leads.selftest.ts
 run src/hr-sales-demo-seed.selftest.ts
 run src/demo-seeds-guard.selftest.ts
 run src/health-ready.selftest.ts
+run src/services/web-otp.selftest.ts
 run src/crm.selftest.ts
 run src/auto-messages.selftest.ts
 run src/crm-ticketing.selftest.ts

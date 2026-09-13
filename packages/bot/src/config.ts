@@ -1,6 +1,7 @@
 import path from 'path';
 import fs from 'fs';
 import dotenv from 'dotenv';
+import { resolveEnvAdminPassword } from '@petdate/shared';
 
 function findEnvFile(): string | undefined {
   const candidates = [
@@ -51,16 +52,13 @@ function resolveAdminIds(): string[] {
   return [...new Set(merged)];
 }
 
-const DEFAULT_PAYMENT_CARD_NUMBER = '62198611052407631';
-const DEFAULT_PAYMENT_CARD_HOLDER = 'محمد تقی باروتیها';
-
 export const config = {
   telegramBotToken: optional('TELEGRAM_BOT_TOKEN'),
   telegramBotUsername: optional('TELEGRAM_BOT_USERNAME'),
   /** شناسه‌های تلگرام ادمین (جدا با کاما) — پنل ادمین / احراز / تأیید پرداخت */
   telegramAdminIds: resolveAdminIds(),
-  /** رمز ورود پنل وقتی لیست ادمین خالی است (پیش‌فرض: petdate) */
-  adminPassword: optional('ADMIN_PASSWORD', 'petdate')!,
+  /** رمز ورود پنل — production rejects the example literal `petdate` */
+  adminPassword: resolveEnvAdminPassword() ?? '',
   apiUrl: optional('API_URL', 'http://localhost:3001')!,
   webUrl: optional('WEB_URL', 'http://localhost:5173')!,
   /** Optional public URL (tunnel/prod) for Telegram inline link buttons. */
@@ -73,9 +71,9 @@ export const config = {
   forceJoinPetdateChannel: optional('FORCE_JOIN_PETDATE_CHANNEL', 'petdating'),
   /** کانال دوردوریا — فعلاً غیرفعال؛ برای فعال‌سازی دوباره به requiredChannels اضافه شود */
   forceJoinDordoriaChannel: optional('FORCE_JOIN_DORDORIA_CHANNEL'),
-  /** شماره کارت واریز خرید سکه */
-  paymentCardNumber: optional('PAYMENT_CARD_NUMBER', DEFAULT_PAYMENT_CARD_NUMBER)!,
-  paymentCardHolder: optional('PAYMENT_CARD_HOLDER', DEFAULT_PAYMENT_CARD_HOLDER)!,
+  /** شماره کارت واریز — empty when env is missing; never a hardcoded production card */
+  paymentCardNumber: optional('PAYMENT_CARD_NUMBER', '')!,
+  paymentCardHolder: optional('PAYMENT_CARD_HOLDER', '')!,
 } as const;
 
 /** آیا حداقل یک ادمین با شناسه تلگرام در env تنظیم شده؟ */
@@ -89,9 +87,11 @@ export function isTelegramAdmin(telegramId: string | number | undefined | null):
   return config.telegramAdminIds.includes(String(telegramId));
 }
 
-/** بررسی رمز پنل ادمین */
+/** بررسی رمز پنل ادمین — false when env password is missing or the production-rejected default */
 export function checkAdminPassword(password: string): boolean {
-  return password.trim() === config.adminPassword;
+  const expected = config.adminPassword.trim();
+  if (!expected) return false;
+  return password.trim() === expected;
 }
 
 export function assertBotToken(): string {

@@ -286,7 +286,7 @@ consultationsRouter.post('/team-agent', async (req, res) => {
  * پت اجباری (جز seeker_advice) → بررسی سکه → ارائه‌دهندگان آنلاین → کسر سکه → ایجاد مشاوره + نوتیف تلگرام
  * kind: vet | trainer | sitter | seeker_advice
  */
-consultationsRouter.post('/quick-connect', async (req, res) => {
+consultationsRouter.post(['/quick-connect', '/quick-connection'], async (req, res) => {
   const session = getUserFromBearer(req.header('authorization') ?? undefined);
   const bot = isInternalBot(req);
   const bodyPatientId =

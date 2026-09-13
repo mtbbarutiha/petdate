@@ -485,6 +485,17 @@ if [[ "\$SCOPE" == "all" || "\$SCOPE" == "bot" || "\$SCOPE" == "api" ]]; then
   fi
 fi
 
+# Mail TLS: Let's Encrypt for mail.petdate.ir when A already points at origin.
+# Best-effort — stale WCDN caches must not fail the ship.
+if [[ "\$SCOPE" == "all" && -x ./infra/mail/ensure-mail-le-cert.sh ]]; then
+  echo "==> Mail LE cert (mail.petdate.ir) — best-effort"
+  if sudo ./infra/mail/ensure-mail-le-cert.sh; then
+    echo "OK: mail LE cert step finished"
+  else
+    echo "WARNING: mail LE cert step failed (deploy continues)" >&2
+  fi
+fi
+
 # Immediate Postgres dump after a full deploy — best-effort; do not fail the ship.
 if [[ "\$SCOPE" == "all" && -x ./scripts/backup-postgres.sh ]]; then
   echo "==> Immediate Postgres backup (best-effort)"

@@ -1178,6 +1178,14 @@ export async function handleShopPay(
         customerPhone: draft.phone,
         address: draft.address,
       });
+      if (!prepared.ok || !prepared.cardNumber) {
+        await ctx.reply(
+          prepared && 'error' in prepared && prepared.error
+            ? String(prepared.error)
+            : 'پرداخت کارت‌به‌کارت فعلاً در دسترس نیست. کارت واریز پیکربندی نشده.'
+        );
+        return;
+      }
       const card = paymentCardInfo();
       await patchSession(user.telegramId, {
         shopCheckout: undefined,
@@ -1191,8 +1199,8 @@ export async function handleShopPay(
           `شماره پیگیری: #${prepared.paymentOrderId}`,
           `مبلغ: ${formatToman(prepared.totalToman)}`,
           '',
-          `کارت: <code>${escapeHtml(prepared.cardNumber || card.number)}</code>`,
-          `به‌نام: ${escapeHtml(prepared.cardHolder || card.holder)}`,
+          `کارت: <code>${escapeHtml(prepared.cardNumber || card?.number || '')}</code>`,
+          `به‌نام: ${escapeHtml(prepared.cardHolder || card?.holder || '')}`,
           '',
           'بعد از واریز، همین‌جا <b>عکس رسید</b> را بفرست.',
           'ادمین بررسی می‌کند و سفارش فروشگاه ثبت می‌شود.',

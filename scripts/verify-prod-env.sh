@@ -88,6 +88,15 @@ check_present S3_ENDPOINT
 check_present S3_ACCESS_KEY
 check_present S3_SECRET_KEY
 
+# Card-to-card destination — never the example / historical hardcoded PAN.
+if ! is_set "${PAYMENT_CARD_NUMBER:-}" || ! is_set "${PAYMENT_CARD_HOLDER:-}"; then
+  status PAYMENT_CARD MISSING
+elif [[ "$PAYMENT_CARD_NUMBER" == "petdate" ]] || [[ "$PAYMENT_CARD_NUMBER" == *"X"* ]] || [[ "$PAYMENT_CARD_NUMBER" == "62198611052407631" ]]; then
+  status PAYMENT_CARD DEFAULT-RISK
+else
+  status PAYMENT_CARD OK
+fi
+
 echo "verify-prod-env: OK=$ok MISSING=$missing DEFAULT-RISK=$risk"
 if [[ "$FAIL" -ne 0 ]]; then
   exit 1
