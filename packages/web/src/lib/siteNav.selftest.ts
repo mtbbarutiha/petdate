@@ -74,6 +74,12 @@ assert.doesNotMatch(mobileFn, /\bGAMES\b/, 'mobile dock builder must not insert 
 
 assert.match(nav, /function withGamesAfterShop/, 'Games is appended after شاپ for desktop only');
 assert.match(nav, /function desktopOrderFromMobile/, 'desktop restores chats-before-shop order');
+const desktopGuest = nav.slice(
+  nav.indexOf('export const SITE_NAV_DESKTOP_GUEST'),
+  nav.indexOf('export const SITE_NAV_DESKTOP_AUTH'),
+);
+assert.match(desktopGuest, /item\.key !== 'login'/, 'desktop guest shortcuts drop text ورود');
+assert.match(nav, /item\.key !== 'my_pets' && item\.key !== 'login'/, 'login is cluster-only on desktop');
 assert.match(
   nav,
   /export function siteNavDesktopForRole[\s\S]*desktopOrderFromMobile/,
@@ -137,6 +143,11 @@ assert.doesNotMatch(
 );
 assert.match(desktopNav, /pepito-nav-section-link/, 'desktop shortcuts share the خدمات text class');
 assert.match(desktopNav, /t\(`nav\.\$\{item\.key\}`\)/, 'desktop header renders nav label text');
+assert.match(
+  desktopNav,
+  /cluster icon \(not a text/,
+  'desktop nav documents that guest login is the cluster icon',
+);
 
 const ownerRail = layout.slice(layout.indexOf('const OWNER_NAV'), layout.indexOf('const VET_NAV'));
 const playmateIdx = ownerRail.indexOf("to: '/chats'");

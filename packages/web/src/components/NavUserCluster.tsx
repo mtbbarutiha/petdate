@@ -1,15 +1,17 @@
 import { lazy, Suspense } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '../hooks/useAuthStore';
+import { useI18n } from '../i18n';
 import { useShopCart } from '../hooks/useShopCart';
-import { IconCart, IconPackage } from './icons/ChromeIcons';
+import { IconCart, IconLogin, IconPackage } from './icons/ChromeIcons';
 
 const ProfileMenu = lazy(() => import('./ProfileMenu').then((m) => ({ default: m.ProfileMenu })));
 const WalletChip = lazy(() => import('./WalletChip').then((m) => ({ default: m.WalletChip })));
 
 /**
  * Top-bar account tools pinned to physical CSS left (LTR cluster):
- * circular profile avatar → wallet entry → orders → cart.
+ * circular profile avatar → wallet → orders → guest login → cart.
+ * Guest login sits immediately left of cart (same circular chip as cart).
  * Mobile CSS hides avatar/wallet (dock covers them); desktop keeps them.
  */
 export function NavUserCluster({
@@ -18,8 +20,8 @@ export function NavUserCluster({
 }: { showCart?: boolean; showOrders?: boolean } = {}) {
   const { isLoggedIn } = useAuthStore();
   const { itemCount } = useShopCart();
-
-  if (!isLoggedIn && !showCart && !showOrders) return null;
+  const { lang } = useI18n();
+  const loginLabel = lang === 'en' ? 'Login' : 'ورود';
 
   return (
     <div className="pepito-nav-user-cluster" role="group" aria-label="حساب و خرید">
@@ -37,6 +39,17 @@ export function NavUserCluster({
           title="سفارش‌های من"
         >
           <IconPackage />
+        </Link>
+      ) : null}
+      {!isLoggedIn ? (
+        <Link
+          to="/auth/login"
+          className="pepito-nav-cart-link pepito-nav-login-icon"
+          data-testid="nav-login-icon"
+          aria-label={loginLabel}
+          title={loginLabel}
+        >
+          <IconLogin />
         </Link>
       ) : null}
       {showCart ? (

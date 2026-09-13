@@ -188,13 +188,14 @@ function desktopOrderFromMobile(items: SiteNavItem[]): SiteNavItem[] {
 
 /**
  * Desktop header shortcuts — avoid duplicating left-cluster tools.
- * Guest: cart lives in NavUserCluster; Auth: wallet chip + circular avatar cover wallet/profile.
+ * Guest: login icon + cart live in NavUserCluster (no text «ورود» in the right menu).
+ * Auth: wallet chip + circular avatar cover wallet/profile.
  * my_pets stays mobile-dock only (desktop app nav already links پت‌های من).
  * Games is a desktop/secondary destination — not a mobile-dock replacement.
  * Desktop order: هم بازی / شاپ / بازی‌ها (chats before shop).
  */
 export const SITE_NAV_DESKTOP_GUEST: SiteNavItem[] = desktopOrderFromMobile(
-  SITE_NAV_GUEST.filter((item) => item.key !== 'my_pets'),
+  SITE_NAV_GUEST.filter((item) => item.key !== 'my_pets' && item.key !== 'login'),
 );
 
 export const SITE_NAV_DESKTOP_AUTH: SiteNavItem[] = desktopOrderFromMobile(

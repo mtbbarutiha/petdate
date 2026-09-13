@@ -11,6 +11,7 @@ import { usePlatformConfig } from '../hooks/usePlatformConfig';
  * Owner: هم بازی / شاپ / بازی‌ها (پت‌های من is in LandingChrome app nav)
  * Vet: پنل پزشک / گفتگو / شاپ / بازی‌ها
  * Wallet chip + circular profile avatar live in NavUserCluster.
+ * Guest login is the cluster icon (not a text «ورود» shortcut).
  */
 export function SiteDesktopNav() {
   const { pathname } = useLocation();

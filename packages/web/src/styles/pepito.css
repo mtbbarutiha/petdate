@@ -424,7 +424,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   flex-shrink: 0;
   position: relative;
   z-index: 6;
-  /* Stable physical order: avatar → wallet → cart → lang → theme */
+  /* Stable physical order: avatar → wallet → login → cart → lang → theme */
   direction: ltr;
 }
 .pepito-nav-login {

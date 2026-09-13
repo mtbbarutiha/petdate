@@ -25,6 +25,15 @@ assert.match(header, /pepito-nav-actions/, 'header has utilities group');
 assert.match(header, /LanguageToggle/, 'utilities include language');
 assert.match(header, /ThemeToggle/, 'utilities include theme');
 assert.match(header, /NavUserCluster/, 'utilities include cart/wallet/profile');
+const navCluster = readFileSync(join(root, 'components/NavUserCluster.tsx'), 'utf8');
+assert.match(navCluster, /to="\/auth\/login"/, 'guest login icon targets /auth/login');
+assert.match(navCluster, /IconLogin/, 'guest login uses first-party icon (no lucide)');
+assert.match(navCluster, /data-testid="nav-login-icon"/, 'guest login icon is testable');
+assert.match(navCluster, /!isLoggedIn \?/, 'login icon is guests-only (avatar covers logged-in)');
+assert.ok(
+  navCluster.indexOf('pepito-nav-login-icon') < navCluster.indexOf('pd-shop-cart-link'),
+  'login icon renders immediately before cart in the LTR cluster',
+);
 assert.match(header, /LazySiteDesktopNav/, 'primary includes role shortcuts');
 assert.doesNotMatch(header, /SiteNavOverflow/, 'header no longer mounts overflow More menu');
 assert.match(
