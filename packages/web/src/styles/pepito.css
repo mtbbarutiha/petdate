@@ -2074,6 +2074,7 @@ body > #pd-boot-lcp.is-parked,
 }
 .pepito-news-viewport {
   position: relative;
+  isolation: isolate;
 }
 .pepito-news-track {
   display: flex;
@@ -2209,7 +2210,7 @@ body > #pd-boot-lcp.is-parked,
   position: absolute;
   inset-inline: 0;
   top: 35%;
-  z-index: 3;
+  z-index: 6;
   display: flex;
   justify-content: space-between;
   pointer-events: none;
@@ -2995,7 +2996,12 @@ body > #pd-boot-lcp.is-parked,
     padding: 40px 20px;
   }
   .pepito-news-nav {
-    display: none;
+    top: 28%;
+  }
+  .pepito-news-arrow {
+    opacity: 1;
+    width: 40px;
+    height: 40px;
   }
 }
 

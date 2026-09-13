@@ -420,15 +420,18 @@ export function setMagazineArticleStatus(
 
 /** Featured carousel for homepage — publicly visible, featured first, then recent. */
 export function listFeaturedMagazineArticles(limit = 6): MagazineArticle[] {
+  const cap = Math.min(Math.max(limit, 1), 24);
+  /* Pool must be larger than `cap`: if we only fetch `limit` recent rows and
+   * ≥3 of those are featured, the old early-return shipped just those 3.
+   * Homepage shows 3 cards at once, so 3 items = 1 page and the arrows no-op. */
   const { articles } = listMagazineArticles({
     publicOnly: true,
-    limit: Math.min(Math.max(limit, 1), 24),
+    limit: 48,
     status: 'all',
   });
   const featured = articles.filter((a) => a.featured);
-  if (featured.length >= 3) return featured.slice(0, limit);
   const rest = articles.filter((a) => !a.featured);
-  return [...featured, ...rest].slice(0, limit);
+  return [...featured, ...rest].slice(0, cap);
 }
 
 /** Related public articles — same category first, then recent; excludes current slug. */

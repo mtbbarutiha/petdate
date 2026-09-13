@@ -17,7 +17,15 @@ import { AdoptionPurchaseCta } from '../components/AdoptionPurchaseCta';
 import { ADOPTION_PETS } from '../data/adoptionPets';
 import { resolvePublicMediaUrl } from '../lib/api';
 import { formatAdminFaDate } from '../admin/jalaliDate';
-import { fetchMagazineFeatured, type MagazineCard } from '../lib/magazineApi';
+import { fetchMagazineFeatured, fetchMagazineList, type MagazineCard } from '../lib/magazineApi';
+import {
+  NEWS_GAP_PX,
+  newsCarouselIndexFromScroll,
+  newsCarouselPages,
+  newsCarouselScrollLeft,
+  newsCarouselVisibleCount,
+  wrapCarouselIndex,
+} from '../lib/newsCarousel';
 import { GatedLink, PawIcon } from './landingGatedLink';
 
 const P = '/pepito/uploads';
@@ -156,7 +164,10 @@ export function WelcomeBelowFold() {
   const svcProgrammaticScrollRef = useRef(false);
   const svcStepRef = useRef(0);
   const newsStepRef = useRef(0);
+  const newsPagesRef = useRef(1);
+  const newsProgrammaticScrollRef = useRef(false);
   const [newsIndex, setNewsIndex] = useState(0);
+  const [newsPages, setNewsPages] = useState(1);
   const newsTrackRef = useRef<HTMLDivElement>(null);
   const [newsItems, setNewsItems] = useState<MagazineCard[]>(() => newsFallback(t));
 
@@ -167,13 +178,28 @@ export function WelcomeBelowFold() {
 
   useEffect(() => {
     let cancelled = false;
-    void fetchMagazineFeatured(6)
-      .then((list) => {
-        if (!cancelled && list.length > 0) setNewsItems(list);
-      })
-      .catch(() => {
+    void (async () => {
+      try {
+        const list = await fetchMagazineFeatured(6);
+        if (cancelled) return;
+        if (list.length >= 4) {
+          setNewsItems(list);
+          return;
+        }
+        try {
+          const extra = await fetchMagazineList({ limit: 6 });
+          if (!cancelled && extra.articles.length > 0) {
+            setNewsItems(extra.articles);
+            return;
+          }
+        } catch {
+          /* keep featured or fallback */
+        }
+        if (list.length > 0) setNewsItems(list);
+      } catch {
         /* keep fallback */
-      });
+      }
+    })();
     return () => {
       cancelled = true;
     };
@@ -273,42 +299,93 @@ export function WelcomeBelowFold() {
     };
   }, []);
 
-  const newsPages = Math.max(1, newsItems.length - 2); // 3 visible on desktop → pages = n-2
+  const trackDirIsRtl = (track: HTMLElement) =>
+    (track.closest('[dir]')?.getAttribute('dir') || document.documentElement.dir) === 'rtl';
+
+  const measureNews = () => {
+    const track = newsTrackRef.current;
+    const card = track?.querySelector<HTMLElement>('.pepito-news-card');
+    if (!track || !card) return;
+    newsStepRef.current = card.offsetWidth + NEWS_GAP_PX;
+    const visible = newsCarouselVisibleCount(track.clientWidth, card.offsetWidth, NEWS_GAP_PX);
+    const pages = newsCarouselPages(newsItems.length, visible);
+    newsPagesRef.current = pages;
+    setNewsPages((prev) => (prev === pages ? prev : pages));
+    setNewsIndex((i) => Math.min(i, pages - 1));
+  };
+
+  const scrollNewsTo = (index: number, behavior?: ScrollBehavior) => {
+    const track = newsTrackRef.current;
+    if (track && newsStepRef.current <= 0) measureNews();
+    const step = newsStepRef.current;
+    if (!track || step <= 0) return;
+    const narrow = window.matchMedia('(max-width: 720px)').matches;
+    newsProgrammaticScrollRef.current = true;
+    track.scrollTo({
+      left: newsCarouselScrollLeft(index, step, trackDirIsRtl(track)),
+      behavior: behavior ?? (narrow ? 'auto' : 'smooth'),
+    });
+    window.requestAnimationFrame(() => {
+      newsProgrammaticScrollRef.current = false;
+    });
+  };
+
   const goNews = (index: number) => {
-    setNewsIndex(((index % newsPages) + newsPages) % newsPages);
+    const next = wrapCarouselIndex(index, newsPagesRef.current);
+    setNewsIndex(next);
+    scrollNewsTo(next);
   };
 
   useEffect(() => {
+    const guess = newsCarouselPages(newsItems.length, 3);
+    newsPagesRef.current = guess;
+    setNewsPages(guess);
     setNewsIndex(0);
+    const id = window.requestAnimationFrame(() => {
+      measureNews();
+      scrollNewsTo(0, 'auto');
+    });
+    return () => window.cancelAnimationFrame(id);
   }, [newsItems.length]);
 
   useEffect(() => {
     const track = newsTrackRef.current;
     if (!track) return;
-    const measure = () => {
-      const card = track.querySelector<HTMLElement>('.pepito-news-card');
-      if (!card) return;
-      newsStepRef.current = card.offsetWidth + 20;
-    };
     const ro = new ResizeObserver(() => {
-      requestAnimationFrame(measure);
+      requestAnimationFrame(measureNews);
     });
     ro.observe(track);
     return () => ro.disconnect();
   }, [newsItems.length]);
 
+  /* Keep dots in sync when the user swipes the news track (RTL-aware). */
   useEffect(() => {
-    if (newsIndex === 0) return;
     const track = newsTrackRef.current;
-    const step = newsStepRef.current;
-    if (!track || step <= 0) return;
-    const rtl = (track.closest('[dir]')?.getAttribute('dir') || document.documentElement.dir) === 'rtl';
-    const narrow = window.matchMedia('(max-width: 720px)').matches;
-    track.scrollTo({
-      left: rtl ? -newsIndex * step : newsIndex * step,
-      behavior: narrow ? 'auto' : 'smooth',
-    });
-  }, [newsIndex, newsItems]);
+    if (!track) return;
+    let settleTimer = 0;
+    const syncFromScroll = () => {
+      if (newsProgrammaticScrollRef.current) return;
+      const step = newsStepRef.current;
+      if (step <= 0) return;
+      const idx = newsCarouselIndexFromScroll(
+        track.scrollLeft,
+        step,
+        trackDirIsRtl(track),
+        newsPagesRef.current
+      );
+      setNewsIndex((prev) => (prev === idx ? prev : idx));
+    };
+    const onScroll = () => {
+      if (newsProgrammaticScrollRef.current) return;
+      window.clearTimeout(settleTimer);
+      settleTimer = window.setTimeout(syncFromScroll, 120);
+    };
+    track.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      window.clearTimeout(settleTimer);
+      track.removeEventListener('scroll', onScroll);
+    };
+  }, [newsItems.length]);
 
 
   return (

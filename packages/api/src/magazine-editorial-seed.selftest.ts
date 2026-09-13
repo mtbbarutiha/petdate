@@ -45,7 +45,7 @@ async function main() {
   assert.ok(dental && dental.bodyHtml.length > 200, 'dental stub replaced');
 
   const featured = mag.listFeaturedMagazineArticles(6);
-  assert.ok(featured.length >= 3, 'featured carousel');
+  assert.equal(featured.length, 6, 'featured carousel fills to requested limit');
   assert.ok(
     featured.some((a) => a.slug === 'علائم-هشدار-سگ-و-گربه'),
     'featured includes warning signs'

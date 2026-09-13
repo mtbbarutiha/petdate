@@ -157,6 +157,7 @@ assert.match(
   'critical CSS keeps the HTML LCP in document flow above #root fill'
 );
 assert.match(below, /magazineApi/, 'magazine fetch stays on the below-fold chunk');
+assert.doesNotMatch(below, /if \(newsIndex === 0\) return/, 'news arrows must scroll back to page 0');
 assert.match(below, /svcIndex === 0/, 'service carousel skips sync layout on mount');
 assert.match(below, /ResizeObserver/, 'carousel step is measured off the React commit path');
 assert.doesNotMatch(below, /getComputedStyle/, 'carousel must not force-reflow via getComputedStyle');
