@@ -27,6 +27,7 @@ import {
   wrapCarouselIndex,
 } from '../lib/newsCarousel';
 import { GatedLink, PawIcon } from './landingGatedLink';
+import { teamAgentChatPath } from '@petdate/shared';
 
 const P = '/pepito/uploads';
 
@@ -95,6 +96,7 @@ const TEAM = [
   { slug: 'leila-kiani', nameKey: 'landing.team2', roleKey: 'landing.roleTrainer', img: `${P}/02-3.jpg` },
   { slug: 'sanaz-ghaffari', nameKey: 'landing.team3', roleKey: 'landing.roleVet', img: `${P}/03-3.jpg` },
   { slug: 'sara-noori', nameKey: 'landing.team4', roleKey: 'landing.roleVet', img: `${P}/04-3.jpg` },
+  { slug: 'yalda-shabani', nameKey: 'landing.team5', roleKey: 'landing.roleSupport', img: '/agents/yalda-shabani.jpg' },
 ] as const;
 
 const REVIEW_DEFS = [
@@ -553,7 +555,7 @@ export function WelcomeBelowFold() {
                 <h3>{t(m.nameKey)}</h3>
                 <p>{t(m.roleKey)}</p>
                 <GatedLink
-                  to={`/team-chat/${m.slug}`}
+                  to={teamAgentChatPath(m.slug)}
                   className="pepito-btn button-3 pepito-member-consult"
                   data-testid={`team-consult-${m.slug}`}
                 >

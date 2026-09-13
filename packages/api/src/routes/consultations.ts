@@ -3,9 +3,11 @@ import fs from 'fs';
 import multer from 'multer';
 import {
   CONSULT_SERVICE_KINDS,
+  DEFAULT_VET_TEAM_AGENT_SLUG,
   QUICK_VET_COST,
   TEAM_AGENTS,
   getTeamAgentBySlug,
+  teamAgentChatPath,
   vetVisitFeeCoins,
   type ConsultServiceKind,
   type VetConsultStatus,
@@ -29,7 +31,7 @@ import {
 } from '../services/fanout-reject-notify';
 import { startVetChatFromApi } from '../services/telegram-vet-chat-start';
 import { clearBotVetChatSessions } from '../services/bot-vet-chat-session';
-import { AI_TRAINER_DISPLAY_NAME } from '../services/ai-consult';
+import { AI_TRAINER_DISPLAY_NAME, AI_VET_DISPLAY_NAME } from '../services/ai-consult';
 import {
   decorateAiConsultDisplay,
   startAiFallbackConsult,
@@ -54,15 +56,14 @@ import {
   saveChatUpload,
   sniffChatMediaContentType,
 } from '../services/chat-upload-store';
-import { isInternalBot } from '../internal-auth';
-import { getUserFromBearer } from '../services/web-otp';
-import { rejectIfFlagOff } from '../runtime-settings';
+import { isInternalBot , teamAgentChatPath , DEFAULT_VET_TEAM_AGENT_SLUG , TEAM_AGENTS , getTeamAgentBySlug } from '../internal-auth';
+import { getUserFromBearer , teamAgentChatPath , DEFAULT_VET_TEAM_AGENT_SLUG , TEAM_AGENTS , getTeamAgentBySlug } from '../services/web-otp';
+import { rejectIfFlagOff , teamAgentChatPath , DEFAULT_VET_TEAM_AGENT_SLUG , TEAM_AGENTS , getTeamAgentBySlug } from '../runtime-settings';
 import {
   notifyInbox,
   notifyVetMessage,
-  notifyVetThread,
-} from '../ws/chatHub';
-import type { VetConsultChatMediaKind } from '@petdate/shared';
+  notifyVetThread, teamAgentChatPath , DEFAULT_VET_TEAM_AGENT_SLUG , TEAM_AGENTS , getTeamAgentBySlug } from '../ws/chatHub';
+import type { VetConsultChatMediaKind , teamAgentChatPath , DEFAULT_VET_TEAM_AGENT_SLUG , TEAM_AGENTS , getTeamAgentBySlug } from '@petdate/shared';
 
 const VALID_STATUSES: VetConsultStatus[] = [
   'requested',
@@ -223,7 +224,7 @@ consultationsRouter.get('/team-agents', (_req, res) => {
       role: a.role,
       kind: a.kind,
       avatarUrl: a.avatarUrl,
-      chatPath: `/team-chat/${a.slug}`,
+      chatPath: teamAgentChatPath(a.slug),
     })),
   });
 });
@@ -238,6 +239,14 @@ consultationsRouter.post('/team-agent', async (req, res) => {
 
   if (!def) {
     res.status(400).json({ error: 'ایجنت پیدا نشد', reason: 'unknown_agent' });
+    return;
+  }
+  if (def.kind === 'support') {
+    res.status(400).json({
+      error: 'برای پشتیبانی از /support/chat استفاده کنید',
+      reason: 'use_support_chat',
+      chatPath: '/support/chat',
+    });
     return;
   }
   if (!patientUserId || !Number.isFinite(patientUserId)) {
@@ -386,6 +395,7 @@ consultationsRouter.post(['/quick-connect', '/quick-connection'], async (req, re
     const ai = await startAiFallbackConsult({
       patient,
       serviceKind,
+      agentSlug: serviceKind === 'vet' ? DEFAULT_VET_TEAM_AGENT_SLUG : undefined,
     });
     if (!ai) return false;
     const updatedPatient = dbService.getUserById(patient.id);
@@ -405,8 +415,8 @@ consultationsRouter.post(['/quick-connect', '/quick-connection'], async (req, re
         serviceKind === 'trainer'
           ? `گفتگو با ${AI_TRAINER_DISPLAY_NAME} (مربی آنلاین) شروع شد (بدون کسر سکه).`
           : reason === 'prefer_ai'
-            ? `چت با ${AI_TRAINER_DISPLAY_NAME} شروع شد (بدون کسر سکه).`
-            : `دامپزشک انسانی آنلاین نبود — چت با ${AI_TRAINER_DISPLAY_NAME} شروع شد (بدون کسر سکه).`,
+            ? `چت با ${AI_VET_DISPLAY_NAME} شروع شد (بدون کسر سکه).`
+            : `دامپزشک انسانی آنلاین نبود — چت با ${AI_VET_DISPLAY_NAME} شروع شد (بدون کسر سکه).`,
     });
     return true;
   }

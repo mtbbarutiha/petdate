@@ -1,10 +1,10 @@
 import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, LifeBuoy, Send } from 'lucide-react';
+import { ArrowRight, Send } from 'lucide-react';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { useI18n } from '../i18n';
 import { fetchSupportMessages, sendSupportMessage, type SupportChatMessage } from '../lib/api';
-import { AI_ASSISTANT_DISPLAY_NAME } from './supportAgent';
+import { AI_ASSISTANT_DISPLAY_NAME, AI_SUPPORT_AVATAR_URL } from './supportAgent';
 
 export function SupportChatPage() {
   const { token, isLoggedIn } = useAuthStore();
@@ -69,12 +69,18 @@ export function SupportChatPage() {
           <Link to="/support" className="tg-icon-btn" aria-label={t('support.back')}>
             <ArrowRight size={18} />
           </Link>
-          <div>
-            <h1>
-              <LifeBuoy size={22} style={{ verticalAlign: 'middle', marginLeft: 8 }} />
-              {t('support.chatCta')}
-            </h1>
-            <p>{t('support.chatPageLead', { name: AI_ASSISTANT_DISPLAY_NAME })}</p>
+          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+            <img
+              src={AI_SUPPORT_AVATAR_URL}
+              alt={AI_ASSISTANT_DISPLAY_NAME}
+              width={48}
+              height={56}
+              style={{ borderRadius: 12, objectFit: 'cover' }}
+            />
+            <div>
+              <h1 style={{ margin: 0 }}>{AI_ASSISTANT_DISPLAY_NAME}</h1>
+              <p style={{ margin: '4px 0 0' }}>{t('support.chatPageLead', { name: AI_ASSISTANT_DISPLAY_NAME })}</p>
+            </div>
           </div>
         </header>
         <p className="pepito-support-gate">
@@ -91,12 +97,18 @@ export function SupportChatPage() {
         <Link to="/support" className="tg-icon-btn" aria-label={t('support.backSupport')}>
           <ArrowRight size={18} />
         </Link>
-        <div>
-          <h1>
-            <LifeBuoy size={22} style={{ verticalAlign: 'middle', marginLeft: 8 }} />
-            {t('support.chatCta')}
-          </h1>
-          <p>{t('support.chatPageLead', { name: AI_ASSISTANT_DISPLAY_NAME })}</p>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <img
+            src={AI_SUPPORT_AVATAR_URL}
+            alt={AI_ASSISTANT_DISPLAY_NAME}
+            width={48}
+            height={56}
+            style={{ borderRadius: 12, objectFit: 'cover' }}
+          />
+          <div>
+            <h1 style={{ margin: 0 }}>{AI_ASSISTANT_DISPLAY_NAME}</h1>
+            <p style={{ margin: '4px 0 0' }}>{t('support.chatPageLead', { name: AI_ASSISTANT_DISPLAY_NAME })}</p>
+          </div>
         </div>
       </header>
 

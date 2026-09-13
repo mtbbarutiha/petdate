@@ -6,7 +6,7 @@ import {
   listPublicTicketActivities,
   listTicketsForPlatformUser,
 } from '../crm-service';
-import { generateAiConsultAdvice, AI_ASSISTANT_DISPLAY_NAME } from '../services/ai-consult';
+import { generateAiConsultAdvice, AI_SUPPORT_DISPLAY_NAME } from '../services/ai-consult';
 import {
   STT_UNAVAILABLE_FA,
   isSpeechToTextConfigured,
@@ -17,8 +17,8 @@ import { getUserFromBearer } from '../services/web-otp';
 
 export const supportRouter = Router();
 
-/** Canonical support AI agent (لیلا کیانی) — same persona as /api/support chat. */
-export const SUPPORT_AGENT_NAME = AI_ASSISTANT_DISPLAY_NAME;
+/** Canonical support AI agent — یلدا شعبانی. */
+export const SUPPORT_AGENT_NAME = AI_SUPPORT_DISPLAY_NAME;
 
 function requireUser(req: { header: (n: string) => string | undefined }) {
   return getUserFromBearer(req.header('authorization') ?? undefined)?.user ?? null;
@@ -64,12 +64,37 @@ async function replySupportTurn(opts: {
   userId: number;
   userName?: string;
   text: string;
+  phone?: string | null;
 }) {
   const userMsg = dbService.addSupportMessage(opts.userId, 'user', opts.text);
   const history = dbService.listSupportMessages(opts.userId, 20).map((m) => ({
     role: m.role,
     content: m.text,
   }));
+
+  const wantsTicket = /تیکت|پیگیری|شکایت|ثبت\s*کن|مشکل\s*دارم|کار\s*نمیکنه|کار\s*نمی‌کنه|escalat|ticket/i.test(
+    opts.text
+  );
+  let ticketNote = '';
+  if (wantsTicket) {
+    try {
+      const ticket = createUserSupportTicket(
+        { id: opts.userId, name: opts.userName, phone: opts.phone },
+        {
+          title: opts.text.trim().slice(0, 80) || 'پیگیری پشتیبانی',
+          description: opts.text.trim(),
+          category: 'support_chat',
+          channel: 'web_chat',
+        }
+      );
+      ticketNote = `\n\n✅ تیکت ${ticket.publicId} برات ثبت کردم. تیم پیگیری می‌کنه؛ وضعیت را همین‌جا یا از بخش تیکت‌ها ببین.`;
+    } catch (err) {
+      console.warn('support chat auto-ticket failed:', (err as Error).message);
+      ticketNote =
+        '\n\nمی‌تونم برات تیکت ثبت کنم؛ اگر نشد از منوی پشتیبانی «ثبت تیکت» را بزن یا بگو دوباره تلاش کنم.';
+    }
+  }
+
   const generated = await generateAiConsultAdvice({
     kind: 'support',
     patientName: opts.userName,
@@ -77,8 +102,9 @@ async function replySupportTurn(opts: {
     userMessage: opts.text,
     history: history.slice(0, -1),
   });
-  const assistantMsg = dbService.addSupportMessage(opts.userId, 'assistant', generated.text);
-  return { userMsg, assistantMsg, generated };
+  const text = `${generated.text}${ticketNote}`;
+  const assistantMsg = dbService.addSupportMessage(opts.userId, 'assistant', text);
+  return { userMsg, assistantMsg, generated: { ...generated, text } };
 }
 
 /** تاریخچه چت پشتیبانی کاربر */
@@ -191,6 +217,7 @@ supportRouter.post('/messages', async (req, res) => {
     const { userMsg, assistantMsg, generated } = await replySupportTurn({
       userId: user.id,
       userName: user.name,
+      phone: user.phone,
       text,
     });
     res.status(201).json({
@@ -353,6 +380,7 @@ supportRouter.post('/telegram/:telegramId/messages', async (req, res) => {
     const { assistantMsg } = await replySupportTurn({
       userId: user.id,
       userName: user.name,
+      phone: user.phone,
       text,
     });
     res.status(201).json({
