@@ -47,6 +47,25 @@ for (const [id, slug, stem, price] of pilots) {
   assert.doesNotMatch(shots.join(' '), /purple|5c4d91|بنفش/i, `${id} gallery has no purple asset`);
 }
 
+const batch2 = [
+  ['p224', 'dog-food-royal-canin-mini-indoor-puppy-1-5kg', 8_294_000],
+  ['p229', 'cat-food-josera-culinesse-2kg', 4_004_000],
+  ['p233', 'cat-food-royal-canin-fit-2kg', 10_217_000],
+  ['p235', 'cat-food-josera-kitten-2kg', 4_004_000],
+] as const;
+for (const [id, slug, price] of batch2) {
+  const item = getProduct(slug) ?? getProduct(id);
+  assert.ok(item, `${id} exists`);
+  assert.equal(item.priceToman, price, `${id} MANIFEST price`);
+  const shots = productGallery(item);
+  assert.equal(shots.length, 3, `${id} gallery has 3 unique angles`);
+  assert.ok(shots[0].includes(`${slug}.jpg?v=batch2-v1`), `${id} front is batch2-v1`);
+  assert.ok(shots[1].includes(`${slug}-2.jpg?v=batch2-v1`), `${id} angle 2 is batch2-v1`);
+  assert.ok(shots[2].includes(`${slug}-3.jpg?v=batch2-v1`), `${id} angle 3 is batch2-v1`);
+  assert.doesNotMatch(shots.join(' '), /purple|5c4d91|بنفش/i, `${id} gallery has no purple asset`);
+}
+assert.ok(getProduct('cat-food-josera-kitten-2kg'), 'Josera Kitten is in catalog');
+
 const p221 = getProduct('dog-food-royal-canin-mini-adult-2kg')!;
 applyLiveShopCatalog({
   products: [

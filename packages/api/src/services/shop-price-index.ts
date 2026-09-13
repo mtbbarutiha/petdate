@@ -13,7 +13,7 @@ export type ShopPriceEntry = {
   priceToman: number;
 };
 
-/** Keep in sync with packages/api/src/data/shop-pilot-products.ts */
+/** Keep in sync with packages/api/src/data/shop-pilot-products.ts + shop-batch2-products.ts */
 const PILOT_PRICE_INDEX: ShopPriceEntry[] = [
   {
     id: 'p221',
@@ -38,6 +38,102 @@ const PILOT_PRICE_INDEX: ShopPriceEntry[] = [
     brandId: 'royal-canin',
     categorySlug: 'cat-food',
     priceToman: 2_741_600,
+  },
+  {
+    id: 'p224',
+    slug: 'dog-food-royal-canin-mini-indoor-puppy-1-5kg',
+    title: 'رویال کنین مینی ایندور پاپی ۱٫۵ کیلو — توله نژاد کوچک آپارتمانی',
+    brandId: 'royal-canin',
+    categorySlug: 'dog-food',
+    priceToman: 8_294_000,
+  },
+  {
+    id: 'p225',
+    slug: 'dog-food-royal-canin-xsmall-adult-1-5kg',
+    title: 'رویال کنین ایکس‌اسمال ادالت ۱٫۵ کیلو — سگ بالغ نژاد خیلی کوچک',
+    brandId: 'royal-canin',
+    categorySlug: 'dog-food',
+    priceToman: 7_841_000,
+  },
+  {
+    id: 'p226',
+    slug: 'dog-food-royal-canin-mini-puppy-2kg',
+    title: 'رویال کنین مینی پاپی ۲ کیلو — توله نژاد کوچک',
+    brandId: 'royal-canin',
+    categorySlug: 'dog-food',
+    priceToman: 8_881_000,
+  },
+  {
+    id: 'p227',
+    slug: 'dog-food-royal-canin-pomeranian-adult-1-5kg',
+    title: 'رویال کنین پامرانین ادالت ۱٫۵ کیلو — مخصوص پامرانین بالغ',
+    brandId: 'royal-canin',
+    categorySlug: 'dog-food',
+    priceToman: 7_826_000,
+  },
+  {
+    id: 'p228',
+    slug: 'dog-food-royal-canin-shih-tzu-adult-1-5kg',
+    title: 'رویال کنین شیتزو ادالت ۱٫۵ کیلو — مخصوص شیتزو بالغ',
+    brandId: 'royal-canin',
+    categorySlug: 'dog-food',
+    priceToman: 7_841_000,
+  },
+  {
+    id: 'p229',
+    slug: 'cat-food-josera-culinesse-2kg',
+    title: 'جوسرا کولینس ۲ کیلو — گربه بالغ با گوارش حساس‌تر',
+    brandId: 'josera',
+    categorySlug: 'cat-food',
+    priceToman: 4_004_000,
+  },
+  {
+    id: 'p230',
+    slug: 'cat-food-josera-dailycat-2kg',
+    title: 'جوسرا دیلی‌کت ۲ کیلو — غذای روزانه گربه بالغ',
+    brandId: 'josera',
+    categorySlug: 'cat-food',
+    priceToman: 3_900_000,
+  },
+  {
+    id: 'p231',
+    slug: 'cat-food-royal-canin-indoor-adult-400g',
+    title: 'رویال کنین ایندور ادالت ۴۰۰ گرم — گربه بالغ خانگی',
+    brandId: 'royal-canin',
+    categorySlug: 'cat-food',
+    priceToman: 2_742_000,
+  },
+  {
+    id: 'p232',
+    slug: 'cat-food-royal-canin-british-shorthair-adult-400g',
+    title: 'رویال کنین بریتیش شورت‌هیر ادالت ۴۰۰ گرم — مخصوص بریتیش بالغ',
+    brandId: 'royal-canin',
+    categorySlug: 'cat-food',
+    priceToman: 2_742_000,
+  },
+  {
+    id: 'p233',
+    slug: 'cat-food-royal-canin-fit-2kg',
+    title: 'رویال کنین فیت ۲ کیلو — گربه بالغ فعال و سالم',
+    brandId: 'royal-canin',
+    categorySlug: 'cat-food',
+    priceToman: 10_217_000,
+  },
+  {
+    id: 'p234',
+    slug: 'cat-food-royal-canin-sterilised-adult-400g',
+    title: 'رویال کنین استرلایزد ادالت ۴۰۰ گرم — گربه بالغ عقیم‌شده',
+    brandId: 'royal-canin',
+    categorySlug: 'cat-food',
+    priceToman: 2_742_000,
+  },
+  {
+    id: 'p235',
+    slug: 'cat-food-josera-kitten-2kg',
+    title: 'جوسرا کیتن ۲ کیلو — بچه گربه در حال رشد',
+    brandId: 'josera',
+    categorySlug: 'cat-food',
+    priceToman: 4_004_000,
   },
 ];
 

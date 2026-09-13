@@ -178,7 +178,7 @@ export function getDb(): AppDatabase {
     };
 
     const bootShopPilot = () => {
-      // Additive Royal Canin pilot SKUs — upsert by slug; never wipe catalog.
+      // Additive Royal Canin pilot + Batch 2 SKUs — upsert by slug; never wipe catalog.
       try {
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { seedRoyalCaninPilotProducts } =
@@ -186,6 +186,14 @@ export function getDb(): AppDatabase {
         seedRoyalCaninPilotProducts();
       } catch (err) {
         console.warn('Royal Canin pilot shop seed skipped/failed:', (err as Error).message);
+      }
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { seedShopBatch2Products } =
+          require('./data/shop-batch2-products') as typeof import('./data/shop-batch2-products');
+        seedShopBatch2Products();
+      } catch (err) {
+        console.warn('Shop batch 2 seed skipped/failed:', (err as Error).message);
       }
     };
 
