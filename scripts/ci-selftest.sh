@@ -73,6 +73,7 @@ npx tsx "$ROOT/packages/shared/src/help.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/auto-messages.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/payment-card.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/admin-password.selftest.ts"
+npx tsx "$ROOT/packages/shared/src/team-agents.selftest.ts"
 
 echo "==> selftest: web face-verify approve toast + profile copy"
 npx tsx "$ROOT/packages/web/src/components/faceVerifyRewardToast.selftest.ts"
@@ -88,6 +89,7 @@ npx tsx "$ROOT/packages/web/src/lib/playdateMap.fanoutReject.selftest.ts"
 
 echo "==> selftest: web inbox consult agent avatars"
 npx tsx "$ROOT/packages/web/src/lib/inboxConversations.avatars.selftest.ts"
+npx tsx "$ROOT/packages/web/src/pages/teamChatPersonas.selftest.ts"
 
 echo "==> selftest: web share helper (Web Share / clipboard)"
 npx tsx "$ROOT/packages/web/src/lib/share.selftest.ts"

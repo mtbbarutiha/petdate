@@ -42,6 +42,10 @@ export function TeamChatStartPage() {
       </main>
     );
   }
+  const canonicalSlug = agent.slug;
+  if (canonicalSlug && canonicalSlug !== String(agentSlug || '').trim().toLowerCase()) {
+    return <Navigate to={teamAgentChatPath(canonicalSlug)} replace />;
+  }
   if (agent.kind === 'support') {
     return <Navigate to="/support/chat" replace />;
   }

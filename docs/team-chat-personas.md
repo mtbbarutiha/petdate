@@ -1,0 +1,26 @@
+# Team chat personas → domain AI agents
+
+## FA
+
+پنج چهرهٔ سایت به **سه موتور دامنه** وصل است (استک موجود `ai-consult`، استک موازی ساخته نشد).
+
+| شخصیت | دامنه / موتور | مسیر چت |
+|--------|----------------|----------|
+| فرانک احمدی | مربی (جایگزین پاشا؛ خودمعرفی) | `/team-chat/faranak-ahmadi` |
+| لیلا کیانی | مربی | `/team-chat/leila-kiani` |
+| دکتر ساناز غفاری | دامپزشک | `/team-chat/sanaz-ghaffari` |
+| دکتر سارا نوری | دامپزشک | `/team-chat/sara-noori` |
+| یلدا شعبانی | پشتیبانی (+ تیکت) | `/support/chat` |
+
+عکس‌ها: `packages/web/public/agents/<slug>.jpg`. **یلدا فعلاً پلیس‌هولدر حروف YS است** — فایل را با همان نام عوض کنید.
+
+## EN
+
+Five landing faces share three existing LLM roles (`trainer` | `vet` | `support`) in `packages/api/src/services/ai-consult.ts`.
+
+- Out-of-domain answers name the right colleague **and** the route above.
+- Faranak introduces herself and continues the former Pasha coach role.
+- Vets triage clinical photos (vision when `AI_CONSULT_API_KEY` is set) + disclaimer.
+- Yalda knows site workflow, can open/track tickets, mentions SMS only when the product already sends it, asks the owner when unknown.
+
+Cache bust: `tmp/cache-bust-team-chat-personas-v1` → SW `petdate-web-v42-team-chat`.

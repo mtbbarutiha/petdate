@@ -107,6 +107,15 @@ assert.match(
 assert.match(conf, /location = \/\.well-known\/llms\.txt/, 'well-known/llms.txt is not the SPA HTML shell');
 assert.match(conf, /max-age=2592000/, 'static brand/pepito/media images cache ≥ 30 days');
 {
+  const agentsCount = (conf.match(/location \^~ \/agents\//g) || []).length;
+  assert.equal(agentsCount, 2, `team avatar /agents/ once per server (got ${agentsCount})`);
+}
+assert.match(
+  conf,
+  /location \^~ \/agents\/ \{[\s\S]*?Cache-Control "public, max-age=2592000"/,
+  '/agents/ persona photos are publicly cacheable'
+);
+{
   const fontsCount = (conf.match(/location \^~ \/fonts\//g) || []).length;
   assert.equal(fontsCount, 2, `self-hosted /fonts/ once per server (got ${fontsCount})`);
 }
