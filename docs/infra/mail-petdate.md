@@ -77,10 +77,16 @@ ssh root@185.110.189.218 'cat /root/.petdate-mail/dkim-txt-oneline.txt'
 
 ### بعد از درست شدن `A mail`
 
+Full deploy runs `infra/mail/ensure-mail-le-cert.sh` (idempotent, best-effort): certbot when Google DNS already shows `185.110.189.218`, then wires Postfix/Dovecot. Manual:
+
 ```bash
 certbot certonly --nginx -d mail.petdate.ir
+bash /opt/petdate/infra/mail/ensure-mail-le-cert.sh
+# or full stack rewrite:
 bash /opt/petdate/infra/mail/setup-mail.sh
 ```
+
+Wait for **all resolvers** to drop the old WCDN A `185.239.1.100` (TTL flush). Let's Encrypt HTTP-01 fails while any LE resolver still sees WCDN.
 
 ### تأیید بعد از انتشار DNS (۵–۳۰ دقیقه)
 
@@ -148,7 +154,7 @@ SMTP_TLS_REJECT_UNAUTHORIZED=0
 
 API کد OTP را با From + Return-Path = `no-reply@petdate.ir` می‌فرستد؛ OpenDKIM برای `*@petdate.ir` امضا می‌کند.
 
-`SMTP_TLS_REJECT_UNAUTHORIZED=0` لازم است چون گواهی فعلی `mail.petdate.ir` هنوز self-signed است (تا بعد از certbot روی DNS درست).
+`SMTP_TLS_REJECT_UNAUTHORIZED=0` is for local `127.0.0.1` Postfix. After LE is on :465/:587/:993, remote clients should see a public cert (not `O=PetDate` self-signed).
 
 ### پنل مشاهده ارسال (ادمین وب)
 

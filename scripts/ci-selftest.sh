@@ -10,6 +10,12 @@ bash -n "$ROOT/scripts/backup-postgres.sh"
 bash -n "$ROOT/scripts/verify-prod-env.sh"
 bash -n "$ROOT/scripts/monitor-health.sh"
 bash -n "$ROOT/scripts/deploy-vps.sh"
+bash -n "$ROOT/infra/mail/ensure-mail-le-cert.sh"
+bash -n "$ROOT/infra/mail/setup-mail.sh"
+grep -q 'ensure-mail-le-cert.sh' "$ROOT/scripts/deploy-vps.sh" || {
+  echo "ci-selftest FAIL: deploy-vps.sh must call ensure-mail-le-cert.sh" >&2
+  exit 1
+}
 tmpenv="$(mktemp)"
 trap 'rm -f "$tmpenv"' EXIT
 cat >"$tmpenv" <<'ENV'
