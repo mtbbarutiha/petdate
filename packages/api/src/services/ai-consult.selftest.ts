@@ -514,10 +514,14 @@ async function main() {
   assert(leashTip.text.length > 280, 'leash offline advice is detailed');
 
   const { trainerShouldGoOnline } = await import('./ai-consult');
+  const prevDisablePollinations = process.env.AI_CONSULT_DISABLE_POLLINATIONS;
+  process.env.AI_CONSULT_DISABLE_POLLINATIONS = '1';
   assert(
     !trainerShouldGoOnline({ kind: 'trainer', userMessage: 'چطور بشین یاد بگیره؟' }),
-    'without API key, known topic does not force online'
+    'without API key (and Pollinations disabled), known topic does not force online'
   );
+  if (prevDisablePollinations === undefined) delete process.env.AI_CONSULT_DISABLE_POLLINATIONS;
+  else process.env.AI_CONSULT_DISABLE_POLLINATIONS = prevDisablePollinations;
   assert(
     trainerQuestionUnknownOffline({
       kind: 'trainer',

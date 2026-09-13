@@ -29,7 +29,7 @@ import {
 } from '../services/fanout-reject-notify';
 import { startVetChatFromApi } from '../services/telegram-vet-chat-start';
 import { clearBotVetChatSessions } from '../services/bot-vet-chat-session';
-import { AI_TRAINER_DISPLAY_NAME, AI_VET_DISPLAY_NAME, aiConsultProviderLabel, isAiConsultConfigured } from '../services/ai-consult';
+import { AI_TRAINER_DISPLAY_NAME, AI_VET_DISPLAY_NAME, aiConsultProviderLabel, isAiConsultLive } from '../services/ai-consult';
 import { grokBotBridgeSummary } from '../services/grok-bot-bridge';
 import {
   decorateAiConsultDisplay,
@@ -223,10 +223,12 @@ consultationsRouter.get('/team-agents', (_req, res) => {
     source: bridge.source,
     linkedGrokBots: bridge.linkedCount,
     /**
-     * Roster `grokBot.linked` is identity only (baked UUID). Live coaching needs
-     * XAI_API_KEY / AI_CONSULT_API_KEY — there is no xAI “call Grok Bot by UUID” API.
+     * Roster `grokBot.linked` is identity only (baked UUID). Live coaching needs a
+     * usable provider (XAI / AI_CONSULT / GROQ / OPENROUTER / FALLBACK / Pollinations).
+     * llmLive is false when keys are missing OR all providers are billing/budget-blocked
+     * (e.g. xAI 403 no credits) — never fake live.
      */
-    llmLive: isAiConsultConfigured(),
+    llmLive: isAiConsultLive(),
     llmProvider: aiConsultProviderLabel(),
     agents: bridge.agents,
   });
