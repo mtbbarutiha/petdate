@@ -41,8 +41,6 @@ export function VetConsultLandingPage() {
           ? 'نقش دامپزشک در پت‌دیت — مشاوره فوری برای پت شما، بدون اپ جدا، روی همان حساب.'
           : t('platform.vetOff')
       }
-      actionLabel="خانه"
-      actionTo="/"
       ctaLabel={platform.vetConsultEnabled ? 'مشاوره دامپزشک' : undefined}
       ctaTo={platform.vetConsultEnabled ? loginPath('/vet-consult') : undefined}
       className="pepito-vet-landing-page"

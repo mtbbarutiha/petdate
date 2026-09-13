@@ -34,6 +34,31 @@ assert.ok(
   navCluster.indexOf('pepito-nav-login-icon') < navCluster.indexOf('pd-shop-cart-link'),
   'login icon renders immediately before cart in the LTR cluster',
 );
+assert.match(header, /isGuestLoginTextAction/, 'header drops duplicate text ورود/Login actions');
+const adoptionList = readFileSync(join(root, 'pages/AdoptionListPage.tsx'), 'utf8');
+const adoptionDetail = readFileSync(join(root, 'pages/AdoptionDetailPage.tsx'), 'utf8');
+const vetLanding = readFileSync(join(root, 'pages/VetConsultLandingPage.tsx'), 'utf8');
+const faq = readFileSync(join(root, 'pages/FaqPage.tsx'), 'utf8');
+const magazine = readFileSync(join(root, 'pages/MagazinePage.tsx'), 'utf8');
+assert.doesNotMatch(
+  adoptionList,
+  /actionLabel=\{t\('common\.login'\)\}/,
+  'adoption list does not pass text ورود into SiteHeader',
+);
+assert.doesNotMatch(
+  adoptionDetail,
+  /actionLabel=\{t\('common\.login'\)\}/,
+  'adoption detail does not pass text ورود into SiteHeader',
+);
+assert.doesNotMatch(vetLanding, /actionLabel=["']خانه["']/, 'vet landing has no text خانه header action');
+assert.doesNotMatch(welcome, /actionLabel/, 'homepage does not pass a header text action');
+assert.doesNotMatch(faq, /actionLabel/, 'FAQ does not pass a header text action');
+assert.doesNotMatch(shop, /actionLabel/, 'shop chrome does not pass a header text action');
+assert.doesNotMatch(
+  magazine,
+  /actionLabel=\{t\('common\.login'\)\}/,
+  'magazine does not pass text ورود into header chrome',
+);
 assert.match(header, /LazySiteDesktopNav/, 'primary includes role shortcuts');
 assert.doesNotMatch(header, /SiteNavOverflow/, 'header no longer mounts overflow More menu');
 assert.match(

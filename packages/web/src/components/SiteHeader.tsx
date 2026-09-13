@@ -21,6 +21,13 @@ function PawIcon({ size = 14 }: { size?: number }) {
   );
 }
 
+/** Guest login is the cluster icon (pepito-nav-login-icon). Never also render text ورود. */
+function isGuestLoginTextAction(label?: string, to?: string): boolean {
+  const n = (label ?? '').trim().toLowerCase();
+  if (n === 'ورود' || n === 'login' || n === 'sign in') return true;
+  return Boolean(to && /\/auth\/login/.test(to));
+}
+
 export type SiteHeaderProps = {
   scrolled?: boolean;
   className?: string;
@@ -81,6 +88,7 @@ export function SiteHeader({
   }, [deferDesktopNav]);
 
   const headerClass = `pepito-nav${scrolled ? ' is-scrolled' : ''}${className ? ` ${className}` : ''}`;
+  const showTextAction = Boolean(actionLabel) && !isGuestLoginTextAction(actionLabel, actionTo);
 
   return (
     <header className={headerClass}>
@@ -117,11 +125,11 @@ export function SiteHeader({
         <NavUserCluster showCart={showCart} showOrders={showOrders} />
         <LanguageToggle />
         <ThemeToggle />
-        {actionLabel && onAction ? (
+        {showTextAction && onAction ? (
           <button type="button" className="pepito-nav-login pepito-nav-login--btn" onClick={onAction}>
             {actionLabel}
           </button>
-        ) : actionLabel && actionTo ? (
+        ) : showTextAction && actionTo ? (
           <Link to={actionTo} className="pepito-nav-login">
             {actionLabel}
           </Link>
