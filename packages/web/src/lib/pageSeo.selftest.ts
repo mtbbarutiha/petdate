@@ -50,8 +50,14 @@ assert.match(shop.noscriptHtml, /پت‌شاپ|شاپ/);
 const mystery = pageSeoForPath('/this-is-not-home');
 assert.equal(mystery.canonicalPath, '/this-is-not-home', 'never force-canonical unknown routes to /');
 
-const product = SHOP_PRODUCTS.find((p) => p.id === 'p1') ?? SHOP_PRODUCTS[0];
-assert.ok(product, 'catalog has a product');
+assert.equal(SHOP_PRODUCTS.length, 15, 'live catalog is exactly 15 SKUs');
+assert.deepEqual(
+  SHOP_PRODUCTS.map((p) => p.id),
+  Array.from({ length: 15 }, (_, i) => `p${221 + i}`),
+  'catalog ids are p221–p235'
+);
+const product = SHOP_PRODUCTS.find((p) => p.id === 'p221') ?? SHOP_PRODUCTS[0];
+assert.ok(product, 'catalog has a live product');
 const byId = pageSeoForPath(`/shop/product/${product.id}`);
 const bySlug = pageSeoForPath(`/shop/product/${product.slug}`);
 const byShort = pageSeoForPath(`/shop/${product.slug}`);
@@ -89,7 +95,11 @@ assert.equal(shop.image, SITE.ogImage, 'shop index keeps brand banner');
 const redirects = listProductIdRedirects();
 assert.ok(redirects.length > 0, 'id → slug redirects exist');
 const p1 = redirects.find((r) => r.from === '/shop/product/p1');
-assert.ok(p1 && p1.to === productCanonicalPath(product), 'p1 redirects to descriptive slug');
+assert.ok(p1 && p1.to === '/shop', 'retired p1 redirects to /shop');
+const retiredSlug = redirects.find((r) => r.from === '/shop/product/dog-food-1-p1');
+assert.ok(retiredSlug && retiredSlug.to === '/shop', 'retired demo slug redirects to /shop');
+const p221 = redirects.find((r) => r.from === '/shop/product/p221');
+assert.ok(p221 && p221.to === productCanonicalPath(product), 'p221 redirects to descriptive slug');
 const shortAlias = redirects.find((r) => r.from === `/shop/${product.slug}`);
 assert.ok(shortAlias && shortAlias.to === productCanonicalPath(product), '/shop/:slug 301s to PDP');
 assert.ok(

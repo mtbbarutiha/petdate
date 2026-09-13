@@ -12,6 +12,10 @@ import {
   getProduct,
   type ShopProduct,
 } from '../data/shopCatalog';
+import {
+  RETIRED_SHOP_CATEGORY_SLUGS,
+  RETIRED_SHOP_PRODUCTS,
+} from '../data/retired-shop-products';
 
 export const INDEX_ROBOTS =
   'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1';
@@ -180,11 +184,12 @@ function faqNoscript(): string {
 }
 
 function shopNoscript(): string {
-  const cats = SHOP_CATEGORIES.slice(0, 12)
+  const liveCategorySlugs = new Set(SHOP_PRODUCTS.map((p) => p.categorySlug));
+  const cats = SHOP_CATEGORIES.filter((c) => liveCategorySlugs.has(c.slug))
     .map((c) => `<li><a href="/shop/c/${esc(c.slug)}">${esc(c.labelFa)}</a> — ${esc(c.description)}</li>`)
     .join('');
   return noscriptWrap(
-    `<h1>پت‌دیت شاپ</h1><p>خرید غذای سگ و گربه، اسباب‌بازی، خاک، قلاده و لوازم پت — قیمت به تومان، ارسال در ایران.</p><ul>${cats}</ul>`
+    `<h1>پت‌دیت شاپ</h1><p>خرید غذای سگ و گربه رویال کنین و جوسرا — قیمت به تومان، ارسال در ایران.</p><ul>${cats}</ul>`
   );
 }
 
@@ -680,6 +685,18 @@ export function listProductIdRedirects(): Array<{ from: string; to: string }> {
       push(`/shop/p/${product.id}`, slugPath);
     }
   }
+  for (const retired of RETIRED_SHOP_PRODUCTS) {
+    push(`/shop/product/${retired.id}`, '/shop');
+    push(`/shop/product/${retired.slug}`, '/shop');
+    if (retired.slug && !SHOP_RESERVED_SEGMENTS.has(retired.slug)) {
+      push(`/shop/${retired.slug}`, '/shop');
+    }
+    push(`/shop/p/${retired.slug}`, '/shop');
+    push(`/shop/p/${retired.id}`, '/shop');
+  }
+  for (const slug of RETIRED_SHOP_CATEGORY_SLUGS) {
+    push(`/shop/c/${slug}`, '/shop');
+  }
   return out;
 }
 
@@ -700,7 +717,9 @@ export function listSitemapEntries(magazineSlugs: string[] = []): SitemapEntry[]
     { path: '/llms.txt', changefreq: 'weekly', priority: '0.4' },
     { path: '/llms-full.txt', changefreq: 'weekly', priority: '0.3' },
   ];
+  const liveCategorySlugs = new Set(SHOP_PRODUCTS.map((p) => p.categorySlug));
   for (const cat of SHOP_CATEGORIES) {
+    if (!liveCategorySlugs.has(cat.slug)) continue;
     urls.push({ path: `/shop/c/${cat.slug}`, changefreq: 'weekly', priority: '0.75' });
   }
   for (const product of SHOP_PRODUCTS) {
