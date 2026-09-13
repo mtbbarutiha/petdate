@@ -55,4 +55,9 @@ assert(
   map.includes('/shop/cat-food-josera-kitten-2kg '),
   'Josera Kitten slug aliases 301 to /shop/product/:slug'
 );
+assert(
+  map.includes('/shop/cat-litter-mr-cat-cat-litter-10-l-carbon '),
+  'batch-multi slug aliases 301 to /shop/product/:slug'
+);
+assert(xml.includes('/shop/product/cat-litter-mr-cat-cat-litter-10-l-carbon'), 'batch-multi PDP is in sitemap');
 console.log('sitemap.selftest: ok');

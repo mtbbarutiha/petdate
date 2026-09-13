@@ -178,7 +178,7 @@ export function getDb(): AppDatabase {
     };
 
     const bootShopPilot = () => {
-      // Additive Royal Canin pilot + Batch 2 SKUs — upsert by slug; never wipe catalog.
+      // Additive Royal Canin pilot + Batch 2 + Batch-multi — upsert by slug; never wipe catalog.
       try {
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { seedRoyalCaninPilotProducts } =
@@ -195,10 +195,18 @@ export function getDb(): AppDatabase {
       } catch (err) {
         console.warn('Shop batch 2 seed skipped/failed:', (err as Error).message);
       }
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { seedShopBatchMultiProducts } =
+          require('./data/shop-batch-multi-products') as typeof import('./data/shop-batch-multi-products');
+        seedShopBatchMultiProducts();
+      } catch (err) {
+        console.warn('Shop batch-multi seed skipped/failed:', (err as Error).message);
+      }
     };
 
     const bootShopCatalogGuard = () => {
-      // Delete leftover demo/seed SKUs. Never touches p221–p235 prices/images/stock.
+      // Delete leftover demo/seed SKUs. Never touches live p221–p235 / p250–p274 prices/images/stock.
       try {
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { purgeDemoShopProducts } =
@@ -1665,10 +1673,15 @@ function seedFinanceDefaults() {
     (db.prepare('SELECT COUNT(*) as c FROM shop_products').get() as { c: number } | undefined)?.c ?? 0
   );
   if (productCount === 0) {
-    // Live SKUs (p221–p235) are seeded by bootShopPilot — never insert demo toys/beds/collars here.
+    // Live SKUs (p221–p235 + p250–p274) are seeded by bootShopPilot — never insert demo toys/beds/collars here.
     const cats = [
       ['dog-food', 'غذای سگ', 'dog', 'غذای خشک و کنسرو', '🦴', 10],
       ['cat-food', 'غذای گربه', 'cat', 'غذای خشک و پوچ', '🐟', 20],
+      ['dog-treats', 'تشویقی و مکمل غذایی سگ', 'dog', 'تشویقی، اسنک و مکمل', '🍖', 30],
+      ['cat-treats', 'تشویقی گربه و مکمل غذایی', 'cat', 'تشویقی، بستنی و مکمل', '🍦', 40],
+      ['dog-toys', 'اسباب بازی سگ', 'dog', 'توپ، لاتکس و اسباب‌بازی تعاملی', '🎾', 50],
+      ['cat-toys', 'اسباب بازی گربه', 'cat', 'موش، میله و اسباب‌بازی', '🐭', 60],
+      ['cat-litter', 'لوازم دستشویی گربه', 'cat', 'خاک، سینی و بیلچه', '🚽', 70],
     ] as const;
     const insCat = db.prepare(
       `INSERT OR IGNORE INTO shop_categories (slug, label_fa, pet_type, description, emoji, sort_order)

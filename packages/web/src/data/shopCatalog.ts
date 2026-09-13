@@ -1,10 +1,12 @@
 /**
  * PetDate shop catalog — Pepito imagery, prices in تومان (wallet primary currency).
- * Live catalog is exactly 15 SKUs: p221–p223 (pilots) + p224–p235 (Batch 2).
+ * Live catalog is 40 SKUs: p221–p223 (pilots) + p224–p235 (Batch 2) +
+ * p250–p274 (Batch-multi Part 1). p236–p249 reserved for Batch 3 (PR #445).
  * Demo p1–p220 were removed so they cannot reappear on deploy.
  */
 
 import { SHOP_BATCH2_PRODUCTS } from './shopBatch2Products';
+import { SHOP_BATCH_MULTI_PRODUCTS } from './shopBatchMultiProducts';
 
 const P = '/pepito/uploads';
 
@@ -123,9 +125,19 @@ export const SHOP_BRANDS: ShopBrand[] = [
   { id: 'mpets', labelFa: 'ام‌پتس', labelEn: 'MPets' },
   { id: 'hagen', labelFa: 'هاگن', labelEn: 'Hagen' },
   { id: 'petdate', labelFa: 'پت‌دیت', labelEn: 'PetDate' },
+  { id: 'mr-cat', labelFa: 'مستر کت', labelEn: 'MR.CAT' },
+  { id: 'meocat', labelFa: 'مئوکت', labelEn: 'Meocat' },
+  { id: 'afp', labelFa: 'AFP', labelEn: 'AFP' },
+  { id: 'dr-clauders', labelFa: 'دکتر کلادرز', labelEn: "Dr.Clauder's" },
+  { id: 'wanpy', labelFa: 'ونپی', labelEn: 'Wanpy' },
+  { id: 'bioline', labelFa: 'بایولاین', labelEn: 'Bioline' },
+  { id: 'bonnest', labelFa: 'بونست', labelEn: 'Bonnest' },
+  { id: 'generic', labelFa: 'متفرقه', labelEn: 'Generic' },
+  { id: 'petopoli', labelFa: 'پتوپولی', labelEn: 'Petopoli' },
+  { id: 'juicer', labelFa: 'جویسر', labelEn: 'Joyser' },
 ];
 
-/** Live shop catalog — 3 Royal Canin pilots + 12 Batch 2 SKUs only */
+/** Live shop catalog — 3 pilots + 12 Batch 2 + 25 Batch-multi Part 1 */
 export const SHOP_PRODUCTS: ShopProduct[] = [
   {
     id: 'p221',
@@ -239,6 +251,7 @@ export const SHOP_PRODUCTS: ShopProduct[] = [
     ],
   },
   ...SHOP_BATCH2_PRODUCTS,
+  ...SHOP_BATCH_MULTI_PRODUCTS,
 ];
 
 export function formatToman(amount: number): string {

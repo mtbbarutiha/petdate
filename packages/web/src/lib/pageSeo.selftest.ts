@@ -50,12 +50,16 @@ assert.match(shop.noscriptHtml, /پت‌شاپ|شاپ/);
 const mystery = pageSeoForPath('/this-is-not-home');
 assert.equal(mystery.canonicalPath, '/this-is-not-home', 'never force-canonical unknown routes to /');
 
-assert.equal(SHOP_PRODUCTS.length, 15, 'live catalog is exactly 15 SKUs');
+assert.equal(SHOP_PRODUCTS.length, 40, 'live catalog is 40 SKUs (pilots + batch2 + batch-multi part 1)');
 assert.deepEqual(
   SHOP_PRODUCTS.map((p) => p.id),
-  Array.from({ length: 15 }, (_, i) => `p${221 + i}`),
-  'catalog ids are p221–p235'
+  [
+    ...Array.from({ length: 15 }, (_, i) => `p${221 + i}`),
+    ...Array.from({ length: 25 }, (_, i) => `p${250 + i}`),
+  ],
+  'catalog ids are p221–p235 and p250–p274'
 );
+assert.ok(!SHOP_PRODUCTS.some((p) => p.id === 'p236'), 'p236 is reserved for Batch 3');
 const product = SHOP_PRODUCTS.find((p) => p.id === 'p221') ?? SHOP_PRODUCTS[0];
 assert.ok(product, 'catalog has a live product');
 const byId = pageSeoForPath(`/shop/product/${product.id}`);

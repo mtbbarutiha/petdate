@@ -1,0 +1,356 @@
+{
+  "batch": "multi-1",
+  "cacheBust": "batch-multi-v1",
+  "products": [
+    {
+      "id": "p250",
+      "slug": "cat-litter-mr-cat-cat-litter-10-l-carbon",
+      "title": "خاک گربه مستر کت کربن‌دار ۱۰ لیتری",
+      "titleEn": "Cat Litter MR Cat Cat Litter 10 L Carbon",
+      "brandId": "mr-cat",
+      "categorySlug": "cat-litter",
+      "petTypes": [
+        "cat"
+      ],
+      "priceToman": 502000,
+      "weightLabel": "کربن",
+      "paramKind": "model"
+    },
+    {
+      "id": "p251",
+      "slug": "cat-litter-mr-cat-baby-powder-scented-cat-litter-10l-10-kg",
+      "title": "خاک گربه مستر کت مدل پودر بچه ۱۰ لیتری",
+      "titleEn": "Cat Litter MR Cat Baby Powder Scented Cat Litter 10l 10 Kg",
+      "brandId": "mr-cat",
+      "categorySlug": "cat-litter",
+      "petTypes": [
+        "cat"
+      ],
+      "priceToman": 449000,
+      "weightLabel": "10 کیلوگرم",
+      "paramKind": "weight"
+    },
+    {
+      "id": "p252",
+      "slug": "cat-litter-meocat-activated-carbon-cat-litter-economy",
+      "title": "خاک گربه کربن فعال مئوکت (اقتصادی)",
+      "titleEn": "Cat Litter Meocat Activated Carbon Cat Litter Economy",
+      "brandId": "meocat",
+      "categorySlug": "cat-litter",
+      "petTypes": [
+        "cat"
+      ],
+      "priceToman": 424000,
+      "weightLabel": "",
+      "paramKind": ""
+    },
+    {
+      "id": "p253",
+      "slug": "cat-litter-mr-cat-oxygen-cat-litter-10-l-10-kg",
+      "title": "خاک گربه مستر کت مدل اکسیژن ۱۰ لیتری",
+      "titleEn": "Cat Litter MR Cat Oxygen Cat Litter 10 L 10 Kg",
+      "brandId": "mr-cat",
+      "categorySlug": "cat-litter",
+      "petTypes": [
+        "cat"
+      ],
+      "priceToman": 414000,
+      "weightLabel": "10 کیلوگرم",
+      "paramKind": "weight"
+    },
+    {
+      "id": "p254",
+      "slug": "cat-litter-meocat-super-clump-cat-litter-economy",
+      "title": "خاک گربه سوپرکلامپ مئوکت (اقتصادی)",
+      "titleEn": "Cat Litter Meocat Super Clump Cat Litter Economy",
+      "brandId": "meocat",
+      "categorySlug": "cat-litter",
+      "petTypes": [
+        "cat"
+      ],
+      "priceToman": 369000,
+      "weightLabel": "",
+      "paramKind": ""
+    },
+    {
+      "id": "p255",
+      "slug": "cat-litter-mr-cat-kitten-cat-litter-7l-7-kg",
+      "title": "خاک بچه‌گربه مستر کت ۷ لیتری",
+      "titleEn": "Cat Litter MR Cat Kitten Cat Litter 7l 7 Kg",
+      "brandId": "mr-cat",
+      "categorySlug": "cat-litter",
+      "petTypes": [
+        "cat"
+      ],
+      "priceToman": 229000,
+      "weightLabel": "7 کیلوگرم",
+      "paramKind": "weight"
+    },
+    {
+      "id": "p256",
+      "slug": "dog-treats-afp-chill-out-ice-bone",
+      "title": "استخوان یخی خنک‌کننده AFP",
+      "titleEn": "Dog Treats Afp Chill Out Ice Bone",
+      "brandId": "afp",
+      "categorySlug": "dog-treats",
+      "petTypes": [
+        "dog"
+      ],
+      "priceToman": 1790000,
+      "weightLabel": "",
+      "paramKind": ""
+    },
+    {
+      "id": "p257",
+      "slug": "dog-treats-rabbit-fillet-dr-clauders-80-g",
+      "title": "تشویقی سگ دکتر کلادرز فیله خرگوش ۸۰ گرم",
+      "titleEn": "Dog Treats Rabbit Fillet Dr Clauders 80 G",
+      "brandId": "dr-clauders",
+      "categorySlug": "dog-treats",
+      "petTypes": [
+        "dog"
+      ],
+      "priceToman": 760000,
+      "weightLabel": "80 گرم",
+      "paramKind": "weight"
+    },
+    {
+      "id": "p258",
+      "slug": "dog-treats-dr-clauders-pork-filet-strips-80-g",
+      "title": "تشویقی سگ دکتر کلادرز فیله استریپس خوک ۸۰ گرم",
+      "titleEn": "Dog Treats Dr Clauders Pork Filet Strips 80 G",
+      "brandId": "dr-clauders",
+      "categorySlug": "dog-treats",
+      "petTypes": [
+        "dog"
+      ],
+      "priceToman": 760000,
+      "weightLabel": "80 گرم",
+      "paramKind": "weight"
+    },
+    {
+      "id": "p259",
+      "slug": "dog-treats-wanpy-toothbrush-chews-100g",
+      "title": "تشویقی سگ ونپی مدل مسواک طعم مرغ ۱۰۰ گرم",
+      "titleEn": "Dog Treats Wanpy Toothbrush Chews 100g",
+      "brandId": "wanpy",
+      "categorySlug": "dog-treats",
+      "petTypes": [
+        "dog"
+      ],
+      "priceToman": 660000,
+      "weightLabel": "100گرم",
+      "paramKind": "weight"
+    },
+    {
+      "id": "p260",
+      "slug": "dog-treats-wanpy-chicken-jerky-chips-100g",
+      "title": "تشویقی سگ ونپی چیپس مرغ ۱۰۰ گرم",
+      "titleEn": "Dog Treats Wanpy Chicken Jerky Chips 100g",
+      "brandId": "wanpy",
+      "categorySlug": "dog-treats",
+      "petTypes": [
+        "dog"
+      ],
+      "priceToman": 655000,
+      "weightLabel": "100گرم",
+      "paramKind": "weight"
+    },
+    {
+      "id": "p261",
+      "slug": "cat-treats-bioline-catnip-spray-50ml",
+      "title": "اسپری کت‌نیپ بایولاین ۵۰ میلی‌لیتر",
+      "titleEn": "Cat Treats Bioline Catnip Spray 50ml",
+      "brandId": "bioline",
+      "categorySlug": "cat-treats",
+      "petTypes": [
+        "cat"
+      ],
+      "priceToman": 828000,
+      "weightLabel": "50ml",
+      "paramKind": "weight"
+    },
+    {
+      "id": "p262",
+      "slug": "cat-treats-bonnest-catnip-spray-50-l",
+      "title": "اسپری کت‌نیپ بونست ۵۰ میلی‌لیتر",
+      "titleEn": "Cat Treats Bonnest Catnip Spray 50 L",
+      "brandId": "bonnest",
+      "categorySlug": "cat-treats",
+      "petTypes": [
+        "cat"
+      ],
+      "priceToman": 539000,
+      "weightLabel": "50 میلی لیتر",
+      "paramKind": "weight"
+    },
+    {
+      "id": "p263",
+      "slug": "cat-treats-cat-grass-theething-stick-30-g",
+      "title": "اسنک علف گربه طعم مرغ ۳۰ گرم",
+      "titleEn": "Cat Treats Cat Grass Theething Stick 30 G",
+      "brandId": "generic",
+      "categorySlug": "cat-treats",
+      "petTypes": [
+        "cat"
+      ],
+      "priceToman": 480000,
+      "weightLabel": "30 گرم",
+      "paramKind": "weight"
+    },
+    {
+      "id": "p264",
+      "slug": "cat-treats-bonnest-cat-nip-powder-20g-20-g",
+      "title": "پودر کت‌نیپ بونست ۲۰ گرم",
+      "titleEn": "Cat Treats Bonnest Cat Nip Powder 20g 20 G",
+      "brandId": "bonnest",
+      "categorySlug": "cat-treats",
+      "petTypes": [
+        "cat"
+      ],
+      "priceToman": 385000,
+      "weightLabel": "20 گرم",
+      "paramKind": "weight"
+    },
+    {
+      "id": "p265",
+      "slug": "cat-treats-chicken-cat-grass-treat-30-g",
+      "title": "تشویقی علف گربه طعم مرغ ۳۰ گرم",
+      "titleEn": "Cat Treats Chicken Cat Grass Treat 30 G",
+      "brandId": "generic",
+      "categorySlug": "cat-treats",
+      "petTypes": [
+        "cat"
+      ],
+      "priceToman": 335000,
+      "weightLabel": "30 گرم",
+      "paramKind": "weight"
+    },
+    {
+      "id": "p266",
+      "slug": "dog-toys-ufo-treat-dispenser-dog-toy",
+      "title": "اسباب‌بازی جایزه‌دهنده سگ مدل سفینه AFP",
+      "titleEn": "Dog Toys Ufo Treat Dispenser Dog Toy",
+      "brandId": "afp",
+      "categorySlug": "dog-toys",
+      "petTypes": [
+        "dog"
+      ],
+      "priceToman": 3580000,
+      "weightLabel": "",
+      "paramKind": ""
+    },
+    {
+      "id": "p267",
+      "slug": "dog-toys-crab-silicone-dog-chew-toothbrush-toy",
+      "title": "دندانی سیلیکونی مدل خرچنگ",
+      "titleEn": "Dog Toys Crab Silicone Dog Chew Toothbrush Toy",
+      "brandId": "generic",
+      "categorySlug": "dog-toys",
+      "petTypes": [
+        "dog"
+      ],
+      "priceToman": 1100000,
+      "weightLabel": "قرمز",
+      "paramKind": "color"
+    },
+    {
+      "id": "p268",
+      "slug": "dog-toys-enjoy-the-meal-puzzle-toy",
+      "title": "اسباب‌بازی فکری سگ AFP",
+      "titleEn": "Dog Toys Enjoy The Meal Puzzle Toy",
+      "brandId": "afp",
+      "categorySlug": "dog-toys",
+      "petTypes": [
+        "dog"
+      ],
+      "priceToman": 5480000,
+      "weightLabel": "",
+      "paramKind": ""
+    },
+    {
+      "id": "p269",
+      "slug": "cat-toys-petopoli-4-way-foldable-cat-play-tunnel",
+      "title": "تونل بازی چهارراه گربه پتوپولی",
+      "titleEn": "Cat Toys Petopoli 4 Way Foldable Cat Play Tunnel",
+      "brandId": "petopoli",
+      "categorySlug": "cat-toys",
+      "petTypes": [
+        "cat"
+      ],
+      "priceToman": 2310000,
+      "weightLabel": "قرمز",
+      "paramKind": "color"
+    },
+    {
+      "id": "p270",
+      "slug": "cat-toys-cat-toy-layer-tower-of-tracks",
+      "title": "برج طبقاتی تعادلی گربه مدل پردار",
+      "titleEn": "Cat Toys Cat Toy Layer Tower Of Tracks",
+      "brandId": "generic",
+      "categorySlug": "cat-toys",
+      "petTypes": [
+        "cat"
+      ],
+      "priceToman": 1520000,
+      "weightLabel": "سبز",
+      "paramKind": "color"
+    },
+    {
+      "id": "p271",
+      "slug": "cat-toys-hanging-catnip-bat-toy-for-cats",
+      "title": "عروسک آویز خفاش کت‌نیپ‌دار",
+      "titleEn": "Cat Toys Hanging Catnip Bat Toy For Cats",
+      "brandId": "juicer",
+      "categorySlug": "cat-toys",
+      "petTypes": [
+        "cat"
+      ],
+      "priceToman": 960000,
+      "weightLabel": "سبز",
+      "paramKind": "color"
+    },
+    {
+      "id": "p272",
+      "slug": "cat-toys-little-yellow-cat-toy",
+      "title": "اسباب‌بازی تعادلی تشویقی‌خور مدل جوجه اردک",
+      "titleEn": "Cat Toys Little Yellow Cat Toy",
+      "brandId": "generic",
+      "categorySlug": "cat-toys",
+      "petTypes": [
+        "cat"
+      ],
+      "priceToman": 825000,
+      "weightLabel": "آبی",
+      "paramKind": "color"
+    },
+    {
+      "id": "p273",
+      "slug": "cat-toys-play-tunnel-bag",
+      "title": "کیسه بازی گربه پتوپولی",
+      "titleEn": "Cat Toys Play Tunnel Bag",
+      "brandId": "petopoli",
+      "categorySlug": "cat-toys",
+      "petTypes": [
+        "cat"
+      ],
+      "priceToman": 792000,
+      "weightLabel": "سبز",
+      "paramKind": "color"
+    },
+    {
+      "id": "p274",
+      "slug": "cat-toys-automatic-cat-teaser-ball-robotic-toy-for-cats",
+      "title": "توپ هوشمند رباتیک گربه",
+      "titleEn": "Cat Toys Automatic Cat Teaser Ball Robotic Toy For Cats",
+      "brandId": "generic",
+      "categorySlug": "cat-toys",
+      "petTypes": [
+        "cat"
+      ],
+      "priceToman": 610050,
+      "weightLabel": "آبی روشن",
+      "paramKind": "color"
+    }
+  ]
+}

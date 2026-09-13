@@ -1,5 +1,5 @@
 /**
- * Landing «محصولات ویژه ما» must use the live shop catalog (p221–p235),
+ * Landing «محصولات ویژه ما» must use the live shop catalog (p221–p235 + p250–p274),
  * not hardcoded demo SKUs / Pepito stock photos.
  * Run: npx tsx packages/web/src/pages/landingFeaturedProducts.selftest.ts
  */
@@ -35,12 +35,12 @@ assert.doesNotMatch(
 
 const featured = getFeaturedProducts();
 assert.ok(featured.length >= 4, 'live catalog has featured products for the landing grid');
-assert.equal(SHOP_PRODUCTS.length, 15, 'live shop is the 15-SKU catalog');
+assert.equal(SHOP_PRODUCTS.length, 40, 'live shop is the 40-SKU catalog');
 
 const liveIds = new Set(SHOP_PRODUCTS.map((p) => p.id));
 for (const p of featured.slice(0, 4)) {
   assert.ok(liveIds.has(p.id), `featured ${p.id} is in the live catalog`);
-  assert.match(p.id, /^p(22[1-9]|23[0-5])$/, `featured ${p.id} is in p221–p235`);
+  assert.match(p.id, /^p(22[1-9]|23[0-5]|25\d|26\d|27[0-4])$/, `featured ${p.id} is a live SKU`);
   assert.ok(p.image.startsWith('/pepito/uploads/'), `featured ${p.id} image is under uploads`);
   assert.ok(!p.image.includes('01-1.png') && !p.image.includes('03.png'), `featured ${p.id} image is not a demo stock shot`);
   assert.ok(p.title.trim().length > 0, `featured ${p.id} has a title`);

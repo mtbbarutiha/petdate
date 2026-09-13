@@ -20,12 +20,46 @@ export const SHOP_BATCH2_SLUGS = [
   'cat-food-josera-kitten-2kg',
 ] as const;
 
+export const SHOP_BATCH_MULTI_SLUGS = [
+  'cat-litter-mr-cat-cat-litter-10-l-carbon',
+  'cat-litter-mr-cat-baby-powder-scented-cat-litter-10l-10-kg',
+  'cat-litter-meocat-activated-carbon-cat-litter-economy',
+  'cat-litter-mr-cat-oxygen-cat-litter-10-l-10-kg',
+  'cat-litter-meocat-super-clump-cat-litter-economy',
+  'cat-litter-mr-cat-kitten-cat-litter-7l-7-kg',
+  'dog-treats-afp-chill-out-ice-bone',
+  'dog-treats-rabbit-fillet-dr-clauders-80-g',
+  'dog-treats-dr-clauders-pork-filet-strips-80-g',
+  'dog-treats-wanpy-toothbrush-chews-100g',
+  'dog-treats-wanpy-chicken-jerky-chips-100g',
+  'cat-treats-bioline-catnip-spray-50ml',
+  'cat-treats-bonnest-catnip-spray-50-l',
+  'cat-treats-cat-grass-theething-stick-30-g',
+  'cat-treats-bonnest-cat-nip-powder-20g-20-g',
+  'cat-treats-chicken-cat-grass-treat-30-g',
+  'dog-toys-ufo-treat-dispenser-dog-toy',
+  'dog-toys-crab-silicone-dog-chew-toothbrush-toy',
+  'dog-toys-enjoy-the-meal-puzzle-toy',
+  'cat-toys-petopoli-4-way-foldable-cat-play-tunnel',
+  'cat-toys-cat-toy-layer-tower-of-tracks',
+  'cat-toys-hanging-catnip-bat-toy-for-cats',
+  'cat-toys-little-yellow-cat-toy',
+  'cat-toys-play-tunnel-bag',
+  'cat-toys-automatic-cat-teaser-ball-robotic-toy-for-cats',
+] as const;
+
 export const ZERO_MARGIN_SHOP_SLUGS: readonly string[] = [
   ...ROYAL_CANIN_PILOT_SLUGS,
   ...SHOP_BATCH2_SLUGS,
+  ...SHOP_BATCH_MULTI_SLUGS,
 ];
 
-/** Live shop product ids — 3 pilots + 12 Batch 2. Never purge these rows. */
+/**
+ * Live shop product ids — 3 pilots + 12 Batch 2 + 25 Batch-multi Part 1.
+ * IDs are p221–p235 and p250–p274. p236–p249 are reserved for open Batch 3
+ * (PR #445) so this wave does not overwrite those SKUs if that PR lands.
+ * Never purge these rows.
+ */
 export const LIVE_SHOP_PRODUCT_IDS = [
   'p221',
   'p222',
@@ -42,6 +76,31 @@ export const LIVE_SHOP_PRODUCT_IDS = [
   'p233',
   'p234',
   'p235',
+  'p250',
+  'p251',
+  'p252',
+  'p253',
+  'p254',
+  'p255',
+  'p256',
+  'p257',
+  'p258',
+  'p259',
+  'p260',
+  'p261',
+  'p262',
+  'p263',
+  'p264',
+  'p265',
+  'p266',
+  'p267',
+  'p268',
+  'p269',
+  'p270',
+  'p271',
+  'p272',
+  'p273',
+  'p274',
 ] as const;
 
 export function isLiveShopProductIdOrSlug(idOrSlug: string): boolean {

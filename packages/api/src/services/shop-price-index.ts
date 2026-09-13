@@ -13,7 +13,7 @@ export type ShopPriceEntry = {
   priceToman: number;
 };
 
-/** Keep in sync with packages/api/src/data/shop-pilot-products.ts + shop-batch2-products.ts */
+/** Keep in sync with shop-pilot-products + shop-batch2-products + shop-batch-multi-products (JSON is primary). */
 const PILOT_PRICE_INDEX: ShopPriceEntry[] = [
   {
     id: 'p221',
