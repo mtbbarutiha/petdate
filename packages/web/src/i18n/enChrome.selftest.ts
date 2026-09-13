@@ -29,6 +29,19 @@ const enKeys = collectKeys(enDict as Record<string, unknown>).sort();
 assert.deepEqual(enKeys, faKeys, 'EN and FA dictionaries must share the same key set');
 
 const tEn = createTranslator(enDict, faDict);
+const tFa = createTranslator(faDict, enDict);
+assert.match(tFa('footer.lead'), /🐾/, 'FA footer.lead keeps the paw emoji');
+assert.match(tEn('footer.lead'), /🐾/, 'EN footer.lead keeps the paw emoji');
+assert.match(
+  tFa('footer.lead'),
+  /پلتفرم فارسی برای پیدا کردن همبازی/,
+  'FA footer.lead describes PetDate services'
+);
+assert.match(
+  tEn('footer.lead'),
+  /Persian platform to find dog and cat playmates/,
+  'EN footer.lead describes PetDate services'
+);
 const offenders: string[] = [];
 for (const key of enKeys) {
   if (key === 'lang.fa' || key === 'lang.switchToFa') continue;

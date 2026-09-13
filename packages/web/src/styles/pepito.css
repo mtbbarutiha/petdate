@@ -2718,10 +2718,11 @@ body > #pd-boot-lcp.is-parked,
 }
 .pepito-footer-lead {
   margin: 0 0 1.25rem;
-  max-width: 22rem;
+  max-width: 32rem;
   color: rgba(255, 255, 255, 0.7);
   font-size: 0.95rem;
   line-height: 1.85;
+  white-space: pre-line;
 }
 .pepito-footer-lead--tight {
   margin-bottom: 1rem;
