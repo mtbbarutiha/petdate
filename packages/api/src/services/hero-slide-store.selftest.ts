@@ -31,6 +31,9 @@ async function main() {
   assert.equal(resolved0.length, 5);
   assert.equal(resolved0[0]!.role, 'playmate');
   assert.equal(resolved0[0]!.source, 'default');
+  assert.equal(resolved0[0]!.posX, 50);
+  assert.equal(resolved0[0]!.posY, 0);
+  assert.equal(resolved0[0]!.scale, 1);
   assert.match(resolved0[0]!.webp, /hero-playmate-800\.webp/);
 
   const src = await sharp({

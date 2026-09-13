@@ -58,8 +58,13 @@ assert.match(
 );
 assert.match(
   indexHtml,
+  /\.pepito-hero\{[^}]*background:#14161e/,
+  'critical hero uses solid fill (photo comes from boot LCP / React only)'
+);
+assert.doesNotMatch(
+  indexHtml,
   /\.pepito-hero\{[^}]*hero-playmate-800\.webp/,
-  'critical hero paints the preloaded playmate WebP on the box itself'
+  'critical hero must not paint a second static photo under the slide img'
 );
 assert.match(
   indexHtml,
@@ -88,7 +93,7 @@ assert.doesNotMatch(
   /rel="preload"\s+as="style"/,
   'do not preload a stylesheet (unused-preload warning)'
 );
-assert.match(indexHtml, /web-perf-v41-hero-hq/, 'deploy marker bumped so SW/HTML cache misses');
+assert.match(indexHtml, /web-perf-v42-hero-focus/, 'deploy marker bumped so SW/HTML cache misses');
 assert.match(
   indexHtml,
   /--pepito-dock-clearance:calc\(96px \+ env\(safe-area-inset-bottom,0px\)\)/,
@@ -199,8 +204,13 @@ assert.match(pepitoCss, /body > #pd-boot-lcp \{[\s\S]*?position:\s*absolute/, 'h
 assert.match(pepitoCss, /body > #pd-boot-lcp \{[\s\S]*?z-index:\s*1/, 'hydrated boot LCP paints above landing fill');
 assert.match(
   pepitoCss,
-  /\.pepito-hero \{[\s\S]*?hero-playmate-800\.webp/,
-  'hydrated hero paints the playmate WebP on the box'
+  /\.pepito-hero \{[\s\S]*?background:\s*#14161e;/,
+  'hydrated hero uses solid fill (no dual static photo under slides)'
+);
+assert.doesNotMatch(
+  pepitoCss,
+  /\.pepito-hero \{[\s\S]*?url\('\/media\/lcp\/hero-playmate-800\.webp'\)/,
+  'hydrated hero must not layer a second playmate photo'
 );
 assert.match(pepitoCss, /--pepito-btn-1-bg:\s*#5c4d91/, 'button-1 fill stays AA vs white');
 assert.match(pepitoCss, /--pepito-btn-3-bg:\s*#a24a86/, 'button-3 fill is darkened pink for AA');
