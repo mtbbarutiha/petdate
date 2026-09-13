@@ -11,6 +11,7 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { tr, useI18n } from '../i18n';
+import { useDialogFocusTrap } from '../hooks/useDialogFocusTrap';
 
 export type AppDialogKind = 'alert' | 'confirm' | 'prompt';
 export type AppDialogVariant = 'admin' | 'public';
@@ -132,59 +133,7 @@ function AppDialogChrome({
 }) {
   const { t, dir } = useI18n();
   const panelRef = useRef<HTMLDivElement | HTMLFormElement | null>(null);
-  const previouslyFocused = useRef<HTMLElement | null>(null);
-
-  useEffect(() => {
-    previouslyFocused.current = document.activeElement as HTMLElement | null;
-    const panel = panelRef.current;
-    const focusables = () =>
-      panel
-        ? Array.from(
-            panel.querySelectorAll<HTMLElement>(
-              'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-            )
-          ).filter((el) => el.offsetParent !== null || el === document.activeElement)
-        : [];
-
-    const tFocus = window.setTimeout(() => {
-      const field = panel?.querySelector<HTMLElement>('[data-app-dialog-field]');
-      const primary = panel?.querySelector<HTMLElement>('[data-app-dialog-primary]');
-      (field ?? primary ?? focusables()[0] ?? panel)?.focus?.();
-    }, 0);
-
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !busy) {
-        e.preventDefault();
-        onCancel();
-        return;
-      }
-      if (e.key !== 'Tab' || !panel) return;
-      const list = focusables();
-      if (list.length === 0) {
-        e.preventDefault();
-        return;
-      }
-      const first = list[0]!;
-      const last = list[list.length - 1]!;
-      if (e.shiftKey && document.activeElement === first) {
-        e.preventDefault();
-        last.focus();
-      } else if (!e.shiftKey && document.activeElement === last) {
-        e.preventDefault();
-        first.focus();
-      }
-    };
-
-    document.addEventListener('keydown', onKey);
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      window.clearTimeout(tFocus);
-      document.removeEventListener('keydown', onKey);
-      document.body.style.overflow = prevOverflow;
-      previouslyFocused.current?.focus?.();
-    };
-  }, [busy, onCancel]);
+  useDialogFocusTrap({ active: true, panelRef, onDismiss: onCancel, busy });
 
   const adminRoot = typeof document !== 'undefined' ? document.querySelector('.admin-app') : null;
   const portalTarget = (variant === 'admin' && adminRoot) || document.body;

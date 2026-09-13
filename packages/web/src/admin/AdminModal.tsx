@@ -1,5 +1,4 @@
 import {
-  useEffect,
   useId,
   useRef,
   type FormEvent,
@@ -7,6 +6,7 @@ import {
   type RefObject,
 } from 'react';
 import { tr } from '../i18n';
+import { useDialogFocusTrap } from '../hooks/useDialogFocusTrap';
 
 export type AdminModalSize = 'sm' | 'md' | 'lg' | 'xl' | 'full';
 
@@ -26,7 +26,9 @@ type AdminModalProps = {
 };
 
 /**
- * Shared admin dialog: Pepito light theme, RTL-friendly, ESC + overlay close, basic focus trap.
+ * Shared admin dialog: Pepito light theme, RTL-friendly, ESC + overlay close.
+ * Focus trap lives in useDialogFocusTrap — initial focus runs once on open
+ * so inline onClose / form keystrokes cannot steal focus back to ×.
  */
 export function AdminModal({
   open,
@@ -42,59 +44,7 @@ export function AdminModal({
 }: AdminModalProps) {
   const titleId = useId();
   const panelRef = useRef<HTMLDivElement | HTMLFormElement | null>(null);
-  const previouslyFocused = useRef<HTMLElement | null>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    previouslyFocused.current = document.activeElement as HTMLElement | null;
-    const panel = panelRef.current;
-    const focusables = () =>
-      panel
-        ? Array.from(
-            panel.querySelectorAll<HTMLElement>(
-              'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-            )
-          ).filter((el) => el.offsetParent !== null || el === document.activeElement)
-        : [];
-
-    const t = window.setTimeout(() => {
-      const list = focusables();
-      (list[0] ?? panel)?.focus?.();
-    }, 0);
-
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && !busy) {
-        e.preventDefault();
-        onClose();
-        return;
-      }
-      if (e.key !== 'Tab' || !panel) return;
-      const list = focusables();
-      if (list.length === 0) {
-        e.preventDefault();
-        return;
-      }
-      const first = list[0];
-      const last = list[list.length - 1];
-      if (e.shiftKey && document.activeElement === first) {
-        e.preventDefault();
-        last.focus();
-      } else if (!e.shiftKey && document.activeElement === last) {
-        e.preventDefault();
-        first.focus();
-      }
-    };
-
-    document.addEventListener('keydown', onKey);
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      window.clearTimeout(t);
-      document.removeEventListener('keydown', onKey);
-      document.body.style.overflow = prevOverflow;
-      previouslyFocused.current?.focus?.();
-    };
-  }, [open, onClose, busy]);
+  useDialogFocusTrap({ active: open, panelRef, onDismiss: onClose, busy });
 
   if (!open) return null;
 

@@ -11,6 +11,7 @@ const dir = dirname(fileURLToPath(import.meta.url));
 const webSrc = join(dir, '..');
 
 const dialog = readFileSync(join(dir, 'AppDialog.tsx'), 'utf8');
+const trap = readFileSync(join(webSrc, 'hooks/useDialogFocusTrap.ts'), 'utf8');
 const app = readFileSync(join(webSrc, 'App.tsx'), 'utf8');
 
 assert.match(dialog, /export function appAlert/, 'appAlert helper');
@@ -19,7 +20,8 @@ assert.match(dialog, /export function appPrompt/, 'appPrompt helper');
 assert.match(dialog, /export function AppDialogHost/, 'AppDialogHost exported');
 assert.match(dialog, /role="dialog"/, 'dialog role');
 assert.match(dialog, /aria-modal="true"/, 'aria-modal');
-assert.match(dialog, /Escape/, 'closes on Escape');
+assert.match(dialog, /useDialogFocusTrap/, 'shared once-on-open focus trap');
+assert.match(trap, /Escape/, 'closes on Escape');
 assert.match(dialog, /createPortal/, 'portals to body / admin-app');
 assert.match(dialog, /data-app-dialog-field/, 'prompt focuses input');
 assert.match(app, /AppDialogHost/, 'App mounts AppDialogHost');
