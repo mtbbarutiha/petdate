@@ -29,7 +29,7 @@ const PILOT_PRICE_INDEX: ShopPriceEntry[] = [
     title: 'رویال کنین ایکس‌اسمال پاپی ۱٫۵ کیلو — توله نژاد خیلی کوچک',
     brandId: 'royal-canin',
     categorySlug: 'dog-food',
-    priceToman: 8_894_000,
+    priceToman: 8_294_000,
   },
   {
     id: 'p223',

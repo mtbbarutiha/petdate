@@ -100,12 +100,12 @@ async function main() {
 
   const expectedPrice: Record<string, number> = {
     [SLUGS[0]]: 8_881_000,
-    [SLUGS[1]]: 8_894_000,
+    [SLUGS[1]]: 8_294_000,
     [SLUGS[2]]: 2_741_600,
   };
   const expectedCoins: Record<string, number> = {
     [SLUGS[0]]: tomanToShopCoins(8_881_000),
-    [SLUGS[1]]: tomanToShopCoins(8_894_000),
+    [SLUGS[1]]: tomanToShopCoins(8_294_000),
     [SLUGS[2]]: tomanToShopCoins(2_741_600),
   };
 
