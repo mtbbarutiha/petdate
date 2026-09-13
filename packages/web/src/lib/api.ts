@@ -66,6 +66,15 @@ export function resolvePublicMediaUrl(
   ) {
     return raw;
   }
+  // Bundled web static files (hero LCP, pepito uploads, etc.) — keep same-origin.
+  // Do not prefix VITE_API_URL; the API host does not serve /media or /pepito.
+  if (
+    raw.startsWith('/media/') ||
+    raw.startsWith('/pepito/') ||
+    raw.startsWith('/assets/')
+  ) {
+    return raw;
+  }
   if (raw.startsWith('/')) return `${API_BASE}${raw}`;
   // Telegram Bot API file_id — not a browser URL
   if (/^(AgAC|AQAD|BAAC|BQAC|AwAC|CQAC|DQAC)/.test(raw) || /^[A-Za-z0-9_-]{24,}$/.test(raw)) {
