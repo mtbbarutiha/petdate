@@ -995,6 +995,53 @@ function mapOffice(row: Record<string, unknown>): FinanceOsOffice {
   };
 }
 
+function mapSbgPerson(row: Record<string, unknown>): FinanceOsSbgPerson {
+  return {
+    id: Number(row.id),
+    name: String(row.name),
+    role: String(row.role || ''),
+    office: String(row.office || ''),
+    allocationMethod: row.allocation_method === 'manual' ? 'manual' : 'auto',
+    timeAllocations: parseJson(row.time_json, []),
+  };
+}
+
+function mapEquipment(row: Record<string, unknown>): FinanceOsEquipment {
+  return {
+    id: Number(row.id),
+    code: String(row.code),
+    category: String(row.category || ''),
+    expenseCategory: String(row.expense_category || ''),
+    name: String(row.name),
+    brand: String(row.brand || ''),
+    purchaseDate: String(row.purchase_date || ''),
+    purchasePrice: Number(row.purchase_price) || 0,
+    currentValue: Number(row.current_value) || 0,
+    monthlyRate: Number(row.monthly_rate) || 0,
+    ownership: String(row.ownership || 'هلدینگ'),
+    assignedBusiness: String(row.assigned_business || ''),
+    assignedPerson: String(row.assigned_person || ''),
+  };
+}
+
+function normalizeOfficeAreas(areas: unknown): FinanceOsOffice['areas'] {
+  if (!Array.isArray(areas)) return [];
+  return areas
+    .map((raw, i) => {
+      const row = raw && typeof raw === 'object' ? (raw as Record<string, unknown>) : {};
+      const name = String(row.name || '').trim();
+      const assigned = row.assignedBusiness != null ? String(row.assignedBusiness).trim() : '';
+      return {
+        id: String(row.id || `area-${i + 1}`).trim() || `area-${i + 1}`,
+        name,
+        sqm: Number(row.sqm) || 0,
+        monthlyRent: Math.round(Number(row.monthlyRent) || 0),
+        assignedBusiness: assigned || null,
+      };
+    })
+    .filter((a) => a.name);
+}
+
 function mapTx(row: Record<string, unknown>): FinanceOsTransaction {
   return {
     id: Number(row.id),
@@ -1473,35 +1520,10 @@ export function getFinanceOsAllocationBundle(): FinanceOsAllocationBundle {
     ).map(mapOffice),
     sbgPeople: (
       db().prepare('SELECT * FROM finance_os_sbg_people ORDER BY id').all() as Array<Record<string, unknown>>
-    ).map(
-      (r): FinanceOsSbgPerson => ({
-        id: Number(r.id),
-        name: String(r.name),
-        role: String(r.role || ''),
-        office: String(r.office || ''),
-        allocationMethod: r.allocation_method === 'manual' ? 'manual' : 'auto',
-        timeAllocations: parseJson(r.time_json, []),
-      })
-    ),
+    ).map(mapSbgPerson),
     equipment: (
       db().prepare('SELECT * FROM finance_os_equipment ORDER BY id').all() as Array<Record<string, unknown>>
-    ).map(
-      (r): FinanceOsEquipment => ({
-        id: Number(r.id),
-        code: String(r.code),
-        category: String(r.category || ''),
-        expenseCategory: String(r.expense_category || ''),
-        name: String(r.name),
-        brand: String(r.brand || ''),
-        purchaseDate: String(r.purchase_date || ''),
-        purchasePrice: Number(r.purchase_price) || 0,
-        currentValue: Number(r.current_value) || 0,
-        monthlyRate: Number(r.monthly_rate) || 0,
-        ownership: String(r.ownership || 'هلدینگ'),
-        assignedBusiness: String(r.assigned_business || ''),
-        assignedPerson: String(r.assigned_person || ''),
-      })
-    ),
+    ).map(mapEquipment),
     expenses,
     invoices: (
       db().prepare('SELECT * FROM finance_os_invoices ORDER BY id DESC').all() as Array<Record<string, unknown>>
@@ -1608,6 +1630,110 @@ export function issueFinanceOsInvoice(input: {
     lines,
     createdAt,
   };
+}
+
+export function updateFinanceOsOffice(
+  id: number,
+  patch: Partial<{
+    name: string;
+    address: string;
+    totalSqm: number;
+    areas: FinanceOsOffice['areas'];
+  }>
+): FinanceOsOffice {
+  ensureFinanceOsSchema();
+  const prev = db().prepare('SELECT * FROM finance_os_offices WHERE id = ?').get(id) as
+    | Record<string, unknown>
+    | undefined;
+  if (!prev) throw new Error('دفتر یافت نشد');
+  const name = patch.name != null ? String(patch.name).trim() : String(prev.name || '');
+  if (!name) throw new Error('نام دفتر الزامی است');
+  const address = patch.address != null ? String(patch.address) : String(prev.address || '');
+  const totalSqm = patch.totalSqm != null ? Number(patch.totalSqm) || 0 : Number(prev.total_sqm) || 0;
+  const areas = patch.areas != null ? normalizeOfficeAreas(patch.areas) : parseJson(prev.areas_json, []);
+  db()
+    .prepare('UPDATE finance_os_offices SET name=?, address=?, total_sqm=?, areas_json=? WHERE id=?')
+    .run(name, address, totalSqm, JSON.stringify(areas), id);
+  return mapOffice(
+    db().prepare('SELECT * FROM finance_os_offices WHERE id = ?').get(id) as Record<string, unknown>
+  );
+}
+
+export function updateFinanceOsSbgPerson(
+  id: number,
+  patch: Partial<{
+    name: string;
+    role: string;
+    office: string;
+    allocationMethod: 'auto' | 'manual';
+  }>
+): FinanceOsSbgPerson {
+  ensureFinanceOsSchema();
+  const prev = db().prepare('SELECT * FROM finance_os_sbg_people WHERE id = ?').get(id) as
+    | Record<string, unknown>
+    | undefined;
+  if (!prev) throw new Error('فرد یافت نشد');
+  const name = patch.name != null ? String(patch.name).trim() : String(prev.name || '');
+  if (!name) throw new Error('نام الزامی است');
+  const method =
+    patch.allocationMethod === 'manual' || patch.allocationMethod === 'auto'
+      ? patch.allocationMethod
+      : String(prev.allocation_method || 'auto') === 'manual'
+        ? 'manual'
+        : 'auto';
+  db()
+    .prepare('UPDATE finance_os_sbg_people SET name=?, role=?, office=?, allocation_method=? WHERE id=?')
+    .run(
+      name,
+      patch.role != null ? String(patch.role) : String(prev.role || ''),
+      patch.office != null ? String(patch.office) : String(prev.office || ''),
+      method,
+      id
+    );
+  return mapSbgPerson(
+    db().prepare('SELECT * FROM finance_os_sbg_people WHERE id = ?').get(id) as Record<string, unknown>
+  );
+}
+
+export function updateFinanceOsEquipment(
+  id: number,
+  patch: Partial<{
+    name: string;
+    category: string;
+    purchasePrice: number;
+    currentValue: number;
+    monthlyRate: number;
+    assignedBusiness: string;
+    assignedPerson: string;
+  }>
+): FinanceOsEquipment {
+  ensureFinanceOsSchema();
+  const prev = db().prepare('SELECT * FROM finance_os_equipment WHERE id = ?').get(id) as
+    | Record<string, unknown>
+    | undefined;
+  if (!prev) throw new Error('تجهیز یافت نشد');
+  const name = patch.name != null ? String(patch.name).trim() : String(prev.name || '');
+  if (!name) throw new Error('نام الزامی است');
+  db()
+    .prepare(
+      `UPDATE finance_os_equipment SET
+        name=?, category=?, purchase_price=?, current_value=?, monthly_rate=?,
+        assigned_business=?, assigned_person=?
+       WHERE id=?`
+    )
+    .run(
+      name,
+      patch.category != null ? String(patch.category) : String(prev.category || ''),
+      patch.purchasePrice != null ? Math.round(Number(patch.purchasePrice) || 0) : Number(prev.purchase_price) || 0,
+      patch.currentValue != null ? Math.round(Number(patch.currentValue) || 0) : Number(prev.current_value) || 0,
+      patch.monthlyRate != null ? Math.round(Number(patch.monthlyRate) || 0) : Number(prev.monthly_rate) || 0,
+      patch.assignedBusiness != null ? String(patch.assignedBusiness) : String(prev.assigned_business || ''),
+      patch.assignedPerson != null ? String(patch.assignedPerson) : String(prev.assigned_person || ''),
+      id
+    );
+  return mapEquipment(
+    db().prepare('SELECT * FROM finance_os_equipment WHERE id = ?').get(id) as Record<string, unknown>
+  );
 }
 
 export function updateFinanceOsBankBalance(balance: number): { bankBalance: number } {

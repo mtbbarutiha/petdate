@@ -17,18 +17,28 @@ export function formatSignedMoney(n: number): string {
 export function FinanceEditToggle({
   editMode,
   onChange,
+  disabled,
 }: {
   editMode: boolean;
   onChange: (v: boolean) => void;
+  disabled?: boolean;
 }) {
   return (
     <button
       type="button"
       className={`admin-btn ${editMode ? 'admin-btn--primary' : 'admin-btn--ghost'}`}
       onClick={() => onChange(!editMode)}
-      title={editMode ? tr('خروج از حالت ویرایش') : tr('ورود به حالت ویرایش')}
+      disabled={disabled}
+      aria-pressed={editMode}
+      title={
+        disabled
+          ? tr('فقط خواندن')
+          : editMode
+            ? tr('خروج از حالت ویرایش')
+            : tr('ورود به حالت ویرایش')
+      }
     >
-      {editMode ? tr('حالت ویرایش') : tr('حالت مشاهده')}
+      {editMode ? tr('خروج از حالت ویرایش') : tr('حالت ویرایش')}
     </button>
   );
 }
@@ -68,6 +78,7 @@ export function useFinanceEditMode(canWrite: boolean) {
   return {
     editMode: canWrite && editMode,
     setEditMode: (v: boolean) => setEditMode(canWrite ? v : false),
+    canWrite,
   };
 }
 
