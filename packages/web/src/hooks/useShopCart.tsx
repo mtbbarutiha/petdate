@@ -190,6 +190,8 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
   const pendingLockRef = useRef(false);
   const mergedForTokenRef = useRef<string | null>(null);
   const skipNextLocalWriteRef = useRef(false);
+  /** Skip poll/focus refresh while add/qty/remove round-trips are in flight. */
+  const inflightMutationsRef = useRef(0);
   const linesRef = useRef(lines);
   const serverMetaRef = useRef<Map<string, ShopCartApiLine>>(new Map());
   linesRef.current = lines;
@@ -226,8 +228,10 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
 
   const refreshFromServer = useCallback(async () => {
     if (!token) return;
+    if (inflightMutationsRef.current > 0) return;
     try {
       const data = await fetchShopCart(token);
+      if (inflightMutationsRef.current > 0) return;
       applyServerLines(data.lines);
     } catch {
       /* keep local mirror on transient errors */
@@ -357,6 +361,7 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
    * Never DELETE live server rows just because this tab cannot resolve the id yet —
    * nginx showed 20k+ DELETE /cart/items from / and /chats while catalog hydrate
    * only ran under ShopChrome on /shop*.
+   * Server also refuses live-SKU DELETE without user-remove intent (stale SPA guard).
    */
   useEffect(() => {
     if (!lines.length) return;
@@ -366,6 +371,7 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
     setLines(lines.filter((l) => !retiredIds.has(l.productId)));
     if (token) {
       for (const ghost of retired) {
+        /* no userIntent — server allows missing/retired demo cleanup only */
         void removeShopCartItem(token, ghost.productId).catch(() => undefined);
       }
     }
@@ -384,9 +390,13 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
         return [...prev, { productId, qty: n }];
       });
       if (token) {
+        inflightMutationsRef.current += 1;
         void addShopCartItem(token, productId, n)
           .then((data) => applyServerLines(data.lines))
-          .catch(() => undefined);
+          .catch(() => undefined)
+          .finally(() => {
+            inflightMutationsRef.current = Math.max(0, inflightMutationsRef.current - 1);
+          });
       }
       const product = resolveProduct(productId);
       if (product) {
@@ -455,9 +465,13 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
         return prev.map((l) => (l.productId === productId ? { ...l, qty } : l));
       });
       if (token) {
+        inflightMutationsRef.current += 1;
         void setShopCartItemQty(token, productId, qty)
           .then((data) => applyServerLines(data.lines))
-          .catch(() => undefined);
+          .catch(() => undefined)
+          .finally(() => {
+            inflightMutationsRef.current = Math.max(0, inflightMutationsRef.current - 1);
+          });
       }
     },
     [token, applyServerLines]
@@ -467,9 +481,13 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
     (productId: string) => {
       setLines((prev) => prev.filter((l) => l.productId !== productId));
       if (token) {
-        void removeShopCartItem(token, productId)
+        inflightMutationsRef.current += 1;
+        void removeShopCartItem(token, productId, { userIntent: true })
           .then((data) => applyServerLines(data.lines))
-          .catch(() => undefined);
+          .catch(() => undefined)
+          .finally(() => {
+            inflightMutationsRef.current = Math.max(0, inflightMutationsRef.current - 1);
+          });
       }
     },
     [token, applyServerLines]

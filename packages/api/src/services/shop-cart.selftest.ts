@@ -7,6 +7,8 @@ import {
   cartItemCount,
   mergeCartLines,
   normalizeCartLines,
+  requestHasShopCartUserRemoveIntent,
+  SHOP_CART_USER_REMOVE_INTENT,
 } from './shop-cart.ts';
 
 assert.deepEqual(normalizeCartLines(null), []);
@@ -38,5 +40,26 @@ assert.deepEqual(
 /** Sync rule used by web login + API /cart/merge */
 assert.equal(cartItemCount(mergeCartLines([], [{ productId: 'g', qty: 2 }])), 2);
 assert.equal(cartItemCount(mergeCartLines([{ productId: 'g', qty: 1 }], [])), 1);
+
+assert.equal(SHOP_CART_USER_REMOVE_INTENT, 'user-remove');
+assert.equal(
+  requestHasShopCartUserRemoveIntent({
+    headers: { 'x-petdate-cart-intent': 'user-remove' },
+  }),
+  true
+);
+assert.equal(
+  requestHasShopCartUserRemoveIntent({
+    body: { intent: 'user-remove', productId: 'p243' },
+  }),
+  true
+);
+assert.equal(requestHasShopCartUserRemoveIntent({ headers: {}, body: {} }), false);
+assert.equal(
+  requestHasShopCartUserRemoveIntent({
+    headers: { 'x-petdate-cart-intent': 'prune' },
+  }),
+  false
+);
 
 console.log('shop-cart.selftest: ok (merge-then-persist)');

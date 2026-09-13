@@ -1,5 +1,6 @@
 /**
  * Guard: shared shop cart API exists for web session + telegram.
+ * Live-SKU DELETE requires user-remove intent (stale ghost-prune guard).
  * Run: npx tsx src/routes/shop-cart.selftest.ts
  */
 import assert from 'node:assert/strict';
@@ -18,9 +19,18 @@ assert.match(src, /shopRouter\.get\('\/cart-telegram'/, 'GET /cart-telegram');
 assert.match(src, /shopRouter\.post\('\/cart-telegram\/items'/, 'POST /cart-telegram/items');
 assert.match(src, /clearCartAfterCheckout/, 'checkout clears shared cart');
 assert.match(src, /mergeAndPersistShopCart/, 'merge helper wired');
+assert.match(src, /requestHasShopCartUserRemoveIntent/, 'DELETE checks user-remove intent');
+assert.match(
+  src,
+  /removeShopCartLine\([\s\S]*?userIntent:\s*requestHasShopCartUserRemoveIntent/,
+  'web + telegram DELETE pass userIntent'
+);
 
 assert.match(service, /merge-then-persist/, 'documents merge-then-persist rule');
 assert.match(service, /CREATE TABLE IF NOT EXISTS shop_carts/, 'ensures shop_carts table');
+assert.match(service, /SHOP_CART_USER_REMOVE_INTENT/, 'exports remove intent constant');
+assert.match(service, /isLiveShopProductIdOrSlug/, 'live SKU DELETE guard');
+assert.match(service, /userIntent/, 'removeShopCartLine accepts userIntent');
 assert.match(db, /CREATE TABLE IF NOT EXISTS shop_carts/, 'migrateSchema creates shop_carts');
 assert.match(db, /DELETE FROM shop_carts WHERE user_id/, 'user delete clears cart');
 

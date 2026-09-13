@@ -2,6 +2,7 @@
  * Guard: web cart badge uses resolved views; login merges guest→server.
  * Never auto-DELETE live server cart rows from unresolved “ghost” prune
  * (only retired demo SKUs). Catalog hydrate runs in the cart provider.
+ * User remove sends user-remove intent; poll skips while mutations in flight.
  * Run: npx tsx src/hooks/useShopCart.selftest.ts
  * (CI may invoke this with cwd=packages/api — resolve paths from this file.)
  */
@@ -39,15 +40,23 @@ assert.doesNotMatch(
   /Drop ghost lines that never resolve in catalog/,
   'must not DELETE any unresolved catalog id from server'
 );
+assert.match(src, /inflightMutationsRef/, 'skips poll refresh during cart mutations');
+assert.match(
+  src,
+  /removeShopCartItem\(token, productId, \{ userIntent: true \}\)/,
+  'user remove sends intent header'
+);
 
 assert.match(sync, /export async function hydrateShopCatalogOnce/, 'shared hydrate export');
 
 assert.match(api, /\/api\/shop\/cart\/merge/, 'merge endpoint client');
 assert.match(api, /export async function fetchShopCart/, 'fetchShopCart client');
+assert.match(api, /X-Petdate-Cart-Intent/, 'remove client sends intent header');
 
 assert.equal(isRetiredShopProduct('p1'), true);
 assert.equal(isRetiredShopProduct('dog-food-2-p2'), true);
 assert.equal(isRetiredShopProduct('p225'), false);
+assert.equal(isRetiredShopProduct('p243'), false);
 assert.equal(isRetiredShopProduct('dog-food-royal-canin-xsmall-adult-1-5kg'), false);
 
 console.log('useShopCart.selftest: ok');

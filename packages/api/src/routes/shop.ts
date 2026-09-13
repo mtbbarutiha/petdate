@@ -22,6 +22,7 @@ import {
   publicCartPayload,
   removeShopCartLine,
   replaceShopCart,
+  requestHasShopCartUserRemoveIntent,
   setShopCartLine,
 } from '../services/shop-cart';
 import { adminPlatform } from '../admin-platform';
@@ -909,7 +910,9 @@ shopRouter.patch('/cart/items/:productId', (req, res) => {
 shopRouter.delete('/cart/items/:productId', (req, res) => {
   const session = requireSession(req, res, 'برای حذف از سبد وارد حساب شوید.');
   if (!session) return;
-  removeShopCartLine(session.user.id, req.params.productId);
+  removeShopCartLine(session.user.id, req.params.productId, {
+    userIntent: requestHasShopCartUserRemoveIntent(req),
+  });
   res.json(publicCartPayload(session.user.id));
 });
 
@@ -1013,7 +1016,9 @@ shopRouter.delete('/cart-telegram/items', (req, res) => {
     });
     return;
   }
-  removeShopCartLine(user.id, String(req.body?.productId ?? req.query.productId ?? ''));
+  removeShopCartLine(user.id, String(req.body?.productId ?? req.query.productId ?? ''), {
+    userIntent: requestHasShopCartUserRemoveIntent(req),
+  });
   res.json(publicCartPayload(user.id));
 });
 
