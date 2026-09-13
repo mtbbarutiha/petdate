@@ -12,16 +12,36 @@ Exactly **four** public personas — same roster as Grok Bot, not a parallel cha
 **Not public:** یلدا شعبانی — `/team-chat/yalda-shabani` and name aliases resolve to ساناز. Only **one** vet (سارا).
 
 Code: `packages/shared/src/team-agents.ts` + `packages/api/src/services/grok-bot-bridge.ts`.  
-Public list: `GET /api/consultations/team-agents` (4 agents; `grokBot.id` + `linked`).
+Public list: `GET /api/consultations/team-agents` (4 agents; `grokBot.id` + `linked` + `llmLive`).
 
-Ids are baked into `TEAM_AGENTS.grokBotId`. Public `grokBot.id` always equals `grokBotId` (stale `GROK_BOT_*_ID` remaps are ignored). Optional URL on `/opt/petdate/.env`:
+## Important: roster UUID ≠ live LLM
+
+Grok Bot **share/agent UUIDs** are for the Grok Bot desktop app (identity / Add to Grok Bot). xAI does **not** expose a public HTTP API to “invoke agent `b6e496b5-…` by UUID”.
+
+Live site answers use **xAI Chat Completions** (or OpenAI-compatible) via `ai-consult`:
+
+| Env | Effect |
+|---|---|
+| `XAI_API_KEY` | `https://api.x.ai/v1` + Grok model — **preferred for trainer** |
+| `AI_CONSULT_API_KEY` / `OPENAI_API_KEY` | OpenAI-compatible base URL/model |
+| *(none)* | Offline Persian KB (topics like بشین / دست بده) — never a hard error |
+
+`GET /api/consultations/team-agents` fields:
+
+- `grokBot.linked` — roster identity present (baked UUID). **Does not mean live Grok.**
+- `llmLive` / `llmProvider` — `true` / `xai` only when a provider key is set on the VPS.
+
+Ids are baked into `TEAM_AGENTS.grokBotId`. Public `grokBot.id` always equals `grokBotId`. Optional URL on `/opt/petdate/.env`:
 
 ```bash
 GROK_BOT_FARANAK_AHMADI_URL=https://x.ai/…
 GROK_BOT_AGENT_MAP={"sanaz_ghaffari":{"url":"…"}}
-XAI_API_KEY=xai-…   # live answers via ai-consult (not offline stubs)
+XAI_API_KEY=xai-…   # REQUIRED for live Grok coaching (not offline stubs)
+XAI_MODEL=grok-4-fast-non-reasoning
 ```
+
+After setting the key: `pm2 restart petdate-api --update-env`.
 
 ## How users chat
 
-Logged-in landing **شروع مشاوره** → `/team-chat/:slug` (trainer/finance/vet) or `/support/chat` (ساناز). Each agent introduces themselves with the roster name above.
+Logged-in landing **شروع مشاوره** → `/team-chat/:slug` (trainer/finance/vet) or `/support/chat` (ساناز). Each agent introduces themselves with the roster name above. Replies go through `generateAiConsultAdvice` (LLM when keyed, else offline topic KB).

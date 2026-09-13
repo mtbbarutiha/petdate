@@ -122,8 +122,8 @@ See [`docs/infra/wcdn.md`](./infra/wcdn.md): apex HTTP→HTTPS on origin (skip W
 ## Live paths on VPS
 
 - App root: `/opt/petdate` (`VPS_PATH`)
-- AI trainer/vet fallback: set `AI_CONSULT_API_KEY` (or `OPENAI_API_KEY`) in `/opt/petdate/.env` and restart `petdate-api`. Without it, پاشا یزدانی uses the rich offline knowledge base only.
-- Voice notes for AI chats (پاشا / support): same key enables Whisper STT (`AI_CONSULT_STT_MODEL`, default `whisper-1`). Without a key, users get a polite “please type” Persian fallback.
+- AI trainer/vet fallback: set `XAI_API_KEY` (preferred) or `AI_CONSULT_API_KEY` / `OPENAI_API_KEY` in `/opt/petdate/.env` and restart `petdate-api`. Without it, فرانک / team agents use the offline knowledge base only. Grok Bot UUIDs alone do **not** enable live LLM — see [`GROK_BOT_AGENTS.md`](./GROK_BOT_AGENTS.md).
+- Voice notes for AI chats: same key enables Whisper STT (`AI_CONSULT_STT_MODEL`, default `whisper-1`). Without a key, users get a polite “please type” Persian fallback.
 - Web: `/opt/petdate/packages/web/dist` (nginx root)
 - API/Bot: `/opt/petdate/packages/{api,bot}/dist` + `pm2 restart petdate-api petdate-bot`
 - DB: production SoT is Postgres (`DATABASE_URL` → compose service `postgres` / `petdate-postgres`). SQLite path in `ecosystem.config.cjs` is fallback only.

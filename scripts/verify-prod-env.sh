@@ -97,7 +97,16 @@ else
   status PAYMENT_CARD OK
 fi
 
-echo "verify-prod-env: OK=$ok MISSING=$missing DEFAULT-RISK=$risk"
+# Optional AI consult / Grok (trainer team-chat). Missing → offline KB only; do not fail launch.
+AI_KEY_SET=0
+if is_set "${XAI_API_KEY:-}" || is_set "${AI_CONSULT_API_KEY:-}" || is_set "${OPENAI_API_KEY:-}"; then
+  AI_KEY_SET=1
+  status AI_CONSULT_LLM OK
+else
+  printf '%-22s %s\n' AI_CONSULT_LLM 'MISSING (optional — offline trainer KB; set XAI_API_KEY for live Grok)'
+fi
+
+echo "verify-prod-env: OK=$ok MISSING=$missing DEFAULT-RISK=$risk AI_LLM=$AI_KEY_SET"
 if [[ "$FAIL" -ne 0 ]]; then
   exit 1
 fi

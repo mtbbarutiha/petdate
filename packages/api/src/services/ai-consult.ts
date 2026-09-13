@@ -12,10 +12,10 @@
  * When no key is configured, returns a careful offline advisory so users never
  * get a hard "no online provider" error for vet/trainer.
  *
- * Production note: without AI_CONSULT_API_KEY on the VPS, trainer replies use the
- * rich offline knowledge base below (پاشا یزدانی). Set the key for deeper LLM answers.
- * Grok Bot (گراک بات) personas on the site share the same TEAM_AGENTS roster;
- * optional XAI_API_KEY runs those faces on xAI models without a parallel chat stack.
+ * Production note: without XAI_API_KEY (or AI_CONSULT_API_KEY / OPENAI_API_KEY) on the
+ * VPS, trainer replies use the offline knowledge base. Grok Bot agent UUIDs on
+ * TEAM_AGENTS are roster identity only — xAI has no public “call bot by UUID” API;
+ * live coaching uses chat completions (api.x.ai) with this persona’s system prompt.
  */
 import { PET_SPECIES, teamAgentOutOfDomainHint } from '@petdate/shared';
 import {
@@ -152,6 +152,12 @@ function envModel(): string {
 
 export function isAiConsultConfigured(): boolean {
   return Boolean(envKey());
+}
+
+/** Public ops label — never includes secret values. */
+export function aiConsultProviderLabel(): 'xai' | 'openai_compatible' | 'none' {
+  if (!isAiConsultConfigured()) return 'none';
+  return usingXaiOnly() ? 'xai' : 'openai_compatible';
 }
 
 /** Avoid flooding pm2 error logs when AI_CONSULT_API_KEY is unset in production. */
@@ -538,6 +544,7 @@ function humanizeTrainerOfflineProse(text: string): string {
 
 type TrainerTopicId =
   | 'sit'
+  | 'paw'
   | 'stay'
   | 'recall'
   | 'leash'
@@ -586,6 +593,21 @@ const TRAINER_TOPICS: TrainerTopic[] = [
       `اوکی، حالا بریم مرحلهٔ بعد: دیگه همیشه تشویقی رو جلوی بینی نگه ندار. چند بار با تشویقی درست بشین، بعد همون حرکت دست بدون تشویقیِ معلوم، بعد فقط کلمه. وقتی سه جلسه پشت‌سرهم بیشتر وقت‌ها درست نشست، یعنی قفل شده.`,
       `سختش کن آروم‌آروم: اول روبروی هم، بعد یه‌کم کج وایسا، بعد وقتی خودت نشسته‌ای، بعد وقتی اسباب‌بازی تو اتاقه، بعد نزدیک در. هر بار فقط یک چیز سخت‌تر بشه. توله جلسه کوتاه‌تر؛ سگ پرانرژی جایزهٔ بهتر می‌خواد.`,
       `اگه فقط وقتی تشویقی تو دسته می‌شینه، چند بار دست خالی کار کن و جایزه رو از جیب دربیار. اگه نشست و فوری پا شد، اول همون نیم‌ثانیه نشسته موندن رو جایزه بده، بعد کم‌کم وصلش کن به «بمان». بگو الان بدون هل دادن تقریباً چند بار از ده تا می‌شینه؟`,
+    ].join('\n\n'),
+  },
+  {
+    id: 'paw',
+    match: /دست\s*بده|بده\s*دست|پنجه|shake(\s*hands?)?|high[\s-]*five|paw\b|give\s*(me\s*)?(a\s*)?paw/,
+    title: 'دست بده',
+    primary: [
+      `برای «دست بده» زور و گرفتن پنجه ممنوع؛ شکل‌دهی می‌کنیم. سگ آروم روبروت بشینه. یه تشویقی تو مشت ببند و نزدیک زمین، جلوی پنجه‌هاش نگه دار تا کنجکاو بشه و پنجه رو بلند کنه یا به دستت بزنه.`,
+      `همون لحظه که پنجه از زمین جدا شد یا به مشتت خورد بگو «آفرین» و فوری جایزه بده. چند تکرار کوتاه؛ کلمهٔ «دست» را وقتی حرکت تقریباً خودش می‌آید اضافه کن، نه از اولین ثانیه.`,
+      `اگه هیجان‌زده پارس می‌کنه یا گاز بازی می‌گیره، مشت را عقب بکش و فقط برای آرومی + پنجهٔ ملایم جایزه بده. فشار روی شانه یا کشیدن پا یاد نمی‌دهد — قطع می‌کند.`,
+    ].join('\n\n'),
+    deeper: [
+      `مرحلهٔ بعد: مشت را کمی بالاتر/دورتر ببر تا پنجه را عمدی دراز کند. بعد دست خالی با همان شکل کف‌دست، و جایزه را از جیب غیب کن. وقتی سه جلسه پشت‌سرهم تمیز آمد، دو طرف (چپ/راست) را جدا تمرین کن.`,
+      `برای مهمانی: اول در خانه با آدم آشنا، بعد با یک مهمان آروم. اگر پنجه را می‌کشد یا ناخن می‌کشد، معیار را به «لمس کوتاه» برگردان و جایزهٔ بهتر بده.`,
+      `بگو الان بیشتر پنجه را بلند می‌کند یا هنوز فقط بینی می‌زند به دستت؟`,
     ].join('\n\n'),
   },
   {
@@ -994,6 +1016,7 @@ function findTrainerTopic(message: string): TrainerTopic | null {
     'crate',
     'recall',
     'stay',
+    'paw',
     'sit',
     'jump',
     'leaveit',
@@ -1727,8 +1750,24 @@ export function offlineUnknownBestEffortReply(ctx: AiConsultContext): string {
     return withTone(homeOrOutContextAdvice(ctx, answeredNow));
   }
 
-  const fearish = /ترس|می‌ترسه|میترسه|یخ|قفل|جیغ|زوزه|فرار|وحشت|دوچرخه|ماشین|بلند|صدا/.test(q);
   const closing = nextUnknownClarifierAsk(ctx);
+  const fearish = looksFearishTrainerQuestion(q);
+  const trickish = looksTrickTeachingQuestion(q);
+
+  // Specific trick / cue teaching must never fall into doorbell/desensitization copy.
+  // (Also: bare «یخ» used to false-positive inside «میخوام».)
+  if (trickish && !fearish) {
+    return withTone(
+      [
+        `باشه، برای ${name} مستقیم می‌ریم سر شکل‌دهی رفتار: محیط خلوت، تشویقی ریز، و جایزه همون لحظه‌ای که تقریبِ درست رو دیدی.`,
+        ``,
+        `الان بگو دقیقاً کدوم حرکت رو می‌خوای (دست بده، بشین، بیا، بمان، …) و تقریباً چندساله‌ست تا همون رو مرحله‌به‌مرحله برات باز کنم.`,
+        ``,
+        closing,
+      ].join('\n')
+    );
+  }
+
   const body = fearish
     ? [
         `باشه، برای ${name} از فاصلهٔ امن شروع کن — اون محرک رو از دور ببینید، قبل از اینکه بترسه آفرین بده و یه تشویقی کوچیک، بعد آروم فاصله رو کم کن. زور و تنبیه نه.`,
@@ -1738,13 +1777,31 @@ export function offlineUnknownBestEffortReply(ctx: AiConsultContext): string {
         closing,
       ].join('\n')
     : [
-        `باشه، برای ${name} فعلاً از ساده‌ترین حالت امن شروع می‌کنیم: فاصله، جایزه برای آرومی، بدون زور.`,
+        `باشه، برای ${name} از ساده‌ترین نسخهٔ موفق شروع می‌کنیم: محیط خلوت، معیار آسان، جایزهٔ به‌موقع، بدون زور.`,
         ``,
-        `یه تمرین کوتاه همین الان: محرک یا موقعیت رو از دور نگه دار، همون لحظه که آرومه آفرین بده و تشویقی بده. اگر به‌هم ریخت، فاصله رو بیشتر کن.`,
+        `یه تمرین کوتاه همین الان: همون لحظه که کار درست (یا نزدیک به درست) رو دیدی آفرین بده و تشویقی بده. اگر به‌هم ریخت، معیار را یک پله آسان‌تر کن.`,
         ``,
         closing,
       ].join('\n');
   return withTone(body);
+}
+
+/** Fear / trigger desensitization — avoid substring traps (e.g. یخ inside میخوام). */
+export function looksFearishTrainerQuestion(message: string): boolean {
+  const q = message.replace(/\s+/g, ' ').trim();
+  if (!q) return false;
+  return /ترس|می‌ترسه|میترسه|وحشت|اضطراب|استرس|قفل\s*کرد|یخ\s*می‌?زن|یخ\s*زد|یخ\s*کرد|جیغ|زوزه|فرار\s*می‌|دوچرخه|ماشین\s*رد|آتش\s*بازی|رعد|محرک/.test(
+    q
+  );
+}
+
+/** User asked how to teach a specific trick/cue (e.g. دست بده) — not a fear script. */
+export function looksTrickTeachingQuestion(message: string): boolean {
+  const q = message.replace(/\s+/g, ' ').trim();
+  if (!q) return false;
+  return /دست\s*بده|بده\s*دست|پنجه|high[\s-]*five|shake(\s*hands?)?|paw\b|give\s*(me\s*)?(a\s*)?paw|چطوری\s*یاد|چطور\s*یاد|یادش\s*بدم|آموزش\s*(?:بده|فرمان|ترفند)|ترفند/.test(
+    q
+  );
 }
 
 export async function generateAiConsultAdvice(ctx: AiConsultContext): Promise<{
@@ -1766,11 +1823,11 @@ export async function generateAiConsultAdvice(ctx: AiConsultContext): Promise<{
       return { text: offlineUnknownBestEffortReply(ctx), source: 'offline' };
     }
     if (unknown && !isAiConsultConfigured()) {
-      // Ops: set AI_CONSULT_API_KEY on the VPS for LLM answers. Log once — not per message.
+      // Ops: set XAI_API_KEY (or AI_CONSULT_API_KEY) on the VPS for live Grok/LLM.
       if (!warnedMissingAiConsultKey) {
         warnedMissingAiConsultKey = true;
         console.warn(
-          'pasha unknown topic: AI_CONSULT_API_KEY missing; best-effort coaching (further warnings suppressed)'
+          'trainer unknown topic: XAI_API_KEY/AI_CONSULT_API_KEY missing; offline coaching (further warnings suppressed)'
         );
       }
       return { text: offlineUnknownBestEffortReply(ctx), source: 'offline' };

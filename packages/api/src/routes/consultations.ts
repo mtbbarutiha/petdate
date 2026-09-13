@@ -29,7 +29,7 @@ import {
 } from '../services/fanout-reject-notify';
 import { startVetChatFromApi } from '../services/telegram-vet-chat-start';
 import { clearBotVetChatSessions } from '../services/bot-vet-chat-session';
-import { AI_TRAINER_DISPLAY_NAME, AI_VET_DISPLAY_NAME } from '../services/ai-consult';
+import { AI_TRAINER_DISPLAY_NAME, AI_VET_DISPLAY_NAME, aiConsultProviderLabel, isAiConsultConfigured } from '../services/ai-consult';
 import { grokBotBridgeSummary } from '../services/grok-bot-bridge';
 import {
   decorateAiConsultDisplay,
@@ -219,9 +219,15 @@ consultationsRouter.get('/previous-vets', (req, res) => {
 consultationsRouter.get('/team-agents', (_req, res) => {
   const bridge = grokBotBridgeSummary();
   res.json({
-    /** Same 5 personas as Grok Bot (گراک بات) roster — not a parallel system. */
+    /** Same 4 personas as Grok Bot (گراک بات) roster — not a parallel system. */
     source: bridge.source,
     linkedGrokBots: bridge.linkedCount,
+    /**
+     * Roster `grokBot.linked` is identity only (baked UUID). Live coaching needs
+     * XAI_API_KEY / AI_CONSULT_API_KEY — there is no xAI “call Grok Bot by UUID” API.
+     */
+    llmLive: isAiConsultConfigured(),
+    llmProvider: aiConsultProviderLabel(),
     agents: bridge.agents,
   });
 });
