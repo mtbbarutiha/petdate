@@ -330,12 +330,18 @@ if [[ "\$SCOPE" == "all" || "\$SCOPE" == "web" ]]; then
       sudo cp "/etc/nginx/sites-available/\$f" "\$NGINX_BAK_DIR/\$f"
     fi
   done
+  if [[ -f /etc/nginx/petdate-shop-product-redirects.map ]]; then
+    sudo cp /etc/nginx/petdate-shop-product-redirects.map "\$NGINX_BAK_DIR/petdate-shop-product-redirects.map"
+  fi
   restore_nginx_bak() {
     for f in petdate ws.petdate.ir pdf.petdate.ir; do
       if [[ -f "\$NGINX_BAK_DIR/\$f" ]]; then
         sudo cp "\$NGINX_BAK_DIR/\$f" "/etc/nginx/sites-available/\$f"
       fi
     done
+    if [[ -f "\$NGINX_BAK_DIR/petdate-shop-product-redirects.map" ]]; then
+      sudo cp "\$NGINX_BAK_DIR/petdate-shop-product-redirects.map" /etc/nginx/petdate-shop-product-redirects.map
+    fi
   }
   if [[ -f infra/nginx/shop-product-redirects.map ]]; then
     sudo cp infra/nginx/shop-product-redirects.map /etc/nginx/petdate-shop-product-redirects.map

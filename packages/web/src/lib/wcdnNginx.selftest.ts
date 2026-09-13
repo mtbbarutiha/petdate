@@ -74,10 +74,16 @@ assert.match(
 );
 assert.match(conf, /shop-product-redirects\.map/, 'product id→slug map included');
 assert.match(conf, /\$shop_product_redirect/, 'product id redirects wired');
+assert.match(conf, /map_hash_bucket_size\s+256/, 'slug redirect keys fit the nginx map hash');
 assert.match(
   deploy,
   /map \\\$uri \\\$shop_product_redirect/,
   'deploy fallback map escapes $uri (unquoted SSH heredoc + set -u)'
+);
+assert.match(
+  deploy,
+  /petdate-shop-product-redirects\.map/,
+  'deploy backs up the product redirect map so nginx -t rollback can restore it'
 );
 
 // /pets/:id SPA deep links (medical tab) must not hard-404 under the stock-photo prefix.
