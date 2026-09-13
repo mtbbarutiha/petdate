@@ -9270,6 +9270,7 @@ a.pepito-btn.pepito-human-consult-cta:hover {
 .pd-shop-filter-field input,
 .pd-shop-price-row input,
 .pd-shop-checkout-form input,
+.pd-shop-checkout-form select,
 .pd-shop-checkout-form textarea {
   width: 100%;
   border: 1px solid rgba(92, 77, 145, 0.18);
@@ -9283,6 +9284,7 @@ a.pepito-btn.pepito-human-consult-cta:hover {
 .pd-shop-filter-field input:focus,
 .pd-shop-price-row input:focus,
 .pd-shop-checkout-form input:focus,
+.pd-shop-checkout-form select:focus,
 .pd-shop-checkout-form textarea:focus {
   outline: none;
   border-color: var(--pepito-base);
@@ -10395,47 +10397,46 @@ a.pepito-btn.pepito-human-consult-cta:hover {
 }
 .pd-shop-pay-methods {
   margin: 0 0 0.85rem;
-  padding: 0.75rem 0.85rem;
-  border: 1px solid rgba(26, 77, 143, 0.12);
-  border-radius: 14px;
+  padding: 0;
+  border: 0;
   display: grid;
-  gap: 0.45rem;
+  gap: 0.35rem;
 }
-.pd-shop-pay-methods legend {
-  padding-inline: 0.35rem;
-  font-size: 0.88rem;
+.pd-shop-pay-select-label {
+  font-size: 0.9rem;
   font-weight: 800;
   color: var(--pepito-dark, #1a2b4a);
 }
-.pd-shop-pay-option {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.55rem;
-  padding: 0.55rem 0.65rem;
-  border-radius: 12px;
-  background: rgba(26, 77, 143, 0.04);
+.pd-shop-pay-select {
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid rgba(92, 77, 145, 0.18);
+  border-radius: 14px;
+  padding-block: 0.7rem;
+  padding-inline: 0.85rem 2.4rem;
+  font: inherit;
+  font-weight: 700;
+  background-color: var(--pepito-soft);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: left 0.85rem center;
+  background-size: 0.9rem;
+  color: var(--pepito-dark);
   cursor: pointer;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
 }
-.pd-shop-pay-option.is-active {
-  background: rgba(11, 165, 242, 0.12);
-  outline: 1px solid rgba(11, 165, 242, 0.35);
+.pd-shop-pay-select:focus {
+  outline: none;
+  border-color: var(--pepito-base);
+  background-color: var(--pepito-white);
 }
-.pd-shop-pay-option input {
-  margin-top: 0.2rem;
-}
-.pd-shop-pay-option span {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  min-width: 0;
-}
-.pd-shop-pay-option strong {
-  font-size: 0.92rem;
-}
-.pd-shop-pay-option small {
+.pd-shop-pay-select-hint {
+  margin: 0;
   font-size: 0.78rem;
-  color: var(--pepito-muted, #6b7280);
   font-weight: 600;
+  color: var(--pepito-muted, #6b7280);
+  line-height: 1.45;
 }
 .pd-shop-checkout-form label {
   display: flex;
