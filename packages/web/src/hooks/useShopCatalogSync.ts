@@ -7,7 +7,8 @@ import { fetchPublicShopCatalog } from '../lib/api';
 
 let hydratePromise: Promise<boolean> | null = null;
 
-async function hydrateOnce(): Promise<boolean> {
+/** Shared hydrate — shop chrome + cart provider (cart runs on every route). */
+export async function hydrateShopCatalogOnce(): Promise<boolean> {
   if (isShopCatalogHydrated()) return true;
   if (!hydratePromise) {
     hydratePromise = (async () => {
@@ -36,7 +37,7 @@ export function useShopCatalogSync(): { ready: boolean; synced: boolean } {
 
   useEffect(() => {
     let cancelled = false;
-    void hydrateOnce().then((ok) => {
+    void hydrateShopCatalogOnce().then((ok) => {
       if (cancelled) return;
       setSynced(ok);
       setReady(true);

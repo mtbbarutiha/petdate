@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from 'react';
 import { tomanToShopCoins, tomanToShopStars } from '@petdate/shared';
+import { isRetiredShopProduct } from '../data/retired-shop-products';
 import { getProduct, type ShopProduct } from '../data/shopCatalog';
 import {
   addShopCartItem,
@@ -20,6 +21,7 @@ import {
   type ShopCartApiLine,
 } from '../lib/api';
 import { useAuthStore } from './useAuthStore';
+import { hydrateShopCatalogOnce } from './useShopCatalogSync';
 
 /** Guest / offline draft. When logged in, localStorage mirrors the server cart. */
 const STORAGE_KEY = 'petdate.shop.cart.v1';
@@ -107,6 +109,26 @@ function apiLinesToCart(lines: ShopCartApiLine[]): CartLine[] {
     .map((l) => ({ productId: l.productId, qty: Math.floor(l.qty) }));
 }
 
+/** Build a minimal ShopProduct from server cart enrichment when local catalog lags. */
+function productFromServerMeta(meta: ShopCartApiLine): ShopProduct | null {
+  if (!meta?.productId || meta.priceToman == null || !Number.isFinite(meta.priceToman)) {
+    return null;
+  }
+  return {
+    id: meta.productId,
+    slug: meta.slug || meta.productId,
+    title: meta.title || meta.productId,
+    brandId: 'petdate',
+    categorySlug: 'dog-food',
+    petTypes: ['dog'],
+    priceToman: meta.priceToman,
+    image: meta.image || '/pepito/img/logo.png',
+    inStock: meta.inStock !== false,
+    params: {},
+    description: '',
+  };
+}
+
 function pulseCartTarget() {
   const el = document.querySelector<HTMLElement>('[data-shop-cart-target]');
   if (!el) return;
@@ -161,19 +183,45 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
   const [pendingAddId, setPendingAddId] = useState<string | null>(null);
   const [addToast, setAddToast] = useState<ShopAddToast | null>(null);
   const [syncing, setSyncing] = useState(false);
+  /** Catalog revision — bump after hydrate so views re-resolve product ids. */
+  const [catalogEpoch, setCatalogEpoch] = useState(0);
   const toastTimerRef = useRef<number | null>(null);
   const toastSeqRef = useRef(0);
   const pendingLockRef = useRef(false);
   const mergedForTokenRef = useRef<string | null>(null);
   const skipNextLocalWriteRef = useRef(false);
   const linesRef = useRef(lines);
+  const serverMetaRef = useRef<Map<string, ShopCartApiLine>>(new Map());
   linesRef.current = lines;
 
-  const applyServerLines = useCallback((serverLines: ShopCartApiLine[]) => {
-    const next = apiLinesToCart(serverLines);
-    skipNextLocalWriteRef.current = true;
-    setLines(next);
-    writeLines(next);
+  const rememberServerMeta = useCallback((serverLines: ShopCartApiLine[]) => {
+    const map = serverMetaRef.current;
+    for (const line of serverLines) {
+      if (!line?.productId) continue;
+      map.set(line.productId, line);
+    }
+  }, []);
+
+  const applyServerLines = useCallback(
+    (serverLines: ShopCartApiLine[]) => {
+      rememberServerMeta(serverLines);
+      const next = apiLinesToCart(serverLines);
+      skipNextLocalWriteRef.current = true;
+      setLines(next);
+      writeLines(next);
+    },
+    [rememberServerMeta]
+  );
+
+  /** Cart provider mounts on every route — hydrate catalog here, not only under ShopChrome. */
+  useEffect(() => {
+    let cancelled = false;
+    void hydrateShopCatalogOnce().then((ok) => {
+      if (!cancelled && ok) setCatalogEpoch((n) => n + 1);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const refreshFromServer = useCallback(async () => {
@@ -272,10 +320,18 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
     }
   }, [isLoggedIn]);
 
+  const resolveProduct = useCallback((productId: string): ShopProduct | undefined => {
+    const fromCatalog = getProduct(productId);
+    if (fromCatalog) return fromCatalog;
+    const meta = serverMetaRef.current.get(productId);
+    if (!meta) return undefined;
+    return productFromServerMeta(meta) ?? undefined;
+  }, [catalogEpoch]);
+
   const views: CartLineView[] = useMemo(() => {
     return lines
       .map((l) => {
-        const product = getProduct(l.productId);
+        const product = resolveProduct(l.productId);
         if (!product) return null;
         const unitCoins = tomanToShopCoins(product.priceToman);
         const unitStars = tomanToShopStars(product.priceToman);
@@ -288,7 +344,7 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
         };
       })
       .filter(Boolean) as CartLineView[];
-  }, [lines]);
+  }, [lines, resolveProduct]);
 
   /** Critical: badge must match visible cart lines, not stale unknown productIds. */
   const itemCount = useMemo(() => views.reduce((s, l) => s + l.qty, 0), [views]);
@@ -296,20 +352,24 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
   const totalCoins = useMemo(() => views.reduce((s, l) => s + l.lineCoins, 0), [views]);
   const totalStars = useMemo(() => views.reduce((s, l) => s + l.lineStars, 0), [views]);
 
-  /** Drop ghost lines that never resolve in catalog (fixes badge=N / empty UI). */
+  /**
+   * Drop retired demo SKUs (p1–p220) from local + server carts.
+   * Never DELETE live server rows just because this tab cannot resolve the id yet —
+   * nginx showed 20k+ DELETE /cart/items from / and /chats while catalog hydrate
+   * only ran under ShopChrome on /shop*.
+   */
   useEffect(() => {
     if (!lines.length) return;
-    const validIds = new Set(views.map((v) => v.productId));
-    if (validIds.size === lines.length) return;
-    const ghosts = lines.filter((l) => !validIds.has(l.productId));
-    if (!ghosts.length) return;
-    setLines(lines.filter((l) => validIds.has(l.productId)));
+    const retired = lines.filter((l) => isRetiredShopProduct(l.productId));
+    if (!retired.length) return;
+    const retiredIds = new Set(retired.map((l) => l.productId));
+    setLines(lines.filter((l) => !retiredIds.has(l.productId)));
     if (token) {
-      for (const ghost of ghosts) {
+      for (const ghost of retired) {
         void removeShopCartItem(token, ghost.productId).catch(() => undefined);
       }
     }
-  }, [lines, views, token]);
+  }, [lines, token]);
 
   const add = useCallback(
     (productId: string, qty = 1) => {
@@ -328,7 +388,7 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
           .then((data) => applyServerLines(data.lines))
           .catch(() => undefined);
       }
-      const product = getProduct(productId);
+      const product = resolveProduct(productId);
       if (product) {
         void import('../lib/siteAnalytics').then((m) => {
           m.trackAddToCart({
@@ -341,7 +401,7 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
         });
       }
     },
-    [token, applyServerLines]
+    [token, applyServerLines, resolveProduct]
   );
 
   const dismissAddToast = useCallback(() => {
@@ -355,7 +415,7 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
   const addAnimated = useCallback(
     async (productId: string, qty = 1) => {
       if (pendingLockRef.current) return;
-      const product = getProduct(productId);
+      const product = resolveProduct(productId);
       if (!product?.inStock) return;
       const n = Math.max(1, Math.min(10, Math.floor(qty) || 1));
       pendingLockRef.current = true;
@@ -385,7 +445,7 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
         pendingLockRef.current = false;
       }
     },
-    [add]
+    [add, resolveProduct]
   );
 
   const setQty = useCallback(
