@@ -7,8 +7,6 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
-  Pie,
-  PieChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -47,6 +45,7 @@ import {
   usePrefersReducedMotion,
   useRechartsMotion,
 } from '../../motionCharts';
+import { AdminDonutChart } from '../../FinanceCharts';
 import { tr } from '../../../i18n';
 
 const STANDING_COLOR: Record<string, string> = {
@@ -297,37 +296,15 @@ export function AdminCrmDashboardPage() {
 
         <AdminChartCard title={tr("وضعیت تیکت‌ها")} empty={!ticketPie.length} height={200}>
           <div className="crm-donut-wrap">
-            <ResponsiveContainer width="100%" height={180}>
-              <PieChart>
-                <Pie
-                  data={ticketPie}
-                  dataKey="value"
-                  nameKey="name"
-                  innerRadius={48}
-                  outerRadius={72}
-                  paddingAngle={2}
-                  {...motion}
-                >
-                  {ticketPie.map((s, i) => (
-                    <Cell key={i} fill={s.color || '#5c4d91'} />
-                  ))}
-                </Pie>
-                <Tooltip content={<MotionChartTooltip />} />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="crm-donut-center">
-              <strong>{formatNumFa(data.openTickets)}</strong>
-              <span>{tr('تیکت باز')}</span>
-            </div>
-            <ul className="crm-donut-legend">
-              {data.ticketStatus.map((s) => (
-                <li key={s.key}>
-                  <i style={{ background: s.color || '#5c4d91' }} />
-                  {tr(s.label)}
-                  <span>{formatNumFa(s.value)}</span>
-                </li>
-              ))}
-            </ul>
+            <AdminDonutChart
+              slices={(data.ticketStatus || []).map((s) => ({
+                key: s.key,
+                label: s.label,
+                value: s.value,
+                color: s.color || '#5c4d91',
+              }))}
+              centerLabel={tr('تیکت')}
+            />
           </div>
         </AdminChartCard>
       </AdminChartGrid>

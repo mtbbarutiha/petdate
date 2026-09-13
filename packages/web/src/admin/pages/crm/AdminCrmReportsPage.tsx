@@ -22,11 +22,14 @@ import {
   type JalaliDateValue,
 } from '../../JalaliDateSelect';
 import {
+  ADMIN_RECHARTS_PIE,
+  ADMIN_RECHARTS_PIE_CELL,
   adminChartPlotMargin,
   adminChartTickFormatter,
   adminChartXAxisProps,
   adminChartYAxisProps,
 } from '../../adminChartLayout';
+import { AdminDonutLegend } from '../../FinanceCharts';
 import {
   AdminProgressRing,
   MotionChartTooltip,
@@ -367,8 +370,18 @@ export function AdminCrmReportsPage() {
                 {reasonPie.length ? (
                   <ResponsiveContainer width="100%" height={220}>
                     <PieChart>
-                      <Pie data={reasonPie} dataKey="value" nameKey="name" innerRadius={55} outerRadius={85} paddingAngle={2} {...motion}>
-                        {reasonPie.map((r) => <Cell key={r.key} fill={r.color || '#15cca0'} />)}
+                      <Pie
+                        data={reasonPie}
+                        dataKey="value"
+                        nameKey="name"
+                        innerRadius={55}
+                        outerRadius={85}
+                        {...ADMIN_RECHARTS_PIE}
+                        {...motion}
+                      >
+                        {reasonPie.map((r) => (
+                          <Cell key={r.key} fill={r.color || '#15cca0'} {...ADMIN_RECHARTS_PIE_CELL} />
+                        ))}
                       </Pie>
                       <Tooltip content={<ChartTip />} />
                       <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle" fill="var(--admin-ink)" style={{ fontSize: 13, fontWeight: 700 }}>
@@ -379,11 +392,15 @@ export function AdminCrmReportsPage() {
                 ) : (
                   <p className="admin-muted">{tr('دلیلی ثبت نشده')}</p>
                 )}
-                <ul className="crm-report-reason-legend">
-                  {reasonPie.map((r) => (
-                    <li key={r.key}><i style={{ background: r.color }} />{tr(r.label)}<span>{formatNumFa(r.value)}</span></li>
-                  ))}
-                </ul>
+                <AdminDonutLegend
+                  className="crm-report-reason-legend"
+                  items={reasonPie.map((r) => ({
+                    key: r.key,
+                    label: r.label,
+                    value: r.value,
+                    color: r.color || '#15cca0',
+                  }))}
+                />
               </div>
             </section>
 

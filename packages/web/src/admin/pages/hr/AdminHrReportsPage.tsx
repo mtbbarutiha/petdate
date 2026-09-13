@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
+import { ADMIN_RECHARTS_PIE, ADMIN_RECHARTS_PIE_CELL } from '../../adminChartLayout';
 import { adminFetch, formatNumFa } from '../../api';
 import { formatJalaliNumFa } from '../../JalaliDateSelect';
 import { IranPersonnelHeatmap } from './IranPersonnelHeatmap';
@@ -111,12 +112,10 @@ function FrequencyDonut({ title, rows }: { title: string; rows: ChartRow[] }) {
                   nameKey="name"
                   innerRadius={54}
                   outerRadius={82}
-                  paddingAngle={2}
-                  stroke="#fff"
-                  strokeWidth={3}
+                  {...ADMIN_RECHARTS_PIE}
                 >
                   {pie.map((s) => (
-                    <Cell key={s.name} fill={s.color} />
+                    <Cell key={s.name} fill={s.color} {...ADMIN_RECHARTS_PIE_CELL} />
                   ))}
                 </Pie>
                 <Tooltip content={<DonutTip />} />

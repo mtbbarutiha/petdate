@@ -178,6 +178,15 @@ async function main() {
   assert(Array.isArray(dash.channelDistribution), 'channel chart');
   assert(Array.isArray(dash.dailyInteractions) && dash.dailyInteractions.length === 7, '7-day series');
   assert(Array.isArray(dash.ticketStatus), 'ticket doughnut');
+  assert(
+    !dash.ticketStatus.some((s) => s.key === 'breached'),
+    'SLA breach is a flag, not an exclusive donut slice'
+  );
+  const openSlices = dash.ticketStatus.filter((s) => s.key === 'in_progress' || s.key === 'unassigned');
+  assert(
+    openSlices.reduce((n, s) => n + s.value, 0) === dash.openTickets,
+    'in_progress + unassigned partition open tickets'
+  );
   assert(typeof dash.overallAchievement === 'number', 'overall achievement');
   assert(typeof dash.qaQueue === 'number', 'qa queue');
   assert(Array.isArray(dash.myTickets), 'my tickets');
