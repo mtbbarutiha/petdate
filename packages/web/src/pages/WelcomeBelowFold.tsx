@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ChevronLeft,
@@ -15,6 +15,10 @@ import { SiteFooter } from '../components/SiteFooter';
 import { useI18n } from '../i18n/I18nProvider';
 import { AdoptionPurchaseCta } from '../components/AdoptionPurchaseCta';
 import { ADOPTION_PETS } from '../data/adoptionPets';
+import {
+  formatToman,
+  getFeaturedProducts,
+} from '../data/shopCatalog';
 import { resolvePublicMediaUrl } from '../lib/api';
 import { formatAdminFaDate } from '../admin/jalaliDate';
 import { fetchMagazineFeatured, fetchMagazineList, type MagazineCard } from '../lib/magazineApi';
@@ -26,10 +30,14 @@ import {
   newsCarouselVisibleCount,
   wrapCarouselIndex,
 } from '../lib/newsCarousel';
+import { productTitleForLang } from '../lib/shopLocale';
 import { GatedLink, PawIcon } from './landingGatedLink';
 import { LANDING_TEAM_AGENT_SLUGS, TEAM_AGENTS, teamAgentChatPath } from '@petdate/shared';
 
 const P = '/pepito/uploads';
+
+/** Landing teaser grid matches Pepito 4-up layout; full catalog is on /shop. */
+const LANDING_FEATURED_LIMIT = 4;
 
 const BLOB_PATH =
   'M30,16C46.588,6.484,54.481-2.058,64.3,1.452c3.145,1.125,6.861,3.657,10.212,9.426A40.611,40.611,0,0,1,59.5,66.544,41.151,41.151,0,0,1,3.482,51.629C0.134,45.865-.2,41.289.375,38.125,2.228,27.979,13.544,25.436,30,16Z';
@@ -119,14 +127,6 @@ const FAQ_DEFS = [
   { qKey: 'landing.faq4q', aKey: 'landing.faq4a' },
 ] as const;
 
-/** Pepito “Our featured products” — shop grid → real catalog */
-const PRODUCT_DEFS = [
-  { nameKey: 'landing.prodBowl', priceKey: 'landing.priceBowl', badgeKey: 'landing.badgeSale', img: `${P}/01-1.png`, to: '/shop/product/dog-bowls-1-p41' },
-  { nameKey: 'landing.prodToy', priceKey: 'landing.priceToy', badgeKey: 'landing.badgeHot', img: `${P}/1-1.jpg`, to: '/shop/product/cat-toys-1-p131' },
-  { nameKey: 'landing.prodLitter', priceKey: 'landing.priceLitter', badgeKey: 'landing.badgeSpecial', img: `${P}/03.png`, to: '/shop/product/cat-litter-1-p161' },
-  { nameKey: 'landing.prodFood', priceKey: 'landing.priceFood', badgeKey: 'landing.badgeHot', img: `${P}/06-1.png`, to: '/shop/product/cat-food-2-p102' },
-] as const;
-
 function newsFallback(t: (key: string) => string): MagazineCard[] {
   return [
     {
@@ -164,6 +164,10 @@ function newsFallback(t: (key: string) => string): MagazineCard[] {
 
 export function WelcomeBelowFold() {
   const { t, lang } = useI18n();
+  const featuredProducts = useMemo(
+    () => getFeaturedProducts().slice(0, LANDING_FEATURED_LIMIT),
+    []
+  );
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [svcIndex, setSvcIndex] = useState(0);
   const [svcPaused, setSvcPaused] = useState(false);
@@ -628,27 +632,41 @@ export function WelcomeBelowFold() {
           <h2>{t('landing.shopTitle')}</h2>
         </div>
         <div className="pepito-shop-grid">
-          {PRODUCT_DEFS.map((p) => {
-            const name = t(p.nameKey);
+          {featuredProducts.map((p) => {
+            const name = productTitleForLang(lang, p.title, {
+              titleEn: p.titleEn,
+              slug: p.slug,
+            });
+            const to = `/shop/product/${p.slug}`;
+            const badge = p.badge
+              ? t(`shop.badge${p.badge[0]!.toUpperCase()}${p.badge.slice(1)}` as 'shop.badgeNew')
+              : t('landing.badgeSpecial');
             return (
-            <article key={p.nameKey} className="pepito-shop-item">
-              <Link to={p.to} className="pepito-shop-wrap">
-                <div className="pepito-shop-img">
-                  <img src={p.img} alt={name} loading="lazy" width={690} height={676} decoding="async" />
+              <article key={p.id} className="pepito-shop-item">
+                <Link to={to} className="pepito-shop-wrap">
+                  <div className="pepito-shop-img">
+                    <img
+                      src={p.image}
+                      alt={name}
+                      loading="lazy"
+                      width={690}
+                      height={676}
+                      decoding="async"
+                    />
+                  </div>
+                  <div className="pepito-shop-price" aria-hidden>
+                    <p className="pepito-shop-price-line">
+                      <span>{badge}</span>
+                      <span className="pepito-shop-amount">{formatToman(p.priceToman)}</span>
+                    </p>
+                  </div>
+                </Link>
+                <div className="pepito-shop-text">
+                  <h3>
+                    <Link to={to}>{name}</Link>
+                  </h3>
                 </div>
-                <div className="pepito-shop-price" aria-hidden>
-                  <p className="pepito-shop-price-line">
-                    <span>{t(p.badgeKey)}</span>
-                    <span className="pepito-shop-amount">{t(p.priceKey)}</span>
-                  </p>
-                </div>
-              </Link>
-              <div className="pepito-shop-text">
-                <h3>
-                  <Link to={p.to}>{name}</Link>
-                </h3>
-              </div>
-            </article>
+              </article>
             );
           })}
         </div>

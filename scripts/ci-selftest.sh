@@ -91,6 +91,7 @@ npx tsx "$ROOT/packages/web/src/lib/playdateMap.fanoutReject.selftest.ts"
 echo "==> selftest: web inbox consult agent avatars"
 npx tsx "$ROOT/packages/web/src/lib/inboxConversations.avatars.selftest.ts"
 npx tsx "$ROOT/packages/web/src/pages/teamChatPersonas.selftest.ts"
+npx tsx "$ROOT/packages/web/src/pages/landingFeaturedProducts.selftest.ts"
 
 echo "==> selftest: web share helper (Web Share / clipboard)"
 npx tsx "$ROOT/packages/web/src/lib/share.selftest.ts"
