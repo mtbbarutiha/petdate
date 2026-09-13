@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import type {
   CrmComplaint,
@@ -15,6 +15,7 @@ import { CRM_CHANNEL_LABELS, CRM_OUTCOMES, CRM_PRIORITIES, CRM_REASON_TREE, CRM_
 import { adminCan } from '../../auth';
 import { adminFetch, formatNumFa } from '../../api';
 import { formatAdminFaDate, formatAdminFaDateTime } from '../../JalaliDateSelect';
+import { DemoSeedBadge, DemoSeedToggle, filterDemoSeedRows, useShowDemoSeeds } from '../../DemoSeedVisibility';
 import { tr } from '../../../i18n';
 
 function Err({ error }: { error: string | null }) {
@@ -102,6 +103,12 @@ export function AdminCrmCustomersPage() {
   const [mobile, setMobile] = useState('');
   const [first, setFirst] = useState('');
   const canWrite = adminCan('crm.write');
+  const { showDemoSeeds, setShowDemoSeeds } = useShowDemoSeeds();
+  const visibleCustomers = useMemo(
+    () => filterDemoSeedRows(customers, showDemoSeeds),
+    [customers, showDemoSeeds]
+  );
+  const hiddenSeedCount = customers.length - visibleCustomers.length;
 
   const load = useCallback(() => {
     const qs = q.trim() ? `?q=${encodeURIComponent(q.trim())}` : '';
@@ -123,9 +130,14 @@ export function AdminCrmCustomersPage() {
   return (
     <div className="admin-page">
       <header className="admin-header"><div><h1>{tr('مشتریان')}</h1><p>{tr('پرونده ۳۶۰ و اتصال به فروش/پلتفرم')}</p></div></header>
-      <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 12, flexWrap: 'wrap', alignItems: 'center' }}>
         <input className="form-input" placeholder={tr("جستجو")} value={q} onChange={(e) => setQ(e.target.value)} />
         <button type="button" className="admin-btn" onClick={load}>{tr('جستجو')}</button>
+        <DemoSeedToggle
+          showDemoSeeds={showDemoSeeds}
+          onChange={setShowDemoSeeds}
+          hiddenCount={hiddenSeedCount}
+        />
       </div>
       {canWrite ? (
         <form onSubmit={(e) => void create(e)} style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
@@ -135,9 +147,9 @@ export function AdminCrmCustomersPage() {
         </form>
       ) : null}
       <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fill,minmax(240px,1fr))' }}>
-        {customers.map((c) => (
+        {visibleCustomers.map((c) => (
           <Link key={c.id} to={`/admin/crm/customers/${c.id}`} className="admin-card" style={{ textDecoration: 'none', color: 'inherit' }}>
-            <strong>{c.first} {c.last}</strong>
+            <strong>{c.first} {c.last} <DemoSeedBadge row={c} /></strong>
             <div className="admin-muted" dir="ltr">{c.mobile}</div>
             <div>{c.level} · {c.product || '—'}</div>
             <div className="admin-muted">{c.publicId}{c.salesCustomerId ? tr(' · از فروش') : ''}{c.platformUserId ? tr(' · کاربر پلتفرم') : ''}</div>

@@ -13,6 +13,7 @@ import { adminFetch, formatNumFa } from '../../api';
 import { adminCan, getAdminRole } from '../../auth';
 import { AdminModal } from '../../AdminModal';
 import { appConfirm } from '../../../components/AppDialog';
+import { DemoSeedBadge, DemoSeedToggle, filterDemoSeedRows, useShowDemoSeeds } from '../../DemoSeedVisibility';
 import { tr } from '../../../i18n';
 
 type RoleForm = {
@@ -58,6 +59,12 @@ export function AdminHrRbacPage() {
   const [accountForm, setAccountForm] = useState<AccountForm | null>(null);
   const currentRole = getAdminRole();
   const canMutate = adminCan('admin.full');
+  const { showDemoSeeds, setShowDemoSeeds } = useShowDemoSeeds();
+  const visibleAccounts = useMemo(
+    () => filterDemoSeedRows(accounts, showDemoSeeds),
+    [accounts, showDemoSeeds]
+  );
+  const hiddenSeedCount = accounts.length - visibleAccounts.length;
 
   const load = useCallback(async () => {
     try {
@@ -344,8 +351,15 @@ export function AdminHrRbacPage() {
 
       <section className="admin-card" style={{ padding: 16 }}>
         <h2 style={{ marginTop: 0, fontSize: '1rem' }}>
-          {tr('حساب‌های پنل (')}{formatNumFa(accounts.length)})
+          {tr('حساب‌های پنل (')}{formatNumFa(showDemoSeeds ? accounts.length : visibleAccounts.length)})
         </h2>
+        <div className="admin-toolbar" style={{ marginBottom: 12 }}>
+          <DemoSeedToggle
+            showDemoSeeds={showDemoSeeds}
+            onChange={setShowDemoSeeds}
+            hiddenCount={hiddenSeedCount}
+          />
+        </div>
         {accounts.length === 0 ? (
           <p className="admin-muted">
             {tr('هنوز حسابی در دیتابیس نیست. برای افزودن کاربر پشتیبانی / HR روی «حساب پنل جدید» بزنید.')}
@@ -363,9 +377,11 @@ export function AdminHrRbacPage() {
                 </tr>
               </thead>
               <tbody>
-                {accounts.map((a) => (
+                {visibleAccounts.map((a) => (
                   <tr key={a.id}>
-                    <td className="admin-mono">{a.username}</td>
+                    <td className="admin-mono">
+                      {a.username} <DemoSeedBadge row={a} />
+                    </td>
                     <td>{a.displayName}</td>
                     <td>
                       {tr(

@@ -9,6 +9,7 @@ import { adminCan } from '../../auth';
 import { AdminEntityCell, AdminThumb } from '../../AdminThumb';
 import { EmployeeCreateModal } from './EmployeeCreateModal';
 import { appConfirm } from '../../../components/AppDialog';
+import { DemoSeedBadge, DemoSeedToggle, filterDemoSeedRows, useShowDemoSeeds } from '../../DemoSeedVisibility';
 import { tr } from '../../../i18n';
 
 function formatHrDate(raw?: string | null): string {
@@ -47,6 +48,12 @@ export function AdminHrEmployeesPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [busyId, setBusyId] = useState<number | null>(null);
   const canWrite = adminCan('hr.write');
+  const { showDemoSeeds, setShowDemoSeeds } = useShowDemoSeeds();
+  const visibleEmployees = useMemo(
+    () => filterDemoSeedRows(employees, showDemoSeeds),
+    [employees, showDemoSeeds]
+  );
+  const hiddenSeedCount = employees.length - visibleEmployees.length;
 
   const loadFacets = useCallback(async () => {
     try {
@@ -161,7 +168,9 @@ export function AdminHrEmployeesPage() {
         <div className="admin-card-head admin-hr-personnel-card-head">
           <div>
             <h2>{tr('لیست اطلاعات پرسنلی')}</h2>
-            <p className="admin-muted admin-hr-personnel-sum">{tr('مجموع')} {formatNumFa(total)} {tr('نفر')}</p>
+            <p className="admin-muted admin-hr-personnel-sum">
+              {tr('مجموع')} {formatNumFa(showDemoSeeds ? total : total - hiddenSeedCount)} {tr('نفر')}
+            </p>
           </div>
         </div>
 
@@ -227,6 +236,11 @@ export function AdminHrEmployeesPage() {
               </option>
             ))}
           </select>
+          <DemoSeedToggle
+            showDemoSeeds={showDemoSeeds}
+            onChange={setShowDemoSeeds}
+            hiddenCount={hiddenSeedCount}
+          />
           {hasFilters ? (
             <button
               type="button"
@@ -255,21 +269,23 @@ export function AdminHrEmployeesPage() {
               </tr>
             </thead>
             <tbody>
-              {employees.length === 0 ? (
+              {visibleEmployees.length === 0 ? (
                 <tr>
                   <td colSpan={10} className="admin-empty">
                     {tr('هنوز همکاری ثبت نشده')}
                   </td>
                 </tr>
               ) : (
-                employees.map((e) => {
+                visibleEmployees.map((e) => {
                   const fullName = `${e.firstName} ${e.lastName}`.trim();
                   return (
                     <tr key={e.id}>
                       <td>
                         <span className={accessPillClass(e.accessStatus)}>{e.accessStatus}</span>
                       </td>
-                      <td className="admin-mono">{e.personnelCode || '—'}</td>
+                      <td className="admin-mono">
+                        {e.personnelCode || '—'} <DemoSeedBadge row={e} />
+                      </td>
                       <td>
                         <AdminEntityCell
                           thumb={

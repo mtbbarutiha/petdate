@@ -23,6 +23,7 @@ Short human steps only. Code/ops gates for backup, ready-health, and demo-seed s
 | Log into admin **Monitoring** (deep probes). Liveness `GET /api/health` is not enough. | با مانیتورینگ ادمین لاگین کن؛ `/api/health` فقط liveness است. |
 | Keep `BOT_WEBHOOK_URL` **empty** on the VPS. | `BOT_WEBHOOK_URL` را خالی بگذار. |
 | Do **not** set `ALLOW_DEMO_SEEDS=1` in production. | در پروداکشن `ALLOW_DEMO_SEEDS=1` نگذار. |
+| Live admin lists hide HR/CRM/Sales **demo-seed** rows unless «نمایش داده تست» is on (default OFF in production). Optional wipe is dry-run: `npx tsx scripts/cleanup-demo-seeds.ts`. Destructive only with `CONFIRM=DELETE_DEMO_SEEDS` and `--apply`, or `POST /api/admin/demo-seeds/purge` with the same confirm token. Never auto-run on deploy. | لیست‌های ادمین ردیف‌های تست را مخفی می‌کنند مگر «نمایش داده تست» روشن باشد. پاک‌سازی فقط با فلگ صریح؛ روی دیپلوی اجرا نشود. |
 
 ## Out of scope here
 

@@ -97,6 +97,8 @@ import { salesAdminRouter } from './admin-sales';
 import { crmAdminRouter } from './admin-crm';
 import { financeOsAdminRouter } from './admin-finance-os';
 import { magazineAdminRouter } from './admin-magazine';
+import { parsePositiveIntId } from './parse-positive-int-id';
+import { DEMO_SEED_PURGE_CONFIRM, runDemoSeedCleanup } from '../demo-seeds-cleanup';
 import {
   createAdminDailyNote,
   deleteAdminDailyNote,
@@ -213,6 +215,37 @@ adminRouter.use('/sales', salesAdminRouter);
 adminRouter.use('/crm', crmAdminRouter);
 adminRouter.use('/finance-os', financeOsAdminRouter);
 adminRouter.use('/magazine', magazineAdminRouter);
+
+/** Preview known demo-seed rows. Dry-run only — never deletes. */
+adminRouter.get('/demo-seeds', (req, res) => {
+  const actor = req.adminActor;
+  if (!actor || !actorHasPermission(actor, 'admin.full')) {
+    res.status(403).json({ error: 'سطح دسترسی کافی نیست' });
+    return;
+  }
+  res.json(runDemoSeedCleanup({ apply: false }));
+});
+
+/**
+ * Destructive purge of known demo-seed markers only.
+ * Requires body.confirm === DELETE_DEMO_SEEDS. Never auto-run on boot/deploy.
+ */
+adminRouter.post('/demo-seeds/purge', (req, res) => {
+  const actor = req.adminActor;
+  if (!actor || !actorHasPermission(actor, 'admin.full')) {
+    res.status(403).json({ error: 'سطح دسترسی کافی نیست' });
+    return;
+  }
+  const confirm = String(req.body?.confirm || '').trim();
+  if (confirm !== DEMO_SEED_PURGE_CONFIRM) {
+    res.status(400).json({
+      error: 'برای حذف داده تست confirm را DELETE_DEMO_SEEDS بفرستید',
+      hint: 'GET /api/admin/demo-seeds پیش‌نمایش است و چیزی پاک نمی‌کند',
+    });
+    return;
+  }
+  res.json(runDemoSeedCleanup({ apply: true }));
+});
 
 /** Platform sidebar open/pending badge counts (single aggregate query set). */
 adminRouter.get('/platform/nav-counts', (req, res) => {
@@ -807,8 +840,8 @@ adminRouter.get('/games', (req, res) => {
 });
 
 adminRouter.get('/games/:id', (req, res) => {
-  const id = Number(req.params.id);
-  if (!Number.isFinite(id) || !Number.isInteger(id) || id <= 0) {
+  const id = parsePositiveIntId(req.params.id);
+  if (id == null) {
     res.status(400).json({ error: 'شناسه بازی نامعتبر است' });
     return;
   }
@@ -822,8 +855,8 @@ adminRouter.get('/games/:id', (req, res) => {
 });
 
 adminRouter.patch('/games/:id/status', (req, res) => {
-  const id = Number(req.params.id);
-  if (!Number.isFinite(id) || !Number.isInteger(id) || id <= 0) {
+  const id = parsePositiveIntId(req.params.id);
+  if (id == null) {
     res.status(400).json({ error: 'شناسه بازی نامعتبر است' });
     return;
   }

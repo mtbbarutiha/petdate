@@ -23,6 +23,8 @@ assert.doesNotMatch(
 
 assert.match(indexSrc, /parsePositiveIntId\(req\.params\.sectionId\)/, 'games-for-section validates id');
 assert.match(indexSrc, /parsePositiveIntId\(userIdRaw\)/, 'my-section-games validates userId');
+assert.match(indexSrc, /شناسه کاربر نامعتبر است/, 'invalid userId returns 400 copy');
+assert.match(indexSrc, /شناسه سکشن نامعتبر است/, 'invalid sectionId returns 400 copy');
 
 assert.match(
   db,

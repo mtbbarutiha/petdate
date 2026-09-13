@@ -2577,6 +2577,19 @@ body:has(.admin-app) {
   white-space: nowrap;
 }
 
+.admin-app .admin-pill--seed {
+  background: #fff4d6;
+  border-color: #f0c14b;
+  color: #8a5a00;
+  margin-inline-start: 6px;
+}
+
+.admin-app .admin-demo-seed-toggle {
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+}
+
 /* ── HR personnel list (اطلاعات پرسنلی) ── */
 .admin-app .admin-hr-personnel-card {
   padding: 16px 18px 8px;
