@@ -358,6 +358,7 @@ echo "==> api: shop brands"
 npx tsx "$ROOT/packages/api/src/data/shop-brands.selftest.ts"
 
 echo "==> selftest: web shop cart sync (badge + merge-then-persist)"
+npx tsx "$ROOT/packages/web/src/hooks/shopCartMerge.selftest.ts"
 npx tsx "$ROOT/packages/web/src/hooks/useShopCart.selftest.ts"
 
 echo "==> selftest: bot shop cart shared API"

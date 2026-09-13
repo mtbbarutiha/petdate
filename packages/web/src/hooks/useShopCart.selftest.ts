@@ -33,6 +33,9 @@ assert.doesNotMatch(
 );
 
 assert.match(src, /hydrateShopCatalogOnce/, 'cart provider hydrates catalog on every route');
+assert.match(src, /applyFetchedServerLines|mergeCartLinesKeepLocal/, 'boot/focus GET merges in-flight local adds');
+assert.match(src, /userClearedRef/, 'explicit clear is not restored by stale GET /cart');
+assert.match(src, /shopCartMerge/, 'client merge helper is wired');
 assert.match(src, /isRetiredShopProduct/, 'ghost prune limited to retired demo SKUs');
 assert.match(src, /productFromServerMeta|serverMetaRef/, 'keeps server enrichment for unresolved ids');
 assert.doesNotMatch(
