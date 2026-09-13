@@ -293,6 +293,9 @@ npx tsx "$ROOT/packages/api/src/routes/admin-games.selftest.ts"
 echo "==> selftest: shop product gallery assets"
 npx tsx "$ROOT/packages/web/src/data/shopGallery.selftest.ts"
 
+echo "==> selftest: royal canin pilot shop SKUs"
+npx tsx "$ROOT/packages/api/src/data/shop-pilot-products.selftest.ts"
+
 echo "==> selftest: web shop cart sync (badge + merge-then-persist)"
 npx tsx "$ROOT/packages/web/src/hooks/useShopCart.selftest.ts"
 

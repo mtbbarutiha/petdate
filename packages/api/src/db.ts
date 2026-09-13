@@ -177,6 +177,18 @@ export function getDb(): AppDatabase {
       }
     };
 
+    const bootShopPilot = () => {
+      // Additive Royal Canin pilot SKUs — upsert by slug; never wipe catalog.
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { seedRoyalCaninPilotProducts } =
+          require('./data/shop-pilot-products') as typeof import('./data/shop-pilot-products');
+        seedRoyalCaninPilotProducts();
+      } catch (err) {
+        console.warn('Royal Canin pilot shop seed skipped/failed:', (err as Error).message);
+      }
+    };
+
     const usePostgres = isPostgresUrl(process.env.DATABASE_URL);
     if (usePostgres) {
       db = createPgCompatDatabase() as unknown as Database.Database;
@@ -195,6 +207,7 @@ export function getDb(): AppDatabase {
         console.warn('species/breed catalog seed skipped/failed:', (err as Error).message);
       }
       bootMagazine();
+      bootShopPilot();
       seedIfEmpty();
       maybeSeedDemo();
       try {
@@ -214,6 +227,7 @@ export function getDb(): AppDatabase {
       db.pragma('foreign_keys = ON');
       initSchema();
       bootMagazine();
+      bootShopPilot();
       seedIfEmpty();
       maybeSeedDemo();
       try {
