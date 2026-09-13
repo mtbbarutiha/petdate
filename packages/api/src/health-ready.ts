@@ -59,11 +59,12 @@ export async function pingPostgres(timeoutMs = DEFAULT_TIMEOUT_MS): Promise<Prob
 }
 
 export async function pingRedis(timeoutMs = DEFAULT_TIMEOUT_MS): Promise<ProbeState> {
-  if (!String(process.env.REDIS_URL || '').trim()) {
+  const redisUrl = String(process.env.REDIS_URL || '').trim();
+  if (!redisUrl) {
     return 'skipped';
   }
   const { default: Redis } = await import('ioredis');
-  const client = new Redis(process.env.REDIS_URL, {
+  const client = new Redis(redisUrl, {
     connectTimeout: timeoutMs,
     maxRetriesPerRequest: 1,
     enableOfflineQueue: false,
