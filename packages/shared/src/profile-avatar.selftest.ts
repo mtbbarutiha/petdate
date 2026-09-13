@@ -131,8 +131,8 @@ const defaultsDir = join(
 );
 const EXPECTED_DEFAULT_AVATARS = {
   'avatar-female.jpg': {
-    bytes: 32057,
-    sha256: '6fb4fda45e6c2561a762f39cd48adef7cd0e7918d7dc352d3bbb5b17e6e64619',
+    bytes: 49480,
+    sha256: '8915ee8aa53bb8df6507e66ce96ff804a850243e706a330eec56f16dd9914b04',
   },
   'avatar-male.jpg': {
     bytes: 37247,
