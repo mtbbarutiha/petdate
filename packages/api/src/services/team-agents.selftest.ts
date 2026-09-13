@@ -9,8 +9,10 @@ process.env.DATABASE_PATH = `/tmp/petdate-selftest-team-agents-${process.pid}.db
 import assert from 'node:assert/strict';
 import {
   DEFAULT_TEAM_AGENT_SLUG,
+  SUPPORT_TEAM_AGENT_SLUG,
   TEAM_AGENTS,
   getTeamAgentBySlug,
+  listTeamAgentsByBackend,
 } from '@petdate/shared';
 
 async function main() {
@@ -23,22 +25,36 @@ async function main() {
     startTeamAgentConsult,
   } = await import('./ai-consult-session');
   const { AI_TRAINER_DISPLAY_NAME } = await import('./ai-consult');
+  const { guardAgentDomain } = await import('./agent-backends');
+  const { knowledgePack } = await import('./agent-knowledge');
 
   getDb();
 
-  assert.equal(TEAM_AGENTS.length, 4);
+  assert.equal(TEAM_AGENTS.length, 5);
   assert.equal(DEFAULT_TEAM_AGENT_SLUG, 'leila-kiani');
+  assert.equal(SUPPORT_TEAM_AGENT_SLUG, 'yalda-shabani');
   assert.equal(AI_TRAINER_DISPLAY_NAME, 'لیلا کیانی');
   assert.equal(getTeamAgentBySlug('leila-kiani')?.name, 'لیلا کیانی');
   assert.equal(getTeamAgentBySlug('leila-kiani')?.telegramId, 'petdate_ai_assistant');
   assert.equal(TEAM_AGENTS.filter((a) => a.telegramId === 'petdate_ai_assistant').length, 1);
   assert.equal(TEAM_AGENTS.filter((a) => a.kind === 'vet').length, 2);
   assert.equal(TEAM_AGENTS.filter((a) => a.kind === 'trainer').length, 2);
+  assert.equal(TEAM_AGENTS.filter((a) => a.kind === 'support').length, 1);
+  assert.equal(listTeamAgentsByBackend('vet').length, 2);
+  assert.equal(listTeamAgentsByBackend('trainer').length, 2);
+  assert.equal(listTeamAgentsByBackend('support').length, 1);
   assert.ok(TEAM_AGENTS.some((a) => a.name === 'دکتر سارا نوری'));
+  assert.ok(TEAM_AGENTS.some((a) => a.name === 'یلدا شعبانی'));
   assert.equal(getTeamAgentBySlug('sara-noori')?.name, 'دکتر سارا نوری');
   assert.equal(getTeamAgentBySlug('sara-nozi')?.slug, 'sara-noori');
   assert.equal(getTeamAgentBySlug('faranak-ahmadi')?.name, 'فرانک احمدی');
+  assert.equal(getTeamAgentBySlug('faranak-ahmadi')?.introSelf, true);
+  assert.equal(getTeamAgentBySlug('faranak-ahmadi')?.coachStyle, 'pasha');
   assert.equal(getTeamAgentBySlug('layla-ahmadi')?.slug, 'faranak-ahmadi');
+  assert.ok(
+    getTeamAgentBySlug('yalda-shabani')?.avatarUrl.includes('yalda-shabani'),
+    'yalda has placeholder avatar path'
+  );
   assert.ok(
     !TEAM_AGENTS.some(
       (a) =>
@@ -50,8 +66,19 @@ async function main() {
     ),
   );
 
+  // Domain guards
+  assert.equal(guardAgentDomain('vet', 'چطور بشین یاد بگیره؟').ok, false);
+  assert.equal(guardAgentDomain('trainer', 'تب و استفراغ داره').ok, false);
+  assert.equal(guardAgentDomain('support', 'نسخه آنتی‌بیوتیک بده').ok, false);
+  assert.equal(guardAgentDomain('vet', 'تب و استفراغ داره').ok, true);
+  assert.equal(guardAgentDomain('trainer', 'چطور بشین یاد بگیره؟').ok, true);
+  assert.equal(guardAgentDomain('support', 'OTP نیومد').ok, true);
+  assert.ok(knowledgePack('vet').bullets.length >= 3);
+  assert.ok(knowledgePack('trainer').bullets.length >= 3);
+  assert.ok(knowledgePack('support').bullets.length >= 3);
+
   const users = ensureAllTeamAgents();
-  assert.equal(users.length, 4);
+  assert.equal(users.length, 5);
   const leila = ensureAiAssistantUser();
   assert.equal(leila.name, 'لیلا کیانی');
   assert.ok(!leila.name.startsWith('دکتر'));
@@ -75,12 +102,19 @@ async function main() {
   assert.ok(sara.avatarUrl?.includes('sara-noori'));
   assert.ok(isAiAssistantUserId(sara.id));
 
+  const yalda = ensureTeamAgentBySlug('yalda-shabani')!;
+  assert.equal(yalda.name, 'یلدا شعبانی');
+  assert.equal(yalda.username, 'agent_yalda_shabani');
+  assert.ok(yalda.avatarUrl?.includes('yalda-shabani'));
+  assert.ok(isAiAssistantUserId(yalda.id));
+
   const { getTeamAgentByName } = await import('@petdate/shared');
   assert.equal(getTeamAgentByName('لیلا کیانی')?.slug, 'leila-kiani');
   assert.equal(getTeamAgentByName('پاشا یزدانی')?.slug, 'leila-kiani');
   assert.equal(getTeamAgentByName('فرانک احمدی')?.avatarUrl?.includes('faranak-ahmadi'), true);
   assert.equal(getTeamAgentByName('دکتر ساناز غفاری')?.slug, 'sanaz-ghaffari');
   assert.equal(getTeamAgentByName('دکتر سارا نوزی')?.slug, 'sara-noori');
+  assert.equal(getTeamAgentByName('یلدا شعبانی')?.slug, 'yalda-shabani');
 
   const saraViaAlias = ensureTeamAgentBySlug('sara-nozi')!;
   assert.equal(saraViaAlias.id, sara.id);
@@ -106,6 +140,18 @@ async function main() {
   const reuse = await startTeamAgentConsult({ patient, agentSlug: 'sara-nozi' });
   assert.equal(reuse!.consult.id, session!.consult.id);
   assert.equal(reuse!.reused, true);
+
+  const supportSession = await startTeamAgentConsult({ patient, agentSlug: 'yalda-shabani' });
+  assert.ok(supportSession);
+  assert.equal(supportSession!.consult.vetUserId, yalda.id);
+  assert.equal(supportSession!.consult.serviceKind, 'support');
+  assert.equal(decorateAiConsultDisplay(supportSession!.consult).vetName, 'یلدا شعبانی');
+  assert.match(supportSession!.advice, /یلدا شعبانی|پشتیبانی/);
+
+  const faranakSession = await startTeamAgentConsult({ patient, agentSlug: 'faranak-ahmadi' });
+  assert.ok(faranakSession);
+  assert.match(faranakSession!.advice, /من فرانک احمدی هستم/);
+
   console.log('team-agents.selftest: ok');
 }
 

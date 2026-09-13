@@ -142,6 +142,7 @@ function inboxKindBadgeLabel(c: InboxConversation): string {
   if (c.serviceKind === 'trainer') return 'آموزش';
   if (c.serviceKind === 'sitter') return 'پرستار';
   if (c.serviceKind === 'seeker_advice') return 'راهنمایی';
+  if (c.serviceKind === 'support') return 'پشتیبانی';
   return 'مشاوره';
 }
 
@@ -1300,12 +1301,16 @@ export function VetChatPage() {
             ? 'درخواست آموزش جدید'
             : consult?.serviceKind === 'seeker_advice'
               ? 'درخواست راهنمایی جدید'
-              : 'درخواست مشاوره جدید'
+              : consult?.serviceKind === 'support'
+                ? 'درخواست پشتیبانی'
+                : 'درخواست مشاوره جدید'
           : consult?.serviceKind === 'trainer'
             ? 'در انتظار پذیرش مربی'
             : consult?.serviceKind === 'seeker_advice'
               ? 'در انتظار پذیرش صاحب پت'
-              : 'در انتظار پذیرش دامپزشک'
+              : consult?.serviceKind === 'support'
+                ? 'گفتگو با پشتیبانی'
+                : 'در انتظار پذیرش دامپزشک'
         : chatUnlocked
           ? secure
             ? 'چت امن فعال'
@@ -1313,7 +1318,9 @@ export function VetChatPage() {
               ? 'در حال پت'
               : consult?.serviceKind === 'seeker_advice'
                 ? 'چت راهنمایی فعال'
-                : 'چت مشاوره فعال'
+                : consult?.serviceKind === 'support'
+                  ? 'چت پشتیبانی فعال'
+                  : 'چت مشاوره فعال'
           : consult?.status === 'completed'
             ? 'مشاوره پایان یافته'
             : consult

@@ -20,12 +20,16 @@ export {
 
 function rolesForKind(kind: TeamAgentDef['kind'], telegramId: string): Array<'vet' | 'trainer'> {
   if (telegramId === 'petdate_ai_assistant') return ['vet', 'trainer'];
-  return kind === 'vet' ? ['vet'] : ['trainer'];
+  if (kind === 'vet') return ['vet'];
+  if (kind === 'trainer') return ['trainer'];
+  // Support persona — no vet/trainer matching roles
+  return [];
 }
 
 export function ensureTeamAgent(def: TeamAgentDef): User {
   const desiredUsername = `agent_${def.slug.replace(/-/g, '_')}`;
   const existing = dbService.getUserByTelegramId(def.telegramId);
+  const roles = rolesForKind(def.kind, def.telegramId);
   if (existing) {
     const patch: {
       name?: string;
@@ -44,7 +48,7 @@ export function ensureTeamAgent(def: TeamAgentDef): User {
     if (Object.keys(patch).length) {
       dbService.updateUserProfile(existing.id, patch);
     }
-    dbService.setUserRoles(existing.id, rolesForKind(def.kind, def.telegramId));
+    if (roles.length) dbService.setUserRoles(existing.id, roles);
     return dbService.getUserById(existing.id) ?? existing;
   }
 
@@ -53,7 +57,7 @@ export function ensureTeamAgent(def: TeamAgentDef): User {
     name: def.name,
     username: desiredUsername,
   });
-  dbService.setUserRoles(user.id, rolesForKind(def.kind, def.telegramId));
+  if (roles.length) dbService.setUserRoles(user.id, roles);
   dbService.updateUserProfile(user.id, {
     avatarUrl: def.avatarUrl,
     avatarCustom: true,

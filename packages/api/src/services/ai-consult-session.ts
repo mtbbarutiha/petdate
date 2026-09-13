@@ -69,8 +69,8 @@ export function decorateAiConsultDisplay(consult: VetConsultation): VetConsultat
   return { ...consult, vetName, vetAvatarUrl };
 }
 
-function toAiKind(kind: ConsultServiceKind): 'vet' | 'trainer' | null {
-  if (kind === 'vet' || kind === 'trainer') return kind;
+function toAiKind(kind: ConsultServiceKind): 'vet' | 'trainer' | 'support' | null {
+  if (kind === 'vet' || kind === 'trainer' || kind === 'support') return kind;
   return null;
 }
 
@@ -139,20 +139,36 @@ export async function startAiFallbackConsult(opts: {
 
   const petFields = petPromptFields(pet);
   const userMessage = opts.userMessage?.trim();
+  const team = resolveTeamAgentForUserId(ai.id);
+  const personaFields = {
+    agentName: displayName,
+    agentSlug: team?.slug,
+    backend: team?.backend ?? aiKind,
+    introSelf: Boolean(team?.introSelf),
+    coachStyle: team?.coachStyle,
+  };
   let adviceText: string;
   let source: 'llm' | 'offline';
   if (aiKind === 'trainer' && !userMessage) {
     adviceText = buildTrainerOpeningGreeting({
       patientName: opts.patient.name,
-      agentName: displayName,
+      ...personaFields,
       ...petFields,
     });
+    source = 'offline';
+  } else if (aiKind === 'support' && !userMessage) {
+    adviceText = [
+      `👋 سلام، من ${displayName} هستم — پشتیبانی پت‌دیت.`,
+      ``,
+      `درباره ورود، پت، همبازی، مربی، دامپزشک، شاپ یا سکه بپرس.`,
+      `اگر لازم باشد تیکت می‌زنم، پیگیری می‌گذارم، پیامک می‌فرستم یا از محمد می‌پرسم.`,
+    ].join('\n');
     source = 'offline';
   } else {
     const generated = await generateAiConsultAdvice({
       kind: aiKind,
       patientName: opts.patient.name,
-      agentName: displayName,
+      ...personaFields,
       ...petFields,
       userMessage,
     });
@@ -166,12 +182,20 @@ export async function startAiFallbackConsult(opts: {
     patientUserId: opts.patient.id,
     petId: pet?.id,
     status: 'active',
-    notes: aiKind === 'trainer' ? `مشاوره آنلاین با ${displayName}` : `مشاوره با ${displayName}`,
+    notes:
+      aiKind === 'trainer'
+        ? `مشاوره آنلاین با ${displayName}`
+        : aiKind === 'support'
+          ? `پشتیبانی با ${displayName}`
+          : `مشاوره با ${displayName}`,
     feeCoins: 0,
     serviceKind: aiKind,
     providerShareCoins: 0,
   });
-  const messageText = aiKind === 'trainer' ? adviceText : `چت با ${displayName} شروع شد.\n\n${adviceText}`;
+  const messageText =
+    aiKind === 'trainer' || aiKind === 'support'
+      ? adviceText
+      : `چت با ${displayName} شروع شد.\n\n${adviceText}`;
   dbService.createVetConsultChatMessage({ consultId: consult.id, senderUserId: ai.id, text: messageText });
   notifyVetThread(consult.id, [opts.patient.id, ai.id], { reason: 'accepted', status: 'active' });
   notifyInbox([opts.patient.id, ai.id], { kind: 'vet', reason: 'accepted', id: consult.id });
@@ -193,9 +217,10 @@ export async function startTeamAgentConsult(opts: {
   if (!user) return null;
   const agent = resolveTeamAgentForUserId(user.id);
   const kind = agent?.kind ?? 'trainer';
+  // Support personas use the same consult chat UI as vet/trainer.
   const session = await startAiFallbackConsult({
     patient: opts.patient,
-    serviceKind: kind,
+    serviceKind: kind === 'support' ? 'support' : kind,
     petId: opts.petId,
     agentSlug: opts.agentSlug,
   });
@@ -249,6 +274,7 @@ export async function maybeReplyAsAiAssistant(opts: {
 
   const aiUser = dbService.getUserById(consult.vetUserId);
   const displayName = aiUser ? agentDisplayName(aiUser) : AI_ASSISTANT_DISPLAY_NAME;
+  const team = aiUser ? resolveTeamAgentForUserId(aiUser.id) : null;
 
   const generated = await generateAiConsultAdvice({
     kind: aiKind,
@@ -262,20 +288,56 @@ export async function maybeReplyAsAiAssistant(opts: {
     history: recent.slice(0, -1),
     userTone,
     agentName: displayName,
+    agentSlug: team?.slug,
+    backend: team?.backend ?? aiKind,
+    introSelf: Boolean(team?.introSelf),
+    coachStyle: team?.coachStyle,
   });
+
+  let replyText = generated.text;
+
+  // Support backend: run ticket / SMS / follow-up / Mohammad escalation tools.
+  if (aiKind === 'support' && patient) {
+    try {
+      const { mergeSupportToolIntoReply, runSupportAgentTools } = await import(
+        './support-agent-tools'
+      );
+      const unsure =
+        /نمی‌دونم|نمی\s*دونم|مطمئن\s*نیستم|باید از محمد|از اپراتور/i.test(replyText) ||
+        /از محمد بپرس|بگو به محمد|escalate/i.test(opts.patientText);
+      const tool = await runSupportAgentTools({
+        user: patient,
+        userMessage: opts.patientText,
+        forceAskMohammad: unsure && detectNeedsMohammad(opts.patientText, replyText),
+      });
+      replyText = mergeSupportToolIntoReply(replyText, tool);
+    } catch (err) {
+      console.warn('support agent tools failed:', (err as Error).message);
+    }
+  }
 
   // Human pacing for trainer AI only — HTTP path already fire-and-forgets this call.
   if (aiKind === 'trainer') {
-    await sleep(trainerTypingDelayMs(generated.text));
+    await sleep(trainerTypingDelayMs(replyText));
   }
 
   const message = dbService.createVetConsultChatMessage({
     consultId: opts.consultId,
     senderUserId: consult.vetUserId,
-    text: generated.text,
+    text: replyText,
   });
   notifyVetMessage(opts.consultId, message, [consult.vetUserId, consult.patientUserId]);
-  fanOutAiReplyToPatientTelegram(consult, generated.text);
+  fanOutAiReplyToPatientTelegram(consult, replyText);
+}
+
+function detectNeedsMohammad(userText: string, draftReply: string): boolean {
+  if (/محمد|اپراتور|escalate/i.test(userText)) return true;
+  // Short vague ops questions where offline KB had nothing useful.
+  return (
+    userText.trim().length > 12 &&
+    /نمی‌دونم چی|مشکل عجیب|کار نمی‌کنه|کار نمیکنه|هر کاری کردم/i.test(userText) &&
+    /کدام بخش|کدوم بخش|جزئیات بیشتر|اسکرین/i.test(draftReply)
+  );
 }
 
 function fanOutAiReplyToPatientTelegram(

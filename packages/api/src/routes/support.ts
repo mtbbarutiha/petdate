@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { getSupportTeamAgent } from '@petdate/shared';
 import { dbService } from '../db';
 import {
   createUserSupportTicket,
@@ -6,7 +7,12 @@ import {
   listPublicTicketActivities,
   listTicketsForPlatformUser,
 } from '../crm-service';
-import { generateAiConsultAdvice, AI_ASSISTANT_DISPLAY_NAME } from '../services/ai-consult';
+import { generateAiConsultAdvice } from '../services/ai-consult';
+import { ensureTeamAgentBySlug } from '../services/team-agents';
+import {
+  mergeSupportToolIntoReply,
+  runSupportAgentTools,
+} from '../services/support-agent-tools';
 import {
   STT_UNAVAILABLE_FA,
   isSpeechToTextConfigured,
@@ -17,8 +23,9 @@ import { getUserFromBearer } from '../services/web-otp';
 
 export const supportRouter = Router();
 
-/** Canonical support AI agent (لیلا کیانی) — same persona as /api/support chat. */
-export const SUPPORT_AGENT_NAME = AI_ASSISTANT_DISPLAY_NAME;
+/** Canonical support AI agent (یلدا شعبانی). */
+export const SUPPORT_AGENT_NAME = getSupportTeamAgent().name;
+export const SUPPORT_AGENT_SLUG = getSupportTeamAgent().slug;
 
 function requireUser(req: { header: (n: string) => string | undefined }) {
   return getUserFromBearer(req.header('authorization') ?? undefined)?.user ?? null;
@@ -64,7 +71,9 @@ async function replySupportTurn(opts: {
   userId: number;
   userName?: string;
   text: string;
+  user: import('@petdate/shared').User;
 }) {
+  ensureTeamAgentBySlug(SUPPORT_AGENT_SLUG);
   const userMsg = dbService.addSupportMessage(opts.userId, 'user', opts.text);
   const history = dbService.listSupportMessages(opts.userId, 20).map((m) => ({
     role: m.role,
@@ -74,11 +83,23 @@ async function replySupportTurn(opts: {
     kind: 'support',
     patientName: opts.userName,
     agentName: SUPPORT_AGENT_NAME,
+    agentSlug: SUPPORT_AGENT_SLUG,
+    backend: 'support',
     userMessage: opts.text,
     history: history.slice(0, -1),
   });
-  const assistantMsg = dbService.addSupportMessage(opts.userId, 'assistant', generated.text);
-  return { userMsg, assistantMsg, generated };
+  let replyText = generated.text;
+  try {
+    const tool = await runSupportAgentTools({
+      user: opts.user,
+      userMessage: opts.text,
+    });
+    replyText = mergeSupportToolIntoReply(replyText, tool);
+  } catch (err) {
+    console.warn('support tools in /messages failed:', (err as Error).message);
+  }
+  const assistantMsg = dbService.addSupportMessage(opts.userId, 'assistant', replyText);
+  return { userMsg, assistantMsg, generated: { ...generated, text: replyText } };
 }
 
 /** تاریخچه چت پشتیبانی کاربر */
@@ -94,7 +115,7 @@ supportRouter.get('/messages', (req, res) => {
     messages,
     welcome:
       messages.length === 0
-        ? `👋 من ${SUPPORT_AGENT_NAME} هستم، پشتیبانی هوشمند پت‌دیت. درباره ورود، پت، همبازی، مربی، دامپزشک، شاپ یا سکه بپرس.`
+        ? `👋 من ${SUPPORT_AGENT_NAME} هستم، پشتیبانی پت‌دیت. درباره ورود، پت، همبازی، مربی، دامپزشک، شاپ یا سکه بپرس. می‌تونم تیکت بزنم یا از محمد بپرسم.`
         : null,
     agentName: SUPPORT_AGENT_NAME,
   });
@@ -192,6 +213,7 @@ supportRouter.post('/messages', async (req, res) => {
       userId: user.id,
       userName: user.name,
       text,
+      user,
     });
     res.status(201).json({
       ok: true,
@@ -233,7 +255,7 @@ supportRouter.get('/telegram/:telegramId/messages', (req, res) => {
     messages,
     welcome:
       messages.length === 0
-        ? `👋 من ${SUPPORT_AGENT_NAME} هستم، پشتیبانی هوشمند پت‌دیت. درباره ورود، پت، همبازی، مربی، دامپزشک، شاپ یا سکه بپرس.`
+        ? `👋 من ${SUPPORT_AGENT_NAME} هستم، پشتیبانی پت‌دیت. درباره ورود، پت، همبازی، مربی، دامپزشک، شاپ یا سکه بپرس. می‌تونم تیکت بزنم یا از محمد بپرسم.`
         : null,
     agentName: SUPPORT_AGENT_NAME,
   });
@@ -354,6 +376,7 @@ supportRouter.post('/telegram/:telegramId/messages', async (req, res) => {
       userId: user.id,
       userName: user.name,
       text,
+      user,
     });
     res.status(201).json({
       ok: true,

@@ -436,13 +436,14 @@ export const VET_CREDENTIAL_STATUS_LABELS: Record<VetCredentialStatus, string> =
 };
 
 /** نوع سرویس مشاوره روی جدول vet_consultations */
-export type ConsultServiceKind = 'vet' | 'trainer' | 'sitter' | 'seeker_advice';
+export type ConsultServiceKind = 'vet' | 'trainer' | 'sitter' | 'seeker_advice' | 'support';
 
 export const CONSULT_SERVICE_KINDS: ConsultServiceKind[] = [
   'vet',
   'trainer',
   'sitter',
   'seeker_advice',
+  'support',
 ];
 
 export const CONSULT_SERVICE_KIND_LABELS: Record<ConsultServiceKind, string> = {
@@ -450,6 +451,7 @@ export const CONSULT_SERVICE_KIND_LABELS: Record<ConsultServiceKind, string> = {
   trainer: 'مشاوره مربی',
   sitter: 'ارتباط پرستار پت',
   seeker_advice: 'مشورت با صاحبین',
+  support: 'پشتیبانی',
 };
 
 /** وضعیت تأیید عکس عمومی (پت / آواتار) */

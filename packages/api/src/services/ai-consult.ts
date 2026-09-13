@@ -13,7 +13,13 @@
  * Production note: without AI_CONSULT_API_KEY on the VPS, trainer replies use the
  * rich offline knowledge base below (پاشا یزدانی). Set the key for deeper LLM answers.
  */
-import { PET_SPECIES } from '@petdate/shared';
+import { PET_SPECIES, type TeamAgentBackend } from '@petdate/shared';
+import {
+  backendSystemCore,
+  guardAgentDomain,
+  personaPromptOverlay,
+} from './agent-backends';
+import { ensureDailyKnowledgeRefresh, knowledgeForPrompt } from './agent-knowledge';
 import {
   applyOfflineToneStyle,
   formatToneSystemInstruction,
@@ -40,6 +46,14 @@ export type AiConsultContext = {
 
   /** Persona display name (team agent); defaults to لیلا کیانی */
   agentName?: string;
+  /** Team agent slug (e.g. faranak-ahmadi) for persona overlays */
+  agentSlug?: string;
+  /** Explicit backend (defaults to kind) */
+  backend?: TeamAgentBackend;
+  /** فرانک احمدی — must introduce self on first message */
+  introSelf?: boolean;
+  /** Trainer coach style (پاشا یزدانی) */
+  coachStyle?: 'pasha';
 };
 
 /** Extra English aliases that may appear in prompts / legacy data (DB codes stay lowercase). */
@@ -111,47 +125,39 @@ export function isAiConsultConfigured(): boolean {
 /** Avoid flooding pm2 error logs when AI_CONSULT_API_KEY is unset in production. */
 let warnedMissingAiConsultKey = false;
 
-function systemPrompt(kind: AiConsultKind, agentName = AI_TRAINER_DISPLAY_NAME): string {
-  const who = agentName || AI_TRAINER_DISPLAY_NAME;
-  if (kind === 'support') {
-    return [
-      'تو پشتیبانی هوشمند پلتفرم پت‌دیت هستی.',
-      'به فارسی، کوتاه، واضح و صمیمی راهنمایی کن.',
-      'کمک کن کاربر بفهمد چطور: ورود OTP، ثبت پت، همبازی، مربی، دامپزشک، شاپ، کیف پول/سکه، و اتصال وب↔ربات کار می‌کند.',
-      'اگر مشکل فنی حل نشد بگو از ربات تلگرام پت‌دیت یا ادمین پیگیری کنند.',
-      'تشخیص پزشکی یا تجویز دارو نده؛ برای درمان به دامپزشک ارجاع بده.',
-      `اگر پرسیدند کی هستی بگو ${who} از پشتیبانی پت‌دیت هستی.`,
-    ].join('\n');
-  }
-  if (kind === 'trainer') {
-    return [
-      `تو ${who} هستی؛ مربی واقعی آموزش پت. مثل آدم واقعی توی چت حرف بزن، نه مثل ربات یا جزوه.`,
-      'لحن: چت خودمونی تلگرامی. انگار داری برای یه دوست که سگ/گربه داره پیام می‌ذاری — گرم، مطمئن، کمی شوخ اگر جا داشته باشه، بدون ادا.',
-      'فارسی کاملاً گفتاری: «ببین»، «راستش»، «یه‌کم»، «باشه»، «آفرین»، «دمش گرم»، «هیچی»، «اوکیه». ممنوع: لحن کتابی، لیست شماره‌دار درسی، واژه‌های اداری.',
-      'جمله‌ها کوتاه و زنده. گاهی یه حس واقعی بگو («من خودم این‌جا با کلی سگ گیر کردم»). نه شعار، نه متن تبلیغاتی.',
-      'روی فرمان‌ها (مخصوصاً بشین/بمان/بیا/قلاده) مثل مربی باتجربه عمیق جواب بده: چی کار کنه، چی نکنه، اگه گیر کرد چی، جلسه بعدی چی.',
-      `هرگز نگو هوش مصنوعی / ربات / AI هستی. اگر پرسید: «من ${who}ام، مربی آنلاین پت‌دیت.»`,
-      'شروع پیام را هر بار عوض کن. وسط گفتگو سلام تکراری و معرفی نکن.',
-      '۱–۲ پیام اول اگر لازم بود گرم باش و عکس پت را ببین/بخواه؛ ولی پروتکل را بلند نگو.',
-      'ممنوع متا: «اول احوال بعد آموزش»، «برای اینکه درست راهنمایی کنم…»، «نسخه»، بازگو کردن سؤال کاربر.',
-      'اول راهنمایی ملموس بده (۲–۴ قدم خودمونی)، بعد اگر لازم بود یک سؤال کوتاه. هی سؤال نپرس.',
-      'سن یا «خونه/بیرون» را اگر قبلاً پرسیدی یا کاربر جواب داد (مثل «همش تو خونست») دوباره نپرس؛ جواب را بگیر و تمرین را با همان تنظیم کن.',
-      'لازم نیست هر پیام با سؤال تمام شود. بگو بره تمرین کنه و بگه چی شد.',
-      'دانش (عنوان کتاب را مگر با «منبع» نگو): Donaldson Culture Clash، McConnell Puppy Primer، و روش تقویت مثبت/کلیکر.',
-      'توله با بالغ فرق دارد؛ گربه با سگ یکی نیست. تنبیه بدنی/خفه/شوک/آلفا رول ممنوع.',
-      'پزشکی: نگران شو و بفرست دامپزشک؛ دارو نده.',
-      'مثل آدمی حرف بزن که دلش برای پت می‌سوزد و حوصلهٔ چت دارد — نه ربات خشک.',
-      'اگر راهنمای لحن کاربر آمد، با همان سبک (تو/شما، کوتاه/بلند، ایموجی) جواب بده.',
-    ].join('\n');
-  }
-  return [
-    `تو ${who} هستی؛ مشاوره دامپزشکی عمومی در پلتفرم پت‌دیت می‌دهی.`,
-    'به فارسی، کوتاه، شفاف و محتاط پاسخ بده.',
-    'در پاسخ فارسی از DOG/CAT یا کد انگلیسی گونه استفاده نکن؛ بگو سگ یا گربه.',
-    'راهنمایی عمومی مراقبت، تغذیه، پیشگیری و زمان مراجعه به دامپزشک بده.',
-    'تشخیص قطعی نده؛ نسخه دارو ننویس؛ در علائم خطرناک فوری به مراجعه حضوری تأکید کن.',
-    `اگر پرسیدند کی هستی بگو ${who} هستی. واضح بگو جایگزین دامپزشک آنلاین/حضوری نیستی و وقتی پزشک آنلاین باشد اتصال انسانی اولویت دارد.`,
-  ].join('\n');
+function resolveBackend(ctx: { kind: AiConsultKind; backend?: TeamAgentBackend }): TeamAgentBackend {
+  return ctx.backend || ctx.kind;
+}
+
+function systemPrompt(ctx: AiConsultContext): string {
+  const who = consultAgentName(ctx);
+  const backend = resolveBackend(ctx);
+  const core = backendSystemCore(backend, who);
+  const persona = personaPromptOverlay({
+    slug: ctx.agentSlug || '',
+    telegramId: '',
+    name: who,
+    role:
+      backend === 'vet' ? 'دامپزشک' : backend === 'trainer' ? 'مربی' : 'پشتیبانی',
+    kind: backend,
+    backend,
+    avatarUrl: '',
+    cardImage: '',
+    introSelf: ctx.introSelf,
+    coachStyle: ctx.coachStyle,
+  });
+  const knowledge = knowledgeForPrompt(backend);
+  const trainerExtras =
+    backend === 'trainer'
+      ? [
+          'فارسی کاملاً گفتاری: «ببین»، «راستش»، «یه‌کم»، «باشه»، «آفرین». ممنوع: لحن کتابی، لیست شماره‌دار درسی.',
+          'شروع پیام را هر بار عوض کن. وسط گفتگو سلام تکراری و معرفی نکن (مگر introSelf برای پیام اول).',
+          'ممنوع متا: «اول احوال بعد آموزش»، «برای اینکه درست راهنمایی کنم…»، بازگو کردن سؤال کاربر.',
+          'اول راهنمایی ملموس بده، بعد اگر لازم بود یک سؤال کوتاه.',
+          'اگر راهنمای لحن کاربر آمد، با همان سبک (تو/شما، کوتاه/بلند، ایموجی) جواب بده.',
+        ]
+      : [];
+  return [...core, ...persona, ...trainerExtras, '', knowledge].join('\n');
 }
 
 function buildUserPrompt(ctx: AiConsultContext): string {
@@ -202,6 +208,19 @@ export function buildTrainerOpeningGreeting(
     : `چند سالشه؟ نژادشم اگه می‌دونی بگو.`;
 
   const who = consultAgentName(ctx);
+  // فرانک احمدی (introSelf): explicit self-intro in پاشا یزدانی coaching voice.
+  if (ctx.introSelf) {
+    return [
+      `سلام ${owner} 👋 من ${who} هستم، مربی پت‌دیت.`,
+      ``,
+      `خوشحالم اینجایی. سبک کارم ساده‌ست: تقویت مثبت، تمرین کوتاه، بدون زور — همون جوری که مربی‌های خوب کار می‌کنن.`,
+      `راستش بگو خودت خوبی؟ ${pet} این روزا حالش چطوره — سرحال و بازیگوشه یا یه‌کم بی‌قراره؟`,
+      photoLine,
+      profileLine,
+      ``,
+      `بگو روی کدوم فرمان یا رفتار کار کنیم؛ من اینجام.`,
+    ].join('\n');
+  }
   const hellos = [
     `سلام ${owner} 👋 من ${who}ام. خوشحالم اینجایی.`,
     `${owner} جان سلام، ${who} هستم. قشنگ شد که اومدی سراغ آموزش.`,
@@ -1188,7 +1207,7 @@ export function offlineAiAdvice(ctx: AiConsultContext): string {
     if (topic) {
       const lines = hasHistory
         ? [`دربارهٔ «${q}»:`, ``, topic]
-        : [`👋 من پشتیبانی هوشمند پت‌دیت هستم.`, ``, topic];
+        : [`👋 من ${consultAgentName(ctx)} هستم، پشتیبانی پت‌دیت.`, ``, topic];
       lines.push(``, `سؤال بعدی‌ات را بپرس — همین‌جا ادامه می‌دهیم.`);
       return lines.join('\n');
     }
@@ -1197,11 +1216,11 @@ export function offlineAiAdvice(ctx: AiConsultContext): string {
         `دربارهٔ «${q || 'ادامهٔ گفتگو'}»:`,
         ``,
         `برای راهنمایی دقیق‌تر بگو کدام بخش: ورود، پت، همبازی، مربی، دامپزشک، شاپ یا سکه.`,
-        `اگر خطا دیدی متن خطا یا اسکرین بفرست.`,
+        `اگر خطا دیدی متن خطا یا اسکرین بفرست. اگر گیر کردم به محمد ارجاع می‌دم.`,
       ].join('\n');
     }
     return [
-      `👋 من پشتیبانی هوشمند پت‌دیت هستم.`,
+      `👋 من ${consultAgentName(ctx)} هستم، پشتیبانی پت‌دیت.`,
       ``,
       q
         ? `دربارهٔ «${q}» — یکی از این‌ها را امتحان کن یا جزئیات بیشتر بفرست:`
@@ -1210,8 +1229,9 @@ export function offlineAiAdvice(ctx: AiConsultContext): string {
       `• ورود وب با OTP پیامک — همان حساب ربات تلگرام`,
       `• ثبت پت از «پت‌های من» یا ربات`,
       `• همبازی از پنل صاحب پت / گفتگوها`,
-      `• مربی و دامپزشک از پنل‌های مربوط؛ برای مربی اگر کسی آزاد نباشد پاشا یزدانی آنلاین جواب می‌دهد`,
+      `• مربی و دامپزشک از پنل‌های مربوط؛ مربی آنلاین هم در تیم هست`,
       `• سکه از منوی کیف پول / ربات`,
+      `• اگر لازم باشد تیکت می‌زنم، پیگیری می‌گذارم، پیامک می‌فرستم یا از محمد می‌پرسم`,
       ``,
       `سؤال بعدی‌ات را بپرس — گفتگو ادامه دارد.`,
     ].join('\n');
@@ -1310,7 +1330,7 @@ async function callOpenAiCompatible(ctx: AiConsultContext): Promise<string | nul
   const base = envBaseUrl();
   const model = envModel();
   const messages: Array<{ role: string; content: string }> = [
-    { role: 'system', content: systemPrompt(ctx.kind, consultAgentName(ctx)) },
+    { role: 'system', content: systemPrompt(ctx) },
   ];
   if (ctx.kind === 'trainer' && ctx.userTone && ctx.userTone.samples > 0) {
     messages.push({ role: 'system', content: formatToneSystemInstruction(ctx.userTone) });
@@ -1521,6 +1541,19 @@ export async function generateAiConsultAdvice(ctx: AiConsultContext): Promise<{
   text: string;
   source: 'llm' | 'offline';
 }> {
+  // Best-effort daily domain refresh (no-op without API key / if already refreshed today).
+  void ensureDailyKnowledgeRefresh([resolveBackend(ctx)]);
+
+  const backend = resolveBackend(ctx);
+  const hasHistory = (ctx.history?.length ?? 0) > 0;
+  // Domain fence: refuse out-of-specialty asks (skip pure greetings / empty).
+  if (ctx.userMessage?.trim() && (hasHistory || ctx.userMessage.trim().length >= 4)) {
+    const guard = guardAgentDomain(backend, ctx.userMessage);
+    if (!guard.ok) {
+      return { text: guard.replyFa, source: 'offline' };
+    }
+  }
+
   if (ctx.kind === 'trainer') {
     const q = ctx.userMessage?.trim() ?? '';
     // When they say سلام / خوبی؟ — answer the greeting like a human (never dump training tips).

@@ -44,7 +44,7 @@ export type InboxConversation = {
   /** عکس طرف مقابل (دامپزشک/مربی یا بیمار) — برای لیست مشاوره */
   peerAvatarUrl?: string;
   /** برای برچسب لیست — پیش‌فرض vet وقتی kind=vet */
-  serviceKind?: 'vet' | 'trainer' | 'sitter' | 'seeker_advice';
+  serviceKind?: 'vet' | 'trainer' | 'sitter' | 'seeker_advice' | 'support';
 };
 
 export function inboxScopeForRole(role?: UserRole | null): InboxScope {
@@ -92,7 +92,7 @@ function sortInbox(items: InboxConversation[]): InboxConversation[] {
  */
 function collapseDuplicateAiInboxRows(items: InboxConversation[]): InboxConversation[] {
   const aiTitle =
-    /^(پاشا یزدانی|دکتر لیلا کیانی|لیلا کیانی|دکتر لایلا احمدی|لایلا احمدی|فرانک احمدی|دستیار هوشمند پت‌دیت|دستیار هوشمند پت|دستیار هوشمند)$/;
+    /^(پاشا یزدانی|دکتر لیلا کیانی|لیلا کیانی|دکتر لایلا احمدی|لایلا احمدی|فرانک احمدی|دکتر ساناز غفاری|دکتر سارا نوری|یلدا شعبانی|دستیار هوشمند پت‌دیت|دستیار هوشمند پت|دستیار هوشمند)$/;
   const seen = new Map<string, InboxConversation>();
   const out: InboxConversation[] = [];
   for (const item of sortInbox(items)) {
@@ -187,7 +187,9 @@ export function vetToInbox(
             ? `پرستار #${c.vetUserId}`
             : serviceKind === 'seeker_advice'
               ? `صاحب پت #${c.vetUserId}`
-              : `پزشک #${c.vetUserId}`);
+              : serviceKind === 'support'
+                ? `پشتیبانی #${c.vetUserId}`
+                : `پزشک #${c.vetUserId}`);
 
   const preview = pending
     ? mode === 'as_vet'
@@ -197,14 +199,18 @@ export function vetToInbox(
           ? 'درخواست پرستار پت'
           : serviceKind === 'seeker_advice'
             ? 'یک نفر راهنمایی خرید و نگهداری پت می‌خواد'
-            : 'درخواست مشاوره جدید'
+            : serviceKind === 'support'
+              ? 'درخواست پشتیبانی'
+              : 'درخواست مشاوره جدید'
       : serviceKind === 'trainer'
         ? 'در انتظار پذیرش مربی'
         : serviceKind === 'sitter'
           ? 'در انتظار پذیرش پرستار'
           : serviceKind === 'seeker_advice'
             ? 'در انتظار پذیرش صاحب پت'
-            : 'در انتظار پذیرش دامپزشک'
+            : serviceKind === 'support'
+              ? 'گفتگو با پشتیبانی'
+              : 'در انتظار پذیرش دامپزشک'
     : ended
       ? serviceKind === 'trainer'
         ? 'هماهنگی پایان یافته'
@@ -212,25 +218,31 @@ export function vetToInbox(
           ? 'ارتباط پایان یافته'
           : serviceKind === 'seeker_advice'
             ? 'راهنمایی پایان یافته'
-            : 'مشاوره پایان یافته'
+            : serviceKind === 'support'
+              ? 'پشتیبانی پایان یافته'
+              : 'مشاوره پایان یافته'
       : c.petName
         ? serviceKind === 'trainer'
           ? `آموزش آنلاین · ${c.petName}`
           : serviceKind === 'sitter'
             ? `پرستاری · ${c.petName}`
-            : `مشاوره · ${c.petName}`
+            : serviceKind === 'support'
+              ? `پشتیبانی · ${c.petName}`
+              : `مشاوره · ${c.petName}`
         : serviceKind === 'trainer'
           ? 'آموزش آنلاین'
           : serviceKind === 'sitter'
             ? 'ارتباط پرستار پت'
             : serviceKind === 'seeker_advice'
               ? 'راهنمایی خرید و نگهداری پت'
-              : 'مشاوره دامپزشک';
+              : serviceKind === 'support'
+                ? 'پشتیبانی پت‌دیت'
+                : 'مشاوره دامپزشک';
 
   const patientPanel =
     serviceKind === 'trainer'
       ? '/trainer-consult'
-      : serviceKind === 'sitter' || serviceKind === 'seeker_advice'
+      : serviceKind === 'sitter' || serviceKind === 'seeker_advice' || serviceKind === 'support'
         ? '/chats'
         : '/vet-consult';
 
