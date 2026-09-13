@@ -50,11 +50,11 @@ assert.match(shop.noscriptHtml, /پت‌شاپ|شاپ/);
 const mystery = pageSeoForPath('/this-is-not-home');
 assert.equal(mystery.canonicalPath, '/this-is-not-home', 'never force-canonical unknown routes to /');
 
-assert.equal(SHOP_PRODUCTS.length, 15, 'live catalog is exactly 15 SKUs');
+assert.equal(SHOP_PRODUCTS.length, 29, 'live catalog is exactly 29 SKUs');
 assert.deepEqual(
   SHOP_PRODUCTS.map((p) => p.id),
-  Array.from({ length: 15 }, (_, i) => `p${221 + i}`),
-  'catalog ids are p221–p235'
+  Array.from({ length: 29 }, (_, i) => `p${221 + i}`),
+  'catalog ids are p221–p249'
 );
 const product = SHOP_PRODUCTS.find((p) => p.id === 'p221') ?? SHOP_PRODUCTS[0];
 assert.ok(product, 'catalog has a live product');

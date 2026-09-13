@@ -55,4 +55,16 @@ assert(
   map.includes('/shop/cat-food-josera-kitten-2kg '),
   'Josera Kitten slug aliases 301 to /shop/product/:slug'
 );
+assert(
+  map.includes('/shop/cat-food-josera-marinesse-2kg '),
+  'batch 3 Marinesse slug aliases 301 to /shop/product/:slug'
+);
+assert(
+  map.includes('/shop/dog-food-royal-canin-hypoallergenic-2kg '),
+  'batch 3 Hypoallergenic slug aliases 301 to /shop/product/:slug'
+);
+assert(
+  xml.includes('/shop/product/cat-food-royal-canin-sensible-2kg'),
+  'batch 3 Sensible stays in sitemap'
+);
 console.log('sitemap.selftest: ok');

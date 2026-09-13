@@ -13,7 +13,7 @@ export type ShopPriceEntry = {
   priceToman: number;
 };
 
-/** Keep in sync with packages/api/src/data/shop-pilot-products.ts + shop-batch2-products.ts */
+/** Keep in sync with shop-pilot-products + shop-batch2-products + shop-batch3-products */
 const PILOT_PRICE_INDEX: ShopPriceEntry[] = [
   {
     id: 'p221',
@@ -134,6 +134,118 @@ const PILOT_PRICE_INDEX: ShopPriceEntry[] = [
     brandId: 'josera',
     categorySlug: 'cat-food',
     priceToman: 4_004_000,
+  },
+  {
+    id: 'p236',
+    slug: 'cat-food-royal-canin-sensible-2kg',
+    title: 'رویال کنین سنسیبل ۲ کیلو — گربه بالغ با گوارش حساس‌تر',
+    brandId: 'royal-canin',
+    categorySlug: 'cat-food',
+    priceToman: 10_217_000,
+  },
+  {
+    id: 'p237',
+    slug: 'cat-food-josera-marinesse-2kg',
+    title: 'جوسرا مارینس ۲ کیلو — گربه بالغ با طعم ماهی',
+    brandId: 'josera',
+    categorySlug: 'cat-food',
+    priceToman: 4_004_000,
+  },
+  {
+    id: 'p238',
+    slug: 'cat-food-josera-sensicat-2kg',
+    title: 'جوسرا سنسی‌کت ۲ کیلو — گربه بالغ با معده حساس',
+    brandId: 'josera',
+    categorySlug: 'cat-food',
+    priceToman: 4_004_000,
+  },
+  {
+    id: 'p239',
+    slug: 'cat-food-royal-canin-mother-babycat-2kg',
+    title: 'رویال کنین مادر اند بیبی ۲ کیلو — مادر باردار/شیرده و بچه گربه',
+    brandId: 'royal-canin',
+    categorySlug: 'cat-food',
+    priceToman: 10_395_000,
+  },
+  {
+    id: 'p240',
+    slug: 'cat-food-royal-canin-dental-1-5kg',
+    title: 'رویال کنین دنتال ۱٫۵ کیلو — گربه بالغ مراقبت دهان و دندان',
+    brandId: 'royal-canin',
+    categorySlug: 'cat-food',
+    priceToman: 9_450_000,
+  },
+  {
+    id: 'p241',
+    slug: 'cat-food-royal-canin-light-weight-1-5kg',
+    title: 'رویال کنین لایت ویت ۱٫۵ کیلو — گربه بالغ کنترل وزن',
+    brandId: 'royal-canin',
+    categorySlug: 'cat-food',
+    priceToman: 9_415_000,
+  },
+  {
+    id: 'p242',
+    slug: 'cat-food-royal-canin-hairball-2kg',
+    title: 'رویال کنین هیربال ۲ کیلو — گربه بالغ مدیریت گلوله مو',
+    brandId: 'royal-canin',
+    categorySlug: 'cat-food',
+    priceToman: 12_100_000,
+  },
+  {
+    id: 'p243',
+    slug: 'cat-food-royal-canin-hair-skin-2kg',
+    title: 'رویال کنین هیر اند اسکین ۲ کیلو — گربه بالغ پوست و مو',
+    brandId: 'royal-canin',
+    categorySlug: 'cat-food',
+    priceToman: 12_100_000,
+  },
+  {
+    id: 'p244',
+    slug: 'cat-food-royal-canin-urinary-so-1-5kg',
+    title: 'رویال کنین یورینری اس‌او ۱٫۵ کیلو — خط دامپزشکی ادراری گربه',
+    brandId: 'royal-canin',
+    categorySlug: 'cat-food',
+    priceToman: 9_623_000,
+  },
+  {
+    id: 'p245',
+    slug: 'dog-food-royal-canin-mini-sterilised-3kg',
+    title: 'رویال کنین مینی استرالایز ۳ کیلو — سگ بالغ نژاد کوچک عقیم‌شده',
+    brandId: 'royal-canin',
+    categorySlug: 'dog-food',
+    priceToman: 14_821_000,
+  },
+  {
+    id: 'p246',
+    slug: 'dog-food-royal-canin-mini-light-weight-3kg',
+    title: 'رویال کنین مینی لایت ویت ۳ کیلو — سگ بالغ نژاد کوچک کنترل وزن',
+    brandId: 'royal-canin',
+    categorySlug: 'dog-food',
+    priceToman: 14_821_000,
+  },
+  {
+    id: 'p247',
+    slug: 'dog-food-royal-canin-poodle-adult-3kg',
+    title: 'رویال کنین پودل ادالت ۳ کیلو — مخصوص پودل بالغ',
+    brandId: 'royal-canin',
+    categorySlug: 'dog-food',
+    priceToman: 14_820_000,
+  },
+  {
+    id: 'p248',
+    slug: 'dog-food-royal-canin-poodle-puppy-3kg',
+    title: 'رویال کنین پودل پاپی ۳ کیلو — توله پودل در حال رشد',
+    brandId: 'royal-canin',
+    categorySlug: 'dog-food',
+    priceToman: 14_820_000,
+  },
+  {
+    id: 'p249',
+    slug: 'dog-food-royal-canin-hypoallergenic-2kg',
+    title: 'رویال کنین هایپوآلرژنیک ۲ کیلو — خط دامپزشکی حساسیت غذایی سگ',
+    brandId: 'royal-canin',
+    categorySlug: 'dog-food',
+    priceToman: 11_702_000,
   },
 ];
 

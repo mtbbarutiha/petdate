@@ -1,10 +1,11 @@
 /**
  * PetDate shop catalog — Pepito imagery, prices in تومان (wallet primary currency).
- * Live catalog is exactly 15 SKUs: p221–p223 (pilots) + p224–p235 (Batch 2).
+ * Live catalog is exactly 29 SKUs: p221–p223 (pilots) + p224–p235 (Batch 2) + p236–p249 (Batch 3).
  * Demo p1–p220 were removed so they cannot reappear on deploy.
  */
 
 import { SHOP_BATCH2_PRODUCTS } from './shopBatch2Products';
+import { SHOP_BATCH3_PRODUCTS } from './shopBatch3Products';
 
 const P = '/pepito/uploads';
 
@@ -125,7 +126,7 @@ export const SHOP_BRANDS: ShopBrand[] = [
   { id: 'petdate', labelFa: 'پت‌دیت', labelEn: 'PetDate' },
 ];
 
-/** Live shop catalog — 3 Royal Canin pilots + 12 Batch 2 SKUs only */
+/** Live shop catalog — 3 Royal Canin pilots + 12 Batch 2 + 14 Batch 3 SKUs */
 export const SHOP_PRODUCTS: ShopProduct[] = [
   {
     id: 'p221',
@@ -239,6 +240,7 @@ export const SHOP_PRODUCTS: ShopProduct[] = [
     ],
   },
   ...SHOP_BATCH2_PRODUCTS,
+  ...SHOP_BATCH3_PRODUCTS,
 ];
 
 export function formatToman(amount: number): string {

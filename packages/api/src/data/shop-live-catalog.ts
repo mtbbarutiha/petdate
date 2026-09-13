@@ -1,5 +1,5 @@
 /**
- * Live shop catalog guard — keep ONLY p221–p235 (3 pilots + 12 Batch 2).
+ * Live shop catalog guard — keep ONLY p221–p249 (3 pilots + 12 Batch 2 + 14 Batch 3).
  * Purges leftover demo/seed rows (p1–p220, finance placeholders, etc.)
  * without touching live prices, images, or stock.
  */
