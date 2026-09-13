@@ -20,12 +20,30 @@ export const SHOP_BATCH2_SLUGS = [
   'cat-food-josera-kitten-2kg',
 ] as const;
 
+export const SHOP_BATCH3_SLUGS = [
+  'cat-food-royal-canin-sensible-2kg',
+  'cat-food-josera-marinesse-2kg',
+  'cat-food-josera-sensicat-2kg',
+  'cat-food-royal-canin-mother-babycat-2kg',
+  'cat-food-royal-canin-dental-1-5kg',
+  'cat-food-royal-canin-light-weight-1-5kg',
+  'cat-food-royal-canin-hairball-2kg',
+  'cat-food-royal-canin-hair-skin-2kg',
+  'cat-food-royal-canin-urinary-so-1-5kg',
+  'dog-food-royal-canin-mini-sterilised-3kg',
+  'dog-food-royal-canin-mini-light-weight-3kg',
+  'dog-food-royal-canin-poodle-adult-3kg',
+  'dog-food-royal-canin-poodle-puppy-3kg',
+  'dog-food-royal-canin-hypoallergenic-2kg',
+] as const;
+
 export const ZERO_MARGIN_SHOP_SLUGS: readonly string[] = [
   ...ROYAL_CANIN_PILOT_SLUGS,
   ...SHOP_BATCH2_SLUGS,
+  ...SHOP_BATCH3_SLUGS,
 ];
 
-/** Live shop product ids — 3 pilots + 12 Batch 2. Never purge these rows. */
+/** Live shop product ids — 3 pilots + 12 Batch 2 + 14 Batch 3. Never purge these rows. */
 export const LIVE_SHOP_PRODUCT_IDS = [
   'p221',
   'p222',
@@ -42,6 +60,20 @@ export const LIVE_SHOP_PRODUCT_IDS = [
   'p233',
   'p234',
   'p235',
+  'p236',
+  'p237',
+  'p238',
+  'p239',
+  'p240',
+  'p241',
+  'p242',
+  'p243',
+  'p244',
+  'p245',
+  'p246',
+  'p247',
+  'p248',
+  'p249',
 ] as const;
 
 export function isLiveShopProductIdOrSlug(idOrSlug: string): boolean {
