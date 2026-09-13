@@ -3,12 +3,14 @@
  * Run: npx tsx packages/web/src/lib/share.selftest.ts
  */
 import assert from 'node:assert/strict';
-import { petPublicUrl, shareOrCopyUrl } from './share.ts';
+import { petPublicUrl, productPublicUrl, shareOrCopyUrl } from './share.ts';
 
 assert.equal(petPublicUrl(42), '/pet/42');
 assert.equal(petPublicUrl('7'), '/pet/7');
 assert.equal(petPublicUrl({ id: 35, slug: 'teddy' }), '/pet/teddy');
 assert.equal(petPublicUrl({ id: 35, slug: 'benji' }), '/pet/benji');
+assert.equal(productPublicUrl('royal-canin-mini-adult-2kg'), '/shop/product/royal-canin-mini-adult-2kg');
+assert.equal(productPublicUrl(''), '/shop');
 
 function setNavigator(value: {
   share?: (data: ShareData) => Promise<void>;

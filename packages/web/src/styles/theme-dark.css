@@ -1980,6 +1980,20 @@ html[data-theme='dark'] .pd-dk-reviews-score {
 html[data-theme='dark'] .pd-dk-reviews-score strong {
   color: var(--pd-ink);
 }
+html[data-theme='dark'] .pd-dk-tool {
+  background: var(--pd-surface);
+  border-color: var(--pd-border);
+  color: var(--pd-ink);
+}
+html[data-theme='dark'] .pd-dk-tool:hover {
+  background: var(--pd-surface-2);
+  border-color: color-mix(in srgb, var(--pepito-base) 45%, var(--pd-border));
+}
+html[data-theme='dark'] .pd-dk-tool.is-liked {
+  color: #f27a9a;
+  border-color: rgba(242, 122, 154, 0.4);
+  background: rgba(242, 122, 154, 0.12);
+}
 html[data-theme='dark'] .pd-dk-mobile-bar {
   background: color-mix(in srgb, var(--pd-surface) 96%, transparent);
   border-top-color: var(--pd-border);
