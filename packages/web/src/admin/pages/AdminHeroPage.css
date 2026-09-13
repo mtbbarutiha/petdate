@@ -1,0 +1,231 @@
+/* Homepage hero photo manager — desktop + mobile placement previews */
+
+.admin-app .admin-hero-note {
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+.admin-app .admin-hero-note p {
+  margin: 6px 0 0;
+}
+
+.admin-app .admin-hero-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.admin-app .admin-hero-card {
+  overflow: visible;
+  padding: 16px;
+}
+
+.admin-app .admin-hero-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.admin-app .admin-hero-card-head h2 {
+  margin: 0 0 4px;
+  font-size: 1.1rem;
+}
+
+.admin-app .admin-hero-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.admin-app .admin-hero-card-actions .is-disabled {
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.admin-app .admin-hero-previews {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(180px, 0.7fr);
+  gap: 14px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .admin-app .admin-hero-previews {
+    grid-template-columns: 1fr;
+  }
+}
+
+.admin-app .admin-hero-device-chrome {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+  font-size: 0.8rem;
+  color: var(--admin-muted, #6b7280);
+}
+
+.admin-app .admin-hero-frame {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  background: #14161e;
+  border: 1px solid color-mix(in srgb, var(--admin-border) 80%, transparent);
+  box-shadow: 0 10px 28px rgba(15, 18, 32, 0.12);
+}
+
+.admin-app .admin-hero-device--desktop .admin-hero-frame {
+  /* Matches landing desktop hero band proportions */
+  aspect-ratio: 16 / 9;
+}
+
+.admin-app .admin-hero-device--mobile .admin-hero-frame {
+  /* Tall phone frame ≈ mobile hero (near full viewport height) */
+  aspect-ratio: 9 / 16;
+  max-width: 280px;
+  margin-inline: auto;
+  border-radius: 22px;
+}
+
+.admin-app .admin-hero-frame-media,
+.admin-app .admin-hero-frame-empty {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.admin-app .admin-hero-frame-media {
+  display: block;
+  object-fit: cover;
+  /* Match live .pepito-hero-media */
+  object-position: center top;
+}
+
+.admin-app .admin-hero-frame-empty {
+  background:
+    linear-gradient(135deg, #2a2d3a 0%, #15171f 55%, #1c1f2b 100%);
+}
+
+.admin-app .admin-hero-frame-wash {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      255deg,
+      rgba(5, 1, 12, 0.58) 0%,
+      rgba(5, 1, 12, 0.34) 42%,
+      rgba(5, 1, 12, 0.12) 72%,
+      rgba(5, 1, 12, 0.04) 100%
+    ),
+    rgba(5, 1, 12, 0.18);
+}
+
+[dir='ltr'] .admin-app .admin-hero-frame-wash {
+  background:
+    linear-gradient(
+      105deg,
+      rgba(5, 1, 12, 0.58) 0%,
+      rgba(5, 1, 12, 0.34) 42%,
+      rgba(5, 1, 12, 0.12) 72%,
+      rgba(5, 1, 12, 0.04) 100%
+    ),
+    rgba(5, 1, 12, 0.18);
+}
+
+.admin-app .admin-hero-frame-copy {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100%;
+  padding: 8% 7%;
+  color: #fff;
+  text-align: start;
+  box-sizing: border-box;
+}
+
+.admin-app .admin-hero-device--mobile .admin-hero-frame-copy {
+  padding: 18% 10% 14%;
+  justify-content: flex-end;
+}
+
+.admin-app .admin-hero-frame-kicker {
+  margin: 0 0 8px;
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+  opacity: 0.9;
+}
+
+.admin-app .admin-hero-frame-title {
+  margin: 0 0 8px;
+  font-size: clamp(0.95rem, 2.2vw, 1.35rem);
+  font-weight: 700;
+  line-height: 1.25;
+  max-width: 16ch;
+}
+
+.admin-app .admin-hero-device--mobile .admin-hero-frame-title {
+  font-size: 0.95rem;
+  max-width: 14ch;
+}
+
+.admin-app .admin-hero-frame-lead {
+  margin: 0 0 12px;
+  font-size: 0.72rem;
+  line-height: 1.6;
+  opacity: 0.88;
+  max-width: 32ch;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.admin-app .admin-hero-device--mobile .admin-hero-frame-lead {
+  display: none;
+}
+
+.admin-app .admin-hero-frame-cta {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.12);
+  font-size: 0.7rem;
+  font-weight: 700;
+  width: fit-content;
+}
+
+.admin-app .admin-hero-frame-dots {
+  position: absolute;
+  z-index: 2;
+  left: 0;
+  right: 0;
+  bottom: 4%;
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  pointer-events: none;
+}
+
+.admin-app .admin-hero-frame-dots span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(236, 230, 250, 0.9);
+  box-sizing: border-box;
+}
+
+.admin-app .admin-hero-frame-dots span.is-active {
+  background: #c9bde8;
+  border-color: #c9bde8;
+}

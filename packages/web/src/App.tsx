@@ -275,6 +275,9 @@ const AdminMagazinePage = lazy(() =>
 const AdminMagazineFormPage = lazy(() =>
   import('./admin/pages/AdminMagazineFormPage').then((m) => ({ default: m.AdminMagazineFormPage })),
 );
+const AdminHeroPage = lazy(() =>
+  import('./admin/pages/AdminHeroPage').then((m) => ({ default: m.AdminHeroPage })),
+);
 const AdminSettingsPage = lazy(() =>
   import('./admin/pages/AdminSettingsPage').then((m) => ({ default: m.AdminSettingsPage })),
 );
@@ -521,6 +524,7 @@ export default function App() {
                 <Route path="magazine" element={<AdminMagazinePage />} />
                 <Route path="magazine/new" element={<AdminMagazineFormPage />} />
                 <Route path="magazine/:id" element={<AdminMagazineFormPage />} />
+                <Route path="hero" element={<AdminHeroPage />} />
                 <Route path="mail" element={<AdminMailPage />} />
                 <Route path="logs" element={<AdminLogsPage />} />
                 <Route path="monitoring" element={<AdminMonitoringPage />} />

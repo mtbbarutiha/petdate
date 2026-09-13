@@ -2,7 +2,7 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { AdminRouteOutlet } from './AdminRouteOutlet';
 import { ChevronDown,
-  Activity, Bell, Briefcase, Building2, ClipboardList, FileText, Headset, Landmark, LayoutDashboard, LineChart, LogOut, Mail, Menu, Newspaper, Package,
+  Activity, Bell, Briefcase, Building2, ClipboardList, FileText, Headset, Image, Landmark, LayoutDashboard, LineChart, LogOut, Mail, Menu, Newspaper, Package,
   PawPrint, PieChart, ScrollText, Settings, Shield, ShieldCheck, ShoppingBag, Stethoscope,
   Store, Target, Ticket, TrendingUp, UserPlus, UserRound, Users, Wallet, X, ClipboardCheck, BarChart3, Coins, Tags,
   Route, Inbox, HandCoins, Bot, MessageSquare, Star, HeartHandshake, ArrowLeftRight, Gamepad2,
@@ -195,6 +195,7 @@ const NAV_GROUPS: NavGroup[] = [
     { to: '/admin/monitoring', icon: Activity, labelKey: 'admin.monitoring', perm: 'platform.read' },
     { to: '/admin/logs', icon: ScrollText, labelKey: 'admin.errorLogs', perm: 'platform.read', tone: 'sensitive' },
     { to: '/admin/magazine', icon: Newspaper, labelKey: 'admin.magazineNews', perm: 'platform.write' },
+    { to: '/admin/hero', icon: Image, labelKey: 'admin.heroPhotos', perm: 'platform.write' },
     { to: '/admin/content', icon: Bell, labelKey: 'admin.noticesContent', perm: 'platform.write' },
     { to: '/admin/mail', icon: Mail, labelKey: 'admin.mailSmtp', perm: 'platform.read' },
     { to: '/admin/settings', icon: Settings, labelKey: 'admin.platformSettings', perm: 'platform.write' },
@@ -258,11 +259,12 @@ function AdminLayoutInner() {
   const [avatarFailed, setAvatarFailed] = useState(false);
   const groups = useMemo(() => visibleGroups(), []);
   const activeGroupTitle = useMemo(() => {
+    const matchesPath = (to: string, pathname: string) =>
+      pathname === to || (to !== '/admin' && pathname.startsWith(`${to}/`));
+
     for (const g of groups) {
       for (const it of g.items) {
-        if (location.pathname === it.to) return g.titleKey;
-        if (it.to !== '/admin' && it.to !== '/admin/dashboard' && location.pathname.startsWith(it.to + '/')) return g.titleKey;
-        if (it.to !== '/admin/dashboard' && location.pathname.startsWith(it.to) && location.pathname.length > it.to.length) return g.titleKey;
+        if (matchesPath(it.to, location.pathname)) return g.titleKey;
       }
     }
     // prefix match longest
@@ -270,7 +272,7 @@ function AdminLayoutInner() {
     let bestLen = -1;
     for (const g of groups) {
       for (const it of g.items) {
-        if (location.pathname.startsWith(it.to) && it.to.length > bestLen) {
+        if (matchesPath(it.to, location.pathname) && it.to.length > bestLen) {
           best = g.titleKey;
           bestLen = it.to.length;
         }

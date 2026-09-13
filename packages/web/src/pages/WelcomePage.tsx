@@ -6,11 +6,14 @@ import { PlatformBanners } from '../components/PlatformBanners';
 import { useI18n } from '../i18n/I18nProvider';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { parkBootLcp } from '../lib/parkBootLcp';
+import { resolvePublicMediaUrl } from '../lib/api';
 import { GatedLink, PawIcon } from './landingGatedLink';
 
 const WelcomeBelowFold = lazy(() =>
   import('./WelcomeBelowFold').then((m) => ({ default: m.WelcomeBelowFold })),
 );
+
+const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '') ?? '';
 
 type HeroRole = 'playmate' | 'vet' | 'trainer' | 'no_pet' | 'adoption';
 
@@ -19,7 +22,7 @@ type HeroCta =
   | { kind: 'link'; to: string; labelKey: string }
   | { kind: 'hash'; href: string; labelKey: string };
 
-const HERO_SLIDES: {
+type HeroSlide = {
   role: HeroRole;
   webp: string;
   srcSet?: string;
@@ -29,7 +32,18 @@ const HERO_SLIDES: {
   leadKey: string;
   cta: HeroCta;
   testId: string;
-}[] = [
+};
+
+type HeroApiSlide = {
+  role: HeroRole;
+  webp: string;
+  srcSet: string;
+  fallback: string;
+  source: 'custom' | 'default';
+};
+
+/** Static defaults — keep playmate on /media/lcp for LCP when not customized. */
+const HERO_SLIDES: HeroSlide[] = [
   {
     role: 'playmate',
     webp: '/media/lcp/hero-playmate-800.webp',
@@ -100,16 +114,45 @@ function Chevron({ dir }: { dir: 'left' | 'right' }) {
   );
 }
 
+function applyHeroOverlay(
+  base: HeroSlide[],
+  apiSlides: HeroApiSlide[] | null,
+): HeroSlide[] {
+  if (!apiSlides?.length) return base;
+  const byRole = new Map(apiSlides.map((s) => [s.role, s]));
+  return base.map((slide) => {
+    const overlay = byRole.get(slide.role);
+    if (!overlay || overlay.source !== 'custom') return slide;
+    const webp = resolvePublicMediaUrl(overlay.webp) || overlay.webp;
+    const fallback = resolvePublicMediaUrl(overlay.fallback) || overlay.fallback;
+    const srcSet = (overlay.srcSet || '')
+      .split(',')
+      .map((part) => {
+        const trimmed = part.trim();
+        const sp = trimmed.lastIndexOf(' ');
+        if (sp <= 0) return resolvePublicMediaUrl(trimmed) || trimmed;
+        const url = trimmed.slice(0, sp);
+        const descriptor = trimmed.slice(sp + 1);
+        return `${resolvePublicMediaUrl(url) || url} ${descriptor}`;
+      })
+      .join(', ');
+    return { ...slide, webp, srcSet: srcSet || webp, fallback };
+  });
+}
+
 export function WelcomePage() {
   const { t, dir } = useI18n();
   const { isLoggedIn } = useAuthStore();
   const [scrolled, setScrolled] = useState(false);
   const [slide, setSlide] = useState(0);
   const [showBelowFold, setShowBelowFold] = useState(false);
+  const [heroOverlay, setHeroOverlay] = useState<HeroApiSlide[] | null>(null);
   const belowFoldSlotRef = useRef<HTMLDivElement>(null);
 
+  const heroSlides = applyHeroOverlay(HERO_SLIDES, heroOverlay);
+
   const goToSlide = (index: number) => {
-    const len = HERO_SLIDES.length;
+    const len = heroSlides.length;
     setSlide(((index % len) + len) % len);
   };
 
@@ -118,6 +161,25 @@ export function WelcomePage() {
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  /* Optional custom heroes from admin — defaults stay for LCP until overlay arrives. */
+  useEffect(() => {
+    let cancelled = false;
+    void fetch(`${API_BASE}/api/hero`, { cache: 'no-store' })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { slides?: HeroApiSlide[] } | null) => {
+        if (cancelled || !data?.slides?.length) return;
+        if (data.slides.some((s) => s.source === 'custom')) {
+          setHeroOverlay(data.slides);
+        }
+      })
+      .catch(() => {
+        /* keep static defaults */
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   /* Park the HTML LCP <img> once React owns the in-hero photo. Do not move it —
@@ -161,7 +223,7 @@ export function WelcomePage() {
     };
   }, []);
 
-  const current = HERO_SLIDES[slide]!;
+  const current = heroSlides[slide]!;
 
   return (
     <div className="pepito-landing pepito-landing--with-dock" dir={dir}>
@@ -185,7 +247,7 @@ export function WelcomePage() {
         aria-label={t('landing.heroAria')}
       >
         <div className="pepito-hero-slides">
-          {HERO_SLIDES.map((s, i) => (
+          {heroSlides.map((s, i) => (
             <div
               key={s.role}
               className={`pepito-hero-slide${i === slide ? ' is-active' : ''}`}
@@ -271,7 +333,7 @@ export function WelcomePage() {
           </button>
         </div>
         <div className="pepito-hero-dots" role="group" aria-label={t('landing.slideTabs')}>
-          {HERO_SLIDES.map((s, i) => (
+          {heroSlides.map((s, i) => (
             <button
               key={s.role}
               type="button"

@@ -7667,3 +7667,6 @@ body:has(.admin-app) {
     animation: none;
   }
 }
+
+/* Homepage hero photo manager — layout lives in AdminHeroPage.css */
+
