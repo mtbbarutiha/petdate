@@ -235,6 +235,7 @@ async function main() {
     { q: 'ولش کن برای آشغال خیابان', needle: /ولش|رها|آشغال/ },
     { q: 'از صدای رعد می‌ترسه', needle: /ترس|فاصله|آرام/ },
     { q: 'جامعه‌پذیری توله', needle: /جامعه|فاصله|تجربه/ },
+    { q: 'دست بده چطوری یادش بدم', needle: /دست|پنجه|تشویق|آفرین/ },
   ];
   for (const t of richTopics) {
     const text = offlineAiAdvice({ kind: 'trainer', userMessage: t.q, petName: 'رکس', petSpecies: 'dog' });
@@ -243,6 +244,34 @@ async function main() {
     assert(!/دستیار هوشمند|ربات|هوش مصنوعی|\bAI\b/i.test(text), `human voice for: ${t.q}`);
     const hint = trainerTopicHint(t.q);
     assert(hint && hint.length > 120, `trainerTopicHint exported for: ${t.q}`);
+  }
+
+  // Screenshot regression: «میخوام … دست بده» must NOT hit doorbell/desensitization template.
+  {
+    const {
+      looksFearishTrainerQuestion,
+      looksTrickTeachingQuestion,
+      offlineUnknownBestEffortReply,
+    } = await import('./ai-consult');
+    const givePawQ = 'فقط میخوام بهم بگی دست بده چطوری یادش بدم';
+    assert(!looksFearishTrainerQuestion(givePawQ), 'میخوام must not trip fearish via یخ substring');
+    assert(looksTrickTeachingQuestion(givePawQ), 'give-paw is trick teaching');
+    assert(looksFearishTrainerQuestion('سگم وقتی ماشین رد میشه یخ میزنه و زوزه میکشه'), 'real freeze stays fearish');
+    const pawAdvice = await generateAiConsultAdvice({
+      kind: 'trainer',
+      userMessage: givePawQ,
+      petName: 'Teddy',
+      agentName: 'فرانک احمدی',
+    });
+    assert(pawAdvice.source === 'offline', 'give-paw without LLM key uses offline KB');
+    assert(/دست|پنجه|تشویق|آفرین|جایزه/.test(pawAdvice.text), 'give-paw teaches paw shaping');
+    assert(!/زنگ|راهرو|مهمان|قفل کرد|محرک/.test(pawAdvice.text), 'give-paw must not be doorbell/desensitization template');
+    const unknownTrick = offlineUnknownBestEffortReply({
+      kind: 'trainer',
+      petName: 'Teddy',
+      userMessage: 'میخوام یه ترفند جدید یادش بدم',
+    });
+    assert(!/محرک|قفل کرد|فاصلهٔ امن/.test(unknownTrick), 'unknown trick path avoids fear script');
   }
 
   // Book-canon offline KB: substantial puppy + cat (+ bird/exotic/dominance/sources)
