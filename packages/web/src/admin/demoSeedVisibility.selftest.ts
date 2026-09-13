@@ -27,6 +27,17 @@ assert.match(crm, /DemoSeedToggle/, 'CRM customers use toggle');
 assert.match(service, /DemoSeedToggle/, 'timesheet uses toggle');
 assert.match(sales, /DemoSeedToggle/, 'sales list uses toggle');
 assert.match(rbac, /DemoSeedToggle/, 'RBAC accounts use toggle');
+assert.match(rbac, /<b>\{r\.nameFa\}<\/b>/, 'role name stays as text');
+assert.doesNotMatch(
+  rbac,
+  /admin-pill--mint/,
+  'role rows do not render a redundant green label badge'
+);
+assert.doesNotMatch(
+  rbac,
+  /r\.key === ['"]support['"]/,
+  'no support-only label pill next to the role name'
+);
 
 assert.equal(isDemoSeedRecord({ personnelCode: 'SEED-HR-01' }), true);
 assert.equal(filterDemoSeedRows([{ personnelCode: 'SEED-HR-01' }, { personnelCode: 'E-1' }], false).length, 1);

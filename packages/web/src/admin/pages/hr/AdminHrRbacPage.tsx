@@ -274,11 +274,6 @@ export function AdminHrRbacPage() {
                   <td className="admin-mono">{r.key}</td>
                   <td>
                     <b>{r.nameFa}</b>
-                    {r.key === 'support' ? (
-                      <span className="admin-pill admin-pill--mint" style={{ marginInlineStart: 8 }}>
-                        {tr('پشتیبانی')}
-                      </span>
-                    ) : null}
                   </td>
                   <td>{tr(r.description || '—')}</td>
                   <td>
