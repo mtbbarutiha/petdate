@@ -71,7 +71,13 @@ assert.doesNotMatch(
   /\.pepito-hero\{min-height:calc\(100svh/,
   'critical CSS must not over-reserve a raw 100svh hero min-height'
 );
-assert.match(indexHtml, /pepito-hero-dot\{width:44px/, 'critical CSS reserves 44px hero dots');
+assert.match(
+  indexHtml,
+  /pepito-hero-dot\{box-sizing:content-box;width:10px/,
+  'critical CSS uses 10px visual hero dots (padding expands the tap box)'
+);
+assert.match(indexHtml, /pepito-hero-dots\{[^}]*gap:\.35rem/, 'critical CSS keeps a half-dot gap between circles');
+assert.match(indexHtml, /is-active::after\{background:#c9bde8/, 'critical active dot is lavender, not white');
 assert.match(indexHtml, /rel="preload"[\s\S]*hero-playmate-800\.webp/, 'LCP image is preload-discovered from HTML');
 assert.match(indexHtml, /id="root">[\s\S]*pepito-hero-inner/, 'static hero copy shell is in #root for FCP');
 assert.match(indexHtml, /id="pd-boot-lcp"[\s\S]*id="root"/, 'LCP img precedes #root so React cannot replace it');
@@ -82,7 +88,7 @@ assert.doesNotMatch(
   /rel="preload"\s+as="style"/,
   'do not preload a stylesheet (unused-preload warning)'
 );
-assert.match(indexHtml, /web-perf-v32-login-icon/, 'deploy marker bumped so SW/HTML cache misses');
+assert.match(indexHtml, /web-perf-v33-hero-dots/, 'deploy marker bumped so SW/HTML cache misses');
 assert.match(
   indexHtml,
   /--pepito-dock-clearance:calc\(96px \+ env\(safe-area-inset-bottom,0px\)\)/,
@@ -218,7 +224,11 @@ assert.match(
   /\.pepito-about \{[\s\S]*?background:\s*var\(--pepito-white\)/,
   'about section is a distinct surface under the hero'
 );
-assert.match(pepitoCss, /\.pepito-hero-dot \{\s*width: 44px/, 'hero dots are 44px targets (no overlapping ::before)');
+assert.match(pepitoCss, /\.pepito-hero-dot \{\s*box-sizing: content-box/, 'hero-dot tap padding is outside the 10px visual box');
+assert.match(pepitoCss, /\.pepito-hero-dot \{\s*box-sizing: content-box;\s*width: 10px/, 'hero visual dots are 10px (not 44px boxes)');
+assert.match(pepitoCss, /\.pepito-hero-dots \{[\s\S]*?gap:\s*0\.35rem/, 'hero dots sit a half-circle apart');
+assert.match(pepitoCss, /\.pepito-hero-dot\.is-active::after \{[\s\S]*?background:\s*#c9bde8/, 'active hero dot is lavender');
+assert.doesNotMatch(pepitoCss, /\.pepito-hero-dot::before/, 'hero dots do not use overlapping ::before hit layers');
 assert.doesNotMatch(welcome, /animation:\s*pepito-rise/, 'hero-inner no longer uses pepito-rise');
 
 const reviewFrameBlock = pepitoCss.match(/\.pepito-review-img-frame \{[^}]+\}/)?.[0] || '';
