@@ -56,6 +56,7 @@ assert.equal(isCtaPath('/faq'), false);
 
 assert.equal(inferPageType('/'), 'home');
 assert.equal(inferPageType('/shop/product/abc'), 'product');
+assert.equal(inferPageType('/shop/p/abc'), 'product');
 assert.equal(inferPageType('/shop/cart'), 'checkout');
 assert.equal(inferPageType('/auth/login'), 'auth');
 assert.equal(inferPageType('/admin/users'), 'admin');

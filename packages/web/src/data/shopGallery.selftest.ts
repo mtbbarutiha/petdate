@@ -70,4 +70,25 @@ assert.ok(hydrated, 'hydrated p221');
 assert.equal(productGallery(hydrated!).length, 3, 'live catalog keeps 3 images');
 assert.ok(!('__images' in hydrated!.params), 'live params strip __images');
 
+applyLiveShopCatalog({
+  products: [
+    {
+      id: p221.id,
+      slug: p221.slug,
+      title: p221.title,
+      brandId: p221.brandId,
+      categorySlug: p221.categorySlug,
+      petTypes: p221.petTypes,
+      priceToman: p221.priceToman,
+      image: p221.image,
+      images: [p221.image],
+      inStock: true,
+      params: { وزن: '۲ کیلوگرم' },
+    },
+  ],
+});
+const thinApi = getProduct(p221.slug);
+assert.ok(thinApi, 'thin-api p221');
+assert.equal(productGallery(thinApi!).length, 3, 'catalog images[] used when list API sends only cover');
+
 console.log('shopGallery.selftest: ok');

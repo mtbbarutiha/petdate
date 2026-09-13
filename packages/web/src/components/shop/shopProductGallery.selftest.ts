@@ -6,21 +6,36 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { stepShopGalleryIndex } from '../../lib/shopGalleryNav.ts';
+import { shopGalleryPointerIntent, stepShopGalleryIndex } from '../../lib/shopGalleryNav.ts';
 
 assert.equal(stepShopGalleryIndex(0, 3, 1), 1);
 assert.equal(stepShopGalleryIndex(2, 3, 1), 0);
 assert.equal(stepShopGalleryIndex(0, 3, -1), 2);
 assert.equal(stepShopGalleryIndex(1, 0, 1), 0);
+assert.equal(shopGalleryPointerIntent(0, true), 'open');
+assert.equal(shopGalleryPointerIntent(12, true), 'open', 'small pointer jitter still opens lightbox');
+assert.equal(shopGalleryPointerIntent(-50, true), 'next');
+assert.equal(shopGalleryPointerIntent(50, true), 'prev');
+assert.equal(shopGalleryPointerIntent(-80, false), 'open', 'single image never swipes');
 
 const here = dirname(fileURLToPath(import.meta.url));
 const gallery = readFileSync(join(here, 'ShopProductGallery.tsx'), 'utf8');
 const page = readFileSync(join(here, '../../pages/shop/ShopProductPage.tsx'), 'utf8');
+const app = readFileSync(join(here, '../../App.tsx'), 'utf8');
+const chrome = readFileSync(join(here, 'ShopChrome.tsx'), 'utf8');
 const css = readFileSync(join(here, '../../styles/pepito.css'), 'utf8');
 
 assert.match(page, /ShopProductGallery/, 'PDP uses gallery component');
+assert.match(page, /ShopProductAliasRedirect/, 'short /shop/:slug aliases the PDP');
+assert.match(app, /shop\/p\/:id/, 'Telegram /shop/p/:slug alias is routed');
+assert.match(app, /shop\/:id/, 'bare /shop/:slug alias is routed');
+assert.match(app, /ShopProductAliasRedirect/, 'alias route uses PDP redirect');
+assert.doesNotMatch(chrome, /key=\{ready/, 'catalog hydrate must not remount PDP (kills lightbox)');
 assert.match(gallery, /createPortal/, 'lightbox portals to document.body');
 assert.match(gallery, /data-testid="shop-product-lightbox"/, 'lightbox test id');
+assert.match(gallery, /data-testid="shop-product-gallery-main"/, 'main image test id');
+assert.match(gallery, /onClick=\{onMainClick\}/, 'click on main image opens lightbox');
+assert.match(gallery, /type="button"/, 'main well is a real button');
 assert.match(gallery, /نمایش تصویر در اندازه بزرگ/, 'main image click opens lightbox');
 assert.match(gallery, /pd-dk-gallery-track/, 'main area is a slider track');
 assert.match(gallery, /pd-dk-thumbs/, 'thumbnail strip under main');

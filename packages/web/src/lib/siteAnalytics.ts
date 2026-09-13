@@ -426,7 +426,7 @@ export function inferPageType(pathname: string): string {
   ) {
     return 'checkout';
   }
-  if (p.startsWith('/shop/product/')) return 'product';
+  if (p.startsWith('/shop/product/') || p.startsWith('/shop/p/')) return 'product';
   if (p.startsWith('/shop')) return 'shop';
   if (p.startsWith('/wallet')) return 'wallet';
   if (p.startsWith('/vet') || p.startsWith('/consult')) return 'consult';

@@ -41,6 +41,16 @@ import { ShopProductGallery } from '../../components/shop/ShopProductGallery';
 
 type DetailTab = 'desc' | 'specs' | 'reviews';
 
+/** `/shop/:slug` and `/shop/p/:slug` — never dump unknown shop URLs on the homepage. */
+export function ShopProductAliasRedirect() {
+  const { id = '' } = useParams<{ id: string }>();
+  const product = getProduct(id);
+  if (!product) {
+    return <Navigate to="/shop" replace />;
+  }
+  return <Navigate to={`/shop/product/${product.slug}`} replace />;
+}
+
 export function ShopProductPage() {
   const { lang } = useI18n();
   const { id = '' } = useParams<{ id: string }>();
@@ -125,6 +135,7 @@ export function ShopProductPage() {
 
         <div className="pd-dk-pdp-top">
           <ShopProductGallery
+            key={product.id}
             gallery={gallery}
             cover={product.image}
             alt={productTitleForLang(lang, product.title, { titleEn: product.titleEn, slug: product.slug })}

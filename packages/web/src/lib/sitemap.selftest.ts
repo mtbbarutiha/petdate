@@ -40,4 +40,8 @@ assert(!xml.includes('/admin'), 'admin must not be in sitemap');
 assert(!xml.includes('/wallet'), 'wallet must not be in sitemap');
 assert(map.includes('map $uri $shop_product_redirect'), 'nginx product redirect map');
 assert(map.includes('/shop/product/p1 '), 'p1 id still 301s to slug');
+assert(
+  map.includes('/shop/dog-food-royal-canin-mini-adult-2kg '),
+  'bare /shop/:slug 301s to /shop/product/:slug'
+);
 console.log('sitemap.selftest: ok');

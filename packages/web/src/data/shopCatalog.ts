@@ -3433,6 +3433,16 @@ export function applyLiveShopCatalog(input: {
     const fromApiImages = Array.isArray(api.images) && api.images.length
       ? api.images.map((s) => String(s ?? '').trim()).filter(Boolean)
       : imagesFromShopParams(api.params);
+    // List payloads sometimes send only the cover. Keep catalog images[]
+    // whenever the API gallery is thinner than the static 3-angle set.
+    const mergedImages =
+      fromApiImages.length >= 2
+        ? fromApiImages
+        : base?.images?.length
+          ? base.images
+          : fromApiImages.length
+            ? fromApiImages
+            : undefined;
     const strippedParams = api.params ? publicShopParams(api.params) : {};
     const params = Object.keys(strippedParams).length ? strippedParams : (base?.params ?? {});
     if (base) {
@@ -3445,7 +3455,7 @@ export function applyLiveShopCatalog(input: {
         priceToman: api.priceToman,
         compareAtToman: api.compareAtToman ?? base.compareAtToman,
         image: api.image || base.image,
-        images: fromApiImages.length ? fromApiImages : base.images,
+        images: mergedImages ?? base.images,
         badge,
         inStock: api.inStock,
         params,
@@ -3464,7 +3474,7 @@ export function applyLiveShopCatalog(input: {
       priceToman: api.priceToman,
       compareAtToman: api.compareAtToman,
       image: api.image || '/pepito/img/logo.png',
-      images: fromApiImages.length ? fromApiImages : undefined,
+      images: mergedImages,
       badge,
       inStock: api.inStock,
       params,

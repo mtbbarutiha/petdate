@@ -54,6 +54,37 @@ export function productCanonicalPath(product: ShopProduct): string {
   return `/shop/product/${product.slug || product.id}`;
 }
 
+/** Single-segment /shop/* paths that are not product slugs. */
+export const SHOP_RESERVED_SEGMENTS = new Set([
+  'cart',
+  'orders',
+  'product',
+  'products',
+  'c',
+  'p',
+  'stars-pay',
+  'card-pay',
+]);
+
+/** Resolve a product from /shop/product/:id, /shop/p/:id, or /shop/:slug. */
+export function shopProductFromPath(pathname: string): ShopProduct | undefined {
+  const path = normalizePath(pathname);
+  if (path.startsWith('/shop/product/')) {
+    const idOrSlug = decodeURIComponent(path.slice('/shop/product/'.length).split('/')[0] ?? '');
+    return idOrSlug ? getProduct(idOrSlug) : undefined;
+  }
+  if (path.startsWith('/shop/p/')) {
+    const idOrSlug = decodeURIComponent(path.slice('/shop/p/'.length).split('/')[0] ?? '');
+    return idOrSlug ? getProduct(idOrSlug) : undefined;
+  }
+  if (path.startsWith('/shop/')) {
+    const rest = path.slice('/shop/'.length);
+    if (!rest || rest.includes('/') || SHOP_RESERVED_SEGMENTS.has(rest)) return undefined;
+    return getProduct(decodeURIComponent(rest));
+  }
+  return undefined;
+}
+
 export function absAsset(src: string): string {
   if (!src) return SITE.ogImage;
   if (/^https?:\/\//i.test(src)) return src;
@@ -415,27 +446,24 @@ export function pageSeoForPath(pathname: string, opts: PageSeoOpts = {}): PageSe
       });
     }
   }
-  if (p.startsWith('/shop/product/')) {
-    const idOrSlug = decodeURIComponent(p.slice('/shop/product/'.length));
-    const product = getProduct(idOrSlug);
-    if (product) {
-      const path = productCanonicalPath(product);
-      const cat = getCategory(product.categorySlug);
-      return pack({
-        title: SEO.titleTemplate(`${product.title} | خرید`),
-        description: `خرید ${product.title} از پت‌دیت شاپ — غذا و لوازم پت با قیمت تومان.`,
-        canonicalPath: path,
-        ogType: 'product',
-        breadcrumbs: [
-          { name: SEO.siteName, path: '/' },
-          { name: 'پت‌شاپ', path: '/shop' },
-          ...(cat ? [{ name: cat.labelFa, path: `/shop/c/${cat.slug}` }] : []),
-          { name: product.title, path },
-        ],
-        extraLd: [productJsonLd(product)],
-        noscriptHtml: productNoscript(product),
-      });
-    }
+  const shopProduct = shopProductFromPath(p);
+  if (shopProduct) {
+    const path = productCanonicalPath(shopProduct);
+    const cat = getCategory(shopProduct.categorySlug);
+    return pack({
+      title: SEO.titleTemplate(`${shopProduct.title} | خرید`),
+      description: `خرید ${shopProduct.title} از پت‌دیت شاپ — غذا و لوازم پت با قیمت تومان.`,
+      canonicalPath: path,
+      ogType: 'product',
+      breadcrumbs: [
+        { name: SEO.siteName, path: '/' },
+        { name: 'پت‌شاپ', path: '/shop' },
+        ...(cat ? [{ name: cat.labelFa, path: `/shop/c/${cat.slug}` }] : []),
+        { name: shopProduct.title, path },
+      ],
+      extraLd: [productJsonLd(shopProduct)],
+      noscriptHtml: productNoscript(shopProduct),
+    });
   }
   if (p === '/shop' || p.startsWith('/shop/')) {
     return pack({
@@ -622,10 +650,23 @@ export function pageSeoForPath(pathname: string, opts: PageSeoOpts = {}): PageSe
 
 export function listProductIdRedirects(): Array<{ from: string; to: string }> {
   const out: Array<{ from: string; to: string }> = [];
+  const seen = new Set<string>();
+  const push = (from: string, to: string) => {
+    if (!from || from === to || seen.has(from)) return;
+    seen.add(from);
+    out.push({ from, to });
+  };
   for (const product of SHOP_PRODUCTS) {
     const slugPath = productCanonicalPath(product);
     if (product.id && slugPath !== `/shop/product/${product.id}`) {
-      out.push({ from: `/shop/product/${product.id}`, to: slugPath });
+      push(`/shop/product/${product.id}`, slugPath);
+    }
+    if (product.slug && !SHOP_RESERVED_SEGMENTS.has(product.slug)) {
+      push(`/shop/${product.slug}`, slugPath);
+      push(`/shop/p/${product.slug}`, slugPath);
+    }
+    if (product.id) {
+      push(`/shop/p/${product.id}`, slugPath);
     }
   }
   return out;

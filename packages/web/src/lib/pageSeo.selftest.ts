@@ -53,8 +53,18 @@ const product = SHOP_PRODUCTS.find((p) => p.id === 'p1') ?? SHOP_PRODUCTS[0];
 assert.ok(product, 'catalog has a product');
 const byId = pageSeoForPath(`/shop/product/${product.id}`);
 const bySlug = pageSeoForPath(`/shop/product/${product.slug}`);
+const byShort = pageSeoForPath(`/shop/${product.slug}`);
+const byP = pageSeoForPath(`/shop/p/${product.slug}`);
 assert.equal(byId.canonicalPath, productCanonicalPath(product));
 assert.equal(bySlug.canonicalPath, productCanonicalPath(product));
+assert.equal(byShort.canonicalPath, productCanonicalPath(product), '/shop/:slug uses product canonical');
+assert.equal(byP.canonicalPath, productCanonicalPath(product), '/shop/p/:slug uses product canonical');
+const miniAdult = pageSeoForPath('/shop/dog-food-royal-canin-mini-adult-2kg');
+assert.equal(
+  miniAdult.canonicalPath,
+  '/shop/product/dog-food-royal-canin-mini-adult-2kg',
+  'Royal Canin short slug is a PDP, not homepage'
+);
 assert.match(bySlug.canonicalPath, /\/shop\/product\/[a-z0-9-]+/);
 assert.doesNotMatch(bySlug.canonicalPath, /\/shop\/product\/p\d+$/, 'canonical uses descriptive slug');
 assert.match(JSON.stringify(bySlug.jsonLd), /"@type":"Product"/);
@@ -64,6 +74,12 @@ const redirects = listProductIdRedirects();
 assert.ok(redirects.length > 0, 'id → slug redirects exist');
 const p1 = redirects.find((r) => r.from === '/shop/product/p1');
 assert.ok(p1 && p1.to === productCanonicalPath(product), 'p1 redirects to descriptive slug');
+const shortAlias = redirects.find((r) => r.from === `/shop/${product.slug}`);
+assert.ok(shortAlias && shortAlias.to === productCanonicalPath(product), '/shop/:slug 301s to PDP');
+assert.ok(
+  redirects.some((r) => r.from === '/shop/dog-food-royal-canin-mini-adult-2kg'),
+  'Royal Canin short slug is in nginx map'
+);
 assert.ok(redirects.every((r) => r.from !== r.to && !/\/p\d+$/.test(r.to)), 'redirect targets are not bare ids');
 
 const sitemap = listSitemapEntries(['علائم-هشدار-سگ-و-گربه']);
