@@ -74,6 +74,7 @@ npx tsx "$ROOT/packages/shared/src/auto-messages.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/payment-card.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/admin-password.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/team-agents.selftest.ts"
+npx tsx "$ROOT/packages/shared/src/staff-agents.selftest.ts"
 
 echo "==> selftest: web face-verify approve toast + profile copy"
 npx tsx "$ROOT/packages/web/src/components/faceVerifyRewardToast.selftest.ts"
@@ -129,6 +130,9 @@ npx tsx "$ROOT/packages/web/src/admin/adminTagManagerRoute.selftest.ts"
 
 echo "==> selftest: admin /admin/magazine route + TipTap + public /magazine"
 npx tsx "$ROOT/packages/web/src/admin/adminMagazineRoute.selftest.ts"
+
+echo "==> selftest: admin staff roles + Grok agent labels cache-bust"
+npx tsx "$ROOT/packages/web/src/admin/staffRolesAgents.selftest.ts"
 
 echo "==> selftest: admin mobile hamburger / drawer (RTL)"
 npx tsx "$ROOT/packages/web/src/admin/adminMobileNav.selftest.ts"
@@ -372,6 +376,7 @@ npx tsx "$ROOT/packages/bot/src/bot-update-mode.selftest.ts"
 # SQLite cascade (uses temp/local DB via API helpers — not production path)
 run src/services/user-delete-cascade.selftest.ts
 run src/hr-rbac.selftest.ts
+run src/staff-agents-seed.selftest.ts
 run src/admin-header-avatar.selftest.ts
 run src/hr-modules.selftest.ts
 run src/sales-crm.selftest.ts

@@ -38,6 +38,12 @@ export const ADMIN_PANEL_ROLE_LABELS: Record<string, string> = {
   crm_agent: 'کارشناس امور مشتریان',
   crm_lead: 'سرپرست امور مشتریان',
   crm_manager: 'مدیر باشگاه مشتریان',
+  veterinarian: 'دامپزشک',
+  trainer: 'مربی',
+  designer: 'گرافیست',
+  social: 'سوشال',
+  shop_procurement: 'مدیر تامین فروشگاه',
+  content_editor: 'تولید محتوا',
 };
 
 /**
@@ -76,6 +82,9 @@ export const ADMIN_PERMISSIONS = [
   'shop.read',
   'shop.write',
   'shop.create',
+  'content.read',
+  'content.write',
+  'content.create',
 ] as const;
 export type AdminPermission = (typeof ADMIN_PERMISSIONS)[number];
 
@@ -111,6 +120,9 @@ export const ADMIN_PERMISSION_LABELS: Record<AdminPermission, string> = {
   'shop.read': 'فروشگاه — دیدن',
   'shop.write': 'فروشگاه — ویرایش',
   'shop.create': 'فروشگاه — ایجاد',
+  'content.read': 'محتوا — دیدن',
+  'content.write': 'محتوا — ویرایش',
+  'content.create': 'محتوا — ایجاد',
 };
 
 /** Grid columns in the role modal (RTL labels) */
@@ -177,6 +189,13 @@ export const ADMIN_PERMISSION_MODULES: readonly AdminPermissionModuleDef[] = [
     create: 'finance.create',
   },
   { id: 'shop', labelFa: 'فروشگاه', view: 'shop.read', edit: 'shop.write', create: 'shop.create' },
+  {
+    id: 'content',
+    labelFa: 'محتوا',
+    view: 'content.read',
+    edit: 'content.write',
+    create: 'content.create',
+  },
 ];
 
 /**
@@ -201,6 +220,9 @@ export const ADMIN_PERMISSION_FALLBACKS: Readonly<Record<string, readonly string
   'shop.read': ['platform.read'],
   'shop.write': ['platform.write'],
   'shop.create': ['platform.create', 'platform.write'],
+  'content.read': ['platform.read', 'platform.write'],
+  'content.write': ['platform.write'],
+  'content.create': ['content.write', 'platform.write'],
 };
 
 export const ADMIN_ROLE_PERMISSIONS: Record<AdminPanelRole, readonly AdminPermission[]> = {

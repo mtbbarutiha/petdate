@@ -86,6 +86,16 @@ const admin = read(join(apiRoot, 'routes/admin.ts'));
 assert.match(admin, /\/coin-sells/, 'admin coin-sell routes');
 assert.match(admin, /normalizeCoinSellAdminStatus/, 'admin coin-sell accepts pending alias');
 assert.match(admin, /\/support\/threads/, 'admin support routes');
+assert.match(admin, /startsWith\('\/shop'\)/, 'shop mutations exempt from platform.write catch-all');
+assert.match(admin, /startsWith\('\/magazine'\)/, 'magazine exempt from platform.write catch-all');
+assert.match(admin, /startsWith\('\/consultations'\)/, 'consults exempt from platform.write catch-all');
+assert.match(admin, /requirePermission\(write \? 'shop.write' : 'shop.read'\)/, 'shop routes use shop.*');
+assert.match(admin, /actorCanMutateConsults/, 'clinical staff can update consults');
+
+const magazineAdmin = read(join(apiRoot, 'routes/admin-magazine.ts'));
+assert.match(magazineAdmin, /requirePermission\('content.write'\)/, 'magazine CMS uses content.write');
+const heroAdmin = read(join(apiRoot, 'routes/admin-hero.ts'));
+assert.match(heroAdmin, /requirePermission\('content.write'\)/, 'hero CMS uses content.write');
 
 const usersSell = users.split("usersRouter.post('/telegram/:telegramId/coins/sell'")[1] || '';
 assert.match(usersSell, /channel:\s*['"]bot['"]/, 'bot sell tagged bot');

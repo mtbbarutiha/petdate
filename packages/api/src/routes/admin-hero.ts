@@ -25,7 +25,7 @@ const imageUpload = multer({
   limits: { fileSize: MAX_HERO_UPLOAD_BYTES },
 });
 
-heroAdminRouter.use(requirePermission('platform.write'));
+heroAdminRouter.use(requirePermission('content.write'));
 
 heroAdminRouter.get('/', (_req, res) => {
   res.json({

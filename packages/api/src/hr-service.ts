@@ -465,6 +465,9 @@ function seedHrDefaults(): void {
     'مدیریت استخدام و جذب',
     ['hr.read', 'hr.write']
   );
+  const { seedStaffRolesIfMissing, mergeStaffRolePerms, seedStaffAgentRoster } =
+    require('./staff-agents-seed') as typeof import('./staff-agents-seed');
+  seedStaffRolesIfMissing(seedRoleIfMissing);
 
   // Backfill sales.* onto existing admin role (roles seeded before Sales CRM landed)
   const mergeRolePerms = (key: string, required: readonly string[]) => {
@@ -494,6 +497,8 @@ function seedHrDefaults(): void {
     }
   };
   mergeRolePerms('admin', ADMIN_ROLE_PERMISSIONS.admin);
+  mergeStaffRolePerms(mergeRolePerms);
+  seedStaffAgentRoster();
 
   // Optional support account from env — never overwrite existing hash if user changed password
   const supportUser = (process.env.ADMIN_SUPPORT_USER || 'support').trim();

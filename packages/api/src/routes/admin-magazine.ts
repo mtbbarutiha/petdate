@@ -25,7 +25,7 @@ const imageUpload = multer({
   limits: { fileSize: MAX_MAGAZINE_IMAGE_BYTES },
 });
 
-magazineAdminRouter.use(requirePermission('platform.write'));
+magazineAdminRouter.use(requirePermission('content.write'));
 
 magazineAdminRouter.post('/upload', (req, res) => {
   imageUpload.single('file')(req, res, (uploadErr) => {

@@ -38,7 +38,12 @@ assert.match(getTeamAgentBySlug('yalda-shabani')!.avatarUrl, /\/agents\/yalda-sh
 for (const a of TEAM_AGENTS) {
   assert.match(a.avatarUrl, new RegExp(`/agents/${a.slug}\\.jpg\\?v=persona-v2$`), `${a.slug} avatar path`);
   assert.equal(a.cardImage, a.avatarUrl, `${a.slug} card matches avatar`);
+  assert.ok(a.staffUsername, `${a.slug} staffUsername`);
+  assert.ok(a.telegramId.startsWith('petdate_ai_'), `${a.slug} synthetic telegram id`);
 }
+assert.equal(getTeamAgentBySlug('sanaz-ghaffari')?.staffUsername, 'sanaz');
+assert.equal(getTeamAgentBySlug('yalda-shabani')?.staffUsername, 'yalda');
+assert.equal(getTeamAgentBySlug('faranak-ahmadi')?.staffUsername, 'faranak');
 
 const trainerRef = teamAgentReferralForKind('trainer');
 assert.equal(trainerRef.path, '/team-chat/faranak-ahmadi');

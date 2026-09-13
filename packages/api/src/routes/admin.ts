@@ -79,7 +79,11 @@ import {
 import { rateLimit } from '../middleware/rate-limit';
 import { publicPdfOrigin, publicWebOrigin } from '../services/prescription-html';
 import { decorateAiConsultDisplay } from '../services/ai-consult-session';
-import { requireAdminAuth } from '../admin-auth';
+import {
+  actorCanMutateConsults,
+  requireAdminAuth,
+  requirePermission,
+} from '../admin-auth';
 import { actorHasPermission, resolveAdminActor } from '../hr-service';
 import {
   listAdminHeaderNotifications,
@@ -174,7 +178,12 @@ adminRouter.use((req, res, next) => {
     req.path.startsWith('/prefs') ||
     req.path.startsWith('/widget-layouts') ||
     req.path.startsWith('/support') ||
-    req.path.startsWith('/daily-notes')
+    req.path.startsWith('/daily-notes') ||
+    req.path.startsWith('/shop') ||
+    req.path.startsWith('/magazine') ||
+    req.path.startsWith('/hero') ||
+    req.path.startsWith('/content') ||
+    req.path.startsWith('/consultations')
   ) {
     next();
     return;
@@ -879,6 +888,16 @@ adminRouter.patch('/games/:id/status', (req, res) => {
 });
 
 adminRouter.get('/consultations', (req, res) => {
+  const actor = req.adminActor;
+  if (
+    !actor ||
+    (!actorHasPermission(actor, 'platform.read') &&
+      !actorHasPermission(actor, 'admin.full') &&
+      !actorCanMutateConsults(actor))
+  ) {
+    res.status(403).json({ error: 'سطح دسترسی کافی نیست' });
+    return;
+  }
   const status = typeof req.query.status === 'string' ? req.query.status : undefined;
   const items = dbService
     .listVetConsultations({
@@ -890,6 +909,10 @@ adminRouter.get('/consultations', (req, res) => {
 });
 
 adminRouter.patch('/consultations/:id/status', (req, res) => {
+  if (!actorCanMutateConsults(req.adminActor)) {
+    res.status(403).json({ error: 'سطح دسترسی کافی نیست' });
+    return;
+  }
   const id = Number(req.params.id);
   const status = String(req.body?.status || '');
   const updated = dbService.updateVetConsultationStatus(id, status as never);
@@ -1164,6 +1187,11 @@ adminRouter.post('/support/threads/:userId/reply', (req, res) => {
   res.status(201).json({ ok: true, message: msg, messages: dbService.listSupportMessages(userId, 200) });
 });
 
+adminRouter.use('/shop', (req, res, next) => {
+  const write = req.method !== 'GET' && req.method !== 'HEAD' && req.method !== 'OPTIONS';
+  requirePermission(write ? 'shop.write' : 'shop.read')(req, res, next);
+});
+
 adminRouter.get('/shop/products', (req, res) => {
   const q = typeof req.query.q === 'string' ? req.query.q : undefined;
   const categorySlug = typeof req.query.category === 'string' ? req.query.category : undefined;
@@ -1347,6 +1375,11 @@ adminRouter.get('/finance/export', (req, res) => {
   res.setHeader('Content-Type', 'text/csv; charset=utf-8');
   res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
   res.send('\uFEFF' + csv);
+});
+
+adminRouter.use('/content', (req, res, next) => {
+  const write = req.method !== 'GET' && req.method !== 'HEAD' && req.method !== 'OPTIONS';
+  requirePermission(write ? 'content.write' : 'content.read')(req, res, next);
 });
 
 adminRouter.get('/content/announcements', (_req, res) => {
