@@ -33,7 +33,8 @@ const HERO_SLIDES: {
   {
     role: 'playmate',
     webp: '/media/lcp/hero-playmate-800.webp',
-    srcSet: '/media/lcp/hero-playmate-800.webp 800w, /media/lcp/hero-playmate-1280.webp 1280w',
+    srcSet:
+      '/media/lcp/hero-playmate-800.webp 800w, /media/lcp/hero-playmate-1280.webp 1280w, /media/lcp/hero-playmate-1920.webp 1920w',
     fallback: '/pepito/uploads/1-hero.jpg',
     kickerKey: 'landing.heroPlaymateKicker',
     titleKey: 'landing.heroPlaymateTitle',
@@ -44,6 +45,8 @@ const HERO_SLIDES: {
   {
     role: 'vet',
     webp: '/media/lcp/hero-vet-800.webp',
+    srcSet:
+      '/media/lcp/hero-vet-800.webp 800w, /media/lcp/hero-vet-1280.webp 1280w, /media/lcp/hero-vet-1920.webp 1920w',
     fallback: '/pepito/uploads/3-hero.jpg',
     kickerKey: 'landing.heroVetKicker',
     titleKey: 'landing.heroVetTitle',
@@ -54,6 +57,8 @@ const HERO_SLIDES: {
   {
     role: 'trainer',
     webp: '/media/lcp/hero-trainer-800.webp',
+    srcSet:
+      '/media/lcp/hero-trainer-800.webp 800w, /media/lcp/hero-trainer-1280.webp 1280w, /media/lcp/hero-trainer-1920.webp 1920w',
     fallback: '/pepito/uploads/5-hero.jpg',
     kickerKey: 'landing.heroTrainerKicker',
     titleKey: 'landing.heroTrainerTitle',
@@ -64,6 +69,8 @@ const HERO_SLIDES: {
   {
     role: 'no_pet',
     webp: '/media/lcp/hero-nopet-800.webp',
+    srcSet:
+      '/media/lcp/hero-nopet-800.webp 800w, /media/lcp/hero-nopet-1280.webp 1280w, /media/lcp/hero-nopet-1920.webp 1920w',
     fallback: '/pepito/uploads/06-hero.jpg',
     kickerKey: 'landing.heroNoPetKicker',
     titleKey: 'landing.heroNoPetTitle',
@@ -74,6 +81,8 @@ const HERO_SLIDES: {
   {
     role: 'adoption',
     webp: '/media/lcp/hero-adoption-800.webp',
+    srcSet:
+      '/media/lcp/hero-adoption-800.webp 800w, /media/lcp/hero-adoption-1280.webp 1280w, /media/lcp/hero-adoption-1920.webp 1920w',
     fallback: '/pepito/uploads/2-hero.jpg',
     kickerKey: 'landing.heroAdoptionKicker',
     titleKey: 'landing.heroAdoptionTitle',
