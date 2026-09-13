@@ -292,6 +292,13 @@ async function main() {
   assert(!/سلام .*خوبی/.test(vetTip.split('\n')[0] || '') || vetTip.includes('استفراغ') || vetTip.includes('عمومی'), 'clinical path not pure greeting');
   const supportTip = offlineAiAdvice({ kind: 'support', userMessage: 'OTP نیومد' });
   assert(supportTip.includes('پشتیبانی') || /OTP|ورود|پیامک/.test(supportTip), 'offline support tip');
+  const supportTicket = offlineAiAdvice({
+    kind: 'support',
+    patientName: 'مینا',
+    userMessage: 'چطور تیکت ثبت کنم؟',
+  });
+  assert(/تیکت/.test(supportTicket), 'support ticket howto mentions تیکت');
+  assert(/ثبت|پیگیری|\/support/.test(supportTicket), 'support ticket howto has path');
 
   const tg = `selftest_ai_patient_${Date.now()}`;
   const { user: patient } = dbService.findOrCreateUser({

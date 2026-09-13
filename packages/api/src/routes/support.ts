@@ -72,7 +72,7 @@ async function replySupportTurn(opts: {
     content: m.text,
   }));
 
-  const wantsTicket = /تیکت|پیگیری|شکایت|ثبت\s*کن|مشکل\s*دارم|کار\s*نمیکنه|کار\s*نمی‌کنه|escalat|ticket/i.test(
+  const wantsTicket = /تیکت|ticket|پیگیری|شکایت|گزارش\s*مشکل|ثبت\s*کن|مشکل\s*دارم|کار\s*نمیکنه|کار\s*نمی‌کنه|escalat|follow\s*up/i.test(
     opts.text
   );
   let ticketNote = '';
