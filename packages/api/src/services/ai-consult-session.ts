@@ -225,7 +225,7 @@ export const AI_PHOTO_PROMPT_FA: Record<'vet' | 'trainer', string> = {
 };
 
 function isPhotoMedia(kind: string | null | undefined): boolean {
-  return kind === 'photo' || kind === 'image';
+  return kind === 'photo';
 }
 
 /** Resize a consult photo for the existing chat-completions vision payload. */

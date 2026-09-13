@@ -940,7 +940,7 @@ consultationsRouter.post('/:id/messages', async (req, res) => {
     // AI provider auto-reply for patient messages (text, photo, or voice/audio → STT).
     if (senderUserId === gate.consult.patientUserId) {
       const voiceLike = mediaKind === 'voice' || mediaKind === 'audio';
-      const photoLike = mediaKind === 'photo' || mediaKind === 'image';
+      const photoLike = mediaKind === 'photo';
       if (voiceLike) {
         void maybeTranscribeAndReplyAsAiAssistant({
           consultId: id,
@@ -1085,7 +1085,7 @@ consultationsRouter.post('/:id/messages/upload', (req, res) => {
         });
       } else if (
         senderUserId === gate.consult.patientUserId &&
-        (caption.trim() || mediaKind === 'photo' || mediaKind === 'image') &&
+        (caption.trim() || mediaKind === 'photo') &&
         mediaKind !== 'voice' &&
         mediaKind !== 'audio'
       ) {
@@ -1093,7 +1093,7 @@ consultationsRouter.post('/:id/messages/upload', (req, res) => {
           consultId: id,
           patientUserId: senderUserId,
           patientText: caption,
-          imageMessage: mediaKind === 'photo' || mediaKind === 'image' ? message : null,
+          imageMessage: mediaKind === 'photo' ? message : null,
         }).catch((err) => {
           console.warn('ai auto-reply failed:', (err as Error).message);
         });
