@@ -2863,11 +2863,12 @@ body > #pd-boot-lcp.is-parked,
   color: var(--pepito-muted);
   font-size: 0.92rem;
 }
-/* English brand line is an LTR island. Under dir=rtl, flex-start / text-align:left
-   park it on the visual right — ms-auto (inline-start) pushes it to visual left. */
+/* Keep the English brand string as an inner LTR island. Do not set dir=ltr on
+   this flex item itself — margin-inline-start would then map to margin-left
+   and park the line on the visual right. The <p> inherits footer dir=rtl so
+   ms-auto is the inline-start side (physical right) and the item sits left. */
 .pepito-footer[dir='rtl'] .pepito-footer-copy {
   margin-inline-start: auto;
-  text-align: start;
 }
 .pepito-footer-copy a {
   color: #fff;

@@ -227,8 +227,10 @@ export function SiteFooter() {
               </li>
             </ul>
           </nav>
-          <p className="pepito-footer-copy" dir="ltr">
-            Copyright © {year} | {BRAND.displayName} — {BRAND.taglineEn}
+          <p className="pepito-footer-copy">
+            <span dir="ltr">
+              Copyright © {year} | {BRAND.displayName} — {BRAND.taglineEn}
+            </span>
           </p>
         </div>
       </div>
