@@ -122,6 +122,9 @@ const ShopCategoryPage = lazy(() =>
 const ShopProductPage = lazy(() =>
   import('./pages/shop/ShopProductPage').then((m) => ({ default: m.ShopProductPage })),
 );
+const ShopProductAliasRedirect = lazy(() =>
+  import('./pages/shop/ShopProductPage').then((m) => ({ default: m.ShopProductAliasRedirect })),
+);
 const ShopCartPage = lazy(() =>
   import('./pages/shop/ShopCartPage').then((m) => ({ default: m.ShopCartPage })),
 );
@@ -453,10 +456,12 @@ export default function App() {
             <Route path="shop" element={<ShopHomePage />} />
             <Route path="shop/c/:category" element={<ShopCategoryPage />} />
             <Route path="shop/product/:id" element={<ShopProductPage />} />
+            <Route path="shop/p/:id" element={<ShopProductAliasRedirect />} />
             <Route path="shop/cart" element={<ShopCartPage />} />
             <Route path="shop/orders" element={<ShopOrdersPage />} />
             <Route path="shop/stars-pay/:paymentOrderId" element={<ShopStarsPayPage />} />
             <Route path="shop/card-pay/:paymentOrderId" element={<ShopCardPayPage />} />
+            <Route path="shop/:id" element={<ShopProductAliasRedirect />} />
             <Route path="auth/login" element={<LoginPage />} />
             <Route path="auth/otp" element={<OtpPage />} />
             <Route path="auth/telegram" element={<TelegramLinkPage />} />

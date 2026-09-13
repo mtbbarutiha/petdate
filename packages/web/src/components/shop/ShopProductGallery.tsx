@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState, type PointerEvent } from 'react';
+import { useEffect, useRef, useState, type MouseEvent, type PointerEvent } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronLeft, ChevronRight, LayoutGrid, X } from 'lucide-react';
 import { BADGE_LABELS } from '../../data/shopCatalog';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
-import { stepShopGalleryIndex } from '../../lib/shopGalleryNav';
+import { shopGalleryPointerIntent, stepShopGalleryIndex } from '../../lib/shopGalleryNav';
 
 type Props = {
   gallery: string[];
@@ -13,8 +13,6 @@ type Props = {
   discount?: number | null;
 };
 
-const SWIPE_PX = 40;
-
 export function ShopProductGallery({ gallery, cover, alt, badge, discount }: Props) {
   const slides = gallery.length ? gallery : cover ? [cover] : [];
   const multi = slides.length > 1;
@@ -23,7 +21,8 @@ export function ShopProductGallery({ gallery, cover, alt, badge, discount }: Pro
   const [gridOpen, setGridOpen] = useState(false);
   const index = Math.min(active, Math.max(slides.length - 1, 0));
   const mainSrc = slides[index] ?? cover;
-  const drag = useRef<{ x: number; moved: boolean } | null>(null);
+  const drag = useRef<{ x: number } | null>(null);
+  const suppressClick = useRef(false);
   const panelRef = useRef<HTMLDivElement | null>(null);
 
   useDialogFocusTrap({
@@ -34,12 +33,6 @@ export function ShopProductGallery({ gallery, cover, alt, badge, discount }: Pro
       setLightbox(false);
     },
   });
-
-  useEffect(() => {
-    setActive(0);
-    setLightbox(false);
-    setGridOpen(false);
-  }, [cover, slides[0]]);
 
   const go = (delta: number) => {
     if (!multi) return;
@@ -56,23 +49,27 @@ export function ShopProductGallery({ gallery, cover, alt, badge, discount }: Pro
     setLightbox(false);
   };
 
-  const onPointerDown = (e: PointerEvent) => {
-    drag.current = { x: e.clientX, moved: false };
+  const onPointerDown = (e: PointerEvent<HTMLButtonElement>) => {
+    if (e.button != null && e.button !== 0) return;
+    drag.current = { x: e.clientX };
   };
-  const onPointerMove = (e: PointerEvent) => {
-    if (!drag.current) return;
-    if (Math.abs(e.clientX - drag.current.x) > 8) drag.current.moved = true;
-  };
-  const onPointerUp = (e: PointerEvent) => {
+  const onPointerUp = (e: PointerEvent<HTMLButtonElement>) => {
     const start = drag.current;
     drag.current = null;
     if (!start) return;
-    const dx = e.clientX - start.x;
-    if (multi && Math.abs(dx) > SWIPE_PX) {
-      go(dx < 0 ? 1 : -1);
+    const intent = shopGalleryPointerIntent(e.clientX - start.x, multi);
+    if (intent === 'open') return;
+    suppressClick.current = true;
+    go(intent === 'next' ? 1 : -1);
+  };
+
+  const onMainClick = (e: MouseEvent<HTMLButtonElement>) => {
+    if (suppressClick.current) {
+      suppressClick.current = false;
+      e.preventDefault();
       return;
     }
-    if (!start.moved) openLightbox();
+    openLightbox();
   };
 
   useEffect(() => {
@@ -96,22 +93,18 @@ export function ShopProductGallery({ gallery, cover, alt, badge, discount }: Pro
   return (
     <div className="pd-dk-gallery">
       <div className="pd-dk-gallery-main">
-        <div
+        <button
+          type="button"
           className="pd-dk-gallery-viewport"
-          role="button"
-          tabIndex={0}
+          data-testid="shop-product-gallery-main"
           aria-label="نمایش تصویر در اندازه بزرگ"
+          onClick={onMainClick}
           onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
           onPointerCancel={() => {
             drag.current = null;
           }}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              openLightbox();
-            }
             if (e.key === 'ArrowRight') {
               e.preventDefault();
               go(1);
@@ -131,7 +124,7 @@ export function ShopProductGallery({ gallery, cover, alt, badge, discount }: Pro
               <img key={`${src}-${i}`} src={src} alt={i === index ? alt : ''} draggable={false} />
             ))}
           </div>
-        </div>
+        </button>
         {multi ? (
           <>
             <button

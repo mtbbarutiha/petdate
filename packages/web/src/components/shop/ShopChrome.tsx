@@ -80,7 +80,7 @@ export function ShopChrome({
         </section>
       ) : null}
 
-      <main className="pd-shop-main" key={ready ? 'shop-live' : 'shop-static'}>
+      <main className="pd-shop-main" data-shop-catalog={ready ? 'live' : 'static'}>
         {children}
       </main>
 
