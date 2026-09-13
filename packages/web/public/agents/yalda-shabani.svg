@@ -1,4 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="600" height="700" viewBox="0 0 600 700" role="img" aria-label="ÌD/' 49('FÌ  ,'ÌF¯G/'1 9©3">
+<svg xmlns="http://www.w3.org/2000/svg" width="600" height="700" viewBox="0 0 600 700" role="img">
+  <title>Yalda Shabani placeholder</title>
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="#1f4d3a"/>
@@ -9,7 +10,7 @@
   <circle cx="300" cy="280" r="110" fill="#c8e6d5" opacity="0.35"/>
   <circle cx="300" cy="250" r="54" fill="#e8f5ee"/>
   <ellipse cx="300" cy="360" rx="90" ry="70" fill="#e8f5ee"/>
-  <text x="300" y="520" text-anchor="middle" fill="#e8f5ee" font-family="Tahoma, sans-serif" font-size="36" font-weight="700">ÌD/' 49('FÌ</text>
-  <text x="300" y="565" text-anchor="middle" fill="#a8d4bc" font-family="Tahoma, sans-serif" font-size="22">~4*Ì('FÌ · ,'ÌF¯G/'1 9©3</text>
-  <text x="300" y="620" text-anchor="middle" fill="#7fb89a" font-family="Tahoma, sans-serif" font-size="16">drop: agents/yalda-shabani.jpg</text>
+  <text x="300" y="510" text-anchor="middle" fill="#e8f5ee" font-family="Tahoma, Arial, sans-serif" font-size="34" font-weight="700">Yalda Shabani</text>
+  <text x="300" y="555" text-anchor="middle" fill="#a8d4bc" font-family="Tahoma, Arial, sans-serif" font-size="22">Support · photo placeholder</text>
+  <text x="300" y="610" text-anchor="middle" fill="#7fb89a" font-family="Tahoma, Arial, sans-serif" font-size="16">drop: agents/yalda-shabani.jpg</text>
 </svg>
