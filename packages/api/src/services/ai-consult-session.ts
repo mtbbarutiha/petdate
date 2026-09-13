@@ -5,7 +5,7 @@ import type {
   VetConsultation,
   VetConsultChatMessage,
 } from '@petdate/shared';
-import { DEFAULT_TEAM_AGENT_SLUG } from '@petdate/shared';
+import { DEFAULT_TEAM_AGENT_SLUG, DEFAULT_VET_TEAM_AGENT_SLUG } from '@petdate/shared';
 import { dbService, getDb } from '../db';
 import {
   AI_ASSISTANT_DISPLAY_NAME,
@@ -106,7 +106,7 @@ export async function startAiFallbackConsult(opts: {
     console.warn('ai consult idle sweep failed:', (err as Error).message);
   }
 
-  const slug = String(opts.agentSlug || '').trim() || DEFAULT_TEAM_AGENT_SLUG;
+  const slug = String(opts.agentSlug || '').trim() || (aiKind === 'vet' ? DEFAULT_VET_TEAM_AGENT_SLUG : DEFAULT_TEAM_AGENT_SLUG);
   const ai = ensureTeamAgentBySlug(slug) ?? ensureAiAssistantUser();
   if (ai.id === opts.patient.id) return null;
   const displayName = agentDisplayName(ai);
@@ -193,6 +193,7 @@ export async function startTeamAgentConsult(opts: {
   if (!user) return null;
   const agent = resolveTeamAgentForUserId(user.id);
   const kind = agent?.kind ?? 'trainer';
+  if (kind === 'support') return null;
   const session = await startAiFallbackConsult({
     patient: opts.patient,
     serviceKind: kind,

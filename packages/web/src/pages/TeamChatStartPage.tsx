@@ -19,7 +19,7 @@ export function TeamChatStartPage() {
   const next = teamAgentChatPath(agentSlug);
 
   useEffect(() => {
-    if (!agent || !ready || !user?.id || !token) return;
+    if (!agent || agent.kind === 'support' || !ready || !user?.id || !token) return;
     let cancelled = false;
     (async () => {
       try {
@@ -41,6 +41,9 @@ export function TeamChatStartPage() {
         <p><Link to="/#team" className="pepito-btn button-3">بازگشت به تیم</Link></p>
       </main>
     );
+  }
+  if (agent.kind === 'support') {
+    return <Navigate to="/support/chat" replace />;
   }
   if (!isLoggedIn || !hasRole || !isProfileComplete) {
     return <Navigate to={loginPath(next)} replace />;

@@ -780,7 +780,7 @@ export function VetConsultPage() {
         const consultId = result.consultations?.[0]?.id;
         const aiLines = [
           result.message,
-          'چت با لیلا کیانی باز شد — می‌توانی سؤال‌ات را بفرستی.',
+          'چت با دکتر سارا نوری باز شد — می‌توانی سؤال‌ات را بفرستی.',
         ];
         setStatusLines(aiLines);
         setPhase('ready');

@@ -1,10 +1,16 @@
 /**
- * Landing-page team chat agents (AI consult personas).
- * Default / legacy fallback identity (`petdate_ai_assistant`) is لیلا کیانی
- * (renamed from پاشا یزدانی). Do not create a second لیلا agent.
+ * Site team chat personas → 3 domain AI agents (vet | trainer | support).
+ *
+ * Domain engines (prompts / knowledge):
+ *   trainer → فرانک احمدی، لیلا کیانی
+ *   vet     → دکتر ساناز غفاری، دکتر سارا نوری
+ *   support → یلدا شعبانی
+ *
+ * Default trainer face is فرانک احمدی (replaces legacy «پاشا یزدانی»).
+ * لیلا remains a separate trainer persona (same domain engine).
  */
 
-export type TeamAgentKind = 'vet' | 'trainer';
+export type TeamAgentKind = 'vet' | 'trainer' | 'support';
 
 export type TeamAgentDef = {
   slug: string;
@@ -16,7 +22,7 @@ export type TeamAgentDef = {
   cardImage: string;
 };
 
-/** Visual L→R on RTL landing matches reverse of this DOM order. */
+/** Visual L→R on RTL landing ≈ reverse of this DOM order. */
 export const TEAM_AGENTS: readonly TeamAgentDef[] = [
   {
     slug: 'faranak-ahmadi',
@@ -56,17 +62,32 @@ export const TEAM_AGENTS: readonly TeamAgentDef[] = [
     avatarUrl: '/agents/sara-noori.jpg',
     cardImage: '/pepito/uploads/04-3.jpg',
   },
+  {
+    slug: 'yalda-shabani',
+    telegramId: 'petdate_ai_yalda_shabani',
+    name: 'یلدا شعبانی',
+    role: 'پشتیبانی',
+    kind: 'support',
+    avatarUrl: '/agents/yalda-shabani.jpg',
+    cardImage: '/agents/yalda-shabani.jpg',
+  },
 ] as const;
 
 /** Old public URLs still resolve after renames. */
 const TEAM_AGENT_SLUG_ALIASES: Record<string, string> = {
   'layla-ahmadi': 'faranak-ahmadi',
   'sara-nozi': 'sara-noori',
+  'pasha-yazdani': 'faranak-ahmadi',
+  pasha: 'faranak-ahmadi',
 };
 
-/** Legacy display names → current TEAM_AGENTS slug (inbox / decorate fallback). */
+/**
+ * Legacy display names → current TEAM_AGENTS slug.
+ * «پاشا یزدانی» now maps to فرانک (مربی پیش‌فرض)، not لیلا.
+ */
 const TEAM_AGENT_NAME_ALIASES: Record<string, string> = {
-  'پاشا یزدانی': 'leila-kiani',
+  'پاشا یزدانی': 'faranak-ahmadi',
+  پاشا: 'faranak-ahmadi',
   'دکتر لیلا کیانی': 'leila-kiani',
   'لیلا کیانی': 'leila-kiani',
   'دکتر لایلا احمدی': 'faranak-ahmadi',
@@ -78,12 +99,20 @@ const TEAM_AGENT_NAME_ALIASES: Record<string, string> = {
   'سارا نوری': 'sara-noori',
   'دکتر سارا نوزی': 'sara-noori',
   'سارا نوزی': 'sara-noori',
-  'دستیار هوشمند پت‌دیت': 'leila-kiani',
-  'دستیار هوشمند پت': 'leila-kiani',
-  'دستیار هوشمند': 'leila-kiani',
+  'یلدا شعبانی': 'yalda-shabani',
+  یلدا: 'yalda-shabani',
+  'دستیار هوشمند پت‌دیت': 'faranak-ahmadi',
+  'دستیار هوشمند پت': 'faranak-ahmadi',
+  'دستیار هوشمند': 'faranak-ahmadi',
 };
 
-export const DEFAULT_TEAM_AGENT_SLUG = 'leila-kiani';
+/** Default trainer / AI fallback face — فرانک replaces پاشا. */
+export const DEFAULT_TEAM_AGENT_SLUG = 'faranak-ahmadi';
+
+export const SUPPORT_TEAM_AGENT_SLUG = 'yalda-shabani';
+
+/** Default vet AI face when no human vet is online. */
+export const DEFAULT_VET_TEAM_AGENT_SLUG = 'sara-noori';
 
 export function getTeamAgentBySlug(slug: string | null | undefined): TeamAgentDef | null {
   const key = String(slug || '').trim().toLowerCase();
@@ -112,6 +141,11 @@ export function isTeamAgentTelegramId(telegramId: string | null | undefined): bo
   return Boolean(getTeamAgentByTelegramId(telegramId));
 }
 
+export function teamAgentsByKind(kind: TeamAgentKind): TeamAgentDef[] {
+  return TEAM_AGENTS.filter((a) => a.kind === kind);
+}
+
 export function teamAgentChatPath(slug: string): string {
+  if (getTeamAgentBySlug(slug)?.kind === 'support') return '/support/chat';
   return `/team-chat/${encodeURIComponent(slug)}`;
 }

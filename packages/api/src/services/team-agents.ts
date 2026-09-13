@@ -19,7 +19,10 @@ export {
 };
 
 function rolesForKind(kind: TeamAgentDef['kind'], telegramId: string): Array<'vet' | 'trainer'> {
-  if (telegramId === 'petdate_ai_assistant') return ['vet', 'trainer'];
+  // Support persona is not a vet/trainer role — chat goes through /support.
+  if (kind === 'support') return [];
+  // Legacy default AI user kept dual-role for old threads; new default is فرانک (trainer only).
+  if (telegramId === 'petdate_ai_assistant') return ['trainer'];
   return kind === 'vet' ? ['vet'] : ['trainer'];
 }
 
