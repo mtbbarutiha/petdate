@@ -21,6 +21,7 @@ import {
   jalaliPartsToGregorianIso,
   type JalaliDateValue,
 } from '../../JalaliDateSelect';
+import { DemoSeedBadge, DemoSeedToggle, filterDemoSeedRows, useShowDemoSeeds } from '../../DemoSeedVisibility';
 import { tr } from '../../../i18n';
 
 type AtsMeta = {
@@ -56,6 +57,12 @@ export function AdminHrAtsPage() {
   const [dupWarn, setDupWarn] = useState<string | null>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const canWrite = adminCan('hr.write');
+  const { showDemoSeeds, setShowDemoSeeds } = useShowDemoSeeds();
+  const visibleCandidates = useMemo(
+    () => filterDemoSeedRows(candidates, showDemoSeeds),
+    [candidates, showDemoSeeds]
+  );
+  const hiddenSeedCount = candidates.length - visibleCandidates.length;
   const { options: stageOpts } = usePlatformDropdownOptions('ats', 'candidate_stages', HR_CANDIDATE_STAGES);
   const { options: boardOpts } = usePlatformDropdownOptions('ats', 'job_boards', HR_JOB_BOARDS);
   const { options: outcomeOpts } = usePlatformDropdownOptions('ats', 'call_outcomes', HR_CALL_OUTCOMES);
@@ -663,6 +670,11 @@ export function AdminHrAtsPage() {
           </section>
 
           <div className="admin-toolbar">
+            <DemoSeedToggle
+              showDemoSeeds={showDemoSeeds}
+              onChange={setShowDemoSeeds}
+              hiddenCount={hiddenSeedCount}
+            />
             <select className="admin-select" value={stage} onChange={(e) => setStage(e.target.value)}>
               <option value="">{tr('همه وضعیت‌ها')}</option>
               {candidateStages.map((s) => (
@@ -689,17 +701,17 @@ export function AdminHrAtsPage() {
                 </tr>
               </thead>
               <tbody>
-                {candidates.length === 0 ? (
+                {visibleCandidates.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="admin-empty">
                       {tr('متقاضی‌ای نیست')}
                     </td>
                   </tr>
                 ) : (
-                  candidates.map((c) => (
+                  visibleCandidates.map((c) => (
                     <tr key={c.id}>
                       <td>
-                        {c.firstName} {c.lastName}
+                        {c.firstName} {c.lastName} <DemoSeedBadge row={c} />
                       </td>
                       <td className="admin-mono">{c.mobile || '—'}</td>
                       <td>{c.jobTitle || openingTitle(c.jobOpeningId)}</td>

@@ -1,7 +1,8 @@
 /**
  * HR / CRM demo graph seeds (SEED-HR-01, 09120006001, ADMIN_SEED_PASSWORD accounts).
  * Production skips unless ALLOW_DEMO_SEEDS=1 (ALLOW_DEMO_SEED=1 accepted as alias).
- * Magazine / migrateSchema / catalog seeds are unrelated and must keep running.
+ * Magazine / migrateSchema / catalog seeds (career layers, system roles) stay ungated.
+ * Existing live rows are not deleted on boot — hide in admin or run cleanup-demo-seeds.ts.
  */
 export function allowDemoSeeds(): boolean {
   const explicit =

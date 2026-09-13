@@ -14,7 +14,8 @@ const db = readFileSync(join(apiSrc, '../db.ts'), 'utf8');
 assert.match(admin, /adminRouter\.get\('\/games'/, 'admin list games');
 assert.match(admin, /adminRouter\.get\('\/games\/:id'/, 'admin game detail');
 assert.match(admin, /adminRouter\.patch\('\/games\/:id\/status'/, 'admin status patch');
-assert.match(admin, /Number\.isFinite\(id\)/, 'rejects non-finite game id');
+assert.match(admin, /parsePositiveIntId\(req\.params\.id\)/, 'rejects non-finite game id');
+assert.match(admin, /\/demo-seeds/, 'demo-seed preview endpoint');
 assert.match(db, /updateGameStatus\(id: number, status: GameStatus\)/, 'db updateGameStatus');
 
 const games = readFileSync(join(apiSrc, 'games.ts'), 'utf8');

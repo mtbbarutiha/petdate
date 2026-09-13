@@ -71,6 +71,17 @@ async function main() {
   assert(hrOn === 1, 'explicit ALLOW_DEMO_SEEDS=1 seeds HR marker');
   assert(crmOn === 1, 'explicit ALLOW_DEMO_SEEDS=1 seeds CRM marker');
 
+  const { readFileSync } = await import('node:fs');
+  const { dirname, join } = await import('node:path');
+  const { fileURLToPath } = await import('node:url');
+  const here = dirname(fileURLToPath(import.meta.url));
+  const hrSeed = readFileSync(join(here, 'hr-sales-demo-seed.ts'), 'utf8');
+  const crmSeed = readFileSync(join(here, 'crm-demo-seed.ts'), 'utf8');
+  const hrService = readFileSync(join(here, 'hr-service.ts'), 'utf8');
+  assert(hrSeed.includes('if (!allowDemoSeeds())'), 'HR demo seed honors gate');
+  assert(crmSeed.includes('if (!allowDemoSeeds())'), 'CRM demo seed honors gate');
+  assert(!/allowDemoSeeds\(\)[\s\S]{0,80}seedHrDefaults/.test(hrService), 'catalog seedHrDefaults stays ungated');
+
   console.log('demo-seeds-guard.selftest: ok');
 }
 

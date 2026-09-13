@@ -4,6 +4,7 @@ import { adminFetch, formatNumFa } from '../../api';
 import { adminCan } from '../../auth';
 import { AdminModal } from '../../AdminModal';
 import { AdminEntityCell, AdminThumb } from '../../AdminThumb';
+import { DemoSeedBadge, DemoSeedToggle, isDemoSeedRecord, useShowDemoSeeds } from '../../DemoSeedVisibility';
 import { tr } from '../../../i18n';
 
 export function AdminHrServicePage() {
@@ -17,6 +18,18 @@ export function AdminHrServicePage() {
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState({ employeeId: '', hours: '8', note: '' });
   const canWrite = adminCan('hr.write');
+  const { showDemoSeeds, setShowDemoSeeds } = useShowDemoSeeds();
+  const visibleEntries = useMemo(
+    () =>
+      showDemoSeeds
+        ? entries
+        : entries.filter((e) => {
+            const emp = employees.find((x) => x.id === e.employeeId);
+            return !isDemoSeedRecord(e) && !isDemoSeedRecord(emp || {});
+          }),
+    [entries, employees, showDemoSeeds]
+  );
+  const hiddenSeedCount = entries.length - visibleEntries.length;
   const load = useCallback(async () => {
     try {
       const [s, e] = await Promise.all([
@@ -65,12 +78,19 @@ export function AdminHrServicePage() {
         </div>
       </header>
       {error ? <p className="admin-error">{error}</p> : null}
+      <div className="admin-toolbar">
+        <DemoSeedToggle
+          showDemoSeeds={showDemoSeeds}
+          onChange={setShowDemoSeeds}
+          hiddenCount={hiddenSeedCount}
+        />
+      </div>
       <p className="admin-muted">{tr('جمع ماه:')} {formatNumFa(Math.round(totalHours * 10) / 10)} {tr('ساعت')}</p>
       <div className="admin-table-wrap">
         <table className="admin-table">
           <thead><tr><th>{tr('همکار')}</th><th>{tr('روز')}</th><th>{tr('ساعت')}</th><th>{tr('یادداشت')}</th><th></th></tr></thead>
           <tbody>
-            {entries.map((e) => {
+            {visibleEntries.map((e) => {
               const emp = empOf(e.employeeId);
               const name = empName(e.employeeId);
               return (
@@ -78,7 +98,7 @@ export function AdminHrServicePage() {
                   <td>
                     <AdminEntityCell
                       thumb={<AdminThumb src={emp?.avatarUrl} label={name} kind="user" size={32} />}
-                      title={name}
+                      title={<>{name} <DemoSeedBadge row={emp || e} /></>}
                     />
                   </td>
                   <td>{formatNumFa(e.day)}</td>

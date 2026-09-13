@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import type {
   SalesCall, SalesCustomer, SalesGoal, SalesItem, SalesItemKind, SalesPattern, SalesProduct,
@@ -16,6 +16,7 @@ import { AdminModal } from '../../AdminModal';
 import { AdminEntityCell, AdminThumb } from '../../AdminThumb';
 import { usePlatformDropdownOptions } from '../../usePlatformDropdownOptions';
 import { useSalesCallSimOptional } from './SalesCallSim';
+import { DemoSeedBadge, DemoSeedToggle, filterDemoSeedRows, useShowDemoSeeds } from '../../DemoSeedVisibility';
 import { tr } from '../../../i18n';
 
 function ItemsPage({ kind }: { kind: SalesItemKind }) {
@@ -31,6 +32,12 @@ function ItemsPage({ kind }: { kind: SalesItemKind }) {
   const [busy, setBusy] = useState(false);
   const [form, setForm] = useState({ first: '', last: '', mobile: '', product: '', source: '' });
   const canWrite = adminCan('sales.write');
+  const { showDemoSeeds, setShowDemoSeeds } = useShowDemoSeeds();
+  const visibleItems = useMemo(
+    () => filterDemoSeedRows(items, showDemoSeeds),
+    [items, showDemoSeeds]
+  );
+  const hiddenSeedCount = items.length - visibleItems.length;
   const title = kind === 'lead' ? 'لیدها' : 'آپگریدها';
   const { options: leadSourceOpts } = usePlatformDropdownOptions('sales', 'lead_sources', SALES_LEAD_SOURCES);
   const leadSources = leadSourceOpts.map((o) => o.label);
@@ -106,12 +113,17 @@ function ItemsPage({ kind }: { kind: SalesItemKind }) {
           <option value="lost">{tr('ازدست‌رفته')}</option>
         </select>
         <label className="admin-check"><input type="checkbox" checked={unassignedOnly} onChange={(e) => setUnassignedOnly(e.target.checked)} /> {tr('فقط بدون تخصیص')}</label>
+        <DemoSeedToggle
+          showDemoSeeds={showDemoSeeds}
+          onChange={setShowDemoSeeds}
+          hiddenCount={hiddenSeedCount}
+        />
       </div>
       <div className="admin-table-wrap"><table className="admin-table">
         <thead><tr><th>{tr('نام')}</th><th>{tr('محصول')}</th><th>{tr('منبع')}</th><th>{tr('امتیاز')}</th><th>{tr('مرحله')}</th><th>{tr('پرداخت')}</th><th>{tr('کارشناس')}</th></tr></thead>
-        <tbody>{items.map((i) => (
+        <tbody>{visibleItems.map((i) => (
           <tr key={i.id}>
-            <td><Link to={`/admin/sales/${kind === 'lead' ? 'leads' : 'upgrades'}/${i.id}`}>{i.publicId}</Link><div>{i.first} {i.last}</div><div className="admin-muted">{i.mobile}</div></td>
+            <td><Link to={`/admin/sales/${kind === 'lead' ? 'leads' : 'upgrades'}/${i.id}`}>{i.publicId}</Link><div>{i.first} {i.last} <DemoSeedBadge row={i} /></div><div className="admin-muted">{i.mobile}</div></td>
             <td>{i.product}<div className="admin-muted">{formatNumFa(i.value)} {tr('ت')}</div></td>
             <td>{i.source}</td><td>{formatNumFa(i.score)}</td><td>{salesStageLabel(i.stage)}</td><td>{i.payStatus}</td>
             <td>{i.ownerName ? (
@@ -121,7 +133,7 @@ function ItemsPage({ kind }: { kind: SalesItemKind }) {
               />
             ) : (canWrite ? <button type="button" className="admin-btn admin-btn--ghost" onClick={() => void adminFetch(`/api/admin/sales/items/${i.id}/claim`, { method: 'POST', body: '{}' }).then(load)}>{tr('برداشتن')}</button> : '—')}</td>
           </tr>
-        ))}{!items.length ? <tr><td colSpan={7}>{tr('خالی')}</td></tr> : null}</tbody>
+        ))}{!visibleItems.length ? <tr><td colSpan={7}>{tr('خالی')}</td></tr> : null}</tbody>
       </table></div>
 
       <AdminModal

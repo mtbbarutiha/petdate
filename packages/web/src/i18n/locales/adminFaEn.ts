@@ -2405,4 +2405,7 @@ export const ADMIN_FA_EN: Record<string, string> = {
     "Tags inside the Google container are created only from the UI (or OAuth GTM API); this checklist is a manual guide.",
   "یادداشت: مسیر /admin": "Note: /admin path",
   "یادداشت: بدون GTM API": "Note: no GTM API",
+  "نمایش داده تست": "Show test data",
+  "داده تست": "Test data",
+  "{n} ردیف تست مخفی است": "{n} test rows hidden",
 };
