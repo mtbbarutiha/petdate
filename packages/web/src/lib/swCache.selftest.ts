@@ -14,9 +14,11 @@ const root = join(webSrc, '..');
 const sw = readFileSync(join(webSrc, 'lib/swRegister.ts'), 'utf8');
 const vite = readFileSync(join(root, 'vite.config.ts'), 'utf8');
 
-assert.match(sw, /petdate-sw-20260913-team-chat-v42/, 'swRegister bust generation is v42');
-assert.match(sw, /petdate-web-v42-team-chat/, 'swRegister active cacheId is v42');
-assert.match(vite, /cacheId:\s*'petdate-web-v42-team-chat'/, 'vite PWA cacheId is v42');
+assert.match(sw, /petdate-sw-20260913-yalda-avatar-v43/, 'swRegister bust generation is v43');
+assert.match(sw, /petdate-web-v43-yalda-avatar/, 'swRegister active cacheId is v43');
+assert.match(vite, /cacheId:\s*'petdate-web-v43-yalda-avatar'/, 'vite PWA cacheId is v43');
+assert.doesNotMatch(sw, /petdate-web-v42-team-chat/, 'old v42-team-chat cacheId is retired');
+assert.doesNotMatch(sw, /petdate-sw-20260913-team-chat-v42/, 'old v42-team-chat bust key is retired');
 assert.doesNotMatch(sw, /petdate-web-v41-hero-hq/, 'old v41-hero-hq cacheId is retired');
 assert.doesNotMatch(sw, /petdate-sw-20260913-hero-hq-v41/, 'old v41-hero-hq bust key is retired');
 assert.doesNotMatch(sw, /petdate-web-v40-hero-images/, 'old v40-hero-images cacheId is retired');
