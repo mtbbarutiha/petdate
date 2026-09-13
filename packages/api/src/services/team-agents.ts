@@ -6,6 +6,7 @@ import {
   TEAM_AGENTS,
   getTeamAgentBySlug,
   getTeamAgentByTelegramId,
+  listTeamAgentTelegramIds,
   type TeamAgentDef,
   type User,
 } from '@petdate/shared';
@@ -26,9 +27,17 @@ function rolesForKind(kind: TeamAgentDef['kind'], telegramId: string): Array<'ve
   return kind === 'vet' ? ['vet'] : ['trainer'];
 }
 
+function findExistingTeamAgentUser(def: TeamAgentDef): User | null {
+  for (const telegramId of listTeamAgentTelegramIds(def)) {
+    const existing = dbService.getUserByTelegramId(telegramId);
+    if (existing) return existing;
+  }
+  return null;
+}
+
 export function ensureTeamAgent(def: TeamAgentDef): User {
   const desiredUsername = `agent_${def.slug.replace(/-/g, '_')}`;
-  const existing = dbService.getUserByTelegramId(def.telegramId);
+  const existing = findExistingTeamAgentUser(def);
   if (existing) {
     const patch: {
       name?: string;

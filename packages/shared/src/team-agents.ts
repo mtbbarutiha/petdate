@@ -109,6 +109,16 @@ const TEAM_AGENT_SLUG_ALIASES: Record<string, string> = {
 };
 
 /**
+ * Synthetic telegram ids that are not the stored `telegramId` on TEAM_AGENTS.
+ * Sara’s row keeps `petdate_ai_sara_nozi` so the live DB user is patched, not
+ * recreated — but slug-shaped `petdate_ai_sara_noori` must still resolve to
+ * the same vet persona (Sanaz already uses the slug-shaped id).
+ */
+const TEAM_AGENT_TELEGRAM_ID_ALIASES: Record<string, string> = {
+  petdate_ai_sara_noori: 'sara-noori',
+};
+
+/**
  * Legacy display names → current TEAM_AGENTS slug.
  * «پاشا یزدانی» now maps to فرانک (مربی پیش‌فرض)، not لیلا.
  */
@@ -151,7 +161,18 @@ export function getTeamAgentBySlug(slug: string | null | undefined): TeamAgentDe
 export function getTeamAgentByTelegramId(telegramId: string | null | undefined): TeamAgentDef | null {
   const t = String(telegramId || '').trim();
   if (!t) return null;
-  return TEAM_AGENTS.find((a) => a.telegramId === t) ?? null;
+  const byExact = TEAM_AGENTS.find((a) => a.telegramId === t);
+  if (byExact) return byExact;
+  const slug = TEAM_AGENT_TELEGRAM_ID_ALIASES[t];
+  return slug ? getTeamAgentBySlug(slug) : null;
+}
+
+/** Primary + alias telegram ids that identify the same persona. */
+export function listTeamAgentTelegramIds(def: TeamAgentDef): string[] {
+  const extras = Object.entries(TEAM_AGENT_TELEGRAM_ID_ALIASES)
+    .filter(([, slug]) => slug === def.slug)
+    .map(([id]) => id);
+  return [def.telegramId, ...extras.filter((id) => id !== def.telegramId)];
 }
 
 /** Resolve by Grok Bot roster key (`faranak_ahmadi` or `faranak-ahmadi`). */

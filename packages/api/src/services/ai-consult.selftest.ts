@@ -333,6 +333,9 @@ async function main() {
   assert(/\/support\/ticket/.test(yaldaPrompt), 'support prompt keeps existing ticket path');
   const leilaPrompt = buildAiConsultSystemPrompt('trainer', 'لیلا کیانی');
   const saraPrompt = buildAiConsultSystemPrompt('vet', 'دکتر سارا نوری');
+  assert(/دکتر سارا نوری/.test(saraPrompt), 'Sara uses named vet prompt');
+  assert(/عکس بالینی/.test(saraPrompt), 'Sara shares Sanaz vet prompt family');
+  assert(/\/team-chat\/faranak-ahmadi/.test(saraPrompt), 'Sara ood points to trainer like Sanaz');
   for (const [label, prompt] of [
     ['faranak', faranakPrompt],
     ['leila', leilaPrompt],

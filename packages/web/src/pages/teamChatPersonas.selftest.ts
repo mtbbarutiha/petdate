@@ -15,8 +15,12 @@ const supportAgent = readFileSync(join(webRoot, 'src/pages/supportAgent.ts'), 'u
 const welcome = readFileSync(join(webRoot, 'src/pages/WelcomeBelowFold.tsx'), 'utf8');
 const shared = readFileSync(join(webRoot, '../shared/src/team-agents.ts'), 'utf8');
 const bust = readFileSync(join(webRoot, '../../tmp/cache-bust-persona-avatars-v2'), 'utf8');
+const saraVetBust = readFileSync(join(webRoot, '../../tmp/cache-bust-sara-noori-vet-link-v1'), 'utf8');
 
 assert.match(bust, /persona-avatars-v2/, 'v2 persona avatar cache-bust marker present');
+assert.match(saraVetBust, /sara-noori-vet-link-v1/, 'Sara vet-link cache-bust marker present');
+assert.match(shared, /petdate_ai_sara_noori/, 'Sara slug-shaped telegram id is aliased to vet');
+assert.match(shared, /kind: 'vet'/, 'shared roster includes vet kind');
 assert.match(startPage, /agent\.avatarUrl/, 'team chat start shows persona photo');
 assert.match(startPage, /agent\.name/, 'team chat start shows persona name');
 assert.match(startPage, /teamAgentChatPath\(canonicalSlug\)/, 'legacy slugs redirect to canonical path');

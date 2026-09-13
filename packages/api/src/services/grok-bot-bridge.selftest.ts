@@ -68,5 +68,9 @@ assert.ok(summary.linkedCount >= 4);
 delete process.env.GROK_BOT_FARANAK_AHMADI_ID;
 delete process.env.GROK_BOT_YALDA_SHABANI_URL;
 delete process.env.GROK_BOT_AGENT_MAP;
+delete process.env.GROK_BOT_SARA_NOORI_ID;
+process.env.GROK_BOT_SARA_NOZI_ID = 'gb-sara-legacy';
+assert.equal(resolveGrokBotLink(sara).id, 'gb-sara-legacy', 'legacy SARA_NOZI env links Sara');
+delete process.env.GROK_BOT_SARA_NOZI_ID;
 
 console.log('grok-bot-bridge.selftest: ok');

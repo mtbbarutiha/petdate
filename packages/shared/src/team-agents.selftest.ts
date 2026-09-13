@@ -9,6 +9,8 @@ import {
   SUPPORT_TEAM_AGENT_SLUG,
   TEAM_AGENTS,
   getTeamAgentBySlug,
+  getTeamAgentByTelegramId,
+  listTeamAgentTelegramIds,
   teamAgentChatPath,
   teamAgentOutOfDomainHint,
   teamAgentReferralForKind,
@@ -32,7 +34,15 @@ assert.equal(getTeamAgentBySlug('faranak-ahmadi')?.kind, 'trainer');
 assert.equal(getTeamAgentBySlug('leila-kiani')?.kind, 'trainer');
 assert.equal(getTeamAgentBySlug('sanaz-ghaffari')?.kind, 'vet');
 assert.equal(getTeamAgentBySlug('sara-noori')?.kind, 'vet');
+assert.equal(getTeamAgentBySlug('sara-noori')?.role, 'دامپزشک');
+assert.equal(getTeamAgentBySlug('sanaz-ghaffari')?.role, 'دامپزشک');
 assert.equal(getTeamAgentBySlug('yalda-shabani')?.kind, 'support');
+assert.equal(getTeamAgentByTelegramId('petdate_ai_sanaz_ghaffari')?.slug, 'sanaz-ghaffari');
+assert.equal(getTeamAgentByTelegramId('petdate_ai_sara_nozi')?.slug, 'sara-noori');
+assert.equal(getTeamAgentByTelegramId('petdate_ai_sara_noori')?.slug, 'sara-noori');
+assert.equal(getTeamAgentByTelegramId('petdate_ai_sara_noori')?.kind, 'vet');
+assert.ok(listTeamAgentTelegramIds(getTeamAgentBySlug('sara-noori')!).includes('petdate_ai_sara_nozi'));
+assert.ok(listTeamAgentTelegramIds(getTeamAgentBySlug('sara-noori')!).includes('petdate_ai_sara_noori'));
 assert.match(getTeamAgentBySlug('yalda-shabani')!.avatarUrl, /\/agents\/yalda-shabani\.jpg\?v=persona-v2$/, 'Yalda avatar is cache-busted');
 
 for (const a of TEAM_AGENTS) {

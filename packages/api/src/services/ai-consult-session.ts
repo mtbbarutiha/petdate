@@ -6,7 +6,11 @@ import type {
   VetConsultation,
   VetConsultChatMessage,
 } from '@petdate/shared';
-import { DEFAULT_TEAM_AGENT_SLUG, DEFAULT_VET_TEAM_AGENT_SLUG } from '@petdate/shared';
+import {
+  DEFAULT_TEAM_AGENT_SLUG,
+  DEFAULT_VET_TEAM_AGENT_SLUG,
+  getTeamAgentBySlug,
+} from '@petdate/shared';
 import { dbService, getDb } from '../db';
 import {
   AI_ASSISTANT_DISPLAY_NAME,
@@ -204,19 +208,23 @@ export async function startTeamAgentConsult(opts: {
   reused?: boolean;
   agentSlug: string;
 } | null> {
-  const user = ensureTeamAgentBySlug(opts.agentSlug);
+  const def = getTeamAgentBySlug(opts.agentSlug);
+  if (!def || def.kind === 'support') return null;
+  const user = ensureTeamAgentBySlug(def.slug);
   if (!user) return null;
-  const agent = resolveTeamAgentForUserId(user.id);
-  const kind = agent?.kind ?? 'trainer';
-  if (kind === 'support') return null;
+  // Kind comes from the persona map (slug), not telegram-id resolve.
+  // Sara’s live DB row may still be `petdate_ai_sara_nozi`; falling back to
+  // trainer here is what left /team-chat/sara-noori off the vet stack.
+  const kind = def.kind;
+  if (kind !== 'vet' && kind !== 'trainer') return null;
   const session = await startAiFallbackConsult({
     patient: opts.patient,
     serviceKind: kind,
     petId: opts.petId,
-    agentSlug: opts.agentSlug,
+    agentSlug: def.slug,
   });
   if (!session) return null;
-  return { ...session, agentSlug: agent?.slug ?? opts.agentSlug };
+  return { ...session, agentSlug: def.slug };
 }
 
 export const AI_PHOTO_PROMPT_FA: Record<'vet' | 'trainer', string> = {

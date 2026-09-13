@@ -23,4 +23,6 @@ Five landing faces share three existing LLM roles (`trainer` | `vet` | `support`
 - Vets triage clinical photos (vision when `AI_CONSULT_API_KEY` is set) + disclaimer.
 - Yalda knows site workflow, can open/track tickets, mentions SMS only when the product already sends it, asks the owner when unknown.
 
-Cache bust: `tmp/cache-bust-persona-avatars-v2` → SW `petdate-web-v44-persona-avatars`.
+Cache bust: `tmp/cache-bust-sara-noori-vet-link-v1` → SW `petdate-web-v46-sara-noori-vet`.
+
+Sara (`/team-chat/sara-noori`) and Sanaz (`/team-chat/sanaz-ghaffari`) share the same `vet` / دامپزشک `ai-consult` engine. Sara’s synthetic telegram id stays `petdate_ai_sara_nozi` (existing DB row); `petdate_ai_sara_noori` is an alias so resolve never falls through to trainer.
