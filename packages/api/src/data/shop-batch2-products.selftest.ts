@@ -117,7 +117,6 @@ async function main() {
   const catalog = readFileSync(join(repoRoot, 'packages/web/src/data/shopBatch2Products.ts'), 'utf8');
   const shopCatalog = readFileSync(join(repoRoot, 'packages/web/src/data/shopCatalog.ts'), 'utf8');
   assert.match(shopCatalog, /SHOP_BATCH2_PRODUCTS/, 'shopCatalog spreads batch 2');
-  assert.match(shopCatalog, /cat-food-josera-kitten-2kg/, 'catalog includes Josera Kitten');
   assert.match(catalog, /cat-food-josera-kitten-2kg/, 'batch 2 catalog file includes Kitten');
   assert.match(shopCatalog, /id: 'josera'/, 'Josera brand stays in SHOP_BRANDS');
 
