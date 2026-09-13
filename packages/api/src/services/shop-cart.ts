@@ -4,9 +4,20 @@
  * Merge rule on login / guest sync:
  *   merge-then-persist — sum quantities for the same productId, then write server.
  *   Guest localStorage is a draft until auth; after merge it mirrors the server cart.
+ *
+ * Live-SKU DELETE guard:
+ *   Stale SPA tabs (pre-#440 ghost-prune) still call DELETE for any cart line
+ *   `getProduct()` cannot resolve — often from /chats — wiping items that just
+ *   POSTed successfully. Deleting an in-catalog / live SKU requires explicit
+ *   user intent (`userIntent: true`). Missing/retired demo ids may still be
+ *   cleaned without intent.
  */
 import { getDb } from '../db';
 import { adminPlatform } from '../admin-platform';
+import { isLiveShopProductIdOrSlug } from '../data/shop-zero-margin-slugs';
+
+/** Header / body value clients send for intentional remove (not ghost-prune). */
+export const SHOP_CART_USER_REMOVE_INTENT = 'user-remove' as const;
 
 export type ShopCartLine = { productId: string; qty: number };
 
@@ -173,14 +184,56 @@ export function addShopCartLine(
   return setShopCartLine(userId, product.id, nextQty);
 }
 
-export function removeShopCartLine(userId: number, productId: string): ShopCartLine[] {
+/**
+ * Remove one cart line.
+ * Without `userIntent`, refuse to delete products that still exist in the live
+ * catalog (or known live id/slug list) — neutralizes stale ghost-prune clients.
+ */
+export function removeShopCartLine(
+  userId: number,
+  productId: string,
+  opts?: { userIntent?: boolean }
+): ShopCartLine[] {
   const id = String(productId || '').trim();
-  if (id) {
-    withTable()
-      .prepare('DELETE FROM shop_carts WHERE user_id = ? AND product_id = ?')
-      .run(userId, id);
+  if (!id) return getShopCartLines(userId);
+
+  if (!opts?.userIntent) {
+    const inCatalog = Boolean(adminPlatform.getShopProduct(id));
+    if (inCatalog || isLiveShopProductIdOrSlug(id)) {
+      return getShopCartLines(userId);
+    }
   }
+
+  withTable()
+    .prepare('DELETE FROM shop_carts WHERE user_id = ? AND product_id = ?')
+    .run(userId, id);
   return getShopCartLines(userId);
+}
+
+/** True when request carries explicit user-remove intent (header or JSON body). */
+export function requestHasShopCartUserRemoveIntent(req: {
+  headers?: Record<string, unknown> | { get?: (name: string) => string | null | undefined };
+  body?: unknown;
+}): boolean {
+  const headers = req.headers;
+  let headerVal = '';
+  if (headers && typeof (headers as { get?: unknown }).get === 'function') {
+    headerVal = String(
+      (headers as { get: (name: string) => string | null | undefined }).get('x-petdate-cart-intent') ??
+        ''
+    );
+  } else if (headers && typeof headers === 'object') {
+    const raw = (headers as Record<string, unknown>)['x-petdate-cart-intent'];
+    headerVal = Array.isArray(raw) ? String(raw[0] ?? '') : String(raw ?? '');
+  }
+  if (headerVal.trim().toLowerCase() === SHOP_CART_USER_REMOVE_INTENT) return true;
+
+  const body = req.body;
+  if (body && typeof body === 'object' && !Array.isArray(body)) {
+    const intent = String((body as { intent?: unknown }).intent ?? '').trim().toLowerCase();
+    if (intent === SHOP_CART_USER_REMOVE_INTENT) return true;
+  }
+  return false;
 }
 
 /**

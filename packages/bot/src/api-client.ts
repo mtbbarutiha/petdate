@@ -1897,7 +1897,7 @@ export async function removeShopCartItemTelegram(
 ): Promise<BotShopCartResponse> {
   return request('/api/shop/cart-telegram/items', {
     method: 'DELETE',
-    body: JSON.stringify({ telegramId, productId }),
+    body: JSON.stringify({ telegramId, productId, intent: 'user-remove' }),
   });
 }
 

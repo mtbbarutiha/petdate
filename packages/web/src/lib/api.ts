@@ -1920,10 +1920,12 @@ export async function setShopCartItemQty(
 
 export async function removeShopCartItem(
   token: string,
-  productId: string
+  productId: string,
+  opts?: { userIntent?: boolean }
 ): Promise<ShopCartApiResponse> {
   return shopCartRequest(`/api/shop/cart/items/${encodeURIComponent(productId)}`, token, {
     method: 'DELETE',
+    headers: opts?.userIntent ? { 'X-Petdate-Cart-Intent': 'user-remove' } : undefined,
   });
 }
 

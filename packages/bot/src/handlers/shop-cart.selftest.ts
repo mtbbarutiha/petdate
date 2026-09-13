@@ -26,5 +26,6 @@ assert.match(index, /shop:add:/, 'registers shop:add callback');
 assert.match(index, /shop:cartcheckout/, 'registers cart checkout');
 
 assert.match(api, /\/api\/shop\/cart-telegram/, 'telegram cart API client');
+assert.match(api, /intent: 'user-remove'/, 'bot remove sends user-remove intent');
 
 console.log('bot shop-cart.selftest: ok');
