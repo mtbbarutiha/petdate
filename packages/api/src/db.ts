@@ -197,6 +197,18 @@ export function getDb(): AppDatabase {
       }
     };
 
+    const bootShopCatalogGuard = () => {
+      // Delete leftover demo/seed SKUs. Never touches p221–p235 prices/images/stock.
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { purgeDemoShopProducts } =
+          require('./data/shop-live-catalog') as typeof import('./data/shop-live-catalog');
+        purgeDemoShopProducts();
+      } catch (err) {
+        console.warn('Shop demo-catalog purge skipped/failed:', (err as Error).message);
+      }
+    };
+
     const usePostgres = isPostgresUrl(process.env.DATABASE_URL);
     if (usePostgres) {
       db = createPgCompatDatabase() as unknown as Database.Database;
@@ -217,6 +229,7 @@ export function getDb(): AppDatabase {
       bootMagazine();
       bootShopPilot();
       seedIfEmpty();
+      bootShopCatalogGuard();
       maybeSeedDemo();
       try {
         backfillPublicIds();
@@ -237,6 +250,7 @@ export function getDb(): AppDatabase {
       bootMagazine();
       bootShopPilot();
       seedIfEmpty();
+      bootShopCatalogGuard();
       maybeSeedDemo();
       try {
         backfillPublicIds();
@@ -1651,36 +1665,16 @@ function seedFinanceDefaults() {
     (db.prepare('SELECT COUNT(*) as c FROM shop_products').get() as { c: number } | undefined)?.c ?? 0
   );
   if (productCount === 0) {
+    // Live SKUs (p221–p235) are seeded by bootShopPilot — never insert demo toys/beds/collars here.
     const cats = [
       ['dog-food', 'غذای سگ', 'dog', 'غذای خشک و کنسرو', '🦴', 10],
       ['cat-food', 'غذای گربه', 'cat', 'غذای خشک و پوچ', '🐟', 20],
-      ['dog-toys', 'اسباب بازی سگ', 'dog', 'توپ و اسباب‌بازی', '🎾', 30],
-      ['cat-litter', 'لوازم دستشویی گربه', 'cat', 'خاک و سینی', '🚽', 40],
     ] as const;
     const insCat = db.prepare(
       `INSERT OR IGNORE INTO shop_categories (slug, label_fa, pet_type, description, emoji, sort_order)
        VALUES (?, ?, ?, ?, ?, ?)`
     );
     for (const c of cats) insCat.run(...c);
-
-    const products = [
-      ['pd-royal-dog-3', 'royal-canin-dog-3kg', 'رویال کنین سگ ۳کیلو', 'royal-canin', 'dog-food', '["dog"]', 1890000, 1200000],
-      ['pd-whiskas-cat', 'whiskas-cat-dry', 'ویسکاس گربه خشک', 'whiskas', 'cat-food', '["cat"]', 420000, 280000],
-      ['pd-kong-classic', 'kong-classic-m', 'کنگ کلاسیک سایز M', 'kong', 'dog-toys', '["dog"]', 890000, 520000],
-      ['pd-cat-litter', 'cat-litter-10kg', 'خاک گربه ۱۰کیلو', 'petdate', 'cat-litter', '["cat"]', 310000, 190000],
-      ['pd-bird-seed', 'bird-seed-mix', 'مخلوط دان پرنده', 'petdate', 'bird-food', '["bird"]', 185000, 110000],
-    ] as const;
-    db.prepare(
-      `INSERT OR IGNORE INTO shop_categories (slug, label_fa, pet_type, description, emoji, sort_order)
-       VALUES ('bird-food', 'غذای پرنده', 'bird', 'دان و مخلوط', '🐦', 50)`
-    ).run();
-    const insProd = db.prepare(
-      `INSERT OR IGNORE INTO shop_products (
-        id, slug, title, brand_id, category_slug, pet_types, price_toman, cost_toman,
-        in_stock, stock_qty, featured, description
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, 40, 1, 'محصول پت دیت شاپ')`
-    );
-    for (const p of products) insProd.run(...p);
   } else {
     db.prepare(
       `UPDATE shop_products

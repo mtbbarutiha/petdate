@@ -6,6 +6,7 @@ import type { User, UserRole, PaymentOrder, PlatformNavCounts } from '@petdate/s
 import { IRAN_PROVINCES, makeOrderPublicId, orderPublicIdOf } from '@petdate/shared';
 import { getDb, dbService } from './db';
 import { parseShopProductImages, withShopImagesParam } from './data/shop-product-images';
+import { isLiveShopProductIdOrSlug, purgeDemoShopProducts } from './data/shop-live-catalog';
 
 function db() {
   return getDb();
@@ -627,6 +628,9 @@ export const adminPlatform = {
   },
 
   deleteShopProduct(id: string): boolean {
+    if (isLiveShopProductIdOrSlug(id)) return false;
+    const row = this.getShopProduct(id);
+    if (row && isLiveShopProductIdOrSlug(row.slug)) return false;
     return db().prepare('DELETE FROM shop_products WHERE id = ?').run(id).changes > 0;
   },
 
@@ -637,10 +641,15 @@ export const adminPlatform = {
     const d = db();
     const tx = d.transaction(() => {
       if (input.categories?.length) {
-        d.prepare('DELETE FROM shop_categories').run();
         const ins = d.prepare(
           `INSERT INTO shop_categories (slug, label_fa, pet_type, description, emoji, sort_order)
-           VALUES (?, ?, ?, ?, ?, ?)`
+           VALUES (?, ?, ?, ?, ?, ?)
+           ON CONFLICT(slug) DO UPDATE SET
+             label_fa = excluded.label_fa,
+             pet_type = excluded.pet_type,
+             description = excluded.description,
+             emoji = excluded.emoji,
+             sort_order = excluded.sort_order`
         );
         input.categories.forEach((c, i) => {
           ins.run(
@@ -653,8 +662,15 @@ export const adminPlatform = {
           );
         });
       }
-      d.prepare('DELETE FROM shop_products').run();
+      // Never wipe p221–p235. Drop leftover demo/seed rows only.
+      purgeDemoShopProducts();
       for (const p of input.products) {
+        const key = String(p.id || p.slug || '').trim();
+        if (!isLiveShopProductIdOrSlug(key) && !isLiveShopProductIdOrSlug(String(p.slug || ''))) {
+          continue;
+        }
+        const existing = this.getShopProduct(String(p.slug || p.id || ''));
+        if (existing) continue;
         this.upsertShopProduct(p);
       }
     });

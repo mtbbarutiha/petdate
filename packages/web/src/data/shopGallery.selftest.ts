@@ -10,8 +10,10 @@ import {
   productGallery,
 } from './shopCatalog.ts';
 
-const product = getProduct('dog-food-1-p1') ?? getProduct('p1');
-assert.ok(product, 'sample product exists');
+const product = getProduct('dog-food-royal-canin-mini-adult-2kg') ?? getProduct('p221');
+assert.ok(product, 'sample live product exists');
+assert.equal(getProduct('p1'), undefined, 'demo p1 is gone from catalog');
+assert.equal(getProduct('dog-food-1-p1'), undefined, 'demo slug is gone from catalog');
 const gallery = productGallery(product);
 assert.ok(gallery.length >= 1, 'gallery has at least the main image');
 assert.ok(

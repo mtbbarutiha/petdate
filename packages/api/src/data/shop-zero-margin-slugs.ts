@@ -25,4 +25,31 @@ export const ZERO_MARGIN_SHOP_SLUGS: readonly string[] = [
   ...SHOP_BATCH2_SLUGS,
 ];
 
+/** Live shop product ids — 3 pilots + 12 Batch 2. Never purge these rows. */
+export const LIVE_SHOP_PRODUCT_IDS = [
+  'p221',
+  'p222',
+  'p223',
+  'p224',
+  'p225',
+  'p226',
+  'p227',
+  'p228',
+  'p229',
+  'p230',
+  'p231',
+  'p232',
+  'p233',
+  'p234',
+  'p235',
+] as const;
+
+export function isLiveShopProductIdOrSlug(idOrSlug: string): boolean {
+  const key = String(idOrSlug || '').trim();
+  return (
+    (LIVE_SHOP_PRODUCT_IDS as readonly string[]).includes(key) ||
+    ZERO_MARGIN_SHOP_SLUGS.includes(key)
+  );
+}
+
 export const HELD_SHOP_SLUGS = [] as const;

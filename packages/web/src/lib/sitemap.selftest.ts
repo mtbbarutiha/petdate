@@ -39,7 +39,10 @@ assert(!xml.includes('/chats'), 'chats must not be in sitemap');
 assert(!xml.includes('/admin'), 'admin must not be in sitemap');
 assert(!xml.includes('/wallet'), 'wallet must not be in sitemap');
 assert(map.includes('map $uri $shop_product_redirect'), 'nginx product redirect map');
-assert(map.includes('/shop/product/p1 '), 'p1 id still 301s to slug');
+assert(map.includes('/shop/product/p1 /shop'), 'retired p1 301s to /shop');
+assert(map.includes('/shop/product/dog-food-1-p1 /shop'), 'retired demo slug 301s to /shop');
+assert(!xml.includes('/shop/product/dog-food-1-p1'), 'demo SKUs must not be in sitemap');
+assert(xml.includes('/shop/product/dog-food-royal-canin-mini-adult-2kg'), 'live p221 stays in sitemap');
 assert(
   map.includes('/shop/dog-food-royal-canin-mini-adult-2kg '),
   'bare /shop/:slug 301s to /shop/product/:slug'
