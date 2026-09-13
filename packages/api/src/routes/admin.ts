@@ -1270,6 +1270,16 @@ adminRouter.post('/shop/catalog/sync', (req, res) => {
       priceToman: Number(p.priceToman ?? p.price_toman ?? 0),
       compareAtToman: p.compareAtToman != null || p.compare_at_toman != null
         ? Number(p.compareAtToman ?? p.compare_at_toman) : undefined,
+      costToman:
+        p.costToman != null || p.cost_toman != null
+          ? Number(p.costToman ?? p.cost_toman)
+          : [
+                'dog-food-royal-canin-mini-adult-2kg',
+                'dog-food-royal-canin-xsmall-puppy-1-5kg',
+                'cat-food-royal-canin-persian-adult-400g',
+              ].includes(String(p.slug))
+            ? Number(p.priceToman ?? p.price_toman ?? 0)
+            : undefined,
       image: p.image ? String(p.image) : undefined,
       badge: (p.badge as string) ?? null,
       inStock: p.inStock !== false && p.in_stock !== 0,
