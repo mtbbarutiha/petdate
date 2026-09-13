@@ -304,6 +304,10 @@ export async function handleStart(ctx: Context): Promise<void> {
         const { paymentCardInfo } = await import('../economy');
         const order = await getPaymentOrder(paymentOrderId);
         const card = paymentCardInfo();
+        if (!card) {
+          await ctx.reply('پرداخت کارت‌به‌کارت فعلاً در دسترس نیست. کارت واریز پیکربندی نشده.');
+          return;
+        }
         if (!order || String(order.packageId) !== 'shopcard') {
           await ctx.reply('فاکتور کارت فروشگاه پیدا نشد یا منقضی است.');
           return;

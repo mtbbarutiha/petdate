@@ -14,6 +14,8 @@ export * from './gtm-contract';
 export * from './team-agents';
 export * from './fanout-reject';
 export * from './help';
+export * from './payment-card';
+export * from './admin-password';
 
 import type {
   OnboardingStatus,

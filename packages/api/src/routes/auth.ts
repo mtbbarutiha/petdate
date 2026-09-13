@@ -400,17 +400,22 @@ authRouter.get('/wallet/buy-coins', (req, res) => {
       vip: Boolean(p.vip),
       label: p.label,
     })),
-    card: {
-      number: card.cardNumber,
-      masked: card.cardMasked,
-      grouped: card.cardGrouped,
-      holder: card.cardHolder,
-    },
+    card: card.configured
+      ? {
+          number: card.cardNumber,
+          masked: card.cardMasked,
+          grouped: card.cardGrouped,
+          holder: card.cardHolder,
+        }
+      : null,
+    paymentCardConfigured: card.configured,
+    error: card.configured ? undefined : card.error,
     openOrders: open,
     paymentCardEnabled: getRuntimeFlags().paymentCardEnabled,
     paymentStarsEnabled: getRuntimeFlags().paymentStarsEnabled,
-    message:
-      'مبلغ را کارت‌به‌کارت واریز کن، عکس رسید را همین‌جا بفرست؛ بعد از تأیید ادمین سکه به کیف پول مشترک واریز می‌شود.',
+    message: card.configured
+      ? 'مبلغ را کارت‌به‌کارت واریز کن، عکس رسید را همین‌جا بفرست؛ بعد از تأیید ادمین سکه به کیف پول مشترک واریز می‌شود.'
+      : card.error,
   });
 });
 
@@ -421,6 +426,15 @@ authRouter.post('/wallet/buy-coins/card', (req, res) => {
     return;
   }
   if (rejectIfFlagOff(res, 'paymentCardEnabled')) return;
+  const dest = paymentCardPublicInfo();
+  if (!dest.configured) {
+    res.status(503).json({
+      ok: false,
+      reason: 'card_not_configured',
+      error: dest.error || 'شماره کارت واریز پیکربندی نشده',
+    });
+    return;
+  }
   const packageId = String(req.body?.packageId ?? '').trim();
   const pkg = findCoinPackage(packageId);
   if (!pkg) {
@@ -429,17 +443,16 @@ authRouter.post('/wallet/buy-coins/card', (req, res) => {
   }
   const open = dbService.findOpenCoinCardOrder(session.user.id);
   if (open) {
-    const card = paymentCardPublicInfo();
     res.status(409).json({
       ok: false,
       reason: 'open_order',
       error: 'یک درخواست کارت‌به‌کارت باز داری — اول همان را تکمیل یا منتظر تأیید بمان.',
       order: open,
       card: {
-        number: card.cardNumber,
-        masked: card.cardMasked,
-        grouped: card.cardGrouped,
-        holder: card.cardHolder,
+        number: dest.cardNumber,
+        masked: dest.cardMasked,
+        grouped: dest.cardGrouped,
+        holder: dest.cardHolder,
       },
     });
     return;
@@ -453,16 +466,15 @@ authRouter.post('/wallet/buy-coins/card', (req, res) => {
     method: 'card',
     status: 'awaiting_receipt',
   });
-  const card = paymentCardPublicInfo();
   res.status(201).json({
     ok: true,
     order,
     package: pkg,
     card: {
-      number: card.cardNumber,
-      masked: card.cardMasked,
-      grouped: card.cardGrouped,
-      holder: card.cardHolder,
+      number: dest.cardNumber,
+      masked: dest.cardMasked,
+      grouped: dest.cardGrouped,
+      holder: dest.cardHolder,
     },
     message: `مبلغ ${pkg.toman.toLocaleString('fa-IR')} تومان را واریز کن و عکس رسید را آپلود کن.`,
   });

@@ -50,9 +50,13 @@ function isProduction(): boolean {
 }
 
 /** Echo OTP in API JSON only for explicit local/dev — never in production. */
-function echoDevCode(): boolean {
+export function shouldEchoWebOtpCode(): boolean {
   if (isProduction()) return false;
   return process.env.WEB_OTP_DEV_ECHO === '1' || process.env.WEB_OTP_DEV_ECHO !== '0';
+}
+
+function echoDevCode(): boolean {
+  return shouldEchoWebOtpCode();
 }
 
 export type WebOtpChannel = 'phone' | 'email';

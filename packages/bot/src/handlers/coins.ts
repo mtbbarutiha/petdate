@@ -214,6 +214,10 @@ async function startCardPayment(ctx: Context, pkg: CoinPackage): Promise<void> {
     await ctx.answerCallbackQuery({ text: 'اول /start بزن', show_alert: true });
     return;
   }
+  if (!paymentCardInfo()) {
+    await ctx.answerCallbackQuery({ text: 'کارت واریز پیکربندی نشده', show_alert: true });
+    return;
+  }
 
   const created = await createPaymentOrder(user.telegramId, {
     packageId: pkg.id,
@@ -481,8 +485,10 @@ async function notifyAdminsPendingPayment(ctx: Context, order: PaymentOrder): Pr
       : null,
     `<b>بسته:</b> ${escapeHtml(order.packageId)} · ${formatNum(order.coins)} سکه`,
     `<b>مبلغ:</b> ${formatToman(order.amountToman ?? 0)}`,
-    `<b>کارت مقصد:</b> <code>${card.number}</code>`,
-    `<b>به‌نام:</b> ${escapeHtml(card.holder)}`,
+    card
+      ? `<b>کارت مقصد:</b> <code>${card.number}</code>`
+      : '<b>کارت مقصد:</b> پیکربندی نشده',
+    card ? `<b>به‌نام:</b> ${escapeHtml(card.holder)}` : null,
   ]
     .filter((l) => l !== null)
     .join('\n');

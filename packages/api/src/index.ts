@@ -45,6 +45,7 @@ import {
 import { attachChatWebSocket } from './ws/chatHub';
 import { ensureAllTeamAgents } from './services/team-agents';
 import { sweepIdleConsultClosures } from './services/consult-idle-close';
+import { authenticateAdminRequest } from './admin-auth';
 
 // Prefer IPv4 — Telegram notify fetch was timing out on IPv6
 try {
@@ -125,13 +126,19 @@ app.get('/api/health/ready', async (_req, res) => {
   res.status(result.ok ? 200 : 503).json(result);
 });
 
-app.get('/api/health/candoo', async (_req, res) => {
+function rejectPublicDeepHealth(req: express.Request, res: express.Response): boolean {
+  if (authenticateAdminRequest(req)) return false;
+  res.status(404).json({ error: 'مسیر API پیدا نشد', path: req.path });
+  return true;
+}
+
+app.get('/api/health/candoo', async (req, res) => {
+  if (rejectPublicDeepHealth(req, res)) return;
   const { candooBalance, isCandooConfigured } = await import('./services/candoo');
   if (!isCandooConfigured()) {
     res.status(503).json({ ok: false, configured: false, error: 'Candoo env missing' });
     return;
   }
-  // Candoo /balance often 500 even when /send works — report sendReady separately.
   const bal = await candooBalance();
   res.status(200).json({
     ok: true,
@@ -144,7 +151,8 @@ app.get('/api/health/candoo', async (_req, res) => {
   });
 });
 
-app.get('/api/health/infra', (_req, res) => {
+app.get('/api/health/infra', (req, res) => {
+  if (rejectPublicDeepHealth(req, res)) return;
   const driver = getStorageDriver();
   const sqlitePath = getResolvedDatabasePath();
   res.json({

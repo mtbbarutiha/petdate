@@ -1,5 +1,6 @@
 import { Bot } from 'grammy';
 import { applyBotBranding } from './branding';
+import { webhookFootgunMessage } from './bot-update-mode';
 import { assertBotToken, config } from './config';
 import { requiredChannels } from './force-join';
 import { registerHandlers } from './handlers';
@@ -93,43 +94,28 @@ async function main(): Promise<void> {
     }
   });
 
-  if (config.webhookUrl) {
-    const secret = config.webhookSecret ?? `petdate-${Date.now()}`;
-    await bot.api.setWebhook(config.webhookUrl, {
-      secret_token: secret,
-      allowed_updates: [
-        'message',
-        'callback_query',
-        'pre_checkout_query',
-        'business_connection',
-        'edited_message',
-        'my_chat_member',
-        'chat_member',
-      ],
-    });
-    console.log(`🤖 petdate bot webhook → ${config.webhookUrl}`);
-    console.log('   (برای dev از polling استفاده کن — BOT_WEBHOOK_URL را خالی بگذار)');
-  } else {
-    await bot.api.deleteWebhook({ drop_pending_updates: true }).catch(() => undefined);
-    console.log('🤖 petdate bot (polling) — Ctrl+C برای توقف');
-    const webUrl = effectiveWebUrl();
-    if (!isTelegramInlineUrl(webUrl)) {
-      console.warn(`   Web links disabled in chat (set PUBLIC_WEB_URL for HTTPS tunnel): ${webUrl}`);
-    }
-    await bot.start({
-      drop_pending_updates: true,
-      allowed_updates: [
-        'message',
-        'callback_query',
-        'pre_checkout_query',
-        'business_connection',
-        'edited_message',
-        'my_chat_member',
-        'chat_member',
-      ],
-      onStart: () => console.log(`   API: ${config.apiUrl} | Web: ${config.webUrl}`),
-    });
+  const webhookWarn = webhookFootgunMessage(config.webhookUrl);
+  if (webhookWarn) console.error(webhookWarn);
+
+  await bot.api.deleteWebhook({ drop_pending_updates: true }).catch(() => undefined);
+  console.log('🤖 petdate bot (polling) — Ctrl+C برای توقف');
+  const webUrl = effectiveWebUrl();
+  if (!isTelegramInlineUrl(webUrl)) {
+    console.warn(`   Web links disabled in chat (set PUBLIC_WEB_URL for HTTPS tunnel): ${webUrl}`);
   }
+  await bot.start({
+    drop_pending_updates: true,
+    allowed_updates: [
+      'message',
+      'callback_query',
+      'pre_checkout_query',
+      'business_connection',
+      'edited_message',
+      'my_chat_member',
+      'chat_member',
+    ],
+    onStart: () => console.log(`   API: ${config.apiUrl} | Web: ${config.webUrl}`),
+  });
 }
 
 async function shutdown(): Promise<void> {
