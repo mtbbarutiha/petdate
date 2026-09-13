@@ -41,5 +41,16 @@ assert.match(
   /getGame\(id: number\): Game \| null \{[\s\S]{0,120}Number\.isFinite\(id\)/,
   'getGame rejects NaN/non-positive ids before SQL'
 );
+assert.match(db, /function asPositiveIntId/, 'mapGame / getters share NaN-safe id helper');
+assert.match(
+  db,
+  /getUserById\(id: number\): User \| null \{[\s\S]{0,160}asPositiveIntId\(id\)/,
+  'getUserById never binds NaN into SQL'
+);
+assert.match(
+  db,
+  /const hostId = asPositiveIntId\(row\.host_user_id\)/,
+  'mapGame does not bind corrupt host ids'
+);
 
 console.log('games-list.selftest: ok');

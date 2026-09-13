@@ -87,7 +87,8 @@ assert.match(faq, /<Link to="\/adoption"/, 'FAQ پذیرش CTA goes to /adoption
 assert.doesNotMatch(faq, /\/#pets/, 'FAQ has no leftover /#pets links');
 assert.match(hashRedirect, /location\.hash !== '#pets'/, 'legacy hash redirect watches #pets');
 assert.match(hashRedirect, /pathname: '\/adoption'/, 'legacy hash redirect navigates to /adoption');
-assert.match(dock, /pathname === '\/vet-consult'/, 'mobile dock hidden on guest vet landing');
+assert.match(nav, /pathname === '\/vet-consult'/, 'mobile dock hidden on guest vet landing');
+assert.match(dock, /isMobileDockHidden/, 'mobile dock uses shared hide helper');
 assert.match(chrome, /appNav \? 'pepito-nav--app'/, 'LandingChrome app header only when appNav');
 assert.match(siteHeader, /LanguageToggle/, 'shared header keeps language toggle');
 assert.doesNotMatch(chrome, /appNav \|\| isLoggedIn/, 'logged-in guests keep marketing chrome on landing');

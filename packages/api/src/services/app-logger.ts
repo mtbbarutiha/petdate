@@ -89,7 +89,9 @@ export function isExpectedHttpNoise(
     statusCode === 409 &&
     m === 'POST' &&
     (path === '/api/consultations/quick-connect' ||
-      path.startsWith('/api/consultations/quick-connect'))
+      path.startsWith('/api/consultations/quick-connect') ||
+      path === '/api/consultations/quick-connection' ||
+      path.startsWith('/api/consultations/quick-connection'))
   ) {
     return true;
   }
@@ -228,6 +230,19 @@ export function responseErrorLogger(req: Request, res: Response, next: NextFunct
   next();
 }
 
+/** Bad client ids bound as NaN — validate to 400, never 500. */
+export function clientStatusForDbError(message: string): number | null {
+  const lower = (message || '').toLowerCase();
+  if (
+    lower.includes('invalid input syntax for type bigint') ||
+    (lower.includes('bigint') && lower.includes('nan')) ||
+    lower.includes('invalid numeric id')
+  ) {
+    return 400;
+  }
+  return null;
+}
+
 /** Final Express error handler — persists + returns JSON. */
 export function expressErrorHandler(
   err: unknown,
@@ -237,17 +252,22 @@ export function expressErrorHandler(
 ): void {
   const message = err instanceof Error ? err.message : String(err);
   const stack = err instanceof Error ? err.stack : undefined;
+  const status = clientStatusForDbError(message) ?? 500;
   nativeConsoleError('unhandled api error:', message);
   logAppEvent({
-    level: 'error',
+    level: status >= 500 ? 'error' : 'warn',
     source: 'api',
     message,
     stack,
     path: req.originalUrl,
     method: req.method,
-    statusCode: 500,
+    statusCode: status,
   });
   if (res.headersSent) return;
+  if (status === 400) {
+    res.status(400).json({ error: 'شناسه عددی نامعتبر است' });
+    return;
+  }
   res.status(500).json({ error: 'خطای داخلی سرور' });
 }
 

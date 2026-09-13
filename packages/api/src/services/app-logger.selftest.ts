@@ -2,7 +2,7 @@
  * Pure filters for admin «لاگ خطاها» noise — no DB / network.
  */
 import assert from 'node:assert/strict';
-import { isBenignTelegramWarn, isExpectedHttpNoise } from './app-logger';
+import { clientStatusForDbError, isBenignTelegramWarn, isExpectedHttpNoise } from './app-logger';
 
 assert.equal(
   isBenignTelegramWarn('telegram sendMessage failed: Bad Request: chat not found'),
@@ -46,5 +46,13 @@ assert.equal(
   '500s always logged'
 );
 assert.equal(isExpectedHttpNoise('GET', '/favicon.ico', 404), true, 'non-api 404');
+
+assert.equal(
+  clientStatusForDbError('invalid input syntax for type bigint: "NaN"'),
+  400,
+  'Postgres NaN bigint is 400 not 500'
+);
+assert.equal(clientStatusForDbError('invalid numeric id'), 400, 'invalid numeric id is 400');
+assert.equal(clientStatusForDbError('relation "games" does not exist'), null, 'other DB errors stay 500');
 
 console.log('app-logger.selftest: ok');
