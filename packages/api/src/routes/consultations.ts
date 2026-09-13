@@ -56,14 +56,15 @@ import {
   saveChatUpload,
   sniffChatMediaContentType,
 } from '../services/chat-upload-store';
-import { isInternalBot , teamAgentChatPath , DEFAULT_VET_TEAM_AGENT_SLUG , TEAM_AGENTS , getTeamAgentBySlug } from '../internal-auth';
-import { getUserFromBearer , teamAgentChatPath , DEFAULT_VET_TEAM_AGENT_SLUG , TEAM_AGENTS , getTeamAgentBySlug } from '../services/web-otp';
-import { rejectIfFlagOff , teamAgentChatPath , DEFAULT_VET_TEAM_AGENT_SLUG , TEAM_AGENTS , getTeamAgentBySlug } from '../runtime-settings';
+import { isInternalBot } from '../internal-auth';
+import { getUserFromBearer } from '../services/web-otp';
+import { rejectIfFlagOff } from '../runtime-settings';
 import {
   notifyInbox,
   notifyVetMessage,
-  notifyVetThread, teamAgentChatPath , DEFAULT_VET_TEAM_AGENT_SLUG , TEAM_AGENTS , getTeamAgentBySlug } from '../ws/chatHub';
-import type { VetConsultChatMediaKind , teamAgentChatPath , DEFAULT_VET_TEAM_AGENT_SLUG , TEAM_AGENTS , getTeamAgentBySlug } from '@petdate/shared';
+  notifyVetThread,
+} from '../ws/chatHub';
+import type { VetConsultChatMediaKind } from '@petdate/shared';
 
 const VALID_STATUSES: VetConsultStatus[] = [
   'requested',
