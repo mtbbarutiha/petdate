@@ -98,7 +98,6 @@ import { crmAdminRouter } from './admin-crm';
 import { financeOsAdminRouter } from './admin-finance-os';
 import { magazineAdminRouter } from './admin-magazine';
 import { heroAdminRouter } from './admin-hero';
-import { heroAdminRouter } from './admin-hero';
 import { parsePositiveIntId } from './parse-positive-int-id';
 import { DEMO_SEED_PURGE_CONFIRM, runDemoSeedCleanup } from '../demo-seeds-cleanup';
 import {
@@ -217,7 +216,6 @@ adminRouter.use('/sales', salesAdminRouter);
 adminRouter.use('/crm', crmAdminRouter);
 adminRouter.use('/finance-os', financeOsAdminRouter);
 adminRouter.use('/magazine', magazineAdminRouter);
-adminRouter.use('/hero', heroAdminRouter);
 adminRouter.use('/hero', heroAdminRouter);
 
 /** Preview known demo-seed rows. Dry-run only — never deletes. */

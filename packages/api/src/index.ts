@@ -36,7 +36,6 @@ import { supportRouter } from './routes/support';
 import { analyticsRouter } from './routes/analytics';
 import { magazineRouter } from './routes/magazine';
 import { heroRouter } from './routes/hero';
-import { heroRouter } from './routes/hero';
 import { platformRouter } from './routes/platform';
 import {
   expressErrorHandler,
@@ -194,7 +193,6 @@ app.use('/api/pet-purchase-leads', petPurchaseLeadsRouter);
 app.use('/api/support', supportRouter);
 app.use('/api/analytics', analyticsRouter);
 app.use('/api/magazine', magazineRouter);
-app.use('/api/hero', heroRouter);
 app.use('/api/hero', heroRouter);
 app.use('/api/platform', platformRouter);
 app.use('/api/admin', adminRouter);
