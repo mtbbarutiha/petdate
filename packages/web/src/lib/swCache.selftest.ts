@@ -14,9 +14,10 @@ const root = join(webSrc, '..');
 const sw = readFileSync(join(webSrc, 'lib/swRegister.ts'), 'utf8');
 const vite = readFileSync(join(root, 'vite.config.ts'), 'utf8');
 
-assert.match(sw, /petdate-sw-20260913-hero-focus-v49/, 'swRegister bust generation is v49');
-assert.match(sw, /petdate-web-v49-hero-focus/, 'swRegister active cacheId is v49');
-assert.match(vite, /cacheId:\s*'petdate-web-v49-hero-focus'/, 'vite PWA cacheId is v49');
+assert.match(sw, /petdate-sw-20260913-hero-api-lcp-v50/, 'swRegister bust generation is v50');
+assert.match(sw, /petdate-web-v50-hero-api-lcp/, 'swRegister active cacheId is v50');
+assert.match(vite, /cacheId:\s*'petdate-web-v50-hero-api-lcp'/, 'vite PWA cacheId is v50');
+assert.doesNotMatch(sw, /petdate-web-v49-hero-focus/, 'old v49-hero-focus cacheId is retired');
 assert.doesNotMatch(sw, /petdate-web-v48-team-personas-four/, 'old v48-team-personas-four cacheId is retired');
 assert.doesNotMatch(sw, /petdate-sw-20260913-persona-roles-v47/, 'old v47 persona-roles bust key is retired');
 assert.doesNotMatch(sw, /petdate-web-v46-sara-noori-vet/, 'old v46-sara-noori-vet cacheId is retired');

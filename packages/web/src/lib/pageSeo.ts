@@ -811,25 +811,16 @@ function setNoscript(html: string, inner: string): string {
   );
 }
 
-const LCP_HERO_MARK = 'data-pd-lcp="hero"';
-const LCP_HERO_HREF = '/media/lcp/hero-playmate-800.webp';
-const LCP_HERO_SRCSET =
-  '/media/lcp/hero-playmate-800.webp 800w, /media/lcp/hero-playmate-1280.webp 1280w, /media/lcp/hero-playmate-1920.webp 1920w';
-
-function setHomeLcpPreload(html: string, pathname: string): string {
-  const p = normalizePath(pathname);
-  /* Strip every homepage-hero preload (marked or the static index.html copy). */
-  let out = html.replace(/\s*<link[^>]*hero-playmate-800\.webp[^>]*>/gi, '');
-  if (p !== '/') return out;
-  const tag = `    <link rel="preload" as="image" type="image/webp" href="${LCP_HERO_HREF}" imagesrcset="${LCP_HERO_SRCSET}" imagesizes="100vw" fetchpriority="high" ${LCP_HERO_MARK} />\n`;
-  /* Early in <head>, not after Vite module scripts (those land just before </head>). */
-  if (out.includes('id="pd-critical-first-paint"')) {
-    return out.replace(
-      /<style id="pd-critical-first-paint">/,
-      `${tag}    <style id="pd-critical-first-paint">`,
-    );
-  }
-  return out.replace('<head>', `<head>\n${tag}`);
+/**
+ * Strip hardcoded /media/lcp/hero-* image preloads from the SPA shell.
+ * Live homepage LCP is filled from GET /api/hero by #pd-boot-hero-from-api —
+ * SEO must not re-inject the stale playmate WebP (flash of wrong photo).
+ */
+function stripHardcodedHeroPreload(html: string): string {
+  let out = html.replace(/\s*<link[^>]*data-pd-lcp="hero"[^>]*>/gi, '');
+  out = out.replace(/\s*<link[^>]*hero-playmate-\d+\.webp[^>]*>/gi, '');
+  out = out.replace(/\s*<link[^>]*\/media\/lcp\/hero-[^"'>]*\.webp[^>]*>/gi, '');
+  return out;
 }
 
 /**
@@ -887,7 +878,7 @@ export function applySeoToHtml(html: string, pathname: string, opts: PageSeoOpts
   }
   out = setJsonLd(out, seo.jsonLd);
   out = setNoscript(out, seo.noscriptHtml);
-  out = setHomeLcpPreload(out, pathname);
+  out = stripHardcodedHeroPreload(out);
   out = parkBootLcpOnNonHome(out, pathname);
   return out;
 }
