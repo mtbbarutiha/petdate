@@ -933,9 +933,10 @@ consultationsRouter.post('/:id/messages', async (req, res) => {
         fileName: message.fileName,
       });
     }
-    // AI provider auto-reply for patient messages (text or voice/audio → STT).
+    // AI provider auto-reply for patient messages (text, photo, or voice/audio → STT).
     if (senderUserId === gate.consult.patientUserId) {
       const voiceLike = mediaKind === 'voice' || mediaKind === 'audio';
+      const photoLike = mediaKind === 'photo';
       if (voiceLike) {
         void maybeTranscribeAndReplyAsAiAssistant({
           consultId: id,
@@ -944,11 +945,12 @@ consultationsRouter.post('/:id/messages', async (req, res) => {
         }).catch((err) => {
           console.warn('ai voice auto-reply failed:', (err as Error).message);
         });
-      } else if (text.trim()) {
+      } else if (text.trim() || photoLike) {
         void maybeReplyAsAiAssistant({
           consultId: id,
           patientUserId: senderUserId,
           patientText: text,
+          imageMessage: photoLike ? message : null,
         }).catch((err) => {
           console.warn('ai auto-reply failed:', (err as Error).message);
         });
@@ -1065,7 +1067,7 @@ consultationsRouter.post('/:id/messages/upload', (req, res) => {
         mimeType: message.mimeType,
         fileName: message.fileName,
       });
-      // AI provider: web voice/audio upload → Whisper STT → reply.
+      // AI provider: voice → STT; photo (even without caption) → vision/triage reply.
       if (
         senderUserId === gate.consult.patientUserId &&
         (mediaKind === 'voice' || mediaKind === 'audio')
@@ -1079,7 +1081,7 @@ consultationsRouter.post('/:id/messages/upload', (req, res) => {
         });
       } else if (
         senderUserId === gate.consult.patientUserId &&
-        caption.trim() &&
+        (caption.trim() || mediaKind === 'photo') &&
         mediaKind !== 'voice' &&
         mediaKind !== 'audio'
       ) {
@@ -1087,6 +1089,7 @@ consultationsRouter.post('/:id/messages/upload', (req, res) => {
           consultId: id,
           patientUserId: senderUserId,
           patientText: caption,
+          imageMessage: mediaKind === 'photo' ? message : null,
         }).catch((err) => {
           console.warn('ai auto-reply failed:', (err as Error).message);
         });

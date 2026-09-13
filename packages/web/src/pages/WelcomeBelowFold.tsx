@@ -27,7 +27,7 @@ import {
   wrapCarouselIndex,
 } from '../lib/newsCarousel';
 import { GatedLink, PawIcon } from './landingGatedLink';
-import { teamAgentChatPath } from '@petdate/shared';
+import { TEAM_AGENTS, teamAgentChatPath } from '@petdate/shared';
 
 const P = '/pepito/uploads';
 
@@ -90,14 +90,19 @@ const PETS = ADOPTION_PETS.map((p) => ({
   details: p.details.slice(0, 3),
 }));
 
-const TEAM = [
-  // DOM order (RTL): first item is visual-right.
-  { slug: 'faranak-ahmadi', nameKey: 'landing.team1', roleKey: 'landing.roleTrainer', img: `${P}/01-3.jpg` },
-  { slug: 'leila-kiani', nameKey: 'landing.team2', roleKey: 'landing.roleTrainer', img: `${P}/02-3.jpg` },
-  { slug: 'sanaz-ghaffari', nameKey: 'landing.team3', roleKey: 'landing.roleVet', img: `${P}/03-3.jpg` },
-  { slug: 'sara-noori', nameKey: 'landing.team4', roleKey: 'landing.roleVet', img: `${P}/04-3.jpg` },
-  { slug: 'yalda-shabani', nameKey: 'landing.team5', roleKey: 'landing.roleSupport', img: '/agents/yalda-shabani.jpg' },
-] as const;
+const TEAM_I18N: Record<string, { nameKey: string; roleKey: string }> = {
+  'faranak-ahmadi': { nameKey: 'landing.team1', roleKey: 'landing.roleTrainer' },
+  'leila-kiani': { nameKey: 'landing.team2', roleKey: 'landing.roleTrainer' },
+  'sanaz-ghaffari': { nameKey: 'landing.team3', roleKey: 'landing.roleVet' },
+  'sara-noori': { nameKey: 'landing.team4', roleKey: 'landing.roleVet' },
+  'yalda-shabani': { nameKey: 'landing.team5', roleKey: 'landing.roleSupport' },
+};
+
+/** Landing cards use committed /agents/*.jpg so chat + team photos stay in sync. */
+const TEAM = TEAM_AGENTS.map((a) => {
+  const i18n = TEAM_I18N[a.slug] ?? { nameKey: 'landing.team1', roleKey: 'landing.roleTrainer' };
+  return { slug: a.slug, nameKey: i18n.nameKey, roleKey: i18n.roleKey, img: a.avatarUrl };
+});
 
 const REVIEW_DEFS = [
   { handleKey: 'landing.review1h', textKey: 'landing.review1t', img: `${P}/01-4.jpg` },

@@ -25,6 +25,8 @@ async function main() {
     isGreetingMessage,
     buildGreetingReply,
     trainerQuestionUnknownOffline,
+    buildAiConsultSystemPrompt,
+    buildLlmUserContent,
   } = await import('./ai-consult');
   const {
     startAiFallbackConsult,
@@ -290,8 +292,18 @@ async function main() {
   const vetTip = offlineAiAdvice({ kind: 'vet', petName: 'ملوس', userMessage: 'استفراغ مکرر از دیروز' });
   assert(vetTip.includes('دامپزشک'), 'offline vet clinical tip');
   assert(!/سلام .*خوبی/.test(vetTip.split('\n')[0] || '') || vetTip.includes('استفراغ') || vetTip.includes('عمومی'), 'clinical path not pure greeting');
+  const vetPhoto = offlineAiAdvice({
+    kind: 'vet',
+    agentName: 'دکتر ساناز غفاری',
+    clinicalImage: { mimeType: 'image/jpeg', dataUrl: 'data:image/jpeg;base64,QQ==' },
+    userMessage: 'این زخم پاشه',
+  });
+  assert(vetPhoto.includes('دکتر ساناز غفاری'), 'photo triage uses persona name');
+  assert(/عکس|تریاژ/.test(vetPhoto), 'offline vet acknowledges clinical photo');
+  assert(/جایگزین ویزیت/.test(vetPhoto), 'photo reply has disclaimer');
   const supportTip = offlineAiAdvice({ kind: 'support', userMessage: 'OTP نیومد' });
   assert(supportTip.includes('پشتیبانی') || /OTP|ورود|پیامک/.test(supportTip), 'offline support tip');
+  assert(supportTip.includes('یلدا شعبانی') || /OTP|ورود/.test(supportTip), 'offline support is Yalda or OTP help');
   const supportTicket = offlineAiAdvice({
     kind: 'support',
     patientName: 'مینا',
@@ -305,6 +317,30 @@ async function main() {
     userMessage: 'کل فرآیندهای سایت چیه؟',
   });
   assert(/\/support|\/pets|\/shop|\/wallet|\/chats/.test(supportFlows), 'support site map paths');
+
+  const faranakPrompt = buildAiConsultSystemPrompt('trainer', 'فرانک احمدی');
+  assert(/فرانک احمدی/.test(faranakPrompt), 'faranak prompt names self');
+  assert(/پاشا یزدانی/.test(faranakPrompt), 'faranak plays former Pasha coach role');
+  assert(/\/team-chat\/sara-noori/.test(faranakPrompt), 'trainer ood points to vet route');
+  assert(/\/support\/chat/.test(faranakPrompt), 'trainer ood points to support');
+  const sanazPrompt = buildAiConsultSystemPrompt('vet', 'دکتر ساناز غفاری');
+  assert(/عکس بالینی/.test(sanazPrompt), 'vet prompt covers clinical photos');
+  assert(/\/team-chat\/faranak-ahmadi/.test(sanazPrompt), 'vet ood points to trainer route');
+  const yaldaPrompt = buildAiConsultSystemPrompt('support', 'یلدا شعبانی');
+  assert(/تیکت/.test(yaldaPrompt), 'support prompt covers tickets');
+  assert(/مدیر پت‌دیت/.test(yaldaPrompt), 'support escalates to owner');
+  assert(/\/team-chat\/faranak-ahmadi/.test(yaldaPrompt), 'support ood points to trainer');
+  assert(/\/support\/ticket/.test(yaldaPrompt), 'support prompt keeps existing ticket path');
+
+  const vision = buildLlmUserContent({
+    kind: 'vet',
+    userMessage: 'زخم پاشه',
+    clinicalImage: { mimeType: 'image/jpeg', dataUrl: 'data:image/jpeg;base64,QQ==' },
+  });
+  assert(Array.isArray(vision), 'vet photo becomes multimodal content');
+  assert((vision as Array<{ type: string }>).some((p) => p.type === 'image_url'), 'vision part attached');
+  const textOnly = buildLlmUserContent({ kind: 'vet', userMessage: 'اشتهاش کمه' });
+  assert(typeof textOnly === 'string', 'vet text stays string content');
 
   const tg = `selftest_ai_patient_${Date.now()}`;
   const { user: patient } = dbService.findOrCreateUser({

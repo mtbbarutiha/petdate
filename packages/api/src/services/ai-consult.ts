@@ -17,7 +17,7 @@
  * Grok Bot (گراک بات) personas on the site share the same TEAM_AGENTS roster;
  * optional XAI_API_KEY runs those faces on xAI models without a parallel chat stack.
  */
-import { PET_SPECIES } from '@petdate/shared';
+import { PET_SPECIES, teamAgentOutOfDomainHint } from '@petdate/shared';
 import {
   applyOfflineToneStyle,
   formatToneSystemInstruction,
@@ -42,8 +42,10 @@ export type AiConsultContext = {
   /** Internal: unknown offline topic — nudge LLM to answer from full online knowledge */
   forceOnlineUnknown?: boolean;
 
-  /** Persona display name (team agent); defaults to لیلا کیانی */
+  /** Persona display name (team agent); defaults to فرانک احمدی */
   agentName?: string;
+  /** Clinical / chat photo for vet (and optional trainer) vision triage. */
+  clinicalImage?: { mimeType: string; dataUrl: string } | null;
 };
 
 /** Extra English aliases that may appear in prompts / legacy data (DB codes stay lowercase). */
@@ -145,8 +147,12 @@ export function isAiConsultConfigured(): boolean {
 /** Avoid flooding pm2 error logs when AI_CONSULT_API_KEY is unset in production. */
 let warnedMissingAiConsultKey = false;
 
-function systemPrompt(kind: AiConsultKind, agentName = AI_TRAINER_DISPLAY_NAME): string {
+export function buildAiConsultSystemPrompt(
+  kind: AiConsultKind,
+  agentName = AI_TRAINER_DISPLAY_NAME,
+): string {
   const who = agentName || AI_TRAINER_DISPLAY_NAME;
+  const ood = teamAgentOutOfDomainHint(kind);
   const sharedHuman = [
     'مثل آدم واقعی در چت حرف بزن؛ نه ربات، نه جزوه، نه لیست شماره‌دار اداری.',
     'لحن طرف مقابل را حس کن (تو/شما، کوتاه/بلند، خودمونی/رسمی) و با همان لحن جواب بده.',
@@ -161,14 +167,14 @@ function systemPrompt(kind: AiConsultKind, agentName = AI_TRAINER_DISPLAY_NAME):
       `تو ${who} هستی؛ پشتیبانی انسانی پت‌دیت. کل فرآیندهای سایت را بلدی و مدیریت راهنمایی می‌کنی.`,
       ...sharedHuman,
       'فقط دربارهٔ خود محصول پت‌دیت حرف بزن: ورود OTP، ثبت/ویرایش پت، همبازی/چت، مربی، دامپزشک، شاپ، سبد، کیف پول/سکه، پشتیبانی/تیکت، اتصال وب↔ربات، پروفایل.',
-      'اگر سؤال پزشکی یا تربیت پت بود بگو تخصص تو پشتیبانی محصول است و به دامپزشک/مربی تیم ارجاع بده (مسیر داخل اپ).',
+      `اگر سؤال پزشکی یا تربیت پت بود: ${ood}`,
       'نقشهٔ سایت (مسیرهای واقعی):',
       '• ورود: /auth/login → شماره موبایل → OTP پیامک → خانه/داشبورد',
       '• خانه و داک پایین: شاپ (/shop)، چت/همبازی (/chats)، پت‌ها (/pets)، کیف پول (/wallet)',
       '• پت: /pets → افزودن/ویرایش → عکس (نمایش بعد تأیید ادمین)',
       '• همبازی: فعال‌سازی «دنبال همبازی» → جستجو/نزدیک → درخواست → بعد قبول گفتگو در /chats',
-      '• دامپزشک: /vet-consult → اگر پزشک آنلاین نبود ایجنت دامپزشک تیم پاسخ می‌دهد؛ چت در /vet-chats',
-      '• مربی: /trainer-consult → اتصال انسانی یا فرانک/لیلا؛ چت تیم از /team-chat',
+      '• دامپزشک: /vet-consult → اگر پزشک آنلاین نبود ایجنت دامپزشک تیم پاسخ می‌دهد؛ چت در /vet-chats یا /team-chat/sara-noori',
+      '• مربی: /trainer-consult → اتصال انسانی یا فرانک/لیلا؛ چت تیم از /team-chat/faranak-ahmadi و /team-chat/leila-kiani',
       '• شاپ: /shop → محصول → سبد (/shop/cart) → آدرس → پرداخت/رسید',
       '• سکه: /wallet → شارژ/رسید؛ برای بعضی سرویس‌ها سکه لازم است',
       '• پشتیبانی هاب: /support → دو راه: چت با من (/support/chat) یا فرم تیکت (/support/ticket)',
@@ -179,7 +185,7 @@ function systemPrompt(kind: AiConsultKind, agentName = AI_TRAINER_DISPLAY_NAME):
       '۳) اگر فقط بپرسد «چطور تیکت ثبت کنم» → آموزش بده، هنوز تیکت نساز مگر خودش بخواهد',
       '۴) مسیر دستی: /support → «ثبت تیکت» (/support/ticket) → عنوان + شرح → ارسال؛ لیست تیکت‌ها همان صفحه است',
       '۵) وضعیت تیکت: باز / در انتظار / پاسخ‌داده‌شده / بسته‌شده — از /support/ticket ببیند',
-      '۶) بعد از ثبت، بگو کد تیکت می‌آید و پیامک/اعلان وضعیت وقتی سیستم اجازه بدهد می‌رسد',
+      '۶) بعد از ثبت، بگو کد تیکت می‌آید؛ پیامک فقط وقتی محصول از قبل برای آن تیکت/شماره می‌فرستد — قول پیامک نده اگر سیستم نفرستاده.',
       'اگر جواب را نمی‌دانی یا سیاست مبهم است، صریح بگو باید از مدیر پت‌دیت بپرسی و بعد اعلام کن پیگیری می‌کنی — حدس نزن.',
       `اگر پرسیدند کی هستی: «من ${who}ام، پشتیبانی پت‌دیت.»`,
     ].join('\n');
@@ -190,11 +196,11 @@ function systemPrompt(kind: AiConsultKind, agentName = AI_TRAINER_DISPLAY_NAME):
       ...sharedHuman,
       'فارسی گفتاری تلگرامی: «ببین»، «راستش»، «یه‌کم»، «باشه»، «آفرین»، «دمش گرم».',
       'فقط تربیت/رفتار/فرمان/اجتماعی‌سازی/اضطراب جدایی/قلاده/جعبه/دستشویی. روی فرمان‌ها عمیق و عملی جواب بده.',
-      'اگر سؤال پزشکی/دارو/تشخیص یا پشتیبانی فنی سایت بود: مودب بگو «این تو تخصص من نیست» و به دامپزشک یا پشتیبانی ارجاع بده.',
+      `اگر سؤال پزشکی/دارو/تشخیص یا پشتیبانی فنی سایت بود: مودب بگو ${ood}`,
       'تنبیه بدنی/خفه/شوک/آلفا رول ممنوع. توله≠بالغ؛ گربه≠سگ.',
-      'پزشکی: نگران شو و بفرست دامپزشک؛ دارو نده.',
+      'پزشکی: نگران شو و بفرست دامپزشک؛ دارو نده. اگر گیر کردی مشاوره آنلاین انسانی یا مربی حضوری پیشنهاد بده.',
       who.includes('فرانک')
-        ? 'در پیام اول خودت را به‌عنوان فرانک احمدی، مربی پت‌دیت معرفی کن (کوتاه و گرم). وسط گفتگو دوباره معرفی نکن.'
+        ? 'نقش مربی آنلاین همان نقش سابق «پاشا یزدانی» است؛ دانش و سبک مربی‌گری همان است. در پیام اول خودت را به‌عنوان فرانک احمدی، مربی پت‌دیت معرفی کن (کوتاه و گرم). وسط گفتگو دوباره معرفی نکن. نگو پاشا هستی مگر کاربر پاشا را پرسید — آن‌وقت بگو فرانک هستی و همان نقش مربی را ادامه می‌دهی.'
         : `اگر پرسیدند کی هستی: «من ${who}ام، مربی آنلاین پت‌دیت.»`,
       'اگر راهنمای لحن کاربر آمد همان سبک را رعایت کن.',
     ].join('\n');
@@ -204,7 +210,8 @@ function systemPrompt(kind: AiConsultKind, agentName = AI_TRAINER_DISPLAY_NAME):
     ...sharedHuman,
     'فقط مراقبت، تغذیه، پیشگیری، علائم هشدار و زمان مراجعه. تشخیص قطعی و نسخه دارو نده.',
     'در فارسی از DOG/CAT استفاده نکن؛ بگو سگ یا گربه.',
-    'اگر سؤال تربیت/فرمان یا پشتیبانی فنی سایت بود: بگو تو تخصص تو نیست و به مربی یا پشتیبانی ارجاع بده.',
+    `اگر سؤال تربیت/فرمان یا پشتیبانی فنی سایت بود: ${ood}`,
+    'اگر عکس بالینی پیوست شد: تریاژ کن (چه می‌بینی، قرمزی/ترشح/زخم/تورم، فوریت). تشخیص قطعی نده. disclaimer بده که جایگزین ویزیت حضوری نیست. علائم خطر → مراجعه فوری. اگر گیر کردی مشاوره آنلاین انسانی یا کلینیک حضوری پیشنهاد بده.',
     `اگر پرسیدند کی هستی بگو ${who} هستی. جایگزین دامپزشک حضوری نیستی؛ علائم خطرناک → مراجعه فوری.`,
   ].join('\n');
 }
@@ -1257,7 +1264,7 @@ export function offlineAiAdvice(ctx: AiConsultContext): string {
     if (topic) {
       const lines = hasHistory
         ? [`دربارهٔ «${q}»:`, ``, topic]
-        : [`👋 من پشتیبانی هوشمند پت‌دیت هستم.`, ``, topic];
+        : [`👋 من ${consultAgentName(ctx)} هستم، پشتیبانی پت‌دیت.`, ``, topic];
       lines.push(``, `سؤال بعدی‌ات را بپرس — همین‌جا ادامه می‌دهیم.`);
       return lines.join('\n');
     }
@@ -1270,7 +1277,7 @@ export function offlineAiAdvice(ctx: AiConsultContext): string {
       ].join('\n');
     }
     return [
-      `👋 من پشتیبانی هوشمند پت‌دیت هستم.`,
+      `👋 من ${consultAgentName(ctx)} هستم، پشتیبانی پت‌دیت.`,
       ``,
       q
         ? `دربارهٔ «${q}» — یکی از این‌ها را امتحان کن یا جزئیات بیشتر بفرست:`
@@ -1337,11 +1344,27 @@ export function offlineAiAdvice(ctx: AiConsultContext): string {
     }
     return withTone(greet);
   }
-    const q = ctx.userMessage?.trim() ?? '';
+  const who = consultAgentName(ctx);
+  const q = ctx.userMessage?.trim() ?? '';
+  if (ctx.clinicalImage) {
+    return [
+      `👋 من ${who} هستم. عکست را دیدم.`,
+      ``,
+      `از روی عکس تشخیص قطعی نمی‌دهم — این تریاژ اولیه است، نه ویزیت.`,
+      `علائم خطر (بی‌حالی شدید، استفراغ مکرر، تنگی نفس، خونریزی، تشنج، نخوردن آب) → فوری دامپزشک حضوری؛ معطل چت نمان.`,
+      ``,
+      q
+        ? `دربارهٔ «${q}»: از کی شروع شده، شدت، تب/اشتها/ادرار را بگو.`
+        : `بگو از کی شروع شده، شدت علائم، تب، اشتها و ادرار چطور است.`,
+      ``,
+      `اگر نگران‌کننده‌تر شد مشاوره آنلاین انسانی یا کلینیک حضوری بگیر.`,
+      `⚠️ جایگزین ویزیت دامپزشک نیست.`,
+    ].join('\n');
+  }
   if (q && isGreetingMessage(q)) return buildGreetingReply(ctx);
   if (!q) return buildGreetingReply(ctx);
   return [
-    `👋 من ${consultAgentName(ctx)} هستم (دامپزشک انسانی الان آنلاین نیست).`,
+    `👋 من ${who} هستم (دامپزشک انسانی الان آنلاین نیست).`,
     ``,
     `برای ${pet} چند نکتهٔ عمومی:`,
     `• آب تازه و غذای متناسب با سن/گونه`,
@@ -1374,24 +1397,16 @@ function petContextBits(ctx: AiConsultContext): string[] {
   return ctxBits;
 }
 
-async function callOpenAiCompatible(ctx: AiConsultContext): Promise<string | null> {
-  const key = envKey();
-  if (!key) return null;
-  const base = envBaseUrl();
-  const model = envModel();
-  const messages: Array<{ role: string; content: string }> = [
-    { role: 'system', content: systemPrompt(ctx.kind, consultAgentName(ctx)) },
-  ];
-  if (ctx.kind === 'trainer' && ctx.userTone && ctx.userTone.samples > 0) {
-    messages.push({ role: 'system', content: formatToneSystemInstruction(ctx.userTone) });
-  }
-  for (const h of ctx.history ?? []) {
-    messages.push({ role: h.role, content: h.content });
-  }
+type LlmTextPart = { type: 'text'; text: string };
+type LlmImagePart = { type: 'image_url'; image_url: { url: string } };
+export type LlmUserContent = string | Array<LlmTextPart | LlmImagePart>;
+
+/** Build the user turn sent to the LLM (text + optional clinical photo). */
+export function buildLlmUserContent(ctx: AiConsultContext): LlmUserContent {
+  let text: string;
   if (ctx.kind === 'support' || ctx.kind === 'trainer') {
-    const userText = ctx.userMessage?.trim() || 'سلام';
+    const userText = ctx.userMessage?.trim() || (ctx.clinicalImage ? 'این عکس را ببین.' : 'سلام');
     const ctxBits = petContextBits(ctx);
-    // Always attach pet context for trainer so multi-turn stays age/breed-aware.
     const includeCtx =
       ctx.kind === 'trainer' ? ctxBits.length > 0 : !(ctx.history?.length ?? 0) && ctxBits.length > 0;
     const prefix = includeCtx ? `${ctxBits.join(' · ')}\n\n` : '';
@@ -1406,10 +1421,37 @@ async function callOpenAiCompatible(ctx: AiConsultContext): Promise<string | nul
           ? '\n\n(یادآوری: سؤال کاربر را تکرار نکن؛ مستقیم جواب بده. «نسخه» و متای «برای اینکه درست/دقیق راهنمایی کنم باید بدونم…» ممنوع؛ گفتگو را ادامه بده؛ سن/خونه-بیرون را اگر قبلاً پرسیدی یا جواب داده دوباره نپرس.)' +
             onlineUnknownHint
           : onlineUnknownHint;
-    messages.push({ role: 'user', content: `${prefix}${userText}${followHint}` });
+    text = `${prefix}${userText}${followHint}`;
   } else {
-    messages.push({ role: 'user', content: buildUserPrompt(ctx) });
+    text = buildUserPrompt(ctx);
+    if (ctx.clinicalImage) {
+      text +=
+        '\n\nعکس بالینی پیوست شده. تریاژ کن (چه می‌بینی، فوریت). تشخیص قطعی و نسخه نده. disclaimer بده.';
+    }
   }
+  const url = ctx.clinicalImage?.dataUrl?.trim();
+  if (!url) return text;
+  return [
+    { type: 'text', text },
+    { type: 'image_url', image_url: { url } },
+  ];
+}
+
+async function callOpenAiCompatible(ctx: AiConsultContext): Promise<string | null> {
+  const key = envKey();
+  if (!key) return null;
+  const base = envBaseUrl();
+  const model = envModel();
+  const messages: Array<{ role: string; content: LlmUserContent }> = [
+    { role: 'system', content: buildAiConsultSystemPrompt(ctx.kind, consultAgentName(ctx)) },
+  ];
+  if (ctx.kind === 'trainer' && ctx.userTone && ctx.userTone.samples > 0) {
+    messages.push({ role: 'system', content: formatToneSystemInstruction(ctx.userTone) });
+  }
+  for (const h of ctx.history ?? []) {
+    messages.push({ role: h.role, content: h.content });
+  }
+  messages.push({ role: 'user', content: buildLlmUserContent(ctx) });
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 45_000);

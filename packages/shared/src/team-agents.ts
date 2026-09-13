@@ -40,7 +40,7 @@ export const TEAM_AGENTS: readonly TeamAgentDef[] = [
     role: 'مربی',
     kind: 'trainer',
     avatarUrl: '/agents/faranak-ahmadi.jpg',
-    cardImage: '/pepito/uploads/01-3.jpg',
+    cardImage: '/agents/faranak-ahmadi.jpg',
     grokBotKey: 'faranak_ahmadi',
   },
   {
@@ -50,7 +50,7 @@ export const TEAM_AGENTS: readonly TeamAgentDef[] = [
     role: 'مربی',
     kind: 'trainer',
     avatarUrl: '/agents/leila-kiani.jpg',
-    cardImage: '/pepito/uploads/02-3.jpg',
+    cardImage: '/agents/leila-kiani.jpg',
     grokBotKey: 'leila_kiani',
   },
   {
@@ -60,7 +60,7 @@ export const TEAM_AGENTS: readonly TeamAgentDef[] = [
     role: 'دامپزشک',
     kind: 'vet',
     avatarUrl: '/agents/sanaz-ghaffari.jpg',
-    cardImage: '/pepito/uploads/03-3.jpg',
+    cardImage: '/agents/sanaz-ghaffari.jpg',
     grokBotKey: 'sanaz_ghaffari',
   },
   {
@@ -71,7 +71,7 @@ export const TEAM_AGENTS: readonly TeamAgentDef[] = [
     role: 'دامپزشک',
     kind: 'vet',
     avatarUrl: '/agents/sara-noori.jpg',
-    cardImage: '/pepito/uploads/04-3.jpg',
+    cardImage: '/agents/sara-noori.jpg',
     grokBotKey: 'sara_noori',
   },
   {
@@ -167,6 +167,42 @@ export function teamAgentsByKind(kind: TeamAgentKind): TeamAgentDef[] {
 }
 
 export function teamAgentChatPath(slug: string): string {
-  if (getTeamAgentBySlug(slug)?.kind === 'support') return '/support/chat';
-  return `/team-chat/${encodeURIComponent(slug)}`;
+  const def = getTeamAgentBySlug(slug);
+  if (def?.kind === 'support') return '/support/chat';
+  const canonical = def?.slug || slug;
+  return `/team-chat/${encodeURIComponent(canonical)}`;
+}
+
+/** Default face + path to offer when a persona is out of domain. */
+export function teamAgentReferralForKind(kind: TeamAgentKind): {
+  slug: string;
+  name: string;
+  role: string;
+  path: string;
+} {
+  const preferred =
+    kind === 'support'
+      ? getTeamAgentBySlug(SUPPORT_TEAM_AGENT_SLUG)
+      : kind === 'vet'
+        ? getTeamAgentBySlug(DEFAULT_VET_TEAM_AGENT_SLUG)
+        : getTeamAgentBySlug(DEFAULT_TEAM_AGENT_SLUG);
+  const def = preferred ?? TEAM_AGENTS.find((a) => a.kind === kind)!;
+  return { slug: def.slug, name: def.name, role: def.role, path: teamAgentChatPath(def.slug) };
+}
+
+/** Persian one-liner: «این تو تخصص من نیست» + named colleague + site path. */
+export function teamAgentOutOfDomainHint(fromKind: TeamAgentKind): string {
+  if (fromKind === 'trainer') {
+    const vet = teamAgentReferralForKind('vet');
+    const support = teamAgentReferralForKind('support');
+    return `این تو تخصص من نیست — برای پزشکی برو پیش ${vet.name} (${vet.path}) و برای ورود/سکه/شاپ پیش ${support.name} (${support.path}).`;
+  }
+  if (fromKind === 'vet') {
+    const trainer = teamAgentReferralForKind('trainer');
+    const support = teamAgentReferralForKind('support');
+    return `این تو تخصص من نیست — تربیت و فرمان را از ${trainer.name} بپرس (${trainer.path}) و پشتیبانی سایت از ${support.name} (${support.path}).`;
+  }
+  const trainer = teamAgentReferralForKind('trainer');
+  const vet = teamAgentReferralForKind('vet');
+  return `تخصص من پشتیبانی محصول است — تربیت را از ${trainer.name} بپرس (${trainer.path}) و پزشکی را از ${vet.name} (${vet.path}).`;
 }

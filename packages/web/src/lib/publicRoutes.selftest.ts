@@ -31,6 +31,10 @@ assert.match(guard, /PUBLIC_EXACT[\s\S]*\/vet-consult/, 'AuthGuard treats /vet-c
 assert.match(guard, /PUBLIC_PREFIXES[\s\S]*\/magazine/, 'AuthGuard treats /magazine as public');
 assert.match(guard, /\/adoption/, 'AuthGuard treats /adoption as public');
 assert.match(guard, /\/pet/, 'AuthGuard treats /pet as public');
+assert.match(guard, /\/team-chat/, 'AuthGuard treats /team-chat as public');
+assert.match(guard, /\/support/, 'AuthGuard treats /support as public');
+assert.match(app, /path="team-chat\/:agentSlug"/, 'App registers /team-chat/:agentSlug');
+assert.match(app, /path="support\/chat"/, 'App registers /support/chat');
 assert.match(app, /path="adoption"\s+element=\{<AdoptionListPage/, 'App registers /adoption listing');
 assert.match(app, /path="pet\/:slugOrId"\s+element=\{<PublicPetPage/, 'App registers public /pet/:slug');
 assert.doesNotMatch(

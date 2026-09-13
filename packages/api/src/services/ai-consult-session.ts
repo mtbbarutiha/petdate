@@ -1,4 +1,5 @@
 import fs from 'fs';
+import sharp from 'sharp';
 import type {
   ConsultServiceKind,
   User,
@@ -218,11 +219,55 @@ export async function startTeamAgentConsult(opts: {
   return { ...session, agentSlug: agent?.slug ?? opts.agentSlug };
 }
 
+export const AI_PHOTO_PROMPT_FA: Record<'vet' | 'trainer', string> = {
+  vet: 'این عکس بالینی را فرستادم. لطفاً تریاژ کن.',
+  trainer: 'این عکس را ببین و راهنمایی تربیت بده.',
+};
+
+function isPhotoMedia(kind: string | null | undefined): boolean {
+  return kind === 'photo';
+}
+
+/** Resize a consult photo for the existing chat-completions vision payload. */
+export async function consultPhotoToDataUrl(
+  message: Pick<VetConsultChatMessage, 'mediaKind' | 'storageKey' | 'telegramFileId' | 'mimeType'>,
+): Promise<{ mimeType: string; dataUrl: string } | null> {
+  if (!isPhotoMedia(message.mediaKind)) return null;
+  let buffer: Buffer | null = null;
+  if (message.storageKey) {
+    const abs = resolveStoragePath(message.storageKey);
+    if (abs && fs.existsSync(abs)) {
+      try {
+        buffer = fs.readFileSync(abs);
+      } catch {
+        buffer = null;
+      }
+    }
+  }
+  if (!buffer && message.telegramFileId) {
+    const file = await fetchTelegramFileBytes(message.telegramFileId);
+    if (file?.buffer?.length) buffer = file.buffer;
+  }
+  if (!buffer?.length) return null;
+  try {
+    const jpeg = await sharp(buffer)
+      .rotate()
+      .resize(1024, 1024, { fit: 'inside', withoutEnlargement: true })
+      .jpeg({ quality: 72 })
+      .toBuffer();
+    return { mimeType: 'image/jpeg', dataUrl: `data:image/jpeg;base64,${jpeg.toString('base64')}` };
+  } catch (err) {
+    console.warn('consult photo vision encode failed:', (err as Error).message);
+    return null;
+  }
+}
+
 /** After a patient message in an AI consult, generate and store an assistant reply. */
 export async function maybeReplyAsAiAssistant(opts: {
   consultId: number;
   patientUserId: number;
   patientText: string;
+  imageMessage?: VetConsultChatMessage | null;
 }): Promise<void> {
   const consult = dbService.getVetConsultation(opts.consultId);
   if (!consult || consult.status !== 'active' || consult.chatEnded) return;
@@ -264,6 +309,11 @@ export async function maybeReplyAsAiAssistant(opts: {
 
   const aiUser = dbService.getUserById(consult.vetUserId);
   const displayName = aiUser ? agentDisplayName(aiUser) : AI_ASSISTANT_DISPLAY_NAME;
+  const clinicalImage = opts.imageMessage ? await consultPhotoToDataUrl(opts.imageMessage) : null;
+  const patientText =
+    opts.patientText.trim() ||
+    (clinicalImage ? AI_PHOTO_PROMPT_FA[aiKind] : '');
+  if (!patientText) return;
 
   const generated = await generateAiConsultAdvice({
     kind: aiKind,
@@ -273,10 +323,11 @@ export async function maybeReplyAsAiAssistant(opts: {
     petBreed: pet?.breed || consult.petBreed,
     petImageUrl: pet?.imageUrl,
     petAgeMonths: pet?.ageMonths,
-    userMessage: opts.patientText,
+    userMessage: patientText,
     history: recent.slice(0, -1),
     userTone,
     agentName: displayName,
+    clinicalImage,
   });
 
   // Human pacing for trainer AI only — HTTP path already fire-and-forgets this call.

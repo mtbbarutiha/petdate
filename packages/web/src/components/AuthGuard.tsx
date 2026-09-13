@@ -16,6 +16,8 @@ const PUBLIC_PREFIXES = [
   '/magazine',
   '/vet-consult',
   '/pet',
+  '/team-chat',
+  '/support',
 ];
 
 function isPublic(pathname: string) {
