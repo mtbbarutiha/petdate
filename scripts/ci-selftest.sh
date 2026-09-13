@@ -314,6 +314,7 @@ echo "==> selftest: live shop catalog is p221–p249 only"
 npx tsx "$ROOT/packages/api/src/data/shop-live-catalog.selftest.ts"
 
 echo "==> selftest: web shop cart sync (badge + merge-then-persist)"
+npx tsx "$ROOT/packages/web/src/hooks/shopCartMerge.selftest.ts"
 npx tsx "$ROOT/packages/web/src/hooks/useShopCart.selftest.ts"
 
 echo "==> selftest: bot shop cart shared API"
