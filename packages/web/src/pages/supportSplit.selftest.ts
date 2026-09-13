@@ -26,6 +26,8 @@ assert.match(hub, /\/support\/chat/, 'hub links chat');
 assert.match(ticket, /createSupportTicket/, 'ticket page posts ticket');
 assert.match(ticket, /lastPublicReply/, 'ticket list shows public reply');
 assert.match(chat, /یلدا شعبانی|AI_ASSISTANT_DISPLAY_NAME/, 'chat uses support agent name');
+assert.match(chat, /AI_SUPPORT_AVATAR_URL/, 'chat header uses Yalda avatar');
 assert.match(agent, /یلدا شعبانی/, 'canonical agent name');
+assert.match(agent, /yalda-shabani\.jpg/, 'canonical Yalda avatar path');
 
 console.log('supportSplit.selftest: ok');

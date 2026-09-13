@@ -33,9 +33,10 @@ assert.equal(getTeamAgentBySlug('leila-kiani')?.kind, 'trainer');
 assert.equal(getTeamAgentBySlug('sanaz-ghaffari')?.kind, 'vet');
 assert.equal(getTeamAgentBySlug('sara-noori')?.kind, 'vet');
 assert.equal(getTeamAgentBySlug('yalda-shabani')?.kind, 'support');
+assert.match(getTeamAgentBySlug('yalda-shabani')!.avatarUrl, /\/agents\/yalda-shabani\.jpg\?v=yalda-v1$/, 'Yalda avatar is cache-busted');
 
 for (const a of TEAM_AGENTS) {
-  assert.match(a.avatarUrl, new RegExp(`/agents/${a.slug}\\.jpg$`), `${a.slug} avatar path`);
+  assert.match(a.avatarUrl, new RegExp(`/agents/${a.slug}\\.jpg(?:\\?v=[\\w-]+)?$`), `${a.slug} avatar path`);
 }
 
 const trainerRef = teamAgentReferralForKind('trainer');

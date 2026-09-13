@@ -80,8 +80,8 @@ export const TEAM_AGENTS: readonly TeamAgentDef[] = [
     name: 'یلدا شعبانی',
     role: 'پشتیبانی',
     kind: 'support',
-    avatarUrl: '/agents/yalda-shabani.jpg',
-    cardImage: '/agents/yalda-shabani.jpg',
+    avatarUrl: '/agents/yalda-shabani.jpg?v=yalda-v1',
+    cardImage: '/agents/yalda-shabani.jpg?v=yalda-v1',
     grokBotKey: 'yalda_shabani',
   },
 ] as const;
