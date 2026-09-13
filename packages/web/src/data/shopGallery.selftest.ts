@@ -31,7 +31,7 @@ assert.ok(!fromParams.includes('__images'), 'gallery srcs are URLs, not the key'
 
 const pilots = [
   ['p221', 'dog-food-royal-canin-mini-adult-2kg', 'royal-canin-mini-adult-2kg', 8_881_000],
-  ['p222', 'dog-food-royal-canin-xsmall-puppy-1-5kg', 'royal-canin-xsmall-puppy-1.5kg', 8_894_000],
+  ['p222', 'dog-food-royal-canin-xsmall-puppy-1-5kg', 'royal-canin-xsmall-puppy-1.5kg', 8_294_000],
   ['p223', 'cat-food-royal-canin-persian-adult-400g', 'royal-canin-persian-adult-400g', 2_741_600],
 ] as const;
 for (const [id, slug, stem, price] of pilots) {

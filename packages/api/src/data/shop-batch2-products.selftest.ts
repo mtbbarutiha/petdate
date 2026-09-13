@@ -156,7 +156,7 @@ async function main() {
   for (const row of livePrices) {
     const expected: Record<string, number> = {
       'dog-food-royal-canin-mini-adult-2kg': 8_881_000,
-      'dog-food-royal-canin-xsmall-puppy-1-5kg': 8_894_000,
+      'dog-food-royal-canin-xsmall-puppy-1-5kg': 8_294_000,
       'cat-food-royal-canin-persian-adult-400g': 2_741_600,
     };
     assert.equal(row.price_toman, expected[row.slug], `${row.slug} live price unchanged`);
