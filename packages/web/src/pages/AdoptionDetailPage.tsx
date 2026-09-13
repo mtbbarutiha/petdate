@@ -52,8 +52,6 @@ export function AdoptionDetailPage() {
         scrolled={scrolled}
         sectionLinks={landingSectionLinks(platform)}
         showCart
-        actionLabel={t('common.login')}
-        actionTo={loginPath('/home')}
         ctaLabel={t('common.sendMessage')}
         ctaTo={loginPath('/chats')}
       />

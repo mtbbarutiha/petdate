@@ -565,16 +565,22 @@ body > #pd-boot-lcp.is-parked,
   bottom: 4vh;
   display: flex;
   justify-content: center;
+  align-items: center;
+  /* ~half a 10px circle between visual dots (not 44px hit-box edges). */
   gap: 0.35rem;
 }
+/* Visual box = the 10px ::after. Padding grows the tap target; negative
+   margin keeps flex gap as the clear space between circle edges. */
 .pepito-hero-dot {
-  width: 44px;
-  height: 44px;
-  min-width: 44px;
-  min-height: 44px;
+  box-sizing: content-box;
+  width: 10px;
+  height: 10px;
+  min-width: 10px;
+  min-height: 10px;
+  padding: 17px 4px;
+  margin: -17px -4px;
   border: 0;
   background: transparent;
-  padding: 0;
   cursor: pointer;
   display: grid;
   place-items: center;
@@ -582,16 +588,17 @@ body > #pd-boot-lcp.is-parked,
 }
 .pepito-hero-dot::after {
   content: '';
-  width: 11px;
-  height: 11px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.7);
+  border: 1.5px solid rgba(236, 230, 250, 0.92);
   background: transparent;
+  box-sizing: border-box;
   transition: background 0.25s ease, border-color 0.25s ease;
 }
 .pepito-hero-dot.is-active::after {
-  background: var(--pepito-white);
-  border-color: #fff;
+  background: #c9bde8;
+  border-color: #c9bde8;
 }
 /* Pepito `.slider-fade .owl-theme .owl-nav` — side circular chevrons */
 .pepito-hero-nav {

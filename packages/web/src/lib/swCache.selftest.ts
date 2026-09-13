@@ -14,9 +14,15 @@ const root = join(webSrc, '..');
 const sw = readFileSync(join(webSrc, 'lib/swRegister.ts'), 'utf8');
 const vite = readFileSync(join(root, 'vite.config.ts'), 'utf8');
 
-assert.match(sw, /petdate-sw-20260913-footer-blurb-v33/, 'swRegister bust generation is v33');
-assert.match(sw, /petdate-web-v33-footer-blurb/, 'swRegister active cacheId is v33');
-assert.match(vite, /cacheId:\s*'petdate-web-v33-footer-blurb'/, 'vite PWA cacheId is v33');
+assert.match(sw, /petdate-sw-20260913-footer-blurb-v35/, 'swRegister bust generation is v35');
+assert.match(sw, /petdate-web-v35-footer-blurb/, 'swRegister active cacheId is v35');
+assert.match(vite, /cacheId:\s*'petdate-web-v35-footer-blurb'/, 'vite PWA cacheId is v35');
+assert.doesNotMatch(sw, /petdate-web-v34-header-dedupe/, 'old v34-header-dedupe cacheId is retired');
+assert.doesNotMatch(sw, /petdate-sw-20260913-header-dedupe-v34/, 'old v34-header-dedupe bust key is retired');
+assert.doesNotMatch(sw, /petdate-web-v33-hero-dots/, 'old v33-hero-dots cacheId is retired');
+assert.doesNotMatch(sw, /petdate-sw-20260913-hero-dots-v33/, 'old v33-hero-dots bust key is retired');
+assert.doesNotMatch(sw, /petdate-web-v33-header-dedupe/, 'old v33-header-dedupe cacheId is retired');
+assert.doesNotMatch(sw, /petdate-sw-20260913-header-dedupe-v33/, 'old v33-header-dedupe bust key is retired');
 assert.doesNotMatch(sw, /petdate-web-v32-login-icon/, 'old v32-login-icon cacheId is retired');
 assert.doesNotMatch(sw, /petdate-sw-20260913-login-icon-v32/, 'old v32-login-icon bust key is retired');
 assert.doesNotMatch(sw, /petdate-web-v31-dock-clear/, 'old v31-dock-clear cacheId is retired');
