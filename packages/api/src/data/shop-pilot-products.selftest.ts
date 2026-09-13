@@ -102,6 +102,35 @@ async function main() {
 
   const bust = readFileSync(join(repoRoot, 'tmp/cache-bust-royal-canin-pilot-3sku-v1'), 'utf8');
   assert.match(bust, /royal-canin-pilot-3sku-v1/, 'cache-bust marker present');
+  const whiteBust = readFileSync(join(repoRoot, 'tmp/cache-bust-royal-canin-mini-adult-white-v1'), 'utf8');
+  assert.match(whiteBust, /royal-canin-mini-adult-white-v1/, 'white packshot cache-bust marker present');
+
+  const p221 = rows.find((r) => r.slug === SLUGS[0]);
+  assert.ok(p221, 'p221 row');
+  assert.match(p221!.image, /royal-canin-mini-adult-2kg\.jpg\?v=white-v1$/, 'p221 image is cache-busted white-v1');
+  assert.doesNotMatch(p221!.image, /purple|5c4d91|بنفش/i, 'p221 must not be a purple cutout');
+  assert.equal(seed.ROYAL_CANIN_PILOT_PRODUCTS.length, 3, 'no extra purple test SKU');
+  assert.ok(
+    !seed.ROYAL_CANIN_PILOT_SLUGS.some((s) => /purple|bg-purple/i.test(s)),
+    'no purple-bg test slug'
+  );
+
+  const pepitoCss = readFileSync(join(repoRoot, 'packages/web/src/styles/pepito.css'), 'utf8');
+  assert.match(
+    pepitoCss,
+    /\.pd-shop-card-media\s*\{[^}]*background:\s*#ffffff/,
+    'listing card photo well is #ffffff, not brand purple'
+  );
+  assert.match(
+    pepitoCss,
+    /\.pd-dk-gallery-main\s*\{[^}]*background:\s*#ffffff/,
+    'PDP gallery well is #ffffff'
+  );
+  assert.match(
+    pepitoCss,
+    /\.pd-shop-cart-thumb\s*\{[^}]*background:\s*#ffffff/,
+    'cart thumb well is #ffffff'
+  );
 
   for (const name of IMAGES) {
     const abs = join(repoRoot, 'packages/web/public/pepito/uploads', name);

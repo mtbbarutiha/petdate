@@ -8960,7 +8960,8 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   position: relative;
   display: block;
   aspect-ratio: 1 / 1;
-  background: var(--pepito-base);
+  /* Shop packshots are #FFFFFF — never brand purple behind the product. */
+  background: #ffffff;
   overflow: hidden;
 }
 .pd-shop-card-media img {
@@ -9444,7 +9445,7 @@ a.pepito-btn.pepito-human-consult-cta:hover {
 .pd-dk-gallery-main {
   position: relative;
   border-radius: 16px;
-  background: var(--pepito-white);
+  background: #ffffff;
   border: 1px solid rgba(92, 77, 145, 0.1);
   aspect-ratio: 1;
   display: grid;
@@ -9482,7 +9483,7 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   height: 4.25rem;
   border-radius: 12px;
   border: 1px solid rgba(92, 77, 145, 0.14);
-  background: var(--pepito-white);
+  background: #ffffff;
   padding: 0.25rem;
   cursor: pointer;
   overflow: hidden;
@@ -9947,7 +9948,7 @@ a.pepito-btn.pepito-human-consult-cta:hover {
 .pd-shop-detail-media {
   position: relative;
   border-radius: 28px;
-  background: var(--pepito-base);
+  background: #ffffff;
   border: 1px solid rgba(92, 77, 145, 0.1);
   aspect-ratio: 1;
   display: grid;
@@ -10050,7 +10051,7 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   height: 88px;
   border-radius: 16px;
   overflow: hidden;
-  background: var(--pepito-base);
+  background: #ffffff;
   display: block;
 }
 .pd-shop-cart-thumb img {

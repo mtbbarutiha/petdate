@@ -7,7 +7,7 @@ import { getDb } from '../db';
 
 const P = '/pepito/uploads';
 
-export const ROYAL_CANIN_PILOT_VERSION = 1;
+export const ROYAL_CANIN_PILOT_VERSION = 2;
 
 export type RoyalCaninPilotProduct = {
   id: string;
@@ -56,7 +56,7 @@ export const ROYAL_CANIN_PILOT_PRODUCTS: RoyalCaninPilotProduct[] = [
     petTypes: ['dog'],
     priceToman: 8_881_000,
     costToman: 8_881_000,
-    image: `${P}/royal-canin-mini-adult-2kg.jpg`,
+    image: `${P}/royal-canin-mini-adult-2kg.jpg?v=white-v1`,
     badge: 'new',
     inStock: true,
     stockQty: 25,

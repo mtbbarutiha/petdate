@@ -130,6 +130,11 @@ assert.match(pepitoCss, /\.pd-dk-tabs\s*\{[\s\S]*?var\(--pd-surface-muted/, 'PDP
 assert.match(pepitoCss, /\.pd-dk-tabs button\.is-active\s*\{[\s\S]*?var\(--pd-surface\)/, 'PDP active tab uses --pd-surface');
 assert.match(pepitoCss, /\.pd-dk-quick-param span\s*\{[\s\S]*?var\(--pd-muted/, 'PDP param labels use --pd-muted');
 assert.match(pepitoCss, /\.pd-dk-quick-param strong\s*\{[\s\S]*?var\(--pd-ink/, 'PDP param values use --pd-ink');
+assert.match(
+  pepitoCss,
+  /\.pd-shop-card-media\s*\{[^}]*background:\s*#ffffff/,
+  'shop card photo well stays #FFFFFF (no brand purple behind packshots)'
+);
 assert.doesNotMatch(
   pepitoCss,
   /\.pd-dk-quick-param\s*\{[^}]*#fafafa/,
