@@ -133,7 +133,7 @@ assert.match(welcome, /to: '\/trainer-consult'/, 'trainer deep-links to /trainer
 assert.match(welcome, /to: '\/onboarding\/role'/, 'no-pet deep-links to role onboarding');
 assert.match(welcome, /href: '#adoption'/, 'adoption hero CTA anchors to #adoption');
 assert.match(welcome, /id="adoption"/, 'welcome adoption section has id=adoption');
-assert.match(welcome, /\/2\.jpg/, 'adoption hero restores removed 2.jpg slide');
+assert.match(welcome, /\/2-hero\.jpg/, 'adoption hero has a dedicated 2-hero.jpg fallback');
 assert.match(welcome, /landing\.heroAdoptionTitle/, 'adoption hero title key present');
 assert.doesNotMatch(welcome, /پیدا کردن پرستار|مراقبت شبانه|نگهداری پت/, 'no sitter leftover CTAs on welcome');
 

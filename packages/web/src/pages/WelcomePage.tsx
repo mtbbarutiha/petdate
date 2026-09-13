@@ -44,7 +44,7 @@ const HERO_SLIDES: {
   {
     role: 'vet',
     webp: '/media/lcp/hero-vet-800.webp',
-    fallback: '/pepito/uploads/3.jpg',
+    fallback: '/pepito/uploads/3-hero.jpg',
     kickerKey: 'landing.heroVetKicker',
     titleKey: 'landing.heroVetTitle',
     leadKey: 'landing.heroVetLead',
@@ -74,7 +74,7 @@ const HERO_SLIDES: {
   {
     role: 'adoption',
     webp: '/media/lcp/hero-adoption-800.webp',
-    fallback: '/pepito/uploads/2.jpg',
+    fallback: '/pepito/uploads/2-hero.jpg',
     kickerKey: 'landing.heroAdoptionKicker',
     titleKey: 'landing.heroAdoptionTitle',
     leadKey: 'landing.heroAdoptionLead',
