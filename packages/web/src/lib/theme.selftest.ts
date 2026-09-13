@@ -135,6 +135,21 @@ assert.match(
   /\.pd-shop-card-media\s*\{[^}]*background:\s*#ffffff/,
   'shop card photo well stays #FFFFFF (no brand purple behind packshots)'
 );
+assert.match(
+  pepitoCss,
+  /\.pd-shop-card-media\s*\{[^}]*border-radius:\s*inherit/,
+  'listing photo well inherits card radius (packshot corners only)'
+);
+assert.match(
+  pepitoCss,
+  /\.pd-shop-card-media img\s*\{[^}]*border-radius:\s*inherit/,
+  'listing packshot img inherits radius so the photo clips, not the card chrome'
+);
+assert.match(
+  pepitoCss,
+  /\.pd-shop-card\s*\{[^}]*border-radius:\s*22px/,
+  'shop card chrome radius is unchanged at 22px'
+);
 assert.doesNotMatch(
   pepitoCss,
   /\.pd-dk-quick-param\s*\{[^}]*#fafafa/,

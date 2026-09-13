@@ -123,6 +123,16 @@ async function main() {
   );
   assert.match(
     pepitoCss,
+    /\.pd-shop-card-media\s*\{[^}]*border-radius:\s*inherit/,
+    'listing photo well rounds via inherit, card chrome untouched'
+  );
+  assert.match(
+    pepitoCss,
+    /\.pd-shop-card-media img\s*\{[^}]*border-radius:\s*inherit/,
+    'listing packshot img has inherited radius'
+  );
+  assert.match(
+    pepitoCss,
     /\.pd-dk-gallery-main\s*\{[^}]*background:\s*#ffffff/,
     'PDP gallery well is #ffffff'
   );
