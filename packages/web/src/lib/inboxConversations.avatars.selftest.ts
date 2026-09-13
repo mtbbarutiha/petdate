@@ -55,7 +55,7 @@ const legacy = resolveConsultPeerAvatarUrl(
   baseConsult({ vetName: 'پاشا یزدانی' }),
   'as_patient',
 );
-assert.ok(legacy?.includes('leila-kiani'), `legacy pasha → leila: ${legacy}`);
+assert.ok(legacy?.includes('faranak-ahmadi'), `legacy pasha → faranak: ${legacy}`);
 
 const patient = resolveConsultPeerAvatarUrl(
   baseConsult({ patientAvatarUrl: '/api/auth/avatar/20/p.jpg' }),
