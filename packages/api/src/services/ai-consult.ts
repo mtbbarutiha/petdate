@@ -1,21 +1,23 @@
 /**
- * AI consult fallback — OpenAI-compatible chat completions + offline Persian advisor.
+ * AI consult — OpenAI-compatible chat completions + offline Persian advisor.
  *
- * Env (any of):
- *   AI_CONSULT_API_KEY / OPENAI_API_KEY / XAI_API_KEY
- *   AI_CONSULT_BASE_URL / OPENAI_BASE_URL  (default https://api.openai.com/v1;
- *     when only XAI_API_KEY is set → https://api.x.ai/v1)
- *   AI_CONSULT_MODEL / OPENAI_MODEL / XAI_MODEL  (default gpt-4o-mini;
- *     when only XAI_API_KEY is set → grok-4-fast-non-reasoning)
- *   AI_CONSULT_STT_MODEL / OPENAI_STT_MODEL (default whisper-1; voice notes)
+ * Primary keys (tried first):
+ *   AI_CONSULT_API_KEY / OPENAI_API_KEY (+ AI_CONSULT_BASE_URL / MODEL)
+ *   XAI_API_KEY (+ XAI_MODEL → api.x.ai)
  *
- * When no key is configured, returns a careful offline advisory so users never
- * get a hard "no online provider" error for vet/trainer.
+ * Extra keyed fallbacks (after primary fails / is billing-blocked):
+ *   GROQ_API_KEY (+ GROQ_MODEL, default llama-3.3-70b-versatile)
+ *   OPENROUTER_API_KEY (+ OPENROUTER_MODEL, prefer a :free model)
+ *   AI_CONSULT_FALLBACK_API_KEY + AI_CONSULT_FALLBACK_BASE_URL + AI_CONSULT_FALLBACK_MODEL
  *
- * Production note: without XAI_API_KEY (or AI_CONSULT_API_KEY / OPENAI_API_KEY) on the
- * VPS, trainer replies use the offline knowledge base. Grok Bot agent UUIDs on
- * TEAM_AGENTS are roster identity only — xAI has no public “call bot by UUID” API;
- * live coaching uses chat completions (api.x.ai) with this persona’s system prompt.
+ * Keyless free fallback (last resort; flaky shared budget):
+ *   AI_CONSULT_DISABLE_POLLINATIONS=1 to disable
+ *   AI_CONSULT_POLLINATIONS_URL (default https://text.pollinations.ai/openai)
+ *   AI_CONSULT_POLLINATIONS_MODEL (default openai)
+ *
+ * llmLive is true only while at least one provider is usable — a lone XAI key with
+ * 403/no-credits (or Pollinations budget exhaustion) does NOT fake live.
+ * Grok Bot agent UUIDs on TEAM_AGENTS are roster identity only.
  */
 import { PET_SPECIES, teamAgentOutOfDomainHint } from '@petdate/shared';
 import {
@@ -115,53 +117,205 @@ export function consultAgentRoleFa(kind: AiConsultKind | null | undefined): stri
   return 'مربی';
 }
 
-function envKey(): string {
-  return String(
-    process.env.AI_CONSULT_API_KEY ||
-      process.env.OPENAI_API_KEY ||
-      process.env.XAI_API_KEY ||
-      '',
-  ).trim();
+export type AiConsultProviderId =
+  | 'openai_compatible'
+  | 'xai'
+  | 'groq'
+  | 'openrouter'
+  | 'fallback'
+  | 'pollinations';
+
+export type AiConsultProviderLabel = AiConsultProviderId | 'none';
+
+type ChatProvider = {
+  id: AiConsultProviderId;
+  key?: string;
+  baseUrl: string;
+  /** Full chat-completions URL when the host is not `…/v1` (Pollinations). */
+  completionsUrl?: string;
+  model: string;
+};
+
+const PROVIDER_DEAD_TTL_MS = 30 * 60 * 1000;
+const providerDeadUntil = new Map<AiConsultProviderId, number>();
+const providerDeadReason = new Map<AiConsultProviderId, string>();
+let warnedMissingAiConsultKey = false;
+let warnedAllProvidersDead = false;
+let lastSuccessfulProvider: AiConsultProviderId | null = null;
+
+function stripTrailingSlash(url: string): string {
+  return url.replace(/\/$/, '');
 }
 
-/** True when the only configured provider key is xAI (Grok). */
-function usingXaiOnly(): boolean {
-  const xai = String(process.env.XAI_API_KEY || '').trim();
-  if (!xai) return false;
-  const other = String(process.env.AI_CONSULT_API_KEY || process.env.OPENAI_API_KEY || '').trim();
-  return !other;
+function envTrim(...names: string[]): string {
+  for (const name of names) {
+    const v = String(process.env[name] || '').trim();
+    if (v) return v;
+  }
+  return '';
 }
 
-function envBaseUrl(): string {
-  const raw = String(
-    process.env.AI_CONSULT_BASE_URL ||
-      process.env.OPENAI_BASE_URL ||
-      (usingXaiOnly() ? 'https://api.x.ai/v1' : 'https://api.openai.com/v1'),
-  ).trim();
-  return raw.replace(/\/$/, '');
+function pollinationsDisabled(): boolean {
+  const v = String(process.env.AI_CONSULT_DISABLE_POLLINATIONS || '')
+    .trim()
+    .toLowerCase();
+  return v === '1' || v === 'true' || v === 'yes';
 }
 
-function envModel(): string {
-  return String(
-    process.env.AI_CONSULT_MODEL ||
-      process.env.OPENAI_MODEL ||
-      process.env.XAI_MODEL ||
-      (usingXaiOnly() ? 'grok-4-fast-non-reasoning' : 'gpt-4o-mini'),
-  ).trim();
+function pollinationsEnabled(): boolean {
+  return !pollinationsDisabled();
 }
 
+function looksUnusableLlmText(text: string): boolean {
+  return /reached its budget|raise the key budget|permission-denied|no credits|doesn't have any credits|API key used for this request|Your newly created team doesn't have any credits|licenses yet/i.test(
+    text,
+  );
+}
+
+function looksBillingOrAuthFailure(status: number, body: string): boolean {
+  if (status === 401 || status === 402 || status === 403) return true;
+  return looksUnusableLlmText(body);
+}
+
+/** Ordered providers — secrets never returned to clients. */
+export function listAiConsultProviders(): ChatProvider[] {
+  const out: ChatProvider[] = [];
+  const seen = new Set<string>();
+  const push = (p: ChatProvider) => {
+    const sig = `${p.id}|${p.completionsUrl || p.baseUrl}|${p.model}`;
+    if (seen.has(sig)) return;
+    seen.add(sig);
+    out.push(p);
+  };
+
+  const consultKey = envTrim('AI_CONSULT_API_KEY', 'OPENAI_API_KEY');
+  if (consultKey) {
+    push({
+      id: 'openai_compatible',
+      key: consultKey,
+      baseUrl: stripTrailingSlash(
+        envTrim('AI_CONSULT_BASE_URL', 'OPENAI_BASE_URL') || 'https://api.openai.com/v1',
+      ),
+      model: envTrim('AI_CONSULT_MODEL', 'OPENAI_MODEL') || 'gpt-4o-mini',
+    });
+  }
+
+  const xaiKey = envTrim('XAI_API_KEY');
+  if (xaiKey) {
+    push({
+      id: 'xai',
+      key: xaiKey,
+      baseUrl: 'https://api.x.ai/v1',
+      model: envTrim('XAI_MODEL') || 'grok-4-fast-non-reasoning',
+    });
+  }
+
+  const groqKey = envTrim('GROQ_API_KEY');
+  if (groqKey) {
+    push({
+      id: 'groq',
+      key: groqKey,
+      baseUrl: stripTrailingSlash(envTrim('GROQ_BASE_URL') || 'https://api.groq.com/openai/v1'),
+      model: envTrim('GROQ_MODEL') || 'llama-3.3-70b-versatile',
+    });
+  }
+
+  const orKey = envTrim('OPENROUTER_API_KEY');
+  if (orKey) {
+    push({
+      id: 'openrouter',
+      key: orKey,
+      baseUrl: stripTrailingSlash(
+        envTrim('OPENROUTER_BASE_URL') || 'https://openrouter.ai/api/v1',
+      ),
+      model: envTrim('OPENROUTER_MODEL') || 'meta-llama/llama-3.3-70b-instruct:free',
+    });
+  }
+
+  const fbKey = envTrim('AI_CONSULT_FALLBACK_API_KEY');
+  if (fbKey) {
+    push({
+      id: 'fallback',
+      key: fbKey,
+      baseUrl: stripTrailingSlash(
+        envTrim('AI_CONSULT_FALLBACK_BASE_URL') || 'https://openrouter.ai/api/v1',
+      ),
+      model:
+        envTrim('AI_CONSULT_FALLBACK_MODEL') ||
+        'meta-llama/llama-3.3-70b-instruct:free',
+    });
+  }
+
+  if (pollinationsEnabled()) {
+    const url = stripTrailingSlash(
+      envTrim('AI_CONSULT_POLLINATIONS_URL') || 'https://text.pollinations.ai/openai',
+    );
+    push({
+      id: 'pollinations',
+      baseUrl: url,
+      completionsUrl: url,
+      model: envTrim('AI_CONSULT_POLLINATIONS_MODEL') || 'openai',
+    });
+  }
+
+  return out;
+}
+
+function isProviderDead(id: AiConsultProviderId): boolean {
+  const until = providerDeadUntil.get(id);
+  if (!until) return false;
+  if (Date.now() >= until) {
+    providerDeadUntil.delete(id);
+    providerDeadReason.delete(id);
+    return false;
+  }
+  return true;
+}
+
+export function resetAiConsultProviderHealth(): void {
+  providerDeadUntil.clear();
+  providerDeadReason.clear();
+  warnedMissingAiConsultKey = false;
+  warnedAllProvidersDead = false;
+  lastSuccessfulProvider = null;
+}
+
+function markProviderDead(id: AiConsultProviderId, reason: string): void {
+  providerDeadUntil.set(id, Date.now() + PROVIDER_DEAD_TTL_MS);
+  providerDeadReason.set(id, reason.slice(0, 160));
+  console.warn(
+    `ai-consult provider ${id} marked unavailable for ${PROVIDER_DEAD_TTL_MS / 60000}m: ${reason.slice(0, 200)}`,
+  );
+}
+
+export function liveAiConsultProviders(): ChatProvider[] {
+  return listAiConsultProviders().filter((p) => !isProviderDead(p.id));
+}
+
+/** Any provider configured (including currently billing-blocked / budget-exhausted). */
 export function isAiConsultConfigured(): boolean {
-  return Boolean(envKey());
+  return listAiConsultProviders().length > 0;
+}
+
+/**
+ * True when we can call a live model right now.
+ * Lone XAI with 403/no-credits, or Pollinations budget exhaustion → false.
+ */
+export function isAiConsultLive(): boolean {
+  return liveAiConsultProviders().length > 0;
 }
 
 /** Public ops label — never includes secret values. */
-export function aiConsultProviderLabel(): 'xai' | 'openai_compatible' | 'none' {
-  if (!isAiConsultConfigured()) return 'none';
-  return usingXaiOnly() ? 'xai' : 'openai_compatible';
+export function aiConsultProviderLabel(): AiConsultProviderLabel {
+  const live = liveAiConsultProviders();
+  if (lastSuccessfulProvider && live.some((p) => p.id === lastSuccessfulProvider)) {
+    return lastSuccessfulProvider;
+  }
+  if (live.length) return live[0]!.id;
+  const all = listAiConsultProviders();
+  if (!all.length) return 'none';
+  return all[0]!.id;
 }
-
-/** Avoid flooding pm2 error logs when AI_CONSULT_API_KEY is unset in production. */
-let warnedMissingAiConsultKey = false;
 
 export function buildAiConsultSystemPrompt(
   kind: AiConsultKind,
@@ -600,13 +754,13 @@ const TRAINER_TOPICS: TrainerTopic[] = [
     match: /دست\s*بده|بده\s*دست|پنجه|shake(\s*hands?)?|high[\s-]*five|paw\b|give\s*(me\s*)?(a\s*)?paw/,
     title: 'دست بده',
     primary: [
-      `برای «دست بده» زور و گرفتن پنجه ممنوع؛ شکل‌دهی می‌کنیم. سگ آروم روبروت بشینه. یه تشویقی تو مشت ببند و نزدیک زمین، جلوی پنجه‌هاش نگه دار تا کنجکاو بشه و پنجه رو بلند کنه یا به دستت بزنه.`,
-      `همون لحظه که پنجه از زمین جدا شد یا به مشتت خورد بگو «آفرین» و فوری جایزه بده. چند تکرار کوتاه؛ کلمهٔ «دست» را وقتی حرکت تقریباً خودش می‌آید اضافه کن، نه از اولین ثانیه.`,
-      `اگه هیجان‌زده پارس می‌کنه یا گاز بازی می‌گیره، مشت را عقب بکش و فقط برای آرومی + پنجهٔ ملایم جایزه بده. فشار روی شانه یا کشیدن پا یاد نمی‌دهد — قطع می‌کند.`,
+      `ببین برای «دست بده» زور و گرفتن پنجه ممنوع؛ شکل‌دهی می‌کنیم. سگ آروم روبروت بشینه. یه تشویقی کوچیک تو مشت ببند و نزدیک زمین، جلوی پنجه‌هاش نگه دار تا کنجکاو بشه پنجه رو بلند کنه یا به دستت بزنه.`,
+      `همون لحظه که پنجه از زمین جدا شد یا به مشتت خورد بگو «آفرین» و فوری جایزه بده — اگه دیر کنی گیج می‌شه. چند تکرار کوتاه کافیه. کلمهٔ «دست» رو وقتی حرکت تقریباً خودش می‌آد اضافه کن، نه از اولین ثانیه.`,
+      `اگه هیجان‌زده پارس می‌کنه یا گاز بازی می‌گیره، مشت را عقب بکش و فقط برای آرومی + پنجهٔ ملایم جایزه بده. فشار روی شانه یا کشیدن پا یاد نمی‌ده — قطع می‌کنه. توله جلسه کوتاه‌تر؛ سگ پرانرژی جایزهٔ بهتر می‌خواد.`,
     ].join('\n\n'),
     deeper: [
-      `مرحلهٔ بعد: مشت را کمی بالاتر/دورتر ببر تا پنجه را عمدی دراز کند. بعد دست خالی با همان شکل کف‌دست، و جایزه را از جیب غیب کن. وقتی سه جلسه پشت‌سرهم تمیز آمد، دو طرف (چپ/راست) را جدا تمرین کن.`,
-      `برای مهمانی: اول در خانه با آدم آشنا، بعد با یک مهمان آروم. اگر پنجه را می‌کشد یا ناخن می‌کشد، معیار را به «لمس کوتاه» برگردان و جایزهٔ بهتر بده.`,
+      `اوکی، حالا بریم مرحلهٔ بعد: مشت را کمی بالاتر یا دورتر ببر تا پنجه را عمدی دراز کند. بعد همون شکل کف‌دست بدون تشویقیِ معلوم، و جایزه را از جیب غیب کن. وقتی سه جلسه پشت‌سرهم تمیز آمد، چپ و راست را جدا تمرین کن.`,
+      `برای مهمانی: اول در خانه با آدم آشنا، بعد با یک مهمان آروم. اگر پنجه را می‌کشد یا ناخن می‌کشد، معیار را به «لمس کوتاه» برگردان و جایزهٔ بهتر بده. سختش کن آروم‌آروم — هر بار فقط یک چیز.`,
       `بگو الان بیشتر پنجه را بلند می‌کند یا هنوز فقط بینی می‌زند به دستت؟`,
     ].join('\n\n'),
   },
@@ -1504,10 +1658,6 @@ export function buildLlmUserContent(ctx: AiConsultContext): LlmUserContent {
 }
 
 async function callOpenAiCompatible(ctx: AiConsultContext): Promise<string | null> {
-  const key = envKey();
-  if (!key) return null;
-  const base = envBaseUrl();
-  const model = envModel();
   const messages: Array<{ role: string; content: LlmUserContent }> = [
     { role: 'system', content: buildAiConsultSystemPrompt(ctx.kind, consultAgentName(ctx)) },
   ];
@@ -1519,41 +1669,81 @@ async function callOpenAiCompatible(ctx: AiConsultContext): Promise<string | nul
   }
   messages.push({ role: 'user', content: buildLlmUserContent(ctx) });
 
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 45_000);
   const temperature = ctx.kind === 'trainer' ? 0.95 : 0.6;
   const maxTokens = ctx.kind === 'trainer' ? 1800 : 700;
-  try {
-    const res = await fetch(`${base}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${key}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model,
-        messages,
-        temperature,
-        max_tokens: maxTokens,
-      }),
-      signal: controller.signal,
-    });
-    if (!res.ok) {
-      const body = await res.text().catch(() => '');
-      console.warn(`ai-consult HTTP ${res.status}: ${body.slice(0, 300)}`);
+
+  const tryOnce = async (provider: ChatProvider): Promise<string | null> => {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 45_000);
+    const url =
+      provider.completionsUrl || `${stripTrailingSlash(provider.baseUrl)}/chat/completions`;
+    try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (provider.key) headers.Authorization = `Bearer ${provider.key}`;
+      if (provider.id === 'openrouter' || provider.id === 'fallback') {
+        headers['HTTP-Referer'] =
+          envTrim('PUBLIC_WEB_URL', 'PUBLIC_API_URL') || 'https://petdate.ir';
+        headers['X-Title'] = 'PetDate';
+      }
+      const res = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          model: provider.model,
+          messages,
+          temperature,
+          max_tokens: maxTokens,
+        }),
+        signal: controller.signal,
+      });
+      if (!res.ok) {
+        const body = await res.text().catch(() => '');
+        console.warn(`ai-consult ${provider.id} HTTP ${res.status}: ${body.slice(0, 300)}`);
+        if (looksBillingOrAuthFailure(res.status, body)) {
+          markProviderDead(provider.id, `HTTP ${res.status}: ${body.slice(0, 120)}`);
+        }
+        return null;
+      }
+      const data = (await res.json()) as {
+        choices?: Array<{ message?: { content?: string } }>;
+      };
+      const out = String(data.choices?.[0]?.message?.content ?? '').trim();
+      if (!out || looksUnusableLlmText(out)) {
+        if (out) {
+          console.warn(`ai-consult ${provider.id}: unusable body: ${out.slice(0, 160)}`);
+          markProviderDead(provider.id, `unusable: ${out.slice(0, 120)}`);
+        }
+        return null;
+      }
+      lastSuccessfulProvider = provider.id;
+      return out;
+    } catch (err) {
+      console.warn(`ai-consult ${provider.id} failed:`, (err as Error).message);
       return null;
+    } finally {
+      clearTimeout(timer);
     }
-    const data = (await res.json()) as {
-      choices?: Array<{ message?: { content?: string } }>;
-    };
-    const text = String(data.choices?.[0]?.message?.content ?? '').trim();
-    return text || null;
-  } catch (err) {
-    console.warn('ai-consult request failed:', (err as Error).message);
+  };
+
+  const providers = liveAiConsultProviders();
+  if (!providers.length) {
+    if (listAiConsultProviders().length && !warnedAllProvidersDead) {
+      warnedAllProvidersDead = true;
+      const reasons = listAiConsultProviders()
+        .map((p) => `${p.id}:${providerDeadReason.get(p.id) || 'dead'}`)
+        .join('; ');
+      console.warn(
+        `ai-consult: all configured providers unavailable (offline coaching). ${reasons}`,
+      );
+    }
     return null;
-  } finally {
-    clearTimeout(timer);
   }
+
+  for (const provider of providers) {
+    const text = await tryOnce(provider);
+    if (text) return text;
+  }
+  return null;
 }
 
 /**
@@ -1569,7 +1759,8 @@ export function trainerShouldGoOnline(ctx: AiConsultContext): boolean {
   const q = ctx.userMessage?.trim() ?? '';
   if (!q) return false;
   if (isTrainerGreetingMessage(q)) return false;
-  if (!isAiConsultConfigured()) return false;
+  // Only go online when a provider is currently usable (not billing/budget-dead).
+  if (!isAiConsultLive()) return false;
   return true;
 }
 
@@ -1744,6 +1935,14 @@ export function offlineUnknownBestEffortReply(ctx: AiConsultContext): string {
   const withTone = (text: string) =>
     ctx.userTone ? applyOfflineToneStyle(text, ctx.userTone) : text;
 
+  // Safety: if a topic matches (e.g. دست بده), coach that — never ask "which cue?".
+  const topicHit = q ? findTrainerTopic(q) : null;
+  if (topicHit) {
+    const tracked = findTrainerTopicFromHistory(ctx);
+    const depth = tracked && tracked.topic.id === topicHit.id ? tracked.depth : 1;
+    return withTone(formatTrainerTopicReply(ctx, topicHit, depth));
+  }
+
   // User just answered the indoor/outdoor clarifier — acknowledge and advance (never re-ask).
   const answeredNow = extractHomeOrOutFromText(q);
   if (answeredNow && ((ctx.history?.length ?? 0) > 0 || assistantAlreadyAskedHomeOrOut(ctx))) {
@@ -1814,20 +2013,21 @@ export async function generateAiConsultAdvice(ctx: AiConsultContext): Promise<{
     return { text: buildGreetingReply(ctx), source: 'offline' };
   }
   if (ctx.kind === 'trainer') {
-    const q = incoming;
     const unknown = trainerQuestionUnknownOffline(ctx);
-    if (unknown && isAiConsultConfigured()) {
+    if (unknown && isAiConsultLive()) {
       const llm = await callOpenAiCompatible({ ...ctx, forceOnlineUnknown: true });
       if (llm) return { text: llm, source: 'llm' };
-      console.warn('pasha unknown topic: online LLM failed; best-effort coaching');
+      console.warn('trainer unknown topic: online LLM failed; best-effort coaching');
       return { text: offlineUnknownBestEffortReply(ctx), source: 'offline' };
     }
-    if (unknown && !isAiConsultConfigured()) {
-      // Ops: set XAI_API_KEY (or AI_CONSULT_API_KEY) on the VPS for live Grok/LLM.
+    if (unknown && !isAiConsultLive()) {
       if (!warnedMissingAiConsultKey) {
         warnedMissingAiConsultKey = true;
+        const configured = isAiConsultConfigured();
         console.warn(
-          'trainer unknown topic: XAI_API_KEY/AI_CONSULT_API_KEY missing; offline coaching (further warnings suppressed)'
+          configured
+            ? 'trainer unknown topic: configured LLM providers unavailable (billing/budget); offline coaching (further warnings suppressed)'
+            : 'trainer unknown topic: no LLM provider; offline coaching (further warnings suppressed)',
         );
       }
       return { text: offlineUnknownBestEffortReply(ctx), source: 'offline' };

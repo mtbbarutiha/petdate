@@ -18,29 +18,39 @@ Public list: `GET /api/consultations/team-agents` (4 agents; `grokBot.id` + `lin
 
 Grok Bot **share/agent UUIDs** are for the Grok Bot desktop app (identity / Add to Grok Bot). xAI does **not** expose a public HTTP API to “invoke agent `b6e496b5-…` by UUID”.
 
-Live site answers use **xAI Chat Completions** (or OpenAI-compatible) via `ai-consult`:
+Live site answers use **OpenAI-compatible Chat Completions** via `ai-consult` (provider chain):
 
 | Env | Effect |
 |---|---|
-| `XAI_API_KEY` | `https://api.x.ai/v1` + Grok model — **preferred for trainer** |
-| `AI_CONSULT_API_KEY` / `OPENAI_API_KEY` | OpenAI-compatible base URL/model |
-| *(none)* | Offline Persian KB (topics like بشین / دست بده) — never a hard error |
+| `AI_CONSULT_API_KEY` / `OPENAI_API_KEY` | Preferred OpenAI-compatible base URL/model |
+| `XAI_API_KEY` | `https://api.x.ai/v1` + Grok — needs credits (403 → marked dead) |
+| `GROQ_API_KEY` | Free-tier fallback (`api.groq.com/openai/v1`) |
+| `OPENROUTER_API_KEY` | Fallback; prefer a `:free` model |
+| `AI_CONSULT_FALLBACK_*` | Explicit second OpenAI-compatible endpoint |
+| Pollinations (default on) | Keyless last resort; shared budget often exhausts |
+| *(none usable)* | Offline Persian KB (بشین / دست بده / …) — never a hard error |
 
 `GET /api/consultations/team-agents` fields:
 
 - `grokBot.linked` — roster identity present (baked UUID). **Does not mean live Grok.**
-- `llmLive` / `llmProvider` — `true` / `xai` only when a provider key is set on the VPS.
+- `llmLive` — `true` only when at least one provider is configured **and** not billing/budget-blocked.
+- `llmProvider` — active provider id (`xai` / `groq` / `openrouter` / `pollinations` / …).
 
-Ids are baked into `TEAM_AGENTS.grokBotId`. Public `grokBot.id` always equals `grokBotId`. Optional URL on `/opt/petdate/.env`:
+Ids are baked into `TEAM_AGENTS.grokBotId`. Public `grokBot.id` always equals `grokBotId`. Optional on `/opt/petdate/.env`:
 
 ```bash
 GROK_BOT_FARANAK_AHMADI_URL=https://x.ai/…
-GROK_BOT_AGENT_MAP={"sanaz_ghaffari":{"url":"…"}}
-XAI_API_KEY=xai-…   # REQUIRED for live Grok coaching (not offline stubs)
+# Live coaching without buying xAI credits — paste a free Groq key:
+GROQ_API_KEY=gsk_…          # https://console.groq.com (free tier)
+# or OpenRouter :free model:
+OPENROUTER_API_KEY=sk-or-…
+OPENROUTER_MODEL=meta-llama/llama-3.3-70b-instruct:free
+# optional keep xAI for later (403 no-credits will not fake llmLive):
+XAI_API_KEY=xai-…
 XAI_MODEL=grok-4-fast-non-reasoning
 ```
 
-After setting the key: `pm2 restart petdate-api --update-env`.
+After setting a key: `pm2 restart petdate-api --update-env`.
 
 ## How users chat
 
