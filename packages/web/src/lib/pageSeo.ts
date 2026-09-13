@@ -738,7 +738,7 @@ function setNoscript(html: string, inner: string): string {
 const LCP_HERO_MARK = 'data-pd-lcp="hero"';
 const LCP_HERO_HREF = '/media/lcp/hero-playmate-800.webp';
 const LCP_HERO_SRCSET =
-  '/media/lcp/hero-playmate-800.webp 800w, /media/lcp/hero-playmate-1280.webp 1280w';
+  '/media/lcp/hero-playmate-800.webp 800w, /media/lcp/hero-playmate-1280.webp 1280w, /media/lcp/hero-playmate-1920.webp 1920w';
 
 function setHomeLcpPreload(html: string, pathname: string): string {
   const p = normalizePath(pathname);
