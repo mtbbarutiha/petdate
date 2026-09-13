@@ -1,6 +1,6 @@
 /**
  * Shop PDP gallery must not reference the known-missing 01-3.png thumb.
- * Royal Canin pilots expose 3 unique gallery srcs (angle placeholders OK).
+ * Royal Canin pilots expose 3 unique gallery srcs (real -2/-3 angle files).
  * Run: npx tsx packages/web/src/data/shopGallery.selftest.ts
  */
 import assert from 'node:assert/strict';
@@ -39,6 +39,9 @@ for (const slug of [
   const shots = productGallery(pilot);
   assert.equal(shots.length, 3, `${slug} has 3 gallery srcs`);
   assert.equal(new Set(shots).size, 3, `${slug} gallery srcs are unique`);
+  assert.ok(shots[1]?.includes('-2.jpg?v=gallery-v1'), `${slug} angle 2 file`);
+  assert.ok(shots[2]?.includes('-3.jpg?v=gallery-v1'), `${slug} angle 3 file`);
+  assert.doesNotMatch(shots.join(' '), /purple|5c4d91|بنفش/i, `${slug} no purple asset`);
 }
 
 const p221 = getProduct('dog-food-royal-canin-mini-adult-2kg')!;
