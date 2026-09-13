@@ -126,6 +126,8 @@ function systemPrompt(kind: AiConsultKind, agentName = AI_TRAINER_DISPLAY_NAME):
   const sharedHuman = [
     'مثل آدم واقعی در چت حرف بزن؛ نه ربات، نه جزوه، نه لیست شماره‌دار اداری.',
     'لحن طرف مقابل را حس کن (تو/شما، کوتاه/بلند، خودمونی/رسمی) و با همان لحن جواب بده.',
+    'سلام و احوال‌پرسی را بلدی: اگر کاربر سلام کرد یا حال‌پرسی کرد، اول گرم جواب بده و حالش را بپرس؛ فوری جزوه/لیست تخصصی نریز.',
+    'اگر کاربر فینگلیش نوشت (فارسی با حروف لاتین مثل salam، khoobi، chetori، sobh bekheir) همان را بفهم و طبیعی جواب بده؛ لازم نیست فینگلیش جواب بدهی مگر خودش همان سبک را ادامه دهد.',
     'هرگز گیر نکن: اگر مطمئن نیستی، صادق بگو و مسیر بعدی بده — سکوت یا خطای خام ممنوع.',
     'هرگز نگو هوش مصنوعی / ربات / AI / مدل زبانی هستی.',
     'دانش روز حوزهٔ خودت را کامل به کار ببر (منابع معتبر دامپزشکی/تربیت/پشتیبانی محصول). عنوان کتاب را مگر کاربر «منبع» نخواست نگو.',
@@ -1195,6 +1197,7 @@ export function offlineAiAdvice(ctx: AiConsultContext): string {
   if (ctx.kind === 'support') {
     const q = ctx.userMessage?.trim() ?? '';
     const hasHistory = (ctx.history?.length ?? 0) > 0;
+    if (q && isGreetingMessage(q)) return buildGreetingReply(ctx);
     const followUp = supportFollowUpReply(ctx);
     if (followUp) return followUp;
     const topic = q ? supportTopicHint(q) : null;
@@ -1234,7 +1237,7 @@ export function offlineAiAdvice(ctx: AiConsultContext): string {
       ctx.userTone ? applyOfflineToneStyle(text, ctx.userTone) : text;
     const q = ctx.userMessage?.trim() ?? '';
     const hasHistory = (ctx.history?.length ?? 0) > 0;
-    if (q && isTrainerGreetingMessage(q)) return withTone(buildTrainerGreetingReply(ctx));
+    if (q && isGreetingMessage(q)) return withTone(buildGreetingReply(ctx));
     const followUp = trainerFollowUpReply(ctx);
     if (followUp) return withTone(followUp);
     const topic = q ? findTrainerTopic(q) : null;
@@ -1281,6 +1284,9 @@ export function offlineAiAdvice(ctx: AiConsultContext): string {
     }
     return withTone(greet);
   }
+    const q = ctx.userMessage?.trim() ?? '';
+  if (q && isGreetingMessage(q)) return buildGreetingReply(ctx);
+  if (!q) return buildGreetingReply(ctx);
   return [
     `👋 من ${consultAgentName(ctx)} هستم (دامپزشک انسانی الان آنلاین نیست).`,
     ``,
@@ -1289,9 +1295,7 @@ export function offlineAiAdvice(ctx: AiConsultContext): string {
     `• علائم خطر (بی‌حالی شدید، استفراغ مکرر، تنگی نفس، خونریزی، تشنج) → فوری دامپزشک حضوری`,
     `• دارو را بدون تجویز شروع نکن`,
     ``,
-    ctx.userMessage?.trim()
-      ? `دربارهٔ «${ctx.userMessage.trim()}»: جزئیات سن، مدت علائم و شدت را بگو تا راهنمایی دقیق‌تری بدهم.`
-      : `علائم یا سؤالت را بنویس تا کمکت کنم.`,
+    `دربارهٔ «${q}»: جزئیات سن، مدت علائم و شدت را بگو تا راهنمایی دقیق‌تری بدهم.`,
     ``,
     `⚠️ این پاسخ مشاوره عمومی است و جایگزین ویزیت دامپزشک نیست.`,
   ].join('\n');
@@ -1410,10 +1414,10 @@ export function trainerShouldGoOnline(ctx: AiConsultContext): boolean {
 
 /** True when local KB has no topic for this question (Pasha "doesn't understand" offline). */
 
-/** Pure greeting / احوال‌پرسی — answer warmly; do not treat as unknown training topic. */
-export function isTrainerGreetingMessage(message: string): boolean {
+/** Pure greeting / احوال‌پرسی (Persian + Finglish) — answer warmly; do not dump domain tips. */
+export function isGreetingMessage(message: string): boolean {
   const q = message.replace(/\s+/g, ' ').trim();
-  if (!q || q.length > 48) return false;
+  if (!q || q.length > 56) return false;
   // Strip common punctuation / emoji-ish tails
   const normalized = q
     .replace(/[!?؟.,،~\-_/\\]+/g, ' ')
@@ -1421,7 +1425,7 @@ export function isTrainerGreetingMessage(message: string): boolean {
     .trim()
     .toLowerCase();
   if (!normalized) return false;
-  // Exact or near-exact greetings
+  // Exact or near-exact greetings (Persian)
   if (
     /^(سلام|درود|هی|هالو|hello|hi|hey|سلام علیکم|سلام‌علیکم|صبح بخیر|ظهر بخیر|عصر بخیر|شب بخیر)([\sآا]?ی?م?ی?د?و?ن?م?)?$/.test(
       normalized
@@ -1429,27 +1433,82 @@ export function isTrainerGreetingMessage(message: string): boolean {
   ) {
     return true;
   }
-  // Short احوال‌پرسی replies / openers
+  // Short احوال‌پرسی replies / openers (Persian)
   if (
-    /^(سلام\s+)?(خوبی|حالت چطوره|چطوری|چه خبرا|چه خبر|چخبر)([\sی]?؟?)?$/.test(normalized) ||
-    /^(سلام|درود|hi|hello|hey)([\s،]+(خوبی|حالت چطوره|چطوری|پاشا|مربی))?$/.test(normalized)
+    /^(سلام\s+)?(خوبی|خوبی؟|حالت چطوره|حالت چطوره؟|چطوری|چطوری؟|چه خبرا|چه خبر|چخبر|خوبین|خوبید)([\sی]?؟?)?$/.test(
+      normalized
+    ) ||
+    /^(سلام|درود|hi|hello|hey)([\s،]+(خوبی|حالت چطوره|چطوری|پاشا|مربی|فرانک|یلدا|دکتر))?$/.test(
+      normalized
+    )
+  ) {
+    return true;
+  }
+  // Finglish greetings / small talk
+  if (
+    /^(salam|salaam|slam|dorood|dorud|sobh\s*bekheir|asr\s*bekheir|shab\s*bekheir|hello|hi|hey)(\s+(khoobi|khubi|khobi|chetori|chetori\?|che\s*khabar))?$/.test(
+      normalized
+    ) ||
+    /^(khoobi|khubi|khobi|chetori|chetori\?|che\s*khabar|chekhabar|che\s*khabara)(\?)?$/.test(
+      normalized
+    ) ||
+    /^(salam|salaam|slam)\s+(khoobi|khubi|khobi|chetori)$/.test(normalized)
   ) {
     return true;
   }
   return false;
 }
 
-export function buildTrainerGreetingReply(ctx: AiConsultContext): string {
-  const name = ctx.petName || 'پت';
+/** @deprecated use isGreetingMessage — kept so old tests/imports do not break */
+export function isTrainerGreetingMessage(message: string): boolean {
+  return isGreetingMessage(message);
+}
+
+/** Warm سلام / احوال‌پرسی for any domain agent — never dump specialty tips. */
+export function buildGreetingReply(ctx: AiConsultContext): string {
+  const pet = ctx.petName || 'پت';
   const owner = (ctx.patientName || '').trim() || 'رفیق';
+  const who = consultAgentName(ctx);
   const withTone = (text: string) =>
     ctx.userTone ? applyOfflineToneStyle(text, ctx.userTone) : text;
   const hasHistory = (ctx.history?.length ?? 0) > 0;
+
+  if (ctx.kind === 'support') {
+    if (hasHistory) {
+      return withTone(
+        [`سلام ${owner}! خوبی؟ من اینجام 👋`, `بگو الان روی کدوم بخش سایت گیر کردی تا کمکت کنم.`].join('\n')
+      );
+    }
+    return withTone(
+      [
+        `سلام ${owner} 👋 من ${who}ام، پشتیبانی پت‌دیت.`,
+        ``,
+        `خودت خوبی؟ بگو چی پیش اومده — ورود، پت، همبازی، مربی، دامپزشک، شاپ یا سکه — تا سریع راهنمایی‌ت کنم.`,
+      ].join('\n')
+    );
+  }
+
+  if (ctx.kind === 'vet') {
+    if (hasHistory) {
+      return withTone(
+        [`سلام ${owner}! خوبی؟ من اینجام 👋`, `بگو ${pet} الان چه علامتی داره یا نگران چی هستی؟`].join('\n')
+      );
+    }
+    return withTone(
+      [
+        `سلام ${owner} 👋 من ${who}ام.`,
+        ``,
+        `خودت خوبی؟ ${pet} حالش چطوره — سرحاله یا چیزی نگران‌ت کرده؟`,
+        `هر چی دیدی بگو (از کی شروع شده، غذا/آب، استفراغ، بی‌حالی…) تا راهنمایی عمومی بدم؛ اگر خطرناک بود می‌گم سریع حضوری برید.`,
+      ].join('\n')
+    );
+  }
+
+  // trainer
   if (hasHistory) {
-    // Mid-chat سلام — answer the greeting, don't re-introduce the whole opener.
     const lines = [
       `سلام ${owner}! خوبی؟ من اینجام 👋`,
-      `بگو برای ${name} الان روی چی کار کنیم؟`,
+      `بگو برای ${pet} الان روی چی کار کنیم؟`,
     ];
     return withTone(lines.join('\n'));
   }
@@ -1464,6 +1523,11 @@ export function buildTrainerGreetingReply(ctx: AiConsultContext): string {
       userTone: ctx.userTone,
     })
   );
+}
+
+/** @deprecated use buildGreetingReply */
+export function buildTrainerGreetingReply(ctx: AiConsultContext): string {
+  return buildGreetingReply({ ...ctx, kind: ctx.kind || 'trainer' });
 }
 
 export function trainerQuestionUnknownOffline(ctx: AiConsultContext): boolean {
@@ -1534,12 +1598,13 @@ export async function generateAiConsultAdvice(ctx: AiConsultContext): Promise<{
   text: string;
   source: 'llm' | 'offline';
 }> {
+  const incoming = ctx.userMessage?.trim() ?? '';
+  // سلام / احوال‌پرسی (و فینگلیش) — برای همهٔ ایجنت‌ها مثل آدم جواب بده، جزوه نریز.
+  if (incoming && isGreetingMessage(incoming)) {
+    return { text: buildGreetingReply(ctx), source: 'offline' };
+  }
   if (ctx.kind === 'trainer') {
-    const q = ctx.userMessage?.trim() ?? '';
-    // When they say سلام / خوبی؟ — answer the greeting like a human (never dump training tips).
-    if (q && isTrainerGreetingMessage(q)) {
-      return { text: buildTrainerGreetingReply(ctx), source: 'offline' };
-    }
+    const q = incoming;
     const unknown = trainerQuestionUnknownOffline(ctx);
     if (unknown && isAiConsultConfigured()) {
       const llm = await callOpenAiCompatible({ ...ctx, forceOnlineUnknown: true });

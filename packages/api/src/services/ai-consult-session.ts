@@ -10,6 +10,7 @@ import { dbService, getDb } from '../db';
 import {
   AI_ASSISTANT_DISPLAY_NAME,
   AI_TRAINER_DISPLAY_NAME,
+  buildGreetingReply,
   buildTrainerOpeningGreeting,
   generateAiConsultAdvice,
   trainerTypingDelayMs,
@@ -141,8 +142,16 @@ export async function startAiFallbackConsult(opts: {
   const userMessage = opts.userMessage?.trim();
   let adviceText: string;
   let source: 'llm' | 'offline';
-  if (aiKind === 'trainer' && !userMessage) {
+  if (!userMessage && aiKind === 'trainer') {
     adviceText = buildTrainerOpeningGreeting({
+      patientName: opts.patient.name,
+      agentName: displayName,
+      ...petFields,
+    });
+    source = 'offline';
+  } else if (!userMessage && aiKind === 'vet') {
+    adviceText = buildGreetingReply({
+      kind: 'vet',
       patientName: opts.patient.name,
       agentName: displayName,
       ...petFields,
@@ -171,7 +180,12 @@ export async function startAiFallbackConsult(opts: {
     serviceKind: aiKind,
     providerShareCoins: 0,
   });
-  const messageText = aiKind === 'trainer' ? adviceText : `چت با ${displayName} شروع شد.\n\n${adviceText}`;
+  const messageText =
+    aiKind === 'trainer' || !userMessage
+      ? adviceText
+      : `چت با ${displayName} شروع شد.
+
+${adviceText}`;
   dbService.createVetConsultChatMessage({ consultId: consult.id, senderUserId: ai.id, text: messageText });
   notifyVetThread(consult.id, [opts.patient.id, ai.id], { reason: 'accepted', status: 'active' });
   notifyInbox([opts.patient.id, ai.id], { kind: 'vet', reason: 'accepted', id: consult.id });
