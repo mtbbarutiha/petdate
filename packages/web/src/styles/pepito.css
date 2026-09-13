@@ -2863,6 +2863,12 @@ body > #pd-boot-lcp.is-parked,
   color: var(--pepito-muted);
   font-size: 0.92rem;
 }
+/* English brand line is an LTR island. Under dir=rtl, flex-start / text-align:left
+   park it on the visual right — ms-auto (inline-start) pushes it to visual left. */
+.pepito-footer[dir='rtl'] .pepito-footer-copy {
+  margin-inline-start: auto;
+  text-align: start;
+}
 .pepito-footer-copy a {
   color: #fff;
 }

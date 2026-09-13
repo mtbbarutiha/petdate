@@ -189,5 +189,13 @@ assert.match(
   /@media \(max-width: 859px\)[\s\S]{0,600}\.pepito-nav-faq[\s\S]{0,120}display:\s*none/,
   'mobile CSS hides FAQ nav/CTA chips'
 );
+assert.match(footer, /className="pepito-footer-copy" dir="ltr"/, 'copyright is an LTR island');
+assert.match(footer, /Copyright © \{year\}/, 'copyright year/copy stays English');
+assert.match(footer, /BRAND\.taglineEn/, 'copyright keeps English brand tagline');
+assert.match(
+  pepitoCss,
+  /\.pepito-footer\[dir='rtl'\] \.pepito-footer-copy[\s\S]{0,120}margin-inline-start:\s*auto/,
+  'FA/RTL copyright uses ms-auto so the line sits on the visual left'
+);
 
 console.log('publicRoutes.selftest: ok');
