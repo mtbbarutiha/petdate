@@ -1,0 +1,9 @@
+Smoke: startTeamAgentConsult for all 5 personas (temp SQLite)
+
+personas: فرانک احمدی→trainer | لیلا کیانی→trainer | دکتر ساناز غفاری→vet | دکتر سارا نوری→vet | یلدا شعبانی→support
+OK faranak-ahmadi: kind=trainer opener=سلام SmokeUser 👋 من فرانک احمدی هستم، مربی پت‌دیت.
+OK leila-kiani: kind=trainer
+OK sanaz-ghaffari: kind=vet
+OK sara-noori: kind=vet
+OK yalda-shabani: kind=support opener=👋 سلام، من یلدا شعبانی هستم — پشتیبانی پت‌دیت.
+Domain guards: vet←training refuse, trainer←medical refuse, support←prescription refuse

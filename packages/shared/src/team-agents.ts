@@ -102,8 +102,8 @@ export const TEAM_AGENTS: readonly TeamAgentDef[] = [
      * packages/web/public/agents/yalda-shabani.jpg
      * Then flip avatarUrl to '/agents/yalda-shabani.jpg'.
      */
-    avatarUrl: '/agents/yalda-shabani.svg',
-    cardImage: '/agents/yalda-shabani.svg',
+    avatarUrl: '/agents/yalda-shabani.png',
+    cardImage: '/agents/yalda-shabani.png',
   },
 ] as const;
 

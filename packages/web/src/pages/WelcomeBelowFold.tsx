@@ -95,7 +95,7 @@ const TEAM = [
   { slug: 'leila-kiani', nameKey: 'landing.team2', roleKey: 'landing.roleTrainer', img: '/agents/leila-kiani.jpg' },
   { slug: 'sanaz-ghaffari', nameKey: 'landing.team3', roleKey: 'landing.roleVet', img: '/agents/sanaz-ghaffari.jpg' },
   { slug: 'sara-noori', nameKey: 'landing.team4', roleKey: 'landing.roleVet', img: '/agents/sara-noori.jpg' },
-  { slug: 'yalda-shabani', nameKey: 'landing.team5', roleKey: 'landing.roleSupport', img: '/agents/yalda-shabani.svg' },
+  { slug: 'yalda-shabani', nameKey: 'landing.team5', roleKey: 'landing.roleSupport', img: '/agents/yalda-shabani.png' },
 ] as const;
 
 const REVIEW_DEFS = [
