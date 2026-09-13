@@ -207,7 +207,10 @@ echo "==> selftest: web shared AppToast card (success/error/warning/info)"
 npx tsx "$ROOT/packages/web/src/hooks/useAppToast.selftest.ts"
 
 echo "==> selftest: web shared AppDialog (no native prompt/confirm/alert)"
-npx tsx "$ROOT/packages/web/src/components/appDialog.selftest.ts"
+  npx tsx "$ROOT/packages/web/src/components/appDialog.selftest.ts"
+
+echo "==> selftest: web dialog focus trap (once on open, not on keystroke)"
+  npx tsx "$ROOT/packages/web/src/lib/dialogFocus.selftest.ts"
 
 echo "==> selftest: web playmate fee ConfirmModal (no window.confirm)"
 npx tsx "$ROOT/packages/web/src/components/playmateFeeConfirm.selftest.ts"
