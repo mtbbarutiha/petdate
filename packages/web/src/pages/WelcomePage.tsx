@@ -205,6 +205,8 @@ export function WelcomePage() {
   const [slide, setSlide] = useState(0);
   const [showBelowFold, setShowBelowFold] = useState(false);
   const [heroOverlay, setHeroOverlay] = useState<HeroApiSlide[] | null>(null);
+  /** false until /api/hero settles — avoids painting hardcoded defaults over admin photos. */
+  const [heroReady, setHeroReady] = useState(false);
   const belowFoldSlotRef = useRef<HTMLDivElement>(null);
 
   const heroSlides = applyHeroOverlay(HERO_SLIDES, heroOverlay);
@@ -226,19 +228,20 @@ export function WelcomePage() {
     lockMobileHeroHeight();
   }, []);
 
-  /* Admin-resolved slides only — always apply API list (custom + default + focus). */
+  /* Admin-resolved slides only — always apply API list (custom + default + focus).
+     Keep boot LCP (API-hydrated) visible until this settles so we never flash
+     a hardcoded /media/lcp/hero-playmate photo before the admin URL arrives. */
   useEffect(() => {
     let cancelled = false;
     void fetch(`${API_BASE}/api/hero`, { cache: 'no-store' })
       .then((res) => (res.ok ? res.json() : null))
       .then((data: { slides?: HeroApiSlide[] } | null) => {
-        if (cancelled || !data?.slides?.length) return;
-        setHeroOverlay(data.slides);
-        const playmate = data.slides.find((s) => s.role === 'playmate');
-        if (playmate?.source === 'custom') parkBootLcp();
+        if (cancelled) return;
+        if (data?.slides?.length) setHeroOverlay(data.slides);
+        setHeroReady(true);
       })
       .catch(() => {
-        /* keep shell defaults that match admin defaults */
+        if (!cancelled) setHeroReady(true);
       });
     return () => {
       cancelled = true;
@@ -248,13 +251,16 @@ export function WelcomePage() {
   /* Park the HTML LCP <img> once React owns the in-hero photo. Do not move it —
      adopt triggers a second contentful paint. Leaving it unparked + outside
      #root (fixed, z-index 0) painted a black empty hero after #378.
+     Wait for heroReady so boot LCP (from /api/hero) stays until React paints
+     the matching slide — never swap to hardcoded defaults mid-load.
      Non-home routes park via ParkBootLcpOnNonHome + index.html boot script. */
   useEffect(() => {
+    if (!heroReady) return;
     parkBootLcp();
     return () => {
       parkBootLcp();
     };
-  }, []);
+  }, [heroReady]);
 
   /* Keep lucide / WelcomeBelowFold / magazine off the LCP critical path.
      Load only after the slot is near the viewport or the user scrolls. */
@@ -315,7 +321,7 @@ export function WelcomePage() {
               className={`pepito-hero-slide${i === slide ? ' is-active' : ''}`}
               aria-hidden={i !== slide}
             >
-              {i === slide ? (
+              {heroReady && i === slide ? (
                 <picture>
                   <source type="image/webp" srcSet={s.srcSet || s.webp} sizes="100vw" />
                   <img
