@@ -209,7 +209,7 @@ export const SHOP_PRODUCTS: ShopProduct[] = [
     brandId: 'royal-canin',
     categorySlug: 'cat-food',
     petTypes: ['cat'],
-    priceToman: 2_741_600,
+    priceToman: 2_742_000,
     image: `${P}/royal-canin-persian-adult-400g.jpg?v=gallery-v1`,
     images: [
       `${P}/royal-canin-persian-adult-400g.jpg?v=gallery-v1`,

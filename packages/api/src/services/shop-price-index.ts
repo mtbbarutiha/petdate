@@ -37,7 +37,7 @@ const PILOT_PRICE_INDEX: ShopPriceEntry[] = [
     title: 'رویال کنین پرشین ادالت ۴۰۰ گرم — گربه پرشین بالغ',
     brandId: 'royal-canin',
     categorySlug: 'cat-food',
-    priceToman: 2_741_600,
+    priceToman: 2_742_000,
   },
   {
     id: 'p224',

@@ -18,7 +18,7 @@ process.env.DATABASE_URL = '';
 const KEEP_PRICES: Record<string, number> = {
   p221: 8_881_000,
   p222: 8_294_000,
-  p223: 2_741_600,
+  p223: 2_742_000,
   p224: 8_294_000,
   p225: 7_841_000,
   p226: 8_881_000,
