@@ -4,10 +4,20 @@
  * Margin 0 (cost_toman = price_toman). Seller copy is پت دیت شاپ only.
  */
 import { getDb } from '../db';
+import { withShopImagesParam } from './shop-product-images';
 
 const P = '/pepito/uploads';
+const G = 'gallery-v1';
+function rcGallery(stem: string): { image: string; images: string[] } {
+  const images = [
+    `${P}/${stem}.jpg?v=${G}`,
+    `${P}/${stem}-2.jpg?v=${G}`,
+    `${P}/${stem}-3.jpg?v=${G}`,
+  ];
+  return { image: images[0]!, images };
+}
 
-export const ROYAL_CANIN_PILOT_VERSION = 2;
+export const ROYAL_CANIN_PILOT_VERSION = 4;
 
 export type RoyalCaninPilotProduct = {
   id: string;
@@ -19,6 +29,8 @@ export type RoyalCaninPilotProduct = {
   priceToman: number;
   costToman: number;
   image: string;
+  /** PDP gallery — three distinct #FFFFFF packshot files per SKU */
+  images: string[];
   badge: 'new';
   inStock: true;
   stockQty: number;
@@ -56,7 +68,7 @@ export const ROYAL_CANIN_PILOT_PRODUCTS: RoyalCaninPilotProduct[] = [
     petTypes: ['dog'],
     priceToman: 8_881_000,
     costToman: 8_881_000,
-    image: `${P}/royal-canin-mini-adult-2kg.jpg?v=gallery-v1`,
+    ...rcGallery('royal-canin-mini-adult-2kg'),
     badge: 'new',
     inStock: true,
     stockQty: 25,
@@ -81,7 +93,7 @@ export const ROYAL_CANIN_PILOT_PRODUCTS: RoyalCaninPilotProduct[] = [
     petTypes: ['dog'],
     priceToman: 8_894_000,
     costToman: 8_894_000,
-    image: `${P}/royal-canin-xsmall-puppy-1.5kg.jpg?v=gallery-v1`,
+    ...rcGallery('royal-canin-xsmall-puppy-1.5kg'),
     badge: 'new',
     inStock: true,
     stockQty: 25,
@@ -106,7 +118,7 @@ export const ROYAL_CANIN_PILOT_PRODUCTS: RoyalCaninPilotProduct[] = [
     petTypes: ['cat'],
     priceToman: 2_741_600,
     costToman: 2_741_600,
-    image: `${P}/royal-canin-persian-adult-400g.jpg?v=gallery-v1`,
+    ...rcGallery('royal-canin-persian-adult-400g'),
     badge: 'new',
     inStock: true,
     stockQty: 25,
@@ -187,7 +199,7 @@ export function seedRoyalCaninPilotProducts(): number {
       p.image,
       p.badge,
       stockQty,
-      JSON.stringify(p.params),
+      JSON.stringify(withShopImagesParam(p.params, p.images)),
       p.description
     );
     count += 1;

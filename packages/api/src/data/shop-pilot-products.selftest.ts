@@ -80,7 +80,7 @@ async function main() {
 
   const rows = d
     .prepare(
-      `SELECT slug, title, price_toman, cost_toman, image, badge, featured, in_stock, stock_qty, description
+      `SELECT slug, title, price_toman, cost_toman, image, badge, featured, in_stock, stock_qty, description, params
        FROM shop_products WHERE slug IN (?, ?, ?)`
     )
     .all(...SLUGS) as Array<{
@@ -94,6 +94,7 @@ async function main() {
     in_stock: number;
     stock_qty: number;
     description: string;
+    params: string;
   }>;
   assert.equal(rows.length, 3, 'three pilot rows');
 
@@ -120,6 +121,15 @@ async function main() {
     assert.doesNotMatch(row.description, /ژیوان|Zivan|ژیوان/i);
     assert.doesNotMatch(row.title, /ژیوان|Zivan/i);
     assert.equal(tomanToShopCoins(row.price_toman), expectedCoins[row.slug], `${row.slug} coins`);
+    const params = JSON.parse(row.params || '{}') as Record<string, string>;
+    const gallery = String(params.__images || '')
+      .split('|')
+      .map((s) => s.trim())
+      .filter(Boolean);
+    assert.equal(gallery.length, 3, `${row.slug} stores 3 gallery URLs`);
+    assert.equal(gallery[0], row.image, `${row.slug} first gallery src is cover`);
+    assert.ok(gallery[1]?.includes('-2.jpg?v=gallery-v1'), `${row.slug} angle 2 file`);
+    assert.ok(gallery[2]?.includes('-3.jpg?v=gallery-v1'), `${row.slug} angle 3 file`);
   }
 
   const catalog = readFileSync(join(repoRoot, 'packages/web/src/data/shopCatalog.ts'), 'utf8');
@@ -135,7 +145,7 @@ async function main() {
 
   const p221 = rows.find((r) => r.slug === SLUGS[0]);
   assert.ok(p221, 'p221 row');
-  assert.match(p221!.image, /royal-canin-mini-adult-2kg\.jpg\?v=gallery-v1$/, 'p221 image is cache-busted gallery-v1');
+  assert.match(p221!.image, /royal-canin-mini-adult-2kg\.jpg\?v=gallery-v1$/, 'p221 cover is gallery-v1');
   assert.doesNotMatch(p221!.image, /purple|5c4d91|بنفش/i, 'p221 must not be a purple cutout');
   assert.match(
     catalog,

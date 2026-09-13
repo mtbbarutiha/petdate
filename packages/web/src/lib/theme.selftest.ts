@@ -150,6 +150,13 @@ assert.match(
   /\.pd-shop-card\s*\{[^}]*border-radius:\s*22px/,
   'shop card chrome radius is unchanged at 22px'
 );
+assert.match(
+  pepitoCss,
+  /\.pd-dk-gallery-main\s*\{[^}]*background:\s*#ffffff/,
+  'PDP gallery well stays #FFFFFF'
+);
+assert.match(pepitoCss, /\.pd-dk-lightbox\s*\{/, 'PDP lightbox styles present');
+assert.match(pepitoCss, /\.pd-dk-gallery-track\.is-slider\s*\{/, 'PDP main image slider present');
 assert.doesNotMatch(
   pepitoCss,
   /\.pd-dk-quick-param\s*\{[^}]*#fafafa/,

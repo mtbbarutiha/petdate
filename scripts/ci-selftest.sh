@@ -293,6 +293,12 @@ npx tsx "$ROOT/packages/api/src/routes/admin-games.selftest.ts"
 echo "==> selftest: shop product gallery assets"
 npx tsx "$ROOT/packages/web/src/data/shopGallery.selftest.ts"
 
+echo "==> selftest: shop product gallery lightbox UI"
+npx tsx "$ROOT/packages/web/src/components/shop/shopProductGallery.selftest.ts"
+
+echo "==> selftest: shop product images[] helpers"
+npx tsx "$ROOT/packages/api/src/data/shop-product-images.selftest.ts"
+
 echo "==> selftest: royal canin pilot shop SKUs"
 npx tsx "$ROOT/packages/api/src/data/shop-pilot-products.selftest.ts"
 

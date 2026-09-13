@@ -5,6 +5,7 @@
 import type { User, UserRole, PaymentOrder, PlatformNavCounts } from '@petdate/shared';
 import { IRAN_PROVINCES, makeOrderPublicId, orderPublicIdOf } from '@petdate/shared';
 import { getDb, dbService } from './db';
+import { parseShopProductImages, withShopImagesParam } from './data/shop-product-images';
 
 function db() {
   return getDb();
@@ -104,6 +105,8 @@ export type ShopProductRow = {
   /** بهای تمام‌شده / COGS به تومان — برای P&L */
   costToman?: number;
   image?: string;
+  /** گالری PDP — از params.__images (و image) */
+  images: string[];
   badge?: string;
   inStock: boolean;
   stockQty: number;
@@ -125,6 +128,7 @@ export type ShopProductInput = {
   compareAtToman?: number;
   costToman?: number | null;
   image?: string;
+  images?: string[];
   badge?: string | null;
   inStock?: boolean;
   stockQty?: number;
@@ -211,6 +215,10 @@ function mapShopProduct(row: Record<string, unknown>): ShopProductRow {
     compareAtToman: row.compare_at_toman != null ? Number(row.compare_at_toman) : undefined,
     costToman: row.cost_toman != null ? Number(row.cost_toman) : undefined,
     image: (row.image as string) || undefined,
+    images: parseShopProductImages({
+      image: row.image,
+      params,
+    }),
     badge: (row.badge as string) || undefined,
     inStock: row.in_stock == null ? true : Boolean(row.in_stock),
     stockQty: Number(row.stock_qty ?? 0),
@@ -569,6 +577,10 @@ export const adminPlatform = {
   upsertShopProduct(input: ShopProductInput): ShopProductRow {
     const id = (input.id || input.slug || `p-${Date.now()}`).trim();
     const slug = (input.slug || id).trim();
+    const params = withShopImagesParam(
+      { ...(input.params ?? {}) },
+      input.images
+    );
     db()
       .prepare(
         `INSERT INTO shop_products (
@@ -607,7 +619,7 @@ export const adminPlatform = {
         input.badge ?? null,
         input.inStock === false ? 0 : 1,
         input.stockQty ?? 0,
-        JSON.stringify(input.params ?? {}),
+        JSON.stringify(params),
         input.description ?? '',
         input.featured ? 1 : 0
       );

@@ -3378,6 +3378,19 @@ export function getLiveCategories(): ShopCategory[] {
  * Merge API/DB rows onto the static Pepito catalog so prices/stock stay in sync
  * while keeping rich product media for the web UI.
  */
+function imagesFromShopParams(params?: Record<string, string> | null): string[] {
+  const raw = params?.__images;
+  if (!raw) return [];
+  return raw
+    .split('|')
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+function publicShopParams(params: Record<string, string>): Record<string, string> {
+  return Object.fromEntries(Object.entries(params).filter(([k]) => !k.startsWith('__')));
+}
+
 export function applyLiveShopCatalog(input: {
   products: Array<{
     id: string;
@@ -3389,6 +3402,7 @@ export function applyLiveShopCatalog(input: {
     priceToman: number;
     compareAtToman?: number;
     image?: string;
+    images?: string[];
     badge?: string;
     inStock: boolean;
     stockQty?: number;
@@ -3416,6 +3430,11 @@ export function applyLiveShopCatalog(input: {
       api.badge === 'hot' || api.badge === 'sale' || api.badge === 'new' || api.badge === 'limited'
         ? api.badge
         : base?.badge;
+    const fromApiImages = Array.isArray(api.images) && api.images.length
+      ? api.images.map((s) => String(s ?? '').trim()).filter(Boolean)
+      : imagesFromShopParams(api.params);
+    const strippedParams = api.params ? publicShopParams(api.params) : {};
+    const params = Object.keys(strippedParams).length ? strippedParams : (base?.params ?? {});
     if (base) {
       return {
         ...base,
@@ -3426,9 +3445,10 @@ export function applyLiveShopCatalog(input: {
         priceToman: api.priceToman,
         compareAtToman: api.compareAtToman ?? base.compareAtToman,
         image: api.image || base.image,
+        images: fromApiImages.length ? fromApiImages : base.images,
         badge,
         inStock: api.inStock,
-        params: api.params && Object.keys(api.params).length ? api.params : base.params,
+        params,
         description: api.description || base.description,
         featured: api.featured ?? base.featured,
         slug: api.slug || base.slug,
@@ -3444,9 +3464,10 @@ export function applyLiveShopCatalog(input: {
       priceToman: api.priceToman,
       compareAtToman: api.compareAtToman,
       image: api.image || '/pepito/img/logo.png',
+      images: fromApiImages.length ? fromApiImages : undefined,
       badge,
       inStock: api.inStock,
-      params: api.params ?? {},
+      params,
       description: api.description ?? '',
       featured: Boolean(api.featured),
     };
@@ -3478,11 +3499,11 @@ export function productDiscountPercent(p: ShopProduct): number | null {
   return Math.round(((p.compareAtToman - p.priceToman) / p.compareAtToman) * 100);
 }
 
-/** گالری محصول — حداقل تصویر اصلی، بدون تکرار و بدون مسیر خالی */
+/** گالری محصول — images[] + params.__images + تصویر اصلی، بدون تکرار و بدون مسیر خالی */
 export function productGallery(p: ShopProduct): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
-  for (const raw of [...(p.images ?? []), p.image]) {
+  for (const raw of [...(p.images ?? []), ...imagesFromShopParams(p.params), p.image]) {
     const src = String(raw ?? '').trim();
     if (!src || seen.has(src)) continue;
     seen.add(src);
