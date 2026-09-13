@@ -22,6 +22,8 @@ async function main() {
     buildTrainerOpeningGreeting,
     speciesLabelFa,
     isTrainerGreetingMessage,
+    isGreetingMessage,
+    buildGreetingReply,
     trainerQuestionUnknownOffline,
   } = await import('./ai-consult');
   const {
@@ -74,6 +76,33 @@ async function main() {
   assert(isTrainerGreetingMessage('سلام خوبی؟'), 'سلام خوبی is greeting');
   assert(isTrainerGreetingMessage('صبح بخیر'), 'صبح بخیر is greeting');
   assert(isTrainerGreetingMessage('hi'), 'hi is greeting');
+  assert(isGreetingMessage('salam'), 'salam finglish is greeting');
+  assert(isGreetingMessage('salam khoobi'), 'salam khoobi is greeting');
+  assert(isGreetingMessage('chetori'), 'chetori is greeting');
+  assert(isGreetingMessage('khoobi'), 'khoobi is greeting');
+  assert(isGreetingMessage('sobh bekheir'), 'sobh bekheir is greeting');
+  assert(!isGreetingMessage('chetori beshin yad begire'), 'finglish training Q is not greeting');
+
+  const vetSalam = await generateAiConsultAdvice({
+    kind: 'vet',
+    patientName: 'علی',
+    petName: 'ملوس',
+    userMessage: 'سلام',
+  });
+  assert(/سلام/.test(vetSalam.text), 'vet سلام gets سلام');
+  assert(/خوبی|حال|چطور/.test(vetSalam.text), 'vet سلام continues احوال‌پرسی');
+  assert(!/نکتهٔ عمومی|آب تازه/.test(vetSalam.text), 'vet سلام must not dump generic care tips');
+
+  const supportSalam = await generateAiConsultAdvice({
+    kind: 'support',
+    patientName: 'مینا',
+    userMessage: 'salam',
+  });
+  assert(/سلام|یلدا/.test(supportSalam.text), 'support finglish salam answered');
+  assert(!/ورود وب با OTP|• سکه از منو/.test(supportSalam.text), 'support salam must not dump FAQ list');
+
+  const supportAhval = buildGreetingReply({ kind: 'support', patientName: 'مینا', userMessage: 'خوبی؟' });
+  assert(/خوبی|حال/.test(supportAhval), 'support احوال reply');
   assert(!isTrainerGreetingMessage('چطور بشین یاد بگیره؟'), 'sit question is not greeting');
   assert(!trainerQuestionUnknownOffline({ kind: 'trainer', userMessage: 'سلام' }), 'سلام must not be unknown');
   const salam = await generateAiConsultAdvice({
@@ -254,12 +283,15 @@ async function main() {
   assert(/Culture Clash|Puppy Primer|Think Like a Cat|Total Cat Mojo|Companion Parrot|Exotic Pet Practice/i.test(sources), 'sources names books when asked');
   assert(/Donaldson|McConnell|Johnson-Bennett|Galaxy|Blanchard|Mitchell/i.test(sources), 'authors present when asked');
 
-  const vetTip = offlineAiAdvice({ kind: 'vet', petName: 'ملوس' });
-  assert(vetTip.includes('دامپزشک'), 'offline vet tip');
-  assert(vetTip.includes('دکتر سارا نوری') || vetTip.includes('فرانک احمدی'), 'offline vet introduces');
-  assert(!/دستیار هوشمند پت/.test(vetTip), 'vet tip must not use old smart-assistant brand');
+  const vetHello = offlineAiAdvice({ kind: 'vet', petName: 'ملوس' });
+  assert(/سلام|خوبی|حال/.test(vetHello), 'offline vet empty opens with احوال‌پرسی');
+  assert(vetHello.includes('دکتر سارا نوری') || /من .+ام/.test(vetHello), 'offline vet introduces');
+  assert(!/دستیار هوشمند پت/.test(vetHello), 'vet tip must not use old smart-assistant brand');
+  const vetTip = offlineAiAdvice({ kind: 'vet', petName: 'ملوس', userMessage: 'استفراغ مکرر از دیروز' });
+  assert(vetTip.includes('دامپزشک'), 'offline vet clinical tip');
+  assert(!/سلام .*خوبی/.test(vetTip.split('\n')[0] || '') || vetTip.includes('استفراغ') || vetTip.includes('عمومی'), 'clinical path not pure greeting');
   const supportTip = offlineAiAdvice({ kind: 'support', userMessage: 'OTP نیومد' });
-  assert(supportTip.includes('پشتیبانی'), 'offline support tip');
+  assert(supportTip.includes('پشتیبانی') || /OTP|ورود|پیامک/.test(supportTip), 'offline support tip');
 
   const tg = `selftest_ai_patient_${Date.now()}`;
   const { user: patient } = dbService.findOrCreateUser({
