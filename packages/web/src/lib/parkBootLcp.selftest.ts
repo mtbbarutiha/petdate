@@ -29,9 +29,12 @@ assert.match(app, /ParkBootLcpOnNonHome/, 'App parks boot LCP off the homepage')
 assert.match(app, /isHomePath/, 'App uses shared home-path helper');
 assert.match(welcome, /parkBootLcp\(\)/, 'WelcomePage parks via shared helper');
 assert.match(indexHtml, /id="pd-park-boot-lcp"/, 'index.html parks boot LCP before React on deep links');
+assert.match(indexHtml, /id="pd-boot-hero-from-api"/, 'index.html hydrates boot LCP from /api/hero');
 assert.match(indexHtml, /getElementById\('pd-boot-lcp'\)/, 'boot script targets the LCP node');
 assert.match(pageSeo, /parkBootLcpOnNonHome/, 'prerender parks boot LCP on non-home HTML');
+assert.match(pageSeo, /stripHardcodedHeroPreload/, 'SEO strips hardcoded hero image preloads');
 assert.match(pageSeo, /pd-boot-shell-placeholder/, 'prerender strips homepage hero shell off non-home');
+assert.match(welcome, /heroReady/, 'WelcomePage gates slide photos on hero API readiness');
 assert.match(
   shopChrome,
   /pepito-landing--with-dock/,

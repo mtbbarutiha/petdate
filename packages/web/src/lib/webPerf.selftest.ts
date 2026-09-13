@@ -83,7 +83,19 @@ assert.match(
 );
 assert.match(indexHtml, /pepito-hero-dots\{[^}]*gap:\.35rem/, 'critical CSS keeps a half-dot gap between circles');
 assert.match(indexHtml, /is-active::after\{background:#c9bde8/, 'critical active dot is lavender, not white');
-assert.match(indexHtml, /rel="preload"[\s\S]*hero-playmate-800\.webp/, 'LCP image is preload-discovered from HTML');
+assert.match(indexHtml, /rel="preload"[\s\S]*Vazirmatn-Variable\.woff2/, 'font preload remains in HTML');
+assert.doesNotMatch(
+  indexHtml,
+  /rel="preload"[^>]*as="image"[^>]*hero-playmate/,
+  'must not hardcode hero-playmate image preload (admin /api/hero is SoT)'
+);
+assert.doesNotMatch(
+  indexHtml,
+  /id="pd-boot-lcp"[^>]*src="\/media\/lcp\/hero-/,
+  'boot LCP must not ship a hardcoded /media/lcp/hero src'
+);
+assert.match(indexHtml, /id="pd-boot-hero-from-api"/, 'boot script hydrates LCP from /api/hero');
+assert.match(indexHtml, /fetch\('\/api\/hero'/, 'boot hero script calls the admin-resolved hero API');
 assert.match(indexHtml, /id="root">[\s\S]*pepito-hero-inner/, 'static hero copy shell is in #root for FCP');
 assert.match(indexHtml, /id="pd-boot-lcp"[\s\S]*id="root"/, 'LCP img precedes #root so React cannot replace it');
 assert.match(indexHtml, /rel="alternate" type="text\/plain" href="https:\/\/petdate\.ir\/llms\.txt"/, 'HTML advertises llms.txt');
@@ -93,7 +105,7 @@ assert.doesNotMatch(
   /rel="preload"\s+as="style"/,
   'do not preload a stylesheet (unused-preload warning)'
 );
-assert.match(indexHtml, /web-perf-v42-hero-focus/, 'deploy marker bumped so SW/HTML cache misses');
+assert.match(indexHtml, /web-perf-v43-hero-api-lcp/, 'deploy marker bumped so SW/HTML cache misses');
 assert.match(
   indexHtml,
   /--pepito-dock-clearance:calc\(96px \+ env\(safe-area-inset-bottom,0px\)\)/,
@@ -101,11 +113,16 @@ assert.match(
 );
 assert.match(indexHtml, /id="pd-boot-lcp"/, 'LCP img lives outside #root so React cannot replace it');
 assert.match(indexHtml, /id="pd-boot-lcp"[\s\S]*decoding="sync"/, 'LCP img decodes sync so main-thread JS cannot stall paint');
-assert.match(indexHtml, /data-pd-lcp="hero"/, 'static preload is marked so SEO inject does not duplicate it');
+assert.match(indexHtml, /data-pd-boot-hero="pending"/, 'boot LCP starts pending until /api/hero fills it');
+assert.doesNotMatch(
+  indexHtml,
+  /<link[^>]*data-pd-lcp="hero"[^>]*>/,
+  'static HTML must not embed a marked hero preload link (API injects it)'
+);
 assert.equal(
-  (indexHtml.match(/data-pd-lcp="hero"/g) || []).length,
-  1,
-  'index.html ships exactly one marked LCP preload'
+  (indexHtml.match(/<link[^>]*data-pd-lcp="hero"[^>]*>/g) || []).length,
+  0,
+  'index.html ships zero hardcoded LCP image preload links'
 );
 assert.match(
   indexHtml,
@@ -141,7 +158,8 @@ assert.match(vetRoute, /const VetConsultLandingPage = lazy/, 'vet landing is laz
 assert.match(welcome, /role="region"/, 'hero carousel has an explicit role (aria-roledescription)');
 assert.doesNotMatch(welcome, /role="tablist"|role="tab"/, 'landing dots are not invalid tabs');
 assert.match(welcome, /width=\{1600\}/, 'hero img has intrinsic dimensions (CLS)');
-assert.match(welcome, /hero-playmate-800\.webp/, 'mobile LCP is the 800w WebP');
+assert.match(welcome, /heroReady/, 'React waits for /api/hero before painting slide photos');
+assert.match(welcome, /hero-playmate-800\.webp/, 'offline fallback still knows the default 800w WebP');
 assert.match(welcome, /WelcomeBelowFold/, 'below-fold is code-split off the TBT path');
 assert.match(welcome, /showBelowFold/, 'below-fold waits for intersection/input (lucide off critical path)');
 assert.doesNotMatch(welcome, /addEventListener\('scroll', load/, 'below-fold must not arm on scroll');
@@ -151,6 +169,7 @@ assert.doesNotMatch(welcome, /magazineApi/, 'welcome critical path does not fetc
 assert.match(welcome, /logo-390\.webp/, 'nav logo is 390w so 2x density passes');
 assert.match(welcome, /pd-boot-lcp|parkBootLcp/, 'HTML LCP img is parked after hydrate');
 assert.match(welcome, /parkBootLcp\(\)/, 'boot LCP is parked so it cannot cover/hide the hero');
+assert.match(welcome, /heroReady\]/, 'boot LCP parks only after hero API settles');
 assert.match(indexHtml, /id="pd-park-boot-lcp"/, 'deep-link boot script parks LCP before React');
 assert.match(appTsx, /ParkBootLcpOnNonHome/, 'non-home routes park boot LCP from App');
 assert.match(welcome, /i === slide \?/, 'every active slide including 0 renders an in-hero photo');
