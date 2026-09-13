@@ -3,7 +3,7 @@
  * Extends ADMIN_PASSWORD session without breaking existing login.
  */
 import type { NextFunction, Request, Response } from 'express';
-import { roleHasPermission, type AdminPermission } from '@petdate/shared';
+import { isClinicalStaffRole, roleHasPermission, type AdminPermission } from '@petdate/shared';
 import { actorHasPermission, resolveAdminActor, type AdminAuthActor } from './hr-service';
 
 export type { AdminAuthActor };
@@ -83,4 +83,36 @@ export function requirePermission(...permissions: AdminPermission[]) {
     }
     next();
   };
+}
+
+export function requireAnyPermission(...permissions: AdminPermission[]) {
+  return (req: Request, res: Response, next: NextFunction): void => {
+    const actor = req.adminActor;
+    if (!actor) {
+      res.status(401).json({ error: 'دسترسی ادمین مجاز نیست' });
+      return;
+    }
+    const ok = permissions.some(
+      (p) =>
+        actorHasPermission(actor, p) ||
+        roleHasPermission(actor.role, p, actor.permissions)
+    );
+    if (!ok) {
+      res.status(403).json({ error: 'سطح دسترسی کافی نیست' });
+      return;
+    }
+    next();
+  };
+}
+
+export function actorCanMutateConsults(actor: AdminAuthActor | undefined | null): boolean {
+  if (!actor) return false;
+  if (
+    actorHasPermission(actor, 'platform.write') ||
+    actorHasPermission(actor, 'admin.full') ||
+    roleHasPermission(actor.role, 'platform.write', actor.permissions)
+  ) {
+    return true;
+  }
+  return isClinicalStaffRole(actor.role);
 }

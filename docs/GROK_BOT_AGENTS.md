@@ -45,3 +45,19 @@ Aliases also work: `AI_CONSULT_API_KEY` / `OPENAI_*`. Whisper STT still expects 
 ## How users chat
 
 Landing team cards / `/team-chat/:slug` / support hub — unchanged. Grok Bot ops agents and site personas share the same names, domains, and slugs.
+
+## Staff / admin logins
+
+The same five public faces (plus four ops-only agents) get `admin_accounts` + HR rows from `STAFF_AGENTS` (`packages/shared/src/staff-agents.ts`). Seed is idempotent on `ensureHrSchema()`.
+
+| Username | Role key | Notes |
+|---|---|---|
+| `sanaz` / `sara` | `veterinarian` | consults + magazine medical |
+| `yalda` | `support` | tickets / inbox / CRM (existing support pack) |
+| `faranak` / `leila` | `trainer` | consult list |
+| `staff.designer` | `designer` | hero + magazine media |
+| `staff.social` | `social` | notices + magazine |
+| `staff.shop` | `shop_procurement` | products / prices / stock |
+| `staff.content` | `content_editor` | magazine CMS |
+
+Password: `ADMIN_STAFF_PASSWORD` or `ADMIN_SEED_PASSWORD`. Existing hashes are never overwritten — reset from `/admin/hr/employees` → reset password.

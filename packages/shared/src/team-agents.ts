@@ -28,6 +28,8 @@ export type TeamAgentDef = {
    * Env link: GROK_BOT_<KEY>_ID / GROK_BOT_<KEY>_URL (KEY = upper snake of this).
    */
   grokBotKey: string;
+  /** Matching admin/staff username from STAFF_AGENTS — does not change chat identity. */
+  staffUsername: string;
 };
 
 /** Query on /agents/*.jpg so browsers drop pepito lookalikes + the YS/yalda-v1 files. */
@@ -49,6 +51,7 @@ export const TEAM_AGENTS: readonly TeamAgentDef[] = [
     avatarUrl: agentAvatar('faranak-ahmadi'),
     cardImage: agentAvatar('faranak-ahmadi'),
     grokBotKey: 'faranak_ahmadi',
+    staffUsername: 'faranak',
   },
   {
     slug: 'leila-kiani',
@@ -59,6 +62,7 @@ export const TEAM_AGENTS: readonly TeamAgentDef[] = [
     avatarUrl: agentAvatar('leila-kiani'),
     cardImage: agentAvatar('leila-kiani'),
     grokBotKey: 'leila_kiani',
+    staffUsername: 'leila',
   },
   {
     slug: 'sanaz-ghaffari',
@@ -69,6 +73,7 @@ export const TEAM_AGENTS: readonly TeamAgentDef[] = [
     avatarUrl: agentAvatar('sanaz-ghaffari'),
     cardImage: agentAvatar('sanaz-ghaffari'),
     grokBotKey: 'sanaz_ghaffari',
+    staffUsername: 'sanaz',
   },
   {
     slug: 'sara-noori',
@@ -80,6 +85,7 @@ export const TEAM_AGENTS: readonly TeamAgentDef[] = [
     avatarUrl: agentAvatar('sara-noori'),
     cardImage: agentAvatar('sara-noori'),
     grokBotKey: 'sara_noori',
+    staffUsername: 'sara',
   },
   {
     slug: 'yalda-shabani',
@@ -90,6 +96,7 @@ export const TEAM_AGENTS: readonly TeamAgentDef[] = [
     avatarUrl: agentAvatar('yalda-shabani'),
     cardImage: agentAvatar('yalda-shabani'),
     grokBotKey: 'yalda_shabani',
+    staffUsername: 'yalda',
   },
 ] as const;
 

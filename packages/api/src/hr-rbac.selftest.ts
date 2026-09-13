@@ -33,6 +33,9 @@ async function main() {
   const seeded = listAdminRoles({ includeInactive: true });
   assert(seeded.some((r) => r.key === 'admin'), 'admin role seeded');
   assert(seeded.some((r) => r.key === 'support'), 'support role seeded');
+  assert(seeded.some((r) => r.key === 'veterinarian'), 'veterinarian role seeded');
+  assert(seeded.some((r) => r.key === 'shop_procurement'), 'shop_procurement role seeded');
+  assert(seeded.some((r) => r.key === 'content_editor'), 'content_editor role seeded');
 
   // Seed must not overwrite UI edits
   const support = seeded.find((r) => r.key === 'support')!;

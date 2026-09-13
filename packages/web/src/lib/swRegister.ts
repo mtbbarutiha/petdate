@@ -9,11 +9,11 @@
 
 // v14 cacheId stayed active even after later bust *keys*, so #213's guest
 // shell never replaced the controlling worker. New cacheId + generation.
-const BUST_GENERATION = 'petdate-sw-20260913-persona-avatars-v44';
+const BUST_GENERATION = 'petdate-sw-20260913-staff-roles-v45';
 const BUST_KEY = `pd_sw_bust_${BUST_GENERATION}`;
 const RELOAD_KEY = `pd_sw_reload_${BUST_GENERATION}`;
 /** Current Workbox cacheId from vite.config — never wipe this generation. */
-const ACTIVE_CACHE_ID = 'petdate-web-v44-persona-avatars';
+const ACTIVE_CACHE_ID = 'petdate-web-v45-staff-roles';
 
 function markBusted() {
   try {
