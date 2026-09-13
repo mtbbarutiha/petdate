@@ -12,7 +12,7 @@
 | دکتر سارا نوری | دامپزشک | `/team-chat/sara-noori` |
 | یلدا شعبانی | پشتیبانی (+ تیکت) | `/support/chat` |
 
-عکس‌ها: `packages/web/public/agents/<slug>.jpg`. **یلدا فعلاً پلیس‌هولدر حروف YS است** — فایل را با همان نام عوض کنید.
+عکس‌ها: `packages/web/public/agents/<slug>.jpg?v=persona-v2` (چهره‌های متمایز v2).
 
 ## EN
 
@@ -23,4 +23,4 @@ Five landing faces share three existing LLM roles (`trainer` | `vet` | `support`
 - Vets triage clinical photos (vision when `AI_CONSULT_API_KEY` is set) + disclaimer.
 - Yalda knows site workflow, can open/track tickets, mentions SMS only when the product already sends it, asks the owner when unknown.
 
-Cache bust: `tmp/cache-bust-team-chat-personas-v1` → SW `petdate-web-v42-team-chat`.
+Cache bust: `tmp/cache-bust-persona-avatars-v2` → SW `petdate-web-v44-persona-avatars`.
