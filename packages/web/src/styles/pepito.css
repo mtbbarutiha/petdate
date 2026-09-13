@@ -9575,15 +9575,15 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   gap: 0.15rem;
   padding: 0.65rem 0.75rem;
   border-radius: 12px;
-  background: #fafafa;
+  background: var(--pd-surface-2);
   border: 1px solid rgba(92, 77, 145, 0.08);
   font-size: 0.8rem;
 }
 .pd-dk-quick-param span {
-  color: var(--pepito-muted);
+  color: var(--pd-muted);
 }
 .pd-dk-quick-param strong {
-  color: var(--pepito-dark);
+  color: var(--pd-ink);
   font-weight: 700;
 }
 .pd-dk-buybox {
@@ -9669,7 +9669,7 @@ a.pepito-btn.pepito-human-consult-cta:hover {
 }
 .pd-dk-tabs-block {
   border-radius: 16px;
-  background: var(--pepito-white);
+  background: var(--pd-surface);
   border: 1px solid rgba(92, 77, 145, 0.1);
   overflow: hidden;
 }
@@ -9678,7 +9678,7 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   gap: 0.25rem;
   padding: 0.55rem 0.65rem 0;
   border-bottom: 1px solid rgba(92, 77, 145, 0.08);
-  background: #fafafa;
+  background: var(--pd-surface-muted);
 }
 .pd-dk-tabs button {
   appearance: none;
@@ -9691,7 +9691,7 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 0.92rem;
-  color: var(--pepito-muted);
+  color: var(--pd-muted);
   cursor: pointer;
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
@@ -9699,7 +9699,7 @@ a.pepito-btn.pepito-human-consult-cta:hover {
 .pd-dk-tabs button.is-active {
   color: var(--pepito-base);
   border-bottom-color: var(--pepito-base);
-  background: var(--pepito-white);
+  background: var(--pd-surface);
   border-radius: 10px 10px 0 0;
 }
 .pd-dk-tab-panel {
@@ -9725,12 +9725,12 @@ a.pepito-btn.pepito-human-consult-cta:hover {
 }
 .pd-dk-specs th {
   width: 34%;
-  color: var(--pepito-muted);
+  color: var(--pd-muted);
   font-weight: 600;
-  background: #fafafa;
+  background: var(--pd-surface-2);
 }
 .pd-dk-specs td {
-  color: var(--pepito-dark);
+  color: var(--pd-ink);
   font-weight: 700;
 }
 @media (max-width: 1100px) {
@@ -9872,12 +9872,12 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   gap: 0.2rem;
   padding: 1rem;
   border-radius: 14px;
-  background: #fafafa;
+  background: var(--pd-surface-2);
   border: 1px solid rgba(92, 77, 145, 0.08);
 }
 .pd-dk-reviews-score strong {
   font-size: 2rem;
-  color: var(--pepito-dark);
+  color: var(--pd-ink);
   line-height: 1;
 }
 .pd-dk-reviews-count {
@@ -9928,7 +9928,7 @@ a.pepito-btn.pepito-human-consult-cta:hover {
     justify-content: space-between;
     gap: 0.75rem;
     padding: 0.7rem 0.9rem calc(0.7rem + env(safe-area-inset-bottom, 0px));
-    background: rgba(255, 255, 255, 0.96);
+    background: color-mix(in srgb, var(--pd-surface) 96%, transparent);
     border-top: 1px solid rgba(92, 77, 145, 0.12);
     box-shadow: 0 -10px 28px rgba(25, 6, 61, 0.08);
   }
@@ -9937,7 +9937,7 @@ a.pepito-btn.pepito-human-consult-cta:hover {
     align-items: center;
     gap: 0.4rem;
     font-weight: 800;
-    color: var(--pepito-dark);
+    color: var(--pd-ink);
   }
   .pd-dk-mobile-bar .pepito-btn {
     flex: 0 0 auto;

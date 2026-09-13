@@ -119,6 +119,53 @@ assert.match(darkCss, /\.pepito-my-pets-hero/, 'my-pets hero remapped');
 assert.match(darkCss, /\.pd-shop-dk-cats/, 'shop categories remapped');
 assert.match(darkCss, /\.pepito-reviews-section/, 'reviews section remapped');
 
+/* Shop product detail (PDP) — param tiles + tab rail must track --pd-* tokens */
+assert.match(darkCss, /\.pd-dk-quick-param\b/, 'shop PDP param tiles remapped for dark');
+assert.match(darkCss, /\.pd-dk-quick-param span/, 'shop PDP param labels remapped');
+assert.match(darkCss, /\.pd-dk-quick-param strong/, 'shop PDP param values remapped');
+assert.match(darkCss, /\.pd-dk-tabs\b/, 'shop PDP tab rail remapped for dark');
+assert.match(darkCss, /\.pd-dk-tabs button\.is-active/, 'shop PDP active tab remapped');
+assert.match(pepitoCss, /\.pd-dk-quick-param\s*\{[\s\S]*?var\(--pd-surface-2/, 'PDP param tiles use --pd-surface-2');
+assert.match(pepitoCss, /\.pd-dk-tabs\s*\{[\s\S]*?var\(--pd-surface-muted/, 'PDP tab rail uses --pd-surface-muted');
+assert.match(pepitoCss, /\.pd-dk-tabs button\.is-active\s*\{[\s\S]*?var\(--pd-surface\)/, 'PDP active tab uses --pd-surface');
+assert.match(pepitoCss, /\.pd-dk-quick-param span\s*\{[\s\S]*?var\(--pd-muted/, 'PDP param labels use --pd-muted');
+assert.match(pepitoCss, /\.pd-dk-quick-param strong\s*\{[\s\S]*?var\(--pd-ink/, 'PDP param values use --pd-ink');
+assert.doesNotMatch(
+  pepitoCss,
+  /\.pd-dk-quick-param\s*\{[^}]*#fafafa/,
+  'PDP param tiles must not hardcode #fafafa',
+);
+assert.doesNotMatch(
+  pepitoCss,
+  /\.pd-dk-tabs\s*\{[^}]*#fafafa/,
+  'PDP tab rail must not hardcode #fafafa',
+);
+assert.doesNotMatch(
+  pepitoCss,
+  /\.pd-dk-specs th\s*\{[^}]*#fafafa/,
+  'PDP spec headers must not hardcode #fafafa',
+);
+assert.doesNotMatch(
+  darkCss,
+  /html\[data-theme=['"]dark['"]\][\s\S]{0,80}\.pd-dk-(quick-param|tabs|tabs-block|specs th|reviews-score)[\s\S]{0,160}#(fff|ffffff|fafafa|faf9fc)\b/i,
+  'dark PDP surfaces must not keep white / #fafafa fills',
+);
+assert.match(
+  darkCss,
+  /html\[data-theme=['"]dark['"]\][\s\S]{0,80}\.pd-dk-quick-param[\s\S]{0,160}var\(--pd-surface-2\)/,
+  'dark PDP param tiles paint --pd-surface-2',
+);
+assert.match(
+  darkCss,
+  /html\[data-theme=['"]dark['"]\][\s\S]{0,80}\.pd-dk-tabs[\s\S]{0,160}var\(--pd-surface-muted\)/,
+  'dark PDP tab rail paints --pd-surface-muted',
+);
+assert.match(
+  darkCss,
+  /html\[data-theme=['"]dark['"]\][\s\S]{0,80}\.pd-dk-tabs button\.is-active[\s\S]{0,160}var\(--pd-surface\)/,
+  'dark PDP active tab paints --pd-surface',
+);
+
 /* Pass 4: logged-in app shell — no leftover white canvases */
 assert.match(darkCss, /\.pepito-app-main\b/, 'app main canvas remapped');
 assert.match(darkCss, /\.pepito-home-action\b/, 'home action cards remapped');

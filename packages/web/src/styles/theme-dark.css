@@ -1937,6 +1937,57 @@ html[data-theme='dark'] .pd-shop-dk-label {
   color: var(--pepito-muted);
 }
 
+/* Shop product detail (PDP) — leftover #fafafa param tiles + tab rail
+ * stayed light while --pepito-dark remapped to pale ink → unreadable. */
+html[data-theme='dark'] .pd-dk-quick-param {
+  background: var(--pd-surface-2);
+  border-color: var(--pd-border);
+  color: var(--pd-ink);
+}
+html[data-theme='dark'] .pd-dk-quick-param span {
+  color: var(--pd-muted);
+}
+html[data-theme='dark'] .pd-dk-quick-param strong {
+  color: var(--pd-ink);
+}
+html[data-theme='dark'] .pd-dk-tabs-block {
+  background: var(--pd-surface);
+  border-color: var(--pd-border);
+}
+html[data-theme='dark'] .pd-dk-tabs {
+  background: var(--pd-surface-muted);
+  border-bottom-color: var(--pd-border);
+}
+html[data-theme='dark'] .pd-dk-tabs button {
+  color: var(--pd-muted);
+}
+html[data-theme='dark'] .pd-dk-tabs button.is-active {
+  color: var(--pepito-base);
+  background: var(--pd-surface);
+  border-bottom-color: var(--pepito-base);
+}
+html[data-theme='dark'] .pd-dk-specs th {
+  background: var(--pd-surface-2);
+  color: var(--pd-muted);
+}
+html[data-theme='dark'] .pd-dk-specs td {
+  color: var(--pd-ink);
+}
+html[data-theme='dark'] .pd-dk-reviews-score {
+  background: var(--pd-surface-2);
+  border-color: var(--pd-border);
+}
+html[data-theme='dark'] .pd-dk-reviews-score strong {
+  color: var(--pd-ink);
+}
+html[data-theme='dark'] .pd-dk-mobile-bar {
+  background: color-mix(in srgb, var(--pd-surface) 96%, transparent);
+  border-top-color: var(--pd-border);
+}
+html[data-theme='dark'] .pd-dk-mobile-bar-price {
+  color: var(--pd-ink);
+}
+
 /* 16) Landing reviews / testimonials section */
 html[data-theme='dark'] .pepito-reviews-section {
   background-color: var(--pepito-soft);
