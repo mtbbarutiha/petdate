@@ -149,6 +149,9 @@ npx tsx "$ROOT/packages/web/src/admin/adminNavOrder.selftest.ts"
 echo "==> selftest: admin finance payments under مالی + nav notifs"
 npx tsx "$ROOT/packages/web/src/admin/adminFinanceNavNotifs.selftest.ts"
 
+echo "==> selftest: admin finance allocation edit mode unlocks section fields"
+npx tsx "$ROOT/packages/web/src/admin/pages/finance/adminFinanceAllocationEdit.selftest.ts"
+
 echo "==> selftest: admin runtime flags / coin-sell / support wiring"
 npx tsx "$ROOT/packages/web/src/admin/adminRuntimeWiring.selftest.ts"
 npx tsx "$ROOT/packages/web/src/pages/supportSplit.selftest.ts"

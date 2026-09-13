@@ -18,6 +18,9 @@ import {
   resolveFinanceOsSuspicious,
   updateFinanceOsAccount,
   updateFinanceOsBankBalance,
+  updateFinanceOsEquipment,
+  updateFinanceOsOffice,
+  updateFinanceOsSbgPerson,
   upsertFinanceOsDim,
 } from '../finance-os-service';
 
@@ -140,6 +143,45 @@ financeOsAdminRouter.get('/allocation', (_req, res) => {
   } catch (err) {
     console.error('finance-os allocation:', err);
     res.status(500).json({ error: (err as Error).message || 'خطای داخلی سرور' });
+  }
+});
+
+financeOsAdminRouter.patch('/allocation/offices/:id', requirePermission('finance.write'), (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) {
+      res.status(400).json({ error: 'شناسه نامعتبر' });
+      return;
+    }
+    res.json(updateFinanceOsOffice(id, req.body || {}));
+  } catch (err) {
+    res.status(400).json({ error: (err as Error).message });
+  }
+});
+
+financeOsAdminRouter.patch('/allocation/people/:id', requirePermission('finance.write'), (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) {
+      res.status(400).json({ error: 'شناسه نامعتبر' });
+      return;
+    }
+    res.json(updateFinanceOsSbgPerson(id, req.body || {}));
+  } catch (err) {
+    res.status(400).json({ error: (err as Error).message });
+  }
+});
+
+financeOsAdminRouter.patch('/allocation/equipment/:id', requirePermission('finance.write'), (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    if (!Number.isFinite(id)) {
+      res.status(400).json({ error: 'شناسه نامعتبر' });
+      return;
+    }
+    res.json(updateFinanceOsEquipment(id, req.body || {}));
+  } catch (err) {
+    res.status(400).json({ error: (err as Error).message });
   }
 });
 

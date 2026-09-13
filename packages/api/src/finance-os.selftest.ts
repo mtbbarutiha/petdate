@@ -101,6 +101,59 @@ async function main() {
   assert(inv.number.includes('INV-PD'), 'invoice number');
   assert(inv.total === allocated.splits[0].amount, 'invoice total');
 
+  const vanak = alloc.offices.find((o) => o.name.includes('ونک'));
+  assert(vanak, 'vanak office');
+  const vanakUpdated = fos.updateFinanceOsOffice(vanak!.id, {
+    address: 'تهران، ونک — ویرایش تست',
+    totalSqm: 230,
+    areas: [
+      { id: 'area1', name: 'اتاق شماره ۱ (اختصاصی)', sqm: 45, monthlyRent: 50000000, assignedBusiness: 'پت‌دیت' },
+      { id: 'area-new', name: 'بالکن', sqm: 12, monthlyRent: 0, assignedBusiness: null },
+    ],
+  });
+  assert(vanakUpdated.address.includes('ویرایش تست'), 'office address patched');
+  assert(vanakUpdated.totalSqm === 230, 'office sqm patched');
+  assert(vanakUpdated.areas.length === 2, 'office areas replaced');
+  assert(vanakUpdated.areas[0].assignedBusiness === 'پت‌دیت', 'area business patched');
+  assert(vanakUpdated.areas.some((a) => a.name === 'بالکن'), 'new area added');
+
+  const emptyOffice = alloc.offices.find((o) => o.areas.length === 0);
+  assert(emptyOffice, 'empty office exists');
+  const filledEmpty = fos.updateFinanceOsOffice(emptyOffice!.id, {
+    areas: [{ id: 'sa-1', name: 'اتاق تست', sqm: 20, monthlyRent: 1000000, assignedBusiness: 'هایپاد' }],
+  });
+  assert(filledEmpty.areas.length === 1, 'empty office can gain areas');
+
+  const staff = alloc.sbgPeople[0];
+  assert(staff, 'sbg person');
+  const staffUpdated = fos.updateFinanceOsSbgPerson(staff.id, {
+    role: 'مدیر مالی',
+    office: filledEmpty.name,
+    allocationMethod: 'manual',
+  });
+  assert(staffUpdated.role === 'مدیر مالی', 'person role patched');
+  assert(staffUpdated.allocationMethod === 'manual', 'person method patched');
+  assert(staffUpdated.timeAllocations.length === staff.timeAllocations.length, 'time allocations kept');
+
+  const equip = alloc.equipment[0];
+  assert(equip, 'equipment');
+  const equipUpdated = fos.updateFinanceOsEquipment(equip.id, {
+    monthlyRate: 1750000,
+    assignedBusiness: 'پت‌دیت',
+    assignedPerson: 'تست تجهیز',
+  });
+  assert(equipUpdated.monthlyRate === 1750000, 'equipment rate patched');
+  assert(equipUpdated.assignedBusiness === 'پت‌دیت', 'equipment business patched');
+  assert(equipUpdated.name === equip.name, 'equipment name kept');
+
+  let officeMissing = false;
+  try {
+    fos.updateFinanceOsOffice(9_999_999, { name: 'x' });
+  } catch {
+    officeMissing = true;
+  }
+  assert(officeMissing, 'missing office throws');
+
   const balBefore = fos.getFinanceOsAllocationBundle().bankBalance;
   fos.updateFinanceOsBankBalance(balBefore + 5000);
   assert(fos.getFinanceOsAllocationBundle().bankBalance === balBefore + 5000, 'bank balance');

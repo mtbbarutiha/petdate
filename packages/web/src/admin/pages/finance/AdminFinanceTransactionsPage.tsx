@@ -156,7 +156,7 @@ export function AdminFinanceTransactionsPage() {
           <p>{tr('ایمپورت · صف بررسی · مشکوک · دفتر (Ledger)')}</p>
         </div>
         <div className="admin-header-actions">
-          <FinanceEditToggle editMode={editMode} onChange={setEditMode} />
+          <FinanceEditToggle editMode={editMode} onChange={setEditMode} disabled={!canWrite} />
         </div>
       </header>
 

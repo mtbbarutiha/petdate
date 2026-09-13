@@ -138,7 +138,7 @@ export function AdminFinanceAccountsPage() {
           <p>{tr('بانک · اسنپ‌پی · طبقه‌بندی درآمد/هزینه · افراد و بخش‌ها')}</p>
         </div>
         <div className="admin-header-actions">
-          <FinanceEditToggle editMode={editMode} onChange={setEditMode} />
+          <FinanceEditToggle editMode={editMode} onChange={setEditMode} disabled={!canWrite} />
           {editMode && tab === 'accounts' ? (
             <button
               type="button"
