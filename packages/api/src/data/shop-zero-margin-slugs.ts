@@ -46,6 +46,31 @@ export const SHOP_BATCH_MULTI_SLUGS = [
   'cat-toys-little-yellow-cat-toy',
   'cat-toys-play-tunnel-bag',
   'cat-toys-automatic-cat-teaser-ball-robotic-toy-for-cats',
+  'dog-accessories-hannapet-silicone-h-harness-size-l',
+  'dog-accessories-hannapet-silicone-dog-leash-size-l',
+  'dog-accessories-hannapet-silicone-h-harness-sizr-m',
+  'dog-accessories-waudog-classic-leather-collar-25-mm',
+  'dog-accessories-hannapet-silicone-dog-leash-size-m',
+  'cat-accessories-hannapet-double-wooden-bowl-stand',
+  'cat-accessories-eggshell-bowls-for-cats',
+  'cat-accessories-high-legend-bowls-for-cat',
+  'cat-accessories-hanapet-double-metal-bowl-stand',
+  'cat-accessories-petopoli-four-legged-pet-bowl',
+  'grooming-bonnest-calming-shampoo-for-pet-200-l',
+  'dog-toys-luna-pomegranate-felt-squeaky-dog-toy',
+  'dog-toys-luna-squeaky-smile-watermelon-plush-dog-toy',
+  'dog-toys-luna-squeaky-watermelon-plush-dog-toy',
+  'dog-carriers-luxury-leather-space-pet-carier-backpack',
+  'dog-carriers-leather-pet-carier-backpack',
+  'dog-carriers-fiber-space-pet-carrier-backpack',
+  'cat-carriers-jupiter-cat-hard-box',
+  'cat-carriers-zarix-zeus-for-cat',
+  'cat-carriers-raha-pet-hard-box-3',
+  'bird-food-oshkaia-mixed-nut-cockatiel-food-kg',
+  'bird-food-oshkaia-mynah-bird-food-kg',
+  'grooming-spray-massage-brush-for-pet',
+  'grooming-mojan-pet-brush',
+  'grooming-dog-shedding-brush-hair-release-button',
 ] as const;
 
 export const ZERO_MARGIN_SHOP_SLUGS: readonly string[] = [
@@ -55,8 +80,8 @@ export const ZERO_MARGIN_SHOP_SLUGS: readonly string[] = [
 ];
 
 /**
- * Live shop product ids — 3 pilots + 12 Batch 2 + 25 Batch-multi Part 1.
- * IDs are p221–p235 and p250–p274. p236–p249 are reserved for open Batch 3
+ * Live shop product ids — 3 pilots + 12 Batch 2 + 50 Batch-multi.
+ * IDs are p221–p235 and p250–p299. p236–p249 are reserved for open Batch 3
  * (PR #445) so this wave does not overwrite those SKUs if that PR lands.
  * Never purge these rows.
  */
@@ -101,6 +126,31 @@ export const LIVE_SHOP_PRODUCT_IDS = [
   'p272',
   'p273',
   'p274',
+  'p275',
+  'p276',
+  'p277',
+  'p278',
+  'p279',
+  'p280',
+  'p281',
+  'p282',
+  'p283',
+  'p284',
+  'p285',
+  'p286',
+  'p287',
+  'p288',
+  'p289',
+  'p290',
+  'p291',
+  'p292',
+  'p293',
+  'p294',
+  'p295',
+  'p296',
+  'p297',
+  'p298',
+  'p299',
 ] as const;
 
 export function isLiveShopProductIdOrSlug(idOrSlug: string): boolean {

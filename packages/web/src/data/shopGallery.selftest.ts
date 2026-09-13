@@ -73,6 +73,8 @@ const batchMulti = [
   ['p256', 'dog-treats-afp-chill-out-ice-bone', 1_790_000],
   ['p269', 'cat-toys-petopoli-4-way-foldable-cat-play-tunnel', 2_310_000],
   ['p274', 'cat-toys-automatic-cat-teaser-ball-robotic-toy-for-cats', 610_050],
+  ['p275', 'dog-accessories-hannapet-silicone-h-harness-size-l', 4_355_000],
+  ['p299', 'grooming-dog-shedding-brush-hair-release-button', 770_000],
 ] as const;
 for (const [id, slug, price] of batchMulti) {
   const item = getProduct(slug) ?? getProduct(id);

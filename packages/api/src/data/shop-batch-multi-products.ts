@@ -1,5 +1,5 @@
 /**
- * PetDate shop Batch-multi Part 1 — 25 live SKUs (p250–p274).
+ * PetDate shop Batch-multi — 50 live SKUs (p250–p299).
  * Additive, idempotent upsert by slug. Margin 0 (cost_toman = price_toman).
  * Seller copy is پت دیت شاپ only. Do not invent missing weights.
  */
@@ -80,6 +80,54 @@ const CATEGORIES = [
     emoji: '🐭',
     sortOrder: 60,
   },
+  {
+    slug: 'dog-accessories',
+    labelFa: 'قلاده، لیش و هارنس',
+    petType: 'dog',
+    description: 'هارنس، لیش و قلاده',
+    emoji: '🦮',
+    sortOrder: 80,
+  },
+  {
+    slug: 'cat-accessories',
+    labelFa: 'ظروف و لوازم گربه',
+    petType: 'cat',
+    description: 'ظرف و پایه غذا',
+    emoji: '🍽️',
+    sortOrder: 90,
+  },
+  {
+    slug: 'grooming',
+    labelFa: 'بهداشت و آراستگی',
+    petType: 'dog',
+    description: 'شامپو و برس',
+    emoji: '🧴',
+    sortOrder: 100,
+  },
+  {
+    slug: 'dog-carriers',
+    labelFa: 'حمل سگ',
+    petType: 'dog',
+    description: 'کوله و باکس حمل',
+    emoji: '🧳',
+    sortOrder: 110,
+  },
+  {
+    slug: 'cat-carriers',
+    labelFa: 'حمل گربه',
+    petType: 'cat',
+    description: 'باکس و کوله حمل',
+    emoji: '🎒',
+    sortOrder: 120,
+  },
+  {
+    slug: 'bird-food',
+    labelFa: 'غذای پرنده',
+    petType: 'bird',
+    description: 'دان، پلت و مخلوط غذایی',
+    emoji: '🐦',
+    sortOrder: 130,
+  },
 ] as const;
 
 function row(
@@ -90,9 +138,13 @@ function row(
     weight?: string;
     color?: string;
     model?: string;
+    size?: string;
   }
 ): ShopBatchMultiProduct {
-  const suitable = partial.petTypes.includes('dog') ? 'سگ' : 'گربه';
+  const hasDog = partial.petTypes.includes('dog');
+  const hasCat = partial.petTypes.includes('cat');
+  const hasBird = partial.petTypes.includes('bird');
+  const suitable = hasDog && hasCat ? 'سگ و گربه' : hasBird ? 'پرنده' : hasDog ? 'سگ' : 'گربه';
   const params: Record<string, string> = {
     مناسب_برای: suitable,
     __titleEn: partial.titleEn,
@@ -100,6 +152,7 @@ function row(
   if (partial.weight) params['وزن'] = partial.weight;
   if (partial.color) params['رنگ'] = partial.color;
   if (partial.model) params['مدل'] = partial.model;
+  if (partial.size) params['سایز'] = partial.size;
   return {
     ...partial,
     costToman: partial.priceToman,
@@ -432,6 +485,326 @@ export const SHOP_BATCH_MULTI_PRODUCTS: ShopBatchMultiProduct[] = [
     color: "آبی روشن",
     description:
       "توپ حرکتی خودکار برای وقتی خودت حوصله میله پر نداری. روی سطح صاف بهتر کار می‌کند.\n\nباتری را چک کن و شب خاموش بگذار تا گربه نخوابد. زیر نظر اولین جلسه‌ها.\n\nآبی روشن.\n\n• توپ رباتیک خودکار\n• تخلیه انرژی بدون میله\n• سطح صاف\n• خاموش کردن بین بازی\n• اولین بار نظارت\n\n— پت دیت شاپ.",
+  }),
+  row({
+    id: "p275",
+    slug: "dog-accessories-hannapet-silicone-h-harness-size-l",
+    title: "هارنس H سیلیکونی حناپت سایز L",
+    titleEn: "Dog Accessories Hannapet Silicone H Harness Size L",
+    brandId: "hannapet",
+    categorySlug: "dog-accessories",
+    petTypes: ["dog"],
+    priceToman: 4_355_000,
+    color: "مشکی",
+    description:
+      "هارنس H سیلیکونی سایز L برای سگ‌های متوسط رو به بزرگ؛ فشار کمتر روی گردن نسبت به قلاده ساده هنگام کشیدن.\n\nاندازه سینه را دقیق بگیر؛ تنگ = زخم، گشاد = دررفتن. مشکی طبق وریانت.\n\nبرای سگ‌های خیلی کشنده ممکن است به مدل محکم‌تر نیاز باشد.\n\n• هارنس H سیلیکونی\n• سایز L\n• برند حناپت\n• فشار کمتر روی گردن\n• اندازه‌گیری سینه قبل خرید\n\n— پت دیت شاپ.",
+  }),
+  row({
+    id: "p276",
+    slug: "dog-accessories-hannapet-silicone-dog-leash-size-l",
+    title: "لیش سیلیکونی حناپت سایز L",
+    titleEn: "Dog Accessories Hannapet Silicone Dog Leash Size L",
+    brandId: "hannapet",
+    categorySlug: "dog-accessories",
+    petTypes: ["dog"],
+    priceToman: 3_332_000,
+    color: "صورتی",
+    description:
+      "لیش سیلیکونی سایز L؛ نرم در دست و قابل شست‌وشو نسبت به پارچه‌های زبر. صورتی طبق وریانت.\n\nبا هارنس مناسب جفت کن نه فقط قلاده گردنی برای سگ‌های کشنده. گره و کارابین را قبل خروج چک کن.\n\nطول را با فضای پیاده‌روی‌ات بسنج.\n\n• لیش سیلیکونی L\n• برند حناپت\n• نرم و قابل شست‌وشو\n• وریانت صورتی\n• چک قفل قبل خروج\n\n— پت دیت شاپ.",
+  }),
+  row({
+    id: "p277",
+    slug: "dog-accessories-hannapet-silicone-h-harness-sizr-m",
+    title: "هارنس H سیلیکونی حناپت سایز M",
+    titleEn: "Dog Accessories Hannapet Silicone H Harness Sizr M",
+    brandId: "hannapet",
+    categorySlug: "dog-accessories",
+    petTypes: ["dog"],
+    priceToman: 3_248_000,
+    color: "نارنجی",
+    description:
+      "همان خط هارنس سیلیکونی حناپت در سایز M برای سگ‌های کوچک تا متوسط. نارنجی طبق وریانت.\n\nجدول سایز روی محصول را با دور سینه واقعی چک کن؛ حرف M بین برندها یکی نیست.\n\nبرای توله در حال رشد ممکن است زود کوچک شود.\n\n• هارنس H سیلیکونی\n• سایز M\n• حناپت / نارنجی\n• اندازه با دور سینه\n• مناسب سگ کوچک–متوسط\n\n— پت دیت شاپ.",
+  }),
+  row({
+    id: "p278",
+    slug: "dog-accessories-waudog-classic-leather-collar-25-mm",
+    title: "قلاده چرمی WAUDOG Classic سایز S",
+    titleEn: "Dog Accessories Waudog Classic Leather Collar 25 Mm",
+    brandId: "waudog",
+    categorySlug: "dog-accessories",
+    petTypes: ["dog"],
+    priceToman: 3_024_000,
+    size: "سایز S",
+    description:
+      "قلاده چرمی کلاسیک ۲۵ میلی‌متری WAUDOG برای سگ‌های کوچک؛ ظاهر مرتب برای پیاده‌روی شهری.\n\nچرم را خشک نگه دار و گاه‌به‌گاه با مراقبت چرم تمیز کن. برای سگ‌های خیلی کشنده هارنس مکمل بهتر است.\n\nسایز S — گردن را اندازه بگیر.\n\n• قلاده چرمی کلاسیک\n• پهنای ۲۵ میلی‌متر\n• سایز S / WAUDOG\n• مراقبت چرم\n• برای کشنده شدید هارنس اضافه کن\n\n— پت دیت شاپ.",
+  }),
+  row({
+    id: "p279",
+    slug: "dog-accessories-hannapet-silicone-dog-leash-size-m",
+    title: "لیش سیلیکونی حناپت سایز M",
+    titleEn: "Dog Accessories Hannapet Silicone Dog Leash Size M",
+    brandId: "hannapet",
+    categorySlug: "dog-accessories",
+    petTypes: ["dog"],
+    priceToman: 2_953_000,
+    color: "مشکی",
+    description:
+      "لیش سیلیکونی سایز M مشکی؛ جفت طبیعی هارنس M همان برند. دست را کمتر می‌سوزاند در کشیدن‌های کوتاه.\n\nکارابین را روی حلقه هارنس قفل کن. اگر سگ خیلی سنگین است به L فکر کن.\n\nشست‌وشوی آب خنک.\n\n• لیش سیلیکونی M\n• مشکی / حناپت\n• جفت هارنس هم‌سایز\n• قفل کارابین\n• شست‌وشوی آسان\n\n— پت دیت شاپ.",
+  }),
+  row({
+    id: "p280",
+    slug: "cat-accessories-hannapet-double-wooden-bowl-stand",
+    title: "پایه چوبی دوقلو حناپت",
+    titleEn: "Cat Accessories Hannapet Double Wooden Bowl Stand",
+    brandId: "hannapet",
+    categorySlug: "cat-accessories",
+    petTypes: ["cat"],
+    priceToman: 2_130_000,
+    description:
+      "پایه چوبی دو ظرف برای آب و غذا؛ ارتفاع ملایم تا گردن کمتر خم شود — مخصوصاً برای گربه‌های مسن‌تر.\n\nچوب را خیس نگذار؛ ظرف‌ها را جدا بشوی. جای ثابت انتخاب کن تا گربه سردرگم نشود.\n\nیک عدد.\n\n• پایه چوبی دوقلو\n• برند حناپت\n• ارتفاع راحت‌تر برای خوردن\n• شست‌وشوی ظرف جدا از چوب\n• جای ثابت در خانه\n\n— پت دیت شاپ.",
+  }),
+  row({
+    id: "p281",
+    slug: "cat-accessories-eggshell-bowls-for-cats",
+    title: "ظرف آب و غذا پایه‌دار طرح تخم‌مرغ",
+    titleEn: "Cat Accessories Eggshell Bowls For Cats",
+    brandId: "generic",
+    categorySlug: "cat-accessories",
+    petTypes: ["cat"],
+    priceToman: 1_468_000,
+    color: "قهوه ای",
+    description:
+      "ست ظرف پایه‌دار طرح تخم‌مرغ؛ ظاهر فانتزی با ارتفاع کم تا متوسط برای گربه روزمره.\n\nسبیل‌ها به دیواره تنگ حساس‌اند — اگر دیدید کنار ظرف غذا می‌گذارند ظرف پهن‌تر بهتر است. قهوه‌ای طبق وریانت.\n\nروزانه بشوی.\n\n• طرح تخم‌مرغ پایه‌دار\n• آب + غذا\n• وریانت قهوه‌ای\n• سبیل را فشار ندهد\n• شست‌وشوی روزانه\n\n— پت دیت شاپ.",
+  }),
+  row({
+    id: "p282",
+    slug: "cat-accessories-high-legend-bowls-for-cat",
+    title: "ظرف غذا و آب پایه‌دار مدل خندان",
+    titleEn: "Cat Accessories High Legend Bowls For Cat",
+    brandId: "generic",
+    categorySlug: "cat-accessories",
+    petTypes: ["cat"],
+    priceToman: 1_110_000,
+    color: "قرمز",
+    description:
+      "ظرف پایه‌دار طرح خندان؛ انتخاب رنگی برای خانه‌هایی که ظرف ساده نمی‌خواهند. قرمز طبق وریانت.\n\nپایه را روی سطح صاف بگذار تا نلغزد. استیل/پلاستیک را بعد هر وعده تمیز کن تا بو نگیرد.\n\nجای ظرف کنار خاک نباشد.\n\n• مدل خندان پایه‌دار\n• قرمز\n• جدا از خاک گربه\n• سطح صاف\n• تمیزکاری بعد وعده\n\n— پت دیت شاپ.",
+  }),
+  row({
+    id: "p283",
+    slug: "cat-accessories-hanapet-double-metal-bowl-stand",
+    title: "پایه فلزی دوقلو حناپت",
+    titleEn: "Cat Accessories Hanapet Double Metal Bowl Stand",
+    brandId: "hannapet",
+    categorySlug: "cat-accessories",
+    petTypes: ["cat"],
+    priceToman: 1_100_000,
+    description:
+      "پایه فلزی دو ظرف؛ مقاوم‌تر از چوب در برابر رطوبت ریز آب. مناسب گربه‌هایی که دور ظرف آب می‌پاشند.\n\nفلز را خشک کن تا لکه نماند. ارتفاع را با جثه گربه بسنج.\n\nیک عدد.\n\n• پایه فلزی دوقلو\n• حناپت\n• مقاوم رطوبت\n• خشک کردن بعد شست‌وشو\n• مناسب پاشیدن آب\n\n— پت دیت شاپ.",
+  }),
+  row({
+    id: "p284",
+    slug: "cat-accessories-petopoli-four-legged-pet-bowl",
+    title: "ظرف آب و غذای چهارپایه پتوپولی",
+    titleEn: "Cat Accessories Petopoli Four Legged Pet Bowl",
+    brandId: "petopoli",
+    categorySlug: "cat-accessories",
+    petTypes: ["cat"],
+    priceToman: 775_000,
+    model: "مدل چهارپایه",
+    description:
+      "ظرف مرتفع چهارپایه؛ برای گربه‌هایی که ایستاده راحت‌تر می‌خورند یا صاحب از ریخت‌وپاش روی زمین خسته شده.\n\nپاها را قفل چک کن. مدل چهارپایه پتوپولی.\n\nلغزش روی سرامیک را با زیرپایی کنترل کن.\n\n• چهارپایه مرتفع\n• برند پتوپولی\n• کمتر خم شدن گردن\n• چک پایداری پاها\n• کنترل لغزش\n\n— پت دیت شاپ.",
+  }),
+  row({
+    id: "p285",
+    slug: "grooming-bonnest-calming-shampoo-for-pet-200-l",
+    title: "شامپو آرامش‌بخش بونست ۲۰۰ میلی‌لیتر",
+    titleEn: "Grooming Bonnest Calming Shampoo For Pet 200 L",
+    brandId: "bonnest",
+    categorySlug: "grooming",
+    petTypes: ["dog"],
+    priceToman: 680_000,
+    weight: "200 میلی لیتر",
+    description:
+      "شامپو ۲۰۰ میلی‌لیتری بونست با ادعای رایحه آرامش‌بخش برای حمام‌های کم‌استرس‌تر. شامپوی انسان استفاده نکن.\n\nآب ولرم، چشم و گوش را حفظ کن. اگر پوست قرمز یا زخم است اول دامپزشک.\n\nخشک کردن کامل بعد حمام.\n\n• شامپو پت ۲۰۰ میل\n• برند بونست\n• نه برای انسان\n• محافظت چشم و گوش\n• زخم پوست = دامپزشک اول\n\n— پت دیت شاپ.",
+  }),
+  row({
+    id: "p286",
+    slug: "dog-toys-luna-pomegranate-felt-squeaky-dog-toy",
+    title: "عروسک نمدی لونا طرح انار",
+    titleEn: "Dog Toys Luna Pomegranate Felt Squeaky Dog Toy",
+    brandId: "lunapet",
+    categorySlug: "dog-toys",
+    petTypes: ["dog"],
+    priceToman: 322_000,
+    description:
+      "عروسک نمدی صدادهنده لونا؛ سبک برای توله و سگ‌های بازی‌گوش نرم. داخل خانه بهتر از حیاط خشن است.\n\nاگر سگ نمد را می‌درد، اسباب‌بازی مقاوم‌تر بگیر. صدای جیرجیر را بعضی سگ‌ها دوست دارند بعضی می‌ترسند.\n\nبعد پاره شدن دور بینداز.\n\n• نمد طرح انار / لوناپت\n• صدادهنده\n• مناسب بازی نرم خانگی\n• زیر نظر اگر پاره شد\n• جایگزین جویدنی مقاوم نیست\n\n— پت دیت شاپ.",
+  }),
+  row({
+    id: "p287",
+    slug: "dog-toys-luna-squeaky-smile-watermelon-plush-dog-toy",
+    title: "عروسک پولیشی لونا هندوانه خندان صدا دار",
+    titleEn: "Dog Toys Luna Squeaky Smile Watermelon Plush Dog Toy",
+    brandId: "lunapet",
+    categorySlug: "dog-toys",
+    petTypes: ["dog"],
+    priceToman: 362_000,
+    description:
+      "پولیش نرم صدادهنده طرح هندوانه خندان؛ برای بازی طناب‌کشی ملایم و حمل‌کردن در خانه.\n\nسگ‌های جوینده حرفه‌ای الیاف را خالی می‌کنند — فقط زیر نظر. الیاف بلعیده‌شده خطرناک است.\n\nشست‌وشوی سطحی طبق دوام پارچه.\n\n• پولیش هندوانه خندان\n• صدادهنده لوناپت\n• بازی نرم خانگی\n• نظارت برای جویندهای قوی\n• الیاف را قورت ندهد\n\n— پت دیت شاپ.",
+  }),
+  row({
+    id: "p288",
+    slug: "dog-toys-luna-squeaky-watermelon-plush-dog-toy",
+    title: "عروسک پولیشی لونا طرح هندوانه صدا دار",
+    titleEn: "Dog Toys Luna Squeaky Watermelon Plush Dog Toy",
+    brandId: "lunapet",
+    categorySlug: "dog-toys",
+    petTypes: ["dog"],
+    priceToman: 312_000,
+    description:
+      "نسخه کلاسیک هندوانه پولیشی لونا با صدا؛ هم‌سبک مدل خندان برای تنوع ظاهر.\n\nهمان قانون: بازی نرم، نظارت، دور انداختن وقتی پاره شد.\n\nبرای توله و سگ کم‌تهاجم مناسب‌تر است.\n\n• پولیش هندوانه / صدا دار\n• برند لوناپت\n• تنوع ظاهری نسبت به مدل خندان\n• نظارت هنگام بازی\n• مقاوم جویدن سنگین نیست\n\n— پت دیت شاپ.",
+  }),
+  row({
+    id: "p289",
+    slug: "dog-carriers-luxury-leather-space-pet-carier-backpack",
+    title: "کوله فضایی چرمی لاکچری (سفید)",
+    titleEn: "Dog Carriers Luxury Leather Space Pet Carier Backpack",
+    brandId: "generic",
+    categorySlug: "dog-carriers",
+    petTypes: ["dog"],
+    priceToman: 2_795_000,
+    color: "سفید",
+    description:
+      "کوله فضایی با نمای چرمی برای جابه‌جایی سگ/گربه کوچک در شهر. پنجره برای دیدن بیرون و هوای نسبی.\n\nوزن حیوان و کوله را با شانه خودت بسنج. سفید زود لکه می‌شود. هرگز در ماشین زیر آفتاب بسته رها نکن.\n\nقبل خرید دور سینه و وزن پت را چک کن.\n\n• کوله فضایی چرمی\n• وریانت سفید\n• مناسب جثه کوچک\n• تهویه و نظارت\n• نه در گرمای بسته\n\n— پت دیت شاپ.",
+  }),
+  row({
+    id: "p290",
+    slug: "dog-carriers-leather-pet-carier-backpack",
+    title: "کوله فضایی چرمی پارک‌دار (آبی)",
+    titleEn: "Dog Carriers Leather Pet Carier Backpack",
+    brandId: "generic",
+    categorySlug: "dog-carriers",
+    petTypes: ["dog"],
+    priceToman: 2_650_000,
+    color: "آبی",
+    description:
+      "کوله فضایی چرمی با فضای پارک/ایستادن محدود؛ آبی طبق وریانت. برای رفت‌وآمد کوتاه شهری.\n\nپت را تدریجی به کوله عادت بده. زیپ و بست را قبل خروج چک کن.\n\nهوای کافی و توقف برای آب.\n\n• کوله چرمی پارک‌دار\n• آبی\n• عادت تدریجی پت\n• چک زیپ و بست\n• توقف آب در مسیر طولانی\n\n— پت دیت شاپ.",
+  }),
+  row({
+    id: "p291",
+    slug: "dog-carriers-fiber-space-pet-carrier-backpack",
+    title: "کوله فضایی فایبر (قرمز)",
+    titleEn: "Dog Carriers Fiber Space Pet Carrier Backpack",
+    brandId: "generic",
+    categorySlug: "dog-carriers",
+    petTypes: ["dog"],
+    priceToman: 6_160_000,
+    color: "قرمز",
+    description:
+      "کوله فضایی مدل فایبر؛ معمولاً سبک‌تر از چرم مصنوعی سنگین. قرمز طبق وریانت.\n\nبرای باران مستقیم ایده‌آل نیست مگر کاور داشته باشد. وزن مجاز را رعایت کن.\n\nپد داخل را جدا بشوی اگر قابل جدا شدن است.\n\n• کوله فایبر\n• قرمز / سبک‌تر\n• وزن مجاز پت\n• مراقب باران\n• شست‌وشوی پد\n\n— پت دیت شاپ.",
+  }),
+  row({
+    id: "p292",
+    slug: "cat-carriers-jupiter-cat-hard-box",
+    title: "باکس حمل سخت ژوپیتر (آبی)",
+    titleEn: "Cat Carriers Jupiter Cat Hard Box",
+    brandId: "generic",
+    categorySlug: "cat-carriers",
+    petTypes: ["cat"],
+    priceToman: 2_970_000,
+    color: "آبی",
+    description:
+      "باکس سخت برای ماشین و دامپزشکی؛ امن‌تر از کیف نرم در تصادف‌های ناگهانی. آبی طبق وریانت.\n\nگربه را از قبل با باکس به‌عنوان جای امن آشنا کن نه فقط روز تزریق. روی صندلی ثابت کن.\n\nتهویه را نبند.\n\n• باکس سخت ژوپیتر\n• آبی\n• مناسب سفر و کلینیک\n• آشناسازی قبلی\n• ثابت کردن در ماشین\n\n— پت دیت شاپ.",
+  }),
+  row({
+    id: "p293",
+    slug: "cat-carriers-zarix-zeus-for-cat",
+    title: "کوله فضایی زئوس زاریکس (خاکستری تیره)",
+    titleEn: "Cat Carriers Zarix Zeus For Cat",
+    brandId: "zarix",
+    categorySlug: "cat-carriers",
+    petTypes: ["cat"],
+    priceToman: 4_274_000,
+    color: "خاکستری تیره",
+    description:
+      "کوله فضایی مدل زئوس برای گربه/پت کوچک؛ خاکستری تیره کمتر از سفید لکه نشان می‌دهد.\n\nوزن و جثه را با کوله بسنج. در مترو شلوغ مراقب در باشی که باز نشود.\n\nنفس‌گیر نباشد؛ توقف استراحت.\n\n• کوله زئوس زاریکس\n• خاکستری تیره\n• جثه کوچک\n• چک بست در شلوغی\n• تهویه و استراحت\n\n— پت دیت شاپ.",
+  }),
+  row({
+    id: "p294",
+    slug: "cat-carriers-raha-pet-hard-box-3",
+    title: "باکس حمل رها سایز ۳",
+    titleEn: "Cat Carriers Raha Pet Hard Box 3",
+    brandId: "zarix",
+    categorySlug: "cat-carriers",
+    petTypes: ["cat"],
+    priceToman: 3_960_000,
+    size: "سایز 3",
+    description:
+      "باکس سخت رها سایز ۳ برای پت‌های بزرگ‌تر از سایزهای کوچک خانگی. انتخاب وقتی باکس مینی تنگ است.\n\nاندازه حیوان ایستاده/چرخیده را چک کن. برند زاریکس/رها طبق لیست تأمین.\n\nدر ماشین مهار کن.\n\n• باکس سخت سایز ۳\n• فضای بزرگ‌تر\n• مهار در خودرو\n• اندازه‌گیری قبل خرید\n• مناسب کلینیک و سفر\n\n— پت دیت شاپ.",
+  }),
+  row({
+    id: "p295",
+    slug: "bird-food-oshkaia-mixed-nut-cockatiel-food-kg",
+    title: "خوراک آجیلی مخلوط عروس هلندی اوشکایا ۱ کیلو",
+    titleEn: "Bird Food Oshkaia Mixed Nut Cockatiel Food Kg",
+    brandId: "oshkaia",
+    categorySlug: "bird-food",
+    petTypes: ["bird"],
+    priceToman: 525_000,
+    weight: "یک کیلو",
+    description:
+      "مخلوط آجیلی برای عروس هلندی و طوطی‌های کوچک مشابه؛ تنوع مغز و دانه برای روزمره.\n\nآجیل چرب است — با سبزی و پلت متعادل کن تا فقط چربی نخورند. تازه و خشک نگه دار.\n\n۱ کیلو. جای آب کثیف را عوض کن.\n\n• مخلوط آجیلی عروس هلندی\n• ۱ کیلو / اوشکایا\n• با رژیم متنوع ترکیب کن\n• نگهداری خشک\n• آب تازه روزانه\n\n— پت دیت شاپ.",
+  }),
+  row({
+    id: "p296",
+    slug: "bird-food-oshkaia-mynah-bird-food-kg",
+    title: "خوراک مرغ مینا و حشره‌خوار اوشکایا ۱ کیلو",
+    titleEn: "Bird Food Oshkaia Mynah Bird Food Kg",
+    brandId: "oshkaia",
+    categorySlug: "bird-food",
+    petTypes: ["bird"],
+    priceToman: 495_000,
+    weight: "یک کیلو",
+    description:
+      "فرمول مخصوص مینا و پرندگان حشره‌خوار؛ با دانه مخلوط عروس یکی نیست.\n\nمینا به پروتئین حیوانی/حشره بیشتر نیاز دارد — این خط برای همان است نه برای قناری. کاسه را روزانه تمیز کن.\n\n۱ کیلو. مکمل میوه/سبزی طبق گونه.\n\n• مخصوص مینا / حشره‌خوار\n• ۱ کیلو اوشکایا\n• متفاوت از خوراک عروس\n• بهداشت ظرف روزانه\n• تنوع غذایی گونه را رعایت کن\n\n— پت دیت شاپ.",
+  }),
+  row({
+    id: "p297",
+    slug: "grooming-spray-massage-brush-for-pet",
+    title: "برس اسپری‌دار طرح انبه",
+    titleEn: "Grooming Spray Massage Brush For Pet",
+    brandId: "generic",
+    categorySlug: "grooming",
+    petTypes: ["dog"],
+    priceToman: 520_000,
+    color: "زرد",
+    description:
+      "برس ماساژ با مخزن اسپری طرح انبه؛ همزمان شانه و کمی رطوبت/اسپری مراقبت (طبق مایع مجاز پت).\n\nمایع نامناسب نریز. زرد طبق وریانت. برای گره سفت اول گره بازکن جدا.\n\nآرام شانه کن تا پوست نخراشد.\n\n• برس + مخزن اسپری\n• طرح انبه / زرد\n• فقط مایع مناسب پت\n• گره سفت را جدا باز کن\n• فشار ملایم روی پوست\n\n— پت دیت شاپ.",
+  }),
+  row({
+    id: "p298",
+    slug: "grooming-mojan-pet-brush",
+    title: "برس فنری موژان سایز S",
+    titleEn: "Grooming Mojan Pet Brush",
+    brandId: "generic",
+    categorySlug: "grooming",
+    petTypes: ["dog", "cat"],
+    priceToman: 823_000,
+    size: "سایز S",
+    description:
+      "برس فنری برای کندن موهای شل سگ و گربه کوتاه‌مو تا متوسط. سایز S برای جثه کوچک‌تر.\n\nهفته‌ای چند بار کوتاه بهتر از یک‌بار وحشیانه است. اگر پوست حساس است با فشار کمتر.\n\nموی جمع‌شده را بعد هر وعده پاک کن.\n\n• برس فنری موژان\n• سایز S\n• کاهش ریزش روی مبل\n• فشار ملایم\n• پاک کردن مو از برس\n\n— پت دیت شاپ.",
+  }),
+  row({
+    id: "p299",
+    slug: "grooming-dog-shedding-brush-hair-release-button",
+    title: "برس ریزش‌گیر بیضی با دکمه تخلیه",
+    titleEn: "Grooming Dog Shedding Brush Hair Release Button",
+    brandId: "generic",
+    categorySlug: "grooming",
+    petTypes: ["dog", "cat"],
+    priceToman: 770_000,
+    color: "صورتی",
+    description:
+      "برس بیضی با دکمه تخلیه مو؛ بعد شانه یک فشار و مو می‌افتد توی سطل نه روی فرش. صورتی طبق وریانت.\n\nروی پوست ملتهب نکش. برای مو بلند ممکن است به شانه جدا هم نیاز باشد.\n\nتمیزکاری بعد هر بار.\n\n• دکمه تخلیه مو\n• مدل بیضی\n• وریانت صورتی\n• نه روی پوست زخمی\n• کمک به کنترل ریزش\n\n— پت دیت شاپ.",
   }),
 ];
 

@@ -1,6 +1,6 @@
 /**
  * Live shop catalog guard — keep p221–p235 (pilots + Batch 2) and
- * p250–p274 (Batch-multi Part 1). Purges leftover demo/seed rows
+ * p250–p299 (Batch-multi). Purges leftover demo/seed rows
  * (p1–p220, finance placeholders, etc.) without touching live prices,
  * images, or stock. p236–p249 are reserved for Batch 3 (PR #445).
  */
@@ -21,6 +21,12 @@ export const LIVE_SHOP_CATEGORY_SLUGS = [
   'cat-treats',
   'dog-toys',
   'cat-toys',
+  'dog-accessories',
+  'cat-accessories',
+  'grooming',
+  'dog-carriers',
+  'cat-carriers',
+  'bird-food',
 ] as const;
 
 export function purgeDemoShopProducts(): { products: number; categories: number } {

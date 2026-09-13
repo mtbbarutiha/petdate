@@ -206,7 +206,7 @@ export function getDb(): AppDatabase {
     };
 
     const bootShopCatalogGuard = () => {
-      // Delete leftover demo/seed SKUs. Never touches live p221–p235 / p250–p274 prices/images/stock.
+      // Delete leftover demo/seed SKUs. Never touches live p221–p235 / p250–p299 prices/images/stock.
       try {
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { purgeDemoShopProducts } =
@@ -1673,7 +1673,7 @@ function seedFinanceDefaults() {
     (db.prepare('SELECT COUNT(*) as c FROM shop_products').get() as { c: number } | undefined)?.c ?? 0
   );
   if (productCount === 0) {
-    // Live SKUs (p221–p235 + p250–p274) are seeded by bootShopPilot — never insert demo toys/beds/collars here.
+    // Live SKUs (p221–p235 + p250–p299) are seeded by bootShopPilot — never insert demo toys/beds/collars here.
     const cats = [
       ['dog-food', 'غذای سگ', 'dog', 'غذای خشک و کنسرو', '🦴', 10],
       ['cat-food', 'غذای گربه', 'cat', 'غذای خشک و پوچ', '🐟', 20],

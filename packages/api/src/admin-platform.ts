@@ -662,7 +662,7 @@ export const adminPlatform = {
           );
         });
       }
-      // Never wipe live SKUs (p221–p235, p250–p274). Drop leftover demo/seed rows only.
+      // Never wipe live SKUs (p221–p235, p250–p299). Drop leftover demo/seed rows only.
       purgeDemoShopProducts();
       for (const p of input.products) {
         const key = String(p.id || p.slug || '').trim();

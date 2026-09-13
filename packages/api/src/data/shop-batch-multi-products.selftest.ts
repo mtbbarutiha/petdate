@@ -1,5 +1,5 @@
 /**
- * Shop Batch-multi Part 1 — 25 SKUs, zero margin, 3-angle batch-multi-v1 galleries.
+ * Shop Batch-multi — 50 SKUs, zero margin, 3-angle batch-multi-v1 galleries.
  * Run: npx tsx src/data/shop-batch-multi-products.selftest.ts
  */
 import assert from 'node:assert/strict';
@@ -68,6 +68,31 @@ const EXPECTED_PRICE: Record<string, number> = {
   'cat-toys-little-yellow-cat-toy': 825_000,
   'cat-toys-play-tunnel-bag': 792_000,
   'cat-toys-automatic-cat-teaser-ball-robotic-toy-for-cats': 610_050,
+  'dog-accessories-hannapet-silicone-h-harness-size-l': 4_355_000,
+  'dog-accessories-hannapet-silicone-dog-leash-size-l': 3_332_000,
+  'dog-accessories-hannapet-silicone-h-harness-sizr-m': 3_248_000,
+  'dog-accessories-waudog-classic-leather-collar-25-mm': 3_024_000,
+  'dog-accessories-hannapet-silicone-dog-leash-size-m': 2_953_000,
+  'cat-accessories-hannapet-double-wooden-bowl-stand': 2_130_000,
+  'cat-accessories-eggshell-bowls-for-cats': 1_468_000,
+  'cat-accessories-high-legend-bowls-for-cat': 1_110_000,
+  'cat-accessories-hanapet-double-metal-bowl-stand': 1_100_000,
+  'cat-accessories-petopoli-four-legged-pet-bowl': 775_000,
+  'grooming-bonnest-calming-shampoo-for-pet-200-l': 680_000,
+  'dog-toys-luna-pomegranate-felt-squeaky-dog-toy': 322_000,
+  'dog-toys-luna-squeaky-smile-watermelon-plush-dog-toy': 362_000,
+  'dog-toys-luna-squeaky-watermelon-plush-dog-toy': 312_000,
+  'dog-carriers-luxury-leather-space-pet-carier-backpack': 2_795_000,
+  'dog-carriers-leather-pet-carier-backpack': 2_650_000,
+  'dog-carriers-fiber-space-pet-carrier-backpack': 6_160_000,
+  'cat-carriers-jupiter-cat-hard-box': 2_970_000,
+  'cat-carriers-zarix-zeus-for-cat': 4_274_000,
+  'cat-carriers-raha-pet-hard-box-3': 3_960_000,
+  'bird-food-oshkaia-mixed-nut-cockatiel-food-kg': 525_000,
+  'bird-food-oshkaia-mynah-bird-food-kg': 495_000,
+  'grooming-spray-massage-brush-for-pet': 520_000,
+  'grooming-mojan-pet-brush': 823_000,
+  'grooming-dog-shedding-brush-hair-release-button': 770_000,
 };
 
 const NO_INVENTED_WEIGHT = new Set([
@@ -76,6 +101,11 @@ const NO_INVENTED_WEIGHT = new Set([
   'dog-treats-afp-chill-out-ice-bone',
   'dog-toys-ufo-treat-dispenser-dog-toy',
   'dog-toys-enjoy-the-meal-puzzle-toy',
+  'cat-accessories-hannapet-double-wooden-bowl-stand',
+  'cat-accessories-hanapet-double-metal-bowl-stand',
+  'dog-toys-luna-pomegranate-felt-squeaky-dog-toy',
+  'dog-toys-luna-squeaky-smile-watermelon-plush-dog-toy',
+  'dog-toys-luna-squeaky-watermelon-plush-dog-toy',
 ]);
 
 async function main() {
@@ -84,9 +114,9 @@ async function main() {
   const seed = await import('./shop-batch-multi-products');
 
   assert.deepEqual([...seed.SHOP_BATCH_MULTI_SLUGS], [...SHOP_BATCH_MULTI_SLUGS], 'slug export');
-  assert.equal(seed.SHOP_BATCH_MULTI_PRODUCTS.length, 25, '25 batch-multi Part 1 SKUs');
+  assert.equal(seed.SHOP_BATCH_MULTI_PRODUCTS.length, 50, '50 batch-multi SKUs');
   assert.equal(seed.SHOP_BATCH_MULTI_PRODUCTS[0]?.id, 'p250');
-  assert.equal(seed.SHOP_BATCH_MULTI_PRODUCTS.at(-1)?.id, 'p274');
+  assert.equal(seed.SHOP_BATCH_MULTI_PRODUCTS.at(-1)?.id, 'p299');
   assert.ok(
     !seed.SHOP_BATCH_MULTI_PRODUCTS.some((p) => (HELD_SHOP_SLUGS as readonly string[]).includes(p.slug)),
     'no held slugs remain in batch-multi products'
@@ -94,7 +124,7 @@ async function main() {
 
   const first = seed.seedShopBatchMultiProducts();
   const second = seed.seedShopBatchMultiProducts();
-  assert.equal(first, 25, 'seed count');
+  assert.equal(first, 50, 'seed count');
   assert.equal(second, first, 'idempotent count');
 
   d.prepare(`UPDATE shop_products SET stock_qty = 4 WHERE slug = ?`).run(SHOP_BATCH_MULTI_SLUGS[0]);
@@ -131,7 +161,7 @@ async function main() {
     description: string;
     params: string;
   }>;
-  assert.equal(rows.length, 25, 'twenty-five batch-multi rows');
+  assert.equal(rows.length, 50, 'fifty batch-multi rows');
 
   const catalog = readFileSync(join(repoRoot, 'packages/web/src/data/shopBatchMultiProducts.ts'), 'utf8');
   const shopCatalog = readFileSync(join(repoRoot, 'packages/web/src/data/shopCatalog.ts'), 'utf8');
@@ -140,9 +170,26 @@ async function main() {
   assert.match(shopCatalog, /id: 'mr-cat'/, 'MR.CAT brand is in SHOP_BRANDS');
   assert.match(shopCatalog, /id: 'meocat'/, 'Meocat brand is in SHOP_BRANDS');
   assert.match(shopCatalog, /id: 'petopoli'/, 'Petopoli brand is in SHOP_BRANDS');
+  assert.match(shopCatalog, /id: 'hannapet'/, 'Hannapet brand is in SHOP_BRANDS');
+  assert.match(shopCatalog, /id: 'waudog'/, 'WAUDOG brand is in SHOP_BRANDS');
+  assert.match(shopCatalog, /id: 'lunapet'/, 'LunaPet brand is in SHOP_BRANDS');
+  assert.match(shopCatalog, /id: 'zarix'/, 'Zarix brand is in SHOP_BRANDS');
+  assert.match(shopCatalog, /id: 'oshkaia'/, 'Oshkaia brand is in SHOP_BRANDS');
 
   const liveCats = readFileSync(join(repoRoot, 'packages/api/src/data/shop-live-catalog.ts'), 'utf8');
-  for (const slug of ['cat-litter', 'dog-treats', 'cat-treats', 'dog-toys', 'cat-toys']) {
+  for (const slug of [
+    'cat-litter',
+    'dog-treats',
+    'cat-treats',
+    'dog-toys',
+    'cat-toys',
+    'dog-accessories',
+    'cat-accessories',
+    'grooming',
+    'dog-carriers',
+    'cat-carriers',
+    'bird-food',
+  ]) {
     assert.match(liveCats, new RegExp(`'${slug}'`), `LIVE_SHOP_CATEGORY_SLUGS keeps ${slug}`);
   }
 
@@ -174,10 +221,10 @@ async function main() {
 
   const cats = d
     .prepare(
-      `SELECT slug FROM shop_categories WHERE slug IN ('cat-litter','dog-treats','cat-treats','dog-toys','cat-toys')`
+      `SELECT slug FROM shop_categories WHERE slug IN ('cat-litter','dog-treats','cat-treats','dog-toys','cat-toys','dog-accessories','cat-accessories','grooming','dog-carriers','cat-carriers','bird-food')`
     )
     .all() as Array<{ slug: string }>;
-  assert.equal(cats.length, 5, 'batch-multi categories are seeded');
+  assert.equal(cats.length, 11, 'batch-multi categories are seeded');
 
   const bust = readFileSync(join(repoRoot, 'tmp/cache-bust-shop-batch-multi-v1'), 'utf8');
   assert.match(bust, /batch-multi-v1/, 'cache-bust marker present');
@@ -187,16 +234,16 @@ async function main() {
     `${slug}-2.jpg`,
     `${slug}-3.jpg`,
   ]);
-  assert.equal(imageNames.length, 75, '75 gallery files expected');
+  assert.equal(imageNames.length, 150, '150 gallery files expected');
   const present = imageNames.filter((name) =>
     existsSync(join(repoRoot, 'packages/web/public/pepito/uploads', name))
   );
   if (present.length === 0) {
     console.warn(
-      'shop-batch-multi-products.selftest: 75 packshots not on disk yet — URL pattern is wired; re-attach JPEGs before merge'
+      'shop-batch-multi-products.selftest: 150 packshots not on disk yet — URL pattern is wired; re-attach JPEGs before merge'
     );
   } else {
-    assert.equal(present.length, 75, 'partial packshot upload — all 75 JPEGs must land together');
+    assert.equal(present.length, 150, 'partial packshot upload — all 150 JPEGs must land together');
     for (const name of imageNames) {
       const abs = join(repoRoot, 'packages/web/public/pepito/uploads', name);
       const bytes = readFileSync(abs);
