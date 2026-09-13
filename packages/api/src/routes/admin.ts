@@ -104,6 +104,7 @@ import { magazineAdminRouter } from './admin-magazine';
 import { heroAdminRouter } from './admin-hero';
 import { parsePositiveIntId } from './parse-positive-int-id';
 import { DEMO_SEED_PURGE_CONFIRM, runDemoSeedCleanup } from '../demo-seeds-cleanup';
+import { ZERO_MARGIN_SHOP_SLUGS } from '../data/shop-zero-margin-slugs';
 import {
   createAdminDailyNote,
   deleteAdminDailyNote,
@@ -1276,11 +1277,7 @@ adminRouter.post('/shop/catalog/sync', (req, res) => {
       costToman:
         p.costToman != null || p.cost_toman != null
           ? Number(p.costToman ?? p.cost_toman)
-          : [
-                'dog-food-royal-canin-mini-adult-2kg',
-                'dog-food-royal-canin-xsmall-puppy-1-5kg',
-                'cat-food-royal-canin-persian-adult-400g',
-              ].includes(String(p.slug))
+          : ZERO_MARGIN_SHOP_SLUGS.includes(String(p.slug))
             ? Number(p.priceToman ?? p.price_toman ?? 0)
             : undefined,
       image: p.image ? String(p.image) : undefined,

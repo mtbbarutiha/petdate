@@ -44,4 +44,12 @@ assert(
   map.includes('/shop/dog-food-royal-canin-mini-adult-2kg '),
   'bare /shop/:slug 301s to /shop/product/:slug'
 );
+assert(
+  map.includes('/shop/dog-food-royal-canin-mini-indoor-puppy-1-5kg '),
+  'batch 2 slug aliases 301 to /shop/product/:slug'
+);
+assert(
+  map.includes('/shop/cat-food-josera-kitten-2kg '),
+  'Josera Kitten slug aliases 301 to /shop/product/:slug'
+);
 console.log('sitemap.selftest: ok');

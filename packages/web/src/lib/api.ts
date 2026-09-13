@@ -2073,6 +2073,7 @@ export type PublicShopProduct = {
   id: string;
   slug: string;
   title: string;
+  titleEn?: string;
   brandId: string;
   categorySlug: string;
   petTypes: string[];

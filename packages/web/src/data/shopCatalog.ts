@@ -3,6 +3,8 @@
  * Seeded for پت دیت شاپ (10 products per category).
  */
 
+import { SHOP_BATCH2_PRODUCTS } from './shopBatch2Products';
+
 const P = '/pepito/uploads';
 
 export type ShopPetType = 'dog' | 'cat' | 'bird' | 'all';
@@ -3343,6 +3345,7 @@ export const SHOP_PRODUCTS: ShopProduct[] = [
       'کمک به عبور مو و کاهش گلوله مو',
     ],
   },
+  ...SHOP_BATCH2_PRODUCTS,
 ];
 
 export function formatToman(amount: number): string {
@@ -3409,6 +3412,7 @@ export function applyLiveShopCatalog(input: {
     params?: Record<string, string>;
     description?: string;
     featured?: boolean;
+    titleEn?: string;
   }>;
   categories?: Array<{
     slug: string;
@@ -3462,6 +3466,7 @@ export function applyLiveShopCatalog(input: {
         description: api.description || base.description,
         featured: api.featured ?? base.featured,
         slug: api.slug || base.slug,
+        titleEn: api.titleEn || base.titleEn,
       };
     }
     return {
@@ -3480,6 +3485,7 @@ export function applyLiveShopCatalog(input: {
       params,
       description: api.description ?? '',
       featured: Boolean(api.featured),
+      titleEn: api.titleEn,
     };
   });
 

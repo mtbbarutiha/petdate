@@ -88,10 +88,12 @@ function parseBool(raw: unknown): boolean | undefined {
 
 function publicProduct(p: ReturnType<typeof adminPlatform.getShopProduct>) {
   if (!p) return null;
+  const titleEn = p.params.__titleEn?.trim() || undefined;
   return {
     id: p.id,
     slug: p.slug,
     title: p.title,
+    titleEn,
     brandId: p.brandId,
     categorySlug: p.categorySlug,
     petTypes: p.petTypes,
