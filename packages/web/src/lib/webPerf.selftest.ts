@@ -82,7 +82,7 @@ assert.doesNotMatch(
   /rel="preload"\s+as="style"/,
   'do not preload a stylesheet (unused-preload warning)'
 );
-assert.match(indexHtml, /web-perf-v31-dock-clear/, 'deploy marker bumped so SW/HTML cache misses');
+assert.match(indexHtml, /web-perf-v32-login-icon/, 'deploy marker bumped so SW/HTML cache misses');
 assert.match(
   indexHtml,
   /--pepito-dock-clearance:calc\(96px \+ env\(safe-area-inset-bottom,0px\)\)/,
