@@ -77,6 +77,7 @@ assert.match(headerLinks, /to: '\/adoption'[\s\S]*testId: 'nav-adoption'/, 'home
 assert.match(headerLinks, /testId: 'nav-adoption'/, 'homepage پذیرش is testable');
 assert.doesNotMatch(welcome, /href="#pets">پذیرش/, 'homepage پذیرش no longer uses #pets');
 assert.doesNotMatch(welcome, /id="pets"/, 'homepage adoption section is not id=pets');
+assert.match(chrome, /pepito-landing--with-dock/, 'LandingChrome marketing pages reserve dock clearance');
 assert.match(chrome, /landingSectionLinks/, 'LandingChrome پذیرش uses shared extras');
 assert.match(headerLinks, /key: 'adoption'[\s\S]*to: '\/adoption'/, 'LandingChrome پذیرش goes to /adoption');
 assert.match(footer, /to: '\/adoption',\s*label: t\('nav\.adoption'\)/, 'footer پذیرش goes to /adoption');
