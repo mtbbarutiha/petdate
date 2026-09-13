@@ -26,16 +26,26 @@ async function main() {
 
   getDb();
 
-  assert.equal(TEAM_AGENTS.length, 5);
+  assert.equal(TEAM_AGENTS.length, 4);
   assert.equal(DEFAULT_TEAM_AGENT_SLUG, 'faranak-ahmadi');
   assert.equal(AI_TRAINER_DISPLAY_NAME, 'فرانک احمدی');
   assert.equal(getTeamAgentBySlug('leila-kiani')?.name, 'لیلا کیانی');
   assert.equal(getTeamAgentBySlug('leila-kiani')?.telegramId, 'petdate_ai_assistant');
   assert.equal(TEAM_AGENTS.filter((a) => a.telegramId === 'petdate_ai_assistant').length, 1);
-  assert.equal(TEAM_AGENTS.filter((a) => a.kind === 'vet').length, 2);
-  assert.equal(TEAM_AGENTS.filter((a) => a.kind === 'trainer').length, 2);
-  assert.ok(TEAM_AGENTS.some((a) => a.name === 'دکتر سارا نوری'));
-  assert.equal(getTeamAgentBySlug('sara-noori')?.name, 'دکتر سارا نوری');
+  assert.equal(TEAM_AGENTS.filter((a) => a.kind === 'vet').length, 1);
+  assert.equal(TEAM_AGENTS.filter((a) => a.kind === 'trainer').length, 1);
+  assert.equal(TEAM_AGENTS.filter((a) => a.kind === 'finance').length, 1);
+  assert.equal(getTeamAgentBySlug('leila-kiani')?.kind, 'finance');
+  assert.equal(getTeamAgentBySlug('sanaz-ghaffari')?.kind, 'support');
+  assert.notEqual(getTeamAgentBySlug('sanaz-ghaffari')?.kind, 'vet');
+  assert.notEqual(getTeamAgentBySlug('leila-kiani')?.kind, 'trainer');
+  assert.equal(getTeamAgentBySlug('sara-noori')?.kind, 'vet');
+  assert.equal(getTeamAgentBySlug('faranak-ahmadi')?.grokBotId, 'b6e496b5-0b15-4c9b-852d-644d3f5e411a');
+  assert.equal(getTeamAgentBySlug('leila-kiani')?.grokBotId, '2410554d-9496-4a60-9b15-4248dcc6e725');
+  assert.equal(getTeamAgentBySlug('sanaz-ghaffari')?.grokBotId, '18a4d76a-1900-49dc-964c-27d23abb31e9');
+  assert.equal(getTeamAgentBySlug('sara-noori')?.grokBotId, '0140b645-f844-45c1-b6d8-3f06514529de');
+  assert.ok(TEAM_AGENTS.some((a) => a.name === 'سارا نوری'));
+  assert.equal(getTeamAgentBySlug('sara-noori')?.name, 'سارا نوری');
   assert.equal(getTeamAgentBySlug('sara-nozi')?.slug, 'sara-noori');
   assert.equal(getTeamAgentBySlug('faranak-ahmadi')?.name, 'فرانک احمدی');
   assert.equal(getTeamAgentBySlug('layla-ahmadi')?.slug, 'faranak-ahmadi');
@@ -54,7 +64,7 @@ async function main() {
   // Ensure must attach that user to the vet persona — not create a disconnected twin.
   const { user: preSara } = dbService.findOrCreateUser({
     telegramId: 'petdate_ai_sara_noori',
-    name: 'دکتر سارا نوری',
+    name: 'سارا نوری',
     username: 'agent_sara_noori',
   });
   const preEnsured = ensureTeamAgentBySlug('sara-noori')!;
@@ -62,7 +72,7 @@ async function main() {
   assert.ok(preEnsured.roles?.includes('vet'), 'alias Sara user gets vet role');
 
   const users = ensureAllTeamAgents();
-  assert.equal(users.length, 5);
+  assert.equal(users.length, 4);
   const faranakDefault = ensureAiAssistantUser();
   assert.equal(faranakDefault.name, 'فرانک احمدی');
   assert.ok(!faranakDefault.name.startsWith('دکتر'));
@@ -85,7 +95,7 @@ async function main() {
   assert.equal(viaAlias.name, 'فرانک احمدی');
 
   const sara = ensureTeamAgentBySlug('sara-noori')!;
-  assert.equal(sara.name, 'دکتر سارا نوری');
+  assert.equal(sara.name, 'سارا نوری');
   assert.equal(sara.username, 'agent_sara_noori');
   assert.ok(sara.avatarUrl?.includes('sara-noori'));
   assert.ok(isAiAssistantUserId(sara.id));
@@ -99,7 +109,7 @@ async function main() {
 
   const saraViaAlias = ensureTeamAgentBySlug('sara-nozi')!;
   assert.equal(saraViaAlias.id, sara.id);
-  assert.equal(saraViaAlias.name, 'دکتر سارا نوری');
+  assert.equal(saraViaAlias.name, 'سارا نوری');
 
   const tg = `selftest_team_${Date.now()}`;
   const { user: patient } = dbService.findOrCreateUser({
@@ -114,7 +124,7 @@ async function main() {
   assert.ok(session);
   assert.equal(session!.consult.vetUserId, sara.id);
   assert.equal(session!.consult.serviceKind, 'vet', 'Sara team-chat uses vet stack');
-  assert.equal(decorateAiConsultDisplay(session!.consult).vetName, 'دکتر سارا نوری');
+  assert.equal(decorateAiConsultDisplay(session!.consult).vetName, 'سارا نوری');
   assert.ok(
     decorateAiConsultDisplay(session!.consult).vetAvatarUrl?.includes('sara-noori'),
     'decorate includes team avatar',
@@ -125,7 +135,7 @@ async function main() {
   assert.equal(reuse!.consult.serviceKind, 'vet');
 
   const sanaz = ensureTeamAgentBySlug('sanaz-ghaffari')!;
-  assert.equal(sanaz.name, 'دکتر ساناز غفاری');
+  assert.equal(sanaz.name, 'ساناز غفاری');
   assert.ok(sanaz.avatarUrl?.includes('sanaz-ghaffari'));
   const sanazPatientTg = `selftest_team_sanaz_${Date.now()}`;
   const { user: sanazPatient } = dbService.findOrCreateUser({
@@ -136,26 +146,31 @@ async function main() {
   dbService.setUserRoles(sanazPatient.id, ['pet_owner']);
   dbService.createPet({ ownerId: sanazPatient.id, name: 'ملوس', species: 'cat' });
   const sanazSession = await startTeamAgentConsult({ patient: sanazPatient, agentSlug: 'sanaz-ghaffari' });
-  assert.ok(sanazSession);
-  assert.equal(sanazSession!.consult.vetUserId, sanaz.id);
-  assert.equal(sanazSession!.consult.serviceKind, 'vet', 'Sanaz team-chat stays on vet stack');
-  assert.equal(decorateAiConsultDisplay(sanazSession!.consult).vetName, 'دکتر ساناز غفاری');
+  assert.equal(sanazSession, null, 'Sanaz support uses /support/chat not team-agent consult');
   const { getTeamAgentByTelegramId } = await import('@petdate/shared');
   assert.equal(getTeamAgentByTelegramId('petdate_ai_sara_noori')?.kind, 'vet');
   assert.equal(sara.id, preSara.id, 'later ensure still the same slug-shaped Sara row');
 
-  const yalda = ensureTeamAgentBySlug('yalda-shabani')!;
-  assert.equal(yalda.name, 'یلدا شعبانی');
-  assert.ok(yalda.avatarUrl?.includes('yalda-shabani'));
+  assert.equal(getTeamAgentBySlug('yalda-shabani')?.slug, 'sanaz-ghaffari');
   assert.equal(getTeamAgentBySlug('yalda-shabani')?.kind, 'support');
   assert.equal(TEAM_AGENTS.filter((a) => a.kind === 'support').length, 1);
+  assert.equal(TEAM_AGENTS.length, 4);
   assert.ok(TEAM_AGENTS.every((a) => a.grokBotKey));
   const { getTeamAgentByGrokBotKey } = await import('@petdate/shared');
   assert.equal(getTeamAgentByGrokBotKey('faranak_ahmadi')?.slug, 'faranak-ahmadi');
-  assert.equal(getTeamAgentByGrokBotKey('yalda-shabani')?.kind, 'support');
+  assert.equal(getTeamAgentByGrokBotKey('yalda-shabani')?.slug, 'sanaz-ghaffari');
 
   const supportAttempt = await startTeamAgentConsult({ patient, agentSlug: 'yalda-shabani' });
   assert.equal(supportAttempt, null);
+
+  const leilaSession = await startTeamAgentConsult({
+    patient: sanazPatient,
+    agentSlug: 'leila-kiani',
+  });
+  assert.ok(leilaSession);
+  assert.equal(leilaSession!.consult.serviceKind, 'finance', 'Leila team-chat is finance not trainer');
+  assert.equal(decorateAiConsultDisplay(leilaSession!.consult).vetName, 'لیلا کیانی');
+  assert.match(leilaSession!.advice, /مدیر مالی/);
 
   console.log('team-agents.selftest: ok');
 }

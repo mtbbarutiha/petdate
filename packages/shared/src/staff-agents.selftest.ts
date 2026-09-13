@@ -1,5 +1,5 @@
 /**
- * Staff/Grok agent roster stays linked to the five public chat personas.
+ * Staff/Grok agent roster stays linked to the four public chat personas.
  * Run: npx tsx packages/shared/src/staff-agents.selftest.ts
  */
 import assert from 'node:assert/strict';
@@ -17,11 +17,11 @@ import {
   staffAgentsForTeamSlug,
 } from './index';
 
-assert.equal(STAFF_ROLE_KEYS.length, 7);
-assert.equal(STAFF_ROLE_DEFS.length, 7);
+assert.equal(STAFF_ROLE_KEYS.length, 8);
+assert.equal(STAFF_ROLE_DEFS.length, 8);
 assert.equal(STAFF_AGENTS.length, 9);
-assert.equal(STAFF_AGENTS.filter((a) => a.teamAgentSlug).length, 5);
-assert.equal(TEAM_AGENTS.length, 5);
+assert.equal(STAFF_AGENTS.filter((a) => a.teamAgentSlug).length, 4);
+assert.equal(TEAM_AGENTS.length, 4);
 
 assertStaffAgentsLinkedToTeamChat();
 
@@ -31,8 +31,11 @@ for (const agent of TEAM_AGENTS) {
 }
 
 assert.equal(staffAgentsForTeamSlug('sanaz-ghaffari')?.username, 'sanaz');
-assert.equal(staffAgentsForTeamSlug('yalda-shabani')?.roleKey, 'support');
+assert.equal(staffAgentsForTeamSlug('sanaz-ghaffari')?.roleKey, 'support');
+assert.equal(staffAgentsForTeamSlug('yalda-shabani'), undefined, 'yalda is ops-only staff, not a public team slug');
 assert.equal(staffAgentsForTeamSlug('faranak-ahmadi')?.roleKey, 'trainer');
+assert.equal(staffAgentsForTeamSlug('leila-kiani')?.roleKey, 'finance');
+assert.equal(staffAgentsForTeamSlug('sara-noori')?.displayName, 'سارا نوری');
 
 const OPS_AVATARS: Record<string, string> = {
   'staff.designer': '/agents/staff-designer.jpg',

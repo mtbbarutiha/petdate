@@ -1,15 +1,17 @@
 /**
  * Bridge: Grok Bot (گراک بات / «گراگ بات») roster ↔ petdate TEAM_AGENTS.
  *
- * Mohammad’s five Grok Bot teammates map 1:1 onto site personas.
- * Optional env links (share id / URL) mark a persona as externally connected
- * without creating a parallel chat system — consult still goes through ai-consult.
+ * Mohammad’s Grok Bot teammates map 1:1 onto site personas.
+ * Each persona has a baked-in live engine id (`grokBotId`). Public `grokBot.id`
+ * always equals that id — stale VPS `GROK_BOT_*_ID` / map remaps are ignored.
+ * Optional env still supplies `grokBot.url` only.
+ * Consult still goes through ai-consult with that persona’s kind/prompt.
  *
- * Per-agent:
- *   GROK_BOT_FARANAK_AHMADI_ID=…
+ * Per-agent URL (id keys are ignored so leftover trainer/vet remaps cannot
+ * leak into GET /api/consultations/team-agents):
  *   GROK_BOT_FARANAK_AHMADI_URL=https://x.ai/…
  * Or JSON map:
- *   GROK_BOT_AGENT_MAP={"faranak_ahmadi":{"id":"…","url":"…"},…}
+ *   GROK_BOT_AGENT_MAP={"faranak_ahmadi":{"url":"…"},…}
  */
 import {
   TEAM_AGENTS,
@@ -35,6 +37,7 @@ export type TeamAgentPublicWithGrok = {
   avatarUrl: string;
   chatPath: string;
   grokBotKey: string;
+  grokBotId: string;
   grokBot: GrokBotLink;
 };
 
@@ -68,7 +71,7 @@ function parseAgentMap(): Record<string, MapEntry> {
 
 function envSuffixesFor(def: TeamAgentDef): string[] {
   const suffixes = new Set<string>([def.grokBotKey.toUpperCase(), def.slug.replace(/-/g, '_').toUpperCase()]);
-  // Legacy Sara typo (نوزی) — same vet persona as sara_noori / sanaz vet engine.
+  // Legacy Sara typo (نوزی) — same vet persona as sara_noori.
   if (def.slug === 'sara-noori') suffixes.add('SARA_NOZI');
   return [...suffixes];
 }
@@ -81,7 +84,7 @@ function firstEnv(suffixes: string[], kind: 'ID' | 'URL'): string | null {
   return null;
 }
 
-/** Resolve optional Grok Bot id/url for one team persona. */
+/** Resolve Grok Bot link for one team persona. `id` is always the baked grokBotId. */
 export function resolveGrokBotLink(def: TeamAgentDef): GrokBotLink {
   const map = parseAgentMap();
   const fromMap =
@@ -89,22 +92,27 @@ export function resolveGrokBotLink(def: TeamAgentDef): GrokBotLink {
     map[def.slug.replace(/-/g, '_')] ||
     (def.slug === 'sara-noori' ? map.sara_nozi : undefined);
   const suffixes = envSuffixesFor(def);
-  const id = firstEnv(suffixes, 'ID') || (fromMap?.id != null ? String(fromMap.id).trim() : '') || null;
+  // Public id is the persona’s baked engine — never another teammate’s leftover env remap.
+  const id = def.grokBotId || null;
   const url = firstEnv(suffixes, 'URL') || (fromMap?.url != null ? String(fromMap.url).trim() : '') || null;
   return { id: id || null, url: url || null, linked: Boolean(id || url) };
 }
 
 export function listTeamAgentsWithGrokBridge(): TeamAgentPublicWithGrok[] {
-  return TEAM_AGENTS.map((a) => ({
-    slug: a.slug,
-    name: a.name,
-    role: a.role,
-    kind: a.kind,
-    avatarUrl: a.avatarUrl,
-    chatPath: teamAgentChatPath(a.slug),
-    grokBotKey: a.grokBotKey,
-    grokBot: resolveGrokBotLink(a),
-  }));
+  return TEAM_AGENTS.map((a) => {
+    const link = resolveGrokBotLink(a);
+    return {
+      slug: a.slug,
+      name: a.name,
+      role: a.role,
+      kind: a.kind,
+      avatarUrl: a.avatarUrl,
+      chatPath: teamAgentChatPath(a.slug),
+      grokBotKey: a.grokBotKey,
+      grokBotId: a.grokBotId,
+      grokBot: { ...link, id: a.grokBotId, linked: Boolean(a.grokBotId || link.url) },
+    };
+  });
 }
 
 /** Lookup site persona from a Grok Bot key / slug / Persian name fragment. */

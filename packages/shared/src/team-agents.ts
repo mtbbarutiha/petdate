@@ -1,22 +1,31 @@
 /**
- * Site team chat personas → 3 domain AI agents (vet | trainer | support).
+ * Site team chat personas → exactly 4 public faces / domain AI agents.
  *
- * Domain engines (prompts / knowledge):
- *   trainer → فرانک احمدی، لیلا کیانی
- *   vet     → دکتر ساناز غفاری، دکتر سارا نوری
- *   support → یلدا شعبانی
+ * Authoritative public map:
+ *   trainer → فرانک احمدی     /team-chat/faranak-ahmadi
+ *   finance → لیلا کیانی     /team-chat/leila-kiani
+ *   support → ساناز غفاری     /support/chat
+ *   vet     → سارا نوری       /team-chat/sara-noori  (only doctor)
  *
- * These five faces are the same roster Mohammad built in Grok Bot (گراک بات /
- * «گراگ بات»). `grokBotKey` is the stable bridge id for optional external links.
- *
- * Default trainer face is فرانک احمدی (replaces legacy «پاشا یزدانی»).
- * لیلا remains a separate trainer persona (same domain engine).
+ * یلدا شعبانی is not public — old URLs alias to ساناز.
+ * Grok Bot engine ids are baked in (`grokBotId` === `grokBot.id`).
+ * `GROK_BOT_*_ID` remaps are ignored so leftover VPS env cannot swap personas.
  */
 
-export type TeamAgentKind = 'vet' | 'trainer' | 'support';
+export type TeamAgentKind = 'vet' | 'trainer' | 'support' | 'finance';
+
+/** Live Grok Bot agent ids — one per public persona. */
+export const TEAM_AGENT_GROK_ENGINE_IDS = {
+  'faranak-ahmadi': 'b6e496b5-0b15-4c9b-852d-644d3f5e411a',
+  'leila-kiani': '2410554d-9496-4a60-9b15-4248dcc6e725',
+  'sanaz-ghaffari': '18a4d76a-1900-49dc-964c-27d23abb31e9',
+  'sara-noori': '0140b645-f844-45c1-b6d8-3f06514529de',
+} as const;
+
+export type TeamAgentSlug = keyof typeof TEAM_AGENT_GROK_ENGINE_IDS;
 
 export type TeamAgentDef = {
-  slug: string;
+  slug: TeamAgentSlug;
   telegramId: string;
   name: string;
   role: string;
@@ -25,19 +34,29 @@ export type TeamAgentDef = {
   cardImage: string;
   /**
    * Stable Grok Bot (گراک بات) roster key — same identity as the off-site Bot.
-   * Env link: GROK_BOT_<KEY>_ID / GROK_BOT_<KEY>_URL (KEY = upper snake of this).
+   * Env link: GROK_BOT_<KEY>_URL (KEY = upper snake of this). ID remaps ignored.
    */
   grokBotKey: string;
+  /** Canonical live Grok Bot agent id. */
+  grokBotId: string;
   /** Matching admin/staff username from STAFF_AGENTS — does not change chat identity. */
   staffUsername: string;
 };
 
 /** Query on /agents/*.jpg so browsers drop pepito lookalikes + the YS/yalda-v1 files. */
-export const TEAM_AGENT_AVATAR_CACHE_BUST = 'persona-v2';
+export const TEAM_AGENT_AVATAR_CACHE_BUST = 'persona-v3';
 
 function agentAvatar(slug: string): string {
   return `/agents/${slug}.jpg?v=${TEAM_AGENT_AVATAR_CACHE_BUST}`;
 }
+
+/** Homepage `#team` cards — the four public faces. */
+export const LANDING_TEAM_AGENT_SLUGS: readonly TeamAgentSlug[] = [
+  'faranak-ahmadi',
+  'leila-kiani',
+  'sanaz-ghaffari',
+  'sara-noori',
+];
 
 /** Visual L→R on RTL landing ≈ reverse of this DOM order. */
 export const TEAM_AGENTS: readonly TeamAgentDef[] = [
@@ -51,52 +70,45 @@ export const TEAM_AGENTS: readonly TeamAgentDef[] = [
     avatarUrl: agentAvatar('faranak-ahmadi'),
     cardImage: agentAvatar('faranak-ahmadi'),
     grokBotKey: 'faranak_ahmadi',
+    grokBotId: TEAM_AGENT_GROK_ENGINE_IDS['faranak-ahmadi'],
     staffUsername: 'faranak',
   },
   {
     slug: 'leila-kiani',
     telegramId: 'petdate_ai_assistant',
     name: 'لیلا کیانی',
-    role: 'مربی',
-    kind: 'trainer',
+    role: 'مدیر مالی',
+    kind: 'finance',
     avatarUrl: agentAvatar('leila-kiani'),
     cardImage: agentAvatar('leila-kiani'),
     grokBotKey: 'leila_kiani',
+    grokBotId: TEAM_AGENT_GROK_ENGINE_IDS['leila-kiani'],
     staffUsername: 'leila',
   },
   {
     slug: 'sanaz-ghaffari',
     telegramId: 'petdate_ai_sanaz_ghaffari',
-    name: 'دکتر ساناز غفاری',
-    role: 'دامپزشک',
-    kind: 'vet',
+    name: 'ساناز غفاری',
+    role: 'پشتیبانی',
+    kind: 'support',
     avatarUrl: agentAvatar('sanaz-ghaffari'),
     cardImage: agentAvatar('sanaz-ghaffari'),
     grokBotKey: 'sanaz_ghaffari',
+    grokBotId: TEAM_AGENT_GROK_ENGINE_IDS['sanaz-ghaffari'],
     staffUsername: 'sanaz',
   },
   {
     slug: 'sara-noori',
     // Keep telegram id so the existing DB synthetic user is patched, not recreated.
     telegramId: 'petdate_ai_sara_nozi',
-    name: 'دکتر سارا نوری',
+    name: 'سارا نوری',
     role: 'دامپزشک',
     kind: 'vet',
     avatarUrl: agentAvatar('sara-noori'),
     cardImage: agentAvatar('sara-noori'),
     grokBotKey: 'sara_noori',
+    grokBotId: TEAM_AGENT_GROK_ENGINE_IDS['sara-noori'],
     staffUsername: 'sara',
-  },
-  {
-    slug: 'yalda-shabani',
-    telegramId: 'petdate_ai_yalda_shabani',
-    name: 'یلدا شعبانی',
-    role: 'پشتیبانی',
-    kind: 'support',
-    avatarUrl: agentAvatar('yalda-shabani'),
-    cardImage: agentAvatar('yalda-shabani'),
-    grokBotKey: 'yalda_shabani',
-    staffUsername: 'yalda',
   },
 ] as const;
 
@@ -106,13 +118,15 @@ const TEAM_AGENT_SLUG_ALIASES: Record<string, string> = {
   'sara-nozi': 'sara-noori',
   'pasha-yazdani': 'faranak-ahmadi',
   pasha: 'faranak-ahmadi',
+  /** یلدا replaced by ساناز as sole public support face. */
+  'yalda-shabani': 'sanaz-ghaffari',
 };
 
 /**
  * Synthetic telegram ids that are not the stored `telegramId` on TEAM_AGENTS.
  * Sara’s row keeps `petdate_ai_sara_nozi` so the live DB user is patched, not
  * recreated — but slug-shaped `petdate_ai_sara_noori` must still resolve to
- * the same vet persona (Sanaz already uses the slug-shaped id).
+ * the same vet persona.
  */
 const TEAM_AGENT_TELEGRAM_ID_ALIASES: Record<string, string> = {
   petdate_ai_sara_noori: 'sara-noori',
@@ -136,20 +150,26 @@ const TEAM_AGENT_NAME_ALIASES: Record<string, string> = {
   'سارا نوری': 'sara-noori',
   'دکتر سارا نوزی': 'sara-noori',
   'سارا نوزی': 'sara-noori',
-  'یلدا شعبانی': 'yalda-shabani',
-  یلدا: 'yalda-shabani',
+  'یلدا شعبانی': 'sanaz-ghaffari',
+  یلدا: 'sanaz-ghaffari',
   'دستیار هوشمند پت‌دیت': 'faranak-ahmadi',
   'دستیار هوشمند پت': 'faranak-ahmadi',
   'دستیار هوشمند': 'faranak-ahmadi',
 };
 
 /** Default trainer / AI fallback face — فرانک replaces پاشا. */
-export const DEFAULT_TEAM_AGENT_SLUG = 'faranak-ahmadi';
+export const DEFAULT_TEAM_AGENT_SLUG: TeamAgentSlug = 'faranak-ahmadi';
 
-export const SUPPORT_TEAM_AGENT_SLUG = 'yalda-shabani';
+/** Support AI face — ساناز غفاری (replaces یلدا). */
+export const SUPPORT_TEAM_AGENT_SLUG: TeamAgentSlug = 'sanaz-ghaffari';
 
-/** Default vet AI face when no human vet is online. */
-export const DEFAULT_VET_TEAM_AGENT_SLUG = 'sara-noori';
+/** @deprecated alias — same as SUPPORT_TEAM_AGENT_SLUG */
+export const TEAM_CHAT_SUPPORT_AGENT_SLUG: TeamAgentSlug = SUPPORT_TEAM_AGENT_SLUG;
+
+/** Default vet AI face when no human vet is online — only Sara. */
+export const DEFAULT_VET_TEAM_AGENT_SLUG: TeamAgentSlug = 'sara-noori';
+
+export const DEFAULT_FINANCE_TEAM_AGENT_SLUG: TeamAgentSlug = 'leila-kiani';
 
 export function getTeamAgentBySlug(slug: string | null | undefined): TeamAgentDef | null {
   const key = String(slug || '').trim().toLowerCase();
@@ -180,7 +200,14 @@ export function getTeamAgentByGrokBotKey(key: string | null | undefined): TeamAg
   const raw = String(key || '').trim().toLowerCase();
   if (!raw) return null;
   const normalized = raw.replace(/-/g, '_');
+  if (normalized === 'yalda_shabani') return getTeamAgentBySlug('sanaz-ghaffari');
   return TEAM_AGENTS.find((a) => a.grokBotKey === normalized) ?? getTeamAgentBySlug(raw.replace(/_/g, '-'));
+}
+
+export function getTeamAgentByGrokBotId(id: string | null | undefined): TeamAgentDef | null {
+  const raw = String(id || '').trim().toLowerCase();
+  if (!raw) return null;
+  return TEAM_AGENTS.find((a) => a.grokBotId.toLowerCase() === raw) ?? null;
 }
 
 /** Resolve team agent by current or legacy Persian display name. */
@@ -201,6 +228,11 @@ export function teamAgentsByKind(kind: TeamAgentKind): TeamAgentDef[] {
   return TEAM_AGENTS.filter((a) => a.kind === kind);
 }
 
+export function landingTeamAgents(): TeamAgentDef[] {
+  return LANDING_TEAM_AGENT_SLUGS.map((slug) => getTeamAgentBySlug(slug)!);
+}
+
+/** Support personas use the support hub; others use /team-chat/:slug. */
 export function teamAgentChatPath(slug: string): string {
   const def = getTeamAgentBySlug(slug);
   if (def?.kind === 'support') return '/support/chat';
@@ -220,24 +252,27 @@ export function teamAgentReferralForKind(kind: TeamAgentKind): {
       ? getTeamAgentBySlug(SUPPORT_TEAM_AGENT_SLUG)
       : kind === 'vet'
         ? getTeamAgentBySlug(DEFAULT_VET_TEAM_AGENT_SLUG)
-        : getTeamAgentBySlug(DEFAULT_TEAM_AGENT_SLUG);
+        : kind === 'finance'
+          ? getTeamAgentBySlug(DEFAULT_FINANCE_TEAM_AGENT_SLUG)
+          : getTeamAgentBySlug(DEFAULT_TEAM_AGENT_SLUG);
   const def = preferred ?? TEAM_AGENTS.find((a) => a.kind === kind)!;
   return { slug: def.slug, name: def.name, role: def.role, path: teamAgentChatPath(def.slug) };
 }
 
 /** Persian one-liner: «این تو تخصص من نیست» + named colleague + site path. */
 export function teamAgentOutOfDomainHint(fromKind: TeamAgentKind): string {
-  if (fromKind === 'trainer') {
-    const vet = teamAgentReferralForKind('vet');
-    const support = teamAgentReferralForKind('support');
-    return `این تو تخصص من نیست — برای پزشکی برو پیش ${vet.name} (${vet.path}) و برای ورود/سکه/شاپ پیش ${support.name} (${support.path}).`;
-  }
-  if (fromKind === 'vet') {
-    const trainer = teamAgentReferralForKind('trainer');
-    const support = teamAgentReferralForKind('support');
-    return `این تو تخصص من نیست — تربیت و فرمان را از ${trainer.name} بپرس (${trainer.path}) و پشتیبانی سایت از ${support.name} (${support.path}).`;
-  }
   const trainer = teamAgentReferralForKind('trainer');
   const vet = teamAgentReferralForKind('vet');
-  return `تخصص من پشتیبانی محصول است — تربیت را از ${trainer.name} بپرس (${trainer.path}) و پزشکی را از ${vet.name} (${vet.path}).`;
+  const support = teamAgentReferralForKind('support');
+  const finance = teamAgentReferralForKind('finance');
+  if (fromKind === 'trainer') {
+    return `این تو تخصص من نیست — برای پزشکی برو پیش ${vet.name} (${vet.path})، برای ورود/سکه/شاپ پیش ${support.name} (${support.path}) و برای پرداخت/سکه/سفارش پیش ${finance.name} (${finance.path}).`;
+  }
+  if (fromKind === 'vet') {
+    return `این تو تخصص من نیست — تربیت و فرمان را از ${trainer.name} بپرس (${trainer.path})، پشتیبانی سایت از ${support.name} (${support.path}) و مالی/سکه از ${finance.name} (${finance.path}).`;
+  }
+  if (fromKind === 'finance') {
+    return `این تو تخصص من نیست — تربیت را از ${trainer.name} بپرس (${trainer.path})، پزشکی را از ${vet.name} (${vet.path}) و پشتیبانی محصول از ${support.name} (${support.path}).`;
+  }
+  return `تخصص من پشتیبانی محصول است — تربیت را از ${trainer.name} بپرس (${trainer.path})، پزشکی را از ${vet.name} (${vet.path}) و مالی/سکه را از ${finance.name} (${finance.path}).`;
 }

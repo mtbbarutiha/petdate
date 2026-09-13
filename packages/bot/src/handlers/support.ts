@@ -16,8 +16,8 @@ import { getCtxUser, menuKeyboardFor } from './helpers';
 const SUPPORT_EXIT_HINT =
   'برای خروج از پشتیبانی «📋 منو» یا هر دکمه منو را بزن — یا /cancel.';
 
-/** یلدا شعبانی — همان ایجنت پشتیبانی /api/support (kind: support) */
-export const SUPPORT_AGENT_NAME = 'یلدا شعبانی';
+/** ساناز غفاری — همان ایجنت پشتیبانی /api/support (kind: support) */
+export const SUPPORT_AGENT_NAME = 'ساناز غفاری';
 
 export const SUPPORT_MENU = {
   ticket: '🎫 ثبت تیکت',

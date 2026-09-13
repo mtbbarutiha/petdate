@@ -2,27 +2,17 @@
 
 ## FA
 
-پنج چهرهٔ سایت به **سه موتور دامنه** وصل است (استک موجود `ai-consult`، استک موازی ساخته نشد).
+چهار چهرهٔ عمومی لندینگ. یلدا عمومی نیست و به ساناز هدایت می‌شود.
 
-| شخصیت | دامنه / موتور | مسیر چت |
-|--------|----------------|----------|
-| فرانک احمدی | مربی (جایگزین پاشا؛ خودمعرفی) | `/team-chat/faranak-ahmadi` |
-| لیلا کیانی | مربی | `/team-chat/leila-kiani` |
-| دکتر ساناز غفاری | دامپزشک | `/team-chat/sanaz-ghaffari` |
-| دکتر سارا نوری | دامپزشک | `/team-chat/sara-noori` |
-| یلدا شعبانی | پشتیبانی (+ تیکت) | `/support/chat` |
+| شخصیت | نقش | دامنه | مسیر چت | Grok agent id |
+|--------|------|--------|----------|----------------|
+| فرانک احمدی | مربی | trainer | `/team-chat/faranak-ahmadi` | `b6e496b5-0b15-4c9b-852d-644d3f5e411a` |
+| لیلا کیانی | مدیر مالی | finance | `/team-chat/leila-kiani` | `2410554d-9496-4a60-9b15-4248dcc6e725` |
+| ساناز غفاری | پشتیبانی | support | `/support/chat` | `18a4d76a-1900-49dc-964c-27d23abb31e9` |
+| سارا نوری | دامپزشک | vet | `/team-chat/sara-noori` | `0140b645-f844-45c1-b6d8-3f06514529de` |
 
-عکس‌ها: `packages/web/public/agents/<slug>.jpg?v=persona-v2` (چهره‌های متمایز v2).
+فقط **یک** دامپزشک: سارا. ساناز دامپزشک نیست. لیلا مربی نیست.
 
 ## EN
 
-Five landing faces share three existing LLM roles (`trainer` | `vet` | `support`) in `packages/api/src/services/ai-consult.ts`.
-
-- Out-of-domain answers name the right colleague **and** the route above.
-- Faranak introduces herself and continues the former Pasha coach role.
-- Vets triage clinical photos (vision when `AI_CONSULT_API_KEY` is set) + disclaimer.
-- Yalda knows site workflow, can open/track tickets, mentions SMS only when the product already sends it, asks the owner when unknown.
-
-Cache bust: `tmp/cache-bust-sara-noori-vet-link-v1` → SW `petdate-web-v46-sara-noori-vet`.
-
-Sara (`/team-chat/sara-noori`) and Sanaz (`/team-chat/sanaz-ghaffari`) share the same `vet` / دامپزشک `ai-consult` engine. Sara’s synthetic telegram id stays `petdate_ai_sara_nozi` (existing DB row); `petdate_ai_sara_noori` is an alias so resolve never falls through to trainer.
+Public `TEAM_AGENTS` length is 4. `GET /api/consultations/team-agents` exposes those four with baked Grok ids (`grokBot.id` always equals `grokBotId`). Support hub and landing support CTA use ساناز غفاری.

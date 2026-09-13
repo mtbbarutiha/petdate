@@ -19,6 +19,7 @@ assert.match(bust, /staff-roles-agents-v1/, 'cache-bust marker present');
 assert.match(bust, /petdate-web-v45-staff-roles/, 'SW cache id documented');
 
 assert.match(hr, /veterinarian:\s*'دامپزشک'/);
+assert.match(hr, /finance:\s*'مدیر مالی'/);
 assert.match(hr, /designer:\s*'گرافیست'/);
 assert.match(hr, /shop_procurement:\s*'مدیر تامین فروشگاه'/);
 assert.match(hr, /content_editor:\s*'تولید محتوا'/);
@@ -31,7 +32,8 @@ assert.match(layout, /perm:\s*'support\.inbox'/, 'support inbox stays gated');
 assert.match(staff, /username:\s*'sanaz'/);
 assert.match(staff, /username:\s*'yalda'/);
 assert.match(staff, /username:\s*'staff\.shop'/);
-assert.match(staff, /teamAgentSlug:\s*'yalda-shabani'/);
+assert.match(staff, /teamAgentSlug:\s*'sanaz-ghaffari'/);
+assert.doesNotMatch(staff, /teamAgentSlug:\s*'yalda-shabani'/);
 
 assert.match(i18n, /"گرافیست":\s*"Graphic designer"/);
 assert.match(i18n, /"سوشال":\s*"Social"/);

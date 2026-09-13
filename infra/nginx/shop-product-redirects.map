@@ -441,4 +441,10 @@ map $uri $shop_product_redirect {
     /shop/product/p219/ /shop/product/bird-accessories-9-p219;
     /shop/product/p220 /shop/product/bird-accessories-10-p220;
     /shop/product/p220/ /shop/product/bird-accessories-10-p220;
+    /shop/product/p221 /shop/product/dog-food-royal-canin-mini-adult-2kg;
+    /shop/product/p221/ /shop/product/dog-food-royal-canin-mini-adult-2kg;
+    /shop/product/p222 /shop/product/dog-food-royal-canin-xsmall-puppy-1-5kg;
+    /shop/product/p222/ /shop/product/dog-food-royal-canin-xsmall-puppy-1-5kg;
+    /shop/product/p223 /shop/product/cat-food-royal-canin-persian-adult-400g;
+    /shop/product/p223/ /shop/product/cat-food-royal-canin-persian-adult-400g;
 }

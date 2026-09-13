@@ -100,7 +100,7 @@ async function main() {
     patientName: 'مینا',
     userMessage: 'salam',
   });
-  assert(/سلام|یلدا/.test(supportSalam.text), 'support finglish salam answered');
+  assert(/سلام|ساناز/.test(supportSalam.text), 'support finglish salam answered');
   assert(!/ورود وب با OTP|• سکه از منو/.test(supportSalam.text), 'support salam must not dump FAQ list');
 
   const supportAhval = buildGreetingReply({ kind: 'support', patientName: 'مینا', userMessage: 'خوبی؟' });
@@ -287,23 +287,23 @@ async function main() {
 
   const vetHello = offlineAiAdvice({ kind: 'vet', petName: 'ملوس' });
   assert(/سلام|خوبی|حال/.test(vetHello), 'offline vet empty opens with احوال‌پرسی');
-  assert(vetHello.includes('دکتر سارا نوری') || /من .+ام/.test(vetHello), 'offline vet introduces');
+  assert(vetHello.includes('سارا نوری') || /من .+ام/.test(vetHello), 'offline vet introduces');
   assert(!/دستیار هوشمند پت/.test(vetHello), 'vet tip must not use old smart-assistant brand');
   const vetTip = offlineAiAdvice({ kind: 'vet', petName: 'ملوس', userMessage: 'استفراغ مکرر از دیروز' });
   assert(vetTip.includes('دامپزشک'), 'offline vet clinical tip');
   assert(!/سلام .*خوبی/.test(vetTip.split('\n')[0] || '') || vetTip.includes('استفراغ') || vetTip.includes('عمومی'), 'clinical path not pure greeting');
   const vetPhoto = offlineAiAdvice({
     kind: 'vet',
-    agentName: 'دکتر ساناز غفاری',
+    agentName: 'سارا نوری',
     clinicalImage: { mimeType: 'image/jpeg', dataUrl: 'data:image/jpeg;base64,QQ==' },
     userMessage: 'این زخم پاشه',
   });
-  assert(vetPhoto.includes('دکتر ساناز غفاری'), 'photo triage uses persona name');
+  assert(vetPhoto.includes('سارا نوری'), 'photo triage uses Sara persona name');
   assert(/عکس|تریاژ/.test(vetPhoto), 'offline vet acknowledges clinical photo');
   assert(/جایگزین ویزیت/.test(vetPhoto), 'photo reply has disclaimer');
   const supportTip = offlineAiAdvice({ kind: 'support', userMessage: 'OTP نیومد' });
   assert(supportTip.includes('پشتیبانی') || /OTP|ورود|پیامک/.test(supportTip), 'offline support tip');
-  assert(supportTip.includes('یلدا شعبانی') || /OTP|ورود/.test(supportTip), 'offline support is Yalda or OTP help');
+  assert(supportTip.includes('ساناز غفاری') || /OTP|ورود/.test(supportTip), 'offline support is Sanaz or OTP help');
   const supportTicket = offlineAiAdvice({
     kind: 'support',
     patientName: 'مینا',
@@ -317,31 +317,45 @@ async function main() {
     userMessage: 'کل فرآیندهای سایت چیه؟',
   });
   assert(/\/support|\/pets|\/shop|\/wallet|\/chats/.test(supportFlows), 'support site map paths');
+  const financeHello = offlineAiAdvice({ kind: 'finance', agentName: 'لیلا کیانی' });
+  assert(/لیلا کیانی/.test(financeHello), 'finance intro names Leila');
+  assert(/مدیر مالی/.test(financeHello), 'finance intro includes role');
+  const financeTip = offlineAiAdvice({
+    kind: 'finance',
+    agentName: 'لیلا کیانی',
+    userMessage: 'سفارش شاپ پرداخت نشد',
+  });
+  assert(/سکه|سفارش|پرداخت/.test(financeTip), 'finance offline stays on money domain');
+  assert(!/دامپزشک|نسخه/.test(financeTip.split('\n')[0] || ''), 'finance does not open as vet');
 
   const faranakPrompt = buildAiConsultSystemPrompt('trainer', 'فرانک احمدی');
   assert(/فرانک احمدی/.test(faranakPrompt), 'faranak prompt names self');
   assert(/پاشا یزدانی/.test(faranakPrompt), 'faranak plays former Pasha coach role');
   assert(/\/team-chat\/sara-noori/.test(faranakPrompt), 'trainer ood points to vet route');
   assert(/\/support\/chat/.test(faranakPrompt), 'trainer ood points to support');
-  const sanazPrompt = buildAiConsultSystemPrompt('vet', 'دکتر ساناز غفاری');
-  assert(/عکس بالینی/.test(sanazPrompt), 'vet prompt covers clinical photos');
-  assert(/\/team-chat\/faranak-ahmadi/.test(sanazPrompt), 'vet ood points to trainer route');
-  const yaldaPrompt = buildAiConsultSystemPrompt('support', 'یلدا شعبانی');
-  assert(/تیکت/.test(yaldaPrompt), 'support prompt covers tickets');
-  assert(/مدیر پت‌دیت/.test(yaldaPrompt), 'support escalates to owner');
-  assert(/\/team-chat\/faranak-ahmadi/.test(yaldaPrompt), 'support ood points to trainer');
-  assert(/\/support\/ticket/.test(yaldaPrompt), 'support prompt keeps existing ticket path');
-  const leilaPrompt = buildAiConsultSystemPrompt('trainer', 'لیلا کیانی');
-  const saraPrompt = buildAiConsultSystemPrompt('vet', 'دکتر سارا نوری');
-  assert(/دکتر سارا نوری/.test(saraPrompt), 'Sara uses named vet prompt');
-  assert(/عکس بالینی/.test(saraPrompt), 'Sara shares Sanaz vet prompt family');
-  assert(/\/team-chat\/faranak-ahmadi/.test(saraPrompt), 'Sara ood points to trainer like Sanaz');
+  const sanazPrompt = buildAiConsultSystemPrompt('support', 'ساناز غفاری');
+  assert(/پشتیبانی/.test(sanazPrompt), 'Sanaz uses support prompt');
+  assert(!/عکس بالینی/.test(sanazPrompt), 'Sanaz is not on vet prompt');
+  assert(/\/team-chat\/faranak-ahmadi/.test(sanazPrompt), 'support ood points to trainer route');
+  const supportPrompt = buildAiConsultSystemPrompt('support', 'ساناز غفاری');
+  assert(/تیکت/.test(supportPrompt), 'support prompt covers tickets');
+  assert(/مدیر پت‌دیت/.test(supportPrompt), 'support escalates to owner');
+  assert(/\/team-chat\/faranak-ahmadi/.test(supportPrompt), 'support ood points to trainer');
+  assert(/\/support\/ticket/.test(supportPrompt), 'support prompt keeps existing ticket path');
+  const leilaPrompt = buildAiConsultSystemPrompt('finance', 'لیلا کیانی');
+  assert(/مدیر مالی/.test(leilaPrompt), 'Leila uses finance prompt');
+  assert(!/مربی آموزش/.test(leilaPrompt), 'Leila is not trainer');
+  assert(/پرداخت|سکه|سفارش/.test(leilaPrompt), 'finance domain is payments/coins/orders');
+  const saraPrompt = buildAiConsultSystemPrompt('vet', 'سارا نوری');
+  assert(/سارا نوری/.test(saraPrompt), 'Sara uses named vet prompt');
+  assert(/عکس بالینی/.test(saraPrompt), 'Sara is the only vet prompt family');
+  assert(/\/team-chat\/faranak-ahmadi/.test(saraPrompt), 'Sara ood points to trainer');
   for (const [label, prompt] of [
     ['faranak', faranakPrompt],
     ['leila', leilaPrompt],
     ['sanaz', sanazPrompt],
     ['sara', saraPrompt],
-    ['yalda', yaldaPrompt],
+    ['support', supportPrompt],
   ] as const) {
     assert(/قالب ثابت/.test(prompt), `${label} prompt forbids fixed reply template`);
     assert(/چت انسانی/.test(prompt), `${label} prompt requires human chat not a script`);
@@ -398,7 +412,7 @@ async function main() {
     .filter((c) => c.vetUserId === aiUser.id && !c.chatEnded);
   assert(activeTrainer.length === 1, 'only one ongoing AI trainer consult after reuse');
 
-  // Vet AI fallback displays as دکتر سارا نوری (not legacy «دستیار هوشمند»).
+  // Vet AI fallback displays as سارا نوری (not legacy «دستیار هوشمند»).
   const vetPatientTg = `selftest_ai_vet_${Date.now()}`;
   const { user: vetPatient } = dbService.findOrCreateUser({
     telegramId: vetPatientTg,
@@ -410,11 +424,11 @@ async function main() {
   const vetSession = await startAiFallbackConsult({ patient: vetPatient, serviceKind: 'vet' });
   assert(vetSession, 'vet ai session started');
   assert(
-    decorateAiConsultDisplay(vetSession!.consult).vetName === 'دکتر سارا نوری',
+    decorateAiConsultDisplay(vetSession!.consult).vetName === 'سارا نوری',
     'vet AI display name is Sara'
   );
   const vetMsgs = dbService.listVetConsultChatMessages(vetSession!.consult.id);
-  assert(vetMsgs[0]!.text.includes('دکتر سارا نوری'), 'vet opening mentions Sara');
+  assert(vetMsgs[0]!.text.includes('سارا نوری'), 'vet opening mentions Sara');
   assert(!/دستیار هوشمند/.test(vetMsgs[0]!.text), 'vet opening must not say smart assistant');
 
   // After user ends chat, a new start may create — but closes orphans.

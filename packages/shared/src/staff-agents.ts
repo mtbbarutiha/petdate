@@ -17,6 +17,7 @@ export const STAFF_ROLE_KEYS = [
   'veterinarian',
   'support',
   'trainer',
+  'finance',
   'designer',
   'social',
   'shop_procurement',
@@ -35,6 +36,7 @@ export const STAFF_ROLE_PERMISSIONS: Record<StaffRoleKey, readonly AdminPermissi
   veterinarian: ['platform.read', 'content.read', 'content.write'],
   support: ADMIN_ROLE_PERMISSIONS.support,
   trainer: ['platform.read'],
+  finance: ['finance.read', 'finance.write', 'shop.read'],
   designer: ['content.read', 'content.write'],
   social: ['content.read', 'content.write', 'content.create', 'platform.read'],
   shop_procurement: ['shop.read', 'shop.write', 'shop.create'],
@@ -66,6 +68,12 @@ export const STAFF_ROLE_DEFS: readonly StaffRoleSeedDef[] = [
     nameFa: 'مربی',
     description: 'مشاهده مشاوره‌های مربیگری',
     permissions: STAFF_ROLE_PERMISSIONS.trainer,
+  },
+  {
+    key: 'finance',
+    nameFa: 'مدیر مالی',
+    description: 'پرداخت، سکه، سفارش شاپ و حاشیه — بدون مشاوره پزشکی',
+    permissions: STAFF_ROLE_PERMISSIONS.finance,
   },
   {
     key: 'designer',
@@ -111,19 +119,19 @@ export type StaffAgentDef = {
 
 /**
  * One panel account per Grok/ops agent.
- * Five named rows stay 1:1 with TEAM_AGENTS; four ops-only rows have no landing card.
+ * Four named rows stay 1:1 with TEAM_AGENTS; yalda + four ops-only rows have no landing card.
  */
 export const STAFF_AGENTS: readonly StaffAgentDef[] = [
   {
     username: 'sanaz',
     orgEmail: 'sanaz@petdate.ir',
-    roleKey: 'veterinarian',
-    displayName: 'دکتر ساناز غفاری',
+    roleKey: 'support',
+    displayName: 'ساناز غفاری',
     firstName: 'ساناز',
     lastName: 'غفاری',
     personnelCode: 'STAFF-SANAZ',
-    jobTitle: 'دامپزشک',
-    department: 'بالینی',
+    jobTitle: 'پشتیبانی',
+    department: 'پشتیبانی',
     teamAgentSlug: 'sanaz-ghaffari',
     avatarUrl: '/agents/sanaz-ghaffari.jpg',
   },
@@ -131,7 +139,7 @@ export const STAFF_AGENTS: readonly StaffAgentDef[] = [
     username: 'sara',
     orgEmail: 'sara@petdate.ir',
     roleKey: 'veterinarian',
-    displayName: 'دکتر سارا نوری',
+    displayName: 'سارا نوری',
     firstName: 'سارا',
     lastName: 'نوری',
     personnelCode: 'STAFF-SARA',
@@ -148,9 +156,9 @@ export const STAFF_AGENTS: readonly StaffAgentDef[] = [
     firstName: 'یلدا',
     lastName: 'شعبانی',
     personnelCode: 'STAFF-YALDA',
-    jobTitle: 'پشتیبانی',
+    jobTitle: 'پشتیبانی (داخلی)',
     department: 'پشتیبانی',
-    teamAgentSlug: 'yalda-shabani',
+    // Ops-only — public support face is ساناز; no separate TEAM_AGENTS row.
     avatarUrl: '/agents/yalda-shabani.jpg',
   },
   {
@@ -169,13 +177,13 @@ export const STAFF_AGENTS: readonly StaffAgentDef[] = [
   {
     username: 'leila',
     orgEmail: 'leila@petdate.ir',
-    roleKey: 'trainer',
+    roleKey: 'finance',
     displayName: 'لیلا کیانی',
     firstName: 'لیلا',
     lastName: 'کیانی',
     personnelCode: 'STAFF-LEILA',
-    jobTitle: 'مربی',
-    department: 'تربیت',
+    jobTitle: 'مدیر مالی',
+    department: 'مالی',
     teamAgentSlug: 'leila-kiani',
     avatarUrl: '/agents/leila-kiani.jpg',
   },

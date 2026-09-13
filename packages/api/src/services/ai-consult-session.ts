@@ -19,6 +19,7 @@ import {
   buildTrainerOpeningGreeting,
   generateAiConsultAdvice,
   trainerTypingDelayMs,
+  type AiConsultKind,
 } from './ai-consult';
 import {
   ensureAllTeamAgents,
@@ -75,8 +76,8 @@ export function decorateAiConsultDisplay(consult: VetConsultation): VetConsultat
   return { ...consult, vetName, vetAvatarUrl };
 }
 
-function toAiKind(kind: ConsultServiceKind): 'vet' | 'trainer' | null {
-  if (kind === 'vet' || kind === 'trainer') return kind;
+function toAiKind(kind: ConsultServiceKind): AiConsultKind | null {
+  if (kind === 'vet' || kind === 'trainer' || kind === 'support' || kind === 'finance') return kind;
   return null;
 }
 
@@ -154,9 +155,9 @@ export async function startAiFallbackConsult(opts: {
       ...petFields,
     });
     source = 'offline';
-  } else if (!userMessage && aiKind === 'vet') {
+  } else if (!userMessage && (aiKind === 'vet' || aiKind === 'support' || aiKind === 'finance')) {
     adviceText = buildGreetingReply({
-      kind: 'vet',
+      kind: aiKind,
       patientName: opts.patient.name,
       agentName: displayName,
       ...petFields,
@@ -209,14 +210,14 @@ export async function startTeamAgentConsult(opts: {
   agentSlug: string;
 } | null> {
   const def = getTeamAgentBySlug(opts.agentSlug);
-  if (!def || def.kind === 'support') return null;
+  if (!def) return null;
+  // Support (ساناز) uses /support/chat, not team-agent consult threads.
+  if (def.kind === 'support') return null;
   const user = ensureTeamAgentBySlug(def.slug);
   if (!user) return null;
   // Kind comes from the persona map (slug), not telegram-id resolve.
-  // Sara’s live DB row may still be `petdate_ai_sara_nozi`; falling back to
-  // trainer here is what left /team-chat/sara-noori off the vet stack.
   const kind = def.kind;
-  if (kind !== 'vet' && kind !== 'trainer') return null;
+  if (kind !== 'vet' && kind !== 'trainer' && kind !== 'finance') return null;
   const session = await startAiFallbackConsult({
     patient: opts.patient,
     serviceKind: kind,
@@ -227,9 +228,11 @@ export async function startTeamAgentConsult(opts: {
   return { ...session, agentSlug: def.slug };
 }
 
-export const AI_PHOTO_PROMPT_FA: Record<'vet' | 'trainer', string> = {
+export const AI_PHOTO_PROMPT_FA: Record<AiConsultKind, string> = {
   vet: 'این عکس بالینی را فرستادم. لطفاً تریاژ کن.',
   trainer: 'این عکس را ببین و راهنمایی تربیت بده.',
+  support: 'این عکس را ببین و راهنمایی پشتیبانی بده.',
+  finance: 'این رسید/عکس را ببین و راهنمایی مالی بده.',
 };
 
 function isPhotoMedia(kind: string | null | undefined): boolean {
