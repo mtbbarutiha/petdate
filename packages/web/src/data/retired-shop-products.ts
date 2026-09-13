@@ -244,3 +244,13 @@ export const RETIRED_SHOP_CATEGORY_SLUGS = [
   'bird-food',
   'bird-accessories',
 ] as const;
+
+const RETIRED_SHOP_PRODUCT_IDS = new Set(RETIRED_SHOP_PRODUCTS.map((p) => p.id));
+const RETIRED_SHOP_PRODUCT_SLUGS = new Set(RETIRED_SHOP_PRODUCTS.map((p) => p.slug));
+
+/** True for demo p1–p220 ids/slugs — safe to strip from local + server carts. */
+export function isRetiredShopProduct(idOrSlug: string): boolean {
+  const key = String(idOrSlug || '').trim();
+  if (!key) return false;
+  return RETIRED_SHOP_PRODUCT_IDS.has(key) || RETIRED_SHOP_PRODUCT_SLUGS.has(key);
+}

@@ -1,5 +1,7 @@
 /**
  * Guard: web cart badge uses resolved views; login merges guest→server.
+ * Never auto-DELETE live server cart rows from unresolved “ghost” prune
+ * (only retired demo SKUs). Catalog hydrate runs in the cart provider.
  * Run: npx tsx src/hooks/useShopCart.selftest.ts
  * (CI may invoke this with cwd=packages/api — resolve paths from this file.)
  */
@@ -7,10 +9,12 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { isRetiredShopProduct } from '../data/retired-shop-products.ts';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const src = readFileSync(join(here, 'useShopCart.tsx'), 'utf8');
 const api = readFileSync(join(here, '../lib/api.ts'), 'utf8');
+const sync = readFileSync(join(here, 'useShopCatalogSync.ts'), 'utf8');
 
 assert.match(src, /SHOP_CART_SYNC_RULE = 'merge-then-persist'/, 'exports sync rule');
 assert.match(src, /mergeShopCart/, 'login merge calls API');
@@ -27,7 +31,23 @@ assert.doesNotMatch(
   'must not count raw lines for badge'
 );
 
+assert.match(src, /hydrateShopCatalogOnce/, 'cart provider hydrates catalog on every route');
+assert.match(src, /isRetiredShopProduct/, 'ghost prune limited to retired demo SKUs');
+assert.match(src, /productFromServerMeta|serverMetaRef/, 'keeps server enrichment for unresolved ids');
+assert.doesNotMatch(
+  src,
+  /Drop ghost lines that never resolve in catalog/,
+  'must not DELETE any unresolved catalog id from server'
+);
+
+assert.match(sync, /export async function hydrateShopCatalogOnce/, 'shared hydrate export');
+
 assert.match(api, /\/api\/shop\/cart\/merge/, 'merge endpoint client');
 assert.match(api, /export async function fetchShopCart/, 'fetchShopCart client');
+
+assert.equal(isRetiredShopProduct('p1'), true);
+assert.equal(isRetiredShopProduct('dog-food-2-p2'), true);
+assert.equal(isRetiredShopProduct('p225'), false);
+assert.equal(isRetiredShopProduct('dog-food-royal-canin-xsmall-adult-1-5kg'), false);
 
 console.log('useShopCart.selftest: ok');
