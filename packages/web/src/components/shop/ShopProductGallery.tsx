@@ -133,7 +133,7 @@ export function ShopProductGallery({ gallery, cover, alt, badge, discount }: Pro
               aria-label="تصویر قبلی"
               onClick={() => go(-1)}
             >
-              <ChevronRight size={18} aria-hidden />
+              <ChevronLeft size={18} aria-hidden />
             </button>
             <button
               type="button"
@@ -141,7 +141,7 @@ export function ShopProductGallery({ gallery, cover, alt, badge, discount }: Pro
               aria-label="تصویر بعدی"
               onClick={() => go(1)}
             >
-              <ChevronLeft size={18} aria-hidden />
+              <ChevronRight size={18} aria-hidden />
             </button>
           </>
         ) : null}
@@ -235,7 +235,7 @@ export function ShopProductGallery({ gallery, cover, alt, badge, discount }: Pro
                         aria-label="تصویر قبلی"
                         onClick={() => go(-1)}
                       >
-                        <ChevronRight size={22} aria-hidden />
+                        <ChevronLeft size={22} aria-hidden />
                       </button>
                       <button
                         type="button"
@@ -243,7 +243,7 @@ export function ShopProductGallery({ gallery, cover, alt, badge, discount }: Pro
                         aria-label="تصویر بعدی"
                         onClick={() => go(1)}
                       >
-                        <ChevronLeft size={22} aria-hidden />
+                        <ChevronRight size={22} aria-hidden />
                       </button>
                     </>
                   ) : null}

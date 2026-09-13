@@ -48,6 +48,28 @@ assert.match(gallery, /ArrowRight/, 'keyboard next');
 assert.match(gallery, /pd-dk-lightbox-arrow/, 'circular lightbox chevrons');
 assert.match(gallery, /pd-dk-lightbox-close/, 'close X');
 assert.match(gallery, /pd-dk-lightbox-thumbs/, 'lightbox thumb strip');
+// Left (--prev) must show ChevronLeft; right (--next) must show ChevronRight.
+// Icons were previously swapped (RTL overcorrection) so arrows pointed inward.
+assert.match(
+  gallery,
+  /pd-dk-gallery-arrow--prev[\s\S]*?<ChevronLeft[\s\S]*?pd-dk-gallery-arrow--next[\s\S]*?<ChevronRight/,
+  'PDP gallery: left=ChevronLeft, right=ChevronRight'
+);
+assert.match(
+  gallery,
+  /pd-dk-lightbox-arrow--prev[\s\S]*?<ChevronLeft[\s\S]*?pd-dk-lightbox-arrow--next[\s\S]*?<ChevronRight/,
+  'lightbox: left=ChevronLeft, right=ChevronRight'
+);
+assert.doesNotMatch(
+  gallery,
+  /pd-dk-gallery-arrow--prev[\s\S]*?<ChevronRight[\s\S]*?pd-dk-gallery-arrow--next[\s\S]*?<ChevronLeft/,
+  'PDP gallery arrows must not be swapped inward'
+);
+assert.doesNotMatch(
+  gallery,
+  /pd-dk-lightbox-arrow--prev[\s\S]*?<ChevronRight[\s\S]*?pd-dk-lightbox-arrow--next[\s\S]*?<ChevronLeft/,
+  'lightbox arrows must not be swapped inward'
+);
 
 assert.match(css, /\.pd-dk-lightbox\s*\{[^}]*background:\s*#000/, 'lightbox black backdrop');
 assert.match(css, /\.pd-dk-lightbox-arrow\s*\{[^}]*border-radius:\s*50%/, 'circular lightbox arrows');
