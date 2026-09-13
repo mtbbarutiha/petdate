@@ -105,10 +105,9 @@ export function SiteFooter() {
     }
   }
 
-  const brandLead =
-    dir === 'rtl'
-      ? `${BRAND.shortDescriptionFa} ${t('footer.lead')}`
-      : `${BRAND.displayName} — ${t('footer.lead')}`;
+  // Full multi-line blurb lives in footer.lead (FA + EN). Do not prefix
+  // BRAND.shortDescriptionFa — mixing LTR brand + RTL lead garbles the column.
+  const brandLead = t('footer.lead');
 
   return (
     <footer className="pepito-footer" dir={dir}>

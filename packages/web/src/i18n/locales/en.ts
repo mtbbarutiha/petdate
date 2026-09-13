@@ -289,7 +289,7 @@ export const en: Dict = {
     moreOr: 'or write in the',
   },
   footer: {
-    lead: 'Playmates, shop, adoption, and vet consult — web and Telegram bot on one shared dataset.',
+    lead: 'PetDate — a playmate for your pet | PLAY • MEET 🐾 FRIENDS\nA Persian platform to find dog and cat playmates, shop the online pet store, adopt a pet, and get online vet and trainer consults.\nWeb and Telegram bot share one account — from signup to chat and orders, everything in one place.',
     social: 'Social networks',
     telegramBot: 'Telegram bot',
     instagram: 'Instagram',
