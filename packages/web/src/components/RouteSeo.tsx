@@ -74,17 +74,21 @@ export function RouteSeo() {
     upsertHreflang('fa-IR', canonical);
     upsertHreflang('x-default', canonical);
 
+    const ogImage = meta.image || SITE.ogImage;
     upsertMeta('property', 'og:url', canonical);
     upsertMeta('property', 'og:title', meta.title);
     upsertMeta('property', 'og:description', meta.description);
     upsertMeta('property', 'og:type', meta.ogType);
     upsertMeta('property', 'og:site_name', SEO.siteName);
     upsertMeta('property', 'og:locale', SEO.locale);
-    upsertMeta('property', 'og:image', SITE.ogImage);
+    upsertMeta('property', 'og:image', ogImage);
+    upsertMeta('property', 'og:image:secure_url', ogImage);
+    upsertMeta('property', 'og:image:alt', meta.imageAlt);
     upsertMeta('name', 'twitter:card', 'summary_large_image');
     upsertMeta('name', 'twitter:title', meta.title);
     upsertMeta('name', 'twitter:description', meta.description);
-    upsertMeta('name', 'twitter:image', SITE.ogImage);
+    upsertMeta('name', 'twitter:image', ogImage);
+    upsertMeta('name', 'twitter:image:alt', meta.imageAlt);
     upsertJsonLd(meta.jsonLd);
   }, [pathname, role, lang]);
 

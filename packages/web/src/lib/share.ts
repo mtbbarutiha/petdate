@@ -72,3 +72,13 @@ export function petPublicUrl(
   }
   return path;
 }
+
+/** Absolute public URL for a shop product PDP (`/shop/product/:slug`). */
+export function productPublicUrl(slugOrId: string): string {
+  const raw = String(slugOrId ?? '').trim();
+  const path = raw ? `/shop/product/${encodeURIComponent(raw)}` : '/shop';
+  if (typeof window !== 'undefined' && window.location?.origin) {
+    return `${window.location.origin}${path}`;
+  }
+  return path;
+}

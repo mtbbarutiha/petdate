@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import { SEO, SITE } from '@petdate/shared';
 import { SHOP_PRODUCTS } from '../data/shopCatalog.ts';
 import {
+  absAsset,
   applySeoToHtml,
   canonicalUrl,
   listProductIdRedirects,
@@ -69,6 +70,21 @@ assert.match(bySlug.canonicalPath, /\/shop\/product\/[a-z0-9-]+/);
 assert.doesNotMatch(bySlug.canonicalPath, /\/shop\/product\/p\d+$/, 'canonical uses descriptive slug');
 assert.match(JSON.stringify(bySlug.jsonLd), /"@type":"Product"/);
 assert.ok(bySlug.noscriptHtml.includes(product.title), 'product noscript includes title');
+const productImage = absAsset(product.image);
+assert.equal(bySlug.image, productImage, 'product SEO uses product pack shot');
+assert.notEqual(bySlug.image, SITE.ogImage, 'product SEO must not fall back to brand banner');
+assert.equal(byId.image, productImage);
+assert.equal(byShort.image, productImage);
+assert.equal(byP.image, productImage);
+const xsmall = pageSeoForPath('/shop/product/dog-food-royal-canin-xsmall-puppy-1-5kg');
+assert.match(
+  xsmall.image,
+  /royal-canin-xsmall-puppy-1\.5kg\.jpg/,
+  'X-Small Puppy og:image is the pack shot'
+);
+assert.doesNotMatch(xsmall.image, /petdate-banner/, 'X-Small Puppy must not use brand banner');
+assert.equal(home.image, SITE.ogImage, 'homepage keeps brand banner');
+assert.equal(shop.image, SITE.ogImage, 'shop index keeps brand banner');
 
 const redirects = listProductIdRedirects();
 assert.ok(redirects.length > 0, 'id → slug redirects exist');
@@ -105,8 +121,13 @@ const shell = `<!DOCTYPE html><html><head>
 <meta property="og:title" data-pd-seo="og:title" content="HOME TITLE" />
 <meta property="og:description" data-pd-seo="og:description" content="HOME DESC" />
 <meta property="og:type" data-pd-seo="og:type" content="website" />
+<meta property="og:image" data-pd-seo="og:image" content="https://petdate.ir/brand/petdate-banner.jpg" />
+<meta property="og:image:secure_url" data-pd-seo="og:image:secure_url" content="https://petdate.ir/brand/petdate-banner.jpg" />
+<meta property="og:image:alt" data-pd-seo="og:image:alt" content="پت‌دیت — همبازی برای پت‌ات" />
 <meta name="twitter:title" data-pd-seo="twitter:title" content="HOME TITLE" />
 <meta name="twitter:description" data-pd-seo="twitter:description" content="HOME DESC" />
+<meta name="twitter:image" data-pd-seo="twitter:image" content="https://petdate.ir/brand/petdate-banner.jpg" />
+<meta name="twitter:image:alt" data-pd-seo="twitter:image:alt" content="پت‌دیت — همبازی برای پت‌ات" />
 <script type="application/ld+json" data-pd-seo="jsonld">{"home":true}</script>
 </head><body><div id="root"></div>
 <noscript id="pd-seo-noscript"><link href="https://fonts.googleapis.com/css2?family=Vazirmatn" rel="stylesheet" /></noscript>
@@ -179,6 +200,29 @@ assert.doesNotMatch(bootShop, /<section class="pepito-hero">/, 'shop prerender h
 const productHtml = applySeoToHtml(shell, `/shop/product/${product.id}`);
 assert.match(productHtml, /"@type":"Product"/);
 assert.match(productHtml, new RegExp(product.slug));
+assert.match(
+  productHtml,
+  new RegExp(`property="og:image"[^>]*content="${productImage.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"`),
+  'prerender og:image is product pack shot'
+);
+assert.match(
+  productHtml,
+  new RegExp(`name="twitter:image"[^>]*content="${productImage.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"`),
+  'prerender twitter:image is product pack shot'
+);
+assert.doesNotMatch(
+  productHtml,
+  /property="og:image"[^>]*petdate-banner\.jpg/,
+  'prerender product HTML must not keep brand banner as og:image'
+);
+
+const xsmallHtml = applySeoToHtml(shell, '/shop/product/dog-food-royal-canin-xsmall-puppy-1-5kg');
+assert.match(xsmallHtml, /royal-canin-xsmall-puppy-1\.5kg\.jpg/, 'X-Small Puppy prerender emits pack shot');
+assert.doesNotMatch(
+  xsmallHtml,
+  /property="og:image"[^>]*petdate-banner\.jpg/,
+  'X-Small Puppy prerender og:image is not brand banner'
+);
 
 assert.equal(SITE.origin, 'https://petdate.ir');
 console.log('pageSeo.selftest: ok');

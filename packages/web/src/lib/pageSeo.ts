@@ -28,10 +28,15 @@ export type PageSeo = {
   canonicalPath: string;
   robots: string;
   ogType: 'website' | 'article' | 'product';
+  /** Absolute OG/Twitter share image (product pack shot, article cover, or site banner). */
+  image: string;
+  imageAlt: string;
   breadcrumbs: BreadcrumbItem[];
   jsonLd: Record<string, unknown>;
   noscriptHtml: string;
 };
+
+const DEFAULT_OG_IMAGE_ALT = 'پت‌دیت — همبازی برای پت‌ات';
 
 export type PageSeoOpts = {
   lang?: SeoLang;
@@ -263,6 +268,8 @@ function pack(partial: {
   canonicalPath: string;
   robots?: string;
   ogType?: PageSeo['ogType'];
+  image?: string;
+  imageAlt?: string;
   breadcrumbs?: BreadcrumbItem[];
   extraLd?: Record<string, unknown>[];
   noscriptHtml?: string;
@@ -279,6 +286,8 @@ function pack(partial: {
     canonicalPath: normalizePath(partial.canonicalPath),
     robots: partial.robots ?? INDEX_ROBOTS,
     ogType: partial.ogType ?? 'website',
+    image: partial.image ?? SITE.ogImage,
+    imageAlt: partial.imageAlt ?? DEFAULT_OG_IMAGE_ALT,
     breadcrumbs,
     jsonLd: graph(nodes),
     noscriptHtml: partial.noscriptHtml ?? defaultNoscript(partial.title, partial.description),
@@ -455,6 +464,8 @@ export function pageSeoForPath(pathname: string, opts: PageSeoOpts = {}): PageSe
       description: `خرید ${shopProduct.title} از پت‌دیت شاپ — غذا و لوازم پت با قیمت تومان.`,
       canonicalPath: path,
       ogType: 'product',
+      image: absAsset(shopProduct.image),
+      imageAlt: shopProduct.title,
       breadcrumbs: [
         { name: SEO.siteName, path: '/' },
         { name: 'پت‌شاپ', path: '/shop' },
@@ -729,8 +740,13 @@ const ATTR_KEYS = [
   'og:title',
   'og:description',
   'og:type',
+  'og:image',
+  'og:image:secure_url',
+  'og:image:alt',
   'twitter:title',
   'twitter:description',
+  'twitter:image',
+  'twitter:image:alt',
 ] as const;
 
 function setSeoAttr(html: string, key: string, value: string): string {
@@ -839,8 +855,13 @@ export function applySeoToHtml(html: string, pathname: string, opts: PageSeoOpts
     'og:title': seo.title,
     'og:description': seo.description,
     'og:type': seo.ogType,
+    'og:image': seo.image,
+    'og:image:secure_url': seo.image,
+    'og:image:alt': seo.imageAlt,
     'twitter:title': seo.title,
     'twitter:description': seo.description,
+    'twitter:image': seo.image,
+    'twitter:image:alt': seo.imageAlt,
   };
   for (const key of ATTR_KEYS) {
     out = setSeoAttr(out, key, values[key]);

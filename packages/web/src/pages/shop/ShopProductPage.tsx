@@ -5,11 +5,13 @@ import { Link, Navigate, useParams } from 'react-router-dom';
 import {
   CheckCircle2,
   ChevronLeft,
+  Heart,
   Info,
   Loader2,
   Minus,
   Plus,
   RefreshCcw,
+  Share2,
   ShieldCheck,
   ShoppingBag,
   Star,
@@ -33,7 +35,10 @@ import {
   productShippingNote,
   productWarranty,
 } from '../../data/shopCatalog';
+import { useAppToast } from '../../hooks/useAppToast';
 import { useShopCart } from '../../hooks/useShopCart';
+import { useShopFavorites } from '../../hooks/useShopFavorites';
+import { productPublicUrl, shareOrCopyUrl } from '../../lib/share';
 import { trackViewItem } from '../../lib/siteAnalytics';
 import { ShopChrome } from '../../components/shop/ShopChrome';
 import { ShopProductCard } from '../../components/shop/ShopProductCard';
@@ -56,6 +61,8 @@ export function ShopProductPage() {
   const { id = '' } = useParams<{ id: string }>();
   const product = getProduct(id);
   const { addAnimated, pendingAddId } = useShopCart();
+  const { liked, toggle: toggleLike } = useShopFavorites();
+  const { toastSuccess, toastError, toastInfo } = useAppToast();
   const [tab, setTab] = useState<DetailTab>('desc');
   const [qty, setQty] = useState(1);
   const [colorIdx, setColorIdx] = useState(0);
@@ -113,9 +120,30 @@ export function ShopProductPage() {
   const paramEntries = Object.entries(product.params).filter(([k]) => !k.startsWith('__'));
 
   const adding = pendingAddId === product.id;
+  const isLiked = liked(product.id);
+  const productTitle = productTitleForLang(lang, product.title, {
+    titleEn: product.titleEn,
+    slug: product.slug,
+  });
   const onAdd = () => {
     if (!product.inStock || adding) return;
     void addAnimated(product.id, qty);
+  };
+  const onToggleLike = () => {
+    const nextLiked = !isLiked;
+    toggleLike(product.id);
+    toastInfo(nextLiked ? 'به علاقه‌مندی‌ها اضافه شد' : 'از علاقه‌مندی‌ها حذف شد');
+  };
+  const onShare = async () => {
+    const url = productPublicUrl(product.slug || product.id);
+    const message = await shareOrCopyUrl({
+      url,
+      title: productTitle,
+      text: productTitle,
+    });
+    if (message == null) return;
+    if (message.includes('ناموفق')) toastError(message);
+    else toastSuccess(message);
   };
 
   return (
@@ -151,8 +179,30 @@ export function ShopProductPage() {
                 <ChevronLeft size={14} aria-hidden />
               </Link>
             ) : null}
-            <h1 className="pd-dk-title">{productTitleForLang(lang, product.title, { titleEn: product.titleEn, slug: product.slug })}</h1>
+            <h1 className="pd-dk-title">{productTitle}</h1>
             {product.titleEn ? <p className="pd-dk-title-en">{product.titleEn}</p> : null}
+
+            <div className="pd-dk-tools" role="group" aria-label="لایک و اشتراک‌گذاری کالا">
+              <button
+                type="button"
+                className={`pd-dk-tool${isLiked ? ' is-liked' : ''}`}
+                aria-pressed={isLiked}
+                aria-label={isLiked ? 'حذف از علاقه‌مندی‌ها' : 'لایک کالا'}
+                onClick={onToggleLike}
+              >
+                <Heart size={16} fill={isLiked ? 'currentColor' : 'none'} aria-hidden />
+                {isLiked ? 'پسندیده‌اید' : 'لایک'}
+              </button>
+              <button
+                type="button"
+                className="pd-dk-tool"
+                aria-label="اشتراک‌گذاری کالا"
+                onClick={() => void onShare()}
+              >
+                <Share2 size={16} aria-hidden />
+                اشتراک‌گذاری
+              </button>
+            </div>
 
             <div className="pd-dk-meta">
               <span className="pd-dk-rating" title="امتیاز کاربران">
