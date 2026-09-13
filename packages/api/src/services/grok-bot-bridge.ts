@@ -66,20 +66,32 @@ function parseAgentMap(): Record<string, MapEntry> {
   }
 }
 
-function envKeyFor(def: TeamAgentDef): string {
-  return def.grokBotKey.toUpperCase();
+function envSuffixesFor(def: TeamAgentDef): string[] {
+  const suffixes = new Set<string>([def.grokBotKey.toUpperCase(), def.slug.replace(/-/g, '_').toUpperCase()]);
+  // Legacy Sara typo (نوزی) — same vet persona as sara_noori / sanaz vet engine.
+  if (def.slug === 'sara-noori') suffixes.add('SARA_NOZI');
+  return [...suffixes];
+}
+
+function firstEnv(suffixes: string[], kind: 'ID' | 'URL'): string | null {
+  for (const suffix of suffixes) {
+    const v = String(process.env[`GROK_BOT_${suffix}_${kind}`] || '').trim();
+    if (v) return v;
+  }
+  return null;
 }
 
 /** Resolve optional Grok Bot id/url for one team persona. */
 export function resolveGrokBotLink(def: TeamAgentDef): GrokBotLink {
   const map = parseAgentMap();
-  const fromMap = map[def.grokBotKey] || map[def.slug.replace(/-/g, '_')];
-  const suffix = envKeyFor(def);
-  const id =
-    String(process.env[`GROK_BOT_${suffix}_ID`] || fromMap?.id || '').trim() || null;
-  const url =
-    String(process.env[`GROK_BOT_${suffix}_URL`] || fromMap?.url || '').trim() || null;
-  return { id, url, linked: Boolean(id || url) };
+  const fromMap =
+    map[def.grokBotKey] ||
+    map[def.slug.replace(/-/g, '_')] ||
+    (def.slug === 'sara-noori' ? map.sara_nozi : undefined);
+  const suffixes = envSuffixesFor(def);
+  const id = firstEnv(suffixes, 'ID') || (fromMap?.id != null ? String(fromMap.id).trim() : '') || null;
+  const url = firstEnv(suffixes, 'URL') || (fromMap?.url != null ? String(fromMap.url).trim() : '') || null;
+  return { id: id || null, url: url || null, linked: Boolean(id || url) };
 }
 
 export function listTeamAgentsWithGrokBridge(): TeamAgentPublicWithGrok[] {

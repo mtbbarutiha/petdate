@@ -50,6 +50,17 @@ async function main() {
     ),
   );
 
+  // Live failure mode: only the slug-shaped telegram id exists (no legacy nozi row).
+  // Ensure must attach that user to the vet persona — not create a disconnected twin.
+  const { user: preSara } = dbService.findOrCreateUser({
+    telegramId: 'petdate_ai_sara_noori',
+    name: 'دکتر سارا نوری',
+    username: 'agent_sara_noori',
+  });
+  const preEnsured = ensureTeamAgentBySlug('sara-noori')!;
+  assert.equal(preEnsured.id, preSara.id, 'ensure finds slug-shaped Sara telegram id');
+  assert.ok(preEnsured.roles?.includes('vet'), 'alias Sara user gets vet role');
+
   const users = ensureAllTeamAgents();
   assert.equal(users.length, 5);
   const faranakDefault = ensureAiAssistantUser();
@@ -102,6 +113,7 @@ async function main() {
   const session = await startTeamAgentConsult({ patient, agentSlug: 'sara-noori' });
   assert.ok(session);
   assert.equal(session!.consult.vetUserId, sara.id);
+  assert.equal(session!.consult.serviceKind, 'vet', 'Sara team-chat uses vet stack');
   assert.equal(decorateAiConsultDisplay(session!.consult).vetName, 'دکتر سارا نوری');
   assert.ok(
     decorateAiConsultDisplay(session!.consult).vetAvatarUrl?.includes('sara-noori'),
@@ -110,6 +122,28 @@ async function main() {
   const reuse = await startTeamAgentConsult({ patient, agentSlug: 'sara-nozi' });
   assert.equal(reuse!.consult.id, session!.consult.id);
   assert.equal(reuse!.reused, true);
+  assert.equal(reuse!.consult.serviceKind, 'vet');
+
+  const sanaz = ensureTeamAgentBySlug('sanaz-ghaffari')!;
+  assert.equal(sanaz.name, 'دکتر ساناز غفاری');
+  assert.ok(sanaz.avatarUrl?.includes('sanaz-ghaffari'));
+  const sanazPatientTg = `selftest_team_sanaz_${Date.now()}`;
+  const { user: sanazPatient } = dbService.findOrCreateUser({
+    telegramId: sanazPatientTg,
+    name: 'SanazPatient',
+    username: 'sanaz_patient',
+  });
+  dbService.setUserRoles(sanazPatient.id, ['pet_owner']);
+  dbService.createPet({ ownerId: sanazPatient.id, name: 'ملوس', species: 'cat' });
+  const sanazSession = await startTeamAgentConsult({ patient: sanazPatient, agentSlug: 'sanaz-ghaffari' });
+  assert.ok(sanazSession);
+  assert.equal(sanazSession!.consult.vetUserId, sanaz.id);
+  assert.equal(sanazSession!.consult.serviceKind, 'vet', 'Sanaz team-chat stays on vet stack');
+  assert.equal(decorateAiConsultDisplay(sanazSession!.consult).vetName, 'دکتر ساناز غفاری');
+  const { getTeamAgentByTelegramId } = await import('@petdate/shared');
+  assert.equal(getTeamAgentByTelegramId('petdate_ai_sara_noori')?.kind, 'vet');
+  assert.equal(sara.id, preSara.id, 'later ensure still the same slug-shaped Sara row');
+
   const yalda = ensureTeamAgentBySlug('yalda-shabani')!;
   assert.equal(yalda.name, 'یلدا شعبانی');
   assert.ok(yalda.avatarUrl?.includes('yalda-shabani'));

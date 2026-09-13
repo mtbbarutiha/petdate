@@ -14,9 +14,11 @@ const root = join(webSrc, '..');
 const sw = readFileSync(join(webSrc, 'lib/swRegister.ts'), 'utf8');
 const vite = readFileSync(join(root, 'vite.config.ts'), 'utf8');
 
-assert.match(sw, /petdate-sw-20260913-staff-roles-v45/, 'swRegister bust generation is v45');
-assert.match(sw, /petdate-web-v45-staff-roles/, 'swRegister active cacheId is v45');
-assert.match(vite, /cacheId:\s*'petdate-web-v45-staff-roles'/, 'vite PWA cacheId is v45');
+assert.match(sw, /petdate-sw-20260913-sara-noori-vet-v46/, 'swRegister bust generation is v46');
+assert.match(sw, /petdate-web-v46-sara-noori-vet/, 'swRegister active cacheId is v46');
+assert.match(vite, /cacheId:\s*'petdate-web-v46-sara-noori-vet'/, 'vite PWA cacheId is v46');
+assert.doesNotMatch(sw, /petdate-web-v45-staff-roles/, 'old v45-staff-roles cacheId is retired');
+assert.doesNotMatch(sw, /petdate-sw-20260913-staff-roles-v45/, 'old v45-staff-roles bust key is retired');
 assert.doesNotMatch(sw, /petdate-web-v44-persona-avatars/, 'old v44-persona-avatars cacheId is retired');
 assert.doesNotMatch(sw, /petdate-sw-20260913-persona-avatars-v44/, 'old v44-persona-avatars bust key is retired');
 assert.doesNotMatch(sw, /petdate-web-v43-yalda-avatar/, 'old v43-yalda-avatar cacheId is retired');
