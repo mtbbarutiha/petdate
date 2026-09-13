@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { Link } from 'react-router-dom';
 import { SiteHeader } from '../components/SiteHeader';
 import { welcomeSectionLinks } from '../components/siteHeaderLinks';
@@ -32,6 +32,9 @@ type HeroSlide = {
   leadKey: string;
   cta: HeroCta;
   testId: string;
+  posX: number;
+  posY: number;
+  scale: number;
 };
 
 type HeroApiSlide = {
@@ -40,9 +43,16 @@ type HeroApiSlide = {
   srcSet: string;
   fallback: string;
   source: 'custom' | 'default';
+  posX?: number;
+  posY?: number;
+  scale?: number;
 };
 
-/** Static defaults — keep playmate on /media/lcp for LCP when not customized. */
+/**
+ * Copy/CTA shell only. Image URLs come exclusively from GET /api/hero
+ * (same resolved list the admin panel shows) — never a parallel gallery.
+ * Offline/first-paint placeholders match admin defaults until the API arrives.
+ */
 const HERO_SLIDES: HeroSlide[] = [
   {
     role: 'playmate',
@@ -55,6 +65,9 @@ const HERO_SLIDES: HeroSlide[] = [
     leadKey: 'landing.heroPlaymateLead',
     cta: { kind: 'gated', to: '/chats', labelKey: 'landing.heroPlaymateCta' },
     testId: 'hero-playmate-cta',
+    posX: 50,
+    posY: 0,
+    scale: 1,
   },
   {
     role: 'vet',
@@ -67,6 +80,9 @@ const HERO_SLIDES: HeroSlide[] = [
     leadKey: 'landing.heroVetLead',
     cta: { kind: 'link', to: '/vet-consult', labelKey: 'landing.heroVetCta' },
     testId: 'hero-vet-consult-cta',
+    posX: 50,
+    posY: 0,
+    scale: 1,
   },
   {
     role: 'trainer',
@@ -79,6 +95,9 @@ const HERO_SLIDES: HeroSlide[] = [
     leadKey: 'landing.heroTrainerLead',
     cta: { kind: 'gated', to: '/trainer-consult', labelKey: 'landing.heroTrainerCta' },
     testId: 'hero-trainer-cta',
+    posX: 50,
+    posY: 0,
+    scale: 1,
   },
   {
     role: 'no_pet',
@@ -91,6 +110,9 @@ const HERO_SLIDES: HeroSlide[] = [
     leadKey: 'landing.heroNoPetLead',
     cta: { kind: 'gated', to: '/onboarding/role', labelKey: 'landing.heroNoPetCta' },
     testId: 'hero-no-pet-cta',
+    posX: 50,
+    posY: 0,
+    scale: 1,
   },
   {
     role: 'adoption',
@@ -103,6 +125,9 @@ const HERO_SLIDES: HeroSlide[] = [
     leadKey: 'landing.heroAdoptionLead',
     cta: { kind: 'hash', href: '#adoption', labelKey: 'landing.heroAdoptionCta' },
     testId: 'hero-adoption-cta',
+    posX: 50,
+    posY: 0,
+    scale: 1,
   },
 ];
 
@@ -114,6 +139,24 @@ function Chevron({ dir }: { dir: 'left' | 'right' }) {
   );
 }
 
+function resolveSrcSet(srcSet: string): string {
+  return (srcSet || '')
+    .split(',')
+    .map((part) => {
+      const trimmed = part.trim();
+      const sp = trimmed.lastIndexOf(' ');
+      if (sp <= 0) return resolvePublicMediaUrl(trimmed) || trimmed;
+      const url = trimmed.slice(0, sp);
+      const descriptor = trimmed.slice(sp + 1);
+      return `${resolvePublicMediaUrl(url) || url} ${descriptor}`;
+    })
+    .join(', ');
+}
+
+/**
+ * Single source of truth: always prefer API slide URLs + focus when present.
+ * Admin panel and live hero share listResolvedHeroSlides().
+ */
 function applyHeroOverlay(
   base: HeroSlide[],
   apiSlides: HeroApiSlide[] | null,
@@ -122,22 +165,37 @@ function applyHeroOverlay(
   const byRole = new Map(apiSlides.map((s) => [s.role, s]));
   return base.map((slide) => {
     const overlay = byRole.get(slide.role);
-    if (!overlay || overlay.source !== 'custom') return slide;
+    if (!overlay) return slide;
     const webp = resolvePublicMediaUrl(overlay.webp) || overlay.webp;
     const fallback = resolvePublicMediaUrl(overlay.fallback) || overlay.fallback;
-    const srcSet = (overlay.srcSet || '')
-      .split(',')
-      .map((part) => {
-        const trimmed = part.trim();
-        const sp = trimmed.lastIndexOf(' ');
-        if (sp <= 0) return resolvePublicMediaUrl(trimmed) || trimmed;
-        const url = trimmed.slice(0, sp);
-        const descriptor = trimmed.slice(sp + 1);
-        return `${resolvePublicMediaUrl(url) || url} ${descriptor}`;
-      })
-      .join(', ');
-    return { ...slide, webp, srcSet: srcSet || webp, fallback };
+    const srcSet = resolveSrcSet(overlay.srcSet || '') || webp;
+    const posX = Number.isFinite(overlay.posX) ? Number(overlay.posX) : slide.posX;
+    const posY = Number.isFinite(overlay.posY) ? Number(overlay.posY) : slide.posY;
+    const scale = Number.isFinite(overlay.scale) ? Number(overlay.scale) : slide.scale;
+    return { ...slide, webp, srcSet, fallback, posX, posY, scale };
   });
+}
+
+function heroMediaStyle(slide: HeroSlide): CSSProperties {
+  return {
+    ['--hero-pos-x' as string]: `${slide.posX}%`,
+    ['--hero-pos-y' as string]: `${slide.posY}%`,
+    ['--hero-scale' as string]: String(slide.scale),
+    objectPosition: `${slide.posX}% ${slide.posY}%`,
+  };
+}
+
+/** Freeze mobile hero height in px once — svh/address-bar changes caused a scroll jump. */
+function lockMobileHeroHeight() {
+  if (typeof window === 'undefined') return;
+  if (!window.matchMedia('(max-width: 859px)').matches) {
+    document.documentElement.style.removeProperty('--pepito-hero-h');
+    return;
+  }
+  const nav = document.querySelector('.pepito-nav') as HTMLElement | null;
+  const navH = Math.round(nav?.getBoundingClientRect().height || 64);
+  const h = Math.max(240, Math.round(window.innerHeight - navH));
+  document.documentElement.style.setProperty('--pepito-hero-h', `${h}px`);
 }
 
 export function WelcomePage() {
@@ -163,19 +221,24 @@ export function WelcomePage() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  /* Optional custom heroes from admin — defaults stay for LCP until overlay arrives. */
+  /* Lock mobile hero band once so URL-chrome / svh shifts cannot jump the page. */
+  useEffect(() => {
+    lockMobileHeroHeight();
+  }, []);
+
+  /* Admin-resolved slides only — always apply API list (custom + default + focus). */
   useEffect(() => {
     let cancelled = false;
     void fetch(`${API_BASE}/api/hero`, { cache: 'no-store' })
       .then((res) => (res.ok ? res.json() : null))
       .then((data: { slides?: HeroApiSlide[] } | null) => {
         if (cancelled || !data?.slides?.length) return;
-        if (data.slides.some((s) => s.source === 'custom')) {
-          setHeroOverlay(data.slides);
-        }
+        setHeroOverlay(data.slides);
+        const playmate = data.slides.find((s) => s.role === 'playmate');
+        if (playmate?.source === 'custom') parkBootLcp();
       })
       .catch(() => {
-        /* keep static defaults */
+        /* keep shell defaults that match admin defaults */
       });
     return () => {
       cancelled = true;
@@ -211,7 +274,6 @@ export function WelcomePage() {
       { root: null, rootMargin: '0px', threshold: 0.01 },
     );
     io.observe(slot);
-    /* No scroll listener — Lighthouse / mobile chrome emit scroll on load. */
     window.addEventListener('pointerdown', load, { once: true, passive: true });
     window.addEventListener('keydown', load, { once: true });
     window.addEventListener('touchstart', load, { once: true, passive: true });
@@ -258,6 +320,7 @@ export function WelcomePage() {
                   <source type="image/webp" srcSet={s.srcSet || s.webp} sizes="100vw" />
                   <img
                     className="pepito-hero-media"
+                    style={heroMediaStyle(s)}
                     src={i === 0 ? s.webp : s.fallback}
                     alt={t(s.titleKey)}
                     width={1600}
@@ -348,7 +411,7 @@ export function WelcomePage() {
 
       <div ref={belowFoldSlotRef} className="pepito-below-fold-slot">
         {showBelowFold ? (
-          <Suspense fallback={<div className="pepito-below-fold-slot" aria-hidden />}>
+          <Suspense fallback={null}>
             <WelcomeBelowFold />
           </Suspense>
         ) : null}

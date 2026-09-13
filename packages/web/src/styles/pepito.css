@@ -447,8 +447,9 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   display: grid;
   align-items: center;
   overflow: hidden;
-  /* Preloaded playmate WebP lives on the hero box so LCP-split stacking cannot hide it. */
-  background: #14161e url('/media/lcp/hero-playmate-800.webp') center top / cover no-repeat;
+  /* Solid fill only — never a second photo under the slide <img> (dual-source flash).
+     Boot LCP + React media own the visible image; admin /api/hero is the SoT. */
+  background: #14161e;
   color: #fff;
   touch-action: pan-y;
 }
@@ -515,9 +516,10 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  /* img equivalent of background-position: center top */
-  object-position: center top;
-  transform: scale(1.04);
+  /* Admin pan/zoom: --hero-pos-x/y (%) and --hero-scale (1–2). */
+  object-position: var(--hero-pos-x, 50%) var(--hero-pos-y, 0%);
+  transform: scale(var(--hero-scale, 1));
+  transform-origin: var(--hero-pos-x, 50%) var(--hero-pos-y, 0%);
   animation: pepito-ken 14s ease-in-out infinite alternate;
 }
 /* HTML LCP node lives outside #root; height matches the compact #377 hero band.
@@ -2914,9 +2916,9 @@ body > #pd-boot-lcp.is-parked,
   to { opacity: 1; transform: translateY(0); }
 }
 @keyframes pepito-ken {
-  /* Milder zoom — large scale + translate spilled past overflow on some slides */
-  from { transform: scale(1.02) translate3d(0, 0, 0); }
-  to { transform: scale(1.06) translate3d(0, -0.8%, 0); }
+  /* Milder zoom relative to admin --hero-scale — large scale spilled past overflow */
+  from { transform: scale(calc(var(--hero-scale, 1) * 1.02)) translate3d(0, 0, 0); }
+  to { transform: scale(calc(var(--hero-scale, 1) * 1.06)) translate3d(0, -0.8%, 0); }
 }
 
 @media (max-width: 980px) {
@@ -10675,8 +10677,11 @@ a.pepito-btn.pepito-human-consult-cta:hover {
     margin-top: 0;
   }
   .pepito-hero {
-    /* Prefer svh only — dvh changes with mobile URL chrome and causes jump */
+    /* Prefer locked px from WelcomePage (or svh fallback). Fixed height — not
+       min-height alone — so address-bar / layout shifts cannot jump scroll. */
+    height: var(--pepito-hero-h);
     min-height: var(--pepito-hero-h);
+    max-height: var(--pepito-hero-h);
   }
   .pepito-hero-inner {
     padding-block: calc(env(safe-area-inset-top, 0px) + 1.35rem) 2.25rem;
@@ -10684,11 +10689,17 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   }
   .pepito-hero-media,
   .pepito-hero-slide.is-active .pepito-hero-media {
-    /* Disable ken-burns zoom on mobile — looks like broken/blurry load */
-    transform: none !important;
+    /* No ken-burns on mobile; keep admin pan/zoom via CSS vars */
+    transform: scale(var(--hero-scale, 1)) !important;
+    transform-origin: var(--hero-pos-x, 50%) var(--hero-pos-y, 0%);
     animation: none !important;
     object-fit: cover;
-    object-position: center top;
+    object-position: var(--hero-pos-x, 50%) var(--hero-pos-y, 0%);
+  }
+  /* Boot LCP sits under in-flow nav; keep it from fighting React media */
+  body > #pd-boot-lcp {
+    top: var(--pepito-nav-h);
+    height: var(--pepito-hero-h);
   }
 }
 

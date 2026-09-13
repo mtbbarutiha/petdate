@@ -19,6 +19,18 @@ export const HERO_ROLES = [
 
 export type HeroRole = (typeof HERO_ROLES)[number];
 
+/** Focal crop — object-position (%) + display scale. */
+export type HeroFocus = {
+  /** 0–100, horizontal object-position. Default 50 (center). */
+  posX: number;
+  /** 0–100, vertical object-position. Default 0 (top). */
+  posY: number;
+  /** Display zoom 1–2. Default 1. */
+  scale: number;
+};
+
+export const DEFAULT_HERO_FOCUS: HeroFocus = { posX: 50, posY: 0, scale: 1 };
+
 export type HeroSlideAssets = {
   webp800: string;
   webp1280: string;
@@ -26,9 +38,12 @@ export type HeroSlideAssets = {
   jpeg: string;
   updatedAt: string;
   originalName?: string;
+  posX?: number;
+  posY?: number;
+  scale?: number;
 };
 
-/** 16:9 — matches object-fit:cover; live CSS uses object-position:center top. */
+/** 16:9 — matches object-fit:cover; live CSS uses object-position from focus. */
 const WEBP_SIZES = [
   { w: 800, h: 450, name: '800' as const },
   { w: 1280, h: 720, name: '1280' as const },
@@ -51,6 +66,21 @@ const ALLOWED_MIME = new Set([
 
 export function isHeroRole(value: string): value is HeroRole {
   return (HERO_ROLES as readonly string[]).includes(value);
+}
+
+function clampNum(n: number, min: number, max: number, fallback: number): number {
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(max, Math.max(min, n));
+}
+
+export function normalizeHeroFocus(raw: unknown): HeroFocus {
+  if (!raw || typeof raw !== 'object') return { ...DEFAULT_HERO_FOCUS };
+  const v = raw as Record<string, unknown>;
+  return {
+    posX: clampNum(Number(v.posX), 0, 100, DEFAULT_HERO_FOCUS.posX),
+    posY: clampNum(Number(v.posY), 0, 100, DEFAULT_HERO_FOCUS.posY),
+    scale: clampNum(Number(v.scale), 1, 2, DEFAULT_HERO_FOCUS.scale),
+  };
 }
 
 export function heroSlidesRoot(): string {
@@ -105,8 +135,8 @@ function dayStamp(): string {
 }
 
 /**
- * Cover-crop to 16:9 from the top (matches live hero object-position: center top),
- * then emit WebP srcset + JPEG fallback.
+ * Cover-crop to 16:9 from the top (baseline), then emit WebP srcset + JPEG fallback.
+ * Fine pan/zoom is applied at display time via object-position / scale.
  */
 export async function processAndSaveHeroSlide(opts: {
   role: HeroRole;
@@ -140,6 +170,7 @@ export async function processAndSaveHeroSlide(opts: {
   const urls: Partial<HeroSlideAssets> = {
     updatedAt: new Date().toISOString(),
     originalName: path.basename(opts.originalName || 'hero.jpg').slice(0, 120),
+    ...DEFAULT_HERO_FOCUS,
   };
 
   for (const size of WEBP_SIZES) {

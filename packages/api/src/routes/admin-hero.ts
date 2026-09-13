@@ -10,6 +10,7 @@ import {
   listResolvedHeroSlides,
   resetCustomHeroSlide,
   setCustomHeroSlide,
+  setHeroSlideFocus,
 } from '../services/hero-slides';
 import {
   HERO_ROLES,
@@ -33,7 +34,7 @@ heroAdminRouter.get('/', (_req, res) => {
     roles: HERO_ROLES,
     labels: heroRoleLabelsFa(),
     cropNote:
-      'عکس به‌صورت خودکار برش ۱۶:۹ از بالای کادر می‌شود تا با هیرو هدر (پوشش کامل از بالا) یکی باشد.',
+      'عکس به‌صورت خودکار برش ۱۶:۹ از بالای کادر می‌شود. با کنترل‌های جابه‌جایی و زوم، نقطهٔ کانونی را برای دسکتاپ و موبایل تنظیم کنید.',
   });
 });
 
@@ -98,6 +99,25 @@ heroAdminRouter.post('/:role/reset', (req, res) => {
     return;
   }
   const slide = resetCustomHeroSlide(role);
+  res.json({ ok: true, slide });
+});
+
+
+heroAdminRouter.post('/:role/focus', (req, res) => {
+  const role = String(req.params.role || '');
+  if (!isHeroRole(role)) {
+    res.status(400).json({ error: 'نقش اسلاید نامعتبر است' });
+    return;
+  }
+  const body = (req.body && typeof req.body === 'object' ? req.body : {}) as Record<
+    string,
+    unknown
+  >;
+  const slide = setHeroSlideFocus(role, {
+    posX: body.posX,
+    posY: body.posY,
+    scale: body.scale,
+  });
   res.json({ ok: true, slide });
 });
 

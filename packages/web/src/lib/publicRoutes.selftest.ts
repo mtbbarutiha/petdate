@@ -137,6 +137,15 @@ assert.match(welcome, /to: '\/trainer-consult'/, 'trainer deep-links to /trainer
 assert.match(welcome, /to: '\/onboarding\/role'/, 'no-pet deep-links to role onboarding');
 assert.match(welcome, /href: '#adoption'/, 'adoption hero CTA anchors to #adoption');
 assert.match(welcome, /id="adoption"/, 'welcome adoption section has id=adoption');
+assert.match(welcome, /\/api\/hero/, 'welcome fetches admin-resolved hero slides');
+assert.match(welcome, /setHeroOverlay\(data\.slides\)/, 'welcome always applies API slides (admin SoT)');
+assert.doesNotMatch(
+  welcome,
+  /source === 'custom'\) \{\s*setHeroOverlay/,
+  'welcome must not ignore default API slides'
+);
+assert.match(welcome, /lockMobileHeroHeight|pepito-hero-h/, 'welcome locks mobile hero height');
+assert.match(welcome, /--hero-pos-x|--hero-pos-y|--hero-scale/, 'welcome applies admin focus CSS vars');
 assert.match(welcome, /\/2-hero\.jpg/, 'adoption hero has a dedicated 2-hero.jpg fallback');
 assert.match(welcome, /landing\.heroAdoptionTitle/, 'adoption hero title key present');
 assert.doesNotMatch(welcome, /پیدا کردن پرستار|مراقبت شبانه|نگهداری پت/, 'no sitter leftover CTAs on welcome');

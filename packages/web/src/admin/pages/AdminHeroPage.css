@@ -101,8 +101,8 @@
 .admin-app .admin-hero-frame-media {
   display: block;
   object-fit: cover;
-  /* Match live .pepito-hero-media */
-  object-position: center top;
+  /* Live preview uses inline object-position + scale from focus controls */
+  will-change: transform, object-position;
 }
 
 .admin-app .admin-hero-frame-empty {
@@ -228,4 +228,57 @@
 .admin-app .admin-hero-frame-dots span.is-active {
   background: #c9bde8;
   border-color: #c9bde8;
+}
+
+.admin-app .admin-hero-focus {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid color-mix(in srgb, var(--admin-border) 80%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.admin-app .admin-hero-focus-head strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.admin-app .admin-hero-focus-head p {
+  margin: 0;
+}
+
+.admin-app .admin-hero-focus-pad {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  width: fit-content;
+}
+
+.admin-app .admin-hero-focus-mid {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.admin-app .admin-hero-focus-zoom {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-app .admin-hero-focus-sliders {
+  display: grid;
+  gap: 10px;
+  max-width: 420px;
+}
+
+.admin-app .admin-hero-focus-sliders label {
+  display: grid;
+  gap: 4px;
+  font-size: 0.85rem;
+}
+
+.admin-app .admin-hero-focus-sliders input[type='range'] {
+  width: 100%;
 }
