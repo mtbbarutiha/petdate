@@ -1632,6 +1632,7 @@ export const ADMIN_FA_EN: Record<string, string> = {
   "مدیر کامل (همهٔ دسترسی‌ها)": "Full admin (all access)",
   "مدیر مربوطه (سمت شغلی)": "Reporting Manager (Job Title)",
   "مدیر منابع انسانی": "HR manager",
+  "مدیر مالی": "Finance manager",
   "مدیرکل": "Director General",
   "مدیریت پت‌ها": "Manage Pets",
   "مدیریت نقش‌ها →": "Manage Roles →",

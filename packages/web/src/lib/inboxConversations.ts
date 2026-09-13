@@ -44,7 +44,7 @@ export type InboxConversation = {
   /** عکس طرف مقابل (دامپزشک/مربی یا بیمار) — برای لیست مشاوره */
   peerAvatarUrl?: string;
   /** برای برچسب لیست — پیش‌فرض vet وقتی kind=vet */
-  serviceKind?: 'vet' | 'trainer' | 'sitter' | 'seeker_advice';
+  serviceKind?: 'vet' | 'trainer' | 'sitter' | 'seeker_advice' | 'finance' | 'support';
 };
 
 export function inboxScopeForRole(role?: UserRole | null): InboxScope {
@@ -187,7 +187,11 @@ export function vetToInbox(
             ? `پرستار #${c.vetUserId}`
             : serviceKind === 'seeker_advice'
               ? `صاحب پت #${c.vetUserId}`
-              : `پزشک #${c.vetUserId}`);
+              : serviceKind === 'finance'
+                ? `مدیر مالی #${c.vetUserId}`
+                : serviceKind === 'support'
+                  ? `پشتیبانی #${c.vetUserId}`
+                  : `پزشک #${c.vetUserId}`);
 
   const preview = pending
     ? mode === 'as_vet'

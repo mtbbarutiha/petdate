@@ -1,9 +1,9 @@
 /**
  * Bridge: Grok Bot (گراک بات / «گراگ بات») roster ↔ petdate TEAM_AGENTS.
  *
- * Mohammad’s five Grok Bot teammates map 1:1 onto site personas.
- * Optional env links (share id / URL) mark a persona as externally connected
- * without creating a parallel chat system — consult still goes through ai-consult.
+ * Mohammad’s Grok Bot teammates map 1:1 onto site personas.
+ * Each persona has a baked-in live engine id (`grokBotId`); env can override.
+ * Consult still goes through ai-consult with that persona’s kind/prompt.
  *
  * Per-agent:
  *   GROK_BOT_FARANAK_AHMADI_ID=…
@@ -35,6 +35,7 @@ export type TeamAgentPublicWithGrok = {
   avatarUrl: string;
   chatPath: string;
   grokBotKey: string;
+  grokBotId: string;
   grokBot: GrokBotLink;
 };
 
@@ -68,7 +69,7 @@ function parseAgentMap(): Record<string, MapEntry> {
 
 function envSuffixesFor(def: TeamAgentDef): string[] {
   const suffixes = new Set<string>([def.grokBotKey.toUpperCase(), def.slug.replace(/-/g, '_').toUpperCase()]);
-  // Legacy Sara typo (نوزی) — same vet persona as sara_noori / sanaz vet engine.
+  // Legacy Sara typo (نوزی) — same vet persona as sara_noori.
   if (def.slug === 'sara-noori') suffixes.add('SARA_NOZI');
   return [...suffixes];
 }
@@ -89,7 +90,11 @@ export function resolveGrokBotLink(def: TeamAgentDef): GrokBotLink {
     map[def.slug.replace(/-/g, '_')] ||
     (def.slug === 'sara-noori' ? map.sara_nozi : undefined);
   const suffixes = envSuffixesFor(def);
-  const id = firstEnv(suffixes, 'ID') || (fromMap?.id != null ? String(fromMap.id).trim() : '') || null;
+  const id =
+    firstEnv(suffixes, 'ID') ||
+    (fromMap?.id != null ? String(fromMap.id).trim() : '') ||
+    def.grokBotId ||
+    null;
   const url = firstEnv(suffixes, 'URL') || (fromMap?.url != null ? String(fromMap.url).trim() : '') || null;
   return { id: id || null, url: url || null, linked: Boolean(id || url) };
 }
@@ -103,6 +108,7 @@ export function listTeamAgentsWithGrokBridge(): TeamAgentPublicWithGrok[] {
     avatarUrl: a.avatarUrl,
     chatPath: teamAgentChatPath(a.slug),
     grokBotKey: a.grokBotKey,
+    grokBotId: a.grokBotId,
     grokBot: resolveGrokBotLink(a),
   }));
 }

@@ -1,63 +1,28 @@
 # Grok Bot (گراک بات) ↔ Petdate team agents
 
-Mohammad’s **Grok Bot** roster (Persian: گراگ/گراک بات) is the same five site personas — not a second chat system.
+Mohammad’s **Grok Bot** roster (Persian: گراگ/گراک بات) is the same site personas — not a second chat system.
 
-| Grok Bot key | Site slug | Domain | Chat |
-|---|---|---|---|
-| `faranak_ahmadi` | `faranak-ahmadi` | trainer | `/team-chat/faranak-ahmadi` |
-| `leila_kiani` | `leila-kiani` | trainer | `/team-chat/leila-kiani` |
-| `sanaz_ghaffari` | `sanaz-ghaffari` | vet | `/team-chat/sanaz-ghaffari` |
-| `sara_noori` | `sara-noori` | vet | `/team-chat/sara-noori` |
-| `yalda_shabani` | `yalda-shabani` | support | `/support/chat` |
+| Grok Bot key | Site slug | Role | Domain | Grok agent id | Chat |
+|---|---|---|---|---|---|
+| `faranak_ahmadi` | `faranak-ahmadi` | مربی | trainer | `b6e496b5-0b15-4c9b-852d-644d3f5e411a` | `/team-chat/faranak-ahmadi` |
+| `leila_kiani` | `leila-kiani` | مدیر مالی | finance | `2410554d-9496-4a60-9b15-4248dcc6e725` | `/team-chat/leila-kiani` |
+| `sanaz_ghaffari` | `sanaz-ghaffari` | پشتیبانی | support | `18a4d76a-1900-49dc-964c-27d23abb31e9` | `/team-chat/sanaz-ghaffari` |
+| `sara_noori` | `sara-noori` | دامپزشک | vet | `0140b645-f844-45c1-b6d8-3f06514529de` | `/team-chat/sara-noori` |
+| `yalda_shabani` | `yalda-shabani` | پشتیبانی | support | `18a4d76a-1900-49dc-964c-27d23abb31e9` | `/support/chat` |
 
 Code: `packages/shared/src/team-agents.ts` + `packages/api/src/services/grok-bot-bridge.ts`.  
-Public list: `GET /api/consultations/team-agents` (includes `grokBotKey` + optional link status).
+Public list: `GET /api/consultations/team-agents` (includes `kind`, `role`, `grokBotKey`, `grokBotId`, `grokBot.id`, `linked`).
 
-## Optional: paste Grok Bot share id/URL
-
-On the VPS `/opt/petdate/.env`:
+Baked-in ids mean each persona is linked without VPS env. Optional override on `/opt/petdate/.env`:
 
 ```bash
-# One agent
 GROK_BOT_FARANAK_AHMADI_ID=…
 GROK_BOT_FARANAK_AHMADI_URL=https://x.ai/…
-
-# Or JSON map (keys = grokBotKey)
 GROK_BOT_AGENT_MAP={"faranak_ahmadi":{"id":"…","url":"…"},"yalda_shabani":{"url":"…"}}
 ```
 
-Then `pm2 restart petdate-api`. Linked flags appear in `/api/consultations/team-agents`.
-
-## Optional: run site chat on xAI (Grok models)
-
-Same OpenAI-compatible consult path:
-
-```bash
-XAI_API_KEY=xai-…
-# defaults: base https://api.x.ai/v1 , model grok-4-fast-non-reasoning
-# or set explicitly:
-# AI_CONSULT_BASE_URL=https://api.x.ai/v1
-# AI_CONSULT_MODEL=grok-4-fast-non-reasoning
-```
-
-Aliases also work: `AI_CONSULT_API_KEY` / `OPENAI_*`. Whisper STT still expects an OpenAI-compatible STT endpoint.
+Then `pm2 restart petdate-api`.
 
 ## How users chat
 
-Landing team cards / `/team-chat/:slug` / support hub — unchanged. Grok Bot ops agents and site personas share the same names, domains, and slugs.
-
-## Staff / admin logins
-
-The same five public faces (plus four ops-only agents) get `admin_accounts` + HR rows from `STAFF_AGENTS` (`packages/shared/src/staff-agents.ts`). Seed is idempotent on `ensureHrSchema()`.
-
-| Username | Role key | Notes |
-|---|---|---|
-| `sanaz` / `sara` | `veterinarian` | consults + magazine medical |
-| `yalda` | `support` | tickets / inbox / CRM (existing support pack) |
-| `faranak` / `leila` | `trainer` | consult list |
-| `staff.designer` | `designer` | hero + magazine media |
-| `staff.social` | `social` | notices + magazine |
-| `staff.shop` | `shop_procurement` | products / prices / stock |
-| `staff.content` | `content_editor` | magazine CMS |
-
-Password: `ADMIN_STAFF_PASSWORD` or `ADMIN_SEED_PASSWORD`. Existing hashes are never overwritten — reset from `/admin/hr/employees` → reset password.
+Landing `#team` → «شروع مشاوره» → `/team-chat/:slug` → `POST /api/consultations/team-agent` → existing `ai-consult` engine with that persona’s kind + name/role intro. Grok Bot ids identify the live agent roster; replies use the matching domain prompt (not offline stubs of the wrong role).

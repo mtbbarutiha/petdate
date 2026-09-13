@@ -32,8 +32,18 @@ async function main() {
   assert.equal(getTeamAgentBySlug('leila-kiani')?.name, 'لیلا کیانی');
   assert.equal(getTeamAgentBySlug('leila-kiani')?.telegramId, 'petdate_ai_assistant');
   assert.equal(TEAM_AGENTS.filter((a) => a.telegramId === 'petdate_ai_assistant').length, 1);
-  assert.equal(TEAM_AGENTS.filter((a) => a.kind === 'vet').length, 2);
-  assert.equal(TEAM_AGENTS.filter((a) => a.kind === 'trainer').length, 2);
+  assert.equal(TEAM_AGENTS.filter((a) => a.kind === 'vet').length, 1);
+  assert.equal(TEAM_AGENTS.filter((a) => a.kind === 'trainer').length, 1);
+  assert.equal(TEAM_AGENTS.filter((a) => a.kind === 'finance').length, 1);
+  assert.equal(getTeamAgentBySlug('leila-kiani')?.kind, 'finance');
+  assert.equal(getTeamAgentBySlug('sanaz-ghaffari')?.kind, 'support');
+  assert.notEqual(getTeamAgentBySlug('sanaz-ghaffari')?.kind, 'vet');
+  assert.notEqual(getTeamAgentBySlug('leila-kiani')?.kind, 'trainer');
+  assert.equal(getTeamAgentBySlug('sara-noori')?.kind, 'vet');
+  assert.equal(getTeamAgentBySlug('faranak-ahmadi')?.grokBotId, 'b6e496b5-0b15-4c9b-852d-644d3f5e411a');
+  assert.equal(getTeamAgentBySlug('leila-kiani')?.grokBotId, '2410554d-9496-4a60-9b15-4248dcc6e725');
+  assert.equal(getTeamAgentBySlug('sanaz-ghaffari')?.grokBotId, '18a4d76a-1900-49dc-964c-27d23abb31e9');
+  assert.equal(getTeamAgentBySlug('sara-noori')?.grokBotId, '0140b645-f844-45c1-b6d8-3f06514529de');
   assert.ok(TEAM_AGENTS.some((a) => a.name === 'دکتر سارا نوری'));
   assert.equal(getTeamAgentBySlug('sara-noori')?.name, 'دکتر سارا نوری');
   assert.equal(getTeamAgentBySlug('sara-nozi')?.slug, 'sara-noori');
@@ -125,7 +135,7 @@ async function main() {
   assert.equal(reuse!.consult.serviceKind, 'vet');
 
   const sanaz = ensureTeamAgentBySlug('sanaz-ghaffari')!;
-  assert.equal(sanaz.name, 'دکتر ساناز غفاری');
+  assert.equal(sanaz.name, 'ساناز غفاری');
   assert.ok(sanaz.avatarUrl?.includes('sanaz-ghaffari'));
   const sanazPatientTg = `selftest_team_sanaz_${Date.now()}`;
   const { user: sanazPatient } = dbService.findOrCreateUser({
@@ -138,8 +148,9 @@ async function main() {
   const sanazSession = await startTeamAgentConsult({ patient: sanazPatient, agentSlug: 'sanaz-ghaffari' });
   assert.ok(sanazSession);
   assert.equal(sanazSession!.consult.vetUserId, sanaz.id);
-  assert.equal(sanazSession!.consult.serviceKind, 'vet', 'Sanaz team-chat stays on vet stack');
-  assert.equal(decorateAiConsultDisplay(sanazSession!.consult).vetName, 'دکتر ساناز غفاری');
+  assert.equal(sanazSession!.consult.serviceKind, 'support', 'Sanaz team-chat is support not vet');
+  assert.equal(decorateAiConsultDisplay(sanazSession!.consult).vetName, 'ساناز غفاری');
+  assert.match(sanazSession!.advice, /پشتیبانی/);
   const { getTeamAgentByTelegramId } = await import('@petdate/shared');
   assert.equal(getTeamAgentByTelegramId('petdate_ai_sara_noori')?.kind, 'vet');
   assert.equal(sara.id, preSara.id, 'later ensure still the same slug-shaped Sara row');
@@ -148,7 +159,7 @@ async function main() {
   assert.equal(yalda.name, 'یلدا شعبانی');
   assert.ok(yalda.avatarUrl?.includes('yalda-shabani'));
   assert.equal(getTeamAgentBySlug('yalda-shabani')?.kind, 'support');
-  assert.equal(TEAM_AGENTS.filter((a) => a.kind === 'support').length, 1);
+  assert.equal(TEAM_AGENTS.filter((a) => a.kind === 'support').length, 2);
   assert.ok(TEAM_AGENTS.every((a) => a.grokBotKey));
   const { getTeamAgentByGrokBotKey } = await import('@petdate/shared');
   assert.equal(getTeamAgentByGrokBotKey('faranak_ahmadi')?.slug, 'faranak-ahmadi');
@@ -156,6 +167,15 @@ async function main() {
 
   const supportAttempt = await startTeamAgentConsult({ patient, agentSlug: 'yalda-shabani' });
   assert.equal(supportAttempt, null);
+
+  const leilaSession = await startTeamAgentConsult({
+    patient: sanazPatient,
+    agentSlug: 'leila-kiani',
+  });
+  assert.ok(leilaSession);
+  assert.equal(leilaSession!.consult.serviceKind, 'finance', 'Leila team-chat is finance not trainer');
+  assert.equal(decorateAiConsultDisplay(leilaSession!.consult).vetName, 'لیلا کیانی');
+  assert.match(leilaSession!.advice, /مدیر مالی/);
 
   console.log('team-agents.selftest: ok');
 }

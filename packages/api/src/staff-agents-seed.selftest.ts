@@ -35,6 +35,7 @@ async function main() {
     'veterinarian',
     'support',
     'trainer',
+    'finance',
     'designer',
     'social',
     'shop_procurement',
@@ -53,12 +54,20 @@ async function main() {
   }
 
   const sanaz = resolveAdminActor({ username: 'sanaz', password: 'staff-temp-12' });
-  assert(sanaz?.role === 'veterinarian', 'sanaz login');
-  assert(actorHasPermission(sanaz!, 'content.write'), 'vet can edit magazine medical');
-  assert(actorHasPermission(sanaz!, 'platform.read'), 'vet can see consults');
-  assert(!actorHasPermission(sanaz!, 'admin.full'), 'vet is not full admin');
-  assert(!actorHasPermission(sanaz!, 'finance.write'), 'vet has no finance write');
-  assert(!actorHasPermission(sanaz!, 'hr.write'), 'vet has no HR write');
+  assert(sanaz?.role === 'support', 'sanaz login is support not vet');
+  assert(actorHasPermission(sanaz!, 'support.inbox'), 'sanaz inbox');
+  assert(!actorHasPermission(sanaz!, 'admin.full'), 'sanaz is not full admin');
+  assert(!actorHasPermission(sanaz!, 'hr.write'), 'sanaz has no HR write');
+
+  const sara = resolveAdminActor({ username: 'sara', password: 'staff-temp-12' });
+  assert(sara?.role === 'veterinarian', 'sara login');
+  assert(actorHasPermission(sara!, 'content.write'), 'vet can edit magazine medical');
+  assert(actorHasPermission(sara!, 'platform.read'), 'vet can see consults');
+  assert(!actorHasPermission(sara!, 'finance.write'), 'vet has no finance write');
+
+  const leila = resolveAdminActor({ username: 'leila', password: 'staff-temp-12' });
+  assert(leila?.role === 'finance', 'leila login is finance not trainer');
+  assert(actorHasPermission(leila!, 'finance.write'), 'leila finance write');
 
   const yalda = resolveAdminActor({ username: 'yalda', password: 'staff-temp-12' });
   assert(yalda?.role === 'support', 'yalda login');
@@ -77,7 +86,7 @@ async function main() {
   process.env.ADMIN_STAFF_PASSWORD = 'changed-must-not-apply';
   ensureHrSchema();
   assert(
-    resolveAdminActor({ username: 'sanaz', password: 'staff-temp-12' })?.role === 'veterinarian',
+    resolveAdminActor({ username: 'sanaz', password: 'staff-temp-12' })?.role === 'support',
     're-seed must not overwrite password'
   );
   assert(
@@ -90,7 +99,7 @@ async function main() {
   assert(users.length === 5, 'five team-agent users');
   const sanazUser = ensureTeamAgentBySlug('sanaz-ghaffari')!;
   assert(sanazUser.telegramId === 'petdate_ai_sanaz_ghaffari', 'sanaz telegram id unchanged');
-  assert(sanazUser.name === 'دکتر ساناز غفاری', 'sanaz display name');
+  assert(sanazUser.name === 'ساناز غفاری', 'sanaz display name');
   assert(sanazUser.username === 'agent_sanaz_ghaffari', 'sanaz chat username');
   const yaldaUser = ensureTeamAgentBySlug('yalda-shabani')!;
   assert(yaldaUser.telegramId === 'petdate_ai_yalda_shabani', 'yalda telegram id unchanged');

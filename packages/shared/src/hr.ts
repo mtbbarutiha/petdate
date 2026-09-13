@@ -40,6 +40,7 @@ export const ADMIN_PANEL_ROLE_LABELS: Record<string, string> = {
   crm_manager: 'مدیر باشگاه مشتریان',
   veterinarian: 'دامپزشک',
   trainer: 'مربی',
+  finance: 'مدیر مالی',
   designer: 'گرافیست',
   social: 'سوشال',
   shop_procurement: 'مدیر تامین فروشگاه',

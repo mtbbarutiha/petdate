@@ -107,7 +107,7 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         // New cache namespace so stuck clients drop the old 1.5s-poll bundle.
         // Bump when guest marketing routes change — v14 left #213's shell unclaimed.
-        cacheId: 'petdate-web-v46-sara-noori-vet',
+        cacheId: 'petdate-web-v47-persona-roles',
         // Precache only the app shell — not hundreds of prerendered SEO HTML files.
         globPatterns: ['index.html', 'offline.html', '**/*.{js,css,ico,svg,woff2}'],
         navigateFallbackDenylist: [/^\/api\//],

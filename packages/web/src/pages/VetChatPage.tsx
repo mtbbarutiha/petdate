@@ -142,6 +142,8 @@ function inboxKindBadgeLabel(c: InboxConversation): string {
   if (c.serviceKind === 'trainer') return 'آموزش';
   if (c.serviceKind === 'sitter') return 'پرستار';
   if (c.serviceKind === 'seeker_advice') return 'راهنمایی';
+  if (c.serviceKind === 'finance') return 'مالی';
+  if (c.serviceKind === 'support') return 'پشتیبانی';
   return 'مشاوره';
 }
 

@@ -27,7 +27,7 @@ import {
   wrapCarouselIndex,
 } from '../lib/newsCarousel';
 import { GatedLink, PawIcon } from './landingGatedLink';
-import { TEAM_AGENTS, teamAgentChatPath } from '@petdate/shared';
+import { LANDING_TEAM_AGENT_SLUGS, TEAM_AGENTS, teamAgentChatPath } from '@petdate/shared';
 
 const P = '/pepito/uploads';
 
@@ -92,16 +92,17 @@ const PETS = ADOPTION_PETS.map((p) => ({
 
 const TEAM_I18N: Record<string, { nameKey: string; roleKey: string }> = {
   'faranak-ahmadi': { nameKey: 'landing.team1', roleKey: 'landing.roleTrainer' },
-  'leila-kiani': { nameKey: 'landing.team2', roleKey: 'landing.roleTrainer' },
-  'sanaz-ghaffari': { nameKey: 'landing.team3', roleKey: 'landing.roleVet' },
+  'leila-kiani': { nameKey: 'landing.team2', roleKey: 'landing.roleFinance' },
+  'sanaz-ghaffari': { nameKey: 'landing.team3', roleKey: 'landing.roleSupport' },
   'sara-noori': { nameKey: 'landing.team4', roleKey: 'landing.roleVet' },
   'yalda-shabani': { nameKey: 'landing.team5', roleKey: 'landing.roleSupport' },
 };
 
-/** Landing cards use committed /agents/*.jpg so chat + team photos stay in sync. */
-const TEAM = TEAM_AGENTS.map((a) => {
+/** Landing `#team` cards — four public faces; roles come from TEAM_AGENTS. */
+const TEAM = LANDING_TEAM_AGENT_SLUGS.map((slug) => {
+  const a = TEAM_AGENTS.find((row) => row.slug === slug)!;
   const i18n = TEAM_I18N[a.slug] ?? { nameKey: 'landing.team1', roleKey: 'landing.roleTrainer' };
-  return { slug: a.slug, nameKey: i18n.nameKey, roleKey: i18n.roleKey, img: a.avatarUrl };
+  return { slug: a.slug, nameKey: i18n.nameKey, roleKey: i18n.roleKey, name: a.name, role: a.role, img: a.avatarUrl };
 });
 
 const REVIEW_DEFS = [
@@ -558,7 +559,7 @@ export function WelcomeBelowFold() {
               </div>
               <div className="pepito-member-info">
                 <h3>{t(m.nameKey)}</h3>
-                <p>{t(m.roleKey)}</p>
+                <p data-team-role={m.slug}>{t(m.roleKey)}</p>
                 <GatedLink
                   to={teamAgentChatPath(m.slug)}
                   className="pepito-btn button-3 pepito-member-consult"
