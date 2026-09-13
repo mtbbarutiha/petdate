@@ -2,9 +2,11 @@
  * AI consult fallback — OpenAI-compatible chat completions + offline Persian advisor.
  *
  * Env (any of):
- *   AI_CONSULT_API_KEY / OPENAI_API_KEY
- *   AI_CONSULT_BASE_URL / OPENAI_BASE_URL  (default https://api.openai.com/v1)
- *   AI_CONSULT_MODEL / OPENAI_MODEL        (default gpt-4o-mini)
+ *   AI_CONSULT_API_KEY / OPENAI_API_KEY / XAI_API_KEY
+ *   AI_CONSULT_BASE_URL / OPENAI_BASE_URL  (default https://api.openai.com/v1;
+ *     when only XAI_API_KEY is set → https://api.x.ai/v1)
+ *   AI_CONSULT_MODEL / OPENAI_MODEL / XAI_MODEL  (default gpt-4o-mini;
+ *     when only XAI_API_KEY is set → grok-4-fast-non-reasoning)
  *   AI_CONSULT_STT_MODEL / OPENAI_STT_MODEL (default whisper-1; voice notes)
  *
  * When no key is configured, returns a careful offline advisory so users never
@@ -12,6 +14,8 @@
  *
  * Production note: without AI_CONSULT_API_KEY on the VPS, trainer replies use the
  * rich offline knowledge base below (پاشا یزدانی). Set the key for deeper LLM answers.
+ * Grok Bot (گراک بات) personas on the site share the same TEAM_AGENTS roster;
+ * optional XAI_API_KEY runs those faces on xAI models without a parallel chat stack.
  */
 import { PET_SPECIES } from '@petdate/shared';
 import {
@@ -100,18 +104,38 @@ export function consultAgentName(
 }
 
 function envKey(): string {
-  return String(process.env.AI_CONSULT_API_KEY || process.env.OPENAI_API_KEY || '').trim();
+  return String(
+    process.env.AI_CONSULT_API_KEY ||
+      process.env.OPENAI_API_KEY ||
+      process.env.XAI_API_KEY ||
+      '',
+  ).trim();
+}
+
+/** True when the only configured provider key is xAI (Grok). */
+function usingXaiOnly(): boolean {
+  const xai = String(process.env.XAI_API_KEY || '').trim();
+  if (!xai) return false;
+  const other = String(process.env.AI_CONSULT_API_KEY || process.env.OPENAI_API_KEY || '').trim();
+  return !other;
 }
 
 function envBaseUrl(): string {
   const raw = String(
-    process.env.AI_CONSULT_BASE_URL || process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1'
+    process.env.AI_CONSULT_BASE_URL ||
+      process.env.OPENAI_BASE_URL ||
+      (usingXaiOnly() ? 'https://api.x.ai/v1' : 'https://api.openai.com/v1'),
   ).trim();
   return raw.replace(/\/$/, '');
 }
 
 function envModel(): string {
-  return String(process.env.AI_CONSULT_MODEL || process.env.OPENAI_MODEL || 'gpt-4o-mini').trim();
+  return String(
+    process.env.AI_CONSULT_MODEL ||
+      process.env.OPENAI_MODEL ||
+      process.env.XAI_MODEL ||
+      (usingXaiOnly() ? 'grok-4-fast-non-reasoning' : 'gpt-4o-mini'),
+  ).trim();
 }
 
 export function isAiConsultConfigured(): boolean {
