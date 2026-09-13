@@ -4194,19 +4194,20 @@ body:has(.admin-app) {
 }
 .admin-app .crm-chart-tooltip-label { color: var(--admin-muted); margin-bottom: 2px; }
 
-/* —— Sales incoming call popup —— */
-.admin-app .admin-sales-call-overlay {
+/* —— Sales incoming call dock (portaled to document.body) ——
+   Isolation: do NOT use inset:0 / in-flow siblings. `.admin-app` has
+   overflow-x:clip + min-height:100dvh; a full-bleed overlay there
+   (or an unstyled sibling of it) stretches the page under the fixed
+   sidebar. The host is display:contents so tokens inherit without a
+   second admin canvas. Physical bottom-left so RTL sidebar stays clear. */
+.admin-app .admin-sales-call-dock {
   position: fixed;
-  inset: 0;
-  z-index: 90;
-  display: grid;
-  place-items: center;
-  padding: 24px;
-  background: rgba(25, 6, 61, 0.45);
-  backdrop-filter: blur(4px);
-}
-.admin-app .admin-sales-call-popup {
-  width: min(100%, 380px);
+  left: max(16px, env(safe-area-inset-left, 0px));
+  bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  z-index: 80;
+  width: min(calc(100vw - 32px), 380px);
+  max-width: calc(100vw - 32px);
+  box-sizing: border-box;
   border-radius: 24px;
   background: var(--admin-surface);
   border: 1px solid var(--admin-border);
@@ -4216,6 +4217,19 @@ body:has(.admin-app) {
   justify-items: center;
   gap: 10px;
   text-align: center;
+  isolation: isolate;
+  pointer-events: auto;
+  animation: admin-sales-call-slide-up 0.32s ease-out;
+}
+.admin-app .admin-sales-call-dock--active {
+  box-shadow: 0 24px 60px rgba(21, 204, 160, 0.18);
+}
+@keyframes admin-sales-call-slide-up {
+  from { transform: translateY(120%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .admin-app .admin-sales-call-dock { animation: none; }
 }
 .admin-app .admin-sales-call-popup-pulse {
   position: relative;
