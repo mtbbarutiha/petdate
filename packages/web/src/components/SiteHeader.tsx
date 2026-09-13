@@ -21,10 +21,11 @@ function PawIcon({ size = 14 }: { size?: number }) {
   );
 }
 
-/** Guest login is the cluster icon (pepito-nav-login-icon). Never also render text ورود. */
-function isGuestLoginTextAction(label?: string, to?: string): boolean {
+/** Guest login is the cluster icon (pepito-nav-login-icon). Never also render text login. */
+function isGuestLoginTextAction(label: string | undefined, to: string | undefined, loginLabel: string): boolean {
   const n = (label ?? '').trim().toLowerCase();
-  if (n === 'ورود' || n === 'login' || n === 'sign in') return true;
+  const login = loginLabel.trim().toLowerCase();
+  if (n && (n === login || n === 'login' || n === 'sign in')) return true;
   return Boolean(to && /\/auth\/login/.test(to));
 }
 
@@ -88,7 +89,8 @@ export function SiteHeader({
   }, [deferDesktopNav]);
 
   const headerClass = `pepito-nav${scrolled ? ' is-scrolled' : ''}${className ? ` ${className}` : ''}`;
-  const showTextAction = Boolean(actionLabel) && !isGuestLoginTextAction(actionLabel, actionTo);
+  const showTextAction =
+    Boolean(actionLabel) && !isGuestLoginTextAction(actionLabel, actionTo, t('common.login'));
 
   return (
     <header className={headerClass}>
