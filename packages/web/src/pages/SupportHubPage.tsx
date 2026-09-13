@@ -7,7 +7,7 @@ import { AI_ASSISTANT_DISPLAY_NAME } from './supportAgent';
 /**
  * Support entry — two clear CTAs:
  * 1) ticket (CRM ticketing)
- * 2) support-bot chat (Leila / kind: support)
+ * 2) support-bot chat (یلدا / kind: support)
  */
 export function SupportHubPage() {
   const { t, dir } = useI18n();
