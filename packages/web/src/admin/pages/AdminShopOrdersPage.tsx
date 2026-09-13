@@ -16,6 +16,15 @@ type OrderItem = {
   coins?: number;
 };
 
+/** Dev-only: `localStorage.setItem('petdate.admin.devRawJson','1')` then reload. */
+function adminWantsRawJson(): boolean {
+  try {
+    return typeof localStorage !== 'undefined' && localStorage.getItem('petdate.admin.devRawJson') === '1';
+  } catch {
+    return false;
+  }
+}
+
 type Order = {
   id: number;
   publicId?: string;
@@ -76,6 +85,20 @@ function itemUnitPrice(it: OrderItem): string {
   return '—';
 }
 
+function itemLineTotal(it: OrderItem): string | null {
+  const qty = Math.max(1, Number(it.qty) || 1);
+  if (it.priceToman != null && Number.isFinite(Number(it.priceToman))) {
+    return formatTomanFa(Number(it.priceToman) * qty);
+  }
+  if (it.stars != null && Number(it.stars) > 0) {
+    return `⭐ ${formatNumFa(Number(it.stars) * qty)}`;
+  }
+  if (it.coins != null && Number(it.coins) > 0) {
+    return `🪙 ${formatNumFa(Number(it.coins) * qty)}`;
+  }
+  return null;
+}
+
 function OrderItemsList({ items }: { items: OrderItem[] }) {
   if (!Array.isArray(items) || items.length === 0) {
     return <p className="admin-muted">{tr('بدون آیتم')}</p>;
@@ -85,13 +108,31 @@ function OrderItemsList({ items }: { items: OrderItem[] }) {
       {items.map((it, idx) => {
         const title = it.title || it.productId || tr('کالا');
         const qty = Math.max(1, Number(it.qty) || 1);
+        const lineTotal = itemLineTotal(it);
+        const unit = itemUnitPrice(it);
         return (
           <li key={`${it.productId || title}-${idx}`} className="admin-order-detail__item">
-            <span className="admin-order-detail__item-title">{title}</span>
+            <div className="admin-order-detail__item-main">
+              <span className="admin-order-detail__item-title">{title}</span>
+              {it.productId ? (
+                <span className="admin-order-detail__item-sku admin-muted" dir="ltr">
+                  {it.productId}
+                </span>
+              ) : null}
+            </div>
             <span className="admin-order-detail__item-qty" dir="ltr">
               ×{formatNumFa(qty)}
             </span>
-            <span className="admin-order-detail__item-price">{itemUnitPrice(it)}</span>
+            <span className="admin-order-detail__item-price">
+              {qty > 1 && lineTotal ? (
+                <>
+                  <span className="admin-order-detail__item-unit admin-muted">{unit}</span>
+                  <strong>{lineTotal}</strong>
+                </>
+              ) : (
+                unit
+              )}
+            </span>
           </li>
         );
       })}
@@ -105,6 +146,7 @@ export function AdminShopOrdersPage() {
   const [q, setQ] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [openId, setOpenId] = useState<number | null>(null);
+  const [showRawJson] = useState(adminWantsRawJson);
 
   const load = useCallback(async () => {
     try {
@@ -259,10 +301,12 @@ export function AdminShopOrdersPage() {
                           <section className="admin-order-detail__block">
                             <h3 className="admin-order-detail__label">{tr('آیتم‌ها')}</h3>
                             <OrderItemsList items={o.items} />
-                            <details className="admin-order-detail__raw">
-                              <summary>{tr('JSON خام')}</summary>
-                              <pre dir="ltr">{JSON.stringify(o.items, null, 2)}</pre>
-                            </details>
+                            {showRawJson ? (
+                              <details className="admin-order-detail__raw">
+                                <summary>{tr('JSON خام')}</summary>
+                                <pre dir="ltr">{JSON.stringify(o.items, null, 2)}</pre>
+                              </details>
+                            ) : null}
                           </section>
                         </div>
                       </td>
