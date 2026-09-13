@@ -336,97 +336,69 @@ export function ShopCartPage() {
                     </strong>
                   </p>
 
-                  <fieldset className="pd-shop-pay-methods">
-                    <legend>روش پرداخت</legend>
-                    <label className={`pd-shop-pay-option${payMethod === 'coins' ? ' is-active' : ''}`}>
-                      <input
-                        type="radio"
-                        name="payMethod"
-                        value="coins"
-                        checked={payMethod === 'coins'}
-                        onChange={() => setPayMethod('coins')}
-                      />
-                      <span>
-                        <strong>سکه پنل پت‌دیت</strong>
-                        <small>
-                          {formatShopCoins(totalCoins)}
-                          {!canAffordCoins && lines.length > 0 ? ' — موجودی کافی نیست' : ''}
-                        </small>
-                      </span>
+                  <div className="pd-shop-pay-methods">
+                    <label className="pd-shop-pay-select-label" htmlFor="shop-pay-method">
+                      روش پرداخت
                     </label>
-                    {platform.paymentStarsEnabled ? (
-                    <label className={`pd-shop-pay-option${payMethod === 'wallet_stars' ? ' is-active' : ''}`}>
-                      <input
-                        type="radio"
-                        name="payMethod"
-                        value="wallet_stars"
-                        checked={payMethod === 'wallet_stars'}
-                        onChange={() => setPayMethod('wallet_stars')}
-                      />
-                      <span>
-                        <strong>ستاره پنل پت‌دیت</strong>
-                        <small>
-                          {formatShopStars(totalStars)}
-                          {!canAffordWalletStars && lines.length > 0 ? ' — موجودی کافی نیست' : ''}
-                        </small>
-                      </span>
-                    </label>
-                    ) : null}
-                    <label className={`pd-shop-pay-option${payMethod === 'toman' ? ' is-active' : ''}`}>
-                      <input
-                        type="radio"
-                        name="payMethod"
-                        value="toman"
-                        checked={payMethod === 'toman'}
-                        onChange={() => setPayMethod('toman')}
-                      />
-                      <span>
-                        <strong>ریال / تومان پنل</strong>
-                        <small>
-                          {formatToman(totalToman)}
-                          {!canAffordToman && lines.length > 0 ? ' — موجودی کافی نیست' : ''}
-                        </small>
-                      </span>
-                    </label>
-                    {platform.paymentCardEnabled ? (
-                    <label className={`pd-shop-pay-option${payMethod === 'card' ? ' is-active' : ''}`}>
-                      <input
-                        type="radio"
-                        name="payMethod"
-                        value="card"
-                        checked={payMethod === 'card'}
-                        onChange={() => setPayMethod('card')}
-                      />
-                      <span>
-                        <strong>کارت‌به‌کارت (ریال)</strong>
-                        <small>واریز ریالی و ارسال رسید در ربات</small>
-                      </span>
-                    </label>
-                    ) : null}
-                    {platform.paymentStarsEnabled ? (
-                    <label
-                      className={`pd-shop-pay-option${payMethod === 'telegram_stars' ? ' is-active' : ''}`}
+                    <select
+                      id="shop-pay-method"
+                      className="pd-shop-pay-select"
+                      name="payMethod"
+                      value={payMethod}
+                      onChange={(e) => setPayMethod(e.target.value as PayMethod)}
+                      aria-describedby="shop-pay-method-hint"
                     >
-                      <input
-                        type="radio"
-                        name="payMethod"
-                        value="telegram_stars"
-                        checked={payMethod === 'telegram_stars'}
-                        onChange={() => setPayMethod('telegram_stars')}
-                      />
-                      <span>
-                        <strong>فاکتور Stars تلگرام</strong>
-                        <small>
-                          صدور اینوویس و پرداخت مستقیم در تلگرام
-                          {!telegramLinked ? ' — اول حساب را به ربات وصل کن' : ''}
-                        </small>
-                      </span>
-                    </label>
-                    ) : null}
+                      <option value="coins">
+                        {`سکه پنل پت‌دیت — ${formatShopCoins(totalCoins)}${
+                          !canAffordCoins && lines.length > 0 ? ' — موجودی کافی نیست' : ''
+                        }`}
+                      </option>
+                      {platform.paymentStarsEnabled ? (
+                        <option value="wallet_stars">
+                          {`ستاره پنل پت‌دیت — ${formatShopStars(totalStars)}${
+                            !canAffordWalletStars && lines.length > 0 ? ' — موجودی کافی نیست' : ''
+                          }`}
+                        </option>
+                      ) : null}
+                      <option value="toman">
+                        {`ریال / تومان پنل — ${formatToman(totalToman)}${
+                          !canAffordToman && lines.length > 0 ? ' — موجودی کافی نیست' : ''
+                        }`}
+                      </option>
+                      {platform.paymentCardEnabled ? (
+                        <option value="card">کارت‌به‌کارت (ریال) — واریز ریالی و ارسال رسید در ربات</option>
+                      ) : null}
+                      {platform.paymentStarsEnabled ? (
+                        <option value="telegram_stars">
+                          {`فاکتور Stars تلگرام — صدور اینوویس و پرداخت مستقیم در تلگرام${
+                            !telegramLinked ? ' — اول حساب را به ربات وصل کن' : ''
+                          }`}
+                        </option>
+                      ) : null}
+                    </select>
+                    <p id="shop-pay-method-hint" className="pd-shop-pay-select-hint">
+                      {payMethod === 'coins'
+                        ? `${formatShopCoins(totalCoins)}${
+                            !canAffordCoins && lines.length > 0 ? ' — موجودی کافی نیست' : ''
+                          }`
+                        : payMethod === 'wallet_stars'
+                          ? `${formatShopStars(totalStars)}${
+                              !canAffordWalletStars && lines.length > 0 ? ' — موجودی کافی نیست' : ''
+                            }`
+                          : payMethod === 'toman'
+                            ? `${formatToman(totalToman)}${
+                                !canAffordToman && lines.length > 0 ? ' — موجودی کافی نیست' : ''
+                              }`
+                            : payMethod === 'card'
+                              ? 'واریز ریالی و ارسال رسید در ربات'
+                              : `صدور اینوویس و پرداخت مستقیم در تلگرام${
+                                  !telegramLinked ? ' — اول حساب را به ربات وصل کن' : ''
+                                }`}
+                    </p>
                     {!platform.paymentCardEnabled ? (
                       <p className="admin-muted">{t('platform.cardOff')}</p>
                     ) : null}
-                  </fieldset>
+                  </div>
 
                   <label>
                     نام گیرنده
