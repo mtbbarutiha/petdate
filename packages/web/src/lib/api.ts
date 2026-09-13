@@ -2079,6 +2079,7 @@ export type PublicShopProduct = {
   priceToman: number;
   compareAtToman?: number;
   image?: string;
+  images?: string[];
   badge?: string;
   inStock: boolean;
   stockQty: number;

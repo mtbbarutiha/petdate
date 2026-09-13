@@ -4,10 +4,11 @@
  * Margin 0 (cost_toman = price_toman). Seller copy is پت دیت شاپ only.
  */
 import { getDb } from '../db';
+import { placeholderGalleryAngles, withShopImagesParam } from './shop-product-images';
 
 const P = '/pepito/uploads';
 
-export const ROYAL_CANIN_PILOT_VERSION = 2;
+export const ROYAL_CANIN_PILOT_VERSION = 3;
 
 export type RoyalCaninPilotProduct = {
   id: string;
@@ -19,6 +20,8 @@ export type RoyalCaninPilotProduct = {
   priceToman: number;
   costToman: number;
   image: string;
+  /** PDP gallery — same packshot with angle=* placeholders until 3-angle assets arrive */
+  images: string[];
   badge: 'new';
   inStock: true;
   stockQty: number;
@@ -57,6 +60,7 @@ export const ROYAL_CANIN_PILOT_PRODUCTS: RoyalCaninPilotProduct[] = [
     priceToman: 8_881_000,
     costToman: 8_881_000,
     image: `${P}/royal-canin-mini-adult-2kg.jpg?v=white-v1`,
+    images: placeholderGalleryAngles(`${P}/royal-canin-mini-adult-2kg.jpg?v=white-v1`),
     badge: 'new',
     inStock: true,
     stockQty: 25,
@@ -82,6 +86,7 @@ export const ROYAL_CANIN_PILOT_PRODUCTS: RoyalCaninPilotProduct[] = [
     priceToman: 8_894_000,
     costToman: 8_894_000,
     image: `${P}/royal-canin-xsmall-puppy-1.5kg.jpg`,
+    images: placeholderGalleryAngles(`${P}/royal-canin-xsmall-puppy-1.5kg.jpg`),
     badge: 'new',
     inStock: true,
     stockQty: 25,
@@ -107,6 +112,7 @@ export const ROYAL_CANIN_PILOT_PRODUCTS: RoyalCaninPilotProduct[] = [
     priceToman: 2_741_600,
     costToman: 2_741_600,
     image: `${P}/royal-canin-persian-adult-400g.jpg`,
+    images: placeholderGalleryAngles(`${P}/royal-canin-persian-adult-400g.jpg`),
     badge: 'new',
     inStock: true,
     stockQty: 25,
@@ -187,7 +193,7 @@ export function seedRoyalCaninPilotProducts(): number {
       p.image,
       p.badge,
       stockQty,
-      JSON.stringify(p.params),
+      JSON.stringify(withShopImagesParam(p.params, p.images)),
       p.description
     );
     count += 1;

@@ -31,6 +31,7 @@ import {
   MAX_PAYMENT_RECEIPT_BYTES,
   savePaymentReceipt,
 } from '../services/payment-receipt-store';
+import { publicShopParams } from '../data/shop-product-images';
 
 export const shopRouter = Router();
 
@@ -97,10 +98,11 @@ function publicProduct(p: ReturnType<typeof adminPlatform.getShopProduct>) {
     priceToman: p.priceToman,
     compareAtToman: p.compareAtToman,
     image: p.image,
+    images: p.images,
     badge: p.badge,
     inStock: p.inStock,
     stockQty: p.stockQty,
-    params: p.params,
+    params: publicShopParams(p.params),
     description: p.description,
     featured: p.featured,
     coins: tomanToShopCoins(p.priceToman),

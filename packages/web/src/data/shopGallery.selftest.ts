@@ -1,9 +1,14 @@
 /**
  * Shop PDP gallery must not reference the known-missing 01-3.png thumb.
+ * Royal Canin pilots expose 3 unique gallery srcs (angle placeholders OK).
  * Run: npx tsx packages/web/src/data/shopGallery.selftest.ts
  */
 import assert from 'node:assert/strict';
-import { getProduct, productGallery } from './shopCatalog.ts';
+import {
+  applyLiveShopCatalog,
+  getProduct,
+  productGallery,
+} from './shopCatalog.ts';
 
 const product = getProduct('dog-food-1-p1') ?? getProduct('p1');
 assert.ok(product, 'sample product exists');
@@ -15,5 +20,48 @@ assert.ok(
 );
 assert.equal(new Set(gallery).size, gallery.length, 'gallery has no duplicate srcs');
 assert.ok(gallery.every((src) => src.startsWith('/')), 'gallery srcs are root-relative');
+
+const fromParams = productGallery({
+  ...product,
+  images: undefined,
+  params: { ...product.params, __images: `${product.image}|/pepito/uploads/extra.jpg` },
+});
+assert.ok(fromParams.includes('/pepito/uploads/extra.jpg'), 'gallery reads params.__images');
+assert.ok(!fromParams.includes('__images'), 'gallery srcs are URLs, not the key');
+
+for (const slug of [
+  'dog-food-royal-canin-mini-adult-2kg',
+  'dog-food-royal-canin-xsmall-puppy-1-5kg',
+  'cat-food-royal-canin-persian-adult-400g',
+]) {
+  const pilot = getProduct(slug);
+  assert.ok(pilot, `${slug} exists`);
+  const shots = productGallery(pilot);
+  assert.equal(shots.length, 3, `${slug} has 3 gallery srcs`);
+  assert.equal(new Set(shots).size, 3, `${slug} gallery srcs are unique`);
+}
+
+const p221 = getProduct('dog-food-royal-canin-mini-adult-2kg')!;
+applyLiveShopCatalog({
+  products: [
+    {
+      id: p221.id,
+      slug: p221.slug,
+      title: p221.title,
+      brandId: p221.brandId,
+      categorySlug: p221.categorySlug,
+      petTypes: p221.petTypes,
+      priceToman: p221.priceToman,
+      image: p221.image,
+      images: p221.images,
+      inStock: true,
+      params: { وزن: '۲ کیلوگرم', __images: (p221.images ?? []).join('|') },
+    },
+  ],
+});
+const hydrated = getProduct(p221.slug);
+assert.ok(hydrated, 'hydrated p221');
+assert.equal(productGallery(hydrated!).length, 3, 'live catalog keeps 3 images');
+assert.ok(!('__images' in hydrated!.params), 'live params strip __images');
 
 console.log('shopGallery.selftest: ok');

@@ -19,7 +19,6 @@ import {
   Truck,
 } from 'lucide-react';
 import {
-  BADGE_LABELS,
   filterProducts,
   formatToman,
   getBrand,
@@ -38,6 +37,7 @@ import { useShopCart } from '../../hooks/useShopCart';
 import { trackViewItem } from '../../lib/siteAnalytics';
 import { ShopChrome } from '../../components/shop/ShopChrome';
 import { ShopProductCard } from '../../components/shop/ShopProductCard';
+import { ShopProductGallery } from '../../components/shop/ShopProductGallery';
 
 type DetailTab = 'desc' | 'specs' | 'reviews';
 
@@ -46,7 +46,6 @@ export function ShopProductPage() {
   const { id = '' } = useParams<{ id: string }>();
   const product = getProduct(id);
   const { addAnimated, pendingAddId } = useShopCart();
-  const [activeImg, setActiveImg] = useState(0);
   const [tab, setTab] = useState<DetailTab>('desc');
   const [qty, setQty] = useState(1);
   const [colorIdx, setColorIdx] = useState(0);
@@ -101,8 +100,7 @@ export function ShopProductPage() {
       ];
   const pros = product.pros?.length ? product.pros : ['کیفیت مناسب', 'ارسال به‌موقع'];
   const cons = product.cons?.length ? product.cons : [];
-  const paramEntries = Object.entries(product.params);
-  const mainSrc = gallery[Math.min(activeImg, Math.max(gallery.length - 1, 0))] ?? product.image;
+  const paramEntries = Object.entries(product.params).filter(([k]) => !k.startsWith('__'));
 
   const adding = pendingAddId === product.id;
   const onAdd = () => {
@@ -126,49 +124,13 @@ export function ShopProductPage() {
         </nav>
 
         <div className="pd-dk-pdp-top">
-          {/* Gallery — Digikala style */}
-          <div className="pd-dk-gallery">
-            <div className="pd-dk-gallery-main">
-              <img src={mainSrc} alt={productTitleForLang(lang, product.title, { titleEn: product.titleEn, slug: product.slug })} />
-              {product.badge ? (
-                <span className={`pd-shop-badge pd-shop-badge--${product.badge}`}>
-                  {BADGE_LABELS[product.badge]}
-                  {discount != null ? ` ${discount.toLocaleString('fa-IR')}٪` : ''}
-                </span>
-              ) : null}
-              {discount != null ? (
-                <span className="pd-dk-discount-pill">{discount.toLocaleString('fa-IR')}٪</span>
-              ) : null}
-            </div>
-            {gallery.length > 1 ? (
-              <div className="pd-dk-thumbs" role="list">
-                {gallery.map((src, i) => (
-                  <button
-                    key={`${src}-${i}`}
-                    type="button"
-                    role="listitem"
-                    className={`pd-dk-thumb${i === activeImg ? ' is-active' : ''}`}
-                    onClick={() => setActiveImg(i)}
-                    aria-label={`تصویر ${i + 1}`}
-                  >
-                    <img
-                      src={src}
-                      alt=""
-                      onError={(e) => {
-                        const el = e.currentTarget;
-                        if (el.dataset.fallback === '1') {
-                          el.style.visibility = 'hidden';
-                          return;
-                        }
-                        el.dataset.fallback = '1';
-                        el.src = product.image;
-                      }}
-                    />
-                  </button>
-                ))}
-              </div>
-            ) : null}
-          </div>
+          <ShopProductGallery
+            gallery={gallery}
+            cover={product.image}
+            alt={productTitleForLang(lang, product.title, { titleEn: product.titleEn, slug: product.slug })}
+            badge={product.badge}
+            discount={discount}
+          />
 
           {/* Info column */}
           <div className="pd-dk-info">
