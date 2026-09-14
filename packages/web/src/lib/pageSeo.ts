@@ -366,6 +366,40 @@ export function pageSeoForPath(pathname: string, opts: PageSeoOpts = {}): PageSe
     });
   }
 
+  if (p === '/landings/app' || p === '/app') {
+    return pack({
+      title: SEO.titleTemplate(lang === 'en' ? 'Download PetDate Android app' : 'دانلود اپلیکیشن اندروید پت‌دیت'),
+      description:
+        lang === 'en'
+          ? 'Install the PetDate Android app — nearby playmates, online vet, trainers, pet shop, and events. Same account as web and Telegram.'
+          : 'دانلود اپلیکیشن اندروید پت‌دیت — همبازی نزدیک، دامپزشک آنلاین، مربی، پت‌شاپ و ایونت. همان حساب وب و تلگرام.',
+      canonicalPath: '/landings/app',
+      breadcrumbs: [
+        { name: SEO.siteName, path: '/' },
+        { name: lang === 'en' ? 'App' : 'اپلیکیشن', path: '/landings/app' },
+      ],
+      extraLd: [
+        {
+          '@type': 'SoftwareApplication',
+          name: 'پت‌دیت',
+          operatingSystem: 'Android',
+          applicationCategory: 'LifestyleApplication',
+          offers: {
+            '@type': 'Offer',
+            price: '0',
+            priceCurrency: 'IRR',
+          },
+          url: `${SITE.origin}/landings/app`,
+          downloadUrl: `${SITE.origin}/downloads/petdate-android.apk`,
+          inLanguage: 'fa',
+        },
+      ],
+      noscriptHtml: noscriptWrap(
+        `<h1>دانلود اپلیکیشن پت‌دیت</h1><p>اپ اندروید پت‌دیت را نصب کنید.</p><p><a href="/downloads/petdate-android.apk">دانلود APK</a> · <a href="/">خانه</a></p>`
+      ),
+    });
+  }
+
   if (p === '/magazine') {
     return pack({
       title: SEO.titleTemplate('مجله و اخبار پت'),
@@ -700,6 +734,7 @@ export function listSitemapEntries(magazineSlugs: string[] = []): SitemapEntry[]
     { path: '/', changefreq: 'daily', priority: '1.0' },
     { path: '/faq', changefreq: 'weekly', priority: '0.9' },
     { path: '/help', changefreq: 'weekly', priority: '0.85' },
+    { path: '/landings/app', changefreq: 'weekly', priority: '0.85' },
     { path: '/magazine', changefreq: 'daily', priority: '0.85' },
     { path: '/shop', changefreq: 'daily', priority: '0.9' },
     { path: '/shop/c/all', changefreq: 'daily', priority: '0.85' },

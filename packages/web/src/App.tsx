@@ -101,6 +101,9 @@ const FaqPage = lazy(() => import('./pages/FaqPage').then((m) => ({ default: m.F
 const InvitePage = lazy(() =>
   import('./pages/InvitePage').then((m) => ({ default: m.InvitePage })),
 );
+const AppLandingPage = lazy(() =>
+  import('./pages/AppLandingPage').then((m) => ({ default: m.AppLandingPage })),
+);
 const MagazinePage = lazy(() =>
   import('./pages/MagazinePage').then((m) => ({ default: m.MagazinePage })),
 );
@@ -452,6 +455,8 @@ export default function App() {
             <Route path="faq" element={<FaqPage />} />
             <Route path="help" element={<FaqPage />} />
             <Route path="invite" element={<InvitePage />} />
+            <Route path="landings/app" element={<AppLandingPage />} />
+            <Route path="app" element={<AppLandingPage />} />
             <Route path="magazine" element={<MagazinePage />} />
             <Route path="magazine/:slug" element={<MagazineArticlePage />} />
             <Route path="news" element={<Navigate to="/magazine" replace />} />

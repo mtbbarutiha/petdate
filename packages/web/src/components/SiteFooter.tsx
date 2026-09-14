@@ -59,6 +59,7 @@ export function SiteFooter() {
     { to: '/#news', label: t('nav.news') },
     { to: '/magazine', label: t('nav.magazine') },
     { to: '/faq', label: t('nav.faq'), className: 'pepito-nav-faq' },
+    { to: '/landings/app', label: t('footer.androidApp') },
     { to: '/vet-consult', label: t('nav.vet') },
     { to: '/auth/login', label: t('common.login') },
   ];
@@ -71,6 +72,7 @@ export function SiteFooter() {
     { to: '/shop/c/cat-food', label: t('footer.catFood') },
     { to: '/vet-consult', label: t('footer.vetConsult') },
     { to: '/adoption', label: t('footer.adoptPet') },
+    { to: '/landings/app', label: t('footer.androidApp') },
     { to: '/faq', label: t('footer.faqFull'), className: 'pepito-nav-faq' },
     { to: '/auth/login', label: t('common.loginRegister') },
   ];
