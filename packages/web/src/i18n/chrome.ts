@@ -44,6 +44,20 @@ export function gameStatusKey(status: string): string {
 
 export function gameTypeKey(type: string): string {
   switch (type) {
+    case 'pet_dating':
+      return 'games.typePetDating';
+    case 'group_walk':
+      return 'games.typeGroupWalk';
+    case 'training':
+      return 'games.typeTraining';
+    case 'grooming_meetup':
+      return 'games.typeGrooming';
+    case 'mobile_vet':
+      return 'games.typeMobileVet';
+    case 'play_club':
+      return 'games.typePlayClub';
+    case 'exhibition':
+      return 'games.typeExhibition';
     case 'football':
       return 'games.typeFootball';
     case 'volleyball':

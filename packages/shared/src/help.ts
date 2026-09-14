@@ -704,12 +704,12 @@ export const HELP_TOPICS: HelpTopic[] = [
     surfaces: ['web'],
     title: { fa: 'ایونت‌ها', en: 'Events' },
     what: {
-      fa: 'ایونت‌های گروهی زمان‌بندی‌شده (فوتبال، فکری و …) روی سایت — جدا از همبازی پت.',
-      en: 'Scheduled group events (football, board games, and more) on the site — not the same as pet playmates.',
+      fa: 'ایونت‌های گروهی زمان‌بندی‌شده پت (پت دیتینگ، پیاده‌روی، آموزش و …) روی سایت — جدا از همبازی پت.',
+      en: 'Scheduled pet group events (pet dating, walks, training, and more) on the site — not the same as pet playmates.',
     },
     how: {
-      fa: 'صفحه ایونت‌ها را باز کن، فیلتر وضعیت را بزن، عضو شو یا ایونت بساز. ساختن و پیوستن ورود می‌خواهد.',
-      en: 'Open Events, filter by status, join or create. Creating and joining require login.',
+      fa: 'صفحه ایونت‌ها را باز کن، فیلتر وضعیت را بزن، عضو شو یا ایونت بساز. ساختن ۱۰۰ سکه هزینه دارد و پیوستن ممکن است هزینه عضویت داشته باشد. عکس ایونت پس از تأیید ادمین عمومی می‌شود.',
+      en: 'Open Events, filter by status, join or host. Creating costs 100 coins; joining may require a fee. Event photos go public after admin approval.',
     },
     tips: {
       fa: 'این بخش در ربات نیست. همبازی پت از مسیر «هم بازی» است نه اینجا.',
@@ -948,8 +948,8 @@ export const HELP_FAQ: HelpFaqItem[] = [
       en: 'Are Events different from pet playmates?',
     },
     a: {
-      fa: 'بله. ایونت‌ها رویداد گروهی روی سایت است (فوتبال، فکری و …). همبازی پت برای قرار دو پت است و از مسیر هم بازی / ربات است.',
-      en: 'Yes. Events are scheduled group gatherings on the site. Playmates are one-to-one pet meetups via Playmates / the bot.',
+      fa: 'بله. ایونت‌ها رویداد گروهی پت روی سایت است (پت دیتینگ، پیاده‌روی، آموزش و …). همبازی پت برای قرار دو پت است و از مسیر هم بازی / ربات است.',
+      en: 'Yes. Events are scheduled pet group gatherings on the site (pet dating, walks, training, and more). Playmates are one-to-one pet meetups via Playmates / the bot.',
     },
   },
   {

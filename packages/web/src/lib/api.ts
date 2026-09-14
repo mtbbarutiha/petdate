@@ -289,10 +289,15 @@ export async function createGame(input: {
   title: string;
   gameType: GameType;
   hostUserId: number;
-  location: string;
+  location?: string;
+  province?: string;
+  city?: string;
   scheduledAt: string;
   maxPlayers?: number;
   description?: string;
+  services?: string;
+  joinFeeCoins?: number;
+  photoUrl?: string;
   sectionId?: number;
 }): Promise<Game> {
   return request<Game>('/api/games', {
@@ -308,6 +313,23 @@ export async function joinGame(gameId: number, userId: number): Promise<Game> {
     headers: storedAuthHeaders(),
     body: JSON.stringify({ userId }),
   });
+}
+
+/** Upload event cover photo (multipart `file`). Returns URL; status starts pending. */
+export async function uploadEventPhoto(file: File, hostUserId: number): Promise<{ url: string }> {
+  const form = new FormData();
+  form.append('file', file);
+  form.append('hostUserId', String(hostUserId));
+  const res = await fetch(`${API_BASE}/api/games/photos/upload`, {
+    method: 'POST',
+    headers: storedAuthHeaders(),
+    body: form,
+  });
+  const data = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
+  if (!res.ok || !data.url) {
+    throw new Error(data.error || 'آپلود عکس ایونت ناموفق بود');
+  }
+  return { url: data.url };
 }
 
 export async function listPets(filters?: {
