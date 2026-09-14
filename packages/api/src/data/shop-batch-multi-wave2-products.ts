@@ -2,7 +2,7 @@
  * PetDate shop Batch-multi wave 2/5 — 10 live SKUs (p260–p269).
  * Additive, idempotent upsert by slug. Margin 0 (cost_toman = price_toman).
  * Seller copy is پت دیت شاپ only. Do not invent missing weights.
- * Gallery cache-bust is batch-multi-w2-v1 (wave 1 stays on batch-multi-w1-v1).
+ * Gallery cache-bust is batch-multi-w2-v1 (wave 1 stays on batch-multi-w1-v2).
  */
 import { getDb } from '../db';
 import { withShopImagesParam } from './shop-product-images';
