@@ -1909,6 +1909,31 @@ html[data-theme='dark'] .pepito-my-pets-empty {
 }
 
 /* 14) Shop categories cream container */
+html[data-theme='dark'] .pd-shop-top-brands-head h2 {
+  color: #f3f0ff;
+}
+html[data-theme='dark'] .pd-shop-top-brand-name {
+  color: #e8e4f5;
+}
+html[data-theme='dark'] .pd-shop-top-brand-logo img {
+  filter: brightness(1.05) contrast(1.05);
+}
+html[data-theme='dark'] .pd-shop-top-brand-fallback {
+  background: rgba(167, 139, 250, 0.16);
+  color: #d8c9ff;
+}
+html[data-theme='dark'] .pd-shop-top-brands-arrow {
+  background: #1c1a24;
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #ebe7f7;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+html[data-theme='dark'] .pd-shop-top-brands-arrow:hover {
+  background: #262230;
+  color: #d8c9ff;
+}
+
+
 html[data-theme='dark'] .pd-shop-dk-cats {
   background: linear-gradient(180deg, #2a2f3d 0%, #1e2230 100%);
   border-color: var(--pd-border);

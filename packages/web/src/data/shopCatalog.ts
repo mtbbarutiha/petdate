@@ -29,6 +29,13 @@ export interface ShopBrand {
   id: string;
   labelFa: string;
   labelEn?: string;
+  /** Public logo path under /shop/brands/… */
+  logoUrl?: string;
+  /** Lower = earlier in admin lists */
+  sortOrder?: number;
+  /** Shown in «برندهای برتر» carousel when true */
+  featured?: boolean;
+  active?: boolean;
 }
 
 export interface ShopProduct {
@@ -123,40 +130,139 @@ export const SHOP_CATEGORIES: ShopCategory[] = [
   { slug: 'bird-accessories', labelFa: 'لوازم پرنده', petType: 'bird', description: 'قفس، نشیمن و لوازم جانبی', emoji: '🪺' },
 ];
 
+const B = '/shop/brands';
+
+/** Featured «برندهای برتر» order (RTL display: first item appears on the right). */
+export const SHOP_TOP_BRAND_IDS = [
+  'royal-canin',
+  'josera',
+  'mofeed',
+  'fidar-patira',
+  'wanpy',
+  'vipet',
+  'reflex',
+  'gourmet',
+  'celebone',
+  'monello',
+] as const;
+
 export const SHOP_BRANDS: ShopBrand[] = [
-  { id: 'royal-canin', labelFa: 'رویال کنین', labelEn: 'Royal Canin' },
-  { id: 'josera', labelFa: 'جوسرا', labelEn: 'Josera' },
-  { id: 'gourmet', labelFa: 'گورمت', labelEn: 'Gourmet' },
-  { id: 'reflex', labelFa: 'رفلکس', labelEn: 'Reflex' },
-  { id: 'nutripet', labelFa: 'نوتری پت', labelEn: 'Nutri Pet' },
-  { id: 'mofeed', labelFa: 'مفید', labelEn: 'MoFeed' },
-  { id: 'wellfed', labelFa: 'ولفيد', labelEn: 'Wellfed' },
-  { id: 'winston', labelFa: 'وینستون', labelEn: 'Winston' },
-  { id: 'red-spring', labelFa: 'رد اسپرینگ', labelEn: 'Red Spring' },
-  { id: 'mpets', labelFa: 'ام‌پتس', labelEn: 'MPets' },
-  { id: 'hagen', labelFa: 'هاگن', labelEn: 'Hagen' },
-  { id: 'petdate', labelFa: 'پت‌دیت', labelEn: 'PetDate' },
-  { id: 'mr-cat', labelFa: 'مستر کت', labelEn: 'MR.CAT' },
-  { id: 'meocat', labelFa: 'مئوکت', labelEn: 'Meocat' },
-  { id: 'afp', labelFa: 'AFP', labelEn: 'AFP' },
-  { id: 'dr-clauders', labelFa: 'دکتر کلادرز', labelEn: "Dr.Clauder's" },
-  { id: 'wanpy', labelFa: 'ونپی', labelEn: 'Wanpy' },
-  { id: 'bioline', labelFa: 'بایولاین', labelEn: 'Bioline' },
-  { id: 'bonnest', labelFa: 'بونست', labelEn: 'Bonnest' },
-  { id: 'generic', labelFa: 'سایر', labelEn: 'Other' },
-  { id: 'luna', labelFa: 'لونا', labelEn: 'Luna' },
-  { id: 'petopoli', labelFa: 'پتوپولی', labelEn: 'Petopoli' },
-  { id: 'juicer', labelFa: 'جویسر', labelEn: 'Joyser' },
-  { id: 'hannapet', labelFa: 'حناپت', labelEn: 'Hannapet' },
-  { id: 'waudog', labelFa: 'واوداگ', labelEn: 'WAUDOG' },
-  { id: 'mojan', labelFa: 'موژان', labelEn: 'Mojan' },
-  { id: 'zarix', labelFa: 'زریکس', labelEn: 'Zarix' },
-  { id: 'raha', labelFa: 'رها', labelEn: 'Raha' },
-  { id: 'jupiter', labelFa: 'ژوپیتر', labelEn: 'Jupiter' },
-  { id: 'oshkaia', labelFa: 'اوشکایا', labelEn: 'Oshkaia' },
+  {
+    id: 'royal-canin',
+    labelFa: 'رویال کنین',
+    labelEn: 'Royal Canin',
+    logoUrl: `${B}/royal-canin.png`,
+    sortOrder: 10,
+    featured: true,
+    active: true,
+  },
+  {
+    id: 'josera',
+    labelFa: 'جوسرا',
+    labelEn: 'Josera',
+    logoUrl: `${B}/josera.png`,
+    sortOrder: 20,
+    featured: true,
+    active: true,
+  },
+  {
+    id: 'mofeed',
+    labelFa: 'مفید',
+    labelEn: 'MoFeed',
+    logoUrl: `${B}/mofeed.png`,
+    sortOrder: 30,
+    featured: true,
+    active: true,
+  },
+  {
+    id: 'fidar-patira',
+    labelFa: 'فیدار پاتیرا',
+    labelEn: 'Fidar Patira',
+    logoUrl: `${B}/fidar-patira.png`,
+    sortOrder: 40,
+    featured: true,
+    active: true,
+  },
+  {
+    id: 'wanpy',
+    labelFa: 'ونپی',
+    labelEn: 'Wanpy',
+    logoUrl: `${B}/wanpy.png`,
+    sortOrder: 50,
+    featured: true,
+    active: true,
+  },
+  {
+    id: 'vipet',
+    labelFa: 'وی پت',
+    labelEn: 'VIPET',
+    logoUrl: `${B}/vipet.png`,
+    sortOrder: 60,
+    featured: true,
+    active: true,
+  },
+  {
+    id: 'reflex',
+    labelFa: 'رفلکس',
+    labelEn: 'Reflex',
+    logoUrl: `${B}/reflex.png`,
+    sortOrder: 70,
+    featured: true,
+    active: true,
+  },
+  {
+    id: 'gourmet',
+    labelFa: 'گورمت',
+    labelEn: 'Purina Gourmet',
+    logoUrl: `${B}/gourmet.png`,
+    sortOrder: 80,
+    featured: true,
+    active: true,
+  },
+  {
+    id: 'celebone',
+    labelFa: 'سلبن',
+    labelEn: 'Celebone',
+    logoUrl: `${B}/celebone.png`,
+    sortOrder: 90,
+    featured: true,
+    active: true,
+  },
+  {
+    id: 'monello',
+    labelFa: 'مونلو',
+    labelEn: 'Monello',
+    logoUrl: `${B}/monello.png`,
+    sortOrder: 100,
+    featured: true,
+    active: true,
+  },
+  { id: 'nutripet', labelFa: 'نوتری پت', labelEn: 'Nutri Pet', sortOrder: 200, active: true },
+  { id: 'wellfed', labelFa: 'ولفيد', labelEn: 'Wellfed', sortOrder: 210, active: true },
+  { id: 'winston', labelFa: 'وینستون', labelEn: 'Winston', sortOrder: 220, active: true },
+  { id: 'red-spring', labelFa: 'رد اسپرینگ', labelEn: 'Red Spring', sortOrder: 230, active: true },
+  { id: 'mpets', labelFa: 'ام‌پتس', labelEn: 'MPets', sortOrder: 240, active: true },
+  { id: 'hagen', labelFa: 'هاگن', labelEn: 'Hagen', sortOrder: 250, active: true },
+  { id: 'petdate', labelFa: 'پت‌دیت', labelEn: 'PetDate', sortOrder: 260, active: true },
+  { id: 'mr-cat', labelFa: 'مستر کت', labelEn: 'MR.CAT', sortOrder: 270, active: true },
+  { id: 'meocat', labelFa: 'مئوکت', labelEn: 'Meocat', sortOrder: 280, active: true },
+  { id: 'afp', labelFa: 'AFP', labelEn: 'AFP', sortOrder: 290, active: true },
+  { id: 'dr-clauders', labelFa: 'دکتر کلادرز', labelEn: "Dr.Clauder's", sortOrder: 300, active: true },
+  { id: 'bioline', labelFa: 'بایولاین', labelEn: 'Bioline', sortOrder: 310, active: true },
+  { id: 'bonnest', labelFa: 'بونست', labelEn: 'Bonnest', sortOrder: 320, active: true },
+  { id: 'luna', labelFa: 'لونا', labelEn: 'Luna', sortOrder: 330, active: true },
+  { id: 'petopoli', labelFa: 'پتوپولی', labelEn: 'Petopoli', sortOrder: 340, active: true },
+  { id: 'juicer', labelFa: 'جویسر', labelEn: 'Joyser', sortOrder: 350, active: true },
+  { id: 'hannapet', labelFa: 'حناپت', labelEn: 'Hannapet', sortOrder: 360, active: true },
+  { id: 'waudog', labelFa: 'واوداگ', labelEn: 'WAUDOG', sortOrder: 370, active: true },
+  { id: 'mojan', labelFa: 'موژان', labelEn: 'Mojan', sortOrder: 380, active: true },
+  { id: 'zarix', labelFa: 'زریکس', labelEn: 'Zarix', sortOrder: 390, active: true },
+  { id: 'raha', labelFa: 'رها', labelEn: 'Raha', sortOrder: 400, active: true },
+  { id: 'jupiter', labelFa: 'ژوپیتر', labelEn: 'Jupiter', sortOrder: 410, active: true },
+  { id: 'oshkaia', labelFa: 'اوشکایا', labelEn: 'Oshkaia', sortOrder: 420, active: true },
+  { id: 'generic', labelFa: 'سایر', labelEn: 'Other', sortOrder: 900, active: true },
 ];
 
-/** Live shop catalog — 3 Royal Canin pilots + 12 Batch 2 + 14 Batch 3 + 10 multi wave 1 + 10 multi wave 2 + 10 multi wave 3 + 10 multi wave 4 + 10 multi wave 5 SKUs */
 export const SHOP_PRODUCTS: ShopProduct[] = [
   {
     id: 'p221',
@@ -293,6 +399,7 @@ export function formatShopStars(amount: number): string {
 /** Live catalog cache — hydrated from /api/shop (same DB as bot). Falls back to static seed. */
 let liveProducts: ShopProduct[] = SHOP_PRODUCTS;
 let liveCategories: ShopCategory[] = SHOP_CATEGORIES;
+let liveBrands: ShopBrand[] = SHOP_BRANDS;
 let liveHydrated = false;
 
 export function isShopCatalogHydrated(): boolean {
@@ -305,6 +412,10 @@ export function getLiveProducts(): ShopProduct[] {
 
 export function getLiveCategories(): ShopCategory[] {
   return liveCategories;
+}
+
+export function getLiveBrands(): ShopBrand[] {
+  return liveBrands;
 }
 
 /**
@@ -351,9 +462,34 @@ export function applyLiveShopCatalog(input: {
     description?: string;
     emoji?: string;
   }>;
+  brands?: Array<{
+    id: string;
+    labelFa: string;
+    labelEn?: string;
+    logoUrl?: string;
+    sortOrder?: number;
+    featured?: boolean;
+    active?: boolean;
+  }>;
 }): void {
   const byId = new Map(SHOP_PRODUCTS.map((p) => [p.id, p]));
   const bySlug = new Map(SHOP_PRODUCTS.map((p) => [p.slug, p]));
+
+  if (input.brands?.length) {
+    const staticById = new Map(SHOP_BRANDS.map((b) => [b.id, b]));
+    liveBrands = input.brands.map((api) => {
+      const base = staticById.get(api.id);
+      return {
+        id: api.id,
+        labelFa: api.labelFa || base?.labelFa || api.id,
+        labelEn: api.labelEn || base?.labelEn,
+        logoUrl: api.logoUrl || base?.logoUrl,
+        sortOrder: api.sortOrder ?? base?.sortOrder ?? 100,
+        featured: api.featured ?? base?.featured ?? false,
+        active: api.active ?? base?.active ?? true,
+      };
+    });
+  }
 
   liveProducts = input.products.map((api) => {
     const base = byId.get(api.id) ?? bySlug.get(api.slug);
@@ -497,8 +633,29 @@ export function getCategory(slug: string): ShopCategory | undefined {
 }
 
 export function getBrand(id: string): ShopBrand | undefined {
-  return SHOP_BRANDS.find((b) => b.id === id);
+  return liveBrands.find((b) => b.id === id) ?? SHOP_BRANDS.find((b) => b.id === id);
 }
+
+/** Brands for the shop-home «برندهای برتر» carousel (logo + Persian name). */
+export function getTopBrands(): ShopBrand[] {
+  const source = liveBrands.length ? liveBrands : SHOP_BRANDS;
+  const byId = new Map(source.map((b) => [b.id, b]));
+  const ordered = SHOP_TOP_BRAND_IDS.map((id) => byId.get(id)).filter(
+    (b): b is ShopBrand => Boolean(b && b.active !== false)
+  );
+  if (ordered.length) return ordered;
+  return source
+    .filter((b) => b.featured && b.active !== false && b.logoUrl)
+    .sort((a, b) => (a.sortOrder ?? 100) - (b.sortOrder ?? 100));
+}
+
+export function getActiveBrands(): ShopBrand[] {
+  const source = liveBrands.length ? liveBrands : SHOP_BRANDS;
+  return source
+    .filter((b) => b.active !== false)
+    .sort((a, b) => (a.sortOrder ?? 100) - (b.sortOrder ?? 100));
+}
+
 
 export function getProduct(idOrSlug: string): ShopProduct | undefined {
   return (

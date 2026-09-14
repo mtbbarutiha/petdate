@@ -552,6 +552,7 @@ export const fa: Dict = {
     store: 'فروشگاه',
     products: 'محصولات',
     categories: 'دسته‌بندی',
+    brands: 'برندها',
     orders: 'سفارش‌ها',
     payments: 'پرداخت‌ها',
     contentSystem: 'محتوا و سیستم',

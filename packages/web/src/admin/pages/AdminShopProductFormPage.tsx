@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Navigate, useParams } from 'react-router-dom';
-import { SHOP_BRANDS, SHOP_CATEGORIES } from '../../data/shopCatalog';
+import { SHOP_CATEGORIES, getActiveBrands } from '../../data/shopCatalog';
 import { adminFetch } from '../api';
 import { AdminModal } from '../AdminModal';
 import { tr } from '../../i18n';
@@ -44,7 +44,7 @@ const empty: FormState = {
   slug: '',
   title: '',
   titleEn: '',
-  brandId: SHOP_BRANDS[0]?.id || 'petdate',
+  brandId: getActiveBrands()[0]?.id || 'petdate',
   categorySlug: SHOP_CATEGORIES[0]?.slug || 'dog-food',
   petTypes: 'dog',
   priceToman: '0',
@@ -339,7 +339,7 @@ export function AdminShopProductFormModal({ open, productId, onClose, onSaved }:
           <label>
             <span className="form-label">{tr('برند')}</span>
             <select className="admin-select" value={form.brandId} onChange={(e) => set({ brandId: e.target.value })}>
-              {SHOP_BRANDS.map((b) => (
+              {getActiveBrands().map((b) => (
                 <option key={b.id} value={b.id}>
                   {b.labelFa}
                 </option>

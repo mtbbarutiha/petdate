@@ -2092,6 +2092,16 @@ export type PublicShopProduct = {
   coins?: number;
 };
 
+export type PublicShopBrand = {
+  id: string;
+  labelFa: string;
+  labelEn?: string;
+  logoUrl?: string;
+  sortOrder?: number;
+  featured?: boolean;
+  active?: boolean;
+};
+
 export type PublicShopCategory = {
   slug: string;
   labelFa: string;
@@ -2105,9 +2115,10 @@ export type PublicShopCategory = {
 export async function fetchPublicShopCatalog(): Promise<{
   products: PublicShopProduct[];
   categories: PublicShopCategory[];
+  brands?: PublicShopBrand[];
   coinPriceToman?: number;
 }> {
-  const [productsRes, categoriesRes] = await Promise.all([
+  const [productsRes, categoriesRes, brandsRes] = await Promise.all([
     request<{
       ok?: boolean;
       products: PublicShopProduct[];
@@ -2118,10 +2129,15 @@ export async function fetchPublicShopCatalog(): Promise<{
       categories: PublicShopCategory[];
       coinPriceToman?: number;
     }>('/api/shop/categories'),
+    request<{
+      ok?: boolean;
+      brands: PublicShopBrand[];
+    }>('/api/shop/brands').catch(() => ({ brands: [] as PublicShopBrand[] })),
   ]);
   return {
     products: productsRes.products ?? [],
     categories: categoriesRes.categories ?? [],
+    brands: brandsRes.brands ?? [],
     coinPriceToman: productsRes.coinPriceToman ?? categoriesRes.coinPriceToman,
   };
 }
