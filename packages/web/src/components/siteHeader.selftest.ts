@@ -86,6 +86,8 @@ assert.doesNotMatch(
   /actionLabel=\{t\('common\.login'\)\}/,
   'magazine does not pass text ورود into header chrome',
 );
+assert.match(magazine, /showMobileEvents=\{false\}/, 'magazine hides mobile Events pill');
+assert.match(magazine, /hideActionOnMobile/, 'magazine hides خانه on mobile (logo is home)');
 assert.match(magazine, /PAGE_SIZE = 20/, 'magazine shows at least 20 per page');
 assert.match(magazine, /magazine-view-all/, 'magazine has مشاهده همه link');
 assert.match(css, /pepito-magazine-grid[\s\S]{0,80}repeat\(4/, 'magazine desktop grid is 4 columns');
@@ -98,6 +100,7 @@ assert.match(
 );
 assert.match(header, /nav-mobile-events/, 'mobile header exposes Events shortcut');
 assert.match(header, /showMobileEvents/, 'shop can suppress mobile Events pill');
+assert.match(header, /hideActionOnMobile/, 'header can hide text actions on mobile');
 assert.match(header, /t\('nav\.games'\)/, 'mobile Events shortcut uses nav.games label');
 assert.doesNotMatch(
   header,
@@ -108,6 +111,8 @@ assert.doesNotMatch(
 assert.match(chrome, /SiteHeader/, 'LandingChrome uses shared header');
 assert.match(chrome, /landingSectionLinks/, 'LandingChrome uses marketing extras');
 assert.match(chrome, /appNav \? \[\] : landingSectionLinks/, 'app shell drops marketing extras');
+assert.match(chrome, /showMobileEvents/, 'LandingChrome can suppress mobile Events');
+assert.match(chrome, /hideActionOnMobile/, 'LandingChrome can hide action on mobile');
 assert.match(welcome, /SiteHeader/, 'Welcome uses shared header');
 assert.match(welcome, /welcomeSectionLinks/, 'Welcome uses hash extras without games/shop');
 assert.match(welcome, /deferDesktopNav/, 'Welcome still defers desktop shortcuts for landing TBT');

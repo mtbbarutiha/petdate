@@ -116,6 +116,7 @@ export function MagazineArticlePage() {
       bannerLead={article?.title || 'مقاله'}
       actionLabel="مجله"
       actionTo="/magazine"
+      showMobileEvents={false}
       hideBanner={!article}
     >
       <article className="pepito-magazine-article">

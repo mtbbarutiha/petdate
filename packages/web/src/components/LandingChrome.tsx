@@ -25,6 +25,10 @@ export interface LandingChromeProps {
   /** Extra action — primary CTA style */
   ctaLabel?: string;
   ctaTo?: string;
+  /** Mobile Events pill beside the logo (default true; magazine/shop turn off) */
+  showMobileEvents?: boolean;
+  /** Hide actionLabel below 860px (magazine keeps خانه on desktop only) */
+  hideActionOnMobile?: boolean;
   /** When true, show app destinations in the top nav instead of landing anchors */
   appNav?: boolean;
   /** Hide the photo banner (app shell pages that have their own headers) */
@@ -47,6 +51,8 @@ export function LandingChrome({
   onAction,
   ctaLabel,
   ctaTo,
+  showMobileEvents = true,
+  hideActionOnMobile = false,
   appNav = false,
   hideBanner = false,
   className = '',
@@ -113,6 +119,8 @@ export function LandingChrome({
         className={appNav ? 'pepito-nav--app' : 'pepito-nav--tools'}
         sectionLinks={sectionLinks}
         showCart
+        showMobileEvents={showMobileEvents}
+        hideActionOnMobile={hideActionOnMobile}
         actionLabel={actionLabel || undefined}
         actionTo={actionTo}
         onAction={onAction}
