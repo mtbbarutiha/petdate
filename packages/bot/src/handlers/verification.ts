@@ -82,7 +82,7 @@ export async function handleVerifyStart(ctx: Context): Promise<void> {
     }
     lines.push('');
   }
-  lines.push('یک سلفی / ویدیوی کوتاه بفرست، یا از دکمهٔ زیر عکس فعلی پروفایل رو بفرست 👇');
+  lines.push('یک ویدیوی سلفی کوتاه بفرست 👇 (باید با عکس پروفایلت یکی باشه)');
 
   if (ctx.callbackQuery) {
     await ctx.answerCallbackQuery().catch(() => undefined);
@@ -157,6 +157,12 @@ async function finishSubmit(ctx: Context, telegramId: string, photoFileId: strin
     const msg = String(err);
     if (msg.includes('409') || msg.includes('already_verified')) {
       await ctx.reply(`${VERIFIED_BADGE}\nقبلاً احراز شده‌ای.`);
+      return;
+    }
+    if (msg.includes('no_profile_photo') || msg.includes('عکس پروفایل')) {
+      await ctx.reply(
+        'اول از پروفایل یک عکس واضح از چهره‌ات بگذار؛ بعد ویدیو/سلفی احراز بفرست تا با همان عکس مقایسه شود.'
+      );
       return;
     }
     await ctx.reply('ارسال درخواست احراز ناموفق بود. دوباره تلاش کن.');

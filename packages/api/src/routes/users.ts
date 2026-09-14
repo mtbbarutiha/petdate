@@ -649,8 +649,10 @@ usersRouter.post('/telegram/:telegramId/verification', async (req, res) => {
         result.reason === 'already_verified'
           ? 'قبلاً احراز شده‌ای'
           : result.reason === 'no_photo'
-            ? 'عکس احراز لازم است'
-            : 'کاربر پیدا نشد',
+            ? 'عکس یا ویدیو احراز لازم است'
+            : result.reason === 'no_profile_photo'
+              ? 'اول یک عکس پروفایل از چهره‌ات بگذار؛ فایل احراز باید با همان عکس یکی باشد'
+              : 'کاربر پیدا نشد',
     });
     return;
   }

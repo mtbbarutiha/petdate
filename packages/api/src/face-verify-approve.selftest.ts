@@ -25,7 +25,15 @@ async function main() {
     username: 'faceuser',
   });
   assert(user, 'user created');
-  const startCoins = Number(user.coins) || 0;
+
+  // Submit requires a custom profile photo (admin compares video ↔ photo).
+  dbService.updateUserProfile(user.id, {
+    avatarUrl: '/api/auth/avatar/1/face.jpg',
+    avatarCustom: true,
+    avatarModerationStatus: 'approved',
+  });
+  dbService.setAvatarModerationStatus(user.id, 'approved');
+  const startCoins = Number(dbService.getUserById(user.id)?.coins) || 0;
 
   const submitted = dbService.submitVerification(user.id, 'selfie_file_id');
   assert(submitted.ok, 'submit verification');
@@ -55,8 +63,15 @@ async function main() {
     username: 'adminflip',
   }).user;
   assert(other, 'second user');
-  const otherStart = Number(other.coins) || 0;
-  dbService.submitVerification(other.id, 'selfie_b');
+  dbService.updateUserProfile(other.id, {
+    avatarUrl: '/api/auth/avatar/2/face.jpg',
+    avatarCustom: true,
+    avatarModerationStatus: 'approved',
+  });
+  dbService.setAvatarModerationStatus(other.id, 'approved');
+  const otherStart = Number(dbService.getUserById(other.id)?.coins) || 0;
+  const otherSubmitted = dbService.submitVerification(other.id, 'selfie_b');
+  assert(otherSubmitted.ok, 'second user submit');
   const viaAdmin = dbService.setVerificationStatusAdmin(other.id, 'verified');
   assert(viaAdmin?.verificationStatus === 'verified', 'admin override verifies');
   assert(Number(viaAdmin?.coins) === otherStart + FACE_VERIFY_REWARD, 'admin override credits once');

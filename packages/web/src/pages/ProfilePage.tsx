@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ChevronLeft,
@@ -23,6 +23,7 @@ import {
   citiesForProvince,
   computeProfileCompletion,
   formatFaInt,
+  isStoredCustomProfilePhoto,
   normalizeRoles,
   parseUserAge,
   primaryRole,
@@ -38,6 +39,7 @@ import {
 } from '@petdate/shared';
 import { appConfirm } from '../components/AppDialog';
 import { AgePicker } from '../components/AgePicker';
+import { FaceVerifyCapture } from '../components/FaceVerifyCapture';
 import { InviteFriendsCard } from '../components/InviteFriendsCard';
 import { PetAvatar } from '../components/PetAvatar';
 import { ProfileAvatarEditor } from '../components/ProfileAvatarEditor';
@@ -98,7 +100,6 @@ export function ProfilePage() {
   const [panelBusy, setPanelBusy] = useState(false);
   const [verifyBusy, setVerifyBusy] = useState(false);
   const [verifyError, setVerifyError] = useState('');
-  const verifyFileRef = useRef<HTMLInputElement>(null);
   const [adviceBusy, setAdviceBusy] = useState(false);
 
   const [name, setName] = useState('');
@@ -379,32 +380,36 @@ export function ProfilePage() {
   function openInteractions() {
     openPanelParam('interactions');
   }
-  async function submitFaceVerify(opts: { file?: File; useAvatar?: boolean }) {
+  async function submitFaceVerify(file: File) {
     if (!token) {
       toastError('وارد نشده‌اید');
-      return;
+      throw new Error('وارد نشده‌اید');
+    }
+    if (!isStoredCustomProfilePhoto(display.avatarUrl)) {
+      const msg = t('verify.needProfilePhoto');
+      setVerifyError(msg);
+      toastError(msg);
+      throw new Error(msg);
     }
     setVerifyBusy(true);
     setVerifyError('');
     try {
-      const res = await submitWebFaceVerification(token, {
-        file: opts.file,
-        photoUrl: opts.useAvatar ? display.avatarUrl : undefined,
-      });
+      const res = await submitWebFaceVerification(token, { file });
       setCardUser(res.user);
       await refreshMe();
       toastSuccess('درخواست احراز ثبت شد — در صف بررسی ادمین است');
+      const reward = lang === 'en' ? String(FACE_VERIFY_REWARD) : formatFaInt(FACE_VERIFY_REWARD);
       setPanelLines([
         faceVerifyChromeLabel(t, lang, res.user.verificationStatus ?? 'pending'),
-        'درخواست احراز در صف بررسی است — به‌محض تأیید، ۱۰۰ سکه جایزه واریز می‌شود.',
+        t('verify.profilePending', { n: reward }),
       ]);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'ارسال احراز ناموفق بود';
       setVerifyError(msg);
       toastError(msg);
+      throw err;
     } finally {
       setVerifyBusy(false);
-      if (verifyFileRef.current) verifyFileRef.current.value = '';
     }
   }
   async function deactivateAccount() {
@@ -999,37 +1004,32 @@ export function ProfilePage() {
                     ))}
                   </ul>
                   {verifyStatus !== 'verified' && verifyStatus !== 'pending' ? (
-                    <div className="pepito-profile-verify-actions">
-                      <input
-                        ref={verifyFileRef}
-                        type="file"
-                        accept="image/*,image/heic,image/heif,.heic,.heif"
-                        capture="user"
-                        className="pepito-avatar-file-input"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) void submitFaceVerify({ file });
-                        }}
-                      />
-                      <button
-                        type="button"
-                        className="pepito-btn button-1"
-                        disabled={verifyBusy}
-                        onClick={() => verifyFileRef.current?.click()}
-                      >
-                        {verifyBusy ? 'در حال ارسال…' : 'ارسال سلفی احراز'}
-                      </button>
-                      {display.avatarUrl ? (
-                        <button
-                          type="button"
-                          className="pepito-btn pepito-btn--ghost"
-                          disabled={verifyBusy}
-                          onClick={() => void submitFaceVerify({ useAvatar: true })}
-                        >
-                          استفاده از عکس پروفایل
-                        </button>
-                      ) : null}
-                    </div>
+                    <FaceVerifyCapture
+                      disabled={verifyBusy}
+                      busy={verifyBusy}
+                      hasProfilePhoto={isStoredCustomProfilePhoto(display.avatarUrl)}
+                      profilePhotoUrl={avatarSrc || undefined}
+                      onError={(msg) => {
+                        setVerifyError(msg);
+                        toastError(msg);
+                      }}
+                      onSubmit={(file) => submitFaceVerify(file)}
+                      labels={{
+                        openCamera: t('verify.openCamera'),
+                        pickFile: t('verify.pickVideoFile'),
+                        needPhoto: t('verify.needProfilePhoto'),
+                        matchHint: t('verify.matchHint'),
+                        ready: t('verify.cameraReady'),
+                        record: t('verify.startRecord'),
+                        stop: t('verify.stopRecord'),
+                        retake: t('verify.retake'),
+                        send: verifyBusy ? t('profile.sending') : t('verify.sendVideo'),
+                        cancel: t('profile.cancel'),
+                        recording: t('verify.recording'),
+                        uploading: t('profile.sending'),
+                        noCamera: t('verify.noCamera'),
+                      }}
+                    />
                   ) : null}
                   {verifyError ? (
                     <p className="pepito-profile-error" role="alert">

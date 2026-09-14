@@ -457,16 +457,16 @@ export const HELP_TOPICS: HelpTopic[] = [
     surfaces: ['bot', 'web'],
     title: { fa: 'احراز چهره', en: 'Face verification' },
     what: {
-      fa: `سلفی واضح برای تأیید هویت پروفایل. بعد از تأیید ادمین ${FA_FACE} سکه جایزه است.`,
-      en: `A clear selfie for profile identity. After admin approval you get ${FACE_VERIFY_REWARD} coins.`,
+      fa: `ویدیوی سلفی کوتاه برای تأیید هویت پروفایل. بعد از تأیید ادمین ${FA_FACE} سکه جایزه است.`,
+      en: `A short selfie video for profile identity. After admin approval you get ${FACE_VERIFY_REWARD} coins.`,
     },
     how: {
-      fa: 'ربات: «احراز چهره» و سلفی یا ویدیوی کوتاه بفرست. سایت: پروفایل → احراز. وضعیت: در انتظار / تأیید / رد.',
-      en: 'Bot: Face verify, then send a selfie or short video. Site: Profile → Verify. Status: pending / verified / rejected.',
+      fa: 'ربات: «احراز چهره» و ویدیو/سلفی بفرست. سایت: پروفایل → احراز → دوربین. وضعیت: در انتظار / تأیید / رد.',
+      en: 'Bot: Face verify, then send a short selfie video. Site: Profile → Verify → camera. Status: pending / verified / rejected.',
     },
     tips: {
-      fa: `عکس باید با چهره خودت یکی باشد. رد شدن معمولاً با توضیح در همان بخش است. تعویض عکس پروفایل ${FA_PHOTO_CHANGE} سکه است و احراز چهره را لغو می‌کند.`,
-      en: `The photo must match your face. A rejection usually includes a note in the same panel. Changing your profile photo costs ${PROFILE_PHOTO_CHANGE_COST} coins and clears face verification.`,
+      fa: `اول عکس پروفایل بگذار؛ ویدیو باید با همان چهره یکی باشد. رد شدن معمولاً با توضیح در همان بخش است. تعویض عکس پروفایل ${FA_PHOTO_CHANGE} سکه است و احراز چهره را لغو می‌کند.`,
+      en: `Add a profile photo first; the video must match that face. A rejection usually includes a note in the same panel. Changing your profile photo costs ${PROFILE_PHOTO_CHANGE_COST} coins and clears face verification.`,
     },
     botLabel: 'احراز چهره',
     sitePath: '/profile?panel=verify',
@@ -704,12 +704,12 @@ export const HELP_TOPICS: HelpTopic[] = [
     surfaces: ['web'],
     title: { fa: 'ایونت‌ها', en: 'Events' },
     what: {
-      fa: 'ایونت‌های گروهی زمان‌بندی‌شده (فوتبال، فکری و …) روی سایت — جدا از همبازی پت.',
-      en: 'Scheduled group events (football, board games, and more) on the site — not the same as pet playmates.',
+      fa: 'ایونت‌های گروهی زمان‌بندی‌شده پت (پت دیتینگ، پیاده‌روی، آموزش و …) روی سایت — جدا از همبازی پت.',
+      en: 'Scheduled pet group events (pet dating, walks, training, and more) on the site — not the same as pet playmates.',
     },
     how: {
-      fa: 'صفحه ایونت‌ها را باز کن، فیلتر وضعیت را بزن، عضو شو یا ایونت بساز. ساختن و پیوستن ورود می‌خواهد.',
-      en: 'Open Events, filter by status, join or create. Creating and joining require login.',
+      fa: 'صفحه ایونت‌ها را باز کن، فیلتر وضعیت را بزن، عضو شو یا ایونت بساز. ساختن ۱۰۰ سکه هزینه دارد و پیوستن ممکن است هزینه عضویت داشته باشد. عکس ایونت پس از تأیید ادمین عمومی می‌شود.',
+      en: 'Open Events, filter by status, join or host. Creating costs 100 coins; joining may require a fee. Event photos go public after admin approval.',
     },
     tips: {
       fa: 'این بخش در ربات نیست. همبازی پت از مسیر «هم بازی» است نه اینجا.',
@@ -948,8 +948,8 @@ export const HELP_FAQ: HelpFaqItem[] = [
       en: 'Are Events different from pet playmates?',
     },
     a: {
-      fa: 'بله. ایونت‌ها رویداد گروهی روی سایت است (فوتبال، فکری و …). همبازی پت برای قرار دو پت است و از مسیر هم بازی / ربات است.',
-      en: 'Yes. Events are scheduled group gatherings on the site. Playmates are one-to-one pet meetups via Playmates / the bot.',
+      fa: 'بله. ایونت‌ها رویداد گروهی پت روی سایت است (پت دیتینگ، پیاده‌روی، آموزش و …). همبازی پت برای قرار دو پت است و از مسیر هم بازی / ربات است.',
+      en: 'Yes. Events are scheduled pet group gatherings on the site (pet dating, walks, training, and more). Playmates are one-to-one pet meetups via Playmates / the bot.',
     },
   },
   {
@@ -981,8 +981,8 @@ export const HELP_FAQ: HelpFaqItem[] = [
       en: 'What are face and phone verification for?',
     },
     a: {
-      fa: `احراز چهره با سلفی و تأیید ادمین است (جایزه ${FA_FACE} سکه). تعویض عکس پروفایل ${FA_PHOTO_CHANGE} سکه است و احراز را لغو می‌کند. احراز موبایل با پیامک است و برای دامپزشک اجباری است.`,
-      en: `Face verify is a selfie reviewed by admin (${FACE_VERIFY_REWARD} coin bonus). Changing your profile photo costs ${PROFILE_PHOTO_CHANGE_COST} coins and clears face verification. Phone verify uses SMS and is required for vets.`,
+      fa: `احراز چهره با ویدیوی سلفی و تأیید ادمین است (جایزه ${FA_FACE} سکه). تعویض عکس پروفایل ${FA_PHOTO_CHANGE} سکه است و احراز را لغو می‌کند. احراز موبایل با پیامک است و برای دامپزشک اجباری است.`,
+      en: `Face verify is a selfie video reviewed by admin (${FACE_VERIFY_REWARD} coin bonus). Changing your profile photo costs ${PROFILE_PHOTO_CHANGE_COST} coins and clears face verification. Phone verify uses SMS and is required for vets.`,
     },
   },
   {

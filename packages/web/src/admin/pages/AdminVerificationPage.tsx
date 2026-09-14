@@ -3,6 +3,7 @@ import { BadgeCheck, RefreshCw } from 'lucide-react';
 import type { User } from '@petdate/shared';
 import { FACE_VERIFY_REWARD, VERIFIED_BADGE, formatFaInt, userPublicIdOf } from '@petdate/shared';
 import { API_BASE, adminFetch, getAdminPassword, getAdminUsername } from '../api';
+import { AdminThumb } from '../AdminThumb';
 import { appPrompt } from '../../components/AppDialog';
 import { tr } from '../../i18n';
 
@@ -222,7 +223,8 @@ export function AdminVerificationPage() {
             {tr('احراز هویت')}
           </h1>
           <p>
-            {tr('صف بررسی سلفی احراز — پس از تأیید،')} {VERIFIED_BADGE} {tr('و')}{' '}
+            {tr('صف بررسی ویدیو/سلفی احراز — عکس پروفایل را با فایل ارسالی مقایسه کن. پس از تأیید،')}{' '}
+            {VERIFIED_BADGE} {tr('و')}{' '}
             {formatFaInt(FACE_VERIFY_REWARD)} {tr('سکه جایزه')}
           </p>
         </div>
@@ -253,8 +255,32 @@ export function AdminVerificationPage() {
               {user.telegramId ? ` · tg ${user.telegramId}` : ''}
               {user.username ? ` · @${user.username}` : ''}
             </p>
+            {user.avatarUrl ? (
+              <div className="admin-verification-profile-photo" style={{ marginTop: 10 }}>
+                <p className="muted" style={{ marginBottom: 6, fontSize: 13 }}>
+                  {tr('عکس پروفایل (برای مقایسه با ویدیو)')}
+                </p>
+                <AdminThumb
+                  src={user.avatarUrl}
+                  gender={user.gender}
+                  label={user.name}
+                  kind="user"
+                  alt={`${tr('پروفایل ')}${user.name}`}
+                  size={120}
+                />
+              </div>
+            ) : (
+              <p className="muted" style={{ marginTop: 10, color: '#b91c1c' }}>
+                {tr('عکس پروفایل ثبت نشده — قبل از تأیید، عکس پروفایل را بررسی کن.')}
+              </p>
+            )}
             {(user.verificationPhotoFileId || user.avatarUrl) && (
-              <AdminVerificationMedia user={user} />
+              <>
+                <p className="muted" style={{ marginTop: 12, marginBottom: 0, fontSize: 13 }}>
+                  {tr('فایل احراز ارسالی (ویدیو / سلفی)')}
+                </p>
+                <AdminVerificationMedia user={user} />
+              </>
             )}
             <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
               <button
