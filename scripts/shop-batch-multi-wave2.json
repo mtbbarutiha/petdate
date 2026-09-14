@@ -3,7 +3,7 @@
   "wave": 2,
   "waveCount": 5,
   "pricingRule": "zero-margin",
-  "cacheBust": "batch-multi-w2-v1",
+  "cacheBust": "batch-multi-w2-v2",
   "products": [
     {
       "proposedId": "p260",

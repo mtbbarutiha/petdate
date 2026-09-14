@@ -1,7 +1,7 @@
 import type { ShopProduct } from './shopCatalog';
 
 const P = '/pepito/uploads';
-const V = "batch-multi-w2-v1";
+const V = "batch-multi-w2-v2";
 
 function gallery(slug: string): { image: string; images: string[] } {
   const images = [
