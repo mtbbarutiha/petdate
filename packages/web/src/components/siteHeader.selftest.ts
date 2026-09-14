@@ -21,6 +21,12 @@ const css = readFileSync(join(root, 'styles/pepito.css'), 'utf8');
 const nav = readFileSync(join(root, 'lib/siteNav.ts'), 'utf8');
 
 assert.match(header, /pepito-nav-primary/, 'header has primary group');
+assert.match(header, /pepito-nav-leading/, 'brand + primary share a leading group');
+assert.match(
+  header,
+  /pepito-nav-leading[\s\S]*pepito-nav-brand[\s\S]*pepito-nav-actions/s,
+  'DOM order is leading (brand/primary) then actions — RTL space-between parks tools left',
+);
 assert.match(header, /brandBelow/, 'header accepts shop search under the logo');
 assert.match(header, /pepito-nav--with-search/, 'shop search marks the header for taller chrome');
 assert.match(header, /pepito-nav-brand--search/, 'search stacks under the brand/logo column');
@@ -32,6 +38,12 @@ assert.match(header, /pepito-nav-actions/, 'header has utilities group');
 assert.match(header, /LanguageToggle/, 'utilities include language');
 assert.match(header, /ThemeToggle/, 'utilities include theme');
 assert.match(header, /NavUserCluster/, 'utilities include cart/wallet/profile');
+const actionsBlock = header.slice(header.indexOf('pepito-nav-actions'));
+assert.ok(
+  actionsBlock.indexOf('<NavUserCluster') < actionsBlock.indexOf('<LanguageToggle') &&
+    actionsBlock.indexOf('<LanguageToggle') < actionsBlock.indexOf('<ThemeToggle'),
+  'actions keep physical LTR order: cluster → lang → theme',
+);
 assert.match(
   header,
   /compactChrome/,
@@ -129,15 +141,21 @@ assert.match(desktopNav, /pepito-nav-section-link/, 'role shortcuts share خدم
 assert.doesNotMatch(desktopNav, /<item\.icon/, 'role shortcuts are text-only (no icon pills)');
 
 assert.match(css, /\.pepito-nav-primary/, 'primary group styled');
+assert.match(css, /\.pepito-nav-leading/, 'leading group styled');
 assert.match(
   css,
   /\.pepito-nav-main[\s\S]{0,120}justify-content:\s*space-between/,
-  'mobile header row spaces logo and tools site-wide'
+  'header row spaces leading and tools site-wide'
 );
 assert.match(
   css,
   /\.pepito-nav-main\s*\{[^}]*flex:\s*1 1 auto/,
   'mobile nav-main grows inside flex .pepito-nav so space-between has free space'
+);
+assert.match(
+  css,
+  /@media \(max-width: 859px\)[\s\S]*?\.pepito-nav-actions\s*\{[^}]*margin-left:\s*0\s*!important/,
+  'mobile pins actions with physical margin-left:0 (ltr island must not reinterpret inline-start)'
 );
 assert.match(
   css,
@@ -156,8 +174,8 @@ assert.match(
 );
 assert.match(
   css,
-  /@media \(min-width: 860px\)[\s\S]{0,1200}\.pepito-nav-primary\s*\{[\s\S]{0,280}margin-inline-end:\s*auto/,
-  'desktop primary absorbs free space (page dir) so LTR actions park at physical left'
+  /@media \(min-width: 860px\)[\s\S]{0,1600}\.pepito-nav-actions\s*\{[^}]*margin-left:\s*0\s*!important/,
+  'desktop pins actions to physical left (margin-left:0, not ms-auto)'
 );
 assert.match(
   css,
@@ -166,14 +184,39 @@ assert.match(
 );
 assert.doesNotMatch(
   css,
-  /\.pepito-nav-actions\s*\{[^}]*^\s*margin-inline-start:\s*auto/m,
-  'base actions styles must not use ms-auto (direction:ltr → margin-left on RTL)'
+  /\.pepito-nav-actions\s*\{[^}]*margin-inline-start:\s*auto/,
+  'no .pepito-nav-actions rule may use ms-auto (direction:ltr → margin-left on RTL)'
+);
+assert.match(
+  css,
+  /\.pepito-nav-actions\s*\{[\s\S]{0,400}margin-left:\s*0\s*!important/,
+  'base actions styles pin physical margin-left:0'
+);
+assert.match(
+  css,
+  /\.pepito-nav-user-cluster\s*\{[\s\S]{0,120}position:\s*static/,
+  'user cluster stays in-flow inside actions (no absolute left reservation)'
+);
+assert.doesNotMatch(
+  css,
+  /\.pepito-nav--app\s*\{[^}]*padding-left:\s*calc\(var\(--pepito-gutter-x\)\s*\+\s*\d/,
+  'app header must not reserve absolute-cluster left padding'
 );
 const criticalHtml = readFileSync(join(root, '../index.html'), 'utf8');
 assert.match(
   criticalHtml,
   /\.pepito-nav-main\{[^}]*justify-content:space-between/,
   'critical CSS spaces logo and tools before hashed CSS applies'
+);
+assert.match(
+  criticalHtml,
+  /\.pepito-nav-leading\{/,
+  'critical CSS knows the leading | actions two-child layout'
+);
+assert.match(
+  criticalHtml,
+  /\.pepito-nav-actions\{[^}]*margin-left:0/,
+  'critical CSS pins physical margin-left:0 on the LTR actions island'
 );
 assert.match(
   criticalHtml,

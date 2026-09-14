@@ -60,10 +60,12 @@
       /* Full-width row before hashed CSS (print→all). Do NOT use
          margin-inline-start:auto on .pepito-nav-actions — that rule also sets
          direction:ltr, so inline-start=left and tools cluster with the logo on
-         RTL until deferred CSS applies (esp. WebKit print onload gaps). */
+         RTL until deferred CSS applies (esp. WebKit print onload gaps).
+         Two children (leading | actions) + space-between + physical margin-left:0. */
       .pepito-nav-main{display:flex;align-items:center;justify-content:space-between;gap:.35rem;width:100%;max-width:100%;flex:1 1 auto;min-width:0}
+      .pepito-nav-leading{display:flex;align-items:center;gap:.35rem;flex:0 1 auto;min-width:0}
       .pepito-nav-logo img{height:42px;width:auto;display:block}
-      .pepito-nav-actions{margin-inline-start:0;margin-inline-end:0;display:flex;align-items:center;gap:.65rem;direction:ltr;flex:0 0 auto}
+      .pepito-nav-actions{margin-left:0!important;margin-right:0;margin-inline-start:0!important;margin-inline-end:0;display:flex;align-items:center;gap:.65rem;direction:ltr;flex:0 0 auto}
       .pd-theme-toggle,.pd-lang-toggle{width:44px;height:44px;min-height:44px;border-radius:999px;border:1px solid #3a3f55;background:#242836;color:#f4f3f8;display:inline-flex;align-items:center;justify-content:center}
       /* Solid hero fill — photo comes only from #pd-boot-lcp / React (admin API SoT). */
       .pepito-hero{min-height:var(--pepito-hero-h);position:relative;overflow:hidden;background:#14161e;display:grid;align-items:center}

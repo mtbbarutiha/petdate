@@ -54,9 +54,10 @@ export type SiteHeaderProps = {
 };
 
 /**
- * Shared site header: brand | primary text links (all inline) | utilities.
- * Always uses a single `.pepito-nav-main` row so mobile space-between layout
- * works site-wide (shop and non-shop). Shop search stacks under the logo.
+ * Shared site header: leading (brand + primary links) | utilities.
+ * Two flex children under `.pepito-nav-main` so RTL space-between parks
+ * logo/nav at the physical right and utilities flush at the physical left.
+ * Shop search stacks under the logo inside the leading column.
  */
 export function SiteHeader({
   scrolled = false,
@@ -107,37 +108,39 @@ export function SiteHeader({
   return (
     <header className={headerClass}>
       <div className="pepito-nav-main">
-        <div className={`pepito-nav-brand${brandBelow ? ' pepito-nav-brand--search' : ''}`}>
-          <Link to="/" className="pepito-nav-logo" aria-label={BRAND.displayName}>
-            <img
-              src={logoSrc}
-              alt={BRAND.displayName}
-              {...(logoSrcSet ? { srcSet: logoSrcSet } : {})}
-              {...(logoSizes ? { sizes: logoSizes } : {})}
-              {...(logoWidth ? { width: logoWidth } : {})}
-              {...(logoHeight ? { height: logoHeight } : {})}
-              decoding="async"
-            />
-          </Link>
-          {brandBelow}
-        </div>
-
-        {wideEnoughForNav ? (
-          <div className="pepito-nav-primary">
-            {showDesktopNav ? (
-              <Suspense fallback={null}>
-                <LazySiteDesktopNav />
-              </Suspense>
-            ) : null}
-            {sectionLinks.length > 0 ? (
-              <nav className="pepito-nav-links pepito-nav-section-inline" aria-label={t('nav.sections')}>
-                {sectionLinks.map((link) => (
-                  <SiteHeaderLinkView key={link.key} link={link} />
-                ))}
-              </nav>
-            ) : null}
+        <div className="pepito-nav-leading">
+          <div className={`pepito-nav-brand${brandBelow ? ' pepito-nav-brand--search' : ''}`}>
+            <Link to="/" className="pepito-nav-logo" aria-label={BRAND.displayName}>
+              <img
+                src={logoSrc}
+                alt={BRAND.displayName}
+                {...(logoSrcSet ? { srcSet: logoSrcSet } : {})}
+                {...(logoSizes ? { sizes: logoSizes } : {})}
+                {...(logoWidth ? { width: logoWidth } : {})}
+                {...(logoHeight ? { height: logoHeight } : {})}
+                decoding="async"
+              />
+            </Link>
+            {brandBelow}
           </div>
-        ) : null}
+
+          {wideEnoughForNav ? (
+            <div className="pepito-nav-primary">
+              {showDesktopNav ? (
+                <Suspense fallback={null}>
+                  <LazySiteDesktopNav />
+                </Suspense>
+              ) : null}
+              {sectionLinks.length > 0 ? (
+                <nav className="pepito-nav-links pepito-nav-section-inline" aria-label={t('nav.sections')}>
+                  {sectionLinks.map((link) => (
+                    <SiteHeaderLinkView key={link.key} link={link} />
+                  ))}
+                </nav>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
 
         <div className="pepito-nav-actions">
           <NavUserCluster showCart={showCart} showOrders={showOrders} />
