@@ -8889,6 +8889,144 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   gap: 0.5rem;
   justify-content: flex-start;
 }
+/* —— Shop Top Brands (برندهای برتر) carousel —— */
+.pd-shop-top-brands {
+  margin-block: 0.35rem 1.65rem;
+}
+.pd-shop-top-brands-head {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin-bottom: 0.85rem;
+}
+.pd-shop-top-brands-head h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.15rem, 2.4vw, 1.45rem);
+  font-weight: 800;
+  color: var(--pepito-dark);
+  letter-spacing: -0.01em;
+}
+.pd-shop-top-brands-rail {
+  position: relative;
+}
+.pd-shop-top-brands-track {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: clamp(0.75rem, 2.2vw, 1.75rem);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 0.35rem 0.15rem 0.55rem;
+  outline: none;
+}
+.pd-shop-top-brands-track::-webkit-scrollbar {
+  display: none;
+}
+.pd-shop-top-brand {
+  flex: 0 0 auto;
+  scroll-snap-align: start;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.55rem;
+  width: clamp(5.6rem, 14vw, 7.2rem);
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.22s ease, opacity 0.22s ease;
+}
+.pd-shop-top-brand:hover {
+  transform: translateY(-2px);
+}
+.pd-shop-top-brand:focus-visible {
+  outline: 2px solid var(--pepito-base);
+  outline-offset: 4px;
+  border-radius: 12px;
+}
+.pd-shop-top-brand-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 3.6rem;
+  padding: 0.2rem 0.35rem;
+}
+.pd-shop-top-brand-logo img {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  filter: none;
+}
+.pd-shop-top-brand-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.2rem;
+  height: 3.2rem;
+  border-radius: 999px;
+  background: rgba(92, 77, 145, 0.1);
+  color: var(--pepito-base);
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+.pd-shop-top-brand-name {
+  font-family: var(--font-display);
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--pepito-dark);
+  text-align: center;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+.pd-shop-top-brands-arrow {
+  position: absolute;
+  top: 38%;
+  transform: translateY(-50%);
+  z-index: 2;
+  width: 2.35rem;
+  height: 2.35rem;
+  border-radius: 999px;
+  border: 1px solid rgba(25, 6, 61, 0.1);
+  background: #fff;
+  color: #3a3a45;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(25, 6, 61, 0.1);
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+.pd-shop-top-brands-arrow:hover {
+  background: #f6f7fb;
+  color: var(--pepito-base);
+}
+.pd-shop-top-brands-arrow--next {
+  left: 0;
+}
+.pd-shop-top-brands-arrow--prev {
+  right: 0;
+}
+@media (max-width: 720px) {
+  .pd-shop-top-brand {
+    width: 5.1rem;
+  }
+  .pd-shop-top-brand-logo {
+    height: 3.1rem;
+  }
+  .pd-shop-top-brand-name {
+    font-size: 0.82rem;
+  }
+  .pd-shop-top-brands-arrow {
+    width: 2.05rem;
+    height: 2.05rem;
+  }
+}
+
+
 .pd-shop-brand-row {
   display: flex;
   flex-wrap: nowrap;

@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { Filter, RotateCcw, Search, X } from 'lucide-react';
 import {
-  SHOP_BRANDS,
+  getActiveBrands,
   SHOP_CATEGORIES,
   SHOP_PET_TYPES,
   SHOP_PRICE_MAX,
@@ -200,7 +200,7 @@ export function ShopCategoryPage() {
           >
             همه
           </button>
-          {SHOP_BRANDS.map((b) => (
+          {getActiveBrands().map((b) => (
             <button
               key={b.id}
               type="button"

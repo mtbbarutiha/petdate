@@ -1263,6 +1263,7 @@ adminRouter.delete('/shop/products/:id', (req, res) => {
 adminRouter.post('/shop/catalog/sync', (req, res) => {
   const products = Array.isArray(req.body?.products) ? req.body.products : [];
   const categories = Array.isArray(req.body?.categories) ? req.body.categories : undefined;
+  const brands = Array.isArray(req.body?.brands) ? req.body.brands : undefined;
   if (!products.length) { res.status(400).json({ error: 'products خالی است' }); return; }
   const result = adminPlatform.replaceShopCatalog({
     products: products.map((p: Record<string, unknown>) => ({
@@ -1297,8 +1298,43 @@ adminRouter.post('/shop/catalog/sync', (req, res) => {
       emoji: String(c.emoji ?? '🛒'),
       sortOrder: Number(c.sortOrder ?? c.sort_order ?? i * 10),
     })),
+    brands: brands?.map((b: Record<string, unknown>, i: number) => ({
+      id: String(b.id),
+      labelFa: String(b.labelFa ?? b.label_fa),
+      labelEn: b.labelEn != null ? String(b.labelEn) : (b.label_en != null ? String(b.label_en) : ''),
+      logoUrl: b.logoUrl != null ? String(b.logoUrl) : (b.logo_url != null ? String(b.logo_url) : ''),
+      sortOrder: Number(b.sortOrder ?? b.sort_order ?? i * 10),
+      featured: Boolean(b.featured),
+      active: b.active !== false,
+    })),
   });
   res.json({ ok: true, ...result });
+});
+
+
+adminRouter.get('/shop/brands', (_req, res) => {
+  res.json({ brands: adminPlatform.listShopBrands() });
+});
+
+adminRouter.post('/shop/brands', (req, res) => {
+  const body = req.body ?? {};
+  if (!body.id || !body.labelFa) {
+    res.status(400).json({ error: 'id, labelFa الزامی‌اند' }); return;
+  }
+  res.status(201).json(adminPlatform.upsertShopBrand({
+    id: String(body.id),
+    labelFa: String(body.labelFa),
+    labelEn: body.labelEn ? String(body.labelEn) : '',
+    logoUrl: body.logoUrl ? String(body.logoUrl) : '',
+    sortOrder: body.sortOrder != null ? Number(body.sortOrder) : 100,
+    featured: Boolean(body.featured),
+    active: body.active !== false,
+  }));
+});
+
+adminRouter.delete('/shop/brands/:id', (req, res) => {
+  if (!adminPlatform.deleteShopBrand(req.params.id)) { res.status(404).json({ error: 'برند پیدا نشد' }); return; }
+  res.json({ ok: true });
 });
 
 adminRouter.get('/shop/categories', (_req, res) => {

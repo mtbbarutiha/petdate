@@ -147,6 +147,27 @@ export type ShopCategoryRow = {
   sortOrder: number;
 };
 
+
+export type ShopBrandRow = {
+  id: string;
+  labelFa: string;
+  labelEn?: string;
+  logoUrl?: string;
+  sortOrder: number;
+  featured: boolean;
+  active: boolean;
+};
+
+export type ShopBrandInput = {
+  id: string;
+  labelFa: string;
+  labelEn?: string;
+  logoUrl?: string;
+  sortOrder?: number;
+  featured?: boolean;
+  active?: boolean;
+};
+
 export type ShopCategoryInput = {
   slug: string;
   labelFa: string;
@@ -228,6 +249,19 @@ function mapShopProduct(row: Record<string, unknown>): ShopProductRow {
     featured: Boolean(row.featured),
     createdAt: String(row.created_at ?? ''),
     updatedAt: String(row.updated_at ?? ''),
+  };
+}
+
+
+function mapShopBrand(row: Record<string, unknown>): ShopBrandRow {
+  return {
+    id: String(row.id),
+    labelFa: String(row.label_fa),
+    labelEn: row.label_en ? String(row.label_en) : undefined,
+    logoUrl: row.logo_url ? String(row.logo_url) : undefined,
+    sortOrder: Number(row.sort_order ?? 100),
+    featured: Boolean(row.featured),
+    active: row.active == null ? true : Boolean(row.active),
   };
 }
 
@@ -637,7 +671,8 @@ export const adminPlatform = {
   replaceShopCatalog(input: {
     products: ShopProductInput[];
     categories?: ShopCategoryInput[];
-  }): { products: number; categories: number } {
+    brands?: ShopBrandInput[];
+  }): { products: number; categories: number; brands: number } {
     const d = db();
     const tx = d.transaction(() => {
       if (input.categories?.length) {
@@ -662,6 +697,9 @@ export const adminPlatform = {
           );
         });
       }
+      if (input.brands?.length) {
+        this.seedShopBrandsFromCatalog(input.brands);
+      }
       // Never wipe p221–p299. Drop leftover demo/seed rows only.
       purgeDemoShopProducts();
       for (const p of input.products) {
@@ -678,7 +716,86 @@ export const adminPlatform = {
     return {
       products: this.listShopProducts().length,
       categories: this.listShopCategories().length,
+      brands: this.listShopBrands().length,
     };
+  },
+
+
+  listShopBrands(): ShopBrandRow[] {
+    return (
+      db()
+        .prepare('SELECT * FROM shop_brands ORDER BY sort_order ASC, id ASC')
+        .all() as Record<string, unknown>[]
+    ).map(mapShopBrand);
+  },
+
+  upsertShopBrand(input: ShopBrandInput): ShopBrandRow {
+    db()
+      .prepare(
+        `INSERT INTO shop_brands (id, label_fa, label_en, logo_url, sort_order, featured, active)
+       VALUES (?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(id) DO UPDATE SET
+         label_fa = excluded.label_fa,
+         label_en = excluded.label_en,
+         logo_url = excluded.logo_url,
+         sort_order = excluded.sort_order,
+         featured = excluded.featured,
+         active = excluded.active`
+      )
+      .run(
+        input.id,
+        input.labelFa,
+        input.labelEn ?? '',
+        input.logoUrl ?? '',
+        input.sortOrder ?? 100,
+        input.featured ? 1 : 0,
+        input.active === false ? 0 : 1
+      );
+    return this.listShopBrands().find((b) => b.id === input.id)!;
+  },
+
+  deleteShopBrand(id: string): boolean {
+    return db().prepare('DELETE FROM shop_brands WHERE id = ?').run(id).changes > 0;
+  },
+
+  seedShopBrandsFromCatalog(
+    brands: Array<{
+      id: string;
+      labelFa: string;
+      labelEn?: string;
+      logoUrl?: string;
+      sortOrder?: number;
+      featured?: boolean;
+      active?: boolean;
+    }>
+  ): number {
+    const d = db();
+    const ins = d.prepare(
+      `INSERT INTO shop_brands (id, label_fa, label_en, logo_url, sort_order, featured, active)
+       VALUES (?, ?, ?, ?, ?, ?, ?)
+       ON CONFLICT(id) DO UPDATE SET
+         label_fa = excluded.label_fa,
+         label_en = excluded.label_en,
+         logo_url = CASE WHEN excluded.logo_url != '' THEN excluded.logo_url ELSE shop_brands.logo_url END,
+         sort_order = excluded.sort_order,
+         featured = excluded.featured,
+         active = excluded.active`
+    );
+    const tx = d.transaction(() => {
+      for (const b of brands) {
+        ins.run(
+          b.id,
+          b.labelFa,
+          b.labelEn ?? '',
+          b.logoUrl ?? '',
+          b.sortOrder ?? 100,
+          b.featured ? 1 : 0,
+          b.active === false ? 0 : 1
+        );
+      }
+    });
+    tx();
+    return this.listShopBrands().length;
   },
 
   listShopCategories(): ShopCategoryRow[] {

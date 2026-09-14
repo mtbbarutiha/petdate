@@ -1397,6 +1397,19 @@ function migrateSchema() {
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     )
   `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS shop_brands (
+      id TEXT PRIMARY KEY,
+      label_fa TEXT NOT NULL,
+      label_en TEXT NOT NULL DEFAULT '',
+      logo_url TEXT NOT NULL DEFAULT '',
+      sort_order INTEGER NOT NULL DEFAULT 100,
+      featured INTEGER NOT NULL DEFAULT 0,
+      active INTEGER NOT NULL DEFAULT 1
+    )
+  `);
+
   db.exec(`
     CREATE TABLE IF NOT EXISTS shop_categories (
       slug TEXT PRIMARY KEY,
@@ -1432,6 +1445,49 @@ function migrateSchema() {
     )
   `);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_shop_carts_user ON shop_carts (user_id)`);
+
+  {
+    const brandCount = Number(
+      (db.prepare('SELECT COUNT(*) as c FROM shop_brands').get() as { c: number } | undefined)?.c ?? 0
+    );
+    if (brandCount === 0) {
+      const brands = [
+        ['royal-canin', 'رویال کنین', 'Royal Canin', '/shop/brands/royal-canin.png', 10, 1],
+        ['josera', 'جوسرا', 'Josera', '/shop/brands/josera.png', 20, 1],
+        ['mofeed', 'مفید', 'MoFeed', '/shop/brands/mofeed.png', 30, 1],
+        ['fidar-patira', 'فیدار پاتیرا', 'Fidar Patira', '/shop/brands/fidar-patira.png', 40, 1],
+        ['wanpy', 'ونپی', 'Wanpy', '/shop/brands/wanpy.png', 50, 1],
+        ['vipet', 'وی پت', 'VIPET', '/shop/brands/vipet.png', 60, 1],
+        ['reflex', 'رفلکس', 'Reflex', '/shop/brands/reflex.png', 70, 1],
+        ['gourmet', 'گورمت', 'Purina Gourmet', '/shop/brands/gourmet.png', 80, 1],
+        ['celebone', 'سلبن', 'Celebone', '/shop/brands/celebone.png', 90, 1],
+        ['monello', 'مونلو', 'Monello', '/shop/brands/monello.png', 100, 1],
+        ['mr-cat', 'مستر کت', 'MR.CAT', '', 270, 0],
+        ['meocat', 'مئوکت', 'Meocat', '', 280, 0],
+        ['afp', 'AFP', 'AFP', '', 290, 0],
+        ['dr-clauders', 'دکتر کلادرز', "Dr.Clauder's", '', 300, 0],
+        ['bioline', 'بایولاین', 'Bioline', '', 310, 0],
+        ['bonnest', 'بونست', 'Bonnest', '', 320, 0],
+        ['luna', 'لونا', 'Luna', '', 330, 0],
+                ['petopoli', 'پتوپولی', 'Petopoli', '', 340, 0],
+        ['juicer', 'جویسر', 'Joyser', '', 350, 0],
+        ['hannapet', 'حناپت', 'Hannapet', '', 360, 0],
+                ['waudog', 'واوداگ', 'WAUDOG', '', 370, 0],
+                ['mojan', 'موژان', 'Mojan', '', 380, 0],
+                ['zarix', 'زریکس', 'Zarix', '', 390, 0],
+                ['raha', 'رها', 'Raha', '', 400, 0],
+                ['jupiter', 'ژوپیتر', 'Jupiter', '', 410, 0],
+                ['oshkaia', 'اوشکایا', 'Oshkaia', '', 420, 0],
+        ['generic', 'سایر', 'Other', '', 900, 0],
+      ] as const;
+      const insBrand = db.prepare(
+        `INSERT OR IGNORE INTO shop_brands (id, label_fa, label_en, logo_url, sort_order, featured, active)
+         VALUES (?, ?, ?, ?, ?, ?, 1)`
+      );
+      for (const b of brands) insBrand.run(...b);
+    }
+  }
+
   db.exec(`
     CREATE TABLE IF NOT EXISTS admin_announcements (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
