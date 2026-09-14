@@ -1388,7 +1388,8 @@ input, select, textarea { font-family: inherit; font-size: 1rem; }
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   background: var(--surface);
-  font-size: 0.9rem;
+  /* ≥16px — iOS Safari auto-zooms focused fields under 16px */
+  font-size: 1rem;
   color: var(--text);
   transition: border-color var(--transition), box-shadow var(--transition);
 }
@@ -3862,6 +3863,8 @@ body:has(.admin-app) .toast-host {
   min-height: 46px;
   border-radius: 14px !important;
   padding: 10px 12px !important;
+  /* Absolute px — rem can fall under 16 when nested under .86rem labels */
+  font-size: 16px !important;
 }
 .auth-login-otp-btn {
   min-width: 6.5rem;
@@ -3945,7 +3948,11 @@ body:has(.admin-app) .toast-host {
   border-radius: 16px;
   padding: 12px 14px;
   background: var(--surface);
-  font: inherit;
+  font-family: inherit;
+  font-weight: inherit;
+  /* iOS Safari auto-zooms focused inputs with computed font-size < 16px.
+     OTP nests <input> under label (.86rem ≈ 13.8px) — never inherit size. */
+  font-size: 16px;
   color: #19063d;
 }
 .auth-form input:focus,

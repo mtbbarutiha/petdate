@@ -27,11 +27,15 @@ assert.match(indexHtml, /mobile-web-app-capable/, 'modern PWA meta is present');
 assert.match(indexHtml, /apple-mobile-web-app-capable/, 'legacy iOS meta kept beside the modern one');
 const viewportMeta = indexHtml.match(/<meta[\s\S]*?name="viewport"[\s\S]*?>/)?.[0] || '';
 assert.match(viewportMeta, /width=device-width/, 'viewport meta exists');
-assert.doesNotMatch(
-  indexHtml,
-  /user-scalable|maximum-scale/,
-  'served index must not mention zoom locks anywhere (meta or scripts)'
+assert.match(viewportMeta, /maximum-scale\s*=\s*1/, 'viewport locks pinch-zoom (maximum-scale=1)');
+assert.match(
+  viewportMeta,
+  /user-scalable\s*=\s*no/,
+  'viewport disables user scaling (product UX — known a11y tradeoff)'
 );
+const globalCss = readFileSync(join(webSrc, 'styles/global.css'), 'utf8');
+assert.match(globalCss, /html\s*\{[\s\S]*?touch-action:\s*manipulation/, 'html disables double-tap zoom');
+assert.match(globalCss, /body\s*\{[\s\S]*?touch-action:\s*manipulation/, 'body disables double-tap zoom');
 assert.match(indexHtml, /pd-critical-first-paint/, 'inline critical CSS kills the white filmstrip');
 assert.match(indexHtml, /setTimeout\(run, 10000\)/, 'GTM waits for interaction or 10s — not first idle');
 assert.doesNotMatch(indexHtml, /requestIdleCallback/, 'GTM must not use requestIdleCallback (fires on first idle)');
@@ -105,7 +109,7 @@ assert.doesNotMatch(
   /rel="preload"\s+as="style"/,
   'do not preload a stylesheet (unused-preload warning)'
 );
-assert.match(indexHtml, /web-perf-v43-hero-api-lcp/, 'deploy marker bumped so SW/HTML cache misses');
+assert.match(indexHtml, /web-perf-v44-no-zoom/, 'deploy marker bumped so SW/HTML cache misses');
 assert.match(
   indexHtml,
   /--pepito-dock-clearance:calc\(96px \+ env\(safe-area-inset-bottom,0px\)\)/,
