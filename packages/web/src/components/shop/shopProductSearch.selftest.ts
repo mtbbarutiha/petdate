@@ -58,6 +58,11 @@ assert.match(search, /shopSearchResultsPath/, 'submit navigates to listing ?q=')
 assert.match(search, /filterProducts/, 'dropdown filters live catalog');
 assert.match(search, /data-testid="shop-product-search"/, 'search test id');
 assert.match(css, /\.pd-shop-search-pill/, 'pill search styles');
+assert.match(
+  css,
+  /\.pd-shop-search-input[\s\S]{0,220}font-size:\s*16px/,
+  'shop search input stays ≥16px (no iOS focus-zoom)'
+);
 assert.match(css, /\.pepito-nav-brand--search/, 'logo-column search styles');
 assert.match(
   css,

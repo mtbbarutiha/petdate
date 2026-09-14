@@ -37,6 +37,16 @@ assert.doesNotMatch(login, /auth-login-brand/, 'no second Pet Date inside the ca
 assert.doesNotMatch(login, /bannerTitle=\"Pet Date\"/, 'banner title is not a second brand line');
 assert.match(login, /bannerTitle=\"ورود\"/, 'banner title is login intent, not brand');
 assert.match(globalCss, /auth-login-premium/, 'premium login styles shipped');
+assert.match(
+  globalCss,
+  /\.auth-form textarea\s*\{[\s\S]{0,400}?font-size:\s*16px/,
+  'auth inputs stay ≥16px so iOS does not focus-zoom'
+);
+assert.match(
+  globalCss,
+  /\.auth-login-phone-row input\s*\{[\s\S]{0,220}font-size:\s*16px/,
+  'login phone field stays ≥16px on mobile'
+);
 assert.match(otp, /auth-otp-countdown/, 'OTP resend countdown visible');
 assert.match(otp, /readRetryAfterSec/, 'OTP reads retryAfterSec from errors');
 assert.match(otp, /pepito-btn button-2 auth-telegram-cta/, 'OTP page keeps Telegram button');
