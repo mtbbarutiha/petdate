@@ -3717,7 +3717,7 @@ html[data-theme='dark'] .pd-platform-banner--maintenance {
   border-color: rgba(253, 150, 30, 0.4);
 }
 
-/* Games page */
+/* Events page */
 html[data-theme='dark'] .pepito-games-form {
   background: color-mix(in srgb, var(--surface, #1e293b) 90%, #14b8a6 10%);
   border-color: color-mix(in srgb, var(--border, #334155) 90%, transparent);

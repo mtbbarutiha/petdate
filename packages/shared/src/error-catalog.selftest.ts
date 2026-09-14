@@ -56,7 +56,7 @@ const gamesList = translateAppLogMessage({
   method: 'GET',
   statusCode: 500,
 });
-assert.match(gamesList.titleFa, /فهرست بازی|بازی/);
+assert.match(gamesList.titleFa, /فهرست ایونت|ایونت/);
 assert.match(gamesList.titleFa, /\/chats|هم بازی/);
 
 console.log('error-catalog.selftest: ok');

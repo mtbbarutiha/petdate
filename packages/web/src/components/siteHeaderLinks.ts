@@ -11,7 +11,7 @@ export type SiteHeaderLink = {
 
 const DUPLICATE_PRIMARY = new Set(['games', 'shop', 'petShop', 'store']);
 
-/** Marketing extras — never repeats شاپ / بازی‌ها (those live in SiteDesktopNav). */
+/** Marketing extras — never repeats شاپ / ایونت‌ها (those live in SiteDesktopNav). */
 export function landingSectionLinks(
   platform?: Pick<PublicPlatformConfig, 'vetConsultEnabled'> | null,
 ): SiteHeaderLink[] {

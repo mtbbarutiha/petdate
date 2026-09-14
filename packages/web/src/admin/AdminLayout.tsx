@@ -123,7 +123,7 @@ const NAV_GROUPS: NavGroup[] = [
     { to: '/admin/consults', icon: Stethoscope, labelKey: 'admin.consults', perm: 'platform.read', platformBadgeKey: 'consults' },
     { to: '/admin/verification', icon: ShieldCheck, labelKey: 'admin.verification', perm: 'platform.write', platformBadgeKey: 'verification', tone: 'sensitive' },
     { to: '/admin/marketplace-moderation', icon: ClipboardList, labelKey: 'admin.docsPhotos', perm: 'platform.write', platformBadgeKey: 'docs', tone: 'sensitive' },
-    { to: '/admin/games', icon: Gamepad2, labelKey: 'admin.games', perm: 'platform.read', platformBadgeKey: 'games' },
+    { to: '/admin/events', icon: Gamepad2, labelKey: 'admin.games', perm: 'platform.read', platformBadgeKey: 'games' },
   ]},
   { titleKey: 'admin.finance', items: [
     { to: '/admin/finance', icon: TrendingUp, labelKey: 'admin.financeDashboard', perm: 'finance.read' },

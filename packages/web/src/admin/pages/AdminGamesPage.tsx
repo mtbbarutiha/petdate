@@ -70,7 +70,7 @@ export function AdminGamesPage() {
     <div className="admin-page">
       <header className="admin-header">
         <div>
-          <h1>{tr('بازی‌ها')}</h1>
+          <h1>{tr('ایونت‌ها')}</h1>
           <p>
             {formatNumFa(items.length)} {tr('مورد')}
           </p>
@@ -155,7 +155,7 @@ export function AdminGamesPage() {
             {!items.length ? (
               <tr>
                 <td colSpan={8} className="admin-muted">
-                  {tr('بازی‌ای ثبت نشده')}
+                  {tr('ایونتی ثبت نشده')}
                 </td>
               </tr>
             ) : null}
@@ -190,14 +190,14 @@ export function AdminGamesPage() {
               <strong>{tr('توضیح')}:</strong> {detail.description}
             </p>
           ) : null}
-          <h3 style={{ marginTop: 12 }}>{tr('بازیکنان')}</h3>
+          <h3 style={{ marginTop: 12 }}>{tr('شرکت‌کنندگان')}</h3>
           <ul>
             {(detail.players ?? []).map((p) => (
               <li key={p.id}>
                 {p.userName || `#${p.userId}`} · {formatAdminFaDateTime(p.joinedAt)}
               </li>
             ))}
-            {!detail.players?.length ? <li className="admin-muted">{tr('بازیکنی نیست')}</li> : null}
+            {!detail.players?.length ? <li className="admin-muted">{tr('شرکت‌کننده‌ای نیست')}</li> : null}
           </ul>
         </div>
       ) : null}

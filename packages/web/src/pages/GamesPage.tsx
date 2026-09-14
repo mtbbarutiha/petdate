@@ -189,7 +189,7 @@ export function GamesPage() {
               {showForm ? t('games.hideForm') : t('games.createCta')}
             </button>
           ) : (
-            <Link to={loginPath('/games')} className="pepito-btn button-1" data-testid="games-login">
+            <Link to={loginPath('/events')} className="pepito-btn button-1" data-testid="games-login">
               {t('games.loginToCreate')}
             </Link>
           )}
@@ -348,7 +348,7 @@ export function GamesPage() {
                   <div className="pepito-games-item-actions">
                     {!isLoggedIn ? (
                       <Link
-                        to={loginPath('/games')}
+                        to={loginPath('/events')}
                         className="pepito-btn button-1"
                         data-testid={`games-join-login-${g.id}`}
                       >

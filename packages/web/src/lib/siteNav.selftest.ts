@@ -162,7 +162,7 @@ assert.match(
 
 const ownerRail = layout.slice(layout.indexOf('const OWNER_NAV'), layout.indexOf('const VET_NAV'));
 const playmateIdx = ownerRail.indexOf("to: '/chats'");
-const gamesIdx = ownerRail.indexOf("to: '/games'");
-assert.ok(playmateIdx > 0 && gamesIdx > playmateIdx, 'owner rail keeps هم بازی before Games');
+const gamesIdx = ownerRail.indexOf("to: '/events'");
+assert.ok(playmateIdx > 0 && gamesIdx > playmateIdx, 'owner rail keeps هم بازی before Events');
 
 console.log('siteNav.selftest: ok');

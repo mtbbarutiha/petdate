@@ -81,7 +81,7 @@ export function LandingChrome({
   // marketing links + SiteDesktopNav.
   const actionLabel = actionLabelProp ?? '';
   const sectionLinks = appNav ? [] : landingSectionLinks(platform);
-  // Public marketing (FAQ/help, shop-adjacent, magazine, games, vet, invite).
+  // Public marketing (FAQ/help, shop-adjacent, magazine, events, vet, invite).
   // App shell already pads `.pepito-app-main`; auth hides the dock.
   const withDock =
     !appNav && !/\bpepito-auth-flow\b/.test(className);

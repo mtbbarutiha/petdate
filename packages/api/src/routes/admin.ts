@@ -854,12 +854,12 @@ adminRouter.get('/games', (req, res) => {
 adminRouter.get('/games/:id', (req, res) => {
   const id = parsePositiveIntId(req.params.id);
   if (id == null) {
-    res.status(400).json({ error: 'شناسه بازی نامعتبر است' });
+    res.status(400).json({ error: 'شناسه ایونت نامعتبر است' });
     return;
   }
   const game = dbService.getGame(id);
   if (!game) {
-    res.status(404).json({ error: 'بازی پیدا نشد' });
+    res.status(404).json({ error: 'ایونت پیدا نشد' });
     return;
   }
   const players = dbService.getGamePlayers(game.id);
@@ -869,7 +869,7 @@ adminRouter.get('/games/:id', (req, res) => {
 adminRouter.patch('/games/:id/status', (req, res) => {
   const id = parsePositiveIntId(req.params.id);
   if (id == null) {
-    res.status(400).json({ error: 'شناسه بازی نامعتبر است' });
+    res.status(400).json({ error: 'شناسه ایونت نامعتبر است' });
     return;
   }
   const status = String(req.body?.status || '');
@@ -882,7 +882,7 @@ adminRouter.patch('/games/:id/status', (req, res) => {
     status as 'open' | 'full' | 'cancelled' | 'completed'
   );
   if (!updated) {
-    res.status(404).json({ error: 'بازی پیدا نشد' });
+    res.status(404).json({ error: 'ایونت پیدا نشد' });
     return;
   }
   res.json(updated);

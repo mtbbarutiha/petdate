@@ -16,10 +16,11 @@ const adminRoutes = readFileSync(join(repoRoot, 'packages/api/src/routes/admin.t
 const sharedNav = readFileSync(join(repoRoot, 'packages/shared/src/admin-nav.ts'), 'utf8');
 const platform = readFileSync(join(repoRoot, 'packages/api/src/admin-platform.ts'), 'utf8');
 
-assert.match(layout, /to: '\/admin\/games'/, 'sidebar has games link');
+assert.match(layout, /to: '\/admin\/events'/, 'sidebar has events link');
 assert.match(layout, /labelKey: 'admin\.games'/, 'sidebar games i18n key');
 assert.match(layout, /platformBadgeKey: 'games'/, 'sidebar games badge');
-assert.match(app, /path="games"\s+element=\{<AdminGamesPage/, 'admin route registered');
+assert.match(app, /path="events"\s+element=\{<AdminGamesPage/, 'admin route registered');
+assert.match(app, /path="games"\s+element=\{<Navigate to="\/admin\/events"/, 'legacy /admin/games redirects');
 assert.match(page, /\/api\/admin\/games/, 'admin page lists games');
 assert.match(page, /\/api\/admin\/games\/\$\{id\}\/status/, 'admin page can update status');
 assert.match(adminRoutes, /adminRouter\.get\('\/games'/, 'GET /api/admin/games');

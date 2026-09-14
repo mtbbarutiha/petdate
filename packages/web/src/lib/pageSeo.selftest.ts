@@ -111,7 +111,7 @@ assert.ok(redirects.every((r) => r.from !== r.to && !/\/p\d+$/.test(r.to)), 'red
 const sitemap = listSitemapEntries(['علائم-هشدار-سگ-و-گربه']);
 const paths = sitemap.map((u) => u.path);
 assert.ok(paths.includes('/help'), 'sitemap lists public /help');
-assert.ok(paths.includes('/games'), 'sitemap lists /games');
+assert.ok(paths.includes('/events'), 'sitemap lists /events');
 assert.ok(paths.includes('/faq'));
 assert.ok(paths.includes(productCanonicalPath(product)));
 assert.ok(!paths.includes('/auth/login'), 'login omitted as low-value');

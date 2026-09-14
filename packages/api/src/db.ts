@@ -4953,14 +4953,14 @@ export const dbService = {
 
   joinGame(gameId: number, userId: number): { game: Game; error?: string } {
     const game = this.getGame(gameId);
-    if (!game) return { game: game!, error: 'بازی پیدا نشد' };
-    if (game.status !== 'open') return { game, error: 'این بازی دیگر باز نیست' };
-    if (game.currentPlayers >= game.maxPlayers) return { game, error: 'ظرفیت بازی تکمیل شده' };
+    if (!game) return { game: game!, error: 'ایونت پیدا نشد' };
+    if (game.status !== 'open') return { game, error: 'این ایونت دیگر باز نیست' };
+    if (game.currentPlayers >= game.maxPlayers) return { game, error: 'ظرفیت ایونت تکمیل شده' };
 
     const existing = db
       .prepare('SELECT id FROM game_players WHERE game_id = ? AND user_id = ?')
       .get(gameId, userId);
-    if (existing) return { game, error: 'شما قبلاً عضو این بازی هستید' };
+    if (existing) return { game, error: 'شما قبلاً عضو این ایونت هستید' };
 
     db.prepare('INSERT INTO game_players (game_id, user_id) VALUES (?, ?)').run(gameId, userId);
     const updated = this.getGame(gameId)!;
