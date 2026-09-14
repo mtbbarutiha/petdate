@@ -115,7 +115,7 @@ fi
 if is_set "${GOOGLE_CLIENT_ID:-}" && is_set "${GOOGLE_CLIENT_SECRET:-}"; then
   status GOOGLE_OAUTH OK
 else
-  printf '%-22s %s\n' GOOGLE_OAUTH 'MISSING (optional — Gmail login hidden until GOOGLE_CLIENT_ID/SECRET are set)'
+  printf '%-22s %s\n' GOOGLE_OAUTH 'MISSING (optional — «ورود با گوگل» stays visible; set GOOGLE_CLIENT_ID/SECRET to complete OAuth)'
 fi
 
 echo "verify-prod-env: OK=$ok MISSING=$missing DEFAULT-RISK=$risk AI_LLM=$AI_KEY_SET"
