@@ -476,3 +476,125 @@ button.pd-app-land-cta--primary {
     animation: none;
   }
 }
+
+/*
+ * Dark mode — root remaps --pepito-dark/--pepito-muted to light ink.
+ * Hardcoded light washes (#fff / lilac→white) must not stay light, or copy vanishes.
+ */
+html[data-theme='dark'] .pd-app-land {
+  --pd-app-ink: var(--pepito-dark);
+  --pd-app-muted: var(--pepito-muted);
+  --pd-app-accent: var(--pepito-base);
+  --pd-app-soft: color-mix(in srgb, var(--pepito-base) 16%, var(--pepito-lilac));
+  --pd-app-wash: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--pepito-base) 22%, #1a1d27) 0%,
+    #1e2130 42%,
+    #242836 100%
+  );
+  color: var(--pd-app-ink);
+}
+
+html[data-theme='dark'] .pd-app-land-hero {
+  background: var(--pd-app-wash);
+  box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--pepito-base) 18%, transparent);
+}
+
+html[data-theme='dark'] .pd-app-land-hero::before {
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--pepito-pink) 22%, transparent),
+    transparent 70%
+  );
+}
+
+html[data-theme='dark'] .pd-app-land-cta--ghost {
+  color: var(--pepito-base);
+  border-color: color-mix(in srgb, var(--pepito-base) 45%, transparent);
+}
+
+html[data-theme='dark'] .pd-app-land-cta--ghost:hover {
+  background: color-mix(in srgb, var(--pepito-base) 16%, var(--pepito-lilac));
+  border-color: var(--pepito-base);
+}
+
+html[data-theme='dark'] .pd-app-land-phone-screen {
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--pepito-base) 18%, #2a2e42) 0%,
+      #242836 45%,
+      #1e2130 100%
+    );
+}
+
+html[data-theme='dark'] .pd-app-land-phone-chips li {
+  background: color-mix(in srgb, var(--pepito-base) 22%, #2a2e42);
+  color: #f0ecfa;
+}
+
+html[data-theme='dark'] .pd-app-land-phone-card {
+  background: #2c3040;
+  border-color: color-mix(in srgb, var(--pepito-base) 28%, transparent);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+  color: var(--pd-app-ink);
+}
+
+html[data-theme='dark'] .pd-app-land-phone-card span {
+  color: var(--pd-app-muted);
+}
+
+html[data-theme='dark'] .pd-app-land-feature {
+  background: color-mix(in srgb, var(--pepito-lilac) 88%, #1a1d27);
+  border-color: color-mix(in srgb, var(--pepito-base) 22%, transparent);
+}
+
+html[data-theme='dark'] .pd-app-land-feature-icon {
+  background: color-mix(in srgb, var(--pepito-base) 22%, #2a2e42);
+  color: var(--pepito-base);
+}
+
+html[data-theme='dark'] .pd-app-land-trust > div {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--pepito-base) 16%, #2a2e42),
+    #242836
+  );
+  border-color: color-mix(in srgb, var(--pepito-base) 22%, transparent);
+}
+
+html[data-theme='dark'] .pd-app-land-download {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--pepito-base) 14%, #1e2130),
+    #242836
+  );
+}
+
+html[data-theme='dark'] .pd-app-land-store {
+  background: #2c3040;
+  border-color: color-mix(in srgb, var(--pepito-base) 22%, transparent);
+  color: var(--pd-app-ink);
+}
+
+html[data-theme='dark'] .pd-app-land-store--apk {
+  background: var(--pepito-btn-1-bg);
+  color: var(--pepito-btn-1-fg);
+  border-color: var(--pepito-btn-1-bg);
+}
+
+html[data-theme='dark'] .pd-app-land-sms {
+  background: #2c3040;
+  border-color: color-mix(in srgb, var(--pepito-base) 22%, transparent);
+  color: var(--pd-app-ink);
+}
+
+html[data-theme='dark'] .pd-app-land-sms-field input {
+  background: #1e2130;
+  border-color: color-mix(in srgb, var(--pepito-base) 28%, transparent);
+  color: var(--pd-app-ink);
+}
+
+html[data-theme='dark'] .pd-app-land-sms-field input::placeholder {
+  color: color-mix(in srgb, var(--pepito-muted) 70%, transparent);
+}

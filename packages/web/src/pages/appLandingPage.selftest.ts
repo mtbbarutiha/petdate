@@ -39,6 +39,21 @@ assert.match(footer, /\/landings\/app/);
 assert.match(footer, /footer\.androidApp/);
 assert.match(css, /\.pd-app-land-hero\b/);
 assert.match(css, /\.pd-app-land-download\b/);
+assert.match(
+  css,
+  /html\[data-theme=['"]dark['"]\]\s+\.pd-app-land\b/,
+  'dark theme remaps app-landing tokens (light wash must not keep light ink)'
+);
+assert.match(
+  css,
+  /html\[data-theme=['"]dark['"]\]\s+\.pd-app-land-hero\b/,
+  'dark theme restyles hero wash'
+);
+assert.match(
+  css,
+  /html\[data-theme=['"]dark['"]\]\s+\.pd-app-land-phone-screen\b/,
+  'dark theme restyles phone mock screen'
+);
 assert.match(main, /app-landing\.css/);
 assert.ok(existsSync(apkPath), 'public APK missing');
 assert.ok(statSync(apkPath).size > 100_000, 'APK too small');
