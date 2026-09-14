@@ -371,7 +371,7 @@ async function main() {
 
   const faranakPrompt = buildAiConsultSystemPrompt('trainer', 'فرانک احمدی');
   assert(/فرانک احمدی/.test(faranakPrompt), 'faranak prompt names self');
-  assert(/پاشا یزدانی/.test(faranakPrompt), 'faranak plays former Pasha coach role');
+  assert(/مرز تخصص سخت|جواب تخصصی نده/.test(faranakPrompt), 'faranak stays in-domain');
   assert(/\/team-chat\/sara-noori/.test(faranakPrompt), 'trainer ood points to vet route');
   assert(/\/support\/chat/.test(faranakPrompt), 'trainer ood points to support');
   const sanazPrompt = buildAiConsultSystemPrompt('support', 'ساناز غفاری');
@@ -399,7 +399,8 @@ async function main() {
     ['support', supportPrompt],
   ] as const) {
     assert(/قالب ثابت/.test(prompt), `${label} prompt forbids fixed reply template`);
-    assert(/چت انسانی/.test(prompt), `${label} prompt requires human chat not a script`);
+    assert(/لحن انسانی|آدم واقعی/.test(prompt), `${label} prompt requires human tone`);
+    assert(/مرز تخصص سخت|جواب تخصصی نده/.test(prompt), `${label} prompt enforces domain lock`);
   }
 
   const vision = buildLlmUserContent({
