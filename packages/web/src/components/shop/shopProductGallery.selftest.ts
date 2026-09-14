@@ -27,7 +27,7 @@ const css = readFileSync(join(here, '../../styles/pepito.css'), 'utf8');
 
 assert.match(page, /ShopProductGallery/, 'PDP uses gallery component');
 assert.match(page, /ShopProductAliasRedirect/, 'short /shop/:slug aliases the PDP');
-assert.match(page, /pd-dk-tools/, 'PDP exposes like + share tools');
+assert.match(page, /pd-dk-action-rail/, 'PDP exposes DigiKala vertical like + share rail');
 assert.match(page, /shareOrCopyUrl/, 'PDP share uses shared helper');
 assert.match(app, /shop\/p\/:id/, 'Telegram /shop/p/:slug alias is routed');
 assert.match(app, /shop\/:id/, 'bare /shop/:slug alias is routed');
