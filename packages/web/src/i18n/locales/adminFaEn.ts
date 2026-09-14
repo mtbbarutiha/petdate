@@ -1940,7 +1940,6 @@ export const ADMIN_FA_EN: Record<string, string> = {
   "هزینه عضویت": "Join fee",
   "خدمات": "Services",
   "وضعیت عکس": "Photo status",
-  "سکه": "coins",
   "بازی‌ای ثبت نشده": "No events yet",
   "ایونتی ثبت نشده": "No events yet",
   "بازیکنان": "Players",
