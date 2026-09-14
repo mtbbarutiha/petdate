@@ -16974,6 +16974,15 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   font-size: 0.88rem;
   color: var(--text-secondary, #5b6472);
 }
+.pepito-pet-discovery-status.is-error {
+  color: var(--danger, #c0392b);
+}
+.pepito-pet-discovery-empty {
+  margin: 0.85rem 0 0;
+  font-size: 0.9rem;
+  color: var(--text-secondary, #5b6472);
+  line-height: 1.5;
+}
 .pepito-pet-discovery-list {
   list-style: none;
   margin: 0.85rem 0 0;
@@ -16985,20 +16994,26 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   display: flex;
   align-items: center;
   gap: 0.7rem;
-  padding: 0.45rem 0.55rem;
+  padding: 0.55rem 0.65rem;
   border-radius: 12px;
   text-decoration: none;
   color: inherit;
   background: color-mix(in srgb, var(--surface, #fff) 96%, transparent);
 }
+.pepito-pet-discovery-card--person {
+  flex-wrap: wrap;
+  row-gap: 0.55rem;
+}
 .pepito-pet-discovery-copy {
   display: flex;
   flex-direction: column;
-  gap: 0.1rem;
+  gap: 0.2rem;
   min-width: 0;
+  flex: 1 1 8rem;
 }
 .pepito-pet-discovery-copy strong {
   font-size: 0.95rem;
+  color: var(--text, #1a1a1a);
 }
 .pepito-pet-discovery-copy span {
   font-size: 0.8rem;
@@ -17006,4 +17021,50 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+.pepito-pet-discovery-petlink {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  text-decoration: none;
+  color: inherit;
+  max-width: 100%;
+}
+.pepito-pet-discovery-petlink .pepito-pet-avatar,
+.pepito-pet-discovery-petlink [class*='avatar'] {
+  flex-shrink: 0;
+  width: 1.55rem !important;
+  height: 1.55rem !important;
+}
+.pepito-pet-discovery-request {
+  flex: 0 0 auto;
+  margin-inline-start: auto;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.82rem;
+  white-space: nowrap;
+}
+.pepito-pet-discovery-pickpanel {
+  margin-top: 0.85rem;
+  padding: 0.75rem 0.85rem;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface, #fff) 94%, var(--pepito-base, #5c4d91) 6%);
+  border: 1px solid color-mix(in srgb, var(--border, #e2e8f0) 75%, transparent);
+}
+.pepito-pet-discovery-pickpanel > p {
+  margin: 0 0 0.55rem;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  color: var(--text-secondary, #5b6472);
+}
+.pepito-pet-discovery-pick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+@media (max-width: 420px) {
+  .pepito-pet-discovery-request {
+    width: 100%;
+    margin-inline-start: 0;
+  }
 }
