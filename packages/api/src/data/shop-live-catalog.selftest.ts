@@ -284,7 +284,7 @@ async function main() {
   );
   assert.match(
     String(p279.image),
-    /dog-accessories-hannapet-silicone-dog-leash-size-l\.jpg\?v=batch-multi-w3-v3$/
+    /dog-accessories-hannapet-silicone-dog-leash-size-l\.jpg\?v=batch-multi-w3-v4$/
   );
   assert.match(
     String(p289.image),
