@@ -8453,6 +8453,7 @@ a.pepito-btn.pepito-human-consult-cta:hover {
     width: max-content;
     max-width: 15.5rem;
   }
+  .pd-shop-page .pepito-nav-leading,
   .pd-shop-page .pepito-nav-primary,
   .pd-shop-page .pepito-nav-actions {
     align-self: flex-start;
