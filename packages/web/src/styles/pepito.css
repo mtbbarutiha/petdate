@@ -364,7 +364,7 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
     height: auto;
   }
   .pepito-nav--app {
-    padding-left: calc(var(--pepito-gutter-x) + 7.25rem);
+    padding-left: var(--pepito-gutter-x);
   }
   .pepito-nav-user-cluster {
     left: 0.65rem;
@@ -389,15 +389,22 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   height: auto;
   align-items: stretch;
 }
-/* Single header row site-wide — logo | links | tools (search nests under brand).
-   space-between parks brand at inline-start and tools at inline-end when the
-   primary column is absent (mobile). Desktop uses primary margin-inline-end:auto. */
+/* Single header row site-wide — leading (logo + links) | tools.
+   Exactly two flex children: space-between parks leading at inline-start
+   (physical right in RTL) and tools at inline-end (physical left). */
 .pepito-nav-main {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
   width: 100%;
+  min-width: 0;
+}
+.pepito-nav-leading {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex: 0 1 auto;
   min-width: 0;
 }
 .pepito-nav-brand--search {
@@ -480,15 +487,19 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   display: none;
 }
 .pepito-nav-actions {
-  /* direction:ltr island — do not use ms-auto here (resolves to margin-left
-     and tools cluster with the logo on RTL). Free space is absorbed by
-     .pepito-nav-primary { margin-inline-end:auto } (inherits page dir) or by
-     .pepito-nav-main { justify-content:space-between } on mobile. */
-  margin-inline-start: 0;
-  margin-inline-end: 0;
+  /* direction:ltr island — NEVER use ms-auto / inline-start:auto here (that
+     resolves to margin-left and pulls tools toward the logo on RTL). Physical
+     margin-left:0 pins the cluster flush to the left content edge; free
+     space comes from .pepito-nav-main { justify-content:space-between }
+     with the .pepito-nav-leading sibling. */
+  margin-left: 0 !important;
+  margin-right: 0;
+  margin-inline-start: 0 !important;
+  margin-inline-end: 0 !important;
   display: flex;
   align-items: center;
   gap: 0.65rem;
+  flex: 0 0 auto;
   flex-shrink: 0;
   position: relative;
   z-index: 6;
@@ -6841,16 +6852,16 @@ div.pepito-profile-stat:active {
   }
 }
 
-/* —— Post-login profile avatar + wallet (physical CSS left) —— */
+/* —— Post-login profile avatar + wallet (in-flow inside .pepito-nav-actions) —— */
 .pepito-nav--app {
-  /* Room for absolute avatar + compact wallet entry on physical left */
-  padding-left: calc(var(--pepito-gutter-x) + 10.5rem);
+  /* Cluster is in-flow on the physical left — do not reserve absolute room. */
+  padding-left: var(--pepito-gutter-x);
 }
 .pepito-nav-user-cluster {
-  position: absolute;
-  left: var(--pepito-gutter-x);
-  top: 50%;
-  transform: translateY(-50%);
+  position: static;
+  left: auto;
+  top: auto;
+  transform: none;
   z-index: 5;
   display: flex;
   flex-direction: row;
@@ -7157,7 +7168,7 @@ div.pepito-profile-stat:active {
 }
 @media (max-width: 859px) {
   .pepito-nav--app {
-    padding-left: calc(var(--pepito-gutter-x) + 9.5rem);
+    padding-left: var(--pepito-gutter-x);
   }
   .pepito-nav-user-cluster {
     gap: 0.35rem;
@@ -8442,6 +8453,7 @@ a.pepito-btn.pepito-human-consult-cta:hover {
     width: max-content;
     max-width: 15.5rem;
   }
+  .pd-shop-page .pepito-nav-leading,
   .pd-shop-page .pepito-nav-primary,
   .pd-shop-page .pepito-nav-actions {
     align-self: flex-start;
@@ -13243,8 +13255,9 @@ a.pepito-btn.pepito-human-consult-cta:hover {
 
   /*
     Site-wide mobile header row (shop + non-shop):
-    Always use .pepito-nav-main so logo stays at inline-start (far right in RTL)
-    and utilities park at inline-end (far left) via space-between.
+    Always use .pepito-nav-main so the leading group (logo) stays at
+    inline-start (far right in RTL) and utilities park at inline-end
+    (far left) via space-between on exactly two children.
     Nested .pepito-nav-logo margin-inline-end:auto alone does nothing — logo
     is not a direct flex child of .pepito-nav.
 
@@ -13259,6 +13272,14 @@ a.pepito-btn.pepito-human-consult-cta:hover {
     width: 100%;
     max-width: 100%;
     flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .pepito-nav-leading {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex: 0 1 auto;
     min-width: 0;
   }
 
@@ -13306,11 +13327,14 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   }
 
   /*
-    MUST keep margin-inline-start:0. .pepito-nav-actions sets direction:ltr, so
-    margin-inline-start resolves to margin-left and pulls tools toward the logo
-    on RTL (same footgun as footer copy). space-between does the separation.
+    MUST keep margin-inline-start:0 and physical margin-left:0.
+    .pepito-nav-actions sets direction:ltr, so margin-inline-start resolves
+    to margin-left and pulls tools toward the logo on RTL (same footgun as
+    footer copy). space-between on the two-child main row does the separation.
   */
   .pepito-nav-actions {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
     margin-inline-start: 0 !important;
     margin-inline-end: 0 !important;
     gap: 0.3rem;
@@ -13475,14 +13499,13 @@ a.pepito-btn.pepito-human-consult-cta:hover {
 
 
 /* SITE_DESKTOP_NAV
-   Hierarchy: brand | primary (role text + extras + overflow) | utilities.
+   Hierarchy: leading (brand + primary text links) | utilities.
    Role shortcuts share the خدمات plain-text treatment (no icon pills).
    Marketing شاپ/ایونت‌ها text links are not rendered beside SiteDesktopNav.
-   Utilities (cluster + lang + theme) are in-flow at inline-end; LTR inside
-   the cluster keeps avatar → wallet → cart on the physical left.
-   Free space: primary margin-inline-end:auto (page dir) — not actions ms-auto
-   (actions is direction:ltr, so ms-auto was margin-left and clustered tools
-   with the logo on RTL). */
+   Utilities stay in-flow at the physical left via space-between on a
+   two-child .pepito-nav-main (leading | actions). LTR inside the actions
+   island keeps avatar → wallet → cart → lang → theme order. Never use
+   ms-auto on .pepito-nav-actions (direction:ltr → margin-left footgun). */
 .pepito-site-desktop-nav {
   display: none;
 }
@@ -13504,15 +13527,23 @@ a.pepito-btn.pepito-human-consult-cta:hover {
     flex: 0 0 auto;
   }
 
+  .pepito-nav-leading {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+
   .pepito-nav-primary {
     display: flex;
     align-items: center;
     gap: 0.95rem;
-    /* Shrink-wrap beside brand; me-auto (page dir) parks LTR tools at far left. */
+    /* Shrink-wrap beside brand inside the leading group. */
     flex: 0 1 auto;
     min-width: 0;
     margin-inline-start: 0.35rem;
-    margin-inline-end: auto;
+    margin-inline-end: 0;
     position: relative;
     z-index: 1;
   }
@@ -13535,11 +13566,14 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   }
 
   .pepito-nav-actions {
+    /* Physical left pin — immune to direction:ltr island reinterpreting
+       inline-start as margin-left (the #493/#504/#505 footgun). */
+    margin-left: 0 !important;
+    margin-right: 0 !important;
     margin-inline-start: 0 !important;
     margin-inline-end: 0 !important;
     flex: 0 0 auto;
     gap: 0.4rem;
-    /* Physical left tools: avatar/wallet/cart then lang/theme */
     direction: ltr;
   }
 
