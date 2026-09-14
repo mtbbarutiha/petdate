@@ -15,11 +15,14 @@ assert.match(chatPage, /onClick=\{\(\) => void blockPeer\(\)\}/, 'block menu wir
 assert.match(chatPage, /مسدود کردن/, 'block from chat menu');
 assert.match(chatPage, /حذف از فهرست گفتگوها/, 'dismiss conversation');
 assert.match(chatPage, /tg-chat-list-dismiss/, 'list-row dismiss control');
+assert.match(chatPage, /tg-thread-dismiss/, 'thread-header dismiss control');
 assert.match(chatPage, /chat-dismiss-confirm/, 'dismiss uses ConfirmModal');
 assert.match(chatPage, /requestDismissFromList/, 'list trash opens confirm first');
 assert.match(chatPage, /ChatVoicePlayer/, 'voice player in playmate chat');
 assert.match(chatPage, /ChatGiftBubble/, 'gift bubble');
 assert.match(vetPage, /ChatVoicePlayer/, 'voice player in vet chat');
+assert.match(vetPage, /tg-thread-dismiss/, 'vet thread-header dismiss control');
+assert.match(vetPage, /chat-dismiss-confirm/, 'vet dismiss uses ConfirmModal');
 assert.match(vetPage, /مسدود کردن/, 'block in vet chat');
 assert.match(api, /sendPlaydateGift/, 'gift API client');
 assert.match(api, /dismissPlaydateInbox/, 'dismiss playmate API');
