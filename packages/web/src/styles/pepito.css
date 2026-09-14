@@ -11013,9 +11013,35 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   scrollbar-width: none;
   padding-block: 0.25rem;
   padding-inline: 2.55rem;
+  cursor: grab;
 }
 .pd-shop-home-rail-track::-webkit-scrollbar {
   display: none;
+}
+/* Mouse drag-to-scroll on shop rails (hook adds .is-dragging). */
+.pd-shop-home-rail-track.is-dragging,
+.pd-shop-dk-strip.is-dragging,
+.pd-shop-top-brands-track.is-dragging,
+.pd-dk-similar-track.is-dragging {
+  cursor: grabbing;
+  scroll-snap-type: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.pd-shop-home-rail-track.is-dragging a,
+.pd-shop-dk-strip.is-dragging a,
+.pd-shop-top-brands-track.is-dragging a,
+.pd-dk-similar-track.is-dragging a,
+.pd-shop-home-rail-track.is-dragging img,
+.pd-shop-dk-strip.is-dragging img,
+.pd-shop-top-brands-track.is-dragging img,
+.pd-dk-similar-track.is-dragging img {
+  pointer-events: none;
+}
+.pd-shop-dk-strip,
+.pd-shop-top-brands-track,
+.pd-dk-similar-track {
+  cursor: grab;
 }
 .pd-shop-home-rail-item {
   flex: 0 0 auto;
