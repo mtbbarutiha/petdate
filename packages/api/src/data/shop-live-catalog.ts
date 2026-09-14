@@ -1,5 +1,5 @@
 /**
- * Live shop catalog guard — keep ONLY p221–p309 (3 pilots + 12 Batch 2 + 14 Batch 3 + 10 multi wave 1 + 10 multi wave 2 + 10 multi wave 3 + 10 multi wave 4 + 10 multi wave 5 + 10 Digikala batch1 Part1).
+ * Live shop catalog guard — keep ONLY p221–p319 (3 pilots + 12 Batch 2 + 14 Batch 3 + 10 multi wave 1 + 10 multi wave 2 + 10 multi wave 3 + 10 multi wave 4 + 10 multi wave 5 + 10 Digikala batch1 Part1 + 10 Digikala batch1 Part2).
  * Purges leftover demo/seed rows (p1–p220, finance placeholders, etc.)
  * without touching live prices, images, or stock.
  */

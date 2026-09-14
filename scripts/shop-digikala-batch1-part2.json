@@ -1,0 +1,153 @@
+{
+  "batch": "digikala-batch1",
+  "wave": 2,
+  "part": "DK-Part2",
+  "waveCount": 4,
+  "pricingRule": "zero-margin",
+  "cacheBust": "digikala-b1-p2-v1",
+  "products": [
+    {
+      "proposedId": "p310",
+      "slug": "cat-toys-dkp-5758150",
+      "title": "اسباب‌بازی سگ و گربه مدل SH100",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "cat-toys",
+      "petTypes": [
+        "cat"
+      ],
+      "priceToman": 293000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p311",
+      "slug": "cat-toys-dkp-7868352",
+      "title": "ماهی پارچه‌ای کت‌نیپ — مجموعه ۳ عددی",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "cat-toys",
+      "petTypes": [
+        "cat"
+      ],
+      "priceToman": 230000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p312",
+      "slug": "cat-toys-dkp-12180640",
+      "title": "چوب بازی چوبی با زنگوله",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "cat-toys",
+      "petTypes": [
+        "cat"
+      ],
+      "priceToman": 170000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p313",
+      "slug": "grooming-dkp-18631110",
+      "title": "ناخن‌گیر اختاپوسی سگ و گربه GK890 (وریانت ۲)",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "grooming",
+      "petTypes": [
+        "dog",
+        "cat"
+      ],
+      "priceToman": 490000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p314",
+      "slug": "grooming-dkp-18625181",
+      "title": "ناخن‌گیر اختاپوسی سگ و گربه GK890",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "grooming",
+      "petTypes": [
+        "dog",
+        "cat"
+      ],
+      "priceToman": 450000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p315",
+      "slug": "grooming-dkp-21424542",
+      "title": "قیچی ناخن‌گیر HIACE BL",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "grooming",
+      "petTypes": [
+        "dog",
+        "cat"
+      ],
+      "priceToman": 380000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p316",
+      "slug": "bird-food-dkp-12290421",
+      "title": "مای‌برد پلاس عروس هلندی ۱ کیلو",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "bird-food",
+      "petTypes": [
+        "bird"
+      ],
+      "priceToman": 428000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p317",
+      "slug": "bird-food-dkp-10394150",
+      "title": "غذای عروس هلندی سبزیجات معطر ۱ کیلو",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "bird-food",
+      "petTypes": [
+        "bird"
+      ],
+      "priceToman": 220000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p318",
+      "slug": "bird-food-dkp-6060757",
+      "title": "تشویقی پرنده میل‌ورم خشک ۵۰ گرم",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "bird-food",
+      "petTypes": [
+        "bird"
+      ],
+      "priceToman": 110000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p319",
+      "slug": "bird-food-dkp-10253439",
+      "title": "ارزن خوشه‌ای پرنده — بسته ۵ عددی",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "bird-food",
+      "petTypes": [
+        "bird"
+      ],
+      "priceToman": 106000,
+      "weightLabel": "",
+      "weightKind": ""
+    }
+  ]
+}
