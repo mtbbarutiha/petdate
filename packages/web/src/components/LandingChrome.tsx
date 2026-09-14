@@ -25,8 +25,10 @@ export interface LandingChromeProps {
   /** Extra action — primary CTA style */
   ctaLabel?: string;
   ctaTo?: string;
-  /** Mobile Events pill beside the logo (default true; magazine/shop turn off) */
+  /** Mobile Events pill beside the logo (default true; magazine/shop/auth turn off) */
   showMobileEvents?: boolean;
+  /** Desktop هم بازی / شاپ / ایونت‌ها shortcuts (default true; shop/auth turn off) */
+  showDesktopNav?: boolean;
   /** Hide actionLabel below 860px (magazine keeps خانه on desktop only) */
   hideActionOnMobile?: boolean;
   /** When true, show app destinations in the top nav instead of landing anchors */
@@ -52,6 +54,7 @@ export function LandingChrome({
   ctaLabel,
   ctaTo,
   showMobileEvents = true,
+  showDesktopNav = true,
   hideActionOnMobile = false,
   appNav = false,
   hideBanner = false,
@@ -120,6 +123,7 @@ export function LandingChrome({
         sectionLinks={sectionLinks}
         showCart
         showMobileEvents={showMobileEvents}
+        showDesktopNav={showDesktopNav}
         hideActionOnMobile={hideActionOnMobile}
         actionLabel={actionLabel || undefined}
         actionTo={actionTo}
