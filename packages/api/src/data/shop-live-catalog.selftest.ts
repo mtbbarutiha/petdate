@@ -309,7 +309,7 @@ async function main() {
   );
   assert.match(
     String(p289.image),
-    /grooming-dog-shedding-brush-hair-release-button\.jpg\?v=batch-multi-w4-v1$/
+    /grooming-dog-shedding-brush-hair-release-button\.jpg\?v=batch-multi-w4-v2$/
   );
   assert.match(
     String(p299.image),
