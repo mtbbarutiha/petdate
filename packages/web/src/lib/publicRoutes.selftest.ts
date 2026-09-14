@@ -26,6 +26,11 @@ const nav = readFileSync(join(webSrc, 'lib/siteNav.ts'), 'utf8');
 
 assert.match(guard, /PUBLIC_EXACT[\s\S]*\/invite/, 'AuthGuard treats /invite as public');
 assert.match(app, /path="invite"\s+element=\{<InvitePage/, 'App registers /invite landing');
+assert.match(guard, /PUBLIC_EXACT[\s\S]*\/landings\/app/, 'AuthGuard treats /landings/app as public');
+assert.match(guard, /PUBLIC_EXACT[\s\S]*\/app[^\w]/, 'AuthGuard treats /app as public');
+assert.match(guard, /PUBLIC_PREFIXES[\s\S]*\/landings/, 'AuthGuard allows /landings/* prefix');
+assert.match(app, /path="landings\/app"\s+element=\{<AppLandingPage/, 'App registers Digikala-style app landing');
+assert.match(app, /path="app"\s+element=\{<AppLandingPage/, 'App registers /app alias for Android landing');
 assert.match(app, /<ReferralCapture/, 'invite ref is captured on every route');
 assert.match(guard, /PUBLIC_EXACT[\s\S]*\/vet-consult/, 'AuthGuard treats /vet-consult as public');
 assert.match(guard, /PUBLIC_PREFIXES[\s\S]*\/magazine/, 'AuthGuard treats /magazine as public');

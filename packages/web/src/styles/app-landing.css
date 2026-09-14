@@ -1,0 +1,478 @@
+/* ========== App landing (/landings/app) — Digikala-inspired, Pepito tokens ========== */
+.pepito-app-landing-page .pepito-flow-main,
+.pepito-app-landing-page > main.pd-app-land {
+  padding-top: 0;
+}
+
+.pd-app-land {
+  --pd-app-ink: var(--pepito-dark);
+  --pd-app-muted: var(--pepito-muted);
+  --pd-app-accent: var(--pepito-base);
+  --pd-app-soft: var(--pepito-lilac);
+  --pd-app-wash: linear-gradient(165deg, #ebe6f8 0%, #f7f5fc 42%, #fff 100%);
+  color: var(--pd-app-ink);
+  font-family: var(--font-body);
+}
+
+.pd-app-land-hero {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: clamp(1.5rem, 4vw, 3rem);
+  align-items: center;
+  max-width: var(--pepito-container-max);
+  margin: 0 auto;
+  padding: clamp(2rem, 5vw, 3.5rem) var(--pepito-container-pad) clamp(2.5rem, 6vw, 4rem);
+  background: var(--pd-app-wash);
+  position: relative;
+  overflow: clip;
+}
+
+.pd-app-land-hero::before {
+  content: '';
+  position: absolute;
+  inset: auto -10% -30% 40%;
+  height: 70%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--pepito-pink) 35%, transparent), transparent 70%);
+  pointer-events: none;
+}
+
+.pd-app-land-hero-copy {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  max-width: 36rem;
+}
+
+.pd-app-land-brand {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(1.35rem, 2.4vw, 1.85rem);
+  letter-spacing: -0.02em;
+  color: var(--pd-app-accent);
+}
+
+.pd-app-land-brand-en {
+  font-size: 0.72em;
+  font-weight: 700;
+  opacity: 0.72;
+  color: var(--pd-app-ink);
+}
+
+.pd-app-land-hero h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.85rem, 4.2vw, 2.75rem);
+  line-height: 1.25;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--pd-app-ink);
+}
+
+.pd-app-land-hero-lead,
+.pd-app-land-hero-note,
+.pd-app-land-section-head p,
+.pd-app-land-feature p,
+.pd-app-land-sms > p {
+  margin: 0;
+  color: var(--pd-app-muted);
+  line-height: 1.7;
+  font-size: 1.02rem;
+}
+
+.pd-app-land-hero-note {
+  font-size: 0.88rem;
+  opacity: 0.9;
+}
+
+.pd-app-land-cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.35rem;
+}
+
+.pd-app-land-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 3rem;
+  padding: 0.7rem 1.25rem;
+  border-radius: 999px;
+  font-weight: 700;
+  text-decoration: none;
+  border: 1.5px solid transparent;
+  transition: transform 0.2s ease, background 0.2s ease, border-color 0.2s ease;
+}
+
+.pd-app-land-cta--primary,
+button.pd-app-land-cta--primary {
+  background: var(--pepito-btn-1-bg);
+  color: var(--pepito-btn-1-fg);
+  border-color: var(--pepito-btn-1-bg);
+  cursor: pointer;
+  font: inherit;
+}
+
+.pd-app-land-cta--primary:hover {
+  background: var(--pepito-btn-1-hover-bg);
+  transform: translateY(-1px);
+}
+
+.pd-app-land-cta--ghost {
+  background: transparent;
+  color: var(--pd-app-accent);
+  border-color: color-mix(in srgb, var(--pd-app-accent) 35%, transparent);
+}
+
+.pd-app-land-cta--ghost:hover {
+  border-color: var(--pd-app-accent);
+  background: color-mix(in srgb, var(--pd-app-soft) 70%, white);
+}
+
+.pd-app-land-phone {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+}
+
+.pd-app-land-phone-frame {
+  width: min(100%, 280px);
+  aspect-ratio: 9 / 18.5;
+  border-radius: 2rem;
+  padding: 0.65rem;
+  background: linear-gradient(160deg, #2a2148, #19063d 55%, #3a2f62);
+  box-shadow:
+    0 24px 48px color-mix(in srgb, var(--pepito-dark) 28%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, white 18%, transparent);
+  animation: pd-app-phone-float 5.5s ease-in-out infinite;
+}
+
+@keyframes pd-app-phone-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.pd-app-land-phone-notch {
+  width: 38%;
+  height: 0.55rem;
+  margin: 0.15rem auto 0.55rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, black 45%, #2a2148);
+}
+
+.pd-app-land-phone-screen {
+  height: calc(100% - 1.1rem);
+  border-radius: 1.35rem;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--pepito-lilac) 55%, white), white 40%),
+    var(--pepito-soft);
+  padding: 1.1rem 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  overflow: hidden;
+}
+
+.pd-app-land-phone-logo {
+  width: 7.5rem;
+  height: auto;
+  object-fit: contain;
+  align-self: center;
+}
+
+.pd-app-land-phone-kicker {
+  margin: 0;
+  text-align: center;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--pd-app-muted);
+}
+
+.pd-app-land-phone-chips {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  justify-content: center;
+}
+
+.pd-app-land-phone-chips li {
+  padding: 0.28rem 0.65rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--pepito-base) 12%, white);
+  color: var(--pepito-base);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.pd-app-land-phone-card {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.85rem 0.9rem;
+  border-radius: 1rem;
+  background: white;
+  border: 1px solid color-mix(in srgb, var(--pepito-base) 14%, transparent);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--pepito-dark) 8%, transparent);
+}
+
+.pd-app-land-phone-card strong {
+  font-size: 0.92rem;
+}
+
+.pd-app-land-phone-card span {
+  font-size: 0.78rem;
+  color: var(--pd-app-muted);
+  line-height: 1.5;
+}
+
+.pd-app-land-features,
+.pd-app-land-download {
+  max-width: var(--pepito-container-max);
+  margin: 0 auto;
+  padding: var(--pepito-section-y) var(--pepito-container-pad);
+}
+
+.pd-app-land-section-head {
+  max-width: 40rem;
+  margin: 0 auto 1.75rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.pd-app-land-section-head h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(1.45rem, 3vw, 2rem);
+  font-weight: 800;
+}
+
+.pd-app-land-feature-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem 1.25rem;
+}
+
+.pd-app-land-feature {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.9rem;
+  align-items: start;
+  padding: 1.1rem 1rem;
+  border-radius: 1.15rem;
+  background: color-mix(in srgb, var(--pepito-soft) 80%, white);
+  border: 1px solid color-mix(in srgb, var(--pepito-base) 10%, transparent);
+}
+
+.pd-app-land-feature-icon {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0.9rem;
+  background: color-mix(in srgb, var(--pepito-base) 12%, white);
+  color: var(--pepito-base);
+}
+
+.pd-app-land-feature h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.pd-app-land-trust {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  max-width: var(--pepito-container-max);
+  margin: 0 auto;
+  padding: 0.5rem var(--pepito-container-pad) var(--pepito-section-y);
+}
+
+.pd-app-land-trust > div {
+  text-align: center;
+  padding: 1.15rem 0.75rem;
+  border-radius: 1.1rem;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--pepito-base) 10%, white), white);
+  border: 1px solid color-mix(in srgb, var(--pepito-base) 12%, transparent);
+}
+
+.pd-app-land-trust strong {
+  display: block;
+  font-family: var(--font-display);
+  font-size: clamp(1.15rem, 2.4vw, 1.45rem);
+  font-weight: 800;
+  color: var(--pepito-base);
+  margin-bottom: 0.35rem;
+}
+
+.pd-app-land-trust span {
+  color: var(--pd-app-muted);
+  font-size: 0.92rem;
+}
+
+.pd-app-land-download {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--pepito-lilac) 45%, white), white);
+  border-radius: 1.5rem;
+  margin-bottom: var(--pepito-section-y);
+}
+
+.pd-app-land-download-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.pd-app-land-store-rail {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.pd-app-land-store {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.95rem 1.05rem;
+  border-radius: 1rem;
+  text-decoration: none;
+  color: inherit;
+  background: white;
+  border: 1px solid color-mix(in srgb, var(--pepito-base) 12%, transparent);
+  transition: border-color 0.2s ease, transform 0.2s ease;
+}
+
+.pd-app-land-store strong {
+  display: block;
+  font-size: 0.98rem;
+}
+
+.pd-app-land-store em {
+  display: block;
+  margin-top: 0.2rem;
+  font-style: normal;
+  font-size: 0.8rem;
+  color: var(--pd-app-muted);
+}
+
+.pd-app-land-store--apk {
+  background: var(--pepito-btn-1-bg);
+  color: var(--pepito-btn-1-fg);
+  border-color: var(--pepito-btn-1-bg);
+}
+
+.pd-app-land-store--apk em {
+  color: color-mix(in srgb, white 78%, transparent);
+}
+
+.pd-app-land-store--apk:hover,
+.pd-app-land-store--web:hover {
+  transform: translateY(-1px);
+}
+
+.pd-app-land-store--soon {
+  opacity: 0.72;
+  cursor: default;
+}
+
+.pd-app-land-sms {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 1.2rem 1.15rem;
+  border-radius: 1.15rem;
+  background: white;
+  border: 1px solid color-mix(in srgb, var(--pepito-base) 12%, transparent);
+}
+
+.pd-app-land-sms h3 {
+  margin: 0;
+  font-size: 1.08rem;
+  font-weight: 800;
+}
+
+.pd-app-land-sms-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.pd-app-land-sms-field input {
+  min-height: 2.85rem;
+  border-radius: 0.85rem;
+  border: 1.5px solid color-mix(in srgb, var(--pepito-base) 18%, transparent);
+  padding: 0.55rem 0.85rem;
+  font-size: 16px;
+  font-family: inherit;
+  background: var(--pepito-soft);
+}
+
+.pd-app-land-sms-field input:focus {
+  outline: 2px solid color-mix(in srgb, var(--pepito-base) 35%, transparent);
+  border-color: var(--pepito-base);
+}
+
+.pd-app-land-sms-note {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--pepito-mint);
+  font-weight: 600;
+}
+
+@media (max-width: 900px) {
+  .pd-app-land-hero {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  .pd-app-land-hero-copy {
+    max-width: none;
+    align-items: center;
+  }
+
+  .pd-app-land-brand,
+  .pd-app-land-cta-row {
+    justify-content: center;
+  }
+
+  .pd-app-land-feature-list,
+  .pd-app-land-download-grid,
+  .pd-app-land-trust {
+    grid-template-columns: 1fr;
+  }
+
+  .pd-app-land-phone-frame {
+    width: min(100%, 240px);
+    animation: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pd-app-land-phone-frame {
+    animation: none;
+  }
+}

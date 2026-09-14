@@ -42,6 +42,13 @@ const help = pageSeoForPath('/help');
 assert.equal(help.canonicalPath, '/faq', '/help aliases FAQ canonical');
 assert.equal(help.title, faq.title);
 
+const appLand = pageSeoForPath('/landings/app');
+assert.equal(appLand.canonicalPath, '/landings/app');
+assert.match(appLand.title, /اپ|Android|اندروید|App/i);
+assert.match(JSON.stringify(appLand.jsonLd), /SoftwareApplication/);
+const appAlias = pageSeoForPath('/app');
+assert.equal(appAlias.canonicalPath, '/landings/app', '/app aliases landings/app canonical');
+
 const shop = pageSeoForPath('/shop');
 assert.equal(shop.canonicalPath, '/shop');
 assert.notEqual(shop.title, home.title);
@@ -113,6 +120,7 @@ const paths = sitemap.map((u) => u.path);
 assert.ok(paths.includes('/help'), 'sitemap lists public /help');
 assert.ok(paths.includes('/events'), 'sitemap lists /events');
 assert.ok(paths.includes('/faq'));
+assert.ok(paths.includes('/landings/app'));
 assert.ok(paths.includes(productCanonicalPath(product)));
 assert.ok(!paths.includes('/auth/login'), 'login omitted as low-value');
 assert.ok(!paths.some((p) => p === `/shop/product/${product.id}` && p !== productCanonicalPath(product)), 'no bare p123 product locs');

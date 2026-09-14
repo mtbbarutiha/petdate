@@ -21,6 +21,7 @@ function assert(cond: unknown, msg: string): asserts cond {
 
 assert(xml.includes('<loc>https://petdate.ir/</loc>'), 'missing home');
 assert(xml.includes('/faq'), 'missing faq');
+assert(xml.includes('/landings/app'), 'missing Android app landing');
 assert(xml.includes('/help'), 'missing public /help');
 assert(xml.includes('/events'), 'missing /events');
 assert(xml.includes('/magazine'), 'missing magazine');
