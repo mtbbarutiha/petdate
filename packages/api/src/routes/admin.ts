@@ -1298,6 +1298,15 @@ adminRouter.post('/shop/catalog/sync', (req, res) => {
       emoji: String(c.emoji ?? '🛒'),
       sortOrder: Number(c.sortOrder ?? c.sort_order ?? i * 10),
     })),
+    brands: brands?.map((b: Record<string, unknown>, i: number) => ({
+      id: String(b.id),
+      labelFa: String(b.labelFa ?? b.label_fa),
+      labelEn: b.labelEn != null ? String(b.labelEn) : (b.label_en != null ? String(b.label_en) : ''),
+      logoUrl: b.logoUrl != null ? String(b.logoUrl) : (b.logo_url != null ? String(b.logo_url) : ''),
+      sortOrder: Number(b.sortOrder ?? b.sort_order ?? i * 10),
+      featured: Boolean(b.featured),
+      active: b.active !== false,
+    })),
   });
   res.json({ ok: true, ...result });
 });
@@ -1510,15 +1519,6 @@ adminRouter.get('/platform-settings/modules/:moduleKey/fields/:fieldKey/options'
       options: listDropdownOptions(String(req.params.moduleKey), String(req.params.fieldKey), {
         includeInactive,
       }),
-    brands: brands?.map((b: Record<string, unknown>, i: number) => ({
-      id: String(b.id),
-      labelFa: String(b.labelFa ?? b.label_fa),
-      labelEn: b.labelEn != null ? String(b.labelEn) : (b.label_en != null ? String(b.label_en) : ''),
-      logoUrl: b.logoUrl != null ? String(b.logoUrl) : (b.logo_url != null ? String(b.logo_url) : ''),
-      sortOrder: Number(b.sortOrder ?? b.sort_order ?? i * 10),
-      featured: Boolean(b.featured),
-      active: b.active !== false,
-    })),
     });
   } catch (err) {
     res.status(500).json({ error: err instanceof Error ? err.message : 'خطا' });
