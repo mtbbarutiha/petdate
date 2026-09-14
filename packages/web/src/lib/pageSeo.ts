@@ -557,14 +557,22 @@ export function pageSeoForPath(pathname: string, opts: PageSeoOpts = {}): PageSe
 
   if (p === '/auth/login') {
     return pack({
-      title: SEO.titleTemplate('ورود با پیامک'),
-      description: 'ورود به پت‌دیت با کد یک‌بارمصرف پیامک — همبازی، شاپ و دامپزشک روی یک حساب.',
+      title: SEO.titleTemplate('ورود'),
+      description: 'ورود به پت‌دیت با موبایل، ایمیل یا گوگل — همبازی، شاپ و دامپزشک روی یک حساب.',
       canonicalPath: '/auth/login',
     });
   }
   if (p === '/auth/otp') {
     return pack({
       title: SEO.titleTemplate('کد تأیید'),
+      description: desc,
+      canonicalPath: p,
+      robots: NOINDEX_FOLLOW,
+    });
+  }
+  if (p === '/auth/google') {
+    return pack({
+      title: SEO.titleTemplate('ورود گوگل'),
       description: desc,
       canonicalPath: p,
       robots: NOINDEX_FOLLOW,

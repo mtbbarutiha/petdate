@@ -1041,6 +1041,16 @@ export async function submitEarnWithdraw(
   });
 }
 
+export async function fetchAuthProviders() {
+  return request<{ ok: true; google: boolean }>('/api/auth/providers');
+}
+
+export function googleOAuthStartPath(next?: string | null): string {
+  const target = next && next.startsWith('/') && !next.startsWith('//') ? next : '/home';
+  const q = target && target !== '/home' ? `?next=${encodeURIComponent(target)}` : '';
+  return `${API_BASE}/api/auth/google${q}`;
+}
+
 /** Bot-signed deep link → web session (same users row). */
 export async function exchangeTelegramWebLink(input: {
   telegramId: string;

@@ -112,6 +112,12 @@ else
   printf '%-22s %s\n' AI_CONSULT_LLM 'MISSING (optional — offline KB; set GROQ_API_KEY or OPENROUTER_API_KEY for free live)'
 fi
 
+if is_set "${GOOGLE_CLIENT_ID:-}" && is_set "${GOOGLE_CLIENT_SECRET:-}"; then
+  status GOOGLE_OAUTH OK
+else
+  printf '%-22s %s\n' GOOGLE_OAUTH 'MISSING (optional — Gmail login hidden until GOOGLE_CLIENT_ID/SECRET are set)'
+fi
+
 echo "verify-prod-env: OK=$ok MISSING=$missing DEFAULT-RISK=$risk AI_LLM=$AI_KEY_SET"
 if [[ "$FAIL" -ne 0 ]]; then
   exit 1

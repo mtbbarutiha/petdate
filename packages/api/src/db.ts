@@ -1003,6 +1003,8 @@ function migrateSchema() {
   const userNames2 = new Set(userCols2.map((c) => c.name));
   if (!userNames2.has('email')) db.exec('ALTER TABLE users ADD COLUMN email TEXT');
   if (!userNames2.has('email_verified')) db.exec('ALTER TABLE users ADD COLUMN email_verified INTEGER NOT NULL DEFAULT 0');
+  if (!userNames2.has('google_sub')) db.exec('ALTER TABLE users ADD COLUMN google_sub TEXT');
+  db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_google_sub ON users (google_sub) WHERE google_sub IS NOT NULL AND google_sub != ''`);
   if (!userNames2.has('silent_chat_requests')) {
     db.exec('ALTER TABLE users ADD COLUMN silent_chat_requests INTEGER NOT NULL DEFAULT 0');
   }
@@ -8429,6 +8431,22 @@ export const dbService = {
     return row ? mapUser(row) : null;
   },
 
+  getUserByGoogleSub(sub: string): User | null {
+    const key = String(sub ?? '').trim();
+    if (!key) return null;
+    const row = db
+      .prepare('SELECT * FROM users WHERE google_sub = ? ORDER BY id DESC LIMIT 1')
+      .get(key) as Record<string, unknown> | undefined;
+    return row ? mapUser(row) : null;
+  },
+
+  setUserGoogleSub(userId: number, sub: string): User | null {
+    const key = String(sub ?? '').trim();
+    if (!key) return this.getUserById(userId);
+    db.prepare('UPDATE users SET google_sub = ? WHERE id = ?').run(key, userId);
+    return this.getUserById(userId);
+  },
+
   /**
    * Merge bot↔web identity onto one users row so pets/chats/matches stay shared.
    * Prefer the account that already has telegramId; otherwise keep the older id.
@@ -8452,6 +8470,18 @@ export const dbService = {
     }
     if ((!survivor.name || survivor.name === 'کاربر petdate') && absorbed.name) {
       patch.name = absorbed.name;
+    }
+    const absorbedExtra = db
+      .prepare('SELECT google_sub, avatar_url FROM users WHERE id = ?')
+      .get(absorbedId) as { google_sub?: string | null; avatar_url?: string | null } | undefined;
+    const survivorExtra = db
+      .prepare('SELECT google_sub, avatar_url FROM users WHERE id = ?')
+      .get(survivorId) as { google_sub?: string | null; avatar_url?: string | null } | undefined;
+    if (!String(survivorExtra?.google_sub ?? '').trim() && String(absorbedExtra?.google_sub ?? '').trim()) {
+      patch.google_sub = String(absorbedExtra!.google_sub).trim();
+    }
+    if (!String(survivorExtra?.avatar_url ?? '').trim() && String(absorbedExtra?.avatar_url ?? '').trim()) {
+      patch.avatar_url = String(absorbedExtra!.avatar_url).trim();
     }
     if (!survivor.age && absorbed.age) patch.age = absorbed.age;
     if (!survivor.gender && absorbed.gender) patch.gender = absorbed.gender;

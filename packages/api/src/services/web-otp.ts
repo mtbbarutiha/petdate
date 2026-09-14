@@ -10,6 +10,7 @@ import {
 } from './otp-email-html';
 import { formatLoginOtpSms } from './otp-sms-copy';
 import { parseReferredByInput, tryGrantReferralOnSignup } from './referral-grant';
+import { applyLoginProfileHints } from './provider-profile-import';
 
 const OTP_TTL_MS = OTP_EMAIL_EXPIRES_MINUTES * 60 * 1000;
 const MAX_ATTEMPTS = 5;
@@ -226,6 +227,14 @@ export function verifyWebOtp(
   } else {
     user = dbService.markEmailVerified(user.id, target) ?? user;
   }
+
+  user =
+    applyLoginProfileHints({
+      userId: user.id,
+      email: channel === 'email' ? target : user.email,
+      phone: channel === 'phone' ? target : user.phone,
+      phoneVerified: channel === 'phone' || Boolean(user.phoneVerified),
+    }) ?? user;
 
   if (!existed) {
     tryGrantReferralOnSignup({

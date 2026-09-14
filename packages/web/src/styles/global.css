@@ -3631,6 +3631,68 @@ body:has(.admin-app) .toast-host {
   text-decoration: none;
   box-sizing: border-box;
 }
+.auth-google-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 46px;
+  margin: 0 0 8px;
+  text-decoration: none;
+  box-sizing: border-box;
+}
+.auth-google-cta.is-off {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.auth-provider-hint {
+  margin: 0 0 10px;
+  color: #8a809c;
+  font-size: 0.78rem;
+  text-align: center;
+  line-height: 1.5;
+}
+.auth-telegram-secondary {
+  display: block;
+  margin: 10px 0 0;
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #8a809c;
+  text-decoration: none;
+}
+.auth-telegram-secondary:hover {
+  color: #5c4d91;
+  text-decoration: underline;
+}
+.pepito-auth-login > h1 {
+  font-size: 1.28rem;
+  margin-bottom: 6px;
+}
+.pepito-auth-login .auth-lead {
+  margin-bottom: 12px;
+  font-size: 0.86rem;
+  line-height: 1.55;
+}
+.pepito-auth-login .auth-tabs {
+  margin-bottom: 10px;
+}
+.pepito-auth-login .auth-tab {
+  min-height: 40px;
+}
+.pepito-auth-login .auth-form input {
+  padding: 10px 12px;
+  border-radius: 14px;
+}
+.pepito-auth-login .auth-submit {
+  min-height: 46px;
+}
+.pepito-auth-login .auth-foot {
+  margin-top: 10px;
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
 .auth-telegram-hint {
   margin: 0 0 16px;
   color: #757086;
