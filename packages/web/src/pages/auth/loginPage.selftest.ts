@@ -1,5 +1,5 @@
 /**
- * Guard: premium login — phone OTP + Telegram CTA; Google only when providers.google.
+ * Guard: premium login — phone OTP + Telegram CTA; Google CTA always visible (dimmed when off).
  * Email OTP tab must stay removed from the login UI.
  * Run: npx tsx packages/web/src/pages/auth/loginPage.selftest.ts
  */
