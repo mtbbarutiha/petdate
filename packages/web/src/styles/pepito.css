@@ -10442,8 +10442,13 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   margin: 0 0 0.95rem;
   padding: 0.85rem 0.9rem;
   border-radius: 14px;
-  border: 1px solid rgba(92, 77, 145, 0.16);
-  background: linear-gradient(165deg, rgba(255, 255, 255, 0.92), rgba(245, 240, 255, 0.75));
+  border: 1px solid var(--pd-border, rgba(92, 77, 145, 0.16));
+  background: linear-gradient(
+    165deg,
+    var(--pd-surface, #ffffff),
+    color-mix(in srgb, var(--pd-surface-2, #f5f0ff) 82%, var(--pepito-base, #5c4d91) 18%)
+  );
+  color: var(--pd-ink, var(--pepito-dark, #1a2b4a));
   display: grid;
   gap: 0.35rem;
   text-align: right;
@@ -10455,20 +10460,20 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   margin: 0;
   font-size: 0.82rem;
   font-weight: 800;
-  color: var(--pepito-muted, #6b7280);
+  color: var(--pd-muted, var(--pepito-muted, #6b7280));
 }
 .pd-shop-card-deposit-number {
   margin: 0;
   font-size: 1.05rem;
   letter-spacing: 0.04em;
-  color: var(--pepito-dark, #1a2b4a);
+  color: var(--pd-ink, var(--pepito-dark, #1a2b4a));
   word-break: break-all;
 }
 .pd-shop-card-deposit-holder {
   margin: 0;
   font-size: 0.9rem;
   font-weight: 600;
-  color: var(--pepito-dark, #1a2b4a);
+  color: var(--pd-ink, var(--pepito-dark, #1a2b4a));
 }
 .pd-shop-card-deposit-actions {
   display: flex;
@@ -10484,7 +10489,7 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   margin: 0.15rem 0 0;
   font-size: 0.78rem;
   line-height: 1.5;
-  color: var(--pepito-muted, #6b7280);
+  color: var(--pd-muted, var(--pepito-muted, #6b7280));
 }
 .pd-shop-card-receipt-upload {
   margin-top: 1rem;

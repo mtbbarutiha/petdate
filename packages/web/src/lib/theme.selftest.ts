@@ -343,6 +343,36 @@ assert.doesNotMatch(
   'dark FAQ/help surfaces must not keep white fills',
 );
 
+/* Shop card-to-card deposit — no leftover light gradient / light-on-light ink */
+assert.match(darkCss, /\.pd-shop-card-deposit\b/, 'card-to-card deposit panel remapped for dark');
+assert.match(darkCss, /\.pd-shop-card-deposit-number\b/, 'deposit card number remapped for dark');
+assert.match(darkCss, /\.pd-shop-card-deposit-hint\b/, 'deposit hint remapped for dark');
+assert.match(
+  pepitoCss,
+  /\.pd-shop-card-deposit\s*\{[\s\S]{0,280}var\(--pd-surface/,
+  'deposit panel uses --pd-surface tokens (not frozen white rgba)',
+);
+assert.doesNotMatch(
+  pepitoCss,
+  /\.pd-shop-card-deposit\s*\{[^}]*rgba\(\s*255\s*,\s*255\s*,\s*255/,
+  'deposit panel must not hardcode white rgba gradient',
+);
+assert.match(
+  darkCss,
+  /html\[data-theme=['"]dark['"]\][\s\S]{0,80}\.pd-shop-card-deposit[\s\S]{0,280}var\(--pd-surface-2\)/,
+  'dark deposit panel paints --pd-surface-2',
+);
+assert.match(
+  darkCss,
+  /html\[data-theme=['"]dark['"]\][\s\S]{0,80}\.pd-shop-card-deposit-number[\s\S]{0,120}var\(--pd-ink\)/,
+  'dark deposit card number uses --pd-ink',
+);
+assert.doesNotMatch(
+  darkCss,
+  /html\[data-theme=['"]dark['"]\][\s\S]{0,80}\.pd-shop-card-deposit[\s\S]{0,220}#(fff|ffffff|faf9fc|f5f0ff)\b/i,
+  'dark deposit panel must not keep light fills',
+);
+
 /* Chat profile tools + sheets (پروفایل پت / پروفایل صاحب پت) — no white strip / white field cards */
 const chatCss = readFileSync(join(root, 'src/styles/chat.css'), 'utf8');
 assert.match(darkCss, /\.tg-vet-tools\b/, 'vet/profile toolbar remapped for dark');
