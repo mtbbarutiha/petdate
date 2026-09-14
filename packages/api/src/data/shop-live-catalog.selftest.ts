@@ -280,11 +280,11 @@ async function main() {
   assert.match(String(p259.image), /dog-treats-wanpy-toothbrush-chews-100g\.jpg\?v=batch-multi-w1-v4$/);
   assert.match(
     String(p269.image),
-    /dog-toys-luna-squeaky-smile-watermelon-plush-dog-toy\.jpg\?v=batch-multi-w2-v2$/
+    /dog-toys-luna-squeaky-smile-watermelon-plush-dog-toy\.jpg\?v=batch-multi-w2-v3$/
   );
   assert.match(
     String(p279.image),
-    /dog-accessories-hannapet-silicone-dog-leash-size-l\.jpg\?v=batch-multi-w3-v2$/
+    /dog-accessories-hannapet-silicone-dog-leash-size-l\.jpg\?v=batch-multi-w3-v3$/
   );
   assert.match(
     String(p289.image),

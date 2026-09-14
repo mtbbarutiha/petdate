@@ -2,14 +2,14 @@
  * PetDate shop Batch-multi wave 3/5 — 10 live SKUs (p270–p279).
  * Additive, idempotent upsert by slug. Margin 0 (cost_toman = price_toman).
  * Seller copy is پت دیت شاپ only. Do not invent missing weights.
- * Gallery cache-bust is batch-multi-w3-v2 (wave 1/2 stay on their own busts).
+ * Gallery cache-bust is batch-multi-w3-v3 (wave 1/2 stay on their own busts).
  */
 import { getDb } from '../db';
 import { withShopImagesParam } from './shop-product-images';
 import { HELD_SHOP_SLUGS, SHOP_BATCH_MULTI_WAVE3_SLUGS } from './shop-zero-margin-slugs';
 
 const P = '/pepito/uploads';
-export const SHOP_BATCH_MULTI_WAVE3_CACHE_BUST = "batch-multi-w3-v2";
+export const SHOP_BATCH_MULTI_WAVE3_CACHE_BUST = "batch-multi-w3-v3";
 
 function multiGallery(slug: string): { image: string; images: string[] } {
   const images = [

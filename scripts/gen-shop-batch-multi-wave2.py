@@ -271,7 +271,7 @@ def write_api() -> None:
  * PetDate shop Batch-multi wave 2/5 — 10 live SKUs (p260–p269).
  * Additive, idempotent upsert by slug. Margin 0 (cost_toman = price_toman).
  * Seller copy is پت دیت شاپ only. Do not invent missing weights.
- * Gallery cache-bust is batch-multi-w2-v2 (wave 1 stays on batch-multi-w1-v1).
+ * Gallery cache-bust is batch-multi-w2-v3 (wave 1 stays on batch-multi-w1-v1).
  */
 import {{ getDb }} from '../db';
 import {{ withShopImagesParam }} from './shop-product-images';
@@ -467,7 +467,7 @@ def write_price_index() -> None:
 
 
 def write_cache_bust() -> None:
-    dest = ROOT / "tmp/cache-bust-shop-batch-multi-w2-v2"
+    dest = ROOT / "tmp/cache-bust-shop-batch-multi-w2-v3"
     dest.write_text(f"{CACHE_BUST}\n")
 
 
@@ -477,8 +477,8 @@ def main() -> None:
         raise SystemExit(f"missing descriptions: {missing}")
     if [p["proposedId"] for p in PRODUCTS] != [f"p{i}" for i in range(260, 270)]:
         raise SystemExit("wave 2 ids must be p260–p269 in order")
-    if CACHE_BUST != "batch-multi-w2-v2":
-        raise SystemExit("wave 2 cache bust must be batch-multi-w2-v2")
+    if CACHE_BUST != "batch-multi-w2-v3":
+        raise SystemExit("wave 2 cache bust must be batch-multi-w2-v3")
     write_web()
     write_api()
     write_price_index()
