@@ -36,11 +36,10 @@ export function welcomeSectionLinks(): SiteHeaderLink[] {
 }
 
 /**
- * Shop IA extras — cart stays in the user cluster.
- * Do not add store/شاپ here: SiteDesktopNav already owns the single /shop shortcut (nav.shop).
+ * Shop IA extras — none in the primary text row.
+ * Orders + cart live in NavUserCluster; Events/playmate/shop shortcuts live in ProfileMenu.
+ * Do not add store/شاپ here (would duplicate the shop destination).
  */
 export function shopSectionLinks(): SiteHeaderLink[] {
-  return [
-    { key: 'orders', labelKey: 'shop.orders', to: '/shop/orders' },
-  ].filter((link) => !DUPLICATE_PRIMARY.has(link.key));
+  return [];
 }

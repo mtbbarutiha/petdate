@@ -3742,8 +3742,22 @@ html[data-theme='dark'] .pepito-games-skeleton-card {
   border-color: var(--border, #334155);
   box-shadow: none;
 }
+/* Open/closed badge on event covers — dark surface needs light text (was invisible). */
+html[data-theme='dark'] .pepito-games-status {
+  color: #f8fafc;
+}
 html[data-theme='dark'] .pepito-games-card-media .pepito-games-status {
   background: color-mix(in srgb, var(--surface, #1e293b) 88%, transparent);
+  color: #f8fafc;
+}
+html[data-theme='dark'] .pepito-games-status.is-open {
+  background: color-mix(in srgb, #10b981 28%, #0f172a 55%);
+  color: #ecfdf5;
+}
+html[data-theme='dark'] .pepito-games-status.is-cancelled,
+html[data-theme='dark'] .pepito-games-status.is-full {
+  background: color-mix(in srgb, #94a3b8 28%, #0f172a 55%);
+  color: #f1f5f9;
 }
 html[data-theme='dark'] .pepito-games-lead,
 html[data-theme='dark'] .pepito-games-type,

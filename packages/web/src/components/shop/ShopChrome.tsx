@@ -5,7 +5,6 @@ import { useAuthStore } from '../../hooks/useAuthStore';
 import { useShopCatalogSync } from '../../hooks/useShopCatalogSync';
 import { useI18n } from '../../i18n';
 import { SiteHeader } from '../SiteHeader';
-import { shopSectionLinks } from '../siteHeaderLinks';
 import { SiteFooter } from '../SiteFooter';
 import { ShopAddToast } from './ShopAddToast';
 import { ShopProductSearch } from './ShopProductSearch';
@@ -74,8 +73,9 @@ export function ShopChrome({
     >
       <SiteHeader
         scrolled={scrolled}
-        className={isLoggedIn ? 'pepito-nav--app' : ''}
-        sectionLinks={shopSectionLinks()}
+        className={`pepito-nav--shop${isLoggedIn ? ' pepito-nav--app' : ''}`}
+        showDesktopNav={false}
+        showMobileEvents={false}
         showCart
         showOrders
         brandBelow={<ShopProductSearch />}
