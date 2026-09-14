@@ -127,7 +127,7 @@ export const SHOP_DIGIKALA_BATCH1_PART1_PRODUCTS: ShopDigikalaBatch1Part1Product
     brandId: "gourmet",
     categorySlug: "cat-food",
     petTypes: ["cat"],
-    priceToman: 1_549_000,
+    priceToman: 1_800_000,
     description:
       "بسته ۶ عددی کنسرو گورمت با طعم مرغ برای گربه بالغ؛ تنوع تر کنار کیسه خشک.\n\nبرچسب هر قوطی را برای بافت بخوان. باقیمانده را یخچال کن.\n\nحساسیت مرغ را جدی بگیر.\n\n• طعم مرغ\n• بسته ۶ عددی\n• گورمت\n• گربه بالغ\n• یخچال بعد باز شدن\n\n— پت دیت شاپ.",
   }),

@@ -177,7 +177,7 @@ for (const [id, slug, price] of batchMultiW5) {
 assert.ok(getProduct('grooming-bonnest-calming-shampoo-for-pet-200-l'), 'Bonnest calming shampoo is in catalog');
 
 const digikalaB1P1 = [
-  ['p300', 'cat-food-dkp-21263751', 1_549_000],
+  ['p300', 'cat-food-dkp-21263751', 1_800_000],
   ['p302', 'dog-food-dkp-15589693', 186_000],
   ['p309', 'cat-toys-dkp-17412089', 380_000],
 ] as const;

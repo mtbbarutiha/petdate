@@ -43,7 +43,7 @@ function jpegSofSize(bytes: Buffer): { w: number; h: number } {
 }
 
 const EXPECTED_PRICE: Record<string, number> = {
-  "cat-food-dkp-21263751": 1_549_000,
+  "cat-food-dkp-21263751": 1_800_000,
   "cat-food-dkp-10928475": 249_000,
   "dog-food-dkp-15589693": 186_000,
   "cat-treats-dkp-9520987": 480_000,
