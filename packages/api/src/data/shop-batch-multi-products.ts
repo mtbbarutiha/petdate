@@ -8,7 +8,7 @@ import { withShopImagesParam } from './shop-product-images';
 import { HELD_SHOP_SLUGS, SHOP_BATCH_MULTI_SLUGS } from './shop-zero-margin-slugs';
 
 const P = '/pepito/uploads';
-export const SHOP_BATCH_MULTI_CACHE_BUST = "batch-multi-w1-v2";
+export const SHOP_BATCH_MULTI_CACHE_BUST = "batch-multi-w1-v3";
 
 function multiGallery(slug: string): { image: string; images: string[] } {
   const images = [
