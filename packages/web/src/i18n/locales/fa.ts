@@ -797,6 +797,9 @@ export const fa: Dict = {
     badgeSale: "تخفیف",
     badgeNew: "جدید",
     badgeLimited: "محدود",
+    search: "جستجو",
+    searchEmpty: "محصولی پیدا نشد.",
+    searchSeeAll: "مشاهده همه نتایج ({n})",
   },
   magazine: {
     loadFail: "بارگذاری مجله ناموفق بود",
