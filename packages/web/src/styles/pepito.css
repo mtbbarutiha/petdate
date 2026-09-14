@@ -11273,6 +11273,7 @@ a.pepito-btn.pepito-human-consult-cta:hover {
 .pd-dk-similar-track.is-dragging {
   cursor: grabbing;
   scroll-snap-type: none;
+  scroll-behavior: auto;
   user-select: none;
   -webkit-user-select: none;
 }
@@ -11285,6 +11286,15 @@ a.pepito-btn.pepito-human-consult-cta:hover {
 .pd-shop-top-brands-track.is-dragging img,
 .pd-dk-similar-track.is-dragging img {
   pointer-events: none;
+}
+/* Native image/link drag fights mouse pan and can stick the gesture. */
+.pd-shop-home-rail-track img,
+.pd-shop-dk-strip img,
+.pd-shop-top-brands-track img,
+.pd-dk-similar-track img {
+  -webkit-user-drag: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 .pd-shop-dk-strip,
 .pd-shop-top-brands-track,

@@ -2,10 +2,17 @@
  * Horizontal shop rails: L/R buttons + mouse drag-to-scroll.
  * Touch keeps native overflow pan (horizontal + vertical page scroll).
  * "Left" = visual-left (RTL-safe).
+ *
+ * Hang history (#490 / #510 / this fix):
+ * - Pointer capture + missed mouseup left rails in a sticky grab state.
+ * - Every scrollLeft tick fired React setState (canPrev/canNext) → main-thread freeze.
+ * - scroll-snap fought continuous scrollLeft without is-dragging applied yet.
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 export type ShopRailSide = 'left' | 'right';
+
+type DragPhase = 'idle' | 'pending' | 'dragging';
 
 export function useShopRailNav(resetKey: unknown) {
   const trackRef = useRef<HTMLDivElement>(null);
@@ -13,6 +20,8 @@ export function useShopRailNav(resetKey: unknown) {
   const [canNext, setCanNext] = useState(false);
   const [rtl, setRtl] = useState(true);
   const [hasOverflow, setHasOverflow] = useState(false);
+  /** When true, scroll listener must not setState (avoids drag-time freezes). */
+  const draggingRef = useRef(false);
 
   const update = useCallback(() => {
     const el = trackRef.current;
@@ -22,6 +31,10 @@ export function useShopRailNav(resetKey: unknown) {
       setHasOverflow(false);
       return;
     }
+    // Skip React updates while the user is mid-drag — scrollLeft fires dozens
+    // of scroll events/sec and re-rendering product rails freezes the page.
+    if (draggingRef.current) return;
+
     const isRtl = getComputedStyle(el).direction === 'rtl';
     setRtl(isRtl);
     const max = el.scrollWidth - el.clientWidth;
@@ -73,47 +86,47 @@ export function useShopRailNav(resetKey: unknown) {
      * Delay capture until the pointer actually moves — immediate capture was
      * eating clicks on cards and could leave the track's composited layer
      * claiming gestures meant for sibling L/R buttons.
-     * Higher threshold + window-level release prevents "stuck" grab hangs.
+     * Document-level release + buttons===0 recovery prevents stuck grab hangs.
      */
     const DRAG_THRESHOLD_PX = 12;
-    let pending = false;
-    let dragging = false;
+    let phase: DragPhase = 'idle';
     let moved = false;
     let pointerId: number | null = null;
     let startX = 0;
     let startY = 0;
     let startScroll = 0;
-    /** If vertical intent wins before horizontal, abandon rail drag (page scroll). */
-    let abandoned = false;
+    let raf = 0;
+    let latestX = 0;
 
-    const clearPointer = (id: number | null) => {
-      pending = false;
-      dragging = false;
-      abandoned = false;
+    const hardReset = () => {
+      if (raf) {
+        cancelAnimationFrame(raf);
+        raf = 0;
+      }
       const prevId = pointerId;
+      phase = 'idle';
       pointerId = null;
+      moved = false;
+      draggingRef.current = false;
       el.classList.remove('is-dragging');
       if (prevId != null) {
         try {
-          if (el.hasPointerCapture(prevId)) el.releasePointerCapture(prevId);
+          if (el.hasPointerCapture?.(prevId)) el.releasePointerCapture(prevId);
         } catch {
           /* already released */
         }
       }
-      if (id != null && id !== prevId) {
-        try {
-          if (el.hasPointerCapture(id)) el.releasePointerCapture(id);
-        } catch {
-          /* ignore */
-        }
-      }
     };
 
-    const endDrag = (e: PointerEvent) => {
-      if (pointerId !== e.pointerId) return;
-      const wasDragging = dragging;
+    const endDrag = (e: Event) => {
+      if (pointerId == null) return;
+      // Pointer events carry an id; mouseup backup has none — treat as matching.
+      if (e instanceof PointerEvent && e.pointerId !== pointerId) return;
+      const wasDragging = phase === 'dragging';
       const didMove = moved;
-      clearPointer(e.pointerId);
+      hardReset();
+      // Refresh L/R affordances once after the drag settles.
+      update();
       if (wasDragging && didMove) {
         // Suppress the click that would open a product/card after a drag.
         const suppress = (ev: Event) => {
@@ -124,7 +137,6 @@ export function useShopRailNav(resetKey: unknown) {
         el.addEventListener('click', suppress, true);
         window.setTimeout(() => el.removeEventListener('click', suppress, true), 0);
       }
-      moved = false;
     };
 
     const onPointerDown = (e: PointerEvent) => {
@@ -140,78 +152,126 @@ export function useShopRailNav(resetKey: unknown) {
       ) {
         return;
       }
-      pending = true;
-      dragging = false;
+      // Abort any prior stuck session before arming a new one.
+      hardReset();
+      phase = 'pending';
       moved = false;
-      abandoned = false;
       pointerId = e.pointerId;
       startX = e.clientX;
       startY = e.clientY;
       startScroll = el.scrollLeft;
+      latestX = e.clientX;
+    };
+
+    const applyScroll = () => {
+      raf = 0;
+      if (phase !== 'dragging') return;
+      el.scrollLeft = startScroll - (latestX - startX);
     };
 
     const onPointerMove = (e: PointerEvent) => {
       if (pointerId !== e.pointerId) return;
-      if (abandoned) return;
-      if (!pending && !dragging) return;
+      if (phase === 'idle') return;
+
+      // Missed pointerup (mouseup outside the window, OS gesture, etc.):
+      // pointermove still fires with buttons===0 — clear sticky grab immediately.
+      if (e.pointerType === 'mouse' && (e.buttons & 1) === 0) {
+        hardReset();
+        update();
+        return;
+      }
+
       const dx = e.clientX - startX;
       const dy = e.clientY - startY;
-      if (!dragging) {
+
+      if (phase === 'pending') {
         // Prefer vertical page scroll when the gesture is mostly vertical.
         if (Math.abs(dy) > DRAG_THRESHOLD_PX && Math.abs(dy) > Math.abs(dx) * 1.15) {
-          abandoned = true;
-          clearPointer(e.pointerId);
+          hardReset();
           return;
         }
         if (Math.abs(dx) < DRAG_THRESHOLD_PX) return;
-        dragging = true;
-        pending = false;
+        phase = 'dragging';
         moved = true;
+        draggingRef.current = true;
         el.classList.add('is-dragging');
+        // Capture only after threshold so clicks still work; release is guaranteed
+        // via hardReset on pointerup / blur / buttons===0 / lostpointercapture.
         try {
           el.setPointerCapture(e.pointerId);
         } catch {
           /* ignore */
         }
-      } else if (Math.abs(dx) > DRAG_THRESHOLD_PX) {
-        moved = true;
       }
-      // Same delta formula works for LTR and Chromium/Firefox RTL scrollLeft.
-      el.scrollLeft = startScroll - dx;
+
+      if (phase !== 'dragging') return;
+      latestX = e.clientX;
+      if (Math.abs(dx) > DRAG_THRESHOLD_PX) moved = true;
+      if (!raf) raf = requestAnimationFrame(applyScroll);
       // Avoid selecting text / native image drag while panning.
-      if (dragging) e.preventDefault();
+      e.preventDefault();
     };
 
-    const onPointerUp = (e: PointerEvent) => endDrag(e);
-    const onPointerCancel = (e: PointerEvent) => endDrag(e);
     const onLostCapture = (e: PointerEvent) => {
       if (pointerId !== e.pointerId) return;
       // Capture was taken away — clear local state without re-releasing.
-      pending = false;
-      dragging = false;
-      abandoned = false;
+      if (raf) {
+        cancelAnimationFrame(raf);
+        raf = 0;
+      }
+      phase = 'idle';
       pointerId = null;
       moved = false;
+      draggingRef.current = false;
       el.classList.remove('is-dragging');
+      update();
+    };
+
+    const onBlurOrHide = () => {
+      if (phase === 'idle') return;
+      hardReset();
+      update();
+    };
+
+    const onVisibility = () => {
+      if (document.visibilityState !== 'visible') onBlurOrHide();
+    };
+
+    // Block native image drag which otherwise fights our pan and can stick.
+    const onDragStart = (e: DragEvent) => {
+      if (phase !== 'idle') e.preventDefault();
+      const t = e.target;
+      if (t instanceof HTMLImageElement || (t instanceof Element && t.closest('img, a'))) {
+        e.preventDefault();
+      }
     };
 
     el.addEventListener('pointerdown', onPointerDown);
-    // Window listeners so release outside the track still clears grab state.
-    window.addEventListener('pointermove', onPointerMove);
-    window.addEventListener('pointerup', onPointerUp);
-    window.addEventListener('pointercancel', onPointerCancel);
+    // Document listeners so release outside the track (or window) still clears grab.
+    // passive:false on move so preventDefault works while dragging.
+    document.addEventListener('pointermove', onPointerMove, { passive: false });
+    document.addEventListener('pointerup', endDrag, true);
+    document.addEventListener('pointercancel', endDrag, true);
+    // Mouseup backup: some environments drop pointerup when the cursor leaves the UI.
+    document.addEventListener('mouseup', endDrag, true);
     el.addEventListener('lostpointercapture', onLostCapture as EventListener);
+    el.addEventListener('dragstart', onDragStart);
+    window.addEventListener('blur', onBlurOrHide);
+    document.addEventListener('visibilitychange', onVisibility);
 
     return () => {
+      document.removeEventListener('pointermove', onPointerMove);
+      document.removeEventListener('pointerup', endDrag, true);
+      document.removeEventListener('pointercancel', endDrag, true);
+      document.removeEventListener('mouseup', endDrag, true);
       el.removeEventListener('pointerdown', onPointerDown);
-      window.removeEventListener('pointermove', onPointerMove);
-      window.removeEventListener('pointerup', onPointerUp);
-      window.removeEventListener('pointercancel', onPointerCancel);
       el.removeEventListener('lostpointercapture', onLostCapture as EventListener);
-      clearPointer(pointerId);
-      el.classList.remove('is-dragging');
+      el.removeEventListener('dragstart', onDragStart);
+      window.removeEventListener('blur', onBlurOrHide);
+      document.removeEventListener('visibilitychange', onVisibility);
+      hardReset();
     };
-  }, [resetKey]);
+  }, [resetKey, update]);
 
   const scrollByDir = (dir: 'next' | 'prev') => {
     const el = trackRef.current;
