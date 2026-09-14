@@ -59,12 +59,21 @@ export function LandingChrome({
   const bannerPlacement = pathname.startsWith('/shop') ? 'shop' : appNav ? 'app' : 'landing';
   const resolvedBannerTitle = bannerTitle ?? BRAND.displayName;
   const resolvedBannerLead = bannerLead ?? (dir === 'rtl' ? BRAND.taglineFa : BRAND.taglineEn);
-  /** Avoid «PET DATE» + «Pet Date» stacked in the continuity banner. */
+  /** Avoid stacking brand line + identical h1 («PET DATE» / «Pet Date»). */
   const bannerTitleIsBrand = (() => {
-    const t = resolvedBannerTitle.trim().toLowerCase().replace(/[\s._-]+/g, '');
-    const aliases = [BRAND.displayName, BRAND.displayNameFa, 'Pet Date', 'PetDate', 'پت دیت']
-      .map((s) => s.trim().toLowerCase().replace(/[\s._-]+/g, ''));
-    return aliases.includes(t);
+    const norm = (s: string) => s.trim().toLowerCase().replace(/[\s._-]+/g, '');
+    const title = norm(resolvedBannerTitle);
+    const display = BRAND.displayName.trim();
+    const titleCase = display
+      .toLowerCase()
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ');
+    const aliases = new Set(
+      [display, BRAND.displayNameFa, titleCase, display.replace(/\s+/g, '')].map(norm)
+    );
+    return aliases.has(title);
   })();
   // Logo is home. Only show an explicit action when the caller passes one
   // (auth back-link, magazine). Do not pass login — NavUserCluster already
