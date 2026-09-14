@@ -53,11 +53,11 @@
   --pepito-container-pad: 15px;
   /*
    * Landing section vertical rhythm. Featured sections used to force 120px
-   * top+bottom (240px white gap between neighbors). Keep readable air without
-   * the empty band; mobile is a touch tighter.
+   * top+bottom (240px white gap between neighbors); later 3.5/2.75rem still
+   * felt airy. Keep readable separation without empty bands; mobile tighter.
    */
-  --pepito-section-y: 3.5rem;
-  --pepito-section-y-mobile: 2.75rem;
+  --pepito-section-y: 2.25rem;
+  --pepito-section-y-mobile: 1.75rem;
   /*
    * Side inset matching the content edge of a centered `.container`.
    * `100%` resolves on the element that consumes this via padding-inline.
@@ -1082,7 +1082,7 @@ body > #pd-boot-lcp.is-parked,
 .pepito-section--lilac { background: linear-gradient(180deg, var(--pepito-white), var(--pepito-lilac)); }
 .pepito-section-head {
   max-width: 40rem;
-  margin: 0 auto 1.75rem;
+  margin: 0 auto 1.25rem;
   text-align: center;
 }
 .pepito-section-head .pepito-eyebrow {
@@ -1111,7 +1111,7 @@ body > #pd-boot-lcp.is-parked,
   text-align: center;
   max-width: 720px;
   margin-inline: auto;
-  margin-bottom: 1.75rem;
+  margin-bottom: 1.25rem;
 }
 .pepito-section-head--center .pepito-eyebrow {
   display: inline-flex;
@@ -13173,10 +13173,6 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   }
   .pepito-landing--with-dock {
     padding-bottom: var(--pepito-mobile-dock-clearance);
-  }
-  /* Mid-fold sections: last cards/dots must clear the pill before the next fold. */
-  .pepito-landing--with-dock .pepito-section {
-    padding-bottom: calc(var(--pepito-section-y-mobile) + var(--pepito-mobile-dock-clearance));
   }
   /* Chat hides the dock — no clearance band */
   body:has(.tg-chat),
