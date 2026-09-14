@@ -43,15 +43,15 @@ function jpegSofSize(bytes: Buffer): { w: number; h: number } {
 }
 
 const EXPECTED_PRICE: Record<string, number> = {
-  "cat-food-dkp-21258454": 828_000,,
-  "cat-food-dkp-20696007": 275_000,,
-  "cat-food-dkp-20696405": 275_000,,
-  "cat-food-dkp-19887269": 175_000,,
-  "cat-food-dkp-20695998": 175_000,,
-  "cat-food-dkp-21930259": 158_000,,
-  "dog-food-dkp-6236417": 366_700,,
-  "dog-food-dkp-20620037": 270_000,,
-  "dog-food-dkp-20949467": 195_000,,
+  "cat-food-dkp-21258454": 828_000,
+  "cat-food-dkp-20696007": 275_000,
+  "cat-food-dkp-20696405": 275_000,
+  "cat-food-dkp-19887269": 175_000,
+  "cat-food-dkp-20695998": 175_000,
+  "cat-food-dkp-21930259": 158_000,
+  "dog-food-dkp-6236417": 366_700,
+  "dog-food-dkp-20620037": 270_000,
+  "dog-food-dkp-20949467": 195_000,
   "dog-food-dkp-20949492": 195_000,
 };
 
