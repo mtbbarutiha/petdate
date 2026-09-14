@@ -84,7 +84,15 @@ assert(
   'batch-multi wave 2 Luna slug aliases 301 to /shop/product/:slug'
 );
 assert(
-  !xml.includes('/shop/product/cat-toys-petopoli-4-way-foldable-cat-play-tunnel'),
+  xml.includes('/shop/product/cat-toys-petopoli-4-way-foldable-cat-play-tunnel'),
+  'batch-multi wave 3 Petopoli tunnel stays in sitemap'
+);
+assert(
+  map.includes('/shop/dog-accessories-hannapet-silicone-dog-leash-size-l '),
+  'batch-multi wave 3 Hannapet leash slug aliases 301 to /shop/product/:slug'
+);
+assert(
+  !xml.includes('/shop/product/cat-accessories-hannapet-double-wooden-bowl-stand'),
   'later waves stay out of sitemap'
 );
 console.log('sitemap.selftest: ok');

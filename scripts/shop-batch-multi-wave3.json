@@ -1,0 +1,129 @@
+{
+  "batch": "multi-1",
+  "wave": 3,
+  "waveCount": 5,
+  "pricingRule": "zero-margin",
+  "cacheBust": "batch-multi-w3-v1",
+  "products": [
+    {
+      "proposedId": "p270",
+      "slug": "dog-toys-luna-pomegranate-felt-squeaky-dog-toy",
+      "title": "عروسک نمدی لونا طرح انار",
+      "titleEn": "",
+      "brandId": "luna",
+      "categorySlug": "dog-toys",
+      "petTypes": ["dog"],
+      "priceToman": 322000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p271",
+      "slug": "dog-toys-luna-squeaky-watermelon-plush-dog-toy",
+      "title": "عروسک پولیشی لونا طرح هندوانه صدا دار",
+      "titleEn": "",
+      "brandId": "luna",
+      "categorySlug": "dog-toys",
+      "petTypes": ["dog"],
+      "priceToman": 312000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p272",
+      "slug": "cat-toys-petopoli-4-way-foldable-cat-play-tunnel",
+      "title": "تونل بازی چهارراه گربه",
+      "titleEn": "",
+      "brandId": "petopoli",
+      "categorySlug": "cat-toys",
+      "petTypes": ["cat"],
+      "priceToman": 2310000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p273",
+      "slug": "cat-toys-cat-toy-layer-tower-of-tracks",
+      "title": "اسباب بازی طبقاتی تعادلی گربه مدل پردار",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "cat-toys",
+      "petTypes": ["cat"],
+      "priceToman": 1520000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p274",
+      "slug": "cat-toys-hanging-catnip-bat-toy-for-cats",
+      "title": "عروسک آویز گربه طرح خفاش کت‌نیپ‌دار",
+      "titleEn": "",
+      "brandId": "juicer",
+      "categorySlug": "cat-toys",
+      "petTypes": ["cat"],
+      "priceToman": 960000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p275",
+      "slug": "cat-toys-little-yellow-cat-toy",
+      "title": "اسباب بازی تشویقی خور تعادلی گربه مدل جوجه اردک",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "cat-toys",
+      "petTypes": ["cat"],
+      "priceToman": 825000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p276",
+      "slug": "cat-toys-play-tunnel-bag",
+      "title": "کیسه بازی گربه برند",
+      "titleEn": "",
+      "brandId": "petopoli",
+      "categorySlug": "cat-toys",
+      "petTypes": ["cat"],
+      "priceToman": 792000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p277",
+      "slug": "cat-toys-automatic-cat-teaser-ball-robotic-toy-for-cats",
+      "title": "توپ هوشمند رباتیک گربه",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "cat-toys",
+      "petTypes": ["cat"],
+      "priceToman": 610050,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p278",
+      "slug": "dog-accessories-hannapet-silicone-h-harness-size-l",
+      "title": "قلاده H مدل سیلیکونی حناپت سایز L",
+      "titleEn": "",
+      "brandId": "hannapet",
+      "categorySlug": "dog-accessories",
+      "petTypes": ["dog"],
+      "priceToman": 4355000,
+      "weightLabel": "L",
+      "weightKind": "size"
+    },
+    {
+      "proposedId": "p279",
+      "slug": "dog-accessories-hannapet-silicone-dog-leash-size-l",
+      "title": "لیش سیلیکونی حناپت سایز L",
+      "titleEn": "",
+      "brandId": "hannapet",
+      "categorySlug": "dog-accessories",
+      "petTypes": ["dog"],
+      "priceToman": 3332000,
+      "weightLabel": "L",
+      "weightKind": "size"
+    }
+  ]
+}
