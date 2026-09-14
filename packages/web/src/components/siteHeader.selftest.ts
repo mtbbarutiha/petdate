@@ -29,12 +29,12 @@ assert.match(
 );
 assert.match(header, /brandBelow/, 'header accepts shop search slot');
 assert.match(header, /pepito-nav--with-search/, 'shop search marks the header for taller chrome');
-assert.match(header, /pepito-nav-brand--search/, 'mobile search stacks under the brand/logo column');
+assert.match(header, /pepito-nav-search-row/, 'mobile search is a full-width row under logo/tools');
 assert.match(header, /pepito-nav-desktop-search/, 'desktop search sits in the primary row');
 assert.match(header, /nav-mobile-events/, 'mobile header exposes Events shortcut');
 assert.match(header, /showMobileEvents/, 'Events pill can be disabled (shop)');
 assert.match(header, /pepito-nav-main/, 'logo, links, and utilities share one header row site-wide');
-assert.doesNotMatch(header, /pepito-nav-search-row/, 'search is not a full-width second row');
+assert.doesNotMatch(header, /pepito-nav-brand--search/, 'mobile search is not nested under the logo column');
 assert.match(header, /pepito-nav-brand/, 'logo lives in the brand cluster');
 assert.doesNotMatch(header, /ShopProductSearch/, 'SiteHeader does not import shop search (slot only)');
 assert.match(header, /pepito-nav-actions/, 'header has utilities group');
@@ -114,7 +114,7 @@ assert.match(welcome, /deferDesktopNav/, 'Welcome still defers desktop shortcuts
 assert.match(shop, /SiteHeader/, 'ShopChrome uses shared header');
 assert.match(shop, /showDesktopNav=\{false\}/, 'shop hides هم بازی/شاپ/ایونت‌ها desktop nav');
 assert.match(shop, /showMobileEvents=\{false\}/, 'shop hides mobile Events pill');
-assert.match(shop, /pepito-nav--shop/, 'shop marks header for top-aligned tools');
+assert.match(shop, /pepito-nav--shop/, 'shop marks header for aligned tools + search chrome');
 assert.match(shop, /showOrders/, 'shop keeps Orders icon in the left cluster');
 assert.doesNotMatch(shop, /shopSectionLinks/, 'shop no longer mounts text سفارش‌ها in primary nav');
 assert.doesNotMatch(shop, /sectionLinks=/, 'shop leading side is logo + search only');
@@ -183,7 +183,32 @@ assert.match(
 assert.match(
   css,
   /\.pepito-nav-brand--search\s*\{[\s\S]{0,220}width:\s*max-content/,
-  'shop brand column hugs the logo so primary nav can sit beside it'
+  'legacy logo-column search styles remain for compatibility'
+);
+assert.match(
+  css,
+  /\.pepito-nav-search-row\s*\{[\s\S]{0,220}margin-block-start:\s*0\.65rem/,
+  'mobile search row sits below the icon row with clear vertical margin'
+);
+assert.match(
+  css,
+  /\.pepito-nav-search-row\s*\{[\s\S]{0,220}width:\s*100%/,
+  'mobile search row spans the full usable header width'
+);
+assert.match(
+  css,
+  /\.pepito-nav--shop[\s\S]{0,160}\.pepito-nav-actions[\s\S]{0,80}align-items:\s*center/,
+  'shop header utilities share one vertical centerline'
+);
+assert.match(
+  css,
+  /\.pepito-nav--mobile-search[\s\S]{0,120}\.pepito-nav-main[\s\S]{0,80}align-items:\s*center/,
+  'mobile search header keeps logo and tools on one axis'
+);
+assert.match(
+  css,
+  /\.pd-shop-page[\s\S]{0,80}\.pd-shop-hero[\s\S]{0,120}margin-top:\s*0\s*!important/,
+  'desktop sticky shop nav does not leave a gap above the hero'
 );
 assert.match(
   css,
@@ -243,10 +268,10 @@ assert.match(
 );
 assert.match(
   css,
-  /\.pepito-nav-brand--search[\s\S]{0,200}\.pd-shop-search\.is-expanded/,
-  'compact logo-column search expands on focus'
+  /\.pepito-nav-search-row[\s\S]{0,200}\.pd-shop-search/,
+  'mobile search row owns the shop search pill'
 );
-assert.doesNotMatch(css, /\.pepito-nav-search-row/, 'full-width search row styles removed');
+assert.match(css, /\.pepito-nav-search-row/, 'full-width mobile search row styles present');
 assert.match(
   css,
   /\.pepito-nav-links\.pepito-nav-section-inline[\s\S]{0,120}display:\s*flex/,
@@ -267,8 +292,8 @@ assert.match(
 
 assert.match(
   css,
-  /\.pepito-nav--shop[\s\S]{0,120}\.pepito-nav-main[\s\S]{0,80}align-items:\s*flex-start/,
-  'shop header tools align to the top with the logo',
+  /\.pepito-nav--shop[\s\S]{0,160}\.pepito-nav-main[\s\S]{0,80}align-items:\s*center/,
+  'shop header logo row and tools share a centerline',
 );
 assert.match(
   css,

@@ -51,7 +51,7 @@ export type SiteHeaderProps = {
   extras?: ReactNode;
   /**
    * Shop search slot.
-   * Mobile: stacks under the logo (must not overlap).
+   * Mobile: full-width row under the logo + tools (must not collide with icons).
    * Desktop: renders in the primary row beside the logo (shop has no section links).
    */
   brandBelow?: ReactNode;
@@ -66,7 +66,7 @@ export type SiteHeaderProps = {
  * Shared site header: leading (brand + primary links) | utilities.
  * Two flex children under `.pepito-nav-main` so RTL space-between parks
  * logo/nav at the physical right and utilities flush at the physical left.
- * Shop search: under logo on mobile; inline beside logo on desktop.
+ * Shop search: full-width under logo/tools on mobile; inline beside logo on desktop.
  * Shop mode: logo + search only on the leading side (no Events / desktop nav).
  */
 export function SiteHeader({
@@ -125,7 +125,7 @@ export function SiteHeader({
     <header className={headerClass}>
       <div className="pepito-nav-main">
         <div className="pepito-nav-leading">
-          <div className={`pepito-nav-brand${mobileSearch ? ' pepito-nav-brand--search' : ''}`}>
+          <div className="pepito-nav-brand">
             <Link to="/" className="pepito-nav-logo" aria-label={BRAND.displayName}>
               <img
                 src={logoSrc}
@@ -137,7 +137,6 @@ export function SiteHeader({
                 decoding="async"
               />
             </Link>
-            {mobileSearch}
           </div>
 
           {!isDesktop && showMobileEvents ? (
@@ -197,6 +196,11 @@ export function SiteHeader({
           {extras}
         </div>
       </div>
+      {mobileSearch ? (
+        <div className="pepito-nav-search-row" data-testid="nav-mobile-search">
+          {mobileSearch}
+        </div>
+      ) : null}
     </header>
   );
 }

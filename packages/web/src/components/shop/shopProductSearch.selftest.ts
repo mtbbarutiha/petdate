@@ -48,8 +48,8 @@ assert.match(chrome, /brandBelow/, 'search is slotted into the header');
 assert.match(chrome, /pepito-nav-h/, 'header height is measured for sticky/fixed offset');
 assert.doesNotMatch(chrome, /pd-shop-search-bar/, 'search is inside the header, not a second sticky bar');
 assert.match(headerSrc, /pepito-nav--with-search/, 'header grows when search is slotted');
-assert.match(headerSrc, /pepito-nav-brand--search/, 'search sits under the logo column');
-assert.doesNotMatch(headerSrc, /pepito-nav-search-row/, 'search is not a full-width second row');
+assert.match(headerSrc, /pepito-nav-search-row/, 'mobile search is a full-width row under logo/tools');
+assert.doesNotMatch(headerSrc, /pepito-nav-brand--search/, 'mobile search is not nested under the logo column');
 assert.match(search, /isShopSearchHotkey/, 'Ctrl\\/Cmd+K focuses search (no visible badge)');
 assert.doesNotMatch(search, /pd-shop-search-kbd/, 'Ctrl+K badge removed from search UI');
 assert.doesNotMatch(search, /Ctrl\+K/, 'no Ctrl+K label in search component');
@@ -63,7 +63,12 @@ assert.match(
   /\.pd-shop-search-input[\s\S]{0,220}font-size:\s*16px/,
   'shop search input stays ≥16px (no iOS focus-zoom)'
 );
-assert.match(css, /\.pepito-nav-brand--search/, 'logo-column search styles');
+assert.match(css, /\.pepito-nav-search-row/, 'full-width mobile search row styles');
+assert.match(
+  css,
+  /\.pepito-nav-search-row[\s\S]{0,200}margin-block-start/,
+  'mobile search has vertical clearance from the icon row'
+);
 assert.match(
   css,
   /\.pd-shop-search\.is-expanded/,
@@ -76,8 +81,8 @@ assert.match(
 );
 assert.match(
   css,
-  /@media \(max-width: 859px\)[\s\S]*\.pd-shop-page \.pepito-nav[\s\S]{0,220}position:\s*sticky/,
-  'mobile shop header stays sticky with search under the logo'
+  /@media \(max-width: 859px\)[\s\S]*\.pd-shop-page \.pepito-nav[\s\S]{0,280}position:\s*sticky/,
+  'mobile shop header stays sticky with search under the logo/tools row'
 );
 assert.doesNotMatch(landing, /ShopProductSearch/, 'shop search is shop-route chrome only');
 assert.match(dark, /pd-shop-search-pill/, 'dark mode search styles');
