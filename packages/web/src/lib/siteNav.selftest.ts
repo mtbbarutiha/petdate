@@ -74,6 +74,17 @@ assert.doesNotMatch(mobileFn, /\bGAMES\b/, 'mobile dock builder must not insert 
 
 assert.match(nav, /function withGamesAfterShop/, 'Games is appended after شاپ for desktop only');
 assert.match(nav, /function desktopOrderFromMobile/, 'desktop restores chats-before-shop order');
+assert.match(nav, /function isShopPrimaryActive/, 'shop active-state helper exists');
+assert.match(
+  nav,
+  /pathname === '\/shop\/orders'|pathname\.startsWith\('\/shop\/orders\/'\)/,
+  'شاپ is not active on سفارش‌ها (section link owns that route)',
+);
+assert.match(
+  nav,
+  /pathname\.startsWith\('\/shop\/c\/'\)/,
+  'شاپ is not active on category section links (سگ/گربه/پرنده)',
+);
 const desktopGuest = nav.slice(
   nav.indexOf('export const SITE_NAV_DESKTOP_GUEST'),
   nav.indexOf('export const SITE_NAV_DESKTOP_AUTH'),
