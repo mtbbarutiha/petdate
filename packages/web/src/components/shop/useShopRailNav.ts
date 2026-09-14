@@ -68,23 +68,35 @@ export function useShopRailNav(resetKey: unknown) {
     const el = trackRef.current;
     if (!el) return;
 
+    /** Delay capture until the pointer actually moves — immediate capture was
+     *  eating clicks on cards and could leave the track's composited layer
+     *  claiming gestures meant for sibling L/R buttons. */
+    const DRAG_THRESHOLD_PX = 8;
+    let pending = false;
     let dragging = false;
     let moved = false;
     let pointerId: number | null = null;
     let startX = 0;
     let startScroll = 0;
 
-    const endDrag = (e: PointerEvent) => {
-      if (!dragging || pointerId !== e.pointerId) return;
+    const clearPointer = (id: number) => {
+      pending = false;
       dragging = false;
       pointerId = null;
       el.classList.remove('is-dragging');
       try {
-        if (el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId);
+        if (el.hasPointerCapture(id)) el.releasePointerCapture(id);
       } catch {
         /* already released */
       }
-      if (moved) {
+    };
+
+    const endDrag = (e: PointerEvent) => {
+      if (pointerId !== e.pointerId) return;
+      const wasDragging = dragging;
+      const didMove = moved;
+      clearPointer(e.pointerId);
+      if (wasDragging && didMove) {
         // Suppress the click that would open a product/card after a drag.
         const suppress = (ev: Event) => {
           ev.preventDefault();
@@ -101,24 +113,41 @@ export function useShopRailNav(resetKey: unknown) {
       // Native touch swipe already works; only emulate drag for mouse/pen.
       if (e.pointerType === 'touch') return;
       if (e.pointerType === 'mouse' && e.button !== 0) return;
-      // Don't steal clicks from rail L/R buttons (they sit outside the track).
-      dragging = true;
+      // Never start a track drag from rail chrome (L/R, pills live outside track,
+      // but keep the guard for nested controls).
+      const target = e.target;
+      if (
+        target instanceof Element &&
+        target.closest('.pd-shop-rail-btn, .pd-shop-home-rail-pill, button, [role="tab"]')
+      ) {
+        return;
+      }
+      pending = true;
+      dragging = false;
       moved = false;
       pointerId = e.pointerId;
       startX = e.clientX;
       startScroll = el.scrollLeft;
-      el.classList.add('is-dragging');
-      try {
-        el.setPointerCapture(e.pointerId);
-      } catch {
-        /* ignore */
-      }
     };
 
     const onPointerMove = (e: PointerEvent) => {
-      if (!dragging || pointerId !== e.pointerId) return;
+      if (pointerId !== e.pointerId) return;
+      if (!pending && !dragging) return;
       const dx = e.clientX - startX;
-      if (Math.abs(dx) > 4) moved = true;
+      if (!dragging) {
+        if (Math.abs(dx) < DRAG_THRESHOLD_PX) return;
+        dragging = true;
+        pending = false;
+        moved = true;
+        el.classList.add('is-dragging');
+        try {
+          el.setPointerCapture(e.pointerId);
+        } catch {
+          /* ignore */
+        }
+      } else if (Math.abs(dx) > DRAG_THRESHOLD_PX) {
+        moved = true;
+      }
       // Same delta formula works for LTR and Chromium/Firefox RTL scrollLeft.
       el.scrollLeft = startScroll - dx;
     };

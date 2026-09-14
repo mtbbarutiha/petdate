@@ -9118,6 +9118,8 @@ a.pepito-btn.pepito-human-consult-cta:hover {
 }
 .pd-shop-top-brands-rail {
   position: relative;
+  isolation: isolate;
+  z-index: 0;
 }
 .pd-shop-top-brands-track {
   display: flex;
@@ -9132,6 +9134,8 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   scrollbar-width: none;
   padding: 0.35rem 2.55rem 0.55rem;
   outline: none;
+  position: relative;
+  z-index: 0;
 }
 .pd-shop-top-brands-track::-webkit-scrollbar {
   display: none;
@@ -9403,6 +9407,8 @@ a.pepito-btn.pepito-human-consult-cta:hover {
 
 .pd-shop-dk-strip-frame {
   position: relative;
+  isolation: isolate;
+  z-index: 0;
 }
 .pd-shop-dk-strip {
   display: flex;
@@ -9417,6 +9423,8 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   scroll-snap-type: x proximity;
   scrollbar-width: none;
   padding: 0.45rem 2.6rem 0.65rem;
+  position: relative;
+  z-index: 0;
 }
 .pd-shop-dk-strip::-webkit-scrollbar {
   display: none;
@@ -11047,6 +11055,8 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   justify-content: space-between;
   gap: 0.75rem;
   margin-bottom: 0.75rem;
+  position: relative;
+  z-index: 2;
 }
 .pd-shop-home-rail-title {
   margin: 0;
@@ -11068,6 +11078,9 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   text-decoration: none;
   font-size: 0.82rem;
   font-weight: 700;
+  position: relative;
+  z-index: 2;
+  touch-action: manipulation;
 }
 .pd-shop-home-rail-all:hover {
   background: #e8e8ea;
@@ -11081,6 +11094,9 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   scrollbar-width: none;
   padding-bottom: 0.75rem;
   margin-bottom: 0.15rem;
+  position: relative;
+  z-index: 2;
+  touch-action: pan-x;
 }
 .pd-shop-home-rail-pills::-webkit-scrollbar {
   display: none;
@@ -11098,6 +11114,11 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
+  position: relative;
+  z-index: 2;
+  pointer-events: auto;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 .pd-shop-home-rail-pill.is-active {
   background: #0c0c0c;
@@ -11106,6 +11127,9 @@ a.pepito-btn.pepito-human-consult-cta:hover {
 }
 .pd-shop-home-rail-frame {
   position: relative;
+  /* Keep L/R buttons above the GPU-composited overflow track. */
+  isolation: isolate;
+  z-index: 0;
 }
 .pd-shop-home-rail-track {
   display: flex;
@@ -11120,6 +11144,8 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   padding-block: 0.25rem;
   padding-inline: 2.55rem;
   cursor: grab;
+  position: relative;
+  z-index: 0;
 }
 .pd-shop-home-rail-track::-webkit-scrollbar {
   display: none;
@@ -11148,6 +11174,8 @@ a.pepito-btn.pepito-human-consult-cta:hover {
 .pd-shop-top-brands-track,
 .pd-dk-similar-track {
   cursor: grab;
+  position: relative;
+  z-index: 0;
 }
 .pd-shop-home-rail-item {
   flex: 0 0 auto;
@@ -11169,7 +11197,7 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   position: absolute;
   inset-block-start: 42%;
   transform: translateY(-50%);
-  z-index: 5;
+  z-index: 6;
   width: 2.5rem;
   height: 2.5rem;
   border-radius: 50%;
@@ -11185,6 +11213,9 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
   user-select: none;
+}
+.pd-shop-rail-btn svg {
+  pointer-events: none;
 }
 .pd-shop-rail-btn--left,
 .pd-shop-rail-btn--next {
@@ -16601,6 +16632,8 @@ a.pepito-btn.pepito-human-consult-cta:hover {
 }
 .pd-dk-similar-frame {
   position: relative;
+  isolation: isolate;
+  z-index: 0;
 }
 .pd-dk-similar-track {
   display: flex;
@@ -16614,6 +16647,8 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   scrollbar-width: none;
   padding-block: 0.25rem;
   padding-inline: 2.55rem;
+  position: relative;
+  z-index: 0;
 }
 .pd-dk-similar-track::-webkit-scrollbar {
   display: none;
