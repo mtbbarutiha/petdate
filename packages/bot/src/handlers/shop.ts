@@ -50,6 +50,7 @@ const PET_TYPES = [
   { id: 'dog' as const, label: '🐕 سگ' },
   { id: 'cat' as const, label: '🐈 گربه' },
   { id: 'bird' as const, label: '🐦 پرنده' },
+  { id: 'rodent' as const, label: '🐹 جوندگان' },
 ];
 
 function escapeHtml(value: string): string {
@@ -311,7 +312,7 @@ export async function handleShopPetType(ctx: Context, petType: string): Promise<
     await ctx.answerCallbackQuery({ text: 'نوع پت نامعتبر', show_alert: true });
     return;
   }
-  const typed = petType as 'dog' | 'cat' | 'bird';
+  const typed = petType as 'dog' | 'cat' | 'bird' | 'rodent';
   if (ctx.from) {
     await patchSession(String(ctx.from.id), {
       shopPetType: typed,

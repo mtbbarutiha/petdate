@@ -18,7 +18,7 @@ import { SHOP_DIGIKALA_BATCH1_PART4_PRODUCTS } from './shopDigikalaBatch1Part4Pr
 
 const P = '/pepito/uploads';
 
-export type ShopPetType = 'dog' | 'cat' | 'bird' | 'all';
+export type ShopPetType = 'dog' | 'cat' | 'bird' | 'rodent' | 'all';
 
 export interface ShopCategory {
   slug: string;
@@ -98,6 +98,7 @@ export const SHOP_PET_TYPES: { id: ShopPetType; labelFa: string; labelEn: string
   { id: 'dog', labelFa: 'سگ', labelEn: 'Dog' },
   { id: 'cat', labelFa: 'گربه', labelEn: 'Cat' },
   { id: 'bird', labelFa: 'پرنده', labelEn: 'Bird' },
+  { id: 'rodent', labelFa: 'جوندگان', labelEn: 'Rodents' },
 ];
 
 /** Top-level shop categories by pet type */
@@ -132,6 +133,8 @@ export const SHOP_CATEGORIES: ShopCategory[] = [
   // —— پرنده ——
   { slug: 'bird-food', labelFa: 'غذای پرنده', petType: 'bird', description: 'دان، پلت و مخلوط غذایی', emoji: '🐦' },
   { slug: 'bird-accessories', labelFa: 'لوازم پرنده', petType: 'bird', description: 'قفس، نشیمن و لوازم جانبی', emoji: '🪺' },
+  // —— جوندگان ——
+  { slug: 'rodent-supplies', labelFa: 'لوازم جوندگان', petType: 'rodent', description: 'غذا و لوازم جوندگان', emoji: '🐹' },
 ];
 
 const B = '/shop/brands';
@@ -505,7 +508,7 @@ export function applyLiveShopCatalog(input: {
     const base = byId.get(api.id) ?? bySlug.get(api.slug);
     const petTypes = (api.petTypes?.length
       ? api.petTypes
-      : base?.petTypes ?? ['dog']) as Array<'dog' | 'cat' | 'bird'>;
+      : base?.petTypes ?? ['dog']) as Array<'dog' | 'cat' | 'bird' | 'rodent'>;
     const badge =
       api.badge === 'hot' || api.badge === 'sale' || api.badge === 'new' || api.badge === 'limited'
         ? api.badge
@@ -575,10 +578,9 @@ export function applyLiveShopCatalog(input: {
     const staticBySlug = new Map(SHOP_CATEGORIES.map((c) => [c.slug, c]));
     liveCategories = input.categories.map((c) => {
       const base = staticBySlug.get(c.slug);
-      const petType = (c.petType === 'cat' || c.petType === 'bird' ? c.petType : 'dog') as
-        | 'dog'
-        | 'cat'
-        | 'bird';
+      const petType = (
+        c.petType === 'cat' || c.petType === 'bird' || c.petType === 'rodent' ? c.petType : 'dog'
+      ) as 'dog' | 'cat' | 'bird' | 'rodent';
       return {
         slug: c.slug,
         labelFa: c.labelFa || base?.labelFa || c.slug,
