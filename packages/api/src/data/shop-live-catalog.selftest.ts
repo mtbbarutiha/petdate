@@ -298,7 +298,7 @@ async function main() {
   assert.match(String(p221.image), /royal-canin-mini-adult-2kg\.jpg\?v=gallery-v1$/);
   assert.match(String(p235.image), /cat-food-josera-kitten-2kg\.jpg\?v=batch2-v1$/);
   assert.match(String(p249.image), /dog-food-royal-canin-hypoallergenic-2kg\.jpg\?v=batch3-v2$/);
-  assert.match(String(p259.image), /dog-treats-wanpy-toothbrush-chews-100g\.jpg\?v=batch-multi-w1-v4$/);
+  assert.match(String(p259.image), /dog-treats-wanpy-toothbrush-chews-100g\.jpg\?v=batch-multi-w1-v5$/);
   assert.match(
     String(p269.image),
     /dog-toys-luna-squeaky-smile-watermelon-plush-dog-toy\.jpg\?v=batch-multi-w2-v4$/

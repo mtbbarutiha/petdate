@@ -453,7 +453,7 @@ def write_cache_bust() -> None:
     old = ROOT / "tmp/cache-bust-shop-batch-multi-v1"
     if old.exists():
         old.unlink()
-    dest = ROOT / "tmp/cache-bust-shop-batch-multi-w1-v1"
+    dest = ROOT / "tmp/cache-bust-shop-batch-multi-w1-v5"
     dest.write_text(f"{CACHE_BUST}\n")
 
 
