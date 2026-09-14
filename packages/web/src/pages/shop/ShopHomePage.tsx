@@ -12,9 +12,11 @@ import {
   getFeaturedProducts,
   type ShopPetType,
 } from '../../data/shopCatalog';
+import { ShopBreadcrumb } from '../../components/shop/ShopBreadcrumb';
 import { ShopChrome } from '../../components/shop/ShopChrome';
 import { ShopProductCard } from '../../components/shop/ShopProductCard';
 import { usePlatformConfig } from '../../hooks/usePlatformConfig';
+import { shopHomeBreadcrumbs } from '../../lib/shopBreadcrumb';
 
 /** Digikala-style solid circle colors (Pepito-friendly palette) */
 const DK_CAT_COLORS = [
@@ -86,6 +88,8 @@ export function ShopHomePage() {
       bannerLead="غذا، لوازم و اسباب‌بازی با فیلتر برند و قیمت — به تومان"
     >
       <div className="pepito-container pd-shop-home">
+        <ShopBreadcrumb items={shopHomeBreadcrumbs(lang)} />
+
         <section className="pd-shop-journey" aria-label="مسیر خرید">
           {JOURNEY.map(({ step, title, desc, Icon }) => (
             <div key={step} className="pd-shop-journey-step">

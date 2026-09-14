@@ -9588,18 +9588,52 @@ a.pepito-btn.pepito-human-consult-cta:hover {
 }
 
 .pd-shop-breadcrumb {
+  display: block;
+  margin: 0 0 1rem;
+  padding: 0.65rem 0;
+  border-top: 1px solid rgba(92, 77, 145, 0.1);
+  border-bottom: 1px solid rgba(92, 77, 145, 0.1);
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: var(--pepito-muted, #81858b);
+}
+.pd-shop-breadcrumb-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.35rem;
   align-items: center;
-  font-size: 0.88rem;
-  color: var(--pepito-muted);
+  gap: 0;
   margin: 0;
+  padding: 0;
+  list-style: none;
 }
-.pd-shop-breadcrumb a {
-  color: var(--pepito-base);
+.pd-shop-breadcrumb-item {
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+}
+.pd-shop-breadcrumb-sep {
+  margin: 0 0.4rem;
+  color: var(--pepito-muted, #a1a3a8);
+  font-weight: 400;
+  user-select: none;
+}
+.pd-shop-breadcrumb-link,
+.pd-shop-breadcrumb-current {
+  color: var(--pepito-muted, #81858b);
   text-decoration: none;
-  font-weight: 700;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: min(42vw, 16rem);
+}
+.pd-shop-breadcrumb-link:hover {
+  color: var(--pepito-base, #5c4d91);
+  text-decoration: none;
+}
+.pd-shop-breadcrumb-current {
+  color: var(--pepito-muted, #6b7077);
+  font-weight: 600;
 }
 .pd-shop-detail-grid {
   display: grid;

@@ -13,8 +13,10 @@ import {
   getCategory,
   type ShopPetType,
 } from '../../data/shopCatalog';
+import { ShopBreadcrumb } from '../../components/shop/ShopBreadcrumb';
 import { ShopChrome } from '../../components/shop/ShopChrome';
 import { ShopProductCard } from '../../components/shop/ShopProductCard';
+import { shopCategoryBreadcrumbs } from '../../lib/shopBreadcrumb';
 
 export function ShopCategoryPage() {
   const { lang, t } = useI18n();
@@ -262,11 +264,14 @@ export function ShopCategoryPage() {
   return (
     <ShopChrome bannerTitle={title} bannerLead={lead}>
       <div className="pepito-container pd-shop-listing">
-        <nav className="pd-shop-breadcrumb" aria-label="مسیر">
-          <Link to="/shop">پت دیت شاپ</Link>
-          <span>/</span>
-          <span>{title}</span>
-        </nav>
+        <ShopBreadcrumb
+          items={shopCategoryBreadcrumbs({
+            lang,
+            categorySlug: category,
+            petType,
+            allProductsLabel: t('shop.allProducts'),
+          })}
+        />
 
         <div className="pd-shop-listing-toolbar">
           <div className="pd-shop-listing-toolbar-copy">

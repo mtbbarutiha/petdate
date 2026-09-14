@@ -16,6 +16,7 @@ import {
   RETIRED_SHOP_CATEGORY_SLUGS,
   RETIRED_SHOP_PRODUCTS,
 } from '../data/retired-shop-products';
+import { shopSeoBreadcrumbItems } from './shopBreadcrumb';
 
 export const INDEX_ROBOTS =
   'index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1';
@@ -428,11 +429,7 @@ export function pageSeoForPath(pathname: string, opts: PageSeoOpts = {}): PageSe
         description:
           'مشاهده همه کالاهای پت‌دیت شاپ — غذا، اسباب‌بازی، خاک، قلاده و لوازم سگ و گربه با فیلتر برند و قیمت.',
         canonicalPath: '/shop/c/all',
-        breadcrumbs: [
-          { name: SEO.siteName, path: '/' },
-          { name: 'پت‌شاپ', path: '/shop' },
-          { name: 'همه محصولات', path: '/shop/c/all' },
-        ],
+        breadcrumbs: shopSeoBreadcrumbItems({ categorySlug: 'all' }),
         extraLd: [
           {
             '@type': 'CollectionPage',
@@ -449,11 +446,7 @@ export function pageSeoForPath(pathname: string, opts: PageSeoOpts = {}): PageSe
         title: SEO.titleTemplate(`${cat.labelFa} | خرید آنلاین`),
         description: cat.description || `خرید ${cat.labelFa} از پت‌دیت شاپ — ارسال در ایران، قیمت به تومان.`,
         canonicalPath: `/shop/c/${cat.slug}`,
-        breadcrumbs: [
-          { name: SEO.siteName, path: '/' },
-          { name: 'پت‌شاپ', path: '/shop' },
-          { name: cat.labelFa, path: `/shop/c/${cat.slug}` },
-        ],
+        breadcrumbs: shopSeoBreadcrumbItems({ categorySlug: cat.slug }),
         noscriptHtml: noscriptWrap(
           `<h1>${esc(cat.labelFa)}</h1><p>${esc(cat.description)}</p><p><a href="/shop">پت‌شاپ</a></p>`
         ),
@@ -463,7 +456,6 @@ export function pageSeoForPath(pathname: string, opts: PageSeoOpts = {}): PageSe
   const shopProduct = shopProductFromPath(p);
   if (shopProduct) {
     const path = productCanonicalPath(shopProduct);
-    const cat = getCategory(shopProduct.categorySlug);
     return pack({
       title: SEO.titleTemplate(`${shopProduct.title} | خرید`),
       description: `خرید ${shopProduct.title} از پت‌دیت شاپ — غذا و لوازم پت با قیمت تومان.`,
@@ -471,12 +463,7 @@ export function pageSeoForPath(pathname: string, opts: PageSeoOpts = {}): PageSe
       ogType: 'product',
       image: absAsset(shopProduct.image),
       imageAlt: shopProduct.title,
-      breadcrumbs: [
-        { name: SEO.siteName, path: '/' },
-        { name: 'پت‌شاپ', path: '/shop' },
-        ...(cat ? [{ name: cat.labelFa, path: `/shop/c/${cat.slug}` }] : []),
-        { name: shopProduct.title, path },
-      ],
+      breadcrumbs: shopSeoBreadcrumbItems({ product: shopProduct }),
       extraLd: [productJsonLd(shopProduct)],
       noscriptHtml: productNoscript(shopProduct),
     });
@@ -487,10 +474,7 @@ export function pageSeoForPath(pathname: string, opts: PageSeoOpts = {}): PageSe
       description:
         'خرید غذای سگ و گربه، اسباب‌بازی، خاک، قلاده و لوازم پت از پت‌دیت شاپ — فیلتر برند و قیمت، پرداخت تومان.',
       canonicalPath: '/shop',
-      breadcrumbs: [
-        { name: SEO.siteName, path: '/' },
-        { name: 'پت‌شاپ', path: '/shop' },
-      ],
+      breadcrumbs: shopSeoBreadcrumbItems({}),
       extraLd: [
         {
           '@type': 'Store',

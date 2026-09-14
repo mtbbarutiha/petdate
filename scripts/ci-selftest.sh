@@ -96,6 +96,7 @@ npx tsx "$ROOT/packages/web/src/pages/landingFeaturedProducts.selftest.ts"
 echo "==> selftest: web share helper (Web Share / clipboard)"
 npx tsx "$ROOT/packages/web/src/lib/share.selftest.ts"
 npx tsx "$ROOT/packages/web/src/lib/shopProductLikeShare.selftest.ts"
+npx tsx "$ROOT/packages/web/src/lib/shopBreadcrumb.selftest.ts"
 
 echo "==> selftest: web admin Jalali date helpers"
 npx tsx "$ROOT/packages/web/src/admin/JalaliDateSelect.selftest.ts"

@@ -1994,6 +1994,19 @@ html[data-theme='dark'] .pd-dk-tool.is-liked {
   border-color: rgba(242, 122, 154, 0.4);
   background: rgba(242, 122, 154, 0.12);
 }
+html[data-theme='dark'] .pd-shop-breadcrumb {
+  color: var(--pepito-muted);
+  border-top-color: var(--pd-border);
+  border-bottom-color: var(--pd-border);
+}
+html[data-theme='dark'] .pd-shop-breadcrumb-link,
+html[data-theme='dark'] .pd-shop-breadcrumb-current,
+html[data-theme='dark'] .pd-shop-breadcrumb-sep {
+  color: var(--pepito-muted);
+}
+html[data-theme='dark'] .pd-shop-breadcrumb-link:hover {
+  color: var(--pepito-base);
+}
 html[data-theme='dark'] .pd-dk-mobile-bar {
   background: color-mix(in srgb, var(--pd-surface) 96%, transparent);
   border-top-color: var(--pd-border);
