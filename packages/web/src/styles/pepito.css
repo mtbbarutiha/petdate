@@ -13025,6 +13025,28 @@ a.pepito-btn.pepito-human-consult-cta:hover {
     padding-inline: 0.65rem;
     font-size: 0.82rem;
   }
+  /*
+   * Mobile auth: keep composition stable when the soft keyboard opens.
+   * Use svh (not dvh) so the shell does not resize with the keyboard;
+   * clip X so a focus scroll cannot leave a horizontal jumble.
+   */
+  .pepito-auth-flow.pepito-flow-page {
+    min-height: 100svh;
+    overflow-x: clip;
+  }
+  .pepito-auth-flow .pepito-flow-panel-inner {
+    max-width: 100%;
+  }
+  .pepito-auth-flow .auth-form input,
+  .pepito-auth-flow .auth-form select,
+  .pepito-auth-flow .auth-form textarea,
+  .pepito-auth-flow .auth-login-phone-row input,
+  .pepito-auth-flow .form-input,
+  .pepito-auth-flow .form-select,
+  .pepito-auth-flow .form-textarea {
+    font-size: 16px !important; /* iOS won't auto-zoom if >= 16px */
+    touch-action: manipulation;
+  }
   .pepito-auth-flow .auth-form input[dir='ltr'] {
     text-align: left;
     letter-spacing: 0.02em;
