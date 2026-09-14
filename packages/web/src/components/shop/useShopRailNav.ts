@@ -1,13 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
+export type ShopRailSide = 'left' | 'right';
+
 /**
- * Horizontal shop rails: hide native overflow, navigate with L/R buttons.
- * Programmatic scroll still works with overflow-x: hidden.
+ * Horizontal shop rails: hide native overflow, navigate with physical L/R buttons.
+ * "Left" always means visual-left (content toward the left edge), including RTL.
  */
 export function useShopRailNav(resetKey: unknown) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [canPrev, setCanPrev] = useState(false);
   const [canNext, setCanNext] = useState(false);
+  const [rtl, setRtl] = useState(true);
   const [hasOverflow, setHasOverflow] = useState(false);
 
   const update = useCallback(() => {
@@ -18,6 +21,8 @@ export function useShopRailNav(resetKey: unknown) {
       setHasOverflow(false);
       return;
     }
+    const isRtl = getComputedStyle(el).direction === 'rtl';
+    setRtl(isRtl);
     const max = el.scrollWidth - el.clientWidth;
     const overflow = max > 8;
     setHasOverflow(overflow);
@@ -27,11 +32,16 @@ export function useShopRailNav(resetKey: unknown) {
       return;
     }
     const left = el.scrollLeft;
-    const rtl = getComputedStyle(el).direction === 'rtl';
-    if (rtl) {
+    if (isRtl) {
       // Chromium RTL: start ≈ 0, further items → negative scrollLeft.
-      setCanPrev(left < -4);
-      setCanNext(left > -max + 4);
+      // Firefox RTL: start ≈ 0, further items → positive scrollLeft.
+      if (left < -4) {
+        setCanPrev(true);
+        setCanNext(left > -max + 4);
+      } else {
+        setCanPrev(left > 4);
+        setCanNext(left < max - 4 || left <= 4);
+      }
     } else {
       setCanPrev(left > 4);
       setCanNext(left < max - 4);
@@ -57,11 +67,33 @@ export function useShopRailNav(resetKey: unknown) {
     const el = trackRef.current;
     if (!el) return;
     const amount = Math.max(220, Math.round(el.clientWidth * 0.7));
-    const rtl = getComputedStyle(el).direction === 'rtl';
-    const nextSign = rtl ? -1 : 1;
+    const isRtl = getComputedStyle(el).direction === 'rtl';
+    const left = el.scrollLeft;
+    const nextSign = isRtl ? (left < -1 ? -1 : 1) : 1;
     const sign = dir === 'next' ? nextSign : -nextSign;
     el.scrollBy({ left: sign * amount, behavior: 'smooth' });
   };
 
-  return { trackRef, canPrev, canNext, hasOverflow, scrollByDir, update };
+  /** Physical left/right — left button always reveals visual-left content. */
+  const scrollBySide = (side: ShopRailSide) => {
+    const el = trackRef.current;
+    const isRtl = el ? getComputedStyle(el).direction === 'rtl' : rtl;
+    if (side === 'left') scrollByDir(isRtl ? 'next' : 'prev');
+    else scrollByDir(isRtl ? 'prev' : 'next');
+  };
+
+  const canLeft = rtl ? canNext : canPrev;
+  const canRight = rtl ? canPrev : canNext;
+
+  return {
+    trackRef,
+    canPrev,
+    canNext,
+    canLeft,
+    canRight,
+    hasOverflow,
+    scrollByDir,
+    scrollBySide,
+    update,
+  };
 }

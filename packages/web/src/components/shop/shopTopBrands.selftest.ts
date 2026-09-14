@@ -51,7 +51,7 @@ assert.doesNotMatch(
 assert.match(carousel, /pd-shop-top-brands/, 'carousel root class');
 assert.match(carousel, /\/shop\/c\/all\?brand=/, 'brand click filters via category route');
 assert.match(carousel, /ShopRailNavButtons/, 'RTL brand rail uses shared L/R buttons');
-assert.match(carousel, /scrollByDir/, 'carousel scrolls horizontally');
+assert.match(carousel, /scrollBySide/, 'carousel scrolls visual-left/right');
 
 assert.match(css, /\.pd-shop-top-brands/, 'carousel styles present');
 assert.match(css, /\.pd-shop-top-brand-logo/, 'logo cell styles present');

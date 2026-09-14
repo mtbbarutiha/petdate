@@ -317,6 +317,9 @@ npx tsx "$ROOT/packages/web/src/components/shop/shopTopBrands.selftest.ts"
 echo "==> web: shop UX batch (home rails + filters)"
 npx tsx "$ROOT/packages/web/src/components/shop/shopUxBatch.selftest.ts"
 
+echo "==> web: shop rail L/R buttons (RTL visual-left)"
+npx tsx "$ROOT/packages/web/src/components/shop/shopRailNav.selftest.ts"
+
 echo "==> selftest: shop product images[] helpers"
 npx tsx "$ROOT/packages/api/src/data/shop-product-images.selftest.ts"
 

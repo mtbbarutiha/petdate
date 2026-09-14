@@ -16,7 +16,7 @@ import { ShopHomeRail } from '../../components/shop/ShopHomeRail';
 import { ShopPromoBanners } from '../../components/shop/ShopPromoBanners';
 import { ShopRailNavButtons } from '../../components/shop/ShopRailNavButtons';
 import { ShopTopBrands } from '../../components/shop/ShopTopBrands';
-import { ShopCategoryMoreIcon, shopCategoryIcon } from '../../components/shop/shopCategoryIcons';
+import { ShopCategoryArt, ShopCategoryMoreArt, shopCategoryArtKind } from '../../components/shop/shopCategoryIcons';
 import { useShopRailNav } from '../../components/shop/useShopRailNav';
 import { usePlatformConfig } from '../../hooks/usePlatformConfig';
 
@@ -32,7 +32,7 @@ const BESTSELLER_PETS: { id: ShopPetType; labelFa: string; labelEn: string }[] =
 function ShopCategoryStrip() {
   const { lang } = useI18n();
   const cats = useMemo(() => categoriesForPet('all'), []);
-  const { trackRef, canPrev, canNext, scrollByDir } = useShopRailNav(cats.length);
+  const { trackRef, canLeft, canRight, scrollBySide } = useShopRailNav(cats.length);
 
   return (
     <section className="pd-shop-dk-cats" aria-label="دسته‌بندی‌ها">
@@ -55,7 +55,7 @@ function ShopCategoryStrip() {
       <div className="pd-shop-dk-strip-frame">
         <div className="pd-shop-dk-strip" role="list" ref={trackRef} tabIndex={0}>
           {cats.map((c) => {
-            const Icon = shopCategoryIcon(c.slug);
+            const kind = shopCategoryArtKind(c.slug);
             return (
               <Link
                 key={c.slug}
@@ -63,27 +63,27 @@ function ShopCategoryStrip() {
                 className="pd-shop-dk-item"
                 role="listitem"
               >
-                <span className="pd-shop-dk-tile" aria-hidden>
-                  <Icon size={28} strokeWidth={1.85} />
+                <span className={`pd-shop-dk-tile pd-shop-dk-tile--art pd-shop-dk-tile--${kind}`} aria-hidden>
+                  <ShopCategoryArt kind={kind} />
                 </span>
                 <span className="pd-shop-dk-label">{shopLabel(lang, c.labelFa, c.labelEn)}</span>
               </Link>
             );
           })}
           <Link to="/shop/c/all" className="pd-shop-dk-item pd-shop-dk-item--more" role="listitem">
-            <span className="pd-shop-dk-tile" aria-hidden>
-              <ShopCategoryMoreIcon size={26} strokeWidth={1.85} />
+            <span className="pd-shop-dk-tile pd-shop-dk-tile--art pd-shop-dk-tile--more" aria-hidden>
+              <ShopCategoryMoreArt />
             </span>
             <span className="pd-shop-dk-label">بیشتر</span>
           </Link>
         </div>
         <ShopRailNavButtons
-          canPrev={canPrev}
-          canNext={canNext}
-          onPrev={() => scrollByDir('prev')}
-          onNext={() => scrollByDir('next')}
-          prevLabel="دسته‌بندی‌های قبلی"
-          nextLabel="دسته‌بندی‌های بیشتر"
+          canLeft={canLeft}
+          canRight={canRight}
+          onLeft={() => scrollBySide('left')}
+          onRight={() => scrollBySide('right')}
+          leftLabel="دسته‌بندی‌های بیشتر"
+          rightLabel="دسته‌بندی‌های قبلی"
         />
       </div>
     </section>

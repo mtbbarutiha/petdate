@@ -3,7 +3,7 @@
  * Run: npx tsx packages/web/src/components/shop/shopUxBatch.selftest.ts
  */
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
@@ -38,7 +38,9 @@ assert.match(home, /ShopPromoBanners/, 'two promo banners on home');
 assert.doesNotMatch(home, /pd-shop-journey/, '3-step journey strip removed');
 assert.doesNotMatch(home, /title: 'انتخاب کن'/, 'journey copy gone');
 assert.doesNotMatch(home, /pd-shop-pet-tabs/, 'no top-of-home species filter chrome');
-assert.match(home, /pd-shop-dk-tile/, 'rectangular category tiles');
+assert.match(home, /pd-shop-dk-tile--art/, 'illustrated category tiles');
+assert.match(home, /ShopCategoryArt/, 'category rail uses branded illustrations');
+assert.doesNotMatch(home, /shopCategoryIcon\(/, 'category rail does not use Lucide icon map');
 assert.doesNotMatch(home, /pd-shop-dk-circle/, 'emoji circles replaced');
 assert.doesNotMatch(home, /c\.emoji/, 'category rail does not use emoji');
 const promoIdx = home.indexOf('<ShopPromoBanners');
@@ -72,7 +74,13 @@ assert.ok(getHomeRailProducts({ pet: 'cat', limit: 6 }).length > 0, 'cat rail pr
 assert.ok(getHomeRailProducts({ pet: 'dog', limit: 6 }).length > 0, 'dog rail products');
 
 assert.match(rail, /ShopRailNavButtons/, 'home rails expose L/R buttons');
-assert.match(css, /\.pd-shop-rail-btn\b/, 'shared rail button styles');
+assert.match(css, /\.pd-shop-rail-btn--left\b/, 'physical left rail button');
+assert.match(css, /\.pd-shop-rail-btn--right\b/, 'physical right rail button');
+assert.match(
+  css,
+  /\.pd-shop-rail-btn--left[\s\S]{0,80}left:\s*0\.2rem/,
+  'left control is physical left (not inset-inline, which mirrors in RTL)'
+);
 assert.match(css, /\.pd-shop-home-rail-track[\s\S]{0,180}overflow-x:\s*hidden/, 'home rail hides native scrollbar');
 assert.match(css, /\.pd-shop-dk-strip\s*\{[\s\S]{0,320}overflow-x:\s*hidden/, 'category strip hides native scrollbar');
 assert.match(css, /\.pd-shop-promo-banners\b/, 'promo banner styles');
@@ -80,7 +88,16 @@ const promoSrc = readFileSync(join(here, 'ShopPromoBanners.tsx'), 'utf8');
 assert.match(promoSrc, /پت‌دیت/, 'promo banners include PetDate name');
 assert.match(promoSrc, /برای پت شما/, 'first promo headline');
 assert.match(promoSrc, /مناسب پت شما/, 'second promo headline');
-assert.match(promoSrc, /shop-promo-banners/, 'promo test id');
+assert.match(promoSrc, /promo-for-your-pet\.jpg/, 'first banner has a photo');
+assert.match(promoSrc, /promo-fits-your-pet\.jpg/, 'second banner has a photo');
+assert.match(promoSrc, /pd-shop-promo-banner-mark/, 'PetDate wordmark on banners');
+assert.match(css, /\.pd-shop-promo-banner-photo\b/, 'banner photo layer');
+const webRoot = join(here, '../../..');
+assert.ok(existsSync(join(webRoot, 'public/media/shop/promo-for-your-pet.jpg')), 'groom banner photo on disk');
+assert.ok(existsSync(join(webRoot, 'public/media/shop/promo-fits-your-pet.jpg')), 'travel banner photo on disk');
+const art = readFileSync(join(here, 'shopCategoryIcons.tsx'), 'utf8');
+assert.match(art, /ShopCategoryArt/, 'illustrated category art component');
+assert.doesNotMatch(art, /lucide-react/, 'category art is not Lucide outlines');
 assert.match(css, /\.pd-shop-filter-acc\b/, 'filter accordion styles');
 assert.match(ci, /shopUxBatch\.selftest/, 'CI runs shop UX batch selftest');
 

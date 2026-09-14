@@ -384,6 +384,28 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   position: relative;
   z-index: 7;
 }
+.pepito-nav--with-search {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.45rem;
+  height: auto;
+}
+.pepito-nav-main {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  min-width: 0;
+}
+.pepito-nav-search-row {
+  width: 100%;
+  min-width: 0;
+}
+.pepito-nav-search-row .pd-shop-search {
+  width: 100%;
+  max-width: 720px;
+  margin-inline: auto;
+}
 .pepito-nav-logo {
   display: inline-flex;
   align-items: center;
@@ -8293,29 +8315,38 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   margin-inline: auto;
 }
 
-/* Desktop shop: search lives in the logo column (under the wordmark), not a full-bleed bar. */
+/* Desktop shop: two-row sticky header (logo/nav/actions + search). In-flow so
+   PDP/home content is not hidden under a taller fixed bar. */
 @media (min-width: 860px) {
-  .pd-shop-page {
-    --pepito-nav-h: 7.7rem;
-  }
   .pd-shop-page .pepito-nav {
-    align-items: flex-start;
+    position: sticky;
+    top: 0;
+    align-items: stretch;
     overflow: visible;
+    padding-block: 0.65rem 0.7rem;
   }
-  .pd-shop-page .pepito-nav-brand--search {
-    width: clamp(17rem, 26vw, 26rem);
-    gap: 0.45rem;
-  }
-  .pd-shop-page .pepito-nav-brand--search .pd-shop-search {
-    width: 100%;
-    max-width: none;
-    margin-inline: 0;
+  .pd-shop-page .pepito-nav-main {
+    min-height: 42px;
   }
   .pd-shop-page .pepito-nav-primary,
   .pd-shop-page .pepito-nav-actions {
-    align-self: flex-start;
+    align-self: center;
     min-height: 42px;
   }
+  .pd-shop-page .pd-shop-hero,
+  .pd-shop-page .pepito-flow-banner {
+    margin-top: 0;
+  }
+}
+
+/* If shop nav is still position:fixed (older CSS), keep a measured offset so
+   PDP gallery / home hero are not hidden under the bar. */
+.pd-shop-page--fixed-nav .pd-shop-hero,
+.pd-shop-page--fixed-nav .pepito-flow-banner {
+  margin-top: var(--pepito-nav-h);
+}
+.pd-shop-page--fixed-nav:not(:has(.pd-shop-hero)) .pd-shop-main {
+  padding-top: calc(var(--pepito-nav-h) + 1.35rem);
 }
 .pd-shop-search-pill {
   display: flex;
@@ -8447,29 +8478,56 @@ a.pepito-btn.pepito-human-consult-cta:hover {
 }
 
 @media (max-width: 720px), (pointer: coarse) {
-  /* Mobile: pin search under the fixed nav (not mid-viewport / mid-page). */
-  .pd-shop-search-bar {
-    position: sticky;
-    top: var(--pepito-nav-h);
-    z-index: 46;
-    padding: 0.55rem 0 0.95rem;
-    background: color-mix(in srgb, var(--pepito-white) 96%, transparent);
-  }
   .pd-shop-search-pill {
     min-height: 2.7rem;
   }
 }
 
-/* Shop: header is in-flow on small screens, so search must stick to the viewport top
-   once the header scrolls away — not 64px down the middle of the page. */
+/* Shop: two-row sticky header on small screens — logo/tools then search.
+   In-flow + sticky so content never slides under the menubar. */
 @media (max-width: 859px) {
-  .pd-shop-page .pd-shop-search-bar {
+  .pd-shop-page.pepito-landing {
+    overflow-x: visible;
+  }
+  .pd-shop-page .pepito-nav,
+  .pd-shop-page .pepito-nav--app,
+  .pd-shop-page .pepito-nav--tools {
     position: sticky;
     top: 0;
-    z-index: 55;
-    padding-top: calc(0.45rem + env(safe-area-inset-top, 0px));
-    padding-bottom: 0.95rem;
-    box-shadow: 0 8px 18px rgba(25, 6, 61, 0.06);
+    z-index: 60;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 0.4rem;
+    padding-block: 0.5rem 0.6rem;
+    padding-top: calc(0.5rem + env(safe-area-inset-top, 0px));
+  }
+  .pd-shop-page .pepito-nav-main {
+    gap: 0.35rem;
+    min-width: 0;
+    justify-content: space-between;
+  }
+  .pd-shop-page .pepito-nav-brand,
+  .pd-shop-page .pepito-nav-logo {
+    flex: 1 1 auto;
+    min-width: 0;
+    margin-inline-end: 0;
+  }
+  .pd-shop-page .pepito-nav-logo img {
+    height: 32px;
+    max-width: min(42vw, 9.5rem);
+    object-fit: contain;
+  }
+  .pd-shop-page .pepito-nav-actions {
+    flex: 0 0 auto;
+    max-width: 58%;
+  }
+  .pd-shop-page .pepito-nav-search-row .pd-shop-search {
+    max-width: none;
+    margin-inline: 0;
+  }
+  .pd-shop-page .pd-shop-hero,
+  .pd-shop-page .pd-shop-hero--full {
+    margin-top: 0;
   }
 }
 
@@ -9252,22 +9310,48 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   text-align: center;
 }
 .pd-shop-dk-tile {
-  width: 5.85rem;
-  height: 5.85rem;
-  border-radius: 18px;
+  width: 6.15rem;
+  height: 6.15rem;
+  border-radius: 20px;
   display: grid;
   place-items: center;
   background: #f4f5f7;
   border: 1px solid rgba(25, 6, 61, 0.06);
   color: var(--pepito-base);
   box-shadow: 0 1px 2px rgba(25, 6, 61, 0.04);
+  overflow: hidden;
   transition: transform 0.22s ease, background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.pd-shop-dk-tile--art {
+  padding: 0;
+  background:
+    radial-gradient(120% 90% at 20% 15%, rgba(255, 255, 255, 0.72), transparent 55%),
+    linear-gradient(180deg, #f7f3ee 0%, #efe8df 100%);
+}
+.pd-shop-dk-tile--food { background: linear-gradient(160deg, #efe6ff 0%, #e4d7c4 100%); }
+.pd-shop-dk-tile--treats { background: linear-gradient(160deg, #ffe8cc 0%, #f3c49a 100%); }
+.pd-shop-dk-tile--groom { background: linear-gradient(160deg, #d9f4fa 0%, #b5e2ee 100%); }
+.pd-shop-dk-tile--toys { background: linear-gradient(160deg, #eef8c8 0%, #d4ec88 100%); }
+.pd-shop-dk-tile--bowls { background: linear-gradient(160deg, #f8ead6 0%, #ecd2aa 100%); }
+.pd-shop-dk-tile--travel { background: linear-gradient(160deg, #f6d9b0 0%, #e0b07a 100%); }
+.pd-shop-dk-tile--collars { background: linear-gradient(160deg, #e4d7fb 0%, #cbb6f0 100%); }
+.pd-shop-dk-tile--clothes { background: linear-gradient(160deg, #f8d7ee 0%, #e8b0d8 100%); }
+.pd-shop-dk-tile--shield { background: linear-gradient(160deg, #d5f6ec 0%, #9ee6cf 100%); }
+.pd-shop-dk-tile--beds { background: linear-gradient(160deg, #ebe4fb 0%, #d0c4f0 100%); }
+.pd-shop-dk-tile--trees { background: linear-gradient(160deg, #e1f3d8 0%, #b7dd9c 100%); }
+.pd-shop-dk-tile--litter { background: linear-gradient(160deg, #eceaf3 0%, #d4d0e0 100%); }
+.pd-shop-dk-tile--bird { background: linear-gradient(160deg, #d6f0fc 0%, #9ed6f2 100%); }
+.pd-shop-dk-tile--rodent { background: linear-gradient(160deg, #f6e4d4 0%, #e8c4a4 100%); }
+.pd-shop-dk-tile--more { background: linear-gradient(160deg, #efeaf8 0%, #e4d7fb 100%); }
+.pd-shop-dk-art {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 .pd-shop-dk-item:hover .pd-shop-dk-tile {
   transform: translateY(-2px);
-  background: #eef0f4;
   border-color: rgba(92, 77, 145, 0.16);
-  box-shadow: 0 4px 12px rgba(25, 6, 61, 0.08);
+  box-shadow: 0 8px 18px rgba(25, 6, 61, 0.1);
 }
 .pd-shop-dk-circle {
   width: 4.85rem;
@@ -10635,28 +10719,57 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   padding: 1.15rem 1.25rem;
   box-shadow: 0 10px 28px rgba(25, 6, 61, 0.12);
 }
+.pd-shop-promo-banner-photo {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 40%;
+  z-index: 0;
+  display: block;
+  transform: scale(1.04);
+  transition: transform 0.45s ease;
+}
+.pd-shop-promo-banner:hover .pd-shop-promo-banner-photo {
+  transform: scale(1.08);
+}
 .pd-shop-promo-banner--groom {
-  background:
-    linear-gradient(200deg, rgba(12, 70, 92, 0.15), rgba(8, 24, 40, 0.55)),
-    radial-gradient(120% 90% at 10% 20%, #7ad7ea 0%, transparent 55%),
-    linear-gradient(135deg, #49c4d9 0%, #1a6f8a 55%, #0d3a4d 100%);
+  background: #0d3a4d;
 }
 .pd-shop-promo-banner--travel {
-  background:
-    linear-gradient(200deg, rgba(80, 40, 10, 0.12), rgba(40, 18, 8, 0.5)),
-    radial-gradient(120% 90% at 90% 10%, #f3c98a 0%, transparent 50%),
-    linear-gradient(135deg, #e8b86d 0%, #c07838 48%, #6b3a1e 100%);
+  background: #6b3a1e;
 }
 .pd-shop-promo-banner-wash {
   position: absolute;
   inset: 0;
-  z-index: 0;
-  background: linear-gradient(180deg, transparent 18%, rgba(8, 10, 18, 0.55) 100%);
+  z-index: 1;
+  background:
+    linear-gradient(90deg, rgba(8, 10, 18, 0.78) 0%, rgba(8, 10, 18, 0.28) 52%, rgba(8, 10, 18, 0.08) 100%),
+    linear-gradient(180deg, transparent 18%, rgba(8, 10, 18, 0.45) 100%);
   pointer-events: none;
+}
+[dir='rtl'] .pd-shop-promo-banner-wash {
+  background:
+    linear-gradient(270deg, rgba(8, 10, 18, 0.78) 0%, rgba(8, 10, 18, 0.28) 52%, rgba(8, 10, 18, 0.08) 100%),
+    linear-gradient(180deg, transparent 18%, rgba(8, 10, 18, 0.45) 100%);
+}
+.pd-shop-promo-banner-mark {
+  position: absolute;
+  top: 0.85rem;
+  inset-inline-end: 0.95rem;
+  z-index: 2;
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.92);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.35);
 }
 .pd-shop-promo-banner-copy {
   position: relative;
-  z-index: 1;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   gap: 0.28rem;
@@ -10809,11 +10922,15 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   cursor: pointer;
   padding: 0;
 }
+.pd-shop-rail-btn--left,
 .pd-shop-rail-btn--next {
-  inset-inline-start: 0.2rem;
+  left: 0.2rem;
+  right: auto;
 }
+.pd-shop-rail-btn--right,
 .pd-shop-rail-btn--prev {
-  inset-inline-end: 0.2rem;
+  right: 0.2rem;
+  left: auto;
 }
 .pd-shop-rail-btn:hover:not(:disabled) {
   color: #ef4056;

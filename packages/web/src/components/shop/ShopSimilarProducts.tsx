@@ -13,7 +13,7 @@ import { useShopRailNav } from './useShopRailNav';
 export function ShopSimilarProducts({ product }: { product: ShopProduct }) {
   const { ready } = useShopCatalogSync();
   const items = useMemo(() => getSimilarProducts(product), [product, ready]);
-  const { trackRef, canPrev, canNext, scrollByDir } = useShopRailNav(items.length);
+  const { trackRef, canLeft, canRight, scrollBySide } = useShopRailNav(items.length);
 
   if (items.length === 0) return null;
 
@@ -35,12 +35,12 @@ export function ShopSimilarProducts({ product }: { product: ShopProduct }) {
           ))}
         </div>
         <ShopRailNavButtons
-          canPrev={canPrev}
-          canNext={canNext}
-          onPrev={() => scrollByDir('prev')}
-          onNext={() => scrollByDir('next')}
-          prevLabel="کالاهای قبلی"
-          nextLabel="مشاهده کالاهای بیشتر"
+          canLeft={canLeft}
+          canRight={canRight}
+          onLeft={() => scrollBySide('left')}
+          onRight={() => scrollBySide('right')}
+          leftLabel="مشاهده کالاهای بیشتر"
+          rightLabel="کالاهای قبلی"
         />
       </div>
     </section>
