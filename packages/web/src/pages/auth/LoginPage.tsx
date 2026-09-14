@@ -1,6 +1,6 @@
 import { FormEvent, MouseEvent, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { Send } from 'lucide-react';
+import { Send, Smartphone } from 'lucide-react';
 import { AuthShell } from '../../components/AuthShell';
 import { useAuthStore } from '../../hooks/useAuthStore';
 import { useAppToast } from '../../hooks/useAppToast';
@@ -200,19 +200,20 @@ export function LoginPage() {
   if (waiting) {
     return (
       <AuthShell
-        bannerTitle="ورود به Pet Date"
+        bannerTitle="Pet Date"
         bannerLead="تأیید تلگرام — ادامه در همین مرورگر"
         bannerImage="/pepito/uploads/3.jpg"
+        footer={false}
       >
-        <div className="pepito-auth-login">
-          <p className="pepito-auth-kicker">تلگرام</p>
+        <div className="pepito-auth-login auth-login-premium auth-login-premium--wait">
+          <p className="auth-login-brand">Pet Date</p>
           <h1>منتظر تأیید…</h1>
           <p className="auth-lead">
             در تلگرام دکمهٔ <strong>تأیید ورود</strong> را بزن. همین تب خودکار وارد می‌شود.
           </p>
           {error ? <p className="auth-error">{error}</p> : null}
           <a
-            className="pepito-btn button-2 auth-telegram-cta"
+            className="pepito-btn button-3 auth-telegram-cta auth-login-method"
             href={waiting.deepLink}
             target="_blank"
             rel="noopener noreferrer"
@@ -235,52 +236,61 @@ export function LoginPage() {
     );
   }
 
-  const welcomeMethods =
+  const lead =
     googleReady === true
-      ? 'تلگرام، گوگل یا موبایل'
-      : 'تلگرام یا موبایل';
+      ? 'با تلگرام، گوگل یا موبایل وارد شو — یک حساب برای وب و ربات.'
+      : 'با تلگرام یا موبایل وارد شو — یک حساب برای وب و ربات.';
 
   return (
     <AuthShell
-      bannerTitle="ورود به Pet Date"
-      bannerLead={`${welcomeMethods} — همان حساب وب و ربات`}
+      bannerTitle="Pet Date"
+      bannerLead="ورود امن — همان حساب وب و ربات"
       bannerImage="/pepito/uploads/3.jpg"
+      footer={false}
     >
-      <div className="pepito-auth-login">
-        <p className="pepito-auth-kicker">ورود / ثبت‌نام</p>
-        <h1>خوش آمدی</h1>
-        <p className="auth-lead">
-          با {welcomeMethods} وارد شو. پروفایل از همان حساب پر می‌شود.
-        </p>
+      <div className="pepito-auth-login auth-login-premium">
+        <header className="auth-login-head">
+          <p className="auth-login-brand">Pet Date</p>
+          <h1>خوش آمدی</h1>
+          <p className="auth-lead">{lead}</p>
+        </header>
 
-        {googleReady === true ? (
-          <a className="pepito-btn button-1 auth-google-cta" href={googleHref}>
-            <GoogleMark />
-            ورود با گوگل
+        <div className="auth-login-methods" role="group" aria-label="روش‌های ورود">
+          <a
+            className="pepito-btn button-3 auth-telegram-cta auth-login-method auth-login-method--primary"
+            href={usePendingFlow ? '#' : telegramLoginUrl}
+            target={usePendingFlow ? undefined : '_blank'}
+            rel="noopener noreferrer"
+            onClick={onTelegramLogin}
+            aria-disabled={tgBusy}
+          >
+            <Send size={17} strokeWidth={2.25} aria-hidden />
+            {tgBusy ? 'در حال آماده‌سازی…' : 'ورود با تلگرام'}
           </a>
-        ) : null}
 
-        <a
-          className="pepito-btn button-2 auth-telegram-cta"
-          href={usePendingFlow ? '#' : telegramLoginUrl}
-          target={usePendingFlow ? undefined : '_blank'}
-          rel="noopener noreferrer"
-          onClick={onTelegramLogin}
-          aria-disabled={tgBusy}
-        >
-          <Send size={16} strokeWidth={2} aria-hidden />
-          {tgBusy ? 'در حال آماده‌سازی تلگرام…' : 'ورود با اکانت تلگرام'}
-        </a>
-        <p className="auth-telegram-hint">ربات باز می‌شود تا ورود را تأیید کنی.</p>
-
-        <div className="auth-or" role="separator">
-          <span>موبایل</span>
+          {googleReady === true ? (
+            <a
+              className="auth-google-cta auth-login-method auth-login-method--google"
+              href={googleHref}
+            >
+              <GoogleMark />
+              ورود با گوگل
+            </a>
+          ) : null}
         </div>
 
-        <form className="auth-form" onSubmit={onSubmit}>
-          <label>
+        <div className="auth-or auth-login-or" role="separator">
+          <span>یا با موبایل</span>
+        </div>
+
+        <form className="auth-form auth-login-phone" onSubmit={onSubmit}>
+          <label className="auth-login-phone-label" htmlFor="login-phone">
+            <Smartphone size={15} aria-hidden />
             شماره موبایل
+          </label>
+          <div className="auth-login-phone-row">
             <input
+              id="login-phone"
               value={target}
               onChange={(e) => setTarget(e.target.value)}
               placeholder="0912…"
@@ -289,21 +299,19 @@ export function LoginPage() {
               dir="ltr"
               required
             />
-          </label>
-          {error && <p className="auth-error">{error}</p>}
-          {devHint && <p className="auth-dev">{devHint}</p>}
-          <button
-            type="submit"
-            className="pepito-btn button-1 auth-submit"
-            disabled={busy || !target.trim()}
-          >
-            {busy ? 'در حال ارسال…' : 'دریافت کد یک‌بارمصرف'}
-          </button>
+            <button
+              type="submit"
+              className="pepito-btn button-1 auth-submit auth-login-otp-btn"
+              disabled={busy || !target.trim()}
+            >
+              {busy ? '…' : 'دریافت کد'}
+            </button>
+          </div>
+          {error ? <p className="auth-error">{error}</p> : null}
+          {devHint ? <p className="auth-dev">{devHint}</p> : null}
         </form>
 
-        <p className="auth-foot">
-          حساب نداری؟ با همان روش وارد شو — ساخته می‌شود.
-        </p>
+        <p className="auth-foot">حساب نداری؟ با همان روش وارد شو — ساخته می‌شود.</p>
       </div>
     </AuthShell>
   );

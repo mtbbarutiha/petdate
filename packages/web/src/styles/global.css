@@ -3703,6 +3703,166 @@ body:has(.admin-app) .toast-host {
 .auth-telegram-wait {
   margin-top: 4px;
 }
+
+/* —— Premium compact login (RTL) —— */
+.pepito-auth-flow:has(.auth-login-premium) .pepito-flow-panel {
+  padding: 1.25rem 0 2.25rem;
+  background:
+    radial-gradient(520px 240px at 88% 8%, rgba(219, 137, 202, 0.22), transparent 58%),
+    radial-gradient(440px 220px at 8% 70%, rgba(92, 77, 145, 0.16), transparent 55%),
+    linear-gradient(165deg, #f7f5fc 0%, #efeaf8 48%, #f4f4f7 100%);
+}
+.auth-login-premium {
+  position: relative;
+  padding: 1.15rem 1.1rem 1.2rem;
+  border-radius: 22px;
+  background:
+    linear-gradient(155deg, rgba(255, 255, 255, 0.92), rgba(244, 244, 247, 0.88));
+  border: 1px solid rgba(92, 77, 145, 0.14);
+  box-shadow:
+    0 18px 40px rgba(25, 6, 61, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  animation: auth-login-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes auth-login-rise {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+.auth-login-head {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+.auth-login-brand {
+  margin: 0 0 0.35rem;
+  font-family: var(--font-display);
+  font-size: clamp(1.35rem, 4.2vw, 1.65rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  background: linear-gradient(120deg, #5c4d91 0%, #8f7fc4 45%, #db89ca 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: auth-login-brand-in 0.7s ease 0.08s both;
+}
+@keyframes auth-login-brand-in {
+  from {
+    opacity: 0;
+    letter-spacing: 0.08em;
+  }
+  to {
+    opacity: 1;
+    letter-spacing: -0.02em;
+  }
+}
+.auth-login-premium > .auth-login-head > h1,
+.auth-login-premium > h1 {
+  margin: 0 0 0.35rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #19063d;
+}
+.auth-login-premium .auth-lead {
+  margin: 0;
+  font-size: 0.84rem;
+  line-height: 1.55;
+  color: #5a5470;
+}
+.auth-login-methods {
+  display: grid;
+  gap: 0.55rem;
+  margin-bottom: 0.15rem;
+}
+.auth-login-method {
+  width: 100%;
+  min-height: 48px;
+  margin: 0;
+  border-radius: 999px;
+  font-weight: 700;
+  text-decoration: none;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease,
+    border-color 0.2s ease;
+}
+.auth-login-method--primary {
+  box-shadow: 0 10px 24px rgba(162, 74, 134, 0.28);
+}
+.auth-login-method--primary:hover {
+  transform: translate3d(0, -2px, 0);
+  box-shadow: 0 14px 28px rgba(162, 74, 134, 0.34);
+}
+.auth-login-method--google {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.72);
+  color: #19063d;
+  border: 1.5px solid rgba(92, 77, 145, 0.22);
+  box-shadow: none;
+}
+.auth-login-method--google:hover {
+  background: #fff;
+  border-color: rgba(92, 77, 145, 0.4);
+  transform: translate3d(0, -2px, 0);
+}
+.auth-login-or {
+  margin: 0.85rem 0 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #7a7290;
+}
+.auth-login-phone {
+  gap: 0.55rem;
+}
+.auth-login-phone-label {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  font-size: 0.8rem !important;
+  color: #4a3d78 !important;
+}
+.auth-login-phone-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+.auth-login-phone-row input {
+  min-height: 46px;
+  border-radius: 14px !important;
+  padding: 10px 12px !important;
+}
+.auth-login-otp-btn {
+  min-width: 6.5rem;
+  min-height: 46px !important;
+  width: auto !important;
+  padding-inline: 1rem;
+  white-space: nowrap;
+}
+.auth-login-premium .auth-foot {
+  margin-top: 0.85rem;
+  font-size: 0.76rem;
+  color: #7a7290;
+}
+@media (max-width: 420px) {
+  .auth-login-phone-row {
+    grid-template-columns: 1fr;
+  }
+  .auth-login-otp-btn {
+    width: 100% !important;
+  }
+}
 .auth-or {
   display: flex;
   align-items: center;
