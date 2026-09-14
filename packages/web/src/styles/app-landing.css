@@ -1,7 +1,15 @@
 /* ========== App landing (/landings/app) — Digikala-inspired, Pepito tokens ========== */
-.pepito-app-landing-page .pepito-flow-main,
+/* hideBanner: no .pepito-flow-banner margin-top — clear fixed SiteHeader.
+   Desktop only; below 860px .pepito-nav is in-flow (see pepito.css). */
+@media (min-width: 860px) {
+  .pepito-app-landing-page > main.pd-app-land {
+    padding-top: var(--pepito-nav-h, 74px);
+    box-sizing: border-box;
+  }
+}
+
 .pepito-app-landing-page > main.pd-app-land {
-  padding-top: 0;
+  scroll-margin-top: var(--pepito-nav-h, 74px);
 }
 
 .pd-app-land {
@@ -25,6 +33,8 @@
   background: var(--pd-app-wash);
   position: relative;
   overflow: clip;
+  /* Hash targets / first paint must clear sticky header */
+  scroll-margin-top: var(--pepito-nav-h, 74px);
 }
 
 .pd-app-land-hero::before {
@@ -597,4 +607,9 @@ html[data-theme='dark'] .pd-app-land-sms-field input {
 
 html[data-theme='dark'] .pd-app-land-sms-field input::placeholder {
   color: color-mix(in srgb, var(--pepito-muted) 70%, transparent);
+}
+
+/* Download hash target also clears fixed nav */
+#pd-app-land-download {
+  scroll-margin-top: calc(var(--pepito-nav-h, 74px) + 0.75rem);
 }
