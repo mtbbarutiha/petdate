@@ -13,7 +13,7 @@ export type ShopPriceEntry = {
   priceToman: number;
 };
 
-/** Keep in sync with shop-pilot-products + shop-batch2-products + shop-batch3-products + shop-batch-multi-products */
+/** Keep in sync with shop-pilot-products + shop-batch2-products + shop-batch3-products + shop-batch-multi-products + shop-batch-multi-wave2-products */
 const PILOT_PRICE_INDEX: ShopPriceEntry[] = [
   {
     id: 'p221',
