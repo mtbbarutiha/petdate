@@ -1,36 +1,65 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, PawPrint, Search } from 'lucide-react';
-import type { PetProfile } from '@petdate/shared';
+import {
+  PLAYDATE_REQUEST_COST,
+  toPersianDigits,
+  type PetProfile,
+} from '@petdate/shared';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { useAppToast } from '../hooks/useAppToast';
 import { useI18n } from '../i18n';
 import { listNearbyPets, listPets } from '../lib/api';
+import { sendPlaymateRequestNow } from '../lib/playmateActions';
+import { peopleFromDiscoveryPets } from '../lib/petDiscoveryPeople';
+import { authStore } from '../data/authStore';
+import { ConfirmModal } from './ConfirmModal';
+import { InboxPeerAvatar } from './InboxPeerAvatar';
 import { PetAvatar } from './PetAvatar';
 
 export type PetDiscoveryMode = 'nearby' | 'samebreed' | 'sameprovince';
 
 type Props = {
-  /** Owner pets used for same-breed / same-province seeds. */
+  /** Owner pets used for same-breed / same-province seeds + request fromPetId. */
   myPets: PetProfile[];
   className?: string;
+  /** Called after a successful playmate request so parent can refresh inbox */
+  onSent?: () => void;
 };
+
+export type { DiscoveryPerson } from '../lib/petDiscoveryPeople';
+export { peopleFromDiscoveryPets } from '../lib/petDiscoveryPeople';
+
+function formatCoins(n: number): string {
+  return toPersianDigits(String(n));
+}
 
 /**
  * Bot parity discovery chips: پت‌های نزدیک من / هم‌نژاد / هم‌استان.
- * Lives next to find-playmate CTA inside /chats.
+ * Results are a **people** list with ارسال درخواست (same createPlaydateRequest flow).
  */
-export function PetDiscoveryPanel({ myPets, className = '' }: Props) {
+export function PetDiscoveryPanel({ myPets, className = '', onSent }: Props) {
   const { t } = useI18n();
   const { user, isLoggedIn } = useAuthStore();
-  const { toastError, toastInfo } = useAppToast();
+  const { toastError, toastInfo, toastSuccess } = useAppToast();
   const [mode, setMode] = useState<PetDiscoveryMode | null>(null);
   const [busy, setBusy] = useState(false);
   const [results, setResults] = useState<PetProfile[]>([]);
   const [status, setStatus] = useState<string | null>(null);
+  const [errorKind, setErrorKind] = useState(false);
+  const [sendingOwnerId, setSendingOwnerId] = useState<number | null>(null);
+  const [sentOwnerIds, setSentOwnerIds] = useState<Set<number>>(() => new Set());
+  /** Pending target pet for fee confirm / from-pet pick */
+  const [pendingTo, setPendingTo] = useState<PetProfile | null>(null);
+  const [pickFromOpen, setPickFromOpen] = useState(false);
+  const [feeConfirmOpen, setFeeConfirmOpen] = useState(false);
+  const [fromPetId, setFromPetId] = useState<number | null>(null);
 
   const myUserId = user?.id;
   const province = user?.province?.trim() || '';
+  const coins = user?.coins ?? user?.wallet?.coins ?? 0;
+
+  const people = useMemo(() => peopleFromDiscoveryPets(results), [results]);
 
   const runMode = useCallback(
     async (next: PetDiscoveryMode) => {
@@ -42,6 +71,7 @@ export function PetDiscoveryPanel({ myPets, className = '' }: Props) {
       setBusy(true);
       setResults([]);
       setStatus(null);
+      setErrorKind(false);
       try {
         if (next === 'nearby') {
           const coords = await new Promise<GeolocationCoordinates>((resolve, reject) => {
@@ -63,9 +93,10 @@ export function PetDiscoveryPanel({ myPets, className = '' }: Props) {
             limit: 24,
           });
           setResults(rows);
+          const n = peopleFromDiscoveryPets(rows).length;
           setStatus(
-            rows.length
-              ? t('chats.discoveryNearbyCount', { n: rows.length })
+            n
+              ? t('chats.discoveryNearbyCount', { n })
               : t('chats.discoveryNearbyEmpty')
           );
           return;
@@ -83,10 +114,12 @@ export function PetDiscoveryPanel({ myPets, className = '' }: Props) {
             excludeOwnerId: myUserId,
             sort: 'newest',
           });
-          setResults(rows.slice(0, 24));
+          const slice = rows.slice(0, 24);
+          setResults(slice);
+          const n = peopleFromDiscoveryPets(slice).length;
           setStatus(
-            rows.length
-              ? t('chats.discoveryProvinceCount', { n: Math.min(rows.length, 24), province })
+            n
+              ? t('chats.discoveryProvinceCount', { n, province })
               : t('chats.discoveryProvinceEmpty', { province })
           );
           return;
@@ -111,10 +144,12 @@ export function PetDiscoveryPanel({ myPets, className = '' }: Props) {
           excludeOwnerId: myUserId,
           sort: 'newest',
         });
-        setResults(rows.slice(0, 24));
+        const slice = rows.slice(0, 24);
+        setResults(slice);
+        const n = peopleFromDiscoveryPets(slice).length;
         setStatus(
-          rows.length
-            ? t('chats.discoveryBreedCount', { n: Math.min(rows.length, 24) })
+          n
+            ? t('chats.discoveryBreedCount', { n })
             : t('chats.discoveryBreedEmpty')
         );
       } catch (err) {
@@ -124,6 +159,7 @@ export function PetDiscoveryPanel({ myPets, className = '' }: Props) {
             : err instanceof Error
               ? err.message
               : t('chats.discoveryFail');
+        setErrorKind(true);
         setStatus(msg);
         toastError(msg);
       } finally {
@@ -137,13 +173,89 @@ export function PetDiscoveryPanel({ myPets, className = '' }: Props) {
     setResults([]);
     setMode(null);
     setStatus(null);
+    setErrorKind(false);
+    setSentOwnerIds(new Set());
   }, [myUserId]);
+
+  function beginRequest(toPet: PetProfile) {
+    if (!isLoggedIn || !myUserId) {
+      toastError(t('chats.discoveryLogin'));
+      return;
+    }
+    if (sentOwnerIds.has(toPet.ownerId) || sendingOwnerId === toPet.ownerId) return;
+    if (myPets.length === 0) {
+      const msg = t('chats.discoveryNeedPet');
+      toastError(msg);
+      return;
+    }
+    if (coins < PLAYDATE_REQUEST_COST) {
+      toastError(
+        t('chats.discoveryNeedCoins', {
+          cost: formatCoins(PLAYDATE_REQUEST_COST),
+          coins: formatCoins(coins),
+        })
+      );
+      return;
+    }
+    setPendingTo(toPet);
+    if (myPets.length === 1) {
+      setFromPetId(myPets[0]!.id);
+      setPickFromOpen(false);
+      setFeeConfirmOpen(true);
+      return;
+    }
+    setFromPetId(null);
+    setPickFromOpen(true);
+    setFeeConfirmOpen(false);
+  }
+
+  function onPickFrom(petId: number) {
+    setFromPetId(petId);
+    setPickFromOpen(false);
+    setFeeConfirmOpen(true);
+  }
+
+  function dismissRequestFlow() {
+    if (sendingOwnerId != null) return;
+    setPendingTo(null);
+    setFromPetId(null);
+    setPickFromOpen(false);
+    setFeeConfirmOpen(false);
+  }
+
+  async function executeRequest() {
+    if (!myUserId || !pendingTo || fromPetId == null) return;
+    const ownerId = pendingTo.ownerId;
+    setFeeConfirmOpen(false);
+    setSendingOwnerId(ownerId);
+    try {
+      await sendPlaymateRequestNow({
+        fromPetId,
+        toPetId: pendingTo.id,
+        fromUserId: myUserId,
+      });
+      setSentOwnerIds((prev) => new Set(prev).add(ownerId));
+      toastSuccess(t('chats.discoveryRequestSent'));
+      void authStore.refreshMe();
+      onSent?.();
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : t('chats.discoverySendFail');
+      toastError(msg);
+    } finally {
+      setSendingOwnerId(null);
+      setPendingTo(null);
+      setFromPetId(null);
+    }
+  }
 
   const chips: { id: PetDiscoveryMode; label: string; Icon: typeof MapPin }[] = [
     { id: 'nearby', label: t('chats.discoveryNearby'), Icon: MapPin },
     { id: 'samebreed', label: t('chats.discoverySameBreed'), Icon: PawPrint },
     { id: 'sameprovince', label: t('chats.discoverySameProvince'), Icon: Search },
   ];
+
+  const showEmpty =
+    !busy && mode != null && !errorKind && people.length === 0 && Boolean(status);
 
   return (
     <section
@@ -170,32 +282,151 @@ export function PetDiscoveryPanel({ myPets, className = '' }: Props) {
           </button>
         ))}
       </div>
-      {status ? <p className="pepito-pet-discovery-status">{status}</p> : null}
-      {busy ? <p className="pepito-muted">{t('common.loading')}</p> : null}
-      {results.length > 0 ? (
-        <ul className="pepito-pet-discovery-list">
-          {results.map((pet) => (
-            <li key={pet.id}>
-              <Link to={`/p/${pet.slug || pet.publicId || pet.id}`} className="pepito-pet-discovery-card">
-                <PetAvatar
-                  type={pet.species === 'cat' ? 'cat' : pet.species === 'bird' ? 'bird' : 'dog'}
-                  size="sm"
-                  imageUrl={pet.imageUrl}
-                  name={pet.name}
-                />
-                <span className="pepito-pet-discovery-copy">
-                  <strong>{pet.name}</strong>
-                  <span>
-                    {[pet.breed, pet.city || pet.ownerCity, pet.ownerProvince]
-                      .filter(Boolean)
-                      .join(' · ')}
-                  </span>
-                </span>
-              </Link>
-            </li>
-          ))}
+      {status && !showEmpty ? (
+        <p
+          className={`pepito-pet-discovery-status${errorKind ? ' is-error' : ''}`}
+          role={errorKind ? 'alert' : undefined}
+          data-testid="pet-discovery-status"
+        >
+          {status}
+        </p>
+      ) : null}
+      {busy ? (
+        <p className="pepito-muted" data-testid="pet-discovery-loading">
+          {t('common.loading')}
+        </p>
+      ) : null}
+      {showEmpty ? (
+        <p
+          className="pepito-pet-discovery-empty"
+          data-testid="pet-discovery-empty"
+          role="status"
+        >
+          {status}
+        </p>
+      ) : null}
+      {people.length > 0 ? (
+        <ul className="pepito-pet-discovery-list" data-testid="pet-discovery-people">
+          {people.map(({ ownerId, ownerName, ownerAvatarUrl, pet }) => {
+            const already = sentOwnerIds.has(ownerId);
+            const sending = sendingOwnerId === ownerId;
+            const petLine = [pet.name, pet.breed, pet.city || pet.ownerCity, pet.ownerProvince]
+              .filter(Boolean)
+              .join(' · ');
+            return (
+              <li key={ownerId}>
+                <article
+                  className="pepito-pet-discovery-card pepito-pet-discovery-card--person"
+                  data-testid={`pet-discovery-person-${ownerId}`}
+                >
+                  <InboxPeerAvatar
+                    avatarUrl={ownerAvatarUrl}
+                    name={ownerName}
+                    size={44}
+                  />
+                  <div className="pepito-pet-discovery-copy">
+                    <strong>{ownerName}</strong>
+                    <Link
+                      to={`/p/${pet.slug || pet.publicId || pet.id}`}
+                      className="pepito-pet-discovery-petlink"
+                    >
+                      <PetAvatar
+                        type={
+                          pet.species === 'cat'
+                            ? 'cat'
+                            : pet.species === 'bird'
+                              ? 'bird'
+                              : 'dog'
+                        }
+                        size="sm"
+                        imageUrl={pet.imageUrl}
+                        name={pet.name}
+                      />
+                      <span>{petLine}</span>
+                    </Link>
+                  </div>
+                  <button
+                    type="button"
+                    className="pepito-btn button-1 pepito-pet-discovery-request"
+                    disabled={already || sending || busy}
+                    data-testid={`pet-discovery-request-${ownerId}`}
+                    onClick={() => beginRequest(pet)}
+                  >
+                    {already
+                      ? t('chats.discoveryRequestSent')
+                      : sending
+                        ? t('common.loading')
+                        : t('chats.discoverySendRequest')}
+                  </button>
+                </article>
+              </li>
+            );
+          })}
         </ul>
       ) : null}
+
+      {pickFromOpen && pendingTo ? (
+        <div
+          className="pepito-pet-discovery-pickpanel"
+          data-testid="pet-discovery-pick-from"
+          role="region"
+          aria-label={t('chats.discoveryPickFrom')}
+        >
+          <p>
+            {t('chats.discoveryPickFromLead', {
+              person: pendingTo.ownerName?.trim() || 'صاحب پت',
+              pet: pendingTo.name,
+            })}
+          </p>
+          <div className="pepito-pet-discovery-pick">
+            {myPets.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                className="pepito-btn button-2"
+                data-testid={`pet-discovery-from-${p.id}`}
+                onClick={() => onPickFrom(p.id)}
+              >
+                {p.name}
+              </button>
+            ))}
+            <button
+              type="button"
+              className="pepito-btn button-3"
+              onClick={dismissRequestFlow}
+            >
+              {t('common.cancel')}
+            </button>
+          </div>
+        </div>
+      ) : null}
+
+      <ConfirmModal
+        open={feeConfirmOpen && !!pendingTo && fromPetId != null}
+        title={t('chats.discoveryFeeTitle')}
+        confirmLabel={t('common.confirm')}
+        cancelLabel={t('common.cancel')}
+        busy={sendingOwnerId != null}
+        testId="pet-discovery-fee-confirm"
+        onCancel={dismissRequestFlow}
+        onConfirm={() => void executeRequest()}
+      >
+        <dl className="pepito-confirm-modal__stats">
+          <div className="pepito-confirm-modal__row pepito-confirm-modal__row--fee">
+            <dt>{t('chats.discoveryFeeCost')}</dt>
+            <dd>
+              {formatCoins(PLAYDATE_REQUEST_COST)} {t('chats.discoveryCoinsUnit')}
+            </dd>
+          </div>
+          <div className="pepito-confirm-modal__row">
+            <dt>{t('chats.discoveryFeeBalance')}</dt>
+            <dd>
+              {formatCoins(coins)} {t('chats.discoveryCoinsUnit')}
+            </dd>
+          </div>
+        </dl>
+        <p className="pepito-lead-modal__lead">{t('chats.discoveryFeeLead')}</p>
+      </ConfirmModal>
     </section>
   );
 }

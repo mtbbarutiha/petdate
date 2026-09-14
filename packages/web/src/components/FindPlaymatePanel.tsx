@@ -427,7 +427,7 @@ export function FindPlaymatePanel({
           </p>
         ) : null}
 
-        <PetDiscoveryPanel myPets={myPets} />
+        <PetDiscoveryPanel myPets={myPets} onSent={onSent} />
       </section>
 
       {showRequests ? (
