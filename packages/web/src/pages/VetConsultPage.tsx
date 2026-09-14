@@ -38,6 +38,7 @@ import {
   quickVetConnect,
   rejectVetConsultation,
   telegramBotDeepLink,
+  uploadProviderCredential,
 } from '../lib/api';
 import { subscribeIncomingRefresh } from '../lib/liveIncoming';
 
@@ -196,21 +197,27 @@ function VetOnlineCard({
   needsLogin,
   dualRole,
   credentialStatus,
+  uploadBusy,
   onSetOnline,
+  onUploadCredential,
 }: {
   vetOnline: boolean;
   onlineBusy: boolean;
   needsLogin: boolean;
   dualRole?: boolean;
   credentialStatus?: VetCredentialStatus | null;
+  uploadBusy: boolean;
   onSetOnline: (online: boolean) => void;
+  onUploadCredential: (file: File) => void;
 }) {
   const { t } = useI18n();
   const cred = credentialChromeLabel(t, credentialStatus);
   const verified = credentialStatus === 'verified';
+  const pending = credentialStatus === 'pending';
   // Only block interaction while a request is in flight or when logged out.
   // Never leave the control permanently inert — busy is cleared by a timeout too.
   const locked = onlineBusy || needsLogin;
+  const uploadLocked = uploadBusy || needsLogin;
   return (
     <section
       className={`pepito-vet-online-card${vetOnline ? ' is-online' : ' is-offline'}`}
@@ -282,7 +289,25 @@ function VetOnlineCard({
           {!verified ? (
             <>
               {' · '}
-              <Link to="/profile">{t('consultDesk.credUpload')}</Link>
+              <label className="pepito-vet-cred-upload">
+                {uploadBusy
+                  ? t('consultDesk.credUploading')
+                  : pending
+                    ? t('consultDesk.credReupload')
+                    : t('consultDesk.credUpload')}
+                <input
+                  type="file"
+                  accept="image/*,application/pdf"
+                  disabled={uploadLocked}
+                  hidden
+                  data-testid={dualRole ? 'vet-credential-upload-dual' : 'vet-credential-upload'}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    e.target.value = '';
+                    if (file) onUploadCredential(file);
+                  }}
+                />
+              </label>
             </>
           ) : null}
         </p>
@@ -451,6 +476,7 @@ export function VetConsultPage() {
   const [recent, setRecent] = useState<VetConsultation[]>([]);
   const [actingId, setActingId] = useState<number | null>(null);
   const [onlineBusy, setOnlineBusy] = useState(false);
+  const [uploadBusy, setUploadBusy] = useState(false);
   const [feeBusy, setFeeBusy] = useState(false);
   const [onlineVets, setOnlineVets] = useState<User[]>([]);
   const [onlineVetsLoading, setOnlineVetsLoading] = useState(false);
@@ -664,11 +690,11 @@ export function VetConsultPage() {
     if (nextOnline) {
       const cred = user?.vetCredentialStatus ?? 'none';
       if (cred === 'none') {
-        const msg = 'اول مدرک دامپزشکی را آپلود کن تا پنل فعال شود (از ربات یا پروفایل).';
+        const msg = t('consultDesk.credNeedVetUpload');
         setError(msg); toastError(msg); return;
       }
       if (cred !== 'verified') {
-        const msg = 'مدرک هنوز تأیید نشده؛ بعد از تأیید ادمین می‌توانی آنلاین شوی.';
+        const msg = t('consultDesk.credNotVerified');
         setError(msg); toastError(msg); return;
       }
     }
@@ -701,6 +727,31 @@ export function VetConsultPage() {
       if (onlineToggleTimerRef.current) clearTimeout(onlineToggleTimerRef.current);
     };
   }, []);
+
+  async function onUploadCredential(file: File) {
+    if (!token) {
+      const msg = t('consultDesk.loginFirst');
+      setError(msg);
+      toastError(msg);
+      return;
+    }
+    setUploadBusy(true);
+    setError(null);
+    try {
+      await uploadProviderCredential(token, 'vet', file);
+      await refreshMe();
+      toastSuccess(t('consultDesk.credSent'));
+    } catch (err) {
+      const msg =
+        err instanceof Error && err.message.trim()
+          ? err.message
+          : t('consultDesk.credUploadFail');
+      setError(msg);
+      toastError(msg);
+    } finally {
+      setUploadBusy(false);
+    }
+  }
 
   async function onSaveVisitFee(fee: number) {
     if (!token) return;
@@ -863,7 +914,9 @@ export function VetConsultPage() {
           onlineBusy={onlineBusy}
           needsLogin={needsLogin}
           credentialStatus={user?.vetCredentialStatus}
+          uploadBusy={uploadBusy}
           onSetOnline={(online) => void onSetVetOnline(online)}
+          onUploadCredential={(file) => void onUploadCredential(file)}
         />
         <VetVisitFeeCard
           currentFee={myVisitFee}
@@ -900,7 +953,9 @@ export function VetConsultPage() {
             needsLogin={needsLogin}
             dualRole
             credentialStatus={user?.vetCredentialStatus}
+            uploadBusy={uploadBusy}
             onSetOnline={(online) => void onSetVetOnline(online)}
+            onUploadCredential={(file) => void onUploadCredential(file)}
           />
           <VetVisitFeeCard
             currentFee={myVisitFee}

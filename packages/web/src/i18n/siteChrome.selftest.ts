@@ -141,6 +141,7 @@ const vet = readFileSync(join(root, 'pages/VetConsultPage.tsx'), 'utf8');
 assert.match(vet, /consultDesk\.statusClosed/, 'vet desk closed badge is translated');
 assert.match(vet, /consultDesk\.titleVet/, 'vet title is translated');
 assert.match(vet, /credentialChromeLabel/, 'vet credential pill is translated');
+assert.match(vet, /vet-credential-upload/, 'vet credential upload control is present');
 
 const chats = readFileSync(join(root, 'pages/ChatPage.tsx'), 'utf8');
 assert.match(chats, /chats\.closed/, 'inbox closed badge uses chats.closed');

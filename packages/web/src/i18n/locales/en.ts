@@ -1030,7 +1030,7 @@ export const en: Dict = {
     lowCoins: 'A quick connect needs at least {cost} coins. Balance: {coins}',
     loginFirst: 'Log in first.',
     credNeedUpload: 'Upload your credential here or in the bot to activate the panel.',
-    credNeedVetUpload: 'Upload your vet credential first (bot or profile) to activate the panel.',
+    credNeedVetUpload: 'Upload your vet credential here or in the bot to activate the panel.',
     credNotVerified: 'Credential is not approved yet; you can go online after admin approval.',
     credNotVerifiedShort: 'Credential is not approved yet; go online after admin approval.',
     onlineOk: 'You are online.',
