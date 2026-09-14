@@ -33,5 +33,13 @@ const gamesPage = readFileSync(join(webSrc, 'pages/GamesPage.tsx'), 'utf8');
 assert.match(gamesPage, /listGames/, 'GamesPage uses listGames');
 assert.match(gamesPage, /createGame/, 'GamesPage can create');
 assert.match(gamesPage, /joinGame/, 'GamesPage can join');
+assert.match(gamesPage, /className="pepito-games-page"/, 'GamesPage uses pepito-games-page shell');
+assert.match(gamesPage, /hideBanner/, 'GamesPage hides flow banner (needs nav-h pad)');
+const pepitoCss = readFileSync(join(webSrc, 'styles/pepito.css'), 'utf8');
+assert.match(
+  pepitoCss,
+  /\.pepito-games-page\.pepito-flow-page\s*\{\s*padding-top:\s*var\(--pepito-nav-h\)/,
+  'events page clears fixed .pepito-nav on desktop'
+);
 
 console.log('listGames.selftest: ok');

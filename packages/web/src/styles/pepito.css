@@ -16123,6 +16123,13 @@ a.pepito-btn.pepito-human-consult-cta:hover {
 }
 
 /* —— Events (/events) —— */
+/* hideBanner: no .pepito-flow-banner margin-top — clear fixed .pepito-nav
+   the same way .pepito-app-layout does (desktop only; mobile nav is in-flow). */
+@media (min-width: 860px) {
+  .pepito-games-page.pepito-flow-page {
+    padding-top: var(--pepito-nav-h);
+  }
+}
 .pepito-games-page .pepito-games {
   padding-block: 32px 64px;
 }
