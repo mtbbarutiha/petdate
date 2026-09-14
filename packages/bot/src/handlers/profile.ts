@@ -29,6 +29,7 @@ import {
   toPersianDigits,
   userCommandIdOf,
   userHasRole,
+  isPrimaryRole,
 } from '@petdate/shared';
 import {
   deleteUserAccount,
@@ -245,6 +246,7 @@ async function sendOwnProfileCard(
     user.verificationStatus ?? 'none',
     {
       isVet: userHasRole(user, 'vet'),
+      isPetOwner: isPrimaryRole(user, 'pet_owner'),
       likesCount: user.likesCount ?? 0,
       contactsCount: user.contactsCount ?? 0,
       silentChatRequests: Boolean(user.silentChatRequests),
