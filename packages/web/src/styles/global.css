@@ -3647,6 +3647,10 @@ body:has(.admin-app) .toast-host {
 .auth-telegram-cta + .auth-google-cta {
   margin-top: 8px;
 }
+.auth-google-cta.is-off {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
 .auth-provider-hint {
   margin: 0 0 10px;
   color: #8a809c;
@@ -3666,13 +3670,6 @@ body:has(.admin-app) .toast-host {
   font-variant-numeric: tabular-nums;
   color: #a24a86;
   font-size: 1.15em;
-}
-.auth-provider-hint {
-  margin: 0 0 10px;
-  color: #8a809c;
-  font-size: 0.78rem;
-  text-align: center;
-  line-height: 1.5;
 }
 .auth-telegram-secondary {
   display: block;
