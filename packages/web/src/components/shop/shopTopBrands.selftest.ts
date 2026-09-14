@@ -4,9 +4,11 @@
  */
 import assert from 'node:assert/strict';
 import { readFileSync, existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const root = join(process.cwd(), 'packages/web');
+const here = dirname(fileURLToPath(import.meta.url));
+const root = join(here, '../../..'); // packages/web
 const catalog = readFileSync(join(root, 'src/data/shopCatalog.ts'), 'utf8');
 const home = readFileSync(join(root, 'src/pages/shop/ShopHomePage.tsx'), 'utf8');
 const carousel = readFileSync(join(root, 'src/components/shop/ShopTopBrands.tsx'), 'utf8');
