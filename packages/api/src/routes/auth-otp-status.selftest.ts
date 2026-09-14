@@ -1,6 +1,6 @@
 /**
- * Web OTP request must map provider failures to 5xx (like Telegram phone OTP),
- * so admin error logs / monitors treat Candoo outages as infra, not client 400s.
+ * Web OTP provider failures must stay HTTP 400 (nginx passes origin JSON) while
+ * still writing an explicit sms/infra error log for admin /logs.
  * Run: npx tsx src/routes/auth-otp-status.selftest.ts
  */
 import assert from 'node:assert/strict';
@@ -13,21 +13,18 @@ const src = readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'auth.ts'
 assert.match(src, /authRouter\.post\('\/otp\/request'/, 'otp request route exists');
 assert.match(src, /result\.reason === 'send_failed'/, 'send_failed is classified');
 assert.match(src, /result\.reason === 'not_configured'/, 'not_configured is classified');
+assert.match(src, /source: 'sms'/, 'provider failures log under source=sms');
+assert.match(src, /logAppEvent/, 'explicit admin error log on provider failure');
 assert.match(
   src,
-  /send_failed[\s\S]{0,80}\? 502/,
-  'provider send_failed → HTTP 502'
+  /statusCode: result\.reason === 'not_configured' \? 503 : 502/,
+  'meta statusCode records infra codes for ops'
 );
-assert.match(
-  src,
-  /not_configured[\s\S]{0,80}\? 503/,
-  'missing SMS/email config → HTTP 503'
-);
-assert.match(src, /cooldown[\s\S]{0,40}\? 429/, 'cooldown → HTTP 429');
+assert.match(src, /cooldown' \? 429 : 400/, 'cooldown → 429; other failures → 400 for clients');
 assert.doesNotMatch(
   src,
-  /res\.status\(result\.reason === 'cooldown' \? 429 : 400\)/,
-  'must not collapse all non-cooldown OTP failures to 400'
+  /send_failed[\s\S]{0,40}\? 502[\s\S]{0,40}res\.status/,
+  'must not return HTTP 502 to clients (nginx rewrites the body)'
 );
 
 console.log('auth-otp-status.selftest: ok');
