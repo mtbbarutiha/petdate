@@ -266,16 +266,25 @@ authRouter.post('/otp/request', otpRequestLimit, async (req, res) => {
 
   const result = await requestWebOtp(channel, target);
   if (!result.ok) {
-    // Align with Telegram phone OTP: provider/config failures are 5xx so admin
-    // error logs + monitors treat them as infra, not client validation mistakes.
-    const status =
-      result.reason === 'cooldown'
-        ? 429
-        : result.reason === 'not_configured'
-          ? 503
-          : result.reason === 'send_failed'
-            ? 502
-            : 400;
+    // Keep 400 for provider/config failures so nginx (proxy_intercept_errors +
+    // error_page 502/503/504) does not replace the useful Candoo/SMTP JSON body.
+    // Infra visibility comes from explicit logAppEvent below + console.error bridge.
+    if (result.reason === 'send_failed' || result.reason === 'not_configured') {
+      const { logAppEvent } = await import('../services/app-logger');
+      logAppEvent({
+        level: 'error',
+        source: 'sms',
+        message:
+          result.reason === 'not_configured'
+            ? `web OTP ${channel}: provider not configured`
+            : `web OTP ${channel}: ${result.error || 'send_failed'}`,
+        path: '/api/auth/otp/request',
+        method: 'POST',
+        statusCode: result.reason === 'not_configured' ? 503 : 502,
+        meta: { reason: result.reason, channel },
+      });
+    }
+    const status = result.reason === 'cooldown' ? 429 : 400;
     res.status(status).json(result);
     return;
   }
