@@ -1,13 +1,12 @@
 import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
-import { Gamepad2 } from 'lucide-react';
 import { BRAND } from '@petdate/shared';
 import { useI18n } from '../i18n';
 import { LanguageToggle } from './LanguageToggle';
 import { NavUserCluster } from './NavUserCluster';
 import { SiteHeaderLinkView } from './SiteHeaderLinkView';
 import { ThemeToggle } from './ThemeToggle';
-import { IconPaw } from './icons/ChromeIcons';
+import { IconGamepad, IconPaw } from './icons/ChromeIcons';
 import { type SiteHeaderLink } from './siteHeaderLinks';
 
 const LazySiteDesktopNav = lazy(() =>
@@ -141,7 +140,7 @@ export function SiteHeader({
               data-testid="nav-mobile-events"
               aria-label={t('nav.games')}
             >
-              <Gamepad2 size={18} strokeWidth={2.25} aria-hidden />
+              <IconGamepad size={18} />
               <span>{t('nav.games')}</span>
             </Link>
           ) : null}

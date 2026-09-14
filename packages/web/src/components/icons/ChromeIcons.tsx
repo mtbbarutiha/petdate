@@ -101,3 +101,14 @@ export function IconPaw({ size = 14 }: IconProps) {
     </svg>
   );
 }
+
+/** Mobile Events shortcut — keep lucide off SiteHeader / landing chrome. */
+export function IconGamepad({ size = 18 }: IconProps) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <rect width="20" height="12" x="2" y="6" rx="2" />
+      <path d="M6 12h4M8 10v4" />
+      <path d="M15 13h.01M18 11h.01" />
+    </svg>
+  );
+}
