@@ -38,8 +38,8 @@ assert.match(home, /ShopPromoBanners/, 'two promo banners on home');
 assert.doesNotMatch(home, /pd-shop-journey/, '3-step journey strip removed');
 assert.doesNotMatch(home, /title: 'انتخاب کن'/, 'journey copy gone');
 assert.doesNotMatch(home, /pd-shop-pet-tabs/, 'no top-of-home species filter chrome');
-assert.match(home, /pd-shop-dk-tile--art/, 'illustrated category tiles');
-assert.match(home, /ShopCategoryArt/, 'category rail uses branded illustrations');
+assert.match(home, /pd-shop-dk-tile--photo/, 'real-photo category tiles');
+assert.match(home, /ShopCategoryArt/, 'category rail uses category photo component');
 assert.doesNotMatch(home, /shopCategoryIcon\(/, 'category rail does not use Lucide icon map');
 assert.doesNotMatch(home, /pd-shop-dk-circle/, 'emoji circles replaced');
 assert.doesNotMatch(home, /c\.emoji/, 'category rail does not use emoji');
@@ -85,6 +85,16 @@ assert.match(css, /\.pd-shop-home-rail-track[\s\S]{0,220}overflow-x:\s*auto/, 'h
 assert.match(css, /\.pd-shop-home-rail-track[\s\S]{0,260}scrollbar-width:\s*none/, 'home rail hides native scrollbar');
 assert.match(css, /\.pd-shop-dk-strip\s*\{[\s\S]{0,360}overflow-x:\s*auto/, 'category strip allows swipe scroll');
 assert.match(css, /\.pd-shop-dk-strip\s*\{[\s\S]{0,420}scrollbar-width:\s*none/, 'category strip hides native scrollbar');
+assert.match(
+  css,
+  /MOBILE_SHOP_LAYOUT_FIX[\s\S]{0,2800}\.pd-shop-dk-strip\s*\{[\s\S]{0,200}overflow-x:\s*auto/,
+  'mobile layout fix keeps category strip overflow-x auto (not hidden)'
+);
+assert.doesNotMatch(
+  css,
+  /MOBILE_SHOP_LAYOUT_FIX[\s\S]{0,2800}\.pd-shop-dk-strip\s*\{[\s\S]{0,120}overflow-x:\s*hidden/,
+  'mobile must not kill category touch swipe with overflow-x:hidden'
+);
 assert.match(css, /\.pd-shop-promo-banners\b/, 'promo banner styles');
 const promoSrc = readFileSync(join(here, 'ShopPromoBanners.tsx'), 'utf8');
 assert.match(promoSrc, /پت‌دیت/, 'promo banners include PetDate name');
@@ -98,8 +108,16 @@ const webRoot = join(here, '../../..');
 assert.ok(existsSync(join(webRoot, 'public/media/shop/promo-for-your-pet.jpg')), 'groom banner photo on disk');
 assert.ok(existsSync(join(webRoot, 'public/media/shop/promo-fits-your-pet.jpg')), 'travel banner photo on disk');
 const art = readFileSync(join(here, 'shopCategoryIcons.tsx'), 'utf8');
-assert.match(art, /ShopCategoryArt/, 'illustrated category art component');
+assert.match(art, /ShopCategoryArt/, 'category photo component');
+assert.match(art, /SHOP_CATEGORY_PHOTOS/, 'category → real photo map');
+assert.match(art, /\/media\/shop\/categories/, 'photos live under public media shop categories');
+assert.match(art, /pd-shop-dk-photo/, 'photo img uses category photo class');
 assert.doesNotMatch(art, /lucide-react/, 'category art is not Lucide outlines');
+assert.doesNotMatch(art, /<svg/, 'category tiles are photos not SVG cartoons');
+assert.ok(existsSync(join(webRoot, 'public/media/shop/categories/food.jpg')), 'food category photo on disk');
+assert.ok(existsSync(join(webRoot, 'public/media/shop/categories/travel.jpg')), 'travel category photo on disk');
+assert.ok(existsSync(join(webRoot, 'public/media/shop/categories/litter.jpg')), 'litter category photo on disk');
+assert.match(css, /\.pd-shop-dk-photo\b/, 'category photo styles');
 assert.match(css, /\.pd-shop-filter-acc\b/, 'filter accordion styles');
 assert.match(ci, /shopUxBatch\.selftest/, 'CI runs shop UX batch selftest');
 

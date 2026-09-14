@@ -402,20 +402,27 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   flex-direction: column;
   align-items: stretch;
   gap: 0.4rem;
-  /* Far-right in RTL (inline-start); keep column narrow until search expands. */
-  width: clamp(11.5rem, 18vw, 15rem);
+  /* Width follows the logo so primary nav sits flush beside it (RTL). */
+  width: max-content;
   max-width: min(42vw, 16rem);
   position: relative;
   z-index: 8;
+  /* Reserve space for the absolutely positioned search under the logo. */
+  padding-bottom: 2.55rem;
 }
 .pepito-nav-brand--search .pd-shop-search {
+  position: absolute;
+  inset-inline-start: 0;
+  inset-block-end: 0;
   width: 100%;
+  min-width: 0;
   max-width: none;
   margin-inline: 0;
   transition: width 0.2s ease, max-width 0.2s ease;
 }
 .pepito-nav-brand--search .pd-shop-search.is-expanded,
 .pepito-nav-brand--search .pd-shop-search:focus-within {
+  /* Expand over neighbors; brand column (and nav gap) stays logo-sized. */
   width: min(28rem, 72vw);
   max-width: min(28rem, 72vw);
   z-index: 30;
@@ -8424,7 +8431,7 @@ a.pepito-btn.pepito-human-consult-cta:hover {
     align-items: flex-start;
   }
   .pd-shop-page .pepito-nav-brand--search {
-    width: clamp(12rem, 16vw, 15.5rem);
+    width: max-content;
     max-width: 15.5rem;
   }
   .pd-shop-page .pepito-nav-primary,
@@ -8601,9 +8608,11 @@ a.pepito-btn.pepito-human-consult-cta:hover {
     padding-top: calc(0.5rem + env(safe-area-inset-top, 0px));
   }
   .pd-shop-page .pepito-nav-brand--search {
+    /* Mobile: no desktop text nav beside logo — keep a usable search column. */
     width: min(46vw, 11.5rem);
     max-width: min(46vw, 11.5rem);
     flex: 0 1 auto;
+    padding-bottom: 2.35rem;
   }
   .pd-shop-page .pepito-nav-brand--search .pd-shop-search.is-expanded,
   .pd-shop-page .pepito-nav-brand--search .pd-shop-search:focus-within {
@@ -9417,11 +9426,13 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   overflow: hidden;
   transition: transform 0.22s ease, background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
-.pd-shop-dk-tile--art {
+.pd-shop-dk-tile--art,
+.pd-shop-dk-tile--photo {
   padding: 0;
-  background:
-    radial-gradient(120% 90% at 20% 15%, rgba(255, 255, 255, 0.72), transparent 55%),
-    linear-gradient(180deg, #f7f3ee 0%, #efe8df 100%);
+  background: #f4f5f7;
+}
+.pd-shop-dk-tile--photo {
+  background: #f0ebe4;
 }
 .pd-shop-dk-tile--food { background: linear-gradient(160deg, #efe6ff 0%, #e4d7c4 100%); }
 .pd-shop-dk-tile--treats { background: linear-gradient(160deg, #ffe8cc 0%, #f3c49a 100%); }
@@ -9438,10 +9449,35 @@ a.pepito-btn.pepito-human-consult-cta:hover {
 .pd-shop-dk-tile--bird { background: linear-gradient(160deg, #d6f0fc 0%, #9ed6f2 100%); }
 .pd-shop-dk-tile--rodent { background: linear-gradient(160deg, #f6e4d4 0%, #e8c4a4 100%); }
 .pd-shop-dk-tile--more { background: linear-gradient(160deg, #efeaf8 0%, #e4d7fb 100%); }
-.pd-shop-dk-art {
+.pd-shop-dk-tile--photo.pd-shop-dk-tile--food,
+.pd-shop-dk-tile--photo.pd-shop-dk-tile--treats,
+.pd-shop-dk-tile--photo.pd-shop-dk-tile--groom,
+.pd-shop-dk-tile--photo.pd-shop-dk-tile--toys,
+.pd-shop-dk-tile--photo.pd-shop-dk-tile--bowls,
+.pd-shop-dk-tile--photo.pd-shop-dk-tile--travel,
+.pd-shop-dk-tile--photo.pd-shop-dk-tile--collars,
+.pd-shop-dk-tile--photo.pd-shop-dk-tile--clothes,
+.pd-shop-dk-tile--photo.pd-shop-dk-tile--shield,
+.pd-shop-dk-tile--photo.pd-shop-dk-tile--beds,
+.pd-shop-dk-tile--photo.pd-shop-dk-tile--trees,
+.pd-shop-dk-tile--photo.pd-shop-dk-tile--litter,
+.pd-shop-dk-tile--photo.pd-shop-dk-tile--bird,
+.pd-shop-dk-tile--photo.pd-shop-dk-tile--rodent,
+.pd-shop-dk-tile--photo.pd-shop-dk-tile--more {
+  background: #f3efe8;
+}
+.pd-shop-dk-art,
+.pd-shop-dk-photo {
   width: 100%;
   height: 100%;
   display: block;
+}
+.pd-shop-dk-photo {
+  object-fit: cover;
+  object-position: center;
+  pointer-events: none;
+  -webkit-user-drag: none;
+  user-select: none;
 }
 .pd-shop-dk-item:hover .pd-shop-dk-tile {
   transform: translateY(-2px);
@@ -13375,8 +13411,12 @@ a.pepito-btn.pepito-human-consult-cta:hover {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     gap: 0.65rem !important;
   }
+  /* Keep native pan-x swipe — do NOT set overflow-x:hidden (that killed touch scroll). */
   .pd-shop-dk-strip {
-    overflow-x: hidden;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    touch-action: pan-x;
     max-width: 100%;
   }
   .pd-shop-h-track {
@@ -13457,7 +13497,8 @@ a.pepito-btn.pepito-human-consult-cta:hover {
     display: flex;
     align-items: center;
     gap: 0.95rem;
-    flex: 1 1 auto;
+    /* Shrink-wrap next to brand; actions ms-auto absorbs the free space. */
+    flex: 0 1 auto;
     min-width: 0;
     margin-inline-start: 0.35rem;
     position: relative;
