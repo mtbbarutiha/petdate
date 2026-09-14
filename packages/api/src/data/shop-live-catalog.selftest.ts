@@ -1,5 +1,5 @@
 /**
- * Live shop catalog is exactly p221–p329. Demo p1–p220 must purge and never re-seed.
+ * Live shop catalog is exactly p221–p341. Demo p1–p220 must purge and never re-seed.
  * Run: npx tsx src/data/shop-live-catalog.selftest.ts
  */
 import assert from 'node:assert/strict';
@@ -125,11 +125,23 @@ const KEEP_PRICES: Record<string, number> = {
   p327: 270_000,
   p328: 195_000,
   p329: 195_000,
+  p330: 195_000,
+  p331: 385_000,
+  p332: 195_840,
+  p333: 1_602_000,
+  p334: 479_500,
+  p335: 478_550,
+  p336: 303_000,
+  p337: 96_000,
+  p338: 550_000,
+  p339: 350_860,
+  p340: 235_000,
+  p341: 181_000,
 };
 
 async function main() {
-  assert.equal(LIVE_SHOP_PRODUCT_IDS.length, 109, '109 live ids');
-  assert.equal(ZERO_MARGIN_SHOP_SLUGS.length, 109, '109 live slugs');
+  assert.equal(LIVE_SHOP_PRODUCT_IDS.length, 121, '121 live ids');
+  assert.equal(ZERO_MARGIN_SHOP_SLUGS.length, 121, '121 live slugs');
 
   const catalog = readFileSync(join(repoRoot, 'packages/web/src/data/shopCatalog.ts'), 'utf8');
   const batch2 = readFileSync(join(repoRoot, 'packages/web/src/data/shopBatch2Products.ts'), 'utf8');
@@ -142,6 +154,7 @@ async function main() {
   const digikalaB1P1 = readFileSync(join(repoRoot, 'packages/web/src/data/shopDigikalaBatch1Part1Products.ts'), 'utf8');
   const digikalaB1P2 = readFileSync(join(repoRoot, 'packages/web/src/data/shopDigikalaBatch1Part2Products.ts'), 'utf8');
   const digikalaB1P3 = readFileSync(join(repoRoot, 'packages/web/src/data/shopDigikalaBatch1Part3Products.ts'), 'utf8');
+  const digikalaB1P4 = readFileSync(join(repoRoot, 'packages/web/src/data/shopDigikalaBatch1Part4Products.ts'), 'utf8');
   assert.match(catalog, /Live shop catalog — 3 Royal Canin pilots/);
   assert.doesNotMatch(catalog, /id: 'p1'/);
   assert.doesNotMatch(catalog, /dog-food-1-p1/);
@@ -156,6 +169,7 @@ async function main() {
   assert.match(catalog, /SHOP_DIGIKALA_BATCH1_PART1_PRODUCTS/);
   assert.match(catalog, /SHOP_DIGIKALA_BATCH1_PART2_PRODUCTS/);
   assert.match(catalog, /SHOP_DIGIKALA_BATCH1_PART3_PRODUCTS/);
+  assert.match(catalog, /SHOP_DIGIKALA_BATCH1_PART4_PRODUCTS/);
   assert.match(batch2, /id: 'p235'/);
   assert.match(batch2, /cat-food-josera-kitten-2kg/);
   assert.match(batch3, /id: 'p236'/);
@@ -181,11 +195,13 @@ async function main() {
   assert.match(digikalaB1P2, /id: "p319"/);
   assert.match(digikalaB1P3, /id: "p320"/);
   assert.match(digikalaB1P3, /id: "p329"/);
+  assert.match(digikalaB1P4, /id: "p330"/);
+  assert.match(digikalaB1P4, /id: "p341"/);
 
   const priceJson = JSON.parse(
     readFileSync(join(repoRoot, 'packages/api/src/data/shop-price-index.json'), 'utf8')
   ) as Array<{ id: string; slug: string; priceToman: number }>;
-  assert.equal(priceJson.length, 109, 'price index JSON is 109 SKUs');
+  assert.equal(priceJson.length, 121, 'price index JSON is 121 SKUs');
   assert.ok(!priceJson.some((e) => e.id === 'p1'), 'price index has no demo p1');
   for (const id of LIVE_SHOP_PRODUCT_IDS) {
     const row = priceJson.find((e) => e.id === id);
@@ -194,7 +210,7 @@ async function main() {
   }
 
   const { lookupShopPrice, shopPriceIndexSize } = await import('../services/shop-price-index');
-  assert.equal(shopPriceIndexSize(), 109, 'runtime price index size is 109');
+  assert.equal(shopPriceIndexSize(), 121, 'runtime price index size is 121');
   assert.equal(lookupShopPrice('p1'), null, 'p1 is not checkout-priceable');
   assert.equal(lookupShopPrice('dog-food-1-p1'), null);
   assert.equal(lookupShopPrice('p221')?.priceToman, 8_881_000);
@@ -225,6 +241,9 @@ async function main() {
   assert.equal(lookupShopPrice('p320')?.priceToman, 828_000);
   assert.equal(lookupShopPrice('p326')?.priceToman, 366_700);
   assert.equal(lookupShopPrice('p329')?.priceToman, 195_000);
+  assert.equal(lookupShopPrice('p330')?.priceToman, 195_000);
+  assert.equal(lookupShopPrice('p338')?.priceToman, 550_000);
+  assert.equal(lookupShopPrice('p341')?.priceToman, 181_000);
 
   const { getDb } = await import('../db');
   const d = getDb();
@@ -239,6 +258,7 @@ async function main() {
   const { seedShopDigikalaBatch1Part1Products } = await import('./shop-digikala-batch1-part1-products');
   const { seedShopDigikalaBatch1Part2Products } = await import('./shop-digikala-batch1-part2-products');
   const { seedShopDigikalaBatch1Part3Products } = await import('./shop-digikala-batch1-part3-products');
+  const { seedShopDigikalaBatch1Part4Products } = await import('./shop-digikala-batch1-part4-products');
   const { purgeDemoShopProducts, isLiveShopProductIdOrSlug } = await import('./shop-live-catalog');
   const { adminPlatform } = await import('../admin-platform');
 
@@ -253,6 +273,7 @@ async function main() {
   seedShopDigikalaBatch1Part1Products();
   seedShopDigikalaBatch1Part2Products();
   seedShopDigikalaBatch1Part3Products();
+  seedShopDigikalaBatch1Part4Products();
 
   d.prepare(`UPDATE shop_products SET stock_qty = 11 WHERE id = 'p221'`).run();
   d.prepare(`UPDATE shop_products SET stock_qty = 9 WHERE id = 'p235'`).run();
@@ -265,6 +286,7 @@ async function main() {
   d.prepare(`UPDATE shop_products SET stock_qty = 4 WHERE id = 'p309'`).run();
   d.prepare(`UPDATE shop_products SET stock_qty = 6 WHERE id = 'p319'`).run();
   d.prepare(`UPDATE shop_products SET stock_qty = 7 WHERE id = 'p329'`).run();
+  d.prepare(`UPDATE shop_products SET stock_qty = 8 WHERE id = 'p341'`).run();
 
   d.prepare(
     `INSERT INTO shop_products (
@@ -290,7 +312,7 @@ async function main() {
   ).run('pd-kong-classic', 'kong-classic-m', 'کنگ کلاسیک سایز M', 'kong', 'dog-toys', '["dog"]', 890000, 520000);
 
   const before = d.prepare(`SELECT COUNT(*) AS c FROM shop_products`).get() as { c: number };
-  assert.equal(Number(before.c), 111, '109 live + 2 demo before purge');
+  assert.equal(Number(before.c), 123, '121 live + 2 demo before purge');
 
   const first = purgeDemoShopProducts();
   const second = purgeDemoShopProducts();
@@ -306,11 +328,11 @@ async function main() {
     image: string | null;
     stock_qty: number;
   }>;
-  assert.equal(rows.length, 109, 'exactly 109 live SKUs remain');
+  assert.equal(rows.length, 121, 'exactly 121 live SKUs remain');
   assert.deepEqual(
     rows.map((r) => r.id),
     [...LIVE_SHOP_PRODUCT_IDS],
-    'remaining ids are p221–p329'
+    'remaining ids are p221–p341'
   );
   for (const row of rows) {
     assert.ok(isLiveShopProductIdOrSlug(row.id), `${row.id} is live`);
@@ -339,6 +361,8 @@ async function main() {
   assert.equal(Number(p319.stock_qty), 6, 'p319 stock preserved');
   const p329 = rows.find((r) => r.id === 'p329')!;
   assert.equal(Number(p329.stock_qty), 7, 'p329 stock preserved');
+  const p341 = rows.find((r) => r.id === 'p341')!;
+  assert.equal(Number(p341.stock_qty), 8, 'p341 stock preserved');
   assert.match(String(p221.image), /royal-canin-mini-adult-2kg\.jpg\?v=gallery-v1$/);
   assert.match(String(p235.image), /cat-food-josera-kitten-2kg\.jpg\?v=batch2-v1$/);
   assert.match(String(p249.image), /dog-food-royal-canin-hypoallergenic-2kg\.jpg\?v=batch3-v2$/);
@@ -362,6 +386,7 @@ async function main() {
   assert.match(String(p309.image), /cat-toys-dkp-17412089\.jpg\?v=digikala-b1-p1-v1$/);
   assert.match(String(p319.image), /bird-food-dkp-10253439\.jpg\?v=digikala-b1-p2-v1$/);
   assert.match(String(p329.image), /dog-food-dkp-20949492\.jpg\?v=digikala-b1-p3-v1$/);
+  assert.match(String(p341.image), /rodent-supplies-dkp-11804534\.jpg\?v=digikala-b1-p4-v1$/);
 
   assert.equal(adminPlatform.deleteShopProduct('p221'), false, 'cannot delete pilot');
   assert.equal(adminPlatform.deleteShopProduct('p235'), false, 'cannot delete batch 2');
@@ -374,6 +399,7 @@ async function main() {
   assert.equal(adminPlatform.deleteShopProduct('p309'), false, 'cannot delete Digikala batch1 Part1');
   assert.equal(adminPlatform.deleteShopProduct('p319'), false, 'cannot delete Digikala batch1 Part2');
   assert.equal(adminPlatform.deleteShopProduct('p329'), false, 'cannot delete Digikala batch1 Part3');
+  assert.equal(adminPlatform.deleteShopProduct('p341'), false, 'cannot delete Digikala batch1 Part4');
   assert.ok(adminPlatform.getShopProduct('p221'), 'p221 still present after refused delete');
 
   adminPlatform.replaceShopCatalog({
@@ -403,7 +429,7 @@ async function main() {
   assert.equal(afterSync.priceToman, 8_881_000, 'catalog sync must not change p221 price');
   assert.equal(afterSync.stockQty, 11, 'catalog sync must not reset p221 stock');
   assert.equal(adminPlatform.getShopProduct('p1'), null, 'catalog sync must not re-seed p1');
-  assert.equal(adminPlatform.listShopProducts().length, 109, 'sync leaves 109 live SKUs');
+  assert.equal(adminPlatform.listShopProducts().length, 121, 'sync leaves 121 live SKUs');
 
   console.log('shop-live-catalog.selftest: ok', LIVE_SHOP_PRODUCT_IDS.join(','));
 }

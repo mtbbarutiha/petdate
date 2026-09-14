@@ -950,7 +950,7 @@ export interface BotSession {
   /** پت‌شاپ — سبد موقت ربات (legacy; live cart is API shop_carts) */
   shopCart?: Array<{ productId: string; qty: number }>;
   /** پت‌شاپ — فیلتر مرور */
-  shopPetType?: 'dog' | 'cat' | 'bird' | 'all';
+  shopPetType?: 'dog' | 'cat' | 'bird' | 'rodent' | 'all';
   shopCategorySlug?: string;
   shopPage?: number;
   /** پت‌شاپ — پیش‌نویس چک‌اوت (تک‌قلم یا کل سبد) */

@@ -25,6 +25,7 @@ const PET_HUB: Record<Exclude<ShopPetType, 'all'>, string> = {
   dog: '/shop/c/all?pet=dog',
   cat: '/shop/c/all?pet=cat',
   bird: '/shop/c/all?pet=bird',
+  rodent: '/shop/c/all?pet=rodent',
 };
 
 export function petTypeLabel(lang: ShopBreadcrumbLang, pet: Exclude<ShopPetType, 'all'>): string {

@@ -131,4 +131,12 @@ assert(
   map.includes('/shop/dog-food-dkp-20949492 '),
   'Digikala batch1 Part3 USPet ostrich slug aliases 301 to /shop/product/:slug'
 );
+assert(
+  xml.includes('/shop/product/dog-food-dkp-20949593'),
+  'Digikala batch1 Part4 USPet goat squash stays in sitemap'
+);
+assert(
+  map.includes('/shop/rodent-supplies-dkp-11804534 '),
+  'Digikala batch1 Part4 hamster slug aliases 301 to /shop/product/:slug'
+);
 console.log('sitemap.selftest: ok');

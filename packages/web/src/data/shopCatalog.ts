@@ -1,6 +1,6 @@
 /**
  * PetDate shop catalog — Pepito imagery, prices in تومان (wallet primary currency).
- * Live catalog is exactly 109 SKUs: p221–p223 (pilots) + p224–p235 (Batch 2) + p236–p249 (Batch 3) + p250–p259 (multi wave 1) + p260–p269 (multi wave 2) + p270–p279 (multi wave 3) + p280–p289 (multi wave 4) + p290–p299 (multi wave 5) + p300–p309 (Digikala batch1 Part1) + p310–p319 (Digikala batch1 Part2) + p320–p329 (Digikala batch1 Part3).
+ * Live catalog is exactly 121 SKUs: p221–p223 (pilots) + p224–p235 (Batch 2) + p236–p249 (Batch 3) + p250–p259 (multi wave 1) + p260–p269 (multi wave 2) + p270–p279 (multi wave 3) + p280–p289 (multi wave 4) + p290–p299 (multi wave 5) + p300–p309 (Digikala batch1 Part1) + p310–p319 (Digikala batch1 Part2) + p320–p329 (Digikala batch1 Part3) + p330–p341 (Digikala batch1 Part4).
  * Demo p1–p220 were removed so they cannot reappear on deploy.
  */
 
@@ -14,10 +14,11 @@ import { SHOP_BATCH_MULTI_WAVE5_PRODUCTS } from './shopBatchMultiWave5Products';
 import { SHOP_DIGIKALA_BATCH1_PART1_PRODUCTS } from './shopDigikalaBatch1Part1Products';
 import { SHOP_DIGIKALA_BATCH1_PART2_PRODUCTS } from './shopDigikalaBatch1Part2Products';
 import { SHOP_DIGIKALA_BATCH1_PART3_PRODUCTS } from './shopDigikalaBatch1Part3Products';
+import { SHOP_DIGIKALA_BATCH1_PART4_PRODUCTS } from './shopDigikalaBatch1Part4Products';
 
 const P = '/pepito/uploads';
 
-export type ShopPetType = 'dog' | 'cat' | 'bird' | 'all';
+export type ShopPetType = 'dog' | 'cat' | 'bird' | 'rodent' | 'all';
 
 export interface ShopCategory {
   slug: string;
@@ -97,6 +98,7 @@ export const SHOP_PET_TYPES: { id: ShopPetType; labelFa: string; labelEn: string
   { id: 'dog', labelFa: 'سگ', labelEn: 'Dog' },
   { id: 'cat', labelFa: 'گربه', labelEn: 'Cat' },
   { id: 'bird', labelFa: 'پرنده', labelEn: 'Bird' },
+  { id: 'rodent', labelFa: 'جوندگان', labelEn: 'Rodents' },
 ];
 
 /** Top-level shop categories by pet type */
@@ -131,6 +133,8 @@ export const SHOP_CATEGORIES: ShopCategory[] = [
   // —— پرنده ——
   { slug: 'bird-food', labelFa: 'غذای پرنده', petType: 'bird', description: 'دان، پلت و مخلوط غذایی', emoji: '🐦' },
   { slug: 'bird-accessories', labelFa: 'لوازم پرنده', petType: 'bird', description: 'قفس، نشیمن و لوازم جانبی', emoji: '🪺' },
+  // —— جوندگان ——
+  { slug: 'rodent-supplies', labelFa: 'لوازم جوندگان', petType: 'rodent', description: 'غذا و لوازم جوندگان', emoji: '🐹' },
 ];
 
 const B = '/shop/brands';
@@ -390,6 +394,7 @@ export const SHOP_PRODUCTS: ShopProduct[] = [
   ...SHOP_DIGIKALA_BATCH1_PART1_PRODUCTS,
   ...SHOP_DIGIKALA_BATCH1_PART2_PRODUCTS,
   ...SHOP_DIGIKALA_BATCH1_PART3_PRODUCTS,
+  ...SHOP_DIGIKALA_BATCH1_PART4_PRODUCTS,
 ];
 
 export function formatToman(amount: number): string {
@@ -503,7 +508,7 @@ export function applyLiveShopCatalog(input: {
     const base = byId.get(api.id) ?? bySlug.get(api.slug);
     const petTypes = (api.petTypes?.length
       ? api.petTypes
-      : base?.petTypes ?? ['dog']) as Array<'dog' | 'cat' | 'bird'>;
+      : base?.petTypes ?? ['dog']) as Array<'dog' | 'cat' | 'bird' | 'rodent'>;
     const badge =
       api.badge === 'hot' || api.badge === 'sale' || api.badge === 'new' || api.badge === 'limited'
         ? api.badge
@@ -573,10 +578,9 @@ export function applyLiveShopCatalog(input: {
     const staticBySlug = new Map(SHOP_CATEGORIES.map((c) => [c.slug, c]));
     liveCategories = input.categories.map((c) => {
       const base = staticBySlug.get(c.slug);
-      const petType = (c.petType === 'cat' || c.petType === 'bird' ? c.petType : 'dog') as
-        | 'dog'
-        | 'cat'
-        | 'bird';
+      const petType = (
+        c.petType === 'cat' || c.petType === 'bird' || c.petType === 'rodent' ? c.petType : 'dog'
+      ) as 'dog' | 'cat' | 'bird' | 'rodent';
       return {
         slug: c.slug,
         labelFa: c.labelFa || base?.labelFa || c.slug,

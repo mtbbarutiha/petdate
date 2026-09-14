@@ -1,0 +1,180 @@
+{
+  "batch": "digikala-batch1",
+  "wave": 4,
+  "part": "DK-Part4",
+  "waveCount": 4,
+  "pricingRule": "zero-margin",
+  "cacheBust": "digikala-b1-p4-v1",
+  "galleryMode": "front-only",
+  "products": [
+    {
+      "proposedId": "p330",
+      "slug": "dog-food-dkp-20949593",
+      "title": "کنسرو سگ یو‌اس‌پت بز و کدو سبز ۴۳۰ گرم",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "dog-food",
+      "petTypes": [
+        "dog"
+      ],
+      "priceToman": 195000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p331",
+      "slug": "cat-treats-dkp-11596119",
+      "title": "خمیر مولتی‌ویتامین گربه پرسا ۲۰۰ گرم — بسته ۲ عددی",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "cat-treats",
+      "petTypes": [
+        "cat"
+      ],
+      "priceToman": 385000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p332",
+      "slug": "cat-treats-dkp-7929885",
+      "title": "خمیر مالت گربه پرسا ۱۰۰ گرم",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "cat-treats",
+      "petTypes": [
+        "cat"
+      ],
+      "priceToman": 195840,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p333",
+      "slug": "grooming-dkp-22460582",
+      "title": "دهان‌شویه سگ و گربه بایوپت اکتیو ۲۵۰ میل",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "grooming",
+      "petTypes": [
+        "dog",
+        "cat"
+      ],
+      "priceToman": 1602000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p334",
+      "slug": "bird-food-dkp-16760701",
+      "title": "غذای گرینچیک کوکو پروت ۱ کیلو",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "bird-food",
+      "petTypes": [
+        "bird"
+      ],
+      "priceToman": 479500,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p335",
+      "slug": "bird-food-dkp-8471877",
+      "title": "غذای مرغ مینا اوشکایا ۱ کیلو",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "bird-food",
+      "petTypes": [
+        "bird"
+      ],
+      "priceToman": 478550,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p336",
+      "slug": "bird-food-dkp-11307683",
+      "title": "غذای عروس هلندی کاسنر K12 — ۱۲۰۰ گرم",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "bird-food",
+      "petTypes": [
+        "bird"
+      ],
+      "priceToman": 303000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p337",
+      "slug": "bird-food-dkp-16512508",
+      "title": "تشویقی پرنده طعم میوه ۱۰۰ گرم",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "bird-food",
+      "petTypes": [
+        "bird"
+      ],
+      "priceToman": 96000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p338",
+      "slug": "rodent-supplies-dkp-2909989",
+      "title": "غذای کامل جوندگان تاپ‌فید ۱ کیلو",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "rodent-supplies",
+      "petTypes": [
+        "rodent"
+      ],
+      "priceToman": 550000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p339",
+      "slug": "rodent-supplies-dkp-20848635",
+      "title": "خوراک جوندگان آسوپت میکس پلت ۱ کیلو",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "rodent-supplies",
+      "petTypes": [
+        "rodent"
+      ],
+      "priceToman": 350860,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p340",
+      "slug": "rodent-supplies-dkp-12533105",
+      "title": "یونجه خشک خرگوش و جوندگان ۱ کیلو",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "rodent-supplies",
+      "petTypes": [
+        "rodent"
+      ],
+      "priceToman": 235000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p341",
+      "slug": "rodent-supplies-dkp-11804534",
+      "title": "غذای همستر نیچرفود ۱ ستاره ۵۰۰ گرم",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "rodent-supplies",
+      "petTypes": [
+        "rodent"
+      ],
+      "priceToman": 181000,
+      "weightLabel": "",
+      "weightKind": ""
+    }
+  ]
+}

@@ -1,5 +1,5 @@
 /**
- * Live shop catalog guard — keep ONLY p221–p329 (3 pilots + 12 Batch 2 + 14 Batch 3 + 10 multi wave 1 + 10 multi wave 2 + 10 multi wave 3 + 10 multi wave 4 + 10 multi wave 5 + 10 Digikala batch1 Part1 + 10 Digikala batch1 Part2 + 10 Digikala batch1 Part3).
+ * Live shop catalog guard — keep ONLY p221–p341 (3 pilots + 12 Batch 2 + 14 Batch 3 + 10 multi wave 1 + 10 multi wave 2 + 10 multi wave 3 + 10 multi wave 4 + 10 multi wave 5 + 10 Digikala batch1 Part1 + 10 Digikala batch1 Part2 + 10 Digikala batch1 Part3 + 12 Digikala batch1 Part4).
  * Purges leftover demo/seed rows (p1–p220, finance placeholders, etc.)
  * without touching live prices, images, or stock.
  */
@@ -26,6 +26,7 @@ export const LIVE_SHOP_CATEGORY_SLUGS = [
   'dog-carriers',
   'cat-carriers',
   'bird-food',
+  'rodent-supplies',
 ] as const;
 
 export function purgeDemoShopProducts(): { products: number; categories: number } {
