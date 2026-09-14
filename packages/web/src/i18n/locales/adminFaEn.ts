@@ -2426,7 +2426,6 @@ export const ADMIN_FA_EN: Record<string, string> = {
   "ویرایش برند": "Edit brand",
   "برند جدید": "New brand",
   "عنوان فارسی": "Persian title",
-  "عنوان انگلیسی": "English title",
   "لوگو": "Logo",
   "آدرس لوگو": "Logo URL",
   "برند برتر (کاروسل فروشگاه)": "Featured (shop carousel)",
