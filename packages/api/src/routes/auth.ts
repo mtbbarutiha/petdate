@@ -566,7 +566,7 @@ authRouter.post('/wallet/payments/:id/receipt', (req, res) => {
         return;
       }
       if (msg === 'INVALID_MIME') {
-        res.status(400).json({ ok: false, error: 'فقط تصویر JPG/PNG/WebP مجاز است.' });
+        res.status(400).json({ ok: false, error: 'فقط تصویر JPG/PNG/WebP/GIF یا PDF مجاز است.' });
         return;
       }
       console.warn('wallet payment receipt upload failed:', msg);

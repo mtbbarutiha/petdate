@@ -11,6 +11,7 @@ const ALLOWED_MIME = new Set([
   'image/png',
   'image/webp',
   'image/gif',
+  'application/pdf',
 ]);
 
 export function paymentReceiptsRoot(): string {
@@ -39,6 +40,7 @@ export function buildPaymentReceiptKey(
     if (mime.includes('png')) ext = '.png';
     else if (mime.includes('webp')) ext = '.webp';
     else if (mime.includes('gif')) ext = '.gif';
+    else if (mime.includes('pdf')) ext = '.pdf';
     else ext = '.jpg';
   }
   return `${orderId}/${randomUUID()}${ext}`;
@@ -94,5 +96,6 @@ export function mimeFromPaymentReceiptKey(storageKey: string): string {
   if (ext === '.png') return 'image/png';
   if (ext === '.webp') return 'image/webp';
   if (ext === '.gif') return 'image/gif';
+  if (ext === '.pdf') return 'application/pdf';
   return 'image/jpeg';
 }

@@ -1092,7 +1092,7 @@ export function prepareShopCardCheckout(
     receiptToken,
     cardNumber: card.number,
     cardHolder: card.holder,
-    message: `مبلغ ${totalToman.toLocaleString('fa-IR')} تومان را کارت‌به‌کارت واریز کن و عکس رسید را در ربات بفرست.`,
+    message: `مبلغ ${totalToman.toLocaleString('fa-IR')} تومان را کارت‌به‌کارت واریز کن و فایل رسید (عکس یا PDF) را در همین سایت آپلود کن.`,
   };
 }
 

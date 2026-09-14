@@ -12,6 +12,8 @@ import {
 import { loginPath } from '../../lib/authRedirect';
 import { ShopChrome } from '../../components/shop/ShopChrome';
 
+const RECEIPT_ACCEPT = 'image/jpeg,image/png,image/webp,image/gif,application/pdf,.pdf';
+
 function groupCard(num: string): string {
   const d = String(num || '').replace(/\D/g, '');
   return d.replace(/(\d{4})(?=\d)/g, '$1 ').trim();
@@ -19,10 +21,22 @@ function groupCard(num: string): string {
 
 function statusFa(status: string): string {
   if (status === 'pending') return 'در انتظار بررسی ادمین';
-  if (status === 'awaiting_receipt') return 'منتظر رسید';
+  if (status === 'awaiting_receipt') return 'منتظر فیش / رسید';
   if (status === 'approved' || status === 'paid') return 'تأیید شده';
   if (status === 'rejected') return 'رد شده';
   return status;
+}
+
+async function copyText(value: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(value);
+      return true;
+    }
+  } catch {
+    /* ignore */
+  }
+  return false;
 }
 
 export function ShopCardPayPage() {
@@ -37,6 +51,7 @@ export function ShopCardPayPage() {
   const [transferRef, setTransferRef] = useState('');
   const [uploading, setUploading] = useState(false);
   const [uploadMsg, setUploadMsg] = useState('');
+  const [cardCopied, setCardCopied] = useState(false);
   const remembered = useRef(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const canTrack = Boolean((isLoggedIn && token) || receiptToken);
@@ -87,7 +102,7 @@ export function ShopCardPayPage() {
         transferRef: transferRef || undefined,
         receiptToken: receiptToken || undefined,
       });
-      setUploadMsg('رسید ثبت شد — منتظر تأیید ادمین بمان.');
+      setUploadMsg('فیش ثبت شد — منتظر تأیید ادمین بمان.');
       setStatus(await fetchShopCardPaymentStatus(token, paymentOrderId, receiptToken || undefined));
     } catch (err) {
       setUploadMsg(err instanceof Error ? err.message : 'آپلود ناموفق بود.');
@@ -96,6 +111,16 @@ export function ShopCardPayPage() {
       if (fileRef.current) fileRef.current.value = '';
     }
   }
+
+  const onCopyCard = async () => {
+    const raw = String(status?.cardNumber || '').replace(/\D/g, '');
+    if (!raw) return;
+    const ok = await copyText(raw);
+    if (ok) {
+      setCardCopied(true);
+      window.setTimeout(() => setCardCopied(false), 2000);
+    }
+  };
 
   if (!canTrack) {
     return (
@@ -113,11 +138,12 @@ export function ShopCardPayPage() {
   const paid = Boolean(status?.paid);
   const awaitingReceipt = status?.status === 'awaiting_receipt';
   const cardDisplay = status?.cardGrouped || groupCard(status?.cardNumber || '');
+  const receiptIsPdf = Boolean(status?.receiptUrl && /\.pdf(\?|$)/i.test(status.receiptUrl));
 
   return (
     <ShopChrome
       bannerTitle={paid ? 'تراکنش موفق' : 'واریز کارت‌به‌کارت'}
-      bannerLead={paid ? 'رسید تأیید شد — سفارش ثبت شد' : 'مبلغ را واریز کن و عکس رسید را همین‌جا آپلود کن'}
+      bannerLead={paid ? 'رسید تأیید شد — سفارش ثبت شد' : 'مبلغ را واریز کن و فایل فیش را همین‌جا آپلود کن'}
     >
       <div className="pepito-container pd-shop-cart">
         <div className="pd-shop-order-ok">
@@ -133,31 +159,60 @@ export function ShopCardPayPage() {
             <>
               <h2>💳 واریز کارت‌به‌کارت</h2>
               <p>مبلغ واریز: <strong>{formatToman(status.totalToman)}</strong></p>
-              <p dir="ltr">شماره کارت: <strong>{cardDisplay}</strong></p>
-              <p>به‌نام: <strong>{status.cardHolder}</strong></p>
+              <div className="pd-shop-card-deposit pd-shop-card-deposit--inline">
+                <p className="pd-shop-card-deposit-title">کارت مقصد</p>
+                <p className="pd-shop-card-deposit-number" dir="ltr">
+                  <strong>{cardDisplay || '—'}</strong>
+                </p>
+                <p className="pd-shop-card-deposit-holder">
+                  به‌نام: <strong>{status.cardHolder || '—'}</strong>
+                </p>
+                {cardDisplay ? (
+                  <div className="pd-shop-card-deposit-actions">
+                    <button type="button" className="pepito-btn button-2" onClick={() => void onCopyCard()}>
+                      {cardCopied ? 'کپی شد' : 'کپی شماره کارت'}
+                    </button>
+                  </div>
+                ) : null}
+              </div>
               <p className="pd-shop-soon">وضعیت: {statusFa(status.status)}{status.transferRef ? ` · پیگیری: ${status.transferRef}` : ''}</p>
               {awaitingReceipt ? (
-                <div style={{ marginTop: 16, textAlign: 'right' }}>
+                <div className="pd-shop-card-receipt-upload">
+                  <p className="pd-shop-card-deposit-hint">
+                    تا وقتی فیش آپلود نشود، سفارش در وضعیت «منتظر رسید» می‌ماند و نهایی نمی‌شود.
+                  </p>
                   <label className="pd-shop-field">
                     <span>شماره پیگیری واریز (اختیاری)</span>
                     <input value={transferRef} onChange={(e) => setTransferRef(e.target.value)} placeholder="کد پیگیری بانک" dir="ltr" />
                   </label>
-                  <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden onChange={(e) => void onUpload(e.target.files?.[0] ?? null)} />
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept={RECEIPT_ACCEPT}
+                    hidden
+                    onChange={(e) => void onUpload(e.target.files?.[0] ?? null)}
+                  />
                   <button type="button" className="pepito-btn button-1" disabled={uploading || !token} onClick={() => fileRef.current?.click()}>
-                    {uploading ? 'در حال ارسال…' : 'آپلود عکس رسید'}
+                    {uploading ? 'در حال ارسال…' : 'آپلود فیش (عکس یا PDF)'}
                   </button>
                   {uploadMsg ? <p className="pd-shop-soon">{uploadMsg}</p> : null}
                 </div>
               ) : status.receiptUrl ? (
                 <p className="pd-shop-soon" style={{ marginTop: 12 }}>
-                  رسید دریافت شد و در صف بررسی ادمین است.<br />
-                  <img src={resolvePublicMediaUrl(status.receiptUrl)} alt="رسید" style={{ maxWidth: 240, marginTop: 8, borderRadius: 8 }} />
+                  فیش دریافت شد و در صف بررسی ادمین است.<br />
+                  {receiptIsPdf ? (
+                    <a href={resolvePublicMediaUrl(status.receiptUrl)} target="_blank" rel="noopener noreferrer">
+                      مشاهده فایل PDF
+                    </a>
+                  ) : (
+                    <img src={resolvePublicMediaUrl(status.receiptUrl)} alt="رسید" style={{ maxWidth: 240, marginTop: 8, borderRadius: 8 }} />
+                  )}
                 </p>
               ) : (
                 <p className="pd-shop-soon" style={{ marginTop: 12 }}>رسید در صف بررسی ادمین است.</p>
               )}
               <a className="pepito-btn button-2" href={status.botDeepLink} target="_blank" rel="noopener noreferrer" style={{ marginTop: 12, display: 'inline-block' }}>
-                ارسال رسید از ربات (اختیاری)
+                ارسال فیش از ربات (اختیاری)
               </a>
             </>
           ) : (<p>در حال بارگذاری…</p>)}

@@ -28,6 +28,17 @@ export async function fetchPublicPlatformConfig(force = false): Promise<PublicPl
       paymentStarsEnabled: data.paymentStarsEnabled !== false,
       maintenanceMode: data.maintenanceMode === true,
       announcements: Array.isArray(data.announcements) ? data.announcements : [],
+      paymentCardConfigured: data.paymentCardConfigured === true,
+      paymentCard:
+        data.paymentCard && typeof data.paymentCard === 'object'
+          ? {
+              cardNumber: String(data.paymentCard.cardNumber || ''),
+              cardMasked: String(data.paymentCard.cardMasked || ''),
+              cardGrouped: String(data.paymentCard.cardGrouped || ''),
+              cardHolder: String(data.paymentCard.cardHolder || ''),
+            }
+          : null,
+      paymentCardError: data.paymentCardError ? String(data.paymentCardError) : undefined,
     };
     cached = { at: Date.now(), config };
     listeners.forEach((fn) => fn(config));

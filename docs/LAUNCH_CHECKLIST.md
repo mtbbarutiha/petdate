@@ -4,7 +4,7 @@ Short human steps only. Code/ops gates for backup, ready-health, and demo-seed s
 
 ## GO (shipped in code)
 
-- Card-to-card **fails closed** if `PAYMENT_CARD_NUMBER` / `PAYMENT_CARD_HOLDER` are missing or are the old hardcoded default.
+- Card-to-card **fails closed** if `PAYMENT_CARD_NUMBER` / `PAYMENT_CARD_HOLDER` are missing or are X-placeholders. Explicit env PANs (including the former hardcoded default) are accepted when both vars are set.
 - Production rejects admin bootstrap password `petdate`.
 - Public `/api/health/candoo` and `/api/health/infra` are **404** without admin auth (SMS balance / infra no longer public).
 - Bot **never** `setWebhook` without an HTTP listener — always polling.

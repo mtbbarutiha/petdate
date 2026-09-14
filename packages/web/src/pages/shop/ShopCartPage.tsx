@@ -1,4 +1,4 @@
-import { type FormEvent, useMemo, useState } from 'react';
+import { type FormEvent, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { COIN_PRICE_TOMAN, STAR_PRICE_TOMAN, walletFromUserFields } from '@petdate/shared';
 import { formatShopCoins, formatShopStars, formatToman } from '../../data/shopCatalog';
@@ -14,10 +14,22 @@ import {
 import { loginPath } from '../../lib/authRedirect';
 import { trackBeginCheckout, trackPurchase } from '../../lib/siteAnalytics';
 import { ShopChrome } from '../../components/shop/ShopChrome';
-import { usePlatformConfig } from '../../hooks/usePlatformConfig';
+import { fetchPublicPlatformConfig, usePlatformConfig } from '../../hooks/usePlatformConfig';
 import { useI18n } from '../../i18n';
 
 type PayMethod = 'coins' | 'wallet_stars' | 'telegram_stars' | 'toman' | 'card';
+
+async function copyText(value: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(value);
+      return true;
+    }
+  } catch {
+    /* fall through */
+  }
+  return false;
+}
 
 export function ShopCartPage() {
   const navigate = useNavigate();
@@ -35,6 +47,12 @@ export function ShopCartPage() {
   const [paidLabel, setPaidLabel] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [cardCopied, setCardCopied] = useState(false);
+
+  // Checkout needs live payment-card destination ASAP (platform hook is LCP-deferred elsewhere).
+  useEffect(() => {
+    void fetchPublicPlatformConfig(true);
+  }, []);
 
   const coinBalance = useMemo(() => {
     if (!user) return 0;
@@ -56,13 +74,20 @@ export function ShopCartPage() {
   const canAffordToman = tomanBalance >= totalToman && totalToman > 0;
   const telegramLinked = Boolean(user?.telegramId);
 
+  const depositCard = platform.paymentCardConfigured ? platform.paymentCard : null;
+  const cardConfigured = Boolean(depositCard?.cardNumber && depositCard?.cardHolder);
+  const cardDisplay =
+    depositCard?.cardGrouped ||
+    (depositCard?.cardNumber || '').replace(/(\d{4})(?=\d)/g, '$1 ').trim();
+
   const payDisabled =
     lines.length === 0 ||
     submitting ||
     (payMethod === 'coins' && !canAffordCoins) ||
     (payMethod === 'wallet_stars' && !canAffordWalletStars) ||
     (payMethod === 'toman' && !canAffordToman) ||
-    (payMethod === 'telegram_stars' && !telegramLinked);
+    (payMethod === 'telegram_stars' && !telegramLinked) ||
+    (payMethod === 'card' && !cardConfigured);
 
   const pay = async () => {
     setError('');
@@ -98,6 +123,10 @@ export function ShopCartPage() {
     }
     if (payMethod === 'telegram_stars' && !telegramLinked) {
       setError('برای پرداخت با Stars تلگرام، حساب وب را به ربات وصل کن (از کیف پول).');
+      return;
+    }
+    if (payMethod === 'card' && !cardConfigured) {
+      setError(platform.paymentCardError || 'شماره کارت واریز پیکربندی نشده.');
       return;
     }
 
@@ -216,6 +245,16 @@ export function ShopCartPage() {
   const onSubmit = (e: FormEvent) => {
     e.preventDefault();
     void pay();
+  };
+
+  const onCopyCard = async () => {
+    const raw = (depositCard?.cardNumber || '').replace(/\D/g, '');
+    if (!raw) return;
+    const ok = await copyText(raw);
+    if (ok) {
+      setCardCopied(true);
+      window.setTimeout(() => setCardCopied(false), 2000);
+    }
   };
 
   return (
@@ -366,7 +405,7 @@ export function ShopCartPage() {
                         }`}
                       </option>
                       {platform.paymentCardEnabled ? (
-                        <option value="card">کارت‌به‌کارت (ریال) — واریز ریالی و ارسال رسید در ربات</option>
+                        <option value="card">کارت‌به‌کارت (ریال) — واریز و آپلود فیش در سایت</option>
                       ) : null}
                       {platform.paymentStarsEnabled ? (
                         <option value="telegram_stars">
@@ -390,7 +429,7 @@ export function ShopCartPage() {
                                 !canAffordToman && lines.length > 0 ? ' — موجودی کافی نیست' : ''
                               }`
                             : payMethod === 'card'
-                              ? 'واریز ریالی و ارسال رسید در ربات'
+                              ? 'مبلغ را به کارت زیر واریز کن؛ بعد از ثبت، فایل فیش را در صفحه بعد آپلود کن'
                               : `صدور اینوویس و پرداخت مستقیم در تلگرام${
                                   !telegramLinked ? ' — اول حساب را به ربات وصل کن' : ''
                                 }`}
@@ -399,6 +438,36 @@ export function ShopCartPage() {
                       <p className="admin-muted">{t('platform.cardOff')}</p>
                     ) : null}
                   </div>
+
+                  {payMethod === 'card' ? (
+                    <div className="pd-shop-card-deposit" role="region" aria-label="اطلاعات کارت واریز">
+                      {cardConfigured && depositCard ? (
+                        <>
+                          <p className="pd-shop-card-deposit-title">کارت مقصد واریز</p>
+                          <p className="pd-shop-card-deposit-number" dir="ltr">
+                            <strong>{cardDisplay}</strong>
+                          </p>
+                          <p className="pd-shop-card-deposit-holder">
+                            به‌نام: <strong>{depositCard.cardHolder}</strong>
+                          </p>
+                          <div className="pd-shop-card-deposit-actions">
+                            <button type="button" className="pepito-btn button-2" onClick={() => void onCopyCard()}>
+                              {cardCopied ? 'کپی شد' : 'کپی شماره کارت'}
+                            </button>
+                          </div>
+                          <p className="pd-shop-card-deposit-hint">
+                            بعد از زدن «پرداخت»، مبلغ را واریز کن و عکس یا PDF فیش را در همان صفحه آپلود کن.
+                            ارسال از ربات اختیاری است.
+                          </p>
+                        </>
+                      ) : (
+                        <p className="pd-shop-form-error">
+                          {platform.paymentCardError ||
+                            'شماره کارت واریز پیکربندی نشده. PAYMENT_CARD_NUMBER و PAYMENT_CARD_HOLDER را در محیط سرور تنظیم کنید.'}
+                        </p>
+                      )}
+                    </div>
+                  ) : null}
 
                   <label>
                     نام گیرنده
@@ -425,12 +494,16 @@ export function ShopCartPage() {
                   {error ? <p className="pd-shop-form-error">{error}</p> : null}
                   <div className="pd-shop-pay-actions">
                     <button type="submit" className="pepito-btn button-1" disabled={payDisabled}>
-                      {submitting ? 'در حال پرداخت…' : 'پرداخت'}
+                      {submitting
+                        ? 'در حال پرداخت…'
+                        : payMethod === 'card'
+                          ? 'ادامه — واریز و آپلود فیش'
+                          : 'پرداخت'}
                     </button>
                   </div>
                   <p className="pd-shop-soon">
-                    سکه، ستاره و تومان پنل از کیف‌پول کسر می‌شوند. کارت‌به‌کارت با آپلود رسید در
-                    همین سایت (یا ربات) تأیید می‌شود. فاکتور Stars هم داخل تلگرام پرداخت می‌شود.
+                    سکه، ستاره و تومان پنل از کیف‌پول کسر می‌شوند. کارت‌به‌کارت با آپلود فیش در
+                    همین سایت تأیید می‌شود (ربات اختیاری است). فاکتور Stars داخل تلگرام پرداخت می‌شود.
                   </p>
                 </form>
               )}

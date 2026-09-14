@@ -88,10 +88,14 @@ check_present S3_ENDPOINT
 check_present S3_ACCESS_KEY
 check_present S3_SECRET_KEY
 
-# Card-to-card destination — never the example / historical hardcoded PAN.
+# Card-to-card destination — must be set; reject X placeholders only.
+# Historical PAN (former code default) is OK when explicitly set in env with holder.
+PAYMENT_CARD_DIGITS="$(printf '%s' "${PAYMENT_CARD_NUMBER:-}" | tr -cd '0-9')"
 if ! is_set "${PAYMENT_CARD_NUMBER:-}" || ! is_set "${PAYMENT_CARD_HOLDER:-}"; then
   status PAYMENT_CARD MISSING
-elif [[ "$PAYMENT_CARD_NUMBER" == "petdate" ]] || [[ "$PAYMENT_CARD_NUMBER" == *"X"* ]] || [[ "$PAYMENT_CARD_NUMBER" == "62198611052407631" ]]; then
+elif [[ "$PAYMENT_CARD_NUMBER" == "petdate" ]] || [[ "$PAYMENT_CARD_NUMBER" == *"X"* ]] || [[ "$PAYMENT_CARD_NUMBER" == *"x"* ]]; then
+  status PAYMENT_CARD DEFAULT-RISK
+elif [[ "${#PAYMENT_CARD_DIGITS}" -lt 16 ]]; then
   status PAYMENT_CARD DEFAULT-RISK
 else
   status PAYMENT_CARD OK

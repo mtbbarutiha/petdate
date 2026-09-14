@@ -12,6 +12,7 @@ import {
   type RuntimeFlagKey,
 } from '@petdate/shared';
 import { adminPlatform } from './admin-platform';
+import { paymentCardPublicInfo } from './services/payment-card';
 
 export const RUNTIME_DISABLED_FA: Record<RuntimeFlagKey, string> = {
   shopEnabled: 'فروشگاه فعلاً غیرفعال است.',
@@ -49,9 +50,20 @@ export function listPublicAnnouncements(): PublicAnnouncement[] {
 }
 
 export function getPublicPlatformConfig(): PublicPlatformConfig {
+  const card = paymentCardPublicInfo();
   return {
     ...getRuntimeFlags(),
     announcements: listPublicAnnouncements(),
+    paymentCardConfigured: card.configured,
+    paymentCard: card.configured
+      ? {
+          cardNumber: card.cardNumber,
+          cardMasked: card.cardMasked,
+          cardGrouped: card.cardGrouped,
+          cardHolder: card.cardHolder,
+        }
+      : null,
+    paymentCardError: card.configured ? undefined : card.error,
   };
 }
 
