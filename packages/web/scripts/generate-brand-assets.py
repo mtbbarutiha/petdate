@@ -17,6 +17,9 @@ Outputs:
   - brand/petdate-og.png, brand/petdate-og.jpg  (FULL mother wordmark)
   - brand/petdate-channel.png, brand/petdate-banner.jpg  (FULL mother wordmark)
   - packages/api/assets/brand/petdate-email-logo.png  (FULL mother wordmark)
+  - logo-assets/telegram/bot-profile-*.jpg   (mark-only, circle-crop safe)
+  - logo-assets/telegram/panel-profile-*.jpg (FULL mother wordmark)
+  - packages/bot/assets/bot-profile.jpg + welcome-logo.jpg  (runtime copies)
 
 PWA / Home Screen policy (Mohammad):
   PWA icons must NOT include logo type/wordmark text — mark/icon only
@@ -35,16 +38,23 @@ from pathlib import Path
 from PIL import Image
 
 ROOT = Path(__file__).resolve().parents[1]  # packages/web
+REPO = ROOT.parent.parent
 PUBLIC = ROOT / "public"
 BRAND = PUBLIC / "brand"
 # لوگو مادر — never point this elsewhere without Mohammad's OK
 LOGO = PUBLIC / "pepito" / "img" / "logo.png"
 API_EMAIL = ROOT.parent / "api" / "assets" / "brand" / "petdate-email-logo.png"
+TELEGRAM_DIR = REPO / "logo-assets" / "telegram"
+BOT_ASSETS = ROOT.parent / "bot" / "assets"
 
 SOFT = (244, 244, 247, 255)
 TRANSPARENT = (0, 0, 0, 0)
 OG_TOP = (252, 240, 248, 255)
 OG_BOTTOM = (244, 244, 247, 255)
+# Soft pink→lavender wash — readable on Telegram's dark/light circular crop
+TG_TOP = (255, 236, 245, 255)
+TG_BOTTOM = (244, 244, 250, 255)
+TELEGRAM_SIZES = (512, 640, 1024)
 
 
 def load_logo() -> Image.Image:
@@ -179,6 +189,65 @@ def make_channel_square(logo: Image.Image, size: int = 1024) -> Image.Image:
     return under
 
 
+def make_telegram_avatar(
+    asset: Image.Image,
+    size: int,
+    *,
+    content_ratio: float,
+) -> Image.Image:
+    """Square JPG-ready avatar with padding so Telegram's circular crop keeps the mark.
+
+    Telegram profile photos are shown as circles; keep content inside ~62–72% of
+    the square so dog/cat ears and wordmark edges are not clipped.
+    """
+    under = vertical_gradient((size, size), TG_TOP, TG_BOTTOM)
+    overlay = fit_on_canvas(
+        asset, (size, size), bg=(0, 0, 0, 0), content_ratio=content_ratio
+    )
+    under.alpha_composite(overlay)
+    return under
+
+
+def save_jpg(im: Image.Image, path: Path, *, quality: int = 92) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    im.convert("RGB").save(path, "JPEG", quality=quality, optimize=True, progressive=True)
+
+
+def write_telegram_assets(logo: Image.Image, mark: Image.Image) -> list[Path]:
+    """Bot = mark-only; panel/channel = full mother wordmark. Also sync bot runtime JPGs."""
+    TELEGRAM_DIR.mkdir(parents=True, exist_ok=True)
+    BOT_ASSETS.mkdir(parents=True, exist_ok=True)
+    written: list[Path] = []
+
+    # BotFather / @Petdatebot avatar — mark only (no «Pet Date» type)
+    bot_by_size: dict[int, Path] = {}
+    for size in TELEGRAM_SIZES:
+        # ~0.68 keeps dog/cat ears inside the circular crop with comfortable padding
+        avatar = make_telegram_avatar(mark, size, content_ratio=0.68)
+        dest = TELEGRAM_DIR / f"bot-profile-{size}.jpg"
+        save_jpg(avatar, dest)
+        bot_by_size[size] = dest
+        written.append(dest)
+
+    # Panel / channel / @petdating — full horizontal mother logo
+    for size in TELEGRAM_SIZES:
+        # Wide wordmark uses most of the horizontal diameter; vertical stays padded
+        avatar = make_telegram_avatar(logo, size, content_ratio=0.82)
+        dest = TELEGRAM_DIR / f"panel-profile-{size}.jpg"
+        save_jpg(avatar, dest)
+        written.append(dest)
+
+    # Runtime copies used by packages/bot (welcome photo + optional local profile)
+    bot_640 = bot_by_size[640]
+    bot_1024 = bot_by_size[1024]
+    runtime_bot = BOT_ASSETS / "bot-profile.jpg"
+    runtime_welcome = BOT_ASSETS / "welcome-logo.jpg"
+    runtime_bot.write_bytes(bot_640.read_bytes())
+    runtime_welcome.write_bytes(bot_1024.read_bytes())
+    written.extend([runtime_bot, runtime_welcome])
+    return written
+
+
 def write_favicon_svg(mark: Image.Image, dest: Path) -> None:
     buf = io.BytesIO()
     side = max(mark.size)
@@ -256,8 +325,9 @@ def main() -> int:
     save_png(make_channel_square(logo, 1024), BRAND / "petdate-channel.png")
     og.convert("RGB").save(BRAND / "petdate-banner.jpg", "JPEG", quality=90, optimize=True)
 
-    repo = ROOT.parent.parent
-    print("Wrote (PWA/favicon = mark-only; OG/email = full mother):")
+    telegram_paths = write_telegram_assets(logo, mark)
+
+    print("Wrote (PWA/favicon = mark-only; OG/email/panel = full mother; bot TG = mark-only):")
     for p in [
         PUBLIC / "favicon.ico",
         PUBLIC / "favicon.png",
@@ -273,8 +343,9 @@ def main() -> int:
         BRAND / "petdate-channel.png",
         BRAND / "petdate-banner.jpg",
         API_EMAIL,
+        *telegram_paths,
     ]:
-        rel = p.relative_to(repo) if p.is_relative_to(repo) else p
+        rel = p.relative_to(REPO) if p.is_relative_to(REPO) else p
         print(f"  {rel} ({p.stat().st_size} bytes)")
     return 0
 
