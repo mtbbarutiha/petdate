@@ -59,6 +59,13 @@ export function LandingChrome({
   const bannerPlacement = pathname.startsWith('/shop') ? 'shop' : appNav ? 'app' : 'landing';
   const resolvedBannerTitle = bannerTitle ?? BRAND.displayName;
   const resolvedBannerLead = bannerLead ?? (dir === 'rtl' ? BRAND.taglineFa : BRAND.taglineEn);
+  /** Avoid «PET DATE» + «Pet Date» stacked in the continuity banner. */
+  const bannerTitleIsBrand = (() => {
+    const t = resolvedBannerTitle.trim().toLowerCase().replace(/[\s._-]+/g, '');
+    const aliases = [BRAND.displayName, BRAND.displayNameFa, 'Pet Date', 'PetDate', 'پت دیت']
+      .map((s) => s.trim().toLowerCase().replace(/[\s._-]+/g, ''));
+    return aliases.includes(t);
+  })();
   // Logo is home. Only show an explicit action when the caller passes one
   // (auth back-link, magazine). Do not pass login — NavUserCluster already
   // has pepito-nav-login-icon. Avoid a default خانه pill stacked on
@@ -118,7 +125,7 @@ export function LandingChrome({
               </span>
               {BRAND.displayName}
             </p>
-            <h1>{resolvedBannerTitle}</h1>
+            {!bannerTitleIsBrand ? <h1>{resolvedBannerTitle}</h1> : null}
             {resolvedBannerLead ? <p>{resolvedBannerLead}</p> : null}
           </div>
         </section>
