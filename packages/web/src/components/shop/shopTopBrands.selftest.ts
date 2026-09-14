@@ -55,7 +55,10 @@ assert.match(carousel, /scrollBy/, 'carousel scrolls horizontally');
 
 assert.match(css, /\.pd-shop-top-brands/, 'carousel styles present');
 assert.match(css, /\.pd-shop-top-brand-logo/, 'logo cell styles present');
+assert.match(css, /\.pd-shop-top-brand-tile/, 'logo tiles for dark/light contrast');
 assert.match(dark, /pd-shop-top-brands/, 'dark mode styles for top brands');
+assert.match(dark, /pd-shop-top-brand-tile/, 'dark mode light logo tiles');
+assert.match(carousel, /pd-shop-top-brand-tile/, 'carousel renders logo tiles');
 
 assert.ok(existsSync(adminPage), 'admin brands page exists');
 assert.match(adminRoutes, /shop\/brands/, 'admin brands route registered');

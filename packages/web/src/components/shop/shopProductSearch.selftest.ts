@@ -43,13 +43,15 @@ const ci = readFileSync(join(here, '../../../../../scripts/ci-selftest.sh'), 'ut
 
 assert.match(chrome, /ShopProductSearch/, 'ShopChrome mounts primary product search');
 assert.match(chrome, /pd-shop-search-bar/, 'search sits in sticky chrome bar under nav');
-assert.match(search, /isShopSearchHotkey/, 'Ctrl\\/Cmd+K focuses search');
+assert.match(search, /isShopSearchHotkey/, 'Ctrl\\/Cmd+K focuses search (no visible badge)');
+assert.doesNotMatch(search, /pd-shop-search-kbd/, 'Ctrl+K badge removed from search UI');
+assert.doesNotMatch(search, /Ctrl\+K/, 'no Ctrl+K label in search component');
 assert.match(search, /shopSearchResultsPath/, 'submit navigates to listing ?q=');
 assert.match(search, /filterProducts/, 'dropdown filters live catalog');
 assert.match(search, /data-testid="shop-product-search"/, 'search test id');
-assert.match(search, /pd-shop-search-kbd/, 'Ctrl+K chip present for desktop');
 assert.match(css, /\.pd-shop-search-pill/, 'pill search styles');
-assert.match(css, /\(pointer:\s*coarse\)/, 'hides kbd chip on touch');
+assert.match(css, /\.pd-shop-search-bar[\s\S]*position:\s*sticky/, 'search bar sticky');
+assert.match(css, /@media \(max-width: 720px\), \(pointer: coarse\)[\s\S]*\.pd-shop-search-bar/, 'mobile sticky search rules');
 assert.match(dark, /pd-shop-search-pill/, 'dark mode search styles');
 assert.match(fa, /search:\s*"جستجو"/, 'FA shop.search');
 assert.match(en, /search:\s*"Search"/, 'EN shop.search');
