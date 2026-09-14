@@ -263,6 +263,7 @@ export const SHOP_BRANDS: ShopBrand[] = [
   { id: 'generic', labelFa: 'سایر', labelEn: 'Other', sortOrder: 900, active: true },
 ];
 
+/** Live shop catalog — 3 Royal Canin pilots + 12 Batch 2 + 14 Batch 3 + 10 multi wave 1 + 10 multi wave 2 + 10 multi wave 3 + 10 multi wave 4 + 10 multi wave 5 SKUs */
 export const SHOP_PRODUCTS: ShopProduct[] = [
   {
     id: 'p221',
