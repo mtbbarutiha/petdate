@@ -51,6 +51,9 @@ assert.ok(dogIdx > catIdx, 'dog rail after cat rail');
 assert.match(rail, /مشاهده همه/, 'view-all link');
 assert.match(rail, /onPillChange/, 'pill filters');
 assert.match(rail, /pill\.id !== 'all'/, 'pill toggle deselects to all');
+assert.match(rail, /useTouchSafePillActivate/, 'pills activate on touch pointerup');
+assert.match(css, /\.pd-shop-home-rail-frame[\s\S]{0,160}isolation:\s*isolate/, 'rail frame stacking isolation');
+assert.match(css, /\.pd-shop-rail-btn[\s\S]{0,360}z-index:\s*6/, 'chevron z-index above track');
 
 assert.match(category, /FilterAccordion/, 'DigiKala accordion filters');
 assert.match(category, /SHOP_PARAM_FILTER_DIMS/, 'catalog-backed param dims');

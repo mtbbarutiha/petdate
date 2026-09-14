@@ -41,8 +41,45 @@ assert.match(hook, /pointerdown/, 'mouse drag starts on pointerdown');
 assert.match(hook, /scrollLeft = startScroll - dx/, 'mouse drag scrolls the track');
 assert.match(hook, /pointerType === 'touch'/, 'touch keeps native pan; mouse/pen drag');
 assert.match(hook, /is-dragging/, 'dragging state class for grab cursor');
+assert.match(hook, /DRAG_THRESHOLD_PX/, 'drag waits for movement threshold before capture');
+assert.match(hook, /setPointerCapture/, 'pointer capture only after drag threshold');
+assert.match(
+  hook,
+  /pd-shop-rail-btn[\s\S]{0,80}pd-shop-home-rail-pill/,
+  'drag ignores rail chrome / pill targets'
+);
 assert.match(css, /\.pd-shop-home-rail-track[\s\S]{0,220}cursor:\s*grab/, 'home rail shows grab cursor');
 assert.match(css, /\.is-dragging[\s\S]{0,80}cursor:\s*grabbing/, 'dragging shows grabbing cursor');
+assert.match(
+  css,
+  /\.pd-shop-home-rail-frame[\s\S]{0,160}isolation:\s*isolate/,
+  'home rail frame isolates stacking so L/R beat the overflow track'
+);
+assert.match(
+  css,
+  /\.pd-shop-home-rail-track[\s\S]{0,360}z-index:\s*0/,
+  'overflow track stays at z-index 0 under chevrons'
+);
+assert.match(
+  css,
+  /\.pd-shop-rail-btn[\s\S]{0,360}z-index:\s*6/,
+  'rail chevrons sit above track compositing layer'
+);
+assert.match(
+  css,
+  /\.pd-shop-rail-btn\s+svg[\s\S]{0,80}pointer-events:\s*none/,
+  'chevron svg does not steal hits from the button'
+);
+assert.match(
+  css,
+  /\.pd-shop-home-rail-pill[\s\S]{0,520}touch-action:\s*manipulation/,
+  'filter pills accept touch taps'
+);
+assert.match(
+  css,
+  /\.pd-shop-home-rail-pills[\s\S]{0,220}z-index:\s*2/,
+  'pill row stacks above any overflow bleed'
+);
 
 assert.match(
   css,
@@ -70,6 +107,10 @@ assert.match(
   /\.pd-shop-home-rail-track[\s\S]{0,160}overflow-x:\s*auto/,
   'home rails keep native swipe scroll'
 );
+
+assert.match(rail, /useTouchSafePillActivate/, 'home rail pills use touch-safe activate');
+assert.match(rail, /onPointerUp/, 'pills handle pointerup for touch');
+assert.match(rail, /onPillChange/, 'pill filters still wire onActivate → onPillChange');
 
 for (const [src, name] of [
   [home, 'categories'],
