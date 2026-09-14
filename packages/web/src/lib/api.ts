@@ -160,10 +160,14 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       code?: string;
       requiresResendConfirm?: boolean;
       status?: number;
+      retryAfterSec?: number;
     };
     err.code = parsed.code;
     err.requiresResendConfirm = Boolean(parsed.requiresResendConfirm);
     err.status = res.status;
+    if (typeof parsed.retryAfterSec === 'number') {
+      err.retryAfterSec = parsed.retryAfterSec;
+    }
     throw err;
   }
   return parsed.data;

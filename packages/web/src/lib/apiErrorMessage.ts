@@ -73,7 +73,16 @@ export function parseApiJsonBody<T>(
   status: number,
   body: string,
   lang: Lang = 'fa'
-): { ok: true; data: T } | { ok: false; message: string; code?: string; requiresResendConfirm?: boolean } {
+): {
+  ok: true;
+  data: T;
+} | {
+  ok: false;
+  message: string;
+  code?: string;
+  requiresResendConfirm?: boolean;
+  retryAfterSec?: number;
+} {
   const trimmed = (body || '').trim();
   if (!trimmed) {
     if (status >= 200 && status < 300) {
@@ -90,6 +99,7 @@ export function parseApiJsonBody<T>(
       message?: string;
       code?: string;
       requiresResendConfirm?: boolean;
+      retryAfterSec?: number;
     };
     if (status >= 200 && status < 300) {
       return { ok: true, data };
@@ -98,11 +108,16 @@ export function parseApiJsonBody<T>(
       (typeof data?.error === 'string' && data.error.trim()) ||
       (typeof data?.message === 'string' && data.message.trim()) ||
       apiStatusFallbackMessage(status, lang);
+    const retryAfterSec =
+      typeof data?.retryAfterSec === 'number' && Number.isFinite(data.retryAfterSec)
+        ? Math.max(1, Math.ceil(data.retryAfterSec))
+        : undefined;
     return {
       ok: false,
       message: msg,
       code: data?.code,
       requiresResendConfirm: data?.requiresResendConfirm,
+      ...(retryAfterSec != null ? { retryAfterSec } : {}),
     };
   } catch {
     return { ok: false, message: apiStatusFallbackMessage(status, lang) };

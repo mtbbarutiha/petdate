@@ -53,6 +53,17 @@ function googleErrorCopy(code: string | null): string {
   return '';
 }
 
+function readRetryAfterSec(err: unknown): number | null {
+  if (err && typeof err === 'object' && 'retryAfterSec' in err) {
+    const n = Number((err as { retryAfterSec?: unknown }).retryAfterSec);
+    if (Number.isFinite(n) && n > 0) return Math.max(1, Math.ceil(n));
+  }
+  const msg = err instanceof Error ? err.message : String(err ?? '');
+  const m = msg.match(/(\d+)\s*ثانیه/);
+  if (m) return Math.max(1, Number(m[1]));
+  return null;
+}
+
 export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -70,8 +81,9 @@ export function LoginPage() {
   const [devHint, setDevHint] = useState('');
   const [waiting, setWaiting] = useState<WaitingState | null>(null);
   const [tgBusy, setTgBusy] = useState(false);
-  /** null = loading providers; only show Google CTA when true */
+  /** null = loading providers */
   const [googleReady, setGoogleReady] = useState<boolean | null>(null);
+  const [sendIn, setSendIn] = useState(0);
   const telegramLoginUrl = telegramWebLoginDeepLink(next);
   const usePendingFlow = prefersSameBrowserTelegramLogin();
   const finishingRef = useRef(false);
@@ -90,6 +102,12 @@ export function LoginPage() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (sendIn <= 0) return;
+    const t = window.setTimeout(() => setSendIn((s) => Math.max(0, s - 1)), 1000);
+    return () => window.clearTimeout(t);
+  }, [sendIn]);
 
   useEffect(() => {
     if (!isLoggedIn) return;
@@ -155,6 +173,7 @@ export function LoginPage() {
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
+    if (sendIn > 0) return;
     setError('');
     setDevHint('');
     setBusy(true);
@@ -167,11 +186,19 @@ export function LoginPage() {
       });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'ارسال کد ناموفق بود';
+      const retry = readRetryAfterSec(err);
+      if (retry) setSendIn(retry);
       setError(msg);
       toastError(msg);
     } finally {
       setBusy(false);
     }
+  }
+
+  function onGoogleClick(e: MouseEvent) {
+    if (googleReady === true) return;
+    e.preventDefault();
+    setError('ورود با گوگل (جیمیل) روی این سرور هنوز فعال نشده — کلید OAuth لازم است.');
   }
 
   async function onTelegramLogin(e: MouseEvent) {
@@ -236,10 +263,8 @@ export function LoginPage() {
     );
   }
 
-  const lead =
-    googleReady === true
-      ? 'با تلگرام، گوگل یا موبایل وارد شو — یک حساب برای وب و ربات.'
-      : 'با تلگرام یا موبایل وارد شو — یک حساب برای وب و ربات.';
+  const lead = 'با تلگرام، گوگل یا موبایل وارد شو — یک حساب برای وب و ربات.';
+  const googleOn = googleReady === true;
 
   return (
     <AuthShell
@@ -268,14 +293,19 @@ export function LoginPage() {
             {tgBusy ? 'در حال آماده‌سازی…' : 'ورود با تلگرام'}
           </a>
 
-          {googleReady === true ? (
-            <a
-              className="auth-google-cta auth-login-method auth-login-method--google"
-              href={googleHref}
-            >
-              <GoogleMark />
-              ورود با گوگل
-            </a>
+          <a
+            className={`auth-google-cta auth-login-method auth-login-method--google${
+              googleOn ? '' : ' is-off'
+            }`}
+            href={googleOn ? googleHref : '#'}
+            aria-disabled={!googleOn}
+            onClick={onGoogleClick}
+          >
+            <GoogleMark />
+            ورود با گوگل (جیمیل)
+          </a>
+          {googleReady === false ? (
+            <p className="auth-provider-hint">ورود گوگل روی این سرور هنوز فعال نشده.</p>
           ) : null}
         </div>
 
@@ -302,11 +332,24 @@ export function LoginPage() {
             <button
               type="submit"
               className="pepito-btn button-1 auth-submit auth-login-otp-btn"
-              disabled={busy || !target.trim()}
+              disabled={busy || !target.trim() || sendIn > 0}
             >
-              {busy ? '…' : 'دریافت کد'}
+              {busy
+                ? '…'
+                : sendIn > 0
+                  ? `${sendIn.toLocaleString('fa-IR')}ث`
+                  : 'دریافت کد'}
             </button>
           </div>
+          {sendIn > 0 ? (
+            <p className="auth-otp-countdown" role="status" aria-live="polite">
+              ارسال دوباره تا{' '}
+              <strong className="auth-otp-countdown-num">
+                {sendIn.toLocaleString('fa-IR')}
+              </strong>{' '}
+              ثانیه
+            </p>
+          ) : null}
           {error ? <p className="auth-error">{error}</p> : null}
           {devHint ? <p className="auth-dev">{devHint}</p> : null}
         </form>

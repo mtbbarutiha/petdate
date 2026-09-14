@@ -67,6 +67,17 @@ export function OtpPage() {
   const [resendIn, setResendIn] = useState(60);
   const tgFinishingRef = useRef(false);
 
+  function readRetryAfterSec(err: unknown, fallback = 60): number {
+    if (err && typeof err === 'object' && 'retryAfterSec' in err) {
+      const n = Number((err as { retryAfterSec?: unknown }).retryAfterSec);
+      if (Number.isFinite(n) && n > 0) return Math.max(1, Math.ceil(n));
+    }
+    const msg = err instanceof Error ? err.message : String(err ?? '');
+    const m = msg.match(/(\d+)\s*ثانیه/);
+    if (m) return Math.max(1, Number(m[1]));
+    return Math.max(1, fallback);
+  }
+
   useEffect(() => {
     setResendIn(60);
   }, [pendingChannel, pendingTarget]);
@@ -301,8 +312,7 @@ export function OtpPage() {
       toastSuccess('کد دوباره ارسال شد');
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'ارسال مجدد ناموفق بود';
-      const m = msg.match(/(\d+)\s*ثانیه/);
-      if (m) setResendIn(Math.max(1, Number(m[1])));
+      setResendIn(readRetryAfterSec(err, 60));
       setError(msg); toastError(msg);
     } finally {
       setBusy(false);
@@ -377,6 +387,15 @@ export function OtpPage() {
         </button>
       </form>
       <div className="auth-secondary-actions">
+        {resendIn > 0 ? (
+          <p className="auth-otp-countdown" role="status" aria-live="polite">
+            ارسال دوباره تا{' '}
+            <strong className="auth-otp-countdown-num">
+              {resendIn.toLocaleString('fa-IR')}
+            </strong>{' '}
+            ثانیه
+          </p>
+        ) : null}
         <button
           type="button"
           className="auth-link-btn"
@@ -384,7 +403,7 @@ export function OtpPage() {
           disabled={busy || resendIn > 0}
         >
           {resendIn > 0
-            ? `ارسال دوباره تا ${resendIn.toLocaleString('fa-IR')} ثانیه`
+            ? `صبر کن — ${resendIn.toLocaleString('fa-IR')}ث`
             : 'ارسال دوباره کد'}
         </button>
         <Link to={`/auth/login?next=${encodeURIComponent(next)}`}>تغییر شماره</Link>
