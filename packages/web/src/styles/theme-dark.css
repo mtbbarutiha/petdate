@@ -3736,14 +3736,19 @@ html[data-theme='dark'] .pepito-games-form {
   background: color-mix(in srgb, var(--surface, #1e293b) 90%, #14b8a6 10%);
   border-color: color-mix(in srgb, var(--border, #334155) 90%, transparent);
 }
-html[data-theme='dark'] .pepito-games-item {
+html[data-theme='dark'] .pepito-games-card,
+html[data-theme='dark'] .pepito-games-skeleton-card {
   background: var(--surface, #1e293b);
   border-color: var(--border, #334155);
+  box-shadow: none;
+}
+html[data-theme='dark'] .pepito-games-card-media .pepito-games-status {
+  background: color-mix(in srgb, var(--surface, #1e293b) 88%, transparent);
 }
 html[data-theme='dark'] .pepito-games-lead,
 html[data-theme='dark'] .pepito-games-type,
 html[data-theme='dark'] .pepito-games-meta li,
-html[data-theme='dark'] .pepito-games-item-note {
+html[data-theme='dark'] .pepito-games-card-note {
   color: var(--text-secondary, #94a3b8);
 }
 

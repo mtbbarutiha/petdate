@@ -38,6 +38,15 @@ assert.match(gamesPage, /EVENT_GAME_TYPES|pet_dating/, 'pet event types in form'
 assert.match(gamesPage, /IRAN_PROVINCES/, 'province selector');
 assert.match(gamesPage, /joinFeeCoins|fieldJoinFee/, 'join fee field');
 assert.match(gamesPage, /fieldServices|services/, 'services field');
+assert.match(gamesPage, /pepito-games-grid/, 'events list uses card grid');
+assert.match(gamesPage, /pepito-games-card/, 'each event is a card');
+assert.match(gamesPage, /pepito-games-card-cover/, 'card has large cover image');
 assert.match(api, /uploadEventPhoto/, 'uploadEventPhoto helper');
+
+const gamesCss = readFileSync(join(webSrc, 'styles/pepito.css'), 'utf8');
+assert.match(gamesCss, /\.pepito-games-grid/, 'grid styles present');
+assert.match(gamesCss, /\.pepito-games-card-media/, 'card media styles present');
+assert.match(gamesCss, /aspect-ratio:\s*16\s*\/\s*9/, 'cover uses 16:9 aspect ratio');
+assert.match(gamesCss, /min-height:\s*180px/, 'cover min-height generous on mobile');
 
 console.log('listGames.selftest: ok');

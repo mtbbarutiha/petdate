@@ -72,6 +72,8 @@ async function main() {
   for (const def of SAMPLE_PET_EVENTS) {
     const photoPath = path.join(repoRoot, 'packages/web/public', def.photo.replace(/^\//, ''));
     assert.ok(fs.existsSync(photoPath), `stock photo exists: ${def.photo}`);
+    const st = fs.statSync(photoPath);
+    assert.ok(st.size > 40_000, `${def.photo} should be a real cover (got ${st.size} bytes)`);
   }
 
   // Soft-deleted host + garbage volleyball title (matches live junk pattern).
