@@ -154,6 +154,8 @@ DEPLOY_SCOPE=all ./scripts/deploy-vps.sh root@185.110.189.218
 | Footer light | `packages/web/public/pepito/img/logo-light.png` |
 | PWA / favicon / apple-touch / brand marks | `packages/web/scripts/generate-brand-assets.py` — **mark-only** (pink dog+cat, no «Pet Date» type) |
 | OG / channel / email | same script — **full** mother wordmark |
+| Telegram bot avatar (`logo-assets/telegram/bot-profile-*.jpg`) | same script — **mark-only** (circle-crop safe); copy → `packages/bot/assets/bot-profile.jpg` |
+| Telegram panel/channel (`logo-assets/telegram/panel-profile-*.jpg`) | same script — **full** mother wordmark; upload manually in Telegram |
 
 **Rule:** Site header / SiteLogo / `logo.png` / `logo-light` keep full لوگو مادر with type. PWA Home Screen / favicon / apple-touch use the **mark-only** crop (no wordmark text) extracted from mother. Regenerate with:
 
