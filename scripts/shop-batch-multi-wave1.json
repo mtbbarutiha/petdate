@@ -1,0 +1,129 @@
+{
+  "batch": "multi-1",
+  "wave": 1,
+  "waveCount": 5,
+  "pricingRule": "zero-margin",
+  "cacheBust": "batch-multi-w1-v1",
+  "products": [
+    {
+      "proposedId": "p250",
+      "slug": "cat-litter-mr-cat-cat-litter-10-l-carbon",
+      "title": "خاک گربه مستر کت کربن‌دار ۱۰ لیتری",
+      "titleEn": "",
+      "brandId": "mr-cat",
+      "categorySlug": "cat-litter",
+      "petTypes": ["cat"],
+      "priceToman": 502000,
+      "weightLabel": "کربن",
+      "weightKind": "model"
+    },
+    {
+      "proposedId": "p251",
+      "slug": "cat-litter-mr-cat-baby-powder-scented-cat-litter-10l-10-kg",
+      "title": "خاک گربه مستر کت مدل پودر بچه ۱۰ لیتری",
+      "titleEn": "",
+      "brandId": "mr-cat",
+      "categorySlug": "cat-litter",
+      "petTypes": ["cat"],
+      "priceToman": 449000,
+      "weightLabel": "10 کیلوگرم",
+      "weightKind": "weight"
+    },
+    {
+      "proposedId": "p252",
+      "slug": "cat-litter-meocat-activated-carbon-cat-litter-economy",
+      "title": "خاک گربه کربن فعال مئوکت (اقتصادی)",
+      "titleEn": "",
+      "brandId": "meocat",
+      "categorySlug": "cat-litter",
+      "petTypes": ["cat"],
+      "priceToman": 424000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p253",
+      "slug": "cat-litter-mr-cat-oxygen-cat-litter-10-l-10-kg",
+      "title": "خاک گربه مستر کت مدل اکسیژن ۱۰ لیتری",
+      "titleEn": "",
+      "brandId": "mr-cat",
+      "categorySlug": "cat-litter",
+      "petTypes": ["cat"],
+      "priceToman": 414000,
+      "weightLabel": "10 کیلوگرم",
+      "weightKind": "weight"
+    },
+    {
+      "proposedId": "p254",
+      "slug": "cat-litter-meocat-super-clump-cat-litter-economy",
+      "title": "خاک گربه سوپرکلامپ مئوکت (اقتصادی)",
+      "titleEn": "",
+      "brandId": "meocat",
+      "categorySlug": "cat-litter",
+      "petTypes": ["cat"],
+      "priceToman": 369000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p255",
+      "slug": "cat-litter-mr-cat-kitten-cat-litter-7l-7-kg",
+      "title": "خاک بچه‌گربه مستر کت ۷ لیتری",
+      "titleEn": "",
+      "brandId": "mr-cat",
+      "categorySlug": "cat-litter",
+      "petTypes": ["cat"],
+      "priceToman": 229000,
+      "weightLabel": "7 کیلوگرم",
+      "weightKind": "weight"
+    },
+    {
+      "proposedId": "p256",
+      "slug": "dog-treats-afp-chill-out-ice-bone",
+      "title": "استخوان یخی خنک‌کننده AFP",
+      "titleEn": "",
+      "brandId": "afp",
+      "categorySlug": "dog-treats",
+      "petTypes": ["dog"],
+      "priceToman": 1790000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p257",
+      "slug": "dog-treats-dr-clauders-pork-filet-strips-80-g",
+      "title": "تشویقی سگ دکتر کلادرز فیله استریپس خوک ۸۰ گرم",
+      "titleEn": "",
+      "brandId": "dr-clauders",
+      "categorySlug": "dog-treats",
+      "petTypes": ["dog"],
+      "priceToman": 760000,
+      "weightLabel": "80 گرم",
+      "weightKind": "weight"
+    },
+    {
+      "proposedId": "p258",
+      "slug": "dog-treats-rabbit-fillet-dr-clauders-80-g",
+      "title": "تشویقی سگ دکتر کلادرز فیله خرگوش ۸۰ گرم",
+      "titleEn": "",
+      "brandId": "dr-clauders",
+      "categorySlug": "dog-treats",
+      "petTypes": ["dog"],
+      "priceToman": 760000,
+      "weightLabel": "80 گرم",
+      "weightKind": "weight"
+    },
+    {
+      "proposedId": "p259",
+      "slug": "dog-treats-wanpy-toothbrush-chews-100g",
+      "title": "تشویقی سگ ونپی مدل مسواک طعم مرغ ۱۰۰ گرم",
+      "titleEn": "",
+      "brandId": "wanpy",
+      "categorySlug": "dog-treats",
+      "petTypes": ["dog"],
+      "priceToman": 660000,
+      "weightLabel": "100گرم",
+      "weightKind": "weight"
+    }
+  ]
+}

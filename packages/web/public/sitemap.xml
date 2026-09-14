@@ -73,7 +73,19 @@
     <priority>0.75</priority>
   </url>
   <url>
+    <loc>https://petdate.ir/shop/c/dog-treats</loc>
+    <lastmod>2026-09-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
     <loc>https://petdate.ir/shop/c/cat-food</loc>
+    <lastmod>2026-09-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://petdate.ir/shop/c/cat-litter</loc>
     <lastmod>2026-09-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
@@ -248,6 +260,66 @@
   </url>
   <url>
     <loc>https://petdate.ir/shop/product/dog-food-royal-canin-hypoallergenic-2kg</loc>
+    <lastmod>2026-09-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://petdate.ir/shop/product/cat-litter-mr-cat-cat-litter-10-l-carbon</loc>
+    <lastmod>2026-09-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://petdate.ir/shop/product/cat-litter-mr-cat-baby-powder-scented-cat-litter-10l-10-kg</loc>
+    <lastmod>2026-09-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://petdate.ir/shop/product/cat-litter-meocat-activated-carbon-cat-litter-economy</loc>
+    <lastmod>2026-09-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://petdate.ir/shop/product/cat-litter-mr-cat-oxygen-cat-litter-10-l-10-kg</loc>
+    <lastmod>2026-09-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://petdate.ir/shop/product/cat-litter-meocat-super-clump-cat-litter-economy</loc>
+    <lastmod>2026-09-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://petdate.ir/shop/product/cat-litter-mr-cat-kitten-cat-litter-7l-7-kg</loc>
+    <lastmod>2026-09-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://petdate.ir/shop/product/dog-treats-afp-chill-out-ice-bone</loc>
+    <lastmod>2026-09-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://petdate.ir/shop/product/dog-treats-dr-clauders-pork-filet-strips-80-g</loc>
+    <lastmod>2026-09-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://petdate.ir/shop/product/dog-treats-rabbit-fillet-dr-clauders-80-g</loc>
+    <lastmod>2026-09-13</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://petdate.ir/shop/product/dog-treats-wanpy-toothbrush-chews-100g</loc>
     <lastmod>2026-09-13</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.65</priority>

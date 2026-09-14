@@ -67,4 +67,13 @@ assert(
   xml.includes('/shop/product/cat-food-royal-canin-sensible-2kg'),
   'batch 3 Sensible stays in sitemap'
 );
+assert(
+  xml.includes('/shop/product/cat-litter-mr-cat-cat-litter-10-l-carbon'),
+  'batch-multi wave 1 carbon litter stays in sitemap'
+);
+assert(
+  map.includes('/shop/dog-treats-wanpy-toothbrush-chews-100g '),
+  'batch-multi wave 1 Wanpy slug aliases 301 to /shop/product/:slug'
+);
+assert(!xml.includes('/shop/product/dog-treats-wanpy-chicken-jerky-chips-100g'), 'later waves stay out of sitemap');
 console.log('sitemap.selftest: ok');

@@ -1,11 +1,12 @@
 /**
  * PetDate shop catalog — Pepito imagery, prices in تومان (wallet primary currency).
- * Live catalog is exactly 29 SKUs: p221–p223 (pilots) + p224–p235 (Batch 2) + p236–p249 (Batch 3).
+ * Live catalog is exactly 39 SKUs: p221–p223 (pilots) + p224–p235 (Batch 2) + p236–p249 (Batch 3) + p250–p259 (multi wave 1).
  * Demo p1–p220 were removed so they cannot reappear on deploy.
  */
 
 import { SHOP_BATCH2_PRODUCTS } from './shopBatch2Products';
 import { SHOP_BATCH3_PRODUCTS } from './shopBatch3Products';
+import { SHOP_BATCH_MULTI_PRODUCTS } from './shopBatchMultiProducts';
 
 const P = '/pepito/uploads';
 
@@ -124,9 +125,14 @@ export const SHOP_BRANDS: ShopBrand[] = [
   { id: 'mpets', labelFa: 'ام‌پتس', labelEn: 'MPets' },
   { id: 'hagen', labelFa: 'هاگن', labelEn: 'Hagen' },
   { id: 'petdate', labelFa: 'پت‌دیت', labelEn: 'PetDate' },
+  { id: 'mr-cat', labelFa: 'مستر کت', labelEn: 'MR.CAT' },
+  { id: 'meocat', labelFa: 'مئوکت', labelEn: 'Meocat' },
+  { id: 'afp', labelFa: 'AFP', labelEn: 'AFP' },
+  { id: 'dr-clauders', labelFa: 'دکتر کلادرز', labelEn: "Dr.Clauder's" },
+  { id: 'wanpy', labelFa: 'ونپی', labelEn: 'Wanpy' },
 ];
 
-/** Live shop catalog — 3 Royal Canin pilots + 12 Batch 2 + 14 Batch 3 SKUs */
+/** Live shop catalog — 3 Royal Canin pilots + 12 Batch 2 + 14 Batch 3 + 10 Batch-multi wave 1 SKUs */
 export const SHOP_PRODUCTS: ShopProduct[] = [
   {
     id: 'p221',
@@ -241,6 +247,7 @@ export const SHOP_PRODUCTS: ShopProduct[] = [
   },
   ...SHOP_BATCH2_PRODUCTS,
   ...SHOP_BATCH3_PRODUCTS,
+  ...SHOP_BATCH_MULTI_PRODUCTS,
 ];
 
 export function formatToman(amount: number): string {

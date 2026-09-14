@@ -87,6 +87,23 @@ for (const [id, slug, price] of batch3) {
 }
 assert.ok(getProduct('cat-food-josera-marinesse-2kg'), 'Josera Marinesse is in catalog');
 
+const batchMulti = [
+  ['p250', 'cat-litter-mr-cat-cat-litter-10-l-carbon', 502_000],
+  ['p259', 'dog-treats-wanpy-toothbrush-chews-100g', 660_000],
+] as const;
+for (const [id, slug, price] of batchMulti) {
+  const item = getProduct(slug) ?? getProduct(id);
+  assert.ok(item, `${id} exists`);
+  assert.equal(item.priceToman, price, `${id} MANIFEST price`);
+  const shots = productGallery(item);
+  assert.equal(shots.length, 3, `${id} gallery has 3 unique angles`);
+  assert.ok(shots[0].includes(`${slug}.jpg?v=batch-multi-w1-v1`), `${id} front is batch-multi-w1-v1`);
+  assert.ok(shots[1].includes(`${slug}-2.jpg?v=batch-multi-w1-v1`), `${id} angle 2 is batch-multi-w1-v1`);
+  assert.ok(shots[2].includes(`${slug}-3.jpg?v=batch-multi-w1-v1`), `${id} angle 3 is batch-multi-w1-v1`);
+  assert.doesNotMatch(shots.join(' '), /purple|5c4d91|بنفش/i, `${id} gallery has no purple asset`);
+}
+assert.ok(getProduct('cat-litter-mr-cat-cat-litter-10-l-carbon'), 'MR.CAT carbon litter is in catalog');
+
 const p221 = getProduct('dog-food-royal-canin-mini-adult-2kg')!;
 applyLiveShopCatalog({
   products: [
