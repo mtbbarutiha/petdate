@@ -47,7 +47,7 @@ export const SHOP_DIGIKALA_BATCH1_PART1_PRODUCTS: ShopProduct[] = [
     brandId: "gourmet",
     categorySlug: "cat-food",
     petTypes: ["cat"],
-    priceToman: 1_549_000,
+    priceToman: 1_800_000,
     params: {
       مناسب_برای: "گربه",
     },

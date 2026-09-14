@@ -95,7 +95,7 @@ const KEEP_PRICES: Record<string, number> = {
   p297: 2_970_000,
   p298: 525_000,
   p299: 495_000,
-  p300: 1_549_000,
+  p300: 1_800_000,
   p301: 249_000,
   p302: 186_000,
   p303: 480_000,
@@ -233,7 +233,7 @@ async function main() {
   assert.equal(lookupShopPrice('p290')?.priceToman, 680_000);
   assert.equal(lookupShopPrice('p292')?.priceToman, 6_160_000);
   assert.equal(lookupShopPrice('p299')?.priceToman, 495_000);
-  assert.equal(lookupShopPrice('p300')?.priceToman, 1_549_000);
+  assert.equal(lookupShopPrice('p300')?.priceToman, 1_800_000);
   assert.equal(lookupShopPrice('p309')?.priceToman, 380_000);
   assert.equal(lookupShopPrice('p310')?.priceToman, 293_000);
   assert.equal(lookupShopPrice('p313')?.priceToman, 490_000);
