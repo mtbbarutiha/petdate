@@ -3526,7 +3526,10 @@ button.chip.is-on {
   border-radius: 16px;
   padding: 12px 14px;
   background: var(--pepito-white);
-  font: inherit;
+  font-family: inherit;
+  font-weight: inherit;
+  /* Keep ≥16px so iOS Safari does not auto-zoom on focus (auth/onboarding). */
+  font-size: 16px;
   color: var(--pepito-dark);
 }
 
@@ -8430,7 +8433,8 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   background: transparent;
   color: var(--pepito-dark);
   font: inherit;
-  font-size: 0.98rem;
+  /* ≥16px avoids iOS focus-zoom even when viewport is locked */
+  font-size: 16px;
   line-height: 1.4;
   padding: 0.35rem 0;
 }
@@ -9841,7 +9845,9 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   border: 1px solid rgba(92, 77, 145, 0.18);
   border-radius: 14px;
   padding: 0.6rem 0.8rem;
-  font: inherit;
+  font-family: inherit;
+  font-weight: inherit;
+  font-size: 16px;
   background: var(--pepito-soft);
   color: var(--pepito-dark);
   transition: border-color 0.2s ease, background 0.2s ease;
@@ -13153,6 +13159,9 @@ a.pepito-btn.pepito-human-consult-cta:hover {
     and utilities park at inline-end (far left) via space-between.
     Nested .pepito-nav-logo margin-inline-end:auto alone does nothing — logo
     is not a direct flex child of .pepito-nav.
+
+    .pepito-nav is itself display:flex — flex:1 keeps .pepito-nav-main from
+    shrink-wrapping so space-between has free space across the full bar.
   */
   .pepito-nav-main {
     display: flex !important;
@@ -13160,6 +13169,8 @@ a.pepito-btn.pepito-human-consult-cta:hover {
     justify-content: space-between;
     gap: 0.35rem;
     width: 100%;
+    max-width: 100%;
+    flex: 1 1 auto;
     min-width: 0;
   }
 
@@ -13206,6 +13217,11 @@ a.pepito-btn.pepito-human-consult-cta:hover {
     display: none !important;
   }
 
+  /*
+    MUST keep margin-inline-start:0. .pepito-nav-actions sets direction:ltr, so
+    margin-inline-start resolves to margin-left and pulls tools toward the logo
+    on RTL (same footgun as footer copy). space-between does the separation.
+  */
   .pepito-nav-actions {
     margin-inline-start: 0 !important;
     margin-inline-end: 0 !important;

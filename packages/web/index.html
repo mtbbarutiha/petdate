@@ -57,8 +57,13 @@
          Desktop has no dock — drop the clearance pad so it cannot open a dark void. */
       .pepito-landing--with-dock{padding-bottom:var(--pepito-dock-clearance)}
       .pepito-nav{min-height:var(--pepito-nav-h);box-sizing:border-box;display:flex;align-items:center;gap:.55rem;padding:.65rem var(--pepito-container-pad);position:relative}
+      /* Full-width row before hashed CSS (print→all). Do NOT use
+         margin-inline-start:auto on .pepito-nav-actions — that rule also sets
+         direction:ltr, so inline-start=left and tools cluster with the logo on
+         RTL until deferred CSS applies (esp. WebKit print onload gaps). */
+      .pepito-nav-main{display:flex;align-items:center;justify-content:space-between;gap:.35rem;width:100%;max-width:100%;flex:1 1 auto;min-width:0}
       .pepito-nav-logo img{height:42px;width:auto;display:block}
-      .pepito-nav-actions{margin-inline-start:auto;display:flex;align-items:center;gap:.65rem;direction:ltr}
+      .pepito-nav-actions{margin-inline-start:0;margin-inline-end:0;display:flex;align-items:center;gap:.65rem;direction:ltr;flex:0 0 auto}
       .pd-theme-toggle,.pd-lang-toggle{width:44px;height:44px;min-height:44px;border-radius:999px;border:1px solid #3a3f55;background:#242836;color:#f4f3f8;display:inline-flex;align-items:center;justify-content:center}
       /* Solid hero fill — photo comes only from #pd-boot-lcp / React (admin API SoT). */
       .pepito-hero{min-height:var(--pepito-hero-h);position:relative;overflow:hidden;background:#14161e;display:grid;align-items:center}

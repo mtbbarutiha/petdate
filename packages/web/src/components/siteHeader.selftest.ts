@@ -136,6 +136,27 @@ assert.match(
 );
 assert.match(
   css,
+  /\.pepito-nav-main\s*\{[^}]*flex:\s*1 1 auto/,
+  'mobile nav-main grows inside flex .pepito-nav so space-between has free space'
+);
+assert.match(
+  css,
+  /@media \(max-width: 859px\)[\s\S]*?\.pepito-nav-actions\s*\{[^}]*margin-inline-start:\s*0\s*!important/,
+  'mobile zeros actions margin-inline-start (ltr island would pull tools to the logo)'
+);
+const criticalHtml = readFileSync(join(root, '../index.html'), 'utf8');
+assert.match(
+  criticalHtml,
+  /\.pepito-nav-main\{[^}]*justify-content:space-between/,
+  'critical CSS spaces logo and tools before hashed CSS applies'
+);
+assert.match(
+  criticalHtml,
+  /\.pepito-nav-actions\{[^}]*margin-inline-start:0/,
+  'critical CSS must not use ms-auto on the LTR actions island (RTL cluster bug)'
+);
+assert.match(
+  css,
   /\.pepito-nav-brand--search[\s\S]{0,200}\.pd-shop-search\.is-expanded/,
   'compact logo-column search expands on focus'
 );
