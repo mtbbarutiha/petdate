@@ -92,7 +92,15 @@ assert(
   'batch-multi wave 3 Hannapet leash slug aliases 301 to /shop/product/:slug'
 );
 assert(
-  !xml.includes('/shop/product/cat-accessories-hannapet-double-wooden-bowl-stand'),
+  xml.includes('/shop/product/cat-accessories-hannapet-double-wooden-bowl-stand'),
+  'batch-multi wave 4 wooden bowl stand stays in sitemap'
+);
+assert(
+  map.includes('/shop/dog-accessories-hannapet-silicone-h-harness-sizr-m '),
+  'batch-multi wave 4 Hannapet harness sizr-m slug aliases 301 to /shop/product/:slug'
+);
+assert(
+  !xml.includes('/shop/product/grooming-bonnest-calming-shampoo-for-pet-200-l'),
   'later waves stay out of sitemap'
 );
 console.log('sitemap.selftest: ok');
