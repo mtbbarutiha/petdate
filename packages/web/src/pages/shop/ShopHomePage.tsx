@@ -63,7 +63,7 @@ function ShopCategoryStrip() {
                 className="pd-shop-dk-item"
                 role="listitem"
               >
-                <span className={`pd-shop-dk-tile pd-shop-dk-tile--art pd-shop-dk-tile--${kind}`} aria-hidden>
+                <span className={`pd-shop-dk-tile pd-shop-dk-tile--photo pd-shop-dk-tile--${kind}`} aria-hidden>
                   <ShopCategoryArt kind={kind} />
                 </span>
                 <span className="pd-shop-dk-label">{shopLabel(lang, c.labelFa, c.labelEn)}</span>
@@ -71,7 +71,7 @@ function ShopCategoryStrip() {
             );
           })}
           <Link to="/shop/c/all" className="pd-shop-dk-item pd-shop-dk-item--more" role="listitem">
-            <span className="pd-shop-dk-tile pd-shop-dk-tile--art pd-shop-dk-tile--more" aria-hidden>
+            <span className="pd-shop-dk-tile pd-shop-dk-tile--photo pd-shop-dk-tile--more" aria-hidden>
               <ShopCategoryMoreArt />
             </span>
             <span className="pd-shop-dk-label">بیشتر</span>

@@ -144,6 +144,16 @@ assert.match(
   /@media \(max-width: 859px\)[\s\S]*?\.pepito-nav-actions\s*\{[^}]*margin-inline-start:\s*0\s*!important/,
   'mobile zeros actions margin-inline-start (ltr island would pull tools to the logo)'
 );
+assert.match(
+  css,
+  /\.pepito-nav-brand--search\s*\{[\s\S]{0,220}width:\s*max-content/,
+  'shop brand column hugs the logo so primary nav can sit beside it'
+);
+assert.match(
+  css,
+  /@media \(min-width: 860px\)[\s\S]{0,900}\.pepito-nav-primary\s*\{[\s\S]{0,180}flex:\s*0 1 auto/,
+  'desktop primary nav shrink-wraps beside the brand (not flex-grow away from logo)'
+);
 const criticalHtml = readFileSync(join(root, '../index.html'), 'utf8');
 assert.match(
   criticalHtml,

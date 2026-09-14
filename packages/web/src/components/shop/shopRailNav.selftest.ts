@@ -60,6 +60,11 @@ assert.match(
   /\.pd-shop-dk-strip[\s\S]{0,160}overflow-x:\s*auto/,
   'category strip keeps native swipe scroll'
 );
+assert.doesNotMatch(
+  css,
+  /MOBILE_SHOP_LAYOUT_FIX[\s\S]{0,2800}\.pd-shop-dk-strip\s*\{[\s\S]{0,100}overflow-x:\s*hidden/,
+  'mobile layout must not disable category strip swipe'
+);
 assert.match(
   css,
   /\.pd-shop-home-rail-track[\s\S]{0,160}overflow-x:\s*auto/,
