@@ -367,6 +367,12 @@ export async function listPets(filters?: {
   ownerId?: number;
   lookingForPlaymate?: boolean;
   species?: string;
+  city?: string;
+  province?: string;
+  breed?: string;
+  breeds?: string[];
+  excludeOwnerId?: number;
+  sort?: 'newest' | 'popular' | 'updated';
 }): Promise<PetProfile[]> {
   const params = new URLSearchParams();
   if (filters?.ownerId) params.set('ownerId', String(filters.ownerId));
@@ -374,8 +380,33 @@ export async function listPets(filters?: {
     params.set('lookingForPlaymate', String(filters.lookingForPlaymate));
   }
   if (filters?.species) params.set('species', filters.species);
+  if (filters?.city) params.set('city', filters.city);
+  if (filters?.province) params.set('province', filters.province);
+  if (filters?.breed) params.set('breed', filters.breed);
+  if (filters?.breeds?.length) params.set('breeds', filters.breeds.join(','));
+  if (filters?.excludeOwnerId) params.set('excludeOwnerId', String(filters.excludeOwnerId));
+  if (filters?.sort) params.set('sort', filters.sort);
   const qs = params.toString();
   return request<PetProfile[]>(`/api/pets${qs ? `?${qs}` : ''}`, {
+    headers: storedAuthHeaders(),
+  });
+}
+
+/** GPS nearby pets — parity with bot «پت‌های نزدیک». */
+export async function listNearbyPets(opts: {
+  lat: number;
+  lng: number;
+  radiusKm?: number;
+  excludeOwnerId?: number;
+  limit?: number;
+}): Promise<PetProfile[]> {
+  const params = new URLSearchParams();
+  params.set('lat', String(opts.lat));
+  params.set('lng', String(opts.lng));
+  if (opts.radiusKm != null) params.set('radiusKm', String(opts.radiusKm));
+  if (opts.excludeOwnerId != null) params.set('excludeOwnerId', String(opts.excludeOwnerId));
+  if (opts.limit != null) params.set('limit', String(opts.limit));
+  return request<PetProfile[]>(`/api/pets/nearby?${params.toString()}`, {
     headers: storedAuthHeaders(),
   });
 }

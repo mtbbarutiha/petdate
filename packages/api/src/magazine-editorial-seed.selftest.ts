@@ -21,6 +21,7 @@ async function main() {
 
   const first = seed.seedMagazineEditorial();
   const second = seed.seedMagazineEditorial();
+  assert.ok(seed.EDITORIAL_ARTICLES.length >= 20, 'at least 20 editorial articles');
   assert.equal(first, seed.EDITORIAL_ARTICLES.length, 'seed count');
   assert.equal(second, first, 'idempotent count');
 

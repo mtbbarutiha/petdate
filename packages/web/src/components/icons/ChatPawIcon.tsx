@@ -4,6 +4,8 @@ import type { LucideProps } from 'lucide-react';
 /**
  * PetDate chats / هم‌بازی mark — speech bubble with a paw print inside.
  * Lucide-compatible so it slots into SiteNavItem like MessagesSquare.
+ * Paths fill most of the 24×24 box so dock weight matches Wallet / Paw siblings
+ * (no CSS scale — siteNav.selftest forbids transform scale).
  */
 export const ChatPawIcon = forwardRef<SVGSVGElement, Omit<LucideProps, 'ref'> & RefAttributes<SVGSVGElement>>(
   (
@@ -38,12 +40,12 @@ export const ChatPawIcon = forwardRef<SVGSVGElement, Omit<LucideProps, 'ref'> & 
         aria-hidden
         {...rest}
       >
-        {/* Paths stay inside the Lucide 24×24 box — no extra scale (dock sizes must match). */}
-        <path d="M5.25 4.6A2.85 2.85 0 0 1 8.1 1.75h7.8a2.85 2.85 0 0 1 2.85 2.85v6.3a2.85 2.85 0 0 1-2.85 2.85h-3.55L8.2 17.8v-3.2H8.1A2.85 2.85 0 0 1 5.25 11.75z" />
-        <circle cx="9.55" cy="6.85" r="1.05" fill={color} stroke="none" />
-        <circle cx="12" cy="5.85" r="1.15" fill={color} stroke="none" />
-        <circle cx="14.45" cy="6.85" r="1.05" fill={color} stroke="none" />
-        <ellipse cx="12" cy="9.95" rx="2.55" ry="2.05" fill={color} stroke="none" />
+        {/* Larger bubble (≈ Lucide MessageCircle footprint) so stroke weight matches siblings. */}
+        <path d="M3.4 4.2A3.2 3.2 0 0 1 6.6 1h10.8a3.2 3.2 0 0 1 3.2 3.2v7.4a3.2 3.2 0 0 1-3.2 3.2h-4.35L6.4 20.2v-4.4H6.6A3.2 3.2 0 0 1 3.4 12.6z" />
+        <circle cx="9.1" cy="7.15" r="1.2" fill={color} stroke="none" />
+        <circle cx="12" cy="5.95" r="1.3" fill={color} stroke="none" />
+        <circle cx="14.9" cy="7.15" r="1.2" fill={color} stroke="none" />
+        <ellipse cx="12" cy="10.55" rx="2.9" ry="2.25" fill={color} stroke="none" />
       </svg>
     );
   }

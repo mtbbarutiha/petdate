@@ -319,7 +319,7 @@ export function withWizardNav(
   kb.text(WIZARD_NAV.cancel).danger();
   // همیشه «منو» قابل‌دسترس باشد تا کیبورد قدیمی تلگرام گیر نکند
   kb.row().text(MAIN_MENU_BTN).primary();
-  return kb.resized().persistent();
+  return kb.resized();
 }
 
 /** کیبورد انتخابی منویی برای مراحل ویزارد */
@@ -407,8 +407,7 @@ export function phoneWizardKeyboard(): Keyboard {
     .danger()
     .row()
     .text(MAIN_MENU_BTN).primary()
-    .resized()
-    .persistent();
+    .resized();
 }
 
 /** کیبورد درخواست موقعیت برای «پت‌های نزدیک» (سبک دوردوریا) */
@@ -422,8 +421,7 @@ export function nearbyLocationKeyboard(): Keyboard {
     .row()
     .text(MAIN_MENU_BTN)
     .primary()
-    .resized()
-    .persistent();
+    .resized();
 }
 
 /** شعاع‌های جستجوی نزدیک (کیلومتر) — ترتیب دکمه‌ها مثل دوردوریا */
@@ -581,7 +579,7 @@ export function breedReplyKeyboard(breeds: PetBreed[], page: number): Keyboard {
   kb.row();
   kb.text(WIZARD_NAV.cancel).danger();
   kb.row().text(MAIN_MENU_BTN).primary();
-  return kb.resized().persistent();
+  return kb.resized();
 }
 
 export function petGenderReplyKeyboard(): Keyboard {
@@ -615,8 +613,7 @@ export function yesNoReplyKeyboard(): Keyboard {
     .danger()
     .row()
     .text(MAIN_MENU_BTN).primary()
-    .resized()
-    .persistent();
+    .resized();
 }
 
 export function vaccinatedReplyKeyboard(): Keyboard {
@@ -643,7 +640,7 @@ export function roleReplyKeyboard(selected: UserRole[] = []): Keyboard {
   });
   if (USER_ROLES.length % 2 !== 0) kb.row();
   kb.text(ROLE_CONFIRM_LABEL).success();
-  return kb.resized().persistent();
+  return kb.resized();
 }
 
 export function roleKeyboard(selected: UserRole[] = []): InlineKeyboard {
@@ -699,7 +696,7 @@ function appendAccessRow(kb: Keyboard, telegramId?: string | number | null): Key
 }
 
 /**
- * مشترک همه نقش‌ها: مرور (شاپ/دعوت) → راهنما → مالی (سکه جدا از browse).
+ * مشترک همه نقش‌ها: مرور (شاپ سبز / دعوت) → راهنما → مالی (سکه با رنگ متمایز).
  * extraFinance مثلاً «کسب درآمد» کنار سکه برای صاحب پت.
  */
 function appendCommonMenuRows(kb: Keyboard, extraFinance?: string): Keyboard {
@@ -707,16 +704,17 @@ function appendCommonMenuRows(kb: Keyboard, extraFinance?: string): Keyboard {
   kb
     .row()
     .text(c.shop)
-    .primary()
-    .text(c.invite)
     .success()
+    .text(c.invite)
+    .primary()
     .row()
     .text(c.support)
     .text(c.help)
     .primary()
     .row()
-    .text(c.coins);
-  if (extraFinance) kb.text(extraFinance);
+    .text(c.coins)
+    .danger();
+  if (extraFinance) kb.text(extraFinance).primary();
   return kb;
 }
 
@@ -738,7 +736,7 @@ export function vetMenuKeyboard(
     .row()
     .text(m.visitFee);
   appendCommonMenuRows(kb);
-  return appendAccessRow(kb.resized().persistent(), telegramId);
+  return appendAccessRow(kb.resized(), telegramId);
 }
 
 export function petOwnerMenuKeyboard(
@@ -746,7 +744,8 @@ export function petOwnerMenuKeyboard(
   options?: { acceptSeekerAdvice?: boolean },
 ): Keyboard {
   const m = PET_OWNER_MENU;
-  const acceptAdvice = options?.acceptSeekerAdvice === true;
+  // acceptSeekerAdvice kept on options for callers; toggle lives in profile now.
+  void options?.acceptSeekerAdvice;
   const kb = new Keyboard()
     .text(m.findPlaymate)
     .success()
@@ -764,12 +763,10 @@ export function petOwnerMenuKeyboard(
     .text(m.quickVet)
     .success()
     .text(m.requestTrainer)
-    .primary()
-    .row()
-    .text(acceptAdvice ? m.seekerAdviceOn : m.seekerAdviceOff)
-    .primary();
+    .success();
   appendCommonMenuRows(kb, m.earn);
-  return appendAccessRow(kb.resized().persistent(), telegramId);
+  // Not persistent — user can drag/collapse the reply keyboard (Telegram-like).
+  return appendAccessRow(kb.resized(), telegramId);
 }
 
 export function trainerMenuKeyboard(
@@ -791,7 +788,7 @@ export function trainerMenuKeyboard(
     .text(m.uploadCredential)
     .primary();
   appendCommonMenuRows(kb);
-  return appendAccessRow(kb.resized().persistent(), telegramId);
+  return appendAccessRow(kb.resized(), telegramId);
 }
 
 export function sitterMenuKeyboard(
@@ -813,7 +810,7 @@ export function sitterMenuKeyboard(
     .text(m.uploadCredential)
     .primary();
   appendCommonMenuRows(kb);
-  return appendAccessRow(kb.resized().persistent(), telegramId);
+  return appendAccessRow(kb.resized(), telegramId);
 }
 
 /** @deprecated نقش دنبال پت حذف شد — کیبورد قدیمی فقط برای سازگاری */
@@ -835,7 +832,7 @@ export function petSeekerMenuKeyboard(
   else kb.success();
   kb.row().text(m.profile).primary();
   appendCommonMenuRows(kb);
-  return appendAccessRow(kb.resized().persistent(), telegramId);
+  return appendAccessRow(kb.resized(), telegramId);
 }
 
 export function noPetMenuKeyboard(telegramId?: string | number | null): Keyboard {
@@ -847,7 +844,7 @@ export function noPetMenuKeyboard(telegramId?: string | number | null): Keyboard
     .text(m.profile)
     .primary();
   appendCommonMenuRows(kb);
-  return appendAccessRow(kb.resized().persistent(), telegramId);
+  return appendAccessRow(kb.resized(), telegramId);
 }
 
 /**
@@ -878,7 +875,7 @@ export function searchPetsMenuInlineKeyboard(): InlineKeyboard {
 /** Reply keyboard سبک — فقط بازگشت؛ گزینه‌های جستجو اینلاین‌اند */
 export function searchPetsMenuKeyboard(): Keyboard {
   const m = SEARCH_PETS_MENU;
-  return new Keyboard().text(m.backToMenu).primary().resized().persistent();
+  return new Keyboard().text(m.backToMenu).primary().resized();
 }
 
 /** @deprecated — از noPetMenuKeyboard استفاده کن */
@@ -913,8 +910,7 @@ export function adminPanelKeyboard(): Keyboard {
     .row()
     .text(m.back)
     .primary()
-    .resized()
-    .persistent();
+    .resized();
 }
 
 /** اینلاین: سوییچ بین نقش‌های فعلی کاربر */
@@ -1043,8 +1039,7 @@ export function myPetsSectionKeyboard(): Keyboard {
     .row()
     .text(m.backToMenu)
     .primary()
-    .resized()
-    .persistent();
+    .resized();
 }
 
 export function speciesKeyboard(): InlineKeyboard {
@@ -1277,6 +1272,11 @@ export function profileActionsKeyboard(
 
   kb.text('📱 احراز موبایل', 'phone:verify:start').primary().row();
 
+  // Owner extras moved off the main sticky menu (پذیرش مشورت / پذیرش).
+  kb.text('💬 مشورت با صاحبین', 'profile:seeker_advice').primary()
+    .text('💚 پذیرش', 'profile:ready_adopt').primary()
+    .row();
+
   kb.text('🚫 بلاک‌شده‌ها', 'profile:blocked').danger().row();
 
   if (opts?.silentChatRequests) {
@@ -1499,8 +1499,7 @@ export function paymentReceiptReplyKeyboard(): Keyboard {
     .row()
     .text('↩️ انصراف از پرداخت')
     .danger()
-    .resized()
-    .persistent();
+    .resized();
 }
 
 export function adminPaymentKeyboard(orderId: number): InlineKeyboard {

@@ -18,6 +18,7 @@ import { listPets, setSilentChatRequests } from '../lib/api';
 import { findAndSendPlaymates, type FindPlaymateResult } from '../lib/playmateActions';
 import { petProfileToUiPet } from '../lib/playdateMap';
 import { authStore } from '../data/authStore';
+import { PetDiscoveryPanel } from './PetDiscoveryPanel';
 
 type FindPhase = 'idle' | 'pick' | 'sending' | 'done';
 
@@ -425,6 +426,8 @@ export function FindPlaymatePanel({
             {findResult?.sampleLine ? ` · ${findResult.sampleLine}` : ''}
           </p>
         ) : null}
+
+        <PetDiscoveryPanel myPets={myPets} />
       </section>
 
       {showRequests ? (

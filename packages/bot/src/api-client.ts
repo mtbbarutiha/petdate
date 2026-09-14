@@ -818,6 +818,8 @@ export async function quickVetConnect(
     confirmResend?: boolean;
     purchaseAdvice?: boolean;
     kind?: 'vet' | 'trainer' | 'sitter' | 'seeker_advice';
+    preferAi?: boolean;
+    humanOnly?: boolean;
   }
 ): Promise<QuickVetConnectResult | QuickVetConnectFailure> {
   const res = await fetch(`${config.apiUrl}/api/consultations/quick-connect`, {
@@ -829,6 +831,8 @@ export async function quickVetConnect(
       purchaseAdvice: Boolean(opts?.purchaseAdvice),
       intent: opts?.purchaseAdvice ? 'purchase_advice' : undefined,
       kind: opts?.kind ?? 'vet',
+      preferAi: Boolean(opts?.preferAi),
+      humanOnly: Boolean(opts?.humanOnly),
     }),
   });
   const body = await res.text();

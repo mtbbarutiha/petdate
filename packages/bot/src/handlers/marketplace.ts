@@ -1,4 +1,5 @@
 import type { Context } from 'grammy';
+import { InlineKeyboard } from 'grammy';
 import type { User, VetConsultation } from '@petdate/shared';
 import {
   SEEKER_ADVICE_COST,
@@ -202,7 +203,8 @@ export async function handleProviderCredentialPhoto(
 async function runQuickConnect(
   ctx: Context,
   kind: 'trainer' | 'sitter' | 'seeker_advice',
-  costHint: number
+  costHint: number,
+  opts?: { preferAi?: boolean; humanOnly?: boolean }
 ): Promise<void> {
   const user = await getCtxUser(ctx);
   if (!user) {
@@ -212,7 +214,11 @@ async function runQuickConnect(
 
   let result;
   try {
-    result = await quickVetConnect(user.id, { kind });
+    result = await quickVetConnect(user.id, {
+      kind,
+      preferAi: opts?.preferAi,
+      humanOnly: opts?.humanOnly,
+    });
   } catch (err) {
     console.error('marketplace quick connect failed:', err);
     await ctx.reply('خطا در ارسال درخواست. کمی بعد دوباره امتحان کن.', {
@@ -227,7 +233,12 @@ async function runQuickConnect(
         reply_markup: menuKeyboardFor(ctx, user),
       });
       // Simple auto-confirm resend on second try via confirmResend
-      const retry = await quickVetConnect(user.id, { kind, confirmResend: true });
+      const retry = await quickVetConnect(user.id, {
+        kind,
+        confirmResend: true,
+        preferAi: opts?.preferAi,
+        humanOnly: opts?.humanOnly,
+      });
       if (retry.ok) {
         await ctx.reply(retry.message, { reply_markup: menuKeyboardFor(ctx, user) });
         return;
@@ -275,12 +286,37 @@ export async function handleRequestTrainer(ctx: Context): Promise<void> {
   await ctx.reply(
     [
       '🎓 درخواست مربی',
-      `هزینه اتصال انسانی: ${TRAINER_CONSULT_COST} سکه (۲۵ مربی + ۲۵ پلتفرم).`,
-      'اگر مربی دیگری آنلاین نباشد، فرانک احمدی (مربی آنلاین) رایگان پاسخ می‌دهد.',
+      '',
+      'کدام مسیر را می‌خواهی؟',
+      `🤖 مربی هوشمند (فرانک احمدی) — رایگان`,
+      `👨‍🏫 مربی انسانی — ${TRAINER_CONSULT_COST} سکه`,
+    ].join('\n'),
+    {
+      reply_markup: new InlineKeyboard()
+        .text('🤖 مربی هوشمند', 'trainer:choice:ai')
+        .success()
+        .row()
+        .text('👨‍🏫 مربی انسانی', 'trainer:choice:human')
+        .primary(),
+    }
+  );
+}
+
+export async function handleTrainerChoice(ctx: Context, mode: 'ai' | 'human'): Promise<void> {
+  await ctx.answerCallbackQuery().catch(() => undefined);
+  if (mode === 'ai') {
+    await runQuickConnect(ctx, 'trainer', TRAINER_CONSULT_COST, { preferAi: true });
+    return;
+  }
+  await ctx.reply(
+    [
+      '🎓 مربی انسانی',
+      `هزینه اتصال: ${TRAINER_CONSULT_COST} سکه (۲۵ مربی + ۲۵ پلتفرم).`,
+      'اگر مربی آنلاین نباشد، پیام می‌گیری تا دوباره انتخاب کنی.',
     ].join('\n'),
     { reply_markup: menuKeyboardFor(ctx, await getCtxUser(ctx)) }
   );
-  await runQuickConnect(ctx, 'trainer', TRAINER_CONSULT_COST);
+  await runQuickConnect(ctx, 'trainer', TRAINER_CONSULT_COST, { humanOnly: true });
 }
 
 export async function handleRequestSeekerAdvice(ctx: Context): Promise<void> {

@@ -27,9 +27,11 @@ assert.match(
   /pepito-nav-leading[\s\S]*pepito-nav-brand[\s\S]*pepito-nav-actions/s,
   'DOM order is leading (brand/primary) then actions — RTL space-between parks tools left',
 );
-assert.match(header, /brandBelow/, 'header accepts shop search under the logo');
+assert.match(header, /brandBelow/, 'header accepts shop search slot');
 assert.match(header, /pepito-nav--with-search/, 'shop search marks the header for taller chrome');
-assert.match(header, /pepito-nav-brand--search/, 'search stacks under the brand/logo column');
+assert.match(header, /pepito-nav-brand--search/, 'mobile search stacks under the brand/logo column');
+assert.match(header, /pepito-nav-desktop-search/, 'desktop search sits in the primary row');
+assert.match(header, /nav-mobile-events/, 'mobile header exposes Events shortcut');
 assert.match(header, /pepito-nav-main/, 'logo, links, and utilities share one header row site-wide');
 assert.doesNotMatch(header, /pepito-nav-search-row/, 'search is not a full-width second row');
 assert.match(header, /pepito-nav-brand/, 'logo lives in the brand cluster');
@@ -83,6 +85,9 @@ assert.doesNotMatch(
   /actionLabel=\{t\('common\.login'\)\}/,
   'magazine does not pass text ورود into header chrome',
 );
+assert.match(magazine, /PAGE_SIZE = 20/, 'magazine shows at least 20 per page');
+assert.match(magazine, /magazine-view-all/, 'magazine has مشاهده همه link');
+assert.match(css, /pepito-magazine-grid[\s\S]{0,80}repeat\(4/, 'magazine desktop grid is 4 columns');
 assert.match(header, /LazySiteDesktopNav/, 'primary includes role shortcuts');
 assert.doesNotMatch(header, /SiteNavOverflow/, 'header no longer mounts overflow More menu');
 assert.match(
@@ -90,10 +95,12 @@ assert.match(
   /sectionLinks\.map/,
   'all section extras render inline (not sliced into overflow)'
 );
+assert.match(header, /nav-mobile-events/, 'mobile header exposes Events shortcut');
+assert.match(header, /t\('nav\.games'\)/, 'mobile Events shortcut uses nav.games label');
 assert.doesNotMatch(
   header,
-  /nav\.games|nav\.petShop/,
-  'shared header does not hardcode duplicate games/shop text links'
+  /nav\.petShop/,
+  'shared header does not hardcode shop text links'
 );
 
 assert.match(chrome, /SiteHeader/, 'LandingChrome uses shared header');

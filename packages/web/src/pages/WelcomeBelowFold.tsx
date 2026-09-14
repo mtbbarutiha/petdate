@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
+  BookOpen,
+  CalendarDays,
   ChevronLeft,
   ChevronRight,
   GraduationCap,
   HeartHandshake,
   Home,
   PawPrint,
+  ShoppingBag,
   Star,
   Stethoscope,
   type LucideIcon,
@@ -43,15 +46,15 @@ const BLOB_PATH =
   'M30,16C46.588,6.484,54.481-2.058,64.3,1.452c3.145,1.125,6.861,3.657,10.212,9.426A40.611,40.611,0,0,1,59.5,66.544,41.151,41.151,0,0,1,3.482,51.629C0.134,45.865-.2,41.289.375,38.125,2.228,27.979,13.544,25.436,30,16Z';
 
 /**
- * Core PetDate product lines only (no sitter / generic filler):
- * همبازی → دامپزشک آنلاین → مربی → بدون پت → پذیرش
+ * Core PetDate product lines:
+ * همبازی → دامپزشک → مربی → شاپ → ایونت → دفتر خاطرات → بدون پت → پذیرش
  */
 const SERVICES: {
   to: string;
   titleKey: string;
   descKey: string;
   Icon: LucideIcon;
-  fill: 1 | 2 | 3 | 4;
+  fill: 1 | 2 | 3 | 4 | 5 | 6;
 }[] = [
   {
     to: '/chats',
@@ -73,6 +76,27 @@ const SERVICES: {
     descKey: 'landing.svcTrainerDesc',
     Icon: GraduationCap,
     fill: 2,
+  },
+  {
+    to: '/shop',
+    titleKey: 'landing.svcShopTitle',
+    descKey: 'landing.svcShopDesc',
+    Icon: ShoppingBag,
+    fill: 5,
+  },
+  {
+    to: '/events',
+    titleKey: 'landing.svcEventsTitle',
+    descKey: 'landing.svcEventsDesc',
+    Icon: CalendarDays,
+    fill: 6,
+  },
+  {
+    to: '/my-pets',
+    titleKey: 'landing.svcDiaryTitle',
+    descKey: 'landing.svcDiaryDesc',
+    Icon: BookOpen,
+    fill: 4,
   },
   {
     to: '/onboarding/role',
