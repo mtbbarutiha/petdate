@@ -389,6 +389,19 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   height: auto;
   align-items: stretch;
 }
+/* Shop: keep logo-row tools flush to the top (level with the wordmark). */
+.pepito-nav--shop .pepito-nav-main,
+.pepito-nav--mobile-search .pepito-nav-main {
+  align-items: flex-start;
+}
+.pepito-nav--shop .pepito-nav-leading,
+.pepito-nav--shop .pepito-nav-actions,
+.pepito-nav--mobile-search .pepito-nav-actions {
+  align-items: flex-start;
+}
+.pepito-nav--shop .pepito-nav-actions {
+  padding-block-start: 0.15rem;
+}
 /* Single header row site-wide — leading (logo + links) | tools.
    Exactly two flex children: space-between parks leading at inline-start
    (physical right in RTL) and tools at inline-end (physical left). */
@@ -7198,6 +7211,14 @@ div.pepito-profile-stat:active {
   font-size: 0.78rem;
   color: var(--pepito-muted);
 }
+.pepito-nav-profile-shortcuts {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding-block: 0.15rem 0.4rem;
+  border-bottom: 1px solid rgba(92, 77, 145, 0.08);
+  margin-bottom: 0.35rem;
+}
 .pepito-nav-profile-item {
   display: flex;
   align-items: center;
@@ -13294,10 +13315,14 @@ a.pepito-btn.pepito-human-consult-cta:hover {
     padding-bottom: var(--pepito-mobile-dock-clearance);
   }
 
-  /* Profile + wallet live in bottom dock on mobile — keep only cart in top cluster */
+  /* Profile + wallet live in bottom dock on mobile — keep only cart in top cluster.
+     Shop exception: profile avatar stays far-left beside Orders (Mohammad header IA). */
   .pepito-nav-user-cluster .pepito-nav-profile,
   .pepito-nav-user-cluster .pepito-nav-wallet {
     display: none !important;
+  }
+  .pd-shop-page .pepito-nav-user-cluster .pepito-nav-profile {
+    display: block !important;
   }
   .pepito-nav--app {
     padding-left: var(--pepito-gutter-x) !important;

@@ -36,6 +36,11 @@ export type SiteHeaderProps = {
   showCart?: boolean;
   showOrders?: boolean;
   showDesktopNav?: boolean;
+  /**
+   * Mobile Events (ایونت‌ها) pill beside the logo.
+   * Shop pages hide this — Events lives in the profile menu instead.
+   */
+  showMobileEvents?: boolean;
   /** Defer SiteDesktopNav until ≥860px (landing LCP / TBT). */
   deferDesktopNav?: boolean;
   actionLabel?: string;
@@ -47,7 +52,7 @@ export type SiteHeaderProps = {
   /**
    * Shop search slot.
    * Mobile: stacks under the logo (must not overlap).
-   * Desktop: renders in the primary row immediately before Orders (سفارش‌ها).
+   * Desktop: renders in the primary row beside the logo (shop has no section links).
    */
   brandBelow?: ReactNode;
   logoSrc?: string;
@@ -61,7 +66,8 @@ export type SiteHeaderProps = {
  * Shared site header: leading (brand + primary links) | utilities.
  * Two flex children under `.pepito-nav-main` so RTL space-between parks
  * logo/nav at the physical right and utilities flush at the physical left.
- * Shop search: under logo on mobile; inline before Orders on desktop.
+ * Shop search: under logo on mobile; inline beside logo on desktop.
+ * Shop mode: logo + search only on the leading side (no Events / desktop nav).
  */
 export function SiteHeader({
   scrolled = false,
@@ -70,6 +76,7 @@ export function SiteHeader({
   showCart = true,
   showOrders = false,
   showDesktopNav = true,
+  showMobileEvents = true,
   deferDesktopNav = false,
   actionLabel,
   actionTo,
@@ -133,7 +140,7 @@ export function SiteHeader({
             {mobileSearch}
           </div>
 
-          {!isDesktop ? (
+          {!isDesktop && showMobileEvents ? (
             <Link
               to="/events"
               className="pepito-nav-mobile-events"

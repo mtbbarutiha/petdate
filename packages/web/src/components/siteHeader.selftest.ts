@@ -32,6 +32,7 @@ assert.match(header, /pepito-nav--with-search/, 'shop search marks the header fo
 assert.match(header, /pepito-nav-brand--search/, 'mobile search stacks under the brand/logo column');
 assert.match(header, /pepito-nav-desktop-search/, 'desktop search sits in the primary row');
 assert.match(header, /nav-mobile-events/, 'mobile header exposes Events shortcut');
+assert.match(header, /showMobileEvents/, 'Events pill can be disabled (shop)');
 assert.match(header, /pepito-nav-main/, 'logo, links, and utilities share one header row site-wide');
 assert.doesNotMatch(header, /pepito-nav-search-row/, 'search is not a full-width second row');
 assert.match(header, /pepito-nav-brand/, 'logo lives in the brand cluster');
@@ -96,6 +97,7 @@ assert.match(
   'all section extras render inline (not sliced into overflow)'
 );
 assert.match(header, /nav-mobile-events/, 'mobile header exposes Events shortcut');
+assert.match(header, /showMobileEvents/, 'shop can suppress mobile Events pill');
 assert.match(header, /t\('nav\.games'\)/, 'mobile Events shortcut uses nav.games label');
 assert.doesNotMatch(
   header,
@@ -110,7 +112,12 @@ assert.match(welcome, /SiteHeader/, 'Welcome uses shared header');
 assert.match(welcome, /welcomeSectionLinks/, 'Welcome uses hash extras without games/shop');
 assert.match(welcome, /deferDesktopNav/, 'Welcome still defers desktop shortcuts for landing TBT');
 assert.match(shop, /SiteHeader/, 'ShopChrome uses shared header');
-assert.match(shop, /shopSectionLinks/, 'shop extras use shared section links');
+assert.match(shop, /showDesktopNav=\{false\}/, 'shop hides هم بازی/شاپ/ایونت‌ها desktop nav');
+assert.match(shop, /showMobileEvents=\{false\}/, 'shop hides mobile Events pill');
+assert.match(shop, /pepito-nav--shop/, 'shop marks header for top-aligned tools');
+assert.match(shop, /showOrders/, 'shop keeps Orders icon in the left cluster');
+assert.doesNotMatch(shop, /shopSectionLinks/, 'shop no longer mounts text سفارش‌ها in primary nav');
+assert.doesNotMatch(shop, /sectionLinks=/, 'shop leading side is logo + search only');
 assert.match(shop, /brandBelow/, 'shop search is passed into the header');
 assert.match(shop, /ShopProductSearch/, 'ShopChrome mounts primary product search');
 assert.doesNotMatch(shop, /pd-shop-search-bar/, 'search is no longer a separate sticky bar');
@@ -131,12 +138,16 @@ assert.ok(
 );
 assert.deepEqual(
   shopSectionLinks().map((l) => l.key),
-  ['orders'],
-  'shop header extras are orders only (no species filter chrome)',
+  [],
+  'shop header extras are empty — Orders icon is in NavUserCluster',
 );
 assert.ok(
   !shopSectionLinks().some((l) => l.key === 'dog' || l.key === 'cat' || l.key === 'bird'),
   'shop pages do not show dog/cat/bird header filters',
+);
+assert.ok(
+  !shopSectionLinks().some((l) => l.key === 'orders'),
+  'orders text link removed from shop primary nav (icon remains in cluster)',
 );
 assert.ok(
   landingSectionLinks({ vetConsultEnabled: true }).some((l) => l.testId === 'nav-adoption'),
@@ -252,6 +263,41 @@ assert.match(
   css,
   /\.pepito-nav-actions[\s\S]{0,200}direction:\s*ltr/,
   'utilities keep a stable physical order'
+);
+
+assert.match(
+  css,
+  /\.pepito-nav--shop[\s\S]{0,120}\.pepito-nav-main[\s\S]{0,80}align-items:\s*flex-start/,
+  'shop header tools align to the top with the logo',
+);
+assert.match(
+  css,
+  /\.pd-shop-page[\s\S]{0,80}\.pepito-nav-profile[\s\S]{0,80}display:\s*block\s*!important/,
+  'shop keeps profile avatar visible on mobile beside Orders',
+);
+assert.match(css, /\.pepito-nav-profile-shortcuts/, 'profile menu hosts relocated nav shortcuts');
+
+const profileMenu = readFileSync(join(root, 'components/ProfileMenu.tsx'), 'utf8');
+assert.match(profileMenu, /profile-shortcut-events/, 'profile menu includes Events shortcut');
+assert.match(profileMenu, /profile-shortcut-playmate/, 'profile menu includes playmate shortcut');
+assert.match(profileMenu, /profile-shortcut-shop/, 'profile menu includes shop shortcut');
+assert.match(profileMenu, /to="\/events"/, 'Events shortcut targets /events');
+
+const darkCss = readFileSync(join(root, 'styles/theme-dark.css'), 'utf8');
+assert.match(
+  darkCss,
+  /html\[data-theme='dark'\]\s*\.pepito-games-status[\s\S]{0,80}color:\s*#f8fafc/,
+  'dark theme forces light text on open/closed status badges',
+);
+assert.match(
+  darkCss,
+  /html\[data-theme='dark'\]\s*\.pepito-games-card-media\s*\.pepito-games-status[\s\S]{0,120}color:\s*#f8fafc/,
+  'dark cover status badge text is light on dark glass',
+);
+assert.match(
+  darkCss,
+  /html\[data-theme='dark'\]\s*\.pepito-games-status\.is-open[\s\S]{0,120}color:\s*#ecfdf5/,
+  'dark open status keeps readable light green text',
 );
 
 assert.match(nav, /withGamesAfterShop/, 'desktop shortcuts still append Games after شاپ (#344)');

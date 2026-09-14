@@ -1,18 +1,22 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { LogOut, UserRound } from 'lucide-react';
+import { Gamepad2, LogOut, PawPrint, ShoppingBag, UserRound } from 'lucide-react';
 import { USER_ROLE_LABELS, normalizeRoles, primaryRole } from '@petdate/shared';
 import { useAuthStore } from '../hooks/useAuthStore';
+import { useI18n } from '../i18n';
 import { resolvePublicAvatarUrl } from '../lib/api';
 import { ProfileManageNav } from './ProfileManageNav';
 import { RoleSwitchControl } from './RoleSwitchControl';
 
 /**
  * Post-login profile avatar control — pinned to physical CSS left of the Pepito nav.
- * Menu includes profile link, role switch (if available), and logout.
+ * Menu includes profile link, site shortcuts (playmate / shop / events),
+ * role switch (if available), and logout.
+ * Shop header drops Events + desktop nav; those shortcuts live here instead.
  */
 export function ProfileMenu() {
   const navigate = useNavigate();
+  const { t } = useI18n();
   const { user, isLoggedIn, logout } = useAuthStore();
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -102,6 +106,39 @@ export function ProfileMenu() {
             <UserRound size={16} strokeWidth={2} />
             <span>پروفایل</span>
           </Link>
+
+          <div className="pepito-nav-profile-shortcuts" role="group" aria-label={t('nav.shortcuts')}>
+            <Link
+              to="/chats"
+              className="pepito-nav-profile-item"
+              role="menuitem"
+              data-testid="profile-shortcut-playmate"
+              onClick={() => setOpen(false)}
+            >
+              <PawPrint size={16} strokeWidth={2} />
+              <span>{t('nav.playmate')}</span>
+            </Link>
+            <Link
+              to="/shop"
+              className="pepito-nav-profile-item"
+              role="menuitem"
+              data-testid="profile-shortcut-shop"
+              onClick={() => setOpen(false)}
+            >
+              <ShoppingBag size={16} strokeWidth={2} />
+              <span>{t('nav.shop')}</span>
+            </Link>
+            <Link
+              to="/events"
+              className="pepito-nav-profile-item"
+              role="menuitem"
+              data-testid="profile-shortcut-events"
+              onClick={() => setOpen(false)}
+            >
+              <Gamepad2 size={16} strokeWidth={2} />
+              <span>{t('nav.games')}</span>
+            </Link>
+          </div>
 
           <ProfileManageNav variant="menu" onNavigate={() => setOpen(false)} />
 
