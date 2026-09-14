@@ -28,6 +28,9 @@ const src = readFileSync(join(process.cwd(), 'src/routes/games.ts'), 'utf8');
 assert.match(src, /gamesRouter\.get\('\/list'/, 'GET /list alias registered');
 assert.match(src, /parsePositiveIntId/, 'id parsing used');
 assert.match(src, /شناسه ایونت نامعتبر است/, 'invalid event id 400 copy');
+assert.match(src, /EVENT_CREATE_COST/, 'create cost constant');
+assert.match(src, /EVENT_GAME_TYPES/, 'pet event types');
+assert.match(src, /photos\/upload/, 'photo upload route');
 
 const listIdx = src.indexOf("gamesRouter.get('/list'");
 const idIdx = src.indexOf("gamesRouter.get('/:id'");

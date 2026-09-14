@@ -374,6 +374,18 @@ export const PROFILE_PHOTO_CHANGE_COST = 100;
 
 /** دلیل لجر کیف‌پول برای کسر تعویض عکس */
 export const PROFILE_PHOTO_CHANGE_FEE_REASON = 'هزینه تعویض عکس پروفایل';
+
+/** هزینه ساخت ایونت (سکه) — از موجودی میزبان کسر می‌شود */
+export const EVENT_CREATE_COST = 100;
+
+/** دلیل لجر برای ساخت ایونت */
+export const EVENT_CREATE_FEE_REASON = 'هزینه ساخت ایونت';
+
+/** دلیل لجر برای عضویت در ایونت (join fee) */
+export const EVENT_JOIN_FEE_REASON = 'هزینه عضویت ایونت';
+
+/** سقف هزینه عضویت ایونت (سکه) */
+export const MAX_EVENT_JOIN_FEE_COINS = 10_000;
 /** جایزه دعوت دوست (به معرف، به‌ازای هر ثبت‌نام جدید از لینک دعوت) */
 export const REFERRAL_BONUS_COINS = 30;
 
@@ -476,6 +488,23 @@ export function walletLedgerLabelFa(reason: string): string {
     r.includes('تعویض عکس')
   ) {
     return PROFILE_PHOTO_CHANGE_FEE_REASON;
+  }
+  if (
+    r === EVENT_CREATE_FEE_REASON ||
+    r === 'event_create' ||
+    r.includes('هزینه ساخت ایونت')
+  ) {
+    return EVENT_CREATE_FEE_REASON;
+  }
+  if (
+    r === EVENT_JOIN_FEE_REASON ||
+    r === 'event_join' ||
+    r.includes('هزینه عضویت ایونت')
+  ) {
+    return EVENT_JOIN_FEE_REASON;
+  }
+  if (r === 'event_join_received' || r.includes('درآمد ایونت')) {
+    return 'درآمد عضویت ایونت';
   }
   if (r === COIN_REASON.daily || r === 'daily') return 'سکه روزانه';
   if (r.startsWith('referral:')) return 'جایزه دعوت دوستان';
