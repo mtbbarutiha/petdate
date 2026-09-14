@@ -3594,8 +3594,10 @@ html[data-theme='dark'] .pepito-my-pets-card-pending {
 }
 
 /* Shop card-to-card deposit panel — was a frozen light gradient while
- * --pepito-dark/--pepito-muted remap to light ink → unreadable in dark. */
-html[data-theme='dark'] .pd-shop-card-deposit {
+ * --pepito-dark/--pepito-muted remap to light ink → unreadable in dark.
+ * Shared by ShopCartPage + ShopCardPayPage (`/shop/card-pay/:id`). */
+html[data-theme='dark'] .pd-shop-card-deposit,
+html[data-theme='dark'] .pd-shop-card-deposit--inline {
   background: linear-gradient(
     165deg,
     var(--pd-surface-2),

@@ -51,6 +51,14 @@ assert.doesNotMatch(shopCart, /ارسال رسید در ربات/, 'cart no long
 const shopCardPay = read(join(webRoot, 'pages/shop/ShopCardPayPage.tsx'));
 assert.match(shopCardPay, /application\/pdf/, 'shop card pay accepts PDF receipts');
 assert.match(shopCardPay, /آپلود فیش/, 'shop card pay has receipt upload CTA');
+assert.match(
+  shopCardPay,
+  /pd-shop-card-deposit pd-shop-card-deposit--inline/,
+  'card-pay receipt page reuses shared deposit panel classes (dark mode contrast)',
+);
+assert.match(shopCardPay, /pd-shop-card-deposit-title/, 'card-pay deposit title uses shared class');
+assert.match(shopCardPay, /pd-shop-card-deposit-number/, 'card-pay deposit number uses shared class');
+assert.match(shopCardPay, /pd-shop-card-deposit-holder/, 'card-pay deposit holder uses shared class');
 
 const chrome = read(join(webRoot, 'components/LandingChrome.tsx'));
 assert.match(chrome, /PlatformBanners/, 'landing shows platform banners');

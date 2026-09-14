@@ -343,8 +343,10 @@ assert.doesNotMatch(
   'dark FAQ/help surfaces must not keep white fills',
 );
 
-/* Shop card-to-card deposit — no leftover light gradient / light-on-light ink */
+/* Shop card-to-card deposit — no leftover light gradient / light-on-light ink
+ * (ShopCartPage + ShopCardPayPage /shop/card-pay receipt upload) */
 assert.match(darkCss, /\.pd-shop-card-deposit\b/, 'card-to-card deposit panel remapped for dark');
+assert.match(darkCss, /\.pd-shop-card-deposit--inline\b/, 'card-pay inline deposit panel remapped for dark');
 assert.match(darkCss, /\.pd-shop-card-deposit-number\b/, 'deposit card number remapped for dark');
 assert.match(darkCss, /\.pd-shop-card-deposit-hint\b/, 'deposit hint remapped for dark');
 assert.match(
@@ -359,7 +361,7 @@ assert.doesNotMatch(
 );
 assert.match(
   darkCss,
-  /html\[data-theme=['"]dark['"]\][\s\S]{0,80}\.pd-shop-card-deposit[\s\S]{0,280}var\(--pd-surface-2\)/,
+  /html\[data-theme=['"]dark['"]\][\s\S]{0,120}\.pd-shop-card-deposit[\s\S]{0,280}var\(--pd-surface-2\)/,
   'dark deposit panel paints --pd-surface-2',
 );
 assert.match(
@@ -369,7 +371,7 @@ assert.match(
 );
 assert.doesNotMatch(
   darkCss,
-  /html\[data-theme=['"]dark['"]\][\s\S]{0,80}\.pd-shop-card-deposit[\s\S]{0,220}#(fff|ffffff|faf9fc|f5f0ff)\b/i,
+  /html\[data-theme=['"]dark['"]\][\s\S]{0,120}\.pd-shop-card-deposit(?!--)[\s\S]{0,280}#(fff|ffffff|faf9fc|f5f0ff)\b/i,
   'dark deposit panel must not keep light fills',
 );
 
