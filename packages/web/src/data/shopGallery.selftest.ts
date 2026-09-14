@@ -122,6 +122,24 @@ for (const [id, slug, price] of batchMultiW2) {
 }
 assert.ok(getProduct('dog-treats-wanpy-chicken-jerky-chips-100g'), 'Wanpy jerky chips is in catalog');
 
+const batchMultiW3 = [
+  ['p270', 'dog-toys-luna-pomegranate-felt-squeaky-dog-toy', 322_000],
+  ['p272', 'cat-toys-petopoli-4-way-foldable-cat-play-tunnel', 2_310_000],
+  ['p279', 'dog-accessories-hannapet-silicone-dog-leash-size-l', 3_332_000],
+] as const;
+for (const [id, slug, price] of batchMultiW3) {
+  const item = getProduct(slug) ?? getProduct(id);
+  assert.ok(item, `${id} exists`);
+  assert.equal(item.priceToman, price, `${id} MANIFEST price`);
+  const shots = productGallery(item);
+  assert.equal(shots.length, 3, `${id} gallery has 3 unique angles`);
+  assert.ok(shots[0].includes(`${slug}.jpg?v=batch-multi-w3-v1`), `${id} front is batch-multi-w3-v1`);
+  assert.ok(shots[1].includes(`${slug}-2.jpg?v=batch-multi-w3-v1`), `${id} angle 2 is batch-multi-w3-v1`);
+  assert.ok(shots[2].includes(`${slug}-3.jpg?v=batch-multi-w3-v1`), `${id} angle 3 is batch-multi-w3-v1`);
+  assert.doesNotMatch(shots.join(' '), /purple|5c4d91|بنفش/i, `${id} gallery has no purple asset`);
+}
+assert.ok(getProduct('cat-toys-petopoli-4-way-foldable-cat-play-tunnel'), 'Petopoli tunnel is in catalog');
+
 const p221 = getProduct('dog-food-royal-canin-mini-adult-2kg')!;
 applyLiveShopCatalog({
   products: [

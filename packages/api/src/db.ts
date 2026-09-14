@@ -178,7 +178,7 @@ export function getDb(): AppDatabase {
     };
 
     const bootShopPilot = () => {
-      // Additive Royal Canin pilot + Batch 2 + Batch 3 + Batch-multi wave 1–2 SKUs — upsert by slug; never wipe catalog.
+      // Additive Royal Canin pilot + Batch 2 + Batch 3 + Batch-multi wave 1–3 SKUs — upsert by slug; never wipe catalog.
       try {
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { seedRoyalCaninPilotProducts } =
@@ -219,10 +219,18 @@ export function getDb(): AppDatabase {
       } catch (err) {
         console.warn('Shop batch-multi wave 2 seed skipped/failed:', (err as Error).message);
       }
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { seedShopBatchMultiWave3Products } =
+          require('./data/shop-batch-multi-wave3-products') as typeof import('./data/shop-batch-multi-wave3-products');
+        seedShopBatchMultiWave3Products();
+      } catch (err) {
+        console.warn('Shop batch-multi wave 3 seed skipped/failed:', (err as Error).message);
+      }
     };
 
     const bootShopCatalogGuard = () => {
-      // Delete leftover demo/seed SKUs. Never touches p221–p269 prices/images/stock.
+      // Delete leftover demo/seed SKUs. Never touches p221–p279 prices/images/stock.
       try {
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { purgeDemoShopProducts } =
@@ -1689,7 +1697,7 @@ function seedFinanceDefaults() {
     (db.prepare('SELECT COUNT(*) as c FROM shop_products').get() as { c: number } | undefined)?.c ?? 0
   );
   if (productCount === 0) {
-    // Live SKUs (p221–p269) are seeded by bootShopPilot — never insert demo toys/beds/collars here.
+    // Live SKUs (p221–p279) are seeded by bootShopPilot — never insert demo toys/beds/collars here.
     const cats = [
       ['dog-food', 'غذای سگ', 'dog', 'غذای خشک و کنسرو', '🦴', 10],
       ['cat-food', 'غذای گربه', 'cat', 'غذای خشک و پوچ', '🐟', 20],

@@ -63,15 +63,29 @@ export const SHOP_BATCH_MULTI_WAVE2_SLUGS = [
   'dog-toys-luna-squeaky-smile-watermelon-plush-dog-toy',
 ] as const;
 
+export const SHOP_BATCH_MULTI_WAVE3_SLUGS = [
+  'dog-toys-luna-pomegranate-felt-squeaky-dog-toy',
+  'dog-toys-luna-squeaky-watermelon-plush-dog-toy',
+  'cat-toys-petopoli-4-way-foldable-cat-play-tunnel',
+  'cat-toys-cat-toy-layer-tower-of-tracks',
+  'cat-toys-hanging-catnip-bat-toy-for-cats',
+  'cat-toys-little-yellow-cat-toy',
+  'cat-toys-play-tunnel-bag',
+  'cat-toys-automatic-cat-teaser-ball-robotic-toy-for-cats',
+  'dog-accessories-hannapet-silicone-h-harness-size-l',
+  'dog-accessories-hannapet-silicone-dog-leash-size-l',
+] as const;
+
 export const ZERO_MARGIN_SHOP_SLUGS: readonly string[] = [
   ...ROYAL_CANIN_PILOT_SLUGS,
   ...SHOP_BATCH2_SLUGS,
   ...SHOP_BATCH3_SLUGS,
   ...SHOP_BATCH_MULTI_SLUGS,
   ...SHOP_BATCH_MULTI_WAVE2_SLUGS,
+  ...SHOP_BATCH_MULTI_WAVE3_SLUGS,
 ];
 
-/** Live shop product ids — 3 pilots + 12 Batch 2 + 14 Batch 3 + 10 multi wave 1 + 10 multi wave 2. Never purge these rows. */
+/** Live shop product ids — 3 pilots + 12 Batch 2 + 14 Batch 3 + 10 multi wave 1 + 10 multi wave 2 + 10 multi wave 3. Never purge these rows. */
 export const LIVE_SHOP_PRODUCT_IDS = [
   'p221',
   'p222',
@@ -122,6 +136,16 @@ export const LIVE_SHOP_PRODUCT_IDS = [
   'p267',
   'p268',
   'p269',
+  'p270',
+  'p271',
+  'p272',
+  'p273',
+  'p274',
+  'p275',
+  'p276',
+  'p277',
+  'p278',
+  'p279',
 ] as const;
 
 export function isLiveShopProductIdOrSlug(idOrSlug: string): boolean {

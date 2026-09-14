@@ -85,6 +85,12 @@
     <priority>0.75</priority>
   </url>
   <url>
+    <loc>https://petdate.ir/shop/c/dog-accessories</loc>
+    <lastmod>2026-09-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
     <loc>https://petdate.ir/shop/c/cat-food</loc>
     <lastmod>2026-09-14</lastmod>
     <changefreq>weekly</changefreq>
@@ -92,6 +98,12 @@
   </url>
   <url>
     <loc>https://petdate.ir/shop/c/cat-treats</loc>
+    <lastmod>2026-09-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://petdate.ir/shop/c/cat-toys</loc>
     <lastmod>2026-09-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
@@ -392,6 +404,66 @@
   </url>
   <url>
     <loc>https://petdate.ir/shop/product/dog-toys-luna-squeaky-smile-watermelon-plush-dog-toy</loc>
+    <lastmod>2026-09-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://petdate.ir/shop/product/dog-toys-luna-pomegranate-felt-squeaky-dog-toy</loc>
+    <lastmod>2026-09-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://petdate.ir/shop/product/dog-toys-luna-squeaky-watermelon-plush-dog-toy</loc>
+    <lastmod>2026-09-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://petdate.ir/shop/product/cat-toys-petopoli-4-way-foldable-cat-play-tunnel</loc>
+    <lastmod>2026-09-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://petdate.ir/shop/product/cat-toys-cat-toy-layer-tower-of-tracks</loc>
+    <lastmod>2026-09-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://petdate.ir/shop/product/cat-toys-hanging-catnip-bat-toy-for-cats</loc>
+    <lastmod>2026-09-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://petdate.ir/shop/product/cat-toys-little-yellow-cat-toy</loc>
+    <lastmod>2026-09-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://petdate.ir/shop/product/cat-toys-play-tunnel-bag</loc>
+    <lastmod>2026-09-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://petdate.ir/shop/product/cat-toys-automatic-cat-teaser-ball-robotic-toy-for-cats</loc>
+    <lastmod>2026-09-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://petdate.ir/shop/product/dog-accessories-hannapet-silicone-h-harness-size-l</loc>
+    <lastmod>2026-09-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://petdate.ir/shop/product/dog-accessories-hannapet-silicone-dog-leash-size-l</loc>
     <lastmod>2026-09-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.65</priority>
