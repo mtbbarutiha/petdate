@@ -13,9 +13,16 @@ const login = readFileSync(join(dir, 'LoginPage.tsx'), 'utf8');
 const otp = readFileSync(join(dir, 'OtpPage.tsx'), 'utf8');
 const googleBtn = readFileSync(join(dir, '../../components/GoogleLoginButton.tsx'), 'utf8');
 const googleCb = readFileSync(join(dir, 'GoogleCallbackPage.tsx'), 'utf8');
+const authShell = readFileSync(join(dir, '../../components/AuthShell.tsx'), 'utf8');
 const globalCss = readFileSync(join(dir, '../../styles/global.css'), 'utf8');
 
 assert.match(login, /GoogleLoginButton/, 'login uses shared Google CTA');
+assert.match(login, /AuthShell/, 'login uses shared auth chrome');
+assert.doesNotMatch(login, /backLabel/, 'login does not force a خانه header action');
+assert.match(authShell, /showMobileEvents=\{false\}/, 'auth chrome hides ایونت‌ها pill');
+assert.match(authShell, /showDesktopNav=\{false\}/, 'auth chrome hides desktop Events nav');
+assert.doesNotMatch(authShell, /common\.home/, 'auth chrome does not default to خانه');
+assert.match(otp, /backLabel=\"تغییر شماره\"/, 'OTP keeps explicit back action (not Home)');
 assert.match(login, /با تلگرام، گوگل یا موبایل وارد شو/, 'welcome copy includes Google');
 assert.doesNotMatch(login, /is-off/, 'Google CTA is not dimmed/hidden');
 assert.doesNotMatch(login, /onGoogleClick/, 'Google always starts API OAuth');

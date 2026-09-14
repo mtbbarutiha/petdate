@@ -6,7 +6,10 @@ interface AuthShellProps {
   children: ReactNode;
   /** Wider panel for multi-step wizards */
   wide?: boolean;
-  /** Optional back link label (default: short «خانه» — fits mobile header) */
+  /**
+   * Optional back link in the header (e.g. OTP «تغییر شماره»).
+   * Login/auth default: omit — logo is home; do not show «خانه».
+   */
   backLabel?: string;
   backTo?: string;
   /** Continuity banner copy — defaults keep brand first */
@@ -34,8 +37,10 @@ export function AuthShell({
       bannerTitle={bannerTitle ?? t('auth.bannerTitle')}
       bannerLead={bannerLead ?? t('auth.bannerLead')}
       bannerImage={bannerImage}
-      actionLabel={backLabel ?? t('common.home')}
+      actionLabel={backLabel}
       actionTo={backTo}
+      showMobileEvents={false}
+      showDesktopNav={false}
       className="pepito-auth-flow"
       footer={footer}
     >

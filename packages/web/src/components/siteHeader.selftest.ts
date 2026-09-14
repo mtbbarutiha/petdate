@@ -112,6 +112,7 @@ assert.match(chrome, /SiteHeader/, 'LandingChrome uses shared header');
 assert.match(chrome, /landingSectionLinks/, 'LandingChrome uses marketing extras');
 assert.match(chrome, /appNav \? \[\] : landingSectionLinks/, 'app shell drops marketing extras');
 assert.match(chrome, /showMobileEvents/, 'LandingChrome can suppress mobile Events');
+assert.match(chrome, /showDesktopNav/, 'LandingChrome can suppress desktop role shortcuts');
 assert.match(chrome, /hideActionOnMobile/, 'LandingChrome can hide action on mobile');
 assert.match(welcome, /SiteHeader/, 'Welcome uses shared header');
 assert.match(welcome, /welcomeSectionLinks/, 'Welcome uses hash extras without games/shop');
@@ -119,6 +120,20 @@ assert.match(welcome, /deferDesktopNav/, 'Welcome still defers desktop shortcuts
 assert.match(shop, /SiteHeader/, 'ShopChrome uses shared header');
 assert.match(shop, /showDesktopNav=\{false\}/, 'shop hides هم بازی/شاپ/ایونت‌ها desktop nav');
 assert.match(shop, /showMobileEvents=\{false\}/, 'shop hides mobile Events pill');
+
+const authShell = readFileSync(join(root, 'components/AuthShell.tsx'), 'utf8');
+assert.match(authShell, /showMobileEvents=\{false\}/, 'auth chrome hides mobile Events pill');
+assert.match(authShell, /showDesktopNav=\{false\}/, 'auth chrome hides desktop Events/shop/playmate');
+assert.doesNotMatch(
+  authShell,
+  /common\.home/,
+  'auth does not default header action to خانه (logo is home)',
+);
+assert.match(
+  authShell,
+  /actionLabel=\{backLabel\}/,
+  'auth only shows a header action when backLabel is set (OTP/onboarding)',
+);
 assert.match(shop, /pepito-nav--shop/, 'shop marks header for aligned tools + search chrome');
 assert.match(shop, /showOrders/, 'shop keeps Orders icon in the left cluster');
 assert.doesNotMatch(shop, /shopSectionLinks/, 'shop no longer mounts text سفارش‌ها in primary nav');
