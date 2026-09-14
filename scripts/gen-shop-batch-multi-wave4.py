@@ -283,7 +283,7 @@ def write_api() -> None:
  * PetDate shop Batch-multi wave 4/5 — 10 live SKUs (p280–p289).
  * Additive, idempotent upsert by slug. Margin 0 (cost_toman = price_toman).
  * Seller copy is پت دیت شاپ only. Do not invent missing weights.
- * Gallery cache-bust is batch-multi-w4-v3 (wave 1–3 stay on their own busts).
+ * Gallery cache-bust is batch-multi-w4-v4 (wave 1–3 stay on their own busts).
  * Slug typo is historical: hannapet-silicone-h-harness-sizr-m (sizr not size).
  */
 import {{ getDb }} from '../db';
@@ -480,7 +480,7 @@ def write_price_index() -> None:
 
 
 def write_cache_bust() -> None:
-    dest = ROOT / "tmp/cache-bust-shop-batch-multi-w4-v3"
+    dest = ROOT / "tmp/cache-bust-shop-batch-multi-w4-v4"
     dest.write_text(f"{CACHE_BUST}\n")
 
 
@@ -490,8 +490,8 @@ def main() -> None:
         raise SystemExit(f"missing descriptions: {missing}")
     if [p["proposedId"] for p in PRODUCTS] != [f"p{i}" for i in range(280, 290)]:
         raise SystemExit("wave 4 ids must be p280–p289 in order")
-    if CACHE_BUST != "batch-multi-w4-v3":
-        raise SystemExit("wave 4 cache bust must be batch-multi-w4-v3")
+    if CACHE_BUST != "batch-multi-w4-v4":
+        raise SystemExit("wave 4 cache bust must be batch-multi-w4-v4")
     if PRODUCTS[0]["slug"] != "dog-accessories-hannapet-silicone-h-harness-sizr-m":
         raise SystemExit("p280 slug must keep historical sizr typo")
     write_web()
