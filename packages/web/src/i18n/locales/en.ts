@@ -345,8 +345,6 @@ export const en: Dict = {
     storeSoonHint: 'Coming soon',
     openWeb: 'Continue on web',
     openWebHint: 'Use the web app until you install the APK',
-Playmates for your pet, shop & online vet — always handy.
-Android install:',
     smsTitle: 'Get the download link by SMS',
     smsLead: 'Enter your mobile number and we will text you the download link.',
     smsPhoneLabel: 'Mobile number',
