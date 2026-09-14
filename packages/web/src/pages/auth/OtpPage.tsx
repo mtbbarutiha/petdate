@@ -1,5 +1,6 @@
 import { FormEvent, MouseEvent, useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { Send } from 'lucide-react';
 import { normalizeRoles, userHasRole, dashboardPathForUser, primaryRole } from '@petdate/shared';
 import { AuthShell } from '../../components/AuthShell';
 import { useAuthStore } from '../../hooks/useAuthStore';
@@ -398,11 +399,12 @@ export function OtpPage() {
             در تلگرام <strong>تأیید ورود</strong> را بزن؛ همین صفحه خودکار ادامه می‌دهد.
           </p>
           <a
-            className="auth-telegram-secondary"
+            className="pepito-btn button-2 auth-telegram-cta"
             href={tgWaiting.deepLink}
             target="_blank"
             rel="noopener noreferrer"
           >
+            <Send size={16} strokeWidth={2} aria-hidden />
             باز کردن دوباره تلگرام
           </a>
           <button type="button" className="auth-link-btn" onClick={() => setTgWaiting(null)}>
@@ -411,13 +413,14 @@ export function OtpPage() {
         </>
       ) : (
         <a
-          className="auth-telegram-secondary"
+          className="pepito-btn button-2 auth-telegram-cta"
           href={usePendingFlow ? '#' : telegramLoginUrl}
           target={usePendingFlow ? undefined : '_blank'}
           rel="noopener noreferrer"
           onClick={onTelegramLogin}
         >
-          {tgBusy ? 'در حال آماده‌سازی…' : 'ورود با تلگرام (اختیاری)'}
+          <Send size={16} strokeWidth={2} aria-hidden />
+          {tgBusy ? 'در حال آماده‌سازی…' : 'ورود با اکانت تلگرام'}
         </a>
       )}
     </AuthShell>
