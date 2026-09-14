@@ -338,7 +338,10 @@ npx tsx "$ROOT/packages/api/src/data/shop-batch-multi-wave4-products.selftest.ts
 echo "==> selftest: shop batch-multi wave 5 SKUs"
 npx tsx "$ROOT/packages/api/src/data/shop-batch-multi-wave5-products.selftest.ts"
 
-echo "==> selftest: live shop catalog is p221–p299 only"
+echo "==> selftest: shop Digikala batch1 Part1 SKUs"
+npx tsx "$ROOT/packages/api/src/data/shop-digikala-batch1-part1-products.selftest.ts"
+
+echo "==> selftest: live shop catalog is p221–p309 only"
 npx tsx "$ROOT/packages/api/src/data/shop-live-catalog.selftest.ts"
 
 echo "==> api: shop brands"

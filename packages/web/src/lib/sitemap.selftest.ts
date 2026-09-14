@@ -107,4 +107,12 @@ assert(
   map.includes('/shop/dog-carriers-luxury-leather-space-pet-carier-backpack '),
   'batch-multi wave 5 luxury leather carier slug aliases 301 to /shop/product/:slug'
 );
+assert(
+  xml.includes('/shop/product/cat-food-dkp-21263751'),
+  'Digikala batch1 Part1 Gourmet 6-pack stays in sitemap'
+);
+assert(
+  map.includes('/shop/cat-toys-dkp-17412089 '),
+  'Digikala batch1 Part1 Worm slug aliases 301 to /shop/product/:slug'
+);
 console.log('sitemap.selftest: ok');

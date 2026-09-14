@@ -1,6 +1,6 @@
 /**
  * PetDate shop catalog — Pepito imagery, prices in تومان (wallet primary currency).
- * Live catalog is exactly 79 SKUs: p221–p223 (pilots) + p224–p235 (Batch 2) + p236–p249 (Batch 3) + p250–p259 (multi wave 1) + p260–p269 (multi wave 2) + p270–p279 (multi wave 3) + p280–p289 (multi wave 4) + p290–p299 (multi wave 5).
+ * Live catalog is exactly 89 SKUs: p221–p223 (pilots) + p224–p235 (Batch 2) + p236–p249 (Batch 3) + p250–p259 (multi wave 1) + p260–p269 (multi wave 2) + p270–p279 (multi wave 3) + p280–p289 (multi wave 4) + p290–p299 (multi wave 5) + p300–p309 (Digikala batch1 Part1).
  * Demo p1–p220 were removed so they cannot reappear on deploy.
  */
 
@@ -11,6 +11,7 @@ import { SHOP_BATCH_MULTI_WAVE2_PRODUCTS } from './shopBatchMultiWave2Products';
 import { SHOP_BATCH_MULTI_WAVE3_PRODUCTS } from './shopBatchMultiWave3Products';
 import { SHOP_BATCH_MULTI_WAVE4_PRODUCTS } from './shopBatchMultiWave4Products';
 import { SHOP_BATCH_MULTI_WAVE5_PRODUCTS } from './shopBatchMultiWave5Products';
+import { SHOP_DIGIKALA_BATCH1_PART1_PRODUCTS } from './shopDigikalaBatch1Part1Products';
 
 const P = '/pepito/uploads';
 
@@ -260,10 +261,11 @@ export const SHOP_BRANDS: ShopBrand[] = [
   { id: 'raha', labelFa: 'رها', labelEn: 'Raha', sortOrder: 400, active: true },
   { id: 'jupiter', labelFa: 'ژوپیتر', labelEn: 'Jupiter', sortOrder: 410, active: true },
   { id: 'oshkaia', labelFa: 'اوشکایا', labelEn: 'Oshkaia', sortOrder: 420, active: true },
+  { id: 'biodop', labelFa: 'بیودپ', labelEn: 'Biodop', sortOrder: 430, active: true },
   { id: 'generic', labelFa: 'سایر', labelEn: 'Other', sortOrder: 900, active: true },
 ];
 
-/** Live shop catalog — 3 Royal Canin pilots + 12 Batch 2 + 14 Batch 3 + 10 multi wave 1 + 10 multi wave 2 + 10 multi wave 3 + 10 multi wave 4 + 10 multi wave 5 SKUs */
+/** Live shop catalog — 3 Royal Canin pilots + 12 Batch 2 + 14 Batch 3 + 10 multi wave 1 + 10 multi wave 2 + 10 multi wave 3 + 10 multi wave 4 + 10 multi wave 5 + 10 Digikala batch1 Part1 SKUs */
 export const SHOP_PRODUCTS: ShopProduct[] = [
   {
     id: 'p221',
@@ -383,6 +385,7 @@ export const SHOP_PRODUCTS: ShopProduct[] = [
   ...SHOP_BATCH_MULTI_WAVE3_PRODUCTS,
   ...SHOP_BATCH_MULTI_WAVE4_PRODUCTS,
   ...SHOP_BATCH_MULTI_WAVE5_PRODUCTS,
+  ...SHOP_DIGIKALA_BATCH1_PART1_PRODUCTS,
 ];
 
 export function formatToman(amount: number): string {
