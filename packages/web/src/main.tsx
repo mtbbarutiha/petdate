@@ -7,6 +7,7 @@ import { registerPetdateSW } from './lib/swRegister';
 import './styles/global.css';
 import './styles/pepito.css';
 import './styles/app-landing.css';
+import './styles/mobile-app-strip.css';
 import './styles/theme-dark.css';
 import { initTheme } from './lib/theme';
 import { I18nProvider, useI18n } from './i18n/I18nProvider';

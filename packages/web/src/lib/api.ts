@@ -142,6 +142,21 @@ export function resolvePublicAvatarUrl(
   return resolvePublicMediaUrl(usable);
 }
 
+
+export async function sendAppDownloadSms(mobile: string) {
+  return request<{
+    ok: true;
+    sent: boolean;
+    fallback?: boolean;
+    phone: string;
+    smsBody?: string;
+    message: string;
+  }>('/api/app-download-sms', {
+    method: 'POST',
+    body: JSON.stringify({ mobile }),
+  });
+}
+
 export async function subscribeNewsletter(email: string, source = 'footer') {
   return request<{
     ok: true;

@@ -15,6 +15,8 @@ After a build, the APK is published at:
 
 `packages/web/public/downloads/petdate-android.apk`
 
+The shell is **immersive fullscreen** (system bars hide; swipe to reveal) and requests **location** permission on launch (`ACCESS_FINE_LOCATION` / `ACCESS_COARSE_LOCATION`). WebView geolocation also reuses Capacitor’s prompt when the site asks for location.
+
 ## Rebuild
 
 Prerequisites: **Java 17+**, **Android SDK** (`cmdline-tools`, platform 34, build-tools 34.0.0).
