@@ -59,10 +59,16 @@ if (category) {
   assert.equal(pdp[2]?.label, 'گربه');
   assert.equal(pdp[2]?.to, '/shop/c/all?pet=cat');
   assert.equal(pdp[3]?.label, category.labelFa);
-  assert.equal(pdp[3]?.to, `/shop/c/${category.slug}`);
-  assert.equal(pdp[4]?.to, undefined);
-  assert.ok(pdp[4]?.label);
+  assert.equal(pdp[3]?.to, undefined, 'category is the leaf — no product-title step');
+  assert.equal(pdp.length, 4, 'PDP crumbs stop at category');
 }
+
+const seoProduct = shopSeoBreadcrumbItems({ product });
+assert.deepEqual(
+  seoProduct.map((c) => c.name),
+  [SEO.siteName, 'شاپ', 'گربه', category!.labelFa],
+  'SEO crumbs also omit the product title'
+);
 
 const seoCat = shopSeoBreadcrumbItems({ categorySlug: 'cat-food' });
 assert.deepEqual(

@@ -21,8 +21,8 @@ function productThumb(p: ShopProduct): string {
 }
 
 /**
- * DigiKala-style RTL shop search: pill field under chrome nav, live dropdown,
- * Ctrl/Cmd+K focus, Enter → /shop/c/all?q= (existing filter route).
+ * DigiKala-style RTL shop search: compact pill under the logo, expands on
+ * focus/typing, live dropdown, Ctrl/Cmd+K focus, Enter → /shop/c/all?q=.
  */
 export function ShopProductSearch() {
   const { lang, t } = useI18n();
@@ -35,6 +35,7 @@ export function ShopProductSearch() {
   const [query, setQuery] = useState(qFromUrl);
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
+  const [focused, setFocused] = useState(false);
 
   useEffect(() => {
     setQuery(qFromUrl);
@@ -69,6 +70,7 @@ export function ShopProductSearch() {
       inputRef.current?.focus();
       inputRef.current?.select();
       setOpen(true);
+      setFocused(true);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -79,6 +81,7 @@ export function ShopProductSearch() {
       if (!rootRef.current?.contains(e.target as Node)) {
         setOpen(false);
         setActiveIndex(-1);
+        setFocused(false);
       }
     };
     document.addEventListener('mousedown', onPointer);
@@ -98,9 +101,14 @@ export function ShopProductSearch() {
   };
 
   const showDropdown = open && query.trim().length > 0;
+  const expanded = focused || open || query.trim().length > 0;
 
   return (
-    <div className="pd-shop-search" ref={rootRef} data-testid="shop-product-search">
+    <div
+      className={`pd-shop-search${expanded ? ' is-expanded' : ''}`}
+      ref={rootRef}
+      data-testid="shop-product-search"
+    >
       <form
         className="pd-shop-search-pill"
         role="search"
@@ -131,7 +139,17 @@ export function ShopProductSearch() {
             setOpen(true);
             setActiveIndex(-1);
           }}
-          onFocus={() => setOpen(true)}
+          onFocus={() => {
+            setOpen(true);
+            setFocused(true);
+          }}
+          onBlur={() => {
+            window.setTimeout(() => {
+              if (!rootRef.current?.contains(document.activeElement)) {
+                setFocused(false);
+              }
+            }, 0);
+          }}
           onKeyDown={(e) => {
             if (!showDropdown) return;
             if (e.key === 'ArrowDown') {

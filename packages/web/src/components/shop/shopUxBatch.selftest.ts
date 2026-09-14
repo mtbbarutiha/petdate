@@ -81,8 +81,10 @@ assert.match(
   /\.pd-shop-rail-btn--left[\s\S]{0,80}left:\s*0\.2rem/,
   'left control is physical left (not inset-inline, which mirrors in RTL)'
 );
-assert.match(css, /\.pd-shop-home-rail-track[\s\S]{0,180}overflow-x:\s*hidden/, 'home rail hides native scrollbar');
-assert.match(css, /\.pd-shop-dk-strip\s*\{[\s\S]{0,320}overflow-x:\s*hidden/, 'category strip hides native scrollbar');
+assert.match(css, /\.pd-shop-home-rail-track[\s\S]{0,220}overflow-x:\s*auto/, 'home rail allows swipe scroll');
+assert.match(css, /\.pd-shop-home-rail-track[\s\S]{0,260}scrollbar-width:\s*none/, 'home rail hides native scrollbar');
+assert.match(css, /\.pd-shop-dk-strip\s*\{[\s\S]{0,360}overflow-x:\s*auto/, 'category strip allows swipe scroll');
+assert.match(css, /\.pd-shop-dk-strip\s*\{[\s\S]{0,420}scrollbar-width:\s*none/, 'category strip hides native scrollbar');
 assert.match(css, /\.pd-shop-promo-banners\b/, 'promo banner styles');
 const promoSrc = readFileSync(join(here, 'ShopPromoBanners.tsx'), 'utf8');
 assert.match(promoSrc, /پت‌دیت/, 'promo banners include PetDate name');

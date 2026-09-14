@@ -10,7 +10,7 @@ import {
   type ShopPetType,
   type ShopProduct,
 } from '../data/shopCatalog';
-import { productTitleForLang, shopLabel } from './shopLocale';
+import { shopLabel } from './shopLocale';
 
 export type ShopBreadcrumbItem = {
   /** Display label (already localized). */
@@ -104,7 +104,10 @@ export function shopCategoryBreadcrumbs(opts: {
   return items;
 }
 
-/** Product detail trail including category ancestors + product title (current). */
+/**
+ * Product detail trail: brand → shop → pet → category (current).
+ * Product title is intentionally omitted so the path stops at the category.
+ */
 export function shopProductBreadcrumbs(opts: {
   lang?: ShopBreadcrumbLang;
   product: ShopProduct;
@@ -121,16 +124,13 @@ export function shopProductBreadcrumbs(opts: {
     });
     items.push({
       label: shopLabel(lang, category.labelFa, category.labelEn),
-      to: `/shop/c/${category.slug}`,
+      // Current crumb — no link (category is the leaf on PDP).
     });
+    return items;
   }
 
-  items.push({
-    label: productTitleForLang(lang, opts.product.title, {
-      titleEn: opts.product.titleEn,
-      slug: opts.product.slug,
-    }),
-  });
+  // Fallback when category is missing: keep a short shop trail (no product title).
+  void opts.product;
   return items;
 }
 
@@ -150,10 +150,7 @@ export function shopSeoBreadcrumbItems(opts: {
       out.push({ name: petTypeLabel('fa', cat.petType), path: petTypeHref(cat.petType) });
       out.push({ name: cat.labelFa, path: `/shop/c/${cat.slug}` });
     }
-    out.push({
-      name: opts.product.title,
-      path: `/shop/product/${opts.product.slug || opts.product.id}`,
-    });
+    // Match visible PDP crumbs: stop at category (no product-title step).
     return out;
   }
 

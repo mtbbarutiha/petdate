@@ -21,7 +21,8 @@ export function ShopProductGallery({ gallery, cover, alt, badge, discount }: Pro
   const [gridOpen, setGridOpen] = useState(false);
   const index = Math.min(active, Math.max(slides.length - 1, 0));
   const mainSrc = slides[index] ?? cover;
-  const drag = useRef<{ x: number } | null>(null);
+  const drag = useRef<{ x: number; pointerId: number } | null>(null);
+  const lightboxDrag = useRef<{ x: number; pointerId: number } | null>(null);
   const suppressClick = useRef(false);
   const panelRef = useRef<HTMLDivElement | null>(null);
 
@@ -51,12 +52,22 @@ export function ShopProductGallery({ gallery, cover, alt, badge, discount }: Pro
 
   const onPointerDown = (e: PointerEvent<HTMLButtonElement>) => {
     if (e.button != null && e.button !== 0) return;
-    drag.current = { x: e.clientX };
+    drag.current = { x: e.clientX, pointerId: e.pointerId };
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      /* ignore */
+    }
   };
   const onPointerUp = (e: PointerEvent<HTMLButtonElement>) => {
     const start = drag.current;
     drag.current = null;
     if (!start) return;
+    try {
+      e.currentTarget.releasePointerCapture(start.pointerId);
+    } catch {
+      /* ignore */
+    }
     const intent = shopGalleryPointerIntent(e.clientX - start.x, multi);
     if (intent === 'open') return;
     suppressClick.current = true;
@@ -70,6 +81,32 @@ export function ShopProductGallery({ gallery, cover, alt, badge, discount }: Pro
       return;
     }
     openLightbox();
+  };
+
+  const onLightboxPointerDown = (e: PointerEvent<HTMLDivElement>) => {
+    if (!multi || gridOpen) return;
+    if (e.button != null && e.button !== 0) return;
+    const target = e.target as HTMLElement | null;
+    if (target?.closest('button')) return;
+    lightboxDrag.current = { x: e.clientX, pointerId: e.pointerId };
+    try {
+      e.currentTarget.setPointerCapture(e.pointerId);
+    } catch {
+      /* ignore */
+    }
+  };
+  const onLightboxPointerUp = (e: PointerEvent<HTMLDivElement>) => {
+    const start = lightboxDrag.current;
+    lightboxDrag.current = null;
+    if (!start) return;
+    try {
+      e.currentTarget.releasePointerCapture(start.pointerId);
+    } catch {
+      /* ignore */
+    }
+    const intent = shopGalleryPointerIntent(e.clientX - start.x, multi);
+    if (intent === 'open') return;
+    go(intent === 'next' ? 1 : -1);
   };
 
   useEffect(() => {
@@ -87,6 +124,15 @@ export function ShopProductGallery({ gallery, cover, alt, badge, discount }: Pro
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [lightbox, gridOpen, multi, slides.length]);
+
+  useEffect(() => {
+    if (!lightbox) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [lightbox]);
 
   if (!slides.length) return null;
 
@@ -225,8 +271,15 @@ export function ShopProductGallery({ gallery, cover, alt, badge, discount }: Pro
                   ))}
                 </div>
               ) : (
-                <div className="pd-dk-lightbox-stage">
-                  <img src={mainSrc} alt={alt} />
+                <div
+                  className="pd-dk-lightbox-stage"
+                  onPointerDown={onLightboxPointerDown}
+                  onPointerUp={onLightboxPointerUp}
+                  onPointerCancel={() => {
+                    lightboxDrag.current = null;
+                  }}
+                >
+                  <img src={mainSrc} alt={alt} draggable={false} />
                   {multi ? (
                     <>
                       <button

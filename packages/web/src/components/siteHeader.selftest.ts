@@ -22,15 +22,21 @@ const nav = readFileSync(join(root, 'lib/siteNav.ts'), 'utf8');
 
 assert.match(header, /pepito-nav-primary/, 'header has primary group');
 assert.match(header, /brandBelow/, 'header accepts shop search under the logo');
-assert.match(header, /pepito-nav--with-search/, 'search uses a second header row');
-assert.match(header, /pepito-nav-search-row/, 'search row is full-width under logo/nav');
-assert.match(header, /pepito-nav-main/, 'logo, links, and utilities share the top row');
+assert.match(header, /pepito-nav--with-search/, 'shop search marks the header for taller chrome');
+assert.match(header, /pepito-nav-brand--search/, 'search stacks under the brand/logo column');
+assert.match(header, /pepito-nav-main/, 'logo, links, and utilities share one header row site-wide');
+assert.doesNotMatch(header, /pepito-nav-search-row/, 'search is not a full-width second row');
 assert.match(header, /pepito-nav-brand/, 'logo lives in the brand cluster');
 assert.doesNotMatch(header, /ShopProductSearch/, 'SiteHeader does not import shop search (slot only)');
 assert.match(header, /pepito-nav-actions/, 'header has utilities group');
 assert.match(header, /LanguageToggle/, 'utilities include language');
 assert.match(header, /ThemeToggle/, 'utilities include theme');
 assert.match(header, /NavUserCluster/, 'utilities include cart/wallet/profile');
+assert.match(
+  header,
+  /compactChrome/,
+  'mobile + shop use compact lang/theme chips'
+);
 const navCluster = readFileSync(join(root, 'components/NavUserCluster.tsx'), 'utf8');
 assert.match(navCluster, /to="\/auth\/login"/, 'guest login icon targets /auth/login');
 assert.match(navCluster, /IconLogin/, 'guest login uses first-party icon (no lucide)');
@@ -123,6 +129,17 @@ assert.match(desktopNav, /pepito-nav-section-link/, 'role shortcuts share خدم
 assert.doesNotMatch(desktopNav, /<item\.icon/, 'role shortcuts are text-only (no icon pills)');
 
 assert.match(css, /\.pepito-nav-primary/, 'primary group styled');
+assert.match(
+  css,
+  /\.pepito-nav-main[\s\S]{0,120}justify-content:\s*space-between/,
+  'mobile header row spaces logo and tools site-wide'
+);
+assert.match(
+  css,
+  /\.pepito-nav-brand--search[\s\S]{0,200}\.pd-shop-search\.is-expanded/,
+  'compact logo-column search expands on focus'
+);
+assert.doesNotMatch(css, /\.pepito-nav-search-row/, 'full-width search row styles removed');
 assert.match(
   css,
   /\.pepito-nav-links\.pepito-nav-section-inline[\s\S]{0,120}display:\s*flex/,

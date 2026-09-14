@@ -384,12 +384,12 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   position: relative;
   z-index: 7;
 }
+/* Shop: taller sticky bar when compact search stacks under the logo. */
 .pepito-nav--with-search {
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0.45rem;
   height: auto;
+  align-items: stretch;
 }
+/* Single header row site-wide — logo | links | tools (search nests under brand). */
 .pepito-nav-main {
   display: flex;
   align-items: center;
@@ -397,14 +397,36 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   width: 100%;
   min-width: 0;
 }
-.pepito-nav-search-row {
-  width: 100%;
-  min-width: 0;
+.pepito-nav-brand--search {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.4rem;
+  /* Far-right in RTL (inline-start); keep column narrow until search expands. */
+  width: clamp(11.5rem, 18vw, 15rem);
+  max-width: min(42vw, 16rem);
+  position: relative;
+  z-index: 8;
 }
-.pepito-nav-search-row .pd-shop-search {
+.pepito-nav-brand--search .pd-shop-search {
   width: 100%;
-  max-width: 720px;
-  margin-inline: auto;
+  max-width: none;
+  margin-inline: 0;
+  transition: width 0.2s ease, max-width 0.2s ease;
+}
+.pepito-nav-brand--search .pd-shop-search.is-expanded,
+.pepito-nav-brand--search .pd-shop-search:focus-within {
+  width: min(28rem, 72vw);
+  max-width: min(28rem, 72vw);
+  z-index: 30;
+}
+.pepito-nav-brand--search .pd-shop-search-pill {
+  min-height: 2.35rem;
+  padding: 0.25rem 0.7rem;
+}
+.pepito-nav-brand--search .pd-shop-search.is-expanded .pd-shop-search-pill,
+.pepito-nav-brand--search .pd-shop-search:focus-within .pd-shop-search-pill {
+  min-height: 2.65rem;
 }
 .pepito-nav-logo {
   display: inline-flex;
@@ -8315,22 +8337,26 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   margin-inline: auto;
 }
 
-/* Desktop shop: two-row sticky header (logo/nav/actions + search). In-flow so
-   PDP/home content is not hidden under a taller fixed bar. */
+/* Desktop shop: sticky header with compact search under the logo column. */
 @media (min-width: 860px) {
   .pd-shop-page .pepito-nav {
     position: sticky;
     top: 0;
-    align-items: stretch;
+    align-items: flex-start;
     overflow: visible;
     padding-block: 0.65rem 0.7rem;
   }
   .pd-shop-page .pepito-nav-main {
     min-height: 42px;
+    align-items: flex-start;
+  }
+  .pd-shop-page .pepito-nav-brand--search {
+    width: clamp(12rem, 16vw, 15.5rem);
+    max-width: 15.5rem;
   }
   .pd-shop-page .pepito-nav-primary,
   .pd-shop-page .pepito-nav-actions {
-    align-self: center;
+    align-self: flex-start;
     min-height: 42px;
   }
   .pd-shop-page .pd-shop-hero,
@@ -8483,8 +8509,7 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   }
 }
 
-/* Shop: two-row sticky header on small screens — logo/tools then search.
-   In-flow + sticky so content never slides under the menubar. */
+/* Shop: sticky header on small screens — compact search under logo (far right in RTL). */
 @media (max-width: 859px) {
   .pd-shop-page.pepito-landing {
     overflow-x: visible;
@@ -8501,29 +8526,20 @@ a.pepito-btn.pepito-human-consult-cta:hover {
     padding-block: 0.5rem 0.6rem;
     padding-top: calc(0.5rem + env(safe-area-inset-top, 0px));
   }
-  .pd-shop-page .pepito-nav-main {
-    gap: 0.35rem;
-    min-width: 0;
-    justify-content: space-between;
+  .pd-shop-page .pepito-nav-brand--search {
+    width: min(46vw, 11.5rem);
+    max-width: min(46vw, 11.5rem);
+    flex: 0 1 auto;
   }
-  .pd-shop-page .pepito-nav-brand,
-  .pd-shop-page .pepito-nav-logo {
-    flex: 1 1 auto;
-    min-width: 0;
-    margin-inline-end: 0;
+  .pd-shop-page .pepito-nav-brand--search .pd-shop-search.is-expanded,
+  .pd-shop-page .pepito-nav-brand--search .pd-shop-search:focus-within {
+    width: min(calc(100vw - 2 * var(--pepito-gutter-x)), 22rem);
+    max-width: min(calc(100vw - 2 * var(--pepito-gutter-x)), 22rem);
   }
   .pd-shop-page .pepito-nav-logo img {
     height: 32px;
     max-width: min(42vw, 9.5rem);
     object-fit: contain;
-  }
-  .pd-shop-page .pepito-nav-actions {
-    flex: 0 0 auto;
-    max-width: 58%;
-  }
-  .pd-shop-page .pepito-nav-search-row .pd-shop-search {
-    max-width: none;
-    margin-inline: 0;
   }
   .pd-shop-page .pd-shop-hero,
   .pd-shop-page .pd-shop-hero--full {
@@ -9005,9 +9021,11 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   flex-direction: row;
   flex-wrap: nowrap;
   gap: clamp(0.75rem, 2.2vw, 1.75rem);
-  overflow-x: hidden;
-  scroll-snap-type: x mandatory;
+  overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x;
+  scroll-snap-type: x mandatory;
   scrollbar-width: none;
   padding: 0.35rem 2.55rem 0.55rem;
   outline: none;
@@ -9289,7 +9307,10 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   gap: 0.55rem 0.85rem;
   justify-content: flex-start;
   align-items: flex-start;
-  overflow-x: hidden;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x;
   scroll-snap-type: x proximity;
   scrollbar-width: none;
   padding: 0.45rem 2.6rem 0.65rem;
@@ -10079,7 +10100,10 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   -webkit-appearance: none;
   font: inherit;
   color: inherit;
-  touch-action: pan-y;
+  /* Allow horizontal swipe between photos (was pan-y only → broken gallery). */
+  touch-action: pan-x pan-y;
+  -webkit-user-select: none;
+  user-select: none;
 }
 .pd-dk-gallery-track {
   display: flex;
@@ -10114,6 +10138,8 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   cursor: pointer;
   z-index: 2;
   box-shadow: 0 4px 14px rgba(15, 10, 30, 0.12);
+  touch-action: manipulation;
+  pointer-events: auto;
 }
 .pd-dk-gallery-arrow--prev {
   left: 0.65rem;
@@ -10132,11 +10158,17 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   color: #fff;
   display: flex;
   flex-direction: column;
+  width: 100%;
+  max-width: 100vw;
+  height: 100%;
+  max-height: 100dvh;
+  overflow: hidden;
+  overscroll-behavior: none;
 }
 .pd-dk-lightbox-close {
   position: absolute;
-  top: 0.85rem;
-  right: 0.85rem;
+  top: max(0.85rem, env(safe-area-inset-top, 0px));
+  right: max(0.85rem, env(safe-area-inset-right, 0px));
   width: 2.5rem;
   height: 2.5rem;
   border: 0;
@@ -10147,6 +10179,7 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   place-items: center;
   cursor: pointer;
   z-index: 3;
+  touch-action: manipulation;
 }
 .pd-dk-lightbox-close:hover {
   background: rgba(255, 255, 255, 0.22);
@@ -10158,13 +10191,20 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   place-items: center;
   position: relative;
   padding: 3.5rem 4.5rem 1rem;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
 }
 .pd-dk-lightbox-stage img {
   max-width: min(92vw, 1100px);
-  max-height: calc(100vh - 10rem);
+  max-height: calc(100dvh - 10rem);
   width: auto;
   height: auto;
   object-fit: contain;
+  pointer-events: none;
 }
 .pd-dk-lightbox-arrow {
   position: absolute;
@@ -10179,6 +10219,9 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   display: grid;
   place-items: center;
   cursor: pointer;
+  z-index: 2;
+  touch-action: manipulation;
+  pointer-events: auto;
 }
 .pd-dk-lightbox-arrow--prev {
   left: 1rem;
@@ -10191,10 +10234,14 @@ a.pepito-btn.pepito-human-consult-cta:hover {
 }
 .pd-dk-lightbox-thumbs {
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 0.45rem;
-  padding: 0.65rem 1rem 1.15rem;
+  padding: 0.65rem 1rem calc(1.15rem + env(safe-area-inset-bottom, 0px));
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+  scrollbar-width: thin;
+  overscroll-behavior-x: contain;
 }
 .pd-dk-lightbox-thumb {
   flex: 0 0 4rem;
@@ -10697,6 +10744,58 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   .pd-shop-detail {
     padding-bottom: 5.5rem;
   }
+  .pd-dk-gallery {
+    max-width: 100%;
+    overflow: hidden;
+  }
+  .pd-dk-gallery-main {
+    border-radius: 12px;
+    max-width: 100%;
+  }
+  .pd-dk-gallery-main img,
+  .pd-dk-gallery-track img {
+    padding: 0.75rem;
+  }
+  .pd-dk-thumbs {
+    max-width: 100%;
+    padding-inline: 0.1rem;
+    -webkit-overflow-scrolling: touch;
+  }
+  .pd-dk-thumb {
+    flex: 0 0 3.6rem;
+    width: 3.6rem;
+    height: 3.6rem;
+  }
+  .pd-dk-lightbox-stage {
+    padding: 3.25rem 0.75rem 0.75rem;
+  }
+  .pd-dk-lightbox-stage img {
+    max-width: 100vw;
+    max-height: calc(100dvh - 9.5rem);
+  }
+  .pd-dk-lightbox-arrow {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+  .pd-dk-lightbox-arrow--prev {
+    left: 0.35rem;
+  }
+  .pd-dk-lightbox-arrow--next {
+    right: 0.35rem;
+  }
+  .pd-dk-lightbox-thumbs {
+    justify-content: flex-start;
+    padding-inline: 0.75rem;
+  }
+  .pd-dk-lightbox-all {
+    bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+    left: 0.75rem;
+  }
+  .pd-dk-lightbox-grid {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    width: 100%;
+    padding: 4rem 0.75rem 5rem;
+  }
 }
 
 .pd-shop-promo-banners {
@@ -10880,7 +10979,10 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   display: flex;
   flex-wrap: nowrap;
   gap: 0;
-  overflow-x: hidden;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x;
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
   padding-block: 0.25rem;
@@ -10909,7 +11011,7 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   position: absolute;
   inset-block-start: 42%;
   transform: translateY(-50%);
-  z-index: 2;
+  z-index: 5;
   width: 2.5rem;
   height: 2.5rem;
   border-radius: 50%;
@@ -10921,6 +11023,10 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   place-items: center;
   cursor: pointer;
   padding: 0;
+  pointer-events: auto;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
 }
 .pd-shop-rail-btn--left,
 .pd-shop-rail-btn--next {
@@ -12990,10 +13096,30 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   }
 
   /*
+    Site-wide mobile header row (shop + non-shop):
+    Always use .pepito-nav-main so logo stays at inline-start (far right in RTL)
+    and utilities park at inline-end (far left) via space-between.
+    Nested .pepito-nav-logo margin-inline-end:auto alone does nothing — logo
+    is not a direct flex child of .pepito-nav.
+  */
+  .pepito-nav-main {
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.35rem;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .pepito-nav-brand {
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+
+  /*
     RTL chrome (dir=rtl on .pepito-landing):
     - Logo is first in DOM → inline-start (physical right)
     - Cluster stays in-flow (not absolute) so wallet/cart stay visible
-    - margin-inline-start: auto parks cluster + actions at inline-end (left)
     Do NOT use order: -1 on the cluster — that forced tools to main-start and
     shoved the logo left.
   */
@@ -13017,9 +13143,7 @@ a.pepito-btn.pepito-human-consult-cta:hover {
     flex: 0 0 auto;
     min-width: 0;
     justify-content: flex-start;
-    /* Logo inherits rtl → inline-end is physical left; auto margin
-       parks following tools (cluster + actions) on the left. */
-    margin-inline-end: auto;
+    margin-inline-end: 0;
   }
   .pepito-nav-logo img {
     height: 34px;
@@ -13034,7 +13158,9 @@ a.pepito-btn.pepito-human-consult-cta:hover {
     margin-inline-start: 0 !important;
     margin-inline-end: 0 !important;
     gap: 0.3rem;
+    flex: 0 0 auto;
     flex-shrink: 0;
+    max-width: 62%;
   }
 
   .pepito-nav-wallet-btn {
@@ -16129,7 +16255,10 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   display: flex;
   flex-wrap: nowrap;
   gap: 0;
-  overflow-x: hidden;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x;
   scroll-snap-type: x mandatory;
   scrollbar-width: none;
   padding-block: 0.25rem;
