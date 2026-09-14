@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { SiteHeader } from '../components/SiteHeader';
 import { welcomeSectionLinks } from '../components/siteHeaderLinks';
 import { PlatformBanners } from '../components/PlatformBanners';
+import { MobileAppDownloadStrip } from '../components/MobileAppDownloadStrip';
 import { useI18n } from '../i18n/I18nProvider';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { parkBootLcp } from '../lib/parkBootLcp';
@@ -414,6 +415,9 @@ export function WelcomePage() {
           ))}
         </div>
       </section>
+
+      {/* Digikala-style mobile app download strip — after hero so the first viewport stays brand/hero clean. */}
+      <MobileAppDownloadStrip />
 
       <div ref={belowFoldSlotRef} className="pepito-below-fold-slot">
         {showBelowFold ? (
