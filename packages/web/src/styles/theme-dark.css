@@ -3481,6 +3481,55 @@ html[data-theme='dark'] .auth-telegram-secondary:hover {
 html[data-theme='dark'] .auth-provider-hint {
   color: var(--pepito-muted);
 }
+html[data-theme='dark'] .pepito-auth-flow:has(.auth-login-premium) .pepito-flow-panel {
+  background:
+    radial-gradient(520px 240px at 88% 8%, rgba(219, 137, 202, 0.18), transparent 58%),
+    radial-gradient(440px 220px at 8% 70%, rgba(92, 77, 145, 0.28), transparent 55%),
+    linear-gradient(165deg, #16141f 0%, #1c1828 48%, #14121c 100%);
+}
+html[data-theme='dark'] .auth-login-premium {
+  background:
+    linear-gradient(155deg, rgba(36, 32, 48, 0.94), rgba(28, 24, 40, 0.9));
+  border-color: rgba(168, 154, 212, 0.22);
+  box-shadow:
+    0 20px 44px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+html[data-theme='dark'] .auth-login-brand {
+  background: linear-gradient(120deg, #c4b8ef 0%, #db89ca 55%, #f0b8e0 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+html[data-theme='dark'] .auth-login-premium > .auth-login-head > h1,
+html[data-theme='dark'] .auth-login-premium > h1 {
+  color: #f3effa;
+}
+html[data-theme='dark'] .auth-login-premium .auth-lead {
+  color: #b5adc8;
+}
+html[data-theme='dark'] .auth-login-method--google {
+  background: rgba(255, 255, 255, 0.06);
+  color: #f3effa;
+  border-color: rgba(168, 154, 212, 0.32);
+}
+html[data-theme='dark'] .auth-login-method--google:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(219, 137, 202, 0.45);
+}
+html[data-theme='dark'] .auth-login-or {
+  color: #9a91b0;
+}
+html[data-theme='dark'] .auth-login-or::before,
+html[data-theme='dark'] .auth-login-or::after {
+  background: rgba(168, 154, 212, 0.28);
+}
+html[data-theme='dark'] .auth-login-phone-label {
+  color: #d4cce8 !important;
+}
+html[data-theme='dark'] .auth-login-premium .auth-foot {
+  color: #9a91b0;
+}
 html[data-theme='dark'] .pepito-auth-flow .auth-skip-btn.pepito-btn--ghost {
   color: var(--pepito-base) !important;
   border-color: var(--pd-border-strong) !important;

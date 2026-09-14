@@ -138,7 +138,7 @@ class AuthStore {
 
   async verifyOtp(code: string) {
     if (!this.data.pendingChannel || !this.data.pendingTarget) {
-      throw new Error('ابتدا شماره یا ایمیل را وارد کن');
+      throw new Error('ابتدا شماره موبایل را وارد کن');
     }
     const result = await verifyWebOtp(
       this.data.pendingChannel,

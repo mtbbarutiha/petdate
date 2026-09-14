@@ -319,11 +319,11 @@ export const en: Dict = {
   auth: {
     bannerTitle: 'For your special pets',
     bannerLead: 'Same web & Telegram account — sign in and finish your profile here',
-    changeContact: "Change number / email",
+    changeContact: "Change number",
     verifyTitle: "Verify identity",
     otpLead: "Enter the SMS code — on mobile it often autofills",
     otpQuickType: " — tap the keyboard suggestion (QuickType) or wait for autofill",
-    otpEmailLog: " (email is in the server log)",
+    otpEmailLog: "",
     otpLabel: "One-time SMS code",
     checking: "Checking…",
     confirmContinue: "Confirm and continue",

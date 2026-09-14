@@ -319,11 +319,11 @@ export const fa: Dict = {
   auth: {
     bannerTitle: 'همراه پت‌های خاص شما',
     bannerLead: 'همان حساب وب و تلگرام — ورود و تکمیل پروفایل در همین محیط',
-    changeContact: "تغییر شماره / ایمیل",
+    changeContact: "تغییر شماره",
     verifyTitle: "تأیید هویت",
     otpLead: "کد پیامک را وارد کن — روی موبایل معمولاً خودش پر می‌شود",
     otpQuickType: " — از پیشنهاد کیبورد (QuickType) کد را بزن یا صبر کن تا پر شود",
-    otpEmailLog: " (ایمیل در لاگ سرور)",
+    otpEmailLog: "",
     otpLabel: "کد یکبارمصرف پیامک",
     checking: "در حال بررسی…",
     confirmContinue: "تأیید و ادامه",
