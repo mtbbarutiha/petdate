@@ -44,6 +44,8 @@ export type SiteHeaderProps = {
   ctaLabel?: string;
   ctaTo?: string;
   extras?: ReactNode;
+  /** Shop-only: product search stacked under the wordmark (desktop logo column). */
+  brandBelow?: ReactNode;
   logoSrc?: string;
   logoSrcSet?: string;
   logoSizes?: string;
@@ -70,6 +72,7 @@ export function SiteHeader({
   ctaLabel,
   ctaTo,
   extras,
+  brandBelow,
   logoSrc = '/pepito/img/logo.png',
   logoSrcSet,
   logoSizes,
@@ -94,17 +97,20 @@ export function SiteHeader({
 
   return (
     <header className={headerClass}>
-      <Link to="/" className="pepito-nav-logo" aria-label={BRAND.displayName}>
-        <img
-          src={logoSrc}
-          alt={BRAND.displayName}
-          {...(logoSrcSet ? { srcSet: logoSrcSet } : {})}
-          {...(logoSizes ? { sizes: logoSizes } : {})}
-          {...(logoWidth ? { width: logoWidth } : {})}
-          {...(logoHeight ? { height: logoHeight } : {})}
-          decoding="async"
-        />
-      </Link>
+      <div className={`pepito-nav-brand${brandBelow ? ' pepito-nav-brand--search' : ''}`}>
+        <Link to="/" className="pepito-nav-logo" aria-label={BRAND.displayName}>
+          <img
+            src={logoSrc}
+            alt={BRAND.displayName}
+            {...(logoSrcSet ? { srcSet: logoSrcSet } : {})}
+            {...(logoSizes ? { sizes: logoSizes } : {})}
+            {...(logoWidth ? { width: logoWidth } : {})}
+            {...(logoHeight ? { height: logoHeight } : {})}
+            decoding="async"
+          />
+        </Link>
+        {brandBelow}
+      </div>
 
       {wideEnoughForNav ? (
         <div className="pepito-nav-primary">

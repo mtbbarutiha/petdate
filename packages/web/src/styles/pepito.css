@@ -375,6 +375,15 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 .pepito-nav.is-scrolled {
   box-shadow: 0 10px 30px rgba(25, 6, 61, 0.08);
 }
+.pepito-nav-brand {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  flex: 0 0 auto;
+  min-width: 0;
+  position: relative;
+  z-index: 7;
+}
 .pepito-nav-logo {
   display: inline-flex;
   align-items: center;
@@ -8283,6 +8292,31 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   max-width: 720px;
   margin-inline: auto;
 }
+
+/* Desktop shop: search lives in the logo column (under the wordmark), not a full-bleed bar. */
+@media (min-width: 860px) {
+  .pd-shop-page {
+    --pepito-nav-h: 7.7rem;
+  }
+  .pd-shop-page .pepito-nav {
+    align-items: flex-start;
+    overflow: visible;
+  }
+  .pd-shop-page .pepito-nav-brand--search {
+    width: clamp(17rem, 26vw, 26rem);
+    gap: 0.45rem;
+  }
+  .pd-shop-page .pepito-nav-brand--search .pd-shop-search {
+    width: 100%;
+    max-width: none;
+    margin-inline: 0;
+  }
+  .pd-shop-page .pepito-nav-primary,
+  .pd-shop-page .pepito-nav-actions {
+    align-self: flex-start;
+    min-height: 42px;
+  }
+}
 .pd-shop-search-pill {
   display: flex;
   align-items: center;
@@ -13063,6 +13097,7 @@ a.pepito-btn.pepito-human-consult-cta:hover {
     padding-right: var(--pepito-gutter-x);
   }
 
+  .pepito-nav-brand,
   .pepito-nav-logo {
     flex: 0 0 auto;
   }

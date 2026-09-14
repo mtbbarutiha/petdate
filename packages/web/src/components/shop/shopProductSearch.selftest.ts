@@ -33,6 +33,8 @@ assert.equal(isShopSearchHotkey({ key: 'f', metaKey: true, ctrlKey: false, altKe
 
 const here = dirname(fileURLToPath(import.meta.url));
 const chrome = readFileSync(join(here, 'ShopChrome.tsx'), 'utf8');
+const headerSrc = readFileSync(join(here, '../SiteHeader.tsx'), 'utf8');
+const landing = readFileSync(join(here, '../LandingChrome.tsx'), 'utf8');
 const search = readFileSync(join(here, 'ShopProductSearch.tsx'), 'utf8');
 const css = readFileSync(join(here, '../../styles/pepito.css'), 'utf8');
 const dark = readFileSync(join(here, '../../styles/theme-dark.css'), 'utf8');
@@ -42,7 +44,9 @@ const category = readFileSync(join(here, '../../pages/shop/ShopCategoryPage.tsx'
 const ci = readFileSync(join(here, '../../../../../scripts/ci-selftest.sh'), 'utf8');
 
 assert.match(chrome, /ShopProductSearch/, 'ShopChrome mounts primary product search');
-assert.match(chrome, /pd-shop-search-bar/, 'search sits in sticky chrome bar under nav');
+assert.match(chrome, /brandBelow/, 'desktop search is the header brand column under the logo');
+assert.match(chrome, /pd-shop-search-bar/, 'mobile search sits in sticky bar after the in-flow header');
+assert.match(headerSrc, /pepito-nav-brand--search/, 'brand column class when search is slotted');
 assert.match(search, /isShopSearchHotkey/, 'Ctrl\\/Cmd+K focuses search (no visible badge)');
 assert.doesNotMatch(search, /pd-shop-search-kbd/, 'Ctrl+K badge removed from search UI');
 assert.doesNotMatch(search, /Ctrl\+K/, 'no Ctrl+K label in search component');
@@ -57,6 +61,12 @@ assert.match(
   'mobile shop search sticks to the viewport top'
 );
 assert.match(css, /@media \(max-width: 720px\), \(pointer: coarse\)[\s\S]*\.pd-shop-search-bar/, 'mobile sticky search rules');
+assert.match(
+  css,
+  /@media \(min-width: 860px\)[\s\S]*\.pepito-nav-brand--search/,
+  'desktop search width is the logo column'
+);
+assert.doesNotMatch(landing, /ShopProductSearch/, 'shop search is shop-route chrome only');
 assert.match(dark, /pd-shop-search-pill/, 'dark mode search styles');
 assert.match(fa, /search:\s*"جستجو"/, 'FA shop.search');
 assert.match(en, /search:\s*"Search"/, 'EN shop.search');
