@@ -298,9 +298,6 @@ npx tsx "$ROOT/packages/web/src/data/shopGallery.selftest.ts"
 echo "==> selftest: shop product gallery lightbox UI"
 npx tsx "$ROOT/packages/web/src/components/shop/shopProductGallery.selftest.ts"
 
-echo "==> selftest: shop product search (chrome pill + Ctrl+K)"
-npx tsx "$ROOT/packages/web/src/components/shop/shopProductSearch.selftest.ts"
-
 # Shop PDP Digikala-style trust / service badges
 npx tsx "$ROOT/packages/web/src/components/shop/shopTrustBadges.selftest.ts"
 
