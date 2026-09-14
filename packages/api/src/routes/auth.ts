@@ -266,7 +266,17 @@ authRouter.post('/otp/request', otpRequestLimit, async (req, res) => {
 
   const result = await requestWebOtp(channel, target);
   if (!result.ok) {
-    res.status(result.reason === 'cooldown' ? 429 : 400).json(result);
+    // Align with Telegram phone OTP: provider/config failures are 5xx so admin
+    // error logs + monitors treat them as infra, not client validation mistakes.
+    const status =
+      result.reason === 'cooldown'
+        ? 429
+        : result.reason === 'not_configured'
+          ? 503
+          : result.reason === 'send_failed'
+            ? 502
+            : 400;
+    res.status(status).json(result);
     return;
   }
   res.json(result);

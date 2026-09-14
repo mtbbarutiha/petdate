@@ -451,6 +451,7 @@ run src/demo-seeds-guard.selftest.ts
 run src/demo-seeds-cleanup.selftest.ts
 run src/health-ready.selftest.ts
 run src/services/web-otp.selftest.ts
+run src/routes/auth-otp-status.selftest.ts
 run src/services/google-web-auth.selftest.ts
 run src/crm.selftest.ts
 run src/auto-messages.selftest.ts
