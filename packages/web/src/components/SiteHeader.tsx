@@ -38,9 +38,14 @@ export type SiteHeaderProps = {
   showDesktopNav?: boolean;
   /**
    * Mobile Events (ایونت‌ها) pill beside the logo.
-   * Shop pages hide this — Events lives in the profile menu instead.
+   * Shop / magazine pages hide this — Events lives in the profile menu / dock instead.
    */
   showMobileEvents?: boolean;
+  /**
+   * Hide the text action (e.g. خانه) below 860px.
+   * Magazine listing keeps it on desktop; logo is home on mobile.
+   */
+  hideActionOnMobile?: boolean;
   /** Defer SiteDesktopNav until ≥860px (landing LCP / TBT). */
   deferDesktopNav?: boolean;
   actionLabel?: string;
@@ -77,6 +82,7 @@ export function SiteHeader({
   showOrders = false,
   showDesktopNav = true,
   showMobileEvents = true,
+  hideActionOnMobile = false,
   deferDesktopNav = false,
   actionLabel,
   actionTo,
@@ -119,7 +125,9 @@ export function SiteHeader({
 
   const headerClass = `pepito-nav${scrolled ? ' is-scrolled' : ''}${brandBelow ? ' pepito-nav--with-search' : ''}${mobileSearch ? ' pepito-nav--mobile-search' : ''}${desktopSearch ? ' pepito-nav--desktop-search' : ''}${className ? ` ${className}` : ''}`;
   const showTextAction =
-    Boolean(actionLabel) && !isGuestLoginTextAction(actionLabel, actionTo, t('common.login'));
+    Boolean(actionLabel) &&
+    !(hideActionOnMobile && !isDesktop) &&
+    !isGuestLoginTextAction(actionLabel, actionTo, t('common.login'));
 
   return (
     <header className={headerClass}>

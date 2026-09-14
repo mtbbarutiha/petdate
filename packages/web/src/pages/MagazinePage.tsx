@@ -103,6 +103,8 @@ export function MagazinePage() {
       bannerLead={t('magazine.lead')}
       actionLabel={t('magazine.home')}
       actionTo="/"
+      hideActionOnMobile
+      showMobileEvents={false}
       ctaLabel={t('magazine.allNews')}
       ctaTo="/magazine"
     >
