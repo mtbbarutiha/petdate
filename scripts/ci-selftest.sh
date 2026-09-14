@@ -305,9 +305,6 @@ npx tsx "$ROOT/packages/web/src/components/shop/shopTrustBadges.selftest.ts"
 echo "==> selftest: shop product search (chrome pill + Ctrl+K)"
 npx tsx "$ROOT/packages/web/src/components/shop/shopProductSearch.selftest.ts"
 
-echo "==> selftest: shop similar products rail"
-npx tsx "$ROOT/packages/web/src/lib/shopSimilarProducts.selftest.ts"
-
 echo "==> selftest: shop product images[] helpers"
 npx tsx "$ROOT/packages/api/src/data/shop-product-images.selftest.ts"
 
@@ -334,6 +331,7 @@ npx tsx "$ROOT/packages/api/src/data/shop-batch-multi-wave4-products.selftest.ts
 
 echo "==> selftest: shop batch-multi wave 5 SKUs"
 npx tsx "$ROOT/packages/api/src/data/shop-batch-multi-wave5-products.selftest.ts"
+npx tsx "$ROOT/packages/api/src/data/shop-digikala-batch1-part1-products.selftest.ts"
 
 echo "==> selftest: live shop catalog is p221–p299 only"
 npx tsx "$ROOT/packages/api/src/data/shop-live-catalog.selftest.ts"

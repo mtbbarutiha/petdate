@@ -176,6 +176,24 @@ for (const [id, slug, price] of batchMultiW5) {
 }
 assert.ok(getProduct('grooming-bonnest-calming-shampoo-for-pet-200-l'), 'Bonnest calming shampoo is in catalog');
 
+const digikalaB1P1 = [
+  ['p300', 'cat-food-dkp-21263751', 1_549_000],
+  ['p302', 'dog-food-dkp-15589693', 186_000],
+  ['p309', 'cat-toys-dkp-17412089', 380_000],
+] as const;
+for (const [id, slug, price] of digikalaB1P1) {
+  const item = getProduct(slug) ?? getProduct(id);
+  assert.ok(item, `${id} exists`);
+  assert.equal(item.priceToman, price, `${id} MANIFEST price`);
+  const shots = productGallery(item);
+  assert.equal(shots.length, 3, `${id} gallery has 3 unique angles`);
+  assert.ok(shots[0].includes(`${slug}.jpg?v=digikala-b1-p1-v1`), `${id} front is digikala-b1-p1-v1`);
+  assert.ok(shots[1].includes(`${slug}-2.jpg?v=digikala-b1-p1-v1`), `${id} angle 2 is digikala-b1-p1-v1`);
+  assert.ok(shots[2].includes(`${slug}-3.jpg?v=digikala-b1-p1-v1`), `${id} angle 3 is digikala-b1-p1-v1`);
+  assert.doesNotMatch(shots.join(' '), /purple|5c4d91|بنفش/i, `${id} gallery has no purple asset`);
+}
+assert.ok(getProduct('cat-food-dkp-21263751'), 'Digikala Gourmet 6-pack is in catalog');
+
 const p221 = getProduct('dog-food-royal-canin-mini-adult-2kg')!;
 applyLiveShopCatalog({
   products: [

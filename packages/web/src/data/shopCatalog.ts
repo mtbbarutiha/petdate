@@ -11,6 +11,7 @@ import { SHOP_BATCH_MULTI_WAVE2_PRODUCTS } from './shopBatchMultiWave2Products';
 import { SHOP_BATCH_MULTI_WAVE3_PRODUCTS } from './shopBatchMultiWave3Products';
 import { SHOP_BATCH_MULTI_WAVE4_PRODUCTS } from './shopBatchMultiWave4Products';
 import { SHOP_BATCH_MULTI_WAVE5_PRODUCTS } from './shopBatchMultiWave5Products';
+import { SHOP_DIGIKALA_BATCH1_PART1_PRODUCTS } from './shopDigikalaBatch1Part1Products';
 
 const P = '/pepito/uploads';
 
@@ -47,8 +48,6 @@ export interface ShopProduct {
   images?: string[];
   badge?: 'hot' | 'sale' | 'new' | 'limited';
   inStock: boolean;
-  /** موجودی عددی از API/DB — برای هشدار کم‌بودن موجودی در ریل مشابه */
-  stockQty?: number;
   /** پارامترهای کارت محصول / جدول مشخصات (وزن، رنگ، سایز، …) */
   params: Record<string, string>;
   description: string;
@@ -276,6 +275,7 @@ export const SHOP_PRODUCTS: ShopProduct[] = [
   ...SHOP_BATCH_MULTI_WAVE3_PRODUCTS,
   ...SHOP_BATCH_MULTI_WAVE4_PRODUCTS,
   ...SHOP_BATCH_MULTI_WAVE5_PRODUCTS,
+  ...SHOP_DIGIKALA_BATCH1_PART1_PRODUCTS,
 ];
 
 export function formatToman(amount: number): string {
@@ -379,10 +379,6 @@ export function applyLiveShopCatalog(input: {
             : undefined;
     const strippedParams = api.params ? publicShopParams(api.params) : {};
     const params = Object.keys(strippedParams).length ? strippedParams : (base?.params ?? {});
-    const stockQty =
-      api.stockQty != null && Number.isFinite(Number(api.stockQty))
-        ? Math.max(0, Math.round(Number(api.stockQty)))
-        : base?.stockQty;
     if (base) {
       return {
         ...base,
@@ -396,7 +392,6 @@ export function applyLiveShopCatalog(input: {
         images: mergedImages ?? base.images,
         badge,
         inStock: api.inStock,
-        stockQty,
         params,
         description: api.description || base.description,
         featured: api.featured ?? base.featured,
@@ -417,7 +412,6 @@ export function applyLiveShopCatalog(input: {
       images: mergedImages,
       badge,
       inStock: api.inStock,
-      stockQty,
       params,
       description: api.description ?? '',
       featured: Boolean(api.featured),

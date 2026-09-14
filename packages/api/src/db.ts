@@ -243,6 +243,14 @@ export function getDb(): AppDatabase {
       } catch (err) {
         console.warn('Shop batch-multi wave 5 seed skipped/failed:', (err as Error).message);
       }
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { seedShopDigikalaBatch1Part1Products } =
+          require('./data/shop-digikala-batch1-part1-products') as typeof import('./data/shop-digikala-batch1-part1-products');
+        seedShopDigikalaBatch1Part1Products();
+      } catch (err) {
+        console.warn('Shop Digikala batch1 Part1 seed skipped/failed:', (err as Error).message);
+      }
     };
 
     const bootShopCatalogGuard = () => {
