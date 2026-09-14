@@ -402,9 +402,21 @@ export function GamesPage() {
         ) : null}
 
         {loading ? (
-          <p className="pepito-games-loading" role="status">
-            {t('games.loading')}
-          </p>
+          <div className="pepito-games-loading" role="status" data-testid="games-loading">
+            <div className="pepito-games-loading-grid" aria-hidden>
+              {[0, 1, 2, 3].map((i) => (
+                <div key={i} className="pepito-games-skeleton-card">
+                  <div className="pepito-games-skeleton-cover" />
+                  <div className="pepito-games-skeleton-lines">
+                    <span />
+                    <span />
+                    <span />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <p>{t('games.loading')}</p>
+          </div>
         ) : games.length === 0 ? (
           <div className="empty-state pepito-games-empty" data-testid="games-empty">
             <Gamepad2 size={36} strokeWidth={1.5} aria-hidden />
@@ -412,7 +424,7 @@ export function GamesPage() {
             <p>{t('games.emptyLead')}</p>
           </div>
         ) : (
-          <ul className="pepito-games-list" data-testid="games-list">
+          <ul className="pepito-games-grid" data-testid="games-list">
             {games.map((g) => {
               const seatsLeft = Math.max(0, g.maxPlayers - g.currentPlayers);
               const canJoin = g.status === 'open' && seatsLeft > 0;
@@ -421,28 +433,38 @@ export function GamesPage() {
               const showPhoto = Boolean(g.photoUrl);
               const pendingOwnPhoto =
                 isHost && g.photoStatus === 'pending' && Boolean(g.photoUrl);
+              const servicesSnippet = g.services
+                ? String(g.services)
+                    .replace(/\s*·\s*catalog:sample-events\s*/gi, '')
+                    .replace(/\s*catalog:sample-events\s*/gi, '')
+                    .trim()
+                : '';
               return (
-                <li key={g.id} className="pepito-games-item">
-                  <div className="pepito-games-item-media" aria-hidden={!showPhoto}>
+                <li key={g.id} className="pepito-games-card">
+                  <div className="pepito-games-card-media">
                     {showPhoto ? (
-                      <img src={g.photoUrl} alt="" className="pepito-games-item-photo" />
+                      <img
+                        src={g.photoUrl}
+                        alt=""
+                        className="pepito-games-card-cover"
+                        loading="lazy"
+                        decoding="async"
+                      />
                     ) : (
-                      <div className="pepito-games-item-photo-ph">
-                        <ImageIcon size={28} strokeWidth={1.5} />
+                      <div className="pepito-games-card-cover-ph" aria-hidden>
+                        <ImageIcon size={40} strokeWidth={1.5} />
                         {pendingOwnPhoto || g.photoStatus === 'pending' ? (
                           <span>{t('games.photoPending')}</span>
                         ) : null}
                       </div>
                     )}
+                    <span className={`pepito-games-status is-${g.status}`}>
+                      {statusLabel(g.status)}
+                    </span>
                   </div>
-                  <div className="pepito-games-item-main">
-                    <div className="pepito-games-item-head">
-                      <h2>{g.title}</h2>
-                      <span className={`pepito-games-status is-${g.status}`}>
-                        {statusLabel(g.status)}
-                      </span>
-                    </div>
+                  <div className="pepito-games-card-body">
                     <p className="pepito-games-type">{typeLabel(g.gameType)}</p>
+                    <h2 className="pepito-games-card-title">{g.title}</h2>
                     <ul className="pepito-games-meta">
                       <li>
                         <MapPin size={14} aria-hidden />
@@ -479,47 +501,47 @@ export function GamesPage() {
                         </span>
                       </li>
                     </ul>
-                    {g.services ? (
+                    {servicesSnippet ? (
                       <p className="pepito-games-services">
-                        <strong>{t('games.fieldServices')}:</strong> {g.services}
+                        <strong>{t('games.fieldServices')}:</strong> {servicesSnippet}
                       </p>
                     ) : null}
                     {g.description ? (
                       <p className="pepito-games-desc">{g.description}</p>
                     ) : null}
-                  </div>
-                  <div className="pepito-games-item-actions">
-                    {!isLoggedIn ? (
-                      <Link
-                        to={loginPath('/events')}
-                        className="pepito-btn button-1"
-                        data-testid={`games-join-login-${g.id}`}
-                      >
-                        {t('games.loginToJoin')}
-                      </Link>
-                    ) : canJoin && !isHost ? (
-                      <button
-                        type="button"
-                        className="pepito-btn button-1"
-                        disabled={joiningId === g.id}
-                        onClick={() => void onJoin(g)}
-                        data-testid={`games-join-${g.id}`}
-                      >
-                        {joiningId === g.id
-                          ? t('games.joining')
-                          : fee > 0
-                            ? t('games.joinWithFee', { n: fee })
-                            : t('games.join')}
-                      </button>
-                    ) : (
-                      <span className="pepito-games-item-note">
-                        {isHost
-                          ? t('games.youHost')
-                          : g.status === 'full'
-                            ? t('games.full')
-                            : statusLabel(g.status)}
-                      </span>
-                    )}
+                    <div className="pepito-games-card-actions">
+                      {!isLoggedIn ? (
+                        <Link
+                          to={loginPath('/events')}
+                          className="pepito-btn button-1"
+                          data-testid={`games-join-login-${g.id}`}
+                        >
+                          {t('games.loginToJoin')}
+                        </Link>
+                      ) : canJoin && !isHost ? (
+                        <button
+                          type="button"
+                          className="pepito-btn button-1"
+                          disabled={joiningId === g.id}
+                          onClick={() => void onJoin(g)}
+                          data-testid={`games-join-${g.id}`}
+                        >
+                          {joiningId === g.id
+                            ? t('games.joining')
+                            : fee > 0
+                              ? t('games.joinWithFee', { n: fee })
+                              : t('games.join')}
+                        </button>
+                      ) : (
+                        <span className="pepito-games-card-note">
+                          {isHost
+                            ? t('games.youHost')
+                            : g.status === 'full'
+                              ? t('games.full')
+                              : statusLabel(g.status)}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </li>
               );
