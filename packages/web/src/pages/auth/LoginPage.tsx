@@ -1,6 +1,6 @@
 import { FormEvent, MouseEvent, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { Mail, Send, Smartphone } from 'lucide-react';
+import { Send } from 'lucide-react';
 import { AuthShell } from '../../components/AuthShell';
 import { useAuthStore } from '../../hooks/useAuthStore';
 import { useAppToast } from '../../hooks/useAppToast';
@@ -11,7 +11,6 @@ import {
   prefersSameBrowserTelegramLogin,
   startTelegramPendingLogin,
   telegramWebLoginDeepLink,
-  type WebOtpChannel,
 } from '../../lib/api';
 import { postAuthPath, sanitizeNext } from '../../lib/authRedirect';
 import { dashboardPathForUser } from '@petdate/shared';
@@ -65,14 +64,14 @@ export function LoginPage() {
   const { requestOtp, isLoggedIn, isProfileComplete, hasRole, user, acceptSession } =
     useAuthStore();
   const { toastError, toastSuccess, toastInfo } = useAppToast();
-  const [channel, setChannel] = useState<WebOtpChannel>('phone');
   const [target, setTarget] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(() => googleErrorCopy(searchParams.get('google')));
   const [devHint, setDevHint] = useState('');
   const [waiting, setWaiting] = useState<WaitingState | null>(null);
   const [tgBusy, setTgBusy] = useState(false);
-  const [googleReady, setGoogleReady] = useState(true);
+  /** null = loading providers; only show Google CTA when true */
+  const [googleReady, setGoogleReady] = useState<boolean | null>(null);
   const telegramLoginUrl = telegramWebLoginDeepLink(next);
   const usePendingFlow = prefersSameBrowserTelegramLogin();
   const finishingRef = useRef(false);
@@ -160,7 +159,7 @@ export function LoginPage() {
     setDevHint('');
     setBusy(true);
     try {
-      const res = await requestOtp(channel, target.trim());
+      const res = await requestOtp('phone', target.trim());
       if (res.devCode) setDevHint(`کد توسعه: ${res.devCode}`);
       toastSuccess('کد ارسال شد');
       navigate(`/auth/otp?next=${encodeURIComponent(next)}`, {
@@ -168,9 +167,8 @@ export function LoginPage() {
       });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'ارسال کد ناموفق بود';
-      const full = channel === 'phone' ? `${msg} اگر پیامک نرسید، از تب ایمیل استفاده کن.` : msg;
-      setError(full);
-      toastError(full);
+      setError(msg);
+      toastError(msg);
     } finally {
       setBusy(false);
     }
@@ -237,35 +235,29 @@ export function LoginPage() {
     );
   }
 
+  const welcomeMethods =
+    googleReady === true
+      ? 'تلگرام، گوگل یا موبایل'
+      : 'تلگرام یا موبایل';
+
   return (
     <AuthShell
       bannerTitle="ورود به Pet Date"
-      bannerLead="تلگرام، گوگل، موبایل یا ایمیل — همان حساب وب و ربات"
+      bannerLead={`${welcomeMethods} — همان حساب وب و ربات`}
       bannerImage="/pepito/uploads/3.jpg"
     >
       <div className="pepito-auth-login">
         <p className="pepito-auth-kicker">ورود / ثبت‌نام</p>
         <h1>خوش آمدی</h1>
         <p className="auth-lead">
-          با تلگرام، گوگل، موبایل یا ایمیل وارد شو. پروفایل از همان حساب پر می‌شود.
+          با {welcomeMethods} وارد شو. پروفایل از همان حساب پر می‌شود.
         </p>
 
-        <a
-          className={`pepito-btn button-1 auth-google-cta${googleReady ? '' : ' is-off'}`}
-          href={googleHref}
-          aria-disabled={!googleReady}
-          onClick={(e) => {
-            if (!googleReady) {
-              e.preventDefault();
-              setError(googleErrorCopy('missing'));
-            }
-          }}
-        >
-          <GoogleMark />
-          ورود با گوگل
-        </a>
-        {!googleReady ? (
-          <p className="auth-provider-hint">ورود گوگل روی این سرور هنوز فعال نشده.</p>
+        {googleReady === true ? (
+          <a className="pepito-btn button-1 auth-google-cta" href={googleHref}>
+            <GoogleMark />
+            ورود با گوگل
+          </a>
         ) : null}
 
         <a
@@ -282,36 +274,19 @@ export function LoginPage() {
         <p className="auth-telegram-hint">ربات باز می‌شود تا ورود را تأیید کنی.</p>
 
         <div className="auth-or" role="separator">
-          <span>موبایل یا ایمیل</span>
-        </div>
-
-        <div className="auth-tabs" role="tablist">
-          <button
-            type="button"
-            className={`auth-tab${channel === 'phone' ? ' is-on' : ''}`}
-            onClick={() => setChannel('phone')}
-          >
-            <Smartphone size={15} /> موبایل
-          </button>
-          <button
-            type="button"
-            className={`auth-tab${channel === 'email' ? ' is-on' : ''}`}
-            onClick={() => setChannel('email')}
-          >
-            <Mail size={15} /> ایمیل
-          </button>
+          <span>موبایل</span>
         </div>
 
         <form className="auth-form" onSubmit={onSubmit}>
           <label>
-            {channel === 'phone' ? 'شماره موبایل' : 'ایمیل'}
+            شماره موبایل
             <input
               value={target}
               onChange={(e) => setTarget(e.target.value)}
-              placeholder={channel === 'phone' ? '0912…' : 'you@gmail.com'}
-              inputMode={channel === 'phone' ? 'tel' : 'email'}
-              autoComplete={channel === 'phone' ? 'tel' : 'email'}
-              dir={channel === 'phone' ? 'ltr' : undefined}
+              placeholder="0912…"
+              inputMode="tel"
+              autoComplete="tel"
+              dir="ltr"
               required
             />
           </label>
@@ -327,7 +302,7 @@ export function LoginPage() {
         </form>
 
         <p className="auth-foot">
-          حساب نداری؟ با همان روش وارد شو — ساخته می‌شود. اگر قبلاً موبایل به ایمیل وصل شده، هر دو یکی می‌مانند.
+          حساب نداری؟ با همان روش وارد شو — ساخته می‌شود.
         </p>
       </div>
     </AuthShell>

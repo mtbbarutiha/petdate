@@ -558,7 +558,7 @@ export function pageSeoForPath(pathname: string, opts: PageSeoOpts = {}): PageSe
   if (p === '/auth/login') {
     return pack({
       title: SEO.titleTemplate('ورود'),
-      description: 'ورود به پت‌دیت با موبایل، ایمیل یا گوگل — همبازی، شاپ و دامپزشک روی یک حساب.',
+      description: 'ورود به پت‌دیت با تلگرام، موبایل یا گوگل — همبازی، شاپ و دامپزشک روی یک حساب.',
       canonicalPath: '/auth/login',
     });
   }

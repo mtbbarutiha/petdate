@@ -313,7 +313,7 @@ export function OtpPage() {
   return (
     <AuthShell
       backTo={`/auth/login?next=${encodeURIComponent(next)}`}
-      backLabel="تغییر شماره / ایمیل"
+      backLabel="تغییر شماره"
       bannerTitle="تأیید هویت"
       bannerLead="کد پیامک را وارد کن — روی موبایل معمولاً خودش پر می‌شود"
       bannerImage="/pepito/uploads/4.jpg"
@@ -324,7 +324,7 @@ export function OtpPage() {
         کد ۵ رقمی برای <strong>{pendingTarget}</strong> ارسال شد
         {pendingChannel === 'phone'
           ? ' — از پیشنهاد کیبورد (QuickType) کد را بزن یا صبر کن تا پر شود'
-          : ' (ایمیل در لاگ سرور)'}
+          : ''}
         .
       </p>
       <form className="auth-form" onSubmit={onSubmit} autoComplete="on">
@@ -387,7 +387,7 @@ export function OtpPage() {
             ? `ارسال دوباره تا ${resendIn.toLocaleString('fa-IR')} ثانیه`
             : 'ارسال دوباره کد'}
         </button>
-        <Link to={`/auth/login?next=${encodeURIComponent(next)}`}>تغییر شماره / ایمیل</Link>
+        <Link to={`/auth/login?next=${encodeURIComponent(next)}`}>تغییر شماره</Link>
       </div>
 
       <div className="auth-or" role="separator">

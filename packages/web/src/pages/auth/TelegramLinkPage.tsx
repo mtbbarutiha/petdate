@@ -98,7 +98,7 @@ export function TelegramLinkPage() {
             از ربات دکمه «🌐 باز کردن وب» را دوباره بزن، یا با موبایل وارد شو.
           </p>
           <p>
-            <Link to="/auth/login">ورود با موبایل / ایمیل</Link>
+            <Link to="/auth/login">ورود با موبایل</Link>
             {user?.telegramId ? ` · tg ${user.telegramId}` : null}
           </p>
         </>

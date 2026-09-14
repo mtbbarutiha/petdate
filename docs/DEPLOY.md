@@ -30,6 +30,32 @@ Repo → **Settings → Secrets and variables → Actions** (never commit these)
 
 Also create Environment **production** (Settings → Environments) and optionally require reviewers.
 
+### Google web login (VPS `.env`, not Actions secrets)
+
+Google OAuth is **optional**. Keys were never present on the VPS or in GitHub secrets; agents must not invent them. Until configured, `/api/auth/providers` returns `google:false` and the login page **hides** the Google button.
+
+On the VPS (`/opt/petdate/.env`):
+
+```bash
+GOOGLE_CLIENT_ID=….apps.googleusercontent.com
+GOOGLE_CLIENT_SECRET=…
+# Optional if callback ≠ https://petdate.ir/api/auth/google/callback
+# GOOGLE_REDIRECT_URI=https://petdate.ir/api/auth/google/callback
+```
+
+Google Cloud Console → OAuth client (Web) → Authorized redirect URI:
+
+`https://petdate.ir/api/auth/google/callback`
+
+Then restart API and verify:
+
+```bash
+pm2 restart petdate-api --update-env
+curl -sS https://petdate.ir/api/auth/providers   # {"ok":true,"google":true}
+```
+
+Nginx already proxies `/api/` to the API; OAuth uses server-side redirects (CORS is not required for the callback).
+
 ### How to trigger deploy
 
 1. Merge finished work into `main` (or `master`) — push runs Deploy after CI build (and Environment approval if configured).
