@@ -1,6 +1,6 @@
 import { FormEvent, MouseEvent, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
-import { Mail, Smartphone } from 'lucide-react';
+import { Mail, Send, Smartphone } from 'lucide-react';
 import { AuthShell } from '../../components/AuthShell';
 import { useAuthStore } from '../../hooks/useAuthStore';
 import { useAppToast } from '../../hooks/useAppToast';
@@ -214,11 +214,12 @@ export function LoginPage() {
           </p>
           {error ? <p className="auth-error">{error}</p> : null}
           <a
-            className="auth-telegram-secondary"
+            className="pepito-btn button-2 auth-telegram-cta"
             href={waiting.deepLink}
             target="_blank"
             rel="noopener noreferrer"
           >
+            <Send size={16} strokeWidth={2} aria-hidden />
             باز کردن دوباره تلگرام
           </a>
           <button
@@ -239,13 +240,15 @@ export function LoginPage() {
   return (
     <AuthShell
       bannerTitle="ورود به Pet Date"
-      bannerLead="موبایل، ایمیل یا گوگل — تلگرام اختیاری است"
+      bannerLead="تلگرام، گوگل، موبایل یا ایمیل — همان حساب وب و ربات"
       bannerImage="/pepito/uploads/3.jpg"
     >
       <div className="pepito-auth-login">
         <p className="pepito-auth-kicker">ورود / ثبت‌نام</p>
         <h1>خوش آمدی</h1>
-        <p className="auth-lead">با شماره، ایمیل یا گوگل وارد شو. پروفایل از همان حساب پر می‌شود.</p>
+        <p className="auth-lead">
+          با تلگرام، گوگل، موبایل یا ایمیل وارد شو. پروفایل از همان حساب پر می‌شود.
+        </p>
 
         <a
           className={`pepito-btn button-1 auth-google-cta${googleReady ? '' : ' is-off'}`}
@@ -264,6 +267,19 @@ export function LoginPage() {
         {!googleReady ? (
           <p className="auth-provider-hint">ورود گوگل روی این سرور هنوز فعال نشده.</p>
         ) : null}
+
+        <a
+          className="pepito-btn button-2 auth-telegram-cta"
+          href={usePendingFlow ? '#' : telegramLoginUrl}
+          target={usePendingFlow ? undefined : '_blank'}
+          rel="noopener noreferrer"
+          onClick={onTelegramLogin}
+          aria-disabled={tgBusy}
+        >
+          <Send size={16} strokeWidth={2} aria-hidden />
+          {tgBusy ? 'در حال آماده‌سازی تلگرام…' : 'ورود با اکانت تلگرام'}
+        </a>
+        <p className="auth-telegram-hint">ربات باز می‌شود تا ورود را تأیید کنی.</p>
 
         <div className="auth-or" role="separator">
           <span>موبایل یا ایمیل</span>
@@ -313,17 +329,6 @@ export function LoginPage() {
         <p className="auth-foot">
           حساب نداری؟ با همان روش وارد شو — ساخته می‌شود. اگر قبلاً موبایل به ایمیل وصل شده، هر دو یکی می‌مانند.
         </p>
-
-        <a
-          className="auth-telegram-secondary"
-          href={usePendingFlow ? '#' : telegramLoginUrl}
-          target={usePendingFlow ? undefined : '_blank'}
-          rel="noopener noreferrer"
-          onClick={onTelegramLogin}
-          aria-disabled={tgBusy}
-        >
-          {tgBusy ? 'در حال آماده‌سازی تلگرام…' : 'ورود با تلگرام (اختیاری)'}
-        </a>
       </div>
     </AuthShell>
   );
