@@ -142,7 +142,30 @@ export function AdminHrRbacPage() {
 
   const saveAccount = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!accountForm || !canMutate) return;
+    if (!accountForm || !canMutate || busy) return;
+    const username = accountForm.username.trim().toLowerCase();
+    const password = accountForm.password;
+    if (!accountForm.id) {
+      if (!username || username.length < 2) {
+        setError(tr('نام کاربری الزامی است'));
+        return;
+      }
+      if (!/^[a-z0-9._-]{2,64}$/.test(username)) {
+        setError(tr('نام کاربری فقط حروف لاتین کوچک، عدد و ._- (۲ تا ۶۴ کاراکتر)'));
+        return;
+      }
+      if (password.length < 6) {
+        setError(tr('رمز عبور حداقل ۶ کاراکتر'));
+        return;
+      }
+    } else if (password.trim() && password.length < 6) {
+      setError(tr('رمز عبور حداقل ۶ کاراکتر'));
+      return;
+    }
+    if (!accountForm.roleKey) {
+      setError(tr('نقش انتخاب‌شده معتبر نیست'));
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -153,15 +176,15 @@ export function AdminHrRbacPage() {
             roleKey: accountForm.roleKey,
             displayName: accountForm.displayName,
             isActive: accountForm.isActive,
-            ...(accountForm.password.trim() ? { password: accountForm.password } : {}),
+            ...(password.trim() ? { password } : {}),
           }),
         });
       } else {
         await adminFetch('/api/admin/hr/rbac/accounts', {
           method: 'POST',
           body: JSON.stringify({
-            username: accountForm.username,
-            password: accountForm.password,
+            username,
+            password,
             roleKey: accountForm.roleKey,
             displayName: accountForm.displayName,
             isActive: accountForm.isActive,
@@ -592,6 +615,10 @@ export function AdminHrRbacPage() {
                   required
                   dir="ltr"
                   autoComplete="off"
+                  pattern="[a-zA-Z0-9._-]{2,64}"
+                  title={tr('نام کاربری فقط حروف لاتین کوچک، عدد و ._- (۲ تا ۶۴ کاراکتر)')}
+                  minLength={2}
+                  maxLength={64}
                   value={accountForm.username}
                   onChange={(e) => setAccountForm({ ...accountForm, username: e.target.value })}
                 />
@@ -614,6 +641,7 @@ export function AdminHrRbacPage() {
                 type="password"
                 dir="ltr"
                 required={!accountForm.id}
+                minLength={accountForm.id ? undefined : 6}
                 autoComplete="new-password"
                 value={accountForm.password}
                 onChange={(e) => setAccountForm({ ...accountForm, password: e.target.value })}

@@ -2081,6 +2081,10 @@ async function probeRedis(): Promise<ServiceCheck> {
       maxRetriesPerRequest: 1,
       enableOfflineQueue: false,
       lazyConnect: true,
+      retryStrategy: () => null,
+    });
+    client.on('error', () => {
+      /* probe result covers this */
     });
     try {
       await client.connect();

@@ -31,6 +31,37 @@ const API_BASE = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/
 
 const WEB_AUTH_STORAGE_KEY = 'petdate_web_auth_v1';
 
+type WebAuthClearedListener = () => void;
+const webAuthClearedListeners = new Set<WebAuthClearedListener>();
+
+/** Same-tab hook when a stale Bearer is dropped after HTTP 401 (avoids cart probe storms). */
+export function onWebAuthTokenCleared(listener: WebAuthClearedListener): () => void {
+  webAuthClearedListeners.add(listener);
+  return () => {
+    webAuthClearedListeners.delete(listener);
+  };
+}
+
+function clearStaleWebAuthToken(expectedToken: string): void {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    const raw = localStorage.getItem(WEB_AUTH_STORAGE_KEY);
+    if (!raw) return;
+    const parsed = JSON.parse(raw) as { token?: string };
+    if (typeof parsed?.token !== 'string' || parsed.token !== expectedToken) return;
+    localStorage.removeItem(WEB_AUTH_STORAGE_KEY);
+    webAuthClearedListeners.forEach((l) => {
+      try {
+        l();
+      } catch {
+        /* ignore */
+      }
+    });
+  } catch {
+    /* ignore */
+  }
+}
+
 function readStoredWebToken(): string | undefined {
   if (typeof localStorage === 'undefined') return undefined;
   try {
@@ -1884,11 +1915,21 @@ async function shopCartRequest(
     },
   });
   const body = await res.text();
-  let json: (ShopCartApiResponse & { error?: string; ok?: boolean }) | null = null;
+  let json: (ShopCartApiResponse & { error?: string; ok?: boolean; reason?: string }) | null =
+    null;
   try {
-    json = JSON.parse(body) as ShopCartApiResponse & { error?: string; ok?: boolean };
+    json = JSON.parse(body) as ShopCartApiResponse & {
+      error?: string;
+      ok?: boolean;
+      reason?: string;
+    };
   } catch {
     throw new Error(body || `خطای ${res.status}`);
+  }
+  if (res.status === 401) {
+    // Stale / expired web token — drop local session so chrome stops probing cart.
+    clearStaleWebAuthToken(token);
+    throw new Error(json?.error || 'برای دیدن سبد وارد حساب شوید.');
   }
   if (!json || json.ok !== true) {
     throw new Error(json?.error || body || `خطای ${res.status}`);

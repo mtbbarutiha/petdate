@@ -69,6 +69,11 @@ export async function pingRedis(timeoutMs = DEFAULT_TIMEOUT_MS): Promise<ProbeSt
     maxRetriesPerRequest: 1,
     enableOfflineQueue: false,
     lazyConnect: true,
+    retryStrategy: () => null,
+  });
+  // Prevent Unhandled error event spam when Redis is briefly unreachable.
+  client.on('error', () => {
+    /* probe result covers this */
   });
   try {
     await withTimeout(client.connect(), timeoutMs, 'redis');

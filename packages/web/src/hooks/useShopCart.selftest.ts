@@ -54,6 +54,8 @@ assert.match(sync, /export async function hydrateShopCatalogOnce/, 'shared hydra
 
 assert.match(api, /\/api\/shop\/cart\/merge/, 'merge endpoint client');
 assert.match(api, /export async function fetchShopCart/, 'fetchShopCart client');
+assert.match(api, /clearStaleWebAuthToken/, 'cart 401 clears stale web token');
+assert.match(api, /onWebAuthTokenCleared/, 'auth store can subscribe to token clear');
 assert.match(api, /X-Petdate-Cart-Intent/, 'remove client sends intent header');
 
 assert.equal(isRetiredShopProduct('p1'), true);

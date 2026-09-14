@@ -41,6 +41,16 @@ assert.equal(
   'quick-connect 409 expected'
 );
 assert.equal(
+  isExpectedHttpNoise('POST', '/api/auth/otp/request', 400),
+  true,
+  'otp request 400 already covered by sms logs / client validation'
+);
+assert.equal(
+  isExpectedHttpNoise('POST', '/api/admin/hr/rbac/accounts', 400),
+  true,
+  'rbac account validation 400 is form noise'
+);
+assert.equal(
   isExpectedHttpNoise('GET', '/api/admin/hr/ats/meta', 500),
   false,
   '500s always logged'

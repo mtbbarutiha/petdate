@@ -12,7 +12,7 @@ import {
   telegramWebLoginDeepLink,
 } from '../../lib/api';
 import { postAuthPath, sanitizeNext } from '../../lib/authRedirect';
-import { dashboardPathForUser } from '@petdate/shared';
+import { dashboardPathForUser, normalizeIranMobile } from '@petdate/shared';
 
 type WaitingState = {
   id: string;
@@ -132,12 +132,19 @@ export function LoginPage() {
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
-    if (sendIn > 0) return;
+    if (sendIn > 0 || busy) return;
     setError('');
     setDevHint('');
+    const phone = normalizeIranMobile(target.trim());
+    if (!phone) {
+      const msg = 'شماره موبایل نامعتبر است';
+      setError(msg);
+      toastError(msg);
+      return;
+    }
     setBusy(true);
     try {
-      const res = await requestOtp('phone', target.trim());
+      const res = await requestOtp('phone', phone);
       if (res.devCode) setDevHint(`کد توسعه: ${res.devCode}`);
       toastSuccess('کد ارسال شد');
       navigate(`/auth/otp?next=${encodeURIComponent(next)}`, {
