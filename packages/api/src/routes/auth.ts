@@ -1010,8 +1010,9 @@ authRouter.post('/verification', (req, res) => {
 });
 
 /**
- * آپلود مدرک مربی / پرستار از وب (multipart field: `file`, body/query: kind).
+ * آپلود مدرک دامپزشک / مربی از وب (multipart field: `file`, body/query: kind).
  * بعد از آپلود وضعیت pending می‌شود تا ادمین تأیید کند.
+ * آنلاین/آفلاین بودن مانع آپلود نیست.
  */
 authRouter.post('/provider-credential', (req, res) => {
   const session = getUserFromBearer(req.header('authorization') ?? undefined);
@@ -1033,9 +1034,16 @@ authRouter.post('/provider-credential', (req, res) => {
     }
 
     const kindRaw = String(req.body?.kind ?? req.query?.kind ?? '').trim();
-    const kind = kindRaw === 'sitter' ? 'sitter' : kindRaw === 'trainer' ? 'trainer' : null;
+    const kind =
+      kindRaw === 'sitter'
+        ? 'sitter'
+        : kindRaw === 'trainer'
+          ? 'trainer'
+          : kindRaw === 'vet'
+            ? 'vet'
+            : null;
     if (!kind) {
-      res.status(400).json({ error: 'kind باید trainer یا sitter باشد' });
+      res.status(400).json({ error: 'kind باید trainer یا vet باشد' });
       return;
     }
     if (kind === 'sitter') {
@@ -1045,7 +1053,8 @@ authRouter.post('/provider-credential', (req, res) => {
       });
       return;
     }
-    if (!userHasRole(session.user, 'trainer')) {
+    const requiredRole = kind === 'vet' ? 'vet' : 'trainer';
+    if (!userHasRole(session.user, requiredRole)) {
       res.status(403).json({ error: 'نقش لازم را نداری' });
       return;
     }
@@ -1063,11 +1072,10 @@ authRouter.post('/provider-credential', (req, res) => {
         mimeType: file.mimetype,
         buffer: file.buffer,
       });
-      const result = dbService.submitProviderCredential(
-        session.user.id,
-        'trainer',
-        saved.urlPath
-      );
+      const result =
+        kind === 'vet'
+          ? dbService.submitVetCredential(session.user.id, saved.urlPath)
+          : dbService.submitProviderCredential(session.user.id, 'trainer', saved.urlPath);
       if (!result.ok) {
         res.status(result.reason === 'missing' ? 404 : 400).json({
           error: result.reason === 'no_file' ? 'فایل مدرک لازم است' : 'کاربر پیدا نشد',

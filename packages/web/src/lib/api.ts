@@ -1264,10 +1264,10 @@ export async function patchWebProviderOnline(
   });
 }
 
-/** آپلود مدرک مربی / پرستار از وب (بعد از آپلود: pending تا تأیید ادمین) */
+/** آپلود مدرک دامپزشک / مربی از وب (بعد از آپلود: pending تا تأیید ادمین) */
 export async function uploadProviderCredential(
   token: string,
-  kind: 'trainer' | 'sitter',
+  kind: 'trainer' | 'sitter' | 'vet',
   file: File
 ): Promise<{ ok: true; url: string; user: User }> {
   const form = new FormData();

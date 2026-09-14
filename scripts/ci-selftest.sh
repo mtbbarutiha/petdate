@@ -206,6 +206,9 @@ npx tsx "$ROOT/packages/web/src/lib/pageSeo.selftest.ts"
 echo "==> selftest: web public marketing routes (vet-consult / adoption / magazine)"
 npx tsx "$ROOT/packages/web/src/lib/publicRoutes.selftest.ts"
 
+echo "==> selftest: web vet credential upload on admission card"
+npx tsx "$ROOT/packages/web/src/pages/vetCredentialUpload.selftest.ts"
+
 echo "==> selftest: web invite referral persist + card wiring"
 npx tsx "$ROOT/packages/web/src/lib/referral.selftest.ts"
 npx tsx "$ROOT/packages/web/src/components/inviteFriends.selftest.ts"
@@ -456,6 +459,7 @@ run src/demo-seeds-cleanup.selftest.ts
 run src/health-ready.selftest.ts
 run src/services/web-otp.selftest.ts
 run src/routes/auth-otp-status.selftest.ts
+run src/routes/auth-provider-credential.selftest.ts
 run src/services/google-web-auth.selftest.ts
 run src/crm.selftest.ts
 run src/auto-messages.selftest.ts

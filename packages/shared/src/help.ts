@@ -145,8 +145,8 @@ export const HELP_ROLE_INTROS: Record<
       en: 'Go online to appear as available. Accept a request — chat is the same on bot and site. Set your fee in the bot menu. Phone verification is required for vets.',
     },
     tips: {
-      fa: 'آفلاین که باشی درخواست جدید نمی‌آید. مدرک دامپزشک را از پروفایل بفرست تا ادمین تأیید کند.',
-      en: 'While offline you will not get new requests. Upload your credential from Profile so admin can verify it.',
+      fa: 'آفلاین که باشی درخواست جدید نمی‌آید. مدرک دامپزشک را از پنل پذیرش («آپلود مدرک») یا ربات بفرست تا ادمین تأیید کند.',
+      en: 'While offline you will not get new requests. Upload your credential from the admission card or the bot so admin can verify it.',
     },
   },
   trainer: {
