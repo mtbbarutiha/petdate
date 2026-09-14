@@ -29,10 +29,14 @@ assert.doesNotMatch(
   /pd-shop-rail-btn--left[\s\S]*?<ChevronRight[\s\S]*?pd-shop-rail-btn--right[\s\S]*?<ChevronLeft/,
   'chevrons are not swapped inward'
 );
+assert.match(buttons, /onPointerUp/, 'rail buttons handle touch pointerup (not click-only)');
+assert.match(buttons, /onPointerDown/, 'rail buttons arm on pointerdown for touch');
+assert.match(buttons, /useTouchSafeActivate/, 'shared touch-safe activate helper');
 
 assert.match(hook, /scrollBySide/, 'hook exposes visual-side scroll');
 assert.match(hook, /canLeft/, 'hook exposes canLeft');
 assert.match(hook, /isRtl \? 'next' : 'prev'/, 'RTL left button scrolls next (visual left)');
+assert.match(hook, /pointer:\s*coarse/, 'coarse pointers use instant scrollBy');
 
 assert.match(
   css,
@@ -43,6 +47,17 @@ assert.doesNotMatch(
   css,
   /\.pd-shop-rail-btn--next\s*\{[\s\S]{0,80}inset-inline-start/,
   'next/left is not mirrored by logical insets'
+);
+assert.match(css, /\.pd-shop-rail-btn[\s\S]{0,500}touch-action:\s*manipulation/, 'rail buttons accept touch');
+assert.match(
+  css,
+  /\.pd-shop-dk-strip[\s\S]{0,160}overflow-x:\s*auto/,
+  'category strip keeps native swipe scroll'
+);
+assert.match(
+  css,
+  /\.pd-shop-home-rail-track[\s\S]{0,160}overflow-x:\s*auto/,
+  'home rails keep native swipe scroll'
 );
 
 for (const [src, name] of [

@@ -71,7 +71,10 @@ export function useShopRailNav(resetKey: unknown) {
     const left = el.scrollLeft;
     const nextSign = isRtl ? (left < -1 ? -1 : 1) : 1;
     const sign = dir === 'next' ? nextSign : -nextSign;
-    el.scrollBy({ left: sign * amount, behavior: 'smooth' });
+    // Coarse pointers: instant scroll — iOS often drops smooth scrollBy mid-gesture.
+    const coarse =
+      typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches;
+    el.scrollBy({ left: sign * amount, behavior: coarse ? 'auto' : 'smooth' });
   };
 
   /** Physical left/right — left button always reveals visual-left content. */

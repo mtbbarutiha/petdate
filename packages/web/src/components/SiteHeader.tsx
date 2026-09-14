@@ -44,7 +44,7 @@ export type SiteHeaderProps = {
   ctaLabel?: string;
   ctaTo?: string;
   extras?: ReactNode;
-  /** Shop-only: product search in a second header row (does not squeeze nav links). */
+  /** Shop-only: compact product search stacked under the wordmark (far-right in RTL). */
   brandBelow?: ReactNode;
   logoSrc?: string;
   logoSrcSet?: string;
@@ -55,8 +55,8 @@ export type SiteHeaderProps = {
 
 /**
  * Shared site header: brand | primary text links (all inline) | utilities.
- * Role shortcuts (هم بازی / شاپ / بازی‌ها) share the خدمات text treatment.
- * No «بیشتر» overflow — section extras render directly in the nav row.
+ * Always uses a single `.pepito-nav-main` row so mobile space-between layout
+ * works site-wide (shop and non-shop). Shop search stacks under the logo.
  */
 export function SiteHeader({
   scrolled = false,
@@ -81,6 +81,7 @@ export function SiteHeader({
 }: SiteHeaderProps) {
   const { t } = useI18n();
   const [wideEnoughForNav, setWideEnoughForNav] = useState(!deferDesktopNav);
+  const [compactChrome, setCompactChrome] = useState(Boolean(brandBelow));
 
   useEffect(() => {
     if (!deferDesktopNav) return;
@@ -91,86 +92,75 @@ export function SiteHeader({
     return () => mq.removeEventListener('change', sync);
   }, [deferDesktopNav]);
 
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 859px)');
+    const sync = () => setCompactChrome(Boolean(brandBelow) || mq.matches);
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, [brandBelow]);
+
   const headerClass = `pepito-nav${scrolled ? ' is-scrolled' : ''}${brandBelow ? ' pepito-nav--with-search' : ''}${className ? ` ${className}` : ''}`;
   const showTextAction =
     Boolean(actionLabel) && !isGuestLoginTextAction(actionLabel, actionTo, t('common.login'));
-  const compactChrome = Boolean(brandBelow);
-
-  const brand = (
-    <div className="pepito-nav-brand">
-      <Link to="/" className="pepito-nav-logo" aria-label={BRAND.displayName}>
-        <img
-          src={logoSrc}
-          alt={BRAND.displayName}
-          {...(logoSrcSet ? { srcSet: logoSrcSet } : {})}
-          {...(logoSizes ? { sizes: logoSizes } : {})}
-          {...(logoWidth ? { width: logoWidth } : {})}
-          {...(logoHeight ? { height: logoHeight } : {})}
-          decoding="async"
-        />
-      </Link>
-    </div>
-  );
-
-  const primary = wideEnoughForNav ? (
-    <div className="pepito-nav-primary">
-      {showDesktopNav ? (
-        <Suspense fallback={null}>
-          <LazySiteDesktopNav />
-        </Suspense>
-      ) : null}
-      {sectionLinks.length > 0 ? (
-        <nav className="pepito-nav-links pepito-nav-section-inline" aria-label={t('nav.sections')}>
-          {sectionLinks.map((link) => (
-            <SiteHeaderLinkView key={link.key} link={link} />
-          ))}
-        </nav>
-      ) : null}
-    </div>
-  ) : null;
-
-  const actions = (
-    <div className="pepito-nav-actions">
-      <NavUserCluster showCart={showCart} showOrders={showOrders} />
-      <LanguageToggle compact={compactChrome} />
-      <ThemeToggle compact={compactChrome} />
-      {showTextAction && onAction ? (
-        <button type="button" className="pepito-nav-login pepito-nav-login--btn" onClick={onAction}>
-          {actionLabel}
-        </button>
-      ) : showTextAction && actionTo ? (
-        <Link to={actionTo} className="pepito-nav-login">
-          {actionLabel}
-        </Link>
-      ) : null}
-      {ctaLabel && ctaTo ? (
-        <Link to={ctaTo} className="pepito-btn pepito-btn--nav">
-          <PawIcon />
-          {ctaLabel}
-        </Link>
-      ) : null}
-      {extras}
-    </div>
-  );
 
   return (
     <header className={headerClass}>
-      {brandBelow ? (
-        <>
-          <div className="pepito-nav-main">
-            {brand}
-            {primary}
-            {actions}
+      <div className="pepito-nav-main">
+        <div className={`pepito-nav-brand${brandBelow ? ' pepito-nav-brand--search' : ''}`}>
+          <Link to="/" className="pepito-nav-logo" aria-label={BRAND.displayName}>
+            <img
+              src={logoSrc}
+              alt={BRAND.displayName}
+              {...(logoSrcSet ? { srcSet: logoSrcSet } : {})}
+              {...(logoSizes ? { sizes: logoSizes } : {})}
+              {...(logoWidth ? { width: logoWidth } : {})}
+              {...(logoHeight ? { height: logoHeight } : {})}
+              decoding="async"
+            />
+          </Link>
+          {brandBelow}
+        </div>
+
+        {wideEnoughForNav ? (
+          <div className="pepito-nav-primary">
+            {showDesktopNav ? (
+              <Suspense fallback={null}>
+                <LazySiteDesktopNav />
+              </Suspense>
+            ) : null}
+            {sectionLinks.length > 0 ? (
+              <nav className="pepito-nav-links pepito-nav-section-inline" aria-label={t('nav.sections')}>
+                {sectionLinks.map((link) => (
+                  <SiteHeaderLinkView key={link.key} link={link} />
+                ))}
+              </nav>
+            ) : null}
           </div>
-          <div className="pepito-nav-search-row">{brandBelow}</div>
-        </>
-      ) : (
-        <>
-          {brand}
-          {primary}
-          {actions}
-        </>
-      )}
+        ) : null}
+
+        <div className="pepito-nav-actions">
+          <NavUserCluster showCart={showCart} showOrders={showOrders} />
+          <LanguageToggle compact={compactChrome} />
+          <ThemeToggle compact={compactChrome} />
+          {showTextAction && onAction ? (
+            <button type="button" className="pepito-nav-login pepito-nav-login--btn" onClick={onAction}>
+              {actionLabel}
+            </button>
+          ) : showTextAction && actionTo ? (
+            <Link to={actionTo} className="pepito-nav-login">
+              {actionLabel}
+            </Link>
+          ) : null}
+          {ctaLabel && ctaTo ? (
+            <Link to={ctaTo} className="pepito-btn pepito-btn--nav">
+              <PawIcon />
+              {ctaLabel}
+            </Link>
+          ) : null}
+          {extras}
+        </div>
+      </div>
     </header>
   );
 }

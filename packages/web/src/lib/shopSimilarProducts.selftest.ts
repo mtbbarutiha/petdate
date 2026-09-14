@@ -121,7 +121,8 @@ assert.match(css, /\.pd-dk-similar\b/, 'similar CSS present');
 assert.match(css, /\.pd-dk-similar-title\b/, 'title accent styles');
 assert.match(css, /\.pd-dk-similar-next\b/, 'legacy chevron class kept');
 assert.match(css, /\.pd-shop-rail-btn\b/, 'visible L/R rail buttons');
-assert.match(css, /\.pd-dk-similar-track[\s\S]{0,180}overflow-x:\s*hidden/, 'similar rail hides native scrollbar');
+assert.match(css, /\.pd-dk-similar-track[\s\S]{0,220}overflow-x:\s*auto/, 'similar rail allows swipe scroll');
+assert.match(css, /\.pd-dk-similar-track[\s\S]{0,280}scrollbar-width:\s*none/, 'similar rail hides native scrollbar');
 assert.match(dark, /pd-dk-similar/, 'dark mode styles for similar rail');
 assert.match(ci, /shopSimilarProducts\.selftest/, 'CI runs similar products selftest');
 
