@@ -168,7 +168,11 @@ export function getDb(): AppDatabase {
         console.warn('SEED_DEMO_DATA ignored (production / ALLOW_DEMO_SEED=0)');
       }
       try {
-        seedSamplePetEventsIfEmpty();
+        // Permanent catalog samples (magazine-style) — not gated by allowDemoSeeds.
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { seedSamplePetEvents } =
+          require('./sample-pet-events-seed') as typeof import('./sample-pet-events-seed');
+        seedSamplePetEvents(db);
       } catch (err) {
         console.warn('sample pet events seed skipped:', (err as Error).message);
       }
@@ -2082,142 +2086,6 @@ function seedIfEmpty() {
   db.prepare('INSERT INTO game_players (game_id, user_id) VALUES (?, ?)').run(1, 1);
 }
 
-/** Four curated pet events with local stock photos (pre-approved). Gated by allowDemoSeeds. */
-function seedSamplePetEventsIfEmpty() {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { allowDemoSeeds } = require('./demo-seeds-guard') as typeof import('./demo-seeds-guard');
-    if (!allowDemoSeeds()) return;
-  } catch {
-    return;
-  }
-
-  const existing = (
-    db
-      .prepare(
-        `SELECT COUNT(*) as c FROM games WHERE game_type IN (
-          'pet_dating','group_walk','training','grooming_meetup','mobile_vet','play_club','exhibition'
-        )`
-      )
-      .get() as { c: number }
-  ).c;
-  if (existing >= 4) return;
-
-  let host = db
-    .prepare(`SELECT id FROM users WHERE telegram_id = ?`)
-    .get('event_demo_host') as { id: number } | undefined;
-  if (!host) {
-    const ins = db
-      .prepare(
-        `INSERT INTO users (telegram_id, name, username, coins, role, onboarding)
-         VALUES (?, ?, ?, ?, ?, ?)`
-      )
-      .run('event_demo_host', 'میزبان ایونت‌های نمونه', 'event_demo', 5000, 'pet_owner', 'profile_complete');
-    host = { id: Number(ins.lastInsertRowid) };
-  }
-
-  const samples: Array<{
-    title: string;
-    gameType: GameType;
-    location: string;
-    province: string;
-    city: string;
-    maxPlayers: number;
-    description: string;
-    services: string;
-    joinFee: number;
-    photo: string;
-    daysAhead: number;
-    hour: number;
-  }> = [
-    {
-      title: 'پت دیتینگ باغ گیاه‌شناسی',
-      gameType: 'pet_dating',
-      location: 'باغ گیاه‌شناسی ملی، ورودی شرقی',
-      province: 'تهران',
-      city: 'تهران',
-      maxPlayers: 16,
-      description: 'آشنایی پت‌های اجتماعی در فضای باز — واکسیناسیون به‌روز الزامی.',
-      services: 'فضای سایه، آب، ناظر رویداد',
-      joinFee: 50,
-      photo: '/events/sample-dating.jpg',
-      daysAhead: 3,
-      hour: 17,
-    },
-    {
-      title: 'پیاده‌روی گروهی سعادت‌آباد',
-      gameType: 'group_walk',
-      location: 'بوستان نهج‌البلاغه',
-      province: 'تهران',
-      city: 'تهران',
-      maxPlayers: 20,
-      description: 'مسیر ملایم یک‌ساعته برای سگ‌های متوسط و بزرگ.',
-      services: 'کیسه جمع‌آوری، آب خنک',
-      joinFee: 15,
-      photo: '/events/sample-walk.jpg',
-      daysAhead: 5,
-      hour: 8,
-    },
-    {
-      title: 'کارگاه آموزش فرمان‌پذیری',
-      gameType: 'training',
-      location: 'باشگاه پت ونک',
-      province: 'تهران',
-      city: 'تهران',
-      maxPlayers: 8,
-      description: 'جلسه گروهی با مربی — تمرکز روی بنشین، بمان و راه رفتن با قلاده.',
-      services: 'مربی تأییدشده، تشویقی آموزشی',
-      joinFee: 80,
-      photo: '/events/sample-training.jpg',
-      daysAhead: 7,
-      hour: 16,
-    },
-    {
-      title: 'گرومینگ میت‌آپ اصفهان',
-      gameType: 'grooming_meetup',
-      location: 'سالن پت چهارباغ',
-      province: 'اصفهان',
-      city: 'اصفهان',
-      maxPlayers: 10,
-      description: 'شست‌وشوی سبک و نکات مراقبت مو برای پت‌های مو بلند.',
-      services: 'شامپوی ملایم، خشک‌کن، مشاوره پوست',
-      joinFee: 40,
-      photo: '/events/sample-grooming.jpg',
-      daysAhead: 10,
-      hour: 11,
-    },
-  ];
-
-  const insert = db.prepare(`
-    INSERT INTO games (
-      title, game_type, section_id, host_user_id, location, scheduled_at, max_players,
-      description, province, city, services, join_fee_coins, photo_url, photo_status
-    ) VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'approved')
-  `);
-  const linkHost = db.prepare('INSERT OR IGNORE INTO game_players (game_id, user_id) VALUES (?, ?)');
-
-  for (const s of samples) {
-    const when = new Date();
-    when.setDate(when.getDate() + s.daysAhead);
-    when.setHours(s.hour, 0, 0, 0);
-    const r = insert.run(
-      s.title,
-      s.gameType,
-      host.id,
-      s.location,
-      when.toISOString(),
-      s.maxPlayers,
-      s.description,
-      s.province,
-      s.city,
-      s.services,
-      s.joinFee,
-      s.photo
-    );
-    linkHost.run(Number(r.lastInsertRowid), host.id);
-  }
-  console.log('🐾 sample pet events seeded (4)');
-}
 
 function seedDemoPetsIfEmpty() {
   const count = db.prepare('SELECT COUNT(*) as c FROM pets').get() as { c: number };
