@@ -42,8 +42,5 @@ export function welcomeSectionLinks(): SiteHeaderLink[] {
 export function shopSectionLinks(): SiteHeaderLink[] {
   return [
     { key: 'orders', labelKey: 'shop.orders', to: '/shop/orders' },
-    { key: 'dog', labelKey: 'shop.dog', to: '/shop/c/dog-food' },
-    { key: 'cat', labelKey: 'shop.cat', to: '/shop/c/cat-food' },
-    { key: 'bird', labelKey: 'shop.bird', to: '/shop/c/bird-food' },
   ].filter((link) => !DUPLICATE_PRIMARY.has(link.key));
 }

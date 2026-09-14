@@ -1,8 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import type { ShopProduct } from '../../data/shopCatalog';
 import { ShopProductCard } from './ShopProductCard';
+import { ShopRailNavButtons } from './ShopRailNavButtons';
+import { useShopRailNav } from './useShopRailNav';
 
 export type ShopHomeRailPill = {
   id: string;
@@ -23,6 +25,7 @@ type Props = {
 
 /**
  * DigiKala-style shop-home rail: title + مشاهده همه + pill filters + product carousel.
+ * Native overflow scrollbar is hidden; L/R buttons drive scroll.
  */
 export function ShopHomeRail({
   title,
@@ -34,46 +37,9 @@ export function ShopHomeRail({
   testId,
   ariaLabel,
 }: Props) {
-  const trackRef = useRef<HTMLDivElement>(null);
-  const [canScrollMore, setCanScrollMore] = useState(false);
-
-  const updateScrollState = useCallback(() => {
-    const el = trackRef.current;
-    if (!el) {
-      setCanScrollMore(false);
-      return;
-    }
-    const max = el.scrollWidth - el.clientWidth;
-    if (max <= 8) {
-      setCanScrollMore(false);
-      return;
-    }
-    const progressed = Math.abs(el.scrollLeft);
-    setCanScrollMore(progressed < max - 8);
-  }, []);
-
-  useEffect(() => {
-    updateScrollState();
-    const el = trackRef.current;
-    if (!el) return;
-    el.addEventListener('scroll', updateScrollState, { passive: true });
-    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(updateScrollState) : null;
-    ro?.observe(el);
-    window.addEventListener('resize', updateScrollState);
-    return () => {
-      el.removeEventListener('scroll', updateScrollState);
-      ro?.disconnect();
-      window.removeEventListener('resize', updateScrollState);
-    };
-  }, [products.length, activePillId, updateScrollState]);
-
-  const scrollMore = () => {
-    const el = trackRef.current;
-    if (!el) return;
-    const amount = Math.max(220, Math.round(el.clientWidth * 0.7));
-    const rtl = getComputedStyle(el).direction === 'rtl';
-    el.scrollBy({ left: rtl ? -amount : amount, behavior: 'smooth' });
-  };
+  const { trackRef, canPrev, canNext, scrollByDir } = useShopRailNav(
+    `${activePillId}:${products.length}`
+  );
 
   const pillButtons = useMemo(() => pills, [pills]);
 
@@ -129,16 +95,14 @@ export function ShopHomeRail({
                 </div>
               ))}
             </div>
-            {canScrollMore ? (
-              <button
-                type="button"
-                className="pd-shop-home-rail-next"
-                aria-label="مشاهده محصولات بیشتر"
-                onClick={scrollMore}
-              >
-                <ChevronLeft size={20} aria-hidden />
-              </button>
-            ) : null}
+            <ShopRailNavButtons
+              canPrev={canPrev}
+              canNext={canNext}
+              onPrev={() => scrollByDir('prev')}
+              onNext={() => scrollByDir('next')}
+              prevLabel="محصولات قبلی"
+              nextLabel="مشاهده محصولات بیشتر"
+            />
           </>
         )}
       </div>

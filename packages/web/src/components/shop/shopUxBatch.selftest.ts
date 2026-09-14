@@ -34,7 +34,16 @@ const bestIdx = home.indexOf('پرفروش‌ترین‌های پت');
 const catIdx = home.indexOf('دسته‌بندی‌های گربه');
 const dogIdx = home.indexOf('دسته‌بندی‌های سگ');
 assert.ok(brandsIdx > 0 && bestIdx > brandsIdx, 'bestsellers after top brands');
-assert.ok(catIdx > bestIdx, 'cat rail after bestsellers');
+assert.match(home, /ShopPromoBanners/, 'two promo banners on home');
+assert.doesNotMatch(home, /pd-shop-journey/, '3-step journey strip removed');
+assert.doesNotMatch(home, /title: 'انتخاب کن'/, 'journey copy gone');
+assert.doesNotMatch(home, /pd-shop-pet-tabs/, 'no top-of-home species filter chrome');
+assert.match(home, /pd-shop-dk-tile/, 'rectangular category tiles');
+assert.doesNotMatch(home, /pd-shop-dk-circle/, 'emoji circles replaced');
+assert.doesNotMatch(home, /c\.emoji/, 'category rail does not use emoji');
+const promoIdx = home.indexOf('<ShopPromoBanners');
+assert.ok(promoIdx > bestIdx, 'promo banners after bestsellers');
+assert.ok(catIdx > promoIdx, 'cat rail after promo banners');
 assert.ok(dogIdx > catIdx, 'dog rail after cat rail');
 
 assert.match(rail, /مشاهده همه/, 'view-all link');
@@ -62,7 +71,16 @@ assert.ok(getBestsellingProducts('all', 8).length > 0, 'bestsellers helper');
 assert.ok(getHomeRailProducts({ pet: 'cat', limit: 6 }).length > 0, 'cat rail products');
 assert.ok(getHomeRailProducts({ pet: 'dog', limit: 6 }).length > 0, 'dog rail products');
 
-assert.match(css, /\.pd-shop-home-rail\b/, 'home rail styles');
+assert.match(rail, /ShopRailNavButtons/, 'home rails expose L/R buttons');
+assert.match(css, /\.pd-shop-rail-btn\b/, 'shared rail button styles');
+assert.match(css, /\.pd-shop-home-rail-track[\s\S]{0,180}overflow-x:\s*hidden/, 'home rail hides native scrollbar');
+assert.match(css, /\.pd-shop-dk-strip\s*\{[\s\S]{0,320}overflow-x:\s*hidden/, 'category strip hides native scrollbar');
+assert.match(css, /\.pd-shop-promo-banners\b/, 'promo banner styles');
+const promoSrc = readFileSync(join(here, 'ShopPromoBanners.tsx'), 'utf8');
+assert.match(promoSrc, /پت‌دیت/, 'promo banners include PetDate name');
+assert.match(promoSrc, /برای پت شما/, 'first promo headline');
+assert.match(promoSrc, /مناسب پت شما/, 'second promo headline');
+assert.match(promoSrc, /shop-promo-banners/, 'promo test id');
 assert.match(css, /\.pd-shop-filter-acc\b/, 'filter accordion styles');
 assert.match(ci, /shopUxBatch\.selftest/, 'CI runs shop UX batch selftest');
 

@@ -94,8 +94,12 @@ assert.ok(
 );
 assert.deepEqual(
   shopSectionLinks().map((l) => l.key),
-  ['orders', 'dog', 'cat', 'bird'],
-  'shop section keeps orders + category shortcuts only',
+  ['orders'],
+  'shop header extras are orders only (no species filter chrome)',
+);
+assert.ok(
+  !shopSectionLinks().some((l) => l.key === 'dog' || l.key === 'cat' || l.key === 'bird'),
+  'shop pages do not show dog/cat/bird header filters',
 );
 assert.ok(
   landingSectionLinks({ vetConsultEnabled: true }).some((l) => l.testId === 'nav-adoption'),

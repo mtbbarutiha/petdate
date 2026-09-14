@@ -8258,7 +8258,7 @@ a.pepito-btn.pepito-human-consult-cta:hover {
 
 /* ========== PetDate full shop (Pepito chrome) ========== */
 .pd-shop-page .pd-shop-main {
-  padding-block: 1.75rem 3.5rem;
+  padding-block: 2.1rem 3.5rem;
   min-height: 50vh;
   background:
     radial-gradient(ellipse 80% 40% at 100% 0%, rgba(219, 137, 202, 0.08), transparent 55%),
@@ -8271,7 +8271,8 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   position: sticky;
   top: var(--pepito-nav-h);
   z-index: 40;
-  padding: 0.65rem 0 0.75rem;
+  padding: 0.75rem 0 1.15rem;
+  margin-bottom: 0.35rem;
   background: color-mix(in srgb, var(--pepito-white) 88%, transparent);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -8417,11 +8418,24 @@ a.pepito-btn.pepito-human-consult-cta:hover {
     position: sticky;
     top: var(--pepito-nav-h);
     z-index: 46;
-    padding: 0.45rem 0 0.55rem;
+    padding: 0.55rem 0 0.95rem;
     background: color-mix(in srgb, var(--pepito-white) 96%, transparent);
   }
   .pd-shop-search-pill {
     min-height: 2.7rem;
+  }
+}
+
+/* Shop: header is in-flow on small screens, so search must stick to the viewport top
+   once the header scrolls away — not 64px down the middle of the page. */
+@media (max-width: 859px) {
+  .pd-shop-page .pd-shop-search-bar {
+    position: sticky;
+    top: 0;
+    z-index: 55;
+    padding-top: calc(0.45rem + env(safe-area-inset-top, 0px));
+    padding-bottom: 0.95rem;
+    box-shadow: 0 8px 18px rgba(25, 6, 61, 0.06);
   }
 }
 
@@ -8899,11 +8913,11 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   flex-direction: row;
   flex-wrap: nowrap;
   gap: clamp(0.75rem, 2.2vw, 1.75rem);
-  overflow-x: auto;
+  overflow-x: hidden;
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
-  padding: 0.35rem 0.15rem 0.55rem;
+  padding: 0.35rem 2.55rem 0.55rem;
   outline: none;
 }
 .pd-shop-top-brands-track::-webkit-scrollbar {
@@ -9174,43 +9188,58 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   color: #fff;
 }
 
+.pd-shop-dk-strip-frame {
+  position: relative;
+}
 .pd-shop-dk-strip {
   display: flex;
   flex-wrap: nowrap;
-  gap: 0.35rem 1.15rem;
+  gap: 0.55rem 0.85rem;
   justify-content: flex-start;
   align-items: flex-start;
-  overflow-x: auto;
+  overflow-x: hidden;
   scroll-snap-type: x proximity;
-  -webkit-overflow-scrolling: touch;
-  padding: 0.35rem 0.15rem 0.55rem;
-  scrollbar-width: thin;
+  scrollbar-width: none;
+  padding: 0.45rem 2.6rem 0.65rem;
+}
+.pd-shop-dk-strip::-webkit-scrollbar {
+  display: none;
 }
 .pd-shop-dk-item {
   flex: 0 0 auto;
   scroll-snap-align: start;
-  width: 5.5rem;
+  width: 6.35rem;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.7rem;
+  gap: 0.55rem;
   text-decoration: none;
   color: inherit;
   text-align: center;
+}
+.pd-shop-dk-tile {
+  width: 5.85rem;
+  height: 5.85rem;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  background: #f4f5f7;
+  border: 1px solid rgba(25, 6, 61, 0.06);
+  color: var(--pepito-base);
+  box-shadow: 0 1px 2px rgba(25, 6, 61, 0.04);
+  transition: transform 0.22s ease, background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.pd-shop-dk-item:hover .pd-shop-dk-tile {
+  transform: translateY(-2px);
+  background: #eef0f4;
+  border-color: rgba(92, 77, 145, 0.16);
+  box-shadow: 0 4px 12px rgba(25, 6, 61, 0.08);
 }
 .pd-shop-dk-circle {
   width: 4.85rem;
   height: 4.85rem;
   border-radius: 50%;
-  display: grid;
-  place-items: center;
-  background: var(--dk-cat, var(--pepito-base));
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  transition: transform 0.22s ease, box-shadow 0.22s ease;
-}
-.pd-shop-dk-item:hover .pd-shop-dk-circle {
-  transform: scale(1.05);
-  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
+  display: none;
 }
 .pd-shop-dk-emoji {
   font-size: 1.85rem;
@@ -9230,10 +9259,9 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   max-width: 100%;
   min-height: 2.1em;
 }
-.pd-shop-dk-item--more .pd-shop-dk-circle {
-  background: #e8e8ea;
+.pd-shop-dk-item--more .pd-shop-dk-tile {
+  background: #eceef2;
   color: #5a5a5e;
-  box-shadow: none;
 }
 .pd-shop-dk-more-dots {
   font-size: 1.65rem;
@@ -10553,6 +10581,80 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   }
 }
 
+.pd-shop-promo-banners {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem;
+  margin: 0.15rem 0 1.85rem;
+}
+.pd-shop-promo-banner {
+  position: relative;
+  isolation: isolate;
+  min-height: clamp(9.5rem, 22vw, 12.5rem);
+  border-radius: 18px;
+  overflow: hidden;
+  text-decoration: none;
+  color: #fff;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
+  padding: 1.15rem 1.25rem;
+  box-shadow: 0 10px 28px rgba(25, 6, 61, 0.12);
+}
+.pd-shop-promo-banner--groom {
+  background:
+    linear-gradient(200deg, rgba(12, 70, 92, 0.15), rgba(8, 24, 40, 0.55)),
+    radial-gradient(120% 90% at 10% 20%, #7ad7ea 0%, transparent 55%),
+    linear-gradient(135deg, #49c4d9 0%, #1a6f8a 55%, #0d3a4d 100%);
+}
+.pd-shop-promo-banner--travel {
+  background:
+    linear-gradient(200deg, rgba(80, 40, 10, 0.12), rgba(40, 18, 8, 0.5)),
+    radial-gradient(120% 90% at 90% 10%, #f3c98a 0%, transparent 50%),
+    linear-gradient(135deg, #e8b86d 0%, #c07838 48%, #6b3a1e 100%);
+}
+.pd-shop-promo-banner-wash {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background: linear-gradient(180deg, transparent 18%, rgba(8, 10, 18, 0.55) 100%);
+  pointer-events: none;
+}
+.pd-shop-promo-banner-copy {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+  max-width: 18rem;
+  text-align: start;
+}
+.pd-shop-promo-banner-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  opacity: 0.92;
+}
+.pd-shop-promo-banner-copy strong {
+  font-family: var(--font-display);
+  font-size: clamp(1.25rem, 2.6vw, 1.7rem);
+  font-weight: 800;
+  line-height: 1.25;
+}
+.pd-shop-promo-banner-copy span:last-child {
+  font-size: 0.86rem;
+  line-height: 1.45;
+  opacity: 0.92;
+}
+@media (max-width: 720px) {
+  .pd-shop-promo-banners {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* —— Shop home DigiKala product rails —— */
 .pd-shop-home-rail {
   margin: 0.35rem 0 1.75rem;
@@ -10631,11 +10733,14 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   display: flex;
   flex-wrap: nowrap;
   gap: 0;
-  overflow-x: auto;
+  overflow-x: hidden;
   scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
-  padding-bottom: 0.25rem;
+  scrollbar-width: none;
+  padding-block: 0.25rem;
+  padding-inline: 2.55rem;
+}
+.pd-shop-home-rail-track::-webkit-scrollbar {
+  display: none;
 }
 .pd-shop-home-rail-item {
   flex: 0 0 auto;
@@ -10653,10 +10758,9 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   color: var(--pepito-muted);
   font-size: 0.92rem;
 }
-.pd-shop-home-rail-next {
+.pd-shop-rail-btn {
   position: absolute;
   inset-block-start: 42%;
-  inset-inline-start: 0.35rem;
   transform: translateY(-50%);
   z-index: 2;
   width: 2.5rem;
@@ -10664,16 +10768,30 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   border-radius: 50%;
   border: 1px solid rgba(0, 0, 0, 0.08);
   background: #fff;
-  color: #81858b;
+  color: #424750;
   box-shadow: 0 1px 6px rgba(0, 0, 0, 0.12);
   display: grid;
   place-items: center;
   cursor: pointer;
   padding: 0;
 }
-.pd-shop-home-rail-next:hover {
+.pd-shop-rail-btn--next {
+  inset-inline-start: 0.2rem;
+}
+.pd-shop-rail-btn--prev {
+  inset-inline-end: 0.2rem;
+}
+.pd-shop-rail-btn:hover:not(:disabled) {
   color: #ef4056;
   border-color: rgba(239, 64, 86, 0.35);
+}
+.pd-shop-rail-btn:disabled {
+  opacity: 0.38;
+  cursor: default;
+  box-shadow: none;
+}
+.pd-shop-home-rail-next {
+  display: none;
 }
 @media (min-width: 720px) {
   .pd-shop-home-rail-item {
@@ -11372,8 +11490,13 @@ a.pepito-btn.pepito-human-consult-cta:hover {
     gap: 0.25rem 0.85rem;
   }
   .pd-shop-dk-item {
-    width: 4.65rem;
-    gap: 0.55rem;
+    width: 5.6rem;
+    gap: 0.45rem;
+  }
+  .pd-shop-dk-tile {
+    width: 5.15rem;
+    height: 5.15rem;
+    border-radius: 16px;
   }
   .pd-shop-dk-circle {
     width: 4rem;
@@ -12825,7 +12948,7 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   .pd-shop-main {
     padding-inline: 0.85rem !important;
     /* Dock sits ~68px tall + 10px inset; keep last product rows clear of the glass pill. */
-    padding-block: 1.1rem calc(var(--pepito-mobile-dock-clearance) + 1.25rem) !important;
+    padding-block: 1.5rem calc(var(--pepito-mobile-dock-clearance) + 1.25rem) !important;
     overflow-x: clip;
   }
   .pd-shop-journey {
@@ -12863,7 +12986,10 @@ a.pepito-btn.pepito-human-consult-cta:hover {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
     gap: 0.65rem !important;
   }
-  .pd-shop-dk-strip,
+  .pd-shop-dk-strip {
+    overflow-x: hidden;
+    max-width: 100%;
+  }
   .pd-shop-h-track {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
@@ -15855,11 +15981,14 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   display: flex;
   flex-wrap: nowrap;
   gap: 0;
-  overflow-x: auto;
+  overflow-x: hidden;
   scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: thin;
-  padding-bottom: 0.25rem;
+  scrollbar-width: none;
+  padding-block: 0.25rem;
+  padding-inline: 2.55rem;
+}
+.pd-dk-similar-track::-webkit-scrollbar {
+  display: none;
 }
 .pd-dk-similar-item {
   flex: 0 0 auto;
@@ -15881,27 +16010,7 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   }
 }
 .pd-dk-similar-next {
-  position: absolute;
-  inset-block-start: 42%;
-  inset-inline-end: auto;
-  inset-inline-start: 0.35rem;
-  transform: translateY(-50%);
-  z-index: 2;
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 50%;
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  background: #fff;
-  color: #81858b;
-  box-shadow: 0 1px 6px rgba(0, 0, 0, 0.12);
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-  padding: 0;
-}
-.pd-dk-similar-next:hover {
-  color: #ef4056;
-  border-color: rgba(239, 64, 86, 0.35);
+  display: none;
 }
 .pd-shop-card--similar {
   border: 0;
@@ -16025,5 +16134,9 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   .pd-dk-similar-next {
     width: 2.15rem;
     height: 2.15rem;
+  }
+  .pd-shop-rail-btn {
+    width: 2.2rem;
+    height: 2.2rem;
   }
 }
