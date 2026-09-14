@@ -3,7 +3,7 @@
   "wave": 4,
   "waveCount": 5,
   "pricingRule": "zero-margin",
-  "cacheBust": "batch-multi-w4-v2",
+  "cacheBust": "batch-multi-w4-v3",
   "products": [
     {
       "proposedId": "p280",
