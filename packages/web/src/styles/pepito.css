@@ -384,53 +384,71 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   position: relative;
   z-index: 7;
 }
-/* Shop: taller sticky bar when compact search stacks under the logo. */
+/* Shop / search: taller chrome when search is present (mobile row or desktop inline). */
 .pepito-nav--with-search {
   height: auto;
   align-items: stretch;
 }
-/* Shop: keep logo-row tools flush to the top (level with the wordmark). */
+/* Mobile search: stack a full-width search row under logo + tools. */
+.pepito-nav--mobile-search {
+  flex-direction: column;
+  align-items: stretch;
+  height: auto;
+  gap: 0;
+}
+/* Shop + mobile-search: logo row and utilities share one vertical centerline. */
 .pepito-nav--shop .pepito-nav-main,
 .pepito-nav--mobile-search .pepito-nav-main {
-  align-items: flex-start;
+  align-items: center;
 }
 .pepito-nav--shop .pepito-nav-leading,
 .pepito-nav--shop .pepito-nav-actions,
 .pepito-nav--mobile-search .pepito-nav-actions {
-  align-items: flex-start;
+  align-items: center;
 }
 .pepito-nav--shop .pepito-nav-actions {
-  padding-block-start: 0.15rem;
+  padding-block-start: 0;
 }
-/* Single header row site-wide — leading (logo + links) | tools.
-   Exactly two flex children: space-between parks leading at inline-start
-   (physical right in RTL) and tools at inline-end (physical left). */
-.pepito-nav-main {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
+/* Full-width mobile search under the logo/tools row — fits the phone viewport. */
+.pepito-nav-search-row {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin-block-start: 0.65rem;
+  margin-block-end: 0.1rem;
+  padding-inline: 0;
+  flex: 0 0 auto;
+}
+.pepito-nav-search-row .pd-shop-search {
+  position: relative;
+  inset: auto;
   width: 100%;
   min-width: 0;
+  max-width: none;
+  margin-inline: 0;
+  z-index: 1;
 }
-.pepito-nav-leading {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-  flex: 0 1 auto;
-  min-width: 0;
+.pepito-nav-search-row .pd-shop-search-pill {
+  min-height: 2.5rem;
+  padding: 0.3rem 0.75rem;
+  width: 100%;
+  box-sizing: border-box;
 }
+.pepito-nav-search-row .pd-shop-search.is-expanded .pd-shop-search-pill,
+.pepito-nav-search-row .pd-shop-search:focus-within .pd-shop-search-pill {
+  min-height: 2.65rem;
+}
+/* Legacy logo-column search (kept for any non-header slots). */
 .pepito-nav-brand--search {
   display: inline-flex;
   flex-direction: column;
   align-items: stretch;
   gap: 0.45rem;
-  /* Width follows the logo so primary nav sits flush beside it (RTL). */
   width: max-content;
   max-width: min(42vw, 16rem);
   position: relative;
   z-index: 8;
-  /* Flow search under the logo (no absolute overlap with the wordmark). */
   padding-bottom: 0;
 }
 .pepito-nav-brand--search .pepito-nav-logo {
@@ -449,7 +467,6 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 }
 .pepito-nav-brand--search .pd-shop-search.is-expanded,
 .pepito-nav-brand--search .pd-shop-search:focus-within {
-  /* Expand over neighbors; brand column (and nav gap) stays logo-sized. */
   width: min(28rem, 72vw);
   max-width: min(28rem, 72vw);
   z-index: 30;
@@ -461,6 +478,24 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 .pepito-nav-brand--search .pd-shop-search.is-expanded .pd-shop-search-pill,
 .pepito-nav-brand--search .pd-shop-search:focus-within .pd-shop-search-pill {
   min-height: 2.65rem;
+}
+/* Single header row site-wide — leading (logo + links) | tools.
+   Exactly two flex children: space-between parks leading at inline-start
+   (physical right in RTL) and tools at inline-end (physical left). */
+.pepito-nav-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  min-width: 0;
+}
+.pepito-nav-leading {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex: 0 1 auto;
+  min-width: 0;
 }
 /* Desktop shop search — inline in the primary row, immediately before سفارش‌ها. */
 .pepito-nav-desktop-search {
@@ -7149,8 +7184,9 @@ div.pepito-profile-stat:active {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 42px;
-  height: 42px;
+  width: var(--pepito-nav-chip-h, 40px);
+  height: var(--pepito-nav-chip-h, 40px);
+  min-height: var(--pepito-nav-chip-h, 40px);
   padding: 0;
   border-radius: 50%;
   border: 2px solid rgba(92, 77, 145, 0.18);
@@ -7160,6 +7196,8 @@ div.pepito-profile-stat:active {
   overflow: hidden;
   box-shadow: 0 4px 14px rgba(25, 6, 61, 0.08);
   transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+  box-sizing: border-box;
+  flex-shrink: 0;
 }
 .pepito-nav-profile-btn:hover,
 .pepito-nav-profile-btn[aria-expanded='true'] {
@@ -8548,18 +8586,18 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   margin-inline: auto;
 }
 
-/* Desktop shop: sticky header with compact search under the logo column. */
+/* Desktop shop: sticky header with compact search beside the logo. */
 @media (min-width: 860px) {
   .pd-shop-page .pepito-nav {
     position: sticky;
     top: 0;
-    align-items: flex-start;
+    align-items: center;
     overflow: visible;
-    padding-block: 0.65rem 0.7rem;
+    padding-block: 0.55rem 0.5rem;
   }
   .pd-shop-page .pepito-nav-main {
-    min-height: 42px;
-    align-items: flex-start;
+    min-height: 40px;
+    align-items: center;
   }
   .pd-shop-page .pepito-nav-brand--search {
     width: max-content;
@@ -8568,12 +8606,15 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   .pd-shop-page .pepito-nav-leading,
   .pd-shop-page .pepito-nav-primary,
   .pd-shop-page .pepito-nav-actions {
-    align-self: flex-start;
-    min-height: 42px;
+    align-self: center;
+    align-items: center;
+    min-height: 40px;
   }
+  /* Sticky shop nav is in-flow — do not reserve a second --pepito-nav-h band. */
   .pd-shop-page .pd-shop-hero,
+  .pd-shop-page .pd-shop-hero--full,
   .pd-shop-page .pepito-flow-banner {
-    margin-top: 0;
+    margin-top: 0 !important;
   }
 }
 
@@ -8722,7 +8763,7 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   }
 }
 
-/* Shop: sticky header on small screens — compact search under logo (far right in RTL). */
+/* Shop: sticky header on small screens — full-width search under logo/tools. */
 @media (max-width: 859px) {
   .pd-shop-page.pepito-landing {
     overflow-x: visible;
@@ -8733,24 +8774,36 @@ a.pepito-btn.pepito-human-consult-cta:hover {
     position: sticky;
     top: 0;
     z-index: 60;
+    flex-direction: column;
     flex-wrap: nowrap;
     align-items: stretch;
-    gap: 0.4rem;
-    padding-block: 0.5rem 0.6rem;
+    gap: 0;
+    padding-block: 0.5rem 0.65rem;
     padding-top: calc(0.5rem + env(safe-area-inset-top, 0px));
   }
+  .pd-shop-page .pepito-nav-main {
+    align-items: center;
+    width: 100%;
+  }
+  .pd-shop-page .pepito-nav-search-row {
+    width: 100%;
+    max-width: 100%;
+    margin-block-start: 0.7rem;
+    box-sizing: border-box;
+  }
+  .pd-shop-page .pepito-nav-search-row .pd-shop-search,
+  .pd-shop-page .pepito-nav-search-row .pd-shop-search.is-expanded,
+  .pd-shop-page .pepito-nav-search-row .pd-shop-search:focus-within {
+    width: 100%;
+    max-width: none;
+  }
   .pd-shop-page .pepito-nav-brand--search {
-    /* Mobile: no desktop text nav beside logo — keep a usable search column. */
-    width: min(46vw, 11.5rem);
+    /* Legacy path — prefer .pepito-nav-search-row for mobile. */
+    width: max-content;
     max-width: min(46vw, 11.5rem);
     flex: 0 1 auto;
     padding-bottom: 0;
     gap: 0.35rem;
-  }
-  .pd-shop-page .pepito-nav-brand--search .pd-shop-search.is-expanded,
-  .pd-shop-page .pepito-nav-brand--search .pd-shop-search:focus-within {
-    width: min(calc(100vw - 2 * var(--pepito-gutter-x)), 22rem);
-    max-width: min(calc(100vw - 2 * var(--pepito-gutter-x)), 22rem);
   }
   .pd-shop-page .pepito-nav-logo img {
     height: 32px;
@@ -8861,19 +8914,23 @@ a.pepito-btn.pepito-human-consult-cta:hover {
 }
 
 .pd-shop-cart-link {
+  --pepito-nav-chip-h: 40px;
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 42px;
-  height: 42px;
+  width: var(--pepito-nav-chip-h);
+  height: var(--pepito-nav-chip-h);
+  min-height: var(--pepito-nav-chip-h);
   border-radius: 50%;
-  color: var(--pepito-dark);
   background: var(--pd-chip-bg, rgba(255, 255, 255, 0.72));
-  border: 1px solid rgba(92, 77, 145, 0.14);
+  color: var(--pepito-dark);
+  border: 1.5px solid rgba(92, 77, 145, 0.14);
   text-decoration: none;
   transition: background 0.2s ease, color 0.2s ease;
   transform-origin: center center;
+  box-sizing: border-box;
+  flex-shrink: 0;
 }
 .pd-shop-cart-link:hover {
   background: var(--pepito-lilac);
@@ -13502,6 +13559,7 @@ a.pepito-btn.pepito-human-consult-cta:hover {
     flex: 0 0 auto;
     flex-shrink: 0;
     max-width: 62%;
+    align-items: center;
   }
 
   .pepito-nav-wallet-btn {
@@ -13515,10 +13573,16 @@ a.pepito-btn.pepito-human-consult-cta:hover {
     font-size: 0.72rem !important;
   }
   .pepito-nav-profile-btn,
-  .pepito-nav-cart-link {
+  .pepito-nav-cart-link,
+  .pd-shop-cart-link,
+  .pd-lang-toggle--compact,
+  .pd-theme-toggle--compact {
     width: 36px !important;
     height: 36px !important;
     min-height: 36px !important;
+    min-width: 36px !important;
+    border-radius: 999px !important;
+    box-sizing: border-box !important;
   }
 
   .pd-shop-page .pepito-nav-actions .pepito-btn--nav {

@@ -173,10 +173,12 @@ html[data-theme='dark'] .landing-brand-mark {
   outline-offset: 2px;
 }
 .pd-theme-toggle--compact {
-  width: 36px;
-  height: 36px;
-  min-height: 36px;
+  --pepito-nav-chip-h: 40px;
+  width: var(--pepito-nav-chip-h);
+  height: var(--pepito-nav-chip-h);
+  min-height: var(--pepito-nav-chip-h);
   border-radius: 999px;
+  box-sizing: border-box;
 }
 
 /* Admin toggle sits in dense topbar */
@@ -223,13 +225,15 @@ html[data-theme='dark'] .landing-brand-mark {
   outline-offset: 2px;
 }
 .pd-lang-toggle--compact {
-  width: 36px;
-  height: 36px;
-  min-height: 36px;
-  min-width: 36px;
+  --pepito-nav-chip-h: 40px;
+  width: var(--pepito-nav-chip-h);
+  height: var(--pepito-nav-chip-h);
+  min-height: var(--pepito-nav-chip-h);
+  min-width: var(--pepito-nav-chip-h);
   padding: 0;
-  border-radius: 10px;
+  border-radius: 999px;
   font-size: 0.72rem;
+  box-sizing: border-box;
 }
 .pd-lang-toggle-label {
   line-height: 1;
