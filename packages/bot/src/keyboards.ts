@@ -1233,6 +1233,8 @@ export function profileActionsKeyboard(
   verificationStatus: 'none' | 'pending' | 'verified' | 'rejected' = 'none',
   opts?: {
     isVet?: boolean;
+    /** نقش فعال صاحب پت — دکمه «مشورت به بدون پت‌ها» + پذیرش */
+    isPetOwner?: boolean;
     likesCount?: number;
     contactsCount?: number;
     silentChatRequests?: boolean;
@@ -1246,6 +1248,7 @@ export function profileActionsKeyboard(
   const contactsLabel =
     contacts > 0 ? `👥 مخاطبین (${fa.format(contacts)})` : '👥 مخاطبین (-)';
   const reward = fa.format(opts?.faceReward ?? 100);
+  const isPetOwner = Boolean(opts?.isPetOwner);
 
   kb.text(`❤️ ${likes}`, 'profile:likes')
     .text(contactsLabel, 'profile:contacts')
@@ -1272,10 +1275,10 @@ export function profileActionsKeyboard(
 
   kb.text('📱 احراز موبایل', 'phone:verify:start').primary().row();
 
-  // Owner extras moved off the main sticky menu (پذیرش مشورت / پذیرش).
-  kb.text('💬 مشورت با صاحبین', 'profile:seeker_advice').primary()
-    .text('💚 پذیرش', 'profile:ready_adopt').primary()
-    .row();
+  // Owner: پذیرش stays above silent; consult CTA sits under silent (label for no-pet seekers).
+  if (isPetOwner) {
+    kb.text('💚 پذیرش', 'profile:ready_adopt').primary().row();
+  }
 
   kb.text('🚫 بلاک‌شده‌ها', 'profile:blocked').danger().row();
 
@@ -1283,6 +1286,10 @@ export function profileActionsKeyboard(
     kb.text('🔔 سایلنت خاموش (روشن است)', 'profile:silent').primary().row();
   } else {
     kb.text('🔇 سایلنت درخواست چت', 'profile:silent').primary().row();
+  }
+
+  if (isPetOwner) {
+    kb.text('💬 مشورت به بدون پت‌ها', 'profile:seeker_advice').primary().row();
   }
 
   kb.text('🔴 حذف / غیرفعال‌سازی حساب', 'profile:account').danger().row();
