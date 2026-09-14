@@ -358,6 +358,7 @@ echo "==> api: shop brands"
 npx tsx "$ROOT/packages/api/src/data/shop-brands.selftest.ts"
 
 echo "==> selftest: web shop cart sync (badge + merge-then-persist)"
+npx tsx "$ROOT/packages/web/src/hooks/shopCartMerge.selftest.ts"
 npx tsx "$ROOT/packages/web/src/hooks/useShopCart.selftest.ts"
 
 echo "==> selftest: bot shop cart shared API"
@@ -450,6 +451,7 @@ run src/demo-seeds-guard.selftest.ts
 run src/demo-seeds-cleanup.selftest.ts
 run src/health-ready.selftest.ts
 run src/services/web-otp.selftest.ts
+run src/routes/auth-otp-status.selftest.ts
 run src/services/google-web-auth.selftest.ts
 run src/crm.selftest.ts
 run src/auto-messages.selftest.ts

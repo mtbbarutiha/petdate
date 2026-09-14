@@ -22,6 +22,7 @@ import {
 } from '../lib/api';
 import { useAuthStore } from './useAuthStore';
 import { hydrateShopCatalogOnce } from './useShopCatalogSync';
+import { localCartIsAhead, mergeCartLinesKeepLocal } from './shopCartMerge';
 
 /** Guest / offline draft. When logged in, localStorage mirrors the server cart. */
 const STORAGE_KEY = 'petdate.shop.cart.v1';
@@ -192,6 +193,8 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
   const skipNextLocalWriteRef = useRef(false);
   /** Skip poll/focus refresh while add/qty/remove round-trips are in flight. */
   const inflightMutationsRef = useRef(0);
+  /** After an explicit clear/checkout, do not restore rows from a stale GET /cart. */
+  const userClearedRef = useRef(false);
   const linesRef = useRef(lines);
   const serverMetaRef = useRef<Map<string, ShopCartApiLine>>(new Map());
   linesRef.current = lines;
@@ -205,14 +208,36 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const applyServerLines = useCallback(
-    (serverLines: ShopCartApiLine[]) => {
+    (serverLines: ShopCartApiLine[], mode: 'replace' | 'merge' = 'replace') => {
       rememberServerMeta(serverLines);
-      const next = apiLinesToCart(serverLines);
+      const fromServer = apiLinesToCart(serverLines);
+      const next =
+        mode === 'merge'
+          ? mergeCartLinesKeepLocal(fromServer, linesRef.current)
+          : fromServer;
       skipNextLocalWriteRef.current = true;
       setLines(next);
       writeLines(next);
+      return next;
     },
     [rememberServerMeta]
+  );
+
+  /** Boot/focus GET /cart must not wipe rows added while that request was in flight. */
+  const applyFetchedServerLines = useCallback(
+    (serverLines: ShopCartApiLine[]) => {
+      if (userClearedRef.current && linesRef.current.length === 0) return;
+      const fromServer = apiLinesToCart(serverLines);
+      const next = applyServerLines(serverLines, 'merge');
+      if (!token || !localCartIsAhead(fromServer, next)) return;
+      void mergeShopCart(token, next)
+        .then((data) => {
+          if (userClearedRef.current && linesRef.current.length === 0) return;
+          applyServerLines(data.lines, 'merge');
+        })
+        .catch(() => undefined);
+    },
+    [token, applyServerLines]
   );
 
   /** Cart provider mounts on every route — hydrate catalog here, not only under ShopChrome. */
@@ -231,12 +256,11 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
     if (inflightMutationsRef.current > 0) return;
     try {
       const data = await fetchShopCart(token);
-      if (inflightMutationsRef.current > 0) return;
-      applyServerLines(data.lines);
+      applyFetchedServerLines(data.lines);
     } catch {
       /* keep local mirror on transient errors */
     }
-  }, [token, applyServerLines]);
+  }, [token, applyFetchedServerLines]);
 
   /** On login: merge guest localStorage into server, then mirror server (source of truth). */
   useEffect(() => {
@@ -256,7 +280,7 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
             ? await mergeShopCart(token, guest)
             : await fetchShopCart(token);
         if (cancelled) return;
-        applyServerLines(data.lines);
+        applyFetchedServerLines(data.lines);
       } catch {
         if (!cancelled) mergedForTokenRef.current = null;
       } finally {
@@ -266,7 +290,7 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [isLoggedIn, token, applyServerLines]);
+  }, [isLoggedIn, token, applyFetchedServerLines]);
 
   /** Guest: persist draft. Logged-in: keep localStorage as mirror only (already written in applyServerLines). */
   useEffect(() => {
@@ -380,6 +404,7 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
   const add = useCallback(
     (productId: string, qty = 1) => {
       const n = Math.max(1, Math.floor(qty) || 1);
+      userClearedRef.current = false;
       setLines((prev) => {
         const i = prev.findIndex((l) => l.productId === productId);
         if (i >= 0) {
@@ -392,7 +417,9 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
       if (token) {
         inflightMutationsRef.current += 1;
         void addShopCartItem(token, productId, n)
-          .then((data) => applyServerLines(data.lines))
+          .then((data) =>
+            applyServerLines(data.lines, inflightMutationsRef.current > 1 ? 'merge' : 'replace')
+          )
           .catch(() => undefined)
           .finally(() => {
             inflightMutationsRef.current = Math.max(0, inflightMutationsRef.current - 1);
@@ -429,6 +456,7 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
       if (!product?.inStock) return;
       const n = Math.max(1, Math.min(10, Math.floor(qty) || 1));
       pendingLockRef.current = true;
+      inflightMutationsRef.current += 1;
       setPendingAddId(productId);
       try {
         await new Promise<void>((resolve) => {
@@ -453,6 +481,7 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
       } finally {
         setPendingAddId(null);
         pendingLockRef.current = false;
+        inflightMutationsRef.current = Math.max(0, inflightMutationsRef.current - 1);
       }
     },
     [add, resolveProduct]
@@ -467,7 +496,9 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
       if (token) {
         inflightMutationsRef.current += 1;
         void setShopCartItemQty(token, productId, qty)
-          .then((data) => applyServerLines(data.lines))
+          .then((data) =>
+            applyServerLines(data.lines, inflightMutationsRef.current > 1 ? 'merge' : 'replace')
+          )
           .catch(() => undefined)
           .finally(() => {
             inflightMutationsRef.current = Math.max(0, inflightMutationsRef.current - 1);
@@ -483,7 +514,9 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
       if (token) {
         inflightMutationsRef.current += 1;
         void removeShopCartItem(token, productId, { userIntent: true })
-          .then((data) => applyServerLines(data.lines))
+          .then((data) =>
+            applyServerLines(data.lines, inflightMutationsRef.current > 1 ? 'merge' : 'replace')
+          )
           .catch(() => undefined)
           .finally(() => {
             inflightMutationsRef.current = Math.max(0, inflightMutationsRef.current - 1);
@@ -494,6 +527,7 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
   );
 
   const clear = useCallback(() => {
+    userClearedRef.current = true;
     setLines([]);
     clearLocalLines();
     if (token) {
