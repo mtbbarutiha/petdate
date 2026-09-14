@@ -389,10 +389,13 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   height: auto;
   align-items: stretch;
 }
-/* Single header row site-wide — logo | links | tools (search nests under brand). */
+/* Single header row site-wide — logo | links | tools (search nests under brand).
+   space-between parks brand at inline-start and tools at inline-end when the
+   primary column is absent (mobile). Desktop uses primary margin-inline-end:auto. */
 .pepito-nav-main {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 1rem;
   width: 100%;
   min-width: 0;
@@ -477,7 +480,12 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
   display: none;
 }
 .pepito-nav-actions {
-  margin-inline-start: auto;
+  /* direction:ltr island — do not use ms-auto here (resolves to margin-left
+     and tools cluster with the logo on RTL). Free space is absorbed by
+     .pepito-nav-primary { margin-inline-end:auto } (inherits page dir) or by
+     .pepito-nav-main { justify-content:space-between } on mobile. */
+  margin-inline-start: 0;
+  margin-inline-end: 0;
   display: flex;
   align-items: center;
   gap: 0.65rem;
@@ -13471,7 +13479,10 @@ a.pepito-btn.pepito-human-consult-cta:hover {
    Role shortcuts share the خدمات plain-text treatment (no icon pills).
    Marketing شاپ/ایونت‌ها text links are not rendered beside SiteDesktopNav.
    Utilities (cluster + lang + theme) are in-flow at inline-end; LTR inside
-   the cluster keeps avatar → wallet → cart on the physical left. */
+   the cluster keeps avatar → wallet → cart on the physical left.
+   Free space: primary margin-inline-end:auto (page dir) — not actions ms-auto
+   (actions is direction:ltr, so ms-auto was margin-left and clustered tools
+   with the logo on RTL). */
 .pepito-site-desktop-nav {
   display: none;
 }
@@ -13497,10 +13508,11 @@ a.pepito-btn.pepito-human-consult-cta:hover {
     display: flex;
     align-items: center;
     gap: 0.95rem;
-    /* Shrink-wrap next to brand; actions ms-auto absorbs the free space. */
+    /* Shrink-wrap beside brand; me-auto (page dir) parks LTR tools at far left. */
     flex: 0 1 auto;
     min-width: 0;
     margin-inline-start: 0.35rem;
+    margin-inline-end: auto;
     position: relative;
     z-index: 1;
   }
@@ -13523,7 +13535,7 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   }
 
   .pepito-nav-actions {
-    margin-inline-start: auto !important;
+    margin-inline-start: 0 !important;
     margin-inline-end: 0 !important;
     flex: 0 0 auto;
     gap: 0.4rem;
