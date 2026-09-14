@@ -41,6 +41,16 @@ assert.match(css, /\.pd-app-land-hero\b/);
 assert.match(css, /\.pd-app-land-download\b/);
 assert.match(
   css,
+  /@media\s*\(\s*min-width:\s*860px\s*\)[\s\S]*?\.pepito-app-landing-page\s*>\s*main\.pd-app-land\s*\{[^}]*padding-top:\s*var\(--pepito-nav-h/,
+  'hideBanner landing clears fixed SiteHeader on desktop (nav in-flow on mobile)'
+);
+assert.doesNotMatch(
+  css,
+  /\.pepito-app-landing-page[^{]*\{[^}]*padding-top:\s*0/,
+  'must not zero out top pad under fixed nav'
+);
+assert.match(
+  css,
   /html\[data-theme=['"]dark['"]\]\s+\.pd-app-land\b/,
   'dark theme remaps app-landing tokens (light wash must not keep light ink)'
 );
