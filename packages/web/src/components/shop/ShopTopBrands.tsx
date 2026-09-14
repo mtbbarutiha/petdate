@@ -14,7 +14,7 @@ type Props = {
 export function ShopTopBrands({ brands, className }: Props) {
   const { lang } = useI18n();
   const items = brands?.length ? brands : getTopBrands();
-  const { trackRef, canPrev, canNext, scrollByDir } = useShopRailNav(items.length);
+  const { trackRef, canLeft, canRight, scrollBySide } = useShopRailNav(items.length);
 
   if (!items.length) return null;
 
@@ -56,12 +56,12 @@ export function ShopTopBrands({ brands, className }: Props) {
         </div>
 
         <ShopRailNavButtons
-          canPrev={canPrev}
-          canNext={canNext}
-          onPrev={() => scrollByDir('prev')}
-          onNext={() => scrollByDir('next')}
-          prevLabel="برندهای قبلی"
-          nextLabel="برندهای بیشتر"
+          canLeft={canLeft}
+          canRight={canRight}
+          onLeft={() => scrollBySide('left')}
+          onRight={() => scrollBySide('right')}
+          leftLabel="برندهای بیشتر"
+          rightLabel="برندهای قبلی"
         />
       </div>
     </section>

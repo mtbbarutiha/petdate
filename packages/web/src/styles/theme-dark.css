@@ -1971,13 +1971,12 @@ html[data-theme='dark'] .pd-shop-dk-cats .pd-shop-chip.is-active {
 html[data-theme='dark'] .pd-shop-dk-label {
   color: var(--pepito-muted);
 }
-html[data-theme='dark'] .pd-shop-dk-tile {
-  background: #f4f5f8;
-  border-color: rgba(255, 255, 255, 0.12);
-  color: #5c4d91;
+html[data-theme='dark'] .pd-shop-dk-tile--art {
+  border-color: rgba(255, 255, 255, 0.14);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.28);
 }
-html[data-theme='dark'] .pd-shop-dk-item:hover .pd-shop-dk-tile {
-  background: #ffffff;
+html[data-theme='dark'] .pd-shop-dk-item:hover .pd-shop-dk-tile--art {
+  border-color: rgba(219, 137, 202, 0.35);
 }
 html[data-theme='dark'] .pd-shop-promo-banner {
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);

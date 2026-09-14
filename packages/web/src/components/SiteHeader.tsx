@@ -44,7 +44,7 @@ export type SiteHeaderProps = {
   ctaLabel?: string;
   ctaTo?: string;
   extras?: ReactNode;
-  /** Shop-only: product search stacked under the wordmark (desktop logo column). */
+  /** Shop-only: product search in a second header row (does not squeeze nav links). */
   brandBelow?: ReactNode;
   logoSrc?: string;
   logoSrcSet?: string;
@@ -91,65 +91,86 @@ export function SiteHeader({
     return () => mq.removeEventListener('change', sync);
   }, [deferDesktopNav]);
 
-  const headerClass = `pepito-nav${scrolled ? ' is-scrolled' : ''}${className ? ` ${className}` : ''}`;
+  const headerClass = `pepito-nav${scrolled ? ' is-scrolled' : ''}${brandBelow ? ' pepito-nav--with-search' : ''}${className ? ` ${className}` : ''}`;
   const showTextAction =
     Boolean(actionLabel) && !isGuestLoginTextAction(actionLabel, actionTo, t('common.login'));
+  const compactChrome = Boolean(brandBelow);
+
+  const brand = (
+    <div className="pepito-nav-brand">
+      <Link to="/" className="pepito-nav-logo" aria-label={BRAND.displayName}>
+        <img
+          src={logoSrc}
+          alt={BRAND.displayName}
+          {...(logoSrcSet ? { srcSet: logoSrcSet } : {})}
+          {...(logoSizes ? { sizes: logoSizes } : {})}
+          {...(logoWidth ? { width: logoWidth } : {})}
+          {...(logoHeight ? { height: logoHeight } : {})}
+          decoding="async"
+        />
+      </Link>
+    </div>
+  );
+
+  const primary = wideEnoughForNav ? (
+    <div className="pepito-nav-primary">
+      {showDesktopNav ? (
+        <Suspense fallback={null}>
+          <LazySiteDesktopNav />
+        </Suspense>
+      ) : null}
+      {sectionLinks.length > 0 ? (
+        <nav className="pepito-nav-links pepito-nav-section-inline" aria-label={t('nav.sections')}>
+          {sectionLinks.map((link) => (
+            <SiteHeaderLinkView key={link.key} link={link} />
+          ))}
+        </nav>
+      ) : null}
+    </div>
+  ) : null;
+
+  const actions = (
+    <div className="pepito-nav-actions">
+      <NavUserCluster showCart={showCart} showOrders={showOrders} />
+      <LanguageToggle compact={compactChrome} />
+      <ThemeToggle compact={compactChrome} />
+      {showTextAction && onAction ? (
+        <button type="button" className="pepito-nav-login pepito-nav-login--btn" onClick={onAction}>
+          {actionLabel}
+        </button>
+      ) : showTextAction && actionTo ? (
+        <Link to={actionTo} className="pepito-nav-login">
+          {actionLabel}
+        </Link>
+      ) : null}
+      {ctaLabel && ctaTo ? (
+        <Link to={ctaTo} className="pepito-btn pepito-btn--nav">
+          <PawIcon />
+          {ctaLabel}
+        </Link>
+      ) : null}
+      {extras}
+    </div>
+  );
 
   return (
     <header className={headerClass}>
-      <div className={`pepito-nav-brand${brandBelow ? ' pepito-nav-brand--search' : ''}`}>
-        <Link to="/" className="pepito-nav-logo" aria-label={BRAND.displayName}>
-          <img
-            src={logoSrc}
-            alt={BRAND.displayName}
-            {...(logoSrcSet ? { srcSet: logoSrcSet } : {})}
-            {...(logoSizes ? { sizes: logoSizes } : {})}
-            {...(logoWidth ? { width: logoWidth } : {})}
-            {...(logoHeight ? { height: logoHeight } : {})}
-            decoding="async"
-          />
-        </Link>
-        {brandBelow}
-      </div>
-
-      {wideEnoughForNav ? (
-        <div className="pepito-nav-primary">
-          {showDesktopNav ? (
-            <Suspense fallback={null}>
-              <LazySiteDesktopNav />
-            </Suspense>
-          ) : null}
-          {sectionLinks.length > 0 ? (
-            <nav className="pepito-nav-links pepito-nav-section-inline" aria-label={t('nav.sections')}>
-              {sectionLinks.map((link) => (
-                <SiteHeaderLinkView key={link.key} link={link} />
-              ))}
-            </nav>
-          ) : null}
-        </div>
-      ) : null}
-
-      <div className="pepito-nav-actions">
-        <NavUserCluster showCart={showCart} showOrders={showOrders} />
-        <LanguageToggle />
-        <ThemeToggle />
-        {showTextAction && onAction ? (
-          <button type="button" className="pepito-nav-login pepito-nav-login--btn" onClick={onAction}>
-            {actionLabel}
-          </button>
-        ) : showTextAction && actionTo ? (
-          <Link to={actionTo} className="pepito-nav-login">
-            {actionLabel}
-          </Link>
-        ) : null}
-        {ctaLabel && ctaTo ? (
-          <Link to={ctaTo} className="pepito-btn pepito-btn--nav">
-            <PawIcon />
-            {ctaLabel}
-          </Link>
-        ) : null}
-        {extras}
-      </div>
+      {brandBelow ? (
+        <>
+          <div className="pepito-nav-main">
+            {brand}
+            {primary}
+            {actions}
+          </div>
+          <div className="pepito-nav-search-row">{brandBelow}</div>
+        </>
+      ) : (
+        <>
+          {brand}
+          {primary}
+          {actions}
+        </>
+      )}
     </header>
   );
 }

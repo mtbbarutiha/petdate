@@ -44,9 +44,11 @@ const category = readFileSync(join(here, '../../pages/shop/ShopCategoryPage.tsx'
 const ci = readFileSync(join(here, '../../../../../scripts/ci-selftest.sh'), 'utf8');
 
 assert.match(chrome, /ShopProductSearch/, 'ShopChrome mounts primary product search');
-assert.match(chrome, /brandBelow/, 'desktop search is the header brand column under the logo');
-assert.match(chrome, /pd-shop-search-bar/, 'mobile search sits in sticky bar after the in-flow header');
-assert.match(headerSrc, /pepito-nav-brand--search/, 'brand column class when search is slotted');
+assert.match(chrome, /brandBelow/, 'search is slotted into the header');
+assert.match(chrome, /pepito-nav-h/, 'header height is measured for sticky/fixed offset');
+assert.doesNotMatch(chrome, /pd-shop-search-bar/, 'search is inside the header, not a second sticky bar');
+assert.match(headerSrc, /pepito-nav--with-search/, 'header grows a search row when slotted');
+assert.match(headerSrc, /pepito-nav-search-row/, 'search occupies its own header row');
 assert.match(search, /isShopSearchHotkey/, 'Ctrl\\/Cmd+K focuses search (no visible badge)');
 assert.doesNotMatch(search, /pd-shop-search-kbd/, 'Ctrl+K badge removed from search UI');
 assert.doesNotMatch(search, /Ctrl\+K/, 'no Ctrl+K label in search component');
@@ -54,17 +56,16 @@ assert.match(search, /shopSearchResultsPath/, 'submit navigates to listing ?q=')
 assert.match(search, /filterProducts/, 'dropdown filters live catalog');
 assert.match(search, /data-testid="shop-product-search"/, 'search test id');
 assert.match(css, /\.pd-shop-search-pill/, 'pill search styles');
-assert.match(css, /\.pd-shop-search-bar[\s\S]*position:\s*sticky/, 'search bar sticky');
+assert.match(css, /\.pepito-nav-search-row/, 'search row styles');
 assert.match(
   css,
-  /@media \(max-width: 859px\)[\s\S]*\.pd-shop-page \.pd-shop-search-bar[\s\S]{0,180}top:\s*0/,
-  'mobile shop search sticks to the viewport top'
+  /\.pd-shop-page \.pepito-nav[\s\S]{0,180}position:\s*sticky/,
+  'shop header is sticky so content is not hidden underneath'
 );
-assert.match(css, /@media \(max-width: 720px\), \(pointer: coarse\)[\s\S]*\.pd-shop-search-bar/, 'mobile sticky search rules');
 assert.match(
   css,
-  /@media \(min-width: 860px\)[\s\S]*\.pepito-nav-brand--search/,
-  'desktop search width is the logo column'
+  /@media \(max-width: 859px\)[\s\S]*\.pd-shop-page \.pepito-nav[\s\S]{0,220}position:\s*sticky/,
+  'mobile shop header stays sticky with search in the same bar'
 );
 assert.doesNotMatch(landing, /ShopProductSearch/, 'shop search is shop-route chrome only');
 assert.match(dark, /pd-shop-search-pill/, 'dark mode search styles');

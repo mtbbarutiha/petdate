@@ -37,7 +37,7 @@ export function ShopHomeRail({
   testId,
   ariaLabel,
 }: Props) {
-  const { trackRef, canPrev, canNext, scrollByDir } = useShopRailNav(
+  const { trackRef, canLeft, canRight, scrollBySide } = useShopRailNav(
     `${activePillId}:${products.length}`
   );
 
@@ -96,12 +96,12 @@ export function ShopHomeRail({
               ))}
             </div>
             <ShopRailNavButtons
-              canPrev={canPrev}
-              canNext={canNext}
-              onPrev={() => scrollByDir('prev')}
-              onNext={() => scrollByDir('next')}
-              prevLabel="محصولات قبلی"
-              nextLabel="مشاهده محصولات بیشتر"
+              canLeft={canLeft}
+              canRight={canRight}
+              onLeft={() => scrollBySide('left')}
+              onRight={() => scrollBySide('right')}
+              leftLabel="مشاهده محصولات بیشتر"
+              rightLabel="محصولات قبلی"
             />
           </>
         )}

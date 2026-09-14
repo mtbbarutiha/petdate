@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { PawPrint } from 'lucide-react';
 import { PageHelpLink } from '../PageHelpLink';
 import { useAuthStore } from '../../hooks/useAuthStore';
@@ -9,22 +9,6 @@ import { shopSectionLinks } from '../siteHeaderLinks';
 import { SiteFooter } from '../SiteFooter';
 import { ShopAddToast } from './ShopAddToast';
 import { ShopProductSearch } from './ShopProductSearch';
-
-const SHOP_DESKTOP_NAV_MQ = '(min-width: 860px)';
-
-function useShopDesktopNav() {
-  const [desktop, setDesktop] = useState(
-    () => typeof window !== 'undefined' && window.matchMedia(SHOP_DESKTOP_NAV_MQ).matches,
-  );
-  useEffect(() => {
-    const mq = window.matchMedia(SHOP_DESKTOP_NAV_MQ);
-    const sync = () => setDesktop(mq.matches);
-    sync();
-    mq.addEventListener('change', sync);
-    return () => mq.removeEventListener('change', sync);
-  }, []);
-  return desktop;
-}
 
 export function ShopChrome({
   children,
@@ -39,12 +23,11 @@ export function ShopChrome({
 }) {
   const { t, dir } = useI18n();
   const [scrolled, setScrolled] = useState(false);
-  const desktopNav = useShopDesktopNav();
   const { isLoggedIn } = useAuthStore();
   const { ready } = useShopCatalogSync();
   const title = bannerTitle ?? t('shop.brand');
   const lead = bannerLead ?? t('shop.lead');
-  const productSearch = <ShopProductSearch />;
+  const pageRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -63,24 +46,40 @@ export function ShopChrome({
     };
   }, []);
 
+  useLayoutEffect(() => {
+    const page = pageRef.current;
+    const nav = page?.querySelector<HTMLElement>('.pepito-nav');
+    if (!page || !nav) return;
+    const apply = () => {
+      const h = Math.ceil(nav.getBoundingClientRect().height);
+      page.style.setProperty('--pepito-nav-h', `${Math.max(h, 56)}px`);
+      const fixed = getComputedStyle(nav).position === 'fixed';
+      page.classList.toggle('pd-shop-page--fixed-nav', fixed);
+    };
+    apply();
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(apply) : null;
+    ro?.observe(nav);
+    window.addEventListener('resize', apply);
+    return () => {
+      ro?.disconnect();
+      window.removeEventListener('resize', apply);
+    };
+  }, []);
+
   return (
-    <div className="pepito-landing pepito-landing--with-dock pepito-flow-page pd-shop-page" dir={dir}>
+    <div
+      ref={pageRef}
+      className="pepito-landing pepito-landing--with-dock pepito-flow-page pd-shop-page"
+      dir={dir}
+    >
       <SiteHeader
         scrolled={scrolled}
         className={isLoggedIn ? 'pepito-nav--app' : ''}
         sectionLinks={shopSectionLinks()}
         showCart
         showOrders
-        brandBelow={desktopNav ? productSearch : undefined}
+        brandBelow={<ShopProductSearch />}
       />
-
-      {/* Mobile: sticky full-width search after the in-flow header.
-          Desktop: search is brandBelow — logo column only, not a full-bleed bar. */}
-      {!desktopNav ? (
-        <div className="pd-shop-search-bar">
-          <div className="pepito-container">{productSearch}</div>
-        </div>
-      ) : null}
 
       {!hideBanner ? (
         <section className="pd-shop-hero pd-shop-hero--full" aria-label={title}>
