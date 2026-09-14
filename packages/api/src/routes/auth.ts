@@ -49,6 +49,13 @@ import {
   type WebOtpChannel,
 } from '../services/web-otp';
 import {
+  buildGoogleAuthorizeUrl,
+  completeGoogleOAuth,
+  googleLoginErrorRedirect,
+  isGoogleOAuthConfigured,
+  readGoogleOAuthState,
+} from '../services/google-web-auth';
+import {
   getReferralStats,
   parseReferredByInput,
   tryClaimReferralForRecentUser,
@@ -74,6 +81,12 @@ const telegramLoginStartLimit = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 20,
   message: 'درخواست ورود تلگرام زیاد شده. کمی بعد دوباره تلاش کن.',
+});
+
+const googleLoginStartLimit = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 30,
+  message: 'درخواست ورود گوگل زیاد شده. کمی بعد دوباره تلاش کن.',
 });
 
 const telegramLoginStatusLimit = rateLimit({
@@ -257,6 +270,33 @@ authRouter.post('/otp/request', otpRequestLimit, async (req, res) => {
     return;
   }
   res.json(result);
+});
+
+authRouter.get('/providers', (_req, res) => {
+  res.json({ ok: true, google: isGoogleOAuthConfigured() });
+});
+
+authRouter.get('/google', googleLoginStartLimit, (req, res) => {
+  const next = req.query?.next != null ? String(req.query.next) : undefined;
+  const url = buildGoogleAuthorizeUrl(next);
+  if (!url) {
+    res.redirect(302, googleLoginErrorRedirect('missing', next));
+    return;
+  }
+  res.redirect(302, url);
+});
+
+authRouter.get('/google/callback', async (req, res) => {
+  if (req.query?.error) {
+    const st = readGoogleOAuthState(String(req.query?.state ?? ''));
+    res.redirect(302, googleLoginErrorRedirect('denied', st.ok ? st.next : undefined));
+    return;
+  }
+  const result = await completeGoogleOAuth({
+    code: String(req.query?.code ?? ''),
+    state: String(req.query?.state ?? ''),
+  });
+  res.redirect(302, result.redirect);
 });
 
 authRouter.post('/otp/verify', otpVerifyLimit, (req, res) => {

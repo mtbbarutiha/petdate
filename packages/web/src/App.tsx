@@ -94,6 +94,9 @@ const OtpPage = lazy(() => import('./pages/auth/OtpPage').then((m) => ({ default
 const TelegramLinkPage = lazy(() =>
   import('./pages/auth/TelegramLinkPage').then((m) => ({ default: m.TelegramLinkPage })),
 );
+const GoogleCallbackPage = lazy(() =>
+  import('./pages/auth/GoogleCallbackPage').then((m) => ({ default: m.GoogleCallbackPage })),
+);
 const FaqPage = lazy(() => import('./pages/FaqPage').then((m) => ({ default: m.FaqPage })));
 const InvitePage = lazy(() =>
   import('./pages/InvitePage').then((m) => ({ default: m.InvitePage })),
@@ -470,6 +473,7 @@ export default function App() {
             <Route path="auth/login" element={<LoginPage />} />
             <Route path="auth/otp" element={<OtpPage />} />
             <Route path="auth/telegram" element={<TelegramLinkPage />} />
+            <Route path="auth/google" element={<GoogleCallbackPage />} />
             <Route path="onboarding/role" element={<RoleSelectPage />} />
             <Route path="onboarding/profile" element={<ProfileWizardPage />} />
             <Route path="onboarding/wizard/:role" element={<RoleWizardPage />} />

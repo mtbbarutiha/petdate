@@ -3473,6 +3473,15 @@ html[data-theme='dark'] .auth-tab.is-on {
 html[data-theme='dark'] .auth-link-btn {
   color: var(--pepito-base);
 }
+html[data-theme='dark'] .auth-telegram-secondary {
+  color: var(--pepito-muted);
+}
+html[data-theme='dark'] .auth-telegram-secondary:hover {
+  color: var(--pepito-base);
+}
+html[data-theme='dark'] .auth-provider-hint {
+  color: var(--pepito-muted);
+}
 html[data-theme='dark'] .pepito-auth-flow .auth-skip-btn.pepito-btn--ghost {
   color: var(--pepito-base) !important;
   border-color: var(--pd-border-strong) !important;
