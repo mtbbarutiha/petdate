@@ -3520,13 +3520,14 @@ html[data-theme='dark'] .auth-login-premium .auth-lead {
   color: #b5adc8;
 }
 html[data-theme='dark'] .auth-login-method--google {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.12);
   color: #f3effa;
-  border-color: rgba(168, 154, 212, 0.32);
+  border-color: rgba(168, 154, 212, 0.42);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.22);
 }
 html[data-theme='dark'] .auth-login-method--google:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(219, 137, 202, 0.45);
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(219, 137, 202, 0.5);
 }
 html[data-theme='dark'] .auth-login-or {
   color: #9a91b0;

@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-do
 import { Send } from 'lucide-react';
 import { normalizeRoles, userHasRole, dashboardPathForUser, primaryRole } from '@petdate/shared';
 import { AuthShell } from '../../components/AuthShell';
+import { GoogleLoginButton } from '../../components/GoogleLoginButton';
 import { useAuthStore } from '../../hooks/useAuthStore';
 import { useAppToast } from '../../hooks/useAppToast';
 import {
@@ -442,6 +443,7 @@ export function OtpPage() {
           {tgBusy ? 'در حال آماده‌سازی…' : 'ورود با اکانت تلگرام'}
         </a>
       )}
+      <GoogleLoginButton next={next} />
     </AuthShell>
   );
 }

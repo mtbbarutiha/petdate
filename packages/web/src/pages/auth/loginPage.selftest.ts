@@ -1,5 +1,5 @@
 /**
- * Guard: premium login — phone OTP + Telegram CTA; Google CTA always visible (dimmed when off).
+ * Guard: premium login — phone OTP + Telegram + always-on Google CTA.
  * Email OTP tab must stay removed from the login UI.
  * Run: npx tsx packages/web/src/pages/auth/loginPage.selftest.ts
  */
@@ -11,15 +11,17 @@ import { fileURLToPath } from 'node:url';
 const dir = dirname(fileURLToPath(import.meta.url));
 const login = readFileSync(join(dir, 'LoginPage.tsx'), 'utf8');
 const otp = readFileSync(join(dir, 'OtpPage.tsx'), 'utf8');
+const googleBtn = readFileSync(join(dir, '../../components/GoogleLoginButton.tsx'), 'utf8');
 const googleCb = readFileSync(join(dir, 'GoogleCallbackPage.tsx'), 'utf8');
 const globalCss = readFileSync(join(dir, '../../styles/global.css'), 'utf8');
 
-assert.match(login, /auth-google-cta/, 'Google CTA always present');
-assert.match(login, /googleOAuthStartPath/, 'Google starts API OAuth');
-assert.match(login, /onGoogleClick/, 'Google click handler when not configured');
-assert.match(login, /is-off/, 'Google CTA dimmed when off');
+assert.match(login, /GoogleLoginButton/, 'login uses shared Google CTA');
+assert.match(login, /با تلگرام، گوگل یا موبایل وارد شو/, 'welcome copy includes Google');
+assert.doesNotMatch(login, /is-off/, 'Google CTA is not dimmed/hidden');
+assert.doesNotMatch(login, /onGoogleClick/, 'Google always starts API OAuth');
+assert.doesNotMatch(login, /googleReady/, 'Google CTA is not gated on /providers');
+assert.doesNotMatch(login, /fetchAuthProviders/, 'login does not hide Google behind providers');
 assert.match(login, /auth-otp-countdown/, 'SMS send countdown on login');
-assert.match(login, /fetchAuthProviders/, 'loads /api/auth/providers');
 assert.match(login, /requestOtp\('phone'/, 'phone OTP only');
 assert.doesNotMatch(login, /setChannel\('email'\)/, 'no email tab setter');
 assert.doesNotMatch(login, /channel === 'email'/, 'no email channel UI');
@@ -47,6 +49,14 @@ assert.match(
   /\.auth-login-phone-row input\s*\{[\s\S]{0,220}font-size:\s*16px/,
   'login phone field stays ≥16px on mobile'
 );
+assert.match(globalCss, /auth-google-cta/, 'Google CTA styles shipped');
+assert.doesNotMatch(globalCss, /\.auth-google-cta\.is-off/, 'no dimmed Google CTA style');
+
+assert.match(googleBtn, /googleOAuthStartPath/, 'Google starts API OAuth');
+assert.match(googleBtn, /ورود با گوگل/, 'Google CTA copy is clear');
+assert.match(googleBtn, /auth-google-cta/, 'Google CTA class present');
+
+assert.match(otp, /GoogleLoginButton/, 'OTP page offers Google as alternate login');
 assert.match(otp, /auth-otp-countdown/, 'OTP resend countdown visible');
 assert.match(otp, /readRetryAfterSec/, 'OTP reads retryAfterSec from errors');
 assert.match(otp, /pepito-btn button-2 auth-telegram-cta/, 'OTP page keeps Telegram button');

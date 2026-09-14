@@ -2,11 +2,10 @@ import { FormEvent, MouseEvent, useEffect, useRef, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { Send, Smartphone } from 'lucide-react';
 import { AuthShell } from '../../components/AuthShell';
+import { GoogleLoginButton } from '../../components/GoogleLoginButton';
 import { useAuthStore } from '../../hooks/useAuthStore';
 import { useAppToast } from '../../hooks/useAppToast';
 import {
-  fetchAuthProviders,
-  googleOAuthStartPath,
   pollTelegramPendingLogin,
   prefersSameBrowserTelegramLogin,
   startTelegramPendingLogin,
@@ -20,29 +19,6 @@ type WaitingState = {
   deepLink: string;
   expiresAt: string;
 };
-
-function GoogleMark() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden>
-      <path
-        fill="#FFC107"
-        d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 8 3.1l5.7-5.7C34.2 6.1 29.4 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.3-.4-3.5z"
-      />
-      <path
-        fill="#FF3D00"
-        d="M6.3 14.7l6.6 4.8C14.7 16 19 12 24 12c3.1 0 5.8 1.2 8 3.1l5.7-5.7C34.2 6.1 29.4 4 24 4 16.3 4 9.6 8.3 6.3 14.7z"
-      />
-      <path
-        fill="#4CAF50"
-        d="M24 44c5.2 0 10-2 13.6-5.2l-6.3-5.3C29.2 35.3 26.7 36 24 36c-5.3 0-9.7-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"
-      />
-      <path
-        fill="#1976D2"
-        d="M43.6 20.5H42V20H24v8h11.3c-1.1 3.2-3.5 5.8-6.7 7.2l.1.1 6.3 5.3C36.9 41.5 44 36 44 24c0-1.3-.1-2.3-.4-3.5z"
-      />
-    </svg>
-  );
-}
 
 function googleErrorCopy(code: string | null): string {
   if (code === 'missing') return 'ورود گوگل روی سرور پیکربندی نشده است.';
@@ -81,27 +57,10 @@ export function LoginPage() {
   const [devHint, setDevHint] = useState('');
   const [waiting, setWaiting] = useState<WaitingState | null>(null);
   const [tgBusy, setTgBusy] = useState(false);
-  /** null = loading providers */
-  const [googleReady, setGoogleReady] = useState<boolean | null>(null);
   const [sendIn, setSendIn] = useState(0);
   const telegramLoginUrl = telegramWebLoginDeepLink(next);
   const usePendingFlow = prefersSameBrowserTelegramLogin();
   const finishingRef = useRef(false);
-  const googleHref = googleOAuthStartPath(next);
-
-  useEffect(() => {
-    let cancelled = false;
-    void fetchAuthProviders()
-      .then((res) => {
-        if (!cancelled) setGoogleReady(Boolean(res.google));
-      })
-      .catch(() => {
-        if (!cancelled) setGoogleReady(false);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   useEffect(() => {
     if (sendIn <= 0) return;
@@ -195,12 +154,6 @@ export function LoginPage() {
     }
   }
 
-  function onGoogleClick(e: MouseEvent) {
-    if (googleReady === true) return;
-    e.preventDefault();
-    setError('ورود با گوگل (جیمیل) روی این سرور هنوز فعال نشده — کلید OAuth لازم است.');
-  }
-
   async function onTelegramLogin(e: MouseEvent) {
     if (!usePendingFlow) return;
     e.preventDefault();
@@ -263,7 +216,6 @@ export function LoginPage() {
   }
 
   const lead = 'با تلگرام، گوگل یا موبایل وارد شو — یک حساب برای وب و ربات.';
-  const googleOn = googleReady === true;
 
   return (
     <AuthShell
@@ -291,20 +243,7 @@ export function LoginPage() {
             {tgBusy ? 'در حال آماده‌سازی…' : 'ورود با تلگرام'}
           </a>
 
-          <a
-            className={`auth-google-cta auth-login-method auth-login-method--google${
-              googleOn ? '' : ' is-off'
-            }`}
-            href={googleOn ? googleHref : '#'}
-            aria-disabled={!googleOn}
-            onClick={onGoogleClick}
-          >
-            <GoogleMark />
-            ورود با گوگل (جیمیل)
-          </a>
-          {googleReady === false ? (
-            <p className="auth-provider-hint">ورود گوگل روی این سرور هنوز فعال نشده.</p>
-          ) : null}
+          <GoogleLoginButton next={next} />
         </div>
 
         <div className="auth-or auth-login-or" role="separator">

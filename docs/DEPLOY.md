@@ -32,29 +32,38 @@ Also create Environment **production** (Settings → Environments) and optionall
 
 ### Google web login (VPS `.env`, not Actions secrets)
 
-Google OAuth is **optional**. Keys were never present on the VPS or in GitHub secrets; agents must not invent them. Until configured, `/api/auth/providers` returns `google:false` and the login page **hides** the Google button.
+Google / Gmail login is **optional to configure**, but the «ورود با گوگل» button is **always visible** on `/auth/login` (and the OTP page). Until keys are set, `/api/auth/providers` returns `google:false` and `/api/auth/google` redirects back to login with `?google=missing`. Agents must not invent client secrets.
 
 On the VPS (`/opt/petdate/.env`):
 
 ```bash
 GOOGLE_CLIENT_ID=….apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=…
-# Optional if callback ≠ https://petdate.ir/api/auth/google/callback
+# Optional override (default is {PUBLIC_WEB_URL}/api/auth/google/callback)
 # GOOGLE_REDIRECT_URI=https://petdate.ir/api/auth/google/callback
+# Optional HMAC secret for the OAuth `state` param (falls back to client secret)
+# GOOGLE_OAUTH_STATE_SECRET=
 ```
 
-Google Cloud Console → OAuth client (Web) → Authorized redirect URI:
+Google Cloud Console → APIs & Services → Credentials → OAuth 2.0 Client ID (**Web application**):
 
-`https://petdate.ir/api/auth/google/callback`
+Authorized JavaScript origins:
+
+- `https://petdate.ir`
+
+Authorized redirect URIs (must match exactly):
+
+- `https://petdate.ir/api/auth/google/callback`
 
 Then restart API and verify:
 
 ```bash
 pm2 restart petdate-api --update-env
 curl -sS https://petdate.ir/api/auth/providers   # {"ok":true,"google":true}
+curl -sSI https://petdate.ir/api/auth/google | head  # 302 to accounts.google.com
 ```
 
-Nginx already proxies `/api/` to the API; OAuth uses server-side redirects (CORS is not required for the callback).
+Nginx already proxies `/api/` to the API; OAuth uses server-side redirects (CORS is not required for the callback). After deploy: open https://petdate.ir/auth/login → «ورود با گوگل» → pick a Gmail account → land on `/auth/google` then the same post-login path as Telegram/OTP.
 
 ### How to trigger deploy
 
