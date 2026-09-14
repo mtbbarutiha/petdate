@@ -484,6 +484,7 @@ run src/platform-settings.selftest.ts
 run src/runtime-settings.selftest.ts
 run src/magazine.selftest.ts
 run src/magazine-editorial-seed.selftest.ts
+run src/sample-pet-events-seed.selftest.ts
 run src/routes/games-list.selftest.ts
 run src/routes/pets-id-guard.selftest.ts
 run src/routes/shop-cart.selftest.ts
