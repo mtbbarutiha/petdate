@@ -17,7 +17,6 @@ import {
   Scissors,
   Shield,
   Shirt,
-  Sparkles,
   Toilet,
   Trees,
   UtensilsCrossed,

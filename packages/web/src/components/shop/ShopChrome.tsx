@@ -1,4 +1,14 @@
 import { useEffect, useState, type ReactNode } from 'react';
+import { PawPrint } from 'lucide-react';
+import { PageHelpLink } from '../PageHelpLink';
+import { useAuthStore } from '../../hooks/useAuthStore';
+import { useShopCatalogSync } from '../../hooks/useShopCatalogSync';
+import { useI18n } from '../../i18n';
+import { SiteHeader } from '../SiteHeader';
+import { shopSectionLinks } from '../siteHeaderLinks';
+import { SiteFooter } from '../SiteFooter';
+import { ShopAddToast } from './ShopAddToast';
+import { ShopProductSearch } from './ShopProductSearch';
 
 const SHOP_DESKTOP_NAV_MQ = '(min-width: 860px)';
 
@@ -15,17 +25,6 @@ function useShopDesktopNav() {
   }, []);
   return desktop;
 }
-
-import { PawPrint } from 'lucide-react';
-import { PageHelpLink } from '../PageHelpLink';
-import { useAuthStore } from '../../hooks/useAuthStore';
-import { useShopCatalogSync } from '../../hooks/useShopCatalogSync';
-import { useI18n } from '../../i18n';
-import { SiteHeader } from '../SiteHeader';
-import { shopSectionLinks } from '../siteHeaderLinks';
-import { SiteFooter } from '../SiteFooter';
-import { ShopAddToast } from './ShopAddToast';
-import { ShopProductSearch } from './ShopProductSearch';
 
 export function ShopChrome({
   children,
