@@ -662,7 +662,7 @@ export const adminPlatform = {
           );
         });
       }
-      // Never wipe p221–p289. Drop leftover demo/seed rows only.
+      // Never wipe p221–p299. Drop leftover demo/seed rows only.
       purgeDemoShopProducts();
       for (const p of input.products) {
         const key = String(p.id || p.slug || '').trim();

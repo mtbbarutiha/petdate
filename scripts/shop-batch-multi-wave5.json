@@ -1,0 +1,129 @@
+{
+  "batch": "multi-1",
+  "wave": 5,
+  "waveCount": 5,
+  "pricingRule": "zero-margin",
+  "cacheBust": "batch-multi-w5-v1",
+  "products": [
+    {
+      "proposedId": "p290",
+      "slug": "grooming-bonnest-calming-shampoo-for-pet-200-l",
+      "title": "شامپو آرامش‌بخش بونست",
+      "titleEn": "",
+      "brandId": "bonnest",
+      "categorySlug": "grooming",
+      "petTypes": ["dog", "cat"],
+      "priceToman": 680000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p291",
+      "slug": "grooming-spray-massage-brush-for-pet",
+      "title": "برس هوشمند اسپری دار طرح انبه",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "grooming",
+      "petTypes": ["dog", "cat"],
+      "priceToman": 520000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p292",
+      "slug": "dog-carriers-fiber-space-pet-carrier-backpack",
+      "title": "کوله فضایی سگ و گربه مدل فایبر",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "dog-carriers",
+      "petTypes": ["dog", "cat"],
+      "priceToman": 6160000,
+      "weightLabel": "فایبر",
+      "weightKind": "model"
+    },
+    {
+      "proposedId": "p293",
+      "slug": "dog-carriers-luxury-leather-space-pet-carier-backpack",
+      "title": "کوله فضایی لاکچری چرم",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "dog-carriers",
+      "petTypes": ["dog"],
+      "priceToman": 2795000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p294",
+      "slug": "dog-carriers-leather-pet-carier-backpack",
+      "title": "کوله فضایی چرمی پارک دار",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "dog-carriers",
+      "petTypes": ["dog"],
+      "priceToman": 2650000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p295",
+      "slug": "cat-carriers-zarix-zeus-for-cat",
+      "title": "کوله فضایی مدل زئوس",
+      "titleEn": "",
+      "brandId": "zarix",
+      "categorySlug": "cat-carriers",
+      "petTypes": ["cat"],
+      "priceToman": 4274000,
+      "weightLabel": "زئوس",
+      "weightKind": "model"
+    },
+    {
+      "proposedId": "p296",
+      "slug": "cat-carriers-raha-pet-hard-box-3",
+      "title": "باکس حمل سگ و گربه رها",
+      "titleEn": "",
+      "brandId": "raha",
+      "categorySlug": "cat-carriers",
+      "petTypes": ["dog", "cat"],
+      "priceToman": 3960000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p297",
+      "slug": "cat-carriers-jupiter-cat-hard-box",
+      "title": "باکس حمل سگ و گربه ژوپیتر",
+      "titleEn": "",
+      "brandId": "jupiter",
+      "categorySlug": "cat-carriers",
+      "petTypes": ["dog", "cat"],
+      "priceToman": 2970000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p298",
+      "slug": "bird-food-oshkaia-mixed-nut-cockatiel-food-kg",
+      "title": "خوراک آجیلی مخلوط عروس هلندی اوشکایا",
+      "titleEn": "",
+      "brandId": "oshkaia",
+      "categorySlug": "bird-food",
+      "petTypes": ["bird"],
+      "priceToman": 525000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p299",
+      "slug": "bird-food-oshkaia-mynah-bird-food-kg",
+      "title": "خوراک مرغ مینا و پرندگان حشره‌خوار اوشکایا",
+      "titleEn": "",
+      "brandId": "oshkaia",
+      "categorySlug": "bird-food",
+      "petTypes": ["bird"],
+      "priceToman": 495000,
+      "weightLabel": "",
+      "weightKind": ""
+    }
+  ]
+}

@@ -89,6 +89,19 @@ export const SHOP_BATCH_MULTI_WAVE4_SLUGS = [
   'grooming-dog-shedding-brush-hair-release-button',
 ] as const;
 
+export const SHOP_BATCH_MULTI_WAVE5_SLUGS = [
+  'grooming-bonnest-calming-shampoo-for-pet-200-l',
+  'grooming-spray-massage-brush-for-pet',
+  'dog-carriers-fiber-space-pet-carrier-backpack',
+  'dog-carriers-luxury-leather-space-pet-carier-backpack',
+  'dog-carriers-leather-pet-carier-backpack',
+  'cat-carriers-zarix-zeus-for-cat',
+  'cat-carriers-raha-pet-hard-box-3',
+  'cat-carriers-jupiter-cat-hard-box',
+  'bird-food-oshkaia-mixed-nut-cockatiel-food-kg',
+  'bird-food-oshkaia-mynah-bird-food-kg',
+] as const;
+
 export const ZERO_MARGIN_SHOP_SLUGS: readonly string[] = [
   ...ROYAL_CANIN_PILOT_SLUGS,
   ...SHOP_BATCH2_SLUGS,
@@ -97,9 +110,10 @@ export const ZERO_MARGIN_SHOP_SLUGS: readonly string[] = [
   ...SHOP_BATCH_MULTI_WAVE2_SLUGS,
   ...SHOP_BATCH_MULTI_WAVE3_SLUGS,
   ...SHOP_BATCH_MULTI_WAVE4_SLUGS,
+  ...SHOP_BATCH_MULTI_WAVE5_SLUGS,
 ];
 
-/** Live shop product ids — 3 pilots + 12 Batch 2 + 14 Batch 3 + 10 multi wave 1 + 10 multi wave 2 + 10 multi wave 3 + 10 multi wave 4. Never purge these rows. */
+/** Live shop product ids — 3 pilots + 12 Batch 2 + 14 Batch 3 + 10 multi wave 1 + 10 multi wave 2 + 10 multi wave 3 + 10 multi wave 4 + 10 multi wave 5. Never purge these rows. */
 export const LIVE_SHOP_PRODUCT_IDS = [
   'p221',
   'p222',
@@ -170,6 +184,16 @@ export const LIVE_SHOP_PRODUCT_IDS = [
   'p287',
   'p288',
   'p289',
+  'p290',
+  'p291',
+  'p292',
+  'p293',
+  'p294',
+  'p295',
+  'p296',
+  'p297',
+  'p298',
+  'p299',
 ] as const;
 
 export function isLiveShopProductIdOrSlug(idOrSlug: string): boolean {
