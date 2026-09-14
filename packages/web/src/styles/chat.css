@@ -1876,6 +1876,16 @@ html.tg-chat-open body {
   background: rgba(185, 28, 28, 0.1) !important;
 }
 
+/* Thread header trash — always visible (not only inside ⋮ / chatUnlocked) */
+.tg-thread-dismiss {
+  color: #ffc9c9;
+}
+.tg-thread-dismiss:hover,
+.tg-thread-dismiss:focus-visible {
+  background: rgba(214, 69, 69, 0.22) !important;
+  color: #fff;
+}
+
 .tg-chat-list-row > .tg-chat-list-actions {
   flex: 1 1 100%;
   width: 100%;

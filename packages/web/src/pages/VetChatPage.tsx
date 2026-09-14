@@ -43,6 +43,7 @@ import {
   type VetConsultation,
 } from '@petdate/shared';
 import { appAlert } from '../components/AppDialog';
+import { ConfirmModal } from '../components/ConfirmModal';
 import { SiteLogo } from '../components/SiteLogo';
 import { InboxPeerAvatar } from '../components/InboxPeerAvatar';
 import { PetAvatar } from '../components/PetAvatar';
@@ -285,6 +286,8 @@ export function VetChatPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [blocking, setBlocking] = useState(false);
   const [dismissing, setDismissing] = useState(false);
+  /** Pending inbox dismiss — ConfirmModal must confirm before API call */
+  const [dismissConfirmOpen, setDismissConfirmOpen] = useState(false);
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [pendingPreview, setPendingPreview] = useState<string | null>(null);
@@ -1207,12 +1210,23 @@ export function VetChatPage() {
     setMenuOpen(false);
     try {
       await dismissVetInbox(consult.id, myUserId);
+      setDismissConfirmOpen(false);
       navigate(inboxScope === 'trainer' ? '/trainer-chats' : inboxScope === 'vet' ? '/vet-chats' : '/chats', { replace: true });
     } catch (err) {
       setActionError(err instanceof Error ? err.message : 'حذف از فهرست ناموفق بود');
     } finally {
       setDismissing(false);
     }
+  }
+
+  function requestDismissFromThread() {
+    setMenuOpen(false);
+    setDismissConfirmOpen(true);
+  }
+
+  function cancelDismissConfirm() {
+    if (dismissing) return;
+    setDismissConfirmOpen(false);
   }
 
   function renderMedia(msg: UiMsg) {
@@ -1379,6 +1393,20 @@ export function VetChatPage() {
 
   return (
     <div className={shellClass} dir="rtl">
+      <ConfirmModal
+        open={dismissConfirmOpen}
+        title="حذف از فهرست گفتگوها"
+        confirmLabel="تأیید"
+        cancelLabel="انصراف"
+        busy={dismissing}
+        testId="chat-dismiss-confirm"
+        onCancel={cancelDismissConfirm}
+        onConfirm={() => void removeFromInbox()}
+      >
+        <p className="pepito-lead-modal__lead">
+          می‌خواهید این گفتگو از فهرست چت‌ها حذف شود؟ تاریخچه طرف مقابل پاک نمی‌شود.
+        </p>
+      </ConfirmModal>
       {showList ? (
         <aside className="tg-chat-list" aria-label="فهرست گفتگوها">
           <header className="tg-chat-list-head">
@@ -1632,147 +1660,162 @@ export function VetChatPage() {
                   </span>
                 </div>
 
-                {chatUnlocked ? (
-                  <div className="tg-chat-header-actions" ref={menuRef}>
-                    <button
-                      type="button"
-                      className={`tg-icon-btn tg-secure-toggle${secure ? ' is-on' : ''}`}
-                      onClick={() => void toggleSecure()}
-                      aria-label={secure ? 'خاموش‌کردن چت امن' : 'فعال‌کردن چت امن'}
-                      title={secure ? 'خاموش‌کردن چت امن' : 'فعال‌کردن چت امن'}
-                    >
-                      {secure ? <Lock size={18} /> : <LockOpen size={18} />}
-                    </button>
-                    <button
-                      type="button"
-                      className="tg-icon-btn tg-end-chat-btn"
-                      onClick={() => void endChat()}
-                      disabled={ending}
-                      aria-label="بستن چت"
-                      title="بستن چت"
-                    >
-                      <PhoneOff size={18} />
-                    </button>
-                    <button
-                      type="button"
-                      className="tg-icon-btn"
-                      onClick={() => setMenuOpen((v) => !v)}
-                      aria-label="منوی گفتگو"
-                      aria-expanded={menuOpen}
-                    >
-                      <MoreVertical size={18} />
-                    </button>
-                    {menuOpen ? (
-                      <div className="tg-chat-menu" role="menu">
-                        {showMedicalTools ? (
-                          <>
-                            <button
-                              type="button"
-                              role="menuitem"
-                              onClick={() => {
-                                setMenuOpen(false);
-                                setDoctorPanel('rx');
-                              }}
-                            >
-                              صدور نسخه
-                            </button>
-                            <button
-                              type="button"
-                              role="menuitem"
-                              onClick={() => {
-                                setMenuOpen(false);
-                                setDoctorPanel('medical');
-                              }}
-                            >
-                              پرونده پزشکی
-                            </button>
-                            <button
-                              type="button"
-                              role="menuitem"
-                              onClick={() => {
-                                setMenuOpen(false);
-                                setDoctorPanel('note');
-                              }}
-                            >
-                              ثبت در پرونده
-                            </button>
-                            <button
-                              type="button"
-                              role="menuitem"
-                              onClick={() => {
-                                setMenuOpen(false);
-                                setDoctorPanel('pet');
-                              }}
-                            >
-                              پروفایل پت
-                            </button>
-                          </>
-                        ) : null}
-                        {showProfileTools ? (
-                          <>
-                            <button
-                              type="button"
-                              role="menuitem"
-                              onClick={() => {
-                                setMenuOpen(false);
-                                setDoctorPanel('pet');
-                              }}
-                            >
-                              پروفایل پت
-                            </button>
-                            <button
-                              type="button"
-                              role="menuitem"
-                              onClick={() => {
-                                setMenuOpen(false);
-                                setDoctorPanel('owner');
-                              }}
-                            >
-                              پروفایل صاحب پت
-                            </button>
-                          </>
-                        ) : null}
-                        <button
-                          type="button"
-                          role="menuitem"
-                          onClick={() => void addContact()}
-                          disabled={contactAdded}
-                        >
-                          <UserPlus size={16} />
-                          {contactAdded ? 'مخاطب اضافه شد' : 'افزودن مخاطب'}
-                        </button>
-                        <button
-                          type="button"
-                          role="menuitem"
-                          onClick={() => void removeFromInbox()}
-                          disabled={dismissing}
-                        >
-                          <Trash2 size={16} />
-                          {dismissing ? 'در حال حذف…' : 'حذف از فهرست گفتگوها'}
-                        </button>
-                        <button
-                          type="button"
-                          role="menuitem"
-                          className="is-danger"
-                          onClick={() => void blockPeer()}
-                          disabled={blocking}
-                        >
-                          <Ban size={16} />
-                          {blocking ? 'در حال مسدود…' : 'مسدود کردن'}
-                        </button>
-                        <button
-                          type="button"
-                          role="menuitem"
-                          className="is-danger"
-                          onClick={() => void endChat()}
-                          disabled={ending}
-                        >
-                          {ending ? 'در حال بستن…' : 'بستن چت'}
-                        </button>
-                      </div>
-                    ) : null}
-                  </div>
-                ) : null}
+                <div className="tg-chat-header-actions" ref={menuRef}>
+                  <button
+                    type="button"
+                    className="tg-icon-btn tg-thread-dismiss"
+                    aria-label="حذف از فهرست"
+                    title="حذف از فهرست گفتگوها"
+                    aria-haspopup="dialog"
+                    data-testid="chat-thread-dismiss"
+                    onClick={requestDismissFromThread}
+                    disabled={dismissing}
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                  {chatUnlocked ? (
+                    <>
+                      <button
+                        type="button"
+                        className={`tg-icon-btn tg-secure-toggle${secure ? ' is-on' : ''}`}
+                        onClick={() => void toggleSecure()}
+                        aria-label={secure ? 'خاموش‌کردن چت امن' : 'فعال‌کردن چت امن'}
+                        title={secure ? 'خاموش‌کردن چت امن' : 'فعال‌کردن چت امن'}
+                      >
+                        {secure ? <Lock size={18} /> : <LockOpen size={18} />}
+                      </button>
+                      <button
+                        type="button"
+                        className="tg-icon-btn tg-end-chat-btn"
+                        onClick={() => void endChat()}
+                        disabled={ending}
+                        aria-label="بستن چت"
+                        title="بستن چت"
+                      >
+                        <PhoneOff size={18} />
+                      </button>
+                      <button
+                        type="button"
+                        className="tg-icon-btn"
+                        onClick={() => setMenuOpen((v) => !v)}
+                        aria-label="منوی گفتگو"
+                        aria-expanded={menuOpen}
+                      >
+                        <MoreVertical size={18} />
+                      </button>
+                      {menuOpen ? (
+                        <div className="tg-chat-menu" role="menu">
+                          {showMedicalTools ? (
+                            <>
+                              <button
+                                type="button"
+                                role="menuitem"
+                                onClick={() => {
+                                  setMenuOpen(false);
+                                  setDoctorPanel('rx');
+                                }}
+                              >
+                                صدور نسخه
+                              </button>
+                              <button
+                                type="button"
+                                role="menuitem"
+                                onClick={() => {
+                                  setMenuOpen(false);
+                                  setDoctorPanel('medical');
+                                }}
+                              >
+                                پرونده پزشکی
+                              </button>
+                              <button
+                                type="button"
+                                role="menuitem"
+                                onClick={() => {
+                                  setMenuOpen(false);
+                                  setDoctorPanel('note');
+                                }}
+                              >
+                                ثبت در پرونده
+                              </button>
+                              <button
+                                type="button"
+                                role="menuitem"
+                                onClick={() => {
+                                  setMenuOpen(false);
+                                  setDoctorPanel('pet');
+                                }}
+                              >
+                                پروفایل پت
+                              </button>
+                            </>
+                          ) : null}
+                          {showProfileTools ? (
+                            <>
+                              <button
+                                type="button"
+                                role="menuitem"
+                                onClick={() => {
+                                  setMenuOpen(false);
+                                  setDoctorPanel('pet');
+                                }}
+                              >
+                                پروفایل پت
+                              </button>
+                              <button
+                                type="button"
+                                role="menuitem"
+                                onClick={() => {
+                                  setMenuOpen(false);
+                                  setDoctorPanel('owner');
+                                }}
+                              >
+                                پروفایل صاحب پت
+                              </button>
+                            </>
+                          ) : null}
+                          <button
+                            type="button"
+                            role="menuitem"
+                            onClick={() => void addContact()}
+                            disabled={contactAdded}
+                          >
+                            <UserPlus size={16} />
+                            {contactAdded ? 'مخاطب اضافه شد' : 'افزودن مخاطب'}
+                          </button>
+                          <button
+                            type="button"
+                            role="menuitem"
+                            aria-haspopup="dialog"
+                            onClick={requestDismissFromThread}
+                            disabled={dismissing}
+                          >
+                            <Trash2 size={16} />
+                            {dismissing ? 'در حال حذف…' : 'حذف از فهرست گفتگوها'}
+                          </button>
+                          <button
+                            type="button"
+                            role="menuitem"
+                            className="is-danger"
+                            onClick={() => void blockPeer()}
+                            disabled={blocking}
+                          >
+                            <Ban size={16} />
+                            {blocking ? 'در حال مسدود…' : 'مسدود کردن'}
+                          </button>
+                          <button
+                            type="button"
+                            role="menuitem"
+                            className="is-danger"
+                            onClick={() => void endChat()}
+                            disabled={ending}
+                          >
+                            {ending ? 'در حال بستن…' : 'بستن چت'}
+                          </button>
+                        </div>
+                      ) : null}
+                    </>
+                  ) : null}
+                </div>
               </header>
 
               {secure && chatUnlocked ? (

@@ -2068,100 +2068,115 @@ export function ChatPage() {
                   </span>
                 </button>
 
-                {chatUnlocked ? (
-                  <div className="tg-chat-header-actions" ref={menuRef}>
-                    <button
-                      type="button"
-                      className={`tg-icon-btn tg-secure-toggle${secure ? ' is-on' : ''}`}
-                      onClick={() => void toggleSecure()}
-                      aria-label={secure ? 'خاموش‌کردن چت امن' : 'فعال‌کردن چت امن'}
-                      title={secure ? 'خاموش‌کردن چت امن' : 'فعال‌کردن چت امن'}
-                    >
-                      {secure ? <Lock size={18} /> : <LockOpen size={18} />}
-                    </button>
-                    <button
-                      type="button"
-                      className="tg-icon-btn tg-end-chat-btn"
-                      onClick={() => void endChat()}
-                      disabled={ending}
-                      aria-label="بستن چت"
-                      title="بستن چت"
-                    >
-                      <PhoneOff size={18} />
-                    </button>
-                    <button
-                      type="button"
-                      className="tg-icon-btn"
-                      onClick={() => setMenuOpen((v) => !v)}
-                      aria-label="منوی گفتگو"
-                      aria-expanded={menuOpen}
-                    >
-                      <MoreVertical size={18} />
-                    </button>
-                    {menuOpen ? (
-                      <div className="tg-chat-menu" role="menu">
-                        <button
-                          type="button"
-                          role="menuitem"
-                          onClick={() => {
-                            setInfoCard('owner');
-                            setMenuOpen(false);
-                          }}
-                        >
-                          <UserRound size={16} /> پروفایل طرف مقابل
-                        </button>
-                        <button
-                          type="button"
-                          role="menuitem"
-                          onClick={() => {
-                            setInfoCard('pet');
-                            setMenuOpen(false);
-                          }}
-                        >
-                          <PawPrint size={16} /> پروفایل پت
-                        </button>
-                        <button
-                          type="button"
-                          role="menuitem"
-                          onClick={() => void addContact()}
-                          disabled={contactAdded}
-                        >
-                          <UserPlus size={16} />
-                          {contactAdded ? 'مخاطب اضافه شد' : 'افزودن مخاطب'}
-                        </button>
-                        <button
-                          type="button"
-                          role="menuitem"
-                          aria-haspopup="dialog"
-                          onClick={requestDismissFromThread}
-                          disabled={dismissing}
-                        >
-                          <Trash2 size={16} />
-                          {dismissing ? 'در حال حذف…' : 'حذف از فهرست گفتگوها'}
-                        </button>
-                        <button
-                          type="button"
-                          role="menuitem"
-                          className="is-danger"
-                          onClick={() => void blockPeer()}
-                          disabled={blocking}
-                        >
-                          <Ban size={16} />
-                          {blocking ? 'در حال مسدود…' : 'مسدود کردن'}
-                        </button>
-                        <button
-                          type="button"
-                          role="menuitem"
-                          className="is-danger"
-                          onClick={() => void endChat()}
-                          disabled={ending}
-                        >
-                          {ending ? 'در حال بستن…' : 'بستن چت'}
-                        </button>
-                      </div>
-                    ) : null}
-                  </div>
-                ) : null}
+                <div className="tg-chat-header-actions" ref={menuRef}>
+                  {/* Always visible — was gated by chatUnlocked so ended/pending threads lost delete */}
+                  <button
+                    type="button"
+                    className="tg-icon-btn tg-thread-dismiss"
+                    aria-label={t('chats.dismissFromList')}
+                    title={t('chats.dismissTitle')}
+                    aria-haspopup="dialog"
+                    data-testid="chat-thread-dismiss"
+                    onClick={requestDismissFromThread}
+                    disabled={dismissing}
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                  {chatUnlocked ? (
+                    <>
+                      <button
+                        type="button"
+                        className={`tg-icon-btn tg-secure-toggle${secure ? ' is-on' : ''}`}
+                        onClick={() => void toggleSecure()}
+                        aria-label={secure ? 'خاموش‌کردن چت امن' : 'فعال‌کردن چت امن'}
+                        title={secure ? 'خاموش‌کردن چت امن' : 'فعال‌کردن چت امن'}
+                      >
+                        {secure ? <Lock size={18} /> : <LockOpen size={18} />}
+                      </button>
+                      <button
+                        type="button"
+                        className="tg-icon-btn tg-end-chat-btn"
+                        onClick={() => void endChat()}
+                        disabled={ending}
+                        aria-label="بستن چت"
+                        title="بستن چت"
+                      >
+                        <PhoneOff size={18} />
+                      </button>
+                      <button
+                        type="button"
+                        className="tg-icon-btn"
+                        onClick={() => setMenuOpen((v) => !v)}
+                        aria-label="منوی گفتگو"
+                        aria-expanded={menuOpen}
+                      >
+                        <MoreVertical size={18} />
+                      </button>
+                      {menuOpen ? (
+                        <div className="tg-chat-menu" role="menu">
+                          <button
+                            type="button"
+                            role="menuitem"
+                            onClick={() => {
+                              setInfoCard('owner');
+                              setMenuOpen(false);
+                            }}
+                          >
+                            <UserRound size={16} /> پروفایل طرف مقابل
+                          </button>
+                          <button
+                            type="button"
+                            role="menuitem"
+                            onClick={() => {
+                              setInfoCard('pet');
+                              setMenuOpen(false);
+                            }}
+                          >
+                            <PawPrint size={16} /> پروفایل پت
+                          </button>
+                          <button
+                            type="button"
+                            role="menuitem"
+                            onClick={() => void addContact()}
+                            disabled={contactAdded}
+                          >
+                            <UserPlus size={16} />
+                            {contactAdded ? 'مخاطب اضافه شد' : 'افزودن مخاطب'}
+                          </button>
+                          <button
+                            type="button"
+                            role="menuitem"
+                            aria-haspopup="dialog"
+                            onClick={requestDismissFromThread}
+                            disabled={dismissing}
+                          >
+                            <Trash2 size={16} />
+                            {dismissing ? 'در حال حذف…' : 'حذف از فهرست گفتگوها'}
+                          </button>
+                          <button
+                            type="button"
+                            role="menuitem"
+                            className="is-danger"
+                            onClick={() => void blockPeer()}
+                            disabled={blocking}
+                          >
+                            <Ban size={16} />
+                            {blocking ? 'در حال مسدود…' : 'مسدود کردن'}
+                          </button>
+                          <button
+                            type="button"
+                            role="menuitem"
+                            className="is-danger"
+                            onClick={() => void endChat()}
+                            disabled={ending}
+                          >
+                            {ending ? 'در حال بستن…' : 'بستن چت'}
+                          </button>
+                        </div>
+                      ) : null}
+                    </>
+                  ) : null}
+                </div>
               </header>
 
               {secure && chatUnlocked ? (
