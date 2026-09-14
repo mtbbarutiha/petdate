@@ -4,6 +4,12 @@ import { ArrowRight, Send } from 'lucide-react';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { useI18n } from '../i18n';
 import { fetchSupportMessages, sendSupportMessage, type SupportChatMessage } from '../lib/api';
+import {
+  ChatReplyActionButton,
+  ChatReplyComposerBar,
+  ChatReplyQuote,
+  type ChatReplyTarget,
+} from '../components/ChatReply';
 import { AI_ASSISTANT_DISPLAY_NAME, AI_SUPPORT_AVATAR_URL } from './supportAgent';
 
 export function SupportChatPage() {
@@ -12,6 +18,7 @@ export function SupportChatPage() {
   const [messages, setMessages] = useState<SupportChatMessage[]>([]);
   const [welcome, setWelcome] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
+  const [replyTo, setReplyTo] = useState<ChatReplyTarget | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement | null>(null);
@@ -26,36 +33,71 @@ export function SupportChatPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : t('support.loadFail'));
     }
-  }, [token]);
+  }, [token, t]);
 
   useEffect(() => {
     void load();
-    const t = window.setInterval(() => void load(), 20_000);
-    return () => window.clearInterval(t);
+    const timer = window.setInterval(() => void load(), 20_000);
+    return () => window.clearInterval(timer);
   }, [load]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, busy]);
 
+  function beginReplyTo(m: SupportChatMessage) {
+    setReplyTo({
+      id: m.id,
+      fromLabel:
+        m.role === 'user' ? t('support.replyYou') : AI_ASSISTANT_DISPLAY_NAME,
+      text: m.text,
+    });
+  }
+
+  function scrollToMessage(id: number) {
+    const el = document.getElementById(`support-msg-${id}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.classList.add('is-flash');
+    window.setTimeout(() => el.classList.remove('is-flash'), 1200);
+  }
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     if (!token || !draft.trim() || busy) return;
     const text = draft.trim();
+    const replyId = replyTo?.id ?? null;
+    const replySnapshot = replyTo;
     setDraft('');
+    setReplyTo(null);
     setBusy(true);
     setError(null);
     setWelcome(null);
     const tempId = -Date.now();
     setMessages((prev) => [
       ...prev,
-      { id: tempId, role: 'user', text, createdAt: new Date().toISOString() },
+      {
+        id: tempId,
+        role: 'user',
+        text,
+        createdAt: new Date().toISOString(),
+        replyToId: replyId,
+        replyTo: replySnapshot
+          ? {
+              id: replySnapshot.id,
+              text: replySnapshot.text,
+              role: replySnapshot.fromLabel === AI_ASSISTANT_DISPLAY_NAME ? 'assistant' : 'user',
+            }
+          : null,
+      },
     ]);
     try {
-      const res = await sendSupportMessage(token, text);
+      const res = await sendSupportMessage(token, text, { replyToId: replyId });
       setMessages(res.messages);
     } catch (err) {
       setError(err instanceof Error ? err.message : t('support.sendFail'));
+      if (replySnapshot) setReplyTo(replySnapshot);
+      setDraft(text);
       await load();
     } finally {
       setBusy(false);
@@ -127,9 +169,26 @@ export function SupportChatPage() {
         {messages.map((m) => (
           <div
             key={m.id}
+            id={m.id > 0 ? `support-msg-${m.id}` : undefined}
             className={`pepito-support-bubble ${m.role === 'user' ? 'is-user' : 'is-assistant'}`}
           >
+            {m.replyTo ? (
+              <ChatReplyQuote
+                fromLabel={
+                  m.replyTo.role === 'assistant'
+                    ? AI_ASSISTANT_DISPLAY_NAME
+                    : t('support.replyYou')
+                }
+                text={m.replyTo.text}
+                onClick={() => scrollToMessage(m.replyTo!.id)}
+              />
+            ) : null}
             <p style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{m.text}</p>
+            {m.id > 0 ? (
+              <div className="pepito-support-bubble-meta">
+                <ChatReplyActionButton onClick={() => beginReplyTo(m)} />
+              </div>
+            ) : null}
           </div>
         ))}
         {busy ? (
@@ -140,12 +199,16 @@ export function SupportChatPage() {
         <div ref={bottomRef} />
       </div>
 
+      {replyTo ? (
+        <ChatReplyComposerBar target={replyTo} onCancel={() => setReplyTo(null)} />
+      ) : null}
+
       <form className="pepito-support-composer" onSubmit={(e) => void onSubmit(e)}>
         <input
           type="text"
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
-          placeholder={t('support.messagePh')}
+          placeholder={replyTo ? t('support.replyPh') : t('support.messagePh')}
           disabled={busy}
           maxLength={4000}
           aria-label={t('support.messageAria')}

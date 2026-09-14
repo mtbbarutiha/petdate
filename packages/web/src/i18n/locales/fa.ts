@@ -1097,6 +1097,8 @@ export const fa: Dict = {
     typing: 'در حال نوشتن…',
     messagePh: 'سؤالت را بنویس…',
     messageAria: 'پیام پشتیبانی',
+    replyYou: 'تو',
+    replyPh: 'پاسخ…',
     statusOpen: 'باز',
     statusPending: 'در انتظار',
     statusClosed: 'بسته',

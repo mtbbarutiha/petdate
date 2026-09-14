@@ -40,6 +40,7 @@ import type {
   VetConsultChatMessage,
   VetConsultStatus,
   VetCredentialStatus,
+  ChatReplySnippet,
 } from '@petdate/shared';
 import {
   COIN_REASON,
@@ -77,6 +78,7 @@ import {
   PLAYDATE_REQUEST_TTL_MS,
   countFanoutSiblingsByCreatedAt,
   PROFILE_REWARD_SECTIONS,
+  truncateChatReplyText,
   PROFILE_SECTION_REWARD,
   REFERRAL_BONUS_COINS,
   SIGNUP_BONUS,
@@ -1297,6 +1299,9 @@ function migrateSchema() {
   if (!chatNames.has('storage_key')) {
     db.exec('ALTER TABLE playdate_chat_messages ADD COLUMN storage_key TEXT');
   }
+  if (!chatNames.has('reply_to_id')) {
+    db.exec('ALTER TABLE playdate_chat_messages ADD COLUMN reply_to_id INTEGER');
+  }
 
   // Vet consult chat media + secure/ended flags (parity with playdate chat)
   const vcCols = db.prepare('PRAGMA table_info(vet_consultations)').all() as { name: string }[];
@@ -1354,6 +1359,16 @@ function migrateSchema() {
   }
   if (!vchatNames.has('storage_key')) {
     db.exec('ALTER TABLE vet_consult_chat_messages ADD COLUMN storage_key TEXT');
+  }
+  if (!vchatNames.has('reply_to_id')) {
+    db.exec('ALTER TABLE vet_consult_chat_messages ADD COLUMN reply_to_id INTEGER');
+  }
+
+  const supportMsgCols = db
+    .prepare('PRAGMA table_info(support_messages)')
+    .all() as { name: string }[];
+  if (supportMsgCols.length && !supportMsgCols.some((c) => c.name === 'reply_to_id')) {
+    db.exec('ALTER TABLE support_messages ADD COLUMN reply_to_id INTEGER');
   }
 
   const userPresenceCols = db.prepare('PRAGMA table_info(users)').all() as { name: string }[];
@@ -2746,6 +2761,10 @@ export function isDeletedOrInactiveUser(user: {
 }
 
 function mapPlaydateChatMessage(row: Record<string, unknown>): PlaydateChatMessage {
+  const replyToId =
+    row.reply_to_id != null && Number.isFinite(Number(row.reply_to_id))
+      ? Number(row.reply_to_id)
+      : null;
   return {
     id: row.id as number,
     playdateId: row.playdate_id as number,
@@ -2756,8 +2775,47 @@ function mapPlaydateChatMessage(row: Record<string, unknown>): PlaydateChatMessa
     storageKey: (row.storage_key as string | undefined) ?? null,
     mimeType: (row.mime_type as string | undefined) ?? null,
     fileName: (row.file_name as string | undefined) ?? null,
+    replyToId,
     createdAt: row.created_at as string,
   };
+}
+
+function attachPlaydateReplySnippet(msg: PlaydateChatMessage): PlaydateChatMessage {
+  if (!msg.replyToId) return { ...msg, replyTo: null };
+  const parent = db
+    .prepare(
+      `SELECT id, sender_user_id, text, media_kind FROM playdate_chat_messages WHERE id = ? AND playdate_id = ?`
+    )
+    .get(msg.replyToId, msg.playdateId) as
+    | {
+        id: number;
+        sender_user_id: number;
+        text: string;
+        media_kind: string | null;
+      }
+    | undefined;
+  if (!parent) return { ...msg, replyTo: null };
+  const snippet: ChatReplySnippet = {
+    id: parent.id,
+    senderUserId: parent.sender_user_id,
+    text: truncateChatReplyText(parent.text),
+    mediaKind: (parent.media_kind as PlaydateChatMessage['mediaKind']) ?? null,
+  };
+  return { ...msg, replyTo: snippet };
+}
+
+function resolvePlaydateReplyToId(
+  playdateId: number,
+  replyToId: number | null | undefined
+): number | null {
+  if (replyToId == null || !Number.isFinite(Number(replyToId)) || Number(replyToId) <= 0) {
+    return null;
+  }
+  const id = Math.trunc(Number(replyToId));
+  const row = db
+    .prepare('SELECT id FROM playdate_chat_messages WHERE id = ? AND playdate_id = ?')
+    .get(id, playdateId) as { id: number } | undefined;
+  return row ? id : null;
 }
 
 function paymentReceiptPublicUrl(receiptFileId: string | undefined | null): string | undefined {
@@ -2801,6 +2859,10 @@ function mapPaymentOrder(row: Record<string, unknown>): PaymentOrder {
 }
 
 function mapVetConsultChatMessage(row: Record<string, unknown>): VetConsultChatMessage {
+  const replyToId =
+    row.reply_to_id != null && Number.isFinite(Number(row.reply_to_id))
+      ? Number(row.reply_to_id)
+      : null;
   return {
     id: row.id as number,
     consultId: row.consult_id as number,
@@ -2811,8 +2873,47 @@ function mapVetConsultChatMessage(row: Record<string, unknown>): VetConsultChatM
     storageKey: (row.storage_key as string | undefined) ?? null,
     mimeType: (row.mime_type as string | undefined) ?? null,
     fileName: (row.file_name as string | undefined) ?? null,
+    replyToId,
     createdAt: row.created_at as string,
   };
+}
+
+function attachVetReplySnippet(msg: VetConsultChatMessage): VetConsultChatMessage {
+  if (!msg.replyToId) return { ...msg, replyTo: null };
+  const parent = db
+    .prepare(
+      `SELECT id, sender_user_id, text, media_kind FROM vet_consult_chat_messages WHERE id = ? AND consult_id = ?`
+    )
+    .get(msg.replyToId, msg.consultId) as
+    | {
+        id: number;
+        sender_user_id: number;
+        text: string;
+        media_kind: string | null;
+      }
+    | undefined;
+  if (!parent) return { ...msg, replyTo: null };
+  const snippet: ChatReplySnippet = {
+    id: parent.id,
+    senderUserId: parent.sender_user_id,
+    text: truncateChatReplyText(parent.text),
+    mediaKind: (parent.media_kind as VetConsultChatMessage['mediaKind']) ?? null,
+  };
+  return { ...msg, replyTo: snippet };
+}
+
+function resolveVetReplyToId(
+  consultId: number,
+  replyToId: number | null | undefined
+): number | null {
+  if (replyToId == null || !Number.isFinite(Number(replyToId)) || Number(replyToId) <= 0) {
+    return null;
+  }
+  const id = Math.trunc(Number(replyToId));
+  const row = db
+    .prepare('SELECT id FROM vet_consult_chat_messages WHERE id = ? AND consult_id = ?')
+    .get(id, consultId) as { id: number } | undefined;
+  return row ? id : null;
 }
 
 function mapVetConsultation(row: Record<string, unknown>): VetConsultation {
@@ -5736,28 +5837,25 @@ export const dbService = {
   ): PlaydateChatMessage[] {
     const limit = Math.min(Math.max(opts?.limit ?? 200, 1), 500);
     const afterId = opts?.afterId;
-    if (afterId != null && Number.isFinite(afterId)) {
-      return (
-        db
-          .prepare(
-            `SELECT * FROM playdate_chat_messages
+    const rows =
+      afterId != null && Number.isFinite(afterId)
+        ? (db
+            .prepare(
+              `SELECT * FROM playdate_chat_messages
              WHERE playdate_id = ? AND id > ?
              ORDER BY id ASC
              LIMIT ?`
-          )
-          .all(playdateId, afterId, limit) as Record<string, unknown>[]
-      ).map(mapPlaydateChatMessage);
-    }
-    return (
-      db
-        .prepare(
-          `SELECT * FROM playdate_chat_messages
+            )
+            .all(playdateId, afterId, limit) as Record<string, unknown>[])
+        : (db
+            .prepare(
+              `SELECT * FROM playdate_chat_messages
            WHERE playdate_id = ?
            ORDER BY id ASC
            LIMIT ?`
-        )
-        .all(playdateId, limit) as Record<string, unknown>[]
-    ).map(mapPlaydateChatMessage);
+            )
+            .all(playdateId, limit) as Record<string, unknown>[]);
+    return rows.map(mapPlaydateChatMessage).map(attachPlaydateReplySnippet);
   },
 
   createPlaydateChatMessage(data: {
@@ -5769,6 +5867,7 @@ export const dbService = {
     storageKey?: string | null;
     mimeType?: string | null;
     fileName?: string | null;
+    replyToId?: number | null;
   }): PlaydateChatMessage {
     const text = (data.text ?? '').trim();
     const hasMedia = Boolean(
@@ -5779,12 +5878,13 @@ export const dbService = {
     );
     if (!text && !hasMedia) throw new Error('EMPTY_TEXT');
     if (text.length > 4000) throw new Error('TEXT_TOO_LONG');
+    const replyToId = resolvePlaydateReplyToId(data.playdateId, data.replyToId);
     const result = db
       .prepare(
         `INSERT INTO playdate_chat_messages (
           playdate_id, sender_user_id, text, media_kind, telegram_file_id,
-          mime_type, file_name, storage_key
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+          mime_type, file_name, storage_key, reply_to_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .run(
         data.playdateId,
@@ -5794,15 +5894,18 @@ export const dbService = {
         data.telegramFileId ?? null,
         data.mimeType ?? null,
         data.fileName ?? null,
-        data.storageKey ?? null
+        data.storageKey ?? null,
+        replyToId
       );
     db.prepare(
       `UPDATE playdate_requests SET updated_at = datetime('now') WHERE id = ?`,
     ).run(data.playdateId);
-    return mapPlaydateChatMessage(
-      db
-        .prepare('SELECT * FROM playdate_chat_messages WHERE id = ?')
-        .get(result.lastInsertRowid) as Record<string, unknown>
+    return attachPlaydateReplySnippet(
+      mapPlaydateChatMessage(
+        db
+          .prepare('SELECT * FROM playdate_chat_messages WHERE id = ?')
+          .get(result.lastInsertRowid) as Record<string, unknown>
+      )
     );
   },
 
@@ -5810,7 +5913,7 @@ export const dbService = {
     const row = db
       .prepare('SELECT * FROM playdate_chat_messages WHERE id = ?')
       .get(id) as Record<string, unknown> | undefined;
-    return row ? mapPlaydateChatMessage(row) : null;
+    return row ? attachPlaydateReplySnippet(mapPlaydateChatMessage(row)) : null;
   },
 
   setPlaydateChatSecure(id: number, secure: boolean): PlaydateRequest | null {
@@ -6696,28 +6799,25 @@ export const dbService = {
   ): VetConsultChatMessage[] {
     const limit = Math.min(Math.max(opts?.limit ?? 200, 1), 500);
     const afterId = opts?.afterId;
-    if (afterId != null && Number.isFinite(afterId)) {
-      return (
-        db
-          .prepare(
-            `SELECT * FROM vet_consult_chat_messages
+    const rows =
+      afterId != null && Number.isFinite(afterId)
+        ? (db
+            .prepare(
+              `SELECT * FROM vet_consult_chat_messages
              WHERE consult_id = ? AND id > ?
              ORDER BY id ASC
              LIMIT ?`
-          )
-          .all(consultId, afterId, limit) as Record<string, unknown>[]
-      ).map(mapVetConsultChatMessage);
-    }
-    return (
-      db
-        .prepare(
-          `SELECT * FROM vet_consult_chat_messages
+            )
+            .all(consultId, afterId, limit) as Record<string, unknown>[])
+        : (db
+            .prepare(
+              `SELECT * FROM vet_consult_chat_messages
            WHERE consult_id = ?
            ORDER BY id ASC
            LIMIT ?`
-        )
-        .all(consultId, limit) as Record<string, unknown>[]
-    ).map(mapVetConsultChatMessage);
+            )
+            .all(consultId, limit) as Record<string, unknown>[]);
+    return rows.map(mapVetConsultChatMessage).map(attachVetReplySnippet);
   },
 
   createVetConsultChatMessage(data: {
@@ -6729,6 +6829,7 @@ export const dbService = {
     storageKey?: string | null;
     mimeType?: string | null;
     fileName?: string | null;
+    replyToId?: number | null;
   }): VetConsultChatMessage {
     const text = (data.text ?? '').trim();
     const hasMedia = Boolean(
@@ -6736,12 +6837,13 @@ export const dbService = {
     );
     if (!text && !hasMedia) throw new Error('EMPTY_TEXT');
     if (text.length > 4000) throw new Error('TEXT_TOO_LONG');
+    const replyToId = resolveVetReplyToId(data.consultId, data.replyToId);
     const result = db
       .prepare(
         `INSERT INTO vet_consult_chat_messages (
           consult_id, sender_user_id, text, media_kind, telegram_file_id,
-          mime_type, file_name, storage_key
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+          mime_type, file_name, storage_key, reply_to_id
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
       )
       .run(
         data.consultId,
@@ -6751,7 +6853,8 @@ export const dbService = {
         data.telegramFileId ?? null,
         data.mimeType ?? null,
         data.fileName ?? null,
-        data.storageKey ?? null
+        data.storageKey ?? null,
+        replyToId
       );
     // Patient message resets idle-close timer (typing WS is separate).
     const consultRow = db
@@ -6764,10 +6867,12 @@ export const dbService = {
     }
     // Touch parent consult so inbox can surface latest chats first via message time.
     // (listVetConsultations already sorts by last message / created_at)
-    return mapVetConsultChatMessage(
-      db
-        .prepare('SELECT * FROM vet_consult_chat_messages WHERE id = ?')
-        .get(result.lastInsertRowid) as Record<string, unknown>
+    return attachVetReplySnippet(
+      mapVetConsultChatMessage(
+        db
+          .prepare('SELECT * FROM vet_consult_chat_messages WHERE id = ?')
+          .get(result.lastInsertRowid) as Record<string, unknown>
+      )
     );
   },
 
@@ -6775,7 +6880,7 @@ export const dbService = {
     const row = db
       .prepare('SELECT * FROM vet_consult_chat_messages WHERE id = ?')
       .get(id) as Record<string, unknown> | undefined;
-    return row ? mapVetConsultChatMessage(row) : null;
+    return row ? attachVetReplySnippet(mapVetConsultChatMessage(row)) : null;
   },
 
   /** Replace message text (e.g. after voice transcription). Keeps media fields. */
@@ -6925,6 +7030,8 @@ export const dbService = {
     role: 'user' | 'assistant';
     text: string;
     createdAt: string;
+    replyToId?: number | null;
+    replyTo?: ChatReplySnippet | null;
   }> {
     const thread = db
       .prepare('SELECT id FROM support_threads WHERE user_id = ?')
@@ -6933,51 +7040,141 @@ export const dbService = {
     const lim = Math.min(Math.max(1, limit), 200);
     const rows = db
       .prepare(
-        `SELECT id, role, text, created_at FROM support_messages
+        `SELECT id, role, text, created_at, reply_to_id FROM support_messages
          WHERE thread_id = ?
          ORDER BY id DESC
          LIMIT ?`
       )
-      .all(thread.id, lim) as Array<{ id: number; role: string; text: string; created_at: string }>;
+      .all(thread.id, lim) as Array<{
+      id: number;
+      role: string;
+      text: string;
+      created_at: string;
+      reply_to_id: number | null;
+    }>;
     rows.reverse();
-    return rows.map((r) => ({
-      id: r.id,
-      role: r.role === 'assistant' ? 'assistant' : 'user',
-      text: r.text,
-      createdAt: r.created_at,
-    }));
+    const byId = new Map(rows.map((r) => [r.id, r]));
+    // Parents may fall outside the limit window — load missing ones.
+    const missingParentIds = [
+      ...new Set(
+        rows
+          .map((r) => (r.reply_to_id != null ? Number(r.reply_to_id) : 0))
+          .filter((id) => id > 0 && !byId.has(id))
+      ),
+    ];
+    if (missingParentIds.length) {
+      const placeholders = missingParentIds.map(() => '?').join(',');
+      const parents = db
+        .prepare(
+          `SELECT id, role, text, created_at, reply_to_id FROM support_messages
+           WHERE thread_id = ? AND id IN (${placeholders})`
+        )
+        .all(thread.id, ...missingParentIds) as Array<{
+        id: number;
+        role: string;
+        text: string;
+        created_at: string;
+        reply_to_id: number | null;
+      }>;
+      for (const p of parents) byId.set(p.id, p);
+    }
+    return rows.map((r) => {
+      const replyToId =
+        r.reply_to_id != null && Number.isFinite(Number(r.reply_to_id))
+          ? Number(r.reply_to_id)
+          : null;
+      let replyTo: ChatReplySnippet | null = null;
+      if (replyToId) {
+        const parent = byId.get(replyToId);
+        if (parent) {
+          replyTo = {
+            id: parent.id,
+            role: parent.role === 'assistant' ? 'assistant' : 'user',
+            text: truncateChatReplyText(parent.text),
+          };
+        }
+      }
+      return {
+        id: r.id,
+        role: r.role === 'assistant' ? 'assistant' : 'user',
+        text: r.text,
+        createdAt: r.created_at,
+        replyToId,
+        replyTo,
+      };
+    });
   },
 
   addSupportMessage(
     userId: number,
     role: 'user' | 'assistant',
-    text: string
-  ): { id: number; role: 'user' | 'assistant'; text: string; createdAt: string } {
+    text: string,
+    replyToId?: number | null
+  ): {
+    id: number;
+    role: 'user' | 'assistant';
+    text: string;
+    createdAt: string;
+    replyToId?: number | null;
+    replyTo?: ChatReplySnippet | null;
+  } {
     const thread = this.ensureSupportThread(userId);
     const body = text.trim();
     if (!body) throw new Error('EMPTY_TEXT');
     if (body.length > 4000) throw new Error('TEXT_TOO_LONG');
+    let resolvedReply: number | null = null;
+    if (replyToId != null && Number.isFinite(Number(replyToId)) && Number(replyToId) > 0) {
+      const id = Math.trunc(Number(replyToId));
+      const parent = db
+        .prepare(
+          `SELECT id, role, text FROM support_messages WHERE id = ? AND thread_id = ?`
+        )
+        .get(id, thread.id) as { id: number; role: string; text: string } | undefined;
+      if (parent) resolvedReply = id;
+    }
     const result = db
       .prepare(
-        `INSERT INTO support_messages (thread_id, role, text) VALUES (?, ?, ?)`
+        `INSERT INTO support_messages (thread_id, role, text, reply_to_id) VALUES (?, ?, ?, ?)`
       )
-      .run(thread.id, role, body);
+      .run(thread.id, role, body, resolvedReply);
     db.prepare(
       `UPDATE support_threads SET updated_at = datetime('now') WHERE id = ?`
     ).run(thread.id);
     const row = db
-      .prepare('SELECT id, role, text, created_at FROM support_messages WHERE id = ?')
+      .prepare(
+        'SELECT id, role, text, created_at, reply_to_id FROM support_messages WHERE id = ?'
+      )
       .get(result.lastInsertRowid) as {
       id: number;
       role: string;
       text: string;
       created_at: string;
+      reply_to_id: number | null;
     };
+    let replyTo: ChatReplySnippet | null = null;
+    if (resolvedReply) {
+      const parent = db
+        .prepare(
+          `SELECT id, role, text FROM support_messages WHERE id = ? AND thread_id = ?`
+        )
+        .get(resolvedReply, thread.id) as
+        | { id: number; role: string; text: string }
+        | undefined;
+      if (parent) {
+        replyTo = {
+          id: parent.id,
+          role: parent.role === 'assistant' ? 'assistant' : 'user',
+          text: truncateChatReplyText(parent.text),
+        };
+      }
+    }
     return {
       id: row.id,
       role: row.role === 'assistant' ? 'assistant' : 'user',
       text: row.text,
       createdAt: row.created_at,
+      replyToId: resolvedReply,
+      replyTo,
     };
   },
 

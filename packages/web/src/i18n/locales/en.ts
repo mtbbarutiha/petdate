@@ -1097,6 +1097,8 @@ export const en: Dict = {
     typing: 'Typing…',
     messagePh: 'Write your question…',
     messageAria: 'Support message',
+    replyYou: 'You',
+    replyPh: 'Reply…',
     statusOpen: 'Open',
     statusPending: 'Pending',
     statusClosed: 'Closed',

@@ -640,6 +640,17 @@ html[data-theme='dark'] .tg-composer textarea:focus {
   background: #2a2f3d !important;
   box-shadow: 0 0 0 3px rgba(59, 184, 245, 0.16) !important;
 }
+html[data-theme='dark'] .tg-reply-composer {
+  background: color-mix(in srgb, var(--pepito-mint, #15cca0) 14%, var(--tg-surface, #1a1d27));
+  border-color: color-mix(in srgb, var(--pepito-mint, #15cca0) 28%, transparent);
+  color: var(--tg-ink, #f4f3f8);
+}
+html[data-theme='dark'] .tg-reply-quote {
+  background: color-mix(in srgb, #fff 8%, transparent);
+}
+html[data-theme='dark'] .tg-reply-action {
+  color: var(--tg-muted, #a8a6b8);
+}
 html[data-theme='dark'] .tg-attach,
 html[data-theme='dark'] .tg-emoji-btn,
 html[data-theme='dark'] .tg-capture-trigger {

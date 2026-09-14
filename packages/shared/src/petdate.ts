@@ -702,6 +702,17 @@ export type PlaydateChatMediaKind =
   | 'sticker'
   | 'gift';
 
+/** اسنیپت پیام والد برای نمایش ریپلای در حباب / کامپوزر */
+export interface ChatReplySnippet {
+  id: number;
+  /** فرستندهٔ پیام اصلی (همبازی / مشاوره) */
+  senderUserId?: number;
+  /** نقش پیام اصلی در چت پشتیبانی */
+  role?: 'user' | 'assistant';
+  text: string;
+  mediaKind?: PlaydateChatMediaKind | null;
+}
+
 /** پیام چت همبازی (وب ↔ تلگرام) */
 export interface PlaydateChatMessage {
   id: number;
@@ -714,6 +725,10 @@ export interface PlaydateChatMessage {
   storageKey?: string | null;
   mimeType?: string | null;
   fileName?: string | null;
+  /** شناسهٔ پیام والد وقتی این خط ریپلای است */
+  replyToId?: number | null;
+  /** اسنیپت پیام والد (در list/create پر می‌شود) */
+  replyTo?: ChatReplySnippet | null;
   createdAt: string;
 }
 
@@ -811,6 +826,10 @@ export interface VetConsultChatMessage {
   storageKey?: string | null;
   mimeType?: string | null;
   fileName?: string | null;
+  /** شناسهٔ پیام والد وقتی این خط ریپلای است */
+  replyToId?: number | null;
+  /** اسنیپت پیام والد (در list/create پر می‌شود) */
+  replyTo?: ChatReplySnippet | null;
   createdAt: string;
 }
 

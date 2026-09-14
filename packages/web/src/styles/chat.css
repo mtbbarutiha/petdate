@@ -896,6 +896,138 @@
   animation: tgBubbleIn 0.3s cubic-bezier(0.22, 1, 0.36, 1) !important;
 }
 
+/* ── Reply-to quote (Telegram-style) ─────────────────────────────── */
+.tg-reply-quote {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+  width: 100%;
+  margin: 0 0 6px;
+  padding: 0;
+  border: 0;
+  background: color-mix(in srgb, var(--pepito-dark, #19063d) 5%, transparent);
+  border-radius: 10px;
+  text-align: start;
+  cursor: pointer;
+  overflow: hidden;
+  font: inherit;
+  color: inherit;
+}
+.tg-reply-quote:not(button) {
+  cursor: default;
+}
+.tg-reply-quote-bar {
+  flex: 0 0 3px;
+  background: var(--pepito-mint, #15cca0);
+  border-radius: 3px 0 0 3px;
+}
+.tg-bubble-row.is-out .tg-reply-quote-bar {
+  background: color-mix(in srgb, var(--pepito-dark, #19063d) 45%, var(--pepito-mint, #15cca0));
+}
+.tg-reply-quote-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 8px 6px 0;
+  min-width: 0;
+}
+.tg-reply-quote-from {
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--pepito-mint, #0f9f7c);
+}
+.tg-bubble-row.is-out .tg-reply-quote-from {
+  color: color-mix(in srgb, var(--pepito-dark, #19063d) 70%, #0f9f7c);
+}
+.tg-reply-quote-text {
+  font-size: 0.78rem;
+  line-height: 1.35;
+  opacity: 0.82;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+.tg-reply-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-inline-start: auto;
+  padding: 2px 6px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: color-mix(in srgb, var(--pepito-dark, #19063d) 55%, transparent);
+  font-size: 0.68rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.tg-bubble-row.is-out .tg-reply-action {
+  color: color-mix(in srgb, var(--pepito-dark, #19063d) 50%, transparent);
+}
+.tg-reply-action:hover {
+  background: color-mix(in srgb, var(--pepito-dark, #19063d) 6%, transparent);
+  color: var(--pepito-dark, #19063d);
+}
+.tg-bubble-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.tg-reply-composer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 10px 6px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--pepito-mint, #15cca0) 12%, #fff);
+  border: 1px solid color-mix(in srgb, var(--pepito-mint, #15cca0) 22%, transparent);
+  color: var(--pepito-dark, #19063d);
+}
+.tg-reply-composer-ico {
+  flex: 0 0 auto;
+  color: var(--pepito-mint, #0f9f7c);
+}
+.tg-reply-composer-copy {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.tg-reply-composer-copy strong {
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+.tg-reply-composer-copy span {
+  font-size: 0.78rem;
+  opacity: 0.8;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.tg-reply-composer-clear {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.tg-reply-composer-clear:hover {
+  background: color-mix(in srgb, var(--pepito-dark, #19063d) 8%, transparent);
+}
+.tg-bubble-row.is-flash .tg-bubble {
+  outline: 2px solid color-mix(in srgb, var(--pepito-mint, #15cca0) 70%, transparent);
+  outline-offset: 2px;
+}
+
 @keyframes tgBubbleIn {
   from { opacity: 0; transform: translateY(10px) scale(0.97); }
   to { opacity: 1; transform: none; }
