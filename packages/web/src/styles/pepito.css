@@ -5193,6 +5193,40 @@ button.chip.is-on {
 .pepito-profile-pet-mod.is-ok { background: rgba(21, 204, 160, 0.12); color: #0b7a5e; }
 .pepito-profile-verify-actions { display: flex; flex-wrap: wrap; gap: 0.55rem; margin-top: 0.75rem; }
 .pepito-profile-verify-panel .pepito-profile-error { margin-top: 0.65rem; }
+.face-verify-capture { margin-top: 0.85rem; }
+.face-verify-capture-hint,
+.face-verify-capture-need-photo {
+  margin: 0 0 0.65rem;
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: color-mix(in srgb, var(--pepito-ink, #e8eef7) 78%, transparent);
+}
+.face-verify-capture-need-photo { color: #f59e0b; }
+.face-verify-capture .pepito-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.face-verify-capture-ref {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  margin: 0 0 0.75rem;
+  padding: 0.55rem 0.7rem;
+  border-radius: 12px;
+  background: rgba(15, 23, 42, 0.72);
+  color: #e2e8f0;
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+.face-verify-capture-ref img {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  flex-shrink: 0;
+}
 .pepito-profile-bio {
   margin: 0 0 0.85rem;
   font-size: 1.05rem;
@@ -16171,6 +16205,25 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   margin: 0 0 16px;
   font-size: 1.15rem;
 }
+.pepito-games-create-hint {
+  margin: -8px 0 16px;
+  opacity: 0.85;
+  font-size: 0.92rem;
+}
+.pepito-games-photo-hint {
+  display: block;
+  margin-top: 6px;
+  font-size: 0.82rem;
+  opacity: 0.75;
+}
+.pepito-games-photo-preview {
+  display: block;
+  margin-top: 12px;
+  max-width: 220px;
+  max-height: 160px;
+  object-fit: cover;
+  border-radius: 10px;
+}
 .pepito-games-form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -16210,6 +16263,35 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   border-radius: 16px;
   background: var(--surface, #fff);
   border: 1px solid var(--border, #e2e8f0);
+}
+.pepito-games-item-media {
+  flex: 0 0 auto;
+  width: 112px;
+}
+.pepito-games-item-photo,
+.pepito-games-item-photo-ph {
+  width: 112px;
+  height: 112px;
+  border-radius: 12px;
+  object-fit: cover;
+}
+.pepito-games-item-photo-ph {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: color-mix(in srgb, currentColor 8%, transparent);
+  font-size: 0.7rem;
+  text-align: center;
+  padding: 6px;
+  opacity: 0.8;
+  box-sizing: border-box;
+}
+.pepito-games-services {
+  margin: 8px 0 0;
+  font-size: 0.9rem;
+  opacity: 0.9;
 }
 .pepito-games-item-head {
   display: flex;

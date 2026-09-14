@@ -89,6 +89,10 @@ export async function saveUserAvatar(opts: {
 
 export function mimeFromUserAvatarKey(storageKey: string): string {
   const ext = path.extname(storageKey).toLowerCase();
+  // Face-verify clips may live under the same user-avatars tree.
+  if (ext === '.webm') return 'video/webm';
+  if (ext === '.mp4' || ext === '.m4v') return 'video/mp4';
+  if (ext === '.mov') return 'video/quicktime';
   if (ext === '.png') return 'image/png';
   if (ext === '.webp') return 'image/webp';
   if (ext === '.gif') return 'image/gif';

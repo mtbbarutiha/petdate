@@ -75,4 +75,8 @@ assert.doesNotMatch(
 assert.match(botVerification, /replyWithVideoNote/, 'bot admin can show video_note KYC');
 assert.match(botVerification, /replyWithVideo/, 'bot admin can show video KYC');
 
+assert.match(page, /AdminThumb/, 'shows profile photo for face match review');
+assert.match(page, /عکس پروفایل \(برای مقایسه با ویدیو\)/, 'labels profile photo comparison');
+assert.match(page, /فایل احراز ارسالی/, 'labels submitted verify media');
+
 console.log('adminVerificationMedia.selftest: ok');

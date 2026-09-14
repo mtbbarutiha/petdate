@@ -1192,38 +1192,36 @@ export async function uploadUserAvatar(
   };
 }
 
-/** Submit face verification from web (selfie upload or existing avatar URL). */
+/** Submit face verification from web (selfie video upload). Requires profile photo. */
 export async function submitWebFaceVerification(
   token: string,
   opts: { file?: File; photoUrl?: string }
 ): Promise<{ ok: true; user: User }> {
-  if (opts.file) {
-    const form = new FormData();
-    form.append('file', opts.file);
-    let res: Response;
-    try {
-      res = await fetch(`${API_BASE}/api/auth/verification`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: form,
-        redirect: 'manual',
-      });
-    } catch {
-      throw new Error('اتصال به سرور برقرار نشد. مطمئن شو API روشن است.');
-    }
-    if (res.status >= 300 && res.status < 400) {
-      throw new Error('ارسال احراز ناموفق بود. دوباره تلاش کن.');
-    }
-    const body = await res.text();
-    const parsed = parseApiJsonBody<{ ok: true; user: User }>(res.status, body);
-    if (!parsed.ok) throw new Error(parsed.message);
-    return parsed.data;
+  if (!opts.file) {
+    throw new Error(
+      'برای احراز چهره باید ویدیوی سلفی کوتاه بفرستی. اول عکس پروفایل بگذار تا ادمین بتواند چهره‌ات را مقایسه کند.'
+    );
   }
-  return request<{ ok: true; user: User }>('/api/auth/verification', {
-    method: 'POST',
-    headers: { Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ photoUrl: opts.photoUrl }),
-  });
+  const form = new FormData();
+  form.append('file', opts.file);
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}/api/auth/verification`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: form,
+      redirect: 'manual',
+    });
+  } catch {
+    throw new Error('اتصال به سرور برقرار نشد. مطمئن شو API روشن است.');
+  }
+  if (res.status >= 300 && res.status < 400) {
+    throw new Error('ارسال احراز ناموفق بود. دوباره تلاش کن.');
+  }
+  const body = await res.text();
+  const parsed = parseApiJsonBody<{ ok: true; user: User }>(res.status, body);
+  if (!parsed.ok) throw new Error(parsed.message);
+  return parsed.data;
 }
 
 export async function patchWebRoles(token: string, roles: UserRole[], primary?: UserRole) {

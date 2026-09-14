@@ -98,6 +98,7 @@ import {
   profileAvatarUrl,
   resolveProfileDisplayAvatarUrl,
   isNonImageAvatarRef,
+  isStoredCustomProfilePhoto,
   isUserProfilePhotoReplacement,
   type CoinSellChannel,
   type CoinSellRequestAdmin,
@@ -3909,11 +3910,20 @@ export const dbService = {
   submitVerification(
     userId: number,
     photoFileId: string
-  ): { ok: true; user: User } | { ok: false; reason: 'missing' | 'already_verified' | 'no_photo' } {
+  ):
+    | { ok: true; user: User }
+    | {
+        ok: false;
+        reason: 'missing' | 'already_verified' | 'no_photo' | 'no_profile_photo';
+      } {
     const existing = this.getUserById(userId);
     if (!existing) return { ok: false, reason: 'missing' };
     if (existing.verificationStatus === 'verified') {
       return { ok: false, reason: 'already_verified' };
+    }
+    // Admin compares the submitted selfie/video to the profile photo — require one first.
+    if (!isStoredCustomProfilePhoto(existing.avatarUrl)) {
+      return { ok: false, reason: 'no_profile_photo' };
     }
     const photo = photoFileId?.trim();
     if (!photo) return { ok: false, reason: 'no_photo' };

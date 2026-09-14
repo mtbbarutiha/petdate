@@ -8,6 +8,7 @@ import {
   findCoinPackage,
   MIN_SELL_COINS,
   USER_ROLES,
+  isStoredCustomProfilePhoto,
   normalizeRoles,
   sellAmountToman,
   userHasRole,
@@ -30,6 +31,11 @@ import {
   resolveUserAvatarPath,
   saveUserAvatar,
 } from '../services/user-avatar-store';
+import {
+  MAX_FACE_VERIFY_BYTES,
+  isFaceVerifyVideoMime,
+  saveFaceVerifyMedia,
+} from '../services/face-verify-media-store';
 import {
   MAX_PROVIDER_CREDENTIAL_BYTES,
   mimeFromProviderCredentialKey,
@@ -99,6 +105,12 @@ const telegramLoginStatusLimit = rateLimit({
 const avatarUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: MAX_USER_AVATAR_BYTES, files: 1 },
+});
+
+/** Face-verify accepts short selfie videos — larger than still avatars. */
+const faceVerifyUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: MAX_FACE_VERIFY_BYTES, files: 1 },
 });
 
 const credentialUpload = multer({
@@ -909,7 +921,8 @@ authRouter.get('/avatar/:userId/:filename', (req, res) => {
 
 /**
  * Web face verification — any role.
- * Accepts multipart `file` (selfie) or JSON `{ photoUrl }` (e.g. current avatar).
+ * Accepts multipart `file` (short selfie **video** preferred; still image also accepted).
+ * Requires a custom profile photo so admin can match face ↔ video.
  * Admin approve later grants FACE_VERIFY_REWARD (100) coins once.
  */
 authRouter.post('/verification', (req, res) => {
@@ -922,7 +935,42 @@ authRouter.post('/verification', (req, res) => {
   const contentType = String(req.header('content-type') || '').toLowerCase();
   const isMultipart = contentType.includes('multipart/form-data');
 
-  const finish = (photoRef: string) => {
+  const verificationError = (
+    reason: 'missing' | 'already_verified' | 'no_photo' | 'no_profile_photo' | string
+  ): string => {
+    if (reason === 'already_verified') return 'قبلاً احراز شده‌ای';
+    if (reason === 'no_photo') return 'ویدیو یا سلفی احراز لازم است';
+    if (reason === 'no_profile_photo') {
+      return 'اول یک عکس پروفایل واضح از چهره‌ات بگذار؛ ویدیو باید با همان عکس یکی باشد';
+    }
+    if (reason === 'missing') return 'کاربر پیدا نشد';
+    return 'ارسال احراز ناموفق بود';
+  };
+
+  const finish = (photoRef: string, opts?: { requireVideo?: boolean; mime?: string; name?: string }) => {
+    if (opts?.requireVideo) {
+      const isVideo = isFaceVerifyVideoMime(opts.mime, opts.name);
+      if (!isVideo) {
+        res.status(400).json({
+          ok: false,
+          reason: 'video_required',
+          error: 'برای احراز چهره باید ویدیوی سلفی کوتاه بفرستی (نه فقط عکس)',
+        });
+        return;
+      }
+    }
+    if (!isStoredCustomProfilePhoto(session.user.avatarUrl)) {
+      // Fresh read — session may be stale after avatar upload in another tab.
+      const fresh = dbService.getUserById(session.user.id);
+      if (!fresh || !isStoredCustomProfilePhoto(fresh.avatarUrl)) {
+        res.status(400).json({
+          ok: false,
+          reason: 'no_profile_photo',
+          error: verificationError('no_profile_photo'),
+        });
+        return;
+      }
+    }
     const result = dbService.submitVerification(session.user.id, photoRef);
     if (!result.ok) {
       const status =
@@ -934,12 +982,7 @@ authRouter.post('/verification', (req, res) => {
       res.status(status).json({
         ok: false,
         reason: result.reason,
-        error:
-          result.reason === 'already_verified'
-            ? 'قبلاً احراز شده‌ای'
-            : result.reason === 'no_photo'
-              ? 'عکس احراز لازم است'
-              : 'کاربر پیدا نشد',
+        error: verificationError(result.reason),
       });
       return;
     }
@@ -947,63 +990,62 @@ authRouter.post('/verification', (req, res) => {
   };
 
   if (!isMultipart) {
-    const photoUrl = String(
-      (req.body as { photoUrl?: string; photoFileId?: string })?.photoUrl ??
-        (req.body as { photoFileId?: string })?.photoFileId ??
-        session.user.avatarUrl ??
-        ''
-    ).trim();
-    finish(photoUrl);
+    // Web face-verify requires a recorded selfie video — no JSON photoUrl shortcut.
+    res.status(400).json({
+      ok: false,
+      reason: 'video_required',
+      error:
+        'برای احراز چهره باید ویدیوی سلفی کوتاه با دوربین ضبط و ارسال کنی. اول عکس پروفایل بگذار تا ادمین بتواند چهره‌ات را با ویدیو مقایسه کند.',
+    });
     return;
   }
 
-  avatarUpload.single('file')(req, res, (uploadErr) => {
+  faceVerifyUpload.single('file')(req, res, (uploadErr) => {
     void (async () => {
       if (uploadErr) {
         const tooLarge =
           uploadErr instanceof multer.MulterError && uploadErr.code === 'LIMIT_FILE_SIZE';
         res.status(tooLarge ? 413 : 400).json({
           error: tooLarge
-            ? 'حجم عکس بیش از حد مجاز است (حداکثر ۸ مگابایت)'
-            : 'آپلود عکس احراز ناموفق بود',
+            ? 'حجم فایل بیش از حد مجاز است (حداکثر ۱۵ مگابایت)'
+            : 'آپلود ویدیو/سلفی احراز ناموفق بود',
         });
         return;
       }
       const file = req.file;
       if (!file?.buffer?.length) {
-        const photoUrl = String((req.body as { photoUrl?: string })?.photoUrl ?? '').trim();
-        if (photoUrl) {
-          finish(photoUrl);
-          return;
-        }
-        res.status(400).json({ error: 'فایل سلفی الزامی است' });
+        res.status(400).json({ error: 'فایل ویدیو سلفی الزامی است' });
         return;
       }
       try {
-        const saved = await saveUserAvatar({
+        const saved = await saveFaceVerifyMedia({
           userId: session.user.id,
-          originalName: file.originalname || 'verify.jpg',
+          originalName: file.originalname || 'verify.webm',
           mimeType: file.mimetype,
           buffer: file.buffer,
         });
-        finish(saved.urlPath);
+        finish(saved.urlPath, {
+          requireVideo: true,
+          mime: saved.mimeType,
+          name: saved.storageKey,
+        });
       } catch (err) {
         const code = err instanceof Error ? err.message : '';
         if (code === 'FILE_TOO_LARGE') {
-          res.status(413).json({ error: 'حجم عکس بیش از حد مجاز است (حداکثر ۸ مگابایت)' });
+          res.status(413).json({ error: 'حجم فایل بیش از حد مجاز است (حداکثر ۱۵ مگابایت)' });
           return;
         }
         if (code === 'INVALID_MIME' || code === 'INVALID_IMAGE') {
           res.status(400).json({
             error:
               code === 'INVALID_IMAGE'
-                ? 'فایل عکس قابل پردازش نیست. یک سلفی دیگر انتخاب کن'
-                : 'فقط عکس مجاز است (JPG، PNG، WebP، HEIC، GIF)',
+                ? 'فایل قابل پردازش نیست. یک ویدیوی سلفی دیگر ضبط کن'
+                : 'فقط ویدیو یا عکس مجاز است (MP4، WebM، MOV، JPG، PNG، WebP)',
           });
           return;
         }
         console.warn('web face verification upload failed:', (err as Error).message);
-        res.status(500).json({ error: 'ذخیره عکس احراز ناموفق بود' });
+        res.status(500).json({ error: 'ذخیره فایل احراز ناموفق بود' });
       }
     })();
   });
