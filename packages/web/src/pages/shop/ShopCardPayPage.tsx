@@ -137,6 +137,8 @@ export function ShopCardPayPage() {
 
   const paid = Boolean(status?.paid);
   const awaitingReceipt = status?.status === 'awaiting_receipt';
+  const hasWebReceipt = Boolean(status?.receiptUrl) || status?.status === 'pending';
+  const showBotReceiptCta = Boolean(awaitingReceipt && !hasWebReceipt && status?.botDeepLink);
   const cardDisplay = status?.cardGrouped || groupCard(status?.cardNumber || '');
   const receiptIsPdf = Boolean(status?.receiptUrl && /\.pdf(\?|$)/i.test(status.receiptUrl));
 
@@ -211,9 +213,12 @@ export function ShopCardPayPage() {
               ) : (
                 <p className="pd-shop-soon" style={{ marginTop: 12 }}>رسید در صف بررسی ادمین است.</p>
               )}
-              <a className="pepito-btn button-2" href={status.botDeepLink} target="_blank" rel="noopener noreferrer" style={{ marginTop: 12, display: 'inline-block' }}>
-                ارسال فیش از ربات (اختیاری)
-              </a>
+              {/* Bot CTA only as an alternative when no web receipt yet */}
+              {showBotReceiptCta ? (
+                <a className="pepito-btn button-2" href={status.botDeepLink} target="_blank" rel="noopener noreferrer" style={{ marginTop: 12, display: 'inline-block' }}>
+                  ارسال فیش از ربات (اختیاری)
+                </a>
+              ) : null}
             </>
           ) : (<p>در حال بارگذاری…</p>)}
         </div>

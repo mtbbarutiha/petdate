@@ -59,6 +59,11 @@ assert.match(
 assert.match(shopCardPay, /pd-shop-card-deposit-title/, 'card-pay deposit title uses shared class');
 assert.match(shopCardPay, /pd-shop-card-deposit-number/, 'card-pay deposit number uses shared class');
 assert.match(shopCardPay, /pd-shop-card-deposit-holder/, 'card-pay deposit holder uses shared class');
+assert.match(
+  shopCardPay,
+  /showBotReceiptCta/,
+  'shop card pay hides Telegram bot receipt CTA after web receipt upload',
+);
 
 const chrome = read(join(webRoot, 'components/LandingChrome.tsx'));
 assert.match(chrome, /PlatformBanners/, 'landing shows platform banners');
