@@ -63,7 +63,8 @@ import {
   notifyVetMessage,
   notifyVetThread,
 } from '../ws/chatHub';
-import type { VetConsultChatMediaKind } from '@petdate/shared';
+import type { ChatReplySnippet, VetConsultChatMediaKind } from '@petdate/shared';
+import { withTelegramReplyPrefix } from '@petdate/shared';
 
 const VALID_STATUSES: VetConsultStatus[] = [
   'requested',
@@ -116,6 +117,7 @@ function fanOutVetChatTelegram(opts: {
   storageKey?: string | null;
   mimeType?: string | null;
   fileName?: string | null;
+  replyTo?: ChatReplySnippet | null;
 }): void {
   const { consult, senderUserId } = opts;
   const peerUserId =
@@ -129,7 +131,7 @@ function fanOutVetChatTelegram(opts: {
   void notifyVetChatTelegram({
     toTelegramId: peerTg,
     peerRole,
-    text: opts.text,
+    text: withTelegramReplyPrefix(opts.text, opts.replyTo),
     protectContent: Boolean(consult.chatSecure),
     serviceKind: consult.serviceKind ?? 'vet',
     mediaKind: (opts.mediaKind ?? null) as VetConsultChatMediaKind | null,
@@ -888,6 +890,11 @@ consultationsRouter.post('/:id/messages', async (req, res) => {
     typeof req.body?.storageKey === 'string' ? req.body.storageKey : undefined;
   /** When true, skip Telegram fan-out (bot already delivered the line). */
   const skipTelegram = Boolean(req.body?.skipTelegram);
+  const replyToIdRaw = req.body?.replyToId ?? req.body?.reply_to_id;
+  const replyToId =
+    replyToIdRaw != null && Number.isFinite(Number(replyToIdRaw))
+      ? Number(replyToIdRaw)
+      : undefined;
 
   if (!senderUserId || !Number.isFinite(senderUserId)) {
     res.status(401).json({ error: 'ورود لازم است' });
@@ -926,6 +933,7 @@ consultationsRouter.post('/:id/messages', async (req, res) => {
       mimeType,
       fileName,
       storageKey,
+      replyToId,
     });
 
     // WS first — web dual-online peers must not wait on Telegram latency/failures.
@@ -939,6 +947,7 @@ consultationsRouter.post('/:id/messages', async (req, res) => {
         storageKey: message.storageKey,
         mimeType: message.mimeType,
         fileName: message.fileName,
+        replyTo: message.replyTo,
       });
     }
     // AI provider auto-reply for patient messages (text, photo, or voice/audio → STT).
@@ -1006,6 +1015,10 @@ consultationsRouter.post('/:id/messages/upload', (req, res) => {
         : typeof (req.body as { text?: string })?.text === 'string'
           ? (req.body as { text: string }).text
           : '';
+    const replyToRaw = (req.body as { replyToId?: string; reply_to_id?: string })?.replyToId
+      ?? (req.body as { reply_to_id?: string })?.reply_to_id;
+    const replyToId =
+      replyToRaw != null && Number.isFinite(Number(replyToRaw)) ? Number(replyToRaw) : undefined;
     const file = req.file;
 
     if (!senderUserId || !Number.isFinite(senderUserId)) {
@@ -1062,6 +1075,7 @@ consultationsRouter.post('/:id/messages/upload', (req, res) => {
         storageKey: saved.storageKey,
         mimeType,
         fileName: originalName,
+        replyToId,
       });
 
       // WS first — web dual-online peers must not wait on Telegram latency/failures.
@@ -1074,6 +1088,7 @@ consultationsRouter.post('/:id/messages/upload', (req, res) => {
         storageKey: message.storageKey,
         mimeType: message.mimeType,
         fileName: message.fileName,
+        replyTo: message.replyTo,
       });
       // AI provider: voice → STT; photo (even without caption) → vision/triage reply.
       if (

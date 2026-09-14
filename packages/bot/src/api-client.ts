@@ -646,12 +646,14 @@ export async function postPlaydateChatMessage(
     telegramFileId: string;
     mimeType?: string;
     fileName?: string;
-  }
+  },
+  opts?: { replyToId?: number | null }
 ): Promise<void> {
   const body = JSON.stringify({
     senderUserId,
     text,
     skipTelegram: true,
+    ...(opts?.replyToId != null ? { replyToId: opts.replyToId } : {}),
     ...(media
       ? {
           mediaKind: media.mediaKind,
@@ -1457,12 +1459,14 @@ export async function postVetConsultChatMessage(
     telegramFileId: string;
     mimeType?: string;
     fileName?: string;
-  }
+  },
+  opts?: { replyToId?: number | null }
 ): Promise<void> {
   const body = JSON.stringify({
     senderUserId,
     text,
     skipTelegram: true,
+    ...(opts?.replyToId != null ? { replyToId: opts.replyToId } : {}),
     ...(media
       ? {
           mediaKind: media.mediaKind,

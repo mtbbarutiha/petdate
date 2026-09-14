@@ -34,6 +34,12 @@ import {
 import { SiteLogo } from '../components/SiteLogo';
 import { ChatMediaCaptureProvider, ChatMediaCaptureTriggers } from '../components/ChatMediaCapture';
 import { ChatVoicePlayer } from '../components/ChatVoicePlayer';
+import {
+  ChatReplyActionButton,
+  ChatReplyComposerBar,
+  ChatReplyQuote,
+  type ChatReplyTarget,
+} from '../components/ChatReply';
 import { ChatGiftBubble, PlaymateChatToolbar, PlaymateGiftSheet } from '../components/PlaymateGift';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { EmojiPicker } from '../components/EmojiPicker';
@@ -77,8 +83,16 @@ import {
   resolvePublicAvatarUrl,
   resolvePublicMediaUrl,
 } from '../lib/api';
-import type { PlaydateChatMediaKind, PlaydateChatMessage } from '@petdate/shared';
-import { PLAYDATE_REQUEST_TTL_MS, USER_GENDER_LABELS, isPendingRequestExpired, makeUserPublicId, petPublicIdOf, userPublicIdOf } from '@petdate/shared';
+import type { ChatReplySnippet, PlaydateChatMediaKind, PlaydateChatMessage } from '@petdate/shared';
+import {
+  PLAYDATE_REQUEST_TTL_MS,
+  USER_GENDER_LABELS,
+  chatReplySnippetBody,
+  isPendingRequestExpired,
+  makeUserPublicId,
+  petPublicIdOf,
+  userPublicIdOf,
+} from '@petdate/shared';
 import { playdateToMatchRequest, shouldShowOutgoingRejectToRequester } from '../lib/playdateMap';
 import { subscribeIncomingRefresh } from '../lib/liveIncoming';
 import {
@@ -131,6 +145,8 @@ type ChatMsg = {
   storageKey?: string | null;
   mimeType?: string | null;
   fileName?: string | null;
+  replyToId?: number | null;
+  replyTo?: ChatReplySnippet | null;
 };
 
 type InfoCard = 'none' | 'owner' | 'pet';
@@ -148,6 +164,8 @@ function toUiMessage(row: PlaydateChatMessage, myUserId: number): ChatMsg {
     storageKey: row.storageKey,
     mimeType: row.mimeType,
     fileName: row.fileName,
+    replyToId: row.replyToId ?? null,
+    replyTo: row.replyTo ?? null,
   };
 }
 
@@ -615,6 +633,7 @@ export function ChatPage() {
   const [secure, setSecure] = useState(false);
   const [contactAdded, setContactAdded] = useState(false);
   const [draft, setDraft] = useState('');
+  const [replyTo, setReplyTo] = useState<ChatReplyTarget | null>(null);
   const [ended, setEnded] = useState(false);
   const [wiped, setWiped] = useState(false);
   /** After secure chat ends, keep wipe CTA visible (don't force-exit to inbox). */
@@ -941,6 +960,7 @@ export function ChatPage() {
     lastMsgIdRef.current = 0;
     setContactAdded(false);
     setDraft('');
+    setReplyTo(null);
     setSendError(null);
     setActionError(null);
     setWiped(false);
@@ -1487,23 +1507,31 @@ export function ChatPage() {
       setSendError('حجم فایل بیش از حد مجاز است (حداکثر ۱۵ مگابایت)');
       return;
     }
+    const replyId = replyTo?.id ?? null;
+    const replySnapshot = replyTo;
     setSending(true);
     setSendError(null);
     setEmojiOpen(false);
     setDraft('');
+    setReplyTo(null);
     clearPendingFile();
     stickToBottomRef.current = true;
     smoothScrollRef.current = true;
     try {
       const saved = file
-        ? await uploadPlaydateChatFile(match.id, myUserId, file, text)
-        : await postPlaydateChatMessage(match.id, myUserId, text);
+        ? await uploadPlaydateChatFile(match.id, myUserId, file, text, {
+            replyToId: replyId,
+          })
+        : await postPlaydateChatMessage(match.id, myUserId, text, {
+            replyToId: replyId,
+          });
       const ui = toUiMessage(saved, myUserId);
       setMessages((prev) => (prev.some((m) => m.id === ui.id) ? prev : [...prev, ui]));
       lastMsgIdRef.current = Math.max(lastMsgIdRef.current, saved.id);
     } catch (err) {
       if (text) setDraft(text);
       if (file) setPendingFile(file);
+      if (replySnapshot) setReplyTo(replySnapshot);
       setSendError(err instanceof Error ? err.message : 'ارسال پیام ناموفق بود');
     } finally {
       setSending(false);
@@ -1518,19 +1546,42 @@ export function ChatPage() {
     if (file.size > MAX_CHAT_ATTACH_BYTES) {
       throw new Error('حجم فایل بیش از حد مجاز است (حداکثر ۱۵ مگابایت)');
     }
+    const replyId = replyTo?.id ?? null;
     setSending(true);
     setSendError(null);
     setEmojiOpen(false);
+    setReplyTo(null);
     stickToBottomRef.current = true;
     smoothScrollRef.current = true;
     try {
-      const saved = await uploadPlaydateChatFile(match.id, myUserId, file, '');
+      const saved = await uploadPlaydateChatFile(match.id, myUserId, file, '', {
+        replyToId: replyId,
+      });
       const ui = toUiMessage(saved, myUserId);
       setMessages((prev) => (prev.some((m) => m.id === ui.id) ? prev : [...prev, ui]));
       lastMsgIdRef.current = Math.max(lastMsgIdRef.current, saved.id);
     } finally {
       setSending(false);
     }
+  }
+
+  function beginReplyTo(msg: ChatMsg) {
+    if (msg.from === 'system' || !msg.numericId) return;
+    setReplyTo({
+      id: msg.numericId,
+      fromLabel: msg.from === 'me' ? 'خودت' : peerOwnerName || 'طرف مقابل',
+      text: msg.text || chatReplySnippetBody({ text: '', mediaKind: msg.mediaKind }),
+      mediaKind: msg.mediaKind,
+    });
+    inputRef.current?.focus({ preventScroll: true });
+  }
+
+  function scrollToMessage(id: number) {
+    const el = document.getElementById(`tg-msg-${id}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.classList.add('is-flash');
+    window.setTimeout(() => el.classList.remove('is-flash'), 1200);
   }
 
   function onComposerKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
@@ -2317,6 +2368,7 @@ export function ChatPage() {
                     return (
                       <div
                         key={msg.id}
+                        id={msg.numericId ? `tg-msg-${msg.numericId}` : undefined}
                         className={`tg-bubble-row${msg.from === 'me' ? ' is-out' : ' is-in'}`}
                       >
                         <div
@@ -2324,12 +2376,27 @@ export function ChatPage() {
                             msg.mediaKind ? ' has-media' : ''
                           }`}
                         >
+                          {msg.replyTo ? (
+                            <ChatReplyQuote
+                              fromLabel={
+                                msg.replyTo.senderUserId === myUserId
+                                  ? 'خودت'
+                                  : peerOwnerName || 'طرف مقابل'
+                              }
+                              text={msg.replyTo.text}
+                              mediaKind={msg.replyTo.mediaKind}
+                              onClick={() => scrollToMessage(msg.replyTo!.id)}
+                            />
+                          ) : null}
                           {renderMedia(msg)}
                           {showText ? <p className="tg-bubble-text">{msg.text}</p> : null}
                           {msg.mediaKind && !showText ? (
                             <span className="tg-media-caption">{mediaLabel(msg.mediaKind)}</span>
                           ) : null}
                           <footer className="tg-bubble-meta">
+                            {!ended && match?.status === 'accepted' ? (
+                              <ChatReplyActionButton onClick={() => beginReplyTo(msg)} />
+                            ) : null}
                             <time>{formatClock(msg.at)}</time>
                             {msg.from === 'me' ? (
                               <CheckCheck size={14} className="tg-ticks" aria-hidden />
@@ -2515,6 +2582,12 @@ export function ChatPage() {
                         <X size={16} />
                       </button>
                     </div>
+                  ) : null}
+                  {replyTo ? (
+                    <ChatReplyComposerBar
+                      target={replyTo}
+                      onCancel={() => setReplyTo(null)}
+                    />
                   ) : null}
                   {/*
                     Telegram-style composer: LTR chrome so Send stays on the physical RIGHT.

@@ -71,6 +71,7 @@ npx tsx "$ROOT/packages/shared/src/sanitize-roles.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/catalog-breed-search.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/help.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/auto-messages.selftest.ts"
+npx tsx "$ROOT/packages/shared/src/chat-reply.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/payment-card.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/admin-password.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/team-agents.selftest.ts"
@@ -241,6 +242,9 @@ npx tsx "$ROOT/packages/web/src/components/silentChatConfirm.selftest.ts"
 
 echo "==> selftest: web chat inbox dismiss ConfirmModal + same-row trash"
 npx tsx "$ROOT/packages/web/src/components/chatDismissConfirm.selftest.ts"
+
+echo "==> selftest: web chat reply-to (playmate + vet + support)"
+npx tsx "$ROOT/packages/web/src/components/chatReply.selftest.ts"
 
 echo "==> selftest: web find-playmate empty mobile layout"
 npx tsx "$ROOT/packages/web/src/components/playmateEmptyMobile.selftest.ts"

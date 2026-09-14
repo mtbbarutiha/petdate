@@ -562,11 +562,16 @@ export async function listPlaydateChatMessages(
 export async function postPlaydateChatMessage(
   playdateId: number,
   senderUserId: number,
-  text: string
+  text: string,
+  opts?: { replyToId?: number | null }
 ): Promise<PlaydateChatMessage> {
   return request(`/api/playdate-requests/${playdateId}/messages`, {
     method: 'POST',
-    body: JSON.stringify({ senderUserId, text }),
+    body: JSON.stringify({
+      senderUserId,
+      text,
+      ...(opts?.replyToId != null ? { replyToId: opts.replyToId } : {}),
+    }),
   });
 }
 
@@ -575,12 +580,14 @@ export async function uploadPlaydateChatFile(
   playdateId: number,
   senderUserId: number,
   file: File,
-  caption = ''
+  caption = '',
+  opts?: { replyToId?: number | null }
 ): Promise<PlaydateChatMessage> {
   const form = new FormData();
   form.append('file', file);
   form.append('senderUserId', String(senderUserId));
   if (caption.trim()) form.append('caption', caption.trim());
+  if (opts?.replyToId != null) form.append('replyToId', String(opts.replyToId));
 
   let res: Response;
   try {
@@ -1427,12 +1434,16 @@ export async function listVetConsultChatMessages(
 export async function postVetConsultChatMessage(
   consultId: number,
   text: string,
-  token?: string | null
+  token?: string | null,
+  opts?: { replyToId?: number | null }
 ): Promise<VetConsultChatMessage> {
   return request<VetConsultChatMessage>(`/api/consultations/${consultId}/messages`, {
     method: 'POST',
     headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-    body: JSON.stringify({ text }),
+    body: JSON.stringify({
+      text,
+      ...(opts?.replyToId != null ? { replyToId: opts.replyToId } : {}),
+    }),
   });
 }
 
@@ -1442,12 +1453,14 @@ export async function uploadVetConsultChatFile(
   senderUserId: number,
   file: File,
   caption = '',
-  token?: string | null
+  token?: string | null,
+  opts?: { replyToId?: number | null }
 ): Promise<VetConsultChatMessage> {
   const form = new FormData();
   form.append('file', file);
   form.append('senderUserId', String(senderUserId));
   if (caption.trim()) form.append('caption', caption.trim());
+  if (opts?.replyToId != null) form.append('replyToId', String(opts.replyToId));
 
   let res: Response;
   try {
@@ -2162,6 +2175,13 @@ export type SupportChatMessage = {
   role: 'user' | 'assistant';
   text: string;
   createdAt: string;
+  replyToId?: number | null;
+  replyTo?: {
+    id: number;
+    role?: 'user' | 'assistant';
+    text: string;
+    mediaKind?: string | null;
+  } | null;
 };
 
 export async function fetchSupportMessages(
@@ -2174,7 +2194,8 @@ export async function fetchSupportMessages(
 
 export async function sendSupportMessage(
   token: string,
-  text: string
+  text: string,
+  opts?: { replyToId?: number | null }
 ): Promise<{
   ok: true;
   messages: SupportChatMessage[];
@@ -2185,7 +2206,10 @@ export async function sendSupportMessage(
   return request('/api/support/messages', {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
-    body: JSON.stringify({ text }),
+    body: JSON.stringify({
+      text,
+      ...(opts?.replyToId != null ? { replyToId: opts.replyToId } : {}),
+    }),
   });
 }
 

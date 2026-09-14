@@ -6417,6 +6417,25 @@ a.tg-chat-playmate-cta.pepito-btn {
   opacity: 0.75;
   font-style: italic;
 }
+.pepito-support-bubble-meta {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+.pepito-support-bubble.is-user .tg-reply-quote {
+  background: rgba(255, 255, 255, 0.14);
+}
+.pepito-support-bubble.is-user .tg-reply-quote-from,
+.pepito-support-bubble.is-user .tg-reply-action {
+  color: rgba(255, 255, 255, 0.92);
+}
+.pepito-support-bubble.is-flash {
+  outline: 2px solid color-mix(in srgb, #15cca0 70%, transparent);
+  outline-offset: 2px;
+}
+.pepito-support-chat .tg-reply-composer {
+  margin: 0 0 8px;
+}
 .pepito-support-composer {
   position: sticky;
   bottom: 72px;

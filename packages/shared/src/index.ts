@@ -17,6 +17,7 @@ export * from './fanout-reject';
 export * from './help';
 export * from './payment-card';
 export * from './admin-password';
+export * from './chat-reply';
 
 import type {
   OnboardingStatus,
@@ -139,6 +140,7 @@ export type {
   PetMedicalField,
   PetMedicalRecord,
   PetSize,
+  ChatReplySnippet,
   PlaydateChatMessage,
   PlaydateChatMediaKind,
   PlaymateMatchScore,

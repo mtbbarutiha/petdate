@@ -65,8 +65,14 @@ async function replySupportTurn(opts: {
   userName?: string;
   text: string;
   phone?: string | null;
+  replyToId?: number | null;
 }) {
-  const userMsg = dbService.addSupportMessage(opts.userId, 'user', opts.text);
+  const userMsg = dbService.addSupportMessage(
+    opts.userId,
+    'user',
+    opts.text,
+    opts.replyToId
+  );
   const history = dbService.listSupportMessages(opts.userId, 20).map((m) => ({
     role: m.role,
     content: m.text,
@@ -219,6 +225,11 @@ supportRouter.post('/messages', async (req, res) => {
     res.status(400).json({ error: 'پیام خیلی طولانی است' });
     return;
   }
+  const replyToIdRaw = req.body?.replyToId ?? req.body?.reply_to_id;
+  const replyToId =
+    replyToIdRaw != null && Number.isFinite(Number(replyToIdRaw))
+      ? Number(replyToIdRaw)
+      : undefined;
 
   try {
     const { userMsg, assistantMsg, generated } = await replySupportTurn({
@@ -226,6 +237,7 @@ supportRouter.post('/messages', async (req, res) => {
       userName: user.name,
       phone: user.phone,
       text,
+      replyToId,
     });
     res.status(201).json({
       ok: true,
@@ -383,12 +395,18 @@ supportRouter.post('/telegram/:telegramId/messages', async (req, res) => {
     res.status(400).json({ error: 'متن پیام الزامی است' });
     return;
   }
+  const replyToIdRaw = req.body?.replyToId ?? req.body?.reply_to_id;
+  const replyToId =
+    replyToIdRaw != null && Number.isFinite(Number(replyToIdRaw))
+      ? Number(replyToIdRaw)
+      : undefined;
   try {
     const { assistantMsg } = await replySupportTurn({
       userId: user.id,
       userName: user.name,
       phone: user.phone,
       text,
+      replyToId,
     });
     res.status(201).json({
       ok: true,

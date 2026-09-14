@@ -32,10 +32,12 @@ import {
 } from 'lucide-react';
 import {
   VET_CONSULT_REQUEST_TTL_MS,
+  chatReplySnippetBody,
   getTeamAgentByName,
   isPendingRequestExpired,
   userHasRole,
   userPublicIdOf,
+  type ChatReplySnippet,
   type VetConsultChatMediaKind,
   type VetConsultChatMessage,
   type VetConsultation,
@@ -48,6 +50,12 @@ import { PresenceBadge } from '../components/PresenceBadge';
 import { PublicIdBadge } from '../components/PublicIdBadge';
 import { ChatMediaCaptureProvider, ChatMediaCaptureTriggers } from '../components/ChatMediaCapture';
 import { ChatVoicePlayer } from '../components/ChatVoicePlayer';
+import {
+  ChatReplyActionButton,
+  ChatReplyComposerBar,
+  ChatReplyQuote,
+  type ChatReplyTarget,
+} from '../components/ChatReply';
 import { EmojiPicker } from '../components/EmojiPicker';
 import {
   CHAT_FILE_ACCEPT,
@@ -174,6 +182,8 @@ type UiMsg = {
   storageKey?: string | null;
   mimeType?: string | null;
   fileName?: string | null;
+  replyToId?: number | null;
+  replyTo?: ChatReplySnippet | null;
 };
 
 function toUi(row: VetConsultChatMessage, myId: number): UiMsg {
@@ -189,6 +199,8 @@ function toUi(row: VetConsultChatMessage, myId: number): UiMsg {
     storageKey: row.storageKey,
     mimeType: row.mimeType,
     fileName: row.fileName,
+    replyToId: row.replyToId ?? null,
+    replyTo: row.replyTo ?? null,
   };
 }
 
@@ -258,6 +270,7 @@ export function VetChatPage() {
   consultRef.current = consult;
   const [messages, setMessages] = useState<UiMsg[]>([]);
   const [draft, setDraft] = useState('');
+  const [replyTo, setReplyTo] = useState<ChatReplyTarget | null>(null);
   const lastTypingPingRef = useRef(0);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -983,18 +996,25 @@ export function VetChatPage() {
       setSendError('حجم فایل بیش از حد مجاز است (حداکثر ۱۵ مگابایت)');
       return;
     }
+    const replyId = replyTo?.id ?? null;
+    const replySnapshot = replyTo;
     setSending(true);
     setSendError(null);
     setError(null);
     setEmojiOpen(false);
     setDraft('');
+    setReplyTo(null);
     clearPendingFile();
     stickToBottomRef.current = true;
     smoothScrollRef.current = true;
     try {
       const saved = file
-        ? await uploadVetConsultChatFile(consult.id, user.id, file, text, token)
-        : await postVetConsultChatMessage(consult.id, text, token);
+        ? await uploadVetConsultChatFile(consult.id, user.id, file, text, token, {
+            replyToId: replyId,
+          })
+        : await postVetConsultChatMessage(consult.id, text, token, {
+            replyToId: replyId,
+          });
       const ui = toUi(saved, user.id);
       setMessages((prev) => (prev.some((m) => m.id === ui.id) ? prev : [...prev, ui]));
       lastIdRef.current = Math.max(lastIdRef.current, saved.id);
@@ -1002,6 +1022,7 @@ export function VetChatPage() {
     } catch (err) {
       if (text) setDraft(text);
       if (file) setPendingFile(file);
+      if (replySnapshot) setReplyTo(replySnapshot);
       setSendError(err instanceof Error ? err.message : 'ارسال پیام ناموفق بود');
     } finally {
       setSending(false);
@@ -1016,14 +1037,18 @@ export function VetChatPage() {
     if (file.size > MAX_CHAT_ATTACH_BYTES) {
       throw new Error('حجم فایل بیش از حد مجاز است (حداکثر ۱۵ مگابایت)');
     }
+    const replyId = replyTo?.id ?? null;
     setSending(true);
     setSendError(null);
     setError(null);
     setEmojiOpen(false);
+    setReplyTo(null);
     stickToBottomRef.current = true;
     smoothScrollRef.current = true;
     try {
-      const saved = await uploadVetConsultChatFile(consult.id, user.id, file, '', token);
+      const saved = await uploadVetConsultChatFile(consult.id, user.id, file, '', token, {
+        replyToId: replyId,
+      });
       const ui = toUi(saved, user.id);
       setMessages((prev) => (prev.some((m) => m.id === ui.id) ? prev : [...prev, ui]));
       lastIdRef.current = Math.max(lastIdRef.current, saved.id);
@@ -1031,6 +1056,25 @@ export function VetChatPage() {
     } finally {
       setSending(false);
     }
+  }
+
+  function beginReplyTo(msg: UiMsg) {
+    if (msg.from === 'system' || !msg.numericId) return;
+    setReplyTo({
+      id: msg.numericId,
+      fromLabel: msg.from === 'me' ? 'خودت' : peerName || 'طرف مقابل',
+      text: msg.text || chatReplySnippetBody({ text: '', mediaKind: msg.mediaKind }),
+      mediaKind: msg.mediaKind,
+    });
+    inputRef.current?.focus({ preventScroll: true });
+  }
+
+  function scrollToMessage(id: number) {
+    const el = document.getElementById(`tg-msg-${id}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.classList.add('is-flash');
+    window.setTimeout(() => el.classList.remove('is-flash'), 1200);
   }
 
   function onComposerKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
@@ -1972,6 +2016,7 @@ export function VetChatPage() {
                     return (
                       <div
                         key={m.id}
+                        id={m.numericId ? `tg-msg-${m.numericId}` : undefined}
                         className={`tg-bubble-row${m.from === 'me' ? ' is-out' : ' is-in'}`}
                       >
                         <div
@@ -1979,12 +2024,27 @@ export function VetChatPage() {
                             m.mediaKind ? ' has-media' : ''
                           }`}
                         >
+                          {m.replyTo ? (
+                            <ChatReplyQuote
+                              fromLabel={
+                                m.replyTo.senderUserId === user?.id
+                                  ? 'خودت'
+                                  : peerName || 'طرف مقابل'
+                              }
+                              text={m.replyTo.text}
+                              mediaKind={m.replyTo.mediaKind}
+                              onClick={() => scrollToMessage(m.replyTo!.id)}
+                            />
+                          ) : null}
                           {renderMedia(m)}
                           {showText ? <p className="tg-bubble-text">{m.text}</p> : null}
                           {m.mediaKind && !showText ? (
                             <span className="tg-media-caption">{mediaLabel(m.mediaKind)}</span>
                           ) : null}
                           <footer className="tg-bubble-meta">
+                            {!ended && consult?.status === 'active' ? (
+                              <ChatReplyActionButton onClick={() => beginReplyTo(m)} />
+                            ) : null}
                             <time>{formatClock(m.at)}</time>
                             {m.from === 'me' ? (
                               <CheckCheck size={14} className="tg-ticks" aria-hidden />
@@ -2088,6 +2148,12 @@ export function VetChatPage() {
                         <X size={16} />
                       </button>
                     </div>
+                  ) : null}
+                  {replyTo ? (
+                    <ChatReplyComposerBar
+                      target={replyTo}
+                      onCancel={() => setReplyTo(null)}
+                    />
                   ) : null}
                   <div className="tg-composer-shell">
                     <ChatMediaCaptureProvider

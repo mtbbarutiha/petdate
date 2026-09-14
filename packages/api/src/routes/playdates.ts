@@ -2,13 +2,14 @@ import { createHash, timingSafeEqual } from 'crypto';
 import { Router } from 'express';
 import fs from 'fs';
 import multer from 'multer';
-import type { PlaydateChatMediaKind, PlaydateStatus } from '@petdate/shared';
+import type { PlaydateChatMediaKind, PlaydateStatus, ChatReplySnippet } from '@petdate/shared';
 import {
   PET_SPECIES_LABELS,
   PLAYDATE_REQUEST_COST,
   rankPlaymateMatches,
   sanitizePetPhotosForViewer,
   userPublicIdOf,
+  withTelegramReplyPrefix,
 } from '@petdate/shared';
 import { infra } from '../config/infra';
 import { dbService, isDeletedOrInactiveUser } from '../db';
@@ -159,6 +160,7 @@ function fanOutPlaydateChatTelegram(opts: {
   storageKey?: string | null;
   mimeType?: string | null;
   fileName?: string | null;
+  replyTo?: ChatReplySnippet | null;
 }): void {
   const { playdate, senderUserId } = opts;
   let peerUserId =
@@ -178,7 +180,7 @@ function fanOutPlaydateChatTelegram(opts: {
   void notifyPlaydateChatTelegram({
     toTelegramId: peerTg,
     senderName,
-    text: opts.text,
+    text: withTelegramReplyPrefix(opts.text, opts.replyTo),
     playdateId: playdate.id,
     protectContent: Boolean(playdate.chatSecure),
     mediaKind: (opts.mediaKind ?? null) as PlaydateChatMediaKind | null,
@@ -355,6 +357,11 @@ playdatesRouter.post('/:id/messages', async (req, res) => {
     typeof req.body?.telegramFileId === 'string' ? req.body.telegramFileId : undefined;
   const mimeType = typeof req.body?.mimeType === 'string' ? req.body.mimeType : undefined;
   const fileName = typeof req.body?.fileName === 'string' ? req.body.fileName : undefined;
+  const replyToIdRaw = req.body?.replyToId ?? req.body?.reply_to_id;
+  const replyToId =
+    replyToIdRaw != null && Number.isFinite(Number(replyToIdRaw))
+      ? Number(replyToIdRaw)
+      : undefined;
   /** When true, skip Telegram fan-out (bot already delivered the line). */
   const skipTelegram = Boolean(req.body?.skipTelegram);
 
@@ -390,6 +397,7 @@ playdatesRouter.post('/:id/messages', async (req, res) => {
       telegramFileId,
       mimeType,
       fileName,
+      replyToId,
     });
 
     const playdate = gate.playdate;
@@ -410,6 +418,7 @@ playdatesRouter.post('/:id/messages', async (req, res) => {
         storageKey: message.storageKey,
         mimeType: message.mimeType,
         fileName: message.fileName,
+        replyTo: message.replyTo,
       });
     }
     res.status(201).json(message);
@@ -448,6 +457,10 @@ playdatesRouter.post('/:id/messages/upload', (req, res) => {
         : typeof (req.body as { text?: string })?.text === 'string'
           ? (req.body as { text: string }).text
           : '';
+    const replyToRaw = (req.body as { replyToId?: string; reply_to_id?: string })?.replyToId
+      ?? (req.body as { reply_to_id?: string })?.reply_to_id;
+    const replyToId =
+      replyToRaw != null && Number.isFinite(Number(replyToRaw)) ? Number(replyToRaw) : undefined;
     const file = req.file;
 
     if (!Number.isFinite(playdateId) || !Number.isFinite(senderUserId)) {
@@ -500,6 +513,7 @@ playdatesRouter.post('/:id/messages/upload', (req, res) => {
         storageKey: saved.storageKey,
         mimeType,
         fileName: originalName,
+        replyToId,
       });
 
       const playdate = gate.playdate;
@@ -516,6 +530,7 @@ playdatesRouter.post('/:id/messages/upload', (req, res) => {
         storageKey: message.storageKey,
         mimeType: message.mimeType,
         fileName: message.fileName,
+        replyTo: message.replyTo,
       });
       res.status(201).json(message);
     } catch (err) {
