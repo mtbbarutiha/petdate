@@ -1,0 +1,190 @@
+# One-off: upsert Google OAuth env vars on the PetDate VPS, restart API, verify.
+#
+# Required GitHub secrets (Settings → Secrets and variables → Actions):
+#   VPS_HOST / VPS_USER / VPS_SSH_KEY   same as deploy.yml
+#   GOOGLE_CLIENT_ID                    Google Cloud Console OAuth 2.0 Web client ID
+#   GOOGLE_CLIENT_SECRET                matching client secret
+# Optional:
+#   VPS_PATH                            remote app dir (default /opt/petdate)
+#   GOOGLE_REDIRECT_URI                 override; otherwise uses the input default
+#
+# Do not invent GOOGLE_CLIENT_* values. Set the real Console credentials:
+#   gh secret set GOOGLE_CLIENT_ID
+#   gh secret set GOOGLE_CLIENT_SECRET
+#   gh workflow run sync-google-oauth-env.yml
+#
+# Uses Environment "production" (may require approval). Secret values are never
+# printed — Actions masks them and this job also add-mask + avoids set -x.
+name: Sync Google OAuth env
+
+on:
+  workflow_dispatch:
+    inputs:
+      redirect_uri:
+        description: 'GOOGLE_REDIRECT_URI to upsert (empty = skip this key)'
+        required: false
+        default: 'https://petdate.ir/api/auth/google/callback'
+
+concurrency:
+  group: petdate-vps-deploy
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Sync Google OAuth to VPS
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 15
+    steps:
+      - name: Require secrets
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+        run: |
+          set -euo pipefail
+          set +x
+          missing=0
+          for v in VPS_HOST VPS_USER VPS_SSH_KEY GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET; do
+            if [[ -z "${!v}" ]]; then
+              echo "Missing secret: $v"
+              missing=1
+            fi
+          done
+          if [[ "$missing" -ne 0 ]]; then
+            echo "::error::Set VPS_HOST, VPS_USER, VPS_SSH_KEY, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET in repo Actions secrets. Do not invent Google OAuth values."
+            exit 1
+          fi
+
+      - name: Configure SSH
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_deploy
+          chmod 600 ~/.ssh/id_deploy
+          ssh-keyscan -H "$VPS_HOST" >> ~/.ssh/known_hosts 2>/dev/null || true
+          {
+            echo "Host petdate-vps"
+            echo "  HostName ${VPS_HOST}"
+            echo "  User ${VPS_USER}"
+            echo "  IdentityFile ~/.ssh/id_deploy"
+            echo "  StrictHostKeyChecking accept-new"
+            echo "  ServerAliveInterval 30"
+          } > ~/.ssh/config
+          chmod 600 ~/.ssh/config
+
+      - name: Upsert .env, restart petdate-api, verify providers
+        env:
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GOOGLE_REDIRECT_URI_SECRET: ${{ secrets.GOOGLE_REDIRECT_URI }}
+          VPS_PATH_SECRET: ${{ secrets.VPS_PATH }}
+          REDIRECT_INPUT: ${{ github.event.inputs.redirect_uri }}
+        run: |
+          set -euo pipefail
+          set +x
+          echo "::add-mask::${GOOGLE_CLIENT_ID}"
+          echo "::add-mask::${GOOGLE_CLIENT_SECRET}"
+          if [[ -n "${GOOGLE_REDIRECT_URI_SECRET:-}" ]]; then
+            echo "::add-mask::${GOOGLE_REDIRECT_URI_SECRET}"
+          fi
+
+          REMOTE_DIR="${VPS_PATH_SECRET:-/opt/petdate}"
+          REDIRECT="${GOOGLE_REDIRECT_URI_SECRET:-${REDIRECT_INPUT:-}}"
+
+          frag="$(mktemp)"
+          chmod 600 "$frag"
+          {
+            printf 'GOOGLE_CLIENT_ID=%s\n' "$GOOGLE_CLIENT_ID"
+            printf 'GOOGLE_CLIENT_SECRET=%s\n' "$GOOGLE_CLIENT_SECRET"
+            if [[ -n "$REDIRECT" ]]; then
+              printf 'GOOGLE_REDIRECT_URI=%s\n' "$REDIRECT"
+            fi
+          } > "$frag"
+
+          scp -q "$frag" petdate-vps:/tmp/petdate-google-oauth.env
+          shred -u "$frag" 2>/dev/null || rm -f "$frag"
+
+          ssh petdate-vps "REMOTE_DIR=$(printf '%q' "$REMOTE_DIR") bash -s" << 'REMOTE'
+          set -euo pipefail
+          set +x
+          ENV_FILE="${REMOTE_DIR}/.env"
+          FRAG=/tmp/petdate-google-oauth.env
+          cleanup() { rm -f "$FRAG"; }
+          trap cleanup EXIT
+
+          if [[ ! -f "$FRAG" ]]; then
+            echo "::error::fragment missing on VPS"
+            exit 1
+          fi
+          if [[ ! -f "$ENV_FILE" ]]; then
+            echo "::error::$ENV_FILE not found"
+            exit 1
+          fi
+
+          umask 077
+          tmp="$(mktemp "${ENV_FILE}.XXXXXX")"
+          chmod 600 "$tmp"
+          cp -p "$ENV_FILE" "$tmp"
+
+          keys=()
+          while IFS= read -r line || [[ -n "$line" ]]; do
+            [[ -z "$line" ]] && continue
+            key="${line%%=*}"
+            case "$key" in
+              GOOGLE_CLIENT_ID|GOOGLE_CLIENT_SECRET|GOOGLE_REDIRECT_URI) ;;
+              *) echo "unexpected key in fragment"; exit 1 ;;
+            esac
+            grep -vE "^${key}=" "$tmp" > "${tmp}.new" || true
+            mv "${tmp}.new" "$tmp"
+            printf '%s\n' "$line" >> "$tmp"
+            keys+=("$key")
+          done < "$FRAG"
+
+          mv "$tmp" "$ENV_FILE"
+          chmod 600 "$ENV_FILE"
+
+          for key in GOOGLE_CLIENT_ID GOOGLE_CLIENT_SECRET; do
+            if ! grep -qE "^${key}=.+" "$ENV_FILE"; then
+              echo "missing or empty $key in .env after upsert"
+              exit 1
+            fi
+            echo "$key=*** (set)"
+          done
+          if grep -qE '^GOOGLE_REDIRECT_URI=.+' "$ENV_FILE"; then
+            echo "GOOGLE_REDIRECT_URI=*** (set)"
+          else
+            echo "GOOGLE_REDIRECT_URI skipped (API default callback applies)"
+          fi
+          echo "upserted: ${keys[*]}"
+
+          export PATH="/usr/local/bin:/usr/bin:$HOME/bin:$PATH"
+          if ! command -v pm2 >/dev/null 2>&1; then
+            echo "pm2 not found on PATH"
+            exit 1
+          fi
+          cd "$REMOTE_DIR"
+          pm2 restart petdate-api --update-env
+          REMOTE
+
+          echo "waiting for /api/auth/providers google:true"
+          body=""
+          for i in $(seq 1 15); do
+            body="$(curl -sS --max-time 10 https://petdate.ir/api/auth/providers || true)"
+            if printf '%s' "$body" | python3 -c 'import json,sys; d=json.load(sys.stdin); sys.exit(0 if d.get("ok") is True and d.get("google") is True else 1)' 2>/dev/null; then
+              echo "providers ok: google is true"
+              exit 0
+            fi
+            echo "probe $i: google is not true yet"
+            sleep 2
+          done
+          echo "::error::GET /api/auth/providers did not report google:true"
+          echo "last response (public flags only): ${body}"
+          exit 1

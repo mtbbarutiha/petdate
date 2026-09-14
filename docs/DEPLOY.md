@@ -12,6 +12,7 @@ Parallel Cloud Agent rsyncs used to overwrite incomplete trees and delete live f
 |----------|---------|----------------|
 | `.github/workflows/ci.yml` | PR + `cursor/**` push | `npm ci` → build shared→api→bot→web → selftests → predeploy-check |
 | `.github/workflows/deploy.yml` | push to `main`/`master`, or `workflow_dispatch` | same build, then SSH deploy of **full** tree (`DEPLOY_SCOPE=all`) |
+| `.github/workflows/sync-google-oauth-env.yml` | `workflow_dispatch` only | upsert `GOOGLE_CLIENT_*` (and optional redirect) on VPS `.env`, `pm2 restart petdate-api --update-env`, verify `/api/auth/providers` |
 
 **Why CI does not also build on `main`:** Deploy already builds before shipping. Running both doubled wall-clock (“two Build monorepo checks”) on every merge.
 
@@ -27,14 +28,26 @@ Repo → **Settings → Secrets and variables → Actions** (never commit these)
 | `VPS_USER` | yes | `root` |
 | `VPS_SSH_KEY` | yes | Full private key PEM for that user (deploy key or user key). **Do not** put the key in git. |
 | `VPS_PATH` | no | Default `/opt/petdate` |
+| `GOOGLE_CLIENT_ID` | for Google login sync | Real OAuth 2.0 Web client ID from Google Cloud Console. **Do not invent.** |
+| `GOOGLE_CLIENT_SECRET` | for Google login sync | Matching client secret. **Do not invent.** |
 
 Also create Environment **production** (Settings → Environments) and optionally require reviewers.
 
-### Google web login (VPS `.env`, not Actions secrets)
+### Google web login (VPS `.env`)
 
 Google / Gmail login is **optional to configure**, but the «ورود با گوگل» button is **always visible** on `/auth/login` (and the OTP page). Until keys are set, `/api/auth/providers` returns `google:false` and `/api/auth/google` redirects back to login with `?google=missing`. Agents must not invent client secrets.
 
-On the VPS (`/opt/petdate/.env`):
+Preferred one-off path (Environment **production**, may need Approve):
+
+```bash
+gh secret set GOOGLE_CLIENT_ID
+gh secret set GOOGLE_CLIENT_SECRET
+gh workflow run sync-google-oauth-env.yml
+```
+
+The workflow SSHs like Deploy, upserts into `/opt/petdate/.env` (or `VPS_PATH`), restarts `petdate-api`, and fails unless `curl -sS https://petdate.ir/api/auth/providers` reports `google:true`. It never prints secret values.
+
+Manual equivalent on the VPS (`/opt/petdate/.env`):
 
 ```bash
 GOOGLE_CLIENT_ID=….apps.googleusercontent.com
