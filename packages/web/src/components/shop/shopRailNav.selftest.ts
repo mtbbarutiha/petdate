@@ -37,6 +37,12 @@ assert.match(hook, /scrollBySide/, 'hook exposes visual-side scroll');
 assert.match(hook, /canLeft/, 'hook exposes canLeft');
 assert.match(hook, /isRtl \? 'next' : 'prev'/, 'RTL left button scrolls next (visual left)');
 assert.match(hook, /pointer:\s*coarse/, 'coarse pointers use instant scrollBy');
+assert.match(hook, /pointerdown/, 'mouse drag starts on pointerdown');
+assert.match(hook, /scrollLeft = startScroll - dx/, 'mouse drag scrolls the track');
+assert.match(hook, /pointerType === 'touch'/, 'touch keeps native pan; mouse/pen drag');
+assert.match(hook, /is-dragging/, 'dragging state class for grab cursor');
+assert.match(css, /\.pd-shop-home-rail-track[\s\S]{0,220}cursor:\s*grab/, 'home rail shows grab cursor');
+assert.match(css, /\.is-dragging[\s\S]{0,80}cursor:\s*grabbing/, 'dragging shows grabbing cursor');
 
 assert.match(
   css,

@@ -3,8 +3,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 export type ShopRailSide = 'left' | 'right';
 
 /**
- * Horizontal shop rails: hide native overflow, navigate with physical L/R buttons.
- * "Left" always means visual-left (content toward the left edge), including RTL.
+ * Horizontal shop rails: L/R buttons + mouse drag-to-scroll.
+ * Touch keeps native overflow pan-x. "Left" = visual-left (RTL-safe).
  */
 export function useShopRailNav(resetKey: unknown) {
   const trackRef = useRef<HTMLDivElement>(null);
@@ -62,6 +62,82 @@ export function useShopRailNav(resetKey: unknown) {
       window.removeEventListener('resize', update);
     };
   }, [resetKey, update]);
+
+  /** Mouse / pen drag-to-scroll (touch already pans via overflow-x + touch-action). */
+  useEffect(() => {
+    const el = trackRef.current;
+    if (!el) return;
+
+    let dragging = false;
+    let moved = false;
+    let pointerId: number | null = null;
+    let startX = 0;
+    let startScroll = 0;
+
+    const endDrag = (e: PointerEvent) => {
+      if (!dragging || pointerId !== e.pointerId) return;
+      dragging = false;
+      pointerId = null;
+      el.classList.remove('is-dragging');
+      try {
+        if (el.hasPointerCapture(e.pointerId)) el.releasePointerCapture(e.pointerId);
+      } catch {
+        /* already released */
+      }
+      if (moved) {
+        // Suppress the click that would open a product/card after a drag.
+        const suppress = (ev: Event) => {
+          ev.preventDefault();
+          ev.stopPropagation();
+          el.removeEventListener('click', suppress, true);
+        };
+        el.addEventListener('click', suppress, true);
+        window.setTimeout(() => el.removeEventListener('click', suppress, true), 0);
+      }
+      moved = false;
+    };
+
+    const onPointerDown = (e: PointerEvent) => {
+      // Native touch swipe already works; only emulate drag for mouse/pen.
+      if (e.pointerType === 'touch') return;
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
+      // Don't steal clicks from rail L/R buttons (they sit outside the track).
+      dragging = true;
+      moved = false;
+      pointerId = e.pointerId;
+      startX = e.clientX;
+      startScroll = el.scrollLeft;
+      el.classList.add('is-dragging');
+      try {
+        el.setPointerCapture(e.pointerId);
+      } catch {
+        /* ignore */
+      }
+    };
+
+    const onPointerMove = (e: PointerEvent) => {
+      if (!dragging || pointerId !== e.pointerId) return;
+      const dx = e.clientX - startX;
+      if (Math.abs(dx) > 4) moved = true;
+      // Same delta formula works for LTR and Chromium/Firefox RTL scrollLeft.
+      el.scrollLeft = startScroll - dx;
+    };
+
+    el.addEventListener('pointerdown', onPointerDown);
+    el.addEventListener('pointermove', onPointerMove);
+    el.addEventListener('pointerup', endDrag);
+    el.addEventListener('pointercancel', endDrag);
+    el.addEventListener('lostpointercapture', endDrag as EventListener);
+
+    return () => {
+      el.removeEventListener('pointerdown', onPointerDown);
+      el.removeEventListener('pointermove', onPointerMove);
+      el.removeEventListener('pointerup', endDrag);
+      el.removeEventListener('pointercancel', endDrag);
+      el.removeEventListener('lostpointercapture', endDrag as EventListener);
+      el.classList.remove('is-dragging');
+    };
+  }, [resetKey]);
 
   const scrollByDir = (dir: 'next' | 'prev') => {
     const el = trackRef.current;
