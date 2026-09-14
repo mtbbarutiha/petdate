@@ -22,7 +22,10 @@ const nav = readFileSync(join(root, 'lib/siteNav.ts'), 'utf8');
 
 assert.match(header, /pepito-nav-primary/, 'header has primary group');
 assert.match(header, /brandBelow/, 'header accepts shop search under the logo');
-assert.match(header, /pepito-nav-brand/, 'logo and optional search share a brand column');
+assert.match(header, /pepito-nav--with-search/, 'search uses a second header row');
+assert.match(header, /pepito-nav-search-row/, 'search row is full-width under logo/nav');
+assert.match(header, /pepito-nav-main/, 'logo, links, and utilities share the top row');
+assert.match(header, /pepito-nav-brand/, 'logo lives in the brand cluster');
 assert.doesNotMatch(header, /ShopProductSearch/, 'SiteHeader does not import shop search (slot only)');
 assert.match(header, /pepito-nav-actions/, 'header has utilities group');
 assert.match(header, /LanguageToggle/, 'utilities include language');
@@ -83,9 +86,10 @@ assert.match(welcome, /welcomeSectionLinks/, 'Welcome uses hash extras without g
 assert.match(welcome, /deferDesktopNav/, 'Welcome still defers desktop shortcuts for landing TBT');
 assert.match(shop, /SiteHeader/, 'ShopChrome uses shared header');
 assert.match(shop, /shopSectionLinks/, 'shop extras use shared section links');
-assert.match(shop, /brandBelow/, 'desktop shop search is passed under the logo');
-assert.match(shop, /pd-shop-search-bar/, 'mobile shop search stays a sticky bar');
-assert.match(shop, /min-width: 860px/, 'desktop vs mobile search split at 860px');
+assert.match(shop, /brandBelow/, 'shop search is passed into the header');
+assert.match(shop, /ShopProductSearch/, 'ShopChrome mounts primary product search');
+assert.doesNotMatch(shop, /pd-shop-search-bar/, 'search is no longer a separate sticky bar');
+assert.doesNotMatch(shop, /min-width: 860px/, 'desktop vs mobile search split removed');
 assert.doesNotMatch(chrome, /ShopProductSearch/, 'landing chrome has no shop product search');
 assert.doesNotMatch(welcome, /ShopProductSearch/, 'homepage chrome has no shop product search');
 
