@@ -84,11 +84,12 @@ export async function requestWebOtp(
     const createdMs = new Date(existing.createdAt).getTime();
     const elapsed = Date.now() - createdMs;
     if (Number.isFinite(createdMs) && elapsed < RESEND_COOLDOWN_MS) {
+      const retryAfterSec = Math.ceil((RESEND_COOLDOWN_MS - elapsed) / 1000);
       return {
         ok: false,
         reason: 'cooldown',
-        error: 'کمی صبر کن و دوباره کد بخواه',
-        retryAfterSec: Math.ceil((RESEND_COOLDOWN_MS - elapsed) / 1000),
+        error: `کمی صبر کن — ${retryAfterSec} ثانیه تا ارسال دوباره`,
+        retryAfterSec,
       };
     }
   }
