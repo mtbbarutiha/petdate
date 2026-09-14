@@ -43,6 +43,7 @@ import { trackViewItem } from '../../lib/siteAnalytics';
 import { ShopChrome } from '../../components/shop/ShopChrome';
 import { ShopProductCard } from '../../components/shop/ShopProductCard';
 import { ShopProductGallery } from '../../components/shop/ShopProductGallery';
+import { ShopTrustBadges } from '../../components/shop/ShopTrustBadges';
 
 type DetailTab = 'desc' | 'specs' | 'reviews';
 
@@ -379,6 +380,8 @@ export function ShopProductPage() {
             </Link>
           </aside>
         </div>
+
+        <ShopTrustBadges />
 
         {/* Tabs: description / specs / reviews */}
         <section className="pd-dk-tabs-block" aria-label="جزئیات محصول">
