@@ -1,6 +1,6 @@
 /**
  * PetDate shop catalog — Pepito imagery, prices in تومان (wallet primary currency).
- * Live catalog is exactly 69 SKUs: p221–p223 (pilots) + p224–p235 (Batch 2) + p236–p249 (Batch 3) + p250–p259 (multi wave 1) + p260–p269 (multi wave 2) + p270–p279 (multi wave 3) + p280–p289 (multi wave 4).
+ * Live catalog is exactly 79 SKUs: p221–p223 (pilots) + p224–p235 (Batch 2) + p236–p249 (Batch 3) + p250–p259 (multi wave 1) + p260–p269 (multi wave 2) + p270–p279 (multi wave 3) + p280–p289 (multi wave 4) + p290–p299 (multi wave 5).
  * Demo p1–p220 were removed so they cannot reappear on deploy.
  */
 
@@ -10,6 +10,7 @@ import { SHOP_BATCH_MULTI_PRODUCTS } from './shopBatchMultiProducts';
 import { SHOP_BATCH_MULTI_WAVE2_PRODUCTS } from './shopBatchMultiWave2Products';
 import { SHOP_BATCH_MULTI_WAVE3_PRODUCTS } from './shopBatchMultiWave3Products';
 import { SHOP_BATCH_MULTI_WAVE4_PRODUCTS } from './shopBatchMultiWave4Products';
+import { SHOP_BATCH_MULTI_WAVE5_PRODUCTS } from './shopBatchMultiWave5Products';
 
 const P = '/pepito/uploads';
 
@@ -95,6 +96,7 @@ export const SHOP_CATEGORIES: ShopCategory[] = [
   { slug: 'dog-toys', labelFa: 'اسباب بازی سگ', petType: 'dog', description: 'توپ، لاتکس و اسباب‌بازی تعاملی', emoji: '🎾' },
   { slug: 'dog-bowls', labelFa: 'ظروف و لوازم جانبی سگ', petType: 'dog', description: 'ظرف غذا و آب', emoji: '🥣' },
   { slug: 'dog-carriers-travel', labelFa: 'وسایل حمل و سفر سگ', petType: 'dog', description: 'باکس، کیف و کوله', emoji: '🧳' },
+  { slug: 'dog-carriers', labelFa: 'کوله و باکس حمل سگ', petType: 'dog', description: 'کوله فضایی و کیف حمل', emoji: '🧳' },
   { slug: 'dog-collars', labelFa: 'قلاده سگ و لوازم جانبی', petType: 'dog', description: 'قلاده، لید و هارنس', emoji: '🦮' },
   { slug: 'dog-accessories', labelFa: 'قلاده، لیش و هارنس', petType: 'dog', description: 'هارنس، لیش و قلاده', emoji: '🦮' },
   { slug: 'grooming', labelFa: 'بهداشت و آراستگی', petType: 'dog', description: 'شامپو و برس', emoji: '🧴' },
@@ -111,6 +113,7 @@ export const SHOP_CATEGORIES: ShopCategory[] = [
   { slug: 'cat-accessories', labelFa: 'ظروف و لوازم گربه', petType: 'cat', description: 'ظرف و پایه غذا', emoji: '🍽️' },
   { slug: 'cat-litter', labelFa: 'لوازم دستشویی گربه', petType: 'cat', description: 'خاک، سینی و بیلچه', emoji: '🚽' },
   { slug: 'cat-carriers-travel', labelFa: 'وسایل حمل و سفر گربه', petType: 'cat', description: 'باکس و کوله حمل', emoji: '🎒' },
+  { slug: 'cat-carriers', labelFa: 'کوله و باکس حمل گربه', petType: 'cat', description: 'کوله فضایی و باکس حمل', emoji: '🎒' },
   { slug: 'cat-beds', labelFa: 'جای خواب گربه', petType: 'cat', description: 'لانه و تشک خواب', emoji: '😺' },
   { slug: 'cat-flea-tick', labelFa: 'ضد کک و کنه گربه', petType: 'cat', description: 'ضد انگل گربه', emoji: '✨' },
   // —— پرنده ——
@@ -145,9 +148,13 @@ export const SHOP_BRANDS: ShopBrand[] = [
   { id: 'hannapet', labelFa: 'حناپت', labelEn: 'Hannapet' },
   { id: 'waudog', labelFa: 'واوداگ', labelEn: 'WAUDOG' },
   { id: 'mojan', labelFa: 'موژان', labelEn: 'Mojan' },
+  { id: 'zarix', labelFa: 'زریکس', labelEn: 'Zarix' },
+  { id: 'raha', labelFa: 'رها', labelEn: 'Raha' },
+  { id: 'jupiter', labelFa: 'ژوپیتر', labelEn: 'Jupiter' },
+  { id: 'oshkaia', labelFa: 'اوشکایا', labelEn: 'Oshkaia' },
 ];
 
-/** Live shop catalog — 3 Royal Canin pilots + 12 Batch 2 + 14 Batch 3 + 10 multi wave 1 + 10 multi wave 2 + 10 multi wave 3 + 10 multi wave 4 SKUs */
+/** Live shop catalog — 3 Royal Canin pilots + 12 Batch 2 + 14 Batch 3 + 10 multi wave 1 + 10 multi wave 2 + 10 multi wave 3 + 10 multi wave 4 + 10 multi wave 5 SKUs */
 export const SHOP_PRODUCTS: ShopProduct[] = [
   {
     id: 'p221',
@@ -266,6 +273,7 @@ export const SHOP_PRODUCTS: ShopProduct[] = [
   ...SHOP_BATCH_MULTI_WAVE2_PRODUCTS,
   ...SHOP_BATCH_MULTI_WAVE3_PRODUCTS,
   ...SHOP_BATCH_MULTI_WAVE4_PRODUCTS,
+  ...SHOP_BATCH_MULTI_WAVE5_PRODUCTS,
 ];
 
 export function formatToman(amount: number): string {

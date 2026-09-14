@@ -241,7 +241,6 @@ export const RETIRED_SHOP_CATEGORY_SLUGS = [
   'cat-carriers-travel',
   'cat-beds',
   'cat-flea-tick',
-  'bird-food',
   'bird-accessories',
 ] as const;
 

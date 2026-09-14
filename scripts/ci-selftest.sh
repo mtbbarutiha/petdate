@@ -329,7 +329,10 @@ npx tsx "$ROOT/packages/api/src/data/shop-batch-multi-wave3-products.selftest.ts
 echo "==> selftest: shop batch-multi wave 4 SKUs"
 npx tsx "$ROOT/packages/api/src/data/shop-batch-multi-wave4-products.selftest.ts"
 
-echo "==> selftest: live shop catalog is p221–p289 only"
+echo "==> selftest: shop batch-multi wave 5 SKUs"
+npx tsx "$ROOT/packages/api/src/data/shop-batch-multi-wave5-products.selftest.ts"
+
+echo "==> selftest: live shop catalog is p221–p299 only"
 npx tsx "$ROOT/packages/api/src/data/shop-live-catalog.selftest.ts"
 
 echo "==> selftest: web shop cart sync (badge + merge-then-persist)"

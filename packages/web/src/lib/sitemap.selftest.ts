@@ -100,7 +100,11 @@ assert(
   'batch-multi wave 4 Hannapet harness sizr-m slug aliases 301 to /shop/product/:slug'
 );
 assert(
-  !xml.includes('/shop/product/grooming-bonnest-calming-shampoo-for-pet-200-l'),
-  'later waves stay out of sitemap'
+  xml.includes('/shop/product/grooming-bonnest-calming-shampoo-for-pet-200-l'),
+  'batch-multi wave 5 Bonnest shampoo stays in sitemap'
+);
+assert(
+  map.includes('/shop/dog-carriers-luxury-leather-space-pet-carier-backpack '),
+  'batch-multi wave 5 luxury leather carier slug aliases 301 to /shop/product/:slug'
 );
 console.log('sitemap.selftest: ok');
