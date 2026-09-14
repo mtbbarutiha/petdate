@@ -144,17 +144,47 @@ export function ShopProductPage() {
   return (
     <ShopChrome hideBanner>
       <div className="pepito-container pd-shop-detail pd-dk-pdp">
-        <ShopBreadcrumb items={shopProductBreadcrumbs({ lang, product, category })} />
-
         <div className="pd-dk-pdp-top">
-          <ShopProductGallery
-            key={product.id}
-            gallery={gallery}
-            cover={product.image}
-            alt={productTitleForLang(lang, product.title, { titleEn: product.titleEn, slug: product.slug })}
-            badge={product.badge}
-            discount={discount}
-          />
+          <div className="pd-dk-gallery-col">
+            <ShopBreadcrumb
+              className="pd-dk-pdp-breadcrumb"
+              items={shopProductBreadcrumbs({ lang, product, category })}
+            />
+            <div className="pd-dk-gallery-with-rail">
+              <div className="pd-dk-action-rail" role="group" aria-label="عملیات کالا">
+                <button
+                  type="button"
+                  className={`pd-dk-action-rail-btn${isLiked ? ' is-liked' : ''}`}
+                  aria-pressed={isLiked}
+                  aria-label={isLiked ? 'حذف از علاقه‌مندی‌ها' : 'افزودن به علاقه‌مندی‌ها'}
+                  title={isLiked ? 'پسندیده‌اید' : 'لایک'}
+                  onClick={onToggleLike}
+                >
+                  <Heart size={20} fill={isLiked ? 'currentColor' : 'none'} aria-hidden />
+                </button>
+                <button
+                  type="button"
+                  className="pd-dk-action-rail-btn"
+                  aria-label="اشتراک‌گذاری کالا"
+                  title="اشتراک‌گذاری"
+                  onClick={() => void onShare()}
+                >
+                  <Share2 size={20} aria-hidden />
+                </button>
+              </div>
+              <ShopProductGallery
+                key={product.id}
+                gallery={gallery}
+                cover={product.image}
+                alt={productTitleForLang(lang, product.title, {
+                  titleEn: product.titleEn,
+                  slug: product.slug,
+                })}
+                badge={product.badge}
+                discount={discount}
+              />
+            </div>
+          </div>
 
           {/* Info column */}
           <div className="pd-dk-info">
@@ -166,28 +196,6 @@ export function ShopProductPage() {
             ) : null}
             <h1 className="pd-dk-title">{productTitle}</h1>
             {product.titleEn ? <p className="pd-dk-title-en">{product.titleEn}</p> : null}
-
-            <div className="pd-dk-tools" role="group" aria-label="لایک و اشتراک‌گذاری کالا">
-              <button
-                type="button"
-                className={`pd-dk-tool${isLiked ? ' is-liked' : ''}`}
-                aria-pressed={isLiked}
-                aria-label={isLiked ? 'حذف از علاقه‌مندی‌ها' : 'لایک کالا'}
-                onClick={onToggleLike}
-              >
-                <Heart size={16} fill={isLiked ? 'currentColor' : 'none'} aria-hidden />
-                {isLiked ? 'پسندیده‌اید' : 'لایک'}
-              </button>
-              <button
-                type="button"
-                className="pd-dk-tool"
-                aria-label="اشتراک‌گذاری کالا"
-                onClick={() => void onShare()}
-              >
-                <Share2 size={16} aria-hidden />
-                اشتراک‌گذاری
-              </button>
-            </div>
 
             <div className="pd-dk-meta">
               <span className="pd-dk-rating" title="امتیاز کاربران">

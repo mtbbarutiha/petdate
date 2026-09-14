@@ -697,6 +697,77 @@ export interface ShopFilters {
   maxPrice?: number;
   q?: string;
   inStockOnly?: boolean;
+  /** Exact match against product.params[key] when set. */
+  params?: Record<string, string>;
+}
+
+/** Catalog-backed DigiKala-style filter dimensions (param key → Persian legend). */
+export const SHOP_PARAM_FILTER_DIMS = [
+  { key: 'وزن', labelFa: 'وزن / سایز بسته', labelEn: 'Weight / pack size' },
+  { key: 'سایز', labelFa: 'سایز', labelEn: 'Size' },
+  { key: 'سن', labelFa: 'گروه سنی حیوان', labelEn: 'Animal age group' },
+  { key: 'کشور_برند', labelFa: 'کشور سازنده', labelEn: 'Country of origin' },
+  { key: 'نوع_غذا', labelFa: 'نوع غذا', labelEn: 'Food type' },
+  { key: 'مدل', labelFa: 'مدل', labelEn: 'Model' },
+  { key: 'مناسب_برای', labelFa: 'مناسب برای', labelEn: 'Suitable for' },
+] as const;
+
+/** DigiKala-named filters that the catalog cannot populate yet. */
+export const SHOP_UNBACKED_FILTER_DIMS = [
+  { key: 'color', labelFa: 'رنگ', labelEn: 'Color' },
+  { key: 'material', labelFa: 'جنس', labelEn: 'Material' },
+  { key: 'includes', labelFa: 'به همراه', labelEn: 'Included with' },
+  { key: 'special', labelFa: 'ویژگی‌های خاص', labelEn: 'Special features' },
+  { key: 'washable', labelFa: 'قابلیت شست‌وشو', labelEn: 'Washability' },
+  { key: 'safety', labelFa: 'ویژگی‌های ایمنی', labelEn: 'Safety features' },
+  { key: 'cage_door', labelFa: 'نحوه باز شدن در لانه یا قفس', labelEn: 'Cage door opening' },
+] as const;
+
+/** Unique non-empty values for a product params key across the live catalog. */
+export function collectParamFilterOptions(paramKey: string): string[] {
+  const source = liveProducts.length ? liveProducts : SHOP_PRODUCTS;
+  const values = new Set<string>();
+  for (const p of source) {
+    const raw = p.params?.[paramKey]?.trim();
+    if (raw) values.add(raw);
+  }
+  return [...values].sort((a, b) => a.localeCompare(b, 'fa'));
+}
+
+/**
+ * Home «پرفروش‌ترین‌ها» rail — prefer hot/sale badges, else in-stock catalog
+ * sliced for a stable DigiKala-style carousel (no fabricated ratings).
+ */
+export function getBestsellingProducts(
+  pet: ShopPetType = 'all',
+  limit = 12
+): ShopProduct[] {
+  const source = liveProducts.length ? liveProducts : SHOP_PRODUCTS;
+  const pool = source.filter((p) => pet === 'all' || p.petTypes.includes(pet));
+  const rank = (p: ShopProduct) => {
+    let score = 0;
+    if (p.badge === 'hot') score += 40;
+    if (p.badge === 'sale' || p.badge === 'limited') score += 25;
+    if (p.compareAtToman && p.compareAtToman > p.priceToman) score += 15;
+    if (p.inStock) score += 10;
+    if (p.featured) score += 5;
+    return score;
+  };
+  return [...pool].sort((a, b) => rank(b) - rank(a) || a.id.localeCompare(b.id)).slice(0, limit);
+}
+
+/** Products for a pet-type home rail, optionally narrowed to one category slug. */
+export function getHomeRailProducts(opts: {
+  pet: Exclude<ShopPetType, 'all'>;
+  categorySlug?: string | null;
+  limit?: number;
+}): ShopProduct[] {
+  const limit = opts.limit ?? 12;
+  return filterProducts({
+    petType: opts.pet,
+    categorySlug: opts.categorySlug || undefined,
+    inStockOnly: false,
+  }).slice(0, limit);
 }
 
 export function filterProducts(filters: ShopFilters = {}): ShopProduct[] {
@@ -708,10 +779,14 @@ export function filterProducts(filters: ShopFilters = {}): ShopProduct[] {
     maxPrice,
     q,
     inStockOnly,
+    params: paramFilters,
   } = filters;
 
   const query = q?.trim().toLowerCase();
   const source = liveProducts.length ? liveProducts : SHOP_PRODUCTS;
+  const paramEntries = paramFilters
+    ? Object.entries(paramFilters).filter(([, v]) => Boolean(v?.trim()))
+    : [];
 
   return source.filter((p) => {
     if (petType !== 'all' && !p.petTypes.includes(petType)) return false;
@@ -720,6 +795,9 @@ export function filterProducts(filters: ShopFilters = {}): ShopProduct[] {
     if (minPrice != null && p.priceToman < minPrice) return false;
     if (maxPrice != null && p.priceToman > maxPrice) return false;
     if (inStockOnly && !p.inStock) return false;
+    for (const [key, value] of paramEntries) {
+      if ((p.params?.[key] ?? '').trim() !== value.trim()) return false;
+    }
     if (query) {
       const brand = getBrand(p.brandId)?.labelFa ?? '';
       const hay = `${p.title} ${brand} ${Object.values(p.params).join(' ')}`.toLowerCase();

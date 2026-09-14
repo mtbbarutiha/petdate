@@ -76,14 +76,16 @@ export function ShopTopBrands({ brands, className }: Props) {
               role="listitem"
               title={shopLabel(lang, b.labelFa, b.labelEn)}
             >
-              <span className="pd-shop-top-brand-logo" aria-hidden={!b.logoUrl}>
-                {b.logoUrl ? (
-                  <img src={b.logoUrl} alt="" loading="lazy" decoding="async" />
-                ) : (
-                  <span className="pd-shop-top-brand-fallback">
-                    {(b.labelEn || b.labelFa).slice(0, 2)}
-                  </span>
-                )}
+              <span className="pd-shop-top-brand-tile">
+                <span className="pd-shop-top-brand-logo" aria-hidden={!b.logoUrl}>
+                  {b.logoUrl ? (
+                    <img src={b.logoUrl} alt="" loading="lazy" decoding="async" />
+                  ) : (
+                    <span className="pd-shop-top-brand-fallback">
+                      {(b.labelEn || b.labelFa).slice(0, 2)}
+                    </span>
+                  )}
+                </span>
               </span>
               <span className="pd-shop-top-brand-name">
                 {shopLabel(lang, b.labelFa, b.labelEn)}

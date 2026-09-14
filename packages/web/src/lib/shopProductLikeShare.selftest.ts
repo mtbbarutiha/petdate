@@ -1,5 +1,5 @@
 /**
- * Shop PDP Like + Share contract.
+ * Shop PDP Like + Share contract (vertical DigiKala action rail).
  * Run: npx tsx packages/web/src/lib/shopProductLikeShare.selftest.ts
  */
 import assert from 'node:assert/strict';
@@ -33,15 +33,16 @@ const dark = readFileSync(join(here, '../styles/theme-dark.css'), 'utf8');
 assert.match(page, /useShopFavorites/, 'PDP uses shop favorites hook');
 assert.match(page, /shareOrCopyUrl/, 'PDP reuses Web Share / clipboard helper');
 assert.match(page, /productPublicUrl/, 'PDP shares product URL helper');
-assert.match(page, /pd-dk-tools/, 'PDP renders like/share tool row');
-assert.match(page, /aria-label="لایک و اشتراک‌گذاری کالا"/, 'tools group labeled in Persian');
+assert.match(page, /pd-dk-action-rail/, 'PDP renders DigiKala vertical action rail');
+assert.match(page, /pd-dk-gallery-with-rail/, 'rail sits beside product gallery');
+assert.doesNotMatch(page, /pd-dk-tools/, 'horizontal like/share row removed from info column');
+assert.match(page, /aria-label="عملیات کالا"/, 'action rail labeled in Persian');
 assert.match(page, /اشتراک‌گذاری/, 'Share label in Persian');
-assert.match(page, /لایک/, 'Like label in Persian');
 assert.match(page, /Heart/, 'Like uses Heart icon');
 assert.match(page, /Share2/, 'Share uses Share2 icon');
 
-assert.match(css, /\.pd-dk-tools\s*\{/, 'tools row styles');
-assert.match(css, /\.pd-dk-tool\.is-liked\s*\{/, 'liked state styles');
-assert.match(dark, /html\[data-theme='dark'\]\s*\.pd-dk-tool\b/, 'dark theme tool styles');
+assert.match(css, /\.pd-dk-action-rail\s*\{/, 'action rail styles');
+assert.match(css, /\.pd-dk-action-rail-btn\.is-liked\s*\{/, 'liked state styles');
+assert.match(dark, /html\[data-theme='dark'\]\s*\.pd-dk-action-rail-btn\b/, 'dark theme rail styles');
 
 console.log('shopProductLikeShare.selftest: ok');

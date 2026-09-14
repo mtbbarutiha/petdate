@@ -35,16 +35,10 @@ export function ShopProductSearch() {
   const [query, setQuery] = useState(qFromUrl);
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
-  const [isMac, setIsMac] = useState(false);
 
   useEffect(() => {
     setQuery(qFromUrl);
   }, [qFromUrl]);
-
-  useEffect(() => {
-    const ua = typeof navigator !== 'undefined' ? navigator.platform || navigator.userAgent : '';
-    setIsMac(/Mac|iPhone|iPad|iPod/i.test(ua));
-  }, []);
 
   const results = useMemo(() => {
     const q = query.trim();
@@ -104,7 +98,6 @@ export function ShopProductSearch() {
   };
 
   const showDropdown = open && query.trim().length > 0;
-  const shortcutLabel = isMac ? '⌘K' : 'Ctrl+K';
 
   return (
     <div className="pd-shop-search" ref={rootRef} data-testid="shop-product-search">
@@ -154,9 +147,6 @@ export function ShopProductSearch() {
             }
           }}
         />
-        <kbd className="pd-shop-search-kbd" aria-hidden>
-          {shortcutLabel}
-        </kbd>
       </form>
 
       {showDropdown ? (

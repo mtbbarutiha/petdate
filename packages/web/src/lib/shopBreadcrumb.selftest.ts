@@ -82,14 +82,17 @@ const ci = readFileSync(join(here, '../../../../scripts/ci-selftest.sh'), 'utf8'
 assert.match(component, /aria-label="breadcrumb"/);
 assert.match(component, /<ol className="pd-shop-breadcrumb-list"/);
 assert.match(component, /aria-current/);
-assert.match(categoryPage, /ShopBreadcrumb/);
-assert.match(categoryPage, /shopCategoryBreadcrumbs/);
+// Listing/home chrome: no breadcrumb bar under hero
+assert.doesNotMatch(homePage, /ShopBreadcrumb/, 'shop home hides listing breadcrumbs');
+assert.doesNotMatch(categoryPage, /ShopBreadcrumb/, 'category listing hides breadcrumbs');
+// PDP keeps breadcrumbs above the gallery
 assert.match(productPage, /ShopBreadcrumb/);
 assert.match(productPage, /shopProductBreadcrumbs/);
-assert.match(homePage, /ShopBreadcrumb/);
-assert.match(homePage, /shopHomeBreadcrumbs/);
+assert.match(productPage, /pd-dk-pdp-breadcrumb/, 'PDP breadcrumbs sit above gallery');
+assert.match(productPage, /pd-dk-gallery-col/, 'gallery column wraps breadcrumb + photo');
 assert.match(css, /\.pd-shop-breadcrumb-list\s*\{/);
 assert.match(css, /\.pd-shop-breadcrumb-sep\s*\{/);
+assert.match(css, /\.pd-dk-pdp-breadcrumb/, 'PDP breadcrumb placement styles');
 assert.match(dark, /html\[data-theme='dark'\]\s*\.pd-shop-breadcrumb\b/);
 assert.match(ci, /shopBreadcrumb\.selftest\.ts/);
 

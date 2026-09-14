@@ -8,15 +8,14 @@ import {
   SHOP_PET_TYPES,
   SHOP_PRICE_MAX,
   categoriesForPet,
-  getFeaturedProducts,
+  getBestsellingProducts,
+  getHomeRailProducts,
   type ShopPetType,
 } from '../../data/shopCatalog';
-import { ShopBreadcrumb } from '../../components/shop/ShopBreadcrumb';
 import { ShopChrome } from '../../components/shop/ShopChrome';
-import { ShopProductCard } from '../../components/shop/ShopProductCard';
+import { ShopHomeRail } from '../../components/shop/ShopHomeRail';
 import { ShopTopBrands } from '../../components/shop/ShopTopBrands';
 import { usePlatformConfig } from '../../hooks/usePlatformConfig';
-import { shopHomeBreadcrumbs } from '../../lib/shopBreadcrumb';
 
 /** Digikala-style solid circle colors (Pepito-friendly palette) */
 const DK_CAT_COLORS = [
@@ -65,12 +64,62 @@ const JOURNEY = [
   },
 ] as const;
 
+/** Bestseller pet pills (catalog has no aquatics species). */
+const BESTSELLER_PETS: { id: ShopPetType; labelFa: string; labelEn: string }[] = [
+  { id: 'all', labelFa: 'همه', labelEn: 'All' },
+  { id: 'cat', labelFa: 'گربه', labelEn: 'Cat' },
+  { id: 'dog', labelFa: 'سگ', labelEn: 'Dog' },
+  { id: 'bird', labelFa: 'پرندگان', labelEn: 'Birds' },
+  { id: 'rodent', labelFa: 'سایر جوندگان', labelEn: 'Other rodents' },
+];
+
 export function ShopHomePage() {
   const { lang, t } = useI18n();
   const platform = usePlatformConfig();
   const [petType, setPetType] = useState<ShopPetType>('all');
-  const featured = useMemo(() => getFeaturedProducts(), []);
+  const [bestsellerPet, setBestsellerPet] = useState<ShopPetType>('all');
+  const [catPill, setCatPill] = useState('all');
+  const [dogPill, setDogPill] = useState('all');
   const cats = useMemo(() => categoriesForPet(petType), [petType]);
+
+  const catCategoryPills = useMemo(() => {
+    const list = categoriesForPet('cat');
+    return [
+      { id: 'all', label: 'همه' },
+      ...list.map((c) => ({ id: c.slug, label: shopLabel(lang, c.labelFa, c.labelEn) })),
+    ];
+  }, [lang]);
+
+  const dogCategoryPills = useMemo(() => {
+    const list = categoriesForPet('dog');
+    return [
+      { id: 'all', label: 'همه' },
+      ...list.map((c) => ({ id: c.slug, label: shopLabel(lang, c.labelFa, c.labelEn) })),
+    ];
+  }, [lang]);
+
+  const bestsellers = useMemo(
+    () => getBestsellingProducts(bestsellerPet, 12),
+    [bestsellerPet]
+  );
+  const catRailProducts = useMemo(
+    () =>
+      getHomeRailProducts({
+        pet: 'cat',
+        categorySlug: catPill === 'all' ? null : catPill,
+        limit: 12,
+      }),
+    [catPill]
+  );
+  const dogRailProducts = useMemo(
+    () =>
+      getHomeRailProducts({
+        pet: 'dog',
+        categorySlug: dogPill === 'all' ? null : dogPill,
+        limit: 12,
+      }),
+    [dogPill]
+  );
 
   if (!platform.shopEnabled) {
     return (
@@ -88,8 +137,6 @@ export function ShopHomePage() {
       bannerLead="غذا، لوازم و اسباب‌بازی با فیلتر برند و قیمت — به تومان"
     >
       <div className="pepito-container pd-shop-home">
-        <ShopBreadcrumb items={shopHomeBreadcrumbs(lang)} />
-
         <section className="pd-shop-journey" aria-label="مسیر خرید">
           {JOURNEY.map(({ step, title, desc, Icon }) => (
             <div key={step} className="pd-shop-journey-step">
@@ -132,7 +179,11 @@ export function ShopHomePage() {
                 role="tab"
                 aria-selected={petType === t.id}
                 className={`pd-shop-chip${petType === t.id ? ' is-active' : ''}`}
-                onClick={() => setPetType(t.id)}
+                onClick={() => {
+                  // Toggle: re-click active chip → «همه»
+                  if (petType === t.id && t.id !== 'all') setPetType('all');
+                  else setPetType(t.id);
+                }}
               >
                 {shopLabel(lang, t.labelFa, t.labelEn)}
               </button>
@@ -165,31 +216,43 @@ export function ShopHomePage() {
 
         <ShopTopBrands />
 
-        <section className="pd-shop-block">
-          <div className="pepito-section-head pepito-section-head--center">
-            <p className="pepito-eyebrow">محصولات ویژه</p>
-            <h2>پیشنهادهای امروز</h2>
-          </div>
-          <div className="pd-shop-product-grid">
-            {featured.map((p) => (
-              <ShopProductCard key={p.id} product={p} />
-            ))}
-          </div>
-          <div className="pd-shop-home-cta">
-            <Link to="/shop/c/all" className="pepito-btn button-1">
-              <span className="pepito-btn-icon" aria-hidden>
-                <PawPrint size={16} />
-              </span>
-              مشاهده همه محصولات
-            </Link>
-          </div>
-          <p className="pd-shop-meta-note">
-            محدوده قیمت کاتالوگ تا {SHOP_PRICE_MAX.toLocaleString('fa-IR')} تومان ·{' '}
-            {SHOP_CATEGORIES.length.toLocaleString('fa-IR')} دسته
-          </p>
-        </section>
+        <ShopHomeRail
+          title="پرفروش‌ترین‌های پت"
+          viewAllTo="/shop/c/all"
+          testId="shop-home-bestsellers"
+          pills={BESTSELLER_PETS.map((p) => ({
+            id: p.id,
+            label: shopLabel(lang, p.labelFa, p.labelEn),
+          }))}
+          activePillId={bestsellerPet}
+          onPillChange={(id) => setBestsellerPet(id as ShopPetType)}
+          products={bestsellers}
+        />
 
+        <ShopHomeRail
+          title="دسته‌بندی‌های گربه"
+          viewAllTo="/shop/c/all?pet=cat"
+          testId="shop-home-cat-rail"
+          pills={catCategoryPills}
+          activePillId={catPill}
+          onPillChange={setCatPill}
+          products={catRailProducts}
+        />
 
+        <ShopHomeRail
+          title="دسته‌بندی‌های سگ"
+          viewAllTo="/shop/c/all?pet=dog"
+          testId="shop-home-dog-rail"
+          pills={dogCategoryPills}
+          activePillId={dogPill}
+          onPillChange={setDogPill}
+          products={dogRailProducts}
+        />
+
+        <p className="pd-shop-meta-note">
+          محدوده قیمت کاتالوگ تا {SHOP_PRICE_MAX.toLocaleString('fa-IR')} تومان ·{' '}
+          {SHOP_CATEGORIES.length.toLocaleString('fa-IR')} دسته
+        </p>
       </div>
     </ShopChrome>
   );
