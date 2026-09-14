@@ -243,10 +243,18 @@ export function getDb(): AppDatabase {
       } catch (err) {
         console.warn('Shop batch-multi wave 5 seed skipped/failed:', (err as Error).message);
       }
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        const { seedShopDigikalaBatch1Part1Products } =
+          require('./data/shop-digikala-batch1-part1-products') as typeof import('./data/shop-digikala-batch1-part1-products');
+        seedShopDigikalaBatch1Part1Products();
+      } catch (err) {
+        console.warn('Shop Digikala batch1 Part1 seed skipped/failed:', (err as Error).message);
+      }
     };
 
     const bootShopCatalogGuard = () => {
-      // Delete leftover demo/seed SKUs. Never touches p221–p299 prices/images/stock.
+      // Delete leftover demo/seed SKUs. Never touches p221–p309 prices/images/stock.
       try {
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         const { purgeDemoShopProducts } =
@@ -1478,6 +1486,7 @@ function migrateSchema() {
                 ['raha', 'رها', 'Raha', '', 400, 0],
                 ['jupiter', 'ژوپیتر', 'Jupiter', '', 410, 0],
                 ['oshkaia', 'اوشکایا', 'Oshkaia', '', 420, 0],
+        ['biodop', 'بیودپ', 'Biodop', '', 430, 0],
         ['generic', 'سایر', 'Other', '', 900, 0],
       ] as const;
       const insBrand = db.prepare(
@@ -1769,7 +1778,7 @@ function seedFinanceDefaults() {
     (db.prepare('SELECT COUNT(*) as c FROM shop_products').get() as { c: number } | undefined)?.c ?? 0
   );
   if (productCount === 0) {
-    // Live SKUs (p221–p299) are seeded by bootShopPilot — never insert demo toys/beds/collars here.
+    // Live SKUs (p221–p309) are seeded by bootShopPilot — never insert demo toys/beds/collars here.
     const cats = [
       ['dog-food', 'غذای سگ', 'dog', 'غذای خشک و کنسرو', '🦴', 10],
       ['cat-food', 'غذای گربه', 'cat', 'غذای خشک و پوچ', '🐟', 20],

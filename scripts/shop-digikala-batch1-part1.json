@@ -1,0 +1,151 @@
+{
+  "batch": "digikala-batch1",
+  "wave": 1,
+  "part": "DK-Part1",
+  "waveCount": 4,
+  "pricingRule": "zero-margin",
+  "cacheBust": "digikala-b1-p1-v1",
+  "products": [
+    {
+      "proposedId": "p300",
+      "slug": "cat-food-dkp-21263751",
+      "title": "کنسرو گربه بالغ گورمت طعم مرغ — بسته ۶ عددی",
+      "titleEn": "",
+      "brandId": "gourmet",
+      "categorySlug": "cat-food",
+      "petTypes": [
+        "cat"
+      ],
+      "priceToman": 1549000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p301",
+      "slug": "cat-food-dkp-10928475",
+      "title": "گورمت گلد پته بوقلمون ۸۵ گرم",
+      "titleEn": "",
+      "brandId": "gourmet",
+      "categorySlug": "cat-food",
+      "petTypes": [
+        "cat"
+      ],
+      "priceToman": 249000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p302",
+      "slug": "dog-food-dkp-15589693",
+      "title": "پودینگ سگ ونپی اردک، هویج و نخود ۹۰ گرم",
+      "titleEn": "",
+      "brandId": "wanpy",
+      "categorySlug": "dog-food",
+      "petTypes": [
+        "dog"
+      ],
+      "priceToman": 186000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p303",
+      "slug": "cat-treats-dkp-9520987",
+      "title": "قرص ضد انگل ورمکس — فقط با نظر دامپزشک",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "cat-treats",
+      "petTypes": [
+        "dog"
+      ],
+      "priceToman": 480000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p304",
+      "slug": "cat-treats-dkp-3333058",
+      "title": "پودر پروبیوتیک سگ و گربه بیودپ — ۱۵ ساشه",
+      "titleEn": "",
+      "brandId": "biodop",
+      "categorySlug": "cat-treats",
+      "petTypes": [
+        "dog",
+        "cat"
+      ],
+      "priceToman": 200000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p305",
+      "slug": "cat-toys-dkp-17977789",
+      "title": "توپ هوشمند گربه LP20",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "cat-toys",
+      "petTypes": [
+        "cat"
+      ],
+      "priceToman": 1222000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p306",
+      "slug": "cat-toys-dkp-17292457",
+      "title": "توپ حرکتی نورانی پاس‌لاو با حسگر",
+      "titleEn": "",
+      "brandId": "passlove",
+      "categorySlug": "cat-toys",
+      "petTypes": [
+        "cat"
+      ],
+      "priceToman": 590000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p307",
+      "slug": "cat-toys-dkp-17411871",
+      "title": "پر متحرک با پایه ثابت",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "cat-toys",
+      "petTypes": [
+        "cat"
+      ],
+      "priceToman": 489450,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p308",
+      "slug": "cat-toys-dkp-5570618",
+      "title": "اسباب‌بازی زنگوله‌دار مدل Bell",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "cat-toys",
+      "petTypes": [
+        "cat"
+      ],
+      "priceToman": 390000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p309",
+      "slug": "cat-toys-dkp-17412089",
+      "title": "اسباب‌بازی کرم تعاملی Worm — ۴۰ گرم",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "cat-toys",
+      "petTypes": [
+        "cat"
+      ],
+      "priceToman": 380000,
+      "weightLabel": "",
+      "weightKind": ""
+    }
+  ]
+}

@@ -102,6 +102,20 @@ export const SHOP_BATCH_MULTI_WAVE5_SLUGS = [
   'bird-food-oshkaia-mynah-bird-food-kg',
 ] as const;
 
+export const SHOP_DIGIKALA_BATCH1_PART1_SLUGS = [
+  'cat-food-dkp-21263751',
+  'cat-food-dkp-10928475',
+  'dog-food-dkp-15589693',
+  'cat-treats-dkp-9520987',
+  'cat-treats-dkp-3333058',
+  'cat-toys-dkp-17977789',
+  'cat-toys-dkp-17292457',
+  'cat-toys-dkp-17411871',
+  'cat-toys-dkp-5570618',
+  'cat-toys-dkp-17412089',
+] as const;
+
+
 export const ZERO_MARGIN_SHOP_SLUGS: readonly string[] = [
   ...ROYAL_CANIN_PILOT_SLUGS,
   ...SHOP_BATCH2_SLUGS,
@@ -111,9 +125,10 @@ export const ZERO_MARGIN_SHOP_SLUGS: readonly string[] = [
   ...SHOP_BATCH_MULTI_WAVE3_SLUGS,
   ...SHOP_BATCH_MULTI_WAVE4_SLUGS,
   ...SHOP_BATCH_MULTI_WAVE5_SLUGS,
+  ...SHOP_DIGIKALA_BATCH1_PART1_SLUGS,
 ];
 
-/** Live shop product ids — 3 pilots + 12 Batch 2 + 14 Batch 3 + 10 multi wave 1 + 10 multi wave 2 + 10 multi wave 3 + 10 multi wave 4 + 10 multi wave 5. Never purge these rows. */
+/** Live shop product ids — 3 pilots + 12 Batch 2 + 14 Batch 3 + 10 multi wave 1 + 10 multi wave 2 + 10 multi wave 3 + 10 multi wave 4 + 10 multi wave 5 + 10 Digikala batch1 Part1. Never purge these rows. */
 export const LIVE_SHOP_PRODUCT_IDS = [
   'p221',
   'p222',
@@ -194,6 +209,16 @@ export const LIVE_SHOP_PRODUCT_IDS = [
   'p297',
   'p298',
   'p299',
+  'p300',
+  'p301',
+  'p302',
+  'p303',
+  'p304',
+  'p305',
+  'p306',
+  'p307',
+  'p308',
+  'p309',
 ] as const;
 
 export function isLiveShopProductIdOrSlug(idOrSlug: string): boolean {
