@@ -91,6 +91,12 @@
     <priority>0.75</priority>
   </url>
   <url>
+    <loc>https://petdate.ir/shop/c/grooming</loc>
+    <lastmod>2026-09-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
     <loc>https://petdate.ir/shop/c/cat-food</loc>
     <lastmod>2026-09-14</lastmod>
     <changefreq>weekly</changefreq>
@@ -104,6 +110,12 @@
   </url>
   <url>
     <loc>https://petdate.ir/shop/c/cat-toys</loc>
+    <lastmod>2026-09-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://petdate.ir/shop/c/cat-accessories</loc>
     <lastmod>2026-09-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.75</priority>
@@ -464,6 +476,66 @@
   </url>
   <url>
     <loc>https://petdate.ir/shop/product/dog-accessories-hannapet-silicone-dog-leash-size-l</loc>
+    <lastmod>2026-09-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://petdate.ir/shop/product/dog-accessories-hannapet-silicone-h-harness-sizr-m</loc>
+    <lastmod>2026-09-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://petdate.ir/shop/product/dog-accessories-waudog-classic-leather-collar-25-mm</loc>
+    <lastmod>2026-09-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://petdate.ir/shop/product/dog-accessories-hannapet-silicone-dog-leash-size-m</loc>
+    <lastmod>2026-09-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://petdate.ir/shop/product/cat-accessories-hannapet-double-wooden-bowl-stand</loc>
+    <lastmod>2026-09-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://petdate.ir/shop/product/cat-accessories-eggshell-bowls-for-cats</loc>
+    <lastmod>2026-09-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://petdate.ir/shop/product/cat-accessories-high-legend-bowls-for-cat</loc>
+    <lastmod>2026-09-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://petdate.ir/shop/product/cat-accessories-hanapet-double-metal-bowl-stand</loc>
+    <lastmod>2026-09-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://petdate.ir/shop/product/cat-accessories-petopoli-four-legged-pet-bowl</loc>
+    <lastmod>2026-09-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://petdate.ir/shop/product/grooming-mojan-pet-brush</loc>
+    <lastmod>2026-09-14</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.65</priority>
+  </url>
+  <url>
+    <loc>https://petdate.ir/shop/product/grooming-dog-shedding-brush-hair-release-button</loc>
     <lastmod>2026-09-14</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.65</priority>

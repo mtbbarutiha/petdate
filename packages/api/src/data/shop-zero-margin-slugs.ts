@@ -76,6 +76,19 @@ export const SHOP_BATCH_MULTI_WAVE3_SLUGS = [
   'dog-accessories-hannapet-silicone-dog-leash-size-l',
 ] as const;
 
+export const SHOP_BATCH_MULTI_WAVE4_SLUGS = [
+  'dog-accessories-hannapet-silicone-h-harness-sizr-m',
+  'dog-accessories-waudog-classic-leather-collar-25-mm',
+  'dog-accessories-hannapet-silicone-dog-leash-size-m',
+  'cat-accessories-hannapet-double-wooden-bowl-stand',
+  'cat-accessories-eggshell-bowls-for-cats',
+  'cat-accessories-high-legend-bowls-for-cat',
+  'cat-accessories-hanapet-double-metal-bowl-stand',
+  'cat-accessories-petopoli-four-legged-pet-bowl',
+  'grooming-mojan-pet-brush',
+  'grooming-dog-shedding-brush-hair-release-button',
+] as const;
+
 export const ZERO_MARGIN_SHOP_SLUGS: readonly string[] = [
   ...ROYAL_CANIN_PILOT_SLUGS,
   ...SHOP_BATCH2_SLUGS,
@@ -83,9 +96,10 @@ export const ZERO_MARGIN_SHOP_SLUGS: readonly string[] = [
   ...SHOP_BATCH_MULTI_SLUGS,
   ...SHOP_BATCH_MULTI_WAVE2_SLUGS,
   ...SHOP_BATCH_MULTI_WAVE3_SLUGS,
+  ...SHOP_BATCH_MULTI_WAVE4_SLUGS,
 ];
 
-/** Live shop product ids — 3 pilots + 12 Batch 2 + 14 Batch 3 + 10 multi wave 1 + 10 multi wave 2 + 10 multi wave 3. Never purge these rows. */
+/** Live shop product ids — 3 pilots + 12 Batch 2 + 14 Batch 3 + 10 multi wave 1 + 10 multi wave 2 + 10 multi wave 3 + 10 multi wave 4. Never purge these rows. */
 export const LIVE_SHOP_PRODUCT_IDS = [
   'p221',
   'p222',
@@ -146,6 +160,16 @@ export const LIVE_SHOP_PRODUCT_IDS = [
   'p277',
   'p278',
   'p279',
+  'p280',
+  'p281',
+  'p282',
+  'p283',
+  'p284',
+  'p285',
+  'p286',
+  'p287',
+  'p288',
+  'p289',
 ] as const;
 
 export function isLiveShopProductIdOrSlug(idOrSlug: string): boolean {

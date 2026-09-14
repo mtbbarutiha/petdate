@@ -1,0 +1,129 @@
+{
+  "batch": "multi-1",
+  "wave": 4,
+  "waveCount": 5,
+  "pricingRule": "zero-margin",
+  "cacheBust": "batch-multi-w4-v1",
+  "products": [
+    {
+      "proposedId": "p280",
+      "slug": "dog-accessories-hannapet-silicone-h-harness-sizr-m",
+      "title": "قلاده H مدل سیلیکونی حناپت سایز M",
+      "titleEn": "",
+      "brandId": "hannapet",
+      "categorySlug": "dog-accessories",
+      "petTypes": ["dog"],
+      "priceToman": 3248000,
+      "weightLabel": "M",
+      "weightKind": "size"
+    },
+    {
+      "proposedId": "p281",
+      "slug": "dog-accessories-waudog-classic-leather-collar-25-mm",
+      "title": "قلاده چرمی WAUDOG Classic",
+      "titleEn": "",
+      "brandId": "waudog",
+      "categorySlug": "dog-accessories",
+      "petTypes": ["dog"],
+      "priceToman": 3024000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p282",
+      "slug": "dog-accessories-hannapet-silicone-dog-leash-size-m",
+      "title": "لیش سیلیکونی حناپت سایز M",
+      "titleEn": "",
+      "brandId": "hannapet",
+      "categorySlug": "dog-accessories",
+      "petTypes": ["dog"],
+      "priceToman": 2953000,
+      "weightLabel": "M",
+      "weightKind": "size"
+    },
+    {
+      "proposedId": "p283",
+      "slug": "cat-accessories-hannapet-double-wooden-bowl-stand",
+      "title": "پایه چوبی دوقلو حناپت",
+      "titleEn": "",
+      "brandId": "hannapet",
+      "categorySlug": "cat-accessories",
+      "petTypes": ["cat"],
+      "priceToman": 2130000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p284",
+      "slug": "cat-accessories-eggshell-bowls-for-cats",
+      "title": "ظرف آب و غذا گربه مدل پایه دار طرح تخم مرغ",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "cat-accessories",
+      "petTypes": ["cat"],
+      "priceToman": 1468000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p285",
+      "slug": "cat-accessories-high-legend-bowls-for-cat",
+      "title": "ظرف غذا و آب گربه مدل پایه دار خندان",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "cat-accessories",
+      "petTypes": ["cat"],
+      "priceToman": 1110000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p286",
+      "slug": "cat-accessories-hanapet-double-metal-bowl-stand",
+      "title": "پایه فلزی دوقلو حناپت",
+      "titleEn": "",
+      "brandId": "hannapet",
+      "categorySlug": "cat-accessories",
+      "petTypes": ["cat"],
+      "priceToman": 1100000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p287",
+      "slug": "cat-accessories-petopoli-four-legged-pet-bowl",
+      "title": "ظرف آب و غذای پایه دار",
+      "titleEn": "",
+      "brandId": "petopoli",
+      "categorySlug": "cat-accessories",
+      "petTypes": ["cat"],
+      "priceToman": 775000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p288",
+      "slug": "grooming-mojan-pet-brush",
+      "title": "برس سگ و گربه فنری موژان",
+      "titleEn": "",
+      "brandId": "mojan",
+      "categorySlug": "grooming",
+      "petTypes": ["dog", "cat"],
+      "priceToman": 823000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p289",
+      "slug": "grooming-dog-shedding-brush-hair-release-button",
+      "title": "برس مو سگ و گربه مدل بیضی با دکمه تخلیه",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "grooming",
+      "petTypes": ["dog", "cat"],
+      "priceToman": 770000,
+      "weightLabel": "",
+      "weightKind": ""
+    }
+  ]
+}
