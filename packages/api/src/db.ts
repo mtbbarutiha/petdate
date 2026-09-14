@@ -8,6 +8,7 @@ import type {
   GamePlayer,
   GameStatus,
   GameType,
+  GamePhotoStatus,
   OnboardingStatus,
   PaymentMethod,
   PaymentOrder,
@@ -44,6 +45,10 @@ import type {
 } from '@petdate/shared';
 import {
   COIN_REASON,
+  EVENT_CREATE_COST,
+  EVENT_CREATE_FEE_REASON,
+  EVENT_JOIN_FEE_REASON,
+  MAX_EVENT_JOIN_FEE_COINS,
   FACE_VERIFY_REWARD,
   PROFILE_PHOTO_CHANGE_COST,
   PROFILE_PHOTO_CHANGE_FEE_REASON,
@@ -160,6 +165,11 @@ export function getDb(): AppDatabase {
         seedFakeDogOwners();
       } else if (process.env.SEED_DEMO_DATA === '1') {
         console.warn('SEED_DEMO_DATA ignored (production / ALLOW_DEMO_SEED=0)');
+      }
+      try {
+        seedSamplePetEventsIfEmpty();
+      } catch (err) {
+        console.warn('sample pet events seed skipped:', (err as Error).message);
       }
     };
 
@@ -660,6 +670,24 @@ function migrateSchema() {
   if (!names.has('avatar_url')) db.exec('ALTER TABLE users ADD COLUMN avatar_url TEXT');
   if (!names.has('avatar_custom')) {
     db.exec('ALTER TABLE users ADD COLUMN avatar_custom INTEGER NOT NULL DEFAULT 0');
+  }
+
+  // Events (games) — photo / geo / fee / services (additive)
+  try {
+    const gameCols = db.prepare('PRAGMA table_info(games)').all() as { name: string }[];
+    const gameNames = new Set(gameCols.map((c) => c.name));
+    if (!gameNames.has('photo_url')) db.exec('ALTER TABLE games ADD COLUMN photo_url TEXT');
+    if (!gameNames.has('photo_status')) {
+      db.exec("ALTER TABLE games ADD COLUMN photo_status TEXT NOT NULL DEFAULT 'approved'");
+    }
+    if (!gameNames.has('join_fee_coins')) {
+      db.exec('ALTER TABLE games ADD COLUMN join_fee_coins INTEGER NOT NULL DEFAULT 0');
+    }
+    if (!gameNames.has('province')) db.exec('ALTER TABLE games ADD COLUMN province TEXT');
+    if (!gameNames.has('city')) db.exec('ALTER TABLE games ADD COLUMN city TEXT');
+    if (!gameNames.has('services')) db.exec('ALTER TABLE games ADD COLUMN services TEXT');
+  } catch (err) {
+    console.warn('games event columns migrate skipped:', (err as Error).message);
   }
   if (!names.has('avatar_moderation_status')) {
     // Existing avatars stay visible; new uploads go pending via profile update.
@@ -2024,24 +2052,170 @@ function seedIfEmpty() {
   insertUser.run('demo_player', 'سارا محمدی', 'sara_m', 1);
 
   const insertGame = db.prepare(`
-    INSERT INTO games (title, game_type, section_id, host_user_id, location, scheduled_at, max_players, description)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO games (
+      title, game_type, section_id, host_user_id, location, scheduled_at, max_players,
+      description, province, city, services, join_fee_coins, photo_url, photo_status
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
   tomorrow.setHours(18, 0, 0, 0);
   insertGame.run(
-    'فوتبال پنجشنبه شب',
-    'football',
+    'پیاده‌روی گروهی پارک ملت',
+    'group_walk',
     1,
     1,
-    'زمین چمن پارک ملت',
+    'پارک ملت، ورودی شمال',
     tomorrow.toISOString(),
-    10,
-    'نیاز به ۲ دروازه‌بان داریم'
+    12,
+    'پیاده‌روی آرام با سگ‌ها — قلاده الزامی',
+    'تهران',
+    'تهران',
+    'آب خنک، کیسه جمع‌آوری',
+    20,
+    '/events/sample-walk.jpg',
+    'approved'
   );
 
   db.prepare('INSERT INTO game_players (game_id, user_id) VALUES (?, ?)').run(1, 1);
+}
+
+/** Four curated pet events with local stock photos (pre-approved). Gated by allowDemoSeeds. */
+function seedSamplePetEventsIfEmpty() {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { allowDemoSeeds } = require('./demo-seeds-guard') as typeof import('./demo-seeds-guard');
+    if (!allowDemoSeeds()) return;
+  } catch {
+    return;
+  }
+
+  const existing = (
+    db
+      .prepare(
+        `SELECT COUNT(*) as c FROM games WHERE game_type IN (
+          'pet_dating','group_walk','training','grooming_meetup','mobile_vet','play_club','exhibition'
+        )`
+      )
+      .get() as { c: number }
+  ).c;
+  if (existing >= 4) return;
+
+  let host = db
+    .prepare(`SELECT id FROM users WHERE telegram_id = ?`)
+    .get('event_demo_host') as { id: number } | undefined;
+  if (!host) {
+    const ins = db
+      .prepare(
+        `INSERT INTO users (telegram_id, name, username, coins, role, onboarding)
+         VALUES (?, ?, ?, ?, ?, ?)`
+      )
+      .run('event_demo_host', 'میزبان ایونت‌های نمونه', 'event_demo', 5000, 'pet_owner', 'profile_complete');
+    host = { id: Number(ins.lastInsertRowid) };
+  }
+
+  const samples: Array<{
+    title: string;
+    gameType: GameType;
+    location: string;
+    province: string;
+    city: string;
+    maxPlayers: number;
+    description: string;
+    services: string;
+    joinFee: number;
+    photo: string;
+    daysAhead: number;
+    hour: number;
+  }> = [
+    {
+      title: 'پت دیتینگ باغ گیاه‌شناسی',
+      gameType: 'pet_dating',
+      location: 'باغ گیاه‌شناسی ملی، ورودی شرقی',
+      province: 'تهران',
+      city: 'تهران',
+      maxPlayers: 16,
+      description: 'آشنایی پت‌های اجتماعی در فضای باز — واکسیناسیون به‌روز الزامی.',
+      services: 'فضای سایه، آب، ناظر رویداد',
+      joinFee: 50,
+      photo: '/events/sample-dating.jpg',
+      daysAhead: 3,
+      hour: 17,
+    },
+    {
+      title: 'پیاده‌روی گروهی سعادت‌آباد',
+      gameType: 'group_walk',
+      location: 'بوستان نهج‌البلاغه',
+      province: 'تهران',
+      city: 'تهران',
+      maxPlayers: 20,
+      description: 'مسیر ملایم یک‌ساعته برای سگ‌های متوسط و بزرگ.',
+      services: 'کیسه جمع‌آوری، آب خنک',
+      joinFee: 15,
+      photo: '/events/sample-walk.jpg',
+      daysAhead: 5,
+      hour: 8,
+    },
+    {
+      title: 'کارگاه آموزش فرمان‌پذیری',
+      gameType: 'training',
+      location: 'باشگاه پت ونک',
+      province: 'تهران',
+      city: 'تهران',
+      maxPlayers: 8,
+      description: 'جلسه گروهی با مربی — تمرکز روی بنشین، بمان و راه رفتن با قلاده.',
+      services: 'مربی تأییدشده، تشویقی آموزشی',
+      joinFee: 80,
+      photo: '/events/sample-training.jpg',
+      daysAhead: 7,
+      hour: 16,
+    },
+    {
+      title: 'گرومینگ میت‌آپ اصفهان',
+      gameType: 'grooming_meetup',
+      location: 'سالن پت چهارباغ',
+      province: 'اصفهان',
+      city: 'اصفهان',
+      maxPlayers: 10,
+      description: 'شست‌وشوی سبک و نکات مراقبت مو برای پت‌های مو بلند.',
+      services: 'شامپوی ملایم، خشک‌کن، مشاوره پوست',
+      joinFee: 40,
+      photo: '/events/sample-grooming.jpg',
+      daysAhead: 10,
+      hour: 11,
+    },
+  ];
+
+  const insert = db.prepare(`
+    INSERT INTO games (
+      title, game_type, section_id, host_user_id, location, scheduled_at, max_players,
+      description, province, city, services, join_fee_coins, photo_url, photo_status
+    ) VALUES (?, ?, NULL, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'approved')
+  `);
+  const linkHost = db.prepare('INSERT OR IGNORE INTO game_players (game_id, user_id) VALUES (?, ?)');
+
+  for (const s of samples) {
+    const when = new Date();
+    when.setDate(when.getDate() + s.daysAhead);
+    when.setHours(s.hour, 0, 0, 0);
+    const r = insert.run(
+      s.title,
+      s.gameType,
+      host.id,
+      s.location,
+      when.toISOString(),
+      s.maxPlayers,
+      s.description,
+      s.province,
+      s.city,
+      s.services,
+      s.joinFee,
+      s.photo
+    );
+    linkHost.run(Number(r.lastInsertRowid), host.id);
+  }
+  console.log('🐾 sample pet events seeded (4)');
 }
 
 function seedDemoPetsIfEmpty() {
@@ -3032,6 +3206,19 @@ function mapGame(row: Record<string, unknown>): Game {
   const host = hostId
     ? (db.prepare('SELECT name FROM users WHERE id = ?').get(hostId) as { name: string } | undefined)
     : undefined;
+  const photoStatusRaw = String(row.photo_status ?? 'approved').trim();
+  const photoStatus: GamePhotoStatus =
+    photoStatusRaw === 'pending' || photoStatusRaw === 'rejected' || photoStatusRaw === 'approved'
+      ? photoStatusRaw
+      : 'approved';
+  const joinFee =
+    row.join_fee_coins != null && Number.isFinite(Number(row.join_fee_coins))
+      ? Math.max(0, Math.floor(Number(row.join_fee_coins)))
+      : 0;
+  const photoUrl = row.photo_url != null ? String(row.photo_url).trim() || undefined : undefined;
+  const province = row.province != null ? String(row.province).trim() || undefined : undefined;
+  const city = row.city != null ? String(row.city).trim() || undefined : undefined;
+  const services = row.services != null ? String(row.services).trim() || undefined : undefined;
   return {
     id: row.id as number,
     title: row.title as string,
@@ -3041,11 +3228,17 @@ function mapGame(row: Record<string, unknown>): Game {
     hostUserId: row.host_user_id as number,
     hostName: host?.name,
     location: row.location as string,
+    province,
+    city,
     scheduledAt: row.scheduled_at as string,
     maxPlayers: row.max_players as number,
     currentPlayers: players.c,
     status: row.status as GameStatus,
     description: row.description as string | undefined,
+    services,
+    joinFeeCoins: joinFee,
+    photoUrl,
+    photoStatus,
     createdAt: row.created_at as string,
   };
 }
@@ -5031,28 +5224,113 @@ export const dbService = {
     scheduledAt: string;
     maxPlayers: number;
     description?: string;
-  }): Game {
-    const result = db
-      .prepare(
-        `INSERT INTO games (title, game_type, section_id, host_user_id, location, scheduled_at, max_players, description)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
-      )
-      .run(
-        data.title,
-        data.gameType,
-        data.sectionId ?? null,
-        data.hostUserId,
-        data.location,
-        data.scheduledAt,
-        data.maxPlayers,
-        data.description ?? null
-      );
-    const gameId = result.lastInsertRowid as number;
-    db.prepare('INSERT INTO game_players (game_id, user_id) VALUES (?, ?)').run(gameId, data.hostUserId);
-    return mapGame(db.prepare('SELECT * FROM games WHERE id = ?').get(gameId) as Record<string, unknown>);
+    province?: string;
+    city?: string;
+    services?: string;
+    joinFeeCoins?: number;
+    photoUrl?: string;
+    /** Seed / admin: skip pending gate (default pending when photoUrl set) */
+    photoStatus?: GamePhotoStatus;
+    /** Skip the 100-coin create fee (demo seeds only) */
+    skipCreateFee?: boolean;
+  }): { game: Game; error?: string; need?: number; balance?: number } {
+    const host = this.getUserById(data.hostUserId);
+    if (!host) {
+      return { game: null as unknown as Game, error: 'میزبان پیدا نشد' };
+    }
+
+    const joinFee = Math.min(
+      MAX_EVENT_JOIN_FEE_COINS,
+      Math.max(0, Math.floor(Number(data.joinFeeCoins) || 0))
+    );
+    const photoUrl = data.photoUrl?.trim() || undefined;
+    const photoStatus: GamePhotoStatus = photoUrl
+      ? data.photoStatus === 'approved' || data.photoStatus === 'rejected'
+        ? data.photoStatus
+        : 'pending'
+      : 'approved';
+    const province = data.province?.trim() || undefined;
+    const city = data.city?.trim() || undefined;
+    const services = data.services?.trim() || undefined;
+    const location =
+      data.location?.trim() ||
+      [city, province].filter(Boolean).join('، ') ||
+      '—';
+
+    const createCost = data.skipCreateFee ? 0 : EVENT_CREATE_COST;
+    const balance = host.coins ?? 0;
+    if (createCost > 0 && balance < createCost) {
+      return {
+        game: null as unknown as Game,
+        error: `موجودی سکه کافی نیست. ساخت ایونت ${createCost.toLocaleString('fa-IR')} سکه هزینه دارد — موجودی: ${balance.toLocaleString('fa-IR')}`,
+        need: createCost,
+        balance,
+      };
+    }
+
+    try {
+      const game = db.transaction(() => {
+        const result = db
+          .prepare(
+            `INSERT INTO games (
+              title, game_type, section_id, host_user_id, location, scheduled_at, max_players,
+              description, province, city, services, join_fee_coins, photo_url, photo_status
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+          )
+          .run(
+            data.title,
+            data.gameType,
+            data.sectionId ?? null,
+            data.hostUserId,
+            location,
+            data.scheduledAt,
+            data.maxPlayers,
+            data.description ?? null,
+            province ?? null,
+            city ?? null,
+            services ?? null,
+            joinFee,
+            photoUrl ?? null,
+            photoStatus
+          );
+        const gameId = result.lastInsertRowid as number;
+        db.prepare('INSERT INTO game_players (game_id, user_id) VALUES (?, ?)').run(
+          gameId,
+          data.hostUserId
+        );
+        if (createCost > 0) {
+          const debited = this.debitCoins(data.hostUserId, createCost, {
+            reason: EVENT_CREATE_FEE_REASON,
+            refType: 'event_create',
+            refId: gameId,
+          });
+          if (!debited) {
+            throw new Error('INSUFFICIENT_COINS');
+          }
+        }
+        return mapGame(
+          db.prepare('SELECT * FROM games WHERE id = ?').get(gameId) as Record<string, unknown>
+        );
+      })();
+      return { game };
+    } catch (err) {
+      if (err instanceof Error && err.message === 'INSUFFICIENT_COINS') {
+        const bal = this.getUserById(data.hostUserId)?.coins ?? 0;
+        return {
+          game: null as unknown as Game,
+          error: `موجودی سکه کافی نیست. ساخت ایونت ${EVENT_CREATE_COST.toLocaleString('fa-IR')} سکه هزینه دارد — موجودی: ${bal.toLocaleString('fa-IR')}`,
+          need: EVENT_CREATE_COST,
+          balance: bal,
+        };
+      }
+      throw err;
+    }
   },
 
-  joinGame(gameId: number, userId: number): { game: Game; error?: string } {
+  joinGame(
+    gameId: number,
+    userId: number
+  ): { game: Game; error?: string; need?: number; balance?: number } {
     const game = this.getGame(gameId);
     if (!game) return { game: game!, error: 'ایونت پیدا نشد' };
     if (game.status !== 'open') return { game, error: 'این ایونت دیگر باز نیست' };
@@ -5063,12 +5341,46 @@ export const dbService = {
       .get(gameId, userId);
     if (existing) return { game, error: 'شما قبلاً عضو این ایونت هستید' };
 
-    db.prepare('INSERT INTO game_players (game_id, user_id) VALUES (?, ?)').run(gameId, userId);
-    const updated = this.getGame(gameId)!;
-    if (updated.currentPlayers >= updated.maxPlayers) {
-      db.prepare("UPDATE games SET status = 'full' WHERE id = ?").run(gameId);
+    const fee = Math.max(0, Math.floor(Number(game.joinFeeCoins) || 0));
+    const isHost = userId === game.hostUserId;
+
+    try {
+      const updated = db.transaction(() => {
+        if (fee > 0 && !isHost) {
+          const debited = this.debitCoins(userId, fee, {
+            reason: EVENT_JOIN_FEE_REASON,
+            refType: 'event_join',
+            refId: gameId,
+          });
+          if (!debited) {
+            throw new Error('INSUFFICIENT_COINS');
+          }
+          this.creditCoins(game.hostUserId, fee, undefined, {
+            reason: 'درآمد عضویت ایونت',
+            refType: 'event_join',
+            refId: gameId,
+          });
+        }
+        db.prepare('INSERT INTO game_players (game_id, user_id) VALUES (?, ?)').run(gameId, userId);
+        const next = this.getGame(gameId)!;
+        if (next.currentPlayers >= next.maxPlayers) {
+          db.prepare("UPDATE games SET status = 'full' WHERE id = ?").run(gameId);
+        }
+        return this.getGame(gameId)!;
+      })();
+      return { game: updated };
+    } catch (err) {
+      if (err instanceof Error && err.message === 'INSUFFICIENT_COINS') {
+        const bal = this.getUserById(userId)?.coins ?? 0;
+        return {
+          game,
+          error: `موجودی سکه کافی نیست. عضویت ${fee.toLocaleString('fa-IR')} سکه هزینه دارد — موجودی: ${bal.toLocaleString('fa-IR')}`,
+          need: fee,
+          balance: bal,
+        };
+      }
+      throw err;
     }
-    return { game: this.getGame(gameId)! };
   },
 
   getGamePlayers(gameId: number): GamePlayer[] {
@@ -5096,6 +5408,30 @@ export const dbService = {
     const existing = this.getGame(id);
     if (!existing) return null;
     db.prepare('UPDATE games SET status = ? WHERE id = ?').run(status, id);
+    return this.getGame(id);
+  },
+
+  listPendingGamePhotos(limit = 100): Game[] {
+    const lim = Math.min(200, Math.max(1, Math.floor(Number(limit) || 100)));
+    const rows = db
+      .prepare(
+        `SELECT * FROM games
+         WHERE COALESCE(photo_status, 'approved') = 'pending'
+           AND photo_url IS NOT NULL
+           AND trim(photo_url) != ''
+         ORDER BY datetime(created_at) DESC
+         LIMIT ?`
+      )
+      .all(lim) as Record<string, unknown>[];
+    return rows.map(mapGame);
+  },
+
+  setGamePhotoStatus(id: number, status: GamePhotoStatus): Game | null {
+    if (!Number.isFinite(id) || !Number.isInteger(id) || id <= 0) return null;
+    if (!['pending', 'approved', 'rejected'].includes(status)) return null;
+    const existing = this.getGame(id);
+    if (!existing) return null;
+    db.prepare('UPDATE games SET photo_status = ? WHERE id = ?').run(status, id);
     return this.getGame(id);
   },
 

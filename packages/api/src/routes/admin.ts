@@ -851,6 +851,12 @@ adminRouter.get('/games', (req, res) => {
   res.json({ total: games.length, games });
 });
 
+adminRouter.get('/games/photos/pending', (req, res) => {
+  const limit = Number(req.query.limit);
+  const games = dbService.listPendingGamePhotos(Number.isFinite(limit) ? limit : 100);
+  res.json({ total: games.length, games });
+});
+
 adminRouter.get('/games/:id', (req, res) => {
   const id = parsePositiveIntId(req.params.id);
   if (id == null) {
@@ -881,6 +887,25 @@ adminRouter.patch('/games/:id/status', (req, res) => {
     id,
     status as 'open' | 'full' | 'cancelled' | 'completed'
   );
+  if (!updated) {
+    res.status(404).json({ error: 'ایونت پیدا نشد' });
+    return;
+  }
+  res.json(updated);
+});
+
+adminRouter.patch('/games/:id/photo', (req, res) => {
+  const id = parsePositiveIntId(req.params.id);
+  if (id == null) {
+    res.status(400).json({ error: 'شناسه ایونت نامعتبر است' });
+    return;
+  }
+  const statusRaw = String(req.body?.status ?? '').trim();
+  if (statusRaw !== 'approved' && statusRaw !== 'rejected' && statusRaw !== 'pending') {
+    res.status(400).json({ error: 'status باید approved، rejected یا pending باشد' });
+    return;
+  }
+  const updated = dbService.setGamePhotoStatus(id, statusRaw);
   if (!updated) {
     res.status(404).json({ error: 'ایونت پیدا نشد' });
     return;

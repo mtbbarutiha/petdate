@@ -29,16 +29,40 @@ import type {
 import type { UserGender } from './petdate';
 import type { CoinAward, WalletBalances } from './economy';
 
+/** Pet-first event types (UI create form). Legacy sports values remain readable. */
 export type GameType =
+  | 'pet_dating'
+  | 'group_walk'
+  | 'training'
+  | 'grooming_meetup'
+  | 'mobile_vet'
+  | 'play_club'
+  | 'exhibition'
+  | 'other'
+  /** @deprecated sports-era — still accepted from older rows */
   | 'football'
   | 'volleyball'
   | 'basketball'
   | 'futsal'
   | 'tennis'
-  | 'board'
-  | 'other';
+  | 'board';
+
+/** Types shown in create/edit event forms (no legacy sports). */
+export const EVENT_GAME_TYPES: readonly GameType[] = [
+  'pet_dating',
+  'group_walk',
+  'training',
+  'grooming_meetup',
+  'mobile_vet',
+  'play_club',
+  'exhibition',
+  'other',
+] as const;
 
 export type GameStatus = 'open' | 'full' | 'cancelled' | 'completed';
+
+/** Admin / public photo gate for event cover images */
+export type GamePhotoStatus = 'pending' | 'approved' | 'rejected';
 
 export {
   ONBOARDING_STATUS_LABELS,
@@ -324,11 +348,22 @@ export interface Game {
   hostUserId: number;
   hostName?: string;
   location: string;
+  /** استان */
+  province?: string;
+  /** شهر */
+  city?: string;
   scheduledAt: string;
   maxPlayers: number;
   currentPlayers: number;
   status: GameStatus;
   description?: string;
+  /** خدمات ارائه‌شده توسط میزبان */
+  services?: string;
+  /** هزینه عضویت (سکه) — ۰ = رایگان */
+  joinFeeCoins?: number;
+  /** Cover photo URL (gated by photoStatus for non-host viewers) */
+  photoUrl?: string;
+  photoStatus?: GamePhotoStatus;
   createdAt: string;
 }
 
@@ -341,13 +376,43 @@ export interface GamePlayer {
 }
 
 export const GAME_TYPE_LABELS: Record<GameType, string> = {
+  pet_dating: 'پت دیتینگ',
+  group_walk: 'پیاده‌روی گروهی',
+  training: 'آموزش',
+  grooming_meetup: 'گرومینگ میت‌آپ',
+  mobile_vet: 'ویزیت دامپزشک سیار',
+  play_club: 'باشگاه بازی پت',
+  exhibition: 'نمایشگاه',
+  other: 'سایر',
   football: 'فوتبال',
   volleyball: 'والیبال',
   basketball: 'بسکتبال',
   futsal: 'فوتسال',
   tennis: 'تنیس',
   board: 'فکری',
-  other: 'سایر',
+};
+
+export const GAME_TYPE_LABELS_EN: Record<GameType, string> = {
+  pet_dating: 'Pet dating',
+  group_walk: 'Group walk',
+  training: 'Training',
+  grooming_meetup: 'Grooming meetup',
+  mobile_vet: 'Mobile vet visit',
+  play_club: 'Pet play club',
+  exhibition: 'Exhibition',
+  other: 'Other',
+  football: 'Football',
+  volleyball: 'Volleyball',
+  basketball: 'Basketball',
+  futsal: 'Futsal',
+  tennis: 'Tennis',
+  board: 'Board / mind',
+};
+
+export const GAME_PHOTO_STATUS_LABELS: Record<GamePhotoStatus, string> = {
+  pending: 'در انتظار تأیید',
+  approved: 'تأیید شده',
+  rejected: 'رد شده',
 };
 
 export const GAME_STATUS_LABELS: Record<GameStatus, string> = {

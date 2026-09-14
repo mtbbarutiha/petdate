@@ -104,3 +104,23 @@ export function sanitizePetPhotosForViewer<
   out.imageUrl = publicFacingPhotoUrl(pet.imageUrl, pet.photoModerationStatus);
   return out;
 }
+
+/** Public event cover: hide until admin approves (host still sees pending). */
+export function sanitizeGamePhotoForViewer<
+  T extends {
+    hostUserId: number;
+    photoUrl?: string;
+    photoStatus?: PhotoModerationStatus | string | null;
+  },
+>(game: T, viewerId?: number, opts?: { privileged?: boolean }): T {
+  if (opts?.privileged) return game;
+  const isHost = viewerId != null && viewerId === game.hostUserId;
+  if (isHost) return game;
+  const out = { ...game };
+  out.photoUrl = publicFacingPhotoUrl(
+    game.photoUrl,
+    game.photoStatus as PhotoModerationStatus | null | undefined
+  );
+  return out;
+}
+
