@@ -41,6 +41,16 @@ assert.match(supportPage, /\/reply/, 'human reply wired');
 
 const hook = read(join(webRoot, 'hooks/usePlatformConfig.ts'));
 assert.match(hook, /\/api\/platform\/config/, 'site fetches public config');
+assert.match(hook, /paymentCardConfigured/, 'platform config carries deposit card configured flag');
+
+const shopCart = read(join(webRoot, 'pages/shop/ShopCartPage.tsx'));
+assert.match(shopCart, /pd-shop-card-deposit/, 'cart shows deposit card when card-to-card selected');
+assert.match(shopCart, /آپلود فیش/, 'cart copy points to web receipt upload');
+assert.doesNotMatch(shopCart, /ارسال رسید در ربات/, 'cart no longer says receipt-only-in-bot');
+
+const shopCardPay = read(join(webRoot, 'pages/shop/ShopCardPayPage.tsx'));
+assert.match(shopCardPay, /application\/pdf/, 'shop card pay accepts PDF receipts');
+assert.match(shopCardPay, /آپلود فیش/, 'shop card pay has receipt upload CTA');
 
 const chrome = read(join(webRoot, 'components/LandingChrome.tsx'));
 assert.match(chrome, /PlatformBanners/, 'landing shows platform banners');

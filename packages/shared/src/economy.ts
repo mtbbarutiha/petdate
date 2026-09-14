@@ -218,15 +218,16 @@ export function validateIranCard(
 
 export function formatCardGrouped(card: string): string {
   const d = normalizeCardNumber(card);
-  if (d.length === 16) return d.replace(/(\d{4})(?=\d)/g, '$1-');
-  return d;
+  if (d.length < 4) return d;
+  return d.replace(/(\d{4})(?=\d)/g, '$1-');
 }
 
-/** ماسک کارت برای UI: ۱۲۳۴-****-****-۵۶۷۸ */
+/** ماسک کارت برای UI: ۱۲۳۴-****-****-۵۶۷۸ (یا first4****last4 برای طول‌های دیگر) */
 export function maskCardNumber(card: string): string {
   const d = normalizeCardNumber(card);
-  if (d.length !== 16) return '****';
-  return `${d.slice(0, 4)}-****-****-${d.slice(12)}`;
+  if (d.length === 16) return `${d.slice(0, 4)}-****-****-${d.slice(12)}`;
+  if (d.length >= 8) return `${d.slice(0, 4)}****${d.slice(-4)}`;
+  return '****';
 }
 
 export const COIN_SELL_STATUS_LABELS_FA: Record<CoinSellRequestStatus, string> = {

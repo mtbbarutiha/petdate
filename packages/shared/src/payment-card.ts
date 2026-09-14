@@ -1,10 +1,14 @@
 import { formatCardGrouped, maskCardNumber, validateIranCard } from './economy';
 
-/** Historical code defaults — never treat these as a live destination card. */
-export const UNSAFE_PAYMENT_CARD_NUMBERS = [
-  '62198611052407631',
-  '6037XXXXXXXXXXXX',
-] as const;
+/**
+ * Patterns that must never be treated as a live destination when used as
+ * *code defaults* (empty / X placeholders). An explicitly configured env PAN
+ * that matches a former hardcoded default is allowed — ops set it on purpose.
+ */
+export const UNSAFE_PAYMENT_CARD_NUMBERS = ['6037XXXXXXXXXXXX'] as const;
+
+/** Former in-code default PAN — verify-prod-env may warn; API accepts when set in env. */
+export const HISTORICAL_PAYMENT_CARD_DEFAULT = '62198611052407631';
 
 export const PAYMENT_CARD_MISSING_ERROR_FA =
   'شماره کارت واریز پیکربندی نشده. PAYMENT_CARD_NUMBER و PAYMENT_CARD_HOLDER را در محیط سرور تنظیم کنید.';
@@ -32,7 +36,10 @@ export function isUnsafePaymentCardNumber(raw: string): boolean {
 }
 
 /**
- * Fail closed: no hardcoded production card. Missing / placeholder / invalid → error.
+ * Destination deposit card from trusted env.
+ * - Missing / X-placeholder → fail closed (no code fallback).
+ * - Prefer 16-digit Luhn-valid Iran PAN.
+ * - Also accept explicit 16–19 digit env values (legacy ops PANs) without Luhn.
  */
 export function resolvePaymentCardFromEnv(env: {
   PAYMENT_CARD_NUMBER?: string;
@@ -46,11 +53,16 @@ export function resolvePaymentCardFromEnv(env: {
   if (isUnsafePaymentCardNumber(rawNumber)) {
     return { ok: false, reason: 'placeholder', error: PAYMENT_CARD_MISSING_ERROR_FA };
   }
-  const valid = validateIranCard(rawNumber);
-  if (!valid.ok) {
-    return { ok: false, reason: 'invalid', error: PAYMENT_CARD_MISSING_ERROR_FA };
+  const digits = digitsOnly(rawNumber);
+  const valid16 = validateIranCard(rawNumber);
+  if (valid16.ok) {
+    return { ok: true, number: valid16.card, holder };
   }
-  return { ok: true, number: valid.card, holder };
+  // Explicit env destination: allow 16–19 digits even if Luhn fails (ops-configured).
+  if (digits.length >= 16 && digits.length <= 19) {
+    return { ok: true, number: digits, holder };
+  }
+  return { ok: false, reason: 'invalid', error: PAYMENT_CARD_MISSING_ERROR_FA };
 }
 
 export function paymentCardPublicFields(card: PaymentCardOk): {

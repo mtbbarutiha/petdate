@@ -534,9 +534,9 @@ export function WalletPage() {
                   <label className="pepito-wallet-buy-ref"><span>شماره پیگیری (اختیاری)</span>
                     <input value={transferRef} onChange={(e) => setTransferRef(e.target.value)} placeholder="کد پیگیری بانک" dir="ltr" />
                   </label>
-                  <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden onChange={(e) => void onUploadReceipt(e.target.files?.[0] ?? null)} />
+                  <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,.pdf" hidden onChange={(e) => void onUploadReceipt(e.target.files?.[0] ?? null)} />
                   <div className="pepito-wallet-tg-actions" style={{ marginTop: 8 }}>
-                    <button type="button" className="pepito-btn button-1" disabled={uploadBusy || buyBusy} onClick={() => fileRef.current?.click()}>{uploadBusy ? 'در حال ارسال…' : 'آپلود عکس رسید'}</button>
+                    <button type="button" className="pepito-btn button-1" disabled={uploadBusy || buyBusy} onClick={() => fileRef.current?.click()}>{uploadBusy ? 'در حال ارسال…' : 'آپلود فیش (عکس یا PDF)'}</button>
                     <button type="button" className="pepito-btn pepito-btn--danger" disabled={uploadBusy || buyBusy} onClick={() => void onCancelActiveOrder()}>لغو سفارش</button>
                   </div>
                 </>

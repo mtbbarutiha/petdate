@@ -32,8 +32,20 @@ export type PublicAnnouncement = {
   placement: string;
 };
 
+/** Public deposit card for card-to-card checkout (null when not configured). */
+export type PublicPaymentCardInfo = {
+  cardNumber: string;
+  cardMasked: string;
+  cardGrouped: string;
+  cardHolder: string;
+};
+
 export type PublicPlatformConfig = Record<RuntimeFlagKey, boolean> & {
   announcements: PublicAnnouncement[];
+  /** True when PAYMENT_CARD_* env resolves to a usable destination. */
+  paymentCardConfigured?: boolean;
+  paymentCard?: PublicPaymentCardInfo | null;
+  paymentCardError?: string;
 };
 
 export const ANNOUNCEMENT_PLACEMENTS = ['landing', 'shop', 'app', 'bot'] as const;

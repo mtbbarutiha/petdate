@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import {
+  HISTORICAL_PAYMENT_CARD_DEFAULT,
   PAYMENT_CARD_MISSING_ERROR_FA,
   isUnsafePaymentCardNumber,
   paymentCardPublicFields,
@@ -7,9 +8,13 @@ import {
 } from './payment-card.ts';
 
 assert.equal(isUnsafePaymentCardNumber(''), true);
-assert.equal(isUnsafePaymentCardNumber('62198611052407631'), true, 'historical hardcoded default');
 assert.equal(isUnsafePaymentCardNumber('6037XXXXXXXXXXXX'), true, 'example placeholder');
 assert.equal(isUnsafePaymentCardNumber('6037-XXXX-XXXX-XXXX'), true);
+assert.equal(
+  isUnsafePaymentCardNumber(HISTORICAL_PAYMENT_CARD_DEFAULT),
+  false,
+  'historical default is allowed when explicitly set in env'
+);
 
 const missing = resolvePaymentCardFromEnv({ PAYMENT_CARD_NUMBER: '', PAYMENT_CARD_HOLDER: '' });
 assert.equal(missing.ok, false);
@@ -24,12 +29,16 @@ const noHolder = resolvePaymentCardFromEnv({
 });
 assert.equal(noHolder.ok, false);
 
-const hardcoded = resolvePaymentCardFromEnv({
-  PAYMENT_CARD_NUMBER: '62198611052407631',
+// Explicit ops env with former hardcoded PAN + holder must work (prod reality).
+const historical = resolvePaymentCardFromEnv({
+  PAYMENT_CARD_NUMBER: HISTORICAL_PAYMENT_CARD_DEFAULT,
   PAYMENT_CARD_HOLDER: 'محمد تقی باروتیها',
 });
-assert.equal(hardcoded.ok, false);
-if (!hardcoded.ok) assert.equal(hardcoded.reason, 'placeholder');
+assert.equal(historical.ok, true);
+if (historical.ok) {
+  assert.equal(historical.number, HISTORICAL_PAYMENT_CARD_DEFAULT);
+  assert.equal(historical.holder, 'محمد تقی باروتیها');
+}
 
 // Classic Luhn-valid test PAN — not a live PetDate destination card.
 const ok = resolvePaymentCardFromEnv({
@@ -51,5 +60,12 @@ const short = resolvePaymentCardFromEnv({
 });
 assert.equal(short.ok, false);
 if (!short.ok) assert.equal(short.reason, 'invalid');
+
+const placeholderX = resolvePaymentCardFromEnv({
+  PAYMENT_CARD_NUMBER: '6037XXXXXXXXXXXX',
+  PAYMENT_CARD_HOLDER: 'پت‌دیت',
+});
+assert.equal(placeholderX.ok, false);
+if (!placeholderX.ok) assert.equal(placeholderX.reason, 'placeholder');
 
 console.log('payment-card.selftest: ok');

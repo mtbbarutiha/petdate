@@ -579,7 +579,7 @@ shopRouter.post('/checkout/card-receipt/:paymentOrderId', (req, res) => {
         return;
       }
       if (msg === 'INVALID_MIME') {
-        res.status(400).json({ ok: false, error: 'فقط تصویر JPG/PNG/WebP مجاز است.' });
+        res.status(400).json({ ok: false, error: 'فقط تصویر JPG/PNG/WebP/GIF یا PDF مجاز است.' });
         return;
       }
       console.warn('shop card receipt upload failed:', msg);
