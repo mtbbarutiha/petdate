@@ -33,7 +33,9 @@ assert.doesNotMatch(
   'Telegram must not be demoted to tiny text-only link'
 );
 assert.match(login, /auth-login-premium/, 'premium login wrapper');
-assert.match(login, /auth-login-brand/, 'brand-first Pet Date signal');
+assert.doesNotMatch(login, /auth-login-brand/, 'no second Pet Date inside the card');
+assert.doesNotMatch(login, /bannerTitle=\"Pet Date\"/, 'banner title is not a second brand line');
+assert.match(login, /bannerTitle=\"ورود\"/, 'banner title is login intent, not brand');
 assert.match(globalCss, /auth-login-premium/, 'premium login styles shipped');
 assert.match(otp, /auth-otp-countdown/, 'OTP resend countdown visible');
 assert.match(otp, /readRetryAfterSec/, 'OTP reads retryAfterSec from errors');

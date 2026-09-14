@@ -227,13 +227,12 @@ export function LoginPage() {
   if (waiting) {
     return (
       <AuthShell
-        bannerTitle="Pet Date"
+        bannerTitle="ورود با تلگرام"
         bannerLead="تأیید تلگرام — ادامه در همین مرورگر"
         bannerImage="/pepito/uploads/3.jpg"
         footer={false}
       >
         <div className="pepito-auth-login auth-login-premium auth-login-premium--wait">
-          <p className="auth-login-brand">Pet Date</p>
           <h1>منتظر تأیید…</h1>
           <p className="auth-lead">
             در تلگرام دکمهٔ <strong>تأیید ورود</strong> را بزن. همین تب خودکار وارد می‌شود.
@@ -268,14 +267,13 @@ export function LoginPage() {
 
   return (
     <AuthShell
-      bannerTitle="Pet Date"
+      bannerTitle="ورود"
       bannerLead="ورود امن — همان حساب وب و ربات"
       bannerImage="/pepito/uploads/3.jpg"
       footer={false}
     >
       <div className="pepito-auth-login auth-login-premium">
         <header className="auth-login-head">
-          <p className="auth-login-brand">Pet Date</p>
           <h1>خوش آمدی</h1>
           <p className="auth-lead">{lead}</p>
         </header>
