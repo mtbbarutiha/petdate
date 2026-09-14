@@ -21,7 +21,6 @@ import {
   Truck,
 } from 'lucide-react';
 import {
-  filterProducts,
   formatToman,
   getBrand,
   getCategory,
@@ -42,7 +41,7 @@ import { productPublicUrl, shareOrCopyUrl } from '../../lib/share';
 import { trackViewItem } from '../../lib/siteAnalytics';
 import { ShopBreadcrumb } from '../../components/shop/ShopBreadcrumb';
 import { ShopChrome } from '../../components/shop/ShopChrome';
-import { ShopProductCard } from '../../components/shop/ShopProductCard';
+import { ShopSimilarProducts } from '../../components/shop/ShopSimilarProducts';
 import { ShopProductGallery } from '../../components/shop/ShopProductGallery';
 import { ShopTrustBadges } from '../../components/shop/ShopTrustBadges';
 import { shopProductBreadcrumbs } from '../../lib/shopBreadcrumb';
@@ -83,13 +82,6 @@ export function ShopProductPage() {
   const { rating, count: reviewCount } = product
     ? productRating(product)
     : { rating: 0, count: 0 };
-
-  const related = useMemo(() => {
-    if (!product) return [];
-    return filterProducts({ categorySlug: product.categorySlug })
-      .filter((p) => p.id !== product.id)
-      .slice(0, 4);
-  }, [product]);
 
   useEffect(() => {
     if (!product) return;
@@ -493,19 +485,8 @@ export function ShopProductPage() {
           </div>
         </section>
 
-        {related.length > 0 ? (
-          <section className="pd-shop-block">
-            <div className="pepito-section-head">
-              <p className="pepito-eyebrow">کالاهای مشابه</p>
-              <h2>خریداران این کالا را هم دیده‌اند</h2>
-            </div>
-            <div className="pd-shop-product-grid">
-              {related.map((p) => (
-                <ShopProductCard key={p.id} product={p} />
-              ))}
-            </div>
-          </section>
-        ) : null}
+        {/* DigiKala-style similar products — below trust badges + description tabs */}
+        <ShopSimilarProducts product={product} />
       </div>
 
       {/* Mobile sticky buy bar — Digikala-like */}

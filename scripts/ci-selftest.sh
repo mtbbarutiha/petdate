@@ -305,6 +305,9 @@ npx tsx "$ROOT/packages/web/src/components/shop/shopTrustBadges.selftest.ts"
 echo "==> selftest: shop product search (chrome pill + Ctrl+K)"
 npx tsx "$ROOT/packages/web/src/components/shop/shopProductSearch.selftest.ts"
 
+echo "==> selftest: shop similar products rail"
+npx tsx "$ROOT/packages/web/src/lib/shopSimilarProducts.selftest.ts"
+
 echo "==> selftest: shop product images[] helpers"
 npx tsx "$ROOT/packages/api/src/data/shop-product-images.selftest.ts"
 
