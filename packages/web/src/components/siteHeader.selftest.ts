@@ -154,6 +154,21 @@ assert.match(
   /@media \(min-width: 860px\)[\s\S]{0,900}\.pepito-nav-primary\s*\{[\s\S]{0,180}flex:\s*0 1 auto/,
   'desktop primary nav shrink-wraps beside the brand (not flex-grow away from logo)'
 );
+assert.match(
+  css,
+  /@media \(min-width: 860px\)[\s\S]{0,1200}\.pepito-nav-primary\s*\{[\s\S]{0,280}margin-inline-end:\s*auto/,
+  'desktop primary absorbs free space (page dir) so LTR actions park at physical left'
+);
+assert.match(
+  css,
+  /@media \(min-width: 860px\)[\s\S]{0,1600}\.pepito-nav-actions\s*\{[^}]*margin-inline-start:\s*0\s*!important/,
+  'desktop must not use ms-auto on the LTR actions island (RTL cluster bug)'
+);
+assert.doesNotMatch(
+  css,
+  /\.pepito-nav-actions\s*\{[^}]*^\s*margin-inline-start:\s*auto/m,
+  'base actions styles must not use ms-auto (direction:ltr → margin-left on RTL)'
+);
 const criticalHtml = readFileSync(join(root, '../index.html'), 'utf8');
 assert.match(
   criticalHtml,
