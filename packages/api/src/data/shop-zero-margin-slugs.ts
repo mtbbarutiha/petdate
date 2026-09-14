@@ -115,6 +115,7 @@ export const SHOP_DIGIKALA_BATCH1_PART1_SLUGS = [
   'cat-toys-dkp-17412089',
 ] as const;
 
+
 export const ZERO_MARGIN_SHOP_SLUGS: readonly string[] = [
   ...ROYAL_CANIN_PILOT_SLUGS,
   ...SHOP_BATCH2_SLUGS,
