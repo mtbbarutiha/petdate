@@ -8923,8 +8923,8 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   height: var(--pepito-nav-chip-h);
   min-height: var(--pepito-nav-chip-h);
   border-radius: 50%;
-  color: var(--pepito-dark);
   background: var(--pd-chip-bg, rgba(255, 255, 255, 0.72));
+  color: var(--pepito-dark);
   border: 1.5px solid rgba(92, 77, 145, 0.14);
   text-decoration: none;
   transition: background 0.2s ease, color 0.2s ease;
