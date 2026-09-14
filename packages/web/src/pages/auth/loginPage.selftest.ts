@@ -22,6 +22,7 @@ assert.doesNotMatch(login, /onGoogleClick/, 'Google always starts API OAuth');
 assert.doesNotMatch(login, /googleReady/, 'Google CTA is not gated on /providers');
 assert.doesNotMatch(login, /fetchAuthProviders/, 'login does not hide Google behind providers');
 assert.match(login, /auth-otp-countdown/, 'SMS send countdown on login');
+assert.match(login, /normalizeIranMobile/, 'validates phone before OTP request');
 assert.match(login, /requestOtp\('phone'/, 'phone OTP only');
 assert.doesNotMatch(login, /setChannel\('email'\)/, 'no email tab setter');
 assert.doesNotMatch(login, /channel === 'email'/, 'no email channel UI');

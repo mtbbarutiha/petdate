@@ -96,6 +96,17 @@ export function isExpectedHttpNoise(
     return true;
   }
 
+  // OTP request 400s are either client validation or provider failures already
+  // written as explicit source=sms errors — avoid duplicate HTTP warn rows.
+  if (statusCode === 400 && m === 'POST' && path === '/api/auth/otp/request') {
+    return true;
+  }
+
+  // HR RBAC account create validation (short password, bad username, etc.).
+  if (statusCode === 400 && m === 'POST' && path === '/api/admin/hr/rbac/accounts') {
+    return true;
+  }
+
   return false;
 }
 
@@ -149,6 +160,10 @@ export function installConsoleErrorBridge(source = 'api'): void {
     nativeConsoleError(...args);
     const message = formatConsoleArgs(args);
     if (!message || message.startsWith('failed to persist app log:')) return;
+    // OTP send failures are persisted via logAppEvent(source=sms) in auth routes.
+    if (message.startsWith('web phone otp send failed')) return;
+    // ioredis emits Unhandled error on transient connect blips — health probes already report Redis.
+    if (message.includes('[ioredis]') && message.toLowerCase().includes('etimedout')) return;
     const err = args.find((a): a is Error => a instanceof Error);
     logAppEvent({
       level: 'error',
@@ -202,6 +217,8 @@ function isExpectedUnauthNoise(req: Request, statusCode: number): boolean {
     '/api/auth/visit-fee',
     '/api/shop/my-orders',
     '/api/shop/checkout/card-status',
+    // Guest / stale-token cart probes from site chrome (events, landing, admin login).
+    '/api/shop/cart',
     '/api/playdate-requests',
     '/api/pets/mine',
   ];

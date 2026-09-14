@@ -4,6 +4,7 @@ import {
   fetchMe,
   invalidateAuthGetCache,
   logoutWebSession,
+  onWebAuthTokenCleared,
   patchWebPrimaryRole,
   patchWebProfile,
   patchWebRoles,
@@ -63,6 +64,14 @@ class AuthStore {
         onboarding: this.data.user.onboarding,
       });
     }
+    onWebAuthTokenCleared(() => {
+      if (!this.data.token) return;
+      invalidateAuthGetCache(this.data.token);
+      refreshMeInflight = null;
+      this.data = {};
+      userStore.reset();
+      this.listeners.forEach((l) => l());
+    });
   }
 
   subscribe = (listener: () => void) => {
