@@ -344,7 +344,7 @@ export const GAME_TYPE_LABELS: Record<GameType, string> = {
   basketball: 'بسکتبال',
   futsal: 'فوتسال',
   tennis: 'تنیس',
-  board: 'بازی فکری',
+  board: 'فکری',
   other: 'سایر',
 };
 

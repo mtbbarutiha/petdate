@@ -91,7 +91,7 @@ export function httpStatusCopy(code: number | null | undefined, lang: ErrorLang 
 }
 
 export const PATH_AREA_COPY: Array<{ test: (path: string) => boolean; copy: LocalizedCopy }> = [
-  { test: (p) => p.includes('/games'), copy: { fa: 'بازی‌ها', en: 'Games' } },
+  { test: (p) => p.includes('/games') || p.includes('/events'), copy: { fa: 'ایونت‌ها', en: 'Events' } },
   { test: (p) => p.includes('/avatar'), copy: { fa: 'آواتار', en: 'Avatar' } },
   { test: (p) => p.includes('/appointment'), copy: { fa: 'نوبت‌ها', en: 'Appointments' } },
   {
@@ -374,27 +374,27 @@ function httpPathTitles(
   if (pl.includes('/games') && (pl.endsWith('/list') || pl.includes('/games/list'))) {
     if (status >= 500) {
       return {
-        fa: 'خطای سرور در فهرست بازی‌ها — شناسه یا پارامتر نامعتبر (API قدیمی؛ رابط کاربر: هم بازی → /chats)',
-        en: 'Games list server error — invalid id/params (legacy API; UI: playmates → /chats)',
+        fa: 'خطای سرور در فهرست ایونت‌ها — شناسه یا پارامتر نامعتبر (API قدیمی؛ رابط کاربر: هم بازی → /chats)',
+        en: 'Events list server error — invalid id/params (legacy API; UI: playmates → /chats)',
       };
     }
     return {
-      fa: `${statusFa} در فهرست بازی‌ها`,
-      en: `${statusEn} on games list`,
+      fa: `${statusFa} در فهرست ایونت‌ها`,
+      en: `${statusEn} on events list`,
     };
   }
 
   if (pl.includes('/games/') && status >= 500) {
     return {
-      fa: 'خطای سرور در جزئیات بازی — شناسه باید عدد معتبر باشد',
-      en: 'Game detail server error — id must be a valid number',
+      fa: 'خطای سرور در جزئیات ایونت — شناسه باید عدد معتبر باشد',
+      en: 'Event detail server error — id must be a valid number',
     };
   }
 
   if (pl.includes('/sections/') && pl.includes('/games') && status >= 500) {
     return {
-      fa: 'خطای سرور در بازی‌های سکشن — شناسه سکشن نامعتبر',
-      en: 'Section games server error — invalid section id',
+      fa: 'خطای سرور در ایونت‌های سکشن — شناسه سکشن نامعتبر',
+      en: 'Section events server error — invalid section id',
     };
   }
 

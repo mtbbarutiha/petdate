@@ -31,12 +31,12 @@ gamesRouter.get('/list', listGamesHandler);
 gamesRouter.get('/:id', (req, res) => {
   const id = parsePositiveIntId(req.params.id);
   if (id == null) {
-    res.status(400).json({ error: 'شناسه بازی نامعتبر است' });
+    res.status(400).json({ error: 'شناسه ایونت نامعتبر است' });
     return;
   }
   const game = dbService.getGame(id);
   if (!game) {
-    res.status(404).json({ error: 'بازی پیدا نشد' });
+    res.status(404).json({ error: 'ایونت پیدا نشد' });
     return;
   }
   const players = dbService.getGamePlayers(game.id);
@@ -92,7 +92,7 @@ gamesRouter.post('/', (req, res) => {
 gamesRouter.post('/:id/join', (req, res) => {
   const gameId = parsePositiveIntId(req.params.id);
   if (gameId == null) {
-    res.status(400).json({ error: 'شناسه بازی نامعتبر است' });
+    res.status(400).json({ error: 'شناسه ایونت نامعتبر است' });
     return;
   }
 

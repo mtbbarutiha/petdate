@@ -13369,7 +13369,7 @@ a.pepito-btn.pepito-human-consult-cta:hover {
 /* SITE_DESKTOP_NAV
    Hierarchy: brand | primary (role text + extras + overflow) | utilities.
    Role shortcuts share the خدمات plain-text treatment (no icon pills).
-   Marketing شاپ/بازی‌ها text links are not rendered beside SiteDesktopNav.
+   Marketing شاپ/ایونت‌ها text links are not rendered beside SiteDesktopNav.
    Utilities (cluster + lang + theme) are in-flow at inline-end; LTR inside
    the cluster keeps avatar → wallet → cart on the physical left. */
 .pepito-site-desktop-nav {
@@ -16096,7 +16096,7 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   border-color: rgba(253, 150, 30, 0.45);
 }
 
-/* —— Games (/games) —— */
+/* —— Events (/events) —— */
 .pepito-games-page .pepito-games {
   padding-block: 32px 64px;
 }

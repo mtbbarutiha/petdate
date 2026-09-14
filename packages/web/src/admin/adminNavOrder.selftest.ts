@@ -57,7 +57,7 @@ assert.deepEqual(
 );
 
 const platform = layout.split("titleKey: 'admin.platform'")[1]?.split("titleKey: 'admin.finance'")[0] ?? '';
-assert.ok(hrefsIn(platform).indexOf('/admin/verification') < hrefsIn(platform).indexOf('/admin/games'), 'verify before games browse');
+assert.ok(hrefsIn(platform).indexOf('/admin/verification') < hrefsIn(platform).indexOf('/admin/events'), 'verify before events browse');
 assert.match(platform, /tone:\s*'sensitive'/, 'verification/docs use sensitive tone');
 
 const finance = layout.split("titleKey: 'admin.finance'")[1]?.split("titleKey: 'admin.ats'")[0] ?? '';

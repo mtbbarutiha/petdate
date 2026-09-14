@@ -23,7 +23,7 @@ const gamesList = formatAdminLogMessageFa({
   method: 'GET',
   statusCode: 500,
 });
-assert.match(gamesList.title, /فهرست بازی|بازی/);
+assert.match(gamesList.title, /فهرست ایونت|ایونت/);
 assert.match(gamesList.title, /\/chats|هم بازی/);
 assert.equal(gamesList.detail, 'HTTP 500 GET /api/games/list');
 
@@ -33,7 +33,7 @@ const gamesAbc = formatAdminLogMessageFa({
   method: 'GET',
   statusCode: 500,
 });
-assert.match(gamesAbc.title, /بازی|شناسه/);
+assert.match(gamesAbc.title, /ایونت|شناسه/);
 
 const nan = formatAdminLogMessageFa({
   message: 'invalid input syntax for type bigint: "NaN"',

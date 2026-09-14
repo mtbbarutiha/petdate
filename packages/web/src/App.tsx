@@ -457,7 +457,8 @@ export default function App() {
             <Route path="news" element={<Navigate to="/magazine" replace />} />
             <Route path="adoption" element={<AdoptionListPage />} />
             <Route path="adoption/:slug" element={<AdoptionDetailPage />} />
-            <Route path="games" element={<GamesPage />} />
+            <Route path="events" element={<GamesPage />} />
+            <Route path="games" element={<Navigate to="/events" replace />} />
             <Route path="pet/:slugOrId" element={<PublicPetPage />} />
             <Route path="vet-consult" element={<VetConsultRoute />} />
             <Route path="team-chat/:agentSlug" element={<TeamChatStartPage />} />
@@ -512,7 +513,8 @@ export default function App() {
                 <Route path="pets/new" element={<AdminPetFormPage />} />
                 <Route path="pets/:id/edit" element={<AdminPetFormPage />} />
                 <Route path="playdates" element={<AdminPlaydatesPage />} />
-                <Route path="games" element={<AdminGamesPage />} />
+                <Route path="events" element={<AdminGamesPage />} />
+                <Route path="games" element={<Navigate to="/admin/events" replace />} />
                 <Route path="matches" element={<Navigate to="/admin/playdates" replace />} />
                 <Route path="consults" element={<AdminConsultsPage />} />
                 <Route path="verification" element={<AdminVerificationPage />} />

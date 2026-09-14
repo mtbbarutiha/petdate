@@ -8,8 +8,8 @@ import { usePlatformConfig } from '../hooks/usePlatformConfig';
 /**
  * Desktop primary actions (≥860px) — follow active primary role.
  * Visual: same plain text as خدمات / پذیرش (no outlined icon pills).
- * Owner: هم بازی / شاپ / بازی‌ها (پت‌های من is in LandingChrome app nav)
- * Vet: پنل پزشک / گفتگو / شاپ / بازی‌ها
+ * Owner: هم بازی / شاپ / ایونت‌ها (پت‌های من is in LandingChrome app nav)
+ * Vet: پنل پزشک / گفتگو / شاپ / ایونت‌ها
  * Wallet chip + circular profile avatar live in NavUserCluster.
  * Guest login is the cluster icon (not a text «ورود» shortcut).
  */

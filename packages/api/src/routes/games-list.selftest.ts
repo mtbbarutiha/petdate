@@ -14,7 +14,7 @@ const parseSrc = readFileSync(join(apiSrc, 'routes/parse-positive-int-id.ts'), '
 
 assert.match(src, /gamesRouter\.get\('\/list'/, 'GET /list is registered');
 assert.match(src, /gamesRouter\.get\('\/'/, 'GET / is registered');
-assert.match(src, /شناسه بازی نامعتبر است/, 'invalid game id returns 400 copy');
+assert.match(src, /شناسه ایونت نامعتبر است/, 'invalid event id returns 400 copy');
 assert.match(parseSrc, /Number\.isFinite\(n\)/, 'id parse finite-checks');
 assert.match(parseSrc, /Number\.isInteger\(n\)/, 'id parse requires integer');
 

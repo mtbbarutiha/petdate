@@ -82,7 +82,7 @@ export const HELP_SECTION_LABELS: Record<HelpSectionId, LocalizedHelp> = {
   invite: { fa: 'دعوت دوستان', en: 'Invite friends' },
   verify: { fa: 'احراز هویت', en: 'Verification' },
   consults: { fa: 'مشاوره دامپزشک و مربی', en: 'Vet & trainer consults' },
-  games: { fa: 'بازی‌ها', en: 'Games' },
+  games: { fa: 'ایونت‌ها', en: 'Events' },
   adoption: { fa: 'پذیرش پت', en: 'Adoption' },
   magazine: { fa: 'مجله', en: 'Magazine' },
   support: { fa: 'پشتیبانی', en: 'Support' },
@@ -107,12 +107,12 @@ export const HELP_ROLE_INTROS: Record<
   guest: {
     title: { fa: `راهنمای مهمان — ${BRAND.displayNameFa}`, en: `Guest help — ${BRAND.displayName}` },
     what: {
-      fa: `${BRAND.displayNameFa} پلتفرم فارسی همبازی پت، پت‌شاپ، پذیرش، بازی‌های گروهی و مشاوره دامپزشک/مربی است. وب و ربات تلگرام یک حساب مشترک دارند.`,
-      en: `${BRAND.displayName} is a Persian playmate, shop, adoption, group-games, and vet/trainer platform. Web and Telegram share one account.`,
+      fa: `${BRAND.displayNameFa} پلتفرم فارسی همبازی پت، پت‌شاپ، پذیرش، ایونت‌های گروهی و مشاوره دامپزشک/مربی است. وب و ربات تلگرام یک حساب مشترک دارند.`,
+      en: `${BRAND.displayName} is a Persian playmate, shop, adoption, group-events, and vet/trainer platform. Web and Telegram share one account.`,
     },
     how: {
-      fa: 'بدون ورود می‌توانی لندینگ، شاپ، مجله، پذیرش، بازی‌ها و صفحه دامپزشک را ببینی. برای همبازی، ثبت پت، چت، کیف پول و ثبت سفارش با پیامک OTP یا تلگرام وارد شو و یک نقش انتخاب کن.',
-      en: 'Landing, shop, magazine, adoption, games, and the vet page are open. Sign in with SMS OTP or Telegram to use playmates, pets, chat, wallet, and checkout — then pick a role.',
+      fa: 'بدون ورود می‌توانی لندینگ، شاپ، مجله، پذیرش، ایونت‌ها و صفحه دامپزشک را ببینی. برای همبازی، ثبت پت، چت، کیف پول و ثبت سفارش با پیامک OTP یا تلگرام وارد شو و یک نقش انتخاب کن.',
+      en: 'Landing, shop, magazine, adoption, events, and the vet page are open. Sign in with SMS OTP or Telegram to use playmates, pets, chat, wallet, and checkout — then pick a role.',
     },
     tips: {
       fa: 'بعد از ورود، نقش صاحب پت، دامپزشک، مربی یا بدون پت را بزن. همان شماره، پت‌ها و گفتگوها را بین وب و @Petdatebot همگام می‌کند.',
@@ -702,20 +702,20 @@ export const HELP_TOPICS: HelpTopic[] = [
     section: 'games',
     audiences: ['all'],
     surfaces: ['web'],
-    title: { fa: 'بازی‌ها', en: 'Games' },
+    title: { fa: 'ایونت‌ها', en: 'Events' },
     what: {
-      fa: 'بازی‌های گروهی زمان‌بندی‌شده (فوتبال، فکری و …) روی سایت — جدا از همبازی پت.',
-      en: 'Scheduled group games (football, board games, and more) on the site — not the same as pet playmates.',
+      fa: 'ایونت‌های گروهی زمان‌بندی‌شده (فوتبال، فکری و …) روی سایت — جدا از همبازی پت.',
+      en: 'Scheduled group events (football, board games, and more) on the site — not the same as pet playmates.',
     },
     how: {
-      fa: 'صفحه بازی‌ها را باز کن، فیلتر وضعیت را بزن، عضو شو یا بازی بساز. ساختن و پیوستن ورود می‌خواهد.',
-      en: 'Open Games, filter by status, join or create. Creating and joining require login.',
+      fa: 'صفحه ایونت‌ها را باز کن، فیلتر وضعیت را بزن، عضو شو یا ایونت بساز. ساختن و پیوستن ورود می‌خواهد.',
+      en: 'Open Events, filter by status, join or create. Creating and joining require login.',
     },
     tips: {
       fa: 'این بخش در ربات نیست. همبازی پت از مسیر «هم بازی» است نه اینجا.',
-      en: 'Games are site-only. Pet playmates live under Playmates, not here.',
+      en: 'Events are site-only. Pet playmates live under Playmates, not here.',
     },
-    sitePath: '/games',
+    sitePath: '/events',
   },
   {
     id: 'adopt',
@@ -827,8 +827,8 @@ export const HELP_FAQ: HelpFaqItem[] = [
       en: 'Do I need to log in to browse the site?',
     },
     a: {
-      fa: 'خیر. لندینگ، شاپ، مجله، پذیرش، بازی‌ها و صفحه دامپزشک باز است. برای همبازی، ثبت پت، چت، کیف پول و ثبت سفارش با OTP یا تلگرام وارد شو.',
-      en: 'No. Landing, shop, magazine, adoption, games, and the vet page are open. Sign in with OTP or Telegram for playmates, pets, chat, wallet, and checkout.',
+      fa: 'خیر. لندینگ، شاپ، مجله، پذیرش، ایونت‌ها و صفحه دامپزشک باز است. برای همبازی، ثبت پت، چت، کیف پول و ثبت سفارش با OTP یا تلگرام وارد شو.',
+      en: 'No. Landing, shop, magazine, adoption, events, and the vet page are open. Sign in with OTP or Telegram for playmates, pets, chat, wallet, and checkout.',
     },
   },
   {
@@ -944,12 +944,12 @@ export const HELP_FAQ: HelpFaqItem[] = [
   {
     id: 'games-q',
     q: {
-      fa: 'بازی‌ها با همبازی پت فرق دارد؟',
-      en: 'Are Games different from pet playmates?',
+      fa: 'ایونت‌ها با همبازی پت فرق دارد؟',
+      en: 'Are Events different from pet playmates?',
     },
     a: {
-      fa: 'بله. بازی‌ها رویداد گروهی روی سایت است (فوتبال، فکری و …). همبازی پت برای قرار دو پت است و از مسیر هم بازی / ربات است.',
-      en: 'Yes. Games are scheduled group events on the site. Playmates are one-to-one pet meetups via Playmates / the bot.',
+      fa: 'بله. ایونت‌ها رویداد گروهی روی سایت است (فوتبال، فکری و …). همبازی پت برای قرار دو پت است و از مسیر هم بازی / ربات است.',
+      en: 'Yes. Events are scheduled group gatherings on the site. Playmates are one-to-one pet meetups via Playmates / the bot.',
     },
   },
   {

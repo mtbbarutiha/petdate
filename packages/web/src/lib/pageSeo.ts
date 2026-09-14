@@ -354,8 +354,8 @@ export function pageSeoForPath(pathname: string, opts: PageSeoOpts = {}): PageSe
       title: SEO.titleTemplate(lang === 'en' ? 'Help & FAQ' : 'راهنما و سؤالات متداول پت‌دیت'),
       description:
         lang === 'en'
-          ? 'Help for every PetDate role and section — playmates, wallet, shop, verification, diary, consults, games — plus FAQ. Same copy as the Telegram bot.'
-          : 'راهنمای همه نقش‌ها و بخش‌های پت‌دیت — همبازی، کیف پول، شاپ، احراز، دفتر خاطرات، مشاوره، بازی‌ها — به‌علاوه سؤالات متداول. همان متن ربات تلگرام.',
+          ? 'Help for every PetDate role and section — playmates, wallet, shop, verification, diary, consults, events — plus FAQ. Same copy as the Telegram bot.'
+          : 'راهنمای همه نقش‌ها و بخش‌های پت‌دیت — همبازی، کیف پول، شاپ، احراز، دفتر خاطرات، مشاوره، ایونت‌ها — به‌علاوه سؤالات متداول. همان متن ربات تلگرام.',
       canonicalPath: '/faq',
       breadcrumbs: [
         { name: SEO.siteName, path: '/' },
@@ -526,14 +526,14 @@ export function pageSeoForPath(pathname: string, opts: PageSeoOpts = {}): PageSe
     });
   }
 
-  if (p === '/games') {
+  if (p === '/events' || p === '/games') {
     return pack({
-      title: SEO.titleTemplate('بازی‌ها'),
-      description: 'بازی‌های نزدیک را ببین، بساز یا به آن‌ها بپیوند.',
-      canonicalPath: '/games',
+      title: SEO.titleTemplate('ایونت‌ها'),
+      description: 'ایونت‌های نزدیک را ببین، بساز یا به آن‌ها بپیوند.',
+      canonicalPath: '/events',
       breadcrumbs: [
         { name: SEO.siteName, path: '/' },
-        { name: 'بازی‌ها', path: '/games' },
+        { name: 'ایونت‌ها', path: '/events' },
       ],
     });
   }
@@ -704,7 +704,7 @@ export function listSitemapEntries(magazineSlugs: string[] = []): SitemapEntry[]
     { path: '/shop', changefreq: 'daily', priority: '0.9' },
     { path: '/shop/c/all', changefreq: 'daily', priority: '0.85' },
     { path: '/adoption', changefreq: 'weekly', priority: '0.8' },
-    { path: '/games', changefreq: 'weekly', priority: '0.7' },
+    { path: '/events', changefreq: 'weekly', priority: '0.7' },
     { path: '/vet-consult', changefreq: 'weekly', priority: '0.85' },
     { path: '/llms.txt', changefreq: 'weekly', priority: '0.4' },
     { path: '/llms-full.txt', changefreq: 'weekly', priority: '0.3' },

@@ -97,7 +97,7 @@ export function FaqPage() {
             <Link to="/adoption" className="pepito-btn button-3">
               {t('nav.adoption')}
             </Link>
-            <Link to="/games" className="pepito-btn button-3">
+            <Link to="/events" className="pepito-btn button-3">
               {t('nav.games')}
             </Link>
             <Link to="/chats" className="pepito-btn button-1">

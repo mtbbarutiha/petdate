@@ -27,7 +27,7 @@ assert.equal(parsePositiveIntId(' 9 '), 9, 'trimmed');
 const src = readFileSync(join(process.cwd(), 'src/routes/games.ts'), 'utf8');
 assert.match(src, /gamesRouter\.get\('\/list'/, 'GET /list alias registered');
 assert.match(src, /parsePositiveIntId/, 'id parsing used');
-assert.match(src, /شناسه بازی نامعتبر است/, 'invalid game id 400 copy');
+assert.match(src, /شناسه ایونت نامعتبر است/, 'invalid event id 400 copy');
 
 const listIdx = src.indexOf("gamesRouter.get('/list'");
 const idIdx = src.indexOf("gamesRouter.get('/:id'");

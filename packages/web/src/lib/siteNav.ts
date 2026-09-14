@@ -54,7 +54,7 @@ const SHOP_AUTH: SiteNavItem = {
 
 /**
  * Owner/guest playmate hub — lives in /chats (find + inbox), not a separate page.
- * Distinct from «بازی‌ها» (/games) — scheduled group games via /api/games.
+ * Distinct from «ایونت‌ها» (/events) — scheduled group events via /api/games.
  * Icon: chat bubble + paw (PetDate conversations mark).
  */
 const PLAYMATE_CHATS: SiteNavItem = {
@@ -65,13 +65,17 @@ const PLAYMATE_CHATS: SiteNavItem = {
   match: (p) => p === '/chats' || p.startsWith('/chats/') || p.startsWith('/vet-chats'),
 };
 
-/** Scheduled group games (football, board, …) — public list + join/create. */
+/** Scheduled group events (football, board, …) — public list + join/create. */
 const GAMES: SiteNavItem = {
   key: 'games',
-  label: 'بازی‌ها',
-  to: '/games',
+  label: 'ایونت‌ها',
+  to: '/events',
   icon: Gamepad2,
-  match: (p) => p === '/games' || p.startsWith('/games/'),
+  match: (p) =>
+    p === '/events' ||
+    p.startsWith('/events/') ||
+    p === '/games' ||
+    p.startsWith('/games/'),
 };
 
 const MY_PETS: SiteNavItem = {
@@ -137,7 +141,7 @@ const LOGIN: SiteNavItem = {
 
 /**
  * Guest mobile dock — cart stays in the top-left cluster only (avoid duplicate
- * سبد in header + dock). Games lives on desktop/landing/footer, not this 4-slot bar.
+ * سبد in header + dock). Events lives on desktop/landing/footer, not this 4-slot bar.
  * Order: browse (شاپ) → primary center (هم بازی) → پت → ورود.
  */
 export const SITE_NAV_GUEST: SiteNavItem[] = [
@@ -150,7 +154,7 @@ export const SITE_NAV_GUEST: SiteNavItem[] = [
 /**
  * Logged-in owner set (legacy default). Prefer `siteNavMobileForUser`.
  * Owner dock: شاپ / پت‌های من / هم بازی (مرکز) / کیف پول / پروفایل
- * Games must not replace کیف پول or گفتگو/هم بازی (#325 regression).
+ * Events must not replace کیف پول or گفتگو/هم بازی (#325 regression).
  */
 export const SITE_NAV_AUTH: SiteNavItem[] = [
   SHOP_AUTH,
@@ -160,7 +164,7 @@ export const SITE_NAV_AUTH: SiteNavItem[] = [
   PROFILE,
 ];
 
-/** Insert Games after شاپ so it never occupies the chats or wallet slot. */
+/** Insert Events after شاپ so it never occupies the chats or wallet slot. */
 function withGamesAfterShop(items: SiteNavItem[]): SiteNavItem[] {
   if (items.some((item) => item.key === 'games')) return items;
   const shopIdx = items.findIndex((item) => item.key === 'shop');
@@ -172,7 +176,7 @@ function withGamesAfterShop(items: SiteNavItem[]): SiteNavItem[] {
 
 /**
  * Desktop chrome keeps گفتگو/هم بازی before شاپ (mobile dock puts chats in the center).
- * Relative order of other items is preserved; Games still appends after شاپ only.
+ * Relative order of other items is preserved; Events still appends after شاپ only.
  */
 function desktopOrderFromMobile(items: SiteNavItem[]): SiteNavItem[] {
   const isChat = (key: string) => key === 'chats' || key === 'playmate';
@@ -205,8 +209,8 @@ function desktopOrderFromMobile(items: SiteNavItem[]): SiteNavItem[] {
  * Guest: login icon + cart live in NavUserCluster (no text «ورود» in the right menu).
  * Auth: wallet chip + circular avatar cover wallet/profile.
  * my_pets stays mobile-dock only (desktop app nav already links پت‌های من).
- * Games is a desktop/secondary destination — not a mobile-dock replacement.
- * Desktop order: هم بازی / شاپ / بازی‌ها (chats before shop).
+ * Events is a desktop/secondary destination — not a mobile-dock replacement.
+ * Desktop order: هم بازی / شاپ / ایونت‌ها (chats before shop).
  */
 export const SITE_NAV_DESKTOP_GUEST: SiteNavItem[] = desktopOrderFromMobile(
   SITE_NAV_GUEST.filter((item) => item.key !== 'my_pets' && item.key !== 'login'),
