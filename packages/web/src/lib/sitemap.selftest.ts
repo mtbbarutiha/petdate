@@ -75,5 +75,16 @@ assert(
   map.includes('/shop/dog-treats-wanpy-toothbrush-chews-100g '),
   'batch-multi wave 1 Wanpy slug aliases 301 to /shop/product/:slug'
 );
-assert(!xml.includes('/shop/product/dog-treats-wanpy-chicken-jerky-chips-100g'), 'later waves stay out of sitemap');
+assert(
+  xml.includes('/shop/product/dog-treats-wanpy-chicken-jerky-chips-100g'),
+  'batch-multi wave 2 Wanpy jerky stays in sitemap'
+);
+assert(
+  map.includes('/shop/dog-toys-luna-squeaky-smile-watermelon-plush-dog-toy '),
+  'batch-multi wave 2 Luna slug aliases 301 to /shop/product/:slug'
+);
+assert(
+  !xml.includes('/shop/product/cat-toys-petopoli-4-way-foldable-cat-play-tunnel'),
+  'later waves stay out of sitemap'
+);
 console.log('sitemap.selftest: ok');

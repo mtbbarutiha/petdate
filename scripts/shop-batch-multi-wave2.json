@@ -1,0 +1,129 @@
+{
+  "batch": "multi-1",
+  "wave": 2,
+  "waveCount": 5,
+  "pricingRule": "zero-margin",
+  "cacheBust": "batch-multi-w2-v1",
+  "products": [
+    {
+      "proposedId": "p260",
+      "slug": "dog-treats-wanpy-chicken-jerky-chips-100g",
+      "title": "تشویقی سگ ونپی چیپس مرغ ۱۰۰ گرم",
+      "titleEn": "",
+      "brandId": "wanpy",
+      "categorySlug": "dog-treats",
+      "petTypes": ["dog"],
+      "priceToman": 655000,
+      "weightLabel": "100گرم",
+      "weightKind": "weight"
+    },
+    {
+      "proposedId": "p261",
+      "slug": "cat-treats-bioline-catnip-spray-50ml",
+      "title": "اسپری کت‌نیپ بایولاین ۵۰ میلی‌لیتر",
+      "titleEn": "",
+      "brandId": "bioline",
+      "categorySlug": "cat-treats",
+      "petTypes": ["cat"],
+      "priceToman": 828000,
+      "weightLabel": "50ml",
+      "weightKind": "weight"
+    },
+    {
+      "proposedId": "p262",
+      "slug": "cat-treats-bonnest-catnip-spray-50-l",
+      "title": "اسپری کت‌نیپ بونست ۵۰ میلی‌لیتر",
+      "titleEn": "",
+      "brandId": "bonnest",
+      "categorySlug": "cat-treats",
+      "petTypes": ["cat"],
+      "priceToman": 539000,
+      "weightLabel": "50 میلی لیتر",
+      "weightKind": "weight"
+    },
+    {
+      "proposedId": "p263",
+      "slug": "cat-treats-cat-grass-theething-stick-30-g",
+      "title": "اسنک علف گربه طعم مرغ ۳۰ گرم",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "cat-treats",
+      "petTypes": ["cat"],
+      "priceToman": 480000,
+      "weightLabel": "30 گرم",
+      "weightKind": "weight"
+    },
+    {
+      "proposedId": "p264",
+      "slug": "cat-treats-bonnest-cat-nip-powder-20g-20-g",
+      "title": "پودر کت‌نیپ بونست ۲۰ گرم",
+      "titleEn": "",
+      "brandId": "bonnest",
+      "categorySlug": "cat-treats",
+      "petTypes": ["cat"],
+      "priceToman": 385000,
+      "weightLabel": "20 گرم",
+      "weightKind": "weight"
+    },
+    {
+      "proposedId": "p265",
+      "slug": "cat-treats-chicken-cat-grass-treat-30-g",
+      "title": "تشویقی علف گربه طعم مرغ ۳۰ گرم",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "cat-treats",
+      "petTypes": ["cat"],
+      "priceToman": 335000,
+      "weightLabel": "30 گرم",
+      "weightKind": "weight"
+    },
+    {
+      "proposedId": "p266",
+      "slug": "dog-toys-enjoy-the-meal-puzzle-toy",
+      "title": "اسباب‌بازی فکری سگ AFP",
+      "titleEn": "",
+      "brandId": "afp",
+      "categorySlug": "dog-toys",
+      "petTypes": ["dog"],
+      "priceToman": 5480000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p267",
+      "slug": "dog-toys-ufo-treat-dispenser-dog-toy",
+      "title": "اسباب‌بازی جایزه‌دهنده سگ مدل سفینه AFP",
+      "titleEn": "",
+      "brandId": "afp",
+      "categorySlug": "dog-toys",
+      "petTypes": ["dog"],
+      "priceToman": 3580000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p268",
+      "slug": "dog-toys-crab-silicone-dog-chew-toothbrush-toy",
+      "title": "دندانی سیلیکونی مدل خرچنگ",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "dog-toys",
+      "petTypes": ["dog"],
+      "priceToman": 1100000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p269",
+      "slug": "dog-toys-luna-squeaky-smile-watermelon-plush-dog-toy",
+      "title": "عروسک پولیشی هندوانه صدا‌دار لونا",
+      "titleEn": "",
+      "brandId": "luna",
+      "categorySlug": "dog-toys",
+      "petTypes": ["dog"],
+      "priceToman": 362000,
+      "weightLabel": "",
+      "weightKind": ""
+    }
+  ]
+}
