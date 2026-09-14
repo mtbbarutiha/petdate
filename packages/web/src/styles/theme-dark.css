@@ -3592,3 +3592,26 @@ html[data-theme='dark'] .pepito-photo-pending {
 html[data-theme='dark'] .pepito-my-pets-card-pending {
   color: #fbbf24;
 }
+
+/* Shop card-to-card deposit panel — was a frozen light gradient while
+ * --pepito-dark/--pepito-muted remap to light ink → unreadable in dark. */
+html[data-theme='dark'] .pd-shop-card-deposit {
+  background: linear-gradient(
+    165deg,
+    var(--pd-surface-2),
+    color-mix(in srgb, var(--pd-surface-muted) 78%, var(--pepito-base) 22%)
+  );
+  border-color: var(--pd-border);
+  color: var(--pd-ink);
+  box-shadow: none;
+}
+html[data-theme='dark'] .pd-shop-card-deposit-title,
+html[data-theme='dark'] .pd-shop-card-deposit-hint {
+  color: var(--pd-muted);
+}
+html[data-theme='dark'] .pd-shop-card-deposit-number,
+html[data-theme='dark'] .pd-shop-card-deposit-holder,
+html[data-theme='dark'] .pd-shop-card-deposit-number strong,
+html[data-theme='dark'] .pd-shop-card-deposit-holder strong {
+  color: var(--pd-ink);
+}
