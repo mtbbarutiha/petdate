@@ -25,17 +25,31 @@ export type SiteNavItem = {
   match?: (pathname: string) => boolean;
 };
 
+/**
+ * Primary شاپ shortcut — active on shop home + product/checkout flows.
+ * Not active on section extras that have their own header links
+ * (سفارش‌ها / سگ / گربه / پرنده) so only one underline shows.
+ */
+function isShopPrimaryActive(pathname: string, includeCart: boolean): boolean {
+  if (pathname === '/shop' || pathname === '/shop/') return true;
+  if (!pathname.startsWith('/shop/')) return false;
+  if (pathname === '/shop/orders' || pathname.startsWith('/shop/orders/')) return false;
+  if (pathname.startsWith('/shop/c/')) return false;
+  if (!includeCart && (pathname === '/shop/cart' || pathname.startsWith('/shop/cart/'))) return false;
+  return true;
+}
+
 const SHOP: SiteNavItem = {
   key: 'shop',
   label: 'شاپ',
   to: '/shop',
   icon: ShoppingBag,
-  match: (p) => p === '/shop' || (p.startsWith('/shop/') && p !== '/shop/cart'),
+  match: (p) => isShopPrimaryActive(p, false),
 };
 
 const SHOP_AUTH: SiteNavItem = {
   ...SHOP,
-  match: (p) => p === '/shop' || p.startsWith('/shop/'),
+  match: (p) => isShopPrimaryActive(p, true),
 };
 
 /**

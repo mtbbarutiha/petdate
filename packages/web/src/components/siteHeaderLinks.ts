@@ -9,7 +9,7 @@ export type SiteHeaderLink = {
   className?: string;
 };
 
-const DUPLICATE_PRIMARY = new Set(['games', 'shop', 'petShop']);
+const DUPLICATE_PRIMARY = new Set(['games', 'shop', 'petShop', 'store']);
 
 /** Marketing extras — never repeats شاپ / بازی‌ها (those live in SiteDesktopNav). */
 export function landingSectionLinks(
@@ -35,13 +35,15 @@ export function welcomeSectionLinks(): SiteHeaderLink[] {
   ];
 }
 
-/** Shop IA — cart stays in the user cluster, not a second text link. */
+/**
+ * Shop IA extras — cart stays in the user cluster.
+ * Do not add store/شاپ here: SiteDesktopNav already owns the single /shop shortcut (nav.shop).
+ */
 export function shopSectionLinks(): SiteHeaderLink[] {
   return [
-    { key: 'store', labelKey: 'shop.store', to: '/shop' },
     { key: 'orders', labelKey: 'shop.orders', to: '/shop/orders' },
     { key: 'dog', labelKey: 'shop.dog', to: '/shop/c/dog-food' },
     { key: 'cat', labelKey: 'shop.cat', to: '/shop/c/cat-food' },
     { key: 'bird', labelKey: 'shop.bird', to: '/shop/c/bird-food' },
-  ];
+  ].filter((link) => !DUPLICATE_PRIMARY.has(link.key));
 }

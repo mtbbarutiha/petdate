@@ -89,6 +89,15 @@ assert.ok(!landingKeys.includes('games') && !landingKeys.includes('shop'));
 assert.ok(!welcomeKeys.includes('games') && !welcomeKeys.includes('shop'));
 assert.ok(!shopSectionLinks().some((l) => l.key === 'games' || l.key === 'cart'));
 assert.ok(
+  !shopSectionLinks().some((l) => l.key === 'store' || l.to === '/shop'),
+  'shop extras must not duplicate SiteDesktopNav شاپ → /shop',
+);
+assert.deepEqual(
+  shopSectionLinks().map((l) => l.key),
+  ['orders', 'dog', 'cat', 'bird'],
+  'shop section keeps orders + category shortcuts only',
+);
+assert.ok(
   landingSectionLinks({ vetConsultEnabled: true }).some((l) => l.testId === 'nav-adoption'),
   'پذیرش stays testable'
 );
