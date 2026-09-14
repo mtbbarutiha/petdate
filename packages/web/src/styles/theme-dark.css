@@ -2015,6 +2015,43 @@ html[data-theme='dark'] .pd-dk-mobile-bar-price {
   color: var(--pd-ink);
 }
 
+html[data-theme='dark'] .pd-dk-similar {
+  background: var(--pd-surface, #1c1f2a);
+  border-color: var(--pd-border, rgba(255, 255, 255, 0.1));
+}
+html[data-theme='dark'] .pd-dk-similar-title {
+  color: var(--pd-ink, #f3f4f6);
+}
+html[data-theme='dark'] .pd-dk-similar-item {
+  border-inline-start-color: var(--pd-border, rgba(255, 255, 255, 0.08));
+}
+html[data-theme='dark'] .pd-dk-similar-next {
+  background: var(--pd-surface-2, #262a38);
+  border-color: var(--pd-border, rgba(255, 255, 255, 0.12));
+  color: #c4c7ce;
+  box-shadow: 0 1px 8px rgba(0, 0, 0, 0.35);
+}
+html[data-theme='dark'] .pd-dk-similar-next:hover {
+  color: #ff6b7d;
+}
+html[data-theme='dark'] .pd-shop-card-media--similar {
+  background: #fff;
+}
+html[data-theme='dark'] .pd-shop-card--similar h3 {
+  color: var(--pd-ink, #f3f4f6);
+}
+html[data-theme='dark'] .pd-shop-similar-ship {
+  background: rgba(245, 158, 11, 0.16);
+  color: #fbbf24;
+}
+html[data-theme='dark'] .pd-shop-card--similar .pd-shop-price-now {
+  color: var(--pd-ink, #f3f4f6);
+}
+html[data-theme='dark'] .pd-shop-card--similar .pd-shop-price-was {
+  color: #9ca3af;
+}
+
+
 /* 16) Landing reviews / testimonials section */
 html[data-theme='dark'] .pepito-reviews-section {
   background-color: var(--pepito-soft);
