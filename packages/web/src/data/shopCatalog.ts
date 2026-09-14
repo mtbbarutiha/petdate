@@ -1,6 +1,6 @@
 /**
  * PetDate shop catalog — Pepito imagery, prices in تومان (wallet primary currency).
- * Live catalog is exactly 99 SKUs: p221–p223 (pilots) + p224–p235 (Batch 2) + p236–p249 (Batch 3) + p250–p259 (multi wave 1) + p260–p269 (multi wave 2) + p270–p279 (multi wave 3) + p280–p289 (multi wave 4) + p290–p299 (multi wave 5) + p300–p319 (Digikala batch1 Part1) + Digikala Part2 p310–p319.
+ * Live catalog is exactly 99 SKUs: p221–p223 (pilots) + p224–p235 (Batch 2) + p236–p249 (Batch 3) + p250–p259 (multi wave 1) + p260–p269 (multi wave 2) + p270–p279 (multi wave 3) + p280–p289 (multi wave 4) + p290–p299 (multi wave 5) + p300–p309 (Digikala batch1 Part1) + p310–p319 (Digikala batch1 Part2).
  * Demo p1–p220 were removed so they cannot reappear on deploy.
  */
 

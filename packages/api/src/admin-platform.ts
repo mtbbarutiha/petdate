@@ -700,7 +700,7 @@ export const adminPlatform = {
       if (input.brands?.length) {
         this.seedShopBrandsFromCatalog(input.brands);
       }
-      // Never wipe p221–p309. Drop leftover demo/seed rows only.
+      // Never wipe p221–p319. Drop leftover demo/seed rows only.
       purgeDemoShopProducts();
       for (const p of input.products) {
         const key = String(p.id || p.slug || '').trim();

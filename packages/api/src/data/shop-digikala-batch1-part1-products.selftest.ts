@@ -108,8 +108,8 @@ async function main() {
   assert.equal(first, 10);
   assert.equal(second, 10, 'idempotent');
 
-  const rows = d.prepare(`SELECT id, slug, price_toman, cost_toman, image FROM shop_products WHERE id LIKE 'p3%'`).all() as any[];
-  assert.equal(rows.length, 10);
+  const rows = d.prepare(`SELECT id, slug, price_toman, cost_toman, image FROM shop_products WHERE id LIKE 'p30%'`).all() as any[];
+  assert.equal(rows.length, 10, 'Part1 is exactly p300–p309 (p310+ is Part2)');
   for (const r of rows) {
     assert.equal(Number(r.price_toman), Number(r.cost_toman), `${r.id} db zero margin`);
     assert.ok(String(r.image).includes('digikala-b1-p1-v1'));

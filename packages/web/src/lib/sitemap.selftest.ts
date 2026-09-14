@@ -115,4 +115,12 @@ assert(
   map.includes('/shop/cat-toys-dkp-17412089 '),
   'Digikala batch1 Part1 Worm slug aliases 301 to /shop/product/:slug'
 );
+assert(
+  xml.includes('/shop/product/cat-toys-dkp-5758150'),
+  'Digikala batch1 Part2 SH100 stays in sitemap'
+);
+assert(
+  map.includes('/shop/bird-food-dkp-10253439 '),
+  'Digikala batch1 Part2 millet slug aliases 301 to /shop/product/:slug'
+);
 console.log('sitemap.selftest: ok');

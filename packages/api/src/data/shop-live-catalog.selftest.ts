@@ -337,6 +337,8 @@ async function main() {
     String(p299.image),
     /bird-food-oshkaia-mynah-bird-food-kg\.jpg\?v=batch-multi-w5-v1$/
   );
+  assert.match(String(p309.image), /cat-toys-dkp-17412089\.jpg\?v=digikala-b1-p1-v1$/);
+  assert.match(String(p319.image), /bird-food-dkp-10253439\.jpg\?v=digikala-b1-p2-v1$/);
 
   assert.equal(adminPlatform.deleteShopProduct('p221'), false, 'cannot delete pilot');
   assert.equal(adminPlatform.deleteShopProduct('p235'), false, 'cannot delete batch 2');
