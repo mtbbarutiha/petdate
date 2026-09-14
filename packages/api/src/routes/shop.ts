@@ -133,6 +133,25 @@ shopRouter.get('/star-rate', (_req, res) => {
   });
 });
 
+shopRouter.get('/brands', (_req, res) => {
+  let brands = adminPlatform.listShopBrands();
+  if (!brands.length) {
+    // fall through empty — web uses static SHOP_BRANDS
+  }
+  res.json({
+    ok: true,
+    brands: brands.filter((b) => b.active !== false).map((b) => ({
+      id: b.id,
+      labelFa: b.labelFa,
+      labelEn: b.labelEn,
+      logoUrl: b.logoUrl,
+      sortOrder: b.sortOrder,
+      featured: b.featured,
+      active: b.active,
+    })),
+  });
+});
+
 shopRouter.get('/categories', (req, res) => {
   const petType = typeof req.query.petType === 'string' ? req.query.petType.trim() : '';
   let categories = adminPlatform.listShopCategories();

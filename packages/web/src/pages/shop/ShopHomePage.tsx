@@ -4,7 +4,6 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, Filter, PawPrint, ShoppingBag, Sparkles } from 'lucide-react';
 import {
-  SHOP_BRANDS,
   SHOP_CATEGORIES,
   SHOP_PET_TYPES,
   SHOP_PRICE_MAX,
@@ -15,6 +14,7 @@ import {
 import { ShopBreadcrumb } from '../../components/shop/ShopBreadcrumb';
 import { ShopChrome } from '../../components/shop/ShopChrome';
 import { ShopProductCard } from '../../components/shop/ShopProductCard';
+import { ShopTopBrands } from '../../components/shop/ShopTopBrands';
 import { usePlatformConfig } from '../../hooks/usePlatformConfig';
 import { shopHomeBreadcrumbs } from '../../lib/shopBreadcrumb';
 
@@ -163,6 +163,8 @@ export function ShopHomePage() {
           </div>
         </section>
 
+        <ShopTopBrands />
+
         <section className="pd-shop-block">
           <div className="pepito-section-head pepito-section-head--center">
             <p className="pepito-eyebrow">محصولات ویژه</p>
@@ -181,25 +183,13 @@ export function ShopHomePage() {
               مشاهده همه محصولات
             </Link>
           </div>
-        </section>
-
-        <section className="pd-shop-block pd-shop-brands">
-          <div className="pepito-section-head pepito-section-head--center">
-            <p className="pepito-eyebrow">برند‌های محبوب</p>
-            <h2>از برندهای معتبر</h2>
-          </div>
-          <div className="pd-shop-brand-row">
-            {SHOP_BRANDS.map((b) => (
-              <Link key={b.id} to={`/shop/c/all?brand=${b.id}`} className="pd-shop-brand-chip">
-                {shopLabel(lang, b.labelFa, b.labelEn)}
-              </Link>
-            ))}
-          </div>
           <p className="pd-shop-meta-note">
             محدوده قیمت کاتالوگ تا {SHOP_PRICE_MAX.toLocaleString('fa-IR')} تومان ·{' '}
             {SHOP_CATEGORIES.length.toLocaleString('fa-IR')} دسته
           </p>
         </section>
+
+
       </div>
     </ShopChrome>
   );

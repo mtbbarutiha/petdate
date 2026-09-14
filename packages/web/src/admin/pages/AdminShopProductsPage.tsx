@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Plus, RefreshCw, Search, Trash2 } from 'lucide-react';
-import { SHOP_CATEGORIES, SHOP_PRODUCTS } from '../../data/shopCatalog';
+import { SHOP_BRANDS, SHOP_CATEGORIES, SHOP_PRODUCTS } from '../../data/shopCatalog';
 import { adminFetch, formatNumFa, formatTomanFa } from '../api';
 import { AdminShopProductFormModal } from './AdminShopProductFormPage';
 import { appConfirm } from '../../components/AppDialog';
@@ -42,14 +42,14 @@ export function AdminShopProductsPage() {
     if (!(await appConfirm(tr('کاتالوگ وب روی دیتابیس بازنویسی شود؟'), { variant: 'admin' }))) return;
     setBusy(true); setMsg(null);
     try {
-      const result = await adminFetch<{ products: number; categories: number }>('/api/admin/shop/catalog/sync', {
+      const result = await adminFetch<{ products: number; categories: number; brands?: number }>('/api/admin/shop/catalog/sync', {
         method: 'POST',
         body: JSON.stringify({
           products: SHOP_PRODUCTS.map((prod) => ({ ...prod, stockQty: prod.inStock ? 25 : 0 })),
-          categories: SHOP_CATEGORIES,
+          categories: SHOP_BRANDS, SHOP_CATEGORIES,
         }),
       });
-      setMsg(`${tr('همگام‌سازی: ')}${formatNumFa(result.products)}${tr(' محصول، ')}${formatNumFa(result.categories)}${tr(' دسته')}`);
+      setMsg(`${tr('همگام‌سازی: ')}${formatNumFa(result.products)}${tr(' محصول، ')}${formatNumFa(result.categories)}${tr(' دسته')}${result.brands != null ? `${tr('، ')}${formatNumFa(result.brands)}${tr(' برند')}` : ''}`);
       await load();
     } catch (err) { setError(err instanceof Error ? err.message : 'خطا'); }
     finally { setBusy(false); }

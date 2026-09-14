@@ -257,6 +257,11 @@ const AdminShopCategoriesPage = lazy(() =>
     default: m.AdminShopCategoriesPage,
   })),
 );
+const AdminShopBrandsPage = lazy(() =>
+  import('./admin/pages/AdminShopBrandsPage').then((m) => ({
+    default: m.AdminShopBrandsPage,
+  })),
+);
 const AdminShopOrdersPage = lazy(() =>
   import('./admin/pages/AdminShopOrdersPage').then((m) => ({ default: m.AdminShopOrdersPage })),
 );
@@ -512,6 +517,7 @@ export default function App() {
                 <Route path="shop/products/new" element={<AdminShopProductFormPage />} />
                 <Route path="shop/products/:id" element={<AdminShopProductFormPage />} />
                 <Route path="shop/categories" element={<AdminShopCategoriesPage />} />
+                <Route path="shop/brands" element={<AdminShopBrandsPage />} />
                 <Route path="shop/orders" element={<AdminShopOrdersPage />} />
                 <Route path="payments" element={<AdminPaymentsPage />} />
                 <Route path="coin-sells" element={<AdminCoinSellsPage />} />

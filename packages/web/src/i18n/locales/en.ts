@@ -552,6 +552,7 @@ export const en: Dict = {
     store: 'Store',
     products: 'Products',
     categories: 'Categories',
+    brands: 'Brands',
     orders: 'Orders',
     payments: 'Payments',
     contentSystem: 'Content & system',

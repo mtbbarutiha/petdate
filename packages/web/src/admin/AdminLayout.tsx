@@ -83,6 +83,7 @@ const NAV_GROUPS: NavGroup[] = [
     },
     { to: '/admin/shop/products', icon: Package, labelKey: 'admin.products', perm: 'shop.read' },
     { to: '/admin/shop/categories', icon: Store, labelKey: 'admin.categories', perm: 'shop.read' },
+    { to: '/admin/shop/brands', icon: Package, labelKey: 'admin.brands', perm: 'shop.read' },
   ]},
   { titleKey: 'admin.club', items: [
     { to: '/admin/crm', icon: LayoutDashboard, labelKey: 'admin.myDesk', perm: 'crm.read' },

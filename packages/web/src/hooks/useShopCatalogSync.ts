@@ -18,6 +18,7 @@ export async function hydrateShopCatalogOnce(): Promise<boolean> {
         applyLiveShopCatalog({
           products: data.products,
           categories: data.categories,
+          brands: data.brands,
         });
         return true;
       } catch {
