@@ -248,6 +248,7 @@ npx tsx "$ROOT/packages/web/src/components/chatDismissConfirm.selftest.ts"
 
 echo "==> selftest: web chat reply-to (playmate + vet + support)"
 npx tsx "$ROOT/packages/web/src/components/chatReply.selftest.ts"
+npx tsx "$ROOT/packages/web/src/components/petDiscovery.selftest.ts"
 
 echo "==> selftest: web find-playmate empty mobile layout"
 npx tsx "$ROOT/packages/web/src/components/playmateEmptyMobile.selftest.ts"

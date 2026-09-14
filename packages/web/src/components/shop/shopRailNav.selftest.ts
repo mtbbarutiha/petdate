@@ -43,6 +43,9 @@ assert.match(hook, /pointerType === 'touch'/, 'touch keeps native pan; mouse/pen
 assert.match(hook, /is-dragging/, 'dragging state class for grab cursor');
 assert.match(hook, /DRAG_THRESHOLD_PX/, 'drag waits for movement threshold before capture');
 assert.match(hook, /setPointerCapture/, 'pointer capture only after drag threshold');
+assert.match(hook, /window\.addEventListener\('pointerup'/, 'window pointerup clears stuck grab');
+assert.match(hook, /window\.addEventListener\('pointermove'/, 'window pointermove drives drag');
+assert.match(hook, /abandoned/, 'vertical intent abandons rail drag for page scroll');
 assert.match(
   hook,
   /pd-shop-rail-btn[\s\S]{0,80}pd-shop-home-rail-pill/,

@@ -108,6 +108,7 @@ import {
   handleQuickVetConnect,
   handleQuickVetReconnect,
   handleServices,
+  handleVetChoice,
   handleVetConsultDecision,
   handleVetConsultPatientProfile,
 } from './services';
@@ -258,6 +259,7 @@ import {
   handleRequestSeekerAdvice,
   handleRequestSitter,
   handleRequestTrainer,
+  handleTrainerChoice,
   handleToggleSeekerAdvice,
 } from './marketplace';
 import {
@@ -267,6 +269,7 @@ import {
   handlePhoneVerifyText,
 } from './phone-verify';
 import { touchTelegramPresence } from '../api-client';
+import { effectiveWebUrl } from '../urls';
 import { stickyReplyKeyboardMiddleware } from '../sticky-reply-keyboard';
 import { registerBusinessHandlers } from './business';
 
@@ -701,6 +704,29 @@ export function registerHandlers(bot: Bot): void {
 
   bot.callbackQuery(/^medical:/, (ctx) => handleComingSoon(ctx, 'پزشکی'));
   bot.callbackQuery('vet:connect', (ctx) => handleQuickVetConnect(ctx));
+  bot.callbackQuery('vet:choice:ai', (ctx) => handleVetChoice(ctx, 'ai'));
+  bot.callbackQuery('vet:choice:human', (ctx) => handleVetChoice(ctx, 'human'));
+  bot.callbackQuery('vet:choice:menu', (ctx) => handleQuickVet(ctx));
+  bot.callbackQuery('trainer:choice:ai', (ctx) => handleTrainerChoice(ctx, 'ai'));
+  bot.callbackQuery('trainer:choice:human', (ctx) => handleTrainerChoice(ctx, 'human'));
+  bot.callbackQuery('profile:seeker_advice', async (ctx) => {
+    await ctx.answerCallbackQuery().catch(() => undefined);
+    const user = await getCtxUser(ctx);
+    const on = Boolean(user?.acceptSeekerAdvice);
+    await handleToggleSeekerAdvice(ctx, !on);
+  });
+  bot.callbackQuery('profile:ready_adopt', async (ctx) => {
+    await ctx.answerCallbackQuery().catch(() => undefined);
+    const base = effectiveWebUrl().replace(/\/$/, '');
+    await ctx.reply(
+      [
+        '💚 پذیرش پت',
+        '',
+        'لیست پت‌های نیازمند خانه را در وب ببین و مسیر پذیرش مسئولانه را شروع کن:',
+        `${base}/adoption`,
+      ].join('\n')
+    );
+  });
   bot.callbackQuery('vet:connect:resend', (ctx) =>
     handleQuickVetConnect(ctx, { confirmResend: true })
   );

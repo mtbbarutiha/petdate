@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { ChevronLeft } from 'lucide-react';
 import { LandingChrome } from '../components/LandingChrome';
 import { resolvePublicMediaUrl } from '../lib/api';
 import { formatAdminFaDate } from '../admin/jalaliDate';
@@ -12,7 +13,8 @@ import {
 export type { MagazineCard } from '../lib/magazineApi';
 export { fetchMagazineFeatured, fetchMagazineList } from '../lib/magazineApi';
 
-const PAGE_SIZE = 3;
+/** Desktop shows 4 per row; load enough for ≥20 visible articles. */
+const PAGE_SIZE = 20;
 
 export function MagazineCardView({ article }: { article: MagazineCard }) {
   const { t } = useI18n();
@@ -115,6 +117,10 @@ export function MagazinePage() {
           <h1>
             {t('magazine.newsHeading')}.
           </h1>
+          <Link to="/magazine" className="pepito-magazine-view-all" data-testid="magazine-view-all">
+            {t('landing.allArticles')}
+            <ChevronLeft size={16} strokeWidth={2.4} aria-hidden />
+          </Link>
         </div>
 
         <form

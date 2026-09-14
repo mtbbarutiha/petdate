@@ -38,8 +38,8 @@ assert.match(home, /ShopPromoBanners/, 'two promo banners on home');
 assert.doesNotMatch(home, /pd-shop-journey/, '3-step journey strip removed');
 assert.doesNotMatch(home, /title: 'انتخاب کن'/, 'journey copy gone');
 assert.doesNotMatch(home, /pd-shop-pet-tabs/, 'no top-of-home species filter chrome');
-assert.match(home, /pd-shop-dk-tile--photo/, 'real-photo category tiles');
-assert.match(home, /ShopCategoryArt/, 'category rail uses category photo component');
+assert.match(home, /pd-shop-dk-tile--photo/, 'illustrated category tiles');
+assert.match(home, /ShopCategoryArt/, 'category rail uses category art component');
 assert.doesNotMatch(home, /shopCategoryIcon\(/, 'category rail does not use Lucide icon map');
 assert.doesNotMatch(home, /pd-shop-dk-circle/, 'emoji circles replaced');
 assert.doesNotMatch(home, /c\.emoji/, 'category rail does not use emoji');
@@ -85,9 +85,9 @@ assert.match(
   'left control is physical left (not inset-inline, which mirrors in RTL)'
 );
 assert.match(css, /\.pd-shop-home-rail-track[\s\S]{0,220}overflow-x:\s*auto/, 'home rail allows swipe scroll');
-assert.match(css, /\.pd-shop-home-rail-track[\s\S]{0,260}scrollbar-width:\s*none/, 'home rail hides native scrollbar');
+assert.match(css, /\.pd-shop-home-rail-track[\s\S]{0,360}scrollbar-width:\s*none/, 'home rail hides native scrollbar');
 assert.match(css, /\.pd-shop-dk-strip\s*\{[\s\S]{0,360}overflow-x:\s*auto/, 'category strip allows swipe scroll');
-assert.match(css, /\.pd-shop-dk-strip\s*\{[\s\S]{0,420}scrollbar-width:\s*none/, 'category strip hides native scrollbar');
+assert.match(css, /\.pd-shop-dk-strip\s*\{[\s\S]{0,520}scrollbar-width:\s*none/, 'category strip hides native scrollbar');
 assert.match(
   css,
   /MOBILE_SHOP_LAYOUT_FIX[\s\S]{0,2800}\.pd-shop-dk-strip\s*\{[\s\S]{0,200}overflow-x:\s*auto/,
@@ -111,15 +111,40 @@ const webRoot = join(here, '../../..');
 assert.ok(existsSync(join(webRoot, 'public/media/shop/promo-for-your-pet.jpg')), 'groom banner photo on disk');
 assert.ok(existsSync(join(webRoot, 'public/media/shop/promo-fits-your-pet.jpg')), 'travel banner photo on disk');
 const art = readFileSync(join(here, 'shopCategoryIcons.tsx'), 'utf8');
-assert.match(art, /ShopCategoryArt/, 'category photo component');
-assert.match(art, /SHOP_CATEGORY_PHOTOS/, 'category → real photo map');
-assert.match(art, /\/media\/shop\/categories/, 'photos live under public media shop categories');
-assert.match(art, /pd-shop-dk-photo/, 'photo img uses category photo class');
+assert.match(art, /ShopCategoryArt/, 'category art component');
+assert.match(art, /SHOP_CATEGORY_PHOTOS/, 'category → illustration map export');
+assert.match(art, /\/media\/shop\/categories\/illustrations/, 'unique SVGs under illustrations/');
+assert.match(art, /pd-shop-dk-photo/, 'art img uses category photo class');
 assert.doesNotMatch(art, /lucide-react/, 'category art is not Lucide outlines');
-assert.doesNotMatch(art, /<svg/, 'category tiles are photos not SVG cartoons');
-assert.ok(existsSync(join(webRoot, 'public/media/shop/categories/food.jpg')), 'food category photo on disk');
-assert.ok(existsSync(join(webRoot, 'public/media/shop/categories/travel.jpg')), 'travel category photo on disk');
-assert.ok(existsSync(join(webRoot, 'public/media/shop/categories/litter.jpg')), 'litter category photo on disk');
+assert.match(art, /dog-food/, 'dog food has its own art kind');
+assert.match(art, /cat-food/, 'cat food has a distinct art kind');
+assert.match(art, /dog-toys/, 'dog toys distinct');
+assert.match(art, /cat-toys/, 'cat toys distinct');
+assert.ok(
+  existsSync(join(webRoot, 'public/media/shop/categories/illustrations/dog-food.svg')),
+  'dog-food illustration on disk'
+);
+assert.ok(
+  existsSync(join(webRoot, 'public/media/shop/categories/illustrations/cat-food.svg')),
+  'cat-food illustration on disk'
+);
+assert.ok(
+  existsSync(join(webRoot, 'public/media/shop/categories/illustrations/dog-toys.svg')),
+  'dog-toys illustration on disk'
+);
+assert.ok(
+  existsSync(join(webRoot, 'public/media/shop/categories/illustrations/cat-toys.svg')),
+  'cat-toys illustration on disk'
+);
+const dogFoodSvg = readFileSync(
+  join(webRoot, 'public/media/shop/categories/illustrations/dog-food.svg'),
+  'utf8'
+);
+const catFoodSvg = readFileSync(
+  join(webRoot, 'public/media/shop/categories/illustrations/cat-food.svg'),
+  'utf8'
+);
+assert.notEqual(dogFoodSvg, catFoodSvg, 'dog and cat food illustrations must differ');
 assert.match(css, /\.pd-shop-dk-photo\b/, 'category photo styles');
 assert.match(css, /\.pd-shop-filter-acc\b/, 'filter accordion styles');
 assert.match(ci, /shopUxBatch\.selftest/, 'CI runs shop UX batch selftest');

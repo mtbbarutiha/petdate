@@ -6,7 +6,7 @@ import { LanguageToggle } from './LanguageToggle';
 import { NavUserCluster } from './NavUserCluster';
 import { SiteHeaderLinkView } from './SiteHeaderLinkView';
 import { ThemeToggle } from './ThemeToggle';
-import { IconPaw } from './icons/ChromeIcons';
+import { IconGamepad, IconPaw } from './icons/ChromeIcons';
 import { type SiteHeaderLink } from './siteHeaderLinks';
 
 const LazySiteDesktopNav = lazy(() =>
@@ -44,7 +44,11 @@ export type SiteHeaderProps = {
   ctaLabel?: string;
   ctaTo?: string;
   extras?: ReactNode;
-  /** Shop-only: compact product search stacked under the wordmark (far-right in RTL). */
+  /**
+   * Shop search slot.
+   * Mobile: stacks under the logo (must not overlap).
+   * Desktop: renders in the primary row immediately before Orders (سفارش‌ها).
+   */
   brandBelow?: ReactNode;
   logoSrc?: string;
   logoSrcSet?: string;
@@ -57,7 +61,7 @@ export type SiteHeaderProps = {
  * Shared site header: leading (brand + primary links) | utilities.
  * Two flex children under `.pepito-nav-main` so RTL space-between parks
  * logo/nav at the physical right and utilities flush at the physical left.
- * Shop search stacks under the logo inside the leading column.
+ * Shop search: under logo on mobile; inline before Orders on desktop.
  */
 export function SiteHeader({
   scrolled = false,
@@ -85,7 +89,8 @@ export function SiteHeader({
   const [compactChrome, setCompactChrome] = useState(Boolean(brandBelow));
 
   useEffect(() => {
-    if (!deferDesktopNav) return;
+    // Always track viewport so shop search can sit under the logo on mobile
+    // and inline before Orders on desktop (deferDesktopNav only delays nav chunk).
     const mq = window.matchMedia('(min-width: 860px)');
     const sync = () => setWideEnoughForNav(mq.matches);
     sync();
@@ -101,7 +106,11 @@ export function SiteHeader({
     return () => mq.removeEventListener('change', sync);
   }, [brandBelow]);
 
-  const headerClass = `pepito-nav${scrolled ? ' is-scrolled' : ''}${brandBelow ? ' pepito-nav--with-search' : ''}${className ? ` ${className}` : ''}`;
+  const isDesktop = wideEnoughForNav;
+  const mobileSearch = brandBelow && !isDesktop ? brandBelow : null;
+  const desktopSearch = brandBelow && isDesktop ? brandBelow : null;
+
+  const headerClass = `pepito-nav${scrolled ? ' is-scrolled' : ''}${brandBelow ? ' pepito-nav--with-search' : ''}${mobileSearch ? ' pepito-nav--mobile-search' : ''}${desktopSearch ? ' pepito-nav--desktop-search' : ''}${className ? ` ${className}` : ''}`;
   const showTextAction =
     Boolean(actionLabel) && !isGuestLoginTextAction(actionLabel, actionTo, t('common.login'));
 
@@ -109,7 +118,7 @@ export function SiteHeader({
     <header className={headerClass}>
       <div className="pepito-nav-main">
         <div className="pepito-nav-leading">
-          <div className={`pepito-nav-brand${brandBelow ? ' pepito-nav-brand--search' : ''}`}>
+          <div className={`pepito-nav-brand${mobileSearch ? ' pepito-nav-brand--search' : ''}`}>
             <Link to="/" className="pepito-nav-logo" aria-label={BRAND.displayName}>
               <img
                 src={logoSrc}
@@ -121,15 +130,32 @@ export function SiteHeader({
                 decoding="async"
               />
             </Link>
-            {brandBelow}
+            {mobileSearch}
           </div>
 
-          {wideEnoughForNav ? (
+          {!isDesktop ? (
+            <Link
+              to="/events"
+              className="pepito-nav-mobile-events"
+              data-testid="nav-mobile-events"
+              aria-label={t('nav.games')}
+            >
+              <IconGamepad size={18} />
+              <span>{t('nav.games')}</span>
+            </Link>
+          ) : null}
+
+          {isDesktop ? (
             <div className="pepito-nav-primary">
               {showDesktopNav ? (
                 <Suspense fallback={null}>
                   <LazySiteDesktopNav />
                 </Suspense>
+              ) : null}
+              {desktopSearch ? (
+                <div className="pepito-nav-desktop-search" data-testid="nav-desktop-search">
+                  {desktopSearch}
+                </div>
               ) : null}
               {sectionLinks.length > 0 ? (
                 <nav className="pepito-nav-links pepito-nav-section-inline" aria-label={t('nav.sections')}>

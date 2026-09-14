@@ -242,27 +242,45 @@ export async function handleQuickVet(ctx: Context): Promise<void> {
   }
   if (!(await ensurePatientHasPetForVet(ctx, user))) return;
 
-  let vets: User[] = [];
-  try {
-    vets = (await listOnlineVets()).filter((v) => v.id !== user.id);
-  } catch (err) {
-    console.error('listOnlineVets failed:', err);
-    await ctx.reply('خطا در دریافت لیست پزشک‌های آنلاین. کمی بعد دوباره امتحان کن.', {
-      reply_markup: menuKeyboardFor(ctx, user),
-    });
+  await ctx.reply(
+    [
+      '⚡ <b>مشاوره سریع با پزشک</b>',
+      '',
+      'کدام مسیر را می‌خواهی؟',
+      '🤖 <b>هوش مصنوعی (سارا نوری)</b> — رایگان، فوری',
+      '👨‍⚕️ <b>پزشک انسانی</b> — سکه، اتصال به دامپزشک آنلاین',
+    ].join('\n'),
+    {
+      parse_mode: 'HTML',
+      reply_markup: new InlineKeyboard()
+        .text('🤖 هوش مصنوعی', 'vet:choice:ai')
+        .success()
+        .row()
+        .text('👨‍⚕️ پزشک انسانی', 'vet:choice:human')
+        .primary(),
+    }
+  );
+  await pushMainMenuKeyboard(ctx, user);
+}
+
+/** After AI vs human choice — AI path or human online list / connect. */
+export async function handleVetChoice(ctx: Context, mode: 'ai' | 'human'): Promise<void> {
+  const user = await getCtxUser(ctx);
+  if (!user) {
+    await ctx.answerCallbackQuery({ text: 'اول /start بزن', show_alert: true }).catch(() => undefined);
     return;
   }
+  await ctx.answerCallbackQuery().catch(() => undefined);
+  if (!(await ensurePatientHasPetForVet(ctx, user))) return;
 
-  const balance = user.coins ?? 0;
-  if (!vets.length) {
-    // Start free AI consult instead of hard-stopping.
-    const result = await quickVetConnect(user.id, {});
-    if (result.ok && result.aiFallback) {
+  if (mode === 'ai') {
+    const result = await quickVetConnect(user.id, { preferAi: true });
+    if (result.ok && (result.aiFallback || result.consultations?.[0])) {
       await ctx.reply(
         [
           '🩺 <b>سارا نوری</b>',
           '',
-          'دامپزشک انسانی آنلاین نبود — چت رایگان با سارا نوری شروع شد.',
+          'چت رایگان با مشاور هوشمند شروع شد.',
           '',
           result.message,
           result.advice ? '\n' + result.advice.slice(0, 3500) : '',
@@ -287,14 +305,42 @@ export async function handleQuickVet(ctx: Context): Promise<void> {
       return;
     }
     await ctx.reply(
+      result.ok === false ? result.error : 'سارا نوری الان در دسترس نبود.',
+      { reply_markup: menuKeyboardFor(ctx, user) }
+    );
+    return;
+  }
+
+  // Human path — same list UX as before, but never auto-fallback to AI without asking.
+  let vets: User[] = [];
+  try {
+    vets = (await listOnlineVets()).filter((v) => v.id !== user.id);
+  } catch (err) {
+    console.error('listOnlineVets failed:', err);
+    await ctx.reply('خطا در دریافت لیست پزشک‌های آنلاین. کمی بعد دوباره امتحان کن.', {
+      reply_markup: menuKeyboardFor(ctx, user),
+    });
+    return;
+  }
+
+  const balance = user.coins ?? 0;
+  if (!vets.length) {
+    await ctx.reply(
       [
-        '⚡ <b>مشاوره سریع با پزشک</b>',
+        '⚡ <b>پزشک انسانی</b>',
         '',
-        result.ok === false ? result.error : 'الان دامپزشک آنلاین نیست و سارا نوری هم در دسترس نبود.',
-        '',
-        `موجودی تو: <b>${formatNum(balance)}</b> سکه`,
+        'الان دامپزشک انسانی آنلاین نیست.',
+        'می‌توانی مسیر هوش مصنوعی (رایگان) را انتخاب کنی یا کمی بعد دوباره امتحان کنی.',
       ].join('\n'),
-      { parse_mode: 'HTML', reply_markup: menuKeyboardFor(ctx, user) }
+      {
+        parse_mode: 'HTML',
+        reply_markup: new InlineKeyboard()
+          .text('🤖 هوش مصنوعی', 'vet:choice:ai')
+          .success()
+          .row()
+          .text('◀️ بازگشت', 'vet:choice:menu')
+          .primary(),
+      }
     );
     return;
   }
@@ -308,7 +354,7 @@ export async function handleQuickVet(ctx: Context): Promise<void> {
 
   await ctx.reply(
     [
-      '⚡ <b>مشاوره سریع با پزشک</b>',
+      '⚡ <b>مشاوره با پزشک انسانی</b>',
       '',
       `پزشک‌های آنلاین آماده پذیرش (<b>${formatNum(vets.length)}</b>):`,
       ...listLines,
@@ -377,6 +423,7 @@ export async function handleQuickVetConnect(
   try {
     result = await quickVetConnect(user.id, {
       confirmResend: Boolean(opts?.confirmResend),
+      humanOnly: true,
     });
   } catch (err) {
     console.error('quickVetConnect failed:', err);

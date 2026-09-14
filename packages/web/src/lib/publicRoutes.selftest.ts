@@ -158,6 +158,9 @@ assert.doesNotMatch(welcome, /خدمات مراقبت از پت ما/, 'generic 
 assert.match(welcome, /to: '\/chats',\s*titleKey: 'landing\.svcPlaymateTitle'/, 'services playmate → /chats');
 assert.match(welcome, /to: '\/vet-consult',\s*titleKey: 'landing\.svcVetTitle'/, 'services vet → /vet-consult');
 assert.match(welcome, /to: '\/trainer-consult',\s*titleKey: 'landing\.svcTrainerTitle'/, 'services trainer → /trainer-consult');
+assert.match(welcome, /to: '\/shop',\s*titleKey: 'landing\.svcShopTitle'/, 'services shop → /shop');
+assert.match(welcome, /to: '\/events',\s*titleKey: 'landing\.svcEventsTitle'/, 'services events → /events');
+assert.match(welcome, /to: '\/my-pets',\s*titleKey: 'landing\.svcDiaryTitle'/, 'services diary → /my-pets');
 assert.match(welcome, /to: '\/onboarding\/role',\s*titleKey: 'landing\.svcNoPetTitle'/, 'services no-pet → onboarding');
 assert.match(welcome, /to: '\/adoption',\s*titleKey: 'landing\.svcAdoptionTitle'/, 'services adoption → /adoption');
 assert.doesNotMatch(

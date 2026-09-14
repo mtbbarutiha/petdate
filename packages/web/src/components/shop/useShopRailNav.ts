@@ -1,11 +1,12 @@
+/**
+ * Horizontal shop rails: L/R buttons + mouse drag-to-scroll.
+ * Touch keeps native overflow pan (horizontal + vertical page scroll).
+ * "Left" = visual-left (RTL-safe).
+ */
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 export type ShopRailSide = 'left' | 'right';
 
-/**
- * Horizontal shop rails: L/R buttons + mouse drag-to-scroll.
- * Touch keeps native overflow pan-x. "Left" = visual-left (RTL-safe).
- */
 export function useShopRailNav(resetKey: unknown) {
   const trackRef = useRef<HTMLDivElement>(null);
   const [canPrev, setCanPrev] = useState(false);
@@ -68,26 +69,43 @@ export function useShopRailNav(resetKey: unknown) {
     const el = trackRef.current;
     if (!el) return;
 
-    /** Delay capture until the pointer actually moves — immediate capture was
-     *  eating clicks on cards and could leave the track's composited layer
-     *  claiming gestures meant for sibling L/R buttons. */
-    const DRAG_THRESHOLD_PX = 8;
+    /**
+     * Delay capture until the pointer actually moves — immediate capture was
+     * eating clicks on cards and could leave the track's composited layer
+     * claiming gestures meant for sibling L/R buttons.
+     * Higher threshold + window-level release prevents "stuck" grab hangs.
+     */
+    const DRAG_THRESHOLD_PX = 12;
     let pending = false;
     let dragging = false;
     let moved = false;
     let pointerId: number | null = null;
     let startX = 0;
+    let startY = 0;
     let startScroll = 0;
+    /** If vertical intent wins before horizontal, abandon rail drag (page scroll). */
+    let abandoned = false;
 
-    const clearPointer = (id: number) => {
+    const clearPointer = (id: number | null) => {
       pending = false;
       dragging = false;
+      abandoned = false;
+      const prevId = pointerId;
       pointerId = null;
       el.classList.remove('is-dragging');
-      try {
-        if (el.hasPointerCapture(id)) el.releasePointerCapture(id);
-      } catch {
-        /* already released */
+      if (prevId != null) {
+        try {
+          if (el.hasPointerCapture(prevId)) el.releasePointerCapture(prevId);
+        } catch {
+          /* already released */
+        }
+      }
+      if (id != null && id !== prevId) {
+        try {
+          if (el.hasPointerCapture(id)) el.releasePointerCapture(id);
+        } catch {
+          /* ignore */
+        }
       }
     };
 
@@ -125,16 +143,26 @@ export function useShopRailNav(resetKey: unknown) {
       pending = true;
       dragging = false;
       moved = false;
+      abandoned = false;
       pointerId = e.pointerId;
       startX = e.clientX;
+      startY = e.clientY;
       startScroll = el.scrollLeft;
     };
 
     const onPointerMove = (e: PointerEvent) => {
       if (pointerId !== e.pointerId) return;
+      if (abandoned) return;
       if (!pending && !dragging) return;
       const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
       if (!dragging) {
+        // Prefer vertical page scroll when the gesture is mostly vertical.
+        if (Math.abs(dy) > DRAG_THRESHOLD_PX && Math.abs(dy) > Math.abs(dx) * 1.15) {
+          abandoned = true;
+          clearPointer(e.pointerId);
+          return;
+        }
         if (Math.abs(dx) < DRAG_THRESHOLD_PX) return;
         dragging = true;
         pending = false;
@@ -150,20 +178,37 @@ export function useShopRailNav(resetKey: unknown) {
       }
       // Same delta formula works for LTR and Chromium/Firefox RTL scrollLeft.
       el.scrollLeft = startScroll - dx;
+      // Avoid selecting text / native image drag while panning.
+      if (dragging) e.preventDefault();
+    };
+
+    const onPointerUp = (e: PointerEvent) => endDrag(e);
+    const onPointerCancel = (e: PointerEvent) => endDrag(e);
+    const onLostCapture = (e: PointerEvent) => {
+      if (pointerId !== e.pointerId) return;
+      // Capture was taken away — clear local state without re-releasing.
+      pending = false;
+      dragging = false;
+      abandoned = false;
+      pointerId = null;
+      moved = false;
+      el.classList.remove('is-dragging');
     };
 
     el.addEventListener('pointerdown', onPointerDown);
-    el.addEventListener('pointermove', onPointerMove);
-    el.addEventListener('pointerup', endDrag);
-    el.addEventListener('pointercancel', endDrag);
-    el.addEventListener('lostpointercapture', endDrag as EventListener);
+    // Window listeners so release outside the track still clears grab state.
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup', onPointerUp);
+    window.addEventListener('pointercancel', onPointerCancel);
+    el.addEventListener('lostpointercapture', onLostCapture as EventListener);
 
     return () => {
       el.removeEventListener('pointerdown', onPointerDown);
-      el.removeEventListener('pointermove', onPointerMove);
-      el.removeEventListener('pointerup', endDrag);
-      el.removeEventListener('pointercancel', endDrag);
-      el.removeEventListener('lostpointercapture', endDrag as EventListener);
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('pointercancel', onPointerCancel);
+      el.removeEventListener('lostpointercapture', onLostCapture as EventListener);
+      clearPointer(pointerId);
       el.classList.remove('is-dragging');
     };
   }, [resetKey]);
