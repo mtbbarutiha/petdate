@@ -8,6 +8,7 @@ import { SiteHeader } from '../SiteHeader';
 import { shopSectionLinks } from '../siteHeaderLinks';
 import { SiteFooter } from '../SiteFooter';
 import { ShopAddToast } from './ShopAddToast';
+import { ShopProductSearch } from './ShopProductSearch';
 
 export function ShopChrome({
   children,
@@ -53,6 +54,14 @@ export function ShopChrome({
         showCart
         showOrders
       />
+
+      {/* Primary shop search: sticky under nav on all ShopChrome routes (home / category / PDP).
+          Sits above page breadcrumbs; category sidebar keeps its own filter field. */}
+      <div className="pd-shop-search-bar">
+        <div className="pepito-container">
+          <ShopProductSearch />
+        </div>
+      </div>
 
       {!hideBanner ? (
         <section className="pd-shop-hero pd-shop-hero--full" aria-label={title}>

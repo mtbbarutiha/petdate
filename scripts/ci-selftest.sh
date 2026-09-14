@@ -301,6 +301,9 @@ npx tsx "$ROOT/packages/web/src/components/shop/shopProductGallery.selftest.ts"
 # Shop PDP Digikala-style trust / service badges
 npx tsx "$ROOT/packages/web/src/components/shop/shopTrustBadges.selftest.ts"
 
+echo "==> selftest: shop product search (chrome pill + Ctrl+K)"
+npx tsx "$ROOT/packages/web/src/components/shop/shopProductSearch.selftest.ts"
+
 echo "==> selftest: shop product images[] helpers"
 npx tsx "$ROOT/packages/api/src/data/shop-product-images.selftest.ts"
 

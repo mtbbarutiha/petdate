@@ -3617,3 +3617,42 @@ html[data-theme='dark'] .pd-shop-card-deposit-number strong,
 html[data-theme='dark'] .pd-shop-card-deposit-holder strong {
   color: var(--pd-ink);
 }
+
+/* Shop product search — readable pill + dropdown in dark mode */
+html[data-theme='dark'] .pd-shop-search-bar {
+  background: color-mix(in srgb, var(--pepito-soft) 88%, transparent);
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+html[data-theme='dark'] .pd-shop-search-pill {
+  background: color-mix(in srgb, var(--pepito-white) 70%, #2a2d38);
+  border-color: rgba(255, 255, 255, 0.06);
+}
+html[data-theme='dark'] .pd-shop-search-pill:focus-within {
+  background: color-mix(in srgb, var(--pepito-white) 78%, #323644);
+  border-color: color-mix(in srgb, var(--pepito-base) 45%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--pepito-base) 18%, transparent);
+}
+html[data-theme='dark'] .pd-shop-search-icon,
+html[data-theme='dark'] .pd-shop-search-input::placeholder {
+  color: color-mix(in srgb, var(--pepito-muted) 88%, #a8aab4);
+}
+html[data-theme='dark'] .pd-shop-search-input {
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pd-shop-search-kbd {
+  background: color-mix(in srgb, var(--pepito-soft) 55%, #12141c);
+  color: var(--pepito-muted);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+html[data-theme='dark'] .pd-shop-search-dropdown {
+  background: var(--pepito-white);
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 16px 42px rgba(0, 0, 0, 0.45);
+}
+html[data-theme='dark'] .pd-shop-search-hit img {
+  background: #fff;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+html[data-theme='dark'] .pd-shop-search-all {
+  border-top-color: rgba(255, 255, 255, 0.1);
+}

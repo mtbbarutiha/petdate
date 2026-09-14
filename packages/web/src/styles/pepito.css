@@ -8266,7 +8266,183 @@ a.pepito-btn.pepito-human-consult-cta:hover {
     var(--pepito-soft);
 }
 
+/* —— Shop product search (DigiKala-like pill under nav) —— */
+.pd-shop-search-bar {
+  position: sticky;
+  top: var(--pepito-nav-h);
+  z-index: 40;
+  padding: 0.65rem 0 0.75rem;
+  background: color-mix(in srgb, var(--pepito-white) 88%, transparent);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(92, 77, 145, 0.08);
+}
+.pd-shop-search {
+  position: relative;
+  max-width: 720px;
+  margin-inline: auto;
+}
+.pd-shop-search-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  min-height: 2.85rem;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  background: #f0f0f1;
+  border: 1px solid transparent;
+  transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+.pd-shop-search-pill:focus-within {
+  border-color: rgba(92, 77, 145, 0.28);
+  background: #f5f5f6;
+  box-shadow: 0 0 0 3px rgba(92, 77, 145, 0.08);
+}
+.pd-shop-search-icon {
+  flex-shrink: 0;
+  color: #8a8a8e;
+  pointer-events: none;
+}
+.pd-shop-search-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--pepito-dark);
+  font: inherit;
+  font-size: 0.98rem;
+  line-height: 1.4;
+  padding: 0.35rem 0;
+}
+.pd-shop-search-input::placeholder {
+  color: #8a8a8e;
+}
+.pd-shop-search-input::-webkit-search-cancel-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+.pd-shop-search-kbd {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.6rem;
+  padding: 0.22rem 0.45rem;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #5c5c63;
+  font-family: ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: none;
+}
+.pd-shop-search-dropdown {
+  position: absolute;
+  inset-inline: 0;
+  top: calc(100% + 0.4rem);
+  z-index: 50;
+  background: var(--pepito-white);
+  border: 1px solid rgba(92, 77, 145, 0.12);
+  border-radius: 18px;
+  box-shadow: 0 14px 40px rgba(28, 25, 40, 0.12);
+  overflow: hidden;
+}
+.pd-shop-search-list {
+  list-style: none;
+  margin: 0;
+  padding: 0.35rem;
+  max-height: min(52vh, 380px);
+  overflow: auto;
+}
+.pd-shop-search-hit {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: 12px;
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.12s ease;
+}
+.pd-shop-search-hit:hover,
+.pd-shop-search-hit.is-active {
+  background: var(--pepito-soft);
+}
+.pd-shop-search-hit img {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px solid rgba(92, 77, 145, 0.08);
+  flex-shrink: 0;
+}
+.pd-shop-search-hit-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+.pd-shop-search-hit-copy strong {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--pepito-dark);
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pd-shop-search-hit-copy span {
+  font-size: 0.8rem;
+  color: var(--pepito-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pd-shop-search-empty {
+  margin: 0;
+  padding: 1rem 1.1rem 0.5rem;
+  color: var(--pepito-muted);
+  font-size: 0.92rem;
+  text-align: center;
+}
+.pd-shop-search-all {
+  appearance: none;
+  width: 100%;
+  border: 0;
+  border-top: 1px solid rgba(92, 77, 145, 0.1);
+  background: transparent;
+  color: var(--pepito-base);
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 0.85rem 1rem;
+  cursor: pointer;
+  text-align: center;
+}
+.pd-shop-search-all:hover {
+  background: color-mix(in srgb, var(--pepito-lilac) 55%, transparent);
+}
+
+@media (max-width: 720px), (pointer: coarse) {
+  .pd-shop-search-kbd {
+    display: none;
+  }
+  .pd-shop-search-bar {
+    padding: 0.55rem 0 0.65rem;
+  }
+  .pd-shop-search-pill {
+    min-height: 2.7rem;
+  }
+}
+
 .pd-shop-hero {
+
   position: relative;
   margin-top: 0;
   width: 100vw;

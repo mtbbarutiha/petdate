@@ -797,6 +797,9 @@ export const en: Dict = {
     badgeSale: "Sale",
     badgeNew: "New",
     badgeLimited: "Limited",
+    search: "Search",
+    searchEmpty: "No products found.",
+    searchSeeAll: "See all results ({n})",
   },
   magazine: {
     loadFail: "Could not load the magazine",
