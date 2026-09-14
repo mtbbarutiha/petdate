@@ -40,10 +40,12 @@ import { useShopCart } from '../../hooks/useShopCart';
 import { useShopFavorites } from '../../hooks/useShopFavorites';
 import { productPublicUrl, shareOrCopyUrl } from '../../lib/share';
 import { trackViewItem } from '../../lib/siteAnalytics';
+import { ShopBreadcrumb } from '../../components/shop/ShopBreadcrumb';
 import { ShopChrome } from '../../components/shop/ShopChrome';
 import { ShopProductCard } from '../../components/shop/ShopProductCard';
 import { ShopProductGallery } from '../../components/shop/ShopProductGallery';
 import { ShopTrustBadges } from '../../components/shop/ShopTrustBadges';
+import { shopProductBreadcrumbs } from '../../lib/shopBreadcrumb';
 
 type DetailTab = 'desc' | 'specs' | 'reviews';
 
@@ -150,17 +152,7 @@ export function ShopProductPage() {
   return (
     <ShopChrome hideBanner>
       <div className="pepito-container pd-shop-detail pd-dk-pdp">
-        <nav className="pd-shop-breadcrumb" aria-label="مسیر">
-          <Link to="/shop">پت دیت شاپ</Link>
-          {category ? (
-            <>
-              <span>/</span>
-              <Link to={`/shop/c/${category.slug}`}>{shopLabel(lang, category.labelFa, category.labelEn)}</Link>
-            </>
-          ) : null}
-          <span>/</span>
-          <span>{productTitleForLang(lang, product.title, { titleEn: product.titleEn, slug: product.slug })}</span>
-        </nav>
+        <ShopBreadcrumb items={shopProductBreadcrumbs({ lang, product, category })} />
 
         <div className="pd-dk-pdp-top">
           <ShopProductGallery
