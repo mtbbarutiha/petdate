@@ -38,14 +38,47 @@ assert.match(hook, /canLeft/, 'hook exposes canLeft');
 assert.match(hook, /isRtl \? 'next' : 'prev'/, 'RTL left button scrolls next (visual left)');
 assert.match(hook, /pointer:\s*coarse/, 'coarse pointers use instant scrollBy');
 assert.match(hook, /pointerdown/, 'mouse drag starts on pointerdown');
-assert.match(hook, /scrollLeft = startScroll - dx/, 'mouse drag scrolls the track');
+assert.match(hook, /scrollLeft = startScroll - \(latestX - startX\)/, 'mouse drag scrolls the track');
 assert.match(hook, /pointerType === 'touch'/, 'touch keeps native pan; mouse/pen drag');
 assert.match(hook, /is-dragging/, 'dragging state class for grab cursor');
 assert.match(hook, /DRAG_THRESHOLD_PX/, 'drag waits for movement threshold before capture');
 assert.match(hook, /setPointerCapture/, 'pointer capture only after drag threshold');
-assert.match(hook, /window\.addEventListener\('pointerup'/, 'window pointerup clears stuck grab');
-assert.match(hook, /window\.addEventListener\('pointermove'/, 'window pointermove drives drag');
-assert.match(hook, /abandoned/, 'vertical intent abandons rail drag for page scroll');
+assert.match(hook, /draggingRef/, 'draggingRef gates scroll setState during drag');
+assert.match(
+  hook,
+  /if \(draggingRef\.current\) return/,
+  'scroll update skips React setState while dragging (hang fix)'
+);
+assert.match(
+  hook,
+  /\(e\.buttons & 1\) === 0/,
+  'pointermove with buttons===0 clears stuck grab (missed mouseup)'
+);
+assert.match(hook, /lostpointercapture/, 'lostpointercapture clears dragging state');
+assert.match(hook, /visibilitychange/, 'visibilitychange ends drag when tab hides');
+assert.match(hook, /addEventListener\('blur'/, 'window blur ends drag');
+assert.match(
+  hook,
+  /document\.addEventListener\('pointerup'/,
+  'document pointerup clears stuck grab'
+);
+assert.match(
+  hook,
+  /document\.addEventListener\('pointermove'/,
+  'document pointermove drives drag'
+);
+assert.match(
+  hook,
+  /document\.addEventListener\('mouseup'/,
+  'mouseup backup clears drag if pointerup is dropped'
+);
+assert.match(hook, /requestAnimationFrame/, 'rAF coalesces scrollLeft writes');
+assert.match(hook, /hardReset/, 'hardReset clears phase + capture + is-dragging');
+assert.match(
+  hook,
+  /Math\.abs\(dy\) > DRAG_THRESHOLD_PX && Math\.abs\(dy\) > Math\.abs\(dx\) \* 1\.15/,
+  'vertical intent abandons rail drag for page scroll'
+);
 assert.match(
   hook,
   /pd-shop-rail-btn[\s\S]{0,80}pd-shop-home-rail-pill/,
@@ -82,6 +115,16 @@ assert.match(
   css,
   /\.pd-shop-home-rail-pills[\s\S]{0,220}z-index:\s*2/,
   'pill row stacks above any overflow bleed'
+);
+assert.match(
+  css,
+  /\.pd-shop-home-rail-track[\s\S]{0,200}touch-action:\s*pan-x pan-y/,
+  'home rails allow vertical page scroll on touch'
+);
+assert.match(
+  css,
+  /-webkit-user-drag:\s*none/,
+  'rail images disable native drag that fights mouse pan'
 );
 
 assert.match(
@@ -123,6 +166,7 @@ for (const [src, name] of [
 ] as const) {
   assert.match(src, /scrollBySide\('left'\)/, `${name} left button scrolls visual-left`);
   assert.match(src, /scrollBySide\('right'\)/, `${name} right button scrolls visual-right`);
+  assert.match(src, /useShopRailNav/, `${name} share the hang-fixed rail hook`);
 }
 
 assert.match(ci, /shopRailNav\.selftest/, 'CI runs shop rail nav selftest');
