@@ -115,9 +115,9 @@ for (const [id, slug, price] of batchMultiW2) {
   assert.equal(item.priceToman, price, `${id} MANIFEST price`);
   const shots = productGallery(item);
   assert.equal(shots.length, 3, `${id} gallery has 3 unique angles`);
-  assert.ok(shots[0].includes(`${slug}.jpg?v=batch-multi-w2-v3`), `${id} front is batch-multi-w2-v3`);
-  assert.ok(shots[1].includes(`${slug}-2.jpg?v=batch-multi-w2-v3`), `${id} angle 2 is batch-multi-w2-v3`);
-  assert.ok(shots[2].includes(`${slug}-3.jpg?v=batch-multi-w2-v3`), `${id} angle 3 is batch-multi-w2-v3`);
+  assert.ok(shots[0].includes(`${slug}.jpg?v=batch-multi-w2-v4`), `${id} front is batch-multi-w2-v4`);
+  assert.ok(shots[1].includes(`${slug}-2.jpg?v=batch-multi-w2-v4`), `${id} angle 2 is batch-multi-w2-v4`);
+  assert.ok(shots[2].includes(`${slug}-3.jpg?v=batch-multi-w2-v4`), `${id} angle 3 is batch-multi-w2-v4`);
   assert.doesNotMatch(shots.join(' '), /purple|5c4d91|بنفش/i, `${id} gallery has no purple asset`);
 }
 assert.ok(getProduct('dog-treats-wanpy-chicken-jerky-chips-100g'), 'Wanpy jerky chips is in catalog');

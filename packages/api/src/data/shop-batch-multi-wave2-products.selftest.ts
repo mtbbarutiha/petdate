@@ -1,5 +1,5 @@
 /**
- * Shop Batch-multi wave 2/5 — 10 SKUs, zero margin, 3-angle batch-multi-w2-v3 galleries.
+ * Shop Batch-multi wave 2/5 — 10 SKUs, zero margin, 3-angle batch-multi-w2-v4 galleries.
  * Run: npx tsx src/data/shop-batch-multi-wave2-products.selftest.ts
  */
 import assert from 'node:assert/strict';
@@ -77,7 +77,7 @@ async function main() {
   assert.equal(seed.SHOP_BATCH_MULTI_WAVE2_PRODUCTS[7]?.slug, 'dog-toys-ufo-treat-dispenser-dog-toy');
   assert.equal(seed.SHOP_BATCH_MULTI_WAVE2_PRODUCTS[8]?.id, 'p268');
   assert.equal(seed.SHOP_BATCH_MULTI_WAVE2_PRODUCTS[8]?.slug, 'dog-toys-crab-silicone-dog-chew-toothbrush-toy');
-  assert.equal(seed.SHOP_BATCH_MULTI_WAVE2_CACHE_BUST, 'batch-multi-w2-v3');
+  assert.equal(seed.SHOP_BATCH_MULTI_WAVE2_CACHE_BUST, 'batch-multi-w2-v4');
   assert.ok(
     !seed.SHOP_BATCH_MULTI_WAVE2_PRODUCTS.some((p) => (HELD_SHOP_SLUGS as readonly string[]).includes(p.slug)),
     'no held slugs remain in batch-multi wave 2 products'
@@ -157,7 +157,7 @@ async function main() {
   for (const row of rows) {
     assert.equal(row.price_toman, EXPECTED_PRICE[row.slug], `${row.slug} exact MANIFEST price`);
     assert.equal(row.cost_toman, row.price_toman, `${row.slug} margin 0`);
-    assert.match(row.image, new RegExp(`/pepito/uploads/${row.slug}\\.jpg\\?v=batch-multi-w2-v3$`));
+    assert.match(row.image, new RegExp(`/pepito/uploads/${row.slug}\\.jpg\\?v=batch-multi-w2-v4$`));
     assert.equal(row.badge, 'new');
     assert.equal(Number(row.featured), 1);
     assert.equal(Number(row.in_stock), 1);
@@ -171,8 +171,8 @@ async function main() {
       .filter(Boolean);
     assert.equal(gallery.length, 3, `${row.slug} stores 3 gallery URLs`);
     assert.equal(gallery[0], row.image, `${row.slug} first gallery src is cover`);
-    assert.ok(gallery[1]?.includes(`${row.slug}-2.jpg?v=batch-multi-w2-v3`), `${row.slug} angle 2`);
-    assert.ok(gallery[2]?.includes(`${row.slug}-3.jpg?v=batch-multi-w2-v3`), `${row.slug} angle 3`);
+    assert.ok(gallery[1]?.includes(`${row.slug}-2.jpg?v=batch-multi-w2-v4`), `${row.slug} angle 2`);
+    assert.ok(gallery[2]?.includes(`${row.slug}-3.jpg?v=batch-multi-w2-v4`), `${row.slug} angle 3`);
     assert.ok('__titleEn' in params, `${row.slug} stores titleEn key`);
     if (NO_INVENTED_WEIGHT.has(row.slug)) {
       assert.equal(params['وزن'], undefined, `${row.slug} must not invent وزن`);
@@ -185,8 +185,8 @@ async function main() {
     .all() as Array<{ slug: string }>;
   assert.equal(cats.length, 3, 'wave-2 categories are seeded');
 
-  const bust = readFileSync(join(repoRoot, 'tmp/cache-bust-shop-batch-multi-w2-v3'), 'utf8');
-  assert.match(bust, /batch-multi-w2-v3/, 'cache-bust marker present');
+  const bust = readFileSync(join(repoRoot, 'tmp/cache-bust-shop-batch-multi-w2-v4'), 'utf8');
+  assert.match(bust, /batch-multi-w2-v4/, 'cache-bust marker present');
 
   const imageNames = SHOP_BATCH_MULTI_WAVE2_SLUGS.flatMap((slug) => [
     `${slug}.jpg`,
