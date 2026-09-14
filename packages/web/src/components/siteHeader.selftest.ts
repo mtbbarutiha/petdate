@@ -21,6 +21,9 @@ const css = readFileSync(join(root, 'styles/pepito.css'), 'utf8');
 const nav = readFileSync(join(root, 'lib/siteNav.ts'), 'utf8');
 
 assert.match(header, /pepito-nav-primary/, 'header has primary group');
+assert.match(header, /brandBelow/, 'header accepts shop search under the logo');
+assert.match(header, /pepito-nav-brand/, 'logo and optional search share a brand column');
+assert.doesNotMatch(header, /ShopProductSearch/, 'SiteHeader does not import shop search (slot only)');
 assert.match(header, /pepito-nav-actions/, 'header has utilities group');
 assert.match(header, /LanguageToggle/, 'utilities include language');
 assert.match(header, /ThemeToggle/, 'utilities include theme');
@@ -80,6 +83,11 @@ assert.match(welcome, /welcomeSectionLinks/, 'Welcome uses hash extras without g
 assert.match(welcome, /deferDesktopNav/, 'Welcome still defers desktop shortcuts for landing TBT');
 assert.match(shop, /SiteHeader/, 'ShopChrome uses shared header');
 assert.match(shop, /shopSectionLinks/, 'shop extras use shared section links');
+assert.match(shop, /brandBelow/, 'desktop shop search is passed under the logo');
+assert.match(shop, /pd-shop-search-bar/, 'mobile shop search stays a sticky bar');
+assert.match(shop, /min-width: 860px/, 'desktop vs mobile search split at 860px');
+assert.doesNotMatch(chrome, /ShopProductSearch/, 'landing chrome has no shop product search');
+assert.doesNotMatch(welcome, /ShopProductSearch/, 'homepage chrome has no shop product search');
 
 const landingKeys = landingSectionLinks({ vetConsultEnabled: true }).map((l) => l.key);
 const welcomeKeys = welcomeSectionLinks().map((l) => l.key);
@@ -94,8 +102,12 @@ assert.ok(
 );
 assert.deepEqual(
   shopSectionLinks().map((l) => l.key),
-  ['orders', 'dog', 'cat', 'bird'],
-  'shop section keeps orders + category shortcuts only',
+  ['orders'],
+  'shop header extras are orders only (no species filter chrome)',
+);
+assert.ok(
+  !shopSectionLinks().some((l) => l.key === 'dog' || l.key === 'cat' || l.key === 'bird'),
+  'shop pages do not show dog/cat/bird header filters',
 );
 assert.ok(
   landingSectionLinks({ vetConsultEnabled: true }).some((l) => l.testId === 'nav-adoption'),

@@ -10,6 +10,22 @@ import { SiteFooter } from '../SiteFooter';
 import { ShopAddToast } from './ShopAddToast';
 import { ShopProductSearch } from './ShopProductSearch';
 
+const SHOP_DESKTOP_NAV_MQ = '(min-width: 860px)';
+
+function useShopDesktopNav() {
+  const [desktop, setDesktop] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia(SHOP_DESKTOP_NAV_MQ).matches,
+  );
+  useEffect(() => {
+    const mq = window.matchMedia(SHOP_DESKTOP_NAV_MQ);
+    const sync = () => setDesktop(mq.matches);
+    sync();
+    mq.addEventListener('change', sync);
+    return () => mq.removeEventListener('change', sync);
+  }, []);
+  return desktop;
+}
+
 export function ShopChrome({
   children,
   bannerTitle,
@@ -23,10 +39,12 @@ export function ShopChrome({
 }) {
   const { t, dir } = useI18n();
   const [scrolled, setScrolled] = useState(false);
+  const desktopNav = useShopDesktopNav();
   const { isLoggedIn } = useAuthStore();
   const { ready } = useShopCatalogSync();
   const title = bannerTitle ?? t('shop.brand');
   const lead = bannerLead ?? t('shop.lead');
+  const productSearch = <ShopProductSearch />;
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -53,15 +71,16 @@ export function ShopChrome({
         sectionLinks={shopSectionLinks()}
         showCart
         showOrders
+        brandBelow={desktopNav ? productSearch : undefined}
       />
 
-      {/* Primary shop search: sticky under nav on all ShopChrome routes (home / category / PDP).
-          Sits above page breadcrumbs; category sidebar keeps its own filter field. */}
-      <div className="pd-shop-search-bar">
-        <div className="pepito-container">
-          <ShopProductSearch />
+      {/* Mobile: sticky full-width search after the in-flow header.
+          Desktop: search is brandBelow — logo column only, not a full-bleed bar. */}
+      {!desktopNav ? (
+        <div className="pd-shop-search-bar">
+          <div className="pepito-container">{productSearch}</div>
         </div>
-      </div>
+      ) : null}
 
       {!hideBanner ? (
         <section className="pd-shop-hero pd-shop-hero--full" aria-label={title}>

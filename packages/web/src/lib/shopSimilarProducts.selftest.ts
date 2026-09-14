@@ -114,12 +114,14 @@ assert.doesNotMatch(page, /خریداران این کالا را هم دیده�
 assert.match(rail, /data-testid="shop-similar-products"/, 'rail test id');
 assert.match(rail, /کالاهای مشابه/, 'rail title');
 assert.match(rail, /getSimilarProducts/, 'uses similarity helper');
-assert.match(rail, /pd-dk-similar/, 'DigiKala class namespace');
+assert.match(rail, /ShopRailNavButtons/, 'similar rail uses shared L/R buttons');
 assert.match(card, /variant\s*===\s*['"]similar['"]/, 'card similar variant');
 assert.match(card, /فروش ویژه/, 'special sale label');
 assert.match(css, /\.pd-dk-similar\b/, 'similar CSS present');
 assert.match(css, /\.pd-dk-similar-title\b/, 'title accent styles');
-assert.match(css, /\.pd-dk-similar-next\b/, 'chevron control styles');
+assert.match(css, /\.pd-dk-similar-next\b/, 'legacy chevron class kept');
+assert.match(css, /\.pd-shop-rail-btn\b/, 'visible L/R rail buttons');
+assert.match(css, /\.pd-dk-similar-track[\s\S]{0,180}overflow-x:\s*hidden/, 'similar rail hides native scrollbar');
 assert.match(dark, /pd-dk-similar/, 'dark mode styles for similar rail');
 assert.match(ci, /shopSimilarProducts\.selftest/, 'CI runs similar products selftest');
 

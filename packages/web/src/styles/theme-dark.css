@@ -1971,6 +1971,17 @@ html[data-theme='dark'] .pd-shop-dk-cats .pd-shop-chip.is-active {
 html[data-theme='dark'] .pd-shop-dk-label {
   color: var(--pepito-muted);
 }
+html[data-theme='dark'] .pd-shop-dk-tile {
+  background: #f4f5f8;
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #5c4d91;
+}
+html[data-theme='dark'] .pd-shop-dk-item:hover .pd-shop-dk-tile {
+  background: #ffffff;
+}
+html[data-theme='dark'] .pd-shop-promo-banner {
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.35);
+}
 
 /* Shop product detail (PDP) — leftover #fafafa param tiles + tab rail
  * stayed light while --pepito-dark remapped to pale ink → unreadable. */
@@ -2060,7 +2071,8 @@ html[data-theme='dark'] .pd-shop-home-rail-pill.is-active {
   border-color: #f3f0ff;
   color: #1c1a24;
 }
-html[data-theme='dark'] .pd-shop-home-rail-next {
+html[data-theme='dark'] .pd-shop-home-rail-next,
+html[data-theme='dark'] .pd-shop-rail-btn {
   background: var(--pd-surface);
   border-color: var(--pd-border);
   color: var(--pd-muted);
@@ -2107,13 +2119,15 @@ html[data-theme='dark'] .pd-dk-similar-title {
 html[data-theme='dark'] .pd-dk-similar-item {
   border-inline-start-color: var(--pd-border, rgba(255, 255, 255, 0.08));
 }
-html[data-theme='dark'] .pd-dk-similar-next {
+html[data-theme='dark'] .pd-dk-similar-next,
+html[data-theme='dark'] .pd-dk-similar .pd-shop-rail-btn {
   background: var(--pd-surface-2, #262a38);
   border-color: var(--pd-border, rgba(255, 255, 255, 0.12));
   color: #c4c7ce;
   box-shadow: 0 1px 8px rgba(0, 0, 0, 0.35);
 }
-html[data-theme='dark'] .pd-dk-similar-next:hover {
+html[data-theme='dark'] .pd-dk-similar-next:hover,
+html[data-theme='dark'] .pd-dk-similar .pd-shop-rail-btn:hover:not(:disabled) {
   color: #ff6b7d;
 }
 html[data-theme='dark'] .pd-shop-card-media--similar {
