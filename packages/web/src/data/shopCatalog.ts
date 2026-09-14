@@ -1,6 +1,6 @@
 /**
  * PetDate shop catalog — Pepito imagery, prices in تومان (wallet primary currency).
- * Live catalog is exactly 99 SKUs: p221–p223 (pilots) + p224–p235 (Batch 2) + p236–p249 (Batch 3) + p250–p259 (multi wave 1) + p260–p269 (multi wave 2) + p270–p279 (multi wave 3) + p280–p289 (multi wave 4) + p290–p299 (multi wave 5) + p300–p309 (Digikala batch1 Part1) + p310–p319 (Digikala batch1 Part2).
+ * Live catalog is exactly 109 SKUs: p221–p223 (pilots) + p224–p235 (Batch 2) + p236–p249 (Batch 3) + p250–p259 (multi wave 1) + p260–p269 (multi wave 2) + p270–p279 (multi wave 3) + p280–p289 (multi wave 4) + p290–p299 (multi wave 5) + p300–p309 (Digikala batch1 Part1) + p310–p319 (Digikala batch1 Part2) + p320–p329 (Digikala batch1 Part3).
  * Demo p1–p220 were removed so they cannot reappear on deploy.
  */
 
@@ -13,6 +13,7 @@ import { SHOP_BATCH_MULTI_WAVE4_PRODUCTS } from './shopBatchMultiWave4Products';
 import { SHOP_BATCH_MULTI_WAVE5_PRODUCTS } from './shopBatchMultiWave5Products';
 import { SHOP_DIGIKALA_BATCH1_PART1_PRODUCTS } from './shopDigikalaBatch1Part1Products';
 import { SHOP_DIGIKALA_BATCH1_PART2_PRODUCTS } from './shopDigikalaBatch1Part2Products';
+import { SHOP_DIGIKALA_BATCH1_PART3_PRODUCTS } from './shopDigikalaBatch1Part3Products';
 
 const P = '/pepito/uploads';
 
@@ -388,6 +389,7 @@ export const SHOP_PRODUCTS: ShopProduct[] = [
   ...SHOP_BATCH_MULTI_WAVE5_PRODUCTS,
   ...SHOP_DIGIKALA_BATCH1_PART1_PRODUCTS,
   ...SHOP_DIGIKALA_BATCH1_PART2_PRODUCTS,
+  ...SHOP_DIGIKALA_BATCH1_PART3_PRODUCTS,
 ];
 
 export function formatToman(amount: number): string {

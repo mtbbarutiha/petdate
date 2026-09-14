@@ -1,0 +1,151 @@
+{
+  "batch": "digikala-batch1",
+  "wave": 3,
+  "part": "DK-Part3",
+  "waveCount": 4,
+  "pricingRule": "zero-margin",
+  "cacheBust": "digikala-b1-p3-v1",
+  "galleryMode": "front-only",
+  "products": [
+    {
+      "proposedId": "p320",
+      "slug": "cat-food-dkp-21258454",
+      "title": "پوچ بچه‌گربه یامیکس مرغ و جگر — بسته ۶ عددی",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "cat-food",
+      "petTypes": [
+        "cat"
+      ],
+      "priceToman": 828000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p321",
+      "slug": "cat-food-dkp-20696007",
+      "title": "کنسرو گربه پابلو پته گوشت گاو ۸۰۰ گرم",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "cat-food",
+      "petTypes": [
+        "cat"
+      ],
+      "priceToman": 275000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p322",
+      "slug": "cat-food-dkp-20696405",
+      "title": "کنسرو گربه پابلو پته گوشت و مرغ ۸۰۰ گرم",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "cat-food",
+      "petTypes": [
+        "cat"
+      ],
+      "priceToman": 275000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p323",
+      "slug": "cat-food-dkp-19887269",
+      "title": "کنسرو گربه پابلو تن، مرغ و گوساله ۴۰۰ گرم",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "cat-food",
+      "petTypes": [
+        "cat"
+      ],
+      "priceToman": 175000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p324",
+      "slug": "cat-food-dkp-20695998",
+      "title": "کنسرو گربه پابلو پته گوشت گاو ۴۳۰ گرم",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "cat-food",
+      "petTypes": [
+        "cat"
+      ],
+      "priceToman": 175000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p325",
+      "slug": "cat-food-dkp-21930259",
+      "title": "کنسرو گربه بالغ پولر مرغ و پرندگان ۴۰۰ گرم",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "cat-food",
+      "petTypes": [
+        "cat"
+      ],
+      "priceToman": 158000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p326",
+      "slug": "dog-food-dkp-6236417",
+      "title": "کنسرو سگ شایر سیرابی ۸۰۰ گرم",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "dog-food",
+      "petTypes": [
+        "dog"
+      ],
+      "priceToman": 366700,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p327",
+      "slug": "dog-food-dkp-20620037",
+      "title": "کنسرو سگ دکتر کلادرز پته بوقلمون ۱۰۰ گرم",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "dog-food",
+      "petTypes": [
+        "dog"
+      ],
+      "priceToman": 270000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p328",
+      "slug": "dog-food-dkp-20949467",
+      "title": "کنسرو سگ یو‌اس‌پت بره و سیرابی ۴۳۰ گرم",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "dog-food",
+      "petTypes": [
+        "dog"
+      ],
+      "priceToman": 195000,
+      "weightLabel": "",
+      "weightKind": ""
+    },
+    {
+      "proposedId": "p329",
+      "slug": "dog-food-dkp-20949492",
+      "title": "کنسرو سگ یو‌اس‌پت شترمرغ و بلوبری ۴۳۰ گرم",
+      "titleEn": "",
+      "brandId": "generic",
+      "categorySlug": "dog-food",
+      "petTypes": [
+        "dog"
+      ],
+      "priceToman": 195000,
+      "weightLabel": "",
+      "weightKind": ""
+    }
+  ]
+}

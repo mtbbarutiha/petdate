@@ -212,6 +212,23 @@ for (const [id, slug, price] of digikalaB1P2) {
 }
 assert.ok(getProduct('cat-toys-dkp-5758150'), 'Digikala Part2 cat toy SH100 is in catalog');
 
+const digikalaB1P3 = [
+  ['p320', 'cat-food-dkp-21258454', 828_000],
+  ['p326', 'dog-food-dkp-6236417', 366_700],
+  ['p329', 'dog-food-dkp-20949492', 195_000],
+] as const;
+for (const [id, slug, price] of digikalaB1P3) {
+  const item = getProduct(slug) ?? getProduct(id);
+  assert.ok(item, `${id} exists`);
+  assert.equal(item.priceToman, price, `${id} MANIFEST price`);
+  const shots = productGallery(item);
+  assert.equal(shots.length, 1, `${id} gallery is front-only (1 real angle)`);
+  assert.ok(shots[0].includes(`${slug}.jpg?v=digikala-b1-p3-v1`), `${id} front is digikala-b1-p3-v1`);
+  assert.ok(!shots[0].includes('-2.jpg') && !shots[0].includes('-3.jpg'), `${id} no fake angles`);
+  assert.doesNotMatch(shots.join(' '), /purple|5c4d91|بنفش/i, `${id} gallery has no purple asset`);
+}
+assert.ok(getProduct('cat-food-dkp-21258454'), 'Digikala Part3 Yamix kitten pouch is in catalog');
+
 const p221 = getProduct('dog-food-royal-canin-mini-adult-2kg')!;
 applyLiveShopCatalog({
   products: [

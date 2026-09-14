@@ -123,4 +123,12 @@ assert(
   map.includes('/shop/bird-food-dkp-10253439 '),
   'Digikala batch1 Part2 millet slug aliases 301 to /shop/product/:slug'
 );
+assert(
+  xml.includes('/shop/product/cat-food-dkp-21258454'),
+  'Digikala batch1 Part3 Yamix kitten pouch stays in sitemap'
+);
+assert(
+  map.includes('/shop/dog-food-dkp-20949492 '),
+  'Digikala batch1 Part3 USPet ostrich slug aliases 301 to /shop/product/:slug'
+);
 console.log('sitemap.selftest: ok');
