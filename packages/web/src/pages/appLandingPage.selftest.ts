@@ -21,6 +21,8 @@ const apkPath = join(dir, '../../public/downloads/petdate-android.apk');
 assert.match(page, /export const ANDROID_APK_HREF = '\/downloads\/petdate-android\.apk'/);
 assert.match(page, /data-testid="app-landing-apk-download"/);
 assert.match(page, /data-testid="app-landing-sms-form"/);
+assert.match(page, /sendAppDownloadSms/);
+assert.match(page, /smsSentOk|smsComposerOk/);
 assert.match(page, /hideBanner/);
 assert.match(page, /showMobileEvents=\{false\}/);
 assert.match(page, /showDesktopNav=\{false\}/);

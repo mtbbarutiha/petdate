@@ -345,14 +345,20 @@ export const en: Dict = {
     storeSoonHint: 'Coming soon',
     openWeb: 'Continue on web',
     openWebHint: 'Use the web app until you install the APK',
+Playmates for your pet, shop & online vet — always handy.
+Android install:',
     smsTitle: 'Get the download link by SMS',
-    smsLead: 'Enter your mobile number to prepare the download link in an SMS to yourself.',
+    smsLead: 'Enter your mobile number and we will text you the download link.',
     smsPhoneLabel: 'Mobile number',
     smsSubmit: 'Send download link',
     smsInvalid: 'Enter a valid Iranian mobile (e.g. 09…).',
-    smsOk: 'Link copied — your SMS app will open.',
+    smsOk: 'Link ready.',
     smsCopyFail: 'Could not copy the link — use direct download instead.',
-    smsBody: 'PetDate Android app download link:',
+    smsSentOk: 'Download link sent by SMS.',
+    smsComposerOk: 'SMS app opened — message and link are ready to send.',
+    smsSendFail: 'Could not send SMS. Use direct download instead.',
+    smsBody: 'PetDate\nPlaymates for your pet, shop & online vet — always handy.\nAndroid install:',
+
   },
   help: {
     bannerTitle: 'Help & FAQ',

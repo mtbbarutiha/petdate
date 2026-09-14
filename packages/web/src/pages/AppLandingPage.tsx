@@ -12,6 +12,7 @@ import {
 import { BRAND, SITE } from '@petdate/shared';
 import { LandingChrome } from '../components/LandingChrome';
 import { useI18n } from '../i18n';
+import { sendAppDownloadSms } from '../lib/api';
 
 /** Public Android package served from `public/downloads/`. */
 export const ANDROID_APK_HREF = '/downloads/petdate-android.apk';
@@ -88,12 +89,29 @@ export function AppLandingPage() {
     }
     setSmsBusy(true);
     try {
-      const text = `${t('appLanding.smsBody')}\n${downloadUrl}`;
-      await navigator.clipboard?.writeText(text);
+      const result = await sendAppDownloadSms(mobile);
+      if (result.sent) {
+        setSmsNote(t('appLanding.smsSentOk'));
+        return;
+      }
+      const text = result.smsBody || `${t('appLanding.smsBody')}\n${downloadUrl}`;
+      try {
+        await navigator.clipboard?.writeText(text);
+      } catch {
+        /* clipboard optional — composer still carries the body */
+      }
       window.location.href = `sms:${mobile}?&body=${encodeURIComponent(text)}`;
-      setSmsNote(t('appLanding.smsOk'));
+      setSmsNote(t('appLanding.smsComposerOk'));
     } catch {
-      setSmsNote(t('appLanding.smsCopyFail'));
+      // Last resort: local composer with branded copy
+      try {
+        const text = `${t('appLanding.smsBody')}\n${downloadUrl}`;
+        await navigator.clipboard?.writeText(text);
+        window.location.href = `sms:${mobile}?&body=${encodeURIComponent(text)}`;
+        setSmsNote(t('appLanding.smsComposerOk'));
+      } catch {
+        setSmsNote(t('appLanding.smsSendFail'));
+      }
     } finally {
       setSmsBusy(false);
     }

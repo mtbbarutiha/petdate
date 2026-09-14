@@ -93,6 +93,7 @@ echo "==> selftest: web inbox consult agent avatars"
 npx tsx "$ROOT/packages/web/src/lib/inboxConversations.avatars.selftest.ts"
 npx tsx "$ROOT/packages/web/src/pages/teamChatPersonas.selftest.ts"
 npx tsx "$ROOT/packages/web/src/pages/landingFeaturedProducts.selftest.ts"
+npx tsx "$ROOT/packages/api/src/services/app-download-sms.selftest.ts"
 npx tsx "$ROOT/packages/web/src/pages/appLandingPage.selftest.ts"
 npx tsx "$ROOT/packages/web/src/pages/mobileAppDownloadStrip.selftest.ts"
 
