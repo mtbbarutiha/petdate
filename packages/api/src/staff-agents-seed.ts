@@ -14,6 +14,7 @@ import {
   createEmployee,
   getEmployee,
   getEmployeePlainPassword,
+  resetEmployeePassword,
   updateAdminAccount,
   updateEmployee,
 } from './hr-service';
@@ -126,21 +127,40 @@ function ensureEmployee(agent: StaffAgentDef, password: string | undefined): num
   }
 }
 
-function ensureAccount(agent: StaffAgentDef, password: string): void {
+function resolveCreatePassword(password: string, empId?: number): string {
+  if (password.length >= 6) return password;
+  if (!empId) return password;
+  // Recover the HR plain password first (SMS / onboard copy). Only generate
+  // when that is also unusable — resetEmployeePassword writes hr_employees.password
+  // and would sync admin_accounts if a row existed. We only call it here when
+  // the admin_accounts row is missing, so an existing hash is never overwritten.
+  const recovered = getEmployeePlainPassword(empId);
+  if (recovered.length >= 6) return recovered;
+  return resetEmployeePassword(empId) || '';
+}
+
+function ensureAccount(agent: StaffAgentDef, password: string, empId?: number): void {
   const existing = findAccountId(agent.username);
   if (existing) {
     try {
-      updateAdminAccount(existing, { displayName: agent.displayName });
+      // Re-seed must repair a stale role (e.g. leila created before finance existed).
+      // displayName / roleKey / isActive only — never password_hash.
+      updateAdminAccount(existing, {
+        displayName: agent.displayName,
+        roleKey: agent.roleKey,
+        isActive: true,
+      });
     } catch {
       /* role/account edge — non-fatal */
     }
     return;
   }
-  if (password.length < 6) return;
+  const usable = resolveCreatePassword(password, empId);
+  if (usable.length < 6) return;
   try {
     createAdminAccount({
       username: agent.username,
-      password,
+      password: usable,
       roleKey: agent.roleKey,
       displayName: agent.displayName,
       isActive: true,
@@ -164,6 +184,6 @@ export function seedStaffAgentRoster(): void {
       envPassword ||
       (empId ? getEmployeePlainPassword(empId) : '') ||
       '';
-    ensureAccount(agent, password);
+    ensureAccount(agent, password, empId);
   }
 }
