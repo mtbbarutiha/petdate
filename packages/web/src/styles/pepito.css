@@ -16026,6 +16026,79 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   padding: 0.55rem 0.7rem;
   font: inherit;
 }
+
+/* Wallet currency convert — full-width dark-friendly fields */
+.pepito-wallet-convert-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem 0.65rem;
+  align-items: end;
+}
+.pepito-wallet-convert-field {
+  display: grid;
+  gap: 0.4rem;
+  min-width: 0;
+}
+.pepito-wallet-convert-field > span {
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--pepito-dark, #1a2b4a);
+}
+.pepito-wallet-convert-field--amount,
+.pepito-wallet-convert-submit {
+  grid-column: 1 / -1;
+}
+.pepito-wallet-convert-control {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 46px;
+  border: 1px solid color-mix(in srgb, var(--pepito-ink, #1f2937) 14%, transparent);
+  border-radius: 14px;
+  padding: 0.65rem 0.85rem;
+  font: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--pepito-dark, #1a2b4a);
+  background-color: var(--pepito-soft, #f4f4f7);
+  transition: border-color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+}
+select.pepito-wallet-convert-control {
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  padding-inline: 0.85rem 2.4rem;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: left 0.85rem center;
+  background-size: 0.9rem;
+}
+.pepito-wallet-convert-control::placeholder {
+  color: var(--pepito-muted, #6b7280);
+  opacity: 1;
+  font-weight: 500;
+}
+.pepito-wallet-convert-control:hover {
+  border-color: color-mix(in srgb, var(--pepito-base, #5c4d91) 45%, transparent);
+}
+.pepito-wallet-convert-control:focus {
+  outline: none;
+  border-color: var(--pepito-base, #5c4d91);
+  background-color: var(--pepito-white, #fff);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--pepito-base, #5c4d91) 18%, transparent);
+}
+.pepito-wallet-convert-control option {
+  background: var(--pepito-white, #fff);
+  color: var(--pepito-dark, #1a2b4a);
+}
+.pepito-wallet-convert-submit {
+  width: 100%;
+  margin-top: 0.15rem;
+}
+@media (max-width: 420px) {
+  .pepito-wallet-convert-form {
+    grid-template-columns: 1fr;
+  }
+}
 .pepito-wallet-buy-receipt {
   max-width: 220px;
   border-radius: 10px;
