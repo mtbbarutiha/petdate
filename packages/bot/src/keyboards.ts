@@ -696,7 +696,7 @@ function appendAccessRow(kb: Keyboard, telegramId?: string | number | null): Key
 }
 
 /**
- * مشترک همه نقش‌ها: مرور (شاپ سبز / دعوت) → راهنما → مالی (سکه با رنگ متمایز).
+ * مشترک همه نقش‌ها: مرور (شاپ سبز / دعوت) → راهنما → مالی (سکه آبی / primary).
  * extraFinance مثلاً «کسب درآمد» کنار سکه برای صاحب پت.
  */
 function appendCommonMenuRows(kb: Keyboard, extraFinance?: string): Keyboard {
@@ -713,7 +713,7 @@ function appendCommonMenuRows(kb: Keyboard, extraFinance?: string): Keyboard {
     .primary()
     .row()
     .text(c.coins)
-    .danger();
+    .primary();
   if (extraFinance) kb.text(extraFinance).primary();
   return kb;
 }
