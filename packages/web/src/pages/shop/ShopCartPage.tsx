@@ -5,6 +5,7 @@ import {
   STAR_PRICE_TOMAN,
   buyCoinsPath,
   walletFromUserFields,
+  orderPublicIdOf,
 } from '@petdate/shared';
 import { formatShopCoins, formatShopStars, formatToman } from '../../data/shopCatalog';
 import { useAuthStore } from '../../hooks/useAuthStore';
@@ -20,6 +21,7 @@ import { loginPath } from '../../lib/authRedirect';
 import { trackBeginCheckout, trackPurchase } from '../../lib/siteAnalytics';
 import { appConfirm } from '../../components/AppDialog';
 import { ShopChrome } from '../../components/shop/ShopChrome';
+import { ShopInvoice, type ShopInvoiceOrder } from '../../components/shop/ShopInvoice';
 import { fetchPublicPlatformConfig, usePlatformConfig } from '../../hooks/usePlatformConfig';
 import { useI18n } from '../../i18n';
 
@@ -50,7 +52,7 @@ export function ShopCartPage() {
   const [address, setAddress] = useState('');
   const [note, setNote] = useState('');
   const [payMethod, setPayMethod] = useState<PayMethod>('coins');
-  const [orderId, setOrderId] = useState<string | null>(null);
+  const [completedInvoice, setCompletedInvoice] = useState<ShopInvoiceOrder | null>(null);
   const [paidLabel, setPaidLabel] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -183,9 +185,30 @@ export function ShopCartPage() {
           items: ecomItems,
           paymentType: 'coins',
         });
+
+        const invoice: ShopInvoiceOrder = {
+          id: result.order?.id ?? result.orderId,
+          publicId: result.order?.publicId,
+          status: result.order?.status ?? 'paid',
+          totalToman: result.totalToman,
+          paymentCurrency: 'coins',
+          paymentAmount: result.coinsSpent,
+          customerName: name.trim(),
+          customerPhone: phone.trim(),
+          note: [`آدرس ارسال: ${address.trim()}`, note.trim()].filter(Boolean).join('\n'),
+          items: lines.map((l) => ({
+            productId: l.productId,
+            title: l.product.title,
+            qty: l.qty,
+            unitPriceToman: l.product.priceToman,
+            lineTotalToman: l.product.priceToman * l.qty,
+          })),
+          createdAt: new Date().toISOString(),
+        };
+
         clear();
         setPaidLabel(formatShopCoins(result.coinsSpent));
-        setOrderId(String(result.orderId));
+        setCompletedInvoice(invoice);
       } else if (payMethod === 'wallet_stars') {
         const result = await checkoutShopWithWalletStars(token, payload);
         rememberPaidOrder({
@@ -207,9 +230,30 @@ export function ShopCartPage() {
           items: ecomItems,
           paymentType: 'wallet_stars',
         });
+
+        const invoice: ShopInvoiceOrder = {
+          id: result.order?.id ?? result.orderId,
+          publicId: result.order?.publicId,
+          status: result.order?.status ?? 'paid',
+          totalToman: result.totalToman,
+          paymentCurrency: 'stars',
+          paymentAmount: result.starsSpent,
+          customerName: name.trim(),
+          customerPhone: phone.trim(),
+          note: [`آدرس ارسال: ${address.trim()}`, note.trim()].filter(Boolean).join('\n'),
+          items: lines.map((l) => ({
+            productId: l.productId,
+            title: l.product.title,
+            qty: l.qty,
+            unitPriceToman: l.product.priceToman,
+            lineTotalToman: l.product.priceToman * l.qty,
+          })),
+          createdAt: new Date().toISOString(),
+        };
+
         clear();
         setPaidLabel(formatShopStars(result.starsSpent));
-        setOrderId(String(result.orderId));
+        setCompletedInvoice(invoice);
       } else if (payMethod === 'toman') {
         const result = await checkoutShopWithToman(token, payload);
         rememberPaidOrder({
@@ -230,9 +274,30 @@ export function ShopCartPage() {
           items: ecomItems,
           paymentType: 'toman',
         });
+
+        const invoice: ShopInvoiceOrder = {
+          id: result.order?.id ?? result.orderId,
+          publicId: result.order?.publicId,
+          status: result.order?.status ?? 'paid',
+          totalToman: result.totalToman,
+          paymentCurrency: 'toman',
+          paymentAmount: result.tomanSpent,
+          customerName: name.trim(),
+          customerPhone: phone.trim(),
+          note: [`آدرس ارسال: ${address.trim()}`, note.trim()].filter(Boolean).join('\n'),
+          items: lines.map((l) => ({
+            productId: l.productId,
+            title: l.product.title,
+            qty: l.qty,
+            unitPriceToman: l.product.priceToman,
+            lineTotalToman: l.product.priceToman * l.qty,
+          })),
+          createdAt: new Date().toISOString(),
+        };
+
         clear();
         setPaidLabel(formatToman(result.tomanSpent));
-        setOrderId(String(result.orderId));
+        setCompletedInvoice(invoice);
       } else if (payMethod === 'card') {
         const result = await checkoutShopWithCard(token, payload);
         clear();
@@ -279,24 +344,22 @@ export function ShopCartPage() {
   return (
     <ShopChrome bannerTitle="سبد خرید" bannerLead="روش پرداخت را انتخاب کن — سکه، ستاره، ریال یا فاکتور تلگرام">
       <div className="pepito-container pd-shop-cart">
-        {orderId ? (
-          <div className="pd-shop-order-ok">
+        {completedInvoice ? (
+          <div className="pd-shop-order-ok pd-shop-order-ok--invoice">
             <h2>پرداخت انجام شد</h2>
-            <p>
-              شماره سفارش: <strong dir="ltr">#{orderId}</strong>
-            </p>
-            {paidLabel != null ? (
-              <p>
-                مبلغ پرداختی: <strong>{paidLabel}</strong>
-              </p>
-            ) : null}
-            <p>سفارش در سیستم ثبت شد و در «سفارش‌های من» قابل پیگیری است.</p>
-            <Link to="/shop" className="pepito-btn button-1">
-              بازگشت به پت شاپ
-            </Link>
-            <Link to="/shop/orders" className="pepito-btn button-2" style={{ marginInlineStart: 8 }}>
-              سفارش‌های من
-            </Link>
+            <p>فاکتور خریدت آماده است — با شناسه فروشگاه قابل پیگیری است.</p>
+            <ShopInvoice order={completedInvoice} paidLabelOverride={paidLabel} />
+            <div className="pd-shop-pay-actions" style={{ marginTop: 16 }}>
+              <Link
+                to={`/shop/orders/${encodeURIComponent(orderPublicIdOf(completedInvoice))}`}
+                className="pepito-btn button-1"
+              >
+                مشاهده در سفارش‌های من
+              </Link>
+              <Link to="/shop" className="pepito-btn button-2">
+                بازگشت به پت‌شاپ
+              </Link>
+            </div>
           </div>
         ) : (
           <div className="pd-shop-cart-layout">

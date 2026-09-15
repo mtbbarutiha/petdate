@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { makeOrderPublicId, makePaymentPublicId } from '@petdate/shared';
 import { formatShopStars, formatToman } from '../../data/shopCatalog';
 import { useAuthStore } from '../../hooks/useAuthStore';
 import { useShopCart } from '../../hooks/useShopCart';
@@ -122,11 +123,13 @@ export function ShopStarsPayPage() {
               <ul className="pd-shop-receipt" style={{ listStyle: 'none', padding: 0, textAlign: 'start' }}>
                 {status.shopOrderId != null ? (
                   <li>
-                    شماره سفارش شاپ: <strong dir="ltr">#{status.shopOrderId}</strong>
+                    شماره سفارش فروشگاه:{' '}
+                    <strong dir="ltr">{makeOrderPublicId(status.shopOrderId)}</strong>
                   </li>
                 ) : null}
                 <li>
-                  شماره فاکتور: <strong dir="ltr">#{status.paymentOrderId}</strong>
+                  شماره فاکتور پرداخت:{' '}
+                  <strong dir="ltr">{makePaymentPublicId(status.paymentOrderId)}</strong>
                 </li>
                 <li>
                   مبلغ: <strong>{formatShopStars(status.stars)}</strong>
@@ -157,9 +160,18 @@ export function ShopStarsPayPage() {
                 </li>
               </ul>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 16 }}>
-                <Link to="/shop/orders" className="pepito-btn button-1">
-                  سفارش‌های من
-                </Link>
+                {status.shopOrderId != null ? (
+                  <Link
+                    to={`/shop/orders/${encodeURIComponent(makeOrderPublicId(status.shopOrderId))}`}
+                    className="pepito-btn button-1"
+                  >
+                    مشاهده فاکتور
+                  </Link>
+                ) : (
+                  <Link to="/shop/orders" className="pepito-btn button-1">
+                    سفارش‌های من
+                  </Link>
+                )}
                 <Link to="/shop" className="pepito-btn button-2">
                   بازگشت به پت شاپ
                 </Link>
@@ -169,7 +181,7 @@ export function ShopStarsPayPage() {
             <>
               <h2>در انتظار پرداخت Stars…</h2>
               <p>
-                فاکتور <strong dir="ltr">#{paymentOrderId}</strong>
+                فاکتور پرداخت <strong dir="ltr">{makePaymentPublicId(paymentOrderId)}</strong>
                 {status ? (
                   <>
                     {' '}

@@ -1073,7 +1073,7 @@ shopRouter.get('/my-orders', (req, res) => {
 shopRouter.get('/my-orders/:id', (req, res) => {
   const session = requireSession(req, res, 'برای دیدن سفارش وارد حساب شوید.');
   if (!session) return;
-  const raw = String(req.params.id || '').trim();
+  const raw = String(req.params.id ?? '').trim();
   let id = Number(raw);
   if (!Number.isFinite(id) || id <= 0) {
     id = parseOrderIdFromPublicId(raw) ?? NaN;
@@ -1087,6 +1087,7 @@ shopRouter.get('/my-orders/:id', (req, res) => {
     res.status(404).json({ ok: false, reason: 'missing', error: 'سفارش پیدا نشد.' });
     return;
   }
+  // فاکتور فروشگاه (PD-O) — جدا از فاکتور پرداخت کارت/Stars (PD-R)
   res.json({
     ok: true,
     order: publicShopOrder(order),

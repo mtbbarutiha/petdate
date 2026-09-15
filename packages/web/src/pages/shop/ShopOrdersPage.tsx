@@ -1,11 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { orderPublicIdOf } from '@petdate/shared';
 import { formatToman } from '../../data/shopCatalog';
 import { useAuthStore } from '../../hooks/useAuthStore';
-import {
-  fetchMyShopOrders,
-  type MyShopOrder,
-} from '../../lib/api';
+import { fetchMyShopOrders, type MyShopOrder } from '../../lib/api';
 import { loginPath } from '../../lib/authRedirect';
 import { ShopChrome } from '../../components/shop/ShopChrome';
 
@@ -31,7 +29,9 @@ function itemsLine(o: MyShopOrder): string {
   if (!items.length) return '—';
   return items
     .map((it) => {
-      const title = String((it as { title?: string }).title || (it as { productId?: string }).productId || 'کالا');
+      const title = String(
+        (it as { title?: string }).title || (it as { productId?: string }).productId || 'کالا'
+      );
       const qty = Math.max(1, Number((it as { qty?: number }).qty) || 1);
       return qty > 1 ? `${title} ×${qty.toLocaleString('fa-IR')}` : title;
     })
@@ -63,7 +63,7 @@ export function ShopOrdersPage() {
   }, [isLoggedIn, token, load]);
 
   return (
-    <ShopChrome bannerTitle="سفارش‌های من" bannerLead="پیگیری خریدهای پت شاپ — وب و ربات">
+    <ShopChrome bannerTitle="سفارش‌های من" bannerLead="پیگیری خریدهای پت‌شاپ — فاکتور با شناسه PD-O">
       <div className="pepito-container pd-shop-cart">
         {!isLoggedIn ? (
           <div className="pd-shop-order-ok">
@@ -89,35 +89,40 @@ export function ShopOrdersPage() {
             {loading ? <p className="pd-shop-empty">در حال بارگذاری…</p> : null}
             {!loading && !orders.length ? (
               <p className="pd-shop-empty">
-                هنوز سفارشی نداری.{' '}
-                <Link to="/shop">برو به پت شاپ</Link>
+                هنوز سفارشی نداری. <Link to="/shop">برو به پت‌شاپ</Link>
               </p>
             ) : null}
             <ul className="pd-shop-orders-list">
-              {orders.map((o) => (
-                <li key={o.id} className="pd-shop-order-card">
-                  <div className="pd-shop-order-card-top">
-                    <strong dir="ltr">#{o.id}</strong>
-                    <span className={`pd-shop-order-status pd-shop-order-status--${o.status}`}>
-                      {STATUS_FA[o.status] || o.status}
-                    </span>
-                  </div>
-                  <p className="pd-shop-order-items">{itemsLine(o)}</p>
-                  <p>
-                    مبلغ: <strong>{formatToman(o.totalToman)}</strong>
-                  </p>
-                  <p>
-                    پرداخت: <strong>{payLabel(o)}</strong>
-                  </p>
-                  {o.customerName ? <p className="pd-shop-muted">گیرنده: {o.customerName}</p> : null}
-                  <p className="pd-shop-muted" dir="ltr">
-                    {o.createdAt}
-                  </p>
-                  {o.paymentCurrency === 'stars_xtr' ? (
-                    <p className="pd-shop-muted">⭐ پرداخت با Stars واقعی تلگرام (واریز به ربات)</p>
-                  ) : null}
-                </li>
-              ))}
+              {orders.map((o) => {
+                const publicId = orderPublicIdOf(o);
+                return (
+                  <li key={o.id} className="pd-shop-order-card">
+                    <div className="pd-shop-order-card-top">
+                      <strong dir="ltr">{publicId}</strong>
+                      <span className={`pd-shop-order-status pd-shop-order-status--${o.status}`}>
+                        {STATUS_FA[o.status] || o.status}
+                      </span>
+                    </div>
+                    <p className="pd-shop-order-items">{itemsLine(o)}</p>
+                    <p>
+                      مبلغ: <strong>{formatToman(o.totalToman)}</strong>
+                    </p>
+                    <p>
+                      پرداخت: <strong>{payLabel(o)}</strong>
+                    </p>
+                    {o.customerName ? <p className="pd-shop-muted">گیرنده: {o.customerName}</p> : null}
+                    <p className="pd-shop-muted">{o.createdAt}</p>
+                    <div className="pd-shop-order-card-actions">
+                      <Link
+                        to={`/shop/orders/${encodeURIComponent(publicId)}`}
+                        className="pepito-btn button-1"
+                      >
+                        مشاهده فاکتور
+                      </Link>
+                    </div>
+                  </li>
+                );
+              })}
             </ul>
           </div>
         )}
