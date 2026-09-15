@@ -40,17 +40,26 @@ assert.match(gallery, /onClick=\{onMainClick\}/, 'click on main image opens ligh
 assert.match(gallery, /type="button"/, 'main well is a real button');
 assert.match(gallery, /نمایش تصویر در اندازه بزرگ/, 'main image click opens lightbox');
 assert.match(gallery, /pd-dk-gallery-track/, 'main area is a slider track');
-assert.match(gallery, /setPointerCapture/, 'gallery captures pointer for reliable mobile swipe');
+assert.match(gallery, /DRAG_THRESHOLD_PX/, 'capture waits for horizontal threshold (scroll hang fix)');
+assert.match(gallery, /hardResetMain|hardResetAll/, 'gallery hard-resets sticky pointer capture');
+assert.match(gallery, /setPointerCapture/, 'gallery captures pointer after threshold for swipe');
+assert.match(gallery, /releasePointerCapture/, 'gallery releases capture on reset');
+assert.match(gallery, /onLostPointerCapture/, 'lost capture clears sticky grab');
+assert.match(gallery, /visibilitychange/, 'tab hide clears sticky grab');
 assert.match(gallery, /onLightboxPointerDown/, 'lightbox stage supports swipe');
 assert.match(gallery, /pd-dk-thumbs/, 'thumbnail strip under main');
 assert.match(gallery, /pd-dk-lightbox/, 'fullscreen lightbox');
 assert.match(gallery, /همه تصاویر/, 'optional all-images grid button');
-assert.match(gallery, /useDialogFocusTrap/, 'ESC + focus trap on lightbox');
+assert.match(gallery, /useDialogFocusTrap/, 'ESC + focus trap + body scroll lock on lightbox');
+assert.doesNotMatch(
+  gallery,
+  /document\.body\.style\.overflow/,
+  'gallery must not double-lock body overflow (trap owns it)'
+);
 assert.match(gallery, /ArrowRight/, 'keyboard next');
 assert.match(gallery, /pd-dk-lightbox-arrow/, 'circular lightbox chevrons');
 assert.match(gallery, /pd-dk-lightbox-close/, 'close X');
 assert.match(gallery, /pd-dk-lightbox-thumbs/, 'lightbox thumb strip');
-assert.match(gallery, /document\.body\.style\.overflow/, 'lightbox locks body scroll on mobile');
 // Left (--prev) must show ChevronLeft; right (--next) must show ChevronRight.
 // Icons were previously swapped (RTL overcorrection) so arrows pointed inward.
 assert.match(

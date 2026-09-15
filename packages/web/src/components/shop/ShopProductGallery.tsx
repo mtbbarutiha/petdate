@@ -13,6 +13,33 @@ type Props = {
   discount?: number | null;
 };
 
+/**
+ * Hang history (shop rails #514 / gallery): immediate setPointerCapture on
+ * pointerdown + missed cancel left the well claiming gestures → mobile scroll
+ * freeze after shop → PDP → lightbox. Capture only after a horizontal
+ * threshold; abandon vertical; hard-reset on up/cancel/lost/blur/hide.
+ * Body overflow lock lives solely in useDialogFocusTrap (no double lock).
+ */
+type DragPhase = 'idle' | 'pending' | 'dragging';
+
+type DragSession = {
+  phase: DragPhase;
+  x: number;
+  y: number;
+  pointerId: number;
+  el: HTMLElement;
+};
+
+const DRAG_THRESHOLD_PX = 12;
+
+function releaseCapture(el: HTMLElement, pointerId: number) {
+  try {
+    if (el.hasPointerCapture?.(pointerId)) el.releasePointerCapture(pointerId);
+  } catch {
+    /* already released */
+  }
+}
+
 export function ShopProductGallery({ gallery, cover, alt, badge, discount }: Props) {
   const slides = gallery.length ? gallery : cover ? [cover] : [];
   const multi = slides.length > 1;
@@ -21,8 +48,8 @@ export function ShopProductGallery({ gallery, cover, alt, badge, discount }: Pro
   const [gridOpen, setGridOpen] = useState(false);
   const index = Math.min(active, Math.max(slides.length - 1, 0));
   const mainSrc = slides[index] ?? cover;
-  const drag = useRef<{ x: number; pointerId: number } | null>(null);
-  const lightboxDrag = useRef<{ x: number; pointerId: number } | null>(null);
+  const drag = useRef<DragSession | null>(null);
+  const lightboxDrag = useRef<DragSession | null>(null);
   const suppressClick = useRef(false);
   const panelRef = useRef<HTMLDivElement | null>(null);
 
@@ -50,27 +77,86 @@ export function ShopProductGallery({ gallery, cover, alt, badge, discount }: Pro
     setLightbox(false);
   };
 
+  const hardResetMain = () => {
+    const s = drag.current;
+    drag.current = null;
+    if (s) releaseCapture(s.el, s.pointerId);
+  };
+
+  const hardResetLightbox = () => {
+    const s = lightboxDrag.current;
+    lightboxDrag.current = null;
+    if (s) releaseCapture(s.el, s.pointerId);
+  };
+
+  const hardResetAll = () => {
+    hardResetMain();
+    hardResetLightbox();
+  };
+
+  useEffect(() => {
+    const onBlurOrHide = () => hardResetAll();
+    const onVisibility = () => {
+      if (document.visibilityState !== 'visible') onBlurOrHide();
+    };
+    window.addEventListener('blur', onBlurOrHide);
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      window.removeEventListener('blur', onBlurOrHide);
+      document.removeEventListener('visibilitychange', onVisibility);
+      hardResetAll();
+    };
+  }, []);
+
   const onPointerDown = (e: PointerEvent<HTMLButtonElement>) => {
     if (e.button != null && e.button !== 0) return;
-    drag.current = { x: e.clientX, pointerId: e.pointerId };
-    try {
-      e.currentTarget.setPointerCapture(e.pointerId);
-    } catch {
-      /* ignore */
+    hardResetMain();
+    drag.current = {
+      phase: 'pending',
+      x: e.clientX,
+      y: e.clientY,
+      pointerId: e.pointerId,
+      el: e.currentTarget,
+    };
+  };
+
+  const onPointerMove = (e: PointerEvent<HTMLButtonElement>) => {
+    const s = drag.current;
+    if (!s || s.pointerId !== e.pointerId || s.phase === 'idle') return;
+    if (e.pointerType === 'mouse' && (e.buttons & 1) === 0) {
+      hardResetMain();
+      return;
+    }
+    const dx = e.clientX - s.x;
+    const dy = e.clientY - s.y;
+    if (s.phase === 'pending') {
+      // Prefer vertical page scroll when the gesture is mostly vertical.
+      if (Math.abs(dy) > DRAG_THRESHOLD_PX && Math.abs(dy) > Math.abs(dx) * 1.15) {
+        hardResetMain();
+        return;
+      }
+      if (Math.abs(dx) < DRAG_THRESHOLD_PX) return;
+      s.phase = 'dragging';
+      try {
+        s.el.setPointerCapture(e.pointerId);
+      } catch {
+        /* ignore */
+      }
     }
   };
+
   const onPointerUp = (e: PointerEvent<HTMLButtonElement>) => {
     const start = drag.current;
-    drag.current = null;
-    if (!start) return;
-    try {
-      e.currentTarget.releasePointerCapture(start.pointerId);
-    } catch {
-      /* ignore */
+    if (!start || start.pointerId !== e.pointerId) {
+      hardResetMain();
+      return;
     }
-    const intent = shopGalleryPointerIntent(e.clientX - start.x, multi);
+    const dx = e.clientX - start.x;
+    const wasDragging = start.phase === 'dragging';
+    hardResetMain();
+    const intent = shopGalleryPointerIntent(dx, multi);
     if (intent === 'open') return;
-    suppressClick.current = true;
+    if (wasDragging) suppressClick.current = true;
     go(intent === 'next' ? 1 : -1);
   };
 
@@ -88,23 +174,49 @@ export function ShopProductGallery({ gallery, cover, alt, badge, discount }: Pro
     if (e.button != null && e.button !== 0) return;
     const target = e.target as HTMLElement | null;
     if (target?.closest('button')) return;
-    lightboxDrag.current = { x: e.clientX, pointerId: e.pointerId };
-    try {
-      e.currentTarget.setPointerCapture(e.pointerId);
-    } catch {
-      /* ignore */
+    hardResetLightbox();
+    lightboxDrag.current = {
+      phase: 'pending',
+      x: e.clientX,
+      y: e.clientY,
+      pointerId: e.pointerId,
+      el: e.currentTarget,
+    };
+  };
+
+  const onLightboxPointerMove = (e: PointerEvent<HTMLDivElement>) => {
+    const s = lightboxDrag.current;
+    if (!s || s.pointerId !== e.pointerId || s.phase === 'idle') return;
+    if (e.pointerType === 'mouse' && (e.buttons & 1) === 0) {
+      hardResetLightbox();
+      return;
+    }
+    const dx = e.clientX - s.x;
+    const dy = e.clientY - s.y;
+    if (s.phase === 'pending') {
+      if (Math.abs(dy) > DRAG_THRESHOLD_PX && Math.abs(dy) > Math.abs(dx) * 1.15) {
+        hardResetLightbox();
+        return;
+      }
+      if (Math.abs(dx) < DRAG_THRESHOLD_PX) return;
+      s.phase = 'dragging';
+      try {
+        s.el.setPointerCapture(e.pointerId);
+      } catch {
+        /* ignore */
+      }
     }
   };
+
   const onLightboxPointerUp = (e: PointerEvent<HTMLDivElement>) => {
     const start = lightboxDrag.current;
-    lightboxDrag.current = null;
-    if (!start) return;
-    try {
-      e.currentTarget.releasePointerCapture(start.pointerId);
-    } catch {
-      /* ignore */
+    if (!start || start.pointerId !== e.pointerId) {
+      hardResetLightbox();
+      return;
     }
-    const intent = shopGalleryPointerIntent(e.clientX - start.x, multi);
+    const dx = e.clientX - start.x;
+    hardResetLightbox();
+    const intent = shopGalleryPointerIntent(dx, multi);
     if (intent === 'open') return;
     go(intent === 'next' ? 1 : -1);
   };
@@ -125,15 +237,6 @@ export function ShopProductGallery({ gallery, cover, alt, badge, discount }: Pro
     return () => document.removeEventListener('keydown', onKey);
   }, [lightbox, gridOpen, multi, slides.length]);
 
-  useEffect(() => {
-    if (!lightbox) return;
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = prev;
-    };
-  }, [lightbox]);
-
   if (!slides.length) return null;
 
   return (
@@ -146,10 +249,10 @@ export function ShopProductGallery({ gallery, cover, alt, badge, discount }: Pro
           aria-label="نمایش تصویر در اندازه بزرگ"
           onClick={onMainClick}
           onPointerDown={onPointerDown}
+          onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
-          onPointerCancel={() => {
-            drag.current = null;
-          }}
+          onPointerCancel={hardResetMain}
+          onLostPointerCapture={hardResetMain}
           onKeyDown={(e) => {
             if (e.key === 'ArrowRight') {
               e.preventDefault();
@@ -274,10 +377,10 @@ export function ShopProductGallery({ gallery, cover, alt, badge, discount }: Pro
                 <div
                   className="pd-dk-lightbox-stage"
                   onPointerDown={onLightboxPointerDown}
+                  onPointerMove={onLightboxPointerMove}
                   onPointerUp={onLightboxPointerUp}
-                  onPointerCancel={() => {
-                    lightboxDrag.current = null;
-                  }}
+                  onPointerCancel={hardResetLightbox}
+                  onLostPointerCapture={hardResetLightbox}
                 >
                   <img src={mainSrc} alt={alt} draggable={false} />
                   {multi ? (
