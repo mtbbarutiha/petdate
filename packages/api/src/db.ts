@@ -110,6 +110,11 @@ import {
   type CoinSellRequestStatus,
   type CoinSellRequestSummary,
   normalizeCoinSellChannel,
+  normalizeWithdrawCurrency,
+  withdrawRateToman,
+  minWithdrawAmount,
+  WITHDRAW_CURRENCY_LABELS_FA,
+  type WithdrawCurrency,
   type PetMedicalField,
   type WalletCurrency,
   type WalletLedgerDirection,
@@ -1620,6 +1625,9 @@ function migrateSchema() {
   if (!coinSellCols.includes('channel')) {
     db.exec(`ALTER TABLE coin_sell_requests ADD COLUMN channel TEXT NOT NULL DEFAULT 'unknown'`);
   }
+  if (!coinSellCols.includes('currency')) {
+    db.exec(`ALTER TABLE coin_sell_requests ADD COLUMN currency TEXT NOT NULL DEFAULT 'coins'`);
+  }
 
   const paymentOrderCols = (
     db.prepare(`PRAGMA table_info(payment_orders)`).all() as Array<{ name: string }>
@@ -3121,6 +3129,7 @@ function mapCoinSellRequestSummary(row: Record<string, unknown>): CoinSellReques
   return {
     id: Number(row.id),
     coins: Number(row.coins),
+    currency: normalizeWithdrawCurrency(row.currency) ?? 'coins',
     rateToman: Number(row.rate_toman),
     amountToman: Number(row.amount_toman),
     cardMasked: maskCardNumber(String(row.card_number ?? '')),
@@ -7475,46 +7484,100 @@ export const dbService = {
   submitCoinSell(input: {
     userId: number;
     coins: number;
-    rateToman: number;
+    rateToman?: number;
     cardNumber: string;
-    minCoins: number;
+    minCoins?: number;
+    /** coins | stars | toman — default coins (legacy) */
+    currency?: WithdrawCurrency | string | null;
     /** web = سایت /earn/withdraw ؛ bot = ربات فروش سکه */
     channel?: CoinSellChannel;
   }):
-    | { ok: true; requestId: number; amountToman: number; rateToman: number; user: User }
-    | { ok: false; reason: 'min' | 'balance' | 'pending' | 'missing' } {
-    const coins = Math.floor(input.coins);
-    if (!Number.isFinite(coins) || coins < input.minCoins) {
+    | {
+        ok: true;
+        requestId: number;
+        amountToman: number;
+        rateToman: number;
+        currency: WithdrawCurrency;
+        coins: number;
+        user: User;
+      }
+    | { ok: false; reason: 'min' | 'balance' | 'pending' | 'missing' | 'currency' } {
+    const currency = normalizeWithdrawCurrency(input.currency) ?? 'coins';
+    const amount = Math.floor(Number(input.coins));
+    const minAmount = Math.floor(Number(input.minCoins) || minWithdrawAmount(currency));
+    const rateToman = Math.floor(Number(input.rateToman) || withdrawRateToman(currency));
+    if (!Number.isFinite(amount) || amount < minAmount) {
       return { ok: false, reason: 'min' };
     }
     const user = this.getUserById(input.userId);
     if (!user) return { ok: false, reason: 'missing' };
     if (this.userHasOpenCoinSell(input.userId)) return { ok: false, reason: 'pending' };
-    if ((user.coins ?? 0) < coins) return { ok: false, reason: 'balance' };
 
-    const amountToman = coins * input.rateToman;
+    const wallet = this.getWallet(input.userId) ?? {
+      ton: 0,
+      stars: 0,
+      coins: user.coins ?? 0,
+      toman: 0,
+    };
+    const balance =
+      currency === 'stars'
+        ? Number(wallet.stars ?? 0)
+        : currency === 'toman'
+          ? Number(wallet.toman ?? 0)
+          : Number(wallet.coins ?? user.coins ?? 0);
+    if (balance < amount) return { ok: false, reason: 'balance' };
+
+    const amountToman = amount * rateToman;
+    const currencyLabel = WITHDRAW_CURRENCY_LABELS_FA[currency];
     const tx = db.transaction(() => {
-      const debited = db
-        .prepare(
-          `UPDATE users SET coins = coins - ? WHERE id = ? AND COALESCE(coins, 0) >= ?`
-        )
-        .run(coins, input.userId, coins);
-      if (debited.changes !== 1) throw new Error('BALANCE');
+      if (currency === 'coins') {
+        const debited = db
+          .prepare(
+            `UPDATE users SET coins = coins - ? WHERE id = ? AND COALESCE(coins, 0) >= ?`
+          )
+          .run(amount, input.userId, amount);
+        if (debited.changes !== 1) throw new Error('BALANCE');
+      } else if (currency === 'stars') {
+        const debited = db
+          .prepare(
+            `UPDATE users SET wallet_stars = wallet_stars - ?
+             WHERE id = ? AND COALESCE(wallet_stars, 0) >= ?`
+          )
+          .run(amount, input.userId, amount);
+        if (debited.changes !== 1) throw new Error('BALANCE');
+      } else {
+        const debited = db
+          .prepare(
+            `UPDATE users SET wallet_toman = wallet_toman - ?
+             WHERE id = ? AND COALESCE(wallet_toman, 0) >= ?`
+          )
+          .run(amount, input.userId, amount);
+        if (debited.changes !== 1) throw new Error('BALANCE');
+      }
+
       const channel = normalizeCoinSellChannel(input.channel);
       const result = db
         .prepare(
           `INSERT INTO coin_sell_requests (
-            user_id, coins, rate_toman, amount_toman, card_number, status, channel
-          ) VALUES (?, ?, ?, ?, ?, 'open', ?)`
+            user_id, coins, rate_toman, amount_toman, card_number, status, channel, currency
+          ) VALUES (?, ?, ?, ?, ?, 'open', ?, ?)`
         )
-        .run(input.userId, coins, input.rateToman, amountToman, input.cardNumber, channel);
+        .run(
+          input.userId,
+          amount,
+          rateToman,
+          amountToman,
+          input.cardNumber,
+          channel,
+          currency
+        );
       const requestId = Number(result.lastInsertRowid);
       this.appendWalletLedger({
         userId: input.userId,
-        currency: 'coins',
-        amount: coins,
+        currency,
+        amount,
         direction: 'debit',
-        reason: 'فروش سکه',
+        reason: `درخواست برداشت (${currencyLabel})`,
         refType: 'coin_sell',
         refId: requestId,
       });
@@ -7531,8 +7594,9 @@ export const dbService = {
         notifyCoinSellSubmitted({
           requestId,
           userName: saved.name,
-          coins,
+          coins: amount,
           amountToman,
+          currency,
           channel: normalizeCoinSellChannel(input.channel),
         });
       } catch (err) {
@@ -7542,7 +7606,9 @@ export const dbService = {
         ok: true,
         requestId,
         amountToman,
-        rateToman: input.rateToman,
+        rateToman,
+        currency,
+        coins: amount,
         user: saved,
       };
     } catch (err) {
@@ -7627,15 +7693,27 @@ export const dbService = {
     const note = typeof input.note === 'string' ? input.note.trim() : '';
     const coins = Number(row.coins);
     const userId = Number(row.user_id);
+    const currency = normalizeWithdrawCurrency(row.currency) ?? 'coins';
+    const currencyLabel = WITHDRAW_CURRENCY_LABELS_FA[currency];
     const tx = db.transaction(() => {
       if (input.action === 'rejected' && Number.isFinite(coins) && coins > 0) {
-        db.prepare(`UPDATE users SET coins = COALESCE(coins, 0) + ? WHERE id = ?`).run(coins, userId);
+        if (currency === 'coins') {
+          db.prepare(`UPDATE users SET coins = COALESCE(coins, 0) + ? WHERE id = ?`).run(coins, userId);
+        } else if (currency === 'stars') {
+          db.prepare(
+            `UPDATE users SET wallet_stars = COALESCE(wallet_stars, 0) + ? WHERE id = ?`
+          ).run(coins, userId);
+        } else {
+          db.prepare(
+            `UPDATE users SET wallet_toman = COALESCE(wallet_toman, 0) + ? WHERE id = ?`
+          ).run(coins, userId);
+        }
         this.appendWalletLedger({
           userId,
-          currency: 'coins',
+          currency,
           amount: coins,
           direction: 'credit',
-          reason: 'رد فروش سکه — بازگشت موجودی',
+          reason: `رد درخواست برداشت — بازگشت ${currencyLabel}`,
           refType: 'coin_sell',
           refId: id,
         });

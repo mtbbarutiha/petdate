@@ -107,12 +107,12 @@ async function main() {
       (i) =>
         i.href === '/admin/coin-sells' &&
         (i.id.startsWith('db:') || i.id === 'live:coin-sells') &&
-        (i.title.includes('برداشت سکه') || i.body.includes('سکه'))
+        (i.title.includes('برداشت') || i.body.includes('سکه'))
     ),
     'header shows coin withdrawal'
   );
   const perRequest = header.items.find(
-    (i) => i.id.startsWith('db:') && i.title === 'درخواست برداشت سکه' && i.body.includes('ربات')
+    (i) => i.id.startsWith('db:') && i.title === 'درخواست برداشت' && i.body.includes('ربات')
   );
   assert(perRequest, 'per-request header item for bot withdrawal');
   assert(perRequest!.module === 'finance', 'withdrawal notif is finance');
@@ -154,7 +154,7 @@ async function main() {
     'web withdrawal appears in live اعلانات'
   );
   assert(
-    headerWeb.items.some((i) => i.title === 'درخواست برداشت سکه' && i.body.includes('وب')),
+    headerWeb.items.some((i) => i.title === 'درخواست برداشت' && i.body.includes('وب')),
     'web withdrawal per-request اعلان'
   );
 
@@ -178,7 +178,7 @@ async function main() {
   syncOpenCoinSellNotifications();
   const backfilled = await listAdminHeaderNotifications(adminActor);
   assert(
-    backfilled.items.some((i) => i.title === 'درخواست برداشت سکه'),
+    backfilled.items.some((i) => i.title === 'درخواست برداشت'),
     'open bot request stays visible after sync (source_key idempotent)'
   );
 

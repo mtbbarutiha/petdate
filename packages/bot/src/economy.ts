@@ -108,7 +108,7 @@ export function packageCheckoutText(p: CoinPackage): string {
 export function earnIntroText(balance: number): string {
   const toman = sellAmountToman(balance);
   return [
-    '💵 <b>کسب درآمد — فروش سکه</b>',
+    '💵 <b>کسب درآمد — درخواست برداشت</b>',
     '',
     `موجودی تو: <b>${formatNum(balance)}</b> سکه`,
     `نرخ فروش: هر سکه ${formatNum(COIN_SELL_PRICE_TOMAN)} تومان`,

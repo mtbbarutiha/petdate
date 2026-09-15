@@ -187,6 +187,7 @@ import {
   handleEarnClose,
   handleEarnConfirm,
   handleEarnSell,
+  handleEarnCurrency,
   handlePaymentApprove,
   handlePaymentReceiptPhoto,
   handlePaymentReject,
@@ -882,6 +883,9 @@ export function registerHandlers(bot: Bot): void {
   bot.on('message:successful_payment', (ctx) => handleSuccessfulPayment(ctx));
 
   bot.callbackQuery('earn:sell', (ctx) => handleEarnSell(ctx));
+  bot.callbackQuery(/^earn:currency:(coins|stars|toman)$/, (ctx) =>
+    handleEarnCurrency(ctx, ctx.match![1] as 'coins' | 'stars' | 'toman')
+  );
   bot.callbackQuery(/^earn:confirm:(\d+)$/, (ctx) =>
     handleEarnConfirm(ctx, Number(ctx.match![1]))
   );

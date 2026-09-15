@@ -1097,9 +1097,22 @@ export async function fetchAuthedPaymentReceiptObjectUrl(
   return URL.createObjectURL(blob);
 }
 
+export type EarnWithdrawCurrency = 'coins' | 'stars' | 'toman';
+
+export type EarnCurrencyOption = {
+  currency: EarnWithdrawCurrency;
+  labelFa: string;
+  balance: number;
+  rateToman: number;
+  minAmount: number;
+  estimatedToman: number;
+  canWithdraw: boolean;
+};
+
 export type EarnRequestSummary = {
   id: number;
   coins: number;
+  currency?: EarnWithdrawCurrency;
   rateToman: number;
   amountToman: number;
   cardMasked: string;
@@ -1122,6 +1135,7 @@ export type EarnStatusResponse = {
   canSell: boolean;
   method: 'card';
   methodLabelFa: string;
+  currencies?: EarnCurrencyOption[];
   requests: EarnRequestSummary[];
 };
 
@@ -1133,21 +1147,28 @@ export async function fetchEarnStatus(token: string) {
 
 export async function submitEarnWithdraw(
   token: string,
-  data: { coins: number; cardNumber: string }
+  data: { currency: EarnWithdrawCurrency; amount: number; cardNumber: string; coins?: number }
 ) {
   return request<{
     ok: true;
     requestId: number;
     amountToman: number;
     rateToman: number;
+    currency: EarnWithdrawCurrency;
     coins: number;
+    amount: number;
     user: User;
     wallet?: { ton: number; stars: number; coins: number; toman: number };
     openRequest: EarnRequestSummary | null;
   }>('/api/auth/earn/withdraw', {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
-    body: JSON.stringify(data),
+    body: JSON.stringify({
+      currency: data.currency,
+      amount: data.amount,
+      coins: data.coins ?? data.amount,
+      cardNumber: data.cardNumber,
+    }),
   });
 }
 

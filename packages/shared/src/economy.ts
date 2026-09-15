@@ -86,6 +86,62 @@ export const COIN_SELL_PRICE_TOMAN = 1_000;
 /** حداقل سکه برای ثبت درخواست فروش / برداشت */
 export const MIN_SELL_COINS = 50;
 
+/**
+ * ارزهای قابل‌برداشت به کارت بانکی ایران.
+ * TON فعلاً برای واریز کارت فعال نیست (نمایش کیف‌پول / stub).
+ */
+export type WithdrawCurrency = 'coins' | 'stars' | 'toman';
+
+export const WITHDRAWABLE_CURRENCIES: readonly WithdrawCurrency[] = [
+  'coins',
+  'stars',
+  'toman',
+] as const;
+
+/** نرخ فروش ستاره کیف‌پول به تومان — هم‌تراز فروش سکه (۱ ستاره ≈ ۱ سکه) */
+export const STAR_SELL_PRICE_TOMAN = COIN_SELL_PRICE_TOMAN;
+
+/** حداقل ستاره برای ثبت درخواست برداشت */
+export const MIN_SELL_STARS = 50;
+
+/** حداقل تومان کیف‌پول برای برداشت به کارت */
+export const MIN_SELL_TOMAN = 50_000;
+
+export const WITHDRAW_CURRENCY_LABELS_FA: Record<WithdrawCurrency, string> = {
+  coins: 'سکه',
+  stars: 'ستاره',
+  toman: 'تومان',
+};
+
+export function normalizeWithdrawCurrency(raw: unknown): WithdrawCurrency | null {
+  const v = String(raw ?? '')
+    .trim()
+    .toLowerCase();
+  if (v === 'coins' || v === 'coin' || v === 'سکه') return 'coins';
+  if (v === 'stars' || v === 'star' || v === 'ستاره') return 'stars';
+  if (v === 'toman' || v === 'irt' || v === 'تومان') return 'toman';
+  return null;
+}
+
+/** نرخ تومان به‌ازای هر واحد ارز در برداشت */
+export function withdrawRateToman(currency: WithdrawCurrency): number {
+  if (currency === 'toman') return 1;
+  if (currency === 'stars') return STAR_SELL_PRICE_TOMAN;
+  return COIN_SELL_PRICE_TOMAN;
+}
+
+/** حداقل مقدار برداشت برای هر ارز */
+export function minWithdrawAmount(currency: WithdrawCurrency): number {
+  if (currency === 'toman') return MIN_SELL_TOMAN;
+  if (currency === 'stars') return MIN_SELL_STARS;
+  return MIN_SELL_COINS;
+}
+
+/** مبلغ تومان قابل‌پرداخت برای مقدار+ارز انتخابی */
+export function withdrawAmountToman(amount: number, currency: WithdrawCurrency): number {
+  return sellAmountToman(amount, withdrawRateToman(currency));
+}
+
 /** بسته خرید سکه — مشترک وب، ربات و ادمین */
 export type CoinPackage = {
   id: string;
@@ -127,7 +183,10 @@ export type CoinSellChannel = 'web' | 'bot' | 'unknown';
 
 export type CoinSellRequestSummary = {
   id: number;
+  /** مقدار ارز مبدأ (برای سکه همان تعداد سکه؛ برای تومان همان مبلغ تومان) */
   coins: number;
+  /** ارز درخواستی برای برداشت؛ ردیف‌های قدیمی = coins */
+  currency: WithdrawCurrency;
   rateToman: number;
   amountToman: number;
   /** کارت ماسک‌شده برای نمایش امن */

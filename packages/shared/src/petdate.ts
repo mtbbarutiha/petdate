@@ -907,6 +907,8 @@ export interface BotSession {
   searchBreedPage?: number;
   /** فروش سکه — منتظر شماره کارت */
   earnPendingCoins?: number;
+  /** ارز درخواستی برداشت: coins | stars | toman */
+  earnPendingCurrency?: 'coins' | 'stars' | 'toman';
   /** خرید سکه کارت‌به‌کارت — سفارش در انتظار رسید */
   paymentPendingOrderId?: number;
   /** ادمین — رد احراز هویت برای این userId */

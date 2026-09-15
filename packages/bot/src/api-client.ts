@@ -1158,7 +1158,7 @@ export async function hasOpenCoinSell(telegramId: string): Promise<boolean> {
 
 export async function submitCoinSell(
   telegramId: string,
-  data: { coins: number; cardNumber: string; rateToman: number; minCoins: number }
+  data: { coins: number; cardNumber: string; rateToman: number; minCoins: number; currency?: 'coins' | 'stars' | 'toman' }
 ): Promise<
   | { ok: true; requestId: number; amountToman: number; rateToman: number; user: User }
   | { ok: false; reason: string }

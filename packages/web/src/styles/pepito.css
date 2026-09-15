@@ -15366,6 +15366,49 @@ a.pepito-btn.pepito-human-consult-cta:hover {
 }
 
 .pepito-earn-how,
+
+/* Earn / withdraw — currency picker */
+.pepito-earn-currency {
+  border: 0;
+  margin: 0 0 1rem;
+  padding: 0;
+}
+.pepito-earn-currency legend {
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+.pepito-earn-currency-options {
+  display: grid;
+  gap: 0.5rem;
+}
+@media (min-width: 640px) {
+  .pepito-earn-currency-options {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.pepito-earn-currency-option {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  padding: 0.75rem 0.85rem;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--pepito-ink, #1a1a1a) 12%, transparent);
+  background: color-mix(in srgb, var(--pepito-surface, #fff) 92%, #f3f6f4);
+  cursor: pointer;
+}
+.pepito-earn-currency-option input {
+  margin-top: 0.2rem;
+}
+.pepito-earn-currency-option span {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-weight: 600;
+}
+.pepito-earn-currency-option small {
+  font-weight: 500;
+  opacity: 0.7;
+}
 .pepito-earn-form-wrap,
 .pepito-earn-history {
   padding: 1rem 1.05rem;

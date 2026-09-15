@@ -3,6 +3,7 @@ import type { CoinSellRequestAdmin, CoinSellRequestStatus } from '@petdate/share
 import {
   COIN_SELL_CHANNEL_LABELS_FA,
   COIN_SELL_STATUS_LABELS_FA,
+  WITHDRAW_CURRENCY_LABELS_FA,
   formatCardGrouped,
 } from '@petdate/shared';
 import { adminFetch, formatNumFa, formatTomanFa } from '../api';
@@ -67,9 +68,9 @@ export function AdminCoinSellsPage() {
     <div className="admin-page admin-page--wide">
       <header className="admin-header">
         <div>
-          <h1>{tr('صف فروش سکه')}</h1>
+          <h1>{tr('صف درخواست برداشت')}</h1>
           <p>
-            {tr('درخواست‌های برداشت از وب و ربات — سکه هنگام ثبت کسر شده؛ رد = بازگشت سکه')}
+            {tr('درخواست‌های برداشت از وب و ربات — موجودی هنگام ثبت کسر می‌شود؛ رد = بازگشت موجودی')}
             {' · '}
             {formatNumFa(openCount)} {tr('باز')}
           </p>
@@ -98,7 +99,7 @@ export function AdminCoinSellsPage() {
             <tr>
               <th>{tr('کاربر')}</th>
               <th>{tr('منبع')}</th>
-              <th>{tr('سکه')}</th>
+              <th>{tr('مقدار / ارز')}</th>
               <th>{tr('مبلغ تومان')}</th>
               <th>{tr('شماره کارت')}</th>
               <th>{tr('وضعیت')}</th>
@@ -116,7 +117,7 @@ export function AdminCoinSellsPage() {
                   </div>
                 </td>
                 <td>{tr(COIN_SELL_CHANNEL_LABELS_FA[r.channel] || r.channel || '—')}</td>
-                <td>{formatNumFa(r.coins)}</td>
+                <td>{formatNumFa(r.coins)}{' · '}{tr(WITHDRAW_CURRENCY_LABELS_FA[(r.currency as keyof typeof WITHDRAW_CURRENCY_LABELS_FA) || 'coins'] || 'سکه')}</td>
                 <td>{formatTomanFa(r.amountToman)}</td>
                 <td dir="ltr">{formatCardGrouped(r.cardNumber) || r.cardMasked}</td>
                 <td>{tr(COIN_SELL_STATUS_LABELS_FA[r.status] || r.status)}</td>
@@ -138,7 +139,7 @@ export function AdminCoinSellsPage() {
                         disabled={busyId === r.id}
                         onClick={() => void decide(r.id, 'reject')}
                       >
-                        {tr('رد و بازگشت سکه')}
+                        {tr('رد و بازگشت موجودی')}
                       </button>
                     </div>
                   ) : (

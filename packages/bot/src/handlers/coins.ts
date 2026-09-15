@@ -1,6 +1,10 @@
 import type { Context } from 'grammy';
 import { InlineKeyboard } from 'grammy';
-import { WALLET_CURRENCY_LABELS_FA, WALLET_CURRENCY_SYMBOLS } from '@petdate/shared';
+import { WALLET_CURRENCY_LABELS_FA, WALLET_CURRENCY_SYMBOLS,
+  withdrawRateToman,
+  minWithdrawAmount,
+  WITHDRAW_CURRENCY_LABELS_FA,
+  type WithdrawCurrency} from '@petdate/shared';
 import {
   approveCardPayment,
   attachPaymentReceipt,
@@ -41,6 +45,7 @@ import {
   coinsShopKeyboard,
   earnCancelKeyboard,
   earnConfirmKeyboard,
+  earnCurrencyKeyboard,
   earnKeyboard,
   MENU_LABELS,
   paymentReceiptCancelKeyboard,
@@ -901,41 +906,83 @@ export async function handleEarnSell(ctx: Context): Promise<void> {
     await ctx.answerCallbackQuery();
     return;
   }
-  const balance = user.coins ?? 0;
   if (await hasOpenCoinSell(user.telegramId)) {
     await ctx.answerCallbackQuery({ text: 'یک درخواست تسویه باز داری', show_alert: true });
     return;
   }
-  if (balance < MIN_SELL_COINS) {
-    await ctx.answerCallbackQuery({
-      text: `حداقل ${formatNum(MIN_SELL_COINS)} سکه لازم است`,
-      show_alert: true,
-    });
-    return;
-  }
-
-  const coins = balance;
-  const toman = sellAmountToman(coins, COIN_SELL_PRICE_TOMAN);
   await ctx.answerCallbackQuery();
   const text = [
-    '💵 <b>تأیید فروش</b>',
+    '💵 <b>درخواست برداشت</b>',
     '',
-    `تعداد سکه: <b>${formatNum(coins)}</b>`,
-    `نرخ: هر سکه ${formatNum(COIN_SELL_PRICE_TOMAN)} تومان`,
-    `مبلغ پرداختی: <b>${formatToman(toman)}</b>`,
-    '',
-    'با ارسال شماره کارت، سکه‌ها تا تأیید/رد ادمین نگه داشته می‌شوند.',
+    'کدام موجودی را می‌خواهی برداشت کنی؟',
+    `🪙 سکه: <b>${formatNum(user.coins ?? 0)}</b>`,
+    `⭐ ستاره: <b>${formatNum((user as { walletStars?: number }).walletStars ?? user.wallet?.stars ?? 0)}</b>`,
+    `💳 تومان: <b>${formatNum((user as { walletToman?: number }).walletToman ?? user.wallet?.toman ?? 0)}</b>`,
   ].join('\n');
-
   try {
     await ctx.editMessageText(text, {
       parse_mode: 'HTML',
-      reply_markup: earnConfirmKeyboard(coins),
+      reply_markup: earnCurrencyKeyboard(),
     });
   } catch {
     await ctx.reply(text, {
       parse_mode: 'HTML',
-      reply_markup: earnConfirmKeyboard(coins),
+      reply_markup: earnCurrencyKeyboard(),
+    });
+  }
+}
+
+export async function handleEarnCurrency(ctx: Context, currency: WithdrawCurrency): Promise<void> {
+  const user = await getCtxUser(ctx);
+  if (!user?.telegramId) {
+    await ctx.answerCallbackQuery();
+    return;
+  }
+  if (await hasOpenCoinSell(user.telegramId)) {
+    await ctx.answerCallbackQuery({ text: 'یک درخواست تسویه باز داری', show_alert: true });
+    return;
+  }
+  const walletStars = Number((user as { walletStars?: number }).walletStars ?? user.wallet?.stars ?? 0);
+  const walletToman = Number((user as { walletToman?: number }).walletToman ?? user.wallet?.toman ?? 0);
+  const balance =
+    currency === 'stars' ? walletStars : currency === 'toman' ? walletToman : Number(user.coins ?? 0);
+  const minAmount = minWithdrawAmount(currency);
+  const rate = withdrawRateToman(currency);
+  const label = WITHDRAW_CURRENCY_LABELS_FA[currency];
+  if (balance < minAmount) {
+    await ctx.answerCallbackQuery({
+      text: `حداقل ${formatNum(minAmount)} ${label} لازم است`,
+      show_alert: true,
+    });
+    return;
+  }
+  const amount = balance;
+  const toman = amount * rate;
+  await ctx.answerCallbackQuery();
+  const text = [
+    '💵 <b>تأیید برداشت</b>',
+    '',
+    `ارز: <b>${label}</b>`,
+    `مقدار: <b>${formatNum(amount)}</b>`,
+    `نرخ: هر واحد ${formatNum(rate)} تومان`,
+    `مبلغ پرداختی: <b>${formatToman(toman)}</b>`,
+    '',
+    'با ادامه، موجودی تا تأیید/رد ادمین رزرو می‌شود.',
+  ].join('\n');
+  try {
+    await ctx.editMessageText(text, {
+      parse_mode: 'HTML',
+      reply_markup: earnConfirmKeyboard(amount),
+    });
+  } catch {
+    await ctx.reply(text, {
+      parse_mode: 'HTML',
+      reply_markup: earnConfirmKeyboard(amount),
+    });
+  }
+  if (ctx.from) {
+    await upsertSession(String(ctx.from.id), {
+      earnPendingCurrency: currency,
     });
   }
 }
@@ -983,6 +1030,7 @@ export async function handleEarnCancel(ctx: Context): Promise<void> {
     await upsertSession(String(ctx.from.id), {
       step: 'ready',
       earnPendingCoins: undefined,
+      earnPendingCurrency: undefined,
     });
   }
   await ctx.answerCallbackQuery({ text: 'لغو شد' });
@@ -1016,6 +1064,7 @@ export async function handleEarnCardText(ctx: Context, text: string): Promise<bo
     await upsertSession(String(from.id), {
       step: 'ready',
       earnPendingCoins: undefined,
+      earnPendingCurrency: undefined,
     });
     return false;
   }
@@ -1035,16 +1084,19 @@ export async function handleEarnCardText(ctx: Context, text: string): Promise<bo
   }
 
   const coins = session.earnPendingCoins;
+  const currency = (session.earnPendingCurrency as WithdrawCurrency | undefined) ?? 'coins';
   const result = await submitCoinSell(user.telegramId, {
     coins,
     cardNumber: cardCheck.card,
-    rateToman: COIN_SELL_PRICE_TOMAN,
-    minCoins: MIN_SELL_COINS,
+    rateToman: withdrawRateToman(currency),
+    minCoins: minWithdrawAmount(currency),
+    currency,
   });
 
   await upsertSession(String(from.id), {
     step: 'ready',
     earnPendingCoins: undefined,
+      earnPendingCurrency: undefined,
   });
 
   if (!result.ok) {

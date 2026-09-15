@@ -208,7 +208,7 @@ export function AdminFinanceDashboardPage() {
           <Wallet size={20} /><div><strong>{tr('صف تأیید واریز')}</strong><span>{tr('رسید کارت‌به‌کارت سکه و شاپ')}</span></div>
         </Link>
         <Link to="/admin/coin-sells" className="admin-card admin-finance-link admin-finance-link--queue">
-          <HandCoins size={20} /><div><strong>{tr('صف فروش سکه')}</strong><span>{tr('برداشت / تسویه در انتظار')}</span></div>
+          <HandCoins size={20} /><div><strong>{tr('صف درخواست برداشت')}</strong><span>{tr('برداشت / تسویه در انتظار')}</span></div>
         </Link>
         <Link to="/admin/finance/transactions" className="admin-card admin-finance-link admin-finance-link--queue">
           <LineChart size={20} /><div><strong>{tr('تراکنش‌ها و دفتر')}</strong><span>{tr('ایمپورت · صف · مشکوک · Ledger')}</span></div>
