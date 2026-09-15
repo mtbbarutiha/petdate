@@ -4,6 +4,7 @@ import { WALLET_CURRENCY_LABELS_FA, WALLET_CURRENCY_SYMBOLS,
   withdrawRateToman,
   minWithdrawAmount,
   WITHDRAW_CURRENCY_LABELS_FA,
+  ledgerPublicIdOf,
   type WithdrawCurrency} from '@petdate/shared';
 import {
   approveCardPayment,
@@ -158,7 +159,8 @@ export async function handleCoinsTransactions(ctx: Context): Promise<void> {
           ? 'تومان'
           : WALLET_CURRENCY_SYMBOLS[tx.currency] || WALLET_CURRENCY_LABELS_FA[tx.currency];
       const when = String(tx.createdAt || '').slice(0, 16).replace('T', ' ');
-      return `• <b>${escapeHtml(tx.labelFa || tx.reason)}</b>\n  ${sign}${amount} ${cur} — ${when}`;
+      const publicId = escapeHtml(ledgerPublicIdOf(tx));
+      return `• <code>${publicId}</code> <b>${escapeHtml(tx.labelFa || tx.reason)}</b>\n  ${sign}${amount} ${cur} — ${when}`;
     });
     const allKb = walletUrl
       ? new InlineKeyboard().url('🌐 همه در کیف پول وب', walletUrl)

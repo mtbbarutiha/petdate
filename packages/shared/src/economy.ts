@@ -564,6 +564,8 @@ export type WalletLedgerDirection = 'credit' | 'debit';
 /** تراکنش قابل‌نمایش در وب/ربات */
 export type WalletTransaction = {
   id: number;
+  /** شناسه عمومی پایدار نمایشی — PD-L##### */
+  publicId?: string;
   currency: WalletCurrency;
   amount: number;
   direction: WalletLedgerDirection;

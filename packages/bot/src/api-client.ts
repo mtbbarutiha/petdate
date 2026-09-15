@@ -983,6 +983,8 @@ export async function debitUserCoins(telegramId: string, amount: number): Promis
 
 export type WalletTransactionDto = {
   id: number;
+  /** شناسه عمومی پایدار — PD-L##### */
+  publicId?: string;
   currency: 'stars' | 'coins' | 'toman';
   amount: number;
   direction: 'credit' | 'debit';

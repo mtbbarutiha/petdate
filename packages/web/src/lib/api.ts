@@ -1005,6 +1005,8 @@ export async function fetchWallet(token: string) {
 
 export type WalletTransactionDto = {
   id: number;
+  /** شناسه عمومی پایدار — PD-L##### */
+  publicId?: string;
   currency: 'stars' | 'coins' | 'toman';
   amount: number;
   direction: 'credit' | 'debit';
