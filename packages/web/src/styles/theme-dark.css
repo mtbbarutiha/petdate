@@ -1739,6 +1739,42 @@ html[data-theme='dark'] .pepito-wallet-buy-history {
   color: var(--pepito-muted);
   opacity: 1;
 }
+html[data-theme='dark'] .pepito-wallet-buy-history-row {
+  background: var(--pd-surface-2);
+  border-color: var(--pd-border);
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-wallet-buy-history-amount,
+html[data-theme='dark'] .pepito-wallet-buy-active-summary {
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-wallet-buy-history-date {
+  color: var(--pepito-muted);
+}
+html[data-theme='dark'] .pepito-wallet-buy-id {
+  color: var(--pepito-dark);
+  background: color-mix(in srgb, var(--pepito-base) 16%, var(--pd-surface-2));
+  border-color: var(--pd-border);
+}
+html[data-theme='dark'] .pepito-wallet-buy-status--ok {
+  color: #2dd4b0;
+  background: color-mix(in srgb, #15cca0 22%, transparent);
+}
+html[data-theme='dark'] .pepito-wallet-buy-status--warn {
+  color: #f0b45a;
+  background: color-mix(in srgb, #fd961e 20%, transparent);
+}
+html[data-theme='dark'] .pepito-wallet-buy-status--err {
+  color: #f07178;
+  background: color-mix(in srgb, #db5a5a 20%, transparent);
+}
+html[data-theme='dark'] .pepito-wallet-buy-status--idle {
+  color: var(--pepito-muted);
+  background: color-mix(in srgb, var(--pepito-dark) 8%, transparent);
+}
+html[data-theme='dark'] .pepito-wallet-tx-id {
+  color: var(--pepito-muted);
+}
 html[data-theme='dark'] .pepito-wallet-buy-receipt {
   border-color: var(--pd-border);
   background: var(--pd-surface-2);

@@ -3,10 +3,13 @@
  */
 import {
   consultPublicIdOf,
+  ledgerPublicIdOf,
   makeConsultPublicId,
+  makeLedgerPublicId,
   makePaymentPublicId,
   makePlaydatePublicId,
   normalizeConsultPublicId,
+  normalizeLedgerPublicId,
   normalizePaymentPublicId,
   normalizePlaydatePublicId,
   paymentPublicIdOf,
@@ -29,5 +32,11 @@ assert(normalizePlaydatePublicId('PD-D7') === 'PD-D00007', 'playdate normalize')
 assert(makePaymentPublicId(5) === 'PD-R00005', 'payment pad');
 assert(paymentPublicIdOf({ id: 5 }) === 'PD-R00005', 'payment derive');
 assert(normalizePaymentPublicId('PD-R99') === 'PD-R00099', 'payment normalize');
+
+assert(makeLedgerPublicId(20) === 'PD-L00020', 'ledger pad');
+assert(ledgerPublicIdOf({ id: 18 }) === 'PD-L00018', 'ledger derive');
+assert(ledgerPublicIdOf({ id: 18, publicId: 'PD-L18' }) === 'PD-L00018', 'ledger re-pad');
+assert(normalizeLedgerPublicId('PD-L42') === 'PD-L00042', 'ledger normalize');
+assert(makeLedgerPublicId(20) !== makePaymentPublicId(20), 'PD-L vs PD-R stay distinct');
 
 console.log('entity-public-id.selftest: ok');

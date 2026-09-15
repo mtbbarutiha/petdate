@@ -95,7 +95,8 @@ export const VERIFIED_BADGE = '✅ احراز شده';
  * شناسهٔ عمومی پایدار (نمایشی) — جدا از id داخلی DB.
  * یک نفر = یک آیدی نمایشی برای وب و بات.
  * فرمت canonical: PD-U##### کاربر، PD-P##### پت، PD-O##### سفارش،
- * PD-C##### مشاوره، PD-D##### همبازی، PD-R##### پرداخت.
+ * PD-C##### مشاوره، PD-D##### همبازی، PD-R##### پرداخت،
+ * PD-L##### ردیف لجر کیف‌پول.
  * پس از تخصیص تغییر نمی‌کند.
  *
  * نکته: `/u#####` فقط دستور عمیق تلگرام است (charset بدون خط تیره) —
@@ -110,6 +111,8 @@ export const CONSULT_PUBLIC_ID_PREFIX = 'PD-C';
 export const PLAYDATE_PUBLIC_ID_PREFIX = 'PD-D';
 /** سفارش پرداخت / رسید */
 export const PAYMENT_PUBLIC_ID_PREFIX = 'PD-R';
+/** ردیف لجر کیف‌پول (کسر/واریز) */
+export const LEDGER_PUBLIC_ID_PREFIX = 'PD-L';
 
 export function makeUserPublicId(internalId: number): string {
   return `${USER_PUBLIC_ID_PREFIX}${String(Math.trunc(internalId)).padStart(5, '0')}`;
@@ -133,6 +136,10 @@ export function makePlaydatePublicId(internalId: number): string {
 
 export function makePaymentPublicId(internalId: number): string {
   return `${PAYMENT_PUBLIC_ID_PREFIX}${String(Math.trunc(internalId)).padStart(5, '0')}`;
+}
+
+export function makeLedgerPublicId(internalId: number): string {
+  return `${LEDGER_PUBLIC_ID_PREFIX}${String(Math.trunc(internalId)).padStart(5, '0')}`;
 }
 
 /**
@@ -291,6 +298,28 @@ export function paymentPublicIdOf(payment: { id: number; publicId?: string | nul
     return raw;
   }
   return makePaymentPublicId(payment.id);
+}
+
+/**
+ * نرمال‌سازی فرم‌های شناخته‌شده به PD-L##### (با پد ۵رقمی).
+ */
+export function normalizeLedgerPublicId(raw: string | null | undefined): string | null {
+  const s = String(raw ?? '').trim();
+  if (!s) return null;
+  const pd = /^PD-L(\d{1,10})$/i.exec(s);
+  if (pd) return makeLedgerPublicId(Number(pd[1]));
+  return null;
+}
+
+/** شناسهٔ نمایشی ردیف لجر کیف‌پول — publicId ذخیره‌شده یا مشتق از id */
+export function ledgerPublicIdOf(entry: { id: number; publicId?: string | null }): string {
+  const raw = entry.publicId != null ? String(entry.publicId).trim() : '';
+  if (raw) {
+    const normalized = normalizeLedgerPublicId(raw);
+    if (normalized) return normalized;
+    return raw;
+  }
+  return makeLedgerPublicId(entry.id);
 }
 
 /**

@@ -3,6 +3,8 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowRight, Link2, Receipt, RefreshCw, Sparkles, Wallet } from 'lucide-react';
 import {
   BRAND,
+  ledgerPublicIdOf,
+  paymentPublicIdOf,
   WALLET_CURRENCY_LABELS_FA,
   WALLET_CURRENCY_STATUS,
   WALLET_CURRENCY_SYMBOLS,
@@ -74,12 +76,21 @@ function sameWallet(a: WalletBalances | null, b: WalletBalances): boolean {
   if (!a) return false;
   return a.stars === b.stars && a.coins === b.coins && a.toman === b.toman;
 }
+
 function paymentStatusFa(status: string): string {
   if (status === 'awaiting_receipt') return 'منتظر رسید';
   if (status === 'pending') return 'در صف تأیید';
   if (status === 'approved' || status === 'paid') return 'تأیید شده';
   if (status === 'rejected') return 'رد شده';
+  if (status === 'cancelled') return 'لغو شده';
   return status;
+}
+
+function paymentStatusTone(status: string): 'ok' | 'warn' | 'err' | 'idle' {
+  if (status === 'approved' || status === 'paid') return 'ok';
+  if (status === 'awaiting_receipt' || status === 'pending') return 'warn';
+  if (status === 'rejected' || status === 'cancelled') return 'err';
+  return 'idle';
 }
 
 /**
@@ -623,7 +634,21 @@ export function WalletPage() {
         <div className="pepito-wallet-tg-body">
           {activeOrder ? (
             <div className="pepito-wallet-buy-active">
-              <p>سفارش فعال: <strong dir="ltr">#{activeOrder.id}</strong> · {toPersianDigits(activeOrder.coins)} سکه · {toPersianDigits(activeOrder.amountToman ?? 0)} تومان · {paymentStatusFa(activeOrder.status)}</p>
+              <div className="pepito-wallet-buy-active-head">
+                <code className="pepito-wallet-buy-id" dir="ltr">
+                  {paymentPublicIdOf(activeOrder)}
+                </code>
+                <span
+                  className={`pepito-wallet-buy-status pepito-wallet-buy-status--${paymentStatusTone(activeOrder.status)}`}
+                >
+                  {paymentStatusFa(activeOrder.status)}
+                </span>
+              </div>
+              <p className="pepito-wallet-buy-active-summary">
+                {toPersianDigits(activeOrder.coins)} سکه
+                <span aria-hidden> · </span>
+                {toPersianDigits(activeOrder.amountToman ?? 0)} تومان
+              </p>
               {cardInfo ? (<><p dir="ltr">کارت: <strong>{cardInfo.grouped || cardInfo.number}</strong></p><p>به‌نام: <strong>{cardInfo.holder}</strong></p></>) : null}
               {activeOrder.status === 'awaiting_receipt' ? (
                 <>
@@ -660,9 +685,30 @@ export function WalletPage() {
           )}
           {paymentHistory.length ? (
             <ul className="pepito-wallet-buy-history" aria-label={t('wallet.cardRequests')}>
-              {paymentHistory.slice(0, 6).map((o) => (
-                <li key={o.id}><span dir="ltr">#{o.id}</span><span>{toPersianDigits(o.coins)} سکه · {paymentStatusFa(o.status)}</span><span>{formatTxDate(o.createdAt)}</span></li>
-              ))}
+              {paymentHistory.slice(0, 6).map((o) => {
+                const publicId = paymentPublicIdOf(o);
+                const tone = paymentStatusTone(o.status);
+                return (
+                  <li key={o.id} className="pepito-wallet-buy-history-row">
+                    <div className="pepito-wallet-buy-history-main">
+                      <code className="pepito-wallet-buy-id" dir="ltr" title={publicId}>
+                        {publicId}
+                      </code>
+                      <p className="pepito-wallet-buy-history-amount">
+                        {toPersianDigits(o.coins)} سکه
+                        <span
+                          className={`pepito-wallet-buy-status pepito-wallet-buy-status--${tone}`}
+                        >
+                          {paymentStatusFa(o.status)}
+                        </span>
+                      </p>
+                    </div>
+                    <time className="pepito-wallet-buy-history-date" dateTime={o.createdAt}>
+                      {formatTxDate(o.createdAt)}
+                    </time>
+                  </li>
+                );
+              })}
             </ul>
           ) : null}
         </div>
@@ -702,11 +748,17 @@ export function WalletPage() {
 
         {transactions.length > 0 ? (
           <ul className="pepito-wallet-tx-list">
-            {transactions.map((tx) => (
+            {transactions.map((tx) => {
+              const publicId = ledgerPublicIdOf(tx);
+              return (
               <li key={tx.id} className={`pepito-wallet-tx-row pepito-wallet-tx-row--${tx.direction}`}>
                 <div className="pepito-wallet-tx-main">
                   <p className="pepito-wallet-tx-label">{tx.labelFa || tx.reason}</p>
                   <p className="pepito-wallet-tx-meta">
+                    <code className="pepito-wallet-tx-id" dir="ltr" title={publicId}>
+                      {publicId}
+                    </code>
+                    <span aria-hidden> · </span>
                     {WALLET_CURRENCY_LABELS_FA[tx.currency]}
                     <span aria-hidden> · </span>
                     {formatTxDate(tx.createdAt)}
@@ -722,7 +774,8 @@ export function WalletPage() {
                   </span>
                 </p>
               </li>
-            ))}
+              );
+            })}
           </ul>
         ) : null}
       </section>

@@ -71,6 +71,7 @@ import {
   consultPublicIdOf,
   playdatePublicIdOf,
   paymentPublicIdOf,
+  ledgerPublicIdOf,
   QUICK_VET_COST,
   SEEKER_ADVICE_COST,
   SEEKER_OWNER_SHARE,
@@ -4527,6 +4528,7 @@ export const dbService = {
       const reason = String(row.reason || '');
       return {
         id: Number(row.id),
+        publicId: ledgerPublicIdOf({ id: Number(row.id) }),
         currency,
         amount,
         direction,
