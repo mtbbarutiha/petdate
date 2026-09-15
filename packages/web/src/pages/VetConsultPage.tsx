@@ -4,6 +4,7 @@ import {
   Check,
   Circle,
   Clock,
+  GraduationCap,
   MessageCircle,
   PawPrint,
   Stethoscope,
@@ -982,7 +983,11 @@ export function VetConsultPage() {
       <section className="pepito-vet-connect-panel" aria-label={t('consultDesk.quickConnectAria')}>
         <div className="pepito-vet-consult-cost" role="status">
           <span className="pepito-vet-cost-mark" aria-hidden>
-            <Stethoscope size={20} strokeWidth={2} />
+            {noOnlineVets ? (
+              <GraduationCap size={20} strokeWidth={2} />
+            ) : (
+              <Stethoscope size={20} strokeWidth={2} />
+            )}
           </span>
           <div>
             <strong>{t('consultDesk.connectCostTitle')}</strong>
@@ -990,7 +995,7 @@ export function VetConsultPage() {
               {onlineVetsLoading
                 ? t('consultDesk.connecting')
                 : noOnlineVets
-                  ? t('consultDesk.aiLeilaFree')
+                  ? t('consultDesk.aiSaraFree')
                   : t('consultDesk.deductBeforeSend', { cost: n(connectCost) })}
             </span>
           </div>
@@ -1025,7 +1030,7 @@ export function VetConsultPage() {
               testId="vet-ai-quick-connect"
               busy={phase === 'sending' && busyMode === 'ai'}
               disabled={phase === 'sending' || petsLoading || onlineVetsLoading}
-              label={t('consultDesk.aiLeilaFree')}
+              label={t('consultDesk.aiSaraFree')}
               busyLabel={t('consultDesk.sending')}
               badge={t('consultDesk.aiBadge')}
               onClick={() => void onConnect('ai')}

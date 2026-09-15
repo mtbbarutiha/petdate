@@ -1061,6 +1061,8 @@ export const fa: Dict = {
     aiBadge: 'Ai',
     aiLeilaFree: 'مشورت با فرانک احمدی (رایگان)',
     aiLeilaShort: 'مشورت با فرانک احمدی',
+    aiSaraFree: 'مشورت با سارا نوری (رایگان)',
+    aiSaraShort: 'مشورت با سارا نوری',
     realTrainer: 'مشورت با مربی حقیقی',
     realDoctor: 'مشورت با پزشک حقیقی',
     sending: 'در حال ارسال…',

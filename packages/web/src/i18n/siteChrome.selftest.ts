@@ -64,6 +64,8 @@ const REQUIRED = [
   'consultDesk.online',
   'consultDesk.offline',
   'consultDesk.credVerified',
+  'consultDesk.aiLeilaFree',
+  'consultDesk.aiSaraFree',
   'chats.closed',
   'chats.ended',
   'chats.expired',
@@ -134,14 +136,19 @@ assert.match(trainer, /consultDesk\.statusClosed/, 'trainer desk closed badge is
 assert.match(trainer, /consultDesk\.statusExpired/, 'trainer desk expired badge is translated');
 assert.match(trainer, /consultDesk\.chatClosedHint/, 'trainer closed-chat hint is translated');
 assert.match(trainer, /consultDesk\.titleTrainer/, 'trainer title is translated');
+assert.match(trainer, /consultDesk\.aiLeilaFree/, 'trainer AI CTA stays Faranak');
 assert.match(trainer, /dir=\{dir\}/, 'trainer desk follows language direction');
 assert.doesNotMatch(trainer, /['"]Closed['"]|['"]Expired['"]/, 'trainer desk must not hardcode EN badges');
 
 const vet = readFileSync(join(root, 'pages/VetConsultPage.tsx'), 'utf8');
 assert.match(vet, /consultDesk\.statusClosed/, 'vet desk closed badge is translated');
 assert.match(vet, /consultDesk\.titleVet/, 'vet title is translated');
+assert.match(vet, /consultDesk\.aiSaraFree/, 'vet free AI line is Sara');
 assert.match(vet, /credentialChromeLabel/, 'vet credential pill is translated');
 assert.match(vet, /vet-credential-upload/, 'vet credential upload control is present');
+assert.match(vet, /GraduationCap/, 'vet cost-mark can show GraduationCap on the free AI line');
+assert.equal(tFa('consultDesk.aiSaraFree'), 'مشورت با سارا نوری (رایگان)');
+assert.equal(tEn('consultDesk.aiLeilaFree'), 'Consult Faranak Ahmadi (free)');
 
 const chats = readFileSync(join(root, 'pages/ChatPage.tsx'), 'utf8');
 assert.match(chats, /chats\.closed/, 'inbox closed badge uses chats.closed');
