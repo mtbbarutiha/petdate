@@ -212,6 +212,9 @@ npx tsx "$ROOT/packages/web/src/lib/publicRoutes.selftest.ts"
 echo "==> selftest: web vet credential upload on admission card"
 npx tsx "$ROOT/packages/web/src/pages/vetCredentialUpload.selftest.ts"
 
+echo "==> selftest: web consult cost-mark icon + Sara/Faranak copy"
+npx tsx "$ROOT/packages/web/src/pages/consultCostMark.selftest.ts"
+
 echo "==> selftest: web invite referral persist + card wiring"
 npx tsx "$ROOT/packages/web/src/lib/referral.selftest.ts"
 npx tsx "$ROOT/packages/web/src/components/inviteFriends.selftest.ts"

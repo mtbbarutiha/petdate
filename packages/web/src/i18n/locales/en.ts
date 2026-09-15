@@ -1061,6 +1061,8 @@ export const en: Dict = {
     aiBadge: 'Ai',
     aiLeilaFree: 'Consult Faranak Ahmadi (free)',
     aiLeilaShort: 'Consult Faranak Ahmadi',
+    aiSaraFree: 'Consult Sara Noori (free)',
+    aiSaraShort: 'Consult Sara Noori',
     realTrainer: 'Consult a real coach',
     realDoctor: 'Consult a real doctor',
     sending: 'Sending…',
