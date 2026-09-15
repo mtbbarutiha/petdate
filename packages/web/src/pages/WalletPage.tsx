@@ -579,25 +579,34 @@ export function WalletPage() {
           </div>
         </div>
         <div className="pepito-wallet-tg-body pepito-wallet-convert-form">
-          <label>
+          <label className="pepito-wallet-convert-field">
             <span>از</span>
-            <select value={convertFrom} onChange={(e) => setConvertFrom(e.target.value as typeof convertFrom)}>
+            <select
+              className="pepito-wallet-convert-control"
+              value={convertFrom}
+              onChange={(e) => setConvertFrom(e.target.value as typeof convertFrom)}
+            >
               <option value="toman">تومان</option>
               <option value="coins">سکه</option>
               <option value="stars">ستاره</option>
             </select>
           </label>
-          <label>
+          <label className="pepito-wallet-convert-field">
             <span>به</span>
-            <select value={convertTo} onChange={(e) => setConvertTo(e.target.value as typeof convertTo)}>
+            <select
+              className="pepito-wallet-convert-control"
+              value={convertTo}
+              onChange={(e) => setConvertTo(e.target.value as typeof convertTo)}
+            >
               <option value="coins">سکه</option>
               <option value="toman">تومان</option>
               <option value="stars">ستاره</option>
             </select>
           </label>
-          <label>
+          <label className="pepito-wallet-convert-field pepito-wallet-convert-field--amount">
             <span>مقدار</span>
             <input
+              className="pepito-wallet-convert-control"
               inputMode="numeric"
               value={convertAmount}
               onChange={(e) => setConvertAmount(e.target.value)}
@@ -605,7 +614,12 @@ export function WalletPage() {
               dir="ltr"
             />
           </label>
-          <button type="button" className="pepito-btn button-1" disabled={convertBusy} onClick={() => void onConvert()}>
+          <button
+            type="button"
+            className="pepito-btn button-1 pepito-wallet-convert-submit"
+            disabled={convertBusy}
+            onClick={() => void onConvert()}
+          >
             {convertBusy ? 'در حال تبدیل…' : 'تبدیل'}
           </button>
         </div>
