@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   CalendarDays,
   Coins,
@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import {
   EVENT_CREATE_COST,
+  buyCoinsPath,
   EVENT_GAME_TYPES,
   IRAN_PROVINCES,
   citiesForProvince,
@@ -20,6 +21,7 @@ import {
   type GameStatus,
   type GameType,
 } from '@petdate/shared';
+import { appConfirm } from '../components/AppDialog';
 import { LandingChrome } from '../components/LandingChrome';
 import { PageHelpLink } from '../components/PageHelpLink';
 import { useAppToast } from '../hooks/useAppToast';
@@ -61,6 +63,7 @@ function emptyForm() {
 
 export function GamesPage() {
   const { t, dir } = useI18n();
+  const navigate = useNavigate();
   const { isLoggedIn, user } = useAuthStore();
   const { toastSuccess, toastError } = useAppToast();
   const [games, setGames] = useState<Game[]>([]);
@@ -100,13 +103,30 @@ export function GamesPage() {
       toastError(t('games.loginToJoin'));
       return;
     }
+    const fee = Math.max(0, Math.floor(Number(game.joinFeeCoins) || 0));
+    if (fee > 0) {
+      const bal = user.coins ?? 0;
+      if (bal < fee) {
+        toastError(t('games.joinNeedCoins') || `برای پیوستن به ${fee} سکه نیاز داری`);
+        navigate(buyCoinsPath({ need: fee, next: '/games' }));
+        return;
+      }
+      const ok = await appConfirm(
+        `مطمئنی می‌خوای ${fee.toLocaleString('fa-IR')} سکه برای پیوستن به این ایونت کسر بشه؟`,
+      );
+      if (!ok) return;
+    }
     setJoiningId(game.id);
     try {
       await joinGame(game.id, user.id);
       toastSuccess(t('games.joinOk'));
       await load();
     } catch (err) {
-      toastError(err instanceof Error ? err.message : t('games.joinFail'));
+      const msg = err instanceof Error ? err.message : t('games.joinFail');
+      toastError(msg);
+      if (/سکه|coins|موجودی/i.test(msg)) {
+        navigate(buyCoinsPath({ need: fee || 1, next: '/games' }));
+      }
     } finally {
       setJoiningId(null);
     }
@@ -142,8 +162,13 @@ export function GamesPage() {
     const balance = user.coins ?? 0;
     if (balance < EVENT_CREATE_COST) {
       toastError(t('games.createNeedCoins'));
+      navigate(buyCoinsPath({ need: EVENT_CREATE_COST, next: '/games' }));
       return;
     }
+    const createOk = await appConfirm(
+      `مطمئنی می‌خوای ${EVENT_CREATE_COST.toLocaleString('fa-IR')} سکه برای ساخت ایونت کسر بشه؟`,
+    );
+    if (!createOk) return;
     const maxPlayers = Number(form.maxPlayers);
     const joinFeeCoins = Number(form.joinFeeCoins);
     setCreating(true);

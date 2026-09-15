@@ -1,4 +1,5 @@
 import type { Context } from 'grammy';
+import { InlineKeyboard } from 'grammy';
 import { PET_SPECIES_LABELS, PLAYDATE_REQUEST_COST, toPersianDigits } from '@petdate/shared';
 import {
   findPlaymates,
@@ -215,7 +216,7 @@ export async function handleExploreForPet(ctx: Context, petId: number | 'all'): 
     if (balance < PLAYDATE_REQUEST_COST) {
       const msg = [
         `برای درخواست همبازی حداقل ${formatCoins(PLAYDATE_REQUEST_COST)} سکه لازم داری.`,
-        `موجودی: ${formatCoins(balance)} — از منو «🪙 سکه» بگیر.`,
+        `موجودی: ${formatCoins(balance)} — از منو «🪙 سکه» بگیر یا دکمه خرید سکه را بزن.`,
       ].join('\n');
       try {
         await ctx.answerCallbackQuery({ text: 'سکه کافی نیست', show_alert: true });
@@ -223,7 +224,7 @@ export async function handleExploreForPet(ctx: Context, petId: number | 'all'): 
         /* ignore */
       }
       await editOrReply(ctx, msg, {
-        reply_markup: explorePickMyPetKeyboard(myPets),
+        reply_markup: new InlineKeyboard().text('🪙 خرید سکه', 'coins:back'),
       });
       return;
     }
@@ -267,9 +268,9 @@ export async function handleExploreForPet(ctx: Context, petId: number | 'all'): 
             parsed.message,
             '',
             `موجودی: ${formatCoins(bal)} — حداقل ${formatCoins(cost)} سکه لازم است.`,
-            'از منو «🪙 سکه» بگیر.',
+            'از منو «🪙 سکه» بگیر یا دکمه خرید سکه را بزن.',
           ].join('\n'),
-          { reply_markup: explorePickMyPetKeyboard(myPets) }
+          { reply_markup: new InlineKeyboard().text('🪙 خرید سکه', 'coins:back') }
         );
         return;
       }

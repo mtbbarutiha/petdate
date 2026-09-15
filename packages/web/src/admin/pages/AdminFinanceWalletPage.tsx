@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { adminFetch, formatNumFa, formatTomanFa } from '../api';
 import { formatAdminFaDateTime } from '../JalaliDateSelect';
 import { AdminDonutChart } from '../FinanceCharts';
 import { tr } from '../../i18n';
 
 type Wallet = {
-  balances: { coins: number; toman: number; ton: number; stars: number };
+  balances: { coins: number; toman: number; stars: number };
   byCurrency: Record<string, { credits: number; debits: number; creditCount: number; debitCount: number }>;
   recent: Array<{
     id: number; userId: number | null; currency: string; amount: number;
@@ -15,7 +16,7 @@ type Wallet = {
 };
 
 const LABELS: Record<string, string> = {
-  toman: 'تومان', coins: 'سکه', stars: 'Stars', ton: 'TON',
+  toman: 'تومان', coins: 'سکه', stars: 'Stars',
 };
 const COLORS = ['#0f766e', '#5c4d91', '#c2410c', '#0369a1'];
 
@@ -41,7 +42,7 @@ export function AdminFinanceWalletPage() {
       <header className="admin-header">
         <div>
           <h1>{tr('دفتر کیف پول')}</h1>
-          <p>{tr('خلاصه اعتبار / بدهکار در ارزهای تومان، سکه، Stars و TON')}</p>
+          <p>{tr('خلاصه اعتبار / بدهکار در ارزهای تومان، سکه و Stars')}</p>
         </div>
         <button type="button" className="admin-btn admin-btn--ghost" onClick={() => void load()}>{tr('بروزرسانی')}</button>
       </header>
@@ -50,6 +51,14 @@ export function AdminFinanceWalletPage() {
 
       {data ? (
         <>
+
+          <section className="admin-card" style={{ marginBottom: 16 }}>
+            <div className="admin-card-head"><h2>{tr('نرخ تبدیل ارز')}</h2></div>
+            <p className="admin-muted">{tr('نرخ خرید و فروش سکه را از تنظیمات پلتفرم تغییر بده — پیش‌فرض خرید ۲٬۰۰۰ و فروش ۱٬۰۰۰ تومان.')}</p>
+            <p>
+              <Link className="admin-btn" to="/admin/settings">{tr('رفتن به تنظیمات نرخ سکه')}</Link>
+            </p>
+          </section>
           <div className="admin-stats admin-stats--dense">
             <div className="admin-stat admin-stat--mint">
               <div><div className="admin-stat-value">{formatTomanFa(data.balances.toman)}</div><div className="admin-stat-label">{tr('موجودی تومان کاربران')}</div></div>
@@ -59,9 +68,6 @@ export function AdminFinanceWalletPage() {
             </div>
             <div className="admin-stat admin-stat--orange">
               <div><div className="admin-stat-value">{formatNumFa(data.balances.stars)}</div><div className="admin-stat-label">Stars</div></div>
-            </div>
-            <div className="admin-stat admin-stat--sky">
-              <div><div className="admin-stat-value">{formatNumFa(data.balances.ton)}</div><div className="admin-stat-label">TON</div></div>
             </div>
           </div>
 

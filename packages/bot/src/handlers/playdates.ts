@@ -1,5 +1,5 @@
 import type { Api, Context } from 'grammy';
-import { InputFile } from 'grammy';
+import { InputFile, InlineKeyboard } from 'grammy';
 import type { PetProfile } from '@petdate/shared';
 import { isPendingRequestExpired, isPhotoApproved, PLAYDATE_REQUEST_TTL_MS } from '@petdate/shared';
 import {
@@ -401,7 +401,7 @@ async function sendPlaydateNow(
               /* ignore */
             }
           }
-          await ctx.reply(msg);
+          await ctx.reply(msg, { reply_markup: new InlineKeyboard().text('🪙 خرید سکه', 'coins:back') });
           return null;
         }
       } catch {

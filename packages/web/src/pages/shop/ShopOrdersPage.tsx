@@ -23,7 +23,6 @@ function payLabel(o: MyShopOrder): string {
   if (cur === 'stars_xtr') return `⭐ ${Number(amt).toLocaleString('fa-IR')} Stars تلگرام`;
   if (cur === 'stars') return `⭐ ${Number(amt).toLocaleString('fa-IR')} ستاره`;
   if (cur === 'coins') return `🪙 ${Number(amt).toLocaleString('fa-IR')} سکه`;
-  if (cur === 'ton') return `◆ ${Number(amt).toLocaleString('fa-IR')} TON`;
   return formatToman(o.totalToman);
 }
 

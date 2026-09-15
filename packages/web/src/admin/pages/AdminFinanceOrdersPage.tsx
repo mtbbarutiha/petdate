@@ -21,7 +21,7 @@ type OrdersRes = {
 };
 
 const CUR: Record<string, string> = {
-  toman: 'تومان', coins: 'سکه', stars: 'Stars', ton: 'TON',
+  toman: 'تومان', coins: 'سکه', stars: 'Stars',
 };
 
 export function AdminFinanceOrdersPage() {

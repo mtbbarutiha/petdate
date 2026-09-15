@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import multer from 'multer';
-import { COIN_PRICE_TOMAN, STAR_PRICE_TOMAN, tomanToShopCoins } from '@petdate/shared';
+import { STAR_PRICE_TOMAN, tomanToShopCoins, parseOrderIdFromPublicId } from '@petdate/shared';
+import { getCoinPriceToman } from '../economy-rates';
 import { getUserFromBearer } from '../services/web-otp';
 import {
   checkoutShopWithCoins,
@@ -108,8 +109,8 @@ function publicProduct(p: ReturnType<typeof adminPlatform.getShopProduct>) {
     params: publicShopParams(p.params),
     description: p.description,
     featured: p.featured,
-    coins: tomanToShopCoins(p.priceToman),
-    coinPriceToman: COIN_PRICE_TOMAN,
+    coins: tomanToShopCoins(p.priceToman, getCoinPriceToman()),
+    coinPriceToman: getCoinPriceToman(),
     starPriceToman: STAR_PRICE_TOMAN,
   };
 }
@@ -118,8 +119,8 @@ function publicProduct(p: ReturnType<typeof adminPlatform.getShopProduct>) {
 shopRouter.get('/coin-rate', (_req, res) => {
   res.json({
     ok: true,
-    coinPriceToman: COIN_PRICE_TOMAN,
-    noteFa: `هر سکه ≈ ${COIN_PRICE_TOMAN.toLocaleString('fa-IR')} تومان در پرداخت فروشگاه`,
+    coinPriceToman: getCoinPriceToman(),
+    noteFa: `هر سکه ≈ ${getCoinPriceToman().toLocaleString('fa-IR')} تومان در پرداخت فروشگاه`,
   });
 });
 
@@ -128,7 +129,7 @@ shopRouter.get('/star-rate', (_req, res) => {
   res.json({
     ok: true,
     starPriceToman: STAR_PRICE_TOMAN,
-    coinPriceToman: COIN_PRICE_TOMAN,
+    coinPriceToman: getCoinPriceToman(),
     noteFa: `هر ستاره ≈ ${STAR_PRICE_TOMAN.toLocaleString('fa-IR')} تومان (کیف پول مشترک وب و ربات)`,
   });
 });
@@ -162,7 +163,7 @@ shopRouter.get('/categories', (req, res) => {
     ok: true,
     total: categories.length,
     categories,
-    coinPriceToman: COIN_PRICE_TOMAN,
+    coinPriceToman: getCoinPriceToman(),
     starPriceToman: STAR_PRICE_TOMAN,
   });
 });
@@ -205,7 +206,7 @@ shopRouter.get('/products', (req, res) => {
     offset,
     limit,
     products: page,
-    coinPriceToman: COIN_PRICE_TOMAN,
+    coinPriceToman: getCoinPriceToman(),
     starPriceToman: STAR_PRICE_TOMAN,
   });
 });
@@ -221,7 +222,7 @@ shopRouter.get('/products/:idOrSlug', (req, res) => {
     ok: true,
     product: publicProduct(product),
     category: category ?? null,
-    coinPriceToman: COIN_PRICE_TOMAN,
+    coinPriceToman: getCoinPriceToman(),
     starPriceToman: STAR_PRICE_TOMAN,
   });
 });
@@ -251,7 +252,7 @@ shopRouter.post('/quote-coins', (req, res) => {
     lines: quoted.lines,
     balance,
     canAfford: balance >= quoted.coins,
-    coinPriceToman: COIN_PRICE_TOMAN,
+    coinPriceToman: getCoinPriceToman(),
   });
 });
 
@@ -843,6 +844,7 @@ function publicShopOrder(o: ReturnType<typeof adminPlatform.getShopOrder>) {
   const items = Array.isArray(o.items) ? o.items : [];
   return {
     id: o.id,
+    /** شناسه فاکتور فروشگاه — PD-O##### (جدا از PD-R پرداخت) */
     publicId: o.publicId,
     status: o.status,
     totalToman: o.totalToman,
@@ -1071,9 +1073,13 @@ shopRouter.get('/my-orders', (req, res) => {
 shopRouter.get('/my-orders/:id', (req, res) => {
   const session = requireSession(req, res, 'برای دیدن سفارش وارد حساب شوید.');
   if (!session) return;
-  const id = Number(req.params.id);
+  const raw = String(req.params.id || '').trim();
+  let id = Number(raw);
   if (!Number.isFinite(id) || id <= 0) {
-    res.status(400).json({ ok: false, reason: 'bad_id', error: 'شناسه نامعتبر است.' });
+    id = parseOrderIdFromPublicId(raw) ?? NaN;
+  }
+  if (!Number.isFinite(id) || id <= 0) {
+    res.status(400).json({ ok: false, reason: 'bad_id', error: 'شناسه فاکتور نامعتبر است.' });
     return;
   }
   const order = adminPlatform.getShopOrder(id);

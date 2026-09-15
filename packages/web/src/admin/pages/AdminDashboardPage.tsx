@@ -68,7 +68,7 @@ type Dash = {
     vetConsultsOpen: number;
     shopOrders: number;
     shopRevenueToman: number;
-    walletTotals: { coins: number; toman: number; ton: number; stars: number };
+    walletTotals: { coins: number; toman: number; stars: number };
     paymentOrdersPending: number;
     botRelated: { chatMessages: number; openGames: number; errors24h: number };
   };
@@ -988,10 +988,6 @@ export function AdminDashboardPage() {
                   <li>
                     <span>{tr('تومان')}</span>
                     <strong>{formatNumFa(s.walletTotals.toman)}</strong>
-                  </li>
-                  <li>
-                    <span>TON</span>
-                    <strong>{formatNumFa(s.walletTotals.ton)}</strong>
                   </li>
                   <li>
                     <span>Stars</span>

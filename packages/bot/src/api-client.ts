@@ -110,7 +110,7 @@ export async function completeWebTelegramLink(data: {
   ok: true;
   user: User;
   merged: boolean;
-  wallet: { ton: number; stars: number; coins: number; toman: number };
+  wallet: { stars: number; coins: number; toman: number };
 }> {
   return request('/api/auth/telegram/link-complete', {
     method: 'POST',
@@ -983,7 +983,7 @@ export async function debitUserCoins(telegramId: string, amount: number): Promis
 
 export type WalletTransactionDto = {
   id: number;
-  currency: 'ton' | 'stars' | 'coins' | 'toman';
+  currency: 'stars' | 'coins' | 'toman';
   amount: number;
   direction: 'credit' | 'debit';
   reason: string;

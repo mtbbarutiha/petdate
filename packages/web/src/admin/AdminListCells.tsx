@@ -54,14 +54,12 @@ export function AdminWalletCell({
   coins = 0,
   toman = 0,
   stars = 0,
-  ton = 0,
   compact = false,
   onOpenCredit,
 }: {
   coins?: number | null;
   toman?: number | null;
   stars?: number | null;
-  ton?: number | null;
   /** Stacked label/value chips for dense tables (no overflow). */
   compact?: boolean;
   /** Optional: open «اعتبار» modal instead of a separate action button. */
@@ -71,7 +69,6 @@ export function AdminWalletCell({
     { key: 'coins', value: Number(coins) || 0, short: tr('سکه') },
     { key: 'toman', value: Number(toman) || 0, short: tr('تومان') },
     { key: 'stars', value: Number(stars) || 0, short: tr('ستاره') },
-    { key: 'ton', value: Number(ton) || 0, short: tr('تون') },
   ];
   const className = [
     'admin-wallet-grid',

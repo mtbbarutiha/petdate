@@ -610,12 +610,11 @@ adminRouter.patch('/users/:id', (req, res) => {
 
   const walletRaw = body.wallet;
   if (walletRaw && typeof walletRaw === 'object') {
-    const currencies: WalletCurrency[] = ['coins', 'toman', 'stars', 'ton'];
+    const currencies: WalletCurrency[] = ['coins', 'toman', 'stars'];
     const current = {
       coins: Number(user.coins) || 0,
       toman: Number(user.walletToman) || 0,
       stars: Number(user.walletStars) || 0,
-      ton: Number(user.walletTon) || 0,
     };
     for (const currency of currencies) {
       if (walletRaw[currency] === undefined || walletRaw[currency] === null || walletRaw[currency] === '') {
@@ -1497,6 +1496,8 @@ adminRouter.get('/settings', (_req, res) => {
     playdateFeeToman: '0',
     financeOpExMonthlyToman: '5000000',
     ga4MeasurementId: '',
+    coinPriceToman: '2000',
+    coinSellPriceToman: '1000',
   };
   res.json({ settings: { ...defaults, ...adminPlatform.getSettings() } });
 });
@@ -1506,6 +1507,12 @@ adminRouter.put('/settings', (req, res) => {
   if (!body || typeof body !== 'object') { res.status(400).json({ error: 'settings نامعتبر' }); return; }
   const patch: Record<string, string> = {};
   for (const [k, v] of Object.entries(body as Record<string, unknown>)) patch[k] = String(v ?? '');
+  if (patch.coinPriceToman != null || patch.coinSellPriceToman != null) {
+    const { normalizeEconomyRatePatch } = require('../economy-rates') as typeof import('../economy-rates');
+    const checked = normalizeEconomyRatePatch(patch);
+    if (!checked.ok) { res.status(400).json({ error: checked.error }); return; }
+    Object.assign(patch, checked.patch);
+  }
   res.json({ settings: adminPlatform.setSettings(patch) });
 });
 
@@ -2425,9 +2432,9 @@ adminRouter.post('/wallet/credit', (req, res) => {
   const userId = Number(req.body?.userId);
   const currencyRaw = String(req.body?.currency ?? '').trim().toLowerCase();
   const amount = Number(req.body?.amount);
-  const currency = currencyRaw === 'ton' || currencyRaw === 'stars' || currencyRaw === 'coins' || currencyRaw === 'toman' ? currencyRaw : null;
+  const currency = currencyRaw === 'stars' || currencyRaw === 'coins' || currencyRaw === 'toman' ? currencyRaw : null;
   if (!Number.isFinite(userId) || userId <= 0) { res.status(400).json({ error: 'userId نامعتبر است' }); return; }
-  if (!currency) { res.status(400).json({ error: 'currency باید ton | stars | coins | toman باشد' }); return; }
+  if (!currency) { res.status(400).json({ error: 'currency باید stars | coins | toman باشد' }); return; }
   if (!Number.isFinite(amount) || amount === 0) { res.status(400).json({ error: 'amount نامعتبر است' }); return; }
   const result = dbService.creditWallet(userId, currency, amount, {
     reason: amount > 0 ? 'واریز ادمین' : 'برداشت ادمین',

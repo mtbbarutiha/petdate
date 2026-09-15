@@ -67,7 +67,6 @@ type EditForm = {
   coins: string;
   toman: string;
   stars: string;
-  ton: string;
   verificationStatus: VerificationStatus;
   isActive: boolean;
 };
@@ -94,7 +93,6 @@ function formFromUser(user: User): EditForm {
     coins: String(Number(user.coins) || 0),
     toman: String(Number(user.walletToman) || 0),
     stars: String(Number(user.walletStars) || 0),
-    ton: String(Number(user.walletTon) || 0),
     verificationStatus:
       user.verificationStatus && VERIFICATION_STATUSES.includes(user.verificationStatus)
         ? user.verificationStatus
@@ -213,7 +211,6 @@ export function AdminUsersPage() {
       coins: Number(editForm.coins),
       toman: Number(editForm.toman),
       stars: Number(editForm.stars),
-      ton: Number(editForm.ton),
     };
     for (const [key, val] of Object.entries(wallet)) {
       if (!Number.isFinite(val) || val < 0) {
@@ -491,7 +488,6 @@ export function AdminUsersPage() {
                       coins={u.coins}
                       toman={u.walletToman}
                       stars={u.walletStars}
-                      ton={u.walletTon}
                       onOpenCredit={
                         isDeletedUserShell(u)
                           ? undefined
@@ -786,17 +782,6 @@ export function AdminUsersPage() {
                   onChange={(e) => setEditForm({ ...editForm, stars: e.target.value })}
                 />
               </div>
-              <div className="form-group">
-                <label className="form-label">{tr('تون')}</label>
-                <input
-                  className="form-input"
-                  type="number"
-                  min={0}
-                  dir="ltr"
-                  value={editForm.ton}
-                  onChange={(e) => setEditForm({ ...editForm, ton: e.target.value })}
-                />
-              </div>
               <div className="form-group admin-form-full">
                 <label className="form-label">{tr('بیو')}</label>
                 <textarea
@@ -878,7 +863,7 @@ export function AdminUsersPage() {
             <label>
               <span className="form-label">{tr('ارز')}</span>
               <select className="admin-select" value={credit.currency} onChange={(e) => setCredit({ ...credit, currency: e.target.value })}>
-                <option value="toman">{tr('تومان')}</option><option value="coins">{tr('سکه')}</option><option value="stars">Stars</option><option value="ton">TON</option>
+                <option value="toman">{tr('تومان')}</option><option value="coins">{tr('سکه')}</option><option value="stars">Stars</option>
               </select>
             </label>
             <label>

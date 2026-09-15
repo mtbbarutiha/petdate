@@ -50,7 +50,6 @@ export type PeerProfileSource = {
   lng?: number | null;
   locationUpdatedAt?: string | null;
   coins?: number | null;
-  walletTon?: number | null;
   walletStars?: number | null;
   walletToman?: number | null;
   wallet?: unknown;
@@ -94,7 +93,6 @@ const SENSITIVE_KEYS = [
   'lng',
   'locationUpdatedAt',
   'coins',
-  'walletTon',
   'walletStars',
   'walletToman',
   'wallet',

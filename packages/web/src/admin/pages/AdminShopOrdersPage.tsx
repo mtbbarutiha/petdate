@@ -57,7 +57,6 @@ function payLabel(o: Order): string {
   if (cur === 'stars_xtr') return `⭐ ${formatNumFa(amt)}${tr(' Stars تلگرام')}`;
   if (cur === 'stars') return `⭐ ${formatNumFa(amt)}${tr(' ستاره کیف‌پول')}`;
   if (cur === 'coins') return `🪙 ${formatNumFa(amt)}${tr(' سکه')}`;
-  if (cur === 'ton') return `◆ ${formatNumFa(amt)} TON`;
   return formatTomanFa(amt);
 }
 
