@@ -3,7 +3,6 @@
 """PetDate investor feasibility PDF (FA, RTL) — events + SS 23% + tax 25% + screenshots."""
 from __future__ import annotations
 
-import math
 import shutil
 from pathlib import Path
 
@@ -75,8 +74,9 @@ BUFFER = CONTINGENCY  # alias for narrative/tables
 CAPITAL_NEED = CAPITAL_BASE  # نیاز قبل از بافر گرد کردن
 ASK_MONTHS = CAPITAL_ASK / BURN  # ≈ ۱۴٫۲ ماه پوشش کل (شامل راه‌اندازی)
 RUNWAY_COVER_MONTHS = (CAPITAL_ASK - SETUP_TOTAL) / BURN  # ≈ ۱۲٫۱ ماه عملیات
-DOC_VERSION = "۱٫۵"
-DOC_VERSION_LATIN = "1.5"
+DOC_VERSION = "۱٫۷"
+DOC_VERSION_LATIN = "1.7"
+POST_RAMP_GROWTH_M = 35  # میلیون تومان رشد ماهانه درآمد پس از ماه ۱۲
 
 # ── اقتصاد سکه و ایونت ────────────────────────────────────────────────
 COIN_TOMAN = 2_000
@@ -160,30 +160,93 @@ def _be_from_ramp(ramp_m: list[int], burn: int) -> int:
     return len(ramp_m)
 
 
+def _cashflow_series(
+    ramp_m: list[int],
+    burn: int,
+    capital: int,
+    growth_m: int = POST_RAMP_GROWTH_M,
+    max_months: int = 60,
+) -> list[dict]:
+    """Monthly revenue / CF / cumulative CF starting from −capital."""
+    rows: list[dict] = []
+    cum = -float(capital)
+    last = float(ramp_m[-1])
+    for i in range(1, max_months + 1):
+        if i <= len(ramp_m):
+            rev_m = float(ramp_m[i - 1])
+        else:
+            last = last + growth_m
+            rev_m = last
+        cf = rev_m * 1_000_000 - burn
+        cum += cf
+        rows.append(
+            {
+                "month": i,
+                "rev_m": rev_m,
+                "rev": rev_m * 1_000_000,
+                "cf": cf,
+                "cum": cum,
+            }
+        )
+    return rows
+
+
 def _payback_from_ramp(
     ramp_m: list[int],
     burn: int,
     capital: int,
-    growth_m: int = 35,
+    growth_m: int = POST_RAMP_GROWTH_M,
     max_months: int = 48,
 ) -> int:
-    """Cumulative CF from -capital; after ramp, +growth_m M toman/mo on revenue."""
-    cum = -float(capital)
-    last = ramp_m[-1]
-    for i in range(1, max_months + 1):
-        if i <= len(ramp_m):
-            v = ramp_m[i - 1]
-        else:
-            last = last + growth_m
-            v = last
-        cum += v * 1_000_000 - burn
-        if cum >= 0:
-            return i
+    """First month cumulative CF from −capital reaches ≥ 0."""
+    for row in _cashflow_series(ramp_m, burn, capital, growth_m, max_months):
+        if row["cum"] >= 0:
+            return row["month"]
     return max_months
 
 
+def _yearly_outlook(
+    ramp_m: list[int],
+    burn: int,
+    capital: int,
+    growth_m: int = POST_RAMP_GROWTH_M,
+    years: int = 5,
+) -> list[dict]:
+    """Calendar-year aggregates for investor multi-year chart (years 1…N)."""
+    series = _cashflow_series(ramp_m, burn, capital, growth_m, years * 12)
+    out: list[dict] = []
+    for y in range(1, years + 1):
+        chunk = series[(y - 1) * 12 : y * 12]
+        rev = sum(r["rev"] for r in chunk)
+        profit_pre = sum(r["cf"] for r in chunk)
+        # مالیات فقط روی سود ماهانه مثبت (ساده برای pitch)
+        tax = sum(
+            max(0.0, r["cf"]) * CORPORATE_TAX_RATE for r in chunk
+        )
+        profit_after = profit_pre - tax
+        cum_end = chunk[-1]["cum"]
+        # چندبرابر بازگشت: ۱ + cum/ask وقتی cum≥۰؛ قبل از payback نسبت بازیابی اصل
+        recovered = max(0.0, capital + cum_end)  # اصل بازیابی‌شده (۰ تا capital+)
+        recovery_pct = min(1.0, recovered / capital) if cum_end < 0 else 1.0
+        roi_multiple = (capital + cum_end) / capital  # ۱.۰ در نقطه payback
+        out.append(
+            {
+                "year": y,
+                "rev": rev,
+                "profit_pre": profit_pre,
+                "profit_after": profit_after,
+                "cum": cum_end,
+                "recovery_pct": recovery_pct,
+                "roi_multiple": roi_multiple,
+            }
+        )
+    return out
+
+
 BE_BASE = _be_from_ramp(BASE_REV_M, BURN)
+CF_SERIES = _cashflow_series(BASE_REV_M, BURN, CAPITAL_ASK)
 PB_BASE = _payback_from_ramp(BASE_REV_M, BURN, CAPITAL_ASK)
+YEARLY = _yearly_outlook(BASE_REV_M, BURN, CAPITAL_ASK, years=5)
 SCENARIOS["پایه"]["be"] = BE_BASE
 SCENARIOS["پایه"]["pb"] = PB_BASE
 # حساسیت: بدبینانه/خوش‌بینانه — تقریبی نسبت به پایه
@@ -233,57 +296,138 @@ def uri(path: Path) -> str:
     return path.resolve().as_uri()
 
 
-# ── SVG charts ─────────────────────────────────────────────────────────
-def donut_chart(
+# ── Charts (PNG for WeasyPrint — SVG arcs clip badly under RTL) ────────
+CHARTS_DIR = ROOT / "charts"
+CHARTS_DIR.mkdir(parents=True, exist_ok=True)
+
+try:
+    import arabic_reshaper
+
+    def fa(t: str) -> str:
+        # Noto + Matplotlib Agg: reshape only (python-bidi reverses glyphs here).
+        return arabic_reshaper.reshape(t)
+except Exception:  # pragma: no cover
+
+    def fa(t: str) -> str:
+        return t
+
+
+def _mpl_setup() -> None:
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    plt.rcParams.update(
+        {
+            "font.family": ["Noto Sans Arabic", "DejaVu Sans"],
+            "axes.unicode_minus": False,
+            "figure.facecolor": "#ffffff",
+            "savefig.facecolor": "#ffffff",
+            "savefig.bbox": "tight",
+            "savefig.pad_inches": 0.08,
+        }
+    )
+
+
+def _save_donut_png(
     parts: list[tuple[str, int, str]],
     center_top: str,
     center_bot: str,
-    size: int = 210,
-    show_legs: bool = True,
-    compact_legs: bool = False,
+    out_name: str,
+    *,
+    fig_size: tuple[float, float] = (3.55, 3.55),
+) -> Path:
+    """Donut without on-slice labels (legend is HTML) — avoids overlap/clip."""
+    _mpl_setup()
+    import matplotlib.pyplot as plt
+
+    values = [v for _, v, _ in parts]
+    colors = [c for _, _, c in parts]
+    total = sum(values) or 1
+    # Tiny slices (e.g. buffer ~0.7%) need a slight explode so they stay visible.
+    explode = tuple(0.045 if (v / total) < 0.03 else 0.012 for v in values)
+
+    fig, ax = plt.subplots(figsize=fig_size, dpi=160)
+    wedges, _ = ax.pie(
+        values,
+        colors=colors,
+        startangle=90,
+        explode=explode,
+        wedgeprops=dict(width=0.42, edgecolor="#ffffff", linewidth=1.6),
+    )
+    ax.set_aspect("equal")
+    # Center hole labels (use LTR digits for clarity inside the ring)
+    ax.text(
+        0,
+        0.12,
+        fa(center_top),
+        ha="center",
+        va="center",
+        fontsize=12,
+        fontweight="bold",
+        color=NAVY,
+        fontfamily="Noto Sans Arabic",
+    )
+    ax.text(
+        0,
+        -0.14,
+        center_bot,
+        ha="center",
+        va="center",
+        fontsize=13,
+        fontweight="bold",
+        color=TEAL,
+        fontfamily="DejaVu Sans",
+    )
+    ax.set_xlim(-1.35, 1.35)
+    ax.set_ylim(-1.35, 1.35)
+    out = CHARTS_DIR / out_name
+    fig.savefig(out, dpi=160)
+    plt.close(fig)
+    return out
+
+
+def _legs_html(
+    parts: list[tuple[str, int, str]],
+    *,
+    compact: bool = False,
 ) -> str:
     total = sum(v for _, v, _ in parts) or 1
-    cx = cy = size / 2
-    r = size * 0.40
-    ri = size * 0.22
-    acc = 0.0
-    paths: list[str] = []
     legs: list[str] = []
     for label, val, color in parts:
-        frac = val / total
-        start = acc * 2 * math.pi - math.pi / 2
-        acc += frac
-        end = acc * 2 * math.pi - math.pi / 2
-        large = 1 if frac > 0.5 else 0
-        x1, y1 = cx + r * math.cos(start), cy + r * math.sin(start)
-        x2, y2 = cx + r * math.cos(end), cy + r * math.sin(end)
-        xi1, yi1 = cx + ri * math.cos(end), cy + ri * math.sin(end)
-        xi2, yi2 = cx + ri * math.cos(start), cy + ri * math.sin(start)
-        paths.append(
-            f'<path d="M{x1:.2f},{y1:.2f} A{r},{r} 0 {large} 1 {x2:.2f},{y2:.2f} '
-            f'L{xi1:.2f},{yi1:.2f} A{ri},{ri} 0 {large} 0 {xi2:.2f},{yi2:.2f} Z" fill="{color}"/>'
-        )
-        if compact_legs:
+        pct = val / total * 100
+        if compact:
             legs.append(
                 f'<div class="leg"><span style="background:{color}"></span>'
-                f"<b>{label}</b> <em>({frac * 100:.0f}٪)</em></div>"
+                f"<b>{label}</b> <em>({pct:.0f}٪)</em></div>"
             )
         else:
             legs.append(
                 f'<div class="leg"><span style="background:{color}"></span>'
                 f"<b>{label}</b> · {fmt(val)} "
-                f'<em>({frac * 100:.0f}٪)</em></div>'
+                f'<em>({pct:.0f}٪)</em></div>'
             )
-    legs_html = ('<div class="legs">' + "".join(legs) + "</div>") if show_legs else ""
+    return '<div class="legs" dir="rtl">' + "".join(legs) + "</div>"
+
+
+def donut_chart(
+    parts: list[tuple[str, int, str]],
+    center_top: str,
+    center_bot: str,
+    out_name: str,
+    *,
+    compact_legs: bool = False,
+    img_max: int = 200,
+) -> str:
+    png = _save_donut_png(parts, center_top, center_bot, out_name)
     return (
         f'<div class="chart-wrap">'
-        f'<svg width="{size}" height="{size}" viewBox="0 0 {size} {size}">'
-        + "".join(paths)
-        + f'<circle cx="{cx}" cy="{cy}" r="{ri - 2}" fill="#fff"/>'
-        + f'<text x="{cx}" y="{cy - 6}" text-anchor="middle" font-size="11" fill="{NAVY}" font-weight="700">{center_top}</text>'
-        + f'<text x="{cx}" y="{cy + 12}" text-anchor="middle" font-size="12" fill="{TEAL}" font-weight="700">{center_bot}</text>'
-        + "</svg>"
-        + legs_html
+        f'<div class="donut-frame" dir="ltr">'
+        f'<img class="donut" src="{uri(png)}" width="{img_max}" height="{img_max}" '
+        f'alt="" style="max-width:{img_max}px;width:100%;height:auto"/>'
+        f"</div>"
+        + _legs_html(parts, compact=compact_legs)
         + "</div>"
     )
 
@@ -300,6 +444,8 @@ def burn_pie() -> str:
         ],
         "برن",
         f"{BURN / 1_000_000:.1f}M".replace(".", "٫"),
+        "burn_pie.png",
+        img_max=200,
     )
 
 
@@ -312,9 +458,9 @@ def use_of_funds_pie() -> str:
         ],
         "سرمایه",
         "۱۰B",
-        size=168,
-        show_legs=True,
+        "use_of_funds.png",
         compact_legs=True,
+        img_max=176,
     )
 
 
@@ -339,17 +485,18 @@ def revenue_mix_bars(s: dict) -> str:
 
 
 def rev_ramp_svg() -> str:
+    """Bar ramp as LTR SVG (safe) with burn label on the right — no overlap."""
     burn_m = BURN / 1_000_000
     vals = BASE_REV_M
-    w, h = 520, 168
-    pad_l, pad_r, pad_t, pad_b = 28, 12, 18, 28
+    w, h = 540, 200
+    pad_l, pad_r, pad_t, pad_b = 36, 78, 28, 32
     plot_w = w - pad_l - pad_r
     plot_h = h - pad_t - pad_b
-    mx = max(max(vals), burn_m) * 1.08
+    mx = max(max(vals), burn_m) * 1.12
     n = len(vals)
-    gap = 4
+    gap = 5
     bw = (plot_w - gap * (n - 1)) / n
-    bars = []
+    bars: list[str] = []
     for i, v in enumerate(vals):
         x = pad_l + i * (bw + gap)
         bh = v / mx * plot_h
@@ -358,22 +505,256 @@ def rev_ramp_svg() -> str:
         bars.append(
             f'<rect x="{x:.1f}" y="{y:.1f}" width="{bw:.1f}" height="{bh:.1f}" '
             f'rx="3" fill="{color}"/>'
-            f'<text x="{x + bw / 2:.1f}" y="{h - 8}" text-anchor="middle" '
-            f'font-size="7.5" fill="{SLATE}">M{i + 1}</text>'
+            f'<text x="{x + bw / 2:.1f}" y="{h - 10}" text-anchor="middle" '
+            f'font-size="7.5" fill="{SLATE}" font-family="DejaVu Sans">M{i + 1}</text>'
         )
-        if i in (0, 5, 9, 11) or v >= burn_m and (i == 0 or vals[i - 1] < burn_m):
+        label_here = i in (0, 5, 9, 11) or (
+            v >= burn_m and (i == 0 or vals[i - 1] < burn_m)
+        )
+        if label_here:
             bars.append(
-                f'<text x="{x + bw / 2:.1f}" y="{y - 3:.1f}" text-anchor="middle" '
-                f'font-size="7" fill="{NAVY}" font-family="DejaVu Sans">{int(v)}</text>'
+                f'<text x="{x + bw / 2:.1f}" y="{y - 5:.1f}" text-anchor="middle" '
+                f'font-size="7.5" fill="{NAVY}" font-family="DejaVu Sans">{int(v)}</text>'
             )
     by = pad_t + plot_h - (burn_m / mx * plot_h)
     return (
-        f'<svg class="ramp" width="{w}" height="{h}" viewBox="0 0 {w} {h}">'
+        f'<div class="ramp-wrap" dir="ltr">'
+        f'<svg class="ramp" width="{w}" height="{h}" viewBox="0 0 {w} {h}" '
+        f'xmlns="http://www.w3.org/2000/svg">'
         f'<line x1="{pad_l}" y1="{by:.1f}" x2="{w - pad_r}" y2="{by:.1f}" '
         f'stroke="{CORAL}" stroke-width="1.6" stroke-dasharray="5 4"/>'
-        f'<text x="{pad_l}" y="{by - 4:.1f}" font-size="8" fill="{CORAL}">برن ≈ {burn_m:.0f}M</text>'
+        f'<text x="{w - pad_r + 6}" y="{by + 3:.1f}" font-size="8.5" fill="{CORAL}" '
+        f'font-family="DejaVu Sans" text-anchor="start">برن ≈ {burn_m:.0f}M</text>'
         + "".join(bars)
-        + "</svg>"
+        + "</svg></div>"
+    )
+
+
+def payback_recovery_chart() -> str:
+    """Cumulative cash recovery of the ۱۰B ask until payback — clean LTR PNG."""
+    _mpl_setup()
+    import matplotlib.pyplot as plt
+    from matplotlib.ticker import MultipleLocator
+
+    horizon = min(36, max(PB_BASE + 4, 30))
+    rows = CF_SERIES[:horizon]
+    xs = [r["month"] for r in rows]
+    ys = [r["cum"] / 1_000_000_000 for r in rows]  # میلیارد
+
+    fig, ax = plt.subplots(figsize=(7.2, 3.35), dpi=160)
+    ax.axhline(0, color=NAVY, lw=1.15, zorder=2)
+    ax.fill_between(
+        xs,
+        ys,
+        0,
+        where=[y < 0 for y in ys],
+        color=CORAL,
+        alpha=0.14,
+        interpolate=True,
+        zorder=1,
+    )
+    ax.fill_between(
+        xs,
+        ys,
+        0,
+        where=[y >= 0 for y in ys],
+        color=TEAL,
+        alpha=0.16,
+        interpolate=True,
+        zorder=1,
+    )
+    ax.plot(xs, ys, color=TEAL, lw=2.4, zorder=3)
+    # mark start capital
+    ax.scatter([0], [-CAPITAL_ASK / 1e9], color=CORAL, s=28, zorder=4, clip_on=False)
+    ax.annotate(
+        fa(f"شروع: −{CAPITAL_ASK / 1e9:.0f}B"),
+        xy=(1, ys[0]),
+        xytext=(3.2, ys[0] - 1.15),
+        fontsize=8,
+        color=CORAL,
+        arrowprops=dict(arrowstyle="->", color=CORAL, lw=0.9),
+    )
+    # payback marker
+    if PB_BASE <= horizon:
+        pb_y = next(r["cum"] for r in rows if r["month"] == PB_BASE) / 1e9
+        ax.axvline(PB_BASE, color=TEAL_DK, ls="--", lw=1.2, alpha=0.85)
+        ax.scatter([PB_BASE], [pb_y], color=TEAL_DK, s=36, zorder=5)
+        ax.annotate(
+            fa(f"بازگشت اصل · ماه {PB_BASE}"),
+            xy=(PB_BASE, pb_y),
+            xytext=(min(PB_BASE + 1.2, horizon - 6), max(1.4, pb_y + 1.6)),
+            fontsize=8.5,
+            color=TEAL_DK,
+            fontweight="bold",
+            arrowprops=dict(arrowstyle="->", color=TEAL_DK, lw=1.0),
+        )
+
+    ax.set_xlim(0, horizon + 0.5)
+    ymin = min(ys) * 1.08
+    ymax = max(0.8, max(ys) * 1.35)
+    ax.set_ylim(ymin, ymax)
+    # BE marker (after limits so label sits cleanly)
+    if BE_BASE <= horizon:
+        ax.axvline(BE_BASE, color=SLATE, ls=":", lw=1.0, alpha=0.7)
+        ax.text(
+            BE_BASE + 0.15,
+            ymin + (ymax - ymin) * 0.06,
+            fa(f"سربه‌سر م{BE_BASE}"),
+            ha="left",
+            va="bottom",
+            fontsize=7.5,
+            color=SLATE,
+        )
+    ax.set_xlabel(fa("ماه از تزریق سرمایه"), fontsize=9, color=SLATE)
+    ax.set_ylabel(fa("جریان نقدی تجمعی (میلیارد تومان)"), fontsize=9, color=SLATE)
+    ax.set_title(
+        fa("بازگشت هزینه اولیه — بازیابی ۱۰ میلیارد تا نقطه Payback"),
+        fontsize=11,
+        color=NAVY,
+        pad=10,
+        fontweight="bold",
+    )
+    ax.xaxis.set_major_locator(MultipleLocator(3))
+    ax.yaxis.set_major_locator(MultipleLocator(2))
+    ax.grid(True, axis="y", alpha=0.28, color="#d8e0e8")
+    for spine in ("top", "right"):
+        ax.spines[spine].set_visible(False)
+    ax.spines["left"].set_color("#c5d0d8")
+    ax.spines["bottom"].set_color("#c5d0d8")
+    fig.tight_layout(pad=0.4)
+    out = CHARTS_DIR / "payback_recovery.png"
+    fig.savefig(out, dpi=160)
+    plt.close(fig)
+    return (
+        f'<div class="plot-wrap" dir="ltr">'
+        f'<img class="plot" src="{uri(out)}" alt="بازگشت هزینه اولیه"/>'
+        f"</div>"
+    )
+
+
+def later_years_chart() -> str:
+    """Years 2–5: annual revenue, after-tax profit, ROI multiple — no overlap."""
+    _mpl_setup()
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    years = [y for y in YEARLY if y["year"] >= 2]
+    labels = [fa(f"سال {y['year']}") for y in years]
+    rev_b = [y["rev"] / 1e9 for y in years]
+    profit_b = [y["profit_after"] / 1e9 for y in years]
+    roi = [y["roi_multiple"] for y in years]
+    x = np.arange(len(years))
+    width = 0.34
+
+    fig, ax = plt.subplots(figsize=(7.2, 3.55), dpi=160)
+    bars1 = ax.bar(
+        x - width / 2,
+        rev_b,
+        width,
+        label=fa("درآمد سالانه"),
+        color=NAVY,
+        edgecolor="none",
+        zorder=3,
+    )
+    bars2 = ax.bar(
+        x + width / 2,
+        profit_b,
+        width,
+        label=fa("سود خالص پس از مالیات"),
+        color=TEAL,
+        edgecolor="none",
+        zorder=3,
+    )
+    ax.set_ylabel(fa("میلیارد تومان"), fontsize=9, color=SLATE)
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels, fontsize=9)
+    ax.set_ylim(0, max(rev_b) * 1.28)
+    ax.grid(True, axis="y", alpha=0.28, color="#d8e0e8", zorder=0)
+    for spine in ("top", "right"):
+        ax.spines[spine].set_visible(False)
+    ax.spines["left"].set_color("#c5d0d8")
+    ax.spines["bottom"].set_color("#c5d0d8")
+
+    # value labels on bars (only tops — avoid clutter)
+    for b in bars1:
+        ax.text(
+            b.get_x() + b.get_width() / 2,
+            b.get_height() + 0.35,
+            f"{b.get_height():.1f}",
+            ha="center",
+            va="bottom",
+            fontsize=7.2,
+            color=NAVY,
+            fontfamily="DejaVu Sans",
+        )
+    for b in bars2:
+        ax.text(
+            b.get_x() + b.get_width() / 2,
+            b.get_height() + 0.35,
+            f"{b.get_height():.1f}",
+            ha="center",
+            va="bottom",
+            fontsize=7.2,
+            color=TEAL_DK,
+            fontfamily="DejaVu Sans",
+        )
+
+    ax2 = ax.twinx()
+    ax2.plot(
+        x,
+        roi,
+        color=CORAL,
+        lw=2.3,
+        marker="o",
+        ms=6,
+        label=fa("چندبرابر سرمایه (ROI)"),
+        zorder=4,
+    )
+    for xi, r in zip(x, roi):
+        ax2.annotate(
+            f"{r:.1f}×",
+            xy=(xi, r),
+            xytext=(0, 8),
+            textcoords="offset points",
+            ha="center",
+            fontsize=8,
+            color=CORAL,
+            fontweight="bold",
+            fontfamily="DejaVu Sans",
+        )
+    ax2.set_ylabel(fa("چندبرابر Ask (۱۰B)"), fontsize=9, color=CORAL)
+    ax2.set_ylim(0, max(roi) * 1.45)
+    ax2.spines["top"].set_visible(False)
+    ax2.spines["right"].set_color("#e8c4bc")
+    ax2.tick_params(axis="y", colors=CORAL)
+
+    ax.set_title(
+        fa("چشم‌انداز سال‌های بعد — درآمد، سود خالص و چندبرابر سرمایه"),
+        fontsize=11,
+        color=NAVY,
+        pad=10,
+        fontweight="bold",
+    )
+    # single combined legend below — avoids overlap with bars/line
+    h1, l1 = ax.get_legend_handles_labels()
+    h2, l2 = ax2.get_legend_handles_labels()
+    ax.legend(
+        h1 + h2,
+        l1 + l2,
+        loc="upper center",
+        bbox_to_anchor=(0.5, -0.14),
+        ncol=3,
+        frameon=False,
+        fontsize=8,
+    )
+    fig.tight_layout(rect=(0, 0.06, 1, 1))
+    out = CHARTS_DIR / "later_years.png"
+    fig.savefig(out, dpi=160, bbox_inches="tight", pad_inches=0.12)
+    plt.close(fig)
+    return (
+        f'<div class="plot-wrap" dir="ltr">'
+        f'<img class="plot" src="{uri(out)}" alt="چشم‌انداز سال‌های بعد"/>'
+        f"</div>"
     )
 
 
@@ -434,6 +815,21 @@ def build_html() -> str:
     join_unit = EVENT_JOIN_FEE_COINS * COIN_TOMAN
     ask_months_txt = fmt_dec(ASK_MONTHS, 1)
     runway_cover_txt = fmt_dec(RUNWAY_COVER_MONTHS, 1)
+    payback_chart_html = payback_recovery_chart()
+    later_years_html = later_years_chart()
+    y2 = next(y for y in YEARLY if y["year"] == 2)
+    y5 = next(y for y in YEARLY if y["year"] == 5)
+    yearly_rows = "".join(
+        f"<tr><td>سال {y['year']}</td>"
+        f"<td class='n'>{fmt_b(y['rev']/1e9, 2)}</td>"
+        f"<td class='n'>{fmt_b(y['profit_after']/1e9, 2)}</td>"
+        f"<td class='n'>{fmt_b(y['cum']/1e9, 2)}</td>"
+        f"<td class='n'>{fmt_dec(y['roi_multiple'], 1)}×</td></tr>"
+        for y in YEARLY
+        if y["year"] >= 2
+    )
+    # بازیابی اصل در ماه payback
+    pb_cum = next(r["cum"] for r in CF_SERIES if r["month"] == PB_BASE)
 
     return f"""<!DOCTYPE html>
 <html lang="fa" dir="rtl">
@@ -668,7 +1064,7 @@ def build_html() -> str:
   .grid2 > .card {{
     min-width: 0;
     max-width: 100%;
-    overflow: hidden;
+    overflow: visible;
   }}
   .card {{
     background: #fff;
@@ -685,17 +1081,17 @@ def build_html() -> str:
   .card table th, .card table td {{ padding: 5px 6px; }}
 
   .funds-grid {{
-    grid-template-columns: 0.9fr 1.1fr;
+    grid-template-columns: 0.95fr 1.05fr;
   }}
   .funds-grid .chart-wrap {{
-    padding: 4px 0;
+    padding: 6px 0 2px;
   }}
   .funds-grid .legs {{
     max-width: 100%;
   }}
   .funds-grid .leg {{
-    font-size: 7.4pt;
-    white-space: nowrap;
+    font-size: 7.6pt;
+    white-space: normal;
   }}
   .funds-grid .card table {{
     font-size: 7.6pt;
@@ -705,18 +1101,43 @@ def build_html() -> str:
     padding: 4px 5px;
   }}
 
-  .legs {{ margin-top: 8px; width: 100%; }}
-  .leg {{
-    font-size: 7.8pt; margin: 4px 0;
-    display: flex; gap: 7px; align-items: center;
+  .legs {{
+    margin-top: 12px; width: 100%;
+    direction: rtl; text-align: right;
   }}
+  .leg {{
+    font-size: 7.9pt; margin: 6px 0;
+    display: flex; gap: 8px; align-items: flex-start;
+    line-height: 1.45;
+    justify-content: flex-start;
+  }}
+  .leg b {{ font-weight: 700; }}
   .leg span {{
     width: 10px; height: 10px; border-radius: 3px;
-    display: inline-block; flex-shrink: 0;
+    display: inline-block; flex-shrink: 0; margin-top: 2px;
   }}
-  .leg em {{ color: {SLATE}; font-style: normal; }}
+  .leg em {{
+    color: {SLATE}; font-style: normal;
+    direction: ltr; unicode-bidi: isolate;
+    font-family: "DejaVu Sans", "Noto Sans Arabic", sans-serif;
+  }}
   .chart-wrap {{
     display: flex; flex-direction: column; align-items: center;
+    overflow: visible;
+    width: 100%;
+    gap: 2px;
+  }}
+  .donut-frame {{
+    direction: ltr;
+    width: 100%;
+    text-align: center;
+  }}
+  .chart-wrap img.donut {{
+    display: inline-block;
+    margin: 2px auto 0;
+    max-width: 190px;
+    width: 100%;
+    height: auto;
   }}
 
   .bmc {{
@@ -738,14 +1159,14 @@ def build_html() -> str:
   }}
   .bmc .w {{ grid-column: span 2; }}
 
-  .hbars {{ display: flex; flex-direction: column; gap: 8px; }}
+  .hbars {{ display: flex; flex-direction: column; gap: 10px; }}
   .hbar {{
-    display: grid; grid-template-columns: 70px 1fr 82px;
-    gap: 7px; align-items: center;
+    display: grid; grid-template-columns: 78px 1fr 88px;
+    gap: 10px; align-items: center;
   }}
   .hlab {{ font-size: 8pt; color: {NAVY}; }}
   .htrack {{
-    background: #e8eef2; border-radius: 6px; height: 11px; overflow: hidden;
+    background: #e8eef2; border-radius: 6px; height: 12px; overflow: hidden;
   }}
   .hfill {{ height: 100%; border-radius: 6px; }}
   .hval {{
@@ -809,8 +1230,39 @@ def build_html() -> str:
     margin: 14px 0 6px; border: none;
   }}
   svg.ramp {{
-    display: block; width: 100%; max-width: 520px;
-    margin: 6px auto 10px; height: auto;
+    display: block; width: 100%; max-width: 540px;
+    margin: 0 auto; height: auto;
+  }}
+  .ramp-wrap {{
+    direction: ltr;
+    margin: 8px 0 12px;
+    overflow: visible;
+    page-break-inside: avoid;
+  }}
+  .plot-wrap {{
+    direction: ltr;
+    margin: 10px 0 14px;
+    overflow: visible;
+    page-break-inside: avoid;
+    background: #fff;
+    border: 1px solid #d8e4ea;
+    border-radius: 12px;
+    padding: 10px 12px 8px;
+  }}
+  .plot-wrap img.plot {{
+    display: block;
+    width: 100%;
+    max-width: 640px;
+    height: auto;
+    margin: 0 auto;
+  }}
+  .narrative ol.steps {{
+    margin: .35em 0 .8em;
+    padding-right: 1.25em;
+  }}
+  .narrative ol.steps li {{
+    margin: .35em 0;
+    padding-right: 2px;
   }}
   .ask-hero {{
     display: grid; grid-template-columns: 1.2fr .8fr; gap: 12px;
@@ -1143,6 +1595,40 @@ Runway ۱۲ ماه ({fmt(BURN)} × ۱۲ = {fmt(RUNWAY)}) =
   <li>VAT (~۱۰٪) عبورکننده فرض شده و در برن خنثی است.</li>
 </ul>
 
+<div class="pb"></div>
+<h2><span class="num">۰۹٫۱</span> نمودار بازگشت هزینه اولیه</h2>
+<p>از لحظه تزریق <strong>۱۰ میلیارد</strong>، جریان نقدی تجمعی از
+<span class="hl">−{fmt(CAPITAL_ASK)}</span> شروع می‌شود.
+هر ماه: درآمد − برن ({fmt(BURN)}). نقطه برخورد با صفر =
+<strong>بازگشت اصل سرمایه ≈ ماه {base['pb']}</strong>
+(در این مدل ≈ {fmt_b(pb_cum/1e6, 0)} میلیون بالای صفر).</p>
+{payback_chart_html}
+<div class="callout">
+<strong>خوانش سرمایه‌گذار:</strong> تا ماه {base['be']} زیان عملیاتی ماهانه طبیعی است
+(رمپ لانچ). از ماه {base['be']} به بعد حاشیه مثبت ماهانه جمع می‌شود و تا ماه
+<strong>{base['pb']}</strong> کل اصل ۱۰ میلیارد بازیابی می‌شود —
+بدون فرض رشد انفجاری؛ فقط رمپ ۱۲ماه + رشد ماهانه ≈{POST_RAMP_GROWTH_M}M پس از آن.
+</div>
+
+<h2><span class="num">۰۹٫۲</span> چشم‌انداز سال‌های بعد (۲ تا ۵)</h2>
+<p>پس از عبور از Payback، مدل پایه چه چیزی برای سرمایه‌گذار می‌سازد؟
+نمودار زیر درآمد سالانه، سود خالص پس از مالیات ۲۵٪، و
+<strong>چندبرابر سرمایه (۱ + جریان نقدی تجمعی / ۱۰B)</strong> را نشان می‌دهد.</p>
+{later_years_html}
+<table>
+  <thead>
+    <tr><th>سال</th><th class="n">درآمد (میلیارد)</th>
+    <th class="n">سود خالص (میلیارد)</th>
+    <th class="n">جریان نقدی تجمعی</th>
+    <th class="n">چندبرابر Ask</th></tr>
+  </thead>
+  <tbody>{yearly_rows}</tbody>
+</table>
+<p class="fn">سال ۲: درآمد ≈ {fmt_b(y2['rev']/1e9, 1)}B · سود خالص ≈ {fmt_b(y2['profit_after']/1e9, 1)}B ·
+چندبرابر ≈ {fmt_dec(y2['roi_multiple'], 1)}× —
+تا پایان سال ۵ چندبرابر ≈ <strong>{fmt_dec(y5['roi_multiple'], 1)}×</strong>
+روی Ask ده میلیارد (فرض رشد ملایم ثابت؛ نه تعهد).</p>
+
 <h2><span class="num">۱۰</span> نقشه راه و ریسک</h2>
 <table>
   <thead><tr><th>فاز</th><th>بازه</th><th>تمرکز</th></tr></thead>
@@ -1164,12 +1650,90 @@ Runway ۱۲ ماه ({fmt(BURN)} × ۱۲ = {fmt(RUNWAY)}) =
   </tbody>
 </table>
 
-<h2><span class="num">۱۱</span> پیشنهاد سرمایه‌گذاری</h2>
+<div class="pb"></div>
+<h2><span class="num">۱۱</span> چرا این سرمایه‌گذاری برای سرمایه‌گذار قابل‌قبول است؟</h2>
+<div class="narrative">
+<p>این بخش برای سرمایه‌گذار شکاک نوشته شده: نه شعار برند، بلکه
+<strong>بستن حلقه اعداد</strong> — از مسئله بازار تا بازگشت اصل و آپساید پس از آن.</p>
+
+<h3>۱) مسئله و بازار — چرا الان؟</h3>
+<p>صاحب‌پت در ایران خدمات اجتماعی، ایونت گروهی، خرید و مشاوره را جداگانه و پراکنده می‌گیرد.
+تلگرام کانال توزیع آماده است؛ پت‌دیت وب + ربات را با یک حساب و اقتصاد سکه یکپارچه وصل می‌کند.
+این یعنی CAC پایین‌تر از اپ‌های خالص موبایل و مسیر ورود کوتاه‌تر به پرداخت.</p>
+
+<h3>۲) موتور درآمد — سکه + ایونت (قابل اندازه‌گیری)</h3>
+<ul class="t">
+  <li><strong>سکه/VIP:</strong> هسته تکرارشونده؛ قیمت مرجع سکه {fmt(COIN_TOMAN)} تومان.</li>
+  <li><strong>ایونت پلتفرمی:</strong> عضویت فرض {EVENT_JOIN_FEE_COINS} سکه/نفر + ساخت {EVENT_CREATE_COST_COINS} سکه —
+  در پایه م۱۲ ≈ <strong>{fmt(base['events'])}</strong> تومان روی استک درآمد
+  ({fmt(base['rev'])} جمع).</li>
+  <li>شاپ و مشاوره حاشیه مکمل‌اند؛ ایونت اهرم رشد اجتماعی و تکرار خرید سکه است.</li>
+</ul>
+
+<h3>۳) اتوماسیون → برن ثابت، هزینه به ازای کاربر کاهشی</h3>
+<p>برن اسمی ماهانه قفل است روی <strong>{fmt(BURN)}</strong> تومان.
+با ربات، AI و پنل ادمین مالی/کیف‌پول، همان تیم ۶–۷ نفره MAU بیشتری را پوشش می‌دهد:
+از ≈{fmt(HR_PHASES[0]['cost_per_mau'])} تومان برن/MAU در لانچ تا
+≈{fmt(HR_PHASES[2]['cost_per_mau'])} در فاز اتوماسیون —
+یعنی مقیاس بدون انفجار HR.</p>
+
+<h3>۴) هزینه‌های واقعی ایران — نه مدل خوش‌بینانه دلاری</h3>
+<table>
+  <thead><tr><th>قلم</th><th>فرض</th><th class="n">اثر روی مدل</th></tr></thead>
+  <tbody>
+    <tr><td>بیمه کارفرما</td><td>۲۳٪ روی حقوق ناخالص</td><td class="n">+{fmt(INSURANCE_EMPLOYER)}/ماه</td></tr>
+    <tr><td>مالیات عملکرد</td><td>۲۵٪ روی سود مشمول</td><td>در سود خالص و جدول سالانه</td></tr>
+    <tr><td>زیرساخت فنی</td><td>سرور + هاست + دامنه</td><td class="n">{fmt(INFRA_TECH)}/ماه داخل برن</td></tr>
+    <tr><td>برن کل</td><td>حقوق+بیمه+AI+اجاره+جاری+infra</td><td class="n"><strong>{fmt(BURN)}</strong></td></tr>
+  </tbody>
+</table>
+
+<h3>۵) بسته سرمایه — Runway شفاف</h3>
+<ol class="steps">
+  <li>راه‌اندازی یک‌باره: {fmt(SETUP_TOTAL)} تومان.</li>
+  <li>۱۲ ماه عملیات: {fmt(BURN)} × ۱۲ = {fmt(RUNWAY)}.</li>
+  <li>جمع ≈ {fmt(CAPITAL_BASE)} + بافر نازک {fmt(CONTINGENCY)} =
+  <strong>Ask قفل: ۱۰٬۰۰۰٬۰۰۰٬۰۰۰</strong>.</li>
+  <li>پوشش: ≈ {ask_months_txt} ماه برن کل · ≈ {runway_cover_txt} ماه عملیات پس از راه‌اندازی —
+  یعنی حتی اگر رمپ درآمد کندتر از پایه باشد، زمان کافی برای اصلاح مسیر هست.</li>
+</ol>
+
+<h3>۶) سربه‌سر، Payback، و آپساید بعد از بازگشت اصل</h3>
+<div class="statrow">
+  <div class="stat"><div class="v">م{base['be']}</div><div class="l">سربه‌سر عملیاتی</div></div>
+  <div class="stat"><div class="v">م{base['pb']}</div><div class="l">بازگشت اصل ۱۰B</div></div>
+  <div class="stat"><div class="v">{fmt_dec(y2['roi_multiple'], 1)}×</div><div class="l">چندبرابر پایان سال ۲</div></div>
+  <div class="stat"><div class="v">{fmt_dec(y5['roi_multiple'], 1)}×</div><div class="l">چندبرابر پایان سال ۵</div></div>
+</div>
+<p>از نگاه سرمایه‌گذار محافظه‌کار: ابتدا اصل در ≈ ماه {base['pb']} برمی‌گردد؛
+سپس جریان نقدی تجمعی مثبت می‌ماند و تا سال ۵ — با فرض رشد ملایم —
+به حدود <strong>{fmt_dec(y5['roi_multiple'], 1)} برابر Ask</strong> می‌رسد.
+این آپساید بعد از Payback است، نه جایگزین بازگشت اصل.</p>
+
+<h3>۷) پوشش ریسک — چرا اعداد «می‌بندند»</h3>
+<ul class="t">
+  <li><strong>رشد کند:</strong> بافر + KPI ماهانه ایونت/پرداخت؛ مسیر کاهش burn نسبی با اتوماسیون.</li>
+  <li><strong>نوسان دلار/AI:</strong> سقف مصرف API؛ قیمت‌گذاری پویا سکه.</li>
+  <li><strong>مدل ایونت:</strong> شروع با ایونت پلتفرمی ۱۰۰٪ take؛ کمیسیون میزبان مسیر بعدی است نه وابستگی فعلی.</li>
+  <li><strong>رگولاتوری/پرداخت:</strong> چند درگاه؛ گزارش P&amp;L ماهانه به سرمایه‌گذار.</li>
+  <li><strong>بیمه/مالیات:</strong> نرخ‌های ایران از روز اول داخل برن و سود خالص‌اند — سورپرایز پنهان کمتر.</li>
+</ul>
+<div class="callout">
+<strong>جمع‌بندی برای ترم‌شیت:</strong>
+Ask <span class="hl">۱۰ میلیارد</span> · برن <span class="hl">{fmt_dec(BURN/1e6, 1)}M</span>/ماه ·
+سربه‌سر پایه ماه {base['be']} · بازگشت اصل ماه {base['pb']} ·
+پس از آن مسیر چندبرابر تا ≈{fmt_dec(y5['roi_multiple'], 1)}× در افق ۵ساله مدل پایه.
+محصول واقعی (وب، چت، همبازی، پنل مالی) همین حالا اسکرین دارد — سرمایه برای مقیاس است، نه ساخت از صفر.
+</div>
+</div>
+
+<h2><span class="num">۱۲</span> پیشنهاد سرمایه‌گذاری</h2>
 <ul class="t">
   <li><strong>مبلغ:</strong> ۱۰٬۰۰۰٬۰۰۰٬۰۰۰ تومان (۱۰ میلیارد)</li>
   <li><strong>مصرف:</strong> راه‌اندازی ۱٫۵B + Runway ۱۲ماه تیم ۶ نفره (بیمه کارفرما ۲۳٪) + بافر نازک</li>
   <li><strong>پوشش:</strong> ≈ {ask_months_txt} ماه برن کل · ≈ {runway_cover_txt} ماه عملیات پس از راه‌اندازی</li>
   <li><strong>هدف ۱۲ماه:</strong> عبور از سربه‌سر در سناریو پایه (با استک ایونت)</li>
+  <li><strong>بازگشت اصل:</strong> ≈ ماه {base['pb']} در مدل پایه (نمودار ۰۹٫۱)</li>
   <li><strong>گزارش:</strong> P&amp;L ماهانه، MAU، نرخ پرداخت، حجم ایونت، CAC</li>
   <li><strong>سهام/valuation:</strong> در مذاکره ترم‌شیت</li>
 </ul>
@@ -1177,7 +1741,8 @@ Runway ۱۲ ماه ({fmt(BURN)} × ۱۲ = {fmt(RUNWAY)}) =
 <strong>جمع‌بندی:</strong> برن <span class="hl">{fmt(BURN)}</span> تومان/ماه ·
 سرمایه درخواستی <span class="hl">۱۰٬۰۰۰٬۰۰۰٬۰۰۰</span> تومان ·
 ایونت پایه م۱۲ ≈ <span class="hl">{fmt(base['events'])}</span> تومان ·
-سربه‌سر پایه ماه <span class="hl">{base['be']}</span>.
+سربه‌سر پایه ماه <span class="hl">{base['be']}</span> ·
+Payback ماه <span class="hl">{base['pb']}</span>.
 </div>
 <p class="muted" style="margin-top:16px;text-align:center">
 پت‌دیت · طرح توجیهی سرمایه‌گذاری · اعداد به تومان · نسخه {DOC_VERSION}
@@ -1258,7 +1823,13 @@ def write_assumptions() -> None:
 - سود پس از مالیات ۲۵٪: {base['profit_after']:,}
 - سربه‌سر: ماه {base['be']}
 - Payback: ماه {base['pb']}
-  - تعریف: جریان نقدی تجمعی از −{CAPITAL_ASK:,}؛ پس از رمپ ۱۲ماه، درآمد ماهانه +۳۵م رشد؛ اولین ماهی که cum ≥ ۰
+  - تعریف: جریان نقدی تجمعی از −{CAPITAL_ASK:,}؛ پس از رمپ ۱۲ماه، درآمد ماهانه +{POST_RAMP_GROWTH_M}م رشد؛ اولین ماهی که cum ≥ ۰
+
+## چشم‌انداز سالانه (پایه، سال ۲–۵)
+{chr(10).join(
+  f"- سال {y['year']}: درآمد {y['rev']:,.0f} · سود خالص {y['profit_after']:,.0f} · cum {y['cum']:,.0f} · ROI {y['roi_multiple']:.1f}×"
+  for y in YEARLY if y['year'] >= 2
+)}
 
 ## اهرم HR / اتوماسیون
 فرض: برن اسمی ثابت ≈{BURN:,}؛ با رشد MAU و اتوماسیون (ربات، AI، پنل ادمین، سلف‌سرویس) هزینه به ازای MAU کاهش می‌یابد.

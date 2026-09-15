@@ -2,13 +2,13 @@
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="utf-8"/>
-<title>طرح توجیهی پت‌دیت — نسخه ۱٫۵</title>
+<title>طرح توجیهی پت‌دیت — نسخه ۱٫۶</title>
 <style>
   @page {
     size: A4;
     margin: 16mm 14mm 18mm 14mm;
     @bottom-center {
-      content: "پت‌دیت · طرح توجیهی سرمایه‌گذاری · محرمانه · v1.5  ·  " counter(page);
+      content: "پت‌دیت · طرح توجیهی سرمایه‌گذاری · محرمانه · v1.6  ·  " counter(page);
       font-family: "Noto Sans Arabic", "DejaVu Sans", sans-serif;
       font-size: 7.5pt;
       color: #64748b;
@@ -231,7 +231,7 @@
   .grid2 > .card {
     min-width: 0;
     max-width: 100%;
-    overflow: hidden;
+    overflow: visible;
   }
   .card {
     background: #fff;
@@ -248,17 +248,17 @@
   .card table th, .card table td { padding: 5px 6px; }
 
   .funds-grid {
-    grid-template-columns: 0.9fr 1.1fr;
+    grid-template-columns: 0.95fr 1.05fr;
   }
   .funds-grid .chart-wrap {
-    padding: 4px 0;
+    padding: 6px 0 2px;
   }
   .funds-grid .legs {
     max-width: 100%;
   }
   .funds-grid .leg {
-    font-size: 7.4pt;
-    white-space: nowrap;
+    font-size: 7.6pt;
+    white-space: normal;
   }
   .funds-grid .card table {
     font-size: 7.6pt;
@@ -268,18 +268,43 @@
     padding: 4px 5px;
   }
 
-  .legs { margin-top: 8px; width: 100%; }
-  .leg {
-    font-size: 7.8pt; margin: 4px 0;
-    display: flex; gap: 7px; align-items: center;
+  .legs {
+    margin-top: 12px; width: 100%;
+    direction: rtl; text-align: right;
   }
+  .leg {
+    font-size: 7.9pt; margin: 6px 0;
+    display: flex; gap: 8px; align-items: flex-start;
+    line-height: 1.45;
+    justify-content: flex-start;
+  }
+  .leg b { font-weight: 700; }
   .leg span {
     width: 10px; height: 10px; border-radius: 3px;
-    display: inline-block; flex-shrink: 0;
+    display: inline-block; flex-shrink: 0; margin-top: 2px;
   }
-  .leg em { color: #64748b; font-style: normal; }
+  .leg em {
+    color: #64748b; font-style: normal;
+    direction: ltr; unicode-bidi: isolate;
+    font-family: "DejaVu Sans", "Noto Sans Arabic", sans-serif;
+  }
   .chart-wrap {
     display: flex; flex-direction: column; align-items: center;
+    overflow: visible;
+    width: 100%;
+    gap: 2px;
+  }
+  .donut-frame {
+    direction: ltr;
+    width: 100%;
+    text-align: center;
+  }
+  .chart-wrap img.donut {
+    display: inline-block;
+    margin: 2px auto 0;
+    max-width: 190px;
+    width: 100%;
+    height: auto;
   }
 
   .bmc {
@@ -301,14 +326,14 @@
   }
   .bmc .w { grid-column: span 2; }
 
-  .hbars { display: flex; flex-direction: column; gap: 8px; }
+  .hbars { display: flex; flex-direction: column; gap: 10px; }
   .hbar {
-    display: grid; grid-template-columns: 70px 1fr 82px;
-    gap: 7px; align-items: center;
+    display: grid; grid-template-columns: 78px 1fr 88px;
+    gap: 10px; align-items: center;
   }
   .hlab { font-size: 8pt; color: #12263a; }
   .htrack {
-    background: #e8eef2; border-radius: 6px; height: 11px; overflow: hidden;
+    background: #e8eef2; border-radius: 6px; height: 12px; overflow: hidden;
   }
   .hfill { height: 100%; border-radius: 6px; }
   .hval {
@@ -372,8 +397,39 @@
     margin: 14px 0 6px; border: none;
   }
   svg.ramp {
-    display: block; width: 100%; max-width: 520px;
-    margin: 6px auto 10px; height: auto;
+    display: block; width: 100%; max-width: 540px;
+    margin: 0 auto; height: auto;
+  }
+  .ramp-wrap {
+    direction: ltr;
+    margin: 8px 0 12px;
+    overflow: visible;
+    page-break-inside: avoid;
+  }
+  .plot-wrap {
+    direction: ltr;
+    margin: 10px 0 14px;
+    overflow: visible;
+    page-break-inside: avoid;
+    background: #fff;
+    border: 1px solid #d8e4ea;
+    border-radius: 12px;
+    padding: 10px 12px 8px;
+  }
+  .plot-wrap img.plot {
+    display: block;
+    width: 100%;
+    max-width: 640px;
+    height: auto;
+    margin: 0 auto;
+  }
+  .narrative ol.steps {
+    margin: .35em 0 .8em;
+    padding-right: 1.25em;
+  }
+  .narrative ol.steps li {
+    margin: .35em 0;
+    padding-right: 2px;
   }
   .ask-hero {
     display: grid; grid-template-columns: 1.2fr .8fr; gap: 12px;
@@ -413,7 +469,7 @@
         <div class="brand-sub">PetDate · petdate.ir</div>
       </div>
     </div>
-    <div class="ver-pill">نسخه ۱٫۵ · محرمانه</div>
+    <div class="ver-pill">نسخه ۱٫۶ · محرمانه</div>
   </div>
   <div class="cover-rule"></div>
   <div class="eyebrow">سند ویژه سرمایه‌گذار · طرح توجیهی</div>
@@ -591,7 +647,7 @@
 </table>
 <p class="fn">سهم بیمه‌شده (7٪) و مالیات حقوق از خالص پرسنل کسر می‌شود و به برن شرکت اضافه نمی‌گردد.</p>
 <div class="grid2">
-  <div class="card"><h3>ترکیب برن</h3><div class="chart-wrap"><svg width="210" height="210" viewBox="0 0 210 210"><path d="M105.00,21.00 A84.0,84.0 0 1 1 76.54,184.03 L89.35,148.47 A46.2,46.2 0 1 0 105.00,58.80 Z" fill="#12263a"/><path d="M76.54,184.03 A84.0,84.0 0 0 1 28.41,139.49 L62.87,123.97 A46.2,46.2 0 0 0 89.35,148.47 Z" fill="#0f766e"/><path d="M28.41,139.49 A84.0,84.0 0 0 1 26.49,75.12 L61.82,88.57 A46.2,46.2 0 0 0 62.87,123.97 Z" fill="#e05a45"/><path d="M26.49,75.12 A84.0,84.0 0 0 1 58.88,34.79 L79.64,66.39 A46.2,46.2 0 0 0 61.82,88.57 Z" fill="#14b8a6"/><path d="M58.88,34.79 A84.0,84.0 0 0 1 93.77,21.75 L98.82,59.21 A46.2,46.2 0 0 0 79.64,66.39 Z" fill="#7c9aab"/><path d="M93.77,21.75 A84.0,84.0 0 0 1 105.00,21.00 L105.00,58.80 A46.2,46.2 0 0 0 98.82,59.21 Z" fill="#1a3a52"/><circle cx="105.0" cy="105.0" r="44.2" fill="#fff"/><text x="105.0" y="99.0" text-anchor="middle" font-size="11" fill="#12263a" font-weight="700">برن</text><text x="105.0" y="117.0" text-anchor="middle" font-size="12" fill="#0f766e" font-weight="700">702٫7M</text></svg><div class="legs"><div class="leg"><span style="background:#12263a"></span><b>حقوق</b> · 390٬000٬000 <em>(56٪)</em></div><div class="leg"><span style="background:#0f766e"></span><b>بیمه کارفرما</b> · 89٬700٬000 <em>(13٪)</em></div><div class="leg"><span style="background:#e05a45"></span><b>AI API</b> · 88٬000٬000 <em>(13٪)</em></div><div class="leg"><span style="background:#14b8a6"></span><b>اجاره</b> · 70٬000٬000 <em>(10٪)</em></div><div class="leg"><span style="background:#7c9aab"></span><b>جاری</b> · 50٬000٬000 <em>(7٪)</em></div><div class="leg"><span style="background:#1a3a52"></span><b>زیرساخت فنی</b> · 15٬000٬000 <em>(2٪)</em></div></div></div></div>
+  <div class="card"><h3>ترکیب برن</h3><div class="chart-wrap"><div class="donut-frame" dir="ltr"><img class="donut" src="file:///agent/artifacts/investor-plan/charts/burn_pie.png" width="200" height="200" alt="" style="max-width:200px;width:100%;height:auto"/></div><div class="legs" dir="rtl"><div class="leg"><span style="background:#12263a"></span><b>حقوق</b> · 390٬000٬000 <em>(56٪)</em></div><div class="leg"><span style="background:#0f766e"></span><b>بیمه کارفرما</b> · 89٬700٬000 <em>(13٪)</em></div><div class="leg"><span style="background:#e05a45"></span><b>AI API</b> · 88٬000٬000 <em>(13٪)</em></div><div class="leg"><span style="background:#14b8a6"></span><b>اجاره</b> · 70٬000٬000 <em>(10٪)</em></div><div class="leg"><span style="background:#7c9aab"></span><b>جاری</b> · 50٬000٬000 <em>(7٪)</em></div><div class="leg"><span style="background:#1a3a52"></span><b>زیرساخت فنی</b> · 15٬000٬000 <em>(2٪)</em></div></div></div></div>
   <div class="card">
     <h3>نکات هزینه</h3>
     <ul class="t">
@@ -658,7 +714,7 @@ Runway ۱۲ ماه (702٬700٬000 × ۱۲ = 8٬432٬400٬000) =
   </tbody>
 </table>
 <div class="grid2 funds-grid">
-  <div class="card"><h3>مصرف وجوه</h3><div class="chart-wrap"><svg width="168" height="168" viewBox="0 0 168 168"><path d="M84.00,16.80 A67.2,67.2 0 1 1 28.01,46.84 L53.20,63.56 A36.96,36.96 0 1 0 84.00,47.04 Z" fill="#12263a"/><path d="M28.01,46.84 A67.2,67.2 0 0 1 81.15,16.86 L82.43,47.07 A36.96,36.96 0 0 0 53.20,63.56 Z" fill="#0f766e"/><path d="M81.15,16.86 A67.2,67.2 0 0 1 84.00,16.80 L84.00,47.04 A36.96,36.96 0 0 0 82.43,47.07 Z" fill="#e05a45"/><circle cx="84.0" cy="84.0" r="34.96" fill="#fff"/><text x="84.0" y="78.0" text-anchor="middle" font-size="11" fill="#12263a" font-weight="700">سرمایه</text><text x="84.0" y="96.0" text-anchor="middle" font-size="12" fill="#0f766e" font-weight="700">۱۰B</text></svg><div class="legs"><div class="leg"><span style="background:#12263a"></span><b>Runway ۱۲م</b> <em>(84٪)</em></div><div class="leg"><span style="background:#0f766e"></span><b>راه‌اندازی</b> <em>(15٪)</em></div><div class="leg"><span style="background:#e05a45"></span><b>بافر عملیاتی</b> <em>(1٪)</em></div></div></div></div>
+  <div class="card"><h3>مصرف وجوه</h3><div class="chart-wrap"><div class="donut-frame" dir="ltr"><img class="donut" src="file:///agent/artifacts/investor-plan/charts/use_of_funds.png" width="176" height="176" alt="" style="max-width:176px;width:100%;height:auto"/></div><div class="legs" dir="rtl"><div class="leg"><span style="background:#12263a"></span><b>Runway ۱۲م</b> <em>(84٪)</em></div><div class="leg"><span style="background:#0f766e"></span><b>راه‌اندازی</b> <em>(15٪)</em></div><div class="leg"><span style="background:#e05a45"></span><b>بافر عملیاتی</b> <em>(1٪)</em></div></div></div></div>
   <div class="card">
     <h3>جدول سهم</h3>
     <table>
@@ -690,7 +746,7 @@ Runway ۱۲ ماه (702٬700٬000 × ۱۲ = 8٬432٬400٬000) =
   <tbody><tr><td>بدبینانه</td><td class='n'>8٬000</td><td class='n'>27٬200٬000</td><td class='n'>399٬200٬000</td><td class='n'>-303٬500٬000</td><td class='n'>0</td><td class='n'>16</td><td class='n'>38</td></tr><tr><td>پایه</td><td class='n'>14٬000</td><td class='n'>75٬000٬000</td><td class='n'>1٬085٬000٬000</td><td class='n'>382٬300٬000</td><td class='n'>286٬725٬000</td><td class='n'>10</td><td class='n'>30</td></tr><tr><td>خوش‌بینانه</td><td class='n'>25٬000</td><td class='n'>160٬000٬000</td><td class='n'>2٬550٬000٬000</td><td class='n'>1٬847٬300٬000</td><td class='n'>1٬385٬475٬000</td><td class='n'>8</td><td class='n'>20</td></tr></tbody>
 </table>
 <h3>رمپ درآمد سناریو پایه (میلیون تومان)</h3>
-<svg class="ramp" width="520" height="168" viewBox="0 0 520 168"><line x1="28" y1="66.8" x2="508" y2="66.8" stroke="#e05a45" stroke-width="1.6" stroke-dasharray="5 4"/><text x="28" y="62.8" font-size="8" fill="#e05a45">برن ≈ 703M</text><rect x="28.0" y="134.3" width="36.3" height="5.7" rx="3" fill="#14b8a6"/><text x="46.2" y="160" text-anchor="middle" font-size="7.5" fill="#64748b">M1</text><text x="46.2" y="131.3" text-anchor="middle" font-size="7" fill="#12263a" font-family="DejaVu Sans">55</text><rect x="68.3" y="130.1" width="36.3" height="9.9" rx="3" fill="#14b8a6"/><text x="86.5" y="160" text-anchor="middle" font-size="7.5" fill="#64748b">M2</text><rect x="108.7" y="124.4" width="36.3" height="15.6" rx="3" fill="#14b8a6"/><text x="126.8" y="160" text-anchor="middle" font-size="7.5" fill="#64748b">M3</text><rect x="149.0" y="118.1" width="36.3" height="21.9" rx="3" fill="#14b8a6"/><text x="167.2" y="160" text-anchor="middle" font-size="7.5" fill="#64748b">M4</text><rect x="189.3" y="110.3" width="36.3" height="29.7" rx="3" fill="#14b8a6"/><text x="207.5" y="160" text-anchor="middle" font-size="7.5" fill="#64748b">M5</text><rect x="229.7" y="102.0" width="36.3" height="38.0" rx="3" fill="#14b8a6"/><text x="247.8" y="160" text-anchor="middle" font-size="7.5" fill="#64748b">M6</text><text x="247.8" y="99.0" text-anchor="middle" font-size="7" fill="#12263a" font-family="DejaVu Sans">365</text><rect x="270.0" y="92.6" width="36.3" height="47.4" rx="3" fill="#14b8a6"/><text x="288.2" y="160" text-anchor="middle" font-size="7.5" fill="#64748b">M7</text><rect x="310.3" y="82.2" width="36.3" height="57.8" rx="3" fill="#14b8a6"/><text x="328.5" y="160" text-anchor="middle" font-size="7.5" fill="#64748b">M8</text><rect x="350.7" y="70.8" width="36.3" height="69.2" rx="3" fill="#14b8a6"/><text x="368.8" y="160" text-anchor="middle" font-size="7.5" fill="#64748b">M9</text><rect x="391.0" y="57.8" width="36.3" height="82.2" rx="3" fill="#0f766e"/><text x="409.2" y="160" text-anchor="middle" font-size="7.5" fill="#64748b">M10</text><text x="409.2" y="54.8" text-anchor="middle" font-size="7" fill="#12263a" font-family="DejaVu Sans">790</text><rect x="431.3" y="43.2" width="36.3" height="96.8" rx="3" fill="#0f766e"/><text x="449.5" y="160" text-anchor="middle" font-size="7.5" fill="#64748b">M11</text><rect x="471.7" y="27.0" width="36.3" height="113.0" rx="3" fill="#0f766e"/><text x="489.8" y="160" text-anchor="middle" font-size="7.5" fill="#64748b">M12</text><text x="489.8" y="24.0" text-anchor="middle" font-size="7" fill="#12263a" font-family="DejaVu Sans">1085</text></svg>
+<div class="ramp-wrap" dir="ltr"><svg class="ramp" width="540" height="200" viewBox="0 0 540 200" xmlns="http://www.w3.org/2000/svg"><line x1="36" y1="87.0" x2="462" y2="87.0" stroke="#e05a45" stroke-width="1.6" stroke-dasharray="5 4"/><text x="468" y="90.0" font-size="8.5" fill="#e05a45" font-family="DejaVu Sans" text-anchor="start">برن ≈ 703M</text><rect x="36.0" y="161.7" width="30.9" height="6.3" rx="3" fill="#14b8a6"/><text x="51.5" y="190" text-anchor="middle" font-size="7.5" fill="#64748b" font-family="DejaVu Sans">M1</text><text x="51.5" y="156.7" text-anchor="middle" font-size="7.5" fill="#12263a" font-family="DejaVu Sans">55</text><rect x="71.9" y="157.1" width="30.9" height="10.9" rx="3" fill="#14b8a6"/><text x="87.4" y="190" text-anchor="middle" font-size="7.5" fill="#64748b" font-family="DejaVu Sans">M2</text><rect x="107.8" y="150.7" width="30.9" height="17.3" rx="3" fill="#14b8a6"/><text x="123.3" y="190" text-anchor="middle" font-size="7.5" fill="#64748b" font-family="DejaVu Sans">M3</text><rect x="143.8" y="143.8" width="30.9" height="24.2" rx="3" fill="#14b8a6"/><text x="159.2" y="190" text-anchor="middle" font-size="7.5" fill="#64748b" font-family="DejaVu Sans">M4</text><rect x="179.7" y="135.2" width="30.9" height="32.8" rx="3" fill="#14b8a6"/><text x="195.1" y="190" text-anchor="middle" font-size="7.5" fill="#64748b" font-family="DejaVu Sans">M5</text><rect x="215.6" y="125.9" width="30.9" height="42.1" rx="3" fill="#14b8a6"/><text x="231.0" y="190" text-anchor="middle" font-size="7.5" fill="#64748b" font-family="DejaVu Sans">M6</text><text x="231.0" y="120.9" text-anchor="middle" font-size="7.5" fill="#12263a" font-family="DejaVu Sans">365</text><rect x="251.5" y="115.6" width="30.9" height="52.4" rx="3" fill="#14b8a6"/><text x="267.0" y="190" text-anchor="middle" font-size="7.5" fill="#64748b" font-family="DejaVu Sans">M7</text><rect x="287.4" y="104.1" width="30.9" height="63.9" rx="3" fill="#14b8a6"/><text x="302.9" y="190" text-anchor="middle" font-size="7.5" fill="#64748b" font-family="DejaVu Sans">M8</text><rect x="323.3" y="91.4" width="30.9" height="76.6" rx="3" fill="#14b8a6"/><text x="338.8" y="190" text-anchor="middle" font-size="7.5" fill="#64748b" font-family="DejaVu Sans">M9</text><rect x="359.3" y="77.0" width="30.9" height="91.0" rx="3" fill="#0f766e"/><text x="374.7" y="190" text-anchor="middle" font-size="7.5" fill="#64748b" font-family="DejaVu Sans">M10</text><text x="374.7" y="72.0" text-anchor="middle" font-size="7.5" fill="#12263a" font-family="DejaVu Sans">790</text><rect x="395.2" y="60.9" width="30.9" height="107.1" rx="3" fill="#0f766e"/><text x="410.6" y="190" text-anchor="middle" font-size="7.5" fill="#64748b" font-family="DejaVu Sans">M11</text><rect x="431.1" y="43.0" width="30.9" height="125.0" rx="3" fill="#0f766e"/><text x="446.5" y="190" text-anchor="middle" font-size="7.5" fill="#64748b" font-family="DejaVu Sans">M12</text><text x="446.5" y="38.0" text-anchor="middle" font-size="7.5" fill="#12263a" font-family="DejaVu Sans">1085</text></svg></div>
 <ul class="t">
   <li>سربه‌سر عملیاتی وقتی درآمد ماهانه ≥ 702٬700٬000 تومان.</li>
   <li>پایه با ایونت: سربه‌سر ≈ ماه <strong>10</strong> · Payback ≈ ماه <strong>30</strong>
@@ -698,6 +754,40 @@ Runway ۱۲ ماه (702٬700٬000 × ۱۲ = 8٬432٬400٬000) =
   <li>برای پوشش برن با حاشیه ≈۸۵٪، حدود <strong>826٬705٬882</strong> تومان GMV ماهانه لازم است.</li>
   <li>VAT (~۱۰٪) عبورکننده فرض شده و در برن خنثی است.</li>
 </ul>
+
+<div class="pb"></div>
+<h2><span class="num">۰۹٫۱</span> نمودار بازگشت هزینه اولیه</h2>
+<p>از لحظه تزریق <strong>۱۰ میلیارد</strong>، جریان نقدی تجمعی از
+<span class="hl">−10٬000٬000٬000</span> شروع می‌شود.
+هر ماه: درآمد − برن (702٬700٬000). نقطه برخورد با صفر =
+<strong>بازگشت اصل سرمایه ≈ ماه 30</strong>
+(در این مدل ≈ 74 میلیون بالای صفر).</p>
+<div class="plot-wrap" dir="ltr"><img class="plot" src="file:///agent/artifacts/investor-plan/charts/payback_recovery.png" alt="بازگشت هزینه اولیه"/></div>
+<div class="callout">
+<strong>خوانش سرمایه‌گذار:</strong> تا ماه 10 زیان عملیاتی ماهانه طبیعی است
+(رمپ لانچ). از ماه 10 به بعد حاشیه مثبت ماهانه جمع می‌شود و تا ماه
+<strong>30</strong> کل اصل ۱۰ میلیارد بازیابی می‌شود —
+بدون فرض رشد انفجاری؛ فقط رمپ ۱۲ماه + رشد ماهانه ≈35M پس از آن.
+</div>
+
+<h2><span class="num">۰۹٫۲</span> چشم‌انداز سال‌های بعد (۲ تا ۵)</h2>
+<p>پس از عبور از Payback، مدل پایه چه چیزی برای سرمایه‌گذار می‌سازد؟
+نمودار زیر درآمد سالانه، سود خالص پس از مالیات ۲۵٪، و
+<strong>چندبرابر سرمایه (۱ + جریان نقدی تجمعی / ۱۰B)</strong> را نشان می‌دهد.</p>
+<div class="plot-wrap" dir="ltr"><img class="plot" src="file:///agent/artifacts/investor-plan/charts/later_years.png" alt="چشم‌انداز سال‌های بعد"/></div>
+<table>
+  <thead>
+    <tr><th>سال</th><th class="n">درآمد (میلیارد)</th>
+    <th class="n">سود خالص (میلیارد)</th>
+    <th class="n">جریان نقدی تجمعی</th>
+    <th class="n">چندبرابر Ask</th></tr>
+  </thead>
+  <tbody><tr><td>سال 2</td><td class='n'>15٫75</td><td class='n'>5٫49</td><td class='n'>-5٫47</td><td class='n'>0٫5×</td></tr><tr><td>سال 3</td><td class='n'>20٫79</td><td class='n'>9٫27</td><td class='n'>6٫88</td><td class='n'>1٫7×</td></tr><tr><td>سال 4</td><td class='n'>25٫83</td><td class='n'>13٫05</td><td class='n'>24٫28</td><td class='n'>3٫4×</td></tr><tr><td>سال 5</td><td class='n'>30٫87</td><td class='n'>16٫83</td><td class='n'>46٫72</td><td class='n'>5٫7×</td></tr></tbody>
+</table>
+<p class="fn">سال ۲: درآمد ≈ 15٫8B · سود خالص ≈ 5٫5B ·
+چندبرابر ≈ 0٫5× —
+تا پایان سال ۵ چندبرابر ≈ <strong>5٫7×</strong>
+روی Ask ده میلیارد (فرض رشد ملایم ثابت؛ نه تعهد).</p>
 
 <h2><span class="num">۱۰</span> نقشه راه و ریسک</h2>
 <table>
@@ -720,12 +810,90 @@ Runway ۱۲ ماه (702٬700٬000 × ۱۲ = 8٬432٬400٬000) =
   </tbody>
 </table>
 
-<h2><span class="num">۱۱</span> پیشنهاد سرمایه‌گذاری</h2>
+<div class="pb"></div>
+<h2><span class="num">۱۱</span> چرا این سرمایه‌گذاری برای سرمایه‌گذار قابل‌قبول است؟</h2>
+<div class="narrative">
+<p>این بخش برای سرمایه‌گذار شکاک نوشته شده: نه شعار برند، بلکه
+<strong>بستن حلقه اعداد</strong> — از مسئله بازار تا بازگشت اصل و آپساید پس از آن.</p>
+
+<h3>۱) مسئله و بازار — چرا الان؟</h3>
+<p>صاحب‌پت در ایران خدمات اجتماعی، ایونت گروهی، خرید و مشاوره را جداگانه و پراکنده می‌گیرد.
+تلگرام کانال توزیع آماده است؛ پت‌دیت وب + ربات را با یک حساب و اقتصاد سکه یکپارچه وصل می‌کند.
+این یعنی CAC پایین‌تر از اپ‌های خالص موبایل و مسیر ورود کوتاه‌تر به پرداخت.</p>
+
+<h3>۲) موتور درآمد — سکه + ایونت (قابل اندازه‌گیری)</h3>
+<ul class="t">
+  <li><strong>سکه/VIP:</strong> هسته تکرارشونده؛ قیمت مرجع سکه 2٬000 تومان.</li>
+  <li><strong>ایونت پلتفرمی:</strong> عضویت فرض 2 سکه/نفر + ساخت 100 سکه —
+  در پایه م۱۲ ≈ <strong>75٬000٬000</strong> تومان روی استک درآمد
+  (1٬085٬000٬000 جمع).</li>
+  <li>شاپ و مشاوره حاشیه مکمل‌اند؛ ایونت اهرم رشد اجتماعی و تکرار خرید سکه است.</li>
+</ul>
+
+<h3>۳) اتوماسیون → برن ثابت، هزینه به ازای کاربر کاهشی</h3>
+<p>برن اسمی ماهانه قفل است روی <strong>702٬700٬000</strong> تومان.
+با ربات، AI و پنل ادمین مالی/کیف‌پول، همان تیم ۶–۷ نفره MAU بیشتری را پوشش می‌دهد:
+از ≈100٬385 تومان برن/MAU در لانچ تا
+≈23٬423 در فاز اتوماسیون —
+یعنی مقیاس بدون انفجار HR.</p>
+
+<h3>۴) هزینه‌های واقعی ایران — نه مدل خوش‌بینانه دلاری</h3>
+<table>
+  <thead><tr><th>قلم</th><th>فرض</th><th class="n">اثر روی مدل</th></tr></thead>
+  <tbody>
+    <tr><td>بیمه کارفرما</td><td>۲۳٪ روی حقوق ناخالص</td><td class="n">+89٬700٬000/ماه</td></tr>
+    <tr><td>مالیات عملکرد</td><td>۲۵٪ روی سود مشمول</td><td>در سود خالص و جدول سالانه</td></tr>
+    <tr><td>زیرساخت فنی</td><td>سرور + هاست + دامنه</td><td class="n">15٬000٬000/ماه داخل برن</td></tr>
+    <tr><td>برن کل</td><td>حقوق+بیمه+AI+اجاره+جاری+infra</td><td class="n"><strong>702٬700٬000</strong></td></tr>
+  </tbody>
+</table>
+
+<h3>۵) بسته سرمایه — Runway شفاف</h3>
+<ol class="steps">
+  <li>راه‌اندازی یک‌باره: 1٬500٬000٬000 تومان.</li>
+  <li>۱۲ ماه عملیات: 702٬700٬000 × ۱۲ = 8٬432٬400٬000.</li>
+  <li>جمع ≈ 9٬932٬400٬000 + بافر نازک 67٬600٬000 =
+  <strong>Ask قفل: ۱۰٬۰۰۰٬۰۰۰٬۰۰۰</strong>.</li>
+  <li>پوشش: ≈ 14٫2 ماه برن کل · ≈ 12٫1 ماه عملیات پس از راه‌اندازی —
+  یعنی حتی اگر رمپ درآمد کندتر از پایه باشد، زمان کافی برای اصلاح مسیر هست.</li>
+</ol>
+
+<h3>۶) سربه‌سر، Payback، و آپساید بعد از بازگشت اصل</h3>
+<div class="statrow">
+  <div class="stat"><div class="v">م10</div><div class="l">سربه‌سر عملیاتی</div></div>
+  <div class="stat"><div class="v">م30</div><div class="l">بازگشت اصل ۱۰B</div></div>
+  <div class="stat"><div class="v">0٫5×</div><div class="l">چندبرابر پایان سال ۲</div></div>
+  <div class="stat"><div class="v">5٫7×</div><div class="l">چندبرابر پایان سال ۵</div></div>
+</div>
+<p>از نگاه سرمایه‌گذار محافظه‌کار: ابتدا اصل در ≈ ماه 30 برمی‌گردد؛
+سپس جریان نقدی تجمعی مثبت می‌ماند و تا سال ۵ — با فرض رشد ملایم —
+به حدود <strong>5٫7 برابر Ask</strong> می‌رسد.
+این آپساید بعد از Payback است، نه جایگزین بازگشت اصل.</p>
+
+<h3>۷) پوشش ریسک — چرا اعداد «می‌بندند»</h3>
+<ul class="t">
+  <li><strong>رشد کند:</strong> بافر + KPI ماهانه ایونت/پرداخت؛ مسیر کاهش burn نسبی با اتوماسیون.</li>
+  <li><strong>نوسان دلار/AI:</strong> سقف مصرف API؛ قیمت‌گذاری پویا سکه.</li>
+  <li><strong>مدل ایونت:</strong> شروع با ایونت پلتفرمی ۱۰۰٪ take؛ کمیسیون میزبان مسیر بعدی است نه وابستگی فعلی.</li>
+  <li><strong>رگولاتوری/پرداخت:</strong> چند درگاه؛ گزارش P&amp;L ماهانه به سرمایه‌گذار.</li>
+  <li><strong>بیمه/مالیات:</strong> نرخ‌های ایران از روز اول داخل برن و سود خالص‌اند — سورپرایز پنهان کمتر.</li>
+</ul>
+<div class="callout">
+<strong>جمع‌بندی برای ترم‌شیت:</strong>
+Ask <span class="hl">۱۰ میلیارد</span> · برن <span class="hl">702٫7M</span>/ماه ·
+سربه‌سر پایه ماه 10 · بازگشت اصل ماه 30 ·
+پس از آن مسیر چندبرابر تا ≈5٫7× در افق ۵ساله مدل پایه.
+محصول واقعی (وب، چت، همبازی، پنل مالی) همین حالا اسکرین دارد — سرمایه برای مقیاس است، نه ساخت از صفر.
+</div>
+</div>
+
+<h2><span class="num">۱۲</span> پیشنهاد سرمایه‌گذاری</h2>
 <ul class="t">
   <li><strong>مبلغ:</strong> ۱۰٬۰۰۰٬۰۰۰٬۰۰۰ تومان (۱۰ میلیارد)</li>
   <li><strong>مصرف:</strong> راه‌اندازی ۱٫۵B + Runway ۱۲ماه تیم ۶ نفره (بیمه کارفرما ۲۳٪) + بافر نازک</li>
   <li><strong>پوشش:</strong> ≈ 14٫2 ماه برن کل · ≈ 12٫1 ماه عملیات پس از راه‌اندازی</li>
   <li><strong>هدف ۱۲ماه:</strong> عبور از سربه‌سر در سناریو پایه (با استک ایونت)</li>
+  <li><strong>بازگشت اصل:</strong> ≈ ماه 30 در مدل پایه (نمودار ۰۹٫۱)</li>
   <li><strong>گزارش:</strong> P&amp;L ماهانه، MAU، نرخ پرداخت، حجم ایونت، CAC</li>
   <li><strong>سهام/valuation:</strong> در مذاکره ترم‌شیت</li>
 </ul>
@@ -733,9 +901,10 @@ Runway ۱۲ ماه (702٬700٬000 × ۱۲ = 8٬432٬400٬000) =
 <strong>جمع‌بندی:</strong> برن <span class="hl">702٬700٬000</span> تومان/ماه ·
 سرمایه درخواستی <span class="hl">۱۰٬۰۰۰٬۰۰۰٬۰۰۰</span> تومان ·
 ایونت پایه م۱۲ ≈ <span class="hl">75٬000٬000</span> تومان ·
-سربه‌سر پایه ماه <span class="hl">10</span>.
+سربه‌سر پایه ماه <span class="hl">10</span> ·
+Payback ماه <span class="hl">30</span>.
 </div>
 <p class="muted" style="margin-top:16px;text-align:center">
-پت‌دیت · طرح توجیهی سرمایه‌گذاری · اعداد به تومان · نسخه ۱٫۵
+پت‌دیت · طرح توجیهی سرمایه‌گذاری · اعداد به تومان · نسخه ۱٫۶
 </p>
 </body></html>
