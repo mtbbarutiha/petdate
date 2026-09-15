@@ -74,8 +74,8 @@ BUFFER = CONTINGENCY  # alias for narrative/tables
 CAPITAL_NEED = CAPITAL_BASE  # نیاز قبل از بافر گرد کردن
 ASK_MONTHS = CAPITAL_ASK / BURN  # ≈ ۱۴٫۲ ماه پوشش کل (شامل راه‌اندازی)
 RUNWAY_COVER_MONTHS = (CAPITAL_ASK - SETUP_TOTAL) / BURN  # ≈ ۱۲٫۱ ماه عملیات
-DOC_VERSION = "۱٫۸"
-DOC_VERSION_LATIN = "1.8"
+DOC_VERSION = "۱٫۹"
+DOC_VERSION_LATIN = "1.9"
 POST_RAMP_GROWTH_M = 35  # میلیون تومان رشد ماهانه درآمد پس از ماه ۱۲
 
 # ── اقتصاد سکه و ایونت ────────────────────────────────────────────────
@@ -770,9 +770,10 @@ def shot(name: str, caption: str, cls: str = "") -> str:
 
 
 def build_html() -> str:
-    # لوگو مادر PNG (packages/web/public/pepito/img/logo.png)
-    logo = uri(ASSETS / "petdate-logo.png")
-    banner = uri(ASSETS / "petdate-banner.jpg")
+    # لوگو مادر شفاف (بدون پس‌زمینه): logo-light برای کاور تیره
+    # منبع: packages/web/public/pepito/img/logo-light.png (RGBA، گوشه‌ها alpha=0)
+    logo = uri(ASSETS / "petdate-logo-light.png")
+    cover_logo = uri(ASSETS / "petdate-cover-logo.png")
     payroll_rows = "".join(
         f"<tr><td>{k}</td><td class='n'>{fmt(v)}</td></tr>" for k, v in PAYROLL.items()
     )
@@ -975,9 +976,15 @@ def build_html() -> str:
     gap: 14px;
   }}
   .cover img.logo {{
-    height: 52px; width: auto; max-width: 220px; object-fit: contain;
-    background: rgba(255,255,255,.06); border-radius: 14px; padding: 8px 12px;
-    box-shadow: 0 10px 28px rgba(0,0,0,.28);
+    height: 48px; width: auto; max-width: 200px; object-fit: contain;
+    background: transparent !important;
+    border: none; border-radius: 0; padding: 0; box-shadow: none;
+  }}
+  .cover img.cover-logo {{
+    display: block; width: auto; height: 72px; max-width: 320px;
+    object-fit: contain; margin: 10px 0 18px;
+    background: transparent !important;
+    border: none; border-radius: 0; padding: 0; box-shadow: none;
   }}
   .brand-name {{
     font-family: "Noto Sans Arabic", "DejaVu Sans", sans-serif;
@@ -1008,12 +1015,6 @@ def build_html() -> str:
   .tag {{
     font-size: 10.5pt; opacity: .92; max-width: 92%;
     line-height: 1.65; margin: 0 0 16px;
-  }}
-  .cover img.banner {{
-    width: 100%; height: 88px; object-fit: cover; object-position: center;
-    border-radius: 14px; margin: 4px 0 18px;
-    border: 1px solid rgba(255,255,255,.16);
-    box-shadow: 0 8px 20px rgba(0,0,0,.18);
   }}
   .kpis {{
     display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
@@ -1311,7 +1312,7 @@ def build_html() -> str:
   <h1>طرح توجیهی سرمایه‌گذاری<br/>پت‌دیت (PetDate)</h1>
   <p class="tag">سوپراپ فارسی پت: همبازی، ایونت، پت‌شاپ و مشاوره دامپزشک —
   وب + ربات تلگرام با اقتصاد سکه یکپارچه و پنل ادمین عملیاتی.</p>
-  <img class="banner" src="{banner}" alt=""/>
+  <img class="cover-logo" src="{cover_logo}" alt="Pet Date"/>
   <div class="kpis">
     <div class="kpi accent">
       <div class="l">سرمایه درخواستی</div>
@@ -1396,32 +1397,32 @@ def build_html() -> str:
 </div>
 
 <div class="pb"></div>
-<h2><span class="num">۰۳</span> تجربه محصول — وب، چت و همبازی</h2>
-<p class="muted">اسکرین‌شات‌های واقعی از محصول جاری پت‌دیت (وب).</p>
+<h2><span class="num">۰۳</span> تجربه محصول — سایت جاری petdate.ir</h2>
+<p class="muted">اسکرین‌شات تازه (همین جلسه) از <strong>سایت زنده</strong> petdate.ir —
+لندینگ، فروشگاه، پذیرش و مشاوره دامپزشک.</p>
 <div class="shots">
-  {shot("gutters-guides-top-1440.png", "لندینگ وب — معرفی برند و مسیر ورود به خدمات پت‌دیت", "tall")}
-  {shot("matches-desktop.png", "همبازی پت — کشف و اتصال صاحبان حیوان خانگی", "tall")}
+  {shot("site-home.png", "سایت — لندینگ زنده petdate.ir", "tall")}
+  {shot("site-shop.png", "سایت — فروشگاه پت (کاتالوگ زنده)", "tall")}
 </div>
 <div class="shots">
-  {shot("chat-desktop.png", "چت دسکتاپ — گفت‌وگوی درون‌پلتفرمی")}
-  {shot("chat-mobile.png", "چت موبایل — تجربه همراه")}
+  {shot("site-adoption.png", "سایت — پذیرش / واگذاری")}
+  {shot("site-vet.png", "سایت — مشاوره دامپزشکی آنلاین")}
 </div>
 
-<h2><span class="num">۰۴</span> پنل ادمین جاری — عملیات، مالی و فروشگاه</h2>
-<p>اسکرین‌شات‌های تازه از <strong>پنل ادمین فعلی</strong> پت‌دیت (لوگوی مادر، کنسول عملیاتی):
-داشبورد پلتفرم، مالی، P&amp;L، کیف‌پول و سفارش‌های فروشگاه —
-ستون اتوماسیون برای رشد بدون نیروی انسانی متناسب.</p>
+<h2><span class="num">۰۴</span> پنل مدیریت جاری — عملیات، مالی و فروشگاه</h2>
+<p>اسکرین‌شات تازه (همین جلسه) از <strong>پنل مدیریت زنده</strong> petdate.ir/admin:
+داشبورد پلتفرم، مالی، P&amp;L، کیف‌پول و سفارش‌های فروشگاه.</p>
 <div class="shots">
-  {shot("admin-finance-dashboard.png", "داشبورد مالی ادمین — درآمد، هزینه، سود و ترکیب پرداخت", "tall panel")}
-  {shot("admin_platform_dashboard_kpis.png", "داشبورد پلتفرم — ویجت‌ها و مانیتورینگ ماژول‌ها", "tall panel")}
+  {shot("admin-finance-dashboard.png", "پنل مدیریت — داشبورد مالی (درآمد، هزینه، سود)", "tall panel")}
+  {shot("admin_platform_dashboard_kpis.png", "پنل مدیریت — داشبورد پلتفرم و KPIها", "tall panel")}
 </div>
 <div class="shots">
-  {shot("admin-finance-pnl.png", "P&amp;L عملیاتی — سود و زیان قابل گزارش به سرمایه‌گذار", "panel")}
-  {shot("admin-finance-wallet.png", "دفتر کیف‌پول — تومان، سکه، ستاره و TON", "panel")}
+  {shot("admin-finance-pnl.png", "پنل مدیریت — P&amp;L عملیاتی", "panel")}
+  {shot("admin-finance-wallet.png", "پنل مدیریت — دفتر کیف‌پول", "panel")}
 </div>
 <div class="shots">
-  {shot("admin-shop-orders.png", "سفارش‌های فروشگاه — صف پرداخت‌شده و رهگیری سفارش", "panel")}
-  {shot("admin-finance-sales.png", "نمودار فروش مالی — روند و دسته‌بندی درآمد", "panel")}
+  {shot("admin-shop-orders.png", "پنل مدیریت — سفارش‌های فروشگاه", "panel")}
+  {shot("admin-finance-sales.png", "پنل مدیریت — نمودار فروش مالی", "panel")}
 </div>
 
 <div class="pb"></div>

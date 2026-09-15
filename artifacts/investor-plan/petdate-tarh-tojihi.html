@@ -2,13 +2,13 @@
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="utf-8"/>
-<title>طرح توجیهی پت‌دیت — نسخه ۱٫۸</title>
+<title>طرح توجیهی پت‌دیت — نسخه ۱٫۹</title>
 <style>
   @page {
     size: A4;
     margin: 16mm 14mm 18mm 14mm;
     @bottom-center {
-      content: "پت‌دیت · طرح توجیهی سرمایه‌گذاری · محرمانه · v1.8  ·  " counter(page);
+      content: "پت‌دیت · طرح توجیهی سرمایه‌گذاری · محرمانه · v1.9  ·  " counter(page);
       font-family: "Noto Sans Arabic", "DejaVu Sans", sans-serif;
       font-size: 7.5pt;
       color: #64748b;
@@ -141,9 +141,15 @@
     gap: 14px;
   }
   .cover img.logo {
-    height: 52px; width: auto; max-width: 220px; object-fit: contain;
-    background: rgba(255,255,255,.06); border-radius: 14px; padding: 8px 12px;
-    box-shadow: 0 10px 28px rgba(0,0,0,.28);
+    height: 48px; width: auto; max-width: 200px; object-fit: contain;
+    background: transparent !important;
+    border: none; border-radius: 0; padding: 0; box-shadow: none;
+  }
+  .cover img.cover-logo {
+    display: block; width: auto; height: 72px; max-width: 320px;
+    object-fit: contain; margin: 10px 0 18px;
+    background: transparent !important;
+    border: none; border-radius: 0; padding: 0; box-shadow: none;
   }
   .brand-name {
     font-family: "Noto Sans Arabic", "DejaVu Sans", sans-serif;
@@ -174,12 +180,6 @@
   .tag {
     font-size: 10.5pt; opacity: .92; max-width: 92%;
     line-height: 1.65; margin: 0 0 16px;
-  }
-  .cover img.banner {
-    width: 100%; height: 88px; object-fit: cover; object-position: center;
-    border-radius: 14px; margin: 4px 0 18px;
-    border: 1px solid rgba(255,255,255,.16);
-    box-shadow: 0 8px 20px rgba(0,0,0,.18);
   }
   .kpis {
     display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
@@ -464,20 +464,20 @@
 <section class="cover">
   <div class="cover-top">
     <div class="cover-brand">
-      <img class="logo" src="file:///agent/artifacts/investor-plan/assets/petdate-logo.png" alt="پت‌دیت"/>
+      <img class="logo" src="file:///agent/artifacts/investor-plan/assets/petdate-logo-light.png" alt="پت‌دیت"/>
       <div>
         <div class="brand-name">پت‌دیت</div>
         <div class="brand-sub">PetDate · petdate.ir</div>
       </div>
     </div>
-    <div class="ver-pill">نسخه ۱٫۸ · محرمانه</div>
+    <div class="ver-pill">نسخه ۱٫۹ · محرمانه</div>
   </div>
   <div class="cover-rule"></div>
   <div class="eyebrow">سند ویژه سرمایه‌گذار · طرح توجیهی</div>
   <h1>طرح توجیهی سرمایه‌گذاری<br/>پت‌دیت (PetDate)</h1>
   <p class="tag">سوپراپ فارسی پت: همبازی، ایونت، پت‌شاپ و مشاوره دامپزشک —
   وب + ربات تلگرام با اقتصاد سکه یکپارچه و پنل ادمین عملیاتی.</p>
-  <img class="banner" src="file:///agent/artifacts/investor-plan/assets/petdate-banner.jpg" alt=""/>
+  <img class="cover-logo" src="file:///agent/artifacts/investor-plan/assets/petdate-cover-logo.png" alt="Pet Date"/>
   <div class="kpis">
     <div class="kpi accent">
       <div class="l">سرمایه درخواستی</div>
@@ -562,32 +562,32 @@
 </div>
 
 <div class="pb"></div>
-<h2><span class="num">۰۳</span> تجربه محصول — وب، چت و همبازی</h2>
-<p class="muted">اسکرین‌شات‌های واقعی از محصول جاری پت‌دیت (وب).</p>
+<h2><span class="num">۰۳</span> تجربه محصول — سایت جاری petdate.ir</h2>
+<p class="muted">اسکرین‌شات تازه (همین جلسه) از <strong>سایت زنده</strong> petdate.ir —
+لندینگ، فروشگاه، پذیرش و مشاوره دامپزشک.</p>
 <div class="shots">
-  <figure class="shot tall"><img src="file:///agent/artifacts/investor-plan/assets/shots/gutters-guides-top-1440.png" alt=""/><figcaption>لندینگ وب — معرفی برند و مسیر ورود به خدمات پت‌دیت</figcaption></figure>
-  <figure class="shot tall"><img src="file:///agent/artifacts/investor-plan/assets/shots/matches-desktop.png" alt=""/><figcaption>همبازی پت — کشف و اتصال صاحبان حیوان خانگی</figcaption></figure>
+  <figure class="shot tall"><img src="file:///agent/artifacts/investor-plan/assets/shots/site-home.png" alt=""/><figcaption>سایت — لندینگ زنده petdate.ir</figcaption></figure>
+  <figure class="shot tall"><img src="file:///agent/artifacts/investor-plan/assets/shots/site-shop.png" alt=""/><figcaption>سایت — فروشگاه پت (کاتالوگ زنده)</figcaption></figure>
 </div>
 <div class="shots">
-  <figure class="shot "><img src="file:///agent/artifacts/investor-plan/assets/shots/chat-desktop.png" alt=""/><figcaption>چت دسکتاپ — گفت‌وگوی درون‌پلتفرمی</figcaption></figure>
-  <figure class="shot "><img src="file:///agent/artifacts/investor-plan/assets/shots/chat-mobile.png" alt=""/><figcaption>چت موبایل — تجربه همراه</figcaption></figure>
+  <figure class="shot "><img src="file:///agent/artifacts/investor-plan/assets/shots/site-adoption.png" alt=""/><figcaption>سایت — پذیرش / واگذاری</figcaption></figure>
+  <figure class="shot "><img src="file:///agent/artifacts/investor-plan/assets/shots/site-vet.png" alt=""/><figcaption>سایت — مشاوره دامپزشکی آنلاین</figcaption></figure>
 </div>
 
-<h2><span class="num">۰۴</span> پنل ادمین جاری — عملیات، مالی و فروشگاه</h2>
-<p>اسکرین‌شات‌های تازه از <strong>پنل ادمین فعلی</strong> پت‌دیت (لوگوی مادر، کنسول عملیاتی):
-داشبورد پلتفرم، مالی، P&amp;L، کیف‌پول و سفارش‌های فروشگاه —
-ستون اتوماسیون برای رشد بدون نیروی انسانی متناسب.</p>
+<h2><span class="num">۰۴</span> پنل مدیریت جاری — عملیات، مالی و فروشگاه</h2>
+<p>اسکرین‌شات تازه (همین جلسه) از <strong>پنل مدیریت زنده</strong> petdate.ir/admin:
+داشبورد پلتفرم، مالی، P&amp;L، کیف‌پول و سفارش‌های فروشگاه.</p>
 <div class="shots">
-  <figure class="shot tall panel"><img src="file:///agent/artifacts/investor-plan/assets/shots/admin-finance-dashboard.png" alt=""/><figcaption>داشبورد مالی ادمین — درآمد، هزینه، سود و ترکیب پرداخت</figcaption></figure>
-  <figure class="shot tall panel"><img src="file:///agent/artifacts/investor-plan/assets/shots/admin_platform_dashboard_kpis.png" alt=""/><figcaption>داشبورد پلتفرم — ویجت‌ها و مانیتورینگ ماژول‌ها</figcaption></figure>
+  <figure class="shot tall panel"><img src="file:///agent/artifacts/investor-plan/assets/shots/admin-finance-dashboard.png" alt=""/><figcaption>پنل مدیریت — داشبورد مالی (درآمد، هزینه، سود)</figcaption></figure>
+  <figure class="shot tall panel"><img src="file:///agent/artifacts/investor-plan/assets/shots/admin_platform_dashboard_kpis.png" alt=""/><figcaption>پنل مدیریت — داشبورد پلتفرم و KPIها</figcaption></figure>
 </div>
 <div class="shots">
-  <figure class="shot panel"><img src="file:///agent/artifacts/investor-plan/assets/shots/admin-finance-pnl.png" alt=""/><figcaption>P&amp;L عملیاتی — سود و زیان قابل گزارش به سرمایه‌گذار</figcaption></figure>
-  <figure class="shot panel"><img src="file:///agent/artifacts/investor-plan/assets/shots/admin-finance-wallet.png" alt=""/><figcaption>دفتر کیف‌پول — تومان، سکه، ستاره و TON</figcaption></figure>
+  <figure class="shot panel"><img src="file:///agent/artifacts/investor-plan/assets/shots/admin-finance-pnl.png" alt=""/><figcaption>پنل مدیریت — P&amp;L عملیاتی</figcaption></figure>
+  <figure class="shot panel"><img src="file:///agent/artifacts/investor-plan/assets/shots/admin-finance-wallet.png" alt=""/><figcaption>پنل مدیریت — دفتر کیف‌پول</figcaption></figure>
 </div>
 <div class="shots">
-  <figure class="shot panel"><img src="file:///agent/artifacts/investor-plan/assets/shots/admin-shop-orders.png" alt=""/><figcaption>سفارش‌های فروشگاه — صف پرداخت‌شده و رهگیری سفارش</figcaption></figure>
-  <figure class="shot panel"><img src="file:///agent/artifacts/investor-plan/assets/shots/admin-finance-sales.png" alt=""/><figcaption>نمودار فروش مالی — روند و دسته‌بندی درآمد</figcaption></figure>
+  <figure class="shot panel"><img src="file:///agent/artifacts/investor-plan/assets/shots/admin-shop-orders.png" alt=""/><figcaption>پنل مدیریت — سفارش‌های فروشگاه</figcaption></figure>
+  <figure class="shot panel"><img src="file:///agent/artifacts/investor-plan/assets/shots/admin-finance-sales.png" alt=""/><figcaption>پنل مدیریت — نمودار فروش مالی</figcaption></figure>
 </div>
 
 <div class="pb"></div>
@@ -910,6 +910,6 @@ Ask <span class="hl">۱۰ میلیارد</span> · برن <span class="hl">702٫
 Payback ماه <span class="hl">30</span>.
 </div>
 <p class="muted" style="margin-top:16px;text-align:center">
-پت‌دیت · طرح توجیهی سرمایه‌گذاری · اعداد به تومان · نسخه ۱٫۸
+پت‌دیت · طرح توجیهی سرمایه‌گذاری · اعداد به تومان · نسخه ۱٫۹
 </p>
 </body></html>

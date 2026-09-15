@@ -1,0 +1,66 @@
+{
+  "captured_at_utc": "2026-09-15T17:56Z",
+  "base": "https://petdate.ir",
+  "shots": [
+    {
+      "file": "/agent/artifacts/investor-plan/assets/shots/v19-live/live-site-home.png",
+      "url": "https://petdate.ir/?v19=1789494995",
+      "bytes": 597875
+    },
+    {
+      "file": "/agent/artifacts/investor-plan/assets/shots/v19-live/live-site-shop.png",
+      "url": "https://petdate.ir/shop?v19=1789495002",
+      "bytes": 908485
+    },
+    {
+      "file": "/agent/artifacts/investor-plan/assets/shots/v19-live/live-site-adoption.png",
+      "url": "https://petdate.ir/adoption?v19=1789495007",
+      "bytes": 505245
+    },
+    {
+      "file": "/agent/artifacts/investor-plan/assets/shots/v19-live/live-site-vet.png",
+      "url": "https://petdate.ir/vet-consult?v19=1789495012",
+      "bytes": 425745
+    },
+    {
+      "file": "/agent/artifacts/investor-plan/assets/shots/v19-live/live-site-magazine.png",
+      "url": "https://petdate.ir/magazine?v19=1789495018",
+      "bytes": 641919
+    },
+    {
+      "file": "/agent/artifacts/investor-plan/assets/shots/v19-live/live-site-home-mobile.png",
+      "url": "https://petdate.ir/?v19m=1789495023",
+      "bytes": 261233
+    },
+    {
+      "file": "/agent/artifacts/investor-plan/assets/shots/v19-live/live-admin-dashboard.png",
+      "url": "https://petdate.ir/admin",
+      "bytes": 186424
+    },
+    {
+      "file": "/agent/artifacts/investor-plan/assets/shots/v19-live/live-admin-finance.png",
+      "url": "https://petdate.ir/admin/finance",
+      "bytes": 224972
+    },
+    {
+      "file": "/agent/artifacts/investor-plan/assets/shots/v19-live/live-admin-finance-pnl.png",
+      "url": "https://petdate.ir/admin/finance/pnl",
+      "bytes": 169530
+    },
+    {
+      "file": "/agent/artifacts/investor-plan/assets/shots/v19-live/live-admin-finance-wallet.png",
+      "url": "https://petdate.ir/admin/finance/wallet",
+      "bytes": 133542
+    },
+    {
+      "file": "/agent/artifacts/investor-plan/assets/shots/v19-live/live-admin-finance-sales.png",
+      "url": "https://petdate.ir/admin/finance/sales",
+      "bytes": 186911
+    },
+    {
+      "file": "/agent/artifacts/investor-plan/assets/shots/v19-live/live-admin-shop-orders.png",
+      "url": "https://petdate.ir/admin/shop/orders",
+      "bytes": 231993
+    }
+  ]
+}
