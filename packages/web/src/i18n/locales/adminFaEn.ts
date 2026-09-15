@@ -2293,6 +2293,8 @@ export const ADMIN_FA_EN: Record<string, string> = {
   "شماره کارت": "Card number",
   "واریز شد": "Paid out",
   "رد و بازگشت موجودی": "Reject and refund balance",
+  "مقدار / ارز": "Amount / currency",
+  "درخواست‌های برداشت از وب و ربات — موجودی هنگام ثبت کسر می‌شود؛ رد = بازگشت موجودی": "Withdrawal requests from web and bot — balance is deducted on submit; reject refunds the balance",
   "یادداشت واریز (اختیاری)": "Payout note (optional)",
   "اینباکس پشتیبانی": "Support inbox",
   "گفتگوهای پشتیبانی وب و ربات — پاسخ انسانی در همان نخ ذخیره می‌شود": "Web and bot support threads — human replies are stored in the same thread",
