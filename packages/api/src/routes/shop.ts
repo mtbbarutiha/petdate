@@ -1,7 +1,8 @@
-import { Router } from 'express';
+import { Router, type Request, type Response } from 'express';
 import multer from 'multer';
 import { COIN_PRICE_TOMAN, STAR_PRICE_TOMAN, tomanToShopCoins } from '@petdate/shared';
 import { getUserFromBearer } from '../services/web-otp';
+import { requireBotOrMatchingTelegram } from '../internal-auth';
 import {
   checkoutShopWithCoins,
   checkoutShopWithStars,
@@ -609,16 +610,8 @@ shopRouter.post('/checkout/card-receipt/:paymentOrderId', (req, res) => {
 
 shopRouter.post('/checkout/toman-telegram', (req, res) => {
   const body = req.body ?? {};
-  const telegramId = String(body.telegramId ?? '').trim();
-  if (!telegramId) {
-    res.status(400).json({ ok: false, reason: 'bad_user', error: 'telegramId الزامی است.' });
-    return;
-  }
-  const user = dbService.getUserByTelegramId(telegramId);
-  if (!user) {
-    res.status(404).json({ ok: false, reason: 'user_missing', error: 'کاربر پیدا نشد. اول /start بزن.' });
-    return;
-  }
+  const user = requireTelegramCheckoutUser(req, res, body.telegramId);
+  if (!user) return;
   const items = Array.isArray(body.items) ? body.items : [];
   const result = checkoutShopWithToman({
     userId: user.id,
@@ -652,16 +645,8 @@ shopRouter.post('/checkout/toman-telegram', (req, res) => {
 
 shopRouter.post('/checkout/card-telegram', (req, res) => {
   const body = req.body ?? {};
-  const telegramId = String(body.telegramId ?? '').trim();
-  if (!telegramId) {
-    res.status(400).json({ ok: false, reason: 'bad_user', error: 'telegramId الزامی است.' });
-    return;
-  }
-  const user = dbService.getUserByTelegramId(telegramId);
-  if (!user) {
-    res.status(404).json({ ok: false, reason: 'user_missing', error: 'کاربر پیدا نشد. اول /start بزن.' });
-    return;
-  }
+  const user = requireTelegramCheckoutUser(req, res, body.telegramId);
+  if (!user) return;
   const items = Array.isArray(body.items) ? body.items : [];
   const result = prepareShopCardCheckout({
     userId: user.id,
@@ -695,17 +680,8 @@ shopRouter.post('/checkout/card-telegram', (req, res) => {
 
 shopRouter.post('/checkout/coins-telegram', (req, res) => {
   const body = req.body ?? {};
-  const telegramId = String(body.telegramId ?? '').trim();
-  if (!telegramId) {
-    res.status(400).json({ ok: false, reason: 'bad_user', error: 'telegramId الزامی است.' });
-    return;
-  }
-
-  const user = dbService.getUserByTelegramId(telegramId);
-  if (!user) {
-    res.status(404).json({ ok: false, reason: 'user_missing', error: 'کاربر پیدا نشد. اول /start بزن.' });
-    return;
-  }
+  const user = requireTelegramCheckoutUser(req, res, body.telegramId);
+  if (!user) return;
 
   const items = Array.isArray(body.items) ? body.items : [];
   const result = checkoutShopWithCoins({
@@ -744,17 +720,8 @@ shopRouter.post('/checkout/coins-telegram', (req, res) => {
 
 shopRouter.post('/checkout/stars-telegram', (req, res) => {
   const body = req.body ?? {};
-  const telegramId = String(body.telegramId ?? '').trim();
-  if (!telegramId) {
-    res.status(400).json({ ok: false, reason: 'bad_user', error: 'telegramId الزامی است.' });
-    return;
-  }
-
-  const user = dbService.getUserByTelegramId(telegramId);
-  if (!user) {
-    res.status(404).json({ ok: false, reason: 'user_missing', error: 'کاربر پیدا نشد. اول /start بزن.' });
-    return;
-  }
+  const user = requireTelegramCheckoutUser(req, res, body.telegramId);
+  if (!user) return;
 
   const items = Array.isArray(body.items) ? body.items : [];
   const result = prepareShopStarsXtrCheckout({
@@ -793,17 +760,8 @@ shopRouter.post('/checkout/stars-telegram', (req, res) => {
 
 shopRouter.post('/checkout/wallet-stars-telegram', (req, res) => {
   const body = req.body ?? {};
-  const telegramId = String(body.telegramId ?? '').trim();
-  if (!telegramId) {
-    res.status(400).json({ ok: false, reason: 'bad_user', error: 'telegramId الزامی است.' });
-    return;
-  }
-
-  const user = dbService.getUserByTelegramId(telegramId);
-  if (!user) {
-    res.status(404).json({ ok: false, reason: 'user_missing', error: 'کاربر پیدا نشد. اول /start بزن.' });
-    return;
-  }
+  const user = requireTelegramCheckoutUser(req, res, body.telegramId);
+  if (!user) return;
 
   const items = Array.isArray(body.items) ? body.items : [];
   const result = checkoutShopWithStars({
@@ -871,6 +829,28 @@ function resolveTelegramUser(telegramIdRaw: unknown) {
   const user = dbService.getUserByTelegramId(telegramId);
   if (!user) return { error: 'کاربر پیدا نشد. اول /start بزن.' as const, user: null };
   return { error: null, user };
+}
+
+/** Checkout / sell-class telegram routes: bot token or matching session. */
+function requireTelegramCheckoutUser(req: Request, res: Response, telegramIdRaw: unknown) {
+  const telegramId = String(telegramIdRaw ?? '').trim();
+  if (!telegramId) {
+    res.status(400).json({ ok: false, reason: 'bad_user', error: 'telegramId الزامی است.' });
+    return null;
+  }
+  if (!requireBotOrMatchingTelegram(req, res, telegramId, 'برای پرداخت وارد حساب شوید.')) {
+    return null;
+  }
+  const user = dbService.getUserByTelegramId(telegramId);
+  if (!user) {
+    res.status(404).json({
+      ok: false,
+      reason: 'user_missing',
+      error: 'کاربر پیدا نشد. اول /start بزن.',
+    });
+    return null;
+  }
+  return user;
 }
 
 /** سبد خرید مشترک وب — منبع حقیقت برای کاربر لاگین‌شده */

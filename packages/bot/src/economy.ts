@@ -33,7 +33,10 @@ export const COIN_PRICE_TOMAN = SHARED_COIN_PRICE_TOMAN;
 export const COIN_PRICE_STARS = SHARED_COIN_PRICE_STARS;
 export const COIN_SELL_PRICE_TOMAN = SHARED_COIN_SELL_PRICE_TOMAN;
 export const MIN_SELL_COINS = SHARED_MIN_SELL_COINS;
-export const DAILY_COIN_REWARD = 10;
+export {
+  DAILY_COIN_REWARD,
+  WALLET_STARS_TOPUP_PACKS,
+} from '@petdate/shared';
 /** جایزه دعوت دوست — از shared */
 export const REFERRAL_BONUS_COINS = SHARED_REFERRAL_BONUS_COINS;
 /** @deprecated استفاده از SIGNUP_BONUS */

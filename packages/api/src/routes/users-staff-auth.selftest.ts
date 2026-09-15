@@ -21,6 +21,14 @@ assert.match(
 );
 assert.match(
   src,
+  /payments\/:id\/stars\/complete',\s*requireTrustedStaff/,
+  'stars complete is staff/bot-only'
+);
+assert.match(src, /requireBotOrMatchingTelegram/, 'telegram money routes require bot or session');
+assert.match(src, /catalogPaymentAmounts/, 'telegram payments use server catalog');
+assert.match(src, /claimDailyCoins\(user\.id\)/, 'daily claim does not take client amount');
+assert.match(
+  src,
   /payments\/pending\/card',\s*requireTrustedStaff/,
   'pending card payments list is staff-only'
 );

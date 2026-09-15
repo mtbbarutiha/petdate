@@ -1,7 +1,8 @@
 import { Router, type Request } from 'express';
-import { isInternalBot, requireTrustedStaff } from '../internal-auth';
+import { isInternalBot, requireBotOrMatchingTelegram, requireTrustedStaff } from '../internal-auth';
 import type { OnboardingStatus, User, UserRole } from '@petdate/shared';
 import {
+  catalogPaymentAmounts,
   COIN_SELL_PRICE_TOMAN,
   FACE_VERIFY_REWARD,
   MIN_SELL_COINS,
@@ -1247,13 +1248,14 @@ usersRouter.get('/providers/online', (req, res) => {
 
 /** دریافت سکه روزانه */
 usersRouter.post('/telegram/:telegramId/coins/daily', (req, res) => {
-  const user = dbService.getUserByTelegramId(req.params.telegramId);
+  const telegramId = String(req.params.telegramId ?? '').trim();
+  if (!requireBotOrMatchingTelegram(req, res, telegramId)) return;
+  const user = dbService.getUserByTelegramId(telegramId);
   if (!user) {
     res.status(404).json({ error: 'کاربر پیدا نشد' });
     return;
   }
-  const amount = req.body?.amount != null ? Number(req.body.amount) : 10;
-  const result = dbService.claimDailyCoins(user.id, Number.isFinite(amount) ? amount : 10);
+  const result = dbService.claimDailyCoins(user.id);
   if (!result.ok) {
     res.status(result.reason === 'already' ? 409 : 404).json({
       error: result.reason === 'already' ? 'امروز سکه روزانه را گرفتی' : 'کاربر پیدا نشد',
@@ -1292,7 +1294,9 @@ usersRouter.get('/telegram/:telegramId/coins/sell/open', (req, res) => {
 
 /** ثبت درخواست فروش سکه */
 usersRouter.post('/telegram/:telegramId/coins/sell', (req, res) => {
-  const user = dbService.getUserByTelegramId(req.params.telegramId);
+  const telegramId = String(req.params.telegramId ?? '').trim();
+  if (!requireBotOrMatchingTelegram(req, res, telegramId)) return;
+  const user = dbService.getUserByTelegramId(telegramId);
   if (!user) {
     res.status(404).json({ error: 'کاربر پیدا نشد' });
     return;
@@ -1337,34 +1341,25 @@ usersRouter.post('/telegram/:telegramId/coins/sell', (req, res) => {
 
 /** ایجاد سفارش خرید سکه (کارت یا Stars) */
 usersRouter.post('/telegram/:telegramId/payments', (req, res) => {
-  const user = dbService.getUserByTelegramId(req.params.telegramId);
+  const telegramId = String(req.params.telegramId ?? '').trim();
+  if (!requireBotOrMatchingTelegram(req, res, telegramId)) return;
+  const user = dbService.getUserByTelegramId(telegramId);
   if (!user) {
     res.status(404).json({ error: 'کاربر پیدا نشد' });
     return;
   }
   const packageId = String(req.body?.packageId ?? '').trim();
   const method = String(req.body?.method ?? '').trim() as 'card' | 'stars';
-  const coins = Number(req.body?.coins);
-  const amountToman =
-    req.body?.amountToman != null ? Number(req.body.amountToman) : undefined;
-  const amountStars =
-    req.body?.amountStars != null ? Number(req.body.amountStars) : undefined;
-
-  const isWalletStarsTopUp = packageId.startsWith('wstars:');
-  if (!packageId) {
-    res.status(400).json({ error: 'بسته نامعتبر', reason: 'package' });
-    return;
-  }
-  if (isWalletStarsTopUp) {
-    if (!Number.isFinite(amountStars) || Number(amountStars) <= 0) {
-      res.status(400).json({ error: 'تعداد ستاره نامعتبر', reason: 'package' });
-      return;
-    }
-  } else if (!Number.isFinite(coins) || coins <= 0) {
+  const catalog = catalogPaymentAmounts(packageId);
+  if (!catalog) {
     res.status(400).json({ error: 'بسته نامعتبر', reason: 'package' });
     return;
   }
   if (method !== 'card' && method !== 'stars') {
+    res.status(400).json({ error: 'روش پرداخت نامعتبر', reason: 'method' });
+    return;
+  }
+  if (catalog.kind === 'wallet_stars' && method !== 'stars') {
     res.status(400).json({ error: 'روش پرداخت نامعتبر', reason: 'method' });
     return;
   }
@@ -1373,7 +1368,7 @@ usersRouter.post('/telegram/:telegramId/payments', (req, res) => {
 
   // Same open-order guard as web wallet: orphan bot awaiting_receipt must not
   // spawn duplicates that block /wallet card top-ups.
-  if (method === 'card' && !isWalletStarsTopUp && !packageId.startsWith('shop')) {
+  if (method === 'card' && catalog.kind === 'coins') {
     const open = dbService.findOpenCoinCardOrder(user.id);
     if (open) {
       res.status(409).json({
@@ -1389,10 +1384,10 @@ usersRouter.post('/telegram/:telegramId/payments', (req, res) => {
   const status = method === 'card' ? 'awaiting_receipt' : 'awaiting_stars';
   const order = dbService.createPaymentOrder({
     userId: user.id,
-    packageId,
-    coins: isWalletStarsTopUp ? 0 : Math.floor(coins),
-    amountToman: amountToman != null && Number.isFinite(amountToman) ? amountToman : undefined,
-    amountStars: amountStars != null && Number.isFinite(amountStars) ? amountStars : undefined,
+    packageId: catalog.packageId,
+    coins: catalog.coins,
+    amountToman: catalog.toman,
+    amountStars: catalog.stars,
     method,
     status,
   });
@@ -1525,7 +1520,7 @@ usersRouter.post('/payments/:id/reject', requireTrustedStaff, (req, res) => {
   res.json({ ok: true, order: result.order, user: result.user });
 });
 
-usersRouter.post('/payments/:id/stars/complete', (req, res) => {
+usersRouter.post('/payments/:id/stars/complete', requireTrustedStaff, (req, res) => {
   const chargeId = String(req.body?.telegramPaymentChargeId ?? '').trim();
   const orderId = Number(req.params.id);
   const existing = dbService.getPaymentOrder(orderId);

@@ -152,9 +152,14 @@ function sumPaidOrders(since: string, until?: string): {
 }
 
 function paymentTopupRevenue(since: string, until?: string): number {
+  // Shop invoices (shopcard / shopcoins / shopxtr / …) are counted in shop_orders.
+  // Including them here double-counts shopcard revenue after completeShopCardPayment.
   let sql = `SELECT COALESCE(SUM(amount_toman), 0) AS c
              FROM payment_orders
-             WHERE status = 'approved' AND amount_toman IS NOT NULL AND created_at >= ?`;
+             WHERE status = 'approved'
+               AND amount_toman IS NOT NULL
+               AND package_id NOT LIKE 'shop%'
+               AND created_at >= ?`;
   const params: unknown[] = [since];
   if (until) {
     sql += ' AND created_at < ?';
