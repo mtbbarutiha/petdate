@@ -14,6 +14,7 @@ import {
   Stethoscope,
   type LucideIcon,
 } from 'lucide-react';
+import { MobileAppDownloadStrip } from '../components/MobileAppDownloadStrip';
 import { SiteFooter } from '../components/SiteFooter';
 import { useI18n } from '../i18n/I18nProvider';
 import { AdoptionPurchaseCta } from '../components/AdoptionPurchaseCta';
@@ -826,6 +827,8 @@ export function WelcomeBelowFold() {
           </Link>
         </p>
       </section>
+
+      <MobileAppDownloadStrip variant="article" />
 
       <SiteFooter />
     </>

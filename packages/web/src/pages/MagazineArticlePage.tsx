@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { LandingChrome } from '../components/LandingChrome';
+import { MobileAppDownloadStrip } from '../components/MobileAppDownloadStrip';
 import { resolvePublicMediaUrl } from '../lib/api';
 import { formatAdminFaDate } from '../admin/jalaliDate';
 import { MagazineCardView, type MagazineCard } from './MagazinePage';
@@ -187,6 +188,7 @@ export function MagazineArticlePage() {
           </div>
         </section>
       ) : null}
+      {article ? <MobileAppDownloadStrip variant="article" /> : null}
     </LandingChrome>
   );
 }

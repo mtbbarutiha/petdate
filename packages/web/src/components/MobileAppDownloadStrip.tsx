@@ -13,21 +13,33 @@ function isNativeCapacitorShell(): boolean {
   }
 }
 
+export type AppDownloadStripVariant = 'home' | 'article';
+
+type MobileAppDownloadStripProps = {
+  /** `home` = mobile-only (default). `article` = under magazine articles on all viewports. */
+  variant?: AppDownloadStripVariant;
+};
+
 /**
- * Digikala-style mobile app download strip for the public homepage.
- * Hidden on desktop and inside the Capacitor Android shell (already installed).
+ * Digikala-style app download strip.
+ * - home: mobile viewport only (homepage)
+ * - article: mobile + desktop (under every magazine article)
+ * Hidden inside the Capacitor Android shell (already installed).
  */
-export function MobileAppDownloadStrip() {
+export function MobileAppDownloadStrip({ variant = 'home' }: MobileAppDownloadStripProps) {
   const { t, dir, lang } = useI18n();
 
   if (isNativeCapacitorShell()) return null;
 
   const brandLabel = lang === 'en' ? BRAND.displayName : BRAND.displayNameFa;
+  const className =
+    variant === 'article' ? 'pd-app-strip pd-app-strip--article' : 'pd-app-strip';
 
   return (
     <aside
-      className="pd-app-strip"
-      data-testid="mobile-app-download-strip"
+      className={className}
+      data-testid={variant === 'article' ? 'article-app-download-strip' : 'mobile-app-download-strip'}
+      data-variant={variant}
       aria-label={t('landing.appStripAria')}
       dir={dir}
     >
