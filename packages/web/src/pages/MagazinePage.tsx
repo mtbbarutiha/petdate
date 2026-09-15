@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import { LandingChrome } from '../components/LandingChrome';
+import { MobileAppDownloadStrip } from '../components/MobileAppDownloadStrip';
 import { resolvePublicMediaUrl } from '../lib/api';
 import { formatAdminFaDate } from '../admin/jalaliDate';
 import { useI18n } from '../i18n';
@@ -180,6 +181,8 @@ export function MagazinePage() {
           </>
         )}
       </section>
+
+      <MobileAppDownloadStrip variant="article" />
     </LandingChrome>
   );
 }

@@ -168,8 +168,6 @@ export function MagazineArticlePage() {
         ) : null}
       </article>
 
-      {article ? <MobileAppDownloadStrip variant="article" /> : null}
-
       {related.length > 0 ? (
         <section className="pepito-section pepito-news pepito-magazine-related">
           <div className="pepito-section-head pepito-section-head--center pepito-news-head">
@@ -190,6 +188,7 @@ export function MagazineArticlePage() {
           </div>
         </section>
       ) : null}
+      {article ? <MobileAppDownloadStrip variant="article" /> : null}
     </LandingChrome>
   );
 }

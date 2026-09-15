@@ -13,6 +13,8 @@ const root = join(dir, '../../../..');
 
 const strip = readFileSync(join(webSrc, 'components/MobileAppDownloadStrip.tsx'), 'utf8');
 const welcome = readFileSync(join(webSrc, 'pages/WelcomePage.tsx'), 'utf8');
+const welcomeBelow = readFileSync(join(webSrc, 'pages/WelcomeBelowFold.tsx'), 'utf8');
+const magazinePage = readFileSync(join(webSrc, 'pages/MagazinePage.tsx'), 'utf8');
 const articlePage = readFileSync(join(webSrc, 'pages/MagazineArticlePage.tsx'), 'utf8');
 const main = readFileSync(join(webSrc, 'main.tsx'), 'utf8');
 const css = readFileSync(join(webSrc, 'styles/mobile-app-strip.css'), 'utf8');
@@ -30,8 +32,14 @@ assert.match(strip, /article-app-download-strip/);
 assert.match(strip, /ANDROID_APK_HREF/);
 assert.match(strip, /\/landings\/app/);
 assert.match(strip, /isNativeCapacitorShell/);
-assert.match(welcome, /MobileAppDownloadStrip/);
-assert.match(welcome, /<MobileAppDownloadStrip\s*\/>/);
+assert.doesNotMatch(welcome, /MobileAppDownloadStrip/, 'home strip is below articles, not under hero');
+assert.match(welcomeBelow, /MobileAppDownloadStrip/);
+assert.match(welcomeBelow, /variant=["']article["']/);
+assert.match(welcomeBelow, /SiteFooter/);
+// strip must appear before footer in below-fold
+assert.ok(welcomeBelow.indexOf('MobileAppDownloadStrip') < welcomeBelow.indexOf('SiteFooter'));
+assert.match(magazinePage, /MobileAppDownloadStrip/);
+assert.match(magazinePage, /variant=["']article["']/);
 assert.match(main, /mobile-app-strip\.css/);
 assert.match(css, /\.pd-app-strip\b/);
 assert.match(css, /@media\s*\(\s*max-width:\s*859px\s*\)/);

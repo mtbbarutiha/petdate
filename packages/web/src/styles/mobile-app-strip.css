@@ -165,10 +165,11 @@ html[data-theme='dark'] .pd-app-strip-store-ico {
 /* Magazine articles — show on mobile and desktop */
 .pd-app-strip--article {
   display: block;
-  /* Match .pepito-magazine-article column so the rail sits under the body text. */
-  max-width: 760px;
-  margin: 1.25rem auto 0;
-  padding: 0 20px;
+  /* Full content width (mobile + desktop) at the bottom of article pages. */
+  width: min(100%, var(--pepito-container-max, 1220px));
+  max-width: var(--pepito-container-max, 1220px);
+  margin: 1.5rem auto 1.75rem;
+  padding: 0 var(--pepito-container-pad, 15px);
   background: transparent;
   box-sizing: border-box;
 }
@@ -292,8 +293,9 @@ html[data-theme='dark'] .pd-app-strip-store-ico {
 
 @media (min-width: 860px) {
   .pd-app-strip--article {
-    margin-top: 1.75rem;
-    padding-inline: 20px;
+    margin-top: 2rem;
+    margin-bottom: 2rem;
+    padding-inline: var(--pepito-container-pad, 15px);
   }
 
   .pd-app-strip--article .pd-app-strip-inner {
