@@ -60,6 +60,11 @@ for (const [username, url] of Object.entries(OPS_AVATARS)) {
 assert.ok(STAFF_ROLE_PERMISSIONS.veterinarian.includes('content.write'));
 assert.ok(!STAFF_ROLE_PERMISSIONS.veterinarian.includes('admin.full'));
 assert.ok(!STAFF_ROLE_PERMISSIONS.veterinarian.includes('finance.write'));
+assert.ok(STAFF_ROLE_PERMISSIONS.finance.includes('finance.read'));
+assert.ok(STAFF_ROLE_PERMISSIONS.finance.includes('finance.write'));
+assert.ok(STAFF_ROLE_PERMISSIONS.finance.includes('shop.read'));
+assert.ok(!STAFF_ROLE_PERMISSIONS.finance.includes('admin.full'));
+assert.ok(!STAFF_ROLE_PERMISSIONS.finance.includes('hr.write'));
 assert.ok(STAFF_ROLE_PERMISSIONS.shop_procurement.includes('shop.write'));
 assert.ok(!STAFF_ROLE_PERMISSIONS.shop_procurement.includes('platform.write'));
 assert.ok(STAFF_ROLE_PERMISSIONS.content_editor.includes('content.create'));
