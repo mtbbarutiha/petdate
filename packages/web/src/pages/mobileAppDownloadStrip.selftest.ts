@@ -13,6 +13,7 @@ const root = join(dir, '../../../..');
 
 const strip = readFileSync(join(webSrc, 'components/MobileAppDownloadStrip.tsx'), 'utf8');
 const welcome = readFileSync(join(webSrc, 'pages/WelcomePage.tsx'), 'utf8');
+const articlePage = readFileSync(join(webSrc, 'pages/MagazineArticlePage.tsx'), 'utf8');
 const main = readFileSync(join(webSrc, 'main.tsx'), 'utf8');
 const css = readFileSync(join(webSrc, 'styles/mobile-app-strip.css'), 'utf8');
 const fa = readFileSync(join(webSrc, 'i18n/locales/fa.ts'), 'utf8');
@@ -24,7 +25,8 @@ const activity = readFileSync(
 );
 const styles = readFileSync(join(root, 'android/app/src/main/res/values/styles.xml'), 'utf8');
 
-assert.match(strip, /data-testid="mobile-app-download-strip"/);
+assert.match(strip, /mobile-app-download-strip/);
+assert.match(strip, /article-app-download-strip/);
 assert.match(strip, /ANDROID_APK_HREF/);
 assert.match(strip, /\/landings\/app/);
 assert.match(strip, /isNativeCapacitorShell/);
@@ -46,5 +48,13 @@ assert.match(activity, /enableFullscreen/);
 assert.match(activity, /requestLocationPermissionIfNeeded/);
 assert.match(activity, /ACCESS_FINE_LOCATION/);
 assert.match(styles, /android:windowFullscreen/);
+
+
+assert.match(strip, /variant\s*=\s*'home'\s*\|\s*'article'|AppDownloadStripVariant/);
+assert.match(strip, /pd-app-strip--article/);
+assert.match(articlePage, /MobileAppDownloadStrip/);
+assert.match(articlePage, /variant=["']article["']/);
+assert.match(css, /\.pd-app-strip--article\b/, 'article variant visible on all viewports');
+assert.match(css, /@media\s*\(\s*min-width:\s*860px\s*\)[\s\S]*?\.pd-app-strip--article\b/);
 
 console.log('mobileAppDownloadStrip.selftest: ok');

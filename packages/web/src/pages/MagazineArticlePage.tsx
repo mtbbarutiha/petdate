@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { LandingChrome } from '../components/LandingChrome';
+import { MobileAppDownloadStrip } from '../components/MobileAppDownloadStrip';
 import { resolvePublicMediaUrl } from '../lib/api';
 import { formatAdminFaDate } from '../admin/jalaliDate';
 import { MagazineCardView, type MagazineCard } from './MagazinePage';
@@ -166,6 +167,8 @@ export function MagazineArticlePage() {
           </>
         ) : null}
       </article>
+
+      {article ? <MobileAppDownloadStrip variant="article" /> : null}
 
       {related.length > 0 ? (
         <section className="pepito-section pepito-news pepito-magazine-related">
