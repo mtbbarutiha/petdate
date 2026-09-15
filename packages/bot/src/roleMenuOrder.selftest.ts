@@ -13,6 +13,8 @@ const common = src.slice(src.indexOf('function appendCommonMenuRows'), src.index
 assert.ok(common.indexOf('c.shop') < common.indexOf('c.coins'), 'common: شاپ before سکه');
 assert.ok(common.indexOf('c.invite') < common.indexOf('c.coins'), 'common: دعوت before سکه');
 assert.match(common, /extraFinance/, 'owner earn can sit on the finance row');
+assert.match(common, /\.text\(c\.coins\)\s*\n\s*\.primary\(\)/, 'coins button is primary (blue)');
+assert.doesNotMatch(common, /\.text\(c\.coins\)\s*\n\s*\.danger\(\)/, 'coins is not danger/red');
 
 const owner = src.slice(src.indexOf('export function petOwnerMenuKeyboard'), src.indexOf('export function trainerMenuKeyboard'));
 assert.ok(owner.indexOf('m.findPlaymate') < owner.indexOf('m.nearbyPets'), 'owner: همبازی first');
