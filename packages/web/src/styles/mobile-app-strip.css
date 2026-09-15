@@ -165,9 +165,12 @@ html[data-theme='dark'] .pd-app-strip-store-ico {
 /* Magazine articles — show on mobile and desktop */
 .pd-app-strip--article {
   display: block;
-  margin: 1.25rem 0 0;
-  padding: 0 var(--pepito-container-pad, 15px);
+  /* Match .pepito-magazine-article column so the rail sits under the body text. */
+  max-width: 760px;
+  margin: 1.25rem auto 0;
+  padding: 0 20px;
   background: transparent;
+  box-sizing: border-box;
 }
 
 .pd-app-strip--article .pd-app-strip-inner {
@@ -290,7 +293,7 @@ html[data-theme='dark'] .pd-app-strip-store-ico {
 @media (min-width: 860px) {
   .pd-app-strip--article {
     margin-top: 1.75rem;
-    padding-inline: 0;
+    padding-inline: 20px;
   }
 
   .pd-app-strip--article .pd-app-strip-inner {
