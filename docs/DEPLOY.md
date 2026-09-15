@@ -13,6 +13,7 @@ Parallel Cloud Agent rsyncs used to overwrite incomplete trees and delete live f
 | `.github/workflows/ci.yml` | PR + `cursor/**` push | `npm ci` → build shared→api→bot→web → selftests → predeploy-check |
 | `.github/workflows/deploy.yml` | push to `main`/`master`, or `workflow_dispatch` | same build, then SSH deploy of **full** tree (`DEPLOY_SCOPE=all`) |
 | `.github/workflows/sync-google-oauth-env.yml` | `workflow_dispatch` only | upsert `GOOGLE_CLIENT_*` (and optional redirect) on VPS `.env`, `pm2 restart petdate-api --update-env`, verify `/api/auth/providers` |
+| `.github/workflows/reset-staff-admin-password.yml` | `workflow_dispatch` only | SSH to VPS and set a staff user’s password via `resetEmployeePassword` (`hr_employees.password` + `admin_accounts.password_hash`). Credentials go to the job summary only. |
 
 **Why CI does not also build on `main`:** Deploy already builds before shipping. Running both doubled wall-clock (“two Build monorepo checks”) on every merge.
 
@@ -46,6 +47,16 @@ gh workflow run sync-google-oauth-env.yml
 ```
 
 The workflow SSHs like Deploy, upserts into `/opt/petdate/.env` (or `VPS_PATH`), restarts `petdate-api`, and fails unless `curl -sS https://petdate.ir/api/auth/providers` reports `google:true`. It never prints secret values.
+
+### Reset a staff admin password (VPS)
+
+One-shot path (Environment **production**, may need Approve). Does **not** deploy code. Uses `resetEmployeePassword` on the running tree so `hr_employees.password` (plain) and `admin_accounts.password_hash` stay in sync. Known `STAFF_AGENTS` usernames (e.g. `leila` → `finance`) get that roster `role_key` and `is_active=1`.
+
+```bash
+gh workflow run reset-staff-admin-password.yml -f username=leila -f password='<min-6-chars>'
+```
+
+Or: **Actions → Reset staff admin password → Run workflow**. After the job succeeds, copy **username** / **password** from the job summary (not from the log). Never commit the password. The job fails if the username is missing in `hr_employees` or `admin_accounts`.
 
 Manual equivalent on the VPS (`/opt/petdate/.env`):
 
