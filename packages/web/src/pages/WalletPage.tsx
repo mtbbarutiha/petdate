@@ -635,7 +635,7 @@ export function WalletPage() {
 
       <div className="pepito-wallet-actions">
         <Link to="/wallet/earn" className="pepito-btn button-1">
-          کسب درآمد / برداشت
+          درخواست برداشت
         </Link>
         <Link to="/shop" className="pepito-btn button-2">
           رفتن به شاپ

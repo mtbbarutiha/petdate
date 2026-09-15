@@ -1518,10 +1518,21 @@ export function adminPaymentKeyboard(orderId: number): InlineKeyboard {
     .danger();
 }
 
+
+export function earnCurrencyKeyboard(): InlineKeyboard {
+  return new InlineKeyboard()
+    .text('🪙 سکه', 'earn:currency:coins')
+    .text('⭐ ستاره', 'earn:currency:stars')
+    .row()
+    .text('💳 تومان', 'earn:currency:toman')
+    .row()
+    .text('↩️ انصراف', 'earn:cancel');
+}
+
 export function earnKeyboard(canSell: boolean): InlineKeyboard {
   const kb = new InlineKeyboard();
   if (canSell) {
-    kb.text('💵 فروش سکه', 'earn:sell').success().row();
+    kb.text('💵 درخواست برداشت', 'earn:sell').success().row();
   }
   kb.text('✖️ بستن', 'earn:close').primary().primary();
   return kb;
@@ -1529,7 +1540,7 @@ export function earnKeyboard(canSell: boolean): InlineKeyboard {
 
 export function earnConfirmKeyboard(coins: number): InlineKeyboard {
   return new InlineKeyboard()
-    .text('✅ تأیید فروش', `earn:confirm:${coins}`)
+    .text('✅ تأیید برداشت', `earn:confirm:${coins}`)
     .success()
     .row()
     .text('↩️ انصراف', 'earn:cancel');

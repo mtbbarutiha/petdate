@@ -7,6 +7,10 @@ import {
   MIN_SELL_COINS,
   ONBOARDING_STATUS_LABELS,
   USER_ROLES,
+  WITHDRAW_CURRENCY_LABELS_FA,
+  normalizeWithdrawCurrency,
+  withdrawRateToman,
+  minWithdrawAmount,
   toPeerPublicUser,
   userHasRole,
   validateIranCard,
@@ -1310,12 +1314,16 @@ usersRouter.post('/telegram/:telegramId/coins/sell', (req, res) => {
     return;
   }
 
+  const currency = normalizeWithdrawCurrency(req.body?.currency) ?? 'coins';
+  const rateToman = withdrawRateToman(currency);
+  const minAmount = minWithdrawAmount(currency);
   const result = dbService.submitCoinSell({
     userId: user.id,
     coins,
-    rateToman: COIN_SELL_PRICE_TOMAN,
+    rateToman,
     cardNumber: cardCheck.card,
-    minCoins: MIN_SELL_COINS,
+    minCoins: minAmount,
+    currency,
     channel: 'bot',
   });
 

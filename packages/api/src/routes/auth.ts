@@ -5,6 +5,12 @@ import type { OnboardingStatus, UserGender, UserRole } from '@petdate/shared';
 import {
   COIN_PACKAGES,
   COIN_SELL_PRICE_TOMAN,
+  WITHDRAWABLE_CURRENCIES,
+  WITHDRAW_CURRENCY_LABELS_FA,
+  normalizeWithdrawCurrency,
+  withdrawRateToman,
+  minWithdrawAmount,
+  withdrawAmountToman,
   findCoinPackage,
   MIN_SELL_COINS,
   USER_ROLES,
@@ -684,22 +690,49 @@ authRouter.get('/earn', (req, res) => {
   }
   const user = dbService.getUserById(session.user.id) ?? session.user;
   const wallet = dbService.getWallet(user.id);
-  const coins = wallet?.coins ?? user.coins ?? 0;
+  const walletBalances = wallet ?? {
+    ton: 0,
+    stars: 0,
+    coins: user.coins ?? 0,
+    toman: 0,
+  };
+  const coins = walletBalances.coins ?? user.coins ?? 0;
   const openRequest = dbService.getOpenCoinSellRequest(user.id);
   const requests = dbService.listCoinSellRequests(user.id, 20);
-  const canSell = coins >= MIN_SELL_COINS && !openRequest;
+  const hasOpenRequest = Boolean(openRequest);
+  const currencies = WITHDRAWABLE_CURRENCIES.map((currency) => {
+    const balance =
+      currency === 'stars'
+        ? Number(walletBalances.stars ?? 0)
+        : currency === 'toman'
+          ? Number(walletBalances.toman ?? 0)
+          : Number(coins);
+    const rateToman = withdrawRateToman(currency);
+    const minAmount = minWithdrawAmount(currency);
+    return {
+      currency,
+      labelFa: WITHDRAW_CURRENCY_LABELS_FA[currency],
+      balance,
+      rateToman,
+      minAmount,
+      estimatedToman: withdrawAmountToman(balance, currency),
+      canWithdraw: balance >= minAmount && !hasOpenRequest,
+    };
+  });
+  const canSell = currencies.some((c) => c.canWithdraw);
   res.json({
     ok: true,
     coins,
-    wallet: wallet ?? { ton: 0, stars: 0, coins, toman: 0 },
+    wallet: walletBalances,
     rateToman: COIN_SELL_PRICE_TOMAN,
     minCoins: MIN_SELL_COINS,
     estimatedToman: sellAmountToman(coins, COIN_SELL_PRICE_TOMAN),
-    hasOpenRequest: Boolean(openRequest),
+    hasOpenRequest,
     openRequest,
     canSell,
     method: 'card' as const,
     methodLabelFa: 'کارت به‌کارت بانکی ایران',
+    currencies,
     requests,
   });
 });
@@ -712,7 +745,8 @@ authRouter.post('/earn/withdraw', (req, res) => {
     return;
   }
 
-  const coins = Number(req.body?.coins);
+  const currency = normalizeWithdrawCurrency(req.body?.currency) ?? 'coins';
+  const amount = Number(req.body?.amount ?? req.body?.coins);
   const cardCheck = validateIranCard(String(req.body?.cardNumber ?? ''));
   if (!cardCheck.ok) {
     res.status(400).json({
@@ -726,23 +760,27 @@ authRouter.post('/earn/withdraw', (req, res) => {
     return;
   }
 
+  const rateToman = withdrawRateToman(currency);
+  const minAmount = minWithdrawAmount(currency);
   const result = dbService.submitCoinSell({
     userId: session.user.id,
-    coins,
-    rateToman: COIN_SELL_PRICE_TOMAN,
+    coins: amount,
+    rateToman,
     cardNumber: cardCheck.card,
-    minCoins: MIN_SELL_COINS,
+    minCoins: minAmount,
+    currency,
     channel: 'web',
   });
 
   if (!result.ok) {
     const status =
       result.reason === 'missing' ? 404 : result.reason === 'pending' ? 409 : 400;
+    const unit = WITHDRAW_CURRENCY_LABELS_FA[currency];
     const error =
       result.reason === 'min'
-        ? `حداقل ${MIN_SELL_COINS} سکه لازم است.`
+        ? `حداقل ${minAmount.toLocaleString('fa-IR')} ${unit} لازم است.`
         : result.reason === 'balance'
-          ? 'سکه کافی نیست.'
+          ? `موجودی ${unit} کافی نیست.`
           : result.reason === 'pending'
             ? 'یک درخواست تسویه باز داری — تا بررسی ادمین صبر کن.'
             : 'ثبت درخواست ممکن نشد.';
@@ -755,7 +793,9 @@ authRouter.post('/earn/withdraw', (req, res) => {
     requestId: result.requestId,
     amountToman: result.amountToman,
     rateToman: result.rateToman,
-    coins: Math.floor(coins),
+    currency: result.currency,
+    coins: result.coins,
+    amount: result.coins,
     user: result.user,
     wallet: result.user.wallet ?? dbService.getWallet(session.user.id),
     openRequest: dbService.getOpenCoinSellRequest(session.user.id),

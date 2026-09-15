@@ -411,8 +411,8 @@ function listCoinSellsLive(actor: AdminAuthActor): AdminHeaderNotification[] {
     return [
       {
         id: 'live:coin-sells',
-        title: `${open} درخواست برداشت سکه`,
-        body: 'فروش سکه وب و ربات در صف واریز (مالی → صف فروش سکه).',
+        title: `${open} درخواست برداشت`,
+        body: 'درخواست‌های برداشت وب و ربات در صف واریز (مالی → صف برداشت).',
         kind: 'warn',
         href: '/admin/coin-sells',
         module: 'finance',
@@ -606,17 +606,21 @@ export function notifyCoinSellSubmitted(input: {
   userName?: string | null;
   coins: number;
   amountToman: number;
+  currency?: string | null;
   channel?: string | null;
 }): void {
   const id = Math.floor(Number(input.requestId));
   if (!Number.isFinite(id) || id <= 0) return;
   const via =
     input.channel === 'bot' ? 'ربات' : input.channel === 'web' ? 'وب' : '';
+  const cur = String(input.currency || 'coins');
+  const unit =
+    cur === 'stars' ? 'ستاره' : cur === 'toman' ? 'تومان' : 'سکه';
   pushAdminHeaderNotification({
-    title: 'درخواست برداشت سکه',
+    title: 'درخواست برداشت',
     body: [
       input.userName || 'کاربر',
-      `${Math.floor(Number(input.coins) || 0)} سکه`,
+      `${Math.floor(Number(input.coins) || 0)} ${unit}`,
       `${Math.floor(Number(input.amountToman) || 0)} تومان`,
       via || null,
     ]
