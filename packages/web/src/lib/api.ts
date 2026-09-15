@@ -1819,6 +1819,7 @@ export type ShopCoinCheckoutResult = {
   orderId: number;
   order: {
     id: number;
+    publicId?: string;
     status: string;
     totalToman: number;
     paymentCurrency?: string;
@@ -1851,6 +1852,7 @@ export type ShopWalletStarsCheckoutResult = {
   orderId: number;
   order: {
     id: number;
+    publicId?: string;
     status: string;
     totalToman: number;
     paymentCurrency?: string;
@@ -1901,6 +1903,8 @@ export async function fetchShopStarsPaymentStatus(
 
 export type MyShopOrder = {
   id: number;
+  /** شناسه فاکتور فروشگاه — PD-O##### */
+  publicId?: string;
   status: string;
   totalToman: number;
   paymentCurrency?: string;
@@ -1943,6 +1947,31 @@ export async function fetchMyShopOrders(token: string): Promise<{
     orders: json.orders ?? [],
     statusLabelsFa: json.statusLabelsFa,
   };
+}
+
+export async function fetchMyShopOrder(
+  token: string,
+  orderIdOrPublicId: string | number
+): Promise<{ ok: true; order: MyShopOrder; statusLabelsFa?: Record<string, string> }> {
+  const key = encodeURIComponent(String(orderIdOrPublicId).trim());
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}/api/shop/my-orders/${key}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  } catch {
+    throw new Error('اتصال به سرور برقرار نشد.');
+  }
+  const json = (await res.json()) as {
+    ok?: boolean;
+    order?: MyShopOrder;
+    statusLabelsFa?: Record<string, string>;
+    error?: string;
+  };
+  if (!res.ok || json.ok !== true || !json.order) {
+    throw new Error(json.error || `خطای ${res.status}`);
+  }
+  return { ok: true, order: json.order, statusLabelsFa: json.statusLabelsFa };
 }
 
 async function postShopCheckout<T extends { ok?: boolean; error?: string }>(
@@ -2142,10 +2171,19 @@ export async function checkoutShopWithWalletStars(
 export type ShopTomanCheckoutResult = {
   ok: true;
   orderId: number;
+  order: {
+    id: number;
+    publicId?: string;
+    status: string;
+    totalToman: number;
+    paymentCurrency?: string;
+    paymentAmount?: number;
+  };
   tomanSpent: number;
   tomanRemaining: number;
   totalToman: number;
   message?: string;
+  wallet?: { stars: number; coins: number; toman: number };
 };
 
 export type ShopCardCheckoutResult = {

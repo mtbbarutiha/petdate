@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { makeOrderPublicId, makePaymentPublicId } from '@petdate/shared';
 import { formatToman } from '../../data/shopCatalog';
 import { useAuthStore } from '../../hooks/useAuthStore';
 import { useShopCart } from '../../hooks/useShopCart';
@@ -153,9 +154,27 @@ export function ShopCardPayPage() {
           {paid && status ? (
             <>
               <h2>✅ پرداخت تأیید شد — سفارش نهایی شد</h2>
-              {status.shopOrderId != null ? <p>شماره سفارش: <strong dir="ltr">#{status.shopOrderId}</strong></p> : null}
+              {status.shopOrderId != null ? (
+                <p>
+                  شماره سفارش فروشگاه:{' '}
+                  <strong dir="ltr">{makeOrderPublicId(status.shopOrderId)}</strong>
+                </p>
+              ) : null}
+              <p>
+                شماره فاکتور پرداخت:{' '}
+                <strong dir="ltr">{makePaymentPublicId(paymentOrderId)}</strong>
+              </p>
               <p>مبلغ: <strong>{formatToman(status.totalToman)}</strong></p>
-              <Link to="/shop/orders" className="pepito-btn button-1">سفارش‌های من</Link>
+              {status.shopOrderId != null ? (
+                <Link
+                  to={`/shop/orders/${encodeURIComponent(makeOrderPublicId(status.shopOrderId))}`}
+                  className="pepito-btn button-1"
+                >
+                  مشاهده فاکتور
+                </Link>
+              ) : (
+                <Link to="/shop/orders" className="pepito-btn button-1">سفارش‌های من</Link>
+              )}
             </>
           ) : status ? (
             <>
