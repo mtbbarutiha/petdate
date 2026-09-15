@@ -74,8 +74,8 @@ BUFFER = CONTINGENCY  # alias for narrative/tables
 CAPITAL_NEED = CAPITAL_BASE  # نیاز قبل از بافر گرد کردن
 ASK_MONTHS = CAPITAL_ASK / BURN  # ≈ ۱۴٫۲ ماه پوشش کل (شامل راه‌اندازی)
 RUNWAY_COVER_MONTHS = (CAPITAL_ASK - SETUP_TOTAL) / BURN  # ≈ ۱۲٫۱ ماه عملیات
-DOC_VERSION = "۱٫۶"
-DOC_VERSION_LATIN = "1.6"
+DOC_VERSION = "۱٫۷"
+DOC_VERSION_LATIN = "1.7"
 POST_RAMP_GROWTH_M = 35  # میلیون تومان رشد ماهانه درآمد پس از ماه ۱۲
 
 # ── اقتصاد سکه و ایونت ────────────────────────────────────────────────
