@@ -1,10 +1,12 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowRight, Link2, Receipt, RefreshCw, Sparkles, Wallet } from 'lucide-react';
 import {
   BRAND,
   ledgerPublicIdOf,
   paymentPublicIdOf,
+  quoteWalletConvert,
+  WALLET_CONVERT_UNIT_FA,
   WALLET_CURRENCY_LABELS_FA,
   WALLET_CURRENCY_STATUS,
   WALLET_CURRENCY_SYMBOLS,
@@ -320,6 +322,30 @@ export function WalletPage() {
   const balances: WalletBalances =
     wallet ?? (user ? user.wallet ?? walletFromUserFields(user) : { stars: 0, coins: 0, toman: 0 });
 
+  const convertPreview = useMemo(() => {
+    const raw = String(convertAmount).trim();
+    if (!raw) return null;
+    const amount = Math.floor(Number(raw));
+    if (!Number.isFinite(amount) || amount <= 0) return null;
+    const pairOk = USER_WALLET_CONVERT_PAIRS.some((p) => p.from === convertFrom && p.to === convertTo);
+    if (!pairOk) return null;
+    const quote = quoteWalletConvert(convertFrom, convertTo, amount, rates ?? undefined);
+    if (!quote.ok) {
+      return { kind: 'hint' as const, text: quote.error };
+    }
+    const fromLabel = WALLET_CONVERT_UNIT_FA[convertFrom];
+    const toLabel = WALLET_CONVERT_UNIT_FA[convertTo];
+    const fromFmt = quote.fromAmount.toLocaleString('fa-IR');
+    const toFmt = quote.toAmount.toLocaleString('fa-IR');
+    const available = Math.floor(Number(balances[convertFrom] ?? 0));
+    const insufficient = quote.fromAmount > available;
+    return {
+      kind: 'ok' as const,
+      text: `پیش‌نمایش: ${fromFmt} ${fromLabel} ≈ ${toFmt} ${toLabel}`,
+      insufficient,
+    };
+  }, [balances.coins, balances.stars, balances.toman, convertAmount, convertFrom, convertTo, rates]);
+
   const linked = telegramLinked || Boolean(user?.telegramId);
   const tgDisplay = telegramId || user?.telegramId || null;
   const statusText = error
@@ -625,6 +651,18 @@ export function WalletPage() {
               dir="ltr"
             />
           </label>
+          <div className="pepito-wallet-convert-preview" aria-live="polite">
+            {convertPreview?.kind === 'ok' ? (
+              <>
+                <p className="pepito-wallet-convert-preview-text">{convertPreview.text}</p>
+                {convertPreview.insufficient ? (
+                  <p className="pepito-wallet-convert-preview-warn">موجودی کافی نیست</p>
+                ) : null}
+              </>
+            ) : convertPreview?.kind === 'hint' ? (
+              <p className="pepito-wallet-convert-preview-hint">{convertPreview.text}</p>
+            ) : null}
+          </div>
           <button
             type="button"
             className="pepito-btn button-1 pepito-wallet-convert-submit"

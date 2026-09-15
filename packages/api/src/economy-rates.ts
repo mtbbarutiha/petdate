@@ -2,8 +2,17 @@
  * Runtime economy rates from admin_settings (fallback to shared defaults).
  * Keys: coinPriceToman (buy), coinSellPriceToman (sell / withdraw).
  */
-import { COIN_PRICE_TOMAN, COIN_SELL_PRICE_TOMAN, STAR_SELL_PRICE_TOMAN } from '@petdate/shared';
+import {
+  COIN_PRICE_TOMAN,
+  COIN_SELL_PRICE_TOMAN,
+  STAR_SELL_PRICE_TOMAN,
+  quoteWalletConvert as quoteWalletConvertShared,
+  type WalletCurrency,
+} from '@petdate/shared';
 import { adminPlatform } from './admin-platform';
+
+/** Re-export shared quote helper; injects live admin rates by default. */
+export type WalletConvertCurrency = WalletCurrency;
 
 export const ECONOMY_RATE_KEYS = {
   coinPriceToman: 'coinPriceToman',
@@ -65,41 +74,11 @@ export function normalizeEconomyRatePatch(
   return { ok: true, patch: out };
 }
 
-export type WalletConvertCurrency = 'coins' | 'stars' | 'toman';
-
-/**
- * Quote convert amounts for allowed pairs.
- * toman→coins uses buy rate; coins→toman uses sell rate; stars↔coins is 1:1.
- * For toman→coins, fromAmount is adjusted down to an exact multiple of the rate.
- */
 export function quoteWalletConvert(
   from: WalletConvertCurrency,
   to: WalletConvertCurrency,
   fromAmount: number,
   rates = getEconomyRates()
-):
-  | { ok: true; fromAmount: number; toAmount: number; rate: number }
-  | { ok: false; error: string } {
-  const amt = Math.floor(Number(fromAmount));
-  if (!Number.isFinite(amt) || amt <= 0) {
-    return { ok: false, error: 'مقدار نامعتبر است' };
-  }
-  if (from === to) return { ok: false, error: 'ارز مبدأ و مقصد یکسان است' };
-
-  if (from === 'toman' && to === 'coins') {
-    const rate = rates.coinPriceToman;
-    const coins = Math.floor(amt / rate);
-    if (coins <= 0) {
-      return { ok: false, error: `حداقل ${rate.toLocaleString('fa-IR')} تومان برای ۱ سکه لازم است` };
-    }
-    return { ok: true, fromAmount: coins * rate, toAmount: coins, rate };
-  }
-  if (from === 'coins' && to === 'toman') {
-    const rate = rates.coinSellPriceToman;
-    return { ok: true, fromAmount: amt, toAmount: amt * rate, rate };
-  }
-  if ((from === 'stars' && to === 'coins') || (from === 'coins' && to === 'stars')) {
-    return { ok: true, fromAmount: amt, toAmount: amt, rate: 1 };
-  }
-  return { ok: false, error: 'این جفت تبدیل پشتیبانی نمی‌شود' };
+) {
+  return quoteWalletConvertShared(from, to, fromAmount, rates);
 }

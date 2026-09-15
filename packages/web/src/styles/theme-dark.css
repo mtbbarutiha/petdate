@@ -1762,6 +1762,15 @@ html[data-theme='dark'] .pepito-wallet-convert-control option {
   background: var(--pd-surface);
   color: var(--pepito-dark);
 }
+html[data-theme='dark'] .pepito-wallet-convert-preview-text {
+  color: var(--pepito-dark);
+}
+html[data-theme='dark'] .pepito-wallet-convert-preview-hint {
+  color: var(--pepito-muted);
+}
+html[data-theme='dark'] .pepito-wallet-convert-preview-warn {
+  color: #fbbf24;
+}
 html[data-theme='dark'] .pepito-wallet-buy-history {
   color: var(--pepito-muted);
   opacity: 1;
