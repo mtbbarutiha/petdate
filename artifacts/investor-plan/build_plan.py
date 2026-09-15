@@ -74,8 +74,8 @@ BUFFER = CONTINGENCY  # alias for narrative/tables
 CAPITAL_NEED = CAPITAL_BASE  # نیاز قبل از بافر گرد کردن
 ASK_MONTHS = CAPITAL_ASK / BURN  # ≈ ۱۴٫۲ ماه پوشش کل (شامل راه‌اندازی)
 RUNWAY_COVER_MONTHS = (CAPITAL_ASK - SETUP_TOTAL) / BURN  # ≈ ۱۲٫۱ ماه عملیات
-DOC_VERSION = "۱٫۷"
-DOC_VERSION_LATIN = "1.7"
+DOC_VERSION = "۱٫۸"
+DOC_VERSION_LATIN = "1.8"
 POST_RAMP_GROWTH_M = 35  # میلیون تومان رشد ماهانه درآمد پس از ماه ۱۲
 
 # ── اقتصاد سکه و ایونت ────────────────────────────────────────────────
@@ -770,7 +770,8 @@ def shot(name: str, caption: str, cls: str = "") -> str:
 
 
 def build_html() -> str:
-    logo = uri(ASSETS / "petdate-mark.png")
+    # لوگو مادر PNG (packages/web/public/pepito/img/logo.png)
+    logo = uri(ASSETS / "petdate-logo.png")
     banner = uri(ASSETS / "petdate-banner.jpg")
     payroll_rows = "".join(
         f"<tr><td>{k}</td><td class='n'>{fmt(v)}</td></tr>" for k, v in PAYROLL.items()
@@ -974,8 +975,8 @@ def build_html() -> str:
     gap: 14px;
   }}
   .cover img.logo {{
-    width: 78px; height: 78px; object-fit: contain;
-    background: #fff; border-radius: 18px; padding: 9px;
+    height: 52px; width: auto; max-width: 220px; object-fit: contain;
+    background: rgba(255,255,255,.06); border-radius: 14px; padding: 8px 12px;
     box-shadow: 0 10px 28px rgba(0,0,0,.28);
   }}
   .brand-name {{
@@ -1188,10 +1189,11 @@ def build_html() -> str:
   }}
   figure.shot img {{
     width: 100%; display: block;
-    max-height: 155px; object-fit: cover; object-position: top center;
-    background: #eef3f6;
+    max-height: 168px; object-fit: cover; object-position: top center;
+    background: #0f172a;
   }}
-  figure.shot.tall img {{ max-height: 185px; }}
+  figure.shot.tall img {{ max-height: 200px; }}
+  figure.shot.panel img {{ max-height: 210px; object-position: top right; }}
   figure.shot figcaption {{
     font-size: 7.4pt; color: {SLATE}; padding: 7px 9px;
     line-height: 1.45; border-top: 1px solid #e8eef2;
@@ -1395,27 +1397,31 @@ def build_html() -> str:
 
 <div class="pb"></div>
 <h2><span class="num">۰۳</span> تجربه محصول — وب، چت و همبازی</h2>
-<p class="muted">اسکرین‌شات‌های واقعی از محصول جاری پت‌دیت.</p>
+<p class="muted">اسکرین‌شات‌های واقعی از محصول جاری پت‌دیت (وب).</p>
 <div class="shots">
   {shot("gutters-guides-top-1440.png", "لندینگ وب — معرفی برند و مسیر ورود به خدمات پت‌دیت", "tall")}
   {shot("matches-desktop.png", "همبازی پت — کشف و اتصال صاحبان حیوان خانگی", "tall")}
 </div>
-<div class="shots tri">
+<div class="shots">
   {shot("chat-desktop.png", "چت دسکتاپ — گفت‌وگوی درون‌پلتفرمی")}
   {shot("chat-mobile.png", "چت موبایل — تجربه همراه")}
-  {shot("gutters-guides-about-1440.png", "صفحه درباره / اعتماد برند")}
 </div>
 
-<h2><span class="num">۰۴</span> پنل ادمین — عملیات و مالی</h2>
-<p>پنل ادمین قدرتمند، ستون اتوماسیون عملیاتی است: مالی، سفارش، کیف‌پول و مانیتورینگ —
-کاهش وابستگی به نیروی انسانی با رشد کاربر.</p>
+<h2><span class="num">۰۴</span> پنل ادمین جاری — عملیات، مالی و فروشگاه</h2>
+<p>اسکرین‌شات‌های تازه از <strong>پنل ادمین فعلی</strong> پت‌دیت (لوگوی مادر، کنسول عملیاتی):
+داشبورد پلتفرم، مالی، P&amp;L، کیف‌پول و سفارش‌های فروشگاه —
+ستون اتوماسیون برای رشد بدون نیروی انسانی متناسب.</p>
 <div class="shots">
-  {shot("admin-finance-dashboard.png", "داشبورد مالی ادمین — دید یکپارچه درآمد و جریان نقد", "tall")}
-  {shot("admin_platform_dashboard_kpis.png", "KPI پلتفرم — مانیتورینگ رشد و سلامت سیستم", "tall")}
+  {shot("admin-finance-dashboard.png", "داشبورد مالی ادمین — درآمد، هزینه، سود و ترکیب پرداخت", "tall panel")}
+  {shot("admin_platform_dashboard_kpis.png", "داشبورد پلتفرم — ویجت‌ها و مانیتورینگ ماژول‌ها", "tall panel")}
 </div>
 <div class="shots">
-  {shot("admin-finance-pnl.png", "P&amp;L عملیاتی — سود و زیان قابل گزارش به سرمایه‌گذار")}
-  {shot("admin-finance-wallet.png", "دفتر کیف‌پول — تومان، سکه و رهگیری تراکنش")}
+  {shot("admin-finance-pnl.png", "P&amp;L عملیاتی — سود و زیان قابل گزارش به سرمایه‌گذار", "panel")}
+  {shot("admin-finance-wallet.png", "دفتر کیف‌پول — تومان، سکه، ستاره و TON", "panel")}
+</div>
+<div class="shots">
+  {shot("admin-shop-orders.png", "سفارش‌های فروشگاه — صف پرداخت‌شده و رهگیری سفارش", "panel")}
+  {shot("admin-finance-sales.png", "نمودار فروش مالی — روند و دسته‌بندی درآمد", "panel")}
 </div>
 
 <div class="pb"></div>
