@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8"/>
+<title>طرح توجیهی پت‌دیت</title>
+<style>
+  @page { size: A4; margin: 12mm 11mm 16mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Noto Naskh Arabic", "Noto Sans Arabic", "DejaVu Sans", sans-serif;
+    color:#0f172a; font-size:10pt; line-height:1.62;
+    background: #f7faf9;
+  }
+  h1 { font-size:20pt; color:#12263a; margin:0 0 .35em; }
+  h2 {
+    font-size:13pt; color:#0d5c56; margin:1.15em 0 .45em;
+    padding-bottom:5px; border-bottom:2.5px solid #14b8a6;
+  }
+  h3 { font-size:10.5pt; color:#1a3a52; margin:.9em 0 .35em; }
+  p { margin:.35em 0 .6em; }
+  table { width:100%; border-collapse:collapse; margin:.5em 0 .85em; font-size:9pt; }
+  th, td { border-bottom:1px solid #dce5ec; padding:6px 7px; text-align:right; }
+  th { background:#f0fdfa; color:#0d5c56; font-weight:700; }
+  tr:nth-child(even) td { background:#fbfdfe; }
+  td.n, th.n { text-align:left; direction:ltr; font-family: DejaVu Sans, sans-serif; font-size:8.5pt; }
+  tr.tfoot td { font-weight:700; background:#e6f7f4 !important; }
+  ul.t { margin:.15em 0 .7em; padding-right:1.05em; }
+  ul.t li { margin:.12em 0; }
+
+  .cover {
+    page-break-after: always; border-radius:18px; overflow:hidden;
+    background:
+      radial-gradient(ellipse at 15% 20%, rgba(20,184,166,.35), transparent 50%),
+      radial-gradient(ellipse at 90% 80%, rgba(224,90,69,.28), transparent 45%),
+      linear-gradient(160deg, #12263a 0%, #1a3a52 42%, #0d5c56 100%);
+    color:#ecfdf5; padding:16mm 13mm 12mm; min-height:255mm;
+    position: relative;
+  }
+  .cover::after {
+    content:""; position:absolute; inset:auto 0 0 0; height:6px;
+    background: linear-gradient(90deg, #14b8a6, #e05a45);
+  }
+  .cover img.logo {
+    width:72px; height:72px; object-fit:contain; background:#fff;
+    border-radius:16px; padding:8px; box-shadow:0 8px 24px rgba(0,0,0,.25);
+  }
+  .cover img.banner {
+    width:100%; max-height:92px; object-fit:cover; border-radius:12px;
+    margin-top:14px; border:1px solid rgba(255,255,255,.18);
+  }
+  .eyebrow { font-size:8.5pt; letter-spacing:.02em; opacity:.88; margin-top:16px; }
+  .cover h1 { color:#fff; font-size:24pt; margin-top:4px; line-height:1.35; }
+  .tag { font-size:10.5pt; opacity:.93; max-width:94%; }
+  .kpis { display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-top:18px; }
+  .kpi {
+    background:rgba(255,255,255,.11); border:1px solid rgba(255,255,255,.2);
+    border-radius:12px; padding:11px 12px; backdrop-filter: blur(2px);
+  }
+  .kpi .l { font-size:8pt; opacity:.85; }
+  .kpi .v { font-size:12.5pt; font-weight:700; margin-top:2px; }
+  .cfoot { margin-top:22px; font-size:8pt; opacity:.78; }
+
+  .callout {
+    background:#f0fdfa; border-right:4px solid #0f766e; border-radius:10px;
+    padding:9px 11px; margin:8px 0 12px;
+  }
+  .warn { background:#fff7ed; border-right-color:#e05a45; }
+  .coral { background:#fff5f3; border-right-color:#e05a45; }
+  .hl { color:#0d5c56; font-weight:700; }
+  .muted { color:#64748b; font-size:8.5pt; }
+  .grid2 { display:grid; grid-template-columns:1.05fr .95fr; gap:12px; align-items:start; }
+  .grid3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
+  .card {
+    background:#fff; border:1px solid #d8e4ea; border-radius:12px; padding:11px;
+    box-shadow: 0 1px 0 rgba(18,38,58,.04);
+  }
+  .card h3 { margin-top:0; }
+  .legs { margin-top:6px; }
+  .leg { font-size:8pt; margin:3px 0; display:flex; gap:7px; align-items:center; }
+  .leg span { width:10px; height:10px; border-radius:3px; display:inline-block; flex-shrink:0; }
+  .leg em { color:#64748b; font-style:normal; }
+  .chart-wrap { display:flex; flex-direction:column; align-items:center; }
+
+  .bmc { display:grid; grid-template-columns:repeat(5,1fr); gap:5px; }
+  .bmc .c {
+    background:#fff; border:1px solid #cfdbe3; border-radius:8px; padding:7px;
+    font-size:7.5pt; min-height:64px;
+  }
+  .bmc .c b { display:block; color:#0f766e; margin-bottom:2px; font-size:8pt; }
+  .bmc .w { grid-column: span 2; }
+
+  .hbars { display:flex; flex-direction:column; gap:7px; }
+  .hbar { display:grid; grid-template-columns:72px 1fr 78px; gap:6px; align-items:center; }
+  .hlab { font-size:8pt; color:#12263a; }
+  .htrack { background:#e8eef2; border-radius:6px; height:12px; overflow:hidden; }
+  .hfill { height:100%; border-radius:6px; }
+  .hval { font-size:7.5pt; direction:ltr; text-align:left; font-family:DejaVu Sans,sans-serif; color:#64748b; }
+
+  .shots { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:8px 0 12px; }
+  .shots.one { grid-template-columns:1fr; }
+  .shots.tri { grid-template-columns:1.2fr 1fr 0.85fr; }
+  figure.shot { margin:0; background:#fff; border:1px solid #d5e0e7; border-radius:10px; overflow:hidden; }
+  figure.shot img { width:100%; display:block; max-height:148px; object-fit:cover; object-position:top; }
+  figure.shot.tall img { max-height:190px; }
+  figure.shot figcaption {
+    font-size:7.5pt; color:#64748b; padding:6px 8px; line-height:1.45;
+    border-top:1px solid #e8eef2; background:#fafcfd;
+  }
+
+  .pb { page-break-before: always; }
+  .fn { font-size:7.5pt; color:#64748b; margin-top:.25em; }
+  .badge {
+    display:inline-block; background:#0f766e; color:#fff; font-size:7.5pt;
+    padding:2px 8px; border-radius:4px; margin-left:4px;
+  }
+  .statrow { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:8px 0 12px; }
+  .stat {
+    background:#fff; border:1px solid #d5e0e7; border-radius:10px; padding:8px 9px; text-align:center;
+  }
+  .stat .v { font-size:11pt; font-weight:700; color:#0d5c56; direction:ltr; font-family:DejaVu Sans,sans-serif; }
+  .stat .l { font-size:7.5pt; color:#64748b; margin-top:2px; }
+</style>
+</head>
+<body>
+
+<section class="cover">
+  <img class="logo" src="file:///agent/artifacts/investor-plan/assets/petdate-mark.png" alt="پت‌دیت"/>
+  <div class="eyebrow">سند محرمانه · ویژه سرمایه‌گذار · نسخه ۱٫۳</div>
+  <h1>طرح توجیهی سرمایه‌گذاری<br/>پت‌دیت (PetDate)</h1>
+  <p class="tag">سوپراپ فارسی پت: همبازی، ایونت، پت‌شاپ و مشاوره دامپزشک —
+  وب + ربات تلگرام با اقتصاد سکه یکپارچه و پنل ادمین عملیاتی</p>
+  <img class="banner" src="file:///agent/artifacts/investor-plan/assets/petdate-banner.jpg" alt=""/>
+  <div class="kpis">
+    <div class="kpi"><div class="l">برن ماهانه (با بیمه کارفرما)</div><div class="v">687٬700٬000 تومان</div></div>
+    <div class="kpi"><div class="l">سرمایه پیشنهادی</div><div class="v">11٬000٬000٬000 تومان</div></div>
+    <div class="kpi"><div class="l">Runway با این سرمایه</div><div class="v">≈ 16 ماه</div></div>
+    <div class="kpi"><div class="l">سربه‌سر پایه (با ایونت)</div><div class="v">ماه 10</div></div>
+  </div>
+  <div class="cfoot">بیمه کارفرما ۲۳٪ · مالیات عملکرد ۲۵٪ · سکه ≈ 2٬000 تومان ·
+  عضویت ایونت فرض 2 سکه · دلار AI: 220٬000 تومان<br/>
+  اعداد درآمد سناریویی‌اند؛ ترم‌شیت سهام در مذاکره نهایی قفل می‌شود.</div>
+</section>
+
+<h2>۱. خلاصه اجرایی</h2>
+<p><strong>پت‌دیت</strong> پلتفرم همبازی و خدمات پت در ایران است — با لایه ایونت گروهی، شاپ، و مشاوره روی وب و تلگرام.
+این سند نیاز سرمایه برای تیم ۶ نفره، دفتر و رشد ۱۲ ماهه را با <strong>بیمه کارفرما</strong>،
+<strong>مالیات عملکرد</strong> و <strong>درآمد ایونت</strong> توجیه می‌کند.</p>
+<div class="callout">
+<strong>پیشنهاد:</strong> جذب <span class="hl">11٬000٬000٬000 تومان</span>
+(≈ 11٫00 میلیارد) برای راه‌اندازی + Runway.
+برن <strong>687٬700٬000</strong> تومان/ماه.
+در سناریو پایه (با ایونت)، سربه‌سر حدود ماه <strong>10</strong>
+و بازگشت اصل حدود ماه <strong>31</strong>.
+</div>
+<div class="statrow">
+  <div class="stat"><div class="v">687M</div><div class="l">برن ماهانه</div></div>
+  <div class="stat"><div class="v">11٫00B</div><div class="l">سرمایه پیشنهادی</div></div>
+  <div class="stat"><div class="v">1٬085M</div><div class="l">درآمد پایه م۱۲</div></div>
+  <div class="stat"><div class="v">75M</div><div class="l">سهم ایونت م۱۲</div></div>
+</div>
+
+<h2>۲. مسئله، فرصت و محصول</h2>
+<ul class="t">
+  <li>بازار بزرگ صاحب‌پت؛ خدمات اجتماعی، ایونت و خرید هنوز پراکنده‌اند.</li>
+  <li>تلگرام کانال توزیع قوی؛ پت‌دیت وب+ربات را با یک حساب وصل می‌کند.</li>
+  <li>موتور درآمد: سکه/VIP + مارجین شاپ + کارمزد مشاوره + <strong>ایونت</strong>.</li>
+</ul>
+<div class="bmc">
+  <div class="c"><b>مشتری</b>صاحب پت، خریدار شاپ، شرکت‌کننده ایونت</div>
+  <div class="c"><b>ارزش</b>همبازی + ایونت + خرید + مشاوره</div>
+  <div class="c"><b>کانال</b>تلگرام، وب، سوشال</div>
+  <div class="c"><b>رابطه</b>چت، ربات، پشتیبانی</div>
+  <div class="c"><b>درآمد</b>سکه، شاپ، مشاوره، ایونت</div>
+  <div class="c w"><b>منابع</b>پلتفرم، برند، داده مچ، تیم AI، پنل ادمین</div>
+  <div class="c w"><b>فعالیت</b>رشد کاربر، ایونت، محتوا، کیفیت مچ</div>
+  <div class="c w"><b>شرکا</b>درگاه، تأمین‌کننده، متخصصان</div>
+  <div class="c w"><b>هزینه</b>حقوق، بیمه کارفرما، اجاره، AI، جاری</div>
+</div>
+
+<div class="pb"></div>
+<h2>۳. تجربه محصول — وب، چت و همبازی</h2>
+<p class="muted">اسکرین‌شات‌های واقعی از محصول جاری پت‌دیت.</p>
+<div class="shots">
+  <figure class="shot tall"><img src="file:///agent/artifacts/investor-plan/assets/shots/gutters-guides-top-1440.png" alt=""/><figcaption>لندینگ وب — معرفی برند و مسیر ورود به خدمات پت‌دیت</figcaption></figure>
+  <figure class="shot tall"><img src="file:///agent/artifacts/investor-plan/assets/shots/matches-desktop.png" alt=""/><figcaption>همبازی پت — کشف و اتصال صاحبان حیوان خانگی</figcaption></figure>
+</div>
+<div class="shots tri">
+  <figure class="shot "><img src="file:///agent/artifacts/investor-plan/assets/shots/chat-desktop.png" alt=""/><figcaption>چت دسکتاپ — گفت‌وگوی درون‌پلتفرمی</figcaption></figure>
+  <figure class="shot "><img src="file:///agent/artifacts/investor-plan/assets/shots/chat-mobile.png" alt=""/><figcaption>چت موبایل — تجربه همراه</figcaption></figure>
+  <figure class="shot "><img src="file:///agent/artifacts/investor-plan/assets/shots/gutters-guides-about-1440.png" alt=""/><figcaption>صفحه درباره / اعتماد برند</figcaption></figure>
+</div>
+
+<h2>۴. پنل ادمین — عملیات و مالی</h2>
+<p>پنل ادمین قدرتمند، ستون اتوماسیون عملیاتی است: مالی، سفارش، کیف‌پول و مانیتورینگ —
+کاهش وابستگی به نیروی انسانی با رشد کاربر.</p>
+<div class="shots">
+  <figure class="shot tall"><img src="file:///agent/artifacts/investor-plan/assets/shots/admin-finance-dashboard.png" alt=""/><figcaption>داشبورد مالی ادمین — دید یکپارچه درآمد و جریان نقد</figcaption></figure>
+  <figure class="shot tall"><img src="file:///agent/artifacts/investor-plan/assets/shots/admin_platform_dashboard_kpis.png" alt=""/><figcaption>KPI پلتفرم — مانیتورینگ رشد و سلامت سیستم</figcaption></figure>
+</div>
+<div class="shots">
+  <figure class="shot "><img src="file:///agent/artifacts/investor-plan/assets/shots/admin-finance-pnl.png" alt=""/><figcaption>P&amp;L عملیاتی — سود و زیان قابل گزارش به سرمایه‌گذار</figcaption></figure>
+  <figure class="shot "><img src="file:///agent/artifacts/investor-plan/assets/shots/admin-finance-wallet.png" alt=""/><figcaption>دفتر کیف‌پول — تومان، سکه و رهگیری تراکنش</figcaption></figure>
+</div>
+
+<div class="pb"></div>
+<h2>۵. درآمد ایونت‌ها <span class="badge">جدید در مدل</span></h2>
+<div class="callout coral">
+<strong>فرض مدل:</strong> هزینه عضویت استاندارد <strong>2 سکه</strong> به ازای هر شرکت‌کننده
+(≈ <strong>4٬000</strong> تومان با قیمت سکه 2٬000).
+در این طرح، ایونت‌های <strong>پلتفرمی / ویژه‌شده</strong> با take rate
+<strong>100٪</strong> مدل می‌شوند (کل کارمزد عضویت به خزانه پت‌دیت).
+ایونت میزبان‌محور در محصول فعلی ممکن است سهم میزبان داشته باشد؛ کارمزد ۲۰–۳۰٪ پلتفرم مسیر بعدی است و در این pitch استفاده نشده.
+هزینه ساخت ایونت در کد محصول: <strong>100 سکه</strong> (sink پلتفرم) — در سناریوها به درآمد ایونت افزوده شده است.
+</div>
+
+<h3>مثال تبدیل به تومان (فقط عضویت، take ۱۰۰٪)</h3>
+<table>
+  <thead><tr><th>سناریو حجم</th><th class="n">سکه عضویت</th><th class="n">درآمد تومان</th></tr></thead>
+  <tbody><tr><td>۵۰ ایونت × ۲۰ نفر × ۲ سکه</td><td class='n'>2٬000</td><td class='n'>4٬000٬000</td></tr><tr><td>۱۰۰ ایونت × ۳۰ نفر × ۲ سکه</td><td class='n'>6٬000</td><td class='n'>12٬000٬000</td></tr><tr><td>۲۵۰ ایونت × ۲۵ نفر × ۲ سکه</td><td class='n'>12٬500</td><td class='n'>25٬000٬000</td></tr><tr><td>۵۰۰ ایونت × ۳۰ نفر × ۲ سکه</td><td class='n'>30٬000</td><td class='n'>60٬000٬000</td></tr></tbody>
+</table>
+
+<h3>سهم ایونت در ماه ۱۲ (سناریوها)</h3>
+<table>
+  <thead>
+    <tr><th>سناریو</th><th class="n">ایونت/ماه</th><th class="n">میانگین نفر</th>
+    <th class="n">عضویت</th><th class="n">ساخت</th><th class="n">جمع ایونت</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>بدبینانه</td><td class='n'>100</td><td class='n'>18</td><td class='n'>7٬200٬000</td><td class='n'>20٬000٬000</td><td class='n'>27٬200٬000</td></tr><tr><td>پایه</td><td class='n'>250</td><td class='n'>25</td><td class='n'>25٬000٬000</td><td class='n'>50٬000٬000</td><td class='n'>75٬000٬000</td></tr><tr><td>خوش‌بینانه</td><td class='n'>500</td><td class='n'>30</td><td class='n'>60٬000٬000</td><td class='n'>100٬000٬000</td><td class='n'>160٬000٬000</td></tr>
+  </tbody>
+</table>
+<p class="fn">فرمول عضویت: N × میانگین شرکت‌کننده × 2 × 2٬000 × 100٪.
+فرمول ساخت: N × 100 × 2٬000.</p>
+
+<div class="card">
+  <h3>ترکیب درآمد ماه ۱۲ — سناریو پایه</h3>
+  <div class="hbars"><div class="hbar"><div class="hlab">سکه/VIP</div><div class="htrack"><div class="hfill" style="width:100%;background:#12263a"></div></div><div class="hval">770٬000٬000</div></div><div class="hbar"><div class="hlab">پت‌شاپ</div><div class="htrack"><div class="hfill" style="width:19%;background:#0f766e"></div></div><div class="hval">150٬000٬000</div></div><div class="hbar"><div class="hlab">مشاوره</div><div class="htrack"><div class="hfill" style="width:11%;background:#e05a45"></div></div><div class="hval">90٬000٬000</div></div><div class="hbar"><div class="hlab">ایونت</div><div class="htrack"><div class="hfill" style="width:9%;background:#14b8a6"></div></div><div class="hval">75٬000٬000</div></div></div>
+  <p class="muted" style="margin-top:8px">جمع: 1٬085٬000٬000 تومان
+  (سکه/VIP 770٬000٬000 + شاپ 150٬000٬000 + مشاوره 90٬000٬000 + ایونت 75٬000٬000)</p>
+</div>
+
+<div class="pb"></div>
+<h2>۶. نیروی انسانی و برن ماهانه</h2>
+<p class="muted">حقوق‌ها <strong>ناخالص</strong>اند؛ سهم بیمه کارفرما جداگانه به برن اضافه شده است.</p>
+<table>
+  <thead><tr><th>نقش</th><th class="n">حقوق ماهانه ناخالص (تومان)</th></tr></thead>
+  <tbody>
+    <tr><td>مدیرعامل / مدیر پروژه</td><td class='n'>100٬000٬000</td></tr><tr><td>برنامه‌نویس هوش مصنوعی</td><td class='n'>100٬000٬000</td></tr><tr><td>مدیر سوشال‌مدیا</td><td class='n'>70٬000٬000</td></tr><tr><td>مدیر مالی</td><td class='n'>60٬000٬000</td></tr><tr><td>پشتیبان ۱</td><td class='n'>30٬000٬000</td></tr><tr><td>پشتیبان ۲</td><td class='n'>30٬000٬000</td></tr>
+    <tr class="tfoot"><td>جمع حقوق ناخالص</td><td class="n">390٬000٬000</td></tr>
+  </tbody>
+</table>
+<table>
+  <thead><tr><th>سرفصل OPEX</th><th class="n">مبلغ ماهانه</th></tr></thead>
+  <tbody>
+    <tr><td>حقوق تیم (ناخالص)</td><td class="n">390٬000٬000</td></tr>
+    <tr><td>بیمه تأمین اجتماعی — سهم کارفرما (23٪)</td>
+        <td class="n">89٬700٬000</td></tr>
+    <tr><td>هوش مصنوعی (400$ × 220٬000)</td><td class="n">88٬000٬000</td></tr>
+    <tr><td>اجاره دفتر</td><td class="n">70٬000٬000</td></tr>
+    <tr><td>هزینه‌های جاری (ابزار، اینترنت، عوارض جزئی)</td><td class="n">50٬000٬000</td></tr>
+    <tr class="tfoot"><td>جمع برن ماهانه</td><td class="n">687٬700٬000</td></tr>
+  </tbody>
+</table>
+<p class="fn">سهم بیمه‌شده (7٪) و مالیات حقوق از خالص پرسنل کسر می‌شود و به برن شرکت اضافه نمی‌گردد.</p>
+<div class="grid2">
+  <div class="card"><h3>ترکیب برن</h3><div class="chart-wrap"><svg width="210" height="210" viewBox="0 0 210 210"><path d="M105.00,21.00 A84.0,84.0 0 1 1 70.62,181.64 L86.09,147.15 A46.2,46.2 0 1 0 105.00,58.80 Z" fill="#12263a"/><path d="M70.62,181.64 A84.0,84.0 0 0 1 25.52,132.19 L61.29,119.95 A46.2,46.2 0 0 0 86.09,147.15 Z" fill="#0f766e"/><path d="M25.52,132.19 A84.0,84.0 0 0 1 30.28,66.63 L63.90,83.90 A46.2,46.2 0 0 0 61.29,119.95 Z" fill="#e05a45"/><path d="M30.28,66.63 A84.0,84.0 0 0 1 67.95,29.61 L84.62,63.54 A46.2,46.2 0 0 0 63.90,83.90 Z" fill="#14b8a6"/><path d="M67.95,29.61 A84.0,84.0 0 0 1 105.00,21.00 L105.00,58.80 A46.2,46.2 0 0 0 84.62,63.54 Z" fill="#7c9aab"/><circle cx="105.0" cy="105.0" r="44.2" fill="#fff"/><text x="105.0" y="99.0" text-anchor="middle" font-size="11" fill="#12263a" font-weight="700">برن</text><text x="105.0" y="117.0" text-anchor="middle" font-size="12" fill="#0f766e" font-weight="700">687٫7M</text></svg><div class="legs"><div class="leg"><span style="background:#12263a"></span><b>حقوق</b> · 390٬000٬000 <em>(57٪)</em></div><div class="leg"><span style="background:#0f766e"></span><b>بیمه کارفرما</b> · 89٬700٬000 <em>(13٪)</em></div><div class="leg"><span style="background:#e05a45"></span><b>AI API</b> · 88٬000٬000 <em>(13٪)</em></div><div class="leg"><span style="background:#14b8a6"></span><b>اجاره</b> · 70٬000٬000 <em>(10٪)</em></div><div class="leg"><span style="background:#7c9aab"></span><b>جاری</b> · 50٬000٬000 <em>(7٪)</em></div></div></div></div>
+  <div class="card">
+    <h3>نکات هزینه</h3>
+    <ul class="t">
+      <li>حقوق + بیمه ≈ 70٪ برن — بزرگ‌ترین اهرم.</li>
+      <li>برن سالانه ثابت: <strong>8٬252٬400٬000</strong> تومان.</li>
+      <li>سرمایه‌گذاری روی مهندس AI → اتوماسیون پشتیبانی و کاهش هزینه نسبی در مقیاس.</li>
+      <li>جاری ۵۰م شامل رزرو کوچک عوارض/بیمه مسئولیت است.</li>
+    </ul>
+  </div>
+</div>
+
+<h2>۶٫۱. بیمه و مالیات (فرض ایران)</h2>
+<table>
+  <thead><tr><th>مورد</th><th>فرض طرح</th><th>اثر</th></tr></thead>
+  <tbody>
+    <tr><td>بیمه کارفرما</td><td>۲۳٪ روی حقوق ناخالص</td><td class="n">+89٬700٬000 / ماه</td></tr>
+    <tr><td>بیمه بیمه‌شده</td><td>۷٪ از حقوق</td><td>هزینه شرکت نیست</td></tr>
+    <tr><td>مالیات حقوق</td><td>کسر از منبع</td><td>هزینه اضافه شرکت نیست</td></tr>
+    <tr><td>مالیات عملکرد</td><td>۲۵٪ روی سود مشمول پس از BE</td><td>در جدول سناریوها</td></tr>
+    <tr><td>VAT (~۱۰٪)</td><td>عبورکننده / pass-through برای B2C دیجیتال</td><td>خنثی در برن</td></tr>
+  </tbody>
+</table>
+<p class="fn">VAT برای درآمد دیجیتال B2C اغلب عبورکننده است؛ کالاهای شاپ ممکن است مشمول باشند — در برن خنثی فرض شده.</p>
+
+<h2>۷. اتوماسیون → اهرم عملیاتی (کاهش هزینه نسبی HR)</h2>
+<div class="callout">
+با توسعه پلتفرم (ربات تلگرام، AI، پنل ادمین مالی/کیف‌پول، سلف‌سرویس سفارش و ایونت)،
+<strong>نیاز نیروی انسانی نسبت به مقیاس کاربر کاهش می‌یابد</strong> — همان تیم، کاربران بیشتر،
+هزینه به ازای هر MAU پایین‌تر. این همان دلیل سرمایه‌گذاری روی نقش برنامه‌نویس هوش مصنوعی است.
+</div>
+<table>
+  <thead>
+    <tr><th>فاز</th><th class="n">تیم</th><th class="n">MAU فرض</th>
+    <th class="n">برن / MAU</th><th>توضیح</th></tr>
+  </thead>
+  <tbody><tr><td>فاز ۱ — لانچ</td><td class='n'>6</td><td class='n'>7٬000</td><td class='n'>98٬242</td><td>تیم کامل؛ پشتیبانی دستی و لانچ</td></tr><tr><td>فاز ۲ — مقیاس</td><td class='n'>6</td><td class='n'>14٬000</td><td class='n'>49٬121</td><td>همان تیم با ≈۲× کاربر؛ پنل ادمین + سلف‌سرویس</td></tr><tr><td>فاز ۳ — اتوماسیون</td><td class='n'>7</td><td class='n'>30٬000</td><td class='n'>22٬923</td><td>ربات/AI بیشتر؛ پشتیبانی نسبی کمتر؛ هزینه/MAU پایین</td></tr></tbody>
+</table>
+<ul class="t">
+  <li><strong>فاز ۱:</strong> ۶ نفر برای لانچ، پشتیبانی دستی و تثبیت محصول.</li>
+  <li><strong>فاز ۲:</strong> همان ۶ نفر با ≈۲× کاربر — پنل ادمین و سلف‌سرویس بار پشتیبانی را کم می‌کند.</li>
+  <li><strong>فاز ۳:</strong> اتوماسیون بیشتر (ربات + AI)؛ رشد نسبی پشتیبانی کندتر از رشد MAU؛
+  حتی با یک نقش اضافه، <em>cost per MAU</em> به شکل معنادار پایین می‌آید.</li>
+</ul>
+<p class="muted">اعداد MAU فازها برای نمایش اهرم‌اند؛ با جدول سناریوهای درآمد هم‌راستا ولی ساده‌سازی‌شده‌اند.</p>
+
+<div class="pb"></div>
+<h2>۸. سرمایه اولیه و Use of Funds</h2>
+<table>
+  <thead><tr><th>جزء</th><th class="n">مبلغ</th></tr></thead>
+  <tbody>
+    <tr><td>تجهیزات و لپ‌تاپ (۶ نفر)</td><td class='n'>480٬000٬000</td></tr><tr><td>ودیعه دفتر (۲ ماه اجاره)</td><td class='n'>140٬000٬000</td></tr><tr><td>ثبت شرکت، حقوقی و مجوزها</td><td class='n'>100٬000٬000</td></tr><tr><td>برندینگ و کمپین لانچ</td><td class='n'>500٬000٬000</td></tr><tr><td>مبلمان و تجهیز دفتر</td><td class='n'>150٬000٬000</td></tr><tr><td>رزرو راه‌اندازی</td><td class='n'>130٬000٬000</td></tr>
+    <tr class="tfoot"><td>جمع راه‌اندازی</td><td class="n">1٬500٬000٬000</td></tr>
+    <tr><td>Runway 12 ماه × برن 687٬700٬000</td><td class="n">8٬252٬400٬000</td></tr>
+    <tr><td>بافر ≈۸٪</td><td class="n">780٬192٬000</td></tr>
+    <tr class="tfoot"><td>حداقل نیاز محاسبه‌شده</td><td class="n">10٬532٬592٬000</td></tr>
+    <tr class="tfoot"><td>پیشنهاد جذب (گرد به ۰٫۵ میلیارد)</td><td class="n">11٬000٬000٬000</td></tr>
+  </tbody>
+</table>
+<div class="grid2">
+  <div class="card"><h3>مصرف وجوه</h3><div class="chart-wrap"><svg width="200" height="200" viewBox="0 0 200 200"><path d="M100.00,20.00 A80.0,80.0 0 1 1 20.00,99.89 L56.00,99.94 A44.0,44.0 0 1 0 100.00,56.00 Z" fill="#12263a"/><path d="M20.00,99.89 A80.0,80.0 0 0 1 47.69,39.47 L71.23,66.71 A44.0,44.0 0 0 0 56.00,99.94 Z" fill="#0f766e"/><path d="M47.69,39.47 A80.0,80.0 0 0 1 100.00,20.00 L100.00,56.00 A44.0,44.0 0 0 0 71.23,66.71 Z" fill="#e05a45"/><circle cx="100.0" cy="100.0" r="42.0" fill="#fff"/><text x="100.0" y="94.0" text-anchor="middle" font-size="11" fill="#12263a" font-weight="700">سرمایه</text><text x="100.0" y="112.0" text-anchor="middle" font-size="12" fill="#0f766e" font-weight="700">11٫0B</text></svg><div class="legs"><div class="leg"><span style="background:#12263a"></span><b>Runway ۱۲م</b> · 8٬252٬400٬000 <em>(75٪)</em></div><div class="leg"><span style="background:#0f766e"></span><b>راه‌اندازی</b> · 1٬500٬000٬000 <em>(14٪)</em></div><div class="leg"><span style="background:#e05a45"></span><b>بافر + گرد</b> · 1٬247٬600٬000 <em>(11٪)</em></div></div></div></div>
+  <div class="card">
+    <h3>جدول سهم</h3>
+    <table>
+      <thead><tr><th>سرفصل</th><th class="n">مبلغ</th><th class="n">سهم</th></tr></thead>
+      <tbody><tr><td>عملیات ۱۲ ماه (Runway)</td><td class='n'>8٬252٬400٬000</td><td class='n'>75٪</td></tr><tr><td>راه‌اندازی یک‌باره</td><td class='n'>1٬500٬000٬000</td><td class='n'>14٪</td></tr><tr><td>بافر + گرد کردن پیشنهاد</td><td class='n'>1٬247٬600٬000</td><td class='n'>11٪</td></tr></tbody>
+    </table>
+    <div class="callout" style="margin-top:8px">≈ <span class="hl">11٫00 میلیارد</span>
+    (≈ <strong>16.0</strong> ماه برن، شامل راه‌اندازی)</div>
+  </div>
+</div>
+
+<div class="pb"></div>
+<h2>۹. پیش‌بینی درآمد و سربه‌سر (با ایونت)</h2>
+<div class="callout warn">درآمدها <strong>فرض مدل</strong> هستند نه تعهد.
+سود پس از مالیات = max(۰، درآمد − برن) × (۱ − ۲۵٪).
+استک درآمد: سکه/VIP + شاپ + مشاوره + <strong>ایونت</strong>.</div>
+<table>
+  <thead>
+    <tr><th>سناریو</th><th class="n">MAU م۱۲</th><th class="n">ایونت م۱۲</th>
+    <th class="n">درآمد م۱۲</th>
+    <th class="n">سود پیش از مالیات</th><th class="n">سود پس از مالیات</th>
+    <th class="n">سربه‌سر</th><th class="n">Payback</th></tr>
+  </thead>
+  <tbody><tr><td>بدبینانه</td><td class='n'>8٬000</td><td class='n'>27٬200٬000</td><td class='n'>399٬200٬000</td><td class='n'>-288٬500٬000</td><td class='n'>0</td><td class='n'>16</td><td class='n'>39</td></tr><tr><td>پایه</td><td class='n'>14٬000</td><td class='n'>75٬000٬000</td><td class='n'>1٬085٬000٬000</td><td class='n'>397٬300٬000</td><td class='n'>297٬975٬000</td><td class='n'>10</td><td class='n'>31</td></tr><tr><td>خوش‌بینانه</td><td class='n'>25٬000</td><td class='n'>160٬000٬000</td><td class='n'>2٬550٬000٬000</td><td class='n'>1٬862٬300٬000</td><td class='n'>1٬396٬725٬000</td><td class='n'>8</td><td class='n'>21</td></tr></tbody>
+</table>
+<h3>رمپ درآمد سناریو پایه (میلیون تومان)</h3>
+<svg class="ramp" width="520" height="168" viewBox="0 0 520 168"><line x1="28" y1="68.4" x2="508" y2="68.4" stroke="#e05a45" stroke-width="1.6" stroke-dasharray="5 4"/><text x="28" y="64.4" font-size="8" fill="#e05a45">برن ≈ 688M</text><rect x="28.0" y="134.3" width="36.3" height="5.7" rx="3" fill="#14b8a6"/><text x="46.2" y="160" text-anchor="middle" font-size="7.5" fill="#64748b">M1</text><text x="46.2" y="131.3" text-anchor="middle" font-size="7" fill="#12263a" font-family="DejaVu Sans">55</text><rect x="68.3" y="130.1" width="36.3" height="9.9" rx="3" fill="#14b8a6"/><text x="86.5" y="160" text-anchor="middle" font-size="7.5" fill="#64748b">M2</text><rect x="108.7" y="124.4" width="36.3" height="15.6" rx="3" fill="#14b8a6"/><text x="126.8" y="160" text-anchor="middle" font-size="7.5" fill="#64748b">M3</text><rect x="149.0" y="118.1" width="36.3" height="21.9" rx="3" fill="#14b8a6"/><text x="167.2" y="160" text-anchor="middle" font-size="7.5" fill="#64748b">M4</text><rect x="189.3" y="110.3" width="36.3" height="29.7" rx="3" fill="#14b8a6"/><text x="207.5" y="160" text-anchor="middle" font-size="7.5" fill="#64748b">M5</text><rect x="229.7" y="102.0" width="36.3" height="38.0" rx="3" fill="#14b8a6"/><text x="247.8" y="160" text-anchor="middle" font-size="7.5" fill="#64748b">M6</text><text x="247.8" y="99.0" text-anchor="middle" font-size="7" fill="#12263a" font-family="DejaVu Sans">365</text><rect x="270.0" y="92.6" width="36.3" height="47.4" rx="3" fill="#14b8a6"/><text x="288.2" y="160" text-anchor="middle" font-size="7.5" fill="#64748b">M7</text><rect x="310.3" y="82.2" width="36.3" height="57.8" rx="3" fill="#14b8a6"/><text x="328.5" y="160" text-anchor="middle" font-size="7.5" fill="#64748b">M8</text><rect x="350.7" y="70.8" width="36.3" height="69.2" rx="3" fill="#14b8a6"/><text x="368.8" y="160" text-anchor="middle" font-size="7.5" fill="#64748b">M9</text><rect x="391.0" y="57.8" width="36.3" height="82.2" rx="3" fill="#0f766e"/><text x="409.2" y="160" text-anchor="middle" font-size="7.5" fill="#64748b">M10</text><text x="409.2" y="54.8" text-anchor="middle" font-size="7" fill="#12263a" font-family="DejaVu Sans">790</text><rect x="431.3" y="43.2" width="36.3" height="96.8" rx="3" fill="#0f766e"/><text x="449.5" y="160" text-anchor="middle" font-size="7.5" fill="#64748b">M11</text><rect x="471.7" y="27.0" width="36.3" height="113.0" rx="3" fill="#0f766e"/><text x="489.8" y="160" text-anchor="middle" font-size="7.5" fill="#64748b">M12</text><text x="489.8" y="24.0" text-anchor="middle" font-size="7" fill="#12263a" font-family="DejaVu Sans">1085</text></svg>
+<ul class="t">
+  <li>سربه‌سر عملیاتی وقتی درآمد ماهانه ≥ 687٬700٬000 تومان.</li>
+  <li>پایه با ایونت: سربه‌سر ≈ ماه <strong>10</strong> · Payback ≈ ماه <strong>31</strong>
+  (جریان نقدی تجمعی از −سرمایه، با رشد ملایم درآمد پس از م۱۲).</li>
+  <li>برای پوشش برن با حاشیه ≈۸۵٪، حدود <strong>809٬058٬823</strong> تومان GMV ماهانه لازم است.</li>
+  <li>VAT (~۱۰٪) عبورکننده فرض شده و در برن خنثی است.</li>
+</ul>
+
+<h2>۱۰. نقشه راه و ریسک</h2>
+<table>
+  <thead><tr><th>فاز</th><th>بازه</th><th>تمرکز</th></tr></thead>
+  <tbody>
+    <tr><td>آماده‌سازی</td><td>۰–۱</td><td>تیم، دفتر، حقوقی، لانچ، لیست بیمه</td></tr>
+    <tr><td>رشد اولیه</td><td>۲–۶</td><td>تلگرام/سوشال، سکه، ایونت پلتفرمی</td></tr>
+    <tr><td>مقیاس + اتوماسیون</td><td>۷–۱۲</td><td>سربه‌سر، پنل ادمین، کاهش cost/MAU</td></tr>
+    <tr><td>تثبیت</td><td>۱۳–۱۸</td><td>B2B، کارمزد ایونت میزبان، راند بعد</td></tr>
+  </tbody>
+</table>
+<table>
+  <thead><tr><th>ریسک</th><th>پوشش</th></tr></thead>
+  <tbody>
+    <tr><td>رشد کند / ایونت کم</td><td>بافر سرمایه؛ KPI ماهانه ایونت و پرداخت</td></tr>
+    <tr><td>نوسان دلار / AI</td><td>سقف مصرف؛ قیمت‌گذاری پویا سکه</td></tr>
+    <tr><td>مدل کارمزد ایونت</td><td>شروع با ایونت پلتفرمی؛ مسیر کمیسیون میزبان</td></tr>
+    <tr><td>پرداخت / رگولاتوری</td><td>چند درگاه؛ فاکتور استاندارد</td></tr>
+    <tr><td>سقف بیمه / تغییر نرخ</td><td>محافظه‌کاری روی پایه کامل حقوق</td></tr>
+  </tbody>
+</table>
+
+<h2>۱۱. پیشنهاد سرمایه‌گذاری</h2>
+<ul class="t">
+  <li><strong>مبلغ:</strong> 11٬000٬000٬000 تومان</li>
+  <li><strong>مصرف:</strong> راه‌اندازی + Runway تیم ۶ نفره (بیمه کارفرما ۲۳٪)</li>
+  <li><strong>هدف ۱۲ماه:</strong> عبور از سربه‌سر در سناریو پایه (با استک ایونت)</li>
+  <li><strong>گزارش:</strong> P&amp;L ماهانه، MAU، نرخ پرداخت، حجم ایونت، CAC</li>
+  <li><strong>سهام/valuation:</strong> در مذاکره ترم‌شیت</li>
+</ul>
+<div class="callout">
+<strong>جمع‌بندی:</strong> برن <span class="hl">687٬700٬000</span> تومان/ماه ·
+سرمایه پیشنهادی <span class="hl">11٬000٬000٬000</span> تومان ·
+ایونت پایه م۱۲ ≈ <span class="hl">75٬000٬000</span> تومان ·
+سربه‌سر پایه ماه <span class="hl">10</span>.
+</div>
+<p class="muted">پت‌دیت · طرح توجیهی سرمایه‌گذاری · اعداد به تومان · نسخه ۱٫۳ (ایونت + اتوماسیون + بیمه/مالیات)</p>
+</body></html>

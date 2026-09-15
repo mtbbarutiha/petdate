@@ -1,0 +1,562 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""PetDate investor feasibility PDF (FA, RTL) — Iran payroll SS + tax."""
+from __future__ import annotations
+
+import math
+import shutil
+from pathlib import Path
+
+from weasyprint import HTML
+
+ROOT = Path(__file__).resolve().parent
+ASSETS = ROOT / "assets"
+ARTIFACTS = ROOT.parent
+
+# ── حقوق ناخالص (تومان/ماه) — بدون تغییر ──────────────────────────────
+PAYROLL = {
+    "مدیرعامل / مدیر پروژه": 100_000_000,
+    "برنامه‌نویس هوش مصنوعی": 100_000_000,
+    "مدیر سوشال‌مدیا": 70_000_000,
+    "مدیر مالی": 60_000_000,
+    "پشتیبان ۱": 30_000_000,
+    "پشتیبان ۲": 30_000_000,
+}
+PAYROLL_TOTAL = sum(PAYROLL.values())  # 390M
+
+# بیمه تأمین اجتماعی — سهم کارفرما (فرض طرح توجیهی)
+# ۲۰٪ بیمه + ۳٪ بیکاری = ۲۳٪ روی پایه حقوق بیمه‌شده
+SS_EMPLOYER_RATE = 0.23
+INSURANCE_EMPLOYER = int(PAYROLL_TOTAL * SS_EMPLOYER_RATE)  # 89.7M
+# سهم بیمه‌شده ۷٪ از حقوق کسر می‌شود — هزینه شرکت نیست
+SS_EMPLOYEE_RATE = 0.07
+
+# مالیات
+CORPORATE_TAX_RATE = 0.25  # مالیات بر عملکرد شرکت‌های خصوصی (فرض)
+VAT_RATE = 0.10  # VAT عبورکننده / خنثی در برن
+
+AI_USD = 400
+USD_TOMAN = 220_000
+AI_COST = AI_USD * USD_TOMAN  # 88M
+RENT = 70_000_000
+# جاری شامل اینترنت، ابزار، جزئی عوارض/بیمه مسئولیت (~۵–۱۰م) — بدون ردیف جدا
+OPEX = 50_000_000
+
+BURN = PAYROLL_TOTAL + INSURANCE_EMPLOYER + AI_COST + RENT + OPEX  # 687.7M
+
+SETUP = {
+    "تجهیزات و لپ‌تاپ (۶ نفر)": 480_000_000,
+    "ودیعه دفتر (۲ ماه اجاره)": 140_000_000,
+    "ثبت شرکت، حقوقی و مجوزها": 100_000_000,
+    "برندینگ و کمپین لانچ": 500_000_000,
+    "مبلمان و تجهیز دفتر": 150_000_000,
+    "رزرو راه‌اندازی": 130_000_000,
+}
+SETUP_TOTAL = sum(SETUP.values())  # 1.5B
+RUNWAY_MONTHS = 12
+RUNWAY = BURN * RUNWAY_MONTHS
+BUFFER = int((RUNWAY + SETUP_TOTAL) * 0.08)
+CAPITAL_NEED = RUNWAY + SETUP_TOTAL + BUFFER
+# گرد کردن به نزدیک‌ترین ۰٫۵ میلیارد؛ اگر کمتر از نیاز بود یک پله بالا
+_HALF_B = 500_000_000
+_ASK = int(round(CAPITAL_NEED / _HALF_B) * _HALF_B)
+CAPITAL_ASK = _ASK if _ASK >= CAPITAL_NEED else _ASK + _HALF_B  # → 11B
+ASK_MONTHS = CAPITAL_ASK / BURN
+
+# رمپ درآمد سناریو پایه (میلیون تومان) — عبور از برن جدید ≈۶۸۸م در ماه ۱۲
+BASE_REV_M = [40, 70, 110, 160, 220, 290, 360, 430, 500, 560, 620, 770]
+
+SCENARIOS = {
+    "بدبینانه": {
+        "mau": 8000,
+        "pay": 0.035,
+        "arpu": 900_000,
+        "shop": 80_000_000,
+        "consult": 40_000_000,
+        "be": 18,
+        "pb": 32,
+    },
+    "پایه": {
+        "mau": 14000,
+        "pay": 0.05,
+        "arpu": 1_100_000,
+        "shop": 150_000_000,
+        "consult": 90_000_000,
+        "be": 12,
+        "pb": 20,
+    },
+    "خوش‌بینانه": {
+        "mau": 25000,
+        "pay": 0.06,
+        "arpu": 1_300_000,
+        "shop": 280_000_000,
+        "consult": 160_000_000,
+        "be": 9,
+        "pb": 14,
+    },
+}
+for s in SCENARIOS.values():
+    s["rev"] = int(s["mau"] * s["pay"] * s["arpu"] + s["shop"] + s["consult"])
+    s["profit_pre"] = s["rev"] - BURN
+    s["profit_after"] = int(max(0, s["profit_pre"]) * (1 - CORPORATE_TAX_RATE))
+
+
+def fmt(n: float | int) -> str:
+    return f"{int(round(n)):,}".replace(",", "٬")
+
+
+def fmt_b(n: float) -> str:
+    return f"{n:.2f}".replace(".", "٫")
+
+
+def pie_block() -> str:
+    parts = [
+        ("حقوق", PAYROLL_TOTAL, "#0f766e"),
+        ("بیمه کارفرما", INSURANCE_EMPLOYER, "#7c3aed"),
+        ("AI API", AI_COST, "#f59e0b"),
+        ("اجاره", RENT, "#0369a1"),
+        ("جاری", OPEX, "#be123c"),
+    ]
+    total = sum(v for _, v, _ in parts)
+    cx = cy = 110
+    r = 88
+    acc = 0.0
+    paths: list[str] = []
+    legs: list[str] = []
+    for label, val, color in parts:
+        frac = val / total
+        start = acc * 2 * math.pi - math.pi / 2
+        acc += frac
+        end = acc * 2 * math.pi - math.pi / 2
+        large = 1 if frac > 0.5 else 0
+        x1, y1 = cx + r * math.cos(start), cy + r * math.sin(start)
+        x2, y2 = cx + r * math.cos(end), cy + r * math.sin(end)
+        paths.append(
+            f'<path d="M{cx},{cy} L{x1:.2f},{y1:.2f} '
+            f'A{r},{r} 0 {large} 1 {x2:.2f},{y2:.2f} Z" fill="{color}"/>'
+        )
+        legs.append(
+            f'<div class="leg"><span style="background:{color}"></span>'
+            f"{label}: {fmt(val)} ({frac * 100:.0f}٪)</div>"
+        )
+    burn_label = f"{BURN // 1_000_000}٫{int((BURN % 1_000_000) / 100_000)}"
+    return (
+        f'<svg width="220" height="220" viewBox="0 0 220 220">'
+        + "".join(paths)
+        + f'<circle cx="{cx}" cy="{cy}" r="48" fill="#fff"/>'
+        + f'<text x="{cx}" y="{cy - 4}" text-anchor="middle" font-size="12" fill="#0f172a">برن</text>'
+        + f'<text x="{cx}" y="{cy + 14}" text-anchor="middle" font-size="11" fill="#0f766e">'
+        + f"{burn_label}M</text></svg>"
+        + '<div class="legs">'
+        + "".join(legs)
+        + "</div>"
+    )
+
+
+def rev_chart() -> str:
+    burn_m = BURN / 1_000_000
+    vals = BASE_REV_M
+    mx = max(max(vals), burn_m)
+    top = 150 - int(burn_m / mx * 130)
+    cols = []
+    for i, v in enumerate(vals, 1):
+        h = max(2, int(v / mx * 130))
+        cols.append(
+            f'<div class="bc"><div class="bb" style="height:{h}px"></div>'
+            f'<div class="bl">M{i}</div><div class="bv">{int(v)}</div></div>'
+        )
+    return (
+        f'<div class="chart"><div class="hline" style="top:{top}px">'
+        f"<span>برن ≈ {burn_m:.0f}M</span></div>"
+        + "".join(cols)
+        + "</div>"
+    )
+
+
+def build_html() -> str:
+    logo = (ASSETS / "petdate-mark.png").as_uri()
+    banner = (ASSETS / "petdate-banner.jpg").as_uri()
+    payroll_rows = "".join(
+        f"<tr><td>{k}</td><td class='n'>{fmt(v)}</td></tr>" for k, v in PAYROLL.items()
+    )
+    setup_rows = "".join(
+        f"<tr><td>{k}</td><td class='n'>{fmt(v)}</td></tr>" for k, v in SETUP.items()
+    )
+    scen_rows = "".join(
+        f"<tr><td>{name}</td><td class='n'>{fmt(s['mau'])}</td>"
+        f"<td class='n'>{fmt(s['rev'])}</td>"
+        f"<td class='n'>{fmt(s['profit_pre'])}</td>"
+        f"<td class='n'>{fmt(s['profit_after'])}</td>"
+        f"<td class='n'>{s['be']}</td><td class='n'>{s['pb']}</td></tr>"
+        for name, s in SCENARIOS.items()
+    )
+    use = [
+        ("عملیات ۱۲ ماه (Runway)", RUNWAY),
+        ("راه‌اندازی یک‌باره", SETUP_TOTAL),
+        ("بافر + گرد کردن پیشنهاد", CAPITAL_ASK - RUNWAY - SETUP_TOTAL),
+    ]
+    use_rows = "".join(
+        f"<tr><td>{k}</td><td class='n'>{fmt(v)}</td>"
+        f"<td class='n'>{v / CAPITAL_ASK * 100:.0f}٪</td></tr>"
+        for k, v in use
+    )
+    base = SCENARIOS["پایه"]
+    labor_share = (PAYROLL_TOTAL + INSURANCE_EMPLOYER) / BURN * 100
+
+    return f"""<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8"/>
+<title>طرح توجیهی پت‌دیت</title>
+<style>
+  @page {{ size: A4; margin: 14mm 12mm 18mm; }}
+  body {{ font-family: "Noto Sans Arabic", "Noto Naskh Arabic", "DejaVu Sans", sans-serif;
+         color:#0f172a; font-size:10.5pt; line-height:1.65; }}
+  h1 {{ font-size:22pt; color:#042f2e; margin:0 0 .4em; }}
+  h2 {{ font-size:13.5pt; color:#0f766e; border-bottom:2px solid #99f6e4;
+       padding-bottom:4px; margin:1.3em 0 .5em; }}
+  h3 {{ font-size:11pt; color:#134e4a; margin:1em 0 .4em; }}
+  p {{ margin:.4em 0 .7em; }}
+  table {{ width:100%; border-collapse:collapse; margin:.6em 0 1em; font-size:9.5pt; }}
+  th, td {{ border-bottom:1px solid #e2e8f0; padding:7px 8px; text-align:right; }}
+  th {{ background:#f0fdfa; color:#115e59; }}
+  tr:nth-child(even) td {{ background:#f8fafc; }}
+  td.n, th.n {{ text-align:left; direction:ltr; font-family: DejaVu Sans, sans-serif; font-size:9pt; }}
+  tr.tfoot td {{ font-weight:700; background:#ecfdf5 !important; }}
+  ul.t {{ margin:.2em 0 .8em; padding-right:1.1em; }}
+  ul.t li {{ margin:.15em 0; }}
+  .cover {{
+    page-break-after: always; border-radius:16px; overflow:hidden;
+    background: linear-gradient(155deg,#042f2e 0%,#0f766e 55%,#115e59 100%);
+    color:#ecfdf5; padding:20mm 14mm 14mm; min-height:248mm;
+  }}
+  .cover img.logo {{ width:70px; height:70px; object-fit:contain; background:#fff;
+                    border-radius:14px; padding:8px; }}
+  .cover img.banner {{ width:100%; max-height:88px; object-fit:cover; border-radius:10px;
+                      margin-top:16px; opacity:.92; }}
+  .eyebrow {{ font-size:9pt; opacity:.85; margin-top:14px; }}
+  .cover h1 {{ color:#fff; font-size:26pt; margin-top:6px; }}
+  .tag {{ font-size:11.5pt; opacity:.93; max-width:92%; }}
+  .kpis {{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:20px; }}
+  .kpi {{ background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.22);
+         border-radius:12px; padding:12px; }}
+  .kpi .l {{ font-size:8.5pt; opacity:.85; }}
+  .kpi .v {{ font-size:13.5pt; font-weight:700; margin-top:2px; }}
+  .cfoot {{ margin-top:26px; font-size:8.5pt; opacity:.8; }}
+  .callout {{ background:#f0fdfa; border-right:4px solid #0f766e; border-radius:8px;
+             padding:10px 12px; margin:10px 0 14px; }}
+  .warn {{ background:#fffbeb; border-right-color:#f59e0b; }}
+  .hl {{ color:#0f766e; font-weight:700; }}
+  .muted {{ color:#64748b; font-size:9pt; }}
+  .grid2 {{ display:grid; grid-template-columns:1.05fr .95fr; gap:14px; align-items:start; }}
+  .card {{ background:#f8fafc; border:1px solid #e2e8f0; border-radius:12px; padding:12px; }}
+  .legs {{ margin-top:8px; }}
+  .leg {{ font-size:8.5pt; margin:3px 0; display:flex; gap:8px; align-items:center; }}
+  .leg span {{ width:11px; height:11px; border-radius:3px; display:inline-block; flex-shrink:0; }}
+  .bmc {{ display:grid; grid-template-columns:repeat(5,1fr); gap:6px; }}
+  .bmc .c {{ background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px; padding:8px;
+            font-size:8pt; min-height:70px; }}
+  .bmc .c b {{ display:block; color:#0f766e; margin-bottom:3px; font-size:8.5pt; }}
+  .bmc .w {{ grid-column: span 2; }}
+  .chart {{ position:relative; height:170px; display:flex; align-items:flex-end; gap:5px;
+           border-bottom:1px solid #cbd5e1; padding-top:20px; }}
+  .hline {{ position:absolute; left:0; right:0; border-top:2px dashed #e11d48; }}
+  .hline span {{ position:absolute; left:0; top:-13px; font-size:7pt; color:#e11d48; }}
+  .bc {{ flex:1; text-align:center; }}
+  .bb {{ width:72%; margin:0 auto; background:linear-gradient(180deg,#2dd4bf,#0f766e);
+        border-radius:4px 4px 0 0; }}
+  .bl {{ font-size:7pt; color:#64748b; }}
+  .bv {{ font-size:6.5pt; direction:ltr; color:#334155; font-family:DejaVu Sans,sans-serif; }}
+  .pb {{ page-break-before: always; }}
+  .fn {{ font-size:8pt; color:#64748b; margin-top:.3em; }}
+</style>
+</head>
+<body>
+
+<section class="cover">
+  <img class="logo" src="{logo}" alt="پت‌دیت"/>
+  <div class="eyebrow">سند محرمانه · ویژه سرمایه‌گذار</div>
+  <h1>طرح توجیهی سرمایه‌گذاری<br/>پت‌دیت (PetDate)</h1>
+  <p class="tag">پلتفرم فارسی همبازی پت، پت‌شاپ و مشاوره دامپزشک آنلاین — وب و ربات تلگرام با کیف‌پول و اقتصاد سکه یکپارچه</p>
+  <img class="banner" src="{banner}" alt=""/>
+  <div class="kpis">
+    <div class="kpi"><div class="l">برن ماهانه (با بیمه کارفرما)</div><div class="v">{fmt(BURN)} تومان</div></div>
+    <div class="kpi"><div class="l">سرمایه پیشنهادی</div><div class="v">{fmt(CAPITAL_ASK)} تومان</div></div>
+    <div class="kpi"><div class="l">Runway با این سرمایه</div><div class="v">≈ {ASK_MONTHS:.0f} ماه</div></div>
+    <div class="kpi"><div class="l">سربه‌سر (سناریو پایه)</div><div class="v">ماه {base['be']}</div></div>
+  </div>
+  <div class="cfoot">نسخه ۱٫۲ · بیمه کارفرما ۲۳٪ + مالیات عملکرد ۲۵٪ · مدیر مالی ۶۰م/ماه · دلار AI: {fmt(USD_TOMAN)} تومان<br/>
+  اعداد درآمد سناریویی‌اند؛ ترم‌شیت سهام در مذاکره نهایی قفل می‌شود.</div>
+</section>
+
+<h2>۱. خلاصه اجرایی</h2>
+<p><strong>پت‌دیت</strong> سوپراپ پت در ایران است: همبازی حیوان خانگی، پت‌شاپ، و مشاوره دامپزشک/مربی روی وب و تلگرام.
+این سند نیاز سرمایه برای استقرار تیم، دفتر و رشد ۱۲ ماهه را توجیه می‌کند — با احتساب
+<strong>بیمه تأمین اجتماعی سهم کارفرما</strong> و چارچوب مالیاتی ایران.</p>
+<div class="callout">
+<strong>پیشنهاد:</strong> جذب <span class="hl">{fmt(CAPITAL_ASK)} تومان</span>
+(≈ {fmt_b(CAPITAL_ASK/1e9)} میلیارد) برای راه‌اندازی + Runway.
+برن ماهانه <strong>{fmt(BURN)}</strong> تومان (شامل {fmt(INSURANCE_EMPLOYER)} بیمه کارفرما).
+در سناریو پایه، سربه‌سر حدود ماه <strong>{base['be']}</strong>
+و بازگشت اصل سرمایه حدود ماه <strong>{base['pb']}</strong> برآورد می‌شود.
+</div>
+
+<h2>۲. مسئله و فرصت</h2>
+<ul class="t">
+  <li>بازار بزرگ صاحب‌پت در کلان‌شهرها؛ خدمات اجتماعی و خرید هنوز پراکنده‌اند.</li>
+  <li>تلگرام کانال توزیع قوی است؛ پت‌دیت وب+ربات را با یک حساب وصل می‌کند.</li>
+  <li>موتور درآمد: سکه/VIP (حاشیه بالا) + مارجین شاپ + کارمزد مشاوره.</li>
+</ul>
+
+<h2>۳. محصول</h2>
+<ul class="t">
+  <li>همبازی پت، چت و تجربه اجتماعی</li>
+  <li>اقتصاد سکه (مرجع ≈ ۲٬۰۰۰ تومان/سکه) و بسته‌های VIP</li>
+  <li>پت‌شاپ با فاکتور استاندارد و شناسه عمومی سفارش</li>
+  <li>مشاوره دامپزشک/مربی با مدل پلتفرمی</li>
+  <li>کیف‌پول چندارزی و تأیید قبل از کسر موجودی</li>
+</ul>
+
+<h2>۴. مدل کسب‌وکار</h2>
+<div class="bmc">
+  <div class="c"><b>مشتری</b>صاحب پت، خریدار شاپ، متقاضی مشاوره</div>
+  <div class="c"><b>ارزش</b>همبازی + خرید + مشاوره یکجا</div>
+  <div class="c"><b>کانال</b>تلگرام، وب، سوشال</div>
+  <div class="c"><b>رابطه</b>چت، پشتیبانی، جامعه</div>
+  <div class="c"><b>درآمد</b>سکه، شاپ، مشاوره، B2B</div>
+  <div class="c w"><b>منابع</b>پلتفرم، برند، داده، تیم، مدل‌های AI</div>
+  <div class="c w"><b>فعالیت</b>رشد کاربر، محتوا، تأمین، کیفیت مچ</div>
+  <div class="c w"><b>شرکا</b>درگاه، تأمین‌کننده، متخصصان، تبلیغات</div>
+  <div class="c w"><b>هزینه</b>حقوق، بیمه کارفرما، اجاره، AI، جاری</div>
+</div>
+
+<div class="pb"></div>
+<h2>۵. نیروی انسانی و برن ماهانه</h2>
+<p class="muted">حقوق مدیر مالی: <strong>۶۰ میلیون تومان</strong>. جمع تیم عملیاتی: ۶ نفر.
+حقوق‌ها <strong>ناخالص</strong>اند؛ سهم بیمه کارفرما جداگانه به برن اضافه شده است.</p>
+<table>
+  <thead><tr><th>نقش</th><th class="n">حقوق ماهانه ناخالص (تومان)</th></tr></thead>
+  <tbody>
+    {payroll_rows}
+    <tr class="tfoot"><td>جمع حقوق ناخالص</td><td class="n">{fmt(PAYROLL_TOTAL)}</td></tr>
+  </tbody>
+</table>
+<table>
+  <thead><tr><th>سرفصل OPEX</th><th class="n">مبلغ ماهانه</th></tr></thead>
+  <tbody>
+    <tr><td>حقوق تیم (ناخالص)</td><td class="n">{fmt(PAYROLL_TOTAL)}</td></tr>
+    <tr><td>بیمه تأمین اجتماعی — سهم کارفرما ({SS_EMPLOYER_RATE*100:.0f}٪)</td>
+        <td class="n">{fmt(INSURANCE_EMPLOYER)}</td></tr>
+    <tr><td>هوش مصنوعی ({AI_USD}$ × {fmt(USD_TOMAN)})</td><td class="n">{fmt(AI_COST)}</td></tr>
+    <tr><td>اجاره دفتر</td><td class="n">{fmt(RENT)}</td></tr>
+    <tr><td>هزینه‌های جاری (ابزار، اینترنت، عوارض جزئی)</td><td class="n">{fmt(OPEX)}</td></tr>
+    <tr class="tfoot"><td>جمع برن ماهانه</td><td class="n">{fmt(BURN)}</td></tr>
+  </tbody>
+</table>
+<p class="fn">پاورقی: سهم بیمه‌شده ({SS_EMPLOYEE_RATE*100:.0f}٪) و مالیات حقوق از خالص پرسنل کسر می‌شود و به برن شرکت
+اضافه نمی‌گردد. سقف/کف دستمزد روزانه بیمه در عمل ممکن است پایه بیمه‌شده را کمتر از حقوق کامل کند؛
+در این طرح برای محافظه‌کاری روی ۱۰۰٪ حقوق ناخالص × ۲۳٪ محاسبه شده است.</p>
+<div class="grid2">
+  <div class="card"><h3 style="margin-top:0">ترکیب برن</h3>{pie_block()}</div>
+  <div class="card">
+    <h3 style="margin-top:0">نکات</h3>
+    <ul class="t">
+      <li>حقوق + بیمه کارفرما ≈ {labor_share:.0f}٪ برن — بزرگ‌ترین اهرم هزینه.</li>
+      <li>برن سالانه ثابت: <strong>{fmt(BURN*12)}</strong> تومان.</li>
+      <li>جاری ۵۰م شامل رزرو کوچک عوارض/بیمه مسئولیت (~۵–۱۰م) است؛ ردیف جداگانه دوبرابر نمی‌شود.</li>
+      <li>با رشد کاربر، هزینه AI ممکن است بالا برود (در مدل پایه ثابت مانده).</li>
+    </ul>
+  </div>
+</div>
+
+<h2>۵٫۱. فرض‌های بیمه‌ای و مالیاتی (ایران)</h2>
+<table>
+  <thead><tr><th>مورد</th><th>فرض طرح</th><th>اثر بر برن / P&amp;L</th></tr></thead>
+  <tbody>
+    <tr>
+      <td>بیمه تأمین اجتماعی — کارفرما</td>
+      <td>۲۳٪ (۲۰٪ بیمه + ۳٪ بیکاری) روی جمع حقوق ناخالص</td>
+      <td class="n">+{fmt(INSURANCE_EMPLOYER)} / ماه در برن</td>
+    </tr>
+    <tr>
+      <td>بیمه — سهم بیمه‌شده</td>
+      <td>۷٪ کسر از حقوق خالص</td>
+      <td>هزینه شرکت نیست</td>
+    </tr>
+    <tr>
+      <td>مالیات حقوق (کسر از منبع)</td>
+      <td>از حقوق پرسنل کسر می‌شود</td>
+      <td>هزینه اضافه شرکت نیست</td>
+    </tr>
+    <tr>
+      <td>مالیات بر عملکرد / شرکت</td>
+      <td>۲۵٪ روی سود مشمول (پس از سربه‌سر)</td>
+      <td>سود پس از مالیات در سناریوها</td>
+    </tr>
+    <tr>
+      <td>مالیات بر ارزش افزوده (VAT)</td>
+      <td>~۱۰٪؛ برای B2C دیجیتال اغلب عبورکننده</td>
+      <td>خنثی در برن؛ شاپ ممکن است متفاوت باشد</td>
+    </tr>
+  </tbody>
+</table>
+<p class="fn">معافیت دانش‌بنیان یا رژیم‌های خاص ممکن است نرخ عملکرد را تغییر دهد؛ این طرح نرخ استاندارد ۲۵٪ شرکت خصوصی را فرض کرده است.</p>
+
+<h2>۶. سرمایه اولیه</h2>
+<table>
+  <thead><tr><th>جزء</th><th class="n">مبلغ</th></tr></thead>
+  <tbody>
+    {setup_rows}
+    <tr class="tfoot"><td>جمع راه‌اندازی</td><td class="n">{fmt(SETUP_TOTAL)}</td></tr>
+    <tr><td>Runway {RUNWAY_MONTHS} ماه × برن {fmt(BURN)}</td><td class="n">{fmt(RUNWAY)}</td></tr>
+    <tr><td>بافر ≈۸٪</td><td class="n">{fmt(BUFFER)}</td></tr>
+    <tr class="tfoot"><td>حداقل نیاز محاسبه‌شده</td><td class="n">{fmt(CAPITAL_NEED)}</td></tr>
+    <tr class="tfoot"><td>پیشنهاد جذب (گرد به ۰٫۵ میلیارد)</td><td class="n">{fmt(CAPITAL_ASK)}</td></tr>
+  </tbody>
+</table>
+<div class="callout">برای لانچ امن حدود <span class="hl">{fmt_b(CAPITAL_ASK/1e9)} میلیارد تومان</span>
+پیشنهاد می‌شود (≈ <strong>{ASK_MONTHS:.1f}</strong> ماه برن، شامل راه‌اندازی).</div>
+<h3>Use of Funds</h3>
+<table>
+  <thead><tr><th>سرفصل</th><th class="n">مبلغ</th><th class="n">سهم</th></tr></thead>
+  <tbody>{use_rows}</tbody>
+</table>
+
+<div class="pb"></div>
+<h2>۷. پیش‌بینی درآمد (سناریویی)</h2>
+<div class="callout warn">درآمدها <strong>فرض مدل</strong> هستند نه تعهد. حساسیت اصلی: نرخ پرداخت‌کننده و CAC.
+سود پس از مالیات = max(۰، درآمد − برن) × (۱ − ۲۵٪).</div>
+<table>
+  <thead>
+    <tr><th>سناریو</th><th class="n">MAU م۱۲</th><th class="n">درآمد م۱۲</th>
+    <th class="n">سود پیش از مالیات</th><th class="n">سود پس از مالیات ۲۵٪</th>
+    <th class="n">سربه‌سر</th><th class="n">Payback</th></tr>
+  </thead>
+  <tbody>{scen_rows}</tbody>
+</table>
+<h3>رمپ درآمد سناریو پایه (میلیون تومان) — ۱۲ ماه اول</h3>
+{rev_chart()}
+<ul class="t">
+  <li>قیمت سکه مرجع: ۲٬۰۰۰ تومان · VIP نمونه ۴٬۰۰۰ سکه ≈ ۸ میلیون GMV.</li>
+  <li>برای پوشش برن با حاشیه ≈۸۵٪، حدود <strong>{fmt(int(BURN/0.85))}</strong> تومان درآمد ناخالص ماهانه لازم است.</li>
+  <li>با ARPU پرداخت‌کننده ۱٫۱م: حدود <strong>{fmt(int((BURN/0.85)/1_100_000))}</strong> پرداخت‌کننده فعال در ماه.</li>
+  <li>VAT (~۱۰٪) برای خدمات دیجیتال B2C معمولاً عبورکننده است و در برن خنثی فرض شده؛ کالاهای شاپ ممکن است مشمول باشند.</li>
+</ul>
+
+<h2>۸. سربه‌سر و بازگشت</h2>
+<ul class="t">
+  <li>سربه‌سر عملیاتی: درآمد ماهانه ≥ {fmt(BURN)} تومان (برن با بیمه کارفرما).</li>
+  <li>پایه: سربه‌سر ≈ ماه {base['be']} · بازگشت اصل ≈ ماه {base['pb']}.</li>
+  <li>پس از سربه‌سر، سود نمایش‌داده‌شده به سرمایه‌گذار هم پیش از مالیات و هم پس از ۲۵٪ مالیات عملکرد است.</li>
+  <li>بدبینانه/خوش‌بینانه در جدول بالا برای حساسیت سرمایه‌گذار آمده است.</li>
+</ul>
+
+<h2>۹. نقشه راه ۱۸ ماه</h2>
+<table>
+  <thead><tr><th>فاز</th><th>بازه</th><th>تمرکز</th></tr></thead>
+  <tbody>
+    <tr><td>آماده‌سازی</td><td>۰–۱</td><td>تیم، دفتر، حقوقی، لانچ، لیست بیمه</td></tr>
+    <tr><td>رشد اولیه</td><td>۲–۶</td><td>تلگرام/سوشال، فعال‌سازی سکه</td></tr>
+    <tr><td>مقیاس</td><td>۷–۱۲</td><td>سربه‌سر، بهینه‌سازی CAC</td></tr>
+    <tr><td>تثبیت</td><td>۱۳–۱۸</td><td>B2B، حاشیه شاپ، راند بعد</td></tr>
+  </tbody>
+</table>
+
+<h2>۱۰. ریسک‌ها</h2>
+<table>
+  <thead><tr><th>ریسک</th><th>پوشش</th></tr></thead>
+  <tbody>
+    <tr><td>رشد کند</td><td>بافر سرمایه؛ کنترل مارکتینگ؛ KPI ماهانه</td></tr>
+    <tr><td>نوسان دلار / AI</td><td>سقف مصرف؛ قیمت‌گذاری پویا سکه</td></tr>
+    <tr><td>پرداخت/رگولاتوری</td><td>چند درگاه؛ فاکتور استاندارد</td></tr>
+    <tr><td>سقف بیمه / تغییر نرخ‌ها</td><td>محافظه‌کاری روی پایه کامل؛ بازنگری سالانه لیست بیمه</td></tr>
+    <tr><td>رقابت شاپ</td><td>تمایز لایه اجتماعی و چسبندگی</td></tr>
+  </tbody>
+</table>
+
+<h2>۱۱. پیشنهاد سرمایه‌گذاری</h2>
+<ul class="t">
+  <li><strong>مبلغ:</strong> {fmt(CAPITAL_ASK)} تومان</li>
+  <li><strong>مصرف:</strong> راه‌اندازی + Runway تیم ۶ نفره (با بیمه کارفرما ۲۳٪)</li>
+  <li><strong>هدف ۱۲ماه:</strong> نزدیک/عبور از سربه‌سر در سناریو پایه</li>
+  <li><strong>گزارش:</strong> P&amp;L ماهانه (پیش/پس از مالیات)، MAU، نرخ پرداخت، CAC، لیست بیمه</li>
+  <li><strong>سهام/valuation:</strong> در مذاکره ترم‌شیت قفل می‌شود</li>
+</ul>
+
+<div class="callout">
+<strong>جمع‌بندی:</strong> برن ماهانه <span class="hl">{fmt(BURN)}</span> تومان
+(حقوق {fmt(PAYROLL_TOTAL)} + بیمه کارفرما {fmt(INSURANCE_EMPLOYER)} + AI/اجاره/جاری)؛
+برای لانچ امن حدود <span class="hl">{fmt(CAPITAL_ASK)}</span> تومان سرمایه لازم است.
+</div>
+<p class="muted">پت‌دیت · طرح توجیهی سرمایه‌گذاری · اعداد به تومان · نسخه ۱٫۲ (بیمه و مالیات ایران)</p>
+</body></html>"""
+
+
+def write_assumptions() -> None:
+    base = SCENARIOS["پایه"]
+    text = f"""# فرض‌های طرح توجیهی پت‌دیت
+
+## حقوق ناخالص (تومان/ماه)
+{chr(10).join(f'- {k}: {v:,}' for k, v in PAYROLL.items())}
+- جمع ناخالص: {PAYROLL_TOTAL:,}
+
+## بیمه تأمین اجتماعی (فرض ایران — بخش خصوصی)
+- سهم کارفرما: **{SS_EMPLOYER_RATE*100:.0f}%** = ۲۰٪ بیمه + ۳٪ بیکاری روی پایه حقوق بیمه‌شده
+- محاسبه طرح (محافظه‌کار): `{PAYROLL_TOTAL:,} × {SS_EMPLOYER_RATE} = {INSURANCE_EMPLOYER:,}` تومان/ماه
+- سهم بیمه‌شده: {SS_EMPLOYEE_RATE*100:.0f}% — از خالص حقوق کسر می‌شود؛ **به برن شرکت اضافه نمی‌شود**
+- سقف/کف دستمزد روزانه بیمه در عمل ممکن است پایه را کمتر کند؛ حساسیت اختیاری — در pitch پایه کامل استفاده شده
+
+## مالیات (فرض ایران)
+- **مالیات حقوق (کسر از منبع):** از حقوق پرسنل کسر می‌شود — هزینه اضافه شرکت نیست (فقط پاورقی)
+- **مالیات بر عملکرد / شرکت:** پس از سودآوری، معمولاً **{CORPORATE_TAX_RATE*100:.0f}%** روی سود مشمول شرکت خصوصی
+  - معافیت دانش‌بنیان یا رژیم خاص ممکن است متفاوت باشد؛ در این طرح نرخ استاندارد فرض شده
+  - در سناریوها: `سود_پس_از_مالیات = max(0, درآمد − برن) × (1 − {CORPORATE_TAX_RATE})`
+- **VAT (~{VAT_RATE*100:.0f}%):** برای درآمد B2C دیجیتال اغلب عبورکننده/خنثی در برن؛ کالاهای شاپ ممکن است مشمول باشند
+- **سایر عوارض / بیمه مسئولیت:** رزرو کوچک (~۵–۱۰م) داخل OPEX جاری {OPEX:,} — ردیف جداگانه اضافه نشده تا دوبرابر نشود
+
+## OPEX ماهانه
+- حقوق ناخالص: {PAYROLL_TOTAL:,}
+- بیمه کارفرما ۲۳٪: {INSURANCE_EMPLOYER:,}
+- AI: {AI_USD}$ × {USD_TOMAN:,} = {AI_COST:,}
+- اجاره: {RENT:,}
+- جاری: {OPEX:,}
+- **برن جدید: {BURN:,}** (قبلاً بدون بیمه: ۵۹۸٬۰۰۰٬۰۰۰)
+
+## سرمایه
+- راه‌اندازی: {SETUP_TOTAL:,}
+- Runway 12م: {RUNWAY:,}
+- بافر ≈۸٪: {BUFFER:,}
+- نیاز محاسبه‌شده: {CAPITAL_NEED:,}
+- **پیشنهاد (گرد به ۰٫۵ میلیارد، در صورت نیاز یک پله بالا): {CAPITAL_ASK:,}** (≈{ASK_MONTHS:.1f} ماه برن)
+
+## پایه ماه ۱۲
+- درآمد: {base['rev']:,}
+- سود پیش از مالیات: {base['profit_pre']:,}
+- سود پس از مالیات ۲۵٪: {base['profit_after']:,}
+- سربه‌سر: ماه {base['be']}
+- Payback: ماه {base['pb']}
+"""
+    (ROOT / "ASSUMPTIONS.md").write_text(text, encoding="utf-8")
+
+
+def main() -> None:
+    html = build_html()
+    html_path = ROOT / "petdate-tarh-tojihi.html"
+    pdf_path = ROOT / "petdate-tarh-tojihi.pdf"
+    copy_path = ARTIFACTS / "petdate-tarh-tojihi-sarmayehgozar.pdf"
+
+    html_path.write_text(html, encoding="utf-8")
+    HTML(filename=str(html_path), base_url=str(ROOT)).write_pdf(str(pdf_path))
+    shutil.copy2(pdf_path, copy_path)
+    write_assumptions()
+
+    print("OK", pdf_path, pdf_path.stat().st_size)
+    print("COPY", copy_path)
+    print(
+        f"BURN={BURN:,} INS={INSURANCE_EMPLOYER:,} ASK={CAPITAL_ASK:,} "
+        f"NEED={CAPITAL_NEED:,} BE_base={SCENARIOS['پایه']['be']}"
+    )
+
+
+if __name__ == "__main__":
+    main()
