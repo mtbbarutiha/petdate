@@ -16099,8 +16099,38 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   color: var(--pepito-dark, #1a2b4a);
 }
 .pepito-wallet-convert-field--amount,
+.pepito-wallet-convert-preview,
 .pepito-wallet-convert-submit {
   grid-column: 1 / -1;
+}
+.pepito-wallet-convert-preview {
+  display: grid;
+  gap: 0.25rem;
+  min-height: 1.25rem;
+  margin-top: -0.15rem;
+}
+.pepito-wallet-convert-preview:empty {
+  display: none;
+}
+.pepito-wallet-convert-preview-text {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--pepito-dark, #1a2b4a);
+  line-height: 1.45;
+}
+.pepito-wallet-convert-preview-hint,
+.pepito-wallet-convert-preview-warn {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+.pepito-wallet-convert-preview-hint {
+  color: var(--pepito-muted, #6b7280);
+}
+.pepito-wallet-convert-preview-warn {
+  color: #b45309;
 }
 .pepito-wallet-convert-control {
   width: 100%;

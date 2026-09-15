@@ -461,6 +461,61 @@ export const USER_WALLET_CONVERT_PAIRS: readonly WalletConvertPair[] = [
   { from: 'coins', to: 'stars' },
 ] as const;
 
+/** برچسب کوتاه واحد برای پیش‌نمایش تبدیل */
+export const WALLET_CONVERT_UNIT_FA: Record<WalletCurrency, string> = {
+  toman: 'تومان',
+  coins: 'سکه',
+  stars: 'ستاره',
+};
+
+export type WalletConvertRates = {
+  coinPriceToman: number;
+  coinSellPriceToman: number;
+};
+
+/**
+ * Quote convert amounts for allowed pairs (shared by API + web preview).
+ * toman→coins uses buy rate; coins→toman uses sell rate; stars↔coins is 1:1.
+ * For toman→coins, fromAmount is adjusted down to an exact multiple of the rate.
+ */
+export function quoteWalletConvert(
+  from: WalletCurrency,
+  to: WalletCurrency,
+  fromAmount: number,
+  rates: WalletConvertRates = {
+    coinPriceToman: COIN_PRICE_TOMAN,
+    coinSellPriceToman: COIN_SELL_PRICE_TOMAN,
+  }
+):
+  | { ok: true; fromAmount: number; toAmount: number; rate: number }
+  | { ok: false; error: string } {
+  const amt = Math.floor(Number(fromAmount));
+  if (!Number.isFinite(amt) || amt <= 0) {
+    return { ok: false, error: 'مقدار نامعتبر است' };
+  }
+  if (from === to) return { ok: false, error: 'ارز مبدأ و مقصد یکسان است' };
+
+  const pairOk = USER_WALLET_CONVERT_PAIRS.some((p) => p.from === from && p.to === to);
+  if (!pairOk) return { ok: false, error: 'این جفت تبدیل پشتیبانی نمی‌شود' };
+
+  if (from === 'toman' && to === 'coins') {
+    const rate = rates.coinPriceToman;
+    const coins = Math.floor(amt / rate);
+    if (coins <= 0) {
+      return { ok: false, error: `حداقل ${rate.toLocaleString('fa-IR')} تومان برای ۱ سکه لازم است` };
+    }
+    return { ok: true, fromAmount: coins * rate, toAmount: coins, rate };
+  }
+  if (from === 'coins' && to === 'toman') {
+    const rate = rates.coinSellPriceToman;
+    return { ok: true, fromAmount: amt, toAmount: amt * rate, rate };
+  }
+  if ((from === 'stars' && to === 'coins') || (from === 'coins' && to === 'stars')) {
+    return { ok: true, fromAmount: amt, toAmount: amt, rate: 1 };
+  }
+  return { ok: false, error: 'این جفت تبدیل پشتیبانی نمی‌شود' };
+}
+
 /** هدیه یک‌باره ثبت‌نام */
 export const SIGNUP_BONUS = 20;
 /** جایزه تکمیل هر بخش پروفایل (اولین بار) */
