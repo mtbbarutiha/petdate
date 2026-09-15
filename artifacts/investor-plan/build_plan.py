@@ -65,13 +65,18 @@ SETUP = {
 }
 SETUP_TOTAL = sum(SETUP.values())  # 1.5B
 RUNWAY_MONTHS = 12
-RUNWAY = BURN * RUNWAY_MONTHS
-BUFFER = int((RUNWAY + SETUP_TOTAL) * 0.08)
-CAPITAL_NEED = RUNWAY + SETUP_TOTAL + BUFFER
-_HALF_B = 500_000_000
-_ASK = int(round(CAPITAL_NEED / _HALF_B) * _HALF_B)
-CAPITAL_ASK = _ASK if _ASK >= CAPITAL_NEED else _ASK + _HALF_B  # → 11B (need ≈10.73B)
-ASK_MONTHS = CAPITAL_ASK / BURN
+RUNWAY = BURN * RUNWAY_MONTHS  # 8,432,400,000
+# بسته شدن تمیز روی ۱۰ میلیارد: راه‌اندازی + ۱۲ ماه برن ≈ ۹٫۹۳B؛
+# بافر عملیاتی نازک (~۶۸م / ≈۰٫۷٪) تا قفل سرمایه درخواستی.
+CAPITAL_BASE = RUNWAY + SETUP_TOTAL  # 9,932,400,000
+CAPITAL_ASK = 10_000_000_000  # سرمایه درخواستی صریح — ۱۰ میلیارد تومان
+CONTINGENCY = CAPITAL_ASK - CAPITAL_BASE  # 67,600,000
+BUFFER = CONTINGENCY  # alias for narrative/tables
+CAPITAL_NEED = CAPITAL_BASE  # نیاز قبل از بافر گرد کردن
+ASK_MONTHS = CAPITAL_ASK / BURN  # ≈ ۱۴٫۲ ماه پوشش کل (شامل راه‌اندازی)
+RUNWAY_COVER_MONTHS = (CAPITAL_ASK - SETUP_TOTAL) / BURN  # ≈ ۱۲٫۱ ماه عملیات
+DOC_VERSION = "۱٫۵"
+DOC_VERSION_LATIN = "1.5"
 
 # ── اقتصاد سکه و ایونت ────────────────────────────────────────────────
 COIN_TOMAN = 2_000
@@ -216,8 +221,12 @@ def fmt(n: float | int) -> str:
     return f"{int(round(n)):,}".replace(",", "٬")
 
 
-def fmt_b(n: float) -> str:
-    return f"{n:.2f}".replace(".", "٫")
+def fmt_b(n: float, digits: int = 1) -> str:
+    return f"{n:.{digits}f}".replace(".", "٫")
+
+
+def fmt_dec(n: float, digits: int = 1) -> str:
+    return f"{n:.{digits}f}".replace(".", "٫")
 
 
 def uri(path: Path) -> str:
@@ -230,6 +239,8 @@ def donut_chart(
     center_top: str,
     center_bot: str,
     size: int = 210,
+    show_legs: bool = True,
+    compact_legs: bool = False,
 ) -> str:
     total = sum(v for _, v, _ in parts) or 1
     cx = cy = size / 2
@@ -252,11 +263,18 @@ def donut_chart(
             f'<path d="M{x1:.2f},{y1:.2f} A{r},{r} 0 {large} 1 {x2:.2f},{y2:.2f} '
             f'L{xi1:.2f},{yi1:.2f} A{ri},{ri} 0 {large} 0 {xi2:.2f},{yi2:.2f} Z" fill="{color}"/>'
         )
-        legs.append(
-            f'<div class="leg"><span style="background:{color}"></span>'
-            f"<b>{label}</b> · {fmt(val)} "
-            f'<em>({frac * 100:.0f}٪)</em></div>'
-        )
+        if compact_legs:
+            legs.append(
+                f'<div class="leg"><span style="background:{color}"></span>'
+                f"<b>{label}</b> <em>({frac * 100:.0f}٪)</em></div>"
+            )
+        else:
+            legs.append(
+                f'<div class="leg"><span style="background:{color}"></span>'
+                f"<b>{label}</b> · {fmt(val)} "
+                f'<em>({frac * 100:.0f}٪)</em></div>'
+            )
+    legs_html = ('<div class="legs">' + "".join(legs) + "</div>") if show_legs else ""
     return (
         f'<div class="chart-wrap">'
         f'<svg width="{size}" height="{size}" viewBox="0 0 {size} {size}">'
@@ -265,9 +283,8 @@ def donut_chart(
         + f'<text x="{cx}" y="{cy - 6}" text-anchor="middle" font-size="11" fill="{NAVY}" font-weight="700">{center_top}</text>'
         + f'<text x="{cx}" y="{cy + 12}" text-anchor="middle" font-size="12" fill="{TEAL}" font-weight="700">{center_bot}</text>'
         + "</svg>"
-        + '<div class="legs">'
-        + "".join(legs)
-        + "</div></div>"
+        + legs_html
+        + "</div>"
     )
 
 
@@ -287,16 +304,17 @@ def burn_pie() -> str:
 
 
 def use_of_funds_pie() -> str:
-    buffer_ask = CAPITAL_ASK - RUNWAY - SETUP_TOTAL
     return donut_chart(
         [
             ("Runway ۱۲م", RUNWAY, NAVY),
             ("راه‌اندازی", SETUP_TOTAL, TEAL),
-            ("بافر + گرد", buffer_ask, CORAL),
+            ("بافر عملیاتی", CONTINGENCY, CORAL),
         ],
         "سرمایه",
-        f"{CAPITAL_ASK / 1e9:.1f}B".replace(".", "٫"),
-        size=200,
+        "۱۰B",
+        size=168,
+        show_legs=True,
+        compact_legs=True,
     )
 
 
@@ -391,11 +409,11 @@ def build_html() -> str:
     use = [
         ("عملیات ۱۲ ماه (Runway)", RUNWAY),
         ("راه‌اندازی یک‌باره", SETUP_TOTAL),
-        ("بافر + گرد کردن پیشنهاد", CAPITAL_ASK - RUNWAY - SETUP_TOTAL),
+        ("بافر عملیاتی (بسته ۱۰ میلیارد)", CONTINGENCY),
     ]
     use_rows = "".join(
         f"<tr><td>{k}</td><td class='n'>{fmt(v)}</td>"
-        f"<td class='n'>{v / CAPITAL_ASK * 100:.0f}٪</td></tr>"
+        f"<td class='n'>{fmt_dec(v / CAPITAL_ASK * 100, 1)}٪</td></tr>"
         for k, v in use
     )
     event_ex_rows = "".join(
@@ -414,169 +432,498 @@ def build_html() -> str:
     base = SCENARIOS["پایه"]
     labor_share = (PAYROLL_TOTAL + INSURANCE_EMPLOYER) / BURN * 100
     join_unit = EVENT_JOIN_FEE_COINS * COIN_TOMAN
+    ask_months_txt = fmt_dec(ASK_MONTHS, 1)
+    runway_cover_txt = fmt_dec(RUNWAY_COVER_MONTHS, 1)
 
     return f"""<!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="utf-8"/>
-<title>طرح توجیهی پت‌دیت</title>
+<title>طرح توجیهی پت‌دیت — نسخه {DOC_VERSION}</title>
 <style>
-  @page {{ size: A4; margin: 12mm 11mm 16mm; }}
+  @page {{
+    size: A4;
+    margin: 16mm 14mm 18mm 14mm;
+    @bottom-center {{
+      content: "پت‌دیت · طرح توجیهی سرمایه‌گذاری · محرمانه · v{DOC_VERSION_LATIN}  ·  " counter(page);
+      font-family: "Noto Sans Arabic", "DejaVu Sans", sans-serif;
+      font-size: 7.5pt;
+      color: #64748b;
+      letter-spacing: 0.01em;
+      padding-top: 4mm;
+      border-top: 0.6pt solid #d5e0e7;
+      width: 100%;
+      margin: 0 2mm;
+    }}
+  }}
+  @page cover {{
+    margin: 0;
+    @bottom-center {{ content: none; }}
+  }}
+
   * {{ box-sizing: border-box; }}
+  html {{ background: #fff; }}
   body {{
     font-family: "Noto Naskh Arabic", "Noto Sans Arabic", "DejaVu Sans", sans-serif;
-    color:{INK}; font-size:10pt; line-height:1.62;
-    background: {SAND};
+    color: {INK};
+    font-size: 9.8pt;
+    line-height: 1.68;
+    background: #fff;
+    margin: 0;
   }}
-  h1 {{ font-size:20pt; color:{NAVY}; margin:0 0 .35em; }}
-  h2 {{
-    font-size:13pt; color:{TEAL_DK}; margin:1.15em 0 .45em;
-    padding-bottom:5px; border-bottom:2.5px solid {TEAL_LT};
-  }}
-  h3 {{ font-size:10.5pt; color:{NAVY2}; margin:.9em 0 .35em; }}
-  p {{ margin:.35em 0 .6em; }}
-  table {{ width:100%; border-collapse:collapse; margin:.5em 0 .85em; font-size:9pt; }}
-  th, td {{ border-bottom:1px solid #dce5ec; padding:6px 7px; text-align:right; }}
-  th {{ background:{MINT_BG}; color:{TEAL_DK}; font-weight:700; }}
-  tr:nth-child(even) td {{ background:#fbfdfe; }}
-  td.n, th.n {{ text-align:left; direction:ltr; font-family: DejaVu Sans, sans-serif; font-size:8.5pt; }}
-  tr.tfoot td {{ font-weight:700; background:#e6f7f4 !important; }}
-  ul.t {{ margin:.15em 0 .7em; padding-right:1.05em; }}
-  ul.t li {{ margin:.12em 0; }}
 
-  .cover {{
-    page-break-after: always; border-radius:18px; overflow:hidden;
-    background:
-      radial-gradient(ellipse at 15% 20%, rgba(20,184,166,.35), transparent 50%),
-      radial-gradient(ellipse at 90% 80%, rgba(224,90,69,.28), transparent 45%),
-      linear-gradient(160deg, {NAVY} 0%, {NAVY2} 42%, {TEAL_DK} 100%);
-    color:#ecfdf5; padding:16mm 13mm 12mm; min-height:255mm;
-    position: relative;
+  h1, h2, h3 {{
+    font-family: "Noto Sans Arabic", "Noto Kufi Arabic", "Noto Naskh Arabic", sans-serif;
+    font-weight: 700;
+    line-height: 1.35;
   }}
-  .cover::after {{
-    content:""; position:absolute; inset:auto 0 0 0; height:6px;
-    background: linear-gradient(90deg, {TEAL_LT}, {CORAL});
+  h1 {{ font-size: 20pt; color: {NAVY}; margin: 0 0 .4em; }}
+  h2 {{
+    font-size: 12.5pt;
+    color: {NAVY};
+    margin: 1.35em 0 .55em;
+    padding: 0 0 7px;
+    border-bottom: 2px solid {TEAL};
+    page-break-after: avoid;
+  }}
+  h2 .num {{
+    display: inline-block;
+    color: {TEAL};
+    font-weight: 700;
+    margin-left: 6px;
+    font-family: "DejaVu Sans", sans-serif;
+    font-size: 11pt;
+  }}
+  h3 {{
+    font-size: 10.2pt;
+    color: {NAVY2};
+    margin: 1em 0 .4em;
+    page-break-after: avoid;
+  }}
+  p {{ margin: .3em 0 .55em; }}
+  strong {{ font-weight: 700; }}
+
+  table {{
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: .55em 0 .95em;
+    font-size: 8.7pt;
+    border: 1px solid #d5e0e7;
+    border-radius: 10px;
+    overflow: hidden;
+  }}
+  th, td {{
+    border-bottom: 1px solid #e8eef2;
+    padding: 7px 9px;
+    text-align: right;
+    vertical-align: middle;
+  }}
+  th {{
+    background: linear-gradient(180deg, #f0fdfa 0%, #e6f5f2 100%);
+    color: {TEAL_DK};
+    font-weight: 700;
+    font-family: "Noto Sans Arabic", sans-serif;
+    font-size: 8.2pt;
+    border-bottom: 1.5px solid #c5ddd8;
+  }}
+  tr:last-child td {{ border-bottom: none; }}
+  tr:nth-child(even) td {{ background: #fafcfd; }}
+  td.n, th.n {{
+    text-align: left;
+    direction: ltr;
+    font-family: "DejaVu Sans", sans-serif;
+    font-size: 8.2pt;
+    font-variant-numeric: tabular-nums;
+  }}
+  tr.tfoot td {{
+    font-weight: 700;
+    background: #e6f7f4 !important;
+    color: {NAVY};
+    border-top: 1.5px solid #b6d9d2;
+  }}
+  tr.ask td {{
+    font-weight: 700;
+    background: linear-gradient(90deg, #ecfdf5, #fff7ed) !important;
+    color: {NAVY};
+    border-top: 2px solid {TEAL};
+  }}
+
+  ul.t {{ margin: .2em 0 .75em; padding-right: 1.1em; }}
+  ul.t li {{ margin: .18em 0; }}
+
+  /* ── Cover ── */
+  .cover {{
+    page: cover;
+    page-break-after: always;
+    min-height: 297mm;
+    padding: 18mm 16mm 16mm;
+    color: #ecfdf5;
+    position: relative;
+    overflow: hidden;
+    background:
+      radial-gradient(ellipse 80% 55% at 100% 0%, rgba(20,184,166,.32), transparent 55%),
+      radial-gradient(ellipse 60% 45% at 0% 100%, rgba(224,90,69,.22), transparent 50%),
+      linear-gradient(155deg, #0b1c2c 0%, {NAVY} 38%, {NAVY2} 68%, {TEAL_DK} 100%);
+  }}
+  .cover-top {{
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+  }}
+  .cover-brand {{
+    display: flex;
+    align-items: center;
+    gap: 14px;
   }}
   .cover img.logo {{
-    width:72px; height:72px; object-fit:contain; background:#fff;
-    border-radius:16px; padding:8px; box-shadow:0 8px 24px rgba(0,0,0,.25);
+    width: 78px; height: 78px; object-fit: contain;
+    background: #fff; border-radius: 18px; padding: 9px;
+    box-shadow: 0 10px 28px rgba(0,0,0,.28);
+  }}
+  .brand-name {{
+    font-family: "Noto Sans Arabic", "DejaVu Sans", sans-serif;
+    font-size: 22pt; font-weight: 700; color: #fff; letter-spacing: 0.02em;
+  }}
+  .brand-sub {{ font-size: 8.5pt; opacity: .82; margin-top: 2px; }}
+  .ver-pill {{
+    font-family: "DejaVu Sans", sans-serif;
+    font-size: 8pt; color: #ecfdf5;
+    border: 1px solid rgba(255,255,255,.35);
+    border-radius: 999px; padding: 5px 12px;
+    background: rgba(255,255,255,.08);
+    white-space: nowrap;
+  }}
+  .cover-rule {{
+    height: 2px; width: 64px; background: {TEAL_LT};
+    margin: 22px 0 14px; border-radius: 2px;
+  }}
+  .eyebrow {{
+    font-family: "Noto Sans Arabic", sans-serif;
+    font-size: 8.5pt; letter-spacing: .04em; opacity: .88;
+    color: {TEAL_LT};
+  }}
+  .cover h1 {{
+    color: #fff; font-size: 26pt; margin: 6px 0 10px; line-height: 1.32;
+    max-width: 92%;
+  }}
+  .tag {{
+    font-size: 10.5pt; opacity: .92; max-width: 92%;
+    line-height: 1.65; margin: 0 0 16px;
   }}
   .cover img.banner {{
-    width:100%; max-height:92px; object-fit:cover; border-radius:12px;
-    margin-top:14px; border:1px solid rgba(255,255,255,.18);
+    width: 100%; height: 88px; object-fit: cover; object-position: center;
+    border-radius: 14px; margin: 4px 0 18px;
+    border: 1px solid rgba(255,255,255,.16);
+    box-shadow: 0 8px 20px rgba(0,0,0,.18);
   }}
-  .eyebrow {{ font-size:8.5pt; letter-spacing:.02em; opacity:.88; margin-top:16px; }}
-  .cover h1 {{ color:#fff; font-size:24pt; margin-top:4px; line-height:1.35; }}
-  .tag {{ font-size:10.5pt; opacity:.93; max-width:94%; }}
-  .kpis {{ display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-top:18px; }}
+  .kpis {{
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    margin-top: 4px;
+  }}
   .kpi {{
-    background:rgba(255,255,255,.11); border:1px solid rgba(255,255,255,.2);
-    border-radius:12px; padding:11px 12px; backdrop-filter: blur(2px);
+    background: rgba(255,255,255,.10);
+    border: 1px solid rgba(255,255,255,.22);
+    border-radius: 14px; padding: 12px 14px;
   }}
-  .kpi .l {{ font-size:8pt; opacity:.85; }}
-  .kpi .v {{ font-size:12.5pt; font-weight:700; margin-top:2px; }}
-  .cfoot {{ margin-top:22px; font-size:8pt; opacity:.78; }}
+  .kpi .l {{
+    font-size: 7.8pt; opacity: .82;
+    font-family: "Noto Sans Arabic", sans-serif;
+  }}
+  .kpi .v {{
+    font-size: 13pt; font-weight: 700; margin-top: 4px;
+    font-family: "Noto Sans Arabic", "DejaVu Sans", sans-serif;
+  }}
+  .kpi.accent {{
+    background: rgba(20,184,166,.18);
+    border-color: rgba(20,184,166,.45);
+  }}
+  .cfoot {{
+    margin-top: 20px; font-size: 7.6pt; opacity: .78; line-height: 1.55;
+    border-top: 1px solid rgba(255,255,255,.16); padding-top: 12px;
+  }}
+  .cover-accent {{
+    position: absolute; left: 0; right: 0; bottom: 0; height: 7px;
+    background: linear-gradient(90deg, {TEAL_LT} 0%, {TEAL} 45%, {CORAL} 100%);
+  }}
 
+  /* ── Content chrome ── */
   .callout {{
-    background:{MINT_BG}; border-right:4px solid {TEAL}; border-radius:10px;
-    padding:9px 11px; margin:8px 0 12px;
+    background: {MINT_BG};
+    border-right: 4px solid {TEAL};
+    border-radius: 0 10px 10px 0;
+    padding: 10px 12px;
+    margin: 8px 0 14px;
+    page-break-inside: avoid;
   }}
-  .warn {{ background:#fff7ed; border-right-color:{CORAL}; }}
-  .coral {{ background:#fff5f3; border-right-color:{CORAL}; }}
-  .hl {{ color:{TEAL_DK}; font-weight:700; }}
-  .muted {{ color:{SLATE}; font-size:8.5pt; }}
-  .grid2 {{ display:grid; grid-template-columns:1.05fr .95fr; gap:12px; align-items:start; }}
-  .grid3 {{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }}
+  .warn {{ background: #fff7ed; border-right-color: {CORAL}; }}
+  .coral {{ background: #fff5f3; border-right-color: {CORAL}; }}
+  .hl {{ color: {TEAL_DK}; font-weight: 700; }}
+  .muted {{ color: {SLATE}; font-size: 8.3pt; }}
+  .grid2 {{
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+    align-items: start; margin: 8px 0 12px;
+  }}
+  .grid2 > .card {{
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+  }}
   .card {{
-    background:#fff; border:1px solid #d8e4ea; border-radius:12px; padding:11px;
-    box-shadow: 0 1px 0 rgba(18,38,58,.04);
+    background: #fff;
+    border: 1px solid #d8e4ea;
+    border-radius: 12px;
+    padding: 12px 13px;
+    page-break-inside: avoid;
   }}
-  .card h3 {{ margin-top:0; }}
-  .legs {{ margin-top:6px; }}
-  .leg {{ font-size:8pt; margin:3px 0; display:flex; gap:7px; align-items:center; }}
-  .leg span {{ width:10px; height:10px; border-radius:3px; display:inline-block; flex-shrink:0; }}
-  .leg em {{ color:{SLATE}; font-style:normal; }}
-  .chart-wrap {{ display:flex; flex-direction:column; align-items:center; }}
+  .card h3 {{ margin-top: 0; }}
+  .card table {{
+    margin-bottom: 0;
+    font-size: 8pt;
+  }}
+  .card table th, .card table td {{ padding: 5px 6px; }}
 
-  .bmc {{ display:grid; grid-template-columns:repeat(5,1fr); gap:5px; }}
-  .bmc .c {{
-    background:#fff; border:1px solid #cfdbe3; border-radius:8px; padding:7px;
-    font-size:7.5pt; min-height:64px;
+  .funds-grid {{
+    grid-template-columns: 0.9fr 1.1fr;
   }}
-  .bmc .c b {{ display:block; color:{TEAL}; margin-bottom:2px; font-size:8pt; }}
+  .funds-grid .chart-wrap {{
+    padding: 4px 0;
+  }}
+  .funds-grid .legs {{
+    max-width: 100%;
+  }}
+  .funds-grid .leg {{
+    font-size: 7.4pt;
+    white-space: nowrap;
+  }}
+  .funds-grid .card table {{
+    font-size: 7.6pt;
+  }}
+  .funds-grid .card table th,
+  .funds-grid .card table td {{
+    padding: 4px 5px;
+  }}
+
+  .legs {{ margin-top: 8px; width: 100%; }}
+  .leg {{
+    font-size: 7.8pt; margin: 4px 0;
+    display: flex; gap: 7px; align-items: center;
+  }}
+  .leg span {{
+    width: 10px; height: 10px; border-radius: 3px;
+    display: inline-block; flex-shrink: 0;
+  }}
+  .leg em {{ color: {SLATE}; font-style: normal; }}
+  .chart-wrap {{
+    display: flex; flex-direction: column; align-items: center;
+  }}
+
+  .bmc {{
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px;
+    margin: 8px 0 12px;
+  }}
+  .bmc .c {{
+    background: #f8fbfc;
+    border: 1px solid #d0dce4;
+    border-radius: 8px;
+    padding: 8px;
+    font-size: 7.4pt;
+    min-height: 62px;
+    page-break-inside: avoid;
+  }}
+  .bmc .c b {{
+    display: block; color: {TEAL}; margin-bottom: 3px;
+    font-size: 7.8pt; font-family: "Noto Sans Arabic", sans-serif;
+  }}
   .bmc .w {{ grid-column: span 2; }}
 
-  .hbars {{ display:flex; flex-direction:column; gap:7px; }}
-  .hbar {{ display:grid; grid-template-columns:72px 1fr 78px; gap:6px; align-items:center; }}
-  .hlab {{ font-size:8pt; color:{NAVY}; }}
-  .htrack {{ background:#e8eef2; border-radius:6px; height:12px; overflow:hidden; }}
-  .hfill {{ height:100%; border-radius:6px; }}
-  .hval {{ font-size:7.5pt; direction:ltr; text-align:left; font-family:DejaVu Sans,sans-serif; color:{SLATE}; }}
+  .hbars {{ display: flex; flex-direction: column; gap: 8px; }}
+  .hbar {{
+    display: grid; grid-template-columns: 70px 1fr 82px;
+    gap: 7px; align-items: center;
+  }}
+  .hlab {{ font-size: 8pt; color: {NAVY}; }}
+  .htrack {{
+    background: #e8eef2; border-radius: 6px; height: 11px; overflow: hidden;
+  }}
+  .hfill {{ height: 100%; border-radius: 6px; }}
+  .hval {{
+    font-size: 7.4pt; direction: ltr; text-align: left;
+    font-family: "DejaVu Sans", sans-serif; color: {SLATE};
+  }}
 
-  .shots {{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:8px 0 12px; }}
-  .shots.one {{ grid-template-columns:1fr; }}
-  .shots.tri {{ grid-template-columns:1.2fr 1fr 0.85fr; }}
-  figure.shot {{ margin:0; background:#fff; border:1px solid #d5e0e7; border-radius:10px; overflow:hidden; }}
-  figure.shot img {{ width:100%; display:block; max-height:148px; object-fit:cover; object-position:top; }}
-  figure.shot.tall img {{ max-height:190px; }}
+  .shots {{
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    margin: 8px 0 14px;
+  }}
+  .shots.one {{ grid-template-columns: 1fr; }}
+  .shots.tri {{ grid-template-columns: 1.15fr 1fr .9fr; }}
+  figure.shot {{
+    margin: 0; background: #fff;
+    border: 1px solid #d0dce4; border-radius: 12px;
+    overflow: hidden; page-break-inside: avoid;
+    box-shadow: 0 1px 3px rgba(18,38,58,.04);
+  }}
+  figure.shot img {{
+    width: 100%; display: block;
+    max-height: 155px; object-fit: cover; object-position: top center;
+    background: #eef3f6;
+  }}
+  figure.shot.tall img {{ max-height: 185px; }}
   figure.shot figcaption {{
-    font-size:7.5pt; color:{SLATE}; padding:6px 8px; line-height:1.45;
-    border-top:1px solid #e8eef2; background:#fafcfd;
+    font-size: 7.4pt; color: {SLATE}; padding: 7px 9px;
+    line-height: 1.45; border-top: 1px solid #e8eef2;
+    background: #fafcfd;
+    font-family: "Noto Sans Arabic", sans-serif;
   }}
 
   .pb {{ page-break-before: always; }}
-  .fn {{ font-size:7.5pt; color:{SLATE}; margin-top:.25em; }}
+  .fn {{ font-size: 7.3pt; color: {SLATE}; margin-top: .2em; }}
   .badge {{
-    display:inline-block; background:{TEAL}; color:#fff; font-size:7.5pt;
-    padding:2px 8px; border-radius:4px; margin-left:4px;
+    display: inline-block; background: {TEAL}; color: #fff;
+    font-size: 7pt; padding: 2px 8px; border-radius: 4px;
+    margin-right: 4px; vertical-align: middle;
+    font-family: "Noto Sans Arabic", sans-serif;
   }}
-  .statrow {{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:8px 0 12px; }}
+  .statrow {{
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 9px; margin: 10px 0 14px;
+  }}
   .stat {{
-    background:#fff; border:1px solid #d5e0e7; border-radius:10px; padding:8px 9px; text-align:center;
+    background: linear-gradient(180deg, #fff 0%, #f7fbfa 100%);
+    border: 1px solid #d5e0e7; border-radius: 11px;
+    padding: 10px 8px; text-align: center;
+    page-break-inside: avoid;
   }}
-  .stat .v {{ font-size:11pt; font-weight:700; color:{TEAL_DK}; direction:ltr; font-family:DejaVu Sans,sans-serif; }}
-  .stat .l {{ font-size:7.5pt; color:{SLATE}; margin-top:2px; }}
+  .stat .v {{
+    font-size: 12pt; font-weight: 700; color: {TEAL_DK};
+    direction: ltr; font-family: "DejaVu Sans", sans-serif;
+  }}
+  .stat .l {{
+    font-size: 7.3pt; color: {SLATE}; margin-top: 3px;
+    font-family: "Noto Sans Arabic", sans-serif;
+  }}
+  .divider {{
+    height: 1px; background: linear-gradient(90deg, {TEAL_LT}, transparent);
+    margin: 14px 0 6px; border: none;
+  }}
+  svg.ramp {{
+    display: block; width: 100%; max-width: 520px;
+    margin: 6px auto 10px; height: auto;
+  }}
+  .ask-hero {{
+    display: grid; grid-template-columns: 1.2fr .8fr; gap: 12px;
+    margin: 8px 0 14px; page-break-inside: avoid;
+  }}
+  .ask-box {{
+    background: linear-gradient(135deg, {NAVY} 0%, {TEAL_DK} 100%);
+    color: #ecfdf5; border-radius: 14px; padding: 14px 16px;
+  }}
+  .ask-box .l {{ font-size: 8pt; opacity: .85; }}
+  .ask-box .v {{
+    font-size: 18pt; font-weight: 700; margin-top: 4px;
+    font-family: "Noto Sans Arabic", "DejaVu Sans", sans-serif;
+  }}
+  .ask-box .s {{ font-size: 8pt; opacity: .8; margin-top: 6px; line-height: 1.5; }}
+  .ask-side {{
+    background: {MINT_BG}; border: 1px solid #c5ddd8;
+    border-radius: 14px; padding: 12px 14px;
+  }}
+  .ask-side .row {{
+    display: flex; justify-content: space-between;
+    font-size: 8.2pt; padding: 4px 0;
+    border-bottom: 1px solid #dceae6;
+  }}
+  .ask-side .row:last-child {{ border-bottom: none; font-weight: 700; color: {TEAL_DK}; }}
+  .ask-side .n {{ direction: ltr; font-family: "DejaVu Sans", sans-serif; }}
 </style>
 </head>
 <body>
 
 <section class="cover">
-  <img class="logo" src="{logo}" alt="پت‌دیت"/>
-  <div class="eyebrow">سند محرمانه · ویژه سرمایه‌گذار · نسخه ۱٫۴</div>
+  <div class="cover-top">
+    <div class="cover-brand">
+      <img class="logo" src="{logo}" alt="پت‌دیت"/>
+      <div>
+        <div class="brand-name">پت‌دیت</div>
+        <div class="brand-sub">PetDate · petdate.ir</div>
+      </div>
+    </div>
+    <div class="ver-pill">نسخه {DOC_VERSION} · محرمانه</div>
+  </div>
+  <div class="cover-rule"></div>
+  <div class="eyebrow">سند ویژه سرمایه‌گذار · طرح توجیهی</div>
   <h1>طرح توجیهی سرمایه‌گذاری<br/>پت‌دیت (PetDate)</h1>
   <p class="tag">سوپراپ فارسی پت: همبازی، ایونت، پت‌شاپ و مشاوره دامپزشک —
-  وب + ربات تلگرام با اقتصاد سکه یکپارچه و پنل ادمین عملیاتی</p>
+  وب + ربات تلگرام با اقتصاد سکه یکپارچه و پنل ادمین عملیاتی.</p>
   <img class="banner" src="{banner}" alt=""/>
   <div class="kpis">
-    <div class="kpi"><div class="l">برن ماهانه (با بیمه کارفرما)</div><div class="v">{fmt(BURN)} تومان</div></div>
-    <div class="kpi"><div class="l">سرمایه پیشنهادی</div><div class="v">{fmt(CAPITAL_ASK)} تومان</div></div>
-    <div class="kpi"><div class="l">Runway با این سرمایه</div><div class="v">≈ {ASK_MONTHS:.0f} ماه</div></div>
-    <div class="kpi"><div class="l">سربه‌سر پایه (با ایونت)</div><div class="v">ماه {base['be']}</div></div>
+    <div class="kpi accent">
+      <div class="l">سرمایه درخواستی</div>
+      <div class="v">۱۰٬۰۰۰٬۰۰۰٬۰۰۰ تومان</div>
+    </div>
+    <div class="kpi">
+      <div class="l">برن ماهانه (با بیمه کارفرما + زیرساخت)</div>
+      <div class="v">{fmt(BURN)} تومان</div>
+    </div>
+    <div class="kpi">
+      <div class="l">پوشش کل با این سرمایه</div>
+      <div class="v">≈ {ask_months_txt} ماه برن</div>
+    </div>
+    <div class="kpi">
+      <div class="l">سربه‌سر پایه (با ایونت)</div>
+      <div class="v">ماه {base['be']}</div>
+    </div>
   </div>
-  <div class="cfoot">بیمه کارفرما ۲۳٪ · مالیات عملکرد ۲۵٪ · زیرساخت فنی {fmt(INFRA_TECH)}/ماه ·
-  سکه ≈ {fmt(COIN_TOMAN)} تومان · عضویت ایونت فرض {EVENT_JOIN_FEE_COINS} سکه · دلار AI: {fmt(USD_TOMAN)} تومان<br/>
-  اعداد درآمد سناریویی‌اند؛ ترم‌شیت سهام در مذاکره نهایی قفل می‌شود. · نسخه ۱٫۴</div>
+  <div class="cfoot">
+    بیمه کارفرما ۲۳٪ · مالیات عملکرد ۲۵٪ · زیرساخت فنی {fmt(INFRA_TECH)}/ماه ·
+    سکه ≈ {fmt(COIN_TOMAN)} تومان · عضویت ایونت فرض {EVENT_JOIN_FEE_COINS} سکه ·
+    دلار AI: {fmt(USD_TOMAN)} تومان<br/>
+    بسته سرمایه: راه‌اندازی {fmt(SETUP_TOTAL)} + Runway ۱۲ماه {fmt(RUNWAY)} + بافر {fmt(CONTINGENCY)}
+    = <strong>۱۰ میلیارد تومان</strong>.
+    اعداد درآمد سناریویی‌اند؛ ترم‌شیت سهام در مذاکره نهایی قفل می‌شود.
+  </div>
+  <div class="cover-accent"></div>
 </section>
 
-<h2>۱. خلاصه اجرایی</h2>
+<h2><span class="num">۰۱</span> خلاصه اجرایی</h2>
 <p><strong>پت‌دیت</strong> پلتفرم همبازی و خدمات پت در ایران است — با لایه ایونت گروهی، شاپ، و مشاوره روی وب و تلگرام.
 این سند نیاز سرمایه برای تیم ۶ نفره، دفتر و رشد ۱۲ ماهه را با <strong>بیمه کارفرما</strong>،
 <strong>مالیات عملکرد</strong> و <strong>درآمد ایونت</strong> توجیه می‌کند.</p>
-<div class="callout">
-<strong>پیشنهاد:</strong> جذب <span class="hl">{fmt(CAPITAL_ASK)} تومان</span>
-(≈ {fmt_b(CAPITAL_ASK/1e9)} میلیارد) برای راه‌اندازی + Runway.
-برن <strong>{fmt(BURN)}</strong> تومان/ماه.
-در سناریو پایه (با ایونت)، سربه‌سر حدود ماه <strong>{base['be']}</strong>
-و بازگشت اصل حدود ماه <strong>{base['pb']}</strong>.
+
+<div class="ask-hero">
+  <div class="ask-box">
+    <div class="l">سرمایه درخواستی (Ask)</div>
+    <div class="v">۱۰ میلیارد تومان</div>
+    <div class="s">راه‌اندازی ۱٫۵ میلیارد + ۱۲ ماه برن ≈ ۹٫۹۳ میلیارد؛
+    بافر عملیاتی نازک برای بسته شدن تمیز روی <strong>۱۰٬۰۰۰٬۰۰۰٬۰۰۰</strong> تومان
+    (≈ {ask_months_txt} ماه پوشش کل · ≈ {runway_cover_txt} ماه عملیات پس از راه‌اندازی).</div>
+  </div>
+  <div class="ask-side">
+    <div class="row"><span>برن ماهانه</span><span class="n">{fmt(BURN)}</span></div>
+    <div class="row"><span>راه‌اندازی</span><span class="n">{fmt(SETUP_TOTAL)}</span></div>
+    <div class="row"><span>Runway ۱۲م</span><span class="n">{fmt(RUNWAY)}</span></div>
+    <div class="row"><span>بافر</span><span class="n">{fmt(CONTINGENCY)}</span></div>
+    <div class="row"><span>جمع Ask</span><span class="n">{fmt(CAPITAL_ASK)}</span></div>
+  </div>
 </div>
+
 <div class="statrow">
-  <div class="stat"><div class="v">{fmt(int(BURN/1e6))}M</div><div class="l">برن ماهانه</div></div>
-  <div class="stat"><div class="v">{fmt_b(CAPITAL_ASK/1e9)}B</div><div class="l">سرمایه پیشنهادی</div></div>
+  <div class="stat"><div class="v">{fmt_dec(BURN/1e6, 1)}M</div><div class="l">برن ماهانه</div></div>
+  <div class="stat"><div class="v">۱۰B</div><div class="l">سرمایه درخواستی</div></div>
   <div class="stat"><div class="v">{fmt(int(base['rev']/1e6))}M</div><div class="l">درآمد پایه م۱۲</div></div>
   <div class="stat"><div class="v">{fmt(int(base['events']/1e6))}M</div><div class="l">سهم ایونت م۱۲</div></div>
 </div>
+<div class="callout">
+<strong>پیشنهاد:</strong> جذب <span class="hl">۱۰٬۰۰۰٬۰۰۰٬۰۰۰ تومان</span>
+برای راه‌اندازی + Runway تیم ۶ نفره.
+برن <strong>{fmt(BURN)}</strong> تومان/ماه (شامل {fmt(INFRA_TECH)} زیرساخت فنی).
+در سناریو پایه (با ایونت)، سربه‌سر حدود ماه <strong>{base['be']}</strong>
+و بازگشت اصل حدود ماه <strong>{base['pb']}</strong>.
+</div>
 
-<h2>۲. مسئله، فرصت و محصول</h2>
+<h2><span class="num">۰۲</span> مسئله، فرصت و محصول</h2>
 <ul class="t">
   <li>بازار بزرگ صاحب‌پت؛ خدمات اجتماعی، ایونت و خرید هنوز پراکنده‌اند.</li>
   <li>تلگرام کانال توزیع قوی؛ پت‌دیت وب+ربات را با یک حساب وصل می‌کند.</li>
@@ -591,11 +938,11 @@ def build_html() -> str:
   <div class="c w"><b>منابع</b>پلتفرم، برند، داده مچ، تیم AI، پنل ادمین</div>
   <div class="c w"><b>فعالیت</b>رشد کاربر، ایونت، محتوا، کیفیت مچ</div>
   <div class="c w"><b>شرکا</b>درگاه، تأمین‌کننده، متخصصان</div>
-  <div class="c w"><b>هزینه</b>حقوق، بیمه کارفرما، اجاره، AI، جاری</div>
+  <div class="c w"><b>هزینه</b>حقوق، بیمه کارفرما، اجاره، AI، جاری، زیرساخت</div>
 </div>
 
 <div class="pb"></div>
-<h2>۳. تجربه محصول — وب، چت و همبازی</h2>
+<h2><span class="num">۰۳</span> تجربه محصول — وب، چت و همبازی</h2>
 <p class="muted">اسکرین‌شات‌های واقعی از محصول جاری پت‌دیت.</p>
 <div class="shots">
   {shot("gutters-guides-top-1440.png", "لندینگ وب — معرفی برند و مسیر ورود به خدمات پت‌دیت", "tall")}
@@ -607,7 +954,7 @@ def build_html() -> str:
   {shot("gutters-guides-about-1440.png", "صفحه درباره / اعتماد برند")}
 </div>
 
-<h2>۴. پنل ادمین — عملیات و مالی</h2>
+<h2><span class="num">۰۴</span> پنل ادمین — عملیات و مالی</h2>
 <p>پنل ادمین قدرتمند، ستون اتوماسیون عملیاتی است: مالی، سفارش، کیف‌پول و مانیتورینگ —
 کاهش وابستگی به نیروی انسانی با رشد کاربر.</p>
 <div class="shots">
@@ -620,7 +967,7 @@ def build_html() -> str:
 </div>
 
 <div class="pb"></div>
-<h2>۵. درآمد ایونت‌ها <span class="badge">جدید در مدل</span></h2>
+<h2><span class="num">۰۵</span> درآمد ایونت‌ها <span class="badge">مدل درآمد</span></h2>
 <div class="callout coral">
 <strong>فرض مدل:</strong> هزینه عضویت استاندارد <strong>{EVENT_JOIN_FEE_COINS} سکه</strong> به ازای هر شرکت‌کننده
 (≈ <strong>{fmt(join_unit)}</strong> تومان با قیمت سکه {fmt(COIN_TOMAN)}).
@@ -664,8 +1011,8 @@ def build_html() -> str:
 </div>
 
 <div class="pb"></div>
-<h2>۶. نیروی انسانی و برن ماهانه</h2>
-<p class="muted">حقوق‌ها <strong>ناخالص</strong>اند؛ سهم بیمه کارفرما جداگانه به برن اضافه شده است.</p>
+<h2><span class="num">۰۶</span> نیروی انسانی و برن ماهانه</h2>
+<p class="muted">حقوق‌ها <strong>ناخالص</strong>اند؛ سهم بیمه کارفرما جداگانه به برن اضافه شده است. تیم ۶ نفره.</p>
 <table>
   <thead><tr><th>نقش</th><th class="n">حقوق ماهانه ناخالص (تومان)</th></tr></thead>
   <tbody>
@@ -694,13 +1041,13 @@ def build_html() -> str:
     <ul class="t">
       <li>حقوق + بیمه ≈ {labor_share:.0f}٪ برن — بزرگ‌ترین اهرم.</li>
       <li>برن سالانه ثابت: <strong>{fmt(BURN*12)}</strong> تومان.</li>
+      <li>زیرساخت فنی: <strong>{fmt(INFRA_TECH)}</strong> تومان/ماه در برن لحاظ شده.</li>
       <li>سرمایه‌گذاری روی مهندس AI → اتوماسیون پشتیبانی و کاهش هزینه نسبی در مقیاس.</li>
-      <li>جاری ۵۰م شامل رزرو کوچک عوارض/بیمه مسئولیت است.</li>
     </ul>
   </div>
 </div>
 
-<h2>۶٫۱. بیمه و مالیات (فرض ایران)</h2>
+<h2><span class="num">۰۶٫۱</span> بیمه و مالیات (فرض ایران)</h2>
 <table>
   <thead><tr><th>مورد</th><th>فرض طرح</th><th>اثر</th></tr></thead>
   <tbody>
@@ -713,7 +1060,7 @@ def build_html() -> str:
 </table>
 <p class="fn">VAT برای درآمد دیجیتال B2C اغلب عبورکننده است؛ کالاهای شاپ ممکن است مشمول باشند — در برن خنثی فرض شده.</p>
 
-<h2>۷. اتوماسیون → اهرم عملیاتی (کاهش هزینه نسبی HR)</h2>
+<h2><span class="num">۰۷</span> اتوماسیون → اهرم عملیاتی</h2>
 <div class="callout">
 با توسعه پلتفرم (ربات تلگرام، AI، پنل ادمین مالی/کیف‌پول، سلف‌سرویس سفارش و ایونت)،
 <strong>نیاز نیروی انسانی نسبت به مقیاس کاربر کاهش می‌یابد</strong> — همان تیم، کاربران بیشتر،
@@ -735,33 +1082,45 @@ def build_html() -> str:
 <p class="muted">اعداد MAU فازها برای نمایش اهرم‌اند؛ با جدول سناریوهای درآمد هم‌راستا ولی ساده‌سازی‌شده‌اند.</p>
 
 <div class="pb"></div>
-<h2>۸. سرمایه اولیه و Use of Funds</h2>
+<h2><span class="num">۰۸</span> سرمایه اولیه و Use of Funds</h2>
+<div class="callout">
+<strong>بسته ۱۰ میلیارد:</strong> راه‌اندازی {fmt(SETUP_TOTAL)} +
+Runway ۱۲ ماه ({fmt(BURN)} × ۱۲ = {fmt(RUNWAY)}) =
+<strong>{fmt(CAPITAL_BASE)}</strong> تومان؛
+بافر عملیاتی <strong>{fmt(CONTINGENCY)}</strong> تومان
+تا قفل سرمایه درخواستی روی <span class="hl">۱۰٬۰۰۰٬۰۰۰٬۰۰۰</span>.
+</div>
 <table>
   <thead><tr><th>جزء</th><th class="n">مبلغ</th></tr></thead>
   <tbody>
     {setup_rows}
     <tr class="tfoot"><td>جمع راه‌اندازی</td><td class="n">{fmt(SETUP_TOTAL)}</td></tr>
     <tr><td>Runway {RUNWAY_MONTHS} ماه × برن {fmt(BURN)}</td><td class="n">{fmt(RUNWAY)}</td></tr>
-    <tr><td>بافر ≈۸٪</td><td class="n">{fmt(BUFFER)}</td></tr>
-    <tr class="tfoot"><td>حداقل نیاز محاسبه‌شده</td><td class="n">{fmt(CAPITAL_NEED)}</td></tr>
-    <tr class="tfoot"><td>پیشنهاد جذب (گرد به ۰٫۵ میلیارد)</td><td class="n">{fmt(CAPITAL_ASK)}</td></tr>
+    <tr class="tfoot"><td>جمع راه‌اندازی + Runway ۱۲م</td><td class="n">{fmt(CAPITAL_BASE)}</td></tr>
+    <tr><td>بافر عملیاتی (بسته شدن روی ۱۰ میلیارد)</td><td class="n">{fmt(CONTINGENCY)}</td></tr>
+    <tr class="ask"><td>سرمایه درخواستی (Ask)</td><td class="n">{fmt(CAPITAL_ASK)}</td></tr>
   </tbody>
 </table>
-<div class="grid2">
+<div class="grid2 funds-grid">
   <div class="card"><h3>مصرف وجوه</h3>{use_of_funds_pie()}</div>
   <div class="card">
     <h3>جدول سهم</h3>
     <table>
       <thead><tr><th>سرفصل</th><th class="n">مبلغ</th><th class="n">سهم</th></tr></thead>
-      <tbody>{use_rows}</tbody>
+      <tbody>{use_rows}
+        <tr class="ask"><td>جمع</td><td class="n">{fmt(CAPITAL_ASK)}</td><td class="n">۱۰۰٪</td></tr>
+      </tbody>
     </table>
-    <div class="callout" style="margin-top:8px">≈ <span class="hl">{fmt_b(CAPITAL_ASK/1e9)} میلیارد</span>
-    (≈ <strong>{ASK_MONTHS:.1f}</strong> ماه برن، شامل راه‌اندازی)</div>
+    <div class="callout" style="margin-top:8px">
+      <span class="hl">۱۰ میلیارد تومان</span> ·
+      ≈ <strong>{ask_months_txt}</strong> ماه پوشش کل ·
+      ≈ <strong>{runway_cover_txt}</strong> ماه عملیات
+    </div>
   </div>
 </div>
 
 <div class="pb"></div>
-<h2>۹. پیش‌بینی درآمد و سربه‌سر (با ایونت)</h2>
+<h2><span class="num">۰۹</span> پیش‌بینی درآمد و سربه‌سر</h2>
 <div class="callout warn">درآمدها <strong>فرض مدل</strong> هستند نه تعهد.
 سود پس از مالیات = max(۰، درآمد − برن) × (۱ − ۲۵٪).
 استک درآمد: سکه/VIP + شاپ + مشاوره + <strong>ایونت</strong>.</div>
@@ -779,12 +1138,12 @@ def build_html() -> str:
 <ul class="t">
   <li>سربه‌سر عملیاتی وقتی درآمد ماهانه ≥ {fmt(BURN)} تومان.</li>
   <li>پایه با ایونت: سربه‌سر ≈ ماه <strong>{base['be']}</strong> · Payback ≈ ماه <strong>{base['pb']}</strong>
-  (جریان نقدی تجمعی از −سرمایه، با رشد ملایم درآمد پس از م۱۲).</li>
+  (جریان نقدی تجمعی از −۱۰ میلیارد، با رشد ملایم درآمد پس از م۱۲).</li>
   <li>برای پوشش برن با حاشیه ≈۸۵٪، حدود <strong>{fmt(int(BURN/0.85))}</strong> تومان GMV ماهانه لازم است.</li>
   <li>VAT (~۱۰٪) عبورکننده فرض شده و در برن خنثی است.</li>
 </ul>
 
-<h2>۱۰. نقشه راه و ریسک</h2>
+<h2><span class="num">۱۰</span> نقشه راه و ریسک</h2>
 <table>
   <thead><tr><th>فاز</th><th>بازه</th><th>تمرکز</th></tr></thead>
   <tbody>
@@ -805,21 +1164,24 @@ def build_html() -> str:
   </tbody>
 </table>
 
-<h2>۱۱. پیشنهاد سرمایه‌گذاری</h2>
+<h2><span class="num">۱۱</span> پیشنهاد سرمایه‌گذاری</h2>
 <ul class="t">
-  <li><strong>مبلغ:</strong> {fmt(CAPITAL_ASK)} تومان</li>
-  <li><strong>مصرف:</strong> راه‌اندازی + Runway تیم ۶ نفره (بیمه کارفرما ۲۳٪)</li>
+  <li><strong>مبلغ:</strong> ۱۰٬۰۰۰٬۰۰۰٬۰۰۰ تومان (۱۰ میلیارد)</li>
+  <li><strong>مصرف:</strong> راه‌اندازی ۱٫۵B + Runway ۱۲ماه تیم ۶ نفره (بیمه کارفرما ۲۳٪) + بافر نازک</li>
+  <li><strong>پوشش:</strong> ≈ {ask_months_txt} ماه برن کل · ≈ {runway_cover_txt} ماه عملیات پس از راه‌اندازی</li>
   <li><strong>هدف ۱۲ماه:</strong> عبور از سربه‌سر در سناریو پایه (با استک ایونت)</li>
   <li><strong>گزارش:</strong> P&amp;L ماهانه، MAU، نرخ پرداخت، حجم ایونت، CAC</li>
   <li><strong>سهام/valuation:</strong> در مذاکره ترم‌شیت</li>
 </ul>
 <div class="callout">
 <strong>جمع‌بندی:</strong> برن <span class="hl">{fmt(BURN)}</span> تومان/ماه ·
-سرمایه پیشنهادی <span class="hl">{fmt(CAPITAL_ASK)}</span> تومان ·
+سرمایه درخواستی <span class="hl">۱۰٬۰۰۰٬۰۰۰٬۰۰۰</span> تومان ·
 ایونت پایه م۱۲ ≈ <span class="hl">{fmt(base['events'])}</span> تومان ·
 سربه‌سر پایه ماه <span class="hl">{base['be']}</span>.
 </div>
-<p class="muted">پت‌دیت · طرح توجیهی سرمایه‌گذاری · اعداد به تومان · نسخه ۱٫۴ (زیرساخت فنی + ایونت + اتوماسیون)</p>
+<p class="muted" style="margin-top:16px;text-align:center">
+پت‌دیت · طرح توجیهی سرمایه‌گذاری · اعداد به تومان · نسخه {DOC_VERSION}
+</p>
 </body></html>"""
 
 
@@ -876,9 +1238,11 @@ def write_assumptions() -> None:
 ## سرمایه
 - راه‌اندازی: {SETUP_TOTAL:,}
 - Runway 12م: {RUNWAY:,}
-- بافر ≈۸٪: {BUFFER:,}
-- نیاز محاسبه‌شده: {CAPITAL_NEED:,}
-- **پیشنهاد (گرد به ۰٫۵ میلیارد): {CAPITAL_ASK:,}** (≈{ASK_MONTHS:.1f} ماه برن)
+- جمع پایه (راه‌اندازی + Runway): {CAPITAL_BASE:,}
+- بافر عملیاتی (بسته ۱۰ میلیارد): {CONTINGENCY:,}
+- **سرمایه درخواستی (Ask): {CAPITAL_ASK:,}** = ۱۰ میلیارد تومان
+- پوشش کل: ≈{ASK_MONTHS:.1f} ماه برن · عملیات پس از راه‌اندازی ≈{RUNWAY_COVER_MONTHS:.1f} ماه
+- منطق بسته: راه‌اندازی + ۱۲ ماه برن ≈ ۹٫۹۳ میلیارد؛ بافر نازک تا قفل روی ۱۰٬۰۰۰٬۰۰۰٬۰۰۰
 
 ## استک درآمد و سربه‌سر
 - استک: سکه/VIP + شاپ + مشاوره + **ایونت**
@@ -922,7 +1286,9 @@ def main() -> None:
     print("COPY", copy_path)
     print(
         f"BURN={BURN:,} INS={INSURANCE_EMPLOYER:,} ASK={CAPITAL_ASK:,} "
-        f"NEED={CAPITAL_NEED:,} BE_base={base['be']} PB_base={base['pb']}"
+        f"BASE={CAPITAL_BASE:,} CONTINGENCY={CONTINGENCY:,} "
+        f"ASK_MO={ASK_MONTHS:.2f} BE_base={base['be']} PB_base={base['pb']} "
+        f"VER={DOC_VERSION_LATIN}"
     )
     print(
         f"BASE_REV={base['rev']:,} EVENTS={base['events']:,} "

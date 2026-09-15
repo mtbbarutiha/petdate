@@ -2,164 +2,491 @@
 <html lang="fa" dir="rtl">
 <head>
 <meta charset="utf-8"/>
-<title>طرح توجیهی پت‌دیت</title>
+<title>طرح توجیهی پت‌دیت — نسخه ۱٫۵</title>
 <style>
-  @page { size: A4; margin: 12mm 11mm 16mm; }
+  @page {
+    size: A4;
+    margin: 16mm 14mm 18mm 14mm;
+    @bottom-center {
+      content: "پت‌دیت · طرح توجیهی سرمایه‌گذاری · محرمانه · v1.5  ·  " counter(page);
+      font-family: "Noto Sans Arabic", "DejaVu Sans", sans-serif;
+      font-size: 7.5pt;
+      color: #64748b;
+      letter-spacing: 0.01em;
+      padding-top: 4mm;
+      border-top: 0.6pt solid #d5e0e7;
+      width: 100%;
+      margin: 0 2mm;
+    }
+  }
+  @page cover {
+    margin: 0;
+    @bottom-center { content: none; }
+  }
+
   * { box-sizing: border-box; }
+  html { background: #fff; }
   body {
     font-family: "Noto Naskh Arabic", "Noto Sans Arabic", "DejaVu Sans", sans-serif;
-    color:#0f172a; font-size:10pt; line-height:1.62;
-    background: #f7faf9;
+    color: #0f172a;
+    font-size: 9.8pt;
+    line-height: 1.68;
+    background: #fff;
+    margin: 0;
   }
-  h1 { font-size:20pt; color:#12263a; margin:0 0 .35em; }
-  h2 {
-    font-size:13pt; color:#0d5c56; margin:1.15em 0 .45em;
-    padding-bottom:5px; border-bottom:2.5px solid #14b8a6;
-  }
-  h3 { font-size:10.5pt; color:#1a3a52; margin:.9em 0 .35em; }
-  p { margin:.35em 0 .6em; }
-  table { width:100%; border-collapse:collapse; margin:.5em 0 .85em; font-size:9pt; }
-  th, td { border-bottom:1px solid #dce5ec; padding:6px 7px; text-align:right; }
-  th { background:#f0fdfa; color:#0d5c56; font-weight:700; }
-  tr:nth-child(even) td { background:#fbfdfe; }
-  td.n, th.n { text-align:left; direction:ltr; font-family: DejaVu Sans, sans-serif; font-size:8.5pt; }
-  tr.tfoot td { font-weight:700; background:#e6f7f4 !important; }
-  ul.t { margin:.15em 0 .7em; padding-right:1.05em; }
-  ul.t li { margin:.12em 0; }
 
-  .cover {
-    page-break-after: always; border-radius:18px; overflow:hidden;
-    background:
-      radial-gradient(ellipse at 15% 20%, rgba(20,184,166,.35), transparent 50%),
-      radial-gradient(ellipse at 90% 80%, rgba(224,90,69,.28), transparent 45%),
-      linear-gradient(160deg, #12263a 0%, #1a3a52 42%, #0d5c56 100%);
-    color:#ecfdf5; padding:16mm 13mm 12mm; min-height:255mm;
-    position: relative;
+  h1, h2, h3 {
+    font-family: "Noto Sans Arabic", "Noto Kufi Arabic", "Noto Naskh Arabic", sans-serif;
+    font-weight: 700;
+    line-height: 1.35;
   }
-  .cover::after {
-    content:""; position:absolute; inset:auto 0 0 0; height:6px;
-    background: linear-gradient(90deg, #14b8a6, #e05a45);
+  h1 { font-size: 20pt; color: #12263a; margin: 0 0 .4em; }
+  h2 {
+    font-size: 12.5pt;
+    color: #12263a;
+    margin: 1.35em 0 .55em;
+    padding: 0 0 7px;
+    border-bottom: 2px solid #0f766e;
+    page-break-after: avoid;
+  }
+  h2 .num {
+    display: inline-block;
+    color: #0f766e;
+    font-weight: 700;
+    margin-left: 6px;
+    font-family: "DejaVu Sans", sans-serif;
+    font-size: 11pt;
+  }
+  h3 {
+    font-size: 10.2pt;
+    color: #1a3a52;
+    margin: 1em 0 .4em;
+    page-break-after: avoid;
+  }
+  p { margin: .3em 0 .55em; }
+  strong { font-weight: 700; }
+
+  table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: .55em 0 .95em;
+    font-size: 8.7pt;
+    border: 1px solid #d5e0e7;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  th, td {
+    border-bottom: 1px solid #e8eef2;
+    padding: 7px 9px;
+    text-align: right;
+    vertical-align: middle;
+  }
+  th {
+    background: linear-gradient(180deg, #f0fdfa 0%, #e6f5f2 100%);
+    color: #0d5c56;
+    font-weight: 700;
+    font-family: "Noto Sans Arabic", sans-serif;
+    font-size: 8.2pt;
+    border-bottom: 1.5px solid #c5ddd8;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:nth-child(even) td { background: #fafcfd; }
+  td.n, th.n {
+    text-align: left;
+    direction: ltr;
+    font-family: "DejaVu Sans", sans-serif;
+    font-size: 8.2pt;
+    font-variant-numeric: tabular-nums;
+  }
+  tr.tfoot td {
+    font-weight: 700;
+    background: #e6f7f4 !important;
+    color: #12263a;
+    border-top: 1.5px solid #b6d9d2;
+  }
+  tr.ask td {
+    font-weight: 700;
+    background: linear-gradient(90deg, #ecfdf5, #fff7ed) !important;
+    color: #12263a;
+    border-top: 2px solid #0f766e;
+  }
+
+  ul.t { margin: .2em 0 .75em; padding-right: 1.1em; }
+  ul.t li { margin: .18em 0; }
+
+  /* ── Cover ── */
+  .cover {
+    page: cover;
+    page-break-after: always;
+    min-height: 297mm;
+    padding: 18mm 16mm 16mm;
+    color: #ecfdf5;
+    position: relative;
+    overflow: hidden;
+    background:
+      radial-gradient(ellipse 80% 55% at 100% 0%, rgba(20,184,166,.32), transparent 55%),
+      radial-gradient(ellipse 60% 45% at 0% 100%, rgba(224,90,69,.22), transparent 50%),
+      linear-gradient(155deg, #0b1c2c 0%, #12263a 38%, #1a3a52 68%, #0d5c56 100%);
+  }
+  .cover-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .cover-brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
   }
   .cover img.logo {
-    width:72px; height:72px; object-fit:contain; background:#fff;
-    border-radius:16px; padding:8px; box-shadow:0 8px 24px rgba(0,0,0,.25);
+    width: 78px; height: 78px; object-fit: contain;
+    background: #fff; border-radius: 18px; padding: 9px;
+    box-shadow: 0 10px 28px rgba(0,0,0,.28);
+  }
+  .brand-name {
+    font-family: "Noto Sans Arabic", "DejaVu Sans", sans-serif;
+    font-size: 22pt; font-weight: 700; color: #fff; letter-spacing: 0.02em;
+  }
+  .brand-sub { font-size: 8.5pt; opacity: .82; margin-top: 2px; }
+  .ver-pill {
+    font-family: "DejaVu Sans", sans-serif;
+    font-size: 8pt; color: #ecfdf5;
+    border: 1px solid rgba(255,255,255,.35);
+    border-radius: 999px; padding: 5px 12px;
+    background: rgba(255,255,255,.08);
+    white-space: nowrap;
+  }
+  .cover-rule {
+    height: 2px; width: 64px; background: #14b8a6;
+    margin: 22px 0 14px; border-radius: 2px;
+  }
+  .eyebrow {
+    font-family: "Noto Sans Arabic", sans-serif;
+    font-size: 8.5pt; letter-spacing: .04em; opacity: .88;
+    color: #14b8a6;
+  }
+  .cover h1 {
+    color: #fff; font-size: 26pt; margin: 6px 0 10px; line-height: 1.32;
+    max-width: 92%;
+  }
+  .tag {
+    font-size: 10.5pt; opacity: .92; max-width: 92%;
+    line-height: 1.65; margin: 0 0 16px;
   }
   .cover img.banner {
-    width:100%; max-height:92px; object-fit:cover; border-radius:12px;
-    margin-top:14px; border:1px solid rgba(255,255,255,.18);
+    width: 100%; height: 88px; object-fit: cover; object-position: center;
+    border-radius: 14px; margin: 4px 0 18px;
+    border: 1px solid rgba(255,255,255,.16);
+    box-shadow: 0 8px 20px rgba(0,0,0,.18);
   }
-  .eyebrow { font-size:8.5pt; letter-spacing:.02em; opacity:.88; margin-top:16px; }
-  .cover h1 { color:#fff; font-size:24pt; margin-top:4px; line-height:1.35; }
-  .tag { font-size:10.5pt; opacity:.93; max-width:94%; }
-  .kpis { display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-top:18px; }
+  .kpis {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    margin-top: 4px;
+  }
   .kpi {
-    background:rgba(255,255,255,.11); border:1px solid rgba(255,255,255,.2);
-    border-radius:12px; padding:11px 12px; backdrop-filter: blur(2px);
+    background: rgba(255,255,255,.10);
+    border: 1px solid rgba(255,255,255,.22);
+    border-radius: 14px; padding: 12px 14px;
   }
-  .kpi .l { font-size:8pt; opacity:.85; }
-  .kpi .v { font-size:12.5pt; font-weight:700; margin-top:2px; }
-  .cfoot { margin-top:22px; font-size:8pt; opacity:.78; }
+  .kpi .l {
+    font-size: 7.8pt; opacity: .82;
+    font-family: "Noto Sans Arabic", sans-serif;
+  }
+  .kpi .v {
+    font-size: 13pt; font-weight: 700; margin-top: 4px;
+    font-family: "Noto Sans Arabic", "DejaVu Sans", sans-serif;
+  }
+  .kpi.accent {
+    background: rgba(20,184,166,.18);
+    border-color: rgba(20,184,166,.45);
+  }
+  .cfoot {
+    margin-top: 20px; font-size: 7.6pt; opacity: .78; line-height: 1.55;
+    border-top: 1px solid rgba(255,255,255,.16); padding-top: 12px;
+  }
+  .cover-accent {
+    position: absolute; left: 0; right: 0; bottom: 0; height: 7px;
+    background: linear-gradient(90deg, #14b8a6 0%, #0f766e 45%, #e05a45 100%);
+  }
 
+  /* ── Content chrome ── */
   .callout {
-    background:#f0fdfa; border-right:4px solid #0f766e; border-radius:10px;
-    padding:9px 11px; margin:8px 0 12px;
+    background: #f0fdfa;
+    border-right: 4px solid #0f766e;
+    border-radius: 0 10px 10px 0;
+    padding: 10px 12px;
+    margin: 8px 0 14px;
+    page-break-inside: avoid;
   }
-  .warn { background:#fff7ed; border-right-color:#e05a45; }
-  .coral { background:#fff5f3; border-right-color:#e05a45; }
-  .hl { color:#0d5c56; font-weight:700; }
-  .muted { color:#64748b; font-size:8.5pt; }
-  .grid2 { display:grid; grid-template-columns:1.05fr .95fr; gap:12px; align-items:start; }
-  .grid3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; }
+  .warn { background: #fff7ed; border-right-color: #e05a45; }
+  .coral { background: #fff5f3; border-right-color: #e05a45; }
+  .hl { color: #0d5c56; font-weight: 700; }
+  .muted { color: #64748b; font-size: 8.3pt; }
+  .grid2 {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+    align-items: start; margin: 8px 0 12px;
+  }
+  .grid2 > .card {
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+  }
   .card {
-    background:#fff; border:1px solid #d8e4ea; border-radius:12px; padding:11px;
-    box-shadow: 0 1px 0 rgba(18,38,58,.04);
+    background: #fff;
+    border: 1px solid #d8e4ea;
+    border-radius: 12px;
+    padding: 12px 13px;
+    page-break-inside: avoid;
   }
-  .card h3 { margin-top:0; }
-  .legs { margin-top:6px; }
-  .leg { font-size:8pt; margin:3px 0; display:flex; gap:7px; align-items:center; }
-  .leg span { width:10px; height:10px; border-radius:3px; display:inline-block; flex-shrink:0; }
-  .leg em { color:#64748b; font-style:normal; }
-  .chart-wrap { display:flex; flex-direction:column; align-items:center; }
+  .card h3 { margin-top: 0; }
+  .card table {
+    margin-bottom: 0;
+    font-size: 8pt;
+  }
+  .card table th, .card table td { padding: 5px 6px; }
 
-  .bmc { display:grid; grid-template-columns:repeat(5,1fr); gap:5px; }
-  .bmc .c {
-    background:#fff; border:1px solid #cfdbe3; border-radius:8px; padding:7px;
-    font-size:7.5pt; min-height:64px;
+  .funds-grid {
+    grid-template-columns: 0.9fr 1.1fr;
   }
-  .bmc .c b { display:block; color:#0f766e; margin-bottom:2px; font-size:8pt; }
+  .funds-grid .chart-wrap {
+    padding: 4px 0;
+  }
+  .funds-grid .legs {
+    max-width: 100%;
+  }
+  .funds-grid .leg {
+    font-size: 7.4pt;
+    white-space: nowrap;
+  }
+  .funds-grid .card table {
+    font-size: 7.6pt;
+  }
+  .funds-grid .card table th,
+  .funds-grid .card table td {
+    padding: 4px 5px;
+  }
+
+  .legs { margin-top: 8px; width: 100%; }
+  .leg {
+    font-size: 7.8pt; margin: 4px 0;
+    display: flex; gap: 7px; align-items: center;
+  }
+  .leg span {
+    width: 10px; height: 10px; border-radius: 3px;
+    display: inline-block; flex-shrink: 0;
+  }
+  .leg em { color: #64748b; font-style: normal; }
+  .chart-wrap {
+    display: flex; flex-direction: column; align-items: center;
+  }
+
+  .bmc {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px;
+    margin: 8px 0 12px;
+  }
+  .bmc .c {
+    background: #f8fbfc;
+    border: 1px solid #d0dce4;
+    border-radius: 8px;
+    padding: 8px;
+    font-size: 7.4pt;
+    min-height: 62px;
+    page-break-inside: avoid;
+  }
+  .bmc .c b {
+    display: block; color: #0f766e; margin-bottom: 3px;
+    font-size: 7.8pt; font-family: "Noto Sans Arabic", sans-serif;
+  }
   .bmc .w { grid-column: span 2; }
 
-  .hbars { display:flex; flex-direction:column; gap:7px; }
-  .hbar { display:grid; grid-template-columns:72px 1fr 78px; gap:6px; align-items:center; }
-  .hlab { font-size:8pt; color:#12263a; }
-  .htrack { background:#e8eef2; border-radius:6px; height:12px; overflow:hidden; }
-  .hfill { height:100%; border-radius:6px; }
-  .hval { font-size:7.5pt; direction:ltr; text-align:left; font-family:DejaVu Sans,sans-serif; color:#64748b; }
+  .hbars { display: flex; flex-direction: column; gap: 8px; }
+  .hbar {
+    display: grid; grid-template-columns: 70px 1fr 82px;
+    gap: 7px; align-items: center;
+  }
+  .hlab { font-size: 8pt; color: #12263a; }
+  .htrack {
+    background: #e8eef2; border-radius: 6px; height: 11px; overflow: hidden;
+  }
+  .hfill { height: 100%; border-radius: 6px; }
+  .hval {
+    font-size: 7.4pt; direction: ltr; text-align: left;
+    font-family: "DejaVu Sans", sans-serif; color: #64748b;
+  }
 
-  .shots { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:8px 0 12px; }
-  .shots.one { grid-template-columns:1fr; }
-  .shots.tri { grid-template-columns:1.2fr 1fr 0.85fr; }
-  figure.shot { margin:0; background:#fff; border:1px solid #d5e0e7; border-radius:10px; overflow:hidden; }
-  figure.shot img { width:100%; display:block; max-height:148px; object-fit:cover; object-position:top; }
-  figure.shot.tall img { max-height:190px; }
+  .shots {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    margin: 8px 0 14px;
+  }
+  .shots.one { grid-template-columns: 1fr; }
+  .shots.tri { grid-template-columns: 1.15fr 1fr .9fr; }
+  figure.shot {
+    margin: 0; background: #fff;
+    border: 1px solid #d0dce4; border-radius: 12px;
+    overflow: hidden; page-break-inside: avoid;
+    box-shadow: 0 1px 3px rgba(18,38,58,.04);
+  }
+  figure.shot img {
+    width: 100%; display: block;
+    max-height: 155px; object-fit: cover; object-position: top center;
+    background: #eef3f6;
+  }
+  figure.shot.tall img { max-height: 185px; }
   figure.shot figcaption {
-    font-size:7.5pt; color:#64748b; padding:6px 8px; line-height:1.45;
-    border-top:1px solid #e8eef2; background:#fafcfd;
+    font-size: 7.4pt; color: #64748b; padding: 7px 9px;
+    line-height: 1.45; border-top: 1px solid #e8eef2;
+    background: #fafcfd;
+    font-family: "Noto Sans Arabic", sans-serif;
   }
 
   .pb { page-break-before: always; }
-  .fn { font-size:7.5pt; color:#64748b; margin-top:.25em; }
+  .fn { font-size: 7.3pt; color: #64748b; margin-top: .2em; }
   .badge {
-    display:inline-block; background:#0f766e; color:#fff; font-size:7.5pt;
-    padding:2px 8px; border-radius:4px; margin-left:4px;
+    display: inline-block; background: #0f766e; color: #fff;
+    font-size: 7pt; padding: 2px 8px; border-radius: 4px;
+    margin-right: 4px; vertical-align: middle;
+    font-family: "Noto Sans Arabic", sans-serif;
   }
-  .statrow { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin:8px 0 12px; }
+  .statrow {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 9px; margin: 10px 0 14px;
+  }
   .stat {
-    background:#fff; border:1px solid #d5e0e7; border-radius:10px; padding:8px 9px; text-align:center;
+    background: linear-gradient(180deg, #fff 0%, #f7fbfa 100%);
+    border: 1px solid #d5e0e7; border-radius: 11px;
+    padding: 10px 8px; text-align: center;
+    page-break-inside: avoid;
   }
-  .stat .v { font-size:11pt; font-weight:700; color:#0d5c56; direction:ltr; font-family:DejaVu Sans,sans-serif; }
-  .stat .l { font-size:7.5pt; color:#64748b; margin-top:2px; }
+  .stat .v {
+    font-size: 12pt; font-weight: 700; color: #0d5c56;
+    direction: ltr; font-family: "DejaVu Sans", sans-serif;
+  }
+  .stat .l {
+    font-size: 7.3pt; color: #64748b; margin-top: 3px;
+    font-family: "Noto Sans Arabic", sans-serif;
+  }
+  .divider {
+    height: 1px; background: linear-gradient(90deg, #14b8a6, transparent);
+    margin: 14px 0 6px; border: none;
+  }
+  svg.ramp {
+    display: block; width: 100%; max-width: 520px;
+    margin: 6px auto 10px; height: auto;
+  }
+  .ask-hero {
+    display: grid; grid-template-columns: 1.2fr .8fr; gap: 12px;
+    margin: 8px 0 14px; page-break-inside: avoid;
+  }
+  .ask-box {
+    background: linear-gradient(135deg, #12263a 0%, #0d5c56 100%);
+    color: #ecfdf5; border-radius: 14px; padding: 14px 16px;
+  }
+  .ask-box .l { font-size: 8pt; opacity: .85; }
+  .ask-box .v {
+    font-size: 18pt; font-weight: 700; margin-top: 4px;
+    font-family: "Noto Sans Arabic", "DejaVu Sans", sans-serif;
+  }
+  .ask-box .s { font-size: 8pt; opacity: .8; margin-top: 6px; line-height: 1.5; }
+  .ask-side {
+    background: #f0fdfa; border: 1px solid #c5ddd8;
+    border-radius: 14px; padding: 12px 14px;
+  }
+  .ask-side .row {
+    display: flex; justify-content: space-between;
+    font-size: 8.2pt; padding: 4px 0;
+    border-bottom: 1px solid #dceae6;
+  }
+  .ask-side .row:last-child { border-bottom: none; font-weight: 700; color: #0d5c56; }
+  .ask-side .n { direction: ltr; font-family: "DejaVu Sans", sans-serif; }
 </style>
 </head>
 <body>
 
 <section class="cover">
-  <img class="logo" src="file:///agent/artifacts/investor-plan/assets/petdate-mark.png" alt="پت‌دیت"/>
-  <div class="eyebrow">سند محرمانه · ویژه سرمایه‌گذار · نسخه ۱٫۴</div>
+  <div class="cover-top">
+    <div class="cover-brand">
+      <img class="logo" src="file:///agent/artifacts/investor-plan/assets/petdate-mark.png" alt="پت‌دیت"/>
+      <div>
+        <div class="brand-name">پت‌دیت</div>
+        <div class="brand-sub">PetDate · petdate.ir</div>
+      </div>
+    </div>
+    <div class="ver-pill">نسخه ۱٫۵ · محرمانه</div>
+  </div>
+  <div class="cover-rule"></div>
+  <div class="eyebrow">سند ویژه سرمایه‌گذار · طرح توجیهی</div>
   <h1>طرح توجیهی سرمایه‌گذاری<br/>پت‌دیت (PetDate)</h1>
   <p class="tag">سوپراپ فارسی پت: همبازی، ایونت، پت‌شاپ و مشاوره دامپزشک —
-  وب + ربات تلگرام با اقتصاد سکه یکپارچه و پنل ادمین عملیاتی</p>
+  وب + ربات تلگرام با اقتصاد سکه یکپارچه و پنل ادمین عملیاتی.</p>
   <img class="banner" src="file:///agent/artifacts/investor-plan/assets/petdate-banner.jpg" alt=""/>
   <div class="kpis">
-    <div class="kpi"><div class="l">برن ماهانه (با بیمه کارفرما)</div><div class="v">702٬700٬000 تومان</div></div>
-    <div class="kpi"><div class="l">سرمایه پیشنهادی</div><div class="v">11٬000٬000٬000 تومان</div></div>
-    <div class="kpi"><div class="l">Runway با این سرمایه</div><div class="v">≈ 16 ماه</div></div>
-    <div class="kpi"><div class="l">سربه‌سر پایه (با ایونت)</div><div class="v">ماه 10</div></div>
+    <div class="kpi accent">
+      <div class="l">سرمایه درخواستی</div>
+      <div class="v">۱۰٬۰۰۰٬۰۰۰٬۰۰۰ تومان</div>
+    </div>
+    <div class="kpi">
+      <div class="l">برن ماهانه (با بیمه کارفرما + زیرساخت)</div>
+      <div class="v">702٬700٬000 تومان</div>
+    </div>
+    <div class="kpi">
+      <div class="l">پوشش کل با این سرمایه</div>
+      <div class="v">≈ 14٫2 ماه برن</div>
+    </div>
+    <div class="kpi">
+      <div class="l">سربه‌سر پایه (با ایونت)</div>
+      <div class="v">ماه 10</div>
+    </div>
   </div>
-  <div class="cfoot">بیمه کارفرما ۲۳٪ · مالیات عملکرد ۲۵٪ · زیرساخت فنی 15٬000٬000/ماه ·
-  سکه ≈ 2٬000 تومان · عضویت ایونت فرض 2 سکه · دلار AI: 220٬000 تومان<br/>
-  اعداد درآمد سناریویی‌اند؛ ترم‌شیت سهام در مذاکره نهایی قفل می‌شود. · نسخه ۱٫۴</div>
+  <div class="cfoot">
+    بیمه کارفرما ۲۳٪ · مالیات عملکرد ۲۵٪ · زیرساخت فنی 15٬000٬000/ماه ·
+    سکه ≈ 2٬000 تومان · عضویت ایونت فرض 2 سکه ·
+    دلار AI: 220٬000 تومان<br/>
+    بسته سرمایه: راه‌اندازی 1٬500٬000٬000 + Runway ۱۲ماه 8٬432٬400٬000 + بافر 67٬600٬000
+    = <strong>۱۰ میلیارد تومان</strong>.
+    اعداد درآمد سناریویی‌اند؛ ترم‌شیت سهام در مذاکره نهایی قفل می‌شود.
+  </div>
+  <div class="cover-accent"></div>
 </section>
 
-<h2>۱. خلاصه اجرایی</h2>
+<h2><span class="num">۰۱</span> خلاصه اجرایی</h2>
 <p><strong>پت‌دیت</strong> پلتفرم همبازی و خدمات پت در ایران است — با لایه ایونت گروهی، شاپ، و مشاوره روی وب و تلگرام.
 این سند نیاز سرمایه برای تیم ۶ نفره، دفتر و رشد ۱۲ ماهه را با <strong>بیمه کارفرما</strong>،
 <strong>مالیات عملکرد</strong> و <strong>درآمد ایونت</strong> توجیه می‌کند.</p>
-<div class="callout">
-<strong>پیشنهاد:</strong> جذب <span class="hl">11٬000٬000٬000 تومان</span>
-(≈ 11٫00 میلیارد) برای راه‌اندازی + Runway.
-برن <strong>702٬700٬000</strong> تومان/ماه.
-در سناریو پایه (با ایونت)، سربه‌سر حدود ماه <strong>10</strong>
-و بازگشت اصل حدود ماه <strong>31</strong>.
+
+<div class="ask-hero">
+  <div class="ask-box">
+    <div class="l">سرمایه درخواستی (Ask)</div>
+    <div class="v">۱۰ میلیارد تومان</div>
+    <div class="s">راه‌اندازی ۱٫۵ میلیارد + ۱۲ ماه برن ≈ ۹٫۹۳ میلیارد؛
+    بافر عملیاتی نازک برای بسته شدن تمیز روی <strong>۱۰٬۰۰۰٬۰۰۰٬۰۰۰</strong> تومان
+    (≈ 14٫2 ماه پوشش کل · ≈ 12٫1 ماه عملیات پس از راه‌اندازی).</div>
+  </div>
+  <div class="ask-side">
+    <div class="row"><span>برن ماهانه</span><span class="n">702٬700٬000</span></div>
+    <div class="row"><span>راه‌اندازی</span><span class="n">1٬500٬000٬000</span></div>
+    <div class="row"><span>Runway ۱۲م</span><span class="n">8٬432٬400٬000</span></div>
+    <div class="row"><span>بافر</span><span class="n">67٬600٬000</span></div>
+    <div class="row"><span>جمع Ask</span><span class="n">10٬000٬000٬000</span></div>
+  </div>
 </div>
+
 <div class="statrow">
-  <div class="stat"><div class="v">702M</div><div class="l">برن ماهانه</div></div>
-  <div class="stat"><div class="v">11٫00B</div><div class="l">سرمایه پیشنهادی</div></div>
+  <div class="stat"><div class="v">702٫7M</div><div class="l">برن ماهانه</div></div>
+  <div class="stat"><div class="v">۱۰B</div><div class="l">سرمایه درخواستی</div></div>
   <div class="stat"><div class="v">1٬085M</div><div class="l">درآمد پایه م۱۲</div></div>
   <div class="stat"><div class="v">75M</div><div class="l">سهم ایونت م۱۲</div></div>
 </div>
+<div class="callout">
+<strong>پیشنهاد:</strong> جذب <span class="hl">۱۰٬۰۰۰٬۰۰۰٬۰۰۰ تومان</span>
+برای راه‌اندازی + Runway تیم ۶ نفره.
+برن <strong>702٬700٬000</strong> تومان/ماه (شامل 15٬000٬000 زیرساخت فنی).
+در سناریو پایه (با ایونت)، سربه‌سر حدود ماه <strong>10</strong>
+و بازگشت اصل حدود ماه <strong>30</strong>.
+</div>
 
-<h2>۲. مسئله، فرصت و محصول</h2>
+<h2><span class="num">۰۲</span> مسئله، فرصت و محصول</h2>
 <ul class="t">
   <li>بازار بزرگ صاحب‌پت؛ خدمات اجتماعی، ایونت و خرید هنوز پراکنده‌اند.</li>
   <li>تلگرام کانال توزیع قوی؛ پت‌دیت وب+ربات را با یک حساب وصل می‌کند.</li>
@@ -174,11 +501,11 @@
   <div class="c w"><b>منابع</b>پلتفرم، برند، داده مچ، تیم AI، پنل ادمین</div>
   <div class="c w"><b>فعالیت</b>رشد کاربر، ایونت، محتوا، کیفیت مچ</div>
   <div class="c w"><b>شرکا</b>درگاه، تأمین‌کننده، متخصصان</div>
-  <div class="c w"><b>هزینه</b>حقوق، بیمه کارفرما، اجاره، AI، جاری</div>
+  <div class="c w"><b>هزینه</b>حقوق، بیمه کارفرما، اجاره، AI، جاری، زیرساخت</div>
 </div>
 
 <div class="pb"></div>
-<h2>۳. تجربه محصول — وب، چت و همبازی</h2>
+<h2><span class="num">۰۳</span> تجربه محصول — وب، چت و همبازی</h2>
 <p class="muted">اسکرین‌شات‌های واقعی از محصول جاری پت‌دیت.</p>
 <div class="shots">
   <figure class="shot tall"><img src="file:///agent/artifacts/investor-plan/assets/shots/gutters-guides-top-1440.png" alt=""/><figcaption>لندینگ وب — معرفی برند و مسیر ورود به خدمات پت‌دیت</figcaption></figure>
@@ -190,7 +517,7 @@
   <figure class="shot "><img src="file:///agent/artifacts/investor-plan/assets/shots/gutters-guides-about-1440.png" alt=""/><figcaption>صفحه درباره / اعتماد برند</figcaption></figure>
 </div>
 
-<h2>۴. پنل ادمین — عملیات و مالی</h2>
+<h2><span class="num">۰۴</span> پنل ادمین — عملیات و مالی</h2>
 <p>پنل ادمین قدرتمند، ستون اتوماسیون عملیاتی است: مالی، سفارش، کیف‌پول و مانیتورینگ —
 کاهش وابستگی به نیروی انسانی با رشد کاربر.</p>
 <div class="shots">
@@ -203,7 +530,7 @@
 </div>
 
 <div class="pb"></div>
-<h2>۵. درآمد ایونت‌ها <span class="badge">جدید در مدل</span></h2>
+<h2><span class="num">۰۵</span> درآمد ایونت‌ها <span class="badge">مدل درآمد</span></h2>
 <div class="callout coral">
 <strong>فرض مدل:</strong> هزینه عضویت استاندارد <strong>2 سکه</strong> به ازای هر شرکت‌کننده
 (≈ <strong>4٬000</strong> تومان با قیمت سکه 2٬000).
@@ -240,8 +567,8 @@
 </div>
 
 <div class="pb"></div>
-<h2>۶. نیروی انسانی و برن ماهانه</h2>
-<p class="muted">حقوق‌ها <strong>ناخالص</strong>اند؛ سهم بیمه کارفرما جداگانه به برن اضافه شده است.</p>
+<h2><span class="num">۰۶</span> نیروی انسانی و برن ماهانه</h2>
+<p class="muted">حقوق‌ها <strong>ناخالص</strong>اند؛ سهم بیمه کارفرما جداگانه به برن اضافه شده است. تیم ۶ نفره.</p>
 <table>
   <thead><tr><th>نقش</th><th class="n">حقوق ماهانه ناخالص (تومان)</th></tr></thead>
   <tbody>
@@ -270,13 +597,13 @@
     <ul class="t">
       <li>حقوق + بیمه ≈ 68٪ برن — بزرگ‌ترین اهرم.</li>
       <li>برن سالانه ثابت: <strong>8٬432٬400٬000</strong> تومان.</li>
+      <li>زیرساخت فنی: <strong>15٬000٬000</strong> تومان/ماه در برن لحاظ شده.</li>
       <li>سرمایه‌گذاری روی مهندس AI → اتوماسیون پشتیبانی و کاهش هزینه نسبی در مقیاس.</li>
-      <li>جاری ۵۰م شامل رزرو کوچک عوارض/بیمه مسئولیت است.</li>
     </ul>
   </div>
 </div>
 
-<h2>۶٫۱. بیمه و مالیات (فرض ایران)</h2>
+<h2><span class="num">۰۶٫۱</span> بیمه و مالیات (فرض ایران)</h2>
 <table>
   <thead><tr><th>مورد</th><th>فرض طرح</th><th>اثر</th></tr></thead>
   <tbody>
@@ -289,7 +616,7 @@
 </table>
 <p class="fn">VAT برای درآمد دیجیتال B2C اغلب عبورکننده است؛ کالاهای شاپ ممکن است مشمول باشند — در برن خنثی فرض شده.</p>
 
-<h2>۷. اتوماسیون → اهرم عملیاتی (کاهش هزینه نسبی HR)</h2>
+<h2><span class="num">۰۷</span> اتوماسیون → اهرم عملیاتی</h2>
 <div class="callout">
 با توسعه پلتفرم (ربات تلگرام، AI، پنل ادمین مالی/کیف‌پول، سلف‌سرویس سفارش و ایونت)،
 <strong>نیاز نیروی انسانی نسبت به مقیاس کاربر کاهش می‌یابد</strong> — همان تیم، کاربران بیشتر،
@@ -311,33 +638,45 @@
 <p class="muted">اعداد MAU فازها برای نمایش اهرم‌اند؛ با جدول سناریوهای درآمد هم‌راستا ولی ساده‌سازی‌شده‌اند.</p>
 
 <div class="pb"></div>
-<h2>۸. سرمایه اولیه و Use of Funds</h2>
+<h2><span class="num">۰۸</span> سرمایه اولیه و Use of Funds</h2>
+<div class="callout">
+<strong>بسته ۱۰ میلیارد:</strong> راه‌اندازی 1٬500٬000٬000 +
+Runway ۱۲ ماه (702٬700٬000 × ۱۲ = 8٬432٬400٬000) =
+<strong>9٬932٬400٬000</strong> تومان؛
+بافر عملیاتی <strong>67٬600٬000</strong> تومان
+تا قفل سرمایه درخواستی روی <span class="hl">۱۰٬۰۰۰٬۰۰۰٬۰۰۰</span>.
+</div>
 <table>
   <thead><tr><th>جزء</th><th class="n">مبلغ</th></tr></thead>
   <tbody>
     <tr><td>تجهیزات و لپ‌تاپ (۶ نفر)</td><td class='n'>480٬000٬000</td></tr><tr><td>ودیعه دفتر (۲ ماه اجاره)</td><td class='n'>140٬000٬000</td></tr><tr><td>ثبت شرکت، حقوقی و مجوزها</td><td class='n'>100٬000٬000</td></tr><tr><td>برندینگ و کمپین لانچ</td><td class='n'>500٬000٬000</td></tr><tr><td>مبلمان و تجهیز دفتر</td><td class='n'>150٬000٬000</td></tr><tr><td>رزرو راه‌اندازی</td><td class='n'>130٬000٬000</td></tr>
     <tr class="tfoot"><td>جمع راه‌اندازی</td><td class="n">1٬500٬000٬000</td></tr>
     <tr><td>Runway 12 ماه × برن 702٬700٬000</td><td class="n">8٬432٬400٬000</td></tr>
-    <tr><td>بافر ≈۸٪</td><td class="n">794٬592٬000</td></tr>
-    <tr class="tfoot"><td>حداقل نیاز محاسبه‌شده</td><td class="n">10٬726٬992٬000</td></tr>
-    <tr class="tfoot"><td>پیشنهاد جذب (گرد به ۰٫۵ میلیارد)</td><td class="n">11٬000٬000٬000</td></tr>
+    <tr class="tfoot"><td>جمع راه‌اندازی + Runway ۱۲م</td><td class="n">9٬932٬400٬000</td></tr>
+    <tr><td>بافر عملیاتی (بسته شدن روی ۱۰ میلیارد)</td><td class="n">67٬600٬000</td></tr>
+    <tr class="ask"><td>سرمایه درخواستی (Ask)</td><td class="n">10٬000٬000٬000</td></tr>
   </tbody>
 </table>
-<div class="grid2">
-  <div class="card"><h3>مصرف وجوه</h3><div class="chart-wrap"><svg width="200" height="200" viewBox="0 0 200 200"><path d="M100.00,20.00 A80.0,80.0 0 1 1 20.43,91.68 L56.24,95.42 A44.0,44.0 0 1 0 100.00,56.00 Z" fill="#12263a"/><path d="M20.43,91.68 A80.0,80.0 0 0 1 54.18,34.42 L74.80,63.93 A44.0,44.0 0 0 0 56.24,95.42 Z" fill="#0f766e"/><path d="M54.18,34.42 A80.0,80.0 0 0 1 100.00,20.00 L100.00,56.00 A44.0,44.0 0 0 0 74.80,63.93 Z" fill="#e05a45"/><circle cx="100.0" cy="100.0" r="42.0" fill="#fff"/><text x="100.0" y="94.0" text-anchor="middle" font-size="11" fill="#12263a" font-weight="700">سرمایه</text><text x="100.0" y="112.0" text-anchor="middle" font-size="12" fill="#0f766e" font-weight="700">11٫0B</text></svg><div class="legs"><div class="leg"><span style="background:#12263a"></span><b>Runway ۱۲م</b> · 8٬432٬400٬000 <em>(77٪)</em></div><div class="leg"><span style="background:#0f766e"></span><b>راه‌اندازی</b> · 1٬500٬000٬000 <em>(14٪)</em></div><div class="leg"><span style="background:#e05a45"></span><b>بافر + گرد</b> · 1٬067٬600٬000 <em>(10٪)</em></div></div></div></div>
+<div class="grid2 funds-grid">
+  <div class="card"><h3>مصرف وجوه</h3><div class="chart-wrap"><svg width="168" height="168" viewBox="0 0 168 168"><path d="M84.00,16.80 A67.2,67.2 0 1 1 28.01,46.84 L53.20,63.56 A36.96,36.96 0 1 0 84.00,47.04 Z" fill="#12263a"/><path d="M28.01,46.84 A67.2,67.2 0 0 1 81.15,16.86 L82.43,47.07 A36.96,36.96 0 0 0 53.20,63.56 Z" fill="#0f766e"/><path d="M81.15,16.86 A67.2,67.2 0 0 1 84.00,16.80 L84.00,47.04 A36.96,36.96 0 0 0 82.43,47.07 Z" fill="#e05a45"/><circle cx="84.0" cy="84.0" r="34.96" fill="#fff"/><text x="84.0" y="78.0" text-anchor="middle" font-size="11" fill="#12263a" font-weight="700">سرمایه</text><text x="84.0" y="96.0" text-anchor="middle" font-size="12" fill="#0f766e" font-weight="700">۱۰B</text></svg><div class="legs"><div class="leg"><span style="background:#12263a"></span><b>Runway ۱۲م</b> <em>(84٪)</em></div><div class="leg"><span style="background:#0f766e"></span><b>راه‌اندازی</b> <em>(15٪)</em></div><div class="leg"><span style="background:#e05a45"></span><b>بافر عملیاتی</b> <em>(1٪)</em></div></div></div></div>
   <div class="card">
     <h3>جدول سهم</h3>
     <table>
       <thead><tr><th>سرفصل</th><th class="n">مبلغ</th><th class="n">سهم</th></tr></thead>
-      <tbody><tr><td>عملیات ۱۲ ماه (Runway)</td><td class='n'>8٬432٬400٬000</td><td class='n'>77٪</td></tr><tr><td>راه‌اندازی یک‌باره</td><td class='n'>1٬500٬000٬000</td><td class='n'>14٪</td></tr><tr><td>بافر + گرد کردن پیشنهاد</td><td class='n'>1٬067٬600٬000</td><td class='n'>10٪</td></tr></tbody>
+      <tbody><tr><td>عملیات ۱۲ ماه (Runway)</td><td class='n'>8٬432٬400٬000</td><td class='n'>84٫3٪</td></tr><tr><td>راه‌اندازی یک‌باره</td><td class='n'>1٬500٬000٬000</td><td class='n'>15٫0٪</td></tr><tr><td>بافر عملیاتی (بسته ۱۰ میلیارد)</td><td class='n'>67٬600٬000</td><td class='n'>0٫7٪</td></tr>
+        <tr class="ask"><td>جمع</td><td class="n">10٬000٬000٬000</td><td class="n">۱۰۰٪</td></tr>
+      </tbody>
     </table>
-    <div class="callout" style="margin-top:8px">≈ <span class="hl">11٫00 میلیارد</span>
-    (≈ <strong>15.7</strong> ماه برن، شامل راه‌اندازی)</div>
+    <div class="callout" style="margin-top:8px">
+      <span class="hl">۱۰ میلیارد تومان</span> ·
+      ≈ <strong>14٫2</strong> ماه پوشش کل ·
+      ≈ <strong>12٫1</strong> ماه عملیات
+    </div>
   </div>
 </div>
 
 <div class="pb"></div>
-<h2>۹. پیش‌بینی درآمد و سربه‌سر (با ایونت)</h2>
+<h2><span class="num">۰۹</span> پیش‌بینی درآمد و سربه‌سر</h2>
 <div class="callout warn">درآمدها <strong>فرض مدل</strong> هستند نه تعهد.
 سود پس از مالیات = max(۰، درآمد − برن) × (۱ − ۲۵٪).
 استک درآمد: سکه/VIP + شاپ + مشاوره + <strong>ایونت</strong>.</div>
@@ -348,19 +687,19 @@
     <th class="n">سود پیش از مالیات</th><th class="n">سود پس از مالیات</th>
     <th class="n">سربه‌سر</th><th class="n">Payback</th></tr>
   </thead>
-  <tbody><tr><td>بدبینانه</td><td class='n'>8٬000</td><td class='n'>27٬200٬000</td><td class='n'>399٬200٬000</td><td class='n'>-303٬500٬000</td><td class='n'>0</td><td class='n'>16</td><td class='n'>39</td></tr><tr><td>پایه</td><td class='n'>14٬000</td><td class='n'>75٬000٬000</td><td class='n'>1٬085٬000٬000</td><td class='n'>382٬300٬000</td><td class='n'>286٬725٬000</td><td class='n'>10</td><td class='n'>31</td></tr><tr><td>خوش‌بینانه</td><td class='n'>25٬000</td><td class='n'>160٬000٬000</td><td class='n'>2٬550٬000٬000</td><td class='n'>1٬847٬300٬000</td><td class='n'>1٬385٬475٬000</td><td class='n'>8</td><td class='n'>21</td></tr></tbody>
+  <tbody><tr><td>بدبینانه</td><td class='n'>8٬000</td><td class='n'>27٬200٬000</td><td class='n'>399٬200٬000</td><td class='n'>-303٬500٬000</td><td class='n'>0</td><td class='n'>16</td><td class='n'>38</td></tr><tr><td>پایه</td><td class='n'>14٬000</td><td class='n'>75٬000٬000</td><td class='n'>1٬085٬000٬000</td><td class='n'>382٬300٬000</td><td class='n'>286٬725٬000</td><td class='n'>10</td><td class='n'>30</td></tr><tr><td>خوش‌بینانه</td><td class='n'>25٬000</td><td class='n'>160٬000٬000</td><td class='n'>2٬550٬000٬000</td><td class='n'>1٬847٬300٬000</td><td class='n'>1٬385٬475٬000</td><td class='n'>8</td><td class='n'>20</td></tr></tbody>
 </table>
 <h3>رمپ درآمد سناریو پایه (میلیون تومان)</h3>
 <svg class="ramp" width="520" height="168" viewBox="0 0 520 168"><line x1="28" y1="66.8" x2="508" y2="66.8" stroke="#e05a45" stroke-width="1.6" stroke-dasharray="5 4"/><text x="28" y="62.8" font-size="8" fill="#e05a45">برن ≈ 703M</text><rect x="28.0" y="134.3" width="36.3" height="5.7" rx="3" fill="#14b8a6"/><text x="46.2" y="160" text-anchor="middle" font-size="7.5" fill="#64748b">M1</text><text x="46.2" y="131.3" text-anchor="middle" font-size="7" fill="#12263a" font-family="DejaVu Sans">55</text><rect x="68.3" y="130.1" width="36.3" height="9.9" rx="3" fill="#14b8a6"/><text x="86.5" y="160" text-anchor="middle" font-size="7.5" fill="#64748b">M2</text><rect x="108.7" y="124.4" width="36.3" height="15.6" rx="3" fill="#14b8a6"/><text x="126.8" y="160" text-anchor="middle" font-size="7.5" fill="#64748b">M3</text><rect x="149.0" y="118.1" width="36.3" height="21.9" rx="3" fill="#14b8a6"/><text x="167.2" y="160" text-anchor="middle" font-size="7.5" fill="#64748b">M4</text><rect x="189.3" y="110.3" width="36.3" height="29.7" rx="3" fill="#14b8a6"/><text x="207.5" y="160" text-anchor="middle" font-size="7.5" fill="#64748b">M5</text><rect x="229.7" y="102.0" width="36.3" height="38.0" rx="3" fill="#14b8a6"/><text x="247.8" y="160" text-anchor="middle" font-size="7.5" fill="#64748b">M6</text><text x="247.8" y="99.0" text-anchor="middle" font-size="7" fill="#12263a" font-family="DejaVu Sans">365</text><rect x="270.0" y="92.6" width="36.3" height="47.4" rx="3" fill="#14b8a6"/><text x="288.2" y="160" text-anchor="middle" font-size="7.5" fill="#64748b">M7</text><rect x="310.3" y="82.2" width="36.3" height="57.8" rx="3" fill="#14b8a6"/><text x="328.5" y="160" text-anchor="middle" font-size="7.5" fill="#64748b">M8</text><rect x="350.7" y="70.8" width="36.3" height="69.2" rx="3" fill="#14b8a6"/><text x="368.8" y="160" text-anchor="middle" font-size="7.5" fill="#64748b">M9</text><rect x="391.0" y="57.8" width="36.3" height="82.2" rx="3" fill="#0f766e"/><text x="409.2" y="160" text-anchor="middle" font-size="7.5" fill="#64748b">M10</text><text x="409.2" y="54.8" text-anchor="middle" font-size="7" fill="#12263a" font-family="DejaVu Sans">790</text><rect x="431.3" y="43.2" width="36.3" height="96.8" rx="3" fill="#0f766e"/><text x="449.5" y="160" text-anchor="middle" font-size="7.5" fill="#64748b">M11</text><rect x="471.7" y="27.0" width="36.3" height="113.0" rx="3" fill="#0f766e"/><text x="489.8" y="160" text-anchor="middle" font-size="7.5" fill="#64748b">M12</text><text x="489.8" y="24.0" text-anchor="middle" font-size="7" fill="#12263a" font-family="DejaVu Sans">1085</text></svg>
 <ul class="t">
   <li>سربه‌سر عملیاتی وقتی درآمد ماهانه ≥ 702٬700٬000 تومان.</li>
-  <li>پایه با ایونت: سربه‌سر ≈ ماه <strong>10</strong> · Payback ≈ ماه <strong>31</strong>
-  (جریان نقدی تجمعی از −سرمایه، با رشد ملایم درآمد پس از م۱۲).</li>
+  <li>پایه با ایونت: سربه‌سر ≈ ماه <strong>10</strong> · Payback ≈ ماه <strong>30</strong>
+  (جریان نقدی تجمعی از −۱۰ میلیارد، با رشد ملایم درآمد پس از م۱۲).</li>
   <li>برای پوشش برن با حاشیه ≈۸۵٪، حدود <strong>826٬705٬882</strong> تومان GMV ماهانه لازم است.</li>
   <li>VAT (~۱۰٪) عبورکننده فرض شده و در برن خنثی است.</li>
 </ul>
 
-<h2>۱۰. نقشه راه و ریسک</h2>
+<h2><span class="num">۱۰</span> نقشه راه و ریسک</h2>
 <table>
   <thead><tr><th>فاز</th><th>بازه</th><th>تمرکز</th></tr></thead>
   <tbody>
@@ -381,19 +720,22 @@
   </tbody>
 </table>
 
-<h2>۱۱. پیشنهاد سرمایه‌گذاری</h2>
+<h2><span class="num">۱۱</span> پیشنهاد سرمایه‌گذاری</h2>
 <ul class="t">
-  <li><strong>مبلغ:</strong> 11٬000٬000٬000 تومان</li>
-  <li><strong>مصرف:</strong> راه‌اندازی + Runway تیم ۶ نفره (بیمه کارفرما ۲۳٪)</li>
+  <li><strong>مبلغ:</strong> ۱۰٬۰۰۰٬۰۰۰٬۰۰۰ تومان (۱۰ میلیارد)</li>
+  <li><strong>مصرف:</strong> راه‌اندازی ۱٫۵B + Runway ۱۲ماه تیم ۶ نفره (بیمه کارفرما ۲۳٪) + بافر نازک</li>
+  <li><strong>پوشش:</strong> ≈ 14٫2 ماه برن کل · ≈ 12٫1 ماه عملیات پس از راه‌اندازی</li>
   <li><strong>هدف ۱۲ماه:</strong> عبور از سربه‌سر در سناریو پایه (با استک ایونت)</li>
   <li><strong>گزارش:</strong> P&amp;L ماهانه، MAU، نرخ پرداخت، حجم ایونت، CAC</li>
   <li><strong>سهام/valuation:</strong> در مذاکره ترم‌شیت</li>
 </ul>
 <div class="callout">
 <strong>جمع‌بندی:</strong> برن <span class="hl">702٬700٬000</span> تومان/ماه ·
-سرمایه پیشنهادی <span class="hl">11٬000٬000٬000</span> تومان ·
+سرمایه درخواستی <span class="hl">۱۰٬۰۰۰٬۰۰۰٬۰۰۰</span> تومان ·
 ایونت پایه م۱۲ ≈ <span class="hl">75٬000٬000</span> تومان ·
 سربه‌سر پایه ماه <span class="hl">10</span>.
 </div>
-<p class="muted">پت‌دیت · طرح توجیهی سرمایه‌گذاری · اعداد به تومان · نسخه ۱٫۴ (زیرساخت فنی + ایونت + اتوماسیون)</p>
+<p class="muted" style="margin-top:16px;text-align:center">
+پت‌دیت · طرح توجیهی سرمایه‌گذاری · اعداد به تومان · نسخه ۱٫۵
+</p>
 </body></html>
