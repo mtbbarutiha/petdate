@@ -214,7 +214,7 @@ export function AdminFinanceDashboardPage() {
           <LineChart size={20} /><div><strong>{tr('تراکنش‌ها و دفتر')}</strong><span>{tr('ایمپورت · صف · مشکوک · Ledger')}</span></div>
         </Link>
         <Link to="/admin/finance/wallet" className="admin-card admin-finance-link admin-finance-link--queue">
-          <Wallet size={20} /><div><strong>{tr('دفتر کیف پول')}</strong><span>{tr('تومان · سکه · Stars · TON')}</span></div>
+          <Wallet size={20} /><div><strong>{tr('دفتر کیف پول')}</strong><span>{tr('تومان · سکه · Stars')}</span></div>
         </Link>
         <Link to="/admin/finance/allocation" className="admin-card admin-finance-link">
           <PieChart size={20} /><div><strong>{tr('تخصیص هزینه')}</strong><span>{tr('دفاتر · تجهیزات · فاکتور هلدینگ')}</span></div>

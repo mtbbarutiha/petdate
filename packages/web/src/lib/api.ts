@@ -984,7 +984,6 @@ export async function fetchWallet(token: string) {
   return coalescedAuthGet<{
     ok: true;
     wallet: {
-      ton: number;
       stars: number;
       coins: number;
       toman: number;
@@ -1006,7 +1005,7 @@ export async function fetchWallet(token: string) {
 
 export type WalletTransactionDto = {
   id: number;
-  currency: 'ton' | 'stars' | 'coins' | 'toman';
+  currency: 'stars' | 'coins' | 'toman';
   amount: number;
   direction: 'credit' | 'debit';
   reason: string;
@@ -1039,6 +1038,30 @@ export type WalletPaymentOrderDto = {
   method: string; status: string; receiptUrl?: string; transferRef?: string;
   createdAt: string; reviewedAt?: string;
 };
+
+export async function fetchWalletRates(token: string) {
+  return request<{
+    ok: true;
+    rates: { coinPriceToman: number; coinSellPriceToman: number; starSellPriceToman: number };
+    pairs: Array<{ from: string; to: string; rate: number; note: string }>;
+  }>('/api/auth/wallet/rates', { headers: { Authorization: `Bearer ${token}` } });
+}
+
+export async function convertWallet(
+  token: string,
+  body: { from: 'coins' | 'stars' | 'toman'; to: 'coins' | 'stars' | 'toman'; amount: number }
+) {
+  return request<{
+    ok: true;
+    wallet: { stars: number; coins: number; toman: number };
+    converted: { from: string; to: string; fromAmount: number; toAmount: number; rate: number };
+  }>('/api/auth/wallet/convert', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify(body),
+  });
+}
+
 export async function fetchBuyCoinsCatalog(token: string) {
   return request<{ ok: true; packages: CoinPackageDto[]; card: { number: string; masked: string; grouped: string; holder: string }; openOrders: WalletPaymentOrderDto[]; message?: string }>(
     '/api/auth/wallet/buy-coins', { headers: { Authorization: `Bearer ${token}` } }
@@ -1126,7 +1149,7 @@ export type EarnRequestSummary = {
 export type EarnStatusResponse = {
   ok: true;
   coins: number;
-  wallet: { ton: number; stars: number; coins: number; toman: number };
+  wallet: { stars: number; coins: number; toman: number };
   rateToman: number;
   minCoins: number;
   estimatedToman: number;
@@ -1158,7 +1181,7 @@ export async function submitEarnWithdraw(
     coins: number;
     amount: number;
     user: User;
-    wallet?: { ton: number; stars: number; coins: number; toman: number };
+    wallet?: { stars: number; coins: number; toman: number };
     openRequest: EarnRequestSummary | null;
   }>('/api/auth/earn/withdraw', {
     method: 'POST',
@@ -1805,7 +1828,7 @@ export type ShopCoinCheckoutResult = {
   coinsRemaining: number;
   totalToman: number;
   message: string;
-  wallet?: { ton: number; stars: number; coins: number; toman: number };
+  wallet?: { stars: number; coins: number; toman: number };
   coins?: number;
 };
 
@@ -1837,7 +1860,7 @@ export type ShopWalletStarsCheckoutResult = {
   starsRemaining: number;
   totalToman: number;
   message: string;
-  wallet?: { ton: number; stars: number; coins: number; toman: number };
+  wallet?: { stars: number; coins: number; toman: number };
 };
 
 export type ShopStarsPaymentStatus = {

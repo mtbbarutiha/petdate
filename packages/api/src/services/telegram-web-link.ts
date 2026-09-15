@@ -463,7 +463,7 @@ export async function completeTelegramAttach(input: {
     ok: true,
     user,
     merged: linked.merged,
-    wallet: wallet ?? { ton: 0, stars: 0, coins: 0, toman: 0 },
+    wallet: wallet ?? { stars: 0, coins: 0, toman: 0 },
   };
 }
 

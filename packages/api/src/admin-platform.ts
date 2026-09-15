@@ -373,11 +373,10 @@ export const adminPlatform = {
         `SELECT
            COALESCE(SUM(coins), 0) AS coins,
            COALESCE(SUM(wallet_toman), 0) AS toman,
-           COALESCE(SUM(wallet_ton), 0) AS ton,
            COALESCE(SUM(wallet_stars), 0) AS stars
          FROM users`
       )
-      .get() as { coins: number; toman: number; ton: number; stars: number };
+      .get() as { coins: number; toman: number; stars: number };
     const logStats = dbService.getAppErrorLogStats();
     return {
       users: q('SELECT COUNT(*) as c FROM users'),
@@ -397,7 +396,6 @@ export const adminPlatform = {
       walletTotals: {
         coins: Number(wallet.coins ?? 0),
         toman: Number(wallet.toman ?? 0),
-        ton: Number(wallet.ton ?? 0),
         stars: Number(wallet.stars ?? 0),
       },
       paymentOrdersPending: q(

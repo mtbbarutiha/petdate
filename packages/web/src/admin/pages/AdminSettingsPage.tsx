@@ -36,6 +36,8 @@ const FINANCE_NUMS: { key: string; label: string; hint: string }[] = [
   },
   { key: 'playdateFeeToman', label: 'کارمزد همبازی (تومان)', hint: 'درآمد تخمینی هر همبازی پذیرفته' },
   { key: 'financeOpExMonthlyToman', label: 'هزینه عملیاتی ماهانه', hint: 'برای P&L دوره' },
+  { key: 'coinPriceToman', label: 'نرخ خرید سکه (تومان)', hint: 'هر سکه چند تومان؟ پیش‌فرض ۲٬۰۰۰ — تبدیل تومان→سکه و قیمت بسته‌ها' },
+  { key: 'coinSellPriceToman', label: 'نرخ فروش سکه (تومان)', hint: 'هر سکه هنگام فروش/برداشت چند تومان؟ پیش‌فرض ۱٬۰۰۰' },
 ];
 
 const ANALYTICS_TEXT: { key: string; label: string; hint: string; placeholder: string }[] = [

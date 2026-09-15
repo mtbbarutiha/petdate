@@ -373,12 +373,12 @@ export const HELP_TOPICS: HelpTopic[] = [
     surfaces: ['bot', 'web'],
     title: { fa: 'کیف پول و سکه', en: 'Wallet & coins' },
     what: {
-      fa: `کیف پول چندارزی مشترک: سکه، تومان، ستاره تلگرام و TON. هدیه ثبت‌نام ${FA_SIGNUP} سکه است.`,
-      en: `Shared multi-currency wallet: coins, toman, Telegram Stars, and TON. Signup bonus is ${SIGNUP_BONUS} coins.`,
+      fa: `کیف پول چندارزی مشترک: سکه، تومان و ستاره. هدیه ثبت‌نام ${FA_SIGNUP} سکه است.`,
+      en: `Shared multi-currency wallet: coins, toman, and Stars. Signup bonus is ${SIGNUP_BONUS} coins.`,
     },
     how: {
-      fa: 'ربات: منوی سکه — بسته بخر (ستاره‌ها یا کارت‌به‌کارت با رسید)، سکه روزانه، تراکنش‌ها. سایت: کیف پول — موجودی، رسید کارت‌به‌کارت، همگام‌سازی ستاره با ربات.',
-      en: 'Bot: Coins menu — buy a pack (Stars or card-to-card receipt), daily coins, transactions. Site: Wallet — balances, card receipt upload, Stars sync via the bot.',
+      fa: 'ربات: منوی سکه — بسته بخر، تبدیل تومان↔سکه، سکه روزانه. سایت: کیف پول — موجودی، تبدیل ارز، رسید کارت‌به‌کارت.',
+      en: 'Bot: Coins menu — buy a pack, convert toman↔coins, daily coins. Site: Wallet — balances, convert, card receipt upload.',
     },
     tips: {
       fa: 'رسید کارت‌به‌کارت بعد از تأیید ادمین در لجر می‌نشیند. برای فاکتور ستاره باید حساب وب به ربات وصل باشد.',
@@ -893,8 +893,8 @@ export const HELP_FAQ: HelpFaqItem[] = [
       en: 'How do I top up wallet and coins?',
     },
     a: {
-      fa: `سکه، تومان، ستاره و TON مشترک وب و ربات است. در ربات از منوی سکه بسته بخر یا سکه روزانه بگیر؛ در سایت رسید کارت‌به‌کارت آپلود کن. دعوت دوست ${FA_REFERRAL} سکه است.`,
-      en: `Coins, toman, Stars, and TON are shared. Buy a pack or claim daily coins in the bot; upload a card receipt on the site. An invite pays ${REFERRAL_BONUS_COINS} coins.`,
+      fa: `سکه، تومان و ستاره مشترک وب و ربات است. در ربات از منوی سکه بسته بخر یا سکه روزانه بگیر؛ در سایت رسید کارت‌به‌کارت آپلود کن یا تومان را به سکه تبدیل کن. دعوت دوست ${FA_REFERRAL} سکه است.`,
+      en: `Coins, toman, and Stars are shared. Buy a pack or claim daily coins in the bot; upload a card receipt on the site or convert toman to coins. An invite pays ${REFERRAL_BONUS_COINS} coins.`,
     },
   },
   {

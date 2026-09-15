@@ -402,7 +402,7 @@ authRouter.get('/me', (req, res) => {
   res.json({ ok: true, user: dbService.enrichUserProfileCard(fresh) });
 });
 
-/** کیف پول چندارزی — TON / Stars / سکه ربات / تومان (همان منبع ربات) */
+/** کیف پول چندارزی — Stars / سکه ربات / تومان (همان منبع ربات) */
 authRouter.get('/wallet', (req, res) => {
   const session = getUserFromBearer(req.header('authorization') ?? undefined);
   if (!session) {
@@ -452,6 +452,75 @@ authRouter.get('/wallet/transactions', (req, res) => {
   res.json({ ok: true, transactions });
 });
 
+
+/** نرخ‌های تبدیل کیف‌پول (خرید/فروش سکه) */
+authRouter.get('/wallet/rates', (req, res) => {
+  const session = getUserFromBearer(req.header('authorization') ?? undefined);
+  if (!session) {
+    res.status(401).json({ error: 'وارد نشده‌اید' });
+    return;
+  }
+  const { getEconomyRates } = require('../economy-rates') as typeof import('../economy-rates');
+  const rates = getEconomyRates();
+  res.json({
+    ok: true,
+    rates,
+    pairs: [
+      { from: 'toman', to: 'coins', rate: rates.coinPriceToman, note: 'خرید سکه از موجودی تومان' },
+      { from: 'coins', to: 'toman', rate: rates.coinSellPriceToman, note: 'فروش سکه به تومان کیف‌پول' },
+      { from: 'stars', to: 'coins', rate: 1, note: '۱ ستاره = ۱ سکه' },
+      { from: 'coins', to: 'stars', rate: 1, note: '۱ سکه = ۱ ستاره' },
+    ],
+  });
+});
+
+/** تبدیل ارز کیف‌پول (تومان↔سکه، ستاره↔سکه) */
+authRouter.post('/wallet/convert', (req, res) => {
+  const session = getUserFromBearer(req.header('authorization') ?? undefined);
+  if (!session) {
+    res.status(401).json({ error: 'وارد نشده‌اید' });
+    return;
+  }
+  const fromRaw = String(req.body?.from ?? '').trim().toLowerCase();
+  const toRaw = String(req.body?.to ?? '').trim().toLowerCase();
+  const amount = Math.floor(Number(req.body?.amount));
+  const from = fromRaw === 'coins' || fromRaw === 'stars' || fromRaw === 'toman' ? fromRaw : null;
+  const to = toRaw === 'coins' || toRaw === 'stars' || toRaw === 'toman' ? toRaw : null;
+  if (!from || !to) {
+    res.status(400).json({ error: 'from/to باید coins | stars | toman باشد' });
+    return;
+  }
+  if (!Number.isFinite(amount) || amount <= 0) {
+    res.status(400).json({ error: 'amount نامعتبر است' });
+    return;
+  }
+  const { quoteWalletConvert } = require('../economy-rates') as typeof import('../economy-rates');
+  const quote = quoteWalletConvert(from, to, amount);
+  if (!quote.ok) {
+    res.status(400).json({ error: quote.error });
+    return;
+  }
+  const result = dbService.convertWallet(session.user.id, from, to, quote.fromAmount, quote.toAmount, {
+    reason: `تبدیل ${from}→${to}`,
+  });
+  if (!result.ok) {
+    const status = result.reason === 'missing_user' ? 404 : 400;
+    const msg =
+      result.reason === 'insufficient'
+        ? 'موجودی کافی نیست'
+        : result.reason === 'same_currency'
+          ? 'ارز مبدأ و مقصد یکسان است'
+          : 'تبدیل ناموفق بود';
+    res.status(status).json({ error: msg, reason: result.reason });
+    return;
+  }
+  res.json({
+    ok: true,
+    wallet: result.wallet,
+    converted: { from, to, fromAmount: quote.fromAmount, toAmount: quote.toAmount, rate: quote.rate },
+  });
+});
+
 /** بسته‌های خرید سکه + کارت مقصد (همان اقتصاد ربات) */
 authRouter.get('/wallet/buy-coins', (req, res) => {
   const session = getUserFromBearer(req.header('authorization') ?? undefined);
@@ -469,14 +538,18 @@ authRouter.get('/wallet/buy-coins', (req, res) => {
     });
   res.json({
     ok: true,
-    packages: COIN_PACKAGES.map((p) => ({
-      id: p.id,
-      coins: p.coins,
-      toman: p.toman,
-      stars: p.stars,
-      vip: Boolean(p.vip),
-      label: p.label,
-    })),
+    packages: (() => {
+      const { getCoinPriceToman } = require('../economy-rates') as typeof import('../economy-rates');
+      const { coinPackagesAtRate } = require('@petdate/shared') as typeof import('@petdate/shared');
+      return coinPackagesAtRate(getCoinPriceToman()).map((p) => ({
+        id: p.id,
+        coins: p.coins,
+        toman: p.toman,
+        stars: p.stars,
+        vip: Boolean(p.vip),
+        label: p.label,
+      }));
+    })(),
     card: card.configured
       ? {
           number: card.cardNumber,
@@ -691,7 +764,6 @@ authRouter.get('/earn', (req, res) => {
   const user = dbService.getUserById(session.user.id) ?? session.user;
   const wallet = dbService.getWallet(user.id);
   const walletBalances = wallet ?? {
-    ton: 0,
     stars: 0,
     coins: user.coins ?? 0,
     toman: 0,

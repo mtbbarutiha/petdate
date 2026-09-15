@@ -6,6 +6,7 @@ import { randomBytes } from 'crypto';
 import { tomanToShopCoins, tomanToShopStars, type PaymentOrder } from '@petdate/shared';
 import { getDb, dbService } from '../db';
 import { adminPlatform, type ShopOrderRow } from '../admin-platform';
+import { getCoinPriceToman } from '../economy-rates';
 import { lookupShopPrice } from './shop-price-index';
 import { paymentCardError, paymentCardFromEnv, paymentCardPublicInfo } from './payment-card';
 
@@ -206,7 +207,7 @@ function resolveLine(
   const categorySlug = dbProd?.categorySlug ?? indexed!.categorySlug;
   const costToman = dbProd?.costToman;
   const id = dbProd?.id ?? indexed!.id;
-  const unitCoins = tomanToShopCoins(priceToman);
+  const unitCoins = tomanToShopCoins(priceToman, getCoinPriceToman());
   const unitStars = tomanToShopStars(priceToman);
 
   return {

@@ -87,12 +87,14 @@ import type { ChatReplySnippet, PlaydateChatMediaKind, PlaydateChatMessage } fro
 import {
   PLAYDATE_REQUEST_TTL_MS,
   USER_GENDER_LABELS,
+  buyCoinsPath,
   chatReplySnippetBody,
   isPendingRequestExpired,
   makeUserPublicId,
   petPublicIdOf,
   userPublicIdOf,
 } from '@petdate/shared';
+import { appConfirm } from '../components/AppDialog';
 import { playdateToMatchRequest, shouldShowOutgoingRejectToRequester } from '../lib/playdateMap';
 import { subscribeIncomingRefresh } from '../lib/liveIncoming';
 import {
@@ -1712,6 +1714,19 @@ export function ChatPage() {
 
   async function sendGift(amount: number) {
     if (!myUserId || !match || giftBusy) return;
+    const need = Math.max(0, Math.floor(Number(amount) || 0));
+    if (need <= 0) return;
+    const bal = authUser?.coins ?? 0;
+    const nextPath = `${window.location.pathname}${window.location.search}`;
+    if (bal < need) {
+      setGiftError(`موجودی سکه کافی نیست. نیاز: ${need.toLocaleString('fa-IR')}`);
+      navigate(buyCoinsPath({ need, next: nextPath }));
+      return;
+    }
+    const ok = await appConfirm(
+      `مطمئنی می‌خوای ${need.toLocaleString('fa-IR')} سکه برای هدیه کسر بشه؟`,
+    );
+    if (!ok) return;
     setGiftBusy(true);
     setGiftError(null);
     try {
@@ -1726,7 +1741,11 @@ export function ChatPage() {
       }
       setGiftOpen(false);
     } catch (err) {
-      setGiftError(err instanceof Error ? err.message : 'ارسال هدیه ناموفق بود');
+      const msg = err instanceof Error ? err.message : 'ارسال هدیه ناموفق بود';
+      setGiftError(msg);
+      if (/سکه|coins|موجودی/i.test(msg)) {
+        navigate(buyCoinsPath({ need, next: nextPath }));
+      }
     } finally {
       setGiftBusy(false);
     }

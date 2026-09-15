@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowRight, Link2, Receipt, RefreshCw, Sparkles, Wallet } from 'lucide-react';
 import {
   BRAND,
@@ -7,10 +7,12 @@ import {
   WALLET_CURRENCY_STATUS,
   WALLET_CURRENCY_SYMBOLS,
   toPersianDigits,
+  USER_WALLET_CONVERT_PAIRS,
   walletFromUserFields,
   type WalletBalances,
   type WalletCurrency,
 } from '@petdate/shared';
+import { appConfirm } from '../components/AppDialog';
 import { InviteFriendsCard } from '../components/InviteFriendsCard';
 import { PageHelpLink } from '../components/PageHelpLink';
 import { useAuthStore } from '../hooks/useAuthStore';
@@ -22,7 +24,9 @@ import {
   fetchAuthedPaymentReceiptObjectUrl,
   fetchBuyCoinsCatalog,
   fetchMyWalletPayments,
+  convertWallet,
   fetchWallet,
+  fetchWalletRates,
   fetchWalletTransactions,
   resolvePublicMediaUrl,
   startTelegramAttach,
@@ -33,7 +37,7 @@ import {
   type WalletTransactionDto,
 } from '../lib/api';
 
-const ORDER: WalletCurrency[] = ['coins', 'stars', 'toman', 'ton'];
+const ORDER: WalletCurrency[] = ['coins', 'stars', 'toman'];
 
 function formatBal(n: number): string {
   const x = Math.floor(Number(n));
@@ -68,7 +72,7 @@ function formatTxDate(iso: string): string {
 
 function sameWallet(a: WalletBalances | null, b: WalletBalances): boolean {
   if (!a) return false;
-  return a.ton === b.ton && a.stars === b.stars && a.coins === b.coins && a.toman === b.toman;
+  return a.stars === b.stars && a.coins === b.coins && a.toman === b.toman;
 }
 function paymentStatusFa(status: string): string {
   if (status === 'awaiting_receipt') return 'منتظر رسید';
@@ -160,6 +164,13 @@ export function WalletPage() {
   const [txLoading, setTxLoading] = useState(false);
   const [txError, setTxError] = useState('');
   const [packages, setPackages] = useState<CoinPackageDto[]>([]);
+  const [searchParams] = useSearchParams();
+  const [convertFrom, setConvertFrom] = useState<'toman' | 'coins' | 'stars'>('toman');
+  const [convertTo, setConvertTo] = useState<'toman' | 'coins' | 'stars'>('coins');
+  const [convertAmount, setConvertAmount] = useState('');
+  const [convertBusy, setConvertBusy] = useState(false);
+  const [rates, setRates] = useState<{ coinPriceToman: number; coinSellPriceToman: number } | null>(null);
+  const buySectionRef = useRef<HTMLElement | null>(null);
   const [cardInfo, setCardInfo] = useState<{ number: string; masked: string; grouped: string; holder: string } | null>(null);
   const [activeOrder, setActiveOrder] = useState<WalletPaymentOrderDto | null>(null);
   const [paymentHistory, setPaymentHistory] = useState<WalletPaymentOrderDto[]>([]);
@@ -239,6 +250,7 @@ export function WalletPage() {
       setError('');
       void loadTransactions();
       void loadBuyCoins();
+      void fetchWalletRates(tok).then((r) => setRates(r.rates)).catch(() => undefined);
     } catch {
       const msg = t('wallet.balanceStale');
       setError(msg);
@@ -255,8 +267,47 @@ export function WalletPage() {
     void loadWallet({ soft: hasLocalRef.current });
   }, [token, loadWallet]);
 
+  useEffect(() => {
+    if (searchParams.get('buy') === '1' && buySectionRef.current) {
+      buySectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [searchParams, packages.length]);
+
+  async function onConvert() {
+    if (!token) return;
+    const amount = Math.floor(Number(convertAmount));
+    if (!Number.isFinite(amount) || amount <= 0) {
+      toastError('مقدار نامعتبر است');
+      return;
+    }
+    const pairOk = USER_WALLET_CONVERT_PAIRS.some((p) => p.from === convertFrom && p.to === convertTo);
+    if (!pairOk) {
+      toastError('این جفت تبدیل مجاز نیست');
+      return;
+    }
+    const ok = await appConfirm(
+      `مطمئنی می‌خوای ${amount.toLocaleString('fa-IR')} ${convertFrom === 'toman' ? 'تومان' : convertFrom === 'coins' ? 'سکه' : 'ستاره'} تبدیل بشه؟`,
+    );
+    if (!ok) return;
+    setConvertBusy(true);
+    try {
+      const res = await convertWallet(token, { from: convertFrom, to: convertTo, amount });
+      setWallet(res.wallet);
+      setConvertAmount('');
+      toastSuccess(
+        `تبدیل شد: ${res.converted.fromAmount.toLocaleString('fa-IR')} → ${res.converted.toAmount.toLocaleString('fa-IR')}`,
+      );
+      void loadTransactions();
+      await refreshMeRef.current().catch(() => undefined);
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : 'تبدیل ناموفق بود');
+    } finally {
+      setConvertBusy(false);
+    }
+  }
+
   const balances: WalletBalances =
-    wallet ?? (user ? user.wallet ?? walletFromUserFields(user) : { ton: 0, stars: 0, coins: 0, toman: 0 });
+    wallet ?? (user ? user.wallet ?? walletFromUserFields(user) : { stars: 0, coins: 0, toman: 0 });
 
   const linked = telegramLinked || Boolean(user?.telegramId);
   const tgDisplay = telegramId || user?.telegramId || null;
@@ -368,7 +419,7 @@ export function WalletPage() {
               </span>
               <div>
                 <h2>{t('wallet.balances')}</h2>
-                <p>چهار ارز فعال در پنل</p>
+                <p>سه ارز فعال در پنل</p>
               </div>
             </div>
             <button
@@ -515,8 +566,53 @@ export function WalletPage() {
         <p className="pd-platform-banner">{t('platform.starsOff')}</p>
       )}
 
+
+      <section className="pepito-wallet-tg pepito-wallet-convert" aria-labelledby="wallet-convert-title">
+        <div className="pepito-wallet-tg-head">
+          <span className="pepito-wallet-tg-mark" aria-hidden><RefreshCw size={18} /></span>
+          <div>
+            <h2 id="wallet-convert-title">تبدیل ارز</h2>
+            <p className="pepito-wallet-tg-lead">
+              تومان کیف‌پول را به سکه تبدیل کن
+              {rates ? ` — هر سکه ${rates.coinPriceToman.toLocaleString('fa-IR')} تومان` : ''}
+            </p>
+          </div>
+        </div>
+        <div className="pepito-wallet-tg-body pepito-wallet-convert-form">
+          <label>
+            <span>از</span>
+            <select value={convertFrom} onChange={(e) => setConvertFrom(e.target.value as typeof convertFrom)}>
+              <option value="toman">تومان</option>
+              <option value="coins">سکه</option>
+              <option value="stars">ستاره</option>
+            </select>
+          </label>
+          <label>
+            <span>به</span>
+            <select value={convertTo} onChange={(e) => setConvertTo(e.target.value as typeof convertTo)}>
+              <option value="coins">سکه</option>
+              <option value="toman">تومان</option>
+              <option value="stars">ستاره</option>
+            </select>
+          </label>
+          <label>
+            <span>مقدار</span>
+            <input
+              inputMode="numeric"
+              value={convertAmount}
+              onChange={(e) => setConvertAmount(e.target.value)}
+              placeholder="مثلاً ۵"
+              dir="ltr"
+            />
+          </label>
+          <button type="button" className="pepito-btn button-1" disabled={convertBusy} onClick={() => void onConvert()}>
+            {convertBusy ? 'در حال تبدیل…' : 'تبدیل'}
+          </button>
+        </div>
+      </section>
+
       {platform.paymentCardEnabled ? (
-      <section className="pepito-wallet-tg pepito-wallet-buy" aria-labelledby="wallet-buy-title">
+      <section ref={buySectionRef} className="pepito-wallet-tg pepito-wallet-buy" aria-labelledby="wallet-buy-title">
         <div className="pepito-wallet-tg-head">
           <span className="pepito-wallet-tg-mark" aria-hidden><Receipt size={18} /></span>
           <div>

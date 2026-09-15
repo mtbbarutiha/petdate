@@ -19,12 +19,15 @@ import type {
 } from '@petdate/shared';
 import {
   PET_MEDICAL_FIELD_LABELS,
+  PLAYDATE_REQUEST_COST,
+  buyCoinsPath,
   petPublicIdOf,
   type PetMedicalField,
   toPersianDigits,
   userPublicIdOf,
 } from '@petdate/shared';
 import { PublicIdBadge } from '../components/PublicIdBadge';
+import { appConfirm } from '../components/AppDialog';
 import { formatAge } from '../data/mock';
 import { EMPTY_STATE_PHOTO } from '../data/petImages';
 import { useAuthStore } from '../hooks/useAuthStore';
@@ -215,6 +218,20 @@ export function PetDetailPage() {
 
   async function sendFrom(fromPetId: number) {
     if (!myUserId || !pet) return;
+    const need = PLAYDATE_REQUEST_COST;
+    const bal = authUser?.coins ?? 0;
+    const nextPath = `${location.pathname}${location.search}`;
+    if (bal < need) {
+      const msg = `برای درخواست همبازی حداقل ${need.toLocaleString('fa-IR')} سکه لازم داری.`;
+      setError(msg);
+      toastError(msg);
+      navigate(buyCoinsPath({ need, next: nextPath }));
+      return;
+    }
+    const ok = await appConfirm(
+      `مطمئنی می‌خوای ${need.toLocaleString('fa-IR')} سکه برای درخواست همبازی کسر بشه؟`,
+    );
+    if (!ok) return;
     setBusy(true);
     setError(null);
     try {
@@ -230,6 +247,9 @@ export function PetDetailPage() {
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'ارسال درخواست ناموفق بود';
       setError(msg); toastError(msg);
+      if (/سکه|coins|موجودی/i.test(msg)) {
+        navigate(buyCoinsPath({ need, next: nextPath }));
+      }
     } finally {
       setBusy(false);
     }

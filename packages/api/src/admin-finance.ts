@@ -392,7 +392,6 @@ export const adminFinance = {
       toman: 'تومان',
       coins: 'سکه',
       stars: 'Stars',
-      ton: 'TON',
     };
 
     return {
@@ -475,11 +474,10 @@ export const adminFinance = {
         `SELECT
            COALESCE(SUM(coins), 0) AS coins,
            COALESCE(SUM(wallet_toman), 0) AS toman,
-           COALESCE(SUM(wallet_ton), 0) AS ton,
            COALESCE(SUM(wallet_stars), 0) AS stars
          FROM users`
       )
-      .get() as { coins: number; toman: number; ton: number; stars: number };
+      .get() as { coins: number; toman: number; stars: number };
 
     const ledgerAgg = db()
       .prepare(
@@ -541,7 +539,6 @@ export const adminFinance = {
       balances: {
         coins: Number(balances.coins),
         toman: Number(balances.toman),
-        ton: Number(balances.ton),
         stars: Number(balances.stars),
       },
       byCurrency,

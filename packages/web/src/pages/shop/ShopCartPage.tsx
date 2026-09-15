@@ -1,6 +1,11 @@
 import { type FormEvent, useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { COIN_PRICE_TOMAN, STAR_PRICE_TOMAN, walletFromUserFields } from '@petdate/shared';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import {
+  COIN_PRICE_TOMAN,
+  STAR_PRICE_TOMAN,
+  buyCoinsPath,
+  walletFromUserFields,
+} from '@petdate/shared';
 import { formatShopCoins, formatShopStars, formatToman } from '../../data/shopCatalog';
 import { useAuthStore } from '../../hooks/useAuthStore';
 import { useShopCart } from '../../hooks/useShopCart';
@@ -13,6 +18,7 @@ import {
 } from '../../lib/api';
 import { loginPath } from '../../lib/authRedirect';
 import { trackBeginCheckout, trackPurchase } from '../../lib/siteAnalytics';
+import { appConfirm } from '../../components/AppDialog';
 import { ShopChrome } from '../../components/shop/ShopChrome';
 import { fetchPublicPlatformConfig, usePlatformConfig } from '../../hooks/usePlatformConfig';
 import { useI18n } from '../../i18n';
@@ -33,6 +39,7 @@ async function copyText(value: string): Promise<boolean> {
 
 export function ShopCartPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { lines, itemCount, totalToman, totalCoins, totalStars, setQty, remove, clear, rememberPaidOrder } =
     useShopCart();
   const { isLoggedIn, token, user, refreshMe } = useAuthStore();
@@ -48,6 +55,7 @@ export function ShopCartPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [cardCopied, setCardCopied] = useState(false);
+  const nextPath = `${location.pathname}${location.search}`;
 
   // Checkout needs live payment-card destination ASAP (platform hook is LCP-deferred elsewhere).
   useEffect(() => {
@@ -83,7 +91,6 @@ export function ShopCartPage() {
   const payDisabled =
     lines.length === 0 ||
     submitting ||
-    (payMethod === 'coins' && !canAffordCoins) ||
     (payMethod === 'wallet_stars' && !canAffordWalletStars) ||
     (payMethod === 'toman' && !canAffordToman) ||
     (payMethod === 'telegram_stars' && !telegramLinked) ||
@@ -107,6 +114,7 @@ export function ShopCartPage() {
       setError(
         `موجودی سکه کافی نیست. نیاز: ${totalCoins.toLocaleString('fa-IR')} — موجودی: ${coinBalance.toLocaleString('fa-IR')}`
       );
+      navigate(buyCoinsPath({ need: totalCoins || 1, next: nextPath }));
       return;
     }
     if (payMethod === 'wallet_stars' && !canAffordWalletStars) {
@@ -128,6 +136,13 @@ export function ShopCartPage() {
     if (payMethod === 'card' && !cardConfigured) {
       setError(platform.paymentCardError || 'شماره کارت واریز پیکربندی نشده.');
       return;
+    }
+
+    if (payMethod === 'coins') {
+      const ok = await appConfirm(
+        `مطمئنی می‌خوای ${totalCoins.toLocaleString('fa-IR')} سکه برای خرید کسر بشه؟`,
+      );
+      if (!ok) return;
     }
 
     setSubmitting(true);
@@ -236,7 +251,11 @@ export function ShopCartPage() {
         /* wallet chip may lag */
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'پرداخت ناموفق بود.');
+      const msg = err instanceof Error ? err.message : 'پرداخت ناموفق بود.';
+      setError(msg);
+      if (payMethod === 'coins' && /سکه|coins|موجودی/i.test(msg)) {
+        navigate(buyCoinsPath({ need: totalCoins || 1, next: nextPath }));
+      }
     } finally {
       setSubmitting(false);
     }

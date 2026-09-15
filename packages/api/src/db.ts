@@ -116,6 +116,7 @@ import {
   WITHDRAW_CURRENCY_LABELS_FA,
   type WithdrawCurrency,
   type PetMedicalField,
+  type WalletBalances,
   type WalletCurrency,
   type WalletLedgerDirection,
   type WalletTransaction,
@@ -1892,7 +1893,7 @@ function seedFinanceDefaults() {
     }>;
   if (!products.length) return;
 
-  const currencies = ['toman', 'toman', 'toman', 'coins', 'stars', 'ton'] as const;
+  const currencies = ['toman', 'toman', 'toman', 'coins', 'stars', 'coins'] as const;
   const statuses = ['paid', 'shipped', 'completed', 'paid', 'completed', 'pending', 'cancelled'] as const;
   const names = ['سارا م.', 'علی ر.', 'مریم ک.', 'رضا ن.', 'نگار پ.', 'حسین ب.'];
   const insOrder = db.prepare(
@@ -1959,7 +1960,7 @@ function seedFinanceDefaults() {
     ['coins', 120, 'credit', 'پاداش پروفایل', 10],
     ['toman', 2000000, 'credit', 'شارژ کیف پول', 8],
     ['stars', 50, 'credit', 'خرید Stars', 6],
-    ['ton', 2, 'credit', 'واریز TON', 4],
+    ['stars', 2, 'credit', 'واریز ستاره', 4],
     ['coins', 80, 'debit', 'هزینه همبازی', 5],
     ['toman', 250000, 'debit', 'مشاوره دامپزشک', 7],
   ] as const;
@@ -4510,9 +4511,10 @@ export const dbService = {
       created_at: string;
     }>;
 
-    return rows.map((row) => {
+    return rows
+      .filter((row) => row.currency !== 'ton')
+      .map((row) => {
       const currency = (
-        row.currency === 'ton' ||
         row.currency === 'stars' ||
         row.currency === 'coins' ||
         row.currency === 'toman'
@@ -4735,13 +4737,17 @@ export const dbService = {
       return { ok: true, user: this.getUserById(userId)! };
     }
 
-    const col = currency === 'ton' ? 'wallet_ton' : 'wallet_toman';
+    if (currency !== 'toman') {
+      return { ok: false, reason: 'bad_amount' };
+    }
+
+    const col = 'wallet_toman';
     if (safe > 0) {
       db.prepare(`UPDATE users SET ${col} = COALESCE(${col}, 0) + ? WHERE id = ?`).run(safe, userId);
       if (!ledgerMeta.skipLedger) {
         this.appendWalletLedger({
           userId,
-          currency,
+          currency: 'toman',
           amount: safe,
           direction: 'credit',
           reason: ledgerMeta.reason!,
@@ -4761,7 +4767,7 @@ export const dbService = {
       if (!ledgerMeta.skipLedger) {
         this.appendWalletLedger({
           userId,
-          currency,
+          currency: 'toman',
           amount: abs,
           direction: 'debit',
           reason: ledgerMeta.reason!,
@@ -4771,6 +4777,57 @@ export const dbService = {
       }
     }
     return { ok: true, user: this.getUserById(userId)! };
+  },
+
+  /**
+   * تبدیل اتمیک بین ارزهای کیف‌پول (بدون TON).
+   * amount = مقدار ارز مبدأ که کسر می‌شود؛ toAmount = مقدار ارز مقصد که واریز می‌شود.
+   */
+  convertWallet(
+    userId: number,
+    from: WalletCurrency,
+    to: WalletCurrency,
+    amount: number,
+    toAmount: number,
+    meta?: { reason?: string; refId?: string }
+  ):
+    | { ok: true; user: User; wallet: WalletBalances }
+    | { ok: false; reason: 'missing_user' | 'bad_amount' | 'insufficient' | 'same_currency' } {
+    if (from === to) return { ok: false, reason: 'same_currency' };
+    const fromAmt = Math.floor(Number(amount));
+    const creditAmt = Math.floor(Number(toAmount));
+    if (!Number.isFinite(fromAmt) || fromAmt <= 0 || !Number.isFinite(creditAmt) || creditAmt <= 0) {
+      return { ok: false, reason: 'bad_amount' };
+    }
+    if (!this.getUserById(userId)) return { ok: false, reason: 'missing_user' };
+
+    const reason = meta?.reason ?? `تبدیل ${from}→${to}`;
+    const refId = meta?.refId ?? `${from}-${to}-${Date.now()}`;
+    const run = db.transaction(() => {
+      const debit = this.creditWallet(userId, from, -fromAmt, {
+        reason,
+        refType: 'convert',
+        refId,
+      });
+      if (!debit.ok) return { ok: false as const, reason: 'insufficient' as const };
+      const credit = this.creditWallet(userId, to, creditAmt, {
+        reason,
+        refType: 'convert',
+        refId,
+      });
+      if (!credit.ok) {
+        // rollback via throwing — better: reverse debit
+        this.creditWallet(userId, from, fromAmt, {
+          reason: `${reason} (برگشت)`,
+          refType: 'convert',
+          refId: `${refId}:rollback`,
+        });
+        return { ok: false as const, reason: 'bad_amount' as const };
+      }
+      const user = this.getUserById(userId)!;
+      return { ok: true as const, user, wallet: user.wallet ?? walletFromUserFields(user) };
+    });
+    return run();
   },
 
   /**
@@ -7514,7 +7571,6 @@ export const dbService = {
     if (this.userHasOpenCoinSell(input.userId)) return { ok: false, reason: 'pending' };
 
     const wallet = this.getWallet(input.userId) ?? {
-      ton: 0,
       stars: 0,
       coins: user.coins ?? 0,
       toman: 0,
@@ -9002,7 +9058,8 @@ export const dbService = {
 
     // Sum multi-currency wallets so web↔Telegram link does not drop balances.
     const absCoins = Math.max(0, Math.floor(Number(absorbed.coins ?? 0)));
-    const absTon = Math.max(0, Math.floor(Number(absorbed.walletTon ?? absorbed.wallet?.ton ?? 0)));
+    // TON is removed from product; still move legacy wallet_ton column so merges don't drop DB rows.
+    const absTon = Math.max(0, Math.floor(Number(absorbed.walletTon ?? 0)));
     const absStars = Math.max(
       0,
       Math.floor(Number(absorbed.walletStars ?? absorbed.wallet?.stars ?? 0))
@@ -9040,17 +9097,6 @@ export const dbService = {
           userId: survivorId,
           currency: 'stars',
           amount: absStars,
-          direction: 'credit',
-          reason: 'همگام‌سازی حساب',
-          refType: 'account_merge',
-          refId: syncRef,
-        });
-      }
-      if (absTon) {
-        this.appendWalletLedger({
-          userId: survivorId,
-          currency: 'ton',
-          amount: absTon,
           direction: 'credit',
           reason: 'همگام‌سازی حساب',
           refType: 'account_merge',

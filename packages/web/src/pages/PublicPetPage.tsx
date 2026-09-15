@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
-import { Link, Navigate, useNavigate, useParams } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom';
 import {
   ArrowRight,
   Heart,
@@ -8,12 +8,15 @@ import {
 } from 'lucide-react';
 import { PetDiaryBook } from '../components/PetDiaryBook';
 import {
+  PLAYDATE_REQUEST_COST,
+  buyCoinsPath,
   formatPetAge,
   isNumericPetIdParam,
   petPublicPath,
   type PetDiaryEntry,
   type PetProfile,
 } from '@petdate/shared';
+import { appConfirm } from '../components/AppDialog';
 import { EMPTY_STATE_PHOTO } from '../data/petImages';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { useAppToast } from '../hooks/useAppToast';
@@ -35,6 +38,7 @@ import { PET_GENDER_LABELS, PET_SIZE_LABELS, PET_TYPE_LABELS } from '../types';
 export function PublicPetPage() {
   const { slugOrId } = useParams<{ slugOrId: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user: authUser, isLoggedIn } = useAuthStore();
   const { t } = useI18n();
   const { toastSuccess, toastError, toastInfo } = useAppToast();
@@ -123,6 +127,20 @@ export function PublicPetPage() {
 
   async function sendFrom(fromPetId: number) {
     if (!myUserId || !pet) return;
+    const need = PLAYDATE_REQUEST_COST;
+    const bal = authUser?.coins ?? 0;
+    const nextPath = `${location.pathname}${location.search}`;
+    if (bal < need) {
+      const msg = `برای درخواست همبازی حداقل ${need.toLocaleString('fa-IR')} سکه لازم داری.`;
+      setError(msg);
+      toastError(msg);
+      navigate(buyCoinsPath({ need, next: nextPath }));
+      return;
+    }
+    const ok = await appConfirm(
+      `مطمئنی می‌خوای ${need.toLocaleString('fa-IR')} سکه برای درخواست همبازی کسر بشه؟`,
+    );
+    if (!ok) return;
     setBusy(true);
     setError(null);
     try {
@@ -139,6 +157,9 @@ export function PublicPetPage() {
       const msg = err instanceof Error ? err.message : 'ارسال درخواست ناموفق بود';
       setError(msg);
       toastError(msg);
+      if (/سکه|coins|موجودی/i.test(msg)) {
+        navigate(buyCoinsPath({ need, next: nextPath }));
+      }
     } finally {
       setBusy(false);
     }
