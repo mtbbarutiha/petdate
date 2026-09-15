@@ -45,6 +45,8 @@ import type {
 } from '@petdate/shared';
 import {
   COIN_REASON,
+  catalogPaymentAmounts,
+  DAILY_COIN_REWARD,
   EVENT_CREATE_COST,
   EVENT_CREATE_FEE_REASON,
   EVENT_JOIN_FEE_REASON,
@@ -6388,10 +6390,10 @@ export const dbService = {
     };
   },
 
-  /** سکه روزانه — یک‌بار در هر روز UTC */
+  /** سکه روزانه — یک‌بار در هر روز UTC؛ مقدار فقط از DAILY_COIN_REWARD */
   claimDailyCoins(
     userId: number,
-    amount: number
+    _ignoredClientAmount?: number
   ):
     | { ok: true; user: User; awarded: number }
     | { ok: false; reason: 'missing' | 'already'; user?: User } {
@@ -6411,12 +6413,13 @@ export const dbService = {
       }
     }
 
+    const awarded = DAILY_COIN_REWARD;
     const nowIso = new Date().toISOString();
     db.prepare(
       'UPDATE users SET coins = COALESCE(coins, 0) + ?, last_daily_coin_at = ? WHERE id = ?'
-    ).run(amount, nowIso, userId);
+    ).run(awarded, nowIso, userId);
     const updated = this.getUserById(userId)!;
-    return { ok: true, user: updated, awarded: amount };
+    return { ok: true, user: updated, awarded };
   },
 
   userHasOpenCoinSell(userId: number): boolean {
@@ -7931,6 +7934,12 @@ export const dbService = {
       return { ok: false, reason: 'bad_status' };
     }
 
+    const catalog = catalogPaymentAmounts(existing.packageId);
+    if (!catalog || catalog.kind !== 'coins') {
+      return { ok: false, reason: 'bad_status' };
+    }
+    const creditCoins = catalog.coins;
+
     const tx = db.transaction(() => {
       const updated = db
         .prepare(
@@ -7943,13 +7952,13 @@ export const dbService = {
         .run(note?.trim() || null, orderId);
       if (updated.changes !== 1) throw new Error('BAD_STATUS');
       db.prepare(`UPDATE users SET coins = COALESCE(coins, 0) + ? WHERE id = ?`).run(
-        existing.coins,
+        creditCoins,
         existing.userId
       );
       this.appendWalletLedger({
         userId: existing.userId,
         currency: 'coins',
-        amount: existing.coins,
+        amount: creditCoins,
         direction: 'credit',
         reason: 'خرید سکه (کارت به کارت)',
         refType: 'payment_order',
@@ -8031,9 +8040,11 @@ export const dbService = {
     }
     if (existing.status !== 'awaiting_stars') return { ok: false, reason: 'bad_status' };
 
-    const isWalletStarsTopUp = String(existing.packageId || '').startsWith('wstars:');
-    const starsAmount = Math.max(0, Math.floor(Number(existing.amountStars ?? 0)));
-    const coinsAmount = Math.max(0, Math.floor(Number(existing.coins ?? 0)));
+    const catalog = catalogPaymentAmounts(existing.packageId);
+    if (!catalog) return { ok: false, reason: 'bad_status' };
+    const isWalletStarsTopUp = catalog.kind === 'wallet_stars';
+    const starsAmount = catalog.stars;
+    const coinsAmount = catalog.coins;
 
     const chargeId = input.telegramPaymentChargeId.trim();
     const tx = db.transaction(() => {
@@ -8049,7 +8060,7 @@ export const dbService = {
       if (updated.changes !== 1) throw new Error('BAD_STATUS');
 
       if (isWalletStarsTopUp) {
-        const credit = starsAmount > 0 ? starsAmount : coinsAmount;
+        const credit = starsAmount;
         if (credit <= 0) throw new Error('BAD_AMOUNT');
         db.prepare(
           `UPDATE users SET wallet_stars = COALESCE(wallet_stars, 0) + ? WHERE id = ?`

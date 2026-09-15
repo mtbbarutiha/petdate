@@ -23,6 +23,7 @@ import {
   COIN_SELL_PRICE_TOMAN,
   DAILY_COIN_REWARD,
   MIN_SELL_COINS,
+  WALLET_STARS_TOPUP_PACKS,
   canClaimDaily,
   cardPaymentInstructionsText,
   coinsShopIntroText,
@@ -801,8 +802,7 @@ export async function handleSuccessfulPayment(ctx: Context): Promise<void> {
   );
 }
 
-/** بسته‌های شارژ wallet_stars با پرداخت واقعی Telegram Stars (XTR) */
-export const WALLET_STARS_TOPUP_PACKS = [10, 25, 50, 100, 250] as const;
+export { WALLET_STARS_TOPUP_PACKS };
 
 export async function handleWalletStarsTopUpMenu(ctx: Context): Promise<void> {
   const user = await getCtxUser(ctx);
@@ -836,7 +836,7 @@ export async function handleWalletStarsTopUpBuy(ctx: Context, amountRaw: string)
     return;
   }
   const amount = Math.floor(Number(amountRaw));
-  if (!Number.isFinite(amount) || amount <= 0 || amount > 5000) {
+  if (!(WALLET_STARS_TOPUP_PACKS as readonly number[]).includes(amount)) {
     await ctx.answerCallbackQuery({ text: 'مبلغ نامعتبر', show_alert: true });
     return;
   }

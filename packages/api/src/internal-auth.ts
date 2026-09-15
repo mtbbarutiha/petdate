@@ -1,7 +1,8 @@
 import { createHash, timingSafeEqual } from 'crypto';
-import type { Request, RequestHandler } from 'express';
+import type { Request, RequestHandler, Response } from 'express';
 import { authenticateAdminRequest } from './admin-auth';
 import { infra } from './config/infra';
+import { getUserFromBearer } from './services/web-otp';
 
 function tokensEqual(a: string, b: string): boolean {
   const ha = createHash('sha256').update(a).digest();
@@ -34,3 +35,23 @@ export const requireTrustedStaff: RequestHandler = (req, res, next) => {
   }
   res.status(401).json({ error: 'وارد نشده‌اید' });
 };
+
+/**
+ * Money-moving telegramId routes: bot token OR a session whose telegramId matches.
+ * Knowing a telegramId alone is not enough to act as that user.
+ */
+export function requireBotOrMatchingTelegram(
+  req: Request,
+  res: Response,
+  telegramId: string,
+  unauthorizedMessage = 'وارد نشده‌اید'
+): boolean {
+  if (isInternalBot(req)) return true;
+  const session = getUserFromBearer(req.header('authorization') ?? undefined);
+  const sessionTg =
+    session?.user?.telegramId != null ? String(session.user.telegramId).trim() : '';
+  const wanted = String(telegramId || '').trim();
+  if (session && wanted && sessionTg === wanted) return true;
+  res.status(401).json({ error: unauthorizedMessage, reason: 'unauthorized' });
+  return false;
+}

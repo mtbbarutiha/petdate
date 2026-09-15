@@ -120,6 +120,57 @@ export function findCoinPackage(packageId: string): CoinPackage | undefined {
   return COIN_PACKAGES.find((p) => p.id === packageId);
 }
 
+/** سکه روزانه — مقدار فقط از سرور؛ کلاینت نمی‌تواند amount بفرستد */
+export const DAILY_COIN_REWARD = 10;
+
+/** بسته‌های شارژ wallet_stars با فاکتور Telegram Stars — فقط این مقادیر معتبرند */
+export const WALLET_STARS_TOPUP_PACKS = [10, 25, 50, 100, 250] as const;
+
+export function parseWalletStarsPackageId(packageId: string): number | null {
+  const m = /^wstars:(\d+)$/.exec(String(packageId || '').trim());
+  if (!m) return null;
+  const n = Number(m[1]);
+  return (WALLET_STARS_TOPUP_PACKS as readonly number[]).includes(n) ? n : null;
+}
+
+export type CatalogPaymentAmounts =
+  | { kind: 'coins'; packageId: string; coins: number; toman: number; stars: number }
+  | { kind: 'wallet_stars'; packageId: string; coins: 0; toman: number; stars: number };
+
+/**
+ * Server-side price table for wallet top-ups.
+ * Client-supplied coins / toman / stars must never be trusted.
+ */
+export function catalogPaymentAmounts(packageId: string): CatalogPaymentAmounts | null {
+  const id = String(packageId || '').trim();
+  const pkg = findCoinPackage(id);
+  if (pkg) {
+    return {
+      kind: 'coins',
+      packageId: pkg.id,
+      coins: pkg.coins,
+      toman: pkg.toman,
+      stars: pkg.stars,
+    };
+  }
+  const stars = parseWalletStarsPackageId(id);
+  if (stars != null) {
+    return {
+      kind: 'wallet_stars',
+      packageId: `wstars:${stars}`,
+      coins: 0,
+      toman: stars * STAR_PRICE_TOMAN,
+      stars,
+    };
+  }
+  return null;
+}
+
+/** Shop checkout invoices (not wallet top-ups) — excluded from P&L top-up revenue */
+export function isShopFinancePackageId(packageId: string | null | undefined): boolean {
+  return String(packageId || '').trim().toLowerCase().startsWith('shop');
+}
+
 export type CoinSellRequestStatus = 'open' | 'paid' | 'rejected' | 'cancelled';
 
 /** Same queue for web earn-withdraw and bot «فروش سکه». `open` is the pending payout state. */

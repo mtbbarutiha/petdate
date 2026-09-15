@@ -488,6 +488,7 @@ run src/hr-ats-followup.selftest.ts
 run src/finance-os.selftest.ts
 run src/services/card2card-wallet.selftest.ts
 run src/admin-finance-dashboard.selftest.ts
+run src/finance-p0-hardening.selftest.ts
 run src/platform-settings.selftest.ts
 run src/runtime-settings.selftest.ts
 run src/magazine.selftest.ts

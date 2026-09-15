@@ -5,6 +5,7 @@
 import type { User, UserRole, PaymentOrder, PlatformNavCounts } from '@petdate/shared';
 import { IRAN_PROVINCES, makeOrderPublicId, orderPublicIdOf } from '@petdate/shared';
 import { getDb, dbService } from './db';
+import { refundWalletOnShopOrderCancel } from './services/shop-order-refund';
 import { parseShopProductImages, withShopImagesParam } from './data/shop-product-images';
 import { isLiveShopProductIdOrSlug, purgeDemoShopProducts } from './data/shop-live-catalog';
 
@@ -947,6 +948,9 @@ export const adminPlatform = {
     const next = this.getShopOrder(id);
     if (prev && prev.status !== 'paid' && next?.status === 'paid') {
       queuePaidShopOrderAutoMessage(next);
+    }
+    if (prev && prev.status !== 'cancelled' && next?.status === 'cancelled') {
+      refundWalletOnShopOrderCancel(next, { previousStatus: prev.status });
     }
     return next;
   },
