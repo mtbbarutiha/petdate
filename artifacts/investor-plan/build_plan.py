@@ -50,8 +50,10 @@ USD_TOMAN = 220_000
 AI_COST = AI_USD * USD_TOMAN  # 88M
 RENT = 70_000_000
 OPEX = 50_000_000
+# سرور + هاست + دامنه + زیرساخت فنی
+INFRA_TECH = 15_000_000
 
-BURN = PAYROLL_TOTAL + INSURANCE_EMPLOYER + AI_COST + RENT + OPEX  # 687.7M
+BURN = PAYROLL_TOTAL + INSURANCE_EMPLOYER + AI_COST + RENT + OPEX + INFRA_TECH  # 702.7M
 
 SETUP = {
     "تجهیزات و لپ‌تاپ (۶ نفر)": 480_000_000,
@@ -68,7 +70,7 @@ BUFFER = int((RUNWAY + SETUP_TOTAL) * 0.08)
 CAPITAL_NEED = RUNWAY + SETUP_TOTAL + BUFFER
 _HALF_B = 500_000_000
 _ASK = int(round(CAPITAL_NEED / _HALF_B) * _HALF_B)
-CAPITAL_ASK = _ASK if _ASK >= CAPITAL_NEED else _ASK + _HALF_B  # → 11B
+CAPITAL_ASK = _ASK if _ASK >= CAPITAL_NEED else _ASK + _HALF_B  # → 11B (need ≈10.73B)
 ASK_MONTHS = CAPITAL_ASK / BURN
 
 # ── اقتصاد سکه و ایونت ────────────────────────────────────────────────
@@ -277,6 +279,7 @@ def burn_pie() -> str:
             ("AI API", AI_COST, CORAL),
             ("اجاره", RENT, TEAL_LT),
             ("جاری", OPEX, "#7c9aab"),
+            ("زیرساخت فنی", INFRA_TECH, NAVY2),
         ],
         "برن",
         f"{BURN / 1_000_000:.1f}M".replace(".", "٫"),
@@ -539,7 +542,7 @@ def build_html() -> str:
 
 <section class="cover">
   <img class="logo" src="{logo}" alt="پت‌دیت"/>
-  <div class="eyebrow">سند محرمانه · ویژه سرمایه‌گذار · نسخه ۱٫۳</div>
+  <div class="eyebrow">سند محرمانه · ویژه سرمایه‌گذار · نسخه ۱٫۴</div>
   <h1>طرح توجیهی سرمایه‌گذاری<br/>پت‌دیت (PetDate)</h1>
   <p class="tag">سوپراپ فارسی پت: همبازی، ایونت، پت‌شاپ و مشاوره دامپزشک —
   وب + ربات تلگرام با اقتصاد سکه یکپارچه و پنل ادمین عملیاتی</p>
@@ -550,9 +553,9 @@ def build_html() -> str:
     <div class="kpi"><div class="l">Runway با این سرمایه</div><div class="v">≈ {ASK_MONTHS:.0f} ماه</div></div>
     <div class="kpi"><div class="l">سربه‌سر پایه (با ایونت)</div><div class="v">ماه {base['be']}</div></div>
   </div>
-  <div class="cfoot">بیمه کارفرما ۲۳٪ · مالیات عملکرد ۲۵٪ · سکه ≈ {fmt(COIN_TOMAN)} تومان ·
-  عضویت ایونت فرض {EVENT_JOIN_FEE_COINS} سکه · دلار AI: {fmt(USD_TOMAN)} تومان<br/>
-  اعداد درآمد سناریویی‌اند؛ ترم‌شیت سهام در مذاکره نهایی قفل می‌شود.</div>
+  <div class="cfoot">بیمه کارفرما ۲۳٪ · مالیات عملکرد ۲۵٪ · زیرساخت فنی {fmt(INFRA_TECH)}/ماه ·
+  سکه ≈ {fmt(COIN_TOMAN)} تومان · عضویت ایونت فرض {EVENT_JOIN_FEE_COINS} سکه · دلار AI: {fmt(USD_TOMAN)} تومان<br/>
+  اعداد درآمد سناریویی‌اند؛ ترم‌شیت سهام در مذاکره نهایی قفل می‌شود. · نسخه ۱٫۴</div>
 </section>
 
 <h2>۱. خلاصه اجرایی</h2>
@@ -679,6 +682,7 @@ def build_html() -> str:
     <tr><td>هوش مصنوعی ({AI_USD}$ × {fmt(USD_TOMAN)})</td><td class="n">{fmt(AI_COST)}</td></tr>
     <tr><td>اجاره دفتر</td><td class="n">{fmt(RENT)}</td></tr>
     <tr><td>هزینه‌های جاری (ابزار، اینترنت، عوارض جزئی)</td><td class="n">{fmt(OPEX)}</td></tr>
+    <tr><td>سرور + هاست + دامنه + زیرساخت فنی</td><td class="n">{fmt(INFRA_TECH)}</td></tr>
     <tr class="tfoot"><td>جمع برن ماهانه</td><td class="n">{fmt(BURN)}</td></tr>
   </tbody>
 </table>
@@ -815,7 +819,7 @@ def build_html() -> str:
 ایونت پایه م۱۲ ≈ <span class="hl">{fmt(base['events'])}</span> تومان ·
 سربه‌سر پایه ماه <span class="hl">{base['be']}</span>.
 </div>
-<p class="muted">پت‌دیت · طرح توجیهی سرمایه‌گذاری · اعداد به تومان · نسخه ۱٫۳ (ایونت + اتوماسیون + بیمه/مالیات)</p>
+<p class="muted">پت‌دیت · طرح توجیهی سرمایه‌گذاری · اعداد به تومان · نسخه ۱٫۴ (زیرساخت فنی + ایونت + اتوماسیون)</p>
 </body></html>"""
 
 
@@ -866,7 +870,8 @@ def write_assumptions() -> None:
 - AI: {AI_USD}$ × {USD_TOMAN:,} = {AI_COST:,}
 - اجاره: {RENT:,}
 - جاری: {OPEX:,}
-- **برن: {BURN:,}**
+- **زیرساخت فنی (سرور + هاست + دامنه): {INFRA_TECH:,}**
+- **برن: {BURN:,}** (قبلاً بدون infra: ۶۸۷٬۷۰۰٬۰۰۰)
 
 ## سرمایه
 - راه‌اندازی: {SETUP_TOTAL:,}
