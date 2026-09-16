@@ -12,8 +12,6 @@ import {
   userPublicIdOf,
 } from '@petdate/shared';
 import {
-  fetchNearbyListCardBuffer,
-  fetchPetsListCardBuffer,
   fetchPetProfileCardBuffer,
   getPet,
   getUserById,
@@ -1004,44 +1002,9 @@ async function showSearchResults(
     .join('\n');
 
   const kb = searchPetsListKeyboard(pets, mode, safePage, PAGE_SIZE);
-  const pagePets = pets.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE);
 
+  /** DoorDooria-style: text + vertical inline keyboard only — never JPEG list-card collage. */
   async function sendListWithKeyboard(): Promise<void> {
-    const collageModes = new Set<SearchMode>(['nearby', 'province', 'samebreed', 'all', 'breed', 'newest', 'popular']);
-    if (collageModes.has(mode) && pagePets.length > 0) {
-      try {
-        if (mode === 'nearby' && geo) {
-          const buf = await fetchNearbyListCardBuffer({
-            lat: geo.lat,
-            lng: geo.lng,
-            radiusKm: geo.radiusKm ?? 5,
-            excludeOwnerId: user?.id,
-            page: safePage,
-            pageSize: PAGE_SIZE,
-          });
-          await ctx.replyWithPhoto(new InputFile(buf, 'nearby-list.jpg'), {
-            caption: text,
-            parse_mode: 'HTML',
-          });
-          await ctx.reply('روی هر مورد بزن تا پروفایل باز بشه:', { reply_markup: kb });
-          return;
-        }
-        const buf = await fetchPetsListCardBuffer({
-          petIds: pets.map((p) => p.id),
-          title: titleText.replace(/<[^>]+>/g, ''),
-          page: safePage,
-          pageSize: PAGE_SIZE,
-        });
-        await ctx.replyWithPhoto(new InputFile(buf, 'search-list.jpg'), {
-          caption: text,
-          parse_mode: 'HTML',
-          reply_markup: kb,
-        });
-        return;
-      } catch (err) {
-        console.warn('search list-card failed:', (err as Error).message);
-      }
-    }
     await ctx.reply(text, { parse_mode: 'HTML', reply_markup: kb });
   }
 
@@ -1049,12 +1012,11 @@ async function showSearchResults(
     try {
       const msg = ctx.callbackQuery.message;
       if (msg && 'photo' in msg && msg.photo) {
-        // برگشت از کارت عکس — پیام جدید لیست
+        // Previous collage/card photo — send a fresh keyboard list message
         await sendListWithKeyboard();
         return;
       }
-      // Pagination edit: prefer new collage photo over editing plain text
-      await sendListWithKeyboard();
+      await ctx.editMessageText(text, { parse_mode: 'HTML', reply_markup: kb });
       return;
     } catch {
       /* fall through to reply */
