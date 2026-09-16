@@ -601,6 +601,7 @@ export async function createPlaydate(data: {
 export async function findPlaymates(data: {
   fromPetId: number;
   fromUserId: number;
+  ownerGender?: 'female' | 'male';
 }): Promise<{
   ok: boolean;
   sent: number;
