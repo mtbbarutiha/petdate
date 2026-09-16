@@ -25,6 +25,7 @@ Short human steps only. Code/ops gates for backup, ready-health, and demo-seed s
 | Do **not** set `ALLOW_DEMO_SEEDS=1` in production. | در پروداکشن `ALLOW_DEMO_SEEDS=1` نگذار. |
 | Live admin lists hide HR/CRM/Sales **demo-seed** rows unless «نمایش داده تست» is on (default OFF in production). Optional wipe is dry-run: `npx tsx scripts/cleanup-demo-seeds.ts`. Destructive only with `CONFIRM=DELETE_DEMO_SEEDS` and `--apply`, or `POST /api/admin/demo-seeds/purge` with the same confirm token. Never auto-run on deploy. **Also purges** fake shop orders, seed wallet ledger, Finance OS demo CoA, and `fake_owner_*` users. | لیست‌های ادمین ردیف‌های تست را مخفی می‌کنند مگر «نمایش داده تست» روشن باشد. پاک‌سازی فقط با فلگ صریح؛ روی دیپلوی اجرا نشود. سفارش/کیف‌پول/فایننس‌اواس فیک هم پاک می‌شود. |
 | Before launch traffic: run cleanup dry-run on VPS, then `--apply` once. Confirm Finance + Shop dashboards show **zeros** (or only real rows), not سارا م. / هایپاد sample balances. Restart API after deploy so ungated seeders stay gated (`NODE_ENV=production`). | قبل از ترافیک: روی VPS dry-run بعد `--apply`. داشبورد مالی/شاپ باید صفر یا واقعی باشد. |
+| Full panel wipe (keep brands + product stock + admin accounts): `npx tsx scripts/launch-panel-wipe.ts` then `CONFIRM=WIPE_PANEL_KEEP_CATALOG npx tsx scripts/launch-panel-wipe.ts --apply`. Also `POST /api/admin/launch-wipe`. | پاک‌سازی کامل پنل با حفظ برند/موجودی/ادمین. |
 
 ## Out of scope here
 

@@ -104,6 +104,11 @@ import { magazineAdminRouter } from './admin-magazine';
 import { heroAdminRouter } from './admin-hero';
 import { parsePositiveIntId } from './parse-positive-int-id';
 import { DEMO_SEED_PURGE_CONFIRM, runDemoSeedCleanup } from '../demo-seeds-cleanup';
+import {
+  applyLaunchPanelWipe,
+  LAUNCH_PANEL_WIPE_CONFIRM,
+  previewLaunchPanelWipe,
+} from '../launch-panel-wipe';
 import { ZERO_MARGIN_SHOP_SLUGS } from '../data/shop-zero-margin-slugs';
 import {
   createAdminDailyNote,
@@ -259,6 +264,36 @@ adminRouter.post('/demo-seeds/purge', (req, res) => {
   res.json(runDemoSeedCleanup({ apply: true }));
 });
 
+/** Preview launch wipe (users + sales/finance/panel). Keeps brands + product stock. */
+adminRouter.get('/launch-wipe', (req, res) => {
+  const actor = req.adminActor;
+  if (!actor || !actorHasPermission(actor, 'admin.full')) {
+    res.status(403).json({ error: 'سطح دسترسی کافی نیست' });
+    return;
+  }
+  res.json(previewLaunchPanelWipe());
+});
+
+/**
+ * Destructive launch wipe. Body.confirm === WIPE_PANEL_KEEP_CATALOG.
+ * Keeps shop_brands / shop_products / shop_categories and admin_accounts (non-seed).
+ */
+adminRouter.post('/launch-wipe', (req, res) => {
+  const actor = req.adminActor;
+  if (!actor || !actorHasPermission(actor, 'admin.full')) {
+    res.status(403).json({ error: 'سطح دسترسی کافی نیست' });
+    return;
+  }
+  const confirm = String(req.body?.confirm || '').trim();
+  if (confirm !== LAUNCH_PANEL_WIPE_CONFIRM) {
+    res.status(400).json({
+      error: `برای پاک‌سازی لانچ confirm را ${LAUNCH_PANEL_WIPE_CONFIRM} بفرستید`,
+      hint: 'GET /api/admin/launch-wipe پیش‌نمایش است',
+    });
+    return;
+  }
+  res.json(applyLaunchPanelWipe());
+});
 /** Platform sidebar open/pending badge counts (single aggregate query set). */
 adminRouter.get('/platform/nav-counts', (req, res) => {
   const actor = req.adminActor;
