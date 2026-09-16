@@ -39,6 +39,8 @@ assert.match(api, /export async function createPlaydateRequest/, 'createPlaydate
 assert.match(actions, /createPlaydateRequest/, 'sendPlaymateRequestNow uses createPlaydateRequest');
 assert.match(find, /PetDiscoveryPanel/, 'wired into find-playmate panel');
 assert.match(find, /onSent=\{onSent\}/, 'discovery onSent refreshes inbox');
+assert.match(panel, /variant\?: 'panel' \| 'bar'/, 'panel supports compact bar variant');
+assert.match(panel, /pepito-pet-discovery--bar/, 'bar class for mobile chat header chips');
 assert.match(fa, /discoveryNearby:\s*'پت‌های نزدیک من'/, 'fa nearby label');
 assert.match(fa, /discoverySameBreed:\s*'هم‌نژاد'/, 'fa same-breed label');
 assert.match(fa, /discoverySameProvince:\s*'هم‌استان'/, 'fa same-province label');

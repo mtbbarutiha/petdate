@@ -25,6 +25,11 @@ type Props = {
   className?: string;
   /** Called after a successful playmate request so parent can refresh inbox */
   onSent?: () => void;
+  /**
+   * `panel` = full card with title (default).
+   * `bar` = compact chip row for mobile chat header (no title/lead chrome).
+   */
+  variant?: 'panel' | 'bar';
 };
 
 export type { DiscoveryPerson } from '../lib/petDiscoveryPeople';
@@ -38,7 +43,12 @@ function formatCoins(n: number): string {
  * Bot parity discovery chips: پت‌های نزدیک من / هم‌نژاد / هم‌استان.
  * Results are a **people** list with ارسال درخواست (same createPlaydateRequest flow).
  */
-export function PetDiscoveryPanel({ myPets, className = '', onSent }: Props) {
+export function PetDiscoveryPanel({
+  myPets,
+  className = '',
+  onSent,
+  variant = 'panel',
+}: Props) {
   const { t } = useI18n();
   const { user, isLoggedIn } = useAuthStore();
   const { toastError, toastInfo, toastSuccess } = useAppToast();
@@ -259,14 +269,16 @@ export function PetDiscoveryPanel({ myPets, className = '', onSent }: Props) {
 
   return (
     <section
-      className={`pepito-pet-discovery${className ? ` ${className}` : ''}`}
+      className={`pepito-pet-discovery${variant === 'bar' ? ' pepito-pet-discovery--bar' : ''}${className ? ` ${className}` : ''}`}
       aria-label={t('chats.discoveryTitle')}
-      data-testid="pet-discovery"
+      data-testid={variant === 'bar' ? 'pet-discovery-bar' : 'pet-discovery'}
     >
-      <header className="pepito-pet-discovery-head">
-        <h3>{t('chats.discoveryTitle')}</h3>
-        <p>{t('chats.discoveryLead')}</p>
-      </header>
+      {variant === 'panel' ? (
+        <header className="pepito-pet-discovery-head">
+          <h3>{t('chats.discoveryTitle')}</h3>
+          <p>{t('chats.discoveryLead')}</p>
+        </header>
+      ) : null}
       <div className="pepito-pet-discovery-chips" role="toolbar">
         {chips.map(({ id, label, Icon }) => (
           <button
@@ -277,7 +289,7 @@ export function PetDiscoveryPanel({ myPets, className = '', onSent }: Props) {
             data-testid={`pet-discovery-${id}`}
             onClick={() => void runMode(id)}
           >
-            <Icon size={16} strokeWidth={2.25} aria-hidden />
+            <Icon size={variant === 'bar' ? 14 : 16} strokeWidth={2.25} aria-hidden />
             {label}
           </button>
         ))}

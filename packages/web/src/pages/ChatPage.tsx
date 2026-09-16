@@ -44,6 +44,7 @@ import { ChatGiftBubble, PlaymateChatToolbar, PlaymateGiftSheet } from '../compo
 import { ConfirmModal } from '../components/ConfirmModal';
 import { EmojiPicker } from '../components/EmojiPicker';
 import { FindPlaymatePanel } from '../components/FindPlaymatePanel';
+import { ChatDiscoveryBar } from '../components/ChatDiscoveryBar';
 import {
   OwnerConsultPanel,
   shouldShowOwnerConsultCta,
@@ -297,9 +298,11 @@ function ConversationListPane({
   onDismiss: (item: InboxConversation) => void;
 }) {
   const { t } = useI18n();
+  const desktop = useIsDesktop();
   const isPlaymateHub = scope === 'owner';
   const panelPath = providerHomePath(scope);
   const HubCta = ownerConsult ? OwnerConsultPanel : FindPlaymatePanel;
+  const showMobileDiscovery = isPlaymateHub && !ownerConsult && !desktop;
   return (
     <aside className="tg-chat-list" aria-label={t('chats.listAria')}>
       <header className="tg-chat-list-head">
@@ -327,6 +330,8 @@ function ConversationListPane({
           </button>
         ) : null}
       </header>
+
+      {showMobileDiscovery ? <ChatDiscoveryBar onSent={onRefresh} /> : null}
 
       {error ? <p className="tg-error tg-error--inset">{error}</p> : null}
 
@@ -380,24 +385,11 @@ function ConversationListPane({
                 <ChatEmptyVisual />
                 <h2>{t('chats.emptyTitle')}</h2>
                 <p>{t('chats.pickLead')}</p>
-                <div className="tg-thread-empty__cta-wrap">
-                  <FindPlaymatePanel compact showRequests={false} onSent={onRefresh} />
-                </div>
               </>
             )}
           </div>
         ) : (
-          <>
-            {isPlaymateHub ? (
-              <div className="tg-chat-list-hub-cta" data-testid="chat-list-discovery">
-                {ownerConsult ? (
-                  <OwnerConsultPanel compact onSent={onRefresh} />
-                ) : (
-                  <FindPlaymatePanel compact showRequests={false} onSent={onRefresh} />
-                )}
-              </div>
-            ) : null}
-            <ul className="tg-chat-list-items">
+          <ul className="tg-chat-list-items">
             {conversations.map((c) => {
               const active = activeKey === c.key;
               const busy = busyKey === c.key;
@@ -527,7 +519,6 @@ function ConversationListPane({
               );
             })}
           </ul>
-          </>
         )}
       </div>
     </aside>
@@ -614,9 +605,12 @@ function ThreadEmptyState({
       </div>
     );
   }
+  // Mobile uses header Find CTA + discovery chip bar on the list pane.
   return (
-    <div className="tg-thread-empty tg-thread-empty--hub">
-      <FindPlaymatePanel onSent={onFindSent} />
+    <div className="tg-thread-empty tg-thread-empty--pepito">
+      <ChatEmptyVisual />
+      <h2>{t('chats.pickTitle')}</h2>
+      <p>{t('chats.pickLead')}</p>
     </div>
   );
 }
