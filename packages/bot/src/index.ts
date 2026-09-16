@@ -73,7 +73,11 @@ async function main(): Promise<void> {
       },
     });
     try {
-      if (
+      if (/inline keyboard expected/i.test(message)) {
+        await err.ctx.reply(
+          'منوی پایین در این نوع چت کار نمی‌کند. ربات را در چت خصوصی باز کن و /start بزن.'
+        );
+      } else if (
         message.includes('fetch failed') ||
         message.includes('ECONNREFUSED') ||
         message.includes('API ') ||

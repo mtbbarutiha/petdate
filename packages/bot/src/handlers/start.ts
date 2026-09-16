@@ -212,9 +212,43 @@ export async function handleWebPendingLoginConfirm(
   }
 }
 
+function isPrivateChat(ctx: Context): boolean {
+  return ctx.chat?.type === 'private';
+}
+
+function isReplyKeyboardRejected(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return /inline keyboard expected/i.test(msg);
+}
+
+function isApiUnavailableError(err: unknown): boolean {
+  const msg = err instanceof Error ? err.message : String(err);
+  return /fetch failed|ECONNREFUSED|AbortError|timeout|API\s|ENOTFOUND|EAI_AGAIN/i.test(msg);
+}
+
+/** Reply keyboards only work in private chats — channel/group/DM-to-channel reject them. */
+async function requirePrivateChat(ctx: Context): Promise<boolean> {
+  if (isPrivateChat(ctx)) return true;
+  const me = ctx.me?.username ? `https://t.me/${ctx.me.username}` : null;
+  await ctx
+    .reply(
+      [
+        'لطفاً ربات را در چت خصوصی باز کن و /start بزن.',
+        'منوی همبازی فقط در پیام خصوصی کار می‌کند.',
+        me ? `\n👉 ${me}?start=1` : '',
+      ]
+        .filter(Boolean)
+        .join('\n')
+    )
+    .catch(() => undefined);
+  return false;
+}
+
 export async function handleStart(ctx: Context): Promise<void> {
   const from = ctx.from;
   if (!from) return;
+
+  if (!(await requirePrivateChat(ctx))) return;
 
   const payload = startPayload(ctx);
   if (payload) {
@@ -421,11 +455,22 @@ export async function handleStart(ctx: Context): Promise<void> {
         'می‌تونی **چند نقش** انتخاب کنی.',
         'نقش‌ها رو از منو تیک بزن، بعد «✅ ثبت نقش‌ها» رو بزن:',
       ].join('\n');
-      const sent = await sendWelcomeLogo(ctx, caption, {
-        reply_markup: roleReplyKeyboard([]),
-      });
-      if (!sent) {
-        await ctx.reply(caption, { parse_mode: 'Markdown', reply_markup: roleReplyKeyboard([]) });
+      try {
+        const sent = await sendWelcomeLogo(ctx, caption, {
+          reply_markup: roleReplyKeyboard([]),
+        });
+        if (!sent) {
+          await ctx.reply(caption, { parse_mode: 'Markdown', reply_markup: roleReplyKeyboard([]) });
+        }
+      } catch (err) {
+        if (!isReplyKeyboardRejected(err)) throw err;
+        // Fallback: inline role picker (works even when reply keyboard is rejected).
+        const sent = await sendWelcomeLogo(ctx, caption, {
+          reply_markup: roleKeyboard([]),
+        });
+        if (!sent) {
+          await ctx.reply(caption, { parse_mode: 'Markdown', reply_markup: roleKeyboard([]) });
+        }
       }
       return;
     }
@@ -433,7 +478,23 @@ export async function handleStart(ctx: Context): Promise<void> {
     await sendWelcomeBack(ctx, user, name);
   } catch (error) {
     console.error('start failed:', error);
-    await ctx.reply('فعلاً سرور همبازی در دسترس نیست. چند لحظه بعد دوباره /start بزن.');
+    if (isReplyKeyboardRejected(error)) {
+      await ctx
+        .reply(
+          'منوی پایین در این نوع چت کار نمی‌کند. ربات را در چت خصوصی باز کن و دوباره /start بزن.'
+        )
+        .catch(() => undefined);
+      return;
+    }
+    if (isApiUnavailableError(error)) {
+      await ctx
+        .reply('فعلاً سرور همبازی در دسترس نیست. چند لحظه بعد دوباره /start بزن.')
+        .catch(() => undefined);
+      return;
+    }
+    await ctx
+      .reply('یک مشکل موقتی پیش اومد. چند لحظه بعد دوباره /start بزن.')
+      .catch(() => undefined);
   }
 }
 
