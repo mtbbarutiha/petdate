@@ -39,8 +39,8 @@ const PET_POOL: Array<{
   size: 'small' | 'medium' | 'large';
   colors: string[];
   names: string[];
-  /** English tags for unique photo fetch (breed-ish). */
-  tags: string;
+  /** dog.ceo breed path — cats leave this empty and use Cataas. */
+  ceo?: string;
 }> = [
   {
     species: 'dog',
@@ -48,7 +48,7 @@ const PET_POOL: Array<{
     size: 'medium',
     colors: ['قهوه‌ای', 'سفید-قهوه‌ای', 'مشکی'],
     names: ['بارون', 'جسی', 'لوکی', 'نیکو'],
-    tags: 'mixed-breed,dog',
+    ceo: 'mix',
   },
   {
     species: 'dog',
@@ -56,7 +56,7 @@ const PET_POOL: Array<{
     size: 'large',
     colors: ['سیاه-قهوه‌ای', 'sable'],
     names: ['رکس', 'ماکس', 'شاتو', 'کیان'],
-    tags: 'german-shepherd,dog',
+    ceo: 'german/shepherd',
   },
   {
     species: 'dog',
@@ -64,7 +64,7 @@ const PET_POOL: Array<{
     size: 'large',
     colors: ['کرم', 'خاکستری'],
     names: ['قهرمان', 'شیر', 'رستم', 'آرش'],
-    tags: 'livestock-guardian,dog',
+    ceo: 'ovcharka/caucasian',
   },
   {
     species: 'dog',
@@ -72,7 +72,7 @@ const PET_POOL: Array<{
     size: 'large',
     colors: ['سفید', 'کرم'],
     names: ['چوپان', 'گل', 'سفید'],
-    tags: 'shepherd,dog',
+    ceo: 'sheepdog/english',
   },
   {
     species: 'dog',
@@ -80,7 +80,7 @@ const PET_POOL: Array<{
     size: 'large',
     colors: ['کرم', 'طلایی'],
     names: ['تازی', 'باد', 'صحرا'],
-    tags: 'saluki,dog',
+    ceo: 'saluki',
   },
   {
     species: 'dog',
@@ -88,7 +88,7 @@ const PET_POOL: Array<{
     size: 'small',
     colors: ['نارنجی', 'کرم'],
     names: ['تدی', 'موچی', 'پام'],
-    tags: 'pomeranian,dog',
+    ceo: 'pomeranian',
   },
   {
     species: 'dog',
@@ -96,7 +96,7 @@ const PET_POOL: Array<{
     size: 'small',
     colors: ['سفید', 'کرم-سفید'],
     names: ['ملوس', 'کیتی', 'شیتی'],
-    tags: 'shih-tzu,dog',
+    ceo: 'shihtzu',
   },
   {
     species: 'dog',
@@ -104,7 +104,7 @@ const PET_POOL: Array<{
     size: 'small',
     colors: ['سفید'],
     names: ['برفی', 'مالی', 'پنبه'],
-    tags: 'maltese,dog',
+    ceo: 'maltese',
   },
   {
     species: 'dog',
@@ -112,7 +112,7 @@ const PET_POOL: Array<{
     size: 'small',
     colors: ['سفید', 'کرم'],
     names: ['پوفی', 'ابر', 'برفک'],
-    tags: 'spitz,dog',
+    ceo: 'samoyed',
   },
   {
     species: 'dog',
@@ -120,7 +120,7 @@ const PET_POOL: Array<{
     size: 'small',
     colors: ['قهوه‌ای', 'سفید-قهوه‌ای'],
     names: ['جک', 'تیکو', 'فندق'],
-    tags: 'terrier,dog',
+    ceo: 'terrier/yorkshire',
   },
   {
     species: 'dog',
@@ -128,7 +128,7 @@ const PET_POOL: Array<{
     size: 'large',
     colors: ['طلایی'],
     names: ['گلدن', 'ساندی', 'هانی'],
-    tags: 'golden-retriever,dog',
+    ceo: 'retriever/golden',
   },
   {
     species: 'dog',
@@ -136,7 +136,7 @@ const PET_POOL: Array<{
     size: 'large',
     colors: ['شکلاتی', 'مشکی', 'کرم'],
     names: ['لاب', 'کوکو', 'بلا'],
-    tags: 'labrador,dog',
+    ceo: 'labrador',
   },
   {
     species: 'dog',
@@ -144,7 +144,7 @@ const PET_POOL: Array<{
     size: 'large',
     colors: ['خاکستری-سفید'],
     names: ['لونا', 'سایه', 'برف'],
-    tags: 'husky,dog',
+    ceo: 'husky',
   },
   {
     species: 'dog',
@@ -152,7 +152,7 @@ const PET_POOL: Array<{
     size: 'large',
     colors: ['قهوه‌ای'],
     names: ['مالی', 'گارد', 'آتاش'],
-    tags: 'malinois,dog',
+    ceo: 'malinois',
   },
   {
     species: 'cat',
@@ -160,7 +160,6 @@ const PET_POOL: Array<{
     size: 'small',
     colors: ['خاکستری', 'نارنجی', 'سه‌رنگ'],
     names: ['پیشی', 'ملوس', 'نارنج'],
-    tags: 'domestic-shorthair,cat',
   },
   {
     species: 'cat',
@@ -168,7 +167,6 @@ const PET_POOL: Array<{
     size: 'small',
     colors: ['سفید', 'کرم'],
     names: ['شاهین', 'پرنسس', 'ابر'],
-    tags: 'persian-cat,cat',
   },
   {
     species: 'cat',
@@ -176,7 +174,6 @@ const PET_POOL: Array<{
     size: 'medium',
     colors: ['خاکستری'],
     names: ['دودی', 'میشا', 'گرافیت'],
-    tags: 'british-shorthair,cat',
   },
   {
     species: 'cat',
@@ -184,18 +181,28 @@ const PET_POOL: Array<{
     size: 'medium',
     colors: ['سفید', 'کرم'],
     names: ['کرکی', 'پشمک', 'برفی'],
-    tags: 'fluffy-cat,cat',
   },
 ];
 
-/**
- * One unique photo per pet. lock never reused across launch playmates.
- * Primary: loremflickr breed tags + unique lock. Fallback: picsum unique seed.
- */
-function uniquePetPhotoUrl(tags: string, unique: number): string {
-  const n = Math.abs(Math.floor(unique)) + 1;
-  return `https://loremflickr.com/800/800/${tags}?lock=${n}`;
-}
+/** Overflow dog.ceo paths if a breed list runs out. All real dogs. */
+const EXTRA_DOG_CEO = [
+  'mix',
+  'labrador',
+  'beagle',
+  'boxer',
+  'husky',
+  'pug',
+  'chihuahua',
+  'samoyed',
+  'akita',
+  'retriever/golden',
+  'german/shepherd',
+  'pomeranian',
+  'maltese',
+  'shihtzu',
+  'saluki',
+  'malinois',
+];
 
 function uniquePicsumUrl(kind: string, unique: number, size = 800): string {
   const n = Math.abs(Math.floor(unique)) + 1;
@@ -205,9 +212,28 @@ function uniquePicsumUrl(kind: string, unique: number, size = 800): string {
 const imageCache = new Map<string, Buffer>();
 /** SHA-1 of raw bytes — ensure no two launch pets share identical photo content. */
 const usedPetPhotoDigests = new Set<string>();
+const usedPhotoUrls = new Set<string>();
+const dogCeoUrlCache = new Map<string, string[]>();
+let catUrlPool: string[] | null = null;
 
 function digestOf(buf: Buffer): string {
   return createHash('sha1').update(buf).digest('hex');
+}
+
+function isStillPhotoUrl(url: string): boolean {
+  const path = url.split('?')[0]!.toLowerCase();
+  if (/\.(mp4|webm|mov|gif)$/.test(path)) return false;
+  return /\.(jpe?g|png|webp)$/.test(path) || /images\.dog\.ceo|cataas\.com\/cat|thecatapi|cdn2\.thecatapi|placedog\.net/.test(path);
+}
+
+function isJpegOrPng(buf: Buffer): boolean {
+  if (buf.length < 12) return false;
+  if (buf[0] === 0xff && buf[1] === 0xd8) return true; // JPEG
+  if (buf[0] === 0x89 && buf[1] === 0x50 && buf[2] === 0x4e && buf[3] === 0x47) return true; // PNG
+  if (buf.slice(0, 4).toString('ascii') === 'RIFF' && buf.slice(8, 12).toString('ascii') === 'WEBP') {
+    return true;
+  }
+  return false;
 }
 
 async function fetchImage(url: string): Promise<Buffer> {
@@ -218,38 +244,177 @@ async function fetchImage(url: string): Promise<Buffer> {
     redirect: 'follow',
   });
   if (!res.ok) throw new Error(`fetch ${res.status} ${url}`);
+  const ctype = (res.headers.get('content-type') || '').toLowerCase();
+  if (ctype.includes('video') || ctype.includes('gif')) throw new Error(`not a still image ${url}`);
   const buf = Buffer.from(await res.arrayBuffer());
   if (buf.length < 800) throw new Error(`tiny image ${url}`);
+  if (!isJpegOrPng(buf)) throw new Error(`not jpeg/png ${url}`);
   imageCache.set(url, buf);
   return buf;
 }
 
-/**
- * Always unique bytes across the seed/refresh run.
- * Tries loremflickr locks, then picsum seeds, until digest is unseen.
- */
-async function fetchUniquePetImage(tags: string, unique: number): Promise<Buffer> {
-  const attempts: string[] = [];
-  for (let i = 0; i < 12; i++) {
-    const lock = unique + i * 10_000;
-    attempts.push(uniquePetPhotoUrl(tags, lock));
-  }
-  for (let i = 0; i < 8; i++) {
-    attempts.push(uniquePicsumUrl('pet', unique + i * 10_000 + 50_000, 800));
-  }
-  let lastErr: Error | null = null;
-  for (const url of attempts) {
+async function fetchJson<T>(url: string): Promise<T> {
+  const res = await fetch(url, {
+    headers: { 'User-Agent': 'PetDateLaunchSeed/1.0 (playmate catalog)', Accept: 'application/json' },
+    redirect: 'follow',
+  });
+  if (!res.ok) throw new Error(`json ${res.status} ${url}`);
+  return (await res.json()) as T;
+}
+
+function ceoPathForBreed(breed: string): string {
+  const hit = PET_POOL.find((p) => p.breed === breed && p.species === 'dog');
+  return hit?.ceo || 'mix';
+}
+
+async function dogCeoImageUrls(breedPath: string): Promise<string[]> {
+  const cached = dogCeoUrlCache.get(breedPath);
+  if (cached) return cached;
+  const data = await fetchJson<{ status?: string; message?: string[] | string }>(
+    `https://dog.ceo/api/breed/${breedPath}/images`
+  );
+  const list = Array.isArray(data.message) ? data.message : [];
+  const urls = list.filter((u) => typeof u === 'string' && isStillPhotoUrl(u));
+  dogCeoUrlCache.set(breedPath, urls);
+  return urls;
+}
+
+async function loadCatUrlPool(): Promise<string[]> {
+  if (catUrlPool) return catUrlPool;
+  const urls: string[] = [];
+  const seen = new Set<string>();
+  for (let skip = 0; skip < 800; skip += 100) {
     try {
-      const buf = await fetchImage(url);
-      const dig = digestOf(buf);
-      if (usedPetPhotoDigests.has(dig)) continue;
-      usedPetPhotoDigests.add(dig);
-      return buf;
+      const rows = await fetchJson<Array<{ id?: string; mimetype?: string }>>(
+        `https://cataas.com/api/cats?limit=100&skip=${skip}`
+      );
+      if (!Array.isArray(rows) || !rows.length) break;
+      for (const row of rows) {
+        const mime = String(row.mimetype || '').toLowerCase();
+        if (mime && !mime.includes('jpeg') && !mime.includes('jpg') && !mime.includes('png')) continue;
+        const id = String(row.id || '').trim();
+        if (!id || seen.has(id)) continue;
+        seen.add(id);
+        urls.push(`https://cataas.com/cat/${id}`);
+      }
+      if (rows.length < 100) break;
+    } catch {
+      break;
+    }
+  }
+  for (let page = 0; page < 20; page++) {
+    try {
+      const rows = await fetchJson<Array<{ url?: string }>>(
+        `https://api.thecatapi.com/v1/images/search?limit=10&page=${page}&order=ASC&mime_types=jpg,png`
+      );
+      if (!Array.isArray(rows) || !rows.length) break;
+      for (const row of rows) {
+        const u = String(row.url || '');
+        if (!u || !isStillPhotoUrl(u) || seen.has(u)) continue;
+        seen.add(u);
+        urls.push(u);
+      }
+    } catch {
+      break;
+    }
+  }
+  catUrlPool = urls;
+  return urls;
+}
+
+async function takeUnusedUrl(candidates: string[], startAt: number): Promise<string | null> {
+  if (!candidates.length) return null;
+  const n = candidates.length;
+  const origin = Math.abs(startAt) % n;
+  for (let i = 0; i < n; i++) {
+    const url = candidates[(origin + i) % n]!;
+    if (usedPhotoUrls.has(url)) continue;
+    usedPhotoUrls.add(url);
+    return url;
+  }
+  return null;
+}
+
+async function claimPetPhotoBuffer(url: string): Promise<Buffer | null> {
+  try {
+    const buf = await fetchImage(url);
+    const dig = digestOf(buf);
+    if (usedPetPhotoDigests.has(dig)) return null;
+    usedPetPhotoDigests.add(dig);
+    return buf;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Real dog or cat photos only — dog.ceo + Cataas/TheCatAPI.
+ * Never loremflickr/picsum (those returned hangers, furniture, etc.).
+ */
+async function fetchUniquePetImage(
+  species: 'dog' | 'cat',
+  breed: string,
+  unique: number
+): Promise<Buffer> {
+  const primaryPools: string[][] = [];
+  if (species === 'cat') {
+    primaryPools.push(await loadCatUrlPool());
+  } else {
+    primaryPools.push(await dogCeoImageUrls(ceoPathForBreed(breed)));
+  }
+
+  let lastErr: Error | null = null;
+  const tryPools = async (pools: string[][]): Promise<Buffer | null> => {
+    for (const pool of pools) {
+      for (let n = 0; n < 6; n++) {
+        const url = await takeUnusedUrl(pool, unique + n * 17);
+        if (!url) break;
+        const buf = await claimPetPhotoBuffer(url);
+        if (buf) return buf;
+      }
+    }
+    return null;
+  };
+
+  const hit = await tryPools(primaryPools);
+  if (hit) return hit;
+
+  if (species === 'dog') {
+    const extra: string[][] = [];
+    const primary = ceoPathForBreed(breed);
+    for (const path of EXTRA_DOG_CEO) {
+      if (path === primary) continue;
+      extra.push(await dogCeoImageUrls(path));
+    }
+    const extraHit = await tryPools(extra);
+    if (extraHit) return extraHit;
+    const placedog = `https://placedog.net/800/800?id=${Math.abs(Math.floor(unique)) + 1}`;
+    if (!usedPhotoUrls.has(placedog)) {
+      usedPhotoUrls.add(placedog);
+      const buf = await claimPetPhotoBuffer(placedog);
+      if (buf) return buf;
+    }
+  }
+
+  for (let i = 0; i < 12; i++) {
+    try {
+      const url =
+        species === 'cat'
+          ? (
+              await fetchJson<Array<{ url?: string }>>(
+                'https://api.thecatapi.com/v1/images/search?limit=1&mime_types=jpg,png'
+              )
+            )[0]?.url
+          : (await fetchJson<{ message?: string }>('https://dog.ceo/api/breeds/image/random')).message;
+      if (!url || !isStillPhotoUrl(url) || usedPhotoUrls.has(url)) continue;
+      usedPhotoUrls.add(url);
+      const buf = await claimPetPhotoBuffer(url);
+      if (buf) return buf;
     } catch (err) {
       lastErr = err as Error;
     }
   }
-  throw lastErr ?? new Error(`no unique pet photo for ${tags}/${unique}`);
+  throw lastErr ?? new Error(`no unique ${species} photo for ${breed}/${unique}`);
 }
 
 async function fetchUniquePersonImage(gender: 'male' | 'female', unique: number): Promise<Buffer> {
@@ -268,12 +433,12 @@ function pick<T>(arr: readonly T[], i: number): T {
   return arr[Math.abs(i) % arr.length]!;
 }
 
-function tagsForBreed(breed: string): string {
-  const hit = PET_POOL.find((p) => p.breed === breed);
-  if (hit) return hit.tags;
-  return breed.includes('گربه') || breed.includes('پرشین') || breed.includes('موکوتاه')
-    ? 'cat'
-    : 'dog';
+function resetPetPhotoCaches(): void {
+  usedPetPhotoDigests.clear();
+  usedPhotoUrls.clear();
+  imageCache.clear();
+  dogCeoUrlCache.clear();
+  catUrlPool = null;
 }
 
 export type LaunchPlaymateSeedResult = {
@@ -292,8 +457,7 @@ export type LaunchPlaymatePhotoRefreshResult = {
 /** Re-download a distinct photo for every existing launch playmate pet. */
 export async function refreshLaunchPlaymatePetPhotos(): Promise<LaunchPlaymatePhotoRefreshResult> {
   getDb();
-  usedPetPhotoDigests.clear();
-  imageCache.clear();
+  resetPetPhotoCaches();
   const d = getDb();
   const rows = d
     .prepare(
@@ -318,9 +482,9 @@ export async function refreshLaunchPlaymatePetPhotos(): Promise<LaunchPlaymatePh
   for (let i = 0; i < rows.length; i++) {
     const row = rows[i]!;
     const unique = Number(row.pet_id);
-    const tags = tagsForBreed(String(row.breed || '')) || (row.species === 'cat' ? 'cat' : 'dog');
+    const species: 'dog' | 'cat' = row.species === 'cat' ? 'cat' : 'dog';
     try {
-      const buf = await fetchUniquePetImage(tags, unique);
+      const buf = await fetchUniquePetImage(species, String(row.breed || ''), unique);
       const saved = await savePetPhoto({
         ownerId: Number(row.owner_id),
         originalName: `pet-${row.pet_id}.jpg`,
@@ -348,8 +512,7 @@ export async function seedLaunchPlaymates(opts?: {
   provinces?: readonly string[];
 }): Promise<LaunchPlaymateSeedResult> {
   getDb();
-  usedPetPhotoDigests.clear();
-  imageCache.clear();
+  resetPetPhotoCaches();
   const per = opts?.perProvince ?? PER_PROVINCE;
   const provinces = opts?.provinces ?? IRAN_PROVINCES;
   let created = 0;
@@ -446,7 +609,7 @@ export async function seedLaunchPlaymates(opts?: {
           city,
           neighborhood,
         });
-        const petBuf = await fetchUniquePetImage(petKind.tags, pet.id);
+        const petBuf = await fetchUniquePetImage(petKind.species, petKind.breed, pet.id);
         const petPhoto = await savePetPhoto({
           ownerId: user.id,
           originalName: `pet-${pet.id}.jpg`,
