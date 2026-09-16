@@ -112,7 +112,6 @@ async function main(): Promise<void> {
       'business_connection',
       'edited_message',
       'my_chat_member',
-      'chat_member',
     ],
     onStart: () => console.log(`   API: ${config.apiUrl} | Web: ${config.webUrl}`),
   });

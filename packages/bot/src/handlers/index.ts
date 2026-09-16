@@ -1,7 +1,13 @@
 import type { Bot, Context } from 'grammy';
 import type { PetGender, PetSize, UserGender, UserRole } from '@petdate/shared';
 import { ROLE_CONFIRM_LABEL, USER_ROLE_LABELS, USER_ROLES } from '@petdate/shared';
-import { forceJoinMiddleware, missingChannels, safeAnswerCallback, sendForceJoinPrompt } from '../force-join';
+import {
+  forceJoinMiddleware,
+  invalidateMembershipCache,
+  missingChannels,
+  safeAnswerCallback,
+  sendForceJoinPrompt,
+} from '../force-join';
 import {
   MENU_LABELS,
   MAIN_MENU_ALIASES,
@@ -292,6 +298,7 @@ export function registerHandlers(bot: Bot): void {
 
   bot.callbackQuery('join:check', async (ctx) => {
     try {
+      if (ctx.from?.id) invalidateMembershipCache(ctx.from.id);
       const { missing } = await missingChannels(ctx);
       if (missing.length === 0) {
         await safeAnswerCallback(ctx, { text: 'عضویت تأیید شد ✅' });
@@ -307,7 +314,7 @@ export function registerHandlers(bot: Bot): void {
         text: 'هنوز عضو کانال نشدی',
         show_alert: true,
       });
-      await sendForceJoinPrompt(ctx, missing);
+      await sendForceJoinPrompt(ctx, missing, { allowNewMessage: false });
     } catch (err) {
       console.error('join:check failed:', err);
       await safeAnswerCallback(ctx, { text: 'خطا — دوباره /start بزن', show_alert: true });

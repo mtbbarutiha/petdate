@@ -453,6 +453,7 @@ npx tsx "$ROOT/packages/bot/src/handlers/help.selftest.ts"
 npx tsx "$ROOT/packages/bot/src/handlers/profile-gap-fill.selftest.ts"
 npx tsx "$ROOT/packages/bot/src/handlers/owner-profile-consult.selftest.ts"
 npx tsx "$ROOT/packages/bot/src/bot-update-mode.selftest.ts"
+npx tsx "$ROOT/packages/bot/src/force-join.selftest.ts"
 
 # SQLite cascade (uses temp/local DB via API helpers — not production path)
 run src/services/user-delete-cascade.selftest.ts
