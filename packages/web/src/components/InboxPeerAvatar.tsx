@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Stethoscope } from 'lucide-react';
 import type { UserGender } from '@petdate/shared';
 import { resolvePublicAvatarUrl } from '../lib/api';
@@ -30,6 +30,11 @@ export function InboxPeerAvatar({
 }) {
   const [failed, setFailed] = useState(false);
   const resolved = resolvePublicAvatarUrl(avatarUrl, { gender });
+  // Soft inbox refresh can swap a broken URL for a good one on the same row key —
+  // clear the sticky onError latch whenever the resolved src changes.
+  useEffect(() => {
+    setFailed(false);
+  }, [resolved]);
   const showImg = Boolean(resolved) && !failed;
   const initials = initialsOf(name);
 
@@ -46,6 +51,8 @@ export function InboxPeerAvatar({
           width={size}
           height={size}
           loading="lazy"
+          decoding="async"
+          referrerPolicy="no-referrer"
           onError={() => setFailed(true)}
         />
       </span>

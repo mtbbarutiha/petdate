@@ -21,6 +21,8 @@ export interface Pet {
   neighborhood: string;
   ownerName: string;
   ownerId: number;
+  /** Owner still photo when API provides it (inbox shows human face next to owner title). */
+  ownerAvatarUrl?: string;
   imageUrl: string;
   emoji: string;
   bio?: string;
