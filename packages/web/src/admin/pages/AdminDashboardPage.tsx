@@ -184,26 +184,36 @@ type ActivityRow = {
 
 const PAY_COLORS = ['#5c4d91', '#15cca0', '#f59e0b', '#0ea5e9', '#ec4899'];
 
-type Standing = 'در مسیر درست' | 'نیازمند تلاش بیشتر' | 'ضعیف';
+type Standing = 'در مسیر درست' | 'نیازمند تلاش بیشتر' | 'ضعیف' | 'بدون داده';
 type DashKpi = { key: string; label: string; value: number; target: number; unit: string; standing: Standing; pct: number };
 
 const STANDING_COLOR: Record<string, string> = {
   'در مسیر درست': '#15cca0',
   'نیازمند تلاش بیشتر': '#fd961e',
   ضعیف: '#c62828',
+  'بدون داده': '#64748b',
 };
 
 function standingOf(pct: number): Standing {
+  if (pct <= 0) return 'بدون داده';
   if (pct >= 90) return 'در مسیر درست';
   if (pct >= 70) return 'نیازمند تلاش بیشتر';
   return 'ضعیف';
 }
 
 function makeKpi(key: string, label: string, value: number, target: number, unit: string, invert = false): DashKpi {
-  const safeTarget = Math.max(1, target);
-  const raw = invert ? (value <= 0 ? 100 : Math.max(0, 100 - (value / safeTarget) * 100)) : (value / safeTarget) * 100;
+  const n = Number(value) || 0;
+  const t = Number(target) || 0;
+  if (!invert && n <= 0 && t <= 0) {
+    return { key, label, value: 0, target: 0, unit, pct: 0, standing: 'بدون داده' };
+  }
+  if (invert && n <= 0) {
+    return { key, label, value: 0, target: 0, unit, pct: 100, standing: 'در مسیر درست' };
+  }
+  const safeTarget = Math.max(1, t);
+  const raw = invert ? Math.max(0, 100 - (n / safeTarget) * 100) : (n / safeTarget) * 100;
   const pct = Math.round(Math.max(0, Math.min(150, raw)));
-  return { key, label, value, target: safeTarget, unit, pct, standing: standingOf(pct) };
+  return { key, label, value: n, target: t, unit, pct, standing: standingOf(pct) };
 }
 
 function GaugeSemi({ pct, standing }: { pct: number; standing: string }) {
@@ -343,20 +353,23 @@ export function AdminDashboardPage() {
   const healthKpis = useMemo(() => {
     if (!s || !m) return [] as DashKpi[];
     return [
-      makeKpi('users', 'کاربران فعال پلتفرم', s.users, Math.max(s.users, 100), 'نفر'),
-      makeKpi('pets', 'پت‌های ثبت‌شده', s.pets, Math.max(s.pets, 80), 'پت'),
-      makeKpi('playdates', 'همبازی باز', s.playdatesPending, Math.max(8, Math.round(s.playdatesPending * 1.2) || 8), 'مورد', true),
-      makeKpi('consults', 'مشاوره باز', s.vetConsultsOpen, Math.max(6, Math.round(s.vetConsultsOpen * 1.2) || 6), 'مورد', true),
-      makeKpi('sales', 'لید فعال فروش', m.sales.activeLeads, Math.max(m.sales.activeLeads, 20), 'لید'),
-      makeKpi('crm_tickets', 'تیکت باز باشگاه', m.crm.openTickets, Math.max(10, Math.round(m.crm.openTickets * 1.15) || 10), 'تیکت', true),
-      makeKpi('sla', 'نقض SLA', m.crm.breachedSla, Math.max(3, m.crm.breachedSla || 3), 'مورد', true),
-      makeKpi('hr', 'درخواست باز HR', m.hr.openRequests, Math.max(5, Math.round(m.hr.openRequests * 1.2) || 5), 'درخواست', true),
+      makeKpi('users', 'کاربران فعال پلتفرم', s.users, s.users, 'نفر'),
+      makeKpi('pets', 'پت‌های ثبت‌شده', s.pets, s.pets, 'پت'),
+      makeKpi('playdates', 'همبازی باز', s.playdatesPending, s.playdatesPending, 'مورد', true),
+      makeKpi('consults', 'مشاوره باز', s.vetConsultsOpen, s.vetConsultsOpen, 'مورد', true),
+      makeKpi('sales', 'لید فعال فروش', m.sales.activeLeads, m.sales.activeLeads, 'لید'),
+      makeKpi('crm_tickets', 'تیکت باز باشگاه', m.crm.openTickets, m.crm.openTickets, 'تیکت', true),
+      makeKpi('sla', 'نقض SLA', m.crm.breachedSla, m.crm.breachedSla, 'مورد', true),
+      makeKpi('hr', 'درخواست باز HR', m.hr.openRequests, m.hr.openRequests, 'درخواست', true),
     ];
   }, [s, m]);
 
   const overallPct = useMemo(() => {
-    if (!healthKpis.length) return 0;
-    return Math.round(healthKpis.reduce((a, k) => a + Math.min(100, k.pct), 0) / healthKpis.length);
+    // Only growth metrics — empty queues must not inflate health to a fake %.
+    const growth = healthKpis.filter((k) => k.key === 'users' || k.key === 'pets' || k.key === 'sales');
+    if (!growth.length) return 0;
+    if (growth.every((k) => k.value <= 0)) return 0;
+    return Math.round(growth.reduce((a, k) => a + Math.min(100, k.pct), 0) / growth.length);
   }, [healthKpis]);
   const overallStanding = standingOf(overallPct);
   const weakPoints = healthKpis.filter((k) => k.standing === 'ضعیف');

@@ -374,12 +374,23 @@ export const adminPlatform = {
            COALESCE(SUM(coins), 0) AS coins,
            COALESCE(SUM(wallet_toman), 0) AS toman,
            COALESCE(SUM(wallet_stars), 0) AS stars
-         FROM users`
+         FROM users
+         WHERE COALESCE(is_active, 1) = 1
+           AND COALESCE(name, '') NOT LIKE '[حذف‌شده%'
+           AND COALESCE(telegram_id, '') NOT LIKE 'petdate_%'
+           AND COALESCE(telegram_id, '') NOT LIKE 'fake_owner_%'
+           AND COALESCE(telegram_id, '') NOT IN ('demo_host', 'demo_player')`
       )
       .get() as { coins: number; toman: number; stars: number };
     const logStats = dbService.getAppErrorLogStats();
+    const liveUsersSql = `SELECT COUNT(*) as c FROM users
+         WHERE COALESCE(is_active, 1) = 1
+           AND COALESCE(name, '') NOT LIKE '[حذف‌شده%'
+           AND COALESCE(telegram_id, '') NOT LIKE 'petdate_%'
+           AND COALESCE(telegram_id, '') NOT LIKE 'fake_owner_%'
+           AND COALESCE(telegram_id, '') NOT IN ('demo_host', 'demo_player')`;
     return {
-      users: q('SELECT COUNT(*) as c FROM users'),
+      users: q(liveUsersSql),
       pets: q('SELECT COUNT(*) as c FROM pets'),
       playdates: q('SELECT COUNT(*) as c FROM playdate_requests'),
       playdatesPending: q(
