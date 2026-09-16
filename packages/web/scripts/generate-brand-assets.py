@@ -17,8 +17,8 @@ Outputs:
   - brand/petdate-og.png, brand/petdate-og.jpg  (FULL mother wordmark)
   - brand/petdate-channel.png, brand/petdate-banner.jpg  (FULL mother wordmark)
   - packages/api/assets/brand/petdate-email-logo.png  (FULL mother wordmark)
-  - logo-assets/telegram/bot-profile-*.jpg   (mark-only, circle-crop safe)
-  - logo-assets/telegram/panel-profile-*.jpg (FULL mother wordmark)
+  - logo-assets/telegram/bot-profile-*.jpg   (mark-only, pink wash, circle-crop safe)
+  - logo-assets/telegram/panel-profile-*.jpg (stacked mark + «Pet Date», lavender wash)
   - packages/bot/assets/bot-profile.jpg + welcome-logo.jpg  (runtime copies)
 
 PWA / Home Screen policy (Mohammad):
@@ -51,9 +51,14 @@ SOFT = (244, 244, 247, 255)
 TRANSPARENT = (0, 0, 0, 0)
 OG_TOP = (252, 240, 248, 255)
 OG_BOTTOM = (244, 244, 247, 255)
-# Soft pink→lavender wash — readable on Telegram's dark/light circular crop
-TG_TOP = (255, 236, 245, 255)
-TG_BOTTOM = (244, 244, 250, 255)
+# Soft pink wash for bot (mark-only) — warmer, app-icon feel
+TG_BOT_TOP = (255, 228, 240, 255)
+TG_BOT_BOTTOM = (252, 244, 248, 255)
+# Cooler lavender wash for panel (stacked mother) — distinct from bot
+TG_PANEL_TOP = (244, 240, 255, 255)
+TG_PANEL_BOTTOM = (248, 246, 252, 255)
+TG_TOP = TG_BOT_TOP
+TG_BOTTOM = TG_BOT_BOTTOM
 TELEGRAM_SIZES = (512, 640, 1024)
 
 
@@ -116,6 +121,81 @@ def extract_mark(logo: Image.Image) -> Image.Image:
             if rr + gg + bb < 45:
                 mp[x, y] = (0, 0, 0, 0)
     return mark
+
+
+def extract_wordmark(logo: Image.Image) -> Image.Image:
+    """Crop the «Pet Date» type to the right of the mark gap (from لوگو مادر)."""
+    w, h = logo.size
+    pixels = logo.load()
+    col_counts: list[int] = []
+    for x in range(w):
+        c = 0
+        for y in range(h):
+            r, g, b, a = pixels[x, y]
+            if a >= 20 and r + g + b >= 40:
+                c += 1
+        col_counts.append(c)
+
+    start = next(i for i, c in enumerate(col_counts) if c > 5)
+    empty_run = 0
+    gap_end = None
+    for i in range(start, w):
+        if col_counts[i] < 3:
+            empty_run += 1
+        else:
+            if empty_run >= 8:
+                gap_end = i
+                break
+            empty_run = 0
+    if gap_end is None:
+        gap_end = start + (w - start) // 3
+
+    mxs: list[int] = []
+    mys: list[int] = []
+    for y in range(h):
+        for x in range(gap_end, w):
+            r, g, b, a = pixels[x, y]
+            if a >= 20 and r + g + b >= 40:
+                mxs.append(x)
+                mys.append(y)
+    if not mxs:
+        return logo.crop((gap_end, 0, w, h)).copy()
+
+    pad = 2
+    left = max(gap_end, min(mxs) - pad)
+    top = max(0, min(mys) - pad)
+    right = min(w, max(mxs) + pad + 1)
+    bottom = min(h, max(mys) + pad + 1)
+    word = logo.crop((left, top, right, bottom)).copy()
+    wp = word.load()
+    for y in range(word.size[1]):
+        for x in range(word.size[0]):
+            rr, gg, bb, aa = wp[x, y]
+            if rr + gg + bb < 45:
+                wp[x, y] = (0, 0, 0, 0)
+    return word
+
+
+def make_stacked_mother(logo: Image.Image) -> Image.Image:
+    """Vertical stack: mark above «Pet Date» — circle-crop safe for channel/panel avatar."""
+    mark = extract_mark(logo)
+    word = extract_wordmark(logo)
+    target_w = 720
+    ms = target_w / mark.size[0]
+    mw, mh = max(1, int(mark.size[0] * ms)), max(1, int(mark.size[1] * ms))
+    mark_r = mark.resize((mw, mh), Image.Resampling.LANCZOS)
+    ws = target_w / word.size[0]
+    ww, wh = max(1, int(word.size[0] * ws)), max(1, int(word.size[1] * ws))
+    word_r = word.resize((int(ww * 0.92), int(wh * 0.92)), Image.Resampling.LANCZOS)
+    gap = 36
+    side = max(mark_r.size[0], word_r.size[0]) + 24
+    height = mark_r.size[1] + gap + word_r.size[1] + 24
+    canvas = Image.new("RGBA", (side, height), (0, 0, 0, 0))
+    canvas.alpha_composite(mark_r, ((side - mark_r.size[0]) // 2, 12))
+    canvas.alpha_composite(
+        word_r, ((side - word_r.size[0]) // 2, 12 + mark_r.size[1] + gap)
+    )
+    return canvas
 
 
 def fit_on_canvas(
@@ -194,13 +274,15 @@ def make_telegram_avatar(
     size: int,
     *,
     content_ratio: float,
+    top: tuple[int, int, int, int] = TG_BOT_TOP,
+    bottom: tuple[int, int, int, int] = TG_BOT_BOTTOM,
 ) -> Image.Image:
     """Square JPG-ready avatar with padding so Telegram's circular crop keeps the mark.
 
     Telegram profile photos are shown as circles; keep content inside ~62–72% of
     the square so dog/cat ears and wordmark edges are not clipped.
     """
-    under = vertical_gradient((size, size), TG_TOP, TG_BOTTOM)
+    under = vertical_gradient((size, size), top, bottom)
     overlay = fit_on_canvas(
         asset, (size, size), bg=(0, 0, 0, 0), content_ratio=content_ratio
     )
@@ -214,25 +296,37 @@ def save_jpg(im: Image.Image, path: Path, *, quality: int = 92) -> None:
 
 
 def write_telegram_assets(logo: Image.Image, mark: Image.Image) -> list[Path]:
-    """Bot = mark-only; panel/channel = full mother wordmark. Also sync bot runtime JPGs."""
+    """Bot = mark-only (pink wash); panel = stacked mother wordmark (lavender wash)."""
     TELEGRAM_DIR.mkdir(parents=True, exist_ok=True)
     BOT_ASSETS.mkdir(parents=True, exist_ok=True)
     written: list[Path] = []
+    stacked = make_stacked_mother(logo)
 
     # BotFather / @Petdatebot avatar — mark only (no «Pet Date» type)
     bot_by_size: dict[int, Path] = {}
     for size in TELEGRAM_SIZES:
         # ~0.68 keeps dog/cat ears inside the circular crop with comfortable padding
-        avatar = make_telegram_avatar(mark, size, content_ratio=0.68)
+        avatar = make_telegram_avatar(
+            mark,
+            size,
+            content_ratio=0.68,
+            top=TG_BOT_TOP,
+            bottom=TG_BOT_BOTTOM,
+        )
         dest = TELEGRAM_DIR / f"bot-profile-{size}.jpg"
         save_jpg(avatar, dest)
         bot_by_size[size] = dest
         written.append(dest)
 
-    # Panel / channel / @petdating — full horizontal mother logo
+    # Panel / channel / @petdating — stacked mark + «Pet Date» (circle-crop safe)
     for size in TELEGRAM_SIZES:
-        # Wide wordmark uses most of the horizontal diameter; vertical stays padded
-        avatar = make_telegram_avatar(logo, size, content_ratio=0.82)
+        avatar = make_telegram_avatar(
+            stacked,
+            size,
+            content_ratio=0.72,
+            top=TG_PANEL_TOP,
+            bottom=TG_PANEL_BOTTOM,
+        )
         dest = TELEGRAM_DIR / f"panel-profile-{size}.jpg"
         save_jpg(avatar, dest)
         written.append(dest)
