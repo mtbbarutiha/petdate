@@ -41,6 +41,7 @@ export type DemoSeedCleanupCounts = {
   salesActivities: number;
   salesCustomers: number;
   salesOrders: number;
+  salesTickets: number;
   crmCustomers: number;
   crmOrders: number;
   crmInteractions: number;
@@ -75,6 +76,7 @@ const EMPTY_COUNTS: DemoSeedCleanupCounts = {
   salesActivities: 0,
   salesCustomers: 0,
   salesOrders: 0,
+  salesTickets: 0,
   crmCustomers: 0,
   crmOrders: 0,
   crmInteractions: 0,
@@ -245,6 +247,21 @@ function collectTargets() {
   };
 }
 
+function deleteSeedSalesTickets(): number {
+  if (!tableExists('sales_tickets')) return 0;
+  const info = getDb()
+    .prepare(
+      `DELETE FROM sales_tickets
+       WHERE title LIKE '%SEED%'
+          OR desc_text LIKE '%SEED%'
+          OR desc_text LIKE '%تیکت نمونه%'
+          OR desc_text LIKE '%تکمیل badge%'
+          OR desc_text LIKE '%باگ ورود%'`
+    )
+    .run();
+  return Number(info.changes ?? 0);
+}
+
 function previewCounts(): DemoSeedCleanupCounts {
   const d = getDb();
   const t = collectTargets();
@@ -310,6 +327,22 @@ function previewCounts(): DemoSeedCleanupCounts {
     salesActivities: countByIds('sales_activities', 'item_id', t.salesItemIds),
     salesCustomers: t.salesCustomerIds.length,
     salesOrders: countByIds('sales_orders', 'customer_id', t.salesCustomerIds),
+    salesTickets: tableExists('sales_tickets')
+      ? Number(
+          (
+            getDb()
+              .prepare(
+                `SELECT COUNT(*) as c FROM sales_tickets
+                 WHERE title LIKE '%SEED%'
+                    OR desc_text LIKE '%SEED%'
+                    OR desc_text LIKE '%تیکت نمونه%'
+                    OR desc_text LIKE '%تکمیل badge%'
+                    OR desc_text LIKE '%باگ ورود%'`
+              )
+              .get() as { c: number }
+          )?.c ?? 0
+        )
+      : 0,
     crmCustomers: t.crmCustomerIds.length,
     crmOrders: countByIds('crm_orders', 'customer_id', t.crmCustomerIds),
     crmInteractions: countByIds('crm_interactions', 'customer_id', t.crmCustomerIds),
@@ -351,6 +384,7 @@ export function applyDemoSeedCleanup(): {
   deleted.salesItems = deleteByIds('sales_items', 'id', t.salesItemIds);
   deleted.salesOrders = deleteByIds('sales_orders', 'customer_id', t.salesCustomerIds);
   deleted.salesCustomers = deleteByIds('sales_customers', 'id', t.salesCustomerIds);
+  deleted.salesTickets = deleteSeedSalesTickets();
 
   deleted.crmSurveys = deleteByIds('crm_surveys', 'customer_id', t.crmCustomerIds);
   deleted.crmReferrals = deleteByIds('crm_referrals', 'customer_id', t.crmCustomerIds);

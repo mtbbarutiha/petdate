@@ -52,6 +52,11 @@ const WIPE_TABLES = [
   'sales_items',
   'sales_orders',
   'sales_customers',
+  'sales_tickets',
+  'sales_payments',
+  'sales_surveys',
+  'sales_messages',
+  'sales_goals',
   'pet_purchase_leads',
   // Social / consults / games (user-generated)
   'playdate_chat_tg_refs',
