@@ -3,6 +3,7 @@
  * Idempotent via telegram_id launch_pm_{pp}_{nn}. Photos stored locally.
  * Never runs on boot — call seedLaunchPlaymates() from the CLI script.
  */
+import { createHash } from 'crypto';
 import { IRAN_CITIES_BY_PROVINCE, IRAN_PROVINCES } from '@petdate/shared';
 import { getDb, dbService } from './db';
 import { saveUserAvatar } from './services/user-avatar-store';
@@ -38,7 +39,8 @@ const PET_POOL: Array<{
   size: 'small' | 'medium' | 'large';
   colors: string[];
   names: string[];
-  photo: string;
+  /** English tags for unique photo fetch (breed-ish). */
+  tags: string;
 }> = [
   {
     species: 'dog',
@@ -46,7 +48,7 @@ const PET_POOL: Array<{
     size: 'medium',
     colors: ['قهوه‌ای', 'سفید-قهوه‌ای', 'مشکی'],
     names: ['بارون', 'جسی', 'لوکی', 'نیکو'],
-    photo: 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?auto=format&fit=crop&w=800&q=80',
+    tags: 'mixed-breed,dog',
   },
   {
     species: 'dog',
@@ -54,7 +56,7 @@ const PET_POOL: Array<{
     size: 'large',
     colors: ['سیاه-قهوه‌ای', 'sable'],
     names: ['رکس', 'ماکس', 'شاتو', 'کیان'],
-    photo: 'https://images.unsplash.com/photo-1568572933382-74d440642117?auto=format&fit=crop&w=800&q=80',
+    tags: 'german-shepherd,dog',
   },
   {
     species: 'dog',
@@ -62,7 +64,7 @@ const PET_POOL: Array<{
     size: 'large',
     colors: ['کرم', 'خاکستری'],
     names: ['قهرمان', 'شیر', 'رستم', 'آرش'],
-    photo: 'https://images.unsplash.com/photo-1568572933382-74d440642117?auto=format&fit=crop&w=800&q=80',
+    tags: 'livestock-guardian,dog',
   },
   {
     species: 'dog',
@@ -70,7 +72,7 @@ const PET_POOL: Array<{
     size: 'large',
     colors: ['سفید', 'کرم'],
     names: ['چوپان', 'گل', 'سفید'],
-    photo: 'https://images.unsplash.com/photo-1477884213360-7e9d7dcc1e48?auto=format&fit=crop&w=800&q=80',
+    tags: 'shepherd,dog',
   },
   {
     species: 'dog',
@@ -78,7 +80,7 @@ const PET_POOL: Array<{
     size: 'large',
     colors: ['کرم', 'طلایی'],
     names: ['تازی', 'باد', 'صحرا'],
-    photo: 'https://images.unsplash.com/photo-1530281700549-e82e7bf110d6?auto=format&fit=crop&w=800&q=80',
+    tags: 'saluki,dog',
   },
   {
     species: 'dog',
@@ -86,7 +88,7 @@ const PET_POOL: Array<{
     size: 'small',
     colors: ['نارنجی', 'کرم'],
     names: ['تدی', 'موچی', 'پام'],
-    photo: 'https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?auto=format&fit=crop&w=800&q=80',
+    tags: 'pomeranian,dog',
   },
   {
     species: 'dog',
@@ -94,7 +96,7 @@ const PET_POOL: Array<{
     size: 'small',
     colors: ['سفید', 'کرم-سفید'],
     names: ['ملوس', 'کیتی', 'شیتی'],
-    photo: 'https://images.unsplash.com/photo-1583511655826-05700d52f4d9?auto=format&fit=crop&w=800&q=80',
+    tags: 'shih-tzu,dog',
   },
   {
     species: 'dog',
@@ -102,7 +104,7 @@ const PET_POOL: Array<{
     size: 'small',
     colors: ['سفید'],
     names: ['برفی', 'مالی', 'پنبه'],
-    photo: 'https://images.unsplash.com/photo-1544568100-847a948585b9?auto=format&fit=crop&w=800&q=80',
+    tags: 'maltese,dog',
   },
   {
     species: 'dog',
@@ -110,7 +112,7 @@ const PET_POOL: Array<{
     size: 'small',
     colors: ['سفید', 'کرم'],
     names: ['پوفی', 'ابر', 'برفک'],
-    photo: 'https://images.unsplash.com/photo-1601758228041-f3b2795255f1?auto=format&fit=crop&w=800&q=80',
+    tags: 'spitz,dog',
   },
   {
     species: 'dog',
@@ -118,7 +120,7 @@ const PET_POOL: Array<{
     size: 'small',
     colors: ['قهوه‌ای', 'سفید-قهوه‌ای'],
     names: ['جک', 'تیکو', 'فندق'],
-    photo: 'https://images.unsplash.com/photo-1507146426996-ef05306b995a?auto=format&fit=crop&w=800&q=80',
+    tags: 'terrier,dog',
   },
   {
     species: 'dog',
@@ -126,7 +128,7 @@ const PET_POOL: Array<{
     size: 'large',
     colors: ['طلایی'],
     names: ['گلدن', 'ساندی', 'هانی'],
-    photo: 'https://images.unsplash.com/photo-1552053831-71594a27632d?auto=format&fit=crop&w=800&q=80',
+    tags: 'golden-retriever,dog',
   },
   {
     species: 'dog',
@@ -134,7 +136,7 @@ const PET_POOL: Array<{
     size: 'large',
     colors: ['شکلاتی', 'مشکی', 'کرم'],
     names: ['لاب', 'کوکو', 'بلا'],
-    photo: 'https://images.unsplash.com/photo-1558788353-f76d92427f16?auto=format&fit=crop&w=800&q=80',
+    tags: 'labrador,dog',
   },
   {
     species: 'dog',
@@ -142,7 +144,7 @@ const PET_POOL: Array<{
     size: 'large',
     colors: ['خاکستری-سفید'],
     names: ['لونا', 'سایه', 'برف'],
-    photo: 'https://images.unsplash.com/photo-1605568427561-40dd23c2acea?auto=format&fit=crop&w=800&q=80',
+    tags: 'husky,dog',
   },
   {
     species: 'dog',
@@ -150,7 +152,7 @@ const PET_POOL: Array<{
     size: 'large',
     colors: ['قهوه‌ای'],
     names: ['مالی', 'گارد', 'آتاش'],
-    photo: 'https://images.unsplash.com/photo-1568572933382-74d440642117?auto=format&fit=crop&w=800&q=80',
+    tags: 'malinois,dog',
   },
   {
     species: 'cat',
@@ -158,7 +160,7 @@ const PET_POOL: Array<{
     size: 'small',
     colors: ['خاکستری', 'نارنجی', 'سه‌رنگ'],
     names: ['پیشی', 'ملوس', 'نارنج'],
-    photo: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?auto=format&fit=crop&w=800&q=80',
+    tags: 'domestic-shorthair,cat',
   },
   {
     species: 'cat',
@@ -166,7 +168,7 @@ const PET_POOL: Array<{
     size: 'small',
     colors: ['سفید', 'کرم'],
     names: ['شاهین', 'پرنسس', 'ابر'],
-    photo: 'https://images.unsplash.com/photo-1574158622682-e40e69881006?auto=format&fit=crop&w=800&q=80',
+    tags: 'persian-cat,cat',
   },
   {
     species: 'cat',
@@ -174,7 +176,7 @@ const PET_POOL: Array<{
     size: 'medium',
     colors: ['خاکستری'],
     names: ['دودی', 'میشا', 'گرافیت'],
-    photo: 'https://images.unsplash.com/photo-1573865526739-10659fec78a5?auto=format&fit=crop&w=800&q=80',
+    tags: 'british-shorthair,cat',
   },
   {
     species: 'cat',
@@ -182,40 +184,31 @@ const PET_POOL: Array<{
     size: 'medium',
     colors: ['سفید', 'کرم'],
     names: ['کرکی', 'پشمک', 'برفی'],
-    photo: 'https://images.unsplash.com/photo-1495360010541-f48722b34f7d?auto=format&fit=crop&w=800&q=80',
+    tags: 'fluffy-cat,cat',
   },
 ];
 
-/** Stock portraits (Unsplash) — West/Central Asian appearance, mixed gender. */
-const PEOPLE_MALE = [
-  'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=600&q=80',
-  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=600&q=80',
-  'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&w=600&q=80',
-  'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=600&q=80',
-  'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=600&q=80',
-  'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=600&q=80',
-  'https://images.unsplash.com/photo-1504257432389-52343af06ae3?auto=format&fit=crop&w=600&q=80',
-  'https://images.unsplash.com/photo-1463453091185-61582044d556?auto=format&fit=crop&w=600&q=80',
-  'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=600&q=80',
-  'https://images.unsplash.com/photo-1488161628813-04466f872be2?auto=format&fit=crop&w=600&q=80',
-  'https://images.unsplash.com/photo-1504257432389-52343af06ae3?auto=format&fit=crop&w=600&q=80',
-];
-const PEOPLE_FEMALE = [
-  'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=600&q=80',
-  'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
-  'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=600&q=80',
-  'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=600&q=80',
-  'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=600&q=80',
-  'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=crop&w=600&q=80',
-  'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=600&q=80',
-  'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&w=600&q=80',
-  'https://images.unsplash.com/photo-1520813792240-56fc4a3765a7?auto=format&fit=crop&w=600&q=80',
-  'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=600&q=80',
-  'https://images.unsplash.com/photo-1548142813-c348350df52b?auto=format&fit=crop&w=600&q=80',
-  'https://images.unsplash.com/photo-1525134479668-1bee5c7c6845?auto=format&fit=crop&w=600&q=80',
-];
+/**
+ * One unique photo per pet. lock never reused across launch playmates.
+ * Primary: loremflickr breed tags + unique lock. Fallback: picsum unique seed.
+ */
+function uniquePetPhotoUrl(tags: string, unique: number): string {
+  const n = Math.abs(Math.floor(unique)) + 1;
+  return `https://loremflickr.com/800/800/${tags}?lock=${n}`;
+}
+
+function uniquePicsumUrl(kind: string, unique: number, size = 800): string {
+  const n = Math.abs(Math.floor(unique)) + 1;
+  return `https://picsum.photos/seed/petdate-${kind}-${n}/${size}/${size}`;
+}
 
 const imageCache = new Map<string, Buffer>();
+/** SHA-1 of raw bytes — ensure no two launch pets share identical photo content. */
+const usedPetPhotoDigests = new Set<string>();
+
+function digestOf(buf: Buffer): string {
+  return createHash('sha1').update(buf).digest('hex');
+}
 
 async function fetchImage(url: string): Promise<Buffer> {
   const hit = imageCache.get(url);
@@ -231,16 +224,39 @@ async function fetchImage(url: string): Promise<Buffer> {
   return buf;
 }
 
-const FALLBACK_PET =
-  'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?auto=format&fit=crop&w=800&q=80';
-const FALLBACK_PERSON =
-  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=600&q=80';
+/**
+ * Always unique bytes across the seed/refresh run.
+ * Tries loremflickr locks, then picsum seeds, until digest is unseen.
+ */
+async function fetchUniquePetImage(tags: string, unique: number): Promise<Buffer> {
+  const attempts: string[] = [];
+  for (let i = 0; i < 12; i++) {
+    const lock = unique + i * 10_000;
+    attempts.push(uniquePetPhotoUrl(tags, lock));
+  }
+  for (let i = 0; i < 8; i++) {
+    attempts.push(uniquePicsumUrl('pet', unique + i * 10_000 + 50_000, 800));
+  }
+  let lastErr: Error | null = null;
+  for (const url of attempts) {
+    try {
+      const buf = await fetchImage(url);
+      const dig = digestOf(buf);
+      if (usedPetPhotoDigests.has(dig)) continue;
+      usedPetPhotoDigests.add(dig);
+      return buf;
+    } catch (err) {
+      lastErr = err as Error;
+    }
+  }
+  throw lastErr ?? new Error(`no unique pet photo for ${tags}/${unique}`);
+}
 
-async function fetchImageSafe(url: string, fallback: string): Promise<Buffer> {
+async function fetchUniquePersonImage(gender: 'male' | 'female', unique: number): Promise<Buffer> {
   try {
-    return await fetchImage(url);
+    return await fetchImage(uniquePicsumUrl(`person-${gender}`, unique, 600));
   } catch {
-    return fetchImage(fallback);
+    return fetchImage(uniquePicsumUrl(`person-fallback-${gender}`, unique + 9000, 600));
   }
 }
 
@@ -252,6 +268,14 @@ function pick<T>(arr: readonly T[], i: number): T {
   return arr[Math.abs(i) % arr.length]!;
 }
 
+function tagsForBreed(breed: string): string {
+  const hit = PET_POOL.find((p) => p.breed === breed);
+  if (hit) return hit.tags;
+  return breed.includes('گربه') || breed.includes('پرشین') || breed.includes('موکوتاه')
+    ? 'cat'
+    : 'dog';
+}
+
 export type LaunchPlaymateSeedResult = {
   created: number;
   skipped: number;
@@ -259,11 +283,73 @@ export type LaunchPlaymateSeedResult = {
   errors: string[];
 };
 
+export type LaunchPlaymatePhotoRefreshResult = {
+  updated: number;
+  failed: number;
+  errors: string[];
+};
+
+/** Re-download a distinct photo for every existing launch playmate pet. */
+export async function refreshLaunchPlaymatePetPhotos(): Promise<LaunchPlaymatePhotoRefreshResult> {
+  getDb();
+  usedPetPhotoDigests.clear();
+  imageCache.clear();
+  const d = getDb();
+  const rows = d
+    .prepare(
+      `SELECT p.id AS pet_id, p.owner_id, p.breed, p.species, u.telegram_id
+       FROM pets p
+       JOIN users u ON u.id = p.owner_id
+       WHERE u.telegram_id LIKE ?
+       ORDER BY p.id ASC`
+    )
+    .all(`${LAUNCH_PM_PREFIX}%`) as Array<{
+    pet_id: number;
+    owner_id: number;
+    breed: string;
+    species: string;
+    telegram_id: string;
+  }>;
+
+  let updated = 0;
+  let failed = 0;
+  const errors: string[] = [];
+
+  for (let i = 0; i < rows.length; i++) {
+    const row = rows[i]!;
+    const unique = Number(row.pet_id);
+    const tags = tagsForBreed(String(row.breed || '')) || (row.species === 'cat' ? 'cat' : 'dog');
+    try {
+      const buf = await fetchUniquePetImage(tags, unique);
+      const saved = await savePetPhoto({
+        ownerId: Number(row.owner_id),
+        originalName: `pet-${row.pet_id}.jpg`,
+        mimeType: 'image/jpeg',
+        buffer: buf,
+      });
+      d.prepare(
+        `UPDATE pets SET image_url = ?, photo_moderation_status = 'approved', updated_at = datetime('now') WHERE id = ?`
+      ).run(saved.urlPath, row.pet_id);
+      updated += 1;
+      if ((i + 1) % 25 === 0 || i + 1 === rows.length) {
+        console.log(`refresh-photos: ${i + 1}/${rows.length} (ok=${updated} fail=${failed})`);
+      }
+    } catch (err) {
+      failed += 1;
+      errors.push(`${row.telegram_id}/pet:${row.pet_id}: ${(err as Error).message}`);
+    }
+  }
+
+  return { updated, failed, errors };
+}
+
 export async function seedLaunchPlaymates(opts?: {
   perProvince?: number;
   provinces?: readonly string[];
 }): Promise<LaunchPlaymateSeedResult> {
   getDb();
+  usedPetPhotoDigests.clear();
+  imageCache.clear();
   const per = opts?.perProvince ?? PER_PROVINCE;
   const provinces = opts?.provinces ?? IRAN_PROVINCES;
   let created = 0;
@@ -295,7 +381,7 @@ export async function seedLaunchPlaymates(opts?: {
       const petName = pick(petKind.names, ui + pi);
       const petGender: 'male' | 'female' = ui % 3 === 0 ? 'female' : 'male';
       const color = pick(petKind.colors, ui);
-      const personUrl = gender === 'male' ? pick(PEOPLE_MALE, pi + ui) : pick(PEOPLE_FEMALE, pi + ui);
+      const uniqueKey = pi * 100 + ui;
 
       try {
         const { user } = existing
@@ -332,7 +418,7 @@ export async function seedLaunchPlaymates(opts?: {
           user.id
         );
 
-        const avatarBuf = await fetchImageSafe(personUrl, FALLBACK_PERSON);
+        const avatarBuf = await fetchUniquePersonImage(gender, uniqueKey);
         const avatar = await saveUserAvatar({
           userId: user.id,
           originalName: 'avatar.jpg',
@@ -343,13 +429,6 @@ export async function seedLaunchPlaymates(opts?: {
           `UPDATE users SET avatar_url = ?, avatar_custom = 1, avatar_moderation_status = 'approved' WHERE id = ?`
         ).run(avatar.urlPath, user.id);
 
-        const petBuf = await fetchImageSafe(petKind.photo, FALLBACK_PET);
-        const petPhoto = await savePetPhoto({
-          ownerId: user.id,
-          originalName: 'pet.jpg',
-          mimeType: 'image/jpeg',
-          buffer: petBuf,
-        });
         const pet = dbService.createPet({
           ownerId: user.id,
           name: petName,
@@ -363,9 +442,16 @@ export async function seedLaunchPlaymates(opts?: {
           vaccinated: true,
           neutered: ui % 2 === 0,
           lookingForPlaymate: true,
-          imageUrl: petPhoto.urlPath,
+          imageUrl: undefined,
           city,
           neighborhood,
+        });
+        const petBuf = await fetchUniquePetImage(petKind.tags, pet.id);
+        const petPhoto = await savePetPhoto({
+          ownerId: user.id,
+          originalName: `pet-${pet.id}.jpg`,
+          mimeType: 'image/jpeg',
+          buffer: petBuf,
         });
         d.prepare(
           `UPDATE pets SET photo_moderation_status = 'approved', looking_for_playmate = 1, image_url = ? WHERE id = ?`
