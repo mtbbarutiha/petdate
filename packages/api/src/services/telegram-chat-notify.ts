@@ -622,7 +622,13 @@ export async function resolveTelegramFile(fileId: string): Promise<{
       description?: string;
     };
     if (!data.ok || !data.result?.file_path) {
-      console.warn('telegram getFile failed:', data.description ?? res.status);
+      const desc = String(data.description ?? res.status);
+      // Expired / revoked Telegram file_ids are common; avoid spamming error logs.
+      if (/invalid file_id|file is too big|file_id is empty/i.test(desc)) {
+        console.debug('telegram getFile skipped:', desc);
+      } else {
+        console.warn('telegram getFile failed:', desc);
+      }
       return null;
     }
     const filePath = data.result.file_path;

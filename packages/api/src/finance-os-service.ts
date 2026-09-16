@@ -196,6 +196,13 @@ export function ensureFinanceOsSchema(): void {
   // PostgreSQL rejects bare column name `desc` (reserved). Older SQLite demo DBs
   // may still have it — rename when needed so both drivers share desc_text.
   migrateFinanceOsDescColumns();
+  d.exec(`
+    CREATE INDEX IF NOT EXISTS idx_finance_os_tx_status ON finance_os_transactions(status);
+    CREATE INDEX IF NOT EXISTS idx_finance_os_tx_account ON finance_os_transactions(account);
+    CREATE INDEX IF NOT EXISTS idx_finance_os_tx_date_id ON finance_os_transactions(date DESC, id DESC);
+    CREATE INDEX IF NOT EXISTS idx_finance_os_sbg_exp_allocated ON finance_os_sbg_expenses(allocated);
+    CREATE INDEX IF NOT EXISTS idx_finance_os_accounts_status ON finance_os_accounts(status);
+  `);
   schemaReady = true;
   seedFinanceOsIfEmpty();
   scrubFinanceOsSbgBranding();
@@ -1301,46 +1308,58 @@ export function getFinanceOsTransactionsBundle(filters?: {
   direction?: string;
 }): FinanceOsTransactionsBundle {
   ensureFinanceOsSchema();
-  let rows = (
-    db().prepare('SELECT * FROM finance_os_transactions ORDER BY date DESC, id DESC').all() as Array<
-      Record<string, unknown>
-    >
-  ).map(mapTx);
+  const d = db();
+  const queueCount = (
+    d.prepare(`SELECT COUNT(*) AS c FROM finance_os_transactions WHERE status='queued'`).get() as {
+      c: number;
+    }
+  ).c;
+  const suspiciousCount = (
+    d.prepare(`SELECT COUNT(*) AS c FROM finance_os_transactions WHERE status='suspicious'`).get() as {
+      c: number;
+    }
+  ).c;
 
-  const queueCount = rows.filter((t) => t.status === 'queued').length;
-  const suspiciousCount = rows.filter((t) => t.status === 'suspicious').length;
-
+  const where: string[] = [];
+  const params: Array<string | number> = [];
   if (filters?.status && filters.status !== 'all') {
-    rows = rows.filter((t) => t.status === filters.status);
+    where.push('status = ?');
+    params.push(filters.status);
   }
   if (filters?.account) {
-    rows = rows.filter((t) => t.account === filters.account);
+    where.push('account = ?');
+    params.push(filters.account);
   }
   if (filters?.direction === 'income') {
-    rows = rows.filter((t) => t.amount > 0 && t.saleType !== 'انتقال-ورودی');
+    where.push(`amount > 0 AND IFNULL(sale_type, '') != 'انتقال-ورودی'`);
   } else if (filters?.direction === 'expense') {
-    rows = rows.filter(
-      (t) =>
-        t.amount < 0 &&
-        t.expenseType !== 'انتقال-خروجی' &&
-        t.expenseType !== 'عودت' &&
-        t.expenseType !== 'بازگشت مبلغ'
+    where.push(
+      `amount < 0 AND IFNULL(expense_type, '') NOT IN ('انتقال-خروجی', 'عودت', 'بازگشت مبلغ')`
     );
   } else if (filters?.direction === 'transfer') {
-    rows = rows.filter((t) => t.saleType === 'انتقال-ورودی' || t.expenseType === 'انتقال-خروجی');
+    where.push(`(sale_type = 'انتقال-ورودی' OR expense_type = 'انتقال-خروجی')`);
   } else if (filters?.direction === 'refund') {
-    rows = rows.filter((t) => t.expenseType === 'عودت' || t.expenseType === 'بازگشت مبلغ');
+    where.push(`expense_type IN ('عودت', 'بازگشت مبلغ')`);
   }
+
+  const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
+  const rows = (
+    d
+      .prepare(
+        `SELECT * FROM finance_os_transactions ${whereSql} ORDER BY date DESC, id DESC LIMIT 2000`
+      )
+      .all(...params) as Array<Record<string, unknown>>
+  ).map(mapTx);
 
   const classified = rows.filter((t) => t.status === 'classified');
   const accounts = (
-    db().prepare('SELECT code, provider, line FROM finance_os_accounts WHERE status = ? ORDER BY id').all(
+    d.prepare('SELECT code, provider, line FROM finance_os_accounts WHERE status = ? ORDER BY id').all(
       'active'
     ) as Array<{ code: string; provider: string; line: string }>
   ).map((a) => ({ code: a.code, provider: a.provider, line: a.line }));
 
   const importLog = (
-    db().prepare('SELECT * FROM finance_os_import_log ORDER BY id DESC LIMIT 50').all() as Array<
+    d.prepare('SELECT * FROM finance_os_import_log ORDER BY id DESC LIMIT 50').all() as Array<
       Record<string, unknown>
     >
   ).map(
@@ -1411,6 +1430,7 @@ export function classifyFinanceOsTransaction(
       status,
       id
     );
+  invalidateFinanceOsNavCountsCache();
   return mapTx(db().prepare('SELECT * FROM finance_os_transactions WHERE id = ?').get(id) as Record<string, unknown>);
 }
 
@@ -1454,6 +1474,7 @@ export function importFinanceOsTransactions(input: {
       );
   });
   tx();
+  invalidateFinanceOsNavCountsCache();
   const logRow = db().prepare('SELECT * FROM finance_os_import_log ORDER BY id DESC LIMIT 1').get() as Record<
     string,
     unknown
@@ -1492,6 +1513,7 @@ export function resolveFinanceOsSuspicious(
       )
       .run(id);
   }
+  invalidateFinanceOsNavCountsCache();
   return { ok: true };
 }
 
@@ -1577,6 +1599,7 @@ export function allocateFinanceOsExpense(
   db()
     .prepare('UPDATE finance_os_sbg_expenses SET allocated=1, splits_json=? WHERE id=?')
     .run(JSON.stringify(clean), id);
+  invalidateFinanceOsNavCountsCache();
   const row = db().prepare('SELECT * FROM finance_os_sbg_expenses WHERE id = ?').get(id) as Record<
     string,
     unknown
@@ -1752,6 +1775,7 @@ export function markFinanceOsCommitmentDone(id: number): FinanceOsCommitment {
   db().prepare(`UPDATE finance_os_commitments SET status='done' WHERE id=?`).run(id);
   const bal = metaGet<number>('bankBalance', 0);
   metaSet('bankBalance', bal - (Number(prev.amount) || 0));
+  invalidateFinanceOsNavCountsCache();
   return {
     id: Number(prev.id),
     desc: rowDesc(prev),
@@ -1762,15 +1786,29 @@ export function markFinanceOsCommitmentDone(id: number): FinanceOsCommitment {
   };
 }
 
-export function getFinanceOsNavCounts(): {
+type FinanceOsNavCounts = {
   queue: number;
   suspicious: number;
   pendingAllocation: number;
   payments: number;
   transactions: number;
   coinSells: number;
-} {
+};
+
+const NAV_COUNTS_TTL_MS = 8_000;
+let navCountsCache: { at: number; value: FinanceOsNavCounts } | null = null;
+
+/** Drop short-lived nav badge cache after writes that change queue/allocation counts. */
+export function invalidateFinanceOsNavCountsCache(): void {
+  navCountsCache = null;
+}
+
+export function getFinanceOsNavCounts(): FinanceOsNavCounts {
   ensureFinanceOsSchema();
+  const now = Date.now();
+  if (navCountsCache && now - navCountsCache.at < NAV_COUNTS_TTL_MS) {
+    return navCountsCache.value;
+  }
   const queue = (
     db().prepare(`SELECT COUNT(*) AS c FROM finance_os_transactions WHERE status='queued'`).get() as {
       c: number;
@@ -1808,7 +1846,7 @@ export function getFinanceOsNavCounts(): {
       .prepare(`SELECT COUNT(*) AS c FROM coin_sell_requests WHERE status = 'open'`)
       .get() as { c: number }
   ).c;
-  return {
+  const value: FinanceOsNavCounts = {
     queue,
     suspicious,
     pendingAllocation,
@@ -1816,4 +1854,6 @@ export function getFinanceOsNavCounts(): {
     transactions: queue + suspicious,
     coinSells,
   };
+  navCountsCache = { at: now, value };
+  return value;
 }

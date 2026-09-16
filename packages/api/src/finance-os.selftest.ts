@@ -31,6 +31,28 @@ async function main() {
   });
   assert(created.code === 'B-TEST-01', 'create account');
 
+  const patched = fos.updateFinanceOsAccount(created.id, {
+    provider: 'بانک تست ویرایش',
+    dedication: 'مشترک',
+    notes: 'ویرایش selftest',
+  });
+  assert(patched.provider === 'بانک تست ویرایش', 'update account provider');
+  assert(patched.dedication === 'مشترک', 'update account dedication');
+
+  const deactivated = fos.updateFinanceOsAccount(created.id, { status: 'inactive' });
+  assert(deactivated.status === 'inactive', 'soft-delete via inactive');
+
+  const { getDb } = await import('./db');
+  const idxRows = getDb()
+    .prepare(
+      `SELECT name FROM sqlite_master WHERE type='index' AND name LIKE 'idx_finance_os_%'`
+    )
+    .all() as Array<{ name: string }>;
+  assert(
+    idxRows.some((r) => r.name === 'idx_finance_os_tx_status'),
+    'tx status index'
+  );
+
   const person = fos.createFinanceOsPerson({
     name: 'تست مالی',
     role: 'حسابدار',
@@ -73,6 +95,12 @@ async function main() {
 
   const sus = fos.getFinanceOsTransactionsBundle({ status: 'suspicious' }).transactions[0];
   assert(sus, 'suspicious row');
+  assert(
+    fos.getFinanceOsTransactionsBundle({ status: 'suspicious' }).transactions.every(
+      (t) => t.status === 'suspicious'
+    ),
+    'SQL status filter'
+  );
   fos.resolveFinanceOsSuspicious(sus.id, 'keep');
   const afterKeep = fos.getFinanceOsTransactionsBundle().transactions.find((t) => t.id === sus.id);
   assert(afterKeep?.status === 'queued', 'suspicious kept -> queued');
@@ -168,7 +196,6 @@ async function main() {
   assert(counts.transactions === counts.queue + counts.suspicious, 'transactions = queue+suspicious');
 
   // Simulate partial #155 scrub failure (desc column renamed → mid-pass abort).
-  const { getDb } = await import('./db');
   const d = getDb();
   d.prepare(
     `UPDATE finance_os_invoices SET number = 'INV-SBG-1405-05-99' WHERE id = ?`

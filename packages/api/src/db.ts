@@ -572,6 +572,7 @@ function backfillPublicIds(): void {
 
   db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_users_public_id ON users (public_id)');
   db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_pets_public_id ON pets (public_id)');
+  db.exec('CREATE INDEX IF NOT EXISTS idx_pets_owner_id ON pets (owner_id)');
 }
 
 /** Assign unique public URL slugs for pets missing them (idempotent). */
