@@ -17000,6 +17000,14 @@ select.pepito-wallet-convert-control {
   max-width: 1100px;
   padding-inline: 16px;
 }
+.pepito-games-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  align-items: flex-end;
+  flex: 1 1 auto;
+  min-width: 0;
+}
 .pepito-games-filter {
   display: flex;
   flex-direction: column;
@@ -17009,6 +17017,31 @@ select.pepito-wallet-convert-control {
 }
 .pepito-games-filter .form-select {
   min-width: 10rem;
+}
+.pepito-games-filter--search {
+  flex: 1 1 12rem;
+  min-width: min(100%, 12rem);
+  max-width: 18rem;
+}
+.pepito-games-filter--search .form-input {
+  width: 100%;
+  min-width: 0;
+}
+@media (max-width: 640px) {
+  .pepito-games-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .pepito-games-filters {
+    width: 100%;
+  }
+  .pepito-games-filter,
+  .pepito-games-filter .form-select,
+  .pepito-games-filter--search {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+  }
 }
 .pepito-games-form {
   max-width: 1100px;

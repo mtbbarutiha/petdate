@@ -4,6 +4,7 @@ import {
   GAME_PHOTO_STATUS_LABELS,
   GAME_STATUS_LABELS,
   GAME_TYPE_LABELS,
+  IRAN_PROVINCES,
   type Game,
   type GamePlayer,
   type GameStatus,
@@ -21,15 +22,21 @@ export function AdminGamesPage() {
   const [items, setItems] = useState<Game[]>([]);
   const [pendingPhotos, setPendingPhotos] = useState<Game[]>([]);
   const [status, setStatus] = useState<GameStatus | ''>('');
+  const [province, setProvince] = useState('');
+  const [organizer, setOrganizer] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [detail, setDetail] = useState<AdminGameDetail | null>(null);
   const [detailBusy, setDetailBusy] = useState(false);
 
   const load = useCallback(async () => {
     try {
-      const qs = status ? `?status=${encodeURIComponent(status)}` : '';
+      const qs = new URLSearchParams();
+      if (status) qs.set('status', status);
+      if (province) qs.set('province', province);
+      if (organizer.trim()) qs.set('host', organizer.trim());
+      const suffix = qs.toString() ? `?${qs.toString()}` : '';
       const [data, pending] = await Promise.all([
-        adminFetch<{ games: Game[]; total: number }>(`/api/admin/games${qs}`),
+        adminFetch<{ games: Game[]; total: number }>(`/api/admin/games${suffix}`),
         adminFetch<{ games: Game[]; total: number }>('/api/admin/games/photos/pending?limit=100'),
       ]);
       setItems(Array.isArray(data.games) ? data.games : []);
@@ -40,7 +47,7 @@ export function AdminGamesPage() {
       setItems([]);
       setPendingPhotos([]);
     }
-  }, [status]);
+  }, [status, province, organizer]);
 
   useEffect(() => {
     void load();
@@ -102,18 +109,42 @@ export function AdminGamesPage() {
             {formatNumFa(EVENT_CREATE_COST)} {tr('سکه')}
           </p>
         </div>
-        <select
-          className="admin-select"
-          value={status}
-          onChange={(e) => setStatus((e.target.value || '') as GameStatus | '')}
-          aria-label={tr('وضعیت')}
-        >
-          {STATUS_OPTIONS.map((s) => (
-            <option key={s || 'all'} value={s}>
-              {s ? GAME_STATUS_LABELS[s] : tr('همه')}
-            </option>
-          ))}
-        </select>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+          <select
+            className="admin-select"
+            value={status}
+            onChange={(e) => setStatus((e.target.value || '') as GameStatus | '')}
+            aria-label={tr('وضعیت')}
+          >
+            {STATUS_OPTIONS.map((s) => (
+              <option key={s || 'all'} value={s}>
+                {s ? GAME_STATUS_LABELS[s] : tr('همه')}
+              </option>
+            ))}
+          </select>
+          <select
+            className="admin-select"
+            value={province}
+            onChange={(e) => setProvince(e.target.value)}
+            aria-label={tr('استان')}
+          >
+            <option value="">{tr('همه استان‌ها')}</option>
+            {IRAN_PROVINCES.map((p) => (
+              <option key={p} value={p}>
+                {p}
+              </option>
+            ))}
+          </select>
+          <input
+            className="admin-input"
+            type="search"
+            value={organizer}
+            onChange={(e) => setOrganizer(e.target.value)}
+            placeholder={tr('برگزارکننده')}
+            aria-label={tr('برگزارکننده')}
+            style={{ minWidth: '10rem' }}
+          />
+        </div>
       </header>
       {error ? <p className="admin-error">{error}</p> : null}
 

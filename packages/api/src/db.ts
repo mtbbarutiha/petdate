@@ -5156,9 +5156,17 @@ export const dbService = {
     );
   },
 
-  listGames(filters?: { sectionId?: number; status?: GameStatus; gameType?: GameType }): Game[] {
+  listGames(filters?: {
+    sectionId?: number;
+    status?: GameStatus;
+    gameType?: GameType;
+    province?: string;
+    /** Partial match on host (organizer) display name. */
+    host?: string;
+  }): Game[] {
     let sql = `
       SELECT g.* FROM games g
+      LEFT JOIN users u ON u.id = g.host_user_id
       WHERE 1=1
     `;
     const params: unknown[] = [];
@@ -5182,6 +5190,16 @@ export const dbService = {
     if (filters?.gameType) {
       sql += ' AND g.game_type = ?';
       params.push(filters.gameType);
+    }
+    const province = String(filters?.province || '').trim();
+    if (province) {
+      sql += " AND LOWER(TRIM(COALESCE(g.province, ''))) = LOWER(TRIM(?))";
+      params.push(province);
+    }
+    const host = String(filters?.host || '').trim();
+    if (host) {
+      sql += " AND LOWER(TRIM(COALESCE(u.name, ''))) LIKE '%' || LOWER(?) || '%'";
+      params.push(host);
     }
 
     sql += ' ORDER BY g.scheduled_at ASC';
