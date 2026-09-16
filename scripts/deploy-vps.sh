@@ -92,7 +92,9 @@ COMMON_EXCLUDES=(
   --exclude 'packages/api/data/prescriptions'
   --exclude 'packages/api/data/magazine-images'
   --exclude 'packages/api/data/hero-slides'
-  --exclude 'packages/api/data/hero-slides'
+  --exclude 'packages/api/data/event-photos'
+  --exclude 'packages/api/data/image-cache'
+  --exclude 'packages/api/data/payment-receipts'
   --exclude 'packages/bot/data/sessions.json'
 )
 
