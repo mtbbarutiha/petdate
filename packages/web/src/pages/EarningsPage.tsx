@@ -317,11 +317,14 @@ export function EarningsPage() {
                         checked={currency === opt.currency}
                         onChange={() => onCurrencyChange(opt.currency)}
                       />
-                      <span>
-                        {opt.labelFa}
-                        <small>
-                          {formatFaInt(opt.balance)} · حداقل {formatFaInt(opt.minAmount)}
-                        </small>
+                      <span className="pepito-earn-currency-copy">
+                        <span className="pepito-earn-currency-label">{opt.labelFa}</span>
+                        <span className="pepito-earn-currency-balance">
+                          {formatFaInt(opt.balance)}
+                        </span>
+                        <span className="pepito-earn-currency-min">
+                          حداقل {formatFaInt(opt.minAmount)}
+                        </span>
                       </span>
                     </label>
                   ))}

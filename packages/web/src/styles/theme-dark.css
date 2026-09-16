@@ -1936,10 +1936,11 @@ html[data-theme='dark'] .pepito-earn-currency-option {
   border-color: var(--pd-border);
   color: var(--pd-ink);
 }
-html[data-theme='dark'] .pepito-earn-currency-option span {
+html[data-theme='dark'] .pepito-earn-currency-label,
+html[data-theme='dark'] .pepito-earn-currency-balance {
   color: var(--pd-ink);
 }
-html[data-theme='dark'] .pepito-earn-currency-option small {
+html[data-theme='dark'] .pepito-earn-currency-min {
   color: var(--pd-muted);
   opacity: 1;
 }
