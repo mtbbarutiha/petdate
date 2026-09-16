@@ -1,5 +1,8 @@
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
 if (!token) throw new Error('TELEGRAM_BOT_TOKEN missing');
@@ -7,29 +10,33 @@ if (!token) throw new Error('TELEGRAM_BOT_TOKEN missing');
 const chatId = process.env.CHANNEL || '@petdating';
 const photoPath =
   process.env.PHOTO ||
-  '/agent/packages/bot/assets/channel-posts/petdate-channel-post-profile-coins.jpg';
+  path.join(
+    __dirname,
+    '../assets/channel-posts/petdate-channel-post-profile-coins.jpg'
+  );
+const botUrl = process.env.BOT_URL || 'https://t.me/Petdatebot?start=channel';
 
 const caption = [
-  'پروفایلت کامل بشه، اعتماد بیشتر می‌شه ✅✨',
+  '🛒 شاپ · 🩺 دامپزشک · 🪙 سکه — همه تو پت‌دیت',
   '',
-  'مالک خوب = پت خوشحال‌تر.',
-  'تو petdate پروفایل، سکه و احراز یک‌جا جمعه 🐾',
+  'علاوه بر همبازی، پت‌دیت خدمات کامل پت هم داره:',
   '',
-  'تو petdate می‌تونی:',
-  '👤 پروفایل مالک رو کامل کنی — شهر، استان، عکس',
-  '🪙 سکه بگیری — روزانه، خرید و فروش',
-  '💵 کسب درآمد — سکه‌هات رو نقد کن',
-  '🛡 احراز هویت کنی — بج ✅ احراز شده روی پروفایل',
-  '🎁 دوستات رو معرفی کنی و خدمات پت بگیری',
+  '🛒 پت‌شاپ آنلاین — غذا، لوازم و سفارش وب/ربات',
+  '🩺 مشاوره دامپزشک آنلاین — صف و چت امن',
+  '⚡ مشاوره سریع پزشک وقتی عجله داری',
+  '🪙 سکه روزانه، خرید و کیف پول مشترک وب',
+  '🛡 احراز هویت — بج تأیید‌شده روی پروفایل',
+  '👤 پروفایل مالک و پت کامل — شهر، عکس، بیو',
   '',
-  'پروفایل قوی‌تر، همبازی بهتر…',
-  'بج احراز یعنی بقیه راحت‌تر اعتماد می‌کنن ❤️‍🔥',
+  'یک حساب، هم تلگرام هم سایت 🌐',
+  'https://petdate.ir',
   '',
-  'همین الان وارد شو 👇',
+  'وارد شو و امکانات رو ببین 👇',
   '🤖 @Petdatebot',
   '',
-  '#petdate #پروفایل #سکه #احراز_هویت',
-  '#پت #همبازی #کسب_درآمد #خدمات_پت',
+  '#پت_دیت #پت_شاپ #دامپزشک_آنلاین #سکه',
+  '#احراز_هویت #خدمات_پت #کیف_پول',
+  '#PetDate #همبازی_پت',
 ].join('\n');
 
 const form = new FormData();
@@ -38,7 +45,7 @@ form.append('caption', caption);
 form.append(
   'reply_markup',
   JSON.stringify({
-    inline_keyboard: [[{ text: '🚀 ورود به ربات', url: 'https://t.me/Petdatebot' }]],
+    inline_keyboard: [[{ text: '🚀 ورود به ربات', url: botUrl }]],
   })
 );
 form.append('photo', new Blob([fs.readFileSync(photoPath)]), path.basename(photoPath));

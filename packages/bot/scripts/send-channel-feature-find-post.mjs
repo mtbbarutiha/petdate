@@ -1,5 +1,8 @@
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
 if (!token) throw new Error('TELEGRAM_BOT_TOKEN missing');
@@ -7,28 +10,33 @@ if (!token) throw new Error('TELEGRAM_BOT_TOKEN missing');
 const chatId = process.env.CHANNEL || '@petdating';
 const photoPath =
   process.env.PHOTO ||
-  '/agent/packages/bot/assets/channel-posts/petdate-channel-post-find-playmate.jpg';
+  path.join(
+    __dirname,
+    '../assets/channel-posts/petdate-channel-post-find-playmate.jpg'
+  );
+const botUrl = process.env.BOT_URL || 'https://t.me/Petdatebot?start=channel';
 
 const caption = [
-  'همبازی نزدیکه… فقط باید پیداش کنی 🔍🐾',
+  '🔍 همبازی نزدیکه… فقط باید پیداش کنی',
   '',
-  'پت‌ات بیرون منتظر دوست جدیده.',
-  'تو همون‌جایی، فقط یه جستجو فاصله‌ست 😏🐶🐱',
+  'پت‌ات بیرون منتظر دوست جدیده 🐶🐱',
+  'تو پت‌دیت مچ هوشمند، جستجو و نقشهٔ همبازی یک‌جاست',
   '',
-  'تو petdate می‌تونی:',
-  '🔍 پیدا کردن همبازی — مچ هوشمند با پت‌های مناسب',
-  '📍 پت‌های نزدیک من — بر اساس شهر و استان',
-  '🔎 جستجوی پت — گونه → نژاد، هم‌استان، مشهد، همه',
-  '📋 لیست صفحه‌بندی‌شده — راحت ورق بزن و انتخاب کن',
+  'چطور کار می‌کنه؟',
+  '🐾 پت‌ات رو ثبت کن و عکس بذار',
+  '🔍 «پیدا کردن همبازی» رو بزن — درخواست اتوماتیک می‌ره',
+  '📍 پت‌های هم‌شهر، هم‌استان و نزدیک رو ببین',
+  '🔎 با گونه و نژاد جستجو کن و لیست رو ورق بزن',
+  '💬 بعد از قبول، چت امن همبازی باز می‌شه',
   '',
-  'دوست پتت شاید همین دور و بره…',
   'نذار امروز هم بدون همبازی تموم بشه ❤️‍🔥',
   '',
-  'همین الان وارد شو 👇',
+  'شروع کن 👇',
   '🤖 @Petdatebot',
   '',
-  '#petdate #همبازی #پت #سگ #گربه',
-  '#جستجوی_پت #پت_نزدیک #پیدا_کردن_همبازی',
+  '#پت_دیت #همبازی #همبازی_پت #پیدا_کردن_همبازی',
+  '#سگ #گربه #پت_نزدیک #دوستیابی_پت',
+  '#PetDate #ایران',
 ].join('\n');
 
 const form = new FormData();
@@ -37,7 +45,7 @@ form.append('caption', caption);
 form.append(
   'reply_markup',
   JSON.stringify({
-    inline_keyboard: [[{ text: '🚀 ورود به ربات', url: 'https://t.me/Petdatebot' }]],
+    inline_keyboard: [[{ text: '🔍 پیدا کردن همبازی', url: botUrl }]],
   })
 );
 form.append('photo', new Blob([fs.readFileSync(photoPath)]), path.basename(photoPath));

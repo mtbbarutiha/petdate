@@ -1,33 +1,41 @@
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
 if (!token) throw new Error('TELEGRAM_BOT_TOKEN missing');
 
 const chatId = process.env.CHANNEL || '@petdating';
-const photoPath = process.env.PHOTO || '/agent/packages/bot/assets/channel-posts/petdate-channel-post-cover.jpg';
+const photoPath =
+  process.env.PHOTO ||
+  path.join(__dirname, '../assets/channel-posts/petdate-channel-post-cover.jpg');
+const botUrl = process.env.BOT_URL || 'https://t.me/Petdatebot?start=channel';
 
 const caption = [
-  'پت‌ات همبازی می‌خواد… 🐾✨',
+  '🐾 پت‌دیت اینجاست — دنیای پت‌هات یک‌جا',
+  'PLAY • MEET • FRIENDS',
   '',
-  'حوصله‌ش سر رفته؟',
-  'تو خونه تنها بازی می‌کنه؟',
-  'نذار امروز هم بدون دوست رد بشه 😏🐶🐱',
+  'پت‌دیت فقط یه ربات نیست؛',
+  'جایی برای پیدا کردن همبازی، خرید، مشاوره و جامعهٔ پت‌دوست‌هاست 🐶🐱',
   '',
-  'تو petdate می‌تونی:',
-  '🔍 همبازی نزدیک پیدا کنی',
-  '📍 پت‌های هم‌محله و هم‌استان رو ببینی',
-  '🐾 پروفایل پت بسازی و عکس بذاری',
-  '🩺 خدمات و مشاوره پت بگیری',
+  'تو پت‌دیت می‌تونی:',
+  '🔍 همبازی برای سگ و گربه‌ات پیدا کنی',
+  '🛒 از پت‌شاپ آنلاین خرید کنی',
+  '🩺 با دامپزشک آنلاین مشورت کنی',
+  '🪙 سکه بگیری و خدمات پت استفاده کنی',
+  '🌐 روی وب و تلگرام با یک حساب باشی',
   '',
-  'همبازی برای پت‌ات همین‌جاست…',
-  'شاید دوست پتت همین‌جا منتظرته ❤️‍🔥',
+  'همبازی برای پت‌ات، از همین‌جا شروع می‌شه ✨',
   '',
-  'همین الان وارد شو 👇',
+  'ورود به ربات 👇',
   '🤖 @Petdatebot',
+  '🌐 https://petdate.ir',
   '',
-  '#petdate #همبازی #پت #سگ #گربه',
-  '#ربات_پت #پیدا_کردن_همبازی #تنها_نذار',
+  '#پت_دیت #PetDate #همبازی_پت #پت',
+  '#سگ #گربه #پت_شاپ #دامپزشک_آنلاین',
+  '#ربات_تلگرام #ایران',
 ].join('\n');
 
 const form = new FormData();
@@ -36,7 +44,7 @@ form.append('caption', caption);
 form.append(
   'reply_markup',
   JSON.stringify({
-    inline_keyboard: [[{ text: '🚀 ورود به ربات', url: 'https://t.me/Petdatebot' }]],
+    inline_keyboard: [[{ text: '🚀 ورود به ربات', url: botUrl }]],
   })
 );
 form.append('photo', new Blob([fs.readFileSync(photoPath)]), path.basename(photoPath));
