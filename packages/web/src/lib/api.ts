@@ -300,6 +300,7 @@ export async function listGames(filters?: {
   sectionId?: number;
   status?: GameStatus;
   gameType?: GameType;
+  province?: string;
 }): Promise<Game[]> {
   const params = new URLSearchParams();
   if (filters?.sectionId != null && Number.isFinite(filters.sectionId)) {
@@ -307,6 +308,7 @@ export async function listGames(filters?: {
   }
   if (filters?.status) params.set('status', filters.status);
   if (filters?.gameType) params.set('gameType', filters.gameType);
+  if (filters?.province) params.set('province', filters.province);
   const qs = params.toString();
   const suffix = qs ? `?${qs}` : '';
   try {

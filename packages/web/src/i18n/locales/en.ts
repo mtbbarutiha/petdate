@@ -941,6 +941,7 @@ export const en: Dict = {
     title: 'Events',
     lead: 'Browse nearby pet events, host one, or join an open seat.',
     filterStatus: 'Status',
+    filterProvince: 'Province',
     filterAll: 'All',
     createCta: 'Create event',
     hideForm: 'Hide form',

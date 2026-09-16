@@ -68,7 +68,8 @@ export function GamesPage() {
   const { toastSuccess, toastError } = useAppToast();
   const [games, setGames] = useState<Game[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState<GameStatus | ''>('open');
+  const [statusFilter, setStatusFilter] = useState<GameStatus | ''>('');
+  const [provinceFilter, setProvinceFilter] = useState('');
   const [joiningId, setJoiningId] = useState<number | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [creating, setCreating] = useState(false);
@@ -78,14 +79,17 @@ export function GamesPage() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const rows = await listGames(statusFilter ? { status: statusFilter } : undefined);
+      const rows = await listGames({
+        ...(statusFilter ? { status: statusFilter } : {}),
+        ...(provinceFilter ? { province: provinceFilter } : {}),
+      });
       setGames(Array.isArray(rows) ? rows : []);
     } catch {
       setGames([]);
     } finally {
       setLoading(false);
     }
-  }, [statusFilter]);
+  }, [statusFilter, provinceFilter]);
 
   useEffect(() => {
     void load();
@@ -220,20 +224,37 @@ export function GamesPage() {
         </div>
 
         <div className="pepito-games-toolbar">
-          <label className="pepito-games-filter">
-            <span>{t('games.filterStatus')}</span>
-            <select
-              className="form-select"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter((e.target.value || '') as GameStatus | '')}
-            >
-              <option value="">{t('games.filterAll')}</option>
-              <option value="open">{statusLabel('open')}</option>
-              <option value="full">{statusLabel('full')}</option>
-              <option value="completed">{statusLabel('completed')}</option>
-              <option value="cancelled">{statusLabel('cancelled')}</option>
-            </select>
-          </label>
+          <div className="pepito-games-filters">
+            <label className="pepito-games-filter">
+              <span>{t('games.filterStatus')}</span>
+              <select
+                className="form-select"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter((e.target.value || '') as GameStatus | '')}
+              >
+                <option value="">{t('games.filterAll')}</option>
+                <option value="open">{statusLabel('open')}</option>
+                <option value="full">{statusLabel('full')}</option>
+                <option value="completed">{statusLabel('completed')}</option>
+                <option value="cancelled">{statusLabel('cancelled')}</option>
+              </select>
+            </label>
+            <label className="pepito-games-filter">
+              <span>{t('games.filterProvince')}</span>
+              <select
+                className="form-select"
+                value={provinceFilter}
+                onChange={(e) => setProvinceFilter(e.target.value)}
+              >
+                <option value="">{t('games.filterAll')}</option>
+                {IRAN_PROVINCES.map((p) => (
+                  <option key={p} value={p}>
+                    {p}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
           {isLoggedIn ? (
             <button
               type="button"

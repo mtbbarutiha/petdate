@@ -16878,6 +16878,12 @@ select.pepito-wallet-convert-control {
   max-width: 1100px;
   padding-inline: 16px;
 }
+.pepito-games-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  align-items: flex-end;
+}
 .pepito-games-filter {
   display: flex;
   flex-direction: column;

@@ -5130,7 +5130,12 @@ export const dbService = {
     );
   },
 
-  listGames(filters?: { sectionId?: number; status?: GameStatus; gameType?: GameType }): Game[] {
+  listGames(filters?: {
+    sectionId?: number;
+    status?: GameStatus;
+    gameType?: GameType;
+    province?: string;
+  }): Game[] {
     let sql = `
       SELECT g.* FROM games g
       WHERE 1=1
@@ -5156,6 +5161,11 @@ export const dbService = {
     if (filters?.gameType) {
       sql += ' AND g.game_type = ?';
       params.push(filters.gameType);
+    }
+    const province = String(filters?.province || '').trim();
+    if (province) {
+      sql += ' AND g.province = ?';
+      params.push(province);
     }
 
     sql += ' ORDER BY g.scheduled_at ASC';

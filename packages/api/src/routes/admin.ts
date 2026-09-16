@@ -881,7 +881,11 @@ adminRouter.get('/games', (req, res) => {
     res.status(400).json({ error: 'وضعیت نامعتبر' });
     return;
   }
-  const games = dbService.listGames({ status, gameType });
+  const games = dbService.listGames({
+    status,
+    gameType,
+    province: typeof req.query.province === 'string' ? req.query.province.trim() || undefined : undefined,
+  });
   res.json({ total: games.length, games });
 });
 

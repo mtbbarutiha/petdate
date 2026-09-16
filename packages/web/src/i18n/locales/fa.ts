@@ -941,6 +941,7 @@ export const fa: Dict = {
     title: 'ایونت‌ها',
     lead: 'ایونت‌های پت نزدیک را ببین، بساز یا به آن‌ها بپیوند.',
     filterStatus: 'وضعیت',
+    filterProvince: 'استان',
     filterAll: 'همه',
     createCta: 'ساخت ایونت',
     hideForm: 'بستن فرم',
