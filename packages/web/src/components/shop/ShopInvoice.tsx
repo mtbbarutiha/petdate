@@ -23,6 +23,7 @@ export type ShopInvoiceOrder = {
   note?: string;
   items: unknown[];
   createdAt: string;
+  invoicePdfUrl?: string | null;
 };
 
 const STATUS_FA: Record<string, string> = {
@@ -103,13 +104,23 @@ type Props = {
   paidLabelOverride?: string | null;
   className?: string;
   compact?: boolean;
+  /** Bearer token for authenticated PDF download endpoint */
+  authToken?: string | null;
+  showDownload?: boolean;
 };
 
 /**
  * فاکتور فروشگاه پت‌دیت — شناسه عمومی PD-O#####، لوگو، اقلام، جمع و مشخصات گیرنده.
  * جدا از فاکتور پرداخت (PD-R#####) که برای کارت/Stars است.
  */
-export function ShopInvoice({ order, paidLabelOverride, className = '', compact = false }: Props) {
+export function ShopInvoice({
+  order,
+  paidLabelOverride,
+  className = '',
+  compact = false,
+  authToken = null,
+  showDownload = true,
+}: Props) {
   const publicId = orderPublicIdOf(order);
   const items = normalizeItems(Array.isArray(order.items) ? order.items : []);
   const { address, extraNote } = parseAddressFromNote(order.note);
@@ -117,6 +128,29 @@ export function ShopInvoice({ order, paidLabelOverride, className = '', compact 
   const payFa =
     paidLabelOverride?.trim() ||
     payLabel(order.paymentCurrency, Number(order.paymentAmount ?? order.totalToman), order.totalToman);
+
+  const onDownloadPdf = async () => {
+    if (order.invoicePdfUrl) {
+      window.open(order.invoicePdfUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    if (!authToken) return;
+    try {
+      const res = await fetch(`/api/shop/my-orders/${order.id}/invoice.pdf`, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
+      if (!res.ok) throw new Error('download failed');
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `petdate-${publicId}.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      /* toast optional */
+    }
+  };
 
   return (
     <article
@@ -208,6 +242,14 @@ export function ShopInvoice({ order, paidLabelOverride, className = '', compact 
           جداگانه با پیشوند <span dir="ltr">PD-R</span> صادر می‌شود.
         </p>
       </footer>
+
+      {showDownload && (order.invoicePdfUrl || authToken) ? (
+        <div className="pd-shop-invoice-actions">
+          <button type="button" className="pepito-btn button-2" onClick={() => void onDownloadPdf()}>
+            دانلود PDF فاکتور
+          </button>
+        </div>
+      ) : null}
     </article>
   );
 }

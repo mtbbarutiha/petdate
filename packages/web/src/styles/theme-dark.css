@@ -3905,6 +3905,45 @@ html[data-theme='dark'] .pepito-my-pets-card-pending {
   color: #fbbf24;
 }
 
+/* Shop purchase invoice — keep paper-white with dark ink in dark mode
+ * (global --pepito-dark remap was making text invisible on white card). */
+html[data-theme='dark'] .pd-shop-invoice {
+  background: #fff;
+  border-color: rgba(92, 77, 145, 0.18);
+  color: #1a2b4a;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+html[data-theme='dark'] .pd-shop-invoice .pd-shop-invoice-brand-name,
+html[data-theme='dark'] .pd-shop-invoice .pd-shop-invoice-id,
+html[data-theme='dark'] .pd-shop-invoice .pd-shop-invoice-parties h3,
+html[data-theme='dark'] .pd-shop-invoice .pd-shop-invoice-parties p,
+html[data-theme='dark'] .pd-shop-invoice .pd-shop-invoice-table th,
+html[data-theme='dark'] .pd-shop-invoice .pd-shop-invoice-table td,
+html[data-theme='dark'] .pd-shop-invoice .pd-shop-invoice-totals,
+html[data-theme='dark'] .pd-shop-invoice .pd-shop-invoice-totals strong,
+html[data-theme='dark'] .pd-shop-invoice .pd-shop-invoice-kind,
+html[data-theme='dark'] .pd-shop-invoice .pd-shop-invoice-date,
+html[data-theme='dark'] .pd-shop-invoice .pd-shop-invoice-brand-tag,
+html[data-theme='dark'] .pd-shop-invoice .pd-shop-invoice-hint,
+html[data-theme='dark'] .pd-shop-invoice .pd-shop-muted {
+  color: #1a2b4a;
+}
+html[data-theme='dark'] .pd-shop-invoice .pd-shop-invoice-brand-tag,
+html[data-theme='dark'] .pd-shop-invoice .pd-shop-invoice-kind,
+html[data-theme='dark'] .pd-shop-invoice .pd-shop-invoice-date,
+html[data-theme='dark'] .pd-shop-invoice .pd-shop-invoice-hint,
+html[data-theme='dark'] .pd-shop-invoice .pd-shop-invoice-table th,
+html[data-theme='dark'] .pd-shop-invoice .pd-shop-muted {
+  opacity: 0.78;
+}
+html[data-theme='dark'] .pd-shop-invoice .pd-shop-invoice-status {
+  background: rgba(92, 77, 145, 0.12);
+  color: #3d2f6b;
+}
+html[data-theme='dark'] .pd-shop-invoice-actions .pepito-btn {
+  color: inherit;
+}
+
 /* Shop card-to-card deposit panel — was a frozen light gradient while
  * --pepito-dark/--pepito-muted remap to light ink → unreadable in dark.
  * Shared by ShopCartPage + ShopCardPayPage (`/shop/card-pay/:id`). */

@@ -349,6 +349,11 @@ assert.match(darkCss, /\.pd-shop-card-deposit\b/, 'card-to-card deposit panel re
 assert.match(darkCss, /\.pd-shop-card-deposit--inline\b/, 'card-pay inline deposit panel remapped for dark');
 assert.match(darkCss, /\.pd-shop-card-deposit-number\b/, 'deposit card number remapped for dark');
 assert.match(
+  darkCss,
+  /html\[data-theme=['"]dark['"]\]\s*\.pd-shop-invoice\s*\{[\s\S]{0,200}background:\s*#fff/,
+  'dark mode keeps shop invoice on white paper with forced dark ink',
+);
+assert.match(
   pepitoCss,
   /\.pepito-card-pan[\s\S]{0,160}unicode-bidi:\s*isolate/,
   'hyphenated card PAN is bidi-isolated so RTL cannot reverse digit groups',

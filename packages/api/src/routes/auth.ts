@@ -12,6 +12,9 @@ import {
   minWithdrawAmount,
   withdrawAmountToman,
   findCoinPackage,
+  findTomanTopupPackage,
+  TOMAN_TOPUP_PACKAGES,
+  isWalletTomanTopupPackageId,
   MIN_SELL_COINS,
   USER_ROLES,
   isStoredCustomProfilePhoto,
@@ -534,7 +537,7 @@ authRouter.get('/wallet/buy-coins', (req, res) => {
     .filter((o) => {
       if (o.status !== 'awaiting_receipt' && o.status !== 'pending') return false;
       const pkg = String(o.packageId || '');
-      return !pkg.startsWith('shop') && !pkg.startsWith('wstars:');
+      return !pkg.startsWith('shop') && !pkg.startsWith('wstars:') && !pkg.startsWith('wtoman:');
     });
   res.json({
     ok: true,
@@ -613,6 +616,106 @@ authRouter.post('/wallet/buy-coins/card', (req, res) => {
     coins: pkg.coins,
     amountToman: pkg.toman,
     amountStars: pkg.stars,
+    method: 'card',
+    status: 'awaiting_receipt',
+  });
+  res.status(201).json({
+    ok: true,
+    order,
+    package: pkg,
+    card: {
+      number: dest.cardNumber,
+      masked: dest.cardMasked,
+      grouped: dest.cardGrouped,
+      holder: dest.cardHolder,
+    },
+    message: `مبلغ ${pkg.toman.toLocaleString('fa-IR')} تومان را واریز کن و عکس رسید را آپلود کن.`,
+  });
+});
+
+/** بسته‌های شارژ ریالی (تومان کیف‌پول) + کارت مقصد */
+authRouter.get('/wallet/buy-toman', (req, res) => {
+  const session = getUserFromBearer(req.header('authorization') ?? undefined);
+  if (!session) {
+    res.status(401).json({ error: 'وارد نشده‌اید' });
+    return;
+  }
+  const card = paymentCardPublicInfo();
+  const open = dbService
+    .listUserPaymentOrders(session.user.id, { limit: 10, method: 'card' })
+    .filter((o) => {
+      if (o.status !== 'awaiting_receipt' && o.status !== 'pending') return false;
+      return isWalletTomanTopupPackageId(String(o.packageId || ''));
+    });
+  res.json({
+    ok: true,
+    packages: TOMAN_TOPUP_PACKAGES.map((p) => ({
+      id: p.id,
+      toman: p.toman,
+      label: p.label,
+    })),
+    card: card.configured
+      ? {
+          number: card.cardNumber,
+          masked: card.cardMasked,
+          grouped: card.cardGrouped,
+          holder: card.cardHolder,
+        }
+      : null,
+    paymentCardConfigured: card.configured,
+    error: card.configured ? undefined : card.error,
+    openOrders: open,
+    paymentCardEnabled: getRuntimeFlags().paymentCardEnabled,
+    message: card.configured
+      ? 'مبلغ را کارت‌به‌کارت واریز کن؛ بعد از تأیید ادمین همان مبلغ به کیف‌پول ریالی (تومان) واریز می‌شود.'
+      : card.error,
+  });
+});
+
+authRouter.post('/wallet/buy-toman/card', (req, res) => {
+  const session = getUserFromBearer(req.header('authorization') ?? undefined);
+  if (!session) {
+    res.status(401).json({ error: 'وارد نشده‌اید' });
+    return;
+  }
+  if (rejectIfFlagOff(res, 'paymentCardEnabled')) return;
+  const dest = paymentCardPublicInfo();
+  if (!dest.configured) {
+    res.status(503).json({
+      ok: false,
+      reason: 'card_not_configured',
+      error: dest.error || 'شماره کارت واریز پیکربندی نشده',
+    });
+    return;
+  }
+  const packageId = String(req.body?.packageId ?? '').trim();
+  const pkg = findTomanTopupPackage(packageId);
+  if (!pkg) {
+    res.status(400).json({ ok: false, error: 'بسته نامعتبر', reason: 'package' });
+    return;
+  }
+  const open = dbService.findOpenWalletTomanCardOrder(session.user.id);
+  if (open) {
+    res.status(409).json({
+      ok: false,
+      reason: 'open_order',
+      error: 'یک درخواست شارژ ریالی باز داری — اول همان را تکمیل یا منتظر تأیید بمان.',
+      order: open,
+      card: {
+        number: dest.cardNumber,
+        masked: dest.cardMasked,
+        grouped: dest.cardGrouped,
+        holder: dest.cardHolder,
+      },
+    });
+    return;
+  }
+  const order = dbService.createPaymentOrder({
+    userId: session.user.id,
+    packageId: pkg.id,
+    coins: 0,
+    amountToman: pkg.toman,
+    amountStars: 0,
     method: 'card',
     status: 'awaiting_receipt',
   });

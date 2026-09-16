@@ -76,9 +76,11 @@ export function enqueueCard2CardFinanceOs(input: {
   const kindFa =
     input.kind === 'shopcard'
       ? 'شاپ کارت‌به‌کارت'
-      : input.kind === 'coins'
-        ? 'خرید سکه کارت‌به‌کارت'
-        : `کارت‌به‌کارت (${input.kind})`;
+      : input.kind === 'toman'
+        ? 'شارژ ریالی کارت‌به‌کارت'
+        : input.kind === 'coins'
+          ? 'خرید سکه کارت‌به‌کارت'
+          : `کارت‌به‌کارت (${input.kind})`;
   try {
     const result = importFinanceOsTransactions({
       account,
@@ -129,7 +131,9 @@ export async function notifyAdminsPendingCardReceipt(
   try {
     pushAdminHeaderNotification({
       title: `رسید کارت‌به‌کارت #${order.id}`,
-      body: `${order.userName || 'کاربر'} · ${order.coins} سکه — صف تأیید مالی`,
+      body: String(order.packageId || '').startsWith('wtoman:')
+        ? `${order.userName || 'کاربر'} · ${toPersianDigits(order.amountToman ?? 0)} تومان — صف تأیید مالی`
+        : `${order.userName || 'کاربر'} · ${order.coins} سکه — صف تأیید مالی`,
       kind: 'warn',
       href: '/admin/payments',
       module: 'finance',
@@ -156,7 +160,11 @@ export async function notifyAdminsPendingCardReceipt(
     `کاربر: ${order.userName || '—'} (#${order.userId})`,
     order.userUsername ? `یوزرنیم: @${order.userUsername}` : null,
     order.userTelegramId ? `تلگرام: ${order.userTelegramId}` : null,
-    `بسته: ${order.packageId} · ${toPersianDigits(order.coins)} سکه`,
+    `بسته: ${order.packageId} · ${
+      String(order.packageId || '').startsWith('wtoman:')
+        ? `${toPersianDigits(order.amountToman ?? 0)} تومان (شارژ ریالی)`
+        : `${toPersianDigits(order.coins)} سکه`
+    }`,
     `مبلغ: ${toPersianDigits(order.amountToman ?? 0)} تومان`,
     last4 ? `کارت مقصد: …${last4}` : null,
     '',
@@ -186,8 +194,9 @@ export async function notifyAdminsPendingCardReceipt(
 export async function notifyCardPaymentApprovedTelegram(opts: {
   toTelegramId?: string | null;
   coins?: number;
+  amountToman?: number;
   shopOrderId?: number;
-  kind: 'coins' | 'shopcard';
+  kind: 'coins' | 'shopcard' | 'toman';
 }): Promise<boolean> {
   const tg = opts.toTelegramId ? String(opts.toTelegramId).trim() : '';
   if (!infra.telegram.botToken || !usableTelegramId(tg)) return false;
@@ -198,11 +207,17 @@ export async function notifyCardPaymentApprovedTelegram(opts: {
           opts.shopOrderId ? `سفارش فروشگاه #${opts.shopOrderId} ثبت شد.` : 'سفارشت ثبت شد.',
           'از «سفارش‌های من» در شاپ پیگیری کن.',
         ].join('\n')
-      : [
-          '✅ پرداخت کارت‌به‌کارت تأیید شد.',
-          `${toPersianDigits(opts.coins ?? 0)} سکه به موجودی‌ات اضافه شد.`,
-          'موجودی در کیف پول وب و ربات یکی است.',
-        ].join('\n');
+      : opts.kind === 'toman'
+        ? [
+            '✅ شارژ ریالی تأیید شد.',
+            `${toPersianDigits(opts.amountToman ?? 0)} تومان به کیف‌پول ریالی‌ات اضافه شد.`,
+            'موجودی در کیف پول وب و ربات یکی است.',
+          ].join('\n')
+        : [
+            '✅ پرداخت کارت‌به‌کارت تأیید شد.',
+            `${toPersianDigits(opts.coins ?? 0)} سکه به موجودی‌ات اضافه شد.`,
+            'موجودی در کیف پول وب و ربات یکی است.',
+          ].join('\n');
   try {
     const res = await telegramFetch(telegramBotApiUrl(infra.telegram.botToken, 'sendMessage'), {
       method: 'POST',

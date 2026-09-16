@@ -407,6 +407,7 @@ run src/routes/games-http.selftest.ts
 run src/services/otp-sms-copy.selftest.ts
 run src/services/otp-email-html.selftest.ts
 run src/services/prescription-sms.selftest.ts
+run src/services/shop-invoice-paid.selftest.ts
 run src/services/prescription-html.selftest.ts
 run src/services/prescription-pdf.selftest.ts
 run src/services/prescription-chat.selftest.ts

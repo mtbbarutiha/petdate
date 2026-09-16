@@ -440,6 +440,9 @@ export const en: Dict = {
     syncWallet: 'Sync wallet',
     cardTitle: 'Top up coins via card transfer',
     cardLead: 'Same bot wallet — transfer, upload the receipt; admin confirms and posts to the ledger',
+    tomanTopupTitle: 'Rial wallet top-up (Toman)',
+    tomanTopupLead:
+      'Transfer the amount by card; after admin approval the same amount credits your Rial (Toman) wallet',
     trackingOptional: "Tracking number (optional)",
     uploadReceipt: "Upload receipt photo",
     receiptPending: "Receipt submitted — waiting for admin confirmation in finance.",

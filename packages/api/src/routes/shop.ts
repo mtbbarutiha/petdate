@@ -842,6 +842,15 @@ shopRouter.post('/checkout/wallet-stars-telegram', (req, res) => {
 function publicShopOrder(o: ReturnType<typeof adminPlatform.getShopOrder>) {
   if (!o) return null;
   const items = Array.isArray(o.items) ? o.items : [];
+  let invoicePdfUrl: string | undefined;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const inv = require('../services/shop-invoice-pdf') as typeof import('../services/shop-invoice-pdf');
+    const meta = inv.getShopOrderInvoiceMeta(o.id);
+    if (meta?.token) invoicePdfUrl = inv.shopInvoicePdfPublicUrl(meta.token);
+  } catch {
+    /* optional */
+  }
   return {
     id: o.id,
     /** شناسه فاکتور فروشگاه — PD-O##### (جدا از PD-R پرداخت) */
@@ -856,6 +865,7 @@ function publicShopOrder(o: ReturnType<typeof adminPlatform.getShopOrder>) {
     items,
     createdAt: o.createdAt,
     updatedAt: o.updatedAt,
+    invoicePdfUrl,
   };
 }
 
@@ -1093,6 +1103,43 @@ shopRouter.get('/my-orders/:id', (req, res) => {
     order: publicShopOrder(order),
     statusLabelsFa: ORDER_STATUS_FA,
   });
+});
+
+/** Authenticated PDF download / generate for owner. */
+shopRouter.get('/my-orders/:id/invoice.pdf', (req, res) => {
+  const session = requireSession(req, res, 'برای دانلود فاکتور وارد حساب شوید.');
+  if (!session) return;
+  const raw = String(req.params.id ?? '').trim();
+  let id = Number(raw);
+  if (!Number.isFinite(id) || id <= 0) {
+    id = parseOrderIdFromPublicId(raw) ?? NaN;
+  }
+  if (!Number.isFinite(id) || id <= 0) {
+    res.status(400).json({ ok: false, reason: 'bad_id', error: 'شناسه فاکتور نامعتبر است.' });
+    return;
+  }
+  const order = adminPlatform.getShopOrder(id);
+  if (!order || order.userId !== session.user.id) {
+    res.status(404).json({ ok: false, reason: 'missing', error: 'سفارش پیدا نشد.' });
+    return;
+  }
+  void import('../services/shop-invoice-pdf')
+    .then(async (inv) => {
+      const pdf = await inv.ensureShopInvoicePdf(order);
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="petdate-${order.publicId || order.id}.pdf"`
+      );
+      res.setHeader('Cache-Control', 'private, max-age=60');
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const fs = require('fs') as typeof import('fs');
+      fs.createReadStream(pdf.pdfPath).pipe(res);
+    })
+    .catch((err) => {
+      console.warn('invoice pdf download failed:', (err as Error).message);
+      res.status(500).json({ ok: false, error: 'ساخت PDF ناموفق بود.' });
+    });
 });
 
 shopRouter.get('/orders-telegram', (req, res) => {
