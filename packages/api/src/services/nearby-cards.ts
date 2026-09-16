@@ -248,12 +248,17 @@ export async function renderNearbyListCard(opts: {
   radiusKm: number;
   page: number;
   totalCount: number;
+  /** Optional header title (defaults to nearby radius caption) */
+  title?: string;
 }): Promise<Buffer> {
   const pets = opts.pets;
   const headerH = 56;
   const height = Math.max(headerH + ROW_H, headerH + pets.length * ROW_H + PAD);
   const layered: sharp.OverlayOptions[] = [];
 
+  const headerTitle =
+    opts.title?.trim() ||
+    `🛰️ اطراف من ≤ ${toFaDigits(opts.radiusKm)} کیلومتر`;
   const headerSvg = `<?xml version="1.0" encoding="UTF-8"?>
 <svg width="${LIST_WIDTH}" height="${headerH}" xmlns="http://www.w3.org/2000/svg">
   <defs><style>${fontFaceCss()}
@@ -261,7 +266,7 @@ export async function renderNearbyListCard(opts: {
     .s { font-family: Vazirmatn; font-weight: 400; font-size: 15px; fill: #9ca3af; }
   </style></defs>
   <rect width="${LIST_WIDTH}" height="${headerH}" fill="#121218"/>
-  <text x="${LIST_WIDTH - PAD}" y="28" class="h" text-anchor="end">🛰️ اطراف من ≤ ${toFaDigits(opts.radiusKm)} کیلومتر</text>
+  <text x="${LIST_WIDTH - PAD}" y="28" class="h" text-anchor="end">${escapeXml(headerTitle)}</text>
   <text x="${LIST_WIDTH - PAD}" y="48" class="s" text-anchor="end">${toFaDigits(opts.totalCount)} نتیجه · صفحه ${toFaDigits(opts.page + 1)}</text>
 </svg>`;
   layered.push({

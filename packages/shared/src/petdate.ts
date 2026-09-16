@@ -645,6 +645,8 @@ export interface PetProfile {
   ownerVerified?: boolean;
   /** آواتار صاحب پت (برای کارت پروفایل ترکیبی) */
   ownerAvatarUrl?: string;
+  /** جنسیت صاحب پت — برای آواتار پیش‌فرض وقتی عکس نیست */
+  ownerGender?: UserGender;
   /** آخرین فعالیت/موقعیت صاحب (برای «آخرین بازدید») */
   ownerLastSeenAt?: string;
   /** فاصله تا موقعیت درخواست‌کننده (کیلومتر) — فقط در نتایج nearby */

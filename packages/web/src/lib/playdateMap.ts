@@ -48,6 +48,10 @@ export function petProfileToUiPet(pet?: PetProfile | null): Pet {
       if (!raw) return undefined;
       return resolvePublicMediaUrl(raw) || raw;
     })(),
+    ownerGender:
+      pet?.ownerGender === 'female' || pet?.ownerGender === 'male'
+        ? pet.ownerGender
+        : undefined,
     imageUrl: resolveImage(pet?.imageUrl, id),
     emoji: PET_TYPE_EMOJI[type],
     bio: pet?.bio,

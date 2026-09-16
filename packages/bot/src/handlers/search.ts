@@ -12,6 +12,8 @@ import {
   userPublicIdOf,
 } from '@petdate/shared';
 import {
+  fetchNearbyListCardBuffer,
+  fetchPetsListCardBuffer,
   fetchPetProfileCardBuffer,
   getPet,
   getUserById,
@@ -720,7 +722,7 @@ function formatNearbyPetCaption(
   lines.push('');
   lines.push('👤 <b>صاحب پت</b>');
   if (ownerName) lines.push(`| نام: ${escapeHtml(ownerName)}`);
-  if (publicId) lines.push(`| شناسه صاحب پت: <code>${escapeHtml(publicId)}</code>`);
+  if (publicId) lines.push(`| شناسه صاحب پت: <code>/${escapeHtml(publicId)}</code>`);
   if (owner?.age != null) lines.push(`| سن: ${owner.age}`);
   if (owner?.gender && owner.gender in USER_GENDER_LABELS) {
     lines.push(`| جنسیت: ${USER_GENDER_LABELS[owner.gender as keyof typeof USER_GENDER_LABELS]}`);
@@ -990,8 +992,9 @@ async function showSearchResults(
   }
 
   const hasGeoDistances = pets.some((p) => p.distanceKm != null);
+  const titleText = modeTitle(mode, breed, species);
   const text = [
-    `<b>${modeTitle(mode, breed, species)}</b>`,
+    `<b>${titleText}</b>`,
     hasGeoDistances
       ? `📋 ${pets.length} نفر/پت نزدیک — روی هر مورد بزن تا پروفایل باز بشه`
       : `📋 ${pets.length} پت — روی هر مورد بزن تا پروفایل باز بشه`,
@@ -1001,23 +1004,64 @@ async function showSearchResults(
     .join('\n');
 
   const kb = searchPetsListKeyboard(pets, mode, safePage, PAGE_SIZE);
+  const pagePets = pets.slice(safePage * PAGE_SIZE, safePage * PAGE_SIZE + PAGE_SIZE);
+
+  async function sendListWithKeyboard(): Promise<void> {
+    const collageModes = new Set<SearchMode>(['nearby', 'province', 'samebreed', 'all', 'breed', 'newest', 'popular']);
+    if (collageModes.has(mode) && pagePets.length > 0) {
+      try {
+        if (mode === 'nearby' && geo) {
+          const buf = await fetchNearbyListCardBuffer({
+            lat: geo.lat,
+            lng: geo.lng,
+            radiusKm: geo.radiusKm ?? 5,
+            excludeOwnerId: user?.id,
+            page: safePage,
+            pageSize: PAGE_SIZE,
+          });
+          await ctx.replyWithPhoto(new InputFile(buf, 'nearby-list.jpg'), {
+            caption: text,
+            parse_mode: 'HTML',
+          });
+          await ctx.reply('روی هر مورد بزن تا پروفایل باز بشه:', { reply_markup: kb });
+          return;
+        }
+        const buf = await fetchPetsListCardBuffer({
+          petIds: pets.map((p) => p.id),
+          title: titleText.replace(/<[^>]+>/g, ''),
+          page: safePage,
+          pageSize: PAGE_SIZE,
+        });
+        await ctx.replyWithPhoto(new InputFile(buf, 'search-list.jpg'), {
+          caption: text,
+          parse_mode: 'HTML',
+          reply_markup: kb,
+        });
+        return;
+      } catch (err) {
+        console.warn('search list-card failed:', (err as Error).message);
+      }
+    }
+    await ctx.reply(text, { parse_mode: 'HTML', reply_markup: kb });
+  }
 
   if (opts?.edit && ctx.callbackQuery) {
     try {
       const msg = ctx.callbackQuery.message;
       if (msg && 'photo' in msg && msg.photo) {
         // برگشت از کارت عکس — پیام جدید لیست
-        await ctx.reply(text, { parse_mode: 'HTML', reply_markup: kb });
+        await sendListWithKeyboard();
         return;
       }
-      await ctx.editMessageText(text, { parse_mode: 'HTML', reply_markup: kb });
+      // Pagination edit: prefer new collage photo over editing plain text
+      await sendListWithKeyboard();
       return;
     } catch {
       /* fall through to reply */
     }
   }
 
-  await ctx.reply(text, { parse_mode: 'HTML', reply_markup: kb });
+  await sendListWithKeyboard();
 
   // کیبورد reply منو را یک‌بار نگه می‌داریم (نه روی هر صفحه)
   if (!opts?.edit) {

@@ -263,6 +263,7 @@ assert.match(darkCss, /\.pepito-earn-meta\b/, 'earn rates meta remapped');
 assert.match(darkCss, /\.pepito-earn-how\b/, 'earn process steps remapped');
 assert.match(darkCss, /\.pepito-earn-form-wrap\b/, 'earn withdraw form remapped');
 assert.match(darkCss, /\.pepito-earn-field input/, 'earn inputs remapped for dark');
+assert.match(darkCss, /\.pepito-earn-currency-option/, 'earn currency options remapped for dark');
 assert.doesNotMatch(
   darkCss,
   /html\[data-theme=['"]dark['"]\][\s\S]{0,80}\.pepito-earn-(hero|balance-main|meta|how|form-wrap|history-item)[\s\S]{0,220}#(fff8f0|fff7ee|fff7ed|fafafa|f5f5f5|ffffff)\b/i,

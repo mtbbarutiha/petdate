@@ -14862,6 +14862,19 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   width: 14px;
   height: 14px;
 }
+.find-playmate-gender-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-block-end: 0.75rem;
+}
+.find-playmate-gender-btn {
+  width: 100%;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.35;
+  min-height: 44px;
+}
 
 @media (min-width: 860px) {
   /* Desktop sidebar is only ~320–400px — keep mute + CTA clear of the logo */
@@ -17130,6 +17143,27 @@ select.pepito-wallet-convert-control {
   backdrop-filter: blur(6px);
   background: color-mix(in srgb, #fff 82%, transparent);
 }
+.pepito-game-host-on-photo {
+  position: absolute;
+  inset-block-end: 10px;
+  inset-inline-start: 10px;
+  inset-inline-end: 10px;
+  z-index: 2;
+  max-width: calc(100% - 20px);
+  width: max-content;
+  padding: 0.28rem 0.55rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, #0f172a 62%, transparent);
+  color: #f8fafc;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+  backdrop-filter: blur(4px);
+}
 .pepito-games-card-body {
   display: flex;
   flex-direction: column;
@@ -17535,6 +17569,15 @@ select.pepito-wallet-convert-control {
   margin-top: 0.55rem;
   max-height: min(42vh, 280px);
   overflow-y: auto;
+}
+.pepito-pet-discovery-contact-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  flex: 0 0 auto;
+}
+.pepito-pet-discovery-contact-actions .pepito-pet-discovery-request {
+  white-space: nowrap;
 }
 .tg-chat-list-discovery-bar {
   flex: 0 0 auto;

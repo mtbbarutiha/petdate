@@ -1,10 +1,15 @@
 /**
  * ReplyKeyboard must not ship Bot API `style` (inline-only) — Telegram 400.
+ * Visual distinction on reply menus uses emoji prefixes (shop/invite/coins/roles).
+ * Inline keyboards (e.g. coin packages) MAY keep .success()/.primary().
  * Run: npx tsx packages/bot/src/keyboards-reply-styles.selftest.ts
  */
 import assert from 'node:assert/strict';
-import { Keyboard } from 'grammy';
+import { InlineKeyboard, Keyboard } from 'grammy';
+import { MY_ROLES_LABEL } from '@petdate/shared';
 import {
+  COMMON_MENU,
+  coinsShopKeyboard,
   finalizeReplyKeyboard,
   mainMenuKeyboard,
   paymentReceiptReplyKeyboard,
@@ -38,5 +43,20 @@ assert.deepEqual(buttonStyles(roleReplyKeyboard([])), [], 'role reply has no sty
 assert.deepEqual(buttonStyles(mainMenuKeyboard('pet_owner', ['pet_owner'])), [], 'main menu has no styles');
 assert.deepEqual(buttonStyles(yesNoReplyKeyboard()), [], 'yes/no has no styles');
 assert.deepEqual(buttonStyles(paymentReceiptReplyKeyboard()), [], 'payment receipt has no styles');
+
+// Reply menus restore color via emoji (styles are stripped)
+assert.match(COMMON_MENU.shop, /🛒|🛍️|🟢/, 'shop has colorful emoji');
+assert.match(COMMON_MENU.invite, /🎁|💙/, 'invite has colorful emoji');
+assert.match(COMMON_MENU.coins, /🪙|💰|💙/, 'coins has colorful emoji');
+assert.match(MY_ROLES_LABEL, /🎭/, 'MY_ROLES has colorful emoji');
+
+// Inline coin packages KEEP Bot API styles
+const coinsRaw = JSON.parse(JSON.stringify(coinsShopKeyboard(null))) as {
+  inline_keyboard?: Array<Array<{ style?: string; text?: string }>>;
+};
+const inlineStyles = (coinsRaw.inline_keyboard ?? []).flatMap((row) =>
+  row.map((b) => b.style).filter(Boolean)
+);
+assert.ok(inlineStyles.length >= 1, 'coin package inline keyboard keeps style');
 
 console.log('keyboards-reply-styles.selftest: ok');

@@ -55,7 +55,7 @@ function formatPetHtml(pet: PetProfile): string {
   }
   if (pet.ownerId) {
     lines.push(
-      `شناسه صاحب پت: <code>${escapeHtml(userPublicIdOf({ id: pet.ownerId }))}</code>`
+      `شناسه صاحب پت: <code>/${escapeHtml(userPublicIdOf({ id: pet.ownerId }))}</code>`
     );
   }
   if (pet.ownerName) lines.push(`👤 صاحب: ${escapeHtml(pet.ownerName)}`);

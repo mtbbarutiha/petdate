@@ -459,10 +459,36 @@ export async function fetchNearbyListCardBuffer(opts: {
   if (opts.excludeOwnerId) params.set('excludeOwnerId', String(opts.excludeOwnerId));
   if (opts.page != null) params.set('page', String(opts.page));
   if (opts.pageSize != null) params.set('pageSize', String(opts.pageSize));
-  const res = await fetch(`${config.apiUrl}/api/pets/nearby/list-card?${params.toString()}`);
+  const res = await fetch(`${config.apiUrl}/api/pets/nearby/list-card?${params.toString()}`, {
+    headers: botHeaders(),
+  });
   if (!res.ok) {
     const body = await res.text();
     throw new Error(`list-card ${res.status}: ${body}`);
+  }
+  return Buffer.from(await res.arrayBuffer());
+}
+
+/** کارت تصویری لیست پت‌ها با شناسه‌های دلخواه (JPEG) */
+export async function fetchPetsListCardBuffer(opts: {
+  petIds: number[];
+  title?: string;
+  page?: number;
+  pageSize?: number;
+}): Promise<Buffer> {
+  const res = await fetch(`${config.apiUrl}/api/pets/list-card`, {
+    method: 'POST',
+    headers: botHeaders(),
+    body: JSON.stringify({
+      petIds: opts.petIds,
+      title: opts.title,
+      page: opts.page,
+      pageSize: opts.pageSize,
+    }),
+  });
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`pets list-card ${res.status}: ${body}`);
   }
   return Buffer.from(await res.arrayBuffer());
 }

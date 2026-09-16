@@ -29,14 +29,14 @@ async function main() {
   const afterBoot = dbService.listGames({ status: 'open' }).filter((g) =>
     SAMPLE_PET_EVENTS.some((s) => s.title === g.title)
   );
-  assert.equal(afterBoot.length, 4, 'boot seeds 4 catalog events in production');
+  assert.equal(afterBoot.length, SAMPLE_PET_EVENTS.length, 'boot seeds catalog events in production');
 
   const first = seedSamplePetEvents(db);
   const second = seedSamplePetEvents(db);
   assert.equal(first.inserted, 0, 'idempotent: no duplicate insert');
-  assert.equal(first.updated, SAMPLE_PET_EVENTS.length, 'first refresh updates 4');
+  assert.equal(first.updated, SAMPLE_PET_EVENTS.length, 'first refresh updates all samples');
   assert.equal(second.inserted, 0, 'second pass inserts nothing');
-  assert.equal(second.updated, SAMPLE_PET_EVENTS.length, 'second pass updates all 4');
+  assert.equal(second.updated, SAMPLE_PET_EVENTS.length, 'second pass updates all samples');
 
   const host = db
     .prepare('SELECT id, telegram_id, name FROM users WHERE telegram_id = ?')
@@ -51,7 +51,7 @@ async function main() {
   const samples = open.filter((g) =>
     SAMPLE_PET_EVENTS.some((s) => s.title === g.title)
   );
-  assert.equal(samples.length, 4, 'four open catalog events');
+  assert.equal(samples.length, SAMPLE_PET_EVENTS.length, 'all open catalog events');
 
   for (const def of SAMPLE_PET_EVENTS) {
     const g = samples.find((x) => x.title === def.title);

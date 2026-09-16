@@ -733,7 +733,8 @@ function appendAccessRow(kb: Keyboard, telegramId?: string | number | null): Key
 }
 
 /**
- * مشترک همه نقش‌ها: مرور (شاپ سبز / دعوت) → راهنما → مالی (سکه آبی / primary).
+ * مشترک همه نقش‌ها: مرور (شاپ سبز / دعوت) → راهنما → مالی (سکه آبی).
+ * ReplyKeyboard نمی‌تواند Bot API style داشته باشد — تمایز بصری با emoji پیشوند.
  * extraFinance مثلاً «کسب درآمد» کنار سکه برای صاحب پت.
  */
 function appendCommonMenuRows(kb: Keyboard, extraFinance?: string): Keyboard {

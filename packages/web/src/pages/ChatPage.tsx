@@ -50,7 +50,6 @@ import {
   shouldShowOwnerConsultCta,
 } from '../components/OwnerConsultPanel';
 import { InboxPeerAvatar } from '../components/InboxPeerAvatar';
-import { PetAvatar } from '../components/PetAvatar';
 import { PresenceBadge } from '../components/PresenceBadge';
 import { RequestCountdown } from '../components/RequestCountdown';
 import { formatAge, formatTimeAgo } from '../data/mock';
@@ -297,13 +296,13 @@ function ConversationListPane({
   onReject: (item: InboxConversation) => void;
   onViewOwner: (item: InboxConversation) => void;
   onDismiss: (item: InboxConversation) => void;
-  onOpenContact?: (contactUserId: number) => void;
+  onOpenContact?: (contactUserId: number) => boolean;
 }) {
   const { t } = useI18n();
   const isPlaymateHub = scope === 'owner';
   const panelPath = providerHomePath(scope);
   const HubCta = ownerConsult ? OwnerConsultPanel : FindPlaymatePanel;
-  const showDiscovery = isPlaymateHub && !ownerConsult;
+  const showDiscovery = isPlaymateHub;
   return (
     <aside className="tg-chat-list" aria-label={t('chats.listAria')}>
       <header className="tg-chat-list-head">
@@ -407,19 +406,11 @@ function ConversationListPane({
                     }${c.pending ? ' is-pending' : ''}${c.ongoing ? ' is-ongoing' : ''}`}
                     onClick={() => onSelect(c)}
                   >
-                    {c.peerAvatarUrl || !peer ? (
-                      <InboxPeerAvatar
-                        avatarUrl={c.peerAvatarUrl || peer?.ownerAvatarUrl}
-                        name={c.title}
-                      />
-                    ) : (
-                      <PetAvatar
-                        type={peer.type}
-                        size="md"
-                        imageUrl={peer.imageUrl}
-                        name={peer.name}
-                      />
-                    )}
+                    <InboxPeerAvatar
+                      avatarUrl={c.peerAvatarUrl || peer?.ownerAvatarUrl}
+                      name={c.title}
+                      gender={peer?.ownerGender}
+                    />
                     <span className="tg-chat-list-meta">
                       <strong>
                         {c.title}
@@ -554,7 +545,7 @@ function ThreadEmptyState({
   desktop?: boolean;
   ownerConsult?: boolean;
   onFindSent?: () => void;
-  onOpenContact?: (contactUserId: number) => void;
+  onOpenContact?: (contactUserId: number) => boolean;
 }) {
   const { t } = useI18n();
   if (scope === 'vet') {
@@ -1373,22 +1364,18 @@ export function ChatPage() {
     navigate(item.href);
   }
 
-  function onOpenContactChat(contactUserId: number) {
+  function onOpenContactChat(contactUserId: number): boolean {
     const preferred = conversations.find(
       (c) =>
         c.kind === 'playmate' &&
         !c.ended &&
         c.peerPet?.ownerId === contactUserId
     );
-    const fallback = conversations.find(
-      (c) => c.kind === 'playmate' && c.peerPet?.ownerId === contactUserId
-    );
-    const hit = preferred || fallback;
-    if (hit) {
-      navigate(hit.href);
-      return;
+    if (preferred) {
+      navigate(preferred.href);
+      return true;
     }
-    setListError(t('chats.discoveryNoChat'));
+    return false;
   }
 
   function onViewOwnerFromList(item: InboxConversation) {

@@ -34,8 +34,8 @@ assert.match(text, /آرمین/, 'includes seeker name');
 assert.match(text, /پروفایل درخواست‌کننده/, 'profile section heading');
 assert.match(
   text,
-  new RegExp(`شناسه: <code>${userPublicIdOf(patient)}</code>`),
-  'includes public id'
+  new RegExp(`شناسه: <code>/${userPublicIdOf(patient)}</code>`),
+  'includes slash-prefixed public id for Telegram search'
 );
 assert.match(text, /بیو: می‌خوام سگ بگیرم/, 'includes bio snippet');
 assert.match(text, /شهر: تهران/, 'includes city when present');

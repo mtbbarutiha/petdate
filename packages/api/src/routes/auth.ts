@@ -339,7 +339,7 @@ authRouter.get('/google/callback', async (req, res) => {
   res.redirect(302, result.redirect);
 });
 
-authRouter.post('/otp/verify', otpVerifyLimit, (req, res) => {
+authRouter.post('/otp/verify', otpVerifyLimit, async (req, res) => {
   const channel = parseChannel(req.body?.channel);
   const target = String(req.body?.target ?? '').trim();
   const code = String(req.body?.code ?? '').trim();
@@ -348,7 +348,7 @@ authRouter.post('/otp/verify', otpVerifyLimit, (req, res) => {
     return;
   }
 
-  const result = verifyWebOtp(channel, target, code, req.body?.referredBy);
+  const result = await verifyWebOtp(channel, target, code, req.body?.referredBy);
   if (!result.ok) {
     res.status(400).json(result);
     return;

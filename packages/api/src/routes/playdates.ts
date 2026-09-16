@@ -994,6 +994,9 @@ playdatesRouter.post('/find', async (req, res) => {
   if (rejectIfFlagOff(res, 'playdatesEnabled')) return;
   const fromPetId = Number(req.body?.fromPetId);
   const fromUserId = Number(req.body?.fromUserId);
+  const ownerGenderRaw = String(req.body?.ownerGender ?? '').trim().toLowerCase();
+  const ownerGender =
+    ownerGenderRaw === 'female' || ownerGenderRaw === 'male' ? ownerGenderRaw : undefined;
   if (!Number.isFinite(fromPetId) || !Number.isFinite(fromUserId)) {
     res.status(400).json({ error: 'fromPetId و fromUserId الزامی هستند' });
     return;
@@ -1017,11 +1020,16 @@ playdatesRouter.post('/find', async (req, res) => {
 
   dbService.expireStalePlaydateRequests();
 
-  const peers = dbService.listPets({
-    lookingForPlaymate: true,
-    species: fromPet.species,
-    excludeOwnerId: fromUserId,
-  });
+  const peers = dbService
+    .listPets({
+      lookingForPlaymate: true,
+      species: fromPet.species,
+      excludeOwnerId: fromUserId,
+    })
+    .filter((pet) => {
+      if (!ownerGender) return true;
+      return pet.ownerGender === ownerGender;
+    });
   const matches = rankPlaymateMatches(fromPet, peers, { max: MAX_AUTO_PLAYMATE_REQUESTS });
   const speciesLabel = PET_SPECIES_LABELS[fromPet.species] ?? fromPet.species;
 

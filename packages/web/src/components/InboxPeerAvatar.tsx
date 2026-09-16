@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { Stethoscope } from 'lucide-react';
-import type { UserGender } from '@petdate/shared';
+import {
+  defaultAvatarUrlForGender,
+  type UserGender,
+} from '@petdate/shared';
 import { resolvePublicAvatarUrl } from '../lib/api';
 
 function initialsOf(label?: string | null): string {
@@ -15,7 +18,7 @@ function initialsOf(label?: string | null): string {
 
 /**
  * Consult / inbox row avatar: real peer photo when available,
- * initials when name is known but photo missing, stethoscope only as last resort.
+ * gender default when photo fails, initials when name known, stethoscope last.
  */
 export function InboxPeerAvatar({
   avatarUrl,
@@ -28,14 +31,17 @@ export function InboxPeerAvatar({
   gender?: UserGender | string | null;
   size?: number;
 }) {
-  const [failed, setFailed] = useState(false);
-  const resolved = resolvePublicAvatarUrl(avatarUrl, { gender });
-  // Soft inbox refresh can swap a broken URL for a good one on the same row key —
-  // clear the sticky onError latch whenever the resolved src changes.
+  const primary = resolvePublicAvatarUrl(avatarUrl, { gender });
+  const genderFallback = defaultAvatarUrlForGender(gender) || '';
+  const [src, setSrc] = useState(primary || genderFallback);
+  const [exhausted, setExhausted] = useState(false);
+
   useEffect(() => {
-    setFailed(false);
-  }, [resolved]);
-  const showImg = Boolean(resolved) && !failed;
+    setSrc(primary || genderFallback);
+    setExhausted(false);
+  }, [primary, genderFallback]);
+
+  const showImg = Boolean(src) && !exhausted;
   const initials = initialsOf(name);
 
   if (showImg) {
@@ -46,14 +52,20 @@ export function InboxPeerAvatar({
         aria-hidden
       >
         <img
-          src={resolved}
+          src={src}
           alt=""
           width={size}
           height={size}
           loading="lazy"
           decoding="async"
           referrerPolicy="no-referrer"
-          onError={() => setFailed(true)}
+          onError={() => {
+            if (genderFallback && src !== genderFallback) {
+              setSrc(genderFallback);
+              return;
+            }
+            setExhausted(true);
+          }}
         />
       </span>
     );

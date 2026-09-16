@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { Bell, BellOff, PawPrint } from 'lucide-react';
 import {
@@ -44,7 +45,7 @@ export type FindPlaymatePanelProps = {
   /** Called after a successful find/send so parent can refresh inbox */
   onSent?: () => void;
   /** Open an existing playmate chat with a saved contact (contacts chip). */
-  onOpenContact?: (contactUserId: number) => void;
+  onOpenContact?: (id: number) => boolean;
 };
 
 /**
@@ -72,6 +73,12 @@ export function FindPlaymatePanel({
   const [silentConfirmOpen, setSilentConfirmOpen] = useState(false);
   /** Pet awaiting fee confirmation in custom modal (not the browser confirm dialog). */
   const [feeConfirmPet, setFeeConfirmPet] = useState<PetProfile | null>(null);
+  /** Preferred peer owner gender — chosen before fee confirm. */
+  const [ownerGenderPick, setOwnerGenderPick] = useState<{
+    pet: PetProfile;
+    gender?: 'female' | 'male';
+  } | null>(null);
+  const [pendingOwnerGender, setPendingOwnerGender] = useState<'female' | 'male' | null>(null);
 
   const myUserId = authUser?.id ?? user.id;
   const active =
@@ -100,7 +107,7 @@ export function FindPlaymatePanel({
 
   const coins = authUser?.coins ?? authUser?.wallet?.coins ?? 0;
 
-  /** Validate balance then open confirm modal (does not send yet). */
+  /** Validate balance then open owner-gender picker (before fee confirm). */
   function requestFindForPet(pet: PetProfile) {
     if (!myUserId) {
       const msg = 'برای ارسال درخواست همبازی وارد حساب شو.';
@@ -111,20 +118,35 @@ export function FindPlaymatePanel({
       setFindError(msg); toastError(msg); return;
     }
     setFindError(null);
+    setPendingOwnerGender(null);
+    setOwnerGenderPick({ pet });
+  }
+
+  function dismissOwnerGenderPick() {
+    if (findPhase === 'sending') return;
+    setOwnerGenderPick(null);
+  }
+
+  function chooseOwnerGender(gender: 'female' | 'male') {
+    const pet = ownerGenderPick?.pet;
+    if (!pet) return;
+    setOwnerGenderPick(null);
+    setPendingOwnerGender(gender);
     setFeeConfirmPet(pet);
   }
 
   function dismissFeeConfirm() {
     if (findPhase === 'sending') return;
     setFeeConfirmPet(null);
+    setPendingOwnerGender(null);
   }
 
-  async function executeFindForPet(pet: PetProfile) {
+  async function executeFindForPet(pet: PetProfile, ownerGender?: 'female' | 'male') {
     if (!myUserId) return;
     setFeeConfirmPet(null);
     setFindPhase('sending'); setFindError(null); setFindResult(null); setStatusLine(null);
     try {
-      const result = await findAndSendPlaymates(pet, myUserId);
+      const result = await findAndSendPlaymates(pet, myUserId, ownerGender);
       setFindResult(result); setFindPhase('done');
       if (result.sent === 0) {
         const msg = `برای ${result.sourceName} فعلاً همبازی هم‌گروه پیدا نشد. درخواست ارسال نشد.`;
@@ -143,6 +165,77 @@ export function FindPlaymatePanel({
     }
   }
 
+  const ownerGenderModal =
+    ownerGenderPick && typeof document !== 'undefined'
+      ? createPortal(
+          <div
+            className="pepito-lead-modal-overlay"
+            role="presentation"
+            data-testid="playmate-owner-gender"
+            onClick={(e) => {
+              if (e.target === e.currentTarget && findPhase !== 'sending') dismissOwnerGenderPick();
+            }}
+          >
+            <div
+              className="pepito-lead-modal pepito-confirm-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-label={t('chats.findOwnerGenderTitle')}
+            >
+              <header className="pepito-lead-modal__head">
+                <h2>{t('chats.findOwnerGenderTitle')}</h2>
+                <button
+                  type="button"
+                  className="pepito-lead-modal__close"
+                  aria-label={t('common.close')}
+                  onClick={dismissOwnerGenderPick}
+                  disabled={findPhase === 'sending'}
+                >
+                  ×
+                </button>
+              </header>
+              <div className="pepito-lead-modal__body">
+                <div
+                  className="find-playmate-gender-options"
+                  role="group"
+                  aria-label={t('chats.findOwnerGenderTitle')}
+                >
+                  <button
+                    type="button"
+                    className="pepito-btn button-1 find-playmate-gender-btn"
+                    data-testid="playmate-owner-gender-female"
+                    disabled={findPhase === 'sending'}
+                    onClick={() => chooseOwnerGender('female')}
+                  >
+                    {t('chats.findOwnerGenderFemale')}
+                  </button>
+                  <button
+                    type="button"
+                    className="pepito-btn button-1 find-playmate-gender-btn"
+                    data-testid="playmate-owner-gender-male"
+                    disabled={findPhase === 'sending'}
+                    onClick={() => chooseOwnerGender('male')}
+                  >
+                    {t('chats.findOwnerGenderMale')}
+                  </button>
+                </div>
+                <div className="pepito-lead-modal__actions">
+                  <button
+                    type="button"
+                    className="pepito-btn button-2"
+                    onClick={dismissOwnerGenderPick}
+                    disabled={findPhase === 'sending'}
+                  >
+                    {t('common.cancel')}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )
+      : null;
+
   const feeConfirmModal = (
     <ConfirmModal
       open={!!feeConfirmPet}
@@ -155,7 +248,9 @@ export function FindPlaymatePanel({
       onConfirm={() => {
         const pet = feeConfirmPet;
         if (!pet) return;
-        void executeFindForPet(pet);
+        const gender = pendingOwnerGender ?? undefined;
+        setPendingOwnerGender(null);
+        void executeFindForPet(pet, gender);
       }}
     >
       <dl className="pepito-confirm-modal__stats">
@@ -339,6 +434,7 @@ export function FindPlaymatePanel({
           )}
           {findError ? <span className="find-playmate-header-err">{findError}</span> : null}
         </div>
+        {ownerGenderModal}
         {feeConfirmModal}
         {silentConfirmModal}
       </>
@@ -445,6 +541,7 @@ export function FindPlaymatePanel({
         </section>
       ) : null}
     </div>
+    {ownerGenderModal}
     {feeConfirmModal}
     {silentConfirmModal}
   </>

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Check, Circle, Clock, GraduationCap, MessageCircle, X } from 'lucide-react';
 import {
@@ -112,6 +112,8 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
   const [incoming, setIncoming] = useState<VetConsultation[]>([]);
   const [recent, setRecent] = useState<VetConsultation[]>([]);
   const [actingId, setActingId] = useState<number | null>(null);
+  const [pendingRequestIds, setPendingRequestIds] = useState<number[]>([]);
+  const autoNavRef = useRef<number | null>(null);
 
   function flashError(msg: string) {
     setError(msg);
@@ -173,11 +175,20 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
         });
         setIncoming([]);
         setRecent(rows.slice(0, 12));
+        if (pendingRequestIds.length > 0) {
+          const accepted = rows.find(
+            (c) => c.status === 'active' && pendingRequestIds.includes(c.id)
+          );
+          if (accepted?.id && autoNavRef.current !== accepted.id) {
+            autoNavRef.current = accepted.id;
+            navigate(`/vet-chats/${accepted.id}`, { replace: true });
+          }
+        }
       }
     } catch {
       /* ignore */
     }
-  }, [user?.id, isProvider, kind]);
+  }, [user?.id, isProvider, kind, pendingRequestIds, navigate]);
 
   useEffect(() => {
     void loadPets();
@@ -284,15 +295,19 @@ export function ServiceConsultPage({ kind }: { kind: Kind }) {
       setNeedsResendConfirm(false);
       flashSuccess(res.message);
       setStatusMsg(res.message);
+      const ids = (res.consultations ?? []).map((c) => c.id).filter(Boolean);
+      if (ids.length) setPendingRequestIds(ids);
       if (res.aiFallback || mode === 'ai') {
         const consultId = res.consultations?.[0]?.id;
         if (consultId) {
-          navigate(`/vet-chats/${consultId}`);
+          autoNavRef.current = consultId;
+          navigate(`/vet-chats/${consultId}`, { replace: true });
           return;
         }
       }
       if (res.consultations?.length === 1 && res.consultations[0]?.status === 'active') {
-        navigate(`/vet-chats/${res.consultations[0].id}`);
+        autoNavRef.current = res.consultations[0].id;
+        navigate(`/vet-chats/${res.consultations[0].id}`, { replace: true });
       }
     } catch (err) {
       flashError(errMessage(err, t('consultDesk.sendFail')));

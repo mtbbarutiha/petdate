@@ -39,7 +39,7 @@ export function formatPet(
   }
   if (pet.ownerId) {
     lines.push(
-      `شناسه صاحب پت: <code>${escapeHtml(userPublicIdOf({ id: pet.ownerId }))}</code>`
+      `شناسه صاحب پت: <code>/${escapeHtml(userPublicIdOf({ id: pet.ownerId }))}</code>`
     );
   }
   if (pet.ownerName) {
@@ -95,7 +95,7 @@ export function formatPlaydate(req: PlaydateRequest): string {
     `📬 درخواست #${req.id}`,
     `${fromName} → ${toName}`,
     fromPetId ? `شناسه پت درخواست‌دهنده: ${fromPetId}` : null,
-    fromOwnerId ? `شناسه صاحب پت: ${fromOwnerId}` : null,
+    fromOwnerId ? `شناسه صاحب پت: /${fromOwnerId}` : null,
     `وضعیت: ${status}`,
   ].filter(Boolean) as string[];
   if (req.message) lines.push(`💬 ${req.message}`);

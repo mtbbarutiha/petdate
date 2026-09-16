@@ -347,6 +347,48 @@ petsRouter.get('/nearby/list-card', async (req, res) => {
   }
 });
 
+/** کارت تصویری لیست پت‌ها با شناسه‌های دلخواه (جستجوی استان/نژاد/همه) — قبل از /:id */
+petsRouter.post('/list-card', async (req, res) => {
+  try {
+    const rawIds = Array.isArray(req.body?.petIds) ? req.body.petIds : [];
+    const petIds = rawIds
+      .map((id: unknown) => Number(id))
+      .filter((id: number) => Number.isFinite(id) && id > 0)
+      .slice(0, 80);
+    if (petIds.length === 0) {
+      res.status(400).json({ error: 'petIds الزامی است' });
+      return;
+    }
+    const page = Math.max(0, Number(req.body?.page ?? 0) || 0);
+    const pageSize = Math.min(12, Math.max(1, Number(req.body?.pageSize ?? 8) || 8));
+    const title =
+      req.body?.title != null && String(req.body.title).trim()
+        ? String(req.body.title).trim().slice(0, 80)
+        : undefined;
+    const viewerId = viewerUserId(req);
+    const loaded = petIds
+      .map((id: number) => dbService.getPet(id))
+      .filter((p: ReturnType<typeof dbService.getPet>): p is NonNullable<typeof p> => Boolean(p))
+      .map((pet: NonNullable<ReturnType<typeof dbService.getPet>>) =>
+        sanitizePetForViewer(pet, viewerId)
+      );
+    const slice = loaded.slice(page * pageSize, page * pageSize + pageSize);
+    const buf = await renderNearbyListCard({
+      pets: slice,
+      radiusKm: 0,
+      page,
+      totalCount: loaded.length,
+      title: title || '📋 لیست پت‌ها',
+    });
+    res.setHeader('Content-Type', 'image/jpeg');
+    res.setHeader('Cache-Control', 'private, max-age=30');
+    res.send(buf);
+  } catch (err) {
+    console.warn('pets list-card failed:', (err as Error).message);
+    res.status(500).json({ error: 'ساخت لیست تصویری ناموفق بود' });
+  }
+});
+
 /** پت‌های صاحب فعلی (Bearer) — قبل از /:id تا «mine» به Number() نرود */
 petsRouter.get('/mine', (req, res) => {
   const ownerId = viewerUserId(req);

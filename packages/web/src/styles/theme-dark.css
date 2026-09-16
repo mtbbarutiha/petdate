@@ -1931,6 +1931,22 @@ html[data-theme='dark'] .pepito-earn-field-hint {
 html[data-theme='dark'] .pepito-earn-preview strong {
   color: var(--pd-ink);
 }
+html[data-theme='dark'] .pepito-earn-currency-option {
+  background: var(--pd-surface-2);
+  border-color: var(--pd-border);
+  color: var(--pd-ink);
+}
+html[data-theme='dark'] .pepito-earn-currency-option span {
+  color: var(--pd-ink);
+}
+html[data-theme='dark'] .pepito-earn-currency-option small {
+  color: var(--pd-muted);
+  opacity: 1;
+}
+html[data-theme='dark'] .pepito-earn-currency-option:has(input:checked) {
+  border-color: color-mix(in srgb, var(--pepito-mint) 45%, var(--pd-border));
+  background: color-mix(in srgb, var(--pepito-mint) 12%, var(--pd-surface-2));
+}
 html[data-theme='dark'] .pepito-earn-preview-warn {
   color: #f0b429;
 }
