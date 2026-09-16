@@ -365,13 +365,18 @@ export function AdminDashboardPage() {
   }, [s, m]);
 
   const overallPct = useMemo(() => {
-    // Only growth metrics — empty queues must not inflate health to a fake %.
-    const growth = healthKpis.filter((k) => k.key === 'users' || k.key === 'pets' || k.key === 'sales');
+    // Growth metrics only. Skip empty/no-data (e.g. sales 0/0) so they don't
+    // drag overall health to a fake weak % while rings look healthy.
+    const growth = healthKpis.filter(
+      (k) =>
+        (k.key === 'users' || k.key === 'pets' || k.key === 'sales') &&
+        k.standing !== 'بدون داده'
+    );
     if (!growth.length) return 0;
-    if (growth.every((k) => k.value <= 0)) return 0;
     return Math.round(growth.reduce((a, k) => a + Math.min(100, k.pct), 0) / growth.length);
   }, [healthKpis]);
   const overallStanding = standingOf(overallPct);
+  // Empty queues and no-data rings are not "weak" — only actual weak standings.
   const weakPoints = healthKpis.filter((k) => k.standing === 'ضعیف');
 
   const platformKpis: AdminKpiItem[] = s
