@@ -326,7 +326,7 @@ export function finalizeReplyKeyboard(kb: Keyboard): Keyboard {
       return next;
     })
   );
-  const out = Keyboard.from(rows as Parameters<typeof Keyboard.from>[0]);
+  const out = Keyboard.from(rows as unknown as Parameters<typeof Keyboard.from>[0]);
   if (raw.resize_keyboard) out.resized();
   if (raw.one_time_keyboard) out.oneTime();
   if (raw.is_persistent) out.persistent();
