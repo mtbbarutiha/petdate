@@ -1792,6 +1792,7 @@ html.tg-chat-open body {
 .tg-chat-list-hub-cta {
   list-style: none;
   padding: 0.65rem 0.75rem 0.35rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 .tg-chat-list-hub-cta .find-playmate-panel {
   gap: 0.5rem;
@@ -1799,6 +1800,10 @@ html.tg-chat-open body {
 .tg-chat-list-hub-cta .pepito-btn {
   width: 100%;
   justify-content: center;
+}
+.tg-chat-list-hub-cta .pet-discovery,
+.tg-chat-list-hub-cta .find-playmate-one {
+  width: 100%;
 }
 .tg-chat-list-empty--hub .pepito-btn,
 .tg-thread-empty--hub .pepito-btn {

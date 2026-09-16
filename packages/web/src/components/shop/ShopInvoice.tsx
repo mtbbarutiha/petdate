@@ -227,19 +227,35 @@ export function ShopInvoice({
       </div>
 
       <footer className="pd-shop-invoice-foot">
-        <div className="pd-shop-invoice-totals">
-          <p>
-            <span>جمع کل (تومان)</span>
-            <strong>{formatToman(order.totalToman)}</strong>
-          </p>
-          <p>
-            <span>پرداخت</span>
-            <strong>{payFa}</strong>
-          </p>
+        <div className="pd-shop-invoice-foot__row">
+          <div className="pd-shop-invoice-seal" aria-hidden="true">
+            <span className="pd-shop-invoice-seal__ring">
+              <span className="pd-shop-invoice-seal__brand">{BRAND.displayNameFa}</span>
+              <span className="pd-shop-invoice-seal__mark">مهر فروشگاه</span>
+              <span className="pd-shop-invoice-seal__id" dir="ltr">
+                {publicId}
+              </span>
+            </span>
+          </div>
+          <div className="pd-shop-invoice-totals">
+            <p>
+              <span>جمع کل (تومان)</span>
+              <strong>{formatToman(order.totalToman)}</strong>
+            </p>
+            <p>
+              <span>پرداخت</span>
+              <strong>{payFa}</strong>
+            </p>
+            <p className="pd-shop-invoice-sign">
+              <span>امضا / تأیید فروشنده</span>
+              <em>{BRAND.displayNameFa}</em>
+            </p>
+          </div>
         </div>
         <p className="pd-shop-invoice-hint">
-          شماره سفارش فروشگاه با پیشوند <span dir="ltr">PD-O</span> است. فاکتور پرداخت کارت/Stars
-          جداگانه با پیشوند <span dir="ltr">PD-R</span> صادر می‌شود.
+          این برگه فاکتور رسمی فروشگاه پت‌دیت است (شناسه <span dir="ltr">PD-O</span>) و با مهر
+          فروشگاه تأیید می‌شود. فاکتور پرداخت کارت/Stars جداگانه با پیشوند{' '}
+          <span dir="ltr">PD-R</span> صادر می‌شود.
         </p>
       </footer>
 

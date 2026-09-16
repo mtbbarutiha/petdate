@@ -296,8 +296,43 @@ export async function generateShopInvoicePdf(
       size: 11,
       color: MUTED,
     });
-    y += 24;
-    paint(doc, 'شماره سفارش با پیشوند PD-O است.', left, y, {
+    y += 28;
+
+    const sealCx = left + 58;
+    const sealCy = Math.min(y + 48, doc.page.height - 90);
+    const sealR = 46;
+    doc.save();
+    doc.circle(sealCx, sealCy, sealR).lineWidth(2.2).strokeColor('#8b1e2d').stroke();
+    doc.circle(sealCx, sealCy, sealR - 5).lineWidth(1).strokeColor('#8b1e2d').stroke();
+    paint(doc, BRAND.displayNameFa, sealCx - 40, sealCy - 16, {
+      width: 80,
+      align: 'center',
+      size: 9,
+      color: '#8b1e2d',
+      bold: true,
+    });
+    paint(doc, 'مهر فروشگاه', sealCx - 40, sealCy + 2, {
+      width: 80,
+      align: 'center',
+      size: 8,
+      color: '#8b1e2d',
+    });
+    paint(doc, publicId, sealCx - 40, sealCy + 16, {
+      width: 80,
+      align: 'center',
+      size: 7,
+      color: '#8b1e2d',
+    });
+    doc.restore();
+
+    paint(doc, `امضا / تأیید: ${BRAND.displayNameFa}`, left, sealCy - 8, {
+      width: contentW,
+      align: 'right',
+      size: 11,
+      color: INK,
+      bold: true,
+    });
+    paint(doc, 'فاکتور رسمی فروشگاه — شماره سفارش با پیشوند PD-O.', left, sealCy + 18, {
       width: contentW,
       align: 'right',
       size: 9,

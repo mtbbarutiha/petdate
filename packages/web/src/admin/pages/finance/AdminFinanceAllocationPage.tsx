@@ -115,11 +115,16 @@ export function AdminFinanceAllocationPage() {
   const [peopleDrafts, setPeopleDrafts] = useState<PersonDraft[]>([]);
   const [equipmentDrafts, setEquipmentDrafts] = useState<EquipmentDraft[]>([]);
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (opts?: { syncDrafts?: boolean }) => {
     try {
       const bundle = await adminFetch<FinanceOsAllocationBundle>('/api/admin/finance-os/allocation');
       setData(bundle);
       setBankDraft(String(bundle.bankBalance));
+      if (opts?.syncDrafts) {
+        setOfficeDrafts(officesToDraft(bundle.offices));
+        setPeopleDrafts(peopleToDraft(bundle.sbgPeople));
+        setEquipmentDrafts(equipmentToDraft(bundle.equipment));
+      }
       setError(null);
       return bundle;
     } catch (err) {
@@ -170,6 +175,24 @@ export function AdminFinanceAllocationPage() {
     setEditMode(false);
   };
 
+  const persistOffice = async (office: OfficeDraft) => {
+    await adminFetch(`/api/admin/finance-os/allocation/offices/${office.id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({
+        name: office.name.trim(),
+        address: office.address.trim(),
+        totalSqm: Number(office.totalSqm) || 0,
+        areas: office.areas.map((a) => ({
+          id: a.id,
+          name: a.name.trim(),
+          sqm: Number(a.sqm) || 0,
+          monthlyRent: Number(a.monthlyRent) || 0,
+          assignedBusiness: a.assignedBusiness.trim() || null,
+        })),
+      }),
+    });
+  };
+
   const saveSections = async () => {
     if (!editMode || !data) return;
     setBusy(true);
@@ -177,21 +200,7 @@ export function AdminFinanceAllocationPage() {
       const savedOffices = officesToDraft(data.offices);
       for (const office of officeDrafts) {
         if (JSON.stringify(office) === JSON.stringify(savedOffices.find((o) => o.id === office.id))) continue;
-        await adminFetch(`/api/admin/finance-os/allocation/offices/${office.id}`, {
-          method: 'PATCH',
-          body: JSON.stringify({
-            name: office.name.trim(),
-            address: office.address.trim(),
-            totalSqm: Number(office.totalSqm) || 0,
-            areas: office.areas.map((a) => ({
-              id: a.id,
-              name: a.name.trim(),
-              sqm: Number(a.sqm) || 0,
-              monthlyRent: Number(a.monthlyRent) || 0,
-              assignedBusiness: a.assignedBusiness.trim() || null,
-            })),
-          }),
-        });
+        await persistOffice(office);
       }
       const savedPeople = peopleToDraft(data.sbgPeople);
       for (const person of peopleDrafts) {
@@ -222,10 +231,101 @@ export function AdminFinanceAllocationPage() {
           }),
         });
       }
-      const bundle = await load();
+      const bundle = await load({ syncDrafts: true });
       if (bundle) applyDrafts(bundle);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'خطا');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const saveOfficeNow = async (officeId: number) => {
+    if (!editMode) return;
+    const office = officeDrafts.find((o) => o.id === officeId);
+    if (!office) return;
+    setBusy(true);
+    try {
+      await persistOffice(office);
+      const bundle = await load({ syncDrafts: true });
+      if (bundle) applyDrafts(bundle);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'خطا');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const savePersonNow = async (personId: number) => {
+    if (!editMode) return;
+    const person = peopleDrafts.find((p) => p.id === personId);
+    if (!person) return;
+    setBusy(true);
+    try {
+      await adminFetch(`/api/admin/finance-os/allocation/people/${person.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          name: person.name.trim(),
+          role: person.role,
+          office: person.office,
+          allocationMethod: person.allocationMethod,
+        }),
+      });
+      const bundle = await load({ syncDrafts: true });
+      if (bundle) applyDrafts(bundle);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'خطا');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const saveEquipmentNow = async (eqId: number) => {
+    if (!editMode) return;
+    const eq = equipmentDrafts.find((e) => e.id === eqId);
+    if (!eq) return;
+    setBusy(true);
+    try {
+      await adminFetch(`/api/admin/finance-os/allocation/equipment/${eq.id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          name: eq.name.trim(),
+          category: eq.category,
+          purchasePrice: Number(eq.purchasePrice) || 0,
+          currentValue: Number(eq.currentValue) || 0,
+          monthlyRate: Number(eq.monthlyRate) || 0,
+          assignedBusiness: eq.assignedBusiness,
+          assignedPerson: eq.assignedPerson,
+        }),
+      });
+      const bundle = await load({ syncDrafts: true });
+      if (bundle) applyDrafts(bundle);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'خطا');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const deleteAreaNow = async (officeId: number, areaId: string) => {
+    if (!editMode) return;
+    const office = officeDrafts.find((o) => o.id === officeId);
+    if (!office) return;
+    const ok = await appConfirm(tr('حذف این فضا؟'), { variant: 'admin' });
+    if (!ok) return;
+    const nextOffice: OfficeDraft = {
+      ...office,
+      areas: office.areas.filter((a) => a.id !== areaId),
+    };
+    setOfficeDrafts((rows) => rows.map((o) => (o.id === officeId ? nextOffice : o)));
+    setBusy(true);
+    try {
+      await persistOffice(nextOffice);
+      const bundle = await load({ syncDrafts: true });
+      if (bundle) applyDrafts(bundle);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'خطا');
+      if (data) applyDrafts(data);
     } finally {
       setBusy(false);
     }
@@ -522,9 +622,8 @@ export function AdminFinanceAllocationPage() {
                                 <button
                                   type="button"
                                   className="admin-btn admin-btn--ghost"
-                                  onClick={() =>
-                                    patchOffice(o.id, { areas: o.areas.filter((x) => x.id !== a.id) })
-                                  }
+                                  disabled={busy}
+                                  onClick={() => void deleteAreaNow(o.id, a.id)}
                                 >
                                   {tr('حذف')}
                                 </button>
@@ -541,6 +640,7 @@ export function AdminFinanceAllocationPage() {
                     <button
                       type="button"
                       className="admin-btn"
+                      disabled={busy}
                       onClick={() =>
                         patchOffice(o.id, {
                           areas: [
@@ -551,6 +651,14 @@ export function AdminFinanceAllocationPage() {
                       }
                     >
                       {tr('افزودن فضا')}
+                    </button>
+                    <button
+                      type="button"
+                      className="admin-btn admin-btn--primary"
+                      disabled={busy}
+                      onClick={() => void saveOfficeNow(o.id)}
+                    >
+                      {tr('ذخیره')}
                     </button>
                   </div>
                 ) : null}
@@ -569,7 +677,7 @@ export function AdminFinanceAllocationPage() {
       {data && tab === 'people' ? (
         <div className="admin-table-wrap admin-card">
           <table className="admin-table admin-table--dense">
-            <thead><tr><th>{tr('نام')}</th><th>{tr('سمت')}</th><th>{tr('دفتر')}</th><th>{tr('روش')}</th><th>{tr('تخصیص زمان (آخرین)')}</th></tr></thead>
+            <thead><tr><th>{tr('نام')}</th><th>{tr('سمت')}</th><th>{tr('دفتر')}</th><th>{tr('روش')}</th><th>{tr('تخصیص زمان (آخرین)')}</th>{editMode ? <th></th> : null}</tr></thead>
             <tbody>
               {peopleView.map((p) => {
                 const live = data.sbgPeople.find((x) => x.id === p.id);
@@ -649,6 +757,18 @@ export function AdminFinanceAllocationPage() {
                         ? last.allocations.map((a) => `${a.business} ${formatNumFa(a.percent)}${tr('٪')}`).join(' · ')
                         : '—'}
                     </td>
+                    {editMode ? (
+                      <td>
+                        <button
+                          type="button"
+                          className="admin-btn admin-btn--primary"
+                          disabled={busy}
+                          onClick={() => void savePersonNow(p.id)}
+                        >
+                          {tr('ذخیره')}
+                        </button>
+                      </td>
+                    ) : null}
                   </tr>
                 );
               })}
@@ -663,7 +783,7 @@ export function AdminFinanceAllocationPage() {
             <thead>
               <tr>
                 <th>{tr('کد')}</th><th>{tr('نام')}</th><th>{tr('دسته')}</th><th>{tr('خرید')}</th><th>{tr('ارزش فعلی')}</th>
-                <th>{tr('نرخ ماهانه')}</th><th>{tr('بیزنس')}</th><th>{tr('فرد')}</th>
+                <th>{tr('نرخ ماهانه')}</th><th>{tr('بیزنس')}</th><th>{tr('فرد')}</th>{editMode ? <th></th> : null}
               </tr>
             </thead>
             <tbody>
@@ -785,6 +905,18 @@ export function AdminFinanceAllocationPage() {
                         />
                       ) : (eq.assignedPerson || '—')}
                     </td>
+                    {editMode ? (
+                      <td>
+                        <button
+                          type="button"
+                          className="admin-btn admin-btn--primary"
+                          disabled={busy}
+                          onClick={() => void saveEquipmentNow(eq.id)}
+                        >
+                          {tr('ذخیره')}
+                        </button>
+                      </td>
+                    ) : null}
                   </tr>
                 );
               })}
