@@ -64,8 +64,11 @@ assert.match(globalCss, /auth-google-cta/, 'Google CTA styles shipped');
 assert.doesNotMatch(globalCss, /\.auth-google-cta\.is-off/, 'no dimmed Google CTA style');
 
 assert.match(googleBtn, /googleOAuthStartPath/, 'Google starts API OAuth');
+assert.match(googleBtn, /location\.assign/, 'Google forces top-level navigation');
 assert.match(googleBtn, /ورود با گوگل/, 'Google CTA copy is clear');
 assert.match(googleBtn, /auth-google-cta/, 'Google CTA class present');
+assert.match(login, /sanitizePhoneInput/, 'login strips OAuth URLs from phone autofill');
+assert.match(login, /auth-google-error/, 'Google OAuth errors surface near the Google CTA');
 
 assert.match(otp, /GoogleLoginButton/, 'OTP page offers Google as alternate login');
 assert.match(otp, /auth-otp-countdown/, 'OTP resend countdown visible');

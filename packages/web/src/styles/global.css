@@ -3644,6 +3644,10 @@ body:has(.admin-app) .toast-host {
   box-sizing: border-box;
   font-weight: 700;
 }
+.auth-google-error {
+  margin: 0.15rem 0 0.65rem;
+  text-align: center;
+}
 .auth-telegram-cta + .auth-google-cta {
   margin-top: 8px;
 }

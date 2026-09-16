@@ -29,6 +29,20 @@ function googleErrorCopy(code: string | null): string {
   return '';
 }
 
+/** Reject autofill / paste of OAuth URLs into the phone field. */
+function sanitizePhoneInput(raw: string): string {
+  const v = String(raw ?? '').trim();
+  if (!v) return '';
+  if (/^https?:\/\//i.test(v) || /petdate\.ir\/api\/auth/i.test(v) || /\/api\/auth\/google/i.test(v)) {
+    return '';
+  }
+  // Keep digits, spaces, + and Persian/Arabic digits — strip letters/URLs.
+  if (/[a-zA-Z./]/.test(v) && !/^[\d\u06F0-\u06F9\u0660-\u0669\s+\-()]+$/.test(v)) {
+    return v.replace(/[^\d\u06F0-\u06F9\u0660-\u0669\s+\-()]/g, '');
+  }
+  return raw;
+}
+
 function readRetryAfterSec(err: unknown): number | null {
   if (err && typeof err === 'object' && 'retryAfterSec' in err) {
     const n = Number((err as { retryAfterSec?: unknown }).retryAfterSec);
@@ -61,6 +75,21 @@ export function LoginPage() {
   const telegramLoginUrl = telegramWebLoginDeepLink(next);
   const usePendingFlow = prefersSameBrowserTelegramLogin();
   const finishingRef = useRef(false);
+  const googleErrToasted = useRef(false);
+
+  useEffect(() => {
+    const g = googleErrorCopy(searchParams.get('google'));
+    if (!g) return;
+    setError(g);
+    if (!googleErrToasted.current) {
+      googleErrToasted.current = true;
+      toastError(g);
+    }
+  }, [searchParams, toastError]);
+
+  useEffect(() => {
+    setTarget((prev) => sanitizePhoneInput(prev));
+  }, []);
 
   useEffect(() => {
     if (sendIn <= 0) return;
@@ -253,11 +282,17 @@ export function LoginPage() {
           <GoogleLoginButton next={next} />
         </div>
 
+        {error && searchParams.get('google') ? (
+          <p className="auth-error auth-google-error" role="alert">
+            {error}
+          </p>
+        ) : null}
+
         <div className="auth-or auth-login-or" role="separator">
           <span>یا با موبایل</span>
         </div>
 
-        <form className="auth-form auth-login-phone" onSubmit={onSubmit}>
+        <form className="auth-form auth-login-phone" onSubmit={onSubmit} autoComplete="on">
           <label className="auth-login-phone-label" htmlFor="login-phone">
             <Smartphone size={15} aria-hidden />
             شماره موبایل
@@ -265,11 +300,19 @@ export function LoginPage() {
           <div className="auth-login-phone-row">
             <input
               id="login-phone"
+              name="phone"
               value={target}
-              onChange={(e) => setTarget(e.target.value)}
+              onChange={(e) => setTarget(sanitizePhoneInput(e.target.value))}
+              onFocus={(e) => {
+                const cleaned = sanitizePhoneInput(e.target.value);
+                if (cleaned !== e.target.value) setTarget(cleaned);
+              }}
               placeholder="0912…"
               inputMode="tel"
               autoComplete="tel"
+              autoCorrect="off"
+              autoCapitalize="off"
+              spellCheck={false}
               dir="ltr"
               required
             />
@@ -294,7 +337,7 @@ export function LoginPage() {
               ثانیه
             </p>
           ) : null}
-          {error ? <p className="auth-error">{error}</p> : null}
+          {error && !searchParams.get('google') ? <p className="auth-error">{error}</p> : null}
           {devHint ? <p className="auth-dev">{devHint}</p> : null}
         </form>
 
