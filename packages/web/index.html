@@ -42,7 +42,7 @@
     <!-- End Google Tag Manager -->
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
     />
     <style id="pd-critical-first-paint">
       /* Self-hosted Vazirmatn (SIL OFL 1.1) + Tahoma metrics so swap does not shift hero copy (CLS). */
@@ -107,13 +107,13 @@
       html.theme-light .pepito-help-block-lead,html[data-theme='light'] .pepito-help-block-lead,
       html.theme-light .pepito-faq-page-lead,html[data-theme='light'] .pepito-faq-page-lead{color:#757086}
     </style>
-    <!-- deploy marker: registration-ux-role-btn-v1 + ui-audit-fix-v2 + chat composer-fixed-v8 + pd-chat-ui-v2 + pd-panels-ui-v3c + web-perf-v45-shop-rail-click + wallet-stars-v2 + my-pets-lead-v1 + wallet-folio-v1 + gtm-html-v1 + gtm-ta-debug-v1 + guest-vet-landing-v16 -->
+    <!-- deploy marker: registration-ux-role-btn-v1 + ui-audit-fix-v2 + chat composer-fixed-v8 + pd-chat-ui-v2 + pd-panels-ui-v3c + web-perf-v46-lighthouse-seo + wallet-stars-v2 + my-pets-lead-v1 + wallet-folio-v1 + gtm-html-v1 + gtm-ta-debug-v1 + guest-vet-landing-v16 -->
     <meta name="pd-chat-shell" content="composer-fixed-v8" />
     <meta name="pd-chat-ui" content="pd-chat-ui-v2" />
     <meta name="pd-ui-audit" content="ui-audit-fix-v2" />
     <meta name="pd-registration-ux" content="registration-ux-role-btn-v1" />
     <meta name="pd-panels-ui" content="pd-panels-ui-v3c" />
-    <meta name="pd-web-perf" content="web-perf-v45-shop-rail-click" />
+    <meta name="pd-web-perf" content="web-perf-v46-lighthouse-seo" />
     <meta name="pd-profile-pets" content="profile-about-pets-v2" />
     <meta name="pd-wallet-stars" content="wallet-stars-xtr-v1" />
     <meta name="pd-my-pets-lead" content="my-pets-lead-v1" />
@@ -221,8 +221,18 @@
     <meta name="twitter:image" data-pd-seo="twitter:image" content="https://petdate.ir/brand/petdate-banner.jpg" />
     <meta name="twitter:image:alt" data-pd-seo="twitter:image:alt" content="پت‌دیت — همبازی برای پت‌ات" />
 
-    <!-- Hero LCP preload is injected by #pd-boot-hero-from-api from GET /api/hero
-         (same SoT as the admin panel). Do not hardcode /media/lcp/hero-*.webp here. -->
+    <!-- Discoverable LCP: default playmate WebP in the initial document (preload scanner).
+         Boot script upgrades from GET /api/hero when admin has a custom first slide. -->
+    <link
+      rel="preload"
+      as="image"
+      type="image/webp"
+      href="/media/lcp/hero-playmate-800.webp"
+      imagesrcset="/media/lcp/hero-playmate-800.webp 800w, /media/lcp/hero-playmate-1280.webp 1280w, /media/lcp/hero-playmate-1920.webp 1920w"
+      imagesizes="100vw"
+      fetchpriority="high"
+      data-pd-lcp="hero"
+    />
     <!-- Same-origin Vazirmatn (SIL OFL). No third-party font CSS.
          crossorigin matches @font-face CORS mode. -->
     <link rel="preload" href="/fonts/Vazirmatn-Variable.woff2" as="font" type="font/woff2" crossorigin />
@@ -304,16 +314,20 @@
       ></iframe
     ></noscript>
     <!-- End Google Tag Manager (noscript) -->
-    <!-- No hardcoded src — solid #14161e until /api/hero fills the correct first slide. -->
+    <!-- Default discoverable LCP src; boot script may upgrade from /api/hero. -->
     <img
       id="pd-boot-lcp"
-      class="pepito-hero-media is-parked"
+      class="pepito-hero-media"
       alt="همبازی مناسب برای پت‌ات پیدا کن"
       width="1600"
       height="900"
+      src="/media/lcp/hero-playmate-800.webp"
+      srcset="/media/lcp/hero-playmate-800.webp 800w, /media/lcp/hero-playmate-1280.webp 1280w, /media/lcp/hero-playmate-1920.webp 1920w"
+      sizes="100vw"
       fetchpriority="high"
       decoding="sync"
-      data-pd-boot-hero="pending"
+      loading="eager"
+      data-pd-boot-hero="default"
     />
     <!-- Park homepage LCP on deep links before React — otherwise /shop,/faq,… show a ghost hero.
          Also freeze mobile hero height in px once so address-bar svh shifts cannot jump scroll.
@@ -341,17 +355,26 @@
           if (p !== '/' && p !== '') return;
           var img = document.getElementById('pd-boot-lcp');
           if (!img) return;
-          fetch('/api/hero', { cache: 'no-store' })
+          // Respect Cache-Control from /api/hero — avoids a cold 1s chain on every load.
+          fetch('/api/hero', { cache: 'default' })
             .then(function (r) {
               return r.ok ? r.json() : null;
             })
             .then(function (data) {
               var slide = data && data.slides && data.slides[0];
               if (!slide || !slide.webp) return;
+              var next = String(slide.webp);
+              // Skip /api/img proxy for hero — keep a direct, cacheable URL.
+              if (next.indexOf('/api/img') === 0) return;
+              var cur = img.getAttribute('src') || '';
+              if (cur === next) {
+                img.setAttribute('data-pd-boot-hero', 'api');
+                return;
+              }
               if (slide.srcSet) img.setAttribute('srcset', slide.srcSet);
               else img.removeAttribute('srcset');
               img.setAttribute('sizes', '100vw');
-              img.setAttribute('src', slide.webp);
+              img.setAttribute('src', next);
               img.setAttribute('data-pd-boot-hero', 'api');
               if (typeof slide.posX === 'number' && typeof slide.posY === 'number') {
                 img.style.objectPosition = slide.posX + '% ' + slide.posY + '%';
@@ -365,22 +388,10 @@
                   '%';
               }
               img.classList.remove('is-parked');
-              if (!document.querySelector('link[data-pd-lcp="hero"]')) {
-                var link = document.createElement('link');
-                link.rel = 'preload';
-                link.as = 'image';
-                link.type = 'image/webp';
-                link.href = slide.webp;
-                if (slide.srcSet) link.setAttribute('imagesrcset', slide.srcSet);
-                link.setAttribute('imagesizes', '100vw');
-                link.setAttribute('fetchpriority', 'high');
-                link.setAttribute('data-pd-lcp', 'hero');
-                var fontPreload = document.querySelector('link[rel="preload"][as="font"]');
-                if (fontPreload && fontPreload.parentNode) {
-                  fontPreload.parentNode.insertBefore(link, fontPreload);
-                } else {
-                  document.head.appendChild(link);
-                }
+              var existing = document.querySelector('link[data-pd-lcp="hero"]');
+              if (existing && existing.getAttribute('href') !== next) {
+                existing.setAttribute('href', next);
+                if (slide.srcSet) existing.setAttribute('imagesrcset', slide.srcSet);
               }
             })
             .catch(function () {});

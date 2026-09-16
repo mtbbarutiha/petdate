@@ -245,16 +245,34 @@ export function WelcomeBelowFold() {
   useEffect(() => {
     const track = svcTrackRef.current;
     if (!track) return;
+    let raf = 0;
     const measure = () => {
+      raf = 0;
       const card = track.querySelector<HTMLElement>('.pepito-service-card');
       if (!card) return;
+      // Single batched layout read inside rAF (avoids forced reflow during paint).
       svcStepRef.current = card.offsetWidth + 21.6;
     };
-    const ro = new ResizeObserver(() => {
-      requestAnimationFrame(measure);
-    });
+    const schedule = () => {
+      if (raf) return;
+      raf = window.requestAnimationFrame(measure);
+    };
+    const ro = new ResizeObserver(schedule);
     ro.observe(track);
-    return () => ro.disconnect();
+    // Defer first measure past hydration so it is not on the LCP critical path.
+    const idle =
+      typeof window.requestIdleCallback === 'function'
+        ? window.requestIdleCallback(schedule, { timeout: 1200 })
+        : window.setTimeout(schedule, 200);
+    return () => {
+      ro.disconnect();
+      if (raf) window.cancelAnimationFrame(raf);
+      if (typeof window.cancelIdleCallback === 'function' && typeof idle === 'number') {
+        window.cancelIdleCallback(idle);
+      } else {
+        window.clearTimeout(idle as number);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -343,8 +361,11 @@ export function WelcomeBelowFold() {
     const track = newsTrackRef.current;
     const card = track?.querySelector<HTMLElement>('.pepito-news-card');
     if (!track || !card) return;
-    newsStepRef.current = card.offsetWidth + NEWS_GAP_PX;
-    const visible = newsCarouselVisibleCount(track.clientWidth, card.offsetWidth, NEWS_GAP_PX);
+    // Read width once — reuse for step + visible count (avoid double forced reflow).
+    const cardW = card.offsetWidth;
+    const trackW = track.clientWidth;
+    newsStepRef.current = cardW + NEWS_GAP_PX;
+    const visible = newsCarouselVisibleCount(trackW, cardW, NEWS_GAP_PX);
     const pages = newsCarouselPages(newsItems.length, visible);
     newsPagesRef.current = pages;
     setNewsPages((prev) => (prev === pages ? prev : pages));
@@ -353,18 +374,28 @@ export function WelcomeBelowFold() {
 
   const scrollNewsTo = (index: number, behavior?: ScrollBehavior) => {
     const track = newsTrackRef.current;
-    if (track && newsStepRef.current <= 0) measureNews();
-    const step = newsStepRef.current;
-    if (!track || step <= 0) return;
-    const narrow = window.matchMedia('(max-width: 720px)').matches;
-    newsProgrammaticScrollRef.current = true;
-    track.scrollTo({
-      left: newsCarouselScrollLeft(index, step, trackDirIsRtl(track)),
-      behavior: behavior ?? (narrow ? 'auto' : 'smooth'),
-    });
-    window.requestAnimationFrame(() => {
-      newsProgrammaticScrollRef.current = false;
-    });
+    if (!track) return;
+    const run = () => {
+      const step = newsStepRef.current;
+      if (step <= 0) return;
+      const narrow = window.matchMedia('(max-width: 720px)').matches;
+      newsProgrammaticScrollRef.current = true;
+      track.scrollTo({
+        left: newsCarouselScrollLeft(index, step, trackDirIsRtl(track)),
+        behavior: behavior ?? (narrow ? 'auto' : 'smooth'),
+      });
+      window.requestAnimationFrame(() => {
+        newsProgrammaticScrollRef.current = false;
+      });
+    };
+    if (newsStepRef.current <= 0) {
+      window.requestAnimationFrame(() => {
+        measureNews();
+        run();
+      });
+      return;
+    }
+    run();
   };
 
   const goNews = (index: number) => {
@@ -378,21 +409,40 @@ export function WelcomeBelowFold() {
     newsPagesRef.current = guess;
     setNewsPages(guess);
     setNewsIndex(0);
-    const id = window.requestAnimationFrame(() => {
+    const schedule = () => {
       measureNews();
       scrollNewsTo(0, 'auto');
-    });
-    return () => window.cancelAnimationFrame(id);
+    };
+    const idle =
+      typeof window.requestIdleCallback === 'function'
+        ? window.requestIdleCallback(schedule, { timeout: 1500 })
+        : window.setTimeout(schedule, 250);
+    return () => {
+      if (typeof window.cancelIdleCallback === 'function' && typeof idle === 'number') {
+        window.cancelIdleCallback(idle);
+      } else {
+        window.clearTimeout(idle as number);
+      }
+    };
   }, [newsItems.length]);
 
   useEffect(() => {
     const track = newsTrackRef.current;
     if (!track) return;
-    const ro = new ResizeObserver(() => {
-      requestAnimationFrame(measureNews);
-    });
+    let raf = 0;
+    const schedule = () => {
+      if (raf) return;
+      raf = window.requestAnimationFrame(() => {
+        raf = 0;
+        measureNews();
+      });
+    };
+    const ro = new ResizeObserver(schedule);
     ro.observe(track);
-    return () => ro.disconnect();
+    return () => {
+      ro.disconnect();
+      if (raf) window.cancelAnimationFrame(raf);
+    };
   }, [newsItems.length]);
 
   /* Keep dots in sync when the user swipes the news track (RTL-aware). */
@@ -432,7 +482,7 @@ export function WelcomeBelowFold() {
         <div className="pepito-about-media">
           <div className="pepito-about-item">
             <div className="pepito-about-photo">
-              <img src="/media/lcp/about-800.webp" alt={t('landing.aboutImgAlt')} loading="lazy" width={800} height={647} decoding="async" />
+              <img src="/media/lcp/about-800.webp" alt={t('landing.aboutImgAlt')} loading="lazy" width={640} height={518} decoding="async" />
             </div>
             {/* Pepito `.note.vert-move` floating quote on the about photo */}
             <aside className="pepito-about-note pepito-vert-move" aria-label={t('landing.aboutQuoteAria')}>

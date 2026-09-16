@@ -155,25 +155,30 @@ const homeHtml = applySeoToHtml(shell, '/');
 assert.doesNotMatch(
   homeHtml,
   /data-pd-lcp="hero"/,
-  'homepage SEO must not inject a hardcoded LCP hero preload'
+  'SEO helpers do not invent a hero preload when the shell has none'
 );
 assert.doesNotMatch(
   homeHtml,
   /\/media\/lcp\/hero-playmate-800\.webp/,
-  'SEO must not re-introduce the stale playmate WebP preload'
+  'SEO helpers do not inject playmate WebP into a bare shell'
 );
 
 const dupShell = shell.replace(
   '</head>',
   `<link rel="preload" as="image" href="/media/lcp/hero-playmate-800.webp" imagesrcset="/media/lcp/hero-playmate-800.webp 800w" data-pd-lcp="hero" />\n</head>`
 );
-const deduped = applySeoToHtml(dupShell, '/');
-assert.equal(
-  (deduped.match(/rel="preload"[^>]*hero-playmate-800\.webp/g) || []).length,
-  0,
-  'SEO strips a leftover static index.html hero preload'
+const dedupedHome = applySeoToHtml(dupShell, '/');
+assert.ok(
+  (dedupedHome.match(/rel="preload"[^>]*hero-playmate-800\.webp/g) || []).length >= 1,
+  'homepage SEO keeps an existing hero preload'
 );
-assert.doesNotMatch(deduped, /data-pd-lcp="hero"/, 'marked hero preload is stripped from all routes');
+const dedupedShop = applySeoToHtml(dupShell, '/shop');
+assert.equal(
+  (dedupedShop.match(/rel="preload"[^>]*hero-playmate-800\.webp/g) || []).length,
+  0,
+  'SEO strips hero preload on non-home routes'
+);
+assert.doesNotMatch(dedupedShop, /data-pd-lcp="hero"/, 'marked hero preload is stripped off non-home');
 
 const faqHtml = applySeoToHtml(shell, '/faq');
 const shopHtml = applySeoToHtml(shell, '/shop');

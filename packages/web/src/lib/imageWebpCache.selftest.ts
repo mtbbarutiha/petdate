@@ -18,6 +18,7 @@ assert.match(apiCache, /getOrCreateCachedWebp/, 'disk webp cache exists');
 assert.match(apiCache, /image-cache/, 'cache dir name');
 assert.match(webApi, /toCachedWebpUrl/, 'frontend helper');
 assert.match(webApi, /\/api\/img/, 'routes through /api/img');
-assert.match(webApi, /media\/lcp/, 'skips LCP webp hop');
+assert.match(webApi, /\.webp\$\/i\.test\(pathname\)/, 'skips already-WebP assets from /api/img hop');
+assert.match(webApi, /\/api\/hero\/images\//, 'keeps hero paths direct');
 
 console.log('imageWebpCache.selftest: ok');

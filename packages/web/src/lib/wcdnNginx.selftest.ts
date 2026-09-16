@@ -31,9 +31,13 @@ assert.match(
 
 assert.match(
   conf,
-  /location \^~ \/api\/img \{/,
-  'WebP image cache location keeps upstream Cache-Control'
+  /location = \/api\/hero \{/,
+  'homepage /api/hero keeps upstream Cache-Control for LCP'
 );
+{
+  const heroCount = (conf.match(/location = \/api\/hero \{/g) || []).length;
+  assert.equal(heroCount, 2, `exact /api/hero once per server (got ${heroCount})`);
+}
 assert.match(
   conf,
   /location \^~ \/api\/img \{[\s\S]*?proxy_pass http:\/\/127\.0\.0\.1:3001\/api\/img/,

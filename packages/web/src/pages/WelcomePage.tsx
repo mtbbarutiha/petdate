@@ -192,9 +192,8 @@ function lockMobileHeroHeight() {
     document.documentElement.style.removeProperty('--pepito-hero-h');
     return;
   }
-  const nav = document.querySelector('.pepito-nav') as HTMLElement | null;
-  const navH = Math.round(nav?.getBoundingClientRect().height || 64);
-  const h = Math.max(240, Math.round(window.innerHeight - navH));
+  // Avoid layout reads (getBoundingClientRect) — nav is a fixed 64px token in CSS.
+  const h = Math.max(240, Math.round(window.innerHeight - 64));
   document.documentElement.style.setProperty('--pepito-hero-h', `${h}px`);
 }
 
@@ -233,7 +232,7 @@ export function WelcomePage() {
      a hardcoded /media/lcp/hero-playmate photo before the admin URL arrives. */
   useEffect(() => {
     let cancelled = false;
-    void fetch(`${API_BASE}/api/hero`, { cache: 'no-store' })
+    void fetch(`${API_BASE}/api/hero`, { cache: 'default' })
       .then((res) => (res.ok ? res.json() : null))
       .then((data: { slides?: HeroApiSlide[] } | null) => {
         if (cancelled) return;

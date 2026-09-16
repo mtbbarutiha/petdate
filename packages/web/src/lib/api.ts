@@ -174,9 +174,18 @@ export function toCachedWebpUrl(
     return raw;
   }
 
-  // LCP hero/logo WebPs are already sized — skip proxy hop.
-  if (pathname.startsWith('/media/lcp/') && pathname.endsWith('.webp')) {
+  // LCP hero/logo WebPs and any already-WebP asset — skip /api/img hop (discoverable URL).
+  if (/\.webp$/i.test(pathname)) {
+    if (pathname.startsWith('/api/')) {
+      const base = (opts?.apiBase ?? '').replace(/\/$/, '');
+      return `${base}${pathname}${search}`;
+    }
     return pathname + search;
+  }
+  // Admin hero JPEGs stay direct too (srcset companions).
+  if (pathname.startsWith('/api/hero/images/')) {
+    const base = (opts?.apiBase ?? '').replace(/\/$/, '');
+    return `${base}${pathname}${search}`;
   }
   if (WEBP_CACHE_SKIP_EXT.test(pathname)) return pathname + search;
   if (!WEBP_CACHE_RASTER_EXT.test(pathname) && !pathname.startsWith('/api/')) {
@@ -191,7 +200,6 @@ export function toCachedWebpUrl(
     pathname.startsWith('/agents/') ||
     pathname.startsWith('/api/pets/photos/') ||
     pathname.startsWith('/api/auth/avatar/') ||
-    pathname.startsWith('/api/hero/images/') ||
     pathname.startsWith('/api/magazine/images/') ||
     pathname.startsWith('/api/games/photos/');
   if (!allowed) return pathname + search;

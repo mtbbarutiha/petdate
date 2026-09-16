@@ -27,15 +27,14 @@ assert.match(indexHtml, /mobile-web-app-capable/, 'modern PWA meta is present');
 assert.match(indexHtml, /apple-mobile-web-app-capable/, 'legacy iOS meta kept beside the modern one');
 const viewportMeta = indexHtml.match(/<meta[\s\S]*?name="viewport"[\s\S]*?>/)?.[0] || '';
 assert.match(viewportMeta, /width=device-width/, 'viewport meta exists');
-assert.match(viewportMeta, /maximum-scale\s*=\s*1/, 'viewport locks pinch-zoom (maximum-scale=1)');
-assert.match(
+assert.doesNotMatch(
   viewportMeta,
-  /user-scalable\s*=\s*no/,
-  'viewport disables user scaling (product UX — known a11y tradeoff)'
+  /maximum-scale\s*=\s*1|user-scalable\s*=\s*no/i,
+  'viewport allows pinch-zoom (axe meta-viewport / Lighthouse a11y)'
 );
 const globalCss = readFileSync(join(webSrc, 'styles/global.css'), 'utf8');
-assert.match(globalCss, /html\s*\{[\s\S]*?touch-action:\s*manipulation/, 'html disables double-tap zoom');
-assert.match(globalCss, /body\s*\{[\s\S]*?touch-action:\s*manipulation/, 'body disables double-tap zoom');
+assert.match(globalCss, /html\s*\{[\s\S]*?touch-action:\s*manipulation/, 'html keeps touch-action manipulation (no double-tap zoom)');
+assert.match(globalCss, /body\s*\{[\s\S]*?touch-action:\s*manipulation/, 'body keeps touch-action manipulation');
 assert.match(indexHtml, /pd-critical-first-paint/, 'inline critical CSS kills the white filmstrip');
 assert.match(indexHtml, /setTimeout\(run, 10000\)/, 'GTM waits for interaction or 10s — not first idle');
 assert.doesNotMatch(indexHtml, /requestIdleCallback/, 'GTM must not use requestIdleCallback (fires on first idle)');
@@ -88,18 +87,23 @@ assert.match(
 assert.match(indexHtml, /pepito-hero-dots\{[^}]*gap:\.35rem/, 'critical CSS keeps a half-dot gap between circles');
 assert.match(indexHtml, /is-active::after\{background:#c9bde8/, 'critical active dot is lavender, not white');
 assert.match(indexHtml, /rel="preload"[\s\S]*Vazirmatn-Variable\.woff2/, 'font preload remains in HTML');
-assert.doesNotMatch(
+assert.match(
   indexHtml,
-  /rel="preload"[^>]*as="image"[^>]*hero-playmate/,
-  'must not hardcode hero-playmate image preload (admin /api/hero is SoT)'
+  /rel="preload"[^>]*as="image"[^>]*hero-playmate-800\.webp/,
+  'discoverable LCP preload for default hero WebP'
 );
-assert.doesNotMatch(
+assert.match(
   indexHtml,
-  /id="pd-boot-lcp"[^>]*src="\/media\/lcp\/hero-/,
-  'boot LCP must not ship a hardcoded /media/lcp/hero src'
+  /id="pd-boot-lcp"[\s\S]*?src="\/media\/lcp\/hero-playmate-800\.webp"/,
+  'boot LCP has discoverable default src in initial HTML'
 );
 assert.match(indexHtml, /id="pd-boot-hero-from-api"/, 'boot script hydrates LCP from /api/hero');
 assert.match(indexHtml, /fetch\('\/api\/hero'/, 'boot hero script calls the admin-resolved hero API');
+assert.match(
+  indexHtml,
+  /fetch\('\/api\/hero',\s*\{\s*cache:\s*'default'\s*\}\)/,
+  'boot /api/hero fetch uses default cache (not no-store)'
+);
 assert.match(indexHtml, /id="root">[\s\S]*pepito-hero-inner/, 'static hero copy shell is in #root for FCP');
 assert.match(indexHtml, /id="pd-boot-lcp"[\s\S]*id="root"/, 'LCP img precedes #root so React cannot replace it');
 assert.match(indexHtml, /rel="alternate" type="text\/plain" href="https:\/\/petdate\.ir\/llms\.txt"/, 'HTML advertises llms.txt');
@@ -109,7 +113,7 @@ assert.doesNotMatch(
   /rel="preload"\s+as="style"/,
   'do not preload a stylesheet (unused-preload warning)'
 );
-assert.match(indexHtml, /web-perf-v45-shop-rail-click/, 'deploy marker bumped so SW/HTML cache misses');
+assert.match(indexHtml, /web-perf-v46-lighthouse-seo/, 'deploy marker bumped so SW/HTML cache misses');
 assert.match(
   indexHtml,
   /--pepito-dock-clearance:calc\(96px \+ env\(safe-area-inset-bottom,0px\)\)/,
@@ -117,16 +121,16 @@ assert.match(
 );
 assert.match(indexHtml, /id="pd-boot-lcp"/, 'LCP img lives outside #root so React cannot replace it');
 assert.match(indexHtml, /id="pd-boot-lcp"[\s\S]*decoding="sync"/, 'LCP img decodes sync so main-thread JS cannot stall paint');
-assert.match(indexHtml, /data-pd-boot-hero="pending"/, 'boot LCP starts pending until /api/hero fills it');
-assert.doesNotMatch(
+assert.match(indexHtml, /data-pd-boot-hero="default"/, 'boot LCP starts with discoverable default until /api/hero upgrades');
+assert.match(
   indexHtml,
   /<link[^>]*data-pd-lcp="hero"[^>]*>/,
-  'static HTML must not embed a marked hero preload link (API injects it)'
+  'static HTML embeds discoverable hero preload for Lighthouse LCP'
 );
 assert.equal(
   (indexHtml.match(/<link[^>]*data-pd-lcp="hero"[^>]*>/g) || []).length,
-  0,
-  'index.html ships zero hardcoded LCP image preload links'
+  1,
+  'index.html ships exactly one LCP image preload link'
 );
 assert.match(
   indexHtml,

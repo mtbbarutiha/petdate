@@ -13,6 +13,7 @@ import { BRAND, SITE } from '@petdate/shared';
 import { LandingChrome } from '../components/LandingChrome';
 import { useI18n } from '../i18n';
 import { sendAppDownloadSms } from '../lib/api';
+import '../styles/app-landing.css';
 
 /** Public Android package served from `public/downloads/`. */
 export const ANDROID_APK_HREF = '/downloads/petdate-android.apk';

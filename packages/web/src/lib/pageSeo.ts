@@ -839,11 +839,12 @@ function setNoscript(html: string, inner: string): string {
 }
 
 /**
- * Strip hardcoded /media/lcp/hero-* image preloads from the SPA shell.
- * Live homepage LCP is filled from GET /api/hero by #pd-boot-hero-from-api —
- * SEO must not re-inject the stale playmate WebP (flash of wrong photo).
+ * On non-home routes, strip hero image preloads so /shop,/faq,… do not fetch
+ * the landing LCP photo. Homepage keeps the discoverable preload in index.html
+ * for Lighthouse LCP (preload scanner + initial document).
  */
-function stripHardcodedHeroPreload(html: string): string {
+function stripHardcodedHeroPreload(html: string, pathname: string): string {
+  if (normalizePath(pathname) === '/') return html;
   let out = html.replace(/\s*<link[^>]*data-pd-lcp="hero"[^>]*>/gi, '');
   out = out.replace(/\s*<link[^>]*hero-playmate-\d+\.webp[^>]*>/gi, '');
   out = out.replace(/\s*<link[^>]*\/media\/lcp\/hero-[^"'>]*\.webp[^>]*>/gi, '');
@@ -905,7 +906,7 @@ export function applySeoToHtml(html: string, pathname: string, opts: PageSeoOpts
   }
   out = setJsonLd(out, seo.jsonLd);
   out = setNoscript(out, seo.noscriptHtml);
-  out = stripHardcodedHeroPreload(out);
+  out = stripHardcodedHeroPreload(out, pathname);
   out = parkBootLcpOnNonHome(out, pathname);
   return out;
 }

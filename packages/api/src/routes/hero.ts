@@ -10,7 +10,7 @@ import { trySendCachedWebpFile } from '../services/image-cache';
 export const heroRouter = Router();
 
 heroRouter.get('/', (_req, res) => {
-  res.setHeader('Cache-Control', 'public, max-age=30');
+  res.setHeader('Cache-Control', 'public, max-age=120, stale-while-revalidate=600');
   res.json({ slides: listResolvedHeroSlides() });
 });
 
