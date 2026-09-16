@@ -182,8 +182,12 @@ export function ShopCardPayPage() {
               <p>مبلغ واریز: <strong>{formatToman(status.totalToman)}</strong></p>
               <div className="pd-shop-card-deposit pd-shop-card-deposit--inline">
                 <p className="pd-shop-card-deposit-title">کارت مقصد</p>
-                <p className="pd-shop-card-deposit-number" dir="ltr">
-                  <strong>{cardDisplay || '—'}</strong>
+                <p className="pd-shop-card-deposit-number">
+                  <strong>
+                    <bdi className="pepito-card-pan" dir="ltr">
+                      {cardDisplay || '—'}
+                    </bdi>
+                  </strong>
                 </p>
                 <p className="pd-shop-card-deposit-holder">
                   به‌نام: <strong>{status.cardHolder || '—'}</strong>

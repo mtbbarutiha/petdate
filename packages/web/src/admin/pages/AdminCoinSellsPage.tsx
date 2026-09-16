@@ -119,7 +119,11 @@ export function AdminCoinSellsPage() {
                 <td>{tr(COIN_SELL_CHANNEL_LABELS_FA[r.channel] || r.channel || '—')}</td>
                 <td>{formatNumFa(r.coins)}{' · '}{tr(WITHDRAW_CURRENCY_LABELS_FA[(r.currency as keyof typeof WITHDRAW_CURRENCY_LABELS_FA) || 'coins'] || 'سکه')}</td>
                 <td>{formatTomanFa(r.amountToman)}</td>
-                <td dir="ltr">{formatCardGrouped(r.cardNumber) || r.cardMasked}</td>
+                <td>
+                  <bdi className="pepito-card-pan" dir="ltr">
+                    {formatCardGrouped(r.cardNumber) || r.cardMasked}
+                  </bdi>
+                </td>
                 <td>{tr(COIN_SELL_STATUS_LABELS_FA[r.status] || r.status)}</td>
                 <td>{formatAdminFaDateTime(r.createdAt)}</td>
                 <td>

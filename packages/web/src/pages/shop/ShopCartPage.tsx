@@ -526,8 +526,12 @@ export function ShopCartPage() {
                       {cardConfigured && depositCard ? (
                         <>
                           <p className="pd-shop-card-deposit-title">کارت مقصد واریز</p>
-                          <p className="pd-shop-card-deposit-number" dir="ltr">
-                            <strong>{cardDisplay}</strong>
+                          <p className="pd-shop-card-deposit-number">
+                            <strong>
+                              <bdi className="pepito-card-pan" dir="ltr">
+                                {cardDisplay}
+                              </bdi>
+                            </strong>
                           </p>
                           <p className="pd-shop-card-deposit-holder">
                             به‌نام: <strong>{depositCard.cardHolder}</strong>

@@ -348,6 +348,11 @@ assert.doesNotMatch(
 assert.match(darkCss, /\.pd-shop-card-deposit\b/, 'card-to-card deposit panel remapped for dark');
 assert.match(darkCss, /\.pd-shop-card-deposit--inline\b/, 'card-pay inline deposit panel remapped for dark');
 assert.match(darkCss, /\.pd-shop-card-deposit-number\b/, 'deposit card number remapped for dark');
+assert.match(
+  pepitoCss,
+  /\.pepito-card-pan[\s\S]{0,160}unicode-bidi:\s*isolate/,
+  'hyphenated card PAN is bidi-isolated so RTL cannot reverse digit groups',
+);
 assert.match(darkCss, /\.pd-shop-card-deposit-hint\b/, 'deposit hint remapped for dark');
 assert.match(
   pepitoCss,
