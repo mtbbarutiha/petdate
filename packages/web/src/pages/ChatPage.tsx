@@ -281,6 +281,7 @@ function ConversationListPane({
   onReject,
   onViewOwner,
   onDismiss,
+  onOpenContact,
 }: {
   conversations: InboxConversation[];
   loading: boolean;
@@ -296,13 +297,13 @@ function ConversationListPane({
   onReject: (item: InboxConversation) => void;
   onViewOwner: (item: InboxConversation) => void;
   onDismiss: (item: InboxConversation) => void;
+  onOpenContact?: (contactUserId: number) => void;
 }) {
   const { t } = useI18n();
-  const desktop = useIsDesktop();
   const isPlaymateHub = scope === 'owner';
   const panelPath = providerHomePath(scope);
   const HubCta = ownerConsult ? OwnerConsultPanel : FindPlaymatePanel;
-  const showMobileDiscovery = isPlaymateHub && !ownerConsult && !desktop;
+  const showDiscovery = isPlaymateHub && !ownerConsult;
   return (
     <aside className="tg-chat-list" aria-label={t('chats.listAria')}>
       <header className="tg-chat-list-head">
@@ -331,7 +332,9 @@ function ConversationListPane({
         ) : null}
       </header>
 
-      {showMobileDiscovery ? <ChatDiscoveryBar onSent={onRefresh} /> : null}
+      {showDiscovery ? (
+        <ChatDiscoveryBar onSent={onRefresh} onOpenContact={onOpenContact} />
+      ) : null}
 
       {error ? <p className="tg-error tg-error--inset">{error}</p> : null}
 
@@ -545,11 +548,13 @@ function ThreadEmptyState({
   desktop,
   ownerConsult,
   onFindSent,
+  onOpenContact,
 }: {
   scope: InboxScope;
   desktop?: boolean;
   ownerConsult?: boolean;
   onFindSent?: () => void;
+  onOpenContact?: (contactUserId: number) => void;
 }) {
   const { t } = useI18n();
   if (scope === 'vet') {
@@ -603,7 +608,12 @@ function ThreadEmptyState({
         <h2>{t('chats.pickTitle')}</h2>
         <p>{t('chats.pickLead')}</p>
         <div className="tg-thread-empty__cta-wrap">
-          <FindPlaymatePanel compact showRequests={false} onSent={onFindSent} />
+          <FindPlaymatePanel
+            compact
+            showRequests={false}
+            onSent={onFindSent}
+            onOpenContact={onOpenContact}
+          />
         </div>
       </div>
     );
@@ -1363,6 +1373,24 @@ export function ChatPage() {
     navigate(item.href);
   }
 
+  function onOpenContactChat(contactUserId: number) {
+    const preferred = conversations.find(
+      (c) =>
+        c.kind === 'playmate' &&
+        !c.ended &&
+        c.peerPet?.ownerId === contactUserId
+    );
+    const fallback = conversations.find(
+      (c) => c.kind === 'playmate' && c.peerPet?.ownerId === contactUserId
+    );
+    const hit = preferred || fallback;
+    if (hit) {
+      navigate(hit.href);
+      return;
+    }
+    setListError(t('chats.discoveryNoChat'));
+  }
+
   function onViewOwnerFromList(item: InboxConversation) {
     if (item.kind !== 'playmate') {
       navigate(item.href);
@@ -1990,6 +2018,7 @@ export function ChatPage() {
           onReject={(item) => void onRejectFromList(item)}
           onDismiss={requestDismissFromList}
           onViewOwner={onViewOwnerFromList}
+          onOpenContact={onOpenContactChat}
         />
       ) : null}
 
@@ -2005,6 +2034,7 @@ export function ChatPage() {
                 desktop={desktop}
                 ownerConsult={ownerConsult}
                 onFindSent={() => void reloadConversations({ soft: true })}
+                onOpenContact={onOpenContactChat}
               />
             </div>
           ) : threadLoading ? (

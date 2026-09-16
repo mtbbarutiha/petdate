@@ -17539,11 +17539,6 @@ select.pepito-wallet-convert-control {
 .tg-chat-list-discovery-bar {
   flex: 0 0 auto;
 }
-@media (min-width: 860px) {
-  .tg-chat-list-discovery-bar {
-    display: none !important;
-  }
-}
 .pepito-pet-discovery-status {
   margin: 0.75rem 0 0;
   font-size: 0.88rem;

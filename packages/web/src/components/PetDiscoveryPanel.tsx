@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, PawPrint, Search } from 'lucide-react';
+import { Contact, MapPin, PawPrint, Search } from 'lucide-react';
 import {
   PLAYDATE_REQUEST_COST,
   toPersianDigits,
@@ -9,7 +9,7 @@ import {
 import { useAuthStore } from '../hooks/useAuthStore';
 import { useAppToast } from '../hooks/useAppToast';
 import { useI18n } from '../i18n';
-import { listNearbyPets, listPets } from '../lib/api';
+import { listNearbyPets, listPets, listUserContacts } from '../lib/api';
 import { sendPlaymateRequestNow } from '../lib/playmateActions';
 import { peopleFromDiscoveryPets } from '../lib/petDiscoveryPeople';
 import { authStore } from '../data/authStore';
@@ -17,7 +17,15 @@ import { ConfirmModal } from './ConfirmModal';
 import { InboxPeerAvatar } from './InboxPeerAvatar';
 import { PetAvatar } from './PetAvatar';
 
-export type PetDiscoveryMode = 'nearby' | 'samebreed' | 'sameprovince';
+export type PetDiscoveryMode = 'nearby' | 'samebreed' | 'sameprovince' | 'contacts';
+
+type ContactRow = {
+  contactUserId: number;
+  contactName?: string;
+  contactAvatarUrl?: string;
+  contactGender?: string;
+  contactPublicId?: string;
+};
 
 type Props = {
   /** Owner pets used for same-breed / same-province seeds + request fromPetId. */
@@ -25,9 +33,11 @@ type Props = {
   className?: string;
   /** Called after a successful playmate request so parent can refresh inbox */
   onSent?: () => void;
+  /** Open an existing playmate chat with this contact user id (contacts chip). */
+  onOpenContact?: (contactUserId: number) => void;
   /**
    * `panel` = full card with title (default).
-   * `bar` = compact chip row for mobile chat header (no title/lead chrome).
+   * `bar` = compact chip row for chat list header (no title/lead chrome).
    */
   variant?: 'panel' | 'bar';
 };
@@ -40,13 +50,15 @@ function formatCoins(n: number): string {
 }
 
 /**
- * Bot parity discovery chips: پت‌های نزدیک من / هم‌نژاد / هم‌استان.
- * Results are a **people** list with ارسال درخواست (same createPlaydateRequest flow).
+ * Bot parity discovery chips: پت‌های نزدیک من / هم‌نژاد / هم‌استان / لیست مخاطبین.
+ * Results are a **people** list with ارسال درخواست (same createPlaydateRequest flow),
+ * plus saved contacts for quick re-open.
  */
 export function PetDiscoveryPanel({
   myPets,
   className = '',
   onSent,
+  onOpenContact,
   variant = 'panel',
 }: Props) {
   const { t } = useI18n();
@@ -55,6 +67,7 @@ export function PetDiscoveryPanel({
   const [mode, setMode] = useState<PetDiscoveryMode | null>(null);
   const [busy, setBusy] = useState(false);
   const [results, setResults] = useState<PetProfile[]>([]);
+  const [contacts, setContacts] = useState<ContactRow[]>([]);
   const [status, setStatus] = useState<string | null>(null);
   const [errorKind, setErrorKind] = useState(false);
   const [sendingOwnerId, setSendingOwnerId] = useState<number | null>(null);
@@ -80,9 +93,30 @@ export function PetDiscoveryPanel({
       setMode(next);
       setBusy(true);
       setResults([]);
+      setContacts([]);
       setStatus(null);
       setErrorKind(false);
       try {
+        if (next === 'contacts') {
+          const rows = await listUserContacts(myUserId);
+          setContacts(
+            rows.map((r) => ({
+              contactUserId: r.contactUserId,
+              contactName: r.contactName,
+              contactAvatarUrl: r.contactAvatarUrl,
+              contactGender: r.contactGender,
+              contactPublicId: r.contactPublicId,
+            }))
+          );
+          const n = rows.length;
+          setStatus(
+            n
+              ? t('chats.discoveryContactsCount', { n })
+              : t('chats.discoveryContactsEmpty')
+          );
+          return;
+        }
+
         if (next === 'nearby') {
           const coords = await new Promise<GeolocationCoordinates>((resolve, reject) => {
             if (!navigator.geolocation) {
@@ -262,10 +296,15 @@ export function PetDiscoveryPanel({
     { id: 'nearby', label: t('chats.discoveryNearby'), Icon: MapPin },
     { id: 'samebreed', label: t('chats.discoverySameBreed'), Icon: PawPrint },
     { id: 'sameprovince', label: t('chats.discoverySameProvince'), Icon: Search },
+    { id: 'contacts', label: t('chats.discoveryContacts'), Icon: Contact },
   ];
 
   const showEmpty =
-    !busy && mode != null && !errorKind && people.length === 0 && Boolean(status);
+    !busy &&
+    mode != null &&
+    !errorKind &&
+    Boolean(status) &&
+    (mode === 'contacts' ? contacts.length === 0 : people.length === 0);
 
   return (
     <section
@@ -369,6 +408,43 @@ export function PetDiscoveryPanel({
                       : sending
                         ? t('common.loading')
                         : t('chats.discoverySendRequest')}
+                  </button>
+                </article>
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
+
+      {mode === 'contacts' && contacts.length > 0 ? (
+        <ul className="pepito-pet-discovery-list" data-testid="pet-discovery-contacts">
+          {contacts.map((row) => {
+            const name = row.contactName?.trim() || t('chats.discoveryContacts');
+            return (
+              <li key={row.contactUserId}>
+                <article
+                  className="pepito-pet-discovery-card pepito-pet-discovery-card--person"
+                  data-testid={`pet-discovery-contact-${row.contactUserId}`}
+                >
+                  <InboxPeerAvatar
+                    avatarUrl={row.contactAvatarUrl}
+                    name={name}
+                    size={44}
+                  />
+                  <div className="pepito-pet-discovery-copy">
+                    <strong>{name}</strong>
+                    {row.contactPublicId ? (
+                      <span className="pepito-muted">{row.contactPublicId}</span>
+                    ) : null}
+                  </div>
+                  <button
+                    type="button"
+                    className="pepito-btn button-1 pepito-pet-discovery-request"
+                    disabled={busy || !onOpenContact}
+                    data-testid={`pet-discovery-open-contact-${row.contactUserId}`}
+                    onClick={() => onOpenContact?.(row.contactUserId)}
+                  >
+                    {t('chats.discoveryOpenChat')}
                   </button>
                 </article>
               </li>

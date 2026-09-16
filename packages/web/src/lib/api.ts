@@ -793,6 +793,9 @@ export async function listUserContacts(userId: number) {
       createdAt: string;
       contactName?: string;
       contactUsername?: string;
+      contactAvatarUrl?: string;
+      contactGender?: string;
+      contactPublicId?: string;
     }>
   >(`/api/users/${userId}/contacts`);
 }
