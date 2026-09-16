@@ -1,6 +1,6 @@
 /**
- * Mobile chats: header Find CTA + small discovery chips at top.
- * Fee card / full discovery panel stay on desktop thread pane only.
+ * Mobile + desktop chats: header Find CTA + discovery chips at top of list.
+ * Fee card / full discovery panel stay on desktop thread pane too.
  * Run: npx tsx packages/web/src/components/playmateEmptyMobile.selftest.ts
  */
 import assert from 'node:assert/strict';
@@ -83,23 +83,26 @@ assert.doesNotMatch(
   /tg-chat-list-hub-cta/,
   'list body must not re-show fee+discovery strip'
 );
-assert.match(chatPage, /ChatDiscoveryBar/, 'mobile list mounts discovery chip bar');
-assert.match(chatPage, /showMobileDiscovery/, 'discovery bar is mobile-only gate');
+assert.match(chatPage, /ChatDiscoveryBar/, 'list mounts discovery chip bar');
+assert.match(chatPage, /showDiscovery/, 'discovery bar gated to playmate hub');
+assert.match(chatPage, /onOpenContact/, 'contacts chip opens existing playmate chat');
 assert.match(chatPage, /HubCta variant="header"/, 'header keeps Find Playmate CTA');
 assert.match(
   chatPage,
-  /if \(desktop\) \{[\s\S]*?FindPlaymatePanel compact showRequests=\{false\}/,
+  /if \(desktop\) \{[\s\S]*?FindPlaymatePanel[\s\S]*?showRequests=\{false\}/,
   'desktop thread empty pane keeps full find+discovery panel'
 );
 
 assert.match(discovery, /variant\?: 'panel' \| 'bar'/, 'PetDiscoveryPanel supports bar variant');
 assert.match(discovery, /pepito-pet-discovery--bar/, 'bar class applied');
+assert.match(discovery, /id: 'contacts'/, 'contacts discovery chip');
 assert.match(discoveryBar, /variant="bar"/, 'ChatDiscoveryBar uses bar chips');
+assert.match(discoveryBar, /onOpenContact/, 'ChatDiscoveryBar forwards contact open');
 assert.match(pepito, /\.pepito-pet-discovery--bar/, 'bar styles present');
-assert.match(
+assert.doesNotMatch(
   pepito,
   /@media \(min-width: 860px\)[\s\S]*?\.tg-chat-list-discovery-bar[\s\S]*?display:\s*none/,
-  'desktop hides list discovery bar (thread pane owns it)'
+  'desktop keeps list discovery bar (same chips as mobile)'
 );
 
 console.log('playmateEmptyMobile.selftest: ok');

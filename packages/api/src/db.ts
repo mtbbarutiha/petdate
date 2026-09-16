@@ -8757,11 +8757,16 @@ export const dbService = {
     createdAt: string;
     contactName?: string;
     contactUsername?: string;
+    contactAvatarUrl?: string;
+    contactGender?: string;
+    contactPublicId?: string;
   }> {
     const rows = db
       .prepare(
         `SELECT c.id, c.user_id, c.contact_user_id, c.created_at,
-                u.name AS contact_name, u.username AS contact_username
+                u.name AS contact_name, u.username AS contact_username,
+                u.avatar_url AS contact_avatar_url, u.gender AS contact_gender,
+                u.public_id AS contact_public_id
          FROM user_contacts c
          LEFT JOIN users u ON u.id = c.contact_user_id
          WHERE c.user_id = ?
@@ -8774,6 +8779,9 @@ export const dbService = {
       created_at: string;
       contact_name: string | null;
       contact_username: string | null;
+      contact_avatar_url: string | null;
+      contact_gender: string | null;
+      contact_public_id: string | null;
     }>;
     return rows.map((row) => ({
       id: row.id,
@@ -8782,6 +8790,15 @@ export const dbService = {
       createdAt: row.created_at,
       contactName: row.contact_name || undefined,
       contactUsername: row.contact_username || undefined,
+      contactAvatarUrl: resolveProfileDisplayAvatarUrl(row.contact_avatar_url || undefined, {
+        gender: parseUserGenderValue(row.contact_gender),
+        publicFacing: true,
+      }),
+      contactGender: parseUserGenderValue(row.contact_gender),
+      contactPublicId: userPublicIdOf({
+        id: row.contact_user_id,
+        publicId: row.contact_public_id || undefined,
+      }),
     }));
   },
 

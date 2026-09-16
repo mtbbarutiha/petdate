@@ -43,6 +43,8 @@ export type FindPlaymatePanelProps = {
   showRequests?: boolean;
   /** Called after a successful find/send so parent can refresh inbox */
   onSent?: () => void;
+  /** Open an existing playmate chat with a saved contact (contacts chip). */
+  onOpenContact?: (contactUserId: number) => void;
 };
 
 /**
@@ -53,6 +55,7 @@ export function FindPlaymatePanel({
   variant = 'panel',
   showRequests = true,
   onSent,
+  onOpenContact,
 }: FindPlaymatePanelProps) {
   const { t } = useI18n();
   const { user } = useUserStore();
@@ -427,7 +430,7 @@ export function FindPlaymatePanel({
           </p>
         ) : null}
 
-        <PetDiscoveryPanel myPets={myPets} onSent={onSent} />
+        <PetDiscoveryPanel myPets={myPets} onSent={onSent} onOpenContact={onOpenContact} />
       </section>
 
       {showRequests ? (

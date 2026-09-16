@@ -7,13 +7,15 @@ import { PetDiscoveryPanel } from './PetDiscoveryPanel';
 
 type Props = {
   onSent?: () => void;
+  /** Open an existing playmate chat with a saved contact. */
+  onOpenContact?: (contactUserId: number) => void;
 };
 
 /**
- * Mobile chat-list discovery chips (nearby / same-breed / same-province).
- * Desktop keeps the full panel in the thread empty pane instead.
+ * Chat-list discovery chips (nearby / same-breed / same-province / contacts).
+ * Shown on both mobile and desktop list panes.
  */
-export function ChatDiscoveryBar({ onSent }: Props) {
+export function ChatDiscoveryBar({ onSent, onOpenContact }: Props) {
   const { user: authUser, isLoggedIn } = useAuthStore();
   const { user } = useUserStore();
   const myUserId = authUser?.id ?? user.id;
@@ -43,7 +45,12 @@ export function ChatDiscoveryBar({ onSent }: Props) {
 
   return (
     <div className="tg-chat-list-discovery-bar" data-testid="chat-list-discovery-bar">
-      <PetDiscoveryPanel variant="bar" myPets={myPets} onSent={onSent} />
+      <PetDiscoveryPanel
+        variant="bar"
+        myPets={myPets}
+        onSent={onSent}
+        onOpenContact={onOpenContact}
+      />
     </div>
   );
 }
