@@ -184,6 +184,39 @@ export function coinPackagesAtRate(rate = COIN_PRICE_TOMAN): CoinPackage[] {
   }));
 }
 
+/**
+ * شارژ کیف‌پول ریالی/تومانی با کارت‌به‌کارت.
+ * شناسه با پیشوند `wtoman:` تا از بسته‌های سکه و شاپ جدا شود.
+ * مبلغ واریز همان مقدار اعتبار تومان کیف‌پول است (۱ تومان = ۱ واحد wallet_toman).
+ */
+export type TomanTopupPackage = {
+  id: string;
+  toman: number;
+  label: string;
+};
+
+function tomanTopupPkg(idSuffix: string, toman: number, label: string): TomanTopupPackage {
+  return { id: `wtoman:${idSuffix}`, toman, label };
+}
+
+export const TOMAN_TOPUP_PACKAGES: TomanTopupPackage[] = [
+  tomanTopupPkg('50k', 50_000, '۵۰٬۰۰۰ تومان'),
+  tomanTopupPkg('100k', 100_000, '۱۰۰٬۰۰۰ تومان'),
+  tomanTopupPkg('200k', 200_000, '۲۰۰٬۰۰۰ تومان'),
+  tomanTopupPkg('500k', 500_000, '۵۰۰٬۰۰۰ تومان'),
+  tomanTopupPkg('1m', 1_000_000, '۱٬۰۰۰٬۰۰۰ تومان'),
+  tomanTopupPkg('2m', 2_000_000, '۲٬۰۰۰٬۰۰۰ تومان'),
+];
+
+export function isWalletTomanTopupPackageId(packageId: string): boolean {
+  return String(packageId || '').startsWith('wtoman:');
+}
+
+export function findTomanTopupPackage(packageId: string): TomanTopupPackage | undefined {
+  const id = String(packageId || '').trim();
+  return TOMAN_TOPUP_PACKAGES.find((p) => p.id === id);
+}
+
 export type CoinSellRequestStatus = 'open' | 'paid' | 'rejected' | 'cancelled';
 
 /** Same queue for web earn-withdraw and bot «فروش سکه». `open` is the pending payout state. */

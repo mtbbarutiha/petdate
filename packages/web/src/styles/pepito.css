@@ -15825,6 +15825,14 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   opacity: 0.72;
   line-height: 1.5;
 }
+.pd-shop-invoice-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px dashed rgba(92, 77, 145, 0.18);
+}
 .pd-shop-order-card-actions { margin-top: 0.75rem; }
 .pd-shop-order-ok--invoice { text-align: start; }
 @media (max-width: 720px) {

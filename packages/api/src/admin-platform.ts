@@ -1049,6 +1049,13 @@ function queuePaidShopOrderAutoMessage(order: ShopOrderRow): void {
         console.warn('purchase auto-message skipped:', (err as Error).message);
       });
   });
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const extras = require('./services/shop-order-paid-extras') as typeof import('./services/shop-order-paid-extras');
+    extras.deliverPaidShopOrderExtras(order);
+  } catch (err) {
+    console.warn('shop paid extras skipped:', (err as Error).message);
+  }
 }
 
 // silence unused import if tree-shaken oddly

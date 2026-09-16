@@ -1620,6 +1620,12 @@ function migrateSchema() {
   if (!shopOrderCols.includes('public_id')) {
     db.exec('ALTER TABLE shop_orders ADD COLUMN public_id TEXT');
   }
+  if (!shopOrderCols.includes('invoice_pdf_path')) {
+    db.exec('ALTER TABLE shop_orders ADD COLUMN invoice_pdf_path TEXT');
+  }
+  if (!shopOrderCols.includes('invoice_pdf_token')) {
+    db.exec('ALTER TABLE shop_orders ADD COLUMN invoice_pdf_token TEXT');
+  }
 
   const coinSellCols = (
     db.prepare(`PRAGMA table_info(coin_sell_requests)`).all() as Array<{ name: string }>
@@ -7979,15 +7985,28 @@ export const dbService = {
     }
   },
 
-  /** Open coin card-to-card orders (excludes shop / wallet-stars top-ups). */
+  /** Open coin card-to-card orders (excludes shop / wallet-stars / wallet-toman top-ups). */
   findOpenCoinCardOrder(userId: number): PaymentOrder | null {
     const rows = this.listUserPaymentOrders(userId, { limit: 20, method: 'card' });
     return (
       rows.find((o) => {
         if (o.status !== 'awaiting_receipt' && o.status !== 'pending') return false;
         const pkg = String(o.packageId || '');
-        if (pkg.startsWith('shop') || pkg.startsWith('wstars:')) return false;
+        if (pkg.startsWith('shop') || pkg.startsWith('wstars:') || pkg.startsWith('wtoman:')) {
+          return false;
+        }
         return true;
+      }) ?? null
+    );
+  },
+
+  /** Open wallet-toman (ریالی) card top-up orders. */
+  findOpenWalletTomanCardOrder(userId: number): PaymentOrder | null {
+    const rows = this.listUserPaymentOrders(userId, { limit: 20, method: 'card' });
+    return (
+      rows.find((o) => {
+        if (o.status !== 'awaiting_receipt' && o.status !== 'pending') return false;
+        return String(o.packageId || '').startsWith('wtoman:');
       }) ?? null
     );
   },
@@ -8067,6 +8086,10 @@ export const dbService = {
       return { ok: false, reason: 'bad_status' };
     }
 
+    const pkgId = String(existing.packageId || '');
+    const isTomanTopup = pkgId.startsWith('wtoman:');
+    const tomanCredit = Math.floor(Number(existing.amountToman) || 0);
+
     const tx = db.transaction(() => {
       const updated = db
         .prepare(
@@ -8078,25 +8101,35 @@ export const dbService = {
         )
         .run(note?.trim() || null, orderId);
       if (updated.changes !== 1) throw new Error('BAD_STATUS');
-      db.prepare(`UPDATE users SET coins = COALESCE(coins, 0) + ? WHERE id = ?`).run(
-        existing.coins,
-        existing.userId
-      );
-      this.appendWalletLedger({
-        userId: existing.userId,
-        currency: 'coins',
-        amount: existing.coins,
-        direction: 'credit',
-        reason: 'خرید سکه (کارت به کارت)',
-        refType: 'payment_order',
-        refId: orderId,
-      });
+      if (isTomanTopup) {
+        if (tomanCredit <= 0) throw new Error('BAD_AMOUNT');
+        const credited = this.creditWallet(existing.userId, 'toman', tomanCredit, {
+          reason: 'شارژ ریالی (کارت به کارت)',
+          refType: 'payment_order',
+          refId: orderId,
+        });
+        if (!credited.ok) throw new Error('BAD_AMOUNT');
+      } else {
+        db.prepare(`UPDATE users SET coins = COALESCE(coins, 0) + ? WHERE id = ?`).run(
+          existing.coins,
+          existing.userId
+        );
+        this.appendWalletLedger({
+          userId: existing.userId,
+          currency: 'coins',
+          amount: existing.coins,
+          direction: 'credit',
+          reason: 'خرید سکه (کارت به کارت)',
+          refType: 'payment_order',
+          refId: orderId,
+        });
+      }
     });
 
     try {
       tx();
     } catch (err) {
-      if (err instanceof Error && err.message === 'BAD_STATUS') {
+      if (err instanceof Error && (err.message === 'BAD_STATUS' || err.message === 'BAD_AMOUNT')) {
         return { ok: false, reason: 'bad_status' };
       }
       throw err;

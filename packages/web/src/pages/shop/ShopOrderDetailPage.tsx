@@ -65,6 +65,7 @@ export function ShopOrderDetailPage() {
             {loading ? <p className="pd-shop-empty">در حال بارگذاری فاکتور…</p> : null}
             {!loading && order ? (
               <ShopInvoice
+                authToken={token}
                 order={{
                   id: order.id,
                   publicId: order.publicId,
@@ -77,6 +78,7 @@ export function ShopOrderDetailPage() {
                   note: order.note,
                   items: order.items,
                   createdAt: order.createdAt,
+                  invoicePdfUrl: order.invoicePdfUrl,
                 }}
               />
             ) : null}

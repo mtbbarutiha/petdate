@@ -348,7 +348,7 @@ export function ShopCartPage() {
           <div className="pd-shop-order-ok pd-shop-order-ok--invoice">
             <h2>پرداخت انجام شد</h2>
             <p>فاکتور خریدت آماده است — با شناسه فروشگاه قابل پیگیری است.</p>
-            <ShopInvoice order={completedInvoice} paidLabelOverride={paidLabel} />
+            <ShopInvoice order={completedInvoice} paidLabelOverride={paidLabel} authToken={token} />
             <div className="pd-shop-pay-actions" style={{ marginTop: 16 }}>
               <Link
                 to={`/shop/orders/${encodeURIComponent(orderPublicIdOf(completedInvoice))}`}

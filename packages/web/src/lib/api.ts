@@ -1035,6 +1035,9 @@ export async function fetchWalletTransactions(
 export type CoinPackageDto = {
   id: string; coins: number; toman: number; stars: number; vip?: boolean; label: string;
 };
+export type TomanTopupPackageDto = {
+  id: string; toman: number; label: string;
+};
 export type WalletPaymentOrderDto = {
   id: number; publicId?: string; packageId: string; coins: number; amountToman?: number;
   method: string; status: string; receiptUrl?: string; transferRef?: string;
@@ -1074,6 +1077,31 @@ export async function createCoinCardPayment(token: string, packageId: string) {
     '/api/auth/wallet/buy-coins/card', { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: JSON.stringify({ packageId }) }
   );
 }
+
+export async function fetchBuyTomanCatalog(token: string) {
+  return request<{
+    ok: true;
+    packages: TomanTopupPackageDto[];
+    card: { number: string; masked: string; grouped: string; holder: string } | null;
+    openOrders: WalletPaymentOrderDto[];
+    message?: string;
+  }>('/api/auth/wallet/buy-toman', { headers: { Authorization: `Bearer ${token}` } });
+}
+
+export async function createTomanCardPayment(token: string, packageId: string) {
+  return request<{
+    ok: true;
+    order: WalletPaymentOrderDto;
+    package: TomanTopupPackageDto;
+    card: { number: string; masked: string; grouped: string; holder: string };
+    message?: string;
+  }>('/api/auth/wallet/buy-toman/card', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ packageId }),
+  });
+}
+
 export async function fetchMyWalletPayments(token: string, opts?: { limit?: number; method?: string }) {
   const q = new URLSearchParams();
   if (opts?.limit != null) q.set('limit', String(opts.limit));
@@ -1917,6 +1945,7 @@ export type MyShopOrder = {
   items: unknown[];
   createdAt: string;
   updatedAt?: string;
+  invoicePdfUrl?: string | null;
 };
 
 export async function fetchMyShopOrders(token: string): Promise<{

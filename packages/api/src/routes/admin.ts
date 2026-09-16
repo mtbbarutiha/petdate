@@ -1057,17 +1057,19 @@ adminRouter.post('/payments/:id/approve', (req, res) => {
   }
   const result = dbService.approveCardPayment(id, note);
   if (!result.ok) { res.status(400).json({ error: result.reason }); return; }
+  const isTomanTopup = String(result.order.packageId || '').startsWith('wtoman:');
   enqueueCard2CardFinanceOs({
     orderId: id,
     amountToman: result.order.amountToman ?? 0,
     userId: result.order.userId,
-    kind: 'coins',
+    kind: isTomanTopup ? 'toman' : 'coins',
     packageId: result.order.packageId,
   });
   void notifyCardPaymentApprovedTelegram({
     toTelegramId: result.user.telegramId ?? result.order.userTelegramId,
     coins: result.order.coins,
-    kind: 'coins',
+    amountToman: result.order.amountToman ?? 0,
+    kind: isTomanTopup ? 'toman' : 'coins',
   });
   res.json(result);
 });

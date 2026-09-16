@@ -25,8 +25,10 @@ import { useI18n } from '../i18n';
 import { usePlatformConfig } from '../hooks/usePlatformConfig';
 import {
   createCoinCardPayment,
+  createTomanCardPayment,
   fetchAuthedPaymentReceiptObjectUrl,
   fetchBuyCoinsCatalog,
+  fetchBuyTomanCatalog,
   fetchMyWalletPayments,
   convertWallet,
   fetchWallet,
@@ -37,6 +39,7 @@ import {
   cancelWalletPayment,
   uploadWalletPaymentReceipt,
   type CoinPackageDto,
+  type TomanTopupPackageDto,
   type WalletPaymentOrderDto,
   type WalletTransactionDto,
 } from '../lib/api';
@@ -177,6 +180,7 @@ export function WalletPage() {
   const [txLoading, setTxLoading] = useState(false);
   const [txError, setTxError] = useState('');
   const [packages, setPackages] = useState<CoinPackageDto[]>([]);
+  const [tomanPackages, setTomanPackages] = useState<TomanTopupPackageDto[]>([]);
   const [searchParams] = useSearchParams();
   const [convertFrom, setConvertFrom] = useState<'toman' | 'coins' | 'stars'>('toman');
   const [convertTo, setConvertTo] = useState<'toman' | 'coins' | 'stars'>('coins');
@@ -184,13 +188,20 @@ export function WalletPage() {
   const [convertBusy, setConvertBusy] = useState(false);
   const [rates, setRates] = useState<{ coinPriceToman: number; coinSellPriceToman: number } | null>(null);
   const buySectionRef = useRef<HTMLElement | null>(null);
+  const tomanSectionRef = useRef<HTMLElement | null>(null);
   const [cardInfo, setCardInfo] = useState<{ number: string; masked: string; grouped: string; holder: string } | null>(null);
   const [activeOrder, setActiveOrder] = useState<WalletPaymentOrderDto | null>(null);
+  const [activeTomanOrder, setActiveTomanOrder] = useState<WalletPaymentOrderDto | null>(null);
   const [paymentHistory, setPaymentHistory] = useState<WalletPaymentOrderDto[]>([]);
+  const [tomanPaymentHistory, setTomanPaymentHistory] = useState<WalletPaymentOrderDto[]>([]);
   const [buyBusy, setBuyBusy] = useState(false);
+  const [tomanBuyBusy, setTomanBuyBusy] = useState(false);
   const [transferRef, setTransferRef] = useState('');
+  const [tomanTransferRef, setTomanTransferRef] = useState('');
   const [uploadBusy, setUploadBusy] = useState(false);
+  const [tomanUploadBusy, setTomanUploadBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const tomanFileRef = useRef<HTMLInputElement>(null);
   const inFlightRef = useRef(false);
   const hasLocalRef = useRef(Boolean(user));
   const tokenRef = useRef(token);
@@ -224,15 +235,33 @@ export function WalletPage() {
     const tok = tokenRef.current;
     if (!tok) return;
     try {
-      const [catalog, payments] = await Promise.all([
+      const [catalog, tomanCatalog, payments] = await Promise.all([
         fetchBuyCoinsCatalog(tok),
+        fetchBuyTomanCatalog(tok),
         fetchMyWalletPayments(tok, { limit: 20, method: 'card' }),
       ]);
       setPackages(catalog.packages ?? []);
-      setCardInfo(catalog.card ?? null);
-      const open = (catalog.openOrders ?? []).find((o) => (o.status === 'awaiting_receipt' || o.status === 'pending') && !String(o.packageId).startsWith('shop')) ?? null;
-      setActiveOrder(open);
-      setPaymentHistory((payments.orders ?? []).filter((o) => !String(o.packageId).startsWith('shop')));
+      setTomanPackages(tomanCatalog.packages ?? []);
+      setCardInfo(catalog.card ?? tomanCatalog.card ?? null);
+      const allOrders = payments.orders ?? [];
+      const isToman = (pkg: string) => String(pkg).startsWith('wtoman:');
+      const isShopOrStars = (pkg: string) =>
+        String(pkg).startsWith('shop') || String(pkg).startsWith('wstars:');
+      setActiveOrder(
+        (catalog.openOrders ?? []).find(
+          (o) =>
+            (o.status === 'awaiting_receipt' || o.status === 'pending') &&
+            !isShopOrStars(o.packageId) &&
+            !isToman(o.packageId)
+        ) ?? null
+      );
+      setActiveTomanOrder(
+        (tomanCatalog.openOrders ?? []).find(
+          (o) => o.status === 'awaiting_receipt' || o.status === 'pending'
+        ) ?? null
+      );
+      setPaymentHistory(allOrders.filter((o) => !isShopOrStars(o.packageId) && !isToman(o.packageId)));
+      setTomanPaymentHistory(allOrders.filter((o) => isToman(o.packageId)));
     } catch { /* optional */ }
   }, []);
 
@@ -424,6 +453,61 @@ export function WalletPage() {
       await loadBuyCoins();
     } finally {
       setBuyBusy(false);
+    }
+  }
+
+  async function onBuyTomanPackage(pkg: TomanTopupPackageDto) {
+    if (!token) return;
+    setTomanBuyBusy(true);
+    try {
+      const res = await createTomanCardPayment(token, pkg.id);
+      setActiveTomanOrder(res.order);
+      setCardInfo(res.card);
+      toastInfo(res.message || 'سفارش شارژ ریالی ثبت شد — مبلغ را واریز و رسید را آپلود کن.');
+      await loadBuyCoins();
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : 'ثبت سفارش ناموفق بود');
+      await loadBuyCoins();
+    } finally {
+      setTomanBuyBusy(false);
+    }
+  }
+
+  async function onUploadTomanReceipt(file: File | null) {
+    if (!token || !activeTomanOrder || !file) return;
+    setTomanUploadBusy(true);
+    try {
+      const order = await uploadWalletPaymentReceipt(
+        token,
+        activeTomanOrder.id,
+        file,
+        tomanTransferRef || undefined
+      );
+      setActiveTomanOrder(order);
+      toastSuccess('رسید ثبت شد — پس از تأیید ادمین کیف‌پول ریالی شارژ می‌شود.');
+      await loadBuyCoins();
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : 'آپلود ناموفق بود');
+    } finally {
+      setTomanUploadBusy(false);
+      if (tomanFileRef.current) tomanFileRef.current.value = '';
+    }
+  }
+
+  async function onCancelActiveTomanOrder() {
+    if (!token || !activeTomanOrder || activeTomanOrder.status !== 'awaiting_receipt') return;
+    setTomanBuyBusy(true);
+    try {
+      await cancelWalletPayment(token, activeTomanOrder.id);
+      setActiveTomanOrder(null);
+      setTomanTransferRef('');
+      toastInfo('سفارش شارژ ریالی لغو شد.');
+      await loadBuyCoins();
+    } catch (err) {
+      toastError(err instanceof Error ? err.message : 'لغو ناموفق بود');
+      await loadBuyCoins();
+    } finally {
+      setTomanBuyBusy(false);
     }
   }
 
@@ -782,6 +866,150 @@ export function WalletPage() {
       ) : (
         <p className="pd-platform-banner">{t('platform.cardOff')}</p>
       )}
+
+      {platform.paymentCardEnabled ? (
+        <section
+          ref={tomanSectionRef}
+          className="pepito-wallet-tg pepito-wallet-buy"
+          aria-labelledby="wallet-toman-title"
+        >
+          <div className="pepito-wallet-tg-head">
+            <span className="pepito-wallet-tg-mark" aria-hidden>
+              <Wallet size={18} />
+            </span>
+            <div>
+              <h2 id="wallet-toman-title">{t('wallet.tomanTopupTitle')}</h2>
+              <p className="pepito-wallet-tg-lead">{t('wallet.tomanTopupLead')}</p>
+            </div>
+          </div>
+          <div className="pepito-wallet-tg-body">
+            {activeTomanOrder ? (
+              <div className="pepito-wallet-buy-active">
+                <div className="pepito-wallet-buy-active-head">
+                  <code className="pepito-wallet-buy-id" dir="ltr">
+                    {paymentPublicIdOf(activeTomanOrder)}
+                  </code>
+                  <span
+                    className={`pepito-wallet-buy-status pepito-wallet-buy-status--${paymentStatusTone(activeTomanOrder.status)}`}
+                  >
+                    {paymentStatusFa(activeTomanOrder.status)}
+                  </span>
+                </div>
+                <p className="pepito-wallet-buy-active-summary">
+                  شارژ {toPersianDigits(activeTomanOrder.amountToman ?? 0)} تومان
+                </p>
+                {cardInfo ? (
+                  <>
+                    <p>
+                      کارت:{' '}
+                      <strong>
+                        <bdi className="pepito-card-pan" dir="ltr">
+                          {cardInfo.grouped || cardInfo.number}
+                        </bdi>
+                      </strong>
+                    </p>
+                    <p>
+                      به‌نام: <strong>{cardInfo.holder}</strong>
+                    </p>
+                  </>
+                ) : null}
+                {activeTomanOrder.status === 'awaiting_receipt' ? (
+                  <>
+                    <label className="pepito-wallet-buy-ref">
+                      <span>شماره پیگیری (اختیاری)</span>
+                      <input
+                        value={tomanTransferRef}
+                        onChange={(e) => setTomanTransferRef(e.target.value)}
+                        placeholder="کد پیگیری بانک"
+                        dir="ltr"
+                      />
+                    </label>
+                    <input
+                      ref={tomanFileRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,.pdf"
+                      hidden
+                      onChange={(e) => void onUploadTomanReceipt(e.target.files?.[0] ?? null)}
+                    />
+                    <div className="pepito-wallet-tg-actions" style={{ marginTop: 8 }}>
+                      <button
+                        type="button"
+                        className="pepito-btn button-1"
+                        disabled={tomanUploadBusy || tomanBuyBusy}
+                        onClick={() => tomanFileRef.current?.click()}
+                      >
+                        {tomanUploadBusy ? 'در حال ارسال…' : 'آپلود فیش (عکس یا PDF)'}
+                      </button>
+                      <button
+                        type="button"
+                        className="pepito-btn pepito-btn--danger"
+                        disabled={tomanUploadBusy || tomanBuyBusy}
+                        onClick={() => void onCancelActiveTomanOrder()}
+                      >
+                        لغو سفارش
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <p className="pepito-wallet-tg-meta">{t('wallet.receiptPending')}</p>
+                )}
+                {activeTomanOrder.receiptUrl && token ? (
+                  <WalletPaymentReceiptImg
+                    token={token}
+                    receiptUrl={activeTomanOrder.receiptUrl}
+                    alt={t('wallet.receiptAlt')}
+                  />
+                ) : null}
+              </div>
+            ) : (
+              <ul className="pepito-wallet-buy-packages">
+                {tomanPackages.map((pkg) => (
+                  <li key={pkg.id}>
+                    <button
+                      type="button"
+                      className="pepito-wallet-buy-pkg"
+                      disabled={tomanBuyBusy}
+                      onClick={() => void onBuyTomanPackage(pkg)}
+                    >
+                      <strong>{pkg.label}</strong>
+                      <span>واریز {toPersianDigits(pkg.toman)} تومان → کیف‌پول ریالی</span>
+                    </button>
+                  </li>
+                ))}
+                {!tomanPackages.length ? (
+                  <li className="pepito-wallet-tg-meta">در حال بارگذاری بسته‌ها…</li>
+                ) : null}
+              </ul>
+            )}
+            {tomanPaymentHistory.length ? (
+              <ul className="pepito-wallet-buy-history" aria-label="درخواست‌های شارژ ریالی">
+                {tomanPaymentHistory.slice(0, 6).map((o) => {
+                  const publicId = paymentPublicIdOf(o);
+                  const tone = paymentStatusTone(o.status);
+                  return (
+                    <li key={o.id} className="pepito-wallet-buy-history-row">
+                      <div className="pepito-wallet-buy-history-main">
+                        <code className="pepito-wallet-buy-id" dir="ltr" title={publicId}>
+                          {publicId}
+                        </code>
+                        <p className="pepito-wallet-buy-history-amount">
+                          {toPersianDigits(o.amountToman ?? 0)} تومان
+                          <span className={`pepito-wallet-buy-status pepito-wallet-buy-status--${tone}`}>
+                            {paymentStatusFa(o.status)}
+                          </span>
+                        </p>
+                      </div>
+                      <time className="pepito-wallet-buy-history-date" dateTime={o.createdAt}>
+                        {formatTxDate(o.createdAt)}
+                      </time>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
 
       <section className="pepito-wallet-tx" aria-labelledby="wallet-tx-title">
         <div className="pepito-wallet-tx-head">

@@ -90,6 +90,7 @@ COMMON_EXCLUDES=(
   --exclude 'packages/api/data/pet-photos'
   --exclude 'packages/api/data/user-avatars'
   --exclude 'packages/api/data/prescriptions'
+  --exclude 'packages/api/data/shop-invoices'
   --exclude 'packages/api/data/magazine-images'
   --exclude 'packages/api/data/hero-slides'
   --exclude 'packages/api/data/hero-slides'
