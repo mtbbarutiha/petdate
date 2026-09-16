@@ -21,6 +21,10 @@ import {
 } from '../services/telegram-media';
 import { getUserFromBearer } from '../services/web-otp';
 import { isPhotoApproved, sanitizePetPhotosForViewer, type PetProfile } from '@petdate/shared';
+import {
+  trySendCachedWebpBuffer,
+  trySendCachedWebpFile,
+} from '../services/image-cache';
 
 export const petsRouter = Router();
 
@@ -205,7 +209,7 @@ petsRouter.post('/photos/upload', (req, res) => {
  * UUID filenames are unguessable; pending URLs are omitted from public JSON,
  * so we always stream the bytes for <img> (no Bearer — browsers can't send it).
  */
-petsRouter.get('/photos/:ownerId/:filename', (req, res) => {
+petsRouter.get('/photos/:ownerId/:filename', async (req, res) => {
   const ownerId = String(req.params.ownerId || '');
   const filename = String(req.params.filename || '');
   const storageKey = `${ownerId}/${filename}`;
@@ -215,8 +219,9 @@ petsRouter.get('/photos/:ownerId/:filename', (req, res) => {
     return;
   }
 
+  if (await trySendCachedWebpFile(res, abs, { maxEdge: 1600 })) return;
   res.setHeader('Content-Type', mimeFromPetPhotoKey(storageKey));
-  res.setHeader('Cache-Control', 'private, max-age=3600');
+  res.setHeader('Cache-Control', 'public, max-age=86400');
   res.send(fs.readFileSync(abs));
 });
 
@@ -455,18 +460,25 @@ petsRouter.get('/:id/image', async (req, res) => {
     return;
   }
 
-  const sendLocal = (urlPath: string): boolean => {
+  const sendLocal = async (urlPath: string): Promise<boolean> => {
     const key = petPhotoStorageKeyFromUrl(urlPath);
     if (!key) return false;
+    const abs = resolvePetPhotoPath(key);
+    if (abs && fs.existsSync(abs)) {
+      if (await trySendCachedWebpFile(res, abs, { maxEdge: 1600 })) return true;
+    }
     const local = readLocalPetPhoto(key);
     if (!local) return false;
+    if (await trySendCachedWebpBuffer(res, local.buffer, `pet:${key}`, { maxEdge: 1600 })) {
+      return true;
+    }
     res.setHeader('Content-Type', local.contentType);
     res.setHeader('Cache-Control', 'public, max-age=86400');
     res.send(local.buffer);
     return true;
   };
 
-  if (raw.startsWith('/api/pets/photos/') && sendLocal(raw)) return;
+  if (raw.startsWith('/api/pets/photos/') && (await sendLocal(raw))) return;
 
   if (/^https?:\/\//i.test(raw)) {
     res.redirect(302, raw);
@@ -475,11 +487,16 @@ petsRouter.get('/:id/image', async (req, res) => {
 
   if (looksLikeTelegramFileId(raw)) {
     const saved = await materializePetTelegramPhoto(petId, row.owner_id, raw);
-    if (saved && sendLocal(saved)) return;
+    if (saved && (await sendLocal(saved))) return;
 
     const bytes = await fetchTelegramFileBytes(raw);
     if (!bytes) {
       res.status(404).json({ error: 'عکس تلگرام در دسترس نیست' });
+      return;
+    }
+    if (
+      await trySendCachedWebpBuffer(res, bytes.buffer, `tg:${raw.slice(0, 48)}`, { maxEdge: 1600 })
+    ) {
       return;
     }
     res.setHeader('Content-Type', bytes.contentType || 'image/jpeg');
@@ -488,7 +505,7 @@ petsRouter.get('/:id/image', async (req, res) => {
     return;
   }
 
-  if (sendLocal(raw)) return;
+  if (await sendLocal(raw)) return;
 
   res.status(404).json({ error: 'عکس پیدا نشد' });
 });

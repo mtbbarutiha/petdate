@@ -83,10 +83,11 @@ function storedAuthHeaders(): Record<string, string> {
  * Resolve stored media paths for <img src> / CSS backgrounds.
  * Relative `/api/...` must be prefixed with VITE_API_URL when the web origin differs.
  * Opaque Telegram file_ids are mapped to the pet/media image proxy when possible.
+ * Raster shop/stock photos go through `/api/img` (disk WebP cache).
  */
 export function resolvePublicMediaUrl(
   url?: string | null,
-  opts?: { petId?: number }
+  opts?: { petId?: number; width?: number }
 ): string {
   const raw = String(url ?? '').trim();
   if (!raw) return '';
@@ -97,16 +98,39 @@ export function resolvePublicMediaUrl(
   ) {
     return raw;
   }
-  // Bundled web static files (hero LCP, pepito uploads, etc.) — keep same-origin.
-  // Do not prefix VITE_API_URL; the API host does not serve /media or /pepito.
+  // Already a cached WebP proxy URL.
+  if (raw.startsWith('/api/img')) {
+    return raw.startsWith('/') ? `${API_BASE}${raw}` : raw;
+  }
+
+  // Bundled web static files (hero LCP, pepito uploads, etc.) — keep same-origin,
+  // but route raster images through the WebP image cache.
   if (
     raw.startsWith('/media/') ||
     raw.startsWith('/pepito/') ||
-    raw.startsWith('/assets/')
+    raw.startsWith('/pets/') ||
+    raw.startsWith('/brand/') ||
+    raw.startsWith('/agents/')
   ) {
+    return toCachedWebpUrl(raw, { width: opts?.width, apiBase: API_BASE }) || raw;
+  }
+  if (raw.startsWith('/assets/')) {
     return raw;
   }
-  if (raw.startsWith('/')) return `${API_BASE}${raw}`;
+  if (raw.startsWith('/')) {
+    const full = `${API_BASE}${raw}`;
+    // API-served raster media also benefits from /api/img when it's a file path.
+    if (
+      raw.startsWith('/api/pets/photos/') ||
+      raw.startsWith('/api/auth/avatar/') ||
+      raw.startsWith('/api/hero/images/') ||
+      raw.startsWith('/api/magazine/images/') ||
+      raw.startsWith('/api/games/photos/')
+    ) {
+      return toCachedWebpUrl(raw, { width: opts?.width, apiBase: API_BASE }) || full;
+    }
+    return full;
+  }
   // Telegram Bot API file_id — not a browser URL
   if (/^(AgAC|AQAD|BAAC|BQAC|AwAC|CQAC|DQAC)/.test(raw) || /^[A-Za-z0-9_-]{24,}$/.test(raw)) {
     if (opts?.petId != null && Number.isFinite(opts.petId) && opts.petId > 0) {
@@ -115,6 +139,71 @@ export function resolvePublicMediaUrl(
     return `${API_BASE}/api/media/telegram/${encodeURIComponent(raw)}`;
   }
   return '';
+}
+
+const WEBP_CACHE_SKIP_EXT = /\.(?:svg|ico|pdf|mp4|webm|mov|m4v)(?:$|\?)/i;
+const WEBP_CACHE_RASTER_EXT = /\.(?:jpe?g|png|gif|bmp|tiff?|heic|heif|webp)(?:$|\?)/i;
+
+/**
+ * Build `/api/img?src=…` for allowlisted public/API raster paths.
+ * Already-optimized LCP WebP under /media/lcp/ stays direct (no extra hop).
+ */
+export function toCachedWebpUrl(
+  pathOrUrl: string,
+  opts?: { width?: number; apiBase?: string }
+): string {
+  const raw = String(pathOrUrl || '').trim();
+  if (!raw || raw.startsWith('blob:') || raw.startsWith('data:')) return raw;
+  if (raw.startsWith('/api/img')) return raw;
+
+  let pathname = raw;
+  let search = '';
+  try {
+    if (/^https?:\/\//i.test(raw)) {
+      const u = new URL(raw);
+      pathname = u.pathname;
+      search = u.search;
+    } else {
+      const q = raw.indexOf('?');
+      if (q >= 0) {
+        pathname = raw.slice(0, q);
+        search = raw.slice(q);
+      }
+    }
+  } catch {
+    return raw;
+  }
+
+  // LCP hero/logo WebPs are already sized — skip proxy hop.
+  if (pathname.startsWith('/media/lcp/') && pathname.endsWith('.webp')) {
+    return pathname + search;
+  }
+  if (WEBP_CACHE_SKIP_EXT.test(pathname)) return pathname + search;
+  if (!WEBP_CACHE_RASTER_EXT.test(pathname) && !pathname.startsWith('/api/')) {
+    return pathname + search;
+  }
+
+  const allowed =
+    pathname.startsWith('/pepito/') ||
+    pathname.startsWith('/media/') ||
+    pathname.startsWith('/pets/') ||
+    pathname.startsWith('/brand/') ||
+    pathname.startsWith('/agents/') ||
+    pathname.startsWith('/api/pets/photos/') ||
+    pathname.startsWith('/api/auth/avatar/') ||
+    pathname.startsWith('/api/hero/images/') ||
+    pathname.startsWith('/api/magazine/images/') ||
+    pathname.startsWith('/api/games/photos/');
+  if (!allowed) return pathname + search;
+
+  const params = new URLSearchParams();
+  // Preserve cache-bust query (e.g. ?v=batch-multi-w1) inside src for stable keys on CDN.
+  params.set('src', pathname + search);
+  if (opts?.width && Number.isFinite(opts.width) && opts.width > 0) {
+    params.set('w', String(Math.round(opts.width)));
+  }
+  const base = (opts?.apiBase ?? '').replace(/\/$/, '');
+  return `${base}/api/img?${params.toString()}`;
 }
 
 /**

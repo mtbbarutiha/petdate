@@ -26,10 +26,24 @@ async function main() {
     maxBytes: 8 * 1024 * 1024,
     maxEdge: 256,
   });
-  assert.equal(normalized.mimeType, 'image/jpeg');
-  assert.match(normalized.originalName, /\.jpg$/i);
+  assert.equal(normalized.mimeType, 'image/webp');
+  assert.match(normalized.originalName, /\.webp$/i);
   assert.ok(normalized.buffer.length > 0);
-  assert.ok(normalized.buffer[0] === 0xff && normalized.buffer[1] === 0xd8);
+  assert.ok(
+    normalized.buffer.toString('ascii', 0, 4) === 'RIFF' &&
+      normalized.buffer.toString('ascii', 8, 12) === 'WEBP'
+  );
+
+  const asJpeg = await normalizeProfileImage({
+    buffer: jpeg,
+    mimeType: 'image/jpeg',
+    originalName: 'legacy.jpg',
+    maxBytes: 8 * 1024 * 1024,
+    maxEdge: 256,
+    format: 'jpeg',
+  });
+  assert.equal(asJpeg.mimeType, 'image/jpeg');
+  assert.ok(asJpeg.buffer[0] === 0xff && asJpeg.buffer[1] === 0xd8);
 
   assert.equal(persianUploadError('INVALID_MIME').includes('عکس'), true);
   assert.equal(persianUploadError('FILE_TOO_LARGE').includes('۸'), true);

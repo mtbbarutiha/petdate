@@ -37,6 +37,7 @@ import {
   resolveUserAvatarPath,
   saveUserAvatar,
 } from '../services/user-avatar-store';
+import { trySendCachedWebpFile } from '../services/image-cache';
 import {
   MAX_FACE_VERIFY_BYTES,
   isFaceVerifyVideoMime,
@@ -1016,7 +1017,7 @@ authRouter.post('/avatar', (req, res) => {
  * Serve uploaded user avatar. UUID path is unguessable; pending URLs are withheld
  * from public profile JSON, so <img> can load without Authorization.
  */
-authRouter.get('/avatar/:userId/:filename', (req, res) => {
+authRouter.get('/avatar/:userId/:filename', async (req, res) => {
   const userId = String(req.params.userId || '');
   const filename = String(req.params.filename || '');
   const storageKey = `${userId}/${filename}`;
@@ -1026,8 +1027,18 @@ authRouter.get('/avatar/:userId/:filename', (req, res) => {
     return;
   }
 
-  res.setHeader('Content-Type', mimeFromUserAvatarKey(storageKey));
-  res.setHeader('Cache-Control', 'private, max-age=3600');
+  const mime = mimeFromUserAvatarKey(storageKey);
+  // Videos / non-raster stay as stored bytes.
+  if (!mime.startsWith('image/') || mime === 'image/svg+xml') {
+    res.setHeader('Content-Type', mime);
+    res.setHeader('Cache-Control', 'private, max-age=3600');
+    res.send(fs.readFileSync(abs));
+    return;
+  }
+
+  if (await trySendCachedWebpFile(res, abs, { maxEdge: 1024 })) return;
+  res.setHeader('Content-Type', mime);
+  res.setHeader('Cache-Control', 'public, max-age=86400');
   res.send(fs.readFileSync(abs));
 });
 

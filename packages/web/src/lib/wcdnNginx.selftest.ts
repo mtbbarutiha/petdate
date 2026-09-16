@@ -31,9 +31,18 @@ assert.match(
 
 assert.match(
   conf,
-  /location \^~ \/api\/auth\/avatar\//,
-  'stored avatar files still served under /api/auth/avatar/'
+  /location \^~ \/api\/img \{/,
+  'WebP image cache location keeps upstream Cache-Control'
 );
+assert.match(
+  conf,
+  /location \^~ \/api\/img \{[\s\S]*?proxy_pass http:\/\/127\.0\.0\.1:3001\/api\/img/,
+  'WebP image cache proxies to API'
+);
+{
+  const imgCount = (conf.match(/location \^~ \/api\/img \{/g) || []).length;
+  assert.equal(imgCount, 2, `exact /api/img once per server (got ${imgCount})`);
+}
 assert.match(doc, /نمایش خطای سرور مقصد/, 'documents ParsPack origin-error passthrough');
 assert.match(
   doc,

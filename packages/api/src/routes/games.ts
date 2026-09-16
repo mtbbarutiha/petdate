@@ -17,6 +17,7 @@ import {
   saveEventPhoto,
 } from '../services/event-photo-store';
 import { getUserFromBearer } from '../services/web-otp';
+import { trySendCachedWebpFile } from '../services/image-cache';
 
 export { parsePositiveIntId } from './parse-positive-int-id';
 
@@ -167,7 +168,7 @@ gamesRouter.post('/photos/upload', (req, res) => {
   });
 });
 
-gamesRouter.get('/photos/:hostUserId/:filename', (req, res) => {
+gamesRouter.get('/photos/:hostUserId/:filename', async (req, res) => {
   const hostUserId = String(req.params.hostUserId || '');
   const filename = String(req.params.filename || '');
   const storageKey = `${hostUserId}/${filename}`;
@@ -176,8 +177,9 @@ gamesRouter.get('/photos/:hostUserId/:filename', (req, res) => {
     res.status(404).end();
     return;
   }
+  if (await trySendCachedWebpFile(res, abs, { maxEdge: 1600 })) return;
   res.setHeader('Content-Type', mimeFromEventPhotoKey(storageKey));
-  res.setHeader('Cache-Control', 'private, max-age=3600');
+  res.setHeader('Cache-Control', 'public, max-age=86400');
   fs.createReadStream(abs).pipe(res);
 });
 

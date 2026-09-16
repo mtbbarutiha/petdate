@@ -13,11 +13,12 @@ import {
   mimeFromMagazineImageKey,
   resolveMagazineImagePath,
 } from '../services/magazine-image-store';
+import { trySendCachedWebpFile } from '../services/image-cache';
 
 export const magazineRouter = Router();
 
-/** Serve uploaded magazine images publicly (cover / body). */
-magazineRouter.get('/images/:day/:filename', (req, res) => {
+/** Serve uploaded magazine images publicly (cover / body) as cached WebP. */
+magazineRouter.get('/images/:day/:filename', async (req, res) => {
   const day = String(req.params.day || '');
   const filename = String(req.params.filename || '');
   const storageKey = `${day}/${filename}`;
@@ -26,6 +27,7 @@ magazineRouter.get('/images/:day/:filename', (req, res) => {
     res.status(404).json({ error: 'تصویر پیدا نشد' });
     return;
   }
+  if (await trySendCachedWebpFile(res, abs, { maxEdge: 1920 })) return;
   res.setHeader('Cache-Control', 'public, max-age=86400');
   res.type(mimeFromMagazineImageKey(storageKey));
   fs.createReadStream(abs).pipe(res);

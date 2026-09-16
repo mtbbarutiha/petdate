@@ -5,6 +5,7 @@ import sharp from 'sharp';
 
 export const IMAGE_NORMALIZE_MAX_EDGE = 1280;
 export const IMAGE_NORMALIZE_JPEG_QUALITY = 82;
+export const IMAGE_NORMALIZE_WEBP_QUALITY = 80;
 
 const ALLOWED_MIME = new Set([
   'image/jpeg',
@@ -67,8 +68,8 @@ export function isAllowedUploadImageMime(mimeType: string | undefined, fileName?
 }
 
 /**
- * Normalize uploads to browser-safe JPEG (fixes HEIC / odd PNG / huge camera files).
- * Animated GIF is preserved as-is.
+ * Normalize uploads to browser-safe WebP (fixes HEIC / odd PNG / huge camera files).
+ * Animated GIF is preserved as-is. Pass format: 'jpeg' only when a caller needs JPEG.
  */
 export async function normalizeProfileImage(opts: {
   buffer: Buffer;
@@ -76,10 +77,13 @@ export async function normalizeProfileImage(opts: {
   originalName?: string;
   maxBytes: number;
   maxEdge?: number;
+  /** Default webp — JPEG kept for rare callers that need it. */
+  format?: 'webp' | 'jpeg';
 }): Promise<{ buffer: Buffer; mimeType: string; originalName: string }> {
   const mime = (opts.mimeType || '').toLowerCase();
   const originalName = opts.originalName || 'photo.jpg';
   const nameLower = originalName.toLowerCase();
+  const format = opts.format === 'jpeg' ? 'jpeg' : 'webp';
 
   if (!isAllowedUploadImageMime(opts.mimeType, originalName, opts.buffer)) {
     throw new Error('INVALID_MIME');
@@ -100,23 +104,32 @@ export async function normalizeProfileImage(opts: {
 
   try {
     const maxEdge = opts.maxEdge ?? IMAGE_NORMALIZE_MAX_EDGE;
-    const out = await sharp(opts.buffer, { failOn: 'none', animated: false })
+    const pipeline = sharp(opts.buffer, { failOn: 'none', animated: false })
       .rotate()
       .resize({
         width: maxEdge,
         height: maxEdge,
         fit: 'inside',
         withoutEnlargement: true,
-      })
-      .jpeg({ quality: IMAGE_NORMALIZE_JPEG_QUALITY, mozjpeg: true })
-      .toBuffer();
-    if (!out.length) throw new Error('EMPTY_JPEG');
+      });
+    const out =
+      format === 'jpeg'
+        ? await pipeline.jpeg({ quality: IMAGE_NORMALIZE_JPEG_QUALITY, mozjpeg: true }).toBuffer()
+        : await pipeline.webp({ quality: IMAGE_NORMALIZE_WEBP_QUALITY, effort: 4 }).toBuffer();
+    if (!out.length) throw new Error(format === 'jpeg' ? 'EMPTY_JPEG' : 'EMPTY_WEBP');
     if (out.length > opts.maxBytes) throw new Error('FILE_TOO_LARGE');
     const base = originalName.replace(/\.[^.]+$/, '') || 'photo';
+    if (format === 'jpeg') {
+      return {
+        buffer: out,
+        mimeType: 'image/jpeg',
+        originalName: `${base}.jpg`,
+      };
+    }
     return {
       buffer: out,
-      mimeType: 'image/jpeg',
-      originalName: `${base}.jpg`,
+      mimeType: 'image/webp',
+      originalName: `${base}.webp`,
     };
   } catch (err) {
     if (err instanceof Error && (err.message === 'FILE_TOO_LARGE' || err.message === 'INVALID_MIME')) {
