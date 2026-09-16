@@ -54,7 +54,7 @@ const PET_POOL: Array<{
     size: 'large',
     colors: ['سیاه-قهوه‌ای', 'sable'],
     names: ['رکس', 'ماکس', 'شاتو', 'کیان'],
-    photo: 'https://images.unsplash.com/photo-1589941013453-ec89f0b5b5c5?auto=format&fit=crop&w=800&q=80',
+    photo: 'https://images.unsplash.com/photo-1568572933382-74d440642117?auto=format&fit=crop&w=800&q=80',
   },
   {
     species: 'dog',
@@ -102,7 +102,7 @@ const PET_POOL: Array<{
     size: 'small',
     colors: ['سفید'],
     names: ['برفی', 'مالی', 'پنبه'],
-    photo: 'https://images.unsplash.com/photo-1611003228941-98852ba28263?auto=format&fit=crop&w=800&q=80',
+    photo: 'https://images.unsplash.com/photo-1544568100-847a948585b9?auto=format&fit=crop&w=800&q=80',
   },
   {
     species: 'dog',
@@ -198,14 +198,14 @@ const PEOPLE_MALE = [
   'https://images.unsplash.com/photo-1463453091185-61582044d556?auto=format&fit=crop&w=600&q=80',
   'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=600&q=80',
   'https://images.unsplash.com/photo-1488161628813-04466f872be2?auto=format&fit=crop&w=600&q=80',
-  'https://images.unsplash.com/photo-1501196353401-2c3d9fce69a1?auto=format&fit=crop&w=600&q=80',
+  'https://images.unsplash.com/photo-1504257432389-52343af06ae3?auto=format&fit=crop&w=600&q=80',
 ];
 const PEOPLE_FEMALE = [
   'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=600&q=80',
   'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
   'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=600&q=80',
   'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?auto=format&fit=crop&w=600&q=80',
-  'https://images.unsplash.com/photo-1531123897727-8f89b6d3f0e3?auto=format&fit=crop&w=600&q=80',
+  'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=600&q=80',
   'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=crop&w=600&q=80',
   'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=600&q=80',
   'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&w=600&q=80',
@@ -229,6 +229,19 @@ async function fetchImage(url: string): Promise<Buffer> {
   if (buf.length < 800) throw new Error(`tiny image ${url}`);
   imageCache.set(url, buf);
   return buf;
+}
+
+const FALLBACK_PET =
+  'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?auto=format&fit=crop&w=800&q=80';
+const FALLBACK_PERSON =
+  'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=600&q=80';
+
+async function fetchImageSafe(url: string, fallback: string): Promise<Buffer> {
+  try {
+    return await fetchImage(url);
+  } catch {
+    return fetchImage(fallback);
+  }
 }
 
 function pad(n: number, w = 2): string {
@@ -285,11 +298,13 @@ export async function seedLaunchPlaymates(opts?: {
       const personUrl = gender === 'male' ? pick(PEOPLE_MALE, pi + ui) : pick(PEOPLE_FEMALE, pi + ui);
 
       try {
-        const { user } = dbService.findOrCreateUser({
-          telegramId,
-          name,
-          username: `pm_${pad(pi + 1)}${pad(ui)}`,
-        });
+        const { user } = existing
+          ? { user: existing }
+          : dbService.findOrCreateUser({
+              telegramId,
+              name,
+              username: `pm_${pad(pi + 1)}${pad(ui)}`,
+            });
         const d = getDb();
         d.prepare(
           `UPDATE users SET
@@ -317,7 +332,7 @@ export async function seedLaunchPlaymates(opts?: {
           user.id
         );
 
-        const avatarBuf = await fetchImage(personUrl);
+        const avatarBuf = await fetchImageSafe(personUrl, FALLBACK_PERSON);
         const avatar = await saveUserAvatar({
           userId: user.id,
           originalName: 'avatar.jpg',
@@ -328,7 +343,7 @@ export async function seedLaunchPlaymates(opts?: {
           `UPDATE users SET avatar_url = ?, avatar_custom = 1, avatar_moderation_status = 'approved' WHERE id = ?`
         ).run(avatar.urlPath, user.id);
 
-        const petBuf = await fetchImage(petKind.photo);
+        const petBuf = await fetchImageSafe(petKind.photo, FALLBACK_PET);
         const petPhoto = await savePetPhoto({
           ownerId: user.id,
           originalName: 'pet.jpg',
