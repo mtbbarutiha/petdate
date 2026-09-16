@@ -18,6 +18,7 @@ import {
 } from './pet-photo-store';
 import { telegramFetch, telegramBotApiUrl } from './telegram-http';
 import { ensureWebAccessibleAvatar } from './telegram-profile-sync';
+import { usableTelegramId } from './telegram-id';
 
 function escapeHtml(value: string | number | null | undefined): string {
   return String(value ?? '')
@@ -305,7 +306,8 @@ export async function notifyPlaydateRequestTelegram(opts: {
 }): Promise<boolean> {
   if (!infra.telegram.botToken || !opts.toTelegramId) return false;
   const tgId = String(opts.toTelegramId).trim();
-  if (!tgId || /^(fake_|demo_)/i.test(tgId)) return false;
+  // Skip fake/demo/launch_pm seeds and any non-numeric Telegram id
+  if (!usableTelegramId(tgId)) return false;
 
   // سایلنت درخواست چت: درخواست در لیست می‌ماند؛ نوتیف تلگرام ارسال نمی‌شود
   try {
@@ -392,7 +394,8 @@ export async function notifyPlaydateRejectedTelegram(opts: {
 }): Promise<boolean> {
   if (!infra.telegram.botToken || !opts.toTelegramId) return false;
   const tgId = String(opts.toTelegramId).trim();
-  if (!tgId || /^(fake_|demo_)/i.test(tgId)) return false;
+  // Skip fake/demo/launch_pm seeds and any non-numeric Telegram id
+  if (!usableTelegramId(tgId)) return false;
   return telegramCall('sendMessage', {
     chat_id: tgId,
     text: opts.text,

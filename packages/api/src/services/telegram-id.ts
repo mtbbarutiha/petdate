@@ -6,7 +6,13 @@ export function normalizeTelegramId(id: unknown): string | null {
   if (id == null) return null;
   const t = String(id).trim();
   if (!t) return null;
-  if (t.startsWith('fake_') || t.startsWith('fake_owner_') || t.startsWith('demo_')) {
+  if (
+    t.startsWith('fake_') ||
+    t.startsWith('fake_owner_') ||
+    t.startsWith('demo_') ||
+    t.startsWith('launch_pm_') ||
+    t.startsWith('petdate_')
+  ) {
     return null;
   }
   return t;
@@ -14,6 +20,16 @@ export function normalizeTelegramId(id: unknown): string | null {
 
 /** Internal synthetic accounts that must never receive Bot API sends. */
 export function isSyntheticTelegramId(id: unknown): boolean {
+  const raw = id == null ? '' : String(id).trim();
+  if (!raw) return false;
+  if (
+    raw.startsWith('fake_') ||
+    raw.startsWith('demo_') ||
+    raw.startsWith('launch_pm_') ||
+    raw.startsWith('petdate_')
+  ) {
+    return true;
+  }
   const t = normalizeTelegramId(id);
   if (!t) return false;
   return t === 'petdate_ai_assistant' || t.startsWith('petdate_ai_');

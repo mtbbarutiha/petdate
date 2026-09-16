@@ -2,7 +2,7 @@ import type { ConsultServiceKind, User, VetConsultation } from '@petdate/shared'
 import { SEEKER_OWNER_SHARE, userPublicIdOf } from '@petdate/shared';
 import { infra } from '../config/infra';
 import { telegramFetch, telegramBotApiUrl } from './telegram-http';
-import { normalizeTelegramId } from './telegram-id';
+import { normalizeTelegramId, usableTelegramId } from './telegram-id';
 
 function escapeHtml(value: string | number | null | undefined): string {
   return String(value ?? '')
@@ -188,8 +188,7 @@ export async function notifyConsultRejectedTelegram(opts: {
   text: string;
 }): Promise<boolean> {
   const tgId = normalizeTelegramId(opts.toTelegramId);
-  if (!infra.telegram.botToken || !tgId) return false;
-  if (/^(fake_|demo_)/i.test(tgId)) return false;
+  if (!infra.telegram.botToken || !tgId || !usableTelegramId(tgId)) return false;
   return telegramCall('sendMessage', {
     chat_id: tgId,
     text: opts.text,

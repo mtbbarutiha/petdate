@@ -788,7 +788,9 @@ async function main() {
 
   const { usableTelegramId, isSyntheticTelegramId } = await import('./telegram-id');
   assert(isSyntheticTelegramId('petdate_ai_assistant'), 'AI tg id synthetic');
+  assert(isSyntheticTelegramId('launch_pm_01_01'), 'launch playmate seed is synthetic');
   assert(!usableTelegramId('petdate_ai_assistant'), 'AI tg id not sendable');
+  assert(!usableTelegramId('launch_pm_01_01'), 'launch playmate never notified');
   assert(usableTelegramId('123456789'), 'numeric tg id ok');
 
   for (let i = 0; i < 25; i++) {
