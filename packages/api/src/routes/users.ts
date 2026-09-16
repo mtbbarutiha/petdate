@@ -216,6 +216,20 @@ usersRouter.post('/telegram/:telegramId/presence', async (req, res) => {
   } catch {
     /* optional */
   }
+  // First-party analytics: count bot sessions in «توزیع دستگاه» as ربات
+  try {
+    const { ingestBotAnalyticsEvent } = await import('../site-analytics');
+    ingestBotAnalyticsEvent({
+      telegramId: String(req.params.telegramId || user.telegramId || ''),
+      userId: user.id,
+      path: '/bot',
+      eventName: 'bot_presence',
+      language: 'fa',
+      country: 'IR',
+    });
+  } catch {
+    /* non-fatal */
+  }
   res.json(dbService.getUserPresence(user.id));
 });
 

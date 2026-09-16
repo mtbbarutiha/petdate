@@ -379,6 +379,107 @@ export function detectDevice(ua: string | null | undefined, screenW?: number | n
   return 'desktop';
 }
 
+/** FA labels for device buckets in admin charts (desktop/mobile/tablet/bot). */
+export function formatDeviceLabel(device: string | null | undefined): string {
+  const d = (device || '').trim().toLowerCase();
+  if (d === 'desktop' || d === 'دسکتاپ') return 'دسکتاپ';
+  if (d === 'mobile' || d === 'موبایل') return 'موبایل';
+  if (d === 'tablet' || d === 'تبلت') return 'تبلت';
+  if (d === 'bot' || d === 'ربات' || d === 'telegram' || d === 'telegram_bot') return 'ربات';
+  return (device || '').trim() || 'نامشخص';
+}
+
+export type BotAnalyticsInput = {
+  telegramId: string;
+  userId?: number | null;
+  path?: string | null;
+  eventName?: string | null;
+  language?: string | null;
+  country?: string | null;
+};
+
+/**
+ * Record Telegram bot activity into site_analytics with device=bot.
+ * Throttled: at most one pageview per bot user per ~45 minutes (daily session id).
+ */
+export function ingestBotAnalyticsEvent(
+  input: BotAnalyticsInput
+): { ok: true; id: number } | { ok: true; skipped: true } {
+  ensureSiteAnalyticsSchema();
+  const telegramId = clampStr(input.telegramId, 64);
+  if (!telegramId || telegramId.length < 3) {
+    throw new Error('telegramId نامعتبر');
+  }
+
+  const day = new Date().toISOString().slice(0, 10);
+  const sessionId = clampStr(`bot:${telegramId}:${day}`, 80);
+  if (!sessionId || sessionId.length < 8) {
+    throw new Error('sessionId نامعتبر');
+  }
+
+  const db = getDb();
+  const since = new Date(Date.now() - 45 * 60 * 1000)
+    .toISOString()
+    .slice(0, 19)
+    .replace('T', ' ');
+  const recent = db
+    .prepare(
+      `SELECT id FROM site_analytics_events
+       WHERE session_id = ? AND event_type = 'pageview' AND created_at >= ?
+       LIMIT 1`
+    )
+    .get(sessionId, since) as { id?: number } | undefined;
+  if (recent?.id) {
+    return { ok: true, skipped: true };
+  }
+
+  const path = normalizePath(input.path || '/bot');
+  const country = clampStr(input.country, 64) || 'IR';
+  const language = clampStr(input.language, 32) || 'fa';
+  const meta = serializeMeta({
+    channel: 'telegram_bot',
+    telegramId,
+    ...(typeof input.userId === 'number' && Number.isFinite(input.userId)
+      ? { userId: Math.round(input.userId) }
+      : {}),
+  });
+
+  const result = db
+    .prepare(
+      `INSERT INTO site_analytics_events (
+        session_id, event_type, event_name, path, title, referrer, referrer_host,
+        utm_source, utm_medium, utm_campaign, utm_content, utm_term, gclid, fbclid,
+        language, country, device,
+        screen_w, screen_h, user_agent, meta_json
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    )
+    .run(
+      sessionId,
+      'pageview',
+      clampStr(input.eventName, 80) || 'bot_activity',
+      path,
+      'ربات تلگرام',
+      'https://t.me/petdate_bot',
+      't.me',
+      'telegram',
+      'bot',
+      null,
+      null,
+      null,
+      null,
+      null,
+      language,
+      country,
+      'bot',
+      null,
+      null,
+      'PetDateTelegramBot/1.0',
+      meta
+    );
+
+  return { ok: true, id: Number(result.lastInsertRowid) };
+}
+
 export function isValidClarityProjectId(id: string | null | undefined): boolean {
   if (!id) return false;
   const t = id.trim();
@@ -756,7 +857,7 @@ export function buildSiteAnalyticsReport(periodDays = 14): SiteAnalyticsReport {
          AND referrer_host IS NOT NULL AND referrer_host != '(internal)'
        GROUP BY referrer_host ORDER BY value DESC`, [from, to], 12),
     devices: deviceRows.map((d) => ({
-      label: d.label === 'desktop' ? 'دسکتاپ' : d.label === 'mobile' ? 'موبایل' : d.label === 'tablet' ? 'تبلت' : d.label,
+      label: formatDeviceLabel(d.label),
       value: d.value,
     })),
     countries: topBucket(
@@ -947,7 +1048,7 @@ export function buildTagManagerReport(periodDays = 14): TagManagerReport {
         15
       ),
       devices: deviceRows.map((d) => ({
-        label: d.label === 'desktop' ? 'دسکتاپ' : d.label === 'mobile' ? 'موبایل' : d.label === 'tablet' ? 'تبلت' : d.label,
+        label: formatDeviceLabel(d.label),
         value: d.value,
       })),
       recentEvents: recentRaw.map((r) => ({

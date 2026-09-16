@@ -8,6 +8,14 @@ export function adminDeviceLabel(device: string): string {
   if (device === 'desktop' || device === 'دسکتاپ') return tr('دسکتاپ');
   if (device === 'mobile' || device === 'موبایل') return tr('موبایل');
   if (device === 'tablet' || device === 'تبلت') return tr('تبلت');
+  if (
+    device === 'bot' ||
+    device === 'ربات' ||
+    device === 'telegram' ||
+    device === 'telegram_bot'
+  ) {
+    return tr('ربات');
+  }
   return tr(device);
 }
 

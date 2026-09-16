@@ -21,11 +21,13 @@ async function main() {
 
   const {
     ingestSiteAnalyticsEvent,
+    ingestBotAnalyticsEvent,
     buildSiteAnalyticsReport,
     buildTagManagerReport,
     buildUtmPreviewUrl,
     createUtmCampaign,
     detectDevice,
+    formatDeviceLabel,
     parseReferrerHost,
     pickRowField,
     isValidClarityProjectId,
@@ -53,6 +55,8 @@ async function main() {
 
   assert(detectDevice('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0)', 390) === 'mobile', 'iphone');
   assert(detectDevice('Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 1440) === 'desktop', 'desktop');
+  assert(formatDeviceLabel('bot') === 'ربات', 'bot label');
+  assert(formatDeviceLabel('desktop') === 'دسکتاپ', 'desktop label');
   assert(parseReferrerHost('https://www.google.com/search?q=pet') === 'google.com', 'ref host');
   assert(parseReferrerHost('https://petdate.ir/shop') === '(internal)', 'internal ref');
   assert(parseReferrerHost(null) === '(direct)', 'direct');
@@ -145,9 +149,24 @@ async function main() {
     country: 'IR',
   });
 
+  const botFirst = ingestBotAnalyticsEvent({
+    telegramId: '999001122',
+    userId: 42,
+    path: '/bot',
+    eventName: 'bot_presence',
+  });
+  assert('id' in botFirst && typeof botFirst.id === 'number', 'bot ingest id');
+  const botSkip = ingestBotAnalyticsEvent({
+    telegramId: '999001122',
+    userId: 42,
+    path: '/bot',
+    eventName: 'bot_presence',
+  });
+  assert('skipped' in botSkip && botSkip.skipped === true, 'bot throttle skip');
+
   const report = buildSiteAnalyticsReport(7);
-  assert(report.overview.pageviews >= 4, 'pageviews');
-  assert(report.overview.uniqueSessions >= 3, 'sessions');
+  assert(report.overview.pageviews >= 5, 'pageviews');
+  assert(report.overview.uniqueSessions >= 4, 'sessions');
   assert(typeof report.overview.engagementRatePct === 'number', 'engagement');
   assert(Array.isArray(report.events), 'events breakdown');
   assert(Array.isArray(report.utmMediums), 'utm mediums');
@@ -157,6 +176,7 @@ async function main() {
   assert(report.ga4 && typeof report.ga4.configured === 'boolean', 'ga4 status');
   assert(report.popularPages.some((p) => p.label === '/shop'), 'popular /shop');
   assert(report.devices.length >= 1, 'devices');
+  assert(report.devices.some((d) => d.label === 'ربات' && d.value >= 1), 'bot device bucket');
   assert(report.recentSessions.length >= 3, 'recent sessions');
   const sess1 = report.recentSessions.find((s) => s.sessionId === 'sess-test-0001');
   assert(sess1, 'sess1 found');
