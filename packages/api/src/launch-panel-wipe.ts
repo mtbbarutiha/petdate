@@ -207,7 +207,9 @@ function wipeAllUsers(): number {
   const rows = getDb()
     .prepare(
       `SELECT id FROM users
-       WHERE name IS NULL OR name NOT LIKE '[حذف‌شده%'`
+       WHERE (name IS NULL OR name NOT LIKE '[حذف‌شده%')
+         AND COALESCE(telegram_id, '') NOT LIKE 'launch_pm_%'
+         AND COALESCE(telegram_id, '') NOT LIKE 'petdate_%'`
     )
     .all() as Array<{ id: number }>;
   let n = 0;
@@ -218,10 +220,17 @@ function wipeAllUsers(): number {
       console.warn(`[launch-wipe] user ${row.id}:`, (err as Error).message);
     }
   }
-  // Hard-clear leftover pets if any
+  // Leftover pets of wiped users only — keep launch playmates / system agents
   if (tableExists('pets')) {
     try {
-      getDb().prepare('DELETE FROM pets').run();
+      getDb()
+        .prepare(
+          `DELETE FROM pets WHERE owner_id NOT IN (
+             SELECT id FROM users
+             WHERE telegram_id LIKE 'launch_pm_%' OR telegram_id LIKE 'petdate_%'
+           )`
+        )
+        .run();
     } catch {
       /* ignore */
     }
