@@ -1,3 +1,4 @@
+import { MouseEvent } from 'react';
 import { googleOAuthStartPath } from '../lib/api';
 
 export function GoogleMark() {
@@ -23,6 +24,29 @@ export function GoogleMark() {
   );
 }
 
+function isNativeCapacitorShell(): boolean {
+  if (typeof window === 'undefined') return false;
+  const cap = (window as Window & { Capacitor?: { isNativePlatform?: () => boolean } }).Capacitor;
+  try {
+    return Boolean(cap?.isNativePlatform?.());
+  } catch {
+    return false;
+  }
+}
+
+/** Full-page OAuth start — avoids SPA/SW trapping and WebView user-agent blocks. */
+export function startGoogleOAuth(next?: string | null): void {
+  const href = googleOAuthStartPath(next);
+  if (typeof window === 'undefined') return;
+  if (isNativeCapacitorShell()) {
+    // Google blocks OAuth inside many embedded WebViews — open the system browser.
+    const opened = window.open(href, '_blank', 'noopener,noreferrer');
+    if (!opened) window.location.assign(href);
+    return;
+  }
+  window.location.assign(href);
+}
+
 /** First-class Gmail/Google OAuth CTA — same session model as Telegram / mobile OTP. */
 export function GoogleLoginButton({
   next,
@@ -31,12 +55,27 @@ export function GoogleLoginButton({
   next?: string | null;
   className?: string;
 }) {
+  const href = googleOAuthStartPath(next);
+
+  function onClick(e: MouseEvent<HTMLAnchorElement>) {
+    // Keep href for accessibility / open-in-new-tab, but force top-level navigation
+    // so React Router / analytics never treat /api/auth/google as an in-app route.
+    if (e.defaultPrevented) return;
+    if (e.button !== 0) return;
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
+    startGoogleOAuth(next);
+  }
+
   return (
     <a
       className={`auth-google-cta auth-login-method auth-login-method--google${
         className ? ` ${className}` : ''
       }`}
-      href={googleOAuthStartPath(next)}
+      href={href}
+      rel="noopener noreferrer"
+      data-gtm-id="auth-google-login"
+      onClick={onClick}
     >
       <GoogleMark />
       ورود با گوگل
