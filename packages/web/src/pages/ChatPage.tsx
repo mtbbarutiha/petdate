@@ -404,15 +404,18 @@ function ConversationListPane({
                     }${c.pending ? ' is-pending' : ''}${c.ongoing ? ' is-ongoing' : ''}`}
                     onClick={() => onSelect(c)}
                   >
-                    {peer ? (
+                    {c.peerAvatarUrl || !peer ? (
+                      <InboxPeerAvatar
+                        avatarUrl={c.peerAvatarUrl || peer?.ownerAvatarUrl}
+                        name={c.title}
+                      />
+                    ) : (
                       <PetAvatar
                         type={peer.type}
                         size="md"
                         imageUrl={peer.imageUrl}
                         name={peer.name}
                       />
-                    ) : (
-                      <InboxPeerAvatar avatarUrl={c.peerAvatarUrl} name={c.title} />
                     )}
                     <span className="tg-chat-list-meta">
                       <strong>

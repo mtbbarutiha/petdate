@@ -43,6 +43,11 @@ export function petProfileToUiPet(pet?: PetProfile | null): Pet {
     neighborhood: pet?.neighborhood || '',
     ownerName: (pet?.ownerName && String(pet.ownerName).trim()) || '',
     ownerId: pet?.ownerId ?? 0,
+    ownerAvatarUrl: (() => {
+      const raw = String(pet?.ownerAvatarUrl ?? '').trim();
+      if (!raw) return undefined;
+      return resolvePublicMediaUrl(raw) || raw;
+    })(),
     imageUrl: resolveImage(pet?.imageUrl, id),
     emoji: PET_TYPE_EMOJI[type],
     bio: pet?.bio,

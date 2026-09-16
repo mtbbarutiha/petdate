@@ -3043,7 +3043,9 @@ function mapVetConsultation(row: Record<string, unknown>): VetConsultation {
       return bio || undefined;
     })(),
     vetName: (row.vet_name as string | undefined) ?? undefined,
-    vetAvatarUrl: profileAvatarUrl(row.vet_avatar_url as string | undefined),
+    vetAvatarUrl: resolveProfileDisplayAvatarUrl(row.vet_avatar_url as string | undefined, {
+      gender: parseUserGenderValue(row.vet_gender),
+    }),
     vetGender: parseUserGenderValue(row.vet_gender),
     petName: (row.pet_name as string | undefined) ?? undefined,
     petSpecies: (row.pet_species as string | undefined) ?? undefined,

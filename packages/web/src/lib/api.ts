@@ -97,12 +97,17 @@ export function resolvePublicMediaUrl(
   ) {
     return raw;
   }
-  // Bundled web static files (hero LCP, pepito uploads, etc.) — keep same-origin.
-  // Do not prefix VITE_API_URL; the API host does not serve /media or /pepito.
+  // Bundled web static files (hero LCP, pepito uploads, agent personas, defaults, stock pets).
+  // Do not prefix VITE_API_URL; the API host does not serve these paths.
   if (
     raw.startsWith('/media/') ||
     raw.startsWith('/pepito/') ||
-    raw.startsWith('/assets/')
+    raw.startsWith('/assets/') ||
+    raw.startsWith('/agents/') ||
+    raw.startsWith('/images/') ||
+    raw.startsWith('/pets/') ||
+    raw.startsWith('/brand/') ||
+    raw.startsWith('/fonts/')
   ) {
     return raw;
   }
