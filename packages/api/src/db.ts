@@ -1047,6 +1047,27 @@ function migrateSchema() {
   if (!userNames2.has('email_verified')) db.exec('ALTER TABLE users ADD COLUMN email_verified INTEGER NOT NULL DEFAULT 0');
   if (!userNames2.has('google_sub')) db.exec('ALTER TABLE users ADD COLUMN google_sub TEXT');
   db.exec(`CREATE UNIQUE INDEX IF NOT EXISTS idx_users_google_sub ON users (google_sub) WHERE google_sub IS NOT NULL AND google_sub != ''`);
+  // Soft-deleted shells must not keep email/phone/google_sub — otherwise Google/OTP
+  // login revives the inactive row, issues a session, then /me deletes it (401).
+  try {
+    db.prepare(
+      `UPDATE users SET
+         google_sub = NULL,
+         email = NULL,
+         email_verified = 0,
+         phone = NULL,
+         phone_verified = 0,
+         phone_verified_at = NULL
+       WHERE COALESCE(is_active, 1) = 0
+         AND (
+           (google_sub IS NOT NULL AND google_sub != '')
+           OR (email IS NOT NULL AND email != '')
+           OR (phone IS NOT NULL AND phone != '')
+         )`
+    ).run();
+  } catch (err) {
+    console.warn('inactive identity release skipped:', (err as Error).message);
+  }
   if (!userNames2.has('silent_chat_requests')) {
     db.exec('ALTER TABLE users ADD COLUMN silent_chat_requests INTEGER NOT NULL DEFAULT 0');
   }
@@ -3633,7 +3654,8 @@ export const dbService = {
         /* ignore */
       }
 
-      // 5) Anonymize — clear EVERY mergeable identity field (email was previously left behind)
+      // 5) Anonymize — clear EVERY mergeable identity field (email/google_sub must not
+      // survive or OAuth/OTP will resurrect the inactive shell and /me returns 401).
       db.prepare(
         `UPDATE users SET
            telegram_id = NULL,
@@ -3644,6 +3666,7 @@ export const dbService = {
            phone_verified_at = NULL,
            email = NULL,
            email_verified = 0,
+           google_sub = NULL,
            bio = NULL,
            avatar_url = NULL,
            avatar_custom = 0,
@@ -9000,13 +9023,23 @@ export const dbService = {
   },
 
   getUserByPhone(phone: string): User | null {
-    const row = db.prepare('SELECT * FROM users WHERE phone = ? ORDER BY id DESC LIMIT 1').get(phone) as Record<string, unknown> | undefined;
+    const row = db
+      .prepare(
+        `SELECT * FROM users
+         WHERE phone = ? AND COALESCE(is_active, 1) = 1
+         ORDER BY id DESC LIMIT 1`
+      )
+      .get(phone) as Record<string, unknown> | undefined;
     return row ? mapUser(row) : null;
   },
 
   getUserByEmail(email: string): User | null {
     const row = db
-      .prepare('SELECT * FROM users WHERE lower(email) = lower(?) ORDER BY id DESC LIMIT 1')
+      .prepare(
+        `SELECT * FROM users
+         WHERE lower(email) = lower(?) AND COALESCE(is_active, 1) = 1
+         ORDER BY id DESC LIMIT 1`
+      )
       .get(email) as Record<string, unknown> | undefined;
     return row ? mapUser(row) : null;
   },
@@ -9015,7 +9048,11 @@ export const dbService = {
     const key = String(sub ?? '').trim();
     if (!key) return null;
     const row = db
-      .prepare('SELECT * FROM users WHERE google_sub = ? ORDER BY id DESC LIMIT 1')
+      .prepare(
+        `SELECT * FROM users
+         WHERE google_sub = ? AND COALESCE(is_active, 1) = 1
+         ORDER BY id DESC LIMIT 1`
+      )
       .get(key) as Record<string, unknown> | undefined;
     return row ? mapUser(row) : null;
   },
@@ -9177,6 +9214,7 @@ export const dbService = {
          telegram_id = CASE WHEN telegram_id IS NOT NULL THEN telegram_id || '_merged_' || id ELSE NULL END,
          phone = NULL,
          email = NULL,
+         google_sub = NULL,
          phone_verified = 0,
          email_verified = 0,
          is_active = 0
@@ -9710,7 +9748,15 @@ export const dbService = {
   },
 
   createWebSession(userId: number, token: string, expiresAt: string) {
+    const user = this.getUserById(userId);
+    if (!user || user.isActive === false) {
+      throw new Error('cannot create web session for inactive user');
+    }
     db.prepare('INSERT INTO web_sessions (token, user_id, expires_at) VALUES (?, ?, ?)').run(token, userId, expiresAt);
+    const saved = this.getWebSession(token);
+    if (!saved) {
+      throw new Error('web session insert did not persist');
+    }
   },
 
   getWebSession(token: string): { token: string; userId: number; expiresAt: string } | null {

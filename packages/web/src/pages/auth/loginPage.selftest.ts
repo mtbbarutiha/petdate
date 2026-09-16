@@ -80,6 +80,7 @@ assert.match(otp, /autoComplete="one-time-code"/, 'OTP keeps iOS SMS autofill at
 assert.match(otp, /preventScroll:\s*true/, 'OTP focus must not scroll-jumble the page');
 assert.match(googleCb, /method: 'google'/, 'Google callback tracks auth method');
 assert.match(googleCb, /fetchMe\(token\)/, 'Google callback hydrates /me');
+assert.match(googleCb, /ورود ناموفق/, 'callback error heading replaces logging-in copy');
 
 /* iOS Safari: inputs < 16px trigger focus zoom — prefer 16px over site-wide zoom lock */
 const authFormInputBlock = globalCss.match(

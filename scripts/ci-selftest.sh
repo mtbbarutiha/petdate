@@ -470,6 +470,7 @@ run src/services/web-otp.selftest.ts
 run src/routes/auth-otp-status.selftest.ts
 run src/routes/auth-provider-credential.selftest.ts
 run src/services/google-web-auth.selftest.ts
+run src/services/google-inactive-login.selftest.ts
 run src/crm.selftest.ts
 run src/auto-messages.selftest.ts
 run src/crm-ticketing.selftest.ts

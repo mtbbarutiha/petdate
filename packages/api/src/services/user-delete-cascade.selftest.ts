@@ -36,8 +36,8 @@ async function main() {
 
   // Leave mergeable identity fields that previously survived soft-delete
   d.prepare(
-    `UPDATE users SET email = ?, email_verified = 1, phone = ?, phone_verified = 1 WHERE id = ?`
-  ).run(`del_${tg}@petdate.test`, '989120000001', user.id);
+    `UPDATE users SET email = ?, email_verified = 1, phone = ?, phone_verified = 1, google_sub = ? WHERE id = ?`
+  ).run(`del_${tg}@petdate.test`, '989120000001', `google_del_${tg}`, user.id);
 
   const beforePets = dbService.listPets({ ownerId: user.id });
   assert(beforePets.length >= 1, 'precondition: at least one pet');
@@ -73,6 +73,11 @@ async function main() {
   assert(!shell.email, 'email cleared (prevents merge resurrection)');
   assert(shell.isActive === false, 'inactive');
   assert((shell.coins ?? 0) === 0, 'coins zeroed');
+
+  const shellExtra = d
+    .prepare('SELECT google_sub FROM users WHERE id = ?')
+    .get(user.id) as { google_sub?: string | null } | undefined;
+  assert(!String(shellExtra?.google_sub ?? '').trim(), 'google_sub cleared on soft-delete');
 
   const sessionCount = (
     d.prepare('SELECT COUNT(*) as c FROM web_sessions WHERE user_id = ?').get(user.id) as {
