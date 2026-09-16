@@ -8,14 +8,14 @@ python3 packages/web/scripts/generate-brand-assets.py
 
 ## بات `@Petdatebot`
 
-- مارک سگ+گربه + نوشته «Pet Date» (از لوگو مادر)، رندر hi-res روی زمینه روشن
-- فایل‌ها: `logo-assets/telegram/bot-profile-*.jpg`
+- مارک لوگو مادر + نوشتهٔ تیز **Pet Date** (Inter Bold)، رندر 2048 و خروجی PNG/JPG
+- فایل‌ها: `logo-assets/telegram/bot-profile-*.{jpg,png}`
 - فعال در ربات: `packages/bot/assets/bot-profile.jpg` + `welcome-logo.jpg`
 
 ## کانال / پنل `@petdating`
 
-- همان stacked مادر با نوشته «Pet Date»، زمینه بنفش ملایم (متفاوت از بات)
-- فایل‌ها: `logo-assets/telegram/panel-profile-*.jpg`
+- همان ترکیب با نوشتهٔ Pet Date، زمینهٔ بنفش ملایم
+- فایل‌ها: `logo-assets/telegram/panel-profile-*.{jpg,png}`
 
 جزئیات: [`telegram/README.md`](./telegram/README.md)
 
