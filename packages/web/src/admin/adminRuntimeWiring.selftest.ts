@@ -45,8 +45,17 @@ assert.match(hook, /paymentCardConfigured/, 'platform config carries deposit car
 
 const shopCart = read(join(webRoot, 'pages/shop/ShopCartPage.tsx'));
 assert.match(shopCart, /pd-shop-card-deposit/, 'cart shows deposit card when card-to-card selected');
+assert.match(shopCart, /pepito-card-pan/, 'cart deposit PAN uses bidi-isolated LTR wrapper');
 assert.match(shopCart, /آپلود فیش/, 'cart copy points to web receipt upload');
 assert.doesNotMatch(shopCart, /ارسال رسید در ربات/, 'cart no longer says receipt-only-in-bot');
+
+const walletPage = read(join(webRoot, 'pages/WalletPage.tsx'));
+assert.match(walletPage, /pepito-card-pan/, 'wallet buy PAN uses bidi-isolated LTR wrapper');
+assert.doesNotMatch(
+  walletPage,
+  /<p dir="ltr">کارت:/,
+  'wallet must not put Persian کارت label inside the same LTR run as hyphenated PAN',
+);
 
 const shopCardPay = read(join(webRoot, 'pages/shop/ShopCardPayPage.tsx'));
 assert.match(shopCardPay, /application\/pdf/, 'shop card pay accepts PDF receipts');
@@ -58,6 +67,7 @@ assert.match(
 );
 assert.match(shopCardPay, /pd-shop-card-deposit-title/, 'card-pay deposit title uses shared class');
 assert.match(shopCardPay, /pd-shop-card-deposit-number/, 'card-pay deposit number uses shared class');
+assert.match(shopCardPay, /pepito-card-pan/, 'card-pay PAN uses bidi-isolated LTR wrapper');
 assert.match(shopCardPay, /pd-shop-card-deposit-holder/, 'card-pay deposit holder uses shared class');
 assert.match(
   shopCardPay,
