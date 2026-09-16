@@ -8,16 +8,14 @@ python3 packages/web/scripts/generate-brand-assets.py
 
 ## بات `@Petdatebot`
 
-- فقط مارک (سگ+گربه، بدون تایپ «Pet Date») روی زمینه صورتی ملایم
+- مارک سگ+گربه + نوشته «Pet Date» (از لوگو مادر)، رندر hi-res روی زمینه روشن
 - فایل‌ها: `logo-assets/telegram/bot-profile-*.jpg`
 - فعال در ربات: `packages/bot/assets/bot-profile.jpg` + `welcome-logo.jpg`
-- آپلود پروفایل: BotFather (Edit Botpic) یا API
 
 ## کانال / پنل `@petdating`
 
-- مارک + تایپ «Pet Date» به‌صورت stacked (عمودی) تا در کراپ دایره‌ای نشکند — زمینه بنفش ملایم
+- همان stacked مادر با نوشته «Pet Date»، زمینه بنفش ملایم (متفاوت از بات)
 - فایل‌ها: `logo-assets/telegram/panel-profile-*.jpg`
-- آپلود پروفایل کانال: تنظیمات کانال → Edit → Photo (یا `setChatPhoto` توسط بات ادمین)
 
 جزئیات: [`telegram/README.md`](./telegram/README.md)
 

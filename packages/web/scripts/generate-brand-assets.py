@@ -17,7 +17,7 @@ Outputs:
   - brand/petdate-og.png, brand/petdate-og.jpg  (FULL mother wordmark)
   - brand/petdate-channel.png, brand/petdate-banner.jpg  (FULL mother wordmark)
   - packages/api/assets/brand/petdate-email-logo.png  (FULL mother wordmark)
-  - logo-assets/telegram/bot-profile-*.jpg   (mark-only, pink wash, circle-crop safe)
+  - logo-assets/telegram/bot-profile-*.jpg   (stacked mark + «Pet Date», hi-res, light wash)
   - logo-assets/telegram/panel-profile-*.jpg (stacked mark + «Pet Date», lavender wash)
   - packages/bot/assets/bot-profile.jpg + welcome-logo.jpg  (runtime copies)
 
@@ -176,26 +176,194 @@ def extract_wordmark(logo: Image.Image) -> Image.Image:
     return word
 
 
-def make_stacked_mother(logo: Image.Image) -> Image.Image:
-    """Vertical stack: mark above «Pet Date» — circle-crop safe for channel/panel avatar."""
-    mark = extract_mark(logo)
-    word = extract_wordmark(logo)
-    target_w = 720
-    ms = target_w / mark.size[0]
-    mw, mh = max(1, int(mark.size[0] * ms)), max(1, int(mark.size[1] * ms))
-    mark_r = mark.resize((mw, mh), Image.Resampling.LANCZOS)
-    ws = target_w / word.size[0]
-    ww, wh = max(1, int(word.size[0] * ws)), max(1, int(word.size[1] * ws))
-    word_r = word.resize((int(ww * 0.92), int(wh * 0.92)), Image.Resampling.LANCZOS)
-    gap = 36
-    side = max(mark_r.size[0], word_r.size[0]) + 24
-    height = mark_r.size[1] + gap + word_r.size[1] + 24
-    canvas = Image.new("RGBA", (side, height), (0, 0, 0, 0))
-    canvas.alpha_composite(mark_r, ((side - mark_r.size[0]) // 2, 12))
-    canvas.alpha_composite(
-        word_r, ((side - word_r.size[0]) // 2, 12 + mark_r.size[1] + gap)
+def sample_brand_colors(logo: Image.Image) -> tuple[tuple[int, int, int], tuple[int, int, int]]:
+    """Median pink (mark) + purple (wordmark) from لوگو مادر."""
+    w, h = logo.size
+    pixels = logo.load()
+    pinks: list[tuple[int, int, int]] = []
+    purples: list[tuple[int, int, int]] = []
+    for y in range(h):
+        for x in range(w):
+            r, g, b, a = pixels[x, y]
+            if a < 200:
+                continue
+            if r > 180 and b > 140 and g < 200 and r > g:
+                pinks.append((r, g, b))
+            if b > r and b > g and r < 140 and b > 100:
+                purples.append((r, g, b))
+    pink = sorted(pinks)[len(pinks) // 2] if pinks else (231, 137, 186)
+    purple = sorted(purples)[len(purples) // 2] if purples else (88, 72, 140)
+    return pink, purple
+
+
+def upscale_mark_crisp(mark: Image.Image, factor: int = 10) -> Image.Image:
+    """Progressive LANCZOS upscale + unsharp — keeps mother mark as sharp as raster allows."""
+    from PIL import ImageFilter
+
+    cur = mark
+    target_w = mark.size[0] * factor
+    target_h = mark.size[1] * factor
+    while cur.size[0] < target_w or cur.size[1] < target_h:
+        nw = min(cur.size[0] * 2, target_w)
+        nh = min(cur.size[1] * 2, target_h)
+        cur = cur.resize((nw, nh), Image.Resampling.LANCZOS)
+    r, g, b, a = cur.split()
+    rgb = Image.merge("RGB", (r, g, b)).filter(
+        ImageFilter.UnsharpMask(radius=3.0, percent=170, threshold=2)
     )
-    return canvas
+    out = rgb.convert("RGBA")
+    out.putalpha(a)
+    return out
+
+
+def make_named_lockup(
+    logo: Image.Image,
+    *,
+    bg_top: tuple[int, int, int, int],
+    bg_bottom: tuple[int, int, int, int],
+    master_size: int = 2048,
+) -> Image.Image:
+    """Mark from لوگو مادر + crisp vector «Pet Date» (Inter Bold) on soft wash."""
+    from PIL import ImageDraw, ImageFont, ImageFilter
+
+    _, purple = sample_brand_colors(logo)
+    mark_hi = upscale_mark_crisp(extract_mark(logo), factor=10)
+    bg = vertical_gradient((master_size, master_size), bg_top, bg_bottom)
+
+    mark_target_w = int(master_size * 0.62)
+    scale = mark_target_w / mark_hi.size[0]
+    mw, mh = max(1, int(mark_hi.size[0] * scale)), max(1, int(mark_hi.size[1] * scale))
+    mark_r = mark_hi.resize((mw, mh), Image.Resampling.LANCZOS)
+
+    font_path = Path("/usr/share/fonts/truetype/macos/Inter-Bold.ttf")
+    if not font_path.is_file():
+        font_path = Path("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf")
+    text = "Pet Date"
+    probe = ImageDraw.Draw(Image.new("RGB", (8, 8)))
+    lo, hi, best = 40, 500, 140
+    for _ in range(24):
+        mid = (lo + hi) // 2
+        font = ImageFont.truetype(str(font_path), mid)
+        bb = probe.textbbox((0, 0), text, font=font)
+        tw = bb[2] - bb[0]
+        if tw < master_size * 0.62:
+            lo = mid
+            best = mid
+        else:
+            hi = mid
+    font = ImageFont.truetype(str(font_path), best)
+    bb = probe.textbbox((0, 0), text, font=font)
+    tw, th = bb[2] - bb[0], bb[3] - bb[1]
+    gap = int(master_size * 0.05)
+    total_h = mh + gap + th
+    top0 = (master_size - total_h) // 2 - int(master_size * 0.015)
+    bg.alpha_composite(mark_r, ((master_size - mw) // 2, top0))
+    draw = ImageDraw.Draw(bg)
+    draw.text(
+        ((master_size - tw) // 2 - bb[0], top0 + mh + gap - bb[1]),
+        text,
+        font=font,
+        fill=(*purple, 255),
+    )
+    return bg
+
+
+def make_telegram_avatar(
+    asset: Image.Image,
+    size: int,
+    *,
+    content_ratio: float = 1.0,
+    top: tuple[int, int, int, int] = TG_BOT_TOP,
+    bottom: tuple[int, int, int, int] = TG_BOT_BOTTOM,
+    supersample: int = 1,
+) -> Image.Image:
+    """If asset is already a full square lockup, just downscale; else fit on wash."""
+    from PIL import ImageFilter
+
+    if asset.size[0] == asset.size[1] and content_ratio >= 0.99:
+        rgb = asset.convert("RGB").resize((size, size), Image.Resampling.LANCZOS)
+        return rgb.filter(ImageFilter.UnsharpMask(radius=0.7, percent=85, threshold=1)).convert(
+            "RGBA"
+        )
+
+    master = size * max(1, supersample)
+    under = vertical_gradient((master, master), top, bottom)
+    overlay = fit_on_canvas(
+        asset, (master, master), bg=(0, 0, 0, 0), content_ratio=content_ratio
+    )
+    under.alpha_composite(overlay)
+    if master != size:
+        under = under.resize((size, size), Image.Resampling.LANCZOS)
+    return under
+
+
+def save_jpg(im: Image.Image, path: Path, *, quality: int = 98) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    im.convert("RGB").save(
+        path,
+        "JPEG",
+        quality=quality,
+        optimize=True,
+        progressive=False,
+        subsampling=0,
+    )
+
+
+def write_telegram_assets(logo: Image.Image, mark: Image.Image) -> list[Path]:
+    """Bot + panel: mother mark + crisp «Pet Date» name; distinct background washes."""
+    from PIL import ImageFilter
+
+    del mark  # mark-only bot avatar retired — name is required on bot profile
+    TELEGRAM_DIR.mkdir(parents=True, exist_ok=True)
+    BOT_ASSETS.mkdir(parents=True, exist_ok=True)
+    written: list[Path] = []
+
+    bot_lockup = make_named_lockup(
+        logo,
+        bg_top=(255, 252, 254, 255),
+        bg_bottom=(255, 242, 248, 255),
+        master_size=2048,
+    )
+    panel_lockup = make_named_lockup(
+        logo,
+        bg_top=TG_PANEL_TOP,
+        bg_bottom=TG_PANEL_BOTTOM,
+        master_size=2048,
+    )
+
+    bot_by_size: dict[int, Path] = {}
+    for size in TELEGRAM_SIZES:
+        avatar = make_telegram_avatar(bot_lockup, size, content_ratio=1.0)
+        dest = TELEGRAM_DIR / f"bot-profile-{size}.jpg"
+        save_jpg(avatar, dest)
+        bot_by_size[size] = dest
+        written.append(dest)
+
+    # Lossless PNG master for Telegram upload (sharpest)
+    bot_png = TELEGRAM_DIR / "bot-profile-1024.png"
+    bot_lockup.resize((1024, 1024), Image.Resampling.LANCZOS).convert("RGB").save(
+        bot_png, "PNG", optimize=True
+    )
+    written.append(bot_png)
+
+    for size in TELEGRAM_SIZES:
+        avatar = make_telegram_avatar(panel_lockup, size, content_ratio=1.0)
+        dest = TELEGRAM_DIR / f"panel-profile-{size}.jpg"
+        save_jpg(avatar, dest)
+        written.append(dest)
+
+    panel_png = TELEGRAM_DIR / "panel-profile-1024.png"
+    panel_lockup.resize((1024, 1024), Image.Resampling.LANCZOS).convert("RGB").save(
+        panel_png, "PNG", optimize=True
+    )
+    written.append(panel_png)
+
+    runtime_bot = BOT_ASSETS / "bot-profile.jpg"
+    runtime_welcome = BOT_ASSETS / "welcome-logo.jpg"
+    runtime_bot.write_bytes(bot_by_size[640].read_bytes())
+    runtime_welcome.write_bytes(bot_by_size[1024].read_bytes())
+    written.extend([runtime_bot, runtime_welcome])
+    return written
 
 
 def fit_on_canvas(
@@ -267,79 +435,6 @@ def make_channel_square(logo: Image.Image, size: int = 1024) -> Image.Image:
     overlay = fit_on_canvas(logo, (size, size), bg=(0, 0, 0, 0), content_ratio=0.78)
     under.alpha_composite(overlay)
     return under
-
-
-def make_telegram_avatar(
-    asset: Image.Image,
-    size: int,
-    *,
-    content_ratio: float,
-    top: tuple[int, int, int, int] = TG_BOT_TOP,
-    bottom: tuple[int, int, int, int] = TG_BOT_BOTTOM,
-) -> Image.Image:
-    """Square JPG-ready avatar with padding so Telegram's circular crop keeps the mark.
-
-    Telegram profile photos are shown as circles; keep content inside ~62–72% of
-    the square so dog/cat ears and wordmark edges are not clipped.
-    """
-    under = vertical_gradient((size, size), top, bottom)
-    overlay = fit_on_canvas(
-        asset, (size, size), bg=(0, 0, 0, 0), content_ratio=content_ratio
-    )
-    under.alpha_composite(overlay)
-    return under
-
-
-def save_jpg(im: Image.Image, path: Path, *, quality: int = 92) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    im.convert("RGB").save(path, "JPEG", quality=quality, optimize=True, progressive=True)
-
-
-def write_telegram_assets(logo: Image.Image, mark: Image.Image) -> list[Path]:
-    """Bot = mark-only (pink wash); panel = stacked mother wordmark (lavender wash)."""
-    TELEGRAM_DIR.mkdir(parents=True, exist_ok=True)
-    BOT_ASSETS.mkdir(parents=True, exist_ok=True)
-    written: list[Path] = []
-    stacked = make_stacked_mother(logo)
-
-    # BotFather / @Petdatebot avatar — mark only (no «Pet Date» type)
-    bot_by_size: dict[int, Path] = {}
-    for size in TELEGRAM_SIZES:
-        # ~0.68 keeps dog/cat ears inside the circular crop with comfortable padding
-        avatar = make_telegram_avatar(
-            mark,
-            size,
-            content_ratio=0.68,
-            top=TG_BOT_TOP,
-            bottom=TG_BOT_BOTTOM,
-        )
-        dest = TELEGRAM_DIR / f"bot-profile-{size}.jpg"
-        save_jpg(avatar, dest)
-        bot_by_size[size] = dest
-        written.append(dest)
-
-    # Panel / channel / @petdating — stacked mark + «Pet Date» (circle-crop safe)
-    for size in TELEGRAM_SIZES:
-        avatar = make_telegram_avatar(
-            stacked,
-            size,
-            content_ratio=0.72,
-            top=TG_PANEL_TOP,
-            bottom=TG_PANEL_BOTTOM,
-        )
-        dest = TELEGRAM_DIR / f"panel-profile-{size}.jpg"
-        save_jpg(avatar, dest)
-        written.append(dest)
-
-    # Runtime copies used by packages/bot (welcome photo + optional local profile)
-    bot_640 = bot_by_size[640]
-    bot_1024 = bot_by_size[1024]
-    runtime_bot = BOT_ASSETS / "bot-profile.jpg"
-    runtime_welcome = BOT_ASSETS / "welcome-logo.jpg"
-    runtime_bot.write_bytes(bot_640.read_bytes())
-    runtime_welcome.write_bytes(bot_1024.read_bytes())
-    written.extend([runtime_bot, runtime_welcome])
-    return written
 
 
 def write_favicon_svg(mark: Image.Image, dest: Path) -> None:
