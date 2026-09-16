@@ -195,6 +195,8 @@ export const ADMIN_FA_EN: Record<string, string> = {
   "از متقاضی جدید تا استخدام": "From New Applicant to Hire",
   "ازدست‌رفته": "Lost",
   "استان": "Province",
+  "همه استان‌ها": "All provinces",
+  "برگزارکننده": "Organizer",
   "استخدام": "Hiring",
   "استخدام و جذب (ATS)": "Hiring and Recruitment (ATS)",
   "استخدام‌شده": "Hired",

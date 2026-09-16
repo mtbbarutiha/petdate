@@ -36,5 +36,12 @@ assert.match(
   /Never bind NaN\/non-positive sectionId/,
   'listGames skips invalid sectionId'
 );
+assert.match(
+  db,
+  /province\?: string[\s\S]{0,80}host\?: string/,
+  'listGames accepts province and host filters'
+);
+assert.match(db, /g\.province/, 'listGames filters by province column');
+assert.match(db, /u\.name/, 'listGames filters by host name');
 
 console.log('sections-games.selftest: ok');

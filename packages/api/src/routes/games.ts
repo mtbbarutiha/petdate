@@ -64,8 +64,10 @@ function listGamesHandler(req: Request, res: Response): void {
   }
   const status = req.query.status as GameStatus | undefined;
   const gameType = req.query.gameType as GameType | undefined;
+  const province = String(req.query.province || '').trim() || undefined;
+  const host = String(req.query.host || req.query.organizer || '').trim() || undefined;
   const viewerId = viewerUserId(req);
-  const games = dbService.listGames({ sectionId, status, gameType });
+  const games = dbService.listGames({ sectionId, status, gameType, province, host });
   const rows = (Array.isArray(games) ? games : []).map((g) => presentGame(g, viewerId));
   res.json(rows);
 }
