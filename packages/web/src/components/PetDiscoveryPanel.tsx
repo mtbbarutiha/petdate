@@ -33,8 +33,8 @@ type Props = {
   className?: string;
   /** Called after a successful playmate request so parent can refresh inbox */
   onSent?: () => void;
-  /** Open an existing playmate chat with this contact user id (contacts chip). */
-  onOpenContact?: (contactUserId: number) => void;
+  /** Open existing playmate chat; return true if opened. False → panel may send a new request. */
+  onOpenContact?: (id: number) => boolean;
   /**
    * `panel` = full card with title (default).
    * `bar` = compact chip row for chat list header (no title/lead chrome).
@@ -267,6 +267,44 @@ export function PetDiscoveryPanel({
     setFeeConfirmOpen(false);
   }
 
+  async function beginRequestForContact(contactUserId: number) {
+    if (!isLoggedIn || !myUserId) {
+      toastError(t('chats.discoveryLogin'));
+      return;
+    }
+    if (sentOwnerIds.has(contactUserId) || sendingOwnerId === contactUserId) return;
+    setBusy(true);
+    setErrorKind(false);
+    try {
+      const rows = await listPets({
+        ownerId: contactUserId,
+        lookingForPlaymate: true,
+        sort: 'newest',
+      });
+      const people = peopleFromDiscoveryPets(rows);
+      const target = people[0]?.pet;
+      if (!target) {
+        toastInfo(t('chats.discoveryContactNoPet'));
+        setStatus(t('chats.discoveryContactNoPet'));
+        return;
+      }
+      beginRequest(target);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : t('chats.discoveryFail');
+      toastError(msg);
+      setErrorKind(true);
+      setStatus(msg);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function onContactPrimary(contactUserId: number) {
+    const opened = onOpenContact?.(contactUserId);
+    if (opened) return;
+    void beginRequestForContact(contactUserId);
+  }
+
   async function executeRequest() {
     if (!myUserId || !pendingTo || fromPetId == null) return;
     const ownerId = pendingTo.ownerId;
@@ -429,23 +467,37 @@ export function PetDiscoveryPanel({
                   <InboxPeerAvatar
                     avatarUrl={row.contactAvatarUrl}
                     name={name}
+                    gender={row.contactGender}
                     size={44}
                   />
                   <div className="pepito-pet-discovery-copy">
                     <strong>{name}</strong>
                     {row.contactPublicId ? (
-                      <span className="pepito-muted">{row.contactPublicId}</span>
+                      <span className="pepito-muted">/{row.contactPublicId}</span>
                     ) : null}
                   </div>
-                  <button
-                    type="button"
-                    className="pepito-btn button-1 pepito-pet-discovery-request"
-                    disabled={busy || !onOpenContact}
-                    data-testid={`pet-discovery-open-contact-${row.contactUserId}`}
-                    onClick={() => onOpenContact?.(row.contactUserId)}
-                  >
-                    {t('chats.discoveryOpenChat')}
-                  </button>
+                  <div className="pepito-pet-discovery-contact-actions">
+                    <button
+                      type="button"
+                      className="pepito-btn button-2 pepito-pet-discovery-request"
+                      disabled={busy}
+                      data-testid={`pet-discovery-open-contact-${row.contactUserId}`}
+                      onClick={() => onContactPrimary(row.contactUserId)}
+                    >
+                      {t('chats.discoveryOpenOrRequest')}
+                    </button>
+                    <button
+                      type="button"
+                      className="pepito-btn button-1 pepito-pet-discovery-request"
+                      disabled={busy || sentOwnerIds.has(row.contactUserId)}
+                      data-testid={`pet-discovery-request-contact-${row.contactUserId}`}
+                      onClick={() => void beginRequestForContact(row.contactUserId)}
+                    >
+                      {sentOwnerIds.has(row.contactUserId)
+                        ? t('chats.discoveryRequestSent')
+                        : t('chats.discoverySendRequest')}
+                    </button>
+                  </div>
                 </article>
               </li>
             );

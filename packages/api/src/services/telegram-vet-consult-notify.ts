@@ -72,7 +72,7 @@ export function seekerAdviceOwnerNotifyText(opts: {
     '',
     '👤 <b>پروفایل درخواست‌کننده</b>',
     who ? `نام: <b>${escapeHtml(who)}</b>` : 'نام: —',
-    publicId ? `شناسه: <code>${escapeHtml(publicId)}</code>` : null,
+    publicId ? `شناسه: <code>/${escapeHtml(publicId)}</code>` : null,
     city ? `شهر: ${escapeHtml(city)}` : null,
     bio ? `بیو: ${escapeHtml(bio)}` : null,
     '',

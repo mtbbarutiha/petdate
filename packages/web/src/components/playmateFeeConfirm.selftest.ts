@@ -13,6 +13,9 @@ const modal = readFileSync(join(dir, 'ConfirmModal.tsx'), 'utf8');
 
 assert.match(panel, /from '\.\/ConfirmModal'/, 'FindPlaymatePanel imports ConfirmModal');
 assert.match(panel, /playmate-fee-confirm/, 'fee confirm modal has test id');
+assert.match(panel, /playmate-owner-gender/, 'owner gender picker before fee confirm');
+assert.match(panel, /findOwnerGenderFemale/, 'female owner gender option');
+assert.match(panel, /findOwnerGenderMale/, 'male owner gender option');
 assert.match(panel, /هزینه درخواست/, 'modal shows request fee');
 assert.match(panel, /موجودی فعلی/, 'modal shows current balance');
 assert.doesNotMatch(panel, /window\.confirm\s*\(/, 'native confirm() removed from playmate fee flow');

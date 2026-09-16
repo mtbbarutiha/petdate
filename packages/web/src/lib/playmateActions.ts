@@ -51,11 +51,13 @@ export async function sendPlaymateRequestNow(opts: {
  */
 export async function findAndSendPlaymates(
   source: PetProfile,
-  fromUserId: number
+  fromUserId: number,
+  ownerGender?: 'female' | 'male'
 ): Promise<FindPlaymateResult> {
   const result = await findPlaymatesRequest({
     fromPetId: source.id,
     fromUserId,
+    ownerGender,
   });
   const speciesLabel =
     result.speciesLabel || PET_SPECIES_LABELS[source.species] || source.species;

@@ -21,5 +21,8 @@ assert.match(
 );
 assert.match(src, /\.\.\.\(echoDevCode\(\) \? \{ devCode: code \} : \{\}\)/, 'devCode only when echo helper is true');
 assert.doesNotMatch(src, /res\.json\(\{[\s\S]*devCode: code/, 'route-level always-echo is absent');
+assert.match(src, /gravatar\.com\/avatar/, 'email verify imports Gravatar when empty');
+assert.match(src, /importRemoteAvatarIfEmpty/, 'uses shared remote avatar import');
+assert.match(src, /createHash\('md5'\)/, 'Gravatar hash uses md5');
 
 console.log('web-otp.selftest: ok');

@@ -2764,6 +2764,7 @@ function mapPet(row: Record<string, unknown>): PetProfile {
         publicFacing: true,
       }
     ),
+    ownerGender: parseUserGenderValue(row.owner_gender),
     ownerLastSeenAt:
       (row.owner_location_updated_at as string | undefined) ||
       (row.owner_last_seen_at as string | undefined) ||

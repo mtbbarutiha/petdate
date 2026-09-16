@@ -23,6 +23,8 @@ export interface Pet {
   ownerId: number;
   /** Owner still photo when API provides it (inbox shows human face next to owner title). */
   ownerAvatarUrl?: string;
+  /** Owner gender for default avatar fallback. */
+  ownerGender?: 'male' | 'female';
   imageUrl: string;
   emoji: string;
   bio?: string;

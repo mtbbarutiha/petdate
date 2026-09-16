@@ -658,13 +658,32 @@ export function VetConsultPage() {
     });
   }, [hasVetRole, loadIncoming, loadRecent]);
 
+  // Patient: live accept → refresh status so navigate fires immediately
+  useEffect(() => {
+    if (isVetDashboard) return;
+    if (phase !== 'waiting' && phase !== 'connected') return;
+    return subscribeIncomingRefresh((detail) => {
+      if (detail?.kinds && !detail.kinds.includes('vet')) return;
+      void refreshConsultStatus();
+    });
+  }, [isVetDashboard, phase, refreshConsultStatus]);
+
   useEffect(() => {
     if (isVetDashboard) return;
     if (phase === 'connected' && activeConsult?.id && autoNavRef.current !== activeConsult.id) {
       autoNavRef.current = activeConsult.id;
-      navigate(`/vet-chats/${activeConsult.id}`);
+      navigate(`/vet-chats/${activeConsult.id}`, { replace: true });
     }
   }, [phase, activeConsult?.id, navigate, isVetDashboard]);
+
+  // Also navigate as soon as polling finds an active accepted consult (even mid-render)
+  useEffect(() => {
+    if (isVetDashboard) return;
+    if (!activeConsult?.id || activeConsult.status !== 'active') return;
+    if (autoNavRef.current === activeConsult.id) return;
+    autoNavRef.current = activeConsult.id;
+    navigate(`/vet-chats/${activeConsult.id}`, { replace: true });
+  }, [activeConsult?.id, activeConsult?.status, navigate, isVetDashboard]);
 
   const needsLogin = !isLoggedIn || !user?.id;
   const needsPet = !needsLogin && !petsLoading && pets.length === 0;

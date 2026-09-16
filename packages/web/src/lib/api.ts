@@ -623,6 +623,8 @@ export async function createPlaydateRequest(data: {
 export async function findPlaymatesRequest(data: {
   fromPetId: number;
   fromUserId: number;
+  /** Filter peers by owner gender (users.gender) before ranking */
+  ownerGender?: 'female' | 'male';
 }): Promise<{
   ok: boolean;
   sent: number;

@@ -483,6 +483,9 @@ export function GamesPage() {
                         ) : null}
                       </div>
                     )}
+                    {g.hostName ? (
+                      <span className="pepito-game-host-on-photo">{g.hostName}</span>
+                    ) : null}
                     <span className={`pepito-games-status is-${g.status}`}>
                       {statusLabel(g.status)}
                     </span>

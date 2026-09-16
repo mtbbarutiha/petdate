@@ -10,7 +10,7 @@ import {
 } from './otp-email-html';
 import { formatLoginOtpSms } from './otp-sms-copy';
 import { parseReferredByInput, tryGrantReferralOnSignup } from './referral-grant';
-import { applyLoginProfileHints } from './provider-profile-import';
+import { applyLoginProfileHints, importRemoteAvatarIfEmpty } from './provider-profile-import';
 
 const OTP_TTL_MS = OTP_EMAIL_EXPIRES_MINUTES * 60 * 1000;
 const MAX_ATTEMPTS = 5;
@@ -167,14 +167,15 @@ export async function requestWebOtp(
   };
 }
 
-export function verifyWebOtp(
+export async function verifyWebOtp(
   channel: WebOtpChannel,
   targetRaw: string,
   codeRaw: string,
   referredByRaw?: unknown
-):
+): Promise<
   | { ok: true; token: string; user: NonNullable<ReturnType<typeof dbService.getUserById>> }
-  | { ok: false; reason: string; error: string; attemptsLeft?: number } {
+  | { ok: false; reason: string; error: string; attemptsLeft?: number }
+> {
   const target =
     channel === 'phone' ? normalizeIranMobile(targetRaw) : normalizeEmail(targetRaw);
   if (!target) {
@@ -236,6 +237,13 @@ export function verifyWebOtp(
       phone: channel === 'phone' ? target : user.phone,
       phoneVerified: channel === 'phone' || Boolean(user.phoneVerified),
     }) ?? user;
+
+  if (channel === 'email') {
+    const emailHash = createHash('md5').update(target.trim().toLowerCase()).digest('hex');
+    const gravatarUrl = `https://www.gravatar.com/avatar/${emailHash}?d=404&s=256`;
+    user =
+      (await importRemoteAvatarIfEmpty({ userId: user.id, pictureUrl: gravatarUrl })) ?? user;
+  }
 
   if (!existed) {
     tryGrantReferralOnSignup({

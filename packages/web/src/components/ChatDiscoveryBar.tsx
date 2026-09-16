@@ -8,7 +8,7 @@ import { PetDiscoveryPanel } from './PetDiscoveryPanel';
 type Props = {
   onSent?: () => void;
   /** Open an existing playmate chat with a saved contact. */
-  onOpenContact?: (contactUserId: number) => void;
+  onOpenContact?: (id: number) => boolean;
 };
 
 /**
