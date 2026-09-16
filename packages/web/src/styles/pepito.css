@@ -11903,6 +11903,14 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   color: var(--pd-ink, var(--pepito-dark, #1a2b4a));
   word-break: break-all;
 }
+/* Isolate hyphenated PANs so RTL parents cannot reverse 4-digit groups. */
+.pepito-card-pan,
+.pd-shop-card-deposit-number .pepito-card-pan {
+  display: inline-block;
+  direction: ltr;
+  unicode-bidi: isolate;
+  font-variant-numeric: tabular-nums;
+}
 .pd-shop-card-deposit-holder {
   margin: 0;
   font-size: 0.9rem;

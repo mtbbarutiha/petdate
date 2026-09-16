@@ -701,7 +701,21 @@ export function WalletPage() {
                 <span aria-hidden> · </span>
                 {toPersianDigits(activeOrder.amountToman ?? 0)} تومان
               </p>
-              {cardInfo ? (<><p dir="ltr">کارت: <strong>{cardInfo.grouped || cardInfo.number}</strong></p><p>به‌نام: <strong>{cardInfo.holder}</strong></p></>) : null}
+              {cardInfo ? (
+                <>
+                  <p>
+                    کارت:{' '}
+                    <strong>
+                      <bdi className="pepito-card-pan" dir="ltr">
+                        {cardInfo.grouped || cardInfo.number}
+                      </bdi>
+                    </strong>
+                  </p>
+                  <p>
+                    به‌نام: <strong>{cardInfo.holder}</strong>
+                  </p>
+                </>
+              ) : null}
               {activeOrder.status === 'awaiting_receipt' ? (
                 <>
                   <label className="pepito-wallet-buy-ref"><span>شماره پیگیری (اختیاری)</span>
