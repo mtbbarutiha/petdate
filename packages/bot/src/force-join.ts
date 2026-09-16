@@ -10,6 +10,37 @@ export type RequiredChannel = {
 };
 
 const MEMBERSHIP_CHECK_TIMEOUT_MS = 2500;
+const MEMBERSHIP_CACHE_TTL_MS = 90_000;
+const NEGATIVE_CACHE_TTL_MS = 5_000;
+const PROMPT_THROTTLE_MS = 15 * 60_000;
+const TELEGRAM_SERVICE_USER_ID = 777000;
+
+const MEMBER_OK = new Set(['creator', 'administrator', 'member', 'restricted']);
+
+/** کش عضویت — نتیجهٔ مثبت طولانی، نتیجهٔ منفی خیلی کوتاه تا بعد از جوین قفل نماند */
+const membershipCache = new Map<string, { status: 'yes' | 'no'; expiresAt: number }>();
+const lastPromptAt = new Map<number, number>();
+
+function membershipCacheKey(userId: number, channelUsername: string): string {
+  return `${userId}:${channelUsername.replace(/^@/, '').toLowerCase()}`;
+}
+
+function isNonPrivateChat(ctx: Context): boolean {
+  const type = ctx.chat?.type;
+  return Boolean(type && type !== 'private');
+}
+
+function isSystemUpdate(ctx: Context): boolean {
+  return Boolean(
+    ctx.chatMember ||
+      ctx.myChatMember ||
+      ctx.channelPost ||
+      ctx.editedChannelPost ||
+      ctx.inlineQuery ||
+      ctx.chosenInlineResult ||
+      ctx.preCheckoutQuery
+  );
+}
 
 /** کانال‌های اجباری برای استفاده از بات (فعلاً فقط petdate) */
 export function requiredChannels(): RequiredChannel[] {
@@ -26,16 +57,6 @@ export function requiredChannels(): RequiredChannel[] {
       url: `https://t.me/${petdate.replace(/^@/, '')}`,
     },
   ];
-}
-
-const MEMBER_OK = new Set(['creator', 'administrator', 'member', 'restricted']);
-
-/** کش کوتاه عضویت — جلوگیری از تأخیر getChatMember روی هر callback (دکمه‌های شعاع) */
-const MEMBERSHIP_CACHE_TTL_MS = 90_000;
-const membershipCache = new Map<string, { status: 'yes' | 'no'; expiresAt: number }>();
-
-function membershipCacheKey(userId: number, channelUsername: string): string {
-  return `${userId}:${channelUsername.replace(/^@/, '').toLowerCase()}`;
 }
 
 /** دستورات/مسیرهایی که همیشه از گیت عضویت عبور می‌کنند تا ربات قفل نشود */
@@ -103,7 +124,7 @@ export async function isMemberOfChannel(
     const status: 'yes' | 'no' = MEMBER_OK.has(member.status) ? 'yes' : 'no';
     membershipCache.set(cacheKey, {
       status,
-      expiresAt: Date.now() + MEMBERSHIP_CACHE_TTL_MS,
+      expiresAt: Date.now() + (status === 'yes' ? MEMBERSHIP_CACHE_TTL_MS : NEGATIVE_CACHE_TTL_MS),
     });
     return status;
   } catch (err) {
@@ -137,11 +158,51 @@ export function forceJoinKeyboard(channels: RequiredChannel[]): InlineKeyboard {
   return kb;
 }
 
+export function clearMembershipCache(userId: number): void {
+  const prefix = `${userId}:`;
+  for (const key of [...membershipCache.keys()]) {
+    if (key.startsWith(prefix)) membershipCache.delete(key);
+  }
+}
+
 export async function sendForceJoinPrompt(
   ctx: Context,
   missing: RequiredChannel[],
   _errors: RequiredChannel[] = []
 ): Promise<void> {
+  if (isNonPrivateChat(ctx) || isSystemUpdate(ctx)) return;
+  const userId = ctx.from?.id;
+  if (!userId) return;
+  const now = Date.now();
+  const prev = lastPromptAt.get(userId) ?? 0;
+  if (now - prev < PROMPT_THROTTLE_MS) {
+    if (ctx.callbackQuery) {
+      try {
+        const channels = missing.length ? missing : requiredChannels();
+        await ctx.editMessageText(
+          [
+            '🔒 عضویت اجباری',
+            '',
+            'برای استفاده از petdate باید عضو کانال بشی:',
+            '',
+            ...requiredChannels().map((c) => `📢 ${c.title}: ${c.url}`),
+            '',
+            missing.length ? `هنوز عضو نیستی:\n${missing.map((c) => `• ${c.title}`).join('\n')}` : '',
+            '',
+            'بعد از عضویت، دکمه «عضو شدم» رو بزن 👇',
+          ]
+            .filter((line) => line !== '')
+            .join('\n'),
+          { reply_markup: forceJoinKeyboard(channels) }
+        );
+      } catch {
+        /* already showing prompt */
+      }
+    }
+    return;
+  }
+  lastPromptAt.set(userId, now);
+
   const channels = missing.length ? missing : requiredChannels();
   if (!channels.length) return;
 
@@ -194,6 +255,22 @@ export async function ensureForceJoined(ctx: Context): Promise<boolean> {
 export async function forceJoinMiddleware(ctx: Context, next: NextFunction): Promise<void> {
   try {
     if (!ctx.from) return next();
+    if (ctx.from.is_bot || ctx.from.id === TELEGRAM_SERVICE_USER_ID) return next();
+    // عضویت کانال را در کش به‌روز کن، ولی هرگز داخل کانال/گروه پیام نفرست
+    if (ctx.chatMember) {
+      const uid = ctx.chatMember.new_chat_member.user.id;
+      for (const ch of requiredChannels()) {
+        const status = ctx.chatMember.new_chat_member.status;
+        const ok = MEMBER_OK.has(status) ? 'yes' : 'no';
+        membershipCache.set(membershipCacheKey(uid, ch.username), {
+          status: ok,
+          expiresAt: Date.now() + (ok === 'yes' ? MEMBERSHIP_CACHE_TTL_MS : NEGATIVE_CACHE_TTL_MS),
+        });
+      }
+      return next();
+    }
+    if (isSystemUpdate(ctx) || isNonPrivateChat(ctx)) return next();
+
     const runtime = await fetchPublicPlatformConfig();
     if (!runtime.botForceJoin) return next();
     if (!requiredChannels().length) return next();

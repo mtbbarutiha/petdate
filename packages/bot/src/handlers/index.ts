@@ -1,7 +1,7 @@
 import type { Bot, Context } from 'grammy';
 import type { PetGender, PetSize, UserGender, UserRole } from '@petdate/shared';
 import { ROLE_CONFIRM_LABEL, USER_ROLE_LABELS, USER_ROLES } from '@petdate/shared';
-import { forceJoinMiddleware, missingChannels, safeAnswerCallback, sendForceJoinPrompt } from '../force-join';
+import { forceJoinMiddleware, missingChannels, safeAnswerCallback, sendForceJoinPrompt, clearMembershipCache } from '../force-join';
 import {
   MENU_LABELS,
   MAIN_MENU_ALIASES,
@@ -292,6 +292,7 @@ export function registerHandlers(bot: Bot): void {
 
   bot.callbackQuery('join:check', async (ctx) => {
     try {
+      if (ctx.from?.id) clearMembershipCache(ctx.from.id);
       const { missing } = await missingChannels(ctx);
       if (missing.length === 0) {
         await safeAnswerCallback(ctx, { text: 'عضویت تأیید شد ✅' });
