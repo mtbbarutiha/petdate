@@ -354,7 +354,7 @@ function AdminLayoutInner() {
   }, []);
   useEffect(() => {
     refreshNavCounts();
-    const t = window.setInterval(refreshNavCounts, 45_000);
+    const t = window.setInterval(refreshNavCounts, 90_000);
     return () => window.clearInterval(t);
   }, [refreshNavCounts, location.pathname]);
 
