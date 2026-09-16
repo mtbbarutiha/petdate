@@ -15402,40 +15402,68 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   padding: 0;
 }
 .pepito-earn-currency legend {
+  font-family: var(--font-display);
   font-weight: 700;
-  margin-bottom: 0.5rem;
+  font-size: 1.05rem;
+  margin-bottom: 0.65rem;
 }
 .pepito-earn-currency-options {
   display: grid;
-  gap: 0.5rem;
+  gap: 0.65rem;
+  grid-template-columns: 1fr;
 }
-@media (min-width: 640px) {
+@media (min-width: 420px) {
   .pepito-earn-currency-options {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 .pepito-earn-currency-option {
   display: flex;
-  gap: 0.6rem;
+  gap: 0.7rem;
   align-items: flex-start;
-  padding: 0.75rem 0.85rem;
-  border-radius: 12px;
+  min-height: 6.25rem;
+  padding: 0.95rem 1rem;
+  border-radius: 14px;
   border: 1px solid color-mix(in srgb, var(--pepito-ink, #1a1a1a) 12%, transparent);
   background: color-mix(in srgb, var(--pepito-surface, #fff) 92%, #f3f6f4);
   cursor: pointer;
 }
 .pepito-earn-currency-option input {
-  margin-top: 0.2rem;
+  margin-top: 0.35rem;
+  width: 1.1rem;
+  height: 1.1rem;
+  flex-shrink: 0;
+  accent-color: var(--pepito-mint, #15cca0);
 }
-.pepito-earn-currency-option span {
+.pepito-earn-currency-copy {
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
-  font-weight: 600;
+  gap: 0.28rem;
+  min-width: 0;
+  flex: 1;
 }
-.pepito-earn-currency-option small {
-  font-weight: 500;
-  opacity: 0.7;
+.pepito-earn-currency-label {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+.pepito-earn-currency-balance {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 800;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+.pepito-earn-currency-min {
+  font-family: var(--font-body);
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.35;
+  opacity: 0.78;
+  white-space: nowrap;
 }
 .pepito-earn-form-wrap,
 .pepito-earn-history {
