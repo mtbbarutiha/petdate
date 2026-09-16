@@ -1285,6 +1285,7 @@ export const ADMIN_FA_EN: Record<string, string> = {
   "صندوق ورودی": "Inbox",
   "صندوق ورودی، نوشتن/پاسخ، پیکربندی SMTP و وضعیت OTP": "Inbox, Compose/Reply, SMTP Configuration, and OTP Status",
   "ضعیف": "Weak",
+  "بدون داده": "No data",
   "طبقه‌بندی درآمد": "Revenue Classification",
   "طبقه‌بندی هزینه": "Expense Classification",
   "طراح": "Designer",
