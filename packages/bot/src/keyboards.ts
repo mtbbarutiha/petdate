@@ -304,6 +304,37 @@ export function isWizardNav(text: string): boolean {
   return WIZARD_NAV_LABELS.has(text);
 }
 
+/**
+ * Telegram rejects ReplyKeyboard buttons that carry Bot API `style`
+ * (primary/success/danger) — those fields are for InlineKeyboard only.
+ * Symptom: 400 "inline keyboard expected" on sendMessage/sendPhoto, then
+ * /start shows the misleading «سرور همبازی در دسترس نیست» fallback.
+ */
+export function finalizeReplyKeyboard(kb: Keyboard): Keyboard {
+  const raw = JSON.parse(JSON.stringify(kb)) as {
+    keyboard?: Array<Array<Record<string, unknown>>>;
+    resize_keyboard?: boolean;
+    one_time_keyboard?: boolean;
+    input_field_placeholder?: string;
+    selective?: boolean;
+    is_persistent?: boolean;
+  };
+  const rows = (raw.keyboard ?? []).map((row) =>
+    row.map((btn) => {
+      const next = { ...btn };
+      delete next.style;
+      return next;
+    })
+  );
+  const out = Keyboard.from(rows as Parameters<typeof Keyboard.from>[0]);
+  if (raw.resize_keyboard) out.resized();
+  if (raw.one_time_keyboard) out.oneTime();
+  if (raw.is_persistent) out.persistent();
+  if (raw.selective) out.selected();
+  if (raw.input_field_placeholder) out.placeholder(raw.input_field_placeholder);
+  return out;
+}
+
 export function withWizardNav(
   kb: Keyboard,
   opts?: { skip?: boolean; noBack?: boolean; skipLater?: boolean }
@@ -319,7 +350,7 @@ export function withWizardNav(
   kb.text(WIZARD_NAV.cancel).danger();
   // همیشه «منو» قابل‌دسترس باشد تا کیبورد قدیمی تلگرام گیر نکند
   kb.row().text(MAIN_MENU_BTN).primary();
-  return kb.resized();
+  return finalizeReplyKeyboard(kb.resized());
 }
 
 /** کیبورد انتخابی منویی برای مراحل ویزارد */
@@ -394,34 +425,38 @@ export function provinceReplyKeyboard(): Keyboard {
 }
 
 export function phoneWizardKeyboard(): Keyboard {
-  return new Keyboard()
-    .requestContact(WIZARD_NAV.sharePhone)
-    .primary()
-    .row()
-    .text(WIZARD_NAV.skip).primary()
-    .row()
-    .text(WIZARD_NAV.skipLater).primary()
-    .row()
-    .text(WIZARD_NAV.back).primary()
-    .text(WIZARD_NAV.cancel)
-    .danger()
-    .row()
-    .text(MAIN_MENU_BTN).primary()
-    .resized();
+  return finalizeReplyKeyboard(
+    new Keyboard()
+      .requestContact(WIZARD_NAV.sharePhone)
+      .primary()
+      .row()
+      .text(WIZARD_NAV.skip).primary()
+      .row()
+      .text(WIZARD_NAV.skipLater).primary()
+      .row()
+      .text(WIZARD_NAV.back).primary()
+      .text(WIZARD_NAV.cancel)
+      .danger()
+      .row()
+      .text(MAIN_MENU_BTN).primary()
+      .resized()
+  );
 }
 
 /** کیبورد درخواست موقعیت برای «پت‌های نزدیک» (سبک دوردوریا) */
 export function nearbyLocationKeyboard(): Keyboard {
-  return new Keyboard()
-    .requestLocation(WIZARD_NAV.shareLocation)
-    .primary()
-    .row()
-    .text(WIZARD_NAV.cancel)
-    .danger()
-    .row()
-    .text(MAIN_MENU_BTN)
-    .primary()
-    .resized();
+  return finalizeReplyKeyboard(
+    new Keyboard()
+      .requestLocation(WIZARD_NAV.shareLocation)
+      .primary()
+      .row()
+      .text(WIZARD_NAV.cancel)
+      .danger()
+      .row()
+      .text(MAIN_MENU_BTN)
+      .primary()
+      .resized()
+  );
 }
 
 /** شعاع‌های جستجوی نزدیک (کیلومتر) — ترتیب دکمه‌ها مثل دوردوریا */
@@ -579,7 +614,7 @@ export function breedReplyKeyboard(breeds: PetBreed[], page: number): Keyboard {
   kb.row();
   kb.text(WIZARD_NAV.cancel).danger();
   kb.row().text(MAIN_MENU_BTN).primary();
-  return kb.resized();
+  return finalizeReplyKeyboard(kb.resized());
 }
 
 export function petGenderReplyKeyboard(): Keyboard {
@@ -602,18 +637,20 @@ export function petColorReplyKeyboard(): Keyboard {
 }
 
 export function yesNoReplyKeyboard(): Keyboard {
-  return new Keyboard()
-    .text(YES_LABEL)
-    .success()
-    .text(NO_LABEL)
-    .danger()
-    .row()
-    .text(WIZARD_NAV.back).primary()
-    .text(WIZARD_NAV.cancel)
-    .danger()
-    .row()
-    .text(MAIN_MENU_BTN).primary()
-    .resized();
+  return finalizeReplyKeyboard(
+    new Keyboard()
+      .text(YES_LABEL)
+      .success()
+      .text(NO_LABEL)
+      .danger()
+      .row()
+      .text(WIZARD_NAV.back).primary()
+      .text(WIZARD_NAV.cancel)
+      .danger()
+      .row()
+      .text(MAIN_MENU_BTN).primary()
+      .resized()
+  );
 }
 
 export function vaccinatedReplyKeyboard(): Keyboard {
@@ -640,7 +677,7 @@ export function roleReplyKeyboard(selected: UserRole[] = []): Keyboard {
   });
   if (USER_ROLES.length % 2 !== 0) kb.row();
   kb.text(ROLE_CONFIRM_LABEL).success();
-  return kb.resized();
+  return finalizeReplyKeyboard(kb.resized());
 }
 
 export function roleKeyboard(selected: UserRole[] = []): InlineKeyboard {
@@ -675,11 +712,11 @@ export function mainMenuKeyboard(
   const list = normalizeRoles(roles as UserRole[] | null | undefined, role as UserRole | null | undefined);
   const active = primaryRole(list, role as UserRole | null | undefined);
 
-  if (active === 'pet_owner') return petOwnerMenuKeyboard(telegramId, options);
-  if (active === 'vet') return vetMenuKeyboard(telegramId, options);
-  if (active === 'trainer') return trainerMenuKeyboard(telegramId, options);
-  if (active === 'no_pet') return noPetMenuKeyboard(telegramId);
-  return noPetMenuKeyboard(telegramId);
+  if (active === 'pet_owner') return finalizeReplyKeyboard(petOwnerMenuKeyboard(telegramId, options));
+  if (active === 'vet') return finalizeReplyKeyboard(vetMenuKeyboard(telegramId, options));
+  if (active === 'trainer') return finalizeReplyKeyboard(trainerMenuKeyboard(telegramId, options));
+  if (active === 'no_pet') return finalizeReplyKeyboard(noPetMenuKeyboard(telegramId));
+  return finalizeReplyKeyboard(noPetMenuKeyboard(telegramId));
 }
 
 /**
@@ -875,42 +912,44 @@ export function searchPetsMenuInlineKeyboard(): InlineKeyboard {
 /** Reply keyboard سبک — فقط بازگشت؛ گزینه‌های جستجو اینلاین‌اند */
 export function searchPetsMenuKeyboard(): Keyboard {
   const m = SEARCH_PETS_MENU;
-  return new Keyboard().text(m.backToMenu).primary().resized();
+  return finalizeReplyKeyboard(new Keyboard().text(m.backToMenu).primary().resized());
 }
 
 /** @deprecated — از noPetMenuKeyboard استفاده کن */
 export function defaultMenuKeyboard(telegramId?: string | number | null): Keyboard {
-  return noPetMenuKeyboard(telegramId);
+  return finalizeReplyKeyboard(noPetMenuKeyboard(telegramId));
 }
 
 /** کیبورد پنل ادمین بعد از ورود */
 export function adminPanelKeyboard(): Keyboard {
   const m = ADMIN_MENU;
-  return new Keyboard()
-    .text(m.faceQueue)
-    .primary()
-    .row()
-    .text(m.vetQueue)
-    .primary()
-    .text(m.trainerQueue)
-    .primary()
-    .row()
-    .text(m.photoQueue)
-    .primary()
-    .text(m.avatarQueue)
-    .primary()
-    .row()
-    .text(m.pendingPayments)
-    .danger()
-    .row()
-    .text(m.stats)
-    .success()
-    .text(m.vetList)
-    .primary()
-    .row()
-    .text(m.back)
-    .primary()
-    .resized();
+  return finalizeReplyKeyboard(
+    new Keyboard()
+      .text(m.faceQueue)
+      .primary()
+      .row()
+      .text(m.vetQueue)
+      .primary()
+      .text(m.trainerQueue)
+      .primary()
+      .row()
+      .text(m.photoQueue)
+      .primary()
+      .text(m.avatarQueue)
+      .primary()
+      .row()
+      .text(m.pendingPayments)
+      .danger()
+      .row()
+      .text(m.stats)
+      .success()
+      .text(m.vetList)
+      .primary()
+      .row()
+      .text(m.back)
+      .primary()
+      .resized()
+  );
 }
 
 /** اینلاین: سوییچ بین نقش‌های فعلی کاربر */
@@ -1033,13 +1072,15 @@ export function adminVetToggleKeyboard(
 /** ریپلای‌کیبورد داخل بخش پت‌های من — فقط ثبت و بازگشت */
 export function myPetsSectionKeyboard(): Keyboard {
   const m = MY_PETS_SECTION;
-  return new Keyboard()
-    .text(m.addPet)
-    .success()
-    .row()
-    .text(m.backToMenu)
-    .primary()
-    .resized();
+  return finalizeReplyKeyboard(
+    new Keyboard()
+      .text(m.addPet)
+      .success()
+      .row()
+      .text(m.backToMenu)
+      .primary()
+      .resized()
+  );
 }
 
 export function speciesKeyboard(): InlineKeyboard {
@@ -1500,13 +1541,15 @@ export function paymentReceiptCancelKeyboard(): InlineKeyboard {
 
 /** کیبورد reply هنگام انتظار فیش کارت‌به‌کارت */
 export function paymentReceiptReplyKeyboard(): Keyboard {
-  return new Keyboard()
-    .text('📤 ارسال فیش')
-    .primary()
-    .row()
-    .text('↩️ انصراف از پرداخت')
-    .danger()
-    .resized();
+  return finalizeReplyKeyboard(
+    new Keyboard()
+      .text('📤 ارسال فیش')
+      .primary()
+      .row()
+      .text('↩️ انصراف از پرداخت')
+      .danger()
+      .resized()
+  );
 }
 
 export function adminPaymentKeyboard(orderId: number): InlineKeyboard {

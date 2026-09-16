@@ -433,7 +433,16 @@ export async function handleStart(ctx: Context): Promise<void> {
     await sendWelcomeBack(ctx, user, name);
   } catch (error) {
     console.error('start failed:', error);
-    await ctx.reply('فعلاً سرور همبازی در دسترس نیست. چند لحظه بعد دوباره /start بزن.');
+    const msg = error instanceof Error ? error.message : String(error);
+    if (/inline keyboard expected/i.test(msg)) {
+      await ctx.reply('منوی ربات موقتاً خطا داد. یک‌بار دیگر /start بزن.');
+      return;
+    }
+    if (/fetch failed|ECONNREFUSED|AbortError|timeout|API /i.test(msg)) {
+      await ctx.reply('فعلاً سرور همبازی در دسترس نیست. چند لحظه بعد دوباره /start بزن.');
+      return;
+    }
+    await ctx.reply('یک مشکل موقتی پیش اومد. دوباره /start بزن.');
   }
 }
 
