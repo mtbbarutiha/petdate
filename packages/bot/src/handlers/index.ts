@@ -27,7 +27,7 @@ import {
   nearbyLocationKeyboard,
 } from '../keyboards';
 import { getSession, upsertSession } from '../session';
-import { handleExplore, handleExploreBack, handleExploreForPet, handleExplorePet, handleExplorePickPet, handleFindPlaymate } from './explore';
+import { handleExplore, handleExploreBack, handleExploreForPet, handleExploreOwnerGender, handleExplorePet, handleExplorePickPet, handleFindPlaymate } from './explore';
 import {
   handleAddPetCommand,
   handleBreedCustom,
@@ -421,6 +421,13 @@ export function registerHandlers(bot: Bot): void {
   bot.callbackQuery('explore:for:all', (ctx) => handleExploreForPet(ctx, 'all'));
   bot.callbackQuery(/^explore:for:(\d+)$/, (ctx) =>
     handleExploreForPet(ctx, Number(ctx.match![1]))
+  );
+  bot.callbackQuery(/^explore:gender:(female|male):(\d+)$/, (ctx) =>
+    handleExploreOwnerGender(
+      ctx,
+      Number(ctx.match![2]),
+      ctx.match![1] as 'female' | 'male'
+    )
   );
 
   bot.callbackQuery(/^playdate:ask:(\d+)$/, (ctx) => handlePlaydateAsk(ctx, Number(ctx.match![1])));

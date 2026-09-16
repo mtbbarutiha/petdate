@@ -7,7 +7,9 @@ import {
   listPets,
 } from '../api-client';
 import {
+  exploreOwnerGenderKeyboard,
   explorePickMyPetKeyboard,
+  EXPLORE_OWNER_GENDER_TITLE,
   myPetsActionKeyboard,
 } from '../keyboards';
 import { upsertSession } from '../session';
@@ -146,8 +148,8 @@ export async function handleExplorePickPet(ctx: Context): Promise<void> {
       `💰 هزینه درخواست: <b>${formatCoins(PLAYDATE_REQUEST_COST)}</b> سکه`,
       `موجودی: <b>${formatCoins(balance)}</b> سکه`,
       '',
-      'با انتخاب پت، درخواست همبازی به‌صورت خودکار برای هم‌گروه‌ها ارسال می‌شه',
-      '(اولویت: هم‌کشور ← هم‌استان ← هم‌دسته ← هم‌نژاد ← سن ← جنسیت متفاوت).',
+      'با انتخاب پت، اول جنسیت صاحب همبازی را می‌پرسیم؛ بعد درخواست برای هم‌گروه‌ها ارسال می‌شه',
+      '(اولویت: هم‌کشور ← هم‌استان ← هم‌دسته ← هم‌نژاد ← سن · فیلتر صاحب).',
     ].join('\n');
     const kb = explorePickMyPetKeyboard(myPets);
 
@@ -230,6 +232,95 @@ export async function handleExploreForPet(ctx: Context, petId: number | 'all'): 
     }
 
     try {
+      await ctx.answerCallbackQuery();
+    } catch {
+      /* ignore */
+    }
+
+    await upsertSession(String(ctx.from!.id), {
+      exploreForPicked: true,
+      exploreForPetId: petId,
+      explorePage: 0,
+    });
+
+    const text = [
+      `🐾 پت انتخاب‌شده: <b>${escapeHtml(source.name)}</b>`,
+      '',
+      `<b>${EXPLORE_OWNER_GENDER_TITLE}</b>`,
+      '',
+      `💰 هزینه درخواست: <b>${formatCoins(PLAYDATE_REQUEST_COST)}</b> سکه`,
+      `موجودی: <b>${formatCoins(balance)}</b> سکه`,
+    ].join('\n');
+
+    await editOrReply(ctx, text, {
+      parse_mode: 'HTML',
+      reply_markup: exploreOwnerGenderKeyboard(petId),
+    });
+  } catch (err) {
+    console.error('handleExploreForPet failed:', err);
+    if (ctx.callbackQuery) {
+      try {
+        await ctx.answerCallbackQuery({ text: 'خطا — دوباره امتحان کن', show_alert: true });
+      } catch {
+        /* ignore */
+      }
+    }
+    await safeReply(
+      ctx,
+      'ارسال درخواست همبازی ناموفق بود. چند لحظه بعد دوباره «🔍 پیدا کردن همبازی» رو بزن.'
+    );
+  }
+}
+
+/** After owner-gender pick → match + send playdate requests (coins charged once). */
+export async function handleExploreOwnerGender(
+  ctx: Context,
+  petId: number,
+  ownerGender: 'female' | 'male'
+): Promise<void> {
+  try {
+    const user = await getCtxUser(ctx);
+    if (!user?.id) {
+      if (ctx.callbackQuery) {
+        try {
+          await ctx.answerCallbackQuery({ text: 'اول /start بزن', show_alert: true });
+        } catch {
+          /* ignore */
+        }
+      }
+      await safeReply(ctx, 'اول /start بزن.');
+      return;
+    }
+
+    const myPets = await listPets({ ownerId: user.id });
+    const source = myPets.find((p) => p.id === petId);
+    if (!source) {
+      try {
+        await ctx.answerCallbackQuery({ text: 'این پت مال تو نیست', show_alert: true });
+      } catch {
+        /* ignore */
+      }
+      return;
+    }
+
+    const balance = user.coins ?? user.wallet?.coins ?? 0;
+    if (balance < PLAYDATE_REQUEST_COST) {
+      const msg = [
+        `برای درخواست همبازی حداقل ${formatCoins(PLAYDATE_REQUEST_COST)} سکه لازم داری.`,
+        `موجودی: ${formatCoins(balance)} — از منو «🪙 سکه» بگیر یا دکمه خرید سکه را بزن.`,
+      ].join('\n');
+      try {
+        await ctx.answerCallbackQuery({ text: 'سکه کافی نیست', show_alert: true });
+      } catch {
+        /* ignore */
+      }
+      await editOrReply(ctx, msg, {
+        reply_markup: new InlineKeyboard().text('🪙 خرید سکه', 'coins:back'),
+      });
+      return;
+    }
+
+    try {
       await ctx.answerCallbackQuery({ text: 'در حال پیدا کردن همبازی…' });
     } catch {
       /* ignore */
@@ -241,10 +332,14 @@ export async function handleExploreForPet(ctx: Context, petId: number | 'all'): 
       explorePage: 0,
     });
 
+    const genderNote =
+      ownerGender === 'female' ? 'صاحب خانم' : 'صاحب آقا';
+
     await editOrReply(
       ctx,
       [
         `⏳ در حال پیدا کردن همبازی برای <b>${escapeHtml(source.name)}</b>…`,
+        `فیلتر: ${genderNote}`,
         '',
         `💰 هزینه: ${formatCoins(PLAYDATE_REQUEST_COST)} سکه`,
       ].join('\n'),
@@ -256,6 +351,7 @@ export async function handleExploreForPet(ctx: Context, petId: number | 'all'): 
       result = await findPlaymates({
         fromPetId: source.id,
         fromUserId: user.id,
+        ownerGender,
       });
     } catch (err) {
       const parsed = parseApiErrorBody(err);
@@ -289,6 +385,8 @@ export async function handleExploreForPet(ctx: Context, petId: number | 'all'): 
       source.name,
       'user',
       user.id,
+      'ownerGender',
+      ownerGender,
       'sent',
       result.sent,
       'cost',
@@ -297,13 +395,13 @@ export async function handleExploreForPet(ctx: Context, petId: number | 'all'): 
 
     if (result.sent === 0) {
       const empty = [
-        `برای <b>${escapeHtml(source.name)}</b> فعلاً همبازی هم‌گروه (${escapeHtml(speciesLabel)}) پیدا نشد.`,
+        `برای <b>${escapeHtml(source.name)}</b> فعلاً همبازی هم‌گروه (${escapeHtml(speciesLabel)}) با ${genderNote} پیدا نشد.`,
         '',
-        'بعداً دوباره امتحان کن.',
+        'جنسیت دیگر را امتحان کن یا بعداً دوباره بیا.',
       ].join('\n');
       await editOrReply(ctx, empty, {
         parse_mode: 'HTML',
-        reply_markup: explorePickMyPetKeyboard(myPets),
+        reply_markup: exploreOwnerGenderKeyboard(petId),
       });
       return;
     }
@@ -312,6 +410,7 @@ export async function handleExploreForPet(ctx: Context, petId: number | 'all'): 
       `✅ برای <b>${escapeHtml(source.name)}</b> درخواست همبازی ارسال شد.`,
       '',
       `هم‌گروه: ${escapeHtml(speciesLabel)}`,
+      `فیلتر صاحب: ${genderNote}`,
       `ارسال‌شده: <b>${formatCoins(result.sent)}</b> درخواست`,
       result.skipped ? `رد شده/تکراری: ${formatCoins(result.skipped)}` : null,
       `💰 کسر شده: <b>${formatCoins(result.cost)}</b> سکه`,
@@ -328,7 +427,7 @@ export async function handleExploreForPet(ctx: Context, petId: number | 'all'): 
     await editOrReply(ctx, summary, { parse_mode: 'HTML' });
     await pushMainMenuKeyboard(ctx, user);
   } catch (err) {
-    console.error('handleExploreForPet failed:', err);
+    console.error('handleExploreOwnerGender failed:', err);
     if (ctx.callbackQuery) {
       try {
         await ctx.answerCallbackQuery({ text: 'خطا — دوباره امتحان کن', show_alert: true });

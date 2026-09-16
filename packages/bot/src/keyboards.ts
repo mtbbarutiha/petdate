@@ -1174,6 +1174,24 @@ export function explorePickMyPetKeyboard(pets: PetProfile[]): InlineKeyboard {
   return kb;
 }
 
+/** Short owner-gender labels — match web findOwnerGenderFemale/Male (no «دنبال»/«هستم»). */
+export const EXPLORE_OWNER_GENDER_TITLE = 'صاحب همبازی چه جنسیتی باشد؟';
+export const EXPLORE_OWNER_GENDER_FEMALE = 'همبازی برای پتم با صاحب خانم';
+export const EXPLORE_OWNER_GENDER_MALE = 'همبازی برای پتم با صاحب آقا';
+
+/** After pet pick: ask preferred playmate-owner gender before charging find. */
+export function exploreOwnerGenderKeyboard(petId: number): InlineKeyboard {
+  return new InlineKeyboard()
+    .text(EXPLORE_OWNER_GENDER_FEMALE, `explore:gender:female:${petId}`)
+    .primary()
+    .row()
+    .text(EXPLORE_OWNER_GENDER_MALE, `explore:gender:male:${petId}`)
+    .primary()
+    .row()
+    .text('🔙 بازگشت', 'explore:pick')
+    .primary();
+}
+
 export function petDetailKeyboard(petId: number, canRequest: boolean): InlineKeyboard {
   const kb = new InlineKeyboard();
   // درخواست دستی حذف شد — پیدا کردن همبازی خودکار ارسال می‌کند
