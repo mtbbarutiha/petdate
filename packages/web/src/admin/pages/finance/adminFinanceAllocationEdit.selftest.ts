@@ -32,6 +32,12 @@ assert.match(page, /aria-label=\{tr\('اجاره ماهانه'\)\}/, 'office ren
 assert.match(page, /aria-label=\{tr\('متراژ'\)\}/, 'office area becomes an input');
 assert.match(page, /aria-label=\{tr\('بیزنس'\)\}/, 'office business becomes a control');
 assert.match(page, /tr\('افزودن فضا'\)/, 'empty offices can add areas');
+assert.match(page, /deleteAreaNow/, 'area delete persists immediately');
+assert.match(page, /saveOfficeNow/, 'office row can save immediately');
+assert.match(page, /savePersonNow/, 'people row can save immediately');
+assert.match(page, /saveEquipmentNow/, 'equipment row can save immediately');
+assert.match(page, /appConfirm\(tr\('حذف این فضا؟'\)/, 'delete confirms before PATCH');
+assert.match(page, /tr\('ذخیره'\)/, 'inline save label present');
 assert.match(page, /editMode \? \(/, 'fields stay read-only until edit mode is on');
 
 assert.doesNotMatch(

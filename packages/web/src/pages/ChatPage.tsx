@@ -387,7 +387,17 @@ function ConversationListPane({
             )}
           </div>
         ) : (
-          <ul className="tg-chat-list-items">
+          <>
+            {isPlaymateHub ? (
+              <div className="tg-chat-list-hub-cta" data-testid="chat-list-discovery">
+                {ownerConsult ? (
+                  <OwnerConsultPanel compact onSent={onRefresh} />
+                ) : (
+                  <FindPlaymatePanel compact showRequests={false} onSent={onRefresh} />
+                )}
+              </div>
+            ) : null}
+            <ul className="tg-chat-list-items">
             {conversations.map((c) => {
               const active = activeKey === c.key;
               const busy = busyKey === c.key;
@@ -517,6 +527,7 @@ function ConversationListPane({
               );
             })}
           </ul>
+          </>
         )}
       </div>
     </aside>

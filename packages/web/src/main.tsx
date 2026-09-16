@@ -16,6 +16,16 @@ import { initLang } from './i18n/lang';
 initTheme();
 initLang();
 
+/** Product UX: block iOS Safari pinch-zoom gesture (viewport meta alone is not enough on all WebViews). */
+if (typeof window !== 'undefined') {
+  const blockGestureZoom = (e: Event) => {
+    e.preventDefault();
+  };
+  document.addEventListener('gesturestart', blockGestureZoom, { passive: false });
+  document.addEventListener('gesturechange', blockGestureZoom, { passive: false });
+  document.addEventListener('gestureend', blockGestureZoom, { passive: false });
+}
+
 /** Remount app chrome when language changes so all surfaces refresh without a full page reload. */
 function LangKeyedApp() {
   const { lang } = useI18n();

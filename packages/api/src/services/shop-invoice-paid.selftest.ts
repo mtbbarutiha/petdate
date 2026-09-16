@@ -3,6 +3,9 @@
  * Run: npx tsx packages/api/src/services/shop-invoice-paid.selftest.ts
  */
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   TOMAN_TOPUP_PACKAGES,
   findTomanTopupPackage,
@@ -24,5 +27,9 @@ assert.match(sms, /فاکتور خرید/);
 assert.match(sms, /PD-O00138/);
 assert.match(sms, /pdf\.petdate\.ir\/inv\//);
 assert.doesNotMatch(sms, /https:\/\/petdate\.ir\/shop/, 'SMS uses PDF origin only');
+
+const pdfSrc = readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'shop-invoice-pdf.ts'), 'utf8');
+assert.match(pdfSrc, /مهر فروشگاه/, 'PDF paints shop seal');
+assert.match(pdfSrc, /circle\(sealCx/, 'PDF draws circular stamp');
 
 console.log('shop-invoice-paid.selftest: ok');

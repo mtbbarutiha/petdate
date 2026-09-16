@@ -852,6 +852,7 @@ export const ADMIN_FA_EN: Record<string, string> = {
   "حذف از داشبورد": "Remove from Dashboard",
   "حذف اعلان؟": "Delete notification?",
   "حذف این یادداشت؟": "Delete this note?",
+  "حذف این فضا؟": "Delete this space?",
   "حذف یادداشت": "Delete note",
   "حذف پرونده «{name}»؟ این کار برگشت‌پذیر نیست.": "Delete record “{name}”? This cannot be undone.",
   "حذف در": "Deleted At",

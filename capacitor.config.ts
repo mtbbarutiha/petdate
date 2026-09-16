@@ -12,6 +12,9 @@ const config: CapacitorConfig = {
   android: {
     allowMixedContent: false,
   },
+  plugins: {
+    // Keep in sync with index.html viewport lock (no pinch zoom).
+  },
 };
 
 export default config;

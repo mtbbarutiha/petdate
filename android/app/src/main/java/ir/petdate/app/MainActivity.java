@@ -32,7 +32,21 @@ public class MainActivity extends BridgeActivity {
             );
         super.onCreate(savedInstanceState);
         enableFullscreen();
+        lockWebViewZoom();
         requestLocationPermissionIfNeeded();
+    }
+
+    /** Product UX: no pinch/double-tap zoom in the Capacitor WebView (matches site viewport lock). */
+    private void lockWebViewZoom() {
+        try {
+            if (getBridge() == null || getBridge().getWebView() == null) return;
+            android.webkit.WebSettings settings = getBridge().getWebView().getSettings();
+            settings.setSupportZoom(false);
+            settings.setBuiltInZoomControls(false);
+            settings.setDisplayZoomControls(false);
+        } catch (Exception ignored) {
+            /* bridge may not be ready yet on some Capacitor versions */
+        }
     }
 
     @Override

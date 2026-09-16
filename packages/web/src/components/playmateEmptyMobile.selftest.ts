@@ -77,5 +77,16 @@ assert.match(
   /FindPlaymatePanel compact showRequests=\{false\}/,
   'mobile empty keeps fee+CTA above fold without requests stack'
 );
+assert.match(
+  chatPage,
+  /tg-chat-list-hub-cta[\s\S]*?FindPlaymatePanel compact showRequests=\{false\}/,
+  'non-empty contacts list keeps find-playmate + discovery (2-coin re-request)'
+);
+assert.match(chatPage, /data-testid="chat-list-discovery"/, 'discovery strip test id');
+assert.doesNotMatch(
+  pepito,
+  /\.tg-chat-list-hub-cta\s*\{\s*display:\s*none/,
+  'mobile must not hide chat-list discovery strip'
+);
 
 console.log('playmateEmptyMobile.selftest: ok');

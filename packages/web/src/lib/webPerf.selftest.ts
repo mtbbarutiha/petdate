@@ -36,6 +36,17 @@ assert.match(
 const globalCss = readFileSync(join(webSrc, 'styles/global.css'), 'utf8');
 assert.match(globalCss, /html\s*\{[\s\S]*?touch-action:\s*manipulation/, 'html disables double-tap zoom');
 assert.match(globalCss, /body\s*\{[\s\S]*?touch-action:\s*manipulation/, 'body disables double-tap zoom');
+assert.match(main, /gesturestart/, 'iOS gesturestart zoom is blocked in main');
+assert.match(main, /gesturechange/, 'iOS gesturechange zoom is blocked in main');
+const androidMain = readFileSync(
+  join(repoRoot, 'android/app/src/main/java/ir/petdate/app/MainActivity.java'),
+  'utf8'
+);
+assert.match(androidMain, /setSupportZoom\(false\)/, 'Android WebView disables pinch zoom');
+assert.match(androidMain, /setBuiltInZoomControls\(false\)/, 'Android WebView hides built-in zoom');
+const wwwIndex = readFileSync(join(repoRoot, 'www/index.html'), 'utf8');
+assert.match(wwwIndex, /maximum-scale\s*=\s*1/, 'Capacitor www viewport locks zoom');
+assert.match(wwwIndex, /user-scalable\s*=\s*no/, 'Capacitor www disables user scaling');
 assert.match(indexHtml, /pd-critical-first-paint/, 'inline critical CSS kills the white filmstrip');
 assert.match(indexHtml, /setTimeout\(run, 10000\)/, 'GTM waits for interaction or 10s — not first idle');
 assert.doesNotMatch(indexHtml, /requestIdleCallback/, 'GTM must not use requestIdleCallback (fires on first idle)');
@@ -295,5 +306,10 @@ assert.doesNotMatch(header, /from 'lucide-react'/, 'SiteHeader must not parse lu
 assert.doesNotMatch(themeToggle, /from 'lucide-react'/, 'ThemeToggle must not parse lucide');
 assert.doesNotMatch(navCluster, /from 'lucide-react'/, 'guest nav cluster must not parse lucide');
 assert.doesNotMatch(toast, /from 'lucide-react'/, 'toast host must not pull lucide onto landing');
+
+const shopInvoice = readFileSync(join(webSrc, 'components/shop/ShopInvoice.tsx'), 'utf8');
+assert.match(shopInvoice, /pd-shop-invoice-seal/, 'shop invoice renders seal/stamp');
+assert.match(shopInvoice, /مهر فروشگاه/, 'shop invoice seal label');
+assert.match(pepitoCss, /\.pd-shop-invoice-seal__ring/, 'seal ring styles present');
 
 console.log('webPerf.selftest: ok');

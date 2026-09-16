@@ -14990,9 +14990,7 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   .find-playmate-header-pick .find-playmate-header-btn {
     flex: 0 1 auto;
   }
-  .tg-chat-list-hub-cta {
-    display: none !important;
-  }
+  /* Keep chat-list discovery strip visible on mobile after first chat */
   /* Empty inbox: fee card + CTA hug content, centered under copy */
   .tg-chat-list-empty .find-playmate-panel {
     background: transparent !important;
@@ -15805,22 +15803,79 @@ a.pepito-btn.pepito-human-consult-cta:hover {
   font-weight: 700;
 }
 .pd-shop-invoice-foot {
+  display: grid;
+  gap: 1rem;
+}
+.pd-shop-invoice-foot__row {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  gap: 1rem;
+  gap: 1.25rem;
   align-items: flex-end;
 }
-.pd-shop-invoice-totals { min-width: 220px; }
+.pd-shop-invoice-seal {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  min-height: 7.5rem;
+}
+.pd-shop-invoice-seal__ring {
+  width: 7.25rem;
+  height: 7.25rem;
+  border-radius: 50%;
+  border: 3px double #8b1e2d;
+  box-shadow: inset 0 0 0 2px rgba(139, 30, 45, 0.35);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  text-align: center;
+  color: #8b1e2d;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(139, 30, 45, 0.06), transparent 68%),
+    repeating-conic-gradient(from 0deg, rgba(139, 30, 45, 0.05) 0 8deg, transparent 8deg 16deg);
+  transform: rotate(-8deg);
+}
+.pd-shop-invoice-seal__brand {
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1.2;
+  max-width: 5.5rem;
+}
+.pd-shop-invoice-seal__mark {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  opacity: 0.92;
+}
+.pd-shop-invoice-seal__id {
+  font-size: 0.62rem;
+  font-weight: 700;
+  opacity: 0.8;
+  direction: ltr;
+}
+.pd-shop-invoice-totals { min-width: 220px; flex: 1 1 200px; }
 .pd-shop-invoice-totals p {
   display: flex;
   justify-content: space-between;
   gap: 1.5rem;
   margin: 0.25rem 0;
 }
+.pd-shop-invoice-sign {
+  margin-top: 0.65rem !important;
+  padding-top: 0.55rem;
+  border-top: 1px dashed rgba(92, 77, 145, 0.2);
+  align-items: center;
+}
+.pd-shop-invoice-sign em {
+  font-style: normal;
+  font-weight: 800;
+  color: #5c4d91;
+}
 .pd-shop-invoice-hint {
   margin: 0;
-  max-width: 28rem;
+  max-width: none;
   font-size: 0.82rem;
   opacity: 0.72;
   line-height: 1.5;
@@ -15838,6 +15893,7 @@ a.pepito-btn.pepito-human-consult-cta:hover {
 @media (max-width: 720px) {
   .pd-shop-invoice-parties { grid-template-columns: 1fr; }
   .pd-shop-invoice-meta { text-align: start; }
+  .pd-shop-invoice-seal__ring { width: 6.4rem; height: 6.4rem; }
 }
 
 
