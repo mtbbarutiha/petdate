@@ -69,6 +69,8 @@ async function main() {
   }
 
   const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../..');
+  const photos = SAMPLE_PET_EVENTS.map((d) => d.photo);
+  assert.equal(new Set(photos).size, photos.length, 'each catalog event has a unique cover photo');
   for (const def of SAMPLE_PET_EVENTS) {
     const photoPath = path.join(repoRoot, 'packages/web/public', def.photo.replace(/^\//, ''));
     assert.ok(fs.existsSync(photoPath), `stock photo exists: ${def.photo}`);

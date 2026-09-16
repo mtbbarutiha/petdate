@@ -28,6 +28,23 @@ assert.match(
   /pepito-vet-cost-mark[\s\S]{0,320}<Stethoscope size=\{20\} strokeWidth=\{2\}/,
   'cost-mark keeps Stethoscope for the paid human-vet line'
 );
+
+const pepitoCss = readFileSync(join(dir, '../styles/pepito.css'), 'utf8');
+assert.match(
+  pepitoCss,
+  /\.pepito-vet-consult-cost\s*>\s*div\s*>\s*span\s*\{/,
+  'cost-copy span rule must not target .pepito-vet-cost-mark (breaks icon flex centering)'
+);
+assert.doesNotMatch(
+  pepitoCss,
+  /\.pepito-vet-consult-cost\s+span\s*\{/,
+  'broad .pepito-vet-consult-cost span { display:block } must stay removed'
+);
+assert.match(
+  pepitoCss,
+  /\.pepito-vet-cost-mark\s*\{[\s\S]{0,280}display:\s*inline-flex;[\s\S]{0,120}align-items:\s*center;[\s\S]{0,80}justify-content:\s*center;/,
+  'cost-mark keeps flex centering for the doctor icon'
+);
 assert.match(
   vet,
   /data-testid="vet-quick-connect"[\s\S]{0,520}<Stethoscope size=\{16\}/,
