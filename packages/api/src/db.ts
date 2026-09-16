@@ -1853,11 +1853,7 @@ function seedFinanceDefaults() {
     upsert.run('vetConsultFeePercent', '20');
   }
 
-  const orderCount = Number(
-    (db.prepare('SELECT COUNT(*) as c FROM shop_orders').get() as { c: number } | undefined)?.c ?? 0
-  );
-  if (orderCount > 0) return;
-
+  // Categories / COGS defaults are safe for empty catalogs — not fake panel KPIs.
   const productCount = Number(
     (db.prepare('SELECT COUNT(*) as c FROM shop_products').get() as { c: number } | undefined)?.c ?? 0
   );
@@ -1879,6 +1875,17 @@ function seedFinanceDefaults() {
        WHERE cost_toman IS NULL AND price_toman > 0`
     ).run();
   }
+
+  // Fake shop orders + wallet ledger inflate finance/shop dashboards.
+  // Production skips unless ALLOW_DEMO_SEEDS=1 (same gate as HR/CRM demo).
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { allowDemoSeeds } = require('./demo-seeds-guard') as typeof import('./demo-seeds-guard');
+  if (!allowDemoSeeds()) return;
+
+  const orderCount = Number(
+    (db.prepare('SELECT COUNT(*) as c FROM shop_orders').get() as { c: number } | undefined)?.c ?? 0
+  );
+  if (orderCount > 0) return;
 
   const products = db
     .prepare(

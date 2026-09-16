@@ -366,6 +366,11 @@ const DEFAULT_CATEGORY_TREE: FinanceOsCategoryNode[] = [
 ];
 
 function seedFinanceOsIfEmpty(): void {
+  // Fake holding CoA / bank balances / payroll — never auto-fill production books.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { allowDemoSeeds } = require('./demo-seeds-guard') as typeof import('./demo-seeds-guard');
+  if (!allowDemoSeeds()) return;
+
   const d = db();
   const bizCount = (d.prepare('SELECT COUNT(*) AS c FROM finance_os_businesses').get() as { c: number }).c;
   if (bizCount > 0) return;

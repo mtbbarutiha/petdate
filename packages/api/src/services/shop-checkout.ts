@@ -202,6 +202,18 @@ function resolveLine(
     };
   }
 
+  if (dbProd && dbProd.stockQty > 0 && qty > dbProd.stockQty) {
+    return {
+      ok: false,
+      fail: {
+        ok: false,
+        reason: 'out_of_stock',
+        error: `موجودی «${dbProd.title}» کافی نیست (باقی‌مانده: ${dbProd.stockQty}).`,
+        productId,
+      },
+    };
+  }
+
   const priceToman = dbProd?.priceToman ?? indexed!.priceToman;
   const title = dbProd?.title ?? indexed!.title;
   const categorySlug = dbProd?.categorySlug ?? indexed!.categorySlug;

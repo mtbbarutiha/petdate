@@ -934,7 +934,33 @@ export const adminPlatform = {
     }
     const order = this.getShopOrder(newId)!;
     if (order.status === 'paid') queuePaidShopOrderAutoMessage(order);
+    try {
+      for (const raw of input.items ?? []) {
+        const item = raw as { productId?: string; qty?: number };
+        const pid = String(item?.productId || '');
+        const qty = Math.floor(Number(item?.qty ?? 0));
+        if (!pid || qty <= 0) continue;
+        this.consumeShopStock(pid, qty);
+      }
+    } catch (err) {
+      console.warn('shop stock consume skipped/failed:', (err as Error).message);
+    }
     return order;
+  },
+
+  /** Decrement stock_qty when tracked (>0). Sets in_stock=0 at zero. No-op if stock untracked (0). */
+  consumeShopStock(productId: string, qty: number): void {
+    const q = Math.floor(Number(qty));
+    if (!productId || !Number.isFinite(q) || q <= 0) return;
+    db()
+      .prepare(
+        `UPDATE shop_products
+         SET stock_qty = stock_qty - ?,
+             in_stock = CASE WHEN stock_qty - ? <= 0 THEN 0 ELSE in_stock END,
+             updated_at = datetime('now')
+         WHERE id = ? AND stock_qty >= ?`
+      )
+      .run(q, q, productId, q);
   },
 
   updateShopOrderStatus(id: number, status: string): ShopOrderRow | null {

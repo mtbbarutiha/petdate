@@ -1,13 +1,16 @@
 #!/usr/bin/env npx tsx
 /**
- * Delete ONLY known demo-seed rows (SEED-HR-*, 09120006xxx, 0912SEED*, seed.* accounts).
+ * Delete ONLY known demo/fake panel rows:
+ *   SEED-HR-*, CRM 09120006xxx, 0912SEED*, seed.* accounts,
+ *   fake shop_orders (سارا م. / 091000000*), wallet_ledger ref_type=seed,
+ *   Finance OS demo CoA (HYP/UPD/PD), fake_owner_*/demo_* users.
  *
  * Dry-run by default. Destructive only with --apply AND CONFIRM=DELETE_DEMO_SEEDS.
  *
  *   npx tsx scripts/cleanup-demo-seeds.ts
  *   CONFIRM=DELETE_DEMO_SEEDS npx tsx scripts/cleanup-demo-seeds.ts --apply
  *
- * Never run automatically on deploy. Does not touch real users/pets/magazine.
+ * Never run automatically on deploy. Does not touch real users/pets/magazine/live shop SKUs.
  */
 import { runDemoSeedCleanup } from '../packages/api/src/demo-seeds-cleanup.ts';
 
