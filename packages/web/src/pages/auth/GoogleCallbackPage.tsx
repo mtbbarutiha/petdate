@@ -82,7 +82,7 @@ export function GoogleCallbackPage() {
       bannerImage="/pepito/uploads/3.jpg"
     >
       <p className="pepito-auth-kicker">گوگل</p>
-      <h1>در حال ورود…</h1>
+      <h1>{error ? 'ورود ناموفق' : 'در حال ورود…'}</h1>
       {busy && !error ? <p className="auth-lead">در حال تکمیل نشست امن…</p> : null}
       {error ? (
         <>

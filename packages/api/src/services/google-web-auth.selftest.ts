@@ -32,6 +32,7 @@ assert.match(coreSrc, /publicWebOrigin/, 'public origin for redirects');
 assert.match(googleSrc, /email_verified/, 'requires Google email_verified');
 assert.match(googleSrc, /createWebSession/, 'issues the same web session token as OTP/Telegram');
 assert.match(googleSrc, /setUserGoogleSub/, 'links google_sub on the unified users row');
+assert.match(googleSrc, /isActive === false/, 'refuses inactive shells before issuing a session');
 assert.doesNotMatch(
   coreSrc,
   /user\.phonenumbers\.read/,

@@ -112,8 +112,14 @@ export async function completeGoogleOAuth(opts: {
     return { ok: false, redirect: googleLoginErrorRedirect('profile', state.next) };
   }
 
-  const existed = dbService.getUserByGoogleSub(sub) ?? dbService.getUserByEmail(email);
+  const existedRaw = dbService.getUserByGoogleSub(sub) ?? dbService.getUserByEmail(email);
+  // Defense: identity lookups already skip inactive rows; never issue a session for a shell.
+  const existed =
+    existedRaw && existedRaw.isActive !== false ? existedRaw : null;
   let user = existed ?? dbService.findOrCreateWebUser({ email, name: String(info?.name ?? '').trim() });
+  if (user.isActive === false) {
+    return { ok: false, redirect: googleLoginErrorRedirect('inactive', state.next) };
+  }
   user = dbService.setUserGoogleSub(user.id, sub) ?? user;
   user =
     applyLoginProfileHints({
