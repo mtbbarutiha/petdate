@@ -871,6 +871,12 @@ export const ADMIN_FA_EN: Record<string, string> = {
   "حساب اپراتور و مجوزها": "Operator Account and Permissions",
   "حساب پنل جدید": "New Panel Account",
   "حساب جدید": "New Account",
+  "این حساب غیرفعال شود؟ (حذف نرم — از فهرست فعال‌ها کنار می‌رود)":
+    "Deactivate this account? (Soft delete — removed from the active list)",
+  "حذف این مورد از فهرست؟": "Remove this item from the list?",
+  "ذخیره کارمزد": "Save fees",
+  "ویرایش حساب": "Edit account",
+  "غیرفعال‌سازی": "Deactivate",
   "حساب فعال": "Active Account",
   "حساب‌ها": "Accounts",
   "حساب‌ها و داده‌های پایه": "Accounts and Master Data",
