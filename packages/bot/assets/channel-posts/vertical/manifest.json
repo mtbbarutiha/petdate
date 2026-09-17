@@ -2,7 +2,11 @@
   "canonical": true,
   "channel": "@petdating",
   "bot_cta": {
+<<<<<<< HEAD
     "text": "🐾 ورود به ربات",
+=======
+    "text": "🐾 ورود به ربات",
+>>>>>>> origin/main
     "url": "https://t.me/Petdatebot"
   },
   "format": {
