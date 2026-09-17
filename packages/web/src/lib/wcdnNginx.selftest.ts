@@ -131,4 +131,11 @@ assert.match(
   '/fonts/ is publicly cacheable like brand/pepito'
 );
 
+assert.match(
+  conf,
+  /location = \/api\/hero \{[\s\S]*?proxy_pass http:\/\/127\.0\.0\.1:3001\/api\/hero;/,
+  '/api/hero keeps upstream Cache-Control (not blanket no-store)'
+);
+assert.match(conf, /location \^~ \/api\/hero\/images\//, '/api/hero/images/ has a dedicated location');
+
 console.log('wcdnNginx.selftest: ok');

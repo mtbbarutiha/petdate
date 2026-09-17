@@ -3,6 +3,8 @@
  * Display focus (pan/zoom) can be set for custom OR default slides.
  */
 import { adminPlatform } from '../admin-platform';
+import { writeHeroBootSnapshot } from './hero-boot-snapshot';
+import { invalidateHeroPublicCache } from './hero-public-cache';
 import {
   DEFAULT_HERO_FOCUS,
   HERO_ROLES,
@@ -12,6 +14,16 @@ import {
   isHeroRole,
   normalizeHeroFocus,
 } from './hero-slide-store';
+
+function afterHeroMutation(): void {
+  invalidateHeroPublicCache();
+  try {
+    const slides = listResolvedHeroSlides();
+    if (slides[0]) writeHeroBootSnapshot(slides[0]);
+  } catch {
+    /* snapshot is best-effort */
+  }
+}
 
 export const HERO_SETTINGS_KEY = 'heroSlides';
 
@@ -187,7 +199,9 @@ export function setCustomHeroSlide(role: HeroRole, assets: HeroSlideAssets): Her
     ...focus,
   };
   writeStored(stored);
-  return resolveOne(role, stored[role]);
+  const resolved = resolveOne(role, stored[role]);
+  afterHeroMutation();
+  return resolved;
 }
 
 export function setHeroSlideFocus(role: HeroRole, focusRaw: unknown): HeroSlideResolved {
@@ -196,14 +210,23 @@ export function setHeroSlideFocus(role: HeroRole, focusRaw: unknown): HeroSlideR
   const focus = normalizeHeroFocus(focusRaw);
   stored[role] = { ...prev, ...focus };
   writeStored(stored);
-  return resolveOne(role, stored[role]);
+  const resolved = resolveOne(role, stored[role]);
+  afterHeroMutation();
+  return resolved;
 }
 
 export function resetCustomHeroSlide(role: HeroRole): HeroSlideResolved {
   const stored = parseStored();
   delete stored[role];
   writeStored(stored);
-  return resolveOne(role, undefined);
+  const resolved = resolveOne(role, undefined);
+  afterHeroMutation();
+  return resolved;
+}
+
+/** Sync LCP HTML snapshot + cache warm on process boot. */
+export function syncHeroBootSnapshotOnStartup(): void {
+  afterHeroMutation();
 }
 
 export function heroRoleLabelsFa(): Record<HeroRole, string> {

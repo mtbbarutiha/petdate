@@ -135,7 +135,15 @@ const TEAM_I18N: Record<string, { nameKey: string; roleKey: string }> = {
 const TEAM = LANDING_TEAM_AGENT_SLUGS.map((slug) => {
   const a = TEAM_AGENTS.find((row) => row.slug === slug)!;
   const i18n = TEAM_I18N[a.slug] ?? { nameKey: 'landing.team1', roleKey: 'landing.roleTrainer' };
-  return { slug: a.slug, nameKey: i18n.nameKey, roleKey: i18n.roleKey, name: a.name, role: a.role, img: a.avatarUrl };
+  return {
+    slug: a.slug,
+    nameKey: i18n.nameKey,
+    roleKey: i18n.roleKey,
+    name: a.name,
+    role: a.role,
+    img: a.avatarUrl,
+    srcSet: `/agents/${a.slug}-240.webp?v=persona-v4 240w, /agents/${a.slug}-480.webp?v=persona-v4 480w`,
+  };
 });
 
 const REVIEW_DEFS = [
@@ -584,7 +592,16 @@ export function WelcomeBelowFold() {
           {TEAM.map((m) => (
             <article key={m.slug} className="pepito-member">
               <div className="pepito-member-photo">
-                <img src={m.img} alt={t('landing.teamAlt', { name: t(m.nameKey), role: t(m.roleKey) })} loading="lazy" width={600} height={600} decoding="async" />
+                <img
+                  src={m.img}
+                  srcSet={m.srcSet}
+                  sizes="(max-width: 859px) 42vw, 240px"
+                  alt={t('landing.teamAlt', { name: t(m.nameKey), role: t(m.roleKey) })}
+                  loading="lazy"
+                  width={480}
+                  height={480}
+                  decoding="async"
+                />
               </div>
               <div className="pepito-member-info">
                 <h3>{t(m.nameKey)}</h3>

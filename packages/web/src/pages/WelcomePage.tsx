@@ -233,7 +233,7 @@ export function WelcomePage() {
      a hardcoded /media/lcp/hero-playmate photo before the admin URL arrives. */
   useEffect(() => {
     let cancelled = false;
-    void fetch(`${API_BASE}/api/hero`, { cache: 'no-store' })
+    void fetch(`${API_BASE}/api/hero`, { credentials: 'same-origin' })
       .then((res) => (res.ok ? res.json() : null))
       .then((data: { slides?: HeroApiSlide[] } | null) => {
         if (cancelled) return;
