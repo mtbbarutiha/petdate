@@ -29,7 +29,7 @@ assert.ok(existsSync(apiOfl), 'API Vazirmatn OFL is committed');
 
 assert.match(indexHtml, /--font-sans:/, 'critical CSS defines --font-sans');
 assert.match(indexHtml, /font-family:var\(--font-sans\)/, 'body uses --font-sans');
-assert.match(indexHtml, /font-display:swap/, 'swap to limit FOIT');
+assert.match(indexHtml, /font-display:optional/, 'optional to limit CLS from late font swap');
 assert.doesNotMatch(indexHtml, /fonts\.googleapis\.com|fonts\.gstatic\.com/, 'no Google Fonts preconnect/CSS');
 assert.doesNotMatch(indexHtml, /Urbanist/, 'no Urbanist competing stack');
 
