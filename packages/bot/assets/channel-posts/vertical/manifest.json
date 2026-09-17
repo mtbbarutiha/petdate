@@ -1,0 +1,123 @@
+{
+  "canonical": true,
+  "channel": "@petdating",
+  "bot_cta": {
+    "text": "🚀 ورود به ربات",
+    "url": "https://t.me/Petdatebot"
+  },
+  "format": {
+    "aspect": "9:16",
+    "width": 1080,
+    "height": 1920,
+    "format": "JPEG"
+  },
+  "brand": {
+    "purple": "#5D2E8E",
+    "pink": "#E91E63",
+    "tagline": "PLAY · MEET · FRIENDS"
+  },
+  "kept_message_ids": [
+    121,
+    122,
+    123,
+    124,
+    125,
+    126,
+    127,
+    128,
+    129,
+    130
+  ],
+  "posts": [
+    {
+      "id": 1,
+      "slug": "playmate",
+      "topic_fa": "همبازی",
+      "file": "v-post-01-playmate.jpg",
+      "message_id": 121,
+      "link": "https://t.me/petdating/121",
+      "image_prompt": "Vertical 9:16 premium Telegram ad for Pet Date app. TOPIC: playmate/friendship ONLY.\n\nCOMPOSITION (must be unique — before/after split story):\n- Top: Pet Date logo (pink/purple line-art dog+cat forming heart) + tagline PLAY · MEET · FRIENDS\n- Middle: diagonal before/after — LEFT grayscale sad Golden Retriever alone with speech bubble Persian «تنها بود...» + sad emoji; RIGHT bright sunny park two happy dogs (Golden + Corgi) in pink/purple paw-print bandanas playing with tennis ball, speech bubble «حالا دوست داره!» + heart-eyes\n- Large pink-purple gradient arrow from lonely to happy\n- Bottom: big purple wavy banner white Persian «پتت هم دوست می‌خواد؟» and pink sub-banner «با پت‌دیت همبازی پیدا کن»\n- Pink CTA pill «PetDate.ir»\n- Sparse floating pink hearts and purple paw prints\n\nColors: deep purple #5D2E8E, magenta #E91E63, white. High-CTR marketing, photoreal pets, clean Persian typography. NO phone UI, NO vet, NO shopping bags."
+    },
+    {
+      "id": 2,
+      "slug": "trainer",
+      "topic_fa": "مربی آنلاین",
+      "file": "v-post-02-trainer.jpg",
+      "message_id": 122,
+      "link": "https://t.me/petdating/122",
+      "image_prompt": "Vertical 9:16 premium Telegram ad for Pet Date. TOPIC: online dog trainer / obedience — COMPLETELY DIFFERENT from lonely-dog story.\n\nCOMPOSITION:\n- Top: Pet Date logo (dog+cat heart line-art pink/purple) + PLAY · MEET · FRIENDS\n- Hero scene fills upper 60%: warm outdoor training yard. Friendly trainer kneeling with clicker and treat pouch, Golden Retriever sitting attentively in «sit» pose, purple bandana. Soft bokeh training cones in background. NO before/after split.\n- Mid: large purple rounded banner white Persian text «مربی آنلاین» and smaller pink banner «فرمان‌پذیری · کلیکر · رفتار»\n- Bottom: stylized laptop/phone showing video call with trainer silhouette, pink CTA button «PetDate.ir»\n- Sparse paw prints and hearts accents only\n\nBrand colors purple #5D2E8E and pink #E91E63. Photoreal, premium high-CTR. NO sad lonely dog, NO park friendship duo as main story, NO shopping."
+    },
+    {
+      "id": 3,
+      "slug": "vet",
+      "topic_fa": "دامپزشک آنلاین",
+      "file": "v-post-03-vet.jpg",
+      "message_id": 123,
+      "link": "https://t.me/petdating/123",
+      "image_prompt": "Vertical 9:16 premium Telegram ad for Pet Date. TOPIC: online veterinarian — soft clinic scene, NOT friendship story.\n\nCOMPOSITION:\n- Top: Pet Date logo + PLAY · MEET · FRIENDS\n- Hero: soft bright veterinary clinic. Kind female vet in white coat gently using stethoscope on calm fluffy cat on exam table; soft daylight window, plants, clean white/soft lavender clinic. Warm caring mood.\n- Accent: floating soft purple heart + subtle medical cross in brand pink (decorative, not clinical-harsh)\n- Mid-bottom: large purple bubble white Persian «دامپزشک آنلاین» and pink subtext «مشاوره تخصصی سریع»\n- Bottom: smartphone showing chat/consult UI with pet avatar and stethoscope icon, pink CTA «PetDate.ir»\n- Sparse paw prints only\n\nColors: purple #5D2E8E, magenta pink, soft whites. Photoreal premium. NO lonely dog before/after, NO two dogs playing in park as main focus, NO shopping bags."
+    },
+    {
+      "id": 4,
+      "slug": "shop",
+      "topic_fa": "پت‌شاپ",
+      "file": "v-post-04-shop.jpg",
+      "message_id": 124,
+      "link": "https://t.me/petdating/124",
+      "image_prompt": "Vertical 9:16 premium Telegram ad for Pet Date. TOPIC: pet shop / shopping — product focus, NOT lonely dog story.\n\nCOMPOSITION:\n- Top: Pet Date logo + PLAY · MEET · FRIENDS\n- Hero: vibrant pet boutique flat-lay / shelf scene — colorful shopping bags (pink & purple), dog food bags, cute toys, leash, bowls, pink gift box with paw, small cute puppy peeking from behind shopping bags excitedly\n- Floating product icons tastefully (bag, bone toy, collar)\n- Mid: big purple banner white Persian «پت‌شاپ» and pink banner «خرید محصولات برای پت»\n- Bottom: pink CTA pill with globe «PetDate.ir» and tagline\n- Soft gradient purple-pink atmosphere background with sparse hearts/paws\n\nBrand purple/pink. Premium high-CTR ecommerce vibe. NO before/after lonely dog, NO vet clinic, NO training clicker scene."
+    },
+    {
+      "id": 5,
+      "slug": "events",
+      "topic_fa": "ایونت",
+      "file": "v-post-05-event.jpg",
+      "message_id": 125,
+      "link": "https://t.me/petdating/125",
+      "image_prompt": "Vertical 9:16 premium Telegram ad for Pet Date. TOPIC: outdoor pet meetup / event crowd — festive gathering vibe.\n\nCOMPOSITION:\n- Top: Pet Date logo + PLAY · MEET · FRIENDS\n- Hero fills most of frame: sunny outdoor park meetup — several pet owners standing chatting, multiple dogs of different breeds wearing pink/purple bandanas, picnic blankets, small branded balloons or banners, festive cheerful energy. Wide community event feel, not a lonely dog story.\n- Overlay mid: purple wavy banner white Persian «ایونت پت» and pink sub «دورهمی · پیاده‌روی · آشنایی»\n- Bottom: pink CTA «PetDate.ir» with calendar/event icon vibe\n- Sparse floating hearts and paw prints\n\nBrand colors purple #5D2E8E pink #E91E63. Photoreal premium high-CTR. NO grayscale lonely before/after split, NO clinic, NO shopping bags as main focus."
+    },
+    {
+      "id": 6,
+      "slug": "nearby",
+      "topic_fa": "همبازی نزدیک",
+      "file": "v-post-06-nearby.jpg",
+      "message_id": 126,
+      "link": "https://t.me/petdating/126",
+      "image_prompt": "Vertical 9:16 premium Telegram ad for Pet Date. TOPIC: nearby playmates / GPS map location — map-centric design.\n\nCOMPOSITION:\n- Top: Pet Date logo + PLAY · MEET · FRIENDS\n- Hero: stylized city map (Tehran-like streets) in soft purple/pink tones with glowing location pins; cute mini dog and cat avatars on map pins near each other; concentric radius circles showing «nearby»\n- A happy Golden Retriever and a cat peeking from corners of the map frame (small accents, not full before/after story)\n- Mid: large purple banner white Persian «همبازی نزدیک» and pink «پیدا کردن دوست نزدیکت»\n- Bottom: pink CTA «PetDate.ir» with location pin icon\n- Sparse paw prints\n\nBrand purple/pink, premium high-CTR digital map aesthetic. NO lonely grayscale dog split, NO vet, NO shopping shelves as main, NO training session."
+    },
+    {
+      "id": 7,
+      "slug": "community",
+      "topic_fa": "جامعه",
+      "file": "v-post-07-community.jpg",
+      "message_id": 127,
+      "link": "https://t.me/petdating/127",
+      "image_prompt": "Vertical 9:16 premium Telegram ad for Pet Date. TOPIC: pet-lover community — people + pets social network vibe.\n\nCOMPOSITION:\n- Top: Pet Date logo + PLAY · MEET · FRIENDS\n- Hero: warm cafe/park gathering of diverse young Iranian pet owners smiling, chatting, holding dogs and cats; phones showing chat bubbles; sense of belonging and friendship circle. Soft golden-hour light. Group community photo energy.\n- Mid: purple banner white Persian «جامعه پت‌دوست‌ها» and pink «آشنا شو و ارتباط بگیر»\n- Bottom: circular avatar collage of pets around pink CTA «PetDate.ir»\n- Sparse hearts and paw prints\n\nBrand purple #5D2E8E pink #E91E63. Photoreal premium. NO before/after lonely dog story, NO clinic exam table, NO product shopping bags as focus, NO map UI as focus."
+    },
+    {
+      "id": 8,
+      "slug": "consult",
+      "topic_fa": "مشورت بدون پت",
+      "file": "v-post-08-consult.jpg",
+      "message_id": 128,
+      "link": "https://t.me/petdating/128",
+      "image_prompt": "Vertical 9:16 premium Telegram ad for Pet Date. TOPIC: consulting before getting a pet — person considering adoption, NO pet ownership yet.\n\nCOMPOSITION:\n- Top: Pet Date logo + PLAY · MEET · FRIENDS\n- Hero: thoughtful young person sitting on couch with laptop/phone, looking at cute dog and cat photos on screen thoughtfully; soft thought bubbles with question marks and pet silhouettes; warm home interior; contemplative hopeful mood — consulting/considering.\n- Optional small speech bubble Persian «هنوز پت ندارم...»\n- Mid: purple banner white Persian «مشورت بدون پت» and pink «از صاحبین باتجربه بپرس»\n- Bottom: pink CTA «PetDate.ir»\n- Soft purple-pink gradient accents, sparse hearts\n\nBrand colors. Photoreal premium high-CTR. NO two dogs playing park friendship as main, NO vet clinic, NO shopping bags pile, NO map pins, NO training clicker."
+    },
+    {
+      "id": 9,
+      "slug": "profile",
+      "topic_fa": "پروفایل پت",
+      "file": "v-post-09-profile.jpg",
+      "message_id": 129,
+      "link": "https://t.me/petdating/129",
+      "image_prompt": "Vertical 9:16 premium Telegram ad for Pet Date. TOPIC: pet profile / pet passport — phone UI mockup focus.\n\nCOMPOSITION:\n- Top: Pet Date logo + PLAY · MEET · FRIENDS\n- Hero: large centered smartphone mockup showing Pet Date profile card — cute Golden Retriever photo, name «Bobby», breed, city Tehran, heart like button, paw passport stamp vibe, purple/pink UI chrome. Soft 3D phone with subtle shadow.\n- Background: soft purple-to-pink gradient with faint passport pattern / ID card motifs and sparse paw prints\n- Beside/below phone: Persian text on purple banner «پروفایل پت بساز» and pink «دیده شو · همبازی پیدا کن»\n- Bottom: pink CTA «PetDate.ir»\n\nPremium app marketing, high-CTR. NO lonely dog before/after split across full canvas, NO outdoor event crowd, NO vet exam, NO shopping bags as main subject."
+    },
+    {
+      "id": 10,
+      "slug": "all-features",
+      "topic_fa": "همه امکانات",
+      "file": "v-post-10-all.jpg",
+      "message_id": 130,
+      "link": "https://t.me/petdating/130",
+      "image_prompt": "Vertical 9:16 premium Telegram ad for Pet Date. TOPIC: all features collage — ONE cohesive vertical ad showing multiple services, NOT repeating lonely-dog story as sole composition.\n\nCOMPOSITION:\n- Top: Pet Date logo large + PLAY · MEET · FRIENDS\n- Center headline purple banner Persian «پتت هم دوست می‌خواد؟»\n- Cohesive collage of 5 circular feature tiles arranged vertically/stacked elegantly on soft gradient:\n  1) two dogs playing (همبازی)\n  2) trainer+clicker (مربی)\n  3) vet+stethoscope (دامپزشک)\n  4) shopping bag products (پت‌شاپ)\n  5) event meetup (ایونت)\n- Each tile has small Persian label\n- Bottom: phone silhouette + pink CTA «PetDate.ir» and «همه امکانات در پت‌دیت»\n- Sparse floating hearts/paws tying collage together as one brand ad\n\nBrand purple/pink, premium high-CTR, clean organized collage (not chaotic). Distinct from single-topic posts."
+    }
+  ]
+}
