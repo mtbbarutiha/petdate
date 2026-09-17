@@ -1009,7 +1009,7 @@ export const en: Dict = {
     myTicketsEmpty: 'No valid tickets yet.',
     ticketExpired: 'Expired',
     ticketValid: 'Valid',
-    openTicket: 'Open ticket',
+    openTicket: 'View ticket',
     loading: 'Loading…',
     emptyTitle: 'No events yet',
     emptyLead: 'Host the first event so others can find and join it.',

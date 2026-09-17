@@ -37,6 +37,8 @@ assert.match(gamesPage, /uploadEventPhoto/, 'GamesPage uploads event photo');
 assert.match(gamesPage, /fetchMyEventTickets/, 'GamesPage lists my tickets');
 assert.match(gamesPage, /joinSuccessBanner|games-join-success/, 'join success confirmation UI');
 assert.match(gamesPage, /games-my-tickets/, 'my tickets section');
+assert.match(gamesPage, /games\.viewTicket/, 'my tickets CTA uses مشاهده بلیط (viewTicket)');
+assert.doesNotMatch(gamesPage, /games\.openTicket/, 'openTicket label retired from GamesPage');
 assert.match(gamesPage, /EVENT_GAME_TYPES|pet_dating/, 'pet event types in form');
 assert.match(gamesPage, /IRAN_PROVINCES/, 'province selector');
 assert.match(gamesPage, /provinceFilter|filterProvince/, 'province list filter');

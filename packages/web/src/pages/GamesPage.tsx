@@ -330,7 +330,7 @@ export function GamesPage() {
                       rel="noreferrer"
                       data-testid={`games-ticket-${tk.ticketCode}`}
                     >
-                      {t('games.openTicket')}
+                      {t('games.viewTicket')}
                     </a>
                   </li>
                 ))}
@@ -351,7 +351,7 @@ export function GamesPage() {
                       target="_blank"
                       rel="noreferrer"
                     >
-                      {t('games.openTicket')}
+                      {t('games.viewTicket')}
                     </a>
                   </li>
                 ))}

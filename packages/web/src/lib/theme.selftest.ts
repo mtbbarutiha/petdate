@@ -196,7 +196,18 @@ assert.match(
 /* Pass 4: logged-in app shell — no leftover white canvases */
 assert.match(darkCss, /\.pepito-app-main\b/, 'app main canvas remapped');
 assert.match(darkCss, /\.pepito-home-action\b/, 'home action cards remapped');
-assert.match(darkCss, /\.pepito-vet-hero\b/, 'vet/trainer hero remapped');
+assert.match(darkCss, /\.pepito-games-card\b/, 'events cards remapped for dark');
+assert.match(darkCss, /\.pepito-games-my-tickets\b/, 'my-tickets section remapped for dark');
+assert.match(
+  darkCss,
+  /html\[data-theme=['"]dark['"]\][\s\S]{0,120}\.pepito-games-my-tickets-head h2[\s\S]{0,80}#e9d5ff/,
+  'my-tickets title uses light ink on dark surface',
+);
+assert.match(
+  darkCss,
+  /html\[data-theme=['"]dark['"]\][\s\S]{0,120}\.pepito-games-ticket-card\b[\s\S]{0,120}var\(--surface/,
+  'ticket rows use dark surface (not leftover #fff)',
+);
 assert.match(darkCss, /\.pepito-vet-online-card\.is-online/, 'vet online card remapped');
 /* No muddy mint/teal radial wash on dark vet desk surfaces */
 assert.doesNotMatch(

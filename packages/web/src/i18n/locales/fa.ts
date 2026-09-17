@@ -1009,7 +1009,7 @@ export const fa: Dict = {
     myTicketsEmpty: 'هنوز بلیط معتبری نداری.',
     ticketExpired: 'منقضی',
     ticketValid: 'معتبر',
-    openTicket: 'باز کردن بلیط',
+    openTicket: 'مشاهده بلیط',
     loading: 'در حال بارگذاری…',
     emptyTitle: 'هنوز ایونتی نیست',
     emptyLead: 'اولین ایونت را بساز تا دیگران ببینند و بپیوندند.',
