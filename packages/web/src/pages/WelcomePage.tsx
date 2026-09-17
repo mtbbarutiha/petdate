@@ -5,7 +5,7 @@ import { welcomeSectionLinks } from '../components/siteHeaderLinks';
 import { PlatformBanners } from '../components/PlatformBanners';
 import { useI18n } from '../i18n/I18nProvider';
 import { useAuthStore } from '../hooks/useAuthStore';
-import { parkBootLcp } from '../lib/parkBootLcp';
+import { parkBootLcp, unparkBootLcp } from '../lib/parkBootLcp';
 import { resolvePublicMediaUrl } from '../lib/mediaUrl';
 import { GatedLink, PawIcon } from './landingGatedLink';
 
@@ -226,17 +226,18 @@ function scheduleAfterLoadIdle(run: () => void) {
   else window.addEventListener('load', arm, { once: true });
 }
 
-/** Freeze mobile hero height in px once — svh/address-bar changes caused a scroll jump. */
+/**
+ * Freeze mobile hero height in px once — svh/address-bar changes caused a scroll jump.
+ * Prefer the head-script lock (before paint). Never re-measure nav after React mounts (CLS).
+ */
 function lockMobileHeroHeight() {
   if (typeof window === 'undefined') return;
-  if (!window.matchMedia('(max-width: 859px)').matches) {
-    document.documentElement.style.removeProperty('--pepito-hero-h');
-    return;
-  }
-  const nav = document.querySelector('.pepito-nav') as HTMLElement | null;
-  const navH = Math.round(nav?.getBoundingClientRect().height || 64);
-  const h = Math.max(240, Math.round(window.innerHeight - navH));
-  document.documentElement.style.setProperty('--pepito-hero-h', `${h}px`);
+  const root = document.documentElement;
+  if (root.getAttribute('data-pd-hero-h-locked') === '1') return;
+  if (!window.matchMedia('(max-width: 859px)').matches) return;
+  const h = Math.max(240, Math.round(window.innerHeight - 64));
+  root.style.setProperty('--pepito-hero-h', `${h}px`);
+  root.setAttribute('data-pd-hero-h-locked', '1');
 }
 
 export function WelcomePage() {
@@ -248,6 +249,8 @@ export function WelcomePage() {
   const [heroOverlay, setHeroOverlay] = useState<HeroApiSlide[] | null>(() => readBootHeroOverlay());
   /** true once boot snapshot or /api/hero is available — never block LCP on the API. */
   const [heroReady, setHeroReady] = useState(() => Boolean(readBootHeroOverlay()));
+  /** After the user leaves slide 0, React owns the in-hero photo and boot LCP stays parked. */
+  const [bootHandedOff, setBootHandedOff] = useState(false);
   const belowFoldSlotRef = useRef<HTMLDivElement>(null);
 
   const heroSlides = applyHeroOverlay(HERO_SLIDES, heroOverlay);
@@ -295,18 +298,23 @@ export function WelcomePage() {
     };
   }, []);
 
-  /* Park the HTML LCP <img> once React owns the in-hero photo. Do not move it —
-     adopt triggers a second contentful paint. Leaving it unparked + outside
-     #root (fixed, z-index 0) painted a black empty hero after #378.
-     Boot snapshot (or deferred API) makes heroReady true without blocking LCP.
-     Non-home routes park via ParkBootLcpOnNonHome + index.html boot script. */
+  /* Keep #pd-boot-lcp as the visible LCP for slide 0 — never display:none it on first paint.
+     Parking while the image was still the LCP candidate (then boot script unparking) caused
+     multi-second "element render delay". Hand off only after the user changes slides. */
   useEffect(() => {
-    if (!heroReady) return;
+    if (slide === 0 && !bootHandedOff) {
+      unparkBootLcp();
+      return;
+    }
     parkBootLcp();
+    if (slide !== 0) setBootHandedOff(true);
+  }, [slide, bootHandedOff]);
+
+  useEffect(() => {
     return () => {
       parkBootLcp();
     };
-  }, [heroReady]);
+  }, []);
 
   /* Keep lucide / WelcomeBelowFold / magazine off the LCP critical path.
      Load only after the slot is near the viewport or the user scrolls. */
@@ -367,7 +375,8 @@ export function WelcomePage() {
               className={`pepito-hero-slide${i === slide ? ' is-active' : ''}`}
               aria-hidden={i !== slide}
             >
-              {heroReady && i === slide ? (
+              {/* Slide 0 uses #pd-boot-lcp until handoff — duplicate img caused park+swap LCP delay. */}
+              {heroReady && i === slide && (i !== 0 || bootHandedOff) ? (
                 <picture>
                   <source type="image/webp" srcSet={s.srcSet || s.webp} sizes="100vw" />
                   <img
@@ -377,7 +386,7 @@ export function WelcomePage() {
                     alt={t(s.titleKey)}
                     width={1600}
                     height={900}
-                    decoding={i === 0 ? 'sync' : 'async'}
+                    decoding={i === 0 ? 'async' : 'async'}
                     loading="eager"
                     fetchPriority={i === 0 ? 'high' : 'low'}
                   />

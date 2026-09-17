@@ -28,9 +28,12 @@ const shopChrome = readFileSync(join(root, 'components/shop/ShopChrome.tsx'), 'u
 assert.match(app, /ParkBootLcpOnNonHome/, 'App parks boot LCP off the homepage');
 assert.match(app, /isHomePath/, 'App uses shared home-path helper');
 assert.match(welcome, /parkBootLcp\(\)/, 'WelcomePage parks via shared helper');
+assert.match(welcome, /unparkBootLcp\(\)/, 'WelcomePage keeps boot LCP visible on slide 0');
+assert.match(welcome, /bootHandedOff/, 'WelcomePage defers park until slide handoff');
 assert.match(indexHtml, /id="pd-park-boot-lcp"/, 'index.html parks boot LCP before React on deep links');
 assert.match(indexHtml, /id="pd-boot-hero-from-api"/, 'index.html hydrates boot LCP from /api/hero');
 assert.match(indexHtml, /getElementById\('pd-boot-lcp'\)/, 'boot script targets the LCP node');
+assert.match(indexHtml, /data-pd-react-owned/, 'boot script respects React ownership (no late unpark)');
 assert.match(pageSeo, /parkBootLcpOnNonHome/, 'prerender parks boot LCP on non-home HTML');
 assert.match(pageSeo, /stripHardcodedHeroPreload/, 'SEO strips hardcoded hero image preloads');
 assert.match(pageSeo, /pd-boot-shell-placeholder/, 'prerender strips homepage hero shell off non-home');

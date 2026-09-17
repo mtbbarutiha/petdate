@@ -43,6 +43,17 @@ const P = '/pepito/uploads';
 /** Landing teaser grid matches Pepito 4-up layout; full catalog is on /shop. */
 const LANDING_FEATURED_LIMIT = 4;
 
+/** Adoption card thumbs — 232 display / 464 for 2x (Lighthouse properly-size-images). */
+function adoptionThumb(src: string): { src: string; srcSet: string } {
+  const m = src.match(/^(.*\/)(0[1-4]-2)\.jpg$/);
+  if (!m) return { src, srcSet: '' };
+  const base = `${m[1]}${m[2]}`;
+  return {
+    src: `${base}-232.webp`,
+    srcSet: `${base}-232.webp 232w, ${base}-464.webp 464w`,
+  };
+}
+
 const BLOB_PATH =
   'M30,16C46.588,6.484,54.481-2.058,64.3,1.452c3.145,1.125,6.861,3.657,10.212,9.426A40.611,40.611,0,0,1,59.5,66.544,41.151,41.151,0,0,1,3.482,51.629C0.134,45.865-.2,41.289.375,38.125,2.228,27.979,13.544,25.436,30,16Z';
 
@@ -253,16 +264,26 @@ export function WelcomeBelowFold() {
   useEffect(() => {
     const track = svcTrackRef.current;
     if (!track) return;
+    let raf2 = 0;
     const measure = () => {
       const card = track.querySelector<HTMLElement>('.pepito-service-card');
       if (!card) return;
+      /* Read geometry only after paint — avoid forced reflow on mount. */
       svcStepRef.current = card.offsetWidth + 21.6;
     };
-    const ro = new ResizeObserver(() => {
-      requestAnimationFrame(measure);
-    });
+    const schedule = () => {
+      window.cancelAnimationFrame(raf2);
+      raf2 = window.requestAnimationFrame(() => {
+        raf2 = window.requestAnimationFrame(measure);
+      });
+    };
+    schedule();
+    const ro = new ResizeObserver(schedule);
     ro.observe(track);
-    return () => ro.disconnect();
+    return () => {
+      window.cancelAnimationFrame(raf2);
+      ro.disconnect();
+    };
   }, []);
 
   useEffect(() => {
@@ -351,8 +372,11 @@ export function WelcomeBelowFold() {
     const track = newsTrackRef.current;
     const card = track?.querySelector<HTMLElement>('.pepito-news-card');
     if (!track || !card) return;
-    newsStepRef.current = card.offsetWidth + NEWS_GAP_PX;
-    const visible = newsCarouselVisibleCount(track.clientWidth, card.offsetWidth, NEWS_GAP_PX);
+    /* Batch reads — never interleave with writes in the same turn. */
+    const cardW = card.offsetWidth;
+    const trackW = track.clientWidth;
+    newsStepRef.current = cardW + NEWS_GAP_PX;
+    const visible = newsCarouselVisibleCount(trackW, cardW, NEWS_GAP_PX);
     const pages = newsCarouselPages(newsItems.length, visible);
     newsPagesRef.current = pages;
     setNewsPages((prev) => (prev === pages ? prev : pages));
@@ -361,7 +385,6 @@ export function WelcomeBelowFold() {
 
   const scrollNewsTo = (index: number, behavior?: ScrollBehavior) => {
     const track = newsTrackRef.current;
-    if (track && newsStepRef.current <= 0) measureNews();
     const step = newsStepRef.current;
     if (!track || step <= 0) return;
     const narrow = window.matchMedia('(max-width: 720px)').matches;
@@ -378,6 +401,13 @@ export function WelcomeBelowFold() {
   const goNews = (index: number) => {
     const next = wrapCarouselIndex(index, newsPagesRef.current);
     setNewsIndex(next);
+    if (newsStepRef.current <= 0) {
+      window.requestAnimationFrame(() => {
+        measureNews();
+        scrollNewsTo(next);
+      });
+      return;
+    }
     scrollNewsTo(next);
   };
 
@@ -386,21 +416,35 @@ export function WelcomeBelowFold() {
     newsPagesRef.current = guess;
     setNewsPages(guess);
     setNewsIndex(0);
-    const id = window.requestAnimationFrame(() => {
-      measureNews();
-      scrollNewsTo(0, 'auto');
+    let raf2 = 0;
+    const raf1 = window.requestAnimationFrame(() => {
+      raf2 = window.requestAnimationFrame(() => {
+        measureNews();
+        scrollNewsTo(0, 'auto');
+      });
     });
-    return () => window.cancelAnimationFrame(id);
+    return () => {
+      window.cancelAnimationFrame(raf1);
+      window.cancelAnimationFrame(raf2);
+    };
   }, [newsItems.length]);
 
   useEffect(() => {
     const track = newsTrackRef.current;
     if (!track) return;
-    const ro = new ResizeObserver(() => {
-      requestAnimationFrame(measureNews);
-    });
+    let raf2 = 0;
+    const schedule = () => {
+      window.cancelAnimationFrame(raf2);
+      raf2 = window.requestAnimationFrame(() => {
+        raf2 = window.requestAnimationFrame(measureNews);
+      });
+    };
+    const ro = new ResizeObserver(schedule);
     ro.observe(track);
-    return () => ro.disconnect();
+    return () => {
+      window.cancelAnimationFrame(raf2);
+      ro.disconnect();
+    };
   }, [newsItems.length]);
 
   /* Keep dots in sync when the user swipes the news track (RTL-aware). */
@@ -440,7 +484,16 @@ export function WelcomeBelowFold() {
         <div className="pepito-about-media">
           <div className="pepito-about-item">
             <div className="pepito-about-photo">
-              <img src="/media/lcp/about-800.webp" alt={t('landing.aboutImgAlt')} loading="lazy" width={800} height={647} decoding="async" />
+              <img
+                src="/media/lcp/about-480.webp"
+                srcSet="/media/lcp/about-480.webp 480w, /media/lcp/about-800.webp 800w"
+                sizes="(max-width: 859px) 92vw, 480px"
+                alt={t('landing.aboutImgAlt')}
+                loading="lazy"
+                width={480}
+                height={388}
+                decoding="async"
+              />
             </div>
             {/* Pepito `.note.vert-move` floating quote on the about photo */}
             <aside className="pepito-about-note pepito-vert-move" aria-label={t('landing.aboutQuoteAria')}>
@@ -557,10 +610,20 @@ export function WelcomeBelowFold() {
         <div className="pepito-adoption-grid">
           {PETS.map((p) => {
             const name = t(p.nameKey);
+            const thumb = adoptionThumb(p.img);
             return (
             <article key={p.nameKey} className="pepito-adoption-card">
               <div className="pepito-adoption-media">
-                <img src={p.img} alt={name} loading="lazy" width={600} height={700} decoding="async" />
+                <img
+                  src={thumb.src}
+                  srcSet={thumb.srcSet || undefined}
+                  sizes="(max-width: 859px) 42vw, 232px"
+                  alt={name}
+                  loading="lazy"
+                  width={232}
+                  height={232}
+                  decoding="async"
+                />
                 <div className="pepito-adoption-shade" aria-hidden />
               </div>
               <div className="pepito-adoption-front">
