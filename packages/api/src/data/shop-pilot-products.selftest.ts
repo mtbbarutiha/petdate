@@ -168,7 +168,9 @@ async function main() {
     'no purple-bg test slug'
   );
 
-  const pepitoCss = readFileSync(join(repoRoot, 'packages/web/src/styles/pepito.css'), 'utf8');
+  const pepitoCss =
+    readFileSync(join(repoRoot, 'packages/web/src/styles/pepito.css'), 'utf8') +
+    readFileSync(join(repoRoot, 'packages/web/src/styles/pepito-shop.css'), 'utf8');
   assert.match(
     pepitoCss,
     /\.pd-shop-card-media\s*\{[^}]*background:\s*#ffffff/,
