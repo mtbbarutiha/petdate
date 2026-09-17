@@ -1,5 +1,5 @@
 /**
- * مشورت با صاحبین — early refund under 1s + fee split 6/3.
+ * مشورت با صاحبین — early refund under 1s + fee split 5/3.
  * Run: cd packages/api && npx tsx src/services/seeker-advice-early-refund.selftest.ts
  */
 export {};
@@ -17,7 +17,7 @@ async function main() {
     SEEKER_OWNER_SHARE,
     SEEKER_ADVICE_EARLY_REFUND_MS,
   } = await import('@petdate/shared');
-  assert(SEEKER_ADVICE_COST === 6, 'cost 6');
+  assert(SEEKER_ADVICE_COST === 5, 'cost 5');
   assert(SEEKER_OWNER_SHARE === 3, 'owner share 3');
   assert(SEEKER_ADVICE_EARLY_REFUND_MS === 1000, 'early refund 1s');
 
@@ -25,7 +25,7 @@ async function main() {
   getDb();
 
   const split = consultFeeSplit('seeker_advice');
-  assert(split.cost === 6 && split.providerShare === 3, 'split 6/3');
+  assert(split.cost === 5 && split.providerShare === 3, 'split 5/3');
   assert(split.debitReason.includes('مشورت با صاحبین'), 'debit reason label');
 
   const stamp = Date.now();
@@ -77,7 +77,7 @@ async function main() {
 
   const early = dbService.refundEarlySeekerAdviceIfEligible(consult.id);
   assert(early.refunded === true, 'early refund');
-  assert(early.amount === SEEKER_ADVICE_COST, 'refund 6');
+  assert(early.amount === SEEKER_ADVICE_COST, 'refund 5');
 
   const afterPatient = dbService.getUserById(patient.id)!.coins ?? 0;
   assert(afterPatient === before, 'patient restored');

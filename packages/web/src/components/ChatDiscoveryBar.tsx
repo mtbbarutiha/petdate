@@ -13,7 +13,7 @@ type Props = {
 
 /**
  * Chat-list discovery chips (nearby / same-breed / same-province / contacts).
- * Shown on both mobile and desktop list panes.
+ * Pet owners: playmate discovery. No-pet role: owner discovery chips.
  */
 export function ChatDiscoveryBar({ onSent, onOpenContact }: Props) {
   const { user: authUser, isLoggedIn } = useAuthStore();
@@ -22,6 +22,7 @@ export function ChatDiscoveryBar({ onSent, onOpenContact }: Props) {
   const active =
     primaryRole(authUser?.roles, authUser?.role) ?? primaryRole(user.roles, user.role);
   const isPetOwner = active === 'pet_owner';
+  const isNoPet = active === 'no_pet';
   const [myPets, setMyPets] = useState<PetProfile[]>([]);
 
   const loadMyPets = useCallback(async () => {
@@ -41,12 +42,13 @@ export function ChatDiscoveryBar({ onSent, onOpenContact }: Props) {
     void loadMyPets();
   }, [loadMyPets]);
 
-  if (!isPetOwner) return null;
+  if (!isPetOwner && !isNoPet) return null;
 
   return (
     <div className="tg-chat-list-discovery-bar" data-testid="chat-list-discovery-bar">
       <PetDiscoveryPanel
         variant="bar"
+        audience={isNoPet ? 'owners' : 'playmate'}
         myPets={myPets}
         onSent={onSent}
         onOpenContact={onOpenContact}

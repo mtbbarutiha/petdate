@@ -18,7 +18,7 @@ import {
 import { getSession, upsertSession } from '../session';
 import { getCtxUser, menuKeyboardFor } from './helpers';
 import { startVetChat, enterAiConsultChatAsPatient } from './vet-chat';
-import { TRAINER_MENU, textStepKeyboard } from '../keyboards';
+import { TRAINER_MENU, textStepKeyboard, SEEKER_ADVICE_GENDER_FEMALE, SEEKER_ADVICE_GENDER_MALE } from '../keyboards';
 
 function patientLabel(c: VetConsultation): string {
   const name = c.patientName?.trim() || `کاربر #${c.patientUserId}`;
@@ -204,7 +204,11 @@ async function runQuickConnect(
   ctx: Context,
   kind: 'trainer' | 'sitter' | 'seeker_advice',
   costHint: number,
-  opts?: { preferAi?: boolean; humanOnly?: boolean }
+  opts?: {
+    preferAi?: boolean;
+    humanOnly?: boolean;
+    ownerGender?: 'female' | 'male';
+  }
 ): Promise<void> {
   const user = await getCtxUser(ctx);
   if (!user) {
@@ -218,6 +222,7 @@ async function runQuickConnect(
       kind,
       preferAi: opts?.preferAi,
       humanOnly: opts?.humanOnly,
+      ownerGender: opts?.ownerGender,
     });
   } catch (err) {
     console.error('marketplace quick connect failed:', err);
@@ -238,6 +243,7 @@ async function runQuickConnect(
         confirmResend: true,
         preferAi: opts?.preferAi,
         humanOnly: opts?.humanOnly,
+        ownerGender: opts?.ownerGender,
       });
       if (retry.ok) {
         await ctx.reply(retry.message, { reply_markup: menuKeyboardFor(ctx, user) });
@@ -326,10 +332,36 @@ export async function handleRequestSeekerAdvice(ctx: Context): Promise<void> {
       `هزینه: ${SEEKER_ADVICE_COST} سکه (${SEEKER_OWNER_SHARE} صاحب + ${SEEKER_ADVICE_COST - SEEKER_OWNER_SHARE} پلتفرم).`,
       'موضوع‌ها: داشتن پت، نگهداری، هزینه‌ها.',
       'اگر گفتگو زیر ۱ ثانیه قطع شود، سکه‌ات برمی‌گردد.',
+      '',
+      'مشاور چه جنسیتی باشد؟',
+    ].join('\n'),
+    {
+      reply_markup: new InlineKeyboard()
+        .text(SEEKER_ADVICE_GENDER_FEMALE, 'seeker:gender:female')
+        .primary()
+        .row()
+        .text(SEEKER_ADVICE_GENDER_MALE, 'seeker:gender:male')
+        .primary(),
+    }
+  );
+}
+
+export async function handleSeekerAdviceGender(
+  ctx: Context,
+  ownerGender: 'female' | 'male'
+): Promise<void> {
+  await ctx.answerCallbackQuery().catch(() => undefined);
+  const genderNote = ownerGender === 'female' ? 'مشاور خانم' : 'مشاور آقا';
+  await ctx.reply(
+    [
+      `⏳ در حال ارسال درخواست مشورت (${genderNote})…`,
+      `هزینه: ${SEEKER_ADVICE_COST} سکه.`,
     ].join('\n'),
     { reply_markup: menuKeyboardFor(ctx, await getCtxUser(ctx)) }
   );
-  await runQuickConnect(ctx, 'seeker_advice', SEEKER_ADVICE_COST);
+  await runQuickConnect(ctx, 'seeker_advice', SEEKER_ADVICE_COST, {
+    ownerGender,
+  });
 }
 
 

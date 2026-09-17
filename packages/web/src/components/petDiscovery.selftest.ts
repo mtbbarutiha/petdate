@@ -56,7 +56,15 @@ assert.match(fa, /discoverySendRequest:\s*'ارسال درخواست'/, 'fa send
 assert.match(fa, /discoveryNearbyCount:\s*'\{n\} نفر/, 'fa people count nearby');
 assert.match(en, /discoverySendRequest:\s*'Send request'/, 'en send request CTA');
 assert.match(en, /discoveryContacts:\s*'Contacts'/, 'en contacts label');
+assert.match(panel, /audience\?: 'playmate' \| 'owners'/, 'panel supports owners audience');
+assert.match(panel, /discoveryOwnersNearby/, 'no-pet nearby owners label');
+assert.match(panel, /pet-discovery-breed-picker/, 'no-pet breed picker');
+assert.match(panel, /preferredProviderId/, 'owners consult targets provider');
+assert.match(fa, /discoveryOwnersNearby:\s*'مالکین نزدیک من'/, 'fa nearby owners');
+assert.match(fa, /discoveryOwnersBreed:\s*'مالکین نژاد'/, 'fa breed owners');
+assert.match(fa, /discoveryOwnersProvince:\s*'هم استان'/, 'fa same province owners');
 assert.match(ci, /petDiscovery\.selftest/, 'CI runs pet discovery selftest');
+assert.match(ci, /ownerConsult\.selftest/, 'CI runs owner consult selftest');
 
 function stubPet(partial: Partial<PetProfile> & Pick<PetProfile, 'id' | 'ownerId' | 'name'>): PetProfile {
   return {

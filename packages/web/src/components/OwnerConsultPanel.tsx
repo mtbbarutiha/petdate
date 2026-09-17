@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { MessageCircleHeart } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { MessageCircleHeart, UserRound, UserRoundSearch } from 'lucide-react';
 import {
   SEEKER_ADVICE_COST,
   SEEKER_OWNER_SHARE,
@@ -10,6 +11,7 @@ import { ConfirmModal } from './ConfirmModal';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { useAppToast } from '../hooks/useAppToast';
 import { useUserStore } from '../hooks/useUserStore';
+import { useI18n } from '../i18n';
 import { quickVetConnect } from '../lib/api';
 
 function formatCoins(n: number): string {
@@ -24,18 +26,22 @@ export type OwnerConsultPanelProps = {
 
 /**
  * «مشورت با صاحبین» — جایگزین پیدا کردن همبازی برای نقش بدون پت / بدون نقش صاحب.
- * هزینه ۶ سکه؛ قطع زیر ۱ ثانیه → بازگشت کامل (سمت API).
+ * هزینه ۵ سکه؛ قطع زیر ۱ ثانیه → بازگشت کامل (سمت API).
+ * CTA مثل همبازی: انتخاب جنسیت مشاور قبل از ارسال.
  */
 export function OwnerConsultPanel({
   compact = false,
   variant = 'panel',
   onSent,
 }: OwnerConsultPanelProps) {
+  const { t } = useI18n();
   const { user } = useUserStore();
   const { user: authUser, token, isLoggedIn, refreshMe } = useAuthStore();
   const { toastError, toastSuccess } = useAppToast();
   const [busy, setBusy] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [genderPickOpen, setGenderPickOpen] = useState(false);
+  const [pendingGender, setPendingGender] = useState<'female' | 'male' | null>(null);
   const [statusLine, setStatusLine] = useState<string | null>(null);
 
   const myUserId = authUser?.id ?? user.id;
@@ -43,7 +49,7 @@ export function OwnerConsultPanel({
   const cost = SEEKER_ADVICE_COST;
   const ownerShare = SEEKER_OWNER_SHARE;
 
-  async function runConnect(confirmResend = false) {
+  function openGenderPick() {
     if (!myUserId || !isLoggedIn) {
       toastError('اول وارد شو');
       return;
@@ -54,6 +60,36 @@ export function OwnerConsultPanel({
       );
       return;
     }
+    setPendingGender(null);
+    setGenderPickOpen(true);
+  }
+
+  function dismissGenderPick() {
+    if (busy) return;
+    setGenderPickOpen(false);
+  }
+
+  function chooseGender(gender: 'female' | 'male') {
+    setGenderPickOpen(false);
+    setPendingGender(gender);
+    void runConnect(false, gender);
+  }
+
+  async function runConnect(
+    confirmResend = false,
+    ownerGender?: 'female' | 'male' | null
+  ) {
+    if (!myUserId || !isLoggedIn) {
+      toastError('اول وارد شو');
+      return;
+    }
+    if (balance < cost) {
+      toastError(
+        `برای مشورت با صاحبین حداقل ${formatCoins(cost)} سکه لازم داری. موجودی: ${formatCoins(balance)}`
+      );
+      return;
+    }
+    const gender = ownerGender ?? pendingGender ?? undefined;
     setBusy(true);
     setStatusLine('در حال ارسال درخواست…');
     try {
@@ -61,10 +97,12 @@ export function OwnerConsultPanel({
         kind: 'seeker_advice',
         confirmResend,
         humanOnly: true,
+        ownerGender: gender ?? undefined,
       });
       await refreshMe().catch(() => undefined);
       setStatusLine(res.message || `درخواست ارسال شد · ${formatCoins(res.cost)} سکه`);
       toastSuccess(res.message || 'درخواست مشورت با صاحبین ارسال شد');
+      setPendingGender(null);
       onSent?.();
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'ارسال ناموفق بود';
@@ -80,34 +118,123 @@ export function OwnerConsultPanel({
     }
   }
 
+  const genderModal =
+    genderPickOpen && typeof document !== 'undefined'
+      ? createPortal(
+          <div
+            className="pepito-lead-modal-overlay"
+            role="presentation"
+            data-testid="owner-consult-gender"
+            onClick={(e) => {
+              if (e.target === e.currentTarget && !busy) dismissGenderPick();
+            }}
+          >
+            <div
+              className="pepito-lead-modal pepito-confirm-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-label={t('chats.consultOwnerGenderTitle')}
+            >
+              <header className="pepito-lead-modal__head">
+                <h2>{t('chats.consultOwnerGenderTitle')}</h2>
+                <button
+                  type="button"
+                  className="pepito-lead-modal__close"
+                  aria-label={t('common.close')}
+                  onClick={dismissGenderPick}
+                  disabled={busy}
+                >
+                  ×
+                </button>
+              </header>
+              <div className="pepito-lead-modal__body">
+                <div
+                  className="find-playmate-gender-options"
+                  role="group"
+                  aria-label={t('chats.consultOwnerGenderTitle')}
+                >
+                  <button
+                    type="button"
+                    className="pepito-btn button-1 find-playmate-gender-btn"
+                    data-testid="owner-consult-gender-female"
+                    disabled={busy}
+                    onClick={() => chooseGender('female')}
+                  >
+                    <UserRound size={18} strokeWidth={2.25} aria-hidden />
+                    {t('chats.consultOwnerGenderFemale')}
+                  </button>
+                  <button
+                    type="button"
+                    className="pepito-btn button-1 find-playmate-gender-btn"
+                    data-testid="owner-consult-gender-male"
+                    disabled={busy}
+                    onClick={() => chooseGender('male')}
+                  >
+                    <UserRoundSearch size={18} strokeWidth={2.25} aria-hidden />
+                    {t('chats.consultOwnerGenderMale')}
+                  </button>
+                </div>
+                <p className="pepito-lead-modal__lead" style={{ marginTop: 12 }}>
+                  هزینه: {formatCoins(cost)} سکه · موجودی: {formatCoins(balance)} سکه
+                </p>
+                <div className="pepito-lead-modal__actions">
+                  <button
+                    type="button"
+                    className="pepito-btn button-2"
+                    onClick={dismissGenderPick}
+                    disabled={busy}
+                  >
+                    {t('common.cancel')}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>,
+          document.body
+        )
+      : null;
+
+  const resendModal = (
+    <ConfirmModal
+      open={confirmOpen}
+      title="ارسال مجدد؟"
+      confirmLabel="بله، دوباره بفرست"
+      cancelLabel="نه"
+      busy={busy}
+      onCancel={() => setConfirmOpen(false)}
+      onConfirm={() => {
+        setConfirmOpen(false);
+        void runConnect(true, pendingGender);
+      }}
+    >
+      میخوای مجدد درخواست بدی به صاحبین؟
+    </ConfirmModal>
+  );
+
+  const ctaLabel = busy ? 'در حال ارسال…' : t('chats.consultCta');
+  const headerLabel = busy ? '…' : t('chats.consultCtaShort');
+
   if (variant === 'header') {
     return (
       <>
-        <button
-          type="button"
-          className="tg-icon-btn find-playmate-header owner-consult-header"
-          onClick={() => void runConnect(false)}
-          disabled={busy}
-          aria-label="مشورت با صاحبین"
-          title={`مشورت با صاحبین · ${formatCoins(cost)} سکه`}
-        >
-          <MessageCircleHeart size={18} />
-          <span className="find-playmate-header__label">مشورت</span>
-        </button>
-        <ConfirmModal
-          open={confirmOpen}
-          title="ارسال مجدد؟"
-          confirmLabel="بله، دوباره بفرست"
-          cancelLabel="نه"
-          busy={busy}
-          onCancel={() => setConfirmOpen(false)}
-          onConfirm={() => {
-            setConfirmOpen(false);
-            void runConnect(true);
-          }}
-        >
-          میخوای مجدد درخواست بدی به صاحبین؟
-        </ConfirmModal>
+        <div className="find-playmate-header owner-consult-header">
+          <button
+            type="button"
+            className="find-playmate-header-btn"
+            onClick={openGenderPick}
+            disabled={busy}
+            aria-label={t('chats.consultCta')}
+            title={`${t('chats.consultCta')} · ${formatCoins(cost)} سکه`}
+            data-testid="owner-consult-header"
+          >
+            <span className="pepito-btn-icon find-playmate-paw" aria-hidden>
+              <MessageCircleHeart size={18} strokeWidth={2.25} />
+            </span>
+            <span>{headerLabel}</span>
+          </button>
+        </div>
+        {genderModal}
+        {resendModal}
       </>
     );
   }
@@ -136,10 +263,13 @@ export function OwnerConsultPanel({
         type="button"
         className="pepito-btn button-1 owner-consult-panel__cta"
         disabled={busy || balance < cost}
-        onClick={() => void runConnect(false)}
+        onClick={openGenderPick}
         data-testid="owner-consult-cta"
       >
-        {busy ? 'در حال ارسال…' : `شروع مشورت · ${formatCoins(cost)} سکه`}
+        <span className="pepito-btn-icon" aria-hidden>
+          <MessageCircleHeart size={16} strokeWidth={2.25} />
+        </span>
+        {ctaLabel}
       </button>
       {balance < cost ? (
         <p className="owner-consult-panel__hint owner-consult-panel__hint--warn" role="alert">
@@ -150,20 +280,8 @@ export function OwnerConsultPanel({
           اگر گفتگو زیر یک ثانیه قطع شود، هر {formatCoins(cost)} سکه برمی‌گردد.
         </p>
       )}
-      <ConfirmModal
-        open={confirmOpen}
-        title="ارسال مجدد؟"
-        confirmLabel="بله، دوباره بفرست"
-        cancelLabel="نه"
-        busy={busy}
-        onCancel={() => setConfirmOpen(false)}
-        onConfirm={() => {
-          setConfirmOpen(false);
-          void runConnect(true);
-        }}
-      >
-        میخوای مجدد درخواست بدی به صاحبین؟
-      </ConfirmModal>
+      {genderModal}
+      {resendModal}
     </div>
   );
 }

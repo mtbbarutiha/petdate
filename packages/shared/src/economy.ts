@@ -24,10 +24,10 @@ export const TRAINER_SYSTEM_FEE = TRAINER_CONSULT_COST - TRAINER_PROVIDER_SHARE;
 
 /**
  * مشورت با صاحبین (نقش بدون پت / بدون نقش صاحب)
- * هزینه کل ۶ سکه: ۳ صاحب + ۳ پلتفرم.
- * اگر چت زیر ۱ ثانیه قطع شود، هر ۶ سکه به بیمار برمی‌گردد.
+ * هزینه کل ۵ سکه: ۳ صاحب + ۲ پلتفرم.
+ * اگر چت زیر ۱ ثانیه قطع شود، هر ۵ سکه به بیمار برمی‌گردد.
  */
-export const SEEKER_ADVICE_COST = 6;
+export const SEEKER_ADVICE_COST = 5;
 export const SEEKER_OWNER_SHARE = 3;
 export const SEEKER_SYSTEM_FEE = SEEKER_ADVICE_COST - SEEKER_OWNER_SHARE;
 /** قطع زیر این مدت → بازگشت کامل هزینه مشورت با صاحبین */

@@ -318,6 +318,21 @@ consultationsRouter.post(['/quick-connect', '/quick-connection'], async (req, re
   const preferAi = Boolean(req.body?.preferAi || req.body?.aiOnly);
   /** Human coach/doctor only — do not fall back to AI when nobody is online. */
   const humanOnly = Boolean(req.body?.humanOnly || req.body?.preferHuman);
+  const ownerGenderRaw = String(
+    req.body?.ownerGender ?? req.body?.preferredGender ?? ''
+  )
+    .trim()
+    .toLowerCase();
+  const ownerGender =
+    ownerGenderRaw === 'female' || ownerGenderRaw === 'male'
+      ? ownerGenderRaw
+      : undefined;
+  const preferredProviderRaw =
+    req.body?.preferredProviderId ?? req.body?.providerUserId ?? req.body?.vetUserId;
+  const preferredProviderId =
+    preferredProviderRaw != null && Number.isFinite(Number(preferredProviderRaw))
+      ? Math.floor(Number(preferredProviderRaw))
+      : undefined;
   const kindRaw = String(req.body?.kind ?? 'vet').trim();
   const serviceKind: ConsultServiceKind = CONSULT_SERVICE_KINDS.includes(
     kindRaw as ConsultServiceKind
@@ -446,8 +461,17 @@ consultationsRouter.post(['/quick-connect', '/quick-connection'], async (req, re
       ? dbService.listOnlineVetsForQuickConnect()
       : serviceKind === 'trainer'
         ? dbService.listOnlineProvidersForQuickConnect('trainer')
-        : dbService.listOwnersAcceptingSeekerAdvice();
+        : dbService.listOwnersAcceptingSeekerAdvice({
+            gender: ownerGender,
+            preferredProviderId:
+              serviceKind === 'seeker_advice' ? preferredProviderId : undefined,
+          });
   providers = providers.filter((v) => v.id !== patient.id);
+  if (serviceKind === 'seeker_advice' && ownerGender) {
+    // Prefer exact gender matches; drop unknowns only when at least one exact match exists.
+    const exact = providers.filter((v) => v.gender === ownerGender);
+    if (exact.length) providers = exact;
+  }
 
   if (!providers.length) {
     // Vet / trainer: fall back to AI assistant instead of hard error (unless human-only).
@@ -1281,7 +1305,7 @@ consultationsRouter.post('/:id/end-chat', async (req, res) => {
   }
 
   const wasSecure = Boolean(gate.consult.chatSecure);
-  // مشورت با صاحبین: قطع زیر ۱ ثانیه → بازگشت ۶ سکه (قبل از پاک‌کردن چت)
+  // مشورت با صاحبین: قطع زیر ۱ ثانیه → بازگشت کامل هزینه (قبل از پاک‌کردن چت)
   const earlyRefund = dbService.refundEarlySeekerAdviceIfEligible(id);
   purgeVetConsultUploads(id);
   const updated = dbService.endVetConsultChat(id);

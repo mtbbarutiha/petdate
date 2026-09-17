@@ -266,6 +266,7 @@ import {
   handleRequestSeekerAdvice,
   handleRequestSitter,
   handleRequestTrainer,
+  handleSeekerAdviceGender,
   handleTrainerChoice,
   handleToggleSeekerAdvice,
 } from './marketplace';
@@ -428,6 +429,9 @@ export function registerHandlers(bot: Bot): void {
       Number(ctx.match![2]),
       ctx.match![1] as 'female' | 'male'
     )
+  );
+  bot.callbackQuery(/^seeker:gender:(female|male)$/, (ctx) =>
+    handleSeekerAdviceGender(ctx, ctx.match![1] as 'female' | 'male')
   );
 
   bot.callbackQuery(/^playdate:ask:(\d+)$/, (ctx) => handlePlaydateAsk(ctx, Number(ctx.match![1])));
