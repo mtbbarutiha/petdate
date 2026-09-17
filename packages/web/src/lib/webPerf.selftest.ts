@@ -269,10 +269,10 @@ assert.match(appTsx, /const WelcomePage = lazy/, 'WelcomePage is route-lazy (sma
 assert.doesNotMatch(appTsx, /import \{ WelcomePage \}/, 'WelcomePage must not be a static App import');
 assert.match(appTsx, /lazy\(\(\) =>\s*import\('\.\/components\/AppDialog'\)/, 'AppDialogHost is lazy off landing entry');
 assert.match(appTsx, /lazy\(\(\) =>\s*import\('\.\/components\/FaceVerifyRewardToast'\)/, 'FaceVerify toast is lazy off landing entry');
-assert.match(appTsx, /lazy\(\(\) =>\s*import\('\.\/pages\/VetConsultRoute'\)/, 'VetConsultRoute is lazy off landing entry');
 assert.doesNotMatch(appTsx, /import \{ AppDialogHost \}/, 'AppDialogHost must not be a static App import');
 assert.doesNotMatch(appTsx, /import \{ FaceVerifyRewardToast \}/, 'FaceVerify must not be a static App import');
-assert.doesNotMatch(appTsx, /import \{ VetConsultRoute \}/, 'VetConsultRoute must not be a static App import');
+assert.match(appTsx, /import \{ VetConsultRoute \}/, 'VetConsultRoute shell stays eager (old-SW /vet-consult)');
+assert.doesNotMatch(appTsx, /const VetConsultRoute = lazy/, 'VetConsultRoute must not be a lazy App import');
 assert.match(
   readFileSync(join(webSrc, 'styles/loadAppCss.ts'), 'utf8'),
   /import\('\.\/theme-dark\.css'\)[\s\S]*?import\('\.\/pepito\.css'\)/,
