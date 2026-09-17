@@ -3880,11 +3880,11 @@ html[data-theme='dark'] .pepito-games-ticket-card strong {
   color: var(--text, #f1f5f9);
 }
 html[data-theme='dark'] .pepito-games-join-success {
-  background: color-mix(in srgb, var(--surface, #1e293b) 85%, #10b981 15%);
-  border-color: color-mix(in srgb, #10b981 40%, var(--border, #334155));
+  background: color-mix(in srgb, var(--surface, #1e293b) 82%, #5b2d8e 18%);
+  border-color: color-mix(in srgb, #e91e8c 35%, var(--border, #334155));
 }
 html[data-theme='dark'] .pepito-games-join-success-text strong {
-  color: #a7f3d0;
+  color: #e9d5ff;
 }
 html[data-theme='dark'] .pepito-games-join-success-text span {
   color: var(--text-secondary, #94a3b8);
