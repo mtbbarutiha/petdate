@@ -200,7 +200,10 @@ function RedisMetric({ label, value }: { label: string; value: string | number |
 }
 
 function RedisNodeCard({ node, title }: { node: RedisInstanceSnap; title: string }) {
-  const tone = checkTone(node);
+  const tone = checkTone({
+    ok: node.status === 'up' || node.status === 'warn' || node.status === 'not_configured',
+    status: node.status,
+  });
   return (
     <div className={`admin-redis-node is-${tone}`} data-status={node.status}>
       <div className="admin-redis-node-head">
