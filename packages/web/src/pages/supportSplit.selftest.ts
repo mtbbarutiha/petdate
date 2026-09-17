@@ -28,6 +28,6 @@ assert.match(ticket, /lastPublicReply/, 'ticket list shows public reply');
 assert.match(chat, /ساناز غفاری|AI_ASSISTANT_DISPLAY_NAME/, 'chat uses support agent name');
 assert.match(chat, /AI_SUPPORT_AVATAR_URL/, 'chat header uses support avatar');
 assert.match(agent, /ساناز غفاری/, 'canonical agent name');
-assert.match(agent, /sanaz-ghaffari\.jpg/, 'canonical Sanaz avatar path');
+assert.match(agent, /sanaz-ghaffari-480\.webp/, 'canonical Sanaz avatar path');
 
 console.log('supportSplit.selftest: ok');
