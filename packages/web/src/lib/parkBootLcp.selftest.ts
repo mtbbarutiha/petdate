@@ -34,7 +34,9 @@ assert.match(indexHtml, /getElementById\('pd-boot-lcp'\)/, 'boot script targets 
 assert.match(pageSeo, /parkBootLcpOnNonHome/, 'prerender parks boot LCP on non-home HTML');
 assert.match(pageSeo, /stripHardcodedHeroPreload/, 'SEO strips hardcoded hero image preloads');
 assert.match(pageSeo, /pd-boot-shell-placeholder/, 'prerender strips homepage hero shell off non-home');
-assert.match(welcome, /heroReady/, 'WelcomePage gates slide photos on hero API readiness');
+assert.match(welcome, /heroReady/, 'WelcomePage gates slide photos on hero readiness');
+assert.match(welcome, /pd-hero-boot-json|readBootHeroOverlay/, 'WelcomePage seeds from boot snapshot');
+assert.match(welcome, /scheduleAfterLoadIdle/, 'WelcomePage defers /api/hero off the critical path');
 assert.match(
   shopChrome,
   /pepito-landing--with-dock/,

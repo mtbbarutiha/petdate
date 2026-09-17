@@ -1,4 +1,4 @@
-import { useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import {
   Download,
   HeartHandshake,
@@ -73,6 +73,10 @@ export function AppLandingPage() {
   const [phone, setPhone] = useState('');
   const [smsNote, setSmsNote] = useState<string | null>(null);
   const [smsBusy, setSmsBusy] = useState(false);
+
+  useEffect(() => {
+    void import('../styles/app-landing.css');
+  }, []);
 
   const downloadUrl = useMemo(() => {
     if (typeof window === 'undefined') return `${SITE.origin}${ANDROID_APK_HREF}`;

@@ -66,7 +66,8 @@ assert.match(
   /html\[data-theme=['"]dark['"]\]\s+\.pd-app-land-phone-screen\b/,
   'dark theme restyles phone mock screen'
 );
-assert.match(main, /app-landing\.css/);
+assert.match(page, /app-landing\.css/, 'app-landing page loads its CSS on mount');
+assert.doesNotMatch(main, /import ['\"]\.\/styles\/app-landing\.css['\"]/, 'app-landing CSS is not a static main import');
 assert.ok(existsSync(apkPath), 'public APK missing');
 assert.ok(statSync(apkPath).size > 100_000, 'APK too small');
 

@@ -11,15 +11,7 @@ import {
 import { tomanToShopCoins, tomanToShopStars } from '@petdate/shared';
 import { isRetiredShopProduct } from '../data/retired-shop-products';
 import { getProduct, type ShopProduct } from '../data/shopCatalog';
-import {
-  addShopCartItem,
-  clearShopCartApi,
-  fetchShopCart,
-  mergeShopCart,
-  removeShopCartItem,
-  setShopCartItemQty,
-  type ShopCartApiLine,
-} from '../lib/api';
+import type { ShopCartApiLine } from '../lib/api';
 import { useAuthStore } from './useAuthStore';
 import { hydrateShopCatalogOnce } from './useShopCatalogSync';
 import { localCartIsAhead, mergeCartLinesKeepLocal } from './shopCartMerge';
@@ -29,6 +21,11 @@ const STORAGE_KEY = 'petdate.shop.cart.v1';
 const ORDERS_KEY = 'petdate.shop.orders.v1';
 /** Sync rule documented for ops / PR: guest ∪ server (sum qty) then persist server. */
 export const SHOP_CART_SYNC_RULE = 'merge-then-persist' as const;
+
+/** Keep the large api.ts client off the landing entry; load when cart syncs. */
+function shopCartApi() {
+  return import('../lib/api');
+}
 
 export interface CartLine {
   productId: string;
@@ -230,7 +227,8 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
       const fromServer = apiLinesToCart(serverLines);
       const next = applyServerLines(serverLines, 'merge');
       if (!token || !localCartIsAhead(fromServer, next)) return;
-      void mergeShopCart(token, next)
+      void shopCartApi()
+        .then(({ mergeShopCart }) => mergeShopCart(token, next))
         .then((data) => {
           if (userClearedRef.current && linesRef.current.length === 0) return;
           applyServerLines(data.lines, 'merge');
@@ -255,7 +253,7 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
     if (!token) return;
     if (inflightMutationsRef.current > 0) return;
     try {
-      const data = await fetchShopCart(token);
+      const data = await (await shopCartApi()).fetchShopCart(token);
       applyFetchedServerLines(data.lines);
     } catch {
       /* keep local mirror on transient errors */
@@ -275,10 +273,11 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
     const guest = readLines();
     void (async () => {
       try {
+        const api = await shopCartApi();
         const data =
           guest.length > 0
-            ? await mergeShopCart(token, guest)
-            : await fetchShopCart(token);
+            ? await api.mergeShopCart(token, guest)
+            : await api.fetchShopCart(token);
         if (cancelled) return;
         applyFetchedServerLines(data.lines);
       } catch {
@@ -396,7 +395,9 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
     if (token) {
       for (const ghost of retired) {
         /* no userIntent — server allows missing/retired demo cleanup only */
-        void removeShopCartItem(token, ghost.productId).catch(() => undefined);
+        void shopCartApi()
+          .then(({ removeShopCartItem }) => removeShopCartItem(token, ghost.productId))
+          .catch(() => undefined);
       }
     }
   }, [lines, token]);
@@ -416,7 +417,8 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
       });
       if (token) {
         inflightMutationsRef.current += 1;
-        void addShopCartItem(token, productId, n)
+        void shopCartApi()
+          .then(({ addShopCartItem }) => addShopCartItem(token, productId, n))
           .then((data) =>
             applyServerLines(data.lines, inflightMutationsRef.current > 1 ? 'merge' : 'replace')
           )
@@ -495,7 +497,8 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
       });
       if (token) {
         inflightMutationsRef.current += 1;
-        void setShopCartItemQty(token, productId, qty)
+        void shopCartApi()
+          .then(({ setShopCartItemQty }) => setShopCartItemQty(token, productId, qty))
           .then((data) =>
             applyServerLines(data.lines, inflightMutationsRef.current > 1 ? 'merge' : 'replace')
           )
@@ -513,7 +516,10 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
       setLines((prev) => prev.filter((l) => l.productId !== productId));
       if (token) {
         inflightMutationsRef.current += 1;
-        void removeShopCartItem(token, productId, { userIntent: true })
+        void shopCartApi()
+          .then(({ removeShopCartItem }) =>
+            removeShopCartItem(token, productId, { userIntent: true })
+          )
           .then((data) =>
             applyServerLines(data.lines, inflightMutationsRef.current > 1 ? 'merge' : 'replace')
           )
@@ -531,7 +537,9 @@ export function ShopCartProvider({ children }: { children: ReactNode }) {
     setLines([]);
     clearLocalLines();
     if (token) {
-      void clearShopCartApi(token).catch(() => undefined);
+      void shopCartApi()
+        .then(({ clearShopCartApi }) => clearShopCartApi(token))
+        .catch(() => undefined);
     }
   }, [token]);
 

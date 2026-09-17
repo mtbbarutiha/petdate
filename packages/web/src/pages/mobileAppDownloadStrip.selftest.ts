@@ -40,7 +40,11 @@ assert.match(welcomeBelow, /SiteFooter/);
 assert.ok(welcomeBelow.indexOf('MobileAppDownloadStrip') < welcomeBelow.indexOf('SiteFooter'));
 assert.match(magazinePage, /MobileAppDownloadStrip/);
 assert.match(magazinePage, /variant=["']article["']/);
-assert.match(main, /mobile-app-strip\.css/);
+assert.match(strip, /mobile-app-strip\.css/, 'strip component loads its CSS on mount');
+assert.doesNotMatch(main, /import ['\"]\.\/styles\/mobile-app-strip\.css['\"]/, 'strip CSS is not a static main import');
+assert.match(strip, /<ul className="pd-app-strip-stores"/, 'store links use a real list');
+assert.doesNotMatch(strip, /role=["']listitem["']/, 'anchors must not fake listitem roles');
+assert.match(strip, /data-testid="mobile-app-strip-apk"/, 'APK download CTA stays testable');
 assert.match(css, /\.pd-app-strip\b/);
 assert.match(css, /@media\s*\(\s*max-width:\s*859px\s*\)/);
 assert.match(
