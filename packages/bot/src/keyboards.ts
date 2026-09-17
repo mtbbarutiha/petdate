@@ -134,7 +134,7 @@ export const SEARCH_MENU_CALLBACKS = {
 
 /** منوی نقش «بدون پت» */
 export const NO_PET_MENU = {
-  /** مشورت با صاحبین (۶ سکه) — جایگزین همبازی برای نقش بدون پت */
+  /** مشورت با صاحبین (۵ سکه) — جایگزین همبازی برای نقش بدون پت */
   ownerConsult: '💬 مشورت با صاحبین',
   /** برچسب قدیمی کیبورد کش‌شده — همان مشورت با صاحبین */
   buyConsult: '🛒 به دنبال مشاوره برای خرید',
@@ -1173,6 +1173,10 @@ export function explorePickMyPetKeyboard(pets: PetProfile[]): InlineKeyboard {
   });
   return kb;
 }
+
+/** Short seeker-advice gender labels — match web consultOwnerGenderFemale/Male. */
+export const SEEKER_ADVICE_GENDER_FEMALE = 'دنبال مشاور خانم هستم';
+export const SEEKER_ADVICE_GENDER_MALE = 'دنبال مشاور آقا هستم';
 
 /** Short owner-gender labels — match web findOwnerGenderFemale/Male (no «دنبال»/«هستم»). */
 export const EXPLORE_OWNER_GENDER_TITLE = 'صاحب همبازی چه جنسیتی باشد؟';

@@ -4170,8 +4170,15 @@ export const dbService = {
       });
   },
 
-  /** صاحبان پت که مشورت با صاحبین را پذیرفته‌اند */
-  listOwnersAcceptingSeekerAdvice(): User[] {
+  /** صاحبان پت که مشورت با صاحبین را پذیرفته‌اند (اختیاری: فیلتر جنسیت مشاور) */
+  listOwnersAcceptingSeekerAdvice(opts?: {
+    gender?: 'female' | 'male';
+    preferredProviderId?: number;
+  }): User[] {
+    const preferredId =
+      opts?.preferredProviderId != null && Number.isFinite(opts.preferredProviderId)
+        ? Math.floor(Number(opts.preferredProviderId))
+        : undefined;
     const rows = db
       .prepare(
         `SELECT u.*
@@ -4189,7 +4196,12 @@ export const dbService = {
       .map(mapUser)
       .filter((u) => {
         const roles = u.roles?.length ? u.roles : u.role ? [u.role] : [];
-        return roles.includes('pet_owner') && u.acceptSeekerAdvice === true;
+        if (!roles.includes('pet_owner') || u.acceptSeekerAdvice !== true) return false;
+        if (preferredId != null && u.id !== preferredId) return false;
+        if (opts?.gender && u.gender && u.gender !== opts.gender) return false;
+        // Prefer known matching gender; keep unknowns when a gender filter is set
+        // so sparse profiles still receive fan-out (same spirit as playmate match).
+        return true;
       });
   },
 
@@ -7025,7 +7037,7 @@ export const dbService = {
 
   /**
    * مشورت با صاحبین: اگر چت زیر ۱ ثانیه بعد از قبول قطع شود،
-   * ۶ سکه به بیمار برمی‌گردد و سهم صاحب (در صورت واریز) پس گرفته می‌شود.
+   * هزینه مشورت با صاحبین به بیمار برمی‌گردد و سهم صاحب (در صورت واریز) پس گرفته می‌شود.
    */
   refundEarlySeekerAdviceIfEligible(consultId: number): {
     refunded: boolean;

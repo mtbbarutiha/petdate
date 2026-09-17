@@ -1529,6 +1529,10 @@ export async function quickVetConnect(
     preferAi?: boolean;
     /** Human coach/doctor only — no AI fallback when offline. */
     humanOnly?: boolean;
+    /** Preferred consultant / owner gender (seeker_advice). */
+    ownerGender?: 'female' | 'male';
+    /** Target a specific owner for seeker_advice. */
+    preferredProviderId?: number;
   }
 ): Promise<QuickVetConnectResult> {
   return request<QuickVetConnectResult>('/api/consultations/quick-connect', {
@@ -1540,6 +1544,8 @@ export async function quickVetConnect(
       kind: opts?.kind ?? 'vet',
       preferAi: Boolean(opts?.preferAi),
       humanOnly: Boolean(opts?.humanOnly),
+      ownerGender: opts?.ownerGender,
+      preferredProviderId: opts?.preferredProviderId,
     }),
   });
 }

@@ -1,15 +1,20 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { Contact, MapPin, PawPrint, Search } from 'lucide-react';
 import {
+  PET_BREEDS_SEED,
+  PET_SPECIES,
   PLAYDATE_REQUEST_COST,
+  SEEKER_ADVICE_COST,
   toPersianDigits,
   type PetProfile,
+  type PetSpeciesCode,
 } from '@petdate/shared';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { useAppToast } from '../hooks/useAppToast';
 import { useI18n } from '../i18n';
-import { listNearbyPets, listPets, listUserContacts } from '../lib/api';
+import { listNearbyPets, listPets, listUserContacts, quickVetConnect } from '../lib/api';
 import { sendPlaymateRequestNow } from '../lib/playmateActions';
 import { peopleFromDiscoveryPets } from '../lib/petDiscoveryPeople';
 import { authStore } from '../data/authStore';
@@ -40,6 +45,11 @@ type Props = {
    * `bar` = compact chip row for chat list header (no title/lead chrome).
    */
   variant?: 'panel' | 'bar';
+  /**
+   * `playmate` = pet-owner discovery + playmate request.
+   * `owners` = no-pet role: nearby / breed-picker / same-province → seeker advice.
+   */
+  audience?: 'playmate' | 'owners';
 };
 
 export type { DiscoveryPerson } from '../lib/petDiscoveryPeople';
@@ -51,8 +61,7 @@ function formatCoins(n: number): string {
 
 /**
  * Bot parity discovery chips: پت‌های نزدیک من / هم‌نژاد / هم‌استان / لیست مخاطبین.
- * Results are a **people** list with ارسال درخواست (same createPlaydateRequest flow),
- * plus saved contacts for quick re-open.
+ * No-pet audience: مالکین نزدیک من / مالکین نژاد / هم استان → مشورت بگیر.
  */
 export function PetDiscoveryPanel({
   myPets,
@@ -60,10 +69,12 @@ export function PetDiscoveryPanel({
   onSent,
   onOpenContact,
   variant = 'panel',
+  audience = 'playmate',
 }: Props) {
   const { t } = useI18n();
-  const { user, isLoggedIn } = useAuthStore();
+  const { user, token, isLoggedIn } = useAuthStore();
   const { toastError, toastInfo, toastSuccess } = useAppToast();
+  const isOwners = audience === 'owners';
   const [mode, setMode] = useState<PetDiscoveryMode | null>(null);
   const [busy, setBusy] = useState(false);
   const [results, setResults] = useState<PetProfile[]>([]);
@@ -77,17 +88,66 @@ export function PetDiscoveryPanel({
   const [pickFromOpen, setPickFromOpen] = useState(false);
   const [feeConfirmOpen, setFeeConfirmOpen] = useState(false);
   const [fromPetId, setFromPetId] = useState<number | null>(null);
+  const [breedPickerOpen, setBreedPickerOpen] = useState(false);
+  const [breedSpecies, setBreedSpecies] = useState<PetSpeciesCode | null>(null);
 
   const myUserId = user?.id;
   const province = user?.province?.trim() || '';
   const coins = user?.coins ?? user?.wallet?.coins ?? 0;
+  const requestCost = isOwners ? SEEKER_ADVICE_COST : PLAYDATE_REQUEST_COST;
 
   const people = useMemo(() => peopleFromDiscoveryPets(results), [results]);
+
+  const runBreedSearch = useCallback(
+    async (breedName: string) => {
+      if (!isLoggedIn || !myUserId) {
+        toastError(t('chats.discoveryLogin'));
+        return;
+      }
+      setBreedPickerOpen(false);
+      setBreedSpecies(null);
+      setMode('samebreed');
+      setBusy(true);
+      setResults([]);
+      setContacts([]);
+      setStatus(null);
+      setErrorKind(false);
+      try {
+        const rows = await listPets({
+          breeds: [breedName],
+          lookingForPlaymate: isOwners ? undefined : true,
+          excludeOwnerId: myUserId,
+          sort: 'newest',
+        });
+        const slice = rows.slice(0, 24);
+        setResults(slice);
+        const n = peopleFromDiscoveryPets(slice).length;
+        setStatus(
+          n
+            ? t('chats.discoveryBreedCount', { n })
+            : t('chats.discoveryBreedEmpty')
+        );
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : t('chats.discoveryFail');
+        setErrorKind(true);
+        setStatus(msg);
+        toastError(msg);
+      } finally {
+        setBusy(false);
+      }
+    },
+    [isLoggedIn, isOwners, myUserId, t, toastError]
+  );
 
   const runMode = useCallback(
     async (next: PetDiscoveryMode) => {
       if (!isLoggedIn || !myUserId) {
         toastError(t('chats.discoveryLogin'));
+        return;
+      }
+      if (isOwners && next === 'samebreed') {
+        setBreedSpecies(null);
+        setBreedPickerOpen(true);
         return;
       }
       setMode(next);
@@ -154,7 +214,7 @@ export function PetDiscoveryPanel({
           }
           const rows = await listPets({
             province,
-            lookingForPlaymate: true,
+            lookingForPlaymate: isOwners ? undefined : true,
             excludeOwnerId: myUserId,
             sort: 'newest',
           });
@@ -169,7 +229,7 @@ export function PetDiscoveryPanel({
           return;
         }
 
-        // samebreed
+        // samebreed (playmate — from my pets)
         const breeds = [
           ...new Set(
             myPets
@@ -210,7 +270,7 @@ export function PetDiscoveryPanel({
         setBusy(false);
       }
     },
-    [isLoggedIn, myPets, myUserId, province, t, toastError, toastInfo]
+    [isLoggedIn, isOwners, myPets, myUserId, province, t, toastError, toastInfo]
   );
 
   useEffect(() => {
@@ -227,21 +287,27 @@ export function PetDiscoveryPanel({
       return;
     }
     if (sentOwnerIds.has(toPet.ownerId) || sendingOwnerId === toPet.ownerId) return;
-    if (myPets.length === 0) {
+    if (!isOwners && myPets.length === 0) {
       const msg = t('chats.discoveryNeedPet');
       toastError(msg);
       return;
     }
-    if (coins < PLAYDATE_REQUEST_COST) {
+    if (coins < requestCost) {
       toastError(
         t('chats.discoveryNeedCoins', {
-          cost: formatCoins(PLAYDATE_REQUEST_COST),
+          cost: formatCoins(requestCost),
           coins: formatCoins(coins),
         })
       );
       return;
     }
     setPendingTo(toPet);
+    if (isOwners) {
+      setFromPetId(null);
+      setPickFromOpen(false);
+      setFeeConfirmOpen(true);
+      return;
+    }
     if (myPets.length === 1) {
       setFromPetId(myPets[0]!.id);
       setPickFromOpen(false);
@@ -306,16 +372,25 @@ export function PetDiscoveryPanel({
   }
 
   async function executeRequest() {
-    if (!myUserId || !pendingTo || fromPetId == null) return;
+    if (!myUserId || !pendingTo) return;
+    if (!isOwners && fromPetId == null) return;
     const ownerId = pendingTo.ownerId;
     setFeeConfirmOpen(false);
     setSendingOwnerId(ownerId);
     try {
-      await sendPlaymateRequestNow({
-        fromPetId,
-        toPetId: pendingTo.id,
-        fromUserId: myUserId,
-      });
+      if (isOwners) {
+        await quickVetConnect(myUserId, token, {
+          kind: 'seeker_advice',
+          humanOnly: true,
+          preferredProviderId: ownerId,
+        });
+      } else {
+        await sendPlaymateRequestNow({
+          fromPetId: fromPetId!,
+          toPetId: pendingTo.id,
+          fromUserId: myUserId,
+        });
+      }
       setSentOwnerIds((prev) => new Set(prev).add(ownerId));
       toastSuccess(t('chats.discoveryRequestSent'));
       void authStore.refreshMe();
@@ -330,12 +405,18 @@ export function PetDiscoveryPanel({
     }
   }
 
-  const chips: { id: PetDiscoveryMode; label: string; Icon: typeof MapPin }[] = [
-    { id: 'nearby', label: t('chats.discoveryNearby'), Icon: MapPin },
-    { id: 'samebreed', label: t('chats.discoverySameBreed'), Icon: PawPrint },
-    { id: 'sameprovince', label: t('chats.discoverySameProvince'), Icon: Search },
-    { id: 'contacts', label: t('chats.discoveryContacts'), Icon: Contact },
-  ];
+  const chips: { id: PetDiscoveryMode; label: string; Icon: typeof MapPin }[] = isOwners
+    ? [
+        { id: 'nearby', label: t('chats.discoveryOwnersNearby'), Icon: MapPin },
+        { id: 'samebreed', label: t('chats.discoveryOwnersBreed'), Icon: PawPrint },
+        { id: 'sameprovince', label: t('chats.discoveryOwnersProvince'), Icon: Search },
+      ]
+    : [
+        { id: 'nearby', label: t('chats.discoveryNearby'), Icon: MapPin },
+        { id: 'samebreed', label: t('chats.discoverySameBreed'), Icon: PawPrint },
+        { id: 'sameprovince', label: t('chats.discoverySameProvince'), Icon: Search },
+        { id: 'contacts', label: t('chats.discoveryContacts'), Icon: Contact },
+      ];
 
   const showEmpty =
     !busy &&
@@ -445,7 +526,9 @@ export function PetDiscoveryPanel({
                       ? t('chats.discoveryRequestSent')
                       : sending
                         ? t('common.loading')
-                        : t('chats.discoverySendRequest')}
+                        : isOwners
+                          ? t('chats.discoveryConsultRequest')
+                          : t('chats.discoverySendRequest')}
                   </button>
                 </article>
               </li>
@@ -505,7 +588,7 @@ export function PetDiscoveryPanel({
         </ul>
       ) : null}
 
-      {pickFromOpen && pendingTo ? (
+      {pickFromOpen && pendingTo && !isOwners ? (
         <div
           className="pepito-pet-discovery-pickpanel"
           data-testid="pet-discovery-pick-from"
@@ -542,8 +625,12 @@ export function PetDiscoveryPanel({
       ) : null}
 
       <ConfirmModal
-        open={feeConfirmOpen && !!pendingTo && fromPetId != null}
-        title={t('chats.discoveryFeeTitle')}
+        open={
+          feeConfirmOpen &&
+          !!pendingTo &&
+          (isOwners || fromPetId != null)
+        }
+        title={isOwners ? t('chats.discoveryConsultFeeTitle') : t('chats.discoveryFeeTitle')}
         confirmLabel={t('common.confirm')}
         cancelLabel={t('common.cancel')}
         busy={sendingOwnerId != null}
@@ -555,7 +642,7 @@ export function PetDiscoveryPanel({
           <div className="pepito-confirm-modal__row pepito-confirm-modal__row--fee">
             <dt>{t('chats.discoveryFeeCost')}</dt>
             <dd>
-              {formatCoins(PLAYDATE_REQUEST_COST)} {t('chats.discoveryCoinsUnit')}
+              {formatCoins(requestCost)} {t('chats.discoveryCoinsUnit')}
             </dd>
           </div>
           <div className="pepito-confirm-modal__row">
@@ -565,8 +652,95 @@ export function PetDiscoveryPanel({
             </dd>
           </div>
         </dl>
-        <p className="pepito-lead-modal__lead">{t('chats.discoveryFeeLead')}</p>
+        <p className="pepito-lead-modal__lead">
+          {isOwners ? t('chats.discoveryConsultFeeLead') : t('chats.discoveryFeeLead')}
+        </p>
       </ConfirmModal>
+
+      {breedPickerOpen && typeof document !== 'undefined'
+        ? createPortal(
+            <div
+              className="pepito-lead-modal-overlay"
+              role="presentation"
+              data-testid="pet-discovery-breed-picker"
+              onClick={(e) => {
+                if (e.target === e.currentTarget) {
+                  setBreedPickerOpen(false);
+                  setBreedSpecies(null);
+                }
+              }}
+            >
+              <div
+                className="pepito-lead-modal pepito-confirm-modal"
+                role="dialog"
+                aria-modal="true"
+                aria-label={t('chats.discoveryPickBreedTitle')}
+              >
+                <header className="pepito-lead-modal__head">
+                  <h2>{t('chats.discoveryPickBreedTitle')}</h2>
+                  <button
+                    type="button"
+                    className="pepito-lead-modal__close"
+                    aria-label={t('common.close')}
+                    onClick={() => {
+                      setBreedPickerOpen(false);
+                      setBreedSpecies(null);
+                    }}
+                  >
+                    ×
+                  </button>
+                </header>
+                <div className="pepito-lead-modal__body">
+                  <p className="pepito-lead-modal__lead">{t('chats.discoveryPickBreedLead')}</p>
+                  {!breedSpecies ? (
+                    <div className="find-playmate-gender-options" role="group">
+                      {PET_SPECIES.map((sp) => (
+                        <button
+                          key={sp.code}
+                          type="button"
+                          className="pepito-btn button-2 find-playmate-gender-btn"
+                          data-testid={`pet-discovery-breed-species-${sp.code}`}
+                          onClick={() => setBreedSpecies(sp.code)}
+                        >
+                          {sp.emoji} {sp.labelFa}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div
+                      className="pepito-pet-discovery-pick"
+                      style={{ maxHeight: '50vh', overflow: 'auto' }}
+                      role="listbox"
+                    >
+                      <button
+                        type="button"
+                        className="pepito-btn button-3"
+                        onClick={() => setBreedSpecies(null)}
+                      >
+                        {t('common.back')}
+                      </button>
+                      {PET_BREEDS_SEED.filter((b) => b.speciesCode === breedSpecies)
+                        .slice()
+                        .sort((a, b) => a.sortOrder - b.sortOrder)
+                        .map((b) => (
+                          <button
+                            key={`${b.speciesCode}-${b.nameFa}`}
+                            type="button"
+                            className="pepito-btn button-2"
+                            data-testid={`pet-discovery-breed-${b.nameFa}`}
+                            onClick={() => void runBreedSearch(b.nameFa)}
+                          >
+                            {b.nameFa}
+                          </button>
+                        ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>,
+            document.body
+          )
+        : null}
     </section>
   );
 }

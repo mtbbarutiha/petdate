@@ -1,13 +1,13 @@
 /**
  * مشورت با صاحبین — owner Telegram notify must not say «ویزیت».
- * Owner earns SEEKER_OWNER_SHARE (3 of 6), not the full debit.
+ * Owner earns SEEKER_OWNER_SHARE (3 of 5), not the full debit.
  * Request embeds requester profile (name, public id, bio snippet).
  */
 import assert from 'node:assert/strict';
 import { SEEKER_ADVICE_COST, SEEKER_OWNER_SHARE, userPublicIdOf } from '@petdate/shared';
 import { seekerAdviceOwnerNotifyText } from './telegram-vet-consult-notify';
 
-assert.equal(SEEKER_ADVICE_COST, 6, 'total seeker advice cost');
+assert.equal(SEEKER_ADVICE_COST, 5, 'total seeker advice cost');
 assert.equal(SEEKER_OWNER_SHARE, 3, 'owner share of seeker advice');
 
 const patient = {
@@ -41,7 +41,7 @@ assert.match(text, /بیو: می‌خوام سگ بگیرم/, 'includes bio snip
 assert.match(text, /شهر: تهران/, 'includes city when present');
 assert.doesNotMatch(text, /ویزیت/, 'must not say ویزیت');
 assert.doesNotMatch(text, /بیمار/, 'must not call seeker بیمار');
-assert.doesNotMatch(text, new RegExp(String(SEEKER_ADVICE_COST)), 'must not show total 6 as owner payout');
+assert.doesNotMatch(text, new RegExp(String(SEEKER_ADVICE_COST)), 'must not show total 5 as owner payout');
 
 const plain = seekerAdviceOwnerNotifyText({});
 assert.match(plain, /<b>3<\/b> سکه/, 'defaults to SEEKER_OWNER_SHARE');
