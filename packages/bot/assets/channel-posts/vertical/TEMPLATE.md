@@ -9,7 +9,7 @@
 | Aspect | **9:16** vertical (`GenerateImage` `aspect_ratio: "9:16"`) |
 | Export | **1080×1920** JPEG, preferably &lt; ~900KB |
 | Channel | `@petdating` |
-| CTA button | `🚀 ورود به ربات` → `https://t.me/Petdatebot` |
+| CTA button | `🐶 ورود به ربات` → `https://t.me/Petdatebot` |
 | Brand | Pet Date purple `#5D2E8E` / pink `#E91E63`, logo dog+cat heart, tagline `PLAY · MEET · FRIENDS` |
 | Style | Premium high-CTR; topic-matched imagery; **do not** reuse the same lonely-dog→park 16:9 template for every post |
 | Captions | Persian body + Persian/English hashtags + `@Petdatebot` · optional `PetDate.ir` |

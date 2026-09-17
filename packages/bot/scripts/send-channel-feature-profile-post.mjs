@@ -38,7 +38,7 @@ form.append('caption', caption);
 form.append(
   'reply_markup',
   JSON.stringify({
-    inline_keyboard: [[{ text: '🚀 ورود به ربات', url: 'https://t.me/Petdatebot' }]],
+    inline_keyboard: [[{ text: '🐶 ورود به ربات', url: 'https://t.me/Petdatebot' }]],
   })
 );
 form.append('photo', new Blob([fs.readFileSync(photoPath)]), path.basename(photoPath));
