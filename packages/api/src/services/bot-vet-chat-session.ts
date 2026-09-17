@@ -2,10 +2,11 @@
  * Activate Telegram bot vet_chat sessions in Redis after a consult is accepted.
  * Bot sessions live under petdate:bot:session:{telegramId} (see packages/bot/src/session.ts).
  * Only call this when consult.status === 'active' — never for requested/pending.
+ *
+ * RMW stays on the primary (getRedisWrite) for read-after-write consistency.
  */
-import Redis from 'ioredis';
 import type { User } from '@petdate/shared';
-import { infra, hasRedisConfig } from '../config/infra';
+import { getRedisWrite } from '../redis-client';
 import { normalizeTelegramId } from './telegram-id';
 
 const KEY_PREFIX = 'petdate:bot:session:';
@@ -26,30 +27,8 @@ type SessionLike = {
   [key: string]: unknown;
 };
 
-let redis: Redis | null = null;
-let redisFailed = false;
-
-async function getRedis(): Promise<Redis | null> {
-  if (!hasRedisConfig() || redisFailed) return null;
-  if (redis) return redis;
-  try {
-    const client = new Redis(infra.redis.url!, {
-      maxRetriesPerRequest: 1,
-      lazyConnect: true,
-      connectTimeout: 2000,
-      retryStrategy: () => null,
-    });
-    client.on('error', () => {
-      /* suppressed */
-    });
-    await client.connect();
-    await client.ping();
-    redis = client;
-    return client;
-  } catch {
-    redisFailed = true;
-    return null;
-  }
+async function getRedis() {
+  return getRedisWrite();
 }
 
 function sessionKey(telegramId: string): string {
