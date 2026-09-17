@@ -26,6 +26,33 @@ type Check = {
   latencyMs?: number;
 };
 
+type RedisInstanceSnap = {
+  label: 'primary' | 'replica';
+  host: string;
+  port: number;
+  status: CheckStatus;
+  role: string | null;
+  usedMemory: string | null;
+  usedMemoryBytes: number | null;
+  maxmemory: string | null;
+  connectedClients: number | null;
+  connectedSlaves: number | null;
+  masterLinkStatus: string | null;
+  masterLastIoSecondsAgo: number | null;
+  replicationOffset: number | null;
+  readOnly: boolean | null;
+  pingLatencyMs: number | null;
+  detail: string;
+};
+
+type RedisTopology = {
+  overall: 'healthy' | 'degraded' | 'down';
+  primary: RedisInstanceSnap;
+  replica: RedisInstanceSnap;
+  useReplicaReads: boolean;
+  generatedAt: string;
+};
+
 type Monitoring = {
   ok: boolean;
   degraded?: boolean;
@@ -63,6 +90,7 @@ type Monitoring = {
   checks: Record<string, Check>;
   unhealthy: string[];
   warnings?: string[];
+  redisTopology?: RedisTopology;
 };
 
 const CHECK_LABELS: Record<string, string> = {
@@ -74,7 +102,8 @@ const CHECK_LABELS: Record<string, string> = {
   telegramBot: 'ربات تلگرام',
   sqlite: 'SQLite',
   postgres: 'Postgres',
-  redis: 'Redis',
+  redis: 'Redis (primary)',
+  redisReplica: 'Redis (replica)',
   s3: 'S3 / MinIO',
   elasticsearch: 'Elasticsearch',
   smtp: 'SMTP',
@@ -92,6 +121,7 @@ const CHECK_ORDER = [
   'sqlite',
   'postgres',
   'redis',
+  'redisReplica',
   's3',
   'elasticsearch',
   'smtp',
@@ -140,6 +170,87 @@ function bannerClass(data: Monitoring): string {
   return 'is-ok';
 }
 
+function redisOverallTone(overall: RedisTopology['overall']): CheckTone {
+  if (overall === 'healthy') return 'ok';
+  if (overall === 'degraded') return 'warn';
+  return 'bad';
+}
+
+function redisOverallLabel(overall: RedisTopology['overall']): string {
+  if (overall === 'healthy') return tr('سالم');
+  if (overall === 'degraded') return tr('تضعیف‌شده');
+  return tr('قطع');
+}
+
+function redisStatusLabel(status: CheckStatus): string {
+  if (status === 'up') return tr('سالم');
+  if (status === 'warn') return tr('تضعیف‌شده');
+  if (status === 'not_configured') return tr('پیکربندی نشده');
+  return tr('قطع');
+}
+
+function RedisMetric({ label, value }: { label: string; value: string | number | null | undefined }) {
+  if (value == null || value === '') return null;
+  return (
+    <div className="admin-redis-metric">
+      <span>{label}</span>
+      <strong>{value}</strong>
+    </div>
+  );
+}
+
+function RedisNodeCard({ node, title }: { node: RedisInstanceSnap; title: string }) {
+  const tone = checkTone({
+    ok: node.status === 'up' || node.status === 'warn' || node.status === 'not_configured',
+    status: node.status,
+  });
+  return (
+    <div className={`admin-redis-node is-${tone}`} data-status={node.status}>
+      <div className="admin-redis-node-head">
+        <CheckIcon tone={tone} />
+        <div>
+          <strong>{title}</strong>
+          <span>
+            {node.host}:{node.port}
+            {' · '}
+            {redisStatusLabel(node.status)}
+          </span>
+        </div>
+      </div>
+      <div className="admin-redis-metrics">
+        <RedisMetric label={tr('نقش')} value={node.role} />
+        <RedisMetric label={tr('حافظه')} value={node.usedMemory} />
+        <RedisMetric label={tr('سقف حافظه')} value={node.maxmemory} />
+        <RedisMetric label={tr('کلاینت‌ها')} value={node.connectedClients} />
+        {node.label === 'primary' ? (
+          <RedisMetric label={tr('اسلیوها')} value={node.connectedSlaves} />
+        ) : null}
+        {node.label === 'replica' ? (
+          <>
+            <RedisMetric label={tr('لینک مستر')} value={node.masterLinkStatus} />
+            <RedisMetric
+              label={tr('تأخیر IO')}
+              value={
+                node.masterLastIoSecondsAgo != null ? `${node.masterLastIoSecondsAgo}s` : null
+              }
+            />
+            <RedisMetric label={tr('آفست')} value={node.replicationOffset} />
+            <RedisMetric
+              label={tr('فقط‌خواندنی')}
+              value={node.readOnly == null ? null : node.readOnly ? tr('بله') : tr('خیر')}
+            />
+          </>
+        ) : null}
+        <RedisMetric
+          label={tr('پینگ')}
+          value={node.pingLatencyMs != null ? `${node.pingLatencyMs}ms` : null}
+        />
+      </div>
+      <p className="admin-redis-detail">{node.detail}</p>
+    </div>
+  );
+}
+
 export function AdminMonitoringPage() {
   const [data, setData] = useState<Monitoring | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -162,6 +273,9 @@ export function AdminMonitoringPage() {
     const t = window.setInterval(() => void load(), 10000);
     return () => window.clearInterval(t);
   }, [load]);
+
+  const redis = data?.redisTopology;
+  const redisTone = redis ? redisOverallTone(redis.overall) : 'idle';
 
   return (
     <div className="admin-page">
@@ -250,6 +364,27 @@ export function AdminMonitoringPage() {
               </div>
             </div>
           </div>
+
+          {redis ? (
+            <section className="admin-card admin-redis-card">
+              <div className="admin-card-head">
+                <h2>
+                  <Database size={18} /> {tr('Redis')}
+                </h2>
+                <span className={`admin-redis-overall is-${redisTone}`}>
+                  {redisOverallLabel(redis.overall)}
+                  {redis.useReplicaReads ? ` · ${tr('خواندن از replica فعال')}` : ''}
+                </span>
+              </div>
+              <p className="admin-muted admin-redis-lead">
+                {tr('Primary روی ۶۳۷۹ (نوشتن) و replica روی ۶۳۸۰ (خواندن) — بدون افشای رمز')}
+              </p>
+              <div className="admin-redis-grid">
+                <RedisNodeCard node={redis.primary} title={tr('Primary (نوشتن)')} />
+                <RedisNodeCard node={redis.replica} title={tr('Replica (خواندن)')} />
+              </div>
+            </section>
+          ) : null}
 
           <section className="admin-card">
             <div className="admin-card-head">

@@ -50,6 +50,8 @@ assert.equal(isNonCriticalCheck('sms', false), true);
 assert.equal(isNonCriticalCheck('postgres', false), true);
 assert.equal(isNonCriticalCheck('postgres', true), false);
 assert.equal(isNonCriticalCheck('redis', true), false);
+assert.equal(isNonCriticalCheck('redisReplica', true), true);
+assert.equal(isNonCriticalCheck('redisReplica', false), true);
 
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'petdate-mon-'));
 const goodDb = path.join(tmp, 'good.db');
