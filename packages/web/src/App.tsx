@@ -11,11 +11,11 @@ import { FaceVerifyRewardToast } from './components/FaceVerifyRewardToast';
 import { ScrollToTop } from './components/ScrollToTop';
 import { withTagAssistantParams } from './lib/tagAssistantParams';
 import { isHomePath, parkBootLcp } from './lib/parkBootLcp';
-import { WelcomePage } from './pages/WelcomePage';
 import { VetConsultRoute } from './pages/VetConsultRoute';
 import { ReferralCapture } from './components/ReferralCapture';
 
 const Layout = lazy(() => import('./components/Layout').then((m) => ({ default: m.Layout })));
+const WelcomePage = lazy(() => import('./pages/WelcomePage').then((m) => ({ default: m.WelcomePage })));
 const LandingMobileDock = lazy(() =>
   import('./components/LandingMobileDock').then((m) => ({ default: m.LandingMobileDock })),
 );

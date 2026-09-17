@@ -27,11 +27,16 @@ assert.match(indexHtml, /mobile-web-app-capable/, 'modern PWA meta is present');
 assert.match(indexHtml, /apple-mobile-web-app-capable/, 'legacy iOS meta kept beside the modern one');
 const viewportMeta = indexHtml.match(/<meta[\s\S]*?name="viewport"[\s\S]*?>/)?.[0] || '';
 assert.match(viewportMeta, /width=device-width/, 'viewport meta exists');
-assert.match(viewportMeta, /maximum-scale\s*=\s*1/, 'viewport locks pinch-zoom (maximum-scale=1)');
-assert.match(
+assert.match(viewportMeta, /initial-scale\s*=\s*1/, 'viewport sets initial-scale=1');
+assert.doesNotMatch(
   viewportMeta,
   /user-scalable\s*=\s*no/,
-  'viewport disables user scaling (product UX — known a11y tradeoff)'
+  'viewport must not disable pinch-zoom (Lighthouse meta-viewport / a11y)'
+);
+assert.doesNotMatch(
+  viewportMeta,
+  /maximum-scale\s*=\s*[0-4](?:\s|,|$)/,
+  'viewport must not set maximum-scale < 5 (Lighthouse meta-viewport)'
 );
 const globalCss = readFileSync(join(webSrc, 'styles/global.css'), 'utf8');
 assert.match(globalCss, /html\s*\{[\s\S]*?touch-action:\s*manipulation/, 'html disables double-tap zoom');
@@ -116,6 +121,16 @@ assert.doesNotMatch(
 );
 assert.match(indexHtml, /id="pd-boot-hero-from-api"/, 'boot script refreshes LCP from /api/hero');
 assert.match(indexHtml, /fetch\('\/api\/hero'/, 'boot hero script calls the admin-resolved hero API');
+assert.match(
+  indexHtml,
+  /addEventListener\('load',\s*scheduleRefresh\)|readyState === 'complete'\) scheduleRefresh/,
+  'boot hero /api/hero waits for window load (not critical-path)'
+);
+assert.match(
+  indexHtml,
+  /setTimeout\(refreshFromApi,\s*2000\)/,
+  'boot hero refresh is deferred ~2s after load'
+);
 assert.doesNotMatch(indexHtml, /cache:\s*['"]no-store['"]/, 'boot hero fetch must allow HTTP cache');
 assert.match(indexHtml, /id="pd-hero-boot-json"/, 'inlined hero boot JSON for zero-RTT apply');
 assert.match(indexHtml, /class="theme-dark"/, 'html defaults to theme-dark before paint (CLS)');
@@ -138,7 +153,7 @@ assert.doesNotMatch(
   /rel="preload"\s+as="style"/,
   'do not preload a stylesheet (unused-preload warning)'
 );
-assert.match(indexHtml, /web-perf-v46-lcp-boot-snapshot/, 'deploy marker bumped so SW/HTML cache misses');
+assert.match(indexHtml, /web-perf-v47-lighthouse-followup/, 'deploy marker bumped so SW/HTML cache misses');
 assert.match(
   indexHtml,
   /--pepito-dock-clearance:calc\(96px \+ env\(safe-area-inset-bottom,0px\)\)/,
@@ -180,7 +195,9 @@ assert.match(vetRoute, /const VetConsultLandingPage = lazy/, 'vet landing is laz
 assert.match(welcome, /role="region"/, 'hero carousel has an explicit role (aria-roledescription)');
 assert.doesNotMatch(welcome, /role="tablist"|role="tab"/, 'landing dots are not invalid tabs');
 assert.match(welcome, /width=\{1600\}/, 'hero img has intrinsic dimensions (CLS)');
-assert.match(welcome, /heroReady/, 'React waits for /api/hero before painting slide photos');
+assert.match(welcome, /heroReady/, 'React gates slide photos on hero readiness');
+assert.match(welcome, /readBootHeroOverlay|pd-hero-boot-json/, 'React seeds hero from HTML boot snapshot');
+assert.match(welcome, /scheduleAfterLoadIdle/, 'React defers /api/hero until after load+idle');
 assert.match(welcome, /hero-playmate-800\.webp/, 'offline fallback still knows the default 800w WebP');
 assert.match(welcome, /WelcomeBelowFold/, 'below-fold is code-split off the TBT path');
 assert.match(welcome, /showBelowFold/, 'below-fold waits for intersection/input (lucide off critical path)');
@@ -191,7 +208,12 @@ assert.doesNotMatch(welcome, /magazineApi/, 'welcome critical path does not fetc
 assert.match(welcome, /logo-390\.webp/, 'nav logo is 390w so 2x density passes');
 assert.match(welcome, /pd-boot-lcp|parkBootLcp/, 'HTML LCP img is parked after hydrate');
 assert.match(welcome, /parkBootLcp\(\)/, 'boot LCP is parked so it cannot cover/hide the hero');
-assert.match(welcome, /heroReady\]/, 'boot LCP parks only after hero API settles');
+assert.match(welcome, /heroReady\]/, 'boot LCP parks once hero is ready (boot snapshot or API)');
+assert.match(appTsx, /const WelcomePage = lazy/, 'WelcomePage is route-lazy (smaller index entry)');
+assert.doesNotMatch(appTsx, /import \{ WelcomePage \}/, 'WelcomePage must not be a static App import');
+assert.match(main, /styles\/pepito\.css/, 'core pepito CSS stays on the entry graph');
+assert.doesNotMatch(main, /styles\/app-landing\.css/, 'app-landing CSS is not on the landing entry');
+assert.doesNotMatch(main, /styles\/mobile-app-strip\.css/, 'app-strip CSS is not on the landing entry');
 assert.match(indexHtml, /id="pd-park-boot-lcp"/, 'deep-link boot script parks LCP before React');
 assert.match(appTsx, /ParkBootLcpOnNonHome/, 'non-home routes park boot LCP from App');
 assert.match(welcome, /i === slide \?/, 'every active slide including 0 renders an in-hero photo');

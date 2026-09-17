@@ -6,7 +6,7 @@ import { PlatformBanners } from '../components/PlatformBanners';
 import { useI18n } from '../i18n/I18nProvider';
 import { useAuthStore } from '../hooks/useAuthStore';
 import { parkBootLcp } from '../lib/parkBootLcp';
-import { resolvePublicMediaUrl } from '../lib/api';
+import { resolvePublicMediaUrl } from '../lib/mediaUrl';
 import { GatedLink, PawIcon } from './landingGatedLink';
 
 const WelcomeBelowFold = lazy(() =>
@@ -185,6 +185,47 @@ function heroMediaStyle(slide: HeroSlide): CSSProperties {
   };
 }
 
+/** Seed playmate slide from inlined HTML snapshot — no /api/hero on first paint. */
+function readBootHeroOverlay(): HeroApiSlide[] | null {
+  if (typeof document === 'undefined') return null;
+  try {
+    const el = document.getElementById('pd-hero-boot-json');
+    if (!el?.textContent) return null;
+    const boot = JSON.parse(el.textContent) as {
+      webp?: string;
+      srcSet?: string;
+      fallback?: string;
+      posX?: number;
+      posY?: number;
+      scale?: number;
+    };
+    if (!boot.webp) return null;
+    return [
+      {
+        role: 'playmate',
+        webp: boot.webp,
+        srcSet: boot.srcSet || '',
+        fallback: boot.fallback || boot.webp,
+        source: 'custom',
+        posX: boot.posX,
+        posY: boot.posY,
+        scale: boot.scale,
+      },
+    ];
+  } catch {
+    return null;
+  }
+}
+
+function scheduleAfterLoadIdle(run: () => void) {
+  const arm = () => {
+    /* After window load — avoid idle APIs that fire mid-load under Lighthouse. */
+    window.setTimeout(run, 2000);
+  };
+  if (document.readyState === 'complete') arm();
+  else window.addEventListener('load', arm, { once: true });
+}
+
 /** Freeze mobile hero height in px once — svh/address-bar changes caused a scroll jump. */
 function lockMobileHeroHeight() {
   if (typeof window === 'undefined') return;
@@ -204,9 +245,9 @@ export function WelcomePage() {
   const [scrolled, setScrolled] = useState(false);
   const [slide, setSlide] = useState(0);
   const [showBelowFold, setShowBelowFold] = useState(false);
-  const [heroOverlay, setHeroOverlay] = useState<HeroApiSlide[] | null>(null);
-  /** false until /api/hero settles — avoids painting hardcoded defaults over admin photos. */
-  const [heroReady, setHeroReady] = useState(false);
+  const [heroOverlay, setHeroOverlay] = useState<HeroApiSlide[] | null>(() => readBootHeroOverlay());
+  /** true once boot snapshot or /api/hero is available — never block LCP on the API. */
+  const [heroReady, setHeroReady] = useState(() => Boolean(readBootHeroOverlay()));
   const belowFoldSlotRef = useRef<HTMLDivElement>(null);
 
   const heroSlides = applyHeroOverlay(HERO_SLIDES, heroOverlay);
@@ -228,21 +269,27 @@ export function WelcomePage() {
     lockMobileHeroHeight();
   }, []);
 
-  /* Admin-resolved slides only — always apply API list (custom + default + focus).
-     Keep boot LCP (API-hydrated) visible until this settles so we never flash
-     a hardcoded /media/lcp/hero-playmate photo before the admin URL arrives. */
+  /* If HTML lacked a boot snapshot, mark ready immediately so offline defaults paint. */
+  useEffect(() => {
+    if (!heroReady) setHeroReady(true);
+  }, [heroReady]);
+
+  /* Admin-resolved slides — refresh after load+idle so LCP never waits on /api/hero. */
   useEffect(() => {
     let cancelled = false;
-    void fetch(`${API_BASE}/api/hero`, { credentials: 'same-origin' })
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data: { slides?: HeroApiSlide[] } | null) => {
-        if (cancelled) return;
-        if (data?.slides?.length) setHeroOverlay(data.slides);
-        setHeroReady(true);
-      })
-      .catch(() => {
-        if (!cancelled) setHeroReady(true);
-      });
+    scheduleAfterLoadIdle(() => {
+      if (cancelled) return;
+      void fetch(`${API_BASE}/api/hero`, { credentials: 'same-origin' })
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data: { slides?: HeroApiSlide[] } | null) => {
+          if (cancelled) return;
+          if (data?.slides?.length) setHeroOverlay(data.slides);
+          setHeroReady(true);
+        })
+        .catch(() => {
+          if (!cancelled) setHeroReady(true);
+        });
+    });
     return () => {
       cancelled = true;
     };
@@ -251,8 +298,7 @@ export function WelcomePage() {
   /* Park the HTML LCP <img> once React owns the in-hero photo. Do not move it —
      adopt triggers a second contentful paint. Leaving it unparked + outside
      #root (fixed, z-index 0) painted a black empty hero after #378.
-     Wait for heroReady so boot LCP (from /api/hero) stays until React paints
-     the matching slide — never swap to hardcoded defaults mid-load.
+     Boot snapshot (or deferred API) makes heroReady true without blocking LCP.
      Non-home routes park via ParkBootLcpOnNonHome + index.html boot script. */
   useEffect(() => {
     if (!heroReady) return;

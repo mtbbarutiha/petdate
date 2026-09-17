@@ -6,8 +6,6 @@ import { AppErrorBoundary } from './components/AppErrorBoundary';
 import { registerPetdateSW } from './lib/swRegister';
 import './styles/global.css';
 import './styles/pepito.css';
-import './styles/app-landing.css';
-import './styles/mobile-app-strip.css';
 import './styles/theme-dark.css';
 import { initTheme } from './lib/theme';
 import { I18nProvider, useI18n } from './i18n/I18nProvider';
@@ -16,7 +14,10 @@ import { initLang } from './i18n/lang';
 initTheme();
 initLang();
 
-/** Product UX: block iOS Safari pinch-zoom gesture (viewport meta alone is not enough on all WebViews). */
+/**
+ * Product UX: block iOS Safari pinch-zoom gesture.
+ * Web viewport meta allows accessibility zoom; Capacitor www + Android WebView stay locked.
+ */
 if (typeof window !== 'undefined') {
   const blockGestureZoom = (e: Event) => {
     e.preventDefault();

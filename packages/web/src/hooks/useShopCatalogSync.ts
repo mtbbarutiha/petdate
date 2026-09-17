@@ -3,30 +3,49 @@ import {
   applyLiveShopCatalog,
   isShopCatalogHydrated,
 } from '../data/shopCatalog';
-import { fetchPublicShopCatalog } from '../lib/api';
 
 let hydratePromise: Promise<boolean> | null = null;
 
-/** Shared hydrate — shop chrome + cart provider (cart runs on every route). */
+function scheduleAfterLoadIdle(run: () => void) {
+  if (typeof window === 'undefined') {
+    run();
+    return;
+  }
+  const arm = () => {
+    window.setTimeout(run, 2500);
+  };
+  if (document.readyState === 'complete') arm();
+  else window.addEventListener('load', arm, { once: true });
+}
+
+/** Shared hydrate — shop chrome + cart provider (cart runs on every route).
+ *  Catalog fetch is deferred until after load+idle so the guest homepage
+ *  does not pull /api/shop onto the LCP critical path. */
 export async function hydrateShopCatalogOnce(): Promise<boolean> {
   if (isShopCatalogHydrated()) return true;
   if (!hydratePromise) {
-    hydratePromise = (async () => {
-      try {
-        const data = await fetchPublicShopCatalog();
-        if (!data.products?.length) return false;
-        applyLiveShopCatalog({
-          products: data.products,
-          categories: data.categories,
-          brands: data.brands,
-        });
-        return true;
-      } catch {
-        return false;
-      } finally {
-        /* keep promise so we don't hammer API on failure loops within same page */
-      }
-    })();
+    hydratePromise = new Promise((resolve) => {
+      scheduleAfterLoadIdle(() => {
+        void (async () => {
+          try {
+            const { fetchPublicShopCatalog } = await import('../lib/api');
+            const data = await fetchPublicShopCatalog();
+            if (!data.products?.length) {
+              resolve(false);
+              return;
+            }
+            applyLiveShopCatalog({
+              products: data.products,
+              categories: data.categories,
+              brands: data.brands,
+            });
+            resolve(true);
+          } catch {
+            resolve(false);
+          }
+        })();
+      });
+    });
   }
   return hydratePromise;
 }

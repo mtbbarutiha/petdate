@@ -108,11 +108,16 @@ assert.match(
   /font-size:\s*16px\s*!important;\s*\/\*\s*iOS won't auto-zoom/,
   'mobile auth inputs reinforce 16px !important'
 );
-// Site-wide pinch-zoom lock (webPerf.selftest) stays; 16px inputs still stop iOS focus-zoom.
+// Auth inputs stay at 16px to avoid iOS focus-zoom; public viewport allows a11y pinch-zoom.
 assert.match(
   indexHtml,
-  /maximum-scale\s*=\s*1/,
-  'viewport keeps site-wide zoom lock alongside 16px auth inputs'
+  /name="viewport"[\s\S]*?width=device-width,\s*initial-scale=1/,
+  'viewport keeps device-width + initial-scale without user-scalable=no'
+);
+assert.doesNotMatch(
+  indexHtml,
+  /user-scalable\s*=\s*no/,
+  'public web viewport must allow zoom (Lighthouse meta-viewport)'
 );
 
 console.log('loginPage.selftest: ok');

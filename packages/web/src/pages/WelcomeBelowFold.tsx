@@ -23,7 +23,7 @@ import {
   formatToman,
   getFeaturedProducts,
 } from '../data/shopCatalog';
-import { resolvePublicMediaUrl } from '../lib/api';
+import { resolvePublicMediaUrl } from '../lib/mediaUrl';
 import { formatAdminFaDate } from '../admin/jalaliDate';
 import { fetchMagazineFeatured, fetchMagazineList, type MagazineCard } from '../lib/magazineApi';
 import {

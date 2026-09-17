@@ -14,14 +14,16 @@ const root = join(webSrc, '..');
 const sw = readFileSync(join(webSrc, 'lib/swRegister.ts'), 'utf8');
 const vite = readFileSync(join(root, 'vite.config.ts'), 'utf8');
 
-assert.match(sw, /petdate-sw-20260917-event-tickets-v51/, 'swRegister bust generation is v51');
-assert.match(sw, /petdate-web-v51-event-tickets/, 'swRegister active cacheId is v51');
-assert.match(vite, /cacheId:\s*'petdate-web-v51-event-tickets'/, 'vite PWA cacheId is v51');
+assert.match(sw, /petdate-sw-20260917-lighthouse-followup-v52/, 'swRegister bust generation is v52');
+assert.match(sw, /petdate-web-v52-lighthouse-followup/, 'swRegister active cacheId is v52');
+assert.match(vite, /cacheId:\s*'petdate-web-v52-lighthouse-followup'/, 'vite PWA cacheId is v52');
 assert.match(
   vite,
   /navigateFallbackDenylist:[\s\S]*?\/\^\\\/t/,
   'SW navigation denylist includes /t ticket HTML routes',
 );
+assert.doesNotMatch(sw, /petdate-web-v51-event-tickets/, 'old v51-event-tickets cacheId is retired');
+assert.doesNotMatch(sw, /petdate-sw-20260917-event-tickets-v51/, 'old v51 bust key is retired');
 assert.doesNotMatch(sw, /petdate-web-v50-hero-api-lcp/, 'old v50-hero-api-lcp cacheId is retired');
 assert.doesNotMatch(sw, /petdate-sw-20260913-hero-api-lcp-v50/, 'old v50 bust key is retired');
 assert.doesNotMatch(sw, /petdate-web-v49-hero-focus/, 'old v49-hero-focus cacheId is retired');

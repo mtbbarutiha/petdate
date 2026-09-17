@@ -13,7 +13,7 @@ const config: CapacitorConfig = {
     allowMixedContent: false,
   },
   plugins: {
-    // Keep in sync with index.html viewport lock (no pinch zoom).
+    // Capacitor www keeps viewport zoom locked; public web allows a11y pinch-zoom.
   },
 };
 
