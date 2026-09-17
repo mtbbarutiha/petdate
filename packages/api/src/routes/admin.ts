@@ -29,6 +29,10 @@ import {
   sqliteFileCheck,
   type ServiceCheck,
 } from '../admin-monitoring';
+import {
+  probeRedisTopology,
+  redisSnapshotToServiceCheck,
+} from '../admin-redis-monitoring';
 import { dbService, getResolvedDatabasePath, getStorageDriver, type UserProfilePatch } from '../db';
 import { isCandooConfigured } from '../services/candoo';
 import { adminPlatform } from '../admin-platform';
@@ -2112,53 +2116,6 @@ async function probeElasticsearch(): Promise<ServiceCheck> {
   }
 }
 
-async function probeRedis(): Promise<ServiceCheck> {
-  const url = process.env.REDIS_URL;
-  if (!url) return checkNotConfigured();
-  try {
-    const u = new URL(url);
-    const host = u.hostname || '127.0.0.1';
-    const port = Number(u.port || 6379);
-    const endpoint = formatServiceEndpoint(host, port, 'Redis');
-    const { default: Redis } = await import('ioredis');
-    const client = new Redis(url, {
-      connectTimeout: 1500,
-      maxRetriesPerRequest: 1,
-      enableOfflineQueue: false,
-      lazyConnect: true,
-      retryStrategy: () => null,
-    });
-    client.on('error', () => {
-      /* probe result covers this */
-    });
-    try {
-      await client.connect();
-      const pong = await Promise.race([
-        client.ping(),
-        new Promise<string>((_, reject) =>
-          setTimeout(() => reject(new Error('Redis PING timeout')), 1500),
-        ),
-      ]);
-      if (String(pong).toUpperCase() === 'PONG') {
-        return checkUp(endpoint);
-      }
-      return checkWarn(`${endpoint} · پاسخ غیرمنتظره`);
-    } finally {
-      try {
-        client.disconnect();
-      } catch {
-        /* */
-      }
-    }
-  } catch (err) {
-    const tcp = await probeService(process.env.REDIS_URL, 6379, 'Redis');
-    if (tcp.status === 'up') {
-      return checkWarn(`${tcp.detail} · PING ناموفق`);
-    }
-    return checkDown((err as Error).message);
-  }
-}
-
 async function probeSmtp(): Promise<ServiceCheck> {
   if (!isSmtpConfigured()) return checkNotConfigured('SMTP_HOST نیست');
   const smtp = getSmtpPublicConfig();
@@ -2337,7 +2294,7 @@ adminRouter.get('/monitoring', async (_req, res) => {
     apiPublic,
     pdfPublic,
     wsPublic,
-    redis,
+    redisTopology,
     postgres,
     s3,
     elasticsearch,
@@ -2356,7 +2313,7 @@ adminRouter.get('/monitoring', async (_req, res) => {
     }),
     probePublicUrl(pdfUrl, new URL(pdfUrl).hostname),
     probePublicUrl(wsHealthUrl, `ws.${apex}`),
-    probeRedis(),
+    probeRedisTopology(),
     probeService(postgresUrl || 'postgresql://petdate@127.0.0.1:5432/petdate', 5432, 'Postgres'),
     hasS3Config()
       ? probeHttp(infra.s3.endpoint, '/minio/health/live', 9000, 'S3/MinIO')
@@ -2366,6 +2323,11 @@ adminRouter.get('/monitoring', async (_req, res) => {
     probeSmtp(),
     probeSms(),
   ]);
+  const redis = hasRedisConfig()
+    ? redisSnapshotToServiceCheck(redisTopology.primary)
+    : checkNotConfigured();
+  // Always surface replica in the grid (defaults to :6380). Non-critical when down.
+  const redisReplica = redisSnapshotToServiceCheck(redisTopology.replica);
   const counts = dbService.getOpsCounts();
   const logStats = dbService.getAppErrorLogStats();
   const disk = diskCheck(process.cwd());
@@ -2390,6 +2352,7 @@ adminRouter.get('/monitoring', async (_req, res) => {
         ? checkWarn(`${apex} · Postgres روی سرور روشن است — DATABASE_URL ست نیست`)
         : checkNotConfigured('کانتینر Postgres در دسترس نیست / DATABASE_URL ست نیست'),
     redis,
+    redisReplica,
     s3,
     elasticsearch,
     smtp,
@@ -2403,9 +2366,10 @@ adminRouter.get('/monitoring', async (_req, res) => {
     .filter(([, v]) => v.status === 'warn')
     .map(([k]) => k);
   const criticalUnhealthy = unhealthy.filter((k) => !isNonCriticalCheck(k, usePostgresStorage()));
+  const redisDegraded = redisTopology.overall === 'degraded' || redisTopology.overall === 'down';
   res.json({
     ok: criticalUnhealthy.length === 0,
-    degraded: warnings.length > 0,
+    degraded: warnings.length > 0 || (redisDegraded && criticalUnhealthy.length === 0),
     generatedAt: new Date().toISOString(),
     publicDomain: apex,
     publicWebUrl: siteUrl,
@@ -2432,6 +2396,7 @@ adminRouter.get('/monitoring', async (_req, res) => {
     checks,
     unhealthy,
     warnings,
+    redisTopology,
     redisConfigured: hasRedisConfig(),
     postgresConfigured: hasPostgresConfig(),
     s3Configured: hasS3Config(),

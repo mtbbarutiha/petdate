@@ -117,6 +117,8 @@ export function isNonCriticalCheck(
   postgresIsSourceOfTruth: boolean,
 ): boolean {
   if (key === 'elasticsearch' || key === 'smtp' || key === 'sms') return true;
+  // Read replica is optional until wired; primary Redis stays critical.
+  if (key === 'redisReplica') return true;
   if (key === 'postgres' && !postgresIsSourceOfTruth) return true;
   return false;
 }
