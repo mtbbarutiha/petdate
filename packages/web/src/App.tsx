@@ -6,20 +6,27 @@ import { PersistTagAssistantParams } from './components/PersistTagAssistantParam
 import { RouteSeo } from './components/RouteSeo';
 import { ShopCartProvider } from './hooks/useShopCart';
 import { AppToastProvider } from './hooks/useAppToast';
-import { AppDialogHost } from './components/AppDialog';
-import { FaceVerifyRewardToast } from './components/FaceVerifyRewardToast';
 import { ScrollToTop } from './components/ScrollToTop';
 import { withTagAssistantParams } from './lib/tagAssistantParams';
 import { isHomePath, parkBootLcp } from './lib/parkBootLcp';
 import { isLandingHomePath } from './hooks/useShopCatalogSync';
 import { loadAppCss } from './styles/loadAppCss';
-import { VetConsultRoute } from './pages/VetConsultRoute';
 import { ReferralCapture } from './components/ReferralCapture';
 
 const Layout = lazy(() => import('./components/Layout').then((m) => ({ default: m.Layout })));
 const WelcomePage = lazy(() => import('./pages/WelcomePage').then((m) => ({ default: m.WelcomePage })));
 const LandingMobileDock = lazy(() =>
   import('./components/LandingMobileDock').then((m) => ({ default: m.LandingMobileDock })),
+);
+/** Dialog + face-verify toast stay off the landing critical JS path. */
+const AppDialogHost = lazy(() =>
+  import('./components/AppDialog').then((m) => ({ default: m.AppDialogHost })),
+);
+const FaceVerifyRewardToast = lazy(() =>
+  import('./components/FaceVerifyRewardToast').then((m) => ({ default: m.FaceVerifyRewardToast })),
+);
+const VetConsultRoute = lazy(() =>
+  import('./pages/VetConsultRoute').then((m) => ({ default: m.VetConsultRoute })),
 );
 
 /** First input or 10s — keeps /api/analytics/collect + GTM helpers off LCP. */
@@ -454,8 +461,10 @@ export default function App() {
   return (
     <AppGuards>
       <AppToastProvider>
-      <AppDialogHost />
-      <FaceVerifyRewardToast />
+      <Suspense fallback={null}>
+        <AppDialogHost />
+        <FaceVerifyRewardToast />
+      </Suspense>
       <ShopCartProvider>
         <ScrollToTop />
         <LegacyAdoptionHashRedirect />
@@ -481,7 +490,14 @@ export default function App() {
             <Route path="events" element={<GamesPage />} />
             <Route path="games" element={<Navigate to="/events" replace />} />
             <Route path="pet/:slugOrId" element={<PublicPetPage />} />
-            <Route path="vet-consult" element={<VetConsultRoute />} />
+            <Route
+              path="vet-consult"
+              element={
+                <Suspense fallback={<RouteFallback />}>
+                  <VetConsultRoute />
+                </Suspense>
+              }
+            />
             <Route path="team-chat/:agentSlug" element={<TeamChatStartPage />} />
             <Route path="shop" element={<ShopHomePage />} />
             <Route path="shop/c/:category" element={<ShopCategoryPage />} />

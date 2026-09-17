@@ -8,11 +8,10 @@ let shopCssPromise: Promise<void> | null = null;
 
 export function loadAppCss(): Promise<void> {
   if (!appCssPromise) {
-    appCssPromise = Promise.all([
-      import('./global.css'),
-      import('./pepito.css'),
-      import('./theme-dark.css'),
-    ]).then(() => undefined);
+    /* theme-dark first so :root light tokens in pepito.css cannot paint dark-on-dark FAQ. */
+    appCssPromise = import('./theme-dark.css')
+      .then(() => Promise.all([import('./global.css'), import('./pepito.css')]))
+      .then(() => undefined);
   }
   return appCssPromise;
 }
