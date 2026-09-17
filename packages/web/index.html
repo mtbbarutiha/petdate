@@ -21,13 +21,21 @@
           /* Default template = dark when no stored preference (ignore OS scheme). */
           var theme = stored === 'light' || stored === 'dark' ? stored : 'dark';
           var root = document.documentElement;
-          root.setAttribute('data-theme', theme);
-          root.classList.add(theme === 'dark' ? 'theme-dark' : 'theme-light');
-          root.style.colorScheme = theme;
-          var meta = document.querySelector('meta[name="theme-color"]');
-          if (meta) meta.setAttribute('content', theme === 'dark' ? '#1a1d27' : '#5c4d91');
-          var scheme = document.querySelector('meta[name="color-scheme"]');
-          if (scheme) scheme.setAttribute('content', theme);
+          /* Avoid class thrash when HTML already matches — late theme flips were CLS on html.theme-dark. */
+          var prevTheme = root.getAttribute('data-theme');
+          var needsTheme =
+            prevTheme !== theme ||
+            !root.classList.contains(theme === 'dark' ? 'theme-dark' : 'theme-light');
+          if (needsTheme) {
+            root.setAttribute('data-theme', theme);
+            root.classList.remove('theme-dark', 'theme-light');
+            root.classList.add(theme === 'dark' ? 'theme-dark' : 'theme-light');
+            root.style.colorScheme = theme;
+            var meta = document.querySelector('meta[name="theme-color"]');
+            if (meta) meta.setAttribute('content', theme === 'dark' ? '#1a1d27' : '#5c4d91');
+            var scheme = document.querySelector('meta[name="color-scheme"]');
+            if (scheme) scheme.setAttribute('content', theme);
+          }
 
           var langKey = 'petdate-lang';
           var langStored = null;
@@ -35,8 +43,18 @@
             langStored = localStorage.getItem(langKey);
           } catch (e2) {}
           var lang = langStored === 'en' || langStored === 'fa' ? langStored : 'fa';
-          root.setAttribute('lang', lang);
-          root.setAttribute('dir', lang === 'en' ? 'ltr' : 'rtl');
+          if (root.getAttribute('lang') !== lang) root.setAttribute('lang', lang);
+          var dir = lang === 'en' ? 'ltr' : 'rtl';
+          if (root.getAttribute('dir') !== dir) root.setAttribute('dir', dir);
+
+          /* Freeze mobile hero height before first paint (same px for CSS + boot LCP). */
+          try {
+            if (window.matchMedia && window.matchMedia('(max-width: 859px)').matches) {
+              var hh = Math.max(240, Math.round(window.innerHeight - 64));
+              root.style.setProperty('--pepito-hero-h', hh + 'px');
+              root.setAttribute('data-pd-hero-h-locked', '1');
+            }
+          } catch (e3) {}
         } catch (e) {}
       })();
     </script>
@@ -115,9 +133,11 @@
       @media (max-width:859px){.pepito-hero{height:var(--pepito-hero-h);max-height:var(--pepito-hero-h)}}
       @media (min-width:860px){:root{--pepito-nav-h:74px;--pepito-hero-h:calc(88svh - var(--pepito-nav-h))}.pepito-landing--with-dock{padding-bottom:0}}
       .pepito-hero-media{width:100%;height:100%;object-fit:cover;object-position:center top;position:absolute;inset:0}
-      /* absolute+z-index:1 — fixed+z-0 sat behind #root/hero paint so slide 0 was a black band. */
-      body>#pd-boot-lcp{position:absolute;top:var(--pepito-nav-h);left:0;width:100%;height:var(--pepito-hero-h);object-fit:cover;object-position:center top;z-index:1;pointer-events:none;margin:0}
-      body>#pd-boot-lcp.is-parked{display:none}
+      /* Boot LCP must paint with critical CSS only — never wait on hashed CSS/JS.
+         Override .pepito-hero-media inset:0 so size is the hero band, not zero/conflict. */
+      body>#pd-boot-lcp,body>#pd-boot-lcp.pepito-hero-media{position:absolute;inset:auto;top:var(--pepito-nav-h);left:0;right:0;bottom:auto;width:100%;height:var(--pepito-hero-h);max-height:var(--pepito-hero-h);object-fit:cover;object-position:center top;z-index:1;pointer-events:none;margin:0;display:block;visibility:visible;opacity:1}
+      /* is-parked is for non-home / post-slide-0 only — never hide boot LCP on first paint. */
+      body>#pd-boot-lcp.is-parked,#pd-boot-lcp.is-parked{display:none!important}
       .pepito-hero-wash{position:absolute;inset:0;z-index:2;background:rgba(5,1,12,.34);pointer-events:none}
       .pepito-hero-inner{position:relative;z-index:3;width:min(var(--pepito-container-max),100%);margin-inline:auto;padding-inline:var(--pepito-container-pad);padding-block:calc(env(safe-area-inset-top,0px) + 1.35rem) 2.25rem;box-sizing:border-box;min-height:14.5rem}
       .pepito-hero-slide-title,.pepito-hero h1{margin:0 0 16px;font-size:24px;line-height:1.15;font-weight:600;font-family:var(--font-display)}
@@ -150,13 +170,13 @@
       html.theme-light .pepito-help-block-lead,html[data-theme='light'] .pepito-help-block-lead,
       html.theme-light .pepito-faq-page-lead,html[data-theme='light'] .pepito-faq-page-lead{color:#757086}
     </style>
-    <!-- deploy marker: registration-ux-role-btn-v1 + ui-audit-fix-v2 + chat composer-fixed-v8 + pd-chat-ui-v2 + pd-panels-ui-v3c + web-perf-v47-lighthouse-followup + wallet-stars-v2 + my-pets-lead-v1 + wallet-folio-v1 + gtm-html-v1 + gtm-ta-debug-v1 + guest-vet-landing-v16 -->
+    <!-- deploy marker: registration-ux-role-btn-v1 + ui-audit-fix-v2 + chat composer-fixed-v8 + pd-chat-ui-v2 + pd-panels-ui-v3c + web-perf-v48-cwv-seo + wallet-stars-v2 + my-pets-lead-v1 + wallet-folio-v1 + gtm-html-v1 + gtm-ta-debug-v1 + guest-vet-landing-v16 -->
     <meta name="pd-chat-shell" content="composer-fixed-v8" />
     <meta name="pd-chat-ui" content="pd-chat-ui-v2" />
     <meta name="pd-ui-audit" content="ui-audit-fix-v2" />
     <meta name="pd-registration-ux" content="registration-ux-role-btn-v1" />
     <meta name="pd-panels-ui" content="pd-panels-ui-v3c" />
-    <meta name="pd-web-perf" content="web-perf-v47-lighthouse-followup" />
+    <meta name="pd-web-perf" content="web-perf-v48-cwv-seo" />
     <meta name="pd-profile-pets" content="profile-about-pets-v2" />
     <meta name="pd-wallet-stars" content="wallet-stars-xtr-v1" />
     <meta name="pd-my-pets-lead" content="my-pets-lead-v1" />
@@ -184,8 +204,8 @@
     <meta name="apple-mobile-web-app-title" content="petdate" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="theme-color" content="#5c4d91" />
-    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#1a1d27" />
+    <meta name="color-scheme" content="dark" />
     <meta name="format-detection" content="telephone=no" />
     <link rel="alternate" type="text/plain" href="https://petdate.ir/llms.txt" title="llms.txt" />
     <link rel="canonical" data-pd-seo="canonical" href="https://petdate.ir/" />
@@ -307,7 +327,8 @@
       ></iframe
     ></noscript>
     <!-- End Google Tag Manager (noscript) -->
-    <!-- Snapshot src discovers LCP in HTML; admin mutations rewrite via hero-boot-snapshot. -->
+    <!-- Snapshot src discovers LCP in HTML; admin mutations rewrite via hero-boot-snapshot.
+         Inline geometry so paint never waits on hashed CSS; is-parked must stay OFF on home first paint. -->
         <img
       id="pd-boot-lcp"
       class="pepito-hero-media"
@@ -315,28 +336,27 @@
       width="1600"
       height="900"
       fetchpriority="high"
-      decoding="sync"
+      decoding="async"
       sizes="100vw"
       srcset="/api/hero/images/20260913/62fdbd72-ee8b-4528-a799-e02cff559ddb-playmate-800.webp 800w, /api/hero/images/20260913/62fdbd72-ee8b-4528-a799-e02cff559ddb-playmate-1280.webp 1280w, /api/hero/images/20260913/62fdbd72-ee8b-4528-a799-e02cff559ddb-playmate-1920.webp 1920w"
       src="/api/hero/images/20260913/62fdbd72-ee8b-4528-a799-e02cff559ddb-playmate-800.webp"
-      style="object-position:50% 90%"
+      style="position:absolute;inset:auto;top:var(--pepito-nav-h,64px);left:0;right:0;bottom:auto;width:100%;height:var(--pepito-hero-h,calc(100svh - 64px));max-height:var(--pepito-hero-h,calc(100svh - 64px));object-fit:cover;object-position:50% 90%;z-index:1;pointer-events:none;margin:0;display:block;visibility:visible;opacity:1"
       data-pd-boot-hero="snapshot"
     />
     <!-- Park homepage LCP on deep links before React — otherwise /shop,/faq,… show a ghost hero.
-         Also freeze mobile hero height in px once so address-bar svh shifts cannot jump scroll.
+         Hero height is locked in the head theme script (before paint) — do not reset it here.
          On home: apply inlined LCP snapshot immediately; refresh from GET /api/hero only after
-         window load + idle so LCP never waits on the JSON API. -->
+         window load so LCP never waits on the JSON API. Never unpark once React owns the node. -->
     <script id="pd-park-boot-lcp">
       (function () {
         try {
           var p = location.pathname || '/';
           var img = document.getElementById('pd-boot-lcp');
           if (p !== '/' && p !== '') {
-            if (img) img.classList.add('is-parked');
-          }
-          if (window.matchMedia && window.matchMedia('(max-width: 859px)').matches) {
-            var h = Math.max(240, Math.round(window.innerHeight - 64));
-            document.documentElement.style.setProperty('--pepito-hero-h', h + 'px');
+            if (img) {
+              img.classList.add('is-parked');
+              img.setAttribute('data-pd-react-owned', '1');
+            }
           }
         } catch (e) {}
       })();
@@ -348,9 +368,13 @@
           if (p !== '/' && p !== '') return;
           var img = document.getElementById('pd-boot-lcp');
           if (!img) return;
-          /* Snapshot first (zero network). Defer /api/hero until after load+idle. */
+          /* Snapshot first (zero network). Defer /api/hero until after load. */
           function applySlide(slide, fromApi) {
             if (!slide || !slide.webp) return;
+            /* React parks on slide change / leave — never revive the node after that (LCP delay). */
+            if (img.getAttribute('data-pd-react-owned') === '1' || img.classList.contains('is-parked')) {
+              return;
+            }
             if (slide.srcSet) img.setAttribute('srcset', slide.srcSet);
             else img.removeAttribute('srcset');
             img.setAttribute('sizes', '100vw');
@@ -369,7 +393,6 @@
             } else {
               img.style.transform = '';
             }
-            img.classList.remove('is-parked');
             var existing = document.querySelector('link[data-pd-lcp="hero"]');
             if (existing) {
               if (existing.getAttribute('href') !== slide.webp) {
@@ -399,6 +422,9 @@
             if (bootEl && bootEl.textContent) applySlide(JSON.parse(bootEl.textContent), false);
           } catch (e0) {}
           function refreshFromApi() {
+            if (img.getAttribute('data-pd-react-owned') === '1' || img.classList.contains('is-parked')) {
+              return;
+            }
             fetch('/api/hero', { credentials: 'same-origin' })
               .then(function (r) {
                 return r.ok ? r.json() : null;

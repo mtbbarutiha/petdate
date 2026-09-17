@@ -79,6 +79,14 @@ export function applyTheme(mode: ThemeMode): void {
 
 export function initTheme(): ThemeMode {
   const mode = resolveTheme(readStoredTheme());
+  if (typeof document !== 'undefined') {
+    const root = document.documentElement;
+    const already =
+      root.getAttribute('data-theme') === mode &&
+      root.classList.contains(mode === 'dark' ? 'theme-dark' : 'theme-light') &&
+      !root.classList.contains(mode === 'dark' ? 'theme-light' : 'theme-dark');
+    if (already) return mode;
+  }
   applyTheme(mode);
   return mode;
 }

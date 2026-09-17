@@ -703,20 +703,29 @@ h1, h2, h3, h4, .landing-brand-en, .landing-brand-mark {
 }
 /* HTML LCP node lives outside #root; height matches the compact #377 hero band.
    absolute (not fixed) so the photo scrolls with the hero. z-index:1 so it paints
-   above #root/landing fills — fixed+z-0 left slide 0 as a black empty band. */
-body > #pd-boot-lcp {
+   above #root/landing fills — fixed+z-0 left slide 0 as a black empty band.
+   Override .pepito-hero-media inset:0 so geometry stays the hero band. */
+body > #pd-boot-lcp,
+body > #pd-boot-lcp.pepito-hero-media {
   position: absolute;
+  inset: auto;
   top: var(--pepito-nav-h);
   left: 0;
+  right: 0;
+  bottom: auto;
   width: 100%;
   height: var(--pepito-hero-h);
+  max-height: var(--pepito-hero-h);
   z-index: 1;
   pointer-events: none;
   margin: 0;
+  display: block;
+  visibility: visible;
+  opacity: 1;
 }
 body > #pd-boot-lcp.is-parked,
 #pd-boot-lcp.is-parked {
-  display: none;
+  display: none !important;
 }
 .pepito-hero-slide.is-active .pepito-hero-media {
   animation: pepito-ken 14s ease-in-out infinite alternate;
