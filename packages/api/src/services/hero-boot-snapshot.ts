@@ -66,11 +66,16 @@ export function renderLcpBootHtml(snap: HeroBootSnapshot): string {
   ].join('\n    ');
 }
 
-/** Attributes applied to #pd-boot-lcp when snapshot is known. */
+/** Attributes applied to #pd-boot-lcp when snapshot is known.
+ *  Must keep inline geometry + decoding=async so LCP paints without waiting on
+ *  hashed CSS / main-thread JS (see Lighthouse element render delay). */
 export function bootLcpImgOpenTag(snap: HeroBootSnapshot): string {
   const srcSetAttr = snap.srcSet ? ` srcset="${snap.srcSet}"` : '';
   const pos = `${snap.posX}% ${snap.posY}%`;
-  let style = `object-position:${pos}`;
+  let style =
+    'position:absolute;inset:auto;top:var(--pepito-nav-h,64px);left:0;right:0;bottom:auto;width:100%;height:var(--pepito-hero-h,calc(100svh - 64px));max-height:var(--pepito-hero-h,calc(100svh - 64px));object-fit:cover;object-position:' +
+    pos +
+    ';z-index:1;pointer-events:none;margin:0;display:block;visibility:visible;opacity:1';
   if (snap.scale > 0 && snap.scale !== 1) {
     style += `;transform:scale(${snap.scale});transform-origin:${pos}`;
   }
@@ -81,7 +86,7 @@ export function bootLcpImgOpenTag(snap: HeroBootSnapshot): string {
       width="1600"
       height="900"
       fetchpriority="high"
-      decoding="sync"
+      decoding="async"
       sizes="100vw"${srcSetAttr}
       src="${snap.webp}"
       style="${style}"

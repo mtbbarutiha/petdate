@@ -40,6 +40,11 @@ const img = bootLcpImgOpenTag(snap);
 assert.match(img, /id="pd-boot-lcp"/);
 assert.match(img, /data-pd-boot-hero="snapshot"/);
 assert.match(img, /src="\/api\/hero\/images\/20260913\/example-playmate-800\.webp"/);
+assert.match(img, /decoding="async"/, 'boot LCP decodes async so JS cannot stall paint');
+assert.match(img, /position:absolute/, 'boot LCP keeps inline geometry after snapshot rewrite');
+assert.match(img, /display:block/, 'boot LCP stays visible after snapshot rewrite');
+assert.doesNotMatch(img, /is-parked/, 'snapshot rewrite must not park homepage LCP');
+assert.match(img, /object-position:50% 90%/, 'focus position preserved');
 
 const apiRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 const heroRoute = readFileSync(join(apiRoot, 'routes/hero.ts'), 'utf8');
