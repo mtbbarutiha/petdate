@@ -11,6 +11,8 @@ import { FaceVerifyRewardToast } from './components/FaceVerifyRewardToast';
 import { ScrollToTop } from './components/ScrollToTop';
 import { withTagAssistantParams } from './lib/tagAssistantParams';
 import { isHomePath, parkBootLcp } from './lib/parkBootLcp';
+import { isLandingHomePath } from './hooks/useShopCatalogSync';
+import { loadAppCss } from './styles/loadAppCss';
 import { VetConsultRoute } from './pages/VetConsultRoute';
 import { ReferralCapture } from './components/ReferralCapture';
 
@@ -79,6 +81,16 @@ function ParkBootLcpOnNonHome() {
   const { pathname } = useLocation();
   useEffect(() => {
     if (!isHomePath(pathname)) parkBootLcp();
+  }, [pathname]);
+  return null;
+}
+
+/** Non-landing routes need full chrome CSS immediately (landing uses critical + deferred). */
+function EnsureAppCss() {
+  const { pathname } = useLocation();
+  useEffect(() => {
+    if (isLandingHomePath(pathname)) return;
+    void loadAppCss();
   }, [pathname]);
   return null;
 }
@@ -451,6 +463,7 @@ export default function App() {
         <ReferralCapture />
         <SiteAnalyticsListener />
         <RouteSeo />
+        <EnsureAppCss />
         <Suspense fallback={<RouteFallback />}>
           <Routes>
             <Route index element={<WelcomePage />} />

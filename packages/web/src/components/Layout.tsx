@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
   GraduationCap,
@@ -24,6 +24,7 @@ import { LiveIncomingRequests } from './LiveIncomingRequests';
 import { PhotoPendingBanner } from './PhotoPendingBanner';
 import { ProfileManageNav } from './ProfileManageNav';
 import { RoleSwitchControl } from './RoleSwitchControl';
+import { loadAppCss } from '../styles/loadAppCss';
 
 type NavDef = { to: string; icon: LucideIcon; labelKey: string };
 
@@ -86,6 +87,9 @@ export function Layout({ children }: { children?: ReactNode }) {
   const { user } = useAuthStore();
   const { t } = useI18n();
   const platform = usePlatformConfig();
+  useEffect(() => {
+    void loadAppCss();
+  }, []);
   const active = primaryRole(user?.roles, user?.role);
   const navItems = navForRole(active).filter((item) => {
     if (item.to === '/shop' && !platform.shopEnabled) return false;

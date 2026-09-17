@@ -219,8 +219,18 @@ function readBootHeroOverlay(): HeroApiSlide[] | null {
 
 function scheduleAfterLoadIdle(run: () => void) {
   const arm = () => {
-    /* After window load — avoid idle APIs that fire mid-load under Lighthouse. */
-    window.setTimeout(run, 2000);
+    /* After window load + input/long idle — boot HTML script already refreshes LCP.
+       Keep React's full-slide refresh off the Lighthouse critical request chain. */
+    let done = false;
+    const go = () => {
+      if (done) return;
+      done = true;
+      run();
+    };
+    window.setTimeout(go, 10000);
+    for (const ev of ['pointerdown', 'keydown', 'touchstart'] as const) {
+      window.addEventListener(ev, go, { once: true, passive: true });
+    }
   };
   if (document.readyState === 'complete') arm();
   else window.addEventListener('load', arm, { once: true });

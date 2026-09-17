@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 const here = dirname(fileURLToPath(import.meta.url));
 const buttons = readFileSync(join(here, 'ShopRailNavButtons.tsx'), 'utf8');
 const hook = readFileSync(join(here, 'useShopRailNav.ts'), 'utf8');
-const css = readFileSync(join(here, '../../styles/pepito.css'), 'utf8');
+const css = readFileSync(join(here, '../../styles/pepito.css'), 'utf8') + readFileSync(join(here, '../../styles/pepito-shop.css'), 'utf8');
 const home = readFileSync(join(here, '../../pages/shop/ShopHomePage.tsx'), 'utf8');
 const rail = readFileSync(join(here, 'ShopHomeRail.tsx'), 'utf8');
 const similar = readFileSync(join(here, 'ShopSimilarProducts.tsx'), 'utf8');

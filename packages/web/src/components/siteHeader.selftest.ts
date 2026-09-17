@@ -17,7 +17,7 @@ const desktopNav = readFileSync(join(root, 'components/SiteDesktopNav.tsx'), 'ut
 const chrome = readFileSync(join(root, 'components/LandingChrome.tsx'), 'utf8');
 const welcome = readFileSync(join(root, 'pages/WelcomePage.tsx'), 'utf8');
 const shop = readFileSync(join(root, 'components/shop/ShopChrome.tsx'), 'utf8');
-const css = readFileSync(join(root, 'styles/pepito.css'), 'utf8');
+const css = readFileSync(join(root, 'styles/pepito.css'), 'utf8') + readFileSync(join(root, 'styles/pepito-shop.css'), 'utf8');
 const nav = readFileSync(join(root, 'lib/siteNav.ts'), 'utf8');
 
 assert.match(header, /pepito-nav-primary/, 'header has primary group');
@@ -328,7 +328,7 @@ assert.match(profileMenu, /profile-shortcut-playmate/, 'profile menu includes pl
 assert.match(profileMenu, /profile-shortcut-shop/, 'profile menu includes shop shortcut');
 assert.match(profileMenu, /to="\/events"/, 'Events shortcut targets /events');
 
-const darkCss = readFileSync(join(root, 'styles/theme-dark.css'), 'utf8');
+const darkCss = readFileSync(join(root, 'styles/theme-dark.css'), 'utf8') + readFileSync(join(root, 'styles/theme-dark-shop.css'), 'utf8');
 assert.match(
   darkCss,
   /html\[data-theme='dark'\]\s*\.pepito-games-status[\s\S]{0,80}color:\s*#f8fafc/,

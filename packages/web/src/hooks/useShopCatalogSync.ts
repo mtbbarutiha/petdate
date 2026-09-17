@@ -6,46 +6,40 @@ import {
 
 let hydratePromise: Promise<boolean> | null = null;
 
-function scheduleAfterLoadIdle(run: () => void) {
-  if (typeof window === 'undefined') {
-    run();
-    return;
-  }
-  const arm = () => {
-    window.setTimeout(run, 2500);
-  };
-  if (document.readyState === 'complete') arm();
-  else window.addEventListener('load', arm, { once: true });
+/** True for /shop and nested shop routes (not admin). */
+export function isShopPath(pathname: string): boolean {
+  const p = pathname.split('?')[0]?.split('#')[0] || '/';
+  return p === '/shop' || p.startsWith('/shop/');
 }
 
-/** Shared hydrate — shop chrome + cart provider (cart runs on every route).
- *  Catalog fetch is deferred until after load+idle so the guest homepage
- *  does not pull /api/shop onto the LCP critical path. */
+/** Guest marketing home — must not pull /api/shop onto the LCP critical path. */
+export function isLandingHomePath(pathname: string): boolean {
+  const p = pathname.split('?')[0]?.split('#')[0] || '/';
+  return p === '/' || p === '' || p === '/welcome';
+}
+
+/**
+ * Shared hydrate — call only from shop routes, landing #shop intersection,
+ * or an explicit user action. Never schedule from ShopCartProvider on `/`.
+ */
 export async function hydrateShopCatalogOnce(): Promise<boolean> {
   if (isShopCatalogHydrated()) return true;
   if (!hydratePromise) {
-    hydratePromise = new Promise((resolve) => {
-      scheduleAfterLoadIdle(() => {
-        void (async () => {
-          try {
-            const { fetchPublicShopCatalog } = await import('../lib/api');
-            const data = await fetchPublicShopCatalog();
-            if (!data.products?.length) {
-              resolve(false);
-              return;
-            }
-            applyLiveShopCatalog({
-              products: data.products,
-              categories: data.categories,
-              brands: data.brands,
-            });
-            resolve(true);
-          } catch {
-            resolve(false);
-          }
-        })();
-      });
-    });
+    hydratePromise = (async () => {
+      try {
+        const { fetchPublicShopCatalog } = await import('../lib/api');
+        const data = await fetchPublicShopCatalog();
+        if (!data.products?.length) return false;
+        applyLiveShopCatalog({
+          products: data.products,
+          categories: data.categories,
+          brands: data.brands,
+        });
+        return true;
+      } catch {
+        return false;
+      }
+    })();
   }
   return hydratePromise;
 }

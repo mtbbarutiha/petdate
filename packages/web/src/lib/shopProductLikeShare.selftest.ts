@@ -27,8 +27,8 @@ assert.deepEqual(toggleShopFavoriteId('  ', ['p221']), ['p221']);
 
 const here = dirname(fileURLToPath(import.meta.url));
 const page = readFileSync(join(here, '../pages/shop/ShopProductPage.tsx'), 'utf8');
-const css = readFileSync(join(here, '../styles/pepito.css'), 'utf8');
-const dark = readFileSync(join(here, '../styles/theme-dark.css'), 'utf8');
+const css = readFileSync(join(here, '../styles/pepito.css'), 'utf8') + readFileSync(join(here, '../styles/pepito-shop.css'), 'utf8');
+const dark = readFileSync(join(here, '../styles/theme-dark.css'), 'utf8') + readFileSync(join(here, '../styles/theme-dark-shop.css'), 'utf8');
 
 assert.match(page, /useShopFavorites/, 'PDP uses shop favorites hook');
 assert.match(page, /shareOrCopyUrl/, 'PDP reuses Web Share / clipboard helper');

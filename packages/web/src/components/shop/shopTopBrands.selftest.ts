@@ -12,8 +12,8 @@ const root = join(here, '../../..'); // packages/web
 const catalog = readFileSync(join(root, 'src/data/shopCatalog.ts'), 'utf8');
 const home = readFileSync(join(root, 'src/pages/shop/ShopHomePage.tsx'), 'utf8');
 const carousel = readFileSync(join(root, 'src/components/shop/ShopTopBrands.tsx'), 'utf8');
-const css = readFileSync(join(root, 'src/styles/pepito.css'), 'utf8');
-const dark = readFileSync(join(root, 'src/styles/theme-dark.css'), 'utf8');
+const css = readFileSync(join(root, 'src/styles/pepito.css'), 'utf8') + readFileSync(join(root, 'src/styles/pepito-shop.css'), 'utf8');
+const dark = readFileSync(join(root, 'src/styles/theme-dark.css'), 'utf8') + readFileSync(join(root, 'src/styles/theme-dark-shop.css'), 'utf8');
 const adminPage = join(root, 'src/admin/pages/AdminShopBrandsPage.tsx');
 const adminRoutes = readFileSync(join(root, 'src/App.tsx'), 'utf8');
 

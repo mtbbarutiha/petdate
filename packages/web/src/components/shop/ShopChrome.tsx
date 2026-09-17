@@ -8,6 +8,7 @@ import { SiteHeader } from '../SiteHeader';
 import { SiteFooter } from '../SiteFooter';
 import { ShopAddToast } from './ShopAddToast';
 import { ShopProductSearch } from './ShopProductSearch';
+import { loadShopCss } from '../../styles/loadAppCss';
 
 export function ShopChrome({
   children,
@@ -27,6 +28,10 @@ export function ShopChrome({
   const title = bannerTitle ?? t('shop.brand');
   const lead = bannerLead ?? t('shop.lead');
   const pageRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    void loadShopCss();
+  }, []);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);

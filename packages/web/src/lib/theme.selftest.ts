@@ -37,8 +37,8 @@ assert.doesNotMatch(
 );
 assert.match(html, /color-scheme/, 'color-scheme meta present');
 
-const darkCss = readFileSync(join(root, 'src/styles/theme-dark.css'), 'utf8');
-const pepitoCss = readFileSync(join(root, 'src/styles/pepito.css'), 'utf8');
+const darkCss = readFileSync(join(root, 'src/styles/theme-dark.css'), 'utf8') + readFileSync(join(root, 'src/styles/theme-dark-shop.css'), 'utf8');
+const pepitoCss = readFileSync(join(root, 'src/styles/pepito.css'), 'utf8') + readFileSync(join(root, 'src/styles/pepito-shop.css'), 'utf8');
 assert.match(darkCss, /\[data-theme=['"]dark['"]\]/, 'dark token block present');
 assert.match(darkCss, /--pepito-soft/, 'pepito soft remapped');
 assert.match(darkCss, /--pepito-btn-1-bg:\s*#5c4d91/, 'dark theme keeps AA purple pill fill');

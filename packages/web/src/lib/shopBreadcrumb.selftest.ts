@@ -81,8 +81,8 @@ const component = readFileSync(join(here, '../components/shop/ShopBreadcrumb.tsx
 const categoryPage = readFileSync(join(here, '../pages/shop/ShopCategoryPage.tsx'), 'utf8');
 const productPage = readFileSync(join(here, '../pages/shop/ShopProductPage.tsx'), 'utf8');
 const homePage = readFileSync(join(here, '../pages/shop/ShopHomePage.tsx'), 'utf8');
-const css = readFileSync(join(here, '../styles/pepito.css'), 'utf8');
-const dark = readFileSync(join(here, '../styles/theme-dark.css'), 'utf8');
+const css = readFileSync(join(here, '../styles/pepito.css'), 'utf8') + readFileSync(join(here, '../styles/pepito-shop.css'), 'utf8');
+const dark = readFileSync(join(here, '../styles/theme-dark.css'), 'utf8') + readFileSync(join(here, '../styles/theme-dark-shop.css'), 'utf8');
 const ci = readFileSync(join(here, '../../../../scripts/ci-selftest.sh'), 'utf8');
 
 assert.match(component, /aria-label="breadcrumb"/);
