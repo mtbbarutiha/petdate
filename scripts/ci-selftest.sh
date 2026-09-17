@@ -63,6 +63,7 @@ npx tsx "$ROOT/packages/shared/src/user-command-id.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/pet-public-id.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/order-public-id.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/entity-public-id.selftest.ts"
+npx tsx "$ROOT/packages/shared/src/event-ticket.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/gtm-contract.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/referral.selftest.ts"
 npx tsx "$ROOT/packages/shared/src/fanout-reject.selftest.ts"
@@ -95,6 +96,7 @@ npx tsx "$ROOT/packages/web/src/components/inboxPeerAvatar.selftest.ts"
 npx tsx "$ROOT/packages/web/src/pages/teamChatPersonas.selftest.ts"
 npx tsx "$ROOT/packages/web/src/pages/landingFeaturedProducts.selftest.ts"
 npx tsx "$ROOT/packages/api/src/services/app-download-sms.selftest.ts"
+npx tsx "$ROOT/packages/api/src/services/event-ticket-sms.selftest.ts"
 npx tsx "$ROOT/packages/web/src/pages/appLandingPage.selftest.ts"
 npx tsx "$ROOT/packages/web/src/pages/mobileAppDownloadStrip.selftest.ts"
 
@@ -499,6 +501,8 @@ run src/runtime-settings.selftest.ts
 run src/magazine.selftest.ts
 run src/magazine-editorial-seed.selftest.ts
 run src/sample-pet-events-seed.selftest.ts
+run src/services/event-tickets.selftest.ts
+run src/services/event-ticket-html.selftest.ts
 run src/routes/games-list.selftest.ts
 run src/routes/pets-id-guard.selftest.ts
 run src/routes/shop-cart.selftest.ts

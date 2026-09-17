@@ -18,6 +18,7 @@ export * from './help';
 export * from './payment-card';
 export * from './admin-password';
 export * from './chat-reply';
+export * from './event-ticket';
 
 import type {
   OnboardingStatus,

@@ -363,12 +363,61 @@ export async function createGame(input: {
   });
 }
 
-export async function joinGame(gameId: number, userId: number): Promise<Game> {
-  return request<Game>(`/api/games/${gameId}/join`, {
+export async function joinGame(
+  gameId: number,
+  userId: number
+): Promise<
+  Game & {
+    ticket?: {
+      ticketCode: string;
+      publicPath: string;
+      publicUrl: string;
+      isValid?: boolean;
+    };
+    joined?: boolean;
+    joinMessage?: string;
+  }
+> {
+  return request(`/api/games/${gameId}/join`, {
     method: 'POST',
     headers: storedAuthHeaders(),
     body: JSON.stringify({ userId }),
   });
+}
+
+export type EventTicketPublic = {
+  id: number;
+  ticketCode: string;
+  publicPath: string;
+  publicUrl: string;
+  isValid: boolean;
+  eventTitle: string;
+  eventScheduledAt: string;
+  eventLocation: string;
+  currentPlayers: number;
+  maxPlayers: number;
+  ownerName: string;
+  petName?: string;
+  petSpeciesLabel?: string;
+  petImageUrl?: string;
+  ticketTypeLabel: string;
+  status: string;
+  expiresAt?: string | null;
+};
+
+export async function fetchMyEventTickets(opts?: {
+  includeExpired?: boolean;
+}): Promise<{ ok: true; tickets: EventTicketPublic[] }> {
+  const q = opts?.includeExpired ? '?includeExpired=1' : '';
+  return request(`/api/tickets/mine${q}`, {
+    headers: storedAuthHeaders(),
+  });
+}
+
+export async function fetchEventTicket(
+  code: string
+): Promise<{ ok: true; ticket: EventTicketPublic }> {
+  return request(`/api/tickets/${encodeURIComponent(code)}`);
 }
 
 /** Upload event cover photo (multipart `file`). Returns URL; status starts pending. */
