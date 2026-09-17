@@ -3859,6 +3859,37 @@ html[data-theme='dark'] .pepito-games-card-note {
   color: var(--text-secondary, #94a3b8);
 }
 
+/* My tickets — light purple wash + #fff ticket rows kept white while global
+ * h2/ink remaps to light grey → unreadable. Paint dark surfaces + light ink. */
+html[data-theme='dark'] .pepito-games-my-tickets {
+  background: color-mix(in srgb, var(--surface, #1e293b) 88%, #5b2d8e 12%);
+  border-color: color-mix(in srgb, var(--border, #334155) 80%, #a78bfa 20%);
+}
+html[data-theme='dark'] .pepito-games-my-tickets-head h2 {
+  color: #e9d5ff;
+}
+html[data-theme='dark'] .pepito-games-my-tickets-head p,
+html[data-theme='dark'] .pepito-games-ticket-meta {
+  color: var(--text-secondary, #94a3b8);
+}
+html[data-theme='dark'] .pepito-games-ticket-card {
+  background: var(--surface, #1e293b);
+  border-color: color-mix(in srgb, var(--border, #334155) 75%, #e91e8c 25%);
+}
+html[data-theme='dark'] .pepito-games-ticket-card strong {
+  color: var(--text, #f1f5f9);
+}
+html[data-theme='dark'] .pepito-games-join-success {
+  background: color-mix(in srgb, var(--surface, #1e293b) 82%, #5b2d8e 18%);
+  border-color: color-mix(in srgb, #e91e8c 35%, var(--border, #334155));
+}
+html[data-theme='dark'] .pepito-games-join-success-text strong {
+  color: #e9d5ff;
+}
+html[data-theme='dark'] .pepito-games-join-success-text span {
+  color: var(--text-secondary, #94a3b8);
+}
+
 /* Help / FAQ (/faq + /help) — --pepito-card was undefined so cards kept #fff
  * while headings remap to light --pepito-dark → unreadable light-on-white. */
 html[data-theme='dark'] .pepito-faq-page,

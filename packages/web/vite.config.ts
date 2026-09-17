@@ -107,10 +107,12 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         // New cache namespace so stuck clients drop the old 1.5s-poll bundle.
         // Bump when guest marketing routes change — v14 left #213's shell unclaimed.
-        cacheId: 'petdate-web-v50-hero-api-lcp',
+        cacheId: 'petdate-web-v51-event-tickets',
         // Precache only the app shell — not hundreds of prerendered SEO HTML files.
         globPatterns: ['index.html', 'offline.html', '**/*.{js,css,ico,svg,woff2}'],
-        navigateFallbackDenylist: [/^\/api\//],
+        // /t (event tickets), /rx (prescriptions), /inv (invoices) are Express HTML —
+        // must not fall through to SPA index.html (that redirects * → /).
+        navigateFallbackDenylist: [/^\/api\//, /^\/t(?:\/|$)/i, /^\/rx(?:\/|$)/i, /^\/inv(?:\/|$)/i],
       },
       includeAssets: [
         'favicon.ico',
