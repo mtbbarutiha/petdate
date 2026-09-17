@@ -2,9 +2,10 @@
  * web-cta-once-v2 — At-most-once web-chat CTA per (kind + chatId + telegramId).
  * Survives session rewrites and process restarts (Redis SET NX).
  * Relays must NEVER call this and must NEVER append a web-chat reply footer.
+ *
+ * SET NX is always on the primary write client.
  */
-import Redis from 'ioredis';
-import { infra, hasRedisConfig } from '../config/infra';
+import { getRedisWrite } from '../redis-client';
 
 /** Deploy marker — grep dist for this string to confirm v2 is live. */
 export const WEB_CTA_ONCE_MARKER = 'web-cta-once-v2';
@@ -15,32 +16,11 @@ const TTL_SECONDS = 60 * 60 * 24 * 60;
 
 export type WebChatCtaKind = 'vet' | 'playmate';
 
-let redis: Redis | null = null;
-let redisFailed = false;
 /** Process-local fallback when Redis is down — still blocks repeat in this process. */
 const memoryClaimed = new Set<string>();
 
-async function getRedis(): Promise<Redis | null> {
-  if (!hasRedisConfig() || redisFailed) return null;
-  if (redis) return redis;
-  try {
-    const client = new Redis(infra.redis.url!, {
-      maxRetriesPerRequest: 1,
-      lazyConnect: true,
-      connectTimeout: 2000,
-      retryStrategy: () => null,
-    });
-    client.on('error', () => {
-      /* suppressed */
-    });
-    await client.connect();
-    await client.ping();
-    redis = client;
-    return client;
-  } catch {
-    redisFailed = true;
-    return null;
-  }
+async function getRedis() {
+  return getRedisWrite();
 }
 
 function ctaKey(kind: WebChatCtaKind, chatId: number, telegramId: string): string {

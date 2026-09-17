@@ -15,6 +15,8 @@ export const infra = {
   },
   redis: {
     url: optional('REDIS_URL'),
+    /** Optional read replica. Used when USE_REDIS_REPLICA is truthy. */
+    readUrl: optional('REDIS_READ_URL'),
   },
   s3: {
     endpoint: optional('S3_ENDPOINT'),

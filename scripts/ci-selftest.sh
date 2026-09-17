@@ -491,6 +491,7 @@ run src/admin-users-geo.selftest.ts
 run src/admin-users-list-pets.selftest.ts
 run src/admin-monitoring.selftest.ts
 run src/admin-redis-monitoring.selftest.ts
+run src/redis-client.selftest.ts
 run src/admin-aggregate-dashboard.selftest.ts
 run src/admin-dashboard-activity.selftest.ts
 run src/hr-ats-followup.selftest.ts
